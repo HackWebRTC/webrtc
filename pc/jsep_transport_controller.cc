@@ -433,7 +433,7 @@ JsepTransportController::CreateDtlsTransport(
   RTC_DCHECK(network_thread_->IsCurrent());
 
   std::unique_ptr<cricket::DtlsTransportInternal> dtls;
-  if (config_.media_transport_factory) {
+  if (is_media_transport_factory_enabled_ && config_.media_transport_factory) {
     dtls = absl::make_unique<cricket::NoOpDtlsTransport>(
         std::move(ice), config_.crypto_options);
   } else if (config_.external_transport_factory) {
@@ -947,6 +947,13 @@ JsepTransportController::MaybeCreateMediaTransport(
     const cricket::ContentInfo& content_info,
     bool local,
     cricket::IceTransportInternal* ice_transport) {
+  if (!is_media_transport_factory_enabled_) {
+    return nullptr;
+  }
+  if (config_.media_transport_factory == nullptr) {
+    return nullptr;
+  }
+
   absl::optional<cricket::CryptoParams> selected_crypto_for_media_transport;
   if (content_info.media_description() &&
       !content_info.media_description()->cryptos().empty()) {
@@ -958,75 +965,71 @@ JsepTransportController::MaybeCreateMediaTransport(
         content_info.media_description()->cryptos()[0];
   }
 
-  if (config_.media_transport_factory != nullptr) {
-    if (!selected_crypto_for_media_transport.has_value()) {
-      RTC_LOG(LS_WARNING) << "a=cryto line was not found in the offer. Most "
-                             "likely you did not enable SDES. "
-                             "Make sure to pass config.enable_dtls_srtp=false "
-                             "to RTCConfiguration. "
-                             "Cannot continue with media transport. Falling "
-                             "back to RTP. is_local="
-                          << local;
+  if (!selected_crypto_for_media_transport.has_value()) {
+    RTC_LOG(LS_WARNING) << "a=cryto line was not found in the offer. Most "
+                           "likely you did not enable SDES. "
+                           "Make sure to pass config.enable_dtls_srtp=false "
+                           "to RTCConfiguration. "
+                           "Cannot continue with media transport. Falling "
+                           "back to RTP. is_local="
+                        << local;
 
-      // Remove media_transport_factory from config, because we don't want to
-      // use it on the subsequent call (for the other side of the offer).
-      config_.media_transport_factory = nullptr;
-    } else {
-      // Note that we ignore here lifetime and length.
-      // In fact we take those bits (inline, lifetime and length) and keep it as
-      // part of key derivation.
-      //
-      // Technically, we are also not following rfc4568, which requires us to
-      // send and answer with the key that we chose. In practice, for media
-      // transport, the current approach should be sufficient (we take the key
-      // that sender offered, and caller assumes we will use it. We are not
-      // signaling back that we indeed used it.)
-      std::unique_ptr<rtc::KeyDerivation> key_derivation =
-          rtc::KeyDerivation::Create(rtc::KeyDerivationAlgorithm::HKDF_SHA256);
-      const std::string label = "MediaTransportLabel";
-      constexpr int kDerivedKeyByteSize = 32;
-
-      int key_len, salt_len;
-      if (!rtc::GetSrtpKeyAndSaltLengths(
-              rtc::SrtpCryptoSuiteFromName(
-                  selected_crypto_for_media_transport.value().cipher_suite),
-              &key_len, &salt_len)) {
-        RTC_CHECK(false) << "Cannot set up secure media transport";
-      }
-      rtc::ZeroOnFreeBuffer<uint8_t> raw_key(key_len + salt_len);
-
-      cricket::SrtpFilter::ParseKeyParams(
-          selected_crypto_for_media_transport.value().key_params,
-          raw_key.data(), raw_key.size());
-      absl::optional<rtc::ZeroOnFreeBuffer<uint8_t>> key =
-          key_derivation->DeriveKey(
-              raw_key,
-              /*salt=*/nullptr,
-              rtc::ArrayView<const uint8_t>(
-                  reinterpret_cast<const uint8_t*>(label.data()), label.size()),
-              kDerivedKeyByteSize);
-
-      // We want to crash the app if we don't have a key, and not silently fall
-      // back to the unsecure communication.
-      RTC_CHECK(key.has_value());
-      MediaTransportSettings settings;
-      settings.is_caller = local;
-      settings.pre_shared_key =
-          std::string(reinterpret_cast<const char*>(key.value().data()),
-                      key.value().size());
-      settings.event_log = config_.event_log;
-      auto media_transport_result =
-          config_.media_transport_factory->CreateMediaTransport(
-              ice_transport, network_thread_, settings);
-
-      // TODO(sukhanov): Proper error handling.
-      RTC_CHECK(media_transport_result.ok());
-
-      return media_transport_result.MoveValue();
-    }
+    // Remove media_transport_factory from config, because we don't want to
+    // use it on the subsequent call (for the other side of the offer).
+    is_media_transport_factory_enabled_ = false;
+    return nullptr;
   }
 
-  return nullptr;
+  // Note that we ignore here lifetime and length.
+  // In fact we take those bits (inline, lifetime and length) and keep it as
+  // part of key derivation.
+  //
+  // Technically, we are also not following rfc4568, which requires us to
+  // send and answer with the key that we chose. In practice, for media
+  // transport, the current approach should be sufficient (we take the key
+  // that sender offered, and caller assumes we will use it. We are not
+  // signaling back that we indeed used it.)
+  std::unique_ptr<rtc::KeyDerivation> key_derivation =
+      rtc::KeyDerivation::Create(rtc::KeyDerivationAlgorithm::HKDF_SHA256);
+  const std::string label = "MediaTransportLabel";
+  constexpr int kDerivedKeyByteSize = 32;
+
+  int key_len, salt_len;
+  if (!rtc::GetSrtpKeyAndSaltLengths(
+          rtc::SrtpCryptoSuiteFromName(
+              selected_crypto_for_media_transport.value().cipher_suite),
+          &key_len, &salt_len)) {
+    RTC_CHECK(false) << "Cannot set up secure media transport";
+  }
+  rtc::ZeroOnFreeBuffer<uint8_t> raw_key(key_len + salt_len);
+
+  cricket::SrtpFilter::ParseKeyParams(
+      selected_crypto_for_media_transport.value().key_params, raw_key.data(),
+      raw_key.size());
+  absl::optional<rtc::ZeroOnFreeBuffer<uint8_t>> key =
+      key_derivation->DeriveKey(
+          raw_key,
+          /*salt=*/nullptr,
+          rtc::ArrayView<const uint8_t>(
+              reinterpret_cast<const uint8_t*>(label.data()), label.size()),
+          kDerivedKeyByteSize);
+
+  // We want to crash the app if we don't have a key, and not silently fall
+  // back to the unsecure communication.
+  RTC_CHECK(key.has_value());
+  MediaTransportSettings settings;
+  settings.is_caller = local;
+  settings.pre_shared_key = std::string(
+      reinterpret_cast<const char*>(key.value().data()), key.value().size());
+  settings.event_log = config_.event_log;
+  auto media_transport_result =
+      config_.media_transport_factory->CreateMediaTransport(
+          ice_transport, network_thread_, settings);
+
+  // TODO(sukhanov): Proper error handling.
+  RTC_CHECK(media_transport_result.ok());
+
+  return media_transport_result.MoveValue();
 }
 
 RTCError JsepTransportController::MaybeCreateJsepTransport(

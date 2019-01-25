@@ -358,6 +358,12 @@ class JsepTransportController : public sigslot::has_slots<> {
   cricket::IceGatheringState ice_gathering_state_ = cricket::kIceGatheringNew;
 
   Config config_;
+  // Determines if Config::media_transport_factory should be used
+  // to create a media transport. (when falling back to RTP this may be false).
+  // This is a prerequisite, but is not sufficient to create media transport
+  // (the factory needs to be provided in the config, and config must allow for
+  // media transport).
+  bool is_media_transport_factory_enabled_ = true;
   const cricket::SessionDescription* local_desc_ = nullptr;
   const cricket::SessionDescription* remote_desc_ = nullptr;
   absl::optional<bool> initial_offerer_;
