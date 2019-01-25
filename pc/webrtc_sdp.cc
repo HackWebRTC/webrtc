@@ -335,10 +335,6 @@ static bool ParseFmtpParam(const std::string& line,
                            std::string* parameter,
                            std::string* value,
                            SdpParseError* error);
-static bool ParseCandidate(const std::string& message,
-                           Candidate* candidate,
-                           SdpParseError* error,
-                           bool is_raw);
 static bool ParseRtcpFbAttribute(const std::string& line,
                                  const cricket::MediaType media_type,
                                  MediaContentDescription* media_desc,
