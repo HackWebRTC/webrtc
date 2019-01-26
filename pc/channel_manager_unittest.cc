@@ -83,16 +83,17 @@ class ChannelManagerTest : public testing::Test {
     cricket::VoiceChannel* voice_channel = cm_->CreateVoiceChannel(
         &fake_call_, cricket::MediaConfig(), rtp_transport, media_transport,
         rtc::Thread::Current(), cricket::CN_AUDIO, kDefaultSrtpRequired,
-        webrtc::CryptoOptions(), AudioOptions());
+        webrtc::CryptoOptions(), &ssrc_generator_, AudioOptions());
     EXPECT_TRUE(voice_channel != nullptr);
     cricket::VideoChannel* video_channel = cm_->CreateVideoChannel(
         &fake_call_, cricket::MediaConfig(), rtp_transport, media_transport,
         rtc::Thread::Current(), cricket::CN_VIDEO, kDefaultSrtpRequired,
-        webrtc::CryptoOptions(), VideoOptions());
+        webrtc::CryptoOptions(), &ssrc_generator_, VideoOptions());
     EXPECT_TRUE(video_channel != nullptr);
     cricket::RtpDataChannel* rtp_data_channel = cm_->CreateRtpDataChannel(
         cricket::MediaConfig(), rtp_transport, rtc::Thread::Current(),
-        cricket::CN_DATA, kDefaultSrtpRequired, webrtc::CryptoOptions());
+        cricket::CN_DATA, kDefaultSrtpRequired, webrtc::CryptoOptions(),
+        &ssrc_generator_);
     EXPECT_TRUE(rtp_data_channel != nullptr);
     cm_->DestroyVideoChannel(video_channel);
     cm_->DestroyVoiceChannel(voice_channel);
@@ -109,6 +110,7 @@ class ChannelManagerTest : public testing::Test {
   std::unique_ptr<cricket::ChannelManager> cm_;
   cricket::FakeCall fake_call_;
   webrtc::FakeMediaTransportFactory fake_media_transport_factory_;
+  rtc::UniqueRandomIdGenerator ssrc_generator_;
 };
 
 // Test that we startup/shutdown properly.

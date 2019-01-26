@@ -125,9 +125,9 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
         absl::make_unique<FakeVoiceMediaChannelForStats>();
     auto* voice_media_channel_ptr = voice_media_channel.get();
     voice_channel_ = absl::make_unique<cricket::VoiceChannel>(
-        worker_thread_, network_thread_, signaling_thread_, nullptr,
+        worker_thread_, network_thread_, signaling_thread_,
         std::move(voice_media_channel), mid, kDefaultSrtpRequired,
-        webrtc::CryptoOptions());
+        webrtc::CryptoOptions(), &ssrc_generator_);
     voice_channel_->set_transport_name_for_testing(transport_name);
     GetOrCreateFirstTransceiverOfType(cricket::MEDIA_TYPE_AUDIO)
         ->internal()
@@ -145,7 +145,7 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
     video_channel_ = absl::make_unique<cricket::VideoChannel>(
         worker_thread_, network_thread_, signaling_thread_,
         std::move(video_media_channel), mid, kDefaultSrtpRequired,
-        webrtc::CryptoOptions());
+        webrtc::CryptoOptions(), &ssrc_generator_);
     video_channel_->set_transport_name_for_testing(transport_name);
     GetOrCreateFirstTransceiverOfType(cricket::MEDIA_TYPE_VIDEO)
         ->internal()
@@ -380,6 +380,8 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
       local_certificates_by_transport_;
   std::map<std::string, std::unique_ptr<rtc::SSLCertChain>>
       remote_cert_chains_by_transport_;
+
+  rtc::UniqueRandomIdGenerator ssrc_generator_;
 };
 
 }  // namespace webrtc

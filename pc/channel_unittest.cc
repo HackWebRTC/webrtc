@@ -39,6 +39,8 @@
 
 using cricket::DtlsTransportInternal;
 using cricket::FakeVoiceMediaChannel;
+using cricket::RidDescription;
+using cricket::RidDirection;
 using cricket::StreamParams;
 using webrtc::RtpTransceiverDirection;
 using webrtc::SdpType;
@@ -223,10 +225,10 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
         fake_rtp_dtls_transport2_.get(), fake_rtcp_dtls_transport2_.get(),
         flags2);
 
-    channel1_ = CreateChannel(worker_thread, network_thread_, &media_engine_,
-                              std::move(ch1), rtp_transport1_.get(), flags1);
-    channel2_ = CreateChannel(worker_thread, network_thread_, &media_engine_,
-                              std::move(ch2), rtp_transport2_.get(), flags2);
+    channel1_ = CreateChannel(worker_thread, network_thread_, std::move(ch1),
+                              rtp_transport1_.get(), flags1);
+    channel2_ = CreateChannel(worker_thread, network_thread_, std::move(ch2),
+                              rtp_transport2_.get(), flags2);
     channel1_->SignalRtcpMuxFullyActive.connect(
         this, &ChannelTest<T>::OnRtcpMuxFullyActive1);
     channel2_->SignalRtcpMuxFullyActive.connect(
@@ -253,14 +255,14 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   std::unique_ptr<typename T::Channel> CreateChannel(
       rtc::Thread* worker_thread,
       rtc::Thread* network_thread,
-      cricket::MediaEngineInterface* engine,
       std::unique_ptr<typename T::MediaChannel> ch,
       webrtc::RtpTransportInternal* rtp_transport,
       int flags) {
     rtc::Thread* signaling_thread = rtc::Thread::Current();
     auto channel = absl::make_unique<typename T::Channel>(
-        worker_thread, network_thread, signaling_thread, engine, std::move(ch),
-        cricket::CN_AUDIO, (flags & DTLS) != 0, webrtc::CryptoOptions());
+        worker_thread, network_thread, signaling_thread, std::move(ch),
+        cricket::CN_AUDIO, (flags & DTLS) != 0, webrtc::CryptoOptions(),
+        &ssrc_generator_);
     channel->Init_w(rtp_transport, /*media_transport=*/nullptr);
     return channel;
   }
@@ -1434,6 +1436,59 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
     EXPECT_EQ(kRcvBufSize, option_val);
   }
 
+  void CreateSimulcastContent(const std::vector<std::string>& rids,
+                              typename T::Content* content) {
+    std::vector<RidDescription> rid_descriptions;
+    for (const std::string name : rids) {
+      rid_descriptions.push_back(RidDescription(name, RidDirection::kSend));
+    }
+
+    StreamParams stream;
+    stream.set_rids(rid_descriptions);
+    CreateContent(0, kPcmuCodec, kH264Codec, content);
+    // This is for unified plan, so there can be only one StreamParams.
+    content->mutable_streams().clear();
+    content->AddStream(stream);
+  }
+
+  void VerifySimulcastStreamParams(const StreamParams& expected,
+                                   const typename T::Channel* channel) {
+    const std::vector<StreamParams>& streams = channel->local_streams();
+    ASSERT_EQ(1u, streams.size());
+    const StreamParams& result = streams[0];
+    EXPECT_EQ(expected.rids(), result.rids());
+    EXPECT_TRUE(result.has_ssrcs());
+    EXPECT_EQ(expected.rids().size() * 2, result.ssrcs.size());
+    std::vector<uint32_t> primary_ssrcs;
+    result.GetPrimarySsrcs(&primary_ssrcs);
+    EXPECT_EQ(expected.rids().size(), primary_ssrcs.size());
+  }
+
+  void TestUpdateLocalStreamsWithSimulcast() {
+    CreateChannels(0, 0);
+    typename T::Content content1, content2, content3;
+    CreateSimulcastContent({"f", "h", "q"}, &content1);
+    EXPECT_TRUE(
+        channel1_->SetLocalContent(&content1, SdpType::kOffer, nullptr));
+    VerifySimulcastStreamParams(content1.streams()[0], channel1_.get());
+    StreamParams stream1 = channel1_->local_streams()[0];
+
+    // Create a similar offer. SetLocalContent should not remove and add.
+    CreateSimulcastContent({"f", "h", "q"}, &content2);
+    EXPECT_TRUE(
+        channel1_->SetLocalContent(&content2, SdpType::kOffer, nullptr));
+    VerifySimulcastStreamParams(content2.streams()[0], channel1_.get());
+    StreamParams stream2 = channel1_->local_streams()[0];
+    // Check that the streams are identical (SSRCs didn't change).
+    EXPECT_EQ(stream1, stream2);
+
+    // Create third offer that has same RIDs in different order.
+    CreateSimulcastContent({"f", "q", "h"}, &content3);
+    EXPECT_TRUE(
+        channel1_->SetLocalContent(&content3, SdpType::kOffer, nullptr));
+    VerifySimulcastStreamParams(content3.streams()[0], channel1_.get());
+  }
+
  protected:
   void WaitForThreads() { WaitForThreads(rtc::ArrayView<rtc::Thread*>()); }
   static void ProcessThreadQueue(rtc::Thread* thread) {
@@ -1489,6 +1544,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   int rtcp_mux_activated_callbacks1_ = 0;
   int rtcp_mux_activated_callbacks2_ = 0;
   cricket::CandidatePairInterface* last_selected_candidate_pair_;
+  rtc::UniqueRandomIdGenerator ssrc_generator_;
 };
 
 template <>
@@ -1562,14 +1618,14 @@ template <>
 std::unique_ptr<cricket::VideoChannel> ChannelTest<VideoTraits>::CreateChannel(
     rtc::Thread* worker_thread,
     rtc::Thread* network_thread,
-    cricket::MediaEngineInterface* engine,
     std::unique_ptr<cricket::FakeVideoMediaChannel> ch,
     webrtc::RtpTransportInternal* rtp_transport,
     int flags) {
   rtc::Thread* signaling_thread = rtc::Thread::Current();
   auto channel = absl::make_unique<cricket::VideoChannel>(
       worker_thread, network_thread, signaling_thread, std::move(ch),
-      cricket::CN_VIDEO, (flags & DTLS) != 0, webrtc::CryptoOptions());
+      cricket::CN_VIDEO, (flags & DTLS) != 0, webrtc::CryptoOptions(),
+      &ssrc_generator_);
   channel->Init_w(rtp_transport, /*media_transport=*/nullptr);
   return channel;
 }
@@ -2063,6 +2119,10 @@ TEST_F(VideoChannelSingleThreadTest, SocketOptionsMergedOnSetTransport) {
   Base::SocketOptionsMergedOnSetTransport();
 }
 
+TEST_F(VideoChannelSingleThreadTest, UpdateLocalStreamsWithSimulcast) {
+  Base::TestUpdateLocalStreamsWithSimulcast();
+}
+
 // VideoChannelDoubleThreadTest
 TEST_F(VideoChannelDoubleThreadTest, TestInit) {
   Base::TestInit();
@@ -2231,14 +2291,14 @@ template <>
 std::unique_ptr<cricket::RtpDataChannel> ChannelTest<DataTraits>::CreateChannel(
     rtc::Thread* worker_thread,
     rtc::Thread* network_thread,
-    cricket::MediaEngineInterface* engine,
     std::unique_ptr<cricket::FakeDataMediaChannel> ch,
     webrtc::RtpTransportInternal* rtp_transport,
     int flags) {
   rtc::Thread* signaling_thread = rtc::Thread::Current();
   auto channel = absl::make_unique<cricket::RtpDataChannel>(
       worker_thread, network_thread, signaling_thread, std::move(ch),
-      cricket::CN_DATA, (flags & DTLS) != 0, webrtc::CryptoOptions());
+      cricket::CN_DATA, (flags & DTLS) != 0, webrtc::CryptoOptions(),
+      &ssrc_generator_);
   channel->Init_w(rtp_transport);
   return channel;
 }

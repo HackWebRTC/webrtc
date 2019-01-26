@@ -163,12 +163,13 @@ VoiceChannel* ChannelManager::CreateVoiceChannel(
     const std::string& content_name,
     bool srtp_required,
     const webrtc::CryptoOptions& crypto_options,
+    rtc::UniqueRandomIdGenerator* ssrc_generator,
     const AudioOptions& options) {
   if (!worker_thread_->IsCurrent()) {
     return worker_thread_->Invoke<VoiceChannel*>(RTC_FROM_HERE, [&] {
-      return CreateVoiceChannel(call, media_config, rtp_transport,
-                                media_transport, signaling_thread, content_name,
-                                srtp_required, crypto_options, options);
+      return CreateVoiceChannel(
+          call, media_config, rtp_transport, media_transport, signaling_thread,
+          content_name, srtp_required, crypto_options, ssrc_generator, options);
     });
   }
 
@@ -186,9 +187,9 @@ VoiceChannel* ChannelManager::CreateVoiceChannel(
   }
 
   auto voice_channel = absl::make_unique<VoiceChannel>(
-      worker_thread_, network_thread_, signaling_thread, media_engine_.get(),
+      worker_thread_, network_thread_, signaling_thread,
       absl::WrapUnique(media_channel), content_name, srtp_required,
-      crypto_options);
+      crypto_options, ssrc_generator);
 
   voice_channel->Init_w(rtp_transport, media_transport);
 
@@ -231,12 +232,13 @@ VideoChannel* ChannelManager::CreateVideoChannel(
     const std::string& content_name,
     bool srtp_required,
     const webrtc::CryptoOptions& crypto_options,
+    rtc::UniqueRandomIdGenerator* ssrc_generator,
     const VideoOptions& options) {
   if (!worker_thread_->IsCurrent()) {
     return worker_thread_->Invoke<VideoChannel*>(RTC_FROM_HERE, [&] {
-      return CreateVideoChannel(call, media_config, rtp_transport,
-                                media_transport, signaling_thread, content_name,
-                                srtp_required, crypto_options, options);
+      return CreateVideoChannel(
+          call, media_config, rtp_transport, media_transport, signaling_thread,
+          content_name, srtp_required, crypto_options, ssrc_generator, options);
     });
   }
 
@@ -256,7 +258,7 @@ VideoChannel* ChannelManager::CreateVideoChannel(
   auto video_channel = absl::make_unique<VideoChannel>(
       worker_thread_, network_thread_, signaling_thread,
       absl::WrapUnique(media_channel), content_name, srtp_required,
-      crypto_options);
+      crypto_options, ssrc_generator);
 
   video_channel->Init_w(rtp_transport, media_transport);
 
@@ -296,11 +298,13 @@ RtpDataChannel* ChannelManager::CreateRtpDataChannel(
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     bool srtp_required,
-    const webrtc::CryptoOptions& crypto_options) {
+    const webrtc::CryptoOptions& crypto_options,
+    rtc::UniqueRandomIdGenerator* ssrc_generator) {
   if (!worker_thread_->IsCurrent()) {
     return worker_thread_->Invoke<RtpDataChannel*>(RTC_FROM_HERE, [&] {
       return CreateRtpDataChannel(media_config, rtp_transport, signaling_thread,
-                                  content_name, srtp_required, crypto_options);
+                                  content_name, srtp_required, crypto_options,
+                                  ssrc_generator);
     });
   }
 
@@ -315,7 +319,7 @@ RtpDataChannel* ChannelManager::CreateRtpDataChannel(
   auto data_channel = absl::make_unique<RtpDataChannel>(
       worker_thread_, network_thread_, signaling_thread,
       absl::WrapUnique(media_channel), content_name, srtp_required,
-      crypto_options);
+      crypto_options, ssrc_generator);
   data_channel->Init_w(rtp_transport);
 
   RtpDataChannel* data_channel_ptr = data_channel.get();

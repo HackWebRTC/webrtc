@@ -28,6 +28,7 @@
 #include "rtc_base/message_digest.h"
 #include "rtc_base/ssl_adapter.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/unique_id_generator.h"
 #include "test/gmock.h"
 
 #define ASSERT_CRYPTO(cd, s, cs)      \
@@ -79,6 +80,7 @@ using rtc::CS_AEAD_AES_128_GCM;
 using rtc::CS_AEAD_AES_256_GCM;
 using rtc::CS_AES_CM_128_HMAC_SHA1_32;
 using rtc::CS_AES_CM_128_HMAC_SHA1_80;
+using rtc::UniqueRandomIdGenerator;
 using testing::Each;
 using testing::ElementsAreArray;
 using testing::Eq;
@@ -382,7 +384,8 @@ static MediaSessionOptions CreatePlanBMediaSessionOptions() {
 // these tests may be obsolete as a result, and should be refactored or removed.
 class MediaSessionDescriptionFactoryTest : public testing::Test {
  public:
-  MediaSessionDescriptionFactoryTest() : f1_(&tdf1_), f2_(&tdf2_) {
+  MediaSessionDescriptionFactoryTest()
+      : f1_(&tdf1_, &ssrc_generator1), f2_(&tdf2_, &ssrc_generator2) {
     f1_.set_audio_codecs(MAKE_VECTOR(kAudioCodecs1),
                          MAKE_VECTOR(kAudioCodecs1));
     f1_.set_video_codecs(MAKE_VECTOR(kVideoCodecs1));
@@ -688,6 +691,8 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
   }
 
  protected:
+  UniqueRandomIdGenerator ssrc_generator1;
+  UniqueRandomIdGenerator ssrc_generator2;
   MediaSessionDescriptionFactory f1_;
   MediaSessionDescriptionFactory f2_;
   TransportDescriptionFactory tdf1_;
@@ -4016,7 +4021,8 @@ TEST_F(MediaSessionDescriptionFactoryTest,
 
 class MediaProtocolTest : public ::testing::TestWithParam<const char*> {
  public:
-  MediaProtocolTest() : f1_(&tdf1_), f2_(&tdf2_) {
+  MediaProtocolTest()
+      : f1_(&tdf1_, &ssrc_generator1), f2_(&tdf2_, &ssrc_generator2) {
     f1_.set_audio_codecs(MAKE_VECTOR(kAudioCodecs1),
                          MAKE_VECTOR(kAudioCodecs1));
     f1_.set_video_codecs(MAKE_VECTOR(kVideoCodecs1));
@@ -4040,6 +4046,8 @@ class MediaProtocolTest : public ::testing::TestWithParam<const char*> {
   MediaSessionDescriptionFactory f2_;
   TransportDescriptionFactory tdf1_;
   TransportDescriptionFactory tdf2_;
+  UniqueRandomIdGenerator ssrc_generator1;
+  UniqueRandomIdGenerator ssrc_generator2;
 };
 
 TEST_P(MediaProtocolTest, TestAudioVideoAcceptance) {
@@ -4074,7 +4082,8 @@ INSTANTIATE_TEST_CASE_P(MediaProtocolDtlsPatternTest,
 
 TEST_F(MediaSessionDescriptionFactoryTest, TestSetAudioCodecs) {
   TransportDescriptionFactory tdf;
-  MediaSessionDescriptionFactory sf(&tdf);
+  UniqueRandomIdGenerator ssrc_generator;
+  MediaSessionDescriptionFactory sf(&tdf, &ssrc_generator);
   std::vector<AudioCodec> send_codecs = MAKE_VECTOR(kAudioCodecs1);
   std::vector<AudioCodec> recv_codecs = MAKE_VECTOR(kAudioCodecs2);
 
@@ -4130,7 +4139,8 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestSetAudioCodecs) {
 // an object that is not semantically equivalent to the set object.
 TEST_F(MediaSessionDescriptionFactoryTest, VideoHasRidExtensionsInUnifiedPlan) {
   TransportDescriptionFactory tdf;
-  MediaSessionDescriptionFactory sf(&tdf);
+  UniqueRandomIdGenerator ssrc_generator;
+  MediaSessionDescriptionFactory sf(&tdf, &ssrc_generator);
   sf.set_is_unified_plan(true);
   cricket::RtpHeaderExtensions extensions;
   sf.set_video_rtp_header_extensions(extensions);
@@ -4155,7 +4165,8 @@ TEST_F(MediaSessionDescriptionFactoryTest, VideoHasRidExtensionsInUnifiedPlan) {
 // an object that is not semantically equivalent to the set object.
 TEST_F(MediaSessionDescriptionFactoryTest, AudioHasRidExtensionsInUnifiedPlan) {
   TransportDescriptionFactory tdf;
-  MediaSessionDescriptionFactory sf(&tdf);
+  UniqueRandomIdGenerator ssrc_generator;
+  MediaSessionDescriptionFactory sf(&tdf, &ssrc_generator);
   sf.set_is_unified_plan(true);
   cricket::RtpHeaderExtensions extensions;
   sf.set_audio_rtp_header_extensions(extensions);
@@ -4193,7 +4204,8 @@ bool CodecsMatch(const std::vector<Codec>& codecs1,
 
 void TestAudioCodecsOffer(RtpTransceiverDirection direction) {
   TransportDescriptionFactory tdf;
-  MediaSessionDescriptionFactory sf(&tdf);
+  UniqueRandomIdGenerator ssrc_generator;
+  MediaSessionDescriptionFactory sf(&tdf, &ssrc_generator);
   const std::vector<AudioCodec> send_codecs = MAKE_VECTOR(kAudioCodecs1);
   const std::vector<AudioCodec> recv_codecs = MAKE_VECTOR(kAudioCodecs2);
   const std::vector<AudioCodec> sendrecv_codecs =
@@ -4290,8 +4302,9 @@ void TestAudioCodecsAnswer(RtpTransceiverDirection offer_direction,
                            bool add_legacy_stream) {
   TransportDescriptionFactory offer_tdf;
   TransportDescriptionFactory answer_tdf;
-  MediaSessionDescriptionFactory offer_factory(&offer_tdf);
-  MediaSessionDescriptionFactory answer_factory(&answer_tdf);
+  UniqueRandomIdGenerator ssrc_generator1, ssrc_generator2;
+  MediaSessionDescriptionFactory offer_factory(&offer_tdf, &ssrc_generator1);
+  MediaSessionDescriptionFactory answer_factory(&answer_tdf, &ssrc_generator2);
   offer_factory.set_audio_codecs(
       VectorFromIndices(kOfferAnswerCodecs, kOfferSendCodecs),
       VectorFromIndices(kOfferAnswerCodecs, kOfferRecvCodecs));

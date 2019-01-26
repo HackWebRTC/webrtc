@@ -100,6 +100,7 @@ class ChannelManager final {
       const std::string& content_name,
       bool srtp_required,
       const webrtc::CryptoOptions& crypto_options,
+      rtc::UniqueRandomIdGenerator* ssrc_generator,
       const AudioOptions& options);
   // Destroys a voice channel created by CreateVoiceChannel.
   void DestroyVoiceChannel(VoiceChannel* voice_channel);
@@ -116,6 +117,7 @@ class ChannelManager final {
       const std::string& content_name,
       bool srtp_required,
       const webrtc::CryptoOptions& crypto_options,
+      rtc::UniqueRandomIdGenerator* ssrc_generator,
       const VideoOptions& options);
   // Destroys a video channel created by CreateVideoChannel.
   void DestroyVideoChannel(VideoChannel* video_channel);
@@ -126,7 +128,8 @@ class ChannelManager final {
       rtc::Thread* signaling_thread,
       const std::string& content_name,
       bool srtp_required,
-      const webrtc::CryptoOptions& crypto_options);
+      const webrtc::CryptoOptions& crypto_options,
+      rtc::UniqueRandomIdGenerator* ssrc_generator);
   // Destroys a data channel created by CreateRtpDataChannel.
   void DestroyRtpDataChannel(RtpDataChannel* data_channel);
 

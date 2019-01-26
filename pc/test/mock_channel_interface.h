@@ -12,6 +12,7 @@
 #define PC_TEST_MOCK_CHANNEL_INTERFACE_H_
 
 #include <string>
+#include <vector>
 
 #include "pc/channel_interface.h"
 #include "test/gmock.h"
@@ -39,6 +40,8 @@ class MockChannelInterface : public cricket::ChannelInterface {
                bool(const cricket::MediaContentDescription*,
                     webrtc::SdpType,
                     std::string*));
+  MOCK_CONST_METHOD0(local_streams, const std::vector<StreamParams>&());
+  MOCK_CONST_METHOD0(remote_streams, const std::vector<StreamParams>&());
   MOCK_METHOD1(SetRtpTransport, bool(webrtc::RtpTransportInternal*));
 };
 

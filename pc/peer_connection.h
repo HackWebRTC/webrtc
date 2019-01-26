@@ -1149,6 +1149,12 @@ class PeerConnection : public PeerConnectionInternal,
 
   int usage_event_accumulator_ = 0;
   bool return_histogram_very_quickly_ = false;
+
+  // This object should be used to generate any SSRC that is not explicitly
+  // specified by the user (or by the remote party).
+  // The generator is not used directly, instead it is passed on to the
+  // channel manager and the session description factory.
+  rtc::UniqueRandomIdGenerator ssrc_generator_;
 };
 
 }  // namespace webrtc

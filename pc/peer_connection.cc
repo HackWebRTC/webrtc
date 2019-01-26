@@ -59,8 +59,13 @@ using cricket::ContentInfo;
 using cricket::ContentInfos;
 using cricket::MediaContentDescription;
 using cricket::MediaProtocolType;
+using cricket::RidDescription;
+using cricket::RidDirection;
 using cricket::SessionDescription;
+using cricket::SimulcastDescription;
+using cricket::SimulcastLayer;
 using cricket::SimulcastLayerList;
+using cricket::StreamParams;
 using cricket::TransportInfo;
 
 using cricket::LOCAL_PORT_TYPE;
@@ -1092,7 +1097,7 @@ bool PeerConnection::Initialize(
 
   webrtc_session_desc_factory_.reset(new WebRtcSessionDescriptionFactory(
       signaling_thread(), channel_manager(), this, session_id(),
-      std::move(dependencies.cert_generator), certificate));
+      std::move(dependencies.cert_generator), certificate, &ssrc_generator_));
   webrtc_session_desc_factory_->SignalCertificateReady.connect(
       this, &PeerConnection::OnCertificateReady);
 
@@ -2198,18 +2203,20 @@ RTCError PeerConnection::ApplyLocalDescription(
       if (!content) {
         continue;
       }
-      const auto& streams = content->media_description()->streams();
-      if (!content->rejected && !streams.empty()) {
-        transceiver->internal()->sender_internal()->set_stream_ids(
-            streams[0].stream_ids());
-        transceiver->internal()->sender_internal()->SetSsrc(
-            streams[0].first_ssrc());
-      } else {
+      cricket::ChannelInterface* channel = transceiver->internal()->channel();
+      if (content->rejected || !channel || channel->local_streams().empty()) {
         // 0 is a special value meaning "this sender has no associated send
         // stream". Need to call this so the sender won't attempt to configure
         // a no longer existing stream and run into DCHECKs in the lower
         // layers.
         transceiver->internal()->sender_internal()->SetSsrc(0);
+      } else {
+        // Get the StreamParams from the channel which could generate SSRCs.
+        const std::vector<StreamParams>& streams = channel->local_streams();
+        transceiver->internal()->sender_internal()->set_stream_ids(
+            streams[0].stream_ids());
+        transceiver->internal()->sender_internal()->SetSsrc(
+            streams[0].first_ssrc());
       }
     }
   } else {
@@ -2911,6 +2918,72 @@ RTCError PeerConnection::UpdateDataChannel(
   return RTCError::OK();
 }
 
+// This method will extract any send encodings that were sent by the remote
+// connection. This is currently only relevant for Simulcast scenario (where
+// the number of layers may be communicated by the server).
+static std::vector<RtpEncodingParameters> GetSendEncodingsFromRemoteDescription(
+    const MediaContentDescription& desc) {
+  if (!desc.HasSimulcast()) {
+    return {};
+  }
+  std::vector<RtpEncodingParameters> result;
+  const SimulcastDescription& simulcast = desc.simulcast_description();
+
+  // This is a remote description, the parameters we are after should appear
+  // as receive streams.
+  for (const auto& alternatives : simulcast.receive_layers()) {
+    RTC_DCHECK(!alternatives.empty());
+    // There is currently no way to specify or choose from alternatives.
+    // We will always use the first alternative, which is the most preferred.
+    const SimulcastLayer& layer = alternatives[0];
+    RtpEncodingParameters parameters;
+    parameters.rid = layer.rid;
+    parameters.active = !layer.is_paused;
+    result.push_back(parameters);
+  }
+
+  return result;
+}
+
+static RTCError UpdateSimulcastLayerStatusInSender(
+    const std::vector<SimulcastLayer>& layers,
+    RtpSenderInterface* sender) {
+  RTC_DCHECK(sender);
+  RtpParameters parameters = sender->GetParameters();
+
+  // The simulcast envelope cannot be changed, only the status of the streams.
+  // So we will iterate over the send encodings rather than the layers.
+  for (RtpEncodingParameters& encoding : parameters.encodings) {
+    auto iter = std::find_if(layers.begin(), layers.end(),
+                             [&encoding](const SimulcastLayer& layer) {
+                               return layer.rid == encoding.rid;
+                             });
+    // A layer that cannot be found may have been removed by the remote party.
+    encoding.active = iter != layers.end() && !iter->is_paused;
+  }
+
+  return sender->SetParameters(parameters);
+}
+
+static RTCError DisableSimulcastInSender(RtpSenderInterface* sender) {
+  RTC_DCHECK(sender);
+  RtpParameters parameters = sender->GetParameters();
+  if (parameters.encodings.empty()) {
+    return RTCError::OK();
+  }
+
+  bool first_layer_status = parameters.encodings[0].active;
+  for (RtpEncodingParameters& encoding : parameters.encodings) {
+    // TODO(bugs.webrtc.org/10251): Active does not really disable the layer.
+    // The user might enable it at a later point in time even though it was
+    // rejected.
+    encoding.active = false;
+  }
+  parameters.encodings[0].active = first_layer_status;
+
+  return sender->SetParameters(parameters);
+}
+
 RTCErrorOr<rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
 PeerConnection::AssociateTransceiver(cricket::ContentSource source,
                                      SdpType type,
@@ -2969,8 +3042,10 @@ PeerConnection::AssociateTransceiver(cricket::ContentSource source,
                        << " at i=" << mline_index
                        << " in response to the remote description.";
       std::string sender_id = rtc::CreateRandomUuid();
-      auto sender =
-          CreateSender(media_desc->type(), sender_id, nullptr, {}, {});
+      std::vector<RtpEncodingParameters> send_encodings =
+          GetSendEncodingsFromRemoteDescription(*media_desc);
+      auto sender = CreateSender(media_desc->type(), sender_id, nullptr, {},
+                                 send_encodings);
       std::string receiver_id;
       if (!media_desc->streams().empty()) {
         receiver_id = media_desc->streams()[0].id;
@@ -2982,12 +3057,42 @@ PeerConnection::AssociateTransceiver(cricket::ContentSource source,
       transceiver->internal()->set_direction(
           RtpTransceiverDirection::kRecvOnly);
     }
+
+    // Check if the offer indicated simulcast but the answer rejected it.
+    // This can happen when simulcast is not supported on the remote party.
+    // This check can be simplified to comparing the number of send encodings,
+    // but that might break legacy implementation in which simulcast is not
+    // signaled in the remote description.
+    if (old_local_content && old_local_content->media_description() &&
+        old_local_content->media_description()->HasSimulcast() &&
+        !media_desc->HasSimulcast()) {
+      RTCError error =
+          DisableSimulcastInSender(transceiver->internal()->sender());
+      if (!error.ok()) {
+        RTC_LOG(LS_ERROR) << "Failed to remove rejected simulcast.";
+        return std::move(error);
+      }
+    }
   }
   RTC_DCHECK(transceiver);
   if (transceiver->media_type() != media_desc->type()) {
     LOG_AND_RETURN_ERROR(
         RTCErrorType::INVALID_PARAMETER,
         "Transceiver type does not match media description type.");
+  }
+  if (media_desc->HasSimulcast()) {
+    std::vector<SimulcastLayer> layers =
+        source == cricket::CS_LOCAL
+            ? media_desc->simulcast_description().send_layers().GetAllLayers()
+            : media_desc->simulcast_description()
+                  .receive_layers()
+                  .GetAllLayers();
+    RTCError error = UpdateSimulcastLayerStatusInSender(
+        layers, transceiver->internal()->sender());
+    if (!error.ok()) {
+      RTC_LOG(LS_ERROR) << "Failed updating status for simulcast layers.";
+      return std::move(error);
+    }
   }
   // Associate the found or created RtpTransceiver with the m= section by
   // setting the value of the RtpTransceiver's mid property to the MID of the m=
@@ -4035,6 +4140,20 @@ void PeerConnection::GetOptionsForPlanBOffer(
                            offer_answer_options.num_simulcast_layers);
 }
 
+static void GetSimulcastInformationFromRtpParameters(
+    const RtpParameters& parameters,
+    RidDirection direction,
+    std::vector<RidDescription>* rids,
+    SimulcastLayerList* layers) {
+  for (const RtpEncodingParameters& encoding : parameters.encodings) {
+    if (encoding.rid.empty()) {
+      continue;
+    }
+    rids->push_back(RidDescription(encoding.rid, direction));
+    layers->AddLayer(SimulcastLayer(encoding.rid, !encoding.active));
+  }
+}
+
 static cricket::MediaDescriptionOptions
 GetMediaDescriptionOptionsForTransceiver(
     rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
@@ -4048,18 +4167,46 @@ GetMediaDescriptionOptionsForTransceiver(
   //    sendrecv.
   // 2. If the MSID is included, then it must be included in any subsequent
   //    offer/answer exactly the same until the RtpTransceiver is stopped.
-  if (!transceiver->stopped() &&
-      (RtpTransceiverDirectionHasSend(transceiver->direction()) ||
-       transceiver->internal()->has_ever_been_used_to_send())) {
-    cricket::SenderOptions sender_options;
-    sender_options.track_id = transceiver->sender()->id();
-    sender_options.stream_ids = transceiver->sender()->stream_ids();
-    int num_send_encoding_layers =
-        transceiver->sender()->init_send_encodings().size();
-    sender_options.num_sim_layers =
-        !num_send_encoding_layers ? 1 : num_send_encoding_layers;
-    media_description_options.sender_options.push_back(sender_options);
+  if (transceiver->stopped() ||
+      (!RtpTransceiverDirectionHasSend(transceiver->direction()) &&
+       !transceiver->internal()->has_ever_been_used_to_send())) {
+    return media_description_options;
   }
+
+  cricket::SenderOptions sender_options;
+  sender_options.track_id = transceiver->sender()->id();
+  sender_options.stream_ids = transceiver->sender()->stream_ids();
+
+  // The following sets up RIDs and Simulcast.
+  // RIDs are included if Simulcast is requested or if any RID was specified.
+  RtpParameters send_parameters = transceiver->sender()->GetParameters();
+  RtpParameters receive_parameters = transceiver->receiver()->GetParameters();
+  bool has_rids = std::any_of(send_parameters.encodings.begin(),
+                              send_parameters.encodings.end(),
+                              [](const RtpEncodingParameters& encoding) {
+                                return !encoding.rid.empty();
+                              });
+
+  std::vector<RidDescription> send_rids, receive_rids;
+  SimulcastLayerList send_layers, receive_layers;
+  GetSimulcastInformationFromRtpParameters(send_parameters, RidDirection::kSend,
+                                           &send_rids, &send_layers);
+  GetSimulcastInformationFromRtpParameters(receive_parameters,
+                                           RidDirection::kReceive,
+                                           &receive_rids, &receive_layers);
+  if (has_rids) {
+    sender_options.rids = send_rids;
+  }
+
+  sender_options.simulcast_layers = send_layers;
+  media_description_options.receive_simulcast_layers = receive_layers;
+  media_description_options.receive_rids = receive_rids;
+  // When RIDs are configured, we must set num_sim_layers to 0 to.
+  // Otherwise, num_sim_layers must be 1 because either there is no
+  // simulcast, or simulcast is acheived by munging the SDP.
+  sender_options.num_sim_layers = has_rids ? 0 : 1;
+  media_description_options.sender_options.push_back(sender_options);
+
   return media_description_options;
 }
 
@@ -5930,7 +6077,7 @@ cricket::VoiceChannel* PeerConnection::CreateVoiceChannel(
   cricket::VoiceChannel* voice_channel = channel_manager()->CreateVoiceChannel(
       call_.get(), configuration_.media_config, rtp_transport, media_transport,
       signaling_thread(), mid, SrtpRequired(), GetCryptoOptions(),
-      audio_options_);
+      &ssrc_generator_, audio_options_);
   if (!voice_channel) {
     return nullptr;
   }
@@ -5955,7 +6102,7 @@ cricket::VideoChannel* PeerConnection::CreateVideoChannel(
   cricket::VideoChannel* video_channel = channel_manager()->CreateVideoChannel(
       call_.get(), configuration_.media_config, rtp_transport, media_transport,
       signaling_thread(), mid, SrtpRequired(), GetCryptoOptions(),
-      video_options_);
+      &ssrc_generator_, video_options_);
   if (!video_channel) {
     return nullptr;
   }
@@ -6002,7 +6149,7 @@ bool PeerConnection::CreateDataChannel(const std::string& mid) {
       RtpTransportInternal* rtp_transport = GetRtpTransport(mid);
       rtp_data_channel_ = channel_manager()->CreateRtpDataChannel(
           configuration_.media_config, rtp_transport, signaling_thread(), mid,
-          SrtpRequired(), GetCryptoOptions());
+          SrtpRequired(), GetCryptoOptions(), &ssrc_generator_);
       if (!rtp_data_channel_) {
         return false;
       }

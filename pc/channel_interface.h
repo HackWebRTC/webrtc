@@ -12,6 +12,7 @@
 #define PC_CHANNEL_INTERFACE_H_
 
 #include <string>
+#include <vector>
 
 #include "api/jsep.h"
 #include "api/media_types.h"
@@ -51,6 +52,10 @@ class ChannelInterface {
   virtual bool SetRemoteContent(const MediaContentDescription* content,
                                 webrtc::SdpType type,
                                 std::string* error_desc) = 0;
+
+  // Access to the local and remote streams that were set on the channel.
+  virtual const std::vector<StreamParams>& local_streams() const = 0;
+  virtual const std::vector<StreamParams>& remote_streams() const = 0;
 
   // Set an RTP level transport.
   // Some examples:

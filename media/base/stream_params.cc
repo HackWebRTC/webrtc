@@ -195,6 +195,38 @@ std::string StreamParams::ToString() const {
   sb << "}";
   return sb.str();
 }
+
+void StreamParams::GenerateSsrcs(int num_layers,
+                                 bool generate_fid,
+                                 bool generate_fec_fr,
+                                 rtc::UniqueRandomIdGenerator* ssrc_generator) {
+  RTC_DCHECK_GE(num_layers, 0);
+  RTC_DCHECK(ssrc_generator);
+  std::vector<uint32_t> primary_ssrcs;
+  for (int i = 0; i < num_layers; ++i) {
+    uint32_t ssrc = ssrc_generator->GenerateId();
+    primary_ssrcs.push_back(ssrc);
+    add_ssrc(ssrc);
+  }
+
+  if (num_layers > 1) {
+    SsrcGroup simulcast(kSimSsrcGroupSemantics, primary_ssrcs);
+    ssrc_groups.push_back(simulcast);
+  }
+
+  if (generate_fid) {
+    for (uint32_t ssrc : primary_ssrcs) {
+      AddFidSsrc(ssrc, ssrc_generator->GenerateId());
+    }
+  }
+
+  if (generate_fec_fr) {
+    for (uint32_t ssrc : primary_ssrcs) {
+      AddFecFrSsrc(ssrc, ssrc_generator->GenerateId());
+    }
+  }
+}
+
 void StreamParams::GetPrimarySsrcs(std::vector<uint32_t>* ssrcs) const {
   const SsrcGroup* sim_group = get_ssrc_group(kSimSsrcGroupSemantics);
   if (sim_group == NULL) {

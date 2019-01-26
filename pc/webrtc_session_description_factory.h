@@ -30,6 +30,7 @@
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread.h"
+#include "rtc_base/unique_id_generator.h"
 
 namespace webrtc {
 
@@ -82,7 +83,8 @@ class WebRtcSessionDescriptionFactory : public rtc::MessageHandler,
       PeerConnectionInternal* pc,
       const std::string& session_id,
       std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
-      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate);
+      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate,
+      rtc::UniqueRandomIdGenerator* ssrc_generator);
   virtual ~WebRtcSessionDescriptionFactory();
 
   static void CopyCandidatesFromSessionDescription(

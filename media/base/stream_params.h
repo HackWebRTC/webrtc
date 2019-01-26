@@ -54,6 +54,7 @@
 
 #include "media/base/rid_description.h"
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/unique_id_generator.h"
 
 namespace cricket {
 
@@ -153,6 +154,14 @@ struct StreamParams {
   bool GetFecFrSsrc(uint32_t primary_ssrc, uint32_t* fecfr_ssrc) const {
     return GetSecondarySsrc(kFecFrSsrcGroupSemantics, primary_ssrc, fecfr_ssrc);
   }
+
+  // Convenience function to populate the StreamParams with the requested number
+  // of SSRCs along with accompanying FID and FEC-FR ssrcs if requested.
+  // SSRCs are generated using the given generator.
+  void GenerateSsrcs(int num_layers,
+                     bool generate_fid,
+                     bool generate_fec_fr,
+                     rtc::UniqueRandomIdGenerator* ssrc_generator);
 
   // Convenience to get all the SIM SSRCs if there are SIM ssrcs, or
   // the first SSRC otherwise.

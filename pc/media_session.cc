@@ -390,52 +390,24 @@ class UsedRtpHeaderExtensionIds : public UsedIds<webrtc::RtpExtension> {
 static StreamParams CreateStreamParamsForNewSenderWithSsrcs(
     const SenderOptions& sender,
     const std::string& rtcp_cname,
-    const StreamParamsVec& current_streams,
     bool include_rtx_streams,
-    bool include_flexfec_stream) {
+    bool include_flexfec_stream,
+    UniqueRandomIdGenerator* ssrc_generator) {
   StreamParams result;
   result.id = sender.track_id;
 
-  std::vector<uint32_t> known_ssrcs;
-  for (const StreamParams& params : current_streams) {
-    for (uint32_t ssrc : params.ssrcs) {
-      known_ssrcs.push_back(ssrc);
-    }
+  // TODO(brandtr): Update when we support multistream protection.
+  if (include_flexfec_stream && sender.num_sim_layers > 1) {
+    include_flexfec_stream = false;
+    RTC_LOG(LS_WARNING)
+        << "Our FlexFEC implementation only supports protecting "
+           "a single media streams. This session has multiple "
+           "media streams however, so no FlexFEC SSRC will be generated.";
   }
 
-  UniqueRandomIdGenerator ssrc_generator(known_ssrcs);
-  // We need to keep |primary_ssrcs| separate from |result.ssrcs|  because
-  // iterators are invalidated when rtx and flexfec ssrcs are added to the list.
-  std::vector<uint32_t> primary_ssrcs;
-  for (int i = 0; i < sender.num_sim_layers; ++i) {
-    primary_ssrcs.push_back(ssrc_generator());
-  }
-  result.ssrcs = primary_ssrcs;
+  result.GenerateSsrcs(sender.num_sim_layers, include_rtx_streams,
+                       include_flexfec_stream, ssrc_generator);
 
-  if (sender.num_sim_layers > 1) {
-    SsrcGroup group(kSimSsrcGroupSemantics, result.ssrcs);
-    result.ssrc_groups.push_back(group);
-  }
-  // Generate an RTX ssrc for every ssrc in the group.
-  if (include_rtx_streams) {
-    for (uint32_t ssrc : primary_ssrcs) {
-      result.AddFidSsrc(ssrc, ssrc_generator());
-    }
-  }
-  // Generate extra ssrc for include_flexfec_stream case.
-  if (include_flexfec_stream) {
-    // TODO(brandtr): Update when we support multistream protection.
-    if (primary_ssrcs.size() == 1) {
-      for (uint32_t ssrc : primary_ssrcs) {
-        result.AddFecFrSsrc(ssrc, ssrc_generator());
-      }
-    } else if (!primary_ssrcs.empty()) {
-      RTC_LOG(LS_WARNING)
-          << "Our FlexFEC implementation only supports protecting "
-             "a single media streams. This session has multiple "
-             "media streams however, so no FlexFEC SSRC will be generated.";
-    }
-  }
   result.cname = rtcp_cname;
   result.set_stream_ids(sender.stream_ids);
 
@@ -523,6 +495,7 @@ template <class C>
 static bool AddStreamParams(
     const std::vector<SenderOptions>& sender_options,
     const std::string& rtcp_cname,
+    UniqueRandomIdGenerator* ssrc_generator,
     StreamParamsVec* current_streams,
     MediaContentDescriptionImpl<C>* content_description) {
   // SCTP streams are not negotiated using SDP/ContentDescriptions.
@@ -548,8 +521,8 @@ static bool AddStreamParams(
               ?
               // Signal SSRCs and legacy simulcast (if requested).
               CreateStreamParamsForNewSenderWithSsrcs(
-                  sender, rtcp_cname, *current_streams, include_rtx_streams,
-                  include_flexfec_stream)
+                  sender, rtcp_cname, include_rtx_streams,
+                  include_flexfec_stream, ssrc_generator)
               :
               // Signal RIDs and spec-compliant simulcast (if requested).
               CreateStreamParamsForNewSenderWithRids(sender, rtcp_cname);
@@ -787,6 +760,7 @@ static bool CreateMediaContentOffer(
     const CryptoParamsVec* current_cryptos,
     const std::vector<std::string>& crypto_suites,
     const RtpHeaderExtensions& rtp_extensions,
+    UniqueRandomIdGenerator* ssrc_generator,
     StreamParamsVec* current_streams,
     MediaContentDescriptionImpl<C>* offer) {
   offer->AddCodecs(codecs);
@@ -798,7 +772,8 @@ static bool CreateMediaContentOffer(
   offer->set_rtp_header_extensions(rtp_extensions);
 
   if (!AddStreamParams(media_description_options.sender_options,
-                       session_options.rtcp_cname, current_streams, offer)) {
+                       session_options.rtcp_cname, ssrc_generator,
+                       current_streams, offer)) {
     return false;
   }
 
@@ -1166,6 +1141,7 @@ static bool CreateMediaContentAnswer(
     const SecurePolicy& sdes_policy,
     const CryptoParamsVec* current_cryptos,
     const RtpHeaderExtensions& local_rtp_extenstions,
+    UniqueRandomIdGenerator* ssrc_generator,
     bool enable_encrypted_rtp_header_extensions,
     StreamParamsVec* current_streams,
     bool bundle_enabled,
@@ -1203,7 +1179,8 @@ static bool CreateMediaContentAnswer(
   }
 
   if (!AddStreamParams(media_description_options.sender_options,
-                       session_options.rtcp_cname, current_streams, answer)) {
+                       session_options.rtcp_cname, ssrc_generator,
+                       current_streams, answer)) {
     return false;  // Something went seriously wrong.
   }
 
@@ -1343,13 +1320,18 @@ bool MediaSessionOptions::HasMediaDescription(MediaType type) const {
 }
 
 MediaSessionDescriptionFactory::MediaSessionDescriptionFactory(
-    const TransportDescriptionFactory* transport_desc_factory)
-    : transport_desc_factory_(transport_desc_factory) {}
+    const TransportDescriptionFactory* transport_desc_factory,
+    rtc::UniqueRandomIdGenerator* ssrc_generator)
+    : ssrc_generator_(ssrc_generator),
+      transport_desc_factory_(transport_desc_factory) {
+  RTC_DCHECK(ssrc_generator_);
+}
 
 MediaSessionDescriptionFactory::MediaSessionDescriptionFactory(
     ChannelManager* channel_manager,
-    const TransportDescriptionFactory* transport_desc_factory)
-    : transport_desc_factory_(transport_desc_factory) {
+    const TransportDescriptionFactory* transport_desc_factory,
+    rtc::UniqueRandomIdGenerator* ssrc_generator)
+    : MediaSessionDescriptionFactory(transport_desc_factory, ssrc_generator) {
   channel_manager->GetSupportedAudioSendCodecs(&audio_send_codecs_);
   channel_manager->GetSupportedAudioReceiveCodecs(&audio_recv_codecs_);
   channel_manager->GetSupportedAudioRtpHeaderExtensions(&audio_rtp_extensions_);
@@ -2039,10 +2021,11 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
   std::vector<std::string> crypto_suites;
   GetSupportedAudioSdesCryptoSuiteNames(session_options.crypto_options,
                                         &crypto_suites);
-  if (!CreateMediaContentOffer(
-          media_description_options, session_options, filtered_codecs,
-          sdes_policy, GetCryptos(current_content), crypto_suites,
-          audio_rtp_extensions, current_streams, audio.get())) {
+  if (!CreateMediaContentOffer(media_description_options, session_options,
+                               filtered_codecs, sdes_policy,
+                               GetCryptos(current_content), crypto_suites,
+                               audio_rtp_extensions, ssrc_generator_,
+                               current_streams, audio.get())) {
     return false;
   }
 
@@ -2109,10 +2092,11 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
     }
   }
 
-  if (!CreateMediaContentOffer(
-          media_description_options, session_options, filtered_codecs,
-          sdes_policy, GetCryptos(current_content), crypto_suites,
-          video_rtp_extensions, current_streams, video.get())) {
+  if (!CreateMediaContentOffer(media_description_options, session_options,
+                               filtered_codecs, sdes_policy,
+                               GetCryptos(current_content), crypto_suites,
+                               video_rtp_extensions, ssrc_generator_,
+                               current_streams, video.get())) {
     return false;
   }
 
@@ -2180,7 +2164,7 @@ bool MediaSessionDescriptionFactory::AddDataContentForOffer(
   if (!CreateMediaContentOffer(
           media_description_options, session_options, data_codecs, sdes_policy,
           GetCryptos(current_content), crypto_suites, RtpHeaderExtensions(),
-          current_streams, data.get())) {
+          ssrc_generator_, current_streams, data.get())) {
     return false;
   }
 
@@ -2283,7 +2267,7 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
   if (!CreateMediaContentAnswer(
           offer_audio_description, media_description_options, session_options,
           filtered_codecs, sdes_policy, GetCryptos(current_content),
-          audio_rtp_header_extensions(),
+          audio_rtp_header_extensions(), ssrc_generator_,
           enable_encrypted_rtp_header_extensions_, current_streams,
           bundle_enabled, audio_answer.get())) {
     return false;  // Fails the session setup.
@@ -2372,7 +2356,7 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
   if (!CreateMediaContentAnswer(
           offer_video_description, media_description_options, session_options,
           filtered_codecs, sdes_policy, GetCryptos(current_content),
-          video_rtp_header_extensions(),
+          video_rtp_header_extensions(), ssrc_generator_,
           enable_encrypted_rtp_header_extensions_, current_streams,
           bundle_enabled, video_answer.get())) {
     return false;  // Failed the sessin setup.
@@ -2432,8 +2416,9 @@ bool MediaSessionDescriptionFactory::AddDataContentForAnswer(
   if (!CreateMediaContentAnswer(
           offer_data_description, media_description_options, session_options,
           data_codecs, sdes_policy, GetCryptos(current_content),
-          RtpHeaderExtensions(), enable_encrypted_rtp_header_extensions_,
-          current_streams, bundle_enabled, data_answer.get())) {
+          RtpHeaderExtensions(), ssrc_generator_,
+          enable_encrypted_rtp_header_extensions_, current_streams,
+          bundle_enabled, data_answer.get())) {
     return false;  // Fails the session setup.
   }
 

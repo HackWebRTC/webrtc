@@ -31,6 +31,7 @@
 #include "rtc_base/string_encode.h"
 
 using cricket::MediaSessionOptions;
+using rtc::UniqueRandomIdGenerator;
 
 namespace webrtc {
 namespace {
@@ -131,9 +132,12 @@ WebRtcSessionDescriptionFactory::WebRtcSessionDescriptionFactory(
     PeerConnectionInternal* pc,
     const std::string& session_id,
     std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
-    const rtc::scoped_refptr<rtc::RTCCertificate>& certificate)
+    const rtc::scoped_refptr<rtc::RTCCertificate>& certificate,
+    UniqueRandomIdGenerator* ssrc_generator)
     : signaling_thread_(signaling_thread),
-      session_desc_factory_(channel_manager, &transport_desc_factory_),
+      session_desc_factory_(channel_manager,
+                            &transport_desc_factory_,
+                            ssrc_generator),
       // RFC 4566 suggested a Network Time Protocol (NTP) format timestamp
       // as the session id and session version. To simplify, it should be fine
       // to just use a random number as session id and start version from
