@@ -211,7 +211,7 @@ class PeerConnectionIceBaseTest : public ::testing::Test {
         static_cast<PeerConnectionProxyWithInternal<PeerConnectionInterface>*>(
             pc_wrapper_ptr->pc());
     PeerConnection* pc = static_cast<PeerConnection*>(pc_proxy->internal());
-    for (auto transceiver : pc->GetTransceiversInternal()) {
+    for (const auto& transceiver : pc->GetTransceiversInternal()) {
       if (transceiver->media_type() == cricket::MEDIA_TYPE_AUDIO) {
         // TODO(amithi): This test seems to be using a method that should not
         // be public |rtp_packet_transport|. Because the test is not mocking

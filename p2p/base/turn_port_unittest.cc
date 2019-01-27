@@ -401,7 +401,7 @@ class TurnPortTest : public testing::Test,
     if (connections.empty()) {
       return false;
     }
-    for (auto kv : connections) {
+    for (const auto& kv : connections) {
       if (!CheckConnectionFailedAndPruned(kv.second)) {
         return false;
       }

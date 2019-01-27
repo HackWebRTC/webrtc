@@ -801,7 +801,7 @@ TEST_F(WebRtcVoiceEngineTestFake, CreateRecvStream) {
 TEST_F(WebRtcVoiceEngineTestFake, OpusSupportsTransportCc) {
   const std::vector<cricket::AudioCodec>& codecs = engine_->send_codecs();
   bool opus_found = false;
-  for (cricket::AudioCodec codec : codecs) {
+  for (const cricket::AudioCodec& codec : codecs) {
     if (codec.name == "opus") {
       EXPECT_TRUE(HasTransportCc(codec));
       opus_found = true;

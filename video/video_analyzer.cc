@@ -458,7 +458,7 @@ void VideoAnalyzer::PollStats() {
     if (send_stats.media_bitrate_bps > 0)
       media_bitrate_bps_.AddSample(send_stats.media_bitrate_bps);
     size_t fec_bytes = 0;
-    for (auto kv : send_stats.substreams) {
+    for (const auto& kv : send_stats.substreams) {
       fec_bytes += kv.second.rtp_stats.fec.payload_bytes +
                    kv.second.rtp_stats.fec.padding_bytes;
     }

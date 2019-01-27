@@ -672,7 +672,7 @@ RTCError JsepTransportController::ValidateAndMaybeUpdateBundleGroup(
 
   // The BUNDLE group containing a MID that no m= section has is invalid.
   if (new_bundle_group) {
-    for (auto content_name : new_bundle_group->content_names()) {
+    for (const auto& content_name : new_bundle_group->content_names()) {
       if (!description->GetContentByName(content_name)) {
         return RTCError(RTCErrorType::INVALID_PARAMETER,
                         "The BUNDLE group contains MID:" + content_name +
@@ -688,7 +688,7 @@ RTCError JsepTransportController::ValidateAndMaybeUpdateBundleGroup(
 
     if (new_bundle_group) {
       // The BUNDLE group in answer should be a subset of offered group.
-      for (auto content_name : new_bundle_group->content_names()) {
+      for (const auto& content_name : new_bundle_group->content_names()) {
         if (!offered_bundle_group ||
             !offered_bundle_group->HasContentName(content_name)) {
           return RTCError(RTCErrorType::INVALID_PARAMETER,
@@ -699,7 +699,7 @@ RTCError JsepTransportController::ValidateAndMaybeUpdateBundleGroup(
     }
 
     if (bundle_group_) {
-      for (auto content_name : bundle_group_->content_names()) {
+      for (const auto& content_name : bundle_group_->content_names()) {
         // An answer that removes m= sections from pre-negotiated BUNDLE group
         // without rejecting it, is invalid.
         if (!new_bundle_group ||
@@ -740,7 +740,7 @@ RTCError JsepTransportController::ValidateAndMaybeUpdateBundleGroup(
   // If the |bundled_content| is rejected, other contents in the bundle group
   // should be rejected.
   if (bundled_content->rejected) {
-    for (auto content_name : bundle_group_->content_names()) {
+    for (const auto& content_name : bundle_group_->content_names()) {
       auto other_content = description->GetContentByName(content_name);
       if (!other_content->rejected) {
         return RTCError(
@@ -775,7 +775,7 @@ void JsepTransportController::HandleRejectedContent(
   // then destroy the cricket::JsepTransport.
   RemoveTransportForMid(content_info.name);
   if (content_info.name == bundled_mid()) {
-    for (auto content_name : bundle_group_->content_names()) {
+    for (const auto& content_name : bundle_group_->content_names()) {
       RemoveTransportForMid(content_name);
     }
     bundle_group_.reset();
@@ -881,7 +881,7 @@ std::vector<int> JsepTransportController::GetEncryptedHeaderExtensionIds(
   }
 
   std::vector<int> encrypted_header_extension_ids;
-  for (auto extension : content_desc->rtp_header_extensions()) {
+  for (const auto& extension : content_desc->rtp_header_extensions()) {
     if (!extension.encrypt) {
       continue;
     }

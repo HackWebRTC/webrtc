@@ -90,7 +90,7 @@ TYPED_TEST(UniqueIdGeneratorTest, AddedElementsAreNotGenerated) {
   rtc::InitRandom(0);
   Generator generator2;
 
-  for (typename Generator::value_type value : known_values) {
+  for (const typename Generator::value_type& value : known_values) {
     generator2.AddKnownId(value);
   }
 

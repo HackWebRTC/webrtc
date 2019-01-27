@@ -2664,7 +2664,7 @@ TEST_P(PeerConnectionInterfaceTest, CloseAndTestStreamsAndStates) {
   } else {
     // Verify that the RtpTransceivers are still present but all stopped.
     EXPECT_EQ(2u, pc_->GetTransceivers().size());
-    for (auto transceiver : pc_->GetTransceivers()) {
+    for (const auto& transceiver : pc_->GetTransceivers()) {
       EXPECT_TRUE(transceiver->stopped());
     }
   }

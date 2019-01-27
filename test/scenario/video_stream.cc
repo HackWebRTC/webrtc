@@ -308,7 +308,7 @@ ColumnPrinter SendVideoStream::StatsPrinter() {
         VideoSendStream::Stats video_stats = send_stream_->GetStats();
         int width = 0;
         int height = 0;
-        for (auto stream_stat : video_stats.substreams) {
+        for (const auto& stream_stat : video_stats.substreams) {
           width = std::max(width, stream_stat.second.width);
           height = std::max(height, stream_stat.second.height);
         }

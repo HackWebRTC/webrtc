@@ -22,7 +22,7 @@ VideoReceiveStream::Config ParseVideoReceiveStreamJsonConfig(
     webrtc::Transport* transport,
     const Json::Value& json) {
   auto receive_config = VideoReceiveStream::Config(transport);
-  for (const auto decoder_json : json["decoders"]) {
+  for (const auto& decoder_json : json["decoders"]) {
     VideoReceiveStream::Decoder decoder;
     decoder.video_format =
         SdpVideoFormat(decoder_json["payload_name"].asString());

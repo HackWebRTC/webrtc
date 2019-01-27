@@ -326,7 +326,7 @@ void SimulatedTimeClient::CongestionProcess(Timestamp at_time) {
 
 void SimulatedTimeClient::PacerProcess(Timestamp at_time) {
   ProcessFrames(at_time);
-  for (auto to_send : sender_.PaceAndPullSendPackets(at_time)) {
+  for (const auto& to_send : sender_.PaceAndPullSendPackets(at_time)) {
     sender_.send_node_->OnPacketReceived(EmulatedIpPacket(
         rtc::SocketAddress() /*from*/, rtc::SocketAddress() /*to*/,
         sender_.send_receiver_id_, to_send.data, at_time));

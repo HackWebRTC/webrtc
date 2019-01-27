@@ -875,7 +875,7 @@ void StatsCollector::ExtractBweInfo() {
 
   // Fill in target encoder bitrate, actual encoder bitrate, rtx bitrate, etc.
   // TODO(holmer): Also fill this in for audio.
-  for (auto transceiver : pc_->GetTransceiversInternal()) {
+  for (const auto& transceiver : pc_->GetTransceiversInternal()) {
     if (transceiver->media_type() != cricket::MEDIA_TYPE_VIDEO) {
       continue;
     }
@@ -916,7 +916,7 @@ void StatsCollector::ExtractMediaInfo() {
 
   {
     rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
-    for (auto transceiver : pc_->GetTransceiversInternal()) {
+    for (const auto& transceiver : pc_->GetTransceiversInternal()) {
       if (!transceiver->internal()->channel()) {
         continue;
       }

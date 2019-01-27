@@ -579,7 +579,7 @@ void PeerConnectionDelegateAdapter::OnRemoveTrack(
   std::vector<rtc::scoped_refptr<webrtc::RtpTransceiverInterface>> nativeTransceivers(
       _peerConnection->GetTransceivers());
   NSMutableArray *transceivers = [[NSMutableArray alloc] init];
-  for (auto nativeTransceiver : nativeTransceivers) {
+  for (const auto &nativeTransceiver : nativeTransceivers) {
     RTCRtpTransceiver *transceiver = [[RTCRtpTransceiver alloc] initWithFactory:self.factory
                                                            nativeRtpTransceiver:nativeTransceiver];
     [transceivers addObject:transceiver];

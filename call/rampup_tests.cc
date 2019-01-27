@@ -441,7 +441,7 @@ void RampUpDownUpTester::PollStats() {
     bool suspended = false;
     if (num_video_streams_ > 0) {
       webrtc::VideoSendStream::Stats stats = send_stream_->GetStats();
-      for (auto it : stats.substreams) {
+      for (const auto& it : stats.substreams) {
         transmit_bitrate_bps += it.second.total_bitrate_bps;
       }
       suspended = stats.suspended;

@@ -477,7 +477,7 @@ void VideoQualityTest::FillScalabilitySettings(
     // lists. To use a default value for an element, use -1 or leave empty.
     // Validity checks performed in CheckParamsAndInjectionComponents.
     RTC_CHECK(params->ss[video_idx].streams.empty());
-    for (auto descriptor : stream_descriptors) {
+    for (const auto& descriptor : stream_descriptors) {
       if (descriptor.empty())
         continue;
       VideoStream stream =
@@ -513,7 +513,7 @@ void VideoQualityTest::FillScalabilitySettings(
   params->ss[video_idx].selected_sl = selected_sl;
   params->ss[video_idx].inter_layer_pred = inter_layer_pred;
   RTC_CHECK(params->ss[video_idx].spatial_layers.empty());
-  for (auto descriptor : sl_descriptors) {
+  for (const auto& descriptor : sl_descriptors) {
     if (descriptor.empty())
       continue;
     std::vector<int> v = VideoQualityTest::ParseCSV(descriptor);

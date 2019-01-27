@@ -347,7 +347,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   std::vector<rtc::scoped_refptr<RtpReceiverInterface>> GetReceiversOfType(
       cricket::MediaType media_type) {
     std::vector<rtc::scoped_refptr<RtpReceiverInterface>> receivers;
-    for (auto receiver : pc()->GetReceivers()) {
+    for (const auto& receiver : pc()->GetReceivers()) {
       if (receiver->media_type() == media_type) {
         receivers.push_back(receiver);
       }
@@ -2237,7 +2237,7 @@ TEST_P(PeerConnectionIntegrationTest, AnswererRejectsAudioAndVideoSections) {
   } else {
     callee()->SetRemoteOfferHandler([this] {
       // Stopping all transceivers will cause all media sections to be rejected.
-      for (auto transceiver : callee()->pc()->GetTransceivers()) {
+      for (const auto& transceiver : callee()->pc()->GetTransceivers()) {
         transceiver->Stop();
       }
     });
@@ -2551,7 +2551,7 @@ TEST_P(PeerConnectionIntegrationTest, GetBytesReceivedStatsWithOldStatsApi) {
 
   // Get a handle to the remote tracks created, so they can be used as GetStats
   // filters.
-  for (auto receiver : callee()->pc()->GetReceivers()) {
+  for (const auto& receiver : callee()->pc()->GetReceivers()) {
     // We received frames, so we definitely should have nonzero "received bytes"
     // stats at this point.
     EXPECT_GT(callee()->OldGetStatsForTrack(receiver->track())->BytesReceived(),

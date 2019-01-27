@@ -281,10 +281,10 @@ void PeerConnectionTestWrapper::GetAndAddUserMedia(
     const webrtc::FakeConstraints& video_constraints) {
   rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
       GetUserMedia(audio, audio_options, video, video_constraints);
-  for (auto audio_track : stream->GetAudioTracks()) {
+  for (const auto& audio_track : stream->GetAudioTracks()) {
     EXPECT_TRUE(peer_connection_->AddTrack(audio_track, {stream->id()}).ok());
   }
-  for (auto video_track : stream->GetVideoTracks()) {
+  for (const auto& video_track : stream->GetVideoTracks()) {
     EXPECT_TRUE(peer_connection_->AddTrack(video_track, {stream->id()}).ok());
   }
 }

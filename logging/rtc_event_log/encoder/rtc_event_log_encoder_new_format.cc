@@ -1295,7 +1295,7 @@ void RtcEventLogEncoderNewFormat::EncodeRtpPacketIncoming(
     const std::map<uint32_t, std::vector<const RtcEventRtpPacketIncoming*>>&
         batch,
     rtclog2::EventStream* event_stream) {
-  for (auto it : batch) {
+  for (const auto& it : batch) {
     RTC_DCHECK(!it.second.empty());
     EncodeRtpPacket(it.second, event_stream->add_incoming_rtp_packets());
   }
@@ -1305,7 +1305,7 @@ void RtcEventLogEncoderNewFormat::EncodeRtpPacketOutgoing(
     const std::map<uint32_t, std::vector<const RtcEventRtpPacketOutgoing*>>&
         batch,
     rtclog2::EventStream* event_stream) {
-  for (auto it : batch) {
+  for (const auto& it : batch) {
     RTC_DCHECK(!it.second.empty());
     EncodeRtpPacket(it.second, event_stream->add_outgoing_rtp_packets());
   }

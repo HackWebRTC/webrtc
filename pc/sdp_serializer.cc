@@ -81,7 +81,7 @@ rtc::StringBuilder& operator<<(
 rtc::StringBuilder& operator<<(rtc::StringBuilder& builder,
                                const SimulcastLayerList& simulcast_layers) {
   bool first = true;
-  for (auto alternatives : simulcast_layers) {
+  for (const auto& alternatives : simulcast_layers) {
     if (!first) {
       builder << kDelimiterSemicolon;
     }

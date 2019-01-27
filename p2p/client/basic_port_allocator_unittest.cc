@@ -764,7 +764,7 @@ TEST_F(BasicPortAllocatorTest, TestIgnoreOnlyLoopbackNetworkByDefault) {
   EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
                              kDefaultAllocationTimeout, fake_clock);
   EXPECT_EQ(4U, candidates_.size());
-  for (Candidate candidate : candidates_) {
+  for (const Candidate& candidate : candidates_) {
     EXPECT_LT(candidate.address().ip(), 0x12345604U);
   }
 }
