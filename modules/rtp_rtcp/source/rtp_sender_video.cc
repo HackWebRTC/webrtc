@@ -261,6 +261,7 @@ void RTPSenderVideo::SendVideoPacketAsRedMaybeWithUlpfec(
         new RtpPacketToSend(*media_packet));
     RTC_CHECK(rtp_packet->Parse(fec_packet->data(), fec_packet->length()));
     rtp_packet->set_capture_time_ms(media_packet->capture_time_ms());
+    rtp_packet->set_is_fec(true);
     uint16_t fec_sequence_number = rtp_packet->SequenceNumber();
     if (rtp_sender_->SendToNetwork(std::move(rtp_packet), fec_storage,
                                    RtpPacketSender::kLowPriority)) {
@@ -321,13 +322,6 @@ void RTPSenderVideo::SetUlpfecConfig(int red_payload_type,
   // Reset FEC parameters.
   delta_fec_params_ = FecProtectionParams{0, 1, kFecMaskRandom};
   key_fec_params_ = FecProtectionParams{0, 1, kFecMaskRandom};
-}
-
-void RTPSenderVideo::GetUlpfecConfig(int* red_payload_type,
-                                     int* ulpfec_payload_type) const {
-  rtc::CritScope cs(&crit_);
-  *red_payload_type = red_payload_type_;
-  *ulpfec_payload_type = ulpfec_payload_type_;
 }
 
 size_t RTPSenderVideo::CalculateFecPacketOverhead() const {

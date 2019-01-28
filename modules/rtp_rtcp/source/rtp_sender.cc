@@ -786,7 +786,7 @@ void RTPSender::UpdateRtpStats(const RtpPacketToSend& packet,
   if (counters->first_packet_time_ms == -1)
     counters->first_packet_time_ms = now_ms;
 
-  if (IsFecPacket(packet))
+  if (packet.is_fec())
     counters->fec.AddPacket(packet);
 
   if (is_retransmit) {
@@ -797,22 +797,6 @@ void RTPSender::UpdateRtpStats(const RtpPacketToSend& packet,
 
   if (rtp_stats_callback_)
     rtp_stats_callback_->DataCountersUpdated(*counters, packet.Ssrc());
-}
-
-bool RTPSender::IsFecPacket(const RtpPacketToSend& packet) const {
-  if (!video_)
-    return false;
-
-  // FlexFEC.
-  if (packet.Ssrc() == FlexfecSsrc())
-    return true;
-
-  // RED+ULPFEC.
-  int pt_red;
-  int pt_fec;
-  video_->GetUlpfecConfig(&pt_red, &pt_fec);
-  return static_cast<int>(packet.PayloadType()) == pt_red &&
-         static_cast<int>(packet.payload()[0]) == pt_fec;
 }
 
 size_t RTPSender::TimeToSendPadding(size_t bytes,

@@ -59,7 +59,6 @@ class RTPSenderVideo {
 
   // ULPFEC.
   void SetUlpfecConfig(int red_payload_type, int ulpfec_payload_type);
-  void GetUlpfecConfig(int* red_payload_type, int* ulpfec_payload_type) const;
 
   // FlexFEC/ULPFEC.
   void SetFecParameters(const FecProtectionParams& delta_params,

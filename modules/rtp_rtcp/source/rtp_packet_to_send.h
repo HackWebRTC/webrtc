@@ -38,6 +38,10 @@ class RtpPacketToSend : public RtpPacket {
 
   void set_capture_time_ms(int64_t time) { capture_time_ms_ = time; }
 
+  bool is_fec() const { return is_fec_; }
+
+  void set_is_fec(bool fec) { is_fec_ = fec; }
+
   // Additional data bound to the RTP packet for use in application code,
   // outside of WebRTC.
   rtc::ArrayView<const uint8_t> application_data() const {
@@ -74,6 +78,8 @@ class RtpPacketToSend : public RtpPacket {
 
  private:
   int64_t capture_time_ms_ = 0;
+  // Used for accounting purposes
+  bool is_fec_ = false;
   std::vector<uint8_t> application_data_;
 };
 
