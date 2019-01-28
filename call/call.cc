@@ -1180,6 +1180,17 @@ void Call::OnAllocationLimitsChanged(uint32_t min_send_bitrate_bps,
   transport_send_ptr_->SetAllocatedSendBitrateLimits(
       min_send_bitrate_bps, max_padding_bitrate_bps, total_bitrate_bps);
 
+  {
+    rtc::CritScope lock(&target_observer_crit_);
+    if (media_transport_) {
+      MediaTransportAllocatedBitrateLimits limits;
+      limits.min_pacing_rate = DataRate::bps(min_send_bitrate_bps);
+      limits.max_padding_bitrate = DataRate::bps(max_padding_bitrate_bps);
+      limits.max_total_allocated_bitrate = DataRate::bps(total_bitrate_bps);
+      media_transport_->SetAllocatedBitrateLimits(limits);
+    }
+  }
+
   rtc::CritScope lock(&bitrate_crit_);
   min_allocated_send_bitrate_bps_ = min_send_bitrate_bps;
   configured_max_padding_bitrate_bps_ = max_padding_bitrate_bps;

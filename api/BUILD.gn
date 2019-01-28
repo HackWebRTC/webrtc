@@ -133,6 +133,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     "audio_codecs:audio_codecs_api",
     "transport:bitrate_settings",
     "transport:network_control",
+    "units:data_rate",
     "video:encoded_image",
     "video:video_frame",
     "//third_party/abseil-cpp/absl/strings",
