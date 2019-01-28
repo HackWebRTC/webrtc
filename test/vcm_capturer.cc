@@ -39,6 +39,9 @@ bool VcmCapturer::Init(size_t width,
   }
 
   vcm_ = webrtc::VideoCaptureFactory::Create(unique_name);
+  if (!vcm_) {
+    return false;
+  }
   vcm_->RegisterCaptureDataCallback(this);
 
   device_info->GetCapability(vcm_->CurrentDeviceName(), 0, capability_);
