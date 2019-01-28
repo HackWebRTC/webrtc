@@ -80,7 +80,7 @@ void RemixAndResample(const int16_t* src_data,
     // The audio in dst_frame really is mono at this point; MonoToStereo will
     // set this back to stereo.
     dst_frame->num_channels_ = 1;
-    AudioFrameOperations::MonoToStereo(dst_frame);
+    AudioFrameOperations::UpmixChannels(2, dst_frame);
   }
 }
 

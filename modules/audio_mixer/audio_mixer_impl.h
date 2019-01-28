@@ -84,13 +84,6 @@ class AudioMixerImpl : public AudioMixer {
   // kMaximumAmountOfMixedAudioSources audio sources.
   AudioFrameList GetAudioFromSources() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  // Add/remove the MixerAudioSource to the specified
-  // MixerAudioSource list.
-  bool AddAudioSourceToList(Source* audio_source,
-                            SourceStatusList* audio_source_list) const;
-  bool RemoveAudioSourceFromList(Source* remove_audio_source,
-                                 SourceStatusList* audio_source_list) const;
-
   // The critical section lock guards audio source insertion and
   // removal, which can be done from any thread. The race checker
   // checks that mixing is done sequentially.

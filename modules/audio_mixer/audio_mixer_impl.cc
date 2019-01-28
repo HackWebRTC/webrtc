@@ -119,7 +119,7 @@ rtc::scoped_refptr<AudioMixerImpl> AudioMixerImpl::Create(
 
 void AudioMixerImpl::Mix(size_t number_of_channels,
                          AudioFrame* audio_frame_for_mixing) {
-  RTC_DCHECK(number_of_channels == 1 || number_of_channels == 2);
+  RTC_DCHECK(number_of_channels >= 1);
   RTC_DCHECK_RUNS_SERIALIZED(&race_checker_);
 
   CalculateOutputFrequency();

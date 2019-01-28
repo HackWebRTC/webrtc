@@ -214,7 +214,6 @@ void AudioTransportImpl::PullRenderData(int bits_per_sample,
                                         int64_t* ntp_time_ms) {
   RTC_DCHECK_EQ(bits_per_sample, 16);
   RTC_DCHECK_GE(number_of_channels, 1);
-  RTC_DCHECK_LE(number_of_channels, 2);
   RTC_DCHECK_GE(sample_rate, AudioProcessing::NativeRate::kSampleRate8kHz);
 
   // 100 = 1 second / data duration (10 ms).

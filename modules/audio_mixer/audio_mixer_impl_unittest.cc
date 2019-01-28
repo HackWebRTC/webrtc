@@ -15,6 +15,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "api/audio/audio_mixer.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/audio_mixer/default_output_rate_calculator.h"
@@ -23,6 +24,7 @@
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "test/gmock.h"
+#include "test/gtest.h"
 
 using testing::_;
 using testing::Exactly;
@@ -520,6 +522,7 @@ TEST(AudioMixer, AnyRateIsPossibleWithNoLimiter) {
 
         std::vector<MockMixerAudioSource> sources(number_of_sources);
         for (auto& source : sources) {
+          ResetFrame(source.fake_frame());
           mixer->AddSource(&source);
         }
 
@@ -530,4 +533,110 @@ TEST(AudioMixer, AnyRateIsPossibleWithNoLimiter) {
     }
   }
 }
+
+TEST(AudioMixer, MultipleChannelsOneParticipant) {
+  // Set up a participant with a 6-channel frame, and make sure a 6-channel
+  // frame with the right sample values comes out from the mixer. There are 2
+  // Mix calls because of ramp-up.
+  constexpr size_t kNumberOfChannels = 6;
+  MockMixerAudioSource source;
+  ResetFrame(source.fake_frame());
+  const auto mixer = AudioMixerImpl::Create();
+  mixer->AddSource(&source);
+  mixer->Mix(1, &frame_for_mixing);
+  auto* frame = source.fake_frame();
+  frame->num_channels_ = kNumberOfChannels;
+  std::fill(frame->mutable_data(),
+            frame->mutable_data() + AudioFrame::kMaxDataSizeSamples, 0);
+  for (size_t i = 0; i < kNumberOfChannels; ++i) {
+    frame->mutable_data()[100 * frame->num_channels_ + i] = 1000 * i;
+  }
+
+  mixer->Mix(kNumberOfChannels, &frame_for_mixing);
+
+  EXPECT_EQ(frame_for_mixing.num_channels_, kNumberOfChannels);
+  for (size_t i = 0; i < kNumberOfChannels; ++i) {
+    EXPECT_EQ(frame_for_mixing.data()[100 * frame_for_mixing.num_channels_ + i],
+              static_cast<int16_t>(1000 * i));
+  }
+}
+
+TEST(AudioMixer, MultipleChannelsManyParticipants) {
+  // Sets up 2 participants. One has a 6-channel frame. Make sure a 6-channel
+  // frame with the right sample values comes out from the mixer. There are 2
+  // Mix calls because of ramp-up.
+  constexpr size_t kNumberOfChannels = 6;
+  MockMixerAudioSource source;
+  const auto mixer = AudioMixerImpl::Create();
+  mixer->AddSource(&source);
+  ResetFrame(source.fake_frame());
+  mixer->Mix(1, &frame_for_mixing);
+  auto* frame = source.fake_frame();
+  frame->num_channels_ = kNumberOfChannels;
+  std::fill(frame->mutable_data(),
+            frame->mutable_data() + AudioFrame::kMaxDataSizeSamples, 0);
+  for (size_t i = 0; i < kNumberOfChannels; ++i) {
+    frame->mutable_data()[100 * frame->num_channels_ + i] = 1000 * i;
+  }
+  MockMixerAudioSource other_source;
+  ResetFrame(other_source.fake_frame());
+  mixer->AddSource(&other_source);
+
+  mixer->Mix(kNumberOfChannels, &frame_for_mixing);
+
+  EXPECT_EQ(frame_for_mixing.num_channels_, kNumberOfChannels);
+  for (size_t i = 0; i < kNumberOfChannels; ++i) {
+    EXPECT_EQ(frame_for_mixing.data()[100 * frame_for_mixing.num_channels_ + i],
+              static_cast<int16_t>(1000 * i));
+  }
+}
+
+class HighOutputRateCalculator : public OutputRateCalculator {
+ public:
+  static const int kDefaultFrequency = 76000;
+  int CalculateOutputRate(
+      const std::vector<int>& preferred_sample_rates) override {
+    return kDefaultFrequency;
+  }
+  ~HighOutputRateCalculator() override {}
+};
+const int HighOutputRateCalculator::kDefaultFrequency;
+
+TEST(AudioMixer, MultipleChannelsAndHighRate) {
+  constexpr size_t kSamplesPerChannel =
+      HighOutputRateCalculator::kDefaultFrequency / 100;
+  // As many channels as an AudioFrame can fit:
+  constexpr size_t kNumberOfChannels =
+      AudioFrame::kMaxDataSizeSamples / kSamplesPerChannel;
+  MockMixerAudioSource source;
+  const auto mixer = AudioMixerImpl::Create(
+      absl::make_unique<HighOutputRateCalculator>(), true);
+  mixer->AddSource(&source);
+  ResetFrame(source.fake_frame());
+  mixer->Mix(1, &frame_for_mixing);
+  auto* frame = source.fake_frame();
+  frame->num_channels_ = kNumberOfChannels;
+  frame->sample_rate_hz_ = HighOutputRateCalculator::kDefaultFrequency;
+  frame->samples_per_channel_ = kSamplesPerChannel;
+
+  std::fill(frame->mutable_data(),
+            frame->mutable_data() + AudioFrame::kMaxDataSizeSamples, 0);
+  MockMixerAudioSource other_source;
+  ResetFrame(other_source.fake_frame());
+  auto* other_frame = other_source.fake_frame();
+  other_frame->num_channels_ = kNumberOfChannels;
+  other_frame->sample_rate_hz_ = HighOutputRateCalculator::kDefaultFrequency;
+  other_frame->samples_per_channel_ = kSamplesPerChannel;
+  mixer->AddSource(&other_source);
+
+#if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
+  EXPECT_DEATH(mixer->Mix(kNumberOfChannels, &frame_for_mixing), "");
+#elif !RTC_DCHECK_IS_ON
+  mixer->Mix(kNumberOfChannels, &frame_for_mixing);
+  EXPECT_EQ(frame_for_mixing.num_channels_, kNumberOfChannels);
+  EXPECT_EQ(frame_for_mixing.sample_rate_hz_,
+            HighOutputRateCalculator::kDefaultFrequency);
+#endif
+}
+
 }  // namespace webrtc
