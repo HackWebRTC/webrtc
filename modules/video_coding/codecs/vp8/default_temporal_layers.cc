@@ -264,10 +264,7 @@ DefaultTemporalLayers::DefaultTemporalLayers(int number_of_temporal_layers)
       temporal_ids_(GetTemporalIds(num_layers_)),
       temporal_pattern_(GetTemporalPattern(num_layers_)),
       kf_buffers_(FindKfBuffers(temporal_pattern_)),
-      pattern_idx_(kUninitializedPatternIndex),
-      checker_(TemporalLayersChecker::CreateTemporalLayersChecker(
-          Vp8TemporalLayersType::kFixedPattern,
-          number_of_temporal_layers)) {
+      pattern_idx_(kUninitializedPatternIndex) {
   RTC_CHECK_GE(kMaxTemporalStreams, number_of_temporal_layers);
   RTC_CHECK_GE(number_of_temporal_layers, 0);
   RTC_CHECK_LE(number_of_temporal_layers, 4);
@@ -275,6 +272,11 @@ DefaultTemporalLayers::DefaultTemporalLayers(int number_of_temporal_layers)
   // temporal_ids_ are ever longer. If this is no longer correct it needs to
   // wrap at max(temporal_ids_.size(), temporal_pattern_.size()).
   RTC_DCHECK_LE(temporal_ids_.size(), temporal_pattern_.size());
+
+#if RTC_DCHECK_IS_ON
+  checker_ = TemporalLayersChecker::CreateTemporalLayersChecker(
+      Vp8TemporalLayersType::kFixedPattern, number_of_temporal_layers);
+#endif
 
   // Always need to start with a keyframe, so pre-populate all frame counters.
   for (Vp8BufferReference buffer : kAllBuffers) {
@@ -399,12 +401,12 @@ Vp8TemporalLayers::FrameConfig DefaultTemporalLayers::UpdateLayerConfig(
   pending_frames_[timestamp] =
       PendingFrame{false, GetUpdatedBuffers(tl_config), tl_config};
 
-  if (checker_) {
-    // Checker does not yet support encoder frame dropping, so validate flags
-    // here before they can be dropped.
-    // TODO(sprang): Update checker to support dropping.
-    RTC_DCHECK(checker_->CheckTemporalConfig(false, tl_config));
-  }
+#if RTC_DCHECK_IS_ON
+  // Checker does not yet support encoder frame dropping, so validate flags
+  // here before they can be dropped.
+  // TODO(sprang): Update checker to support dropping.
+  RTC_DCHECK(checker_->CheckTemporalConfig(false, tl_config));
+#endif
 
   return tl_config;
 }
@@ -481,10 +483,12 @@ void DefaultTemporalLayers::OnEncodeDone(uint32_t rtp_timestamp,
   }
 
   PendingFrame& frame = pending_frame->second;
-  if (is_keyframe && checker_) {
+#if RTC_DCHECK_IS_ON
+  if (is_keyframe) {
     // Signal key-frame so checker resets state.
     RTC_DCHECK(checker_->CheckTemporalConfig(true, frame.frame_config));
   }
+#endif
 
   if (num_layers_ == 1) {
     vp8_info->temporalIdx = kNoTemporalIdx;
