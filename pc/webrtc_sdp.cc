@@ -1677,16 +1677,6 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
     }
   }
 
-  if (media_desc->has_receive_stream()) {
-    const auto& rids = media_desc->receive_stream().rids();
-    for (const RidDescription& rid_description : rids) {
-      InitAttrLine(kAttributeRid, &os);
-      os << kSdpDelimiterColon
-         << serializer.SerializeRidDescription(rid_description);
-      AddLine(os.str(), message);
-    }
-  }
-
   // Simulcast (a=simulcast)
   // https://tools.ietf.org/html/draft-ietf-mmusic-sdp-simulcast-13#section-5.1
   if (media_desc->HasSimulcast()) {
@@ -3180,7 +3170,7 @@ bool ParseContent(const std::string& message,
   // If simulcast is specifed, split the rids into send and receive.
   // Rids that do not appear in simulcast attribute will be removed.
   // If it is not specified, we assume that all rids are for send layers.
-  std::vector<RidDescription> send_rids, receive_rids;
+  std::vector<RidDescription> send_rids;
   if (!simulcast.empty()) {
     // Verify that the rids in simulcast match rids in sdp.
     RemoveInvalidRidsFromSimulcast(rids, &simulcast);
@@ -3195,12 +3185,6 @@ bool ParseContent(const std::string& message,
       auto iter = rid_map.find(layer.rid);
       RTC_DCHECK(iter != rid_map.end());
       send_rids.push_back(iter->second);
-    }
-
-    for (const auto& layer : simulcast.receive_layers().GetAllLayers()) {
-      auto iter = rid_map.find(layer.rid);
-      RTC_DCHECK(iter != rid_map.end());
-      receive_rids.push_back(iter->second);
     }
 
     media_desc->set_simulcast_description(simulcast);
@@ -3222,13 +3206,6 @@ bool ParseContent(const std::string& message,
     // StreamParams aren't used for SCTP streams, and RTP data channels don't
     // support unsignaled SSRCs.
     CreateTrackWithNoSsrcs(stream_ids, track_id, send_rids, &tracks);
-  }
-
-  // Create receive track when we have incoming receive rids.
-  if (!receive_rids.empty()) {
-    StreamParams receive_track;
-    receive_track.set_rids(receive_rids);
-    media_desc->set_receive_stream(receive_track);
   }
 
   // Add the ssrc group to the track.

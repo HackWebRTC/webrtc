@@ -4140,20 +4140,6 @@ void PeerConnection::GetOptionsForPlanBOffer(
                            offer_answer_options.num_simulcast_layers);
 }
 
-static void GetSimulcastInformationFromRtpParameters(
-    const RtpParameters& parameters,
-    RidDirection direction,
-    std::vector<RidDescription>* rids,
-    SimulcastLayerList* layers) {
-  for (const RtpEncodingParameters& encoding : parameters.encodings) {
-    if (encoding.rid.empty()) {
-      continue;
-    }
-    rids->push_back(RidDescription(encoding.rid, direction));
-    layers->AddLayer(SimulcastLayer(encoding.rid, !encoding.active));
-  }
-}
-
 static cricket::MediaDescriptionOptions
 GetMediaDescriptionOptionsForTransceiver(
     rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
@@ -4180,27 +4166,27 @@ GetMediaDescriptionOptionsForTransceiver(
   // The following sets up RIDs and Simulcast.
   // RIDs are included if Simulcast is requested or if any RID was specified.
   RtpParameters send_parameters = transceiver->sender()->GetParameters();
-  RtpParameters receive_parameters = transceiver->receiver()->GetParameters();
   bool has_rids = std::any_of(send_parameters.encodings.begin(),
                               send_parameters.encodings.end(),
                               [](const RtpEncodingParameters& encoding) {
                                 return !encoding.rid.empty();
                               });
 
-  std::vector<RidDescription> send_rids, receive_rids;
-  SimulcastLayerList send_layers, receive_layers;
-  GetSimulcastInformationFromRtpParameters(send_parameters, RidDirection::kSend,
-                                           &send_rids, &send_layers);
-  GetSimulcastInformationFromRtpParameters(receive_parameters,
-                                           RidDirection::kReceive,
-                                           &receive_rids, &receive_layers);
+  std::vector<RidDescription> send_rids;
+  SimulcastLayerList send_layers;
+  for (const RtpEncodingParameters& encoding : send_parameters.encodings) {
+    if (encoding.rid.empty()) {
+      continue;
+    }
+    send_rids.push_back(RidDescription(encoding.rid, RidDirection::kSend));
+    send_layers.AddLayer(SimulcastLayer(encoding.rid, !encoding.active));
+  }
+
   if (has_rids) {
     sender_options.rids = send_rids;
   }
 
   sender_options.simulcast_layers = send_layers;
-  media_description_options.receive_simulcast_layers = receive_layers;
-  media_description_options.receive_rids = receive_rids;
   // When RIDs are configured, we must set num_sim_layers to 0 to.
   // Otherwise, num_sim_layers must be 1 because either there is no
   // simulcast, or simulcast is acheived by munging the SDP.

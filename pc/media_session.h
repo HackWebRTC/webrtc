@@ -77,15 +77,6 @@ struct MediaDescriptionOptions {
   // Note: There's no equivalent "RtpReceiverOptions" because only send
   // stream information goes in the local descriptions.
   std::vector<SenderOptions> sender_options;
-  // |receive_rids| and |receive_simulcast_layers| are used with spec-compliant
-  // simulcast. When Simulcast is used, they should both not be empty.
-  // All RIDs in |receive_simulcast_layers| must appear in receive_rids as well.
-  // |receive_rids| could also be used outside of simulcast. It is possible to
-  // add restrictions on the incoming stream during negotiation outside the
-  // simulcast scenario. This is currently not fully supported, as meaningful
-  // restrictions are not handled by this library.
-  std::vector<RidDescription> receive_rids;
-  SimulcastLayerList receive_simulcast_layers;
 
  private:
   // Doesn't DCHECK on |type|.

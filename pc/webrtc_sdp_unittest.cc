@@ -1410,10 +1410,6 @@ class WebRtcSdpTest : public testing::Test {
 
     // streams
     EXPECT_EQ(cd1->streams(), cd2->streams());
-    EXPECT_EQ(cd1->has_receive_stream(), cd2->has_receive_stream());
-    if (cd1->has_receive_stream() && cd2->has_receive_stream()) {
-      EXPECT_EQ(cd1->receive_stream(), cd2->receive_stream());
-    }
 
     // extmap-allow-mixed
     EXPECT_EQ(cd1->extmap_allow_mixed_enum(), cd2->extmap_allow_mixed_enum());
@@ -4086,8 +4082,6 @@ TEST_F(WebRtcSdpTest, TestDeserializeSimulcastAttribute) {
   EXPECT_FALSE(media->streams().empty());
   const std::vector<RidDescription>& rids = media->streams()[0].rids();
   CompareRidDescriptionIds(rids, {"1", "2", "3"});
-  ASSERT_TRUE(media->has_receive_stream());
-  CompareRidDescriptionIds(media->receive_stream().rids(), {"4", "5", "6"});
 }
 
 // Validates that deserialization removes rids that do not appear in SDP
@@ -4124,8 +4118,6 @@ TEST_F(WebRtcSdpTest, TestDeserializeSimulcastAttributeRemovesUnknownRids) {
   EXPECT_FALSE(media->streams().empty());
   const std::vector<RidDescription>& rids = media->streams()[0].rids();
   CompareRidDescriptionIds(rids, {"1", "3"});
-  ASSERT_TRUE(media->has_receive_stream());
-  CompareRidDescriptionIds(media->receive_stream().rids(), {"4"});
 }
 
 // Validates that Simulcast removes rids that appear in both send and receive.
@@ -4153,8 +4145,6 @@ TEST_F(WebRtcSdpTest,
   EXPECT_FALSE(media->streams().empty());
   const std::vector<RidDescription>& rids = media->streams()[0].rids();
   CompareRidDescriptionIds(rids, {"1", "3"});
-  ASSERT_TRUE(media->has_receive_stream());
-  CompareRidDescriptionIds(media->receive_stream().rids(), {"4"});
 }
 
 // Ignores empty rid line.
@@ -4180,7 +4170,6 @@ TEST_F(WebRtcSdpTest, TestDeserializeIgnoresEmptyRidLines) {
   EXPECT_FALSE(media->streams().empty());
   const std::vector<RidDescription>& rids = media->streams()[0].rids();
   CompareRidDescriptionIds(rids, {"1", "2"});
-  ASSERT_FALSE(media->has_receive_stream());
 }
 
 // Ignores malformed rid lines.
@@ -4207,7 +4196,6 @@ TEST_F(WebRtcSdpTest, TestDeserializeIgnoresMalformedRidLines) {
   EXPECT_FALSE(media->streams().empty());
   const std::vector<RidDescription>& rids = media->streams()[0].rids();
   CompareRidDescriptionIds(rids, {"5"});
-  ASSERT_FALSE(media->has_receive_stream());
 }
 
 // Removes RIDs that specify a different format than the m= section.
@@ -4234,8 +4222,6 @@ TEST_F(WebRtcSdpTest, TestDeserializeRemovesRidsWithInvalidCodec) {
   EXPECT_EQ("1", rids[0].rid);
   EXPECT_EQ(1ul, rids[0].payload_types.size());
   EXPECT_EQ(120, rids[0].payload_types[0]);
-
-  ASSERT_FALSE(media->has_receive_stream());
 }
 
 // Ignores duplicate rid lines
@@ -4263,8 +4249,6 @@ TEST_F(WebRtcSdpTest, TestDeserializeIgnoresDuplicateRidLines) {
   EXPECT_FALSE(media->streams().empty());
   const std::vector<RidDescription>& rids = media->streams()[0].rids();
   CompareRidDescriptionIds(rids, {"1", "3"});
-  ASSERT_TRUE(media->has_receive_stream());
-  CompareRidDescriptionIds(media->receive_stream().rids(), {"4"});
 }
 
 // Simulcast serialization integration test.
@@ -4283,29 +4267,12 @@ TEST_F(WebRtcSdpTest, SerializeSimulcast_ComplexSerialization) {
   send_rids.push_back(RidDescription("3", RidDirection::kSend));
   send_rids.push_back(RidDescription("4", RidDirection::kSend));
   send_stream.set_rids(send_rids);
-  StreamParams recv_stream;
-  std::vector<RidDescription> recv_rids;
-  recv_rids.push_back(RidDescription("6", RidDirection::kReceive));
-  recv_rids.push_back(RidDescription("7", RidDirection::kReceive));
-  recv_rids.push_back(RidDescription("8", RidDirection::kReceive));
-  recv_rids.push_back(RidDescription("9", RidDirection::kReceive));
-  recv_rids.push_back(RidDescription("10", RidDirection::kReceive));
-  recv_rids.push_back(RidDescription("11", RidDirection::kReceive));
-  recv_stream.set_rids(recv_rids);
-  media->set_receive_stream(recv_stream);
 
   SimulcastDescription& simulcast = media->simulcast_description();
   simulcast.send_layers().AddLayerWithAlternatives(
       {SimulcastLayer("2", false), SimulcastLayer("1", true)});
   simulcast.send_layers().AddLayerWithAlternatives(
       {SimulcastLayer("4", false), SimulcastLayer("3", false)});
-
-  simulcast.receive_layers().AddLayerWithAlternatives(
-      {SimulcastLayer("6", false), SimulcastLayer("7", false)});
-  simulcast.receive_layers().AddLayer(SimulcastLayer("8", true));
-  simulcast.receive_layers().AddLayerWithAlternatives(
-      {SimulcastLayer("9", false), SimulcastLayer("10", true),
-       SimulcastLayer("11", false)});
 
   TestSerialize(jdesc_);
 }

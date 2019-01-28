@@ -472,19 +472,10 @@ static void AddSimulcastToMediaDescription(
     return;
   }
 
-  RTC_DCHECK(!media_description_options.receive_rids.empty());
-  RTC_DCHECK(ValidateSimulcastLayers(
-      media_description_options.receive_rids,
-      media_description_options.receive_simulcast_layers));
-  StreamParams receive_stream;
-  receive_stream.set_rids(media_description_options.receive_rids);
-  description->set_receive_stream(receive_stream);
-
+  // Only negotiate the send layers.
   SimulcastDescription simulcast;
   simulcast.send_layers() =
       media_description_options.sender_options[0].simulcast_layers;
-  simulcast.receive_layers() =
-      media_description_options.receive_simulcast_layers;
   description->set_simulcast_description(simulcast);
 }
 

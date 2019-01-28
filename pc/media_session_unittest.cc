@@ -2032,9 +2032,7 @@ static void CheckSimulcastInSessionDescription(
     const SessionDescription* description,
     const std::string& content_name,
     const std::vector<RidDescription>& send_rids,
-    const SimulcastLayerList& send_layers,
-    const RidDescription& receive_rid,
-    const SimulcastLayer& receive_layer) {
+    const SimulcastLayerList& send_layers) {
   ASSERT_NE(description, nullptr);
   const ContentInfo* content = description->GetContentByName(content_name);
   ASSERT_NE(content, nullptr);
@@ -2049,22 +2047,12 @@ static void CheckSimulcastInSessionDescription(
 
   EXPECT_THAT(rids, Pointwise(RidDescriptionEquals(), send_rids));
 
-  ASSERT_TRUE(cd->has_receive_stream());
-  const StreamParams& receive_stream = cd->receive_stream();
-  EXPECT_THAT(receive_stream.ssrcs, IsEmpty());
-  EXPECT_TRUE(receive_stream.has_rids());
-  ASSERT_THAT(receive_stream.rids(), SizeIs(1));
-
-  EXPECT_EQ(receive_rid.rid, receive_stream.rids()[0].rid);
-  EXPECT_EQ(receive_rid.direction, receive_stream.rids()[0].direction);
-
   EXPECT_TRUE(cd->HasSimulcast());
   const SimulcastDescription& simulcast = cd->simulcast_description();
   EXPECT_THAT(simulcast.send_layers(), SizeIs(send_layers.size()));
   EXPECT_THAT(simulcast.send_layers(), Pointwise(Eq(), send_layers));
 
-  ASSERT_THAT(simulcast.receive_layers().GetAllLayers(), SizeIs(1));
-  EXPECT_EQ(receive_layer, simulcast.receive_layers().GetAllLayers()[0]);
+  ASSERT_THAT(simulcast.receive_layers().GetAllLayers(), SizeIs(0));
 }
 
 // Create an offer with spec-compliant simulcast video stream.
@@ -2073,11 +2061,6 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateCompliantSimulcastOffer) {
   AddMediaDescriptionOptions(MEDIA_TYPE_VIDEO, "video",
                              RtpTransceiverDirection::kSendRecv, kActive,
                              &opts);
-  RidDescription receive_rid("1", RidDirection::kReceive);
-  SimulcastLayer receive_layer(receive_rid.rid, false);
-  opts.media_description_options[0].receive_rids = {receive_rid};
-  opts.media_description_options[0].receive_simulcast_layers.AddLayer(
-      receive_layer);
   std::vector<RidDescription> send_rids;
   send_rids.push_back(RidDescription("f", RidDirection::kSend));
   send_rids.push_back(RidDescription("h", RidDirection::kSend));
@@ -2092,8 +2075,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateCompliantSimulcastOffer) {
   std::unique_ptr<SessionDescription> offer = f1_.CreateOffer(opts, nullptr);
 
   CheckSimulcastInSessionDescription(offer.get(), "video", send_rids,
-                                     simulcast_layers, receive_rid,
-                                     receive_layer);
+                                     simulcast_layers);
 }
 
 // Create an offer that signals RIDs (not SSRCs) without Simulcast.
@@ -2114,7 +2096,6 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestOfferWithRidsNoSimulcast) {
   ASSERT_NE(content, nullptr);
   const MediaContentDescription* cd = content->media_description();
   ASSERT_NE(cd, nullptr);
-  EXPECT_FALSE(cd->has_receive_stream());
   const StreamParamsVec& streams = cd->streams();
   ASSERT_THAT(streams, SizeIs(1));
   const StreamParams& stream = streams[0];
@@ -2140,11 +2121,6 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateCompliantSimulcastAnswer) {
                              RtpTransceiverDirection::kSendRecv, kActive,
                              &answer_opts);
 
-  RidDescription receive_rid("1", RidDirection::kReceive);
-  SimulcastLayer receive_layer(receive_rid.rid, false);
-  answer_opts.media_description_options[0].receive_rids = {receive_rid};
-  answer_opts.media_description_options[0].receive_simulcast_layers.AddLayer(
-      receive_layer);
   std::vector<RidDescription> rid_descriptions{
       RidDescription("f", RidDirection::kSend),
       RidDescription("h", RidDirection::kSend),
@@ -2161,8 +2137,7 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateCompliantSimulcastAnswer) {
       f2_.CreateAnswer(offer.get(), answer_opts, nullptr);
 
   CheckSimulcastInSessionDescription(answer.get(), "video", rid_descriptions,
-                                     simulcast_layers, receive_rid,
-                                     receive_layer);
+                                     simulcast_layers);
 }
 
 // Create an answer that signals RIDs (not SSRCs) without Simulcast.
@@ -2197,7 +2172,6 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestAnswerWithRidsNoSimulcast) {
   ASSERT_NE(content, nullptr);
   const MediaContentDescription* cd = content->media_description();
   ASSERT_NE(cd, nullptr);
-  EXPECT_FALSE(cd->has_receive_stream());
   const StreamParamsVec& streams = cd->streams();
   ASSERT_THAT(streams, SizeIs(1));
   const StreamParams& stream = streams[0];
