@@ -227,7 +227,6 @@ void RTPSenderVideo::SendVideoPacketAsRedMaybeWithUlpfec(
   BuildRedPayload(*media_packet, red_packet.get());
 
   std::vector<std::unique_ptr<RedPacket>> fec_packets;
-  StorageType fec_storage = kDontRetransmit;
   {
     // Only protect while creating RED and FEC packets, not when sending.
     rtc::CritScope cs(&crit_);
@@ -245,8 +244,6 @@ void RTPSenderVideo::SendVideoPacketAsRedMaybeWithUlpfec(
         fec_packets = ulpfec_generator_.GetUlpfecPacketsAsRed(
             red_payload_type_, ulpfec_payload_type_, first_fec_sequence_number);
         RTC_DCHECK_EQ(num_fec_packets, fec_packets.size());
-        if (retransmission_settings_ & kRetransmitFECPackets)
-          fec_storage = kAllowRetransmission;
       }
     }
   }
@@ -268,7 +265,7 @@ void RTPSenderVideo::SendVideoPacketAsRedMaybeWithUlpfec(
     rtp_packet->set_capture_time_ms(media_packet->capture_time_ms());
     rtp_packet->set_is_fec(true);
     uint16_t fec_sequence_number = rtp_packet->SequenceNumber();
-    if (rtp_sender_->SendToNetwork(std::move(rtp_packet), fec_storage,
+    if (rtp_sender_->SendToNetwork(std::move(rtp_packet), kDontRetransmit,
                                    RtpPacketSender::kLowPriority)) {
       rtc::CritScope cs(&stats_crit_);
       fec_bitrate_.Update(fec_packet->length(), clock_->TimeInMilliseconds());
@@ -664,8 +661,6 @@ StorageType RTPSenderVideo::GetStorageType(
     int64_t expected_retransmission_time_ms) {
   if (retransmission_settings == kRetransmitOff)
     return StorageType::kDontRetransmit;
-  if (retransmission_settings == kRetransmitAllPackets)
-    return StorageType::kAllowRetransmission;
 
   rtc::CritScope cs(&stats_crit_);
   // Media packet storage.

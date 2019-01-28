@@ -35,6 +35,17 @@ class FrameEncryptorInterface;
 class RtpPacketizer;
 class RtpPacketToSend;
 
+// kConditionallyRetransmitHigherLayers allows retransmission of video frames
+// in higher layers if either the last frame in that layer was too far back in
+// time, or if we estimate that a new frame will be available in a lower layer
+// in a shorter time than it would take to request and receive a retransmission.
+enum RetransmissionMode : uint8_t {
+  kRetransmitOff = 0x0,
+  kRetransmitBaseLayer = 0x2,
+  kRetransmitHigherLayers = 0x4,
+  kConditionallyRetransmitHigherLayers = 0x8,
+};
+
 class RTPSenderVideo {
  public:
   static constexpr int64_t kTLRateWindowSizeMs = 2500;
