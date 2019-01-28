@@ -92,7 +92,7 @@ bool ParseArgsAndSetupEstimator(int argc,
     fprintf(stderr, "0x%08x, ", s);
   }
   fprintf(stderr, "\n");
-  if (filename.substr(filename.find_last_of(".")) == ".pcap") {
+  if (filename.substr(filename.find_last_of('.')) == ".pcap") {
     fprintf(stderr, "Opening as pcap\n");
     *rtp_reader = webrtc::test::RtpFileReader::Create(
         webrtc::test::RtpFileReader::kPcap, filename.c_str(),

@@ -2385,7 +2385,7 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithH264) {
   std::string to_find = "a=fmtp:" + pt + " ";
   size_t fmtp_pos = message.find(to_find);
   ASSERT_NE(std::string::npos, fmtp_pos) << "Failed to find " << to_find;
-  size_t fmtp_endpos = message.find("\n", fmtp_pos);
+  size_t fmtp_endpos = message.find('\n', fmtp_pos);
   ASSERT_NE(std::string::npos, fmtp_endpos);
   std::string fmtp_value = message.substr(fmtp_pos, fmtp_endpos);
   EXPECT_NE(std::string::npos, fmtp_value.find("level-asymmetry-allowed=1"));

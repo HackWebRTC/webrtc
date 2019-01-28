@@ -706,7 +706,7 @@ bool Port::ParseStunUsername(const StunMessage* stun_msg,
 
   // RFRAG:LFRAG
   const std::string username = username_attr->GetString();
-  size_t colon_pos = username.find(":");
+  size_t colon_pos = username.find(':');
   if (colon_pos == std::string::npos) {
     return false;
   }

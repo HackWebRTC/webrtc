@@ -174,7 +174,7 @@ bool SSLIdentity::PemToDer(const std::string& pem_type,
   if (header == std::string::npos) {
     return false;
   }
-  size_t body = pem_string.find("\n", header);
+  size_t body = pem_string.find('\n', header);
   if (body == std::string::npos) {
     return false;
   }
