@@ -20,11 +20,13 @@
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/codecs/vp8/default_temporal_layers.h"
 #include "modules/video_coding/include/video_codec_interface.h"
+#include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
+using Buffer = Vp8TemporalLayers::FrameConfig::Buffer;
 
 Vp8TemporalLayers::FrameConfig::FrameConfig()
     : FrameConfig(kNone, kNone, kNone, false) {}
@@ -509,6 +511,24 @@ void DefaultTemporalLayers::OnEncodeDone(uint32_t rtp_timestamp,
       // Delta frame, update codec specifics with temporal id and sync flag.
       vp8_info->temporalIdx = frame.frame_config.packetizer_temporal_idx;
       vp8_info->layerSync = frame.frame_config.layer_sync;
+    }
+  }
+
+  vp8_info->useExplicitDependencies = true;
+  RTC_DCHECK_EQ(vp8_info->referencedBuffersCount, 0u);
+  RTC_DCHECK_EQ(vp8_info->updatedBuffersCount, 0u);
+
+  for (int i = 0; i < static_cast<int>(Buffer::kCount); ++i) {
+    if (!is_keyframe && frame.frame_config.References(static_cast<Buffer>(i))) {
+      RTC_DCHECK_LT(vp8_info->referencedBuffersCount,
+                    arraysize(CodecSpecificInfoVP8::referencedBuffers));
+      vp8_info->referencedBuffers[vp8_info->referencedBuffersCount++] = i;
+    }
+
+    if (is_keyframe || frame.frame_config.Updates(static_cast<Buffer>(i))) {
+      RTC_DCHECK_LT(vp8_info->updatedBuffersCount,
+                    arraysize(CodecSpecificInfoVP8::updatedBuffers));
+      vp8_info->updatedBuffers[vp8_info->updatedBuffersCount++] = i;
     }
   }
 
