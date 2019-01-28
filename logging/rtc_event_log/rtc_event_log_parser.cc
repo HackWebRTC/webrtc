@@ -113,6 +113,13 @@ std::vector<OverheadChangeEvent> GetOverheadChangingEvents(
   return overheads;
 }
 
+bool IdenticalRtcpContents(const std::vector<uint8_t>& last_rtcp,
+                           absl::string_view new_rtcp) {
+  if (last_rtcp.size() != new_rtcp.size())
+    return false;
+  return memcmp(last_rtcp.data(), new_rtcp.data(), new_rtcp.size()) == 0;
+}
+
 // Conversion functions for legacy wire format.
 RtcpMode GetRuntimeRtcpMode(rtclog::VideoReceiveConfig::RtcpMode rtcp_mode) {
   switch (rtcp_mode) {
@@ -736,12 +743,21 @@ void StoreRtpPackets(
 
 template <typename ProtoType, typename LoggedType>
 void StoreRtcpPackets(const ProtoType& proto,
-                      std::vector<LoggedType>* rtcp_packets) {
+                      std::vector<LoggedType>* rtcp_packets,
+                      bool remove_duplicates) {
   RTC_CHECK(proto.has_timestamp_ms());
   RTC_CHECK(proto.has_raw_packet());
 
-  // Base event
-  rtcp_packets->emplace_back(proto.timestamp_ms() * 1000, proto.raw_packet());
+  // TODO(terelius): Incoming RTCP may be delivered once for audio and once
+  // for video. As a work around, we remove the duplicated packets since they
+  // cause problems when analyzing the log or feeding it into the transport
+  // feedback adapter.
+  if (!remove_duplicates || rtcp_packets->empty() ||
+      !IdenticalRtcpContents(rtcp_packets->back().rtcp.raw_data,
+                             proto.raw_packet())) {
+    // Base event
+    rtcp_packets->emplace_back(proto.timestamp_ms() * 1000, proto.raw_packet());
+  }
 
   const size_t number_of_deltas =
       proto.has_number_of_deltas() ? proto.number_of_deltas() : 0u;
@@ -767,10 +783,19 @@ void StoreRtcpPackets(const ProtoType& proto,
     int64_t timestamp_ms;
     RTC_CHECK(ToSigned(timestamp_ms_values[i].value(), &timestamp_ms));
 
-    rtcp_packets->emplace_back(
-        1000 * timestamp_ms,
-        reinterpret_cast<const uint8_t*>(raw_packet_values[i].data()),
-        raw_packet_values[i].size());
+    // TODO(terelius): Incoming RTCP may be delivered once for audio and once
+    // for video. As a work around, we remove the duplicated packets since they
+    // cause problems when analyzing the log or feeding it into the transport
+    // feedback adapter.
+    if (remove_duplicates && !rtcp_packets->empty() &&
+        IdenticalRtcpContents(rtcp_packets->back().rtcp.raw_data,
+                              raw_packet_values[i])) {
+      continue;
+    }
+    const size_t data_size = raw_packet_values[i].size();
+    const uint8_t* data =
+        reinterpret_cast<const uint8_t*>(raw_packet_values[i].data());
+    rtcp_packets->emplace_back(1000 * timestamp_ms, data, data_size);
   }
 }
 
@@ -2168,12 +2193,12 @@ void ParsedRtcEventLog::StoreOutgoingRtpPackets(
 
 void ParsedRtcEventLog::StoreIncomingRtcpPackets(
     const rtclog2::IncomingRtcpPackets& proto) {
-  StoreRtcpPackets(proto, &incoming_rtcp_packets_);
+  StoreRtcpPackets(proto, &incoming_rtcp_packets_, /*remove_duplicates=*/true);
 }
 
 void ParsedRtcEventLog::StoreOutgoingRtcpPackets(
     const rtclog2::OutgoingRtcpPackets& proto) {
-  StoreRtcpPackets(proto, &outgoing_rtcp_packets_);
+  StoreRtcpPackets(proto, &outgoing_rtcp_packets_, /*remove_duplicates=*/false);
 }
 
 void ParsedRtcEventLog::StoreStartEvent(const rtclog2::BeginLogEvent& proto) {

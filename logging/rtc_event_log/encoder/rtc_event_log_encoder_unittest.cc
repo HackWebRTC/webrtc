@@ -617,9 +617,9 @@ TEST_P(RtcEventLogEncoderTest, RtcEventProbeResultSuccess) {
 }
 
 TEST_P(RtcEventLogEncoderTest, RtcEventRtcpPacketIncoming) {
-  if (!new_encoding_ && force_repeated_fields_) {
-    // The old encoding does not work with duplicated packets. Since the legacy
-    // encoding is being phased out, we will not fix this.
+  if (force_repeated_fields_) {
+    // RTCP packets maybe delivered twice (once for audio and once for video).
+    // As a work around, we're removing duplicates in the parser.
     return;
   }
 
