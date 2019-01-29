@@ -257,9 +257,6 @@ class MediaTransportVideoSinkInterface {
   // Called when new encoded video frame is received.
   virtual void OnData(uint64_t channel_id,
                       MediaTransportEncodedVideoFrame frame) = 0;
-
-  // TODO(bugs.webrtc.org/9719): Belongs on send side, not receive side.
-  RTC_DEPRECATED virtual void OnKeyFrameRequested(uint64_t channel_id) {}
 };
 
 // Interface for video sender to be notified of received key frame request.
