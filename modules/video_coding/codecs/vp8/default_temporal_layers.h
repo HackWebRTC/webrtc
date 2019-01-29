@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/video_codecs/vp8_frame_config.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "modules/video_coding/codecs/vp8/include/temporal_layers_checker.h"
 #include "modules/video_coding/include/video_codec_interface.h"
@@ -36,7 +37,7 @@ class DefaultTemporalLayers : public Vp8TemporalLayers {
 
   // Returns the recommended VP8 encode flags needed. May refresh the decoder
   // and/or update the reference buffers.
-  Vp8TemporalLayers::FrameConfig UpdateLayerConfig(uint32_t timestamp) override;
+  Vp8FrameConfig UpdateLayerConfig(uint32_t timestamp) override;
 
   // New target bitrate, per temporal layer.
   void OnRatesUpdated(const std::vector<uint32_t>& bitrates_bps,
@@ -52,17 +53,17 @@ class DefaultTemporalLayers : public Vp8TemporalLayers {
 
  private:
   static constexpr size_t kKeyframeBuffer = std::numeric_limits<size_t>::max();
-  static std::vector<Vp8TemporalLayers::FrameConfig> GetTemporalPattern(
-      size_t num_layers);
-  bool IsSyncFrame(const FrameConfig& config) const;
-  void ValidateReferences(BufferFlags* flags, Vp8BufferReference ref) const;
-  void UpdateSearchOrder(FrameConfig* config);
+  static std::vector<Vp8FrameConfig> GetTemporalPattern(size_t num_layers);
+  bool IsSyncFrame(const Vp8FrameConfig& config) const;
+  void ValidateReferences(Vp8FrameConfig::BufferFlags* flags,
+                          Vp8FrameConfig::Vp8BufferReference ref) const;
+  void UpdateSearchOrder(Vp8FrameConfig* config);
 
   const size_t num_layers_;
   const std::vector<unsigned int> temporal_ids_;
-  const std::vector<Vp8TemporalLayers::FrameConfig> temporal_pattern_;
+  const std::vector<Vp8FrameConfig> temporal_pattern_;
   // Set of buffers that are never updated except by keyframes.
-  const std::set<Vp8BufferReference> kf_buffers_;
+  const std::set<Vp8FrameConfig::Vp8BufferReference> kf_buffers_;
 
   uint8_t pattern_idx_;
   // Updated cumulative bitrates, per temporal layer.
@@ -72,7 +73,7 @@ class DefaultTemporalLayers : public Vp8TemporalLayers {
     PendingFrame();
     PendingFrame(bool expired,
                  uint8_t updated_buffers_mask,
-                 const FrameConfig& frame_config);
+                 const Vp8FrameConfig& frame_config);
     // Flag indicating if this frame has expired, ie it belongs to a previous
     // iteration of the temporal pattern.
     bool expired = false;
@@ -80,7 +81,7 @@ class DefaultTemporalLayers : public Vp8TemporalLayers {
     // updates.
     uint8_t updated_buffer_mask = 0;
     // The frame config return by UpdateLayerConfig() for this frame.
-    FrameConfig frame_config;
+    Vp8FrameConfig frame_config;
   };
   // Map from rtp timestamp to pending frame status. Reset on pattern loop.
   std::map<uint32_t, PendingFrame> pending_frames_;
@@ -88,7 +89,8 @@ class DefaultTemporalLayers : public Vp8TemporalLayers {
   // One counter per Vp8BufferReference, indicating number of frames since last
   // refresh. For non-base-layer frames (ie golden, altref buffers), this is
   // reset when the pattern loops.
-  std::map<Vp8BufferReference, size_t> frames_since_buffer_refresh_;
+  std::map<Vp8FrameConfig::Vp8BufferReference, size_t>
+      frames_since_buffer_refresh_;
 
   // Optional utility used to verify reference validity.
   std::unique_ptr<TemporalLayersChecker> checker_;
@@ -99,9 +101,8 @@ class DefaultTemporalLayersChecker : public TemporalLayersChecker {
   explicit DefaultTemporalLayersChecker(int number_of_temporal_layers);
   ~DefaultTemporalLayersChecker() override;
 
-  bool CheckTemporalConfig(
-      bool frame_is_keyframe,
-      const Vp8TemporalLayers::FrameConfig& frame_config) override;
+  bool CheckTemporalConfig(bool frame_is_keyframe,
+                           const Vp8FrameConfig& frame_config) override;
 
  private:
   struct BufferState {

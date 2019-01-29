@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "api/video_codecs/vp8_frame_config.h"
 #include "modules/video_coding/codecs/interface/common_constants.h"
 #include "modules/video_coding/codecs/vp8/libvpx_vp8_encoder.h"
 #include "modules/video_coding/codecs/vp8/screenshare_layers.h"
@@ -93,7 +94,7 @@ class ScreenshareLayerTest : public ::testing::Test {
     return flags;
   }
 
-  Vp8TemporalLayers::FrameConfig UpdateLayerConfig(uint32_t timestamp) {
+  Vp8FrameConfig UpdateLayerConfig(uint32_t timestamp) {
     int64_t timestamp_ms = timestamp / 90;
     clock_.AdvanceTimeMilliseconds(timestamp_ms - clock_.TimeInMilliseconds());
     return layers_->UpdateLayerConfig(timestamp);
@@ -173,7 +174,7 @@ class ScreenshareLayerTest : public ::testing::Test {
   std::unique_ptr<ScreenshareLayers> layers_;
 
   uint32_t timestamp_;
-  Vp8TemporalLayers::FrameConfig tl_config_;
+  Vp8FrameConfig tl_config_;
   Vp8EncoderConfig cfg_;
   bool config_updated_;
   CodecSpecificInfoVP8 vp8_info_;

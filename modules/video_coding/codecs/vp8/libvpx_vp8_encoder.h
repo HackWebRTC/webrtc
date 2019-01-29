@@ -17,6 +17,7 @@
 #include "api/video/encoded_image.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_encoder.h"
+#include "api/video_codecs/vp8_frame_config.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
@@ -52,8 +53,7 @@ class LibvpxVp8Encoder : public VideoEncoder {
 
   EncoderInfo GetEncoderInfo() const override;
 
-  static vpx_enc_frame_flags_t EncodeFlags(
-      const Vp8TemporalLayers::FrameConfig& references);
+  static vpx_enc_frame_flags_t EncodeFlags(const Vp8FrameConfig& references);
 
  private:
   void SetupTemporalLayers(const VideoCodec& codec);

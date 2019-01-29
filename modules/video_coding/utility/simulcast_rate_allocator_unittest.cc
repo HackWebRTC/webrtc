@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "api/video_codecs/vp8_frame_config.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "rtc_base/checks.h"
 #include "test/field_trial.h"
@@ -36,15 +37,14 @@ constexpr uint32_t kSimulcastScreenshareMaxBitrateKbps = 1250;
 
 class MockTemporalLayers : public Vp8TemporalLayers {
  public:
-  MOCK_METHOD1(UpdateLayerConfig, Vp8TemporalLayers::FrameConfig(uint32_t));
+  MOCK_METHOD1(UpdateLayerConfig, Vp8FrameConfig(uint32_t));
   MOCK_METHOD2(OnRatesUpdated, void(const std::vector<uint32_t>&, int));
   MOCK_METHOD1(UpdateConfiguration, bool(Vp8EncoderConfig*));
   MOCK_METHOD5(OnEncodeDone,
                void(uint32_t, size_t, bool, int, CodecSpecificInfoVP8*));
   MOCK_METHOD3(FrameEncoded, void(uint32_t, size_t, int));
   MOCK_CONST_METHOD0(Tl0PicIdx, uint8_t());
-  MOCK_CONST_METHOD1(GetTemporalLayerId,
-                     int(const Vp8TemporalLayers::FrameConfig&));
+  MOCK_CONST_METHOD1(GetTemporalLayerId, int(const Vp8FrameConfig&));
 };
 }  // namespace
 

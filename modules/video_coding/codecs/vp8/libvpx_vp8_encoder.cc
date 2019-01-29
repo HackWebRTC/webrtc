@@ -132,22 +132,27 @@ std::unique_ptr<VideoEncoder> VP8Encoder::Create() {
 }
 
 vpx_enc_frame_flags_t LibvpxVp8Encoder::EncodeFlags(
-    const Vp8TemporalLayers::FrameConfig& references) {
+    const Vp8FrameConfig& references) {
   RTC_DCHECK(!references.drop_frame);
 
   vpx_enc_frame_flags_t flags = 0;
 
-  if ((references.last_buffer_flags & Vp8TemporalLayers::kReference) == 0)
+  if ((references.last_buffer_flags &
+       Vp8FrameConfig::BufferFlags::kReference) == 0)
     flags |= VP8_EFLAG_NO_REF_LAST;
-  if ((references.last_buffer_flags & Vp8TemporalLayers::kUpdate) == 0)
+  if ((references.last_buffer_flags & Vp8FrameConfig::BufferFlags::kUpdate) ==
+      0)
     flags |= VP8_EFLAG_NO_UPD_LAST;
-  if ((references.golden_buffer_flags & Vp8TemporalLayers::kReference) == 0)
+  if ((references.golden_buffer_flags &
+       Vp8FrameConfig::BufferFlags::kReference) == 0)
     flags |= VP8_EFLAG_NO_REF_GF;
-  if ((references.golden_buffer_flags & Vp8TemporalLayers::kUpdate) == 0)
+  if ((references.golden_buffer_flags & Vp8FrameConfig::BufferFlags::kUpdate) ==
+      0)
     flags |= VP8_EFLAG_NO_UPD_GF;
-  if ((references.arf_buffer_flags & Vp8TemporalLayers::kReference) == 0)
+  if ((references.arf_buffer_flags & Vp8FrameConfig::BufferFlags::kReference) ==
+      0)
     flags |= VP8_EFLAG_NO_REF_ARF;
-  if ((references.arf_buffer_flags & Vp8TemporalLayers::kUpdate) == 0)
+  if ((references.arf_buffer_flags & Vp8FrameConfig::BufferFlags::kUpdate) == 0)
     flags |= VP8_EFLAG_NO_UPD_ARF;
   if (references.freeze_entropy)
     flags |= VP8_EFLAG_NO_UPD_ENTROPY;
@@ -757,7 +762,7 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
     }
   }
   vpx_enc_frame_flags_t flags[kMaxSimulcastStreams];
-  Vp8TemporalLayers::FrameConfig tl_configs[kMaxSimulcastStreams];
+  Vp8FrameConfig tl_configs[kMaxSimulcastStreams];
   for (size_t i = 0; i < encoders_.size(); ++i) {
     tl_configs[i] = temporal_layers_[i]->UpdateLayerConfig(frame.timestamp());
     if (tl_configs[i].drop_frame) {
