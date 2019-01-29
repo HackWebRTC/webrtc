@@ -136,7 +136,9 @@ class VideoAnalyzer : public PacketReceiver,
   class CapturedFrameForwarder : public rtc::VideoSinkInterface<VideoFrame>,
                                  public rtc::VideoSourceInterface<VideoFrame> {
    public:
-    explicit CapturedFrameForwarder(VideoAnalyzer* analyzer, Clock* clock);
+    CapturedFrameForwarder(VideoAnalyzer* analyzer,
+                           Clock* clock,
+                           int frames_to_process);
     void SetSource(rtc::VideoSourceInterface<VideoFrame>* video_source);
 
    private:
@@ -155,6 +157,8 @@ class VideoAnalyzer : public PacketReceiver,
         RTC_GUARDED_BY(crit_);
     VideoSourceInterface<VideoFrame>* video_source_;
     Clock* clock_;
+    int captured_frames_ RTC_GUARDED_BY(crit_);
+    int frames_to_process_ RTC_GUARDED_BY(crit_);
   };
 
   struct FrameWithPsnr {
@@ -240,6 +244,7 @@ class VideoAnalyzer : public PacketReceiver,
   int frames_recorded_;
   int frames_processed_;
   int dropped_frames_;
+  int captured_frames_;
   int dropped_frames_before_first_encode_;
   int dropped_frames_before_rendering_;
   int64_t last_render_time_;
