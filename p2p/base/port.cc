@@ -153,12 +153,6 @@ const int RTT_RATIO = 3;  // 3 : 1
 // it to a little higher than a total STUN timeout.
 const int kPortTimeoutDelay = cricket::STUN_TOTAL_TIMEOUT + 5000;
 
-// For packet loss estimation.
-const int64_t kConsiderPacketLostAfter = 3000;  // 3 seconds
-
-// For packet loss estimation.
-const int64_t kForgetPacketAfter = 30000;  // 30 seconds
-
 }  // namespace
 
 namespace cricket {
@@ -1120,7 +1114,6 @@ Connection::Connection(Port* port,
       last_ping_received_(0),
       last_data_received_(0),
       last_ping_response_received_(0),
-      packet_loss_estimator_(kConsiderPacketLostAfter, kForgetPacketAfter),
       reported_(false),
       state_(IceCandidatePairState::WAITING),
       time_created_ms_(rtc::TimeMillis()) {
@@ -1513,7 +1506,6 @@ void Connection::Ping(int64_t now) {
     nomination = nomination_;
   }
   pings_since_last_response_.push_back(SentPing(req->id(), now, nomination));
-  packet_loss_estimator_.ExpectResponse(req->id(), now);
   RTC_LOG(LS_VERBOSE) << ToString() << ": Sending STUN ping, id="
                       << rtc::hex_encode(req->id())
                       << ", nomination=" << nomination_;
@@ -1709,9 +1701,6 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
                    << rtt << ", pings_since_last_response=" << pings;
   }
   ReceivedPingResponse(rtt, request->id());
-
-  int64_t time_received = rtc::TimeMillis();
-  packet_loss_estimator_.ReceivedResponse(request->id(), time_received);
 
   stats_.recv_ping_responses++;
   LogCandidatePairEvent(
