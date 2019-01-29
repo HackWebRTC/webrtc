@@ -120,7 +120,7 @@ void RemoteAudioSource::AddSink(AudioTrackSinkInterface* sink) {
   }
 
   rtc::CritScope lock(&sink_lock_);
-  RTC_DCHECK(absl::c_linear_search(sinks_, sink));
+  RTC_DCHECK(!absl::c_linear_search(sinks_, sink));
   sinks_.push_back(sink);
 }
 
