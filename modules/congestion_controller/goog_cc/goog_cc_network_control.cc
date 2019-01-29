@@ -100,11 +100,11 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
       fall_back_to_probe_rate_(
           key_value_config_->Lookup("WebRTC-Bwe-ProbeRateFallback")
               .find("Enabled") == 0),
-      rate_control_experiments_(
+      rate_control_settings_(
           RateControlSettings::ParseFromKeyValueConfig(key_value_config_)),
       probe_controller_(new ProbeController(key_value_config_)),
       congestion_window_pushback_controller_(
-          rate_control_experiments_.UseCongestionWindowPushback()
+          rate_control_settings_.UseCongestionWindowPushback()
               ? absl::make_unique<CongestionWindowPushbackController>(
                     key_value_config_)
               : nullptr),
@@ -315,9 +315,13 @@ NetworkControlUpdate GoogCcNetworkController::OnStreamsConfig(
   }
   if (msg.max_total_allocated_bitrate &&
       *msg.max_total_allocated_bitrate != max_total_allocated_bitrate_) {
-    update.probe_cluster_configs =
-        probe_controller_->OnMaxTotalAllocatedBitrate(
-            msg.max_total_allocated_bitrate->bps(), msg.at_time.ms());
+    if (rate_control_settings_.TriggerProbeOnMaxAllocatedBitrateChange()) {
+      update.probe_cluster_configs =
+          probe_controller_->OnMaxTotalAllocatedBitrate(
+              msg.max_total_allocated_bitrate->bps(), msg.at_time.ms());
+    } else {
+      probe_controller_->SetMaxBitrate(msg.max_total_allocated_bitrate->bps());
+    }
     max_total_allocated_bitrate_ = *msg.max_total_allocated_bitrate;
   }
   bool pacing_changed = false;
@@ -544,7 +548,7 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
 
   // No valid RTT could be because send-side BWE isn't used, in which case
   // we don't try to limit the outstanding packets.
-  if (rate_control_experiments_.UseCongestionWindow() &&
+  if (rate_control_settings_.UseCongestionWindow() &&
       max_feedback_rtt.IsFinite()) {
     int64_t min_feedback_max_rtt_ms =
         *std::min_element(feedback_max_rtts_.begin(), feedback_max_rtts_.end());
@@ -552,7 +556,7 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
     const DataSize kMinCwnd = DataSize::bytes(2 * 1500);
     TimeDelta time_window = TimeDelta::ms(
         min_feedback_max_rtt_ms +
-        rate_control_experiments_.GetCongestionWindowAdditionalTimeMs());
+        rate_control_settings_.GetCongestionWindowAdditionalTimeMs());
     DataSize data_window = last_raw_target_rate_ * time_window;
     if (current_data_window_) {
       data_window =

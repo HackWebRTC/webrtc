@@ -44,6 +44,8 @@ class RateControlSettings final {
   double GetSimulcastVideoHysteresisFactor() const;
   double GetSimulcastScreenshareHysteresisFactor() const;
 
+  bool TriggerProbeOnMaxAllocatedBitrateChange() const;
+
  private:
   explicit RateControlSettings(
       const WebRtcKeyValueConfig* const key_value_config);
@@ -56,6 +58,7 @@ class RateControlSettings final {
   FieldTrialParameter<bool> trust_vp9_;
   FieldTrialParameter<double> video_hysteresis_;
   FieldTrialParameter<double> screenshare_hysteresis_;
+  FieldTrialParameter<bool> probe_max_allocation_;
 };
 
 }  // namespace webrtc
