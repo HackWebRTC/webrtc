@@ -20,12 +20,12 @@
   'masters': {
     'client.webrtc': {
       # iOS
-      'iOS32 Debug': 'ios',
-      'iOS32 Release': 'ios',
-      'iOS64 Debug': 'ios',
-      'iOS64 Release': 'ios',
-      'iOS64 Sim Debug (iOS 9.0)': 'ios',
-      'iOS64 Sim Debug (iOS 10.0)': 'ios',
+      'iOS32 Debug': 'ios_debug_bot_arm',
+      'iOS32 Release': 'ios_release_bot_arm',
+      'iOS64 Debug': 'ios_debug_bot_arm64',
+      'iOS64 Release': 'ios_release_bot_arm64',
+      'iOS64 Sim Debug (iOS 9.0)': 'ios_debug_bot_x64',
+      'iOS64 Sim Debug (iOS 10.0)': 'ios_debug_bot_x64',
 
       # Mac
       'Mac64 Debug': 'debug_bot_x64',
@@ -136,24 +136,23 @@
       }
     },
     'internal.client.webrtc': {
-      'iOS64 Debug': 'ios',
-      'iOS64 Perf': 'ios',
-      'iOS64 Release': 'ios',
+      'iOS64 Debug': 'ios_internal_debug_bot_arm64',
+      'iOS64 Perf': 'ios_internal_release_bot_arm64',
+      'iOS64 Release': 'ios_internal_release_bot_arm64',
     },
     'internal.tryserver.webrtc': {
-      'ios_arm64_dbg': 'ios',
-      'ios_arm64_rel': 'ios',
+      'ios_arm64_dbg': 'ios_internal_debug_bot_arm64',
+      'ios_arm64_rel': 'ios_internal_release_bot_arm64',
     },
     'tryserver.webrtc': {
       # iOS
-      'ios_compile_arm_dbg': 'ios',
-      'ios_compile_arm_rel': 'ios',
-      'ios_compile_arm64_dbg': 'ios',
-      'ios_compile_arm64_rel': 'ios',
-      'ios_sim_x86_dbg_ios9': 'ios',
-      'ios_sim_x64_dbg_ios9': 'ios',
-      'ios_sim_x64_dbg_ios10': 'ios',
-      'ios_sim_x64_dbg_ios11': 'ios',
+      'ios_compile_arm_dbg': 'ios_debug_bot_arm',
+      'ios_compile_arm_rel': 'ios_release_bot_arm',
+      'ios_compile_arm64_dbg': 'ios_debug_bot_arm64',
+      'ios_compile_arm64_rel': 'ios_release_bot_arm64',
+      'ios_sim_x64_dbg_ios9': 'ios_debug_bot_x64',
+      'ios_sim_x64_dbg_ios10': 'ios_debug_bot_x64',
+      'ios_sim_x64_dbg_ios11': 'ios_debug_bot_x64',
 
       # Mac
       'mac_compile_dbg': 'debug_bot_x64',
@@ -311,13 +310,6 @@
       'x64', 'no_rtc_tests'
     ],
 
-    # iOS
-    # The 'ios' config is just used for auditing. iOS bots
-    # use the ios recipes and look up their GN arguments via files checked in
-    # under //tools_webrtc/ios/bots. It is an error to actually use one of these
-    # configs to generate the build files.
-    'ios': [ 'error'],
-
     # Windows
     'win_clang_debug_bot_x86': [
       'clang', 'openh264', 'debug_bot', 'x86',
@@ -393,6 +385,29 @@
     ],
     'android_asan_shared_release_bot_arm': [
       'android', 'asan', 'clang', 'release_bot', 'arm'
+    ],
+
+    # iOS
+    'ios_debug_bot_arm': [
+      'ios', 'debug_bot', 'arm', 'no_ios_code_signing'
+    ],
+    'ios_release_bot_arm': [
+      'ios', 'release_bot', 'arm', 'no_ios_code_signing'
+    ],
+    'ios_debug_bot_arm64': [
+      'ios', 'debug_bot', 'arm64', 'no_ios_code_signing'
+    ],
+    'ios_release_bot_arm64': [
+      'ios', 'release_bot', 'arm64', 'no_ios_code_signing'
+    ],
+    'ios_internal_debug_bot_arm64': [
+      'ios', 'debug_bot', 'arm64'
+    ],
+    'ios_internal_release_bot_arm64': [
+      'ios', 'release_bot', 'arm64'
+    ],
+    'ios_debug_bot_x64': [
+      'ios', 'debug_bot', 'x64'
     ],
 
     # More configs
@@ -495,6 +510,10 @@
       'gn_args': 'use_goma=true',
     },
 
+    'ios': {
+      'gn_args': 'target_os="ios"',
+    },
+
     'no_goma': {
       'gn_args': 'use_goma=false',
     },
@@ -518,6 +537,10 @@
 
     'no_clang': {
       'gn_args': 'is_clang=false',
+    },
+
+    'no_ios_code_signing': {
+      'gn_args': 'ios_enable_code_signing=false',
     },
 
     'no_lld': {
