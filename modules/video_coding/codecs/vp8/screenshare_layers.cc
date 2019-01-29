@@ -15,6 +15,7 @@
 #include <memory>
 
 #include "modules/video_coding/include/video_codec_interface.h"
+#include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
@@ -292,10 +293,9 @@ void ScreenshareLayers::OnEncodeDone(uint32_t rtp_timestamp,
       vp8_info->temporalIdx = frame_config->packetizer_temporal_idx;
       vp8_info->layerSync = frame_config->layer_sync;
     } else {
-      // Frame requested to be dropped, but was not. Fall back to base-layer.
-      vp8_info->temporalIdx = 0;
-      vp8_info->layerSync = false;
+      RTC_DCHECK(is_keyframe);
     }
+
     if (is_keyframe) {
       vp8_info->temporalIdx = 0;
       last_sync_timestamp_ = unwrapped_timestamp;
@@ -303,6 +303,26 @@ void ScreenshareLayers::OnEncodeDone(uint32_t rtp_timestamp,
       layers_[0].state = TemporalLayer::State::kKeyFrame;
       layers_[1].state = TemporalLayer::State::kKeyFrame;
       active_layer_ = 1;
+    }
+
+    vp8_info->useExplicitDependencies = true;
+    RTC_DCHECK_EQ(vp8_info->referencedBuffersCount, 0u);
+    RTC_DCHECK_EQ(vp8_info->updatedBuffersCount, 0u);
+
+    // Note that |frame_config| is not derefernced if |is_keyframe|,
+    // meaning it's never dereferenced if the optional may be unset.
+    for (int i = 0; i < static_cast<int>(Buffer::kCount); ++i) {
+      if (!is_keyframe && frame_config->References(static_cast<Buffer>(i))) {
+        RTC_DCHECK_LT(vp8_info->referencedBuffersCount,
+                      arraysize(CodecSpecificInfoVP8::referencedBuffers));
+        vp8_info->referencedBuffers[vp8_info->referencedBuffersCount++] = i;
+      }
+
+      if (is_keyframe || frame_config->Updates(static_cast<Buffer>(i))) {
+        RTC_DCHECK_LT(vp8_info->updatedBuffersCount,
+                      arraysize(CodecSpecificInfoVP8::updatedBuffers));
+        vp8_info->updatedBuffers[vp8_info->updatedBuffersCount++] = i;
+      }
     }
   }
 
