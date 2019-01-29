@@ -285,6 +285,7 @@ if (rtc_include_tests) {
       "../media:rtc_media_base",
       "../media:rtc_media_tests_utils",
       "../modules/rtp_rtcp:rtp_rtcp_format",
+      "../p2p:fake_ice_transport",
       "../p2p:p2p_test_utils",
       "../p2p:rtc_p2p",
       "../rtc_base:checks",
