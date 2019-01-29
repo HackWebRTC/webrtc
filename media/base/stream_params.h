@@ -47,11 +47,11 @@
 #define MEDIA_BASE_STREAM_PARAMS_H_
 
 #include <stddef.h>
-#include <algorithm>
 #include <cstdint>
 #include <string>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "media/base/rid_description.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/unique_id_generator.h"
@@ -114,7 +114,7 @@ struct StreamParams {
   }
   bool has_ssrcs() const { return !ssrcs.empty(); }
   bool has_ssrc(uint32_t ssrc) const {
-    return std::find(ssrcs.begin(), ssrcs.end(), ssrc) != ssrcs.end();
+    return absl::c_linear_search(ssrcs, ssrc);
   }
   void add_ssrc(uint32_t ssrc) { ssrcs.push_back(ssrc); }
   bool has_ssrc_groups() const { return !ssrc_groups.empty(); }
@@ -296,15 +296,13 @@ struct MediaStreams {
 template <class Condition>
 const StreamParams* GetStream(const StreamParamsVec& streams,
                               Condition condition) {
-  StreamParamsVec::const_iterator found =
-      std::find_if(streams.begin(), streams.end(), condition);
+  auto found = absl::c_find_if(streams, condition);
   return found == streams.end() ? nullptr : &(*found);
 }
 
 template <class Condition>
 StreamParams* GetStream(StreamParamsVec& streams, Condition condition) {
-  StreamParamsVec::iterator found =
-      std::find_if(streams.begin(), streams.end(), condition);
+  auto found = absl::c_find_if(streams, condition);
   return found == streams.end() ? nullptr : &(*found);
 }
 

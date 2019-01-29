@@ -10,8 +10,8 @@
 
 #include <stdint.h>
 #include <string.h>
-#include <algorithm>
 
+#include "absl/algorithm/container.h"
 #include "media/base/fake_rtp.h"
 #include "rtc_base/checks.h"
 #include "test/gtest.h"
@@ -53,9 +53,7 @@ void CompareHeaderExtensions(const char* packet1,
 
     // The header extension doesn't get encrypted if the id is not in the
     // list of header extensions to encrypt.
-    if (expect_equal ||
-        std::find(encrypted_headers.begin(), encrypted_headers.end(), id) ==
-            encrypted_headers.end()) {
+    if (expect_equal || !absl::c_linear_search(encrypted_headers, id)) {
       EXPECT_EQ(0, memcmp(extension_data1, extension_data2, len));
     } else {
       EXPECT_NE(0, memcmp(extension_data1, extension_data2, len));

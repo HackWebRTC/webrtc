@@ -10,9 +10,9 @@
 
 #include "media/engine/webrtc_media_engine.h"
 
-#include <algorithm>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video_codecs/video_decoder_factory.h"
@@ -82,8 +82,8 @@ void DiscardRedundantExtensions(
   RTC_DCHECK(extensions);
   bool found = false;
   for (const char* uri : extensions_decreasing_prio) {
-    auto it = std::find_if(
-        extensions->begin(), extensions->end(),
+    auto it = absl::c_find_if(
+        *extensions,
         [uri](const webrtc::RtpExtension& rhs) { return rhs.uri == uri; });
     if (it != extensions->end()) {
       if (found) {
@@ -135,8 +135,8 @@ std::vector<webrtc::RtpExtension> FilterRtpExtensions(
   // Sort by name, ascending (prioritise encryption), so that we don't reset
   // extensions if they were specified in a different order (also allows us
   // to use std::unique below).
-  std::sort(
-      result.begin(), result.end(),
+  absl::c_sort(
+      result,
       [](const webrtc::RtpExtension& rhs, const webrtc::RtpExtension& lhs) {
         return rhs.encrypt == lhs.encrypt ? rhs.uri < lhs.uri
                                           : rhs.encrypt > lhs.encrypt;

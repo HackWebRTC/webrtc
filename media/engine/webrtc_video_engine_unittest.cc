@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <algorithm>
 #include <map>
 #include <memory>
 #include <utility>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "api/rtp_parameters.h"
@@ -681,8 +681,7 @@ WebRtcVideoEngineTest::SetSendParamsWithAllSupportedCodecs() {
   for (const webrtc::SdpVideoFormat& format :
        encoder_factory_->GetSupportedFormats()) {
     cricket::VideoCodec engine_codec = GetEngineCodec(format.name);
-    if (std::find(parameters.codecs.begin(), parameters.codecs.end(),
-                  engine_codec) == parameters.codecs.end()) {
+    if (!absl::c_linear_search(parameters.codecs, engine_codec)) {
       parameters.codecs.push_back(engine_codec);
     }
   }
@@ -878,23 +877,15 @@ TEST_F(WebRtcVideoEngineTest,
        Flexfec03SupportedAsInternalCodecBehindFieldTrial) {
   encoder_factory_->AddSupportedVideoCodecType("VP8");
 
-  auto is_flexfec = [](const VideoCodec& codec) {
-    if (codec.name == "flexfec-03")
-      return true;
-    return false;
-  };
+  auto flexfec = Field("name", &VideoCodec::name, "flexfec-03");
 
   // FlexFEC is not active without field trial.
-  const std::vector<VideoCodec> codecs_before = engine_.codecs();
-  EXPECT_EQ(codecs_before.end(), std::find_if(codecs_before.begin(),
-                                              codecs_before.end(), is_flexfec));
+  EXPECT_THAT(engine_.codecs(), Not(Contains(flexfec)));
 
   // FlexFEC is active with field trial.
   webrtc::test::ScopedFieldTrials override_field_trials_(
       "WebRTC-FlexFEC-03-Advertised/Enabled/");
-  const std::vector<VideoCodec> codecs_after = engine_.codecs();
-  EXPECT_NE(codecs_after.end(),
-            std::find_if(codecs_after.begin(), codecs_after.end(), is_flexfec));
+  EXPECT_THAT(engine_.codecs(), Contains(flexfec));
 }
 
 // Test that codecs are added in the order they are reported from the factory.
@@ -2461,8 +2452,7 @@ TEST_F(WebRtcVideoChannelTest, IdenticalSendExtensionsDoesntRecreateStream) {
 
   // Setting the same extensions (even if in different order) shouldn't
   // reallocate the stream.
-  std::reverse(send_parameters_.extensions.begin(),
-               send_parameters_.extensions.end());
+  absl::c_reverse(send_parameters_.extensions);
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
 
   EXPECT_EQ(1, fake_call_->GetNumCreatedSendStreams());
@@ -2494,8 +2484,7 @@ TEST_F(WebRtcVideoChannelTest, IdenticalRecvExtensionsDoesntRecreateStream) {
 
   // Setting the same extensions (even if in different order) shouldn't
   // reallocate the stream.
-  std::reverse(recv_parameters_.extensions.begin(),
-               recv_parameters_.extensions.end());
+  absl::c_reverse(recv_parameters_.extensions);
   EXPECT_TRUE(channel_->SetRecvParameters(recv_parameters_));
 
   EXPECT_EQ(1, fake_call_->GetNumCreatedReceiveStreams());
@@ -6869,16 +6858,12 @@ TEST_F(WebRtcVideoChannelTestWithClock, GetContributingSources) {
     std::vector<webrtc::RtpSource> sources = channel_->GetSources(kSsrc);
     EXPECT_EQ(sources[0].timestamp_ms(), sources[1].timestamp_ms());
     // 1 SSRC and 1 CSRC.
-    EXPECT_EQ(1, std::count_if(sources.begin(), sources.end(),
-                               [](const webrtc::RtpSource& source) {
-                                 return source.source_type() ==
-                                        webrtc::RtpSourceType::SSRC;
-                               }));
-    EXPECT_EQ(1, std::count_if(sources.begin(), sources.end(),
-                               [](const webrtc::RtpSource& source) {
-                                 return source.source_type() ==
-                                        webrtc::RtpSourceType::CSRC;
-                               }));
+    EXPECT_EQ(1, absl::c_count_if(sources, [](const webrtc::RtpSource& source) {
+                return source.source_type() == webrtc::RtpSourceType::SSRC;
+              }));
+    EXPECT_EQ(1, absl::c_count_if(sources, [](const webrtc::RtpSource& source) {
+                return source.source_type() == webrtc::RtpSourceType::CSRC;
+              }));
   }
   int64_t timestamp1 = channel_->GetSources(kSsrc)[0].timestamp_ms();
 
@@ -6898,22 +6883,18 @@ TEST_F(WebRtcVideoChannelTestWithClock, GetContributingSources) {
     std::vector<webrtc::RtpSource> sources = channel_->GetSources(kSsrc);
     EXPECT_NE(sources[0].timestamp_ms(), sources[1].timestamp_ms());
     // 1 SSRC and 1 CSRC.
-    EXPECT_EQ(1, std::count_if(sources.begin(), sources.end(),
-                               [](const webrtc::RtpSource& source) {
-                                 return source.source_type() ==
-                                        webrtc::RtpSourceType::SSRC;
-                               }));
-    EXPECT_EQ(1, std::count_if(sources.begin(), sources.end(),
-                               [](const webrtc::RtpSource& source) {
-                                 return source.source_type() ==
-                                        webrtc::RtpSourceType::CSRC;
-                               }));
-    auto ssrcSource = std::find_if(
-        sources.begin(), sources.end(), [](const webrtc::RtpSource& source) {
+    EXPECT_EQ(1, absl::c_count_if(sources, [](const webrtc::RtpSource& source) {
+                return source.source_type() == webrtc::RtpSourceType::SSRC;
+              }));
+    EXPECT_EQ(1, absl::c_count_if(sources, [](const webrtc::RtpSource& source) {
+                return source.source_type() == webrtc::RtpSourceType::CSRC;
+              }));
+    auto ssrcSource =
+        absl::c_find_if(sources, [](const webrtc::RtpSource& source) {
           return source.source_type() == webrtc::RtpSourceType::SSRC;
         });
-    auto csrcSource = std::find_if(
-        sources.begin(), sources.end(), [](const webrtc::RtpSource& source) {
+    auto csrcSource =
+        absl::c_find_if(sources, [](const webrtc::RtpSource& source) {
           return source.source_type() == webrtc::RtpSourceType::CSRC;
         });
 
@@ -6928,16 +6909,12 @@ TEST_F(WebRtcVideoChannelTestWithClock, GetContributingSources) {
     ASSERT_EQ(1u, channel_->GetSources(kSsrc).size());
     EXPECT_EQ(0u, channel_->GetSources(kCsrc).size());
     std::vector<webrtc::RtpSource> sources = channel_->GetSources(kSsrc);
-    EXPECT_EQ(1, std::count_if(sources.begin(), sources.end(),
-                               [](const webrtc::RtpSource& source) {
-                                 return source.source_type() ==
-                                        webrtc::RtpSourceType::SSRC;
-                               }));
-    EXPECT_EQ(0, std::count_if(sources.begin(), sources.end(),
-                               [](const webrtc::RtpSource& source) {
-                                 return source.source_type() ==
-                                        webrtc::RtpSourceType::CSRC;
-                               }));
+    EXPECT_EQ(1, absl::c_count_if(sources, [](const webrtc::RtpSource& source) {
+                return source.source_type() == webrtc::RtpSourceType::SSRC;
+              }));
+    EXPECT_EQ(0, absl::c_count_if(sources, [](const webrtc::RtpSource& source) {
+                return source.source_type() == webrtc::RtpSourceType::CSRC;
+              }));
   }
 
   fake_clock_.AdvanceTime(webrtc::TimeDelta::ms(1));

@@ -10,11 +10,11 @@
 
 #include <stdio.h>
 #include <string.h>
-#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "media/sctp/sctp_transport.h"
 #include "p2p/base/fake_dtls_transport.h"
 #include "rtc_base/copy_on_write_buffer.h"
@@ -75,12 +75,11 @@ class SctpTransportObserver : public sigslot::has_slots<> {
   }
 
   int StreamCloseCount(int stream) {
-    return std::count(closed_streams_.begin(), closed_streams_.end(), stream);
+    return absl::c_count(closed_streams_, stream);
   }
 
   bool WasStreamClosed(int stream) {
-    return std::find(closed_streams_.begin(), closed_streams_.end(), stream) !=
-           closed_streams_.end();
+    return absl::c_linear_search(closed_streams_, stream);
   }
 
   bool ReadyToSend() { return ready_to_send_; }
@@ -102,9 +101,7 @@ class SignalTransportClosedReopener : public sigslot::has_slots<> {
   SignalTransportClosedReopener(SctpTransport* transport, SctpTransport* peer)
       : transport_(transport), peer_(peer) {}
 
-  int StreamCloseCount(int stream) {
-    return std::count(streams_.begin(), streams_.end(), stream);
-  }
+  int StreamCloseCount(int stream) { return absl::c_count(streams_, stream); }
 
  private:
   void OnStreamClosed(int stream) {

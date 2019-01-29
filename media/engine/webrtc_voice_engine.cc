@@ -19,6 +19,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/strings/match.h"
 #include "api/audio_codecs/audio_codec_pair_id.h"
 #include "api/call/audio_sink.h"
@@ -125,12 +126,10 @@ bool VerifyUniquePayloadTypes(const std::vector<AudioCodec>& codecs) {
     return true;
   }
   std::vector<int> payload_types;
-  for (const AudioCodec& codec : codecs) {
-    payload_types.push_back(codec.id);
-  }
-  std::sort(payload_types.begin(), payload_types.end());
-  auto it = std::unique(payload_types.begin(), payload_types.end());
-  return it == payload_types.end();
+  absl::c_transform(codecs, std::back_inserter(payload_types),
+                    [](const AudioCodec& codec) { return codec.id; });
+  absl::c_sort(payload_types);
+  return absl::c_adjacent_find(payload_types) == payload_types.end();
 }
 
 absl::optional<std::string> GetAudioNetworkAdaptorConfig(
@@ -579,7 +578,7 @@ void WebRtcVoiceEngine::RegisterChannel(WebRtcVoiceMediaChannel* channel) {
 
 void WebRtcVoiceEngine::UnregisterChannel(WebRtcVoiceMediaChannel* channel) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  auto it = std::find(channels_.begin(), channels_.end(), channel);
+  auto it = absl::c_find(channels_, channel);
   RTC_DCHECK(it != channels_.end());
   channels_.erase(it);
 }
@@ -2029,9 +2028,7 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
   if (!GetRtpSsrc(packet->cdata(), packet->size(), &ssrc)) {
     return;
   }
-  RTC_DCHECK(std::find(unsignaled_recv_ssrcs_.begin(),
-                       unsignaled_recv_ssrcs_.end(),
-                       ssrc) == unsignaled_recv_ssrcs_.end());
+  RTC_DCHECK(!absl::c_linear_search(unsignaled_recv_ssrcs_, ssrc));
 
   // Add new stream.
   StreamParams sp = unsignaled_stream_params_;
@@ -2181,7 +2178,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=8158
     if (!unsignaled_recv_ssrcs_.empty()) {
       auto end_it = --unsignaled_recv_ssrcs_.end();
-      if (std::find(unsignaled_recv_ssrcs_.begin(), end_it, ssrc) != end_it) {
+      if (absl::linear_search(unsignaled_recv_ssrcs_.begin(), end_it, ssrc)) {
         continue;
       }
     }
@@ -2280,8 +2277,7 @@ std::vector<webrtc::RtpSource> WebRtcVoiceMediaChannel::GetSources(
 bool WebRtcVoiceMediaChannel::MaybeDeregisterUnsignaledRecvStream(
     uint32_t ssrc) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  auto it = std::find(unsignaled_recv_ssrcs_.begin(),
-                      unsignaled_recv_ssrcs_.end(), ssrc);
+  auto it = absl::c_find(unsignaled_recv_ssrcs_, ssrc);
   if (it != unsignaled_recv_ssrcs_.end()) {
     unsignaled_recv_ssrcs_.erase(it);
     return true;

@@ -10,8 +10,7 @@
 
 #include "media/base/codec.h"
 
-#include <algorithm>
-
+#include "absl/algorithm/container.h"
 #include "absl/strings/match.h"
 #include "media/base/h264_profile_level_id.h"
 #include "media/base/vp9_profile.h"
@@ -35,7 +34,7 @@ bool FeedbackParams::operator==(const FeedbackParams& other) const {
 }
 
 bool FeedbackParams::Has(const FeedbackParam& param) const {
-  return std::find(params_.begin(), params_.end(), param) != params_.end();
+  return absl::c_linear_search(params_, param);
 }
 
 void FeedbackParams::Add(const FeedbackParam& param) {

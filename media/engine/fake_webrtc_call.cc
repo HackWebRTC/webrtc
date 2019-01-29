@@ -10,9 +10,9 @@
 
 #include "media/engine/fake_webrtc_call.h"
 
-#include <algorithm>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "api/call/audio_sink.h"
 #include "media/base/rtp_utils.h"
 #include "rtc_base/checks.h"
@@ -467,9 +467,8 @@ webrtc::AudioSendStream* FakeCall::CreateAudioSendStream(
 }
 
 void FakeCall::DestroyAudioSendStream(webrtc::AudioSendStream* send_stream) {
-  auto it = std::find(audio_send_streams_.begin(),
-                      audio_send_streams_.end(),
-                      static_cast<FakeAudioSendStream*>(send_stream));
+  auto it = absl::c_find(audio_send_streams_,
+                         static_cast<FakeAudioSendStream*>(send_stream));
   if (it == audio_send_streams_.end()) {
     ADD_FAILURE() << "DestroyAudioSendStream called with unknown parameter.";
   } else {
@@ -488,9 +487,8 @@ webrtc::AudioReceiveStream* FakeCall::CreateAudioReceiveStream(
 
 void FakeCall::DestroyAudioReceiveStream(
     webrtc::AudioReceiveStream* receive_stream) {
-  auto it = std::find(audio_receive_streams_.begin(),
-                      audio_receive_streams_.end(),
-                      static_cast<FakeAudioReceiveStream*>(receive_stream));
+  auto it = absl::c_find(audio_receive_streams_,
+                         static_cast<FakeAudioReceiveStream*>(receive_stream));
   if (it == audio_receive_streams_.end()) {
     ADD_FAILURE() << "DestroyAudioReceiveStream called with unknown parameter.";
   } else {
@@ -510,9 +508,8 @@ webrtc::VideoSendStream* FakeCall::CreateVideoSendStream(
 }
 
 void FakeCall::DestroyVideoSendStream(webrtc::VideoSendStream* send_stream) {
-  auto it = std::find(video_send_streams_.begin(),
-                      video_send_streams_.end(),
-                      static_cast<FakeVideoSendStream*>(send_stream));
+  auto it = absl::c_find(video_send_streams_,
+                         static_cast<FakeVideoSendStream*>(send_stream));
   if (it == video_send_streams_.end()) {
     ADD_FAILURE() << "DestroyVideoSendStream called with unknown parameter.";
   } else {
@@ -531,9 +528,8 @@ webrtc::VideoReceiveStream* FakeCall::CreateVideoReceiveStream(
 
 void FakeCall::DestroyVideoReceiveStream(
     webrtc::VideoReceiveStream* receive_stream) {
-  auto it = std::find(video_receive_streams_.begin(),
-                      video_receive_streams_.end(),
-                      static_cast<FakeVideoReceiveStream*>(receive_stream));
+  auto it = absl::c_find(video_receive_streams_,
+                         static_cast<FakeVideoReceiveStream*>(receive_stream));
   if (it == video_receive_streams_.end()) {
     ADD_FAILURE() << "DestroyVideoReceiveStream called with unknown parameter.";
   } else {
@@ -552,9 +548,9 @@ webrtc::FlexfecReceiveStream* FakeCall::CreateFlexfecReceiveStream(
 
 void FakeCall::DestroyFlexfecReceiveStream(
     webrtc::FlexfecReceiveStream* receive_stream) {
-  auto it = std::find(flexfec_receive_streams_.begin(),
-                      flexfec_receive_streams_.end(),
-                      static_cast<FakeFlexfecReceiveStream*>(receive_stream));
+  auto it =
+      absl::c_find(flexfec_receive_streams_,
+                   static_cast<FakeFlexfecReceiveStream*>(receive_stream));
   if (it == flexfec_receive_streams_.end()) {
     ADD_FAILURE()
         << "DestroyFlexfecReceiveStream called with unknown parameter.";

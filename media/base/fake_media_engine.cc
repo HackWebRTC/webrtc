@@ -12,6 +12,7 @@
 
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "rtc_base/checks.h"
@@ -482,7 +483,7 @@ FakeVoiceMediaChannel* FakeVoiceEngine::GetChannel(size_t index) {
   return (channels_.size() > index) ? channels_[index] : NULL;
 }
 void FakeVoiceEngine::UnregisterChannel(VoiceMediaChannel* channel) {
-  channels_.erase(std::find(channels_.begin(), channels_.end(), channel));
+  channels_.erase(absl::c_find(channels_, channel));
 }
 const std::vector<AudioCodec>& FakeVoiceEngine::send_codecs() const {
   return codecs_;
@@ -537,7 +538,7 @@ FakeVideoMediaChannel* FakeVideoEngine::GetChannel(size_t index) {
   return (channels_.size() > index) ? channels_[index] : nullptr;
 }
 void FakeVideoEngine::UnregisterChannel(VideoMediaChannel* channel) {
-  auto it = std::find(channels_.begin(), channels_.end(), channel);
+  auto it = absl::c_find(channels_, channel);
   RTC_DCHECK(it != channels_.end());
   channels_.erase(it);
 }
@@ -586,7 +587,7 @@ FakeDataMediaChannel* FakeDataEngine::GetChannel(size_t index) {
   return (channels_.size() > index) ? channels_[index] : NULL;
 }
 void FakeDataEngine::UnregisterChannel(DataMediaChannel* channel) {
-  channels_.erase(std::find(channels_.begin(), channels_.end(), channel));
+  channels_.erase(absl::c_find(channels_, channel));
 }
 void FakeDataEngine::SetDataCodecs(const std::vector<DataCodec>& data_codecs) {
   data_codecs_ = data_codecs;

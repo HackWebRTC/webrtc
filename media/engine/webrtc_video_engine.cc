@@ -560,10 +560,6 @@ WebRtcVideoChannel::SelectSendVideoCodec(
 bool WebRtcVideoChannel::NonFlexfecReceiveCodecsHaveChanged(
     std::vector<VideoCodecSettings> before,
     std::vector<VideoCodecSettings> after) {
-  if (before.size() != after.size()) {
-    return true;
-  }
-
   // The receive codec order doesn't matter, so we sort the codecs before
   // comparing. This is necessary because currently the
   // only way to change the send codec is to munge SDP, which causes
@@ -576,14 +572,14 @@ bool WebRtcVideoChannel::NonFlexfecReceiveCodecsHaveChanged(
                        const VideoCodecSettings& codec2) {
     return codec1.codec.id > codec2.codec.id;
   };
-  std::sort(before.begin(), before.end(), comparison);
-  std::sort(after.begin(), after.end(), comparison);
+  absl::c_sort(before, comparison);
+  absl::c_sort(after, comparison);
 
   // Changes in FlexFEC payload type are handled separately in
   // WebRtcVideoChannel::GetChangedRecvParameters, so disregard FlexFEC in the
   // comparison here.
-  return !std::equal(before.begin(), before.end(), after.begin(),
-                     VideoCodecSettings::EqualsDisregardingFlexfec);
+  return !absl::c_equal(before, after,
+                        VideoCodecSettings::EqualsDisregardingFlexfec);
 }
 
 bool WebRtcVideoChannel::GetChangedSendParameters(

@@ -11,9 +11,9 @@
 #include "media/base/stream_params.h"
 
 #include <stdint.h>
-#include <algorithm>
 #include <list>
 
+#include "absl/algorithm/container.h"
 #include "api/array_view.h"
 #include "rtc_base/strings/string_builder.h"
 
@@ -153,8 +153,7 @@ bool StreamParams::operator==(const StreamParams& other) const {
           ssrc_groups == other.ssrc_groups && cname == other.cname &&
           stream_ids_ == other.stream_ids_ &&
           // RIDs are not required to be in the same order for equality.
-          rids_.size() == other.rids_.size() &&
-          std::is_permutation(rids_.begin(), rids_.end(), other.rids_.begin()));
+          absl::c_is_permutation(rids_, other.rids_));
 }
 
 std::string StreamParams::ToString() const {
@@ -328,8 +327,7 @@ bool IsOneSsrcStream(const StreamParams& sp) {
 
 namespace {
 void RemoveFirst(std::list<uint32_t>* ssrcs, uint32_t value) {
-  std::list<uint32_t>::iterator it =
-      std::find(ssrcs->begin(), ssrcs->end(), value);
+  auto it = absl::c_find(*ssrcs, value);
   if (it != ssrcs->end()) {
     ssrcs->erase(it);
   }

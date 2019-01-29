@@ -10,8 +10,7 @@
 
 #include "media/base/video_source_base.h"
 
-#include <algorithm>
-
+#include "absl/algorithm/container.h"
 #include "rtc_base/checks.h"
 
 namespace rtc {
@@ -44,8 +43,8 @@ void VideoSourceBase::RemoveSink(VideoSinkInterface<webrtc::VideoFrame>* sink) {
 
 VideoSourceBase::SinkPair* VideoSourceBase::FindSinkPair(
     const VideoSinkInterface<webrtc::VideoFrame>* sink) {
-  auto sink_pair_it = std::find_if(
-      sinks_.begin(), sinks_.end(),
+  auto sink_pair_it = absl::c_find_if(
+      sinks_,
       [sink](const SinkPair& sink_pair) { return sink_pair.sink == sink; });
   if (sink_pair_it != sinks_.end()) {
     return &*sink_pair_it;
