@@ -41,6 +41,7 @@ class RTCStatsTraversalTest : public testing::Test {
 
   void TakeReferencedStats(std::vector<const RTCStats*> start_nodes) {
     std::vector<std::string> start_ids;
+    start_ids.reserve(start_nodes.size());
     for (const RTCStats* start_node : start_nodes) {
       start_ids.push_back(start_node->id());
     }

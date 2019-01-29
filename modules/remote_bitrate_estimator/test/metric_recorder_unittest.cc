@@ -72,6 +72,7 @@ TEST_F(MetricRecorderTest, VariableDelayPackets) {
   const int kNumPackets = 1000;
 
   std::vector<int64_t> delays_ms;
+  delays_ms.reserve(kNumPackets);
   for (int i = 0; i < kNumPackets; ++i) {
     delays_ms.push_back(static_cast<int64_t>(i + 1));
   }

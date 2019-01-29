@@ -329,6 +329,7 @@ void BweTest::RunFairnessTest(BandwidthEstimatorType bwe_type,
   jitter.SetMaxJitter(max_jitter_ms);
 
   std::vector<RateCounterFilter*> rate_counters;
+  rate_counters.reserve(media_flow_ids.size());
   for (int flow : media_flow_ids) {
     rate_counters.push_back(
         new RateCounterFilter(&uplink_, flow, "Receiver", bwe_names[bwe_type]));

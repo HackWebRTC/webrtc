@@ -45,6 +45,7 @@ const int kTransmissionMaxBitrateMultiplier = 2;
 std::vector<uint32_t> BitrateAllocationStrategy::SetAllBitratesToMinimum(
     const std::vector<BitrateAllocationStrategy::TrackConfig>& track_configs) {
   std::vector<uint32_t> track_allocations;
+  track_allocations.reserve(track_configs.size());
   for (const auto& track_config : track_configs) {
     track_allocations.push_back(track_config.min_bitrate_bps);
   }

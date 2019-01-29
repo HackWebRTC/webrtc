@@ -282,6 +282,7 @@ SdpContentMutator RemoveRtcpMux() {
 std::vector<int> GetCandidateComponents(
     const std::vector<IceCandidateInterface*> candidates) {
   std::vector<int> components;
+  components.reserve(candidates.size());
   for (auto* candidate : candidates) {
     components.push_back(candidate->candidate().component());
   }

@@ -266,6 +266,7 @@ static void AddRtxCodec(const VideoCodec& rtx_codec,
 template <class T>
 static std::vector<std::string> GetCodecNames(const std::vector<T>& codecs) {
   std::vector<std::string> codec_names;
+  codec_names.reserve(codecs.size());
   for (const auto& codec : codecs) {
     codec_names.push_back(codec.name);
   }

@@ -116,6 +116,7 @@ TEST(BuiltinAudioEncoderFactoryTest, SupportsTheExpectedFormats) {
 
   const std::vector<SdpAudioFormat> supported_formats = [&specs] {
     std::vector<SdpAudioFormat> formats;
+    formats.reserve(specs.size());
     for (const auto& spec : specs) {
       formats.push_back(spec.format);
     }

@@ -75,6 +75,7 @@ FakeSSLIdentity::FakeSSLIdentity(const std::string& pem_string)
 
 FakeSSLIdentity::FakeSSLIdentity(const std::vector<std::string>& pem_strings) {
   std::vector<std::unique_ptr<SSLCertificate>> certs;
+  certs.reserve(pem_strings.size());
   for (const std::string& pem_string : pem_strings) {
     certs.push_back(absl::make_unique<FakeSSLCertificate>(pem_string));
   }

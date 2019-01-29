@@ -201,6 +201,7 @@ TEST_P(PeerConnectionMediaTest,
 std::vector<std::string> GetIds(
     const std::vector<cricket::StreamParams>& streams) {
   std::vector<std::string> ids;
+  ids.reserve(streams.size());
   for (const auto& stream : streams) {
     ids.push_back(stream.id);
   }
