@@ -49,7 +49,6 @@ std::vector<std::unique_ptr<RtpRtcp>> CreateRtpRtcpModules(
     RtcpRttStats* rtt_stats,
     FlexfecSender* flexfec_sender,
     BitrateStatisticsObserver* bitrate_observer,
-    FrameCountObserver* frame_count_observer,
     RtcpPacketTypeCounterObserver* rtcp_type_observer,
     SendSideDelayObserver* send_delay_observer,
     SendPacketObserver* send_packet_observer,
@@ -75,7 +74,6 @@ std::vector<std::unique_ptr<RtpRtcp>> CreateRtpRtcpModules(
   configuration.transport_sequence_number_allocator =
       transport->packet_router();
   configuration.send_bitrate_observer = bitrate_observer;
-  configuration.send_frame_count_observer = frame_count_observer;
   configuration.send_side_delay_observer = send_delay_observer;
   configuration.send_packet_observer = send_packet_observer;
   configuration.event_log = event_log;
@@ -209,7 +207,6 @@ RtpVideoSender::RtpVideoSender(
                                         observers.rtcp_rtt_stats,
                                         flexfec_sender_.get(),
                                         observers.bitrate_observer,
-                                        observers.frame_count_observer,
                                         observers.rtcp_type_observer,
                                         observers.send_delay_observer,
                                         observers.send_packet_observer,
@@ -223,7 +220,9 @@ RtpVideoSender::RtpVideoSender(
       transport_(transport),
       transport_overhead_bytes_per_packet_(0),
       overhead_bytes_per_packet_(0),
-      encoder_target_rate_bps_(0) {
+      encoder_target_rate_bps_(0),
+      frame_counts_(rtp_config.ssrcs.size()),
+      frame_count_observer_(observers.frame_count_observer) {
   RTC_DCHECK_EQ(rtp_config.ssrcs.size(), rtp_modules_.size());
   module_process_thread_checker_.DetachFromThread();
   // SSRCs are assumed to be sorted in the same order as |rtp_modules|.
@@ -379,6 +378,19 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
       encoded_image.Timestamp(), encoded_image.capture_time_ms_,
       encoded_image.data(), encoded_image.size(), fragmentation,
       &rtp_video_header, &frame_id);
+
+  if (frame_count_observer_) {
+    FrameCounts& counts = frame_counts_[stream_index];
+    if (encoded_image._frameType == kVideoFrameKey) {
+      ++counts.key_frames;
+    } else if (encoded_image._frameType == kVideoFrameDelta) {
+      ++counts.delta_frames;
+    } else {
+      RTC_DCHECK_EQ(encoded_image._frameType, kEmptyFrame);
+    }
+    frame_count_observer_->FrameCountUpdated(counts,
+                                             rtp_config_.ssrcs[stream_index]);
+  }
   if (!send_result)
     return Result(Result::ERROR_SEND_FAILED);
 

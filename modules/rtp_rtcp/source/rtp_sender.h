@@ -57,7 +57,6 @@ class RTPSender {
             TransportSequenceNumberAllocator* sequence_number_allocator,
             TransportFeedbackObserver* transport_feedback_callback,
             BitrateStatisticsObserver* bitrate_callback,
-            FrameCountObserver* frame_count_observer,
             SendSideDelayObserver* send_side_delay_observer,
             RtcEventLog* event_log,
             SendPacketObserver* send_packet_observer,
@@ -302,14 +301,12 @@ class RTPSender {
   SendDelayMap send_delays_ RTC_GUARDED_BY(statistics_crit_);
   SendDelayMap::const_iterator max_delay_it_ RTC_GUARDED_BY(statistics_crit_);
   int64_t sum_delays_ms_ RTC_GUARDED_BY(statistics_crit_);
-  FrameCounts frame_counts_ RTC_GUARDED_BY(statistics_crit_);
   StreamDataCounters rtp_stats_ RTC_GUARDED_BY(statistics_crit_);
   StreamDataCounters rtx_rtp_stats_ RTC_GUARDED_BY(statistics_crit_);
   StreamDataCountersCallback* rtp_stats_callback_
       RTC_GUARDED_BY(statistics_crit_);
   RateStatistics total_bitrate_sent_ RTC_GUARDED_BY(statistics_crit_);
   RateStatistics nack_bitrate_sent_ RTC_GUARDED_BY(statistics_crit_);
-  FrameCountObserver* const frame_count_observer_;
   SendSideDelayObserver* const send_side_delay_observer_;
   RtcEventLog* const event_log_;
   SendPacketObserver* const send_packet_observer_;

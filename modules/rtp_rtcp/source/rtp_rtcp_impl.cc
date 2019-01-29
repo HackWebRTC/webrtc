@@ -105,7 +105,6 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
         configuration.transport_sequence_number_allocator,
         configuration.transport_feedback_callback,
         configuration.send_bitrate_observer,
-        configuration.send_frame_count_observer,
         configuration.send_side_delay_observer, configuration.event_log,
         configuration.send_packet_observer,
         configuration.retransmission_rate_limiter,

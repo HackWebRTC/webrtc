@@ -164,6 +164,9 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   std::unordered_set<uint16_t> feedback_packet_seq_num_set_;
   std::vector<bool> loss_mask_vector_ RTC_GUARDED_BY(crit_);
 
+  std::vector<FrameCounts> frame_counts_ RTC_GUARDED_BY(crit_);
+  FrameCountObserver* const frame_count_observer_;
+
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpVideoSender);
 };
 

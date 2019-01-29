@@ -114,7 +114,6 @@ RTPSender::RTPSender(
     TransportSequenceNumberAllocator* sequence_number_allocator,
     TransportFeedbackObserver* transport_feedback_observer,
     BitrateStatisticsObserver* bitrate_callback,
-    FrameCountObserver* frame_count_observer,
     SendSideDelayObserver* send_side_delay_observer,
     RtcEventLog* event_log,
     SendPacketObserver* send_packet_observer,
@@ -155,7 +154,6 @@ RTPSender::RTPSender(
       total_bitrate_sent_(kBitrateStatisticsWindowMs,
                           RateStatistics::kBpsScale),
       nack_bitrate_sent_(kBitrateStatisticsWindowMs, RateStatistics::kBpsScale),
-      frame_count_observer_(frame_count_observer),
       send_side_delay_observer_(send_side_delay_observer),
       event_log_(event_log),
       send_packet_observer_(send_packet_observer),
@@ -399,17 +397,6 @@ bool RTPSender::SendOutgoingData(FrameType frame_type,
                                capture_time_ms, payload_data, payload_size,
                                fragmentation, rtp_header,
                                expected_retransmission_time_ms);
-  }
-
-  rtc::CritScope cs(&statistics_crit_);
-  // Note: This is currently only counting for video.
-  if (frame_type == kVideoFrameKey) {
-    ++frame_counts_.key_frames;
-  } else if (frame_type == kVideoFrameDelta) {
-    ++frame_counts_.delta_frames;
-  }
-  if (frame_count_observer_) {
-    frame_count_observer_->FrameCountUpdated(frame_counts_, ssrc);
   }
 
   return result;

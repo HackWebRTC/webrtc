@@ -70,7 +70,6 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
   configuration.transport_sequence_number_allocator =
       transport_sequence_number_allocator;
   configuration.send_bitrate_observer = nullptr;
-  configuration.send_frame_count_observer = nullptr;
   configuration.send_side_delay_observer = nullptr;
   configuration.send_packet_observer = nullptr;
   configuration.bandwidth_callback = nullptr;

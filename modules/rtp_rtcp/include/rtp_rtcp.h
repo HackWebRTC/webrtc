@@ -87,7 +87,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
     TransportSequenceNumberAllocator* transport_sequence_number_allocator =
         nullptr;
     BitrateStatisticsObserver* send_bitrate_observer = nullptr;
-    FrameCountObserver* send_frame_count_observer = nullptr;
     SendSideDelayObserver* send_side_delay_observer = nullptr;
     RtcEventLog* event_log = nullptr;
     SendPacketObserver* send_packet_observer = nullptr;
