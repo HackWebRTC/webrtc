@@ -1452,8 +1452,7 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
   auto default_send_encodings = init.send_encodings;
 
   // Unimplemented RtpParameters: ssrc, codec_payload_type, fec, rtx, dtx,
-  // ptime, scale_resolution_down_by, scale_framerate_down_by, rid,
-  // dependency_rids.
+  // ptime, scale_framerate_down_by, rid, dependency_rids.
   init.send_encodings[0].ssrc = 1;
   EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
             caller->pc()
@@ -1502,14 +1501,6 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
                 .type());
   init.send_encodings = default_send_encodings;
 
-  init.send_encodings[0].scale_resolution_down_by = 2.0;
-  EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
-            caller->pc()
-                ->AddTransceiver(cricket::MEDIA_TYPE_AUDIO, init)
-                .error()
-                .type());
-  init.send_encodings = default_send_encodings;
-
   init.send_encodings[0].rid = "dummy_rid";
   EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
             caller->pc()
@@ -1524,6 +1515,58 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
                 ->AddTransceiver(cricket::MEDIA_TYPE_AUDIO, init)
                 .error()
                 .type());
+}
+
+// Test that AddTransceiver fails if trying to use invalid RTP encoding
+// parameters with the send_encodings parameters.
+TEST_F(PeerConnectionRtpTestUnifiedPlan, CheckForInvalidEncodingParameters) {
+  auto caller = CreatePeerConnection();
+
+  RtpTransceiverInit init;
+  init.send_encodings.emplace_back();
+
+  auto default_send_encodings = init.send_encodings;
+
+  init.send_encodings[0].scale_resolution_down_by = 0.5;
+  EXPECT_EQ(RTCErrorType::INVALID_RANGE,
+            caller->pc()
+                ->AddTransceiver(cricket::MEDIA_TYPE_VIDEO, init)
+                .error()
+                .type());
+  init.send_encodings = default_send_encodings;
+
+  init.send_encodings[0].bitrate_priority = 0;
+  EXPECT_EQ(RTCErrorType::INVALID_RANGE,
+            caller->pc()
+                ->AddTransceiver(cricket::MEDIA_TYPE_VIDEO, init)
+                .error()
+                .type());
+  init.send_encodings = default_send_encodings;
+
+  init.send_encodings[0].min_bitrate_bps = 200000;
+  init.send_encodings[0].max_bitrate_bps = 100000;
+  EXPECT_EQ(RTCErrorType::INVALID_RANGE,
+            caller->pc()
+                ->AddTransceiver(cricket::MEDIA_TYPE_VIDEO, init)
+                .error()
+                .type());
+  init.send_encodings = default_send_encodings;
+
+  init.send_encodings[0].num_temporal_layers = 0;
+  EXPECT_EQ(RTCErrorType::INVALID_RANGE,
+            caller->pc()
+                ->AddTransceiver(cricket::MEDIA_TYPE_VIDEO, init)
+                .error()
+                .type());
+  init.send_encodings = default_send_encodings;
+
+  init.send_encodings[0].num_temporal_layers = 5;
+  EXPECT_EQ(RTCErrorType::INVALID_RANGE,
+            caller->pc()
+                ->AddTransceiver(cricket::MEDIA_TYPE_VIDEO, init)
+                .error()
+                .type());
+  init.send_encodings = default_send_encodings;
 }
 
 // Test that AddTransceiver transfers the send_encodings to the sender and they

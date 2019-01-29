@@ -36,13 +36,15 @@ struct VideoStream {
   int min_bitrate_bps;
   int target_bitrate_bps;
   int max_bitrate_bps;
+  // Scaling factor applied to the stream size.
+  // |width| and |height| values are already scaled down.
+  double scale_resolution_down_by;
   int max_qp;
 
   absl::optional<size_t> num_temporal_layers;
 
   absl::optional<double> bitrate_priority;
 
-  // TODO(bugs.webrtc.org/8653): Support active per-simulcast layer.
   bool active;
 };
 

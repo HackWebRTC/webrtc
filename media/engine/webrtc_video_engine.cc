@@ -38,6 +38,8 @@ namespace cricket {
 
 namespace {
 
+const int kMinLayerSize = 16;
+
 // If this field trial is enabled, we will enable sending FlexFEC and disable
 // sending ULPFEC whenever the former has been negotiated in the SDPs.
 bool IsFlexfecFieldTrialEnabled() {
@@ -1794,8 +1796,8 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::SetSendParameters(
 webrtc::RTCError WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
     const webrtc::RtpParameters& new_parameters) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  webrtc::RTCError error =
-      ValidateRtpParameters(rtp_parameters_, new_parameters);
+  webrtc::RTCError error = CheckRtpParametersInvalidModificationAndValues(
+      rtp_parameters_, new_parameters);
   if (!error.ok()) {
     return error;
   }
@@ -1808,6 +1810,8 @@ webrtc::RTCError WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
          rtp_parameters_.encodings[i].max_bitrate_bps) ||
         (new_parameters.encodings[i].max_framerate !=
          rtp_parameters_.encodings[i].max_framerate) ||
+        (new_parameters.encodings[i].scale_resolution_down_by !=
+         rtp_parameters_.encodings[i].scale_resolution_down_by) ||
         (new_parameters.encodings[i].num_temporal_layers !=
          rtp_parameters_.encodings[i].num_temporal_layers)) {
       new_param = true;
@@ -1978,6 +1982,10 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
     if (rtp_parameters_.encodings[i].max_framerate) {
       encoder_config.simulcast_layers[i].max_framerate =
           *rtp_parameters_.encodings[i].max_framerate;
+    }
+    if (rtp_parameters_.encodings[i].scale_resolution_down_by) {
+      encoder_config.simulcast_layers[i].scale_resolution_down_by =
+          *rtp_parameters_.encodings[i].scale_resolution_down_by;
     }
     if (rtp_parameters_.encodings[i].num_temporal_layers) {
       encoder_config.simulcast_layers[i].num_temporal_layers =
@@ -2694,6 +2702,12 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
     int max_framerate = GetMaxFramerate(encoder_config, layers.size());
     // Update the active simulcast layers and configured bitrates.
     bool is_highest_layer_max_bitrate_configured = false;
+    bool has_scale_resolution_down_by =
+        std::any_of(encoder_config.simulcast_layers.begin(),
+                    encoder_config.simulcast_layers.end(),
+                    [](const webrtc::VideoStream& layer) {
+                      return layer.scale_resolution_down_by != -1.;
+                    });
     for (size_t i = 0; i < layers.size(); ++i) {
       layers[i].active = encoder_config.simulcast_layers[i].active;
       if (!is_screenshare_) {
@@ -2705,6 +2719,18 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
           layers[i].num_temporal_layers =
               *encoder_config.simulcast_layers[i].num_temporal_layers;
         }
+      }
+      if (has_scale_resolution_down_by) {
+        double scale_resolution_down_by = std::max(
+            encoder_config.simulcast_layers[i].scale_resolution_down_by, 1.0);
+        layers[i].width =
+            std::max(NormalizeSimulcastSize(width / scale_resolution_down_by,
+                                            encoder_config.number_of_streams),
+                     kMinLayerSize);
+        layers[i].height =
+            std::max(NormalizeSimulcastSize(height / scale_resolution_down_by,
+                                            encoder_config.number_of_streams),
+                     kMinLayerSize);
       }
       // Update simulcast bitrates with configured min and max bitrate.
       if (encoder_config.simulcast_layers[i].min_bitrate_bps > 0) {
@@ -2770,6 +2796,17 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
   layer.width = width;
   layer.height = height;
   layer.max_framerate = max_framerate;
+
+  if (encoder_config.simulcast_layers[0].scale_resolution_down_by > 1.) {
+    layer.width = std::max<size_t>(
+        layer.width /
+            encoder_config.simulcast_layers[0].scale_resolution_down_by,
+        kMinLayerSize);
+    layer.height = std::max<size_t>(
+        layer.height /
+            encoder_config.simulcast_layers[0].scale_resolution_down_by,
+        kMinLayerSize);
+  }
 
   // In the case that the application sets a max bitrate that's lower than the
   // min bitrate, we adjust it down (see bugs.webrtc.org/9141).

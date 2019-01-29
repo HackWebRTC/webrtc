@@ -38,7 +38,10 @@ class Call;
 
 namespace cricket {
 
-webrtc::RTCError ValidateRtpParameters(
+webrtc::RTCError CheckRtpParametersValues(
+    const webrtc::RtpParameters& new_parameters);
+
+webrtc::RTCError CheckRtpParametersInvalidModificationAndValues(
     const webrtc::RtpParameters& old_parameters,
     const webrtc::RtpParameters& new_parameters);
 

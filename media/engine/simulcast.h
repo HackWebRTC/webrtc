@@ -26,6 +26,9 @@ int GetTotalMaxBitrateBps(const std::vector<webrtc::VideoStream>& streams);
 void BoostMaxSimulcastLayer(int max_bitrate_bps,
                             std::vector<webrtc::VideoStream>* layers);
 
+// Round size to nearest simulcast-friendly size
+int NormalizeSimulcastSize(int size, size_t simulcast_layers);
+
 // Gets simulcast settings.
 // TODO(asapersson): Remove max_bitrate_bps and max_framerate.
 std::vector<webrtc::VideoStream> GetSimulcastConfig(

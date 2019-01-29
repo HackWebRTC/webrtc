@@ -810,7 +810,7 @@ TEST_F(RtpSenderReceiverTest,
   EXPECT_EQ(1u, params.encodings.size());
 
   // Unimplemented RtpParameters: codec_payload_type, fec, rtx, dtx, ptime,
-  // scale_resolution_down_by, scale_framerate_down_by, rid, dependency_rids.
+  // scale_framerate_down_by, rid, dependency_rids.
   params.encodings[0].codec_payload_type = 1;
   EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
             audio_rtp_sender_->SetParameters(params).type());
@@ -832,11 +832,6 @@ TEST_F(RtpSenderReceiverTest,
   params = audio_rtp_sender_->GetParameters();
 
   params.encodings[0].ptime = 1;
-  EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
-            audio_rtp_sender_->SetParameters(params).type());
-  params = audio_rtp_sender_->GetParameters();
-
-  params.encodings[0].scale_resolution_down_by = 2.0;
   EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
             audio_rtp_sender_->SetParameters(params).type());
   params = audio_rtp_sender_->GetParameters();
@@ -1087,7 +1082,7 @@ TEST_F(RtpSenderReceiverTest,
   EXPECT_EQ(1u, params.encodings.size());
 
   // Unimplemented RtpParameters: codec_payload_type, fec, rtx, dtx, ptime,
-  // scale_resolution_down_by, scale_framerate_down_by, rid, dependency_rids.
+  // scale_framerate_down_by, rid, dependency_rids.
   params.encodings[0].codec_payload_type = 1;
   EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
             video_rtp_sender_->SetParameters(params).type());
@@ -1113,11 +1108,6 @@ TEST_F(RtpSenderReceiverTest,
             video_rtp_sender_->SetParameters(params).type());
   params = video_rtp_sender_->GetParameters();
 
-  params.encodings[0].scale_resolution_down_by = 2.0;
-  EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
-            video_rtp_sender_->SetParameters(params).type());
-  params = video_rtp_sender_->GetParameters();
-
   params.encodings[0].rid = "dummy_rid";
   EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
             video_rtp_sender_->SetParameters(params).type());
@@ -1130,6 +1120,30 @@ TEST_F(RtpSenderReceiverTest,
   DestroyVideoRtpSender();
 }
 
+TEST_F(RtpSenderReceiverTest, VideoSenderCanSetScaleResolutionDownBy) {
+  CreateVideoRtpSender();
+
+  RtpParameters params = video_rtp_sender_->GetParameters();
+  params.encodings[0].scale_resolution_down_by = 2;
+
+  EXPECT_TRUE(video_rtp_sender_->SetParameters(params).ok());
+  params = video_rtp_sender_->GetParameters();
+  EXPECT_EQ(2, params.encodings[0].scale_resolution_down_by);
+
+  DestroyVideoRtpSender();
+}
+
+TEST_F(RtpSenderReceiverTest, VideoSenderDetectInvalidScaleResolutionDownBy) {
+  CreateVideoRtpSender();
+
+  RtpParameters params = video_rtp_sender_->GetParameters();
+  params.encodings[0].scale_resolution_down_by = 0.5;
+  RTCError result = video_rtp_sender_->SetParameters(params);
+  EXPECT_EQ(RTCErrorType::INVALID_RANGE, result.type());
+
+  DestroyVideoRtpSender();
+}
+
 TEST_F(RtpSenderReceiverTest,
        VideoSenderCantSetUnimplementedEncodingParametersWithSimulcast) {
   CreateVideoRtpSenderWithSimulcast();
@@ -1137,7 +1151,7 @@ TEST_F(RtpSenderReceiverTest,
   EXPECT_EQ(kVideoSimulcastLayerCount, params.encodings.size());
 
   // Unimplemented RtpParameters: codec_payload_type, fec, rtx, dtx, ptime,
-  // scale_resolution_down_by, scale_framerate_down_by, rid, dependency_rids.
+  // scale_framerate_down_by, rid, dependency_rids.
   for (size_t i = 0; i < params.encodings.size(); i++) {
     params.encodings[i].codec_payload_type = 1;
     EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
@@ -1160,11 +1174,6 @@ TEST_F(RtpSenderReceiverTest,
     params = video_rtp_sender_->GetParameters();
 
     params.encodings[i].ptime = 1;
-    EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
-              video_rtp_sender_->SetParameters(params).type());
-    params = video_rtp_sender_->GetParameters();
-
-    params.encodings[i].scale_resolution_down_by = 2.0;
     EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
               video_rtp_sender_->SetParameters(params).type());
     params = video_rtp_sender_->GetParameters();

@@ -1485,6 +1485,11 @@ PeerConnection::AddTransceiver(
         "Attempted to set an unimplemented parameter of RtpParameters.");
   }
 
+  auto result = cricket::CheckRtpParametersValues(parameters);
+  if (!result.ok()) {
+    LOG_AND_RETURN_ERROR(result.type(), result.message());
+  }
+
   RTC_LOG(LS_INFO) << "Adding " << cricket::MediaTypeToString(media_type)
                    << " transceiver in response to a call to AddTransceiver.";
   // Set the sender ID equal to the track ID if the track is specified unless
