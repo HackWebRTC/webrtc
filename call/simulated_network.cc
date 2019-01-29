@@ -66,6 +66,7 @@ bool SimulatedNetwork::EnqueuePacket(PacketInFlightInfo packet) {
     rtc::CritScope crit(&config_lock_);
     config = config_;
   }
+  packet.size += config.packet_overhead;
   rtc::CritScope crit(&process_lock_);
   if (config.queue_length_packets > 0 &&
       capacity_link_.size() >= config.queue_length_packets) {

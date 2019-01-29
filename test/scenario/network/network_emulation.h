@@ -71,9 +71,8 @@ class EmulatedNetworkNode : public EmulatedNetworkReceiverInterface {
   // Creates node based on |network_behavior|. The specified |packet_overhead|
   // is added to the size of each packet in the information provided to
   // |network_behavior|.
-  EmulatedNetworkNode(
-      std::unique_ptr<NetworkBehaviorInterface> network_behavior,
-      size_t packet_overhead = 0);
+  explicit EmulatedNetworkNode(
+      std::unique_ptr<NetworkBehaviorInterface> network_behavior);
   ~EmulatedNetworkNode() override;
   RTC_DISALLOW_COPY_AND_ASSIGN(EmulatedNetworkNode);
 
@@ -103,7 +102,6 @@ class EmulatedNetworkNode : public EmulatedNetworkReceiverInterface {
       RTC_GUARDED_BY(lock_);
   const std::unique_ptr<NetworkBehaviorInterface> network_behavior_
       RTC_GUARDED_BY(lock_);
-  const size_t packet_overhead_ RTC_GUARDED_BY(lock_);
   std::deque<StoredPacket> packets_ RTC_GUARDED_BY(lock_);
 
   uint64_t next_packet_id_ RTC_GUARDED_BY(lock_) = 1;

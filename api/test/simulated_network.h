@@ -61,6 +61,8 @@ struct BuiltInNetworkBehaviorConfig {
   bool allow_reordering = false;
   // The average length of a burst of lost packets.
   int avg_burst_loss_length = -1;
+  // Additional bytes to add to packet size.
+  int packet_overhead = 0;
 };
 
 class NetworkBehaviorInterface {

@@ -50,10 +50,8 @@ void EmulatedNetworkNode::ClearRoute(uint64_t receiver_id,
 }
 
 EmulatedNetworkNode::EmulatedNetworkNode(
-    std::unique_ptr<NetworkBehaviorInterface> network_behavior,
-    size_t packet_overhead)
-    : network_behavior_(std::move(network_behavior)),
-      packet_overhead_(packet_overhead) {}
+    std::unique_ptr<NetworkBehaviorInterface> network_behavior)
+    : network_behavior_(std::move(network_behavior)) {}
 
 EmulatedNetworkNode::~EmulatedNetworkNode() = default;
 
@@ -62,8 +60,8 @@ void EmulatedNetworkNode::OnPacketReceived(EmulatedIpPacket packet) {
   if (routing_.find(packet.dest_endpoint_id) == routing_.end())
     return;
   uint64_t packet_id = next_packet_id_++;
-  bool sent = network_behavior_->EnqueuePacket(PacketInFlightInfo(
-      packet.size() + packet_overhead_, packet.arrival_time.us(), packet_id));
+  bool sent = network_behavior_->EnqueuePacket(
+      PacketInFlightInfo(packet.size(), packet.arrival_time.us(), packet_id));
   if (sent) {
     packets_.emplace_back(StoredPacket{packet_id, std::move(packet), false});
   }

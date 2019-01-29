@@ -24,6 +24,7 @@ SimulatedNetwork::Config CreateSimulationConfig(NetworkNodeConfig config) {
   sim_config.loss_percent = config.simulation.loss_rate * 100;
   sim_config.queue_delay_ms = config.simulation.delay.ms();
   sim_config.delay_standard_deviation_ms = config.simulation.delay_std_dev.ms();
+  sim_config.packet_overhead = config.packet_overhead.bytes<int>();
   return sim_config;
 }
 }  // namespace
@@ -73,8 +74,7 @@ SimulationNode::SimulationNode(
     NetworkNodeConfig config,
     std::unique_ptr<NetworkBehaviorInterface> behavior,
     SimulatedNetwork* simulation)
-    : EmulatedNetworkNode(std::move(behavior),
-                          config.packet_overhead.bytes_or(0)),
+    : EmulatedNetworkNode(std::move(behavior)),
       simulated_network_(simulation),
       config_(config) {}
 

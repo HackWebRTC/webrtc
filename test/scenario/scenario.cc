@@ -227,8 +227,7 @@ EmulatedNetworkNode* Scenario::CreateNetworkNode(
     NetworkNodeConfig config,
     std::unique_ptr<NetworkBehaviorInterface> behavior) {
   RTC_DCHECK(config.mode == NetworkNodeConfig::TrafficMode::kCustom);
-  network_nodes_.emplace_back(new EmulatedNetworkNode(
-      std::move(behavior), config.packet_overhead.bytes_or(0)));
+  network_nodes_.emplace_back(new EmulatedNetworkNode(std::move(behavior)));
   EmulatedNetworkNode* network_node = network_nodes_.back().get();
   Every(config.update_frequency,
         [this, network_node] { network_node->Process(Now()); });
