@@ -252,59 +252,59 @@
   'configs': {
     # Linux, Mac and Windows
     'gcc_release_bot_x64': [
-      'gn', 'gcc', 'release_bot', 'x64', 'no_rtc_tests'
+      'gcc', 'release_bot', 'x64', 'no_rtc_tests'
     ],
     # TOOD(kjellander): Restore Goma for this when crbug.com/726706 is fixed.
     'debug_bot_arm': [
-      'gn', 'openh264', 'debug', 'arm'
+      'openh264', 'debug', 'arm'
     ],
     'release_bot_arm': [
-      'gn', 'openh264', 'release_bot', 'arm'
+      'openh264', 'release_bot', 'arm'
     ],
     'debug_bot_arm64': [
-      'gn', 'openh264', 'debug_bot', 'arm64'
+      'openh264', 'debug_bot', 'arm64'
     ],
     'release_bot_arm64': [
-      'gn', 'openh264', 'release_bot', 'arm64'
+      'openh264', 'release_bot', 'arm64'
     ],
     'asan_lsan_clang_release_bot_x64': [
-      'gn', 'asan', 'lsan', 'clang', 'openh264', 'release_bot', 'x64'
+      'asan', 'lsan', 'clang', 'openh264', 'release_bot', 'x64'
     ],
     'msan_clang_release_bot_x64': [
-      'gn', 'msan', 'clang', 'openh264', 'release_bot', 'x64'
+      'msan', 'clang', 'openh264', 'release_bot', 'x64'
     ],
     'tsan_clang_release_bot_x64': [
-      'gn', 'tsan', 'clang', 'openh264', 'release_bot', 'x64'
+      'tsan', 'clang', 'openh264', 'release_bot', 'x64'
     ],
     'ubsan_clang_release_bot_x64': [
-      'gn', 'ubsan', 'clang', 'openh264', 'release_bot', 'x64'
+      'ubsan', 'clang', 'openh264', 'release_bot', 'x64'
     ],
     'ubsan_vptr_clang_release_bot_x64': [
-      'gn', 'ubsan_vptr', 'clang', 'openh264', 'release_bot', 'x64'
+      'ubsan_vptr', 'clang', 'openh264', 'release_bot', 'x64'
     ],
     'debug_bot_x86': [
-      'gn', 'openh264', 'debug_bot', 'x86'
+      'openh264', 'debug_bot', 'x86'
     ],
     'no_h264_debug_bot_x86': [
-      'gn', 'debug_bot', 'x86'
+      'debug_bot', 'x86'
     ],
     'release_bot_x86': [
-      'gn', 'openh264', 'release_bot', 'x86'
+      'openh264', 'release_bot', 'x86'
     ],
     'debug_bot_x64': [
-      'gn', 'openh264', 'debug_bot', 'x64'
+      'openh264', 'debug_bot', 'x64'
     ],
     'codesearch_gen_linux_bot': [
-      'gn', 'openh264', 'debug_bot', 'minimal_symbols'
+      'openh264', 'debug_bot', 'minimal_symbols'
     ],
     'release_bot_x64': [
-      'gn', 'openh264', 'release_bot', 'x64'
+      'openh264', 'release_bot', 'x64'
     ],
     'pure_release_bot_x86': [
-      'gn', 'openh264', 'pure_release_bot', 'x86'
+      'openh264', 'pure_release_bot', 'x86'
     ],
     'pure_release_bot_x64': [
-      'gn', 'openh264', 'pure_release_bot', 'x64'
+      'openh264', 'pure_release_bot', 'x64'
     ],
     'libfuzzer_asan_release_bot_x64': [
       'libfuzzer', 'asan', 'optimize_for_fuzzing', 'openh264', 'release_bot',
@@ -320,79 +320,79 @@
 
     # Windows
     'win_clang_debug_bot_x86': [
-      'gn', 'clang', 'openh264', 'debug_bot', 'x86',
+      'clang', 'openh264', 'debug_bot', 'x86',
     ],
     'win_clang_release_bot_x86': [
-      'gn', 'clang', 'openh264', 'release_bot', 'x86',
+      'clang', 'openh264', 'release_bot', 'x86',
     ],
     'win_clang_pure_release_bot_x86': [
-      'gn', 'clang', 'openh264', 'pure_release_bot', 'x86',
+      'clang', 'openh264', 'pure_release_bot', 'x86',
     ],
     'win_clang_debug_bot_x64': [
-      'gn', 'clang', 'openh264', 'debug_bot', 'x64',
+      'clang', 'openh264', 'debug_bot', 'x64',
     ],
     'win_clang_release_bot_x64': [
-      'gn', 'clang', 'openh264', 'release_bot', 'x64',
+      'clang', 'openh264', 'release_bot', 'x64',
     ],
     'win_msvc_debug_bot_x86': [
-      'gn', 'no_clang', 'debug_bot', 'x86', 'no_lld',
+      'no_clang', 'debug_bot', 'x86', 'no_lld',
     ],
     'win_msvc_release_bot_x86': [
-      'gn', 'no_clang', 'release_bot', 'x86', 'no_lld',
+      'no_clang', 'release_bot', 'x86', 'no_lld',
     ],
     'win_msvc_debug_bot_x64': [
-      'gn', 'no_clang', 'debug_bot', 'x64', 'no_lld'
+      'no_clang', 'debug_bot', 'x64', 'no_lld'
     ],
     'win_msvc_release_bot_x64': [
-      'gn', 'no_clang', 'release_bot', 'x64', 'no_lld',
+      'no_clang', 'release_bot', 'x64', 'no_lld',
     ],
     'win_asan_clang_release_bot_x86': [
-      'gn', 'asan', 'clang',  'full_symbols', 'openh264', 'release_bot', 'x86',
+      'asan', 'clang',  'full_symbols', 'openh264', 'release_bot', 'x86',
       'win_fastlink',
     ],
     'win_uwp_release_bot_x64': [
       # UWP passes compiler flags that are not supported by goma.
-      'gn', 'no_clang', 'openh264', 'x64', 'winuwp', 'release_bot_no_goma'
+      'no_clang', 'openh264', 'x64', 'winuwp', 'release_bot_no_goma'
     ],
 
     # Mac
     'mac_asan_clang_release_bot_x64': [
-      'gn', 'asan', 'clang', 'openh264', 'release_bot', 'x64',
+      'asan', 'clang', 'openh264', 'release_bot', 'x64',
     ],
 
     # Android
     'android_debug_static_bot_arm': [
-      'android', 'gn', 'debug_static_bot', 'arm'
+      'android', 'debug_static_bot', 'arm'
     ],
     'android_release_bot_arm': [
-      'android', 'gn', 'release_bot', 'arm'
+      'android', 'release_bot', 'arm'
     ],
     'android_pure_release_bot_arm': [
-      'android', 'gn', 'pure_release_bot', 'arm'
+      'android', 'pure_release_bot', 'arm'
     ],
     'android_debug_static_bot_x86': [
-      'android', 'gn', 'debug_static_bot', 'x86'
+      'android', 'debug_static_bot', 'x86'
     ],
     'android_release_bot_x86': [
-      'android', 'gn', 'release_bot', 'x86'
+      'android', 'release_bot', 'x86'
     ],
     'android_debug_static_bot_arm64': [
-      'android', 'gn', 'debug_static_bot', 'arm64'
+      'android', 'debug_static_bot', 'arm64'
     ],
     'android_release_bot_arm64': [
-      'android', 'gn', 'release_bot', 'arm64'
+      'android', 'release_bot', 'arm64'
     ],
     'android_pure_release_bot_arm64': [
-      'android', 'gn', 'pure_release_bot', 'arm64'
+      'android', 'pure_release_bot', 'arm64'
     ],
     'android_debug_static_bot_x64': [
-      'android', 'gn', 'debug_static_bot', 'x64'
+      'android', 'debug_static_bot', 'x64'
     ],
     'android_release_bot_x64': [
-      'android', 'gn', 'release_bot', 'x86'
+      'android', 'release_bot', 'x86'
     ],
     'android_asan_shared_release_bot_arm': [
-      'android', 'gn', 'asan', 'clang', 'release_bot', 'arm'
+      'android', 'asan', 'clang', 'release_bot', 'arm'
     ],
 
     # More configs
@@ -490,8 +490,6 @@
       'gn_args': ('is_clang=false use_sysroot=false '
                   'treat_warnings_as_errors=false'),
     },
-
-    'gn': {'type': 'gn'},
 
     'goma': {
       'gn_args': 'use_goma=true',
