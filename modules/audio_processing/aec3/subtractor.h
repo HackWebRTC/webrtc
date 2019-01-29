@@ -107,12 +107,6 @@ class Subtractor {
   ApmDataDumper* data_dumper_;
   const Aec3Optimization optimization_;
   const EchoCanceller3Config config_;
-  const bool adaptation_during_saturation_;
-  const bool enable_misadjustment_estimator_;
-  const bool enable_agc_gain_change_response_;
-  const bool enable_shadow_filter_jumpstart_;
-  const bool enable_shadow_filter_boosted_jumpstart_;
-  const bool enable_early_shadow_filter_jumpstart_;
 
   AdaptiveFirFilter main_filter_;
   AdaptiveFirFilter shadow_filter_;

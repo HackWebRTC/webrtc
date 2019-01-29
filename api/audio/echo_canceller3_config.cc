@@ -173,8 +173,6 @@ bool EchoCanceller3Config::Validate(EchoCanceller3Config* config) {
 
   res =
       res & Limit(&c->echo_removal_control.gain_rampup.initial_gain, 0.f, 1.f);
-  res = res & Limit(&c->echo_removal_control.gain_rampup.first_non_zero_gain,
-                    0.f, 1.f);
   res = res & Limit(&c->echo_removal_control.gain_rampup.non_zero_gain_blocks,
                     0, 100000);
   res = res &

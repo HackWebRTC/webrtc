@@ -116,7 +116,6 @@ struct RTC_EXPORT EchoCanceller3Config {
   struct EchoRemovalControl {
     struct GainRampup {
       float initial_gain = 0.0f;
-      float first_non_zero_gain = 0.001f;
       int non_zero_gain_blocks = 187;
       int full_gain_blocks = 312;
     } gain_rampup;

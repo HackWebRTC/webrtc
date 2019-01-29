@@ -239,8 +239,6 @@ void Aec3ConfigFromJsonString(absl::string_view json_string,
     if (rtc::GetValueFromJsonObject(section, "gain_rampup", &subsection)) {
       ReadParam(subsection, "initial_gain",
                 &cfg.echo_removal_control.gain_rampup.initial_gain);
-      ReadParam(subsection, "first_non_zero_gain",
-                &cfg.echo_removal_control.gain_rampup.first_non_zero_gain);
       ReadParam(subsection, "non_zero_gain_blocks",
                 &cfg.echo_removal_control.gain_rampup.non_zero_gain_blocks);
       ReadParam(subsection, "full_gain_blocks",
@@ -465,8 +463,6 @@ std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config) {
   ost << "\"gain_rampup\": {";
   ost << "\"initial_gain\": "
       << config.echo_removal_control.gain_rampup.initial_gain << ",";
-  ost << "\"first_non_zero_gain\": "
-      << config.echo_removal_control.gain_rampup.first_non_zero_gain << ",";
   ost << "\"non_zero_gain_blocks\": "
       << config.echo_removal_control.gain_rampup.non_zero_gain_blocks << ",";
   ost << "\"full_gain_blocks\": "

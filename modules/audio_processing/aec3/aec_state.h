@@ -31,7 +31,6 @@
 #include "modules/audio_processing/aec3/reverb_model_estimator.h"
 #include "modules/audio_processing/aec3/subtractor_output.h"
 #include "modules/audio_processing/aec3/subtractor_output_analyzer.h"
-#include "modules/audio_processing/aec3/suppression_gain_limiter.h"
 
 namespace webrtc {
 
@@ -46,17 +45,11 @@ class AecState {
   // Returns whether the echo subtractor can be used to determine the residual
   // echo.
   bool UsableLinearEstimate() const {
-    if (use_legacy_filter_quality_) {
-      return legacy_filter_quality_state_.LinearFilterUsable();
-    }
     return filter_quality_state_.LinearFilterUsable();
   }
 
   // Returns whether the echo subtractor output should be used as output.
   bool UseLinearFilterOutput() const {
-    if (use_legacy_filter_quality_) {
-      return legacy_filter_quality_state_.LinearFilterUsable();
-    }
     return filter_quality_state_.LinearFilterUsable();
   }
 
@@ -105,11 +98,7 @@ class AecState {
   bool SaturatedCapture() const { return capture_signal_saturation_; }
 
   // Returns whether the echo signal is saturated.
-  bool SaturatedEcho() const {
-    return use_legacy_saturation_behavior_
-               ? legacy_saturation_detector_.SaturatedEcho()
-               : saturation_detector_.SaturatedEcho();
-  }
+  bool SaturatedEcho() const { return saturation_detector_.SaturatedEcho(); }
 
   // Updates the capture signal saturation.
   void UpdateCaptureSaturation(bool capture_signal_saturation) {
@@ -128,20 +117,6 @@ class AecState {
   // Return the frequency response of the reverberant echo.
   rtc::ArrayView<const float> GetReverbFrequencyResponse() const {
     return reverb_model_estimator_.GetReverbFrequencyResponse();
-  }
-
-  // Returns the upper limit for the echo suppression gain.
-  float SuppressionGainLimit() const {
-    if (use_suppressor_gain_limiter_) {
-      return suppression_gain_limiter_.Limit();
-    } else {
-      return 1.f;
-    }
-  }
-
-  // Returns whether the suppression gain limiter is active.
-  bool IsSuppressionGainLimitActive() const {
-    return suppression_gain_limiter_.IsActive();
   }
 
   // Returns whether the transition for going out of the initial stated has
@@ -170,11 +145,6 @@ class AecState {
   static int instance_count_;
   std::unique_ptr<ApmDataDumper> data_dumper_;
   const EchoCanceller3Config config_;
-  const bool use_legacy_saturation_behavior_;
-  const bool enable_erle_resets_at_gain_changes_;
-  const bool enable_erle_updates_during_reverb_;
-  const bool use_legacy_filter_quality_;
-  const bool use_suppressor_gain_limiter_;
 
   // Class for controlling the transition from the intial state, which in turn
   // controls when the filter parameters for the initial state should be used.
@@ -378,8 +348,6 @@ class AecState {
   size_t strong_not_saturated_render_blocks_ = 0;
   size_t blocks_with_active_render_ = 0;
   bool capture_signal_saturation_ = false;
-
-  SuppressionGainUpperLimiter suppression_gain_limiter_;
   FilterAnalyzer filter_analyzer_;
   absl::optional<DelayEstimate> external_delay_;
   EchoAudibility echo_audibility_;

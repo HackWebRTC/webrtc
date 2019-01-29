@@ -18,44 +18,16 @@
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_minmax.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
 namespace {
-
-bool EnableAgcGainChangeResponse() {
-  return !field_trial::IsEnabled("WebRTC-Aec3AgcGainChangeResponseKillSwitch");
-}
-
-bool EnableAdaptationDuringSaturation() {
-  return !field_trial::IsEnabled("WebRTC-Aec3RapidAgcGainRecoveryKillSwitch");
-}
-
-bool EnableMisadjustmentEstimator() {
-  return !field_trial::IsEnabled("WebRTC-Aec3MisadjustmentEstimatorKillSwitch");
-}
-
-bool EnableShadowFilterJumpstart() {
-  return !field_trial::IsEnabled("WebRTC-Aec3ShadowFilterJumpstartKillSwitch");
-}
-
-bool EnableShadowFilterBoostedJumpstart() {
-  return !field_trial::IsEnabled(
-      "WebRTC-Aec3ShadowFilterBoostedJumpstartKillSwitch");
-}
-
-bool EnableEarlyShadowFilterJumpstart() {
-  return !field_trial::IsEnabled(
-      "WebRTC-Aec3EarlyShadowFilterJumpstartKillSwitch");
-}
 
 void PredictionError(const Aec3Fft& fft,
                      const FftData& S,
                      rtc::ArrayView<const float> y,
                      std::array<float, kBlockSize>* e,
                      std::array<float, kBlockSize>* s,
-                     bool adaptation_during_saturation,
                      bool* saturation) {
   std::array<float, kFftLength> tmp;
   fft.Ifft(S, &tmp);
@@ -77,12 +49,7 @@ void PredictionError(const Aec3Fft& fft,
     *saturation = *result.first <= -32768 || *result.first >= 32767;
   }
 
-  if (!adaptation_during_saturation) {
-    std::for_each(e->begin(), e->end(),
-                  [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
-  } else {
-    *saturation = false;
-  }
+  *saturation = false;
 }
 
 void ScaleFilterOutput(rtc::ArrayView<const float> y,
@@ -106,13 +73,6 @@ Subtractor::Subtractor(const EchoCanceller3Config& config,
       data_dumper_(data_dumper),
       optimization_(optimization),
       config_(config),
-      adaptation_during_saturation_(EnableAdaptationDuringSaturation()),
-      enable_misadjustment_estimator_(EnableMisadjustmentEstimator()),
-      enable_agc_gain_change_response_(EnableAgcGainChangeResponse()),
-      enable_shadow_filter_jumpstart_(EnableShadowFilterJumpstart()),
-      enable_shadow_filter_boosted_jumpstart_(
-          EnableShadowFilterBoostedJumpstart()),
-      enable_early_shadow_filter_jumpstart_(EnableEarlyShadowFilterJumpstart()),
       main_filter_(config_.filter.main.length_blocks,
                    config_.filter.main_initial.length_blocks,
                    config.filter.config_change_duration_blocks,
@@ -152,7 +112,7 @@ void Subtractor::HandleEchoPathChange(
     full_reset();
   }
 
-  if (echo_path_variability.gain_change && enable_agc_gain_change_response_) {
+  if (echo_path_variability.gain_change) {
     G_main_.HandleEchoPathChange(echo_path_variability);
   }
 }
@@ -182,28 +142,24 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   // Form the outputs of the main and shadow filters.
   main_filter_.Filter(render_buffer, &S);
   bool main_saturation = false;
-  PredictionError(fft_, S, y, &e_main, &output->s_main,
-                  adaptation_during_saturation_, &main_saturation);
+  PredictionError(fft_, S, y, &e_main, &output->s_main, &main_saturation);
 
   shadow_filter_.Filter(render_buffer, &S);
   bool shadow_saturation = false;
-  PredictionError(fft_, S, y, &e_shadow, &output->s_shadow,
-                  adaptation_during_saturation_, &shadow_saturation);
+  PredictionError(fft_, S, y, &e_shadow, &output->s_shadow, &shadow_saturation);
 
   // Compute the signal powers in the subtractor output.
   output->ComputeMetrics(y);
 
   // Adjust the filter if needed.
   bool main_filter_adjusted = false;
-  if (enable_misadjustment_estimator_) {
-    filter_misadjustment_estimator_.Update(*output);
-    if (filter_misadjustment_estimator_.IsAdjustmentNeeded()) {
-      float scale = filter_misadjustment_estimator_.GetMisadjustment();
-      main_filter_.ScaleFilter(scale);
-      ScaleFilterOutput(y, scale, e_main, output->s_main);
-      filter_misadjustment_estimator_.Reset();
-      main_filter_adjusted = true;
-    }
+  filter_misadjustment_estimator_.Update(*output);
+  if (filter_misadjustment_estimator_.IsAdjustmentNeeded()) {
+    float scale = filter_misadjustment_estimator_.GetMisadjustment();
+    main_filter_.ScaleFilter(scale);
+    ScaleFilterOutput(y, scale, e_main, output->s_main);
+    filter_misadjustment_estimator_.Reset();
+    main_filter_adjusted = true;
   }
 
   // Compute the FFts of the main and shadow filter outputs.
@@ -248,40 +204,26 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   // Update the shadow filter.
   poor_shadow_filter_counter_ =
       output->e2_main < output->e2_shadow ? poor_shadow_filter_counter_ + 1 : 0;
-  if (((poor_shadow_filter_counter_ < 5 &&
-        enable_early_shadow_filter_jumpstart_) ||
-       (poor_shadow_filter_counter_ < 10 &&
-        !enable_early_shadow_filter_jumpstart_)) ||
-      !enable_shadow_filter_jumpstart_) {
+  if (poor_shadow_filter_counter_ < 5) {
     G_shadow_.Compute(X2_shadow, render_signal_analyzer, E_shadow,
                       shadow_filter_.SizePartitions(),
                       aec_state.SaturatedCapture() || shadow_saturation, &G);
-    shadow_filter_.Adapt(render_buffer, G);
   } else {
     poor_shadow_filter_counter_ = 0;
-    if (enable_shadow_filter_boosted_jumpstart_) {
-      shadow_filter_.SetFilter(main_filter_.GetFilter());
-      G_shadow_.Compute(X2_shadow, render_signal_analyzer, E_main,
-                        shadow_filter_.SizePartitions(),
-                        aec_state.SaturatedCapture() || main_saturation, &G);
-      shadow_filter_.Adapt(render_buffer, G);
-    } else {
-      G.re.fill(0.f);
-      G.im.fill(0.f);
-      shadow_filter_.Adapt(render_buffer, G);
-      shadow_filter_.SetFilter(main_filter_.GetFilter());
-    }
+    shadow_filter_.SetFilter(main_filter_.GetFilter());
+    G_shadow_.Compute(X2_shadow, render_signal_analyzer, E_main,
+                      shadow_filter_.SizePartitions(),
+                      aec_state.SaturatedCapture() || main_saturation, &G);
   }
 
+  shadow_filter_.Adapt(render_buffer, G);
   data_dumper_->DumpRaw("aec3_subtractor_G_shadow", G.re);
   data_dumper_->DumpRaw("aec3_subtractor_G_shadow", G.im);
   filter_misadjustment_estimator_.Dump(data_dumper_);
   DumpFilters();
 
-  if (adaptation_during_saturation_) {
-    std::for_each(e_main.begin(), e_main.end(),
-                  [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
-  }
+  std::for_each(e_main.begin(), e_main.end(),
+                [](float& a) { a = rtc::SafeClamp(a, -32768.f, 32767.f); });
 
   data_dumper_->DumpWav("aec3_main_filter_output", kBlockSize, &e_main[0],
                         16000, 1);

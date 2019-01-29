@@ -35,25 +35,10 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/logging.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
 namespace {
-
-bool UseShadowFilterOutput() {
-  return !field_trial::IsEnabled(
-      "WebRTC-Aec3UtilizeShadowFilterOutputKillSwitch");
-}
-
-bool UseSmoothSignalTransitions() {
-  return !field_trial::IsEnabled(
-      "WebRTC-Aec3SmoothSignalTransitionsKillSwitch");
-}
-
-bool EnableBoundedNearend() {
-  return !field_trial::IsEnabled("WebRTC-Aec3BoundedNearendKillSwitch");
-}
 
 void LinearEchoPower(const FftData& E,
                      const FftData& Y,
@@ -127,8 +112,7 @@ class EchoRemoverImpl final : public EchoRemover {
   // Selects which of the shadow and main linear filter outputs that is most
   // appropriate to pass to the suppressor and forms the linear filter output by
   // smoothly transition between those.
-  void FormLinearFilterOutput(bool smooth_transition,
-                              const SubtractorOutput& subtractor_output,
+  void FormLinearFilterOutput(const SubtractorOutput& subtractor_output,
                               rtc::ArrayView<float> output);
 
   static int instance_count_;
@@ -138,8 +122,6 @@ class EchoRemoverImpl final : public EchoRemover {
   const Aec3Optimization optimization_;
   const int sample_rate_hz_;
   const bool use_shadow_filter_output_;
-  const bool use_smooth_signal_transitions_;
-  const bool enable_bounded_nearend_;
   Subtractor subtractor_;
   SuppressionGain suppression_gain_;
   ComfortNoiseGenerator cng_;
@@ -171,10 +153,7 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
       optimization_(DetectOptimization()),
       sample_rate_hz_(sample_rate_hz),
       use_shadow_filter_output_(
-          UseShadowFilterOutput() &&
           config_.filter.enable_shadow_filter_output_usage),
-      use_smooth_signal_transitions_(UseSmoothSignalTransitions()),
-      enable_bounded_nearend_(EnableBoundedNearend()),
       subtractor_(config, data_dumper_.get(), optimization_),
       suppression_gain_(config_, optimization_, sample_rate_hz),
       cng_(optimization_),
@@ -275,7 +254,7 @@ void EchoRemoverImpl::ProcessCapture(
   subtractor_.Process(*render_buffer, y0, render_signal_analyzer_, aec_state_,
                       &subtractor_output);
   std::array<float, kBlockSize> e;
-  FormLinearFilterOutput(use_smooth_signal_transitions_, subtractor_output, e);
+  FormLinearFilterOutput(subtractor_output, e);
 
   // Compute spectra.
   WindowedPaddedFft(fft_, y0, y_old_, &Y);
@@ -293,14 +272,13 @@ void EchoRemoverImpl::ProcessCapture(
   data_dumper_->DumpWav("aec3_output_linear2", kBlockSize, &e[0],
                         LowestBandRate(sample_rate_hz_), 1);
   if (aec_state_.UseLinearFilterOutput()) {
-    if (!linear_filter_output_last_selected_ &&
-        use_smooth_signal_transitions_) {
+    if (!linear_filter_output_last_selected_) {
       SignalTransition(y0, e, y0);
     } else {
       std::copy(e.begin(), e.end(), y0.begin());
     }
   } else {
-    if (linear_filter_output_last_selected_ && use_smooth_signal_transitions_) {
+    if (linear_filter_output_last_selected_) {
       SignalTransition(e, y0, y0);
     }
   }
@@ -322,12 +300,8 @@ void EchoRemoverImpl::ProcessCapture(
       aec_state_.UsableLinearEstimate() ? S2_linear : R2;
 
   std::array<float, kFftLengthBy2Plus1> E2_bounded;
-  if (enable_bounded_nearend_) {
-    std::transform(E2.begin(), E2.end(), Y2.begin(), E2_bounded.begin(),
-                   [](float a, float b) { return std::min(a, b); });
-  } else {
-    std::copy(E2.begin(), E2.end(), E2_bounded.begin());
-  }
+  std::transform(E2.begin(), E2.end(), Y2.begin(), E2_bounded.begin(),
+                 [](float a, float b) { return std::min(a, b); });
 
   suppression_gain_.GetGain(E2, E2_bounded, echo_spectrum, R2,
                             cng_.NoiseSpectrum(), E, Y, render_signal_analyzer_,
@@ -367,7 +341,6 @@ void EchoRemoverImpl::ProcessCapture(
 }
 
 void EchoRemoverImpl::FormLinearFilterOutput(
-    bool smooth_transition,
     const SubtractorOutput& subtractor_output,
     rtc::ArrayView<float> output) {
   RTC_DCHECK_EQ(subtractor_output.e_main.size(), output.size());
@@ -393,7 +366,7 @@ void EchoRemoverImpl::FormLinearFilterOutput(
   }
 
   if (use_main_output) {
-    if (!main_filter_output_last_selected_ && smooth_transition) {
+    if (!main_filter_output_last_selected_) {
       SignalTransition(subtractor_output.e_shadow, subtractor_output.e_main,
                        output);
     } else {
@@ -401,7 +374,7 @@ void EchoRemoverImpl::FormLinearFilterOutput(
                 subtractor_output.e_main.end(), output.begin());
     }
   } else {
-    if (main_filter_output_last_selected_ && smooth_transition) {
+    if (main_filter_output_last_selected_) {
       SignalTransition(subtractor_output.e_main, subtractor_output.e_shadow,
                        output);
     } else {

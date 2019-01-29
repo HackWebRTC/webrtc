@@ -72,7 +72,6 @@ class ResidualEchoEstimator {
                            const EchoCanceller3Config::EchoModel& echo_model,
                            int headroom_spectrum_buffer,
                            int filter_delay_blocks,
-                           bool gain_limiter_running,
                            bool apply_noise_gating,
                            std::array<float, kFftLengthBy2Plus1>* X2) const;
 
@@ -88,9 +87,6 @@ class ResidualEchoEstimator {
   std::array<int, kFftLengthBy2Plus1> R2_hold_counter_;
   std::array<float, kFftLengthBy2Plus1> X2_noise_floor_;
   std::array<int, kFftLengthBy2Plus1> X2_noise_floor_counter_;
-  const bool soft_transparent_mode_;
-  const bool override_estimated_echo_path_gain_;
-  const bool use_fixed_nonlinear_reverb_model_;
   std::unique_ptr<ReverbModel> echo_reverb_;
   std::unique_ptr<ReverbModelFallback> echo_reverb_fallback;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(ResidualEchoEstimator);

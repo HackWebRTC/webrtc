@@ -24,7 +24,6 @@
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
