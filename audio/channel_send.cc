@@ -245,8 +245,6 @@ class ChannelSend
   std::unique_ptr<AudioCodingModule> audio_coding_;
   uint32_t _timeStamp RTC_GUARDED_BY(encoder_queue_);
 
-  uint16_t send_sequence_number_;
-
   // uses
   ProcessThread* const _moduleProcessThreadPtr;
   RmsLevel rms_level_ RTC_GUARDED_BY(encoder_queue_);
@@ -648,7 +646,6 @@ ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
     : event_log_(rtc_event_log),
       _timeStamp(0),  // This is just an offset, RTP module will add it's own
                       // random offset
-      send_sequence_number_(0),
       _moduleProcessThreadPtr(module_process_thread),
       input_mute_(false),
       previous_frame_muted_(false),
@@ -747,11 +744,6 @@ void ChannelSend::StartSend() {
   RTC_DCHECK(!sending_);
   sending_ = true;
 
-  // Resume the previous sequence number which was reset by StopSend(). This
-  // needs to be done before |sending| is set to true on the RTP/RTCP module.
-  if (send_sequence_number_) {
-    _rtpRtcpModule->SetSequenceNumber(send_sequence_number_);
-  }
   _rtpRtcpModule->SetSendingMediaStatus(true);
   int ret = _rtpRtcpModule->SetSendingStatus(true);
   RTC_DCHECK_EQ(0, ret);
@@ -786,14 +778,6 @@ void ChannelSend::StopSend() {
     encoder_queue_->PostTask([&flush]() { flush.Set(); });
   }
   flush.Wait(rtc::Event::kForever);
-
-  // Store the sequence number to be able to pick up the same sequence for
-  // the next StartSend(). This is needed for restarting device, otherwise
-  // it might cause libSRTP to complain about packets being replayed.
-  // TODO(xians): Remove this workaround after RtpRtcpModule's refactoring
-  // CL is landed. See issue
-  // https://code.google.com/p/webrtc/issues/detail?id=2111 .
-  send_sequence_number_ = _rtpRtcpModule->SequenceNumber();
 
   // Reset sending SSRC and sequence number and triggers direct transmission
   // of RTCP BYE
