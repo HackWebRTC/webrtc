@@ -124,6 +124,7 @@ if (rtc_include_tests) {
       ":rtc_p2p",
       "../rtc_base:rtc_base",
       "../rtc_base:rtc_base_approved",
+      "//third_party/abseil-cpp/absl/algorithm:container",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
