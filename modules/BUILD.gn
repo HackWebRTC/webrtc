@@ -124,6 +124,7 @@ if (rtc_include_tests) {
     "../resources/audio_coding/neteq_universal_new.rtp",
     "../resources/audio_coding/speech_mono_16kHz.pcm",
     "../resources/audio_coding/speech_mono_32_48kHz.pcm",
+    "../resources/audio_coding/speech_4_channels_48k_one_second.wav",
     "../resources/audio_coding/testfile32kHz.pcm",
     "../resources/audio_coding/teststereo32kHz.pcm",
     "../resources/audio_device/audio_short16.pcm",
