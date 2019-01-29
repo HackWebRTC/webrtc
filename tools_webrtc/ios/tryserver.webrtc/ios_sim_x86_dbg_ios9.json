@@ -6,13 +6,11 @@
   "xcode build version": "10l232m",
   "gn_args": [
     "goma_dir=\"$(goma_dir)\"",
-    "is_component_build=false",
     "is_debug=true",
     "target_cpu=\"x86\"",
     "target_os=\"ios\"",
     "use_goma=true"
   ],
-  "use_analyze": false,
   "additional_compile_targets": [ "all" ],
   "configuration": "Debug",
   "sdk": "iphonesimulator9.3",
