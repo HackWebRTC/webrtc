@@ -17,6 +17,7 @@
 
 #include <string>
 #if WEBRTC_APM_DEBUG_DUMP == 1
+#include <memory>
 #include <unordered_map>
 #endif
 
