@@ -13,6 +13,7 @@
 #include <tuple>  // for std::tie
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "p2p/base/async_stun_tcp_socket.h"
 #include "p2p/base/packet_socket_factory.h"
@@ -959,14 +960,13 @@ void TurnServerAllocation::OnMessage(rtc::Message* msg) {
 }
 
 void TurnServerAllocation::OnPermissionDestroyed(Permission* perm) {
-  PermissionList::iterator it = std::find(perms_.begin(), perms_.end(), perm);
+  auto it = absl::c_find(perms_, perm);
   RTC_DCHECK(it != perms_.end());
   perms_.erase(it);
 }
 
 void TurnServerAllocation::OnChannelDestroyed(Channel* channel) {
-  ChannelList::iterator it =
-      std::find(channels_.begin(), channels_.end(), channel);
+  auto it = absl::c_find(channels_, channel);
   RTC_DCHECK(it != channels_.end());
   channels_.erase(it);
 }

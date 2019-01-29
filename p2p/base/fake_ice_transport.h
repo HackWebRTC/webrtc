@@ -15,6 +15,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "absl/types/optional.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "rtc_base/async_invoker.h"
@@ -181,8 +182,7 @@ class FakeIceTransport : public IceTransportInternal {
     remote_candidates_.push_back(candidate);
   }
   void RemoveRemoteCandidate(const Candidate& candidate) override {
-    auto it = std::find(remote_candidates_.begin(), remote_candidates_.end(),
-                        candidate);
+    auto it = absl::c_find(remote_candidates_, candidate);
     if (it == remote_candidates_.end()) {
       RTC_LOG(LS_INFO) << "Trying to remove a candidate which doesn't exist.";
       return;

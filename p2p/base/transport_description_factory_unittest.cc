@@ -9,7 +9,6 @@
  */
 
 #include <stddef.h>
-#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
@@ -22,11 +21,14 @@
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/ssl_fingerprint.h"
 #include "rtc_base/ssl_identity.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 
-using cricket::TransportDescriptionFactory;
 using cricket::TransportDescription;
+using cricket::TransportDescriptionFactory;
 using cricket::TransportOptions;
+using ::testing::Contains;
+using ::testing::Not;
 
 class TransportDescriptionFactoryTest : public testing::Test {
  public:
@@ -116,31 +118,30 @@ class TransportDescriptionFactoryTest : public testing::Test {
     // The initial offer / answer exchange.
     std::unique_ptr<TransportDescription> offer =
         f1_.CreateOffer(options, nullptr, &ice_credentials_);
+    ASSERT_TRUE(offer);
+    EXPECT_THAT(offer->transport_options, Not(Contains("renomination")));
+
     std::unique_ptr<TransportDescription> answer = f2_.CreateAnswer(
         offer.get(), options, true, nullptr, &ice_credentials_);
-    VerifyRenomination(offer.get(), false);
-    VerifyRenomination(answer.get(), false);
+    ASSERT_TRUE(answer);
+    EXPECT_THAT(answer->transport_options, Not(Contains("renomination")));
 
     options.enable_ice_renomination = true;
     std::unique_ptr<TransportDescription> renomination_offer =
         f1_.CreateOffer(options, offer.get(), &ice_credentials_);
-    VerifyRenomination(renomination_offer.get(), true);
+    ASSERT_TRUE(renomination_offer);
+    EXPECT_THAT(renomination_offer->transport_options,
+                Contains("renomination"));
 
     std::unique_ptr<TransportDescription> renomination_answer =
         f2_.CreateAnswer(renomination_offer.get(), options, true, answer.get(),
                          &ice_credentials_);
-    VerifyRenomination(renomination_answer.get(), true);
+    ASSERT_TRUE(renomination_answer);
+    EXPECT_THAT(renomination_answer->transport_options,
+                Contains("renomination"));
   }
 
  protected:
-  void VerifyRenomination(TransportDescription* desc,
-                          bool renomination_expected) {
-    ASSERT_TRUE(desc != nullptr);
-    std::vector<std::string>& options = desc->transport_options;
-    auto iter = std::find(options.begin(), options.end(), "renomination");
-    EXPECT_EQ(renomination_expected, iter != options.end());
-  }
-
   void SetDtls(bool dtls) {
     if (dtls) {
       f1_.set_secure(cricket::SEC_ENABLED);

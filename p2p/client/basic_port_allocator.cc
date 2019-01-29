@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "p2p/base/basic_packet_socket_factory.h"
 #include "p2p/base/port.h"
 #include "p2p/base/relay_port.h"
@@ -313,13 +314,12 @@ void BasicPortAllocatorSession::SetCandidateFilter(uint32_t filter) {
     if (!port.has_pairable_candidate()) {
       continue;
     }
-    const auto& candidates = port.port()->Candidates();
     // Setting a filter may cause a ready port to become non-ready
     // if it no longer has any pairable candidates.
-    if (!std::any_of(candidates.begin(), candidates.end(),
-                     [this, &port](const Candidate& candidate) {
-                       return CandidatePairable(candidate, port.port());
-                     })) {
+    if (absl::c_none_of(port.port()->Candidates(),
+                        [this, &port](const Candidate& candidate) {
+                          return CandidatePairable(candidate, port.port());
+                        })) {
       port.set_has_pairable_candidate(false);
     }
   }
@@ -417,8 +417,7 @@ void BasicPortAllocatorSession::RegatherOnFailedNetworks() {
   // regathers ports and candidates.
   for (AllocationSequence* sequence : sequences_) {
     if (!sequence->network_failed() &&
-        std::find(failed_networks.begin(), failed_networks.end(),
-                  sequence->network()) != failed_networks.end()) {
+        absl::c_linear_search(failed_networks, sequence->network())) {
       sequence->set_network_failed();
     }
   }
@@ -553,18 +552,17 @@ bool BasicPortAllocatorSession::CandidatesAllocationDone() const {
   }
 
   // Check that all port allocation sequences are complete (not running).
-  if (std::any_of(sequences_.begin(), sequences_.end(),
-                  [](const AllocationSequence* sequence) {
-                    return sequence->state() == AllocationSequence::kRunning;
-                  })) {
+  if (absl::c_any_of(sequences_, [](const AllocationSequence* sequence) {
+        return sequence->state() == AllocationSequence::kRunning;
+      })) {
     return false;
   }
 
   // If all allocated ports are no longer gathering, session must have got all
   // expected candidates. Session will trigger candidates allocation complete
   // signal.
-  return std::none_of(ports_.begin(), ports_.end(),
-                      [](const PortData& port) { return port.inprogress(); });
+  return absl::c_none_of(
+      ports_, [](const PortData& port) { return port.inprogress(); });
 }
 
 void BasicPortAllocatorSession::OnMessage(rtc::Message* message) {
@@ -828,8 +826,7 @@ void BasicPortAllocatorSession::OnNetworksChanged() {
     // Mark the sequence as "network failed" if its network is not in
     // |networks|.
     if (!sequence->network_failed() &&
-        std::find(networks.begin(), networks.end(), sequence->network()) ==
-            networks.end()) {
+        !absl::c_linear_search(networks, sequence->network())) {
       sequence->OnNetworkFailed();
       failed_networks.push_back(sequence->network());
     }
@@ -1159,8 +1156,7 @@ BasicPortAllocatorSession::GetUnprunedPorts(
   std::vector<PortData*> unpruned_ports;
   for (PortData& port : ports_) {
     if (!port.pruned() &&
-        std::find(networks.begin(), networks.end(),
-                  port.sequence()->network()) != networks.end()) {
+        absl::c_linear_search(networks, port.sequence()->network())) {
       unpruned_ports.push_back(&port);
     }
   }
@@ -1263,18 +1259,20 @@ void AllocationSequence::DisableEquivalentPhases(rtc::Network* network,
   // This can happen if, say, there's a network change event right before an
   // application-triggered ICE restart. Hopefully this problem will just go
   // away if we get rid of the gathering "phases" though, which is planned.
-  if (std::any_of(session_->ports_.begin(), session_->ports_.end(),
-                  [this](const BasicPortAllocatorSession::PortData& p) {
-                    return p.port()->Network() == network_ &&
-                           p.port()->GetProtocol() == PROTO_UDP && !p.error();
-                  })) {
+  if (absl::c_any_of(session_->ports_,
+                     [this](const BasicPortAllocatorSession::PortData& p) {
+                       return p.port()->Network() == network_ &&
+                              p.port()->GetProtocol() == PROTO_UDP &&
+                              !p.error();
+                     })) {
     *flags |= PORTALLOCATOR_DISABLE_UDP;
   }
-  if (std::any_of(session_->ports_.begin(), session_->ports_.end(),
-                  [this](const BasicPortAllocatorSession::PortData& p) {
-                    return p.port()->Network() == network_ &&
-                           p.port()->GetProtocol() == PROTO_TCP && !p.error();
-                  })) {
+  if (absl::c_any_of(session_->ports_,
+                     [this](const BasicPortAllocatorSession::PortData& p) {
+                       return p.port()->Network() == network_ &&
+                              p.port()->GetProtocol() == PROTO_TCP &&
+                              !p.error();
+                     })) {
     *flags |= PORTALLOCATOR_DISABLE_TCP;
   }
 
@@ -1619,7 +1617,7 @@ void AllocationSequence::OnPortDestroyed(PortInterface* port) {
     return;
   }
 
-  auto it = std::find(relay_ports_.begin(), relay_ports_.end(), port);
+  auto it = absl::c_find(relay_ports_, port);
   if (it != relay_ports_.end()) {
     relay_ports_.erase(it);
   } else {

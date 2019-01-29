@@ -8,7 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <algorithm>
 #include <list>
 #include <memory>
 
@@ -44,6 +43,7 @@ namespace {
 using rtc::SocketAddress;
 using ::testing::_;
 using ::testing::Assign;
+using ::testing::Contains;
 using ::testing::DoAll;
 using ::testing::InSequence;
 using ::testing::InvokeWithoutArgs;
@@ -1989,12 +1989,10 @@ TEST_F(P2PTransportChannelTest, TestUsingPooledSessionBeforeDoneGathering) {
   // pooled sessions.
   auto pooled_ports_1 = pooled_session_1->ReadyPorts();
   auto pooled_ports_2 = pooled_session_2->ReadyPorts();
-  EXPECT_NE(pooled_ports_1.end(),
-            std::find(pooled_ports_1.begin(), pooled_ports_1.end(),
-                      ep1_ch1()->selected_connection()->port()));
-  EXPECT_NE(pooled_ports_2.end(),
-            std::find(pooled_ports_2.begin(), pooled_ports_2.end(),
-                      ep2_ch1()->selected_connection()->port()));
+  EXPECT_THAT(pooled_ports_1,
+              Contains(ep1_ch1()->selected_connection()->port()));
+  EXPECT_THAT(pooled_ports_2,
+              Contains(ep2_ch1()->selected_connection()->port()));
 }
 
 // Test that a connection succeeds when the P2PTransportChannel uses a pooled
@@ -2034,12 +2032,10 @@ TEST_F(P2PTransportChannelTest, TestUsingPooledSessionAfterDoneGathering) {
   // pooled sessions.
   auto pooled_ports_1 = pooled_session_1->ReadyPorts();
   auto pooled_ports_2 = pooled_session_2->ReadyPorts();
-  EXPECT_NE(pooled_ports_1.end(),
-            std::find(pooled_ports_1.begin(), pooled_ports_1.end(),
-                      ep1_ch1()->selected_connection()->port()));
-  EXPECT_NE(pooled_ports_2.end(),
-            std::find(pooled_ports_2.begin(), pooled_ports_2.end(),
-                      ep2_ch1()->selected_connection()->port()));
+  EXPECT_THAT(pooled_ports_1,
+              Contains(ep1_ch1()->selected_connection()->port()));
+  EXPECT_THAT(pooled_ports_2,
+              Contains(ep2_ch1()->selected_connection()->port()));
 }
 
 // Test that when the "presume_writable_when_fully_relayed" flag is set to

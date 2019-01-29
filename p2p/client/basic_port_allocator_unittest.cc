@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <algorithm>
 #include <memory>
 #include <ostream>  // no-presubmit-check TODO(webrtc:8982)
 
+#include "absl/algorithm/container.h"
 #include "p2p/base/basic_packet_socket_factory.h"
 #include "p2p/base/p2p_constants.h"
 #include "p2p/base/stun_port.h"
@@ -41,10 +41,13 @@
 #include "rtc_base/thread.h"
 #include "rtc_base/virtual_socket_server.h"
 #include "system_wrappers/include/metrics.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 
 using rtc::IPAddress;
 using rtc::SocketAddress;
+using ::testing::Contains;
+using ::testing::Not;
 
 #define MAYBE_SKIP_IPV4                        \
   if (!rtc::HasIPv4Enabled()) {                \
@@ -310,9 +313,8 @@ class BasicPortAllocatorTestBase : public testing::Test,
                         const std::string& type,
                         ProtocolType protocol,
                         const SocketAddress& client_addr) {
-    return std::count_if(
-        ports.begin(), ports.end(),
-        [type, protocol, client_addr](PortInterface* port) {
+    return absl::c_count_if(
+        ports, [type, protocol, client_addr](PortInterface* port) {
           return port->Type() == type && port->GetProtocol() == protocol &&
                  port->Network()->GetBestIP() == client_addr.ipaddr();
         });
@@ -322,11 +324,11 @@ class BasicPortAllocatorTestBase : public testing::Test,
                              const std::string& type,
                              const std::string& proto,
                              const SocketAddress& addr) {
-    return std::count_if(candidates.begin(), candidates.end(),
-                         [type, proto, addr](const Candidate& c) {
-                           return c.type() == type && c.protocol() == proto &&
-                                  AddressMatch(c.address(), addr);
-                         });
+    return absl::c_count_if(
+        candidates, [type, proto, addr](const Candidate& c) {
+          return c.type() == type && c.protocol() == proto &&
+                 AddressMatch(c.address(), addr);
+        });
   }
 
   // Find a candidate and return it.
@@ -335,11 +337,11 @@ class BasicPortAllocatorTestBase : public testing::Test,
                             const std::string& proto,
                             const SocketAddress& addr,
                             Candidate* found) {
-    auto it = std::find_if(candidates.begin(), candidates.end(),
-                           [type, proto, addr](const Candidate& c) {
-                             return c.type() == type && c.protocol() == proto &&
-                                    AddressMatch(c.address(), addr);
-                           });
+    auto it =
+        absl::c_find_if(candidates, [type, proto, addr](const Candidate& c) {
+          return c.type() == type && c.protocol() == proto &&
+                 AddressMatch(c.address(), addr);
+        });
     if (it != candidates.end() && found) {
       *found = *it;
     }
@@ -361,14 +363,12 @@ class BasicPortAllocatorTestBase : public testing::Test,
       const std::string& proto,
       const SocketAddress& addr,
       const SocketAddress& related_addr) {
-    auto it =
-        std::find_if(candidates.begin(), candidates.end(),
-                     [type, proto, addr, related_addr](const Candidate& c) {
-                       return c.type() == type && c.protocol() == proto &&
-                              AddressMatch(c.address(), addr) &&
-                              AddressMatch(c.related_address(), related_addr);
-                     });
-    return it != candidates.end();
+    return absl::c_any_of(
+        candidates, [type, proto, addr, related_addr](const Candidate& c) {
+          return c.type() == type && c.protocol() == proto &&
+                 AddressMatch(c.address(), addr) &&
+                 AddressMatch(c.related_address(), related_addr);
+        });
   }
 
   static bool CheckPort(const rtc::SocketAddress& addr,
@@ -414,8 +414,7 @@ class BasicPortAllocatorTestBase : public testing::Test,
     ports_.push_back(port);
     // Make sure the new port is added to ReadyPorts.
     auto ready_ports = ses->ReadyPorts();
-    EXPECT_NE(ready_ports.end(),
-              std::find(ready_ports.begin(), ready_ports.end(), port));
+    EXPECT_THAT(ready_ports, Contains(port));
   }
   void OnPortsPruned(PortAllocatorSession* ses,
                      const std::vector<PortInterface*>& pruned_ports) {
@@ -425,8 +424,7 @@ class BasicPortAllocatorTestBase : public testing::Test,
     for (PortInterface* port : pruned_ports) {
       new_end = std::remove(ports_.begin(), new_end, port);
       // Make sure the pruned port is not in ReadyPorts.
-      EXPECT_EQ(ready_ports.end(),
-                std::find(ready_ports.begin(), ready_ports.end(), port));
+      EXPECT_THAT(ready_ports, Not(Contains(port)));
     }
     ports_.erase(new_end, ports_.end());
   }
@@ -442,9 +440,7 @@ class BasicPortAllocatorTestBase : public testing::Test,
     // Make sure the new candidates are added to Candidates.
     auto ses_candidates = ses->ReadyCandidates();
     for (const Candidate& candidate : candidates) {
-      EXPECT_NE(
-          ses_candidates.end(),
-          std::find(ses_candidates.begin(), ses_candidates.end(), candidate));
+      EXPECT_THAT(ses_candidates, Contains(candidate));
     }
   }
 

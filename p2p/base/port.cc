@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "p2p/base/port_allocator.h"
@@ -1526,8 +1527,8 @@ void Connection::ReceivedPingResponse(int rtt, const std::string& request_id) {
   // So if we're not already, become writable. We may be bringing a pruned
   // connection back to life, but if we don't really want it, we can always
   // prune it again.
-  auto iter = std::find_if(
-      pings_since_last_response_.begin(), pings_since_last_response_.end(),
+  auto iter = absl::c_find_if(
+      pings_since_last_response_,
       [request_id](const SentPing& ping) { return ping.id == request_id; });
   if (iter != pings_since_last_response_.end() &&
       iter->nomination > acked_nomination_) {

@@ -17,6 +17,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "rtc_base/async_tcp_socket.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
@@ -107,16 +108,13 @@ RelayServer::~RelayServer() {
 }
 
 void RelayServer::AddInternalSocket(rtc::AsyncPacketSocket* socket) {
-  RTC_DCHECK(internal_sockets_.end() == std::find(internal_sockets_.begin(),
-                                                  internal_sockets_.end(),
-                                                  socket));
+  RTC_DCHECK(!absl::c_linear_search(internal_sockets_, socket));
   internal_sockets_.push_back(socket);
   socket->SignalReadPacket.connect(this, &RelayServer::OnInternalPacket);
 }
 
 void RelayServer::RemoveInternalSocket(rtc::AsyncPacketSocket* socket) {
-  auto iter =
-      std::find(internal_sockets_.begin(), internal_sockets_.end(), socket);
+  auto iter = absl::c_find(internal_sockets_, socket);
   RTC_DCHECK(iter != internal_sockets_.end());
   internal_sockets_.erase(iter);
   removed_sockets_.push_back(socket);
@@ -124,16 +122,13 @@ void RelayServer::RemoveInternalSocket(rtc::AsyncPacketSocket* socket) {
 }
 
 void RelayServer::AddExternalSocket(rtc::AsyncPacketSocket* socket) {
-  RTC_DCHECK(external_sockets_.end() == std::find(external_sockets_.begin(),
-                                                  external_sockets_.end(),
-                                                  socket));
+  RTC_DCHECK(!absl::c_linear_search(external_sockets_, socket));
   external_sockets_.push_back(socket);
   socket->SignalReadPacket.connect(this, &RelayServer::OnExternalPacket);
 }
 
 void RelayServer::RemoveExternalSocket(rtc::AsyncPacketSocket* socket) {
-  auto iter =
-      std::find(external_sockets_.begin(), external_sockets_.end(), socket);
+  auto iter = absl::c_find(external_sockets_, socket);
   RTC_DCHECK(iter != external_sockets_.end());
   external_sockets_.erase(iter);
   removed_sockets_.push_back(socket);

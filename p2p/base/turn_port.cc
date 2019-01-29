@@ -10,11 +10,11 @@
 
 #include "p2p/base/turn_port.h"
 
-#include <algorithm>
 #include <functional>
 #include <utility>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "p2p/base/stun.h"
@@ -434,12 +434,10 @@ void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
   // Note that, aside from minor differences in log statements, this logic is
   // identical to that in TcpPort.
   const rtc::SocketAddress& socket_address = socket->GetLocalAddress();
-  const std::vector<rtc::InterfaceAddress>& desired_addresses =
-      Network()->GetIPs();
-  if (std::find_if(desired_addresses.begin(), desired_addresses.end(),
-                   [socket_address](const rtc::InterfaceAddress& addr) {
-                     return socket_address.ipaddr() == addr;
-                   }) == desired_addresses.end()) {
+  if (absl::c_none_of(Network()->GetIPs(),
+                      [socket_address](const rtc::InterfaceAddress& addr) {
+                        return socket_address.ipaddr() == addr;
+                      })) {
     if (socket->GetLocalAddress().IsLoopbackIP()) {
       RTC_LOG(LS_WARNING) << "Socket is bound to the address:"
                           << socket_address.ipaddr().ToString()
@@ -1121,30 +1119,26 @@ void TurnPort::ResetNonce() {
 }
 
 bool TurnPort::HasPermission(const rtc::IPAddress& ipaddr) const {
-  return (std::find_if(entries_.begin(), entries_.end(),
-                       [&ipaddr](const TurnEntry* e) {
-                         return e->address().ipaddr() == ipaddr;
-                       }) != entries_.end());
+  return absl::c_any_of(entries_, [&ipaddr](const TurnEntry* e) {
+    return e->address().ipaddr() == ipaddr;
+  });
 }
 
 TurnEntry* TurnPort::FindEntry(const rtc::SocketAddress& addr) const {
-  auto it = std::find_if(
-      entries_.begin(), entries_.end(),
-      [&addr](const TurnEntry* e) { return e->address() == addr; });
+  auto it = absl::c_find_if(
+      entries_, [&addr](const TurnEntry* e) { return e->address() == addr; });
   return (it != entries_.end()) ? *it : NULL;
 }
 
 TurnEntry* TurnPort::FindEntry(int channel_id) const {
-  auto it = std::find_if(entries_.begin(), entries_.end(),
-                         [&channel_id](const TurnEntry* e) {
-                           return e->channel_id() == channel_id;
-                         });
+  auto it = absl::c_find_if(entries_, [&channel_id](const TurnEntry* e) {
+    return e->channel_id() == channel_id;
+  });
   return (it != entries_.end()) ? *it : NULL;
 }
 
 bool TurnPort::EntryExists(TurnEntry* e) {
-  auto it = std::find(entries_.begin(), entries_.end(), e);
-  return it != entries_.end();
+  return absl::c_linear_search(entries_, e);
 }
 
 bool TurnPort::CreateOrRefreshEntry(const rtc::SocketAddress& addr,

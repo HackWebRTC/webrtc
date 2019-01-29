@@ -11,11 +11,11 @@
 #ifndef P2P_BASE_TRANSPORT_DESCRIPTION_H_
 #define P2P_BASE_TRANSPORT_DESCRIPTION_H_
 
-#include <algorithm>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "p2p/base/p2p_constants.h"
 #include "rtc_base/ssl_fingerprint.h"
 
@@ -104,8 +104,7 @@ struct TransportDescription {
 
   // TODO(deadbeef): Rename to HasIceOption, etc.
   bool HasOption(const std::string& option) const {
-    return (std::find(transport_options.begin(), transport_options.end(),
-                      option) != transport_options.end());
+    return absl::c_linear_search(transport_options, option);
   }
   void AddOption(const std::string& option) {
     transport_options.push_back(option);
