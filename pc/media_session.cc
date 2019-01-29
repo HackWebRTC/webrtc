@@ -10,7 +10,6 @@
 
 #include "pc/media_session.h"
 
-#include <algorithm>  // For std::find_if, std::sort.
 #include <functional>
 #include <map>
 #include <memory>
@@ -18,6 +17,7 @@
 #include <unordered_map>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "absl/types/optional.h"
@@ -185,9 +185,8 @@ const CryptoParamsVec* GetCryptos(const ContentInfo* content) {
 bool FindMatchingCrypto(const CryptoParamsVec& cryptos,
                         const CryptoParams& crypto,
                         CryptoParams* crypto_out) {
-  auto it = std::find_if(
-      cryptos.begin(), cryptos.end(),
-      [&crypto](const CryptoParams& c) { return crypto.Matches(c); });
+  auto it = absl::c_find_if(
+      cryptos, [&crypto](const CryptoParams& c) { return crypto.Matches(c); });
   if (it == cryptos.end()) {
     return false;
   }
@@ -417,14 +416,12 @@ static StreamParams CreateStreamParamsForNewSenderWithSsrcs(
 static bool ValidateSimulcastLayers(
     const std::vector<RidDescription>& rids,
     const SimulcastLayerList& simulcast_layers) {
-  std::vector<SimulcastLayer> all_layers = simulcast_layers.GetAllLayers();
-  return std::all_of(all_layers.begin(), all_layers.end(),
-                     [&rids](const SimulcastLayer& layer) {
-                       return std::find_if(rids.begin(), rids.end(),
-                                           [&layer](const RidDescription& rid) {
-                                             return rid.rid == layer.rid;
-                                           }) != rids.end();
-                     });
+  return absl::c_all_of(
+      simulcast_layers.GetAllLayers(), [&rids](const SimulcastLayer& layer) {
+        return absl::c_any_of(rids, [&layer](const RidDescription& rid) {
+          return rid.rid == layer.rid;
+        });
+      });
 }
 
 static StreamParams CreateStreamParamsForNewSenderWithRids(
@@ -455,9 +452,9 @@ static void AddSimulcastToMediaDescription(
   RTC_DCHECK(description);
 
   // Check if we are using RIDs in this scenario.
-  if (std::all_of(
-          description->streams().begin(), description->streams().end(),
-          [](const StreamParams& params) { return !params.has_rids(); })) {
+  if (absl::c_all_of(description->streams(), [](const StreamParams& params) {
+        return !params.has_rids();
+      })) {
     return;
   }
 
@@ -833,11 +830,10 @@ static void NegotiateCodecs(const std::vector<C>& local_codecs,
   for (const C& codec : offered_codecs) {
     payload_type_preferences[codec.id] = preference--;
   }
-  std::sort(negotiated_codecs->begin(), negotiated_codecs->end(),
-            [&payload_type_preferences](const C& a, const C& b) {
-              return payload_type_preferences[a.id] >
-                     payload_type_preferences[b.id];
-            });
+  absl::c_sort(
+      *negotiated_codecs, [&payload_type_preferences](const C& a, const C& b) {
+        return payload_type_preferences[a.id] > payload_type_preferences[b.id];
+      });
 }
 
 // Finds a codec in |codecs2| that matches |codec_to_match|, which is
@@ -850,10 +846,9 @@ static bool FindMatchingCodec(const std::vector<C>& codecs1,
                               C* found_codec) {
   // |codec_to_match| should be a member of |codecs1|, in order to look up RTX
   // codecs' associated codecs correctly. If not, that's a programming error.
-  RTC_DCHECK(std::find_if(codecs1.begin(), codecs1.end(),
-                          [&codec_to_match](const C& codec) {
-                            return &codec == &codec_to_match;
-                          }) != codecs1.end());
+  RTC_DCHECK(absl::c_any_of(codecs1, [&codec_to_match](const C& codec) {
+    return &codec == &codec_to_match;
+  }));
   for (const C& potential_match : codecs2) {
     if (potential_match.Matches(codec_to_match)) {
       if (IsRtxCodec(codec_to_match)) {
@@ -960,14 +955,13 @@ static void MergeCodecs(const std::vector<C>& reference_codecs,
 static bool FindByUriAndEncryption(const RtpHeaderExtensions& extensions,
                                    const webrtc::RtpExtension& ext_to_match,
                                    webrtc::RtpExtension* found_extension) {
-  auto it =
-      std::find_if(extensions.begin(), extensions.end(),
-                   [&ext_to_match](const webrtc::RtpExtension& extension) {
-                     // We assume that all URIs are given in a canonical
-                     // format.
-                     return extension.uri == ext_to_match.uri &&
-                            extension.encrypt == ext_to_match.encrypt;
-                   });
+  auto it = absl::c_find_if(
+      extensions, [&ext_to_match](const webrtc::RtpExtension& extension) {
+        // We assume that all URIs are given in a canonical
+        // format.
+        return extension.uri == ext_to_match.uri &&
+               extension.encrypt == ext_to_match.encrypt;
+      });
   if (it == extensions.end()) {
     return false;
   }
@@ -1303,11 +1297,9 @@ void MediaDescriptionOptions::AddSenderInternal(
 }
 
 bool MediaSessionOptions::HasMediaDescription(MediaType type) const {
-  return std::find_if(media_description_options.begin(),
-                      media_description_options.end(),
-                      [type](const MediaDescriptionOptions& t) {
-                        return t.type == type;
-                      }) != media_description_options.end();
+  return absl::c_any_of(
+      media_description_options,
+      [type](const MediaDescriptionOptions& t) { return t.type == type; });
 }
 
 MediaSessionDescriptionFactory::MediaSessionDescriptionFactory(

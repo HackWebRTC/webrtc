@@ -18,8 +18,6 @@
 #include "rtc_base/gunit.h"
 #include "test/gtest.h"
 
-using std::min;
-
 class FakeAdmTest : public testing::Test, public webrtc::AudioTransport {
  protected:
   static const int kMsInSecond = 1000;
@@ -110,7 +108,8 @@ class FakeAdmTest : public testing::Test, public webrtc::AudioTransport {
   }
   size_t CopyFromRecBuffer(void* audio_buffer, size_t audio_buffer_size) {
     EXPECT_EQ(audio_buffer_size, rec_buffer_bytes_);
-    const size_t min_buffer_size = min(audio_buffer_size, rec_buffer_bytes_);
+    const size_t min_buffer_size =
+        std::min(audio_buffer_size, rec_buffer_bytes_);
     memcpy(audio_buffer, rec_buffer_, min_buffer_size);
     return min_buffer_size;
   }

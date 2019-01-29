@@ -10,9 +10,9 @@
 
 #include "pc/rtp_transceiver.h"
 
-#include <algorithm>
 #include <string>
 
+#include "absl/algorithm/container.h"
 #include "pc/rtp_media_utils.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -83,8 +83,7 @@ void RtpTransceiver::AddSender(
   RTC_DCHECK(!unified_plan_);
   RTC_DCHECK(sender);
   RTC_DCHECK_EQ(media_type(), sender->media_type());
-  RTC_DCHECK(std::find(senders_.begin(), senders_.end(), sender) ==
-             senders_.end());
+  RTC_DCHECK(!absl::c_linear_search(senders_, sender));
   senders_.push_back(sender);
 }
 
@@ -93,7 +92,7 @@ bool RtpTransceiver::RemoveSender(RtpSenderInterface* sender) {
   if (sender) {
     RTC_DCHECK_EQ(media_type(), sender->media_type());
   }
-  auto it = std::find(senders_.begin(), senders_.end(), sender);
+  auto it = absl::c_find(senders_, sender);
   if (it == senders_.end()) {
     return false;
   }
@@ -109,8 +108,7 @@ void RtpTransceiver::AddReceiver(
   RTC_DCHECK(!unified_plan_);
   RTC_DCHECK(receiver);
   RTC_DCHECK_EQ(media_type(), receiver->media_type());
-  RTC_DCHECK(std::find(receivers_.begin(), receivers_.end(), receiver) ==
-             receivers_.end());
+  RTC_DCHECK(!absl::c_linear_search(receivers_, receiver));
   receivers_.push_back(receiver);
 }
 
@@ -119,7 +117,7 @@ bool RtpTransceiver::RemoveReceiver(RtpReceiverInterface* receiver) {
   if (receiver) {
     RTC_DCHECK_EQ(media_type(), receiver->media_type());
   }
-  auto it = std::find(receivers_.begin(), receivers_.end(), receiver);
+  auto it = absl::c_find(receivers_, receiver);
   if (it == receivers_.end()) {
     return false;
   }

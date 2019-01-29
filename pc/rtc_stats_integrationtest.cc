@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/strings/match.h"
 #include "api/audio_codecs/audio_decoder_factory.h"
 #include "api/audio_codecs/audio_encoder_factory.h"
@@ -41,7 +42,10 @@
 #include "rtc_base/thread.h"
 #include "rtc_base/trace_event.h"
 #include "rtc_base/virtual_socket_server.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
+
+using ::testing::Contains;
 
 namespace webrtc {
 
@@ -402,8 +406,7 @@ class RTCStatsReportVerifier {
       }
     }
     for (const char* missing : missing_stats) {
-      if (std::find(allowed_missing_stats.begin(), allowed_missing_stats.end(),
-                    missing) == allowed_missing_stats.end()) {
+      if (!absl::c_linear_search(allowed_missing_stats, missing)) {
         verify_successful = false;
         EXPECT_TRUE(false) << "Missing expected stats type: " << missing;
       }
@@ -897,13 +900,10 @@ TEST_F(RTCStatsIntegrationTest, GetStatsReferencedIds) {
     std::vector<const std::string*> neighbor_ids = GetStatsReferencedIds(stats);
     EXPECT_EQ(neighbor_ids.size(), expected_ids.size());
     for (const std::string* neighbor_id : neighbor_ids) {
-      EXPECT_TRUE(expected_ids.find(neighbor_id) != expected_ids.end())
-          << "Unexpected neighbor ID: " << *neighbor_id;
+      EXPECT_THAT(expected_ids, Contains(neighbor_id));
     }
     for (const std::string* expected_id : expected_ids) {
-      EXPECT_TRUE(std::find(neighbor_ids.begin(), neighbor_ids.end(),
-                            expected_id) != neighbor_ids.end())
-          << "Missing expected neighbor ID: " << *expected_id;
+      EXPECT_THAT(neighbor_ids, Contains(expected_id));
     }
   }
 }

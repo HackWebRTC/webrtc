@@ -10,11 +10,11 @@
 
 #include "pc/sdp_serializer.h"
 
-#include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "api/jsep.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/string_encode.h"
@@ -166,8 +166,7 @@ webrtc::RTCError ParseRidPayloadList(const std::string& payload_list,
     }
 
     // Check if the value already appears in the payload list.
-    if (std::find(payload_types.begin(), payload_types.end(), value.value()) !=
-        payload_types.end()) {
+    if (absl::c_linear_search(payload_types, value.value())) {
       return ParseError("Duplicate payload type in list: " + payload_type);
     }
     payload_types.push_back(value.value());

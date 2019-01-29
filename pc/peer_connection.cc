@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "api/jsep_ice_candidate.h"
@@ -4828,8 +4829,7 @@ void PeerConnection::UpdateClosingRtpDataChannels(
   auto it = rtp_data_channels_.begin();
   while (it != rtp_data_channels_.end()) {
     DataChannel* data_channel = it->second;
-    if (std::find(active_channels.begin(), active_channels.end(),
-                  data_channel->label()) != active_channels.end()) {
+    if (absl::c_linear_search(active_channels, data_channel->label())) {
       ++it;
       continue;
     }

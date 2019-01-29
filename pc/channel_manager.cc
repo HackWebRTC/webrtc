@@ -10,9 +10,9 @@
 
 #include "pc/channel_manager.h"
 
-#include <algorithm>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "media/base/media_constants.h"
@@ -211,10 +211,10 @@ void ChannelManager::DestroyVoiceChannel(VoiceChannel* voice_channel) {
 
   RTC_DCHECK(initialized_);
 
-  auto it = std::find_if(voice_channels_.begin(), voice_channels_.end(),
-                         [&](const std::unique_ptr<VoiceChannel>& p) {
-                           return p.get() == voice_channel;
-                         });
+  auto it = absl::c_find_if(voice_channels_,
+                            [&](const std::unique_ptr<VoiceChannel>& p) {
+                              return p.get() == voice_channel;
+                            });
   RTC_DCHECK(it != voice_channels_.end());
   if (it == voice_channels_.end()) {
     return;
@@ -280,10 +280,10 @@ void ChannelManager::DestroyVideoChannel(VideoChannel* video_channel) {
 
   RTC_DCHECK(initialized_);
 
-  auto it = std::find_if(video_channels_.begin(), video_channels_.end(),
-                         [&](const std::unique_ptr<VideoChannel>& p) {
-                           return p.get() == video_channel;
-                         });
+  auto it = absl::c_find_if(video_channels_,
+                            [&](const std::unique_ptr<VideoChannel>& p) {
+                              return p.get() == video_channel;
+                            });
   RTC_DCHECK(it != video_channels_.end());
   if (it == video_channels_.end()) {
     return;
@@ -340,10 +340,10 @@ void ChannelManager::DestroyRtpDataChannel(RtpDataChannel* data_channel) {
 
   RTC_DCHECK(initialized_);
 
-  auto it = std::find_if(data_channels_.begin(), data_channels_.end(),
-                         [&](const std::unique_ptr<RtpDataChannel>& p) {
-                           return p.get() == data_channel;
-                         });
+  auto it = absl::c_find_if(data_channels_,
+                            [&](const std::unique_ptr<RtpDataChannel>& p) {
+                              return p.get() == data_channel;
+                            });
   RTC_DCHECK(it != data_channels_.end());
   if (it == data_channels_.end()) {
     return;

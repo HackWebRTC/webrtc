@@ -10,9 +10,9 @@
 
 #include "pc/session_description.h"
 
-#include <algorithm>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "rtc_base/checks.h"
 
 namespace cricket {
@@ -66,8 +66,7 @@ const std::string* ContentGroup::FirstContentName() const {
 }
 
 bool ContentGroup::HasContentName(const std::string& content_name) const {
-  return (std::find(content_names_.begin(), content_names_.end(),
-                    content_name) != content_names_.end());
+  return absl::c_linear_search(content_names_, content_name);
 }
 
 void ContentGroup::AddContentName(const std::string& content_name) {
@@ -77,8 +76,7 @@ void ContentGroup::AddContentName(const std::string& content_name) {
 }
 
 bool ContentGroup::RemoveContentName(const std::string& content_name) {
-  ContentNames::iterator iter =
-      std::find(content_names_.begin(), content_names_.end(), content_name);
+  ContentNames::iterator iter = absl::c_find(content_names_, content_name);
   if (iter == content_names_.end()) {
     return false;
   }

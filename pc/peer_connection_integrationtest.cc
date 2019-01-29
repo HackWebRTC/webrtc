@@ -14,7 +14,6 @@
 
 #include <stdio.h>
 
-#include <algorithm>
 #include <functional>
 #include <list>
 #include <map>
@@ -22,6 +21,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
@@ -78,9 +78,10 @@ using ::cricket::StreamParams;
 using ::rtc::SocketAddress;
 using ::testing::_;
 using ::testing::Combine;
+using ::testing::Contains;
 using ::testing::ElementsAre;
-using ::testing::Return;
 using ::testing::NiceMock;
+using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::UnorderedElementsAreArray;
 using ::testing::Values;
@@ -1639,18 +1640,16 @@ TEST_P(PeerConnectionIntegrationTest,
   EXPECT_EQ(2U, callee()->rtp_receiver_observers().size());
   // Wait for all "first packet received" callbacks to be fired.
   EXPECT_TRUE_WAIT(
-      std::all_of(caller()->rtp_receiver_observers().begin(),
-                  caller()->rtp_receiver_observers().end(),
-                  [](const std::unique_ptr<MockRtpReceiverObserver>& o) {
-                    return o->first_packet_received();
-                  }),
+      absl::c_all_of(caller()->rtp_receiver_observers(),
+                     [](const std::unique_ptr<MockRtpReceiverObserver>& o) {
+                       return o->first_packet_received();
+                     }),
       kMaxWaitForFramesMs);
   EXPECT_TRUE_WAIT(
-      std::all_of(callee()->rtp_receiver_observers().begin(),
-                  callee()->rtp_receiver_observers().end(),
-                  [](const std::unique_ptr<MockRtpReceiverObserver>& o) {
-                    return o->first_packet_received();
-                  }),
+      absl::c_all_of(callee()->rtp_receiver_observers(),
+                     [](const std::unique_ptr<MockRtpReceiverObserver>& o) {
+                       return o->first_packet_received();
+                     }),
       kMaxWaitForFramesMs);
   // If new observers are set after the first packet was already received, the
   // callback should still be invoked.
@@ -1659,17 +1658,15 @@ TEST_P(PeerConnectionIntegrationTest,
   EXPECT_EQ(2U, caller()->rtp_receiver_observers().size());
   EXPECT_EQ(2U, callee()->rtp_receiver_observers().size());
   EXPECT_TRUE(
-      std::all_of(caller()->rtp_receiver_observers().begin(),
-                  caller()->rtp_receiver_observers().end(),
-                  [](const std::unique_ptr<MockRtpReceiverObserver>& o) {
-                    return o->first_packet_received();
-                  }));
+      absl::c_all_of(caller()->rtp_receiver_observers(),
+                     [](const std::unique_ptr<MockRtpReceiverObserver>& o) {
+                       return o->first_packet_received();
+                     }));
   EXPECT_TRUE(
-      std::all_of(callee()->rtp_receiver_observers().begin(),
-                  callee()->rtp_receiver_observers().end(),
-                  [](const std::unique_ptr<MockRtpReceiverObserver>& o) {
-                    return o->first_packet_received();
-                  }));
+      absl::c_all_of(callee()->rtp_receiver_observers(),
+                     [](const std::unique_ptr<MockRtpReceiverObserver>& o) {
+                       return o->first_packet_received();
+                     }));
 }
 
 class DummyDtmfObserver : public DtmfSenderObserverInterface {
@@ -3364,9 +3361,9 @@ TEST_P(PeerConnectionIntegrationTest, StressTestUnorderedSctpDataChannel) {
       caller()->data_observer()->messages();
   std::vector<std::string> callee_received_messages =
       callee()->data_observer()->messages();
-  std::sort(sent_messages.begin(), sent_messages.end());
-  std::sort(caller_received_messages.begin(), caller_received_messages.end());
-  std::sort(callee_received_messages.begin(), callee_received_messages.end());
+  absl::c_sort(sent_messages);
+  absl::c_sort(caller_received_messages);
+  absl::c_sort(callee_received_messages);
   EXPECT_EQ(sent_messages, caller_received_messages);
   EXPECT_EQ(sent_messages, callee_received_messages);
 }
@@ -4049,17 +4046,11 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithIceRenomination) {
   const cricket::SessionDescription* desc =
       caller()->pc()->local_description()->description();
   for (const cricket::TransportInfo& info : desc->transport_infos()) {
-    ASSERT_NE(
-        info.description.transport_options.end(),
-        std::find(info.description.transport_options.begin(),
-                  info.description.transport_options.end(), "renomination"));
+    ASSERT_THAT(info.description.transport_options, Contains("renomination"));
   }
   desc = callee()->pc()->local_description()->description();
   for (const cricket::TransportInfo& info : desc->transport_infos()) {
-    ASSERT_NE(
-        info.description.transport_options.end(),
-        std::find(info.description.transport_options.begin(),
-                  info.description.transport_options.end(), "renomination"));
+    ASSERT_THAT(info.description.transport_options, Contains("renomination"));
   }
   MediaExpectations media_expectations;
   media_expectations.ExpectBidirectionalAudioAndVideo();

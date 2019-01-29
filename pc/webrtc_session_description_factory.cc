@@ -11,11 +11,11 @@
 #include "pc/webrtc_session_description_factory.h"
 
 #include <stddef.h>
-#include <algorithm>
 #include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/jsep.h"
@@ -42,16 +42,6 @@ static const char kFailedDueToSessionShutdown[] =
 
 static const uint64_t kInitSessionVersion = 2;
 
-static bool CompareSenderOptions(const cricket::SenderOptions& sender1,
-                                 const cricket::SenderOptions& sender2) {
-  return sender1.track_id < sender2.track_id;
-}
-
-static bool SameId(const cricket::SenderOptions& sender1,
-                   const cricket::SenderOptions& sender2) {
-  return sender1.track_id == sender2.track_id;
-}
-
 // Check that each sender has a unique ID.
 static bool ValidMediaSessionOptions(
     const cricket::MediaSessionOptions& session_options) {
@@ -62,10 +52,15 @@ static bool ValidMediaSessionOptions(
                           media_description_options.sender_options.begin(),
                           media_description_options.sender_options.end());
   }
-  std::sort(sorted_senders.begin(), sorted_senders.end(), CompareSenderOptions);
-  std::vector<cricket::SenderOptions>::iterator it =
-      std::adjacent_find(sorted_senders.begin(), sorted_senders.end(), SameId);
-  return it == sorted_senders.end();
+  absl::c_sort(sorted_senders, [](const cricket::SenderOptions& sender1,
+                                  const cricket::SenderOptions& sender2) {
+    return sender1.track_id < sender2.track_id;
+  });
+  return absl::c_adjacent_find(sorted_senders,
+                               [](const cricket::SenderOptions& sender1,
+                                  const cricket::SenderOptions& sender2) {
+                                 return sender1.track_id == sender2.track_id;
+                               }) == sorted_senders.end();
 }
 
 enum {

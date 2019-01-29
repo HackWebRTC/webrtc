@@ -9,9 +9,9 @@
  */
 
 #include <stdio.h>
-#include <algorithm>
 #include <memory>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/audio_codecs/audio_encoder.h"
@@ -235,7 +235,7 @@ std::string DerToPem(const std::string& der) {
 
 std::vector<std::string> DersToPems(const std::vector<std::string>& ders) {
   std::vector<std::string> pems(ders.size());
-  std::transform(ders.begin(), ders.end(), pems.begin(), DerToPem);
+  absl::c_transform(ders, pems.begin(), DerToPem);
   return pems;
 }
 

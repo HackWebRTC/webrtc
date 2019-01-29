@@ -14,6 +14,7 @@
 
 #include <tuple>
 
+#include "absl/algorithm/container.h"
 #include "api/call/call_factory_interface.h"
 #include "api/test/fake_media_transport.h"
 #include "logging/rtc_event_log/rtc_event_log_factory.h"
@@ -812,8 +813,8 @@ void RenameVideoContent(cricket::SessionDescription* desc) {
 }
 
 void ReverseMediaContent(cricket::SessionDescription* desc) {
-  std::reverse(desc->contents().begin(), desc->contents().end());
-  std::reverse(desc->transport_infos().begin(), desc->transport_infos().end());
+  absl::c_reverse(desc->contents());
+  absl::c_reverse(desc->transport_infos());
 }
 
 void ChangeMediaTypeAudioToVideo(cricket::SessionDescription* desc) {

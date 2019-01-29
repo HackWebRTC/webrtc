@@ -10,9 +10,10 @@
 
 #include "pc/media_stream_observer.h"
 
-#include <algorithm>
 #include <string>
 #include <vector>
+
+#include "absl/algorithm/container.h"
 
 namespace webrtc {
 
@@ -33,48 +34,44 @@ void MediaStreamObserver::OnChanged() {
 
   // Find removed audio tracks.
   for (const auto& cached_track : cached_audio_tracks_) {
-    auto it = std::find_if(
-        new_audio_tracks.begin(), new_audio_tracks.end(),
-        [cached_track](const AudioTrackVector::value_type& new_track) {
-          return new_track->id().compare(cached_track->id()) == 0;
-        });
-    if (it == new_audio_tracks.end()) {
+    if (absl::c_none_of(
+            new_audio_tracks,
+            [cached_track](const AudioTrackVector::value_type& new_track) {
+              return new_track->id() == cached_track->id();
+            })) {
       SignalAudioTrackRemoved(cached_track.get(), stream_);
     }
   }
 
   // Find added audio tracks.
   for (const auto& new_track : new_audio_tracks) {
-    auto it = std::find_if(
-        cached_audio_tracks_.begin(), cached_audio_tracks_.end(),
-        [new_track](const AudioTrackVector::value_type& cached_track) {
-          return new_track->id().compare(cached_track->id()) == 0;
-        });
-    if (it == cached_audio_tracks_.end()) {
+    if (absl::c_none_of(
+            cached_audio_tracks_,
+            [new_track](const AudioTrackVector::value_type& cached_track) {
+              return new_track->id() == cached_track->id();
+            })) {
       SignalAudioTrackAdded(new_track.get(), stream_);
     }
   }
 
   // Find removed video tracks.
   for (const auto& cached_track : cached_video_tracks_) {
-    auto it = std::find_if(
-        new_video_tracks.begin(), new_video_tracks.end(),
-        [cached_track](const VideoTrackVector::value_type& new_track) {
-          return new_track->id().compare(cached_track->id()) == 0;
-        });
-    if (it == new_video_tracks.end()) {
+    if (absl::c_none_of(
+            new_video_tracks,
+            [cached_track](const VideoTrackVector::value_type& new_track) {
+              return new_track->id() == cached_track->id();
+            })) {
       SignalVideoTrackRemoved(cached_track.get(), stream_);
     }
   }
 
   // Find added video tracks.
   for (const auto& new_track : new_video_tracks) {
-    auto it = std::find_if(
-        cached_video_tracks_.begin(), cached_video_tracks_.end(),
-        [new_track](const VideoTrackVector::value_type& cached_track) {
-          return new_track->id().compare(cached_track->id()) == 0;
-        });
-    if (it == cached_video_tracks_.end()) {
+    if (absl::c_none_of(
+            cached_video_tracks_,
+            [new_track](const VideoTrackVector::value_type& cached_track) {
+              return new_track->id() == cached_track->id();
+            })) {
       SignalVideoTrackAdded(new_track.get(), stream_);
     }
   }

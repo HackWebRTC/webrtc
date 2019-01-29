@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <algorithm>
 #include <iterator>
 #include <utility>
 
 #include "pc/channel.h"
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "api/call/audio_sink.h"
 #include "media/base/media_constants.h"
@@ -746,11 +746,10 @@ RtpHeaderExtensions BaseChannel::GetFilteredRtpHeaderExtensions(
   RTC_DCHECK(rtp_transport_);
   if (crypto_options_.srtp.enable_encrypted_rtp_header_extensions) {
     RtpHeaderExtensions filtered;
-    auto pred = [](const webrtc::RtpExtension& extension) {
-      return !extension.encrypt;
-    };
-    std::copy_if(extensions.begin(), extensions.end(),
-                 std::back_inserter(filtered), pred);
+    absl::c_copy_if(extensions, std::back_inserter(filtered),
+                    [](const webrtc::RtpExtension& extension) {
+                      return !extension.encrypt;
+                    });
     return filtered;
   }
 

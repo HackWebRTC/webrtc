@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "api/array_view.h"
 #include "api/crypto_params.h"
 #include "api/jsep_session_description.h"
@@ -1431,10 +1432,9 @@ class WebRtcSdpTest : public testing::Test {
     // Order of elements does not matter, only equivalence of sets.
     EXPECT_EQ(rids.size(), ids.size());
     for (const std::string& id : ids) {
-      EXPECT_EQ(1l, std::count_if(rids.begin(), rids.end(),
-                                  [id](const RidDescription& rid) {
-                                    return rid.rid == id;
-                                  }));
+      EXPECT_EQ(1l, absl::c_count_if(rids, [id](const RidDescription& rid) {
+                  return rid.rid == id;
+                }));
     }
   }
 
@@ -4105,10 +4105,10 @@ TEST_F(WebRtcSdpTest, TestDeserializeSimulcastAttributeRemovesUnknownRids) {
   std::vector<SimulcastLayer> all_send_layers =
       simulcast.send_layers().GetAllLayers();
   EXPECT_EQ(2ul, all_send_layers.size());
-  EXPECT_EQ(0, std::count_if(all_send_layers.begin(), all_send_layers.end(),
-                             [](const SimulcastLayer& layer) {
-                               return layer.rid == "2";
-                             }));
+  EXPECT_EQ(0,
+            absl::c_count_if(all_send_layers, [](const SimulcastLayer& layer) {
+              return layer.rid == "2";
+            }));
 
   std::vector<SimulcastLayer> all_receive_layers =
       simulcast.receive_layers().GetAllLayers();

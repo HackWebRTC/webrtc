@@ -13,7 +13,6 @@
 #ifndef PC_MEDIA_SESSION_H_
 #define PC_MEDIA_SESSION_H_
 
-#include <algorithm>
 #include <map>
 #include <memory>
 #include <string>

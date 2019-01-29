@@ -12,6 +12,9 @@
 
 #include "pc/rtp_parameters_conversion.h"
 #include "rtc_base/gunit.h"
+#include "test/gmock.h"
+
+using ::testing::UnorderedElementsAre;
 
 namespace webrtc {
 
@@ -601,24 +604,15 @@ TEST(RtpParametersConversionTest, ToRtpCapabilities) {
   capabilities = ToRtpCapabilities<cricket::VideoCodec>(
       {vp8, red, ulpfec, rtx}, cricket::RtpHeaderExtensions());
   EXPECT_EQ(4u, capabilities.codecs.size());
-  EXPECT_EQ(2u, capabilities.fec.size());
-  EXPECT_NE(capabilities.fec.end(),
-            std::find(capabilities.fec.begin(), capabilities.fec.end(),
-                      FecMechanism::RED));
-  EXPECT_NE(capabilities.fec.end(),
-            std::find(capabilities.fec.begin(), capabilities.fec.end(),
-                      FecMechanism::RED_AND_ULPFEC));
+  EXPECT_THAT(
+      capabilities.fec,
+      UnorderedElementsAre(FecMechanism::RED, FecMechanism::RED_AND_ULPFEC));
 
   capabilities = ToRtpCapabilities<cricket::VideoCodec>(
       {vp8, red, flexfec}, cricket::RtpHeaderExtensions());
   EXPECT_EQ(3u, capabilities.codecs.size());
-  EXPECT_EQ(2u, capabilities.fec.size());
-  EXPECT_NE(capabilities.fec.end(),
-            std::find(capabilities.fec.begin(), capabilities.fec.end(),
-                      FecMechanism::RED));
-  EXPECT_NE(capabilities.fec.end(),
-            std::find(capabilities.fec.begin(), capabilities.fec.end(),
-                      FecMechanism::FLEXFEC));
+  EXPECT_THAT(capabilities.fec,
+              UnorderedElementsAre(FecMechanism::RED, FecMechanism::FLEXFEC));
 }
 
 TEST(RtpParametersConversionTest, ToRtpParameters) {

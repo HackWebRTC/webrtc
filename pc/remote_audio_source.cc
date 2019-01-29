@@ -11,9 +11,9 @@
 #include "pc/remote_audio_source.h"
 
 #include <stddef.h>
-#include <algorithm>
 #include <string>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "api/scoped_refptr.h"
 #include "rtc_base/checks.h"
@@ -101,8 +101,7 @@ void RemoteAudioSource::SetVolume(double volume) {
 
 void RemoteAudioSource::RegisterAudioObserver(AudioObserver* observer) {
   RTC_DCHECK(observer != NULL);
-  RTC_DCHECK(std::find(audio_observers_.begin(), audio_observers_.end(),
-                       observer) == audio_observers_.end());
+  RTC_DCHECK(!absl::c_linear_search(audio_observers_, observer));
   audio_observers_.push_back(observer);
 }
 
@@ -121,7 +120,7 @@ void RemoteAudioSource::AddSink(AudioTrackSinkInterface* sink) {
   }
 
   rtc::CritScope lock(&sink_lock_);
-  RTC_DCHECK(std::find(sinks_.begin(), sinks_.end(), sink) == sinks_.end());
+  RTC_DCHECK(absl::c_linear_search(sinks_, sink));
   sinks_.push_back(sink);
 }
 

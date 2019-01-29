@@ -10,10 +10,10 @@
 
 #include "pc/jsep_transport_controller.h"
 
-#include <algorithm>
 #include <memory>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/no_op_dtls_transport.h"
@@ -885,9 +885,7 @@ std::vector<int> JsepTransportController::GetEncryptedHeaderExtensionIds(
     if (!extension.encrypt) {
       continue;
     }
-    auto it = std::find(encrypted_header_extension_ids.begin(),
-                        encrypted_header_extension_ids.end(), extension.id);
-    if (it == encrypted_header_extension_ids.end()) {
+    if (!absl::c_linear_search(encrypted_header_extension_ids, extension.id)) {
       encrypted_header_extension_ids.push_back(extension.id);
     }
   }
@@ -907,8 +905,7 @@ JsepTransportController::MergeEncryptedHeaderExtensionIdsForBundle(
       std::vector<int> extension_ids =
           GetEncryptedHeaderExtensionIds(content_info);
       for (int id : extension_ids) {
-        auto it = std::find(merged_ids.begin(), merged_ids.end(), id);
-        if (it == merged_ids.end()) {
+        if (!absl::c_linear_search(merged_ids, id)) {
           merged_ids.push_back(id);
         }
       }
