@@ -50,7 +50,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
         timing_(new VCMTiming(clock)),
         receiver_(clock, timing_.get(), nack_sender, keyframe_request_sender) {}
 
-  virtual ~VideoCodingModuleImpl() {}
+  ~VideoCodingModuleImpl() override {}
 
   int64_t TimeUntilNextProcess() override {
     int64_t receiver_time = receiver_.TimeUntilNextProcess();

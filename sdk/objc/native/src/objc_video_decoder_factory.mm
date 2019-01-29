@@ -37,7 +37,7 @@ class ObjCVideoDecoder : public VideoDecoder {
   ObjCVideoDecoder(id<RTCVideoDecoder> decoder)
       : decoder_(decoder), implementation_name_([decoder implementationName].stdString) {}
 
-  int32_t InitDecode(const VideoCodec *codec_settings, int32_t number_of_cores) {
+  int32_t InitDecode(const VideoCodec *codec_settings, int32_t number_of_cores) override {
     if ([decoder_ respondsToSelector:@selector(startDecodeWithNumberOfCores:)]) {
       return [decoder_ startDecodeWithNumberOfCores:number_of_cores];
     } else {
@@ -52,7 +52,7 @@ class ObjCVideoDecoder : public VideoDecoder {
   int32_t Decode(const EncodedImage &input_image,
                  bool missing_frames,
                  const CodecSpecificInfo *codec_specific_info = NULL,
-                 int64_t render_time_ms = -1) {
+                 int64_t render_time_ms = -1) override {
     RTCEncodedImage *encodedImage =
         [[RTCEncodedImage alloc] initWithNativeEncodedImage:input_image];
 
@@ -73,7 +73,7 @@ class ObjCVideoDecoder : public VideoDecoder {
                renderTimeMs:render_time_ms];
   }
 
-  int32_t RegisterDecodeCompleteCallback(DecodedImageCallback *callback) {
+  int32_t RegisterDecodeCompleteCallback(DecodedImageCallback *callback) override {
     [decoder_ setCallback:^(RTCVideoFrame *frame) {
       const rtc::scoped_refptr<VideoFrameBuffer> buffer =
           new rtc::RefCountedObject<ObjCFrameBuffer>(frame.buffer);
@@ -92,9 +92,9 @@ class ObjCVideoDecoder : public VideoDecoder {
     return WEBRTC_VIDEO_CODEC_OK;
   }
 
-  int32_t Release() { return [decoder_ releaseDecoder]; }
+  int32_t Release() override { return [decoder_ releaseDecoder]; }
 
-  const char *ImplementationName() const { return implementation_name_.c_str(); }
+  const char *ImplementationName() const override { return implementation_name_.c_str(); }
 
  private:
   id<RTCVideoDecoder> decoder_;

@@ -186,7 +186,7 @@ class FileRenderPassthrough : public rtc::VideoSinkInterface<VideoFrame> {
                         rtc::VideoSinkInterface<VideoFrame>* renderer)
       : basename_(basename), renderer_(renderer), file_(nullptr), count_(0) {}
 
-  ~FileRenderPassthrough() {
+  ~FileRenderPassthrough() override {
     if (file_)
       fclose(file_);
   }
@@ -219,7 +219,7 @@ class DecoderBitstreamFileWriter : public test::FakeDecoder {
       : file_(fopen(filename, "wb")) {
     RTC_DCHECK(file_);
   }
-  ~DecoderBitstreamFileWriter() { fclose(file_); }
+  ~DecoderBitstreamFileWriter() override { fclose(file_); }
 
   int32_t Decode(const EncodedImage& encoded_frame,
                  bool /* missing_frames */,

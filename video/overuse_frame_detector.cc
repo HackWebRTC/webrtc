@@ -83,7 +83,7 @@ class SendProcessingUsage1 : public OveruseFrameDetector::ProcessingUsage {
         filtered_frame_diff_ms_(new rtc::ExpFilter(kWeightFactorFrameDiff)) {
     Reset();
   }
-  virtual ~SendProcessingUsage1() {}
+  ~SendProcessingUsage1() override {}
 
   void Reset() override {
     frame_timing_.clear();
@@ -226,7 +226,7 @@ class SendProcessingUsage2 : public OveruseFrameDetector::ProcessingUsage {
       : options_(options) {
     Reset();
   }
-  virtual ~SendProcessingUsage2() = default;
+  ~SendProcessingUsage2() override = default;
 
   void Reset() override {
     prev_time_us_ = -1;

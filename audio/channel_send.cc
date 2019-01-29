@@ -410,7 +410,7 @@ class VoERtcpObserver : public RtcpBandwidthObserver {
  public:
   explicit VoERtcpObserver(ChannelSend* owner)
       : owner_(owner), bandwidth_observer_(nullptr) {}
-  virtual ~VoERtcpObserver() {}
+  ~VoERtcpObserver() override {}
 
   void SetBandwidthObserver(RtcpBandwidthObserver* bandwidth_observer) {
     rtc::CritScope lock(&crit_);

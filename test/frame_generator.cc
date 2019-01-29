@@ -197,7 +197,7 @@ class YuvFileGenerator : public FrameGenerator {
     RTC_DCHECK_GT(frame_repeat_count, 0);
   }
 
-  virtual ~YuvFileGenerator() {
+  ~YuvFileGenerator() override {
     for (FILE* file : files_)
       fclose(file);
   }
@@ -359,7 +359,7 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
     RTC_DCHECK_GT(scroll_time_ms + pause_time_ms, 0);
   }
 
-  virtual ~ScrollingImageFrameGenerator() {}
+  ~ScrollingImageFrameGenerator() override {}
 
   VideoFrame* NextFrame() override {
     const int64_t kFrameDisplayTime = scroll_time_ + pause_time_;

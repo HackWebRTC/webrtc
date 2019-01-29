@@ -36,7 +36,7 @@ class BweSimulation : public BweTest,
  public:
   BweSimulation()
       : BweTest(), random_(Clock::GetRealTimeClock()->TimeInMicroseconds()) {}
-  virtual ~BweSimulation() {}
+  ~BweSimulation() override {}
 
  protected:
   void SetUp() override {

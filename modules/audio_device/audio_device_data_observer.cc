@@ -28,7 +28,7 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
     auto res = impl_->RegisterAudioCallback(this);
     is_valid_ = (impl_.get() != nullptr) && (res == 0);
   }
-  virtual ~ADMWrapper() {
+  ~ADMWrapper() override {
     audio_transport_ = nullptr;
     observer_ = nullptr;
   }

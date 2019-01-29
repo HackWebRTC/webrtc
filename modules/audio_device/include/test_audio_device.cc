@@ -79,7 +79,7 @@ class TestAudioDeviceModuleImpl
     }
   }
 
-  ~TestAudioDeviceModuleImpl() {
+  ~TestAudioDeviceModuleImpl() override {
     StopPlayout();
     StopRecording();
     if (thread_) {
@@ -91,7 +91,7 @@ class TestAudioDeviceModuleImpl
     }
   }
 
-  int32_t Init() {
+  int32_t Init() override {
     thread_ = absl::make_unique<rtc::PlatformThread>(
         TestAudioDeviceModuleImpl::Run, this, "TestAudioDeviceModuleImpl",
         rtc::kHighPriority);
@@ -99,58 +99,58 @@ class TestAudioDeviceModuleImpl
     return 0;
   }
 
-  int32_t RegisterAudioCallback(AudioTransport* callback) {
+  int32_t RegisterAudioCallback(AudioTransport* callback) override {
     rtc::CritScope cs(&lock_);
     RTC_DCHECK(callback || audio_callback_);
     audio_callback_ = callback;
     return 0;
   }
 
-  int32_t StartPlayout() {
+  int32_t StartPlayout() override {
     rtc::CritScope cs(&lock_);
     RTC_CHECK(renderer_);
     rendering_ = true;
     return 0;
   }
 
-  int32_t StopPlayout() {
+  int32_t StopPlayout() override {
     rtc::CritScope cs(&lock_);
     rendering_ = false;
     return 0;
   }
 
-  int32_t StartRecording() {
+  int32_t StartRecording() override {
     rtc::CritScope cs(&lock_);
     RTC_CHECK(capturer_);
     capturing_ = true;
     return 0;
   }
 
-  int32_t StopRecording() {
+  int32_t StopRecording() override {
     rtc::CritScope cs(&lock_);
     capturing_ = false;
     return 0;
   }
 
-  bool Playing() const {
+  bool Playing() const override {
     rtc::CritScope cs(&lock_);
     return rendering_;
   }
 
-  bool Recording() const {
+  bool Recording() const override {
     rtc::CritScope cs(&lock_);
     return capturing_;
   }
 
   // Blocks until the Renderer refuses to receive data.
   // Returns false if |timeout_ms| passes before that happens.
-  bool WaitForPlayoutEnd(int timeout_ms = rtc::Event::kForever) {
+  bool WaitForPlayoutEnd(int timeout_ms = rtc::Event::kForever) override {
     return done_rendering_.Wait(timeout_ms);
   }
 
   // Blocks until the Recorder stops producing data.
   // Returns false if |timeout_ms| passes before that happens.
-  bool WaitForRecordingEnd(int timeout_ms = rtc::Event::kForever) {
+  bool WaitForRecordingEnd(int timeout_ms = rtc::Event::kForever) override {
     return done_capturing_.Wait(timeout_ms);
   }
 

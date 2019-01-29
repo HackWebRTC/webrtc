@@ -70,14 +70,14 @@ class SimulcastTestFixtureImpl::TestEncodedImageCallback
     memset(layer_sync_, false, sizeof(layer_sync_));
   }
 
-  ~TestEncodedImageCallback() {
+  ~TestEncodedImageCallback() override {
     delete[] encoded_key_frame_.data();
     delete[] encoded_frame_.data();
   }
 
-  virtual Result OnEncodedImage(const EncodedImage& encoded_image,
-                                const CodecSpecificInfo* codec_specific_info,
-                                const RTPFragmentationHeader* fragmentation) {
+  Result OnEncodedImage(const EncodedImage& encoded_image,
+                        const CodecSpecificInfo* codec_specific_info,
+                        const RTPFragmentationHeader* fragmentation) override {
     bool is_vp8 = (codec_specific_info->codecType == kVideoCodecVP8);
     // Only store the base layer.
     if (encoded_image.SpatialIndex().value_or(0) == 0) {

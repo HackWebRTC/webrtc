@@ -69,15 +69,15 @@ class RtpFileReaderImpl : public RtpFileReader {
 
 class InterleavedRtpFileReader : public RtpFileReaderImpl {
  public:
-  virtual ~InterleavedRtpFileReader() {
+  ~InterleavedRtpFileReader() override {
     if (file_ != NULL) {
       fclose(file_);
       file_ = NULL;
     }
   }
 
-  virtual bool Init(const std::string& filename,
-                    const std::set<uint32_t>& ssrc_filter) {
+  bool Init(const std::string& filename,
+            const std::set<uint32_t>& ssrc_filter) override {
     file_ = fopen(filename.c_str(), "rb");
     if (file_ == NULL) {
       printf("ERROR: Can't open file: %s\n", filename.c_str());
@@ -85,7 +85,7 @@ class InterleavedRtpFileReader : public RtpFileReaderImpl {
     }
     return true;
   }
-  virtual bool NextPacket(RtpPacket* packet) {
+  bool NextPacket(RtpPacket* packet) override {
     assert(file_ != NULL);
     packet->length = RtpPacket::kMaxPacketBufferSize;
     uint32_t len = 0;
@@ -116,7 +116,7 @@ class InterleavedRtpFileReader : public RtpFileReaderImpl {
 class RtpDumpReader : public RtpFileReaderImpl {
  public:
   RtpDumpReader() : file_(NULL) {}
-  virtual ~RtpDumpReader() {
+  ~RtpDumpReader() override {
     if (file_ != NULL) {
       fclose(file_);
       file_ = NULL;
@@ -255,7 +255,7 @@ class PcapReader : public RtpFileReaderImpl {
         next_packet_it_() {
   }
 
-  virtual ~PcapReader() {
+  ~PcapReader() override {
     if (file_ != NULL) {
       fclose(file_);
       file_ = NULL;
