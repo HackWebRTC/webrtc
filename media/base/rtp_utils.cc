@@ -287,9 +287,15 @@ bool IsRtpPacket(const void* data, size_t len) {
 // Check the RTP payload type. If 63 < payload type < 96, it's RTCP.
 // For additional details, see http://tools.ietf.org/html/rfc5761.
 bool IsRtcpPacket(const char* data, size_t len) {
-  if (len < 2) {
+  if (len < kMinRtcpPacketLen) {
     return false;
   }
+
+  // RTCP must be a valid RTP packet.
+  if ((static_cast<uint8_t>(data[0]) >> 6) != kRtpVersion) {
+    return false;
+  }
+
   char pt = data[1] & 0x7F;
   return (63 < pt) && (pt < 96);
 }
