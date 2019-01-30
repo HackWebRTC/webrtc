@@ -819,20 +819,6 @@ int OpenSSLStreamAdapter::BeginSSL() {
   SSL_set_mode(ssl_, SSL_MODE_ENABLE_PARTIAL_WRITE |
                          SSL_MODE_ACCEPT_MOVING_WRITE_BUFFER);
 
-#if !defined(OPENSSL_IS_BORINGSSL)
-  // Specify an ECDH group for ECDHE ciphers, otherwise OpenSSL cannot
-  // negotiate them when acting as the server. Use NIST's P-256 which is
-  // commonly supported. BoringSSL doesn't need explicit configuration and has
-  // a reasonable default set.
-  EC_KEY* ecdh = EC_KEY_new_by_curve_name(NID_X9_62_prime256v1);
-  if (ecdh == nullptr) {
-    return -1;
-  }
-  SSL_set_options(ssl_, SSL_OP_SINGLE_ECDH_USE);
-  SSL_set_tmp_ecdh(ssl_, ecdh);
-  EC_KEY_free(ecdh);
-#endif
-
   // Do the connect
   return ContinueSSL();
 }
@@ -966,57 +952,14 @@ void OpenSSLStreamAdapter::OnMessage(Message* msg) {
 }
 
 SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
-  SSL_CTX* ctx = nullptr;
-
-#ifdef OPENSSL_IS_BORINGSSL
-  ctx = SSL_CTX_new(ssl_mode_ == SSL_MODE_DTLS ? DTLS_method() : TLS_method());
-// Version limiting for BoringSSL will be done below.
-#else
-  const SSL_METHOD* method;
-  switch (ssl_max_version_) {
-    case SSL_PROTOCOL_TLS_10:
-    case SSL_PROTOCOL_TLS_11:
-      // OpenSSL doesn't support setting min/max versions, so we always use
-      // (D)TLS 1.0 if a max. version below the max. available is requested.
-      if (ssl_mode_ == SSL_MODE_DTLS) {
-        if (role_ == SSL_CLIENT) {
-          method = DTLSv1_client_method();
-        } else {
-          method = DTLSv1_server_method();
-        }
-      } else {
-        if (role_ == SSL_CLIENT) {
-          method = TLSv1_client_method();
-        } else {
-          method = TLSv1_server_method();
-        }
-      }
-      break;
-    case SSL_PROTOCOL_TLS_12:
-    default:
-      if (ssl_mode_ == SSL_MODE_DTLS) {
-        if (role_ == SSL_CLIENT) {
-          method = DTLS_client_method();
-        } else {
-          method = DTLS_server_method();
-        }
-      } else {
-        if (role_ == SSL_CLIENT) {
-          method = TLS_client_method();
-        } else {
-          method = TLS_server_method();
-        }
-      }
-      break;
-  }
-  ctx = SSL_CTX_new(method);
-#endif  // OPENSSL_IS_BORINGSSL
-
+  SSL_CTX* ctx =
+      SSL_CTX_new(ssl_mode_ == SSL_MODE_DTLS ? DTLS_method() : TLS_method());
   if (ctx == nullptr) {
     return nullptr;
   }
 
-#ifdef OPENSSL_IS_BORINGSSL
+  // TODO(https://bugs.webrtc.org/10261): Evaluate and drop (D)TLS 1.0 and 1.1
+  // support by default.
   SSL_CTX_set_min_proto_version(
       ctx, ssl_mode_ == SSL_MODE_DTLS ? DTLS1_VERSION : TLS1_VERSION);
   switch (ssl_max_version_) {
@@ -1034,6 +977,8 @@ SSL_CTX* OpenSSLStreamAdapter::SetupSSLContext() {
           ctx, ssl_mode_ == SSL_MODE_DTLS ? DTLS1_2_VERSION : TLS1_2_VERSION);
       break;
   }
+#ifdef OPENSSL_IS_BORINGSSL
+  // SSL_CTX_set_current_time_cb is only supported in BoringSSL.
   if (g_use_time_callback_for_testing) {
     SSL_CTX_set_current_time_cb(ctx, &TimeCallbackForTesting);
   }

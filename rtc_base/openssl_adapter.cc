@@ -31,34 +31,6 @@
 #include "rtc_base/string_encode.h"
 #include "rtc_base/thread.h"
 
-#ifndef OPENSSL_IS_BORINGSSL
-
-// TODO(benwright): Use a nicer abstraction for mutex.
-
-#if defined(WEBRTC_WIN)
-#define MUTEX_TYPE HANDLE
-#define MUTEX_SETUP(x) (x) = CreateMutex(nullptr, FALSE, nullptr)
-#define MUTEX_CLEANUP(x) CloseHandle(x)
-#define MUTEX_LOCK(x) WaitForSingleObject((x), INFINITE)
-#define MUTEX_UNLOCK(x) ReleaseMutex(x)
-#define THREAD_ID GetCurrentThreadId()
-#elif defined(WEBRTC_POSIX)
-#define MUTEX_TYPE pthread_mutex_t
-#define MUTEX_SETUP(x) pthread_mutex_init(&(x), nullptr)
-#define MUTEX_CLEANUP(x) pthread_mutex_destroy(&(x))
-#define MUTEX_LOCK(x) pthread_mutex_lock(&(x))
-#define MUTEX_UNLOCK(x) pthread_mutex_unlock(&(x))
-#define THREAD_ID pthread_self()
-#else
-#error You must define mutex operations appropriate for your platform!
-#endif
-
-struct CRYPTO_dynlock_value {
-  MUTEX_TYPE mutex;
-};
-
-#endif  // #ifndef OPENSSL_IS_BORINGSSL
-
 //////////////////////////////////////////////////////////////////////
 // SocketBIO
 //////////////////////////////////////////////////////////////////////
@@ -881,17 +853,8 @@ int OpenSSLAdapter::NewSSLSessionCallback(SSL* ssl, SSL_SESSION* session) {
 }
 
 SSL_CTX* OpenSSLAdapter::CreateContext(SSLMode mode, bool enable_cache) {
-  // Use (D)TLS 1.2.
-  // Note: BoringSSL supports a range of versions by setting max/min version
-  // (Default V1.0 to V1.2). However (D)TLSv1_2_client_method functions used
-  // below in OpenSSL only support V1.2.
-  SSL_CTX* ctx = nullptr;
-#ifdef OPENSSL_IS_BORINGSSL
-  ctx = SSL_CTX_new(mode == SSL_MODE_DTLS ? DTLS_method() : TLS_method());
-#else
-  ctx = SSL_CTX_new(mode == SSL_MODE_DTLS ? DTLSv1_2_client_method()
-                                          : TLSv1_2_client_method());
-#endif  // OPENSSL_IS_BORINGSSL
+  SSL_CTX* ctx =
+      SSL_CTX_new(mode == SSL_MODE_DTLS ? DTLS_method() : TLS_method());
   if (ctx == nullptr) {
     unsigned long error = ERR_get_error();  // NOLINT: type used by OpenSSL.
     RTC_LOG(LS_WARNING) << "SSL_CTX creation failed: " << '"'
