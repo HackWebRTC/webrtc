@@ -66,28 +66,15 @@ MediaTransportEncodedVideoFrame::~MediaTransportEncodedVideoFrame() = default;
 MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
     int64_t frame_id,
     std::vector<int64_t> referenced_frame_ids,
-    VideoCodecType codec_type,
-    const webrtc::EncodedImage& encoded_image)
-    : codec_type_(codec_type),
-      payload_type_(0),
-      encoded_image_(encoded_image),
-      frame_id_(frame_id),
-      referenced_frame_ids_(std::move(referenced_frame_ids)) {}
-
-MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
-    int64_t frame_id,
-    std::vector<int64_t> referenced_frame_ids,
     int payload_type,
     const webrtc::EncodedImage& encoded_image)
-    : codec_type_(kVideoCodecGeneric),
-      payload_type_(payload_type),
+    : payload_type_(payload_type),
       encoded_image_(encoded_image),
       frame_id_(frame_id),
       referenced_frame_ids_(std::move(referenced_frame_ids)) {}
 
 MediaTransportEncodedVideoFrame& MediaTransportEncodedVideoFrame::operator=(
     const MediaTransportEncodedVideoFrame& o) {
-  codec_type_ = o.codec_type_;
   payload_type_ = o.payload_type_;
   encoded_image_ = o.encoded_image_;
   encoded_data_ = o.encoded_data_;
@@ -102,7 +89,6 @@ MediaTransportEncodedVideoFrame& MediaTransportEncodedVideoFrame::operator=(
 
 MediaTransportEncodedVideoFrame& MediaTransportEncodedVideoFrame::operator=(
     MediaTransportEncodedVideoFrame&& o) {
-  codec_type_ = o.codec_type_;
   payload_type_ = o.payload_type_;
   encoded_image_ = o.encoded_image_;
   encoded_data_ = std::move(o.encoded_data_);
