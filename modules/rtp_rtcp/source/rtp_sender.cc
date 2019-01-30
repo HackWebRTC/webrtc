@@ -389,8 +389,17 @@ bool RTPSender::SendOutgoingData(FrameType frame_type,
       return true;
 
     if (rtp_header) {
-      playout_delay_oracle_.UpdateRequest(ssrc, rtp_header->playout_delay,
-                                          sequence_number);
+      // TODO(nisse): This way of using PlayoutDelayOracle is a bit awkward. The
+      // intended way to use it is to call PlayoutDelayToSend at the place where
+      // the extension is written into the packet, and OnSentPacket later, after
+      // the final allocation of the sequence number. But currently the
+      // extension is set in AllocatePacket, where the RTPVideoHeader isn't
+      // available, so it always calls PlayoutDelayToSend with {-1,-1}. Hence,
+      // we have to use OnSentPacket early, and record both contents of the
+      // extension and the sequence number.
+      playout_delay_oracle_.OnSentPacket(
+          sequence_number,
+          playout_delay_oracle_.PlayoutDelayToSend(rtp_header->playout_delay));
     }
 
     result = video_->SendVideo(frame_type, payload_type, rtp_timestamp,
@@ -653,7 +662,23 @@ void RTPSender::OnReceivedNack(
 
 void RTPSender::OnReceivedRtcpReportBlocks(
     const ReportBlockList& report_blocks) {
-  playout_delay_oracle_.OnReceivedRtcpReportBlocks(report_blocks);
+  if (!video_) {
+    return;
+  }
+  uint32_t ssrc;
+  {
+    rtc::CritScope lock(&send_critsect_);
+    if (!ssrc_)
+      return;
+    ssrc = *ssrc_;
+  }
+
+  for (const RTCPReportBlock& report_block : report_blocks) {
+    if (ssrc == report_block.source_ssrc) {
+      playout_delay_oracle_.OnReceivedAck(
+          report_block.extended_highest_sequence_number);
+    }
+  }
 }
 
 // Called from pacer when we can send the packet.
@@ -1050,9 +1075,10 @@ std::unique_ptr<RtpPacketToSend> RTPSender::AllocatePacket() const {
   packet->ReserveExtension<AbsoluteSendTime>();
   packet->ReserveExtension<TransmissionOffset>();
   packet->ReserveExtension<TransportSequenceNumber>();
-  if (playout_delay_oracle_.send_playout_delay()) {
-    packet->SetExtension<PlayoutDelayLimits>(
-        playout_delay_oracle_.playout_delay());
+  absl::optional<PlayoutDelay> playout_delay =
+      playout_delay_oracle_.PlayoutDelayToSend({-1, -1});
+  if (playout_delay) {
+    packet->SetExtension<PlayoutDelayLimits>(*playout_delay);
   }
   if (!mid_.empty()) {
     // This is a no-op if the MID header extension is not registered.
