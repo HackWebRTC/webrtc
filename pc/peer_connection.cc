@@ -6016,7 +6016,7 @@ RTCErrorOr<const cricket::ContentGroup*> PeerConnection::GetEarlyBundleGroup(
                            "has no BUNDLE group");
     }
   }
-  return std::move(bundle_group);
+  return bundle_group;
 }
 
 RTCError PeerConnection::CreateChannels(const SessionDescription& desc) {
