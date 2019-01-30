@@ -71,6 +71,8 @@ std::vector<PacketFeedback> ReceivedPacketsFeedbackAsRtp(
       packet_feedback_vector.push_back(pf);
     }
   }
+  std::sort(packet_feedback_vector.begin(), packet_feedback_vector.end(),
+            PacketFeedbackComparator());
   return packet_feedback_vector;
 }
 

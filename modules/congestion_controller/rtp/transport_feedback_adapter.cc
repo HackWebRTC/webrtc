@@ -22,9 +22,6 @@
 
 namespace webrtc {
 namespace {
-void SortPacketFeedbackVector(std::vector<webrtc::PacketFeedback>* input) {
-  std::sort(input->begin(), input->end(), PacketFeedbackComparator());
-}
 
 PacketResult NetworkPacketFeedbackFromRtpPacketFeedback(
     const webrtc::PacketFeedback& pf) {
@@ -143,7 +140,6 @@ TransportFeedbackAdapter::ProcessTransportFeedback(
   if (feedback_vector.empty())
     return absl::nullopt;
 
-  SortPacketFeedbackVector(&feedback_vector);
   TransportPacketsFeedback msg;
   for (const PacketFeedback& rtp_feedback : feedback_vector) {
     if (rtp_feedback.send_time_ms != PacketFeedback::kNoSendTime) {
