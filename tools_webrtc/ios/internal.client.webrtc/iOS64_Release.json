@@ -24,6 +24,5 @@
       "os": "11.4.1",
       "pool": "chrome.tests"
     }
-  ],
-  "expiration_time": 3600
+  ]
 }
