@@ -446,11 +446,6 @@ TEST_F(GoogCcNetworkControllerTest,
   UpdatesTargetRateBasedOnLinkCapacity("_loss_based");
 }
 
-TEST_F(GoogCcNetworkControllerTest, DelayBasedRateControlRegressionTest) {
-  ScopedFieldTrials trial("WebRTC-Bwe-DelayBasedRateController/Enabled/");
-  UpdatesTargetRateBasedOnLinkCapacity("_delay_based");
-}
-
 TEST_F(GoogCcNetworkControllerTest,
        LossBasedControlDoesModestBackoffToHighLoss) {
   ScopedFieldTrials trial("WebRTC-Bwe-LossBasedControl/Enabled/");
