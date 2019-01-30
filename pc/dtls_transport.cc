@@ -12,6 +12,8 @@
 
 #include <utility>
 
+#include "pc/ice_transport.h"
+
 namespace webrtc {
 
 namespace {
@@ -46,6 +48,8 @@ DtlsTransport::DtlsTransport(
   RTC_DCHECK(internal_dtls_transport_.get());
   internal_dtls_transport_->SignalDtlsState.connect(
       this, &DtlsTransport::OnInternalDtlsState);
+  ice_transport_ = new rtc::RefCountedObject<IceTransportWithPointer>(
+      internal_dtls_transport_->ice_transport());
 }
 
 DtlsTransport::~DtlsTransport() {
@@ -74,6 +78,10 @@ void DtlsTransport::UnregisterObserver() {
   observer_ = nullptr;
 }
 
+rtc::scoped_refptr<IceTransportInterface> DtlsTransport::ice_transport() {
+  return ice_transport_;
+}
+
 // Internal functions
 void DtlsTransport::Clear() {
   RTC_DCHECK(signaling_thread_->IsCurrent());
@@ -86,6 +94,7 @@ void DtlsTransport::Clear() {
   } else {
     internal_dtls_transport_.reset();
   }
+  ice_transport_->Clear();
 }
 
 void DtlsTransport::OnInternalDtlsState(

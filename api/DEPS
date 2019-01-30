@@ -87,6 +87,10 @@ specific_include_rules = {
     "+modules/include/module_fec_types.h",
   ],
 
+  "ice_transport_interface\.h": [
+    "+rtc_base/ref_count.h",
+  ],
+
   "jsep\.h": [
     "+rtc_base/ref_count.h",
   ],
