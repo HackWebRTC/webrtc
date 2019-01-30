@@ -73,7 +73,7 @@ struct Cluster {
 class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
  public:
   RemoteBitrateEstimatorAbsSendTime(RemoteBitrateObserver* observer,
-                                    const Clock* clock);
+                                    Clock* clock);
   ~RemoteBitrateEstimatorAbsSendTime() override;
 
   void IncomingPacket(int64_t arrival_time_ms,
@@ -120,7 +120,7 @@ class RemoteBitrateEstimatorAbsSendTime : public RemoteBitrateEstimator {
   void TimeoutStreams(int64_t now_ms) RTC_EXCLUSIVE_LOCKS_REQUIRED(&crit_);
 
   rtc::RaceChecker network_race_;
-  const Clock* const clock_;
+  Clock* const clock_;
   RemoteBitrateObserver* const observer_;
   std::unique_ptr<InterArrival> inter_arrival_;
   std::unique_ptr<OveruseEstimator> estimator_;

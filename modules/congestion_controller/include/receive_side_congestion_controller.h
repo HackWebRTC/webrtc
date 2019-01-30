@@ -30,8 +30,7 @@ class RemoteBitrateObserver;
 class ReceiveSideCongestionController : public CallStatsObserver,
                                         public Module {
  public:
-  ReceiveSideCongestionController(const Clock* clock,
-                                  PacketRouter* packet_router);
+  ReceiveSideCongestionController(Clock* clock, PacketRouter* packet_router);
 
   ~ReceiveSideCongestionController() override {}
 
@@ -57,8 +56,7 @@ class ReceiveSideCongestionController : public CallStatsObserver,
  private:
   class WrappingBitrateEstimator : public RemoteBitrateEstimator {
    public:
-    WrappingBitrateEstimator(RemoteBitrateObserver* observer,
-                             const Clock* clock);
+    WrappingBitrateEstimator(RemoteBitrateObserver* observer, Clock* clock);
 
     ~WrappingBitrateEstimator() override;
 
@@ -84,7 +82,7 @@ class ReceiveSideCongestionController : public CallStatsObserver,
         RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
     void PickEstimator() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
     RemoteBitrateObserver* observer_;
-    const Clock* const clock_;
+    Clock* const clock_;
     rtc::CriticalSection crit_sect_;
     std::unique_ptr<RemoteBitrateEstimator> rbe_;
     bool using_absolute_send_time_;

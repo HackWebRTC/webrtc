@@ -68,7 +68,7 @@ class PacedSender : public Pacer {
   // overshoots from the encoder.
   static const float kDefaultPaceMultiplier;
 
-  PacedSender(const Clock* clock,
+  PacedSender(Clock* clock,
               PacketSender* packet_sender,
               RtcEventLog* event_log);
 
@@ -168,7 +168,7 @@ class PacedSender : public Pacer {
   bool Congested() const RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   int64_t TimeMilliseconds() const RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
-  const Clock* const clock_;
+  Clock* const clock_;
   PacketSender* const packet_sender_;
   std::unique_ptr<AlrDetector> alr_detector_ RTC_PT_GUARDED_BY(critsect_);
 

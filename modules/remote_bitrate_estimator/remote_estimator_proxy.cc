@@ -33,7 +33,7 @@ static constexpr int64_t kMaxTimeMs =
     std::numeric_limits<int64_t>::max() / 1000;
 
 RemoteEstimatorProxy::RemoteEstimatorProxy(
-    const Clock* clock,
+    Clock* clock,
     TransportFeedbackSenderInterface* feedback_sender)
     : clock_(clock),
       feedback_sender_(feedback_sender),

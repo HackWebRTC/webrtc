@@ -41,7 +41,7 @@ class VideoQualityAnalyzer {
   void OnDecodedFrame(const VideoFrame& frame);
   void Synchronize();
   bool Active() const;
-  const Clock* clock();
+  Clock* clock();
 
  private:
   int64_t DecodedFrameCaptureTimeOffsetMs(const VideoFrame& decoded) const;
@@ -73,7 +73,7 @@ class ForwardingCapturedFrameTap
     : public rtc::VideoSinkInterface<VideoFrame>,
       public rtc::VideoSourceInterface<VideoFrame> {
  public:
-  ForwardingCapturedFrameTap(const Clock* clock,
+  ForwardingCapturedFrameTap(Clock* clock,
                              VideoQualityAnalyzer* analyzer,
                              rtc::VideoSourceInterface<VideoFrame>* source);
   ForwardingCapturedFrameTap(ForwardingCapturedFrameTap&) = delete;
@@ -91,7 +91,7 @@ class ForwardingCapturedFrameTap
   VideoFrame PopFrame();
 
  private:
-  const Clock* clock_;
+  Clock* const clock_;
   VideoQualityAnalyzer* const analyzer_;
   rtc::VideoSourceInterface<VideoFrame>* const source_;
   VideoSinkInterface<VideoFrame>* sink_;

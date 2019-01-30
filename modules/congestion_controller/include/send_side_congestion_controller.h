@@ -51,7 +51,7 @@ class DEPRECATED_SendSideCongestionController
  public:
   using Observer = NetworkChangedObserver;
   DEPRECATED_SendSideCongestionController(
-      const Clock* clock,
+      Clock* clock,
       Observer* observer,
       RtcEventLog* event_log,
       PacedSender* pacer,
@@ -140,7 +140,7 @@ class DEPRECATED_SendSideCongestionController
       RTC_EXCLUSIVE_LOCKS_REQUIRED(&probe_lock_);
   const FieldTrialBasedConfig field_trial_config_;
   const WebRtcKeyValueConfig* const key_value_config_;
-  const Clock* const clock_;
+  Clock* const clock_;
   rtc::CriticalSection observer_lock_;
   Observer* observer_ RTC_GUARDED_BY(observer_lock_);
   RtcEventLog* const event_log_;

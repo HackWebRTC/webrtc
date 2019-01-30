@@ -29,8 +29,7 @@ const int64_t kBaseTimestampScaleFactor =
     rtcp::TransportFeedback::kDeltaScaleFactor * (1 << 8);
 const int64_t kBaseTimestampRangeSizeUs = kBaseTimestampScaleFactor * (1 << 24);
 
-LegacyTransportFeedbackAdapter::LegacyTransportFeedbackAdapter(
-    const Clock* clock)
+LegacyTransportFeedbackAdapter::LegacyTransportFeedbackAdapter(Clock* clock)
     : send_time_history_(kSendTimeHistoryWindowMs),
       clock_(clock),
       current_offset_ms_(kNoTimestamp),

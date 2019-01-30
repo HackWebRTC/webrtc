@@ -32,7 +32,7 @@ static constexpr int64_t kNackCountTimeoutMs = 60000;
 static constexpr double kDefaultMaxTimestampDeviationInSigmas = 3.5;
 }  // namespace
 
-VCMJitterEstimator::VCMJitterEstimator(const Clock* clock,
+VCMJitterEstimator::VCMJitterEstimator(Clock* clock,
                                        int32_t vcmId,
                                        int32_t receiverId)
     : _vcmId(vcmId),

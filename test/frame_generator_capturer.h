@@ -59,6 +59,7 @@ class FrameGeneratorCapturer : public TestVideoCapturer {
                                                       int frame_repeat_count,
                                                       int target_fps,
                                                       Clock* clock);
+
   static FrameGeneratorCapturer* Create(
       std::unique_ptr<FrameGenerator> frame_generator,
       int target_fps,

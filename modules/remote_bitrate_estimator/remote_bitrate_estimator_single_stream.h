@@ -32,7 +32,7 @@ struct RTPHeader;
 class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
  public:
   RemoteBitrateEstimatorSingleStream(RemoteBitrateObserver* observer,
-                                     const Clock* clock);
+                                     Clock* clock);
   ~RemoteBitrateEstimatorSingleStream() override;
 
   void IncomingPacket(int64_t arrival_time_ms,
@@ -62,7 +62,7 @@ class RemoteBitrateEstimatorSingleStream : public RemoteBitrateEstimator {
   // otherwise creates it.
   AimdRateControl* GetRemoteRate() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
-  const Clock* const clock_;
+  Clock* const clock_;
   SsrcOveruseEstimatorMap overuse_detectors_ RTC_GUARDED_BY(crit_sect_);
   RateStatistics incoming_bitrate_ RTC_GUARDED_BY(crit_sect_);
   uint32_t last_valid_incoming_bitrate_ RTC_GUARDED_BY(crit_sect_);

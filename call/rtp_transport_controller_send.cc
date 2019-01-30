@@ -35,7 +35,7 @@ constexpr TimeDelta kPacerQueueUpdateInterval = TimeDelta::Millis<25>();
 TargetRateConstraints ConvertConstraints(int min_bitrate_bps,
                                          int max_bitrate_bps,
                                          int start_bitrate_bps,
-                                         const Clock* clock) {
+                                         Clock* clock) {
   TargetRateConstraints msg;
   msg.at_time = Timestamp::ms(clock->TimeInMilliseconds());
   msg.min_data_rate =
@@ -48,7 +48,7 @@ TargetRateConstraints ConvertConstraints(int min_bitrate_bps,
 }
 
 TargetRateConstraints ConvertConstraints(const BitrateConstraints& contraints,
-                                         const Clock* clock) {
+                                         Clock* clock) {
   return ConvertConstraints(contraints.min_bitrate_bps,
                             contraints.max_bitrate_bps,
                             contraints.start_bitrate_bps, clock);

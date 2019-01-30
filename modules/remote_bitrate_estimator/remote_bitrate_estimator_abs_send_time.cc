@@ -90,7 +90,7 @@ void RemoteBitrateEstimatorAbsSendTime::AddCluster(std::list<Cluster>* clusters,
 
 RemoteBitrateEstimatorAbsSendTime::RemoteBitrateEstimatorAbsSendTime(
     RemoteBitrateObserver* observer,
-    const Clock* clock)
+    Clock* clock)
     : clock_(clock),
       observer_(observer),
       inter_arrival_(),

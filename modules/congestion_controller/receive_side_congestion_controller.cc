@@ -23,8 +23,7 @@ static const uint32_t kTimeOffsetSwitchThreshold = 30;
 }  // namespace
 
 ReceiveSideCongestionController::WrappingBitrateEstimator::
-    WrappingBitrateEstimator(RemoteBitrateObserver* observer,
-                             const Clock* clock)
+    WrappingBitrateEstimator(RemoteBitrateObserver* observer, Clock* clock)
     : observer_(observer),
       clock_(clock),
       rbe_(new RemoteBitrateEstimatorSingleStream(observer_, clock_)),
@@ -120,7 +119,7 @@ void ReceiveSideCongestionController::WrappingBitrateEstimator::
 }
 
 ReceiveSideCongestionController::ReceiveSideCongestionController(
-    const Clock* clock,
+    Clock* clock,
     PacketRouter* packet_router)
     : remote_bitrate_estimator_(packet_router, clock),
       remote_estimator_proxy_(clock, packet_router) {}

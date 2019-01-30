@@ -134,7 +134,7 @@ void VideoQualityStats::HandleFrameInfo(VideoFrameQualityInfo sample) {
 }
 
 ForwardingCapturedFrameTap::ForwardingCapturedFrameTap(
-    const Clock* clock,
+    Clock* clock,
     VideoQualityAnalyzer* analyzer,
     rtc::VideoSourceInterface<VideoFrame>* source)
     : clock_(clock), analyzer_(analyzer), source_(source) {}

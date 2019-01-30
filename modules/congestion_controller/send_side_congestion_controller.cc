@@ -84,7 +84,7 @@ bool IsPacerPushbackExperimentEnabled(
 
 DEPRECATED_SendSideCongestionController::
     DEPRECATED_SendSideCongestionController(
-        const Clock* clock,
+        Clock* clock,
         Observer* observer,
         RtcEventLog* event_log,
         PacedSender* pacer,

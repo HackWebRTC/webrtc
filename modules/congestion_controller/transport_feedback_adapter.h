@@ -33,7 +33,7 @@ class TransportFeedback;
 // modules/congeestion_controller/rtp/transport_feedback_adapter.h
 class LegacyTransportFeedbackAdapter {
  public:
-  explicit LegacyTransportFeedbackAdapter(const Clock* clock);
+  explicit LegacyTransportFeedbackAdapter(Clock* clock);
   virtual ~LegacyTransportFeedbackAdapter();
 
   void RegisterPacketFeedbackObserver(PacketFeedbackObserver* observer);
@@ -64,7 +64,7 @@ class LegacyTransportFeedbackAdapter {
 
   rtc::CriticalSection lock_;
   SendTimeHistory send_time_history_ RTC_GUARDED_BY(&lock_);
-  const Clock* const clock_;
+  Clock* const clock_;
   int64_t current_offset_ms_;
   int64_t last_timestamp_us_;
   std::vector<PacketFeedback> last_packet_feedback_vector_;

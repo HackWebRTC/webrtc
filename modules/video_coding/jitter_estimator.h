@@ -20,9 +20,9 @@ class Clock;
 
 class VCMJitterEstimator {
  public:
-  VCMJitterEstimator(const Clock* clock,
-                     int32_t vcmId = 0,
-                     int32_t receiverId = 0);
+  explicit VCMJitterEstimator(Clock* clock,
+                              int32_t vcmId = 0,
+                              int32_t receiverId = 0);
   virtual ~VCMJitterEstimator();
   VCMJitterEstimator& operator=(const VCMJitterEstimator& rhs);
 
@@ -158,7 +158,7 @@ class VCMJitterEstimator {
 
   rtc::RollingAccumulator<uint64_t> fps_counter_;
   const double time_deviation_upper_bound_;
-  const Clock* clock_;
+  Clock* clock_;
 };
 
 }  // namespace webrtc

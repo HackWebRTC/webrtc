@@ -32,7 +32,7 @@ class BitrateControllerImpl : public BitrateController {
  public:
   // TODO(perkj): BitrateObserver has been deprecated and is not used in WebRTC.
   // |observer| is left for project that is not yet updated.
-  BitrateControllerImpl(const Clock* clock,
+  BitrateControllerImpl(Clock* clock,
                         BitrateObserver* observer,
                         RtcEventLog* event_log);
   virtual ~BitrateControllerImpl() {}
@@ -83,7 +83,7 @@ class BitrateControllerImpl : public BitrateController {
                         int64_t rtt) RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   // Used by process thread.
-  const Clock* const clock_;
+  Clock* const clock_;
   BitrateObserver* const observer_;
   int64_t last_bitrate_update_ms_;
   RtcEventLog* const event_log_;

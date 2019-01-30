@@ -59,7 +59,7 @@ struct RemoteBitrateEstimatorSingleStream::Detector {
 
 RemoteBitrateEstimatorSingleStream::RemoteBitrateEstimatorSingleStream(
     RemoteBitrateObserver* observer,
-    const Clock* clock)
+    Clock* clock)
     : clock_(clock),
       incoming_bitrate_(kBitrateWindowMs, 8000),
       last_valid_incoming_bitrate_(0),

@@ -201,7 +201,7 @@ class AcmReceiver {
   std::unique_ptr<int16_t[]> last_audio_buffer_ RTC_GUARDED_BY(crit_sect_);
   CallStatistics call_stats_ RTC_GUARDED_BY(crit_sect_);
   const std::unique_ptr<NetEq> neteq_;  // NetEq is thread-safe; no lock needed.
-  const Clock* const clock_;
+  Clock* const clock_;
   bool resampled_last_output_frame_ RTC_GUARDED_BY(crit_sect_);
 };
 

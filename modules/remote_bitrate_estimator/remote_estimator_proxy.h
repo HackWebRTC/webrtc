@@ -32,7 +32,7 @@ class TransportFeedback;
 
 class RemoteEstimatorProxy : public RemoteBitrateEstimator {
  public:
-  RemoteEstimatorProxy(const Clock* clock,
+  RemoteEstimatorProxy(Clock* clock,
                        TransportFeedbackSenderInterface* feedback_sender);
   ~RemoteEstimatorProxy() override;
 
@@ -58,7 +58,7 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
       RTC_EXCLUSIVE_LOCKS_REQUIRED(&lock_);
   bool BuildFeedbackPacket(rtcp::TransportFeedback* feedback_packet);
 
-  const Clock* const clock_;
+  Clock* const clock_;
   TransportFeedbackSenderInterface* const feedback_sender_;
   int64_t last_process_time_ms_;
 

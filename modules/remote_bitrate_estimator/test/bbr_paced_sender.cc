@@ -19,7 +19,7 @@
 
 namespace webrtc {
 
-BbrPacedSender::BbrPacedSender(const Clock* clock,
+BbrPacedSender::BbrPacedSender(Clock* clock,
                                PacedSender::PacketSender* packet_sender,
                                RtcEventLog* event_log)
     : clock_(clock),

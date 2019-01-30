@@ -78,7 +78,7 @@ SimulationNode::SimulationNode(
       simulated_network_(simulation),
       config_(config) {}
 
-NetworkNodeTransport::NetworkNodeTransport(const Clock* sender_clock,
+NetworkNodeTransport::NetworkNodeTransport(Clock* sender_clock,
                                            Call* sender_call)
     : sender_clock_(sender_clock), sender_call_(sender_call) {}
 
