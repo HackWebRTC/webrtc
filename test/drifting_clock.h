@@ -30,10 +30,10 @@ class DriftingClock : public Clock {
   static float PercentsFaster(float percent) { return 1.0f + percent / 100.0f; }
   static float PercentsSlower(float percent) { return 1.0f - percent / 100.0f; }
 
-  int64_t TimeInMilliseconds() const override;
-  int64_t TimeInMicroseconds() const override;
-  NtpTime CurrentNtpTime() const override;
-  int64_t CurrentNtpInMilliseconds() const override;
+  int64_t TimeInMilliseconds() override;
+  int64_t TimeInMicroseconds() override;
+  NtpTime CurrentNtpTime() override;
+  int64_t CurrentNtpInMilliseconds() override;
 
  private:
   float Drift() const;

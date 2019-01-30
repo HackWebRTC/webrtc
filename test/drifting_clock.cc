@@ -31,15 +31,15 @@ float DriftingClock::Drift() const {
   return (now - start_time_) * drift_;
 }
 
-int64_t DriftingClock::TimeInMilliseconds() const {
+int64_t DriftingClock::TimeInMilliseconds() {
   return clock_->TimeInMilliseconds() + Drift() / 1000.;
 }
 
-int64_t DriftingClock::TimeInMicroseconds() const {
+int64_t DriftingClock::TimeInMicroseconds() {
   return clock_->TimeInMicroseconds() + Drift();
 }
 
-NtpTime DriftingClock::CurrentNtpTime() const {
+NtpTime DriftingClock::CurrentNtpTime() {
   // NTP precision is 1/2^32 seconds, i.e. 2^32 ntp fractions = 1 second.
   const double kNtpFracPerMicroSecond = 4294.967296;  // = 2^32 / 10^6
 
@@ -49,7 +49,7 @@ NtpTime DriftingClock::CurrentNtpTime() const {
   return NtpTime(total_fractions);
 }
 
-int64_t DriftingClock::CurrentNtpInMilliseconds() const {
+int64_t DriftingClock::CurrentNtpInMilliseconds() {
   return clock_->CurrentNtpInMilliseconds() + Drift() / 1000.;
 }
 }  // namespace test
