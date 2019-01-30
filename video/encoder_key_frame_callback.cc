@@ -8,18 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video/encoder_rtcp_feedback.h"
+#include "video/encoder_key_frame_callback.h"
 
-#include "api/video/video_stream_encoder_interface.h"
 #include "rtc_base/checks.h"
 
 static const int kMinKeyFrameRequestIntervalMs = 300;
 
 namespace webrtc {
 
-EncoderRtcpFeedback::EncoderRtcpFeedback(Clock* clock,
-                                         const std::vector<uint32_t>& ssrcs,
-                                         VideoStreamEncoderInterface* encoder)
+EncoderKeyFrameCallback::EncoderKeyFrameCallback(
+    Clock* clock,
+    const std::vector<uint32_t>& ssrcs,
+    VideoStreamEncoderInterface* encoder)
     : clock_(clock),
       ssrcs_(ssrcs),
       video_stream_encoder_(encoder),
@@ -27,7 +27,7 @@ EncoderRtcpFeedback::EncoderRtcpFeedback(Clock* clock,
   RTC_DCHECK(!ssrcs.empty());
 }
 
-bool EncoderRtcpFeedback::HasSsrc(uint32_t ssrc) {
+bool EncoderKeyFrameCallback::HasSsrc(uint32_t ssrc) {
   for (uint32_t registered_ssrc : ssrcs_) {
     if (registered_ssrc == ssrc) {
       return true;
@@ -36,7 +36,7 @@ bool EncoderRtcpFeedback::HasSsrc(uint32_t ssrc) {
   return false;
 }
 
-void EncoderRtcpFeedback::OnReceivedIntraFrameRequest(uint32_t ssrc) {
+void EncoderKeyFrameCallback::OnReceivedIntraFrameRequest(uint32_t ssrc) {
   RTC_DCHECK(HasSsrc(ssrc));
   {
     int64_t now_ms = clock_->TimeInMilliseconds();
@@ -48,6 +48,16 @@ void EncoderRtcpFeedback::OnReceivedIntraFrameRequest(uint32_t ssrc) {
   }
 
   // Always produce key frame for all streams.
+  video_stream_encoder_->SendKeyFrame();
+}
+
+void EncoderKeyFrameCallback::OnKeyFrameRequested(uint64_t channel_id) {
+  if (channel_id != ssrcs_[0]) {
+    RTC_LOG(LS_INFO) << "Key frame request on unknown channel id " << channel_id
+                     << " expected " << ssrcs_[0];
+    return;
+  }
+
   video_stream_encoder_->SendKeyFrame();
 }
 

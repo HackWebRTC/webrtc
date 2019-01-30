@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video/encoder_rtcp_feedback.h"
+#include "video/encoder_key_frame_callback.h"
 
 #include <memory>
 
@@ -25,7 +25,7 @@ class VieKeyRequestTest : public ::testing::Test {
   VieKeyRequestTest()
       : simulated_clock_(123456789),
         encoder_(),
-        encoder_rtcp_feedback_(
+        encoder_key_frame_callback_(
             &simulated_clock_,
             std::vector<uint32_t>(1, VieKeyRequestTest::kSsrc),
             &encoder_) {}
@@ -35,26 +35,31 @@ class VieKeyRequestTest : public ::testing::Test {
 
   SimulatedClock simulated_clock_;
   testing::StrictMock<MockVideoStreamEncoder> encoder_;
-  EncoderRtcpFeedback encoder_rtcp_feedback_;
+  EncoderKeyFrameCallback encoder_key_frame_callback_;
 };
 
 TEST_F(VieKeyRequestTest, CreateAndTriggerRequests) {
   EXPECT_CALL(encoder_, SendKeyFrame()).Times(1);
-  encoder_rtcp_feedback_.OnReceivedIntraFrameRequest(kSsrc);
+  encoder_key_frame_callback_.OnReceivedIntraFrameRequest(kSsrc);
 }
 
 TEST_F(VieKeyRequestTest, TooManyOnReceivedIntraFrameRequest) {
   EXPECT_CALL(encoder_, SendKeyFrame()).Times(1);
-  encoder_rtcp_feedback_.OnReceivedIntraFrameRequest(kSsrc);
-  encoder_rtcp_feedback_.OnReceivedIntraFrameRequest(kSsrc);
+  encoder_key_frame_callback_.OnReceivedIntraFrameRequest(kSsrc);
+  encoder_key_frame_callback_.OnReceivedIntraFrameRequest(kSsrc);
   simulated_clock_.AdvanceTimeMilliseconds(10);
-  encoder_rtcp_feedback_.OnReceivedIntraFrameRequest(kSsrc);
+  encoder_key_frame_callback_.OnReceivedIntraFrameRequest(kSsrc);
 
   EXPECT_CALL(encoder_, SendKeyFrame()).Times(1);
   simulated_clock_.AdvanceTimeMilliseconds(300);
-  encoder_rtcp_feedback_.OnReceivedIntraFrameRequest(kSsrc);
-  encoder_rtcp_feedback_.OnReceivedIntraFrameRequest(kSsrc);
-  encoder_rtcp_feedback_.OnReceivedIntraFrameRequest(kSsrc);
+  encoder_key_frame_callback_.OnReceivedIntraFrameRequest(kSsrc);
+  encoder_key_frame_callback_.OnReceivedIntraFrameRequest(kSsrc);
+  encoder_key_frame_callback_.OnReceivedIntraFrameRequest(kSsrc);
+}
+
+TEST_F(VieKeyRequestTest, TriggerRequestFromMediaTransport) {
+  EXPECT_CALL(encoder_, SendKeyFrame()).Times(1);
+  encoder_key_frame_callback_.OnKeyFrameRequested(kSsrc);
 }
 
 }  // namespace webrtc

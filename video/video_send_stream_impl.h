@@ -40,7 +40,7 @@
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/weak_ptr.h"
 #include "video/call_stats.h"
-#include "video/encoder_rtcp_feedback.h"
+#include "video/encoder_key_frame_callback.h"
 #include "video/send_delay_stats.h"
 #include "video/send_statistics_proxy.h"
 #include "video/video_send_stream.h"
@@ -166,7 +166,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   bool has_packet_feedback_;
 
   VideoStreamEncoderInterface* const video_stream_encoder_;
-  EncoderRtcpFeedback encoder_feedback_;
+  EncoderKeyFrameCallback encoder_feedback_;
 
   RtcpBandwidthObserver* const bandwidth_observer_;
   RtpVideoSenderInterface* const rtp_video_sender_;

@@ -133,7 +133,7 @@ RtpSenderFrameEncryptionConfig CreateFrameEncryptionConfig(
 }
 
 RtpSenderObservers CreateObservers(CallStats* call_stats,
-                                   EncoderRtcpFeedback* encoder_feedback,
+                                   EncoderKeyFrameCallback* encoder_feedback,
                                    SendStatisticsProxy* stats_proxy,
                                    SendDelayStats* send_delay_stats) {
   RtpSenderObservers observers;
@@ -242,6 +242,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     // The configured ssrc is interpreted as a channel id, so there must be
     // exactly one.
     RTC_DCHECK_EQ(config_->rtp.ssrcs.size(), 1);
+    media_transport_->SetKeyFrameRequestCallback(&encoder_feedback_);
   } else {
     RTC_DCHECK(!config_->rtp.ssrcs.empty());
   }
@@ -324,6 +325,9 @@ VideoSendStreamImpl::~VideoSendStreamImpl() {
       << "VideoSendStreamImpl::Stop not called";
   RTC_LOG(LS_INFO) << "~VideoSendStreamInternal: " << config_->ToString();
   transport_->DestroyRtpVideoSender(rtp_video_sender_);
+  if (media_transport_) {
+    media_transport_->SetKeyFrameRequestCallback(nullptr);
+  }
 }
 
 void VideoSendStreamImpl::RegisterProcessThread(
