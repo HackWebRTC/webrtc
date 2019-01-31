@@ -18,9 +18,9 @@
   "bucket": "chromium-webrtc",
   "tests": [
     {
-      "include": "perf_trybot_tests.json",
-      "device type": "iPhone 7",
-      "os": "11.0.3",
+      "include": "perf_tests.json",
+      "bot id": "build16-a7",
+      "pool": "WebRTC",
       "max runtime seconds": 7200
     }
   ]
