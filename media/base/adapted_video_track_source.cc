@@ -19,14 +19,11 @@
 
 namespace rtc {
 
-AdaptedVideoTrackSource::AdaptedVideoTrackSource() {
-  thread_checker_.DetachFromThread();
-}
+AdaptedVideoTrackSource::AdaptedVideoTrackSource() = default;
 
 AdaptedVideoTrackSource::AdaptedVideoTrackSource(int required_alignment)
-    : video_adapter_(required_alignment) {
-  thread_checker_.DetachFromThread();
-}
+    : video_adapter_(required_alignment) {}
+
 AdaptedVideoTrackSource::~AdaptedVideoTrackSource() = default;
 
 bool AdaptedVideoTrackSource::GetStats(Stats* stats) {
@@ -71,16 +68,12 @@ void AdaptedVideoTrackSource::OnFrame(const webrtc::VideoFrame& frame) {
 void AdaptedVideoTrackSource::AddOrUpdateSink(
     rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
     const rtc::VideoSinkWants& wants) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-
   broadcaster_.AddOrUpdateSink(sink, wants);
   OnSinkWantsChanged(broadcaster_.wants());
 }
 
 void AdaptedVideoTrackSource::RemoveSink(
     rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
-
   broadcaster_.RemoveSink(sink);
   OnSinkWantsChanged(broadcaster_.wants());
 }
@@ -91,7 +84,6 @@ bool AdaptedVideoTrackSource::apply_rotation() {
 
 void AdaptedVideoTrackSource::OnSinkWantsChanged(
     const rtc::VideoSinkWants& wants) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
   video_adapter_.OnResolutionFramerateRequest(
       wants.target_pixel_count, wants.max_pixel_count, wants.max_framerate_fps);
 }

@@ -23,7 +23,6 @@
 #include "media/base/video_broadcaster.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/thread_annotations.h"
-#include "rtc_base/thread_checker.h"
 
 namespace rtc {
 
@@ -78,8 +77,6 @@ class AdaptedVideoTrackSource
   bool GetStats(Stats* stats) override;
 
   void OnSinkWantsChanged(const rtc::VideoSinkWants& wants);
-
-  rtc::ThreadChecker thread_checker_;
 
   cricket::VideoAdapter video_adapter_;
 

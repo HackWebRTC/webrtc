@@ -16,7 +16,6 @@
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/create_peerconnection_factory.h"
-#include "api/video_track_source_proxy.h"
 #include "media/engine/internal_decoder_factory.h"
 #include "media/engine/internal_encoder_factory.h"
 #include "media/engine/multiplex_codec_factory.h"
@@ -447,9 +446,6 @@ void SimplePeerConnection::AddStreams(bool audio_only) {
         new rtc::RefCountedObject<webrtc::jni::AndroidVideoTrackSource>(
             g_signaling_thread.get(), env, /* is_screencast= */ false,
             /* align_timestamps= */ true));
-    rtc::scoped_refptr<webrtc::VideoTrackSourceProxy> proxy_source =
-        webrtc::VideoTrackSourceProxy::Create(g_signaling_thread.get(),
-                                              g_worker_thread.get(), source);
 
     // link with VideoCapturer (Camera);
     jmethodID link_camera_method = webrtc::GetStaticMethodID(
@@ -457,13 +453,13 @@ void SimplePeerConnection::AddStreams(bool audio_only) {
         "(JLorg/webrtc/SurfaceTextureHelper;)Lorg/webrtc/VideoCapturer;");
     jobject camera_tmp =
         env->CallStaticObjectMethod(pc_factory_class, link_camera_method,
-                                    (jlong)proxy_source.get(), texture_helper);
+                                    (jlong)source.get(), texture_helper);
     CHECK_EXCEPTION(env);
     g_camera = (jobject)env->NewGlobalRef(camera_tmp);
 
     rtc::scoped_refptr<webrtc::VideoTrackInterface> video_track(
         g_peer_connection_factory->CreateVideoTrack(kVideoLabel,
-                                                    proxy_source.release()));
+                                                    source.release()));
     stream->AddTrack(video_track);
 #else
     rtc::scoped_refptr<CapturerTrackSource> video_device =

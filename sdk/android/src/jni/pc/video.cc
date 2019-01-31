@@ -15,7 +15,6 @@
 
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
-#include "api/video_track_source_proxy.h"
 #include "rtc_base/logging.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/android_video_track_source.h"
@@ -49,8 +48,7 @@ void* CreateVideoSource(JNIEnv* env,
   rtc::scoped_refptr<AndroidVideoTrackSource> source(
       new rtc::RefCountedObject<AndroidVideoTrackSource>(
           signaling_thread, env, is_screencast, align_timestamps));
-  return VideoTrackSourceProxy::Create(signaling_thread, worker_thread, source)
-      .release();
+  return source.release();
 }
 
 }  // namespace jni

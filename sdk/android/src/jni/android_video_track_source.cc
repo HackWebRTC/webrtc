@@ -12,7 +12,6 @@
 
 #include <utility>
 
-#include "api/video_track_source_proxy.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {
@@ -32,7 +31,6 @@ AndroidVideoTrackSource::AndroidVideoTrackSource(rtc::Thread* signaling_thread,
       is_screencast_(is_screencast),
       align_timestamps_(align_timestamps) {
   RTC_LOG(LS_INFO) << "AndroidVideoTrackSource ctor";
-  camera_thread_checker_.DetachFromThread();
 }
 AndroidVideoTrackSource::~AndroidVideoTrackSource() = default;
 
@@ -73,8 +71,6 @@ void AndroidVideoTrackSource::OnFrameCaptured(
     int64_t timestamp_ns,
     VideoRotation rotation,
     const JavaRef<jobject>& j_video_frame_buffer) {
-  RTC_DCHECK(camera_thread_checker_.CalledOnValidThread());
-
   int64_t camera_time_us = timestamp_ns / rtc::kNumNanosecsPerMicrosec;
   int64_t translated_camera_time_us =
       align_timestamps_ ? timestamp_aligner_.TranslateTimestamp(

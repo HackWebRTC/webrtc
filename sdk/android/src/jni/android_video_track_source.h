@@ -18,7 +18,6 @@
 #include "media/base/adapted_video_track_source.h"
 #include "rtc_base/async_invoker.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/thread_checker.h"
 #include "rtc_base/timestamp_aligner.h"
 #include "sdk/android/src/jni/video_frame.h"
 
@@ -63,7 +62,6 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
  private:
   rtc::Thread* signaling_thread_;
   rtc::AsyncInvoker invoker_;
-  rtc::ThreadChecker camera_thread_checker_;
   SourceState state_;
   const bool is_screencast_;
   rtc::TimestampAligner timestamp_aligner_;

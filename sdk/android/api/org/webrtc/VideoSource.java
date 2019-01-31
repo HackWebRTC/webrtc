@@ -20,7 +20,7 @@ public class VideoSource extends MediaSource {
 
   public VideoSource(long nativeSource) {
     super(nativeSource);
-    this.capturerObserver = new NativeCapturerObserver(nativeGetInternalSource(nativeSource));
+    this.capturerObserver = new NativeCapturerObserver(nativeSource);
   }
 
   /**
@@ -55,8 +55,6 @@ public class VideoSource extends MediaSource {
     return getNativeMediaSource();
   }
 
-  // Returns source->internal() from webrtc::VideoTrackSourceProxy.
-  private static native long nativeGetInternalSource(long source);
   private static native void nativeAdaptOutputFormat(long source, int landscapeWidth,
       int landscapeHeight, int portraitWidth, int portraitHeight, int fps);
 }
