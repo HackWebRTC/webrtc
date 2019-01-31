@@ -125,7 +125,7 @@ void SimulatedNetwork::UpdateCapacityQueue(ConfigState state,
     }
 
     // Time to get this packet.
-    PacketInfo packet = std::move(capacity_link_.front());
+    PacketInfo packet = capacity_link_.front();
     capacity_link_.pop();
 
     time_us += time_until_front_exits_us;
@@ -165,7 +165,7 @@ void SimulatedNetwork::UpdateCapacityQueue(ConfigState state,
         needs_sort = true;
       }
     }
-    delay_link_.emplace_back(std::move(packet));
+    delay_link_.emplace_back(packet);
   }
   last_capacity_link_visit_us_ = time_now_us;
   // Cannot save unused capacity for later.

@@ -1381,7 +1381,7 @@ class ChannelTest : public testing::Test, public sigslot::has_slots<> {
   webrtc::RtpParameters BitrateLimitedParameters(absl::optional<int> limit) {
     webrtc::RtpParameters parameters;
     webrtc::RtpEncodingParameters encoding;
-    encoding.max_bitrate_bps = std::move(limit);
+    encoding.max_bitrate_bps = limit;
     parameters.encodings.push_back(encoding);
     return parameters;
   }

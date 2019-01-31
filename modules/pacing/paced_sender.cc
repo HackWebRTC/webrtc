@@ -359,7 +359,7 @@ void PacedSender::Process() {
     if (success) {
       bytes_sent += packet->bytes;
       // Send succeeded, remove it from the queue.
-      OnPacketSent(std::move(packet));
+      OnPacketSent(packet);
       if (is_probing && bytes_sent > recommended_probe_size)
         break;
     } else {

@@ -208,7 +208,7 @@ bool DtlsTransport::SetDtlsRole(rtc::SSLRole role) {
     return true;
   }
 
-  dtls_role_ = std::move(role);
+  dtls_role_ = role;
   return true;
 }
 

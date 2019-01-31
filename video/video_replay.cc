@@ -247,7 +247,7 @@ class RtpReplayer final {
                      const std::string& rtp_dump_path) {
     webrtc::RtcEventLogNullImpl event_log;
     Call::Config call_config(&event_log);
-    std::unique_ptr<Call> call(Call::Create(std::move(call_config)));
+    std::unique_ptr<Call> call(Call::Create(call_config));
     std::unique_ptr<StreamState> stream_state;
     // Attempt to load the configuration
     if (replay_config_path.empty()) {

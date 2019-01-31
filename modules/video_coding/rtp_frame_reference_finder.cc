@@ -275,7 +275,7 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
   if (codec_header.pictureId == kNoPictureId ||
       codec_header.temporalIdx == kNoTemporalIdx ||
       codec_header.tl0PicIdx == kNoTl0PicIdx) {
-    return ManageFramePidOrSeqNum(std::move(frame), codec_header.pictureId);
+    return ManageFramePidOrSeqNum(frame, codec_header.pictureId);
   }
 
   frame->id.picture_id = codec_header.pictureId % kPicIdLength;
@@ -424,7 +424,7 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
 
   if (codec_header.picture_id == kNoPictureId ||
       codec_header.temporal_idx == kNoTemporalIdx) {
-    return ManageFramePidOrSeqNum(std::move(frame), codec_header.picture_id);
+    return ManageFramePidOrSeqNum(frame, codec_header.picture_id);
   }
 
   frame->id.spatial_layer = codec_header.spatial_idx;

@@ -651,8 +651,8 @@ webrtc::RTCError JsepTransport::NegotiateDtlsRole(
     // If local is passive, local will act as server.
   }
 
-  *negotiated_dtls_role = (is_remote_server ? std::move(rtc::SSL_CLIENT)
-                                            : std::move(rtc::SSL_SERVER));
+  *negotiated_dtls_role =
+      (is_remote_server ? rtc::SSL_CLIENT : rtc::SSL_SERVER);
   return webrtc::RTCError::OK();
 }
 

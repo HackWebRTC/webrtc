@@ -82,9 +82,9 @@ std::unique_ptr<AudioEncoderOpusStates> CreateCodec(size_t num_channels) {
       new MockSmoothingFilter());
   states->mock_bitrate_smoother = bitrate_smoother.get();
 
-  states->encoder.reset(new AudioEncoderOpusImpl(
-      states->config, kDefaultOpusPayloadType, std::move(creator),
-      std::move(bitrate_smoother)));
+  states->encoder.reset(
+      new AudioEncoderOpusImpl(states->config, kDefaultOpusPayloadType, creator,
+                               std::move(bitrate_smoother)));
   return states;
 }
 

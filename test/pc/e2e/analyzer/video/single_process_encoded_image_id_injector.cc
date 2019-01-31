@@ -45,7 +45,7 @@ EncodedImage SingleProcessEncodedImageIdInjector::InjectId(
     // Will create new one if missed.
     ExtractionInfoVector& ev = extraction_cache_[id];
     info.sub_id = ev.next_sub_id++;
-    ev.infos[info.sub_id] = std::move(info);
+    ev.infos[info.sub_id] = info;
   }
 
   EncodedImage out = source;
@@ -83,7 +83,7 @@ EncodedImageWithId SingleProcessEncodedImageIdInjector::ExtractId(
       auto info_it = ext_vector_it->second.infos.find(sub_id);
       RTC_CHECK(info_it != ext_vector_it->second.infos.end())
           << "Unknown sub id " << sub_id << " for frame " << next_id;
-      info = std::move(info_it->second);
+      info = info_it->second;
       ext_vector_it->second.infos.erase(info_it);
     }
 

@@ -239,8 +239,8 @@ class RtpSenderReceiverTest : public testing::Test,
 
   void CreateAudioRtpReceiver(
       std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams = {}) {
-    audio_rtp_receiver_ = new AudioRtpReceiver(
-        rtc::Thread::Current(), kAudioTrackId, std::move(streams));
+    audio_rtp_receiver_ =
+        new AudioRtpReceiver(rtc::Thread::Current(), kAudioTrackId, streams);
     audio_rtp_receiver_->SetMediaChannel(voice_media_channel_);
     audio_rtp_receiver_->SetupMediaChannel(kAudioSsrc);
     audio_track_ = audio_rtp_receiver_->audio_track();
@@ -249,8 +249,8 @@ class RtpSenderReceiverTest : public testing::Test,
 
   void CreateVideoRtpReceiver(
       std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams = {}) {
-    video_rtp_receiver_ = new VideoRtpReceiver(
-        rtc::Thread::Current(), kVideoTrackId, std::move(streams));
+    video_rtp_receiver_ =
+        new VideoRtpReceiver(rtc::Thread::Current(), kVideoTrackId, streams);
     video_rtp_receiver_->SetMediaChannel(video_media_channel_);
     video_rtp_receiver_->SetupMediaChannel(kVideoSsrc);
     video_track_ = video_rtp_receiver_->video_track();
@@ -269,8 +269,8 @@ class RtpSenderReceiverTest : public testing::Test,
     video_media_channel_->AddRecvStream(stream_params);
     uint32_t primary_ssrc = stream_params.first_ssrc();
 
-    video_rtp_receiver_ = new VideoRtpReceiver(
-        rtc::Thread::Current(), kVideoTrackId, std::move(streams));
+    video_rtp_receiver_ =
+        new VideoRtpReceiver(rtc::Thread::Current(), kVideoTrackId, streams);
     video_rtp_receiver_->SetMediaChannel(video_media_channel_);
     video_rtp_receiver_->SetupMediaChannel(primary_ssrc);
     video_track_ = video_rtp_receiver_->video_track();

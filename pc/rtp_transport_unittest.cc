@@ -86,7 +86,7 @@ class SignalObserver : public sigslot::has_slots<> {
 
   absl::optional<rtc::NetworkRoute> network_route() { return network_route_; }
   void OnNetworkRouteChanged(absl::optional<rtc::NetworkRoute> network_route) {
-    network_route_ = std::move(network_route);
+    network_route_ = network_route;
   }
 
   void OnSentPacket(rtc::PacketTransportInternal* packet_transport,

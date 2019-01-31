@@ -124,7 +124,7 @@ RTCError MediaTransportPair::LoopbackMediaTransport::SendAudioFrame(
     ++stats_.sent_audio_frames;
   }
   invoker_.AsyncInvoke<void>(RTC_FROM_HERE, thread_, [this, channel_id, frame] {
-    other_->OnData(channel_id, std::move(frame));
+    other_->OnData(channel_id, frame);
   });
   return RTCError::OK();
 }
