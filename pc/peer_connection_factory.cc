@@ -35,7 +35,6 @@
 #include "pc/local_audio_source.h"
 #include "pc/media_stream.h"
 #include "pc/peer_connection.h"
-#include "pc/video_capturer_track_source.h"
 #include "pc/video_track.h"
 #include "system_wrappers/include/field_trial.h"
 
@@ -285,29 +284,6 @@ PeerConnectionFactory::CreateAudioSource(const cricket::AudioOptions& options) {
   rtc::scoped_refptr<LocalAudioSource> source(
       LocalAudioSource::Create(&options));
   return source;
-}
-
-rtc::scoped_refptr<VideoTrackSourceInterface>
-PeerConnectionFactory::CreateVideoSource(
-    std::unique_ptr<cricket::VideoCapturer> capturer,
-    const MediaConstraintsInterface* constraints) {
-  RTC_DCHECK(signaling_thread_->IsCurrent());
-  rtc::scoped_refptr<VideoTrackSourceInterface> source(
-      VideoCapturerTrackSource::Create(worker_thread_, std::move(capturer),
-                                       constraints, false));
-  return VideoTrackSourceProxy::Create(signaling_thread_, worker_thread_,
-                                       source);
-}
-
-rtc::scoped_refptr<VideoTrackSourceInterface>
-PeerConnectionFactory::CreateVideoSource(
-    std::unique_ptr<cricket::VideoCapturer> capturer) {
-  RTC_DCHECK(signaling_thread_->IsCurrent());
-  rtc::scoped_refptr<VideoTrackSourceInterface> source(
-      VideoCapturerTrackSource::Create(worker_thread_, std::move(capturer),
-                                       false));
-  return VideoTrackSourceProxy::Create(signaling_thread_, worker_thread_,
-                                       source);
 }
 
 bool PeerConnectionFactory::StartAecDump(rtc::PlatformFile file,

@@ -96,9 +96,6 @@
 #include "api/turn_customizer.h"
 #include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "media/base/media_config.h"
-// TODO(bugs.webrtc.org/6353): cricket::VideoCapturer is deprecated and should
-// be deleted from the PeerConnection api.
-#include "media/base/video_capturer.h"  // nogncheck
 // TODO(bugs.webrtc.org/7447): We plan to provide a way to let applications
 // inject a PacketSocketFactory and/or NetworkManager, and not expose
 // PortAllocator in the PeerConnection api.
@@ -125,7 +122,6 @@ class AudioDeviceModule;
 class AudioMixer;
 class AudioProcessing;
 class DtlsTransportInterface;
-class MediaConstraintsInterface;
 class VideoDecoderFactory;
 class VideoEncoderFactory;
 
@@ -1344,30 +1340,6 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   virtual rtc::scoped_refptr<AudioSourceInterface> CreateAudioSource(
       const cricket::AudioOptions& options) = 0;
 
-  // Creates a VideoTrackSourceInterface from |capturer|.
-  // TODO(deadbeef): We should aim to remove cricket::VideoCapturer from the
-  // API. It's mainly used as a wrapper around webrtc's provided
-  // platform-specific capturers, but these should be refactored to use
-  // VideoTrackSourceInterface directly.
-  // TODO(deadbeef): Make pure virtual once downstream mock PC factory classes
-  // are updated.
-  virtual rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(
-      std::unique_ptr<cricket::VideoCapturer> capturer);
-
-  // A video source creator that allows selection of resolution and frame rate.
-  // |constraints| decides video resolution and frame rate but can be null.
-  // In the null case, use the version above.
-  //
-  // |constraints| is only used for the invocation of this method, and can
-  // safely be destroyed afterwards.
-  virtual rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(
-      std::unique_ptr<cricket::VideoCapturer> capturer,
-      const MediaConstraintsInterface* constraints);
-
-  // Deprecated; please use the versions that take unique_ptrs above.
-  // TODO(deadbeef): Remove these once safe to do so.
-  virtual rtc::scoped_refptr<VideoTrackSourceInterface> CreateVideoSource(
-      cricket::VideoCapturer* capturer);
   // Creates a new local VideoTrack. The same |source| can be used in several
   // tracks.
   virtual rtc::scoped_refptr<VideoTrackInterface> CreateVideoTrack(

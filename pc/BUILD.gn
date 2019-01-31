@@ -175,8 +175,6 @@ rtc_static_library("peerconnection") {
     "stream_collection.h",
     "track_media_info_map.cc",
     "track_media_info_map.h",
-    "video_capturer_track_source.cc",
-    "video_capturer_track_source.h",
     "video_track.cc",
     "video_track.h",
     "video_track_source.cc",
@@ -491,7 +489,6 @@ if (rtc_include_tests) {
       "test/fake_audio_capture_module_unittest.cc",
       "test/test_sdp_strings.h",
       "track_media_info_map_unittest.cc",
-      "video_capturer_track_source_unittest.cc",
       "video_track_unittest.cc",
       "webrtc_sdp_unittest.cc",
     ]

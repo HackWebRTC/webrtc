@@ -25,11 +25,6 @@ namespace webrtc {
 // are called on is an implementation detail.
 BEGIN_SIGNALING_PROXY_MAP(PeerConnectionFactory)
 PROXY_SIGNALING_THREAD_DESTRUCTOR()
-// Use the overloads of CreateVideoSource that take raw VideoCapturer
-// pointers from PeerConnectionFactoryInterface.
-// TODO(deadbeef): Remove this using statement once those overloads are
-// removed.
-using PeerConnectionFactoryInterface::CreateVideoSource;
 PROXY_METHOD1(void, SetOptions, const Options&)
 PROXY_METHOD4(rtc::scoped_refptr<PeerConnectionInterface>,
               CreatePeerConnection,
@@ -53,13 +48,6 @@ PROXY_METHOD1(rtc::scoped_refptr<MediaStreamInterface>,
 PROXY_METHOD1(rtc::scoped_refptr<AudioSourceInterface>,
               CreateAudioSource,
               const cricket::AudioOptions&)
-PROXY_METHOD2(rtc::scoped_refptr<VideoTrackSourceInterface>,
-              CreateVideoSource,
-              std::unique_ptr<cricket::VideoCapturer>,
-              const MediaConstraintsInterface*)
-PROXY_METHOD1(rtc::scoped_refptr<VideoTrackSourceInterface>,
-              CreateVideoSource,
-              std::unique_ptr<cricket::VideoCapturer>)
 PROXY_METHOD2(rtc::scoped_refptr<VideoTrackInterface>,
               CreateVideoTrack,
               const std::string&,

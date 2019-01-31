@@ -235,23 +235,4 @@ RtpCapabilities PeerConnectionFactoryInterface::GetRtpReceiverCapabilities(
   return {};
 }
 
-rtc::scoped_refptr<VideoTrackSourceInterface>
-PeerConnectionFactoryInterface::CreateVideoSource(
-    std::unique_ptr<cricket::VideoCapturer> capturer) {
-  return nullptr;
-}
-
-rtc::scoped_refptr<VideoTrackSourceInterface>
-PeerConnectionFactoryInterface::CreateVideoSource(
-    std::unique_ptr<cricket::VideoCapturer> capturer,
-    const MediaConstraintsInterface* constraints) {
-  return nullptr;
-}
-
-rtc::scoped_refptr<VideoTrackSourceInterface>
-PeerConnectionFactoryInterface::CreateVideoSource(
-    cricket::VideoCapturer* capturer) {
-  return CreateVideoSource(std::unique_ptr<cricket::VideoCapturer>(capturer));
-}
-
 }  // namespace webrtc

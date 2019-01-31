@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 
+#include "api/media_constraints_interface.h"
 #include "api/peer_connection_interface.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/pc/session_description.h"
