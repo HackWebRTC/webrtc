@@ -30,6 +30,7 @@
 #include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/third_party/base64/base64.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace {
 
@@ -1328,6 +1329,11 @@ void Connection::OnReadPacket(const char* data,
 void Connection::HandleBindingRequest(IceMessage* msg) {
   // This connection should now be receiving.
   ReceivedPing();
+  if (webrtc::field_trial::IsEnabled("WebRTC-ExtraICEPing") &&
+      last_ping_response_received_ == 0) {
+    RTC_LOG(LS_INFO) << ToString() << "WebRTC-ExtraICEPing/Sending extra ping";
+    Ping(rtc::TimeMillis());
+  }
 
   const rtc::SocketAddress& remote_addr = remote_candidate_.address();
   const std::string& remote_ufrag = remote_candidate_.username();

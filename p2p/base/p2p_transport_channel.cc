@@ -631,6 +631,10 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
                      << config.stun_keepalive_interval_or_default();
   }
 
+  if (webrtc::field_trial::IsEnabled("WebRTC-ExtraICEPing")) {
+    RTC_LOG(LS_INFO) << "Set WebRTC-ExtraICEPing: Enabled";
+  }
+
   webrtc::BasicRegatheringController::Config regathering_config(
       config_.regather_all_networks_interval_range,
       config_.regather_on_failed_networks_interval_or_default());
