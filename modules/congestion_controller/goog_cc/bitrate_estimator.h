@@ -15,6 +15,7 @@
 
 #include "absl/types/optional.h"
 #include "api/transport/webrtc_key_value_config.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 
 namespace webrtc {
 
@@ -37,7 +38,8 @@ class BitrateEstimator {
  private:
   float UpdateWindow(int64_t now_ms, int bytes, int rate_window_ms);
   int sum_;
-  int64_t initial_window_ms_;
+  FieldTrialConstrained<int> initial_window_ms_;
+  FieldTrialConstrained<int> noninitial_window_ms_;
   int64_t current_window_ms_;
   int64_t prev_time_ms_;
   float bitrate_estimate_;

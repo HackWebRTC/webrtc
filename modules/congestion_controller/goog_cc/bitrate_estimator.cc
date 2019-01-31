@@ -22,56 +22,40 @@ namespace webrtc {
 namespace {
 constexpr int kInitialRateWindowMs = 500;
 constexpr int kRateWindowMs = 150;
+constexpr int kMinRateWindowMs = 150;
+constexpr int kMaxRateWindowMs = 1000;
 
-const char kBweInitialThroughputWindowExperiment[] =
-    "WebRTC-BweInitialThroughputWindowExperiment";
-
-int ReadInitialThroughputWindowSizeMs(
-    const WebRtcKeyValueConfig* key_value_config) {
-  std::string experiment_string =
-      key_value_config->Lookup(kBweInitialThroughputWindowExperiment);
-  int initial_window_ms = kInitialRateWindowMs;
-  int parsed_values =
-      sscanf(experiment_string.c_str(), "Enabled-%d", &initial_window_ms);
-  if (parsed_values != 1) {
-    RTC_LOG(LS_ERROR) << "Incorrectly formatted field trial string for "
-                      << kBweInitialThroughputWindowExperiment;
-    return kInitialRateWindowMs;
-  }
-  if (kRateWindowMs <= initial_window_ms && initial_window_ms <= 1000) {
-    RTC_LOG(LS_INFO) << kBweInitialThroughputWindowExperiment
-                     << " enabled with " << initial_window_ms << " ms window.";
-    return initial_window_ms;
-  }
-  RTC_LOG(LS_ERROR)
-      << "Initial window for throughput estimation must be between "
-      << kRateWindowMs << " and 1000 ms.";
-  return kInitialRateWindowMs;
-}
+const char kBweThroughputWindowConfig[] = "WebRTC-BweThroughputWindowConfig";
 
 }  // namespace
 
 BitrateEstimator::BitrateEstimator(const WebRtcKeyValueConfig* key_value_config)
     : sum_(0),
-      initial_window_ms_(kInitialRateWindowMs),
+      initial_window_ms_("initial_window_ms",
+                         kInitialRateWindowMs,
+                         kMinRateWindowMs,
+                         kMaxRateWindowMs),
+      noninitial_window_ms_("window_ms",
+                            kRateWindowMs,
+                            kMinRateWindowMs,
+                            kMaxRateWindowMs),
       current_window_ms_(0),
       prev_time_ms_(-1),
       bitrate_estimate_(-1.0f),
       bitrate_estimate_var_(50.0f) {
-  if (key_value_config->Lookup(kBweInitialThroughputWindowExperiment)
-          .find("Enabled") == 0) {
-    initial_window_ms_ = ReadInitialThroughputWindowSizeMs(key_value_config);
-  }
+  // E.g WebRTC-BweThroughputWindowConfig/initial_window_ms:350,window_ms:250/
+  ParseFieldTrial({&initial_window_ms_, &noninitial_window_ms_},
+                  key_value_config->Lookup(kBweThroughputWindowConfig));
 }
 
 BitrateEstimator::~BitrateEstimator() = default;
 
 void BitrateEstimator::Update(int64_t now_ms, int bytes) {
-  int rate_window_ms = kRateWindowMs;
+  int rate_window_ms = noninitial_window_ms_.Get();
   // We use a larger window at the beginning to get a more stable sample that
   // we can use to initialize the estimate.
   if (bitrate_estimate_ < 0.f)
-    rate_window_ms = initial_window_ms_;
+    rate_window_ms = initial_window_ms_.Get();
   float bitrate_sample = UpdateWindow(now_ms, bytes, rate_window_ms);
   if (bitrate_sample < 0.0f)
     return;
