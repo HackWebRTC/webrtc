@@ -159,8 +159,11 @@ TEST(NetworkEmulationManagerPCTest, Run) {
   network_manager.Start();
 
   signaling_thread->Invoke<void>(RTC_FROM_HERE, [&]() {
-    rtc::scoped_refptr<DataChannelInterface> channel =
-        alice->CreateDataChannel("data");
+    rtc::scoped_refptr<webrtc::AudioSourceInterface> source =
+        alice_pcf->CreateAudioSource(cricket::AudioOptions());
+    rtc::scoped_refptr<AudioTrackInterface> track =
+        alice_pcf->CreateAudioTrack("audio", source);
+    alice->AddTransceiver(track);
 
     // Connect peers.
     ASSERT_TRUE(alice->ExchangeOfferAnswerWith(bob.get()));
@@ -179,13 +182,6 @@ TEST(NetworkEmulationManagerPCTest, Run) {
     // This means that ICE and DTLS are connected.
     ASSERT_TRUE_WAIT(bob->IsIceConnected(), kDefaultTimeoutMs);
     ASSERT_TRUE_WAIT(alice->IsIceConnected(), kDefaultTimeoutMs);
-
-    ASSERT_TRUE_WAIT(bob->observer()->last_datachannel_ != nullptr,
-                     kDefaultTimeoutMs);
-    MockDataChannelObserver observer(bob->observer()->last_datachannel_);
-    channel->Send(DataBuffer("Test data"));
-    ASSERT_TRUE_WAIT(observer.received_message_count() == 1, kDefaultTimeoutMs);
-    ASSERT_EQ("Test data", observer.last_message());
 
     // Close peer connections
     alice->pc()->Close();
