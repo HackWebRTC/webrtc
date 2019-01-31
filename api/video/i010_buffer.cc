@@ -243,8 +243,10 @@ void I010Buffer::PasteFrom(const I010BufferInterface& picture,
   // Pasted picture has to be aligned so subsumpled UV plane isn't corrupted.
   RTC_CHECK(offset_col % 2 == 0);
   RTC_CHECK(offset_row % 2 == 0);
-  RTC_CHECK(picture.width() % 2 == 0);
-  RTC_CHECK(picture.height() % 2 == 0);
+  RTC_CHECK(picture.width() % 2 == 0 ||
+            picture.width() + offset_col == width());
+  RTC_CHECK(picture.height() % 2 == 0 ||
+            picture.height() + offset_row == height());
 
   libyuv::CopyPlane_16(picture.DataY(), picture.StrideY(),
                        MutableDataY() + StrideY() * offset_row + offset_col,
