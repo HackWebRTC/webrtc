@@ -25,7 +25,6 @@
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "modules/rtp_rtcp/source/playout_delay_oracle.h"
 #include "modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "rtc_base/constructor_magic.h"
@@ -183,6 +182,7 @@ class RTPSender {
 
   absl::optional<uint32_t> FlexfecSsrc() const;
 
+  // Sends packet to |transport_| or to the pacer, depending on configuration.
   bool SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
                      StorageType storage,
                      RtpPacketSender::Priority priority);
@@ -239,6 +239,7 @@ class RTPSender {
   std::unique_ptr<RtpPacketToSend> BuildRtxPacket(
       const RtpPacketToSend& packet);
 
+  // Sends packet on to |transport_|, leaving the RTP module.
   bool SendPacketToNetwork(const RtpPacketToSend& packet,
                            const PacketOptions& options,
                            const PacedPacketInfo& pacing_info);
@@ -285,11 +286,6 @@ class RTPSender {
 
   RtpHeaderExtensionMap rtp_header_extension_map_
       RTC_GUARDED_BY(send_critsect_);
-
-  // Tracks the current request for playout delay limits from application
-  // and decides whether the current RTP frame should include the playout
-  // delay extension on header.
-  PlayoutDelayOracle playout_delay_oracle_;
 
   RtpPacketHistory packet_history_;
   // TODO(brandtr): Remove |flexfec_packet_history_| when the FlexfecSender

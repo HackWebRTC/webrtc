@@ -53,6 +53,7 @@ void BuildRedPayload(const RtpPacketToSend& media_packet,
 }
 
 void AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
+                            const absl::optional<PlayoutDelay>& playout_delay,
                             FrameType frame_type,
                             bool set_video_rotation,
                             bool set_color_space,
@@ -78,6 +79,10 @@ void AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
       video_header.video_timing.flags != VideoSendTiming::kInvalid)
     packet->SetExtension<VideoTimingExtension>(video_header.video_timing);
 
+  // If transmitted, add to all packets; ack logic depends on this.
+  if (playout_delay) {
+    packet->SetExtension<PlayoutDelayLimits>(*playout_delay);
+  }
   if (video_header.generic) {
     RtpGenericFrameDescriptor generic_descriptor;
     generic_descriptor.SetFirstPacketInSubFrame(first_packet);
@@ -378,6 +383,9 @@ bool RTPSenderVideo::SendVideo(FrameType frame_type,
   int32_t retransmission_settings;
   bool set_video_rotation;
   bool set_color_space = false;
+
+  const absl::optional<PlayoutDelay> playout_delay =
+      playout_delay_oracle_.PlayoutDelayToSend(video_header->playout_delay);
   {
     rtc::CritScope cs(&crit_);
     // According to
@@ -441,19 +449,18 @@ bool RTPSenderVideo::SendVideo(FrameType frame_type,
   auto middle_packet = absl::make_unique<RtpPacketToSend>(*single_packet);
   auto last_packet = absl::make_unique<RtpPacketToSend>(*single_packet);
   // Simplest way to estimate how much extensions would occupy is to set them.
-  AddRtpHeaderExtensions(*video_header, frame_type, set_video_rotation,
-                         set_color_space, /*first=*/true, /*last=*/true,
-                         single_packet.get());
-  AddRtpHeaderExtensions(*video_header, frame_type, set_video_rotation,
-                         set_color_space, /*first=*/true, /*last=*/false,
-                         first_packet.get());
-  AddRtpHeaderExtensions(*video_header, frame_type, set_video_rotation,
-                         set_color_space, /*first=*/false, /*last=*/false,
-                         middle_packet.get());
-  AddRtpHeaderExtensions(*video_header, frame_type, set_video_rotation,
-                         set_color_space, /*first=*/false, /*last=*/true,
-                         last_packet.get());
-
+  AddRtpHeaderExtensions(*video_header, playout_delay, frame_type,
+                         set_video_rotation, set_color_space, /*first=*/true,
+                         /*last=*/true, single_packet.get());
+  AddRtpHeaderExtensions(*video_header, playout_delay, frame_type,
+                         set_video_rotation, set_color_space, /*first=*/true,
+                         /*last=*/false, first_packet.get());
+  AddRtpHeaderExtensions(*video_header, playout_delay, frame_type,
+                         set_video_rotation, set_color_space, /*first=*/false,
+                         /*last=*/false, middle_packet.get());
+  AddRtpHeaderExtensions(*video_header, playout_delay, frame_type,
+                         set_video_rotation, set_color_space, /*first=*/false,
+                         /*last=*/true, last_packet.get());
   RTC_DCHECK_GT(packet_capacity, single_packet->headers_size());
   RTC_DCHECK_GT(packet_capacity, first_packet->headers_size());
   RTC_DCHECK_GT(packet_capacity, middle_packet->headers_size());
@@ -582,6 +589,10 @@ bool RTPSenderVideo::SendVideo(FrameType frame_type,
       return false;
     packetized_payload_size += packet->payload_size();
 
+    if (i == 0) {
+      playout_delay_oracle_.OnSentPacket(packet->SequenceNumber(),
+                                         playout_delay);
+    }
     // No FEC protection for upper temporal layers, if used.
     bool protect_packet = temporal_id == 0 || temporal_id == kNoTemporalIdx;
 

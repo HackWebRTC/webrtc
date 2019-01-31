@@ -19,6 +19,7 @@
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/playout_delay_oracle.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "modules/rtp_rtcp/source/ulpfec_generator.h"
@@ -70,6 +71,10 @@ class RTPSenderVideo {
   uint32_t VideoBitrateSent() const;
   uint32_t FecOverheadRate() const;
   uint32_t PacketizationOverheadBps() const;
+
+  void OnReceivedAck(int64_t extended_highest_sequence_number) {
+    playout_delay_oracle_.OnReceivedAck(extended_highest_sequence_number);
+  }
 
  protected:
   static uint8_t GetTemporalId(const RTPVideoHeader& header);
@@ -135,6 +140,10 @@ class RTPSenderVideo {
   VideoRotation last_rotation_ RTC_GUARDED_BY(crit_);
   absl::optional<ColorSpace> last_color_space_ RTC_GUARDED_BY(crit_);
   bool transmit_color_space_next_frame_ RTC_GUARDED_BY(crit_);
+  // Tracks the current request for playout delay limits from application
+  // and decides whether the current RTP frame should include the playout
+  // delay extension on header.
+  PlayoutDelayOracle playout_delay_oracle_;
 
   // RED/ULPFEC.
   int red_payload_type_ RTC_GUARDED_BY(crit_);
