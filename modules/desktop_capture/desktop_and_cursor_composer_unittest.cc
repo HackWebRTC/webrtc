@@ -126,7 +126,6 @@ class FakeMouseMonitor : public MouseCursorMonitor {
       std::unique_ptr<DesktopFrame> image(
           new BasicDesktopFrame(DesktopSize(kCursorWidth, kCursorHeight)));
       uint32_t* data = reinterpret_cast<uint32_t*>(image->data());
-      memset(data, 0, image->stride() * kCursorHeight);
 
       // Set four pixels near the hotspot and leave all other blank.
       for (int y = 0; y < kTestCursorSize; ++y) {

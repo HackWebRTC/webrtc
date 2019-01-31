@@ -249,7 +249,6 @@ void WindowCapturerWin::CaptureFrame() {
       !window_capture_helper_.IsWindowVisibleOnCurrentDesktop(window_)) {
     std::unique_ptr<DesktopFrame> frame(
         new BasicDesktopFrame(DesktopSize(1, 1)));
-    memset(frame->data(), 0, frame->stride() * frame->size().height());
 
     previous_size_ = frame->size();
     window_size_map_[window_] = previous_size_;

@@ -64,4 +64,17 @@ TEST(CroppedDesktopFrameTest, SetTopLeft) {
   ASSERT_EQ(frame->top_left().y(), 203);
 }
 
+TEST(CroppedDesktopFrameTest, InitializedWithZeros) {
+  std::unique_ptr<DesktopFrame> frame = CreateTestFrame();
+  const DesktopVector frame_origin = frame->top_left();
+  const DesktopSize frame_size = frame->size();
+  std::unique_ptr<DesktopFrame> cropped = CreateCroppedDesktopFrame(
+      std::move(frame), DesktopRect::MakeOriginSize(frame_origin, frame_size));
+  for (int j = 0; j < cropped->size().height(); ++j) {
+    for (int i = 0; i < cropped->stride(); ++i) {
+      ASSERT_EQ(cropped->data()[i + j * cropped->stride()], 0);
+    }
+  }
+}
+
 }  // namespace webrtc

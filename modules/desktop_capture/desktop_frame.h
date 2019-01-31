@@ -138,6 +138,7 @@ class RTC_EXPORT DesktopFrame {
 // A DesktopFrame that stores data in the heap.
 class RTC_EXPORT BasicDesktopFrame : public DesktopFrame {
  public:
+  // The entire data buffer used for the frame is initialized with zeros.
   explicit BasicDesktopFrame(DesktopSize size);
 
   ~BasicDesktopFrame() override;
