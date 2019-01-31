@@ -582,8 +582,18 @@ VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
       static_cast<int>(total_byte_tracker_.ComputeRate() * 8);
   stats_.interframe_delay_max_ms =
       interframe_delay_max_moving_.Max(now_ms).value_or(-1);
-  stats_.timing_frame_info = timing_frame_info_counter_.Max(now_ms);
+  stats_.freeze_count = video_quality_observer_->NumFreezes();
+  stats_.pause_count = video_quality_observer_->NumPauses();
+  stats_.total_freezes_duration_ms =
+      video_quality_observer_->TotalFreezesDurationMs();
+  stats_.total_pauses_duration_ms =
+      video_quality_observer_->TotalPausesDurationMs();
+  stats_.total_frames_duration_ms =
+      video_quality_observer_->TotalFramesDurationMs();
+  stats_.sum_squared_frame_durations =
+      video_quality_observer_->SumSquaredFrameDurationsSec();
   stats_.content_type = last_content_type_;
+  stats_.timing_frame_info = timing_frame_info_counter_.Max(now_ms);
   return stats_;
 }
 

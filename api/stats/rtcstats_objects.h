@@ -314,6 +314,14 @@ class RTC_EXPORT RTCMediaStreamTrackStats final : public RTCStats {
   // TODO(kuddai): Add description to standard. crbug.com/webrtc/10042
   RTCNonStandardStatsMember<uint64_t> jitter_buffer_flushes;
   RTCNonStandardStatsMember<uint64_t> delayed_packet_outage_samples;
+  // Non-standard video-only members.
+  // https://henbos.github.io/webrtc-provisional-stats/#RTCVideoReceiverStats-dict*
+  RTCNonStandardStatsMember<uint32_t> freeze_count;
+  RTCNonStandardStatsMember<uint32_t> pause_count;
+  RTCNonStandardStatsMember<double> total_freezes_duration;
+  RTCNonStandardStatsMember<double> total_pauses_duration;
+  RTCNonStandardStatsMember<double> total_frames_duration;
+  RTCNonStandardStatsMember<double> sum_squared_frame_durations;
 };
 
 // https://w3c.github.io/webrtc-stats/#pcstats-dict*

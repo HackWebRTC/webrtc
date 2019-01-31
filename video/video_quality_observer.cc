@@ -20,12 +20,13 @@
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
+const uint32_t VideoQualityObserver::kMinFrameSamplesToDetectFreeze = 5;
+const uint32_t VideoQualityObserver::kMinIncreaseForFreezeMs = 150;
+const uint32_t VideoQualityObserver::kAvgInterframeDelaysWindowSizeFrames = 30;
 
 namespace {
-constexpr int kMinFrameSamplesToDetectFreeze = 5;
 constexpr int kMinVideoDurationMs = 3000;
 constexpr int kMinRequiredSamples = 1;
-constexpr int kMinIncreaseForFreezeMs = 150;
 constexpr int kPixelsInHighResolution =
     960 * 540;  // CPU-adapted HD still counts.
 constexpr int kPixelsInMediumResolution = 640 * 360;
@@ -41,7 +42,8 @@ VideoQualityObserver::VideoQualityObserver(VideoContentType content_type)
       first_frame_rendered_ms_(-1),
       last_frame_pixels_(0),
       is_last_frame_blocky_(false),
-      last_unfreeze_time_(0),
+      last_unfreeze_time_ms_(0),
+      render_interframe_delays_(kAvgInterframeDelaysWindowSizeFrames),
       sum_squared_interframe_delays_secs_(0.0),
       time_in_resolution_ms_(3, 0),
       current_resolution_(Resolution::Low),
@@ -63,9 +65,9 @@ void VideoQualityObserver::UpdateHistograms() {
   char log_stream_buf[2 * 1024];
   rtc::SimpleStringBuilder log_stream(log_stream_buf);
 
-  if (last_frame_rendered_ms_ > last_unfreeze_time_) {
+  if (last_frame_rendered_ms_ > last_unfreeze_time_ms_) {
     smooth_playback_durations_.Add(last_frame_rendered_ms_ -
-                                   last_unfreeze_time_);
+                                   last_unfreeze_time_ms_);
   }
 
   std::string uma_prefix = videocontenttypehelpers::IsScreenshare(content_type_)
@@ -135,32 +137,38 @@ void VideoQualityObserver::UpdateHistograms() {
 
 void VideoQualityObserver::OnRenderedFrame(const VideoFrame& frame,
                                            int64_t now_ms) {
-  if (num_frames_rendered_ == 0) {
-    first_frame_rendered_ms_ = last_unfreeze_time_ = now_ms;
-  }
+  RTC_DCHECK_LE(last_frame_rendered_ms_, now_ms);
+  RTC_DCHECK_LE(last_unfreeze_time_ms_, now_ms);
 
-  ++num_frames_rendered_;
+  if (num_frames_rendered_ == 0) {
+    first_frame_rendered_ms_ = last_unfreeze_time_ms_ = now_ms;
+  }
 
   auto blocky_frame_it = blocky_frames_.find(frame.timestamp());
 
-  if (!is_paused_ && num_frames_rendered_ > 1) {
+  if (!is_paused_ && num_frames_rendered_ > 0) {
     // Process inter-frame delay.
     const int64_t interframe_delay_ms = now_ms - last_frame_rendered_ms_;
-    const float interframe_delays_secs = interframe_delay_ms / 1000.0;
+    const double interframe_delays_secs = interframe_delay_ms / 1000.0;
     sum_squared_interframe_delays_secs_ +=
         interframe_delays_secs * interframe_delays_secs;
-    render_interframe_delays_.Add(interframe_delay_ms);
-    absl::optional<int> avg_interframe_delay =
-        render_interframe_delays_.Avg(kMinFrameSamplesToDetectFreeze);
-    // Check if it was a freeze.
-    if (avg_interframe_delay &&
-        interframe_delay_ms >=
-            std::max(3 * *avg_interframe_delay,
-                     *avg_interframe_delay + kMinIncreaseForFreezeMs)) {
+    render_interframe_delays_.AddSample(interframe_delay_ms);
+
+    bool was_freeze = false;
+    if (render_interframe_delays_.Size() >= kMinFrameSamplesToDetectFreeze) {
+      const absl::optional<int64_t> avg_interframe_delay =
+          render_interframe_delays_.GetAverageRoundedDown();
+      RTC_DCHECK(avg_interframe_delay);
+      was_freeze = interframe_delay_ms >=
+                   std::max(3 * *avg_interframe_delay,
+                            *avg_interframe_delay + kMinIncreaseForFreezeMs);
+    }
+
+    if (was_freeze) {
       freezes_durations_.Add(interframe_delay_ms);
       smooth_playback_durations_.Add(last_frame_rendered_ms_ -
-                                     last_unfreeze_time_);
-      last_unfreeze_time_ = now_ms;
+                                     last_unfreeze_time_ms_);
+      last_unfreeze_time_ms_ = now_ms;
     } else {
       // Count spatial metrics if there were no freeze.
       time_in_resolution_ms_[current_resolution_] += interframe_delay_ms;
@@ -176,11 +184,15 @@ void VideoQualityObserver::OnRenderedFrame(const VideoFrame& frame,
     // pause toward smooth playback. Explicitly count the part before it and
     // start the new smooth playback interval from this frame.
     is_paused_ = false;
-    if (last_frame_rendered_ms_ > last_unfreeze_time_) {
+    if (last_frame_rendered_ms_ > last_unfreeze_time_ms_) {
       smooth_playback_durations_.Add(last_frame_rendered_ms_ -
-                                     last_unfreeze_time_);
+                                     last_unfreeze_time_ms_);
     }
-    last_unfreeze_time_ = now_ms;
+    last_unfreeze_time_ms_ = now_ms;
+
+    if (num_frames_rendered_ > 0) {
+      pauses_durations_.Add(now_ms - last_frame_rendered_ms_);
+    }
   }
 
   int64_t pixels = frame.width() * frame.height();
@@ -203,6 +215,8 @@ void VideoQualityObserver::OnRenderedFrame(const VideoFrame& frame,
   if (is_last_frame_blocky_) {
     blocky_frames_.erase(blocky_frames_.begin(), ++blocky_frame_it);
   }
+
+  ++num_frames_rendered_;
 }
 
 void VideoQualityObserver::OnDecodedFrame(const VideoFrame& frame,
@@ -241,4 +255,29 @@ void VideoQualityObserver::OnDecodedFrame(const VideoFrame& frame,
 void VideoQualityObserver::OnStreamInactive() {
   is_paused_ = true;
 }
+
+uint32_t VideoQualityObserver::NumFreezes() {
+  return freezes_durations_.NumSamples();
+}
+
+uint32_t VideoQualityObserver::NumPauses() {
+  return pauses_durations_.NumSamples();
+}
+
+uint32_t VideoQualityObserver::TotalFreezesDurationMs() {
+  return freezes_durations_.Sum(kMinRequiredSamples).value_or(0);
+}
+
+uint32_t VideoQualityObserver::TotalPausesDurationMs() {
+  return pauses_durations_.Sum(kMinRequiredSamples).value_or(0);
+}
+
+uint32_t VideoQualityObserver::TotalFramesDurationMs() {
+  return last_frame_rendered_ms_ - first_frame_rendered_ms_;
+}
+
+double VideoQualityObserver::SumSquaredFrameDurationsSec() {
+  return sum_squared_interframe_delays_secs_;
+}
+
 }  // namespace webrtc

@@ -57,6 +57,13 @@ absl::optional<int> SampleCounter::Max() const {
   return max_;
 }
 
+absl::optional<int64_t> SampleCounter::Sum(int64_t min_required_samples) const {
+  RTC_DCHECK_GT(min_required_samples, 0);
+  if (num_samples_ < min_required_samples)
+    return absl::nullopt;
+  return sum_;
+}
+
 int64_t SampleCounter::NumSamples() const {
   return num_samples_;
 }

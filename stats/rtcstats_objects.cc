@@ -381,7 +381,13 @@ WEBRTC_RTCSTATS_IMPL(RTCMediaStreamTrackStats, RTCStats, "track",
                      &concealed_samples,
                      &concealment_events,
                      &jitter_buffer_flushes,
-                     &delayed_packet_outage_samples);
+                     &delayed_packet_outage_samples,
+                     &freeze_count,
+                     &pause_count,
+                     &total_freezes_duration,
+                     &total_pauses_duration,
+                     &total_frames_duration,
+                     &sum_squared_frame_durations);
 // clang-format on
 
 RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(const std::string& id,
@@ -420,7 +426,13 @@ RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(std::string&& id,
       concealed_samples("concealedSamples"),
       concealment_events("concealmentEvents"),
       jitter_buffer_flushes("jitterBufferFlushes"),
-      delayed_packet_outage_samples("delayedPacketOutageSamples") {
+      delayed_packet_outage_samples("delayedPacketOutageSamples"),
+      freeze_count("freezeCount"),
+      pause_count("pauseCount"),
+      total_freezes_duration("totalFreezesDuration"),
+      total_pauses_duration("totalPausesDuration"),
+      total_frames_duration("totalFramesDuration"),
+      sum_squared_frame_durations("sumOfSquaredFramesDuration") {
   RTC_DCHECK(kind == RTCMediaStreamTrackKind::kAudio ||
              kind == RTCMediaStreamTrackKind::kVideo);
 }
@@ -455,7 +467,13 @@ RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(
       concealed_samples(other.concealed_samples),
       concealment_events(other.concealment_events),
       jitter_buffer_flushes(other.jitter_buffer_flushes),
-      delayed_packet_outage_samples(other.delayed_packet_outage_samples) {}
+      delayed_packet_outage_samples(other.delayed_packet_outage_samples),
+      freeze_count(other.freeze_count),
+      pause_count(other.pause_count),
+      total_freezes_duration(other.total_freezes_duration),
+      total_pauses_duration(other.total_pauses_duration),
+      total_frames_duration(other.total_frames_duration),
+      sum_squared_frame_durations(other.sum_squared_frame_durations) {}
 
 RTCMediaStreamTrackStats::~RTCMediaStreamTrackStats() {}
 
