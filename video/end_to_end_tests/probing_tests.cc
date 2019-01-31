@@ -28,7 +28,7 @@ class ProbingEndToEndTest : public test::CallTest,
  private:
   test::ScopedFieldTrials field_trial_;
 };
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     FieldTrials,
     ProbingEndToEndTest,
     ::testing::Values("WebRTC-TaskQueueCongestionControl/Enabled/",

@@ -1220,10 +1220,11 @@ TEST(FullStackTest, MAYBE_LargeRoomVP8_50thumb) {
   fixture->RunWithAnalyzer(large_room);
 }
 
-INSTANTIATE_TEST_CASE_P(FullStackTest,
-                        GenericDescriptorTest,
-                        ::testing::Values("WebRTC-GenericDescriptor/Disabled/",
-                                          "WebRTC-GenericDescriptor/Enabled/"));
+INSTANTIATE_TEST_SUITE_P(
+    FullStackTest,
+    GenericDescriptorTest,
+    ::testing::Values("WebRTC-GenericDescriptor/Disabled/",
+                      "WebRTC-GenericDescriptor/Enabled/"));
 
 class DualStreamsTest : public ::testing::TestWithParam<int> {};
 
@@ -1329,8 +1330,8 @@ TEST_P(DualStreamsTest, Conference_Restricted) {
   fixture->RunWithAnalyzer(dual_streams);
 }
 
-INSTANTIATE_TEST_CASE_P(FullStackTest,
-                        DualStreamsTest,
-                        ::testing::Values(0, 1));
+INSTANTIATE_TEST_SUITE_P(FullStackTest,
+                         DualStreamsTest,
+                         ::testing::Values(0, 1));
 
 }  // namespace webrtc

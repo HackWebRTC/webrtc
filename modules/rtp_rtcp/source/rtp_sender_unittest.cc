@@ -2286,16 +2286,16 @@ TEST_P(RtpSenderTest, SendsKeepAlive) {
   EXPECT_EQ(kSeqNum + 1, rtp_sender_->SequenceNumber());
 }
 
-INSTANTIATE_TEST_CASE_P(WithAndWithoutOverhead,
-                        RtpSenderTest,
-                        ::testing::Bool());
-INSTANTIATE_TEST_CASE_P(WithAndWithoutOverhead,
-                        RtpSenderTestWithoutPacer,
-                        ::testing::Bool());
-INSTANTIATE_TEST_CASE_P(WithAndWithoutOverhead,
-                        RtpSenderVideoTest,
-                        ::testing::Bool());
-INSTANTIATE_TEST_CASE_P(WithAndWithoutOverhead,
-                        RtpSenderAudioTest,
-                        ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(WithAndWithoutOverhead,
+                         RtpSenderTest,
+                         ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(WithAndWithoutOverhead,
+                         RtpSenderTestWithoutPacer,
+                         ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(WithAndWithoutOverhead,
+                         RtpSenderVideoTest,
+                         ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(WithAndWithoutOverhead,
+                         RtpSenderAudioTest,
+                         ::testing::Bool());
 }  // namespace webrtc

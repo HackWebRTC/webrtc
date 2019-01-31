@@ -455,7 +455,7 @@ TEST_P(DtlsTransportVersionTest, TestCipherSuiteNegotiation) {
 }
 
 // Will test every combination of 1.0/1.2 on the client and server.
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     TestCipherSuiteNegotiation,
     DtlsTransportVersionTest,
     ::testing::Combine(::testing::Values(rtc::SSL_PROTOCOL_DTLS_10,
@@ -707,7 +707,7 @@ TEST_P(DtlsEventOrderingTest, TestEventOrdering) {
                     ::testing::get<1>(GetParam()));
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     TestEventOrdering,
     DtlsEventOrderingTest,
     ::testing::Combine(

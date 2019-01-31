@@ -536,7 +536,7 @@ TEST_P(PeerConnectionMediaOfferDirectionTest, VerifyDirection) {
 
 // Note that in these tests, MD_INACTIVE indicates that no media section is
 // included in the offer, not that the media direction is inactive.
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     PeerConnectionMediaTest,
     PeerConnectionMediaOfferDirectionTest,
     Combine(
@@ -652,16 +652,16 @@ TEST_P(PeerConnectionMediaAnswerDirectionTest, VerifyRejected) {
   EXPECT_EQ((offer_to_receive_ == 0 && !send_media_), audio_content->rejected);
 }
 
-INSTANTIATE_TEST_CASE_P(PeerConnectionMediaTest,
-                        PeerConnectionMediaAnswerDirectionTest,
-                        Combine(Values(SdpSemantics::kPlanB,
-                                       SdpSemantics::kUnifiedPlan),
-                                Values(RtpTransceiverDirection::kInactive,
-                                       RtpTransceiverDirection::kSendOnly,
-                                       RtpTransceiverDirection::kRecvOnly,
-                                       RtpTransceiverDirection::kSendRecv),
-                                Bool(),
-                                Values(-1, 0, 1)));
+INSTANTIATE_TEST_SUITE_P(PeerConnectionMediaTest,
+                         PeerConnectionMediaAnswerDirectionTest,
+                         Combine(Values(SdpSemantics::kPlanB,
+                                        SdpSemantics::kUnifiedPlan),
+                                 Values(RtpTransceiverDirection::kInactive,
+                                        RtpTransceiverDirection::kSendOnly,
+                                        RtpTransceiverDirection::kRecvOnly,
+                                        RtpTransceiverDirection::kSendRecv),
+                                 Bool(),
+                                 Values(-1, 0, 1)));
 
 TEST_P(PeerConnectionMediaTest, OfferHasDifferentDirectionForAudioVideo) {
   auto caller = CreatePeerConnection();
@@ -830,7 +830,7 @@ constexpr char kMLinesOutOfOrder[] =
     "The order of m-lines in answer doesn't match order in offer. Rejecting "
     "answer.";
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     PeerConnectionMediaTest,
     PeerConnectionMediaInvalidMediaTest,
     Combine(Values(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),
@@ -1239,9 +1239,9 @@ TEST_P(PeerConnectionMediaTest, MediaTransportNotPropagatedToVoiceEngine) {
   ASSERT_EQ(nullptr, callee_video->media_transport());
 }
 
-INSTANTIATE_TEST_CASE_P(PeerConnectionMediaTest,
-                        PeerConnectionMediaTest,
-                        Values(SdpSemantics::kPlanB,
-                               SdpSemantics::kUnifiedPlan));
+INSTANTIATE_TEST_SUITE_P(PeerConnectionMediaTest,
+                         PeerConnectionMediaTest,
+                         Values(SdpSemantics::kPlanB,
+                                SdpSemantics::kUnifiedPlan));
 
 }  // namespace webrtc

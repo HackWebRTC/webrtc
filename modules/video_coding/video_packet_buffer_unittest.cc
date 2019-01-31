@@ -583,9 +583,9 @@ class TestPacketBufferH264Parameterized
   TestPacketBufferH264Parameterized() : TestPacketBufferH264(GetParam()) {}
 };
 
-INSTANTIATE_TEST_CASE_P(SpsPpsIdrIsKeyframe,
-                        TestPacketBufferH264Parameterized,
-                        ::testing::Values(false, true));
+INSTANTIATE_TEST_SUITE_P(SpsPpsIdrIsKeyframe,
+                         TestPacketBufferH264Parameterized,
+                         ::testing::Values(false, true));
 
 TEST_P(TestPacketBufferH264Parameterized, DontRemoveMissingPacketOnClearTo) {
   EXPECT_TRUE(InsertH264(0, kKeyFrame, kFirst, kLast, 0));

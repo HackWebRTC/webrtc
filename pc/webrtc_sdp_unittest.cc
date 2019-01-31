@@ -3020,9 +3020,9 @@ TEST_P(WebRtcSdpExtmapTest, DeserializeSessionDescriptionWithInvalidExtmap) {
   TestDeserializeExtmap(true, true, encrypted);
 }
 
-INSTANTIATE_TEST_CASE_P(Encrypted,
-                        WebRtcSdpExtmapTest,
-                        ::testing::Values(false, true));
+INSTANTIATE_TEST_SUITE_P(Encrypted,
+                         WebRtcSdpExtmapTest,
+                         ::testing::Values(false, true));
 
 TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithoutEndLineBreak) {
   JsepSessionDescription jdesc(kDummyType);

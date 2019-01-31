@@ -2413,7 +2413,7 @@ TEST_P(AudioProcessingTest, Formats) {
 }
 
 #if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     CommonFormats,
     AudioProcessingTest,
     testing::Values(std::make_tuple(48000, 48000, 48000, 48000, 0, 0),
@@ -2469,7 +2469,7 @@ INSTANTIATE_TEST_CASE_P(
                     std::make_tuple(16000, 16000, 16000, 16000, 0, 0)));
 
 #elif defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     CommonFormats,
     AudioProcessingTest,
     testing::Values(std::make_tuple(48000, 48000, 48000, 48000, 20, 0),

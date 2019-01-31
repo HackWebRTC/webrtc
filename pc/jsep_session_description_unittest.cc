@@ -425,8 +425,8 @@ TEST_P(EnumerateAllSdpTypesTest, TestIdentity) {
   EXPECT_EQ(type, webrtc::SdpTypeFromString(str));
 }
 
-INSTANTIATE_TEST_CASE_P(JsepSessionDescriptionTest,
-                        EnumerateAllSdpTypesTest,
-                        Values(SdpType::kOffer,
-                               SdpType::kPrAnswer,
-                               SdpType::kAnswer));
+INSTANTIATE_TEST_SUITE_P(JsepSessionDescriptionTest,
+                         EnumerateAllSdpTypesTest,
+                         Values(SdpType::kOffer,
+                                SdpType::kPrAnswer,
+                                SdpType::kAnswer));

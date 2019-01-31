@@ -141,9 +141,9 @@ class RtpVideoSenderTest : public ::testing::Test,
   test::ScopedFieldTrials field_trial_;
 };
 
-INSTANTIATE_TEST_CASE_P(Default, RtpVideoSenderTest, ::testing::Values(""));
+INSTANTIATE_TEST_SUITE_P(Default, RtpVideoSenderTest, ::testing::Values(""));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     TaskQueueTrial,
     RtpVideoSenderTest,
     ::testing::Values("WebRTC-TaskQueueCongestionControl/Enabled/"));

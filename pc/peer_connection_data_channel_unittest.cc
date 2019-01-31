@@ -416,9 +416,9 @@ TEST_P(PeerConnectionDataChannelTest,
             "Failed to set local offer sdp: Failed to create data channel.");
 }
 
-INSTANTIATE_TEST_CASE_P(PeerConnectionDataChannelTest,
-                        PeerConnectionDataChannelTest,
-                        Values(SdpSemantics::kPlanB,
-                               SdpSemantics::kUnifiedPlan));
+INSTANTIATE_TEST_SUITE_P(PeerConnectionDataChannelTest,
+                         PeerConnectionDataChannelTest,
+                         Values(SdpSemantics::kPlanB,
+                                SdpSemantics::kUnifiedPlan));
 
 }  // namespace webrtc

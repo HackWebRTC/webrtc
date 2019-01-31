@@ -713,9 +713,9 @@ class TemporalLayersReferenceTest : public TemporalLayersTest,
   BufferState altref_state;
 };
 
-INSTANTIATE_TEST_CASE_P(DefaultTemporalLayersTest,
-                        TemporalLayersReferenceTest,
-                        ::testing::Range(1, kMaxTemporalStreams + 1));
+INSTANTIATE_TEST_SUITE_P(DefaultTemporalLayersTest,
+                         TemporalLayersReferenceTest,
+                         ::testing::Range(1, kMaxTemporalStreams + 1));
 
 TEST_P(TemporalLayersReferenceTest, ValidFrameConfigs) {
   const int num_layers = GetParam();

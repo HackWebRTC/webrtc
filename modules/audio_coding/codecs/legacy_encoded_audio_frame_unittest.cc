@@ -160,7 +160,7 @@ TEST_P(SplitBySamplesTest, PayloadSizes) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     LegacyEncodedAudioFrame,
     SplitBySamplesTest,
     ::testing::Values(NetEqDecoder::kDecoderPCMu,

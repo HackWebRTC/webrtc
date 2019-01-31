@@ -117,7 +117,7 @@ class QualityScalerTest : public ::testing::Test,
   std::unique_ptr<MockAdaptationObserver> observer_;
 };
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     FieldTrials,
     QualityScalerTest,
     ::testing::Values(

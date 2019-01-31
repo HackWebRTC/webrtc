@@ -621,7 +621,7 @@ TEST_P(CallSimulator, DISABLED_ApiCallDurationTest) {
   EXPECT_TRUE(Run());
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     AudioProcessingPerformanceTest,
     CallSimulator,
     ::testing::ValuesIn(SimulationConfig::GenerateSimulationConfigs()));

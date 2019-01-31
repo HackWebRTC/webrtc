@@ -1750,6 +1750,6 @@ TEST_P(StatsCollectorTrackTest, VerifyVideoReceiveSsrcStatsNew) {
             ExtractSsrcStatsValue(reports, StatsReport::kStatsValueNameQpSum));
 }
 
-INSTANTIATE_TEST_CASE_P(HasStream, StatsCollectorTrackTest, ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(HasStream, StatsCollectorTrackTest, ::testing::Bool());
 
 }  // namespace webrtc

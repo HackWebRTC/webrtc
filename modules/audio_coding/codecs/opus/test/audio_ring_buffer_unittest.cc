@@ -82,7 +82,7 @@ TEST_P(AudioRingBufferTest, ReadDataMatchesWrittenData) {
       EXPECT_EQ(input.channels()[i][j], output.channels()[i][j]);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     AudioRingBufferTest,
     AudioRingBufferTest,
     ::testing::Combine(::testing::Values(10, 20, 42),  // num_write_chunk_frames

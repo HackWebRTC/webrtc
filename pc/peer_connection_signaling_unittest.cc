@@ -402,16 +402,16 @@ TEST_P(PeerConnectionSignalingStateTest, SetRemoteAnswer) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(PeerConnectionSignalingTest,
-                        PeerConnectionSignalingStateTest,
-                        Combine(Values(SdpSemantics::kPlanB,
-                                       SdpSemantics::kUnifiedPlan),
-                                Values(SignalingState::kStable,
-                                       SignalingState::kHaveLocalOffer,
-                                       SignalingState::kHaveLocalPrAnswer,
-                                       SignalingState::kHaveRemoteOffer,
-                                       SignalingState::kHaveRemotePrAnswer),
-                                Bool()));
+INSTANTIATE_TEST_SUITE_P(PeerConnectionSignalingTest,
+                         PeerConnectionSignalingStateTest,
+                         Combine(Values(SdpSemantics::kPlanB,
+                                        SdpSemantics::kUnifiedPlan),
+                                 Values(SignalingState::kStable,
+                                        SignalingState::kHaveLocalOffer,
+                                        SignalingState::kHaveLocalPrAnswer,
+                                        SignalingState::kHaveRemoteOffer,
+                                        SignalingState::kHaveRemotePrAnswer),
+                                 Bool()));
 
 // Test that CreateAnswer fails if a round of offer/answer has been done and
 // the PeerConnection is in the stable state.
@@ -522,10 +522,10 @@ TEST_P(PeerConnectionSignalingTest, CreateOffersAndShutdown) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(PeerConnectionSignalingTest,
-                        PeerConnectionSignalingTest,
-                        Values(SdpSemantics::kPlanB,
-                               SdpSemantics::kUnifiedPlan));
+INSTANTIATE_TEST_SUITE_P(PeerConnectionSignalingTest,
+                         PeerConnectionSignalingTest,
+                         Values(SdpSemantics::kPlanB,
+                                SdpSemantics::kUnifiedPlan));
 
 class PeerConnectionSignalingUnifiedPlanTest
     : public PeerConnectionSignalingBaseTest {

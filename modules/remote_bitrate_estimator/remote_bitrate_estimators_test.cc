@@ -56,9 +56,9 @@ class BweFeedbackTest
   RTC_DISALLOW_COPY_AND_ASSIGN(BweFeedbackTest);
 };
 
-INSTANTIATE_TEST_CASE_P(VideoSendersTest,
-                        BweFeedbackTest,
-                        ::testing::Values(kRembEstimator, kSendSideEstimator));
+INSTANTIATE_TEST_SUITE_P(VideoSendersTest,
+                         BweFeedbackTest,
+                         ::testing::Values(kRembEstimator, kSendSideEstimator));
 
 TEST_P(BweFeedbackTest, ConstantCapacity) {
   AdaptiveVideoSource source(0, 30, 300, 0, 0);

@@ -32,7 +32,7 @@ using test_types = ::testing::Types<UniqueNumberGenerator<uint8_t>,
                                     UniqueRandomIdGenerator,
                                     UniqueStringGenerator>;
 
-TYPED_TEST_CASE(UniqueIdGeneratorTest, test_types);
+TYPED_TEST_SUITE(UniqueIdGeneratorTest, test_types);
 
 TYPED_TEST(UniqueIdGeneratorTest, ElementsDoNotRepeat) {
   typedef TypeParam Generator;

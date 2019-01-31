@@ -1112,14 +1112,14 @@ TEST_P(AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
 #ifdef WEBRTC_WIN
 // Test two different audio layers (or rather two different Core Audio
 // implementations) for Windows.
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     AudioLayerWin,
     AudioDeviceTest,
     ::testing::Values(AudioDeviceModule::kPlatformDefaultAudio,
                       AudioDeviceModule::kWindowsCoreAudio2));
 #else
 // For all platforms but Windows, only test the default audio layer.
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     AudioLayer,
     AudioDeviceTest,
     ::testing::Values(AudioDeviceModule::kPlatformDefaultAudio));

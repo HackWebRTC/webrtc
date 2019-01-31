@@ -211,11 +211,12 @@ TEST_P(BbrScenarioTest, ReceivesVideo) {
   s.RunFor(TimeDelta::ms(kRunTimeMs));
 }
 
-INSTANTIATE_TEST_CASE_P(Selected,
-                        BbrScenarioTest,
-                        Values(make_tuple("rs:1,bw:150,dl:100,ct:100", "bbr")));
+INSTANTIATE_TEST_SUITE_P(Selected,
+                         BbrScenarioTest,
+                         Values(make_tuple("rs:1,bw:150,dl:100,ct:100",
+                                           "bbr")));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     OneWayTuning,
     BbrScenarioTest,
     Values(make_tuple("bw:150,dl:100", "bbr,iw:,eg:100%,notr"),
@@ -223,34 +224,34 @@ INSTANTIATE_TEST_CASE_P(
            make_tuple("bw:150,dl:100", "bbr,iw:8000,eg:100%"),
            make_tuple("bw:150,dl:100", "bbr,iw:8000,eg:80%")));
 
-INSTANTIATE_TEST_CASE_P(OneWayTuned,
-                        BbrScenarioTest,
-                        Values(make_tuple("bw:150,dl:100", "bbr"),
-                               make_tuple("bw:150,dl:100", ""),
-                               make_tuple("bw:800,dl:100", "bbr"),
-                               make_tuple("bw:800,dl:100", "")));
+INSTANTIATE_TEST_SUITE_P(OneWayTuned,
+                         BbrScenarioTest,
+                         Values(make_tuple("bw:150,dl:100", "bbr"),
+                                make_tuple("bw:150,dl:100", ""),
+                                make_tuple("bw:800,dl:100", "bbr"),
+                                make_tuple("bw:800,dl:100", "")));
 
-INSTANTIATE_TEST_CASE_P(OneWayDegraded,
-                        BbrScenarioTest,
-                        Values(make_tuple("bw:150,dl:100,dn:30,pl:5%", "bbr"),
-                               make_tuple("bw:150,dl:100,dn:30,pl:5%", ""),
+INSTANTIATE_TEST_SUITE_P(OneWayDegraded,
+                         BbrScenarioTest,
+                         Values(make_tuple("bw:150,dl:100,dn:30,pl:5%", "bbr"),
+                                make_tuple("bw:150,dl:100,dn:30,pl:5%", ""),
 
-                               make_tuple("bw:150,ct:100,dl:100", "bbr"),
-                               make_tuple("bw:150,ct:100,dl:100", ""),
+                                make_tuple("bw:150,ct:100,dl:100", "bbr"),
+                                make_tuple("bw:150,ct:100,dl:100", ""),
 
-                               make_tuple("bw:800,dl:100,dn:30,pl:5%", "bbr"),
-                               make_tuple("bw:800,dl:100,dn:30,pl:5%", ""),
+                                make_tuple("bw:800,dl:100,dn:30,pl:5%", "bbr"),
+                                make_tuple("bw:800,dl:100,dn:30,pl:5%", ""),
 
-                               make_tuple("bw:800,ct:600,dl:100", "bbr"),
-                               make_tuple("bw:800,ct:600,dl:100", "")));
+                                make_tuple("bw:800,ct:600,dl:100", "bbr"),
+                                make_tuple("bw:800,ct:600,dl:100", "")));
 
-INSTANTIATE_TEST_CASE_P(TwoWay,
-                        BbrScenarioTest,
-                        Values(make_tuple("ret,bw:150,dl:100", "bbr"),
-                               make_tuple("ret,bw:150,dl:100", ""),
-                               make_tuple("ret,bw:800,dl:100", "bbr"),
-                               make_tuple("ret,bw:800,dl:100", ""),
-                               make_tuple("ret,bw:150,dl:50", "bbr"),
-                               make_tuple("ret,bw:150,dl:50", "")));
+INSTANTIATE_TEST_SUITE_P(TwoWay,
+                         BbrScenarioTest,
+                         Values(make_tuple("ret,bw:150,dl:100", "bbr"),
+                                make_tuple("ret,bw:150,dl:100", ""),
+                                make_tuple("ret,bw:800,dl:100", "bbr"),
+                                make_tuple("ret,bw:800,dl:100", ""),
+                                make_tuple("ret,bw:150,dl:50", "bbr"),
+                                make_tuple("ret,bw:150,dl:50", "")));
 }  // namespace test
 }  // namespace webrtc

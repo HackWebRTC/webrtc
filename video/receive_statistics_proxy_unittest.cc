@@ -928,10 +928,10 @@ TEST_F(ReceiveStatisticsProxyTest, RtcpHistogramsAreUpdated) {
                             kNackPackets * 60 / metrics::kMinRunTimeInSeconds));
 }
 
-INSTANTIATE_TEST_CASE_P(ContentTypes,
-                        ReceiveStatisticsProxyTest,
-                        ::testing::Values(VideoContentType::UNSPECIFIED,
-                                          VideoContentType::SCREENSHARE));
+INSTANTIATE_TEST_SUITE_P(ContentTypes,
+                         ReceiveStatisticsProxyTest,
+                         ::testing::Values(VideoContentType::UNSPECIFIED,
+                                           VideoContentType::SCREENSHARE));
 
 TEST_P(ReceiveStatisticsProxyTest, InterFrameDelaysAreReported) {
   const VideoContentType content_type = GetParam();

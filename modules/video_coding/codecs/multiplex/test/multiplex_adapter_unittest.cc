@@ -323,8 +323,8 @@ TEST_P(TestMultiplexAdapter, ImageIndexIncreases) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(TestMultiplexAdapter,
-                        TestMultiplexAdapter,
-                        ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(TestMultiplexAdapter,
+                         TestMultiplexAdapter,
+                         ::testing::Bool());
 
 }  // namespace webrtc

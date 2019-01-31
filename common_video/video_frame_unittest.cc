@@ -489,10 +489,10 @@ TEST_P(TestPlanarYuvBuffer, PastesIntoBuffer) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(,
-                        TestPlanarYuvBuffer,
-                        ::testing::Values(VideoFrameBuffer::Type::kI420,
-                                          VideoFrameBuffer::Type::kI010));
+INSTANTIATE_TEST_SUITE_P(,
+                         TestPlanarYuvBuffer,
+                         ::testing::Values(VideoFrameBuffer::Type::kI420,
+                                           VideoFrameBuffer::Type::kI010));
 
 class TestPlanarYuvBufferRotate
     : public ::testing::TestWithParam<
@@ -507,7 +507,7 @@ TEST_P(TestPlanarYuvBufferRotate, Rotates) {
   CheckRotate(640, 480, rotation, *rotated_buffer->ToI420());
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     Rotate,
     TestPlanarYuvBufferRotate,
     ::testing::Combine(::testing::Values(kVideoRotation_0,

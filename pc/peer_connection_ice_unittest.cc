@@ -872,7 +872,7 @@ TEST_P(PeerConnectionIceUfragPwdAnswerTest, TestIncludedInAnswer) {
   EXPECT_NE(answer_transport_desc->ice_pwd, local_transport_desc->ice_pwd);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     PeerConnectionIceTest,
     PeerConnectionIceUfragPwdAnswerTest,
     Combine(Values(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),
@@ -970,10 +970,10 @@ TEST_P(PeerConnectionIceTest,
   EXPECT_EQ(cricket::ICEROLE_CONTROLLED, GetIceRole(callee));
 }
 
-INSTANTIATE_TEST_CASE_P(PeerConnectionIceTest,
-                        PeerConnectionIceTest,
-                        Values(SdpSemantics::kPlanB,
-                               SdpSemantics::kUnifiedPlan));
+INSTANTIATE_TEST_SUITE_P(PeerConnectionIceTest,
+                         PeerConnectionIceTest,
+                         Values(SdpSemantics::kPlanB,
+                                SdpSemantics::kUnifiedPlan));
 
 class PeerConnectionIceConfigTest : public testing::Test {
  protected:

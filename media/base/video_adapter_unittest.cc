@@ -125,9 +125,9 @@ class VideoAdapterTest : public testing::Test,
   const bool use_new_format_request_;
 };
 
-INSTANTIATE_TEST_CASE_P(OnOutputFormatRequests,
-                        VideoAdapterTest,
-                        ::testing::Values(true, false));
+INSTANTIATE_TEST_SUITE_P(OnOutputFormatRequests,
+                         VideoAdapterTest,
+                         ::testing::Values(true, false));
 
 // Do not adapt the frame rate or the resolution. Expect no frame drop, no
 // cropping, and no resolution change.

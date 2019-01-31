@@ -57,9 +57,9 @@ TEST_P(EnumerateAllDirectionsTest, TestReversedIdentity) {
                            RtpTransceiverDirectionReversed(direction)));
 }
 
-INSTANTIATE_TEST_CASE_P(RtpTransceiverDirectionTest,
-                        EnumerateAllDirectionsTest,
-                        ValuesIn(kAllDirections));
+INSTANTIATE_TEST_SUITE_P(RtpTransceiverDirectionTest,
+                         EnumerateAllDirectionsTest,
+                         ValuesIn(kAllDirections));
 
 class EnumerateAllDirectionsAndBool
     : public ::testing::TestWithParam<
@@ -89,8 +89,8 @@ TEST_P(EnumerateAllDirectionsAndBool, TestWithRecvSet) {
   EXPECT_EQ(recv, RtpTransceiverDirectionHasRecv(result));
 }
 
-INSTANTIATE_TEST_CASE_P(RtpTransceiverDirectionTest,
-                        EnumerateAllDirectionsAndBool,
-                        Combine(ValuesIn(kAllDirections), Bool()));
+INSTANTIATE_TEST_SUITE_P(RtpTransceiverDirectionTest,
+                         EnumerateAllDirectionsAndBool,
+                         Combine(ValuesIn(kAllDirections), Bool()));
 
 }  // namespace webrtc

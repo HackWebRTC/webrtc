@@ -216,7 +216,7 @@ class UlpfecForwardErrorCorrection : public ForwardErrorCorrection {
 
 using FecTypes =
     Types<FlexfecForwardErrorCorrection, UlpfecForwardErrorCorrection>;
-TYPED_TEST_CASE(RtpFecTest, FecTypes);
+TYPED_TEST_SUITE(RtpFecTest, FecTypes);
 
 TYPED_TEST(RtpFecTest, WillProtectMediaPacketsWithLargeSequenceNumberGap) {
   constexpr int kNumImportantPackets = 0;

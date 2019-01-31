@@ -3943,7 +3943,7 @@ constexpr uint32_t kFlagsIPv6NoStun =
 constexpr uint32_t kFlagsIPv4Stun =
     cricket::PORTALLOCATOR_DISABLE_TCP | cricket::PORTALLOCATOR_DISABLE_RELAY;
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     PeerConnectionIntegrationTest,
     PeerConnectionIntegrationIceStatesTest,
     Combine(Values(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),
@@ -4915,10 +4915,10 @@ TEST_P(PeerConnectionIntegrationTest,
   EXPECT_LT(0, callee_ice_event_count);
 }
 
-INSTANTIATE_TEST_CASE_P(PeerConnectionIntegrationTest,
-                        PeerConnectionIntegrationTest,
-                        Values(SdpSemantics::kPlanB,
-                               SdpSemantics::kUnifiedPlan));
+INSTANTIATE_TEST_SUITE_P(PeerConnectionIntegrationTest,
+                         PeerConnectionIntegrationTest,
+                         Values(SdpSemantics::kPlanB,
+                                SdpSemantics::kUnifiedPlan));
 
 // Tests that verify interoperability between Plan B and Unified Plan
 // PeerConnections.
@@ -5036,7 +5036,7 @@ TEST_P(PeerConnectionIntegrationInteropTest,
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     PeerConnectionIntegrationTest,
     PeerConnectionIntegrationInteropTest,
     Values(std::make_tuple(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),

@@ -34,9 +34,9 @@ class PercentileFilterTest : public ::testing::TestWithParam<float> {
   RTC_DISALLOW_COPY_AND_ASSIGN(PercentileFilterTest);
 };
 
-INSTANTIATE_TEST_CASE_P(PercentileFilterTests,
-                        PercentileFilterTest,
-                        ::testing::Values(0.0f, 0.1f, 0.5f, 0.9f, 1.0f));
+INSTANTIATE_TEST_SUITE_P(PercentileFilterTests,
+                         PercentileFilterTest,
+                         ::testing::Values(0.0f, 0.1f, 0.5f, 0.9f, 1.0f));
 
 TEST(PercentileFilterTest, MinFilter) {
   PercentileFilter<int64_t> filter(0.0f);

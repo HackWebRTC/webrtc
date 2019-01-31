@@ -252,6 +252,6 @@ std::vector<IsacTestParam> TestCases() {
   return cases;
 }
 
-INSTANTIATE_TEST_CASE_P(, IsacCommonTest, testing::ValuesIn(TestCases()));
+INSTANTIATE_TEST_SUITE_P(, IsacCommonTest, testing::ValuesIn(TestCases()));
 
 }  // namespace webrtc

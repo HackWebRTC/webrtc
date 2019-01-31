@@ -399,9 +399,9 @@ TEST_F(SrtpTransportTest,
 }
 
 // Run all tests both with and without external auth enabled.
-INSTANTIATE_TEST_CASE_P(ExternalAuth,
-                        SrtpTransportTestWithExternalAuth,
-                        ::testing::Values(true, false));
+INSTANTIATE_TEST_SUITE_P(ExternalAuth,
+                         SrtpTransportTestWithExternalAuth,
+                         ::testing::Values(true, false));
 
 // Test directly setting the params with bogus keys.
 TEST_F(SrtpTransportTest, TestSetParamsKeyTooShort) {

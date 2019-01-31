@@ -1238,10 +1238,10 @@ TEST_P(TestVp9ImplWithLayering, ExternalRefControl) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(,
-                        TestVp9ImplWithLayering,
-                        ::testing::Combine(::testing::Values(1, 2, 3),
-                                           ::testing::Values(1, 2, 3)));
+INSTANTIATE_TEST_SUITE_P(,
+                         TestVp9ImplWithLayering,
+                         ::testing::Combine(::testing::Values(1, 2, 3),
+                                            ::testing::Values(1, 2, 3)));
 
 class TestVp9ImplFrameDropping : public TestVp9Impl {
  protected:

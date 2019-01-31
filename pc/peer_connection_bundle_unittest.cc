@@ -458,7 +458,7 @@ TEST_P(PeerConnectionBundleMatrixTest,
 // and multiplex audio/video from the start.
 // For all other policies, bundling should only be enabled if negotiated by the
 // answer.
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     PeerConnectionBundleTest,
     PeerConnectionBundleMatrixTest,
     Combine(Values(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),
@@ -861,10 +861,10 @@ TEST_P(PeerConnectionBundleTest, RemoveContentFromBundleGroup) {
       callee->SetLocalDescription(CloneSessionDescription(answer.get())));
 }
 
-INSTANTIATE_TEST_CASE_P(PeerConnectionBundleTest,
-                        PeerConnectionBundleTest,
-                        Values(SdpSemantics::kPlanB,
-                               SdpSemantics::kUnifiedPlan));
+INSTANTIATE_TEST_SUITE_P(PeerConnectionBundleTest,
+                         PeerConnectionBundleTest,
+                         Values(SdpSemantics::kPlanB,
+                                SdpSemantics::kUnifiedPlan));
 
 // According to RFC5888, if an endpoint understands the semantics of an
 // "a=group", it MUST return an answer with that group. So, an empty BUNDLE

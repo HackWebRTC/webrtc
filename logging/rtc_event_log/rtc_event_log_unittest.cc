@@ -725,7 +725,7 @@ TEST_P(RtcEventLogSession, StartLoggingInTheMiddle) {
   ReadAndVerifyLog();
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     RtcEventLogTest,
     RtcEventLogSession,
     ::testing::Combine(
@@ -822,7 +822,7 @@ TEST_P(RtcEventLogCircularBufferTest, KeepsMostRecentEvents) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     RtcEventLogTest,
     RtcEventLogCircularBufferTest,
     ::testing::Values(RtcEventLog::EncodingType::Legacy,

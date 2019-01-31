@@ -103,9 +103,9 @@ TEST_P(AudioEncoderFactoryTest, CanRunAllSupportedEncoders) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(BuiltinAudioEncoderFactoryTest,
-                        AudioEncoderFactoryTest,
-                        ::testing::Values(CreateBuiltinAudioEncoderFactory()));
+INSTANTIATE_TEST_SUITE_P(BuiltinAudioEncoderFactoryTest,
+                         AudioEncoderFactoryTest,
+                         ::testing::Values(CreateBuiltinAudioEncoderFactory()));
 
 TEST(BuiltinAudioEncoderFactoryTest, SupportsTheExpectedFormats) {
   using ::testing::ElementsAreArray;

@@ -1065,7 +1065,7 @@ TEST_P(RecycleMediaSectionTest, PendingRemoteRejectedAndNotRejectedLocal) {
 // for the media section. This is needed for full test coverage because
 // MediaSession has separate functions for processing audio and video media
 // sections.
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     PeerConnectionJsepTest,
     RecycleMediaSectionTest,
     Combine(Values(cricket::MEDIA_TYPE_AUDIO, cricket::MEDIA_TYPE_VIDEO),

@@ -4044,12 +4044,12 @@ TEST_P(MediaProtocolTest, TestAudioVideoAcceptance) {
   EXPECT_EQ(GetParam(), vcd->protocol());
 }
 
-INSTANTIATE_TEST_CASE_P(MediaProtocolPatternTest,
-                        MediaProtocolTest,
-                        ::testing::ValuesIn(kMediaProtocols));
-INSTANTIATE_TEST_CASE_P(MediaProtocolDtlsPatternTest,
-                        MediaProtocolTest,
-                        ::testing::ValuesIn(kMediaProtocolsDtls));
+INSTANTIATE_TEST_SUITE_P(MediaProtocolPatternTest,
+                         MediaProtocolTest,
+                         ::testing::ValuesIn(kMediaProtocols));
+INSTANTIATE_TEST_SUITE_P(MediaProtocolDtlsPatternTest,
+                         MediaProtocolTest,
+                         ::testing::ValuesIn(kMediaProtocolsDtls));
 
 TEST_F(MediaSessionDescriptionFactoryTest, TestSetAudioCodecs) {
   TransportDescriptionFactory tdf;
@@ -4372,12 +4372,12 @@ TEST_P(AudioCodecsOfferTest, TestCodecsInOffer) {
   TestAudioCodecsOffer(GetParam());
 }
 
-INSTANTIATE_TEST_CASE_P(MediaSessionDescriptionFactoryTest,
-                        AudioCodecsOfferTest,
-                        ::testing::Values(RtpTransceiverDirection::kSendOnly,
-                                          RtpTransceiverDirection::kRecvOnly,
-                                          RtpTransceiverDirection::kSendRecv,
-                                          RtpTransceiverDirection::kInactive));
+INSTANTIATE_TEST_SUITE_P(MediaSessionDescriptionFactoryTest,
+                         AudioCodecsOfferTest,
+                         ::testing::Values(RtpTransceiverDirection::kSendOnly,
+                                           RtpTransceiverDirection::kRecvOnly,
+                                           RtpTransceiverDirection::kSendRecv,
+                                           RtpTransceiverDirection::kInactive));
 
 class AudioCodecsAnswerTest
     : public ::testing::TestWithParam<::testing::tuple<RtpTransceiverDirection,
@@ -4390,7 +4390,7 @@ TEST_P(AudioCodecsAnswerTest, TestCodecsInAnswer) {
                         ::testing::get<2>(GetParam()));
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     MediaSessionDescriptionFactoryTest,
     AudioCodecsAnswerTest,
     ::testing::Combine(::testing::Values(RtpTransceiverDirection::kSendOnly,

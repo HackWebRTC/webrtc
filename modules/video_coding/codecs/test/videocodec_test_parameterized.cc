@@ -77,7 +77,7 @@ class VideoCodecTestParameterized
   const VideoCodecType codec_type_;
 };
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     CodecSettings,
     VideoCodecTestParameterized,
     ::testing::Combine(::testing::ValuesIn(kBitrates),

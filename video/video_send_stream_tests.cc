@@ -101,9 +101,9 @@ class VideoSendStreamTest : public test::CallTest,
   test::ScopedFieldTrials field_trial_;
 };
 
-INSTANTIATE_TEST_CASE_P(Default, VideoSendStreamTest, ::testing::Values(""));
+INSTANTIATE_TEST_SUITE_P(Default, VideoSendStreamTest, ::testing::Values(""));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     TaskQueueTrial,
     VideoSendStreamTest,
     ::testing::Values("WebRTC-TaskQueueCongestionControl/Enabled/"));

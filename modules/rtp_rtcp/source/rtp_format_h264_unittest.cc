@@ -202,7 +202,7 @@ TEST_P(RtpPacketizerH264ModeTest,
   EXPECT_THAT(packets, SizeIs(1));
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     PacketMode,
     RtpPacketizerH264ModeTest,
     ::testing::Values(H264PacketizationMode::SingleNalUnit,

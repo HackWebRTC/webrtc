@@ -227,7 +227,7 @@ TEST_P(FixedDigitalTest, CheckSaturationBehaviorWithLimiter) {
 }
 
 static_assert(test::kLimiterMaxInputLevelDbFs < 10, "");
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     GainController2,
     FixedDigitalTest,
     ::testing::Values(

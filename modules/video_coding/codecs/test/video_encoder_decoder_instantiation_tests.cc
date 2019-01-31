@@ -96,20 +96,20 @@ class VideoEncoderDecoderInstantiationTest
   std::vector<std::unique_ptr<VideoDecoder>> decoders_;
 };
 
-INSTANTIATE_TEST_CASE_P(MultipleEncoders,
-                        VideoEncoderDecoderInstantiationTest,
-                        ::testing::Combine(::testing::Range(1, 4),
-                                           ::testing::Range(1, 2)));
+INSTANTIATE_TEST_SUITE_P(MultipleEncoders,
+                         VideoEncoderDecoderInstantiationTest,
+                         ::testing::Combine(::testing::Range(1, 4),
+                                            ::testing::Range(1, 2)));
 
-INSTANTIATE_TEST_CASE_P(MultipleDecoders,
-                        VideoEncoderDecoderInstantiationTest,
-                        ::testing::Combine(::testing::Range(1, 2),
-                                           ::testing::Range(1, 9)));
+INSTANTIATE_TEST_SUITE_P(MultipleDecoders,
+                         VideoEncoderDecoderInstantiationTest,
+                         ::testing::Combine(::testing::Range(1, 2),
+                                            ::testing::Range(1, 9)));
 
-INSTANTIATE_TEST_CASE_P(MultipleEncodersDecoders,
-                        VideoEncoderDecoderInstantiationTest,
-                        ::testing::Combine(::testing::Range(1, 4),
-                                           ::testing::Range(1, 9)));
+INSTANTIATE_TEST_SUITE_P(MultipleEncodersDecoders,
+                         VideoEncoderDecoderInstantiationTest,
+                         ::testing::Combine(::testing::Range(1, 4),
+                                            ::testing::Range(1, 9)));
 
 // TODO(brandtr): Check that the factories actually support the codecs before
 // trying to instantiate. Currently, we will just crash with a Java exception

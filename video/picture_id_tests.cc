@@ -240,9 +240,9 @@ class PictureIdTest : public test::CallTest,
   std::unique_ptr<PictureIdObserver> observer_;
 };
 
-INSTANTIATE_TEST_CASE_P(TemporalLayers,
-                        PictureIdTest,
-                        ::testing::ValuesIn(kNumTemporalLayers));
+INSTANTIATE_TEST_SUITE_P(TemporalLayers,
+                         PictureIdTest,
+                         ::testing::ValuesIn(kNumTemporalLayers));
 
 // Use a special stream factory to ensure that all simulcast streams are being
 // sent.

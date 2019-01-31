@@ -640,7 +640,7 @@ TEST_P(PeerConnectionCryptoDtlsCertGenTest, TestCertificateGeneration) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     PeerConnectionCryptoTest,
     PeerConnectionCryptoDtlsCertGenTest,
     Combine(Values(SdpSemantics::kPlanB, SdpSemantics::kUnifiedPlan),
@@ -746,9 +746,9 @@ TEST_P(PeerConnectionCryptoTest, SessionErrorIfFingerprintInvalid) {
                       "Session error code: ERROR_CONTENT.");
 }
 
-INSTANTIATE_TEST_CASE_P(PeerConnectionCryptoTest,
-                        PeerConnectionCryptoTest,
-                        Values(SdpSemantics::kPlanB,
-                               SdpSemantics::kUnifiedPlan));
+INSTANTIATE_TEST_SUITE_P(PeerConnectionCryptoTest,
+                         PeerConnectionCryptoTest,
+                         Values(SdpSemantics::kPlanB,
+                                SdpSemantics::kUnifiedPlan));
 
 }  // namespace webrtc

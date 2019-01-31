@@ -1456,7 +1456,7 @@ TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Server) {
 // The RSA keysizes here might look strange, why not include the RFC's size
 // 2048?. The reason is test case slowness; testing two sizes to exercise
 // parametrization is sufficient.
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     SSLStreamAdapterTestsTLS,
     SSLStreamAdapterTestTLS,
     Combine(Values(rtc::KeyParams::RSA(1024, 65537),
@@ -1465,7 +1465,7 @@ INSTANTIATE_TEST_CASE_P(
             Values(rtc::KeyParams::RSA(1024, 65537),
                    rtc::KeyParams::RSA(1152, 65537),
                    rtc::KeyParams::ECDSA(rtc::EC_NIST_P256))));
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     SSLStreamAdapterTestsDTLS,
     SSLStreamAdapterTestDTLS,
     Combine(Values(rtc::KeyParams::RSA(1024, 65537),

@@ -364,24 +364,24 @@ void PrintTo(const TestParameters& p, ::std::ostream* os) {
 
 // Instantiate the tests. Each test is instantiated using the function above,
 // so that all different parameter combinations are tested.
-INSTANTIATE_TEST_CASE_P(MultiChannel,
-                        NetEqStereoTestNoJitter,
-                        ::testing::ValuesIn(GetTestParameters()));
+INSTANTIATE_TEST_SUITE_P(MultiChannel,
+                         NetEqStereoTestNoJitter,
+                         ::testing::ValuesIn(GetTestParameters()));
 
-INSTANTIATE_TEST_CASE_P(MultiChannel,
-                        NetEqStereoTestPositiveDrift,
-                        ::testing::ValuesIn(GetTestParameters()));
+INSTANTIATE_TEST_SUITE_P(MultiChannel,
+                         NetEqStereoTestPositiveDrift,
+                         ::testing::ValuesIn(GetTestParameters()));
 
-INSTANTIATE_TEST_CASE_P(MultiChannel,
-                        NetEqStereoTestNegativeDrift,
-                        ::testing::ValuesIn(GetTestParameters()));
+INSTANTIATE_TEST_SUITE_P(MultiChannel,
+                         NetEqStereoTestNegativeDrift,
+                         ::testing::ValuesIn(GetTestParameters()));
 
-INSTANTIATE_TEST_CASE_P(MultiChannel,
-                        NetEqStereoTestDelays,
-                        ::testing::ValuesIn(GetTestParameters()));
+INSTANTIATE_TEST_SUITE_P(MultiChannel,
+                         NetEqStereoTestDelays,
+                         ::testing::ValuesIn(GetTestParameters()));
 
-INSTANTIATE_TEST_CASE_P(MultiChannel,
-                        NetEqStereoTestLosses,
-                        ::testing::ValuesIn(GetTestParameters()));
+INSTANTIATE_TEST_SUITE_P(MultiChannel,
+                         NetEqStereoTestLosses,
+                         ::testing::ValuesIn(GetTestParameters()));
 
 }  // namespace webrtc

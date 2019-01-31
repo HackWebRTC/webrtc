@@ -284,7 +284,7 @@ class RtpVideoStreamReceiverTestH264
   RtpVideoStreamReceiverTestH264() : RtpVideoStreamReceiverTest(GetParam()) {}
 };
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     SpsPpsIdrIsKeyframe,
     RtpVideoStreamReceiverTestH264,
     ::testing::Values("", "WebRTC-SpsPpsIdrIsH264Keyframe/Enabled/"));

@@ -238,6 +238,6 @@ const coding_param param_set[] = {
                     string("pcm"))};
 
 // 64 kbps, stereo
-INSTANTIATE_TEST_CASE_P(AllTest, OpusFecTest, ::testing::ValuesIn(param_set));
+INSTANTIATE_TEST_SUITE_P(AllTest, OpusFecTest, ::testing::ValuesIn(param_set));
 
 }  // namespace webrtc

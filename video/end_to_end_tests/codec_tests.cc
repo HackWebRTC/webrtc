@@ -110,10 +110,11 @@ class CodecObserver : public test::EndToEndTest,
   int frame_counter_;
 };
 
-INSTANTIATE_TEST_CASE_P(GenericDescriptor,
-                        CodecEndToEndTest,
-                        ::testing::Values("WebRTC-GenericDescriptor/Disabled/",
-                                          "WebRTC-GenericDescriptor/Enabled/"));
+INSTANTIATE_TEST_SUITE_P(
+    GenericDescriptor,
+    CodecEndToEndTest,
+    ::testing::Values("WebRTC-GenericDescriptor/Disabled/",
+                      "WebRTC-GenericDescriptor/Enabled/"));
 
 TEST_P(CodecEndToEndTest, SendsAndReceivesVP8) {
   test::FunctionVideoEncoderFactory encoder_factory(
@@ -229,7 +230,7 @@ class EndToEndTestH264 : public test::CallTest,
   test::ScopedFieldTrials field_trial_;
 };
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     SpsPpsIdrIsKeyframe,
     EndToEndTestH264,
     ::testing::Values("WebRTC-SpsPpsIdrIsH264Keyframe/Disabled/",

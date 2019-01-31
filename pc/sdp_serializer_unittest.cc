@@ -231,9 +231,9 @@ const char* kSimulcastMalformedStrings[] = {
     "",
 };
 
-INSTANTIATE_TEST_CASE_P(SimulcastDeserializationErrors,
-                        SimulcastSdpSerializerTest,
-                        ValuesIn(kSimulcastMalformedStrings));
+INSTANTIATE_TEST_SUITE_P(SimulcastDeserializationErrors,
+                         SimulcastSdpSerializerTest,
+                         ValuesIn(kSimulcastMalformedStrings));
 
 // Test a simple serialization scenario.
 TEST_F(SimulcastSdpSerializerTest, Serialize_SimpleCase) {
@@ -471,8 +471,8 @@ const char* kRidDescriptionMalformedStrings[] = {
     "1 recv ;;",
 };
 
-INSTANTIATE_TEST_CASE_P(RidDescriptionDeserializationErrors,
-                        RidDescriptionSdpSerializerTest,
-                        ValuesIn(kRidDescriptionMalformedStrings));
+INSTANTIATE_TEST_SUITE_P(RidDescriptionDeserializationErrors,
+                         RidDescriptionSdpSerializerTest,
+                         ValuesIn(kRidDescriptionMalformedStrings));
 
 }  // namespace webrtc

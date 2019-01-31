@@ -1109,12 +1109,12 @@ TEST_P(AudioProcessingImplLockTest, LockTest) {
 }
 
 // Instantiate tests from the extreme test configuration set.
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     DISABLED_AudioProcessingImplLockExtensive,
     AudioProcessingImplLockTest,
     ::testing::ValuesIn(TestConfig::GenerateExtensiveTestConfigs()));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     AudioProcessingImplLockBrief,
     AudioProcessingImplLockTest,
     ::testing::ValuesIn(TestConfig::GenerateBriefTestConfigs()));

@@ -538,9 +538,9 @@ class ScreenshareRateAllocationTest : public SimulcastRateAllocatorTest {
   }
 };
 
-INSTANTIATE_TEST_CASE_P(ScreenshareTest,
-                        ScreenshareRateAllocationTest,
-                        ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(ScreenshareTest,
+                         ScreenshareRateAllocationTest,
+                         ::testing::Bool());
 
 TEST_P(ScreenshareRateAllocationTest, BitrateBelowTl0) {
   SetupConferenceScreenshare(GetParam());

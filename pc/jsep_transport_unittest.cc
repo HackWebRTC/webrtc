@@ -638,9 +638,9 @@ TEST_P(JsepTransport2WithRtcpMux, InvalidDtlsRoleNegotiation) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(JsepTransport2Test,
-                        JsepTransport2WithRtcpMux,
-                        testing::Bool());
+INSTANTIATE_TEST_SUITE_P(JsepTransport2Test,
+                         JsepTransport2WithRtcpMux,
+                         testing::Bool());
 
 // Test that a reoffer in the opposite direction is successful as long as the
 // role isn't changing. Doesn't test every possible combination like the test
@@ -1231,7 +1231,7 @@ TEST_P(JsepTransport2HeaderExtensionTest, EncryptedHeaderExtensionNegotiation) {
   TestSendRecvPacketWithEncryptedHeaderExtension();
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     JsepTransport2Test,
     JsepTransport2HeaderExtensionTest,
     ::testing::Values(

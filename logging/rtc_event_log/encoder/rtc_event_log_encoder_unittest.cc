@@ -939,7 +939,7 @@ TEST_P(RtcEventLogEncoderTest, RtcEventVideoSendStreamConfig) {
   verifier_.VerifyLoggedVideoSendConfig(*event, video_send_configs[0]);
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     RandomSeeds,
     RtcEventLogEncoderTest,
     ::testing::Combine(/* Random seed*: */ ::testing::Values(1, 2, 3, 4, 5),

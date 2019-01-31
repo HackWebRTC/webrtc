@@ -3948,10 +3948,10 @@ TEST_P(PeerConnectionInterfaceTest, ExtmapAllowMixedIsConfigurable) {
   EXPECT_TRUE(offer->description()->extmap_allow_mixed());
 }
 
-INSTANTIATE_TEST_CASE_P(PeerConnectionInterfaceTest,
-                        PeerConnectionInterfaceTest,
-                        Values(SdpSemantics::kPlanB,
-                               SdpSemantics::kUnifiedPlan));
+INSTANTIATE_TEST_SUITE_P(PeerConnectionInterfaceTest,
+                         PeerConnectionInterfaceTest,
+                         Values(SdpSemantics::kPlanB,
+                                SdpSemantics::kUnifiedPlan));
 
 class PeerConnectionMediaConfigTest : public testing::Test {
  protected:

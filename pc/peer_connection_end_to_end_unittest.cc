@@ -726,7 +726,7 @@ TEST_P(PeerConnectionEndToEndTest, CloseDataChannelRemotelyWhileNotReferenced) {
 }
 #endif  // HAVE_SCTP
 
-INSTANTIATE_TEST_CASE_P(PeerConnectionEndToEndTest,
-                        PeerConnectionEndToEndTest,
-                        Values(SdpSemantics::kPlanB,
-                               SdpSemantics::kUnifiedPlan));
+INSTANTIATE_TEST_SUITE_P(PeerConnectionEndToEndTest,
+                         PeerConnectionEndToEndTest,
+                         Values(SdpSemantics::kPlanB,
+                                SdpSemantics::kUnifiedPlan));
