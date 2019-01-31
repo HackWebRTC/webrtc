@@ -42,9 +42,6 @@ struct RTC_EXPORT VideoSinkWants {
   absl::optional<int> target_pixel_count;
   // Tells the source the maximum framerate the sink wants.
   int max_framerate_fps = std::numeric_limits<int>::max();
-
-  // Tells the source that the sink supports partial frame updates.
-  bool partial_frames = false;
 };
 
 template <typename VideoFrameT>
