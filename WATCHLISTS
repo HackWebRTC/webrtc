@@ -95,7 +95,7 @@
       'filepath': 'system_wrappers/.*',
     },
     'pc': {
-      'filepath': 'pc/.*',
+      'filepath': '^pc/.*',
     },
   },
 
