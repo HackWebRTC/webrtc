@@ -48,8 +48,11 @@ class SimulatedNetwork : public NetworkBehaviorInterface {
     PacketInFlightInfo packet;
     int64_t arrival_time_us;
   };
+
+  // Moves packets from capacity- to delay link.
+  void UpdateCapacityQueue(int64_t time_now_us);
+
   rtc::CriticalSection config_lock_;
-  bool reset_capacity_delay_error_ RTC_GUARDED_BY(config_lock_) = false;
 
   // |process_lock| guards the data structures involved in delay and loss
   // processes, such as the packet queues.
@@ -73,7 +76,11 @@ class SimulatedNetwork : public NetworkBehaviorInterface {
 
   // The probability to drop a burst of packets.
   double prob_start_bursting_ RTC_GUARDED_BY(config_lock_);
-  int64_t capacity_delay_error_bytes_ = 0;
+
+  int64_t queue_size_bytes_ RTC_GUARDED_BY(process_lock_) = 0;
+  int64_t pending_drain_bits_ RTC_GUARDED_BY(process_lock_) = 0;
+  absl::optional<int64_t> last_capacity_link_visit_us_
+      RTC_GUARDED_BY(process_lock_);
 };
 
 }  // namespace webrtc
