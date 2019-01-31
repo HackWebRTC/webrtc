@@ -367,4 +367,37 @@ TEST(TaskQueueTest, PostALot) {
   EXPECT_EQ(kTaskCount, tasks_cleaned_up);
 }
 
+// Test posting two tasks that have shared state not protected by a
+// lock. The TaskQueue should guarantee memory read-write order and
+// FIFO task execution order, so the second task should always see the
+// changes that were made by the first task.
+//
+// If the TaskQueue doesn't properly synchronize the execution of
+// tasks, there will be a data race, which is undefined behavior. The
+// EXPECT calls may randomly catch this, but to make the most of this
+// unit test, run it under TSan or some other tool that is able to
+// directly detect data races.
+TEST(TaskQueueTest, PostTwoWithSharedUnprotectedState) {
+  static const char kQueueName[] = "PostTwoWithSharedUnprotectedState";
+  struct SharedState {
+    // First task will set this value to 1 and second will assert it.
+    int state = 0;
+  } state;
+
+  TaskQueue queue(kQueueName);
+  rtc::Event done;
+  queue.PostTask([&state, &queue, &done] {
+    // Post tasks from queue to guarantee, that 1st task won't be
+    // executed before the second one will be posted.
+    queue.PostTask([&state] { state.state = 1; });
+    queue.PostTask([&state, &done] {
+      EXPECT_EQ(state.state, 1);
+      done.Set();
+    });
+    // Check, that state changing tasks didn't start yet.
+    EXPECT_EQ(state.state, 0);
+  });
+  EXPECT_TRUE(done.Wait(1000));
+}
+
 }  // namespace rtc
