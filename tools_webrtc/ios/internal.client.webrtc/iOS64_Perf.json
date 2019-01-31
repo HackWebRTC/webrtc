@@ -19,8 +19,8 @@
   "tests": [
     {
       "include": "perf_tests.json",
-      "bot id": "build15-a7",
-      "pool": "WebRTC",
+      "device type": "iPhone 7",
+      "os": "11.0.3",
       "max runtime seconds": 7200
     }
   ]
