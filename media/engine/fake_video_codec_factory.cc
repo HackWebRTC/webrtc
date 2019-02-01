@@ -34,8 +34,7 @@ FakeVideoEncoderFactory::FakeVideoEncoderFactory() = default;
 
 // static
 std::unique_ptr<VideoEncoder> FakeVideoEncoderFactory::CreateVideoEncoder() {
-  return absl::make_unique<test::FakeEncoder>(Clock::GetRealTimeClock(),
-                                              10000000);
+  return absl::make_unique<test::FakeEncoder>(Clock::GetRealTimeClock());
 }
 
 std::vector<SdpVideoFormat> FakeVideoEncoderFactory::GetSupportedFormats()
@@ -51,8 +50,7 @@ VideoEncoderFactory::CodecInfo FakeVideoEncoderFactory::QueryVideoEncoder(
 
 std::unique_ptr<VideoEncoder> FakeVideoEncoderFactory::CreateVideoEncoder(
     const SdpVideoFormat& format) {
-  return absl::make_unique<test::FakeEncoder>(Clock::GetRealTimeClock(),
-                                              10000000);
+  return absl::make_unique<test::FakeEncoder>(Clock::GetRealTimeClock());
 }
 
 FakeVideoDecoderFactory::FakeVideoDecoderFactory() = default;
