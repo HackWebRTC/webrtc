@@ -55,7 +55,7 @@ class SingleProcessEncodedImageIdInjector : public EncodedImageIdInjector,
   // original buffer.
   struct ExtractionInfo {
     // Frame sub id to distinguish encoded images for different spatial layers.
-    uint8_t sub_id = 0;
+    uint8_t sub_id;
     // Length of the origin buffer encoded image.
     size_t length;
     // Data from first 3 bytes of origin encoded image's payload.
