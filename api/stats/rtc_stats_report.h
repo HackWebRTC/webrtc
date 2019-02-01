@@ -34,7 +34,7 @@ class RTC_EXPORT RTCStatsReport : public rtc::RefCountInterface {
 
   class ConstIterator {
    public:
-    ConstIterator(const ConstIterator&& other);
+    ConstIterator(ConstIterator&& other);
     ~ConstIterator();
 
     ConstIterator& operator++();
