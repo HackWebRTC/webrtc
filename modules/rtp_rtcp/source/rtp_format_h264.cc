@@ -43,7 +43,6 @@ static const size_t kStapAHeaderSize = kNalHeaderSize + kLengthFieldSize;
 
 static const char* kSpsValidHistogramName = "WebRTC.Video.H264.SpsValid";
 enum SpsValidEvent {
-  kReceivedSpsPocOk = 0,
   kReceivedSpsVuiOk = 1,
   kReceivedSpsRewritten = 2,
   kReceivedSpsParseFailure = 3,
@@ -133,11 +132,6 @@ RtpPacketizerH264::RtpPacketizerH264(
           updated_sps = true;
           RTC_HISTOGRAM_ENUMERATION(kSpsValidHistogramName,
                                     SpsValidEvent::kSentSpsRewritten,
-                                    SpsValidEvent::kSpsRewrittenMax);
-          break;
-        case SpsVuiRewriter::ParseResult::kPocOk:
-          RTC_HISTOGRAM_ENUMERATION(kSpsValidHistogramName,
-                                    SpsValidEvent::kSentSpsPocOk,
                                     SpsValidEvent::kSpsRewrittenMax);
           break;
         case SpsVuiRewriter::ParseResult::kVuiOk:
@@ -557,11 +551,6 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
 
             RTC_HISTOGRAM_ENUMERATION(kSpsValidHistogramName,
                                       SpsValidEvent::kReceivedSpsRewritten,
-                                      SpsValidEvent::kSpsRewrittenMax);
-            break;
-          case SpsVuiRewriter::ParseResult::kPocOk:
-            RTC_HISTOGRAM_ENUMERATION(kSpsValidHistogramName,
-                                      SpsValidEvent::kReceivedSpsPocOk,
                                       SpsValidEvent::kSpsRewrittenMax);
             break;
           case SpsVuiRewriter::ParseResult::kVuiOk:

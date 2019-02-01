@@ -31,7 +31,7 @@ namespace webrtc {
 // decoding.
 class SpsVuiRewriter : private SpsParser {
  public:
-  enum class ParseResult { kFailure, kPocOk, kVuiOk, kVuiRewritten };
+  enum class ParseResult { kFailure, kVuiOk, kVuiRewritten };
 
   // Parses an SPS block and if necessary copies it and rewrites the VUI.
   // Returns kFailure on failure, kParseOk if parsing succeeded and no update

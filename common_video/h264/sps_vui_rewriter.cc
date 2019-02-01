@@ -84,11 +84,6 @@ SpsVuiRewriter::ParseResult SpsVuiRewriter::ParseAndRewriteSps(
 
   *sps = sps_state;
 
-  if (sps_state->pic_order_cnt_type >= 2) {
-    // No need to rewrite VUI in this case.
-    return ParseResult::kPocOk;
-  }
-
   // We're going to completely muck up alignment, so we need a BitBuffer to
   // write with.
   rtc::Buffer out_buffer(length + kMaxVuiSpsIncrease);
