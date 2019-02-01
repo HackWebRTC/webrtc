@@ -63,20 +63,25 @@ rtc_source_set("default_task_queue_factory") {
   # supported platforms.
   visibility = [ ":global_task_queue_factory" ]
   sources = [
-    "default_task_queue_factory.cc",
     "default_task_queue_factory.h",
   ]
   deps = [
     ":task_queue_factory",
-    "../../rtc_base:checks",
   ]
+
+  # TODO(bugs.webrtc.org/10284): Include implementation unconditionally when
+  # global task queue factory is removed.
+  if (rtc_link_task_queue_impl) {
+    sources += [ "default_task_queue_factory.cc" ]
+    deps += [ "../../rtc_base:checks" ]
+  }
 }
 
 # Linking with global_task_queue_factory adds link-time implementation of the
 # rtc::TaskQueue that allows run-time injection of the TaskQueue implementaion.
 rtc_source_set("global_task_queue_factory") {
-  # TODO(danilchap): Remove this target when task queue factory propagated to
-  # all components that create TaskQueues.
+  # TODO(bugs.webrtc.org/10284): Remove this target when task queue factory
+  # propagated to all components that create TaskQueues.
   visibility = [ "*" ]
   sources = [
     "global_task_queue_factory.cc",
