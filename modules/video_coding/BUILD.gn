@@ -133,7 +133,6 @@ rtc_static_library("video_coding") {
     "jitter_estimator.h",
     "media_opt_util.cc",
     "media_opt_util.h",
-    "nack_fec_tables.h",
     "packet_buffer.cc",
     "packet_buffer.h",
     "receiver.cc",
