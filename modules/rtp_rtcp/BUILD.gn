@@ -411,6 +411,7 @@ if (rtc_include_tests) {
       "source/rtp_packet_history_unittest.cc",
       "source/rtp_packet_unittest.cc",
       "source/rtp_rtcp_impl_unittest.cc",
+      "source/rtp_sender_audio_unittest.cc",
       "source/rtp_sender_unittest.cc",
       "source/rtp_utility_unittest.cc",
       "source/time_util_unittest.cc",

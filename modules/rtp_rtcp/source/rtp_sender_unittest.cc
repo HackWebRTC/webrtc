@@ -31,7 +31,6 @@
 #include "modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "rtc_base/arraysize.h"
-#include "rtc_base/buffer.h"
 #include "rtc_base/rate_limiter.h"
 #include "test/field_trial.h"
 #include "test/gmock.h"
@@ -57,9 +56,7 @@ const uint32_t kTimestamp = 10;
 const uint16_t kSeqNum = 33;
 const uint32_t kSsrc = 725242;
 const int kMaxPacketLength = 1500;
-const uint8_t kAudioLevel = 0x5a;
 const uint16_t kTransportSequenceNumber = 0xaabbu;
-const int kAudioPayload = 103;
 const uint64_t kStartTime = 123456789;
 const size_t kMaxPaddingSize = 224u;
 const size_t kGenericHeaderLength = 1;
@@ -179,7 +176,6 @@ class RtpSenderTest : public ::testing::TestWithParam<bool> {
         mock_paced_sender_(),
         retransmission_rate_limiter_(&fake_clock_, 1000),
         rtp_sender_(),
-        payload_(kPayload),
         transport_(),
         kMarkerBit(true),
         field_trials_(GetParam() ? "WebRTC-SendSideBwe-WithOverhead/Enabled/"
@@ -207,30 +203,9 @@ class RtpSenderTest : public ::testing::TestWithParam<bool> {
   testing::StrictMock<MockTransportFeedbackObserver> feedback_observer_;
   RateLimiter retransmission_rate_limiter_;
   std::unique_ptr<RTPSender> rtp_sender_;
-  int payload_;
   LoopbackTransportTest transport_;
   const bool kMarkerBit;
   test::ScopedFieldTrials field_trials_;
-
-  void VerifyRTPHeaderCommon(const RTPHeader& rtp_header) {
-    VerifyRTPHeaderCommon(rtp_header, kMarkerBit, 0);
-  }
-
-  void VerifyRTPHeaderCommon(const RTPHeader& rtp_header, bool marker_bit) {
-    VerifyRTPHeaderCommon(rtp_header, marker_bit, 0);
-  }
-
-  void VerifyRTPHeaderCommon(const RTPHeader& rtp_header,
-                             bool marker_bit,
-                             uint8_t number_of_csrcs) {
-    EXPECT_EQ(marker_bit, rtp_header.markerBit);
-    EXPECT_EQ(payload_, rtp_header.payloadType);
-    EXPECT_EQ(kSeqNum, rtp_header.sequenceNumber);
-    EXPECT_EQ(kTimestamp, rtp_header.timestamp);
-    EXPECT_EQ(rtp_sender_->SSRC(), rtp_header.ssrc);
-    EXPECT_EQ(number_of_csrcs, rtp_header.numCSRCs);
-    EXPECT_EQ(0U, rtp_header.paddingLength);
-  }
 
   std::unique_ptr<RtpPacketToSend> BuildRtpPacket(int payload_type,
                                                   bool marker_bit,
@@ -1549,21 +1524,6 @@ TEST_P(RtpSenderTest, BitrateCallbacks) {
   rtp_sender_.reset();
 }
 
-class RtpSenderAudioTest : public RtpSenderTest {
- protected:
-  RtpSenderAudioTest() {}
-
-  void SetUp() override {
-    payload_ = kAudioPayload;
-    rtp_sender_.reset(new RTPSender(
-        true, &fake_clock_, &transport_, nullptr, nullptr, nullptr, nullptr,
-        nullptr, nullptr, nullptr, nullptr, &retransmission_rate_limiter_,
-        nullptr, false, nullptr, false, false));
-    rtp_sender_->SetSSRC(kSsrc);
-    rtp_sender_->SetSequenceNumber(kSeqNum);
-  }
-};
-
 TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
   class TestCallback : public StreamDataCountersCallback {
    public:
@@ -1661,94 +1621,6 @@ TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
   callback.Matches(ssrc, expected);
 
   rtp_sender_->RegisterRtpStatisticsCallback(nullptr);
-}
-
-TEST_P(RtpSenderAudioTest, SendAudio) {
-  const char payload_name[] = "PAYLOAD_NAME";
-  const uint8_t payload_type = 127;
-  ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 48000,
-                                            0, 1500));
-  uint8_t payload[] = {47, 11, 32, 93, 89};
-
-  RTPVideoHeader video_header;
-  ASSERT_TRUE(rtp_sender_->SendOutgoingData(
-      kAudioFrameCN, payload_type, 1234, 4321, payload, sizeof(payload),
-      nullptr, &video_header, nullptr, kDefaultExpectedRetransmissionTimeMs));
-
-  auto sent_payload = transport_.last_sent_packet().payload();
-  EXPECT_THAT(sent_payload, ElementsAreArray(payload));
-}
-
-TEST_P(RtpSenderAudioTest, SendAudioWithAudioLevelExtension) {
-  EXPECT_EQ(0, rtp_sender_->SetAudioLevel(kAudioLevel));
-  EXPECT_EQ(0, rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionAudioLevel,
-                                                       kAudioLevelExtensionId));
-
-  const char payload_name[] = "PAYLOAD_NAME";
-  const uint8_t payload_type = 127;
-  ASSERT_EQ(0, rtp_sender_->RegisterPayload(payload_name, payload_type, 48000,
-                                            0, 1500));
-  uint8_t payload[] = {47, 11, 32, 93, 89};
-
-  RTPVideoHeader video_header;
-  ASSERT_TRUE(rtp_sender_->SendOutgoingData(
-      kAudioFrameCN, payload_type, 1234, 4321, payload, sizeof(payload),
-      nullptr, &video_header, nullptr, kDefaultExpectedRetransmissionTimeMs));
-
-  auto sent_payload = transport_.last_sent_packet().payload();
-  EXPECT_THAT(sent_payload, ElementsAreArray(payload));
-  // Verify AudioLevel extension.
-  bool voice_activity;
-  uint8_t audio_level;
-  EXPECT_TRUE(transport_.last_sent_packet().GetExtension<AudioLevel>(
-      &voice_activity, &audio_level));
-  EXPECT_EQ(kAudioLevel, audio_level);
-  EXPECT_FALSE(voice_activity);
-}
-
-// As RFC4733, named telephone events are carried as part of the audio stream
-// and must use the same sequence number and timestamp base as the regular
-// audio channel.
-// This test checks the marker bit for the first packet and the consequent
-// packets of the same telephone event. Since it is specifically for DTMF
-// events, ignoring audio packets and sending kEmptyFrame instead of those.
-TEST_P(RtpSenderAudioTest, CheckMarkerBitForTelephoneEvents) {
-  const char* kDtmfPayloadName = "telephone-event";
-  const uint32_t kPayloadFrequency = 8000;
-  const uint8_t kPayloadType = 126;
-  ASSERT_EQ(0, rtp_sender_->RegisterPayload(kDtmfPayloadName, kPayloadType,
-                                            kPayloadFrequency, 0, 0));
-  // For Telephone events, payload is not added to the registered payload list,
-  // it will register only the payload used for audio stream.
-  // Registering the payload again for audio stream with different payload name.
-  const char* kPayloadName = "payload_name";
-  ASSERT_EQ(0, rtp_sender_->RegisterPayload(kPayloadName, kPayloadType,
-                                            kPayloadFrequency, 1, 0));
-  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
-  // DTMF event key=9, duration=500 and attenuationdB=10
-  rtp_sender_->SendTelephoneEvent(9, 500, 10);
-  // During start, it takes the starting timestamp as last sent timestamp.
-  // The duration is calculated as the difference of current and last sent
-  // timestamp. So for first call it will skip since the duration is zero.
-  RTPVideoHeader video_header;
-  ASSERT_TRUE(rtp_sender_->SendOutgoingData(
-      kEmptyFrame, kPayloadType, capture_time_ms, 0, nullptr, 0, nullptr,
-      &video_header, nullptr, kDefaultExpectedRetransmissionTimeMs));
-  // DTMF Sample Length is (Frequency/1000) * Duration.
-  // So in this case, it is (8000/1000) * 500 = 4000.
-  // Sending it as two packets.
-  ASSERT_TRUE(rtp_sender_->SendOutgoingData(
-      kEmptyFrame, kPayloadType, capture_time_ms + 2000, 0, nullptr, 0, nullptr,
-      &video_header, nullptr, kDefaultExpectedRetransmissionTimeMs));
-
-  // Marker Bit should be set to 1 for first packet.
-  EXPECT_TRUE(transport_.last_sent_packet().Marker());
-
-  ASSERT_TRUE(rtp_sender_->SendOutgoingData(
-      kEmptyFrame, kPayloadType, capture_time_ms + 4000, 0, nullptr, 0, nullptr,
-      &video_header, nullptr, kDefaultExpectedRetransmissionTimeMs));
-  // Marker Bit should be set to 0 for rest of the packets.
-  EXPECT_FALSE(transport_.last_sent_packet().Marker());
 }
 
 TEST_P(RtpSenderTestWithoutPacer, BytesReportedCorrectly) {
@@ -2295,7 +2167,5 @@ INSTANTIATE_TEST_SUITE_P(WithAndWithoutOverhead,
 INSTANTIATE_TEST_SUITE_P(WithAndWithoutOverhead,
                          RtpSenderVideoTest,
                          ::testing::Bool());
-INSTANTIATE_TEST_SUITE_P(WithAndWithoutOverhead,
-                         RtpSenderAudioTest,
-                         ::testing::Bool());
+
 }  // namespace webrtc
