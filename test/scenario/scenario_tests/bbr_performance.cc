@@ -97,7 +97,7 @@ struct CallTestConfig {
     return trial.str();
   }
   std::string FieldTrials() const {
-    std::string trials = "WebRTC-TaskQueueCongestionControl/Enabled/";
+    std::string trials;
     if (tuning.use_bbr) {
       trials +=
           "WebRTC-BweCongestionController/Enabled,BBR/"

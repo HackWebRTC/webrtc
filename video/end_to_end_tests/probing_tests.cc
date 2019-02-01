@@ -17,22 +17,7 @@
 #include "test/gtest.h"
 namespace webrtc {
 
-class ProbingEndToEndTest : public test::CallTest,
-                            public testing::WithParamInterface<std::string> {
- public:
-  ProbingEndToEndTest() : field_trial_(GetParam()) {}
-
-  virtual ~ProbingEndToEndTest() {
-  }
-
- private:
-  test::ScopedFieldTrials field_trial_;
-};
-INSTANTIATE_TEST_SUITE_P(
-    FieldTrials,
-    ProbingEndToEndTest,
-    ::testing::Values("WebRTC-TaskQueueCongestionControl/Enabled/",
-                      "WebRTC-TaskQueueCongestionControl/Disabled/"));
+class ProbingEndToEndTest : public test::CallTest {};
 
 class ProbingTest : public test::EndToEndTest {
  public:
@@ -60,11 +45,11 @@ class ProbingTest : public test::EndToEndTest {
 // Flaky under MemorySanitizer: bugs.webrtc.org/7419
 // Flaky on iOS bots: bugs.webrtc.org/7851
 #if defined(MEMORY_SANITIZER)
-TEST_P(ProbingEndToEndTest, DISABLED_InitialProbing) {
+TEST_F(ProbingEndToEndTest, DISABLED_InitialProbing) {
 #elif defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
-TEST_P(ProbingEndToEndTest, DISABLED_InitialProbing) {
+TEST_F(ProbingEndToEndTest, DISABLED_InitialProbing) {
 #else
-TEST_P(ProbingEndToEndTest, InitialProbing) {
+TEST_F(ProbingEndToEndTest, InitialProbing) {
 #endif
   class InitialProbingTest : public ProbingTest {
    public:
@@ -108,12 +93,12 @@ TEST_P(ProbingEndToEndTest, InitialProbing) {
 
 // Fails on Linux MSan: bugs.webrtc.org/7428
 #if defined(MEMORY_SANITIZER)
-TEST_P(ProbingEndToEndTest, DISABLED_TriggerMidCallProbing) {
+TEST_F(ProbingEndToEndTest, DISABLED_TriggerMidCallProbing) {
 // Fails on iOS bots: bugs.webrtc.org/7851
 #elif defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
-TEST_P(ProbingEndToEndTest, DISABLED_TriggerMidCallProbing) {
+TEST_F(ProbingEndToEndTest, DISABLED_TriggerMidCallProbing) {
 #else
-TEST_P(ProbingEndToEndTest, TriggerMidCallProbing) {
+TEST_F(ProbingEndToEndTest, TriggerMidCallProbing) {
 #endif
 
   class TriggerMidCallProbingTest : public ProbingTest {
@@ -187,11 +172,11 @@ TEST_P(ProbingEndToEndTest, TriggerMidCallProbing) {
 }
 
 #if defined(MEMORY_SANITIZER)
-TEST_P(ProbingEndToEndTest, DISABLED_ProbeOnVideoEncoderReconfiguration) {
+TEST_F(ProbingEndToEndTest, DISABLED_ProbeOnVideoEncoderReconfiguration) {
 #elif defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
-TEST_P(ProbingEndToEndTest, DISABLED_ProbeOnVideoEncoderReconfiguration) {
+TEST_F(ProbingEndToEndTest, DISABLED_ProbeOnVideoEncoderReconfiguration) {
 #else
-TEST_P(ProbingEndToEndTest, ProbeOnVideoEncoderReconfiguration) {
+TEST_F(ProbingEndToEndTest, ProbeOnVideoEncoderReconfiguration) {
 #endif
 
   class ReconfigureTest : public ProbingTest {

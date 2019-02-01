@@ -132,23 +132,7 @@ class RtpVideoSenderTestFixture {
 };
 }  // namespace
 
-class RtpVideoSenderTest : public ::testing::Test,
-                           public ::testing::WithParamInterface<std::string> {
- public:
-  RtpVideoSenderTest() : field_trial_(GetParam()) {}
-
- private:
-  test::ScopedFieldTrials field_trial_;
-};
-
-INSTANTIATE_TEST_SUITE_P(Default, RtpVideoSenderTest, ::testing::Values(""));
-
-INSTANTIATE_TEST_SUITE_P(
-    TaskQueueTrial,
-    RtpVideoSenderTest,
-    ::testing::Values("WebRTC-TaskQueueCongestionControl/Enabled/"));
-
-TEST_P(RtpVideoSenderTest, SendOnOneModule) {
+TEST(RtpVideoSenderTest, SendOnOneModule) {
   uint8_t payload = 'a';
   EncodedImage encoded_image;
   encoded_image.SetTimestamp(1);
@@ -178,7 +162,7 @@ TEST_P(RtpVideoSenderTest, SendOnOneModule) {
       test.router()->OnEncodedImage(encoded_image, nullptr, nullptr).error);
 }
 
-TEST_P(RtpVideoSenderTest, SendSimulcastSetActive) {
+TEST(RtpVideoSenderTest, SendSimulcastSetActive) {
   uint8_t payload = 'a';
   EncodedImage encoded_image_1;
   encoded_image_1.SetTimestamp(1);
@@ -222,7 +206,7 @@ TEST_P(RtpVideoSenderTest, SendSimulcastSetActive) {
 // behavior of the payload router. First sets one module to active and checks
 // that outgoing data can be sent on this module, and checks that no data can
 // be sent if both modules are inactive.
-TEST_P(RtpVideoSenderTest, SendSimulcastSetActiveModules) {
+TEST(RtpVideoSenderTest, SendSimulcastSetActiveModules) {
   uint8_t payload = 'a';
   EncodedImage encoded_image_1;
   encoded_image_1.SetTimestamp(1);
@@ -264,7 +248,7 @@ TEST_P(RtpVideoSenderTest, SendSimulcastSetActiveModules) {
                 .error);
 }
 
-TEST_P(RtpVideoSenderTest, CreateWithNoPreviousStates) {
+TEST(RtpVideoSenderTest, CreateWithNoPreviousStates) {
   RtpVideoSenderTestFixture test({kSsrc1, kSsrc2}, kPayloadType, {});
   test.router()->SetActive(true);
 
@@ -275,7 +259,7 @@ TEST_P(RtpVideoSenderTest, CreateWithNoPreviousStates) {
   EXPECT_NE(initial_states.find(kSsrc2), initial_states.end());
 }
 
-TEST_P(RtpVideoSenderTest, CreateWithPreviousStates) {
+TEST(RtpVideoSenderTest, CreateWithPreviousStates) {
   const int64_t kState1SharedFrameId = 123;
   const int64_t kState2SharedFrameId = 234;
   RtpPayloadState state1;
@@ -303,7 +287,7 @@ TEST_P(RtpVideoSenderTest, CreateWithPreviousStates) {
   EXPECT_EQ(kState2SharedFrameId, initial_states[kSsrc2].shared_frame_id);
 }
 
-TEST_P(RtpVideoSenderTest, FrameCountCallbacks) {
+TEST(RtpVideoSenderTest, FrameCountCallbacks) {
   class MockFrameCountObserver : public FrameCountObserver {
    public:
     MOCK_METHOD2(FrameCountUpdated,

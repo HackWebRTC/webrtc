@@ -22,26 +22,9 @@
 
 namespace webrtc {
 
-class TransportFeedbackEndToEndTest
-    : public test::CallTest,
-      public testing::WithParamInterface<std::string> {
- public:
-  TransportFeedbackEndToEndTest() : field_trial_(GetParam()) {}
+class TransportFeedbackEndToEndTest : public test::CallTest {};
 
-  virtual ~TransportFeedbackEndToEndTest() {
-  }
-
- private:
-  test::ScopedFieldTrials field_trial_;
-};
-
-INSTANTIATE_TEST_SUITE_P(
-    FieldTrials,
-    TransportFeedbackEndToEndTest,
-    ::testing::Values("WebRTC-TaskQueueCongestionControl/Enabled/",
-                      "WebRTC-TaskQueueCongestionControl/Disabled/"));
-
-TEST_P(TransportFeedbackEndToEndTest, AssignsTransportSequenceNumbers) {
+TEST_F(TransportFeedbackEndToEndTest, AssignsTransportSequenceNumbers) {
   static const int kExtensionId = 5;
 
   class RtpExtensionHeaderObserver : public test::DirectTransport {
@@ -322,32 +305,32 @@ class TransportFeedbackTester : public test::EndToEndTest {
   Call* receiver_call_;
 };
 
-TEST_P(TransportFeedbackEndToEndTest, VideoReceivesTransportFeedback) {
+TEST_F(TransportFeedbackEndToEndTest, VideoReceivesTransportFeedback) {
   TransportFeedbackTester test(true, 1, 0);
   RunBaseTest(&test);
 }
 
-TEST_P(TransportFeedbackEndToEndTest, VideoTransportFeedbackNotConfigured) {
+TEST_F(TransportFeedbackEndToEndTest, VideoTransportFeedbackNotConfigured) {
   TransportFeedbackTester test(false, 1, 0);
   RunBaseTest(&test);
 }
 
-TEST_P(TransportFeedbackEndToEndTest, AudioReceivesTransportFeedback) {
+TEST_F(TransportFeedbackEndToEndTest, AudioReceivesTransportFeedback) {
   TransportFeedbackTester test(true, 0, 1);
   RunBaseTest(&test);
 }
 
-TEST_P(TransportFeedbackEndToEndTest, AudioTransportFeedbackNotConfigured) {
+TEST_F(TransportFeedbackEndToEndTest, AudioTransportFeedbackNotConfigured) {
   TransportFeedbackTester test(false, 0, 1);
   RunBaseTest(&test);
 }
 
-TEST_P(TransportFeedbackEndToEndTest, AudioVideoReceivesTransportFeedback) {
+TEST_F(TransportFeedbackEndToEndTest, AudioVideoReceivesTransportFeedback) {
   TransportFeedbackTester test(true, 1, 1);
   RunBaseTest(&test);
 }
 
-TEST_P(TransportFeedbackEndToEndTest,
+TEST_F(TransportFeedbackEndToEndTest,
        StopsAndResumesMediaWhenCongestionWindowFull) {
   test::ScopedFieldTrials override_field_trials(
       "WebRTC-CwndExperiment/Enabled-250/");
@@ -440,7 +423,7 @@ TEST_P(TransportFeedbackEndToEndTest,
   RunBaseTest(&test);
 }
 
-TEST_P(TransportFeedbackEndToEndTest, TransportSeqNumOnAudioAndVideo) {
+TEST_F(TransportFeedbackEndToEndTest, TransportSeqNumOnAudioAndVideo) {
   static constexpr int kExtensionId = 8;
   static constexpr size_t kMinPacketsToWaitFor = 50;
   class TransportSequenceNumberTest : public test::EndToEndTest {
