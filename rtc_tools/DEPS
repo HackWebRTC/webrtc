@@ -3,6 +3,7 @@ include_rules = [
   "+common_audio",
   "+common_video",
   "+logging/rtc_event_log",
+  "+media",
   "+modules/audio_device",
   "+modules/audio_coding/audio_network_adaptor",
   "+modules/audio_coding/neteq/include",

@@ -137,6 +137,50 @@ rtc_executable("frame_analyzer") {
   ]
 }
 
+rtc_executable("rtp_generator") {
+  visibility = [ "*" ]
+  testonly = true
+  sources = [
+    "rtp_generator/main.cc",
+    "rtp_generator/rtp_generator.cc",
+    "rtp_generator/rtp_generator.h",
+  ]
+
+  deps = [
+    ":command_line_parser",
+    "../api:libjingle_peerconnection_api",
+    "../api:transport_api",
+    "../api/video:builtin_video_bitrate_allocator_factory",
+    "../api/video_codecs:builtin_video_decoder_factory",
+    "../api/video_codecs:builtin_video_encoder_factory",
+    "../api/video_codecs:video_codecs_api",
+    "../call",
+    "../call:call_interfaces",
+    "../call:fake_network",
+    "../call:rtp_interfaces",
+    "../call:rtp_sender",
+    "../call:simulated_network",
+    "../call:simulated_packet_receiver",
+    "../call:video_stream_api",
+    "../logging:rtc_event_log_api",
+    "../logging:rtc_event_log_impl_base",
+    "../media:rtc_audio_video",
+    "../media:rtc_media_base",
+    "../rtc_base:rtc_base",
+    "../rtc_base:rtc_base_approved",
+    "../rtc_base:rtc_json",
+    "../rtc_base/system:file_wrapper",
+    "../test:fileutils",
+    "../test:rtp_test_utils",
+    "../test:video_test_common",
+    "//third_party/abseil-cpp/absl/strings",
+  ]
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
+}
+
 if (!build_with_chromium && !build_with_mozilla) {
   action("frame_analyzer_host") {
     script = "//tools_webrtc/executable_host_build.py"
