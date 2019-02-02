@@ -29,12 +29,6 @@
 #include "pc/rtp_parameters_conversion.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
-// Adding 'nogncheck' to disable the gn include headers check to support modular
-// WebRTC build targets.
-// TODO(zhihuang): This wouldn't be necessary if the interface and
-// implementation of the media engine were in separate build targets.
-#include "media/engine/webrtc_media_engine.h"           // nogncheck
-#include "modules/audio_device/include/audio_device.h"  // nogncheck
 #include "p2p/base/basic_packet_socket_factory.h"
 #include "p2p/client/basic_port_allocator.h"
 #include "pc/audio_track.h"
