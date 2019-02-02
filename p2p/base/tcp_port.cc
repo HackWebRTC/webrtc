@@ -97,7 +97,6 @@ TCPPort::TCPPort(rtc::Thread* thread,
            max_port,
            username,
            password),
-      incoming_only_(false),
       allow_listen_(allow_listen),
       socket_(NULL),
       error_(0) {
@@ -131,10 +130,6 @@ Connection* TCPPort::CreateConnection(const Candidate& address,
 
   // We can't accept TCP connections incoming on other ports
   if (origin == ORIGIN_OTHER_PORT)
-    return NULL;
-
-  // Check if we are allowed to make outgoing TCP connections
-  if (incoming_only_ && (origin == ORIGIN_MESSAGE))
     return NULL;
 
   // We don't know how to act as an ssl server yet

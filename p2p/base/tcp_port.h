@@ -104,8 +104,6 @@ class TCPPort : public Port {
   void OnAddressReady(rtc::AsyncPacketSocket* socket,
                       const rtc::SocketAddress& address);
 
-  // TODO(?): Is this still needed?
-  bool incoming_only_;
   bool allow_listen_;
   rtc::AsyncPacketSocket* socket_;
   int error_;
