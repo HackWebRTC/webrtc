@@ -849,12 +849,8 @@ void ChannelReceive::SetMinimumPlayoutDelay(int delay_ms) {
   RTC_DCHECK(module_process_thread_checker_.CalledOnValidThread());
   // Limit to range accepted by both VoE and ACM, so we're at least getting as
   // close as possible, instead of failing.
-  delay_ms = rtc::SafeClamp(delay_ms, 0, 10000);
-  if ((delay_ms < kVoiceEngineMinMinPlayoutDelayMs) ||
-      (delay_ms > kVoiceEngineMaxMinPlayoutDelayMs)) {
-    RTC_DLOG(LS_ERROR) << "SetMinimumPlayoutDelay() invalid min delay";
-    return;
-  }
+  delay_ms = rtc::SafeClamp(delay_ms, kVoiceEngineMinMinPlayoutDelayMs,
+                            kVoiceEngineMaxMinPlayoutDelayMs);
   if (audio_coding_->SetMinimumPlayoutDelay(delay_ms) != 0) {
     RTC_DLOG(LS_ERROR)
         << "SetMinimumPlayoutDelay() failed to set min playout delay";
