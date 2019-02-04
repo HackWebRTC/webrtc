@@ -482,16 +482,19 @@ DelayManager::IATVector DelayManager::ScaleHistogram(const IATVector& histogram,
   return new_histogram;
 }
 
+bool DelayManager::IsValidMinimumDelay(int delay_ms) {
+  const int q75 =
+      rtc::dchecked_cast<int>(3 * max_packets_in_buffer_ * packet_len_ms_ / 4);
+  return delay_ms >= 0 &&
+         (maximum_delay_ms_ <= 0 || delay_ms <= maximum_delay_ms_) &&
+         (packet_len_ms_ <= 0 || delay_ms <= q75);
+}
+
 bool DelayManager::SetMinimumDelay(int delay_ms) {
-  // Minimum delay shouldn't be more than maximum delay, if any maximum is set.
-  // Also, if possible check |delay| to less than 75% of
-  // |max_packets_in_buffer_|.
-  if ((maximum_delay_ms_ > 0 && delay_ms > maximum_delay_ms_) ||
-      (packet_len_ms_ > 0 &&
-       delay_ms >
-           static_cast<int>(3 * max_packets_in_buffer_ * packet_len_ms_ / 4))) {
+  if (!IsValidMinimumDelay(delay_ms)) {
     return false;
   }
+  // Ensure that minimum_delay_ms is no bigger than base_min_target_delay_ms_
   minimum_delay_ms_ = std::max(delay_ms, base_min_target_delay_ms_);
   return true;
 }
@@ -507,6 +510,21 @@ bool DelayManager::SetMaximumDelay(int delay_ms) {
   }
   maximum_delay_ms_ = delay_ms;
   return true;
+}
+
+bool DelayManager::SetBaseMinimumDelay(int delay_ms) {
+  if (!IsValidMinimumDelay(delay_ms)) {
+    return false;
+  }
+
+  base_min_target_delay_ms_ = delay_ms;
+  // Ensure that minimum_delay_ms is no bigger than base_min_target_delay_ms_
+  minimum_delay_ms_ = std::max(delay_ms, base_min_target_delay_ms_);
+  return true;
+}
+
+int DelayManager::GetBaseMinimumDelay() const {
+  return base_min_target_delay_ms_;
 }
 
 int DelayManager::base_target_level() const {

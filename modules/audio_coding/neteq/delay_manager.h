@@ -112,6 +112,8 @@ class DelayManager {
   // Assuming |delay| is in valid range.
   virtual bool SetMinimumDelay(int delay_ms);
   virtual bool SetMaximumDelay(int delay_ms);
+  virtual bool SetBaseMinimumDelay(int delay_ms);
+  virtual int GetBaseMinimumDelay() const;
   virtual int base_target_level() const;
   virtual void set_streaming_mode(bool value);
   virtual int last_pack_cng_or_dtmf() const;
@@ -141,13 +143,18 @@ class DelayManager {
   // called by Update().
   void LimitTargetLevel();
 
+  // Makes sure that |delay_ms| is less than maximum delay, if any maximum
+  // is set. Also, if possible check |delay_ms| to be less than 75% of
+  // |max_packets_in_buffer_|.
+  bool IsValidMinimumDelay(int delay_ms);
+
   bool first_packet_received_;
   const size_t max_packets_in_buffer_;  // Capacity of the packet buffer.
   IATVector iat_vector_;                // Histogram of inter-arrival times.
   int iat_factor_;  // Forgetting factor for updating the IAT histogram (Q15).
   const TickTimer* tick_timer_;
-  const int base_min_target_delay_ms_;  // Lower bound for target_level_ and
-                                        // minimum_delay_ms_.
+  int base_min_target_delay_ms_;  // Lower bound for target_level_ and
+                                  // minimum_delay_ms_.
   // Time elapsed since last packet.
   std::unique_ptr<TickTimer::Stopwatch> packet_iat_stopwatch_;
   int base_target_level_;  // Currently preferred buffer level before peak

@@ -267,6 +267,50 @@ TEST_F(DelayManagerTest, MinDelay) {
   EXPECT_EQ(kMinDelayPackets << 8, dm_->TargetLevel());
 }
 
+TEST_F(DelayManagerTest, BaseMinDelay) {
+  const int kExpectedTarget = 5;
+  const int kTimeIncrement = kExpectedTarget * kFrameSizeMs;
+  SetPacketAudioLength(kFrameSizeMs);
+  // First packet arrival.
+  InsertNextPacket();
+  // Second packet arrival.
+  // Expect detector update method to be called once with inter-arrival time
+  // equal to |kExpectedTarget| packet. Return true to indicate peaks found.
+  EXPECT_CALL(detector_, Update(kExpectedTarget, false, _))
+      .WillRepeatedly(Return(true));
+  EXPECT_CALL(detector_, MaxPeakHeight())
+      .WillRepeatedly(Return(kExpectedTarget));
+  IncreaseTime(kTimeIncrement);
+  InsertNextPacket();
+
+  // No limit is applied.
+  EXPECT_EQ(kExpectedTarget << 8, dm_->TargetLevel());
+
+  int kBaseMinDelayPackets = kExpectedTarget + 2;
+  int kBaseMinDelayMs = kBaseMinDelayPackets * kFrameSizeMs;
+  EXPECT_TRUE(dm_->SetBaseMinimumDelay(kBaseMinDelayMs));
+  EXPECT_EQ(dm_->GetBaseMinimumDelay(), kBaseMinDelayMs);
+
+  IncreaseTime(kTimeIncrement);
+  InsertNextPacket();
+  EXPECT_EQ(dm_->GetBaseMinimumDelay(), kBaseMinDelayMs);
+  EXPECT_EQ(kBaseMinDelayPackets << 8, dm_->TargetLevel());
+}
+
+TEST_F(DelayManagerTest, BaseMinDelayGreaterThanMaxDelayIsInvalid) {
+  int kMaxDelayMs = 2 * kFrameSizeMs;
+  int kBaseMinDelayMs = 4 * kFrameSizeMs;
+  EXPECT_TRUE(dm_->SetMaximumDelay(kMaxDelayMs));
+  EXPECT_FALSE(dm_->SetBaseMinimumDelay(kBaseMinDelayMs));
+}
+
+TEST_F(DelayManagerTest, BaseMinDelayGreaterThanQ75MaxPacketsIsInvalid) {
+  // .75 of |max_packets_in_buffer|, + 1 to ensure that |kBaseMinDelayMs| is
+  // greater.
+  int kBaseMinDelayMs = (3 * kMaxNumberOfPackets * kFrameSizeMs / 4) + 1;
+  EXPECT_FALSE(dm_->SetBaseMinimumDelay(kBaseMinDelayMs));
+}
+
 TEST_F(DelayManagerTest, UpdateReorderedPacket) {
   SetPacketAudioLength(kFrameSizeMs);
   InsertNextPacket();
