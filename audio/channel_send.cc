@@ -78,7 +78,6 @@ class VoERtcpObserver;
 
 class ChannelSend
     : public ChannelSendInterface,
-      public OverheadObserver,
       public AudioPacketizationCallback,  // receive encoded packets from the
                                           // ACM
       public TargetTransferRateObserver {
@@ -90,6 +89,7 @@ class ChannelSend
   ChannelSend(rtc::TaskQueue* encoder_queue,
               ProcessThread* module_process_thread,
               MediaTransportInterface* media_transport,
+              OverheadObserver* overhead_observer,
               Transport* rtp_transport,
               RtcpRttStats* rtcp_rtt_stats,
               RtcEventLog* rtc_event_log,
@@ -160,8 +160,6 @@ class ChannelSend
   // packet.
   void ProcessAndEncodeAudio(std::unique_ptr<AudioFrame> audio_frame) override;
 
-  void SetTransportOverhead(size_t transport_overhead_per_packet) override;
-
   // The existence of this function alongside OnUplinkPacketLossRate is
   // a compromise. We want the encoder to be agnostic of the PLR source, but
   // we also don't want it to receive conflicting information from TWCC and
@@ -188,16 +186,10 @@ class ChannelSend
                    size_t payloadSize,
                    const RTPFragmentationHeader* fragmentation) override;
 
-  // From OverheadObserver in the RTP/RTCP module
-  void OnOverheadChanged(size_t overhead_bytes_per_packet) override;
-
   void OnUplinkPacketLossRate(float packet_loss_rate);
   bool InputMute() const;
 
   int SetSendRtpHeaderExtension(bool enable, RTPExtensionType type, int id);
-
-  void UpdateOverheadForEncoder()
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(overhead_per_packet_lock_);
 
   int32_t SendRtpAudio(FrameType frameType,
                        uint8_t payloadType,
@@ -254,10 +246,7 @@ class ChannelSend
   // TODO(henrika): can today be accessed on the main thread and on the
   // task queue; hence potential race.
   bool _includeAudioLevelIndication;
-  size_t transport_overhead_per_packet_
-      RTC_GUARDED_BY(overhead_per_packet_lock_);
-  size_t rtp_overhead_per_packet_ RTC_GUARDED_BY(overhead_per_packet_lock_);
-  rtc::CriticalSection overhead_per_packet_lock_;
+
   // RtcpBandwidthObserver
   const std::unique_ptr<VoERtcpObserver> rtcp_observer_;
 
@@ -636,6 +625,7 @@ int32_t ChannelSend::SendMediaTransportAudio(
 ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
                          ProcessThread* module_process_thread,
                          MediaTransportInterface* media_transport,
+                         OverheadObserver* overhead_observer,
                          Transport* rtp_transport,
                          RtcpRttStats* rtcp_rtt_stats,
                          RtcEventLog* rtc_event_log,
@@ -650,8 +640,6 @@ ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
       input_mute_(false),
       previous_frame_muted_(false),
       _includeAudioLevelIndication(false),
-      transport_overhead_per_packet_(0),
-      rtp_overhead_per_packet_(0),
       rtcp_observer_(new VoERtcpObserver(this)),
       feedback_observer_proxy_(new TransportFeedbackProxy()),
       seq_num_allocator_proxy_(new TransportSequenceNumberProxy()),
@@ -677,7 +665,12 @@ ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
   // RTPMediaTransport. In this case it means that overhead and bandwidth
   // observers should not be called when using media transport.
   if (!media_transport_) {
-    configuration.overhead_observer = this;
+    // TODO(sukhanov): Overhead observer is only needed for RTP path, because in
+    // media transport audio overhead is currently considered constant (see
+    // getter MediaTransportInterface::GetAudioPacketOverhead).  In the future
+    // when we introduce RTP media transport we should make audio overhead
+    // interface consistent and work for both RTP and non-RTP implementations.
+    configuration.overhead_observer = overhead_observer;
     configuration.bandwidth_callback = rtcp_observer_.get();
     configuration.transport_feedback_callback = feedback_observer_proxy_.get();
   }
@@ -704,7 +697,6 @@ ChannelSend::ChannelSend(rtc::TaskQueue* encoder_queue,
   if (media_transport_) {
     RTC_DLOG(LS_INFO) << "Setting media_transport_ rate observers.";
     media_transport_->AddTargetTransferRateObserver(this);
-    OnOverheadChanged(media_transport_->GetAudioPacketOverhead());
   } else {
     RTC_DLOG(LS_INFO) << "Not setting media_transport_ rate observers.";
   }
@@ -731,7 +723,6 @@ ChannelSend::~ChannelSend() {
   }
 
   StopSend();
-
   int error = audio_coding_->RegisterTransportCallback(NULL);
   RTC_DCHECK_EQ(0, error);
 
@@ -814,7 +805,9 @@ bool ChannelSend::SetEncoder(int payload_type,
 
 void ChannelSend::ModifyEncoder(
     rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
+  // This method can be called on the worker thread, module process thread
+  // or network thread. Audio coding is thread safe, so we do not need to
+  // enforce the calling thread.
   audio_coding_->ModifyEncoder(modifier);
 }
 
@@ -1145,30 +1138,6 @@ void ChannelSend::ProcessAndEncodeAudioOnTaskQueue(AudioFrame* audio_input) {
   _timeStamp += static_cast<uint32_t>(audio_input->samples_per_channel_);
 }
 
-void ChannelSend::UpdateOverheadForEncoder() {
-  size_t overhead_per_packet =
-      transport_overhead_per_packet_ + rtp_overhead_per_packet_;
-  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
-    if (*encoder) {
-      (*encoder)->OnReceivedOverhead(overhead_per_packet);
-    }
-  });
-}
-
-void ChannelSend::SetTransportOverhead(size_t transport_overhead_per_packet) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  rtc::CritScope cs(&overhead_per_packet_lock_);
-  transport_overhead_per_packet_ = transport_overhead_per_packet;
-  UpdateOverheadForEncoder();
-}
-
-// TODO(solenberg): Make AudioSendStream an OverheadObserver instead.
-void ChannelSend::OnOverheadChanged(size_t overhead_bytes_per_packet) {
-  rtc::CritScope cs(&overhead_per_packet_lock_);
-  rtp_overhead_per_packet_ = overhead_bytes_per_packet;
-  UpdateOverheadForEncoder();
-}
-
 ANAStats ChannelSend::GetANAStatistics() const {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   return audio_coding_->GetANAStats();
@@ -1243,6 +1212,9 @@ void ChannelSend::SetFrameEncryptor(
   }
 }
 
+// TODO(sukhanov): Consider moving TargetTransferRate observer to
+// AudioSendStream. Since AudioSendStream owns encoder and configures ANA, it
+// makes sense to consolidate all rate (and overhead) calculation there.
 void ChannelSend::OnTargetTransferRate(TargetTransferRate rate) {
   RTC_DCHECK(media_transport_);
   OnReceivedRtt(rate.network_estimate.round_trip_time.ms());
@@ -1264,6 +1236,7 @@ std::unique_ptr<ChannelSendInterface> CreateChannelSend(
     rtc::TaskQueue* encoder_queue,
     ProcessThread* module_process_thread,
     MediaTransportInterface* media_transport,
+    OverheadObserver* overhead_observer,
     Transport* rtp_transport,
     RtcpRttStats* rtcp_rtt_stats,
     RtcEventLog* rtc_event_log,
@@ -1272,9 +1245,9 @@ std::unique_ptr<ChannelSendInterface> CreateChannelSend(
     bool extmap_allow_mixed,
     int rtcp_report_interval_ms) {
   return absl::make_unique<ChannelSend>(
-      encoder_queue, module_process_thread, media_transport, rtp_transport,
-      rtcp_rtt_stats, rtc_event_log, frame_encryptor, crypto_options,
-      extmap_allow_mixed, rtcp_report_interval_ms);
+      encoder_queue, module_process_thread, media_transport, overhead_observer,
+      rtp_transport, rtcp_rtt_stats, rtc_event_log, frame_encryptor,
+      crypto_options, extmap_allow_mixed, rtcp_report_interval_ms);
 }
 
 }  // namespace voe

@@ -89,7 +89,6 @@ class ChannelSendInterface {
 
   virtual void ProcessAndEncodeAudio(
       std::unique_ptr<AudioFrame> audio_frame) = 0;
-  virtual void SetTransportOverhead(size_t transport_overhead_per_packet) = 0;
   virtual RtpRtcp* GetRtpRtcp() const = 0;
 
   virtual void OnTwccBasedUplinkPacketLossRate(float packet_loss_rate) = 0;
@@ -118,6 +117,7 @@ std::unique_ptr<ChannelSendInterface> CreateChannelSend(
     rtc::TaskQueue* encoder_queue,
     ProcessThread* module_process_thread,
     MediaTransportInterface* media_transport,
+    OverheadObserver* overhead_observer,
     Transport* rtp_transport,
     RtcpRttStats* rtcp_rtt_stats,
     RtcEventLog* rtc_event_log,

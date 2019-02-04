@@ -520,7 +520,59 @@ TEST(AudioSendStreamTest, ReconfigureTransportCcResetsFirst) {
                                             helper.transport(), Ne(nullptr)))
         .Times(1);
   }
+
+  // ModifyEncoder will be called to re-set overhead.
+  EXPECT_CALL(*helper.channel_send(), ModifyEncoder(testing::_)).Times(1);
+
   send_stream->Reconfigure(new_config);
+}
+
+TEST(AudioSendStreamTest, OnTransportOverheadChanged) {
+  ConfigHelper helper(false, true);
+  auto send_stream = helper.CreateAudioSendStream();
+  auto new_config = helper.config();
+
+  // ModifyEncoder will be called on overhead change.
+  EXPECT_CALL(*helper.channel_send(), ModifyEncoder(testing::_)).Times(1);
+
+  const size_t transport_overhead_per_packet_bytes = 333;
+  send_stream->SetTransportOverhead(transport_overhead_per_packet_bytes);
+
+  EXPECT_EQ(transport_overhead_per_packet_bytes,
+            send_stream->TestOnlyGetPerPacketOverheadBytes());
+}
+
+TEST(AudioSendStreamTest, OnAudioOverheadChanged) {
+  ConfigHelper helper(false, true);
+  auto send_stream = helper.CreateAudioSendStream();
+  auto new_config = helper.config();
+
+  // ModifyEncoder will be called on overhead change.
+  EXPECT_CALL(*helper.channel_send(), ModifyEncoder(testing::_)).Times(1);
+
+  const size_t audio_overhead_per_packet_bytes = 555;
+  send_stream->OnOverheadChanged(audio_overhead_per_packet_bytes);
+  EXPECT_EQ(audio_overhead_per_packet_bytes,
+            send_stream->TestOnlyGetPerPacketOverheadBytes());
+}
+
+TEST(AudioSendStreamTest, OnAudioAndTransportOverheadChanged) {
+  ConfigHelper helper(false, true);
+  auto send_stream = helper.CreateAudioSendStream();
+  auto new_config = helper.config();
+
+  // ModifyEncoder will be called when each of overhead changes.
+  EXPECT_CALL(*helper.channel_send(), ModifyEncoder(testing::_)).Times(2);
+
+  const size_t transport_overhead_per_packet_bytes = 333;
+  send_stream->SetTransportOverhead(transport_overhead_per_packet_bytes);
+
+  const size_t audio_overhead_per_packet_bytes = 555;
+  send_stream->OnOverheadChanged(audio_overhead_per_packet_bytes);
+
+  EXPECT_EQ(
+      transport_overhead_per_packet_bytes + audio_overhead_per_packet_bytes,
+      send_stream->TestOnlyGetPerPacketOverheadBytes());
 }
 
 // Validates that reconfiguring the AudioSendStream with a Frame encryptor

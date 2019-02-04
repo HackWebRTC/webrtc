@@ -36,7 +36,8 @@ class AudioState;
 
 class AudioSendStream final : public webrtc::AudioSendStream,
                               public webrtc::BitrateAllocatorObserver,
-                              public webrtc::PacketFeedbackObserver {
+                              public webrtc::PacketFeedbackObserver,
+                              public webrtc::OverheadObserver {
  public:
   AudioSendStream(const webrtc::AudioSendStream::Config& config,
                   const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
@@ -85,10 +86,18 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   void OnPacketFeedbackVector(
       const std::vector<PacketFeedback>& packet_feedback_vector) override;
 
-  void SetTransportOverhead(int transport_overhead_per_packet);
+  void SetTransportOverhead(int transport_overhead_per_packet_bytes);
+
+  // OverheadObserver override reports audio packetization overhead from
+  // RTP/RTCP module or Media Transport.
+  void OnOverheadChanged(size_t overhead_bytes_per_packet_bytes) override;
 
   RtpState GetRtpState() const;
   const voe::ChannelSendInterface* GetChannel() const;
+
+  // Returns combined per-packet overhead.
+  size_t TestOnlyGetPerPacketOverheadBytes() const
+      RTC_LOCKS_EXCLUDED(overhead_per_packet_lock_);
 
  private:
   class TimedTransport;
@@ -115,6 +124,15 @@ class AudioSendStream final : public webrtc::AudioSendStream,
                                 int max_bitrate_bps,
                                 double bitrate_priority);
   void RemoveBitrateObserver();
+
+  // Sets per-packet overhead on encoded (for ANA) based on current known values
+  // of transport and packetization overheads.
+  void UpdateOverheadForEncoder()
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(overhead_per_packet_lock_);
+
+  // Returns combined per-packet overhead.
+  size_t GetPerPacketOverheadBytes() const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(overhead_per_packet_lock_);
 
   void RegisterCngPayloadType(int payload_type, int clockrate_hz);
 
@@ -155,6 +173,16 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   static ExtensionIds FindExtensionIds(
       const std::vector<RtpExtension>& extensions);
   static int TransportSeqNumId(const Config& config);
+
+  rtc::CriticalSection overhead_per_packet_lock_;
+
+  // Current transport overhead (ICE, TURN, etc.)
+  size_t transport_overhead_per_packet_bytes_
+      RTC_GUARDED_BY(overhead_per_packet_lock_) = 0;
+
+  // Current audio packetization overhead (RTP or Media Transport).
+  size_t audio_overhead_per_packet_bytes_
+      RTC_GUARDED_BY(overhead_per_packet_lock_) = 0;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioSendStream);
 };
