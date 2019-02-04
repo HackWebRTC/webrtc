@@ -38,12 +38,10 @@ bool RepeatingTaskBase::Run() {
   TimeDelta lost_time = Timestamp::us(rtc::TimeMicros()) - next_run_time_;
   next_run_time_ += delay;
   delay -= lost_time;
+  delay = std::max(delay, TimeDelta::Zero());
 
-  if (delay <= TimeDelta::Zero()) {
-    task_queue_->PostTask(absl::WrapUnique(this));
-  } else {
-    task_queue_->PostDelayedTask(absl::WrapUnique(this), delay.ms());
-  }
+  task_queue_->PostDelayedTask(absl::WrapUnique(this), delay.ms());
+
   // Return false to tell the TaskQueue to not destruct this object since we
   // have taken ownership with absl::WrapUnique.
   return false;

@@ -112,13 +112,14 @@ TEST(RepeatingTaskTest, CompensatesForShortRunTime) {
   rtc::TaskQueue task_queue("TestQueue");
   RepeatingTaskHandle::Start(&task_queue, [&] {
     ++counter;
-    // Sleeping for the 5 ms should be compensated.
-    Sleep(TimeDelta::ms(5));
-    return TimeDelta::ms(10);
+    // Sleeping for the 10 ms should be compensated.
+    Sleep(TimeDelta::ms(10));
+    return TimeDelta::ms(30);
   });
-  Sleep(TimeDelta::ms(15));
+  Sleep(TimeDelta::ms(40));
+
   // We expect that the task have been called twice, once directly at Start and
-  // once after 10 ms has passed.
+  // once after 30 ms has passed.
   EXPECT_EQ(counter.load(), 2);
 }
 
