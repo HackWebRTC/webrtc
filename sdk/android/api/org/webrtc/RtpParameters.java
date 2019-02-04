@@ -11,6 +11,7 @@
 package org.webrtc;
 
 import android.support.annotation.Nullable;
+import java.lang.Double;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -40,18 +41,22 @@ public class RtpParameters {
     @Nullable public Integer maxFramerate;
     // The number of temporal layers for video.
     @Nullable public Integer numTemporalLayers;
+    // If non-null, scale the width and height down by this factor for video. If null,
+    // implementation default scaling factor will be used.
+    @Nullable public Double scaleResolutionDownBy;
     // SSRC to be used by this encoding.
     // Can't be changed between getParameters/setParameters.
     public Long ssrc;
 
     @CalledByNative("Encoding")
     Encoding(boolean active, Integer maxBitrateBps, Integer minBitrateBps, Integer maxFramerate,
-        Integer numTemporalLayers, Long ssrc) {
+        Integer numTemporalLayers, Double scaleResolutionDownBy, Long ssrc) {
       this.active = active;
       this.maxBitrateBps = maxBitrateBps;
       this.minBitrateBps = minBitrateBps;
       this.maxFramerate = maxFramerate;
       this.numTemporalLayers = numTemporalLayers;
+      this.scaleResolutionDownBy = scaleResolutionDownBy;
       this.ssrc = ssrc;
     }
 
@@ -82,6 +87,12 @@ public class RtpParameters {
     @CalledByNative("Encoding")
     Integer getNumTemporalLayers() {
       return numTemporalLayers;
+    }
+
+    @Nullable
+    @CalledByNative("Encoding")
+    Double getScaleResolutionDownBy() {
+      return scaleResolutionDownBy;
     }
 
     @CalledByNative("Encoding")

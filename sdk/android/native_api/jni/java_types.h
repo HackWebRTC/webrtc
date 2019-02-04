@@ -129,6 +129,9 @@ int64_t JavaToNativeLong(JNIEnv* env, const JavaRef<jobject>& j_long);
 
 absl::optional<bool> JavaToNativeOptionalBool(JNIEnv* jni,
                                               const JavaRef<jobject>& boolean);
+absl::optional<double> JavaToNativeOptionalDouble(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_double);
 absl::optional<int32_t> JavaToNativeOptionalInt(
     JNIEnv* jni,
     const JavaRef<jobject>& integer);
@@ -196,6 +199,9 @@ ScopedJavaLocalRef<jstring> NativeToJavaString(JNIEnv* jni, const char* str);
 ScopedJavaLocalRef<jstring> NativeToJavaString(JNIEnv* jni,
                                                const std::string& str);
 
+ScopedJavaLocalRef<jobject> NativeToJavaDouble(
+    JNIEnv* jni,
+    const absl::optional<double>& optional_double);
 ScopedJavaLocalRef<jobject> NativeToJavaInteger(
     JNIEnv* jni,
     const absl::optional<int32_t>& optional_int);

@@ -28,6 +28,7 @@ ScopedJavaLocalRef<jobject> NativeToJavaRtpEncodingParameter(
       NativeToJavaInteger(env, encoding.min_bitrate_bps),
       NativeToJavaInteger(env, encoding.max_framerate),
       NativeToJavaInteger(env, encoding.num_temporal_layers),
+      NativeToJavaDouble(env, encoding.scale_resolution_down_by),
       encoding.ssrc ? NativeToJavaLong(env, *encoding.ssrc) : nullptr);
 }
 
@@ -77,6 +78,10 @@ RtpEncodingParameters JavaToNativeRtpEncodingParameters(
       Java_Encoding_getNumTemporalLayers(jni, j_encoding_parameters);
   encoding.num_temporal_layers =
       JavaToNativeOptionalInt(jni, j_num_temporal_layers);
+  ScopedJavaLocalRef<jobject> j_scale_resolution_down_by =
+      Java_Encoding_getScaleResolutionDownBy(jni, j_encoding_parameters);
+  encoding.scale_resolution_down_by =
+      JavaToNativeOptionalDouble(jni, j_scale_resolution_down_by);
   ScopedJavaLocalRef<jobject> j_ssrc =
       Java_Encoding_getSsrc(jni, j_encoding_parameters);
   if (!IsNull(jni, j_ssrc))

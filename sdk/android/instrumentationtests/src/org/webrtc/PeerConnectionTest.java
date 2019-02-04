@@ -10,6 +10,7 @@
 
 package org.webrtc;
 
+import static com.google.common.truth.Truth.assertThat;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -148,6 +149,9 @@ public class PeerConnectionTest {
     // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
     @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void onFrame(VideoFrame frame) {
+      if (expectedFramesDelivered <= 0) {
+        return;
+      }
       assertTrue(expectedWidth > 0);
       assertTrue(expectedHeight > 0);
       assertEquals(expectedWidth, frame.getRotatedWidth());
@@ -1025,11 +1029,13 @@ public class PeerConnectionTest {
     assertNull(rtpParameters.encodings.get(0).minBitrateBps);
     assertNull(rtpParameters.encodings.get(0).maxFramerate);
     assertNull(rtpParameters.encodings.get(0).numTemporalLayers);
+    assertNull(rtpParameters.encodings.get(0).scaleResolutionDownBy);
 
     rtpParameters.encodings.get(0).maxBitrateBps = 300000;
     rtpParameters.encodings.get(0).minBitrateBps = 100000;
     rtpParameters.encodings.get(0).maxFramerate = 20;
     rtpParameters.encodings.get(0).numTemporalLayers = 2;
+    rtpParameters.encodings.get(0).scaleResolutionDownBy = 2.0;
     assertTrue(videoSender.setParameters(rtpParameters));
 
     // Create a DTMF sender.
@@ -1044,6 +1050,7 @@ public class PeerConnectionTest {
     assertEquals(100000, (int) rtpParameters.encodings.get(0).minBitrateBps);
     assertEquals(20, (int) rtpParameters.encodings.get(0).maxFramerate);
     assertEquals(2, (int) rtpParameters.encodings.get(0).numTemporalLayers);
+    assertThat(rtpParameters.encodings.get(0).scaleResolutionDownBy).isEqualTo(2.0);
 
     // Test send & receive UTF-8 text.
     answeringExpectations.expectMessage(
