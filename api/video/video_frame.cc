@@ -156,7 +156,6 @@ rtc::scoped_refptr<VideoFrameBuffer> VideoFrame::video_frame_buffer() const {
 
 void VideoFrame::set_video_frame_buffer(
     rtc::scoped_refptr<VideoFrameBuffer> buffer) {
-  RTC_CHECK(buffer.get());
   video_frame_buffer_ = buffer;
 }
 
