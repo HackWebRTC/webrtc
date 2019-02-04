@@ -40,6 +40,11 @@ RTC_OBJC_EXPORT
  */
 @property(nonatomic, copy, nullable) NSNumber *numTemporalLayers;
 
+/** Scale the width and height down by this factor for video. If nil,
+ * implementation default scaling factor will be used.
+ */
+@property(nonatomic, copy, nullable) NSNumber *scaleResolutionDownBy;
+
 /** The SSRC being used by this encoding. */
 @property(nonatomic, readonly, nullable) NSNumber *ssrc;
 
