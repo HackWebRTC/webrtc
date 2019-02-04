@@ -994,7 +994,7 @@ class PeerConnectionIceConfigTest : public testing::Test {
                                           nullptr /* cert_generator */,
                                           &observer_));
     EXPECT_TRUE(pc.get());
-    pc_ = std::move(pc.get());
+    pc_ = std::move(pc);
   }
 
   rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory_ = nullptr;

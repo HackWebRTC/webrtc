@@ -32,6 +32,10 @@ struct RTC_EXPORT SdpAudioFormat {
                  int clockrate_hz,
                  size_t num_channels,
                  const Parameters& param);
+  SdpAudioFormat(absl::string_view name,
+                 int clockrate_hz,
+                 size_t num_channels,
+                 Parameters&& param);
   ~SdpAudioFormat();
 
   // Returns true if this format is compatible with |o|. In SDP terminology:

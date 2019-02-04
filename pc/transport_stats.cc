@@ -18,8 +18,4 @@ TransportChannelStats::TransportChannelStats(const TransportChannelStats&) =
 
 TransportChannelStats::~TransportChannelStats() = default;
 
-TransportStats::TransportStats() = default;
-
-TransportStats::~TransportStats() = default;
-
 }  // namespace cricket

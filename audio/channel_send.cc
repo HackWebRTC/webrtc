@@ -587,7 +587,7 @@ int32_t ChannelSend::SendMediaTransportAudio(
     sampling_rate_hz = media_transport_sampling_frequency_;
     channel_id = media_transport_channel_id_;
   }
-  const MediaTransportEncodedAudioFrame frame(
+  MediaTransportEncodedAudioFrame frame(
       /*sampling_rate_hz=*/sampling_rate_hz,
 
       // TODO(nisse): Timestamp and sample index are the same for all supported

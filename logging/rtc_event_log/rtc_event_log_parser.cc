@@ -1051,7 +1051,7 @@ bool ParsedRtcEventLog::ParseStream(
   // Since we dont need rapid lookup based on SSRC after parsing, we move the
   // packets_streams from map to vector.
   incoming_rtp_packets_by_ssrc_.reserve(incoming_rtp_packets_map_.size());
-  for (const auto& kv : incoming_rtp_packets_map_) {
+  for (auto& kv : incoming_rtp_packets_map_) {
     incoming_rtp_packets_by_ssrc_.emplace_back(LoggedRtpStreamIncoming());
     incoming_rtp_packets_by_ssrc_.back().ssrc = kv.first;
     incoming_rtp_packets_by_ssrc_.back().incoming_packets =
@@ -1059,7 +1059,7 @@ bool ParsedRtcEventLog::ParseStream(
   }
   incoming_rtp_packets_map_.clear();
   outgoing_rtp_packets_by_ssrc_.reserve(outgoing_rtp_packets_map_.size());
-  for (const auto& kv : outgoing_rtp_packets_map_) {
+  for (auto& kv : outgoing_rtp_packets_map_) {
     outgoing_rtp_packets_by_ssrc_.emplace_back(LoggedRtpStreamOutgoing());
     outgoing_rtp_packets_by_ssrc_.back().ssrc = kv.first;
     outgoing_rtp_packets_by_ssrc_.back().outgoing_packets =
