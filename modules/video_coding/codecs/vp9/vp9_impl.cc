@@ -721,6 +721,10 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   if (encoded_complete_callback_ == nullptr) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
+  if (num_active_spatial_layers_ == 0) {
+    // All spatial layers are disabled, return without encoding anything.
+    return WEBRTC_VIDEO_CODEC_OK;
+  }
 
   // We only support one stream at the moment.
   if (frame_types && !frame_types->empty()) {
