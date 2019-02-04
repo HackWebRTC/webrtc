@@ -1235,7 +1235,7 @@ void ChannelSend::SetFrameEncryptor(
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   rtc::CritScope cs(&encoder_queue_lock_);
   if (encoder_queue_is_active_) {
-    encoder_queue_->PostTask([this, frame_encryptor]() {
+    encoder_queue_->PostTask([this, frame_encryptor]() mutable {
       this->frame_encryptor_ = std::move(frame_encryptor);
     });
   } else {

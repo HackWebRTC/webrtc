@@ -39,7 +39,7 @@ VideoQualityAnalyzer::~VideoQualityAnalyzer() {
 
 void VideoQualityAnalyzer::OnCapturedFrame(const VideoFrame& frame) {
   VideoFrame copy = frame;
-  task_queue_.PostTask([this, copy] {
+  task_queue_.PostTask([this, copy]() mutable {
     if (!first_capture_ntp_time_ms_)
       first_capture_ntp_time_ms_ = copy.ntp_time_ms();
     captured_frames_.push_back(std::move(copy));

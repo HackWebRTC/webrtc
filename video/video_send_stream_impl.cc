@@ -513,13 +513,13 @@ void VideoSendStreamImpl::OnEncoderConfigurationChanged(
     int min_transmit_bitrate_bps) {
   if (!worker_queue_->IsCurrent()) {
     rtc::WeakPtr<VideoSendStreamImpl> send_stream = weak_ptr_;
-    worker_queue_->PostTask(
-        [send_stream, streams, content_type, min_transmit_bitrate_bps]() {
-          if (send_stream) {
-            send_stream->OnEncoderConfigurationChanged(
-                std::move(streams), content_type, min_transmit_bitrate_bps);
-          }
-        });
+    worker_queue_->PostTask([send_stream, streams, content_type,
+                             min_transmit_bitrate_bps]() mutable {
+      if (send_stream) {
+        send_stream->OnEncoderConfigurationChanged(
+            std::move(streams), content_type, min_transmit_bitrate_bps);
+      }
+    });
     return;
   }
   RTC_DCHECK_GE(config_->rtp.ssrcs.size(), streams.size());
