@@ -733,8 +733,10 @@ class VideoStreamEncoderTest : public ::testing::Test {
       return Result(Result::OK, last_timestamp_);
     }
 
-    void OnEncoderConfigurationChanged(std::vector<VideoStream> streams,
-                                       int min_transmit_bitrate_bps) override {
+    void OnEncoderConfigurationChanged(
+        std::vector<VideoStream> streams,
+        VideoEncoderConfig::ContentType content_type,
+        int min_transmit_bitrate_bps) override {
       rtc::CriticalSection crit_;
       ++number_of_reconfigurations_;
       min_transmit_bitrate_bps_ = min_transmit_bitrate_bps;

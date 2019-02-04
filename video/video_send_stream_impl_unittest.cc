@@ -228,6 +228,7 @@ TEST_F(VideoSendStreamImplTest, UpdatesObserverOnConfigurationChange) {
     static_cast<VideoStreamEncoderInterface::EncoderSink*>(vss_impl.get())
         ->OnEncoderConfigurationChanged(
             std::vector<VideoStream>{qvga_stream, vga_stream},
+            VideoEncoderConfig::ContentType::kRealtimeVideo,
             min_transmit_bitrate_bps);
     vss_impl->Stop();
   });
@@ -292,7 +293,64 @@ TEST_F(VideoSendStreamImplTest, UpdatesObserverOnConfigurationChangeWithAlr) {
     static_cast<VideoStreamEncoderInterface::EncoderSink*>(vss_impl.get())
         ->OnEncoderConfigurationChanged(
             std::vector<VideoStream>{low_stream, high_stream},
-            min_transmit_bitrate_bps);
+            VideoEncoderConfig::ContentType::kScreen, min_transmit_bitrate_bps);
+    vss_impl->Stop();
+  });
+}
+
+TEST_F(VideoSendStreamImplTest,
+       UpdatesObserverOnConfigurationChangeWithSimulcastVideoHysteresis) {
+  test::ScopedFieldTrials hysteresis_experiment(
+      "WebRTC-VideoRateControl/video_hysteresis:1.25/");
+
+  test_queue_.SendTask([this] {
+    auto vss_impl = CreateVideoSendStreamImpl(
+        kDefaultInitialBitrateBps, kDefaultBitratePriority,
+        VideoEncoderConfig::ContentType::kRealtimeVideo);
+    vss_impl->Start();
+
+    // 2-layer video simulcast.
+    VideoStream low_stream;
+    low_stream.width = 320;
+    low_stream.height = 240;
+    low_stream.max_framerate = 30;
+    low_stream.min_bitrate_bps = 30000;
+    low_stream.target_bitrate_bps = 100000;
+    low_stream.max_bitrate_bps = 200000;
+    low_stream.max_qp = 56;
+    low_stream.bitrate_priority = 1;
+
+    VideoStream high_stream;
+    high_stream.width = 640;
+    high_stream.height = 480;
+    high_stream.max_framerate = 30;
+    high_stream.min_bitrate_bps = 150000;
+    high_stream.target_bitrate_bps = 500000;
+    high_stream.max_bitrate_bps = 750000;
+    high_stream.max_qp = 56;
+    high_stream.bitrate_priority = 1;
+
+    config_.rtp.ssrcs.emplace_back(1);
+    config_.rtp.ssrcs.emplace_back(2);
+
+    EXPECT_CALL(bitrate_allocator_, AddObserver(vss_impl.get(), _))
+        .WillOnce(Invoke([&](BitrateAllocatorObserver*,
+                             MediaStreamAllocationConfig config) {
+          EXPECT_EQ(config.min_bitrate_bps,
+                    static_cast<uint32_t>(low_stream.min_bitrate_bps));
+          EXPECT_EQ(config.max_bitrate_bps,
+                    static_cast<uint32_t>(low_stream.max_bitrate_bps +
+                                          high_stream.max_bitrate_bps));
+          EXPECT_EQ(config.pad_up_bitrate_bps,
+                    static_cast<uint32_t>(low_stream.target_bitrate_bps +
+                                          1.25 * high_stream.min_bitrate_bps));
+        }));
+
+    static_cast<VideoStreamEncoderInterface::EncoderSink*>(vss_impl.get())
+        ->OnEncoderConfigurationChanged(
+            std::vector<VideoStream>{low_stream, high_stream},
+            VideoEncoderConfig::ContentType::kRealtimeVideo,
+            /*min_transmit_bitrate_bps=*/0);
     vss_impl->Stop();
   });
 }

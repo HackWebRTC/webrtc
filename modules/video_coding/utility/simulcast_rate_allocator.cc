@@ -58,11 +58,8 @@ float SimulcastRateAllocator::GetTemporalRateAllocation(int num_layers,
 
 SimulcastRateAllocator::SimulcastRateAllocator(const VideoCodec& codec)
     : codec_(codec),
-      hysteresis_factor_(codec.mode == VideoCodecMode::kScreensharing
-                             ? RateControlSettings::ParseFromFieldTrials()
-                                   .GetSimulcastScreenshareHysteresisFactor()
-                             : RateControlSettings::ParseFromFieldTrials()
-                                   .GetSimulcastVideoHysteresisFactor()) {}
+      hysteresis_factor_(RateControlSettings::ParseFromFieldTrials()
+                             .GetSimulcastHysteresisFactor(codec.mode)) {}
 
 SimulcastRateAllocator::~SimulcastRateAllocator() = default;
 

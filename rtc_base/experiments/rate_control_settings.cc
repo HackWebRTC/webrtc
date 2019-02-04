@@ -178,6 +178,22 @@ bool RateControlSettings::LibvpxVp9TrustedRateController() const {
   return trust_vp9_.Get();
 }
 
+double RateControlSettings::GetSimulcastHysteresisFactor(
+    VideoCodecMode mode) const {
+  if (mode == VideoCodecMode::kScreensharing) {
+    return GetSimulcastScreenshareHysteresisFactor();
+  }
+  return GetSimulcastVideoHysteresisFactor();
+}
+
+double RateControlSettings::GetSimulcastHysteresisFactor(
+    VideoEncoderConfig::ContentType content_type) const {
+  if (content_type == VideoEncoderConfig::ContentType::kScreen) {
+    return GetSimulcastScreenshareHysteresisFactor();
+  }
+  return GetSimulcastVideoHysteresisFactor();
+}
+
 double RateControlSettings::GetSimulcastVideoHysteresisFactor() const {
   return video_hysteresis_.Get();
 }

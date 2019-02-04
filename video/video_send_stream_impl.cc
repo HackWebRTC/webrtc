@@ -89,6 +89,7 @@ int GetEncoderMinBitrateBps() {
 
 // Calculate max padding bitrate for a multi layer codec.
 int CalculateMaxPadBitrateBps(const std::vector<VideoStream>& streams,
+                              VideoEncoderConfig::ContentType content_type,
                               int min_transmit_bitrate_bps,
                               bool pad_to_min_bitrate,
                               bool alr_probing) {
@@ -107,12 +108,23 @@ int CalculateMaxPadBitrateBps(const std::vector<VideoStream>& streams,
       // probing will handle the rest of the rampup.
       pad_up_to_bitrate_bps = active_streams[0].min_bitrate_bps;
     } else {
-      // Pad to min bitrate of the highest layer.
-      pad_up_to_bitrate_bps =
-          active_streams[active_streams.size() - 1].min_bitrate_bps;
-      // Add target_bitrate_bps of the lower layers.
-      for (size_t i = 0; i < active_streams.size() - 1; ++i)
+      // Without alr probing, pad up to start bitrate of the
+      // highest active stream.
+      const double hysteresis_factor =
+          RateControlSettings::ParseFromFieldTrials()
+              .GetSimulcastHysteresisFactor(content_type);
+      const size_t top_active_stream_idx = active_streams.size() - 1;
+      pad_up_to_bitrate_bps = std::min(
+          static_cast<int>(
+              hysteresis_factor *
+                  active_streams[top_active_stream_idx].min_bitrate_bps +
+              0.5),
+          active_streams[top_active_stream_idx].target_bitrate_bps);
+
+      // Add target_bitrate_bps of the lower active streams.
+      for (size_t i = 0; i < top_active_stream_idx; ++i) {
         pad_up_to_bitrate_bps += active_streams[i].target_bitrate_bps;
+      }
     }
   } else if (!active_streams.empty() && pad_to_min_bitrate) {
     pad_up_to_bitrate_bps = active_streams[0].min_bitrate_bps;
@@ -497,14 +509,17 @@ void VideoSendStreamImpl::SignalEncoderActive() {
 
 void VideoSendStreamImpl::OnEncoderConfigurationChanged(
     std::vector<VideoStream> streams,
+    VideoEncoderConfig::ContentType content_type,
     int min_transmit_bitrate_bps) {
   if (!worker_queue_->IsCurrent()) {
     rtc::WeakPtr<VideoSendStreamImpl> send_stream = weak_ptr_;
-    worker_queue_->PostTask([send_stream, streams, min_transmit_bitrate_bps]() {
-      if (send_stream)
-        send_stream->OnEncoderConfigurationChanged(std::move(streams),
-                                                   min_transmit_bitrate_bps);
-    });
+    worker_queue_->PostTask(
+        [send_stream, streams, content_type, min_transmit_bitrate_bps]() {
+          if (send_stream) {
+            send_stream->OnEncoderConfigurationChanged(
+                std::move(streams), content_type, min_transmit_bitrate_bps);
+          }
+        });
     return;
   }
   RTC_DCHECK_GE(config_->rtp.ssrcs.size(), streams.size());
@@ -530,6 +545,7 @@ void VideoSendStreamImpl::OnEncoderConfigurationChanged(
       std::max(static_cast<uint32_t>(encoder_min_bitrate_bps_),
                encoder_max_bitrate_bps_);
 
+  // TODO(bugs.webrtc.org/10266): Query the VideoBitrateAllocator instead.
   const VideoCodecType codec_type =
       PayloadStringToCodecType(config_->rtp.payload_name);
   if (codec_type == kVideoCodecVP9) {
@@ -537,8 +553,8 @@ void VideoSendStreamImpl::OnEncoderConfigurationChanged(
                                             : streams[0].target_bitrate_bps;
   } else {
     max_padding_bitrate_ = CalculateMaxPadBitrateBps(
-        streams, min_transmit_bitrate_bps, config_->suspend_below_min_bitrate,
-        has_alr_probing_);
+        streams, content_type, min_transmit_bitrate_bps,
+        config_->suspend_below_min_bitrate, has_alr_probing_);
   }
 
   // Clear stats for disabled layers.

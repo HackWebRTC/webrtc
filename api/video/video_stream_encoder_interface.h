@@ -42,6 +42,7 @@ class VideoStreamEncoderInterface : public rtc::VideoSinkInterface<VideoFrame> {
    public:
     virtual void OnEncoderConfigurationChanged(
         std::vector<VideoStream> streams,
+        VideoEncoderConfig::ContentType content_type,
         int min_transmit_bitrate_bps) = 0;
   };
 
