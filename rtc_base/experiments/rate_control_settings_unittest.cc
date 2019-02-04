@@ -19,35 +19,109 @@ namespace webrtc {
 
 namespace {
 
-TEST(RateControlSettingsTest, LibvpxTrustedRateController) {
-  test::ScopedFieldTrials field_trials(
-      "WebRTC-VideoRateControl/trust_vp8:1,trust_vp9:0/");
-  const RateControlSettings rate_control_settings =
-      RateControlSettings::ParseFromFieldTrials();
+TEST(RateControlSettingsTest, CongestionWindow) {
+  EXPECT_FALSE(
+      RateControlSettings::ParseFromFieldTrials().UseCongestionWindow());
 
-  EXPECT_TRUE(rate_control_settings.LibvpxVp8TrustedRateController());
-  EXPECT_FALSE(rate_control_settings.LibvpxVp9TrustedRateController());
+  test::ScopedFieldTrials field_trials("WebRTC-VideoRateControl/cwnd:100/");
+  const RateControlSettings settings_after =
+      RateControlSettings::ParseFromFieldTrials();
+  EXPECT_TRUE(settings_after.UseCongestionWindow());
+  EXPECT_EQ(settings_after.GetCongestionWindowAdditionalTimeMs(), 100);
+}
+
+TEST(RateControlSettingsTest, CongestionWindowPushback) {
+  EXPECT_FALSE(RateControlSettings::ParseFromFieldTrials()
+                   .UseCongestionWindowPushback());
+
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-VideoRateControl/cwnd:100,cwnd_pushback:100000/");
+  const RateControlSettings settings_after =
+      RateControlSettings::ParseFromFieldTrials();
+  EXPECT_TRUE(settings_after.UseCongestionWindowPushback());
+  EXPECT_EQ(settings_after.CongestionWindowMinPushbackTargetBitrateBps(),
+            100000u);
+}
+
+TEST(RateControlSettingsTest, PacingFactor) {
+  EXPECT_FALSE(RateControlSettings::ParseFromFieldTrials().GetPacingFactor());
+
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-VideoRateControl/pacing_factor:1.2/");
+  const RateControlSettings settings_after =
+      RateControlSettings::ParseFromFieldTrials();
+  // Need to explicitly dereference the absl::optional
+  // for the EXPECT_DOUBLE_EQ to compile.
+  ASSERT_TRUE(settings_after.GetPacingFactor());
+  EXPECT_DOUBLE_EQ(*settings_after.GetPacingFactor(), 1.2);
+}
+
+TEST(RateControlSettingsTest, AlrProbing) {
+  EXPECT_FALSE(RateControlSettings::ParseFromFieldTrials().UseAlrProbing());
+
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-VideoRateControl/alr_probing:1/");
+  EXPECT_TRUE(RateControlSettings::ParseFromFieldTrials().UseAlrProbing());
+}
+
+TEST(RateControlSettingsTest, LibvpxTrustedRateController) {
+  const RateControlSettings settings_before =
+      RateControlSettings::ParseFromFieldTrials();
+  EXPECT_FALSE(settings_before.LibvpxVp8TrustedRateController());
+  EXPECT_FALSE(settings_before.LibvpxVp9TrustedRateController());
+
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-VideoRateControl/trust_vp8:1,trust_vp9:1/");
+  const RateControlSettings settings_after =
+      RateControlSettings::ParseFromFieldTrials();
+  EXPECT_TRUE(settings_after.LibvpxVp8TrustedRateController());
+  EXPECT_TRUE(settings_after.LibvpxVp9TrustedRateController());
 }
 
 TEST(RateControlSettingsTest, GetSimulcastHysteresisFactor) {
+  const RateControlSettings settings_before =
+      RateControlSettings::ParseFromFieldTrials();
+  EXPECT_DOUBLE_EQ(settings_before.GetSimulcastHysteresisFactor(
+                       VideoCodecMode::kRealtimeVideo),
+                   1.0);
+  EXPECT_DOUBLE_EQ(settings_before.GetSimulcastHysteresisFactor(
+                       VideoEncoderConfig::ContentType::kRealtimeVideo),
+                   1.0);
+  EXPECT_DOUBLE_EQ(settings_before.GetSimulcastHysteresisFactor(
+                       VideoCodecMode::kScreensharing),
+                   1.35);
+  EXPECT_DOUBLE_EQ(settings_before.GetSimulcastHysteresisFactor(
+                       VideoEncoderConfig::ContentType::kScreen),
+                   1.35);
+
   test::ScopedFieldTrials field_trials(
       "WebRTC-VideoRateControl/"
       "video_hysteresis:1.2,screenshare_hysteresis:1.4/");
-  const RateControlSettings rate_control_settings =
+  const RateControlSettings settings_after =
       RateControlSettings::ParseFromFieldTrials();
 
-  EXPECT_EQ(rate_control_settings.GetSimulcastHysteresisFactor(
-                VideoCodecMode::kRealtimeVideo),
-            1.2);
-  EXPECT_EQ(rate_control_settings.GetSimulcastHysteresisFactor(
-                VideoEncoderConfig::ContentType::kRealtimeVideo),
-            1.2);
-  EXPECT_EQ(rate_control_settings.GetSimulcastHysteresisFactor(
-                VideoCodecMode::kScreensharing),
-            1.4);
-  EXPECT_EQ(rate_control_settings.GetSimulcastHysteresisFactor(
-                VideoEncoderConfig::ContentType::kScreen),
-            1.4);
+  EXPECT_DOUBLE_EQ(settings_after.GetSimulcastHysteresisFactor(
+                       VideoCodecMode::kRealtimeVideo),
+                   1.2);
+  EXPECT_DOUBLE_EQ(settings_after.GetSimulcastHysteresisFactor(
+                       VideoEncoderConfig::ContentType::kRealtimeVideo),
+                   1.2);
+  EXPECT_DOUBLE_EQ(settings_after.GetSimulcastHysteresisFactor(
+                       VideoCodecMode::kScreensharing),
+                   1.4);
+  EXPECT_DOUBLE_EQ(settings_after.GetSimulcastHysteresisFactor(
+                       VideoEncoderConfig::ContentType::kScreen),
+                   1.4);
+}
+
+TEST(RateControlSettingsTest, TriggerProbeOnMaxAllocatedBitrateChange) {
+  EXPECT_TRUE(RateControlSettings::ParseFromFieldTrials()
+                  .TriggerProbeOnMaxAllocatedBitrateChange());
+
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-VideoRateControl/probe_max_allocation:0/");
+  EXPECT_FALSE(RateControlSettings::ParseFromFieldTrials()
+                   .TriggerProbeOnMaxAllocatedBitrateChange());
 }
 
 }  // namespace
