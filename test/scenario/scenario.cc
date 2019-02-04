@@ -318,6 +318,9 @@ AudioStreamPair* Scenario::CreateAudioStream(
 RepeatedActivity* Scenario::Every(TimeDelta interval,
                                   std::function<void(TimeDelta)> function) {
   repeated_activities_.emplace_back(new RepeatedActivity(interval, function));
+  if (start_time_.IsFinite()) {
+    repeated_activities_.back()->SetStartTime(Now());
+  }
   return repeated_activities_.back().get();
 }
 
@@ -326,6 +329,9 @@ RepeatedActivity* Scenario::Every(TimeDelta interval,
   auto function_with_argument = [function](TimeDelta) { function(); };
   repeated_activities_.emplace_back(
       new RepeatedActivity(interval, function_with_argument));
+  if (start_time_.IsFinite()) {
+    repeated_activities_.back()->SetStartTime(Now());
+  }
   return repeated_activities_.back().get();
 }
 
