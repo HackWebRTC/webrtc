@@ -860,6 +860,7 @@ if (is_android) {
       ":generated_external_classes_jni",
       ":generated_native_api_jni",
       ":internal_jni",
+      "//api:array_view",
       "//rtc_base:checks",
       "//rtc_base:rtc_base_approved",
       "//third_party/abseil-cpp/absl/types:optional",

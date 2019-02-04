@@ -99,23 +99,19 @@ static rtc::AdapterType AdapterTypeFromNetworkType(NetworkType network_type) {
 static rtc::IPAddress JavaToNativeIpAddress(
     JNIEnv* jni,
     const JavaRef<jobject>& j_ip_address) {
-  ScopedJavaLocalRef<jbyteArray> j_addresses =
-      Java_IPAddress_getAddress(jni, j_ip_address);
-  size_t address_length = jni->GetArrayLength(j_addresses.obj());
-  jbyte* addr_array = jni->GetByteArrayElements(j_addresses.obj(), nullptr);
-  CHECK_EXCEPTION(jni) << "Error during JavaToNativeIpAddress";
+  std::vector<int8_t> address =
+      JavaToNativeByteArray(jni, Java_IPAddress_getAddress(jni, j_ip_address));
+  size_t address_length = address.size();
   if (address_length == 4) {
     // IP4
     struct in_addr ip4_addr;
-    memcpy(&ip4_addr.s_addr, addr_array, 4);
-    jni->ReleaseByteArrayElements(j_addresses.obj(), addr_array, JNI_ABORT);
+    memcpy(&ip4_addr.s_addr, address.data(), 4);
     return rtc::IPAddress(ip4_addr);
   }
   // IP6
   RTC_CHECK(address_length == 16);
   struct in6_addr ip6_addr;
-  memcpy(ip6_addr.s6_addr, addr_array, address_length);
-  jni->ReleaseByteArrayElements(j_addresses.obj(), addr_array, JNI_ABORT);
+  memcpy(ip6_addr.s6_addr, address.data(), address_length);
   return rtc::IPAddress(ip6_addr);
 }
 

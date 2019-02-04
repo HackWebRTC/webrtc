@@ -206,6 +206,49 @@ ScopedJavaLocalRef<jstring> NativeToJavaString(
   return str ? NativeToJavaString(jni, *str) : nullptr;
 }
 
+ScopedJavaLocalRef<jbyteArray> NativeToJavaByteArray(
+    JNIEnv* env,
+    rtc::ArrayView<int8_t> container) {
+  ScopedJavaLocalRef<jbyteArray> jarray(env,
+                                        env->NewByteArray(container.size()));
+  int8_t* array_ptr =
+      env->GetByteArrayElements(jarray.obj(), /*isCopy=*/nullptr);
+  memcpy(array_ptr, container.data(), container.size() * sizeof(int8_t));
+  env->ReleaseByteArrayElements(jarray.obj(), array_ptr, /*mode=*/0);
+  return jarray;
+}
+
+ScopedJavaLocalRef<jintArray> NativeToJavaIntArray(
+    JNIEnv* env,
+    rtc::ArrayView<int32_t> container) {
+  ScopedJavaLocalRef<jintArray> jarray(env, env->NewIntArray(container.size()));
+  int32_t* array_ptr =
+      env->GetIntArrayElements(jarray.obj(), /*isCopy=*/nullptr);
+  memcpy(array_ptr, container.data(), container.size() * sizeof(int32_t));
+  env->ReleaseIntArrayElements(jarray.obj(), array_ptr, /*mode=*/0);
+  return jarray;
+}
+
+std::vector<int8_t> JavaToNativeByteArray(JNIEnv* env,
+                                          const JavaRef<jbyteArray>& jarray) {
+  int8_t* array_ptr =
+      env->GetByteArrayElements(jarray.obj(), /*isCopy=*/nullptr);
+  size_t array_length = env->GetArrayLength(jarray.obj());
+  std::vector<int8_t> container(array_ptr, array_ptr + array_length);
+  env->ReleaseByteArrayElements(jarray.obj(), array_ptr, /*mode=*/JNI_ABORT);
+  return container;
+}
+
+std::vector<int32_t> JavaToNativeIntArray(JNIEnv* env,
+                                          const JavaRef<jintArray>& jarray) {
+  int32_t* array_ptr =
+      env->GetIntArrayElements(jarray.obj(), /*isCopy=*/nullptr);
+  size_t array_length = env->GetArrayLength(jarray.obj());
+  std::vector<int32_t> container(array_ptr, array_ptr + array_length);
+  env->ReleaseIntArrayElements(jarray.obj(), array_ptr, /*mode=*/JNI_ABORT);
+  return container;
+}
+
 ScopedJavaLocalRef<jobjectArray> NativeToJavaBooleanArray(
     JNIEnv* env,
     const std::vector<bool>& container) {

@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/array_view.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/thread_checker.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
@@ -219,6 +220,18 @@ ScopedJavaLocalRef<jobjectArray> NativeToJavaObjectArray(
   }
   return j_container;
 }
+
+ScopedJavaLocalRef<jbyteArray> NativeToJavaByteArray(
+    JNIEnv* env,
+    rtc::ArrayView<int8_t> container);
+ScopedJavaLocalRef<jintArray> NativeToJavaIntArray(
+    JNIEnv* env,
+    rtc::ArrayView<int32_t> container);
+
+std::vector<int8_t> JavaToNativeByteArray(JNIEnv* env,
+                                          const JavaRef<jbyteArray>& jarray);
+std::vector<int32_t> JavaToNativeIntArray(JNIEnv* env,
+                                          const JavaRef<jintArray>& jarray);
 
 ScopedJavaLocalRef<jobjectArray> NativeToJavaBooleanArray(
     JNIEnv* env,
