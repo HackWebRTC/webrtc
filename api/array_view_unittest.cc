@@ -28,16 +28,21 @@ using ::testing::ElementsAre;
 using ::testing::IsEmpty;
 
 template <typename T>
-void Call(ArrayView<T>) {}
+size_t Call(ArrayView<T> av) {
+  return av.size();
+}
+
+template <typename T, size_t N>
+void CallFixed(ArrayView<T, N> av) {}
 
 }  // namespace
 
 TEST(ArrayViewTest, TestConstructFromPtrAndArray) {
   char arr[] = "Arrr!";
   const char carr[] = "Carrr!";
-  Call<const char>(arr);
-  Call<const char>(carr);
-  Call<char>(arr);
+  EXPECT_EQ(6u, Call<const char>(arr));
+  EXPECT_EQ(7u, Call<const char>(carr));
+  EXPECT_EQ(6u, Call<char>(arr));
   // Call<char>(carr);  // Compile error, because can't drop const.
   // Call<int>(arr);  // Compile error, because incompatible types.
   ArrayView<int*> x;
@@ -182,6 +187,8 @@ TEST(ArrayViewTest, TestCopyAssignmentFixed) {
 }
 
 TEST(ArrayViewTest, TestStdArray) {
+  EXPECT_EQ(4u, Call<const int>(std::array<int, 4>{1, 2, 3, 4}));
+  CallFixed<const int, 3>(std::array<int, 3>{2, 3, 4});
   constexpr size_t size = 5;
   std::array<float, size> arr{};
   // Fixed size view.
@@ -214,11 +221,12 @@ TEST(ArrayViewTest, TestConstStdArray) {
 }
 
 TEST(ArrayViewTest, TestStdVector) {
+  EXPECT_EQ(3u, Call<const int>(std::vector<int>{4, 5, 6}));
   std::vector<int> v;
   v.push_back(3);
   v.push_back(11);
-  Call<const int>(v);
-  Call<int>(v);
+  EXPECT_EQ(2u, Call<const int>(v));
+  EXPECT_EQ(2u, Call<int>(v));
   // Call<unsigned int>(v);  // Compile error, because incompatible types.
   ArrayView<int> x = v;
   EXPECT_EQ(2u, x.size());
@@ -229,7 +237,7 @@ TEST(ArrayViewTest, TestStdVector) {
   EXPECT_EQ(v.data(), y.data());
   // ArrayView<double> d = v;  // Compile error, because incompatible types.
   const std::vector<int> cv;
-  Call<const int>(cv);
+  EXPECT_EQ(0u, Call<const int>(cv));
   // Call<int>(cv);  // Compile error, because can't drop const.
   ArrayView<const int> z = cv;
   EXPECT_EQ(0u, z.size());
@@ -239,8 +247,8 @@ TEST(ArrayViewTest, TestStdVector) {
 
 TEST(ArrayViewTest, TestRtcBuffer) {
   rtc::Buffer b = "so buffer";
-  Call<const uint8_t>(b);
-  Call<uint8_t>(b);
+  EXPECT_EQ(10u, Call<const uint8_t>(b));
+  EXPECT_EQ(10u, Call<uint8_t>(b));
   // Call<int8_t>(b);  // Compile error, because incompatible types.
   ArrayView<uint8_t> x = b;
   EXPECT_EQ(10u, x.size());
@@ -251,7 +259,7 @@ TEST(ArrayViewTest, TestRtcBuffer) {
   EXPECT_EQ(b.data(), y.data());
   // ArrayView<char> d = b;  // Compile error, because incompatible types.
   const rtc::Buffer cb = "very const";
-  Call<const uint8_t>(cb);
+  EXPECT_EQ(11u, Call<const uint8_t>(cb));
   // Call<uint8_t>(cb);  // Compile error, because can't drop const.
   ArrayView<const uint8_t> z = cb;
   EXPECT_EQ(11u, z.size());
