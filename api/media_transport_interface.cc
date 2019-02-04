@@ -157,6 +157,12 @@ MediaTransportInterface::GetLatestTargetTransferRate() {
 void MediaTransportInterface::SetNetworkChangeCallback(
     MediaTransportNetworkChangeCallback* callback) {}
 
+void MediaTransportInterface::AddNetworkChangeCallback(
+    MediaTransportNetworkChangeCallback* callback) {}
+
+void MediaTransportInterface::RemoveNetworkChangeCallback(
+    MediaTransportNetworkChangeCallback* callback) {}
+
 void MediaTransportInterface::SetFirstAudioPacketReceivedObserver(
     AudioPacketReceivedObserver* observer) {}
 

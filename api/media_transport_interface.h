@@ -433,7 +433,13 @@ class MediaTransportInterface {
   // with the current network route.
   // Before media transport is destroyed, the callback must be unregistered by
   // setting it to nullptr.
+  // TODO(nisse): The SetNetworkChangeCallback is being replaced with Add/Remove
+  // methods, because both video channel and voice channel need to register.
   virtual void SetNetworkChangeCallback(
+      MediaTransportNetworkChangeCallback* callback);
+  virtual void AddNetworkChangeCallback(
+      MediaTransportNetworkChangeCallback* callback);
+  virtual void RemoveNetworkChangeCallback(
       MediaTransportNetworkChangeCallback* callback);
 
   // Sets a state observer callback. Before media transport is destroyed, the
