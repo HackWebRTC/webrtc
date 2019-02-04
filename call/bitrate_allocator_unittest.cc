@@ -17,8 +17,9 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
-using ::testing::NiceMock;
 using ::testing::_;
+using ::testing::NiceMock;
+using ::testing::StrictMock;
 
 namespace webrtc {
 // Emulating old interface for test suite compatibility.
@@ -347,27 +348,21 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserverWithPacketLoss) {
 
   // Add loss and use a part of the bitrate for protection.
   const double kProtectionRatio = 0.4;
-  uint32_t target_bitrate_bps = 200000;
-  const uint32_t kMaxBitrateWithProtectionBps =
-      static_cast<uint32_t>(kMaxBitrateBps * 2);
-  uint8_t fraction_loss = kProtectionRatio * 256;
+  const uint8_t fraction_loss = kProtectionRatio * 256;
   bitrate_observer.SetBitrateProtectionRatio(kProtectionRatio);
-  EXPECT_CALL(limit_observer_,
-              OnAllocationLimitsChanged(0, 0, kMaxBitrateWithProtectionBps));
-  allocator_->OnNetworkChanged(target_bitrate_bps, 0, fraction_loss,
+  allocator_->OnNetworkChanged(200000, 0, fraction_loss,
                                kDefaultProbingIntervalMs);
-  EXPECT_EQ(target_bitrate_bps, bitrate_observer.last_bitrate_bps_);
+  EXPECT_EQ(200000u, bitrate_observer.last_bitrate_bps_);
 
   // Above the min threshold, but not enough given the protection used.
   // Limits changed, as we will video is now off and we need to pad up to the
   // start bitrate.
-  target_bitrate_bps = kMinStartBitrateBps + 1000;
   // Verify the hysteresis is added for the protection.
   const uint32_t kMinStartBitrateWithProtectionBps =
       static_cast<uint32_t>(kMinStartBitrateBps * (1 + kProtectionRatio));
   EXPECT_CALL(limit_observer_,
               OnAllocationLimitsChanged(0, kMinStartBitrateWithProtectionBps,
-                                        kMaxBitrateWithProtectionBps));
+                                        kMaxBitrateBps));
   allocator_->OnNetworkChanged(kMinStartBitrateBps + 1000, 0, fraction_loss,
                                kDefaultProbingIntervalMs);
   EXPECT_EQ(0u, bitrate_observer.last_bitrate_bps_);
@@ -377,9 +372,7 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserverWithPacketLoss) {
   EXPECT_EQ(0u, bitrate_observer.last_bitrate_bps_);
 
   // Just enough to enable video again.
-  target_bitrate_bps = kMinStartBitrateWithProtectionBps;
-  EXPECT_CALL(limit_observer_,
-              OnAllocationLimitsChanged(0, 0, kMaxBitrateWithProtectionBps));
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0, kMaxBitrateBps));
   allocator_->OnNetworkChanged(kMinStartBitrateWithProtectionBps, 0,
                                fraction_loss, kDefaultProbingIntervalMs);
   EXPECT_EQ(kMinStartBitrateWithProtectionBps,
@@ -387,7 +380,6 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserverWithPacketLoss) {
 
   // Remove all protection and make sure video is not paused as earlier.
   bitrate_observer.SetBitrateProtectionRatio(0.0);
-  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0, kMaxBitrateBps));
   allocator_->OnNetworkChanged(kMinStartBitrateWithProtectionBps - 1000, 0, 0,
                                kDefaultProbingIntervalMs);
   EXPECT_EQ(kMinStartBitrateWithProtectionBps - 1000,
@@ -399,6 +391,40 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserverWithPacketLoss) {
 
   EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0, 0));
   allocator_->RemoveObserver(&bitrate_observer);
+}
+
+TEST_F(BitrateAllocatorTest,
+       TotalAllocationLimitsAreUnaffectedByProtectionRatio) {
+  TestBitrateObserver bitrate_observer;
+
+  const uint32_t kMinBitrateBps = 100000;
+  const uint32_t kMaxBitrateBps = 400000;
+
+  // Register |bitrate_observer| and expect total allocation limits to change.
+  EXPECT_CALL(limit_observer_,
+              OnAllocationLimitsChanged(kMinBitrateBps, 0, kMaxBitrateBps))
+      .Times(1);
+  allocator_->AddObserver(
+      &bitrate_observer,
+      {kMinBitrateBps, kMaxBitrateBps, 0, true, "", kDefaultBitratePriority});
+
+  // Observer uses 20% of it's allocated bitrate for protection.
+  bitrate_observer.SetBitrateProtectionRatio(/*protection_ratio=*/0.2);
+  // Total allocation limits are unaffected by the protection rate change.
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(_, _, _)).Times(0);
+  allocator_->OnNetworkChanged(200000u, 0, 100, kDefaultProbingIntervalMs);
+
+  // Observer uses 0% of it's allocated bitrate for protection.
+  bitrate_observer.SetBitrateProtectionRatio(/*protection_ratio=*/0.0);
+  // Total allocation limits are unaffected by the protection rate change.
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(_, _, _)).Times(0);
+  allocator_->OnNetworkChanged(200000u, 0, 100, kDefaultProbingIntervalMs);
+
+  // Observer again uses 20% of it's allocated bitrate for protection.
+  bitrate_observer.SetBitrateProtectionRatio(/*protection_ratio=*/0.2);
+  // Total allocation limits are unaffected by the protection rate change.
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(_, _, _)).Times(0);
+  allocator_->OnNetworkChanged(200000u, 0, 100, kDefaultProbingIntervalMs);
 }
 
 TEST_F(BitrateAllocatorTestNoEnforceMin, TwoBitrateObserverWithPacketLoss) {

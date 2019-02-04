@@ -27,6 +27,8 @@
 
 namespace webrtc {
 
+namespace {
+
 // Allow packets to be transmitted in up to 2 times max video bitrate if the
 // bandwidth estimate allows it.
 const uint8_t kTransmissionMaxBitrateMultiplier = 2;
@@ -38,8 +40,6 @@ const uint32_t kMinToggleBitrateBps = 20000;
 
 const int64_t kBweLogIntervalMs = 5000;
 
-namespace {
-
 double MediaRatio(uint32_t allocated_bitrate, uint32_t protection_bitrate) {
   RTC_DCHECK_GT(allocated_bitrate, 0);
   if (protection_bitrate == 0)
@@ -48,6 +48,7 @@ double MediaRatio(uint32_t allocated_bitrate, uint32_t protection_bitrate) {
   uint32_t media_bitrate = allocated_bitrate - protection_bitrate;
   return media_bitrate / static_cast<double>(allocated_bitrate);
 }
+
 }  // namespace
 
 BitrateAllocator::BitrateAllocator(LimitObserver* limit_observer)
@@ -228,14 +229,7 @@ void BitrateAllocator::UpdateAllocationLimits() {
           std::max(config.MinBitrateWithHysteresis(), stream_padding);
     }
     total_requested_padding_bitrate += stream_padding;
-    uint32_t max_bitrate_bps = config.max_bitrate_bps;
-    if (config.media_ratio < 1.0) {
-      // Account for protection overhead (eg FEC). Assumption is that overhead
-      // is never more than 100%. Don't adjust based exact value as that might
-      // trigger too frequent calls to OnAllocationLimitsChanged().
-      max_bitrate_bps *= 2;
-    }
-    total_requested_max_bitrate += max_bitrate_bps;
+    total_requested_max_bitrate += config.max_bitrate_bps;
   }
 
   if (total_requested_padding_bitrate == total_requested_padding_bitrate_ &&
