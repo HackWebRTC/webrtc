@@ -531,9 +531,11 @@ void Log(const LogArgType* fmt, ...) {
       case LogArgType::kLongDouble:
         log_message.stream() << va_arg(args, long double);
         break;
-      case LogArgType::kCharP:
-        log_message.stream() << va_arg(args, const char*);
+      case LogArgType::kCharP: {
+        const char* s = va_arg(args, const char*);
+        log_message.stream() << (s ? s : "(null)");
         break;
+      }
       case LogArgType::kStdString:
         log_message.stream() << *va_arg(args, const std::string*);
         break;

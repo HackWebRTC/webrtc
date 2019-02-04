@@ -162,13 +162,14 @@ TEST(LogTest, SingleStream) {
   std::string s1 = "char*";
   std::string s2 = "std::string";
   std::string s3 = "absl::stringview";
-
+  const char* null_string = nullptr;
   void* p = reinterpret_cast<void*>(0xabcd);
 
   // Log all suported types(except doubles/floats) as a sanity-check.
   RTC_LOG(LS_INFO) << "|" << i << "|" << l << "|" << ll << "|" << u << "|" << ul
                    << "|" << ull << "|" << s1.c_str() << "|" << s2 << "|"
-                   << absl::string_view(s3) << "|" << p << "|";
+                   << absl::string_view(s3) << "|" << p << "|" << null_string
+                   << "|";
 
   // Signed integers
   EXPECT_NE(std::string::npos, str.find("|1|"));
@@ -187,6 +188,9 @@ TEST(LogTest, SingleStream) {
 
   // void*
   EXPECT_NE(std::string::npos, str.find("|abcd|"));
+
+  // null char*
+  EXPECT_NE(std::string::npos, str.find("|(null)|"));
 
   LogMessage::RemoveLogToStream(&stream);
   EXPECT_EQ(LS_NONE, LogMessage::GetLogToStream(&stream));
