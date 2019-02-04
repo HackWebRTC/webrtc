@@ -220,7 +220,7 @@ int32_t VideoCaptureDS::SetCameraOutput(
   bool isDVCamera = false;
   hr = streamConfig->GetStreamCaps(windowsCapability.directShowCapabilityIndex,
                                    &pmt, reinterpret_cast<BYTE*>(&caps));
-  if (!FAILED(hr)) {
+  if (hr == S_OK) {
     if (pmt->formattype == FORMAT_VideoInfo2) {
       VIDEOINFOHEADER2* h = reinterpret_cast<VIDEOINFOHEADER2*>(pmt->pbFormat);
       if (capability.maxFPS > 0 && windowsCapability.supportFrameRateControl) {
