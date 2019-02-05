@@ -461,7 +461,7 @@ struct RtpEncodingParameters {
   // supported by the codec implementation).
   // TODO(asapersson): Different number of temporal layers are not supported
   // per simulcast layer.
-  // Not supported for screencast.
+  // Screencast support is experimental.
   absl::optional<int> num_temporal_layers;
 
   // For video, scale the resolution down by this factor.
