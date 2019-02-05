@@ -87,10 +87,15 @@ void VideoBroadcaster::OnDiscardedFrame() {
 void VideoBroadcaster::UpdateWants() {
   VideoSinkWants wants;
   wants.rotation_applied = false;
+  wants.partial_frames = true;
   for (auto& sink : sink_pairs()) {
     // wants.rotation_applied == ANY(sink.wants.rotation_applied)
     if (sink.wants.rotation_applied) {
       wants.rotation_applied = true;
+    }
+    // wants.partial_frames == ALL(sink.wants.partial_frames)
+    if (!sink.wants.partial_frames) {
+      wants.partial_frames = false;
     }
     // wants.max_pixel_count == MIN(sink.wants.max_pixel_count)
     if (sink.wants.max_pixel_count < wants.max_pixel_count) {
