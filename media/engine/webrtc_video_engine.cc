@@ -1567,7 +1567,6 @@ WebRtcVideoChannel::WebRtcVideoSendStream::WebRtcVideoSendStream(
       enable_cpu_overuse_detection_(enable_cpu_overuse_detection),
       source_(nullptr),
       stream_(nullptr),
-      encoder_sink_(nullptr),
       parameters_(std::move(config), options, max_bitrate_bps, codec_settings),
       rtp_parameters_(CreateRtpParametersWithEncodings(sp)),
       sending_(false) {
@@ -1663,7 +1662,7 @@ bool WebRtcVideoChannel::WebRtcVideoSendStream::SetVideoSend(
   // Switch to the new source.
   source_ = source;
   if (source && stream_) {
-    stream_->SetSource(this, GetDegradationPreference());
+    stream_->SetSource(source_, GetDegradationPreference());
   }
   return true;
 }
@@ -1843,7 +1842,7 @@ webrtc::RTCError WebRtcVideoChannel::WebRtcVideoSendStream::SetRtpParameters(
     UpdateSendState();
   }
   if (new_degradation_preference) {
-    stream_->SetSource(this, GetDegradationPreference());
+    stream_->SetSource(source_, GetDegradationPreference());
   }
   return webrtc::RTCError::OK();
 }
@@ -2024,39 +2023,6 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::SetSend(bool send) {
   UpdateSendState();
 }
 
-void WebRtcVideoChannel::WebRtcVideoSendStream::RemoveSink(
-    rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  RTC_DCHECK(encoder_sink_ == sink);
-  encoder_sink_ = nullptr;
-  source_->RemoveSink(sink);
-}
-
-void WebRtcVideoChannel::WebRtcVideoSendStream::AddOrUpdateSink(
-    rtc::VideoSinkInterface<webrtc::VideoFrame>* sink,
-    const rtc::VideoSinkWants& wants) {
-  if (worker_thread_ == rtc::Thread::Current()) {
-    // AddOrUpdateSink is called on |worker_thread_| if this is the first
-    // registration of |sink|.
-    RTC_DCHECK_RUN_ON(&thread_checker_);
-    encoder_sink_ = sink;
-    source_->AddOrUpdateSink(encoder_sink_, wants);
-  } else {
-    // Subsequent calls to AddOrUpdateSink will happen on the encoder task
-    // queue.
-    invoker_.AsyncInvoke<void>(
-        RTC_FROM_HERE, worker_thread_, [this, sink, wants] {
-          RTC_DCHECK_RUN_ON(&thread_checker_);
-          // |sink| may be invalidated after this task was posted since
-          // RemoveSink is called on the worker thread.
-          bool encoder_sink_valid = (sink == encoder_sink_);
-          if (source_ && encoder_sink_valid) {
-            source_->AddOrUpdateSink(encoder_sink_, wants);
-          }
-        });
-  }
-}
-
 VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
     bool log_stats) {
   VideoSenderInfo info;
@@ -2179,7 +2145,7 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::RecreateWebRtcStream() {
   parameters_.encoder_config.encoder_specific_settings = NULL;
 
   if (source_) {
-    stream_->SetSource(this, GetDegradationPreference());
+    stream_->SetSource(source_, GetDegradationPreference());
   }
 
   // Call stream_->Start() if necessary conditions are met.
