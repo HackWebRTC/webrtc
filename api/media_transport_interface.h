@@ -29,6 +29,7 @@
 #include "api/units/data_rate.h"
 #include "api/video/encoded_image.h"
 #include "rtc_base/copy_on_write_buffer.h"
+#include "rtc_base/deprecation.h"
 #include "rtc_base/network_route.h"
 
 namespace rtc {
@@ -435,6 +436,7 @@ class MediaTransportInterface {
   // setting it to nullptr.
   // TODO(nisse): The SetNetworkChangeCallback is being replaced with Add/Remove
   // methods, because both video channel and voice channel need to register.
+  RTC_DEPRECATED
   virtual void SetNetworkChangeCallback(
       MediaTransportNetworkChangeCallback* callback);
   virtual void AddNetworkChangeCallback(

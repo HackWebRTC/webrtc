@@ -154,7 +154,7 @@ BaseChannel::~BaseChannel() {
   RTC_DCHECK_RUN_ON(worker_thread_);
 
   if (media_transport_) {
-    media_transport_->SetNetworkChangeCallback(nullptr);
+    media_transport_->RemoveNetworkChangeCallback(this);
   }
 
   // Eats any outstanding messages or packets.
@@ -217,7 +217,7 @@ void BaseChannel::Init_w(webrtc::RtpTransportInternal* rtp_transport,
   RTC_LOG(LS_INFO) << "BaseChannel::Init_w, media_transport="
                    << (media_transport_ != nullptr);
   if (media_transport_) {
-    media_transport_->SetNetworkChangeCallback(this);
+    media_transport_->AddNetworkChangeCallback(this);
   }
 }
 
