@@ -336,6 +336,7 @@ class VideoStreamEncoder::VideoSourceProxy {
     }
     // Limit to configured max framerate.
     wants.max_framerate_fps = std::min(max_framerate_, wants.max_framerate_fps);
+    wants.partial_frames = true;
     return wants;
   }
 
@@ -713,7 +714,23 @@ void VideoStreamEncoder::ConfigureQualityScaler() {
 
 void VideoStreamEncoder::OnFrame(const VideoFrame& video_frame) {
   RTC_DCHECK_RUNS_SERIALIZED(&incoming_frame_race_checker_);
+
+  const VideoFrame::PartialFrameDescription* partial_desc =
+      video_frame.partial_frame_description();
   VideoFrame incoming_frame = video_frame;
+
+  if (video_frame.cache_buffer_for_partial_updates()) {
+    VideoFrameBuffer* input_buffer = video_frame.video_frame_buffer();
+    if (!partial_frame_assembler_.ApplyPartialUpdate(
+            input_buffer, &incoming_frame, partial_desc)) {
+      // Can't apply new image to the cached buffer because of some error.
+      // Nothing sensible to encode.
+      // Detailed error message is already logged by |ApplyPartialUpdate()|.
+      return;
+    }
+  } else {
+    partial_frame_assembler_.Reset();
+  }
 
   // Local time in webrtc time base.
   int64_t current_time_us = clock_->TimeInMicroseconds();

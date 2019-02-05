@@ -33,6 +33,7 @@
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/task_queue.h"
 #include "video/overuse_frame_detector.h"
+#include "video/partial_frame_assembler.h"
 
 namespace webrtc {
 
@@ -294,6 +295,9 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // OnEncodedImage(), which is only called by one thread but not necessarily
   // the worker thread.
   std::atomic<int> pending_frame_drops_;
+
+  PartialFrameAssembler partial_frame_assembler_
+      RTC_GUARDED_BY(incoming_frame_race_checker_);
 
   // All public methods are proxied to |encoder_queue_|. It must must be
   // destroyed first to make sure no tasks are run that use other members.
