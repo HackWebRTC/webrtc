@@ -1263,6 +1263,34 @@ TEST_F(NetEqImplTest, TickTimerIncrement) {
   EXPECT_EQ(1u, tick_timer_->ticks());
 }
 
+TEST_F(NetEqImplTest, SetBaseMinimumDelay) {
+  UseNoMocks();
+  use_mock_delay_manager_ = true;
+  CreateInstance();
+
+  EXPECT_CALL(*mock_delay_manager_, SetBaseMinimumDelay(_))
+      .WillOnce(Return(true))
+      .WillOnce(Return(false));
+
+  const int delay_ms = 200;
+
+  EXPECT_EQ(true, neteq_->SetBaseMinimumDelayMs(delay_ms));
+  EXPECT_EQ(false, neteq_->SetBaseMinimumDelayMs(delay_ms));
+}
+
+TEST_F(NetEqImplTest, GetBaseMinimumDelayMs) {
+  UseNoMocks();
+  use_mock_delay_manager_ = true;
+  CreateInstance();
+
+  const int delay_ms = 200;
+
+  EXPECT_CALL(*mock_delay_manager_, GetBaseMinimumDelay())
+      .WillOnce(Return(delay_ms));
+
+  EXPECT_EQ(delay_ms, neteq_->GetBaseMinimumDelayMs());
+}
+
 TEST_F(NetEqImplTest, TargetDelayMs) {
   UseNoMocks();
   use_mock_delay_manager_ = true;

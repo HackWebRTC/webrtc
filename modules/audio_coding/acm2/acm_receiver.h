@@ -108,6 +108,16 @@ class AcmReceiver {
   //
   int SetMaximumDelay(int delay_ms);
 
+  // Sets a base minimum delay in milliseconds for the packet buffer.
+  // Base minimum delay sets lower bound minimum delay value which
+  // is set via SetMinimumDelay.
+  //
+  // Returns true if value was successfully set, false overwise.
+  bool SetBaseMinimumDelayMs(int delay_ms);
+
+  // Returns current value of base minimum delay in milliseconds.
+  int GetBaseMinimumDelayMs() const;
+
   //
   // Resets the initial delay to zero.
   //
