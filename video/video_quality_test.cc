@@ -1090,7 +1090,8 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
       kSendRtxSsrcs[params_.ss[0].selected_stream],
       static_cast<size_t>(params_.ss[0].selected_stream),
       params.ss[0].selected_sl, params_.video[0].selected_tl,
-      is_quick_test_enabled, clock_, params_.logging.rtp_dump_name);
+      is_quick_test_enabled, clock_, params_.logging.rtp_dump_name,
+      params_.video[0].partial_updates);
 
   task_queue_.SendTask([&]() {
     analyzer_->SetCall(sender_call_.get());
@@ -1356,6 +1357,15 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
                                            rtc::VideoSinkWants());
       }
       ConnectVideoSourcesToStreams();
+      if (params_.video[0].partial_updates) {
+        frame_change_extractor_.reset(new FrameChangeExtractor());
+        frame_change_extractor_->SetSource(video_sources_[0].get());
+        video_send_streams_[0]->SetSource(frame_change_extractor_.get(),
+                                          degradation_preference_);
+      } else {
+        video_send_streams_[0]->SetSource(video_sources_[0].get(),
+                                          degradation_preference_);
+      }
     }
 
     if (params_.audio.enabled) {

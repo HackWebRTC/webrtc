@@ -299,6 +299,11 @@ std::vector<std::string> Slides() {
 
 WEBRTC_DEFINE_bool(help, false, "prints this message");
 
+WEBRTC_DEFINE_bool(partial_updates,
+                   false,
+                   "Pass only changed regions from the "
+                   "capturer");
+
 }  // namespace flags
 
 void Loopback() {
@@ -333,7 +338,10 @@ void Loopback() {
                      false,  // ULPFEC disabled.
                      false,  // FlexFEC disabled.
                      false,  // Automatic scaling disabled.
-                     ""};
+                     "",
+                     0,  // capture_device_index.
+                     SdpVideoFormat::Parameters(),
+                     flags::FLAG_partial_updates};
   params.screenshare[0] = {true, flags::GenerateSlides(),
                            flags::SlideChangeInterval(),
                            flags::ScrollDuration(), flags::Slides()};
