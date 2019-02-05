@@ -19,11 +19,6 @@
 
 namespace cricket {
 namespace {
-// NOTE: There is no check here for duplicate streams, so check before
-// adding.
-void AddStream(std::vector<StreamParams>* streams, const StreamParams& stream) {
-  streams->push_back(stream);
-}
 
 std::string SsrcsToString(const std::vector<uint32_t>& ssrcs) {
   char buf[1024];
@@ -67,54 +62,6 @@ bool GetStream(const StreamParamsVec& streams,
   if (found && stream_out)
     *stream_out = *found;
   return found != nullptr;
-}
-
-MediaStreams::MediaStreams() = default;
-MediaStreams::~MediaStreams() = default;
-
-bool MediaStreams::GetAudioStream(const StreamSelector& selector,
-                                  StreamParams* stream) {
-  return GetStream(audio_, selector, stream);
-}
-
-bool MediaStreams::GetVideoStream(const StreamSelector& selector,
-                                  StreamParams* stream) {
-  return GetStream(video_, selector, stream);
-}
-
-bool MediaStreams::GetDataStream(const StreamSelector& selector,
-                                 StreamParams* stream) {
-  return GetStream(data_, selector, stream);
-}
-
-void MediaStreams::CopyFrom(const MediaStreams& streams) {
-  audio_ = streams.audio_;
-  video_ = streams.video_;
-  data_ = streams.data_;
-}
-
-void MediaStreams::AddAudioStream(const StreamParams& stream) {
-  AddStream(&audio_, stream);
-}
-
-void MediaStreams::AddVideoStream(const StreamParams& stream) {
-  AddStream(&video_, stream);
-}
-
-void MediaStreams::AddDataStream(const StreamParams& stream) {
-  AddStream(&data_, stream);
-}
-
-bool MediaStreams::RemoveAudioStream(const StreamSelector& selector) {
-  return RemoveStream(&audio_, selector);
-}
-
-bool MediaStreams::RemoveVideoStream(const StreamSelector& selector) {
-  return RemoveStream(&video_, selector);
-}
-
-bool MediaStreams::RemoveDataStream(const StreamSelector& selector) {
-  return RemoveStream(&data_, selector);
 }
 
 SsrcGroup::SsrcGroup(const std::string& usage,
@@ -287,80 +234,6 @@ void StreamParams::set_stream_ids(const std::vector<std::string>& stream_ids) {
 
 std::string StreamParams::first_stream_id() const {
   return stream_ids_.empty() ? "" : stream_ids_[0];
-}
-
-bool IsOneSsrcStream(const StreamParams& sp) {
-  if (sp.ssrcs.size() == 1 && sp.ssrc_groups.empty()) {
-    return true;
-  }
-  const SsrcGroup* fid_group = sp.get_ssrc_group(kFidSsrcGroupSemantics);
-  const SsrcGroup* fecfr_group = sp.get_ssrc_group(kFecFrSsrcGroupSemantics);
-  if (sp.ssrcs.size() == 2) {
-    if (fid_group != nullptr && sp.ssrcs == fid_group->ssrcs) {
-      return true;
-    }
-    if (fecfr_group != nullptr && sp.ssrcs == fecfr_group->ssrcs) {
-      return true;
-    }
-  }
-  if (sp.ssrcs.size() == 3) {
-    if (fid_group == nullptr || fecfr_group == nullptr) {
-      return false;
-    }
-    if (sp.ssrcs[0] != fid_group->ssrcs[0] ||
-        sp.ssrcs[0] != fecfr_group->ssrcs[0]) {
-      return false;
-    }
-    // We do not check for FlexFEC over RTX,
-    // as this combination is not supported.
-    if (sp.ssrcs[1] == fid_group->ssrcs[1] &&
-        sp.ssrcs[2] == fecfr_group->ssrcs[1]) {
-      return true;
-    }
-    if (sp.ssrcs[1] == fecfr_group->ssrcs[1] &&
-        sp.ssrcs[2] == fid_group->ssrcs[1]) {
-      return true;
-    }
-  }
-  return false;
-}
-
-namespace {
-void RemoveFirst(std::list<uint32_t>* ssrcs, uint32_t value) {
-  auto it = absl::c_find(*ssrcs, value);
-  if (it != ssrcs->end()) {
-    ssrcs->erase(it);
-  }
-}
-}  // namespace
-
-bool IsSimulcastStream(const StreamParams& sp) {
-  // Check for spec-compliant Simulcast using rids.
-  if (sp.rids().size() > 1) {
-    return true;
-  }
-
-  const SsrcGroup* const sg = sp.get_ssrc_group(kSimSsrcGroupSemantics);
-  if (sg == NULL || sg->ssrcs.size() < 2) {
-    return false;
-  }
-  // Start with all StreamParams SSRCs. Remove simulcast SSRCs (from sg) and
-  // RTX SSRCs. If we still have SSRCs left, we don't know what they're for.
-  // Also we remove first-found SSRCs only. So duplicates should lead to errors.
-  std::list<uint32_t> sp_ssrcs(sp.ssrcs.begin(), sp.ssrcs.end());
-  for (size_t i = 0; i < sg->ssrcs.size(); ++i) {
-    RemoveFirst(&sp_ssrcs, sg->ssrcs[i]);
-  }
-  for (size_t i = 0; i < sp.ssrc_groups.size(); ++i) {
-    const SsrcGroup& group = sp.ssrc_groups[i];
-    if (group.semantics.compare(kFidSsrcGroupSemantics) != 0 ||
-        group.ssrcs.size() != 2) {
-      continue;
-    }
-    RemoveFirst(&sp_ssrcs, group.ssrcs[1]);
-  }
-  // If there's SSRCs left that we don't know how to handle, we bail out.
-  return sp_ssrcs.size() == 0;
 }
 
 }  // namespace cricket
