@@ -91,7 +91,6 @@ rtc_static_library("rtc_media_base") {
     "base/audio_source.h",
     "base/codec.cc",
     "base/codec.h",
-    "base/device.h",
     "base/media_channel.cc",
     "base/media_channel.h",
     "base/media_constants.cc",
