@@ -449,6 +449,26 @@ def CheckNoWarningSuppressionFlagsAreAdded(gn_files, input_api, output_api,
     return [output_api.PresubmitError(msg, errors)]
   return []
 
+
+def CheckNoTestCaseUsageIsAdded(input_api, output_api, source_file_filter,
+                                error_formatter=_ReportFileAndLine):
+  error_msg = ('Usage of legacy GoogleTest API detected!\nPlease use the '
+               'new API: https://github.com/google/googletest/blob/master/'
+               'googletest/docs/primer.md#beware-of-the-nomenclature.\n'
+               'Affected files:\n')
+  errors = []  # 2-element tuples with (file, line number)
+  test_case_re = input_api.re.compile(r'TEST_CASE')
+  file_filter = lambda f: (source_file_filter(f)
+                           and f.LocalPath().endswith('.cc'))
+  for f in input_api.AffectedSourceFiles(file_filter):
+    for line_num, line in f.ChangedContents():
+      if test_case_re.search(line):
+        errors.append(error_formatter(f.LocalPath(), line_num))
+  if errors:
+    return [output_api.PresubmitError(error_msg, errors)]
+  return []
+
+
 def CheckNoStreamUsageIsAdded(input_api, output_api,
                               source_file_filter,
                               error_formatter=_ReportFileAndLine):
@@ -859,6 +879,8 @@ def CommonChecks(input_api, output_api):
   results.extend(CheckNewlineAtTheEndOfProtoFiles(
       input_api, output_api, source_file_filter=non_third_party_sources))
   results.extend(CheckNoStreamUsageIsAdded(
+      input_api, output_api, non_third_party_sources))
+  results.extend(CheckNoTestCaseUsageIsAdded(
       input_api, output_api, non_third_party_sources))
   results.extend(CheckAddedDepsHaveTargetApprovals(input_api, output_api))
   results.extend(CheckApiDepsFileIsUpToDate(input_api, output_api))
