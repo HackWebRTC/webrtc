@@ -1052,12 +1052,12 @@ const auto kFreezeDetectionCond1NotFreeze = std::make_tuple(150, 482, 0);
 const auto kFreezeDetectionCond2Freeze = std::make_tuple(30, 185, 1);
 const auto kFreezeDetectionCond2NotFreeze = std::make_tuple(30, 184, 0);
 
-INSTANTIATE_TEST_CASE_P(_,
-                        ReceiveStatisticsProxyTestWithFreezeDuration,
-                        ::testing::Values(kFreezeDetectionCond1Freeze,
-                                          kFreezeDetectionCond1NotFreeze,
-                                          kFreezeDetectionCond2Freeze,
-                                          kFreezeDetectionCond2NotFreeze));
+INSTANTIATE_TEST_SUITE_P(_,
+                         ReceiveStatisticsProxyTestWithFreezeDuration,
+                         ::testing::Values(kFreezeDetectionCond1Freeze,
+                                           kFreezeDetectionCond1NotFreeze,
+                                           kFreezeDetectionCond2Freeze,
+                                           kFreezeDetectionCond2NotFreeze));
 
 TEST_P(ReceiveStatisticsProxyTestWithFreezeDuration, FreezeDetection) {
   VideoReceiveStream::Stats stats = statistics_proxy_->GetStats();
@@ -1090,10 +1090,10 @@ class ReceiveStatisticsProxyTestWithContent
   const webrtc::VideoContentType content_type_{GetParam()};
 };
 
-INSTANTIATE_TEST_CASE_P(ContentTypes,
-                        ReceiveStatisticsProxyTestWithContent,
-                        ::testing::Values(VideoContentType::UNSPECIFIED,
-                                          VideoContentType::SCREENSHARE));
+INSTANTIATE_TEST_SUITE_P(ContentTypes,
+                         ReceiveStatisticsProxyTestWithContent,
+                         ::testing::Values(VideoContentType::UNSPECIFIED,
+                                           VideoContentType::SCREENSHARE));
 
 TEST_P(ReceiveStatisticsProxyTestWithContent, InterFrameDelaysAreReported) {
   const int kInterFrameDelayMs = 33;
