@@ -22,7 +22,7 @@ TEST(CallConfigUtils, MarshalUnmarshalProcessSameObject) {
   VideoReceiveStream::Decoder decoder;
   decoder.payload_type = 10;
   decoder.video_format.name = "test";
-  decoder.video_format.parameters["99"] = 98;
+  decoder.video_format.parameters["99"] = "b";
   recv_config.decoders.push_back(decoder);
   recv_config.render_delay_ms = 10;
   recv_config.target_delay_ms = 15;
