@@ -126,7 +126,7 @@ TEST(RtpPayloadParamsTest, InfoMappedToRtpVideoHeader_Vp9) {
   ColorSpace color_space(
       ColorSpace::PrimaryID::kSMPTE170M, ColorSpace::TransferID::kSMPTE170M,
       ColorSpace::MatrixID::kSMPTE170M, ColorSpace::RangeID::kFull);
-  encoded_image.SetColorSpace(&color_space);
+  encoded_image.SetColorSpace(color_space);
   header = params.GetRtpVideoHeader(encoded_image, &codec_info, kDontCare);
 
   EXPECT_EQ(kVideoRotation_90, header.rotation);

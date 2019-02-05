@@ -185,7 +185,7 @@ TEST_F(TestVp9Impl, EncodedColorSpaceEqualsInputColorSpace) {
   VideoFrame input_frame_w_hdr =
       VideoFrame::Builder()
           .set_video_frame_buffer(input_frame->video_frame_buffer())
-          .set_color_space(&color_space)
+          .set_color_space(color_space)
           .build();
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->Encode(input_frame_w_hdr, nullptr, nullptr));
@@ -215,7 +215,7 @@ TEST_F(TestVp9Impl, DecodedColorSpaceEqualsEncodedColorSpace) {
 
   // Encoded frame with explicit color space information.
   ColorSpace color_space = CreateTestColorSpace(/*with_hdr_metadata=*/true);
-  encoded_frame.SetColorSpace(&color_space);
+  encoded_frame.SetColorSpace(color_space);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             decoder_->Decode(encoded_frame, false, nullptr, 0));
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));

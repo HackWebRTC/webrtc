@@ -283,11 +283,12 @@ int LibvpxVp8Decoder::Decode(const EncodedImage& input_image,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int LibvpxVp8Decoder::ReturnFrame(const vpx_image_t* img,
-                                  uint32_t timestamp,
-                                  int64_t ntp_time_ms,
-                                  int qp,
-                                  const ColorSpace* explicit_color_space) {
+int LibvpxVp8Decoder::ReturnFrame(
+    const vpx_image_t* img,
+    uint32_t timestamp,
+    int64_t ntp_time_ms,
+    int qp,
+    const webrtc::ColorSpace* explicit_color_space) {
   if (img == NULL) {
     // Decoder OK and NULL image => No show frame
     return WEBRTC_VIDEO_CODEC_NO_OUTPUT;

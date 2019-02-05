@@ -73,9 +73,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   // frame (I-frame or IDR frame in H.264 (AVC), or an IRAP picture in H.265
   // (HEVC)).
   rotation_ = last_packet->video_header.rotation;
-  SetColorSpace(last_packet->video_header.color_space
-                    ? &last_packet->video_header.color_space.value()
-                    : nullptr);
+  SetColorSpace(last_packet->video_header.color_space);
   _rotation_set = true;
   content_type_ = last_packet->video_header.content_type;
   if (last_packet->video_header.video_timing.flags !=

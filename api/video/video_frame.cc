@@ -61,7 +61,7 @@ VideoFrame::Builder& VideoFrame::Builder::set_rotation(VideoRotation rotation) {
 }
 
 VideoFrame::Builder& VideoFrame::Builder::set_color_space(
-    const ColorSpace& color_space) {
+    const absl::optional<ColorSpace>& color_space) {
   color_space_ = color_space;
   return *this;
 }

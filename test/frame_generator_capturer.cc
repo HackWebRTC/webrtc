@@ -150,7 +150,7 @@ void FrameGeneratorCapturer::InsertFrame() {
     frame->set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
     frame->set_rotation(fake_rotation_);
     if (fake_color_space_) {
-      frame->set_color_space(&fake_color_space_.value());
+      frame->set_color_space(fake_color_space_);
     }
     if (first_frame_capture_time_ == -1) {
       first_frame_capture_time_ = frame->ntp_time_ms();

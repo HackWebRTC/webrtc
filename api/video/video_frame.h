@@ -47,7 +47,7 @@ class RTC_EXPORT VideoFrame {
     Builder& set_timestamp_rtp(uint32_t timestamp_rtp);
     Builder& set_ntp_time_ms(int64_t ntp_time_ms);
     Builder& set_rotation(VideoRotation rotation);
-    Builder& set_color_space(const ColorSpace& color_space);
+    Builder& set_color_space(const absl::optional<ColorSpace>& color_space);
     Builder& set_color_space(const ColorSpace* color_space);
     Builder& set_id(uint16_t id);
     Builder& set_partial_frame_description(
@@ -140,12 +140,9 @@ class RTC_EXPORT VideoFrame {
   void set_rotation(VideoRotation rotation) { rotation_ = rotation; }
 
   // Get color space when available.
-  const ColorSpace* color_space() const {
-    return color_space_ ? &*color_space_ : nullptr;
-  }
-  void set_color_space(ColorSpace* color_space) {
-    color_space_ =
-        color_space ? absl::make_optional(*color_space) : absl::nullopt;
+  const absl::optional<ColorSpace>& color_space() const { return color_space_; }
+  void set_color_space(const absl::optional<ColorSpace>& color_space) {
+    color_space_ = color_space;
   }
 
   const PartialFrameDescription* partial_frame_description() const {
