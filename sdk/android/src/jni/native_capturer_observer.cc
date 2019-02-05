@@ -18,54 +18,11 @@
 namespace webrtc {
 namespace jni {
 
-namespace {
-VideoRotation jintToVideoRotation(jint rotation) {
-  RTC_DCHECK(rotation == 0 || rotation == 90 || rotation == 180 ||
-             rotation == 270);
-  return static_cast<VideoRotation>(rotation);
-}
-}  // namespace
-
 ScopedJavaLocalRef<jobject> CreateJavaNativeCapturerObserver(
     JNIEnv* env,
     rtc::scoped_refptr<AndroidVideoTrackSource> native_source) {
   return Java_NativeCapturerObserver_Constructor(
       env, NativeToJavaPointer(native_source.release()));
-}
-
-static void JNI_NativeCapturerObserver_OnFrameCaptured(
-    JNIEnv* jni,
-    jlong j_source,
-    jint j_width,
-    jint j_height,
-    jint j_rotation,
-    jlong j_timestamp_ns,
-    const JavaParamRef<jobject>& j_video_frame_buffer) {
-  AndroidVideoTrackSource* source =
-      reinterpret_cast<AndroidVideoTrackSource*>(j_source);
-  source->OnFrameCaptured(jni, j_width, j_height, j_timestamp_ns,
-                          jintToVideoRotation(j_rotation),
-                          j_video_frame_buffer);
-}
-
-static void JNI_NativeCapturerObserver_CapturerStarted(
-    JNIEnv* jni,
-    jlong j_source,
-    jboolean j_success) {
-  RTC_LOG(LS_INFO) << "NativeCapturerObserver_nativeCapturerStarted";
-  AndroidVideoTrackSource* source =
-      reinterpret_cast<AndroidVideoTrackSource*>(j_source);
-  source->SetState(j_success ? AndroidVideoTrackSource::SourceState::kLive
-                             : AndroidVideoTrackSource::SourceState::kEnded);
-}
-
-static void JNI_NativeCapturerObserver_CapturerStopped(
-    JNIEnv* jni,
-    jlong j_source) {
-  RTC_LOG(LS_INFO) << "NativeCapturerObserver_nativeCapturerStopped";
-  AndroidVideoTrackSource* source =
-      reinterpret_cast<AndroidVideoTrackSource*>(j_source);
-  source->SetState(AndroidVideoTrackSource::SourceState::kEnded);
 }
 
 }  // namespace jni

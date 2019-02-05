@@ -16,11 +16,40 @@ import android.support.annotation.Nullable;
  * Java wrapper of native AndroidVideoTrackSource.
  */
 public class VideoSource extends MediaSource {
-  private final NativeCapturerObserver capturerObserver;
+  /** Simple aspect ratio clas for use in constraining output format. */
+  public static class AspectRatio {
+    public static final AspectRatio UNDEFINED = new AspectRatio(/* width= */ 0, /* height= */ 0);
+
+    public final int width;
+    public final int height;
+
+    public AspectRatio(int width, int height) {
+      this.width = width;
+      this.height = height;
+    }
+  }
+
+  private final NativeAndroidVideoTrackSource nativeAndroidVideoTrackSource;
+  private final CapturerObserver capturerObserver = new CapturerObserver() {
+    @Override
+    public void onCapturerStarted(boolean success) {
+      nativeAndroidVideoTrackSource.setState(success);
+    }
+
+    @Override
+    public void onCapturerStopped() {
+      nativeAndroidVideoTrackSource.setState(/* isLive= */ false);
+    }
+
+    @Override
+    public void onFrameCaptured(VideoFrame frame) {
+      nativeAndroidVideoTrackSource.onFrameCaptured(frame);
+    }
+  };
 
   public VideoSource(long nativeSource) {
     super(nativeSource);
-    this.capturerObserver = new NativeCapturerObserver(nativeSource);
+    this.nativeAndroidVideoTrackSource = new NativeAndroidVideoTrackSource(nativeSource);
   }
 
   /**
@@ -42,8 +71,18 @@ public class VideoSource extends MediaSource {
    */
   public void adaptOutputFormat(
       int landscapeWidth, int landscapeHeight, int portraitWidth, int portraitHeight, int fps) {
-    nativeAdaptOutputFormat(getNativeVideoTrackSource(), landscapeWidth, landscapeHeight,
-        portraitWidth, portraitHeight, fps);
+    adaptOutputFormat(new AspectRatio(landscapeWidth, landscapeHeight),
+        /* maxLandscapePixelCount= */ landscapeWidth * landscapeHeight,
+        new AspectRatio(portraitWidth, portraitHeight),
+        /* maxPortraitPixelCount= */ portraitWidth * portraitHeight, fps);
+  }
+
+  /** Same as above, with even more control as each constraint is optional. */
+  public void adaptOutputFormat(AspectRatio targetLandscapeAspectRatio,
+      @Nullable Integer maxLandscapePixelCount, AspectRatio targetPortraitAspectRatio,
+      @Nullable Integer maxPortraitPixelCount, @Nullable Integer maxFps) {
+    nativeAndroidVideoTrackSource.adaptOutputFormat(targetLandscapeAspectRatio,
+        maxLandscapePixelCount, targetPortraitAspectRatio, maxPortraitPixelCount, maxFps);
   }
 
   public CapturerObserver getCapturerObserver() {
@@ -54,7 +93,4 @@ public class VideoSource extends MediaSource {
   long getNativeVideoTrackSource() {
     return getNativeMediaSource();
   }
-
-  private static native void nativeAdaptOutputFormat(long source, int landscapeWidth,
-      int landscapeHeight, int portraitWidth, int portraitHeight, int fps);
 }

@@ -39,27 +39,37 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
   // depending on video codec.
   absl::optional<bool> needs_denoising() const override;
 
-  // Called by the native capture observer
   void SetState(SourceState state);
 
   SourceState state() const override;
 
   bool remote() const override;
 
-  void OnFrameCaptured(JNIEnv* jni,
-                       int width,
-                       int height,
-                       int64_t timestamp_ns,
-                       VideoRotation rotation,
+  void OnFrameCaptured(JNIEnv* env,
+                       const JavaRef<jobject>& j_caller,
+                       jint j_width,
+                       jint j_height,
+                       jint j_rotation,
+                       jlong j_timestamp_ns,
                        const JavaRef<jobject>& j_video_frame_buffer);
 
-  void OnOutputFormatRequest(int landscape_width,
-                             int landscape_height,
-                             int portrait_width,
-                             int portrait_height,
-                             int fps);
+  void SetState(JNIEnv* env,
+                const JavaRef<jobject>& j_caller,
+                jboolean j_is_live);
+
+  void AdaptOutputFormat(JNIEnv* env,
+                         const JavaRef<jobject>& j_caller,
+                         jint j_landscape_width,
+                         jint j_landscape_height,
+                         const JavaRef<jobject>& j_max_landscape_pixel_count,
+                         jint j_portrait_width,
+                         jint j_portrait_height,
+                         const JavaRef<jobject>& j_max_portrait_pixel_count,
+                         const JavaRef<jobject>& j_max_fps);
 
  private:
+  void InternalSetState(SourceState state);
+
   rtc::Thread* signaling_thread_;
   rtc::AsyncInvoker invoker_;
   SourceState state_;

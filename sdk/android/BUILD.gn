@@ -327,6 +327,7 @@ if (is_android) {
       "api/org/webrtc/VideoTrack.java",
       "src/java/org/webrtc/NativeLibrary.java",
       "src/java/org/webrtc/NativeCapturerObserver.java",
+      "src/java/org/webrtc/NativeAndroidVideoTrackSource.java",
     ]
 
     deps = [
@@ -662,7 +663,6 @@ if (is_android) {
       "src/jni/video_encoder_wrapper.h",
       "src/jni/video_sink.cc",
       "src/jni/video_sink.h",
-      "src/jni/video_source.cc",
       "src/jni/video_track.cc",
       "src/jni/yuv_helper.cc",
     ]
@@ -1256,12 +1256,12 @@ if (is_android) {
       "api/org/webrtc/VideoEncoderFallback.java",
       "api/org/webrtc/VideoFrame.java",
       "api/org/webrtc/VideoSink.java",
-      "api/org/webrtc/VideoSource.java",
       "api/org/webrtc/VideoTrack.java",
       "api/org/webrtc/YuvHelper.java",
       "src/java/org/webrtc/H264Utils.java",
       "src/java/org/webrtc/NV12Buffer.java",
       "src/java/org/webrtc/NV21Buffer.java",
+      "src/java/org/webrtc/NativeAndroidVideoTrackSource.java",
       "src/java/org/webrtc/NativeCapturerObserver.java",
       "src/java/org/webrtc/VideoDecoderWrapper.java",
       "src/java/org/webrtc/VideoEncoderWrapper.java",
