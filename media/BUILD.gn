@@ -20,10 +20,7 @@ group("media") {
 }
 
 config("rtc_media_defines_config") {
-  defines = [
-    "HAVE_WEBRTC_VIDEO",
-    "HAVE_WEBRTC_VOICE",
-  ]
+  defines = [ "HAVE_WEBRTC_VIDEO" ]
 }
 
 rtc_source_set("rtc_h264_profile_id") {

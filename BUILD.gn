@@ -249,7 +249,6 @@ config("common_config") {
       # TODO(kjellander): Cleanup unused ones and move defines closer to the
       # source when webrtc:4256 is completed.
       "HAVE_WEBRTC_VIDEO",
-      "HAVE_WEBRTC_VOICE",
       "LOGGING_INSIDE_WEBRTC",
     ]
   } else {

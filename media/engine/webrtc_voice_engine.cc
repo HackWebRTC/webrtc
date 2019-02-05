@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifdef HAVE_WEBRTC_VOICE
-
 #include "media/engine/webrtc_voice_engine.h"
 
 #include <algorithm>
@@ -2286,5 +2284,3 @@ bool WebRtcVoiceMediaChannel::MaybeDeregisterUnsignaledRecvStream(
   return false;
 }
 }  // namespace cricket
-
-#endif  // HAVE_WEBRTC_VOICE
