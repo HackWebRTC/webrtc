@@ -127,7 +127,7 @@ EncodedImageCallback::Result FakeVP8Encoder::OnEncodedImage(
 
   // Write width and height to the payload the same way as the real encoder
   // does.
-  WriteFakeVp8(encoded_image.data(), encoded_image._encodedWidth,
+  WriteFakeVp8(encoded_image.buffer(), encoded_image._encodedWidth,
                encoded_image._encodedHeight,
                encoded_image._frameType == kVideoFrameKey);
   return callback_->OnEncodedImage(encoded_image, &overrided_specific_info,

@@ -587,9 +587,9 @@ const webrtc::EncodedImage* VideoProcessor::BuildAndStoreSuperframe(
   copied_image.set_size(payload_size_bytes);
 
   // Replace previous EncodedImage for this spatial layer.
-  uint8_t* old_data = merged_encoded_frames_.at(spatial_idx).data();
-  if (old_data) {
-    delete[] old_data;
+  uint8_t* old_buffer = merged_encoded_frames_.at(spatial_idx).buffer();
+  if (old_buffer) {
+    delete[] old_buffer;
   }
   merged_encoded_frames_.at(spatial_idx) = copied_image;
 

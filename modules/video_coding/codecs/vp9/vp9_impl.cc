@@ -185,8 +185,8 @@ VP9EncoderImpl::~VP9EncoderImpl() {
 int VP9EncoderImpl::Release() {
   int ret_val = WEBRTC_VIDEO_CODEC_OK;
 
-  if (encoded_image_.data() != nullptr) {
-    delete[] encoded_image_.data();
+  if (encoded_image_.buffer() != nullptr) {
+    delete[] encoded_image_.buffer();
     encoded_image_.set_buffer(nullptr, 0);
   }
   if (encoder_ != nullptr) {
@@ -1266,7 +1266,7 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   }
 
   if (pkt->data.frame.sz > encoded_image_.capacity()) {
-    delete[] encoded_image_.data();
+    delete[] encoded_image_.buffer();
     encoded_image_.set_buffer(new uint8_t[pkt->data.frame.sz],
                               pkt->data.frame.sz);
   }

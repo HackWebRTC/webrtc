@@ -82,7 +82,7 @@ class SimulcastTestFixtureImpl::TestEncodedImageCallback
     // Only store the base layer.
     if (encoded_image.SpatialIndex().value_or(0) == 0) {
       if (encoded_image._frameType == kVideoFrameKey) {
-        delete[] encoded_key_frame_.data();
+        delete[] encoded_key_frame_.buffer();
         encoded_key_frame_.set_buffer(new uint8_t[encoded_image.capacity()],
                                       encoded_image.capacity());
         encoded_key_frame_.set_size(encoded_image.size());
@@ -91,7 +91,7 @@ class SimulcastTestFixtureImpl::TestEncodedImageCallback
         memcpy(encoded_key_frame_.data(), encoded_image.data(),
                encoded_image.size());
       } else {
-        delete[] encoded_frame_.data();
+        delete[] encoded_frame_.buffer();
         encoded_frame_.set_buffer(new uint8_t[encoded_image.capacity()],
                                   encoded_image.capacity());
         encoded_frame_.set_size(encoded_image.size());
@@ -905,7 +905,7 @@ void SimulcastTestFixtureImpl::TestDecodeWidthHeightSet() {
   EXPECT_EQ(0, decoder_->Decode(encoded_frame[2], false, NULL, 0));
 
   for (int i = 0; i < 3; ++i) {
-    delete[] encoded_frame[i].data();
+    delete[] encoded_frame[i].buffer();
   }
 }
 

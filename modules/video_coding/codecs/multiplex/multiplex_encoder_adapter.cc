@@ -253,8 +253,8 @@ int MultiplexEncoderAdapter::Release() {
     }
   }
   stashed_images_.clear();
-  if (combined_image_.data()) {
-    delete[] combined_image_.data();
+  if (combined_image_.buffer()) {
+    delete[] combined_image_.buffer();
     combined_image_.set_buffer(nullptr, 0);
   }
   return WEBRTC_VIDEO_CODEC_OK;
@@ -302,8 +302,8 @@ EncodedImageCallback::Result MultiplexEncoderAdapter::OnEncodedImage(
 
       // We have to send out those stashed frames, otherwise the delta frame
       // dependency chain is broken.
-      if (combined_image_.data())
-        delete[] combined_image_.data();
+      if (combined_image_.buffer())
+        delete[] combined_image_.buffer();
       combined_image_ =
           MultiplexEncodedImagePacker::PackAndRelease(iter->second);
 

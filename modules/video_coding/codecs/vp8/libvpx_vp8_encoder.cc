@@ -888,7 +888,7 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image) {
               encoded_images_[encoder_idx].capacity()) {
             uint8_t* buffer = new uint8_t[pkt->data.frame.sz + length];
             memcpy(buffer, encoded_images_[encoder_idx].data(), length);
-            delete[] encoded_images_[encoder_idx].data();
+            delete[] encoded_images_[encoder_idx].buffer();
             encoded_images_[encoder_idx].set_buffer(
                 buffer, pkt->data.frame.sz + length);
           }

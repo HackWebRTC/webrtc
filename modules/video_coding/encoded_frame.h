@@ -28,10 +28,6 @@ class VCMEncodedFrame : protected EncodedImage {
 
   ~VCMEncodedFrame();
   /**
-   *   Delete VideoFrame and resets members to zero
-   */
-  void Free();
-  /**
    *   Set render time in milliseconds
    */
   void SetRenderTime(const int64_t renderTimeMs) {

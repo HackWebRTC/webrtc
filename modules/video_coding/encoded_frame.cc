@@ -31,15 +31,7 @@ VCMEncodedFrame::VCMEncodedFrame()
 }
 
 VCMEncodedFrame::~VCMEncodedFrame() {
-  Free();
-}
-
-void VCMEncodedFrame::Free() {
   Reset();
-  if (data() != nullptr) {
-    delete[] data();
-    set_buffer(nullptr, 0);
-  }
 }
 
 void VCMEncodedFrame::Reset() {
@@ -156,15 +148,10 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header) {
 void VCMEncodedFrame::VerifyAndAllocate(size_t minimumSize) {
   size_t old_capacity = capacity();
   if (minimumSize > old_capacity) {
-    // create buffer of sufficient size
-    uint8_t* old_data = data();
-
-    set_buffer(new uint8_t[minimumSize], minimumSize);
-    if (old_data) {
-      // copy old data
-      memcpy(data(), old_data, old_capacity);
-      delete[] old_data;
-    }
+    // TODO(nisse): EncodedImage::Allocate is implemented as
+    // std::vector::resize, which means that old contents is kept. Find out if
+    // any code depends on that behavior.
+    Allocate(minimumSize);
   }
 }
 

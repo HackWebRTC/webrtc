@@ -74,33 +74,10 @@ MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
       referenced_frame_ids_(std::move(referenced_frame_ids)) {}
 
 MediaTransportEncodedVideoFrame& MediaTransportEncodedVideoFrame::operator=(
-    const MediaTransportEncodedVideoFrame& o) {
-  payload_type_ = o.payload_type_;
-  encoded_image_ = o.encoded_image_;
-  encoded_data_ = o.encoded_data_;
-  frame_id_ = o.frame_id_;
-  referenced_frame_ids_ = o.referenced_frame_ids_;
-  if (!encoded_data_.empty()) {
-    // We own the underlying data.
-    encoded_image_.set_buffer(encoded_data_.data(), encoded_data_.size());
-  }
-  return *this;
-}
+    const MediaTransportEncodedVideoFrame&) = default;
 
 MediaTransportEncodedVideoFrame& MediaTransportEncodedVideoFrame::operator=(
-    MediaTransportEncodedVideoFrame&& o) {
-  payload_type_ = o.payload_type_;
-  encoded_image_ = o.encoded_image_;
-  encoded_data_ = std::move(o.encoded_data_);
-  frame_id_ = o.frame_id_;
-  referenced_frame_ids_ = std::move(o.referenced_frame_ids_);
-  if (!encoded_data_.empty()) {
-    // We take over ownership of the underlying data.
-    encoded_image_.set_buffer(encoded_data_.data(), encoded_data_.size());
-    o.encoded_image_.set_buffer(nullptr, 0);
-  }
-  return *this;
-}
+    MediaTransportEncodedVideoFrame&&) = default;
 
 MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
     const MediaTransportEncodedVideoFrame& o)
@@ -112,14 +89,6 @@ MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
     MediaTransportEncodedVideoFrame&& o)
     : MediaTransportEncodedVideoFrame() {
   *this = std::move(o);
-}
-
-void MediaTransportEncodedVideoFrame::Retain() {
-  if (encoded_image_.data() && encoded_data_.empty()) {
-    encoded_data_ = std::vector<uint8_t>(
-        encoded_image_.data(), encoded_image_.data() + encoded_image_.size());
-    encoded_image_.set_buffer(encoded_data_.data(), encoded_image_.size());
-  }
 }
 
 SendDataParams::SendDataParams() = default;

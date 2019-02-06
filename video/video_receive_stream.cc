@@ -124,16 +124,20 @@ class EncodedFrameForMediaTransport : public video_coding::EncodedFrame {
  public:
   explicit EncodedFrameForMediaTransport(
       MediaTransportEncodedVideoFrame frame) {
-    // TODO(nisse): This is too ugly. We copy the EncodedImage (a base class of
-    // ours, in several steps), to get all the meta data. But we then need to
-    // reset the buffer and allocate a new copy, since EncodedFrame must own it.
+    // TODO(nisse): This is ugly. We copy the EncodedImage (a base class of
+    // ours, in several steps), to get all the meta data. We should be using
+    // std::move in some way. Then we also need to handle the case of an unowned
+    // buffer, in which case we need to make an owned copy.
     *static_cast<class EncodedImage*>(this) = frame.encoded_image();
-    // Don't use the copied _buffer pointer.
-    set_buffer(nullptr, 0);
 
-    VerifyAndAllocate(frame.encoded_image().size());
-    set_size(frame.encoded_image().size());
-    memcpy(data(), frame.encoded_image().data(), size());
+    if (buffer()) {
+      // Unowned data. Make a copy we own.
+      set_buffer(nullptr, 0);
+
+      VerifyAndAllocate(frame.encoded_image().size());
+      set_size(frame.encoded_image().size());
+      memcpy(data(), frame.encoded_image().data(), size());
+    }
 
     _payloadType = static_cast<uint8_t>(frame.payload_type());
 

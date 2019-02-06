@@ -170,15 +170,11 @@ void RtpFrameObject::AllocateBitstreamBuffer(size_t frame_size) {
   // Since FFmpeg use an optimized bitstream reader that reads in chunks of
   // 32/64 bits we have to add at least that much padding to the buffer
   // to make sure the decoder doesn't read out of bounds.
-  // NOTE! EncodedImage::_size is the size of the buffer (think capacity of
-  //       an std::vector) and EncodedImage::_length is the actual size of
-  //       the bitstream (think size of an std::vector).
   size_t new_size = frame_size + (codec_type_ == kVideoCodecH264
                                       ? EncodedImage::kBufferPaddingBytesH264
                                       : 0);
   if (capacity() < new_size) {
-    delete[] data();
-    set_buffer(new uint8_t[new_size], new_size);
+    Allocate(new_size);
   }
 
   set_size(frame_size);
