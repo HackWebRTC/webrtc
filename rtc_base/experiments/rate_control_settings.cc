@@ -121,11 +121,12 @@ RateControlSettings::RateControlSettings(
           ParseHysteresisFactor(key_value_config,
                                 kScreenshareHysteresisFieldTrialname,
                                 kDefaultScreenshareHysteresisFactor)),
-      probe_max_allocation_("probe_max_allocation", true) {
+      probe_max_allocation_("probe_max_allocation", true),
+      bitrate_adjuster_("bitrate_adjuster", false) {
   ParseFieldTrial(
       {&congestion_window_, &congestion_window_pushback_, &pacing_factor_,
        &alr_probing_, &trust_vp8_, &trust_vp9_, &video_hysteresis_,
-       &screenshare_hysteresis_, &probe_max_allocation_},
+       &screenshare_hysteresis_, &probe_max_allocation_, &bitrate_adjuster_},
       key_value_config->Lookup("WebRTC-VideoRateControl"));
 }
 
@@ -204,6 +205,10 @@ double RateControlSettings::GetSimulcastScreenshareHysteresisFactor() const {
 
 bool RateControlSettings::TriggerProbeOnMaxAllocatedBitrateChange() const {
   return probe_max_allocation_.Get();
+}
+
+bool RateControlSettings::UseEncoderBitrateAdjuster() const {
+  return bitrate_adjuster_.Get();
 }
 
 }  // namespace webrtc

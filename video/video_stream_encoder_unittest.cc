@@ -25,6 +25,7 @@
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ref_counted_object.h"
+#include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/encoder_settings.h"
@@ -3300,7 +3301,13 @@ TEST_F(VideoStreamEncoderTest, DropsFramesWhenEncoderOvershoots) {
   // Make encoder produce frames at double the expected bitrate during 3 seconds
   // of video, verify number of drops. Rate needs to be slightly changed in
   // order to force the rate to be reconfigured.
-  fake_encoder_.SimulateOvershoot(2.0);
+  double overshoot_factor = 2.0;
+  if (RateControlSettings::ParseFromFieldTrials().UseEncoderBitrateAdjuster()) {
+    // With bitrate adjuster, when need to overshoot even more to trigger
+    // frame dropping.
+    overshoot_factor *= 2;
+  }
+  fake_encoder_.SimulateOvershoot(overshoot_factor);
   video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps + 1000, 0, 0);
   num_dropped = 0;
   for (int i = 0; i < kNumFramesInRun; ++i) {

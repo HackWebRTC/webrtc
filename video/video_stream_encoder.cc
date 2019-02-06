@@ -26,6 +26,7 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/quality_scaling_experiment.h"
+#include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
@@ -364,6 +365,7 @@ VideoStreamEncoder::VideoStreamEncoder(
       source_proxy_(new VideoSourceProxy(this)),
       sink_(nullptr),
       settings_(settings),
+      rate_control_settings_(RateControlSettings::ParseFromFieldTrials()),
       video_sender_(Clock::GetRealTimeClock(), this),
       overuse_detector_(std::move(overuse_detector)),
       encoder_stats_observer_(encoder_stats_observer),
@@ -449,7 +451,7 @@ void VideoStreamEncoder::SetSource(
     degradation_preference_ = degradation_preference;
 
     if (encoder_)
-      ConfigureQualityScaler();
+      ConfigureQualityScaler(encoder_->GetEncoderInfo());
 
     if (!IsFramerateScalingEnabled(degradation_preference) &&
         max_framerate_ != -1) {
@@ -645,6 +647,12 @@ void VideoStreamEncoder::ReconfigureEncoder() {
       field_trial::IsDisabled(kFrameDropperFieldTrial) ||
       (num_layers > 1 && codec.mode == VideoCodecMode::kScreensharing);
 
+  VideoEncoder::EncoderInfo info = encoder_->GetEncoderInfo();
+  if (rate_control_settings_.UseEncoderBitrateAdjuster()) {
+    bitrate_adjuster_ = absl::make_unique<EncoderBitrateAdjuster>(codec);
+    bitrate_adjuster_->OnEncoderInfo(info);
+  }
+
   if (rate_allocator_ && last_observed_bitrate_bps_ > 0) {
     // We have a new rate allocator instance and already configured target
     // bitrate. Update the rate allocation and notify observsers.
@@ -672,12 +680,13 @@ void VideoStreamEncoder::ReconfigureEncoder() {
       max_framerate_, source_proxy_->GetActiveSinkWants().max_framerate_fps);
   overuse_detector_->OnTargetFramerateUpdated(target_framerate);
 
-  ConfigureQualityScaler();
+  ConfigureQualityScaler(info);
 }
 
-void VideoStreamEncoder::ConfigureQualityScaler() {
+void VideoStreamEncoder::ConfigureQualityScaler(
+    const VideoEncoder::EncoderInfo& encoder_info) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
-  const auto scaling_settings = encoder_->GetEncoderInfo().scaling_settings;
+  const auto scaling_settings = encoder_info.scaling_settings;
   const bool quality_scaling_allowed =
       IsResolutionScalingEnabled(degradation_preference_) &&
       scaling_settings.thresholds;
@@ -840,6 +849,10 @@ VideoStreamEncoder::GetBitrateAllocationAndNotifyObserver(
     bitrate_observer_->OnBitrateAllocationUpdated(bitrate_allocation);
   }
 
+  if (bitrate_adjuster_) {
+    return bitrate_adjuster_->AdjustRateAllocation(bitrate_allocation,
+                                                   framerate_fps);
+  }
   return bitrate_allocation;
 }
 
@@ -987,7 +1000,21 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   if (info.implementation_name != encoder_info_.implementation_name) {
     encoder_stats_observer_->OnEncoderImplementationChanged(
         info.implementation_name);
+    if (bitrate_adjuster_) {
+      // Encoder implementation changed, reset overshoot detector states.
+      bitrate_adjuster_->Reset();
+    }
   }
+
+  if (bitrate_adjuster_) {
+    for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
+      if (info.fps_allocation[si] != encoder_info_.fps_allocation[si]) {
+        bitrate_adjuster_->OnEncoderInfo(info);
+        break;
+      }
+    }
+  }
+
   encoder_info_ = info;
 
   input_framerate_.Update(1u, clock_->TimeInMilliseconds());
@@ -1018,26 +1045,25 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
       sink_->OnEncodedImage(encoded_image, codec_specific_info, fragmentation);
 
   int64_t time_sent_us = rtc::TimeMicros();
-  uint32_t timestamp = encoded_image.Timestamp();
-  const int qp = encoded_image.qp_;
-  int64_t capture_time_us =
-      encoded_image.capture_time_ms_ * rtc::kNumMicrosecsPerMillisec;
+  // We are only interested in propagating the meta-data about the image, not
+  // encoded data itself, to the post encode function. Since we cannot be sure
+  // the pointer will still be valid when run on the task queue, set it to null.
+  EncodedImage encoded_image_metadata = encoded_image;
+  encoded_image_metadata.set_buffer(nullptr, 0);
 
-  absl::optional<int> encode_duration_us;
-  if (encoded_image.timing_.flags != VideoSendTiming::kInvalid) {
-    encode_duration_us.emplace(
-        // TODO(nisse): Maybe use capture_time_ms_ rather than encode_start_ms_?
-        rtc::kNumMicrosecsPerMillisec *
-        (encoded_image.timing_.encode_finish_ms -
-         encoded_image.timing_.encode_start_ms));
+  int temporal_index = 0;
+  if (codec_specific_info) {
+    if (codec_specific_info->codecType == kVideoCodecVP9) {
+      temporal_index = codec_specific_info->codecSpecific.VP9.temporal_idx;
+    } else if (codec_specific_info->codecType == kVideoCodecVP8) {
+      temporal_index = codec_specific_info->codecSpecific.VP8.temporalIdx;
+    }
+  }
+  if (temporal_index == kNoTemporalIdx) {
+    temporal_index = 0;
   }
 
-  // Run post encode tasks, such as overuse detection and frame rate/drop
-  // stats for internal encoders.
-  const size_t frame_size = encoded_image.size();
-  const bool keyframe = encoded_image._frameType == FrameType::kVideoFrameKey;
-  RunPostEncode(timestamp, time_sent_us, capture_time_us, encode_duration_us,
-                qp, frame_size, keyframe);
+  RunPostEncode(encoded_image_metadata, time_sent_us, temporal_index);
 
   if (result.error == Result::OK) {
     // In case of an internal encoder running on a separate thread, the
@@ -1372,26 +1398,35 @@ VideoStreamEncoder::GetConstAdaptCounter() {
   return adapt_counters_[degradation_preference_];
 }
 
-void VideoStreamEncoder::RunPostEncode(uint32_t frame_timestamp,
+void VideoStreamEncoder::RunPostEncode(EncodedImage encoded_image,
                                        int64_t time_sent_us,
-                                       int64_t capture_time_us,
-                                       absl::optional<int> encode_durations_us,
-                                       int qp,
-                                       size_t frame_size_bytes,
-                                       bool keyframe) {
+                                       int temporal_index) {
   if (!encoder_queue_.IsCurrent()) {
-    encoder_queue_.PostTask([this, frame_timestamp, time_sent_us, qp,
-                             capture_time_us, encode_durations_us,
-                             frame_size_bytes, keyframe] {
-      RunPostEncode(frame_timestamp, time_sent_us, capture_time_us,
-                    encode_durations_us, qp, frame_size_bytes, keyframe);
-    });
+    encoder_queue_.PostTask(
+        [this, encoded_image, time_sent_us, temporal_index] {
+          RunPostEncode(encoded_image, time_sent_us, temporal_index);
+        });
     return;
   }
 
   RTC_DCHECK_RUN_ON(&encoder_queue_);
-  if (frame_size_bytes > 0) {
-    frame_dropper_.Fill(frame_size_bytes, !keyframe);
+
+  absl::optional<int> encode_duration_us;
+  if (encoded_image.timing_.flags != VideoSendTiming::kInvalid) {
+    encode_duration_us =
+        // TODO(nisse): Maybe use capture_time_ms_ rather than encode_start_ms_?
+        rtc::kNumMicrosecsPerMillisec *
+        (encoded_image.timing_.encode_finish_ms -
+         encoded_image.timing_.encode_start_ms);
+  }
+
+  // Run post encode tasks, such as overuse detection and frame rate/drop
+  // stats for internal encoders.
+  const size_t frame_size = encoded_image.size();
+  const bool keyframe = encoded_image._frameType == FrameType::kVideoFrameKey;
+
+  if (frame_size > 0) {
+    frame_dropper_.Fill(frame_size, !keyframe);
   }
 
   if (encoder_info_.has_internal_source) {
@@ -1404,10 +1439,15 @@ void VideoStreamEncoder::RunPostEncode(uint32_t frame_timestamp,
     }
   }
 
-  overuse_detector_->FrameSent(frame_timestamp, time_sent_us, capture_time_us,
-                               encode_durations_us);
-  if (quality_scaler_ && qp >= 0)
-    quality_scaler_->ReportQp(qp);
+  overuse_detector_->FrameSent(
+      encoded_image.Timestamp(), time_sent_us,
+      encoded_image.capture_time_ms_ * rtc::kNumMicrosecsPerMillisec,
+      encode_duration_us);
+  if (quality_scaler_ && encoded_image.qp_ >= 0)
+    quality_scaler_->ReportQp(encoded_image.qp_);
+  if (bitrate_adjuster_) {
+    bitrate_adjuster_->OnEncodedFrame(encoded_image, temporal_index);
+  }
 }
 
 // Class holding adaptation information.
