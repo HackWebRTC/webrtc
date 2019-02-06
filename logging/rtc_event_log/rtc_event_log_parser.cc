@@ -2035,6 +2035,7 @@ std::vector<LoggedIceEvent> ParsedRtcEventLog::GetIceEvents() const {
   RtcEventProcessor process;
   process.AddEvents(ice_candidate_pair_events(), handle_check);
   process.AddEvents(ice_candidate_pair_configs(), handle_config);
+  process.ProcessEventsInOrder();
   return log_events;
 }
 
