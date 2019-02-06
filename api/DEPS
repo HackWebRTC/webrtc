@@ -111,7 +111,6 @@ specific_include_rules = {
   "media_transport_interface\.h": [
     "+rtc_base/copy_on_write_buffer.h",  # As used by datachannelinterface.h
     "+rtc_base/network_route.h",
-    "+rtc_base/deprecation.h",
   ],
 
   "peer_connection_factory_proxy\.h": [

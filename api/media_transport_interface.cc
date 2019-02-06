@@ -154,9 +154,6 @@ MediaTransportInterface::GetLatestTargetTransferRate() {
   return absl::nullopt;
 }
 
-void MediaTransportInterface::SetNetworkChangeCallback(
-    MediaTransportNetworkChangeCallback* callback) {}
-
 void MediaTransportInterface::AddNetworkChangeCallback(
     MediaTransportNetworkChangeCallback* callback) {}
 

@@ -29,7 +29,6 @@
 #include "api/units/data_rate.h"
 #include "api/video/encoded_image.h"
 #include "rtc_base/copy_on_write_buffer.h"
-#include "rtc_base/deprecation.h"
 #include "rtc_base/network_route.h"
 
 namespace rtc {
@@ -429,16 +428,10 @@ class MediaTransportInterface {
   // might not be a very accurate number.
   virtual size_t GetAudioPacketOverhead() const;
 
-  // Sets an observer for network change events. If the network route is already
-  // established when the callback is set, |callback| will be called immediately
-  // with the current network route.
-  // Before media transport is destroyed, the callback must be unregistered by
-  // setting it to nullptr.
-  // TODO(nisse): The SetNetworkChangeCallback is being replaced with Add/Remove
-  // methods, because both video channel and voice channel need to register.
-  RTC_DEPRECATED
-  virtual void SetNetworkChangeCallback(
-      MediaTransportNetworkChangeCallback* callback);
+  // Registers an observer for network change events. If the network route is
+  // already established when the callback is added, |callback| will be called
+  // immediately with the current network route. Before media transport is
+  // destroyed, the callback must be removed.
   virtual void AddNetworkChangeCallback(
       MediaTransportNetworkChangeCallback* callback);
   virtual void RemoveNetworkChangeCallback(
