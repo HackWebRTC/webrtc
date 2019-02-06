@@ -65,6 +65,7 @@ NetEqImpl::Dependencies::Dependencies(
           new DelayPeakDetector(tick_timer.get(), config.enable_rtx_handling)),
       delay_manager(new DelayManager(config.max_packets_in_buffer,
                                      config.min_delay_ms,
+                                     config.enable_rtx_handling,
                                      delay_peak_detector.get(),
                                      tick_timer.get())),
       dtmf_buffer(new DtmfBuffer(config.sample_rate_hz)),

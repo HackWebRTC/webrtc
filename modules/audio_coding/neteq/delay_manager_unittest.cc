@@ -46,6 +46,7 @@ class DelayManagerTest : public ::testing::Test {
   MockDelayPeakDetector detector_;
   uint16_t seq_no_;
   uint32_t ts_;
+  bool enable_rtx_handling_ = false;
 };
 
 DelayManagerTest::DelayManagerTest()
@@ -60,8 +61,8 @@ void DelayManagerTest::SetUp() {
 
 void DelayManagerTest::RecreateDelayManager() {
   EXPECT_CALL(detector_, Reset()).Times(1);
-  dm_.reset(new DelayManager(kMaxNumberOfPackets, kMinDelayMs, &detector_,
-                             &tick_timer_));
+  dm_.reset(new DelayManager(kMaxNumberOfPackets, kMinDelayMs,
+                             enable_rtx_handling_, &detector_, &tick_timer_));
 }
 
 void DelayManagerTest::SetPacketAudioLength(int lengt_ms) {
@@ -318,6 +319,31 @@ TEST_F(DelayManagerTest, UpdateReorderedPacket) {
   // Insert packet that was sent before the previous packet.
   EXPECT_CALL(detector_, Update(_, true, _));
   EXPECT_EQ(0, dm_->Update(seq_no_ - 1, ts_ - kFrameSizeMs, kFs));
+}
+
+TEST_F(DelayManagerTest, EnableRtxHandling) {
+  enable_rtx_handling_ = true;
+  RecreateDelayManager();
+
+  // Insert first packet.
+  SetPacketAudioLength(kFrameSizeMs);
+  InsertNextPacket();
+
+  // Insert reordered packet.
+  // TODO(jakobi): Test estimated inter-arrival time by mocking the histogram
+  // instead of checking the call to the peak detector.
+  EXPECT_CALL(detector_, Update(3, true, _));
+  EXPECT_EQ(0, dm_->Update(seq_no_ - 3, ts_ - 3 * kFrameSizeMs, kFs));
+
+  // Insert another reordered packet.
+  EXPECT_CALL(detector_, Update(2, true, _));
+  EXPECT_EQ(0, dm_->Update(seq_no_ - 2, ts_ - 2 * kFrameSizeMs, kFs));
+
+  // Insert the next packet in order and verify that the inter-arrival time is
+  // estimated correctly.
+  IncreaseTime(kFrameSizeMs);
+  EXPECT_CALL(detector_, Update(1, false, _));
+  InsertNextPacket();
 }
 
 // Tests that skipped sequence numbers (simulating empty packets) are handled

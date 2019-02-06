@@ -136,6 +136,7 @@ NetEqTest::SimulationStepResult NetEqTest::RunToNextGetAudio() {
                 : -1;
         *text_log_ << "Packet   - wallclock: " << std::setw(5) << time_now_ms
                    << ", delta wc: " << std::setw(4) << delta_wallclock
+                   << ", seq_no: " << packet_data->header.sequenceNumber
                    << ", timestamp: " << std::setw(10)
                    << packet_data->header.timestamp
                    << ", delta ts: " << std::setw(4) << delta_timestamp
