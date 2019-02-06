@@ -382,7 +382,8 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
   }
 
   void UpdateSourceFrame(size_t frame_num) {
-    while (current_frame_num_ != frame_num) {
+    while (current_frame_num_ != frame_num ||
+           current_source_frame_ == nullptr) {
       current_source_frame_ = file_generator_.NextFrame();
       current_frame_num_ = (current_frame_num_ + 1) % num_frames_;
     }
