@@ -247,6 +247,8 @@ def BuildDepsentryDict(deps_dict):
       if dep.get('dep_type') == 'cipd':
         result[path] = CipdDepsEntry(path, dep['packages'])
       else:
+        if '@' not in dep['url']:
+          continue
         url, revision = dep['url'].split('@')
         result[path] = DepsEntry(path, url, revision)
 
