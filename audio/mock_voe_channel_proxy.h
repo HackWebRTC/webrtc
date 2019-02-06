@@ -53,6 +53,8 @@ class MockChannelReceive : public voe::ChannelReceiveInterface {
   MOCK_CONST_METHOD0(GetPlayoutTimestamp, uint32_t());
   MOCK_CONST_METHOD0(GetSyncInfo, absl::optional<Syncable::Info>());
   MOCK_METHOD1(SetMinimumPlayoutDelay, void(int delay_ms));
+  MOCK_METHOD1(SetBaseMinimumPlayoutDelayMs, bool(int delay_ms));
+  MOCK_CONST_METHOD0(GetBaseMinimumPlayoutDelayMs, int());
   MOCK_CONST_METHOD0(GetReceiveCodec,
                      absl::optional<std::pair<int, SdpAudioFormat>>());
   MOCK_METHOD1(SetReceiveCodecs,

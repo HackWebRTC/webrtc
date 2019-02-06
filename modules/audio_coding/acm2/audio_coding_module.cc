@@ -100,6 +100,10 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // Maximum playout delay.
   int SetMaximumPlayoutDelay(int time_ms) override;
 
+  bool SetBaseMinimumPlayoutDelayMs(int delay_ms) override;
+
+  int GetBaseMinimumPlayoutDelayMs() const override;
+
   absl::optional<uint32_t> PlayoutTimestamp() override;
 
   int FilteredCurrentDelayMs() const override;
@@ -706,6 +710,15 @@ int AudioCodingModuleImpl::SetMaximumPlayoutDelay(int time_ms) {
     return -1;
   }
   return receiver_.SetMaximumDelay(time_ms);
+}
+
+bool AudioCodingModuleImpl::SetBaseMinimumPlayoutDelayMs(int delay_ms) {
+  // All necessary validation happens on NetEq level.
+  return receiver_.SetBaseMinimumDelayMs(delay_ms);
+}
+
+int AudioCodingModuleImpl::GetBaseMinimumPlayoutDelayMs() const {
+  return receiver_.GetBaseMinimumDelayMs();
 }
 
 // Get 10 milliseconds of raw audio data to play out.

@@ -144,6 +144,10 @@ class ChannelReceive : public ChannelReceiveInterface,
   void SetMinimumPlayoutDelay(int delayMs) override;
   uint32_t GetPlayoutTimestamp() const override;
 
+  // Audio quality.
+  bool SetBaseMinimumPlayoutDelayMs(int delay_ms) override;
+  int GetBaseMinimumPlayoutDelayMs() const override;
+
   // Produces the transport-related timestamps; current_delay_ms is left unset.
   absl::optional<Syncable::Info> GetSyncInfo() const override;
 
@@ -863,6 +867,14 @@ uint32_t ChannelReceive::GetPlayoutTimestamp() const {
     rtc::CritScope lock(&video_sync_lock_);
     return playout_timestamp_rtp_;
   }
+}
+
+bool ChannelReceive::SetBaseMinimumPlayoutDelayMs(int delay_ms) {
+  return audio_coding_->SetBaseMinimumPlayoutDelayMs(delay_ms);
+}
+
+int ChannelReceive::GetBaseMinimumPlayoutDelayMs() const {
+  return audio_coding_->GetBaseMinimumPlayoutDelayMs();
 }
 
 absl::optional<Syncable::Info> ChannelReceive::GetSyncInfo() const {
