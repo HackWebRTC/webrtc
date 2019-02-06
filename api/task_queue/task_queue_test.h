@@ -10,6 +10,9 @@
 #ifndef API_TASK_QUEUE_TASK_QUEUE_TEST_H_
 #define API_TASK_QUEUE_TASK_QUEUE_TEST_H_
 
+#include <functional>
+#include <memory>
+
 #include "api/task_queue/task_queue_factory.h"
 #include "test/gtest.h"
 
@@ -20,12 +23,17 @@ namespace webrtc {
 //
 // namespace {
 //
+// using ::testing::Values;
 // using ::webrtc::TaskQueueTest;
-// webrtc::TaskQueueFactory* MyFactory();
-// INSTANTIATE_TEST_SUITE_P(My, TaskQueueTest, ::testing::Values(MyFactory()));
+//
+// std::unique_ptr<webrtc::TaskQueueFactory> CreateMyFactory();
+//
+// INSTANTIATE_TEST_SUITE_P(My, TaskQueueTest, Values(CreateMyFactory));
 //
 // }  // namespace
-class TaskQueueTest : public ::testing::TestWithParam<TaskQueueFactory*> {};
+class TaskQueueTest : public ::testing::TestWithParam<
+                          std::function<std::unique_ptr<TaskQueueFactory>()>> {
+};
 
 }  // namespace webrtc
 

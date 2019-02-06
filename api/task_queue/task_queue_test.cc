@@ -19,20 +19,22 @@ namespace webrtc {
 namespace {
 
 std::unique_ptr<TaskQueueBase, TaskQueueDeleter> CreateTaskQueue(
-    TaskQueueFactory* factory,
+    const std::unique_ptr<webrtc::TaskQueueFactory>& factory,
     absl::string_view task_queue_name,
     TaskQueueFactory::Priority priority = TaskQueueFactory::Priority::NORMAL) {
   return factory->CreateTaskQueue(task_queue_name, priority);
 }
 
 TEST_P(TaskQueueTest, Construct) {
-  auto queue = CreateTaskQueue(GetParam(), "Construct");
+  std::unique_ptr<webrtc::TaskQueueFactory> factory = GetParam()();
+  auto queue = CreateTaskQueue(factory, "Construct");
   EXPECT_FALSE(queue->IsCurrent());
 }
 
 TEST_P(TaskQueueTest, PostAndCheckCurrent) {
+  std::unique_ptr<webrtc::TaskQueueFactory> factory = GetParam()();
   rtc::Event event;
-  auto queue = CreateTaskQueue(GetParam(), "PostAndCheckCurrent");
+  auto queue = CreateTaskQueue(factory, "PostAndCheckCurrent");
 
   // We're not running a task, so there shouldn't be a current queue.
   EXPECT_FALSE(queue->IsCurrent());
@@ -46,8 +48,9 @@ TEST_P(TaskQueueTest, PostAndCheckCurrent) {
 }
 
 TEST_P(TaskQueueTest, PostCustomTask) {
+  std::unique_ptr<webrtc::TaskQueueFactory> factory = GetParam()();
   rtc::Event ran;
-  auto queue = CreateTaskQueue(GetParam(), "PostCustomImplementation");
+  auto queue = CreateTaskQueue(factory, "PostCustomImplementation");
 
   class CustomTask : public QueuedTask {
    public:
@@ -67,16 +70,18 @@ TEST_P(TaskQueueTest, PostCustomTask) {
 }
 
 TEST_P(TaskQueueTest, PostDelayedZero) {
+  std::unique_ptr<webrtc::TaskQueueFactory> factory = GetParam()();
   rtc::Event event;
-  auto queue = CreateTaskQueue(GetParam(), "PostDelayedZero");
+  auto queue = CreateTaskQueue(factory, "PostDelayedZero");
 
   queue->PostDelayedTask(rtc::NewClosure([&event] { event.Set(); }), 0);
   EXPECT_TRUE(event.Wait(1000));
 }
 
 TEST_P(TaskQueueTest, PostFromQueue) {
+  std::unique_ptr<webrtc::TaskQueueFactory> factory = GetParam()();
   rtc::Event event;
-  auto queue = CreateTaskQueue(GetParam(), "PostFromQueue");
+  auto queue = CreateTaskQueue(factory, "PostFromQueue");
 
   queue->PostTask(rtc::NewClosure([&event, &queue] {
     queue->PostTask(rtc::NewClosure([&event] { event.Set(); }));
@@ -85,9 +90,10 @@ TEST_P(TaskQueueTest, PostFromQueue) {
 }
 
 TEST_P(TaskQueueTest, PostDelayed) {
+  std::unique_ptr<webrtc::TaskQueueFactory> factory = GetParam()();
   rtc::Event event;
-  auto queue = CreateTaskQueue(GetParam(), "PostDelayed",
-                               TaskQueueFactory::Priority::HIGH);
+  auto queue =
+      CreateTaskQueue(factory, "PostDelayed", TaskQueueFactory::Priority::HIGH);
 
   int64_t start = rtc::TimeMillis();
   queue->PostDelayedTask(rtc::NewClosure([&event, &queue] {
@@ -105,7 +111,8 @@ TEST_P(TaskQueueTest, PostDelayed) {
 }
 
 TEST_P(TaskQueueTest, PostMultipleDelayed) {
-  auto queue = CreateTaskQueue(GetParam(), "PostMultipleDelayed");
+  std::unique_ptr<webrtc::TaskQueueFactory> factory = GetParam()();
+  auto queue = CreateTaskQueue(factory, "PostMultipleDelayed");
 
   std::vector<rtc::Event> events(100);
   for (int i = 0; i < 100; ++i) {
@@ -122,9 +129,10 @@ TEST_P(TaskQueueTest, PostMultipleDelayed) {
 }
 
 TEST_P(TaskQueueTest, PostDelayedAfterDestruct) {
+  std::unique_ptr<webrtc::TaskQueueFactory> factory = GetParam()();
   rtc::Event run;
   rtc::Event deleted;
-  auto queue = CreateTaskQueue(GetParam(), "PostDelayedAfterDestruct");
+  auto queue = CreateTaskQueue(factory, "PostDelayedAfterDestruct");
   queue->PostDelayedTask(
       rtc::NewClosure([&run] { run.Set(); }, [&deleted] { deleted.Set(); }),
       100);
@@ -136,9 +144,10 @@ TEST_P(TaskQueueTest, PostDelayedAfterDestruct) {
 }
 
 TEST_P(TaskQueueTest, PostAndReuse) {
+  std::unique_ptr<webrtc::TaskQueueFactory> factory = GetParam()();
   rtc::Event event;
-  auto post_queue = CreateTaskQueue(GetParam(), "PostQueue");
-  auto reply_queue = CreateTaskQueue(GetParam(), "ReplyQueue");
+  auto post_queue = CreateTaskQueue(factory, "PostQueue");
+  auto reply_queue = CreateTaskQueue(factory, "ReplyQueue");
 
   int call_count = 0;
 
@@ -181,6 +190,7 @@ TEST_P(TaskQueueTest, PostAndReuse) {
 // Tests posting more messages than a queue can queue up.
 // In situations like that, tasks will get dropped.
 TEST_P(TaskQueueTest, PostALot) {
+  std::unique_ptr<webrtc::TaskQueueFactory> factory = GetParam()();
   // To destruct the event after the queue has gone out of scope.
   rtc::Event event;
 
@@ -189,7 +199,7 @@ TEST_P(TaskQueueTest, PostALot) {
   static const int kTaskCount = 0xffff;
 
   {
-    auto queue = CreateTaskQueue(GetParam(), "PostALot");
+    auto queue = CreateTaskQueue(factory, "PostALot");
 
     // On linux, the limit of pending bytes in the pipe buffer is 0xffff.
     // So here we post a total of 0xffff+1 messages, which triggers a failure
@@ -219,12 +229,13 @@ TEST_P(TaskQueueTest, PostALot) {
 // unit test, run it under TSan or some other tool that is able to
 // directly detect data races.
 TEST_P(TaskQueueTest, PostTwoWithSharedUnprotectedState) {
+  std::unique_ptr<webrtc::TaskQueueFactory> factory = GetParam()();
   struct SharedState {
     // First task will set this value to 1 and second will assert it.
     int state = 0;
   } state;
 
-  auto queue = CreateTaskQueue(GetParam(), "PostTwoWithSharedUnprotectedState");
+  auto queue = CreateTaskQueue(factory, "PostTwoWithSharedUnprotectedState");
   rtc::Event done;
   queue->PostTask(rtc::NewClosure([&state, &queue, &done] {
     // Post tasks from queue to guarantee, that 1st task won't be
