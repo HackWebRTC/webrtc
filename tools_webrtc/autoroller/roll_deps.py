@@ -28,6 +28,8 @@ def FindSrcDirPath():
 
 # Skip these dependencies (list without solution name prefix).
 DONT_AUTOROLL_THESE = [
+  # TODO(crbug.com/927867): resume rolling this as chromium/src/buildtools.
+  'src/buildtools',
   'src/examples/androidtests/third_party/gradle',
 ]
 

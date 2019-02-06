@@ -24,6 +24,9 @@ from roll_deps import CalculateChangedDeps, FindAddedDeps, \
   GetMatchingDepsEntries, ParseDepsDict, ParseLocalDepsFile, UpdateDepsFile, \
   ChromiumRevisionUpdate
 
+# HACK to avoid updating unittests just because buildtools roll is disabled.
+roll_deps.DONT_AUTOROLL_THESE.remove('src/buildtools')
+
 SRC_DIR = os.path.join(PARENT_DIR, os.pardir, os.pardir)
 sys.path.append(os.path.join(SRC_DIR, 'third_party', 'pymock'))
 import mock
