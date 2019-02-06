@@ -24,6 +24,11 @@
 namespace webrtc {
 namespace jni {
 
+// This class needs to be used in conjunction with the Java corresponding class
+// NativeAndroidVideoTrackSource. This class is thred safe and methods can be
+// called from any thread, but if frames A, B, ..., are sent to adaptFrame(),
+// the adapted frames adaptedA, adaptedB, ..., needs to be passed in the same
+// order to onFrameCaptured().
 class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
  public:
   AndroidVideoTrackSource(rtc::Thread* signaling_thread,
@@ -45,10 +50,25 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
 
   bool remote() const override;
 
+  // This function should be called before delivering any frame to determine if
+  // the frame should be dropped or what the cropping and scaling parameters
+  // should be. This function is thread safe and can be called from any thread.
+  // This function returns
+  // NativeAndroidVideoTrackSource.FrameAdaptationParameters, or null if the
+  // frame should be dropped.
+  ScopedJavaLocalRef<jobject> AdaptFrame(JNIEnv* env,
+                                         const JavaRef<jobject>& j_caller,
+                                         jint j_width,
+                                         jint j_height,
+                                         jint j_rotation,
+                                         jlong j_timestamp_ns);
+
+  // This function converts and passes the frame on to the rest of the C++
+  // WebRTC layer. Note that GetFrameAdaptationParameters() is expected to be
+  // called first and that the delivered frame conforms to those parameters.
+  // This function is thread safe and can be called from any thread.
   void OnFrameCaptured(JNIEnv* env,
                        const JavaRef<jobject>& j_caller,
-                       jint j_width,
-                       jint j_height,
                        jint j_rotation,
                        jlong j_timestamp_ns,
                        const JavaRef<jobject>& j_video_frame_buffer);

@@ -86,21 +86,21 @@ bool AndroidVideoTrackSource::remote() const {
   return false;
 }
 
-void AndroidVideoTrackSource::OnFrameCaptured(
+ScopedJavaLocalRef<jobject> AndroidVideoTrackSource::AdaptFrame(
     JNIEnv* env,
     const JavaRef<jobject>& j_caller,
     jint j_width,
     jint j_height,
     jint j_rotation,
-    jlong j_timestamp_ns,
-    const JavaRef<jobject>& j_video_frame_buffer) {
+    jlong j_timestamp_ns) {
   const VideoRotation rotation = jintToVideoRotation(j_rotation);
 
-  int64_t camera_time_us = j_timestamp_ns / rtc::kNumNanosecsPerMicrosec;
-  int64_t translated_camera_time_us =
-      align_timestamps_ ? timestamp_aligner_.TranslateTimestamp(
-                              camera_time_us, rtc::TimeMicros())
-                        : camera_time_us;
+  const int64_t camera_time_us = j_timestamp_ns / rtc::kNumNanosecsPerMicrosec;
+  const int64_t aligned_timestamp_ns =
+      align_timestamps_ ? rtc::kNumNanosecsPerMicrosec *
+                              timestamp_aligner_.TranslateTimestamp(
+                                  camera_time_us, rtc::TimeMicros())
+                        : j_timestamp_ns;
 
   int adapted_width;
   int adapted_height;
@@ -109,35 +109,46 @@ void AndroidVideoTrackSource::OnFrameCaptured(
   int crop_x;
   int crop_y;
 
+  // TODO(magjed): Move this logic to users of NativeAndroidVideoTrackSource
+  // instead, in order to keep this native wrapping layer as thin as possible.
   if (rotation % 180 == 0) {
-    if (!AdaptFrame(j_width, j_height, camera_time_us, &adapted_width,
-                    &adapted_height, &crop_width, &crop_height, &crop_x,
-                    &crop_y)) {
-      return;
+    if (!rtc::AdaptedVideoTrackSource::AdaptFrame(
+            j_width, j_height, camera_time_us, &adapted_width, &adapted_height,
+            &crop_width, &crop_height, &crop_x, &crop_y)) {
+      return nullptr;
     }
   } else {
     // Swap all width/height and x/y.
-    if (!AdaptFrame(j_height, j_width, camera_time_us, &adapted_height,
-                    &adapted_width, &crop_height, &crop_width, &crop_y,
-                    &crop_x)) {
-      return;
+    if (!rtc::AdaptedVideoTrackSource::AdaptFrame(
+            j_height, j_width, camera_time_us, &adapted_height, &adapted_width,
+            &crop_height, &crop_width, &crop_y, &crop_x)) {
+      return nullptr;
     }
   }
 
+  return Java_FrameAdaptationParameters_Constructor(
+      env, crop_x, crop_y, crop_width, crop_height, adapted_width,
+      adapted_height, aligned_timestamp_ns);
+}
+
+void AndroidVideoTrackSource::OnFrameCaptured(
+    JNIEnv* env,
+    const JavaRef<jobject>& j_caller,
+    jint j_rotation,
+    jlong j_timestamp_ns,
+    const JavaRef<jobject>& j_video_frame_buffer) {
   rtc::scoped_refptr<VideoFrameBuffer> buffer =
-      AndroidVideoBuffer::Create(env, j_video_frame_buffer)
-          ->CropAndScale(env, crop_x, crop_y, crop_width, crop_height,
-                         adapted_width, adapted_height);
+      AndroidVideoBuffer::Create(env, j_video_frame_buffer);
+  const VideoRotation rotation = jintToVideoRotation(j_rotation);
 
   // AdaptedVideoTrackSource handles applying rotation for I420 frames.
-  if (apply_rotation() && rotation != kVideoRotation_0) {
+  if (apply_rotation() && rotation != kVideoRotation_0)
     buffer = buffer->ToI420();
-  }
 
   OnFrame(VideoFrame::Builder()
               .set_video_frame_buffer(buffer)
               .set_rotation(rotation)
-              .set_timestamp_us(translated_camera_time_us)
+              .set_timestamp_us(j_timestamp_ns / rtc::kNumNanosecsPerMicrosec)
               .build());
 }
 

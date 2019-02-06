@@ -17,10 +17,35 @@ import org.webrtc.VideoFrame;
  * This class is meant to be a simple layer that only handles the JNI wrapping of a C++
  * AndroidVideoTrackSource, that can easily be mocked out in Java unit tests. Refrain from adding
  * any unnecessary logic to this class.
+ * This class is thred safe and methods can be called from any thread, but if frames A, B, ..., are
+ * sent to adaptFrame(), the adapted frames adaptedA, adaptedB, ..., needs to be passed in the same
+ * order to onFrameCaptured().
  */
 class NativeAndroidVideoTrackSource {
   // Pointer to webrtc::jni::AndroidVideoTrackSource.
   private final long nativeAndroidVideoTrackSource;
+
+  public static class FrameAdaptationParameters {
+    public final int cropX;
+    public final int cropY;
+    public final int cropWidth;
+    public final int cropHeight;
+    public final int scaleWidth;
+    public final int scaleHeight;
+    public final long timestampNs;
+
+    @CalledByNative("FrameAdaptationParameters")
+    FrameAdaptationParameters(int cropX, int cropY, int cropWidth, int cropHeight, int scaleWidth,
+        int scaleHeight, long timestampNs) {
+      this.cropX = cropX;
+      this.cropY = cropY;
+      this.cropWidth = cropWidth;
+      this.cropHeight = cropHeight;
+      this.scaleWidth = scaleWidth;
+      this.scaleHeight = scaleHeight;
+      this.timestampNs = timestampNs;
+    }
+  }
 
   public NativeAndroidVideoTrackSource(long nativeAndroidVideoTrackSource) {
     this.nativeAndroidVideoTrackSource = nativeAndroidVideoTrackSource;
@@ -34,11 +59,25 @@ class NativeAndroidVideoTrackSource {
     nativeSetState(nativeAndroidVideoTrackSource, isLive);
   }
 
-  /** Pass a frame to the native AndroidVideoTrackSource. */
+  /**
+   * This function should be called before delivering any frame to determine if the frame should be
+   * dropped or what the cropping and scaling parameters should be. If the return value is null, the
+   * frame should be dropped, otherwise the frame should be adapted in accordance to the frame
+   * adaptation parameters before calling onFrameCaptured().
+   */
+  @Nullable
+  public FrameAdaptationParameters adaptFrame(VideoFrame frame) {
+    return nativeAdaptFrame(nativeAndroidVideoTrackSource, frame.getBuffer().getWidth(),
+        frame.getBuffer().getHeight(), frame.getRotation(), frame.getTimestampNs());
+  }
+
+  /**
+   * Pass an adapted frame to the native AndroidVideoTrackSource. Note that adaptFrame() is
+   * expected to be called first and that the passed frame conforms to those parameters.
+   */
   public void onFrameCaptured(VideoFrame frame) {
-    nativeOnFrameCaptured(nativeAndroidVideoTrackSource, frame.getBuffer().getWidth(),
-        frame.getBuffer().getHeight(), frame.getRotation(), frame.getTimestampNs(),
-        frame.getBuffer());
+    nativeOnFrameCaptured(nativeAndroidVideoTrackSource, frame.getRotation(),
+        frame.getTimestampNs(), frame.getBuffer());
   }
 
   /**
@@ -59,6 +98,9 @@ class NativeAndroidVideoTrackSource {
       int landscapeWidth, int landscapeHeight, @Nullable Integer maxLandscapePixelCount,
       int portraitWidth, int portraitHeight, @Nullable Integer maxPortraitPixelCount,
       @Nullable Integer maxFps);
-  private static native void nativeOnFrameCaptured(long nativeAndroidVideoTrackSource, int width,
-      int height, int rotation, long timestampNs, VideoFrame.Buffer buffer);
+  @Nullable
+  private static native FrameAdaptationParameters nativeAdaptFrame(
+      long nativeAndroidVideoTrackSource, int width, int height, int rotation, long timestampNs);
+  private static native void nativeOnFrameCaptured(
+      long nativeAndroidVideoTrackSource, int rotation, long timestampNs, VideoFrame.Buffer buffer);
 }
