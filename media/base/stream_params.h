@@ -249,6 +249,50 @@ struct StreamSelector {
 
 typedef std::vector<StreamParams> StreamParamsVec;
 
+// A collection of audio and video and data streams. Most of the
+// methods are merely for convenience. Many of these methods are keyed
+// by ssrc, which is the source identifier in the RTP spec
+// (http://tools.ietf.org/html/rfc3550).
+// TODO(pthatcher):  Add basic unit test for these.
+// See https://code.google.com/p/webrtc/issues/detail?id=4107
+struct MediaStreams {
+ public:
+  MediaStreams();
+  ~MediaStreams();
+  void CopyFrom(const MediaStreams& sources);
+
+  bool empty() const {
+    return audio_.empty() && video_.empty() && data_.empty();
+  }
+
+  std::vector<StreamParams>* mutable_audio() { return &audio_; }
+  std::vector<StreamParams>* mutable_video() { return &video_; }
+  std::vector<StreamParams>* mutable_data() { return &data_; }
+  const std::vector<StreamParams>& audio() const { return audio_; }
+  const std::vector<StreamParams>& video() const { return video_; }
+  const std::vector<StreamParams>& data() const { return data_; }
+
+  // Gets a stream, returning true if found.
+  bool GetAudioStream(const StreamSelector& selector, StreamParams* stream);
+  bool GetVideoStream(const StreamSelector& selector, StreamParams* stream);
+  bool GetDataStream(const StreamSelector& selector, StreamParams* stream);
+  // Adds a stream.
+  void AddAudioStream(const StreamParams& stream);
+  void AddVideoStream(const StreamParams& stream);
+  void AddDataStream(const StreamParams& stream);
+  // Removes a stream, returning true if found and removed.
+  bool RemoveAudioStream(const StreamSelector& selector);
+  bool RemoveVideoStream(const StreamSelector& selector);
+  bool RemoveDataStream(const StreamSelector& selector);
+
+ private:
+  std::vector<StreamParams> audio_;
+  std::vector<StreamParams> video_;
+  std::vector<StreamParams> data_;
+
+  RTC_DISALLOW_COPY_AND_ASSIGN(MediaStreams);
+};
+
 template <class Condition>
 const StreamParams* GetStream(const StreamParamsVec& streams,
                               Condition condition) {
@@ -324,6 +368,16 @@ inline bool RemoveStreamByIds(StreamParamsVec* streams,
     return sp.groupid == groupid && sp.id == id;
   });
 }
+
+// Checks if |sp| defines parameters for a single primary stream. There may
+// be an RTX stream or a FlexFEC stream (or both) associated with the primary
+// stream. Leaving as non-static so we can test this function.
+bool IsOneSsrcStream(const StreamParams& sp);
+
+// Checks if |sp| defines parameters for one Simulcast stream. There may be RTX
+// streams associated with the simulcast streams. Leaving as non-static so we
+// can test this function.
+bool IsSimulcastStream(const StreamParams& sp);
 
 }  // namespace cricket
 
