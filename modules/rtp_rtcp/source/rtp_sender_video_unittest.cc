@@ -112,7 +112,7 @@ class RtpSenderVideoTest : public ::testing::TestWithParam<bool> {
                     &fake_clock_,
                     &transport_,
                     nullptr,
-                    nullptr,
+                    absl::nullopt,
                     nullptr,
                     nullptr,
                     nullptr,

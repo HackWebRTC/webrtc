@@ -21,6 +21,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "api/crypto/frame_encryptor_interface.h"
+#include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/rtp_format_video_generic.h"
@@ -152,6 +153,20 @@ bool IsBaseLayer(const RTPVideoHeader& video_header) {
   return true;
 }
 
+const char* FrameTypeToString(FrameType frame_type) {
+  switch (frame_type) {
+    case kEmptyFrame:
+      return "empty";
+    case kVideoFrameKey:
+      return "video_key";
+    case kVideoFrameDelta:
+      return "video_delta";
+    default:
+      RTC_NOTREACHED();
+      return "";
+  }
+}
+
 }  // namespace
 
 RTPSenderVideo::RTPSenderVideo(Clock* clock,
@@ -207,8 +222,8 @@ void RTPSenderVideo::SendVideoPacket(std::unique_ptr<RtpPacketToSend> packet,
   // Remember some values about the packet before sending it away.
   size_t packet_size = packet->size();
   uint16_t seq_num = packet->SequenceNumber();
-  if (!rtp_sender_->SendToNetwork(std::move(packet), storage,
-                                  RtpPacketSender::kLowPriority)) {
+  if (!LogAndSendToNetwork(std::move(packet), storage,
+                           RtpPacketSender::kLowPriority)) {
     RTC_LOG(LS_WARNING) << "Failed to send video packet " << seq_num;
     return;
   }
@@ -249,8 +264,8 @@ void RTPSenderVideo::SendVideoPacketAsRedMaybeWithUlpfec(
   }
   // Send |red_packet| instead of |packet| for allocated sequence number.
   size_t red_packet_size = red_packet->size();
-  if (rtp_sender_->SendToNetwork(std::move(red_packet), media_packet_storage,
-                                 RtpPacketSender::kLowPriority)) {
+  if (LogAndSendToNetwork(std::move(red_packet), media_packet_storage,
+                          RtpPacketSender::kLowPriority)) {
     rtc::CritScope cs(&stats_crit_);
     video_bitrate_.Update(red_packet_size, clock_->TimeInMilliseconds());
   } else {
@@ -265,8 +280,8 @@ void RTPSenderVideo::SendVideoPacketAsRedMaybeWithUlpfec(
     rtp_packet->set_capture_time_ms(media_packet->capture_time_ms());
     rtp_packet->set_is_fec(true);
     uint16_t fec_sequence_number = rtp_packet->SequenceNumber();
-    if (rtp_sender_->SendToNetwork(std::move(rtp_packet), kDontRetransmit,
-                                   RtpPacketSender::kLowPriority)) {
+    if (LogAndSendToNetwork(std::move(rtp_packet), kDontRetransmit,
+                            RtpPacketSender::kLowPriority)) {
       rtc::CritScope cs(&stats_crit_);
       fec_bitrate_.Update(fec_packet->length(), clock_->TimeInMilliseconds());
     } else {
@@ -293,8 +308,8 @@ void RTPSenderVideo::SendVideoPacketWithFlexfec(
     for (auto& fec_packet : fec_packets) {
       size_t packet_length = fec_packet->size();
       uint16_t seq_num = fec_packet->SequenceNumber();
-      if (rtp_sender_->SendToNetwork(std::move(fec_packet), kDontRetransmit,
-                                     RtpPacketSender::kLowPriority)) {
+      if (LogAndSendToNetwork(std::move(fec_packet), kDontRetransmit,
+                              RtpPacketSender::kLowPriority)) {
         rtc::CritScope cs(&stats_crit_);
         fec_bitrate_.Update(packet_length, clock_->TimeInMilliseconds());
       } else {
@@ -302,6 +317,24 @@ void RTPSenderVideo::SendVideoPacketWithFlexfec(
       }
     }
   }
+}
+
+bool RTPSenderVideo::LogAndSendToNetwork(
+    std::unique_ptr<RtpPacketToSend> packet,
+    StorageType storage,
+    RtpPacketSender::Priority priority) {
+#if BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
+  int64_t now_ms = clock_->TimeInMilliseconds();
+  BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoTotBitrate_kbps", now_ms,
+                                  rtp_sender_->ActualSendBitrateKbit(),
+                                  packet->Ssrc());
+  BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoFecBitrate_kbps", now_ms,
+                                  FecOverheadRate() / 1000, packet->Ssrc());
+  BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoNackBitrate_kbps", now_ms,
+                                  rtp_sender_->NackOverheadRate() / 1000,
+                                  packet->Ssrc());
+#endif
+  return rtp_sender_->SendToNetwork(std::move(packet), storage, priority);
 }
 
 void RTPSenderVideo::SetUlpfecConfig(int red_payload_type,
@@ -371,6 +404,15 @@ bool RTPSenderVideo::SendVideo(FrameType frame_type,
                                const RTPFragmentationHeader* fragmentation,
                                const RTPVideoHeader* video_header,
                                int64_t expected_retransmission_time_ms) {
+  RTC_DCHECK(frame_type == kVideoFrameKey || frame_type == kVideoFrameDelta ||
+             frame_type == kEmptyFrame);
+
+  TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", capture_time_ms, "Send", "type",
+                          FrameTypeToString(frame_type));
+
+  if (frame_type == kEmptyFrame)
+    return true;
+
   if (payload_size == 0)
     return false;
   RTC_CHECK(video_header);
