@@ -193,11 +193,8 @@ LibvpxVp8Encoder::~LibvpxVp8Encoder() {
 int LibvpxVp8Encoder::Release() {
   int ret_val = WEBRTC_VIDEO_CODEC_OK;
 
-  while (!encoded_images_.empty()) {
-    EncodedImage& image = encoded_images_.back();
-    delete[] image.data();
-    encoded_images_.pop_back();
-  }
+  encoded_images_.clear();
+
   while (!encoders_.empty()) {
     vpx_codec_ctx_t& encoder = encoders_.back();
     if (inited_) {
@@ -386,12 +383,9 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   }
   for (int i = 0; i < number_of_streams; ++i) {
     // allocate memory for encoded image
-    if (encoded_images_[i].data() != nullptr) {
-      delete[] encoded_images_[i].data();
-    }
     size_t frame_capacity =
         CalcBufferSize(VideoType::kI420, codec_.width, codec_.height);
-    encoded_images_[i].set_buffer(new uint8_t[frame_capacity], frame_capacity);
+    encoded_images_[i].Allocate(frame_capacity);
     encoded_images_[i]._completeFrame = true;
   }
   // populate encoder configuration with default values
@@ -883,19 +877,12 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image) {
            NULL) {
       switch (pkt->kind) {
         case VPX_CODEC_CX_FRAME_PKT: {
-          size_t length = encoded_images_[encoder_idx].size();
-          if (pkt->data.frame.sz + length >
-              encoded_images_[encoder_idx].capacity()) {
-            uint8_t* buffer = new uint8_t[pkt->data.frame.sz + length];
-            memcpy(buffer, encoded_images_[encoder_idx].data(), length);
-            delete[] encoded_images_[encoder_idx].buffer();
-            encoded_images_[encoder_idx].set_buffer(
-                buffer, pkt->data.frame.sz + length);
-          }
-          memcpy(&encoded_images_[encoder_idx].data()[length],
+          const size_t size = encoded_images_[encoder_idx].size();
+          const size_t new_size = pkt->data.frame.sz + size;
+          encoded_images_[encoder_idx].Allocate(new_size);
+          memcpy(&encoded_images_[encoder_idx].data()[size],
                  pkt->data.frame.buf, pkt->data.frame.sz);
-          encoded_images_[encoder_idx].set_size(
-              encoded_images_[encoder_idx].size() + pkt->data.frame.sz);
+          encoded_images_[encoder_idx].set_size(new_size);
           break;
         }
         default:
