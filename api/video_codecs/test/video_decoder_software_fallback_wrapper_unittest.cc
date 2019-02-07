@@ -22,6 +22,7 @@
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
+#include "test/field_trial.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -29,7 +30,11 @@ namespace webrtc {
 class VideoDecoderSoftwareFallbackWrapperTest : public ::testing::Test {
  protected:
   VideoDecoderSoftwareFallbackWrapperTest()
-      : fake_decoder_(new CountingFakeDecoder()),
+      : VideoDecoderSoftwareFallbackWrapperTest("") {}
+  explicit VideoDecoderSoftwareFallbackWrapperTest(
+      const std::string& field_trials)
+      : override_field_trials_(field_trials),
+        fake_decoder_(new CountingFakeDecoder()),
         fallback_wrapper_(CreateVideoDecoderSoftwareFallbackWrapper(
             std::unique_ptr<VideoDecoder>(VP8Decoder::Create()),
             std::unique_ptr<VideoDecoder>(fake_decoder_))) {}
@@ -71,6 +76,7 @@ class VideoDecoderSoftwareFallbackWrapperTest : public ::testing::Test {
     int release_count_ = 0;
     int reset_count_ = 0;
   };
+  test::ScopedFieldTrials override_field_trials_;
   // |fake_decoder_| is owned and released by |fallback_wrapper_|.
   CountingFakeDecoder* fake_decoder_;
   std::unique_ptr<VideoDecoder> fallback_wrapper_;
@@ -212,6 +218,42 @@ TEST_F(VideoDecoderSoftwareFallbackWrapperTest,
   EXPECT_STREQ("libvpx (fallback from: fake-decoder)",
                fallback_wrapper_->ImplementationName());
   fallback_wrapper_->Release();
+}
+
+class ForcedSoftwareDecoderFallbackTest
+    : public VideoDecoderSoftwareFallbackWrapperTest {
+ public:
+  ForcedSoftwareDecoderFallbackTest()
+      : VideoDecoderSoftwareFallbackWrapperTest(
+            "WebRTC-Video-ForcedSwDecoderFallback/Enabled/") {
+    fake_decoder_ = new CountingFakeDecoder();
+    sw_fallback_decoder_ = new CountingFakeDecoder();
+    fallback_wrapper_ = CreateVideoDecoderSoftwareFallbackWrapper(
+        std::unique_ptr<VideoDecoder>(sw_fallback_decoder_),
+        std::unique_ptr<VideoDecoder>(fake_decoder_));
+  }
+
+  CountingFakeDecoder* sw_fallback_decoder_;
+};
+
+TEST_F(ForcedSoftwareDecoderFallbackTest, UsesForcedFallback) {
+  VideoCodec codec = {};
+  fallback_wrapper_->InitDecode(&codec, 2);
+  EXPECT_EQ(1, sw_fallback_decoder_->init_decode_count_);
+
+  EncodedImage encoded_image;
+  encoded_image._frameType = kVideoFrameKey;
+  fallback_wrapper_->Decode(encoded_image, false, nullptr, -1);
+  EXPECT_EQ(1, sw_fallback_decoder_->init_decode_count_);
+  EXPECT_EQ(1, sw_fallback_decoder_->decode_count_);
+
+  fallback_wrapper_->Release();
+  EXPECT_EQ(1, sw_fallback_decoder_->release_count_);
+
+  // Only fallback decoder should have been used.
+  EXPECT_EQ(0, fake_decoder_->init_decode_count_);
+  EXPECT_EQ(0, fake_decoder_->decode_count_);
+  EXPECT_EQ(0, fake_decoder_->release_count_);
 }
 
 }  // namespace webrtc
