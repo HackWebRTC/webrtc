@@ -49,7 +49,6 @@
 #include "media/base/media_config.h"
 #include "media/base/media_engine.h"
 #include "media/base/stream_params.h"
-#include "media/base/video_capturer.h"
 #include "media/engine/webrtc_media_engine.h"
 #include "media/sctp/sctp_transport_internal.h"
 #include "modules/audio_device/include/audio_device.h"
