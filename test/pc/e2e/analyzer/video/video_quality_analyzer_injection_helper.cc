@@ -131,6 +131,10 @@ VideoQualityAnalyzerInjectionHelper::CreateVideoSink(
   return absl::make_unique<AnalyzingVideoSink>(analyzer_.get(), writer);
 }
 
+void VideoQualityAnalyzerInjectionHelper::Start(int max_threads_count) {
+  analyzer_->Start(max_threads_count);
+}
+
 void VideoQualityAnalyzerInjectionHelper::Stop() {
   analyzer_->Stop();
 }

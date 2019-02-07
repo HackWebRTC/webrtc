@@ -59,6 +59,8 @@ class VideoQualityAnalyzerInjectionHelper {
   std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> CreateVideoSink(
       VideoFrameWriter* writer) const;
 
+  void Start(int max_threads_count);
+
   // Stops VideoQualityAnalyzerInterface to populate final data and metrics.
   void Stop();
 

@@ -18,6 +18,7 @@
 #include "api/units/time_delta.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/gunit.h"
+#include "system_wrappers/include/cpu_info.h"
 #include "test/pc/e2e/analyzer/video/example_video_quality_analyzer.h"
 #include "test/pc/e2e/api/video_quality_analyzer_interface.h"
 #include "test/testsupport/file_utils.h"
@@ -30,6 +31,12 @@ using VideoConfig = PeerConnectionE2EQualityTestFixture::VideoConfig;
 
 constexpr int kDefaultTimeoutMs = 10000;
 constexpr char kSignalThreadName[] = "signaling_thread";
+// 1 signaling, 2 network, 2 worker and 2 extra for codecs etc.
+constexpr int kPeerConnectionUsedThreads = 7;
+// Framework has extra thread for network layer and extra thread for peer
+// connection stats polling.
+constexpr int kFrameworkUsedThreads = 2;
+constexpr int kMaxVideoAnalyzerThreads = 8;
 
 std::string VideoConfigSourcePresenceToString(const VideoConfig& video_config) {
   char buf[1024];
@@ -115,10 +122,25 @@ PeerConnectionE2EQualityTest::PeerConnectionE2EQualityTest(
 void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   SetMissedVideoStreamLabels({alice_->params(), bob_->params()});
   ValidateParams({alice_->params(), bob_->params()});
+
+  int num_cores = CpuInfo::DetectNumberOfCores();
+  RTC_DCHECK_GE(num_cores, 1);
+
+  int video_analyzer_threads =
+      num_cores - kPeerConnectionUsedThreads - kFrameworkUsedThreads;
+  if (video_analyzer_threads <= 0) {
+    video_analyzer_threads = 1;
+  }
+  video_analyzer_threads =
+      std::min(video_analyzer_threads, kMaxVideoAnalyzerThreads);
+  RTC_LOG(INFO) << "video_analyzer_threads=" << video_analyzer_threads;
+
+  video_quality_analyzer_injection_helper_->Start(video_analyzer_threads);
   signaling_thread_->Invoke<void>(
       RTC_FROM_HERE,
       rtc::Bind(&PeerConnectionE2EQualityTest::RunOnSignalingThread, this,
                 run_params));
+  video_quality_analyzer_injection_helper_->Stop();
 }
 
 void PeerConnectionE2EQualityTest::SetMissedVideoStreamLabels(
@@ -192,7 +214,6 @@ void PeerConnectionE2EQualityTest::RunOnSignalingThread(RunParams run_params) {
   done.Wait(static_cast<int>(run_params.run_duration.ms()));
 
   TearDownCall();
-  video_quality_analyzer_injection_helper_->Stop();
 }
 
 void PeerConnectionE2EQualityTest::AddMedia(TestPeer* peer) {
