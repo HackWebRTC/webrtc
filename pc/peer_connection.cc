@@ -2311,13 +2311,16 @@ static absl::string_view GetDefaultMidForPlanB(cricket::MediaType media_type) {
 }
 
 void PeerConnection::FillInMissingRemoteMids(
-    cricket::SessionDescription* remote_description) {
-  RTC_DCHECK(remote_description);
+    cricket::SessionDescription* new_remote_description) {
+  RTC_DCHECK(new_remote_description);
   const cricket::ContentInfos& local_contents =
       (local_description() ? local_description()->description()->contents()
                            : cricket::ContentInfos());
-  for (size_t i = 0; i < remote_description->contents().size(); ++i) {
-    cricket::ContentInfo& content = remote_description->contents()[i];
+  const cricket::ContentInfos& remote_contents =
+      (remote_description() ? remote_description()->description()->contents()
+                            : cricket::ContentInfos());
+  for (size_t i = 0; i < new_remote_description->contents().size(); ++i) {
+    cricket::ContentInfo& content = new_remote_description->contents()[i];
     if (!content.name.empty()) {
       continue;
     }
@@ -2327,6 +2330,9 @@ void PeerConnection::FillInMissingRemoteMids(
       if (i < local_contents.size()) {
         new_mid = local_contents[i].name;
         source_explanation = "from the matching local media section";
+      } else if (i < remote_contents.size()) {
+        new_mid = remote_contents[i].name;
+        source_explanation = "from the matching previous remote media section";
       } else {
         new_mid = mid_generator_();
         source_explanation = "generated just now";
@@ -2336,9 +2342,9 @@ void PeerConnection::FillInMissingRemoteMids(
           GetDefaultMidForPlanB(content.media_description()->type()));
       source_explanation = "to match pre-existing behavior";
     }
+    RTC_DCHECK(!new_mid.empty());
     content.name = new_mid;
-    remote_description->transport_infos()[i].content_name =
-        std::string(new_mid);
+    new_remote_description->transport_infos()[i].content_name = new_mid;
     RTC_LOG(LS_INFO) << "SetRemoteDescription: Remote media section at i=" << i
                      << " is missing an a=mid line. Filling in the value '"
                      << new_mid << "' " << source_explanation << ".";
