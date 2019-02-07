@@ -84,7 +84,7 @@ TEST_F(TestH264Impl, MAYBE_EncodeDecode) {
   EXPECT_EQ(ColorSpace::PrimaryID::kUnspecified, color_space.primaries());
   EXPECT_EQ(ColorSpace::TransferID::kUnspecified, color_space.transfer());
   EXPECT_EQ(ColorSpace::MatrixID::kUnspecified, color_space.matrix());
-  EXPECT_EQ(ColorSpace::RangeID::kLimited, color_space.range());
+  EXPECT_EQ(ColorSpace::RangeID::kInvalid, color_space.range());
   EXPECT_EQ(ColorSpace::ChromaSiting::kUnspecified,
             color_space.chroma_siting_horizontal());
   EXPECT_EQ(ColorSpace::ChromaSiting::kUnspecified,

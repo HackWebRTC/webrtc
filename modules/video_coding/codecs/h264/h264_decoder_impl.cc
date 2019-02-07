@@ -304,8 +304,8 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
 
   // Pass on color space from input frame if explicitly specified.
   const ColorSpace& color_space =
-      input_frame->color_space() ? *input_frame->color_space()
-                                 : ExtractH264ColorSpace(av_context_.get());
+      input_image.ColorSpace() ? *input_image.ColorSpace()
+                               : ExtractH264ColorSpace(av_context_.get());
   VideoFrame decoded_frame =
       VideoFrame::Builder()
           .set_video_frame_buffer(input_frame->video_frame_buffer())
