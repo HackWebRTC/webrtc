@@ -29,35 +29,6 @@ MediaTransportSettings& MediaTransportSettings::operator=(
     const MediaTransportSettings&) = default;
 MediaTransportSettings::~MediaTransportSettings() = default;
 
-MediaTransportEncodedAudioFrame::~MediaTransportEncodedAudioFrame() {}
-
-MediaTransportEncodedAudioFrame::MediaTransportEncodedAudioFrame(
-    int sampling_rate_hz,
-    int starting_sample_index,
-    int samples_per_channel,
-    int sequence_number,
-    FrameType frame_type,
-    int payload_type,
-    std::vector<uint8_t> encoded_data)
-    : sampling_rate_hz_(sampling_rate_hz),
-      starting_sample_index_(starting_sample_index),
-      samples_per_channel_(samples_per_channel),
-      sequence_number_(sequence_number),
-      frame_type_(frame_type),
-      payload_type_(payload_type),
-      encoded_data_(std::move(encoded_data)) {}
-
-MediaTransportEncodedAudioFrame& MediaTransportEncodedAudioFrame::operator=(
-    const MediaTransportEncodedAudioFrame&) = default;
-
-MediaTransportEncodedAudioFrame& MediaTransportEncodedAudioFrame::operator=(
-    MediaTransportEncodedAudioFrame&&) = default;
-
-MediaTransportEncodedAudioFrame::MediaTransportEncodedAudioFrame(
-    const MediaTransportEncodedAudioFrame&) = default;
-
-MediaTransportEncodedAudioFrame::MediaTransportEncodedAudioFrame(
-    MediaTransportEncodedAudioFrame&&) = default;
 
 MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame() = default;
 
