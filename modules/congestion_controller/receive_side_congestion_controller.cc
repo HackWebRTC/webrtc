@@ -139,6 +139,12 @@ void ReceiveSideCongestionController::OnReceivedPacket(
   }
 }
 
+void ReceiveSideCongestionController::SetSendFeedbackOnRequestOnly(
+    bool send_feedback_on_request_only) {
+  remote_estimator_proxy_.SetSendFeedbackOnRequestOnly(
+      send_feedback_on_request_only);
+}
+
 RemoteBitrateEstimator*
 ReceiveSideCongestionController::GetRemoteBitrateEstimator(bool send_side_bwe) {
   if (send_side_bwe) {

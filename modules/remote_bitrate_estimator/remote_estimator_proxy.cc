@@ -41,7 +41,8 @@ RemoteEstimatorProxy::RemoteEstimatorProxy(
       media_ssrc_(0),
       feedback_sequence_(0),
       window_start_seq_(-1),
-      send_interval_ms_(kDefaultSendIntervalMs) {}
+      send_interval_ms_(kDefaultSendIntervalMs),
+      send_feedback_on_request_only_(false) {}
 
 RemoteEstimatorProxy::~RemoteEstimatorProxy() {}
 
@@ -108,6 +109,12 @@ void RemoteEstimatorProxy::OnBitrateChanged(int bitrate_bps) {
   send_interval_ms_ = static_cast<int>(
       0.5 + kTwccReportSize * 8.0 * 1000.0 /
                 rtc::SafeClamp(0.05 * bitrate_bps, kMinTwccRate, kMaxTwccRate));
+}
+
+void RemoteEstimatorProxy::SetSendFeedbackOnRequestOnly(
+    bool send_feedback_on_request_only) {
+  rtc::CritScope cs(&lock_);
+  send_feedback_on_request_only_ = send_feedback_on_request_only;
 }
 
 void RemoteEstimatorProxy::OnPacketArrival(uint16_t sequence_number,

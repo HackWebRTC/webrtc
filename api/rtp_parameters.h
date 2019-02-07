@@ -295,6 +295,7 @@ struct RtpExtension {
   // Header extension for transport sequence number, see url for details:
   // http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions
   static const char kTransportSequenceNumberUri[];
+  static const char kTransportSequenceNumberV2Uri[];
   static const int kTransportSequenceNumberDefaultId;
 
   static const char kPlayoutDelayUri[];

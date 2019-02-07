@@ -108,6 +108,8 @@ const int RtpExtension::kVideoRotationDefaultId = 4;
 
 const char RtpExtension::kTransportSequenceNumberUri[] =
     "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01";
+const char RtpExtension::kTransportSequenceNumberV2Uri[] =
+    "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-02";
 const int RtpExtension::kTransportSequenceNumberDefaultId = 5;
 
 // This extension allows applications to adaptively limit the playout delay
