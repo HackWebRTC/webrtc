@@ -44,8 +44,6 @@ class TestPeer final : public PeerConnectionWrapper {
   // also will setup dependencies, that are required for media analyzers
   // injection.
   //
-  // We require |worker_thread| here, because TestPeer can't own worker thread,
-  // because in such case it will be destroyed before peer connection.
   // |signaling_thread| will be provided by test fixture implementation.
   // |params| - describes current peer paramters, like current peer video
   // streams and audio streams
@@ -57,7 +55,6 @@ class TestPeer final : public PeerConnectionWrapper {
       std::unique_ptr<Params> params,
       VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
       rtc::Thread* signaling_thread,
-      rtc::Thread* worker_thread,
       absl::optional<std::string> audio_output_file_name);
 
   Params* params() const { return params_.get(); }

@@ -49,6 +49,28 @@ rtc_source_set("peer_connection_quality_test_fixture_api") {
     "../../../../api/video_codecs:video_codecs_api",
     "../../../../logging:rtc_event_log_api",
     "../../../../rtc_base:rtc_base",
+    "//third_party/abseil-cpp/absl/memory:memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
+}
+
+if (rtc_include_tests) {
+  rtc_source_set("create_peerconnection_quality_test_fixture") {
+    visibility = [ "*" ]
+    testonly = true
+    sources = [
+      "create_peerconnection_quality_test_fixture.cc",
+      "create_peerconnection_quality_test_fixture.h",
+    ]
+
+    deps = [
+      ":peer_connection_quality_test_fixture_api",
+      "../:peerconnection_quality_test",
+      "//third_party/abseil-cpp/absl/memory:memory",
+    ]
+    if (!build_with_chromium && is_clang) {
+      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
+  }
 }

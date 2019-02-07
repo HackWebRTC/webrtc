@@ -14,6 +14,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/async_resolver_factory.h"
 #include "api/call/call_factory_interface.h"
 #include "api/fec_controller.h"
@@ -81,7 +82,10 @@ class PeerConnectionE2EQualityTestFixture {
   // has a network thread, that will be used to communicate with another peers.
   struct InjectableComponents {
     explicit InjectableComponents(rtc::Thread* network_thread)
-        : network_thread(network_thread) {
+        : network_thread(network_thread),
+          pcf_dependencies(
+              absl::make_unique<PeerConnectionFactoryComponents>()),
+          pc_dependencies(absl::make_unique<PeerConnectionComponents>()) {
       RTC_CHECK(network_thread);
     }
 
@@ -104,6 +108,8 @@ class PeerConnectionE2EQualityTestFixture {
     std::vector<std::string> slides_yuv_file_names;
   };
 
+  enum VideoGeneratorType { kDefault, kI420A, kI010 };
+
   // Contains properties of single video stream.
   struct VideoConfig {
     size_t width;
@@ -113,17 +119,22 @@ class PeerConnectionE2EQualityTestFixture {
     absl::optional<std::string> stream_label;
     // Only single from 3 next fields can be specified.
     // If specified generator with this name will be used as input.
-    absl::optional<std::string> generator_name;
-    // If specified this file will be used as input.
+    absl::optional<VideoGeneratorType> generator;
+    // If specified this file will be used as input. Input video will be played
+    // in a circle.
     absl::optional<std::string> input_file_name;
     // If specified screen share video stream will be created as input.
     absl::optional<ScreenShareConfig> screen_share_config;
     // If specified the input stream will be also copied to specified file.
+    // It is actually one of the test's output file, which contains copy of what
+    // was captured during the test for this video stream on sender side.
+    // It is useful when generator is used as input.
     absl::optional<std::string> input_dump_file_name;
     // If specified this file will be used as output on the receiver side for
     // this stream. If multiple streams will be produced by input stream,
-    // output files will be appended with indexes.
-    absl::optional<std::string> output_file_name;
+    // output files will be appended with indexes. The produced files contains
+    // what was rendered for this video stream on receiver side.
+    absl::optional<std::string> output_dump_file_name;
   };
 
   // Contains properties for audio in the call.
@@ -138,7 +149,7 @@ class PeerConnectionE2EQualityTestFixture {
     // If specified the input stream will be also copied to specified file.
     absl::optional<std::string> input_dump_file_name;
     // If specified the output stream will be copied to specified file.
-    absl::optional<std::string> output_file_name;
+    absl::optional<std::string> output_dump_file_name;
     // Audio options to use.
     cricket::AudioOptions audio_options;
   };
@@ -162,7 +173,16 @@ class PeerConnectionE2EQualityTestFixture {
     std::unique_ptr<VideoQualityAnalyzerInterface> video_quality_analyzer;
   };
 
-  virtual void Run() = 0;
+  // Contains parameters, that describe how long framework should run quality
+  // test.
+  struct RunParams {
+    // Specifies how long the test should be run. This time shows how long
+    // the media should flow after connection was established and before
+    // it will be shut downed.
+    TimeDelta run_duration;
+  };
+
+  virtual void Run(RunParams run_params) = 0;
   virtual ~PeerConnectionE2EQualityTestFixture() = default;
 };
 

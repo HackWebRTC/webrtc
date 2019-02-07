@@ -77,14 +77,14 @@ std::unique_ptr<TestAudioDeviceModule::Capturer> CreateAudioCapturer(
   if (audio_config.mode == AudioConfig::Mode::kGenerated) {
     return TestAudioDeviceModule::CreatePulsedNoiseCapturer(
         kGeneratedAudioMaxAmplitude, kSamplingFrequencyInHz);
-  } else if (audio_config.mode == AudioConfig::Mode::kFile) {
+  }
+  if (audio_config.mode == AudioConfig::Mode::kFile) {
     RTC_DCHECK(audio_config.input_file_name);
     return TestAudioDeviceModule::CreateWavFileReader(
         audio_config.input_file_name.value());
-  } else {
-    RTC_NOTREACHED() << "Unknown audio_config->mode";
-    return nullptr;
   }
+  RTC_NOTREACHED() << "Unknown audio_config->mode";
+  return nullptr;
 }
 
 rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModule(
@@ -176,12 +176,10 @@ PeerConnectionFactoryDependencies CreatePCFDependencies(
     VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
     rtc::Thread* network_thread,
     rtc::Thread* signaling_thread,
-    rtc::Thread* worker_thread,
     absl::optional<std::string> audio_output_file_name) {
   PeerConnectionFactoryDependencies pcf_deps;
   pcf_deps.network_thread = network_thread;
   pcf_deps.signaling_thread = signaling_thread;
-  pcf_deps.worker_thread = worker_thread;
   pcf_deps.media_engine = CreateMediaEngine(
       pcf_dependencies.get(), std::move(audio_config), video_analyzer_helper,
       std::move(audio_output_file_name));
@@ -217,8 +215,7 @@ PeerConnectionDependencies CreatePCDependencies(
   // until the end of the test.
   if (pc_dependencies->network_manager == nullptr) {
     pc_dependencies->network_manager =
-        // TODO(titovartem) have network manager integrated with emulated
-        // network layer.
+        // Use real network (on the loopback interface)
         absl::make_unique<rtc::BasicNetworkManager>();
   }
   auto port_allocator = absl::make_unique<cricket::BasicPortAllocator>(
@@ -250,7 +247,6 @@ std::unique_ptr<TestPeer> TestPeer::CreateTestPeer(
     std::unique_ptr<Params> params,
     VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
     rtc::Thread* signaling_thread,
-    rtc::Thread* worker_thread,
     absl::optional<std::string> audio_output_file_name) {
   RTC_DCHECK(components);
   RTC_DCHECK(params);
@@ -264,7 +260,7 @@ std::unique_ptr<TestPeer> TestPeer::CreateTestPeer(
   PeerConnectionFactoryDependencies pcf_deps = CreatePCFDependencies(
       std::move(components->pcf_dependencies), params->audio_config,
       video_analyzer_helper, components->network_thread, signaling_thread,
-      worker_thread, std::move(audio_output_file_name));
+      std::move(audio_output_file_name));
   rtc::scoped_refptr<PeerConnectionFactoryInterface> pcf =
       CreateModularPeerConnectionFactory(std::move(pcf_deps));
 
@@ -284,6 +280,11 @@ bool TestPeer::AddIceCandidates(
   bool success = true;
   for (const auto* candidate : candidates) {
     if (!pc()->AddIceCandidate(candidate)) {
+      std::string candidate_str;
+      bool res = candidate->ToString(&candidate_str);
+      RTC_CHECK(res);
+      RTC_LOG(LS_ERROR) << "Failed to add ICE candidate, candidate_str="
+                        << candidate_str;
       success = false;
     }
   }
@@ -296,8 +297,8 @@ TestPeer::TestPeer(
     std::unique_ptr<MockPeerConnectionObserver> observer,
     std::unique_ptr<Params> params,
     std::unique_ptr<rtc::NetworkManager> network_manager)
-    : PeerConnectionWrapper::PeerConnectionWrapper(pc_factory,
-                                                   pc,
+    : PeerConnectionWrapper::PeerConnectionWrapper(std::move(pc_factory),
+                                                   std::move(pc),
                                                    std::move(observer)),
       params_(std::move(params)),
       network_manager_(std::move(network_manager)) {}

@@ -54,4 +54,7 @@ specific_include_rules = {
     "+pc/test/mock_peer_connection_observers.h",
     "+p2p/client/basic_port_allocator.h",
   ],
+  ".*peer_connection_quality_test\.h": [
+    "+pc",
+  ]
 }
