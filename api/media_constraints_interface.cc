@@ -80,18 +80,8 @@ const char MediaConstraintsInterface::kValueTrue[] = "true";
 const char MediaConstraintsInterface::kValueFalse[] = "false";
 
 // Constraints declared as static members in mediastreaminterface.h
-// Specified by draft-alvestrand-constraints-resolution-00b
-const char MediaConstraintsInterface::kMinAspectRatio[] = "minAspectRatio";
-const char MediaConstraintsInterface::kMaxAspectRatio[] = "maxAspectRatio";
-const char MediaConstraintsInterface::kMaxWidth[] = "maxWidth";
-const char MediaConstraintsInterface::kMinWidth[] = "minWidth";
-const char MediaConstraintsInterface::kMaxHeight[] = "maxHeight";
-const char MediaConstraintsInterface::kMinHeight[] = "minHeight";
-const char MediaConstraintsInterface::kMaxFrameRate[] = "maxFrameRate";
-const char MediaConstraintsInterface::kMinFrameRate[] = "minFrameRate";
 
 // Audio constraints.
-const char MediaConstraintsInterface::kEchoCancellation[] = "echoCancellation";
 const char MediaConstraintsInterface::kGoogEchoCancellation[] =
     "googEchoCancellation";
 const char MediaConstraintsInterface::kExtendedFilterEchoCancellation[] =
@@ -112,9 +102,6 @@ const char MediaConstraintsInterface::kTypingNoiseDetection[] =
 const char MediaConstraintsInterface::kAudioMirroring[] = "googAudioMirroring";
 const char MediaConstraintsInterface::kAudioNetworkAdaptorConfig[] =
     "googAudioNetworkAdaptorConfig";
-
-// Google-specific constraint keys for a local video source (getUserMedia).
-const char MediaConstraintsInterface::kNoiseReduction[] = "googNoiseReduction";
 
 // Constraint keys for CreateOffer / CreateAnswer defined in W3C specification.
 const char MediaConstraintsInterface::kOfferToReceiveAudio[] =
@@ -144,7 +131,6 @@ const char MediaConstraintsInterface::kScreencastMinBitrate[] =
 // TODO(ronghuawu): Remove once cpu overuse detection is stable.
 const char MediaConstraintsInterface::kCpuOveruseDetection[] =
     "googCpuOveruseDetection";
-const char MediaConstraintsInterface::kPayloadPadding[] = "googPayloadPadding";
 
 const char MediaConstraintsInterface::kNumSimulcastLayers[] =
     "googNumSimulcastLayers";

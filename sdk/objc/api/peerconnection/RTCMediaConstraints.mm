@@ -14,22 +14,6 @@
 
 #include <memory>
 
-NSString * const kRTCMediaConstraintsMinAspectRatio =
-    @(webrtc::MediaConstraintsInterface::kMinAspectRatio);
-NSString * const kRTCMediaConstraintsMaxAspectRatio =
-    @(webrtc::MediaConstraintsInterface::kMaxAspectRatio);
-NSString * const kRTCMediaConstraintsMinWidth =
-    @(webrtc::MediaConstraintsInterface::kMinWidth);
-NSString * const kRTCMediaConstraintsMaxWidth =
-    @(webrtc::MediaConstraintsInterface::kMaxWidth);
-NSString * const kRTCMediaConstraintsMinHeight =
-    @(webrtc::MediaConstraintsInterface::kMinHeight);
-NSString * const kRTCMediaConstraintsMaxHeight =
-    @(webrtc::MediaConstraintsInterface::kMaxHeight);
-NSString * const kRTCMediaConstraintsMinFrameRate =
-    @(webrtc::MediaConstraintsInterface::kMinFrameRate);
-NSString * const kRTCMediaConstraintsMaxFrameRate =
-    @(webrtc::MediaConstraintsInterface::kMaxFrameRate);
 NSString * const kRTCMediaConstraintsAudioNetworkAdaptorConfig =
     @(webrtc::MediaConstraintsInterface::kAudioNetworkAdaptorConfig);
 

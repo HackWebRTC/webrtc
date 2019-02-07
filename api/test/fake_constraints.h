@@ -53,26 +53,6 @@ class FakeConstraints : public webrtc::MediaConstraintsInterface {
     optional_.push_back(Constraint(key, rtc::ToString(value)));
   }
 
-  void SetMandatoryMinAspectRatio(double ratio) {
-    SetMandatory(MediaConstraintsInterface::kMinAspectRatio, ratio);
-  }
-
-  void SetMandatoryMinWidth(int width) {
-    SetMandatory(MediaConstraintsInterface::kMinWidth, width);
-  }
-
-  void SetMandatoryMinHeight(int height) {
-    SetMandatory(MediaConstraintsInterface::kMinHeight, height);
-  }
-
-  void SetOptionalMaxWidth(int width) {
-    AddOptional(MediaConstraintsInterface::kMaxWidth, width);
-  }
-
-  void SetMandatoryMaxFrameRate(int frame_rate) {
-    SetMandatory(MediaConstraintsInterface::kMaxFrameRate, frame_rate);
-  }
-
   void SetMandatoryReceiveAudio(bool enable) {
     SetMandatory(MediaConstraintsInterface::kOfferToReceiveAudio, enable);
   }

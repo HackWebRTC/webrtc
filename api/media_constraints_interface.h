@@ -51,19 +51,7 @@ class MediaConstraintsInterface {
     bool FindFirst(const std::string& key, std::string* value) const;
   };
 
-  // Constraint keys used by a local video source.
-  // Specified by draft-alvestrand-constraints-resolution-00b
-  static const char kMinAspectRatio[];  // minAspectRatio
-  static const char kMaxAspectRatio[];  // maxAspectRatio
-  static const char kMaxWidth[];        // maxWidth
-  static const char kMinWidth[];        // minWidth
-  static const char kMaxHeight[];       // maxHeight
-  static const char kMinHeight[];       // minHeight
-  static const char kMaxFrameRate[];    // maxFrameRate
-  static const char kMinFrameRate[];    // minFrameRate
-
   // Constraint keys used by a local audio source.
-  static const char kEchoCancellation[];  // echoCancellation
 
   // These keys are google specific.
   static const char kGoogEchoCancellation[];  // googEchoCancellation
@@ -79,9 +67,6 @@ class MediaConstraintsInterface {
   static const char kAudioMirroring[];        // googAudioMirroring
   static const char
       kAudioNetworkAdaptorConfig[];  // goodAudioNetworkAdaptorConfig
-
-  // Google-specific constraint keys for a local video source
-  static const char kNoiseReduction[];  // googNoiseReduction
 
   // Constraint keys for CreateOffer / CreateAnswer
   // Specified by the W3C PeerConnection spec
@@ -113,11 +98,6 @@ class MediaConstraintsInterface {
   static const char kCombinedAudioVideoBwe[];  // googCombinedAudioVideoBwe
   static const char kScreencastMinBitrate[];   // googScreencastMinBitrate
   static const char kCpuOveruseDetection[];    // googCpuOveruseDetection
-  static const char kPayloadPadding[];         // googPayloadPadding
-
-  // The prefix of internal-only constraints whose JS set values should be
-  // stripped by Chrome before passed down to Libjingle.
-  static const char kInternalConstraintPrefix[];
 
   // Specifies number of simulcast layers for all video tracks
   // with a Plan B offer/answer
