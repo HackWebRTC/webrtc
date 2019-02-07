@@ -17,8 +17,12 @@ namespace webrtc {
 
 SamplesStatsCounter::SamplesStatsCounter() = default;
 SamplesStatsCounter::~SamplesStatsCounter() = default;
-SamplesStatsCounter::SamplesStatsCounter(SamplesStatsCounter&) = default;
+SamplesStatsCounter::SamplesStatsCounter(const SamplesStatsCounter&) = default;
+SamplesStatsCounter& SamplesStatsCounter::operator=(
+    const SamplesStatsCounter&) = default;
 SamplesStatsCounter::SamplesStatsCounter(SamplesStatsCounter&&) = default;
+SamplesStatsCounter& SamplesStatsCounter::operator=(SamplesStatsCounter&&) =
+    default;
 
 void SamplesStatsCounter::AddSample(double value) {
   samples_.push_back(value);
@@ -30,6 +34,7 @@ void SamplesStatsCounter::AddSample(double value) {
     min_ = value;
   }
   sum_ += value;
+  sum_squared_ += value * value;
 }
 
 double SamplesStatsCounter::GetPercentile(double percentile) {

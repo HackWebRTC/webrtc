@@ -10,6 +10,7 @@
 
 #include "rtc_base/numerics/samples_stats_counter.h"
 
+#include <math.h>
 #include <algorithm>
 #include <vector>
 
@@ -17,6 +18,7 @@
 
 namespace webrtc {
 namespace {
+
 SamplesStatsCounter CreateStatsFilledWithIntsFrom1ToN(int n) {
   std::vector<double> data;
   for (int i = 1; i <= n; i++) {
@@ -30,35 +32,47 @@ SamplesStatsCounter CreateStatsFilledWithIntsFrom1ToN(int n) {
   }
   return stats;
 }
+
 }  // namespace
 
 TEST(SamplesStatsCounter, FullSimpleTest) {
   SamplesStatsCounter stats = CreateStatsFilledWithIntsFrom1ToN(100);
 
-  ASSERT_TRUE(!stats.IsEmpty());
-  ASSERT_DOUBLE_EQ(stats.GetMin(), 1.0);
-  ASSERT_DOUBLE_EQ(stats.GetMax(), 100.0);
-  ASSERT_DOUBLE_EQ(stats.GetAverage(), 50.5);
-  ASSERT_DOUBLE_EQ(stats.GetPercentile(0), 1);
+  EXPECT_TRUE(!stats.IsEmpty());
+  EXPECT_DOUBLE_EQ(stats.GetMin(), 1.0);
+  EXPECT_DOUBLE_EQ(stats.GetMax(), 100.0);
+  EXPECT_DOUBLE_EQ(stats.GetAverage(), 50.5);
   for (int i = 1; i <= 100; i++) {
     double p = i / 100.0;
-    ASSERT_GE(stats.GetPercentile(p), i);
-    ASSERT_LT(stats.GetPercentile(p), i + 1);
+    EXPECT_GE(stats.GetPercentile(p), i);
+    EXPECT_LT(stats.GetPercentile(p), i + 1);
   }
+}
+
+TEST(SamplesStatsCounter, VarianceAndDeviation) {
+  SamplesStatsCounter stats;
+  stats.AddSample(2);
+  stats.AddSample(2);
+  stats.AddSample(-1);
+  stats.AddSample(5);
+
+  EXPECT_DOUBLE_EQ(stats.GetAverage(), 2.0);
+  EXPECT_DOUBLE_EQ(stats.GetVariance(), 4.5);
+  EXPECT_DOUBLE_EQ(stats.GetStandardDeviation(), sqrt(4.5));
 }
 
 TEST(SamplesStatsCounter, FractionPercentile) {
   SamplesStatsCounter stats = CreateStatsFilledWithIntsFrom1ToN(5);
 
-  ASSERT_DOUBLE_EQ(stats.GetPercentile(0.5), 3);
+  EXPECT_DOUBLE_EQ(stats.GetPercentile(0.5), 3);
 }
 
 TEST(SamplesStatsCounter, TestBorderValues) {
   SamplesStatsCounter stats = CreateStatsFilledWithIntsFrom1ToN(5);
 
-  ASSERT_GE(stats.GetPercentile(0.01), 1);
-  ASSERT_LT(stats.GetPercentile(0.01), 2);
-  ASSERT_DOUBLE_EQ(stats.GetPercentile(1.0), 5);
+  EXPECT_GE(stats.GetPercentile(0.01), 1);
+  EXPECT_LT(stats.GetPercentile(0.01), 2);
+  EXPECT_DOUBLE_EQ(stats.GetPercentile(1.0), 5);
 }
 
 }  // namespace webrtc
