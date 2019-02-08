@@ -24,6 +24,9 @@
 #include "logging/rtc_event_log/events/rtc_event_bwe_update_loss_based.h"
 #include "logging/rtc_event_log/events/rtc_event_dtls_transport_state.h"
 #include "logging/rtc_event_log/events/rtc_event_dtls_writable_state.h"
+#include "logging/rtc_event_log/events/rtc_event_generic_ack_received.h"
+#include "logging/rtc_event_log/events/rtc_event_generic_packet_received.h"
+#include "logging/rtc_event_log/events/rtc_event_generic_packet_sent.h"
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair.h"
 #include "logging/rtc_event_log/events/rtc_event_ice_candidate_pair_config.h"
 #include "logging/rtc_event_log/events/rtc_event_probe_cluster_created.h"
@@ -687,6 +690,9 @@ std::string RtcEventLogEncoderNewFormat::EncodeBatch(
     std::vector<const RtcEventVideoSendStreamConfig*> video_send_stream_configs;
     std::vector<const RtcEventIceCandidatePairConfig*> ice_candidate_configs;
     std::vector<const RtcEventIceCandidatePair*> ice_candidate_events;
+    std::vector<const RtcEventGenericPacketReceived*> generic_packets_received;
+    std::vector<const RtcEventGenericPacketSent*> generic_packets_sent;
+    std::vector<const RtcEventGenericAckReceived*> generic_acks_received;
 
     for (auto it = begin; it != end; ++it) {
       switch ((*it)->GetType()) {
@@ -816,6 +822,25 @@ std::string RtcEventLogEncoderNewFormat::EncodeBatch(
           auto* rtc_event =
               static_cast<const RtcEventIceCandidatePair* const>(it->get());
           ice_candidate_events.push_back(rtc_event);
+          break;
+        }
+        case RtcEvent::Type::GenericPacketReceived: {
+          auto* rtc_event =
+              static_cast<const RtcEventGenericPacketReceived* const>(
+                  it->get());
+          generic_packets_received.push_back(rtc_event);
+          break;
+        }
+        case RtcEvent::Type::GenericPacketSent: {
+          auto* rtc_event =
+              static_cast<const RtcEventGenericPacketSent* const>(it->get());
+          generic_packets_sent.push_back(rtc_event);
+          break;
+        }
+        case RtcEvent::Type::GenericAckReceived: {
+          auto* rtc_event =
+              static_cast<const RtcEventGenericAckReceived* const>(it->get());
+          generic_acks_received.push_back(rtc_event);
           break;
         }
       }
