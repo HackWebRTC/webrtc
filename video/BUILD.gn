@@ -322,9 +322,6 @@ if (rtc_include_tests) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
-    if (rtc_use_h264) {
-      defines = [ "WEBRTC_USE_H264" ]
-    }
   }
 
   rtc_executable("video_loopback") {
@@ -583,9 +580,6 @@ if (rtc_include_tests) {
     if (!build_with_chromium && is_clang) {
       # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-    if (rtc_use_h264) {
-      defines += [ "WEBRTC_USE_H264" ]
     }
     if (!build_with_mozilla) {
       deps += [ "../media:rtc_media_base" ]

@@ -242,6 +242,10 @@ config("common_config") {
     defines += [ "ENABLE_EXTERNAL_AUTH" ]
   }
 
+  if (rtc_use_h264) {
+    defines += [ "WEBRTC_USE_H264" ]
+  }
+
   if (build_with_chromium) {
     defines += [
       # NOTICE: Since common_inherited_config is used in public_configs for our

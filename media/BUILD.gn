@@ -481,10 +481,6 @@ if (rtc_include_tests) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
-    if (rtc_use_h264) {
-      defines += [ "WEBRTC_USE_H264" ]
-    }
-
     deps += [
       ":rtc_internal_video_codecs",
       ":rtc_media",
@@ -585,10 +581,6 @@ if (rtc_include_tests) {
 
     if (rtc_enable_sctp) {
       sources += [ "sctp/sctp_transport_unittest.cc" ]
-    }
-
-    if (rtc_use_h264) {
-      defines += [ "WEBRTC_USE_H264" ]
     }
 
     if (rtc_opus_support_120ms_ptime) {
