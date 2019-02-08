@@ -467,37 +467,28 @@ std::vector<VideoCodec> WebRtcVideoEngine::codecs() const {
 
 RtpCapabilities WebRtcVideoEngine::GetCapabilities() const {
   RtpCapabilities capabilities;
+  int id = 1;
   capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kTimestampOffsetUri,
-                           webrtc::RtpExtension::kTimestampOffsetDefaultId));
+      webrtc::RtpExtension(webrtc::RtpExtension::kTimestampOffsetUri, id++));
   capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kAbsSendTimeUri,
-                           webrtc::RtpExtension::kAbsSendTimeDefaultId));
+      webrtc::RtpExtension(webrtc::RtpExtension::kAbsSendTimeUri, id++));
   capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kVideoRotationUri,
-                           webrtc::RtpExtension::kVideoRotationDefaultId));
+      webrtc::RtpExtension(webrtc::RtpExtension::kVideoRotationUri, id++));
   capabilities.header_extensions.push_back(webrtc::RtpExtension(
-      webrtc::RtpExtension::kTransportSequenceNumberUri,
-      webrtc::RtpExtension::kTransportSequenceNumberDefaultId));
+      webrtc::RtpExtension::kTransportSequenceNumberUri, id++));
   capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kPlayoutDelayUri,
-                           webrtc::RtpExtension::kPlayoutDelayDefaultId));
+      webrtc::RtpExtension(webrtc::RtpExtension::kPlayoutDelayUri, id++));
   capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kVideoContentTypeUri,
-                           webrtc::RtpExtension::kVideoContentTypeDefaultId));
+      webrtc::RtpExtension(webrtc::RtpExtension::kVideoContentTypeUri, id++));
   capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kVideoTimingUri,
-                           webrtc::RtpExtension::kVideoTimingDefaultId));
+      webrtc::RtpExtension(webrtc::RtpExtension::kVideoTimingUri, id++));
   capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kFrameMarkingUri,
-                           webrtc::RtpExtension::kFrameMarkingDefaultId));
+      webrtc::RtpExtension(webrtc::RtpExtension::kFrameMarkingUri, id++));
   capabilities.header_extensions.push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kColorSpaceUri,
-                           webrtc::RtpExtension::kColorSpaceDefaultId));
+      webrtc::RtpExtension(webrtc::RtpExtension::kColorSpaceUri, id++));
   if (webrtc::field_trial::IsEnabled("WebRTC-GenericDescriptorAdvertised")) {
     capabilities.header_extensions.push_back(webrtc::RtpExtension(
-        webrtc::RtpExtension::kGenericFrameDescriptorUri,
-        webrtc::RtpExtension::kGenericFrameDescriptorDefaultId));
+        webrtc::RtpExtension::kGenericFrameDescriptorUri, id++));
   }
 
   return capabilities;

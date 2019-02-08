@@ -10,6 +10,7 @@
 
 #include "pc/media_session.h"
 
+#include <algorithm>
 #include <functional>
 #include <map>
 #include <memory>
@@ -51,6 +52,7 @@ void GetSupportedSdesCryptoSuiteNames(
     names->push_back(rtc::SrtpCryptoSuiteToName(crypto));
   }
 }
+
 }  // namespace
 
 namespace cricket {
@@ -1347,14 +1349,21 @@ void MediaSessionDescriptionFactory::set_audio_codecs(
 
 static void AddUnifiedPlanExtensions(RtpHeaderExtensions* extensions) {
   RTC_DCHECK(extensions);
+
+  rtc::UniqueNumberGenerator<int> unique_id_generator;
+  unique_id_generator.AddKnownId(0);  // The first valid RTP extension ID is 1.
+  for (const webrtc::RtpExtension& extension : *extensions) {
+    const bool collision_free = unique_id_generator.AddKnownId(extension.id);
+    RTC_DCHECK(collision_free);
+  }
+
   // Unified Plan also offers the MID and RID header extensions.
+  extensions->push_back(webrtc::RtpExtension(webrtc::RtpExtension::kMidUri,
+                                             unique_id_generator()));
+  extensions->push_back(webrtc::RtpExtension(webrtc::RtpExtension::kRidUri,
+                                             unique_id_generator()));
   extensions->push_back(webrtc::RtpExtension(
-      webrtc::RtpExtension::kMidUri, webrtc::RtpExtension::kMidDefaultId));
-  extensions->push_back(webrtc::RtpExtension(
-      webrtc::RtpExtension::kRidUri, webrtc::RtpExtension::kRidDefaultId));
-  extensions->push_back(
-      webrtc::RtpExtension(webrtc::RtpExtension::kRepairedRidUri,
-                           webrtc::RtpExtension::kRepairedRidDefaultId));
+      webrtc::RtpExtension::kRepairedRidUri, unique_id_generator()));
 }
 
 RtpHeaderExtensions

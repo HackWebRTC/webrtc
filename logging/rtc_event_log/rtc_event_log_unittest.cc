@@ -52,20 +52,6 @@ namespace webrtc {
 
 namespace {
 
-RtpHeaderExtensionMap ExtensionMapWithAllSupportedExtensions() {
-  RtpHeaderExtensionMap all_extensions;
-  all_extensions.Register<AudioLevel>(RtpExtension::kAudioLevelDefaultId);
-  all_extensions.Register<TransmissionOffset>(
-      RtpExtension::kTimestampOffsetDefaultId);
-  all_extensions.Register<AbsoluteSendTime>(
-      RtpExtension::kAbsSendTimeDefaultId);
-  all_extensions.Register<VideoOrientation>(
-      RtpExtension::kVideoRotationDefaultId);
-  all_extensions.Register<TransportSequenceNumber>(
-      RtpExtension::kTransportSequenceNumberDefaultId);
-  return all_extensions;
-}
-
 struct EventCounts {
   size_t audio_send_streams = 0;
   size_t audio_recv_streams = 0;
@@ -247,7 +233,7 @@ void RtcEventLogSession::WriteVideoRecvConfigs(size_t video_recv_streams,
   // Force least one stream to use all header extensions, to ensure
   // (statistically) that every extension is tested in packet creation.
   RtpHeaderExtensionMap all_extensions =
-      ExtensionMapWithAllSupportedExtensions();
+      ParsedRtcEventLog::GetDefaultHeaderExtensionMap();
 
   clock_.AdvanceTimeMicros(prng_.Rand(20) * 1000);
   uint32_t ssrc = prng_.Rand<uint32_t>();
@@ -276,7 +262,7 @@ void RtcEventLogSession::WriteVideoSendConfigs(size_t video_send_streams,
   // Force least one stream to use all header extensions, to ensure
   // (statistically) that every extension is tested in packet creation.
   RtpHeaderExtensionMap all_extensions =
-      ExtensionMapWithAllSupportedExtensions();
+      ParsedRtcEventLog::GetDefaultHeaderExtensionMap();
 
   clock_.AdvanceTimeMicros(prng_.Rand(20) * 1000);
   uint32_t ssrc = prng_.Rand<uint32_t>();

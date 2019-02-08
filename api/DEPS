@@ -150,6 +150,10 @@ specific_include_rules = {
     "+rtc_base/logging.h",
   ],
 
+  "rtp_parameters\.h": [
+    "+rtc_base/deprecation.h",
+  ],
+
   "rtp_receiver_interface\.h": [
     "+rtc_base/ref_count.h",
   ],

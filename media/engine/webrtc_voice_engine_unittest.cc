@@ -35,13 +35,14 @@
 #include "test/mock_audio_decoder_factory.h"
 #include "test/mock_audio_encoder_factory.h"
 
-using testing::_;
-using testing::ContainerEq;
-using testing::Field;
-using testing::Return;
-using testing::ReturnPointee;
-using testing::SaveArg;
-using testing::StrictMock;
+using ::testing::_;
+using ::testing::ContainerEq;
+using ::testing::Contains;
+using ::testing::Field;
+using ::testing::Return;
+using ::testing::ReturnPointee;
+using ::testing::SaveArg;
+using ::testing::StrictMock;
 
 namespace {
 using webrtc::BitrateConstraints;
@@ -2018,16 +2019,11 @@ class WebRtcVoiceEngineWithSendSideBweTest : public WebRtcVoiceEngineTestFake {
 
 TEST_F(WebRtcVoiceEngineWithSendSideBweTest,
        SupportsTransportSequenceNumberHeaderExtension) {
-  cricket::RtpCapabilities capabilities = engine_->GetCapabilities();
-  ASSERT_FALSE(capabilities.header_extensions.empty());
-  for (const webrtc::RtpExtension& extension : capabilities.header_extensions) {
-    if (extension.uri == webrtc::RtpExtension::kTransportSequenceNumberUri) {
-      EXPECT_EQ(webrtc::RtpExtension::kTransportSequenceNumberDefaultId,
-                extension.id);
-      return;
-    }
-  }
-  FAIL() << "Transport sequence number extension not in header-extension list.";
+  const cricket::RtpCapabilities capabilities = engine_->GetCapabilities();
+  EXPECT_THAT(capabilities.header_extensions,
+              Contains(testing::Field(
+                  "uri", &RtpExtension::uri,
+                  webrtc::RtpExtension::kTransportSequenceNumberUri)));
 }
 
 // Test support for audio level header extension.

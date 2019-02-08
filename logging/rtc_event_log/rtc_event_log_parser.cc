@@ -919,22 +919,26 @@ ParsedRtcEventLog::LoggedRtpStreamView::LoggedRtpStreamView(
 //             audio streams. Tracking bug: webrtc:6399
 webrtc::RtpHeaderExtensionMap
 ParsedRtcEventLog::GetDefaultHeaderExtensionMap() {
+  // Values from before the default RTP header extension IDs were removed.
+  constexpr int kAudioLevelDefaultId = 1;
+  constexpr int kTimestampOffsetDefaultId = 2;
+  constexpr int kAbsSendTimeDefaultId = 3;
+  constexpr int kVideoRotationDefaultId = 4;
+  constexpr int kTransportSequenceNumberDefaultId = 5;
+  constexpr int kPlayoutDelayDefaultId = 6;
+  constexpr int kVideoContentTypeDefaultId = 7;
+  constexpr int kVideoTimingDefaultId = 8;
+
   webrtc::RtpHeaderExtensionMap default_map;
-  default_map.Register<AudioLevel>(webrtc::RtpExtension::kAudioLevelDefaultId);
-  default_map.Register<TransmissionOffset>(
-      webrtc::RtpExtension::kTimestampOffsetDefaultId);
-  default_map.Register<AbsoluteSendTime>(
-      webrtc::RtpExtension::kAbsSendTimeDefaultId);
-  default_map.Register<VideoOrientation>(
-      webrtc::RtpExtension::kVideoRotationDefaultId);
-  default_map.Register<VideoContentTypeExtension>(
-      webrtc::RtpExtension::kVideoContentTypeDefaultId);
-  default_map.Register<VideoTimingExtension>(
-      webrtc::RtpExtension::kVideoTimingDefaultId);
+  default_map.Register<AudioLevel>(kAudioLevelDefaultId);
+  default_map.Register<TransmissionOffset>(kTimestampOffsetDefaultId);
+  default_map.Register<AbsoluteSendTime>(kAbsSendTimeDefaultId);
+  default_map.Register<VideoOrientation>(kVideoRotationDefaultId);
   default_map.Register<TransportSequenceNumber>(
-      webrtc::RtpExtension::kTransportSequenceNumberDefaultId);
-  default_map.Register<PlayoutDelayLimits>(
-      webrtc::RtpExtension::kPlayoutDelayDefaultId);
+      kTransportSequenceNumberDefaultId);
+  default_map.Register<PlayoutDelayLimits>(kPlayoutDelayDefaultId);
+  default_map.Register<VideoContentTypeExtension>(kVideoContentTypeDefaultId);
+  default_map.Register<VideoTimingExtension>(kVideoTimingDefaultId);
   return default_map;
 }
 

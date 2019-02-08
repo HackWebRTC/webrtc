@@ -359,9 +359,9 @@ TEST_F(VideoSendStreamImplTest, SetsScreensharePacingFactorWithFeedback) {
   test::ScopedFieldTrials alr_experiment(GetAlrProbingExperimentString());
 
   test_queue_.SendTask([this] {
+    constexpr int kId = 1;
     config_.rtp.extensions.emplace_back(
-        RtpExtension::kTransportSequenceNumberUri,
-        RtpExtension::kTransportSequenceNumberDefaultId);
+        RtpExtension::kTransportSequenceNumberUri, kId);
     EXPECT_CALL(transport_controller_,
                 SetPacingFactor(kAlrProbingExperimentPaceMultiplier))
         .Times(1);

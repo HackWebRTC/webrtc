@@ -4119,6 +4119,8 @@ TEST_F(MediaSessionDescriptionFactoryTest, VideoHasRidExtensionsInUnifiedPlan) {
   // Check to see that RID extensions were added to the extension list
   EXPECT_GE(result.size(), 2u);
   EXPECT_THAT(result, Contains(Field("uri", &RtpExtension::uri,
+                                     RtpExtension::kMidUri)));
+  EXPECT_THAT(result, Contains(Field("uri", &RtpExtension::uri,
                                      RtpExtension::kRidUri)));
   EXPECT_THAT(result, Contains(Field("uri", &RtpExtension::uri,
                                      RtpExtension::kRepairedRidUri)));
@@ -4138,6 +4140,8 @@ TEST_F(MediaSessionDescriptionFactoryTest, AudioHasRidExtensionsInUnifiedPlan) {
   cricket::RtpHeaderExtensions result = sf.audio_rtp_header_extensions();
   // Check to see that RID extensions were added to the extension list
   EXPECT_GE(result.size(), 2u);
+  EXPECT_THAT(result, Contains(Field("uri", &RtpExtension::uri,
+                                     RtpExtension::kMidUri)));
   EXPECT_THAT(result, Contains(Field("uri", &RtpExtension::uri,
                                      RtpExtension::kRidUri)));
   EXPECT_THAT(result, Contains(Field("uri", &RtpExtension::uri,

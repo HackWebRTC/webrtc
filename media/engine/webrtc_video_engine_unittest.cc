@@ -243,7 +243,7 @@ class WebRtcVideoEngineTest : public ::testing::Test {
   VideoMediaChannel* SetRecvParamsWithSupportedCodecs(
       const std::vector<VideoCodec>& codecs);
 
-  void TestExtendedEncoderOveruse(bool use_external_encoder);
+  void ExpectRtpCapabilitySupport(const char* uri, bool supported) const;
 
   // Has to be the first one, so it is initialized before the call or there is a
   // race condition in the clock access.
@@ -278,43 +278,43 @@ TEST_F(WebRtcVideoEngineTest, DefaultRtxCodecHasAssociatedPayloadTypeSet) {
 }
 
 TEST_F(WebRtcVideoEngineTest, SupportsTimestampOffsetHeaderExtension) {
-  RtpCapabilities capabilities = engine_.GetCapabilities();
-  EXPECT_THAT(
-      capabilities.header_extensions,
-      testing::Contains(RtpExtension(RtpExtension::kTimestampOffsetUri,
-                                     RtpExtension::kTimestampOffsetDefaultId)));
+  ExpectRtpCapabilitySupport(RtpExtension::kTimestampOffsetUri, true);
 }
 
 TEST_F(WebRtcVideoEngineTest, SupportsAbsoluteSenderTimeHeaderExtension) {
-  RtpCapabilities capabilities = engine_.GetCapabilities();
-  EXPECT_THAT(
-      capabilities.header_extensions,
-      testing::Contains(RtpExtension(RtpExtension::kAbsSendTimeUri,
-                                     RtpExtension::kAbsSendTimeDefaultId)));
+  ExpectRtpCapabilitySupport(RtpExtension::kAbsSendTimeUri, true);
 }
 
 TEST_F(WebRtcVideoEngineTest, SupportsTransportSequenceNumberHeaderExtension) {
-  RtpCapabilities capabilities = engine_.GetCapabilities();
-  EXPECT_THAT(capabilities.header_extensions,
-              testing::Contains(RtpExtension(
-                  RtpExtension::kTransportSequenceNumberUri,
-                  RtpExtension::kTransportSequenceNumberDefaultId)));
+  ExpectRtpCapabilitySupport(RtpExtension::kTransportSequenceNumberUri, true);
 }
 
 TEST_F(WebRtcVideoEngineTest, SupportsVideoRotationHeaderExtension) {
-  RtpCapabilities capabilities = engine_.GetCapabilities();
-  EXPECT_THAT(
-      capabilities.header_extensions,
-      testing::Contains(RtpExtension(RtpExtension::kVideoRotationUri,
-                                     RtpExtension::kVideoRotationDefaultId)));
+  ExpectRtpCapabilitySupport(RtpExtension::kVideoRotationUri, true);
+}
+
+TEST_F(WebRtcVideoEngineTest, SupportsPlayoutDelayHeaderExtension) {
+  ExpectRtpCapabilitySupport(RtpExtension::kPlayoutDelayUri, true);
+}
+
+TEST_F(WebRtcVideoEngineTest, SupportsVideoContentTypeHeaderExtension) {
+  ExpectRtpCapabilitySupport(RtpExtension::kVideoContentTypeUri, true);
+}
+
+TEST_F(WebRtcVideoEngineTest, SupportsVideoTimingHeaderExtension) {
+  ExpectRtpCapabilitySupport(RtpExtension::kVideoTimingUri, true);
+}
+
+TEST_F(WebRtcVideoEngineTest, SupportsFrameMarkingHeaderExtension) {
+  ExpectRtpCapabilitySupport(RtpExtension::kFrameMarkingUri, true);
 }
 
 TEST_F(WebRtcVideoEngineTest, SupportsColorSpaceHeaderExtension) {
-  RtpCapabilities capabilities = engine_.GetCapabilities();
-  EXPECT_THAT(
-      capabilities.header_extensions,
-      testing::Contains(RtpExtension(RtpExtension::kColorSpaceUri,
-                                     RtpExtension::kColorSpaceDefaultId)));
+  ExpectRtpCapabilitySupport(RtpExtension::kColorSpaceUri, true);
+}
+
+TEST_F(WebRtcVideoEngineTest, AdvertiseGenericDescriptor) {
+  ExpectRtpCapabilitySupport(RtpExtension::kGenericFrameDescriptorUri, false);
 }
 
 class WebRtcVideoEngineTestWithGenericDescriptor
@@ -325,15 +325,7 @@ class WebRtcVideoEngineTestWithGenericDescriptor
 };
 
 TEST_F(WebRtcVideoEngineTestWithGenericDescriptor, AdvertiseGenericDescriptor) {
-  RtpCapabilities capabilities = engine_.GetCapabilities();
-  ASSERT_FALSE(capabilities.header_extensions.empty());
-  for (const RtpExtension& extension : capabilities.header_extensions) {
-    if (extension.uri == RtpExtension::kGenericFrameDescriptorUri) {
-      EXPECT_EQ(RtpExtension::kGenericFrameDescriptorDefaultId, extension.id);
-      return;
-    }
-  }
-  FAIL() << "Generic descriptor extension not in header-extension list.";
+  ExpectRtpCapabilitySupport(RtpExtension::kGenericFrameDescriptorUri, true);
 }
 
 TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionBeforeCapturer) {
@@ -700,6 +692,19 @@ VideoMediaChannel* WebRtcVideoEngineTest::SetRecvParamsWithSupportedCodecs(
   EXPECT_TRUE(channel->SetRecvParameters(parameters));
 
   return channel;
+}
+
+void WebRtcVideoEngineTest::ExpectRtpCapabilitySupport(const char* uri,
+                                                       bool supported) const {
+  const RtpCapabilities capabilities = engine_.GetCapabilities();
+  if (supported) {
+    EXPECT_THAT(capabilities.header_extensions,
+                testing::Contains(testing::Field(&RtpExtension::uri, uri)));
+  } else {
+    EXPECT_THAT(
+        capabilities.header_extensions,
+        testing::Each(testing::Field(&RtpExtension::uri, testing::StrNe(uri))));
+  }
 }
 
 TEST_F(WebRtcVideoEngineTest, UsesSimulcastAdapterForVp8Factories) {

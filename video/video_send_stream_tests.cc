@@ -34,6 +34,7 @@
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/rate_limiter.h"
 #include "rtc_base/time_utils.h"
+#include "rtc_base/unique_id_generator.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/call_test.h"
 #include "test/configurable_frame_size_encoder.h"
@@ -3752,10 +3753,14 @@ class PacingFactorObserver : public test::SendTest {
     }
 
     if (configure_send_side_ && !has_send_side) {
+      rtc::UniqueNumberGenerator<int> unique_id_generator;
+      unique_id_generator.AddKnownId(0);  // First valid RTP extension ID is 1.
+      for (const RtpExtension& extension : send_config->rtp.extensions) {
+        unique_id_generator.AddKnownId(extension.id);
+      }
       // Want send side, not present by default, so add it.
       send_config->rtp.extensions.emplace_back(
-          RtpExtension::kTransportSequenceNumberUri,
-          RtpExtension::kTransportSequenceNumberDefaultId);
+          RtpExtension::kTransportSequenceNumberUri, unique_id_generator());
     }
 
     // ALR only enabled for screenshare.
