@@ -1057,9 +1057,9 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
 
   // Starts RtcEventLog using existing file. Takes ownership of |file| and
   // passes it on to Call, which will take the ownership. If the
-  // operation fails the file will be closed. The logging will stop
-  // automatically after 10 minutes have passed, or when the StopRtcEventLog
-  // function is called.
+  // operation fails the file will be closed.
+  // The logging will stop when |max_size_bytes| is reached or when the
+  // StopRtcEventLog function is called.
   // TODO(eladalon): Deprecate and remove this.
   virtual bool StartRtcEventLog(rtc::PlatformFile file, int64_t max_size_bytes);
 
