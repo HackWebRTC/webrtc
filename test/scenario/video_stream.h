@@ -36,6 +36,7 @@ class SendVideoStream {
   VideoSendStream::Stats GetStats() const;
   ColumnPrinter StatsPrinter();
   void Start();
+  void Stop();
   void UpdateConfig(std::function<void(VideoStreamConfig*)> modifier);
 
  private:

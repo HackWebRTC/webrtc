@@ -208,5 +208,28 @@ TEST(GoogCcNetworkControllerTest, NoBandwidthTogglingInLossControlTrial) {
   }
 }
 
+TEST(GoogCcNetworkControllerTest, NoRttBackoffCollapseWhenVideoStops) {
+  ScopedFieldTrials trial("WebRTC-Bwe-MaxRttLimit/limit:2s/");
+  Scenario s("googcc_unit/rttbackoff_video_stop", true);
+  auto* send_net = s.CreateSimulationNode([&](NetworkNodeConfig* c) {
+    c->simulation.bandwidth = DataRate::kbps(2000);
+    c->simulation.delay = TimeDelta::ms(100);
+  });
+
+  auto* client = s.CreateClient("send", [&](CallClientConfig* c) {
+    c->transport.cc = TransportControllerConfig::CongestionController::kGoogCc;
+    c->transport.rates.start_rate = DataRate::kbps(1000);
+  });
+  auto* route = s.CreateRoutes(client, {send_net},
+                               s.CreateClient("return", CallClientConfig()),
+                               {s.CreateSimulationNode(NetworkNodeConfig())});
+  auto* video = s.CreateVideoStream(route->forward(), VideoStreamConfig());
+  // Allow the controller to initialize, then stop video.
+  s.RunFor(TimeDelta::seconds(1));
+  video->send()->Stop();
+  s.RunFor(TimeDelta::seconds(4));
+  EXPECT_GT(client->send_bandwidth().kbps(), 1000);
+}
+
 }  // namespace test
 }  // namespace webrtc

@@ -151,12 +151,14 @@ RttBasedBackoff::RttBasedBackoff()
       drop_fraction_("fraction", 0.5),
       drop_interval_("interval", TimeDelta::ms(300)),
       persist_on_route_change_("persist"),
+      safe_timeout_("safe_timeout", true),
       // By initializing this to plus infinity, we make sure that we never
       // trigger rtt backoff unless packet feedback is enabled.
       last_propagation_rtt_update_(Timestamp::PlusInfinity()),
-      last_propagation_rtt_(TimeDelta::Zero()) {
+      last_propagation_rtt_(TimeDelta::Zero()),
+      last_packet_sent_(Timestamp::MinusInfinity()) {
   ParseFieldTrial({&rtt_limit_, &drop_fraction_, &drop_interval_,
-                   &persist_on_route_change_},
+                   &persist_on_route_change_, &safe_timeout_},
                   field_trial::FindFullName("WebRTC-Bwe-MaxRttLimit"));
 }
 
@@ -173,10 +175,16 @@ void RttBasedBackoff::UpdatePropagationRtt(Timestamp at_time,
   last_propagation_rtt_ = propagation_rtt;
 }
 
-TimeDelta RttBasedBackoff::RttLowerBound(Timestamp at_time) const {
-  // TODO(srte): Use time since last unacknowledged packet for this.
+TimeDelta RttBasedBackoff::CorrectedRtt(Timestamp at_time) const {
   TimeDelta time_since_rtt = at_time - last_propagation_rtt_update_;
-  return time_since_rtt + last_propagation_rtt_;
+  TimeDelta timeout_correction = time_since_rtt;
+  if (safe_timeout_) {
+    // Avoid timeout when no packets are being sent.
+    TimeDelta time_since_packet_sent = at_time - last_packet_sent_;
+    timeout_correction =
+        std::max(time_since_rtt - time_since_packet_sent, TimeDelta::Zero());
+  }
+  return timeout_correction + last_propagation_rtt_;
 }
 
 RttBasedBackoff::~RttBasedBackoff() = default;
@@ -432,7 +440,7 @@ void SendSideBandwidthEstimation::UpdateRtt(TimeDelta rtt, Timestamp at_time) {
 
 void SendSideBandwidthEstimation::UpdateEstimate(Timestamp at_time) {
   DataRate new_bitrate = current_bitrate_;
-  if (rtt_backoff_.RttLowerBound(at_time) > rtt_backoff_.rtt_limit_) {
+  if (rtt_backoff_.CorrectedRtt(at_time) > rtt_backoff_.rtt_limit_) {
     if (at_time - time_last_decrease_ >= rtt_backoff_.drop_interval_) {
       time_last_decrease_ = at_time;
       new_bitrate = current_bitrate_ * rtt_backoff_.drop_fraction_;
@@ -550,6 +558,11 @@ void SendSideBandwidthEstimation::UpdatePropagationRtt(
     Timestamp at_time,
     TimeDelta propagation_rtt) {
   rtt_backoff_.UpdatePropagationRtt(at_time, propagation_rtt);
+}
+
+void SendSideBandwidthEstimation::OnSentPacket(const SentPacket& sent_packet) {
+  // Only feedback-triggering packets will be reported here.
+  rtt_backoff_.last_packet_sent_ = sent_packet.send_time;
 }
 
 bool SendSideBandwidthEstimation::IsInStartPhase(Timestamp at_time) const {

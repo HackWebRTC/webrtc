@@ -277,6 +277,7 @@ NetworkControlUpdate GoogCcNetworkController::OnSentPacket(
     bandwidth_estimation_->UpdatePropagationRtt(sent_packet.send_time,
                                                 TimeDelta::Zero());
   }
+  bandwidth_estimation_->OnSentPacket(sent_packet);
   if (congestion_window_pushback_controller_) {
     congestion_window_pushback_controller_->UpdateOutstandingData(
         sent_packet.data_in_flight.bytes());
