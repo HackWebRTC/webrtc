@@ -14,10 +14,10 @@
 
 @implementation RTCEncodedImage (Private)
 
-- (instancetype)initWithNativeEncodedImage:(webrtc::EncodedImage)encodedImage {
+- (instancetype)initWithNativeEncodedImage:(const webrtc::EncodedImage &)encodedImage {
   if (self = [super init]) {
     // Wrap the buffer in NSData without copying, do not take ownership.
-    self.buffer = [NSData dataWithBytesNoCopy:encodedImage.data()
+    self.buffer = [NSData dataWithBytesNoCopy:encodedImage.mutable_data()
                                        length:encodedImage.size()
                                  freeWhenDone:NO];
     self.encodedWidth = rtc::dchecked_cast<int32_t>(encodedImage._encodedWidth);
