@@ -29,6 +29,7 @@ class SendAudioStream {
   RTC_DISALLOW_COPY_AND_ASSIGN(SendAudioStream);
   ~SendAudioStream();
   void Start();
+  void Stop();
   void SetMuted(bool mute);
   ColumnPrinter StatsPrinter();
 
@@ -52,6 +53,7 @@ class ReceiveAudioStream {
   RTC_DISALLOW_COPY_AND_ASSIGN(ReceiveAudioStream);
   ~ReceiveAudioStream();
   void Start();
+  void Stop();
 
  private:
   friend class Scenario;

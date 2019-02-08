@@ -401,6 +401,10 @@ void ReceiveVideoStream::Start() {
   receiver_->call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
 }
 
+void ReceiveVideoStream::Stop() {
+  receive_stream_->Stop();
+}
+
 VideoStreamPair::~VideoStreamPair() = default;
 
 VideoStreamPair::VideoStreamPair(

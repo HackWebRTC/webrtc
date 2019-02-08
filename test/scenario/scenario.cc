@@ -408,14 +408,14 @@ void Scenario::Start() {
 void Scenario::Stop() {
   RTC_DCHECK(start_time_.IsFinite());
   for (auto& stream_pair : video_streams_) {
-    stream_pair->send()->send_stream_->Stop();
+    stream_pair->send()->Stop();
   }
   for (auto& stream_pair : audio_streams_)
-    stream_pair->send()->send_stream_->Stop();
+    stream_pair->send()->Stop();
   for (auto& stream_pair : video_streams_)
-    stream_pair->receive()->receive_stream_->Stop();
+    stream_pair->receive()->Stop();
   for (auto& stream_pair : audio_streams_)
-    stream_pair->receive()->receive_stream_->Stop();
+    stream_pair->receive()->Stop();
   start_time_ = Timestamp::PlusInfinity();
 }
 

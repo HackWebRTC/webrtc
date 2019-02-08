@@ -142,6 +142,10 @@ void SendAudioStream::Start() {
   sender_->call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
 }
 
+void SendAudioStream::Stop() {
+  send_stream_->Stop();
+}
+
 void SendAudioStream::SetMuted(bool mute) {
   send_stream_->SetMuted(mute);
 }
@@ -187,6 +191,10 @@ ReceiveAudioStream::~ReceiveAudioStream() {
 void ReceiveAudioStream::Start() {
   receive_stream_->Start();
   receiver_->call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
+}
+
+void ReceiveAudioStream::Stop() {
+  receive_stream_->Stop();
 }
 
 AudioStreamPair::~AudioStreamPair() = default;
