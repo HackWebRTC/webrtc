@@ -41,6 +41,7 @@ bool UnimplementedRtpEncodingParameterHasValue(
   if (encoding_params.codec_payload_type.has_value() ||
       encoding_params.fec.has_value() || encoding_params.rtx.has_value() ||
       encoding_params.dtx.has_value() || encoding_params.ptime.has_value() ||
+      !encoding_params.rid.empty() ||
       encoding_params.scale_framerate_down_by.has_value() ||
       !encoding_params.dependency_rids.empty()) {
     return true;
@@ -250,7 +251,7 @@ RtpParameters AudioRtpSender::GetParameters() {
   if (stopped_) {
     return RtpParameters();
   }
-  if (!media_channel_ || !ssrc_) {
+  if (!media_channel_) {
     RtpParameters result = init_parameters_;
     last_transaction_id_ = rtc::CreateRandomUuid();
     result.transaction_id = last_transaction_id_.value();
@@ -287,7 +288,7 @@ RTCError AudioRtpSender::SetParameters(const RtpParameters& parameters) {
         RTCErrorType::UNSUPPORTED_PARAMETER,
         "Attempted to set an unimplemented parameter of RtpParameters.");
   }
-  if (!media_channel_ || !ssrc_) {
+  if (!media_channel_) {
     auto result = cricket::CheckRtpParametersInvalidModificationAndValues(
         init_parameters_, parameters);
     if (result.ok()) {
@@ -505,7 +506,7 @@ RtpParameters VideoRtpSender::GetParameters() {
   if (stopped_) {
     return RtpParameters();
   }
-  if (!media_channel_ || !ssrc_) {
+  if (!media_channel_) {
     RtpParameters result = init_parameters_;
     last_transaction_id_ = rtc::CreateRandomUuid();
     result.transaction_id = last_transaction_id_.value();
@@ -542,7 +543,7 @@ RTCError VideoRtpSender::SetParameters(const RtpParameters& parameters) {
         RTCErrorType::UNSUPPORTED_PARAMETER,
         "Attempted to set an unimplemented parameter of RtpParameters.");
   }
-  if (!media_channel_ || !ssrc_) {
+  if (!media_channel_) {
     auto result = cricket::CheckRtpParametersInvalidModificationAndValues(
         init_parameters_, parameters);
     if (result.ok()) {

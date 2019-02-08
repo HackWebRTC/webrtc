@@ -1461,50 +1461,23 @@ PeerConnection::AddTransceiver(
                        : cricket::MEDIA_TYPE_VIDEO));
   }
 
-  size_t num_rids = absl::c_count_if(init.send_encodings,
-                                     [](const RtpEncodingParameters& encoding) {
-                                       return !encoding.rid.empty();
-                                     });
-  if (num_rids > 0 && num_rids != init.send_encodings.size()) {
-    LOG_AND_RETURN_ERROR(
-        RTCErrorType::INVALID_PARAMETER,
-        "RIDs must be provided for either all or none of the send encodings.");
-  }
-
-  if (absl::c_any_of(init.send_encodings,
-                     [](const RtpEncodingParameters& encoding) {
-                       return encoding.ssrc.has_value();
-                     })) {
+  // TODO(bugs.webrtc.org/7600): Verify init.
+  if (init.send_encodings.size() > 1) {
     LOG_AND_RETURN_ERROR(
         RTCErrorType::UNSUPPORTED_PARAMETER,
-        "Attempted to set an unimplemented parameter of RtpParameters.");
+        "Attempted to create an encoder with more than 1 encoding parameter.");
+  }
+
+  for (const auto& encoding : init.send_encodings) {
+    if (encoding.ssrc.has_value()) {
+      LOG_AND_RETURN_ERROR(
+          RTCErrorType::UNSUPPORTED_PARAMETER,
+          "Attempted to set an unimplemented parameter of RtpParameters.");
+    }
   }
 
   RtpParameters parameters;
   parameters.encodings = init.send_encodings;
-
-  // Encodings are dropped from the tail if too many are provided.
-  if (parameters.encodings.size() > kMaxSimulcastStreams) {
-    parameters.encodings.erase(
-        parameters.encodings.begin() + kMaxSimulcastStreams,
-        parameters.encodings.end());
-  }
-
-  // Single RID should be removed.
-  if (parameters.encodings.size() == 1 &&
-      !parameters.encodings[0].rid.empty()) {
-    RTC_LOG(LS_INFO) << "Removing RID: " << parameters.encodings[0].rid << ".";
-    parameters.encodings[0].rid.clear();
-  }
-
-  // If RIDs were not provided, they are generated for simulcast scenario.
-  if (parameters.encodings.size() > 1 && num_rids == 0) {
-    rtc::UniqueStringGenerator rid_generator;
-    for (RtpEncodingParameters& encoding : parameters.encodings) {
-      encoding.rid = rid_generator();
-    }
-  }
-
   if (UnimplementedRtpParameterHasValue(parameters)) {
     LOG_AND_RETURN_ERROR(
         RTCErrorType::UNSUPPORTED_PARAMETER,
@@ -1524,7 +1497,7 @@ PeerConnection::AddTransceiver(
       (track && !FindSenderById(track->id()) ? track->id()
                                              : rtc::CreateRandomUuid());
   auto sender = CreateSender(media_type, sender_id, track, init.stream_ids,
-                             parameters.encodings);
+                             init.send_encodings);
   auto receiver = CreateReceiver(media_type, rtc::CreateRandomUuid());
   auto transceiver = CreateAndAddTransceiver(sender, receiver);
   transceiver->internal()->set_direction(init.direction);
@@ -3067,11 +3040,8 @@ PeerConnection::AssociateTransceiver(cricket::ContentSource source,
     RTC_DCHECK_EQ(source, cricket::CS_REMOTE);
     // If the m= section is sendrecv or recvonly, and there are RtpTransceivers
     // of the same type...
-    // When simulcast is requested, a transceiver cannot be associated because
-    // AddTrack cannot be called to initialize it.
     if (!transceiver &&
-        RtpTransceiverDirectionHasRecv(media_desc->direction()) &&
-        !media_desc->HasSimulcast()) {
+        RtpTransceiverDirectionHasRecv(media_desc->direction())) {
       transceiver = FindAvailableTransceiverToReceive(media_desc->type());
     }
     // If no RtpTransceiver was found in the previous step, create one with a

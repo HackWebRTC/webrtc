@@ -1428,6 +1428,18 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
   EXPECT_FALSE(caller->observer()->negotiation_needed());
 }
 
+// Test that AddTransceiver fails if trying to use simulcast using
+// send_encodings as it isn't currently supported.
+TEST_F(PeerConnectionRtpTestUnifiedPlan, CheckForUnsupportedSimulcast) {
+  auto caller = CreatePeerConnection();
+
+  RtpTransceiverInit init;
+  init.send_encodings.emplace_back();
+  init.send_encodings.emplace_back();
+  auto result = caller->pc()->AddTransceiver(cricket::MEDIA_TYPE_VIDEO, init);
+  EXPECT_EQ(result.error().type(), RTCErrorType::UNSUPPORTED_PARAMETER);
+}
+
 // Test that AddTransceiver fails if trying to use unimplemented RTP encoding
 // parameters with the send_encodings parameters.
 TEST_F(PeerConnectionRtpTestUnifiedPlan,
@@ -1440,7 +1452,7 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
   auto default_send_encodings = init.send_encodings;
 
   // Unimplemented RtpParameters: ssrc, codec_payload_type, fec, rtx, dtx,
-  // ptime, scale_framerate_down_by, dependency_rids.
+  // ptime, scale_framerate_down_by, rid, dependency_rids.
   init.send_encodings[0].ssrc = 1;
   EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
             caller->pc()
@@ -1482,6 +1494,14 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
   init.send_encodings = default_send_encodings;
 
   init.send_encodings[0].ptime = 1;
+  EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
+            caller->pc()
+                ->AddTransceiver(cricket::MEDIA_TYPE_AUDIO, init)
+                .error()
+                .type());
+  init.send_encodings = default_send_encodings;
+
+  init.send_encodings[0].rid = "dummy_rid";
   EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
             caller->pc()
                 ->AddTransceiver(cricket::MEDIA_TYPE_AUDIO, init)
