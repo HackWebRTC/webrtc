@@ -39,6 +39,7 @@ constexpr int kAbsoluteSendTimeExtensionId = 14;
 constexpr int kTransportSequenceNumberExtensionId = 13;
 constexpr int kVideoTimingExtensionId = 12;
 constexpr int kGenericDescriptorId = 10;
+constexpr int kFrameMarkingExtensionId = 6;
 constexpr int kVideoRotationExtensionId = 5;
 constexpr int kPayload = 100;
 constexpr uint32_t kTimestamp = 10;
@@ -63,6 +64,8 @@ class LoopbackTransportTest : public webrtc::Transport {
                                    kVideoTimingExtensionId);
     receivers_extensions_.Register(kRtpExtensionGenericFrameDescriptor,
                                    kGenericDescriptorId);
+    receivers_extensions_.Register(kRtpExtensionFrameMarking,
+                                   kFrameMarkingExtensionId);
   }
 
   bool SendRtp(const uint8_t* data,
@@ -230,6 +233,43 @@ TEST_P(RtpSenderVideoTest, DeltaFrameHasCVOWhenNonZero) {
   EXPECT_EQ(kVideoRotation_90, rotation);
 }
 
+TEST_P(RtpSenderVideoTest, CheckH264FrameMarking) {
+  uint8_t kFrame[kMaxPacketLength];
+  EXPECT_EQ(0, rtp_sender_.RegisterRtpHeaderExtension(
+                   kRtpExtensionFrameMarking, kFrameMarkingExtensionId));
+
+  RTPFragmentationHeader frag;
+  frag.VerifyAndAllocateFragmentationHeader(1);
+  frag.fragmentationOffset[0] = 0;
+  frag.fragmentationLength[0] = sizeof(kFrame);
+
+  RTPVideoHeader hdr;
+  hdr.video_type_header.emplace<RTPVideoHeaderH264>().packetization_mode =
+      H264PacketizationMode::NonInterleaved;
+  hdr.codec = kVideoCodecH264;
+  hdr.frame_marking.temporal_id = kNoTemporalIdx;
+  hdr.frame_marking.tl0_pic_idx = 99;
+  hdr.frame_marking.base_layer_sync = true;
+  rtp_sender_video_.SendVideo(kVideoFrameDelta, kPayload,
+                               kTimestamp, 0, kFrame, sizeof(kFrame), &frag,
+                               &hdr, kDefaultExpectedRetransmissionTimeMs);
+
+  FrameMarking fm;
+  EXPECT_FALSE(
+      transport_.last_sent_packet().GetExtension<FrameMarkingExtension>(&fm));
+
+  hdr.frame_marking.temporal_id = 0;
+  rtp_sender_video_.SendVideo(kVideoFrameDelta, kPayload,
+                               kTimestamp + 1, 0, kFrame, sizeof(kFrame), &frag,
+                               &hdr, kDefaultExpectedRetransmissionTimeMs);
+
+  EXPECT_TRUE(
+      transport_.last_sent_packet().GetExtension<FrameMarkingExtension>(&fm));
+  EXPECT_EQ(hdr.frame_marking.temporal_id, fm.temporal_id);
+  EXPECT_EQ(hdr.frame_marking.tl0_pic_idx, fm.tl0_pic_idx);
+  EXPECT_EQ(hdr.frame_marking.base_layer_sync, fm.base_layer_sync);
+}
+
 // Make sure rotation is parsed correctly when the Camera (C) and Flip (F) bits
 // are set in the CVO byte.
 TEST_P(RtpSenderVideoTest, SendVideoWithCameraAndFlipCVO) {
@@ -275,6 +315,7 @@ TEST_P(RtpSenderVideoTest, RetransmissionTypesH264) {
   header.video_type_header.emplace<RTPVideoHeaderH264>().packetization_mode =
       H264PacketizationMode::NonInterleaved;
   header.codec = kVideoCodecH264;
+  header.frame_marking.temporal_id = kNoTemporalIdx;
 
   EXPECT_EQ(kDontRetransmit,
             rtp_sender_video_.GetStorageType(
@@ -289,6 +330,15 @@ TEST_P(RtpSenderVideoTest, RetransmissionTypesH264) {
             rtp_sender_video_.GetStorageType(
                 header, kConditionallyRetransmitHigherLayers,
                 kDefaultExpectedRetransmissionTimeMs));
+
+  // Test higher level retransmit.
+  for (int tid = 0; tid <= kMaxTemporalStreams; ++tid) {
+    header.frame_marking.temporal_id = tid;
+    EXPECT_EQ(kAllowRetransmission,
+              rtp_sender_video_.GetStorageType(
+                  header, kRetransmitHigherLayers | kRetransmitBaseLayer,
+                  kDefaultExpectedRetransmissionTimeMs));
+  }
 }
 
 TEST_P(RtpSenderVideoTest, RetransmissionTypesVP8BaseLayer) {

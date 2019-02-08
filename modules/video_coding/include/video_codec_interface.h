@@ -83,6 +83,9 @@ static_assert(std::is_pod<CodecSpecificInfoVP9>::value, "");
 // Hack alert - the code assumes that thisstruct is memset when constructed.
 struct CodecSpecificInfoH264 {
   H264PacketizationMode packetization_mode;
+  uint8_t temporal_idx;
+  bool base_layer_sync;
+  bool idr_frame;
 };
 static_assert(std::is_pod<CodecSpecificInfoH264>::value, "");
 

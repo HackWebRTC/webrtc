@@ -100,6 +100,9 @@ class H264EncoderImpl : public H264Encoder {
 
   bool has_reported_init_;
   bool has_reported_error_;
+
+  int num_temporal_layers_;
+  uint8_t tl0sync_limit_;
 };
 
 }  // namespace webrtc

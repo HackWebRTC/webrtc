@@ -628,6 +628,8 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     num_layers = codec.VP8()->numberOfTemporalLayers;
   } else if (codec.codecType == kVideoCodecVP9) {
     num_layers = codec.VP9()->numberOfTemporalLayers;
+  } else if (codec.codecType == kVideoCodecH264) {
+    num_layers = codec.H264()->numberOfTemporalLayers;
   } else if (codec.codecType == kVideoCodecGeneric &&
              codec.numberOfSimulcastStreams > 0) {
     // This is mainly for unit testing, disabling frame dropping.

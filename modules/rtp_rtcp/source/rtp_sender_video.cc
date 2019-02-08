@@ -58,6 +58,7 @@ void AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
                             FrameType frame_type,
                             bool set_video_rotation,
                             bool set_color_space,
+                            bool set_frame_marking,
                             bool first_packet,
                             bool last_packet,
                             RtpPacketToSend* packet) {
@@ -84,6 +85,14 @@ void AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
   if (playout_delay) {
     packet->SetExtension<PlayoutDelayLimits>(*playout_delay);
   }
+
+  if (set_frame_marking) {
+    FrameMarking frame_marking = video_header.frame_marking;
+    frame_marking.start_of_frame = first_packet;
+    frame_marking.end_of_frame = last_packet;
+    packet->SetExtension<FrameMarkingExtension>(frame_marking);
+  }
+
   if (video_header.generic) {
     RtpGenericFrameDescriptor generic_descriptor;
     generic_descriptor.SetFirstPacketInSubFrame(first_packet);
@@ -215,6 +224,12 @@ void RTPSenderVideo::RegisterPayloadType(int8_t payload_type,
 
   rtc::CritScope cs(&payload_type_crit_);
   payload_type_map_[payload_type] = video_type;
+
+  // Backward compatibility for older receivers without temporal layer logic
+  if (video_type == kVideoCodecH264) {
+    rtc::CritScope cs(&crit_);
+    retransmission_settings_ = kRetransmitBaseLayer | kRetransmitHigherLayers;
+  }
 }
 
 void RTPSenderVideo::SendVideoPacket(std::unique_ptr<RtpPacketToSend> packet,
@@ -422,6 +437,8 @@ bool RTPSenderVideo::SendVideo(FrameType frame_type,
   int32_t retransmission_settings;
   bool set_video_rotation;
   bool set_color_space = false;
+  bool set_frame_marking = video_header->codec == kVideoCodecH264 &&
+        video_header->frame_marking.temporal_id != kNoTemporalIdx;
 
   const absl::optional<PlayoutDelay> playout_delay =
       playout_delay_oracle_.PlayoutDelayToSend(video_header->playout_delay);
@@ -489,17 +506,18 @@ bool RTPSenderVideo::SendVideo(FrameType frame_type,
   auto last_packet = absl::make_unique<RtpPacketToSend>(*single_packet);
   // Simplest way to estimate how much extensions would occupy is to set them.
   AddRtpHeaderExtensions(*video_header, playout_delay, frame_type,
-                         set_video_rotation, set_color_space, /*first=*/true,
-                         /*last=*/true, single_packet.get());
+                         set_video_rotation, set_color_space, set_frame_marking,
+                         /*first=*/true, /*last=*/true, single_packet.get());
   AddRtpHeaderExtensions(*video_header, playout_delay, frame_type,
-                         set_video_rotation, set_color_space, /*first=*/true,
-                         /*last=*/false, first_packet.get());
+                         set_video_rotation, set_color_space, set_frame_marking,
+                         /*first=*/true, /*last=*/false, first_packet.get());
   AddRtpHeaderExtensions(*video_header, playout_delay, frame_type,
-                         set_video_rotation, set_color_space, /*first=*/false,
-                         /*last=*/false, middle_packet.get());
+                         set_video_rotation, set_color_space, set_frame_marking,
+                         /*first=*/false, /*last=*/false, middle_packet.get());
   AddRtpHeaderExtensions(*video_header, playout_delay, frame_type,
-                         set_video_rotation, set_color_space, /*first=*/false,
-                         /*last=*/true, last_packet.get());
+                         set_video_rotation, set_color_space, set_frame_marking,
+                         /*first=*/false, /*last=*/true, last_packet.get());
+
   RTC_DCHECK_GT(packet_capacity, single_packet->headers_size());
   RTC_DCHECK_GT(packet_capacity, first_packet->headers_size());
   RTC_DCHECK_GT(packet_capacity, middle_packet->headers_size());
@@ -733,7 +751,12 @@ uint8_t RTPSenderVideo::GetTemporalId(const RTPVideoHeader& header) {
     uint8_t operator()(const RTPVideoHeaderH264&) { return kNoTemporalIdx; }
     uint8_t operator()(const absl::monostate&) { return kNoTemporalIdx; }
   };
-  return absl::visit(TemporalIdGetter(), header.video_type_header);
+  switch (header.codec) {
+    case kVideoCodecH264:
+      return header.frame_marking.temporal_id;
+    default:
+      return absl::visit(TemporalIdGetter(), header.video_type_header);
+  }
 }
 
 bool RTPSenderVideo::UpdateConditionalRetransmit(

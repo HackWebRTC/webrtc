@@ -91,6 +91,15 @@ void PopulateRtpWithCodecSpecifics(const CodecSpecificInfo& info,
       h264_header.packetization_mode =
           info.codecSpecific.H264.packetization_mode;
       rtp->simulcastIdx = spatial_index.value_or(0);
+      rtp->frame_marking.temporal_id = kNoTemporalIdx;
+      if (info.codecSpecific.H264.temporal_idx != kNoTemporalIdx) {
+        rtp->frame_marking.temporal_id = info.codecSpecific.H264.temporal_idx;
+        rtp->frame_marking.layer_id = 0;
+        rtp->frame_marking.independent_frame =
+            info.codecSpecific.H264.idr_frame;
+        rtp->frame_marking.base_layer_sync =
+            info.codecSpecific.H264.base_layer_sync;
+      }
       return;
     }
     case kVideoCodecMultiplex:
@@ -220,6 +229,14 @@ void RtpPayloadParams::SetCodecSpecific(RTPVideoHeader* rtp_video_header,
         ++state_.tl0_pic_idx;
       }
       vp9_header.tl0_pic_idx = state_.tl0_pic_idx;
+    }
+  }
+  if (rtp_video_header->codec == kVideoCodecH264) {
+    if (rtp_video_header->frame_marking.temporal_id != kNoTemporalIdx) {
+      if (rtp_video_header->frame_marking.temporal_id == 0) {
+        ++state_.tl0_pic_idx;
+      }
+      rtp_video_header->frame_marking.tl0_pic_idx = state_.tl0_pic_idx;
     }
   }
   // There are currently two generic descriptors in WebRTC. The old descriptor

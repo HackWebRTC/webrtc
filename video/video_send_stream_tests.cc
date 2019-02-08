@@ -2534,8 +2534,23 @@ void VideoCodecConfigObserver<VideoCodecH264>::InitCodecSpecifics() {
 template <>
 void VideoCodecConfigObserver<VideoCodecH264>::VerifyCodecSpecifics(
     const VideoCodec& config) const {
+  // Check that the number of temporal layers has propagated properly to
+  // VideoCodec.
+  EXPECT_EQ(kVideoCodecConfigObserverNumberOfTemporalLayers,
+            config.H264().numberOfTemporalLayers);
+
+  for (unsigned char i = 0; i < config.numberOfSimulcastStreams; ++i) {
+    EXPECT_EQ(kVideoCodecConfigObserverNumberOfTemporalLayers,
+              config.simulcastStream[i].numberOfTemporalLayers);
+  }
+
+  // Set expected temporal layers as they should have been set when
+  // reconfiguring the encoder and not match the set config.
+  VideoCodecH264 encoder_settings = encoder_settings_;
+  encoder_settings.numberOfTemporalLayers =
+      kVideoCodecConfigObserverNumberOfTemporalLayers;
   EXPECT_EQ(
-      0, memcmp(&config.H264(), &encoder_settings_, sizeof(encoder_settings_)));
+      0, memcmp(&config.H264(), &encoder_settings, sizeof(encoder_settings_)));
 }
 
 template <>

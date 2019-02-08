@@ -495,6 +495,8 @@ void RtpVideoStreamReceiver::ReceivePacket(const RtpPacketReceived& packet) {
       VideoSendTiming::kInvalid;
   webrtc_rtp_header.video_header().is_last_packet_in_frame =
       webrtc_rtp_header.header.markerBit;
+  webrtc_rtp_header.video_header().frame_marking.temporal_id = kNoTemporalIdx;
+
   if (parsed_payload.video_header().codec == kVideoCodecVP9) {
     const RTPVideoHeaderVP9& codec_header = absl::get<RTPVideoHeaderVP9>(
         parsed_payload.video_header().video_type_header);
@@ -512,6 +514,9 @@ void RtpVideoStreamReceiver::ReceivePacket(const RtpPacketReceived& packet) {
       &webrtc_rtp_header.video_header().video_timing);
   packet.GetExtension<PlayoutDelayLimits>(
       &webrtc_rtp_header.video_header().playout_delay);
+  packet.GetExtension<FrameMarkingExtension>(
+      &webrtc_rtp_header.video_header().frame_marking);
+
   webrtc_rtp_header.video_header().color_space =
       packet.GetExtension<ColorSpaceExtension>();
   if (webrtc_rtp_header.video_header().color_space ||
@@ -523,6 +528,7 @@ void RtpVideoStreamReceiver::ReceivePacket(const RtpPacketReceived& packet) {
   } else if (last_color_space_) {
     webrtc_rtp_header.video_header().color_space = last_color_space_;
   }
+
   absl::optional<RtpGenericFrameDescriptor> generic_descriptor_wire;
   generic_descriptor_wire.emplace();
   if (packet.GetExtension<RtpGenericFrameDescriptorExtension>(

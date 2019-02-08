@@ -249,6 +249,8 @@ void FakeVideoSendStream::ReconfigureVideoEncoder(
     } else if (config_.rtp.payload_name == "H264") {
       config.encoder_specific_settings->FillVideoCodecH264(
           &codec_specific_settings_.h264);
+      codec_specific_settings_.h264.numberOfTemporalLayers =
+            num_temporal_layers;
     } else {
       ADD_FAILURE() << "Unsupported encoder payload: "
                     << config_.rtp.payload_name;
