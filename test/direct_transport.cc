@@ -50,19 +50,18 @@ DirectTransport::DirectTransport(
 }
 
 DirectTransport::~DirectTransport() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
-  // Constructor updates |next_scheduled_task_|, so it's guaranteed to
-  // be initialized.
-  task_queue_->CancelTask(next_scheduled_task_);
+  if (next_process_task_)
+    task_queue_->CancelTask(*next_process_task_);
 }
 
 void DirectTransport::StopSending() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
-  task_queue_->CancelTask(next_scheduled_task_);
+  rtc::CritScope cs(&process_lock_);
+  if (next_process_task_)
+    task_queue_->CancelTask(*next_process_task_);
 }
 
 void DirectTransport::SetReceiver(PacketReceiver* receiver) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  rtc::CritScope cs(&process_lock_);
   fake_network_->SetReceiver(receiver);
 }
 
@@ -92,6 +91,9 @@ void DirectTransport::SendPacket(const uint8_t* data, size_t length) {
   int64_t send_time = clock_->TimeInMicroseconds();
   fake_network_->DeliverPacket(media_type, rtc::CopyOnWriteBuffer(data, length),
                                send_time);
+  rtc::CritScope cs(&process_lock_);
+  if (!next_process_task_)
+    ProcessPackets();
 }
 
 int DirectTransport::GetAverageDelayMs() {
@@ -104,17 +106,20 @@ void DirectTransport::Start() {
     send_call_->SignalChannelNetworkState(MediaType::AUDIO, kNetworkUp);
     send_call_->SignalChannelNetworkState(MediaType::VIDEO, kNetworkUp);
   }
-  SendPackets();
 }
 
-void DirectTransport::SendPackets() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
-
-  fake_network_->Process();
-
-  int64_t delay_ms = fake_network_->TimeUntilNextProcess();
-  next_scheduled_task_ =
-      task_queue_->PostDelayedTask([this]() { SendPackets(); }, delay_ms);
+void DirectTransport::ProcessPackets() {
+  next_process_task_.reset();
+  auto delay_ms = fake_network_->TimeUntilNextProcess();
+  if (delay_ms) {
+    next_process_task_ = task_queue_->PostDelayedTask(
+        [this]() {
+          fake_network_->Process();
+          rtc::CritScope cs(&process_lock_);
+          ProcessPackets();
+        },
+        *delay_ms);
+  }
 }
 }  // namespace test
 }  // namespace webrtc

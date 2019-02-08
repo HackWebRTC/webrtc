@@ -20,6 +20,9 @@
 #include "rtc_base/checks.h"
 
 namespace webrtc {
+namespace {
+constexpr int64_t kDefaultProcessDelayUs = 5000;
+}
 
 SimulatedNetwork::SimulatedNetwork(SimulatedNetwork::Config config,
                                    uint64_t random_seed)
@@ -76,15 +79,16 @@ bool SimulatedNetwork::EnqueuePacket(PacketInFlightInfo packet) {
   // calculated in UpdateCapacityQueue.
   queue_size_bytes_ += packet.size;
   capacity_link_.push({packet, packet.send_time_us});
+  if (!next_process_time_us_) {
+    next_process_time_us_ = packet.send_time_us + kDefaultProcessDelayUs;
+  }
 
   return true;
 }
 
 absl::optional<int64_t> SimulatedNetwork::NextDeliveryTimeUs() const {
   RTC_DCHECK_RUNS_SERIALIZED(&process_checker_);
-  if (!delay_link_.empty())
-    return delay_link_.begin()->arrival_time_us;
-  return absl::nullopt;
+  return next_process_time_us_;
 }
 
 void SimulatedNetwork::UpdateCapacityQueue(ConfigState state,
@@ -197,6 +201,14 @@ std::vector<PacketDeliveryInfo> SimulatedNetwork::DequeueDeliverablePackets(
     packets_to_deliver.emplace_back(
         PacketDeliveryInfo(packet_info.packet, packet_info.arrival_time_us));
     delay_link_.pop_front();
+  }
+
+  if (!delay_link_.empty()) {
+    next_process_time_us_ = delay_link_.front().arrival_time_us;
+  } else if (!capacity_link_.empty()) {
+    next_process_time_us_ = receive_time_us + kDefaultProcessDelayUs;
+  } else {
+    next_process_time_us_.reset();
   }
   return packets_to_deliver;
 }

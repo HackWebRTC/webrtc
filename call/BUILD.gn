@@ -228,6 +228,7 @@ rtc_static_library("call") {
     "../logging:rtc_event_rtp_rtcp",
     "../logging:rtc_event_video",
     "../logging:rtc_stream_config",
+    "../modules:module_api",
     "../modules/bitrate_controller",
     "../modules/congestion_controller",
     "../modules/pacing",
@@ -300,7 +301,6 @@ rtc_source_set("simulated_packet_receiver") {
   deps = [
     ":call_interfaces",
     "../api:simulated_network_api",
-    "../modules:module_api",
   ]
 }
 
@@ -317,7 +317,6 @@ rtc_source_set("fake_network") {
     "../api:libjingle_peerconnection_api",
     "../api:simulated_network_api",
     "../api:transport_api",
-    "../modules:module_api",
     "../modules/utility",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",

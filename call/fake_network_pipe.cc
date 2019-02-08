@@ -24,7 +24,6 @@
 namespace webrtc {
 
 namespace {
-constexpr int64_t kDefaultProcessIntervalMs = 5;
 constexpr int64_t kLogIntervalMs = 5000;
 }  // namespace
 
@@ -167,12 +166,6 @@ bool FakeNetworkPipe::EnqueuePacket(rtc::CopyOnWriteBuffer packet,
     packets_in_flight_.pop_back();
     ++dropped_packets_;
   }
-  if (network_behavior_->NextDeliveryTimeUs()) {
-    rtc::CritScope crit(&process_thread_lock_);
-    if (process_thread_)
-      process_thread_->WakeUp(nullptr);
-  }
-
   return sent;
 }
 
@@ -292,19 +285,14 @@ void FakeNetworkPipe::DeliverNetworkPacket(NetworkPacket* packet) {
   }
 }
 
-int64_t FakeNetworkPipe::TimeUntilNextProcess() {
+absl::optional<int64_t> FakeNetworkPipe::TimeUntilNextProcess() {
   rtc::CritScope crit(&process_lock_);
   absl::optional<int64_t> delivery_us = network_behavior_->NextDeliveryTimeUs();
   if (delivery_us) {
     int64_t delay_us = *delivery_us - clock_->TimeInMicroseconds();
     return std::max<int64_t>((delay_us + 500) / 1000, 0);
   }
-  return kDefaultProcessIntervalMs;
-}
-
-void FakeNetworkPipe::ProcessThreadAttached(ProcessThread* process_thread) {
-  rtc::CritScope cs(&process_thread_lock_);
-  process_thread_ = process_thread;
+  return absl::nullopt;
 }
 
 bool FakeNetworkPipe::HasTransport() const {

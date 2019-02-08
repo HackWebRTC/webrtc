@@ -87,6 +87,8 @@ class SimulatedNetwork : public NetworkBehaviorInterface {
   int64_t pending_drain_bits_ RTC_GUARDED_BY(process_checker_) = 0;
   absl::optional<int64_t> last_capacity_link_visit_us_
       RTC_GUARDED_BY(process_checker_);
+  absl::optional<int64_t> next_process_time_us_
+      RTC_GUARDED_BY(process_checker_);
 };
 
 }  // namespace webrtc

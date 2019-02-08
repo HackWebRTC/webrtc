@@ -60,7 +60,7 @@ class DirectTransport : public Transport {
   int GetAverageDelayMs();
 
  private:
-  void SendPackets();
+  void ProcessPackets() RTC_EXCLUSIVE_LOCKS_REQUIRED(&process_lock_);
   void SendPacket(const uint8_t* data, size_t length);
   void Start();
 
@@ -68,13 +68,14 @@ class DirectTransport : public Transport {
   Clock* const clock_;
 
   SingleThreadedTaskQueueForTesting* const task_queue_;
-  SingleThreadedTaskQueueForTesting::TaskId next_scheduled_task_
-      RTC_GUARDED_BY(&sequence_checker_);
+
+  rtc::CriticalSection process_lock_;
+  absl::optional<SingleThreadedTaskQueueForTesting::TaskId> next_process_task_
+      RTC_GUARDED_BY(&process_lock_);
 
   const Demuxer demuxer_;
   const std::unique_ptr<SimulatedPacketReceiverInterface> fake_network_;
 
-  rtc::SequencedTaskChecker sequence_checker_;
 };
 }  // namespace test
 }  // namespace webrtc
