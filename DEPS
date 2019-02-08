@@ -50,7 +50,7 @@ deps = {
   'src/build':
     Var('chromium_git') + '/chromium/src/build' + '@' + 'e3ed5e43c305b353b49e08ac69e7f4d1c2d88ad2',
   'src/buildtools':
-    Var('chromium_git') + '/chromium/buildtools.git' + '@' + '6fbda1b24c1893a893b17aa219b765b9e7c801d8',
+    Var('chromium_git') + '/chromium/src/buildtools' + '@' + '106e9fce3799633f42b45ca8bbe9e84e1e235603',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
   'src/examples/androidtests/third_party/gradle': {
     'url': Var('chromium_git') + '/external/github.com/gradle/gradle.git' + '@' +
@@ -65,6 +65,16 @@ deps = {
     Var('chromium_git') + '/chromium/src/testing' + '@' + 'e0563165094137bce9b4224aa07d0b698b6c5256',
   'src/third_party':
     Var('chromium_git') + '/chromium/src/third_party' + '@' + '448e819cf182c14a6ebd7a2dfc055e0e4c6103b5',
+
+  'src/buildtools/clang_format/script':
+    Var('chromium_git') + '/chromium/llvm-project/cfe/tools/clang-format.git' + '@' + '96636aa0e9f047f17447f2d45a094d0b59ed7917',
+  'src/buildtools/third_party/libc++/trunk':
+    Var('chromium_git') + '/chromium/llvm-project/libcxx.git' + '@' + 'e713cc0acf1ae8b82f451bf58ebef67a46ceddfb',
+  'src/buildtools/third_party/libc++abi/trunk':
+    Var('chromium_git') + '/chromium/llvm-project/libcxxabi.git' + '@' + '307bb62985575b2e3216a8cfd7e122e0574f33a9',
+  'src/buildtools/third_party/libunwind/trunk':
+    Var('chromium_git') + '/external/llvm.org/libunwind.git' + '@' + '69d9b84cca8354117b9fe9705a4430d789ee599b',
+
   'src/third_party/android_ndk': {
       'url': Var('chromium_git') + '/android_ndk.git' + '@' + '4e2cea441bfd43f0863d14f57b1e1844260b9884',
       'condition': 'checkout_android',
@@ -1403,10 +1413,7 @@ hooks = [
   },
 ]
 
-recursedeps = [
-  # buildtools provides clang_format, libc++, and libc++abi.
-  'src/buildtools',
-]
+recursedeps = []
 
 # Define rules for which include paths are allowed in our source.
 include_rules = [
