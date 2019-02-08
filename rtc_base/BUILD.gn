@@ -105,8 +105,6 @@ rtc_source_set("rtc_base_approved") {
     "copy_on_write_buffer.h",
     "event_tracer.cc",
     "event_tracer.h",
-    "file.cc",
-    "file.h",
     "flags.cc",
     "flags.h",
     "function_view.h",
@@ -140,13 +138,8 @@ rtc_source_set("rtc_base_approved") {
     "zero_memory.h",
   ]
 
-  if (is_posix || is_fuchsia) {
-    sources += [ "file_posix.cc" ]
-  }
-
   if (is_win) {
     sources += [
-      "file_win.cc",
       "win/windows_version.cc",
       "win/windows_version.h",
     ]
@@ -1253,7 +1246,6 @@ if (rtc_include_tests) {
       "critical_section_unittest.cc",
       "event_tracer_unittest.cc",
       "event_unittest.cc",
-      "file_unittest.cc",
       "function_view_unittest.cc",
       "logging_unittest.cc",
       "numerics/histogram_percentile_counter_unittest.cc",

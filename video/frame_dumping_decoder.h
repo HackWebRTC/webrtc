@@ -19,15 +19,13 @@
 #include "api/video_codecs/video_decoder.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
-#include "rtc_base/platform_file.h"
 
 namespace webrtc {
 
 // A decoder wrapper that writes the encoded frames to a file.
 class FrameDumpingDecoder : public VideoDecoder {
  public:
-  FrameDumpingDecoder(std::unique_ptr<VideoDecoder> decoder,
-                      rtc::PlatformFile file);
+  FrameDumpingDecoder(std::unique_ptr<VideoDecoder> decoder, FileWrapper file);
   ~FrameDumpingDecoder() override;
 
   int32_t InitDecode(const VideoCodec* codec_settings,

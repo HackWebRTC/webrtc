@@ -319,7 +319,7 @@ void VideoReceiveStream::Start() {
       ssb << decoded_output_file << "/webrtc_receive_stream_"
           << this->config_.rtp.local_ssrc << ".ivf";
       video_decoder = absl::make_unique<FrameDumpingDecoder>(
-          std::move(video_decoder), rtc::CreatePlatformFile(ssb.str()));
+          std::move(video_decoder), FileWrapper::OpenWriteOnly(ssb.str()));
     }
 
     video_decoders_.push_back(std::move(video_decoder));

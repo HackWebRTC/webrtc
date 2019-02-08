@@ -12,9 +12,9 @@
 
 #include <string.h>
 
-#include "rtc_base/file.h"
 #include "rtc_base/flags.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/system/file_wrapper.h"
 #include "test/testsupport/file_utils.h"
 
 namespace {
@@ -53,10 +53,10 @@ bool WriteToTestArtifactsDir(const char* filename,
     return false;
   }
 
-  rtc::File output =
-      rtc::File::Create(JoinFilename(FLAG_test_artifacts_dir, filename));
+  FileWrapper output = FileWrapper::OpenWriteOnly(
+      JoinFilename(FLAG_test_artifacts_dir, filename));
 
-  return output.IsOpen() && output.Write(buffer, length) == length;
+  return output.is_open() && output.Write(buffer, length);
 }
 
 bool WriteToTestArtifactsDir(const char* filename, const std::string& content) {

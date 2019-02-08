@@ -24,7 +24,7 @@ namespace webrtc {
 
 const size_t kIvfHeaderSize = 32;
 
-IvfFileWriter::IvfFileWriter(rtc::File file, size_t byte_limit)
+IvfFileWriter::IvfFileWriter(FileWrapper file, size_t byte_limit)
     : codec_type_(kVideoCodecGeneric),
       bytes_written_(0),
       byte_limit_(byte_limit),
@@ -42,14 +42,14 @@ IvfFileWriter::~IvfFileWriter() {
   Close();
 }
 
-std::unique_ptr<IvfFileWriter> IvfFileWriter::Wrap(rtc::File file,
+std::unique_ptr<IvfFileWriter> IvfFileWriter::Wrap(FileWrapper file,
                                                    size_t byte_limit) {
   return std::unique_ptr<IvfFileWriter>(
       new IvfFileWriter(std::move(file), byte_limit));
 }
 
 bool IvfFileWriter::WriteHeader() {
-  if (!file_.Seek(0)) {
+  if (!file_.Rewind()) {
     RTC_LOG(LS_WARNING) << "Unable to rewind ivf output file.";
     return false;
   }
@@ -97,7 +97,7 @@ bool IvfFileWriter::WriteHeader() {
                                           static_cast<uint32_t>(num_frames_));
   ByteWriter<uint32_t>::WriteLittleEndian(&ivf_header[28], 0);  // Reserved.
 
-  if (file_.Write(ivf_header, kIvfHeaderSize) < kIvfHeaderSize) {
+  if (!file_.Write(ivf_header, kIvfHeaderSize)) {
     RTC_LOG(LS_ERROR) << "Unable to write IVF header for ivf output file.";
     return false;
   }
@@ -133,7 +133,7 @@ bool IvfFileWriter::InitFromFirstFrame(const EncodedImage& encoded_image,
 
 bool IvfFileWriter::WriteFrame(const EncodedImage& encoded_image,
                                VideoCodecType codec_type) {
-  if (!file_.IsOpen())
+  if (!file_.is_open())
     return false;
 
   if (num_frames_ == 0 && !InitFromFirstFrame(encoded_image, codec_type))
@@ -170,9 +170,8 @@ bool IvfFileWriter::WriteFrame(const EncodedImage& encoded_image,
   ByteWriter<uint32_t>::WriteLittleEndian(
       &frame_header[0], static_cast<uint32_t>(encoded_image.size()));
   ByteWriter<uint64_t>::WriteLittleEndian(&frame_header[4], timestamp);
-  if (file_.Write(frame_header, kFrameHeaderSize) < kFrameHeaderSize ||
-      file_.Write(encoded_image.data(), encoded_image.size()) <
-          encoded_image.size()) {
+  if (!file_.Write(frame_header, kFrameHeaderSize) ||
+      !file_.Write(encoded_image.data(), encoded_image.size())) {
     RTC_LOG(LS_ERROR) << "Unable to write frame to file.";
     return false;
   }
@@ -184,7 +183,7 @@ bool IvfFileWriter::WriteFrame(const EncodedImage& encoded_image,
 }
 
 bool IvfFileWriter::Close() {
-  if (!file_.IsOpen())
+  if (!file_.is_open())
     return false;
 
   if (num_frames_ == 0) {

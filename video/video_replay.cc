@@ -23,7 +23,6 @@
 #include "media/engine/internal_decoder_factory.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/file.h"
 #include "rtc_base/flags.h"
 #include "rtc_base/string_to_number.h"
 #include "rtc_base/strings/json.h"

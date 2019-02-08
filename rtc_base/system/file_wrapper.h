@@ -71,7 +71,6 @@ class FileWrapper final {
 
   // Seeks to the beginning of file. Returns true on success, false on failure,
   // e.g., if the underlying file isn't seekable.
-  // TODO(nisse): Delete this method.
   bool Rewind();
 
   // Returns number of bytes read. Short count indicates EOF or error.

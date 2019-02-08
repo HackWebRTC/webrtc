@@ -39,7 +39,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/cpu_time.h"
 #include "rtc_base/event.h"
-#include "rtc_base/file.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/cpu_info.h"
@@ -617,8 +616,8 @@ void VideoCodecTestFixtureImpl::SetUpAndInitObjects(
                                              std::to_string(simulcast_svc_idx);
 
     if (config_.visualization_params.save_encoded_ivf) {
-      rtc::File post_encode_file =
-          rtc::File::Create(output_filename_base + ".ivf");
+      FileWrapper post_encode_file =
+          FileWrapper::OpenWriteOnly(output_filename_base + ".ivf");
       encoded_frame_writers_.push_back(
           IvfFileWriter::Wrap(std::move(post_encode_file), 0));
     }

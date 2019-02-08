@@ -87,11 +87,11 @@ class QualityTestVideoEncoder : public VideoEncoder,
  public:
   QualityTestVideoEncoder(std::unique_ptr<VideoEncoder> encoder,
                           VideoAnalyzer* analyzer,
-                          std::vector<rtc::PlatformFile> files)
+                          std::vector<FileWrapper> files)
       : encoder_(std::move(encoder)), analyzer_(analyzer) {
-    for (rtc::PlatformFile file : files) {
+    for (FileWrapper& file : files) {
       writers_.push_back(
-          IvfFileWriter::Wrap(rtc::File(file), /* byte_limit= */ 100000000));
+          IvfFileWriter::Wrap(std::move(file), /* byte_limit= */ 100000000));
     }
   }
   // Implement VideoEncoder
@@ -182,7 +182,7 @@ std::unique_ptr<VideoDecoder> VideoQualityTest::CreateVideoDecoder(
     std::string path =
         params_.logging.encoded_frame_base_path + "." + str.str() + ".recv.ivf";
     decoder = absl::make_unique<FrameDumpingDecoder>(
-        std::move(decoder), rtc::CreatePlatformFile(path));
+        std::move(decoder), FileWrapper::OpenWriteOnly(path));
   }
   return decoder;
 }
@@ -208,15 +208,16 @@ std::unique_ptr<VideoEncoder> VideoQualityTest::CreateVideoEncoder(
     sb << send_logs_++;
     std::string prefix =
         params_.logging.encoded_frame_base_path + "." + sb.str() + ".send.";
+    std::vector<FileWrapper> files;
+    files.push_back(FileWrapper::OpenWriteOnly(prefix + "1.ivf"));
+    files.push_back(FileWrapper::OpenWriteOnly(prefix + "2.ivf"));
+    files.push_back(FileWrapper::OpenWriteOnly(prefix + "3.ivf"));
+
     encoder = absl::make_unique<QualityTestVideoEncoder>(
-        std::move(encoder), analyzer,
-        std::vector<rtc::PlatformFile>(
-            {rtc::CreatePlatformFile(prefix + "1.ivf"),
-             rtc::CreatePlatformFile(prefix + "2.ivf"),
-             rtc::CreatePlatformFile(prefix + "3.ivf")}));
+        std::move(encoder), analyzer, std::move(files));
   } else if (analyzer) {
     encoder = absl::make_unique<QualityTestVideoEncoder>(
-        std::move(encoder), analyzer, std::vector<rtc::PlatformFile>());
+        std::move(encoder), analyzer, std::vector<FileWrapper>());
   }
 
   return encoder;

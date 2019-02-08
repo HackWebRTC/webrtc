@@ -57,13 +57,13 @@ class IvfFileWriterTest : public ::testing::Test {
     return true;
   }
 
-  void VerifyIvfHeader(rtc::File* file,
+  void VerifyIvfHeader(FileWrapper* file,
                        const uint8_t fourcc[4],
                        int width,
                        int height,
                        uint32_t num_frames,
                        bool use_capture_tims_ms) {
-    ASSERT_TRUE(file->IsOpen());
+    ASSERT_TRUE(file->is_open());
     uint8_t data[kHeaderSize];
     ASSERT_EQ(static_cast<size_t>(kHeaderSize), file->Read(data, kHeaderSize));
 
@@ -81,7 +81,7 @@ class IvfFileWriterTest : public ::testing::Test {
     EXPECT_EQ(0u, ByteReader<uint32_t>::ReadLittleEndian(&data[28]));
   }
 
-  void VerifyDummyTestFrames(rtc::File* file, uint32_t num_frames) {
+  void VerifyDummyTestFrames(FileWrapper* file, uint32_t num_frames) {
     const int kMaxFrameSize = 4;
     for (uint32_t i = 1; i <= num_frames; ++i) {
       uint8_t frame_header[kFrameHeaderSize];
@@ -104,7 +104,8 @@ class IvfFileWriterTest : public ::testing::Test {
   void RunBasicFileStructureTest(VideoCodecType codec_type,
                                  const uint8_t fourcc[4],
                                  bool use_capture_tims_ms) {
-    file_writer_ = IvfFileWriter::Wrap(rtc::File::Open(file_name_), 0);
+    file_writer_ =
+        IvfFileWriter::Wrap(FileWrapper::OpenWriteOnly(file_name_), 0);
     ASSERT_TRUE(file_writer_.get());
     const int kWidth = 320;
     const int kHeight = 240;
@@ -113,7 +114,7 @@ class IvfFileWriterTest : public ::testing::Test {
                                      use_capture_tims_ms));
     EXPECT_TRUE(file_writer_->Close());
 
-    rtc::File out_file = rtc::File::Open(file_name_);
+    FileWrapper out_file = FileWrapper::OpenReadOnly(file_name_);
     VerifyIvfHeader(&out_file, fourcc, kWidth, kHeight, kNumFrames,
                     use_capture_tims_ms);
     VerifyDummyTestFrames(&out_file, kNumFrames);
@@ -163,7 +164,7 @@ TEST_F(IvfFileWriterTest, ClosesWhenReachesLimit) {
   const int kNumFramesToFit = 1;
 
   file_writer_ = IvfFileWriter::Wrap(
-      rtc::File::Open(file_name_),
+      FileWrapper::OpenWriteOnly(file_name_),
       kHeaderSize +
           kNumFramesToFit * (kFrameHeaderSize + sizeof(dummy_payload)));
   ASSERT_TRUE(file_writer_.get());
@@ -172,7 +173,7 @@ TEST_F(IvfFileWriterTest, ClosesWhenReachesLimit) {
                                     kNumFramesToWrite, true));
   ASSERT_FALSE(file_writer_->Close());
 
-  rtc::File out_file = rtc::File::Open(file_name_);
+  FileWrapper out_file = FileWrapper::OpenReadOnly(file_name_);
   VerifyIvfHeader(&out_file, fourcc, kWidth, kHeight, kNumFramesToFit, true);
   VerifyDummyTestFrames(&out_file, kNumFramesToFit);
 
