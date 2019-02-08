@@ -43,7 +43,8 @@ class UniqueNumberGenerator {
   TIntegral operator()() { return GenerateNumber(); }
 
   // Adds an id that this generator should no longer generate.
-  void AddKnownId(TIntegral value);
+  // Return value indicates whether the ID was hitherto unknown.
+  bool AddKnownId(TIntegral value);
 
  private:
   static_assert(std::is_integral<TIntegral>::value, "Must be integral type.");
@@ -71,7 +72,8 @@ class UniqueRandomIdGenerator {
   uint32_t operator()() { return GenerateId(); }
 
   // Adds an id that this generator should no longer generate.
-  void AddKnownId(uint32_t value);
+  // Return value indicates whether the ID was hitherto unknown.
+  bool AddKnownId(uint32_t value);
 
  private:
   std::set<uint32_t> known_ids_;
@@ -93,7 +95,8 @@ class UniqueStringGenerator {
   std::string operator()() { return GenerateString(); }
 
   // Adds an id that this generator should no longer generate.
-  void AddKnownId(const std::string& value);
+  // Return value indicates whether the ID was hitherto unknown.
+  bool AddKnownId(const std::string& value);
 
  private:
   // This implementation will be simple and will generate "0", "1", ...
@@ -123,8 +126,8 @@ TIntegral UniqueNumberGenerator<TIntegral>::GenerateNumber() {
 }
 
 template <typename TIntegral>
-void UniqueNumberGenerator<TIntegral>::AddKnownId(TIntegral value) {
-  known_ids_.insert(value);
+bool UniqueNumberGenerator<TIntegral>::AddKnownId(TIntegral value) {
+  return known_ids_.insert(value).second;
 }
 }  // namespace rtc
 

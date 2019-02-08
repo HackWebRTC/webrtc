@@ -26,8 +26,8 @@ UniqueRandomIdGenerator::UniqueRandomIdGenerator(ArrayView<uint32_t> known_ids)
 UniqueRandomIdGenerator::~UniqueRandomIdGenerator() = default;
 
 uint32_t UniqueRandomIdGenerator::GenerateId() {
+  RTC_CHECK_LT(known_ids_.size(), std::numeric_limits<uint32_t>::max() - 1);
   while (true) {
-    RTC_CHECK_LT(known_ids_.size(), std::numeric_limits<uint32_t>::max());
     auto pair = known_ids_.insert(CreateRandomNonZeroId());
     if (pair.second) {
       return *pair.first;
@@ -35,8 +35,8 @@ uint32_t UniqueRandomIdGenerator::GenerateId() {
   }
 }
 
-void UniqueRandomIdGenerator::AddKnownId(uint32_t value) {
-  known_ids_.insert(value);
+bool UniqueRandomIdGenerator::AddKnownId(uint32_t value) {
+  return known_ids_.insert(value).second;
 }
 
 UniqueStringGenerator::UniqueStringGenerator() : unique_number_generator_() {}
@@ -52,13 +52,14 @@ std::string UniqueStringGenerator::GenerateString() {
   return ToString(unique_number_generator_.GenerateNumber());
 }
 
-void UniqueStringGenerator::AddKnownId(const std::string& value) {
+bool UniqueStringGenerator::AddKnownId(const std::string& value) {
   absl::optional<uint32_t> int_value = StringToNumber<uint32_t>(value);
   // The underlying generator works for uint32_t values, so if the provided
   // value is not a uint32_t it will never be generated anyway.
   if (int_value.has_value()) {
-    unique_number_generator_.AddKnownId(int_value.value());
+    return unique_number_generator_.AddKnownId(int_value.value());
   }
+  return false;
 }
 
 }  // namespace rtc

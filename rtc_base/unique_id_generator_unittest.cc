@@ -29,6 +29,7 @@ class UniqueIdGeneratorTest : public Test {};
 using test_types = ::testing::Types<UniqueNumberGenerator<uint8_t>,
                                     UniqueNumberGenerator<uint16_t>,
                                     UniqueNumberGenerator<uint32_t>,
+                                    UniqueNumberGenerator<int>,
                                     UniqueRandomIdGenerator,
                                     UniqueStringGenerator>;
 
@@ -105,6 +106,45 @@ TYPED_TEST(UniqueIdGeneratorTest, AddedElementsAreNotGenerated) {
   std::set_intersection(values.begin(), values.end(), known_values.begin(),
                         known_values.end(), std::back_inserter(intersection));
   EXPECT_THAT(intersection, IsEmpty());
+}
+
+TYPED_TEST(UniqueIdGeneratorTest, AddKnownIdOnNewIdReturnsTrue) {
+  typedef TypeParam Generator;
+
+  rtc::InitRandom(0);
+  Generator generator1;
+  const typename Generator::value_type id = generator1();
+
+  rtc::InitRandom(0);
+  Generator generator2;
+  EXPECT_TRUE(generator2.AddKnownId(id));
+}
+
+TYPED_TEST(UniqueIdGeneratorTest, AddKnownIdCalledAgainForSameIdReturnsFalse) {
+  typedef TypeParam Generator;
+
+  rtc::InitRandom(0);
+  Generator generator1;
+  const typename Generator::value_type id = generator1();
+
+  rtc::InitRandom(0);
+  Generator generator2;
+  ASSERT_TRUE(generator2.AddKnownId(id));
+  EXPECT_FALSE(generator2.AddKnownId(id));
+}
+
+TYPED_TEST(UniqueIdGeneratorTest,
+           AddKnownIdOnIdProvidedAsKnownToCtorReturnsFalse) {
+  typedef TypeParam Generator;
+
+  rtc::InitRandom(0);
+  Generator generator1;
+  const typename Generator::value_type id = generator1();
+  std::vector<typename Generator::value_type> known_values = {id};
+
+  rtc::InitRandom(0);
+  Generator generator2(known_values);
+  EXPECT_FALSE(generator2.AddKnownId(id));
 }
 
 }  // namespace rtc
