@@ -3295,8 +3295,11 @@ TEST_F(VideoStreamEncoderTest, DropsFramesWhenEncoderOvershoots) {
     timestamp_ms += 1000 / kFps;
   }
 
-  // Frame drops should be less than 5%
-  EXPECT_LT(num_dropped, 5 * kNumFramesInRun / 100);
+  // Framerate should be measured to be near the expected target rate.
+  EXPECT_NEAR(fake_encoder_.GetLastFramerate(), kFps, 1);
+
+  // Frame drops should be within 5% of expected 0%.
+  EXPECT_NEAR(num_dropped, 0, 5 * kNumFramesInRun / 100);
 
   // Make encoder produce frames at double the expected bitrate during 3 seconds
   // of video, verify number of drops. Rate needs to be slightly changed in
@@ -3320,8 +3323,14 @@ TEST_F(VideoStreamEncoderTest, DropsFramesWhenEncoderOvershoots) {
     timestamp_ms += 1000 / kFps;
   }
 
-  // Frame drops should be more than 40%.
-  EXPECT_GT(num_dropped, 40 * kNumFramesInRun / 100);
+  video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+
+  // Target framerate should be still be near the expected target, despite
+  // the frame drops.
+  EXPECT_NEAR(fake_encoder_.GetLastFramerate(), kFps, 1);
+
+  // Frame drops should be within 5% of expected 50%.
+  EXPECT_NEAR(num_dropped, kNumFramesInRun / 2, 5 * kNumFramesInRun / 100);
 
   video_stream_encoder_->Stop();
 }

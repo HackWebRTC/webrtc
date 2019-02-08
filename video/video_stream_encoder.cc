@@ -884,6 +884,9 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
   // InitialFrameDropOffWhenEncoderDisabledScaling, the return value
   // from GetScalingSettings should enable or disable the frame drop.
 
+  // Update input frame rate before we start using it. If we update it after
+  // any potential frame drop we are going to artifically increase frame sizes.
+  input_framerate_.Update(1u, clock_->TimeInMilliseconds());
   uint32_t framerate_fps = GetInputFramerateFps();
 
   int64_t now_ms = clock_->TimeInMilliseconds();
@@ -1016,8 +1019,6 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   }
 
   encoder_info_ = info;
-
-  input_framerate_.Update(1u, clock_->TimeInMilliseconds());
   video_sender_.AddVideoFrame(out_frame, nullptr, encoder_info_);
 }
 
