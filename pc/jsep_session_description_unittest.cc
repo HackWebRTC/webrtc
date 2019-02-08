@@ -212,6 +212,22 @@ TEST_F(JsepSessionDescriptionTest, AddCandidateDuplicates) {
   EXPECT_EQ(1u, jsep_desc_->candidates(0)->count());
 }
 
+// Test that the connection address is set to a hostname address after adding a
+// hostname candidate.
+TEST_F(JsepSessionDescriptionTest, AddHostnameCandidate) {
+  cricket::Candidate c;
+  c.set_component(cricket::ICE_CANDIDATE_COMPONENT_RTP);
+  c.set_protocol(cricket::UDP_PROTOCOL_NAME);
+  c.set_address(rtc::SocketAddress("example.local", 1234));
+  c.set_type(cricket::LOCAL_PORT_TYPE);
+  JsepIceCandidate hostname_candidate("audio", 0, c);
+  EXPECT_TRUE(jsep_desc_->AddCandidate(&hostname_candidate));
+  ASSERT_NE(nullptr, jsep_desc_->description());
+  const auto& content = jsep_desc_->description()->contents()[0];
+  EXPECT_EQ("example.local:1234",
+            content.media_description()->connection_address().ToString());
+}
+
 // Test that we can serialize a JsepSessionDescription and deserialize it again.
 TEST_F(JsepSessionDescriptionTest, SerializeDeserialize) {
   std::string sdp = Serialize(jsep_desc_.get());

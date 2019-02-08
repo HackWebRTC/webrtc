@@ -56,6 +56,7 @@ void UpdateConnectionAddress(
     cricket::MediaContentDescription* media_desc) {
   int port = kDummyPort;
   std::string ip = kDummyAddress;
+  std::string hostname;
   int current_preference = kPreferenceUnknown;
   int current_family = AF_UNSPEC;
   for (size_t i = 0; i < candidate_collection.count(); ++i) {
@@ -81,12 +82,16 @@ void UpdateConnectionAddress(
     }
     current_preference = preference;
     current_family = family;
-    port = jsep_candidate->candidate().address().port();
-    ip = jsep_candidate->candidate().address().ipaddr().ToString();
+    const rtc::SocketAddress& candidate_addr =
+        jsep_candidate->candidate().address();
+    port = candidate_addr.port();
+    ip = candidate_addr.ipaddr().ToString();
+    hostname = candidate_addr.hostname();
   }
-  rtc::SocketAddress connection_addr;
-  connection_addr.SetIP(ip);
-  connection_addr.SetPort(port);
+  rtc::SocketAddress connection_addr(ip, port);
+  if (rtc::IPIsUnspec(connection_addr.ipaddr()) && !hostname.empty()) {
+    connection_addr = rtc::SocketAddress(hostname, port);
+  }
   media_desc->set_connection_address(connection_addr);
 }
 

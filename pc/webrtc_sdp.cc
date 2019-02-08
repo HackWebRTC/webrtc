@@ -1385,9 +1385,15 @@ void BuildMediaDescription(const ContentInfo* content_info,
   } else if (media_desc->connection_address().family() == AF_INET) {
     os << " " << kConnectionIpv4Addrtype << " "
        << media_desc->connection_address().ipaddr().ToString();
-  } else {
+  } else if (media_desc->connection_address().family() == AF_INET6) {
     os << " " << kConnectionIpv6Addrtype << " "
        << media_desc->connection_address().ipaddr().ToString();
+  } else if (!media_desc->connection_address().hostname().empty()) {
+    // For hostname candidates, we use c=IN IP4 <hostname>.
+    os << " " << kConnectionIpv4Addrtype << " "
+       << media_desc->connection_address().hostname();
+  } else {
+    os << " " << kConnectionIpv4Addrtype << " " << kDummyAddress;
   }
   AddLine(os.str(), message);
 
