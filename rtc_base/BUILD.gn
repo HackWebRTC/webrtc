@@ -699,6 +699,7 @@ rtc_source_set("net_helpers") {
 }
 
 rtc_source_set("async_resolver_interface") {
+  visibility = [ "*" ]
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
@@ -708,6 +709,7 @@ rtc_source_set("async_resolver_interface") {
 }
 
 rtc_source_set("ip_address") {
+  visibility = [ "*" ]
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
@@ -717,6 +719,7 @@ rtc_source_set("ip_address") {
 }
 
 rtc_source_set("socket_address") {
+  visibility = [ "*" ]
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
@@ -743,6 +746,7 @@ rtc_source_set("socket_server") {
 }
 
 rtc_source_set("threading") {
+  visibility = [ "*" ]
   # TODO(bugs.webrtc.org/9987): This build target will soon contain
   #                             the following files:
   # sources = [
