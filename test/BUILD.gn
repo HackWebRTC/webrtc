@@ -377,7 +377,6 @@ if (rtc_include_tests) {
       "rtp_file_reader_unittest.cc",
       "rtp_file_writer_unittest.cc",
       "single_threaded_task_queue_unittest.cc",
-      "testsupport/always_passing_unittest.cc",
       "testsupport/perf_test_unittest.cc",
       "testsupport/test_artifacts_unittest.cc",
       "testsupport/video_frame_writer_unittest.cc",
