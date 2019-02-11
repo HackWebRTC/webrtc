@@ -90,7 +90,6 @@ class H264EncoderImpl : public H264Encoder {
   std::vector<rtc::scoped_refptr<I420Buffer>> downscaled_buffers_;
   std::vector<LayerConfig> configurations_;
   std::vector<EncodedImage> encoded_images_;
-  std::vector<std::unique_ptr<uint8_t[]>> encoded_image_buffers_;
 
   VideoCodec codec_;
   H264PacketizationMode packetization_mode_;

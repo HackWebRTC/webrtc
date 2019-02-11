@@ -94,7 +94,6 @@ FrameType ConvertToVideoFrameType(EVideoFrameType type) {
 // is updated to point to each fragment, with offsets and lengths set as to
 // exclude the start codes.
 static void RtpFragmentize(EncodedImage* encoded_image,
-                           std::unique_ptr<uint8_t[]>* encoded_image_buffer,
                            const VideoFrameBuffer& frame_buffer,
                            SFrameBSInfo* info,
                            RTPFragmentationHeader* frag_header) {
@@ -126,8 +125,7 @@ static void RtpFragmentize(EncodedImage* encoded_image,
           << ", encoded bytes: " << required_capacity << ".";
       new_capacity = required_capacity;
     }
-    encoded_image->set_buffer(new uint8_t[new_capacity], new_capacity);
-    encoded_image_buffer->reset(encoded_image->data());
+    encoded_image->Allocate(new_capacity);
   }
 
   // Iterate layers and NAL units, note each NAL unit as a fragment and copy
@@ -179,7 +177,6 @@ H264EncoderImpl::H264EncoderImpl(const cricket::VideoCodec& codec)
   }
   downscaled_buffers_.reserve(kMaxSimulcastStreams - 1);
   encoded_images_.reserve(kMaxSimulcastStreams);
-  encoded_image_buffers_.reserve(kMaxSimulcastStreams);
   encoders_.reserve(kMaxSimulcastStreams);
   configurations_.reserve(kMaxSimulcastStreams);
 }
@@ -222,7 +219,6 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* inst,
   }
   downscaled_buffers_.resize(number_of_streams - 1);
   encoded_images_.resize(number_of_streams);
-  encoded_image_buffers_.resize(number_of_streams);
   encoders_.resize(number_of_streams);
   pictures_.resize(number_of_streams);
   configurations_.resize(number_of_streams);
@@ -302,8 +298,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* inst,
     const size_t new_capacity =
         CalcBufferSize(VideoType::kI420, codec_.simulcastStream[idx].width,
                        codec_.simulcastStream[idx].height);
-    encoded_images_[i].set_buffer(new uint8_t[new_capacity], new_capacity);
-    encoded_image_buffers_[i].reset(encoded_images_[i].data());
+    encoded_images_[i].Allocate(new_capacity);
     encoded_images_[i]._completeFrame = true;
     encoded_images_[i]._encodedWidth = codec_.simulcastStream[idx].width;
     encoded_images_[i]._encodedHeight = codec_.simulcastStream[idx].height;
@@ -328,7 +323,6 @@ int32_t H264EncoderImpl::Release() {
   downscaled_buffers_.clear();
   configurations_.clear();
   encoded_images_.clear();
-  encoded_image_buffers_.clear();
   pictures_.clear();
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -513,8 +507,7 @@ int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
     // Split encoded image up into fragments. This also updates
     // |encoded_image_|.
     RTPFragmentationHeader frag_header;
-    RtpFragmentize(&encoded_images_[i], &encoded_image_buffers_[i],
-                   *frame_buffer, &info, &frag_header);
+    RtpFragmentize(&encoded_images_[i], *frame_buffer, &info, &frag_header);
 
     // Encoder can skip frames to save bandwidth in which case
     // |encoded_images_[i]._length| == 0.
