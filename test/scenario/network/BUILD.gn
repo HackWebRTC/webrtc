@@ -11,6 +11,8 @@ import("../../../webrtc.gni")
 rtc_source_set("emulated_network") {
   testonly = true
   sources = [
+    "cross_traffic.cc",
+    "cross_traffic.h",
     "fake_network_socket.cc",
     "fake_network_socket.h",
     "fake_network_socket_server.cc",
@@ -19,8 +21,11 @@ rtc_source_set("emulated_network") {
     "network_emulation.h",
     "network_emulation_manager.cc",
     "network_emulation_manager.h",
+    "traffic_route.cc",
+    "traffic_route.h",
   ]
   deps = [
+    "../:column_printer",
     "../../../api:simulated_network_api",
     "../../../api/units:data_rate",
     "../../../api/units:data_size",
@@ -90,9 +95,26 @@ rtc_source_set("network_emulation_pc_unittest") {
   }
 }
 
+rtc_source_set("cross_traffic_unittest") {
+  testonly = true
+  sources = [
+    "cross_traffic_unittest.cc",
+  ]
+  deps = [
+    ":emulated_network",
+    "../../../api:simulated_network_api",
+    "../../../call:simulated_network",
+    "../../../rtc_base:logging",
+    "../../../rtc_base:rtc_event",
+    "../../../test:test_support",
+    "//third_party/abseil-cpp/absl/memory:memory",
+  ]
+}
+
 rtc_source_set("network_emulation_unittests") {
   testonly = true
   deps = [
+    ":cross_traffic_unittest",
     ":network_emulation_pc_unittest",
     ":network_emulation_unittest",
   ]

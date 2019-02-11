@@ -8,6 +8,19 @@
 
 import("../../webrtc.gni")
 
+rtc_source_set("column_printer") {
+  testonly = true
+  sources = [
+    "column_printer.cc",
+    "column_printer.h",
+  ]
+  deps = [
+    "../../rtc_base:macromagic",
+    "../../rtc_base:stringutils",
+    "../logging:log_writer",
+  ]
+}
+
 if (rtc_include_tests) {
   rtc_source_set("scenario") {
     testonly = true
@@ -17,8 +30,6 @@ if (rtc_include_tests) {
       "call_client.cc",
       "call_client.h",
       "call_client.h",
-      "column_printer.cc",
-      "column_printer.h",
       "hardware_codecs.cc",
       "hardware_codecs.h",
       "network_node.cc",
@@ -36,6 +47,7 @@ if (rtc_include_tests) {
       "video_stream.h",
     ]
     deps = [
+      ":column_printer",
       "../:fake_video_codecs",
       "../:fileutils",
       "../:test_common",
