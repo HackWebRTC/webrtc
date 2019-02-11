@@ -114,8 +114,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   }
   test::FuzzDataHelper fuzz_data(rtc::ArrayView<const uint8_t>(data, size));
   rtc::CriticalSection crit_capture;
-  rtc::CriticalSection crit_render;
-  auto gci = absl::make_unique<GainControlImpl>(&crit_render, &crit_capture);
+  auto gci = absl::make_unique<GainControlImpl>(&crit_capture);
   FuzzGainController(&fuzz_data, gci.get());
 }
 }  // namespace webrtc

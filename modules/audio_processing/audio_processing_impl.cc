@@ -387,47 +387,41 @@ AudioProcessingImpl::AudioProcessingImpl(
       capture_(config.Get<ExperimentalNs>().enabled),
 #endif
       capture_nonlocked_() {
-  {
-    rtc::CritScope cs_render(&crit_render_);
-    rtc::CritScope cs_capture(&crit_capture_);
+  // Mark Echo Controller enabled if a factory is injected.
+  capture_nonlocked_.echo_controller_enabled =
+      static_cast<bool>(echo_control_factory_);
 
-    // Mark Echo Controller enabled if a factory is injected.
-    capture_nonlocked_.echo_controller_enabled =
-        static_cast<bool>(echo_control_factory_);
+  public_submodules_->gain_control.reset(new GainControlImpl(&crit_capture_));
+  public_submodules_->level_estimator.reset(
+      new LevelEstimatorImpl(&crit_capture_));
+  public_submodules_->noise_suppression.reset(
+      new NoiseSuppressionImpl(&crit_capture_));
+  public_submodules_->noise_suppression_proxy.reset(new NoiseSuppressionProxy(
+      this, public_submodules_->noise_suppression.get()));
+  public_submodules_->voice_detection.reset(
+      new VoiceDetectionImpl(&crit_capture_));
+  public_submodules_->gain_control_for_experimental_agc.reset(
+      new GainControlForExperimentalAgc(public_submodules_->gain_control.get(),
+                                        &crit_capture_));
 
-    public_submodules_->gain_control.reset(
-        new GainControlImpl(&crit_render_, &crit_capture_));
-    public_submodules_->level_estimator.reset(
-        new LevelEstimatorImpl(&crit_capture_));
-    public_submodules_->noise_suppression.reset(
-        new NoiseSuppressionImpl(&crit_capture_));
-    public_submodules_->noise_suppression_proxy.reset(new NoiseSuppressionProxy(
-        this, public_submodules_->noise_suppression.get()));
-    public_submodules_->voice_detection.reset(
-        new VoiceDetectionImpl(&crit_capture_));
-    public_submodules_->gain_control_for_experimental_agc.reset(
-        new GainControlForExperimentalAgc(
-            public_submodules_->gain_control.get(), &crit_capture_));
-
-    // If no echo detector is injected, use the ResidualEchoDetector.
-    if (!private_submodules_->echo_detector) {
-      private_submodules_->echo_detector =
-          new rtc::RefCountedObject<ResidualEchoDetector>();
-    }
-
-    private_submodules_->echo_cancellation.reset(new EchoCancellationImpl());
-    private_submodules_->echo_control_mobile.reset(new EchoControlMobileImpl());
-    // TODO(alessiob): Move the injected gain controller once injection is
-    // implemented.
-    private_submodules_->gain_controller2.reset(new GainController2());
-
-    RTC_LOG(LS_INFO) << "Capture analyzer activated: "
-                     << !!private_submodules_->capture_analyzer
-                     << "\nCapture post processor activated: "
-                     << !!private_submodules_->capture_post_processor
-                     << "\nRender pre processor activated: "
-                     << !!private_submodules_->render_pre_processor;
+  // If no echo detector is injected, use the ResidualEchoDetector.
+  if (!private_submodules_->echo_detector) {
+    private_submodules_->echo_detector =
+        new rtc::RefCountedObject<ResidualEchoDetector>();
   }
+
+  private_submodules_->echo_cancellation.reset(new EchoCancellationImpl());
+  private_submodules_->echo_control_mobile.reset(new EchoControlMobileImpl());
+  // TODO(alessiob): Move the injected gain controller once injection is
+  // implemented.
+  private_submodules_->gain_controller2.reset(new GainController2());
+
+  RTC_LOG(LS_INFO) << "Capture analyzer activated: "
+                   << !!private_submodules_->capture_analyzer
+                   << "\nCapture post processor activated: "
+                   << !!private_submodules_->capture_post_processor
+                   << "\nRender pre processor activated: "
+                   << !!private_submodules_->render_pre_processor;
 
   SetExtraOptions(config);
 }

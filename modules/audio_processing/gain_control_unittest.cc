@@ -72,9 +72,8 @@ void RunBitExactnessTest(int sample_rate_hz,
                          int analog_level_max,
                          int achieved_stream_analog_level_reference,
                          rtc::ArrayView<const float> output_reference) {
-  rtc::CriticalSection crit_render;
   rtc::CriticalSection crit_capture;
-  GainControlImpl gain_controller(&crit_render, &crit_capture);
+  GainControlImpl gain_controller(&crit_capture);
   SetupComponent(sample_rate_hz, mode, target_level_dbfs, stream_analog_level,
                  compression_gain_db, enable_limiter, analog_level_min,
                  analog_level_max, &gain_controller);

@@ -89,10 +89,8 @@ class GainControlImpl::GainController {
 
 int GainControlImpl::instance_counter_ = 0;
 
-GainControlImpl::GainControlImpl(rtc::CriticalSection* crit_render,
-                                 rtc::CriticalSection* crit_capture)
-    : crit_render_(crit_render),
-      crit_capture_(crit_capture),
+GainControlImpl::GainControlImpl(rtc::CriticalSection* crit_capture)
+    : crit_capture_(crit_capture),
       data_dumper_(new ApmDataDumper(instance_counter_)),
       mode_(kAdaptiveAnalog),
       minimum_capture_level_(0),
@@ -103,7 +101,6 @@ GainControlImpl::GainControlImpl(rtc::CriticalSection* crit_render,
       analog_capture_level_(0),
       was_analog_level_set_(false),
       stream_is_saturated_(false) {
-  RTC_DCHECK(crit_render);
   RTC_DCHECK(crit_capture);
 }
 
@@ -267,7 +264,6 @@ int GainControlImpl::stream_analog_level() {
 }
 
 int GainControlImpl::Enable(bool enable) {
-  rtc::CritScope cs_render(crit_render_);
   rtc::CritScope cs_capture(crit_capture_);
   if (enable && !enabled_) {
     enabled_ = enable;  // Must be set before Initialize() is called.
@@ -287,7 +283,6 @@ bool GainControlImpl::is_enabled() const {
 }
 
 int GainControlImpl::set_mode(Mode mode) {
-  rtc::CritScope cs_render(crit_render_);
   rtc::CritScope cs_capture(crit_capture_);
   if (MapSetting(mode) == -1) {
     return AudioProcessing::kBadParameterError;
@@ -354,10 +349,8 @@ int GainControlImpl::set_target_level_dbfs(int level) {
   if (level > 31 || level < 0) {
     return AudioProcessing::kBadParameterError;
   }
-  {
-    rtc::CritScope cs(crit_capture_);
-    target_level_dbfs_ = level;
-  }
+  rtc::CritScope cs(crit_capture_);
+  target_level_dbfs_ = level;
   return Configure();
 }
 
@@ -370,18 +363,14 @@ int GainControlImpl::set_compression_gain_db(int gain) {
   if (gain < 0 || gain > 90) {
     return AudioProcessing::kBadParameterError;
   }
-  {
-    rtc::CritScope cs(crit_capture_);
-    compression_gain_db_ = gain;
-  }
+  rtc::CritScope cs(crit_capture_);
+  compression_gain_db_ = gain;
   return Configure();
 }
 
 int GainControlImpl::enable_limiter(bool enable) {
-  {
-    rtc::CritScope cs(crit_capture_);
-    limiter_enabled_ = enable;
-  }
+  rtc::CritScope cs(crit_capture_);
+  limiter_enabled_ = enable;
   return Configure();
 }
 
@@ -391,7 +380,6 @@ bool GainControlImpl::is_limiter_enabled() const {
 }
 
 void GainControlImpl::Initialize(size_t num_proc_channels, int sample_rate_hz) {
-  rtc::CritScope cs_render(crit_render_);
   rtc::CritScope cs_capture(crit_capture_);
   data_dumper_->InitiateNewSetOfRecordings();
 
@@ -415,8 +403,6 @@ void GainControlImpl::Initialize(size_t num_proc_channels, int sample_rate_hz) {
 }
 
 int GainControlImpl::Configure() {
-  rtc::CritScope cs_render(crit_render_);
-  rtc::CritScope cs_capture(crit_capture_);
   WebRtcAgcConfig config;
   // TODO(ajm): Flip the sign here (since AGC expects a positive value) if we
   //            change the interface.
