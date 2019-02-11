@@ -175,8 +175,6 @@ rtc_source_set("video_stream_encoder_impl") {
     "encoder_overshoot_detector.h",
     "overuse_frame_detector.cc",
     "overuse_frame_detector.h",
-    "partial_frame_assembler.cc",
-    "partial_frame_assembler.h",
     "video_stream_encoder.cc",
     "video_stream_encoder.h",
   ]
@@ -483,7 +481,6 @@ if (rtc_include_tests) {
       "end_to_end_tests/stats_tests.cc",
       "end_to_end_tests/transport_feedback_tests.cc",
       "overuse_frame_detector_unittest.cc",
-      "partial_frame_assembler_unittest.cc",
       "picture_id_tests.cc",
       "quality_scaling_tests.cc",
       "quality_threshold_unittest.cc",
