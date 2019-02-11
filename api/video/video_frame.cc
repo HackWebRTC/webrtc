@@ -21,9 +21,7 @@ VideoFrame::Builder::~Builder() = default;
 
 VideoFrame VideoFrame::Builder::build() {
   return VideoFrame(id_, video_frame_buffer_, timestamp_us_, timestamp_rtp_,
-                    ntp_time_ms_, rotation_, color_space_,
-                    partial_frame_description_,
-                    cache_buffer_for_partial_updates_);
+                    ntp_time_ms_, rotation_, color_space_);
 }
 
 VideoFrame::Builder& VideoFrame::Builder::set_video_frame_buffer(
@@ -78,18 +76,6 @@ VideoFrame::Builder& VideoFrame::Builder::set_id(uint16_t id) {
   return *this;
 }
 
-VideoFrame::Builder& VideoFrame::Builder::set_partial_frame_description(
-    const absl::optional<PartialFrameDescription>& description) {
-  partial_frame_description_ = description;
-  return *this;
-}
-
-VideoFrame::Builder& VideoFrame::Builder::set_cache_buffer_for_partial_updates(
-    bool cache_buffer_for_partial_updates) {
-  cache_buffer_for_partial_updates_ = cache_buffer_for_partial_updates;
-  return *this;
-}
-
 VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
                        webrtc::VideoRotation rotation,
                        int64_t timestamp_us)
@@ -111,25 +97,20 @@ VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
   RTC_DCHECK(buffer);
 }
 
-VideoFrame::VideoFrame(
-    uint16_t id,
-    const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
-    int64_t timestamp_us,
-    uint32_t timestamp_rtp,
-    int64_t ntp_time_ms,
-    VideoRotation rotation,
-    const absl::optional<ColorSpace>& color_space,
-    const absl::optional<PartialFrameDescription> partial_frame_description,
-    bool cache_buffer_for_partial_updates)
+VideoFrame::VideoFrame(uint16_t id,
+                       const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
+                       int64_t timestamp_us,
+                       uint32_t timestamp_rtp,
+                       int64_t ntp_time_ms,
+                       VideoRotation rotation,
+                       const absl::optional<ColorSpace>& color_space)
     : id_(id),
       video_frame_buffer_(buffer),
       timestamp_rtp_(timestamp_rtp),
       ntp_time_ms_(ntp_time_ms),
       timestamp_us_(timestamp_us),
       rotation_(rotation),
-      color_space_(color_space),
-      partial_frame_description_(partial_frame_description),
-      cache_buffer_for_partial_updates_(cache_buffer_for_partial_updates) {}
+      color_space_(color_space) {}
 
 VideoFrame::~VideoFrame() = default;
 
@@ -152,12 +133,6 @@ uint32_t VideoFrame::size() const {
 
 rtc::scoped_refptr<VideoFrameBuffer> VideoFrame::video_frame_buffer() const {
   return video_frame_buffer_;
-}
-
-void VideoFrame::set_video_frame_buffer(
-    rtc::scoped_refptr<VideoFrameBuffer> buffer) {
-  RTC_CHECK(buffer.get());
-  video_frame_buffer_ = buffer;
 }
 
 int64_t VideoFrame::render_time_ms() const {

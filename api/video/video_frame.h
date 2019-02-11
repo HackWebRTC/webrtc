@@ -25,14 +25,6 @@ namespace webrtc {
 
 class RTC_EXPORT VideoFrame {
  public:
-  // Describes a partial frame, which contains only a changed region compared
-  // to a previous frame. Shouldn't be set on the fully updated picture.
-  struct PartialFrameDescription {
-    // Coordinates of top-left corner of the changed region in the full picture.
-    int offset_x;
-    int offset_y;
-  };
-
   // Preferred way of building VideoFrame objects.
   class Builder {
    public:
@@ -50,10 +42,6 @@ class RTC_EXPORT VideoFrame {
     Builder& set_color_space(const absl::optional<ColorSpace>& color_space);
     Builder& set_color_space(const ColorSpace* color_space);
     Builder& set_id(uint16_t id);
-    Builder& set_partial_frame_description(
-        const absl::optional<PartialFrameDescription>& description);
-    Builder& set_cache_buffer_for_partial_updates(
-        bool cache_buffer_for_partial_updates);
 
    private:
     uint16_t id_ = 0;
@@ -63,8 +51,6 @@ class RTC_EXPORT VideoFrame {
     int64_t ntp_time_ms_ = 0;
     VideoRotation rotation_ = kVideoRotation_0;
     absl::optional<ColorSpace> color_space_;
-    absl::optional<PartialFrameDescription> partial_frame_description_;
-    bool cache_buffer_for_partial_updates_ = false;
   };
 
   // To be deprecated. Migrate all use to Builder.
@@ -145,31 +131,13 @@ class RTC_EXPORT VideoFrame {
     color_space_ = color_space;
   }
 
-  const PartialFrameDescription* partial_frame_description() const {
-    return partial_frame_description_ ? &partial_frame_description_.value()
-                                      : nullptr;
-  }
-  void set_partial_frame_description(
-      const absl::optional<PartialFrameDescription>& description) {
-    partial_frame_description_ = description;
-  }
-
-  void set_cache_buffer_for_partial_updates(
-      bool cache_buffer_for_partial_updates) {
-    cache_buffer_for_partial_updates_ = cache_buffer_for_partial_updates;
-  }
-  bool cache_buffer_for_partial_updates() const {
-    return cache_buffer_for_partial_updates_;
-  }
-
   // Get render time in milliseconds.
   // TODO(nisse): Deprecated. Migrate all users to timestamp_us().
   int64_t render_time_ms() const;
 
-  // Return the underlying buffer. This can only be a nullptr for a partial
-  // update VideoFrame with no changed pixels.
+  // Return the underlying buffer. Never nullptr for a properly
+  // initialized VideoFrame.
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer() const;
-  void set_video_frame_buffer(rtc::scoped_refptr<VideoFrameBuffer> buffer);
 
   // TODO(nisse): Deprecated.
   // Return true if the frame is stored in a texture.
@@ -178,16 +146,13 @@ class RTC_EXPORT VideoFrame {
   }
 
  private:
-  VideoFrame(
-      uint16_t id,
-      const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
-      int64_t timestamp_us,
-      uint32_t timestamp_rtp,
-      int64_t ntp_time_ms,
-      VideoRotation rotation,
-      const absl::optional<ColorSpace>& color_space,
-      const absl::optional<PartialFrameDescription> partial_frame_description,
-      bool cache_buffer_for_partial_updates_);
+  VideoFrame(uint16_t id,
+             const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
+             int64_t timestamp_us,
+             uint32_t timestamp_rtp,
+             int64_t ntp_time_ms,
+             VideoRotation rotation,
+             const absl::optional<ColorSpace>& color_space);
 
   uint16_t id_;
   // An opaque reference counted handle that stores the pixel data.
@@ -197,9 +162,6 @@ class RTC_EXPORT VideoFrame {
   int64_t timestamp_us_;
   VideoRotation rotation_;
   absl::optional<ColorSpace> color_space_;
-  absl::optional<PartialFrameDescription> partial_frame_description_;
-  // Should be set on all frames, if the source may produce partial updates.
-  bool cache_buffer_for_partial_updates_;
 };
 
 }  // namespace webrtc
