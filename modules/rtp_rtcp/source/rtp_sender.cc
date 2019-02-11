@@ -1022,16 +1022,8 @@ uint16_t RTPSender::SequenceNumber() const {
   return sequence_number_;
 }
 
-static std::unique_ptr<RtpPacketToSend> CreateRtxPacket(
-    const RtpPacketToSend& packet,
-    RtpHeaderExtensionMap* extension_map) {
-  RTC_DCHECK(extension_map);
-  // TODO(danilchap): Create rtx packet with extra capacity for SRTP
-  // when transport interface would be updated to take buffer class.
-  size_t packet_size = packet.size() + kRtxHeaderSize;
-  std::unique_ptr<RtpPacketToSend> rtx_packet =
-      absl::make_unique<RtpPacketToSend>(extension_map, packet_size);
-
+static void CopyHeaderAndExtensionsToRtxPacket(const RtpPacketToSend& packet,
+                                               RtpPacketToSend* rtx_packet) {
   // Set the relevant fixed packet headers. The following are not set:
   // * Payload type - it is replaced in rtx packets.
   // * Sequence number - RTX has a separate sequence numbering.
@@ -1075,14 +1067,11 @@ static std::unique_ptr<RtpPacketToSend> CreateRtxPacket(
 
     std::memcpy(destination.begin(), source.begin(), destination.size());
   }
-
-  return rtx_packet;
 }
 
 std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
     const RtpPacketToSend& packet) {
-  std::unique_ptr<RtpPacketToSend> rtx_packet =
-      CreateRtxPacket(packet, &rtp_header_extension_map_);
+  std::unique_ptr<RtpPacketToSend> rtx_packet;
 
   // Add original RTP header.
   {
@@ -1096,6 +1085,10 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
     auto kv = rtx_payload_type_map_.find(packet.PayloadType());
     if (kv == rtx_payload_type_map_.end())
       return nullptr;
+
+    rtx_packet = absl::make_unique<RtpPacketToSend>(&rtp_header_extension_map_,
+                                                    max_packet_size_);
+
     rtx_packet->SetPayloadType(kv->second);
 
     // Replace sequence number.
@@ -1103,6 +1096,8 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
 
     // Replace SSRC.
     rtx_packet->SetSsrc(*ssrc_rtx_);
+
+    CopyHeaderAndExtensionsToRtxPacket(packet, rtx_packet.get());
 
     // The spec indicates that it is possible for a sender to stop sending mids
     // once the SSRCs have been bound on the receiver. As a result the source
@@ -1119,10 +1114,13 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
       // rtx_packet->SetExtension<RepairedRtpStreamId>(rid_);
     }
   }
+  RTC_DCHECK(rtx_packet);
 
   uint8_t* rtx_payload =
       rtx_packet->AllocatePayload(packet.payload_size() + kRtxHeaderSize);
-  RTC_DCHECK(rtx_payload);
+  if (rtx_payload == nullptr)
+    return nullptr;
+
   // Add OSN (original sequence number).
   ByteWriter<uint16_t>::WriteBigEndian(rtx_payload, packet.SequenceNumber());
 
