@@ -204,26 +204,3 @@ TEST(VideoBroadcasterTest, SinkWantsBlackFrames) {
   EXPECT_TRUE(sink2.black_frame());
   EXPECT_EQ(30, sink2.timestamp_us());
 }
-
-TEST(VideoBroadcasterTest, SinkWantsPartialFrames) {
-  VideoBroadcaster broadcaster;
-  EXPECT_FALSE(broadcaster.wants().partial_frames);
-
-  FakeVideoRenderer sink1;
-  VideoSinkWants wants1;
-  wants1.partial_frames = true;
-  broadcaster.AddOrUpdateSink(&sink1, wants1);
-
-  FakeVideoRenderer sink2;
-  VideoSinkWants wants2;
-  wants2.partial_frames = false;
-  broadcaster.AddOrUpdateSink(&sink2, wants2);
-
-  EXPECT_FALSE(broadcaster.wants().partial_frames);
-
-  // Change second sink to also want partial frames.
-  wants2.partial_frames = true;
-  broadcaster.AddOrUpdateSink(&sink2, wants2);
-
-  EXPECT_TRUE(broadcaster.wants().partial_frames);
-}
