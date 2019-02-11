@@ -41,8 +41,6 @@ rtc_source_set("video_test_common") {
   sources = [
     "fake_texture_frame.cc",
     "fake_texture_frame.h",
-    "frame_change_extractor.cc",
-    "frame_change_extractor.h",
     "frame_generator.cc",
     "frame_generator.h",
     "frame_generator_capturer.cc",
