@@ -128,6 +128,8 @@ rtc_static_library("peerconnection") {
   visibility = [ "*" ]
   cflags = []
   sources = [
+    "audio_rtp_receiver.cc",
+    "audio_rtp_receiver.h",
     "audio_track.cc",
     "audio_track.h",
     "data_channel.cc",
@@ -175,6 +177,8 @@ rtc_static_library("peerconnection") {
     "stream_collection.h",
     "track_media_info_map.cc",
     "track_media_info_map.h",
+    "video_rtp_receiver.cc",
+    "video_rtp_receiver.h",
     "video_track.cc",
     "video_track.h",
     "video_track_source.cc",

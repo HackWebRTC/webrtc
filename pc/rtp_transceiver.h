@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "api/rtp_transceiver_interface.h"
+#include "pc/channel_interface.h"
 #include "pc/rtp_receiver.h"
 #include "pc/rtp_sender.h"
 
