@@ -60,7 +60,6 @@ class VideoQualityTestFixtureInterface {
       std::string clip_name;  // "Generator" to generate frames instead.
       size_t capture_device_index;
       SdpVideoFormat::Parameters sdp_params;
-      bool partial_updates;
     } video[2];
     struct Audio {
       bool enabled;

@@ -22,7 +22,6 @@
 #include "media/engine/internal_decoder_factory.h"
 #include "media/engine/internal_encoder_factory.h"
 #include "test/call_test.h"
-#include "test/frame_change_extractor.h"
 #include "test/frame_generator.h"
 #include "test/layer_filtering_transport.h"
 #include "video/video_analyzer.h"
@@ -114,8 +113,6 @@ class VideoQualityTest :
   std::vector<VideoSendStream*> thumbnail_send_streams_;
   std::vector<VideoReceiveStream::Config> thumbnail_receive_configs_;
   std::vector<VideoReceiveStream*> thumbnail_receive_streams_;
-
-  std::unique_ptr<FrameChangeExtractor> frame_change_extractor_;
 
   int receive_logs_;
   int send_logs_;
