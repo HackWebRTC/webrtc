@@ -279,6 +279,23 @@ TEST(FullStackTest, ForemanCifLink150kbpsWithoutPacketLoss) {
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
+// Restricted network and encoder overproducing by 30%.
+TEST(FullStackTest, ForemanCifLink150kbpsBadRateController) {
+  auto fixture = CreateVideoQualityTestFixture();
+  ParamsWithLogging foreman_cif;
+  foreman_cif.call.send_side_bwe = true;
+  foreman_cif.video[0] = {true,  352,           288, 30, 30000, 500000, 2000000,
+                          false, "VP8",         1,   0,  0,     false,  false,
+                          true,  "foreman_cif", 0,   {}, 1.30};
+  foreman_cif.analyzer = {
+      "foreman_cif_link_150kbps_delay100ms_30pkts_queue_overshoot30", 0.0, 0.0,
+      kFullStackTestDurationSecs};
+  foreman_cif.config->link_capacity_kbps = 150;
+  foreman_cif.config->queue_length_packets = 30;
+  foreman_cif.config->queue_delay_ms = 100;
+  fixture->RunWithAnalyzer(foreman_cif);
+}
+
 TEST_P(GenericDescriptorTest, ForemanCifPlr5) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
