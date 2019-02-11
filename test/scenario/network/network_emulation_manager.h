@@ -22,6 +22,7 @@
 #include "rtc_base/task_queue.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread.h"
+#include "system_wrappers/include/clock.h"
 #include "test/scenario/network/fake_network_socket_server.h"
 #include "test/scenario/network/network_emulation.h"
 
@@ -30,7 +31,7 @@ namespace test {
 
 class NetworkEmulationManager {
  public:
-  explicit NetworkEmulationManager(Clock* clock);
+  NetworkEmulationManager();
   ~NetworkEmulationManager();
 
   EmulatedNetworkNode* CreateEmulatedNode(
@@ -48,9 +49,6 @@ class NetworkEmulationManager {
                   EndpointNode* to);
 
   rtc::Thread* CreateNetworkThread(std::vector<EndpointNode*> endpoints);
-
-  void Start();
-  void Stop();
 
  private:
   FakeNetworkSocketServer* CreateSocketServer(

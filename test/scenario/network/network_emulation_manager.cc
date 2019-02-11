@@ -25,13 +25,20 @@ constexpr int64_t kPacketProcessingIntervalMs = 1;
 
 }  // namespace
 
-NetworkEmulationManager::NetworkEmulationManager(webrtc::Clock* clock)
-    : clock_(clock),
+NetworkEmulationManager::NetworkEmulationManager()
+    : clock_(Clock::GetRealTimeClock()),
       next_node_id_(1),
-      task_queue_("network_emulation_manager") {}
-NetworkEmulationManager::~NetworkEmulationManager() {
-  Stop();
+      task_queue_("network_emulation_manager") {
+  process_task_handle_ = RepeatingTaskHandle::Start(&task_queue_, [this] {
+    ProcessNetworkPackets();
+    return TimeDelta::ms(kPacketProcessingIntervalMs);
+  });
 }
+
+// TODO(srte): Ensure that any pending task that must be run for consistency
+// (such as stats collection tasks) are not cancelled when the task queue is
+// destroyed.
+NetworkEmulationManager::~NetworkEmulationManager() = default;
 
 EmulatedNetworkNode* NetworkEmulationManager::CreateEmulatedNode(
     std::unique_ptr<NetworkBehaviorInterface> network_behavior) {
@@ -99,17 +106,6 @@ rtc::Thread* NetworkEmulationManager::CreateNetworkThread(
   rtc::Thread* out = network_thread.get();
   threads_.push_back(std::move(network_thread));
   return out;
-}
-
-void NetworkEmulationManager::Start() {
-  process_task_handle_ = RepeatingTaskHandle::Start(&task_queue_, [this] {
-    ProcessNetworkPackets();
-    return TimeDelta::ms(kPacketProcessingIntervalMs);
-  });
-}
-
-void NetworkEmulationManager::Stop() {
-  process_task_handle_.PostStop();
 }
 
 FakeNetworkSocketServer* NetworkEmulationManager::CreateSocketServer(

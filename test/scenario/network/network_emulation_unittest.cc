@@ -58,7 +58,7 @@ class SocketReader : public sigslot::has_slots<> {
 };
 
 TEST(NetworkEmulationManagerTest, Run) {
-  NetworkEmulationManager network_manager(Clock::GetRealTimeClock());
+  NetworkEmulationManager network_manager;
 
   EmulatedNetworkNode* alice_node = network_manager.CreateEmulatedNode(
       absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
@@ -73,8 +73,6 @@ TEST(NetworkEmulationManagerTest, Run) {
 
   auto* nt1 = network_manager.CreateNetworkThread({alice_endpoint});
   auto* nt2 = network_manager.CreateNetworkThread({bob_endpoint});
-
-  network_manager.Start();
 
   for (uint64_t j = 0; j < 2; j++) {
     auto* s1 = nt1->socketserver()->CreateAsyncSocket(AF_INET, SOCK_DGRAM);
@@ -106,8 +104,6 @@ TEST(NetworkEmulationManagerTest, Run) {
     delete s1;
     delete s2;
   }
-
-  network_manager.Stop();
 }
 
 }  // namespace test

@@ -66,7 +66,7 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
       /*output_dump_file_name=*/absl::nullopt, cricket::AudioOptions()};
 
   // Setup emulated network
-  NetworkEmulationManager network_emulation_manager(Clock::GetRealTimeClock());
+  NetworkEmulationManager network_emulation_manager;
 
   EmulatedNetworkNode* alice_node =
       network_emulation_manager.CreateEmulatedNode(
@@ -105,15 +105,11 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
   auto* video_analyzer = static_cast<ExampleVideoQualityAnalyzer*>(
       analyzers->video_quality_analyzer.get());
 
-  network_emulation_manager.Start();
-
   auto fixture = CreatePeerConnectionE2EQualityTestFixture(
       std::move(alice_components), std::move(alice_params),
       std::move(bob_components), absl::make_unique<Params>(),
       std::move(analyzers));
   fixture->Run(RunParams{TimeDelta::seconds(5)});
-
-  network_emulation_manager.Stop();
 
   RTC_LOG(INFO) << "Captured: " << video_analyzer->frames_captured();
   RTC_LOG(INFO) << "Sent    : " << video_analyzer->frames_sent();
