@@ -7,16 +7,18 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "api/task_queue/default_task_queue_factory.h"
 
-#include "rtc_base/checks.h"
+#ifndef RTC_BASE_TASK_QUEUE_LIBEVENT_H_
+#define RTC_BASE_TASK_QUEUE_LIBEVENT_H_
+
+#include <memory>
+
+#include "api/task_queue/task_queue_factory.h"
 
 namespace webrtc {
 
-std::unique_ptr<TaskQueueFactory> CreateDefaultTaskQueueFactory() {
-  RTC_CHECK(false)
-      << "Default task queue is not implemented for current platform, "
-         "overwrite the task queue implementation by setting global factory.";
-}
+std::unique_ptr<TaskQueueFactory> CreateTaskQueueLibeventFactory();
 
 }  // namespace webrtc
+
+#endif  // RTC_BASE_TASK_QUEUE_LIBEVENT_H_
