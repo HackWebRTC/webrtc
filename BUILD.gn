@@ -406,13 +406,19 @@ if (!build_with_chromium) {
       "video",
     ]
 
-    # Include audio and video codecs by default.
-    deps += [
-      "api/audio_codecs:builtin_audio_decoder_factory",
-      "api/audio_codecs:builtin_audio_encoder_factory",
-      "api/video_codecs:builtin_video_decoder_factory",
-      "api/video_codecs:builtin_video_encoder_factory",
-    ]
+    if (rtc_include_builtin_audio_codecs) {
+      deps += [
+        "api/audio_codecs:builtin_audio_decoder_factory",
+        "api/audio_codecs:builtin_audio_encoder_factory",
+      ]
+    }
+
+    if (rtc_include_builtin_video_codecs) {
+      deps += [
+        "api/video_codecs:builtin_video_decoder_factory",
+        "api/video_codecs:builtin_video_encoder_factory",
+      ]
+    }
 
     if (build_with_mozilla) {
       deps += [ "api/video:video_frame" ]
