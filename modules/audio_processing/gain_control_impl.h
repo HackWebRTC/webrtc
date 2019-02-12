@@ -30,7 +30,7 @@ class AudioBuffer;
 
 class GainControlImpl : public GainControl {
  public:
-  GainControlImpl(rtc::CriticalSection* crit_capture);
+  explicit GainControlImpl(rtc::CriticalSection* crit_capture);
   ~GainControlImpl() override;
 
   void ProcessRenderAudio(rtc::ArrayView<const int16_t> packed_render_audio);
