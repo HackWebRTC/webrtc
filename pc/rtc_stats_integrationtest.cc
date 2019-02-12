@@ -31,7 +31,6 @@
 #include "api/stats/rtc_stats.h"
 #include "api/stats/rtc_stats_report.h"
 #include "api/stats/rtcstats_objects.h"
-#include "api/test/fake_constraints.h"
 #include "pc/rtc_stats_traversal.h"
 #include "pc/test/peer_connection_test_wrapper.h"
 #include "pc/test/rtc_stats_obtainer.h"
@@ -133,10 +132,8 @@ class RTCStatsIntegrationTest : public testing::Test {
     PeerConnectionTestWrapper::Connect(caller_.get(), callee_.get());
 
     // Get user media for audio and video
-    caller_->GetAndAddUserMedia(true, cricket::AudioOptions(), true,
-                                FakeConstraints());
-    callee_->GetAndAddUserMedia(true, cricket::AudioOptions(), true,
-                                FakeConstraints());
+    caller_->GetAndAddUserMedia(true, cricket::AudioOptions(), true);
+    callee_->GetAndAddUserMedia(true, cricket::AudioOptions(), true);
 
     // Create data channels
     DataChannelInit init;

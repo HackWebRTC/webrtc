@@ -39,7 +39,6 @@
 #include "rtc_base/time_utils.h"
 #include "test/gtest.h"
 
-using webrtc::FakeConstraints;
 using webrtc::FakeVideoTrackRenderer;
 using webrtc::IceCandidateInterface;
 using webrtc::MediaStreamInterface;
@@ -277,10 +276,9 @@ bool PeerConnectionTestWrapper::CheckForVideo() {
 void PeerConnectionTestWrapper::GetAndAddUserMedia(
     bool audio,
     const cricket::AudioOptions& audio_options,
-    bool video,
-    const webrtc::FakeConstraints& video_constraints) {
+    bool video) {
   rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =
-      GetUserMedia(audio, audio_options, video, video_constraints);
+      GetUserMedia(audio, audio_options, video);
   for (const auto& audio_track : stream->GetAudioTracks()) {
     EXPECT_TRUE(peer_connection_->AddTrack(audio_track, {stream->id()}).ok());
   }
@@ -293,8 +291,7 @@ rtc::scoped_refptr<webrtc::MediaStreamInterface>
 PeerConnectionTestWrapper::GetUserMedia(
     bool audio,
     const cricket::AudioOptions& audio_options,
-    bool video,
-    const webrtc::FakeConstraints& video_constraints) {
+    bool video) {
   std::string stream_id =
       kStreamIdBase + rtc::ToString(num_get_user_media_calls_++);
   rtc::scoped_refptr<webrtc::MediaStreamInterface> stream =

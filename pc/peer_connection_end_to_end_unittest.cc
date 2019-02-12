@@ -39,7 +39,6 @@ using testing::Values;
 using testing::_;
 
 using webrtc::DataChannelInterface;
-using webrtc::FakeConstraints;
 using webrtc::MediaStreamInterface;
 using webrtc::PeerConnectionInterface;
 using webrtc::SdpSemantics;
@@ -100,16 +99,14 @@ class PeerConnectionEndToEndBaseTest : public sigslot::has_slots<>,
 
   void GetAndAddUserMedia() {
     cricket::AudioOptions audio_options;
-    FakeConstraints video_constraints;
-    GetAndAddUserMedia(true, audio_options, true, video_constraints);
+    GetAndAddUserMedia(true, audio_options, true);
   }
 
   void GetAndAddUserMedia(bool audio,
                           const cricket::AudioOptions& audio_options,
-                          bool video,
-                          const FakeConstraints& video_constraints) {
-    caller_->GetAndAddUserMedia(audio, audio_options, video, video_constraints);
-    callee_->GetAndAddUserMedia(audio, audio_options, video, video_constraints);
+                          bool video) {
+    caller_->GetAndAddUserMedia(audio, audio_options, video);
+    callee_->GetAndAddUserMedia(audio, audio_options, video);
   }
 
   void Negotiate() {

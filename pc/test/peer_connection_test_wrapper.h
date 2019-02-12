@@ -25,7 +25,6 @@
 #include "api/rtc_error.h"
 #include "api/rtp_receiver_interface.h"
 #include "api/scoped_refptr.h"
-#include "api/test/fake_constraints.h"
 #include "pc/test/fake_audio_capture_module.h"
 #include "pc/test/fake_video_track_renderer.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
@@ -91,8 +90,7 @@ class PeerConnectionTestWrapper
   void WaitForVideo();
   void GetAndAddUserMedia(bool audio,
                           const cricket::AudioOptions& audio_options,
-                          bool video,
-                          const webrtc::FakeConstraints& video_constraints);
+                          bool video);
 
   // sigslots
   sigslot::signal1<std::string*> SignalOnIceCandidateCreated;
@@ -111,8 +109,7 @@ class PeerConnectionTestWrapper
   rtc::scoped_refptr<webrtc::MediaStreamInterface> GetUserMedia(
       bool audio,
       const cricket::AudioOptions& audio_options,
-      bool video,
-      const webrtc::FakeConstraints& video_constraints);
+      bool video);
 
   std::string name_;
   rtc::Thread* const network_thread_;
