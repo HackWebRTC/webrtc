@@ -385,13 +385,7 @@ void VideoSendStreamImpl::Start() {
 
 void VideoSendStreamImpl::StartupVideoSendStream() {
   RTC_DCHECK_RUN_ON(worker_queue_);
-  bitrate_allocator_->AddObserver(
-      this,
-      MediaStreamAllocationConfig{
-          static_cast<uint32_t>(encoder_min_bitrate_bps_),
-          encoder_max_bitrate_bps_, static_cast<uint32_t>(max_padding_bitrate_),
-          !config_->suspend_below_min_bitrate, config_->track_id,
-          encoder_bitrate_priority_});
+  bitrate_allocator_->AddObserver(this, GetAllocationConfig());
   // Start monitoring encoder activity.
   {
     RTC_DCHECK(!check_encoder_activity_task_.Running());
@@ -498,13 +492,18 @@ void VideoSendStreamImpl::OnBitrateAllocationUpdated(
 void VideoSendStreamImpl::SignalEncoderActive() {
   RTC_DCHECK_RUN_ON(worker_queue_);
   RTC_LOG(LS_INFO) << "SignalEncoderActive, Encoder is active.";
-  bitrate_allocator_->AddObserver(
-      this,
-      MediaStreamAllocationConfig{
-          static_cast<uint32_t>(encoder_min_bitrate_bps_),
-          encoder_max_bitrate_bps_, static_cast<uint32_t>(max_padding_bitrate_),
-          !config_->suspend_below_min_bitrate, config_->track_id,
-          encoder_bitrate_priority_});
+  bitrate_allocator_->AddObserver(this, GetAllocationConfig());
+}
+
+MediaStreamAllocationConfig VideoSendStreamImpl::GetAllocationConfig() const {
+  return MediaStreamAllocationConfig{
+      static_cast<uint32_t>(encoder_min_bitrate_bps_),
+      encoder_max_bitrate_bps_,
+      static_cast<uint32_t>(max_padding_bitrate_),
+      /* priority_bitrate */ 0,
+      !config_->suspend_below_min_bitrate,
+      config_->track_id,
+      encoder_bitrate_priority_};
 }
 
 void VideoSendStreamImpl::OnEncoderConfigurationChanged(
@@ -571,13 +570,7 @@ void VideoSendStreamImpl::OnEncoderConfigurationChanged(
   if (rtp_video_sender_->IsActive()) {
     // The send stream is started already. Update the allocator with new bitrate
     // limits.
-    bitrate_allocator_->AddObserver(
-        this, MediaStreamAllocationConfig{
-                  static_cast<uint32_t>(encoder_min_bitrate_bps_),
-                  encoder_max_bitrate_bps_,
-                  static_cast<uint32_t>(max_padding_bitrate_),
-                  !config_->suspend_below_min_bitrate, config_->track_id,
-                  encoder_bitrate_priority_});
+    bitrate_allocator_->AddObserver(this, GetAllocationConfig());
   }
 }
 

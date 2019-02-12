@@ -100,12 +100,59 @@ class BitrateAllocatorTest : public ::testing::Test {
                    double bitrate_priority) {
     allocator_->AddObserver(
         observer, {min_bitrate_bps, max_bitrate_bps, pad_up_bitrate_bps,
-                   enforce_min_bitrate, track_id, bitrate_priority});
+                   /* priority_bitrate */ 0, enforce_min_bitrate, track_id,
+                   bitrate_priority});
+  }
+  MediaStreamAllocationConfig DefaultConfig() const {
+    MediaStreamAllocationConfig default_config;
+    default_config.min_bitrate_bps = 0;
+    default_config.max_bitrate_bps = 1500000;
+    default_config.pad_up_bitrate_bps = 0;
+    default_config.priority_bitrate_bps = 0;
+    default_config.enforce_min_bitrate = true;
+    default_config.track_id = "";
+    default_config.bitrate_priority = kDefaultBitratePriority;
+    return default_config;
   }
 
   NiceMock<MockLimitObserver> limit_observer_;
   std::unique_ptr<BitrateAllocatorForTest> allocator_;
 };
+
+TEST_F(BitrateAllocatorTest, RespectsPriorityBitrate) {
+  TestBitrateObserver stream_a;
+  auto config_a = DefaultConfig();
+  config_a.min_bitrate_bps = 100000;
+  config_a.priority_bitrate_bps = 0;
+  allocator_->AddObserver(&stream_a, config_a);
+
+  TestBitrateObserver stream_b;
+  auto config_b = DefaultConfig();
+  config_b.min_bitrate_bps = 100000;
+  config_b.max_bitrate_bps = 300000;
+  config_b.priority_bitrate_bps = 300000;
+  allocator_->AddObserver(&stream_b, config_b);
+
+  allocator_->OnNetworkChanged(100000, 0, 0, 0);
+  EXPECT_EQ(stream_a.last_bitrate_bps_, 100000u);
+  EXPECT_EQ(stream_b.last_bitrate_bps_, 100000u);
+
+  allocator_->OnNetworkChanged(200000, 0, 0, 0);
+  EXPECT_EQ(stream_a.last_bitrate_bps_, 100000u);
+  EXPECT_EQ(stream_b.last_bitrate_bps_, 100000u);
+
+  allocator_->OnNetworkChanged(300000, 0, 0, 0);
+  EXPECT_EQ(stream_a.last_bitrate_bps_, 100000u);
+  EXPECT_EQ(stream_b.last_bitrate_bps_, 200000u);
+
+  allocator_->OnNetworkChanged(400000, 0, 0, 0);
+  EXPECT_EQ(stream_a.last_bitrate_bps_, 100000u);
+  EXPECT_EQ(stream_b.last_bitrate_bps_, 300000u);
+
+  allocator_->OnNetworkChanged(800000, 0, 0, 0);
+  EXPECT_EQ(stream_a.last_bitrate_bps_, 500000u);
+  EXPECT_EQ(stream_b.last_bitrate_bps_, 300000u);
+}
 
 TEST_F(BitrateAllocatorTest, UpdatingBitrateObserver) {
   TestBitrateObserver bitrate_observer;
@@ -232,7 +279,7 @@ class BitrateAllocatorTestNoEnforceMin : public ::testing::Test {
                    std::string track_id,
                    double bitrate_priority) {
     allocator_->AddObserver(
-        observer, {min_bitrate_bps, max_bitrate_bps, pad_up_bitrate_bps,
+        observer, {min_bitrate_bps, max_bitrate_bps, pad_up_bitrate_bps, 0,
                    enforce_min_bitrate, track_id, bitrate_priority});
   }
   NiceMock<MockLimitObserver> limit_observer_;
@@ -404,9 +451,10 @@ TEST_F(BitrateAllocatorTest,
   EXPECT_CALL(limit_observer_,
               OnAllocationLimitsChanged(kMinBitrateBps, 0, kMaxBitrateBps))
       .Times(1);
-  allocator_->AddObserver(
-      &bitrate_observer,
-      {kMinBitrateBps, kMaxBitrateBps, 0, true, "", kDefaultBitratePriority});
+  MediaStreamAllocationConfig allocation_config = DefaultConfig();
+  allocation_config.min_bitrate_bps = kMinBitrateBps;
+  allocation_config.max_bitrate_bps = kMaxBitrateBps;
+  allocator_->AddObserver(&bitrate_observer, allocation_config);
 
   // Observer uses 20% of it's allocated bitrate for protection.
   bitrate_observer.SetBitrateProtectionRatio(/*protection_ratio=*/0.2);

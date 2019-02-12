@@ -139,6 +139,8 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   void ConfigureSsrcs();
   void SignalEncoderTimedOut();
   void SignalEncoderActive();
+  MediaStreamAllocationConfig GetAllocationConfig() const
+      RTC_RUN_ON(worker_queue_);
 
   const bool has_alr_probing_;
   const PacingConfig pacing_config_;

@@ -55,6 +55,7 @@ struct MediaStreamAllocationConfig {
   uint32_t min_bitrate_bps;
   uint32_t max_bitrate_bps;
   uint32_t pad_up_bitrate_bps;
+  int64_t priority_bitrate_bps;
   bool enforce_min_bitrate;
   std::string track_id;
   double bitrate_priority;
@@ -128,6 +129,7 @@ class BitrateAllocator : public BitrateAllocatorInterface {
                    uint32_t min_bitrate_bps,
                    uint32_t max_bitrate_bps,
                    uint32_t pad_up_bitrate_bps,
+                   int64_t priority_bitrate_bps,
                    bool enforce_min_bitrate,
                    std::string track_id,
                    double bitrate_priority)
@@ -137,12 +139,14 @@ class BitrateAllocator : public BitrateAllocatorInterface {
                       track_id),
           observer(observer),
           pad_up_bitrate_bps(pad_up_bitrate_bps),
+          priority_bitrate_bps(priority_bitrate_bps),
           allocated_bitrate_bps(-1),
           media_ratio(1.0),
           bitrate_priority(bitrate_priority) {}
 
     BitrateAllocatorObserver* observer;
     uint32_t pad_up_bitrate_bps;
+    int64_t priority_bitrate_bps;
     int64_t allocated_bitrate_bps;
     double media_ratio;  // Part of the total bitrate used for media [0.0, 1.0].
     // The amount of bitrate allocated to this observer relative to all other

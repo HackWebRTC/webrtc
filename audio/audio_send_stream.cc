@@ -785,10 +785,11 @@ void AudioSendStream::ConfigureBitrateObserver(int min_bitrate_bps,
     config_.bitrate_priority = bitrate_priority;
     // This either updates the current observer or adds a new observer.
     bitrate_allocator_->AddObserver(
-        this,
-        MediaStreamAllocationConfig{static_cast<uint32_t>(min_bitrate_bps),
-                                    static_cast<uint32_t>(max_bitrate_bps), 0,
-                                    true, config_.track_id, bitrate_priority});
+        this, MediaStreamAllocationConfig{
+                  static_cast<uint32_t>(min_bitrate_bps),
+                  static_cast<uint32_t>(max_bitrate_bps), 0,
+                  allocation_settings_.DefaultPriorityBitrate().bps(), true,
+                  config_.track_id, bitrate_priority});
     thread_sync_event.Set();
   });
   thread_sync_event.Wait(rtc::Event::kForever);

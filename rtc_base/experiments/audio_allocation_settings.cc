@@ -15,13 +15,18 @@ namespace {
 // For SendSideBwe, Opus bitrate should be in the range between 6000 and 32000.
 const int kOpusMinBitrateBps = 6000;
 const int kOpusBitrateFbBps = 32000;
+// OverheadPerPacket = Ipv4(20B) + UDP(8B) + SRTP(10B) + RTP(12)
+constexpr int kOverheadPerPacket = 20 + 8 + 10 + 12;
 }  // namespace
 AudioAllocationSettings::AudioAllocationSettings()
     : audio_send_side_bwe_("Enabled"),
       allocate_audio_without_feedback_("Enabled"),
       force_no_audio_feedback_("Enabled"),
       audio_feedback_to_improve_video_bwe_("Enabled"),
-      send_side_bwe_with_overhead_("Enabled") {
+      send_side_bwe_with_overhead_("Enabled"),
+      default_min_bitrate_("min", DataRate::bps(kOpusMinBitrateBps)),
+      default_max_bitrate_("max", DataRate::bps(kOpusBitrateFbBps)),
+      priority_bitrate_("prio", DataRate::Zero()) {
   ParseFieldTrial({&audio_send_side_bwe_},
                   field_trial::FindFullName("WebRTC-Audio-SendSideBwe"));
   ParseFieldTrial({&allocate_audio_without_feedback_},
@@ -31,16 +36,17 @@ AudioAllocationSettings::AudioAllocationSettings()
   ParseFieldTrial(
       {&audio_feedback_to_improve_video_bwe_},
       field_trial::FindFullName("WebRTC-Audio-SendSideBwe-For-Video"));
+
   ParseFieldTrial({&send_side_bwe_with_overhead_},
                   field_trial::FindFullName("WebRTC-SendSideBwe-WithOverhead"));
+  ParseFieldTrial(
+      {&default_min_bitrate_, &default_max_bitrate_, &priority_bitrate_},
+      field_trial::FindFullName("WebRTC-Audio-Allocation"));
 
   // TODO(mflodman): Keep testing this and set proper values.
   // Note: This is an early experiment currently only supported by Opus.
   if (send_side_bwe_with_overhead_) {
     constexpr int kMaxPacketSizeMs = WEBRTC_OPUS_SUPPORT_120MS_PTIME ? 120 : 60;
-
-    // OverheadPerPacket = Ipv4(20B) + UDP(8B) + SRTP(10B) + RTP(12)
-    constexpr int kOverheadPerPacket = 20 + 8 + 10 + 12;
     min_overhead_bps_ = kOverheadPerPacket * 8 * 1000 / kMaxPacketSizeMs;
   }
 }
@@ -116,7 +122,7 @@ bool AudioAllocationSettings::IncludeAudioInAllocationOnReconfigure(
 }
 
 int AudioAllocationSettings::MinBitrateBps() const {
-  return kOpusMinBitrateBps + min_overhead_bps_;
+  return default_min_bitrate_->bps() + min_overhead_bps_;
 }
 
 int AudioAllocationSettings::MaxBitrateBps(
@@ -133,6 +139,15 @@ int AudioAllocationSettings::MaxBitrateBps(
   // meanwhile change the cap to the output of BWE.
   if (rtp_parameter_max_bitrate_bps)
     return *rtp_parameter_max_bitrate_bps + min_overhead_bps_;
-  return kOpusBitrateFbBps + min_overhead_bps_;
+  return default_max_bitrate_->bps() + min_overhead_bps_;
 }
+DataRate AudioAllocationSettings::DefaultPriorityBitrate() const {
+  DataRate max_overhead = DataRate::Zero();
+  if (send_side_bwe_with_overhead_) {
+    const TimeDelta kMinPacketDuration = TimeDelta::ms(20);
+    max_overhead = DataSize::bytes(kOverheadPerPacket) / kMinPacketDuration;
+  }
+  return priority_bitrate_.Get() + max_overhead;
+}
+
 }  // namespace webrtc

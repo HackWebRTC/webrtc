@@ -174,10 +174,10 @@ void BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
     it->enforce_min_bitrate = config.enforce_min_bitrate;
     it->bitrate_priority = config.bitrate_priority;
   } else {
-    bitrate_observer_configs_.push_back(
-        ObserverConfig(observer, config.min_bitrate_bps, config.max_bitrate_bps,
-                       config.pad_up_bitrate_bps, config.enforce_min_bitrate,
-                       config.track_id, config.bitrate_priority));
+    bitrate_observer_configs_.push_back(ObserverConfig(
+        observer, config.min_bitrate_bps, config.max_bitrate_bps,
+        config.pad_up_bitrate_bps, config.priority_bitrate_bps,
+        config.enforce_min_bitrate, config.track_id, config.bitrate_priority));
   }
 
   if (last_target_bps_ > 0) {
@@ -439,6 +439,21 @@ BitrateAllocator::ObserverAllocation BitrateAllocator::NormalRateAllocation(
   }
 
   bitrate -= sum_min_bitrates;
+
+  // TODO(srte): Implement fair sharing between prioritized streams, currently
+  // they are treated on a first come first serve basis.
+  for (const auto& observer_config : bitrate_observer_configs_) {
+    int64_t priority_margin = observer_config.priority_bitrate_bps -
+                              allocation[observer_config.observer];
+    if (priority_margin > 0 && bitrate > 0) {
+      int64_t extra_bitrate = std::min<int64_t>(priority_margin, bitrate);
+      allocation[observer_config.observer] +=
+          rtc::dchecked_cast<int>(extra_bitrate);
+      observers_capacities[observer_config.observer] -= extra_bitrate;
+      bitrate -= extra_bitrate;
+    }
+  }
+
   // From the remaining bitrate, allocate a proportional amount to each observer
   // above the min bitrate already allocated.
   if (bitrate > 0)
