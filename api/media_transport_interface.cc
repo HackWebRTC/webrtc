@@ -30,38 +30,6 @@ MediaTransportSettings& MediaTransportSettings::operator=(
 MediaTransportSettings::~MediaTransportSettings() = default;
 
 
-MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame() = default;
-
-MediaTransportEncodedVideoFrame::~MediaTransportEncodedVideoFrame() = default;
-
-MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
-    int64_t frame_id,
-    std::vector<int64_t> referenced_frame_ids,
-    int payload_type,
-    const webrtc::EncodedImage& encoded_image)
-    : payload_type_(payload_type),
-      encoded_image_(encoded_image),
-      frame_id_(frame_id),
-      referenced_frame_ids_(std::move(referenced_frame_ids)) {}
-
-MediaTransportEncodedVideoFrame& MediaTransportEncodedVideoFrame::operator=(
-    const MediaTransportEncodedVideoFrame&) = default;
-
-MediaTransportEncodedVideoFrame& MediaTransportEncodedVideoFrame::operator=(
-    MediaTransportEncodedVideoFrame&&) = default;
-
-MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
-    const MediaTransportEncodedVideoFrame& o)
-    : MediaTransportEncodedVideoFrame() {
-  *this = o;
-}
-
-MediaTransportEncodedVideoFrame::MediaTransportEncodedVideoFrame(
-    MediaTransportEncodedVideoFrame&& o)
-    : MediaTransportEncodedVideoFrame() {
-  *this = std::move(o);
-}
-
 SendDataParams::SendDataParams() = default;
 SendDataParams::SendDataParams(const SendDataParams&) = default;
 

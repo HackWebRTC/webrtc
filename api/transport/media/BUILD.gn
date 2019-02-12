@@ -18,3 +18,14 @@ rtc_source_set("audio_interfaces") {
     "../..:array_view",
   ]
 }
+
+rtc_source_set("video_interfaces") {
+  visibility = [ "*" ]
+  sources = [
+    "video_transport.cc",
+    "video_transport.h",
+  ]
+  deps = [
+    "../../video:encoded_image",
+  ]
+}
