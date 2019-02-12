@@ -75,5 +75,6 @@ if (is_mac || is_ios) {
     deps = [
       "..:checks",
     ]
+    libs = [ "Foundation.framework" ]
   }
 }
