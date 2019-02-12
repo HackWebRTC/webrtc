@@ -18,7 +18,6 @@
 
 #include "absl/types/optional.h"
 #include "api/media_types.h"
-#include "rtc_base/deprecation.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -259,67 +258,45 @@ struct RtpExtension {
   // Header extension for audio levels, as defined in:
   // http://tools.ietf.org/html/draft-ietf-avtext-client-to-mixer-audio-level-03
   static const char kAudioLevelUri[];
-  // TODO(bugs.webrtc.org/10288): Remove once dependencies have been updated.
-  RTC_DEPRECATED static const int kAudioLevelDefaultId;
 
   // Header extension for RTP timestamp offset, see RFC 5450 for details:
   // http://tools.ietf.org/html/rfc5450
   static const char kTimestampOffsetUri[];
-  // TODO(bugs.webrtc.org/10288): Remove once dependencies have been updated.
-  RTC_DEPRECATED static const int kTimestampOffsetDefaultId;
 
   // Header extension for absolute send time, see url for details:
   // http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
   static const char kAbsSendTimeUri[];
-  // TODO(bugs.webrtc.org/10288): Remove once dependencies have been updated.
-  RTC_DEPRECATED static const int kAbsSendTimeDefaultId;
 
   // Header extension for coordination of video orientation, see url for
   // details:
   // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/ts_126114v120700p.pdf
   static const char kVideoRotationUri[];
-  // TODO(bugs.webrtc.org/10288): Remove once dependencies have been updated.
-  RTC_DEPRECATED static const int kVideoRotationDefaultId;
 
   // Header extension for video content type. E.g. default or screenshare.
   static const char kVideoContentTypeUri[];
-  // TODO(bugs.webrtc.org/10288): Remove once dependencies have been updated.
-  RTC_DEPRECATED static const int kVideoContentTypeDefaultId;
 
   // Header extension for video timing.
   static const char kVideoTimingUri[];
-  // TODO(bugs.webrtc.org/10288): Remove once dependencies have been updated.
-  RTC_DEPRECATED static const int kVideoTimingDefaultId;
 
   // Header extension for video frame marking.
   static const char kFrameMarkingUri[];
-  // TODO(bugs.webrtc.org/10288): Remove once dependencies have been updated.
-  RTC_DEPRECATED static const int kFrameMarkingDefaultId;
 
   // Experimental codec agnostic frame descriptor.
   static const char kGenericFrameDescriptorUri00[];
   static const char kGenericFrameDescriptorUri01[];
   // TODO(bugs.webrtc.org/10243): Remove once dependencies have been updated.
   static const char kGenericFrameDescriptorUri[];
-  // TODO(bugs.webrtc.org/10288): Remove once dependencies have been updated.
-  RTC_DEPRECATED static const int kGenericFrameDescriptorDefaultId;
 
   // Header extension for transport sequence number, see url for details:
   // http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions
   static const char kTransportSequenceNumberUri[];
   static const char kTransportSequenceNumberV2Uri[];
-  // TODO(bugs.webrtc.org/10288): Remove once dependencies have been updated.
-  RTC_DEPRECATED static const int kTransportSequenceNumberDefaultId;
 
   static const char kPlayoutDelayUri[];
-  // TODO(bugs.webrtc.org/10288): Remove once dependencies have been updated.
-  RTC_DEPRECATED static const int kPlayoutDelayDefaultId;
 
   // Header extension for identifying media section within a transport.
   // https://tools.ietf.org/html/draft-ietf-mmusic-sdp-bundle-negotiation-49#section-15
   static const char kMidUri[];
-  // TODO(bugs.webrtc.org/10288): Remove once dependencies have been updated.
-  RTC_DEPRECATED static const int kMidDefaultId;
 
   // Encryption of Header Extensions, see RFC 6904 for details:
   // https://tools.ietf.org/html/rfc6904
@@ -327,18 +304,12 @@ struct RtpExtension {
 
   // Header extension for color space information.
   static const char kColorSpaceUri[];
-  // TODO(bugs.webrtc.org/10288): Remove once dependencies have been updated.
-  RTC_DEPRECATED static const int kColorSpaceDefaultId;
 
   // Header extension for RIDs and Repaired RIDs
   // https://tools.ietf.org/html/draft-ietf-avtext-rid-09
   // https://tools.ietf.org/html/draft-ietf-mmusic-rid-15
   static const char kRidUri[];
-  // TODO(bugs.webrtc.org/10288): Remove once dependencies have been updated.
-  RTC_DEPRECATED static const int kRidDefaultId;
   static const char kRepairedRidUri[];
-  // TODO(bugs.webrtc.org/10288): Remove once dependencies have been updated.
-  RTC_DEPRECATED static const int kRepairedRidDefaultId;
 
   // Inclusive min and max IDs for two-byte header extensions and one-byte
   // header extensions, per RFC8285 Section 4.2-4.3.
