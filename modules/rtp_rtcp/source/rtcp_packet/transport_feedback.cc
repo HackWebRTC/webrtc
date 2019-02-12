@@ -521,6 +521,10 @@ size_t TransportFeedback::BlockLength() const {
   return (size_bytes_ + 3) & (~static_cast<size_t>(3));
 }
 
+size_t TransportFeedback::PaddingLength() const {
+  return BlockLength() - size_bytes_;
+}
+
 // Serialize packet.
 bool TransportFeedback::Create(uint8_t* packet,
                                size_t* position,
@@ -534,9 +538,10 @@ bool TransportFeedback::Create(uint8_t* packet,
       return false;
   }
   const size_t position_end = *position + BlockLength();
-
-  CreateHeader(kFeedbackMessageType, kPacketType, HeaderLength(), packet,
-               position);
+  const size_t padding_length = PaddingLength();
+  bool has_padding = padding_length > 0;
+  CreateHeader(kFeedbackMessageType, kPacketType, HeaderLength(), has_padding,
+               packet, position);
   CreateCommonFeedback(packet + *position);
   *position += kCommonFeedbackLength;
 
@@ -571,9 +576,12 @@ bool TransportFeedback::Create(uint8_t* packet,
     }
   }
 
-  while ((*position % 4) != 0)
-    packet[(*position)++] = 0;
-
+  if (padding_length > 0) {
+    for (size_t i = 0; i < padding_length - 1; ++i) {
+      packet[(*position)++] = 0;
+    }
+    packet[(*position)++] = padding_length;
+  }
   RTC_DCHECK_EQ(*position, position_end);
   return true;
 }

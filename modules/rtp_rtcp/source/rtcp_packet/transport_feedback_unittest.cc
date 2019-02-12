@@ -82,7 +82,7 @@ class FeedbackTester {
     feedback_ =
         TransportFeedback::ParseFrom(serialized_.data(), serialized_.size());
     ASSERT_TRUE(feedback_->IsConsistent());
-    ASSERT_NE(nullptr, feedback_.get());
+    ASSERT_NE(nullptr, feedback_);
     VerifyInternal();
   }
 
@@ -130,7 +130,7 @@ class FeedbackTester {
   rtc::Buffer serialized_;
 };
 
-TEST(RtcpPacketTest, TransportFeedback_OneBitVector) {
+TEST(RtcpPacketTest, TransportFeedbackOneBitVector) {
   const uint16_t kReceived[] = {1, 2, 7, 8, 9, 10, 13};
   const size_t kLength = sizeof(kReceived) / sizeof(uint16_t);
   const size_t kExpectedSizeBytes =
@@ -142,7 +142,7 @@ TEST(RtcpPacketTest, TransportFeedback_OneBitVector) {
   test.VerifyPacket();
 }
 
-TEST(RtcpPacketTest, TransportFeedback_FullOneBitVector) {
+TEST(RtcpPacketTest, TransportFeedbackFullOneBitVector) {
   const uint16_t kReceived[] = {1, 2, 7, 8, 9, 10, 13, 14};
   const size_t kLength = sizeof(kReceived) / sizeof(uint16_t);
   const size_t kExpectedSizeBytes =
@@ -154,7 +154,7 @@ TEST(RtcpPacketTest, TransportFeedback_FullOneBitVector) {
   test.VerifyPacket();
 }
 
-TEST(RtcpPacketTest, TransportFeedback_OneBitVector_WrapReceived) {
+TEST(RtcpPacketTest, TransportFeedbackOneBitVectorWrapReceived) {
   const uint16_t kMax = 0xFFFF;
   const uint16_t kReceived[] = {kMax - 2, kMax - 1, kMax, 0, 1, 2};
   const size_t kLength = sizeof(kReceived) / sizeof(uint16_t);
@@ -167,7 +167,7 @@ TEST(RtcpPacketTest, TransportFeedback_OneBitVector_WrapReceived) {
   test.VerifyPacket();
 }
 
-TEST(RtcpPacketTest, TransportFeedback_OneBitVector_WrapMissing) {
+TEST(RtcpPacketTest, TransportFeedbackOneBitVectorWrapMissing) {
   const uint16_t kMax = 0xFFFF;
   const uint16_t kReceived[] = {kMax - 2, kMax - 1, 1, 2};
   const size_t kLength = sizeof(kReceived) / sizeof(uint16_t);
@@ -180,7 +180,7 @@ TEST(RtcpPacketTest, TransportFeedback_OneBitVector_WrapMissing) {
   test.VerifyPacket();
 }
 
-TEST(RtcpPacketTest, TransportFeedback_TwoBitVector) {
+TEST(RtcpPacketTest, TransportFeedbackTwoBitVector) {
   const uint16_t kReceived[] = {1, 2, 6, 7};
   const size_t kLength = sizeof(kReceived) / sizeof(uint16_t);
   const size_t kExpectedSizeBytes =
@@ -193,7 +193,7 @@ TEST(RtcpPacketTest, TransportFeedback_TwoBitVector) {
   test.VerifyPacket();
 }
 
-TEST(RtcpPacketTest, TransportFeedback_TwoBitVectorFull) {
+TEST(RtcpPacketTest, TransportFeedbackTwoBitVectorFull) {
   const uint16_t kReceived[] = {1, 2, 6, 7, 8};
   const size_t kLength = sizeof(kReceived) / sizeof(uint16_t);
   const size_t kExpectedSizeBytes =
@@ -206,7 +206,7 @@ TEST(RtcpPacketTest, TransportFeedback_TwoBitVectorFull) {
   test.VerifyPacket();
 }
 
-TEST(RtcpPacketTest, TransportFeedback_LargeAndNegativeDeltas) {
+TEST(RtcpPacketTest, TransportFeedbackLargeAndNegativeDeltas) {
   const uint16_t kReceived[] = {1, 2, 6, 7, 8};
   const int64_t kReceiveTimes[] = {
       2000, 1000, 4000, 3000,
@@ -221,7 +221,7 @@ TEST(RtcpPacketTest, TransportFeedback_LargeAndNegativeDeltas) {
   test.VerifyPacket();
 }
 
-TEST(RtcpPacketTest, TransportFeedback_MaxRle) {
+TEST(RtcpPacketTest, TransportFeedbackMaxRle) {
   // Expected chunks created:
   // * 1-bit vector chunk (1xreceived + 13xdropped)
   // * RLE chunk of max length for dropped symbol
@@ -240,7 +240,7 @@ TEST(RtcpPacketTest, TransportFeedback_MaxRle) {
   test.VerifyPacket();
 }
 
-TEST(RtcpPacketTest, TransportFeedback_MinRle) {
+TEST(RtcpPacketTest, TransportFeedbackMinRle) {
   // Expected chunks created:
   // * 1-bit vector chunk (1xreceived + 13xdropped)
   // * RLE chunk of length 15 for dropped symbol
@@ -258,7 +258,7 @@ TEST(RtcpPacketTest, TransportFeedback_MinRle) {
   test.VerifyPacket();
 }
 
-TEST(RtcpPacketTest, TransportFeedback_OneToTwoBitVector) {
+TEST(RtcpPacketTest, TransportFeedbackOneToTwoBitVector) {
   const size_t kTwoBitVectorCapacity = 7;
   const uint16_t kReceived[] = {0, kTwoBitVectorCapacity - 1};
   const int64_t kReceiveTimes[] = {
@@ -273,7 +273,7 @@ TEST(RtcpPacketTest, TransportFeedback_OneToTwoBitVector) {
   test.VerifyPacket();
 }
 
-TEST(RtcpPacketTest, TransportFeedback_OneToTwoBitVectorSimpleSplit) {
+TEST(RtcpPacketTest, TransportFeedbackOneToTwoBitVectorSimpleSplit) {
   const size_t kTwoBitVectorCapacity = 7;
   const uint16_t kReceived[] = {0, kTwoBitVectorCapacity};
   const int64_t kReceiveTimes[] = {
@@ -288,7 +288,7 @@ TEST(RtcpPacketTest, TransportFeedback_OneToTwoBitVectorSimpleSplit) {
   test.VerifyPacket();
 }
 
-TEST(RtcpPacketTest, TransportFeedback_OneToTwoBitVectorSplit) {
+TEST(RtcpPacketTest, TransportFeedbackOneToTwoBitVectorSplit) {
   // With received small delta = S, received large delta = L, use input
   // SSSSSSSSLSSSSSSSSSSSS. This will cause a 1:2 split at the L.
   // After split there will be two symbols in symbol_vec: SL.
@@ -316,7 +316,7 @@ TEST(RtcpPacketTest, TransportFeedback_OneToTwoBitVectorSplit) {
   test.VerifyPacket();
 }
 
-TEST(RtcpPacketTest, TransportFeedback_Aliasing) {
+TEST(RtcpPacketTest, TransportFeedbackAliasing) {
   TransportFeedback feedback;
   feedback.SetBase(0, 0);
 
@@ -340,7 +340,7 @@ TEST(RtcpPacketTest, TransportFeedback_Aliasing) {
   }
 }
 
-TEST(RtcpPacketTest, TransportFeedback_Limits) {
+TEST(RtcpPacketTest, TransportFeedbackLimits) {
   // Sequence number wrap above 0x8000.
   std::unique_ptr<TransportFeedback> packet(new TransportFeedback());
   packet->SetBase(0, 0);
@@ -404,10 +404,12 @@ TEST(RtcpPacketTest, TransportFeedback_Limits) {
   // add back test for max size in bytes.
 }
 
-TEST(RtcpPacketTest, TransportFeedback_Padding) {
+TEST(RtcpPacketTest, TransportFeedbackPadding) {
   const size_t kExpectedSizeBytes =
       kHeaderSize + kStatusChunkSize + kSmallDeltaSize;
   const size_t kExpectedSizeWords = (kExpectedSizeBytes + 3) / 4;
+  const size_t kExpectedPaddingSizeBytes =
+      4 * kExpectedSizeWords - kExpectedSizeBytes;
 
   TransportFeedback feedback;
   feedback.SetBase(0, 0);
@@ -416,8 +418,10 @@ TEST(RtcpPacketTest, TransportFeedback_Padding) {
   rtc::Buffer packet = feedback.Build();
   EXPECT_EQ(kExpectedSizeWords * 4, packet.size());
   ASSERT_GT(kExpectedSizeWords * 4, kExpectedSizeBytes);
-  for (size_t i = kExpectedSizeBytes; i < kExpectedSizeWords * 4; ++i)
-    EXPECT_EQ(0u, packet.data()[i]);
+  for (size_t i = kExpectedSizeBytes; i < (kExpectedSizeWords * 4 - 1); ++i)
+    EXPECT_EQ(0u, packet[i]);
+
+  EXPECT_EQ(kExpectedPaddingSizeBytes, packet[kExpectedSizeWords * 4 - 1]);
 
   // Modify packet by adding 4 bytes of padding at the end. Not currently used
   // when we're sending, but need to be able to handle it when receiving.
@@ -428,7 +432,8 @@ TEST(RtcpPacketTest, TransportFeedback_Padding) {
   uint8_t mod_buffer[kExpectedSizeWithPadding];
   memcpy(mod_buffer, packet.data(), kExpectedSizeWords * 4);
   memset(&mod_buffer[kExpectedSizeWords * 4], 0, kPaddingBytes - 1);
-  mod_buffer[kExpectedSizeWithPadding - 1] = kPaddingBytes;
+  mod_buffer[kExpectedSizeWithPadding - 1] =
+      kPaddingBytes + kExpectedPaddingSizeBytes;
   const uint8_t padding_flag = 1 << 5;
   mod_buffer[0] |= padding_flag;
   ByteWriter<uint16_t>::WriteBigEndian(
@@ -437,11 +442,46 @@ TEST(RtcpPacketTest, TransportFeedback_Padding) {
 
   std::unique_ptr<TransportFeedback> parsed_packet(
       TransportFeedback::ParseFrom(mod_buffer, kExpectedSizeWithPadding));
-  ASSERT_TRUE(parsed_packet.get() != nullptr);
+  ASSERT_TRUE(parsed_packet != nullptr);
   EXPECT_EQ(kExpectedSizeWords * 4, packet.size());  // Padding not included.
 }
 
-TEST(RtcpPacketTest, TransportFeedback_CorrectlySplitsVectorChunks) {
+TEST(RtcpPacketTest, TransportFeedbackPaddingBackwardsCompatibility) {
+  const size_t kExpectedSizeBytes =
+      kHeaderSize + kStatusChunkSize + kSmallDeltaSize;
+  const size_t kExpectedSizeWords = (kExpectedSizeBytes + 3) / 4;
+  const size_t kExpectedPaddingSizeBytes =
+      4 * kExpectedSizeWords - kExpectedSizeBytes;
+
+  TransportFeedback feedback;
+  feedback.SetBase(0, 0);
+  EXPECT_TRUE(feedback.AddReceivedPacket(0, 0));
+
+  rtc::Buffer packet = feedback.Build();
+  EXPECT_EQ(kExpectedSizeWords * 4, packet.size());
+  ASSERT_GT(kExpectedSizeWords * 4, kExpectedSizeBytes);
+  for (size_t i = kExpectedSizeBytes; i < (kExpectedSizeWords * 4 - 1); ++i)
+    EXPECT_EQ(0u, packet[i]);
+
+  EXPECT_GT(kExpectedPaddingSizeBytes, 0u);
+  EXPECT_EQ(kExpectedPaddingSizeBytes, packet[kExpectedSizeWords * 4 - 1]);
+
+  // Modify packet by removing padding bit and writing zero at the last padding
+  // byte to verify that we can parse packets from old clients, where zero
+  // padding of up to three bytes was used without the padding bit being set.
+  uint8_t mod_buffer[kExpectedSizeWords * 4];
+  memcpy(mod_buffer, packet.data(), kExpectedSizeWords * 4);
+  mod_buffer[kExpectedSizeWords * 4 - 1] = 0;
+  const uint8_t padding_flag = 1 << 5;
+  mod_buffer[0] &= ~padding_flag;  // Unset padding flag.
+
+  std::unique_ptr<TransportFeedback> parsed_packet(
+      TransportFeedback::ParseFrom(mod_buffer, kExpectedSizeWords * 4));
+  ASSERT_TRUE(parsed_packet != nullptr);
+  EXPECT_EQ(kExpectedSizeWords * 4, packet.size());
+}
+
+TEST(RtcpPacketTest, TransportFeedbackCorrectlySplitsVectorChunks) {
   const int kOneBitVectorCapacity = 14;
   const int64_t kLargeTimeDelta =
       TransportFeedback::kDeltaScaleFactor * (1 << 8);
@@ -460,11 +500,11 @@ TEST(RtcpPacketTest, TransportFeedback_CorrectlySplitsVectorChunks) {
     std::unique_ptr<TransportFeedback> deserialized_packet =
         TransportFeedback::ParseFrom(serialized_packet.data(),
                                      serialized_packet.size());
-    EXPECT_TRUE(deserialized_packet.get() != nullptr);
+    EXPECT_TRUE(deserialized_packet != nullptr);
   }
 }
 
-TEST(RtcpPacketTest, TransportFeedback_MoveConstructor) {
+TEST(RtcpPacketTest, TransportFeedbackMoveConstructor) {
   const int kSamples = 100;
   const int64_t kDelta = TransportFeedback::kDeltaScaleFactor;
   const uint16_t kBaseSeqNo = 7531;

@@ -87,6 +87,13 @@ class RtcpPacket {
                            uint8_t* buffer,
                            size_t* pos);
 
+  static void CreateHeader(size_t count_or_format,
+                           uint8_t packet_type,
+                           size_t block_length,  // Payload size in 32bit words.
+                           bool padding,  // True if there are padding bytes.
+                           uint8_t* buffer,
+                           size_t* pos);
+
   bool OnBufferFull(uint8_t* packet,
                     size_t* index,
                     PacketReadyCallback callback) const;
