@@ -17,8 +17,6 @@ set(src_vpx_arm64
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/dequant_idct_neon.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/dequantizeb_neon.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/idct_blk_neon.c
-    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/idct_dequant_0_2x_neon.c
-    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/idct_dequant_full_2x_neon.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/iwalsh_neon.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/loopfiltersimplehorizontaledge_neon.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/loopfiltersimpleverticaledge_neon.c
@@ -27,7 +25,6 @@ set(src_vpx_arm64
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/sixtappredict_neon.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/arm/neon/vp8_loopfilter_neon.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/blockd.c
-    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/copy_c.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/dequantize.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/entropy.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/common/entropymode.c
@@ -65,6 +62,7 @@ set(src_vpx_arm64
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/arm/neon/vp8_shortwalsh4x4_neon.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/bitstream.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/boolhuff.c
+    ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/copy_c.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/dct.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/denoising.c
     ${WEBRTC_REPO}/third_party/libvpx/source/libvpx/vp8/encoder/encodeframe.c

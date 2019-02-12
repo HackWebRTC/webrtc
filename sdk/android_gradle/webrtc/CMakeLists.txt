@@ -65,7 +65,7 @@ file(GLOB_RECURSE src_api
 )
 list(FILTER src_api EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_api EXCLUDE REGEX
-    ".*echo_canceller3_config_json.cc"
+    ".*echo_canceller3_config_json.cc|.*task_queue.cc"
 )
 
 file(GLOB_RECURSE src_audio
@@ -95,7 +95,7 @@ file(GLOB_RECURSE src_logging
     ${WEBRTC_REPO}/logging/rtc_event_log/encoder/*.cc
     ${WEBRTC_REPO}/logging/rtc_event_log/events/*.cc
     ${WEBRTC_REPO}/logging/rtc_event_log/output/*.cc
-    ${WEBRTC_REPO}/logging/rtc_event_log/icelogger.cc
+    ${WEBRTC_REPO}/logging/rtc_event_log/ice_logger.cc
     ${WEBRTC_REPO}/logging/rtc_event_log/rtc_event_log.cc
     ${WEBRTC_REPO}/logging/rtc_event_log/rtc_event_log_factory.cc
     ${WEBRTC_REPO}/logging/rtc_event_log/rtc_event_log_impl.cc
@@ -137,7 +137,7 @@ file(GLOB_RECURSE src_pc
 )
 list(FILTER src_pc EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_pc EXCLUDE REGEX 
-    ".*bundlefilter.cc|.*peerconnectionwrapper.cc"
+    ".*peer_connection_wrapper.cc"
 )
 
 file(GLOB_RECURSE src_rtc_base
@@ -146,7 +146,7 @@ file(GLOB_RECURSE src_rtc_base
 list(FILTER src_rtc_base EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_rtc_base EXCLUDE REGEX ${OTHER_PLATFORM_CC_FILTER})
 list(FILTER src_rtc_base EXCLUDE REGEX 
-    ".*macutils.cc|.*macifaddrs_converter.cc|.*testechoserver.cc|.*task_queue_gcd.cc|.*task_queue_stdlib.cc|.*task_queue_for_test.cc|.*virtualsocketserver.cc|.*natsocketfactory.cc|.*natserver.cc|.*strings/json.cc"
+    ".*mac_utils.cc|.*mac_ifaddrs_converter.cc|.*test_echo_server.cc|.*task_queue_gcd.cc|.*task_queue_stdlib.cc|.*task_queue_for_test.cc|.*virtual_socket_server.cc|.*nat_socket_factory.cc|.*nat_server.cc|.*strings/json.cc"
 )
 
 file(GLOB_RECURSE src_sdk
