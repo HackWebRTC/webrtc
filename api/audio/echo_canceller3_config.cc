@@ -88,8 +88,8 @@ bool EchoCanceller3Config::Validate(EchoCanceller3Config* config) {
     res = false;
   }
   if (c->delay.delay_headroom_blocks <= 1 &&
-      c->delay.hysteresis_limit_1_blocks == 1) {
-    c->delay.hysteresis_limit_1_blocks = 0;
+      c->delay.hysteresis_limit_2_blocks == 1) {
+    c->delay.hysteresis_limit_2_blocks = 0;
     res = false;
   }
   res = res & Limit(&c->delay.default_delay, 0, 5000);

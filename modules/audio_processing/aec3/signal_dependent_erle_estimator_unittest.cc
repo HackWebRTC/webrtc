@@ -139,6 +139,7 @@ TEST(SignalDependentErleEstimator, LongerRun) {
   cfg.filter.main_initial.length_blocks = 1;
   cfg.delay.delay_headroom_blocks = 0;
   cfg.delay.hysteresis_limit_1_blocks = 0;
+  cfg.delay.hysteresis_limit_2_blocks = 0;
   cfg.erle.num_sections = 2;
   EXPECT_EQ(EchoCanceller3Config::Validate(&cfg), true);
   std::array<float, kFftLengthBy2Plus1> average_erle;
