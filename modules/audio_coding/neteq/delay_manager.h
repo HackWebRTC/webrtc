@@ -32,10 +32,10 @@ class DelayManager {
   // Create a DelayManager object. Notify the delay manager that the packet
   // buffer can hold no more than |max_packets_in_buffer| packets (i.e., this
   // is the number of packet slots in the buffer) and that the target delay
-  // should be greater than or equal to |base_min_target_delay_ms|. Supply a
+  // should be greater than or equal to |base_minimum_delay_ms|. Supply a
   // PeakDetector object to the DelayManager.
   DelayManager(size_t max_packets_in_buffer,
-               int base_min_target_delay_ms,
+               int base_minimum_delay_ms,
                bool enable_rtx_handling,
                DelayPeakDetector* peak_detector,
                const TickTimer* tick_timer);
@@ -125,7 +125,19 @@ class DelayManager {
     return forced_limit_probability_;
   }
 
+  // This accessor is only intended for testing purposes.
+  int effective_minimum_delay_ms_for_test() const {
+    return effective_minimum_delay_ms_;
+  }
+
  private:
+  // Provides value which minimum delay can't exceed based on current buffer
+  // size and given |maximum_delay_ms_|. Lower bound is a constant 0.
+  int MinimumDelayUpperBound() const;
+
+  // Provides 75% of currently possible maximum buffer size in milliseconds.
+  int MaxBufferTimeQ75() const;
+
   // Sets |iat_vector_| to the default start distribution and sets the
   // |base_target_level_| and |target_level_| to the corresponding values.
   void ResetHistogram();
@@ -133,6 +145,11 @@ class DelayManager {
   // Updates |iat_cumulative_sum_| and |max_iat_cumulative_sum_|. (These are
   // used by the streaming mode.) This method is called by Update().
   void UpdateCumulativeSums(int packet_len_ms, uint16_t sequence_number);
+
+  // Updates |effective_minimum_delay_ms_| delay based on current
+  // |minimum_delay_ms_|, |base_minimum_delay_ms_| and |maximum_delay_ms_|
+  // and buffer size.
+  void UpdateEffectiveMinimumDelay();
 
   // Updates the histogram |iat_vector_|. The probability for inter-arrival time
   // equal to |iat_packets| (in integer packets) is increased slightly, while
@@ -147,15 +164,20 @@ class DelayManager {
   // Makes sure that |delay_ms| is less than maximum delay, if any maximum
   // is set. Also, if possible check |delay_ms| to be less than 75% of
   // |max_packets_in_buffer_|.
-  bool IsValidMinimumDelay(int delay_ms);
+  bool IsValidMinimumDelay(int delay_ms) const;
+
+  bool IsValidBaseMinimumDelay(int delay_ms) const;
 
   bool first_packet_received_;
   const size_t max_packets_in_buffer_;  // Capacity of the packet buffer.
   IATVector iat_vector_;                // Histogram of inter-arrival times.
   int iat_factor_;  // Forgetting factor for updating the IAT histogram (Q15).
   const TickTimer* tick_timer_;
-  int base_min_target_delay_ms_;  // Lower bound for target_level_ and
-                                  // minimum_delay_ms_.
+  int base_minimum_delay_ms_;
+  // Provides delay which is used by LimitTargetLevel as lower bound on target
+  // delay.
+  int effective_minimum_delay_ms_;
+
   // Time elapsed since last packet.
   std::unique_ptr<TickTimer::Stopwatch> packet_iat_stopwatch_;
   int base_target_level_;  // Currently preferred buffer level before peak
