@@ -463,6 +463,77 @@ TEST_P(RtcEventLogEncoderTest, RtcEventBweUpdateLossBased) {
   }
 }
 
+TEST_P(RtcEventLogEncoderTest, RtcEventGenericPacketReceived) {
+  if (!new_encoding_) {
+    return;
+  }
+  std::vector<std::unique_ptr<RtcEventGenericPacketReceived>> events(
+      event_count_);
+  for (size_t i = 0; i < event_count_; ++i) {
+    events[i] = (i == 0 || !force_repeated_fields_)
+                    ? gen_.NewGenericPacketReceived()
+                    : events[0]->Copy();
+    history_.push_back(events[i]->Copy());
+  }
+
+  std::string encoded = encoder_->EncodeBatch(history_.begin(), history_.end());
+  ASSERT_TRUE(parsed_log_.ParseString(encoded));
+
+  const auto& packets_received = parsed_log_.generic_packets_received();
+  ASSERT_EQ(packets_received.size(), event_count_);
+
+  for (size_t i = 0; i < event_count_; ++i) {
+    verifier_.VerifyLoggedGenericPacketReceived(*events[i],
+                                                packets_received[i]);
+  }
+}
+
+TEST_P(RtcEventLogEncoderTest, RtcEventGenericPacketSent) {
+  if (!new_encoding_) {
+    return;
+  }
+  std::vector<std::unique_ptr<RtcEventGenericPacketSent>> events(event_count_);
+  for (size_t i = 0; i < event_count_; ++i) {
+    events[i] = (i == 0 || !force_repeated_fields_)
+                    ? gen_.NewGenericPacketSent()
+                    : events[0]->Copy();
+    history_.push_back(events[i]->Copy());
+  }
+
+  std::string encoded = encoder_->EncodeBatch(history_.begin(), history_.end());
+  ASSERT_TRUE(parsed_log_.ParseString(encoded));
+
+  const auto& packets_sent = parsed_log_.generic_packets_sent();
+  ASSERT_EQ(packets_sent.size(), event_count_);
+
+  for (size_t i = 0; i < event_count_; ++i) {
+    verifier_.VerifyLoggedGenericPacketSent(*events[i], packets_sent[i]);
+  }
+}
+
+TEST_P(RtcEventLogEncoderTest, RtcEventGenericAcksReceived) {
+  if (!new_encoding_) {
+    return;
+  }
+  std::vector<std::unique_ptr<RtcEventGenericAckReceived>> events(event_count_);
+  for (size_t i = 0; i < event_count_; ++i) {
+    events[i] = (i == 0 || !force_repeated_fields_)
+                    ? gen_.NewGenericAckReceived()
+                    : events[0]->Copy();
+    history_.push_back(events[i]->Copy());
+  }
+
+  std::string encoded = encoder_->EncodeBatch(history_.begin(), history_.end());
+  ASSERT_TRUE(parsed_log_.ParseString(encoded));
+
+  const auto& decoded_events = parsed_log_.generic_acks_received();
+  ASSERT_EQ(decoded_events.size(), event_count_);
+
+  for (size_t i = 0; i < event_count_; ++i) {
+    verifier_.VerifyLoggedGenericAckReceived(*events[i], decoded_events[i]);
+  }
+}
+
 TEST_P(RtcEventLogEncoderTest, RtcEventDtlsTransportState) {
   std::vector<std::unique_ptr<RtcEventDtlsTransportState>> events(event_count_);
   for (size_t i = 0; i < event_count_; ++i) {

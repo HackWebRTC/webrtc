@@ -21,7 +21,15 @@ RtcEventGenericPacketSent::RtcEventGenericPacketSent(int64_t packet_number,
       payload_length_(payload_length),
       padding_length_(padding_length) {}
 
+RtcEventGenericPacketSent::RtcEventGenericPacketSent(
+    const RtcEventGenericPacketSent& packet) = default;
+
 RtcEventGenericPacketSent::~RtcEventGenericPacketSent() = default;
+
+std::unique_ptr<RtcEventGenericPacketSent> RtcEventGenericPacketSent::Copy()
+    const {
+  return absl::WrapUnique(new RtcEventGenericPacketSent(*this));
+}
 
 RtcEvent::Type RtcEventGenericPacketSent::GetType() const {
   return RtcEvent::Type::GenericPacketSent;

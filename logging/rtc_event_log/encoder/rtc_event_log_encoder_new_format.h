@@ -49,6 +49,9 @@ class RtcEventVideoSendStreamConfig;
 class RtcEventIceCandidatePairConfig;
 class RtcEventIceCandidatePair;
 class RtpPacket;
+class RtcEventGenericAckReceived;
+class RtcEventGenericPacketReceived;
+class RtcEventGenericPacketSent;
 
 class RtcEventLogEncoderNewFormat final : public RtcEventLogEncoder {
  public:
@@ -115,6 +118,15 @@ class RtcEventLogEncoderNewFormat final : public RtcEventLogEncoder {
   void EncodeRtpPacketOutgoing(
       const std::map<uint32_t, std::vector<const RtcEventRtpPacketOutgoing*>>&
           batch,
+      rtclog2::EventStream* event_stream);
+  void EncodeGenericAcksReceived(
+      rtc::ArrayView<const RtcEventGenericAckReceived*> batch,
+      rtclog2::EventStream* event_stream);
+  void EncodeGenericPacketsReceived(
+      rtc::ArrayView<const RtcEventGenericPacketReceived*> batch,
+      rtclog2::EventStream* event_stream);
+  void EncodeGenericPacketsSent(
+      rtc::ArrayView<const RtcEventGenericPacketSent*> batch,
       rtclog2::EventStream* event_stream);
   void EncodeVideoRecvStreamConfig(
       rtc::ArrayView<const RtcEventVideoReceiveStreamConfig*> batch,

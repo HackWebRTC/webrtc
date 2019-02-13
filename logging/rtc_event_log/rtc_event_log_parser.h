@@ -470,6 +470,17 @@ class ParsedRtcEventLog {
     }
   }
 
+  const std::vector<LoggedGenericPacketReceived>& generic_packets_received() {
+    return generic_packets_received_;
+  }
+  const std::vector<LoggedGenericPacketSent>& generic_packets_sent() {
+    return generic_packets_sent_;
+  }
+
+  const std::vector<LoggedGenericAckReceived>& generic_acks_received() {
+    return generic_acks_received_;
+  }
+
   int64_t first_timestamp() const { return first_timestamp_; }
   int64_t last_timestamp() const { return last_timestamp_; }
 
@@ -578,6 +589,10 @@ class ParsedRtcEventLog {
   void StoreAudioSendConfig(const rtclog2::AudioSendStreamConfig& proto);
   void StoreVideoRecvConfig(const rtclog2::VideoRecvStreamConfig& proto);
   void StoreVideoSendConfig(const rtclog2::VideoSendStreamConfig& proto);
+  void StoreGenericPacketReceivedEvent(
+      const rtclog2::GenericPacketReceived& proto);
+  void StoreGenericPacketSentEvent(const rtclog2::GenericPacketSent& proto);
+  void StoreGenericAckReceivedEvent(const rtclog2::GenericAckReceived& proto);
   // End of new parsing functions.
 
   struct Stream {
@@ -677,6 +692,10 @@ class ParsedRtcEventLog {
   std::vector<LoggedAudioSendConfig> audio_send_configs_;
   std::vector<LoggedVideoRecvConfig> video_recv_configs_;
   std::vector<LoggedVideoSendConfig> video_send_configs_;
+
+  std::vector<LoggedGenericPacketReceived> generic_packets_received_;
+  std::vector<LoggedGenericPacketSent> generic_packets_sent_;
+  std::vector<LoggedGenericAckReceived> generic_acks_received_;
 
   uint8_t last_incoming_rtcp_packet_[IP_PACKET_SIZE];
   uint8_t last_incoming_rtcp_packet_length_;

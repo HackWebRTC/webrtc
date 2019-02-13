@@ -11,6 +11,8 @@
 #ifndef LOGGING_RTC_EVENT_LOG_EVENTS_RTC_EVENT_GENERIC_PACKET_SENT_H_
 #define LOGGING_RTC_EVENT_LOG_EVENTS_RTC_EVENT_GENERIC_PACKET_SENT_H_
 
+#include <memory>
+
 #include "logging/rtc_event_log/events/rtc_event.h"
 
 namespace webrtc {
@@ -21,8 +23,9 @@ class RtcEventGenericPacketSent final : public RtcEvent {
                             size_t overhead_length,
                             size_t payload_length,
                             size_t padding_length);
-  RtcEventGenericPacketSent(const RtcEventGenericPacketSent& packet);
   ~RtcEventGenericPacketSent() override;
+
+  std::unique_ptr<RtcEventGenericPacketSent> Copy() const;
 
   Type GetType() const override;
 
@@ -48,6 +51,8 @@ class RtcEventGenericPacketSent final : public RtcEvent {
   size_t padding_length() const { return padding_length_; }
 
  private:
+  RtcEventGenericPacketSent(const RtcEventGenericPacketSent& packet);
+
   const int64_t packet_number_;
   const size_t overhead_length_;
   const size_t payload_length_;

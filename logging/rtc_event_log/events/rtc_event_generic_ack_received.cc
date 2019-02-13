@@ -13,16 +13,17 @@
 #include <vector>
 
 namespace webrtc {
+
 std::vector<std::unique_ptr<RtcEventGenericAckReceived>>
 RtcEventGenericAckReceived::CreateLogs(
     int64_t packet_number,
-    const std::vector<AckedPacket> acked_packets) {
+    const std::vector<AckedPacket>& acked_packets) {
   std::vector<std::unique_ptr<RtcEventGenericAckReceived>> result;
   int64_t time_us = rtc::TimeMicros();
   for (const AckedPacket& packet : acked_packets) {
     result.push_back(absl::WrapUnique(new RtcEventGenericAckReceived(
         time_us, packet_number, packet.packet_number,
-        packet.receive_timestamp_ms)));
+        packet.receive_acked_packet_time_ms)));
   }
   return result;
 }
@@ -31,11 +32,19 @@ RtcEventGenericAckReceived::RtcEventGenericAckReceived(
     int64_t timestamp_us,
     int64_t packet_number,
     int64_t acked_packet_number,
-    absl::optional<int64_t> receive_timestamp_ms)
+    absl::optional<int64_t> receive_acked_packet_time_ms)
     : RtcEvent(timestamp_us),
       packet_number_(packet_number),
       acked_packet_number_(acked_packet_number),
-      receive_timestamp_ms_(receive_timestamp_ms) {}
+      receive_acked_packet_time_ms_(receive_acked_packet_time_ms) {}
+
+std::unique_ptr<RtcEventGenericAckReceived> RtcEventGenericAckReceived::Copy()
+    const {
+  return absl::WrapUnique(new RtcEventGenericAckReceived(*this));
+}
+
+RtcEventGenericAckReceived::RtcEventGenericAckReceived(
+    const RtcEventGenericAckReceived& packet) = default;
 
 RtcEventGenericAckReceived::~RtcEventGenericAckReceived() = default;
 

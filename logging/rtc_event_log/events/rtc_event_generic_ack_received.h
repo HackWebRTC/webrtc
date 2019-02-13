@@ -24,7 +24,7 @@ struct AckedPacket {
 
   // The time where the packet was received. Not every ACK will
   // include the receive timestamp.
-  absl::optional<int64_t> receive_timestamp_ms;
+  absl::optional<int64_t> receive_acked_packet_time_ms;
 };
 
 class RtcEventGenericAckReceived final : public RtcEvent {
@@ -33,10 +33,11 @@ class RtcEventGenericAckReceived final : public RtcEvent {
   // the same timestamp.
   static std::vector<std::unique_ptr<RtcEventGenericAckReceived>> CreateLogs(
       int64_t packet_number,
-      const std::vector<AckedPacket> acked_packets);
+      const std::vector<AckedPacket>& acked_packets);
 
-  RtcEventGenericAckReceived(const RtcEventGenericAckReceived& packet);
   ~RtcEventGenericAckReceived() override;
+
+  std::unique_ptr<RtcEventGenericAckReceived> Copy() const;
 
   Type GetType() const override;
 
@@ -48,24 +49,32 @@ class RtcEventGenericAckReceived final : public RtcEvent {
   // An identifier of the acked packet.
   int64_t acked_packet_number() const { return acked_packet_number_; }
 
-  // Collection of the received acks with their timestamps.
-  const absl::optional<int64_t> receive_timestamp_ms() const {
-    return receive_timestamp_ms_;
+  // Timestamp when the |acked_packet_number| was received by the remote side.
+  absl::optional<int64_t> receive_timestamp_ms() const {
+    return receive_acked_packet_time_ms_;
+  }
+
+  absl::optional<int64_t> receive_acked_packet_time_ms() const {
+    return receive_acked_packet_time_ms_;
   }
 
  private:
+  RtcEventGenericAckReceived(const RtcEventGenericAckReceived& packet);
+
   // When the ack is received, |packet_number| identifies the packet which
   // contained an ack for |acked_packet_number|, and contains the
-  // |receive_timestamp_ms| on which the |acked_packet_number| was received on
-  // the remote side. The |receive_timestamp_ms| may be null.
-  RtcEventGenericAckReceived(int64_t timestamp_us,
-                             int64_t packet_number,
-                             int64_t acked_packet_number,
-                             absl::optional<int64_t> receive_timestamp_ms);
+  // |receive_acked_packet_time_ms| on which the |acked_packet_number| was
+  // received on the remote side. The |receive_acked_packet_time_ms| may be
+  // null.
+  RtcEventGenericAckReceived(
+      int64_t timestamp_us,
+      int64_t packet_number,
+      int64_t acked_packet_number,
+      absl::optional<int64_t> receive_acked_packet_time_ms);
 
   const int64_t packet_number_;
   const int64_t acked_packet_number_;
-  const absl::optional<int64_t> receive_timestamp_ms_;
+  const absl::optional<int64_t> receive_acked_packet_time_ms_;
 };
 
 }  // namespace webrtc

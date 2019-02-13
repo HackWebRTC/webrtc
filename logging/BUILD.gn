@@ -347,6 +347,10 @@ if (rtc_enable_protobuf) {
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
+
+    if (!build_with_chromium && is_clang) {
+      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+    }
   }
 
   if (rtc_include_tests) {
@@ -369,6 +373,7 @@ if (rtc_enable_protobuf) {
         ":ice_log",
         ":rtc_event_audio",
         ":rtc_event_bwe",
+        ":rtc_event_generic_packet_events",
         ":rtc_event_log2_proto",
         ":rtc_event_log_api",
         ":rtc_event_log_impl_base",

@@ -522,5 +522,65 @@ struct LoggedIceEvent {
   LoggedIceEventType event_type;
 };
 
+struct LoggedGenericPacketSent {
+  LoggedGenericPacketSent() = default;
+  LoggedGenericPacketSent(int64_t timestamp_us,
+                          int64_t packet_number,
+                          size_t overhead_length,
+                          size_t payload_length,
+                          size_t padding_length)
+      : timestamp_us(timestamp_us),
+        packet_number(packet_number),
+        overhead_length(overhead_length),
+        payload_length(payload_length),
+        padding_length(padding_length) {}
+
+  int64_t log_time_us() const { return timestamp_us; }
+  int64_t log_time_ms() const { return timestamp_us / 1000; }
+
+  int64_t timestamp_us;
+  int64_t packet_number;
+  size_t overhead_length;
+  size_t payload_length;
+  size_t padding_length;
+};
+
+struct LoggedGenericPacketReceived {
+  LoggedGenericPacketReceived() = default;
+  LoggedGenericPacketReceived(int64_t timestamp_us,
+                              int64_t packet_number,
+                              int packet_length)
+      : timestamp_us(timestamp_us),
+        packet_number(packet_number),
+        packet_length(packet_length) {}
+
+  int64_t log_time_us() const { return timestamp_us; }
+  int64_t log_time_ms() const { return timestamp_us / 1000; }
+
+  int64_t timestamp_us;
+  int64_t packet_number;
+  int packet_length;
+};
+
+struct LoggedGenericAckReceived {
+  LoggedGenericAckReceived() = default;
+  LoggedGenericAckReceived(int64_t timestamp_us,
+                           int64_t packet_number,
+                           int64_t acked_packet_number,
+                           absl::optional<int64_t> receive_acked_packet_time_ms)
+      : timestamp_us(timestamp_us),
+        packet_number(packet_number),
+        acked_packet_number(acked_packet_number),
+        receive_acked_packet_time_ms(receive_acked_packet_time_ms) {}
+
+  int64_t log_time_us() const { return timestamp_us; }
+  int64_t log_time_ms() const { return timestamp_us / 1000; }
+
+  int64_t timestamp_us;
+  int64_t packet_number;
+  int64_t acked_packet_number;
+  absl::optional<int64_t> receive_acked_packet_time_ms;
+};
+
 }  // namespace webrtc
 #endif  // LOGGING_RTC_EVENT_LOG_LOGGED_EVENTS_H_
