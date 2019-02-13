@@ -283,8 +283,8 @@ void NetworkManagerBase::GetAnyAddressNetworks(NetworkList* networks) {
     ipv4_any_address_network_.reset(
         new rtc::Network("any", "any", ipv4_any_address, 0, ADAPTER_TYPE_ANY));
     ipv4_any_address_network_->set_default_local_address_provider(this);
+    ipv4_any_address_network_->set_mdns_responder_provider(this);
     ipv4_any_address_network_->AddIP(ipv4_any_address);
-    ipv4_any_address_network_->SetMdnsResponder(GetMdnsResponder());
   }
   networks->push_back(ipv4_any_address_network_.get());
 
@@ -293,8 +293,8 @@ void NetworkManagerBase::GetAnyAddressNetworks(NetworkList* networks) {
     ipv6_any_address_network_.reset(
         new rtc::Network("any", "any", ipv6_any_address, 0, ADAPTER_TYPE_ANY));
     ipv6_any_address_network_->set_default_local_address_provider(this);
+    ipv6_any_address_network_->set_mdns_responder_provider(this);
     ipv6_any_address_network_->AddIP(ipv6_any_address);
-    ipv6_any_address_network_->SetMdnsResponder(GetMdnsResponder());
   }
   networks->push_back(ipv6_any_address_network_.get());
 }
@@ -383,7 +383,7 @@ void NetworkManagerBase::MergeNetworkList(const NetworkList& new_networks,
         delete net;
       }
     }
-    networks_map_[key]->SetMdnsResponder(GetMdnsResponder());
+    networks_map_[key]->set_mdns_responder_provider(this);
   }
   // It may still happen that the merged list is a subset of |networks_|.
   // To detect this change, we compare their sizes.
@@ -739,6 +739,7 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
           std::unique_ptr<Network> network(new Network(
               name, description, prefix, prefix_length, adapter_type));
           network->set_default_local_address_provider(this);
+          network->set_mdns_responder_provider(this);
           network->set_scope_id(scope_id);
           network->AddIP(ip);
           bool ignored = IsIgnoredNetwork(*network);
@@ -1047,6 +1048,13 @@ IPAddress Network::GetBestIP() const {
   }
 
   return static_cast<IPAddress>(selected_ip);
+}
+
+webrtc::MdnsResponderInterface* Network::GetMdnsResponder() const {
+  if (mdns_responder_provider_ == nullptr) {
+    return nullptr;
+  }
+  return mdns_responder_provider_->GetMdnsResponder();
 }
 
 uint16_t Network::GetCost() const {
