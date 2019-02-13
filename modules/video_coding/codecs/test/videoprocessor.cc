@@ -109,7 +109,8 @@ void ExtractI420BufferWithSize(const VideoFrame& image,
 
 void CalculateFrameQuality(const I420BufferInterface& ref_buffer,
                            const I420BufferInterface& dec_buffer,
-                           FrameStatistics* frame_stat) {
+                           FrameStatistics* frame_stat,
+                           bool calc_ssim) {
   if (ref_buffer.width() != dec_buffer.width() ||
       ref_buffer.height() != dec_buffer.height()) {
     RTC_CHECK_GE(ref_buffer.width(), dec_buffer.width());
@@ -126,7 +127,7 @@ void CalculateFrameQuality(const I420BufferInterface& ref_buffer,
               scaled_buffer->width(), scaled_buffer->height(),
               libyuv::kFilterBox);
 
-    CalculateFrameQuality(*scaled_buffer, dec_buffer, frame_stat);
+    CalculateFrameQuality(*scaled_buffer, dec_buffer, frame_stat, calc_ssim);
   } else {
     const uint64_t sse_y = libyuv::ComputeSumSquareErrorPlane(
         dec_buffer.DataY(), dec_buffer.StrideY(), ref_buffer.DataY(),
@@ -149,7 +150,10 @@ void CalculateFrameQuality(const I420BufferInterface& ref_buffer,
     frame_stat->psnr_v = libyuv::SumSquareErrorToPsnr(sse_v, num_u_samples);
     frame_stat->psnr = libyuv::SumSquareErrorToPsnr(
         sse_y + sse_u + sse_v, num_y_samples + 2 * num_u_samples);
-    frame_stat->ssim = I420SSIM(ref_buffer, dec_buffer);
+
+    if (calc_ssim) {
+      frame_stat->ssim = I420SSIM(ref_buffer, dec_buffer);
+    }
   }
 }
 
@@ -495,9 +499,12 @@ void VideoProcessor::FrameDecoded(const VideoFrame& decoded_frame,
     RTC_CHECK(reference_frame != input_frames_.cend())
         << "The codecs are either buffering too much, dropping too much, or "
            "being too slow relative the input frame rate.";
+
+    // SSIM calculation is not optimized. Skip it in real-time mode.
+    const bool calc_ssim = !config_.encode_in_real_time;
     CalculateFrameQuality(
         *reference_frame->second.video_frame_buffer()->ToI420(),
-        *decoded_frame.video_frame_buffer()->ToI420(), frame_stat);
+        *decoded_frame.video_frame_buffer()->ToI420(), frame_stat, calc_ssim);
 
     // Erase all buffered input frames that we have moved past for all
     // simulcast/spatial layers. Never buffer more than

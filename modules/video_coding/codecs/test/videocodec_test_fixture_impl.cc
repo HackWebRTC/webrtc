@@ -539,8 +539,13 @@ void VideoCodecTestFixtureImpl::VerifyVideoStatistic(
   if (quality_thresholds) {
     EXPECT_GT(video_stat.avg_psnr, quality_thresholds->min_avg_psnr);
     EXPECT_GT(video_stat.min_psnr, quality_thresholds->min_min_psnr);
-    EXPECT_GT(video_stat.avg_ssim, quality_thresholds->min_avg_ssim);
-    EXPECT_GT(video_stat.min_ssim, quality_thresholds->min_min_ssim);
+
+    // SSIM calculation is not optimized and thus it is disabled in real-time
+    // mode.
+    if (!config_.encode_in_real_time) {
+      EXPECT_GT(video_stat.avg_ssim, quality_thresholds->min_avg_ssim);
+      EXPECT_GT(video_stat.min_ssim, quality_thresholds->min_min_ssim);
+    }
   }
 
   if (bs_thresholds) {
