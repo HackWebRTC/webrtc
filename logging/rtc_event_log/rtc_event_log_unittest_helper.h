@@ -41,8 +41,13 @@
 #include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/extended_reports.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/fir.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/loss_notification.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/nack.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/pli.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/remb.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
 #include "modules/rtp_rtcp/source/rtp_packet.h"
@@ -57,31 +62,18 @@ class EventGenerator {
   explicit EventGenerator(uint64_t seed) : prng_(seed) {}
 
   std::unique_ptr<RtcEventAlrState> NewAlrState();
-
   std::unique_ptr<RtcEventAudioPlayout> NewAudioPlayout(uint32_t ssrc);
-
   std::unique_ptr<RtcEventAudioNetworkAdaptation> NewAudioNetworkAdaptation();
-
   std::unique_ptr<RtcEventBweUpdateDelayBased> NewBweUpdateDelayBased();
-
   std::unique_ptr<RtcEventBweUpdateLossBased> NewBweUpdateLossBased();
-
   std::unique_ptr<RtcEventDtlsTransportState> NewDtlsTransportState();
-
   std::unique_ptr<RtcEventDtlsWritableState> NewDtlsWritableState();
-
   std::unique_ptr<RtcEventProbeClusterCreated> NewProbeClusterCreated();
-
   std::unique_ptr<RtcEventProbeResultFailure> NewProbeResultFailure();
-
   std::unique_ptr<RtcEventProbeResultSuccess> NewProbeResultSuccess();
-
   std::unique_ptr<RtcEventIceCandidatePairConfig> NewIceCandidatePairConfig();
-
   std::unique_ptr<RtcEventIceCandidatePair> NewIceCandidatePair();
-
   std::unique_ptr<RtcEventRtcpPacketIncoming> NewRtcpPacketIncoming();
-
   std::unique_ptr<RtcEventRtcpPacketOutgoing> NewRtcpPacketOutgoing();
 
   std::unique_ptr<RtcEventGenericPacketSent> NewGenericPacketSent();
@@ -90,9 +82,12 @@ class EventGenerator {
 
   rtcp::SenderReport NewSenderReport();
   rtcp::ReceiverReport NewReceiverReport();
+  rtcp::ExtendedReports NewExtendedReports();
   rtcp::Nack NewNack();
-  rtcp::TransportFeedback NewTransportFeedback();
   rtcp::Remb NewRemb();
+  rtcp::Fir NewFir();
+  rtcp::Pli NewPli();
+  rtcp::TransportFeedback NewTransportFeedback();
   rtcp::LossNotification NewLossNotification();
 
   // |all_configured_exts| determines whether the RTP packet exhibits all
@@ -253,6 +248,16 @@ class EventVerifier {
       int64_t log_time_us,
       const rtcp::ReceiverReport& original_rr,
       const LoggedRtcpPacketReceiverReport& logged_rr);
+  void VerifyLoggedExtendedReports(
+      int64_t log_time_us,
+      const rtcp::ExtendedReports& original_xr,
+      const LoggedRtcpPacketExtendedReports& logged_xr);
+  void VerifyLoggedFir(int64_t log_time_us,
+                       const rtcp::Fir& original_fir,
+                       const LoggedRtcpPacketFir& logged_fir);
+  void VerifyLoggedPli(int64_t log_time_us,
+                       const rtcp::Pli& original_pli,
+                       const LoggedRtcpPacketPli& logged_pli);
   void VerifyLoggedNack(int64_t log_time_us,
                         const rtcp::Nack& original_nack,
                         const LoggedRtcpPacketNack& logged_nack);

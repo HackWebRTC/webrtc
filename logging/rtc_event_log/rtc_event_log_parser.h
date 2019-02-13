@@ -434,6 +434,15 @@ class ParsedRtcEventLog {
     }
   }
 
+  const std::vector<LoggedRtcpPacketExtendedReports>& extended_reports(
+      PacketDirection direction) const {
+    if (direction == kIncomingPacket) {
+      return incoming_xr_;
+    } else {
+      return outgoing_xr_;
+    }
+  }
+
   const std::vector<LoggedRtcpPacketNack>& nacks(
       PacketDirection direction) const {
     if (direction == kIncomingPacket) {
@@ -449,6 +458,24 @@ class ParsedRtcEventLog {
       return incoming_remb_;
     } else {
       return outgoing_remb_;
+    }
+  }
+
+  const std::vector<LoggedRtcpPacketFir>& firs(
+      PacketDirection direction) const {
+    if (direction == kIncomingPacket) {
+      return incoming_fir_;
+    } else {
+      return outgoing_fir_;
+    }
+  }
+
+  const std::vector<LoggedRtcpPacketPli>& plis(
+      PacketDirection direction) const {
+    if (direction == kIncomingPacket) {
+      return incoming_pli_;
+    } else {
+      return outgoing_pli_;
     }
   }
 
@@ -653,10 +680,16 @@ class ParsedRtcEventLog {
   std::vector<LoggedRtcpPacketReceiverReport> outgoing_rr_;
   std::vector<LoggedRtcpPacketSenderReport> incoming_sr_;
   std::vector<LoggedRtcpPacketSenderReport> outgoing_sr_;
+  std::vector<LoggedRtcpPacketExtendedReports> incoming_xr_;
+  std::vector<LoggedRtcpPacketExtendedReports> outgoing_xr_;
   std::vector<LoggedRtcpPacketNack> incoming_nack_;
   std::vector<LoggedRtcpPacketNack> outgoing_nack_;
   std::vector<LoggedRtcpPacketRemb> incoming_remb_;
   std::vector<LoggedRtcpPacketRemb> outgoing_remb_;
+  std::vector<LoggedRtcpPacketFir> incoming_fir_;
+  std::vector<LoggedRtcpPacketFir> outgoing_fir_;
+  std::vector<LoggedRtcpPacketPli> incoming_pli_;
+  std::vector<LoggedRtcpPacketPli> outgoing_pli_;
   std::vector<LoggedRtcpPacketTransportFeedback> incoming_transport_feedback_;
   std::vector<LoggedRtcpPacketTransportFeedback> outgoing_transport_feedback_;
   std::vector<LoggedRtcpPacketLossNotification> incoming_loss_notification_;

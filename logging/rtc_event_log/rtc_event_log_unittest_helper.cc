@@ -29,6 +29,9 @@
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/rtp_rtcp/include/rtp_cvo.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/rrtr.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/target_bitrate.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
@@ -258,6 +261,29 @@ rtcp::ReceiverReport EventGenerator::NewReceiverReport() {
   return receiver_report;
 }
 
+rtcp::ExtendedReports EventGenerator::NewExtendedReports() {
+  rtcp::ExtendedReports extended_report;
+  extended_report.SetSenderSsrc(prng_.Rand<uint32_t>());
+
+  rtcp::Rrtr rrtr;
+  rrtr.SetNtp(NtpTime(prng_.Rand<uint32_t>(), prng_.Rand<uint32_t>()));
+  extended_report.SetRrtr(rrtr);
+
+  rtcp::ReceiveTimeInfo time_info(
+      prng_.Rand<uint32_t>(), prng_.Rand<uint32_t>(), prng_.Rand<uint32_t>());
+  extended_report.AddDlrrItem(time_info);
+
+  rtcp::TargetBitrate target_bitrate;
+  target_bitrate.AddTargetBitrate(/*spatial layer*/ prng_.Rand(0, 3),
+                                  /*temporal layer*/ prng_.Rand(0, 3),
+                                  /*bitrate kbps*/ prng_.Rand(0, 50000));
+  target_bitrate.AddTargetBitrate(/*spatial layer*/ prng_.Rand(4, 7),
+                                  /*temporal layer*/ prng_.Rand(4, 7),
+                                  /*bitrate kbps*/ prng_.Rand(0, 50000));
+  extended_report.SetTargetBitrate(target_bitrate);
+  return extended_report;
+}
+
 rtcp::Nack EventGenerator::NewNack() {
   rtcp::Nack nack;
   uint16_t base_seq_no = prng_.Rand<uint16_t>();
@@ -269,6 +295,23 @@ rtcp::Nack EventGenerator::NewNack() {
   }
   nack.SetPacketIds(nack_list);
   return nack;
+}
+
+rtcp::Fir EventGenerator::NewFir() {
+  rtcp::Fir fir;
+  fir.SetSenderSsrc(prng_.Rand<uint32_t>());
+  fir.AddRequestTo(/*ssrc*/ prng_.Rand<uint32_t>(),
+                   /*seq num*/ prng_.Rand<uint8_t>());
+  fir.AddRequestTo(/*ssrc*/ prng_.Rand<uint32_t>(),
+                   /*seq num*/ prng_.Rand<uint8_t>());
+  return fir;
+}
+
+rtcp::Pli EventGenerator::NewPli() {
+  rtcp::Pli pli;
+  pli.SetSenderSsrc(prng_.Rand<uint32_t>());
+  pli.SetMediaSsrc(prng_.Rand<uint32_t>());
+  return pli;
 }
 
 rtcp::TransportFeedback EventGenerator::NewTransportFeedback() {
@@ -312,6 +355,9 @@ EventGenerator::NewRtcpPacketIncoming() {
   enum class SupportedRtcpTypes {
     kSenderReport = 0,
     kReceiverReport,
+    kExtendedReports,
+    kFir,
+    kPli,
     kNack,
     kRemb,
     kTransportFeedback,
@@ -328,6 +374,21 @@ EventGenerator::NewRtcpPacketIncoming() {
     case SupportedRtcpTypes::kReceiverReport: {
       rtcp::ReceiverReport receiver_report = NewReceiverReport();
       rtc::Buffer buffer = receiver_report.Build();
+      return absl::make_unique<RtcEventRtcpPacketIncoming>(buffer);
+    }
+    case SupportedRtcpTypes::kExtendedReports: {
+      rtcp::ExtendedReports extended_report = NewExtendedReports();
+      rtc::Buffer buffer = extended_report.Build();
+      return absl::make_unique<RtcEventRtcpPacketIncoming>(buffer);
+    }
+    case SupportedRtcpTypes::kFir: {
+      rtcp::Fir fir = NewFir();
+      rtc::Buffer buffer = fir.Build();
+      return absl::make_unique<RtcEventRtcpPacketIncoming>(buffer);
+    }
+    case SupportedRtcpTypes::kPli: {
+      rtcp::Pli pli = NewPli();
+      rtc::Buffer buffer = pli.Build();
       return absl::make_unique<RtcEventRtcpPacketIncoming>(buffer);
     }
     case SupportedRtcpTypes::kNack: {
@@ -357,6 +418,9 @@ EventGenerator::NewRtcpPacketOutgoing() {
   enum class SupportedRtcpTypes {
     kSenderReport = 0,
     kReceiverReport,
+    kExtendedReports,
+    kFir,
+    kPli,
     kNack,
     kRemb,
     kTransportFeedback,
@@ -373,6 +437,21 @@ EventGenerator::NewRtcpPacketOutgoing() {
     case SupportedRtcpTypes::kReceiverReport: {
       rtcp::ReceiverReport receiver_report = NewReceiverReport();
       rtc::Buffer buffer = receiver_report.Build();
+      return absl::make_unique<RtcEventRtcpPacketOutgoing>(buffer);
+    }
+    case SupportedRtcpTypes::kExtendedReports: {
+      rtcp::ExtendedReports extended_report = NewExtendedReports();
+      rtc::Buffer buffer = extended_report.Build();
+      return absl::make_unique<RtcEventRtcpPacketOutgoing>(buffer);
+    }
+    case SupportedRtcpTypes::kFir: {
+      rtcp::Fir fir = NewFir();
+      rtc::Buffer buffer = fir.Build();
+      return absl::make_unique<RtcEventRtcpPacketOutgoing>(buffer);
+    }
+    case SupportedRtcpTypes::kPli: {
+      rtcp::Pli pli = NewPli();
+      rtc::Buffer buffer = pli.Build();
       return absl::make_unique<RtcEventRtcpPacketOutgoing>(buffer);
     }
     case SupportedRtcpTypes::kNack: {
@@ -982,6 +1061,68 @@ void EventVerifier::VerifyLoggedReceiverReport(
     VerifyReportBlock(original_rr.report_blocks()[i],
                       logged_rr.rr.report_blocks()[i]);
   }
+}
+
+void EventVerifier::VerifyLoggedExtendedReports(
+    int64_t log_time_us,
+    const rtcp::ExtendedReports& original_xr,
+    const LoggedRtcpPacketExtendedReports& logged_xr) {
+  EXPECT_EQ(original_xr.sender_ssrc(), logged_xr.xr.sender_ssrc());
+
+  EXPECT_EQ(original_xr.rrtr().has_value(), logged_xr.xr.rrtr().has_value());
+  if (original_xr.rrtr().has_value() && logged_xr.xr.rrtr().has_value()) {
+    EXPECT_EQ(original_xr.rrtr()->ntp(), logged_xr.xr.rrtr()->ntp());
+  }
+
+  const auto& original_subblocks = original_xr.dlrr().sub_blocks();
+  const auto& logged_subblocks = logged_xr.xr.dlrr().sub_blocks();
+  ASSERT_EQ(original_subblocks.size(), logged_subblocks.size());
+  for (size_t i = 0; i < original_subblocks.size(); i++) {
+    EXPECT_EQ(original_subblocks[i].ssrc, logged_subblocks[i].ssrc);
+    EXPECT_EQ(original_subblocks[i].last_rr, logged_subblocks[i].last_rr);
+    EXPECT_EQ(original_subblocks[i].delay_since_last_rr,
+              logged_subblocks[i].delay_since_last_rr);
+  }
+
+  EXPECT_EQ(original_xr.target_bitrate().has_value(),
+            logged_xr.xr.target_bitrate().has_value());
+  if (original_xr.target_bitrate().has_value() &&
+      logged_xr.xr.target_bitrate().has_value()) {
+    const auto& original_bitrates =
+        original_xr.target_bitrate()->GetTargetBitrates();
+    const auto& logged_bitrates =
+        logged_xr.xr.target_bitrate()->GetTargetBitrates();
+    ASSERT_EQ(original_bitrates.size(), logged_bitrates.size());
+    for (size_t i = 0; i < original_bitrates.size(); i++) {
+      EXPECT_EQ(original_bitrates[i].spatial_layer,
+                logged_bitrates[i].spatial_layer);
+      EXPECT_EQ(original_bitrates[i].temporal_layer,
+                logged_bitrates[i].temporal_layer);
+      EXPECT_EQ(original_bitrates[i].target_bitrate_kbps,
+                logged_bitrates[i].target_bitrate_kbps);
+    }
+  }
+}
+
+void EventVerifier::VerifyLoggedFir(int64_t log_time_us,
+                                    const rtcp::Fir& original_fir,
+                                    const LoggedRtcpPacketFir& logged_fir) {
+  EXPECT_EQ(original_fir.sender_ssrc(), logged_fir.fir.sender_ssrc());
+
+  const auto& original_requests = original_fir.requests();
+  const auto& logged_requests = logged_fir.fir.requests();
+  ASSERT_EQ(original_requests.size(), logged_requests.size());
+  for (size_t i = 0; i < original_requests.size(); i++) {
+    EXPECT_EQ(original_requests[i].ssrc, logged_requests[i].ssrc);
+    EXPECT_EQ(original_requests[i].seq_nr, logged_requests[i].seq_nr);
+  }
+}
+
+void EventVerifier::VerifyLoggedPli(int64_t log_time_us,
+                                    const rtcp::Pli& original_pli,
+                                    const LoggedRtcpPacketPli& logged_pli) {
+  EXPECT_EQ(original_pli.sender_ssrc(), logged_pli.pli.sender_ssrc());
+  EXPECT_EQ(original_pli.media_ssrc(), logged_pli.pli.media_ssrc());
 }
 
 void EventVerifier::VerifyLoggedNack(int64_t log_time_us,

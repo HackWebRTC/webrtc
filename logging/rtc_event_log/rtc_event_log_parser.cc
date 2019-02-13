@@ -803,11 +803,14 @@ void StoreRtcpBlocks(
     int64_t timestamp_us,
     const uint8_t* packet_begin,
     const uint8_t* packet_end,
-    std::vector<LoggedRtcpPacketTransportFeedback>* transport_feedback_list,
     std::vector<LoggedRtcpPacketSenderReport>* sr_list,
     std::vector<LoggedRtcpPacketReceiverReport>* rr_list,
+    std::vector<LoggedRtcpPacketExtendedReports>* xr_list,
     std::vector<LoggedRtcpPacketRemb>* remb_list,
     std::vector<LoggedRtcpPacketNack>* nack_list,
+    std::vector<LoggedRtcpPacketFir>* fir_list,
+    std::vector<LoggedRtcpPacketPli>* pli_list,
+    std::vector<LoggedRtcpPacketTransportFeedback>* transport_feedback_list,
     std::vector<LoggedRtcpPacketLossNotification>* loss_notification_list) {
   rtcp::CommonHeader header;
   for (const uint8_t* block = packet_begin; block < packet_end;
@@ -830,6 +833,26 @@ void StoreRtcpBlocks(
       parsed_block.timestamp_us = timestamp_us;
       if (parsed_block.rr.Parse(header)) {
         rr_list->push_back(std::move(parsed_block));
+      }
+    } else if (header.type() == rtcp::ExtendedReports::kPacketType) {
+      LoggedRtcpPacketExtendedReports parsed_block;
+      parsed_block.timestamp_us = timestamp_us;
+      if (parsed_block.xr.Parse(header)) {
+        xr_list->push_back(std::move(parsed_block));
+      }
+    } else if (header.type() == rtcp::Fir::kPacketType &&
+               header.fmt() == rtcp::Fir::kFeedbackMessageType) {
+      LoggedRtcpPacketFir parsed_block;
+      parsed_block.timestamp_us = timestamp_us;
+      if (parsed_block.fir.Parse(header)) {
+        fir_list->push_back(std::move(parsed_block));
+      }
+    } else if (header.type() == rtcp::Pli::kPacketType &&
+               header.fmt() == rtcp::Pli::kFeedbackMessageType) {
+      LoggedRtcpPacketPli parsed_block;
+      parsed_block.timestamp_us = timestamp_us;
+      if (parsed_block.pli.Parse(header)) {
+        pli_list->push_back(std::move(parsed_block));
       }
     } else if (header.type() == rtcp::Remb::kPacketType &&
                header.fmt() == rtcp::Remb::kFeedbackMessageType) {
@@ -1088,9 +1111,10 @@ bool ParsedRtcEventLog::ParseStream(
     const int64_t timestamp_us = incoming.rtcp.timestamp_us;
     const uint8_t* packet_begin = incoming.rtcp.raw_data.data();
     const uint8_t* packet_end = packet_begin + incoming.rtcp.raw_data.size();
-    StoreRtcpBlocks(timestamp_us, packet_begin, packet_end,
-                    &incoming_transport_feedback_, &incoming_sr_, &incoming_rr_,
-                    &incoming_remb_, &incoming_nack_,
+    StoreRtcpBlocks(timestamp_us, packet_begin, packet_end, &incoming_sr_,
+                    &incoming_rr_, &incoming_xr_, &incoming_remb_,
+                    &incoming_nack_, &incoming_fir_, &incoming_pli_,
+                    &incoming_transport_feedback_,
                     &incoming_loss_notification_);
   }
 
@@ -1098,9 +1122,10 @@ bool ParsedRtcEventLog::ParseStream(
     const int64_t timestamp_us = outgoing.rtcp.timestamp_us;
     const uint8_t* packet_begin = outgoing.rtcp.raw_data.data();
     const uint8_t* packet_end = packet_begin + outgoing.rtcp.raw_data.size();
-    StoreRtcpBlocks(timestamp_us, packet_begin, packet_end,
-                    &outgoing_transport_feedback_, &outgoing_sr_, &outgoing_rr_,
-                    &outgoing_remb_, &outgoing_nack_,
+    StoreRtcpBlocks(timestamp_us, packet_begin, packet_end, &outgoing_sr_,
+                    &outgoing_rr_, &outgoing_xr_, &outgoing_remb_,
+                    &outgoing_nack_, &outgoing_fir_, &outgoing_pli_,
+                    &outgoing_transport_feedback_,
                     &outgoing_loss_notification_);
   }
 

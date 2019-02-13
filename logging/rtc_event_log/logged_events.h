@@ -25,8 +25,11 @@
 #include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/extended_reports.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/fir.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/loss_notification.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/nack.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/pli.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/receiver_report.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/remb.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
@@ -334,6 +337,16 @@ struct LoggedRtcpPacketSenderReport {
   rtcp::SenderReport sr;
 };
 
+struct LoggedRtcpPacketExtendedReports {
+  LoggedRtcpPacketExtendedReports() = default;
+
+  int64_t log_time_us() const { return timestamp_us; }
+  int64_t log_time_ms() const { return timestamp_us / 1000; }
+
+  int64_t timestamp_us;
+  rtcp::ExtendedReports xr;
+};
+
 struct LoggedRtcpPacketRemb {
   LoggedRtcpPacketRemb() = default;
   LoggedRtcpPacketRemb(int64_t timestamp_us, const rtcp::Remb& remb)
@@ -356,6 +369,26 @@ struct LoggedRtcpPacketNack {
 
   int64_t timestamp_us;
   rtcp::Nack nack;
+};
+
+struct LoggedRtcpPacketFir {
+  LoggedRtcpPacketFir() = default;
+
+  int64_t log_time_us() const { return timestamp_us; }
+  int64_t log_time_ms() const { return timestamp_us / 1000; }
+
+  int64_t timestamp_us;
+  rtcp::Fir fir;
+};
+
+struct LoggedRtcpPacketPli {
+  LoggedRtcpPacketPli() = default;
+
+  int64_t log_time_us() const { return timestamp_us; }
+  int64_t log_time_ms() const { return timestamp_us / 1000; }
+
+  int64_t timestamp_us;
+  rtcp::Pli pli;
 };
 
 struct LoggedRtcpPacketTransportFeedback {
