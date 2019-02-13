@@ -20,8 +20,9 @@ VideoFrame::Builder::Builder() = default;
 VideoFrame::Builder::~Builder() = default;
 
 VideoFrame VideoFrame::Builder::build() {
+  RTC_CHECK(video_frame_buffer_ != nullptr);
   return VideoFrame(id_, video_frame_buffer_, timestamp_us_, timestamp_rtp_,
-                    ntp_time_ms_, rotation_, color_space_);
+                    ntp_time_ms_, rotation_, color_space_, update_rect_);
 }
 
 VideoFrame::Builder& VideoFrame::Builder::set_video_frame_buffer(
@@ -76,6 +77,12 @@ VideoFrame::Builder& VideoFrame::Builder::set_id(uint16_t id) {
   return *this;
 }
 
+VideoFrame::Builder& VideoFrame::Builder::set_update_rect(
+    const VideoFrame::UpdateRect& update_rect) {
+  update_rect_ = update_rect;
+  return *this;
+}
+
 VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
                        webrtc::VideoRotation rotation,
                        int64_t timestamp_us)
@@ -83,7 +90,8 @@ VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
       timestamp_rtp_(0),
       ntp_time_ms_(0),
       timestamp_us_(timestamp_us),
-      rotation_(rotation) {}
+      rotation_(rotation),
+      update_rect_{0, 0, buffer->width(), buffer->height()} {}
 
 VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
                        uint32_t timestamp_rtp,
@@ -93,7 +101,8 @@ VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
       timestamp_rtp_(timestamp_rtp),
       ntp_time_ms_(0),
       timestamp_us_(render_time_ms * rtc::kNumMicrosecsPerMillisec),
-      rotation_(rotation) {
+      rotation_(rotation),
+      update_rect_{0, 0, buffer->width(), buffer->height()} {
   RTC_DCHECK(buffer);
 }
 
@@ -103,14 +112,22 @@ VideoFrame::VideoFrame(uint16_t id,
                        uint32_t timestamp_rtp,
                        int64_t ntp_time_ms,
                        VideoRotation rotation,
-                       const absl::optional<ColorSpace>& color_space)
+                       const absl::optional<ColorSpace>& color_space,
+                       const absl::optional<UpdateRect>& update_rect)
     : id_(id),
       video_frame_buffer_(buffer),
       timestamp_rtp_(timestamp_rtp),
       ntp_time_ms_(ntp_time_ms),
       timestamp_us_(timestamp_us),
       rotation_(rotation),
-      color_space_(color_space) {}
+      color_space_(color_space),
+      update_rect_(update_rect.value_or(UpdateRect{
+          0, 0, video_frame_buffer_->width(), video_frame_buffer_->height()})) {
+  RTC_DCHECK_GE(update_rect_.offset_x, 0);
+  RTC_DCHECK_GE(update_rect_.offset_y, 0);
+  RTC_DCHECK_LE(update_rect_.offset_x + update_rect_.width, width());
+  RTC_DCHECK_LE(update_rect_.offset_y + update_rect_.height, height());
+}
 
 VideoFrame::~VideoFrame() = default;
 
