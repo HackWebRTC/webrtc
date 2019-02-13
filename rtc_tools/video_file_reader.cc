@@ -28,6 +28,10 @@ namespace test {
 
 namespace {
 
+bool ReadBytes(uint8_t* dst, size_t n, FILE* file) {
+  return fread(reinterpret_cast<char*>(dst), /* size= */ 1, n, file) == n;
+}
+
 // Common base class for .yuv and .y4m files.
 class VideoFile : public Video {
  public:
@@ -52,17 +56,16 @@ class VideoFile : public Video {
 
     fsetpos(file_, &frame_positions_[frame_index]);
     rtc::scoped_refptr<I420Buffer> buffer = I420Buffer::Create(width_, height_);
-    fread(reinterpret_cast<char*>(buffer->MutableDataY()), /* size= */ 1,
-          width_ * height_, file_);
-    fread(reinterpret_cast<char*>(buffer->MutableDataU()), /* size= */ 1,
-          buffer->ChromaWidth() * buffer->ChromaHeight(), file_);
-    fread(reinterpret_cast<char*>(buffer->MutableDataV()), /* size= */ 1,
-          buffer->ChromaWidth() * buffer->ChromaHeight(), file_);
 
-    if (ferror(file_) != 0) {
+    if (!ReadBytes(buffer->MutableDataY(), width_ * height_, file_) ||
+        !ReadBytes(buffer->MutableDataU(),
+                   buffer->ChromaWidth() * buffer->ChromaHeight(), file_) ||
+        !ReadBytes(buffer->MutableDataV(),
+                   buffer->ChromaWidth() * buffer->ChromaHeight(), file_)) {
       RTC_LOG(LS_ERROR) << "Could not read YUV data for frame " << frame_index;
       return nullptr;
     }
+
     return buffer;
   }
 
@@ -122,8 +125,8 @@ rtc::scoped_refptr<Video> OpenY4mFile(const std::string& file_name) {
   }
 
   int parse_file_header_result = -1;
-  fscanf(file, "YUV4MPEG2 %n", &parse_file_header_result);
-  if (parse_file_header_result == -1) {
+  if (fscanf(file, "YUV4MPEG2 %n", &parse_file_header_result) != 0 ||
+      parse_file_header_result == -1) {
     RTC_LOG(LS_ERROR) << "File " << file_name
                       << " does not start with YUV4MPEG2 header";
     return nullptr;
@@ -202,8 +205,8 @@ rtc::scoped_refptr<Video> OpenY4mFile(const std::string& file_name) {
   std::vector<fpos_t> frame_positions;
   while (true) {
     int parse_frame_header_result = -1;
-    fscanf(file, "FRAME\n%n", &parse_frame_header_result);
-    if (parse_frame_header_result == -1) {
+    if (fscanf(file, "FRAME\n%n", &parse_frame_header_result) != 0 ||
+        parse_frame_header_result == -1) {
       if (!feof(file)) {
         RTC_LOG(LS_ERROR) << "Did not find FRAME header, ignoring rest of file";
       }
