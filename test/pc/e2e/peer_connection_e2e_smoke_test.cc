@@ -16,7 +16,7 @@
 #include "rtc_base/async_invoker.h"
 #include "rtc_base/fake_network.h"
 #include "test/gtest.h"
-#include "test/pc/e2e/analyzer/video/example_video_quality_analyzer.h"
+#include "test/pc/e2e/analyzer/video/default_video_quality_analyzer.h"
 #include "test/pc/e2e/api/create_peerconnection_quality_test_fixture.h"
 #include "test/pc/e2e/api/peerconnection_quality_test_fixture.h"
 #include "test/scenario/network/network_emulation.h"
@@ -101,8 +101,8 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
   // Create analyzers.
   auto analyzers = absl::make_unique<Analyzers>();
   analyzers->video_quality_analyzer =
-      absl::make_unique<ExampleVideoQualityAnalyzer>();
-  auto* video_analyzer = static_cast<ExampleVideoQualityAnalyzer*>(
+      absl::make_unique<DefaultVideoQualityAnalyzer>("smoke_test");
+  auto* video_analyzer = static_cast<DefaultVideoQualityAnalyzer*>(
       analyzers->video_quality_analyzer.get());
 
   auto fixture =
@@ -111,17 +111,16 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
                std::move(bob_components), absl::make_unique<Params>(),
                RunParams{TimeDelta::seconds(5)});
 
-  RTC_LOG(INFO) << "Captured: " << video_analyzer->frames_captured();
-  RTC_LOG(INFO) << "Sent    : " << video_analyzer->frames_sent();
-  RTC_LOG(INFO) << "Received: " << video_analyzer->frames_received();
-  RTC_LOG(INFO) << "Rendered: " << video_analyzer->frames_rendered();
-  RTC_LOG(INFO) << "Dropped : " << video_analyzer->frames_dropped();
-
-  // 150 = 30fps * 5s
-  EXPECT_GE(video_analyzer->frames_captured(), 150lu);
-  // EXPECT_NEAR(video_analyzer->frames_sent(), 150, 15);
-  // EXPECT_NEAR(video_analyzer->frames_received(), 150, 15);
-  // EXPECT_NEAR(video_analyzer->frames_rendered(), 150, 15);
+  // 150 = 30fps * 5s. On some devices pipeline can be too slow, so it can
+  // happen, that frames will stuck in the middle, so we actually can't force
+  // real constraints here, so lets just check, that at least 1 frame passed
+  // whole pipeline.
+  EXPECT_GE(video_analyzer->GetGlobalCounters().captured, 150);
+  EXPECT_GE(video_analyzer->GetGlobalCounters().pre_encoded, 1);
+  EXPECT_GE(video_analyzer->GetGlobalCounters().encoded, 1);
+  EXPECT_GE(video_analyzer->GetGlobalCounters().received, 1);
+  EXPECT_GE(video_analyzer->GetGlobalCounters().decoded, 1);
+  EXPECT_GE(video_analyzer->GetGlobalCounters().rendered, 1);
 }
 
 }  // namespace test

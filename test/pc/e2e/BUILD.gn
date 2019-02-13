@@ -261,7 +261,7 @@ if (rtc_include_tests) {
       "peer_connection_e2e_smoke_test.cc",
     ]
     deps = [
-      ":example_video_quality_analyzer",
+      ":default_video_quality_analyzer",
       "../../../api:callfactory_api",
       "../../../api:libjingle_peerconnection_api",
       "../../../api:scoped_refptr",
@@ -312,4 +312,35 @@ rtc_source_set("example_video_quality_analyzer") {
     "../../../rtc_base:logging",
     "api:video_quality_analyzer_api",
   ]
+}
+
+rtc_source_set("default_video_quality_analyzer") {
+  visibility = [ "*" ]
+  testonly = true
+  sources = [
+    "analyzer/video/default_video_quality_analyzer.cc",
+    "analyzer/video/default_video_quality_analyzer.h",
+  ]
+
+  deps = [
+    "../..:perf_test",
+    "../../../api/units:time_delta",
+    "../../../api/units:timestamp",
+    "../../../api/video:encoded_image",
+    "../../../api/video:video_frame",
+    "../../../common_video:common_video",
+    "../../../rtc_base:criticalsection",
+    "../../../rtc_base:logging",
+    "../../../rtc_base:rtc_base_approved",
+    "../../../rtc_base:rtc_event",
+    "../../../rtc_base:rtc_numerics",
+    "../../../system_wrappers:system_wrappers",
+    "api:video_quality_analyzer_api",
+    "//third_party/abseil-cpp/absl/memory:memory",
+  ]
+
+  if (!build_with_chromium && is_clang) {
+    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
+    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
+  }
 }
