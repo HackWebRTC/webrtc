@@ -365,7 +365,8 @@ std::string RtcEventLogEncoderLegacy::Encode(const RtcEvent& event) {
     case RtcEvent::Type::GenericPacketReceived:
     case RtcEvent::Type::GenericPacketSent:
     case RtcEvent::Type::GenericAckReceived:
-      RTC_NOTREACHED();
+      // These are unsupported in the old format.
+      break;
   }
 
   int event_type = static_cast<int>(event.GetType());
