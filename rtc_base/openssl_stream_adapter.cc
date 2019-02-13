@@ -25,6 +25,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -1081,7 +1082,7 @@ int OpenSSLStreamAdapter::SSLVerifyCallback(X509_STORE_CTX* store, void* arg) {
   // Record the peer's certificate.
   X509* cert = X509_STORE_CTX_get0_cert(store);
   stream->peer_cert_chain_.reset(
-      new SSLCertChain(new OpenSSLCertificate(cert)));
+      new SSLCertChain(absl::make_unique<OpenSSLCertificate>(cert)));
 #endif
 
   // If the peer certificate digest isn't known yet, we'll wait to verify

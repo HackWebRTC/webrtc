@@ -11,7 +11,7 @@
 #ifndef RTC_BASE_OPENSSL_DIGEST_H_
 #define RTC_BASE_OPENSSL_DIGEST_H_
 
-#include <openssl/base.h>
+#include <openssl/ossl_typ.h>
 #include <stddef.h>
 #include <string>
 
