@@ -26,6 +26,30 @@
 
 namespace webrtc {
 
+class AnalyzerConfig {
+ public:
+  float GetCallTimeSec(int64_t timestamp_us) const {
+    int64_t offset = normalize_time_ ? begin_time_ : 0;
+    return static_cast<float>(timestamp_us - offset) / 1000000;
+  }
+
+  float CallBeginTimeSec() const { return GetCallTimeSec(begin_time_); }
+
+  float CallEndTimeSec() const { return GetCallTimeSec(end_time_); }
+
+  // Window and step size used for calculating moving averages, e.g. bitrate.
+  // The generated data points will be |step_| microseconds apart.
+  // Only events occuring at most |window_duration_| microseconds before the
+  // current data point will be part of the average.
+  int64_t window_duration_;
+  int64_t step_;
+
+  // First and last events of the log.
+  int64_t begin_time_;
+  int64_t end_time_;
+  bool normalize_time_;
+};
+
 class EventLogAnalyzer {
  public:
   // The EventLogAnalyzer keeps a reference to the ParsedRtcEventLogNew for the
@@ -174,9 +198,6 @@ class EventLogAnalyzer {
     return name.str();
   }
 
-  int64_t ToCallTimeUs(int64_t timestamp) const;
-  float ToCallTimeSec(int64_t timestamp) const;
-
   void Alert_RtpLogTimeGap(PacketDirection direction,
                            float time_seconds,
                            int64_t duration) {
@@ -245,20 +266,7 @@ class EventLogAnalyzer {
 
   std::map<uint32_t, std::string> candidate_pair_desc_by_id_;
 
-  // Window and step size used for calculating moving averages, e.g. bitrate.
-  // The generated data points will be |step_| microseconds apart.
-  // Only events occuring at most |window_duration_| microseconds before the
-  // current data point will be part of the average.
-  int64_t window_duration_;
-  int64_t step_;
-
-  // First and last events of the log.
-  int64_t begin_time_;
-  int64_t end_time_;
-  const bool normalize_time_;
-
-  // Duration (in seconds) of log file.
-  float call_duration_s_;
+  AnalyzerConfig config_;
 };
 
 }  // namespace webrtc
