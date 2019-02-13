@@ -48,14 +48,6 @@ constexpr size_t kPacketLossTrackerMaxWindowSizeMs = 15000;
 constexpr size_t kPacketLossRateMinNumAckedPackets = 50;
 constexpr size_t kRecoverablePacketLossRateMinNumAckedPairs = 40;
 
-void CallEncoder(const std::unique_ptr<voe::ChannelSendInterface>& channel_send,
-                 rtc::FunctionView<void(AudioEncoder*)> lambda) {
-  channel_send->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder_ptr) {
-    RTC_DCHECK(encoder_ptr);
-    lambda(encoder_ptr->get());
-  });
-}
-
 void UpdateEventLogStreamConfig(RtcEventLog* event_log,
                                 const AudioSendStream::Config& config,
                                 const AudioSendStream::Config* old_config) {
@@ -506,10 +498,8 @@ void AudioSendStream::OnOverheadChanged(
 
 void AudioSendStream::UpdateOverheadForEncoder() {
   const size_t overhead_per_packet_bytes = GetPerPacketOverheadBytes();
-  CallEncoder(channel_send_, [&](AudioEncoder* encoder) {
-    if (encoder) {
-      encoder->OnReceivedOverhead(overhead_per_packet_bytes);
-    }
+  channel_send_->CallEncoder([&](AudioEncoder* encoder) {
+    encoder->OnReceivedOverhead(overhead_per_packet_bytes);
   });
 }
 
@@ -657,7 +647,7 @@ bool AudioSendStream::ReconfigureSendCodec(AudioSendStream* stream,
       new_target_bitrate_bps &&
       new_target_bitrate_bps !=
           old_config.send_codec_spec->target_bitrate_bps) {
-    CallEncoder(stream->channel_send_, [&](AudioEncoder* encoder) {
+    stream->channel_send_->CallEncoder([&](AudioEncoder* encoder) {
       encoder->OnReceivedTargetAudioBitrate(*new_target_bitrate_bps);
     });
   }
@@ -681,7 +671,7 @@ void AudioSendStream::ReconfigureANA(AudioSendStream* stream,
     return;
   }
   if (new_config.audio_network_adaptor_config) {
-    CallEncoder(stream->channel_send_, [&](AudioEncoder* encoder) {
+    stream->channel_send_->CallEncoder([&](AudioEncoder* encoder) {
       if (encoder->EnableAudioNetworkAdaptor(
               *new_config.audio_network_adaptor_config, stream->event_log_)) {
         RTC_DLOG(LS_INFO) << "Audio network adaptor enabled on SSRC "
@@ -691,9 +681,8 @@ void AudioSendStream::ReconfigureANA(AudioSendStream* stream,
       }
     });
   } else {
-    CallEncoder(stream->channel_send_, [&](AudioEncoder* encoder) {
-      encoder->DisableAudioNetworkAdaptor();
-    });
+    stream->channel_send_->CallEncoder(
+        [&](AudioEncoder* encoder) { encoder->DisableAudioNetworkAdaptor(); });
     RTC_DLOG(LS_INFO) << "Audio network adaptor disabled on SSRC "
                       << new_config.rtp.ssrc;
   }

@@ -105,6 +105,7 @@ class ChannelSend
                   std::unique_ptr<AudioEncoder> encoder) override;
   void ModifyEncoder(rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)>
                          modifier) override;
+  void CallEncoder(rtc::FunctionView<void(AudioEncoder*)> modifier) override;
 
   // API methods
   void StartSend() override;
@@ -811,6 +812,16 @@ void ChannelSend::ModifyEncoder(
   audio_coding_->ModifyEncoder(modifier);
 }
 
+void ChannelSend::CallEncoder(rtc::FunctionView<void(AudioEncoder*)> modifier) {
+  ModifyEncoder([modifier](std::unique_ptr<AudioEncoder>* encoder_ptr) {
+    if (*encoder_ptr) {
+      modifier(encoder_ptr->get());
+    } else {
+      RTC_DLOG(LS_WARNING) << "Trying to call unset encoder.";
+    }
+  });
+}
+
 void ChannelSend::OnBitrateAllocation(BitrateAllocationUpdate update) {
   // This method can be called on the worker thread, module process thread
   // or on a TaskQueue via VideoSendStreamImpl::OnEncoderConfigurationChanged.
@@ -820,10 +831,8 @@ void ChannelSend::OnBitrateAllocation(BitrateAllocationUpdate update) {
   //            module_process_thread_checker_.CalledOnValidThread());
   rtc::CritScope lock(&bitrate_crit_section_);
 
-  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
-    if (*encoder) {
-      (*encoder)->OnReceivedUplinkAllocation(update);
-    }
+  CallEncoder([&](AudioEncoder* encoder) {
+    encoder->OnReceivedUplinkAllocation(update);
   });
   retransmission_rate_limiter_->SetMaxRate(update.target_bitrate.bps());
   configured_bitrate_bps_ = update.target_bitrate.bps();
@@ -838,31 +847,25 @@ void ChannelSend::OnTwccBasedUplinkPacketLossRate(float packet_loss_rate) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   if (!use_twcc_plr_for_ana_)
     return;
-  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
-    if (*encoder) {
-      (*encoder)->OnReceivedUplinkPacketLossFraction(packet_loss_rate);
-    }
+  CallEncoder([&](AudioEncoder* encoder) {
+    encoder->OnReceivedUplinkPacketLossFraction(packet_loss_rate);
   });
 }
 
 void ChannelSend::OnRecoverableUplinkPacketLossRate(
     float recoverable_packet_loss_rate) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
-    if (*encoder) {
-      (*encoder)->OnReceivedUplinkRecoverablePacketLossFraction(
-          recoverable_packet_loss_rate);
-    }
+  CallEncoder([&](AudioEncoder* encoder) {
+    encoder->OnReceivedUplinkRecoverablePacketLossFraction(
+        recoverable_packet_loss_rate);
   });
 }
 
 void ChannelSend::OnUplinkPacketLossRate(float packet_loss_rate) {
   if (use_twcc_plr_for_ana_)
     return;
-  audio_coding_->ModifyEncoder([&](std::unique_ptr<AudioEncoder>* encoder) {
-    if (*encoder) {
-      (*encoder)->OnReceivedUplinkPacketLossFraction(packet_loss_rate);
-    }
+  CallEncoder([&](AudioEncoder* encoder) {
+    encoder->OnReceivedUplinkPacketLossFraction(packet_loss_rate);
   });
 }
 
@@ -1222,12 +1225,8 @@ void ChannelSend::OnTargetTransferRate(TargetTransferRate rate) {
 
 void ChannelSend::OnReceivedRtt(int64_t rtt_ms) {
   // Invoke audio encoders OnReceivedRtt().
-  audio_coding_->ModifyEncoder(
-      [rtt_ms](std::unique_ptr<AudioEncoder>* encoder) {
-        if (*encoder) {
-          (*encoder)->OnReceivedRtt(rtt_ms);
-        }
-      });
+  CallEncoder(
+      [rtt_ms](AudioEncoder* encoder) { encoder->OnReceivedRtt(rtt_ms); });
 }
 
 }  // namespace

@@ -76,6 +76,8 @@ class MockChannelSend : public voe::ChannelSendInterface {
   MOCK_METHOD1(
       ModifyEncoder,
       void(rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier));
+  MOCK_METHOD1(CallEncoder,
+               void(rtc::FunctionView<void(AudioEncoder*)> modifier));
   MOCK_METHOD3(SetRid,
                void(const std::string& rid,
                     int extension_id,

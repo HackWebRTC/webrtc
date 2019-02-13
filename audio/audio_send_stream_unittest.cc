@@ -222,14 +222,13 @@ struct ConfigHelper {
     }
   }
 
-  void SetupMockForModifyEncoder() {
+  void SetupMockForCallEncoder() {
     // Let ModifyEncoder to invoke mock audio encoder.
-    EXPECT_CALL(*channel_send_, ModifyEncoder(_))
+    EXPECT_CALL(*channel_send_, CallEncoder(_))
         .WillRepeatedly(
-            [this](rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)>
-                       modifier) {
+            [this](rtc::FunctionView<void(AudioEncoder*)> modifier) {
               if (this->audio_encoder_)
-                modifier(&this->audio_encoder_);
+                modifier(this->audio_encoder_.get());
             });
   }
 
@@ -426,7 +425,7 @@ TEST(AudioSendStreamTest, SendCodecAppliesAudioNetworkAdaptor) {
   auto stream_config = helper.config();
   stream_config.audio_network_adaptor_config = kAnaReconfigString;
 
-  helper.SetupMockForModifyEncoder();
+  helper.SetupMockForCallEncoder();
   send_stream->Reconfigure(stream_config);
 }
 
@@ -521,8 +520,8 @@ TEST(AudioSendStreamTest, ReconfigureTransportCcResetsFirst) {
         .Times(1);
   }
 
-  // ModifyEncoder will be called to re-set overhead.
-  EXPECT_CALL(*helper.channel_send(), ModifyEncoder(testing::_)).Times(1);
+  // CallEncoder will be called to re-set overhead.
+  EXPECT_CALL(*helper.channel_send(), CallEncoder(testing::_)).Times(1);
 
   send_stream->Reconfigure(new_config);
 }
@@ -532,8 +531,8 @@ TEST(AudioSendStreamTest, OnTransportOverheadChanged) {
   auto send_stream = helper.CreateAudioSendStream();
   auto new_config = helper.config();
 
-  // ModifyEncoder will be called on overhead change.
-  EXPECT_CALL(*helper.channel_send(), ModifyEncoder(testing::_)).Times(1);
+  // CallEncoder will be called on overhead change.
+  EXPECT_CALL(*helper.channel_send(), CallEncoder(testing::_)).Times(1);
 
   const size_t transport_overhead_per_packet_bytes = 333;
   send_stream->SetTransportOverhead(transport_overhead_per_packet_bytes);
@@ -547,8 +546,8 @@ TEST(AudioSendStreamTest, OnAudioOverheadChanged) {
   auto send_stream = helper.CreateAudioSendStream();
   auto new_config = helper.config();
 
-  // ModifyEncoder will be called on overhead change.
-  EXPECT_CALL(*helper.channel_send(), ModifyEncoder(testing::_)).Times(1);
+  // CallEncoder will be called on overhead change.
+  EXPECT_CALL(*helper.channel_send(), CallEncoder(testing::_)).Times(1);
 
   const size_t audio_overhead_per_packet_bytes = 555;
   send_stream->OnOverheadChanged(audio_overhead_per_packet_bytes);
@@ -561,8 +560,8 @@ TEST(AudioSendStreamTest, OnAudioAndTransportOverheadChanged) {
   auto send_stream = helper.CreateAudioSendStream();
   auto new_config = helper.config();
 
-  // ModifyEncoder will be called when each of overhead changes.
-  EXPECT_CALL(*helper.channel_send(), ModifyEncoder(testing::_)).Times(2);
+  // CallEncoder will be called when each of overhead changes.
+  EXPECT_CALL(*helper.channel_send(), CallEncoder(testing::_)).Times(2);
 
   const size_t transport_overhead_per_packet_bytes = 333;
   send_stream->SetTransportOverhead(transport_overhead_per_packet_bytes);
