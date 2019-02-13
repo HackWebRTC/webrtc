@@ -188,7 +188,7 @@ EncodedImage MultiplexEncodedImagePacker::PackAndRelease(
     frame_headers.push_back(frame_header);
   }
 
-  combined_image.set_buffer(new uint8_t[bitstream_offset], bitstream_offset);
+  combined_image.Allocate(bitstream_offset);
   combined_image.set_size(bitstream_offset);
 
   // header

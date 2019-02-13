@@ -247,16 +247,8 @@ int MultiplexEncoderAdapter::Release() {
   encoders_.clear();
   adapter_callbacks_.clear();
   rtc::CritScope cs(&crit_);
-  for (auto& stashed_image : stashed_images_) {
-    for (auto& image_component : stashed_image.second.image_components) {
-      delete[] image_component.encoded_image.data();
-    }
-  }
   stashed_images_.clear();
-  if (combined_image_.buffer()) {
-    delete[] combined_image_.buffer();
-    combined_image_.set_buffer(nullptr, 0);
-  }
+
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
@@ -275,11 +267,9 @@ EncodedImageCallback::Result MultiplexEncoderAdapter::OnEncodedImage(
   image_component.codec_type =
       PayloadStringToCodecType(associated_format_.name);
   image_component.encoded_image = encodedImage;
-  image_component.encoded_image.set_buffer(new uint8_t[encodedImage.size()],
-                                           encodedImage.size());
-  image_component.encoded_image.set_size(encodedImage.size());
-  std::memcpy(image_component.encoded_image.data(), encodedImage.data(),
-              encodedImage.size());
+
+  // If we don't already own the buffer, make a copy.
+  image_component.encoded_image.Retain();
 
   rtc::CritScope cs(&crit_);
   const auto& stashed_image_itr =
@@ -302,8 +292,6 @@ EncodedImageCallback::Result MultiplexEncoderAdapter::OnEncodedImage(
 
       // We have to send out those stashed frames, otherwise the delta frame
       // dependency chain is broken.
-      if (combined_image_.buffer())
-        delete[] combined_image_.buffer();
       combined_image_ =
           MultiplexEncodedImagePacker::PackAndRelease(iter->second);
 
