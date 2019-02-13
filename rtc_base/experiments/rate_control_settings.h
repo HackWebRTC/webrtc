@@ -41,6 +41,7 @@ class RateControlSettings final {
   bool UseAlrProbing() const;
 
   bool LibvpxVp8TrustedRateController() const;
+  bool Vp8BoostBaseLayerQuality() const;
   bool LibvpxVp9TrustedRateController() const;
 
   // TODO(bugs.webrtc.org/10272): Remove one of these when we have merged
@@ -69,6 +70,7 @@ class RateControlSettings final {
   FieldTrialParameter<double> screenshare_hysteresis_;
   FieldTrialParameter<bool> probe_max_allocation_;
   FieldTrialParameter<bool> bitrate_adjuster_;
+  FieldTrialParameter<bool> vp8_s0_boost_;
 };
 
 }  // namespace webrtc

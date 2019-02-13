@@ -32,7 +32,6 @@
 #include "modules/video_coding/utility/simulcast_utility.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/field_trial_parser.h"
-#include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
 #include "third_party/libyuv/include/libyuv/scale.h"
@@ -166,8 +165,7 @@ LibvpxVp8Encoder::LibvpxVp8Encoder()
 LibvpxVp8Encoder::LibvpxVp8Encoder(std::unique_ptr<LibvpxInterface> interface)
     : libvpx_(std::move(interface)),
       experimental_cpu_speed_config_arm_(CpuSpeedExperiment::GetConfigs()),
-      trusted_rate_controller_(RateControlSettings::ParseFromFieldTrials()
-                                   .LibvpxVp8TrustedRateController()),
+      rate_control_settings_(RateControlSettings::ParseFromFieldTrials()),
       encoded_complete_callback_(nullptr),
       inited_(false),
       timestamp_(0),
@@ -250,7 +248,8 @@ int LibvpxVp8Encoder::SetRateAllocation(const VideoBitrateAllocation& bitrate,
     // possibly more dropped frames, so we only do this if the frame rate is
     // above some threshold (base temporal layer is down to 1/4 for 3 layers).
     // We may want to condition this on bitrate later.
-    if (new_framerate > 20) {
+    if (rate_control_settings_.Vp8BoostBaseLayerQuality() &&
+        new_framerate > 20) {
       configurations_[encoders_.size() - 1].rc_max_quantizer = 45;
     } else {
       // Go back to default value set in InitEncode.
@@ -943,7 +942,8 @@ VideoEncoder::EncoderInfo LibvpxVp8Encoder::GetEncoderInfo() const {
   EncoderInfo info;
   info.supports_native_handle = false;
   info.implementation_name = "libvpx";
-  info.has_trusted_rate_controller = trusted_rate_controller_;
+  info.has_trusted_rate_controller =
+      rate_control_settings_.LibvpxVp8TrustedRateController();
   info.is_hardware_accelerated = false;
   info.has_internal_source = false;
 

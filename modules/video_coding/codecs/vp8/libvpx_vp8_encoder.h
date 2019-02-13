@@ -24,6 +24,7 @@
 #include "modules/video_coding/codecs/vp8/libvpx_interface.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/experiments/cpu_speed_experiment.h"
+#include "rtc_base/experiments/rate_control_settings.h"
 
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_encoder.h"
@@ -86,7 +87,7 @@ class LibvpxVp8Encoder : public VideoEncoder {
 
   const absl::optional<std::vector<CpuSpeedExperiment::Config>>
       experimental_cpu_speed_config_arm_;
-  const bool trusted_rate_controller_;
+  const RateControlSettings rate_control_settings_;
 
   EncodedImageCallback* encoded_complete_callback_;
   VideoCodec codec_;

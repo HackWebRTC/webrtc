@@ -27,6 +27,7 @@
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/experiments/rate_control_settings.h"
 #include "system_wrappers/include/field_trial.h"
 #include "third_party/libyuv/include/libyuv/scale.h"
 
@@ -124,7 +125,9 @@ SimulcastEncoderAdapter::SimulcastEncoderAdapter(VideoEncoderFactory* factory,
       factory_(factory),
       video_format_(format),
       encoded_complete_callback_(nullptr),
-      experimental_boosted_screenshare_qp_(GetScreenshareBoostedQpValue()) {
+      experimental_boosted_screenshare_qp_(GetScreenshareBoostedQpValue()),
+      boost_base_layer_quality_(RateControlSettings::ParseFromFieldTrials()
+                                    .Vp8BoostBaseLayerQuality()) {
   RTC_DCHECK(factory_);
   encoder_info_.implementation_name = "SimulcastEncoderAdapter";
 
@@ -534,7 +537,7 @@ void SimulcastEncoderAdapter::PopulateStreamCodec(
       if (experimental_boosted_screenshare_qp_) {
         stream_codec->qpMax = *experimental_boosted_screenshare_qp_;
       }
-    } else {
+    } else if (boost_base_layer_quality_) {
       stream_codec->qpMax = kLowestResMaxQp;
     }
   }

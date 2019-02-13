@@ -122,12 +122,13 @@ RateControlSettings::RateControlSettings(
                                 kScreenshareHysteresisFieldTrialname,
                                 kDefaultScreenshareHysteresisFactor)),
       probe_max_allocation_("probe_max_allocation", true),
-      bitrate_adjuster_("bitrate_adjuster", false) {
-  ParseFieldTrial(
-      {&congestion_window_, &congestion_window_pushback_, &pacing_factor_,
-       &alr_probing_, &trust_vp8_, &trust_vp9_, &video_hysteresis_,
-       &screenshare_hysteresis_, &probe_max_allocation_, &bitrate_adjuster_},
-      key_value_config->Lookup("WebRTC-VideoRateControl"));
+      bitrate_adjuster_("bitrate_adjuster", false),
+      vp8_s0_boost_("vp8_s0_boost", true) {
+  ParseFieldTrial({&congestion_window_, &congestion_window_pushback_,
+                   &pacing_factor_, &alr_probing_, &trust_vp8_, &trust_vp9_,
+                   &video_hysteresis_, &screenshare_hysteresis_,
+                   &probe_max_allocation_, &bitrate_adjuster_, &vp8_s0_boost_},
+                  key_value_config->Lookup("WebRTC-VideoRateControl"));
 }
 
 RateControlSettings::~RateControlSettings() = default;
@@ -173,6 +174,10 @@ bool RateControlSettings::UseAlrProbing() const {
 
 bool RateControlSettings::LibvpxVp8TrustedRateController() const {
   return trust_vp8_.Get();
+}
+
+bool RateControlSettings::Vp8BoostBaseLayerQuality() const {
+  return vp8_s0_boost_.Get();
 }
 
 bool RateControlSettings::LibvpxVp9TrustedRateController() const {

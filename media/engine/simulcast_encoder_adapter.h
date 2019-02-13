@@ -116,6 +116,7 @@ class SimulcastEncoderAdapter : public VideoEncoder {
   std::stack<std::unique_ptr<VideoEncoder>> stored_encoders_;
 
   const absl::optional<unsigned int> experimental_boosted_screenshare_qp_;
+  const bool boost_base_layer_quality_;
 };
 
 }  // namespace webrtc
