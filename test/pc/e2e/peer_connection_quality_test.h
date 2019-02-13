@@ -38,16 +38,15 @@ class PeerConnectionE2EQualityTest
   using RunParams = PeerConnectionE2EQualityTestFixture::RunParams;
   using VideoConfig = PeerConnectionE2EQualityTestFixture::VideoConfig;
 
-  PeerConnectionE2EQualityTest(
-      std::unique_ptr<InjectableComponents> alice_components,
-      std::unique_ptr<Params> alice_params,
-      std::unique_ptr<InjectableComponents> bob_components,
-      std::unique_ptr<Params> bob_params,
-      std::unique_ptr<Analyzers> analyzers);
+  PeerConnectionE2EQualityTest(std::unique_ptr<Analyzers> analyzers);
 
   ~PeerConnectionE2EQualityTest() override = default;
 
-  void Run(RunParams run_params) override;
+  void Run(std::unique_ptr<InjectableComponents> alice_components,
+           std::unique_ptr<Params> alice_params,
+           std::unique_ptr<InjectableComponents> bob_components,
+           std::unique_ptr<Params> bob_params,
+           RunParams run_params) override;
 
  private:
   // Sets video stream labels that are not specified in VideoConfigs to unique
@@ -63,7 +62,7 @@ class PeerConnectionE2EQualityTest
   std::unique_ptr<FrameGenerator> CreateFrameGenerator(
       const VideoConfig& video_config);
   void AddAudio(TestPeer* peer);
-  void SetupCall(TestPeer* alice, TestPeer* bob);
+  void SetupCall();
   void WaitForTransceiversSetup(Params* params, TestPeer* remote_peer);
   void SetupVideoSink(Params* params, TestPeer* remote_peer);
   void StartVideo();
@@ -77,7 +76,6 @@ class PeerConnectionE2EQualityTest
       video_quality_analyzer_injection_helper_;
   std::unique_ptr<SingleProcessEncodedImageIdInjector>
       encoded_image_id_controller_;
-  const std::unique_ptr<rtc::Thread> signaling_thread_;
 
   std::unique_ptr<TestPeer> alice_;
   std::unique_ptr<TestPeer> bob_;

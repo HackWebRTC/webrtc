@@ -105,11 +105,11 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
   auto* video_analyzer = static_cast<ExampleVideoQualityAnalyzer*>(
       analyzers->video_quality_analyzer.get());
 
-  auto fixture = CreatePeerConnectionE2EQualityTestFixture(
-      std::move(alice_components), std::move(alice_params),
-      std::move(bob_components), absl::make_unique<Params>(),
-      std::move(analyzers));
-  fixture->Run(RunParams{TimeDelta::seconds(5)});
+  auto fixture =
+      CreatePeerConnectionE2EQualityTestFixture(std::move(analyzers));
+  fixture->Run(std::move(alice_components), std::move(alice_params),
+               std::move(bob_components), absl::make_unique<Params>(),
+               RunParams{TimeDelta::seconds(5)});
 
   RTC_LOG(INFO) << "Captured: " << video_analyzer->frames_captured();
   RTC_LOG(INFO) << "Sent    : " << video_analyzer->frames_sent();

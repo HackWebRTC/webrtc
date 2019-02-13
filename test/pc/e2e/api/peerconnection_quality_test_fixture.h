@@ -182,7 +182,11 @@ class PeerConnectionE2EQualityTestFixture {
     TimeDelta run_duration;
   };
 
-  virtual void Run(RunParams run_params) = 0;
+  virtual void Run(std::unique_ptr<InjectableComponents> alice_components,
+                   std::unique_ptr<Params> alice_params,
+                   std::unique_ptr<InjectableComponents> bob_components,
+                   std::unique_ptr<Params> bob_params,
+                   RunParams run_params) = 0;
   virtual ~PeerConnectionE2EQualityTestFixture() = default;
 };
 

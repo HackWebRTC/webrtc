@@ -21,12 +21,6 @@ namespace webrtc {
 // During the test Alice will be caller and Bob will answer the call.
 std::unique_ptr<PeerConnectionE2EQualityTestFixture>
 CreatePeerConnectionE2EQualityTestFixture(
-    std::unique_ptr<PeerConnectionE2EQualityTestFixture::InjectableComponents>
-        alice_components,
-    std::unique_ptr<PeerConnectionE2EQualityTestFixture::Params> alice_params,
-    std::unique_ptr<PeerConnectionE2EQualityTestFixture::InjectableComponents>
-        bob_components,
-    std::unique_ptr<PeerConnectionE2EQualityTestFixture::Params> bob_params,
     std::unique_ptr<PeerConnectionE2EQualityTestFixture::Analyzers> analyzers);
 
 }  // namespace webrtc
