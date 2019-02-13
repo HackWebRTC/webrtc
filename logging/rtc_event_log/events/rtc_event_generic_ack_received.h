@@ -50,10 +50,6 @@ class RtcEventGenericAckReceived final : public RtcEvent {
   int64_t acked_packet_number() const { return acked_packet_number_; }
 
   // Timestamp when the |acked_packet_number| was received by the remote side.
-  absl::optional<int64_t> receive_timestamp_ms() const {
-    return receive_acked_packet_time_ms_;
-  }
-
   absl::optional<int64_t> receive_acked_packet_time_ms() const {
     return receive_acked_packet_time_ms_;
   }
