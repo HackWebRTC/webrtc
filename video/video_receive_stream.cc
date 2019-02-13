@@ -130,14 +130,8 @@ class EncodedFrameForMediaTransport : public video_coding::EncodedFrame {
     // buffer, in which case we need to make an owned copy.
     *static_cast<class EncodedImage*>(this) = frame.encoded_image();
 
-    if (buffer()) {
-      // Unowned data. Make a copy we own.
-      set_buffer(nullptr, 0);
-
-      VerifyAndAllocate(frame.encoded_image().size());
-      set_size(frame.encoded_image().size());
-      memcpy(data(), frame.encoded_image().data(), size());
-    }
+    // If we don't already own the buffer, make a copy.
+    Retain();
 
     _payloadType = static_cast<uint8_t>(frame.payload_type());
 
