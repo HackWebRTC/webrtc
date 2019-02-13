@@ -86,8 +86,6 @@ rtc_static_library("libjingle_peerconnection_api") {
     "jsep_ice_candidate.cc",
     "jsep_ice_candidate.h",
     "jsep_session_description.h",
-    "media_constraints_interface.cc",
-    "media_constraints_interface.h",
     "media_stream_interface.cc",
     "media_stream_interface.h",
     "media_stream_proxy.h",
@@ -361,19 +359,6 @@ rtc_source_set("ice_transport_factory") {
     "../p2p:rtc_p2p",
     "../rtc_base:rtc_base",
     "//third_party/abseil-cpp/absl/memory:memory",
-  ]
-}
-
-rtc_source_set("libjingle_peerconnection_test_api") {
-  visibility = [ "*" ]
-  testonly = true
-  sources = [
-    "test/fake_constraints.h",
-  ]
-
-  deps = [
-    ":libjingle_peerconnection_api",
-    "../rtc_base:rtc_base_approved",
   ]
 }
 

@@ -14,13 +14,13 @@
 #include <jni.h>
 #include <memory>
 
-#include "api/media_constraints_interface.h"
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
+#include "sdk/media_constraints.h"
 
 namespace webrtc {
 namespace jni {
 
-std::unique_ptr<MediaConstraintsInterface> JavaToNativeMediaConstraints(
+std::unique_ptr<MediaConstraints> JavaToNativeMediaConstraints(
     JNIEnv* env,
     const JavaRef<jobject>& j_constraints);
 

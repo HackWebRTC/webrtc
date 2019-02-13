@@ -108,18 +108,16 @@ class OwnedPeerConnection {
   OwnedPeerConnection(
       rtc::scoped_refptr<PeerConnectionInterface> peer_connection,
       std::unique_ptr<PeerConnectionObserver> observer,
-      std::unique_ptr<MediaConstraintsInterface> constraints);
+      std::unique_ptr<MediaConstraints> constraints);
   ~OwnedPeerConnection();
 
   PeerConnectionInterface* pc() const { return peer_connection_.get(); }
-  const MediaConstraintsInterface* constraints() const {
-    return constraints_.get();
-  }
+  const MediaConstraints* constraints() const { return constraints_.get(); }
 
  private:
   rtc::scoped_refptr<PeerConnectionInterface> peer_connection_;
   std::unique_ptr<PeerConnectionObserver> observer_;
-  std::unique_ptr<MediaConstraintsInterface> constraints_;
+  std::unique_ptr<MediaConstraints> constraints_;
 };
 
 }  // namespace jni

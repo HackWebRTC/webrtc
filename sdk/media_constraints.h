@@ -8,21 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-// This file contains the interface for MediaConstraints, corresponding to
-// the definition at
-// http://www.w3.org/TR/mediacapture-streams/#mediastreamconstraints and also
-// used in WebRTC: http://dev.w3.org/2011/webrtc/editor/webrtc.html#constraints.
-
 // Implementation of the w3c constraints spec is the responsibility of the
 // browser. Chrome no longer uses the constraints api declared here, and it will
 // be removed from WebRTC.
 // https://bugs.chromium.org/p/webrtc/issues/detail?id=9239
 
-#ifndef API_MEDIA_CONSTRAINTS_INTERFACE_H_
-#define API_MEDIA_CONSTRAINTS_INTERFACE_H_
+#ifndef SDK_MEDIA_CONSTRAINTS_H_
+#define SDK_MEDIA_CONSTRAINTS_H_
 
 #include <stddef.h>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "api/audio_options.h"
@@ -30,13 +26,12 @@
 
 namespace webrtc {
 
-// Interface used for passing arguments about media constraints
-// to the MediaStream and PeerConnection implementation.
+// Class representing constraints, as used by the android and objc apis.
 //
 // Constraints may be either "mandatory", which means that unless satisfied,
 // the method taking the constraints should fail, or "optional", which means
 // they may not be satisfied..
-class MediaConstraintsInterface {
+class MediaConstraints {
  public:
   struct Constraint {
     Constraint() {}
@@ -48,8 +43,16 @@ class MediaConstraintsInterface {
 
   class Constraints : public std::vector<Constraint> {
    public:
+    Constraints() = default;
+    Constraints(std::initializer_list<Constraint> l)
+        : std::vector<Constraint>(l) {}
+
     bool FindFirst(const std::string& key, std::string* value) const;
   };
+
+  MediaConstraints() = default;
+  MediaConstraints(Constraints mandatory, Constraints optional)
+      : mandatory_(std::move(mandatory)), optional_(std::move(optional)) {}
 
   // Constraint keys used by a local audio source.
 
@@ -104,36 +107,29 @@ class MediaConstraintsInterface {
   // (see RTCOfferAnswerOptions::num_simulcast_layers).
   static const char kNumSimulcastLayers[];
 
-  virtual ~MediaConstraintsInterface() = default;
+  ~MediaConstraints() = default;
 
-  virtual const Constraints& GetMandatory() const = 0;
-  virtual const Constraints& GetOptional() const = 0;
+  const Constraints& GetMandatory() const { return mandatory_; }
+  const Constraints& GetOptional() const { return optional_; }
+
+ private:
+  const Constraints mandatory_ = {};
+  const Constraints optional_ = {};
 };
-
-bool FindConstraint(const MediaConstraintsInterface* constraints,
-                    const std::string& key,
-                    bool* value,
-                    size_t* mandatory_constraints);
-
-bool FindConstraint(const MediaConstraintsInterface* constraints,
-                    const std::string& key,
-                    int* value,
-                    size_t* mandatory_constraints);
 
 // Copy all relevant constraints into an RTCConfiguration object.
 void CopyConstraintsIntoRtcConfiguration(
-    const MediaConstraintsInterface* constraints,
+    const MediaConstraints* constraints,
     PeerConnectionInterface::RTCConfiguration* configuration);
 
 // Copy all relevant constraints into an AudioOptions object.
-void CopyConstraintsIntoAudioOptions(
-    const MediaConstraintsInterface* constraints,
-    cricket::AudioOptions* options);
+void CopyConstraintsIntoAudioOptions(const MediaConstraints* constraints,
+                                     cricket::AudioOptions* options);
 
 bool CopyConstraintsIntoOfferAnswerOptions(
-    const MediaConstraintsInterface* constraints,
+    const MediaConstraints* constraints,
     PeerConnectionInterface::RTCOfferAnswerOptions* offer_answer_options);
 
 }  // namespace webrtc
 
-#endif  // API_MEDIA_CONSTRAINTS_INTERFACE_H_
+#endif  // SDK_MEDIA_CONSTRAINTS_H_

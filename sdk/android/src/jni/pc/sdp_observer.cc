@@ -12,10 +12,10 @@
 
 #include <utility>
 
-#include "api/media_constraints_interface.h"
 #include "sdk/android/generated_peerconnection_jni/jni/SdpObserver_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
+#include "sdk/media_constraints.h"
 
 namespace webrtc {
 namespace jni {
@@ -23,7 +23,7 @@ namespace jni {
 CreateSdpObserverJni::CreateSdpObserverJni(
     JNIEnv* env,
     const JavaRef<jobject>& j_observer,
-    std::unique_ptr<MediaConstraintsInterface> constraints)
+    std::unique_ptr<MediaConstraints> constraints)
     : j_observer_global_(env, j_observer),
       constraints_(std::move(constraints)) {}
 
@@ -47,7 +47,7 @@ void CreateSdpObserverJni::OnFailure(webrtc::RTCError error) {
 SetSdpObserverJni::SetSdpObserverJni(
     JNIEnv* env,
     const JavaRef<jobject>& j_observer,
-    std::unique_ptr<MediaConstraintsInterface> constraints)
+    std::unique_ptr<MediaConstraints> constraints)
     : j_observer_global_(env, j_observer),
       constraints_(std::move(constraints)) {}
 

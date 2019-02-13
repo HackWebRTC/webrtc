@@ -14,10 +14,10 @@
 #include <memory>
 #include <string>
 
-#include "api/media_constraints_interface.h"
 #include "api/peer_connection_interface.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/pc/session_description.h"
+#include "sdk/media_constraints.h"
 
 namespace webrtc {
 namespace jni {
@@ -26,34 +26,34 @@ class CreateSdpObserverJni : public CreateSessionDescriptionObserver {
  public:
   CreateSdpObserverJni(JNIEnv* env,
                        const JavaRef<jobject>& j_observer,
-                       std::unique_ptr<MediaConstraintsInterface> constraints);
+                       std::unique_ptr<MediaConstraints> constraints);
   ~CreateSdpObserverJni() override;
 
-  MediaConstraintsInterface* constraints() { return constraints_.get(); }
+  MediaConstraints* constraints() { return constraints_.get(); }
 
   void OnSuccess(SessionDescriptionInterface* desc) override;
   void OnFailure(RTCError error) override;
 
  private:
   const ScopedJavaGlobalRef<jobject> j_observer_global_;
-  std::unique_ptr<MediaConstraintsInterface> constraints_;
+  std::unique_ptr<MediaConstraints> constraints_;
 };
 
 class SetSdpObserverJni : public SetSessionDescriptionObserver {
  public:
   SetSdpObserverJni(JNIEnv* env,
                     const JavaRef<jobject>& j_observer,
-                    std::unique_ptr<MediaConstraintsInterface> constraints);
+                    std::unique_ptr<MediaConstraints> constraints);
   ~SetSdpObserverJni() override;
 
-  MediaConstraintsInterface* constraints() { return constraints_.get(); }
+  MediaConstraints* constraints() { return constraints_.get(); }
 
   void OnSuccess() override;
   void OnFailure(RTCError error) override;
 
  private:
   const ScopedJavaGlobalRef<jobject> j_observer_global_;
-  std::unique_ptr<MediaConstraintsInterface> constraints_;
+  std::unique_ptr<MediaConstraints> constraints_;
 };
 
 }  // namespace jni

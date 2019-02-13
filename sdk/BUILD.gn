@@ -27,6 +27,29 @@ group("sdk") {
   }
 }
 
+rtc_source_set("media_constraints") {
+  sources = [
+    "media_constraints.cc",
+    "media_constraints.h",
+  ]
+  deps = [
+    "../api:audio_options_api",
+    "../api:libjingle_peerconnection_api",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
+rtc_source_set("sdk_tests") {
+  testonly = true
+  sources = [
+    "media_constraints_unittest.cc",
+  ]
+  deps = [
+    ":media_constraints",
+    "../test:test_support",
+  ]
+}
+
 if (is_ios || is_mac) {
   config("common_config_objc") {
     include_dirs = [
@@ -668,7 +691,7 @@ if (is_ios || is_mac) {
       deps = [
         ":base_objc",
         ":helpers_objc",
-        "../api:libjingle_peerconnection_api",
+        ":media_constraints",
       ]
     }
 

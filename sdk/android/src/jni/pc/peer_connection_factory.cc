@@ -370,7 +370,7 @@ static jlong JNI_PeerConnectionFactory_CreateAudioSource(
     JNIEnv* jni,
     jlong native_factory,
     const JavaParamRef<jobject>& j_constraints) {
-  std::unique_ptr<MediaConstraintsInterface> constraints =
+  std::unique_ptr<MediaConstraints> constraints =
       JavaToNativeMediaConstraints(jni, j_constraints);
   cricket::AudioOptions options;
   CopyConstraintsIntoAudioOptions(constraints.get(), &options);
@@ -437,7 +437,7 @@ static jlong JNI_PeerConnectionFactory_CreatePeerConnection(
     }
   }
 
-  std::unique_ptr<MediaConstraintsInterface> constraints;
+  std::unique_ptr<MediaConstraints> constraints;
   if (!j_constraints.is_null()) {
     constraints = JavaToNativeMediaConstraints(jni, j_constraints);
     CopyConstraintsIntoRtcConfiguration(constraints.get(), &rtc_config);
