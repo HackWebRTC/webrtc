@@ -262,10 +262,14 @@ void TransportFeedback::LastChunk::DecodeRunLength(uint16_t chunk,
 }
 
 TransportFeedback::TransportFeedback()
+    : TransportFeedback(/*include_timestamps=*/true) {}
+
+TransportFeedback::TransportFeedback(bool include_timestamps)
     : base_seq_no_(0),
       num_seq_no_(0),
       base_time_ticks_(0),
       feedback_seq_(0),
+      include_timestamps_(include_timestamps),
       last_timestamp_us_(0),
       size_bytes_(kTransportFeedbackHeaderSizeBytes) {}
 
@@ -276,6 +280,7 @@ TransportFeedback::TransportFeedback(TransportFeedback&& other)
       num_seq_no_(other.num_seq_no_),
       base_time_ticks_(other.base_time_ticks_),
       feedback_seq_(other.feedback_seq_),
+      include_timestamps_(other.include_timestamps_),
       last_timestamp_us_(other.last_timestamp_us_),
       packets_(std::move(other.packets_)),
       encoded_chunks_(std::move(other.encoded_chunks_)),
@@ -301,19 +306,25 @@ void TransportFeedback::SetFeedbackSequenceNumber(uint8_t feedback_sequence) {
 
 bool TransportFeedback::AddReceivedPacket(uint16_t sequence_number,
                                           int64_t timestamp_us) {
-  // Convert to ticks and round.
-  int64_t delta_full = (timestamp_us - last_timestamp_us_) % kTimeWrapPeriodUs;
-  if (delta_full > kTimeWrapPeriodUs / 2)
-    delta_full -= kTimeWrapPeriodUs;
-  delta_full +=
-      delta_full < 0 ? -(kDeltaScaleFactor / 2) : kDeltaScaleFactor / 2;
-  delta_full /= kDeltaScaleFactor;
+  // Set delta to zero if timestamps are not included, this will simplify the
+  // encoding process.
+  int16_t delta = 0;
+  if (include_timestamps_) {
+    // Convert to ticks and round.
+    int64_t delta_full =
+        (timestamp_us - last_timestamp_us_) % kTimeWrapPeriodUs;
+    if (delta_full > kTimeWrapPeriodUs / 2)
+      delta_full -= kTimeWrapPeriodUs;
+    delta_full +=
+        delta_full < 0 ? -(kDeltaScaleFactor / 2) : kDeltaScaleFactor / 2;
+    delta_full /= kDeltaScaleFactor;
 
-  int16_t delta = static_cast<int16_t>(delta_full);
-  // If larger than 16bit signed, we can't represent it - need new fb packet.
-  if (delta != delta_full) {
-    RTC_LOG(LS_WARNING) << "Delta value too large ( >= 2^16 ticks )";
-    return false;
+    delta = static_cast<int16_t>(delta_full);
+    // If larger than 16bit signed, we can't represent it - need new fb packet.
+    if (delta != delta_full) {
+      RTC_LOG(LS_WARNING) << "Delta value too large ( >= 2^16 ticks )";
+      return false;
+    }
   }
 
   uint16_t next_seq_no = base_seq_no_ + num_seq_no_;
@@ -332,7 +343,9 @@ bool TransportFeedback::AddReceivedPacket(uint16_t sequence_number,
 
   packets_.emplace_back(sequence_number, delta);
   last_timestamp_us_ += delta * kDeltaScaleFactor;
-  size_bytes_ += delta_size;
+  if (include_timestamps_) {
+    size_bytes_ += delta_size;
+  }
   return true;
 }
 
@@ -400,38 +413,57 @@ bool TransportFeedback::Parse(const CommonHeader& packet) {
   num_seq_no_ = status_count;
 
   uint16_t seq_no = base_seq_no_;
+  size_t recv_delta_size = 0;
   for (size_t delta_size : delta_sizes) {
-    if (index + delta_size > end_index) {
-      RTC_LOG(LS_WARNING) << "Buffer overflow while parsing packet.";
-      Clear();
-      return false;
-    }
-    switch (delta_size) {
-      case 0:
-        break;
-      case 1: {
-        int16_t delta = payload[index];
-        packets_.emplace_back(seq_no, delta);
-        last_timestamp_us_ += delta * kDeltaScaleFactor;
-        index += delta_size;
-        break;
-      }
-      case 2: {
-        int16_t delta = ByteReader<int16_t>::ReadBigEndian(&payload[index]);
-        packets_.emplace_back(seq_no, delta);
-        last_timestamp_us_ += delta * kDeltaScaleFactor;
-        index += delta_size;
-        break;
-      }
-      case 3:
+    recv_delta_size += delta_size;
+  }
+
+  // Determine if timestamps, that is, recv_delta are included in the packet.
+  if (end_index >= index + recv_delta_size) {
+    for (size_t delta_size : delta_sizes) {
+      if (index + delta_size > end_index) {
+        RTC_LOG(LS_WARNING) << "Buffer overflow while parsing packet.";
         Clear();
-        RTC_LOG(LS_WARNING) << "Invalid delta_size for seq_no " << seq_no;
         return false;
-      default:
-        RTC_NOTREACHED();
-        break;
+      }
+      switch (delta_size) {
+        case 0:
+          break;
+        case 1: {
+          int16_t delta = payload[index];
+          packets_.emplace_back(seq_no, delta);
+          last_timestamp_us_ += delta * kDeltaScaleFactor;
+          index += delta_size;
+          break;
+        }
+        case 2: {
+          int16_t delta = ByteReader<int16_t>::ReadBigEndian(&payload[index]);
+          packets_.emplace_back(seq_no, delta);
+          last_timestamp_us_ += delta * kDeltaScaleFactor;
+          index += delta_size;
+          break;
+        }
+        case 3:
+          Clear();
+          RTC_LOG(LS_WARNING) << "Invalid delta_size for seq_no " << seq_no;
+
+          return false;
+        default:
+          RTC_NOTREACHED();
+          break;
+      }
+      ++seq_no;
     }
-    ++seq_no;
+  } else {
+    // The packet does not contain receive deltas.
+    include_timestamps_ = false;
+    for (size_t delta_size : delta_sizes) {
+      // Use delta sizes to detect if packet was received.
+      if (delta_size > 0) {
+        packets_.emplace_back(seq_no, 0);
+      }
+      ++seq_no;
+    }
   }
   size_bytes_ = RtcpPacket::kHeaderLength + index;
   RTC_DCHECK_LE(index, end_index);
@@ -495,7 +527,9 @@ bool TransportFeedback::IsConsistent() const {
       timestamp_us += packet_it->delta_us();
       ++packet_it;
     }
-    packet_size += delta_size;
+    if (include_timestamps_) {
+      packet_size += delta_size;
+    }
     ++seq_no;
   }
   if (packet_it != packets_.end()) {
@@ -566,13 +600,15 @@ bool TransportFeedback::Create(uint8_t* packet,
     *position += 2;
   }
 
-  for (const auto& received_packet : packets_) {
-    int16_t delta = received_packet.delta_ticks();
-    if (delta >= 0 && delta <= 0xFF) {
-      packet[(*position)++] = delta;
-    } else {
-      ByteWriter<int16_t>::WriteBigEndian(&packet[*position], delta);
-      *position += 2;
+  if (include_timestamps_) {
+    for (const auto& received_packet : packets_) {
+      int16_t delta = received_packet.delta_ticks();
+      if (delta >= 0 && delta <= 0xFF) {
+        packet[(*position)++] = delta;
+      } else {
+        ByteWriter<int16_t>::WriteBigEndian(&packet[*position], delta);
+        *position += 2;
+      }
     }
   }
 

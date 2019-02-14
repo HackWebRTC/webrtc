@@ -33,9 +33,11 @@ static const int64_t kDeltaLimit = 0xFF * TransportFeedback::kDeltaScaleFactor;
 
 class FeedbackTester {
  public:
-  FeedbackTester()
+  FeedbackTester() : FeedbackTester(true) {}
+  explicit FeedbackTester(bool include_timestamps)
       : expected_size_(kAnySize),
-        default_delta_(TransportFeedback::kDeltaScaleFactor * 4) {}
+        default_delta_(TransportFeedback::kDeltaScaleFactor * 4),
+        include_timestamps_(include_timestamps) {}
 
   void WithExpectedSize(size_t expected_size) {
     expected_size_ = expected_size;
@@ -46,16 +48,16 @@ class FeedbackTester {
   void WithInput(const uint16_t received_seq[],
                  const int64_t received_ts[],
                  uint16_t length) {
-    std::unique_ptr<int64_t[]> temp_deltas;
+    std::unique_ptr<int64_t[]> temp_timestamps;
     if (received_ts == nullptr) {
-      temp_deltas.reset(new int64_t[length]);
-      GenerateDeltas(received_seq, length, temp_deltas.get());
-      received_ts = temp_deltas.get();
+      temp_timestamps.reset(new int64_t[length]);
+      GenerateReceiveTimestamps(received_seq, length, temp_timestamps.get());
+      received_ts = temp_timestamps.get();
     }
 
     expected_seq_.clear();
     expected_deltas_.clear();
-    feedback_.reset(new TransportFeedback());
+    feedback_.reset(new TransportFeedback(include_timestamps_));
     feedback_->SetBase(received_seq[0], received_ts[0]);
     ASSERT_TRUE(feedback_->IsConsistent());
 
@@ -81,8 +83,9 @@ class FeedbackTester {
     VerifyInternal();
     feedback_ =
         TransportFeedback::ParseFrom(serialized_.data(), serialized_.size());
-    ASSERT_TRUE(feedback_->IsConsistent());
     ASSERT_NE(nullptr, feedback_);
+    ASSERT_TRUE(feedback_->IsConsistent());
+    EXPECT_EQ(include_timestamps_, feedback_->IncludeTimestamps());
     VerifyInternal();
   }
 
@@ -104,12 +107,14 @@ class FeedbackTester {
       actual_deltas_us.push_back(packet.delta_us());
     }
     EXPECT_THAT(actual_seq_nos, ElementsAreArray(expected_seq_));
-    EXPECT_THAT(actual_deltas_us, ElementsAreArray(expected_deltas_));
+    if (include_timestamps_) {
+      EXPECT_THAT(actual_deltas_us, ElementsAreArray(expected_deltas_));
+    }
   }
 
-  void GenerateDeltas(const uint16_t seq[],
-                      const size_t length,
-                      int64_t* deltas) {
+  void GenerateReceiveTimestamps(const uint16_t seq[],
+                                 const size_t length,
+                                 int64_t* timestamps) {
     uint16_t last_seq = seq[0];
     int64_t offset = 0;
 
@@ -118,7 +123,7 @@ class FeedbackTester {
         offset += 0x10000 * default_delta_;
       last_seq = seq[i];
 
-      deltas[i] = offset + (last_seq * default_delta_);
+      timestamps[i] = offset + (last_seq * default_delta_);
     }
   }
 
@@ -128,8 +133,17 @@ class FeedbackTester {
   int64_t default_delta_;
   std::unique_ptr<TransportFeedback> feedback_;
   rtc::Buffer serialized_;
+  bool include_timestamps_;
 };
 
+// The following tests use FeedbackTester that simulates received packets as
+// specified by the parameters |received_seq[]| and |received_ts[]| (optional).
+// The following is verified in these tests:
+// - Expected size of serialized packet.
+// - Expected sequence numbers and receive deltas.
+// - Sequence numbers and receive deltas are persistent after serialization
+//   followed by parsing.
+// - The internal state of a feedback packet is consistent.
 TEST(RtcpPacketTest, TransportFeedbackOneBitVector) {
   const uint16_t kReceived[] = {1, 2, 7, 8, 9, 10, 13};
   const size_t kLength = sizeof(kReceived) / sizeof(uint16_t);
@@ -137,6 +151,17 @@ TEST(RtcpPacketTest, TransportFeedbackOneBitVector) {
       kHeaderSize + kStatusChunkSize + (kLength * kSmallDeltaSize);
 
   FeedbackTester test;
+  test.WithExpectedSize(kExpectedSizeBytes);
+  test.WithInput(kReceived, nullptr, kLength);
+  test.VerifyPacket();
+}
+
+TEST(RtcpPacketTest, TransportFeedbackOneBitVectorNoRecvDelta) {
+  const uint16_t kReceived[] = {1, 2, 7, 8, 9, 10, 13};
+  const size_t kLength = sizeof(kReceived) / sizeof(uint16_t);
+  const size_t kExpectedSizeBytes = kHeaderSize + kStatusChunkSize;
+
+  FeedbackTester test(/*include_timestamps=*/false);
   test.WithExpectedSize(kExpectedSizeBytes);
   test.WithInput(kReceived, nullptr, kLength);
   test.VerifyPacket();

@@ -45,6 +45,10 @@ class TransportFeedback : public Rtpfb {
   static constexpr size_t kMaxReportedPackets = 0xffff;
 
   TransportFeedback();
+  explicit TransportFeedback(
+      bool include_timestamps);  // If |include_timestamps| is set to false, the
+                                 // created packet will not contain the receive
+                                 // delta block.
   TransportFeedback(const TransportFeedback&);
   TransportFeedback(TransportFeedback&&);
 
@@ -64,6 +68,9 @@ class TransportFeedback : public Rtpfb {
 
   // Get the reference time in microseconds, including any precision loss.
   int64_t GetBaseTimeUs() const;
+
+  // Does the feedback packet contain timestamp information?
+  bool IncludeTimestamps() const { return include_timestamps_; }
 
   bool Parse(const CommonHeader& packet);
   static std::unique_ptr<TransportFeedback> ParseFrom(const uint8_t* buffer,
@@ -141,6 +148,7 @@ class TransportFeedback : public Rtpfb {
   uint16_t num_seq_no_;
   int32_t base_time_ticks_;
   uint8_t feedback_seq_;
+  bool include_timestamps_;
 
   int64_t last_timestamp_us_;
   std::vector<ReceivedPacket> packets_;
