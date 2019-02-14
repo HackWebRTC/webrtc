@@ -145,8 +145,8 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   const std::map<std::string, FrameCounters>& GetPerStreamCounters() const;
   // Returns video quality stats per stream label. Valid stream labels can be
   // obtained by calling GetKnownVideoStreams()
-  const std::map<std::string, StreamStats>& GetStats() const;
-  const AnalyzerStats& GetAnalyzerStats() const;
+  std::map<std::string, StreamStats> GetStats() const;
+  AnalyzerStats GetAnalyzerStats() const;
 
  private:
   struct FrameStats {

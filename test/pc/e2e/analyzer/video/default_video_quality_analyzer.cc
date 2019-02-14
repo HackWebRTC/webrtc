@@ -316,13 +316,13 @@ DefaultVideoQualityAnalyzer::GetPerStreamCounters() const {
   return stream_frame_counters_;
 }
 
-const std::map<std::string, StreamStats>&
-DefaultVideoQualityAnalyzer::GetStats() const {
+std::map<std::string, StreamStats> DefaultVideoQualityAnalyzer::GetStats()
+    const {
   rtc::CritScope cri(&comparison_lock_);
   return stream_stats_;
 }
 
-const AnalyzerStats& DefaultVideoQualityAnalyzer::GetAnalyzerStats() const {
+AnalyzerStats DefaultVideoQualityAnalyzer::GetAnalyzerStats() const {
   rtc::CritScope crit(&comparison_lock_);
   return analyzer_stats_;
 }
