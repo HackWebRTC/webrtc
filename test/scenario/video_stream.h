@@ -58,9 +58,8 @@ class SendVideoStream {
   std::unique_ptr<VideoEncoderFactory> encoder_factory_;
   std::vector<test::FakeEncoder*> fake_encoders_ RTC_GUARDED_BY(crit_);
   std::unique_ptr<VideoBitrateAllocatorFactory> bitrate_allocator_factory_;
-  std::unique_ptr<TestVideoCapturer> video_capturer_;
+  std::unique_ptr<FrameGeneratorCapturer> video_capturer_;
   std::unique_ptr<ForwardingCapturedFrameTap> frame_tap_;
-  FrameGeneratorCapturer* frame_generator_ = nullptr;
   int next_local_network_id_ = 0;
   int next_remote_network_id_ = 0;
 };
