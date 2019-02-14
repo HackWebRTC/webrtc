@@ -1033,7 +1033,11 @@ class PeerConnection : public PeerConnectionInternal,
       nullptr;
 
   // The EventLog needs to outlive |call_| (and any other object that uses it).
-  std::unique_ptr<RtcEventLog> event_log_;
+  std::unique_ptr<RtcEventLog> event_log_ RTC_GUARDED_BY(worker_thread());
+
+  // Points to the same thing as `event_log_`. Since it's const, we may read the
+  // pointer (but not touch the object) from any thread.
+  RtcEventLog* const event_log_ptr_ RTC_PT_GUARDED_BY(worker_thread());
 
   SignalingState signaling_state_ = kStable;
   IceConnectionState ice_connection_state_ = kIceConnectionNew;
