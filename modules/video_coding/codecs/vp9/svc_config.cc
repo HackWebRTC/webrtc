@@ -24,7 +24,10 @@ const size_t kMinVp9SvcBitrateKbps = 30;
 
 const size_t kMaxNumLayersForScreenSharing = 3;
 const float kMaxScreenSharingLayerFramerateFps[] = {5.0, 5.0, 30.0};
-const size_t kMaxScreenSharingLayerBitrateKbps[] = {200, 500, 1250};
+const size_t kMinScreenSharingLayerBitrateKbps[] = {30, 150, 500};
+const size_t kTargetScreenSharingLayerBitrateKbps[] = {150, 350, 1000};
+const size_t kMaxScreenSharingLayerBitrateKbps[] = {200, 500, 1000};
+
 }  // namespace
 
 std::vector<SpatialLayer> ConfigureSvcScreenSharing(size_t input_width,
@@ -42,10 +45,12 @@ std::vector<SpatialLayer> ConfigureSvcScreenSharing(size_t input_width,
     spatial_layer.maxFramerate =
         std::min(kMaxScreenSharingLayerFramerateFps[sl_idx], max_framerate_fps);
     spatial_layer.numberOfTemporalLayers = 1;
-    spatial_layer.minBitrate = static_cast<int>(kMinVp9SvcBitrateKbps);
+    spatial_layer.minBitrate =
+        static_cast<int>(kMinScreenSharingLayerBitrateKbps[sl_idx]);
     spatial_layer.maxBitrate =
         static_cast<int>(kMaxScreenSharingLayerBitrateKbps[sl_idx]);
-    spatial_layer.targetBitrate = spatial_layer.maxBitrate;
+    spatial_layer.targetBitrate =
+        static_cast<int>(kTargetScreenSharingLayerBitrateKbps[sl_idx]);
     spatial_layer.active = true;
     spatial_layers.push_back(spatial_layer);
   }

@@ -409,7 +409,8 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   configurations_[0].g_pass = VPX_RC_ONE_PASS;
   // Handle resizing outside of libvpx.
   configurations_[0].rc_resize_allowed = 0;
-  configurations_[0].rc_min_quantizer = 2;
+  configurations_[0].rc_min_quantizer =
+      codec_.mode == VideoCodecMode::kScreensharing ? 12 : 2;
   if (inst->qpMax >= configurations_[0].rc_min_quantizer) {
     qp_max_ = inst->qpMax;
   }
@@ -645,7 +646,7 @@ int LibvpxVp8Encoder::InitAndSetControlSettings() {
     // Allow more screen content to be detected as static.
     libvpx_->codec_control(
         &(encoders_[i]), VP8E_SET_STATIC_THRESHOLD,
-        codec_.mode == VideoCodecMode::kScreensharing ? 300u : 1u);
+        codec_.mode == VideoCodecMode::kScreensharing ? 100u : 1u);
     libvpx_->codec_control(&(encoders_[i]), VP8E_SET_CPUUSED, cpu_speed_[i]);
     libvpx_->codec_control(
         &(encoders_[i]), VP8E_SET_TOKEN_PARTITIONS,

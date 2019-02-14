@@ -227,16 +227,22 @@ bool IsCodecBlacklistedForSimulcast(const std::string& codec_name) {
 
 // The selected thresholds for QVGA and VGA corresponded to a QP around 10.
 // The change in QP declined above the selected bitrates.
-static int GetMaxDefaultVideoBitrateKbps(int width, int height) {
+static int GetMaxDefaultVideoBitrateKbps(int width,
+                                         int height,
+                                         bool is_screenshare) {
+  int max_bitrate;
   if (width * height <= 320 * 240) {
-    return 600;
+    max_bitrate = 600;
   } else if (width * height <= 640 * 480) {
-    return 1700;
+    max_bitrate = 1700;
   } else if (width * height <= 960 * 540) {
-    return 2000;
+    max_bitrate = 2000;
   } else {
-    return 2500;
+    max_bitrate = 2500;
   }
+  if (is_screenshare)
+    max_bitrate = std::max(max_bitrate, 1200);
+  return max_bitrate;
 }
 
 bool GetVp9LayersFromFieldTrialGroup(size_t* num_spatial_layers,
@@ -2783,7 +2789,8 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
   int max_bitrate_bps =
       (encoder_config.max_bitrate_bps > 0)
           ? encoder_config.max_bitrate_bps
-          : GetMaxDefaultVideoBitrateKbps(width, height) * 1000;
+          : GetMaxDefaultVideoBitrateKbps(width, height, is_screenshare_) *
+                1000;
 
   int min_bitrate_bps = GetMinVideoBitrateBps();
   if (encoder_config.simulcast_layers[0].min_bitrate_bps > 0) {

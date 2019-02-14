@@ -159,8 +159,8 @@ TEST(SvcRateAllocatorTest, MinBitrateToGetQualityLayer) {
   EXPECT_EQ(allocation.GetSpatialLayerSum(1), 0UL);
 
   allocation = allocator.GetAllocation(
-      (layers[0].maxBitrate + layers[1].minBitrate) * 1000, 30);
-  EXPECT_EQ(allocation.GetSpatialLayerSum(0) / 1000, layers[0].maxBitrate);
+      (layers[0].targetBitrate + layers[1].minBitrate) * 1000, 30);
+  EXPECT_EQ(allocation.GetSpatialLayerSum(0) / 1000, layers[0].targetBitrate);
   EXPECT_EQ(allocation.GetSpatialLayerSum(1) / 1000, layers[1].minBitrate);
 }
 
