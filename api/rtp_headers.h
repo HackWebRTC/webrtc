@@ -82,6 +82,16 @@ typedef StringRtpHeaderExtension StreamId;
 // Mid represents RtpMid which is a string.
 typedef StringRtpHeaderExtension Mid;
 
+struct FeedbackRequest {
+  // Determines whether the recv delta as specified in
+  // https://tools.ietf.org/html/draft-holmer-rmcat-transport-wide-cc-extensions-01
+  // should be included.
+  bool include_timestamps;
+  // Include feedback of received packets in the range [sequence_number -
+  // sequence_count, sequence_number].
+  int sequence_count;
+};
+
 struct RTPHeaderExtension {
   RTPHeaderExtension();
   RTPHeaderExtension(const RTPHeaderExtension& other);
@@ -93,6 +103,7 @@ struct RTPHeaderExtension {
   uint32_t absoluteSendTime;
   bool hasTransportSequenceNumber;
   uint16_t transportSequenceNumber;
+  absl::optional<FeedbackRequest> feedback_request;
 
   // Audio Level includes both level in dBov and voiced/unvoiced bit. See:
   // https://datatracker.ietf.org/doc/draft-lennox-avt-rtp-audio-level-exthdr/
