@@ -21,7 +21,7 @@
 #include "test/testsupport/file_utils.h"
 
 WEBRTC_DEFINE_bool(scenario_logs, false, "Save logs from scenario framework.");
-WEBRTC_DEFINE_string(out_root,
+WEBRTC_DEFINE_string(scenario_logs_root,
                      "",
                      "Output root path, based on project root if unset.");
 
@@ -32,7 +32,7 @@ int64_t kMicrosPerSec = 1000000;
 std::unique_ptr<FileLogWriterFactory> GetScenarioLogManager(
     std::string file_name) {
   if (FLAG_scenario_logs && !file_name.empty()) {
-    std::string output_root = FLAG_out_root;
+    std::string output_root = FLAG_scenario_logs_root;
     if (output_root.empty())
       output_root = OutputPath() + "output_data/";
 
