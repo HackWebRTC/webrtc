@@ -812,27 +812,29 @@ void EventLogAnalyzer::CreateTotalIncomingBitrateGraph(Plot* plot) {
   auto window_end = packets_in_order.begin();
   size_t bytes_in_window = 0;
 
-  // Calculate a moving average of the bitrate and store in a TimeSeries.
-  TimeSeries bitrate_series("Bitrate", LineStyle::kLine);
-  for (int64_t time = config_.begin_time_;
-       time < config_.end_time_ + config_.step_; time += config_.step_) {
-    while (window_end != packets_in_order.end() && window_end->first < time) {
-      bytes_in_window += window_end->second;
-      ++window_end;
+  if (!packets_in_order.empty()) {
+    // Calculate a moving average of the bitrate and store in a TimeSeries.
+    TimeSeries bitrate_series("Bitrate", LineStyle::kLine);
+    for (int64_t time = config_.begin_time_;
+         time < config_.end_time_ + config_.step_; time += config_.step_) {
+      while (window_end != packets_in_order.end() && window_end->first < time) {
+        bytes_in_window += window_end->second;
+        ++window_end;
+      }
+      while (window_begin != packets_in_order.end() &&
+             window_begin->first < time - config_.window_duration_) {
+        RTC_DCHECK_LE(window_begin->second, bytes_in_window);
+        bytes_in_window -= window_begin->second;
+        ++window_begin;
+      }
+      float window_duration_in_seconds =
+          static_cast<float>(config_.window_duration_) / kNumMicrosecsPerSec;
+      float x = config_.GetCallTimeSec(time);
+      float y = bytes_in_window * 8 / window_duration_in_seconds / 1000;
+      bitrate_series.points.emplace_back(x, y);
     }
-    while (window_begin != packets_in_order.end() &&
-           window_begin->first < time - config_.window_duration_) {
-      RTC_DCHECK_LE(window_begin->second, bytes_in_window);
-      bytes_in_window -= window_begin->second;
-      ++window_begin;
-    }
-    float window_duration_in_seconds =
-        static_cast<float>(config_.window_duration_) / kNumMicrosecsPerSec;
-    float x = config_.GetCallTimeSec(time);
-    float y = bytes_in_window * 8 / window_duration_in_seconds / 1000;
-    bitrate_series.points.emplace_back(x, y);
+    plot->AppendTimeSeries(std::move(bitrate_series));
   }
-  plot->AppendTimeSeries(std::move(bitrate_series));
 
   // Overlay the outgoing REMB over incoming bitrate.
   TimeSeries remb_series("Remb", LineStyle::kStep);
@@ -842,6 +844,17 @@ void EventLogAnalyzer::CreateTotalIncomingBitrateGraph(Plot* plot) {
     remb_series.points.emplace_back(x, y);
   }
   plot->AppendTimeSeriesIfNotEmpty(std::move(remb_series));
+
+  if (!parsed_log_.generic_packets_received().empty()) {
+    TimeSeries time_series("Incoming generic bitrate", LineStyle::kLine);
+    auto GetPacketSizeKilobits = [](const LoggedGenericPacketReceived& packet) {
+      return packet.packet_length * 8.0 / 1000.0;
+    };
+    MovingAverage<LoggedGenericPacketReceived, double>(
+        GetPacketSizeKilobits, parsed_log_.generic_packets_received(), config_,
+        &time_series);
+    plot->AppendTimeSeries(std::move(time_series));
+  }
 
   plot->SetXAxis(config_.CallBeginTimeSec(), config_.CallEndTimeSec(),
                  "Time (s)", kLeftMargin, kRightMargin);
@@ -865,27 +878,29 @@ void EventLogAnalyzer::CreateTotalOutgoingBitrateGraph(Plot* plot,
   auto window_end = packets_in_order.begin();
   size_t bytes_in_window = 0;
 
-  // Calculate a moving average of the bitrate and store in a TimeSeries.
-  TimeSeries bitrate_series("Bitrate", LineStyle::kLine);
-  for (int64_t time = config_.begin_time_;
-       time < config_.end_time_ + config_.step_; time += config_.step_) {
-    while (window_end != packets_in_order.end() && window_end->first < time) {
-      bytes_in_window += window_end->second;
-      ++window_end;
+  if (!packets_in_order.empty()) {
+    // Calculate a moving average of the bitrate and store in a TimeSeries.
+    TimeSeries bitrate_series("Bitrate", LineStyle::kLine);
+    for (int64_t time = config_.begin_time_;
+         time < config_.end_time_ + config_.step_; time += config_.step_) {
+      while (window_end != packets_in_order.end() && window_end->first < time) {
+        bytes_in_window += window_end->second;
+        ++window_end;
+      }
+      while (window_begin != packets_in_order.end() &&
+             window_begin->first < time - config_.window_duration_) {
+        RTC_DCHECK_LE(window_begin->second, bytes_in_window);
+        bytes_in_window -= window_begin->second;
+        ++window_begin;
+      }
+      float window_duration_in_seconds =
+          static_cast<float>(config_.window_duration_) / kNumMicrosecsPerSec;
+      float x = config_.GetCallTimeSec(time);
+      float y = bytes_in_window * 8 / window_duration_in_seconds / 1000;
+      bitrate_series.points.emplace_back(x, y);
     }
-    while (window_begin != packets_in_order.end() &&
-           window_begin->first < time - config_.window_duration_) {
-      RTC_DCHECK_LE(window_begin->second, bytes_in_window);
-      bytes_in_window -= window_begin->second;
-      ++window_begin;
-    }
-    float window_duration_in_seconds =
-        static_cast<float>(config_.window_duration_) / kNumMicrosecsPerSec;
-    float x = config_.GetCallTimeSec(time);
-    float y = bytes_in_window * 8 / window_duration_in_seconds / 1000;
-    bitrate_series.points.emplace_back(x, y);
+    plot->AppendTimeSeries(std::move(bitrate_series));
   }
-  plot->AppendTimeSeries(std::move(bitrate_series));
 
   // Overlay the send-side bandwidth estimate over the outgoing bitrate.
   TimeSeries loss_series("Loss-based estimate", LineStyle::kStep);
@@ -1004,6 +1019,32 @@ void EventLogAnalyzer::CreateTotalOutgoingBitrateGraph(Plot* plot,
     remb_series.points.emplace_back(x, y);
   }
   plot->AppendTimeSeriesIfNotEmpty(std::move(remb_series));
+
+  if (!parsed_log_.generic_packets_sent().empty()) {
+    {
+      TimeSeries time_series("Outgoing generic total bitrate",
+                             LineStyle::kLine);
+      auto GetPacketSizeKilobits = [](const LoggedGenericPacketSent& packet) {
+        return packet.packet_length() * 8.0 / 1000.0;
+      };
+      MovingAverage<LoggedGenericPacketSent, double>(
+          GetPacketSizeKilobits, parsed_log_.generic_packets_sent(), config_,
+          &time_series);
+      plot->AppendTimeSeries(std::move(time_series));
+    }
+
+    {
+      TimeSeries time_series("Outgoing generic payload bitrate",
+                             LineStyle::kLine);
+      auto GetPacketSizeKilobits = [](const LoggedGenericPacketSent& packet) {
+        return packet.payload_length * 8.0 / 1000.0;
+      };
+      MovingAverage<LoggedGenericPacketSent, double>(
+          GetPacketSizeKilobits, parsed_log_.generic_packets_sent(), config_,
+          &time_series);
+      plot->AppendTimeSeries(std::move(time_series));
+    }
+  }
 
   plot->SetXAxis(config_.CallBeginTimeSec(), config_.CallEndTimeSec(),
                  "Time (s)", kLeftMargin, kRightMargin);

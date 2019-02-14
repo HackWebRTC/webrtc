@@ -497,14 +497,15 @@ class ParsedRtcEventLog {
     }
   }
 
-  const std::vector<LoggedGenericPacketReceived>& generic_packets_received() {
+  const std::vector<LoggedGenericPacketReceived>& generic_packets_received()
+      const {
     return generic_packets_received_;
   }
-  const std::vector<LoggedGenericPacketSent>& generic_packets_sent() {
+  const std::vector<LoggedGenericPacketSent>& generic_packets_sent() const {
     return generic_packets_sent_;
   }
 
-  const std::vector<LoggedGenericAckReceived>& generic_acks_received() {
+  const std::vector<LoggedGenericAckReceived>& generic_acks_received() const {
     return generic_acks_received_;
   }
 
