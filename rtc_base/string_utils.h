@@ -93,13 +93,6 @@ inline std::string ToUtf8(const std::wstring& wstr) {
 
 #endif  // WEBRTC_WIN
 
-// Replaces all occurrences of "search" with "replace".
-void replace_substrs(const char* search,
-                     size_t search_len,
-                     const char* replace,
-                     size_t replace_len,
-                     std::string* s);
-
 // Remove leading and trailing whitespaces.
 std::string string_trim(const std::string& s);
 

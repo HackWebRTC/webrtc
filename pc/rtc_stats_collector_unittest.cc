@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/str_replace.h"
 #include "api/rtp_parameters.h"
 #include "api/stats/rtc_stats_report.h"
 #include "api/stats/rtcstats_objects.h"
@@ -134,11 +135,10 @@ std::unique_ptr<CertificateInfo> CreateFakeCertificateAndInfoFromDers(
           new rtc::FakeSSLIdentity(info->pems)));
   // Strip header/footer and newline characters of PEM strings.
   for (size_t i = 0; i < info->pems.size(); ++i) {
-    rtc::replace_substrs("-----BEGIN CERTIFICATE-----", 27, "", 0,
-                         &info->pems[i]);
-    rtc::replace_substrs("-----END CERTIFICATE-----", 25, "", 0,
-                         &info->pems[i]);
-    rtc::replace_substrs("\n", 1, "", 0, &info->pems[i]);
+    absl::StrReplaceAll({{"-----BEGIN CERTIFICATE-----", ""},
+                         {"-----END CERTIFICATE-----", ""},
+                         {"\n", ""}},
+                        &info->pems[i]);
   }
   // Fingerprints for the whole certificate chain, starting with leaf
   // certificate.

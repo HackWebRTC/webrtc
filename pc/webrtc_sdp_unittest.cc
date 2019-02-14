@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/strings/str_replace.h"
 #include "api/array_view.h"
 #include "api/crypto_params.h"
 #include "api/jsep_session_description.h"
@@ -38,7 +39,6 @@
 #include "rtc_base/socket_address.h"
 #include "rtc_base/ssl_fingerprint.h"
 #include "rtc_base/string_encode.h"
-#include "rtc_base/string_utils.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -88,9 +88,7 @@ typedef std::vector<AudioCodec> AudioCodecs;
 typedef std::vector<Candidate> Candidates;
 
 static const uint32_t kDefaultSctpPort = 5000;
-static const char kDefaultSctpPortStr[] = "5000";
 static const uint16_t kUnusualSctpPort = 9556;
-static const char kUnusualSctpPortStr[] = "9556";
 static const char kSessionTime[] = "t=0 0\r\n";
 static const uint32_t kCandidatePriority = 2130706432U;  // pref = 1.0
 static const char kAttributeIceUfragVoice[] = "a=ice-ufrag:ufrag_voice\r\n";
@@ -925,16 +923,13 @@ static bool SdpDeserializeCandidate(const std::string& message,
 static void InjectAfter(const std::string& line,
                         const std::string& newlines,
                         std::string* message) {
-  const std::string tmp = line + newlines;
-  rtc::replace_substrs(line.c_str(), line.length(), tmp.c_str(), tmp.length(),
-                       message);
+  absl::StrReplaceAll({{line, line + newlines}}, message);
 }
 
 static void Replace(const std::string& line,
                     const std::string& newlines,
                     std::string* message) {
-  rtc::replace_substrs(line.c_str(), line.length(), newlines.c_str(),
-                       newlines.length(), message);
+  absl::StrReplaceAll({{line, newlines}}, message);
 }
 
 // Expect fail to parase |bad_sdp| and expect |bad_part| be part of the error
@@ -1584,14 +1579,8 @@ class WebRtcSdpTest : public testing::Test {
   // Disable the ice-ufrag and ice-pwd in given |sdp| message by replacing
   // them with invalid keywords so that the parser will just ignore them.
   bool RemoveCandidateUfragPwd(std::string* sdp) {
-    const char ice_ufrag[] = "a=ice-ufrag";
-    const char ice_ufragx[] = "a=xice-ufrag";
-    const char ice_pwd[] = "a=ice-pwd";
-    const char ice_pwdx[] = "a=xice-pwd";
-    rtc::replace_substrs(ice_ufrag, strlen(ice_ufrag), ice_ufragx,
-                         strlen(ice_ufragx), sdp);
-    rtc::replace_substrs(ice_pwd, strlen(ice_pwd), ice_pwdx, strlen(ice_pwdx),
-                         sdp);
+    absl::StrReplaceAll(
+        {{"a=ice-ufrag", "a=xice-ufrag"}, {"a=ice-pwd", "a=xice-pwd"}}, sdp);
     return true;
   }
 
@@ -2244,12 +2233,9 @@ TEST_F(WebRtcSdpTest, SerializeWithSctpDataChannelAndNewPort) {
   std::string expected_sdp = kSdpString;
   expected_sdp.append(kSdpSctpDataChannelString);
 
-  char default_portstr[16];
-  char new_portstr[16];
-  snprintf(default_portstr, sizeof(default_portstr), "%d", kDefaultSctpPort);
-  snprintf(new_portstr, sizeof(new_portstr), "%d", kNewPort);
-  rtc::replace_substrs(default_portstr, strlen(default_portstr), new_portstr,
-                       strlen(new_portstr), &expected_sdp);
+  absl::StrReplaceAll(
+      {{rtc::ToString(kDefaultSctpPort), rtc::ToString(kNewPort)}},
+      &expected_sdp);
 
   EXPECT_EQ(expected_sdp, message);
 }
@@ -2934,9 +2920,9 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelAndUnusualPort) {
   // Then get the deserialized JsepSessionDescription.
   std::string sdp_with_data = kSdpString;
   sdp_with_data.append(kSdpSctpDataChannelString);
-  rtc::replace_substrs(kDefaultSctpPortStr, strlen(kDefaultSctpPortStr),
-                       kUnusualSctpPortStr, strlen(kUnusualSctpPortStr),
-                       &sdp_with_data);
+  absl::StrReplaceAll(
+      {{rtc::ToString(kDefaultSctpPort), rtc::ToString(kUnusualSctpPort)}},
+      &sdp_with_data);
   JsepSessionDescription jdesc_output(kDummyType);
 
   EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
@@ -2957,9 +2943,9 @@ TEST_F(WebRtcSdpTest,
   // a=sctp-port
   std::string sdp_with_data = kSdpString;
   sdp_with_data.append(kSdpSctpDataChannelStringWithSctpPort);
-  rtc::replace_substrs(kDefaultSctpPortStr, strlen(kDefaultSctpPortStr),
-                       kUnusualSctpPortStr, strlen(kUnusualSctpPortStr),
-                       &sdp_with_data);
+  absl::StrReplaceAll(
+      {{rtc::ToString(kDefaultSctpPort), rtc::ToString(kUnusualSctpPort)}},
+      &sdp_with_data);
   JsepSessionDescription jdesc_output(kDummyType);
 
   EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));

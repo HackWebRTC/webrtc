@@ -30,18 +30,6 @@ size_t strcpyn(char* buffer,
   return srclen;
 }
 
-void replace_substrs(const char* search,
-                     size_t search_len,
-                     const char* replace,
-                     size_t replace_len,
-                     std::string* s) {
-  size_t pos = 0;
-  while ((pos = s->find(search, pos, search_len)) != std::string::npos) {
-    s->replace(pos, search_len, replace, replace_len);
-    pos += replace_len;
-  }
-}
-
 static const char kWhitespace[] = " \n\r\t";
 
 std::string string_trim(const std::string& s) {

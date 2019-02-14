@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/str_replace.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/fake_ssl_identity.h"
 #include "rtc_base/helpers.h"
@@ -20,7 +21,6 @@
 #include "rtc_base/message_digest.h"
 #include "rtc_base/ssl_fingerprint.h"
 #include "rtc_base/ssl_identity.h"
-#include "rtc_base/string_utils.h"
 #include "test/gtest.h"
 
 using rtc::SSLIdentity;
@@ -173,10 +173,10 @@ IdentityAndInfo CreateFakeIdentityAndInfoFromDers(
   info.identity.reset(new rtc::FakeSSLIdentity(info.pems));
   // Strip header/footer and newline characters of PEM strings.
   for (size_t i = 0; i < info.pems.size(); ++i) {
-    rtc::replace_substrs("-----BEGIN CERTIFICATE-----", 27, "", 0,
-                         &info.pems[i]);
-    rtc::replace_substrs("-----END CERTIFICATE-----", 25, "", 0, &info.pems[i]);
-    rtc::replace_substrs("\n", 1, "", 0, &info.pems[i]);
+    absl::StrReplaceAll({{"-----BEGIN CERTIFICATE-----", ""},
+                         {"-----END CERTIFICATE-----", ""},
+                         {"\n", ""}},
+                        &info.pems[i]);
   }
   // Fingerprints for the whole certificate chain, starting with leaf
   // certificate.
