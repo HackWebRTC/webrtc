@@ -897,6 +897,7 @@ void PeerConnection::DestroyAllChannels() {
 bool PeerConnection::Initialize(
     const PeerConnectionInterface::RTCConfiguration& configuration,
     PeerConnectionDependencies dependencies) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   TRACE_EVENT0("webrtc", "PeerConnection::Initialize");
 
   RTCError config_error = ValidateConfiguration(configuration);
@@ -1155,6 +1156,7 @@ rtc::scoped_refptr<StreamCollectionInterface> PeerConnection::remote_streams() {
 }
 
 bool PeerConnection::AddStream(MediaStreamInterface* local_stream) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_CHECK(!IsUnifiedPlan()) << "AddStream is not available with Unified Plan "
                                  "SdpSemantics. Please use AddTrack instead.";
   TRACE_EVENT0("webrtc", "PeerConnection::AddStream");
@@ -1190,6 +1192,7 @@ bool PeerConnection::AddStream(MediaStreamInterface* local_stream) {
 }
 
 void PeerConnection::RemoveStream(MediaStreamInterface* local_stream) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_CHECK(!IsUnifiedPlan()) << "RemoveStream is not available with Unified "
                                  "Plan SdpSemantics. Please use RemoveTrack "
                                  "instead.";
@@ -1220,6 +1223,7 @@ void PeerConnection::RemoveStream(MediaStreamInterface* local_stream) {
 RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> PeerConnection::AddTrack(
     rtc::scoped_refptr<MediaStreamTrackInterface> track,
     const std::vector<std::string>& stream_ids) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   TRACE_EVENT0("webrtc", "PeerConnection::AddTrack");
   if (!track) {
     LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, "Track is null.");
@@ -1354,6 +1358,7 @@ bool PeerConnection::RemoveTrack(RtpSenderInterface* sender) {
 
 RTCError PeerConnection::RemoveTrackNew(
     rtc::scoped_refptr<RtpSenderInterface> sender) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   if (!sender) {
     LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER, "Sender is null.");
   }
@@ -1413,6 +1418,7 @@ RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
 PeerConnection::AddTransceiver(
     rtc::scoped_refptr<MediaStreamTrackInterface> track,
     const RtpTransceiverInit& init) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_CHECK(IsUnifiedPlan())
       << "AddTransceiver is only available with Unified Plan SdpSemantics";
   if (!track) {
@@ -1438,6 +1444,7 @@ PeerConnection::AddTransceiver(cricket::MediaType media_type) {
 RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>>
 PeerConnection::AddTransceiver(cricket::MediaType media_type,
                                const RtpTransceiverInit& init) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_CHECK(IsUnifiedPlan())
       << "AddTransceiver is only available with Unified Plan SdpSemantics";
   if (!(media_type == cricket::MEDIA_TYPE_AUDIO ||
@@ -1939,6 +1946,7 @@ void PeerConnection::RemoveRecvDirectionFromReceivingTransceiversOfType(
 
 void PeerConnection::AddUpToOneReceivingTransceiverOfType(
     cricket::MediaType media_type) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   if (GetReceivingTransceiversOfType(media_type).empty()) {
     RTC_LOG(LS_INFO)
         << "Adding one recvonly " << cricket::MediaTypeToString(media_type)
@@ -3375,6 +3383,7 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
 
 bool PeerConnection::AddIceCandidate(
     const IceCandidateInterface* ice_candidate) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   TRACE_EVENT0("webrtc", "PeerConnection::AddIceCandidate");
   if (IsClosed()) {
     RTC_LOG(LS_ERROR) << "AddIceCandidate: PeerConnection is closed.";
@@ -3651,6 +3660,7 @@ const SessionDescriptionInterface* PeerConnection::pending_remote_description()
 }
 
 void PeerConnection::Close() {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   TRACE_EVENT0("webrtc", "PeerConnection::Close");
   // Update stats here so that we have the most recent stats for tracks and
   // streams before the channels are closed.
@@ -3697,6 +3707,7 @@ void PeerConnection::Close() {
 }
 
 void PeerConnection::OnMessage(rtc::Message* msg) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   switch (msg->message_id) {
     case MSG_SET_SESSIONDESCRIPTION_SUCCESS: {
       SetSessionDescriptionMsg* param =
@@ -3900,7 +3911,6 @@ void PeerConnection::RemoveVideoTrack(VideoTrackInterface* track,
 }
 
 void PeerConnection::SetIceConnectionState(IceConnectionState new_state) {
-  RTC_DCHECK(signaling_thread()->IsCurrent());
   if (ice_connection_state_ == new_state) {
     return;
   }
@@ -3922,7 +3932,6 @@ void PeerConnection::SetIceConnectionState(IceConnectionState new_state) {
 
 void PeerConnection::SetStandardizedIceConnectionState(
     PeerConnectionInterface::IceConnectionState new_state) {
-  RTC_DCHECK(signaling_thread()->IsCurrent());
   if (standardized_ice_connection_state_ == new_state)
     return;
   if (IsClosed())
@@ -3933,7 +3942,6 @@ void PeerConnection::SetStandardizedIceConnectionState(
 
 void PeerConnection::SetConnectionState(
     PeerConnectionInterface::PeerConnectionState new_state) {
-  RTC_DCHECK(signaling_thread()->IsCurrent());
   if (connection_state_ == new_state)
     return;
   if (IsClosed())
@@ -3944,7 +3952,6 @@ void PeerConnection::SetConnectionState(
 
 void PeerConnection::OnIceGatheringChange(
     PeerConnectionInterface::IceGatheringState new_state) {
-  RTC_DCHECK(signaling_thread()->IsCurrent());
   if (IsClosed()) {
     return;
   }
@@ -3954,7 +3961,6 @@ void PeerConnection::OnIceGatheringChange(
 
 void PeerConnection::OnIceCandidate(
     std::unique_ptr<IceCandidateInterface> candidate) {
-  RTC_DCHECK(signaling_thread()->IsCurrent());
   if (IsClosed()) {
     return;
   }
@@ -3968,7 +3974,6 @@ void PeerConnection::OnIceCandidate(
 
 void PeerConnection::OnIceCandidatesRemoved(
     const std::vector<cricket::Candidate>& candidates) {
-  RTC_DCHECK(signaling_thread()->IsCurrent());
   if (IsClosed()) {
     return;
   }
@@ -3977,7 +3982,6 @@ void PeerConnection::OnIceCandidatesRemoved(
 
 void PeerConnection::ChangeSignalingState(
     PeerConnectionInterface::SignalingState signaling_state) {
-  RTC_DCHECK(signaling_thread()->IsCurrent());
   if (signaling_state_ == signaling_state) {
     return;
   }
@@ -5876,7 +5880,6 @@ void PeerConnection::OnTransportControllerConnectionState(
 void PeerConnection::OnTransportControllerCandidatesGathered(
     const std::string& transport_name,
     const cricket::Candidates& candidates) {
-  RTC_DCHECK(signaling_thread()->IsCurrent());
   int sdp_mline_index;
   if (!GetLocalCandidateMediaIndex(transport_name, &sdp_mline_index)) {
     RTC_LOG(LS_ERROR)
@@ -5899,7 +5902,6 @@ void PeerConnection::OnTransportControllerCandidatesGathered(
 
 void PeerConnection::OnTransportControllerCandidatesRemoved(
     const std::vector<cricket::Candidate>& candidates) {
-  RTC_DCHECK(signaling_thread()->IsCurrent());
   // Sanity check.
   for (const cricket::Candidate& candidate : candidates) {
     if (candidate.transport_name().empty()) {
