@@ -569,7 +569,7 @@ void VideoCodecTestFixtureImpl::CreateEncoderAndDecoder() {
   } else {
     params = {};
   }
-  SdpVideoFormat format(config_.codec_name);
+  SdpVideoFormat format(config_.codec_name, params);
 
   encoder_ = encoder_factory_->CreateVideoEncoder(format);
   EXPECT_TRUE(encoder_) << "Encoder not successfully created.";
