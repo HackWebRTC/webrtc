@@ -717,9 +717,8 @@ void EventLogAnalyzer::CreateIncomingPacketLossGraph(Plot* plot) {
 
   plot->SetXAxis(config_.CallBeginTimeSec(), config_.CallEndTimeSec(),
                  "Time (s)", kLeftMargin, kRightMargin);
-  plot->SetSuggestedYAxis(0, 1, "Estimated loss rate (%)", kBottomMargin,
-                          kTopMargin);
-  plot->SetTitle("Estimated incoming loss rate");
+  plot->SetSuggestedYAxis(0, 1, "Loss rate (in %)", kBottomMargin, kTopMargin);
+  plot->SetTitle("Incoming packet loss (derived from incoming packets)");
 }
 
 void EventLogAnalyzer::CreateIncomingDelayGraph(Plot* plot) {
@@ -795,9 +794,8 @@ void EventLogAnalyzer::CreateFractionLossGraph(Plot* plot) {
   plot->AppendTimeSeries(std::move(time_series));
   plot->SetXAxis(config_.CallBeginTimeSec(), config_.CallEndTimeSec(),
                  "Time (s)", kLeftMargin, kRightMargin);
-  plot->SetSuggestedYAxis(0, 10, "Percent lost packets", kBottomMargin,
-                          kTopMargin);
-  plot->SetTitle("Reported packet loss");
+  plot->SetSuggestedYAxis(0, 10, "Loss rate (in %)", kBottomMargin, kTopMargin);
+  plot->SetTitle("Outgoing packet loss (as reported by BWE)");
 }
 
 // Plot the total bandwidth used by all RTP streams.
