@@ -53,6 +53,7 @@ class TestPeer final : public PeerConnectionWrapper {
   static std::unique_ptr<TestPeer> CreateTestPeer(
       std::unique_ptr<InjectableComponents> components,
       std::unique_ptr<Params> params,
+      std::unique_ptr<MockPeerConnectionObserver> observer,
       VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
       rtc::Thread* signaling_thread,
       absl::optional<std::string> audio_output_file_name);

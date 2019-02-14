@@ -245,6 +245,7 @@ PeerConnectionDependencies CreatePCDependencies(
 std::unique_ptr<TestPeer> TestPeer::CreateTestPeer(
     std::unique_ptr<InjectableComponents> components,
     std::unique_ptr<Params> params,
+    std::unique_ptr<MockPeerConnectionObserver> observer,
     VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
     rtc::Thread* signaling_thread,
     absl::optional<std::string> audio_output_file_name) {
@@ -252,9 +253,6 @@ std::unique_ptr<TestPeer> TestPeer::CreateTestPeer(
   RTC_DCHECK(params);
   SetMandatoryEntities(components.get());
   params->rtc_configuration.sdp_semantics = SdpSemantics::kUnifiedPlan;
-
-  std::unique_ptr<MockPeerConnectionObserver> observer =
-      absl::make_unique<MockPeerConnectionObserver>();
 
   // Create peer connection factory.
   PeerConnectionFactoryDependencies pcf_deps = CreatePCFDependencies(
