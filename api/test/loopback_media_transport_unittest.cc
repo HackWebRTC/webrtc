@@ -103,9 +103,10 @@ TEST(LoopbackMediaTransport, VideoDeliveredToSink) {
   thread->Start();
   MediaTransportPair transport_pair(thread.get());
   testing::StrictMock<MockMediaTransportVideoSinkInterface> sink;
-  uint8_t encoded_data[] = {1, 2, 3};
+  constexpr uint8_t encoded_data[] = {1, 2, 3};
   EncodedImage encoded_image;
-  encoded_image.set_buffer(encoded_data, sizeof(encoded_data));
+  encoded_image.Allocate(sizeof(encoded_data));
+  memcpy(encoded_image.data(), encoded_data, sizeof(encoded_data));
   encoded_image.set_size(sizeof(encoded_data));
 
   EXPECT_CALL(sink, OnData(1, testing::Property(
