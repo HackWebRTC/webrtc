@@ -429,7 +429,8 @@ class PeerConnection : public PeerConnectionInternal,
       cricket::ContentSource source,
       const SessionDescriptionInterface& new_session,
       const SessionDescriptionInterface* old_local_description,
-      const SessionDescriptionInterface* old_remote_description);
+      const SessionDescriptionInterface* old_remote_description)
+      RTC_RUN_ON(signaling_thread());
 
   // Either creates or destroys the transceiver's BaseChannel according to the
   // given media section.
@@ -443,7 +444,8 @@ class PeerConnection : public PeerConnectionInternal,
   // media section.
   RTCError UpdateDataChannel(cricket::ContentSource source,
                              const cricket::ContentInfo& content,
-                             const cricket::ContentGroup* bundle_group);
+                             const cricket::ContentGroup* bundle_group)
+      RTC_RUN_ON(signaling_thread());
 
   // Associate the given transceiver according to the JSEP rules.
   RTCErrorOr<
@@ -629,18 +631,20 @@ class PeerConnection : public PeerConnectionInternal,
                             cricket::MediaType media_type);
 
   void UpdateLocalRtpDataChannels(const cricket::StreamParamsVec& streams);
-  void UpdateRemoteRtpDataChannels(const cricket::StreamParamsVec& streams);
+  void UpdateRemoteRtpDataChannels(const cricket::StreamParamsVec& streams)
+      RTC_RUN_ON(signaling_thread());
   void UpdateClosingRtpDataChannels(
       const std::vector<std::string>& active_channels,
       bool is_local_update);
   void CreateRemoteRtpDataChannel(const std::string& label,
-                                  uint32_t remote_ssrc);
+                                  uint32_t remote_ssrc)
+      RTC_RUN_ON(signaling_thread());
 
   // Creates channel and adds it to the collection of DataChannels that will
   // be offered in a SessionDescription.
   rtc::scoped_refptr<DataChannel> InternalCreateDataChannel(
       const std::string& label,
-      const InternalDataChannelInit* config);
+      const InternalDataChannelInit* config) RTC_RUN_ON(signaling_thread());
 
   // Checks if any data channel has been added.
   bool HasDataChannels() const;
@@ -651,7 +655,9 @@ class PeerConnection : public PeerConnectionInternal,
   void OnDataChannelDestroyed();
   // Called when a valid data channel OPEN message is received.
   void OnDataChannelOpenMessage(const std::string& label,
-                                const InternalDataChannelInit& config);
+                                const InternalDataChannelInit& config)
+      RTC_RUN_ON(signaling_thread());
+
   // Parses and handles open messages.  Returns true if the message is an open
   // message, false otherwise.
   bool HandleOpenMessage_s(const cricket::ReceiveDataParams& params,
@@ -992,7 +998,8 @@ class PeerConnection : public PeerConnectionInternal,
     return media_transport;
   }
 
-  sigslot::signal1<DataChannel*> SignalDataChannelCreated_;
+  sigslot::signal1<DataChannel*> SignalDataChannelCreated_
+      RTC_GUARDED_BY(signaling_thread());
 
   // Storing the factory as a scoped reference pointer ensures that the memory
   // in the PeerConnectionFactoryImpl remains available as long as the

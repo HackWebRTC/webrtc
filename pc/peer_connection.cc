@@ -1827,6 +1827,7 @@ PeerConnection::ice_gathering_state() {
 rtc::scoped_refptr<DataChannelInterface> PeerConnection::CreateDataChannel(
     const std::string& label,
     const DataChannelInit* config) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   TRACE_EVENT0("webrtc", "PeerConnection::CreateDataChannel");
 
   bool first_datachannel = !HasDataChannels();
