@@ -81,6 +81,7 @@ class EventLogAnalyzer {
                                        bool show_alr_state = false);
 
   void CreateStreamBitrateGraph(PacketDirection direction, Plot* plot);
+  void CreateBitrateAllocationGraph(PacketDirection direction, Plot* plot);
 
   void CreateSendSideBweSimulationGraph(Plot* plot);
   void CreateReceiveSideBweSimulationGraph(Plot* plot);
@@ -132,6 +133,25 @@ class EventLogAnalyzer {
   void PrintNotifications(FILE* file);
 
  private:
+  struct LayerDescription {
+    LayerDescription(uint32_t ssrc,
+                     uint8_t spatial_layer,
+                     uint8_t temporal_layer)
+        : ssrc(ssrc),
+          spatial_layer(spatial_layer),
+          temporal_layer(temporal_layer) {}
+    bool operator<(const LayerDescription& other) const {
+      if (ssrc != other.ssrc)
+        return ssrc < other.ssrc;
+      if (spatial_layer != other.spatial_layer)
+        return spatial_layer < other.spatial_layer;
+      return temporal_layer < other.temporal_layer;
+    }
+    uint32_t ssrc;
+    uint8_t spatial_layer;
+    uint8_t temporal_layer;
+  };
+
   bool IsRtxSsrc(PacketDirection direction, uint32_t ssrc) const {
     if (direction == kIncomingPacket) {
       return parsed_log_.incoming_rtx_ssrcs().find(ssrc) !=
@@ -197,6 +217,14 @@ class EventLogAnalyzer {
     else
       name << "(Out) ";
     name << "SSRC " << ssrc;
+    return name.str();
+  }
+
+  std::string GetLayerName(LayerDescription layer) const {
+    char buffer[100];
+    rtc::SimpleStringBuilder name(buffer);
+    name << "SSRC " << layer.ssrc << " sl " << layer.spatial_layer << ", tl "
+         << layer.temporal_layer;
     return name.str();
   }
 

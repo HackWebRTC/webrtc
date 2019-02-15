@@ -1115,6 +1115,46 @@ void EventLogAnalyzer::CreateStreamBitrateGraph(PacketDirection direction,
   plot->SetTitle(GetDirectionAsString(direction) + " bitrate per stream");
 }
 
+// Plot the bitrate allocation for each temporal and spatial layer.
+// Computed from RTCP XR target bitrate block, so the graph is only populated if
+// those are sent.
+void EventLogAnalyzer::CreateBitrateAllocationGraph(PacketDirection direction,
+                                                    Plot* plot) {
+  std::map<LayerDescription, TimeSeries> time_series;
+  const auto& xr_list = parsed_log_.extended_reports(direction);
+  for (const auto& rtcp : xr_list) {
+    const absl::optional<rtcp::TargetBitrate>& target_bitrate =
+        rtcp.xr.target_bitrate();
+    if (!target_bitrate.has_value())
+      continue;
+    for (const auto& bitrate_item : target_bitrate->GetTargetBitrates()) {
+      LayerDescription layer(rtcp.xr.sender_ssrc(), bitrate_item.spatial_layer,
+                             bitrate_item.temporal_layer);
+      auto time_series_it = time_series.find(layer);
+      if (time_series_it == time_series.end()) {
+        std::string layer_name = GetLayerName(layer);
+        bool inserted;
+        std::tie(time_series_it, inserted) = time_series.insert(
+            std::make_pair(layer, TimeSeries(layer_name, LineStyle::kStep)));
+        RTC_DCHECK(inserted);
+      }
+      float x = config_.GetCallTimeSec(rtcp.log_time_us());
+      float y = bitrate_item.target_bitrate_kbps;
+      time_series_it->second.points.emplace_back(x, y);
+    }
+  }
+  for (auto& layer : time_series) {
+    plot->AppendTimeSeries(std::move(layer.second));
+  }
+  plot->SetXAxis(config_.CallBeginTimeSec(), config_.CallEndTimeSec(),
+                 "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "Bitrate (kbps)", kBottomMargin, kTopMargin);
+  if (direction == kIncomingPacket)
+    plot->SetTitle("Target bitrate per incoming layer");
+  else
+    plot->SetTitle("Target bitrate per outgoing layer");
+}
+
 void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
   using RtpPacketType = LoggedRtpPacketOutgoing;
   using TransportFeedbackType = LoggedRtcpPacketTransportFeedback;
