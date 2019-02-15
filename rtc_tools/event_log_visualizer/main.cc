@@ -555,4 +555,5 @@ void SetAllPlotFlags(bool setting) {
   FLAG_plot_neteq_stats = setting;
   FLAG_plot_ice_candidate_pair_config = setting;
   FLAG_plot_ice_connectivity_check = setting;
+  FLAG_plot_pacer_delay = setting;
 }

@@ -667,7 +667,8 @@ void EventLogAnalyzer::CreateAudioLevelGraph(PacketDirection direction,
   plot->SetTitle(GetDirectionAsString(direction) + " audio level");
 }
 
-// For each SSRC, plot the time between the consecutive playouts.
+// For each SSRC, plot the sequence number difference between consecutive
+// incoming packets.
 void EventLogAnalyzer::CreateSequenceNumberGraph(Plot* plot) {
   for (const auto& stream : parsed_log_.incoming_rtp_packets_by_ssrc()) {
     // Filter on SSRC.
@@ -697,7 +698,7 @@ void EventLogAnalyzer::CreateSequenceNumberGraph(Plot* plot) {
                  "Time (s)", kLeftMargin, kRightMargin);
   plot->SetSuggestedYAxis(0, 1, "Difference since last packet", kBottomMargin,
                           kTopMargin);
-  plot->SetTitle("Sequence number");
+  plot->SetTitle("Incoming sequence number delta");
 }
 
 void EventLogAnalyzer::CreateIncomingPacketLossGraph(Plot* plot) {
