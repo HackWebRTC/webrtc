@@ -1039,7 +1039,9 @@ JsepTransportController::MaybeCreateMediaTransport(
   settings.is_caller = local;
   settings.pre_shared_key = std::string(
       reinterpret_cast<const char*>(key.value().data()), key.value().size());
-  settings.event_log = config_.event_log;
+  if (config_.use_media_transport_for_media) {
+    settings.event_log = config_.event_log;
+  }
   auto media_transport_result =
       config_.media_transport_factory->CreateMediaTransport(
           ice_transport, network_thread_, settings);
