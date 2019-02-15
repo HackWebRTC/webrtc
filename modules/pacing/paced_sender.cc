@@ -82,11 +82,6 @@ PacedSender::PacedSender(Clock* clock,
 
 PacedSender::~PacedSender() {}
 
-void PacedSender::CreateProbeCluster(int bitrate_bps) {
-  CreateProbeCluster(bitrate_bps, next_probe_cluster_id_);
-  next_probe_cluster_id_++;
-}
-
 void PacedSender::CreateProbeCluster(int bitrate_bps, int cluster_id) {
   rtc::CritScope cs(&critsect_);
   prober_.CreateProbeCluster(bitrate_bps, TimeMilliseconds(), cluster_id);

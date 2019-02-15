@@ -75,7 +75,6 @@ class PacedSender : public Pacer {
 
   ~PacedSender() override;
 
-  RTC_DEPRECATED virtual void CreateProbeCluster(int bitrate_bps);
   virtual void CreateProbeCluster(int bitrate_bps, int cluster_id);
 
   // Temporarily pause all sending.
@@ -207,9 +206,6 @@ class PacedSender : public Pacer {
 
   RoundRobinPacketQueue packets_ RTC_GUARDED_BY(critsect_);
   uint64_t packet_counter_ RTC_GUARDED_BY(critsect_);
-
-  // TODO(psla): Used by the RTC_DEPRECATED method, to be removed.
-  int next_probe_cluster_id_ = 1;
 
   int64_t congestion_window_bytes_ RTC_GUARDED_BY(critsect_) =
       kNoCongestionWindow;
