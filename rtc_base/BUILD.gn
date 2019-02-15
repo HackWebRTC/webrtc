@@ -1063,6 +1063,17 @@ rtc_static_library("rtc_base") {
   }
 }
 
+rtc_source_set("rtc_post_message_with_functor") {
+  sources = [
+    "post_message_with_functor.h",
+  ]
+  deps = [
+    ":checks",
+    ":rtc_base",
+    ":rtc_event",
+  ]
+}
+
 rtc_source_set("gtest_prod") {
   visibility = [ "*" ]
   sources = [
@@ -1394,6 +1405,21 @@ if (rtc_include_tests) {
       ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
       ":rtc_json",
+      "../test:test_support",
+    ]
+  }
+
+  rtc_source_set("rtc_post_message_with_functor_unittests") {
+    testonly = true
+
+    sources = [
+      "post_message_with_functor_unittest.cc",
+    ]
+    deps = [
+      ":checks",
+      ":gunit_helpers",
+      ":rtc_base",
+      ":rtc_post_message_with_functor",
       "../test:test_support",
     ]
   }
