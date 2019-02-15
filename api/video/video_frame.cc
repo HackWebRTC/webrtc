@@ -10,54 +10,10 @@
 
 #include "api/video/video_frame.h"
 
-#include <algorithm>
-
 #include "rtc_base/checks.h"
 #include "rtc_base/time_utils.h"
 
 namespace webrtc {
-
-void VideoFrame::UpdateRect::Union(const UpdateRect& other) {
-  if (other.IsEmpty())
-    return;
-  if (IsEmpty()) {
-    *this = other;
-    return;
-  }
-  int right = std::max(offset_x + width, other.offset_x + other.width);
-  int bottom = std::max(offset_y + height, other.offset_y + other.height);
-  offset_x = std::min(offset_x, other.offset_x);
-  offset_y = std::min(offset_y, other.offset_y);
-  width = right - offset_x;
-  height = bottom - offset_y;
-  RTC_DCHECK_GT(width, 0);
-  RTC_DCHECK_GT(height, 0);
-}
-
-void VideoFrame::UpdateRect::Intersect(const UpdateRect& other) {
-  if (other.IsEmpty() || IsEmpty()) {
-    MakeEmptyUpdate();
-    return;
-  }
-
-  int right = std::min(offset_x + width, other.offset_x + other.width);
-  int bottom = std::min(offset_y + height, other.offset_y + other.height);
-  offset_x = std::max(offset_x, other.offset_x);
-  offset_y = std::max(offset_y, other.offset_y);
-  width = right - offset_x;
-  height = bottom - offset_y;
-  if (width <= 0 || height <= 0) {
-    MakeEmptyUpdate();
-  }
-}
-
-void VideoFrame::UpdateRect::MakeEmptyUpdate() {
-  width = height = offset_x = offset_y = 0;
-}
-
-bool VideoFrame::UpdateRect::IsEmpty() const {
-  return width == 0 && height == 0;
-}
 
 VideoFrame::Builder::Builder() = default;
 

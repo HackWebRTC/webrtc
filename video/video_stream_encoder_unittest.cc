@@ -373,22 +373,6 @@ class VideoStreamEncoderTest : public ::testing::Test {
     return frame;
   }
 
-  VideoFrame CreateFrameWithUpdatedPixel(int64_t ntp_time_ms,
-                                         rtc::Event* destruction_event,
-                                         int offset_x) const {
-    VideoFrame frame =
-        VideoFrame::Builder()
-            .set_video_frame_buffer(new rtc::RefCountedObject<TestBuffer>(
-                destruction_event, codec_width_, codec_height_))
-            .set_timestamp_rtp(99)
-            .set_timestamp_ms(99)
-            .set_rotation(kVideoRotation_0)
-            .set_update_rect({offset_x, 0, 1, 1})
-            .build();
-    frame.set_ntp_time_ms(ntp_time_ms);
-    return frame;
-  }
-
   VideoFrame CreateFrame(int64_t ntp_time_ms, int width, int height) const {
     VideoFrame frame =
         VideoFrame::Builder()
@@ -589,11 +573,6 @@ class VideoStreamEncoderTest : public ::testing::Test {
       return last_framerate_;
     }
 
-    VideoFrame::UpdateRect GetLastUpdateRect() {
-      rtc::CritScope lock(&local_crit_sect_);
-      return last_update_rect_;
-    }
-
    private:
     int32_t Encode(const VideoFrame& input_image,
                    const CodecSpecificInfo* codec_specific_info,
@@ -611,7 +590,6 @@ class VideoStreamEncoderTest : public ::testing::Test {
         last_input_height_ = input_image.height();
         block_encode = block_next_encode_;
         block_next_encode_ = false;
-        last_update_rect_ = input_image.update_rect();
       }
       int32_t result =
           FakeEncoder::Encode(input_image, codec_specific_info, frame_types);
@@ -677,8 +655,6 @@ class VideoStreamEncoderTest : public ::testing::Test {
     bool force_init_encode_failed_ RTC_GUARDED_BY(local_crit_sect_) = false;
     double rate_factor_ RTC_GUARDED_BY(local_crit_sect_) = 1.0;
     uint32_t last_framerate_ RTC_GUARDED_BY(local_crit_sect_) = 0;
-    VideoFrame::UpdateRect last_update_rect_
-        RTC_GUARDED_BY(local_crit_sect_) = {0, 0, 0, 0};
   };
 
   class TestSink : public VideoStreamEncoder::EncoderSink {
@@ -3381,50 +3357,6 @@ TEST_F(VideoStreamEncoderTest, ConfiguresCorrectFrameRate) {
   }
 
   EXPECT_NEAR(kActualInputFps, fake_encoder_.GetLastFramerate(), 1);
-
-  video_stream_encoder_->Stop();
-}
-
-TEST_F(VideoStreamEncoderTest, AccumulatesUpdateRectOnDroppedFrames) {
-  VideoFrame::UpdateRect rect;
-  video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
-
-  fake_encoder_.BlockNextEncode();
-  video_source_.IncomingCapturedFrame(
-      CreateFrameWithUpdatedPixel(1, nullptr, 0));
-  WaitForEncodedFrame(1);
-  // On the very first frame full update should be forced.
-  rect = fake_encoder_.GetLastUpdateRect();
-  EXPECT_EQ(rect.offset_x, 0);
-  EXPECT_EQ(rect.offset_y, 0);
-  EXPECT_EQ(rect.height, codec_height_);
-  EXPECT_EQ(rect.width, codec_width_);
-  // Here, the encoder thread will be blocked in the TestEncoder waiting for a
-  // call to ContinueEncode.
-  video_source_.IncomingCapturedFrame(
-      CreateFrameWithUpdatedPixel(2, nullptr, 1));
-  ExpectDroppedFrame();
-  video_source_.IncomingCapturedFrame(
-      CreateFrameWithUpdatedPixel(3, nullptr, 10));
-  ExpectDroppedFrame();
-  fake_encoder_.ContinueEncode();
-  WaitForEncodedFrame(3);
-  // Updates to pixels 1 and 10 should be accumulated to one 10x1 rect.
-  rect = fake_encoder_.GetLastUpdateRect();
-  EXPECT_EQ(rect.offset_x, 1);
-  EXPECT_EQ(rect.offset_y, 0);
-  EXPECT_EQ(rect.width, 10);
-  EXPECT_EQ(rect.height, 1);
-
-  video_source_.IncomingCapturedFrame(
-      CreateFrameWithUpdatedPixel(4, nullptr, 0));
-  WaitForEncodedFrame(4);
-  // Previous frame was encoded, so no accumulation should happen.
-  rect = fake_encoder_.GetLastUpdateRect();
-  EXPECT_EQ(rect.offset_x, 0);
-  EXPECT_EQ(rect.offset_y, 0);
-  EXPECT_EQ(rect.width, 1);
-  EXPECT_EQ(rect.height, 1);
 
   video_stream_encoder_->Stop();
 }

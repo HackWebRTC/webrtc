@@ -31,17 +31,6 @@ class RTC_EXPORT VideoFrame {
     int offset_y;
     int width;
     int height;
-
-    // Makes this UpdateRect a bounding box of this and other rect.
-    void Union(const UpdateRect& other);
-
-    // Makes this UpdateRect an intersection of this and other rect.
-    void Intersect(const UpdateRect& other);
-
-    // Sets everything to 0, making this UpdateRect a zero-size (empty) update.
-    void MakeEmptyUpdate();
-
-    bool IsEmpty() const;
   };
 
   // Preferred way of building VideoFrame objects.
