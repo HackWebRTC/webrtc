@@ -42,7 +42,7 @@ class BitrateProber {
 
   // Create a cluster used to probe for |bitrate_bps| with |num_probes| number
   // of probes.
-  void CreateProbeCluster(int bitrate_bps, int64_t now_ms);
+  void CreateProbeCluster(int bitrate_bps, int64_t now_ms, int cluster_id);
 
   // Returns the number of milliseconds until the next probe should be sent to
   // get accurate probing.
@@ -98,9 +98,6 @@ class BitrateProber {
 
   // Time the next probe should be sent when in kActive state.
   int64_t next_probe_time_ms_;
-
-  int next_cluster_id_;
-  RtcEventLog* const event_log_;
 };
 
 }  // namespace webrtc

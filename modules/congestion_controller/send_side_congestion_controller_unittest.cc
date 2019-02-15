@@ -62,8 +62,8 @@ class LegacySendSideCongestionControllerTest : public ::testing::Test {
     // to be updated.
     EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps, _, _, _));
     EXPECT_CALL(*pacer_, SetEstimatedBitrate(kInitialBitrateBps));
-    EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 3));
-    EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 5));
+    EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 3, 1));
+    EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 5, 2));
     controller_->SetBweBitrates(0, kInitialBitrateBps, 5 * kInitialBitrateBps);
   }
 
@@ -335,8 +335,8 @@ TEST_F(LegacySendSideCongestionControllerTest, GetProbingInterval) {
 
 TEST_F(LegacySendSideCongestionControllerTest, ProbeOnRouteChange) {
   testing::Mock::VerifyAndClearExpectations(pacer_.get());
-  EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 6));
-  EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 12));
+  EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 6, _));
+  EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 12, _));
   EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps * 2, _, _, _));
   rtc::NetworkRoute route;
   route.local_network_id = 1;

@@ -49,11 +49,9 @@ BitrateProber::BitrateProber() : BitrateProber(nullptr) {}
 
 BitrateProber::~BitrateProber() = default;
 
+// TODO(psla): Remove this constructor in a follow up change.
 BitrateProber::BitrateProber(RtcEventLog* event_log)
-    : probing_state_(ProbingState::kDisabled),
-      next_probe_time_ms_(-1),
-      next_cluster_id_(0),
-      event_log_(event_log) {
+    : probing_state_(ProbingState::kDisabled), next_probe_time_ms_(-1) {
   SetEnabled(true);
 }
 
@@ -85,7 +83,9 @@ void BitrateProber::OnIncomingPacket(size_t packet_size) {
   }
 }
 
-void BitrateProber::CreateProbeCluster(int bitrate_bps, int64_t now_ms) {
+void BitrateProber::CreateProbeCluster(int bitrate_bps,
+                                       int64_t now_ms,
+                                       int cluster_id) {
   RTC_DCHECK(probing_state_ != ProbingState::kDisabled);
   RTC_DCHECK_GT(bitrate_bps, 0);
   while (!clusters_.empty() &&
@@ -100,13 +100,8 @@ void BitrateProber::CreateProbeCluster(int bitrate_bps, int64_t now_ms) {
       static_cast<int64_t>(bitrate_bps) * kMinProbeDurationMs / 8000);
   RTC_DCHECK_GE(cluster.pace_info.probe_cluster_min_bytes, 0);
   cluster.pace_info.send_bitrate_bps = bitrate_bps;
-  cluster.pace_info.probe_cluster_id = next_cluster_id_++;
+  cluster.pace_info.probe_cluster_id = cluster_id;
   clusters_.push(cluster);
-  if (event_log_)
-    event_log_->Log(absl::make_unique<RtcEventProbeClusterCreated>(
-        cluster.pace_info.probe_cluster_id, cluster.pace_info.send_bitrate_bps,
-        cluster.pace_info.probe_cluster_min_probes,
-        cluster.pace_info.probe_cluster_min_bytes));
 
   RTC_LOG(LS_INFO) << "Probe cluster (bitrate:min bytes:min packets): ("
                    << cluster.pace_info.send_bitrate_bps << ":"

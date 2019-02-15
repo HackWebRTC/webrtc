@@ -541,7 +541,7 @@ void RtpTransportControllerSend::PostUpdates(NetworkControlUpdate update) {
   }
   for (const auto& probe : update.probe_cluster_configs) {
     int64_t bitrate_bps = probe.target_data_rate.bps();
-    pacer_.CreateProbeCluster(bitrate_bps);
+    pacer_.CreateProbeCluster(bitrate_bps, probe.id);
   }
   if (update.target_rate) {
     control_handler_->SetTargetRate(*update.target_rate);

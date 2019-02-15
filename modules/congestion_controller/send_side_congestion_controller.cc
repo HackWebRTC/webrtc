@@ -99,7 +99,7 @@ DEPRECATED_SendSideCongestionController::
           BitrateController::CreateBitrateController(clock_, event_log)),
       acknowledged_bitrate_estimator_(
           absl::make_unique<AcknowledgedBitrateEstimator>(key_value_config_)),
-      probe_controller_(new ProbeController(key_value_config_)),
+      probe_controller_(new ProbeController(key_value_config_, event_log)),
       retransmission_rate_limiter_(
           new RateLimiter(clock, kRetransmitWindowSizeMs)),
       transport_feedback_adapter_(clock_),
@@ -341,7 +341,8 @@ int64_t DEPRECATED_SendSideCongestionController::TimeUntilNextProcess() {
 void DEPRECATED_SendSideCongestionController::SendProbes(
     std::vector<ProbeClusterConfig> probe_configs) {
   for (auto probe_config : probe_configs) {
-    pacer_->CreateProbeCluster(probe_config.target_data_rate.bps());
+    pacer_->CreateProbeCluster(probe_config.target_data_rate.bps(),
+                               probe_config.id);
   }
 }
 

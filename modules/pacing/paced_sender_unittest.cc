@@ -112,8 +112,8 @@ class PacedSenderTest : public testing::TestWithParam<std::string> {
     srand(0);
     // Need to initialize PacedSender after we initialize clock.
     send_bucket_.reset(new PacedSender(&clock_, &callback_, nullptr));
-    send_bucket_->CreateProbeCluster(kFirstClusterBps);
-    send_bucket_->CreateProbeCluster(kSecondClusterBps);
+    send_bucket_->CreateProbeCluster(kFirstClusterBps, /*cluster_id=*/0);
+    send_bucket_->CreateProbeCluster(kSecondClusterBps, /*cluster_id=*/1);
     // Default to bitrate probing disabled for testing purposes. Probing tests
     // have to enable probing, either by creating a new PacedSender instance or
     // by calling SetProbingEnabled(true).
@@ -1055,8 +1055,8 @@ TEST_F(PacedSenderTest, ProbingWithInsertedPackets) {
 
   PacedSenderProbing packet_sender;
   send_bucket_.reset(new PacedSender(&clock_, &packet_sender, nullptr));
-  send_bucket_->CreateProbeCluster(kFirstClusterBps);
-  send_bucket_->CreateProbeCluster(kSecondClusterBps);
+  send_bucket_->CreateProbeCluster(kFirstClusterBps, /*cluster_id=*/0);
+  send_bucket_->CreateProbeCluster(kSecondClusterBps, /*cluster_id=*/1);
   send_bucket_->SetPacingRates(kInitialBitrateBps * kPaceMultiplier, 0);
 
   for (int i = 0; i < 10; ++i) {
@@ -1101,7 +1101,7 @@ TEST_F(PacedSenderTest, ProbingWithPaddingSupport) {
 
   PacedSenderProbing packet_sender;
   send_bucket_.reset(new PacedSender(&clock_, &packet_sender, nullptr));
-  send_bucket_->CreateProbeCluster(kFirstClusterBps);
+  send_bucket_->CreateProbeCluster(kFirstClusterBps, /*cluster_id=*/0);
   send_bucket_->SetPacingRates(kInitialBitrateBps * kPaceMultiplier, 0);
 
   for (int i = 0; i < 3; ++i) {

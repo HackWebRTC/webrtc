@@ -34,6 +34,7 @@ rtc_static_library("pacing") {
     "../../logging:rtc_event_log_api",
     "../../logging:rtc_event_pacing",
     "../../rtc_base:checks",
+    "../../rtc_base:deprecation",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base/experiments:alr_experiment",
     "../../rtc_base/experiments:field_trial_parser",

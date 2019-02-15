@@ -25,6 +25,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/critical_section.h"
+#include "rtc_base/deprecation.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -74,7 +75,8 @@ class PacedSender : public Pacer {
 
   ~PacedSender() override;
 
-  virtual void CreateProbeCluster(int bitrate_bps);
+  RTC_DEPRECATED virtual void CreateProbeCluster(int bitrate_bps);
+  virtual void CreateProbeCluster(int bitrate_bps, int cluster_id);
 
   // Temporarily pause all sending.
   void Pause();
@@ -205,6 +207,9 @@ class PacedSender : public Pacer {
 
   RoundRobinPacketQueue packets_ RTC_GUARDED_BY(critsect_);
   uint64_t packet_counter_ RTC_GUARDED_BY(critsect_);
+
+  // TODO(psla): Used by the RTC_DEPRECATED method, to be removed.
+  int next_probe_cluster_id_ = 1;
 
   int64_t congestion_window_bytes_ RTC_GUARDED_BY(critsect_) =
       kNoCongestionWindow;

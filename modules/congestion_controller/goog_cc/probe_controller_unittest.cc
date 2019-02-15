@@ -13,6 +13,7 @@
 #include "api/transport/network_types.h"
 #include "api/units/data_rate.h"
 #include "api/units/timestamp.h"
+#include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "modules/congestion_controller/goog_cc/probe_controller.h"
 #include "system_wrappers/include/clock.h"
 #include "test/gmock.h"
@@ -44,7 +45,8 @@ constexpr int kBitrateDropTimeoutMs = 5000;
 class ProbeControllerTest : public ::testing::Test {
  protected:
   ProbeControllerTest() : clock_(100000000L) {
-    probe_controller_.reset(new ProbeController(&field_trial_config_));
+    probe_controller_.reset(
+        new ProbeController(&field_trial_config_, &mock_rtc_event_log));
   }
   ~ProbeControllerTest() override {}
 
@@ -59,6 +61,7 @@ class ProbeControllerTest : public ::testing::Test {
 
   FieldTrialBasedConfig field_trial_config_;
   SimulatedClock clock_;
+  MockRtcEventLog mock_rtc_event_log;
   std::unique_ptr<ProbeController> probe_controller_;
 };
 
@@ -225,7 +228,8 @@ TEST_F(ProbeControllerTest, PeriodicProbing) {
 }
 
 TEST_F(ProbeControllerTest, PeriodicProbingAfterReset) {
-  probe_controller_.reset(new ProbeController(&field_trial_config_));
+  probe_controller_.reset(
+      new ProbeController(&field_trial_config_, &mock_rtc_event_log));
   int64_t alr_start_time = clock_.TimeInMilliseconds();
 
   probe_controller_->SetAlrStartTimeMs(alr_start_time);

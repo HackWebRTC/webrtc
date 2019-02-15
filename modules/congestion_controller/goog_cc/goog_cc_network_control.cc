@@ -104,7 +104,7 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
               .find("Enabled") == 0),
       rate_control_settings_(
           RateControlSettings::ParseFromKeyValueConfig(key_value_config_)),
-      probe_controller_(new ProbeController(key_value_config_)),
+      probe_controller_(new ProbeController(key_value_config_, event_log)),
       congestion_window_pushback_controller_(
           rate_control_settings_.UseCongestionWindowPushback()
               ? absl::make_unique<CongestionWindowPushbackController>(
