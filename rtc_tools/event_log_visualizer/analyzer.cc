@@ -321,6 +321,20 @@ void MovingAverage(
   }
 }
 
+template <typename T>
+TimeSeries CreateRtcpTypeTimeSeries(const std::vector<T>& rtcp_list,
+                                    AnalyzerConfig config,
+                                    std::string rtcp_name,
+                                    int category_id) {
+  TimeSeries time_series(rtcp_name, LineStyle::kNone, PointStyle::kHighlight);
+  for (const auto& rtcp : rtcp_list) {
+    float x = config.GetCallTimeSec(rtcp.log_time_us());
+    float y = category_id;
+    time_series.points.emplace_back(x, y);
+  }
+  return time_series;
+}
+
 const char kUnknownEnumValue[] = "unknown";
 
 const char kIceCandidateTypeLocal[] = "local";
@@ -536,6 +550,30 @@ void EventLogAnalyzer::CreatePacketGraph(PacketDirection direction,
   plot->SetSuggestedYAxis(0, 1, "Packet size (bytes)", kBottomMargin,
                           kTopMargin);
   plot->SetTitle(GetDirectionAsString(direction) + " RTP packets");
+}
+
+void EventLogAnalyzer::CreateRtcpTypeGraph(PacketDirection direction,
+                                           Plot* plot) {
+  plot->AppendTimeSeries(CreateRtcpTypeTimeSeries(
+      parsed_log_.transport_feedbacks(direction), config_, "TWCC", 1));
+  plot->AppendTimeSeries(CreateRtcpTypeTimeSeries(
+      parsed_log_.receiver_reports(direction), config_, "RR", 2));
+  plot->AppendTimeSeries(CreateRtcpTypeTimeSeries(
+      parsed_log_.sender_reports(direction), config_, "SR", 3));
+  plot->AppendTimeSeries(CreateRtcpTypeTimeSeries(
+      parsed_log_.extended_reports(direction), config_, "XR", 4));
+  plot->AppendTimeSeries(CreateRtcpTypeTimeSeries(parsed_log_.nacks(direction),
+                                                  config_, "NACK", 5));
+  plot->AppendTimeSeries(CreateRtcpTypeTimeSeries(parsed_log_.rembs(direction),
+                                                  config_, "REMB", 6));
+  plot->AppendTimeSeries(
+      CreateRtcpTypeTimeSeries(parsed_log_.firs(direction), config_, "FIR", 7));
+  plot->AppendTimeSeries(
+      CreateRtcpTypeTimeSeries(parsed_log_.plis(direction), config_, "PLI", 8));
+  plot->SetXAxis(config_.CallBeginTimeSec(), config_.CallEndTimeSec(),
+                 "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 1, "RTCP type", kBottomMargin, kTopMargin);
+  plot->SetTitle(GetDirectionAsString(direction) + " RTCP packets");
 }
 
 template <typename IterableType>

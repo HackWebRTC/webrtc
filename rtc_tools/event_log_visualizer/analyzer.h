@@ -59,6 +59,8 @@ class EventLogAnalyzer {
 
   void CreatePacketGraph(PacketDirection direction, Plot* plot);
 
+  void CreateRtcpTypeGraph(PacketDirection direction, Plot* plot);
+
   void CreateAccumulatedPacketsGraph(PacketDirection direction, Plot* plot);
 
   void CreatePlayoutGraph(Plot* plot);

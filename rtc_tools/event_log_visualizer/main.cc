@@ -43,6 +43,12 @@ WEBRTC_DEFINE_bool(plot_incoming_packet_sizes,
 WEBRTC_DEFINE_bool(plot_outgoing_packet_sizes,
                    false,
                    "Plot bar graph showing the size of each outgoing packet.");
+WEBRTC_DEFINE_bool(plot_incoming_rtcp_types,
+                   false,
+                   "Plot the RTCP block types for incoming RTCP packets.");
+WEBRTC_DEFINE_bool(plot_outgoing_rtcp_types,
+                   false,
+                   "Plot the RTCP block types for outgoing RTCP packets.");
 WEBRTC_DEFINE_bool(
     plot_incoming_packet_count,
     false,
@@ -287,6 +293,14 @@ int main(int argc, char* argv[]) {
     analyzer.CreatePacketGraph(webrtc::kOutgoingPacket,
                                collection->AppendNewPlot());
   }
+  if (FLAG_plot_incoming_rtcp_types) {
+    analyzer.CreateRtcpTypeGraph(webrtc::kIncomingPacket,
+                                 collection->AppendNewPlot());
+  }
+  if (FLAG_plot_outgoing_rtcp_types) {
+    analyzer.CreateRtcpTypeGraph(webrtc::kOutgoingPacket,
+                                 collection->AppendNewPlot());
+  }
   if (FLAG_plot_incoming_packet_count) {
     analyzer.CreateAccumulatedPacketsGraph(webrtc::kIncomingPacket,
                                            collection->AppendNewPlot());
@@ -495,6 +509,8 @@ int main(int argc, char* argv[]) {
 void SetAllPlotFlags(bool setting) {
   FLAG_plot_incoming_packet_sizes = setting;
   FLAG_plot_outgoing_packet_sizes = setting;
+  FLAG_plot_incoming_rtcp_types = setting;
+  FLAG_plot_outgoing_rtcp_types = setting;
   FLAG_plot_incoming_packet_count = setting;
   FLAG_plot_outgoing_packet_count = setting;
   FLAG_plot_audio_playout = setting;
