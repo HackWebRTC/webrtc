@@ -116,7 +116,8 @@ int32_t Channel::SendData(FrameType frameType,
     return 0;
   }
 
-  status = _receiverACM->IncomingPacket(_payloadData, payloadDataSize, rtpInfo);
+  status = _receiverACM->IncomingPacket(_payloadData, payloadDataSize,
+                                        rtpInfo.header);
 
   return status;
 }

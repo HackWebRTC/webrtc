@@ -71,21 +71,20 @@ class RtpUtility {
 
   virtual ~RtpUtility() {}
 
-  void Populate(WebRtcRTPHeader* rtp_header) {
-    rtp_header->header.sequenceNumber = 0xABCD;
-    rtp_header->header.timestamp = 0xABCDEF01;
-    rtp_header->header.payloadType = payload_type_;
-    rtp_header->header.markerBit = false;
-    rtp_header->header.ssrc = 0x1234;
-    rtp_header->header.numCSRCs = 0;
-    rtp_header->frameType = kAudioFrameSpeech;
+  void Populate(RTPHeader* rtp_header) {
+    rtp_header->sequenceNumber = 0xABCD;
+    rtp_header->timestamp = 0xABCDEF01;
+    rtp_header->payloadType = payload_type_;
+    rtp_header->markerBit = false;
+    rtp_header->ssrc = 0x1234;
+    rtp_header->numCSRCs = 0;
 
-    rtp_header->header.payload_type_frequency = kSampleRateHz;
+    rtp_header->payload_type_frequency = kSampleRateHz;
   }
 
-  void Forward(WebRtcRTPHeader* rtp_header) {
-    ++rtp_header->header.sequenceNumber;
-    rtp_header->header.timestamp += samples_per_packet_;
+  void Forward(RTPHeader* rtp_header) {
+    ++rtp_header->sequenceNumber;
+    rtp_header->timestamp += samples_per_packet_;
   }
 
  private:
@@ -237,7 +236,7 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
   std::unique_ptr<RtpUtility> rtp_utility_;
   std::unique_ptr<AudioCodingModule> acm_;
   PacketizationCallbackStubOldApi packet_cb_;
-  WebRtcRTPHeader rtp_header_;
+  RTPHeader rtp_header_;
   AudioFrame input_frame_;
 
   absl::optional<SdpAudioFormat> audio_format_;
@@ -792,16 +791,15 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
       ++receive_packet_count_;
 
       // Encode new frame.
-      uint32_t input_timestamp = rtp_header_.header.timestamp;
+      uint32_t input_timestamp = rtp_header_.timestamp;
       while (info.encoded_bytes == 0) {
         info = isac_encoder_->Encode(input_timestamp,
                                      audio_loop_.GetNextBlock(), &encoded);
         input_timestamp += 160;  // 10 ms at 16 kHz.
       }
-      EXPECT_EQ(rtp_header_.header.timestamp + kPacketSizeSamples,
-                input_timestamp);
-      EXPECT_EQ(rtp_header_.header.timestamp, info.encoded_timestamp);
-      EXPECT_EQ(rtp_header_.header.payloadType, info.payload_type);
+      EXPECT_EQ(rtp_header_.timestamp + kPacketSizeSamples, input_timestamp);
+      EXPECT_EQ(rtp_header_.timestamp, info.encoded_timestamp);
+      EXPECT_EQ(rtp_header_.payloadType, info.payload_type);
     }
     // Now we're not holding the crit sect when calling ACM.
 

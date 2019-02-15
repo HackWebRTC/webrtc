@@ -57,7 +57,8 @@ bool ReceiverWithPacketLoss::IncomingPacket() {
     }
 
     if (!PacketLost()) {
-      _acm->IncomingPacket(_incomingPayload, _realPayloadSizeBytes, _rtpInfo);
+      _acm->IncomingPacket(_incomingPayload, _realPayloadSizeBytes,
+                           _rtpInfo.header);
     }
     packet_counter_++;
     _realPayloadSizeBytes = _rtpStream->Read(&_rtpInfo, _incomingPayload,

@@ -92,7 +92,7 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // Incoming packet from network parsed and ready for decode.
   int IncomingPacket(const uint8_t* incoming_payload,
                      const size_t payload_length,
-                     const WebRtcRTPHeader& rtp_info) override;
+                     const RTPHeader& rtp_info) override;
 
   // Minimum playout delay.
   int SetMinimumPlayoutDelay(int time_ms) override;
@@ -688,7 +688,7 @@ absl::optional<std::pair<int, SdpAudioFormat>>
 // Incoming packet from network parsed and ready for decode.
 int AudioCodingModuleImpl::IncomingPacket(const uint8_t* incoming_payload,
                                           const size_t payload_length,
-                                          const WebRtcRTPHeader& rtp_header) {
+                                          const RTPHeader& rtp_header) {
   RTC_DCHECK_EQ(payload_length == 0, incoming_payload == nullptr);
   return receiver_.InsertPacket(
       rtp_header,

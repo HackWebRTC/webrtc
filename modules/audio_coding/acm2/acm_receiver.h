@@ -33,7 +33,6 @@ namespace webrtc {
 class Clock;
 class NetEq;
 struct RTPHeader;
-struct WebRtcRTPHeader;
 
 namespace acm2 {
 
@@ -58,7 +57,7 @@ class AcmReceiver {
   // Return value             : 0 if OK.
   //                           <0 if NetEq returned an error.
   //
-  int InsertPacket(const WebRtcRTPHeader& rtp_header,
+  int InsertPacket(const RTPHeader& rtp_header,
                    rtc::ArrayView<const uint8_t> incoming_payload);
 
   //

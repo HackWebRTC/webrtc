@@ -21,17 +21,19 @@
 #include "api/audio_codecs/audio_encoder.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
+#include "modules/include/module_common_types.h"
+#include "rtc_base/deprecation.h"
 #include "rtc_base/function_view.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 
 // forward declarations
-struct WebRtcRTPHeader;
 class AudioDecoder;
 class AudioEncoder;
 class AudioFrame;
 class RTPFragmentationHeader;
+struct RTPHeader;
 
 #define WEBRTC_10MS_PCM_AUDIO 960  // 16 bits super wideband 48 kHz
 
@@ -246,7 +248,13 @@ class AudioCodingModule {
   //
   virtual int32_t IncomingPacket(const uint8_t* incoming_payload,
                                  const size_t payload_len_bytes,
-                                 const WebRtcRTPHeader& rtp_info) = 0;
+                                 const RTPHeader& rtp_header) = 0;
+  RTC_DEPRECATED
+  int32_t IncomingPacket(const uint8_t* incoming_payload,
+                         const size_t payload_len_bytes,
+                         const WebRtcRTPHeader& rtp_info) {
+    return IncomingPacket(incoming_payload, payload_len_bytes, rtp_info.header);
+  }
 
   ///////////////////////////////////////////////////////////////////////////
   // int SetMinimumPlayoutDelay()

@@ -78,15 +78,14 @@ int AcmReceiver::last_output_sample_rate_hz() const {
   return neteq_->last_output_sample_rate_hz();
 }
 
-int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
+int AcmReceiver::InsertPacket(const RTPHeader& rtp_header,
                               rtc::ArrayView<const uint8_t> incoming_payload) {
   if (incoming_payload.empty()) {
-    neteq_->InsertEmptyPacket(rtp_header.header);
+    neteq_->InsertEmptyPacket(rtp_header);
     return 0;
   }
 
-  const RTPHeader& header = rtp_header.header;  // Just a shorthand.
-  int payload_type = header.payloadType;
+  int payload_type = rtp_header.payloadType;
   auto format = neteq_->GetDecoderFormat(payload_type);
   if (format && absl::EqualsIgnoreCase(format->name, "red")) {
     // This is a RED packet. Get the format of the audio codec.
@@ -115,9 +114,10 @@ int AcmReceiver::InsertPacket(const WebRtcRTPHeader& rtp_header,
   }  // |crit_sect_| is released.
 
   uint32_t receive_timestamp = NowInTimestamp(format->clockrate_hz);
-  if (neteq_->InsertPacket(header, incoming_payload, receive_timestamp) < 0) {
+  if (neteq_->InsertPacket(rtp_header, incoming_payload, receive_timestamp) <
+      0) {
     RTC_LOG(LERROR) << "AcmReceiver::InsertPacket "
-                    << static_cast<int>(header.payloadType)
+                    << static_cast<int>(rtp_header.payloadType)
                     << " Failed to insert packet";
     return -1;
   }

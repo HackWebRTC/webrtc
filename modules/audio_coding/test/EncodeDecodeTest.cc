@@ -168,7 +168,7 @@ bool Receiver::IncomingPacket() {
     }
 
     EXPECT_EQ(0, _acm->IncomingPacket(_incomingPayload, _realPayloadSizeBytes,
-                                      _rtpInfo));
+                                      _rtpInfo.header));
     _realPayloadSizeBytes = _rtpStream->Read(&_rtpInfo, _incomingPayload,
                                              _payloadSizeBytes, &_nextTime);
     if (_realPayloadSizeBytes == 0 && _rtpStream->EndOfFile()) {

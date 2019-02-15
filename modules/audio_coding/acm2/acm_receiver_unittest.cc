@@ -50,13 +50,12 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
     acm_->InitializeReceiver();
     acm_->RegisterTransportCallback(this);
 
-    rtp_header_.header.sequenceNumber = 0;
-    rtp_header_.header.timestamp = 0;
-    rtp_header_.header.markerBit = false;
-    rtp_header_.header.ssrc = 0x12345678;  // Arbitrary.
-    rtp_header_.header.numCSRCs = 0;
-    rtp_header_.header.payloadType = 0;
-    rtp_header_.frameType = kAudioFrameSpeech;
+    rtp_header_.sequenceNumber = 0;
+    rtp_header_.timestamp = 0;
+    rtp_header_.markerBit = false;
+    rtp_header_.ssrc = 0x12345678;  // Arbitrary.
+    rtp_header_.numCSRCs = 0;
+    rtp_header_.payloadType = 0;
   }
 
   void TearDown() override {}
@@ -113,9 +112,8 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
     if (frame_type == kEmptyFrame)
       return 0;
 
-    rtp_header_.header.payloadType = payload_type;
-    rtp_header_.frameType = frame_type;
-    rtp_header_.header.timestamp = timestamp;
+    rtp_header_.payloadType = payload_type;
+    rtp_header_.timestamp = timestamp;
 
     int ret_val = receiver_->InsertPacket(
         rtp_header_,
@@ -124,7 +122,7 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
       assert(false);
       return -1;
     }
-    rtp_header_.header.sequenceNumber++;
+    rtp_header_.sequenceNumber++;
     packet_sent_ = true;
     last_frame_type_ = frame_type;
     return 0;
@@ -137,7 +135,7 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
   AudioCodingModule::Config config_;
   std::unique_ptr<AcmReceiver> receiver_;
   std::unique_ptr<AudioCodingModule> acm_;
-  WebRtcRTPHeader rtp_header_;
+  RTPHeader rtp_header_;
   uint32_t timestamp_;
   bool packet_sent_;  // Set when SendData is called reset when inserting audio.
   uint32_t last_packet_send_timestamp_;

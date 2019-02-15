@@ -66,14 +66,14 @@ int32_t TestPack::SendData(FrameType frame_type,
                            const uint8_t* payload_data,
                            size_t payload_size,
                            const RTPFragmentationHeader* fragmentation) {
-  WebRtcRTPHeader rtp_info;
+  RTPHeader rtp_header;
   int32_t status;
 
-  rtp_info.header.markerBit = false;
-  rtp_info.header.ssrc = 0;
-  rtp_info.header.sequenceNumber = sequence_number_++;
-  rtp_info.header.payloadType = payload_type;
-  rtp_info.header.timestamp = timestamp;
+  rtp_header.markerBit = false;
+  rtp_header.ssrc = 0;
+  rtp_header.sequenceNumber = sequence_number_++;
+  rtp_header.payloadType = payload_type;
+  rtp_header.timestamp = timestamp;
 
   if (frame_type == kEmptyFrame) {
     // Skip this frame.
@@ -83,7 +83,8 @@ int32_t TestPack::SendData(FrameType frame_type,
   // Only run mono for all test cases.
   memcpy(payload_data_, payload_data, payload_size);
 
-  status = receiver_acm_->IncomingPacket(payload_data_, payload_size, rtp_info);
+  status =
+      receiver_acm_->IncomingPacket(payload_data_, payload_size, rtp_header);
 
   payload_size_ = payload_size;
   timestamp_diff_ = timestamp - last_in_timestamp_;

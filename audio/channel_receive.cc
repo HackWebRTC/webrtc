@@ -57,36 +57,19 @@ constexpr double kAudioSampleDurationSeconds = 0.01;
 constexpr int kVoiceEngineMinMinPlayoutDelayMs = 0;
 constexpr int kVoiceEngineMaxMinPlayoutDelayMs = 10000;
 
-webrtc::FrameType WebrtcFrameTypeForMediaTransportFrameType(
-    MediaTransportEncodedAudioFrame::FrameType frame_type) {
-  switch (frame_type) {
-    case MediaTransportEncodedAudioFrame::FrameType::kSpeech:
-      return kAudioFrameSpeech;
-      break;
-
-    case MediaTransportEncodedAudioFrame::FrameType::
-        kDiscountinuousTransmission:
-      return kAudioFrameCN;
-      break;
-  }
-}
-
-WebRtcRTPHeader CreateWebrtcRTPHeaderForMediaTransportFrame(
+RTPHeader CreateRTPHeaderForMediaTransportFrame(
     const MediaTransportEncodedAudioFrame& frame,
     uint64_t channel_id) {
-  webrtc::WebRtcRTPHeader webrtc_header = {};
-  webrtc_header.header.payloadType = frame.payload_type();
-  webrtc_header.header.payload_type_frequency = frame.sampling_rate_hz();
-  webrtc_header.header.timestamp = frame.starting_sample_index();
-  webrtc_header.header.sequenceNumber = frame.sequence_number();
+  webrtc::RTPHeader rtp_header;
+  rtp_header.payloadType = frame.payload_type();
+  rtp_header.payload_type_frequency = frame.sampling_rate_hz();
+  rtp_header.timestamp = frame.starting_sample_index();
+  rtp_header.sequenceNumber = frame.sequence_number();
 
-  webrtc_header.frameType =
-      WebrtcFrameTypeForMediaTransportFrameType(frame.frame_type());
-
-  webrtc_header.header.ssrc = static_cast<uint32_t>(channel_id);
+  rtp_header.ssrc = static_cast<uint32_t>(channel_id);
 
   // The rest are initialized by the RTPHeader constructor.
-  return webrtc_header;
+  return rtp_header;
 }
 
 class ChannelReceive : public ChannelReceiveInterface,
@@ -189,7 +172,7 @@ class ChannelReceive : public ChannelReceiveInterface,
 
   int32_t OnReceivedPayloadData(const uint8_t* payloadData,
                                 size_t payloadSize,
-                                const WebRtcRTPHeader* rtpHeader);
+                                const RTPHeader& rtpHeader);
 
   bool Playing() const {
     rtc::CritScope lock(&playing_lock_);
@@ -277,10 +260,9 @@ class ChannelReceive : public ChannelReceiveInterface,
   webrtc::CryptoOptions crypto_options_;
 };
 
-int32_t ChannelReceive::OnReceivedPayloadData(
-    const uint8_t* payloadData,
-    size_t payloadSize,
-    const WebRtcRTPHeader* rtpHeader) {
+int32_t ChannelReceive::OnReceivedPayloadData(const uint8_t* payloadData,
+                                              size_t payloadSize,
+                                              const RTPHeader& rtp_header) {
   // We should not be receiving any RTP packets if media_transport is set.
   RTC_CHECK(!media_transport_);
 
@@ -291,7 +273,7 @@ int32_t ChannelReceive::OnReceivedPayloadData(
   }
 
   // Push the incoming payload (parsed and ready for decoding) into the ACM
-  if (audio_coding_->IncomingPacket(payloadData, payloadSize, *rtpHeader) !=
+  if (audio_coding_->IncomingPacket(payloadData, payloadSize, rtp_header) !=
       0) {
     RTC_DLOG(LS_ERROR) << "ChannelReceive::OnReceivedPayloadData() unable to "
                           "push data to the ACM";
@@ -324,8 +306,7 @@ void ChannelReceive::OnData(uint64_t channel_id,
   // Send encoded audio frame to Decoder / NetEq.
   if (audio_coding_->IncomingPacket(
           frame.encoded_data().data(), frame.encoded_data().size(),
-          CreateWebrtcRTPHeaderForMediaTransportFrame(frame, channel_id)) !=
-      0) {
+          CreateRTPHeaderForMediaTransportFrame(frame, channel_id)) != 0) {
     RTC_DLOG(LS_ERROR) << "ChannelReceive::OnData: unable to "
                           "push data to the ACM";
   }
@@ -637,8 +618,6 @@ bool ChannelReceive::ReceivePacket(const uint8_t* packet,
   const uint8_t* payload = packet + header.headerLength;
   assert(packet_length >= header.headerLength);
   size_t payload_length = packet_length - header.headerLength;
-  WebRtcRTPHeader webrtc_rtp_header = {};
-  webrtc_rtp_header.header = header;
 
   size_t payload_data_length = payload_length - header.paddingLength;
 
@@ -677,11 +656,9 @@ bool ChannelReceive::ReceivePacket(const uint8_t* packet,
   }
 
   if (payload_data_length == 0) {
-    webrtc_rtp_header.frameType = kEmptyFrame;
-    return OnReceivedPayloadData(nullptr, 0, &webrtc_rtp_header);
+    return OnReceivedPayloadData(nullptr, 0, header);
   }
-  return OnReceivedPayloadData(payload, payload_data_length,
-                               &webrtc_rtp_header);
+  return OnReceivedPayloadData(payload, payload_data_length, header);
 }
 
 // May be called on either worker thread or network thread.

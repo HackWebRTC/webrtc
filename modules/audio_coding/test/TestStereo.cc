@@ -46,14 +46,14 @@ int32_t TestPackStereo::SendData(const FrameType frame_type,
                                  const uint8_t* payload_data,
                                  const size_t payload_size,
                                  const RTPFragmentationHeader* fragmentation) {
-  WebRtcRTPHeader rtp_info;
+  RTPHeader rtp_header;
   int32_t status = 0;
 
-  rtp_info.header.markerBit = false;
-  rtp_info.header.ssrc = 0;
-  rtp_info.header.sequenceNumber = seq_no_++;
-  rtp_info.header.payloadType = payload_type;
-  rtp_info.header.timestamp = timestamp;
+  rtp_header.markerBit = false;
+  rtp_header.ssrc = 0;
+  rtp_header.sequenceNumber = seq_no_++;
+  rtp_header.payloadType = payload_type;
+  rtp_header.timestamp = timestamp;
   if (frame_type == kEmptyFrame) {
     // Skip this frame
     return 0;
@@ -61,7 +61,7 @@ int32_t TestPackStereo::SendData(const FrameType frame_type,
 
   if (lost_packet_ == false) {
     status =
-        receiver_acm_->IncomingPacket(payload_data, payload_size, rtp_info);
+        receiver_acm_->IncomingPacket(payload_data, payload_size, rtp_header);
 
     if (frame_type != kAudioFrameCN) {
       payload_size_ = static_cast<int>(payload_size);
