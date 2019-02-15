@@ -477,7 +477,9 @@ int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame,
     return -1;
   }
 
-  if (audio_frame.num_channels_ != 1 && audio_frame.num_channels_ != 2) {
+  if (audio_frame.num_channels_ != 1 && audio_frame.num_channels_ != 2 &&
+      audio_frame.num_channels_ != 4 && audio_frame.num_channels_ != 6 &&
+      audio_frame.num_channels_ != 8) {
     RTC_LOG(LS_ERROR) << "Cannot Add 10 ms audio, invalid number of channels.";
     return -1;
   }
