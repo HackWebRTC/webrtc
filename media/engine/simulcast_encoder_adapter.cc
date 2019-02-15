@@ -418,6 +418,8 @@ int SimulcastEncoderAdapter::Encode(
                         dst_buffer->StrideV(), dst_width, dst_height,
                         libyuv::kFilterBilinear);
 
+      // UpdateRect is not propagated to lower simulcast layers currently.
+      // TODO(ilnik): Consider scaling UpdateRect together with the buffer.
       VideoFrame frame = VideoFrame::Builder()
                              .set_video_frame_buffer(dst_buffer)
                              .set_timestamp_rtp(input_image.timestamp())

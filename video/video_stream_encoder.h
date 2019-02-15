@@ -274,6 +274,9 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   absl::optional<VideoFrame> pending_frame_ RTC_GUARDED_BY(&encoder_queue_);
   int64_t pending_frame_post_time_us_ RTC_GUARDED_BY(&encoder_queue_);
 
+  VideoFrame::UpdateRect accumulated_update_rect_
+      RTC_GUARDED_BY(&encoder_queue_);
+
   VideoBitrateAllocationObserver* bitrate_observer_
       RTC_GUARDED_BY(&encoder_queue_);
   absl::optional<int64_t> last_parameters_update_ms_
