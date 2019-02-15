@@ -16,7 +16,7 @@
 
 #include "absl/types/optional.h"
 #include "api/video/color_space.h"
-#include "api/video/video_bitrate_allocation.h"
+#include "api/video/video_codec_constants.h"
 #include "api/video/video_codec_type.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_rotation.h"
