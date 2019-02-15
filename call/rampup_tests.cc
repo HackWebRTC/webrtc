@@ -19,6 +19,7 @@
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/string_encode.h"
 #include "test/encoder_settings.h"
+#include "test/field_trial.h"
 #include "test/gtest.h"
 #include "test/testsupport/perf_test.h"
 
@@ -640,6 +641,7 @@ TEST_F(RampUpTest, DISABLED_UpDownUpTransportSequenceNumberPacketLoss) {
   UpDownUpAudioVideoTransportSequenceNumberRtx
 #endif
 TEST_F(RampUpTest, MAYBE_UpDownUpAudioVideoTransportSequenceNumberRtx) {
+  test::ScopedFieldTrials field_trials("WebRTC-Audio-SendSideBwe/Enabled/");
   std::vector<int> loss_rates = {0, 0, 0, 0};
   RampUpDownUpTester test(3, 1, 0, kStartBitrateBps,
                           RtpExtension::kTransportSequenceNumberUri, true,
@@ -648,6 +650,7 @@ TEST_F(RampUpTest, MAYBE_UpDownUpAudioVideoTransportSequenceNumberRtx) {
 }
 
 TEST_F(RampUpTest, UpDownUpAudioTransportSequenceNumberRtx) {
+  test::ScopedFieldTrials field_trials("WebRTC-Audio-SendSideBwe/Enabled/");
   std::vector<int> loss_rates = {0, 0, 0, 0};
   RampUpDownUpTester test(0, 1, 0, kStartBitrateBps,
                           RtpExtension::kTransportSequenceNumberUri, true,

@@ -27,14 +27,13 @@ class AudioAllocationSettings {
   bool IgnoreSeqNumIdChange() const;
   // Returns true if the bitrate allocation range should be configured.
   bool ConfigureRateAllocationRange() const;
-  // Returns true if the transport sequence number extension should be enabled.
-  bool EnableTransportSequenceNumberExtension() const;
-  // Returns true if audio traffic should be included in transport wide feedback
-  // packets.
+  // Returns true if sent audio packets should have transport wide sequence
+  // numbers.
   // |transport_seq_num_extension_header_id| the extension header id for
   // transport sequence numbers. Set to 0 if not the extension is not
   // configured.
-  bool IncludeAudioInFeedback(int transport_seq_num_extension_header_id) const;
+  bool ShouldSendTransportSequenceNumber(
+      int transport_seq_num_extension_header_id) const;
   // Returns true if target bitrate for audio streams should be updated.
   // |transport_seq_num_extension_header_id| the extension header id for
   // transport sequence numbers. Set to 0 if not the extension is not

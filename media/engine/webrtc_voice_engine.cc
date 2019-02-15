@@ -559,11 +559,8 @@ RtpCapabilities WebRtcVoiceEngine::GetCapabilities() const {
   int id = 1;
   capabilities.header_extensions.push_back(
       webrtc::RtpExtension(webrtc::RtpExtension::kAudioLevelUri, id++));
-  if (allocation_settings_.EnableTransportSequenceNumberExtension()) {
-    capabilities.header_extensions.push_back(webrtc::RtpExtension(
-        webrtc::RtpExtension::kTransportSequenceNumberUri, id++));
-  }
-
+  capabilities.header_extensions.push_back(webrtc::RtpExtension(
+      webrtc::RtpExtension::kTransportSequenceNumberUri, id++));
   return capabilities;
 }
 

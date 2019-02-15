@@ -316,6 +316,7 @@ TEST_F(TransportFeedbackEndToEndTest, VideoTransportFeedbackNotConfigured) {
 }
 
 TEST_F(TransportFeedbackEndToEndTest, AudioReceivesTransportFeedback) {
+  test::ScopedFieldTrials field_trials("WebRTC-Audio-SendSideBwe/Enabled/");
   TransportFeedbackTester test(true, 0, 1);
   RunBaseTest(&test);
 }
@@ -424,6 +425,7 @@ TEST_F(TransportFeedbackEndToEndTest,
 }
 
 TEST_F(TransportFeedbackEndToEndTest, TransportSeqNumOnAudioAndVideo) {
+  test::ScopedFieldTrials field_trials("WebRTC-Audio-SendSideBwe/Enabled/");
   static constexpr int kExtensionId = 8;
   static constexpr size_t kMinPacketsToWaitFor = 50;
   class TransportSequenceNumberTest : public test::EndToEndTest {

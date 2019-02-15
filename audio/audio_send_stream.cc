@@ -264,8 +264,8 @@ void AudioSendStream::ConfigureStream(
 
     RtcpBandwidthObserver* bandwidth_observer = nullptr;
 
-    if (stream->allocation_settings_.IncludeAudioInFeedback(
-            new_ids.transport_sequence_number != 0)) {
+    if (stream->allocation_settings_.ShouldSendTransportSequenceNumber(
+            new_ids.transport_sequence_number)) {
       channel_send->EnableSendTransportSequenceNumber(
           new_ids.transport_sequence_number);
       // Probing in application limited region is only used in combination with
