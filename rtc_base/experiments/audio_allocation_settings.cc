@@ -65,12 +65,16 @@ bool AudioAllocationSettings::ConfigureRateAllocationRange() const {
   return audio_send_side_bwe_;
 }
 
-bool AudioAllocationSettings::ShouldSendTransportSequenceNumber(
+bool AudioAllocationSettings::EnableTransportSequenceNumberExtension() const {
+  // TODO(srte): Update this to be more accurate.
+  return audio_send_side_bwe_ && !allocate_audio_without_feedback_;
+}
+
+bool AudioAllocationSettings::IncludeAudioInFeedback(
     int transport_seq_num_extension_header_id) const {
   if (force_no_audio_feedback_)
     return false;
-  return audio_send_side_bwe_ && !allocate_audio_without_feedback_ &&
-         transport_seq_num_extension_header_id != 0;
+  return transport_seq_num_extension_header_id != 0;
 }
 
 bool AudioAllocationSettings::UpdateAudioTargetBitrate(

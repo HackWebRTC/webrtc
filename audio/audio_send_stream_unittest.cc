@@ -28,7 +28,6 @@
 #include "modules/rtp_rtcp/mocks/mock_rtcp_rtt_stats.h"
 #include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "rtc_base/task_queue.h"
-#include "test/field_trial.h"
 #include "test/gtest.h"
 #include "test/mock_audio_encoder.h"
 #include "test/mock_audio_encoder_factory.h"
@@ -354,7 +353,6 @@ TEST(AudioSendStreamTest, SetMuted) {
 }
 
 TEST(AudioSendStreamTest, AudioBweCorrectObjectsOnChannelProxy) {
-  ScopedFieldTrials field_trials("WebRTC-Audio-SendSideBwe/Enabled/");
   ConfigHelper helper(true, true);
   auto send_stream = helper.CreateAudioSendStream();
 }
@@ -506,7 +504,6 @@ TEST(AudioSendStreamTest, DontRecreateEncoder) {
 }
 
 TEST(AudioSendStreamTest, ReconfigureTransportCcResetsFirst) {
-  ScopedFieldTrials field_trials("WebRTC-Audio-SendSideBwe/Enabled/");
   ConfigHelper helper(false, true);
   auto send_stream = helper.CreateAudioSendStream();
   auto new_config = helper.config();

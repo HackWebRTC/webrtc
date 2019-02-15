@@ -149,7 +149,6 @@ if (rtc_include_tests) {
       "../logging:rtc_event_log_api",
       "../modules/audio_device:mock_audio_device",
       "../rtc_base:rtc_base_tests_utils",
-      "../test:field_trial",
 
       # For TestAudioDeviceModule
       "../modules/audio_device:audio_device_impl",
