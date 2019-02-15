@@ -25,7 +25,6 @@
 #include "pc/peer_connection.h"
 #include "pc/rtc_stats_traversal.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/post_message_with_functor.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
@@ -754,8 +753,6 @@ RTCStatsCollector::RTCStatsCollector(PeerConnectionInternal* pc,
       network_thread_(pc->network_thread()),
       num_pending_partial_reports_(0),
       partial_report_timestamp_us_(0),
-      network_report_event_(true /* manual_reset */,
-                            true /* initially_signaled */),
       cache_timestamp_us_(0),
       cache_lifetime_us_(cache_lifetime_us) {
   RTC_DCHECK(pc_);
@@ -802,7 +799,7 @@ void RTCStatsCollector::GetStatsReportInternal(
     // reentrancy problems.
     std::vector<RequestInfo> requests;
     requests.swap(requests_);
-    rtc::PostMessageWithFunctor(
+    invoker_.AsyncInvoke<void>(
         RTC_FROM_HERE, signaling_thread_,
         rtc::Bind(&RTCStatsCollector::DeliverCachedReport, this, cached_report_,
                   std::move(requests)));
@@ -833,14 +830,10 @@ void RTCStatsCollector::GetStatsReportInternal(
     // network thread, where it more naturally belongs.
     call_stats_ = pc_->GetCallStats();
 
-    // Don't touch |network_report_| on the signaling thread until
-    // ProducePartialResultsOnNetworkThread() has signaled the
-    // |network_report_event_|.
-    network_report_event_.Reset();
-    rtc::PostMessageWithFunctor(
+    invoker_.AsyncInvoke<void>(
         RTC_FROM_HERE, network_thread_,
         rtc::Bind(&RTCStatsCollector::ProducePartialResultsOnNetworkThread,
-                  this, timestamp_us));
+                  rtc::scoped_refptr<RTCStatsCollector>(this), timestamp_us));
     ProducePartialResultsOnSignalingThread(timestamp_us);
   }
 }
@@ -852,117 +845,89 @@ void RTCStatsCollector::ClearCachedStatsReport() {
 
 void RTCStatsCollector::WaitForPendingRequest() {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  // If a request is pending, blocks until the |network_report_event_| is
-  // signaled and then delivers the result. Otherwise this is a NO-OP.
-  MergeNetworkReport_s();
+  if (num_pending_partial_reports_) {
+    rtc::Thread::Current()->ProcessMessages(0);
+    while (num_pending_partial_reports_) {
+      rtc::Thread::Current()->SleepMs(1);
+      rtc::Thread::Current()->ProcessMessages(0);
+    }
+  }
 }
 
 void RTCStatsCollector::ProducePartialResultsOnSignalingThread(
     int64_t timestamp_us) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  partial_report_ = RTCStatsReport::Create(timestamp_us);
+  rtc::scoped_refptr<RTCStatsReport> report = RTCStatsReport::Create(
+      timestamp_us);
 
-  ProducePartialResultsOnSignalingThreadImpl(timestamp_us,
-                                             partial_report_.get());
+  ProduceDataChannelStats_s(timestamp_us, report.get());
+  ProduceMediaStreamStats_s(timestamp_us, report.get());
+  ProduceMediaStreamTrackStats_s(timestamp_us, report.get());
+  ProducePeerConnectionStats_s(timestamp_us, report.get());
 
-  // ProducePartialResultsOnSignalingThread() is running synchronously on the
-  // signaling thread, so it is always the first partial result delivered on the
-  // signaling thread. The request is not complete until MergeNetworkReport_s()
-  // happens; we don't have to do anything here.
-  RTC_DCHECK_GT(num_pending_partial_reports_, 1);
-  --num_pending_partial_reports_;
-}
-
-void RTCStatsCollector::ProducePartialResultsOnSignalingThreadImpl(
-    int64_t timestamp_us,
-    RTCStatsReport* partial_report) {
-  RTC_DCHECK(signaling_thread_->IsCurrent());
-  ProduceDataChannelStats_s(timestamp_us, partial_report);
-  ProduceMediaStreamStats_s(timestamp_us, partial_report);
-  ProduceMediaStreamTrackStats_s(timestamp_us, partial_report);
-  ProducePeerConnectionStats_s(timestamp_us, partial_report);
+  AddPartialResults(report);
 }
 
 void RTCStatsCollector::ProducePartialResultsOnNetworkThread(
     int64_t timestamp_us) {
   RTC_DCHECK(network_thread_->IsCurrent());
-  // Touching |network_report_| on this thread is safe by this method because
-  // |network_report_event_| is reset before this method is invoked.
-  network_report_ = RTCStatsReport::Create(timestamp_us);
+  rtc::scoped_refptr<RTCStatsReport> report = RTCStatsReport::Create(
+      timestamp_us);
 
   std::map<std::string, cricket::TransportStats> transport_stats_by_name =
       pc_->GetTransportStatsByNames(transport_names_);
+
   std::map<std::string, CertificateStatsPair> transport_cert_stats =
       PrepareTransportCertificateStats_n(transport_stats_by_name);
 
-  ProducePartialResultsOnNetworkThreadImpl(
-      timestamp_us, transport_stats_by_name, transport_cert_stats,
-      network_report_.get());
-
-  // Signal that it is now safe to touch |network_report_| on the signaling
-  // thread, and post a task to merge it into the final results.
-  network_report_event_.Set();
-  rtc::PostMessageWithFunctor(
-      RTC_FROM_HERE, signaling_thread_,
-      rtc::Bind(&RTCStatsCollector::MergeNetworkReport_s, this));
-}
-
-void RTCStatsCollector::ProducePartialResultsOnNetworkThreadImpl(
-    int64_t timestamp_us,
-    const std::map<std::string, cricket::TransportStats>&
-        transport_stats_by_name,
-    const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
-    RTCStatsReport* partial_report) {
-  RTC_DCHECK(network_thread_->IsCurrent());
-  ProduceCertificateStats_n(timestamp_us, transport_cert_stats, partial_report);
-  ProduceCodecStats_n(timestamp_us, transceiver_stats_infos_, partial_report);
+  ProduceCertificateStats_n(timestamp_us, transport_cert_stats, report.get());
+  ProduceCodecStats_n(timestamp_us, transceiver_stats_infos_, report.get());
   ProduceIceCandidateAndPairStats_n(timestamp_us, transport_stats_by_name,
-                                    call_stats_, partial_report);
-  ProduceRTPStreamStats_n(timestamp_us, transceiver_stats_infos_,
-                          partial_report);
+                                    call_stats_, report.get());
+  ProduceRTPStreamStats_n(timestamp_us, transceiver_stats_infos_, report.get());
   ProduceTransportStats_n(timestamp_us, transport_stats_by_name,
-                          transport_cert_stats, partial_report);
+                          transport_cert_stats, report.get());
+
+  AddPartialResults(report);
 }
 
-void RTCStatsCollector::MergeNetworkReport_s() {
-  RTC_DCHECK(signaling_thread_->IsCurrent());
-  // The |network_report_event_| must be signaled for it to be safe to touch
-  // |network_report_|. This is normally not blocking, but if
-  // WaitForPendingRequest() is called while a request is pending, we might have
-  // to wait until the network thread is done touching |network_report_|.
-  network_report_event_.Wait(rtc::Event::kForever);
-  if (!network_report_) {
-    // Normally, MergeNetworkReport_s() is executed because it is posted from
-    // the network thread. But if WaitForPendingRequest() is called while a
-    // request is pending, an early call to MergeNetworkReport_s() is made,
-    // merging the report and setting |network_report_| to null. If so, when the
-    // previously posted MergeNetworkReport_s() is later executed, the report is
-    // already null and nothing needs to be done here.
+void RTCStatsCollector::AddPartialResults(
+    const rtc::scoped_refptr<RTCStatsReport>& partial_report) {
+  if (!signaling_thread_->IsCurrent()) {
+    invoker_.AsyncInvoke<void>(RTC_FROM_HERE, signaling_thread_,
+        rtc::Bind(&RTCStatsCollector::AddPartialResults_s,
+                  rtc::scoped_refptr<RTCStatsCollector>(this),
+                  partial_report));
     return;
   }
-  RTC_DCHECK_GT(num_pending_partial_reports_, 0);
-  RTC_DCHECK(partial_report_);
-  partial_report_->TakeMembersFrom(network_report_);
-  network_report_ = nullptr;
-  --num_pending_partial_reports_;
-  // |network_report_| is currently the only partial report collected
-  // asynchronously, so |num_pending_partial_reports_| must now be 0 and we are
-  // ready to deliver the result.
-  RTC_DCHECK_EQ(num_pending_partial_reports_, 0);
-  cache_timestamp_us_ = partial_report_timestamp_us_;
-  cached_report_ = partial_report_;
-  partial_report_ = nullptr;
-  transceiver_stats_infos_.clear();
-  // Trace WebRTC Stats when getStats is called on Javascript.
-  // This allows access to WebRTC stats from trace logs. To enable them,
-  // select the "webrtc_stats" category when recording traces.
-  TRACE_EVENT_INSTANT1("webrtc_stats", "webrtc_stats", "report",
-                       cached_report_->ToJson());
+  AddPartialResults_s(partial_report);
+}
 
-  // Deliver report and clear |requests_|.
-  std::vector<RequestInfo> requests;
-  requests.swap(requests_);
-  DeliverCachedReport(cached_report_, std::move(requests));
+void RTCStatsCollector::AddPartialResults_s(
+    rtc::scoped_refptr<RTCStatsReport> partial_report) {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK_GT(num_pending_partial_reports_, 0);
+  if (!partial_report_)
+    partial_report_ = partial_report;
+  else
+    partial_report_->TakeMembersFrom(partial_report);
+  --num_pending_partial_reports_;
+  if (!num_pending_partial_reports_) {
+    cache_timestamp_us_ = partial_report_timestamp_us_;
+    cached_report_ = partial_report_;
+    partial_report_ = nullptr;
+    transceiver_stats_infos_.clear();
+    // Trace WebRTC Stats when getStats is called on Javascript.
+    // This allows access to WebRTC stats from trace logs. To enable them,
+    // select the "webrtc_stats" category when recording traces.
+    TRACE_EVENT_INSTANT1("webrtc_stats", "webrtc_stats", "report",
+                         cached_report_->ToJson());
+
+    // Deliver report and clear |requests_|.
+    std::vector<RequestInfo> requests;
+    requests.swap(requests_);
+    DeliverCachedReport(cached_report_, std::move(requests));
+  }
 }
 
 void RTCStatsCollector::DeliverCachedReport(
