@@ -25,6 +25,7 @@ namespace {
 
 constexpr int kMaxActiveComparisons = 10;
 constexpr int kFreezeThresholdMs = 150;
+constexpr int kMicrosPerSecond = 1000000;
 
 }  // namespace
 
@@ -38,8 +39,11 @@ void RateCounter::AddEvent(Timestamp event_time) {
 
 double RateCounter::GetEventsPerSecond() const {
   RTC_DCHECK(!IsEmpty());
+  // Divide on us and multiply on kMicrosPerSecond to correctly process cases
+  // where there were too small amount of events, so difference is less then 1
+  // sec. We can use us here, because Timestamp has us resolution.
   return static_cast<double>(event_count_) /
-         (event_last_time_ - event_first_time_).seconds();
+         (event_last_time_ - event_first_time_).us() * kMicrosPerSecond;
 }
 
 DefaultVideoQualityAnalyzer::DefaultVideoQualityAnalyzer(std::string test_label)
