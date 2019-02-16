@@ -408,6 +408,17 @@ deps = {
       'dep_type': 'cipd',
   },
 
+  'src/third_party/androidx': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/androidx',
+              'version': 'BgU0HKOH7unGo87kXkIKJlPMmaSOCFhvUKcIr9aborwC',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
   'src/third_party/sqlite4java': {
       'packages': [
           {
