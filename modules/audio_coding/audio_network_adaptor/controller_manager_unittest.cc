@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string>
 #include <utility>
 
 #include "modules/audio_coding/audio_network_adaptor/controller_manager.h"
@@ -15,7 +16,6 @@
 #include "modules/audio_coding/audio_network_adaptor/mock/mock_debug_dump_writer.h"
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/ignore_wundef.h"
-#include "rtc_base/protobuf_utils.h"
 #include "test/gtest.h"
 
 #if WEBRTC_ENABLE_PROTOBUF
@@ -266,7 +266,7 @@ constexpr int kInitialFrameLengthMs = 60;
 constexpr int kMinBitrateBps = 6000;
 
 ControllerManagerStates CreateControllerManager(
-    const ProtoString& config_string) {
+    const std::string& config_string) {
   ControllerManagerStates states;
   constexpr size_t kNumEncoderChannels = 2;
   const std::vector<int> encoder_frame_lengths_ms = {20, 60};
@@ -319,8 +319,8 @@ void CheckControllersOrder(const std::vector<Controller*>& controllers,
 }
 
 MATCHER_P(ControllerManagerEqual, value, "") {
-  ProtoString value_string;
-  ProtoString arg_string;
+  std::string value_string;
+  std::string arg_string;
   EXPECT_TRUE(arg.SerializeToString(&arg_string));
   EXPECT_TRUE(value.SerializeToString(&value_string));
   return arg_string == value_string;
@@ -339,7 +339,7 @@ TEST(ControllerManagerTest, DebugDumpLoggedWhenCreateFromConfigString) {
   AddFrameLengthControllerConfig(&config);
   AddBitrateControllerConfig(&config);
 
-  ProtoString config_string;
+  std::string config_string;
   config.SerializeToString(&config_string);
 
   constexpr size_t kNumEncoderChannels = 2;
@@ -373,7 +373,7 @@ TEST(ControllerManagerTest, CreateFromConfigStringAndCheckDefaultOrder) {
   AddFrameLengthControllerConfig(&config);
   AddBitrateControllerConfig(&config);
 
-  ProtoString config_string;
+  std::string config_string;
   config.SerializeToString(&config_string);
 
   auto states = CreateControllerManager(config_string);
@@ -395,7 +395,7 @@ TEST(ControllerManagerTest, CreateCharPointFreeConfigAndCheckDefaultOrder) {
   AddDtxControllerConfig(&config);
   AddBitrateControllerConfig(&config);
 
-  ProtoString config_string;
+  std::string config_string;
   config.SerializeToString(&config_string);
 
   auto states = CreateControllerManager(config_string);
@@ -426,7 +426,7 @@ TEST(ControllerManagerTest, CreateFromConfigStringAndCheckReordering) {
 
   AddBitrateControllerConfig(&config);
 
-  ProtoString config_string;
+  std::string config_string;
   config.SerializeToString(&config_string);
 
   auto states = CreateControllerManager(config_string);

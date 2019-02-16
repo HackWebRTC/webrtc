@@ -24,7 +24,6 @@
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "modules/audio_coding/codecs/opus/opus_interface.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/protobuf_utils.h"
 
 namespace webrtc {
 
@@ -171,7 +170,7 @@ class AudioEncoderOpusImpl final : public AudioEncoder {
 
   void ApplyAudioNetworkAdaptor();
   std::unique_ptr<AudioNetworkAdaptor> DefaultAudioNetworkAdaptorCreator(
-      const ProtoString& config_string,
+      const std::string& config_string,
       RtcEventLog* event_log) const;
 
   void MaybeUpdateUplinkBandwidth();

@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <string>
 #include <utility>
 
 #include "absl/memory/memory.h"
@@ -25,7 +26,6 @@
 #include "rtc_base/numerics/exp_filter.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/numerics/safe_minmax.h"
-#include "rtc_base/protobuf_utils.h"
 #include "rtc_base/string_to_number.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/field_trial.h"
@@ -443,7 +443,7 @@ AudioEncoderOpusImpl::AudioEncoderOpusImpl(const AudioEncoderOpusConfig& config,
     : AudioEncoderOpusImpl(
           config,
           payload_type,
-          [this](const ProtoString& config_string, RtcEventLog* event_log) {
+          [this](const std::string& config_string, RtcEventLog* event_log) {
             return DefaultAudioNetworkAdaptorCreator(config_string, event_log);
           },
           // We choose 5sec as initial time constant due to empirical data.
@@ -870,7 +870,7 @@ void AudioEncoderOpusImpl::ApplyAudioNetworkAdaptor() {
 
 std::unique_ptr<AudioNetworkAdaptor>
 AudioEncoderOpusImpl::DefaultAudioNetworkAdaptorCreator(
-    const ProtoString& config_string,
+    const std::string& config_string,
     RtcEventLog* event_log) const {
   AudioNetworkAdaptorImpl::Config config;
   config.event_log = event_log;

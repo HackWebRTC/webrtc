@@ -767,6 +767,7 @@ rtc_static_library("webrtc_opus") {
     "../../api/audio_codecs/opus:audio_encoder_opus_config",
     "../../common_audio",
     "../../rtc_base:checks",
+    "../../rtc_base:protobuf_utils",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_numerics",
     "../../rtc_base:safe_minmax",
@@ -777,7 +778,6 @@ rtc_static_library("webrtc_opus") {
   ]
   public_deps = [
     ":webrtc_opus_c",
-    "../../rtc_base:protobuf_utils",
   ]
 
   defines = audio_codec_defines
@@ -1341,7 +1341,6 @@ if (rtc_include_tests) {
       ":neteq_test_tools",
       "../..:webrtc_common",
       "../../api/audio_codecs/opus:audio_encoder_opus",
-      "../../rtc_base:protobuf_utils",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers",
       "../../system_wrappers:field_trial",
@@ -1433,7 +1432,6 @@ if (rtc_include_tests) {
              "../../api/audio_codecs:audio_codecs_api",
              "../../api/audio_codecs/opus:audio_encoder_opus",
              "../../common_audio",
-             "../../rtc_base:protobuf_utils",
              "../../rtc_base/system:arch",
              "../../test:test_main",
              "//testing/gtest",
@@ -2040,7 +2038,6 @@ if (rtc_include_tests) {
       "../../logging:rtc_event_log_api",
       "../../modules/rtp_rtcp:rtp_rtcp_format",
       "../../rtc_base:checks",
-      "../../rtc_base:protobuf_utils",
       "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_base_tests_utils",

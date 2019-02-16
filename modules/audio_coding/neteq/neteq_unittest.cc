@@ -33,7 +33,6 @@
 #include "rtc_base/ignore_wundef.h"
 #include "rtc_base/message_digest.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/protobuf_utils.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/system/arch.h"
@@ -208,7 +207,7 @@ void ResultSink::AddResult(const NetEqNetworkStatistics& stats_raw) {
   neteq_unittest::NetEqNetworkStatistics stats;
   Convert(stats_raw, &stats);
 
-  ProtoString stats_string;
+  std::string stats_string;
   ASSERT_TRUE(stats.SerializeToString(&stats_string));
   AddMessage(output_fp_, digest_.get(), stats_string);
 #else
@@ -221,7 +220,7 @@ void ResultSink::AddResult(const RtcpStatistics& stats_raw) {
   neteq_unittest::RtcpStatistics stats;
   Convert(stats_raw, &stats);
 
-  ProtoString stats_string;
+  std::string stats_string;
   ASSERT_TRUE(stats.SerializeToString(&stats_string));
   AddMessage(output_fp_, digest_.get(), stats_string);
 #else

@@ -10,7 +10,7 @@
 
 #include "modules/audio_processing/aec_dump/write_to_file_task.h"
 
-#include "rtc_base/protobuf_utils.h"
+#include <string>
 
 namespace webrtc {
 
@@ -39,7 +39,7 @@ void WriteToFileTask::UpdateBytesLeft(size_t event_byte_size) {
 }
 
 bool WriteToFileTask::Run() {
-  ProtoString event_string;
+  std::string event_string;
   event_.SerializeToString(&event_string);
 
   const size_t event_byte_size = event_.ByteSizeLong();
