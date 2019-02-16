@@ -117,36 +117,13 @@ BOOL CALLBACK TopWindowVerifier(HWND hwnd, LPARAM param) {
 
   // Checks whether current window |hwnd| intersects with
   // |context|->selected_window.
-  // |content_rect| is preferred because,
-  // 1. WindowCapturerWin is using GDI capturer, which cannot capture DX output.
-  //    So ScreenCapturer should be used as much as possible to avoid
-  //    uncapturable cases. Note: lots of new applications are using DX output
-  //    (hardware acceleration) to improve the performance which cannot be
-  //    captured by WindowCapturerWin. See bug http://crbug.com/741770.
-  // 2. WindowCapturerWin is still useful because we do not want to expose the
-  //    content on other windows if the target window is covered by them.
-  // 3. Shadow and borders should not be considered as "content" on other
-  //    windows because they do not expose any useful information.
-  //
-  // So we can bear the false-negative cases (target window is covered by the
-  // borders or shadow of other windows, but we have not detected it) in favor
-  // of using ScreenCapturer, rather than let the false-positive cases (target
-  // windows is only covered by borders or shadow of other windows, but we treat
-  // it as overlapping) impact the user experience.
-  DesktopRect content_rect;
-  if (!GetWindowContentRect(hwnd, &content_rect)) {
-    // Bail out if failed to get the window area.
+  if (context->window_capture_helper->IsWindowIntersectWithSelectedWindow(
+          hwnd, context->selected_window, context->selected_window_rect)) {
+    // If intersection is not empty, the selected window is not on top.
     context->is_top_window = false;
     return FALSE;
   }
 
-  content_rect.IntersectWith(context->selected_window_rect);
-
-  // If intersection is not empty, the selected window is not on top.
-  if (!content_rect.is_empty()) {
-    context->is_top_window = false;
-    return FALSE;
-  }
   // Otherwise, keep enumerating.
   return TRUE;
 }

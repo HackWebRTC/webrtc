@@ -67,6 +67,10 @@ class WindowCaptureHelperWin {
 
   bool IsAeroEnabled();
   bool IsWindowChromeNotification(HWND hwnd);
+  bool IsWindowIntersectWithSelectedWindow(
+      HWND hwnd,
+      HWND selected_hwnd,
+      const DesktopRect& selected_window_rect);
   bool IsWindowOnCurrentDesktop(HWND hwnd);
   bool IsWindowVisibleOnCurrentDesktop(HWND hwnd);
 
