@@ -4670,7 +4670,7 @@ void PeerConnection::UpdateRemoteSendersList(
         FindSenderInfo(*current_senders, kDefaultStreamId, default_sender_id);
     if (!default_sender_info) {
       current_senders->push_back(
-          RtpSenderInfo(kDefaultStreamId, default_sender_id, 0));
+          RtpSenderInfo(kDefaultStreamId, default_sender_id, /*ssrc=*/0));
       OnRemoteSenderAdded(current_senders->back(), media_type);
     }
   }

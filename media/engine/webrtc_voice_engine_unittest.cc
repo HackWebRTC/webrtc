@@ -3168,6 +3168,65 @@ TEST_F(WebRtcVoiceEngineTestFake, SetOutputVolumeUnsignaledRecvStream) {
   EXPECT_DOUBLE_EQ(4, GetRecvStream(kSsrcX).gain());
 }
 
+TEST_F(WebRtcVoiceEngineTestFake, BaseMinimumPlayoutDelayMs) {
+  EXPECT_TRUE(SetupChannel());
+  EXPECT_FALSE(channel_->SetBaseMinimumPlayoutDelayMs(kSsrcY, 200));
+  EXPECT_FALSE(channel_->GetBaseMinimumPlayoutDelayMs(kSsrcY).has_value());
+
+  cricket::StreamParams stream;
+  stream.ssrcs.push_back(kSsrcY);
+  EXPECT_TRUE(channel_->AddRecvStream(stream));
+  EXPECT_EQ(0, GetRecvStream(kSsrcY).base_mininum_playout_delay_ms());
+  EXPECT_TRUE(channel_->SetBaseMinimumPlayoutDelayMs(kSsrcY, 300));
+  EXPECT_EQ(300, GetRecvStream(kSsrcY).base_mininum_playout_delay_ms());
+}
+
+TEST_F(WebRtcVoiceEngineTestFake,
+       BaseMinimumPlayoutDelayMsUnsignaledRecvStream) {
+  // Here base minimum delay is abbreviated to delay in comments for shortness.
+  EXPECT_TRUE(SetupChannel());
+
+  // Spawn an unsignaled stream by sending a packet - delay should be 0.
+  DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
+  EXPECT_EQ(0, channel_->GetBaseMinimumPlayoutDelayMs(kSsrc1).value_or(-1));
+  // Check that it doesn't provide default values for unknown ssrc.
+  EXPECT_FALSE(channel_->GetBaseMinimumPlayoutDelayMs(kSsrcY).has_value());
+
+  // Check that default value for unsignaled streams is 0.
+  EXPECT_EQ(0, channel_->GetBaseMinimumPlayoutDelayMs(kSsrc0).value_or(-1));
+
+  // Should remember the delay 100 which will be set on new unsignaled streams,
+  // and also set the delay to 100 on existing unsignaled streams.
+  EXPECT_TRUE(channel_->SetBaseMinimumPlayoutDelayMs(kSsrc0, 100));
+  EXPECT_EQ(100, channel_->GetBaseMinimumPlayoutDelayMs(kSsrc0).value_or(-1));
+  // Check that it doesn't provide default values for unknown ssrc.
+  EXPECT_FALSE(channel_->GetBaseMinimumPlayoutDelayMs(kSsrcY).has_value());
+
+  // Spawn an unsignaled stream by sending a packet - delay should be 100.
+  unsigned char pcmuFrame2[sizeof(kPcmuFrame)];
+  memcpy(pcmuFrame2, kPcmuFrame, sizeof(kPcmuFrame));
+  rtc::SetBE32(&pcmuFrame2[8], kSsrcX);
+  DeliverPacket(pcmuFrame2, sizeof(pcmuFrame2));
+  EXPECT_EQ(100, channel_->GetBaseMinimumPlayoutDelayMs(kSsrcX).value_or(-1));
+
+  // Setting delay with SSRC=0 should affect all unsignaled streams.
+  EXPECT_TRUE(channel_->SetBaseMinimumPlayoutDelayMs(kSsrc0, 300));
+  if (kMaxUnsignaledRecvStreams > 1) {
+    EXPECT_EQ(300, channel_->GetBaseMinimumPlayoutDelayMs(kSsrc1).value_or(-1));
+  }
+  EXPECT_EQ(300, channel_->GetBaseMinimumPlayoutDelayMs(kSsrcX).value_or(-1));
+
+  // Setting delay on an individual stream affects only that.
+  EXPECT_TRUE(channel_->SetBaseMinimumPlayoutDelayMs(kSsrcX, 400));
+  if (kMaxUnsignaledRecvStreams > 1) {
+    EXPECT_EQ(300, channel_->GetBaseMinimumPlayoutDelayMs(kSsrc1).value_or(-1));
+  }
+  EXPECT_EQ(400, channel_->GetBaseMinimumPlayoutDelayMs(kSsrcX).value_or(-1));
+  EXPECT_EQ(300, channel_->GetBaseMinimumPlayoutDelayMs(kSsrc0).value_or(-1));
+  // Check that it doesn't provide default values for unknown ssrc.
+  EXPECT_FALSE(channel_->GetBaseMinimumPlayoutDelayMs(kSsrcY).has_value());
+}
+
 TEST_F(WebRtcVoiceEngineTestFake, SetsSyncGroupFromStreamId) {
   const uint32_t kAudioSsrc = 123;
   const std::string kStreamId = "AvSyncLabel";

@@ -48,6 +48,7 @@
 #include "pc/dtls_srtp_transport.h"
 #include "pc/local_audio_source.h"
 #include "pc/media_stream.h"
+#include "pc/remote_audio_source.h"
 #include "pc/rtp_receiver.h"
 #include "pc/rtp_sender.h"
 #include "pc/rtp_transport_internal.h"
@@ -520,6 +521,103 @@ TEST_F(RtpSenderReceiverTest, RemoteAudioTrackSetVolume) {
   EXPECT_EQ(0.9, volume);
 
   DestroyAudioRtpReceiver();
+}
+
+TEST_F(RtpSenderReceiverTest, RemoteAudioSourceLatencyCaching) {
+  absl::optional<int> delay_ms;  // In milliseconds.
+  double latency_s = 0.5;        // In seconds.
+  rtc::scoped_refptr<RemoteAudioSource> source =
+      new rtc::RefCountedObject<RemoteAudioSource>(rtc::Thread::Current());
+
+  // Check default value.
+  EXPECT_DOUBLE_EQ(source->GetLatency(), 0.0);
+
+  // Check caching behaviour.
+  source->SetLatency(latency_s);
+  EXPECT_DOUBLE_EQ(source->GetLatency(), latency_s);
+
+  // Check that cached value applied on the start.
+  source->Start(voice_media_channel_, kAudioSsrc);
+  delay_ms = voice_media_channel_->GetBaseMinimumPlayoutDelayMs(kAudioSsrc);
+  EXPECT_DOUBLE_EQ(latency_s, delay_ms.value_or(0) / 1000.0);
+
+  // Check that setting latency changes delay.
+  latency_s = 0.8;
+  source->SetLatency(latency_s);
+  delay_ms = voice_media_channel_->GetBaseMinimumPlayoutDelayMs(kAudioSsrc);
+  EXPECT_DOUBLE_EQ(latency_s, delay_ms.value_or(0) / 1000.0);
+  EXPECT_DOUBLE_EQ(latency_s, source->GetLatency());
+
+  // Check that if underlying delay is changed then remote source will reflect
+  // it.
+  delay_ms = 300;
+  voice_media_channel_->SetBaseMinimumPlayoutDelayMs(kAudioSsrc,
+                                                     delay_ms.value());
+  EXPECT_DOUBLE_EQ(source->GetLatency(), delay_ms.value() / 1000.0);
+
+  // Check that after stop we get last cached value.
+  source->Stop(voice_media_channel_, kAudioSsrc);
+  EXPECT_DOUBLE_EQ(latency_s, source->GetLatency());
+
+  // Check that if we start source again with new ssrc then cached value is
+  // applied.
+  source->Start(voice_media_channel_, kAudioSsrc2);
+  delay_ms = voice_media_channel_->GetBaseMinimumPlayoutDelayMs(kAudioSsrc2);
+  EXPECT_DOUBLE_EQ(latency_s, delay_ms.value_or(0) / 1000.0);
+
+  // Check rounding behavior.
+  source->SetLatency(2 / 1000.0);
+  delay_ms = voice_media_channel_->GetBaseMinimumPlayoutDelayMs(kAudioSsrc2);
+  EXPECT_EQ(0, delay_ms.value_or(-1));
+  EXPECT_DOUBLE_EQ(0, source->GetLatency());
+}
+
+TEST_F(RtpSenderReceiverTest, RemoteAudioSourceLatencyNoCaching) {
+  int delay_ms = 300;  // In milliseconds.
+  rtc::scoped_refptr<RemoteAudioSource> source =
+      new rtc::RefCountedObject<RemoteAudioSource>(rtc::Thread::Current());
+
+  // Set it to value different from default zero.
+  voice_media_channel_->SetBaseMinimumPlayoutDelayMs(kAudioSsrc, delay_ms);
+
+  // Check that calling GetLatency on the source that hasn't been started yet
+  // won't trigger caching.
+  EXPECT_DOUBLE_EQ(source->GetLatency(), 0);
+  source->Start(voice_media_channel_, kAudioSsrc);
+  EXPECT_DOUBLE_EQ(source->GetLatency(), delay_ms / 1000.0);
+}
+
+TEST_F(RtpSenderReceiverTest, RemoteAudioTrackSetLatency) {
+  CreateAudioRtpReceiver();
+
+  absl::optional<int> delay_ms;  // In milliseconds.
+  double latency_s = 0.5;        // In seconds.
+  audio_track_->GetSource()->SetLatency(latency_s);
+  delay_ms = voice_media_channel_->GetBaseMinimumPlayoutDelayMs(kAudioSsrc);
+  EXPECT_DOUBLE_EQ(latency_s, delay_ms.value_or(0) / 1000.0);
+
+  // Disabling the track should take no effect on previously set value.
+  audio_track_->set_enabled(false);
+  delay_ms = voice_media_channel_->GetBaseMinimumPlayoutDelayMs(kAudioSsrc);
+  EXPECT_DOUBLE_EQ(latency_s, delay_ms.value_or(0) / 1000.0);
+
+  // When the track is disabled, we still should be able to set latency.
+  latency_s = 0.3;
+  audio_track_->GetSource()->SetLatency(latency_s);
+  delay_ms = voice_media_channel_->GetBaseMinimumPlayoutDelayMs(kAudioSsrc);
+  EXPECT_DOUBLE_EQ(latency_s, delay_ms.value_or(0) / 1000.0);
+
+  // Enabling the track should take no effect on previously set value.
+  audio_track_->set_enabled(true);
+  delay_ms = voice_media_channel_->GetBaseMinimumPlayoutDelayMs(kAudioSsrc);
+  EXPECT_DOUBLE_EQ(latency_s, delay_ms.value_or(0) / 1000.0);
+
+  // We still should be able to change latency.
+  latency_s = 0.0;
+  audio_track_->GetSource()->SetLatency(latency_s);
+  delay_ms = voice_media_channel_->GetBaseMinimumPlayoutDelayMs(kAudioSsrc);
+  EXPECT_EQ(0, delay_ms.value_or(-1));
+  EXPECT_DOUBLE_EQ(latency_s, delay_ms.value_or(0) / 1000.0);
 }
 
 // Test that the media channel isn't enabled for sending if the audio sender

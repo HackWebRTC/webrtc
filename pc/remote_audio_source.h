@@ -46,6 +46,8 @@ class RemoteAudioSource : public Notifier<AudioSourceInterface>,
 
   // AudioSourceInterface implementation.
   void SetVolume(double volume) override;
+  void SetLatency(double latency) override;
+  double GetLatency() const override;
   void RegisterAudioObserver(AudioObserver* observer) override;
   void UnregisterAudioObserver(AudioObserver* observer) override;
 
@@ -63,12 +65,19 @@ class RemoteAudioSource : public Notifier<AudioSourceInterface>,
 
   void OnMessage(rtc::Message* msg) override;
 
+  bool SetDelayMs(int delay_ms);
+  absl::optional<int> GetDelayMs() const;
+
   rtc::Thread* const main_thread_;
   rtc::Thread* const worker_thread_;
   std::list<AudioObserver*> audio_observers_;
   rtc::CriticalSection sink_lock_;
   std::list<AudioTrackSinkInterface*> sinks_;
   SourceState state_;
+  // Media channel and ssrc together uniqely identify audio stream.
+  cricket::VoiceMediaChannel* media_channel_ = nullptr;
+  absl::optional<uint32_t> ssrc_;
+  absl::optional<double> cached_latency_;
 };
 
 }  // namespace webrtc

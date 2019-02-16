@@ -201,6 +201,12 @@ class AudioSourceInterface : public MediaSourceInterface {
   // be applied in the track in a way that does not affect clones of the track.
   virtual void SetVolume(double volume) {}
 
+  // Sets the minimum latency of the remote source until audio playout. Actual
+  // observered latency may differ depending on the source. |latency| is in the
+  // range of [0.0, 10.0] seconds.
+  virtual void SetLatency(double latency) {}
+  virtual double GetLatency() const;
+
   // Registers/unregisters observers to the audio source.
   virtual void RegisterAudioObserver(AudioObserver* observer) {}
   virtual void UnregisterAudioObserver(AudioObserver* observer) {}

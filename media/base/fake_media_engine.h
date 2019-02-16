@@ -349,6 +349,10 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   bool SetOutputVolume(uint32_t ssrc, double volume) override;
   bool GetOutputVolume(uint32_t ssrc, double* volume);
 
+  bool SetBaseMinimumPlayoutDelayMs(uint32_t ssrc, int delay_ms) override;
+  absl::optional<int> GetBaseMinimumPlayoutDelayMs(
+      uint32_t ssrc) const override;
+
   bool GetStats(VoiceMediaInfo* info) override;
 
   void SetRawAudioSink(
@@ -384,6 +388,7 @@ class FakeVoiceMediaChannel : public RtpHelper<VoiceMediaChannel> {
   std::vector<AudioCodec> recv_codecs_;
   std::vector<AudioCodec> send_codecs_;
   std::map<uint32_t, double> output_scalings_;
+  std::map<uint32_t, int> output_delays_;
   std::vector<DtmfInfo> dtmf_info_queue_;
   AudioOptions options_;
   std::map<uint32_t, std::unique_ptr<VoiceChannelAudioSink>> local_sinks_;
