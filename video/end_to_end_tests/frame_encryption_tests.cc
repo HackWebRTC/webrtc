@@ -17,10 +17,18 @@
 #include "test/gtest.h"
 
 namespace webrtc {
+namespace {
+enum : int {  // The first valid value is 1.
+  kGenericDescriptorExtensionId = 1,
+};
+}  // namespace
 
 class FrameEncryptionEndToEndTest : public test::CallTest {
  public:
-  FrameEncryptionEndToEndTest() = default;
+  FrameEncryptionEndToEndTest() {
+    RegisterRtpExtension(RtpExtension(RtpExtension::kGenericFrameDescriptorUri,
+                                      kGenericDescriptorExtensionId));
+  }
 
  private:
   // GenericDescriptor is required for FrameEncryption to work.

@@ -8,8 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <string>
+#include <utility>
+#include <vector>
+
 #include "test/call_test.h"
-#include "test/constants.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 #include "test/rtcp_packet_parser.h"
@@ -17,6 +20,11 @@
 namespace webrtc {
 namespace test {
 namespace {
+
+enum : int {  // The first valid value is 1.
+  kAudioLevelExtensionId = 1,
+  kTransportSequenceNumberExtensionId,
+};
 
 class AudioSendTest : public SendTest {
  public:
@@ -103,8 +111,8 @@ TEST_F(AudioSendStreamCallTest, SupportsAudioLevel) {
   class AudioLevelObserver : public AudioSendTest {
    public:
     AudioLevelObserver() : AudioSendTest() {
-      EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
-          kRtpExtensionAudioLevel, test::kAudioLevelExtensionId));
+      EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(kRtpExtensionAudioLevel,
+                                                      kAudioLevelExtensionId));
     }
 
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -127,8 +135,8 @@ TEST_F(AudioSendStreamCallTest, SupportsAudioLevel) {
         AudioSendStream::Config* send_config,
         std::vector<AudioReceiveStream::Config>* receive_configs) override {
       send_config->rtp.extensions.clear();
-      send_config->rtp.extensions.push_back(RtpExtension(
-          RtpExtension::kAudioLevelUri, test::kAudioLevelExtensionId));
+      send_config->rtp.extensions.push_back(
+          RtpExtension(RtpExtension::kAudioLevelUri, kAudioLevelExtensionId));
     }
 
     void PerformTest() override {

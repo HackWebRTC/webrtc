@@ -24,7 +24,19 @@
 #include "test/rtcp_packet_parser.h"
 
 namespace webrtc {
-class StatsEndToEndTest : public test::CallTest {};
+namespace {
+enum : int {  // The first valid value is 1.
+  kVideoContentTypeExtensionId = 1,
+};
+}  // namespace
+
+class StatsEndToEndTest : public test::CallTest {
+ public:
+  StatsEndToEndTest() {
+    RegisterRtpExtension(RtpExtension(RtpExtension::kVideoContentTypeUri,
+                                      kVideoContentTypeExtensionId));
+  }
+};
 
 TEST_F(StatsEndToEndTest, GetStats) {
   static const int kStartBitrateBps = 3000000;

@@ -22,10 +22,21 @@
 #include "test/rtcp_packet_parser.h"
 
 namespace webrtc {
+namespace {
+enum : int {  // The first valid value is 1.
+  kTransportSequenceNumberExtensionId = 1,
+  kVideoRotationExtensionId,
+};
+}  // namespace
 
 class FecEndToEndTest : public test::CallTest {
  public:
-  FecEndToEndTest() = default;
+  FecEndToEndTest() {
+    RegisterRtpExtension(RtpExtension(RtpExtension::kTransportSequenceNumberUri,
+                                      kTransportSequenceNumberExtensionId));
+    RegisterRtpExtension(RtpExtension(RtpExtension::kVideoRotationUri,
+                                      kVideoRotationExtensionId));
+  }
 };
 
 TEST_F(FecEndToEndTest, ReceivesUlpfec) {

@@ -18,6 +18,11 @@
 #include "test/rtcp_packet_parser.h"
 
 namespace webrtc {
+namespace {
+enum : int {  // The first valid value is 1.
+  kTransportSequenceNumberExtensionId = 1,
+};
+}  // namespace
 
 class RtpRtcpEndToEndTest : public test::CallTest {
  protected:
@@ -530,7 +535,7 @@ TEST_F(RtpRtcpEndToEndTest, DISABLED_TestFlexfecRtpStatePreservation) {
     flexfec_receive_config.transport_cc = true;
     flexfec_receive_config.rtp_header_extensions.emplace_back(
         RtpExtension::kTransportSequenceNumberUri,
-        test::kTransportSequenceNumberExtensionId);
+        kTransportSequenceNumberExtensionId);
     flexfec_receive_configs_.push_back(flexfec_receive_config);
 
     CreateFlexfecStreams();

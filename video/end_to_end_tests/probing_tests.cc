@@ -15,9 +15,21 @@
 #include "test/call_test.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
-namespace webrtc {
 
-class ProbingEndToEndTest : public test::CallTest {};
+namespace webrtc {
+namespace {
+enum : int {  // The first valid value is 1.
+  kTransportSequenceNumberExtensionId = 1,
+};
+}  // namespace
+
+class ProbingEndToEndTest : public test::CallTest {
+ public:
+  ProbingEndToEndTest() {
+    RegisterRtpExtension(RtpExtension(RtpExtension::kTransportSequenceNumberUri,
+                                      kTransportSequenceNumberExtensionId));
+  }
+};
 
 class ProbingTest : public test::EndToEndTest {
  public:
