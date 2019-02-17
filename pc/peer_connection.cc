@@ -1810,26 +1810,31 @@ void PeerConnection::GetStats(
 }
 
 PeerConnectionInterface::SignalingState PeerConnection::signaling_state() {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   return signaling_state_;
 }
 
 PeerConnectionInterface::IceConnectionState
 PeerConnection::ice_connection_state() {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   return ice_connection_state_;
 }
 
 PeerConnectionInterface::IceConnectionState
 PeerConnection::standardized_ice_connection_state() {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   return standardized_ice_connection_state_;
 }
 
 PeerConnectionInterface::PeerConnectionState
 PeerConnection::peer_connection_state() {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   return connection_state_;
 }
 
 PeerConnectionInterface::IceGatheringState
 PeerConnection::ice_gathering_state() {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   return ice_gathering_state_;
 }
 
@@ -1975,6 +1980,7 @@ PeerConnection::GetReceivingTransceiversOfType(cricket::MediaType media_type) {
 
 void PeerConnection::CreateAnswer(CreateSessionDescriptionObserver* observer,
                                   const RTCOfferAnswerOptions& options) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   TRACE_EVENT0("webrtc", "PeerConnection::CreateAnswer");
   if (!observer) {
     RTC_LOG(LS_ERROR) << "CreateAnswer - observer is NULL.";

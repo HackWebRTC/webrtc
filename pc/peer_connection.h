@@ -522,6 +522,7 @@ class PeerConnection : public PeerConnectionInternal,
   void OnNegotiationNeeded();
 
   bool IsClosed() const {
+    RTC_DCHECK_RUN_ON(signaling_thread());
     return signaling_state_ == PeerConnectionInterface::kClosed;
   }
 
@@ -1039,14 +1040,16 @@ class PeerConnection : public PeerConnectionInternal,
   // pointer (but not touch the object) from any thread.
   RtcEventLog* const event_log_ptr_ RTC_PT_GUARDED_BY(worker_thread());
 
-  SignalingState signaling_state_ = kStable;
-  IceConnectionState ice_connection_state_ = kIceConnectionNew;
-  PeerConnectionInterface::IceConnectionState
-      standardized_ice_connection_state_ = kIceConnectionNew;
-  PeerConnectionInterface::PeerConnectionState connection_state_ =
-      PeerConnectionState::kNew;
+  SignalingState signaling_state_ RTC_GUARDED_BY(signaling_thread()) = kStable;
+  IceConnectionState ice_connection_state_ RTC_GUARDED_BY(signaling_thread()) =
+      kIceConnectionNew;
+  PeerConnectionInterface::IceConnectionState standardized_ice_connection_state_
+      RTC_GUARDED_BY(signaling_thread()) = kIceConnectionNew;
+  PeerConnectionInterface::PeerConnectionState connection_state_
+      RTC_GUARDED_BY(signaling_thread()) = PeerConnectionState::kNew;
 
-  IceGatheringState ice_gathering_state_ = kIceGatheringNew;
+  IceGatheringState ice_gathering_state_ RTC_GUARDED_BY(signaling_thread()) =
+      kIceGatheringNew;
   PeerConnectionInterface::RTCConfiguration configuration_;
 
   // TODO(zstein): |async_resolver_factory_| can currently be nullptr if it
