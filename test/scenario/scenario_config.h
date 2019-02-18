@@ -150,6 +150,16 @@ struct VideoStreamConfig {
       bool denoising = true;
       bool automatic_scaling = true;
     } single;
+    struct Layers {
+      int temporal = 1;
+      int spatial = 1;
+      enum class Prediction {
+        kTemporalOnly,
+        kSpatialOnKey,
+        kFull,
+      } prediction = Prediction::kFull;
+    } layers;
+
     using DegradationPreference = DegradationPreference;
     DegradationPreference degradation_preference =
         DegradationPreference::MAINTAIN_FRAMERATE;

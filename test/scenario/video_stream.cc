@@ -74,6 +74,18 @@ VideoEncoderConfig::ContentType ConvertContentType(
       return VideoEncoderConfig::ContentType::kScreen;
   }
 }
+InterLayerPredMode ToInterLayerPredMode(
+    VideoStreamConfig::Encoder::Layers::Prediction value) {
+  using Pred = VideoStreamConfig::Encoder::Layers::Prediction;
+  switch (value) {
+    case Pred::kTemporalOnly:
+      return InterLayerPredMode::kOff;
+    case Pred::kSpatialOnKey:
+      return InterLayerPredMode::kOnKeyPic;
+    case Pred::kFull:
+      return InterLayerPredMode::kOn;
+  }
+}
 std::vector<RtpExtension> GetVideoRtpExtensions(
     const VideoStreamConfig config) {
   return {RtpExtension(RtpExtension::kTransportSequenceNumberUri,
@@ -120,26 +132,37 @@ VideoSendStream::Config CreateVideoSendStreamConfig(VideoStreamConfig config,
   return send_config;
 }
 rtc::scoped_refptr<VideoEncoderConfig::EncoderSpecificSettings>
-CreateVp9SpecificSettings(VideoStreamConfig config) {
-  VideoCodecVP9 vp9_settings = VideoEncoder::GetDefaultVp9Settings();
-  vp9_settings.frameDroppingOn = config.encoder.frame_dropping;
-  vp9_settings.keyFrameInterval = config.encoder.key_frame_interval.value_or(0);
-  vp9_settings.automaticResizeOn = config.encoder.single.automatic_scaling;
-  vp9_settings.denoisingOn = config.encoder.single.denoising;
+CreateVp9SpecificSettings(VideoStreamConfig video_config) {
+  constexpr auto kScreen = VideoStreamConfig::Encoder::ContentType::kScreen;
+  VideoStreamConfig::Encoder conf = video_config.encoder;
+  VideoCodecVP9 vp9 = VideoEncoder::GetDefaultVp9Settings();
+  vp9.frameDroppingOn = conf.frame_dropping;
+  vp9.keyFrameInterval = conf.key_frame_interval.value_or(0);
+  vp9.numberOfTemporalLayers = static_cast<uint8_t>(conf.layers.temporal);
+  vp9.numberOfSpatialLayers = static_cast<uint8_t>(conf.layers.spatial);
+  vp9.interLayerPred = ToInterLayerPredMode(conf.layers.prediction);
 
-  if (config.encoder.content_type ==
-      VideoStreamConfig::Encoder::ContentType::kScreen) {
-    vp9_settings.automaticResizeOn = false;
-    // High FPS vp9 screenshare requires flexible mode.
-    if (config.source.framerate > 5)
-      vp9_settings.flexibleMode = true;
+  if (conf.content_type == kScreen &&
+      (video_config.source.framerate > 5 || conf.layers.spatial >= 3)) {
+    vp9.flexibleMode = true;
+  }
+
+  if (conf.content_type == kScreen ||
+      conf.layers.temporal * conf.layers.spatial) {
+    vp9.automaticResizeOn = false;
+    vp9.denoisingOn = false;
+  } else {
+    vp9.automaticResizeOn = conf.single.automatic_scaling;
+    vp9.denoisingOn = conf.single.denoising;
   }
   return new rtc::RefCountedObject<
-      VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
+      VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9);
 }
 
 rtc::scoped_refptr<VideoEncoderConfig::EncoderSpecificSettings>
 CreateVp8SpecificSettings(VideoStreamConfig config) {
+  RTC_DCHECK_EQ(config.encoder.layers.temporal, 1);
+  RTC_DCHECK_EQ(config.encoder.layers.spatial, 1);
   VideoCodecVP8 vp8_settings = VideoEncoder::GetDefaultVp8Settings();
   vp8_settings.frameDroppingOn = config.encoder.frame_dropping;
   vp8_settings.keyFrameInterval = config.encoder.key_frame_interval.value_or(0);
@@ -151,6 +174,9 @@ CreateVp8SpecificSettings(VideoStreamConfig config) {
 
 rtc::scoped_refptr<VideoEncoderConfig::EncoderSpecificSettings>
 CreateH264SpecificSettings(VideoStreamConfig config) {
+  RTC_DCHECK_EQ(config.encoder.layers.temporal, 1);
+  RTC_DCHECK_EQ(config.encoder.layers.spatial, 1);
+
   VideoCodecH264 h264_settings = VideoEncoder::GetDefaultH264Settings();
   h264_settings.frameDroppingOn = config.encoder.frame_dropping;
   h264_settings.keyFrameInterval =
