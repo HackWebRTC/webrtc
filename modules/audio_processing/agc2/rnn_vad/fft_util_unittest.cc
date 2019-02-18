@@ -8,7 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <array>
+#include <algorithm>
+#include <cmath>
+#include <vector>
 
 #include "modules/audio_processing/agc2/rnn_vad/common.h"
 #include "modules/audio_processing/agc2/rnn_vad/fft_util.h"
@@ -20,27 +22,40 @@
 namespace webrtc {
 namespace rnn_vad {
 namespace test {
+namespace {
 
-TEST(RnnVadTest, CheckBandAnalysisFftOutput) {
-  // Input data.
-  std::array<float, kFrameSize20ms24kHz> samples{};
-  for (int i = 0; i < static_cast<int>(kFrameSize20ms24kHz); ++i) {
-    samples[i] = i - static_cast<int>(kFrameSize20ms24kHz / 2);
+std::vector<float> CreateSine(float amplitude,
+                              float frequency_hz,
+                              float duration_s,
+                              int sample_rate_hz) {
+  size_t num_samples = static_cast<size_t>(duration_s * sample_rate_hz);
+  std::vector<float> signal(num_samples);
+  for (size_t i = 0; i < num_samples; ++i) {
+    signal[i] =
+        amplitude * std::sin(i * 2.0 * kPi * frequency_hz / sample_rate_hz);
   }
-  // TODO(bugs.webrtc.org/8948): Add when the issue is fixed.
-  // FloatingPointExceptionObserver fpe_observer;
-  BandAnalysisFft fft;
-  std::array<std::complex<float>, kFrameSize20ms24kHz> fft_coeffs;
-  fft.ForwardFft(samples, fft_coeffs);
-  // First coefficient is DC - i.e., real number.
-  EXPECT_EQ(0.f, fft_coeffs[0].imag());
-  // Check conjugated symmetry of the FFT output.
-  for (size_t i = 1; i < fft_coeffs.size() / 2; ++i) {
-    SCOPED_TRACE(i);
-    const auto& a = fft_coeffs[i];
-    const auto& b = fft_coeffs[fft_coeffs.size() - i];
-    EXPECT_NEAR(a.real(), b.real(), 2e-6f);
-    EXPECT_NEAR(a.imag(), -b.imag(), 2e-6f);
+  return signal;
+}
+
+}  // namespace
+
+TEST(RnnVadTest, BandAnalysisFftTest) {
+  for (float frequency_hz : {200.f, 450.f, 1500.f}) {
+    SCOPED_TRACE(frequency_hz);
+    auto x = CreateSine(
+        /*amplitude=*/1000.f, frequency_hz,
+        /*duration_s=*/0.02f,
+        /*sample_rate_hz=*/kSampleRate24kHz);
+    BandAnalysisFft analyzer;
+    std::vector<std::complex<float>> x_fft(x.size() / 2 + 1);
+    analyzer.ForwardFft(x, x_fft);
+    int peak_fft_bin_index = std::distance(
+        x_fft.begin(),
+        std::max_element(x_fft.begin(), x_fft.end(),
+                         [](std::complex<float> a, std::complex<float> b) {
+                           return std::abs(a) < std::abs(b);
+                         }));
+    EXPECT_EQ(frequency_hz, kSampleRate24kHz * peak_fft_bin_index / x.size());
   }
 }
 

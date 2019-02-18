@@ -11,6 +11,7 @@
 #include "modules/audio_processing/agc2/rnn_vad/fft_util.h"
 
 #include <stddef.h>
+#include <algorithm>
 #include <cmath>
 
 #include "rtc_base/checks.h"
@@ -42,8 +43,8 @@ BandAnalysisFft::~BandAnalysisFft() = default;
 
 void BandAnalysisFft::ForwardFft(rtc::ArrayView<const float> samples,
                                  rtc::ArrayView<std::complex<float>> dst) {
-  RTC_DCHECK_EQ(input_buf_.size(), samples.size());
-  RTC_DCHECK_EQ(samples.size(), dst.size());
+  RTC_DCHECK_EQ(samples.size(), kFrameSize20ms24kHz);
+  RTC_DCHECK_EQ(dst.size(), kFrameSize20ms24kHz / 2 + 1);
   // Apply windowing.
   RTC_DCHECK_EQ(input_buf_.size(), 2 * half_window_.size());
   for (size_t i = 0; i < input_buf_.size() / 2; ++i) {
@@ -52,7 +53,10 @@ void BandAnalysisFft::ForwardFft(rtc::ArrayView<const float> samples,
     input_buf_[j].real(samples[j] * half_window_[i]);
   }
   fft_.ForwardFft(kFrameSize20ms24kHz, input_buf_.data(), kFrameSize20ms24kHz,
-                  dst.data());
+                  output_buf_.data());
+  // Copy the first symmetric conjugate part.
+  RTC_DCHECK_LT(dst.size(), output_buf_.size());
+  std::copy(output_buf_.begin(), output_buf_.begin() + dst.size(), dst.begin());
 }
 
 }  // namespace rnn_vad

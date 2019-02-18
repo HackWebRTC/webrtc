@@ -21,6 +21,8 @@
 namespace webrtc {
 namespace rnn_vad {
 
+// TODO(alessiob): Switch to PFFFT using its own wrapper.
+// TODO(alessiob): Delete this class when switching to PFFFT.
 // FFT implementation wrapper for the band-wise analysis step in which 20 ms
 // frames at 24 kHz are analyzed in the frequency domain. The goal of this class
 // are (i) making easy to switch to another FFT implementation, (ii) own the
@@ -34,6 +36,8 @@ class BandAnalysisFft {
   ~BandAnalysisFft();
   // Applies a windowing function to |samples|, computes the real forward FFT
   // and writes the result in |dst|.
+  // The size of |samples| must be 480 (20 ms at 24 kHz).
+  // The size of |dst| must be 241 since the complex conjugate is not written.
   void ForwardFft(rtc::ArrayView<const float> samples,
                   rtc::ArrayView<std::complex<float>> dst);
 
@@ -42,6 +46,7 @@ class BandAnalysisFft {
                 "kFrameSize20ms24kHz must be even.");
   const std::array<float, kFrameSize20ms24kHz / 2> half_window_;
   std::array<std::complex<float>, kFrameSize20ms24kHz> input_buf_{};
+  std::array<std::complex<float>, kFrameSize20ms24kHz> output_buf_{};
   rnnoise::KissFft fft_;
 };
 

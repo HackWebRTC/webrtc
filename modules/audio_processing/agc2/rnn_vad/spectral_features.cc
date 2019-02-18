@@ -68,8 +68,8 @@ SpectralFeaturesView::~SpectralFeaturesView() = default;
 
 SpectralFeaturesExtractor::SpectralFeaturesExtractor()
     : fft_(),
-      reference_frame_fft_(kFrameSize20ms24kHz),
-      lagged_frame_fft_(kFrameSize20ms24kHz),
+      reference_frame_fft_(kFrameSize20ms24kHz / 2 + 1),
+      lagged_frame_fft_(kFrameSize20ms24kHz / 2 + 1),
       band_boundaries_(
           ComputeBandBoundaryIndexes(kSampleRate24kHz, kFrameSize20ms24kHz)),
       dct_table_(ComputeDctTable()) {}
