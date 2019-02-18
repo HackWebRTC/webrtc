@@ -199,6 +199,10 @@ int32_t VideoSender::AddVideoFrame(
       RTC_LOG(LS_ERROR) << "Frame conversion failed, dropping frame.";
       return VCM_PARAMETER_ERROR;
     }
+
+    // UpdatedRect is not propagated because buffer was converted,
+    // therefore we can't guarantee that pixels outside of UpdateRect didn't
+    // change comparing to the previous frame.
     converted_frame = VideoFrame::Builder()
                           .set_video_frame_buffer(converted_buffer)
                           .set_timestamp_rtp(converted_frame.timestamp())
