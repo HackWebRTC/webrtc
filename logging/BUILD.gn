@@ -126,6 +126,7 @@ rtc_source_set("rtc_event_generic_packet_events") {
   ]
   deps = [
     ":rtc_event_log_api",
+    "//third_party/abseil-cpp/absl/memory",
   ]
   if (!build_with_chromium && is_clang) {
     suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]

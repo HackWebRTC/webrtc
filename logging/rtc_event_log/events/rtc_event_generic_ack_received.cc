@@ -12,6 +12,8 @@
 
 #include <vector>
 
+#include "absl/memory/memory.h"
+
 namespace webrtc {
 
 std::vector<std::unique_ptr<RtcEventGenericAckReceived>>
