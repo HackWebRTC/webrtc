@@ -58,15 +58,14 @@ constexpr int kVoiceEngineMinMinPlayoutDelayMs = 0;
 constexpr int kVoiceEngineMaxMinPlayoutDelayMs = 10000;
 
 RTPHeader CreateRTPHeaderForMediaTransportFrame(
-    const MediaTransportEncodedAudioFrame& frame,
-    uint64_t channel_id) {
+    const MediaTransportEncodedAudioFrame& frame) {
   webrtc::RTPHeader rtp_header;
   rtp_header.payloadType = frame.payload_type();
   rtp_header.payload_type_frequency = frame.sampling_rate_hz();
   rtp_header.timestamp = frame.starting_sample_index();
   rtp_header.sequenceNumber = frame.sequence_number();
 
-  rtp_header.ssrc = static_cast<uint32_t>(channel_id);
+  // Note: SSRC is no longer used by NetEq, so not set.
 
   // The rest are initialized by the RTPHeader constructor.
   return rtp_header;
@@ -167,8 +166,12 @@ class ChannelReceive : public ChannelReceiveInterface,
   int64_t GetRTT() const;
 
   // MediaTransportAudioSinkInterface override;
-  void OnData(uint64_t channel_id,
-              MediaTransportEncodedAudioFrame frame) override;
+  void OnData(MediaTransportEncodedAudioFrame frame) override;
+  // TODO(nisse): Deprecated variant. Delete.
+  void OnData(uint64_t /* channel_id */,
+              MediaTransportEncodedAudioFrame frame) override {
+    OnData(std::move(frame));
+  }
 
   int32_t OnReceivedPayloadData(const uint8_t* payloadData,
                                 size_t payloadSize,
@@ -293,8 +296,7 @@ int32_t ChannelReceive::OnReceivedPayloadData(const uint8_t* payloadData,
 }
 
 // MediaTransportAudioSinkInterface override.
-void ChannelReceive::OnData(uint64_t channel_id,
-                            MediaTransportEncodedAudioFrame frame) {
+void ChannelReceive::OnData(MediaTransportEncodedAudioFrame frame) {
   RTC_CHECK(media_transport_);
 
   if (!Playing()) {
@@ -306,7 +308,7 @@ void ChannelReceive::OnData(uint64_t channel_id,
   // Send encoded audio frame to Decoder / NetEq.
   if (audio_coding_->IncomingPacket(
           frame.encoded_data().data(), frame.encoded_data().size(),
-          CreateRTPHeaderForMediaTransportFrame(frame, channel_id)) != 0) {
+          CreateRTPHeaderForMediaTransportFrame(frame)) != 0) {
     RTC_DLOG(LS_ERROR) << "ChannelReceive::OnData: unable to "
                           "push data to the ACM";
   }
