@@ -58,7 +58,8 @@ class PeerConnectionE2EQualityTest
   void SetupVideoSink(rtc::scoped_refptr<RtpTransceiverInterface> transceiver,
                       std::vector<VideoConfig> remote_video_configs);
   // Have to be run on the signaling thread.
-  void RunOnSignalingThread(RunParams run_params);
+  void SetupCallOnSignalingThread();
+  void TearDownCallOnSignalingThread();
   std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>
   AddMedia(TestPeer* peer);
   std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>

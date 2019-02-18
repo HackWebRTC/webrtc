@@ -11,6 +11,7 @@
  */
 #include "test/pc/e2e/peer_connection_quality_test.h"
 
+#include <algorithm>
 #include <set>
 #include <utility>
 
@@ -22,6 +23,7 @@
 #include "pc/test/mock_peer_connection_observers.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "system_wrappers/include/cpu_info.h"
 #include "test/pc/e2e/analyzer/video/example_video_quality_analyzer.h"
 #include "test/pc/e2e/api/video_quality_analyzer_interface.h"
@@ -189,8 +191,19 @@ void PeerConnectionE2EQualityTest::Run(
   video_quality_analyzer_injection_helper_->Start(video_analyzer_threads);
   signaling_thread->Invoke<void>(
       RTC_FROM_HERE,
-      rtc::Bind(&PeerConnectionE2EQualityTest::RunOnSignalingThread, this,
-                run_params));
+      rtc::Bind(&PeerConnectionE2EQualityTest::SetupCallOnSignalingThread,
+                this));
+
+  // TODO(bugs.webrtc.org/10138): Implement stats collection and send stats
+  // reports to analyzers every 1 second.
+  rtc::Event done;
+  done.Wait(rtc::checked_cast<int>(run_params.run_duration.ms()));
+
+  signaling_thread->Invoke<void>(
+      RTC_FROM_HERE,
+      rtc::Bind(&PeerConnectionE2EQualityTest::TearDownCallOnSignalingThread,
+                this));
+
   video_quality_analyzer_injection_helper_->Stop();
 
   // Ensuring that TestPeers have been destroyed in order to correctly close
@@ -296,15 +309,14 @@ void PeerConnectionE2EQualityTest::SetupVideoSink(
   output_video_sinks_.push_back(std::move(video_sink));
 }
 
-void PeerConnectionE2EQualityTest::RunOnSignalingThread(RunParams run_params) {
+void PeerConnectionE2EQualityTest::SetupCallOnSignalingThread() {
   alice_video_sources_ = AddMedia(alice_.get());
   bob_video_sources_ = AddMedia(bob_.get());
 
   SetupCall();
+}
 
-  rtc::Event done;
-  done.Wait(static_cast<int>(run_params.run_duration.ms()));
-
+void PeerConnectionE2EQualityTest::TearDownCallOnSignalingThread() {
   TearDownCall();
 }
 
