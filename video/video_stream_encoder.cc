@@ -858,8 +858,13 @@ VideoStreamEncoder::GetBitrateAllocationAndNotifyObserver(
   }
 
   if (bitrate_adjuster_) {
-    return bitrate_adjuster_->AdjustRateAllocation(bitrate_allocation,
-                                                   framerate_fps);
+    VideoBitrateAllocation adjusted_allocation =
+        bitrate_adjuster_->AdjustRateAllocation(bitrate_allocation,
+                                                framerate_fps);
+    RTC_LOG(LS_VERBOSE) << "Adjusting allocation, fps = " << framerate_fps
+                        << ", from " << bitrate_allocation.ToString() << ", to "
+                        << adjusted_allocation.ToString();
+    return adjusted_allocation;
   }
   return bitrate_allocation;
 }

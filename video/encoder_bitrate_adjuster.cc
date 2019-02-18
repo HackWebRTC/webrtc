@@ -139,6 +139,11 @@ VideoBitrateAllocation EncoderBitrateAdjuster::AdjustRateAllocation(
                                   min_bitrates_bps_[si]);
     }
 
+    if (spatial_layer_bitrate_bps > 0) {
+      RTC_LOG(LS_VERBOSE) << "Utilization factor for spatial index " << si
+                          << ": " << utilization_factor;
+    }
+
     // Populate the adjusted allocation with determined utilization factor.
     if (active_tls_[si] == 1 &&
         spatial_layer_bitrate_bps > bitrate_allocation.GetBitrate(si, 0)) {
