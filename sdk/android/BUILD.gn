@@ -326,6 +326,7 @@ if (is_android) {
       "api/org/webrtc/StatsReport.java",
       "api/org/webrtc/TurnCustomizer.java",
       "api/org/webrtc/VideoSource.java",
+      "api/org/webrtc/VideoProcessor.java",
       "api/org/webrtc/VideoTrack.java",
       "src/java/org/webrtc/NativeLibrary.java",
       "src/java/org/webrtc/NativeCapturerObserver.java",
