@@ -20,9 +20,11 @@ import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.graphics.Matrix;
+import android.graphics.SurfaceTexture;
 import android.media.MediaCodecInfo.CodecCapabilities;
 import android.media.MediaFormat;
 import android.os.Handler;
@@ -176,6 +178,8 @@ public class AndroidVideoDecoderTest {
   @Before
   public void setUp() {
     MockitoAnnotations.initMocks(this);
+    when(mockSurfaceTextureHelper.getSurfaceTexture())
+        .thenReturn(new SurfaceTexture(/*texName=*/0));
     MediaFormat outputFormat = new MediaFormat();
     // TODO(sakal): Add more details to output format as needed.
     fakeMediaCodecWrapper = spy(new FakeMediaCodecWrapper(outputFormat));
