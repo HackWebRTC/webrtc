@@ -26,6 +26,11 @@
 #include "test/video_encoder_proxy_factory.h"
 
 namespace webrtc {
+namespace {
+enum : int {  // The first valid value is 1.
+  kAbsSendTimeExtensionId = 1,
+};
+}  // namespace
 
 class BandwidthEndToEndTest : public test::CallTest {
  public:
@@ -42,8 +47,8 @@ TEST_F(BandwidthEndToEndTest, ReceiveStreamSendsRemb) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       send_config->rtp.extensions.clear();
-      send_config->rtp.extensions.push_back(RtpExtension(
-          RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
+      send_config->rtp.extensions.push_back(
+          RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeExtensionId));
       (*receive_configs)[0].rtp.remb = true;
       (*receive_configs)[0].rtp.transport_cc = false;
     }
@@ -87,8 +92,8 @@ class BandwidthStatsTest : public test::EndToEndTest {
       VideoEncoderConfig* encoder_config) override {
     if (!send_side_bwe_) {
       send_config->rtp.extensions.clear();
-      send_config->rtp.extensions.push_back(RtpExtension(
-          RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
+      send_config->rtp.extensions.push_back(
+          RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeExtensionId));
       (*receive_configs)[0].rtp.remb = true;
       (*receive_configs)[0].rtp.transport_cc = false;
     }

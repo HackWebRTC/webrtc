@@ -40,16 +40,19 @@
 namespace webrtc {
 
 namespace {
-const int kTransmissionTimeOffsetExtensionId = 1;
-const int kAbsoluteSendTimeExtensionId = 14;
-const int kTransportSequenceNumberExtensionId = 13;
-const int kVideoTimingExtensionId = 12;
-const int kMidExtensionId = 11;
-const int kGenericDescriptorId = 10;
-const int kAudioLevelExtensionId = 9;
-const int kRidExtensionId = 8;
-const int kRepairedRidExtensionId = 7;
-const int kVideoRotationExtensionId = 5;
+enum : int {  // The first valid value is 1.
+  kAbsoluteSendTimeExtensionId = 1,
+  kAudioLevelExtensionId,
+  kGenericDescriptorId,
+  kMidExtensionId,
+  kRepairedRidExtensionId,
+  kRidExtensionId,
+  kTransmissionTimeOffsetExtensionId,
+  kTransportSequenceNumberExtensionId,
+  kVideoRotationExtensionId,
+  kVideoTimingExtensionId,
+};
+
 const int kPayload = 100;
 const int kRtxPayload = 98;
 const uint32_t kTimestamp = 10;

@@ -12,6 +12,7 @@
 
 #include <map>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "api/test/simulated_network.h"
@@ -21,7 +22,6 @@
 #include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "system_wrappers/include/field_trial.h"
-#include "test/constants.h"
 #include "test/direct_transport.h"
 #include "test/gtest.h"
 
@@ -71,14 +71,7 @@ class RtpRtcpObserver {
  protected:
   RtpRtcpObserver() : RtpRtcpObserver(0) {}
   explicit RtpRtcpObserver(int event_timeout_ms)
-      : parser_(RtpHeaderParser::Create()), timeout_ms_(event_timeout_ms) {
-    parser_->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
-                                        kTOffsetExtensionId);
-    parser_->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
-                                        kAbsSendTimeExtensionId);
-    parser_->RegisterRtpHeaderExtension(kRtpExtensionTransportSequenceNumber,
-                                        kTransportSequenceNumberExtensionId);
-  }
+      : parser_(RtpHeaderParser::Create()), timeout_ms_(event_timeout_ms) {}
 
   rtc::Event observation_complete_;
   const std::unique_ptr<RtpHeaderParser> parser_;

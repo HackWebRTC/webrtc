@@ -51,8 +51,19 @@
 using webrtc::test::DriftingClock;
 
 namespace webrtc {
+namespace {
+enum : int {  // The first valid value is 1.
+  kTransportSequenceNumberExtensionId = 1,
+};
+}  // namespace
 
 class CallPerfTest : public test::CallTest {
+ public:
+  CallPerfTest() {
+    RegisterRtpExtension(RtpExtension(RtpExtension::kTransportSequenceNumberUri,
+                                      kTransportSequenceNumberExtensionId));
+  }
+
  protected:
   enum class FecMode { kOn, kOff };
   enum class CreateOrder { kAudioFirst, kVideoFirst };

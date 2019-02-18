@@ -73,6 +73,15 @@ class VideoSendStreamPeer {
 }  // namespace test
 
 namespace {
+enum : int {  // The first valid value is 1.
+  kAbsSendTimeExtensionId = 1,
+  kTimestampOffsetExtensionId,
+  kTransportSequenceNumberExtensionId,
+  kVideoContentTypeExtensionId,
+  kVideoRotationExtensionId,
+  kVideoTimingExtensionId,
+};
+
 constexpr int64_t kRtcpIntervalMs = 1000;
 
 enum VideoFormat {
@@ -84,6 +93,12 @@ enum VideoFormat {
 VideoFrame CreateVideoFrame(int width, int height, uint8_t data);
 
 class VideoSendStreamTest : public test::CallTest {
+ public:
+  VideoSendStreamTest() {
+    RegisterRtpExtension(RtpExtension(RtpExtension::kTransportSequenceNumberUri,
+                                      kTransportSequenceNumberExtensionId));
+  }
+
  protected:
   void TestNackRetransmission(uint32_t retransmit_ssrc,
                               uint8_t retransmit_payload_type);
@@ -163,7 +178,7 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
    public:
     AbsoluteSendTimeObserver() : SendTest(kDefaultTimeoutMs) {
       EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
-          kRtpExtensionAbsoluteSendTime, test::kAbsSendTimeExtensionId));
+          kRtpExtensionAbsoluteSendTime, kAbsSendTimeExtensionId));
     }
 
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -193,8 +208,8 @@ TEST_F(VideoSendStreamTest, SupportsAbsoluteSendTime) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       send_config->rtp.extensions.clear();
-      send_config->rtp.extensions.push_back(RtpExtension(
-          RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
+      send_config->rtp.extensions.push_back(
+          RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeExtensionId));
     }
 
     void PerformTest() override {
@@ -215,7 +230,7 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
                 Clock::GetRealTimeClock(), kEncodeDelayMs);
           }) {
       EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
-          kRtpExtensionTransmissionTimeOffset, test::kTOffsetExtensionId));
+          kRtpExtensionTransmissionTimeOffset, kTimestampOffsetExtensionId));
     }
 
    private:
@@ -239,7 +254,7 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
       send_config->encoder_settings.encoder_factory = &encoder_factory_;
       send_config->rtp.extensions.clear();
       send_config->rtp.extensions.push_back(RtpExtension(
-          RtpExtension::kTimestampOffsetUri, test::kTOffsetExtensionId));
+          RtpExtension::kTimestampOffsetUri, kTimestampOffsetExtensionId));
     }
 
     void PerformTest() override {
@@ -253,7 +268,7 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
 }
 
 TEST_F(VideoSendStreamTest, SupportsTransportWideSequenceNumbers) {
-  static const uint8_t kExtensionId = test::kTransportSequenceNumberExtensionId;
+  static const uint8_t kExtensionId = kTransportSequenceNumberExtensionId;
   class TransportWideSequenceNumberObserver : public test::SendTest {
    public:
     TransportWideSequenceNumberObserver()
@@ -301,7 +316,7 @@ TEST_F(VideoSendStreamTest, SupportsVideoRotation) {
    public:
     VideoRotationObserver() : SendTest(kDefaultTimeoutMs) {
       EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
-          kRtpExtensionVideoRotation, test::kVideoRotationExtensionId));
+          kRtpExtensionVideoRotation, kVideoRotationExtensionId));
     }
 
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -322,7 +337,7 @@ TEST_F(VideoSendStreamTest, SupportsVideoRotation) {
         VideoEncoderConfig* encoder_config) override {
       send_config->rtp.extensions.clear();
       send_config->rtp.extensions.push_back(RtpExtension(
-          RtpExtension::kVideoRotationUri, test::kVideoRotationExtensionId));
+          RtpExtension::kVideoRotationUri, kVideoRotationExtensionId));
     }
 
     void OnFrameGeneratorCapturerCreated(
@@ -344,7 +359,7 @@ TEST_F(VideoSendStreamTest, SupportsVideoContentType) {
     VideoContentTypeObserver()
         : SendTest(kDefaultTimeoutMs), first_frame_sent_(false) {
       EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
-          kRtpExtensionVideoContentType, test::kVideoContentTypeExtensionId));
+          kRtpExtensionVideoContentType, kVideoContentTypeExtensionId));
     }
 
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -367,9 +382,8 @@ TEST_F(VideoSendStreamTest, SupportsVideoContentType) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       send_config->rtp.extensions.clear();
-      send_config->rtp.extensions.push_back(
-          RtpExtension(RtpExtension::kVideoContentTypeUri,
-                       test::kVideoContentTypeExtensionId));
+      send_config->rtp.extensions.push_back(RtpExtension(
+          RtpExtension::kVideoContentTypeUri, kVideoContentTypeExtensionId));
       encoder_config->content_type = VideoEncoderConfig::ContentType::kScreen;
     }
 
@@ -389,8 +403,8 @@ TEST_F(VideoSendStreamTest, SupportsVideoTimingFrames) {
    public:
     VideoTimingObserver()
         : SendTest(kDefaultTimeoutMs), first_frame_sent_(false) {
-      EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
-          kRtpExtensionVideoTiming, test::kVideoTimingExtensionId));
+      EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(kRtpExtensionVideoTiming,
+                                                      kVideoTimingExtensionId));
     }
 
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -412,8 +426,8 @@ TEST_F(VideoSendStreamTest, SupportsVideoTimingFrames) {
         std::vector<VideoReceiveStream::Config>* receive_configs,
         VideoEncoderConfig* encoder_config) override {
       send_config->rtp.extensions.clear();
-      send_config->rtp.extensions.push_back(RtpExtension(
-          RtpExtension::kVideoTimingUri, test::kVideoTimingExtensionId));
+      send_config->rtp.extensions.push_back(
+          RtpExtension(RtpExtension::kVideoTimingUri, kVideoTimingExtensionId));
     }
 
     void PerformTest() override {
@@ -464,7 +478,12 @@ class UlpfecObserver : public test::EndToEndTest {
         expect_ulpfec_(expect_ulpfec),
         sent_media_(false),
         sent_ulpfec_(false),
-        header_extensions_enabled_(header_extensions_enabled) {}
+        header_extensions_enabled_(header_extensions_enabled) {
+    parser_->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
+                                        kAbsSendTimeExtensionId);
+    parser_->RegisterRtpHeaderExtension(kRtpExtensionTransportSequenceNumber,
+                                        kTransportSequenceNumberExtensionId);
+  }
 
   // Some of the test cases are expected to time out and thus we are using
   // a shorter timeout window than the default here.
@@ -564,12 +583,11 @@ class UlpfecObserver : public test::EndToEndTest {
         VideoSendStreamTest::kRedPayloadType;
     send_config->rtp.ulpfec.ulpfec_payload_type =
         VideoSendStreamTest::kUlpfecPayloadType;
-    EXPECT_FALSE(send_config->rtp.extensions.empty());
     if (!header_extensions_enabled_) {
       send_config->rtp.extensions.clear();
     } else {
-      send_config->rtp.extensions.push_back(RtpExtension(
-          RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
+      send_config->rtp.extensions.push_back(
+          RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeExtensionId));
     }
     encoder_config->codec_type = PayloadStringToCodecType(payload_name_);
     (*receive_configs)[0].rtp.red_payload_type =
@@ -687,7 +705,14 @@ class FlexfecObserver : public test::EndToEndTest {
         sent_media_(false),
         sent_flexfec_(false),
         header_extensions_enabled_(header_extensions_enabled),
-        num_video_streams_(num_video_streams) {}
+        num_video_streams_(num_video_streams) {
+    parser_->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
+                                        kAbsSendTimeExtensionId);
+    parser_->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
+                                        kTimestampOffsetExtensionId);
+    parser_->RegisterRtpHeaderExtension(kRtpExtensionTransportSequenceNumber,
+                                        kTransportSequenceNumberExtensionId);
+  }
 
   size_t GetNumFlexfecStreams() const override { return 1; }
   size_t GetNumVideoStreams() const override { return num_video_streams_; }
@@ -751,10 +776,10 @@ class FlexfecObserver : public test::EndToEndTest {
     send_config->encoder_settings.encoder_factory = encoder_factory_;
     send_config->rtp.payload_name = payload_name_;
     if (header_extensions_enabled_) {
+      send_config->rtp.extensions.push_back(
+          RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeExtensionId));
       send_config->rtp.extensions.push_back(RtpExtension(
-          RtpExtension::kAbsSendTimeUri, test::kAbsSendTimeExtensionId));
-      send_config->rtp.extensions.push_back(RtpExtension(
-          RtpExtension::kTimestampOffsetUri, test::kTOffsetExtensionId));
+          RtpExtension::kTimestampOffsetUri, kTimestampOffsetExtensionId));
     } else {
       send_config->rtp.extensions.clear();
     }
@@ -1628,7 +1653,7 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
 TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
   static const int kStartBitrateBps = 300000;
   static const int kNewMaxBitrateBps = 1234567;
-  static const uint8_t kExtensionId = test::kTransportSequenceNumberExtensionId;
+  static const uint8_t kExtensionId = kTransportSequenceNumberExtensionId;
   class ChangingNetworkRouteTest : public test::EndToEndTest {
    public:
     explicit ChangingNetworkRouteTest(
