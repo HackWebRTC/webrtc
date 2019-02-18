@@ -22,10 +22,7 @@
 namespace webrtc {
 
 namespace {
-enum : int {  // The first valid value is 1.
-  kAudioLevelExtensionId = 1,
-};
-
+const int kAudioLevelExtensionId = 9;
 const uint16_t kSeqNum = 33;
 const uint32_t kSsrc = 725242;
 const uint8_t kAudioLevel = 0x5a;

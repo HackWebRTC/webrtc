@@ -21,18 +21,9 @@
 #include "test/rtcp_packet_parser.h"
 
 namespace webrtc {
-namespace {
-enum : int {  // The first valid value is 1.
-  kVideoRotationExtensionId = 1,
-};
-}  // namespace
-
 class RetransmissionEndToEndTest : public test::CallTest {
  public:
-  RetransmissionEndToEndTest() {
-    RegisterRtpExtension(RtpExtension(RtpExtension::kVideoRotationUri,
-                                      kVideoRotationExtensionId));
-  }
+  RetransmissionEndToEndTest() = default;
 
  protected:
   void DecodesRetransmittedFrame(bool enable_rtx, bool enable_red);

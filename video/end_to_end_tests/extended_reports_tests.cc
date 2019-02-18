@@ -43,20 +43,8 @@
 #include "test/single_threaded_task_queue.h"
 
 namespace webrtc {
-namespace {
-enum : int {  // The first valid value is 1.
-  kColorSpaceExtensionId = 1,
-  kTransportSequenceNumberExtensionId,
-};
-}  // namespace
 
-class ExtendedReportsEndToEndTest : public test::CallTest {
- public:
-  ExtendedReportsEndToEndTest() {
-    RegisterRtpExtension(RtpExtension(RtpExtension::kTransportSequenceNumberUri,
-                                      kTransportSequenceNumberExtensionId));
-  }
-};
+class ExtendedReportsEndToEndTest : public test::CallTest {};
 
 class RtcpXrObserver : public test::EndToEndTest {
  public:

@@ -23,10 +23,6 @@ namespace webrtc {
 namespace test {
 
 namespace {
-enum : int {  // The first valid value is 1.
-  kTransportSequenceNumberExtensionId = 1,
-};
-
 // Wait a second between stopping sending and stopping receiving audio.
 constexpr int kExtraProcessTimeMs = 1000;
 }  // namespace

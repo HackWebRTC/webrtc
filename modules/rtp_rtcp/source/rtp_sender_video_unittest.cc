@@ -34,16 +34,13 @@ namespace {
 
 using ::testing::ElementsAre;
 
-enum : int {  // The first valid value is 1.
-  kAbsoluteSendTimeExtensionId = 1,
-  kFrameMarkingExtensionId,
-  kGenericDescriptorId,
-  kTransmissionTimeOffsetExtensionId,
-  kTransportSequenceNumberExtensionId,
-  kVideoRotationExtensionId,
-  kVideoTimingExtensionId,
-};
-
+constexpr int kTransmissionTimeOffsetExtensionId = 1;
+constexpr int kAbsoluteSendTimeExtensionId = 14;
+constexpr int kTransportSequenceNumberExtensionId = 13;
+constexpr int kVideoTimingExtensionId = 12;
+constexpr int kGenericDescriptorId = 10;
+constexpr int kFrameMarkingExtensionId = 6;
+constexpr int kVideoRotationExtensionId = 5;
 constexpr int kPayload = 100;
 constexpr uint32_t kTimestamp = 10;
 constexpr uint16_t kSeqNum = 33;

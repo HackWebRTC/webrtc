@@ -656,6 +656,8 @@ rtc_source_set("test_common") {
   sources = [
     "call_test.cc",
     "call_test.h",
+    "constants.cc",
+    "constants.h",
     "drifting_clock.cc",
     "drifting_clock.h",
     "encoder_settings.cc",
@@ -746,7 +748,6 @@ rtc_source_set("test_common") {
     "../video",
     "//testing/gtest",
     "//third_party/abseil-cpp/absl/memory",
-    "//third_party/abseil-cpp/absl/types:optional",
   ]
   if (!is_android && !build_with_chromium) {
     deps += [ "../modules/video_capture:video_capture_internal_impl" ]

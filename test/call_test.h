@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/test/video/function_video_decoder_factory.h"
 #include "api/test/video/function_video_encoder_factory.h"
 #include "api/video/video_bitrate_allocator_factory.h"
@@ -72,8 +71,6 @@ class CallTest : public ::testing::Test {
   static const std::map<uint8_t, MediaType> payload_type_map_;
 
  protected:
-  void RegisterRtpExtension(const RtpExtension& extension);
-
   // RunBaseTest overwrites the audio_state of the send and receive Call configs
   // to simplify test code.
   void RunBaseTest(BaseTest* test);
@@ -219,13 +216,6 @@ class CallTest : public ::testing::Test {
   SingleThreadedTaskQueueForTesting task_queue_;
 
  private:
-  absl::optional<RtpExtension> GetRtpExtensionByUri(
-      const std::string& uri) const;
-
-  void AddRtpExtensionByUri(const std::string& uri,
-                            std::vector<RtpExtension>* extensions) const;
-
-  std::vector<RtpExtension> rtp_extensions_;
   rtc::scoped_refptr<AudioProcessing> apm_send_;
   rtc::scoped_refptr<AudioProcessing> apm_recv_;
   rtc::scoped_refptr<TestAudioDeviceModule> fake_send_audio_device_;
