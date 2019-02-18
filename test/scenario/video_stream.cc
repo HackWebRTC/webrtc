@@ -84,6 +84,19 @@ std::vector<RtpExtension> GetVideoRtpExtensions(
                        kVideoRotationRtpExtensionId)};
 }
 
+std::string TransformFilePath(std::string path) {
+  static const std::string resource_prefix = "res://";
+  int ext_pos = path.rfind(".");
+  if (ext_pos < 0) {
+    return test::ResourcePath(path, "yuv");
+  } else if (path.find(resource_prefix) == 0) {
+    std::string name = path.substr(resource_prefix.length(), ext_pos);
+    std::string ext = path.substr(ext_pos, path.size());
+    return test::ResourcePath(name, ext);
+  }
+  return path;
+}
+
 VideoSendStream::Config CreateVideoSendStreamConfig(VideoStreamConfig config,
                                                     std::vector<uint32_t> ssrcs,
                                                     Transport* send_transport) {
@@ -113,6 +126,14 @@ CreateVp9SpecificSettings(VideoStreamConfig config) {
   vp9_settings.keyFrameInterval = config.encoder.key_frame_interval.value_or(0);
   vp9_settings.automaticResizeOn = config.encoder.single.automatic_scaling;
   vp9_settings.denoisingOn = config.encoder.single.denoising;
+
+  if (config.encoder.content_type ==
+      VideoStreamConfig::Encoder::ContentType::kScreen) {
+    vp9_settings.automaticResizeOn = false;
+    // High FPS vp9 screenshare requires flexible mode.
+    if (config.source.framerate > 5)
+      vp9_settings.flexibleMode = true;
+  }
   return new rtc::RefCountedObject<
       VideoEncoderConfig::Vp9EncoderSpecificSettings>(vp9_settings);
 }
@@ -194,6 +215,32 @@ VideoEncoderConfig CreateVideoEncoderConfig(VideoStreamConfig config) {
   return encoder_config;
 }
 
+std::unique_ptr<FrameGenerator> CreateImageSlideGenerator(
+    Clock* clock,
+    VideoStreamConfig::Source::Slides slides,
+    int framerate) {
+  std::vector<std::string> paths = slides.images.paths;
+  for (std::string& path : paths)
+    path = TransformFilePath(path);
+  if (slides.images.crop.width || slides.images.crop.height) {
+    TimeDelta pause_duration =
+        slides.change_interval - slides.images.crop.scroll_duration;
+    RTC_CHECK(pause_duration >= TimeDelta::Zero());
+    int crop_width = slides.images.crop.width.value_or(slides.images.width);
+    int crop_height = slides.images.crop.height.value_or(slides.images.height);
+    RTC_CHECK_LE(crop_width, slides.images.width);
+    RTC_CHECK_LE(crop_height, slides.images.height);
+    return FrameGenerator::CreateScrollingInputFromYuvFiles(
+        clock, paths, slides.images.width, slides.images.height, crop_width,
+        crop_height, slides.images.crop.scroll_duration.ms(),
+        pause_duration.ms());
+  } else {
+    return FrameGenerator::CreateFromYuvFile(
+        paths, slides.images.width, slides.images.height,
+        slides.change_interval.seconds<double>() * framerate);
+  }
+}
+
 std::unique_ptr<FrameGenerator> CreateFrameGenerator(
     Clock* clock,
     VideoStreamConfig::Source source) {
@@ -208,6 +255,12 @@ std::unique_ptr<FrameGenerator> CreateFrameGenerator(
       return FrameGenerator::CreateFromYuvFile(
           {source.video_file.name}, source.video_file.width,
           source.video_file.height, /*frame_repeat_count*/ 1);
+    case Capture::kGenerateSlides:
+      return FrameGenerator::CreateSlideGenerator(
+          source.slides.generator.width, source.slides.generator.height,
+          source.slides.change_interval.seconds<double>() * source.framerate);
+    case Capture::kImageSlides:
+      return CreateImageSlideGenerator(clock, source.slides, source.framerate);
   }
 }
 
