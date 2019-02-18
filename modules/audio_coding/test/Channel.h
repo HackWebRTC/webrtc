@@ -81,7 +81,7 @@ class Channel : public AudioPacketizationCallback {
   }
 
  private:
-  void CalcStatistics(WebRtcRTPHeader& rtpInfo, size_t payloadSize);
+  void CalcStatistics(const RTPHeader& rtp_header, size_t payloadSize);
 
   AudioCodingModule* _receiverACM;
   uint16_t _seqNo;
@@ -94,7 +94,7 @@ class Channel : public AudioPacketizationCallback {
   int16_t _lastPayloadType;
   ACMTestPayloadStats _payloadStats[MAX_NUM_PAYLOADS];
   bool _isStereo;
-  WebRtcRTPHeader _rtpInfo;
+  RTPHeader _rtp_header;
   bool _leftChannel;
   uint32_t _lastInTimestamp;
   bool _useLastFrameSize;

@@ -155,7 +155,7 @@ bool Receiver::IncomingPacket() {
   if (!_rtpStream->EndOfFile()) {
     if (_firstTime) {
       _firstTime = false;
-      _realPayloadSizeBytes = _rtpStream->Read(&_rtpInfo, _incomingPayload,
+      _realPayloadSizeBytes = _rtpStream->Read(&_rtpHeader, _incomingPayload,
                                                _payloadSizeBytes, &_nextTime);
       if (_realPayloadSizeBytes == 0) {
         if (_rtpStream->EndOfFile()) {
@@ -168,8 +168,8 @@ bool Receiver::IncomingPacket() {
     }
 
     EXPECT_EQ(0, _acm->IncomingPacket(_incomingPayload, _realPayloadSizeBytes,
-                                      _rtpInfo.header));
-    _realPayloadSizeBytes = _rtpStream->Read(&_rtpInfo, _incomingPayload,
+                                      _rtpHeader));
+    _realPayloadSizeBytes = _rtpStream->Read(&_rtpHeader, _incomingPayload,
                                              _payloadSizeBytes, &_nextTime);
     if (_realPayloadSizeBytes == 0 && _rtpStream->EndOfFile()) {
       _firstTime = true;

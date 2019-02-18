@@ -44,7 +44,7 @@ void ReceiverWithPacketLoss::Setup(AudioCodingModule* acm,
 bool ReceiverWithPacketLoss::IncomingPacket() {
   if (!_rtpStream->EndOfFile()) {
     if (packet_counter_ == 0) {
-      _realPayloadSizeBytes = _rtpStream->Read(&_rtpInfo, _incomingPayload,
+      _realPayloadSizeBytes = _rtpStream->Read(&_rtpHeader, _incomingPayload,
                                                _payloadSizeBytes, &_nextTime);
       if (_realPayloadSizeBytes == 0) {
         if (_rtpStream->EndOfFile()) {
@@ -57,11 +57,10 @@ bool ReceiverWithPacketLoss::IncomingPacket() {
     }
 
     if (!PacketLost()) {
-      _acm->IncomingPacket(_incomingPayload, _realPayloadSizeBytes,
-                           _rtpInfo.header);
+      _acm->IncomingPacket(_incomingPayload, _realPayloadSizeBytes, _rtpHeader);
     }
     packet_counter_++;
-    _realPayloadSizeBytes = _rtpStream->Read(&_rtpInfo, _incomingPayload,
+    _realPayloadSizeBytes = _rtpStream->Read(&_rtpHeader, _incomingPayload,
                                              _payloadSizeBytes, &_nextTime);
     if (_realPayloadSizeBytes == 0 && _rtpStream->EndOfFile()) {
       packet_counter_ = 0;
