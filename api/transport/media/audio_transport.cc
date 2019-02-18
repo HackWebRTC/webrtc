@@ -51,10 +51,4 @@ MediaTransportEncodedAudioFrame::MediaTransportEncodedAudioFrame(
 MediaTransportEncodedAudioFrame::MediaTransportEncodedAudioFrame(
     MediaTransportEncodedAudioFrame&&) = default;
 
-void MediaTransportAudioSinkInterface::OnData(
-    uint64_t channel_id,
-    MediaTransportEncodedAudioFrame frame) {
-  OnData(frame);
-}
-
 }  // namespace webrtc

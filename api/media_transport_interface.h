@@ -187,28 +187,10 @@ class MediaTransportInterface {
   MediaTransportInterface();
   virtual ~MediaTransportInterface();
 
-  // Creates an object representing the send end-point of a audio stream using
-  // this transport.
-  // TODO(bugs.webrtc.org/9719): Make pure virtual after downstream
-  // implementations are updated.
-  virtual std::unique_ptr<MediaTransportAudioSender> CreateAudioSender(
-      uint64_t channel_id);
-
-  // Creates an object representing the receive end-point of a audio stream
-  // using this transport.
-  // TODO(bugs.webrtc.org/9719): Make pure virtual after downstream
-  // implementations are updated.
-  virtual std::unique_ptr<MediaTransportAudioReceiver> CreateAudioReceiver(
-      uint64_t channel_id,
-      // TODO(nisse): Add Rtt observer, or route that via Call to the receive
-      // stream instead?
-      MediaTransportAudioSinkInterface* sink);
-
   // Start asynchronous send of audio frame. The status returned by this method
   // only pertains to the synchronous operations (e.g.
   // serialization/packetization), not to the asynchronous operation.
-  // TODO(nisse): Deprecated, should be deleted when implementations are updated
-  // to use CreateAudioSender.
+
   virtual RTCError SendAudioFrame(uint64_t channel_id,
                                   MediaTransportEncodedAudioFrame frame) = 0;
 

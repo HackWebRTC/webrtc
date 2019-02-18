@@ -22,8 +22,6 @@ namespace {
 class MockMediaTransportAudioSinkInterface
     : public MediaTransportAudioSinkInterface {
  public:
-  MOCK_METHOD1(OnData, void(MediaTransportEncodedAudioFrame));
-  // TODO(nisse): Deprecated version, delete.
   MOCK_METHOD2(OnData, void(uint64_t, MediaTransportEncodedAudioFrame));
 };
 

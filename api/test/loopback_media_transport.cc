@@ -109,64 +109,11 @@ MediaTransportPair::LoopbackMediaTransport::LoopbackMediaTransport(
 
 MediaTransportPair::LoopbackMediaTransport::~LoopbackMediaTransport() {
   rtc::CritScope lock(&sink_lock_);
-  RTC_CHECK(audio_sinks_.empty());
   RTC_CHECK(audio_sink_ == nullptr);
   RTC_CHECK(video_sink_ == nullptr);
   RTC_CHECK(data_sink_ == nullptr);
   RTC_CHECK(target_transfer_rate_observers_.empty());
   RTC_CHECK(rtt_observers_.empty());
-}
-
-class MediaTransportPair::LoopbackMediaTransport::AudioSender
-    : public MediaTransportAudioSender {
- public:
-  AudioSender(LoopbackMediaTransport* transport, uint64_t channel_id)
-      : transport_(transport), channel_id_(channel_id) {}
-  void SendAudioFrame(MediaTransportEncodedAudioFrame frame) override {
-    transport_->SendAudioFrame(channel_id_, std::move(frame));
-  }
-
- private:
-  LoopbackMediaTransport* transport_;
-  uint64_t channel_id_;
-};
-
-class MediaTransportPair::LoopbackMediaTransport::AudioReceiver
-    : public MediaTransportAudioReceiver {
- public:
-  AudioReceiver(LoopbackMediaTransport* transport, uint64_t channel_id)
-      : transport_(transport), channel_id_(channel_id) {}
-  ~AudioReceiver() override {
-    transport_->UnregisterAudioReceiver(channel_id_);
-  }
-
- private:
-  LoopbackMediaTransport* transport_;
-  uint64_t channel_id_;
-};
-
-std::unique_ptr<MediaTransportAudioSender>
-MediaTransportPair::LoopbackMediaTransport::CreateAudioSender(
-    uint64_t channel_id) {
-  return absl::make_unique<AudioSender>(this, channel_id);
-}
-
-std::unique_ptr<MediaTransportAudioReceiver>
-MediaTransportPair::LoopbackMediaTransport::CreateAudioReceiver(
-    uint64_t channel_id,
-    MediaTransportAudioSinkInterface* sink) {
-  rtc::CritScope cs(&sink_lock_);
-  auto res = audio_sinks_.emplace(channel_id, sink);
-  RTC_DCHECK(res.second);
-  return absl::make_unique<AudioReceiver>(this, channel_id);
-}
-
-void MediaTransportPair::LoopbackMediaTransport::UnregisterAudioReceiver(
-    uint64_t channel_id) {
-  rtc::CritScope cs(&sink_lock_);
-  auto it = audio_sinks_.find(channel_id);
-  RTC_DCHECK(it != audio_sinks_.end());
-  audio_sinks_.erase(it);
 }
 
 RTCError MediaTransportPair::LoopbackMediaTransport::SendAudioFrame(
@@ -370,10 +317,7 @@ void MediaTransportPair::LoopbackMediaTransport::OnData(
     MediaTransportEncodedAudioFrame frame) {
   {
     rtc::CritScope lock(&sink_lock_);
-    const auto it = audio_sinks_.find(channel_id);
-    if (it != audio_sinks_.end()) {
-      it->second->OnData(frame);
-    } else if (audio_sink_) {
+    if (audio_sink_) {
       audio_sink_->OnData(channel_id, frame);
     }
   }

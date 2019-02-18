@@ -11,7 +11,6 @@
 #ifndef API_TEST_LOOPBACK_MEDIA_TRANSPORT_H_
 #define API_TEST_LOOPBACK_MEDIA_TRANSPORT_H_
 
-#include <map>
 #include <memory>
 #include <utility>
 #include <vector>
@@ -86,13 +85,6 @@ class MediaTransportPair {
 
     ~LoopbackMediaTransport() override;
 
-    std::unique_ptr<MediaTransportAudioSender> CreateAudioSender(
-        uint64_t channel_id) override;
-
-    std::unique_ptr<MediaTransportAudioReceiver> CreateAudioReceiver(
-        uint64_t channel_id,
-        MediaTransportAudioSinkInterface* sink) override;
-
     RTCError SendAudioFrame(uint64_t channel_id,
                             MediaTransportEncodedAudioFrame frame) override;
 
@@ -139,9 +131,6 @@ class MediaTransportPair {
         const MediaTransportAllocatedBitrateLimits& limits) override;
 
    private:
-    class AudioReceiver;
-    class AudioSender;
-
     void OnData(uint64_t channel_id, MediaTransportEncodedAudioFrame frame);
 
     void OnData(uint64_t channel_id, MediaTransportEncodedVideoFrame frame);
@@ -155,17 +144,11 @@ class MediaTransportPair {
     void OnRemoteCloseChannel(int channel_id);
 
     void OnStateChanged() RTC_RUN_ON(thread_);
-    void UnregisterAudioReceiver(uint64_t channel_id);
 
     rtc::Thread* const thread_;
     rtc::CriticalSection sink_lock_;
     rtc::CriticalSection stats_lock_;
 
-    std::map<uint64_t, MediaTransportAudioSinkInterface*> audio_sinks_
-        RTC_GUARDED_BY(sink_lock_);
-
-    // TODO(bugs.webrtc.org/9719): Delete when everything is converted to
-    // CreateAudioReceiver.
     MediaTransportAudioSinkInterface* audio_sink_ RTC_GUARDED_BY(sink_lock_) =
         nullptr;
     MediaTransportVideoSinkInterface* video_sink_ RTC_GUARDED_BY(sink_lock_) =
