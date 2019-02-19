@@ -59,6 +59,26 @@ enum {
       VP8_EFLAG_NO_UPD_ARF | VP8_EFLAG_NO_REF_GF,
 };
 
+using BufferFlags = Vp8FrameConfig::BufferFlags;
+using Vp8BufferReference = Vp8FrameConfig::Vp8BufferReference;
+
+constexpr uint8_t kNone = static_cast<uint8_t>(Vp8BufferReference::kNone);
+constexpr uint8_t kLast = static_cast<uint8_t>(Vp8BufferReference::kLast);
+constexpr uint8_t kGolden = static_cast<uint8_t>(Vp8BufferReference::kGolden);
+constexpr uint8_t kAltref = static_cast<uint8_t>(Vp8BufferReference::kAltref);
+
+constexpr int ToVp8CodecFlags(uint8_t referenced_buffers,
+                              uint8_t updated_buffers,
+                              bool update_entropy) {
+  return (((referenced_buffers & kLast) == 0) ? VP8_EFLAG_NO_REF_LAST : 0) |
+         (((referenced_buffers & kGolden) == 0) ? VP8_EFLAG_NO_REF_GF : 0) |
+         (((referenced_buffers & kAltref) == 0) ? VP8_EFLAG_NO_REF_ARF : 0) |
+         (((updated_buffers & kLast) == 0) ? VP8_EFLAG_NO_UPD_LAST : 0) |
+         (((updated_buffers & kGolden) == 0) ? VP8_EFLAG_NO_UPD_GF : 0) |
+         (((updated_buffers & kAltref) == 0) ? VP8_EFLAG_NO_UPD_ARF : 0) |
+         (update_entropy ? 0 : VP8_EFLAG_NO_UPD_ENTROPY);
+}
+
 std::vector<uint32_t> GetTemporalLayerRates(int target_bitrate_kbps,
                                             int framerate_fps,
                                             int num_temporal_layers) {
@@ -83,9 +103,6 @@ constexpr int kDefaultBytesPerFrame =
 constexpr int kDefaultQp = 2;
 }  // namespace
 
-using BufferFlags = Vp8FrameConfig::BufferFlags;
-using Vp8BufferReference = Vp8FrameConfig::Vp8BufferReference;
-
 class TemporalLayersTest : public ::testing::Test {
  public:
   ~TemporalLayersTest() override = default;
@@ -109,45 +126,34 @@ TEST_F(TemporalLayersTest, 2Layers) {
                     kDefaultFramerate);
   tl.UpdateConfiguration(&cfg);
 
-  int expected_flags[16] = {
-      kTemporalUpdateLastRefAltRef,
-      kTemporalUpdateGoldenWithoutDependencyRefAltRef,
-      kTemporalUpdateLastRefAltRef,
-      kTemporalUpdateNone,
-      kTemporalUpdateLastRefAltRef,
-      kTemporalUpdateGoldenWithoutDependencyRefAltRef,
-      kTemporalUpdateLastRefAltRef,
-      kTemporalUpdateNone,
-      kTemporalUpdateLastRefAltRef,
-      kTemporalUpdateGoldenWithoutDependencyRefAltRef,
-      kTemporalUpdateLastRefAltRef,
-      kTemporalUpdateNone,
-      kTemporalUpdateLastRefAltRef,
-      kTemporalUpdateGoldenWithoutDependencyRefAltRef,
-      kTemporalUpdateLastRefAltRef,
-      kTemporalUpdateNone,
-  };
-  int expected_temporal_idx[16] = {0, 1, 0, 1, 0, 1, 0, 1,
-                                   0, 1, 0, 1, 0, 1, 0, 1};
+  constexpr size_t kPatternSize = 4;
+  constexpr size_t kRepetitions = 4;
 
-  bool expected_layer_sync[16] = {false, true,  false, false, false, true,
-                                  false, false, false, true,  false, false,
-                                  false, true,  false, false};
+  const int expected_flags[kPatternSize] = {
+      ToVp8CodecFlags(kLast, kLast, true),
+      ToVp8CodecFlags(kLast, kGolden, true),
+      ToVp8CodecFlags(kLast, kLast, true),
+      ToVp8CodecFlags(kLast | kGolden, kNone, false),
+  };
+  const int expected_temporal_idx[kPatternSize] = {0, 1, 0, 1};
+  const bool expected_layer_sync[kPatternSize] = {false, true, false, false};
 
   uint32_t timestamp = 0;
-  for (int i = 0; i < 16; ++i) {
+  for (size_t i = 0; i < kPatternSize * kRepetitions; ++i) {
+    const size_t ind = i % kPatternSize;
     CodecSpecificInfo info;
     CodecSpecificInfoVP8& vp8_info = info.codecSpecific.VP8;
     Vp8FrameConfig tl_config = tl.UpdateLayerConfig(timestamp);
-    EXPECT_EQ(expected_flags[i], LibvpxVp8Encoder::EncodeFlags(tl_config)) << i;
+    EXPECT_EQ(expected_flags[ind], LibvpxVp8Encoder::EncodeFlags(tl_config))
+        << i;
     tl.OnEncodeDone(timestamp, kDefaultBytesPerFrame, i == 0, kDefaultQp,
                     &vp8_info);
     EXPECT_TRUE(checker.CheckTemporalConfig(i == 0, tl_config));
-    EXPECT_EQ(expected_temporal_idx[i], vp8_info.temporalIdx);
-    EXPECT_EQ(expected_temporal_idx[i], tl_config.packetizer_temporal_idx);
-    EXPECT_EQ(expected_temporal_idx[i], tl_config.encoder_layer_id);
-    EXPECT_EQ(i == 0 || expected_layer_sync[i], vp8_info.layerSync);
-    EXPECT_EQ(expected_layer_sync[i], tl_config.layer_sync);
+    EXPECT_EQ(expected_temporal_idx[ind], vp8_info.temporalIdx);
+    EXPECT_EQ(expected_temporal_idx[ind], tl_config.packetizer_temporal_idx);
+    EXPECT_EQ(expected_temporal_idx[ind], tl_config.encoder_layer_id);
+    EXPECT_EQ(i == 0 || expected_layer_sync[ind], vp8_info.layerSync);
+    EXPECT_EQ(expected_layer_sync[ind], tl_config.layer_sync);
     timestamp += 3000;
   }
 }

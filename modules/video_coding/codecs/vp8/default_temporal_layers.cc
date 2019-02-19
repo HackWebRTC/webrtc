@@ -146,25 +146,23 @@ std::vector<Vp8FrameConfig> DefaultTemporalLayers::GetTemporalPattern(
         //   1---1   1---1 ...
         //  /   /   /   /
         // 0---0---0---0 ...
-        return {
-            Vp8FrameConfig(kReferenceAndUpdate, kNone, kReference),
-            Vp8FrameConfig(kReference, kUpdate, kReference),
-            Vp8FrameConfig(kReferenceAndUpdate, kNone, kReference),
-            Vp8FrameConfig(kReference, kReference, kReference, kFreezeEntropy)};
+        return {Vp8FrameConfig(kReferenceAndUpdate, kNone, kNone),
+                Vp8FrameConfig(kReference, kUpdate, kNone),
+                Vp8FrameConfig(kReferenceAndUpdate, kNone, kNone),
+                Vp8FrameConfig(kReference, kReference, kNone, kFreezeEntropy)};
       } else {
         // "Default" 8-frame pattern:
         //   1---1---1---1   1---1---1---1 ...
         //  /   /   /   /   /   /   /   /
         // 0---0---0---0---0---0---0---0 ...
-        return {
-            Vp8FrameConfig(kReferenceAndUpdate, kNone, kReference),
-            Vp8FrameConfig(kReference, kUpdate, kReference),
-            Vp8FrameConfig(kReferenceAndUpdate, kNone, kReference),
-            Vp8FrameConfig(kReference, kReferenceAndUpdate, kReference),
-            Vp8FrameConfig(kReferenceAndUpdate, kNone, kReference),
-            Vp8FrameConfig(kReference, kReferenceAndUpdate, kReference),
-            Vp8FrameConfig(kReferenceAndUpdate, kNone, kReference),
-            Vp8FrameConfig(kReference, kReference, kReference, kFreezeEntropy)};
+        return {Vp8FrameConfig(kReferenceAndUpdate, kNone, kNone),
+                Vp8FrameConfig(kReference, kUpdate, kNone),
+                Vp8FrameConfig(kReferenceAndUpdate, kNone, kNone),
+                Vp8FrameConfig(kReference, kReferenceAndUpdate, kNone),
+                Vp8FrameConfig(kReferenceAndUpdate, kNone, kNone),
+                Vp8FrameConfig(kReference, kReferenceAndUpdate, kNone),
+                Vp8FrameConfig(kReferenceAndUpdate, kNone, kNone),
+                Vp8FrameConfig(kReference, kReference, kNone, kFreezeEntropy)};
       }
     case 3:
       if (field_trial::IsEnabled("WebRTC-UseShortVP8TL3Pattern")) {
