@@ -31,6 +31,7 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
     private final AudioManager audioManager;
     private int sampleRate;
     private int audioSource = WebRtcAudioRecord.DEFAULT_AUDIO_SOURCE;
+    private int audioFormat = WebRtcAudioRecord.DEFAULT_AUDIO_FORMAT;
     private AudioTrackErrorCallback audioTrackErrorCallback;
     private AudioRecordErrorCallback audioRecordErrorCallback;
     private SamplesReadyCallback samplesReadyCallback;
@@ -62,6 +63,17 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
      */
     public Builder setAudioSource(int audioSource) {
       this.audioSource = audioSource;
+      return this;
+    }
+
+    /**
+     * Call this to change the audio format. The argument should be one of the values from
+     * android.media.AudioFormat ENCODING_PCM_8BIT, ENCODING_PCM_16BIT or ENCODING_PCM_FLOAT.
+     * Default audio data format is PCM 16 bit per sample.
+     * Guaranteed to be supported by all devices.
+     */
+    public Builder setAudioFormat(int audioFormat) {
+      this.audioFormat = audioFormat;
       return this;
     }
 
@@ -154,9 +166,9 @@ public class JavaAudioDeviceModule implements AudioDeviceModule {
         }
         Logging.d(TAG, "HW AEC will not be used.");
       }
-      final WebRtcAudioRecord audioInput =
-          new WebRtcAudioRecord(context, audioManager, audioSource, audioRecordErrorCallback,
-              samplesReadyCallback, useHardwareAcousticEchoCanceler, useHardwareNoiseSuppressor);
+      final WebRtcAudioRecord audioInput = new WebRtcAudioRecord(context, audioManager, audioSource,
+          audioFormat, audioRecordErrorCallback, samplesReadyCallback,
+          useHardwareAcousticEchoCanceler, useHardwareNoiseSuppressor);
       final WebRtcAudioTrack audioOutput =
           new WebRtcAudioTrack(context, audioManager, audioTrackErrorCallback);
       return new JavaAudioDeviceModule(context, audioManager, audioInput, audioOutput, sampleRate,
