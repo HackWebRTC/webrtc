@@ -649,16 +649,17 @@ void VideoQualityTest::FillScalabilitySettings(
     if (descriptor.empty())
       continue;
     std::vector<int> v = VideoQualityTest::ParseCSV(descriptor);
-    RTC_CHECK_EQ(v.size(), 7);
+    RTC_CHECK_EQ(v.size(), 8);
 
     SpatialLayer layer = {0};
     layer.width = v[0];
     layer.height = v[1];
-    layer.numberOfTemporalLayers = v[2];
-    layer.maxBitrate = v[3];
-    layer.minBitrate = v[4];
-    layer.targetBitrate = v[5];
-    layer.qpMax = v[6];
+    layer.maxFramerate = v[2];
+    layer.numberOfTemporalLayers = v[3];
+    layer.maxBitrate = v[4];
+    layer.minBitrate = v[5];
+    layer.targetBitrate = v[6];
+    layer.qpMax = v[7];
     layer.active = true;
 
     params->ss[video_idx].spatial_layers.push_back(layer);

@@ -246,6 +246,14 @@ std::string SL1() {
 }
 
 WEBRTC_DEFINE_string(
+    sl2,
+    "",
+    "Comma separated values describing SpatialLayer for layer #2.");
+std::string SL2() {
+  return static_cast<std::string>(FLAG_sl2);
+}
+
+WEBRTC_DEFINE_string(
     encoded_frame_path,
     "",
     "The base path for encoded frame logs. Created files will have "
@@ -368,6 +376,7 @@ void Loopback() {
   std::vector<std::string> SL_descriptors;
   SL_descriptors.push_back(flags::SL0());
   SL_descriptors.push_back(flags::SL1());
+  SL_descriptors.push_back(flags::SL2());
   VideoQualityTest::FillScalabilitySettings(
       &params, 0, stream_descriptors, flags::NumStreams(),
       flags::SelectedStream(), flags::NumSpatialLayers(), flags::SelectedSL(),
