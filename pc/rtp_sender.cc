@@ -82,6 +82,36 @@ void MaybeAttachFrameEncryptorToMediaChannel(
   }
 }
 
+void RemoveEncodingLayers(const std::vector<std::string>& rids,
+                          std::vector<RtpEncodingParameters>* encodings) {
+  RTC_DCHECK(encodings);
+  encodings->erase(
+      std::remove_if(encodings->begin(), encodings->end(),
+                     [&rids](const RtpEncodingParameters& encoding) {
+                       return absl::c_linear_search(rids, encoding.rid);
+                     }),
+      encodings->end());
+}
+
+RtpParameters RestoreEncodingLayers(
+    const RtpParameters& parameters,
+    const std::vector<std::string>& removed_rids,
+    const std::vector<RtpEncodingParameters>& all_layers) {
+  RTC_DCHECK_EQ(parameters.encodings.size() + removed_rids.size(),
+                all_layers.size());
+  RtpParameters result(parameters);
+  result.encodings.clear();
+  size_t index = 0;
+  for (const RtpEncodingParameters& encoding : all_layers) {
+    if (absl::c_linear_search(removed_rids, encoding.rid)) {
+      result.encodings.push_back(encoding);
+      continue;
+    }
+    result.encodings.push_back(parameters.encodings[index++]);
+  }
+  return result;
+}
+
 }  // namespace
 
 // Returns true if any RtpParameters member that isn't implemented contains a
@@ -246,7 +276,7 @@ bool AudioRtpSender::SetTrack(MediaStreamTrackInterface* track) {
   return true;
 }
 
-RtpParameters AudioRtpSender::GetParameters() {
+RtpParameters AudioRtpSender::GetParameters() const {
   if (stopped_) {
     return RtpParameters();
   }
@@ -440,6 +470,13 @@ void AudioRtpSender::ClearAudioSend() {
   }
 }
 
+RTCError AudioRtpSender::DisableEncodingLayers(
+    const std::vector<std::string>& rids) {
+  // Multiple encoding layers (and simulcast) are not supported in audio.
+  return rids.empty() ? RTCError::OK()
+                      : RTCError(RTCErrorType::UNSUPPORTED_OPERATION);
+}
+
 VideoRtpSender::VideoRtpSender(rtc::Thread* worker_thread,
                                const std::string& id)
     : worker_thread_(worker_thread), id_(id) {
@@ -501,7 +538,7 @@ bool VideoRtpSender::SetTrack(MediaStreamTrackInterface* track) {
   return true;
 }
 
-RtpParameters VideoRtpSender::GetParameters() {
+RtpParameters VideoRtpSender::GetParameters() const {
   if (stopped_) {
     return RtpParameters();
   }
@@ -513,6 +550,7 @@ RtpParameters VideoRtpSender::GetParameters() {
   }
   return worker_thread_->Invoke<RtpParameters>(RTC_FROM_HERE, [&] {
     RtpParameters result = media_channel_->GetRtpSendParameters(ssrc_);
+    RemoveEncodingLayers(disabled_rids_, &result.encodings);
     last_transaction_id_ = rtc::CreateRandomUuid();
     result.transaction_id = last_transaction_id_.value();
     return result;
@@ -551,7 +589,16 @@ RTCError VideoRtpSender::SetParameters(const RtpParameters& parameters) {
     return result;
   }
   return worker_thread_->Invoke<RTCError>(RTC_FROM_HERE, [&] {
-    RTCError result = media_channel_->SetRtpSendParameters(ssrc_, parameters);
+    RtpParameters rtp_parameters = parameters;
+    if (!disabled_rids_.empty()) {
+      // Need to add the inactive layers.
+      RtpParameters old_parameters =
+          media_channel_->GetRtpSendParameters(ssrc_);
+      rtp_parameters = RestoreEncodingLayers(parameters, disabled_rids_,
+                                             old_parameters.encodings);
+    }
+    RTCError result =
+        media_channel_->SetRtpSendParameters(ssrc_, rtp_parameters);
     last_transaction_id_.reset();
     return result;
   });
@@ -605,6 +652,7 @@ void VideoRtpSender::SetSsrc(uint32_t ssrc) {
       for (size_t i = 0; i < init_parameters_.encodings.size(); ++i) {
         init_parameters_.encodings[i].ssrc =
             current_parameters.encodings[i].ssrc;
+        init_parameters_.encodings[i].rid = current_parameters.encodings[i].rid;
         current_parameters.encodings[i] = init_parameters_.encodings[i];
       }
       current_parameters.degradation_preference =
@@ -682,6 +730,38 @@ void VideoRtpSender::ClearVideoSend() {
   worker_thread_->Invoke<bool>(RTC_FROM_HERE, [&] {
     return media_channel_->SetVideoSend(ssrc_, nullptr, nullptr);
   });
+}
+
+RTCError VideoRtpSender::DisableEncodingLayers(
+    const std::vector<std::string>& rids) {
+  if (stopped_) {
+    return RTCError(RTCErrorType::INVALID_STATE);
+  }
+
+  if (!media_channel_ || !ssrc_) {
+    RemoveEncodingLayers(rids, &init_parameters_.encodings);
+    return RTCError::OK();
+  }
+
+  // Check that all the specified layers exist and disable them in the channel.
+  RtpParameters parameters = GetParameters();
+  for (const std::string& rid : rids) {
+    auto iter = absl::c_find_if(parameters.encodings,
+                                [&rid](const RtpEncodingParameters& encoding) {
+                                  return encoding.rid == rid;
+                                });
+    if (iter == parameters.encodings.end()) {
+      return RTCError(RTCErrorType::INVALID_PARAMETER,
+                      "RID: " + rid + " does not refer to a valid layer.");
+    }
+    iter->active = false;
+  }
+
+  RTCError result = SetParameters(parameters);
+  if (result.ok()) {
+    disabled_rids_.insert(disabled_rids_.end(), rids.begin(), rids.end());
+  }
+  return result;
 }
 
 }  // namespace webrtc

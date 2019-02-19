@@ -15,6 +15,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/string_encode.h"
@@ -40,6 +41,13 @@ webrtc::RtpParameters CreateRtpParametersWithEncodings(StreamParams sp) {
   for (size_t i = 0; i < encodings.size(); ++i) {
     encodings[i].ssrc = primary_ssrcs[i];
   }
+
+  const std::vector<RidDescription>& rids = sp.rids();
+  RTC_DCHECK(rids.size() == 0 || rids.size() == encoding_count);
+  for (size_t i = 0; i < rids.size(); ++i) {
+    encodings[i].rid = rids[i].rid;
+  }
+
   webrtc::RtpParameters parameters;
   parameters.encodings = encodings;
   parameters.rtcp.cname = sp.cname;
@@ -115,13 +123,21 @@ webrtc::RTCError CheckRtpParametersInvalidModificationAndValues(
         RTCErrorType::INVALID_MODIFICATION,
         "Attempted to set RtpParameters with modified header extensions");
   }
-
-  for (size_t i = 0; i < rtp_parameters.encodings.size(); ++i) {
-    if (rtp_parameters.encodings[i].ssrc !=
-        old_rtp_parameters.encodings[i].ssrc) {
-      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
-                           "Attempted to set RtpParameters with modified SSRC");
-    }
+  if (!absl::c_equal(old_rtp_parameters.encodings, rtp_parameters.encodings,
+                     [](const webrtc::RtpEncodingParameters& encoding1,
+                        const webrtc::RtpEncodingParameters& encoding2) {
+                       return encoding1.rid == encoding2.rid;
+                     })) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
+                         "Attempted to change RID values in the encodings.");
+  }
+  if (!absl::c_equal(old_rtp_parameters.encodings, rtp_parameters.encodings,
+                     [](const webrtc::RtpEncodingParameters& encoding1,
+                        const webrtc::RtpEncodingParameters& encoding2) {
+                       return encoding1.ssrc == encoding2.ssrc;
+                     })) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
+                         "Attempted to set RtpParameters with modified SSRC");
   }
 
   return CheckRtpParametersValues(rtp_parameters);

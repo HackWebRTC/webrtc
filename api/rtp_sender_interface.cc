@@ -30,4 +30,16 @@ rtc::scoped_refptr<DtlsTransportInterface> RtpSenderInterface::dtls_transport()
   return nullptr;
 }
 
+// TODO(amithi): Fix downstream dependencies and make GetParameters pure
+// virtual.
+RtpParameters RtpSenderInterface::GetParameters() {
+  const RtpSenderInterface* interface = this;
+  return interface->GetParameters();
+}
+
+RtpParameters RtpSenderInterface::GetParameters() const {
+  RtpSenderInterface* interface = const_cast<RtpSenderInterface*>(this);
+  return interface->GetParameters();
+}
+
 }  // namespace webrtc

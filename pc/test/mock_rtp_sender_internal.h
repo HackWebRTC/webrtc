@@ -33,7 +33,7 @@ class MockRtpSenderInternal : public RtpSenderInternal {
   MOCK_CONST_METHOD0(stream_ids, std::vector<std::string>());
   MOCK_CONST_METHOD0(init_send_encodings, std::vector<RtpEncodingParameters>());
   MOCK_METHOD1(set_transport, void(rtc::scoped_refptr<DtlsTransportInterface>));
-  MOCK_METHOD0(GetParameters, RtpParameters());
+  MOCK_CONST_METHOD0(GetParameters, RtpParameters());
   MOCK_METHOD1(SetParameters, RTCError(const RtpParameters&));
   MOCK_CONST_METHOD0(GetDtmfSender, rtc::scoped_refptr<DtmfSenderInterface>());
   MOCK_METHOD1(SetFrameEncryptor,
@@ -49,6 +49,8 @@ class MockRtpSenderInternal : public RtpSenderInternal {
                void(const std::vector<RtpEncodingParameters>&));
   MOCK_METHOD0(Stop, void());
   MOCK_CONST_METHOD0(AttachmentId, int());
+  MOCK_METHOD1(DisableEncodingLayers,
+               RTCError(const std::vector<std::string>&));
 };
 
 }  // namespace webrtc

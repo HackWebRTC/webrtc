@@ -59,6 +59,11 @@ class RtpSenderInternal : public RtpSenderInterface {
   // otherwise remains constant. Used to generate IDs for stats.
   // The special value zero means that no track is attached.
   virtual int AttachmentId() const = 0;
+
+  // Disables the layers identified by the specified RIDs.
+  // If the specified list is empty, this is a no-op.
+  virtual RTCError DisableEncodingLayers(
+      const std::vector<std::string>& rid) = 0;
 };
 
 // LocalAudioSinkAdapter receives data callback as a sink to the local
@@ -128,7 +133,7 @@ class AudioRtpSender : public DtmfProviderInterface,
 
   std::vector<std::string> stream_ids() const override { return stream_ids_; }
 
-  RtpParameters GetParameters() override;
+  RtpParameters GetParameters() const override;
   RTCError SetParameters(const RtpParameters& parameters) override;
 
   rtc::scoped_refptr<DtmfSenderInterface> GetDtmfSender() const override;
@@ -163,6 +168,8 @@ class AudioRtpSender : public DtmfProviderInterface,
 
   void SetMediaChannel(cricket::MediaChannel* media_channel) override;
 
+  RTCError DisableEncodingLayers(const std::vector<std::string>& rids) override;
+
  private:
   // TODO(nisse): Since SSRC == 0 is technically valid, figure out
   // some other way to test if we have a valid SSRC.
@@ -184,7 +191,12 @@ class AudioRtpSender : public DtmfProviderInterface,
   rtc::scoped_refptr<AudioTrackInterface> track_;
   rtc::scoped_refptr<DtlsTransportInterface> dtls_transport_;
   rtc::scoped_refptr<DtmfSenderInterface> dtmf_sender_proxy_;
-  absl::optional<std::string> last_transaction_id_;
+  // |last_transaction_id_| is used to verify that |SetParameters| is receiving
+  // the parameters object that was last returned from |GetParameters|.
+  // As such, it is used for internal verification and is not observable by the
+  // the client. It is marked as mutable to enable |GetParameters| to be a
+  // const method.
+  mutable absl::optional<std::string> last_transaction_id_;
   uint32_t ssrc_ = 0;
   bool cached_track_enabled_ = false;
   bool stopped_ = false;
@@ -239,7 +251,7 @@ class VideoRtpSender : public ObserverInterface,
     dtls_transport_ = dtls_transport;
   }
 
-  RtpParameters GetParameters() override;
+  RtpParameters GetParameters() const override;
   RTCError SetParameters(const RtpParameters& parameters) override;
 
   rtc::scoped_refptr<DtmfSenderInterface> GetDtmfSender() const override;
@@ -262,6 +274,8 @@ class VideoRtpSender : public ObserverInterface,
 
   void SetMediaChannel(cricket::MediaChannel* media_channel) override;
 
+  RTCError DisableEncodingLayers(const std::vector<std::string>& rids) override;
+
  private:
   bool can_send_track() const { return track_ && ssrc_; }
   // Helper function to construct options for
@@ -276,7 +290,12 @@ class VideoRtpSender : public ObserverInterface,
   RtpParameters init_parameters_;
   cricket::VideoMediaChannel* media_channel_ = nullptr;
   rtc::scoped_refptr<VideoTrackInterface> track_;
-  absl::optional<std::string> last_transaction_id_;
+  // |last_transaction_id_| is used to verify that |SetParameters| is receiving
+  // the parameters object that was last returned from |GetParameters|.
+  // As such, it is used for internal verification and is not observable by the
+  // the client. It is marked as mutable to enable |GetParameters| to be a
+  // const method.
+  mutable absl::optional<std::string> last_transaction_id_;
   uint32_t ssrc_ = 0;
   VideoTrackInterface::ContentHint cached_track_content_hint_ =
       VideoTrackInterface::ContentHint::kNone;
@@ -284,6 +303,7 @@ class VideoRtpSender : public ObserverInterface,
   int attachment_id_ = 0;
   rtc::scoped_refptr<FrameEncryptorInterface> frame_encryptor_;
   rtc::scoped_refptr<DtlsTransportInterface> dtls_transport_;
+  std::vector<std::string> disabled_rids_;
 };
 
 }  // namespace webrtc

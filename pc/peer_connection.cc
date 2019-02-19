@@ -3004,9 +3004,10 @@ static std::vector<RtpEncodingParameters> GetSendEncodingsFromRemoteDescription(
 
 static RTCError UpdateSimulcastLayerStatusInSender(
     const std::vector<SimulcastLayer>& layers,
-    RtpSenderInterface* sender) {
+    rtc::scoped_refptr<RtpSenderInternal> sender) {
   RTC_DCHECK(sender);
   RtpParameters parameters = sender->GetParameters();
+  std::vector<std::string> disabled_layers;
 
   // The simulcast envelope cannot be changed, only the status of the streams.
   // So we will iterate over the send encodings rather than the layers.
@@ -3016,29 +3017,36 @@ static RTCError UpdateSimulcastLayerStatusInSender(
                                return layer.rid == encoding.rid;
                              });
     // A layer that cannot be found may have been removed by the remote party.
-    encoding.active = iter != layers.end() && !iter->is_paused;
+    if (iter == layers.end()) {
+      disabled_layers.push_back(encoding.rid);
+      continue;
+    }
+
+    encoding.active = !iter->is_paused;
   }
 
-  return sender->SetParameters(parameters);
+  RTCError result = sender->SetParameters(parameters);
+  if (result.ok()) {
+    result = sender->DisableEncodingLayers(disabled_layers);
+  }
+
+  return result;
 }
 
-static RTCError DisableSimulcastInSender(RtpSenderInterface* sender) {
+static RTCError DisableSimulcastInSender(
+    rtc::scoped_refptr<RtpSenderInternal> sender) {
   RTC_DCHECK(sender);
   RtpParameters parameters = sender->GetParameters();
-  if (parameters.encodings.empty()) {
+  if (parameters.encodings.size() <= 1) {
     return RTCError::OK();
   }
 
-  bool first_layer_status = parameters.encodings[0].active;
-  for (RtpEncodingParameters& encoding : parameters.encodings) {
-    // TODO(bugs.webrtc.org/10251): Active does not really disable the layer.
-    // The user might enable it at a later point in time even though it was
-    // rejected.
-    encoding.active = false;
-  }
-  parameters.encodings[0].active = first_layer_status;
-
-  return sender->SetParameters(parameters);
+  std::vector<std::string> disabled_layers;
+  std::transform(
+      parameters.encodings.begin() + 1, parameters.encodings.end(),
+      std::back_inserter(disabled_layers),
+      [](const RtpEncodingParameters& encoding) { return encoding.rid; });
+  return sender->DisableEncodingLayers(disabled_layers);
 }
 
 RTCErrorOr<rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
@@ -3127,7 +3135,7 @@ PeerConnection::AssociateTransceiver(cricket::ContentSource source,
         old_local_content->media_description()->HasSimulcast() &&
         !media_desc->HasSimulcast()) {
       RTCError error =
-          DisableSimulcastInSender(transceiver->internal()->sender());
+          DisableSimulcastInSender(transceiver->internal()->sender_internal());
       if (!error.ok()) {
         RTC_LOG(LS_ERROR) << "Failed to remove rejected simulcast.";
         return std::move(error);
@@ -3148,7 +3156,7 @@ PeerConnection::AssociateTransceiver(cricket::ContentSource source,
                   .receive_layers()
                   .GetAllLayers();
     RTCError error = UpdateSimulcastLayerStatusInSender(
-        layers, transceiver->internal()->sender());
+        layers, transceiver->internal()->sender_internal());
     if (!error.ok()) {
       RTC_LOG(LS_ERROR) << "Failed updating status for simulcast layers.";
       return std::move(error);
