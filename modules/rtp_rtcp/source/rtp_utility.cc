@@ -433,6 +433,10 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
           header->extension.hasTransportSequenceNumber = true;
           break;
         }
+        case kRtpExtensionTransportSequenceNumber02:
+          RTC_LOG(WARNING) << "TransportSequenceNumberV2 unsupported by rtp "
+                              "header parser.";
+          break;
         case kRtpExtensionPlayoutDelay: {
           if (len != 2) {
             RTC_LOG(LS_WARNING) << "Incorrect playout delay len: " << len;
