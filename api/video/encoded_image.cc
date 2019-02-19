@@ -42,8 +42,7 @@ EncodedImage& EncodedImage::operator=(const EncodedImage&) = default;
 
 void EncodedImage::Retain() {
   if (buffer_) {
-    encoded_data_ = std::vector<uint8_t>(size_);
-    memcpy(encoded_data_.data(), buffer_, size_);
+    encoded_data_.SetData(buffer_, size_);
     buffer_ = nullptr;
   }
 }

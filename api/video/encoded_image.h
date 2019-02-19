@@ -12,7 +12,6 @@
 #define API_VIDEO_ENCODED_IMAGE_H_
 
 #include <stdint.h>
-#include <vector>
 
 #include "absl/types/optional.h"
 #include "api/video/color_space.h"
@@ -23,6 +22,7 @@
 #include "api/video/video_timing.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/checks.h"
+#include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -88,13 +88,13 @@ class RTC_EXPORT EncodedImage {
   }
 
   void Allocate(size_t capacity) {
-    encoded_data_.resize(capacity);
+    encoded_data_.SetSize(capacity);
     buffer_ = nullptr;
   }
 
   uint8_t* data() { return buffer_ ? buffer_ : encoded_data_.data(); }
   const uint8_t* data() const {
-    return buffer_ ? buffer_ : encoded_data_.data();
+    return buffer_ ? buffer_ : encoded_data_.cdata();
   }
   // TODO(nisse): At some places, code accepts a const ref EncodedImage, but
   // still writes to it, to clear padding at the end of the encoded data.
@@ -141,7 +141,7 @@ class RTC_EXPORT EncodedImage {
  private:
   // TODO(bugs.webrtc.org/9378): We're transitioning to always owning the
   // encoded data.
-  std::vector<uint8_t> encoded_data_;
+  rtc::CopyOnWriteBuffer encoded_data_;
   size_t size_;      // Size of encoded frame data.
   // Non-null when used with an un-owned buffer.
   uint8_t* buffer_;
