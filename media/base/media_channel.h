@@ -273,6 +273,11 @@ class MediaChannel : public sigslot::has_slots<> {
   }
   bool ExtmapAllowMixed() const { return extmap_allow_mixed_; }
 
+  virtual webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const = 0;
+  virtual webrtc::RTCError SetRtpSendParameters(
+      uint32_t ssrc,
+      const webrtc::RtpParameters& parameters) = 0;
+
  protected:
   virtual rtc::DiffServCodePoint PreferredDscp() const;
 
@@ -712,10 +717,6 @@ class VoiceMediaChannel : public MediaChannel {
   cricket::MediaType media_type() const override;
   virtual bool SetSendParameters(const AudioSendParameters& params) = 0;
   virtual bool SetRecvParameters(const AudioRecvParameters& params) = 0;
-  virtual webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const = 0;
-  virtual webrtc::RTCError SetRtpSendParameters(
-      uint32_t ssrc,
-      const webrtc::RtpParameters& parameters) = 0;
   // Get the receive parameters for the incoming stream identified by |ssrc|.
   // If |ssrc| is 0, retrieve the receive parameters for the default receive
   // stream, which is used when SSRCs are not signaled. Note that calling with
@@ -792,10 +793,6 @@ class VideoMediaChannel : public MediaChannel {
   cricket::MediaType media_type() const override;
   virtual bool SetSendParameters(const VideoSendParameters& params) = 0;
   virtual bool SetRecvParameters(const VideoRecvParameters& params) = 0;
-  virtual webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const = 0;
-  virtual webrtc::RTCError SetRtpSendParameters(
-      uint32_t ssrc,
-      const webrtc::RtpParameters& parameters) = 0;
   // Get the receive parameters for the incoming stream identified by |ssrc|.
   // If |ssrc| is 0, retrieve the receive parameters for the default receive
   // stream, which is used when SSRCs are not signaled. Note that calling with
@@ -904,6 +901,12 @@ class DataMediaChannel : public MediaChannel {
   cricket::MediaType media_type() const override;
   virtual bool SetSendParameters(const DataSendParameters& params) = 0;
   virtual bool SetRecvParameters(const DataRecvParameters& params) = 0;
+
+  // RtpParameter methods are not supported for Data channel.
+  webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const override;
+  webrtc::RTCError SetRtpSendParameters(
+      uint32_t ssrc,
+      const webrtc::RtpParameters& parameters) override;
 
   // TODO(pthatcher): Implement this.
   virtual bool GetStats(DataMediaInfo* info);
