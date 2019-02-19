@@ -313,8 +313,12 @@ TEST_F(WebRtcVideoEngineTest, SupportsColorSpaceHeaderExtension) {
   ExpectRtpCapabilitySupport(RtpExtension::kColorSpaceUri, true);
 }
 
-TEST_F(WebRtcVideoEngineTest, AdvertiseGenericDescriptor) {
-  ExpectRtpCapabilitySupport(RtpExtension::kGenericFrameDescriptorUri, false);
+TEST_F(WebRtcVideoEngineTest, AdvertiseGenericDescriptor00) {
+  ExpectRtpCapabilitySupport(RtpExtension::kGenericFrameDescriptorUri00, false);
+}
+
+TEST_F(WebRtcVideoEngineTest, AdvertiseGenericDescriptor01) {
+  ExpectRtpCapabilitySupport(RtpExtension::kGenericFrameDescriptorUri01, false);
 }
 
 class WebRtcVideoEngineTestWithGenericDescriptor
@@ -324,8 +328,14 @@ class WebRtcVideoEngineTestWithGenericDescriptor
       : WebRtcVideoEngineTest("WebRTC-GenericDescriptorAdvertised/Enabled/") {}
 };
 
-TEST_F(WebRtcVideoEngineTestWithGenericDescriptor, AdvertiseGenericDescriptor) {
-  ExpectRtpCapabilitySupport(RtpExtension::kGenericFrameDescriptorUri, true);
+TEST_F(WebRtcVideoEngineTestWithGenericDescriptor,
+       AdvertiseGenericDescriptor00) {
+  ExpectRtpCapabilitySupport(RtpExtension::kGenericFrameDescriptorUri00, true);
+}
+
+TEST_F(WebRtcVideoEngineTestWithGenericDescriptor,
+       AdvertiseGenericDescriptor01) {
+  ExpectRtpCapabilitySupport(RtpExtension::kGenericFrameDescriptorUri01, true);
 }
 
 TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionBeforeCapturer) {

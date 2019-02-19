@@ -43,6 +43,7 @@ struct RTPVideoHeader {
     int temporal_index = 0;
     absl::InlinedVector<int64_t, 5> dependencies;
     absl::InlinedVector<int, 5> higher_spatial_layers;
+    bool discardable = false;
   };
 
   RTPVideoHeader();

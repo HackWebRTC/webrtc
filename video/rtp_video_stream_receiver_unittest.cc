@@ -32,6 +32,7 @@
 
 using ::testing::_;
 using ::testing::Invoke;
+using ::testing::Values;
 
 namespace webrtc {
 
@@ -284,10 +285,9 @@ class RtpVideoStreamReceiverTestH264
   RtpVideoStreamReceiverTestH264() : RtpVideoStreamReceiverTest(GetParam()) {}
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    SpsPpsIdrIsKeyframe,
-    RtpVideoStreamReceiverTestH264,
-    ::testing::Values("", "WebRTC-SpsPpsIdrIsH264Keyframe/Enabled/"));
+INSTANTIATE_TEST_SUITE_P(SpsPpsIdrIsKeyframe,
+                         RtpVideoStreamReceiverTestH264,
+                         Values("", "WebRTC-SpsPpsIdrIsH264Keyframe/Enabled/"));
 
 TEST_P(RtpVideoStreamReceiverTestH264, InBandSpsPps) {
   std::vector<uint8_t> sps_data;
@@ -500,7 +500,51 @@ TEST_F(RtpVideoStreamReceiverTest,
   rtp_video_stream_receiver_->RemoveSecondarySink(&secondary_sink);
 }
 
-TEST_F(RtpVideoStreamReceiverTest, ParseGenericDescriptorOnePacket) {
+class RtpVideoStreamReceiverGenericDescriptorTest
+    : public RtpVideoStreamReceiverTest,
+      public ::testing::WithParamInterface<int> {
+ public:
+  void RegisterRtpGenericFrameDescriptorExtension(
+      RtpHeaderExtensionMap* extension_map,
+      int version) {
+    constexpr int kId00 = 5;
+    constexpr int kId01 = 6;
+    switch (version) {
+      case 0:
+        extension_map->Register<RtpGenericFrameDescriptorExtension00>(kId00);
+        return;
+      case 1:
+        extension_map->Register<RtpGenericFrameDescriptorExtension01>(kId01);
+        return;
+    }
+    RTC_NOTREACHED();
+  }
+
+  bool SetExtensionRtpGenericFrameDescriptorExtension(
+      const RtpGenericFrameDescriptor& generic_descriptor,
+      RtpPacketReceived* rtp_packet,
+      int version) {
+    switch (version) {
+      case 0:
+        return rtp_packet->SetExtension<RtpGenericFrameDescriptorExtension00>(
+            generic_descriptor);
+      case 1:
+        return rtp_packet->SetExtension<RtpGenericFrameDescriptorExtension01>(
+            generic_descriptor);
+    }
+    RTC_NOTREACHED();
+    return false;
+  }
+};
+
+INSTANTIATE_TEST_SUITE_P(,
+                         RtpVideoStreamReceiverGenericDescriptorTest,
+                         Values(0, 1));
+
+TEST_P(RtpVideoStreamReceiverGenericDescriptorTest,
+       ParseGenericDescriptorOnePacket) {
+  const int version = GetParam();
+
   const std::vector<uint8_t> data = {0, 1, 2, 3, 4};
   const int kPayloadType = 123;
   const int kSpatialIndex = 1;
@@ -511,7 +555,7 @@ TEST_F(RtpVideoStreamReceiverTest, ParseGenericDescriptorOnePacket) {
   rtp_video_stream_receiver_->StartReceive();
 
   RtpHeaderExtensionMap extension_map;
-  extension_map.Register<RtpGenericFrameDescriptorExtension>(5);
+  RegisterRtpGenericFrameDescriptorExtension(&extension_map, version);
   RtpPacketReceived rtp_packet(&extension_map);
 
   RtpGenericFrameDescriptor generic_descriptor;
@@ -521,8 +565,8 @@ TEST_F(RtpVideoStreamReceiverTest, ParseGenericDescriptorOnePacket) {
   generic_descriptor.SetSpatialLayersBitmask(1 << kSpatialIndex);
   generic_descriptor.AddFrameDependencyDiff(90);
   generic_descriptor.AddFrameDependencyDiff(80);
-  EXPECT_TRUE(rtp_packet.SetExtension<RtpGenericFrameDescriptorExtension>(
-      generic_descriptor));
+  ASSERT_TRUE(SetExtensionRtpGenericFrameDescriptorExtension(
+      generic_descriptor, &rtp_packet, version));
 
   uint8_t* payload = rtp_packet.SetPayloadSize(data.size());
   memcpy(payload, data.data(), data.size());
@@ -545,7 +589,10 @@ TEST_F(RtpVideoStreamReceiverTest, ParseGenericDescriptorOnePacket) {
   rtp_video_stream_receiver_->OnRtpPacket(rtp_packet);
 }
 
-TEST_F(RtpVideoStreamReceiverTest, ParseGenericDescriptorTwoPackets) {
+TEST_P(RtpVideoStreamReceiverGenericDescriptorTest,
+       ParseGenericDescriptorTwoPackets) {
+  const int version = GetParam();
+
   const std::vector<uint8_t> data = {0, 1, 2, 3, 4};
   const int kPayloadType = 123;
   const int kSpatialIndex = 1;
@@ -556,7 +603,7 @@ TEST_F(RtpVideoStreamReceiverTest, ParseGenericDescriptorTwoPackets) {
   rtp_video_stream_receiver_->StartReceive();
 
   RtpHeaderExtensionMap extension_map;
-  extension_map.Register<RtpGenericFrameDescriptorExtension>(5);
+  RegisterRtpGenericFrameDescriptorExtension(&extension_map, version);
   RtpPacketReceived first_packet(&extension_map);
 
   RtpGenericFrameDescriptor first_packet_descriptor;
@@ -565,8 +612,8 @@ TEST_F(RtpVideoStreamReceiverTest, ParseGenericDescriptorTwoPackets) {
   first_packet_descriptor.SetFrameId(100);
   first_packet_descriptor.SetSpatialLayersBitmask(1 << kSpatialIndex);
   first_packet_descriptor.SetResolution(480, 360);
-  EXPECT_TRUE(first_packet.SetExtension<RtpGenericFrameDescriptorExtension>(
-      first_packet_descriptor));
+  ASSERT_TRUE(SetExtensionRtpGenericFrameDescriptorExtension(
+      first_packet_descriptor, &first_packet, version));
 
   uint8_t* first_packet_payload = first_packet.SetPayloadSize(data.size());
   memcpy(first_packet_payload, data.data(), data.size());
@@ -582,8 +629,8 @@ TEST_F(RtpVideoStreamReceiverTest, ParseGenericDescriptorTwoPackets) {
   RtpGenericFrameDescriptor second_packet_descriptor;
   second_packet_descriptor.SetFirstPacketInSubFrame(false);
   second_packet_descriptor.SetLastPacketInSubFrame(true);
-  EXPECT_TRUE(second_packet.SetExtension<RtpGenericFrameDescriptorExtension>(
-      second_packet_descriptor));
+  ASSERT_TRUE(SetExtensionRtpGenericFrameDescriptorExtension(
+      second_packet_descriptor, &second_packet, version));
 
   second_packet.SetMarker(true);
   second_packet.SetPayloadType(kPayloadType);
@@ -604,6 +651,45 @@ TEST_F(RtpVideoStreamReceiverTest, ParseGenericDescriptorTwoPackets) {
       }));
 
   rtp_video_stream_receiver_->OnRtpPacket(second_packet);
+}
+
+TEST_F(RtpVideoStreamReceiverGenericDescriptorTest,
+       DropPacketsWithMultipleVersionsOfExtension) {
+  const std::vector<uint8_t> data = {0, 1, 2, 3, 4};
+  const int kPayloadType = 123;
+
+  VideoCodec codec;
+  codec.plType = kPayloadType;
+  rtp_video_stream_receiver_->AddReceiveCodec(codec, {});
+  rtp_video_stream_receiver_->StartReceive();
+
+  RtpHeaderExtensionMap extension_map;
+  RegisterRtpGenericFrameDescriptorExtension(&extension_map, 0);
+  RegisterRtpGenericFrameDescriptorExtension(&extension_map, 1);
+  RtpPacketReceived rtp_packet(&extension_map);
+
+  RtpGenericFrameDescriptor generic_descriptors[2];
+  for (size_t i = 0; i < 2; ++i) {
+    generic_descriptors[i].SetFirstPacketInSubFrame(true);
+    generic_descriptors[i].SetLastPacketInSubFrame(true);
+    generic_descriptors[i].SetFrameId(100);
+    ASSERT_TRUE(SetExtensionRtpGenericFrameDescriptorExtension(
+        generic_descriptors[i], &rtp_packet, i));
+  }
+
+  uint8_t* payload = rtp_packet.SetPayloadSize(data.size());
+  memcpy(payload, data.data(), data.size());
+  // The first byte is the header, so we ignore the first byte of |data|.
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(data.data() + 1,
+                                                           data.size() - 1);
+
+  rtp_packet.SetMarker(true);
+  rtp_packet.SetPayloadType(kPayloadType);
+  rtp_packet.SetSequenceNumber(1);
+
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame).Times(0);
+
+  rtp_video_stream_receiver_->OnRtpPacket(rtp_packet);
 }
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)

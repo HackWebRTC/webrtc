@@ -297,6 +297,9 @@ struct RtpExtension {
   RTC_DEPRECATED static const int kFrameMarkingDefaultId;
 
   // Experimental codec agnostic frame descriptor.
+  static const char kGenericFrameDescriptorUri00[];
+  static const char kGenericFrameDescriptorUri01[];
+  // TODO(bugs.webrtc.org/10243): Remove once dependencies have been updated.
   static const char kGenericFrameDescriptorUri[];
   // TODO(bugs.webrtc.org/10288): Remove once dependencies have been updated.
   RTC_DEPRECATED static const int kGenericFrameDescriptorDefaultId;

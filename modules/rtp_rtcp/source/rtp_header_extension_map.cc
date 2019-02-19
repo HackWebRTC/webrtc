@@ -42,7 +42,8 @@ constexpr ExtensionInfo kExtensions[] = {
     CreateExtensionInfo<RtpStreamId>(),
     CreateExtensionInfo<RepairedRtpStreamId>(),
     CreateExtensionInfo<RtpMid>(),
-    CreateExtensionInfo<RtpGenericFrameDescriptorExtension>(),
+    CreateExtensionInfo<RtpGenericFrameDescriptorExtension00>(),
+    CreateExtensionInfo<RtpGenericFrameDescriptorExtension01>(),
     CreateExtensionInfo<ColorSpaceExtension>(),
 };
 
