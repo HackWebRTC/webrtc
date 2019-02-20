@@ -10,7 +10,6 @@
 
 #include <bitset>
 
-#include "absl/types/optional.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor_extension.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
@@ -86,13 +85,6 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
         uint16_t seqnum;
         packet.GetExtension<TransportSequenceNumber>(&seqnum);
         break;
-      case kRtpExtensionTransportSequenceNumber02: {
-        uint16_t seqnum;
-        absl::optional<FeedbackRequest> feedback_request;
-        packet.GetExtension<TransportSequenceNumberV2>(&seqnum,
-                                                       &feedback_request);
-        break;
-      }
       case kRtpExtensionPlayoutDelay:
         PlayoutDelay playout;
         packet.GetExtension<PlayoutDelayLimits>(&playout);

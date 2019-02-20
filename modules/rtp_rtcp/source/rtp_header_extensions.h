@@ -81,38 +81,9 @@ class TransportSequenceNumber {
   static constexpr const char kUri[] =
       "http://www.ietf.org/id/"
       "draft-holmer-rmcat-transport-wide-cc-extensions-01";
-  static bool Parse(rtc::ArrayView<const uint8_t> data,
-                    uint16_t* transport_sequence_number);
-  static size_t ValueSize(uint16_t /*transport_sequence_number*/) {
-    return kValueSizeBytes;
-  }
-  static bool Write(rtc::ArrayView<uint8_t> data,
-                    uint16_t transport_sequence_number);
-};
-
-class TransportSequenceNumberV2 {
- public:
-  static constexpr RTPExtensionType kId =
-      kRtpExtensionTransportSequenceNumber02;
-  static constexpr uint8_t kValueSizeBytesWithFeedbackRequest = 4;
-  static constexpr const char kUri[] =
-      "http://www.ietf.org/id/"
-      "draft-holmer-rmcat-transport-wide-cc-extensions-02";
-  static bool Parse(rtc::ArrayView<const uint8_t> data,
-                    uint16_t* transport_sequence_number,
-                    absl::optional<FeedbackRequest>* feedback_request);
-  static size_t ValueSize(
-      uint16_t /*transport_sequence_number*/,
-      const absl::optional<FeedbackRequest>& feedback_request) {
-    return feedback_request ? kValueSizeBytesWithFeedbackRequest
-                            : TransportSequenceNumber::kValueSizeBytes;
-  }
-  static bool Write(rtc::ArrayView<uint8_t> data,
-                    uint16_t transport_sequence_number,
-                    const absl::optional<FeedbackRequest>& feedback_request);
-
- private:
-  static constexpr uint16_t kIncludeTimestampsBit = 1 << 15;
+  static bool Parse(rtc::ArrayView<const uint8_t> data, uint16_t* value);
+  static size_t ValueSize(uint16_t value) { return kValueSizeBytes; }
+  static bool Write(rtc::ArrayView<uint8_t> data, uint16_t value);
 };
 
 class VideoOrientation {
