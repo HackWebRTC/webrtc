@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "pc/test/frame_generator_capturer_video_track_source.h"
+#include "rtc_base/task_queue.h"
 #include "rtc_base/thread.h"
 #include "system_wrappers/include/clock.h"
 #include "test/pc/e2e/analyzer/video/single_process_encoded_image_id_injector.h"
@@ -92,6 +93,10 @@ class PeerConnectionE2EQualityTest
   std::vector<std::unique_ptr<VideoFrameWriter>> video_writers_;
   std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>
       output_video_sinks_;
+
+  // Must be the last field, so it will be deleted first, because tasks
+  // in the TaskQueue can access other fields of the instance of this class.
+  rtc::TaskQueue task_queue_;
 };
 
 }  // namespace test

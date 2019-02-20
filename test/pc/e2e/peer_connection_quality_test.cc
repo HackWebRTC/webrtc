@@ -1,5 +1,3 @@
-#include <utility>
-
 /*
  *  Copyright (c) 2019 The WebRTC project authors. All Rights Reserved.
  *
@@ -94,7 +92,7 @@ class FixturePeerConnectionObserver : public MockPeerConnectionObserver {
 
 PeerConnectionE2EQualityTest::PeerConnectionE2EQualityTest(
     std::unique_ptr<Analyzers> analyzers)
-    : clock_(Clock::GetRealTimeClock()) {
+    : clock_(Clock::GetRealTimeClock()), task_queue_("pc_e2e_quality_test") {
   RTC_CHECK(analyzers);
 
   // Create default video quality analyzer. We will always create an analyzer,
