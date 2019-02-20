@@ -25,7 +25,7 @@ namespace test {
 QualityAnalyzingVideoDecoder::QualityAnalyzingVideoDecoder(
     int id,
     std::unique_ptr<VideoDecoder> delegate,
-    EncodedImageIdExtractor* extractor,
+    EncodedImageDataExtractor* extractor,
     VideoQualityAnalyzerInterface* analyzer)
     : id_(id),
       implementation_name_("AnalyzingDecoder-" +
@@ -53,7 +53,10 @@ int32_t QualityAnalyzingVideoDecoder::Decode(
   // owner of original buffer will be responsible for deleting it, or extractor
   // can create a new buffer. In such case extractor will be responsible for
   // deleting it.
-  EncodedImageWithId out = extractor_->ExtractId(input_image, id_);
+  EncodedImageExtractionResult out = extractor_->ExtractData(input_image, id_);
+
+  // TODO(titovartem) add support for simulcast.
+  RTC_CHECK(!out.discard) << "Simulcast is not supported yet";
 
   EncodedImage* origin_image;
   {
@@ -195,7 +198,7 @@ void QualityAnalyzingVideoDecoder::OnFrameDecoded(
 QualityAnalyzingVideoDecoderFactory::QualityAnalyzingVideoDecoderFactory(
     std::unique_ptr<VideoDecoderFactory> delegate,
     IdGenerator<int>* id_generator,
-    EncodedImageIdExtractor* extractor,
+    EncodedImageDataExtractor* extractor,
     VideoQualityAnalyzerInterface* analyzer)
     : delegate_(std::move(delegate)),
       id_generator_(id_generator),

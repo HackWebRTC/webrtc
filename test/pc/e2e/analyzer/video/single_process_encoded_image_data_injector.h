@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_PC_E2E_ANALYZER_VIDEO_SINGLE_PROCESS_ENCODED_IMAGE_ID_INJECTOR_H_
-#define TEST_PC_E2E_ANALYZER_VIDEO_SINGLE_PROCESS_ENCODED_IMAGE_ID_INJECTOR_H_
+#ifndef TEST_PC_E2E_ANALYZER_VIDEO_SINGLE_PROCESS_ENCODED_IMAGE_DATA_INJECTOR_H_
+#define TEST_PC_E2E_ANALYZER_VIDEO_SINGLE_PROCESS_ENCODED_IMAGE_DATA_INJECTOR_H_
 
 #include <cstdint>
 #include <map>
@@ -19,36 +19,39 @@
 
 #include "api/video/encoded_image.h"
 #include "rtc_base/critical_section.h"
-#include "test/pc/e2e/analyzer/video/encoded_image_id_injector.h"
+#include "test/pc/e2e/analyzer/video/encoded_image_data_injector.h"
 
 namespace webrtc {
 namespace test {
 
 // Based on assumption that all call participants are in the same OS process
-// and uses same QualityAnalyzingVideoContext to obtain EncodedImageIdInjector.
+// and uses same QualityAnalyzingVideoContext to obtain
+// EncodedImageDataInjector.
 //
-// To inject frame id into EncodedImage injector uses first 2 bytes of
-// EncodedImage payload. Then it uses 3rd byte for frame sub id, that is
-// required to distinguish different spatial layers. The origin data from these
-// 3 bytes will be stored inside injector's internal storage and then will be
-// restored during extraction phase.
+// To inject frame id and discard flag into EncodedImage injector uses first 2
+// bytes of EncodedImage payload. Then it uses 3rd byte for frame sub id, that
+// is required to distinguish different spatial layers. The origin data from
+// these 3 bytes will be stored inside injector's internal storage and then will
+// be restored during extraction phase.
 //
 // This injector won't add any extra overhead into EncodedImage payload and
 // support frames with any size of payload. Also assumes that every EncodedImage
 // payload size is greater or equals to 3 bytes
-class SingleProcessEncodedImageIdInjector : public EncodedImageIdInjector,
-                                            public EncodedImageIdExtractor {
+class SingleProcessEncodedImageDataInjector : public EncodedImageDataInjector,
+                                              public EncodedImageDataExtractor {
  public:
-  SingleProcessEncodedImageIdInjector();
-  ~SingleProcessEncodedImageIdInjector() override;
+  SingleProcessEncodedImageDataInjector();
+  ~SingleProcessEncodedImageDataInjector() override;
 
-  // Id will be injected into EncodedImage buffer directly. This buffer won't
-  // be fully copied, so |source| image buffer will be also changed.
-  EncodedImage InjectId(uint16_t id,
-                        const EncodedImage& source,
-                        int coding_entity_id) override;
-  EncodedImageWithId ExtractId(const EncodedImage& source,
-                               int coding_entity_id) override;
+  // Id and discard flag will be injected into EncodedImage buffer directly.
+  // This buffer won't be fully copied, so |source| image buffer will be also
+  // changed.
+  EncodedImage InjectData(uint16_t id,
+                          bool discard,
+                          const EncodedImage& source,
+                          int coding_entity_id) override;
+  EncodedImageExtractionResult ExtractData(const EncodedImage& source,
+                                           int coding_entity_id) override;
 
  private:
   // Contains data required to extract frame id from EncodedImage and restore
@@ -58,6 +61,9 @@ class SingleProcessEncodedImageIdInjector : public EncodedImageIdInjector,
     uint8_t sub_id;
     // Length of the origin buffer encoded image.
     size_t length;
+    // Flag to show is this encoded images should be discarded by analyzing
+    // decoder because of not required spatial layer/simulcast stream.
+    bool discard;
     // Data from first 3 bytes of origin encoded image's payload.
     uint8_t origin_data[3];
   };
@@ -84,4 +90,4 @@ class SingleProcessEncodedImageIdInjector : public EncodedImageIdInjector,
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // TEST_PC_E2E_ANALYZER_VIDEO_SINGLE_PROCESS_ENCODED_IMAGE_ID_INJECTOR_H_
+#endif  // TEST_PC_E2E_ANALYZER_VIDEO_SINGLE_PROCESS_ENCODED_IMAGE_DATA_INJECTOR_H_

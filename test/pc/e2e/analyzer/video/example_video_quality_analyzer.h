@@ -12,6 +12,7 @@
 #define TEST_PC_E2E_ANALYZER_VIDEO_EXAMPLE_VIDEO_QUALITY_ANALYZER_H_
 
 #include <atomic>
+#include <map>
 #include <set>
 #include <string>
 
@@ -48,6 +49,7 @@ class ExampleVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   void OnEncoderError(const VideoFrame& frame, int32_t error_code) override;
   void OnDecoderError(uint16_t frame_id, int32_t error_code) override;
   void Stop() override;
+  std::string GetStreamLabel(uint16_t frame_id) override;
 
   uint64_t frames_captured() const;
   uint64_t frames_sent() const;
@@ -66,6 +68,7 @@ class ExampleVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   // need to keep them to correctly determine dropped frames and also correctly
   // process frame id overlap.
   std::set<uint16_t> frames_in_flight_ RTC_GUARDED_BY(lock_);
+  std::map<uint16_t, std::string> frames_to_stream_label_ RTC_GUARDED_BY(lock_);
   uint16_t next_frame_id_ RTC_GUARDED_BY(lock_) = 0;
   uint64_t frames_captured_ RTC_GUARDED_BY(lock_) = 0;
   uint64_t frames_sent_ RTC_GUARDED_BY(lock_) = 0;

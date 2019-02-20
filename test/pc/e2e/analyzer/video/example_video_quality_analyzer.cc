@@ -28,12 +28,16 @@ uint16_t ExampleVideoQualityAnalyzer::OnFrameCaptured(
   auto it = frames_in_flight_.find(frame_id);
   if (it == frames_in_flight_.end()) {
     frames_in_flight_.insert(frame_id);
+    frames_to_stream_label_.insert({frame_id, stream_label});
   } else {
     RTC_LOG(WARNING) << "Meet new frame with the same id: " << frame_id
                      << ". Assumes old one as dropped";
     // We needn't insert frame to frames_in_flight_, because it is already
     // there.
     ++frames_dropped_;
+    auto stream_it = frames_to_stream_label_.find(frame_id);
+    RTC_CHECK(stream_it != frames_to_stream_label_.end());
+    stream_it->second = stream_label;
   }
   ++frames_captured_;
   return frame_id;
@@ -93,6 +97,14 @@ void ExampleVideoQualityAnalyzer::Stop() {
   RTC_LOG(INFO) << "There are " << frames_in_flight_.size()
                 << " frames in flight, assuming all of them are dropped";
   frames_dropped_ += frames_in_flight_.size();
+}
+
+std::string ExampleVideoQualityAnalyzer::GetStreamLabel(uint16_t frame_id) {
+  rtc::CritScope crit(&lock_);
+  auto it = frames_to_stream_label_.find(frame_id);
+  RTC_DCHECK(it != frames_to_stream_label_.end())
+      << "Unknown frame_id=" << frame_id;
+  return it->second;
 }
 
 uint64_t ExampleVideoQualityAnalyzer::frames_captured() const {

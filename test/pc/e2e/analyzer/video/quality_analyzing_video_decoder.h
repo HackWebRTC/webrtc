@@ -22,7 +22,7 @@
 #include "api/video_codecs/video_decoder.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "rtc_base/critical_section.h"
-#include "test/pc/e2e/analyzer/video/encoded_image_id_injector.h"
+#include "test/pc/e2e/analyzer/video/encoded_image_data_injector.h"
 #include "test/pc/e2e/analyzer/video/id_generator.h"
 #include "test/pc/e2e/api/video_quality_analyzer_interface.h"
 
@@ -51,10 +51,10 @@ class QualityAnalyzingVideoDecoder : public VideoDecoder {
  public:
   // Creates analyzing decoder. |id| is unique coding entity id, that will
   // be used to distinguish all encoders and decoders inside
-  // EncodedImageIdInjector and EncodedImageIdExtracor.
+  // EncodedImageDataInjector and EncodedImageIdExtracor.
   QualityAnalyzingVideoDecoder(int id,
                                std::unique_ptr<VideoDecoder> delegate,
-                               EncodedImageIdExtractor* extractor,
+                               EncodedImageDataExtractor* extractor,
                                VideoQualityAnalyzerInterface* analyzer);
   ~QualityAnalyzingVideoDecoder() override;
 
@@ -101,7 +101,7 @@ class QualityAnalyzingVideoDecoder : public VideoDecoder {
   const int id_;
   const std::string implementation_name_;
   std::unique_ptr<VideoDecoder> delegate_;
-  EncodedImageIdExtractor* const extractor_;
+  EncodedImageDataExtractor* const extractor_;
   VideoQualityAnalyzerInterface* const analyzer_;
   std::unique_ptr<DecoderCallback> analyzing_callback_;
 
@@ -112,7 +112,7 @@ class QualityAnalyzingVideoDecoder : public VideoDecoder {
 
   std::map<uint32_t, uint16_t> timestamp_to_frame_id_ RTC_GUARDED_BY(lock_);
   // Stores currently being decoded images by frame id. Because
-  // EncodedImageIdExtractor can create new copy on EncodedImage we need to
+  // EncodedImageDataExtractor can create new copy on EncodedImage we need to
   // ensure, that this image won't be deleted during async decoding. To do it
   // all images are putted into this map and removed from here inside callback.
   std::map<uint16_t, EncodedImage> decoding_images_ RTC_GUARDED_BY(lock_);
@@ -126,7 +126,7 @@ class QualityAnalyzingVideoDecoderFactory : public VideoDecoderFactory {
   QualityAnalyzingVideoDecoderFactory(
       std::unique_ptr<VideoDecoderFactory> delegate,
       IdGenerator<int>* id_generator,
-      EncodedImageIdExtractor* extractor,
+      EncodedImageDataExtractor* extractor,
       VideoQualityAnalyzerInterface* analyzer);
   ~QualityAnalyzingVideoDecoderFactory() override;
 
@@ -141,7 +141,7 @@ class QualityAnalyzingVideoDecoderFactory : public VideoDecoderFactory {
  private:
   std::unique_ptr<VideoDecoderFactory> delegate_;
   IdGenerator<int>* const id_generator_;
-  EncodedImageIdExtractor* const extractor_;
+  EncodedImageDataExtractor* const extractor_;
   VideoQualityAnalyzerInterface* const analyzer_;
 };
 

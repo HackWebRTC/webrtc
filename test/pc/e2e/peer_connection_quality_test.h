@@ -18,7 +18,7 @@
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread.h"
 #include "system_wrappers/include/clock.h"
-#include "test/pc/e2e/analyzer/video/single_process_encoded_image_id_injector.h"
+#include "test/pc/e2e/analyzer/video/single_process_encoded_image_data_injector.h"
 #include "test/pc/e2e/analyzer/video/video_quality_analyzer_injection_helper.h"
 #include "test/pc/e2e/api/peerconnection_quality_test_fixture.h"
 #include "test/pc/e2e/test_peer.h"
@@ -81,7 +81,7 @@ class PeerConnectionE2EQualityTest
   Clock* const clock_;
   std::unique_ptr<VideoQualityAnalyzerInjectionHelper>
       video_quality_analyzer_injection_helper_;
-  std::unique_ptr<SingleProcessEncodedImageIdInjector>
+  std::unique_ptr<SingleProcessEncodedImageDataInjector>
       encoded_image_id_controller_;
 
   std::unique_ptr<TestPeer> alice_;

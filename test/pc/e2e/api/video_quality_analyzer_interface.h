@@ -93,6 +93,8 @@ class VideoQualityAnalyzerInterface {
   // Tells analyzer that analysis complete and it should calculate final
   // statistics.
   virtual void Stop() {}
+
+  virtual std::string GetStreamLabel(uint16_t frame_id) = 0;
 };
 
 }  // namespace webrtc

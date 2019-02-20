@@ -88,8 +88,8 @@ class AnalyzingVideoSink : public rtc::VideoSinkInterface<VideoFrame> {
 
 VideoQualityAnalyzerInjectionHelper::VideoQualityAnalyzerInjectionHelper(
     std::unique_ptr<VideoQualityAnalyzerInterface> analyzer,
-    EncodedImageIdInjector* injector,
-    EncodedImageIdExtractor* extractor)
+    EncodedImageDataInjector* injector,
+    EncodedImageDataExtractor* extractor)
     : analyzer_(std::move(analyzer)),
       injector_(injector),
       extractor_(extractor),
@@ -102,10 +102,12 @@ VideoQualityAnalyzerInjectionHelper::~VideoQualityAnalyzerInjectionHelper() =
 
 std::unique_ptr<VideoEncoderFactory>
 VideoQualityAnalyzerInjectionHelper::WrapVideoEncoderFactory(
-    std::unique_ptr<VideoEncoderFactory> delegate) const {
+    std::unique_ptr<VideoEncoderFactory> delegate,
+    std::map<std::string, absl::optional<int>> stream_required_spatial_index)
+    const {
   return absl::make_unique<QualityAnalyzingVideoEncoderFactory>(
-      std::move(delegate), encoding_entities_id_generator_.get(), injector_,
-      analyzer_.get());
+      std::move(delegate), std::move(stream_required_spatial_index),
+      encoding_entities_id_generator_.get(), injector_, analyzer_.get());
 }
 
 std::unique_ptr<VideoDecoderFactory>

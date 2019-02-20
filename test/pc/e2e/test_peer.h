@@ -22,7 +22,7 @@
 #include "pc/test/mock_peer_connection_observers.h"
 #include "rtc_base/network.h"
 #include "rtc_base/thread.h"
-#include "test/pc/e2e/analyzer/video/encoded_image_id_injector.h"
+#include "test/pc/e2e/analyzer/video/encoded_image_data_injector.h"
 #include "test/pc/e2e/analyzer/video/video_quality_analyzer_injection_helper.h"
 #include "test/pc/e2e/api/peerconnection_quality_test_fixture.h"
 

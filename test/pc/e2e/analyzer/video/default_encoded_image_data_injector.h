@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_PC_E2E_ANALYZER_VIDEO_DEFAULT_ENCODED_IMAGE_ID_INJECTOR_H_
-#define TEST_PC_E2E_ANALYZER_VIDEO_DEFAULT_ENCODED_IMAGE_ID_INJECTOR_H_
+#ifndef TEST_PC_E2E_ANALYZER_VIDEO_DEFAULT_ENCODED_IMAGE_DATA_INJECTOR_H_
+#define TEST_PC_E2E_ANALYZER_VIDEO_DEFAULT_ENCODED_IMAGE_DATA_INJECTOR_H_
 
 #include <cstdint>
 #include <deque>
@@ -20,20 +20,21 @@
 
 #include "api/video/encoded_image.h"
 #include "rtc_base/critical_section.h"
-#include "test/pc/e2e/analyzer/video/encoded_image_id_injector.h"
+#include "test/pc/e2e/analyzer/video/encoded_image_data_injector.h"
 
 namespace webrtc {
 namespace test {
 
-// Injects frame id into EncodedImage payload buffer. The payload buffer will
-// be prepended in the injector with 2 bytes frame id and 4 bytes original
-// buffer length. It is assumed, that frame's data can't be more then 2^32
-// bytes. In the decoder, frame id will be extracted and the length will be used
-// to restore original buffer.
+// Injects frame id and discard flag into EncodedImage payload buffer. The
+// payload buffer will be prepended in the injector with 2 bytes frame id and 4
+// bytes original buffer length. Discarded flag will be put into the highest bit
+// of the length. It is assumed, that frame's data can't be more then 2^31
+// bytes. In the decoder, frame id and discard flag will be extracted and the
+// length will be used to restore original buffer.
 //
 // The data in the EncodedImage on encoder side after injection will look like
 // this:
-//        4 bytes frame length
+//        4 bytes frame length + discard flag
 //   _ _ _↓_ _ _ _________________
 //  |   |       | original buffer |
 //   ¯↑¯ ¯ ¯ ¯ ¯ ¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯¯
@@ -48,10 +49,12 @@ namespace test {
 //   1. pos = 0
 //   2. Extract id from buf[pos] and buf[pos + 1]
 //   3. Extract length from buf[pos + 2]..buf[pos + 5]
-//   4. Copy |length| bytes starting from buf[pos + 6] to output buffer.
-//   5. pos = pos + length + 6
-//   6. If pos < buf.length - go to the step 2.
-// Also it will be checked, that all extracted ids are equals.
+//   4. Extract discard flag from length highest bit.
+//   5. If discard flag is False, copy |length| bytes starting from buf[pos + 6]
+//   to output buffer.
+//   6. pos = pos + length + 6
+//   7. If pos < buf.length - go to the step 2.
+// Also it will check, that all extracted ids are equals.
 //
 // Because EncodedImage doesn't take ownership of its buffer, injector will keep
 // ownership of the buffers that will be used for EncodedImages with injected
@@ -67,17 +70,19 @@ namespace test {
 // preallocate buffers for 2 coding entities, so 512 buffers with initial size
 // 2KB. If in some point of time bigger buffer will be required, it will be also
 // extended.
-class DefaultEncodedImageIdInjector : public EncodedImageIdInjector,
-                                      public EncodedImageIdExtractor {
+class DefaultEncodedImageDataInjector : public EncodedImageDataInjector,
+                                        public EncodedImageDataExtractor {
  public:
-  DefaultEncodedImageIdInjector();
-  ~DefaultEncodedImageIdInjector() override;
+  DefaultEncodedImageDataInjector();
+  ~DefaultEncodedImageDataInjector() override;
 
-  EncodedImage InjectId(uint16_t id,
-                        const EncodedImage& source,
-                        int coding_entity_id) override;
-  EncodedImageWithId ExtractId(const EncodedImage& source,
-                               int coding_entity_id) override;
+  // TODO(titovartem) add support for discard injection and update the doc.
+  EncodedImage InjectData(uint16_t id,
+                          bool discard,
+                          const EncodedImage& source,
+                          int coding_entity_id) override;
+  EncodedImageExtractionResult ExtractData(const EncodedImage& source,
+                                           int coding_entity_id) override;
 
  private:
   void ExtendIfRequired(int coding_entity_id) RTC_LOCKS_EXCLUDED(lock_);
@@ -99,4 +104,4 @@ class DefaultEncodedImageIdInjector : public EncodedImageIdInjector,
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // TEST_PC_E2E_ANALYZER_VIDEO_DEFAULT_ENCODED_IMAGE_ID_INJECTOR_H_
+#endif  // TEST_PC_E2E_ANALYZER_VIDEO_DEFAULT_ENCODED_IMAGE_DATA_INJECTOR_H_

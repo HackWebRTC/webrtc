@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "test/pc/e2e/analyzer/video/default_encoded_image_id_injector.h"
+#include "test/pc/e2e/analyzer/video/default_encoded_image_data_injector.h"
 
 #include <cstddef>
 
@@ -32,18 +32,20 @@ constexpr size_t kBuffersPoolPerCodingEntity = 256;
 
 }  // namespace
 
-DefaultEncodedImageIdInjector::DefaultEncodedImageIdInjector() {
+DefaultEncodedImageDataInjector::DefaultEncodedImageDataInjector() {
   for (size_t i = 0;
        i < kPreInitCodingEntitiesCount * kBuffersPoolPerCodingEntity; ++i) {
     bufs_pool_.push_back(
         absl::make_unique<std::vector<uint8_t>>(kInitialBufferSize));
   }
 }
-DefaultEncodedImageIdInjector::~DefaultEncodedImageIdInjector() = default;
+DefaultEncodedImageDataInjector::~DefaultEncodedImageDataInjector() = default;
 
-EncodedImage DefaultEncodedImageIdInjector::InjectId(uint16_t id,
-                                                     const EncodedImage& source,
-                                                     int coding_entity_id) {
+EncodedImage DefaultEncodedImageDataInjector::InjectData(
+    uint16_t id,
+    bool discard,
+    const EncodedImage& source,
+    int coding_entity_id) {
   ExtendIfRequired(coding_entity_id);
 
   EncodedImage out = source;
@@ -57,14 +59,18 @@ EncodedImage DefaultEncodedImageIdInjector::InjectId(uint16_t id,
          source.size());
   out.data()[0] = id & 0x00ff;
   out.data()[1] = (id & 0xff00) >> 8;
-  out.data()[2] = source.size() & 0x00ff;
-  out.data()[3] = (source.size() & 0xff00) >> 8;
-  out.data()[4] = (source.size() & 0xff00) >> 16;
-  out.data()[5] = (source.size() & 0xff00) >> 24;
+  out.data()[2] = source.size() & 0x000000ff;
+  out.data()[3] = (source.size() & 0x0000ff00) >> 8;
+  out.data()[4] = (source.size() & 0x00ff0000) >> 16;
+  out.data()[5] = (source.size() & 0xff000000) >> 24;
+
+  // We will store discard flag in the high bit of high byte of the size.
+  RTC_CHECK_LT(source.size(), 1U << 31) << "High bit is already in use";
+  out.data()[5] = out.data()[5] | ((discard ? 1 : 0) << 7);
   return out;
 }
 
-EncodedImageWithId DefaultEncodedImageIdInjector::ExtractId(
+EncodedImageExtractionResult DefaultEncodedImageDataInjector::ExtractData(
     const EncodedImage& source,
     int coding_entity_id) {
   ExtendIfRequired(coding_entity_id);
@@ -79,6 +85,7 @@ EncodedImageWithId DefaultEncodedImageIdInjector::ExtractId(
   size_t source_pos = 0;
   size_t out_pos = 0;
   absl::optional<uint16_t> id = absl::nullopt;
+  bool discard = true;
   while (source_pos < source.size()) {
     RTC_CHECK_LE(source_pos + kEncodedImageBufferExpansion, source.size());
     uint16_t next_id =
@@ -89,21 +96,29 @@ EncodedImageWithId DefaultEncodedImageIdInjector::ExtractId(
     id = next_id;
     uint32_t length = source.data()[source_pos + 2] +
                       (source.data()[source_pos + 3] << 8) +
-                      (source.data()[source_pos + 3] << 16) +
-                      (source.data()[source_pos + 3] << 24);
+                      (source.data()[source_pos + 4] << 16) +
+                      ((source.data()[source_pos + 5] << 24) & 0b01111111);
+    bool current_discard = (source.data()[source_pos + 5] & 0b10000000) != 0;
     RTC_CHECK_LE(source_pos + kEncodedImageBufferExpansion + length,
                  source.size());
-    memcpy(&out.data()[out_pos],
-           &source.data()[source_pos + kEncodedImageBufferExpansion], length);
+    if (!current_discard) {
+      // Copy next encoded image payload from concatenated buffer only if it is
+      // not discarded.
+      memcpy(&out.data()[out_pos],
+             &source.data()[source_pos + kEncodedImageBufferExpansion], length);
+      out_pos += length;
+    }
     source_pos += length + kEncodedImageBufferExpansion;
-    out_pos += length;
+    // Extraction result is discarded only if all encoded partitions are
+    // discarded.
+    discard = discard && current_discard;
   }
   out.set_size(out_pos);
 
-  return EncodedImageWithId{id.value(), out};
+  return EncodedImageExtractionResult{id.value(), out, discard};
 }
 
-void DefaultEncodedImageIdInjector::ExtendIfRequired(int coding_entity_id) {
+void DefaultEncodedImageDataInjector::ExtendIfRequired(int coding_entity_id) {
   rtc::CritScope crit(&lock_);
   if (coding_entities_.find(coding_entity_id) != coding_entities_.end()) {
     // This entity is already known for this injector, so buffers are allocated.
@@ -124,7 +139,7 @@ void DefaultEncodedImageIdInjector::ExtendIfRequired(int coding_entity_id) {
   }
 }
 
-std::vector<uint8_t>* DefaultEncodedImageIdInjector::NextBuffer() {
+std::vector<uint8_t>* DefaultEncodedImageDataInjector::NextBuffer() {
   rtc::CritScope crit(&lock_);
   // Get buffer from the front of the queue, return it to the caller and
   // put in the back

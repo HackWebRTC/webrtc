@@ -136,6 +136,7 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   void OnEncoderError(const VideoFrame& frame, int32_t error_code) override;
   void OnDecoderError(uint16_t frame_id, int32_t error_code) override;
   void Stop() override;
+  std::string GetStreamLabel(uint16_t frame_id) override;
 
   // Returns set of stream labels, that were met during test call.
   std::set<std::string> GetKnownVideoStreams() const;

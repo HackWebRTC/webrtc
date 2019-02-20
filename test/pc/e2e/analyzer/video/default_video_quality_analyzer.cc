@@ -299,6 +299,13 @@ void DefaultVideoQualityAnalyzer::Stop() {
   ReportResults();
 }
 
+std::string DefaultVideoQualityAnalyzer::GetStreamLabel(uint16_t frame_id) {
+  rtc::CritScope crit1(&lock_);
+  auto it = frame_stats_.find(frame_id);
+  RTC_DCHECK(it != frame_stats_.end()) << "Unknown frame_id=" << frame_id;
+  return it->second.stream_label;
+}
+
 std::set<std::string> DefaultVideoQualityAnalyzer::GetKnownVideoStreams()
     const {
   rtc::CritScope crit2(&comparison_lock_);

@@ -125,6 +125,19 @@ class PeerConnectionE2EQualityTestFixture {
     absl::optional<std::string> input_file_name;
     // If specified screen share video stream will be created as input.
     absl::optional<ScreenShareConfig> screen_share_config;
+    // Specifies spatial index of the video stream to analyze.
+    // There are 3 cases:
+    // 1. |target_spatial_index| omitted: in such case it will be assumed that
+    //    video stream has not spatial layers and simulcast streams.
+    // 2. |target_spatial_index| presented and simulcast encoder is used:
+    //    in such case |target_spatial_index| will specify the index of
+    //    simulcast strem, that should be analyzed. Other streams will be
+    //    dropped.
+    // 3. |target_spatial_index| presented and SVP encoder is used:
+    //    in such case |target_spatial_index| will specify the top interesting
+    //    spatial layer and all layers bellow, including target one will be
+    //    processed. All layers above target one will be dropped.
+    absl::optional<int> target_spatial_index;
     // If specified the input stream will be also copied to specified file.
     // It is actually one of the test's output file, which contains copy of what
     // was captured during the test for this video stream on sender side.

@@ -12,13 +12,13 @@ group("e2e") {
   testonly = true
 
   deps = [
-    ":default_encoded_image_id_injector",
-    ":encoded_image_id_injector_api",
+    ":default_encoded_image_data_injector",
+    ":encoded_image_data_injector_api",
     ":example_video_quality_analyzer",
     ":id_generator",
     ":quality_analyzing_video_decoder",
     ":quality_analyzing_video_encoder",
-    ":single_process_encoded_image_id_injector",
+    ":single_process_encoded_image_data_injector",
   ]
   if (rtc_include_tests) {
     deps += [
@@ -34,17 +34,17 @@ if (rtc_include_tests) {
     testonly = true
 
     deps = [
-      ":default_encoded_image_id_injector_unittest",
+      ":default_encoded_image_data_injector_unittest",
       ":peer_connection_e2e_smoke_test",
-      ":single_process_encoded_image_id_injector_unittest",
+      ":single_process_encoded_image_data_injector_unittest",
     ]
   }
 }
 
-rtc_source_set("encoded_image_id_injector_api") {
+rtc_source_set("encoded_image_data_injector_api") {
   visibility = [ "*" ]
   sources = [
-    "analyzer/video/encoded_image_id_injector.h",
+    "analyzer/video/encoded_image_data_injector.h",
   ]
 
   deps = [
@@ -52,15 +52,15 @@ rtc_source_set("encoded_image_id_injector_api") {
   ]
 }
 
-rtc_source_set("default_encoded_image_id_injector") {
+rtc_source_set("default_encoded_image_data_injector") {
   visibility = [ "*" ]
   sources = [
-    "analyzer/video/default_encoded_image_id_injector.cc",
-    "analyzer/video/default_encoded_image_id_injector.h",
+    "analyzer/video/default_encoded_image_data_injector.cc",
+    "analyzer/video/default_encoded_image_data_injector.h",
   ]
 
   deps = [
-    ":encoded_image_id_injector_api",
+    ":encoded_image_data_injector_api",
     "../../../api/video:encoded_image",
     "../../../rtc_base:checks",
     "../../../rtc_base:criticalsection",
@@ -68,15 +68,15 @@ rtc_source_set("default_encoded_image_id_injector") {
   ]
 }
 
-rtc_source_set("single_process_encoded_image_id_injector") {
+rtc_source_set("single_process_encoded_image_data_injector") {
   visibility = [ "*" ]
   sources = [
-    "analyzer/video/single_process_encoded_image_id_injector.cc",
-    "analyzer/video/single_process_encoded_image_id_injector.h",
+    "analyzer/video/single_process_encoded_image_data_injector.cc",
+    "analyzer/video/single_process_encoded_image_data_injector.h",
   ]
 
   deps = [
-    ":encoded_image_id_injector_api",
+    ":encoded_image_data_injector_api",
     "../../../api/video:encoded_image",
     "../../../rtc_base:checks",
     "../../../rtc_base:criticalsection",
@@ -100,7 +100,7 @@ rtc_source_set("quality_analyzing_video_decoder") {
     "analyzer/video/quality_analyzing_video_decoder.h",
   ]
   deps = [
-    ":encoded_image_id_injector_api",
+    ":encoded_image_data_injector_api",
     ":id_generator",
     "../../../api/video:encoded_image",
     "../../../api/video:video_frame",
@@ -121,7 +121,7 @@ rtc_source_set("quality_analyzing_video_encoder") {
     "analyzer/video/quality_analyzing_video_encoder.h",
   ]
   deps = [
-    ":encoded_image_id_injector_api",
+    ":encoded_image_data_injector_api",
     ":id_generator",
     "../../../api/video:encoded_image",
     "../../../api/video:video_frame",
@@ -143,7 +143,7 @@ if (rtc_include_tests) {
       "analyzer/video/video_quality_analyzer_injection_helper.h",
     ]
     deps = [
-      ":encoded_image_id_injector_api",
+      ":encoded_image_data_injector_api",
       ":id_generator",
       ":quality_analyzing_video_decoder",
       ":quality_analyzing_video_encoder",
@@ -164,8 +164,8 @@ if (rtc_include_tests) {
       "test_peer.h",
     ]
     deps = [
-      ":default_encoded_image_id_injector",
-      ":encoded_image_id_injector_api",
+      ":default_encoded_image_data_injector",
+      ":encoded_image_data_injector_api",
       ":example_video_quality_analyzer",
       ":video_quality_analyzer_injection_helper",
       "../../../api:array_view",
@@ -206,7 +206,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":example_video_quality_analyzer",
-      ":single_process_encoded_image_id_injector",
+      ":single_process_encoded_image_data_injector",
       ":test_peer",
       ":video_quality_analyzer_injection_helper",
       "../../../api:libjingle_peerconnection_api",
@@ -231,26 +231,26 @@ if (rtc_include_tests) {
     }
   }
 
-  rtc_source_set("single_process_encoded_image_id_injector_unittest") {
+  rtc_source_set("single_process_encoded_image_data_injector_unittest") {
     testonly = true
     sources = [
-      "analyzer/video/single_process_encoded_image_id_injector_unittest.cc",
+      "analyzer/video/single_process_encoded_image_data_injector_unittest.cc",
     ]
     deps = [
-      ":single_process_encoded_image_id_injector",
+      ":single_process_encoded_image_data_injector",
       "../../../api/video:encoded_image",
       "../../../rtc_base:rtc_base_approved",
       "../../../test:test_support",
     ]
   }
 
-  rtc_source_set("default_encoded_image_id_injector_unittest") {
+  rtc_source_set("default_encoded_image_data_injector_unittest") {
     testonly = true
     sources = [
-      "analyzer/video/default_encoded_image_id_injector_unittest.cc",
+      "analyzer/video/default_encoded_image_data_injector_unittest.cc",
     ]
     deps = [
-      ":default_encoded_image_id_injector",
+      ":default_encoded_image_data_injector",
       "../../../api/video:encoded_image",
       "../../../rtc_base:rtc_base_approved",
       "../../../test:test_support",

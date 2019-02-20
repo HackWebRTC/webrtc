@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "test/pc/e2e/analyzer/video/single_process_encoded_image_id_injector.h"
+#include "test/pc/e2e/analyzer/video/single_process_encoded_image_data_injector.h"
 
 #include <cstddef>
 
@@ -26,19 +26,21 @@ constexpr size_t kUsedBufferSize = 3;
 
 }  // namespace
 
-SingleProcessEncodedImageIdInjector::SingleProcessEncodedImageIdInjector() =
+SingleProcessEncodedImageDataInjector::SingleProcessEncodedImageDataInjector() =
     default;
-SingleProcessEncodedImageIdInjector::~SingleProcessEncodedImageIdInjector() =
-    default;
+SingleProcessEncodedImageDataInjector::
+    ~SingleProcessEncodedImageDataInjector() = default;
 
-EncodedImage SingleProcessEncodedImageIdInjector::InjectId(
+EncodedImage SingleProcessEncodedImageDataInjector::InjectData(
     uint16_t id,
+    bool discard,
     const EncodedImage& source,
     int coding_entity_id) {
   RTC_CHECK(source.size() >= kUsedBufferSize);
 
   ExtractionInfo info;
   info.length = source.size();
+  info.discard = discard;
   memcpy(info.origin_data, source.data(), kUsedBufferSize);
   {
     rtc::CritScope crit(&lock_);
@@ -55,18 +57,24 @@ EncodedImage SingleProcessEncodedImageIdInjector::InjectId(
   return out;
 }
 
-EncodedImageWithId SingleProcessEncodedImageIdInjector::ExtractId(
+EncodedImageExtractionResult SingleProcessEncodedImageDataInjector::ExtractData(
     const EncodedImage& source,
     int coding_entity_id) {
   EncodedImage out = source;
 
+  // Both |source| and |out| image will share the same buffer for payload or
+  // out will have a copy for it, so we can operate on the |out| buffer only.
+  uint8_t* buffer = out.data();
+  size_t size = out.size();
+
   size_t pos = 0;
   absl::optional<uint16_t> id = absl::nullopt;
-  while (pos < source.size()) {
+  bool discard = true;
+  while (pos < size) {
     // Extract frame id from first 2 bytes of the payload.
-    uint16_t next_id = source.data()[pos] + (source.data()[pos + 1] << 8);
+    uint16_t next_id = buffer[pos] + (buffer[pos + 1] << 8);
     // Extract frame sub id from second 2 byte of the payload.
-    uint16_t sub_id = source.data()[pos + 2];
+    uint16_t sub_id = buffer[pos + 2];
 
     RTC_CHECK(!id || id.value() == next_id)
         << "Different frames encoded into single encoded image: " << id.value()
@@ -87,17 +95,28 @@ EncodedImageWithId SingleProcessEncodedImageIdInjector::ExtractId(
       ext_vector_it->second.infos.erase(info_it);
     }
 
-    memcpy(&out.data()[pos], info.origin_data, kUsedBufferSize);
-    pos += info.length;
+    if (info.discard) {
+      // If this encoded image is marked to be discarded - erase it's payload
+      // from the buffer.
+      memmove(&buffer[pos], &buffer[pos + info.length],
+              size - pos - info.length);
+      size -= info.length;
+    } else {
+      memmove(&buffer[pos], info.origin_data, kUsedBufferSize);
+      pos += info.length;
+    }
+    // We need to discard encoded image only if all concatenated encoded images
+    // have to be discarded.
+    discard = discard & info.discard;
   }
   out.set_size(pos);
 
-  return EncodedImageWithId{id.value(), out};
+  return EncodedImageExtractionResult{id.value(), out, discard};
 }
 
-SingleProcessEncodedImageIdInjector::ExtractionInfoVector::
+SingleProcessEncodedImageDataInjector::ExtractionInfoVector::
     ExtractionInfoVector() = default;
-SingleProcessEncodedImageIdInjector::ExtractionInfoVector::
+SingleProcessEncodedImageDataInjector::ExtractionInfoVector::
     ~ExtractionInfoVector() = default;
 
 }  // namespace test

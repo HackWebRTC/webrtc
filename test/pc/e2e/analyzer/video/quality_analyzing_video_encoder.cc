@@ -13,7 +13,9 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "api/video/video_codec_type.h"
 #include "modules/video_coding/include/video_error_codes.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {
@@ -27,10 +29,12 @@ constexpr size_t kMaxFrameInPipelineCount = 1000;
 QualityAnalyzingVideoEncoder::QualityAnalyzingVideoEncoder(
     int id,
     std::unique_ptr<VideoEncoder> delegate,
-    EncodedImageIdInjector* injector,
+    std::map<std::string, absl::optional<int>> stream_required_spatial_index,
+    EncodedImageDataInjector* injector,
     VideoQualityAnalyzerInterface* analyzer)
     : id_(id),
       delegate_(std::move(delegate)),
+      stream_required_spatial_index_(std::move(stream_required_spatial_index)),
       injector_(injector),
       analyzer_(analyzer) {}
 QualityAnalyzingVideoEncoder::~QualityAnalyzingVideoEncoder() = default;
@@ -39,6 +43,29 @@ int32_t QualityAnalyzingVideoEncoder::InitEncode(
     const VideoCodec* codec_settings,
     int32_t number_of_cores,
     size_t max_payload_size) {
+  rtc::CritScope crit(&lock_);
+  mode_ = SimulcastMode::kNormal;
+  if (codec_settings->codecType == kVideoCodecVP9) {
+    if (codec_settings->VP9().numberOfSpatialLayers > 1) {
+      switch (codec_settings->VP9().interLayerPred) {
+        case InterLayerPredMode::kOn:
+          mode_ = SimulcastMode::kSVC;
+          break;
+        case InterLayerPredMode::kOnKeyPic:
+          mode_ = SimulcastMode::kKSVC;
+          break;
+        case InterLayerPredMode::kOff:
+          mode_ = SimulcastMode::kSimulcast;
+          break;
+        default:
+          RTC_NOTREACHED() << "Unknown codec_settings->VP9().interLayerPred";
+          break;
+      }
+    }
+  }
+  if (codec_settings->numberOfSimulcastStreams > 1) {
+    mode_ = SimulcastMode::kSimulcast;
+  }
   return delegate_->InitEncode(codec_settings, number_of_cores,
                                max_payload_size);
 }
@@ -109,7 +136,7 @@ VideoEncoder::EncoderInfo QualityAnalyzingVideoEncoder::GetEncoderInfo() const {
 }
 
 // It is assumed, that encoded callback will be always invoked with encoded
-// images that correspond to the frames if the same sequence, that frames
+// images that correspond to the frames in the same sequence, that frames
 // arrived. In other words, assume we have frames F1, F2 and F3 and they have
 // corresponding encoded images I1, I2 and I3. In such case if we will call
 // encode first with F1, then with F2 and then with F3, then encoder callback
@@ -126,6 +153,7 @@ EncodedImageCallback::Result QualityAnalyzingVideoEncoder::OnEncodedImage(
     const CodecSpecificInfo* codec_specific_info,
     const RTPFragmentationHeader* fragmentation) {
   uint16_t frame_id;
+  bool discard = false;
   {
     rtc::CritScope crit(&lock_);
     std::pair<uint32_t, uint16_t> timestamp_frame_id;
@@ -155,15 +183,22 @@ EncodedImageCallback::Result QualityAnalyzingVideoEncoder::OnEncodedImage(
           EncodedImageCallback::Result::Error::OK);
     }
     frame_id = timestamp_frame_id.second;
+
+    discard = ShouldDiscard(frame_id, encoded_image);
   }
 
-  analyzer_->OnFrameEncoded(frame_id, encoded_image);
+  if (!discard) {
+    // Analyzer should see only encoded images, that weren't discarded.
+    analyzer_->OnFrameEncoded(frame_id, encoded_image);
+  }
 
-  // Image id injector injects frame id into provided EncodedImage and returns
-  // the image with a) modified original buffer (in such case the current owner
-  // of the buffer will be responsible for deleting it) or b) a new buffer (in
-  // such case injector will be responsible for deleting it).
-  const EncodedImage& image = injector_->InjectId(frame_id, encoded_image, id_);
+  // Image data injector injects frame id and discard flag into provided
+  // EncodedImage and returns the image with a) modified original buffer (in
+  // such case the current owner of the buffer will be responsible for deleting
+  // it) or b) a new buffer (in such case injector will be responsible for
+  // deleting it).
+  const EncodedImage& image =
+      injector_->InjectData(frame_id, discard, encoded_image, id_);
   {
     rtc::CritScope crit(&lock_);
     RTC_DCHECK(delegate_callback_);
@@ -180,12 +215,57 @@ void QualityAnalyzingVideoEncoder::OnDroppedFrame(
   delegate_callback_->OnDroppedFrame(reason);
 }
 
+bool QualityAnalyzingVideoEncoder::ShouldDiscard(
+    uint16_t frame_id,
+    const EncodedImage& encoded_image) {
+  std::string stream_label = analyzer_->GetStreamLabel(frame_id);
+  absl::optional<int> required_spatial_index =
+      stream_required_spatial_index_[stream_label];
+  if (required_spatial_index) {
+    RTC_CHECK(encoded_image.SpatialIndex())
+        << "Specific spatial layer/simulcast stream requested for track, but "
+           "now spatial layers/simulcast streams produced by encoder. "
+           "stream_label="
+        << stream_label
+        << "; required_spatial_index=" << *required_spatial_index;
+    RTC_CHECK(mode_ != SimulcastMode::kNormal)
+        << "Analyzing encoder is in kNormal "
+           "mode, but spatial layer/simulcast "
+           "stream met.";
+    if (mode_ == SimulcastMode::kSimulcast) {
+      // In simulcast mode only encoded images with required spatial index are
+      // interested, so all others have to be discarded.
+      return *encoded_image.SpatialIndex() != *required_spatial_index;
+    } else if (mode_ == SimulcastMode::kSVC) {
+      // In SVC mode encoded images with spatial indexes that are equal or
+      // less than required one are interesting, so all above have to be
+      // discarded.
+      return *encoded_image.SpatialIndex() > *required_spatial_index;
+    } else if (mode_ == SimulcastMode::kKSVC) {
+      // In KSVC mode for key frame encoded images with spatial indexes that
+      // are equal or less than required one are interesting, so all above
+      // have to be discarded. For other frames only required spatial index
+      // is interesting, so all others have to be discarded.
+      if (encoded_image._frameType == FrameType::kVideoFrameKey) {
+        return *encoded_image.SpatialIndex() > *required_spatial_index;
+      } else {
+        return *encoded_image.SpatialIndex() != *required_spatial_index;
+      }
+    } else {
+      RTC_NOTREACHED() << "Unsupported encoder mode";
+    }
+  }
+  return false;
+}
+
 QualityAnalyzingVideoEncoderFactory::QualityAnalyzingVideoEncoderFactory(
     std::unique_ptr<VideoEncoderFactory> delegate,
+    std::map<std::string, absl::optional<int>> stream_required_spatial_index,
     IdGenerator<int>* id_generator,
-    EncodedImageIdInjector* injector,
+    EncodedImageDataInjector* injector,
     VideoQualityAnalyzerInterface* analyzer)
     : delegate_(std::move(delegate)),
+      stream_required_spatial_index_(std::move(stream_required_spatial_index)),
       id_generator_(id_generator),
       injector_(injector),
       analyzer_(analyzer) {}
@@ -208,7 +288,7 @@ QualityAnalyzingVideoEncoderFactory::CreateVideoEncoder(
     const SdpVideoFormat& format) {
   return absl::make_unique<QualityAnalyzingVideoEncoder>(
       id_generator_->GetNextId(), delegate_->CreateVideoEncoder(format),
-      injector_, analyzer_);
+      stream_required_spatial_index_, injector_, analyzer_);
 }
 
 }  // namespace test

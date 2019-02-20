@@ -101,7 +101,7 @@ PeerConnectionE2EQualityTest::PeerConnectionE2EQualityTest(
     video_quality_analyzer = absl::make_unique<ExampleVideoQualityAnalyzer>();
   }
   encoded_image_id_controller_ =
-      absl::make_unique<SingleProcessEncodedImageIdInjector>();
+      absl::make_unique<SingleProcessEncodedImageDataInjector>();
   video_quality_analyzer_injection_helper_ =
       absl::make_unique<VideoQualityAnalyzerInjectionHelper>(
           std::move(video_quality_analyzer), encoded_image_id_controller_.get(),

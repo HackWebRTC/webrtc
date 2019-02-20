@@ -11,6 +11,7 @@
 #ifndef TEST_PC_E2E_ANALYZER_VIDEO_VIDEO_QUALITY_ANALYZER_INJECTION_HELPER_H_
 #define TEST_PC_E2E_ANALYZER_VIDEO_VIDEO_QUALITY_ANALYZER_INJECTION_HELPER_H_
 
+#include <map>
 #include <memory>
 #include <string>
 
@@ -19,7 +20,7 @@
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "test/frame_generator.h"
-#include "test/pc/e2e/analyzer/video/encoded_image_id_injector.h"
+#include "test/pc/e2e/analyzer/video/encoded_image_data_injector.h"
 #include "test/pc/e2e/analyzer/video/id_generator.h"
 #include "test/pc/e2e/api/video_quality_analyzer_interface.h"
 #include "test/testsupport/video_frame_writer.h"
@@ -33,14 +34,16 @@ class VideoQualityAnalyzerInjectionHelper {
  public:
   VideoQualityAnalyzerInjectionHelper(
       std::unique_ptr<VideoQualityAnalyzerInterface> analyzer,
-      EncodedImageIdInjector* injector,
-      EncodedImageIdExtractor* extractor);
+      EncodedImageDataInjector* injector,
+      EncodedImageDataExtractor* extractor);
   ~VideoQualityAnalyzerInjectionHelper();
 
   // Wraps video encoder factory to give video quality analyzer access to frames
   // before encoding and encoded images after.
   std::unique_ptr<VideoEncoderFactory> WrapVideoEncoderFactory(
-      std::unique_ptr<VideoEncoderFactory> delegate) const;
+      std::unique_ptr<VideoEncoderFactory> delegate,
+      std::map<std::string, absl::optional<int>> stream_required_spatial_index)
+      const;
   // Wraps video decoder factory to give video quality analyzer access to
   // received encoded images and frames, that were decoded from them.
   std::unique_ptr<VideoDecoderFactory> WrapVideoDecoderFactory(
@@ -66,8 +69,8 @@ class VideoQualityAnalyzerInjectionHelper {
 
  private:
   std::unique_ptr<VideoQualityAnalyzerInterface> analyzer_;
-  EncodedImageIdInjector* injector_;
-  EncodedImageIdExtractor* extractor_;
+  EncodedImageDataInjector* injector_;
+  EncodedImageDataExtractor* extractor_;
 
   std::unique_ptr<IdGenerator<int>> encoding_entities_id_generator_;
 };
