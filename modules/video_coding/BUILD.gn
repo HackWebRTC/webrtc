@@ -218,19 +218,6 @@ rtc_source_set("video_codec_interface") {
   ]
 }
 
-rtc_source_set("mock_headers") {
-  testonly = true
-  sources = [
-    "include/mock/mock_video_codec_interface.h",
-  ]
-  deps = [
-    ":video_codec_interface",
-    ":video_coding_utility",
-    "../..:webrtc_common",
-    "../../test:test_support",
-  ]
-}
-
 rtc_source_set("codec_globals_headers") {
   visibility = [ "*" ]
   sources = [
@@ -608,7 +595,6 @@ if (rtc_include_tests) {
     }
 
     deps = [
-      ":mock_headers",
       ":video_codec_interface",
       ":video_coding",
       ":video_coding_utility",
@@ -777,7 +763,6 @@ if (rtc_include_tests) {
     }
 
     deps = [
-      ":mock_headers",
       ":video_codec_interface",
       ":video_codecs_test_framework",
       ":video_coding_utility",
@@ -897,7 +882,6 @@ if (rtc_include_tests) {
     deps = [
       ":codec_globals_headers",
       ":encoded_frame",
-      ":mock_headers",
       ":nack_module",
       ":packet",
       ":simulcast_test_fixture_impl",
