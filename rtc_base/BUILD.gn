@@ -552,9 +552,10 @@ if (is_mac || is_ios) {
 
 if (is_win) {
   rtc_source_set("rtc_task_queue_win") {
-    visibility = [ ":rtc_task_queue_impl" ]
+    visibility = [ "../api/task_queue:default_task_queue_factory_impl" ]
     sources = [
       "task_queue_win.cc",
+      "task_queue_win.h",
     ]
     deps = [
       ":checks",
@@ -562,12 +563,14 @@ if (is_win) {
       ":logging",
       ":macromagic",
       ":platform_thread",
-      ":refcount",
       ":rtc_event",
       ":rtc_task_queue_api",
       ":safe_conversions",
       ":timeutils",
-      "../api:scoped_refptr",
+      "../api/task_queue",
+      "../api/task_queue:task_queue_factory",
+      "//third_party/abseil-cpp/absl/memory",
+      "//third_party/abseil-cpp/absl/strings",
     ]
   }
 }
@@ -594,22 +597,17 @@ rtc_source_set("rtc_task_queue_stdlib") {
 
 rtc_source_set("rtc_task_queue_impl") {
   visibility = [ "*" ]
-  if (rtc_enable_libevent || is_mac || is_ios) {
+  if (rtc_enable_libevent || is_mac || is_ios ||
+      (is_win && current_os != "winuwp")) {
     deps = [
       "../api/task_queue:default_task_queue_factory_impl",
       "../api/task_queue:global_task_queue_factory",
     ]
   } else {
-    if (is_win) {
-      if (current_os == "winuwp") {
-        deps = [
-          ":rtc_task_queue_stdlib",
-        ]
-      } else {
-        deps = [
-          ":rtc_task_queue_win",
-        ]
-      }
+    if (is_win && current_os == "winuwp") {
+      deps = [
+        ":rtc_task_queue_stdlib",
+      ]
     }
   }
 }

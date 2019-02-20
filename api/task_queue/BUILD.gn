@@ -99,6 +99,11 @@ rtc_source_set("default_task_queue_factory_impl") {
       "default_task_queue_factory_gcd.cc",
     ]
     deps += [ "../../rtc_base:rtc_task_queue_gcd" ]
+  } else if (is_win && current_os != "winuwp") {
+    sources = [
+      "default_task_queue_factory_win.cc",
+    ]
+    deps += [ "../../rtc_base:rtc_task_queue_win" ]
   } else {
     sources = [
       "default_task_queue_factory_unimplemented.cc",
