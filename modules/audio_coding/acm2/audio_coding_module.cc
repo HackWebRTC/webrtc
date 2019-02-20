@@ -652,9 +652,6 @@ int AudioCodingModuleImpl::InitializeReceiverSafe() {
   // start-up.
   if (receiver_initialized_)
     receiver_.RemoveAllCodecs();
-  receiver_.ResetInitialDelay();
-  receiver_.SetMinimumDelay(0);
-  receiver_.SetMaximumDelay(0);
   receiver_.FlushBuffers();
 
   receiver_initialized_ = true;

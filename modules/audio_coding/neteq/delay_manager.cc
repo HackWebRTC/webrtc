@@ -85,7 +85,7 @@ DelayManager::DelayManager(size_t max_packets_in_buffer,
       last_seq_no_(0),
       last_timestamp_(0),
       minimum_delay_ms_(base_minimum_delay_ms_),
-      maximum_delay_ms_(target_level_),
+      maximum_delay_ms_(0),
       iat_cumulative_sum_(0),
       max_iat_cumulative_sum_(0),
       peak_detector_(*peak_detector),
@@ -96,7 +96,6 @@ DelayManager::DelayManager(size_t max_packets_in_buffer,
       enable_rtx_handling_(enable_rtx_handling) {
   assert(peak_detector);  // Should never be NULL.
   RTC_DCHECK_GE(base_minimum_delay_ms_, 0);
-  RTC_DCHECK_LE(minimum_delay_ms_, maximum_delay_ms_);
 
   Reset();
 }

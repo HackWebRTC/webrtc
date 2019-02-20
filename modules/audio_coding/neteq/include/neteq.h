@@ -115,7 +115,7 @@ class NetEq {
     int sample_rate_hz = 16000;  // Initial value. Will change with input data.
     bool enable_post_decode_vad = false;
     size_t max_packets_in_buffer = 50;
-    int max_delay_ms = 2000;
+    int max_delay_ms = 0;
     int min_delay_ms = 0;
     bool enable_fast_accelerate = false;
     bool enable_muted_state = false;

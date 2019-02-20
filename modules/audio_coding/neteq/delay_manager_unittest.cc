@@ -314,12 +314,17 @@ TEST_F(DelayManagerTest, BaseMinimumDelayGreaterThanBufferSize) {
   SetPacketAudioLength(kFrameSizeMs);
   constexpr int kBaseMinimumDelayMs = kMaxBufferSizeMs + 1;
   constexpr int kMinimumDelayMs = 12;
+  constexpr int kMaximumDelayMs = 20;
   constexpr int kMaxBufferSizeMsQ75 = 3 * kMaxBufferSizeMs / 4;
+
+  EXPECT_TRUE(dm_->SetMaximumDelay(kMaximumDelayMs));
 
   // Base minimum delay is greater than minimum delay, that is why we clamp
   // it to current the highest possible value which is maximum delay.
   RTC_DCHECK_GT(kBaseMinimumDelayMs, kMinimumDelayMs);
   RTC_DCHECK_GT(kBaseMinimumDelayMs, kMaxBufferSizeMs);
+  RTC_DCHECK_GT(kBaseMinimumDelayMs, kMaximumDelayMs);
+  RTC_DCHECK_LT(kMaximumDelayMs, kMaxBufferSizeMsQ75);
 
   EXPECT_TRUE(dm_->SetMinimumDelay(kMinimumDelayMs));
   EXPECT_TRUE(dm_->SetBaseMinimumDelay(kBaseMinimumDelayMs));
