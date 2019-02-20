@@ -191,7 +191,7 @@ TEST_F(RtpPacketHistoryTest, PacketStateIsCorrect) {
   EXPECT_EQ(state->send_time_ms, fake_clock_.TimeInMilliseconds());
   EXPECT_EQ(state->capture_time_ms, fake_clock_.TimeInMilliseconds());
   EXPECT_EQ(state->ssrc, kSsrc);
-  EXPECT_EQ(state->payload_size, packet_size);
+  EXPECT_EQ(state->packet_size, packet_size);
   EXPECT_EQ(state->times_retransmitted, 0u);
 
   fake_clock_.AdvanceTimeMilliseconds(1);
@@ -228,7 +228,7 @@ TEST_F(RtpPacketHistoryTest, MinResendTimeWithPacer) {
   absl::optional<RtpPacketHistory::PacketState> packet_state =
       hist_.GetPacketState(kStartSeqNum);
   EXPECT_TRUE(packet_state);
-  EXPECT_EQ(len, packet_state->payload_size);
+  EXPECT_EQ(len, packet_state->packet_size);
   EXPECT_EQ(capture_time_ms, packet_state->capture_time_ms);
 
   // Retransmission was allowed, next send it from pacer.

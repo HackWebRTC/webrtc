@@ -315,7 +315,7 @@ RtpPacketHistory::PacketState RtpPacketHistory::StoredPacketToPacketState(
   state.send_time_ms = stored_packet.send_time_ms;
   state.capture_time_ms = stored_packet.packet->capture_time_ms();
   state.ssrc = stored_packet.packet->Ssrc();
-  state.payload_size = stored_packet.packet->size();
+  state.packet_size = stored_packet.packet->size();
   state.times_retransmitted = stored_packet.times_retransmitted;
   return state;
 }

@@ -443,7 +443,7 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
     return 0;
   }
 
-  const int32_t packet_size = static_cast<int32_t>(stored_packet->payload_size);
+  const int32_t packet_size = static_cast<int32_t>(stored_packet->packet_size);
 
   // Skip retransmission rate check if not configured.
   if (retransmission_rate_limiter_) {
@@ -462,7 +462,7 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
     paced_sender_->InsertPacket(
         RtpPacketSender::kNormalPriority, stored_packet->ssrc,
         stored_packet->rtp_sequence_number, corrected_capture_tims_ms,
-        stored_packet->payload_size, true);
+        stored_packet->packet_size, true);
 
     return packet_size;
   }
