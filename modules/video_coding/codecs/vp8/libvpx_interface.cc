@@ -141,7 +141,7 @@ class LibvpxVp8Facade : public LibvpxInterface {
         RTC_NOTREACHED() << "Unsupported libvpx ctrl_id: " << ctrl_id;
     }
     return VPX_CODEC_ERROR;
-  };
+  }
 
   vpx_codec_err_t codec_control(vpx_codec_ctx_t* ctx,
                                 vp8e_enc_control_id ctrl_id,
@@ -153,7 +153,7 @@ class LibvpxVp8Facade : public LibvpxInterface {
         RTC_NOTREACHED() << "Unsupported libvpx ctrl_id: " << ctrl_id;
     }
     return VPX_CODEC_ERROR;
-  };
+  }
 
   vpx_codec_err_t codec_control(vpx_codec_ctx_t* ctx,
                                 vp8e_enc_control_id ctrl_id,
@@ -165,7 +165,7 @@ class LibvpxVp8Facade : public LibvpxInterface {
         RTC_NOTREACHED() << "Unsupported libvpx ctrl_id: " << ctrl_id;
     }
     return VPX_CODEC_ERROR;
-  };
+  }
 
   vpx_codec_err_t codec_control(vpx_codec_ctx_t* ctx,
                                 vp8e_enc_control_id ctrl_id,
@@ -177,7 +177,7 @@ class LibvpxVp8Facade : public LibvpxInterface {
         RTC_NOTREACHED() << "Unsupported libvpx ctrl_id: " << ctrl_id;
     }
     return VPX_CODEC_ERROR;
-  };
+  }
 
   vpx_codec_err_t codec_encode(vpx_codec_ctx_t* ctx,
                                const vpx_image_t* img,

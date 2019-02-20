@@ -172,4 +172,4 @@ const VideoEngineInterface& CompositeMediaEngine::video() const {
   return *video_engine_.get();
 }
 
-};  // namespace cricket
+}  // namespace cricket

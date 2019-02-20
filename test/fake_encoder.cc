@@ -45,7 +45,7 @@ void WriteCounter(unsigned char* payload, uint32_t counter) {
   payload[3] = (counter & 0xFF000000) >> 24;
 }
 
-};  // namespace
+}  // namespace
 
 FakeEncoder::FakeEncoder(Clock* clock)
     : clock_(clock),

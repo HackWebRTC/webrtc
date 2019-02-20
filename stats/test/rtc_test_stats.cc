@@ -30,7 +30,7 @@ WEBRTC_RTCSTATS_IMPL(RTCTestStats,
                      &m_sequence_int64,
                      &m_sequence_uint64,
                      &m_sequence_double,
-                     &m_sequence_string);
+                     &m_sequence_string)
 
 RTCTestStats::RTCTestStats(const std::string& id, int64_t timestamp_us)
     : RTCStats(id, timestamp_us),

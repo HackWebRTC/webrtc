@@ -42,4 +42,4 @@ void CopySocketInformationToPacketInfo(size_t packet_size_bytes,
   }
 }
 
-};  // namespace rtc
+}  // namespace rtc

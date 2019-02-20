@@ -69,4 +69,4 @@ void InsecureCryptStringImpl::CopyRawTo(
   memcpy(&dest->front(), password_.data(), password_.size());
 }
 
-};  // namespace rtc
+}  // namespace rtc

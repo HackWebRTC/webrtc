@@ -40,9 +40,9 @@ class AudioEncoderOpusImpl final : public AudioEncoder {
     float OptimizePacketLossRate(float packet_loss_rate) const;
 
     // Getters for testing.
-    float min_packet_loss_rate() const { return min_packet_loss_rate_; };
-    float max_packet_loss_rate() const { return max_packet_loss_rate_; };
-    float slope() const { return slope_; };
+    float min_packet_loss_rate() const { return min_packet_loss_rate_; }
+    float max_packet_loss_rate() const { return max_packet_loss_rate_; }
+    float slope() const { return slope_; }
 
    private:
     const float min_packet_loss_rate_;

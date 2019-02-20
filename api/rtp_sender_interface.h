@@ -106,14 +106,14 @@ PROXY_CONSTMETHOD0(cricket::MediaType, media_type)
 PROXY_CONSTMETHOD0(std::string, id)
 PROXY_CONSTMETHOD0(std::vector<std::string>, stream_ids)
 PROXY_CONSTMETHOD0(std::vector<RtpEncodingParameters>, init_send_encodings)
-PROXY_CONSTMETHOD0(RtpParameters, GetParameters);
+PROXY_CONSTMETHOD0(RtpParameters, GetParameters)
 PROXY_METHOD1(RTCError, SetParameters, const RtpParameters&)
-PROXY_CONSTMETHOD0(rtc::scoped_refptr<DtmfSenderInterface>, GetDtmfSender);
+PROXY_CONSTMETHOD0(rtc::scoped_refptr<DtmfSenderInterface>, GetDtmfSender)
 PROXY_METHOD1(void,
               SetFrameEncryptor,
-              rtc::scoped_refptr<FrameEncryptorInterface>);
+              rtc::scoped_refptr<FrameEncryptorInterface>)
 PROXY_CONSTMETHOD0(rtc::scoped_refptr<FrameEncryptorInterface>,
-                   GetFrameEncryptor);
+                   GetFrameEncryptor)
 END_PROXY_MAP()
 
 }  // namespace webrtc

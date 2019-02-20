@@ -384,7 +384,7 @@ class Port : public PortInterface,
 
   int16_t network_cost() const { return network_cost_; }
 
-  void GetStunStats(absl::optional<StunStats>* stats) override{};
+  void GetStunStats(absl::optional<StunStats>* stats) override {}
 
  protected:
   enum { MSG_DESTROY_IF_DEAD = 0, MSG_FIRST_AVAILABLE };

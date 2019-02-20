@@ -271,4 +271,4 @@ void SimulatedClock::AdvanceTimeMicroseconds(int64_t microseconds) {
   time_us_ += microseconds;
 }
 
-};  // namespace webrtc
+}  // namespace webrtc

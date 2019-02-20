@@ -29,7 +29,7 @@ constexpr float kEventLogMinBitrateChangeFraction = 0.25;
 constexpr float kEventLogMinPacketLossChangeFraction = 0.5;
 }  // namespace
 
-AudioNetworkAdaptorImpl::Config::Config() : event_log(nullptr){};
+AudioNetworkAdaptorImpl::Config::Config() : event_log(nullptr) {}
 
 AudioNetworkAdaptorImpl::Config::~Config() = default;
 

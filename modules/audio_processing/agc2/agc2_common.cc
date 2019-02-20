@@ -54,4 +54,4 @@ float GetExtraSaturationMarginOffsetDb() {
   constexpr float kDefaultExtraSaturationMarginDb = 2.f;
   return kDefaultExtraSaturationMarginDb;
 }
-};  // namespace webrtc
+}  // namespace webrtc

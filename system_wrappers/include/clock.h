@@ -83,6 +83,6 @@ class SimulatedClock : public Clock {
   std::unique_ptr<RWLockWrapper> lock_;
 };
 
-};  // namespace webrtc
+}  // namespace webrtc
 
 #endif  // SYSTEM_WRAPPERS_INCLUDE_CLOCK_H_

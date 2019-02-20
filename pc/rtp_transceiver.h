@@ -202,18 +202,18 @@ class RtpTransceiver final
 
 BEGIN_SIGNALING_PROXY_MAP(RtpTransceiver)
 PROXY_SIGNALING_THREAD_DESTRUCTOR()
-PROXY_CONSTMETHOD0(cricket::MediaType, media_type);
-PROXY_CONSTMETHOD0(absl::optional<std::string>, mid);
-PROXY_CONSTMETHOD0(rtc::scoped_refptr<RtpSenderInterface>, sender);
-PROXY_CONSTMETHOD0(rtc::scoped_refptr<RtpReceiverInterface>, receiver);
-PROXY_CONSTMETHOD0(bool, stopped);
-PROXY_CONSTMETHOD0(RtpTransceiverDirection, direction);
-PROXY_METHOD1(void, SetDirection, RtpTransceiverDirection);
-PROXY_CONSTMETHOD0(absl::optional<RtpTransceiverDirection>, current_direction);
-PROXY_CONSTMETHOD0(absl::optional<RtpTransceiverDirection>, fired_direction);
-PROXY_METHOD0(void, Stop);
-PROXY_METHOD1(void, SetCodecPreferences, rtc::ArrayView<RtpCodecCapability>);
-END_PROXY_MAP();
+PROXY_CONSTMETHOD0(cricket::MediaType, media_type)
+PROXY_CONSTMETHOD0(absl::optional<std::string>, mid)
+PROXY_CONSTMETHOD0(rtc::scoped_refptr<RtpSenderInterface>, sender)
+PROXY_CONSTMETHOD0(rtc::scoped_refptr<RtpReceiverInterface>, receiver)
+PROXY_CONSTMETHOD0(bool, stopped)
+PROXY_CONSTMETHOD0(RtpTransceiverDirection, direction)
+PROXY_METHOD1(void, SetDirection, RtpTransceiverDirection)
+PROXY_CONSTMETHOD0(absl::optional<RtpTransceiverDirection>, current_direction)
+PROXY_CONSTMETHOD0(absl::optional<RtpTransceiverDirection>, fired_direction)
+PROXY_METHOD0(void, Stop)
+PROXY_METHOD1(void, SetCodecPreferences, rtc::ArrayView<RtpCodecCapability>)
+END_PROXY_MAP()
 
 }  // namespace webrtc
 

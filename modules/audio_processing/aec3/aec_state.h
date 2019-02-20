@@ -306,7 +306,7 @@ class AecState {
   class SaturationDetector {
    public:
     // Returns whether the echo is to be considered saturated.
-    bool SaturatedEcho() const { return saturated_echo_; };
+    bool SaturatedEcho() const { return saturated_echo_; }
 
     // Updates the detection decision based on new data.
     void Update(rtc::ArrayView<const float> x,
@@ -327,7 +327,7 @@ class AecState {
     explicit LegacySaturationDetector(const EchoCanceller3Config& config);
 
     // Returns whether the echo is to be considered saturated.
-    bool SaturatedEcho() const { return saturated_echo_; };
+    bool SaturatedEcho() const { return saturated_echo_; }
 
     // Resets the state of the detector.
     void Reset();

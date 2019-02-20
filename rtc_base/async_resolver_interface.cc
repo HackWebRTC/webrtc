@@ -16,4 +16,4 @@ AsyncResolverInterface::AsyncResolverInterface() {}
 
 AsyncResolverInterface::~AsyncResolverInterface() = default;
 
-};  // namespace rtc
+}  // namespace rtc

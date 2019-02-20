@@ -140,18 +140,16 @@ class RTC_EXPORT RTCStats {
 //   }
 //
 #define WEBRTC_RTCSTATS_DECL()                                          \
- public:                                                                \
-  static const char kType[];                                            \
-                                                                        \
-  std::unique_ptr<webrtc::RTCStats> copy() const override;              \
-  const char* type() const override;                                    \
-                                                                        \
  protected:                                                             \
   std::vector<const webrtc::RTCStatsMemberInterface*>                   \
   MembersOfThisObjectAndAncestors(size_t local_var_additional_capacity) \
       const override;                                                   \
                                                                         \
- public:
+ public:                                                                \
+  static const char kType[];                                            \
+                                                                        \
+  std::unique_ptr<webrtc::RTCStats> copy() const override;              \
+  const char* type() const override
 
 #define WEBRTC_RTCSTATS_IMPL(this_class, parent_class, type_str, ...)          \
   const char this_class::kType[] = type_str;                                   \

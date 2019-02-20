@@ -35,7 +35,7 @@ struct VideoCaptureCapability {
     maxFPS = 0;
     videoType = VideoType::kUnknown;
     interlaced = false;
-  };
+  }
   bool operator!=(const VideoCaptureCapability& other) const {
     if (width != other.width)
       return true;

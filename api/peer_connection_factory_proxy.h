@@ -31,17 +31,17 @@ PROXY_METHOD4(rtc::scoped_refptr<PeerConnectionInterface>,
               const PeerConnectionInterface::RTCConfiguration&,
               std::unique_ptr<cricket::PortAllocator>,
               std::unique_ptr<rtc::RTCCertificateGeneratorInterface>,
-              PeerConnectionObserver*);
+              PeerConnectionObserver*)
 PROXY_METHOD2(rtc::scoped_refptr<PeerConnectionInterface>,
               CreatePeerConnection,
               const PeerConnectionInterface::RTCConfiguration&,
-              PeerConnectionDependencies);
+              PeerConnectionDependencies)
 PROXY_CONSTMETHOD1(webrtc::RtpCapabilities,
                    GetRtpSenderCapabilities,
-                   cricket::MediaType);
+                   cricket::MediaType)
 PROXY_CONSTMETHOD1(webrtc::RtpCapabilities,
                    GetRtpReceiverCapabilities,
-                   cricket::MediaType);
+                   cricket::MediaType)
 PROXY_METHOD1(rtc::scoped_refptr<MediaStreamInterface>,
               CreateLocalMediaStream,
               const std::string&)
