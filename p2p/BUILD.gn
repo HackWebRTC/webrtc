@@ -132,7 +132,6 @@ if (rtc_include_tests) {
   rtc_source_set("p2p_test_utils") {
     testonly = true
     sources = [
-      "base/fake_candidate_pair.h",
       "base/fake_dtls_transport.h",
       "base/fake_packet_transport.h",
       "base/fake_port_allocator.h",
