@@ -15,6 +15,7 @@
 
 #include "rtc_base/constructor_magic.h"
 #include "test/fake_encoder.h"
+#include "test/fake_videorenderer.h"
 #include "test/frame_generator_capturer.h"
 #include "test/logging/log_writer.h"
 #include "test/scenario/call_client.h"
@@ -82,9 +83,10 @@ class ReceiveVideoStream {
                      Transport* feedback_transport,
                      VideoQualityAnalyzer* analyzer);
 
-  VideoReceiveStream* receive_stream_ = nullptr;
+  std::vector<VideoReceiveStream*> receive_streams_;
   FlexfecReceiveStream* flecfec_stream_ = nullptr;
-  std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> renderer_;
+  FakeVideoRenderer fake_renderer_;
+  std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> analyzer_;
   CallClient* const receiver_;
   const VideoStreamConfig config_;
   std::unique_ptr<VideoDecoderFactory> decoder_factory_;

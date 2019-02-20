@@ -14,11 +14,20 @@
 #include "absl/memory/memory.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/congestion_controller/goog_cc/test/goog_cc_printer.h"
-#include "test/call_test.h"
 
 namespace webrtc {
 namespace test {
 namespace {
+static constexpr size_t kNumSsrcs = 6;
+const uint32_t kSendRtxSsrcs[kNumSsrcs] = {0xBADCAFD, 0xBADCAFE, 0xBADCAFF,
+                                           0xBADCB00, 0xBADCB01, 0xBADCB02};
+const uint32_t kVideoSendSsrcs[kNumSsrcs] = {0xC0FFED, 0xC0FFEE, 0xC0FFEF,
+                                             0xC0FFF0, 0xC0FFF1, 0xC0FFF2};
+const uint32_t kVideoRecvLocalSsrcs[kNumSsrcs] = {0xDAB001, 0xDAB002, 0xDAB003,
+                                                  0xDAB004, 0xDAB005, 0xDAB006};
+const uint32_t kAudioSendSsrc = 0xDEADBEEF;
+const uint32_t kReceiverLocalAudioSsrc = 0x1234567;
+
 const char* kPriorityStreamId = "priority-track";
 
 CallClientFakeAudio InitAudio() {
@@ -192,19 +201,30 @@ std::unique_ptr<RtcEventLogOutput> CallClient::GetLogWriter(std::string name) {
 }
 
 uint32_t CallClient::GetNextVideoSsrc() {
-  RTC_CHECK_LT(next_video_ssrc_index_, CallTest::kNumSsrcs);
-  return CallTest::kVideoSendSsrcs[next_video_ssrc_index_++];
+  RTC_CHECK_LT(next_video_ssrc_index_, kNumSsrcs);
+  return kVideoSendSsrcs[next_video_ssrc_index_++];
+}
+
+uint32_t CallClient::GetNextVideoLocalSsrc() {
+  RTC_CHECK_LT(next_video_local_ssrc_index_, kNumSsrcs);
+  return kVideoRecvLocalSsrcs[next_video_local_ssrc_index_++];
 }
 
 uint32_t CallClient::GetNextAudioSsrc() {
   RTC_CHECK_LT(next_audio_ssrc_index_, 1);
   next_audio_ssrc_index_++;
-  return CallTest::kAudioSendSsrc;
+  return kAudioSendSsrc;
+}
+
+uint32_t CallClient::GetNextAudioLocalSsrc() {
+  RTC_CHECK_LT(next_audio_local_ssrc_index_, 1);
+  next_audio_local_ssrc_index_++;
+  return kReceiverLocalAudioSsrc;
 }
 
 uint32_t CallClient::GetNextRtxSsrc() {
-  RTC_CHECK_LT(next_rtx_ssrc_index_, CallTest::kNumSsrcs);
-  return CallTest::kSendRtxSsrcs[next_rtx_ssrc_index_++];
+  RTC_CHECK_LT(next_rtx_ssrc_index_, kNumSsrcs);
+  return kSendRtxSsrcs[next_rtx_ssrc_index_++];
 }
 
 std::string CallClient::GetNextPriorityId() {

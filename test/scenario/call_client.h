@@ -88,7 +88,9 @@ class CallClient : public EmulatedNetworkReceiverInterface {
   friend class AudioStreamPair;
   friend class NetworkNodeTransport;
   uint32_t GetNextVideoSsrc();
+  uint32_t GetNextVideoLocalSsrc();
   uint32_t GetNextAudioSsrc();
+  uint32_t GetNextAudioLocalSsrc();
   uint32_t GetNextRtxSsrc();
   std::string GetNextPriorityId();
   void AddExtensions(std::vector<RtpExtension> extensions);
@@ -106,8 +108,10 @@ class CallClient : public EmulatedNetworkReceiverInterface {
   // to subtract the overhead before processing.
   std::map<uint64_t, DataSize> route_overhead_;
   int next_video_ssrc_index_ = 0;
+  int next_video_local_ssrc_index_ = 0;
   int next_rtx_ssrc_index_ = 0;
   int next_audio_ssrc_index_ = 0;
+  int next_audio_local_ssrc_index_ = 0;
   int next_priority_index_ = 0;
   std::map<uint32_t, MediaType> ssrc_media_types_;
 };

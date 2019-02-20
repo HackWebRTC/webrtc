@@ -128,6 +128,7 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "scenario_unittest.cc",
+      "video_stream_unittest.cc",
     ]
     if (!build_with_chromium && is_clang) {
       suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
