@@ -19,7 +19,8 @@ using Codec = VideoStreamConfig::Encoder::Codec;
 using CodecImpl = VideoStreamConfig::Encoder::Implementation;
 }  // namespace
 
-TEST(VideoStreamTest, RecievesVp8SimulcastFrames) {
+// TODO(srte): Enable after landing fix causing flakiness.
+TEST(VideoStreamTest, DISABLED_RecievesVp8SimulcastFrames) {
   TimeDelta kRunTime = TimeDelta::ms(500);
   int kFrameRate = 30;
 
