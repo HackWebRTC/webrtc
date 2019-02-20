@@ -40,8 +40,6 @@ VideoQualityAnalyzer::~VideoQualityAnalyzer() {
 void VideoQualityAnalyzer::OnCapturedFrame(const VideoFrame& frame) {
   VideoFrame copy = frame;
   task_queue_.PostTask([this, copy]() mutable {
-    if (!first_capture_ntp_time_ms_)
-      first_capture_ntp_time_ms_ = copy.ntp_time_ms();
     captured_frames_.push_back(std::move(copy));
   });
 }
@@ -51,33 +49,10 @@ void VideoQualityAnalyzer::OnDecodedFrame(const VideoFrame& frame) {
   RTC_CHECK(frame.ntp_time_ms());
   RTC_CHECK(frame.timestamp());
   task_queue_.PostTask([this, decoded] {
-    // If first frame never is received, this value will be wrong. However, that
-    // is something that is very unlikely to happen.
-    if (!first_decode_rtp_timestamp_)
-      first_decode_rtp_timestamp_ = decoded.timestamp();
+    // TODO(srte): Add detection and handling of lost frames.
     RTC_CHECK(!captured_frames_.empty());
-    int64_t decoded_capture_time_ms = DecodedFrameCaptureTimeOffsetMs(decoded);
-    while (CapturedFrameCaptureTimeOffsetMs(captured_frames_.front()) <
-           decoded_capture_time_ms) {
-      VideoFrame lost = std::move(captured_frames_.front());
-      captured_frames_.pop_front();
-      VideoFrameQualityInfo lost_info =
-          VideoFrameQualityInfo{Timestamp::us(lost.timestamp_us()),
-                                Timestamp::PlusInfinity(),
-                                Timestamp::PlusInfinity(),
-                                lost.width(),
-                                lost.height(),
-                                NAN};
-      for (auto& handler : frame_info_handlers_)
-        handler(lost_info);
-      RTC_CHECK(!captured_frames_.empty());
-    }
-    RTC_CHECK(!captured_frames_.empty());
-    RTC_CHECK(CapturedFrameCaptureTimeOffsetMs(captured_frames_.front()) ==
-              DecodedFrameCaptureTimeOffsetMs(decoded));
     VideoFrame captured = std::move(captured_frames_.front());
     captured_frames_.pop_front();
-
     VideoFrameQualityInfo decoded_info =
         VideoFrameQualityInfo{Timestamp::us(captured.timestamp_us()),
                               Timestamp::ms(decoded.timestamp() / 90.0),
@@ -92,21 +67,6 @@ void VideoQualityAnalyzer::OnDecodedFrame(const VideoFrame& frame) {
 
 bool VideoQualityAnalyzer::Active() const {
   return !frame_info_handlers_.empty();
-}
-
-int64_t VideoQualityAnalyzer::DecodedFrameCaptureTimeOffsetMs(
-    const VideoFrame& decoded) const {
-  // Assumes that the underlying resolution is ms.
-  // Note that we intentinally allow wraparound. The code is incorrect for
-  // durations of more than UINT32_MAX/90 ms.
-  RTC_DCHECK(first_decode_rtp_timestamp_);
-  return (decoded.timestamp() - *first_decode_rtp_timestamp_) / 90;
-}
-
-int64_t VideoQualityAnalyzer::CapturedFrameCaptureTimeOffsetMs(
-    const VideoFrame& captured) const {
-  RTC_DCHECK(first_capture_ntp_time_ms_);
-  return captured.ntp_time_ms() - *first_capture_ntp_time_ms_;
 }
 
 void VideoQualityAnalyzer::PrintHeaders() {

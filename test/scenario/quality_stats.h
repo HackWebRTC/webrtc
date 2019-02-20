@@ -44,16 +44,12 @@ class VideoQualityAnalyzer {
   Clock* clock();
 
  private:
-  int64_t DecodedFrameCaptureTimeOffsetMs(const VideoFrame& decoded) const;
-  int64_t CapturedFrameCaptureTimeOffsetMs(const VideoFrame& captured) const;
   void PrintHeaders();
   void PrintFrameInfo(const VideoFrameQualityInfo& sample);
   const std::unique_ptr<RtcEventLogOutput> writer_;
   std::vector<std::function<void(const VideoFrameQualityInfo&)>>
       frame_info_handlers_;
   std::deque<VideoFrame> captured_frames_;
-  absl::optional<int64_t> first_capture_ntp_time_ms_;
-  absl::optional<uint32_t> first_decode_rtp_timestamp_;
   rtc::TaskQueue task_queue_;
 };
 
