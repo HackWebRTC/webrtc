@@ -55,7 +55,6 @@ rtc_static_library("rtc_pc_base") {
     "rtp_transport.cc",
     "rtp_transport.h",
     "rtp_transport_internal.h",
-    "rtp_transport_internal_adapter.h",
     "session_description.cc",
     "session_description.h",
     "simulcast_description.cc",
