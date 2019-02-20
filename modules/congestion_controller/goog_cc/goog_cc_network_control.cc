@@ -633,6 +633,8 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
 }
 
 PacerConfig GoogCcNetworkController::GetPacingRates(Timestamp at_time) const {
+  // Pacing rate is based on target rate before congestion window pushback,
+  // because we don't want to build queues in the pacer when pushback occurs.
   DataRate pacing_rate =
       std::max(min_pacing_rate_, last_raw_target_rate_) * pacing_factor_;
   DataRate padding_rate =
