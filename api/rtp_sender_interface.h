@@ -67,9 +67,7 @@ class RtpSenderInterface : public rtc::RefCountInterface {
   // TODO(orphis): Make it pure virtual once Chrome has updated
   virtual std::vector<RtpEncodingParameters> init_send_encodings() const;
 
-  // TODO(amithi): Fix downstream dependecies and remove the non-const method.
-  virtual RtpParameters GetParameters();
-  virtual RtpParameters GetParameters() const;
+  virtual RtpParameters GetParameters() const = 0;
   // Note that only a subset of the parameters can currently be changed. See
   // rtpparameters.h
   // The encodings are in increasing quality order for simulcast.
