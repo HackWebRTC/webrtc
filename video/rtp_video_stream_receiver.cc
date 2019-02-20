@@ -252,7 +252,7 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
     return 0;
   }
 
-  if (packet.codec == kVideoCodecH264) {
+  if (packet.codec() == kVideoCodecH264) {
     // Only when we start to receive packets will we know what payload type
     // that will be used. When we know the payload type insert the correct
     // sps/pps into the tracker.

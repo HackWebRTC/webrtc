@@ -64,7 +64,7 @@ class TestNalUnits : public TestSessionInfo {
  protected:
   virtual void SetUp() {
     TestSessionInfo::SetUp();
-    packet_.codec = kVideoCodecVP8;
+    packet_.video_header.codec = kVideoCodecVP8;
   }
 
   bool VerifyNalu(int offset, int packets_expected, int start_value) {
@@ -113,7 +113,7 @@ class TestNackList : public TestSessionInfo {
 };
 
 TEST_F(TestSessionInfo, TestSimpleAPIs) {
-  packet_.is_first_packet_in_frame = true;
+  packet_.video_header.is_first_packet_in_frame = true;
   packet_.seqNum = 0xFFFE;
   packet_.sizeBytes = packet_buffer_size();
   packet_.frameType = kVideoFrameKey;
@@ -123,7 +123,7 @@ TEST_F(TestSessionInfo, TestSimpleAPIs) {
   EXPECT_FALSE(session_.HaveLastPacket());
   EXPECT_EQ(kVideoFrameKey, session_.FrameType());
 
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.markerBit = true;
   packet_.seqNum += 1;
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
@@ -134,7 +134,7 @@ TEST_F(TestSessionInfo, TestSimpleAPIs) {
 
   // Insert empty packet which will be the new high sequence number.
   // To make things more difficult we will make sure to have a wrap here.
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.markerBit = true;
   packet_.seqNum = 2;
   packet_.sizeBytes = 0;
@@ -145,13 +145,13 @@ TEST_F(TestSessionInfo, TestSimpleAPIs) {
 
 TEST_F(TestSessionInfo, NormalOperation) {
   packet_.seqNum = 0xFFFF;
-  packet_.is_first_packet_in_frame = true;
+  packet_.video_header.is_first_packet_in_frame = true;
   packet_.markerBit = false;
   FillPacket(0);
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
 
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   for (int i = 1; i < 9; ++i) {
     packet_.seqNum += 1;
     FillPacket(i);
@@ -174,19 +174,19 @@ TEST_F(TestSessionInfo, NormalOperation) {
 
 TEST_F(TestSessionInfo, OutOfBoundsPackets1PacketFrame) {
   packet_.seqNum = 0x0001;
-  packet_.is_first_packet_in_frame = true;
+  packet_.video_header.is_first_packet_in_frame = true;
   packet_.markerBit = true;
   FillPacket(1);
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
 
   packet_.seqNum = 0x0004;
-  packet_.is_first_packet_in_frame = true;
+  packet_.video_header.is_first_packet_in_frame = true;
   packet_.markerBit = true;
   FillPacket(1);
   EXPECT_EQ(-3, session_.InsertPacket(packet_, frame_buffer_, frame_data));
   packet_.seqNum = 0x0000;
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.markerBit = false;
   FillPacket(1);
   EXPECT_EQ(-3, session_.InsertPacket(packet_, frame_buffer_, frame_data));
@@ -194,13 +194,13 @@ TEST_F(TestSessionInfo, OutOfBoundsPackets1PacketFrame) {
 
 TEST_F(TestSessionInfo, SetMarkerBitOnce) {
   packet_.seqNum = 0x0005;
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.markerBit = true;
   FillPacket(1);
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
   ++packet_.seqNum;
-  packet_.is_first_packet_in_frame = true;
+  packet_.video_header.is_first_packet_in_frame = true;
   packet_.markerBit = true;
   FillPacket(1);
   EXPECT_EQ(-3, session_.InsertPacket(packet_, frame_buffer_, frame_data));
@@ -209,25 +209,25 @@ TEST_F(TestSessionInfo, SetMarkerBitOnce) {
 TEST_F(TestSessionInfo, OutOfBoundsPacketsBase) {
   // Allow packets in the range 5-6.
   packet_.seqNum = 0x0005;
-  packet_.is_first_packet_in_frame = true;
+  packet_.video_header.is_first_packet_in_frame = true;
   packet_.markerBit = false;
   FillPacket(1);
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
   // Insert an older packet with a first packet set.
   packet_.seqNum = 0x0004;
-  packet_.is_first_packet_in_frame = true;
+  packet_.video_header.is_first_packet_in_frame = true;
   packet_.markerBit = true;
   FillPacket(1);
   EXPECT_EQ(-3, session_.InsertPacket(packet_, frame_buffer_, frame_data));
   packet_.seqNum = 0x0006;
-  packet_.is_first_packet_in_frame = true;
+  packet_.video_header.is_first_packet_in_frame = true;
   packet_.markerBit = true;
   FillPacket(1);
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
   packet_.seqNum = 0x0008;
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.markerBit = true;
   FillPacket(1);
   EXPECT_EQ(-3, session_.InsertPacket(packet_, frame_buffer_, frame_data));
@@ -235,31 +235,31 @@ TEST_F(TestSessionInfo, OutOfBoundsPacketsBase) {
 
 TEST_F(TestSessionInfo, OutOfBoundsPacketsWrap) {
   packet_.seqNum = 0xFFFE;
-  packet_.is_first_packet_in_frame = true;
+  packet_.video_header.is_first_packet_in_frame = true;
   packet_.markerBit = false;
   FillPacket(1);
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
 
   packet_.seqNum = 0x0004;
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.markerBit = true;
   FillPacket(1);
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
   packet_.seqNum = 0x0002;
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.markerBit = false;
   FillPacket(1);
   ASSERT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
   packet_.seqNum = 0xFFF0;
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.markerBit = false;
   FillPacket(1);
   EXPECT_EQ(-3, session_.InsertPacket(packet_, frame_buffer_, frame_data));
   packet_.seqNum = 0x0006;
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.markerBit = false;
   FillPacket(1);
   EXPECT_EQ(-3, session_.InsertPacket(packet_, frame_buffer_, frame_data));
@@ -269,45 +269,45 @@ TEST_F(TestSessionInfo, OutOfBoundsOutOfOrder) {
   // Insert out of bound regular packets, and then the first and last packet.
   // Verify that correct bounds are maintained.
   packet_.seqNum = 0x0003;
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.markerBit = false;
   FillPacket(1);
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
   // Insert an older packet with a first packet set.
   packet_.seqNum = 0x0005;
-  packet_.is_first_packet_in_frame = true;
+  packet_.video_header.is_first_packet_in_frame = true;
   packet_.markerBit = false;
   FillPacket(1);
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
   packet_.seqNum = 0x0004;
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.markerBit = false;
   FillPacket(1);
   EXPECT_EQ(-3, session_.InsertPacket(packet_, frame_buffer_, frame_data));
   packet_.seqNum = 0x0010;
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.markerBit = false;
   FillPacket(1);
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
   packet_.seqNum = 0x0008;
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.markerBit = true;
   FillPacket(1);
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
 
   packet_.seqNum = 0x0009;
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.markerBit = false;
   FillPacket(1);
   EXPECT_EQ(-3, session_.InsertPacket(packet_, frame_buffer_, frame_data));
 }
 
 TEST_F(TestNalUnits, OnlyReceivedEmptyPacket) {
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.completeNALU = kNaluComplete;
   packet_.frameType = kEmptyFrame;
   packet_.sizeBytes = 0;
@@ -320,7 +320,7 @@ TEST_F(TestNalUnits, OnlyReceivedEmptyPacket) {
 }
 
 TEST_F(TestNalUnits, OneIsolatedNaluLoss) {
-  packet_.is_first_packet_in_frame = true;
+  packet_.video_header.is_first_packet_in_frame = true;
   packet_.completeNALU = kNaluComplete;
   packet_.seqNum = 0;
   packet_.markerBit = false;
@@ -328,7 +328,7 @@ TEST_F(TestNalUnits, OneIsolatedNaluLoss) {
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
 
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.completeNALU = kNaluComplete;
   packet_.seqNum += 2;
   packet_.markerBit = true;
@@ -345,7 +345,7 @@ TEST_F(TestNalUnits, OneIsolatedNaluLoss) {
 }
 
 TEST_F(TestNalUnits, LossInMiddleOfNalu) {
-  packet_.is_first_packet_in_frame = true;
+  packet_.video_header.is_first_packet_in_frame = true;
   packet_.completeNALU = kNaluComplete;
   packet_.seqNum = 0;
   packet_.markerBit = false;
@@ -353,7 +353,7 @@ TEST_F(TestNalUnits, LossInMiddleOfNalu) {
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
 
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.completeNALU = kNaluEnd;
   packet_.seqNum += 2;
   packet_.markerBit = true;
@@ -368,7 +368,7 @@ TEST_F(TestNalUnits, LossInMiddleOfNalu) {
 }
 
 TEST_F(TestNalUnits, StartAndEndOfLastNalUnitLost) {
-  packet_.is_first_packet_in_frame = true;
+  packet_.video_header.is_first_packet_in_frame = true;
   packet_.completeNALU = kNaluComplete;
   packet_.seqNum = 0;
   packet_.markerBit = false;
@@ -376,7 +376,7 @@ TEST_F(TestNalUnits, StartAndEndOfLastNalUnitLost) {
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
 
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.completeNALU = kNaluIncomplete;
   packet_.seqNum += 2;
   packet_.markerBit = false;
@@ -392,7 +392,7 @@ TEST_F(TestNalUnits, StartAndEndOfLastNalUnitLost) {
 
 TEST_F(TestNalUnits, ReorderWrapNoLoss) {
   packet_.seqNum = 0xFFFF;
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.completeNALU = kNaluIncomplete;
   packet_.seqNum += 1;
   packet_.markerBit = false;
@@ -400,7 +400,7 @@ TEST_F(TestNalUnits, ReorderWrapNoLoss) {
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
 
-  packet_.is_first_packet_in_frame = true;
+  packet_.video_header.is_first_packet_in_frame = true;
   packet_.completeNALU = kNaluComplete;
   packet_.seqNum -= 1;
   packet_.markerBit = false;
@@ -408,7 +408,7 @@ TEST_F(TestNalUnits, ReorderWrapNoLoss) {
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
 
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.completeNALU = kNaluEnd;
   packet_.seqNum += 2;
   packet_.markerBit = true;
@@ -424,14 +424,14 @@ TEST_F(TestNalUnits, ReorderWrapNoLoss) {
 
 TEST_F(TestNalUnits, WrapLosses) {
   packet_.seqNum = 0xFFFF;
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.completeNALU = kNaluIncomplete;
   packet_.markerBit = false;
   FillPacket(1);
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
 
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.completeNALU = kNaluEnd;
   packet_.seqNum += 2;
   packet_.markerBit = true;
@@ -446,7 +446,7 @@ TEST_F(TestNalUnits, WrapLosses) {
 TEST_F(TestNalUnits, ReorderWrapLosses) {
   packet_.seqNum = 0xFFFF;
 
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.completeNALU = kNaluEnd;
   packet_.seqNum += 2;
   packet_.markerBit = true;
@@ -455,7 +455,7 @@ TEST_F(TestNalUnits, ReorderWrapLosses) {
                                       packet_, frame_buffer_, frame_data)));
 
   packet_.seqNum -= 2;
-  packet_.is_first_packet_in_frame = false;
+  packet_.video_header.is_first_packet_in_frame = false;
   packet_.completeNALU = kNaluIncomplete;
   packet_.markerBit = false;
   FillPacket(1);

@@ -79,13 +79,13 @@ class BufferedFrameDecryptorTest
     seq_num_++;
 
     VCMPacket packet;
-    packet.codec = kVideoCodecGeneric;
+    packet.video_header.codec = kVideoCodecGeneric;
     packet.seqNum = seq_num_;
     packet.frameType = key_frame ? kVideoFrameKey : kVideoFrameDelta;
     packet.generic_descriptor = RtpGenericFrameDescriptor();
     fake_packet_buffer_->InsertPacket(&packet);
     packet.seqNum = seq_num_;
-    packet.is_last_packet_in_frame = true;
+    packet.video_header.is_last_packet_in_frame = true;
     fake_packet_buffer_->InsertPacket(&packet);
 
     return std::unique_ptr<video_coding::RtpFrameObject>(

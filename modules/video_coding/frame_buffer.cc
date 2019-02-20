@@ -93,7 +93,7 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
     SetTimestamp(packet.timestamp);
     // We only take the ntp timestamp of the first packet of a frame.
     ntp_time_ms_ = packet.ntp_time_ms_;
-    _codec = packet.codec;
+    _codec = packet.codec();
     if (packet.frameType != kEmptyFrame) {
       // first media packet
       SetState(kStateIncomplete);
@@ -103,7 +103,7 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
   uint32_t requiredSizeBytes =
       size() + packet.sizeBytes +
       (packet.insertStartCode ? kH264StartCodeLengthBytes : 0) +
-      EncodedImage::GetBufferPaddingBytes(packet.codec);
+      EncodedImage::GetBufferPaddingBytes(packet.codec());
   if (requiredSizeBytes >= capacity()) {
     const uint8_t* prevBuffer = data();
     const uint32_t increments =
@@ -119,9 +119,9 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
     _sessionInfo.UpdateDataPointers(prevBuffer, data());
   }
 
-  if (packet.width > 0 && packet.height > 0) {
-    _encodedWidth = packet.width;
-    _encodedHeight = packet.height;
+  if (packet.width() > 0 && packet.height() > 0) {
+    _encodedWidth = packet.width();
+    _encodedHeight = packet.height();
   }
 
   // Don't copy payload specific data for empty packets (e.g padding packets).
@@ -173,7 +173,7 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
     timing_.flags = packet.video_header.video_timing.flags;
   }
 
-  if (packet.is_first_packet_in_frame) {
+  if (packet.is_first_packet_in_frame()) {
     playout_delay_ = packet.video_header.playout_delay;
   }
 

@@ -54,7 +54,7 @@ void ExpectSpsPpsIdr(const RTPVideoHeaderH264& codec_header,
 class H264VcmPacket : public VCMPacket {
  public:
   H264VcmPacket() {
-    codec = kVideoCodecH264;
+    video_header.codec = kVideoCodecH264;
     video_header.is_first_packet_in_frame = false;
     auto& type_header =
         video_header.video_type_header.emplace<RTPVideoHeaderH264>();
@@ -303,8 +303,8 @@ TEST_F(TestH264SpsPpsTracker, SpsPpsOutOfBand) {
   EXPECT_EQ(H264SpsPpsTracker::kInsert,
             tracker_.CopyAndFixBitstream(&idr_packet));
   EXPECT_EQ(3u, idr_packet.h264().nalus_length);
-  EXPECT_EQ(320, idr_packet.width);
-  EXPECT_EQ(240, idr_packet.height);
+  EXPECT_EQ(320, idr_packet.width());
+  EXPECT_EQ(240, idr_packet.height());
   ExpectSpsPpsIdr(idr_packet.h264(), 0, 0);
 
   if (idr_packet.dataPtr != kData) {
@@ -365,8 +365,8 @@ TEST_F(TestH264SpsPpsTracker, SaveRestoreWidthHeight) {
   AddPps(&sps_pps_packet, 0, 1, &data);
   sps_pps_packet.dataPtr = data.data();
   sps_pps_packet.sizeBytes = data.size();
-  sps_pps_packet.width = 320;
-  sps_pps_packet.height = 240;
+  sps_pps_packet.video_header.width = 320;
+  sps_pps_packet.video_header.height = 240;
   EXPECT_EQ(H264SpsPpsTracker::kInsert,
             tracker_.CopyAndFixBitstream(&sps_pps_packet));
   delete[] sps_pps_packet.dataPtr;
@@ -380,8 +380,8 @@ TEST_F(TestH264SpsPpsTracker, SaveRestoreWidthHeight) {
   EXPECT_EQ(H264SpsPpsTracker::kInsert,
             tracker_.CopyAndFixBitstream(&idr_packet));
 
-  EXPECT_EQ(320, idr_packet.width);
-  EXPECT_EQ(240, idr_packet.height);
+  EXPECT_EQ(320, idr_packet.width());
+  EXPECT_EQ(240, idr_packet.height());
   delete[] idr_packet.dataPtr;
 }
 

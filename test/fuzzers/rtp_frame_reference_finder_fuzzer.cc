@@ -80,7 +80,20 @@ class FuzzyPacketBuffer : public video_coding::PacketBuffer {
       return &packet_it->second;
 
     VCMPacket* packet = &packets[seq_num];
-    packet->codec = codec;
+    packet->video_header.codec = codec;
+    switch (codec) {
+      case kVideoCodecVP8:
+        packet->video_header.video_type_header.emplace<RTPVideoHeaderVP8>();
+        break;
+      case kVideoCodecVP9:
+        packet->video_header.video_type_header.emplace<RTPVideoHeaderVP9>();
+        break;
+      case kVideoCodecH264:
+        packet->video_header.video_type_header.emplace<RTPVideoHeaderH264>();
+        break;
+      default:
+        RTC_NOTREACHED();
+    }
     packet->markerBit = true;
     reader->CopyTo(packet, sizeof(packet));
     return packet;

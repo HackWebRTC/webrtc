@@ -60,11 +60,11 @@ VCMPacket StreamGenerator::GeneratePacket(uint16_t sequence_number,
   packet.seqNum = sequence_number;
   packet.timestamp = timestamp;
   packet.frameType = type;
-  packet.is_first_packet_in_frame = first_packet;
+  packet.video_header.is_first_packet_in_frame = first_packet;
   packet.markerBit = marker_bit;
   packet.sizeBytes = size;
   packet.dataPtr = packet_buffer_;
-  if (packet.is_first_packet_in_frame)
+  if (packet.is_first_packet_in_frame())
     packet.completeNALU = kNaluStart;
   else if (packet.markerBit)
     packet.completeNALU = kNaluEnd;

@@ -113,8 +113,8 @@ bool PacketBuffer::InsertPacket(VCMPacket* packet) {
       }
     }
 
-    sequence_buffer_[index].frame_begin = packet->is_first_packet_in_frame;
-    sequence_buffer_[index].frame_end = packet->is_last_packet_in_frame;
+    sequence_buffer_[index].frame_begin = packet->is_first_packet_in_frame();
+    sequence_buffer_[index].frame_end = packet->is_last_packet_in_frame();
     sequence_buffer_[index].seq_num = packet->seqNum;
     sequence_buffer_[index].continuous = false;
     sequence_buffer_[index].frame_created = false;
@@ -297,7 +297,7 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
       int64_t frame_timestamp = data_buffer_[start_index].timestamp;
 
       // Identify H.264 keyframes by means of SPS, PPS, and IDR.
-      bool is_h264 = data_buffer_[start_index].codec == kVideoCodecH264;
+      bool is_h264 = data_buffer_[start_index].codec() == kVideoCodecH264;
       bool has_h264_sps = false;
       bool has_h264_pps = false;
       bool has_h264_idr = false;

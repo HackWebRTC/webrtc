@@ -31,6 +31,17 @@ class VCMPacket {
 
   ~VCMPacket();
 
+  VideoCodecType codec() const { return video_header.codec; }
+  int width() const { return video_header.width; }
+  int height() const { return video_header.height; }
+
+  bool is_first_packet_in_frame() const {
+    return video_header.is_first_packet_in_frame;
+  }
+  bool is_last_packet_in_frame() const {
+    return video_header.is_last_packet_in_frame;
+  }
+
   uint8_t payloadType;
   uint32_t timestamp;
   // NTP time of the capture time in local timebase in milliseconds.
@@ -42,15 +53,10 @@ class VCMPacket {
   int timesNacked;
 
   FrameType frameType;
-  VideoCodecType codec;
 
-  bool is_first_packet_in_frame;
-  bool is_last_packet_in_frame;
   VCMNaluCompleteness completeNALU;  // Default is kNaluIncomplete.
   bool insertStartCode;  // True if a start code should be inserted before this
                          // packet.
-  int width;
-  int height;
   RTPVideoHeader video_header;
   absl::optional<RtpGenericFrameDescriptor> generic_descriptor;
 

@@ -35,7 +35,7 @@ TEST(TestDecodingState, FrameContinuity) {
   VCMFrameBuffer frame;
   VCMFrameBuffer frame_key;
   VCMPacket packet;
-  packet.is_first_packet_in_frame = true;
+  packet.video_header.is_first_packet_in_frame = true;
   packet.timestamp = 1;
   packet.seqNum = 0xffff;
   packet.frameType = kVideoFrameDelta;
@@ -57,7 +57,7 @@ TEST(TestDecodingState, FrameContinuity) {
   frame.Reset();
   packet.frameType = kVideoFrameDelta;
   // Use pictureId
-  packet.is_first_packet_in_frame = false;
+  packet.video_header.is_first_packet_in_frame = false;
   vp8_header.pictureId = 0x0002;
   EXPECT_LE(0, frame.InsertPacket(packet, 0, frame_data));
   EXPECT_FALSE(dec_state.ContinuousFrame(&frame));
@@ -267,7 +267,7 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   // A key frame is always a base layer.
   frame.Reset();
   packet.frameType = kVideoFrameKey;
-  packet.is_first_packet_in_frame = 1;
+  packet.video_header.is_first_packet_in_frame = true;
   packet.timestamp = 5;
   packet.seqNum = 5;
   vp8_header.tl0PicIdx = 2;
@@ -291,7 +291,7 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   EXPECT_TRUE(dec_state.full_sync());
   frame.Reset();
   packet.frameType = kVideoFrameDelta;
-  packet.is_first_packet_in_frame = 1;
+  packet.video_header.is_first_packet_in_frame = true;
   packet.timestamp = 8;
   packet.seqNum = 8;
   vp8_header.tl0PicIdx = 4;
@@ -306,7 +306,7 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   // Insert a non-ref frame - should update sync value.
   frame.Reset();
   packet.frameType = kVideoFrameDelta;
-  packet.is_first_packet_in_frame = 1;
+  packet.video_header.is_first_packet_in_frame = true;
   packet.timestamp = 9;
   packet.seqNum = 9;
   vp8_header.tl0PicIdx = 4;
@@ -326,7 +326,7 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   frame.Reset();
   dec_state.Reset();
   packet.frameType = kVideoFrameDelta;
-  packet.is_first_packet_in_frame = 1;
+  packet.video_header.is_first_packet_in_frame = true;
   packet.markerBit = 1;
   packet.timestamp = 0;
   packet.seqNum = 0;
@@ -340,7 +340,7 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   // Layer 2 - 2 packets (insert one, lose one).
   frame.Reset();
   packet.frameType = kVideoFrameDelta;
-  packet.is_first_packet_in_frame = 1;
+  packet.video_header.is_first_packet_in_frame = true;
   packet.markerBit = 0;
   packet.timestamp = 1;
   packet.seqNum = 1;
@@ -353,7 +353,7 @@ TEST(TestDecodingState, MultiLayerBehavior) {
   // Layer 1
   frame.Reset();
   packet.frameType = kVideoFrameDelta;
-  packet.is_first_packet_in_frame = 1;
+  packet.video_header.is_first_packet_in_frame = true;
   packet.markerBit = 1;
   packet.timestamp = 2;
   packet.seqNum = 3;
@@ -461,7 +461,7 @@ TEST(TestDecodingState, FrameContinuityFlexibleModeKeyFrame) {
   VCMDecodingState dec_state;
   VCMFrameBuffer frame;
   VCMPacket packet;
-  packet.is_first_packet_in_frame = true;
+  packet.video_header.is_first_packet_in_frame = true;
   packet.timestamp = 1;
   packet.seqNum = 0xffff;
   uint8_t data[] = "I need a data pointer for this test!";
@@ -505,7 +505,7 @@ TEST(TestDecodingState, FrameContinuityFlexibleModeOutOfOrderFrames) {
   VCMDecodingState dec_state;
   VCMFrameBuffer frame;
   VCMPacket packet;
-  packet.is_first_packet_in_frame = true;
+  packet.video_header.is_first_packet_in_frame = true;
   packet.timestamp = 1;
   packet.seqNum = 0xffff;
   uint8_t data[] = "I need a data pointer for this test!";
@@ -561,7 +561,7 @@ TEST(TestDecodingState, FrameContinuityFlexibleModeGeneral) {
   VCMDecodingState dec_state;
   VCMFrameBuffer frame;
   VCMPacket packet;
-  packet.is_first_packet_in_frame = true;
+  packet.video_header.is_first_packet_in_frame = true;
   packet.timestamp = 1;
   packet.seqNum = 0xffff;
   uint8_t data[] = "I need a data pointer for this test!";

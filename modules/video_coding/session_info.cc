@@ -354,7 +354,7 @@ VCMSessionInfo::PacketIterator VCMSessionInfo::FindNextPartitionBeginning(
 
 VCMSessionInfo::PacketIterator VCMSessionInfo::FindPartitionEnd(
     PacketIterator it) const {
-  assert((*it).codec == kVideoCodecVP8);
+  assert((*it).codec() == kVideoCodecVP8);
   PacketIterator prev_it = it;
   const int partition_id =
       absl::get<RTPVideoHeaderVP8>((*it).video_header.video_type_header)
@@ -450,9 +450,9 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
       (*rit).sizeBytes > 0)
     return -2;
 
-  if (packet.codec == kVideoCodecH264) {
+  if (packet.codec() == kVideoCodecH264) {
     frame_type_ = packet.frameType;
-    if (packet.is_first_packet_in_frame &&
+    if (packet.is_first_packet_in_frame() &&
         (first_packet_seq_num_ == -1 ||
          IsNewerSequenceNumber(first_packet_seq_num_, packet.seqNum))) {
       first_packet_seq_num_ = packet.seqNum;
@@ -468,7 +468,7 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
     // Placing check here, as to properly account for duplicate packets.
     // Check if this is first packet (only valid for some codecs)
     // Should only be set for one packet per session.
-    if (packet.is_first_packet_in_frame && first_packet_seq_num_ == -1) {
+    if (packet.is_first_packet_in_frame() && first_packet_seq_num_ == -1) {
       // The first packet in a frame signals the frame type.
       frame_type_ = packet.frameType;
       // Store the sequence number for the first packet.
