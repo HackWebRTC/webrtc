@@ -55,8 +55,7 @@ AudioEncoderOpusConfig& AudioEncoderOpusConfig::operator=(
 bool AudioEncoderOpusConfig::IsOk() const {
   if (frame_size_ms <= 0 || frame_size_ms % 10 != 0)
     return false;
-  if (num_channels != 1 && num_channels != 2 && num_channels != 4 &&
-      num_channels != 6 && num_channels != 8)
+  if (num_channels != 1 && num_channels != 2)
     return false;
   if (!bitrate_bps)
     return false;

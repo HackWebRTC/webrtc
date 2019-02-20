@@ -33,8 +33,7 @@ class AcmReceiveTestOldApi {
   enum NumOutputChannels : size_t {
     kArbitraryChannels = 0,
     kMonoOutput = 1,
-    kStereoOutput = 2,
-    kQuadOutput = 4
+    kStereoOutput = 2
   };
 
   AcmReceiveTestOldApi(PacketSource* packet_source,
