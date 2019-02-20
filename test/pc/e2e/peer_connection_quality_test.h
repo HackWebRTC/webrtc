@@ -31,7 +31,6 @@ class PeerConnectionE2EQualityTest
     : public PeerConnectionE2EQualityTestFixture {
  public:
   using Params = PeerConnectionE2EQualityTestFixture::Params;
-  using Analyzers = PeerConnectionE2EQualityTestFixture::Analyzers;
   using InjectableComponents =
       PeerConnectionE2EQualityTestFixture::InjectableComponents;
   using VideoGeneratorType =
@@ -39,7 +38,9 @@ class PeerConnectionE2EQualityTest
   using RunParams = PeerConnectionE2EQualityTestFixture::RunParams;
   using VideoConfig = PeerConnectionE2EQualityTestFixture::VideoConfig;
 
-  PeerConnectionE2EQualityTest(std::unique_ptr<Analyzers> analyzers);
+  PeerConnectionE2EQualityTest(
+      std::unique_ptr<AudioQualityAnalyzerInterface> audio_quality_analyzer,
+      std::unique_ptr<VideoQualityAnalyzerInterface> video_quality_analyzer);
 
   ~PeerConnectionE2EQualityTest() override = default;
 

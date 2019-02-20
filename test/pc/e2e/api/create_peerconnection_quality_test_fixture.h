@@ -12,7 +12,9 @@
 
 #include <memory>
 
+#include "test/pc/e2e/api/audio_quality_analyzer_interface.h"
 #include "test/pc/e2e/api/peerconnection_quality_test_fixture.h"
+#include "test/pc/e2e/api/video_quality_analyzer_interface.h"
 
 namespace webrtc {
 
@@ -21,7 +23,8 @@ namespace webrtc {
 // During the test Alice will be caller and Bob will answer the call.
 std::unique_ptr<PeerConnectionE2EQualityTestFixture>
 CreatePeerConnectionE2EQualityTestFixture(
-    std::unique_ptr<PeerConnectionE2EQualityTestFixture::Analyzers> analyzers);
+    std::unique_ptr<AudioQualityAnalyzerInterface> audio_quality_analyzer,
+    std::unique_ptr<VideoQualityAnalyzerInterface> video_quality_analyzer);
 
 }  // namespace webrtc
 

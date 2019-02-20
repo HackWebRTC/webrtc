@@ -44,7 +44,6 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
   using RunParams = PeerConnectionE2EQualityTestFixture::RunParams;
   using VideoGeneratorType =
       PeerConnectionE2EQualityTestFixture::VideoGeneratorType;
-  using Analyzers = PeerConnectionE2EQualityTestFixture::Analyzers;
   using VideoConfig = PeerConnectionE2EQualityTestFixture::VideoConfig;
   using AudioConfig = PeerConnectionE2EQualityTestFixture::AudioConfig;
   using InjectableComponents =
@@ -99,14 +98,15 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
       CreateFakeNetworkManager({bob_endpoint});
 
   // Create analyzers.
-  auto analyzers = absl::make_unique<Analyzers>();
-  analyzers->video_quality_analyzer =
+  std::unique_ptr<VideoQualityAnalyzerInterface> video_quality_analyzer =
       absl::make_unique<DefaultVideoQualityAnalyzer>("smoke_test");
-  auto* video_analyzer = static_cast<DefaultVideoQualityAnalyzer*>(
-      analyzers->video_quality_analyzer.get());
+  // This is only done for the sake of smoke testing. In general there should
+  // be no need to explicitly pull data from analyzers after the run.
+  auto* video_analyzer_ptr =
+      static_cast<DefaultVideoQualityAnalyzer*>(video_quality_analyzer.get());
 
-  auto fixture =
-      CreatePeerConnectionE2EQualityTestFixture(std::move(analyzers));
+  auto fixture = CreatePeerConnectionE2EQualityTestFixture(
+      nullptr, std::move(video_quality_analyzer));
   fixture->Run(std::move(alice_components), std::move(alice_params),
                std::move(bob_components), absl::make_unique<Params>(),
                RunParams{TimeDelta::seconds(5)});
@@ -115,12 +115,12 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
   // happen, that frames will stuck in the middle, so we actually can't force
   // real constraints here, so lets just check, that at least 1 frame passed
   // whole pipeline.
-  EXPECT_GE(video_analyzer->GetGlobalCounters().captured, 150);
-  EXPECT_GE(video_analyzer->GetGlobalCounters().pre_encoded, 1);
-  EXPECT_GE(video_analyzer->GetGlobalCounters().encoded, 1);
-  EXPECT_GE(video_analyzer->GetGlobalCounters().received, 1);
-  EXPECT_GE(video_analyzer->GetGlobalCounters().decoded, 1);
-  EXPECT_GE(video_analyzer->GetGlobalCounters().rendered, 1);
+  EXPECT_GE(video_analyzer_ptr->GetGlobalCounters().captured, 150);
+  EXPECT_GE(video_analyzer_ptr->GetGlobalCounters().pre_encoded, 1);
+  EXPECT_GE(video_analyzer_ptr->GetGlobalCounters().encoded, 1);
+  EXPECT_GE(video_analyzer_ptr->GetGlobalCounters().received, 1);
+  EXPECT_GE(video_analyzer_ptr->GetGlobalCounters().decoded, 1);
+  EXPECT_GE(video_analyzer_ptr->GetGlobalCounters().rendered, 1);
 }
 
 }  // namespace test

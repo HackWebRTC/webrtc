@@ -19,9 +19,10 @@ namespace webrtc {
 
 std::unique_ptr<PeerConnectionE2EQualityTestFixture>
 CreatePeerConnectionE2EQualityTestFixture(
-    std::unique_ptr<PeerConnectionE2EQualityTestFixture::Analyzers> analyzers) {
+    std::unique_ptr<AudioQualityAnalyzerInterface> audio_quality_analyzer,
+    std::unique_ptr<VideoQualityAnalyzerInterface> video_quality_analyzer) {
   return absl::make_unique<webrtc::test::PeerConnectionE2EQualityTest>(
-      std::move(analyzers));
+      std::move(audio_quality_analyzer), std::move(video_quality_analyzer));
 }
 
 }  // namespace webrtc

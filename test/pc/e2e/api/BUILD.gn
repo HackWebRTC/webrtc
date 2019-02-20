@@ -64,7 +64,9 @@ if (rtc_include_tests) {
     ]
 
     deps = [
+      ":audio_quality_analyzer_api",
       ":peer_connection_quality_test_fixture_api",
+      ":video_quality_analyzer_api",
       "../:peerconnection_quality_test",
       "//third_party/abseil-cpp/absl/memory:memory",
     ]
