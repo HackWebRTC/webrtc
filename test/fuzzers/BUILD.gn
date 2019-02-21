@@ -230,6 +230,7 @@ webrtc_fuzzer_test("rtp_packet_fuzzer") {
   ]
   deps = [
     "../../modules/rtp_rtcp:rtp_rtcp_format",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
   seed_corpus = "corpora/rtp-corpus"
 }
