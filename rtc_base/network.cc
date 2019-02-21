@@ -235,7 +235,8 @@ AdapterType GetAdapterTypeFromName(const char* network_name) {
   if (MatchTypeNameWithIndexPattern(network_name, "rmnet") ||
       MatchTypeNameWithIndexPattern(network_name, "rmnet_data") ||
       MatchTypeNameWithIndexPattern(network_name, "v4-rmnet") ||
-      MatchTypeNameWithIndexPattern(network_name, "v4-rmnet_data")) {
+      MatchTypeNameWithIndexPattern(network_name, "v4-rmnet_data") ||
+      MatchTypeNameWithIndexPattern(network_name, "clat")) {
     return ADAPTER_TYPE_CELLULAR;
   }
   if (MatchTypeNameWithIndexPattern(network_name, "wlan")) {
@@ -703,7 +704,9 @@ bool BasicNetworkManager::CreateNetworks(bool include_ignored,
 
             break;
           }
-          default: { continue; }
+          default: {
+            continue;
+          }
         }
 
         IPAddress prefix;
