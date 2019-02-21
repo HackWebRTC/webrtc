@@ -15,6 +15,7 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_minmax.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
@@ -33,11 +34,16 @@ std::array<float, kFftLengthBy2Plus1> SetMaxErleBands(float max_erle_l,
   return max_erle;
 }
 
+bool EnableMinErleDuringOnsets() {
+  return !field_trial::IsEnabled("WebRTC-Aec3MinErleDuringOnsetsKillSwitch");
+}
+
 }  // namespace
 
 SubbandErleEstimator::SubbandErleEstimator(const EchoCanceller3Config& config)
     : min_erle_(config.erle.min),
-      max_erle_(SetMaxErleBands(config.erle.max_l, config.erle.max_h)) {
+      max_erle_(SetMaxErleBands(config.erle.max_l, config.erle.max_h)),
+      use_min_erle_during_onsets_(EnableMinErleDuringOnsets()) {
   Reset();
 }
 
@@ -95,10 +101,12 @@ void SubbandErleEstimator::UpdateBands(bool onset_detection) {
       if (is_erle_updated[k] && !accum_spectra_.low_render_energy_[k]) {
         if (coming_onset_[k]) {
           coming_onset_[k] = false;
-          float alpha = new_erle[k] < erle_onsets_[k] ? 0.3f : 0.15f;
-          erle_onsets_[k] = rtc::SafeClamp(
-              erle_onsets_[k] + alpha * (new_erle[k] - erle_onsets_[k]),
-              min_erle_, max_erle_[k]);
+          if (!use_min_erle_during_onsets_) {
+            float alpha = new_erle[k] < erle_onsets_[k] ? 0.3f : 0.15f;
+            erle_onsets_[k] = rtc::SafeClamp(
+                erle_onsets_[k] + alpha * (new_erle[k] - erle_onsets_[k]),
+                min_erle_, max_erle_[k]);
+          }
         }
         hold_counters_[k] = kBlocksForOnsetDetection;
       }

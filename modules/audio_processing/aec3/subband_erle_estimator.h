@@ -66,6 +66,7 @@ class SubbandErleEstimator {
 
   const float min_erle_;
   const std::array<float, kFftLengthBy2Plus1> max_erle_;
+  const bool use_min_erle_during_onsets_;
   AccumulatedSpectra accum_spectra_;
   std::array<float, kFftLengthBy2Plus1> erle_;
   std::array<float, kFftLengthBy2Plus1> erle_onsets_;

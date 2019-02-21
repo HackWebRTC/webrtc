@@ -28,6 +28,7 @@ namespace {
 const std::string kFieldTrialNames[] = {
     "WebRTC-Audio-Agc2ForceExtraSaturationMargin",
     "WebRTC-Audio-Agc2ForceInitialSaturationMargin",
+    "WebRTC-Aec3MinErleDuringOnsetsKillSwitch",
 };
 
 std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
