@@ -66,7 +66,7 @@ enum { kMaxEncodedLogFrames = 10 };
 static inline void AllowBlockingCalls() {
   rtc::Thread* current_thread = rtc::Thread::Current();
   if (current_thread != NULL)
-    current_thread->SetAllowBlockingCalls(true);
+    current_thread->DEPRECATED_AllowBlockingCalls();
 }
 
 // Checks for any Java exception, prints stack backtrace and clears

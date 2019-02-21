@@ -219,10 +219,6 @@ class RTC_LOCKABLE Thread : public MessageQueue {
   // of whatever code is conditionally executing because of the return value!
   bool RunningForTest() { return IsRunning(); }
 
-  // Sets the per-thread allow-blocking-calls flag and returns the previous
-  // value. Must be called on this thread.
-  bool SetAllowBlockingCalls(bool allow);
-
   // These functions are public to avoid injecting test hooks. Don't call them
   // outside of tests.
   // This method should be called when thread is created using non standard
@@ -231,6 +227,17 @@ class RTC_LOCKABLE Thread : public MessageQueue {
   // owned to false. This must be called from the current thread.
   bool WrapCurrent();
   void UnwrapCurrent();
+
+  // Sets the per-thread allow-blocking-calls flag to false; this is
+  // irrevocable. Must be called on this thread.
+  void DisallowBlockingCalls() { SetAllowBlockingCalls(false); }
+
+#ifdef WEBRTC_ANDROID
+  // Sets the per-thread allow-blocking-calls flag to true, sidestepping the
+  // invariants upheld by DisallowBlockingCalls() and
+  // ScopedDisallowBlockingCalls. Must be called on this thread.
+  void DEPRECATED_AllowBlockingCalls() { SetAllowBlockingCalls(true); }
+#endif
 
  protected:
   // Same as WrapCurrent except that it never fails as it does not try to
@@ -250,6 +257,10 @@ class RTC_LOCKABLE Thread : public MessageQueue {
     Thread* thread;
     Runnable* runnable;
   };
+
+  // Sets the per-thread allow-blocking-calls flag and returns the previous
+  // value. Must be called on this thread.
+  bool SetAllowBlockingCalls(bool allow);
 
 #if defined(WEBRTC_WIN)
   static DWORD WINAPI PreRun(LPVOID context);

@@ -127,7 +127,7 @@ bool ChannelManager::Init() {
   if (!network_thread_->IsCurrent()) {
     // Do not allow invoking calls to other threads on the network thread.
     network_thread_->Invoke<void>(
-        RTC_FROM_HERE, [&] { network_thread_->SetAllowBlockingCalls(false); });
+        RTC_FROM_HERE, [&] { network_thread_->DisallowBlockingCalls(); });
   }
 
   if (media_engine_) {
