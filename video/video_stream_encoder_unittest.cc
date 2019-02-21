@@ -49,8 +49,9 @@ const int kMinFramerateFps = 2;
 const int kMinBalancedFramerateFps = 7;
 const int64_t kFrameTimeoutMs = 100;
 const size_t kMaxPayloadLength = 1440;
-const int kTargetBitrateBps = 1000000;
-const int kLowTargetBitrateBps = kTargetBitrateBps / 10;
+const uint32_t kTargetBitrateBps = 1000000;
+const uint32_t kSimulcastTargetBitrateBps = 3150000;
+const uint32_t kLowTargetBitrateBps = kTargetBitrateBps / 10;
 const int kMaxInitialFramedrop = 4;
 const int kDefaultFramerate = 30;
 const int64_t kFrameIntervalMs = rtc::kNumMillisecsPerSec / kDefaultFramerate;
@@ -342,7 +343,8 @@ class VideoStreamEncoderTest : public ::testing::Test {
     VideoEncoderConfig video_encoder_config;
     video_encoder_config.codec_type = PayloadStringToCodecType(payload_name);
     video_encoder_config.number_of_streams = num_streams;
-    video_encoder_config.max_bitrate_bps = kTargetBitrateBps;
+    video_encoder_config.max_bitrate_bps =
+        num_streams == 1 ? kTargetBitrateBps : kSimulcastTargetBitrateBps;
     video_encoder_config.video_stream_factory =
         new rtc::RefCountedObject<VideoStreamFactory>(num_temporal_layers,
                                                       kDefaultFramerate);
@@ -584,14 +586,40 @@ class VideoStreamEncoderTest : public ::testing::Test {
       rate_factor_ = rate_factor;
     }
 
-    uint32_t GetLastFramerate() {
+    uint32_t GetLastFramerate() const {
       rtc::CritScope lock(&local_crit_sect_);
       return last_framerate_;
     }
 
-    VideoFrame::UpdateRect GetLastUpdateRect() {
+    VideoFrame::UpdateRect GetLastUpdateRect() const {
       rtc::CritScope lock(&local_crit_sect_);
       return last_update_rect_;
+    }
+
+    const std::vector<FrameType>& LastFrameTypes() const {
+      rtc::CritScope lock(&local_crit_sect_);
+      return last_frame_types_;
+    }
+
+    void InjectFrame(const VideoFrame& input_image, bool keyframe) {
+      const std::vector<FrameType> frame_type = {keyframe ? kVideoFrameKey
+                                                          : kVideoFrameDelta};
+      {
+        rtc::CritScope lock(&local_crit_sect_);
+        last_frame_types_ = frame_type;
+      }
+      FakeEncoder::Encode(input_image, nullptr, &frame_type);
+    }
+
+    void ExpectNullFrame() {
+      rtc::CritScope lock(&local_crit_sect_);
+      expect_null_frame_ = true;
+    }
+
+    absl::optional<VideoBitrateAllocation> GetAndResetLastBitrateAllocation() {
+      auto allocation = last_bitrate_allocation_;
+      last_bitrate_allocation_.reset();
+      return allocation;
     }
 
    private:
@@ -601,9 +629,16 @@ class VideoStreamEncoderTest : public ::testing::Test {
       bool block_encode;
       {
         rtc::CritScope lock(&local_crit_sect_);
-        EXPECT_GT(input_image.timestamp(), timestamp_);
-        EXPECT_GT(input_image.ntp_time_ms(), ntp_time_ms_);
-        EXPECT_EQ(input_image.timestamp(), input_image.ntp_time_ms() * 90);
+        if (expect_null_frame_) {
+          EXPECT_EQ(input_image.timestamp(), 0u);
+          EXPECT_EQ(input_image.width(), 1);
+          last_frame_types_ = *frame_types;
+          expect_null_frame_ = false;
+        } else {
+          EXPECT_GT(input_image.timestamp(), timestamp_);
+          EXPECT_GT(input_image.ntp_time_ms(), ntp_time_ms_);
+          EXPECT_EQ(input_image.timestamp(), input_image.ntp_time_ms() * 90);
+        }
 
         timestamp_ = input_image.timestamp();
         ntp_time_ms_ = input_image.ntp_time_ms();
@@ -612,6 +647,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
         block_encode = block_next_encode_;
         block_next_encode_ = false;
         last_update_rect_ = input_image.update_rect();
+        last_frame_types_ = *frame_types;
       }
       int32_t result =
           FakeEncoder::Encode(input_image, codec_specific_info, frame_types);
@@ -658,6 +694,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
         }
       }
       last_framerate_ = framerate;
+      last_bitrate_allocation_ = rate_allocation;
       return FakeEncoder::SetRateAllocation(adjusted_rate_allocation,
                                             framerate);
     }
@@ -677,8 +714,11 @@ class VideoStreamEncoderTest : public ::testing::Test {
     bool force_init_encode_failed_ RTC_GUARDED_BY(local_crit_sect_) = false;
     double rate_factor_ RTC_GUARDED_BY(local_crit_sect_) = 1.0;
     uint32_t last_framerate_ RTC_GUARDED_BY(local_crit_sect_) = 0;
+    absl::optional<VideoBitrateAllocation> last_bitrate_allocation_;
     VideoFrame::UpdateRect last_update_rect_
         RTC_GUARDED_BY(local_crit_sect_) = {0, 0, 0, 0};
+    std::vector<FrameType> last_frame_types_;
+    bool expect_null_frame_ = false;
   };
 
   class TestSink : public VideoStreamEncoder::EncoderSink {
@@ -744,6 +784,11 @@ class VideoStreamEncoderTest : public ::testing::Test {
       return min_transmit_bitrate_bps_;
     }
 
+    void SetNumExpectedLayers(size_t num_layers) {
+      rtc::CritScope lock(&crit_);
+      num_expected_layers_ = num_layers;
+    }
+
    private:
     Result OnEncodedImage(
         const EncodedImage& encoded_image,
@@ -751,10 +796,18 @@ class VideoStreamEncoderTest : public ::testing::Test {
         const RTPFragmentationHeader* fragmentation) override {
       rtc::CritScope lock(&crit_);
       EXPECT_TRUE(expect_frames_);
-      last_timestamp_ = encoded_image.Timestamp();
+      uint32_t timestamp = encoded_image.Timestamp();
+      if (last_timestamp_ != timestamp) {
+        num_received_layers_ = 1;
+      } else {
+        ++num_received_layers_;
+      }
+      last_timestamp_ = timestamp;
       last_width_ = encoded_image._encodedWidth;
       last_height_ = encoded_image._encodedHeight;
-      encoded_frame_event_.Set();
+      if (num_received_layers_ == num_expected_layers_) {
+        encoded_frame_event_.Set();
+      }
       return Result(Result::OK, last_timestamp_);
     }
 
@@ -773,6 +826,8 @@ class VideoStreamEncoderTest : public ::testing::Test {
     uint32_t last_timestamp_ = 0;
     uint32_t last_height_ = 0;
     uint32_t last_width_ = 0;
+    size_t num_expected_layers_ = 1;
+    size_t num_received_layers_ = 0;
     bool expect_frames_ = true;
     int number_of_reconfigurations_ = 0;
     int min_transmit_bitrate_bps_ = 0;
@@ -2168,28 +2223,38 @@ TEST_F(VideoStreamEncoderTest, CallsBitrateObserver) {
       .Times(1);
   video_stream_encoder_->OnBitrateUpdated(kLowTargetBitrateBps, 0, 0);
 
-  const int64_t kStartTimeMs = 1;
   video_source_.IncomingCapturedFrame(
-      CreateFrame(kStartTimeMs, codec_width_, codec_height_));
-  WaitForEncodedFrame(kStartTimeMs);
+      CreateFrame(rtc::TimeMillis(), codec_width_, codec_height_));
+  WaitForEncodedFrame(rtc::TimeMillis());
+  absl::optional<VideoBitrateAllocation> bitrate_allocation =
+      fake_encoder_.GetAndResetLastBitrateAllocation();
+  // Check that encoder has been updated too, not just allocation observer.
+  EXPECT_EQ(bitrate_allocation->get_sum_bps(), kLowTargetBitrateBps);
+  fake_clock_.AdvanceTimeMicros(rtc::kNumMicrosecsPerMillisec / kDefaultFps);
 
   // Not called on second frame.
   EXPECT_CALL(bitrate_observer, OnBitrateAllocationUpdated(expected_bitrate))
       .Times(0);
   video_source_.IncomingCapturedFrame(
-      CreateFrame(kStartTimeMs + 1, codec_width_, codec_height_));
-  WaitForEncodedFrame(kStartTimeMs + 1);
+      CreateFrame(rtc::TimeMillis(), codec_width_, codec_height_));
+  WaitForEncodedFrame(rtc::TimeMillis());
+  fake_clock_.AdvanceTimeMicros(rtc::kNumMicrosecsPerMillisec / kDefaultFps);
 
   // Called after a process interval.
   const int64_t kProcessIntervalMs =
       vcm::VCMProcessTimer::kDefaultProcessIntervalMs;
-  fake_clock_.AdvanceTimeMicros(rtc::kNumMicrosecsPerMillisec *
-                                (kProcessIntervalMs + (1000 / kDefaultFps)));
   EXPECT_CALL(bitrate_observer, OnBitrateAllocationUpdated(expected_bitrate))
       .Times(1);
-  video_source_.IncomingCapturedFrame(CreateFrame(
-      kStartTimeMs + kProcessIntervalMs, codec_width_, codec_height_));
-  WaitForEncodedFrame(kStartTimeMs + kProcessIntervalMs);
+  const int64_t start_time_ms = rtc::TimeMillis();
+  while (rtc::TimeMillis() - start_time_ms < kProcessIntervalMs) {
+    video_source_.IncomingCapturedFrame(
+        CreateFrame(rtc::TimeMillis(), codec_width_, codec_height_));
+    WaitForEncodedFrame(rtc::TimeMillis());
+    fake_clock_.AdvanceTimeMicros(rtc::kNumMicrosecsPerMillisec / kDefaultFps);
+  }
+
+  // Since rates are unchanged, encoder should not be reconfigured.
+  EXPECT_FALSE(fake_encoder_.GetAndResetLastBitrateAllocation().has_value());
 
   video_stream_encoder_->Stop();
 }
@@ -3429,4 +3494,93 @@ TEST_F(VideoStreamEncoderTest, AccumulatesUpdateRectOnDroppedFrames) {
   video_stream_encoder_->Stop();
 }
 
+TEST_F(VideoStreamEncoderTest, SetsFrameTypes) {
+  video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+
+  // First frame is always keyframe.
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
+  WaitForEncodedFrame(1);
+  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
+              testing::ElementsAre(FrameType{kVideoFrameKey}));
+
+  // Insert delta frame.
+  video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
+  WaitForEncodedFrame(2);
+  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
+              testing::ElementsAre(FrameType{kVideoFrameDelta}));
+
+  // Request next frame be a key-frame.
+  video_stream_encoder_->SendKeyFrame();
+  video_source_.IncomingCapturedFrame(CreateFrame(3, nullptr));
+  WaitForEncodedFrame(3);
+  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
+              testing::ElementsAre(FrameType{kVideoFrameKey}));
+
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, SetsFrameTypesSimulcast) {
+  // Setup simulcast with three streams.
+  ResetEncoder("VP8", 3, 1, 1, false);
+  video_stream_encoder_->OnBitrateUpdated(kSimulcastTargetBitrateBps, 0, 0);
+  // Wait for all three layers before triggering event.
+  sink_.SetNumExpectedLayers(3);
+
+  // First frame is always keyframe.
+  video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
+  WaitForEncodedFrame(1);
+  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
+              testing::ElementsAreArray(
+                  {kVideoFrameKey, kVideoFrameKey, kVideoFrameKey}));
+
+  // Insert delta frame.
+  video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
+  WaitForEncodedFrame(2);
+  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
+              testing::ElementsAreArray(
+                  {kVideoFrameDelta, kVideoFrameDelta, kVideoFrameDelta}));
+
+  // Request next frame be a key-frame.
+  // Only first stream is configured to produce key-frame.
+  video_stream_encoder_->SendKeyFrame();
+  video_source_.IncomingCapturedFrame(CreateFrame(3, nullptr));
+  WaitForEncodedFrame(3);
+  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
+              testing::ElementsAreArray(
+                  {kVideoFrameKey, kVideoFrameDelta, kVideoFrameDelta}));
+
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, RequestKeyframeInternalSource) {
+  // Configure internal source factory and setup test again.
+  encoder_factory_.SetHasInternalSource(true);
+  ResetEncoder("VP8", 1, 1, 1, false);
+  video_stream_encoder_->OnBitrateUpdated(kTargetBitrateBps, 0, 0);
+
+  // Call encoder directly, simulating internal source where encoded frame
+  // callback in VideoStreamEncoder is called despite no OnFrame().
+  fake_encoder_.InjectFrame(CreateFrame(1, nullptr), true);
+  EXPECT_TRUE(WaitForFrame(kDefaultTimeoutMs));
+  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
+              testing::ElementsAre(FrameType{kVideoFrameKey}));
+
+  const std::vector<FrameType> kDeltaFrame = {kVideoFrameDelta};
+  // Need to set timestamp manually since manually for injected frame.
+  VideoFrame frame = CreateFrame(101, nullptr);
+  frame.set_timestamp(101);
+  fake_encoder_.InjectFrame(frame, false);
+  EXPECT_TRUE(WaitForFrame(kDefaultTimeoutMs));
+  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
+              testing::ElementsAre(FrameType{kVideoFrameDelta}));
+
+  // Request key-frame. The forces a dummy frame down into the encoder.
+  fake_encoder_.ExpectNullFrame();
+  video_stream_encoder_->SendKeyFrame();
+  EXPECT_TRUE(WaitForFrame(kDefaultTimeoutMs));
+  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
+              testing::ElementsAre(FrameType{kVideoFrameKey}));
+
+  video_stream_encoder_->Stop();
+}
 }  // namespace webrtc

@@ -139,6 +139,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
       const uint32_t target_bitrate_bps,
       uint32_t framerate_fps) RTC_RUN_ON(&encoder_queue_);
   uint32_t GetInputFramerateFps() RTC_RUN_ON(&encoder_queue_);
+  void SetEncoderRates(const VideoBitrateAllocation& bitrate_allocation,
+                       uint32_t framerate_fps) RTC_RUN_ON(&encoder_queue_);
 
   // Class holding adaptation information.
   class AdaptCounter final {
@@ -185,6 +187,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   void RunPostEncode(EncodedImage encoded_image,
                      int64_t time_sent_us,
                      int temporal_index);
+  bool HasInternalSource() const RTC_RUN_ON(&encoder_queue_);
 
   rtc::Event shutdown_event_;
 
@@ -201,7 +204,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   const VideoStreamEncoderSettings settings_;
   const RateControlSettings rate_control_settings_;
 
-  vcm::VideoSender video_sender_ RTC_GUARDED_BY(&encoder_queue_);
   const std::unique_ptr<OveruseFrameDetector> overuse_detector_
       RTC_PT_GUARDED_BY(&encoder_queue_);
   std::unique_ptr<QualityScaler> quality_scaler_ RTC_GUARDED_BY(&encoder_queue_)
@@ -283,6 +285,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
       RTC_GUARDED_BY(&encoder_queue_);
 
   VideoEncoder::EncoderInfo encoder_info_ RTC_GUARDED_BY(&encoder_queue_);
+  VideoEncoderFactory::CodecInfo codec_info_ RTC_GUARDED_BY(&encoder_queue_);
   FrameDropper frame_dropper_ RTC_GUARDED_BY(&encoder_queue_);
 
   // If frame dropper is not force disabled, frame dropping might still be
@@ -299,6 +302,16 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   std::unique_ptr<EncoderBitrateAdjuster> bitrate_adjuster_
       RTC_GUARDED_BY(&encoder_queue_);
+
+  // TODO(webrtc:10164): Refactor/remove these VCM classes.
+  // |generic_encoder_| instance is owned by |codec_database_|.
+  VCMGenericEncoder* generic_encoder_ RTC_GUARDED_BY(&encoder_queue_);
+  VCMEncodedFrameCallback generic_encoder_callback_
+      RTC_GUARDED_BY(&encoder_queue_);
+  VCMEncoderDataBase codec_database_ RTC_GUARDED_BY(&encoder_queue_);
+  // TODO(sprang): Change actually support keyframe per simulcast stream, or
+  // turn this into a simple bool |pending_keyframe_request_|.
+  std::vector<FrameType> next_frame_types_ RTC_GUARDED_BY(&encoder_queue_);
 
   // All public methods are proxied to |encoder_queue_|. It must must be
   // destroyed first to make sure no tasks are run that use other members.
