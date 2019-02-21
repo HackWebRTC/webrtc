@@ -10,14 +10,12 @@
 #include <memory>
 
 #include "api/task_queue/task_queue_factory.h"
-#include "rtc_base/checks.h"
+#include "rtc_base/task_queue_stdlib.h"
 
 namespace webrtc {
 
 std::unique_ptr<TaskQueueFactory> CreateDefaultTaskQueueFactory() {
-  RTC_CHECK(false)
-      << "Default task queue is not implemented for current platform, "
-         "overwrite the task queue implementation by setting global factory.";
+  return CreateTaskQueueStdlibFactory();
 }
 
 }  // namespace webrtc

@@ -106,9 +106,9 @@ rtc_source_set("default_task_queue_factory_impl") {
     deps += [ "../../rtc_base:rtc_task_queue_win" ]
   } else {
     sources = [
-      "default_task_queue_factory_unimplemented.cc",
+      "default_task_queue_factory_stdlib.cc",
     ]
-    deps += [ "../../rtc_base:checks" ]
+    deps += [ "../../rtc_base:rtc_task_queue_stdlib" ]
   }
 }
 
