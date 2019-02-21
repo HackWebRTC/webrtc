@@ -18,6 +18,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "api/transport/field_trial_based_config.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "rtc_base/checks.h"
@@ -97,6 +98,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       remote_bitrate_(configuration.remote_bitrate_estimator),
       rtt_stats_(configuration.rtt_stats),
       rtt_ms_(0) {
+  FieldTrialBasedConfig default_trials;
   if (!configuration.receiver_only) {
     rtp_sender_.reset(new RTPSender(
         configuration.audio, configuration.clock,
@@ -113,14 +115,17 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
         configuration.overhead_observer,
         configuration.populate_network2_timestamp,
         configuration.frame_encryptor, configuration.require_frame_encryption,
-        configuration.extmap_allow_mixed));
+        configuration.extmap_allow_mixed,
+        configuration.field_trials ? *configuration.field_trials
+                                   : default_trials));
     if (configuration.audio) {
       audio_ = absl::make_unique<RTPSenderAudio>(clock_, rtp_sender_.get());
     } else {
       video_ = absl::make_unique<RTPSenderVideo>(
           clock_, rtp_sender_.get(), configuration.flexfec_sender,
-          configuration.frame_encryptor,
-          configuration.require_frame_encryption);
+          configuration.frame_encryptor, configuration.require_frame_encryption,
+          configuration.field_trials ? *configuration.field_trials
+                                     : default_trials);
     }
     // Make sure rtcp sender use same timestamp offset as rtp sender.
     rtcp_sender_.SetTimestampOffset(rtp_sender_->TimestampOffset());

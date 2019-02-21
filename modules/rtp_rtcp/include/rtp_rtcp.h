@@ -18,6 +18,7 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "api/transport/webrtc_key_value_config.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "modules/include/module.h"
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
@@ -106,6 +107,10 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
 
     // Corresponds to extmap-allow-mixed in SDP negotiation.
     bool extmap_allow_mixed = false;
+
+    // If set, field trials are read from |field_trials|, otherwise
+    // defaults to  webrtc::FieldTrialBasedConfig.
+    WebRtcKeyValueConfig* field_trials = nullptr;
 
    private:
     RTC_DISALLOW_COPY_AND_ASSIGN(Configuration);

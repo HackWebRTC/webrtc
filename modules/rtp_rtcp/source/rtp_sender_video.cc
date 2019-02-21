@@ -33,7 +33,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/trace_event.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
@@ -188,7 +187,8 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock,
                                RTPSender* rtp_sender,
                                FlexfecSender* flexfec_sender,
                                FrameEncryptorInterface* frame_encryptor,
-                               bool require_frame_encryption)
+                               bool require_frame_encryption,
+                               const WebRtcKeyValueConfig& field_trials)
     : rtp_sender_(rtp_sender),
       clock_(clock),
       retransmission_settings_(kRetransmitBaseLayer |
@@ -206,7 +206,8 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock,
       frame_encryptor_(frame_encryptor),
       require_frame_encryption_(require_frame_encryption),
       generic_descriptor_auth_experiment_(
-          field_trial::IsEnabled("WebRTC-GenericDescriptorAuth")) {}
+          field_trials.Lookup("WebRTC-GenericDescriptorAuth").find("Enabled") ==
+          0) {}
 
 RTPSenderVideo::~RTPSenderVideo() {}
 

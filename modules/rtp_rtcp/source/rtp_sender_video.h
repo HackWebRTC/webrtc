@@ -54,7 +54,8 @@ class RTPSenderVideo {
                  RTPSender* rtpSender,
                  FlexfecSender* flexfec_sender,
                  FrameEncryptorInterface* frame_encryptor,
-                 bool require_frame_encryption);
+                 bool require_frame_encryption,
+                 const WebRtcKeyValueConfig& field_trials);
   virtual ~RTPSenderVideo();
 
   bool SendVideo(FrameType frame_type,

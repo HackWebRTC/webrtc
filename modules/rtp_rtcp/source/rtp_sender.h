@@ -21,6 +21,7 @@
 #include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/call/transport.h"
+#include "api/transport/webrtc_key_value_config.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
@@ -60,7 +61,8 @@ class RTPSender {
             bool populate_network2_timestamp,
             FrameEncryptorInterface* frame_encryptor,
             bool require_frame_encryption,
-            bool extmap_allow_mixed);
+            bool extmap_allow_mixed,
+            const WebRtcKeyValueConfig& field_trials);
 
   ~RTPSender();
 

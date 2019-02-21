@@ -10,6 +10,7 @@
 
 #include <vector>
 
+#include "api/transport/field_trial_based_config.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
@@ -79,7 +80,8 @@ class RtpSenderAudioTest : public ::testing::Test {
                     false,
                     nullptr,
                     false,
-                    false),
+                    false,
+                    FieldTrialBasedConfig()),
         rtp_sender_audio_(&fake_clock_, &rtp_sender_) {
     rtp_sender_.SetSSRC(kSsrc);
     rtp_sender_.SetSequenceNumber(kSeqNum);
