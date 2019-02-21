@@ -11,8 +11,10 @@
 #ifndef MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_DELAY_MANAGER_H_
 #define MODULES_AUDIO_CODING_NETEQ_MOCK_MOCK_DELAY_MANAGER_H_
 
-#include "modules/audio_coding/neteq/delay_manager.h"
+#include <algorithm>
 
+#include "modules/audio_coding/neteq/delay_manager.h"
+#include "modules/audio_coding/neteq/histogram.h"
 #include "test/gmock.h"
 
 namespace webrtc {
@@ -23,15 +25,16 @@ class MockDelayManager : public DelayManager {
                    int base_min_target_delay_ms,
                    bool enable_rtx_handling,
                    DelayPeakDetector* peak_detector,
-                   const TickTimer* tick_timer)
+                   const TickTimer* tick_timer,
+                   std::unique_ptr<Histogram> histogram)
       : DelayManager(max_packets_in_buffer,
                      base_min_target_delay_ms,
                      enable_rtx_handling,
                      peak_detector,
-                     tick_timer) {}
+                     tick_timer,
+                     std::move(histogram)) {}
   virtual ~MockDelayManager() { Die(); }
   MOCK_METHOD0(Die, void());
-  MOCK_CONST_METHOD0(iat_vector, const IATVector&());
   MOCK_METHOD3(Update,
                int(uint16_t sequence_number,
                    uint32_t timestamp,

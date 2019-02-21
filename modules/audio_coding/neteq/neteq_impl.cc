@@ -63,11 +63,11 @@ NetEqImpl::Dependencies::Dependencies(
           new DecoderDatabase(decoder_factory, config.codec_pair_id)),
       delay_peak_detector(
           new DelayPeakDetector(tick_timer.get(), config.enable_rtx_handling)),
-      delay_manager(new DelayManager(config.max_packets_in_buffer,
-                                     config.min_delay_ms,
-                                     config.enable_rtx_handling,
-                                     delay_peak_detector.get(),
-                                     tick_timer.get())),
+      delay_manager(DelayManager::Create(config.max_packets_in_buffer,
+                                         config.min_delay_ms,
+                                         config.enable_rtx_handling,
+                                         delay_peak_detector.get(),
+                                         tick_timer.get())),
       dtmf_buffer(new DtmfBuffer(config.sample_rate_hz)),
       dtmf_tone_generator(new DtmfToneGenerator),
       packet_buffer(

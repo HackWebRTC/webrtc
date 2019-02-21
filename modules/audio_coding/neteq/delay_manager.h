@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "modules/audio_coding/neteq/histogram.h"
 #include "modules/audio_coding/neteq/tick_timer.h"
 #include "rtc_base/constructor_magic.h"
 
@@ -27,23 +28,25 @@ class DelayPeakDetector;
 
 class DelayManager {
  public:
-  typedef std::vector<int> IATVector;
+  DelayManager(size_t max_packets_in_buffer,
+               int base_minimum_delay_ms,
+               bool enable_rtx_handling,
+               DelayPeakDetector* peak_detector,
+               const TickTimer* tick_timer,
+               std::unique_ptr<Histogram> iat_histogram);
 
   // Create a DelayManager object. Notify the delay manager that the packet
   // buffer can hold no more than |max_packets_in_buffer| packets (i.e., this
   // is the number of packet slots in the buffer) and that the target delay
   // should be greater than or equal to |base_minimum_delay_ms|. Supply a
   // PeakDetector object to the DelayManager.
-  DelayManager(size_t max_packets_in_buffer,
-               int base_minimum_delay_ms,
-               bool enable_rtx_handling,
-               DelayPeakDetector* peak_detector,
-               const TickTimer* tick_timer);
+  static std::unique_ptr<DelayManager> Create(size_t max_packets_in_buffer,
+                                              int base_minimum_delay_ms,
+                                              bool enable_rtx_handling,
+                                              DelayPeakDetector* peak_detector,
+                                              const TickTimer* tick_timer);
 
   virtual ~DelayManager();
-
-  // Read the inter-arrival time histogram. Mainly for testing purposes.
-  virtual const IATVector& iat_vector() const;
 
   // Updates the delay manager with a new incoming packet, with
   // |sequence_number| and |timestamp| from the RTP header. This updates the
@@ -102,13 +105,6 @@ class DelayManager {
   // packet will shift the sequence numbers for the following packets.
   virtual void RegisterEmptyPacket();
 
-  // Apply compression or stretching to the IAT histogram, for a change in frame
-  // size. This returns an updated histogram. This function is public for
-  // testability.
-  static IATVector ScaleHistogram(const IATVector& histogram,
-                                  int old_packet_length,
-                                  int new_packet_length);
-
   // Accessors and mutators.
   // Assuming |delay| is in valid range.
   virtual bool SetMinimumDelay(int delay_ms);
@@ -138,10 +134,6 @@ class DelayManager {
   // Provides 75% of currently possible maximum buffer size in milliseconds.
   int MaxBufferTimeQ75() const;
 
-  // Sets |iat_vector_| to the default start distribution and sets the
-  // |base_target_level_| and |target_level_| to the corresponding values.
-  void ResetHistogram();
-
   // Updates |iat_cumulative_sum_| and |max_iat_cumulative_sum_|. (These are
   // used by the streaming mode.) This method is called by Update().
   void UpdateCumulativeSums(int packet_len_ms, uint16_t sequence_number);
@@ -150,11 +142,6 @@ class DelayManager {
   // |minimum_delay_ms_|, |base_minimum_delay_ms_| and |maximum_delay_ms_|
   // and buffer size.
   void UpdateEffectiveMinimumDelay();
-
-  // Updates the histogram |iat_vector_|. The probability for inter-arrival time
-  // equal to |iat_packets| (in integer packets) is increased slightly, while
-  // all other entries are decreased. This method is called by Update().
-  void UpdateHistogram(size_t iat_packets);
 
   // Makes sure that |target_level_| is not too large, taking
   // |max_packets_in_buffer_| and |extra_delay_ms_| into account. This method is
@@ -170,8 +157,7 @@ class DelayManager {
 
   bool first_packet_received_;
   const size_t max_packets_in_buffer_;  // Capacity of the packet buffer.
-  IATVector iat_vector_;                // Histogram of inter-arrival times.
-  int iat_factor_;  // Forgetting factor for updating the IAT histogram (Q15).
+  std::unique_ptr<Histogram> iat_histogram_;
   const TickTimer* tick_timer_;
   int base_minimum_delay_ms_;
   // Provides delay which is used by LimitTargetLevel as lower bound on target

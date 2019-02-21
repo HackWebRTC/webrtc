@@ -14,6 +14,7 @@
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_coding/neteq/accelerate.h"
 #include "modules/audio_coding/neteq/expand.h"
+#include "modules/audio_coding/neteq/histogram.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/audio_coding/neteq/mock/mock_buffer_level_filter.h"
 #include "modules/audio_coding/neteq/mock/mock_decoder_database.h"
@@ -97,7 +98,8 @@ class NetEqImplTest : public ::testing::Test {
     if (use_mock_delay_manager_) {
       std::unique_ptr<MockDelayManager> mock(new MockDelayManager(
           config_.max_packets_in_buffer, config_.min_delay_ms,
-          config_.enable_rtx_handling, delay_peak_detector_, tick_timer_));
+          config_.enable_rtx_handling, delay_peak_detector_, tick_timer_,
+          absl::make_unique<Histogram>(50, 32745)));
       mock_delay_manager_ = mock.get();
       EXPECT_CALL(*mock_delay_manager_, set_streaming_mode(false)).Times(1);
       deps.delay_manager = std::move(mock);

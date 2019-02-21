@@ -31,11 +31,12 @@ TEST(DecisionLogic, CreateAndDestroy) {
   TickTimer tick_timer;
   PacketBuffer packet_buffer(10, &tick_timer);
   DelayPeakDetector delay_peak_detector(&tick_timer, false);
-  DelayManager delay_manager(240, 0, false, &delay_peak_detector, &tick_timer);
+  auto delay_manager =
+      DelayManager::Create(240, 0, false, &delay_peak_detector, &tick_timer);
   BufferLevelFilter buffer_level_filter;
   DecisionLogic* logic = DecisionLogic::Create(
       fs_hz, output_size_samples, false, &decoder_database, packet_buffer,
-      &delay_manager, &buffer_level_filter, &tick_timer);
+      delay_manager.get(), &buffer_level_filter, &tick_timer);
   delete logic;
 }
 
@@ -48,14 +49,15 @@ TEST(DecisionLogic, PostponeDecodingAfterExpansionSettings) {
   TickTimer tick_timer;
   PacketBuffer packet_buffer(10, &tick_timer);
   DelayPeakDetector delay_peak_detector(&tick_timer, false);
-  DelayManager delay_manager(240, 0, false, &delay_peak_detector, &tick_timer);
+  auto delay_manager =
+      DelayManager::Create(240, 0, false, &delay_peak_detector, &tick_timer);
   BufferLevelFilter buffer_level_filter;
   {
     test::ScopedFieldTrials field_trial(
         "WebRTC-Audio-NetEqPostponeDecodingAfterExpand/Enabled/");
     DecisionLogic logic(kFsHz, kOutputSizeSamples, false, &decoder_database,
-                        packet_buffer, &delay_manager, &buffer_level_filter,
-                        &tick_timer);
+                        packet_buffer, delay_manager.get(),
+                        &buffer_level_filter, &tick_timer);
     EXPECT_EQ(kDefaultPostponeDecodingLevel,
               logic.postpone_decoding_level_for_test());
   }
@@ -63,24 +65,24 @@ TEST(DecisionLogic, PostponeDecodingAfterExpansionSettings) {
     test::ScopedFieldTrials field_trial(
         "WebRTC-Audio-NetEqPostponeDecodingAfterExpand/Enabled-65/");
     DecisionLogic logic(kFsHz, kOutputSizeSamples, false, &decoder_database,
-                        packet_buffer, &delay_manager, &buffer_level_filter,
-                        &tick_timer);
+                        packet_buffer, delay_manager.get(),
+                        &buffer_level_filter, &tick_timer);
     EXPECT_EQ(65, logic.postpone_decoding_level_for_test());
   }
   {
     test::ScopedFieldTrials field_trial(
         "WebRTC-Audio-NetEqPostponeDecodingAfterExpand/Disabled/");
     DecisionLogic logic(kFsHz, kOutputSizeSamples, false, &decoder_database,
-                        packet_buffer, &delay_manager, &buffer_level_filter,
-                        &tick_timer);
+                        packet_buffer, delay_manager.get(),
+                        &buffer_level_filter, &tick_timer);
     EXPECT_EQ(0, logic.postpone_decoding_level_for_test());
   }
   {
     test::ScopedFieldTrials field_trial(
         "WebRTC-Audio-NetEqPostponeDecodingAfterExpand/Enabled--1/");
     DecisionLogic logic(kFsHz, kOutputSizeSamples, false, &decoder_database,
-                        packet_buffer, &delay_manager, &buffer_level_filter,
-                        &tick_timer);
+                        packet_buffer, delay_manager.get(),
+                        &buffer_level_filter, &tick_timer);
     EXPECT_EQ(kDefaultPostponeDecodingLevel,
               logic.postpone_decoding_level_for_test());
   }
@@ -88,8 +90,8 @@ TEST(DecisionLogic, PostponeDecodingAfterExpansionSettings) {
     test::ScopedFieldTrials field_trial(
         "WebRTC-Audio-NetEqPostponeDecodingAfterExpand/Enabled-101/");
     DecisionLogic logic(kFsHz, kOutputSizeSamples, false, &decoder_database,
-                        packet_buffer, &delay_manager, &buffer_level_filter,
-                        &tick_timer);
+                        packet_buffer, delay_manager.get(),
+                        &buffer_level_filter, &tick_timer);
     EXPECT_EQ(kDefaultPostponeDecodingLevel,
               logic.postpone_decoding_level_for_test());
   }
