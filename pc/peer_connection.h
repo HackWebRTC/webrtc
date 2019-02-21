@@ -210,13 +210,11 @@ class PeerConnection : public PeerConnectionInternal,
   void Close() override;
 
   // PeerConnectionInternal implementation.
-  rtc::Thread* network_thread() const override {
+  rtc::Thread* network_thread() const final {
     return factory_->network_thread();
   }
-  rtc::Thread* worker_thread() const override {
-    return factory_->worker_thread();
-  }
-  rtc::Thread* signaling_thread() const override {
+  rtc::Thread* worker_thread() const final { return factory_->worker_thread(); }
+  rtc::Thread* signaling_thread() const final {
     return factory_->signaling_thread();
   }
 

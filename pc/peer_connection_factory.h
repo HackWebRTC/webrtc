@@ -76,9 +76,15 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   CreateSctpTransportInternalFactory();
 
   virtual cricket::ChannelManager* channel_manager();
-  virtual rtc::Thread* signaling_thread();
-  virtual rtc::Thread* worker_thread();
-  virtual rtc::Thread* network_thread();
+
+  rtc::Thread* signaling_thread() {
+    // This method can be called on a different thread when the factory is
+    // created in CreatePeerConnectionFactory().
+    return signaling_thread_;
+  }
+  rtc::Thread* worker_thread() { return worker_thread_; }
+  rtc::Thread* network_thread() { return network_thread_; }
+
   const Options& options() const { return options_; }
 
   MediaTransportFactory* media_transport_factory() {

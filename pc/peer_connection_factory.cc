@@ -396,20 +396,6 @@ cricket::ChannelManager* PeerConnectionFactory::channel_manager() {
   return channel_manager_.get();
 }
 
-rtc::Thread* PeerConnectionFactory::signaling_thread() {
-  // This method can be called on a different thread when the factory is
-  // created in CreatePeerConnectionFactory().
-  return signaling_thread_;
-}
-
-rtc::Thread* PeerConnectionFactory::worker_thread() {
-  return worker_thread_;
-}
-
-rtc::Thread* PeerConnectionFactory::network_thread() {
-  return network_thread_;
-}
-
 std::unique_ptr<RtcEventLog> PeerConnectionFactory::CreateRtcEventLog_w() {
   RTC_DCHECK_RUN_ON(worker_thread_);
 
