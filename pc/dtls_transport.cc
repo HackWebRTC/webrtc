@@ -45,12 +45,12 @@ DtlsTransport::DtlsTransport(
     std::unique_ptr<cricket::DtlsTransportInternal> internal)
     : owner_thread_(rtc::Thread::Current()),
       info_(DtlsTransportState::kNew),
-      internal_dtls_transport_(std::move(internal)) {
+      internal_dtls_transport_(std::move(internal)),
+      ice_transport_(new rtc::RefCountedObject<IceTransportWithPointer>(
+          internal_dtls_transport_->ice_transport())) {
   RTC_DCHECK(internal_dtls_transport_.get());
   internal_dtls_transport_->SignalDtlsState.connect(
       this, &DtlsTransport::OnInternalDtlsState);
-  ice_transport_ = new rtc::RefCountedObject<IceTransportWithPointer>(
-      internal_dtls_transport_->ice_transport());
   UpdateInformation();
 }
 
@@ -77,8 +77,6 @@ void DtlsTransport::UnregisterObserver() {
 }
 
 rtc::scoped_refptr<IceTransportInterface> DtlsTransport::ice_transport() {
-  RTC_DCHECK_RUN_ON(owner_thread_);
-  rtc::CritScope scope(&lock_);
   return ice_transport_;
 }
 

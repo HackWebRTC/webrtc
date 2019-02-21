@@ -66,8 +66,7 @@ class DtlsTransport : public DtlsTransportInterface,
   DtlsTransportInformation info_ RTC_GUARDED_BY(lock_);
   std::unique_ptr<cricket::DtlsTransportInternal> internal_dtls_transport_
       RTC_GUARDED_BY(lock_);
-  rtc::scoped_refptr<IceTransportWithPointer> ice_transport_
-      RTC_GUARDED_BY(lock_);
+  const rtc::scoped_refptr<IceTransportWithPointer> ice_transport_;
 };
 
 }  // namespace webrtc
