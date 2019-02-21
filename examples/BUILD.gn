@@ -346,6 +346,8 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "objc/AppRTCMobile/ios/UIImage+ARDUtilities.m",
       ]
 
+      configs += [ "..:common_objc" ]
+
       deps = [
         ":apprtc_common",
         ":apprtc_signaling",
