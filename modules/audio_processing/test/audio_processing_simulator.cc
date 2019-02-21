@@ -437,9 +437,11 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
   }
 
   RTC_CHECK(ap_builder_);
-  ap_.reset((*ap_builder_)
-                .SetEchoControlFactory(std::move(echo_control_factory))
-                .Create(config));
+  if (echo_control_factory) {
+    ap_builder_->SetEchoControlFactory(std::move(echo_control_factory));
+  }
+  ap_.reset((*ap_builder_).Create(config));
+
   RTC_CHECK(ap_);
 
   ap_->ApplyConfig(apm_config);
