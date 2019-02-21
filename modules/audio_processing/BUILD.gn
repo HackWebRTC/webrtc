@@ -449,6 +449,7 @@ if (rtc_include_tests) {
       "test/conversational_speech:unittest",
       "utility:block_mean_calculator_unittest",
       "utility:legacy_delay_estimator_unittest",
+      "utility:pffft_wrapper_unittest",
       "vad:vad_unittests",
       "//testing/gtest",
       "//third_party/abseil-cpp/absl/memory",
