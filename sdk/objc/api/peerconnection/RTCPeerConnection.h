@@ -25,6 +25,7 @@
 @class RTCRtpTransceiver;
 @class RTCRtpTransceiverInit;
 @class RTCSessionDescription;
+@class RTCStatisticsReport;
 @class RTCLegacyStatsReport;
 
 typedef NS_ENUM(NSInteger, RTCRtpMediaType);
@@ -316,6 +317,8 @@ RTC_OBJC_EXPORT
 
 @end
 
+typedef void (^RTCStatisticsCompletionHandler)(RTCStatisticsReport *);
+
 @interface RTCPeerConnection (Stats)
 
 /** Gather stats for the given RTCMediaStreamTrack. If |mediaStreamTrack| is nil
@@ -324,6 +327,9 @@ RTC_OBJC_EXPORT
 - (void)statsForTrack:(nullable RTCMediaStreamTrack *)mediaStreamTrack
      statsOutputLevel:(RTCStatsOutputLevel)statsOutputLevel
     completionHandler:(nullable void (^)(NSArray<RTCLegacyStatsReport *> *stats))completionHandler;
+
+/** Gather statistic through the v2 statistics API. */
+- (void)statisticsWithCompletionHandler:(RTCStatisticsCompletionHandler)completionHandler;
 
 @end
 
