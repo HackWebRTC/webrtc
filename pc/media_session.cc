@@ -1091,15 +1091,40 @@ static void NegotiateRtpHeaderExtensions(
     const RtpHeaderExtensions& local_extensions,
     const RtpHeaderExtensions& offered_extensions,
     bool enable_encrypted_rtp_header_extensions,
-    RtpHeaderExtensions* negotiated_extenstions) {
+    RtpHeaderExtensions* negotiated_extensions) {
+  // TransportSequenceNumberV2 is not offered by default. The special logic for
+  // the TransportSequenceNumber extensions works as follows:
+  // Offer       Answer
+  // V1          V1 if in local_extensions.
+  // V1 and V2   V2 regardless of local_extensions.
+  // V2          V2 regardless of local_extensions.
+  const webrtc::RtpExtension* transport_sequence_number_v2_offer =
+      webrtc::RtpExtension::FindHeaderExtensionByUri(
+          offered_extensions,
+          webrtc::RtpExtension::kTransportSequenceNumberV2Uri);
+
   for (const webrtc::RtpExtension& ours : local_extensions) {
     webrtc::RtpExtension theirs;
     if (FindByUriWithEncryptionPreference(
             offered_extensions, ours, enable_encrypted_rtp_header_extensions,
             &theirs)) {
-      // We respond with their RTP header extension id.
-      negotiated_extenstions->push_back(theirs);
+      if (transport_sequence_number_v2_offer &&
+          ours.uri == webrtc::RtpExtension::kTransportSequenceNumberUri) {
+        // Don't respond to
+        // http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
+        // if we get an offer including
+        // http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-02
+        continue;
+      } else {
+        // We respond with their RTP header extension id.
+        negotiated_extensions->push_back(theirs);
+      }
     }
+  }
+
+  if (transport_sequence_number_v2_offer) {
+    // Respond that we support kTransportSequenceNumberV2Uri.
+    negotiated_extensions->push_back(*transport_sequence_number_v2_offer);
   }
 }
 

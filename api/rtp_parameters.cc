@@ -167,6 +167,7 @@ constexpr int RtpExtension::kOneByteHeaderExtensionMaxValueSize;
 bool RtpExtension::IsSupportedForAudio(const std::string& uri) {
   return uri == webrtc::RtpExtension::kAudioLevelUri ||
          uri == webrtc::RtpExtension::kTransportSequenceNumberUri ||
+         uri == webrtc::RtpExtension::kTransportSequenceNumberV2Uri ||
          uri == webrtc::RtpExtension::kMidUri ||
          uri == webrtc::RtpExtension::kRidUri ||
          uri == webrtc::RtpExtension::kRepairedRidUri;
@@ -177,6 +178,7 @@ bool RtpExtension::IsSupportedForVideo(const std::string& uri) {
          uri == webrtc::RtpExtension::kAbsSendTimeUri ||
          uri == webrtc::RtpExtension::kVideoRotationUri ||
          uri == webrtc::RtpExtension::kTransportSequenceNumberUri ||
+         uri == webrtc::RtpExtension::kTransportSequenceNumberV2Uri ||
          uri == webrtc::RtpExtension::kPlayoutDelayUri ||
          uri == webrtc::RtpExtension::kVideoContentTypeUri ||
          uri == webrtc::RtpExtension::kVideoTimingUri ||
@@ -202,6 +204,7 @@ bool RtpExtension::IsEncryptionSupported(const std::string& uri) {
 #endif
          uri == webrtc::RtpExtension::kVideoRotationUri ||
          uri == webrtc::RtpExtension::kTransportSequenceNumberUri ||
+         uri == webrtc::RtpExtension::kTransportSequenceNumberV2Uri ||
          uri == webrtc::RtpExtension::kPlayoutDelayUri ||
          uri == webrtc::RtpExtension::kVideoContentTypeUri ||
          uri == webrtc::RtpExtension::kMidUri ||

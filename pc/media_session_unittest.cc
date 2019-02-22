@@ -213,6 +213,27 @@ static const RtpExtension kVideoRtpExtensionEncryptedAnswer[] = {
     RtpExtension("urn:ietf:params:rtp-hdrext:toffset", 11, true),
 };
 
+static const RtpExtension kRtpExtensionTransportSequenceNumber01[] = {
+    RtpExtension("http://www.ietf.org/id/"
+                 "draft-holmer-rmcat-transport-wide-cc-extensions-01",
+                 1),
+};
+
+static const RtpExtension kRtpExtensionTransportSequenceNumber01And02[] = {
+    RtpExtension("http://www.ietf.org/id/"
+                 "draft-holmer-rmcat-transport-wide-cc-extensions-01",
+                 1),
+    RtpExtension("http://www.ietf.org/id/"
+                 "draft-holmer-rmcat-transport-wide-cc-extensions-02",
+                 2),
+};
+
+static const RtpExtension kRtpExtensionTransportSequenceNumber02[] = {
+    RtpExtension("http://www.ietf.org/id/"
+                 "draft-holmer-rmcat-transport-wide-cc-extensions-02",
+                 2),
+};
+
 static const uint32_t kSimulcastParamsSsrc[] = {10, 11, 20, 21, 30, 31};
 static const uint32_t kSimSsrc[] = {10, 20, 30};
 static const uint32_t kFec1Ssrc[] = {10, 11};
@@ -687,6 +708,30 @@ class MediaSessionDescriptionFactoryTest : public testing::Test {
       ASSERT_CRYPTO(vcd, 1U, kDefaultSrtpCryptoSuite);
     }
     EXPECT_EQ(cricket::kMediaProtocolSavpf, vcd->protocol());
+  }
+
+  void TestTransportSequenceNumberNegotiation(
+      const cricket::RtpHeaderExtensions& local,
+      const cricket::RtpHeaderExtensions& offered,
+      const cricket::RtpHeaderExtensions& expectedAnswer) {
+    MediaSessionOptions opts;
+    AddAudioVideoSections(RtpTransceiverDirection::kRecvOnly, &opts);
+    f1_.set_audio_rtp_header_extensions(offered);
+    f1_.set_video_rtp_header_extensions(offered);
+    f2_.set_audio_rtp_header_extensions(local);
+    f2_.set_video_rtp_header_extensions(local);
+
+    std::unique_ptr<SessionDescription> offer = f1_.CreateOffer(opts, NULL);
+    ASSERT_TRUE(offer.get() != NULL);
+    std::unique_ptr<SessionDescription> answer =
+        f2_.CreateAnswer(offer.get(), opts, NULL);
+
+    EXPECT_EQ(
+        expectedAnswer,
+        GetFirstAudioContentDescription(answer.get())->rtp_header_extensions());
+    EXPECT_EQ(
+        expectedAnswer,
+        GetFirstVideoContentDescription(answer.get())->rtp_header_extensions());
   }
 
  protected:
@@ -1504,6 +1549,32 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestOfferAnswerWithRtpExtensions) {
   EXPECT_EQ(
       MAKE_VECTOR(kVideoRtpExtensionAnswer),
       GetFirstVideoContentDescription(answer.get())->rtp_header_extensions());
+}
+
+// Create a audio/video offer and answer and ensure that the
+// TransportSequenceNumber RTP header extensions are handled correctly. 02 is
+// supported and should take precedence even though not listed among locally
+// supported extensions.
+TEST_F(MediaSessionDescriptionFactoryTest,
+       TestOfferAnswerWithTransportSequenceNumberInOffer) {
+  TestTransportSequenceNumberNegotiation(
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01),   // Local.
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01),   // Offer.
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01));  // Expected answer.
+}
+TEST_F(MediaSessionDescriptionFactoryTest,
+       TestOfferAnswerWithTransportSequenceNumber01And02InOffer) {
+  TestTransportSequenceNumberNegotiation(
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01),       // Local.
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01And02),  // Offer.
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber02));  // Expected answer.
+}
+TEST_F(MediaSessionDescriptionFactoryTest,
+       TestOfferAnswerWithTransportSequenceNumber02InOffer) {
+  TestTransportSequenceNumberNegotiation(
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber01),   // Local.
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber02),   // Offer.
+      MAKE_VECTOR(kRtpExtensionTransportSequenceNumber02));  // Expected answer.
 }
 
 TEST_F(MediaSessionDescriptionFactoryTest,
