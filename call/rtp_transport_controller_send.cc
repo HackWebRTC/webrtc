@@ -184,9 +184,6 @@ void RtpTransportControllerSend::SetPacingFactor(float pacing_factor) {
 void RtpTransportControllerSend::SetQueueTimeLimit(int limit_ms) {
   pacer_.SetQueueTimeLimit(limit_ms);
 }
-CallStatsObserver* RtpTransportControllerSend::GetCallStatsObserver() {
-  return this;
-}
 void RtpTransportControllerSend::RegisterPacketFeedbackObserver(
     PacketFeedbackObserver* observer) {
   transport_feedback_adapter_.RegisterPacketFeedbackObserver(observer);
@@ -440,20 +437,6 @@ void RtpTransportControllerSend::OnTransportFeedback(
   }
   pacer_.UpdateOutstandingData(
       transport_feedback_adapter_.GetOutstandingData().bytes());
-}
-
-void RtpTransportControllerSend::OnRttUpdate(int64_t avg_rtt_ms,
-                                             int64_t max_rtt_ms) {
-  int64_t now_ms = clock_->TimeInMilliseconds();
-  RoundTripTimeUpdate report;
-  report.receive_time = Timestamp::ms(now_ms);
-  report.round_trip_time = TimeDelta::ms(avg_rtt_ms);
-  report.smoothed = true;
-  task_queue_.PostTask([this, report]() {
-    RTC_DCHECK_RUN_ON(&task_queue_);
-    if (controller_)
-      PostUpdates(controller_->OnRoundTripTimeUpdate(report));
-  });
 }
 
 void RtpTransportControllerSend::MaybeCreateControllers() {

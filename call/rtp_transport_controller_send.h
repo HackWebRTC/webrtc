@@ -42,7 +42,6 @@ class RtcEventLog;
 class RtpTransportControllerSend final
     : public RtpTransportControllerSendInterface,
       public RtcpBandwidthObserver,
-      public CallStatsObserver,
       public TransportFeedbackObserver {
  public:
   RtpTransportControllerSend(
@@ -81,7 +80,6 @@ class RtpTransportControllerSend final
   void SetKeepAliveConfig(const RtpKeepAliveConfig& config);
   void SetPacingFactor(float pacing_factor) override;
   void SetQueueTimeLimit(int limit_ms) override;
-  CallStatsObserver* GetCallStatsObserver() override;
   void RegisterPacketFeedbackObserver(
       PacketFeedbackObserver* observer) override;
   void DeRegisterPacketFeedbackObserver(
@@ -116,8 +114,6 @@ class RtpTransportControllerSend final
                  const PacedPacketInfo& pacing_info) override;
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override;
 
-  // Implements CallStatsObserver interface
-  void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
  private:
   void MaybeCreateControllers() RTC_RUN_ON(task_queue_);
   void UpdateInitialConstraints(TargetRateConstraints new_contraints)

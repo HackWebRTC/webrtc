@@ -134,8 +134,6 @@ class RtpTransportControllerSendInterface {
   virtual void SetPacingFactor(float pacing_factor) = 0;
   virtual void SetQueueTimeLimit(int limit_ms) = 0;
 
-  virtual CallStatsObserver* GetCallStatsObserver() = 0;
-
   virtual void RegisterPacketFeedbackObserver(
       PacketFeedbackObserver* observer) = 0;
   virtual void DeRegisterPacketFeedbackObserver(

@@ -255,14 +255,11 @@ NetworkControlUpdate GoogCcNetworkController::OnRemoteBitrateReport(
 
 NetworkControlUpdate GoogCcNetworkController::OnRoundTripTimeUpdate(
     RoundTripTimeUpdate msg) {
-  if (packet_feedback_only_)
+  if (packet_feedback_only_ || msg.smoothed)
     return NetworkControlUpdate();
-  if (msg.smoothed) {
-    if (delay_based_bwe_)
-      delay_based_bwe_->OnRttUpdate(msg.round_trip_time);
-  } else {
-    bandwidth_estimation_->UpdateRtt(msg.round_trip_time, msg.receive_time);
-  }
+  if (delay_based_bwe_)
+    delay_based_bwe_->OnRttUpdate(msg.round_trip_time);
+  bandwidth_estimation_->UpdateRtt(msg.round_trip_time, msg.receive_time);
   return NetworkControlUpdate();
 }
 

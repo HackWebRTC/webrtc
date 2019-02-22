@@ -484,8 +484,6 @@ Call::~Call() {
     module_process_thread_->DeRegisterModule(call_stats_.get());
     module_process_thread_->Stop();
     call_stats_->DeregisterStatsObserver(&receive_side_cc_);
-    call_stats_->DeregisterStatsObserver(
-        transport_send_->GetCallStatsObserver());
   }
 
   int64_t first_sent_packet_ms = transport_send_->GetFirstPacketTimeMs();
@@ -517,7 +515,6 @@ void Call::RegisterRateObserver() {
     transport_send_ptr_->RegisterTargetTransferRateObserver(this);
 
     call_stats_->RegisterStatsObserver(&receive_side_cc_);
-    call_stats_->RegisterStatsObserver(transport_send_->GetCallStatsObserver());
 
     module_process_thread_->RegisterModule(
         receive_side_cc_.GetRemoteBitrateEstimator(true), RTC_FROM_HERE);

@@ -52,7 +52,6 @@ class MockRtpTransportControllerSend
   MOCK_METHOD3(SetAllocatedSendBitrateLimits, void(int, int, int));
   MOCK_METHOD1(SetPacingFactor, void(float));
   MOCK_METHOD1(SetQueueTimeLimit, void(int));
-  MOCK_METHOD0(GetCallStatsObserver, CallStatsObserver*());
   MOCK_METHOD1(RegisterPacketFeedbackObserver, void(PacketFeedbackObserver*));
   MOCK_METHOD1(DeRegisterPacketFeedbackObserver, void(PacketFeedbackObserver*));
   MOCK_METHOD1(RegisterTargetTransferRateObserver,
