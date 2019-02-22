@@ -60,9 +60,7 @@ rtc_source_set("task_queue_test") {
 }
 
 rtc_source_set("default_task_queue_factory") {
-  # TODO(bugs.webrtc.org/10191): Make public when implemented for all
-  # supported platforms.
-  visibility = [ ":global_task_queue_factory" ]
+  visibility = [ "*" ]
   sources = [
     "default_task_queue_factory.h",
   ]
@@ -73,42 +71,19 @@ rtc_source_set("default_task_queue_factory") {
   # TODO(bugs.webrtc.org/10284): Include implementation unconditionally when
   # global task queue factory is removed.
   if (rtc_link_task_queue_impl) {
-    deps += [ ":default_task_queue_factory_impl" ]
-  }
-}
-
-# TODO(bugs.webrtc.org/10191): Merge back to default_task_queue_factory when
-# rtc_task_queue_impl build target is removed.
-rtc_source_set("default_task_queue_factory_impl") {
-  # Include the implementation when rtc_link_task_queue_impl is set to default
-  # value of true or when explicit dependency on "rtc_task_queue_impl" is added.
-  visibility = [
-    ":default_task_queue_factory",
-    "../../rtc_base:rtc_task_queue_impl",
-  ]
-  deps = [
-    ":task_queue_factory",
-  ]
-  if (rtc_enable_libevent) {
-    sources = [
-      "default_task_queue_factory_libevent.cc",
-    ]
-    deps += [ "../../rtc_base:rtc_task_queue_libevent" ]
-  } else if (is_mac || is_ios) {
-    sources = [
-      "default_task_queue_factory_gcd.cc",
-    ]
-    deps += [ "../../rtc_base:rtc_task_queue_gcd" ]
-  } else if (is_win && current_os != "winuwp") {
-    sources = [
-      "default_task_queue_factory_win.cc",
-    ]
-    deps += [ "../../rtc_base:rtc_task_queue_win" ]
-  } else {
-    sources = [
-      "default_task_queue_factory_stdlib.cc",
-    ]
-    deps += [ "../../rtc_base:rtc_task_queue_stdlib" ]
+    if (rtc_enable_libevent) {
+      sources += [ "default_task_queue_factory_libevent.cc" ]
+      deps += [ "../../rtc_base:rtc_task_queue_libevent" ]
+    } else if (is_mac || is_ios) {
+      sources += [ "default_task_queue_factory_gcd.cc" ]
+      deps += [ "../../rtc_base:rtc_task_queue_gcd" ]
+    } else if (is_win && current_os != "winuwp") {
+      sources += [ "default_task_queue_factory_win.cc" ]
+      deps += [ "../../rtc_base:rtc_task_queue_win" ]
+    } else {
+      sources += [ "default_task_queue_factory_stdlib.cc" ]
+      deps += [ "../../rtc_base:rtc_task_queue_stdlib" ]
+    }
   }
 }
 
