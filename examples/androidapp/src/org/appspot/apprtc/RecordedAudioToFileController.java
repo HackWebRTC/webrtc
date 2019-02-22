@@ -22,15 +22,12 @@ import java.io.OutputStream;
 import java.util.concurrent.ExecutorService;
 import org.webrtc.audio.JavaAudioDeviceModule;
 import org.webrtc.audio.JavaAudioDeviceModule.SamplesReadyCallback;
-import org.webrtc.voiceengine.WebRtcAudioRecord;
-import org.webrtc.voiceengine.WebRtcAudioRecord.WebRtcAudioRecordSamplesReadyCallback;
 
 /**
  * Implements the AudioRecordSamplesReadyCallback interface and writes
  * recorded raw audio samples to an output file.
  */
-public class RecordedAudioToFileController
-    implements SamplesReadyCallback, WebRtcAudioRecordSamplesReadyCallback {
+public class RecordedAudioToFileController implements SamplesReadyCallback {
   private static final String TAG = "RecordedAudioToFile";
   private static final long MAX_FILE_SIZE_IN_BYTES = 58348800L;
 
@@ -104,13 +101,6 @@ public class RecordedAudioToFileController
       Log.e(TAG, "Failed to open audio output file: " + e.getMessage());
     }
     Log.d(TAG, "Opened file for recording: " + fileName);
-  }
-
-  // Called when new audio samples are ready.
-  @Override
-  public void onWebRtcAudioRecordSamplesReady(WebRtcAudioRecord.AudioSamples samples) {
-    onWebRtcAudioRecordSamplesReady(new JavaAudioDeviceModule.AudioSamples(samples.getAudioFormat(),
-        samples.getChannelCount(), samples.getSampleRate(), samples.getData()));
   }
 
   // Called when new audio samples are ready.
