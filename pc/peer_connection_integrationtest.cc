@@ -60,6 +60,7 @@
 #include "pc/test/fake_rtc_certificate_generator.h"
 #include "pc/test/fake_video_track_renderer.h"
 #include "pc/test/mock_peer_connection_observers.h"
+#include "rtc_base/fake_clock.h"
 #include "rtc_base/fake_network.h"
 #include "rtc_base/firewall_socket_server.h"
 #include "rtc_base/gunit.h"
@@ -3808,9 +3809,10 @@ class PeerConnectionIntegrationIceStatesTest
 // states, induced by putting a firewall between the peers and waiting for them
 // to time out.
 TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
-  // TODO(bugs.webrtc.org/8295): When using a ScopedFakeClock, this test will
-  // sometimes hit a DCHECK in platform_thread.cc about the PacerThread being
-  // too busy. For now, revert to running without a fake clock.
+  rtc::ScopedFakeClock fake_clock;
+  // Some things use a time of "0" as a special value, so we need to start out
+  // the fake clock at a nonzero time.
+  fake_clock.AdvanceTime(TimeDelta::seconds(1));
 
   const SocketAddress kStunServerAddress =
       SocketAddress("99.99.99.1", cricket::STUN_SERVER_PORT);
@@ -3868,20 +3870,22 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
     firewall()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, caller_address);
   }
   RTC_LOG(LS_INFO) << "Firewall rules applied";
-  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionDisconnected,
-                 caller()->ice_connection_state(), kDefaultTimeout);
-  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionDisconnected,
-                 caller()->standardized_ice_connection_state(),
-                 kDefaultTimeout);
+  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionDisconnected,
+                           caller()->ice_connection_state(), kDefaultTimeout,
+                           fake_clock);
+  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionDisconnected,
+                           caller()->standardized_ice_connection_state(),
+                           kDefaultTimeout, fake_clock);
 
   // Let ICE re-establish by removing the firewall rules.
   firewall()->ClearRules();
   RTC_LOG(LS_INFO) << "Firewall rules cleared";
-  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
-                 caller()->ice_connection_state(), kDefaultTimeout);
-  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionConnected,
-                 caller()->standardized_ice_connection_state(),
-                 kDefaultTimeout);
+  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
+                           caller()->ice_connection_state(), kDefaultTimeout,
+                           fake_clock);
+  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionConnected,
+                           caller()->standardized_ice_connection_state(),
+                           kDefaultTimeout, fake_clock);
 
   // According to RFC7675, if there is no response within 30 seconds then the
   // peer should consider the other side to have rejected the connection. This
@@ -3891,11 +3895,54 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
     firewall()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, caller_address);
   }
   RTC_LOG(LS_INFO) << "Firewall rules applied again";
-  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionFailed,
-                 caller()->ice_connection_state(), kConsentTimeout);
-  ASSERT_EQ_WAIT(PeerConnectionInterface::kIceConnectionFailed,
-                 caller()->standardized_ice_connection_state(),
-                 kConsentTimeout);
+  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionFailed,
+                           caller()->ice_connection_state(), kConsentTimeout,
+                           fake_clock);
+  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionFailed,
+                           caller()->standardized_ice_connection_state(),
+                           kConsentTimeout, fake_clock);
+
+  // We need to manually close the peerconnections before the fake clock goes
+  // out of scope, or we trigger a DCHECK in rtp_sender.cc when we briefly
+  // return to using non-faked time.
+  delete SetCallerPcWrapperAndReturnCurrent(nullptr);
+  delete SetCalleePcWrapperAndReturnCurrent(nullptr);
+}
+
+// Tests that if the connection doesn't get set up properly we eventually reach
+// the "failed" iceConnectionState.
+TEST_P(PeerConnectionIntegrationIceStatesTest, IceStateSetupFailure) {
+  rtc::ScopedFakeClock fake_clock;
+  // Some things use a time of "0" as a special value, so we need to start out
+  // the fake clock at a nonzero time.
+  fake_clock.AdvanceTime(TimeDelta::seconds(1));
+
+  // Block connections to/from the caller and wait for ICE to become
+  // disconnected.
+  for (const auto& caller_address : CallerAddresses()) {
+    firewall()->AddRule(false, rtc::FP_ANY, rtc::FD_ANY, caller_address);
+  }
+
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  SetPortAllocatorFlags();
+  SetUpNetworkInterfaces();
+  caller()->AddAudioVideoTracks();
+  caller()->CreateAndSetAndSignalOffer();
+
+  // According to RFC7675, if there is no response within 30 seconds then the
+  // peer should consider the other side to have rejected the connection. This
+  // is signaled by the state transitioning to "failed".
+  constexpr int kConsentTimeout = 30000;
+  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionFailed,
+                           caller()->standardized_ice_connection_state(),
+                           kConsentTimeout, fake_clock);
+
+  // We need to manually close the peerconnections before the fake clock goes
+  // out of scope, or we trigger a DCHECK in rtp_sender.cc when we briefly
+  // return to using non-faked time.
+  delete SetCallerPcWrapperAndReturnCurrent(nullptr);
+  delete SetCalleePcWrapperAndReturnCurrent(nullptr);
 }
 
 // Tests that the best connection is set to the appropriate IPv4/IPv6 connection

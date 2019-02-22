@@ -406,11 +406,12 @@ webrtc::IceTransportState P2PTransportChannel::ComputeIceTransportState()
     }
   }
 
+  if (had_connection_ && !has_connection) {
+    return webrtc::IceTransportState::kFailed;
+  }
+
   if (!writable() && has_been_writable_) {
-    if (has_connection)
-      return webrtc::IceTransportState::kDisconnected;
-    else
-      return webrtc::IceTransportState::kFailed;
+    return webrtc::IceTransportState::kDisconnected;
   }
 
   if (gathering_state_ == kIceGatheringNew)
