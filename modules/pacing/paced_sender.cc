@@ -22,8 +22,8 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
-#include "system_wrappers/include/field_trial.h"
 
+namespace webrtc {
 namespace {
 // Time limit in milliseconds between packet bursts.
 const int64_t kDefaultMinPacketLimitMs = 5;
@@ -35,23 +35,44 @@ const int64_t kMaxElapsedTimeMs = 2000;
 // time.
 const int64_t kMaxIntervalTimeMs = 30;
 
-}  // namespace
+bool IsDisabled(const WebRtcKeyValueConfig& field_trials,
+                absl::string_view key) {
+  return field_trials.Lookup(key).find("Disabled") == 0;
+}
 
-namespace webrtc {
+bool IsEnabled(const WebRtcKeyValueConfig& field_trials,
+               absl::string_view key) {
+  return field_trials.Lookup(key).find("Enabled") == 0;
+}
+
+}  // namespace
 
 const int64_t PacedSender::kMaxQueueLengthMs = 2000;
 const float PacedSender::kDefaultPaceMultiplier = 2.5f;
 
 PacedSender::PacedSender(Clock* clock,
                          PacketSender* packet_sender,
-                         RtcEventLog* event_log)
+                         RtcEventLog* event_log,
+                         const WebRtcKeyValueConfig* field_trials)
+    : PacedSender(clock,
+                  packet_sender,
+                  event_log,
+                  field_trials
+                      ? *field_trials
+                      : static_cast<const webrtc::WebRtcKeyValueConfig&>(
+                            FieldTrialBasedConfig())) {}
+
+PacedSender::PacedSender(Clock* clock,
+                         PacketSender* packet_sender,
+                         RtcEventLog* event_log,
+                         const WebRtcKeyValueConfig& field_trials)
     : clock_(clock),
       packet_sender_(packet_sender),
       alr_detector_(),
-      drain_large_queues_(!field_trial::IsDisabled("WebRTC-Pacer-DrainQueue")),
+      drain_large_queues_(!IsDisabled(field_trials, "WebRTC-Pacer-DrainQueue")),
       send_padding_if_silent_(
-          field_trial::IsEnabled("WebRTC-Pacer-PadInSilence")),
-      pace_audio_(!field_trial::IsDisabled("WebRTC-Pacer-BlockAudio")),
+          IsEnabled(field_trials, "WebRTC-Pacer-PadInSilence")),
+      pace_audio_(!IsDisabled(field_trials, "WebRTC-Pacer-BlockAudio")),
       min_packet_limit_ms_("", kDefaultMinPacketLimitMs),
       last_timestamp_ms_(clock_->TimeInMilliseconds()),
       paused_(false),
@@ -76,7 +97,7 @@ PacedSender::PacedSender(Clock* clock,
                            "pushback experiment must be enabled.";
   }
   ParseFieldTrial({&min_packet_limit_ms_},
-                  field_trial::FindFullName("WebRTC-Pacer-MinPacketLimitMs"));
+                  field_trials.Lookup("WebRTC-Pacer-MinPacketLimitMs"));
   UpdateBudgetWithElapsedTime(min_packet_limit_ms_);
 }
 

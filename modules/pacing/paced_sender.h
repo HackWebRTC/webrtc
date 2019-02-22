@@ -17,7 +17,9 @@
 #include <memory>
 
 #include "absl/types/optional.h"
+#include "api/transport/field_trial_based_config.h"
 #include "api/transport/network_types.h"
+#include "api/transport/webrtc_key_value_config.h"
 #include "modules/pacing/bitrate_prober.h"
 #include "modules/pacing/interval_budget.h"
 #include "modules/pacing/pacer.h"
@@ -71,7 +73,8 @@ class PacedSender : public Pacer {
 
   PacedSender(Clock* clock,
               PacketSender* packet_sender,
-              RtcEventLog* event_log);
+              RtcEventLog* event_log,
+              const WebRtcKeyValueConfig* field_trials = nullptr);
 
   ~PacedSender() override;
 
@@ -147,6 +150,11 @@ class PacedSender : public Pacer {
   void SetQueueTimeLimit(int limit_ms);
 
  private:
+  PacedSender(Clock* clock,
+              PacketSender* packet_sender,
+              RtcEventLog* event_log,
+              const WebRtcKeyValueConfig& field_trials);
+
   int64_t UpdateTimeAndGetElapsedMs(int64_t now_us)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   bool ShouldSendKeepalive(int64_t at_time_us) const
