@@ -286,7 +286,7 @@ std::unique_ptr<FrameGenerator> CreateFrameGenerator(
     case Capture::kVideoFile:
       RTC_CHECK(source.video_file.width && source.video_file.height);
       return FrameGenerator::CreateFromYuvFile(
-          {TransformFilePath(source.video_file.name)}, source.video_file.width,
+          {source.video_file.name}, source.video_file.width,
           source.video_file.height, /*frame_repeat_count*/ 1);
     case Capture::kGenerateSlides:
       return FrameGenerator::CreateSlideGenerator(
