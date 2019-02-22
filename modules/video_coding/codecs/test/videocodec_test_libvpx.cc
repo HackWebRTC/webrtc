@@ -153,7 +153,7 @@ TEST(VideoCodecTestLibvpx, ChangeFramerateVP9) {
 
   // Quality should be higher for lower framerates for the same content.
   std::vector<QualityThresholds> quality_thresholds = {
-      {33, 32, 0.89, 0.87}, {33.5, 32, 0.90, 0.86}, {33.5, 31.5, 0.90, 0.85}};
+      {33, 32, 0.88, 0.86}, {33.5, 32, 0.90, 0.86}, {33.5, 31.5, 0.90, 0.85}};
 
   fixture->RunTest(rate_profiles, &rc_thresholds, &quality_thresholds, nullptr);
 }
