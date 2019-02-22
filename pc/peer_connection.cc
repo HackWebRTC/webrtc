@@ -5694,7 +5694,7 @@ void PeerConnection::DisconnectDataChannel(DataChannel* webrtc_data_channel) {
 
 void PeerConnection::AddSctpDataStream(int sid) {
   if (media_transport_) {
-    // No-op.  Media transport does not need to add streams.
+    media_transport_->OpenChannel(sid);
     return;
   }
   if (!sctp_transport_) {

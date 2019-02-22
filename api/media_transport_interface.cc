@@ -88,4 +88,11 @@ size_t MediaTransportInterface::GetAudioPacketOverhead() const {
 void MediaTransportInterface::SetAllocatedBitrateLimits(
     const MediaTransportAllocatedBitrateLimits& limits) {}
 
+// TODO(mellem):  Delete when all implementations support it.
+RTCError MediaTransportInterface::OpenChannel(int channel_id) {
+  // NB: This must return OK to avoid breaking existing implementations, which
+  // do not require calling OpenChannel.
+  return RTCError::OK();
+}
+
 }  // namespace webrtc
