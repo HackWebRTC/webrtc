@@ -69,10 +69,12 @@ class ChannelManagerTest : public testing::Test {
 
   std::unique_ptr<webrtc::MediaTransportInterface> CreateMediaTransport(
       rtc::PacketTransportInternal* packet_transport) {
+    webrtc::MediaTransportSettings settings;
+    settings.is_caller = true;
     auto media_transport_result =
-        fake_media_transport_factory_.CreateMediaTransport(packet_transport,
-                                                           network_.get(),
-                                                           /*is_caller=*/true);
+        fake_media_transport_factory_.CreateMediaTransport(
+            packet_transport, network_.get(),
+            /*is_caller=*/settings);
     RTC_CHECK(media_transport_result.ok());
     return media_transport_result.MoveValue();
   }

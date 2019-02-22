@@ -37,16 +37,6 @@ RTCErrorOr<std::unique_ptr<MediaTransportInterface>>
 MediaTransportFactory::CreateMediaTransport(
     rtc::PacketTransportInternal* packet_transport,
     rtc::Thread* network_thread,
-    bool is_caller) {
-  MediaTransportSettings settings;
-  settings.is_caller = is_caller;
-  return CreateMediaTransport(packet_transport, network_thread, settings);
-}
-
-RTCErrorOr<std::unique_ptr<MediaTransportInterface>>
-MediaTransportFactory::CreateMediaTransport(
-    rtc::PacketTransportInternal* packet_transport,
-    rtc::Thread* network_thread,
     const MediaTransportSettings& settings) {
   return std::unique_ptr<MediaTransportInterface>(nullptr);
 }

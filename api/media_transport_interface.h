@@ -318,17 +318,6 @@ class MediaTransportFactory {
   // - Does not take ownership of packet_transport or network_thread.
   // - Does not support group calls, in 1:1 call one side must set
   //   is_caller = true and another is_caller = false.
-  // TODO(bugs.webrtc.org/9938) This constructor will be removed and replaced
-  // with the one below.
-  virtual RTCErrorOr<std::unique_ptr<MediaTransportInterface>>
-  CreateMediaTransport(rtc::PacketTransportInternal* packet_transport,
-                       rtc::Thread* network_thread,
-                       bool is_caller);
-
-  // Creates media transport.
-  // - Does not take ownership of packet_transport or network_thread.
-  // TODO(bugs.webrtc.org/9938): remove default implementation once all children
-  // override it.
   virtual RTCErrorOr<std::unique_ptr<MediaTransportInterface>>
   CreateMediaTransport(rtc::PacketTransportInternal* packet_transport,
                        rtc::Thread* network_thread,
