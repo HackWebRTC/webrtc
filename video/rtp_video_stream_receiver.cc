@@ -382,7 +382,7 @@ int32_t RtpVideoStreamReceiver::ResendPackets(const uint16_t* sequence_numbers,
   return rtp_rtcp_->SendNACK(sequence_numbers, length);
 }
 
-void RtpVideoStreamReceiver::OnReceivedFrame(
+void RtpVideoStreamReceiver::OnAssembledFrame(
     std::unique_ptr<video_coding::RtpFrameObject> frame) {
   RTC_DCHECK_RUN_ON(&network_tc_);
   // Request a key frame as soon as possible.

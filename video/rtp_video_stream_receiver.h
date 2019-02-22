@@ -59,7 +59,7 @@ class RtpVideoStreamReceiver : public RecoveredPacketReceiver,
                                public RtpPacketSinkInterface,
                                public VCMFrameTypeCallback,
                                public VCMPacketRequestCallback,
-                               public video_coding::OnReceivedFrameCallback,
+                               public video_coding::OnAssembledFrameCallback,
                                public video_coding::OnCompleteFrameCallback,
                                public OnDecryptedFrameCallback {
  public:
@@ -127,8 +127,8 @@ class RtpVideoStreamReceiver : public RecoveredPacketReceiver,
   int32_t ResendPackets(const uint16_t* sequenceNumbers,
                         uint16_t length) override;
 
-  // Implements OnReceivedFrameCallback.
-  void OnReceivedFrame(
+  // Implements OnAssembledFrameCallback.
+  void OnAssembledFrame(
       std::unique_ptr<video_coding::RtpFrameObject> frame) override;
 
   // Implements OnCompleteFrameCallback.

@@ -25,7 +25,7 @@ namespace webrtc {
 namespace video_coding {
 
 class TestPacketBuffer : public ::testing::Test,
-                         public OnReceivedFrameCallback {
+                         public OnAssembledFrameCallback {
  protected:
   TestPacketBuffer() : TestPacketBuffer("") {}
   explicit TestPacketBuffer(std::string field_trials)
@@ -37,7 +37,7 @@ class TestPacketBuffer : public ::testing::Test,
 
   uint16_t Rand() { return rand_.Rand<uint16_t>(); }
 
-  void OnReceivedFrame(std::unique_ptr<RtpFrameObject> frame) override {
+  void OnAssembledFrame(std::unique_ptr<RtpFrameObject> frame) override {
     uint16_t first_seq_num = frame->first_seq_num();
     if (frames_from_callback_.find(first_seq_num) !=
         frames_from_callback_.end()) {

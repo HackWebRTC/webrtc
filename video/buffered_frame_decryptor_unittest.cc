@@ -60,7 +60,7 @@ class FakePacketBuffer : public video_coding::PacketBuffer {
 class BufferedFrameDecryptorTest
     : public ::testing::Test,
       public OnDecryptedFrameCallback,
-      public video_coding::OnReceivedFrameCallback {
+      public video_coding::OnAssembledFrameCallback {
  public:
   // Implements the OnDecryptedFrameCallbackInterface
   void OnDecryptedFrame(
@@ -68,8 +68,8 @@ class BufferedFrameDecryptorTest
     decrypted_frame_call_count_++;
   }
 
-  // Implements the OnReceivedFrameCallback interface.
-  void OnReceivedFrame(
+  // Implements the OnAssembledFrameCallback interface.
+  void OnAssembledFrame(
       std::unique_ptr<video_coding::RtpFrameObject> frame) override {}
 
   // Returns a new fake RtpFrameObject it abstracts the difficult construction
