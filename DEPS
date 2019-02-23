@@ -7,7 +7,7 @@ vars = {
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
   'webrtc_git': 'https://webrtc.googlesource.com',
-  'chromium_revision': 'e7ecd1bfc2bda0a255e4b9d07d33d2d8089a4e14',
+  'chromium_revision': '95a23eca14803c1cacae7cc1dd6748d5bb2d3f9c',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -16,7 +16,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling BoringSSL
   # and whatever else without interference from each other.
-  'boringssl_revision': '7ef4223fb32431529a797c5b8d3bf26ece6c138b',
+  'boringssl_revision': 'c18353d214c04da5349e97283d6d70b8176a96f8',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling lss
   # and whatever else without interference from each other.
@@ -24,7 +24,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling catapult
   # and whatever else without interference from each other.
-  'catapult_revision': 'b4fdbb737c9841960237a182dc531b1fafb3c2d1',
+  'catapult_revision': 'e4abf4c59be62c98f05d62d9a5dd8418c6d92cdb',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling libFuzzer
   # and whatever else without interference from each other.
@@ -46,9 +46,9 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    Var('chromium_git') + '/chromium/src/base' + '@' + '684b17e2c5fa2ee0d40de24de26591d24f49aad1',
+    Var('chromium_git') + '/chromium/src/base' + '@' + '4740a44298f7b0c98b45b0b92a01f109b3ef1b8f',
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + '52fa227c5e1e545d9710824f33151344c48a0e86',
+    Var('chromium_git') + '/chromium/src/build' + '@' + '93f8c0e9ece76b63c02ba6b8980197fc66fce8bb',
   'src/buildtools':
     Var('chromium_git') + '/chromium/src/buildtools' + '@' + '3e50219fc4503f461b2176a9976891b28d80f9ab',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
@@ -58,13 +58,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + '18051ca0c751a867b5bde62e930db430f4b2b28f',
+    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + '9e3d1b85c395dae32d095d44dd320beb5826639d',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + '6ae2f43c729b1f09242730c8af451fa92f9828ae',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + 'eb7f8cfda8714ef85e035d20529355fb7559a305',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '5e378b8f47689607e0b6e443daa6d52037bafcb2',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'cff076381d48de3ba3a86ea05f7428e1f0e8c53f',
 
   'src/buildtools/clang_format/script':
     Var('chromium_git') + '/chromium/llvm-project/cfe/tools/clang-format.git' + '@' + '96636aa0e9f047f17447f2d45a094d0b59ed7917',
@@ -121,7 +121,7 @@ deps = {
   'src/third_party/colorama/src':
     Var('chromium_git') + '/external/colorama.git' + '@' + '799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
   'src/third_party/depot_tools':
-    Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + 'e83100437106c8303aa955d2bafb6b8b1978ed59',
+    Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '298f2cf820dfe45dff53b0e41b11441dbf72b48c',
   'src/third_party/errorprone/lib': {
       'url': Var('chromium_git') + '/chromium/third_party/errorprone.git' + '@' + '980d49e839aa4984015efed34b0134d4b2c9b6d7',
       'condition': 'checkout_android',
@@ -239,7 +239,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '720b70524a4424b15fc57e82263568c8ba0496ad',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + '8d9358aff8f68015cf4178ff28170b8c787dc0c3',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '72225c4e132c99656a9b65e3057188324894958c',
   'src/tools/swarming_client':
     Var('chromium_git') + '/infra/luci/client-py.git' + '@' +  Var('swarming_revision'),
 
@@ -489,6 +489,61 @@ deps = {
           {
               'package': 'chromium/third_party/android_deps/libs/android_arch_lifecycle_runtime',
               'version': 'version:1.0.0-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/android_deps/libs/androidx_annotation_annotation': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/android_deps/libs/androidx_annotation_annotation',
+              'version': 'version:1.0.0-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/android_deps/libs/androidx_lifecycle_lifecycle_common': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/android_deps/libs/androidx_lifecycle_lifecycle_common',
+              'version': 'version:2.0.0-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/android_deps/libs/androidx_test_core': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/android_deps/libs/androidx_test_core',
+              'version': 'version:1.0.0-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/android_deps/libs/androidx_test_ext_junit': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/android_deps/libs/androidx_test_ext_junit',
+              'version': 'version:1.0.0-cr0',
+          },
+      ],
+      'condition': 'checkout_android',
+      'dep_type': 'cipd',
+  },
+
+  'src/third_party/android_deps/libs/androidx_test_monitor': {
+      'packages': [
+          {
+              'package': 'chromium/third_party/android_deps/libs/androidx_test_monitor',
+              'version': 'version:1.1.0-cr0',
           },
       ],
       'condition': 'checkout_android',
