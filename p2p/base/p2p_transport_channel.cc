@@ -414,12 +414,17 @@ webrtc::IceTransportState P2PTransportChannel::ComputeIceTransportState()
     return webrtc::IceTransportState::kDisconnected;
   }
 
-  if (gathering_state_ == kIceGatheringNew)
+  if (!had_connection_ && !has_connection) {
     return webrtc::IceTransportState::kNew;
-  else if (has_connection)
-    return webrtc::IceTransportState::kConnected;
-  else
+  }
+
+  if (has_connection && !writable()) {
+    // A candidate pair has been formed by adding a remote candidate
+    // and gathering a local candidate.
     return webrtc::IceTransportState::kChecking;
+  }
+
+  return webrtc::IceTransportState::kConnected;
 }
 
 void P2PTransportChannel::SetIceParameters(const IceParameters& ice_params) {
