@@ -20,8 +20,6 @@ namespace rtcp {
 
 class LossNotification : public Psfb {
  public:
-  static constexpr uint8_t kFeedbackMessageType = 15;
-
   LossNotification();
   LossNotification(const LossNotification& other);
   ~LossNotification() override;

@@ -20,6 +20,7 @@
 
 namespace webrtc {
 namespace rtcp {
+// TODO(bugs.webrtc.org/10353): Remove once dependencies are updated.
 constexpr uint8_t Remb::kFeedbackMessageType;
 // Receiver Estimated Max Bitrate (REMB) (draft-alvestrand-rmcat-remb).
 //
@@ -48,7 +49,7 @@ Remb::~Remb() = default;
 
 bool Remb::Parse(const CommonHeader& packet) {
   RTC_DCHECK(packet.type() == kPacketType);
-  RTC_DCHECK_EQ(packet.fmt(), kFeedbackMessageType);
+  RTC_DCHECK_EQ(packet.fmt(), Psfb::kAfbMessageType);
 
   if (packet.payload_size_bytes() < 16) {
     RTC_LOG(LS_WARNING) << "Payload length " << packet.payload_size_bytes()
@@ -112,7 +113,7 @@ bool Remb::Create(uint8_t* packet,
       return false;
   }
   size_t index_end = *index + BlockLength();
-  CreateHeader(kFeedbackMessageType, kPacketType, HeaderLength(), packet,
+  CreateHeader(Psfb::kAfbMessageType, kPacketType, HeaderLength(), packet,
                index);
   RTC_DCHECK_EQ(0, Psfb::media_ssrc());
   CreateCommonFeedback(packet + *index);

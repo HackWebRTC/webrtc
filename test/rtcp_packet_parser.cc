@@ -55,7 +55,7 @@ bool RtcpPacketParser::Parse(const void* data, size_t length) {
           case rtcp::Pli::kFeedbackMessageType:
             pli_.Parse(header, &sender_ssrc_);
             break;
-          case rtcp::Remb::kFeedbackMessageType:
+          case rtcp::Psfb::kAfbMessageType:
             remb_.Parse(header, &sender_ssrc_);
             break;
           default:

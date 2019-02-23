@@ -379,7 +379,7 @@ bool RTCPReceiver::ParseCompoundPacket(const uint8_t* packet_begin,
           case rtcp::Fir::kFeedbackMessageType:
             HandleFir(rtcp_block, packet_information);
             break;
-          case rtcp::Remb::kFeedbackMessageType:
+          case rtcp::Psfb::kAfbMessageType:
             HandlePsfbApp(rtcp_block, packet_information);
             break;
           default:

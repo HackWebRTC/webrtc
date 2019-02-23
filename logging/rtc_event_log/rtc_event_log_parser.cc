@@ -855,7 +855,7 @@ void StoreRtcpBlocks(
         pli_list->push_back(std::move(parsed_block));
       }
     } else if (header.type() == rtcp::Remb::kPacketType &&
-               header.fmt() == rtcp::Remb::kFeedbackMessageType) {
+               header.fmt() == rtcp::Psfb::kAfbMessageType) {
       bool type_found = false;
       if (!type_found) {
         LoggedRtcpPacketRemb parsed_block;

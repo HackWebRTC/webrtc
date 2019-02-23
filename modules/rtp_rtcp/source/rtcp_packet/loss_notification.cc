@@ -17,7 +17,6 @@
 
 namespace webrtc {
 namespace rtcp {
-constexpr uint8_t LossNotification::kFeedbackMessageType;
 
 // Loss Notification
 // -----------------
@@ -58,7 +57,7 @@ bool LossNotification::Create(uint8_t* packet,
   const size_t index_end = *index + BlockLength();
 
   // Note: |index| updated by the function below.
-  CreateHeader(kFeedbackMessageType, kPacketType, HeaderLength(), packet,
+  CreateHeader(Psfb::kAfbMessageType, kPacketType, HeaderLength(), packet,
                index);
 
   CreateCommonFeedback(packet + *index);
@@ -85,7 +84,7 @@ bool LossNotification::Create(uint8_t* packet,
 
 bool LossNotification::Parse(const CommonHeader& packet) {
   RTC_DCHECK_EQ(packet.type(), kPacketType);
-  RTC_DCHECK_EQ(packet.fmt(), kFeedbackMessageType);
+  RTC_DCHECK_EQ(packet.fmt(), Psfb::kAfbMessageType);
 
   if (packet.payload_size_bytes() <
       kCommonFeedbackLength + kLossNotificationPayloadLength) {
