@@ -110,7 +110,7 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
 
     // If set, field trials are read from |field_trials|, otherwise
     // defaults to  webrtc::FieldTrialBasedConfig.
-    WebRtcKeyValueConfig* field_trials = nullptr;
+    const WebRtcKeyValueConfig* field_trials = nullptr;
 
    private:
     RTC_DISALLOW_COPY_AND_ASSIGN(Configuration);
