@@ -474,10 +474,7 @@ rtc_source_set("rtc_task_queue") {
   ]
 
   if (rtc_link_task_queue_impl) {
-    deps = [
-      "../api/task_queue:default_task_queue_factory",
-      "../api/task_queue:global_task_queue_factory",
-    ]
+    deps += [ ":rtc_task_queue_impl" ]
   }
 }
 
@@ -510,7 +507,7 @@ rtc_source_set("rtc_task_queue_api") {
 
 if (rtc_enable_libevent) {
   rtc_source_set("rtc_task_queue_libevent") {
-    visibility = [ "../api/task_queue:default_task_queue_factory" ]
+    visibility = [ "../api/task_queue:default_task_queue_factory_impl" ]
     sources = [
       "task_queue_libevent.cc",
       "task_queue_libevent.h",
@@ -537,7 +534,7 @@ if (rtc_enable_libevent) {
 
 if (is_mac || is_ios) {
   rtc_source_set("rtc_task_queue_gcd") {
-    visibility = [ "../api/task_queue:default_task_queue_factory" ]
+    visibility = [ "../api/task_queue:default_task_queue_factory_impl" ]
     sources = [
       "task_queue_gcd.cc",
       "task_queue_gcd.h",
@@ -555,7 +552,7 @@ if (is_mac || is_ios) {
 
 if (is_win) {
   rtc_source_set("rtc_task_queue_win") {
-    visibility = [ "../api/task_queue:default_task_queue_factory" ]
+    visibility = [ "../api/task_queue:default_task_queue_factory_impl" ]
     sources = [
       "task_queue_win.cc",
       "task_queue_win.h",
@@ -579,7 +576,7 @@ if (is_win) {
 }
 
 rtc_source_set("rtc_task_queue_stdlib") {
-  visibility = [ "../api/task_queue:default_task_queue_factory" ]
+  visibility = [ "../api/task_queue:default_task_queue_factory_impl" ]
   sources = [
     "task_queue_stdlib.cc",
     "task_queue_stdlib.h",
@@ -598,6 +595,14 @@ rtc_source_set("rtc_task_queue_stdlib") {
     "../api/task_queue:task_queue_factory",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",
+  ]
+}
+
+rtc_source_set("rtc_task_queue_impl") {
+  visibility = [ "*" ]
+  deps = [
+    "../api/task_queue:default_task_queue_factory_impl",
+    "../api/task_queue:global_task_queue_factory",
   ]
 }
 
