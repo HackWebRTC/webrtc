@@ -21,8 +21,8 @@ class NullModuleRtpRtcp : public RTCPReceiver::ModuleRtpRtcp {
  public:
   void SetTmmbn(std::vector<rtcp::TmmbItem>) override {}
   void OnRequestSendReport() override {}
-  void OnReceivedNack(const std::vector<uint16_t>&) override{};
-  void OnReceivedRtcpReportBlocks(const ReportBlockList&) override{};
+  void OnReceivedNack(const std::vector<uint16_t>&) override {}
+  void OnReceivedRtcpReportBlocks(const ReportBlockList&) override {}
 };
 
 }  // namespace
