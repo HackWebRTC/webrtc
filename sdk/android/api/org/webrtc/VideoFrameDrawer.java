@@ -28,7 +28,7 @@ public class VideoFrameDrawer {
    * used multiplied together with the transformation matrix of the frame. (M = renderMatrix *
    * transformationMatrix)
    */
-  static void drawTexture(RendererCommon.GlDrawer drawer, VideoFrame.TextureBuffer buffer,
+  public static void drawTexture(RendererCommon.GlDrawer drawer, VideoFrame.TextureBuffer buffer,
       Matrix renderMatrix, int frameWidth, int frameHeight, int viewportX, int viewportY,
       int viewportWidth, int viewportHeight) {
     Matrix finalMatrix = new Matrix(buffer.getTransformMatrix());
@@ -222,6 +222,12 @@ public class VideoFrameDrawer {
           RendererCommon.convertMatrixFromAndroidGraphicsMatrix(renderMatrix), renderWidth,
           renderHeight, viewportX, viewportY, viewportWidth, viewportHeight);
     }
+  }
+
+  public VideoFrame.Buffer prepareBufferForViewportSize(
+      VideoFrame.Buffer buffer, int width, int height) {
+    buffer.retain();
+    return buffer;
   }
 
   public void release() {

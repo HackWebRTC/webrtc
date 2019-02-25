@@ -42,8 +42,9 @@ public class SurfaceTextureHelper {
    * PeerConnectionFactory.createVideoSource(). This makes the timestamps more accurate and
    * closer to actual creation time.
    */
-  public static SurfaceTextureHelper create(
-      final String threadName, final EglBase.Context sharedContext, boolean alignTimestamps) {
+  public static SurfaceTextureHelper create(final String threadName,
+      final EglBase.Context sharedContext, boolean alignTimestamps,
+      final YuvConverter yuvConverter) {
     final HandlerThread thread = new HandlerThread(threadName);
     thread.start();
     final Handler handler = new Handler(thread.getLooper());
@@ -57,7 +58,7 @@ public class SurfaceTextureHelper {
       @Override
       public SurfaceTextureHelper call() {
         try {
-          return new SurfaceTextureHelper(sharedContext, handler, alignTimestamps);
+          return new SurfaceTextureHelper(sharedContext, handler, alignTimestamps, yuvConverter);
         } catch (RuntimeException e) {
           Logging.e(TAG, threadName + " create failure", e);
           return null;
@@ -67,20 +68,30 @@ public class SurfaceTextureHelper {
   }
 
   /**
-   * Same as above with alignTimestamps set to false.
+   * Same as above with alignTimestamps set to false and yuvConverter set to new YuvConverter.
    *
-   * @see #create(String, EglBase.Context, boolean)
+   * @see #create(String, EglBase.Context, boolean, YuvConverter)
    */
   public static SurfaceTextureHelper create(
       final String threadName, final EglBase.Context sharedContext) {
-    return create(threadName, sharedContext, /* alignTimestamps= */ false);
+    return create(threadName, sharedContext, /* alignTimestamps= */ false, new YuvConverter());
+  }
+
+  /**
+   * Same as above with yuvConverter set to new YuvConverter.
+   *
+   * @see #create(String, EglBase.Context, boolean, YuvConverter)
+   */
+  public static SurfaceTextureHelper create(
+      final String threadName, final EglBase.Context sharedContext, boolean alignTimestamps) {
+    return create(threadName, sharedContext, alignTimestamps, new YuvConverter());
   }
 
   private final Handler handler;
   private final EglBase eglBase;
   private final SurfaceTexture surfaceTexture;
   private final int oesTextureId;
-  private final YuvConverter yuvConverter = new YuvConverter();
+  private final YuvConverter yuvConverter;
   @Nullable private final TimestampAligner timestampAligner;
 
   // These variables are only accessed from the |handler| thread.
@@ -110,13 +121,14 @@ public class SurfaceTextureHelper {
     }
   };
 
-  private SurfaceTextureHelper(
-      EglBase.Context sharedContext, Handler handler, boolean alignTimestamps) {
+  private SurfaceTextureHelper(EglBase.Context sharedContext, Handler handler,
+      boolean alignTimestamps, YuvConverter yuvConverter) {
     if (handler.getLooper().getThread() != Thread.currentThread()) {
       throw new IllegalStateException("SurfaceTextureHelper must be created on the handler thread");
     }
     this.handler = handler;
     this.timestampAligner = alignTimestamps ? new TimestampAligner() : null;
+    this.yuvConverter = yuvConverter;
 
     eglBase = EglBase.create(sharedContext, EglBase.CONFIG_PIXEL_BUFFER);
     try {

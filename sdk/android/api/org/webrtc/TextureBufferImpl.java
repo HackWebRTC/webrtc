@@ -135,6 +135,14 @@ public class TextureBufferImpl implements VideoFrame.TextureBuffer {
     return unscaledHeight;
   }
 
+  public Handler getToI420Handler() {
+    return toI420Handler;
+  }
+
+  public YuvConverter getYuvConverter() {
+    return yuvConverter;
+  }
+
   /**
    * Create a new TextureBufferImpl with an applied transform matrix and a new size. The
    * existing buffer is unchanged. The given transform matrix is applied first when texture
