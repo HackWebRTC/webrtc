@@ -281,6 +281,13 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     ice_connection_state_history_.clear();
   }
 
+  // Every standardized ICE connection state in order that has been seen by the
+  // observer.
+  std::vector<PeerConnectionInterface::IceConnectionState>
+  standardized_ice_connection_state_history() const {
+    return standardized_ice_connection_state_history_;
+  }
+
   // Every PeerConnection state in order that has been seen by the observer.
   std::vector<PeerConnectionInterface::PeerConnectionState>
   peer_connection_state_history() const {
@@ -894,6 +901,10 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     EXPECT_EQ(pc()->ice_connection_state(), new_state);
     ice_connection_state_history_.push_back(new_state);
   }
+  void OnStandardizedIceConnectionChange(
+      webrtc::PeerConnectionInterface::IceConnectionState new_state) override {
+    standardized_ice_connection_state_history_.push_back(new_state);
+  }
   void OnConnectionChange(
       webrtc::PeerConnectionInterface::PeerConnectionState new_state) override {
     peer_connection_state_history_.push_back(new_state);
@@ -981,6 +992,8 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
 
   std::vector<PeerConnectionInterface::IceConnectionState>
       ice_connection_state_history_;
+  std::vector<PeerConnectionInterface::IceConnectionState>
+      standardized_ice_connection_state_history_;
   std::vector<PeerConnectionInterface::PeerConnectionState>
       peer_connection_state_history_;
   std::vector<PeerConnectionInterface::IceGatheringState>
@@ -3928,11 +3941,15 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
 
   ASSERT_EQ(PeerConnectionInterface::kIceConnectionCompleted,
             caller()->ice_connection_state());
-  ASSERT_EQ(PeerConnectionInterface::kIceConnectionConnected,
+  ASSERT_EQ(PeerConnectionInterface::kIceConnectionCompleted,
             caller()->standardized_ice_connection_state());
 
   // Verify that the observer was notified of the intermediate transitions.
   EXPECT_THAT(caller()->ice_connection_state_history(),
+              ElementsAre(PeerConnectionInterface::kIceConnectionChecking,
+                          PeerConnectionInterface::kIceConnectionConnected,
+                          PeerConnectionInterface::kIceConnectionCompleted));
+  EXPECT_THAT(caller()->standardized_ice_connection_state_history(),
               ElementsAre(PeerConnectionInterface::kIceConnectionChecking,
                           PeerConnectionInterface::kIceConnectionConnected,
                           PeerConnectionInterface::kIceConnectionCompleted));
@@ -3963,7 +3980,7 @@ TEST_P(PeerConnectionIntegrationIceStatesTest, VerifyIceStates) {
   ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
                            caller()->ice_connection_state(), kDefaultTimeout,
                            fake_clock);
-  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionConnected,
+  ASSERT_EQ_SIMULATED_WAIT(PeerConnectionInterface::kIceConnectionCompleted,
                            caller()->standardized_ice_connection_state(),
                            kDefaultTimeout, fake_clock);
 

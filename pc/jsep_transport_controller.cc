@@ -1401,9 +1401,14 @@ void JsepTransportController::UpdateAggregateStates_n() {
     // None of the previous states apply and any RTCIceTransports are in the
     // "new" or "checking" state.
     new_ice_connection_state = PeerConnectionInterface::kIceConnectionChecking;
-  } else if (total_ice_completed + total_ice_closed == total_ice) {
+  } else if (total_ice_completed + total_ice_closed == total_ice ||
+             all_completed) {
     // None of the previous states apply and all RTCIceTransports are in the
     // "completed" or "closed" state.
+    //
+    // TODO(https://bugs.webrtc.org/10356): The all_completed condition is added
+    // to mimic the behavior of the old ICE connection state, and should be
+    // removed once we get end-of-candidates signaling in place.
     new_ice_connection_state = PeerConnectionInterface::kIceConnectionCompleted;
   } else if (total_ice_connected + total_ice_completed + total_ice_closed ==
              total_ice) {
@@ -1415,6 +1420,16 @@ void JsepTransportController::UpdateAggregateStates_n() {
   }
 
   if (standardized_ice_connection_state_ != new_ice_connection_state) {
+    if (standardized_ice_connection_state_ ==
+            PeerConnectionInterface::kIceConnectionChecking &&
+        new_ice_connection_state ==
+            PeerConnectionInterface::kIceConnectionCompleted) {
+      // Ensure that we never skip over the "connected" state.
+      invoker_.AsyncInvoke<void>(RTC_FROM_HERE, signaling_thread_, [this] {
+        SignalStandardizedIceConnectionState(
+            PeerConnectionInterface::kIceConnectionConnected);
+      });
+    }
     standardized_ice_connection_state_ = new_ice_connection_state;
     invoker_.AsyncInvoke<void>(
         RTC_FROM_HERE, signaling_thread_, [this, new_ice_connection_state] {
