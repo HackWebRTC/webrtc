@@ -25,6 +25,8 @@ SimulatedNetwork::Config CreateSimulationConfig(NetworkNodeConfig config) {
   sim_config.queue_delay_ms = config.simulation.delay.ms();
   sim_config.delay_standard_deviation_ms = config.simulation.delay_std_dev.ms();
   sim_config.packet_overhead = config.packet_overhead.bytes<int>();
+  sim_config.codel_active_queue_management =
+      config.simulation.codel_active_queue_management;
   return sim_config;
 }
 }  // namespace

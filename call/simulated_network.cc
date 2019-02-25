@@ -21,7 +21,62 @@
 
 namespace webrtc {
 namespace {
-constexpr int64_t kDefaultProcessDelayUs = 5000;
+constexpr TimeDelta kDefaultProcessDelay = TimeDelta::Millis<5>();
+}  // namespace
+
+CoDelSimulation::CoDelSimulation() = default;
+CoDelSimulation::~CoDelSimulation() = default;
+
+bool CoDelSimulation::DropDequeuedPacket(Timestamp now,
+                                         Timestamp enqueing_time,
+                                         DataSize packet_size,
+                                         DataSize queue_size) {
+  constexpr TimeDelta kWindow = TimeDelta::Millis<100>();
+  constexpr TimeDelta kDelayThreshold = TimeDelta::Millis<5>();
+  constexpr TimeDelta kDropCountMemory = TimeDelta::Millis<1600>();
+  constexpr DataSize kMaxPacketSize = DataSize::Bytes<1500>();
+
+  // Compensates for process interval in simulation; not part of standard CoDel.
+  TimeDelta queuing_time = now - enqueing_time - kDefaultProcessDelay;
+
+  if (queue_size < kMaxPacketSize || queuing_time < kDelayThreshold) {
+    enter_drop_state_at_ = Timestamp::PlusInfinity();
+    state_ = kNormal;
+    return false;
+  }
+  switch (state_) {
+    case kNormal:
+      enter_drop_state_at_ = now + kWindow;
+      state_ = kPending;
+      return false;
+
+    case kPending:
+      if (now >= enter_drop_state_at_) {
+        state_ = kDropping;
+        // Starting the drop counter with the drops made during the most recent
+        // drop state period.
+        drop_count_ = drop_count_ - previous_drop_count_;
+        if (now >= last_drop_at_ + kDropCountMemory)
+          drop_count_ = 0;
+        previous_drop_count_ = drop_count_;
+        last_drop_at_ = now;
+        ++drop_count_;
+        return true;
+      }
+      return false;
+
+    case kDropping:
+      TimeDelta drop_delay = kWindow / sqrt(static_cast<double>(drop_count_));
+      Timestamp next_drop_at = last_drop_at_ + drop_delay;
+      if (now >= next_drop_at) {
+        if (queue_size - packet_size < kMaxPacketSize)
+          state_ = kPending;
+        last_drop_at_ = next_drop_at;
+        ++drop_count_;
+        return true;
+      }
+      return false;
+  }
 }
 
 SimulatedNetwork::SimulatedNetwork(SimulatedNetwork::Config config,
@@ -80,7 +135,7 @@ bool SimulatedNetwork::EnqueuePacket(PacketInFlightInfo packet) {
   queue_size_bytes_ += packet.size;
   capacity_link_.push({packet, packet.send_time_us});
   if (!next_process_time_us_) {
-    next_process_time_us_ = packet.send_time_us + kDefaultProcessDelayUs;
+    next_process_time_us_ = packet.send_time_us + kDefaultProcessDelay.us();
   }
 
   return true;
@@ -133,6 +188,20 @@ void SimulatedNetwork::UpdateCapacityQueue(ConfigState state,
     capacity_link_.pop();
 
     time_us += time_until_front_exits_us;
+    if (state.config.codel_active_queue_management) {
+      while (!capacity_link_.empty() &&
+             codel_controller_.DropDequeuedPacket(
+                 Timestamp::us(time_us),
+                 Timestamp::us(capacity_link_.front().packet.send_time_us),
+                 DataSize::bytes(capacity_link_.front().packet.size),
+                 DataSize::bytes(queue_size_bytes_))) {
+        PacketInfo dropped = capacity_link_.front();
+        capacity_link_.pop();
+        queue_size_bytes_ -= dropped.packet.size;
+        dropped.arrival_time_us = PacketDeliveryInfo::kNotReceived;
+        delay_link_.emplace_back(dropped);
+      }
+    }
     RTC_DCHECK(time_us >= packet.packet.send_time_us);
     packet.arrival_time_us =
         std::max(state.pause_transmission_until_us, time_us);
@@ -206,7 +275,7 @@ std::vector<PacketDeliveryInfo> SimulatedNetwork::DequeueDeliverablePackets(
   if (!delay_link_.empty()) {
     next_process_time_us_ = delay_link_.front().arrival_time_us;
   } else if (!capacity_link_.empty()) {
-    next_process_time_us_ = receive_time_us + kDefaultProcessDelayUs;
+    next_process_time_us_ = receive_time_us + kDefaultProcessDelay.us();
   } else {
     next_process_time_us_.reset();
   }

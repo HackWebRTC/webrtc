@@ -242,6 +242,7 @@ struct NetworkNodeConfig {
     TimeDelta delay = TimeDelta::Zero();
     TimeDelta delay_std_dev = TimeDelta::Zero();
     double loss_rate = 0;
+    bool codel_active_queue_management = false;
   } simulation;
   DataSize packet_overhead = DataSize::Zero();
   TimeDelta update_frequency = TimeDelta::ms(1);

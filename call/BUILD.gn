@@ -286,6 +286,7 @@ rtc_source_set("simulated_network") {
     "../api/units:data_rate",
     "../api/units:data_size",
     "../api/units:time_delta",
+    "../api/units:timestamp",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "../rtc_base:sequenced_task_checker",
@@ -498,13 +499,16 @@ if (rtc_include_tests) {
 
     sources = [
       "fake_network_pipe_unittest.cc",
+      "simulated_network_unittest.cc",
     ]
     deps = [
       ":fake_network",
       ":simulated_network",
+      "../api/units:data_rate",
       "../system_wrappers",
       "../test:test_support",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/algorithm:container",
       "//third_party/abseil-cpp/absl/memory",
     ]
   }
