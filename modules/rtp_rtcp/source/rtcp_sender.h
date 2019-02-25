@@ -114,6 +114,11 @@ class RTCPSender {
                            int32_t nackSize = 0,
                            const uint16_t* nackList = 0);
 
+  int32_t SendLossNotification(const FeedbackState& feedback_state,
+                               uint16_t last_decoded_seq_num,
+                               uint16_t last_received_seq_num,
+                               bool decodability_flag);
+
   void SetRemb(int64_t bitrate_bps, std::vector<uint32_t> ssrcs);
 
   void UnsetRemb();
@@ -168,6 +173,9 @@ class RTCPSender {
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
   std::unique_ptr<rtcp::RtcpPacket> BuildAPP(const RtcpContext& context)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
+  std::unique_ptr<rtcp::RtcpPacket> BuildLossNotification(
+      const RtcpContext& context)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
   std::unique_ptr<rtcp::RtcpPacket> BuildExtendedReports(
       const RtcpContext& context)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critical_section_rtcp_sender_);
@@ -213,6 +221,15 @@ class RTCPSender {
 
   // Full intra request
   uint8_t sequence_number_fir_ RTC_GUARDED_BY(critical_section_rtcp_sender_);
+
+  // Loss Notification
+  struct LossNotificationState {
+    uint16_t last_decoded_seq_num;
+    uint16_t last_received_seq_num;
+    bool decodability_flag;
+  };
+  LossNotificationState loss_notification_state_
+      RTC_GUARDED_BY(critical_section_rtcp_sender_);
 
   // REMB
   int64_t remb_bitrate_ RTC_GUARDED_BY(critical_section_rtcp_sender_);

@@ -21,6 +21,9 @@ namespace rtcp {
 class LossNotification : public Psfb {
  public:
   LossNotification();
+  LossNotification(uint16_t last_decoded,
+                   uint16_t last_received,
+                   bool decodability_flag);
   LossNotification(const LossNotification& other);
   ~LossNotification() override;
 

@@ -37,6 +37,13 @@ namespace rtcp {
 LossNotification::LossNotification()
     : last_decoded_(0), last_received_(0), decodability_flag_(false) {}
 
+LossNotification::LossNotification(uint16_t last_decoded,
+                                   uint16_t last_received,
+                                   bool decodability_flag)
+    : last_decoded_(last_decoded),
+      last_received_(last_received),
+      decodability_flag_(decodability_flag) {}
+
 LossNotification::LossNotification(const LossNotification& rhs) = default;
 
 LossNotification::~LossNotification() = default;

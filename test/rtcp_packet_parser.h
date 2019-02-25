@@ -22,6 +22,7 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/extended_jitter_report.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/extended_reports.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/fir.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/loss_notification.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/nack.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/pli.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/rapid_resync_request.h"
@@ -62,12 +63,14 @@ class RtcpPacketParser {
       if (TypedRtcpPacket::Parse(header))
         ++num_packets_;
     }
-    void Parse(const rtcp::CommonHeader& header, uint32_t* sender_ssrc) {
-      if (TypedRtcpPacket::Parse(header)) {
+    bool Parse(const rtcp::CommonHeader& header, uint32_t* sender_ssrc) {
+      const bool result = TypedRtcpPacket::Parse(header);
+      if (result) {
         ++num_packets_;
         if (*sender_ssrc == 0)  // Use first sender ssrc in compound packet.
           *sender_ssrc = TypedRtcpPacket::sender_ssrc();
       }
+      return result;
     }
 
    private:
@@ -90,6 +93,9 @@ class RtcpPacketParser {
   PacketCounter<rtcp::ReceiverReport>* receiver_report() {
     return &receiver_report_;
   }
+  PacketCounter<rtcp::LossNotification>* loss_notification() {
+    return &loss_notification_;
+  }
   PacketCounter<rtcp::Remb>* remb() { return &remb_; }
   PacketCounter<rtcp::Sdes>* sdes() { return &sdes_; }
   PacketCounter<rtcp::SenderReport>* sender_report() { return &sender_report_; }
@@ -110,6 +116,7 @@ class RtcpPacketParser {
   PacketCounter<rtcp::Pli> pli_;
   PacketCounter<rtcp::RapidResyncRequest> rrr_;
   PacketCounter<rtcp::ReceiverReport> receiver_report_;
+  PacketCounter<rtcp::LossNotification> loss_notification_;
   PacketCounter<rtcp::Remb> remb_;
   PacketCounter<rtcp::Sdes> sdes_;
   PacketCounter<rtcp::SenderReport> sender_report_;

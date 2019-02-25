@@ -376,6 +376,19 @@ TEST_F(RtcpSenderTest, SendNack) {
   EXPECT_THAT(parser()->nack()->packet_ids(), ElementsAre(0, 1, 16));
 }
 
+TEST_F(RtcpSenderTest, SendLossNotification) {
+  rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
+  constexpr uint16_t kLastDecoded = 0x1234;
+  constexpr uint16_t kLastReceived = 0x4321;
+  constexpr bool kDecodabilityFlag = true;
+  const int32_t result = rtcp_sender_->SendLossNotification(
+      feedback_state(), kLastDecoded, kLastReceived, kDecodabilityFlag);
+  EXPECT_EQ(result, 0);
+  EXPECT_EQ(1, parser()->loss_notification()->num_packets());
+  EXPECT_EQ(kSenderSsrc, parser()->loss_notification()->sender_ssrc());
+  EXPECT_EQ(kRemoteSsrc, parser()->loss_notification()->media_ssrc());
+}
+
 TEST_F(RtcpSenderTest, RembNotIncludedBeforeSet) {
   rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
 

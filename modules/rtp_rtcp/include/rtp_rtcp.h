@@ -462,6 +462,12 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   // Sends a request for a keyframe.
   // Returns -1 on failure else 0.
   virtual int32_t RequestKeyFrame() = 0;
+
+  // Sends a LossNotification RTCP message.
+  // Returns -1 on failure else 0.
+  virtual int32_t SendLossNotification(uint16_t last_decoded_seq_num,
+                                       uint16_t last_received_seq_num,
+                                       bool decodability_flag) = 0;
 };
 
 }  // namespace webrtc

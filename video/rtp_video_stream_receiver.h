@@ -18,7 +18,6 @@
 #include <vector>
 
 #include "absl/types/optional.h"
-
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/video/color_space.h"
 #include "api/video_codecs/video_codec.h"
@@ -33,6 +32,7 @@
 #include "modules/rtp_rtcp/source/contributing_sources.h"
 #include "modules/video_coding/h264_sps_pps_tracker.h"
 #include "modules/video_coding/include/video_coding_defines.h"
+#include "modules/video_coding/loss_notification_controller.h"
 #include "modules/video_coding/packet_buffer.h"
 #include "modules/video_coding/rtp_frame_reference_finder.h"
 #include "rtc_base/constructor_magic.h"
@@ -55,7 +55,8 @@ class RtpPacketReceived;
 class Transport;
 class UlpfecReceiver;
 
-class RtpVideoStreamReceiver : public RecoveredPacketReceiver,
+class RtpVideoStreamReceiver : public LossNotificationSender,
+                               public RecoveredPacketReceiver,
                                public RtpPacketSinkInterface,
                                public VCMFrameTypeCallback,
                                public VCMPacketRequestCallback,
@@ -117,6 +118,11 @@ class RtpVideoStreamReceiver : public RecoveredPacketReceiver,
 
   // Implements VCMFrameTypeCallback.
   int32_t RequestKeyFrame() override;
+
+  // Implements LossNotificationSender.
+  void SendLossNotification(uint16_t last_decoded_seq_num,
+                            uint16_t last_received_seq_num,
+                            bool decodability_flag) override;
 
   bool IsUlpfecEnabled() const;
   bool IsRetransmissionsEnabled() const;
@@ -186,8 +192,9 @@ class RtpVideoStreamReceiver : public RecoveredPacketReceiver,
 
   // Members for the new jitter buffer experiment.
   video_coding::OnCompleteFrameCallback* complete_frame_callback_;
-  KeyFrameRequestSender* keyframe_request_sender_;
+  KeyFrameRequestSender* const keyframe_request_sender_;
   std::unique_ptr<NackModule> nack_module_;
+  std::unique_ptr<LossNotificationController> loss_notification_controller_;
   rtc::scoped_refptr<video_coding::PacketBuffer> packet_buffer_;
   std::unique_ptr<video_coding::RtpFrameReferenceFinder> reference_finder_;
   rtc::CriticalSection last_seq_num_cs_;
