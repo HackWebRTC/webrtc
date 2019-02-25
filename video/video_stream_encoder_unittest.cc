@@ -547,7 +547,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
     VideoEncoder::EncoderInfo GetEncoderInfo() const override {
       rtc::CritScope lock(&local_crit_sect_);
       EncoderInfo info;
-      if (initialized_) {
+      if (initialized_ == EncoderState::kInitialized) {
         if (quality_scaling_) {
           info.scaling_settings =
               VideoEncoder::ScalingSettings(1, 2, kMinPixelsPerFrame);
@@ -662,6 +662,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
       int res =
           FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
       rtc::CritScope lock(&local_crit_sect_);
+      EXPECT_EQ(initialized_, EncoderState::kUninitialized);
       if (config->codecType == kVideoCodecVP8) {
         // Simulate setting up temporal layers, in order to validate the life
         // cycle of these objects.
@@ -672,11 +673,20 @@ class VideoStreamEncoderTest : public ::testing::Test {
                                       config->VP8().numberOfTemporalLayers));
         }
       }
-      if (force_init_encode_failed_)
+      if (force_init_encode_failed_) {
+        initialized_ = EncoderState::kInitializationFailed;
         return -1;
+      }
 
-      initialized_ = true;
+      initialized_ = EncoderState::kInitialized;
       return res;
+    }
+
+    int32_t Release() override {
+      rtc::CritScope lock(&local_crit_sect_);
+      EXPECT_NE(initialized_, EncoderState::kUninitialized);
+      initialized_ = EncoderState::kUninitialized;
+      return FakeEncoder::Release();
     }
 
     int32_t SetRateAllocation(const VideoBitrateAllocation& rate_allocation,
@@ -700,7 +710,12 @@ class VideoStreamEncoderTest : public ::testing::Test {
     }
 
     rtc::CriticalSection local_crit_sect_;
-    bool initialized_ RTC_GUARDED_BY(local_crit_sect_) = false;
+    enum class EncoderState {
+      kUninitialized,
+      kInitializationFailed,
+      kInitialized
+    } initialized_ RTC_GUARDED_BY(local_crit_sect_) =
+        EncoderState::kUninitialized;
     bool block_next_encode_ RTC_GUARDED_BY(local_crit_sect_) = false;
     rtc::Event continue_encode_event_;
     uint32_t timestamp_ RTC_GUARDED_BY(local_crit_sect_) = 0;

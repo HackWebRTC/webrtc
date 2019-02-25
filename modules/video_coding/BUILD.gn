@@ -102,8 +102,6 @@ rtc_static_library("video_coding") {
     "decoder_database.h",
     "decoding_state.cc",
     "decoding_state.h",
-    "encoder_database.cc",
-    "encoder_database.h",
     "fec_controller_default.cc",
     "fec_controller_default.h",
     "fec_rate_table.h",

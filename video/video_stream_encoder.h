@@ -304,11 +304,12 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
       RTC_GUARDED_BY(&encoder_queue_);
 
   // TODO(webrtc:10164): Refactor/remove these VCM classes.
-  // |generic_encoder_| instance is owned by |codec_database_|.
-  VCMGenericEncoder* generic_encoder_ RTC_GUARDED_BY(&encoder_queue_);
+  std::unique_ptr<VCMGenericEncoder> generic_encoder_
+      RTC_GUARDED_BY(&encoder_queue_);
   VCMEncodedFrameCallback generic_encoder_callback_
       RTC_GUARDED_BY(&encoder_queue_);
-  VCMEncoderDataBase codec_database_ RTC_GUARDED_BY(&encoder_queue_);
+  VideoCodec send_codec_ RTC_GUARDED_BY(&encoder_queue_);
+
   // TODO(sprang): Change actually support keyframe per simulcast stream, or
   // turn this into a simple bool |pending_keyframe_request_|.
   std::vector<FrameType> next_frame_types_ RTC_GUARDED_BY(&encoder_queue_);
