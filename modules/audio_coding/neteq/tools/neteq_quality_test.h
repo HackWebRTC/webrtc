@@ -34,7 +34,7 @@ enum LossModes {
 
 class LossModel {
  public:
-  virtual ~LossModel(){};
+  virtual ~LossModel() {}
   virtual bool Lost(int now_ms) = 0;
 };
 

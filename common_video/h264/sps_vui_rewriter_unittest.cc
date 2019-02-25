@@ -171,14 +171,14 @@ void TestSps(SpsMode mode, SpsVuiRewriter::ParseResult expected_parse_result) {
 
 REWRITE_TEST(VuiAlreadyOptimal,
              kNoRewriteRequired_VuiOptimal,
-             SpsVuiRewriter::ParseResult::kVuiOk);
+             SpsVuiRewriter::ParseResult::kVuiOk)
 REWRITE_TEST(RewriteFullVui,
              kRewriteRequired_NoVui,
-             SpsVuiRewriter::ParseResult::kVuiRewritten);
+             SpsVuiRewriter::ParseResult::kVuiRewritten)
 REWRITE_TEST(AddBitstreamRestriction,
              kRewriteRequired_NoBitstreamRestriction,
-             SpsVuiRewriter::ParseResult::kVuiRewritten);
+             SpsVuiRewriter::ParseResult::kVuiRewritten)
 REWRITE_TEST(RewriteSuboptimalVui,
              kRewriteRequired_VuiSuboptimal,
-             SpsVuiRewriter::ParseResult::kVuiRewritten);
+             SpsVuiRewriter::ParseResult::kVuiRewritten)
 }  // namespace webrtc

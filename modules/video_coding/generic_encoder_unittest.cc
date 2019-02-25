@@ -42,7 +42,7 @@ class FakeEncodedImageCallback : public EncodedImageCallback {
         encoded_image.timing_.flags != VideoSendTiming::kNotTriggered;
     last_capture_timestamp_ = encoded_image.capture_time_ms_;
     return Result(Result::OK);
-  };
+  }
 
   void OnDroppedFrame(DropReason reason) override { ++num_frames_dropped_; }
 

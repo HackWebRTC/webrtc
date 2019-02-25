@@ -49,7 +49,7 @@ class RTCChildStats : public RTCStats {
   RTCStatsMember<int32_t> child_int;
 };
 
-WEBRTC_RTCSTATS_IMPL(RTCChildStats, RTCStats, "child-stats", &child_int);
+WEBRTC_RTCSTATS_IMPL(RTCChildStats, RTCStats, "child-stats", &child_int)
 
 class RTCGrandChildStats : public RTCChildStats {
  public:
@@ -64,7 +64,7 @@ class RTCGrandChildStats : public RTCChildStats {
 WEBRTC_RTCSTATS_IMPL(RTCGrandChildStats,
                      RTCChildStats,
                      "grandchild-stats",
-                     &grandchild_int);
+                     &grandchild_int)
 
 TEST(RTCStatsTest, RTCStatsAndMembers) {
   RTCTestStats stats("testId", 42);

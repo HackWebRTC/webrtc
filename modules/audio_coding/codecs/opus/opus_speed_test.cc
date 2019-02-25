@@ -96,17 +96,17 @@ constexpr size_t kDurationSec = 400;
     EncodeDecode(kDurationSec);                                        \
   }
 
-ADD_TEST(10);
-ADD_TEST(9);
-ADD_TEST(8);
-ADD_TEST(7);
-ADD_TEST(6);
-ADD_TEST(5);
-ADD_TEST(4);
-ADD_TEST(3);
-ADD_TEST(2);
-ADD_TEST(1);
-ADD_TEST(0);
+ADD_TEST(10)
+ADD_TEST(9)
+ADD_TEST(8)
+ADD_TEST(7)
+ADD_TEST(6)
+ADD_TEST(5)
+ADD_TEST(4)
+ADD_TEST(3)
+ADD_TEST(2)
+ADD_TEST(1)
+ADD_TEST(0)
 
 #define ADD_BANDWIDTH_TEST(bandwidth)                                \
   TEST_P(OpusSpeedTest, OpusSetBandwidthTest##bandwidth) {           \
@@ -116,11 +116,11 @@ ADD_TEST(0);
     EncodeDecode(kDurationSec);                                      \
   }
 
-ADD_BANDWIDTH_TEST(OPUS_BANDWIDTH_NARROWBAND);
-ADD_BANDWIDTH_TEST(OPUS_BANDWIDTH_MEDIUMBAND);
-ADD_BANDWIDTH_TEST(OPUS_BANDWIDTH_WIDEBAND);
-ADD_BANDWIDTH_TEST(OPUS_BANDWIDTH_SUPERWIDEBAND);
-ADD_BANDWIDTH_TEST(OPUS_BANDWIDTH_FULLBAND);
+ADD_BANDWIDTH_TEST(OPUS_BANDWIDTH_NARROWBAND)
+ADD_BANDWIDTH_TEST(OPUS_BANDWIDTH_MEDIUMBAND)
+ADD_BANDWIDTH_TEST(OPUS_BANDWIDTH_WIDEBAND)
+ADD_BANDWIDTH_TEST(OPUS_BANDWIDTH_SUPERWIDEBAND)
+ADD_BANDWIDTH_TEST(OPUS_BANDWIDTH_FULLBAND)
 
 // List all test cases: (channel, bit rat, filename, extension).
 const coding_param param_set[] = {

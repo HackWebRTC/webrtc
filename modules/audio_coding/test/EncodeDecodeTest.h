@@ -65,7 +65,7 @@ class Sender {
 class Receiver {
  public:
   Receiver();
-  virtual ~Receiver() {};
+  virtual ~Receiver() {}
   void Setup(AudioCodingModule *acm, RTPStream *rtpStream,
              std::string out_file_name, size_t channels, int file_num);
   void Teardown();

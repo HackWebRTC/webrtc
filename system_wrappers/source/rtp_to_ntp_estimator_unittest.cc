@@ -346,4 +346,4 @@ TEST(RtpToNtpTests, AveragesErrorOut) {
   }
 }
 
-};  // namespace webrtc
+}  // namespace webrtc

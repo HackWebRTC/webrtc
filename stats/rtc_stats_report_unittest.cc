@@ -26,7 +26,7 @@ class RTCTestStats1 : public RTCStats {
   RTCStatsMember<int32_t> integer;
 };
 
-WEBRTC_RTCSTATS_IMPL(RTCTestStats1, RTCStats, "test-stats-1", &integer);
+WEBRTC_RTCSTATS_IMPL(RTCTestStats1, RTCStats, "test-stats-1", &integer)
 
 class RTCTestStats2 : public RTCStats {
  public:
@@ -38,7 +38,7 @@ class RTCTestStats2 : public RTCStats {
   RTCStatsMember<double> number;
 };
 
-WEBRTC_RTCSTATS_IMPL(RTCTestStats2, RTCStats, "test-stats-2", &number);
+WEBRTC_RTCSTATS_IMPL(RTCTestStats2, RTCStats, "test-stats-2", &number)
 
 class RTCTestStats3 : public RTCStats {
  public:
@@ -50,7 +50,7 @@ class RTCTestStats3 : public RTCStats {
   RTCStatsMember<std::string> string;
 };
 
-WEBRTC_RTCSTATS_IMPL(RTCTestStats3, RTCStats, "test-stats-3", &string);
+WEBRTC_RTCSTATS_IMPL(RTCTestStats3, RTCStats, "test-stats-3", &string)
 
 TEST(RTCStatsReport, AddAndGetStats) {
   rtc::scoped_refptr<RTCStatsReport> report = RTCStatsReport::Create(1337);

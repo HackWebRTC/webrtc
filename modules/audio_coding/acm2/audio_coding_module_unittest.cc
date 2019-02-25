@@ -1484,7 +1484,7 @@ const std::string payload_checksum =
         "ab88b1a049c36bdfeb7e8b057ef6982a",
         "27fef7b799393347ec3b5694369a1c36",
         "27fef7b799393347ec3b5694369a1c36");
-};  // namespace
+}  // namespace
 
 TEST_F(AcmSenderBitExactnessOldApi, Opus_stereo_20ms) {
   ASSERT_NO_FATAL_FAILURE(SetUpTest("opus", 48000, 2, 120, 960, 960));

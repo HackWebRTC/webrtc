@@ -44,7 +44,7 @@ class FakeMediaTransport : public MediaTransportInterface {
 
   RTCError RequestKeyFrame(uint64_t channel_id) override {
     return RTCError::OK();
-  };
+  }
 
   void SetReceiveAudioSink(MediaTransportAudioSinkInterface* sink) override {}
   void SetReceiveVideoSink(MediaTransportVideoSinkInterface* sink) override {}

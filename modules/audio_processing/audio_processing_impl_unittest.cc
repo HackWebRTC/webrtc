@@ -133,7 +133,7 @@ class TestRenderPreProcessor : public CustomProcessing {
       std::transform(channel_view.begin(), channel_view.end(),
                      channel_view.begin(), ProcessSample);
     }
-  };
+  }
   std::string ToString() const override { return "TestRenderPreProcessor"; }
   void SetRuntimeSetting(AudioProcessing::RuntimeSetting setting) override {}
   // Modifies a sample. This member is used in Process() to modify a frame and

@@ -23,7 +23,7 @@ namespace {
 
 class NullReceiver : public EmulatedNetworkReceiverInterface {
  public:
-  void OnPacketReceived(EmulatedIpPacket packet) override{};
+  void OnPacketReceived(EmulatedIpPacket packet) override {}
 };
 
 class ActionReceiver : public EmulatedNetworkReceiverInterface {
@@ -36,7 +36,7 @@ class ActionReceiver : public EmulatedNetworkReceiverInterface {
     RTC_DCHECK(port_);
     action_();
     endpoint_->UnbindReceiver(port_.value());
-  };
+  }
 
   // We can't set port in constructor, because port will be provided by
   // endpoint, when this receiver will be binded to that endpoint.

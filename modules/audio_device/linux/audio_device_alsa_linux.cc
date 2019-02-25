@@ -50,7 +50,7 @@ void WebrtcAlsaErrorHandler(const char* file,
                             const char* function,
                             int err,
                             const char* fmt,
-                            ...){};
+                            ...) {}
 
 namespace webrtc {
 static const unsigned int ALSA_PLAYOUT_FREQ = 48000;

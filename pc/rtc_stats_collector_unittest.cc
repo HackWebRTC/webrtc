@@ -214,8 +214,8 @@ class FakeVideoTrackForStats : public MediaStreamTrack<VideoTrackInterface> {
   }
 
   void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
-                       const rtc::VideoSinkWants& wants) override{};
-  void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override{};
+                       const rtc::VideoSinkWants& wants) override {}
+  void RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) override {}
 
   VideoTrackSourceInterface* GetSource() const override { return nullptr; }
 };
@@ -2197,7 +2197,7 @@ class RTCTestStats : public RTCStats {
   RTCStatsMember<int32_t> dummy_stat;
 };
 
-WEBRTC_RTCSTATS_IMPL(RTCTestStats, RTCStats, "test-stats", &dummy_stat);
+WEBRTC_RTCSTATS_IMPL(RTCTestStats, RTCStats, "test-stats", &dummy_stat)
 
 // Overrides the stats collection to verify thread usage and that the resulting
 // partial reports are merged.

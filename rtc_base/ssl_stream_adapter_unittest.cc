@@ -731,7 +731,7 @@ class SSLStreamAdapterTestTLS
         break;
       }
     }
-  };
+  }
 
   void ReadData(rtc::StreamInterface* stream) override {
     char buffer[1600];
@@ -880,7 +880,7 @@ class SSLStreamAdapterTestDTLS
       RTC_LOG(LS_INFO) << "Sent " << sent_ << " packets; received "
                        << received_.size();
     }
-  };
+  }
 
  private:
   BufferQueueStream client_buffer_;
@@ -907,7 +907,7 @@ rtc::StreamResult SSLDummyStreamBase::Write(const void* data,
   }
 
   return test_base_->DataWritten(this, data, data_len, written, error);
-};
+}
 
 class SSLStreamAdapterTestDTLSFromPEMStrings : public SSLStreamAdapterTestDTLS {
  public:
@@ -919,7 +919,7 @@ class SSLStreamAdapterTestDTLSFromPEMStrings : public SSLStreamAdapterTestDTLS {
 // certificate.
 class SSLStreamAdapterTestDTLSCertChain : public SSLStreamAdapterTestDTLS {
  public:
-  SSLStreamAdapterTestDTLSCertChain() : SSLStreamAdapterTestDTLS("", ""){};
+  SSLStreamAdapterTestDTLSCertChain() : SSLStreamAdapterTestDTLS("", "") {}
   void SetUp() override {
     CreateStreams();
 
@@ -950,7 +950,7 @@ class SSLStreamAdapterTestDTLSCertChain : public SSLStreamAdapterTestDTLS {
 // Test that we can make a handshake work
 TEST_P(SSLStreamAdapterTestTLS, TestTLSConnect) {
   TestHandshake();
-};
+}
 
 TEST_P(SSLStreamAdapterTestTLS, GetPeerCertChainWithOneCertificate) {
   TestHandshake();
@@ -1009,13 +1009,13 @@ TEST_P(SSLStreamAdapterTestTLS, TestTLSClose) {
   TestHandshake();
   client_ssl_->Close();
   EXPECT_EQ_WAIT(rtc::SS_CLOSED, server_ssl_->GetState(), handshake_wait_);
-};
+}
 
 // Test transfer -- trivial
 TEST_P(SSLStreamAdapterTestTLS, TestTLSTransfer) {
   TestHandshake();
   TestTransfer(100000);
-};
+}
 
 // Test read-write after close.
 TEST_P(SSLStreamAdapterTestTLS, ReadWriteAfterClose) {
@@ -1034,21 +1034,21 @@ TEST_P(SSLStreamAdapterTestTLS, ReadWriteAfterClose) {
   // But after closed read gives you EOS.
   rv = client_ssl_->Read(block, sizeof(block), &dummy, nullptr);
   ASSERT_EQ(rtc::SR_EOS, rv);
-};
+}
 
 // Test a handshake with a bogus peer digest
 TEST_P(SSLStreamAdapterTestTLS, TestTLSBogusDigest) {
   SetPeerIdentitiesByDigest(false, true);
   TestHandshake(false);
-};
+}
 
 TEST_P(SSLStreamAdapterTestTLS, TestTLSDelayedIdentity) {
   TestHandshakeWithDelayedIdentity(true);
-};
+}
 
 TEST_P(SSLStreamAdapterTestTLS, TestTLSDelayedIdentityWithBogusDigest) {
   TestHandshakeWithDelayedIdentity(false);
-};
+}
 
 // Test that the correct error is returned when SetPeerCertificateDigest is
 // called with an unknown algorithm.
@@ -1093,7 +1093,7 @@ TEST_P(SSLStreamAdapterTestTLS, TestSetPeerCertificateDigestWithInvalidLength) {
 // Test that we can make a handshake work
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSConnect) {
   TestHandshake();
-};
+}
 
 // Test that we can make a handshake work if the first packet in
 // each direction is lost. This gives us predictable loss
@@ -1101,7 +1101,7 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSConnect) {
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSConnectWithLostFirstPacket) {
   SetLoseFirstPacket(true);
   TestHandshake();
-};
+}
 
 // Test a handshake with loss and delay
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSConnectWithLostFirstPacketDelay2s) {
@@ -1109,7 +1109,7 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSConnectWithLostFirstPacketDelay2s) {
   SetDelay(2000);
   SetHandshakeWait(20000);
   TestHandshake();
-};
+}
 
 // Test a handshake with small MTU
 // Disabled due to https://code.google.com/p/webrtc/issues/detail?id=3910
@@ -1117,34 +1117,34 @@ TEST_P(SSLStreamAdapterTestDTLS, DISABLED_TestDTLSConnectWithSmallMtu) {
   SetMtu(700);
   SetHandshakeWait(20000);
   TestHandshake();
-};
+}
 
 // Test transfer -- trivial
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSTransfer) {
   TestHandshake();
   TestTransfer(100);
-};
+}
 
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSTransferWithLoss) {
   TestHandshake();
   SetLoss(10);
   TestTransfer(100);
-};
+}
 
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSTransferWithDamage) {
   SetDamage();  // Must be called first because first packet
                 // write happens at end of handshake.
   TestHandshake();
   TestTransfer(100);
-};
+}
 
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSDelayedIdentity) {
   TestHandshakeWithDelayedIdentity(true);
-};
+}
 
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSDelayedIdentityWithBogusDigest) {
   TestHandshakeWithDelayedIdentity(false);
-};
+}
 
 // Test DTLS-SRTP with all high ciphers
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpHigh) {
@@ -1161,7 +1161,7 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpHigh) {
 
   ASSERT_EQ(client_cipher, server_cipher);
   ASSERT_EQ(client_cipher, rtc::SRTP_AES128_CM_SHA1_80);
-};
+}
 
 // Test DTLS-SRTP with all low ciphers
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpLow) {
@@ -1178,7 +1178,7 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpLow) {
 
   ASSERT_EQ(client_cipher, server_cipher);
   ASSERT_EQ(client_cipher, rtc::SRTP_AES128_CM_SHA1_32);
-};
+}
 
 // Test DTLS-SRTP with a mismatch -- should not converge
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpHighLow) {
@@ -1194,7 +1194,7 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpHighLow) {
   ASSERT_FALSE(GetDtlsSrtpCryptoSuite(true, &client_cipher));
   int server_cipher;
   ASSERT_FALSE(GetDtlsSrtpCryptoSuite(false, &server_cipher));
-};
+}
 
 // Test DTLS-SRTP with each side being mixed -- should select high
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpMixed) {
@@ -1212,7 +1212,7 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpMixed) {
 
   ASSERT_EQ(client_cipher, server_cipher);
   ASSERT_EQ(client_cipher, rtc::SRTP_AES128_CM_SHA1_80);
-};
+}
 
 // Test DTLS-SRTP with all GCM-128 ciphers.
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCM128) {
@@ -1229,7 +1229,7 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCM128) {
 
   ASSERT_EQ(client_cipher, server_cipher);
   ASSERT_EQ(client_cipher, rtc::SRTP_AEAD_AES_128_GCM);
-};
+}
 
 // Test DTLS-SRTP with all GCM-256 ciphers.
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCM256) {
@@ -1246,7 +1246,7 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCM256) {
 
   ASSERT_EQ(client_cipher, server_cipher);
   ASSERT_EQ(client_cipher, rtc::SRTP_AEAD_AES_256_GCM);
-};
+}
 
 // Test DTLS-SRTP with mixed GCM-128/-256 ciphers -- should not converge.
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCMMismatch) {
@@ -1262,7 +1262,7 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCMMismatch) {
   ASSERT_FALSE(GetDtlsSrtpCryptoSuite(true, &client_cipher));
   int server_cipher;
   ASSERT_FALSE(GetDtlsSrtpCryptoSuite(false, &server_cipher));
-};
+}
 
 // Test DTLS-SRTP with both GCM-128/-256 ciphers -- should select GCM-256.
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCMMixed) {
@@ -1280,7 +1280,7 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpGCMMixed) {
 
   ASSERT_EQ(client_cipher, server_cipher);
   ASSERT_EQ(client_cipher, rtc::SRTP_AEAD_AES_256_GCM);
-};
+}
 
 // Test SRTP cipher suite lengths.
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpKeyAndSaltLengths) {
@@ -1309,7 +1309,7 @@ TEST_P(SSLStreamAdapterTestDTLS, TestDTLSSrtpKeyAndSaltLengths) {
                                             &key_len, &salt_len));
   ASSERT_EQ(256 / 8, key_len);
   ASSERT_EQ(96 / 8, salt_len);
-};
+}
 
 // Test an exporter
 TEST_P(SSLStreamAdapterTestDTLS, TestDTLSExporter) {
