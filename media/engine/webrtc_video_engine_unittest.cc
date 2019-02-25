@@ -7248,4 +7248,23 @@ TEST_F(WebRtcVideoChannelTestWithClock, GetContributingSources) {
   EXPECT_EQ(0u, channel_->GetSources(kCsrc).size());
 }
 
+TEST_F(WebRtcVideoChannelTest, SetsRidsOnSendStream) {
+  StreamParams sp = CreateSimStreamParams("cname", {123, 456, 789});
+
+  std::vector<std::string> rids = {"f", "h", "q"};
+  std::vector<cricket::RidDescription> rid_descriptions;
+  for (const auto& rid : rids) {
+    rid_descriptions.emplace_back(rid, cricket::RidDirection::kSend);
+  }
+  sp.set_rids(rid_descriptions);
+
+  ASSERT_TRUE(channel_->AddSendStream(sp));
+  const auto& streams = fake_call_->GetVideoSendStreams();
+  ASSERT_EQ(1u, streams.size());
+  auto stream = streams[0];
+  ASSERT_NE(stream, nullptr);
+  const auto& config = stream->GetConfig();
+  EXPECT_THAT(config.rtp.rids, ::testing::ElementsAreArray(rids));
+}
+
 }  // namespace cricket

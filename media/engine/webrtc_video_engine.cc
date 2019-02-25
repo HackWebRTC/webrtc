@@ -1053,6 +1053,11 @@ bool WebRtcVideoChannel::AddSendStream(const StreamParams& sp) {
     send_ssrcs_.insert(used_ssrc);
 
   webrtc::VideoSendStream::Config config(this, media_transport());
+
+  for (const RidDescription& rid : sp.rids()) {
+    config.rtp.rids.push_back(rid.rid);
+  }
+
   config.suspend_below_min_bitrate = video_config_.suspend_below_min_bitrate;
   config.periodic_alr_bandwidth_probing =
       video_config_.periodic_alr_bandwidth_probing;
