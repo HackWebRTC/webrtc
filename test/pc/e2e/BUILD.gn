@@ -212,6 +212,8 @@ if (rtc_include_tests) {
       "../../../api:libjingle_peerconnection_api",
       "../../../api:scoped_refptr",
       "../../../api/units:time_delta",
+      "../../../logging:rtc_event_log_api",
+      "../../../logging:rtc_event_log_impl_output",
       "../../../pc:pc_test_utils",
       "../../../rtc_base:gunit_helpers",
       "../../../rtc_base:rtc_base",

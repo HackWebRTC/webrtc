@@ -173,8 +173,11 @@ class PeerConnectionE2EQualityTestFixture {
   struct Params {
     // If |video_configs| is empty - no video should be added to the test call.
     std::vector<VideoConfig> video_configs;
-    // If |audio_config| is presented audio stream will be configured
+    // If |audio_config| is set audio stream will be configured
     absl::optional<AudioConfig> audio_config;
+    // If |rtc_event_log_path| is set, an RTCEventLog will be saved in that
+    // location and it will be available for further analysis.
+    absl::optional<std::string> rtc_event_log_path;
 
     PeerConnectionInterface::RTCConfiguration rtc_configuration;
   };
