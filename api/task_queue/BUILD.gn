@@ -12,32 +12,24 @@ rtc_source_set("task_queue") {
   visibility = [ "*" ]
   public = [
     "queued_task.h",
-    "task_queue_priority.h",
-  ]
-}
-
-# TODO(bugs.webrtc.org/10191): Merge the target into task_queue target above
-# when support for link-time injection is dropped.
-rtc_source_set("task_queue_factory") {
-  visibility = [ "*" ]
-  public = [
     "task_queue_base.h",
     "task_queue_factory.h",
   ]
   sources = [
     "task_queue_base.cc",
-    "task_queue_impl.cc",
-    "task_queue_impl.h",
   ]
 
   deps = [
-    ":task_queue",
     "../../rtc_base:checks",
-    "../../rtc_base:rtc_task_queue_api",
     "//third_party/abseil-cpp/absl/base:config",
     "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/strings",
   ]
+}
+
+# TODO(danilchap): Remove this empty target when downstream project stop depending on it.
+rtc_source_set("task_queue_factory") {
+  visibility = [ "*" ]
 }
 
 rtc_source_set("task_queue_test") {
@@ -49,7 +41,6 @@ rtc_source_set("task_queue_test") {
   ]
   deps = [
     ":task_queue",
-    ":task_queue_factory",
     "../../rtc_base:rtc_event",
     "../../rtc_base:rtc_task_queue_api",
     "../../rtc_base:timeutils",
@@ -65,7 +56,7 @@ rtc_source_set("default_task_queue_factory") {
     "default_task_queue_factory.h",
   ]
   deps = [
-    ":task_queue_factory",
+    ":task_queue",
   ]
 
   # TODO(bugs.webrtc.org/10284): Include implementation unconditionally when
@@ -85,7 +76,7 @@ rtc_source_set("default_task_queue_factory_impl") {
     "../../rtc_base:rtc_task_queue_impl",
   ]
   deps = [
-    ":task_queue_factory",
+    ":task_queue",
   ]
   if (rtc_enable_libevent) {
     sources = [
@@ -141,7 +132,7 @@ rtc_source_set("global_task_queue_factory") {
   ]
   deps = [
     ":default_task_queue_factory",
-    ":task_queue_factory",
+    ":task_queue",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_task_queue_api",
   ]

@@ -14,15 +14,15 @@
 
 #include "absl/strings/string_view.h"
 #include "api/task_queue/task_queue_base.h"
-#include "api/task_queue/task_queue_priority.h"
 
 namespace webrtc {
 
+// The implementation of this interface must be thread-safe.
 class TaskQueueFactory {
  public:
   // TaskQueue priority levels. On some platforms these will map to thread
   // priorities, on others such as Mac and iOS, GCD queue priorities.
-  using Priority = ::webrtc::TaskQueuePriority;
+  enum class Priority { NORMAL = 0, HIGH, LOW };
 
   virtual ~TaskQueueFactory() = default;
   virtual std::unique_ptr<TaskQueueBase, TaskQueueDeleter> CreateTaskQueue(

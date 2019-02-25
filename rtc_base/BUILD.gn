@@ -498,7 +498,6 @@ rtc_source_set("rtc_task_queue_api") {
   ]
   deps = [
     ":macromagic",
-    "../api:scoped_refptr",
     "../api/task_queue",
     "system:rtc_export",
     "//third_party/abseil-cpp/absl/memory",
@@ -522,7 +521,6 @@ if (rtc_enable_libevent) {
       ":safe_conversions",
       ":timeutils",
       "../api/task_queue",
-      "../api/task_queue:task_queue_factory",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/strings",
     ]
@@ -543,7 +541,6 @@ if (is_mac || is_ios) {
       ":checks",
       ":logging",
       "../api/task_queue",
-      "../api/task_queue:task_queue_factory",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/strings",
     ]
@@ -568,7 +565,6 @@ if (is_win) {
       ":safe_conversions",
       ":timeutils",
       "../api/task_queue",
-      "../api/task_queue:task_queue_factory",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/strings",
     ]
@@ -592,7 +588,6 @@ rtc_source_set("rtc_task_queue_stdlib") {
     ":safe_conversions",
     ":timeutils",
     "../api/task_queue",
-    "../api/task_queue:task_queue_factory",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",
   ]
