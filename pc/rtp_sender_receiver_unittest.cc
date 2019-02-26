@@ -1388,6 +1388,7 @@ TEST_F(RtpSenderReceiverTest,
     params.encodings[i].dependency_rids.push_back("dummy_rid");
     EXPECT_EQ(RTCErrorType::UNSUPPORTED_PARAMETER,
               video_rtp_sender_->SetParameters(params).type());
+    params = video_rtp_sender_->GetParameters();
   }
 
   DestroyVideoRtpSender();
@@ -1771,6 +1772,21 @@ TEST_F(RtpSenderReceiverTest, VideoReceiverCannotSetFrameDecryptorAfterStop) {
   video_rtp_receiver_->Stop();
   video_rtp_receiver_->SetFrameDecryptor(fake_frame_decryptor);
   // TODO(webrtc:9926) - Validate media channel not set once fakes updated.
+}
+
+// Checks that calling the internal methods for get/set parameters do not
+// invalidate any parameters retreived by clients.
+TEST_F(RtpSenderReceiverTest,
+       InternalParameterMethodsDoNotInvalidateTransaction) {
+  CreateVideoRtpSender();
+  RtpParameters parameters = video_rtp_sender_->GetParameters();
+  RtpParameters new_parameters = video_rtp_sender_->GetParametersInternal();
+  new_parameters.encodings[0].active = false;
+  video_rtp_sender_->SetParametersInternal(new_parameters);
+  new_parameters.encodings[0].active = true;
+  video_rtp_sender_->SetParametersInternal(new_parameters);
+  parameters.encodings[0].active = false;
+  EXPECT_TRUE(video_rtp_sender_->SetParameters(parameters).ok());
 }
 
 // Helper method for syntactic sugar for accepting a vector with '{}' notation.

@@ -55,6 +55,11 @@ class RtpSenderInternal : public RtpSenderInterface {
 
   virtual void Stop() = 0;
 
+  // |GetParameters| and |SetParameters| operate with a transactional model.
+  // Allow access to get/set parameters without invalidating transaction id.
+  virtual RtpParameters GetParametersInternal() const = 0;
+  virtual RTCError SetParametersInternal(const RtpParameters& parameters) = 0;
+
   // Returns an ID that changes every time SetTrack() is called, but
   // otherwise remains constant. Used to generate IDs for stats.
   // The special value zero means that no track is attached.
@@ -82,6 +87,11 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
 
   RtpParameters GetParameters() const override;
   RTCError SetParameters(const RtpParameters& parameters) override;
+
+  // |GetParameters| and |SetParameters| operate with a transactional model.
+  // Allow access to get/set parameters without invalidating transaction id.
+  RtpParameters GetParametersInternal() const override;
+  RTCError SetParametersInternal(const RtpParameters& parameters) override;
 
   // Used to set the SSRC of the sender, once a local description has been set.
   // If |ssrc| is 0, this indiates that the sender should disconnect from the

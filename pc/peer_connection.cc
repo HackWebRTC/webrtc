@@ -3015,7 +3015,7 @@ static RTCError UpdateSimulcastLayerStatusInSender(
     const std::vector<SimulcastLayer>& layers,
     rtc::scoped_refptr<RtpSenderInternal> sender) {
   RTC_DCHECK(sender);
-  RtpParameters parameters = sender->GetParameters();
+  RtpParameters parameters = sender->GetParametersInternal();
   std::vector<std::string> disabled_layers;
 
   // The simulcast envelope cannot be changed, only the status of the streams.
@@ -3034,7 +3034,7 @@ static RTCError UpdateSimulcastLayerStatusInSender(
     encoding.active = !iter->is_paused;
   }
 
-  RTCError result = sender->SetParameters(parameters);
+  RTCError result = sender->SetParametersInternal(parameters);
   if (result.ok()) {
     result = sender->DisableEncodingLayers(disabled_layers);
   }
@@ -3045,7 +3045,7 @@ static RTCError UpdateSimulcastLayerStatusInSender(
 static RTCError DisableSimulcastInSender(
     rtc::scoped_refptr<RtpSenderInternal> sender) {
   RTC_DCHECK(sender);
-  RtpParameters parameters = sender->GetParameters();
+  RtpParameters parameters = sender->GetParametersInternal();
   if (parameters.encodings.size() <= 1) {
     return RTCError::OK();
   }
@@ -4243,7 +4243,8 @@ GetMediaDescriptionOptionsForTransceiver(
 
   // The following sets up RIDs and Simulcast.
   // RIDs are included if Simulcast is requested or if any RID was specified.
-  RtpParameters send_parameters = transceiver->sender()->GetParameters();
+  RtpParameters send_parameters =
+      transceiver->internal()->sender_internal()->GetParametersInternal();
   bool has_rids = std::any_of(send_parameters.encodings.begin(),
                               send_parameters.encodings.end(),
                               [](const RtpEncodingParameters& encoding) {

@@ -141,42 +141,29 @@ void RtpSenderBase::SetMediaChannel(cricket::MediaChannel* media_channel) {
   media_channel_ = media_channel;
 }
 
-RtpParameters RtpSenderBase::GetParameters() const {
+RtpParameters RtpSenderBase::GetParametersInternal() const {
   if (stopped_) {
     return RtpParameters();
   }
   if (!media_channel_ || !ssrc_) {
-    RtpParameters result = init_parameters_;
-    last_transaction_id_ = rtc::CreateRandomUuid();
-    result.transaction_id = last_transaction_id_.value();
-    return result;
+    return init_parameters_;
   }
   return worker_thread_->Invoke<RtpParameters>(RTC_FROM_HERE, [&] {
     RtpParameters result = media_channel_->GetRtpSendParameters(ssrc_);
     RemoveEncodingLayers(disabled_rids_, &result.encodings);
-    last_transaction_id_ = rtc::CreateRandomUuid();
-    result.transaction_id = last_transaction_id_.value();
     return result;
   });
 }
 
-RTCError RtpSenderBase::SetParameters(const RtpParameters& parameters) {
-  TRACE_EVENT0("webrtc", "RtpSenderBase::SetParameters");
-  if (stopped_) {
-    return RTCError(RTCErrorType::INVALID_STATE);
-  }
-  if (!last_transaction_id_) {
-    LOG_AND_RETURN_ERROR(
-        RTCErrorType::INVALID_STATE,
-        "Failed to set parameters since getParameters() has never been called"
-        " on this sender");
-  }
-  if (last_transaction_id_ != parameters.transaction_id) {
-    LOG_AND_RETURN_ERROR(
-        RTCErrorType::INVALID_MODIFICATION,
-        "Failed to set parameters since the transaction_id doesn't match"
-        " the last value returned from getParameters()");
-  }
+RtpParameters RtpSenderBase::GetParameters() const {
+  RtpParameters result = GetParametersInternal();
+  last_transaction_id_ = rtc::CreateRandomUuid();
+  result.transaction_id = last_transaction_id_.value();
+  return result;
+}
+
+RTCError RtpSenderBase::SetParametersInternal(const RtpParameters& parameters) {
+  RTC_DCHECK(!stopped_);
 
   if (UnimplementedRtpParameterHasValue(parameters)) {
     LOG_AND_RETURN_ERROR(
@@ -200,11 +187,32 @@ RTCError RtpSenderBase::SetParameters(const RtpParameters& parameters) {
       rtp_parameters = RestoreEncodingLayers(parameters, disabled_rids_,
                                              old_parameters.encodings);
     }
-    RTCError result =
-        media_channel_->SetRtpSendParameters(ssrc_, rtp_parameters);
-    last_transaction_id_.reset();
-    return result;
+    return media_channel_->SetRtpSendParameters(ssrc_, rtp_parameters);
   });
+}
+
+RTCError RtpSenderBase::SetParameters(const RtpParameters& parameters) {
+  TRACE_EVENT0("webrtc", "RtpSenderBase::SetParameters");
+  if (stopped_) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_STATE,
+                         "Cannot set parameters on a stopped sender.");
+  }
+  if (!last_transaction_id_) {
+    LOG_AND_RETURN_ERROR(
+        RTCErrorType::INVALID_STATE,
+        "Failed to set parameters since getParameters() has never been called"
+        " on this sender");
+  }
+  if (last_transaction_id_ != parameters.transaction_id) {
+    LOG_AND_RETURN_ERROR(
+        RTCErrorType::INVALID_MODIFICATION,
+        "Failed to set parameters since the transaction_id doesn't match"
+        " the last value returned from getParameters()");
+  }
+
+  RTCError result = SetParametersInternal(parameters);
+  last_transaction_id_.reset();
+  return result;
 }
 
 bool RtpSenderBase::SetTrack(MediaStreamTrackInterface* track) {
@@ -315,31 +323,45 @@ void RtpSenderBase::Stop() {
 RTCError RtpSenderBase::DisableEncodingLayers(
     const std::vector<std::string>& rids) {
   if (stopped_) {
-    return RTCError(RTCErrorType::INVALID_STATE);
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_STATE,
+                         "Cannot disable encodings on a stopped sender.");
   }
 
-  if (!media_channel_ || !ssrc_) {
-    RemoveEncodingLayers(rids, &init_parameters_.encodings);
+  if (rids.empty()) {
     return RTCError::OK();
   }
 
   // Check that all the specified layers exist and disable them in the channel.
-  RtpParameters parameters = GetParameters();
+  RtpParameters parameters = GetParametersInternal();
   for (const std::string& rid : rids) {
-    auto iter = absl::c_find_if(parameters.encodings,
-                                [&rid](const RtpEncodingParameters& encoding) {
-                                  return encoding.rid == rid;
-                                });
-    if (iter == parameters.encodings.end()) {
-      return RTCError(RTCErrorType::INVALID_PARAMETER,
-                      "RID: " + rid + " does not refer to a valid layer.");
+    if (absl::c_none_of(parameters.encodings,
+                        [&rid](const RtpEncodingParameters& encoding) {
+                          return encoding.rid == rid;
+                        })) {
+      LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
+                           "RID: " + rid + " does not refer to a valid layer.");
     }
-    iter->active = false;
   }
 
-  RTCError result = SetParameters(parameters);
+  if (!media_channel_ || !ssrc_) {
+    RemoveEncodingLayers(rids, &init_parameters_.encodings);
+    // Invalidate any transaction upon success.
+    last_transaction_id_.reset();
+    return RTCError::OK();
+  }
+
+  for (RtpEncodingParameters& encoding : parameters.encodings) {
+    // Remain active if not in the disable list.
+    encoding.active &= absl::c_none_of(
+        rids,
+        [&encoding](const std::string& rid) { return encoding.rid == rid; });
+  }
+
+  RTCError result = SetParametersInternal(parameters);
   if (result.ok()) {
     disabled_rids_.insert(disabled_rids_.end(), rids.begin(), rids.end());
+    // Invalidate any transaction upon success.
+    last_transaction_id_.reset();
   }
   return result;
 }

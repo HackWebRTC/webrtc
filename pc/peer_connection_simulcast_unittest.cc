@@ -108,6 +108,24 @@ class PeerConnectionSimulcastTests : public testing::Test {
                                                     std::move(observer));
   }
 
+  void ExchangeOfferAnswer(PeerConnectionWrapper* local,
+                           PeerConnectionWrapper* remote,
+                           const std::vector<SimulcastLayer>& answer_layers) {
+    auto offer = local->CreateOfferAndSetAsLocal();
+    // Remove simulcast as the second peer connection won't support it.
+    auto removed_simulcast = RemoveSimulcast(offer.get());
+    std::string err;
+    EXPECT_TRUE(remote->SetRemoteDescription(std::move(offer), &err)) << err;
+    auto answer = remote->CreateAnswerAndSetAsLocal();
+    // Setup the answer to look like a server response.
+    auto mcd_answer = answer->description()->contents()[0].media_description();
+    auto& receive_layers = mcd_answer->simulcast_description().receive_layers();
+    for (const SimulcastLayer& layer : answer_layers) {
+      receive_layers.AddLayer(layer);
+    }
+    EXPECT_TRUE(local->SetRemoteDescription(std::move(answer), &err)) << err;
+  }
+
   RtpTransceiverInit CreateTransceiverInit(
       const std::vector<SimulcastLayer>& layers) {
     RtpTransceiverInit init;
@@ -327,18 +345,8 @@ TEST_F(PeerConnectionSimulcastTests, SimulcastRejectedRemovesExtraLayers) {
   auto local = CreatePeerConnectionWrapper();
   auto remote = CreatePeerConnectionWrapper();
   auto layers = CreateLayers({"1", "2", "3", "4"}, true);
-  // The number of layers does not change.
-  auto expected_layers = CreateLayers({"1", "2", "3", "4"}, false);
-  RTC_DCHECK_EQ(layers.size(), expected_layers.size());
-  expected_layers[0].is_paused = false;
   auto transceiver = AddTransceiver(local.get(), layers);
-  auto offer = local->CreateOfferAndSetAsLocal();
-  // Remove simulcast as the second peer connection won't support it.
-  RemoveSimulcast(offer.get());
-  std::string error;
-  EXPECT_TRUE(remote->SetRemoteDescription(std::move(offer), &error)) << error;
-  auto answer = remote->CreateAnswerAndSetAsLocal();
-  EXPECT_TRUE(local->SetRemoteDescription(std::move(answer), &error)) << error;
+  ExchangeOfferAnswer(local.get(), remote.get(), {});
   auto parameters = transceiver->sender()->GetParameters();
   // Should only have the first layer.
   EXPECT_THAT(parameters.encodings,
@@ -414,6 +422,43 @@ TEST_F(PeerConnectionSimulcastTests, TransceiverIsNotRecycledWithSimulcast) {
   transceiver->SetDirection(RtpTransceiverDirection::kSendRecv);
   EXPECT_TRUE(remote->CreateAnswerAndSetAsLocal());
   EXPECT_TRUE(ValidateTransceiverParameters(transceiver, layers));
+}
+
+// Checks that if the number of layers changes during negotiation, then any
+// outstanding get/set parameters transaction is invalidated.
+TEST_F(PeerConnectionSimulcastTests, ParametersAreInvalidatedWhenLayersChange) {
+  auto local = CreatePeerConnectionWrapper();
+  auto remote = CreatePeerConnectionWrapper();
+  auto layers = CreateLayers({"1", "2", "3"}, true);
+  auto transceiver = AddTransceiver(local.get(), layers);
+  auto parameters = transceiver->sender()->GetParameters();
+  ASSERT_EQ(3u, parameters.encodings.size());
+  // Response will reject simulcast altogether.
+  ExchangeOfferAnswer(local.get(), remote.get(), {});
+  auto result = transceiver->sender()->SetParameters(parameters);
+  EXPECT_EQ(RTCErrorType::INVALID_STATE, result.type());
+}
+
+// Checks that even though negotiation modifies the sender's parameters, an
+// outstanding get/set parameters transaction is not invalidated.
+// This test negotiates twice because initial parameters before negotiation
+// is missing critical information and cannot be set on the sender.
+TEST_F(PeerConnectionSimulcastTests,
+       NegotiationDoesNotInvalidateParameterTransactions) {
+  auto local = CreatePeerConnectionWrapper();
+  auto remote = CreatePeerConnectionWrapper();
+  auto layers = CreateLayers({"1", "2", "3"}, true);
+  auto expected_layers = CreateLayers({"1", "2", "3"}, false);
+  auto transceiver = AddTransceiver(local.get(), layers);
+  ExchangeOfferAnswer(local.get(), remote.get(), expected_layers);
+
+  // Verify that negotiation does not invalidate the parameters.
+  auto parameters = transceiver->sender()->GetParameters();
+  ExchangeOfferAnswer(local.get(), remote.get(), expected_layers);
+
+  auto result = transceiver->sender()->SetParameters(parameters);
+  EXPECT_TRUE(result.ok());
+  EXPECT_TRUE(ValidateTransceiverParameters(transceiver, expected_layers));
 }
 
 }  // namespace webrtc
