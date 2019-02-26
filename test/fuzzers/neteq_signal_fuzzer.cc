@@ -148,7 +148,7 @@ bool MapHas(const std::map<int, T>& m, int key, const T& value) {
 }  // namespace
 
 void FuzzOneInputTest(const uint8_t* data, size_t size) {
-  if (size < 1 || size > 90000) {
+  if (size < 1 || size > 70000) {
     return;
   }
 
