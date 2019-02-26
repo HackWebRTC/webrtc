@@ -681,6 +681,7 @@ if (rtc_include_tests) {
       "../rtc_base:gunit_helpers",
       "../rtc_base:rtc_base_approved",
       "../test:test_support",
+      "task_queue:task_queue_default_factory_unittests",
       "units:units_unittests",
     ]
   }
