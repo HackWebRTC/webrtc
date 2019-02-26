@@ -71,6 +71,10 @@ struct MediaTransportSettings final {
   // future.
   absl::optional<std::string> pre_shared_key;
 
+  // If present, this is a config passed from the caller to the answerer in the
+  // offer. Each media transport knows how to understand its own parameters.
+  absl::optional<std::string> remote_transport_parameters;
+
   // If present, provides the event log that media transport should use.
   // Media transport does not own it. The lifetime of |event_log| will exceed
   // the lifetime of the instance of MediaTransportInterface instance.
@@ -186,6 +190,27 @@ class MediaTransportInterface {
  public:
   MediaTransportInterface();
   virtual ~MediaTransportInterface();
+
+  // Retrieves callers config (i.e. media transport offer) that should be passed
+  // to the callee, before the call is connected. Such config is opaque to SDP
+  // (sdp just passes it through). The config is a binary blob, so SDP may
+  // choose to use base64 to serialize it (or any other approach that guarantees
+  // that the binary blob goes through). This should only be called for the
+  // caller's perspective.
+  //
+  // This may return an unset optional, which means that the given media
+  // transport is not supported / disabled and shouldn't be reported in SDP.
+  //
+  // It may also return an empty string, in which case the media transport is
+  // supported, but without any extra settings.
+  // TODO(psla): Make abstract.
+  virtual absl::optional<std::string> GetTransportParametersOffer() const;
+
+  // Connect the media transport to the ICE transport.
+  // The implementation must be able to ignore incoming packets that don't
+  // belong to it.
+  // TODO(psla): Make abstract.
+  virtual void Connect(rtc::PacketTransportInternal* packet_transport);
 
   // Start asynchronous send of audio frame. The status returned by this method
   // only pertains to the synchronous operations (e.g.
@@ -322,6 +347,24 @@ class MediaTransportFactory {
   CreateMediaTransport(rtc::PacketTransportInternal* packet_transport,
                        rtc::Thread* network_thread,
                        const MediaTransportSettings& settings);
+
+  // Creates a new Media Transport in a disconnected state. If the media
+  // transport for the caller is created, one can then call
+  // MediaTransportInterface::GetTransportParametersOffer on that new instance.
+  // TODO(psla): Make abstract.
+  virtual RTCErrorOr<std::unique_ptr<webrtc::MediaTransportInterface>>
+  CreateMediaTransport(rtc::Thread* network_thread,
+                       const MediaTransportSettings& settings);
+
+  // Gets a transport name which is supported by the implementation.
+  // Different factories should return different transport names, and at runtime
+  // it will be checked that different names were used.
+  // For example, "rtp" or "generic" may be returned by two different
+  // implementations.
+  // The value returned by this method must never change in the lifetime of the
+  // factory.
+  // TODO(psla): Make abstract.
+  virtual std::string GetTransportName() const;
 };
 
 }  // namespace webrtc

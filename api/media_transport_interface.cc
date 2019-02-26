@@ -41,8 +41,27 @@ MediaTransportFactory::CreateMediaTransport(
   return std::unique_ptr<MediaTransportInterface>(nullptr);
 }
 
+RTCErrorOr<std::unique_ptr<MediaTransportInterface>>
+MediaTransportFactory::CreateMediaTransport(
+    rtc::Thread* network_thread,
+    const MediaTransportSettings& settings) {
+  return std::unique_ptr<MediaTransportInterface>(nullptr);
+}
+
+std::string MediaTransportFactory::GetTransportName() const {
+  return "";
+}
+
 MediaTransportInterface::MediaTransportInterface() = default;
 MediaTransportInterface::~MediaTransportInterface() = default;
+
+absl::optional<std::string>
+MediaTransportInterface::GetTransportParametersOffer() const {
+  return absl::nullopt;
+}
+
+void MediaTransportInterface::Connect(
+    rtc::PacketTransportInternal* packet_transport) {}
 
 void MediaTransportInterface::SetKeyFrameRequestCallback(
     MediaTransportKeyFrameRequestCallback* callback) {}
