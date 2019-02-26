@@ -31,6 +31,22 @@
 namespace webrtc {
 namespace test {
 
+struct EndpointConfig {
+  enum IpAddressFamily { kIpv4, kIpv6 };
+
+  EndpointConfig();
+  ~EndpointConfig();
+  EndpointConfig(EndpointConfig&);
+  EndpointConfig& operator=(EndpointConfig&);
+  EndpointConfig(EndpointConfig&&);
+  EndpointConfig& operator=(EndpointConfig&&);
+
+  IpAddressFamily generated_ip_family = IpAddressFamily::kIpv4;
+  // If specified will be used as IP address for endpoint node. Should be unique
+  // among all created nodes.
+  absl::optional<rtc::IPAddress> ip;
+};
+
 class NetworkEmulationManager {
  public:
   NetworkEmulationManager();
@@ -39,9 +55,7 @@ class NetworkEmulationManager {
   EmulatedNetworkNode* CreateEmulatedNode(
       std::unique_ptr<NetworkBehaviorInterface> network_behavior);
 
-  // TODO(titovartem) add method without IP address, where manager
-  // will provided some unique generated address.
-  EndpointNode* CreateEndpoint(rtc::IPAddress ip);
+  EndpointNode* CreateEndpoint(EndpointConfig config);
 
   void CreateRoute(EndpointNode* from,
                    std::vector<EmulatedNetworkNode*> via_nodes,
@@ -63,6 +77,7 @@ class NetworkEmulationManager {
  private:
   FakeNetworkSocketServer* CreateSocketServer(
       std::vector<EndpointNode*> endpoints);
+  absl::optional<rtc::IPAddress> GetNextIPv4Address();
   void ProcessNetworkPackets();
   Timestamp Now() const;
 
@@ -70,6 +85,9 @@ class NetworkEmulationManager {
   int next_node_id_;
 
   RepeatingTaskHandle process_task_handle_;
+
+  uint32_t next_ip4_address_;
+  std::set<rtc::IPAddress> used_ip_addresses_;
 
   // All objects can be added to the manager only when it is idle.
   std::vector<std::unique_ptr<EndpointNode>> endpoints_;

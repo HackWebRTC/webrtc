@@ -108,10 +108,9 @@ TEST(NetworkEmulationManagerPCTest, Run) {
       absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
   EmulatedNetworkNode* bob_node = network_manager.CreateEmulatedNode(
       absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
-  rtc::IPAddress alice_ip(1);
-  EndpointNode* alice_endpoint = network_manager.CreateEndpoint(alice_ip);
-  rtc::IPAddress bob_ip(2);
-  EndpointNode* bob_endpoint = network_manager.CreateEndpoint(bob_ip);
+  EndpointNode* alice_endpoint =
+      network_manager.CreateEndpoint(EndpointConfig());
+  EndpointNode* bob_endpoint = network_manager.CreateEndpoint(EndpointConfig());
   network_manager.CreateRoute(alice_endpoint, {alice_node}, bob_endpoint);
   network_manager.CreateRoute(bob_endpoint, {bob_node}, alice_endpoint);
 
@@ -127,7 +126,8 @@ TEST(NetworkEmulationManagerPCTest, Run) {
       absl::make_unique<MockPeerConnectionObserver>();
   std::unique_ptr<rtc::FakeNetworkManager> alice_network_manager =
       absl::make_unique<rtc::FakeNetworkManager>();
-  alice_network_manager->AddInterface(rtc::SocketAddress(alice_ip, 0));
+  alice_network_manager->AddInterface(
+      rtc::SocketAddress(alice_endpoint->GetPeerLocalAddress(), 0));
 
   rtc::scoped_refptr<PeerConnectionFactoryInterface> bob_pcf;
   rtc::scoped_refptr<PeerConnectionInterface> bob_pc;
@@ -135,7 +135,8 @@ TEST(NetworkEmulationManagerPCTest, Run) {
       absl::make_unique<MockPeerConnectionObserver>();
   std::unique_ptr<rtc::FakeNetworkManager> bob_network_manager =
       absl::make_unique<rtc::FakeNetworkManager>();
-  bob_network_manager->AddInterface(rtc::SocketAddress(bob_ip, 0));
+  bob_network_manager->AddInterface(
+      rtc::SocketAddress(bob_endpoint->GetPeerLocalAddress(), 0));
 
   signaling_thread->Invoke<void>(RTC_FROM_HERE, [&]() {
     alice_pcf = CreatePeerConnectionFactory(signaling_thread.get(),
