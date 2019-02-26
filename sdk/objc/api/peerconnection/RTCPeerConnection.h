@@ -331,6 +331,18 @@ typedef void (^RTCStatisticsCompletionHandler)(RTCStatisticsReport *);
 /** Gather statistic through the v2 statistics API. */
 - (void)statisticsWithCompletionHandler:(RTCStatisticsCompletionHandler)completionHandler;
 
+/** Spec-compliant getStats() performing the stats selection algorithm with the
+ *  sender.
+ */
+- (void)statisticsForSender:(RTCRtpSender *)sender
+          completionHandler:(RTCStatisticsCompletionHandler)completionHandler;
+
+/** Spec-compliant getStats() performing the stats selection algorithm with the
+ *  receiver.
+ */
+- (void)statisticsForReceiver:(RTCRtpReceiver *)receiver
+            completionHandler:(RTCStatisticsCompletionHandler)completionHandler;
+
 @end
 
 NS_ASSUME_NONNULL_END

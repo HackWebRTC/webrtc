@@ -12,6 +12,8 @@
 
 #import "RTCLegacyStatsReport+Private.h"
 #import "RTCMediaStreamTrack+Private.h"
+#import "RTCRtpReceiver+Private.h"
+#import "RTCRtpSender+Private.h"
 #import "RTCStatisticsReport+Private.h"
 #import "helpers/NSString+StdString.h"
 
@@ -62,6 +64,20 @@ class StatsObserverAdapter : public StatsObserver {
 }  // namespace webrtc
 
 @implementation RTCPeerConnection (Stats)
+
+- (void)statisticsForSender:(RTCRtpSender *)sender
+          completionHandler:(RTCStatisticsCompletionHandler)completionHandler {
+  rtc::scoped_refptr<webrtc::StatsCollectorCallbackAdapter> collector(
+      new rtc::RefCountedObject<webrtc::StatsCollectorCallbackAdapter>(completionHandler));
+  self.nativePeerConnection->GetStats(sender.nativeRtpSender, collector);
+}
+
+- (void)statisticsForReceiver:(RTCRtpReceiver *)receiver
+            completionHandler:(RTCStatisticsCompletionHandler)completionHandler {
+  rtc::scoped_refptr<webrtc::StatsCollectorCallbackAdapter> collector(
+      new rtc::RefCountedObject<webrtc::StatsCollectorCallbackAdapter>(completionHandler));
+  self.nativePeerConnection->GetStats(receiver.nativeRtpReceiver, collector);
+}
 
 - (void)statisticsWithCompletionHandler:(RTCStatisticsCompletionHandler)completionHandler {
   rtc::scoped_refptr<webrtc::StatsCollectorCallbackAdapter> collector(
