@@ -285,8 +285,8 @@ std::vector<ProbeClusterConfig> ProbeController::RequestProbe(
         RTC_HISTOGRAM_COUNTS_10000(
             "WebRTC.BWE.BweDropProbingIntervalInS",
             (at_time_ms - last_bwe_drop_probing_time_ms_) / 1000);
-        return InitiateProbing(at_time_ms, {suggested_probe_bps}, false);
         last_bwe_drop_probing_time_ms_ = at_time_ms;
+        return InitiateProbing(at_time_ms, {suggested_probe_bps}, false);
       }
     }
   }
