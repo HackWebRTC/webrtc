@@ -25,6 +25,7 @@
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/experiments/alr_experiment.h"
 #include "rtc_base/experiments/quality_scaling_experiment.h"
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/location.h"
@@ -34,7 +35,6 @@
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
-#include "video/overuse_frame_detector.h"
 
 namespace webrtc {
 
@@ -164,6 +164,26 @@ bool RequiresEncoderReset(const VideoCodec& previous_send_codec,
       return true;
   }
   return false;
+}
+
+std::array<uint8_t, 2> GetExperimentGroups() {
+  std::array<uint8_t, 2> experiment_groups;
+  absl::optional<AlrExperimentSettings> experiment_settings =
+      AlrExperimentSettings::CreateFromFieldTrial(
+          AlrExperimentSettings::kStrictPacingAndProbingExperimentName);
+  if (experiment_settings) {
+    experiment_groups[0] = experiment_settings->group_id + 1;
+  } else {
+    experiment_groups[0] = 0;
+  }
+  experiment_settings = AlrExperimentSettings::CreateFromFieldTrial(
+      AlrExperimentSettings::kScreenshareProbingBweExperimentName);
+  if (experiment_settings) {
+    experiment_groups[1] = experiment_settings->group_id + 1;
+  } else {
+    experiment_groups[1] = 0;
+  }
+  return experiment_groups;
 }
 }  //  namespace
 
@@ -415,6 +435,7 @@ VideoStreamEncoder::VideoStreamEncoder(
       rate_control_settings_(RateControlSettings::ParseFromFieldTrials()),
       overuse_detector_(std::move(overuse_detector)),
       encoder_stats_observer_(encoder_stats_observer),
+      encoder_initialized_(false),
       max_framerate_(-1),
       pending_encoder_reconfiguration_(false),
       pending_encoder_creation_(false),
@@ -436,12 +457,13 @@ VideoStreamEncoder::VideoStreamEncoder(
       pending_frame_post_time_us_(0),
       accumulated_update_rect_{0, 0, 0, 0},
       bitrate_observer_(nullptr),
+      last_framerate_fps_(0),
       force_disable_frame_dropper_(false),
       input_framerate_(kFrameRateAvergingWindowSizeMs, 1000),
       pending_frame_drops_(0),
-      generic_encoder_(nullptr),
-      generic_encoder_callback_(this),
       next_frame_types_(1, kVideoFrameDelta),
+      frame_encoder_timer_(this),
+      experiment_groups_(GetExperimentGroups()),
       encoder_queue_("EncoderQueue") {
   RTC_DCHECK(encoder_stats_observer);
   RTC_DCHECK(overuse_detector_);
@@ -462,10 +484,7 @@ void VideoStreamEncoder::Stop() {
     overuse_detector_->StopCheckForOveruse();
     rate_allocator_ = nullptr;
     bitrate_observer_ = nullptr;
-    if (encoder_ != nullptr && generic_encoder_ != nullptr) {
-      encoder_->Release();
-    }
-    generic_encoder_ = nullptr;
+    ReleaseEncoder();
     quality_scaler_ = nullptr;
     shutdown_event_.Set();
   });
@@ -669,43 +688,39 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   // Encoder creation block is split in two since EncoderInfo needed to start
   // CPU adaptation with the correct settings should be polled after
   // encoder_->InitEncode().
-  if (pending_encoder_creation_) {
-    if (encoder_) {
-      encoder_->Release();
-      generic_encoder_ = nullptr;
-    }
-
-    encoder_ = settings_.encoder_factory->CreateVideoEncoder(
-        encoder_config_.video_format);
-    // TODO(nisse): What to do if creating the encoder fails? Crash,
-    // or just discard incoming frames?
-    RTC_CHECK(encoder_);
-
-    codec_info_ = settings_.encoder_factory->QueryVideoEncoder(
-        encoder_config_.video_format);
-  } else if (reset_required) {
-    RTC_DCHECK(encoder_);
-    encoder_->Release();
-  }
-
   bool success = true;
-  if (pending_encoder_creation_ || reset_required || !generic_encoder_) {
-    RTC_DCHECK(encoder_);
-    generic_encoder_ = absl::make_unique<VCMGenericEncoder>(
-        encoder_.get(), &generic_encoder_callback_, HasInternalSource());
-    generic_encoder_callback_.SetInternalSource(HasInternalSource());
-    if (generic_encoder_->InitEncode(&send_codec_, number_of_cores_,
-                                     max_data_payload_length_ > 0
-                                         ? max_data_payload_length_
-                                         : kDefaultPayloadSize) < 0) {
-      encoder_->Release();
-      generic_encoder_ = nullptr;
-      success = false;
+  if (pending_encoder_creation_ || reset_required) {
+    ReleaseEncoder();
+    if (pending_encoder_creation_) {
+      encoder_ = settings_.encoder_factory->CreateVideoEncoder(
+          encoder_config_.video_format);
+      // TODO(nisse): What to do if creating the encoder fails? Crash,
+      // or just discard incoming frames?
+      RTC_CHECK(encoder_);
+      codec_info_ = settings_.encoder_factory->QueryVideoEncoder(
+          encoder_config_.video_format);
     }
+
+    if (encoder_->InitEncode(&send_codec_, number_of_cores_,
+                             max_data_payload_length_ > 0
+                                 ? max_data_payload_length_
+                                 : kDefaultPayloadSize) != 0) {
+      RTC_LOG(LS_ERROR) << "Failed to initialize the encoder associated with "
+                           "codec type: "
+                        << CodecTypeToPayloadString(send_codec_.codecType)
+                        << " (" << send_codec_.codecType << ")";
+      ReleaseEncoder();
+      success = false;
+    } else {
+      encoder_initialized_ = true;
+      encoder_->RegisterEncodeCompleteCallback(this);
+      frame_encoder_timer_.OnEncoderInit(send_codec_, HasInternalSource());
+    }
+
+    frame_encoder_timer_.Reset();
   }
 
   if (success) {
-    RTC_DCHECK(generic_encoder_);
     next_frame_types_.clear();
     next_frame_types_.resize(
         std::max(static_cast<int>(codec.numberOfSimulcastStreams), 1),
@@ -984,7 +999,7 @@ uint32_t VideoStreamEncoder::GetInputFramerateFps() {
 void VideoStreamEncoder::SetEncoderRates(
     const VideoBitrateAllocation& bitrate_allocation,
     uint32_t framerate_fps) {
-  if (!generic_encoder_) {
+  if (!encoder_) {
     return;
   }
 
@@ -1001,7 +1016,20 @@ void VideoStreamEncoder::SetEncoderRates(
   }
 
   RTC_DCHECK_GT(framerate_fps, 0);
-  generic_encoder_->SetEncoderParameters(bitrate_allocation, framerate_fps);
+  if (bitrate_allocation != last_bitrate_allocation_ ||
+      framerate_fps != last_framerate_fps_) {
+    int res = encoder_->SetRateAllocation(bitrate_allocation, framerate_fps);
+    if (res != 0) {
+      RTC_LOG(LS_WARNING) << "Error set encoder rate (total bitrate bps = "
+                          << bitrate_allocation.get_sum_bps()
+                          << ", framerate = " << framerate_fps << "): " << res;
+    }
+
+    frame_encoder_timer_.OnSetRates(bitrate_allocation, framerate_fps);
+  }
+
+  last_bitrate_allocation_ = bitrate_allocation;
+  last_framerate_fps_ = framerate_fps;
 }
 
 void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
@@ -1199,7 +1227,6 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   }
 
   encoder_info_ = info;
-  RTC_DCHECK(generic_encoder_);
   RTC_DCHECK_EQ(send_codec_.width, out_frame.width());
   RTC_DCHECK_EQ(send_codec_.height, out_frame.height());
   const VideoFrameBuffer::Type buffer_type =
@@ -1207,7 +1234,7 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   const bool is_buffer_type_supported =
       buffer_type == VideoFrameBuffer::Type::kI420 ||
       (buffer_type == VideoFrameBuffer::Type::kNative &&
-       encoder_info_.supports_native_handle);
+       info.supports_native_handle);
 
   if (!is_buffer_type_supported) {
     // This module only supports software encoding.
@@ -1230,8 +1257,16 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
                     .set_id(out_frame.id())
                     .build();
   }
+
+  TRACE_EVENT1("webrtc", "VCMGenericEncoder::Encode", "timestamp",
+               out_frame.timestamp());
+
+  frame_encoder_timer_.OnEncodeStarted(out_frame.timestamp(),
+                                       out_frame.render_time_ms());
+
   const int32_t encode_status =
-      generic_encoder_->Encode(out_frame, nullptr, next_frame_types_);
+      encoder_->Encode(out_frame, nullptr, &next_frame_types_);
+
   if (encode_status < 0) {
     RTC_LOG(LS_ERROR) << "Failed to encode frame. Error code: "
                       << encode_status;
@@ -1255,9 +1290,21 @@ void VideoStreamEncoder::SendKeyFrame() {
   if (HasInternalSource()) {
     // Try to request the frame if we have an external encoder with
     // internal source since AddVideoFrame never will be called.
-    RTC_DCHECK(generic_encoder_);
-    if (generic_encoder_->RequestFrame(next_frame_types_) ==
-        WEBRTC_VIDEO_CODEC_OK) {
+
+    // TODO(nisse): Used only with internal source. Delete as soon as
+    // that feature is removed. The only implementation I've been able
+    // to find ignores what's in the frame. With one exception: It seems
+    // a few test cases, e.g.,
+    // VideoSendStreamTest.VideoSendStreamStopSetEncoderRateToZero, set
+    // internal_source to true and use FakeEncoder. And the latter will
+    // happily encode this 1x1 frame and pass it on down the pipeline.
+    if (encoder_->Encode(VideoFrame::Builder()
+                             .set_video_frame_buffer(I420Buffer::Create(1, 1))
+                             .set_rotation(kVideoRotation_0)
+                             .set_timestamp_us(0)
+                             .build(),
+                         nullptr,
+                         &next_frame_types_) == WEBRTC_VIDEO_CODEC_OK) {
       // Try to remove just-performed keyframe request, if stream still exists.
       next_frame_types_[0] = kVideoFrameDelta;
     }
@@ -1268,21 +1315,44 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
     const EncodedImage& encoded_image,
     const CodecSpecificInfo* codec_specific_info,
     const RTPFragmentationHeader* fragmentation) {
+  const int64_t time_sent_us = rtc::TimeMicros();
+
+  TRACE_EVENT_INSTANT1("webrtc", "VCMEncodedFrameCallback::Encoded",
+                       "timestamp", encoded_image.Timestamp());
+  const size_t spatial_idx = encoded_image.SpatialIndex().value_or(0);
+  EncodedImage image_copy(encoded_image);
+
+  frame_encoder_timer_.FillTimingInfo(
+      spatial_idx, &image_copy, time_sent_us / rtc::kNumMicrosecsPerMillisec);
+
+  // Piggyback ALR experiment group id and simulcast id into the content type.
+  const uint8_t experiment_id =
+      experiment_groups_[videocontenttypehelpers::IsScreenshare(
+          image_copy.content_type_)];
+
+  // TODO(ilnik): This will force content type extension to be present even
+  // for realtime video. At the expense of miniscule overhead we will get
+  // sliced receive statistics.
+  RTC_CHECK(videocontenttypehelpers::SetExperimentId(&image_copy.content_type_,
+                                                     experiment_id));
+  // We count simulcast streams from 1 on the wire. That's why we set simulcast
+  // id in content type to +1 of that is actual simulcast index. This is because
+  // value 0 on the wire is reserved for 'no simulcast stream specified'.
+  RTC_CHECK(videocontenttypehelpers::SetSimulcastId(
+      &image_copy.content_type_, static_cast<uint8_t>(spatial_idx + 1)));
+
   // Encoded is called on whatever thread the real encoder implementation run
   // on. In the case of hardware encoders, there might be several encoders
   // running in parallel on different threads.
-  encoder_stats_observer_->OnSendEncodedImage(encoded_image,
-                                              codec_specific_info);
+  encoder_stats_observer_->OnSendEncodedImage(image_copy, codec_specific_info);
 
   EncodedImageCallback::Result result =
-      sink_->OnEncodedImage(encoded_image, codec_specific_info, fragmentation);
+      sink_->OnEncodedImage(image_copy, codec_specific_info, fragmentation);
 
-  int64_t time_sent_us = rtc::TimeMicros();
   // We are only interested in propagating the meta-data about the image, not
   // encoded data itself, to the post encode function. Since we cannot be sure
   // the pointer will still be valid when run on the task queue, set it to null.
-  EncodedImage encoded_image_metadata = encoded_image;
-  encoded_image_metadata.set_buffer(nullptr, 0);
+  image_copy.set_buffer(nullptr, 0);
 
   int temporal_index = 0;
   if (codec_specific_info) {
@@ -1296,7 +1366,7 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
     temporal_index = 0;
   }
 
-  RunPostEncode(encoded_image_metadata, time_sent_us, temporal_index);
+  RunPostEncode(image_copy, time_sent_us, temporal_index);
 
   if (result.error == Result::OK) {
     // In case of an internal encoder running on a separate thread, the
@@ -1686,6 +1756,15 @@ bool VideoStreamEncoder::HasInternalSource() const {
   // TODO(sprang): Checking both info from encoder and from encoder factory
   // until we have deprecated and removed the encoder factory info.
   return codec_info_.has_internal_source || encoder_info_.has_internal_source;
+}
+
+void VideoStreamEncoder::ReleaseEncoder() {
+  if (!encoder_ || !encoder_initialized_) {
+    return;
+  }
+  encoder_->Release();
+  encoder_initialized_ = false;
+  TRACE_EVENT0("webrtc", "VCMGenericEncoder::Release");
 }
 
 // Class holding adaptation information.

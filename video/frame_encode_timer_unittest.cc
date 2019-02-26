@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2017 The WebRTC project authors. All Rights Reserved.
+ *  Copyright (c) 2019 The WebRTC project authors. All Rights Reserved.
  *
  *  Use of this source code is governed by a BSD-style license
  *  that can be found in the LICENSE file in the root of the source
@@ -12,11 +12,10 @@
 #include <vector>
 
 #include "api/video/video_timing.h"
-#include "modules/video_coding/generic_encoder.h"
 #include "modules/video_coding/include/video_coding_defines.h"
-#include "rtc_base/fake_clock.h"
 #include "rtc_base/time_utils.h"
 #include "test/gtest.h"
+#include "video/frame_encode_timer.h"
 
 namespace webrtc {
 namespace test {
@@ -30,32 +29,17 @@ inline size_t FrameSize(const size_t& min_frame_size,
 
 class FakeEncodedImageCallback : public EncodedImageCallback {
  public:
-  FakeEncodedImageCallback()
-      : last_frame_was_timing_(false),
-        num_frames_dropped_(0),
-        last_capture_timestamp_(-1) {}
+  FakeEncodedImageCallback() : num_frames_dropped_(0) {}
   Result OnEncodedImage(const EncodedImage& encoded_image,
                         const CodecSpecificInfo* codec_specific_info,
                         const RTPFragmentationHeader* fragmentation) override {
-    last_frame_was_timing_ =
-        encoded_image.timing_.flags != VideoSendTiming::kInvalid &&
-        encoded_image.timing_.flags != VideoSendTiming::kNotTriggered;
-    last_capture_timestamp_ = encoded_image.capture_time_ms_;
     return Result(Result::OK);
   }
-
   void OnDroppedFrame(DropReason reason) override { ++num_frames_dropped_; }
-
-  bool WasTimingFrame() { return last_frame_was_timing_; }
-
   size_t GetNumFramesDropped() { return num_frames_dropped_; }
 
-  int64_t GetLastCaptureTimestamp() { return last_capture_timestamp_; }
-
  private:
-  bool last_frame_was_timing_;
   size_t num_frames_dropped_;
-  int64_t last_capture_timestamp_;
 };
 
 enum class FrameType {
@@ -63,6 +47,11 @@ enum class FrameType {
   kTiming,
   kDropped,
 };
+
+bool IsTimingFrame(const EncodedImage& image) {
+  return image.timing_.flags != VideoSendTiming::kInvalid &&
+         image.timing_.flags != VideoSendTiming::kNotTriggered;
+}
 
 // Emulates |num_frames| on |num_streams| frames with capture timestamps
 // increased by 1 from 0. Size of each frame is between
@@ -76,41 +65,48 @@ std::vector<std::vector<FrameType>> GetTimingFrames(
     const int num_streams,
     const int num_frames) {
   FakeEncodedImageCallback sink;
-  VCMEncodedFrameCallback callback(&sink);
+  FrameEncodeTimer encode_timer(&sink);
+  VideoCodec codec_settings;
+  codec_settings.numberOfSimulcastStreams = num_streams;
+  codec_settings.timing_frame_thresholds = {delay_ms,
+                                            kDefaultOutlierFrameSizePercent};
+  encode_timer.OnEncoderInit(codec_settings, false);
   const size_t kFramerate = 30;
-  callback.SetTimingFramesThresholds(
-      {delay_ms, kDefaultOutlierFrameSizePercent});
-  callback.OnFrameRateChanged(kFramerate);
-  int s, i;
+  VideoBitrateAllocation bitrate_allocation;
+  for (int si = 0; si < num_streams; ++si) {
+    bitrate_allocation.SetBitrate(si, 0,
+                                  average_frame_sizes[si] * 8 * kFramerate);
+  }
+  encode_timer.OnSetRates(bitrate_allocation, kFramerate);
+
   std::vector<std::vector<FrameType>> result(num_streams);
-  for (s = 0; s < num_streams; ++s)
-    callback.OnTargetBitrateChanged(average_frame_sizes[s] * kFramerate, s);
   int64_t current_timestamp = 0;
-  for (i = 0; i < num_frames; ++i) {
+  for (int i = 0; i < num_frames; ++i) {
     current_timestamp += 1;
-    for (s = 0; s < num_streams; ++s) {
+    encode_timer.OnEncodeStarted(static_cast<uint32_t>(current_timestamp * 90),
+                                 current_timestamp);
+    for (int si = 0; si < num_streams; ++si) {
       // every (5+s)-th frame is dropped on s-th stream by design.
-      bool dropped = i % (5 + s) == 0;
+      bool dropped = i % (5 + si) == 0;
 
       EncodedImage image;
-      CodecSpecificInfo codec_specific;
       image.Allocate(max_frame_size);
-      image.set_size(FrameSize(min_frame_size, max_frame_size, s, i));
+      image.set_size(FrameSize(min_frame_size, max_frame_size, si, i));
       image.capture_time_ms_ = current_timestamp;
       image.SetTimestamp(static_cast<uint32_t>(current_timestamp * 90));
-      image.SetSpatialIndex(s);
-      codec_specific.codecType = kVideoCodecGeneric;
-      callback.OnEncodeStarted(static_cast<uint32_t>(current_timestamp * 90),
-                               current_timestamp, s);
+      image.SetSpatialIndex(si);
+
       if (dropped) {
-        result[s].push_back(FrameType::kDropped);
+        result[si].push_back(FrameType::kDropped);
         continue;
       }
-      callback.OnEncodedImage(image, &codec_specific, nullptr);
-      if (sink.WasTimingFrame()) {
-        result[s].push_back(FrameType::kTiming);
+
+      encode_timer.FillTimingInfo(si, &image, current_timestamp);
+
+      if (IsTimingFrame(image)) {
+        result[si].push_back(FrameType::kTiming);
       } else {
-        result[s].push_back(FrameType::kNormal);
+        result[si].push_back(FrameType::kNormal);
       }
     }
   }
@@ -118,7 +114,7 @@ std::vector<std::vector<FrameType>> GetTimingFrames(
 }
 }  // namespace
 
-TEST(TestVCMEncodedFrameCallback, MarksTimingFramesPeriodicallyTogether) {
+TEST(FrameEncodeTimerTest, MarksTimingFramesPeriodicallyTogether) {
   const int64_t kDelayMs = 29;
   const size_t kMinFrameSize = 10;
   const size_t kMaxFrameSize = 20;
@@ -162,7 +158,7 @@ TEST(TestVCMEncodedFrameCallback, MarksTimingFramesPeriodicallyTogether) {
   }
 }
 
-TEST(TestVCMEncodedFrameCallback, MarksOutliers) {
+TEST(FrameEncodeTimerTest, MarksOutliers) {
   const int64_t kDelayMs = 29;
   const size_t kMinFrameSize = 2495;
   const size_t kMaxFrameSize = 2505;
@@ -184,129 +180,147 @@ TEST(TestVCMEncodedFrameCallback, MarksOutliers) {
   }
 }
 
-TEST(TestVCMEncodedFrameCallback, NoTimingFrameIfNoEncodeStartTime) {
-  EncodedImage image;
-  CodecSpecificInfo codec_specific;
+TEST(FrameEncodeTimerTest, NoTimingFrameIfNoEncodeStartTime) {
   int64_t timestamp = 1;
   constexpr size_t kFrameSize = 500;
+  EncodedImage image;
   image.Allocate(kFrameSize);
   image.set_size(kFrameSize);
   image.capture_time_ms_ = timestamp;
   image.SetTimestamp(static_cast<uint32_t>(timestamp * 90));
-  codec_specific.codecType = kVideoCodecGeneric;
+
   FakeEncodedImageCallback sink;
-  VCMEncodedFrameCallback callback(&sink);
-  VideoCodec::TimingFrameTriggerThresholds thresholds;
-  thresholds.delay_ms = 1;  // Make all frames timing frames.
-  callback.SetTimingFramesThresholds(thresholds);
-  callback.OnTargetBitrateChanged(500, 0);
+  FrameEncodeTimer encode_timer(&sink);
+  VideoCodec codec_settings;
+  // Make all frames timing frames.
+  codec_settings.timing_frame_thresholds.delay_ms = 1;
+  encode_timer.OnEncoderInit(codec_settings, false);
+  VideoBitrateAllocation bitrate_allocation;
+  bitrate_allocation.SetBitrate(0, 0, 500000);
+  encode_timer.OnSetRates(bitrate_allocation, 30);
 
   // Verify a single frame works with encode start time set.
-  callback.OnEncodeStarted(static_cast<uint32_t>(timestamp * 90), timestamp, 0);
-  callback.OnEncodedImage(image, &codec_specific, nullptr);
-  EXPECT_TRUE(sink.WasTimingFrame());
+  encode_timer.OnEncodeStarted(static_cast<uint32_t>(timestamp * 90),
+                               timestamp);
+  encode_timer.FillTimingInfo(0, &image, timestamp);
+  EXPECT_TRUE(IsTimingFrame(image));
 
   // New frame, now skip OnEncodeStarted. Should not result in timing frame.
   image.capture_time_ms_ = ++timestamp;
   image.SetTimestamp(static_cast<uint32_t>(timestamp * 90));
-  callback.OnEncodedImage(image, &codec_specific, nullptr);
-  EXPECT_FALSE(sink.WasTimingFrame());
+  image.timing_ = EncodedImage::Timing();
+  encode_timer.FillTimingInfo(0, &image, timestamp);
+  EXPECT_FALSE(IsTimingFrame(image));
 }
 
-TEST(TestVCMEncodedFrameCallback, AdjustsCaptureTimeForInternalSourceEncoder) {
-  rtc::ScopedFakeClock clock;
-  clock.SetTimeMicros(1234567);
-  EncodedImage image;
-  CodecSpecificInfo codec_specific;
+TEST(FrameEncodeTimerTest, AdjustsCaptureTimeForInternalSourceEncoder) {
   const int64_t kEncodeStartDelayMs = 2;
   const int64_t kEncodeFinishDelayMs = 10;
-  int64_t timestamp = 1;
   constexpr size_t kFrameSize = 500;
+
+  int64_t timestamp = 1;
+  EncodedImage image;
   image.Allocate(kFrameSize);
   image.set_size(kFrameSize);
   image.capture_time_ms_ = timestamp;
   image.SetTimestamp(static_cast<uint32_t>(timestamp * 90));
-  codec_specific.codecType = kVideoCodecGeneric;
+
   FakeEncodedImageCallback sink;
-  VCMEncodedFrameCallback callback(&sink);
-  callback.SetInternalSource(true);
-  VideoCodec::TimingFrameTriggerThresholds thresholds;
-  thresholds.delay_ms = 1;  // Make all frames timing frames.
-  callback.SetTimingFramesThresholds(thresholds);
-  callback.OnTargetBitrateChanged(500, 0);
+  FrameEncodeTimer encode_timer(&sink);
+
+  VideoCodec codec_settings;
+  // Make all frames timing frames.
+  codec_settings.timing_frame_thresholds.delay_ms = 1;
+  encode_timer.OnEncoderInit(codec_settings, true);
+
+  VideoBitrateAllocation bitrate_allocation;
+  bitrate_allocation.SetBitrate(0, 0, 500000);
+  encode_timer.OnSetRates(bitrate_allocation, 30);
 
   // Verify a single frame without encode timestamps isn't a timing frame.
-  callback.OnEncodedImage(image, &codec_specific, nullptr);
-  EXPECT_FALSE(sink.WasTimingFrame());
+  encode_timer.FillTimingInfo(0, &image, timestamp);
+  EXPECT_FALSE(IsTimingFrame(image));
 
   // New frame, but this time with encode timestamps set in timing_.
   // This should be a timing frame.
   image.capture_time_ms_ = ++timestamp;
   image.SetTimestamp(static_cast<uint32_t>(timestamp * 90));
+  image.timing_ = EncodedImage::Timing();
   image.timing_.encode_start_ms = timestamp + kEncodeStartDelayMs;
   image.timing_.encode_finish_ms = timestamp + kEncodeFinishDelayMs;
-  callback.OnEncodedImage(image, &codec_specific, nullptr);
-  EXPECT_TRUE(sink.WasTimingFrame());
+  const int64_t kEncodeDoneTimestamp = 1234567;
+  encode_timer.FillTimingInfo(0, &image, kEncodeDoneTimestamp);
+  EXPECT_TRUE(IsTimingFrame(image));
+
   // Frame is captured kEncodeFinishDelayMs before it's encoded, so restored
   // capture timestamp should be kEncodeFinishDelayMs in the past.
-  EXPECT_EQ(
-      sink.GetLastCaptureTimestamp(),
-      clock.TimeNanos() / rtc::kNumNanosecsPerMillisec - kEncodeFinishDelayMs);
+  EXPECT_EQ(image.capture_time_ms_,
+            kEncodeDoneTimestamp - kEncodeFinishDelayMs);
 }
 
-TEST(TestVCMEncodedFrameCallback, NotifiesAboutDroppedFrames) {
-  EncodedImage image;
-  CodecSpecificInfo codec_specific;
+TEST(FrameEncodeTimerTest, NotifiesAboutDroppedFrames) {
   const int64_t kTimestampMs1 = 47721840;
   const int64_t kTimestampMs2 = 47721850;
   const int64_t kTimestampMs3 = 47721860;
   const int64_t kTimestampMs4 = 47721870;
-  codec_specific.codecType = kVideoCodecGeneric;
+
   FakeEncodedImageCallback sink;
-  VCMEncodedFrameCallback callback(&sink);
+  FrameEncodeTimer encode_timer(&sink);
+  encode_timer.OnEncoderInit(VideoCodec(), false);
   // Any non-zero bitrate needed to be set before the first frame.
-  callback.OnTargetBitrateChanged(500, 0);
+  VideoBitrateAllocation bitrate_allocation;
+  bitrate_allocation.SetBitrate(0, 0, 500000);
+  encode_timer.OnSetRates(bitrate_allocation, 30);
+
+  EncodedImage image;
   image.capture_time_ms_ = kTimestampMs1;
   image.SetTimestamp(static_cast<uint32_t>(image.capture_time_ms_ * 90));
-  callback.OnEncodeStarted(image.Timestamp(), image.capture_time_ms_, 0);
+  encode_timer.OnEncodeStarted(image.Timestamp(), image.capture_time_ms_);
+
   EXPECT_EQ(0u, sink.GetNumFramesDropped());
-  callback.OnEncodedImage(image, &codec_specific, nullptr);
+  encode_timer.FillTimingInfo(0, &image, kTimestampMs1);
 
   image.capture_time_ms_ = kTimestampMs2;
   image.SetTimestamp(static_cast<uint32_t>(image.capture_time_ms_ * 90));
-  callback.OnEncodeStarted(image.Timestamp(), image.capture_time_ms_, 0);
+  image.timing_ = EncodedImage::Timing();
+  encode_timer.OnEncodeStarted(image.Timestamp(), image.capture_time_ms_);
   // No OnEncodedImageCall for timestamp2. Yet, at this moment it's not known
   // that frame with timestamp2 was dropped.
   EXPECT_EQ(0u, sink.GetNumFramesDropped());
 
   image.capture_time_ms_ = kTimestampMs3;
   image.SetTimestamp(static_cast<uint32_t>(image.capture_time_ms_ * 90));
-  callback.OnEncodeStarted(image.Timestamp(), image.capture_time_ms_, 0);
-  callback.OnEncodedImage(image, &codec_specific, nullptr);
+  image.timing_ = EncodedImage::Timing();
+  encode_timer.OnEncodeStarted(image.Timestamp(), image.capture_time_ms_);
+  encode_timer.FillTimingInfo(0, &image, kTimestampMs3);
   EXPECT_EQ(1u, sink.GetNumFramesDropped());
 
   image.capture_time_ms_ = kTimestampMs4;
   image.SetTimestamp(static_cast<uint32_t>(image.capture_time_ms_ * 90));
-  callback.OnEncodeStarted(image.Timestamp(), image.capture_time_ms_, 0);
-  callback.OnEncodedImage(image, &codec_specific, nullptr);
+  image.timing_ = EncodedImage::Timing();
+  encode_timer.OnEncodeStarted(image.Timestamp(), image.capture_time_ms_);
+  encode_timer.FillTimingInfo(0, &image, kTimestampMs4);
   EXPECT_EQ(1u, sink.GetNumFramesDropped());
 }
 
-TEST(TestVCMEncodedFrameCallback, RestoresCaptureTimestamps) {
+TEST(FrameEncodeTimerTest, RestoresCaptureTimestamps) {
   EncodedImage image;
-  CodecSpecificInfo codec_specific;
   const int64_t kTimestampMs = 123456;
-  codec_specific.codecType = kVideoCodecGeneric;
   FakeEncodedImageCallback sink;
-  VCMEncodedFrameCallback callback(&sink);
+
+  FrameEncodeTimer encode_timer(&sink);
+  encode_timer.OnEncoderInit(VideoCodec(), false);
   // Any non-zero bitrate needed to be set before the first frame.
-  callback.OnTargetBitrateChanged(500, 0);
-  image.capture_time_ms_ = kTimestampMs;  // Incorrect timesetamp.
+  VideoBitrateAllocation bitrate_allocation;
+  bitrate_allocation.SetBitrate(0, 0, 500000);
+  encode_timer.OnSetRates(bitrate_allocation, 30);
+
+  image.capture_time_ms_ = kTimestampMs;  // Correct timestamp.
   image.SetTimestamp(static_cast<uint32_t>(image.capture_time_ms_ * 90));
-  callback.OnEncodeStarted(image.Timestamp(), image.capture_time_ms_, 0);
-  image.capture_time_ms_ = 0;  // Incorrect timesetamp.
-  callback.OnEncodedImage(image, &codec_specific, nullptr);
-  EXPECT_EQ(kTimestampMs, sink.GetLastCaptureTimestamp());
+  encode_timer.OnEncodeStarted(image.Timestamp(), image.capture_time_ms_);
+  image.capture_time_ms_ = 0;  // Incorrect timestamp.
+  encode_timer.FillTimingInfo(0, &image, kTimestampMs);
+  EXPECT_EQ(kTimestampMs, image.capture_time_ms_);
 }
 
 }  // namespace test

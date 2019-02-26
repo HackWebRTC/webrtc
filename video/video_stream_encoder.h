@@ -23,17 +23,19 @@
 #include "api/video/video_stream_encoder_interface.h"
 #include "api/video/video_stream_encoder_observer.h"
 #include "api/video/video_stream_encoder_settings.h"
+#include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
 #include "modules/video_coding/utility/frame_dropper.h"
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "modules/video_coding/video_coding_impl.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "rtc_base/experiments/rate_control_settings.h"
+#include "rtc_base/race_checker.h"
 #include "rtc_base/rate_statistics.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/task_queue.h"
 #include "video/encoder_bitrate_adjuster.h"
+#include "video/frame_encode_timer.h"
 #include "video/overuse_frame_detector.h"
 
 namespace webrtc {
@@ -188,6 +190,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
                      int64_t time_sent_us,
                      int temporal_index);
   bool HasInternalSource() const RTC_RUN_ON(&encoder_queue_);
+  void ReleaseEncoder() RTC_RUN_ON(&encoder_queue_);
 
   rtc::Event shutdown_event_;
 
@@ -217,6 +220,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   VideoEncoderConfig encoder_config_ RTC_GUARDED_BY(&encoder_queue_);
   std::unique_ptr<VideoEncoder> encoder_ RTC_GUARDED_BY(&encoder_queue_)
       RTC_PT_GUARDED_BY(&encoder_queue_);
+  bool encoder_initialized_;
   std::unique_ptr<VideoBitrateAllocator> rate_allocator_
       RTC_GUARDED_BY(&encoder_queue_) RTC_PT_GUARDED_BY(&encoder_queue_);
   // The maximum frame rate of the current codec configuration, as determined
@@ -286,8 +290,12 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   VideoEncoder::EncoderInfo encoder_info_ RTC_GUARDED_BY(&encoder_queue_);
   VideoEncoderFactory::CodecInfo codec_info_ RTC_GUARDED_BY(&encoder_queue_);
-  FrameDropper frame_dropper_ RTC_GUARDED_BY(&encoder_queue_);
+  VideoBitrateAllocation last_bitrate_allocation_
+      RTC_GUARDED_BY(&encoder_queue_);
+  uint32_t last_framerate_fps_ RTC_GUARDED_BY(&encoder_queue_);
+  VideoCodec send_codec_ RTC_GUARDED_BY(&encoder_queue_);
 
+  FrameDropper frame_dropper_ RTC_GUARDED_BY(&encoder_queue_);
   // If frame dropper is not force disabled, frame dropping might still be
   // disabled if VideoEncoder::GetEncoderInfo() indicates that the encoder has a
   // trusted rate controller. This is determined on a per-frame basis, as the
@@ -303,16 +311,16 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   std::unique_ptr<EncoderBitrateAdjuster> bitrate_adjuster_
       RTC_GUARDED_BY(&encoder_queue_);
 
-  // TODO(webrtc:10164): Refactor/remove these VCM classes.
-  std::unique_ptr<VCMGenericEncoder> generic_encoder_
-      RTC_GUARDED_BY(&encoder_queue_);
-  VCMEncodedFrameCallback generic_encoder_callback_
-      RTC_GUARDED_BY(&encoder_queue_);
-  VideoCodec send_codec_ RTC_GUARDED_BY(&encoder_queue_);
-
   // TODO(sprang): Change actually support keyframe per simulcast stream, or
   // turn this into a simple bool |pending_keyframe_request_|.
   std::vector<FrameType> next_frame_types_ RTC_GUARDED_BY(&encoder_queue_);
+
+  FrameEncodeTimer frame_encoder_timer_;
+
+  // Experiment groups parsed from field trials for realtime video ([0]) and
+  // screenshare ([1]). 0 means no group specified. Positive values are
+  // experiment group numbers incremented by 1.
+  const std::array<uint8_t, 2> experiment_groups_;
 
   // All public methods are proxied to |encoder_queue_|. It must must be
   // destroyed first to make sure no tasks are run that use other members.
