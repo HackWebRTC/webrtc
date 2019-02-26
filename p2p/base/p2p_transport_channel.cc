@@ -640,6 +640,9 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
   if (webrtc::field_trial::IsEnabled("WebRTC-ExtraICEPing")) {
     RTC_LOG(LS_INFO) << "Set WebRTC-ExtraICEPing: Enabled";
   }
+  if (webrtc::field_trial::IsEnabled("WebRTC-TurnAddMultiMapping")) {
+    RTC_LOG(LS_INFO) << "Set WebRTC-TurnAddMultiMapping: Enabled";
+  }
 
   webrtc::BasicRegatheringController::Config regathering_config(
       config_.regather_all_networks_interval_range,

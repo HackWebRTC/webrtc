@@ -266,6 +266,10 @@ class TurnPort : public Port {
   bool CreateOrRefreshEntry(const rtc::SocketAddress& addr,
                             int channel_number);
 
+  bool CreateOrRefreshEntry(const rtc::SocketAddress& addr,
+                            int channel_number,
+                            const std::string& remote_ufrag);
+
   rtc::DiffServCodePoint StunDscpValue() const override;
 
  private:
