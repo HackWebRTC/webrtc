@@ -61,6 +61,8 @@ const float kFramedropThreshold = 0.3;
 // optimization module defaults.
 const int64_t kFrameRateAvergingWindowSizeMs = (1000 / 30) * 90;
 
+const size_t kDefaultPayloadSize = 1440;
+
 // Initial limits for BALANCED degradation preference.
 int MinFps(int pixels) {
   if (pixels <= 320 * 240) {
@@ -118,6 +120,51 @@ CpuOveruseOptions GetCpuOveruseOptions(
   return options;
 }
 
+bool RequiresEncoderReset(const VideoCodec& previous_send_codec,
+                          const VideoCodec& new_send_codec) {
+  // Does not check startBitrate or maxFramerate.
+  if (new_send_codec.codecType != previous_send_codec.codecType ||
+      new_send_codec.width != previous_send_codec.width ||
+      new_send_codec.height != previous_send_codec.height ||
+      new_send_codec.maxBitrate != previous_send_codec.maxBitrate ||
+      new_send_codec.minBitrate != previous_send_codec.minBitrate ||
+      new_send_codec.qpMax != previous_send_codec.qpMax ||
+      new_send_codec.numberOfSimulcastStreams !=
+          previous_send_codec.numberOfSimulcastStreams ||
+      new_send_codec.mode != previous_send_codec.mode) {
+    return true;
+  }
+
+  switch (new_send_codec.codecType) {
+    case kVideoCodecVP8:
+      if (new_send_codec.VP8() != previous_send_codec.VP8()) {
+        return true;
+      }
+      break;
+
+    case kVideoCodecVP9:
+      if (new_send_codec.VP9() != previous_send_codec.VP9()) {
+        return true;
+      }
+      break;
+
+    case kVideoCodecH264:
+      if (new_send_codec.H264() != previous_send_codec.H264()) {
+        return true;
+      }
+      break;
+
+    default:
+      break;
+  }
+
+  for (unsigned char i = 0; i < new_send_codec.numberOfSimulcastStreams; ++i) {
+    if (new_send_codec.simulcastStream[i] !=
+        previous_send_codec.simulcastStream[i])
+      return true;
+  }
+  return false;
+}
 }  //  namespace
 
 // VideoSourceProxy is responsible ensuring thread safety between calls to
@@ -394,7 +441,6 @@ VideoStreamEncoder::VideoStreamEncoder(
       pending_frame_drops_(0),
       generic_encoder_(nullptr),
       generic_encoder_callback_(this),
-      codec_database_(&generic_encoder_callback_),
       next_frame_types_(1, kVideoFrameDelta),
       encoder_queue_("EncoderQueue") {
   RTC_DCHECK(encoder_stats_observer);
@@ -414,9 +460,11 @@ void VideoStreamEncoder::Stop() {
   encoder_queue_.PostTask([this] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     overuse_detector_->StopCheckForOveruse();
-    rate_allocator_.reset();
+    rate_allocator_ = nullptr;
     bitrate_observer_ = nullptr;
-    codec_database_.DeregisterExternalEncoder();
+    if (encoder_ != nullptr && generic_encoder_ != nullptr) {
+      encoder_->Release();
+    }
     generic_encoder_ = nullptr;
     quality_scaler_ = nullptr;
     shutdown_event_.Set();
@@ -593,13 +641,37 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   }
   source_proxy_->SetMaxFramerate(max_framerate);
 
+  if (codec.maxBitrate == 0) {
+    // max is one bit per pixel
+    codec.maxBitrate =
+        (static_cast<int>(codec.height) * static_cast<int>(codec.width) *
+         static_cast<int>(codec.maxFramerate)) /
+        1000;
+    if (codec.startBitrate > codec.maxBitrate) {
+      // But if the user tries to set a higher start bit rate we will
+      // increase the max accordingly.
+      codec.maxBitrate = codec.startBitrate;
+    }
+  }
+
+  if (codec.startBitrate > codec.maxBitrate) {
+    codec.startBitrate = codec.maxBitrate;
+  }
+
+  // Reset (release existing encoder) if one exists and anything except
+  // start bitrate or max framerate has changed. Don't call Release() if
+  // |pending_encoder_creation_| as that means this is a new encoder
+  // that has not yet been initialized.
+  const bool reset_required = RequiresEncoderReset(codec, send_codec_);
+  send_codec_ = codec;
+
   // Keep the same encoder, as long as the video_format is unchanged.
   // Encoder creation block is split in two since EncoderInfo needed to start
   // CPU adaptation with the correct settings should be polled after
   // encoder_->InitEncode().
   if (pending_encoder_creation_) {
     if (encoder_) {
-      codec_database_.DeregisterExternalEncoder();
+      encoder_->Release();
       generic_encoder_ = nullptr;
     }
 
@@ -611,15 +683,26 @@ void VideoStreamEncoder::ReconfigureEncoder() {
 
     codec_info_ = settings_.encoder_factory->QueryVideoEncoder(
         encoder_config_.video_format);
-
-    codec_database_.RegisterExternalEncoder(encoder_.get(),
-                                            HasInternalSource());
+  } else if (reset_required) {
+    RTC_DCHECK(encoder_);
+    encoder_->Release();
   }
 
-  // SetSendCodec implies an unconditional call to encoder_->InitEncode().
-  bool success = codec_database_.SetSendCodec(&codec, number_of_cores_,
-                                              max_data_payload_length_);
-  generic_encoder_ = codec_database_.GetEncoder();
+  bool success = true;
+  if (pending_encoder_creation_ || reset_required || !generic_encoder_) {
+    RTC_DCHECK(encoder_);
+    generic_encoder_ = absl::make_unique<VCMGenericEncoder>(
+        encoder_.get(), &generic_encoder_callback_, HasInternalSource());
+    generic_encoder_callback_.SetInternalSource(HasInternalSource());
+    if (generic_encoder_->InitEncode(&send_codec_, number_of_cores_,
+                                     max_data_payload_length_ > 0
+                                         ? max_data_payload_length_
+                                         : kDefaultPayloadSize) < 0) {
+      encoder_->Release();
+      generic_encoder_ = nullptr;
+      success = false;
+    }
+  }
 
   if (success) {
     RTC_DCHECK(generic_encoder_);
@@ -633,7 +716,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
                         << " max payload size " << max_data_payload_length_;
   } else {
     RTC_LOG(LS_ERROR) << "Failed to configure encoder.";
-    rate_allocator_.reset();
+    rate_allocator_ = nullptr;
   }
 
   if (pending_encoder_creation_) {
@@ -1117,8 +1200,8 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
 
   encoder_info_ = info;
   RTC_DCHECK(generic_encoder_);
-  RTC_DCHECK(codec_database_.MatchesCurrentResolution(out_frame.width(),
-                                                      out_frame.height()));
+  RTC_DCHECK_EQ(send_codec_.width, out_frame.width());
+  RTC_DCHECK_EQ(send_codec_.height, out_frame.height());
   const VideoFrameBuffer::Type buffer_type =
       out_frame.video_frame_buffer()->type();
   const bool is_buffer_type_supported =

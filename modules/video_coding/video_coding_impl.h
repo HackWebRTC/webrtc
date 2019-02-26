@@ -19,7 +19,6 @@
 
 #include "absl/types/optional.h"
 #include "modules/video_coding/decoder_database.h"
-#include "modules/video_coding/encoder_database.h"
 #include "modules/video_coding/frame_buffer.h"
 #include "modules/video_coding/generic_decoder.h"
 #include "modules/video_coding/generic_encoder.h"
@@ -55,47 +54,6 @@ class VCMProcessTimer {
   Clock* _clock;
   int64_t _periodMs;
   int64_t _latestMs;
-};
-
-class VideoSender {
- public:
-  typedef VideoCodingModule::SenderNackMode SenderNackMode;
-
-  VideoSender(Clock* clock, EncodedImageCallback* post_encode_callback);
-  ~VideoSender();
-
-  // Register the send codec to be used.
-  // This method must be called on the construction thread.
-  int32_t RegisterSendCodec(const VideoCodec* sendCodec,
-                            uint32_t numberOfCores,
-                            uint32_t maxPayloadSize);
-
-  void RegisterExternalEncoder(VideoEncoder* externalEncoder,
-                               bool internalSource);
-
-  // Update the the encoder with new bitrate allocation and framerate.
-  int32_t SetChannelParameters(const VideoBitrateAllocation& bitrate_allocation,
-                               uint32_t framerate_fps);
-
-  int32_t AddVideoFrame(const VideoFrame& videoFrame,
-                        const CodecSpecificInfo* codecSpecificInfo,
-                        absl::optional<VideoEncoder::EncoderInfo> encoder_info);
-
-  int32_t IntraFrameRequest(size_t stream_index);
-
- private:
-  rtc::CriticalSection encoder_crit_;
-  VCMGenericEncoder* _encoder;
-  VCMEncodedFrameCallback _encodedFrameCallback RTC_GUARDED_BY(encoder_crit_);
-  VCMEncoderDataBase _codecDataBase RTC_GUARDED_BY(encoder_crit_);
-
-  // Must be accessed on the construction thread of VideoSender.
-  VideoCodec current_codec_;
-  rtc::SequencedTaskChecker sequenced_checker_;
-
-  rtc::CriticalSection params_crit_;
-  bool encoder_has_internal_source_ RTC_GUARDED_BY(params_crit_);
-  std::vector<FrameType> next_frame_types_ RTC_GUARDED_BY(params_crit_);
 };
 
 class VideoReceiver : public Module {
