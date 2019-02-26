@@ -20,7 +20,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/alr_experiment.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/time_utils.h"
 
 namespace webrtc {
 AlrDetector::AlrDetector() : AlrDetector(nullptr) {}
@@ -65,7 +64,7 @@ void AlrDetector::OnBytesSent(size_t bytes_sent, int64_t send_time_ms) {
   bool state_changed = false;
   if (alr_budget_.budget_level_percent() > alr_start_budget_level_percent_ &&
       !alr_started_time_ms_) {
-    alr_started_time_ms_.emplace(rtc::TimeMillis());
+    alr_started_time_ms_.emplace(send_time_ms);
     state_changed = true;
   } else if (alr_budget_.budget_level_percent() <
                  alr_stop_budget_level_percent_ &&
