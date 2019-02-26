@@ -107,9 +107,6 @@ class VideoCodecTestFixture {
     // Simulate frames arriving in real-time by adding delays between frames.
     bool encode_in_real_time = false;
 
-    // If > 0: forces the encoder to create a keyframe every Nth frame.
-    size_t keyframe_interval = 0;
-
     // Codec settings to use.
     webrtc::VideoCodec codec_settings;
 

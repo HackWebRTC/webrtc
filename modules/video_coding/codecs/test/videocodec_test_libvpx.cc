@@ -291,8 +291,8 @@ TEST(VideoCodecTestLibvpx, MAYBE_ChangeFramerateVP8) {
       {10, 2, 10, 1, 0.3, 0.2, 0, 0}};
 #else
   std::vector<RateControlThresholds> rc_thresholds = {
-      {10, 2, 20, 1, 0.3, 0.1, 0, 1},
-      {5, 2, 5, 1, 0.3, 0.1, 0, 0},
+      {10, 2, 20, 1, 0.3, 0.15, 0, 1},
+      {5, 2, 5, 1, 0.3, 0.15, 0, 0},
       {4, 2, 1, 1, 0.3, 0.2, 0, 0}};
 #endif
 

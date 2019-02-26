@@ -157,16 +157,6 @@ void CalculateFrameQuality(const I420BufferInterface& ref_buffer,
   }
 }
 
-std::vector<FrameType> FrameTypeForFrame(
-    const VideoCodecTestFixture::Config& config,
-    size_t frame_idx) {
-  if (config.keyframe_interval > 0 &&
-      (frame_idx % config.keyframe_interval == 0)) {
-    return {kVideoFrameKey};
-  }
-  return {kVideoFrameDelta};
-}
-
 }  // namespace
 
 VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
@@ -296,7 +286,8 @@ void VideoProcessor::ProcessFrame() {
 
   // Encode.
   const std::vector<FrameType> frame_types =
-      FrameTypeForFrame(config_, frame_number);
+      (frame_number == 0) ? std::vector<FrameType>{kVideoFrameKey}
+                          : std::vector<FrameType>{kVideoFrameDelta};
   const int encode_return_code =
       encoder_->Encode(input_frame, nullptr, &frame_types);
   for (size_t i = 0; i < num_simulcast_or_spatial_layers_; ++i) {

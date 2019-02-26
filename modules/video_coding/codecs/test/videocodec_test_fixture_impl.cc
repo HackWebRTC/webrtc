@@ -258,7 +258,6 @@ std::string VideoCodecTestFixtureImpl::Config::ToString() const {
   ss << "\nuse_single_core: " << use_single_core;
   ss << "\nmeasure_cpu: " << measure_cpu;
   ss << "\nnum_cores: " << NumberOfCores();
-  ss << "\nkeyframe_interval: " << keyframe_interval;
   ss << "\ncodec_type: " << codec_type;
   ss << "\n\n--> codec_settings";
   ss << "\nwidth: " << codec_settings.width;
