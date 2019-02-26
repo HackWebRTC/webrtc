@@ -11,7 +11,8 @@
 import os
 import unittest
 
-from gn_check import RunGnCheck
+#pylint: disable=relative-import
+import build_helpers
 
 
 TESTDATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)),
@@ -23,7 +24,8 @@ class GnCheckTest(unittest.TestCase):
     test_dir = os.path.join(TESTDATA_DIR, 'circular_dependency')
     expected_errors = ['ERROR Dependency cycle:\n'
                        '  //:bar ->\n  //:foo ->\n  //:bar']
-    self.assertListEqual(expected_errors, RunGnCheck(test_dir))
+    self.assertListEqual(expected_errors,
+                         build_helpers.RunGnCheck(test_dir))
 
 
 if __name__ == '__main__':

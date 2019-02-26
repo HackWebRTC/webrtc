@@ -580,7 +580,7 @@ def CheckGnGen(input_api, output_api):
   """
   with _AddToPath(input_api.os_path.join(
       input_api.PresubmitLocalPath(), 'tools_webrtc', 'presubmit_checks_lib')):
-    from gn_check import RunGnCheck
+    from build_helpers import RunGnCheck
   errors = RunGnCheck(FindSrcDirPath(input_api.PresubmitLocalPath()))[:5]
   if errors:
     return [output_api.PresubmitPromptWarning(
