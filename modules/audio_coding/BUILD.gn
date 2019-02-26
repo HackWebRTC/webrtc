@@ -8,7 +8,7 @@
 
 import("../../webrtc.gni")
 import("audio_coding.gni")
-if (!build_with_mozilla) {
+if (rtc_enable_protobuf) {
   import("//third_party/protobuf/proto_library.gni")
 }
 
