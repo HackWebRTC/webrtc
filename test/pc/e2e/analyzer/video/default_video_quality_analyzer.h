@@ -149,6 +149,9 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   std::map<std::string, StreamStats> GetStats() const;
   AnalyzerStats GetAnalyzerStats() const;
 
+  // TODO(bugs.webrtc.org/10138): Provide a real implementation for
+  // OnStatsReport.
+
  private:
   struct FrameStats {
     FrameStats(std::string stream_label, Timestamp captured_time);

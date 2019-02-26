@@ -16,6 +16,7 @@
 #include "test/pc/e2e/peer_connection_quality_test.h"
 
 namespace webrtc {
+namespace test {
 
 std::unique_ptr<PeerConnectionE2EQualityTestFixture>
 CreatePeerConnectionE2EQualityTestFixture(
@@ -25,4 +26,5 @@ CreatePeerConnectionE2EQualityTestFixture(
       std::move(audio_quality_analyzer), std::move(video_quality_analyzer));
 }
 
+}  // namespace test
 }  // namespace webrtc

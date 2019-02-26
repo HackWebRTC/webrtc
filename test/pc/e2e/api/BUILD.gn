@@ -15,9 +15,11 @@ rtc_source_set("video_quality_analyzer_api") {
   ]
 
   deps = [
+    ":stats_observer_interface",
     "../../../../api/video:encoded_image",
     "../../../../api/video:video_frame",
     "../../../../api/video_codecs:video_codecs_api",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -28,7 +30,21 @@ rtc_source_set("audio_quality_analyzer_api") {
     "audio_quality_analyzer_interface.h",
   ]
 
-  deps = []
+  deps = [
+    ":stats_observer_interface",
+  ]
+}
+
+rtc_source_set("stats_observer_interface") {
+  visibility = [ "*" ]
+  sources = [
+    "stats_observer_interface.h",
+  ]
+
+  deps = [
+    "../../../../api:libjingle_peerconnection_api",
+    "//third_party/abseil-cpp/absl/strings",
+  ]
 }
 
 rtc_source_set("peer_connection_quality_test_fixture_api") {

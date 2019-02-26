@@ -16,8 +16,11 @@
 
 #include "pc/test/frame_generator_capturer_video_track_source.h"
 #include "rtc_base/task_queue.h"
+#include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread.h"
+#include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
+#include "test/pc/e2e/analyzer/audio/default_audio_quality_analyzer.h"
 #include "test/pc/e2e/analyzer/video/single_process_encoded_image_data_injector.h"
 #include "test/pc/e2e/analyzer/video/video_quality_analyzer_injection_helper.h"
 #include "test/pc/e2e/api/peerconnection_quality_test_fixture.h"
@@ -83,6 +86,7 @@ class PeerConnectionE2EQualityTest
       video_quality_analyzer_injection_helper_;
   std::unique_ptr<SingleProcessEncodedImageDataInjector>
       encoded_image_id_controller_;
+  std::unique_ptr<AudioQualityAnalyzerInterface> audio_quality_analyzer_;
 
   std::unique_ptr<TestPeer> alice_;
   std::unique_ptr<TestPeer> bob_;
@@ -95,6 +99,7 @@ class PeerConnectionE2EQualityTest
   std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>
       output_video_sinks_;
 
+  RepeatingTaskHandle stats_polling_task_ RTC_GUARDED_BY(&task_queue_);
   // Must be the last field, so it will be deleted first, because tasks
   // in the TaskQueue can access other fields of the instance of this class.
   rtc::TaskQueue task_queue_;

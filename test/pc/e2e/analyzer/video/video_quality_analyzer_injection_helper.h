@@ -15,6 +15,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video_codecs/video_decoder_factory.h"
@@ -22,6 +23,7 @@
 #include "test/frame_generator.h"
 #include "test/pc/e2e/analyzer/video/encoded_image_data_injector.h"
 #include "test/pc/e2e/analyzer/video/id_generator.h"
+#include "test/pc/e2e/api/stats_observer_interface.h"
 #include "test/pc/e2e/api/video_quality_analyzer_interface.h"
 #include "test/testsupport/video_frame_writer.h"
 
@@ -30,13 +32,13 @@ namespace test {
 
 // Provides factory methods for components, that will be used to inject
 // VideoQualityAnalyzerInterface into PeerConnection pipeline.
-class VideoQualityAnalyzerInjectionHelper {
+class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
  public:
   VideoQualityAnalyzerInjectionHelper(
       std::unique_ptr<VideoQualityAnalyzerInterface> analyzer,
       EncodedImageDataInjector* injector,
       EncodedImageDataExtractor* extractor);
-  ~VideoQualityAnalyzerInjectionHelper();
+  ~VideoQualityAnalyzerInjectionHelper() override;
 
   // Wraps video encoder factory to give video quality analyzer access to frames
   // before encoding and encoded images after.
@@ -63,6 +65,11 @@ class VideoQualityAnalyzerInjectionHelper {
       VideoFrameWriter* writer) const;
 
   void Start(int max_threads_count);
+
+  // Forwards |stats_reports| for Peer Connection |pc_label| to
+  // |analyzer_|.
+  void OnStatsReports(absl::string_view pc_label,
+                      const StatsReports& stats_reports) override;
 
   // Stops VideoQualityAnalyzerInterface to populate final data and metrics.
   void Stop();
