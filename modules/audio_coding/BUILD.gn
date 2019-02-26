@@ -1467,6 +1467,7 @@ if (rtc_include_tests) {
       deps = [
         "../../rtc_base:checks",
         "../../test:fileutils",
+        "//third_party/abseil-cpp/absl/types:optional",
       ]
       sources = [
         "neteq/tools/neteq_test_factory.cc",

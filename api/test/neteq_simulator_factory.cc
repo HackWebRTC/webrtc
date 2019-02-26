@@ -15,6 +15,18 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/flags.h"
 
+namespace {
+
+WEBRTC_DEFINE_string(replacement_audio_file,
+                     "",
+                     "A PCM file that will be used to populate dummy"
+                     " RTP packets");
+WEBRTC_DEFINE_int(max_nr_packets_in_buffer,
+                  50,
+                  "Maximum allowed number of packets in the buffer");
+
+}  // namespace
+
 namespace webrtc {
 namespace test {
 
@@ -30,7 +42,11 @@ std::unique_ptr<NetEqSimulator> NetEqSimulatorFactory::CreateSimulator(
       << "Error while parsing command-line flags";
   RTC_CHECK_EQ(argc, 3) << "Wrong number of input arguments. Expected 3, got "
                         << argc;
-  return factory_->InitializeTest(argv[1], argv[2]);
+  // TODO(ivoc) Stop (ab)using command-line flags in this function.
+  NetEqTestFactory::Config config;
+  config.replacement_audio_file = FLAG_replacement_audio_file;
+  config.max_nr_packets_in_buffer = FLAG_max_nr_packets_in_buffer;
+  return factory_->InitializeTest(argv[1], argv[2], config);
 }
 
 }  // namespace test
