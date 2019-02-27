@@ -23,12 +23,16 @@ class MockDelayManager : public DelayManager {
  public:
   MockDelayManager(size_t max_packets_in_buffer,
                    int base_min_target_delay_ms,
+                   int histogram_quantile,
+                   HistogramMode histogram_mode,
                    bool enable_rtx_handling,
                    DelayPeakDetector* peak_detector,
                    const TickTimer* tick_timer,
                    std::unique_ptr<Histogram> histogram)
       : DelayManager(max_packets_in_buffer,
                      base_min_target_delay_ms,
+                     histogram_quantile,
+                     histogram_mode,
                      enable_rtx_handling,
                      peak_detector,
                      tick_timer,

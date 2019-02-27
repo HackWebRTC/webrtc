@@ -43,6 +43,8 @@ class Histogram {
   // Returns the probability for each bucket in Q30.
   std::vector<int> buckets() const { return buckets_; }
 
+  int forget_factor() const { return base_forget_factor_; }
+
   // Made public for testing.
   static std::vector<int> ScaleBuckets(const std::vector<int>& buckets,
                                        int old_bucket_width,

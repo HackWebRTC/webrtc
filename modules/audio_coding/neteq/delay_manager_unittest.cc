@@ -25,19 +25,24 @@
 
 namespace webrtc {
 
+namespace {
+constexpr int kMaxNumberOfPackets = 240;
+constexpr int kMinDelayMs = 0;
+constexpr int kTimeStepMs = 10;
+constexpr int kFs = 8000;
+constexpr int kFrameSizeMs = 20;
+constexpr int kTsIncrement = kFrameSizeMs * kFs / 1000;
+constexpr int kMaxBufferSizeMs = kMaxNumberOfPackets * kFrameSizeMs;
+constexpr int kDefaultHistogramQuantile = 1020054733;
+constexpr int kMaxIat = 64;
+constexpr int kForgetFactor = 32745;
+}  // namespace
+
 using ::testing::Return;
 using ::testing::_;
 
 class DelayManagerTest : public ::testing::Test {
  protected:
-  static const int kMaxNumberOfPackets = 240;
-  static const int kMinDelayMs = 0;
-  static const int kTimeStepMs = 10;
-  static const int kFs = 8000;
-  static const int kFrameSizeMs = 20;
-  static const int kTsIncrement = kFrameSizeMs * kFs / 1000;
-  static const int kMaxBufferSizeMs = kMaxNumberOfPackets * kFrameSizeMs;
-
   DelayManagerTest();
   virtual void SetUp();
   virtual void TearDown();
@@ -49,11 +54,13 @@ class DelayManagerTest : public ::testing::Test {
   std::unique_ptr<DelayManager> dm_;
   TickTimer tick_timer_;
   MockDelayPeakDetector detector_;
-  bool use_mock_histogram_ = false;
   MockHistogram* mock_histogram_;
   uint16_t seq_no_;
   uint32_t ts_;
   bool enable_rtx_handling_ = false;
+  bool use_mock_histogram_ = false;
+  DelayManager::HistogramMode histogram_mode_ =
+      DelayManager::HistogramMode::INTER_ARRIVAL_TIME;
 };
 
 DelayManagerTest::DelayManagerTest()
@@ -68,18 +75,17 @@ void DelayManagerTest::SetUp() {
 
 void DelayManagerTest::RecreateDelayManager() {
   EXPECT_CALL(detector_, Reset()).Times(1);
-  std::unique_ptr<Histogram> histogram;
-  static const int kMaxIat = 64;
-  static const int kForgetFactor = 32745;
   if (use_mock_histogram_) {
     mock_histogram_ = new MockHistogram(kMaxIat, kForgetFactor);
-    histogram.reset(mock_histogram_);
+    std::unique_ptr<Histogram> histogram(mock_histogram_);
+    dm_ = absl::make_unique<DelayManager>(
+        kMaxNumberOfPackets, kMinDelayMs, kDefaultHistogramQuantile,
+        histogram_mode_, enable_rtx_handling_, &detector_, &tick_timer_,
+        std::move(histogram));
   } else {
-    histogram = absl::make_unique<Histogram>(kMaxIat, kForgetFactor);
+    dm_ = DelayManager::Create(kMaxNumberOfPackets, kMinDelayMs,
+                               enable_rtx_handling_, &detector_, &tick_timer_);
   }
-  dm_.reset(new DelayManager(kMaxNumberOfPackets, kMinDelayMs,
-                             enable_rtx_handling_, &detector_, &tick_timer_,
-                             std::move(histogram)));
 }
 
 void DelayManagerTest::SetPacketAudioLength(int lengt_ms) {
@@ -577,8 +583,7 @@ TEST_F(DelayManagerTest, TargetDelayGreaterThanOne) {
   test::ScopedFieldTrials field_trial(
       "WebRTC-Audio-NetEqForceTargetDelayPercentile/Enabled-0/");
   RecreateDelayManager();
-  EXPECT_EQ(absl::make_optional<int>(0),
-            dm_->forced_limit_probability_for_test());
+  EXPECT_EQ(0, dm_->histogram_quantile());
 
   SetPacketAudioLength(kFrameSizeMs);
   // First packet arrival.
@@ -599,33 +604,109 @@ TEST_F(DelayManagerTest, ForcedTargetDelayPercentile) {
     test::ScopedFieldTrials field_trial(
         "WebRTC-Audio-NetEqForceTargetDelayPercentile/Enabled-95/");
     RecreateDelayManager();
-    EXPECT_EQ(absl::make_optional<int>(1020054733),
-              dm_->forced_limit_probability_for_test());  // 1/20 in Q30
+    EXPECT_EQ(kDefaultHistogramQuantile, dm_->histogram_quantile());
   }
   {
     test::ScopedFieldTrials field_trial(
         "WebRTC-Audio-NetEqForceTargetDelayPercentile/Enabled-99.95/");
     RecreateDelayManager();
-    EXPECT_EQ(absl::make_optional<int>(1073204953),
-              dm_->forced_limit_probability_for_test());  // 1/2000 in Q30
+    EXPECT_EQ(1073204953, dm_->histogram_quantile());  // 0.9995 in Q30.
   }
   {
     test::ScopedFieldTrials field_trial(
         "WebRTC-Audio-NetEqForceTargetDelayPercentile/Disabled/");
     RecreateDelayManager();
-    EXPECT_EQ(absl::nullopt, dm_->forced_limit_probability_for_test());
+    EXPECT_EQ(kDefaultHistogramQuantile, dm_->histogram_quantile());
   }
   {
     test::ScopedFieldTrials field_trial(
         "WebRTC-Audio-NetEqForceTargetDelayPercentile/Enabled--1/");
-    EXPECT_EQ(absl::nullopt, dm_->forced_limit_probability_for_test());
+    EXPECT_EQ(kDefaultHistogramQuantile, dm_->histogram_quantile());
   }
   {
     test::ScopedFieldTrials field_trial(
         "WebRTC-Audio-NetEqForceTargetDelayPercentile/Enabled-100.1/");
     RecreateDelayManager();
-    EXPECT_EQ(absl::nullopt, dm_->forced_limit_probability_for_test());
+    EXPECT_EQ(kDefaultHistogramQuantile, dm_->histogram_quantile());
   }
+}
+
+TEST_F(DelayManagerTest, DelayHistogramFieldTrial) {
+  {
+    test::ScopedFieldTrials field_trial(
+        "WebRTC-Audio-NetEqDelayHistogram/Enabled-96-0.998/");
+    RecreateDelayManager();
+    EXPECT_EQ(DelayManager::HistogramMode::RELATIVE_ARRIVAL_DELAY,
+              dm_->histogram_mode());
+    EXPECT_EQ(1030792151, dm_->histogram_quantile());  // 0.96 in Q30.
+    EXPECT_EQ(32702, dm_->histogram_forget_factor());  // 0.998 in Q15.
+  }
+  {
+    test::ScopedFieldTrials field_trial(
+        "WebRTC-Audio-NetEqDelayHistogram/Enabled-97.5-0.998/");
+    RecreateDelayManager();
+    EXPECT_EQ(DelayManager::HistogramMode::RELATIVE_ARRIVAL_DELAY,
+              dm_->histogram_mode());
+    EXPECT_EQ(1046898278, dm_->histogram_quantile());  // 0.975 in Q30.
+    EXPECT_EQ(32702, dm_->histogram_forget_factor());  // 0.998 in Q15.
+  }
+  {
+    // NetEqDelayHistogram should take precedence over
+    // NetEqForceTargetDelayPercentile.
+    test::ScopedFieldTrials field_trial(
+        "WebRTC-Audio-NetEqForceTargetDelayPercentile/Enabled-99.95/"
+        "WebRTC-Audio-NetEqDelayHistogram/Enabled-96-0.998/");
+    RecreateDelayManager();
+    EXPECT_EQ(DelayManager::HistogramMode::RELATIVE_ARRIVAL_DELAY,
+              dm_->histogram_mode());
+    EXPECT_EQ(1030792151, dm_->histogram_quantile());  // 0.96 in Q30.
+    EXPECT_EQ(32702, dm_->histogram_forget_factor());  // 0.998 in Q15.
+  }
+  {
+    // Invalid parameters.
+    test::ScopedFieldTrials field_trial(
+        "WebRTC-Audio-NetEqDelayHistogram/Enabled-96/");
+    RecreateDelayManager();
+    EXPECT_EQ(DelayManager::HistogramMode::RELATIVE_ARRIVAL_DELAY,
+              dm_->histogram_mode());
+    EXPECT_EQ(kDefaultHistogramQuantile,
+              dm_->histogram_quantile());                      // 0.95 in Q30.
+    EXPECT_EQ(kForgetFactor, dm_->histogram_forget_factor());  // 0.9993 in Q15.
+  }
+  {
+    test::ScopedFieldTrials field_trial(
+        "WebRTC-Audio-NetEqDelayHistogram/Disabled/");
+    RecreateDelayManager();
+    EXPECT_EQ(DelayManager::HistogramMode::INTER_ARRIVAL_TIME,
+              dm_->histogram_mode());
+    EXPECT_EQ(kDefaultHistogramQuantile,
+              dm_->histogram_quantile());                      // 0.95 in Q30.
+    EXPECT_EQ(kForgetFactor, dm_->histogram_forget_factor());  // 0.9993 in Q15.
+  }
+}
+
+TEST_F(DelayManagerTest, RelativeArrivalDelayMode) {
+  histogram_mode_ = DelayManager::HistogramMode::RELATIVE_ARRIVAL_DELAY;
+  use_mock_histogram_ = true;
+  RecreateDelayManager();
+
+  SetPacketAudioLength(kFrameSizeMs);
+  InsertNextPacket();
+
+  IncreaseTime(kFrameSizeMs);
+  EXPECT_CALL(*mock_histogram_, Add(0));  // Not delayed.
+  InsertNextPacket();
+
+  IncreaseTime(2 * kFrameSizeMs);
+  EXPECT_CALL(*mock_histogram_, Add(1));  // 20ms delayed.
+  EXPECT_EQ(0, dm_->Update(seq_no_, ts_, kFs));
+
+  IncreaseTime(2 * kFrameSizeMs);
+  EXPECT_CALL(*mock_histogram_, Add(2));  // 40ms delayed.
+  EXPECT_EQ(0, dm_->Update(seq_no_ + 1, ts_ + kTsIncrement, kFs));
+
+  EXPECT_CALL(*mock_histogram_, Add(1));  // Reordered, 20ms delayed.
+  EXPECT_EQ(0, dm_->Update(seq_no_, ts_, kFs));
 }
 
 }  // namespace webrtc

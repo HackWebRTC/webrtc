@@ -13,8 +13,8 @@
 
 #include <string.h>  // Provide access to size_t.
 
+#include <deque>
 #include <memory>
-#include <vector>
 
 #include "absl/types/optional.h"
 #include "modules/audio_coding/neteq/histogram.h"
@@ -28,12 +28,19 @@ class DelayPeakDetector;
 
 class DelayManager {
  public:
+  enum HistogramMode {
+    INTER_ARRIVAL_TIME,
+    RELATIVE_ARRIVAL_DELAY,
+  };
+
   DelayManager(size_t max_packets_in_buffer,
                int base_minimum_delay_ms,
+               int histogram_quantile,
+               HistogramMode histogram_mode,
                bool enable_rtx_handling,
                DelayPeakDetector* peak_detector,
                const TickTimer* tick_timer,
-               std::unique_ptr<Histogram> iat_histogram);
+               std::unique_ptr<Histogram> histogram);
 
   // Create a DelayManager object. Notify the delay manager that the packet
   // buffer can hold no more than |max_packets_in_buffer| packets (i.e., this
@@ -117,14 +124,14 @@ class DelayManager {
   virtual void set_last_pack_cng_or_dtmf(int value);
 
   // This accessor is only intended for testing purposes.
-  const absl::optional<int>& forced_limit_probability_for_test() const {
-    return forced_limit_probability_;
-  }
-
-  // This accessor is only intended for testing purposes.
   int effective_minimum_delay_ms_for_test() const {
     return effective_minimum_delay_ms_;
   }
+
+  // This accessor is only intended for testing purposes.
+  HistogramMode histogram_mode() const { return histogram_mode_; }
+  int histogram_quantile() const { return histogram_quantile_; }
+  int histogram_forget_factor() const { return histogram_->forget_factor(); }
 
  private:
   // Provides value which minimum delay can't exceed based on current buffer
@@ -133,6 +140,12 @@ class DelayManager {
 
   // Provides 75% of currently possible maximum buffer size in milliseconds.
   int MaxBufferTimeQ75() const;
+
+  // Updates |delay_history_|.
+  void UpdateDelayHistory(int iat_delay);
+
+  // Calculate relative packet arrival delay from |delay_history_|.
+  int CalculateRelativePacketArrivalDelay() const;
 
   // Updates |iat_cumulative_sum_| and |max_iat_cumulative_sum_|. (These are
   // used by the streaming mode.) This method is called by Update().
@@ -157,7 +170,9 @@ class DelayManager {
 
   bool first_packet_received_;
   const size_t max_packets_in_buffer_;  // Capacity of the packet buffer.
-  std::unique_ptr<Histogram> iat_histogram_;
+  std::unique_ptr<Histogram> histogram_;
+  const int histogram_quantile_;
+  const HistogramMode histogram_mode_;
   const TickTimer* tick_timer_;
   int base_minimum_delay_ms_;
   // Provides delay which is used by LimitTargetLevel as lower bound on target
@@ -185,9 +200,9 @@ class DelayManager {
   DelayPeakDetector& peak_detector_;
   int last_pack_cng_or_dtmf_;
   const bool frame_length_change_experiment_;
-  const absl::optional<int> forced_limit_probability_;
   const bool enable_rtx_handling_;
   int num_reordered_packets_ = 0;  // Number of consecutive reordered packets.
+  std::deque<int> delay_history_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DelayManager);
 };
