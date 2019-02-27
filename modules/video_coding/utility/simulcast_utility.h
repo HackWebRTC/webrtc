@@ -21,10 +21,8 @@ class SimulcastUtility {
  public:
   static uint32_t SumStreamMaxBitrate(int streams, const VideoCodec& codec);
   static int NumberOfSimulcastStreams(const VideoCodec& codec);
-  static bool ValidSimulcastResolutions(const VideoCodec& codec,
-                                        int num_streams);
-  static bool ValidSimulcastTemporalLayers(const VideoCodec& codec,
-                                           int num_streams);
+  static bool ValidSimulcastParameters(const VideoCodec& codec,
+                                       int num_streams);
   static int NumberOfTemporalLayers(const VideoCodec& codec, int spatial_id);
   // TODO(sprang): Remove this hack when ScreenshareLayers is gone.
   static bool IsConferenceModeScreenshare(const VideoCodec& codec);

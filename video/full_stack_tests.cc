@@ -724,24 +724,24 @@ const char kScreenshareSimulcastExperiment[] =
 
 // TODO(bugs.webrtc.org/9840): Investigate why is this test flaky on Win/Mac.
 #if !defined(WEBRTC_WIN)
-TEST(FullStackTest, ScreenshareSlidesVP8_3TL_Simulcast) {
+TEST(FullStackTest, ScreenshareSlidesVP8_2TL_Simulcast) {
   test::ScopedFieldTrials field_trial(
       AppendFieldTrials(kScreenshareSimulcastExperiment));
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging screenshare;
   screenshare.call.send_side_bwe = true;
   screenshare.screenshare[0] = {true, false, 10};
-  screenshare.video[0] = {true,    1850,    1110,  5,     800000,
-                          2500000, 2500000, false, "VP8", 3,
-                          2,       400000,  false, false, false, ""};
+  screenshare.video[0] = {true,    1850,  1110,  30, 800000, 2500000,
+                          2500000, false, "VP8", 3,  2,      400000,
+                          false,   false, false, ""};
   screenshare.analyzer = {"screenshare_slides_simulcast", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   ParamsWithLogging screenshare_params_high;
-  screenshare_params_high.video[0] = {true,    1850,  1110,  5, 400000, 1000000,
-                                      1000000, false, "VP8", 3, 0,      400000,
-                                      false,   false, false, ""};
+  screenshare_params_high.video[0] = {
+      true,  1850, 1110, 60,     600000, 1250000, 1250000, false,
+      "VP8", 2,    0,    400000, false,  false,   false,   ""};
   VideoQualityTest::Params screenshare_params_low;
-  screenshare_params_low.video[0] = {true,    1850,  1110,  5, 50000, 200000,
+  screenshare_params_low.video[0] = {true,    1850,  1110,  5, 30000, 200000,
                                      1000000, false, "VP8", 2, 0,     400000,
                                      false,   false, false, ""};
 
@@ -1249,7 +1249,7 @@ class DualStreamsTest : public ::testing::TestWithParam<int> {};
 // TODO(bugs.webrtc.org/9840): Investigate why is this test flaky on MAC.
 #if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS) && !defined(WEBRTC_MAC)
 TEST_P(DualStreamsTest,
-       ModeratelyRestricted_SlidesVp8_3TL_Simulcast_Video_Simulcast_High) {
+       ModeratelyRestricted_SlidesVp8_2TL_Simulcast_Video_Simulcast_High) {
   test::ScopedFieldTrials field_trial(
       AppendFieldTrials(std::string(kPacerPushBackExperiment) +
                         std::string(kScreenshareSimulcastExperiment)));
@@ -1264,11 +1264,11 @@ TEST_P(DualStreamsTest,
                                       ""};
 
   ParamsWithLogging screenshare_params_high;
-  screenshare_params_high.video[0] = {true,    1850,  1110,  5, 400000, 1000000,
-                                      1000000, false, "VP8", 3, 0,      400000,
-                                      false,   false, false, ""};
+  screenshare_params_high.video[0] = {
+      true,  1850, 1110, 60,     600000, 1250000, 1250000, false,
+      "VP8", 2,    0,    400000, false,  false,   false,   ""};
   VideoQualityTest::Params screenshare_params_low;
-  screenshare_params_low.video[0] = {true,    1850,  1110,  5, 50000, 200000,
+  screenshare_params_low.video[0] = {true,    1850,  1110,  5, 30000, 200000,
                                      1000000, false, "VP8", 2, 0,     400000,
                                      false,   false, false, ""};
   std::vector<VideoStream> screenhsare_streams = {

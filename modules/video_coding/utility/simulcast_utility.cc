@@ -10,6 +10,8 @@
 
 #include <algorithm>
 
+#include <cmath>
+
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/utility/simulcast_utility.h"
 #include "rtc_base/checks.h"
@@ -35,8 +37,9 @@ int SimulcastUtility::NumberOfSimulcastStreams(const VideoCodec& codec) {
   return streams;
 }
 
-bool SimulcastUtility::ValidSimulcastResolutions(const VideoCodec& codec,
-                                                 int num_streams) {
+bool SimulcastUtility::ValidSimulcastParameters(const VideoCodec& codec,
+                                                int num_streams) {
+  // Check resolution.
   if (codec.width != codec.simulcastStream[num_streams - 1].width ||
       codec.height != codec.simulcastStream[num_streams - 1].height) {
     return false;
@@ -63,11 +66,16 @@ bool SimulcastUtility::ValidSimulcastResolutions(const VideoCodec& codec,
       }
     }
   }
-  return true;
-}
 
-bool SimulcastUtility::ValidSimulcastTemporalLayers(const VideoCodec& codec,
-                                                    int num_streams) {
+  // Check frame-rate.
+  for (int i = 1; i < num_streams; ++i) {
+    if (fabs(codec.simulcastStream[i].maxFramerate -
+             codec.simulcastStream[i - 1].maxFramerate) > 1e-9) {
+      return false;
+    }
+  }
+
+  // Check temporal layers.
   for (int i = 0; i < num_streams - 1; ++i) {
     if (codec.simulcastStream[i].numberOfTemporalLayers !=
         codec.simulcastStream[i + 1].numberOfTemporalLayers)

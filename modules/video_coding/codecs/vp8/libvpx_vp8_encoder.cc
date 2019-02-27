@@ -338,9 +338,7 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
 
   int number_of_streams = SimulcastUtility::NumberOfSimulcastStreams(*inst);
   if (number_of_streams > 1 &&
-      (!SimulcastUtility::ValidSimulcastResolutions(*inst, number_of_streams) ||
-       !SimulcastUtility::ValidSimulcastTemporalLayers(*inst,
-                                                       number_of_streams))) {
+      !SimulcastUtility::ValidSimulcastParameters(*inst, number_of_streams)) {
     return WEBRTC_VIDEO_CODEC_ERR_SIMULCAST_PARAMETERS_NOT_SUPPORTED;
   }
 

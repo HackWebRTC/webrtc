@@ -211,10 +211,8 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* inst,
   int number_of_streams = SimulcastUtility::NumberOfSimulcastStreams(*inst);
   bool doing_simulcast = (number_of_streams > 1);
 
-  if (doing_simulcast && (!SimulcastUtility::ValidSimulcastResolutions(
-                              *inst, number_of_streams) ||
-                          !SimulcastUtility::ValidSimulcastTemporalLayers(
-                              *inst, number_of_streams))) {
+  if (doing_simulcast &&
+      !SimulcastUtility::ValidSimulcastParameters(*inst, number_of_streams)) {
     return WEBRTC_VIDEO_CODEC_ERR_SIMULCAST_PARAMETERS_NOT_SUPPORTED;
   }
   downscaled_buffers_.resize(number_of_streams - 1);
