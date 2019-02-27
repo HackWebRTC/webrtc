@@ -252,6 +252,15 @@ class VideoReceiveStream {
 
   virtual std::vector<RtpSource> GetSources() const = 0;
 
+  // Sets a base minimum for the playout delay. Base minimum delay sets lower
+  // bound on minimum delay value determining lower bound on playout delay.
+  //
+  // Returns true if value was successfully set, false overwise.
+  virtual bool SetBaseMinimumPlayoutDelayMs(int delay_ms) = 0;
+
+  // Returns current value of base minimum delay in milliseconds.
+  virtual int GetBaseMinimumPlayoutDelayMs() const = 0;
+
  protected:
   virtual ~VideoReceiveStream() {}
 };

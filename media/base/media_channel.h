@@ -32,6 +32,7 @@
 #include "api/video/video_timing.h"
 #include "api/video_codecs/video_encoder_config.h"
 #include "media/base/codec.h"
+#include "media/base/delayable.h"
 #include "media/base/media_config.h"
 #include "media/base/media_constants.h"
 #include "media/base/stream_params.h"
@@ -707,7 +708,7 @@ struct AudioSendParameters : RtpSendParameters<AudioCodec> {
 
 struct AudioRecvParameters : RtpParameters<AudioCodec> {};
 
-class VoiceMediaChannel : public MediaChannel {
+class VoiceMediaChannel : public MediaChannel, public Delayable {
  public:
   VoiceMediaChannel() {}
   explicit VoiceMediaChannel(const MediaConfig& config)
@@ -738,13 +739,6 @@ class VoiceMediaChannel : public MediaChannel {
                             AudioSource* source) = 0;
   // Set speaker output volume of the specified ssrc.
   virtual bool SetOutputVolume(uint32_t ssrc, double volume) = 0;
-  // Set base minimum delay of the receive stream with specified ssrc.
-  // Base minimum delay sets lower bound on minimum delay value which
-  // determines minimum delay until audio playout.
-  // Returns false if there is no stream with given ssrc.
-  virtual bool SetBaseMinimumPlayoutDelayMs(uint32_t ssrc, int delay_ms) = 0;
-  virtual absl::optional<int> GetBaseMinimumPlayoutDelayMs(
-      uint32_t ssrc) const = 0;
   // Returns if the telephone-event has been negotiated.
   virtual bool CanInsertDtmf() = 0;
   // Send a DTMF |event|. The DTMF out-of-band signal will be used.
@@ -783,7 +777,7 @@ struct VideoSendParameters : RtpSendParameters<VideoCodec> {
 // encapsulate all the parameters needed for a video RtpReceiver.
 struct VideoRecvParameters : RtpParameters<VideoCodec> {};
 
-class VideoMediaChannel : public MediaChannel {
+class VideoMediaChannel : public MediaChannel, public Delayable {
  public:
   VideoMediaChannel() {}
   explicit VideoMediaChannel(const MediaConfig& config)

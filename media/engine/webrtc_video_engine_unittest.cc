@@ -5012,6 +5012,56 @@ TEST_F(WebRtcVideoChannelTest, RecvUnsignaledSsrcWithSignaledStreamId) {
       fake_call_->GetVideoReceiveStreams()[0]->GetConfig().sync_group.empty());
 }
 
+// Test BaseMinimumPlayoutDelayMs on receive streams.
+TEST_F(WebRtcVideoChannelTest, BaseMinimumPlayoutDelayMs) {
+  // Test that set won't work for non-existing receive streams.
+  EXPECT_FALSE(channel_->SetBaseMinimumPlayoutDelayMs(kSsrc + 2, 200));
+  // Test that get won't work for non-existing receive streams.
+  EXPECT_FALSE(channel_->GetBaseMinimumPlayoutDelayMs(kSsrc + 2));
+
+  EXPECT_TRUE(AddRecvStream());
+  // Test that set works for the existing receive stream.
+  EXPECT_TRUE(channel_->SetBaseMinimumPlayoutDelayMs(last_ssrc_, 200));
+  auto* recv_stream = fake_call_->GetVideoReceiveStream(last_ssrc_);
+  EXPECT_TRUE(recv_stream);
+  EXPECT_EQ(recv_stream->base_mininum_playout_delay_ms(), 200);
+  EXPECT_EQ(channel_->GetBaseMinimumPlayoutDelayMs(last_ssrc_).value_or(0),
+            200);
+}
+
+// Test BaseMinimumPlayoutDelayMs on unsignaled receive streams.
+TEST_F(WebRtcVideoChannelTest, BaseMinimumPlayoutDelayMsUnsignaledRecvStream) {
+  absl::optional<int> delay_ms;
+  const FakeVideoReceiveStream* recv_stream;
+
+  // Set default stream with SSRC 0
+  EXPECT_TRUE(channel_->SetBaseMinimumPlayoutDelayMs(0, 200));
+  EXPECT_EQ(200, channel_->GetBaseMinimumPlayoutDelayMs(0).value_or(0));
+
+  // Spawn an unsignaled stream by sending a packet, it should inherit
+  // default delay 200.
+  const size_t kDataLength = 12;
+  uint8_t data[kDataLength];
+  memset(data, 0, sizeof(data));
+  rtc::SetBE32(&data[8], kIncomingUnsignalledSsrc);
+  rtc::CopyOnWriteBuffer packet(data, kDataLength);
+  channel_->OnPacketReceived(&packet, /* packet_time_us */ -1);
+
+  recv_stream = fake_call_->GetVideoReceiveStream(kIncomingUnsignalledSsrc);
+  EXPECT_EQ(recv_stream->base_mininum_playout_delay_ms(), 200);
+  delay_ms = channel_->GetBaseMinimumPlayoutDelayMs(kIncomingUnsignalledSsrc);
+  EXPECT_EQ(200, delay_ms.value_or(0));
+
+  // Check that now if we change delay for SSRC 0 it will change delay for the
+  // default receiving stream as well.
+  EXPECT_TRUE(channel_->SetBaseMinimumPlayoutDelayMs(0, 300));
+  EXPECT_EQ(300, channel_->GetBaseMinimumPlayoutDelayMs(0).value_or(0));
+  delay_ms = channel_->GetBaseMinimumPlayoutDelayMs(kIncomingUnsignalledSsrc);
+  EXPECT_EQ(300, delay_ms.value_or(0));
+  recv_stream = fake_call_->GetVideoReceiveStream(kIncomingUnsignalledSsrc);
+  EXPECT_EQ(recv_stream->base_mininum_playout_delay_ms(), 300);
+}
+
 void WebRtcVideoChannelTest::TestReceiveUnsignaledSsrcPacket(
     uint8_t payload_type,
     bool expect_created_receive_stream) {

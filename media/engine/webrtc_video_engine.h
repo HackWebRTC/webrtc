@@ -170,6 +170,11 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
                          rtc::scoped_refptr<webrtc::FrameEncryptorInterface>
                              frame_encryptor) override;
 
+  bool SetBaseMinimumPlayoutDelayMs(uint32_t ssrc, int delay_ms) override;
+
+  absl::optional<int> GetBaseMinimumPlayoutDelayMs(
+      uint32_t ssrc) const override;
+
   // Implemented for VideoMediaChannelTest.
   bool sending() const { return sending_; }
 
@@ -393,6 +398,10 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
     void SetFrameDecryptor(
         rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor);
 
+    bool SetBaseMinimumPlayoutDelayMs(int delay_ms);
+
+    int GetBaseMinimumPlayoutDelayMs() const;
+
     void SetSink(rtc::VideoSinkInterface<webrtc::VideoFrame>* sink);
 
     VideoReceiverInfo GetVideoReceiverInfo(bool log_stats);
@@ -469,6 +478,9 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
 
   DefaultUnsignalledSsrcHandler default_unsignalled_ssrc_handler_;
   UnsignalledSsrcHandler* const unsignalled_ssrc_handler_;
+
+  // Delay for unsignaled streams, which may be set before the stream exists.
+  int default_recv_base_minimum_delay_ms_ = 0;
 
   const MediaConfig::Video video_config_;
 

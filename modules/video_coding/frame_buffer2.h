@@ -118,11 +118,6 @@ class FrameBuffer {
   // Check that the references of |frame| are valid.
   bool ValidReferences(const EncodedFrame& frame) const;
 
-  // Updates the minimal and maximal playout delays
-  // depending on the frame.
-  void UpdatePlayoutDelays(const EncodedFrame& frame)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
-
   // Update all directly dependent and indirectly dependent frames and mark
   // them as continuous if all their references has been fulfilled.
   void PropagateContinuity(FrameMap::iterator start)

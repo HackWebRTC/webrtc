@@ -222,6 +222,10 @@ class FakeVideoReceiveStream final : public webrtc::VideoReceiveStream {
     return std::vector<webrtc::RtpSource>();
   }
 
+  int base_mininum_playout_delay_ms() const {
+    return base_mininum_playout_delay_ms_;
+  }
+
  private:
   // webrtc::VideoReceiveStream implementation.
   void Start() override;
@@ -229,9 +233,20 @@ class FakeVideoReceiveStream final : public webrtc::VideoReceiveStream {
 
   webrtc::VideoReceiveStream::Stats GetStats() const override;
 
+  bool SetBaseMinimumPlayoutDelayMs(int delay_ms) override {
+    base_mininum_playout_delay_ms_ = delay_ms;
+    return true;
+  }
+
+  int GetBaseMinimumPlayoutDelayMs() const override {
+    return base_mininum_playout_delay_ms_;
+  }
+
   webrtc::VideoReceiveStream::Config config_;
   bool receiving_;
   webrtc::VideoReceiveStream::Stats stats_;
+
+  int base_mininum_playout_delay_ms_ = 0;
 
   int num_added_secondary_sinks_;
   int num_removed_secondary_sinks_;
@@ -268,6 +283,7 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
   const FakeAudioSendStream* GetAudioSendStream(uint32_t ssrc);
   const std::vector<FakeAudioReceiveStream*>& GetAudioReceiveStreams();
   const FakeAudioReceiveStream* GetAudioReceiveStream(uint32_t ssrc);
+  const FakeVideoReceiveStream* GetVideoReceiveStream(uint32_t ssrc);
 
   const std::vector<FakeFlexfecReceiveStream*>& GetFlexfecReceiveStreams();
 

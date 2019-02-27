@@ -441,6 +441,10 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
 
   std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const override;
 
+  bool SetBaseMinimumPlayoutDelayMs(uint32_t ssrc, int delay_ms) override;
+  absl::optional<int> GetBaseMinimumPlayoutDelayMs(
+      uint32_t ssrc) const override;
+
  private:
   bool SetRecvCodecs(const std::vector<VideoCodec>& codecs);
   bool SetSendCodecs(const std::vector<VideoCodec>& codecs);
@@ -452,6 +456,7 @@ class FakeVideoMediaChannel : public RtpHelper<VideoMediaChannel> {
   std::vector<VideoCodec> send_codecs_;
   std::map<uint32_t, rtc::VideoSinkInterface<webrtc::VideoFrame>*> sinks_;
   std::map<uint32_t, rtc::VideoSourceInterface<webrtc::VideoFrame>*> sources_;
+  std::map<uint32_t, int> output_delays_;
   VideoOptions options_;
   int max_bps_;
 };

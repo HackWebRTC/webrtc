@@ -341,12 +341,14 @@ bool FakeVideoMediaChannel::AddRecvStream(const StreamParams& sp) {
   if (!RtpHelper<VideoMediaChannel>::AddRecvStream(sp))
     return false;
   sinks_[sp.first_ssrc()] = NULL;
+  output_delays_[sp.first_ssrc()] = 0;
   return true;
 }
 bool FakeVideoMediaChannel::RemoveRecvStream(uint32_t ssrc) {
   if (!RtpHelper<VideoMediaChannel>::RemoveRecvStream(ssrc))
     return false;
   sinks_.erase(ssrc);
+  output_delays_.erase(ssrc);
   return true;
 }
 void FakeVideoMediaChannel::FillBitrateInfo(BandwidthEstimationInfo* bwe_info) {
@@ -357,6 +359,23 @@ bool FakeVideoMediaChannel::GetStats(VideoMediaInfo* info) {
 std::vector<webrtc::RtpSource> FakeVideoMediaChannel::GetSources(
     uint32_t ssrc) const {
   return {};
+}
+bool FakeVideoMediaChannel::SetBaseMinimumPlayoutDelayMs(uint32_t ssrc,
+                                                         int delay_ms) {
+  if (output_delays_.find(ssrc) == output_delays_.end()) {
+    return false;
+  } else {
+    output_delays_[ssrc] = delay_ms;
+    return true;
+  }
+}
+absl::optional<int> FakeVideoMediaChannel::GetBaseMinimumPlayoutDelayMs(
+    uint32_t ssrc) const {
+  const auto it = output_delays_.find(ssrc);
+  if (it != output_delays_.end()) {
+    return it->second;
+  }
+  return absl::nullopt;
 }
 bool FakeVideoMediaChannel::SetRecvCodecs(
     const std::vector<VideoCodec>& codecs) {

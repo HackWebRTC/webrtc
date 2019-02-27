@@ -57,6 +57,14 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                      PacketRouter* packet_router,
                      VideoReceiveStream::Config config,
                      ProcessThread* process_thread,
+                     CallStats* call_stats,
+                     Clock* clock,
+                     VCMTiming* timing);
+  VideoReceiveStream(RtpStreamReceiverControllerInterface* receiver_controller,
+                     int num_cpu_cores,
+                     PacketRouter* packet_router,
+                     VideoReceiveStream::Config config,
+                     ProcessThread* process_thread,
                      CallStats* call_stats);
   ~VideoReceiveStream() override;
 
@@ -75,6 +83,12 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   void AddSecondarySink(RtpPacketSinkInterface* sink) override;
   void RemoveSecondarySink(const RtpPacketSinkInterface* sink) override;
+
+  // SetBaseMinimumPlayoutDelayMs and GetBaseMinimumPlayoutDelayMs are called
+  // from webrtc/api level and requested by user code. For e.g. blink/js layer
+  // in Chromium.
+  bool SetBaseMinimumPlayoutDelayMs(int delay_ms) override;
+  int GetBaseMinimumPlayoutDelayMs() const override;
 
   // Implements rtc::VideoSinkInterface<VideoFrame>.
   void OnFrame(const VideoFrame& video_frame) override;
@@ -104,6 +118,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   int id() const override;
   absl::optional<Syncable::Info> GetInfo() const override;
   uint32_t GetPlayoutTimestamp() const override;
+
+  // SetMinimumPlayoutDelay is only called by A/V sync.
   void SetMinimumPlayoutDelay(int delay_ms) override;
 
   std::vector<webrtc::RtpSource> GetSources() const override;
@@ -111,9 +127,12 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
  private:
   static void DecodeThreadFunction(void* ptr);
   bool Decode();
+  void UpdatePlayoutDelays() const
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(playout_delay_lock_);
 
   rtc::SequencedTaskChecker worker_sequence_checker_;
   rtc::SequencedTaskChecker module_process_sequence_checker_;
+  rtc::SequencedTaskChecker network_sequence_checker_;
 
   TransportAdapter transport_adapter_;
   const VideoReceiveStream::Config config_;
@@ -158,6 +177,23 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   int64_t last_keyframe_request_ms_ = 0;
   int64_t last_complete_frame_time_ms_ = 0;
+
+  rtc::CriticalSection playout_delay_lock_;
+
+  // All of them tries to change current min_playout_delay on |timing_| but
+  // source of the change request is different in each case. Among them the
+  // biggest delay is used. -1 means use default value from the |timing_|.
+  //
+  // Minimum delay as decided by the RTP playout delay extension.
+  int frame_minimum_playout_delay_ms_ RTC_GUARDED_BY(playout_delay_lock_) = -1;
+  // Minimum delay as decided by the setLatency function in "webrtc/api".
+  int base_minimum_playout_delay_ms_ RTC_GUARDED_BY(playout_delay_lock_) = -1;
+  // Minimum delay as decided by the A/V synchronization feature.
+  int syncable_minimum_playout_delay_ms_ RTC_GUARDED_BY(playout_delay_lock_) =
+      -1;
+
+  // Maximum delay as decided by the RTP playout delay extension.
+  int frame_maximum_playout_delay_ms_ RTC_GUARDED_BY(playout_delay_lock_) = -1;
 };
 }  // namespace internal
 }  // namespace webrtc

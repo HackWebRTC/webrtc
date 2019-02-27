@@ -32,7 +32,7 @@ const cricket::AudioOptions AudioSourceInterface::options() const {
   return {};
 }
 
-double AudioSourceInterface::GetLatency() const {
+double MediaSourceInterface::GetLatency() const {
   return 0.0;
 }
 

@@ -16,6 +16,8 @@
 #include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "api/scoped_refptr.h"
+#include "pc/playout_latency.h"
+#include "pc/playout_latency_proxy.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/location.h"
@@ -25,11 +27,6 @@
 #include "rtc_base/thread_checker.h"
 
 namespace webrtc {
-
-namespace {
-constexpr int kDefaultLatency = 0;
-constexpr int kRoundToZeroThresholdMs = 10;
-}  // namespace
 
 // This proxy is passed to the underlying media engine to receive audio data as
 // they come in. The data will then be passed back up to the RemoteAudioSource
@@ -55,7 +52,11 @@ class RemoteAudioSource::AudioDataProxy : public AudioSinkInterface {
 RemoteAudioSource::RemoteAudioSource(rtc::Thread* worker_thread)
     : main_thread_(rtc::Thread::Current()),
       worker_thread_(worker_thread),
-      state_(MediaSourceInterface::kLive) {
+      state_(MediaSourceInterface::kLive),
+      latency_(PlayoutLatencyProxy::Create(
+          main_thread_,
+          worker_thread_,
+          new rtc::RefCountedObject<PlayoutLatency>(worker_thread))) {
   RTC_DCHECK(main_thread_);
   RTC_DCHECK(worker_thread_);
 }
@@ -70,12 +71,6 @@ void RemoteAudioSource::Start(cricket::VoiceMediaChannel* media_channel,
                               uint32_t ssrc) {
   RTC_DCHECK_RUN_ON(main_thread_);
   RTC_DCHECK(media_channel);
-  // Check that there are no consecutive start calls.
-  RTC_DCHECK(!media_channel_ && !ssrc_);
-
-  // Remember media channel ssrc pair for latency calls.
-  media_channel_ = media_channel;
-  ssrc_ = ssrc;
 
   // Register for callbacks immediately before AddSink so that we always get
   // notified when a channel goes out of scope (signaled when "AudioDataProxy"
@@ -85,10 +80,8 @@ void RemoteAudioSource::Start(cricket::VoiceMediaChannel* media_channel,
                                    absl::make_unique<AudioDataProxy>(this));
   });
 
-  // Trying to apply cached latency for the audio stream.
-  if (cached_latency_) {
-    SetLatency(cached_latency_.value());
-  }
+  // Apply latency to the audio stream if |SetLatency| was called before.
+  latency_->OnStart(media_channel, ssrc);
 }
 
 void RemoteAudioSource::Stop(cricket::VoiceMediaChannel* media_channel,
@@ -96,9 +89,7 @@ void RemoteAudioSource::Stop(cricket::VoiceMediaChannel* media_channel,
   RTC_DCHECK_RUN_ON(main_thread_);
   RTC_DCHECK(media_channel);
 
-  // Assume that audio stream is no longer present for latency calls.
-  media_channel_ = nullptr;
-  ssrc_ = absl::nullopt;
+  latency_->OnStop();
 
   worker_thread_->Invoke<void>(
       RTC_FROM_HERE, [&] { media_channel->SetRawAudioSink(ssrc, nullptr); });
@@ -123,50 +114,11 @@ void RemoteAudioSource::SetVolume(double volume) {
 }
 
 void RemoteAudioSource::SetLatency(double latency) {
-  RTC_DCHECK_GE(latency, 0);
-  RTC_DCHECK_LE(latency, 10);
-
-  int delay_ms = rtc::dchecked_cast<int>(latency * 1000);
-  // In NetEq 0 delay has special meaning of being unconstrained value that is
-  // why we round delay to 0 if it is small enough during conversion from
-  // latency.
-  if (delay_ms <= kRoundToZeroThresholdMs) {
-    delay_ms = 0;
-  }
-
-  cached_latency_ = latency;
-  SetDelayMs(delay_ms);
+  latency_->SetLatency(latency);
 }
 
 double RemoteAudioSource::GetLatency() const {
-  absl::optional<int> delay_ms = GetDelayMs();
-
-  if (delay_ms) {
-    return delay_ms.value() / 1000.0;
-  } else {
-    return cached_latency_.value_or(kDefaultLatency);
-  }
-}
-
-bool RemoteAudioSource::SetDelayMs(int delay_ms) {
-  if (!media_channel_ || !ssrc_) {
-    return false;
-  }
-
-  worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
-    media_channel_->SetBaseMinimumPlayoutDelayMs(ssrc_.value(), delay_ms);
-  });
-  return true;
-}
-
-absl::optional<int> RemoteAudioSource::GetDelayMs() const {
-  if (!media_channel_ || !ssrc_) {
-    return absl::nullopt;
-  }
-
-  return worker_thread_->Invoke<absl::optional<int>>(RTC_FROM_HERE, [&] {
-    return media_channel_->GetBaseMinimumPlayoutDelayMs(ssrc_.value());
-  });
+  return latency_->GetLatency();
 }
 
 void RemoteAudioSource::RegisterAudioObserver(AudioObserver* observer) {

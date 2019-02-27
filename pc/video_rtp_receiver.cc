@@ -39,7 +39,7 @@ VideoRtpReceiver::VideoRtpReceiver(
     const std::vector<rtc::scoped_refptr<MediaStreamInterface>>& streams)
     : worker_thread_(worker_thread),
       id_(receiver_id),
-      source_(new RefCountedObject<VideoRtpTrackSource>()),
+      source_(new RefCountedObject<VideoRtpTrackSource>(worker_thread_)),
       track_(VideoTrackProxy::Create(
           rtc::Thread::Current(),
           worker_thread,
@@ -123,6 +123,7 @@ void VideoRtpReceiver::Stop() {
     // media channel has already been deleted.
     SetSink(nullptr);
   }
+  source_->Stop();
   stopped_ = true;
 }
 
@@ -142,6 +143,8 @@ void VideoRtpReceiver::SetupMediaChannel(uint32_t ssrc) {
   // Attach any existing frame decryptor to the media channel.
   MaybeAttachFrameDecryptorToMediaChannel(
       ssrc_, worker_thread_, frame_decryptor_, media_channel_, stopped_);
+
+  source_->Start(media_channel_, ssrc);
 }
 
 void VideoRtpReceiver::set_stream_ids(std::vector<std::string> stream_ids) {

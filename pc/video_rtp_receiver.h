@@ -27,6 +27,8 @@
 #include "api/video/video_source_interface.h"
 #include "media/base/media_channel.h"
 #include "media/base/video_broadcaster.h"
+#include "pc/playout_latency.h"
+#include "pc/playout_latency_proxy.h"
 #include "pc/rtp_receiver.h"
 #include "pc/video_track_source.h"
 #include "rtc_base/ref_counted_object.h"
@@ -37,7 +39,7 @@ namespace webrtc {
 class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
  public:
   // An SSRC of 0 will create a receiver that will match the first SSRC it
-  // sees.
+  // sees. Must be called on signaling thread.
   VideoRtpReceiver(rtc::Thread* worker_thread,
                    std::string receiver_id,
                    std::vector<std::string> streams_ids);
@@ -103,23 +105,42 @@ class VideoRtpReceiver : public rtc::RefCountedObject<RtpReceiverInternal> {
 
   std::vector<RtpSource> GetSources() const override;
 
- private:
   class VideoRtpTrackSource : public VideoTrackSource {
    public:
-    VideoRtpTrackSource() : VideoTrackSource(true /* remote */) {}
+    explicit VideoRtpTrackSource(rtc::Thread* worker_thread)
+        : VideoTrackSource(true /* remote */),
+          latency_(PlayoutLatencyProxy::Create(
+              rtc::Thread::Current(),
+              worker_thread,
+              new rtc::RefCountedObject<PlayoutLatency>(worker_thread))) {}
 
     rtc::VideoSourceInterface<VideoFrame>* source() override {
       return &broadcaster_;
     }
     rtc::VideoSinkInterface<VideoFrame>* sink() { return &broadcaster_; }
 
+    void SetLatency(double latency) override { latency_->SetLatency(latency); }
+
+    void Start(cricket::VideoMediaChannel* media_channel, uint32_t ssrc) {
+      latency_->OnStart(media_channel, ssrc);
+    }
+
+    void Stop() { latency_->OnStop(); }
+
+    double GetLatency() const override { return latency_->GetLatency(); }
+
    private:
+    // Allows to thread safely change playout latency. Handles caching cases if
+    // |SetLatency| is called before start.
+    rtc::scoped_refptr<PlayoutLatencyInterface> latency_;
+
     // |broadcaster_| is needed since the decoder can only handle one sink.
     // It might be better if the decoder can handle multiple sinks and consider
     // the VideoSinkWants.
     rtc::VideoBroadcaster broadcaster_;
   };
 
+ private:
   bool SetSink(rtc::VideoSinkInterface<VideoFrame>* sink);
 
   rtc::Thread* const worker_thread_;

@@ -410,6 +410,15 @@ const std::vector<FakeVideoReceiveStream*>& FakeCall::GetVideoReceiveStreams() {
   return video_receive_streams_;
 }
 
+const FakeVideoReceiveStream* FakeCall::GetVideoReceiveStream(uint32_t ssrc) {
+  for (const auto* p : GetVideoReceiveStreams()) {
+    if (p->GetConfig().rtp.remote_ssrc == ssrc) {
+      return p;
+    }
+  }
+  return nullptr;
+}
+
 const std::vector<FakeAudioSendStream*>& FakeCall::GetAudioSendStreams() {
   return audio_send_streams_;
 }

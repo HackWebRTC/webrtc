@@ -347,19 +347,6 @@ bool FrameBuffer::ValidReferences(const EncodedFrame& frame) const {
   return true;
 }
 
-void FrameBuffer::UpdatePlayoutDelays(const EncodedFrame& frame) {
-  TRACE_EVENT0("webrtc", "FrameBuffer::UpdatePlayoutDelays");
-  PlayoutDelay playout_delay = frame.EncodedImage().playout_delay_;
-  if (playout_delay.min_ms >= 0)
-    timing_->set_min_playout_delay(playout_delay.min_ms);
-
-  if (playout_delay.max_ms >= 0)
-    timing_->set_max_playout_delay(playout_delay.max_ms);
-
-  if (!frame.delayed_by_retransmission())
-    timing_->IncomingTimestamp(frame.Timestamp(), frame.ReceivedTime());
-}
-
 int64_t FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
   TRACE_EVENT0("webrtc", "FrameBuffer::InsertFrame");
   RTC_DCHECK(frame);
@@ -449,7 +436,9 @@ int64_t FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
 
   if (!UpdateFrameInfoWithIncomingFrame(*frame, info))
     return last_continuous_picture_id;
-  UpdatePlayoutDelays(*frame);
+
+  if (!frame->delayed_by_retransmission())
+    timing_->IncomingTimestamp(frame->Timestamp(), frame->ReceivedTime());
 
   info->second.frame = std::move(frame);
 
