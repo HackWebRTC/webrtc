@@ -596,7 +596,7 @@ RTCError JsepTransportController::ApplyDescription_n(
         (IsBundled(content_info.name) && content_info.name != *bundled_mid())) {
       continue;
     }
-    error = MaybeCreateJsepTransport(local, content_info);
+    error = MaybeCreateJsepTransport(local, content_info, *description);
     if (!error.ok()) {
       return error;
     }
@@ -958,6 +958,7 @@ cricket::JsepTransport* JsepTransportController::GetJsepTransportByName(
 std::unique_ptr<webrtc::MediaTransportInterface>
 JsepTransportController::MaybeCreateMediaTransport(
     const cricket::ContentInfo& content_info,
+    const cricket::SessionDescription& description,
     bool local,
     cricket::IceTransportInternal* ice_transport) {
   if (!is_media_transport_factory_enabled_) {
@@ -998,6 +999,7 @@ JsepTransportController::MaybeCreateMediaTransport(
     return nullptr;
   }
 
+  // TODO(psla): This code will be removed in favor of media transport settings.
   // Note that we ignore here lifetime and length.
   // In fact we take those bits (inline, lifetime and length) and keep it as
   // part of key derivation.
@@ -1031,6 +1033,7 @@ JsepTransportController::MaybeCreateMediaTransport(
           rtc::ArrayView<const uint8_t>(
               reinterpret_cast<const uint8_t*>(label.data()), label.size()),
           kDerivedKeyByteSize);
+  // TODO(psla): End of the code to be removed.
 
   // We want to crash the app if we don't have a key, and not silently fall
   // back to the unsecure communication.
@@ -1042,6 +1045,15 @@ JsepTransportController::MaybeCreateMediaTransport(
   if (config_.use_media_transport_for_media) {
     settings.event_log = config_.event_log;
   }
+
+  // Assume there is only one media transport (or if more, use the first one).
+  if (!local && !description.MediaTransportSettings().empty() &&
+      config_.media_transport_factory->GetTransportName() ==
+          description.MediaTransportSettings()[0].transport_name) {
+    settings.remote_transport_parameters =
+        description.MediaTransportSettings()[0].transport_setting;
+  }
+
   auto media_transport_result =
       config_.media_transport_factory->CreateMediaTransport(
           ice_transport, network_thread_, settings);
@@ -1054,7 +1066,8 @@ JsepTransportController::MaybeCreateMediaTransport(
 
 RTCError JsepTransportController::MaybeCreateJsepTransport(
     bool local,
-    const cricket::ContentInfo& content_info) {
+    const cricket::ContentInfo& content_info,
+    const cricket::SessionDescription& description) {
   RTC_DCHECK(network_thread_->IsCurrent());
   cricket::JsepTransport* transport = GetJsepTransportByName(content_info.name);
   if (transport) {
@@ -1073,7 +1086,7 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
       CreateIceTransport(content_info.name, /*rtcp=*/false);
 
   std::unique_ptr<MediaTransportInterface> media_transport =
-      MaybeCreateMediaTransport(content_info, local, ice.get());
+      MaybeCreateMediaTransport(content_info, description, local, ice.get());
 
   std::unique_ptr<cricket::DtlsTransportInternal> rtp_dtls_transport =
       CreateDtlsTransport(std::move(ice));

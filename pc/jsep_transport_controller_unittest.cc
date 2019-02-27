@@ -514,6 +514,87 @@ TEST_F(JsepTransportControllerTest, GetMediaTransportInCallee) {
       << "Because media transport is used, expected no-op DTLS transport.";
 }
 
+TEST_F(JsepTransportControllerTest, GetMediaTransportInCalleePassesSdp) {
+  FakeMediaTransportFactory fake_media_transport_factory;
+  JsepTransportController::Config config;
+
+  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  config.media_transport_factory = &fake_media_transport_factory;
+  config.use_media_transport_for_data_channels = true;
+  config.use_media_transport_for_media = true;
+  CreateJsepTransportController(config);
+  auto description = CreateSessionDescriptionWithBundleGroup();
+  AddCryptoSettings(description.get());
+  description->AddMediaTransportSetting("fake", "this-is-a-test-setting");
+  EXPECT_TRUE(transport_controller_
+                  ->SetRemoteDescription(SdpType::kOffer, description.get())
+                  .ok());
+
+  FakeMediaTransport* media_transport = static_cast<FakeMediaTransport*>(
+      transport_controller_->GetMediaTransport(kAudioMid1));
+
+  ASSERT_NE(nullptr, media_transport);
+
+  EXPECT_EQ("this-is-a-test-setting",
+            media_transport->settings().remote_transport_parameters);
+}
+
+// Caller ignores its own outgoing parameters.
+TEST_F(JsepTransportControllerTest,
+       GetMediaTransportInCallerIgnoresXmtSection) {
+  FakeMediaTransportFactory fake_media_transport_factory;
+  JsepTransportController::Config config;
+
+  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  config.media_transport_factory = &fake_media_transport_factory;
+  config.use_media_transport_for_data_channels = true;
+  config.use_media_transport_for_media = true;
+  CreateJsepTransportController(config);
+  auto description = CreateSessionDescriptionWithBundleGroup();
+  AddCryptoSettings(description.get());
+  description->AddMediaTransportSetting("fake", "this-is-a-test-setting");
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer, description.get())
+                  .ok());
+
+  FakeMediaTransport* media_transport = static_cast<FakeMediaTransport*>(
+      transport_controller_->GetMediaTransport(kAudioMid1));
+
+  ASSERT_NE(nullptr, media_transport);
+
+  // Remote parameters are nullopt, because we are the offerer (we don't)
+  // have the remote transport parameters, only ours.
+  EXPECT_EQ(absl::nullopt,
+            media_transport->settings().remote_transport_parameters);
+}
+
+TEST_F(JsepTransportControllerTest,
+       GetMediaTransportInCalleeIgnoresDifferentTransport) {
+  FakeMediaTransportFactory fake_media_transport_factory;
+  JsepTransportController::Config config;
+
+  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  config.media_transport_factory = &fake_media_transport_factory;
+  config.use_media_transport_for_data_channels = true;
+  config.use_media_transport_for_media = true;
+  CreateJsepTransportController(config);
+  auto description = CreateSessionDescriptionWithBundleGroup();
+  AddCryptoSettings(description.get());
+  description->AddMediaTransportSetting("not-a-fake-transport",
+                                        "this-is-a-test-setting");
+  EXPECT_TRUE(transport_controller_
+                  ->SetRemoteDescription(SdpType::kOffer, description.get())
+                  .ok());
+
+  FakeMediaTransport* media_transport = static_cast<FakeMediaTransport*>(
+      transport_controller_->GetMediaTransport(kAudioMid1));
+
+  ASSERT_NE(nullptr, media_transport);
+
+  EXPECT_EQ(absl::nullopt,
+            media_transport->settings().remote_transport_parameters);
+}
+
 TEST_F(JsepTransportControllerTest, GetMediaTransportIsNotSetIfNoSdes) {
   FakeMediaTransportFactory fake_media_transport_factory;
   JsepTransportController::Config config;

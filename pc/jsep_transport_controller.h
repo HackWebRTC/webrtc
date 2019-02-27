@@ -283,14 +283,17 @@ class JsepTransportController : public sigslot::has_slots<> {
   // Transport is created either during SetLocalDescription (|local| == true) or
   // during SetRemoteDescription (|local| == false). Passing |local| helps to
   // differentiate initiator (caller) from answerer (callee).
-  RTCError MaybeCreateJsepTransport(bool local,
-                                    const cricket::ContentInfo& content_info);
+  RTCError MaybeCreateJsepTransport(
+      bool local,
+      const cricket::ContentInfo& content_info,
+      const cricket::SessionDescription& description);
 
   // Creates media transport if config wants to use it, and pre-shared key is
   // provided in content info. It modifies the config to disable media transport
   // if pre-shared key is not provided.
   std::unique_ptr<webrtc::MediaTransportInterface> MaybeCreateMediaTransport(
       const cricket::ContentInfo& content_info,
+      const cricket::SessionDescription& description,
       bool local,
       cricket::IceTransportInternal* ice_transport);
   void MaybeDestroyJsepTransport(const std::string& mid);

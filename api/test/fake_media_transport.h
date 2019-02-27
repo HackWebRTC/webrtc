@@ -98,6 +98,9 @@ class FakeMediaTransport : public MediaTransportInterface {
 
   int target_rate_observers_size() { return target_rate_observers_.size(); }
 
+  // Settings that were passed down to fake media transport.
+  const MediaTransportSettings& settings() { return settings_; }
+
  private:
   const MediaTransportSettings settings_;
   MediaTransportStateCallback* state_callback_;
@@ -109,6 +112,8 @@ class FakeMediaTransportFactory : public MediaTransportFactory {
  public:
   FakeMediaTransportFactory() = default;
   ~FakeMediaTransportFactory() = default;
+
+  std::string GetTransportName() const override { return "fake"; }
 
   RTCErrorOr<std::unique_ptr<MediaTransportInterface>> CreateMediaTransport(
       rtc::PacketTransportInternal* packet_transport,
