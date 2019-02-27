@@ -251,7 +251,7 @@ if (rtc_include_tests) {
       "channel_manager_unittest.cc",
       "channel_unittest.cc",
       "dtls_srtp_transport_unittest.cc",
-      "dtlstransport_unittest.cc",
+      "dtls_transport_unittest.cc",
       "ice_transport_unittest.cc",
       "jsep_transport_controller_unittest.cc",
       "jsep_transport_unittest.cc",
