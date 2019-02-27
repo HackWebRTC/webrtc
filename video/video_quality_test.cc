@@ -477,8 +477,11 @@ void VideoQualityTest::CheckParamsAndInjectionComponents() {
                  params_.video[video_idx].target_bitrate_bps);
     RTC_CHECK_GE(params_.video[video_idx].target_bitrate_bps,
                  params_.video[video_idx].min_bitrate_bps);
-    RTC_CHECK_LT(params_.video[video_idx].selected_tl,
-                 params_.video[video_idx].num_temporal_layers);
+    int selected_stream = params_.ss[video_idx].selected_stream;
+    int stream_tl = params_.ss[video_idx]
+                        .streams[selected_stream]
+                        .num_temporal_layers.value_or(1);
+    RTC_CHECK_LT(params_.video[video_idx].selected_tl, stream_tl);
     RTC_CHECK_LE(params_.ss[video_idx].selected_stream,
                  params_.ss[video_idx].streams.size());
     for (const VideoStream& stream : params_.ss[video_idx].streams) {

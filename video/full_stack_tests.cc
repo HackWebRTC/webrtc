@@ -732,7 +732,7 @@ TEST(FullStackTest, ScreenshareSlidesVP8_2TL_Simulcast) {
   screenshare.call.send_side_bwe = true;
   screenshare.screenshare[0] = {true, false, 10};
   screenshare.video[0] = {true,    1850,  1110,  30, 800000, 2500000,
-                          2500000, false, "VP8", 3,  2,      400000,
+                          2500000, false, "VP8", 2,  1,      400000,
                           false,   false, false, ""};
   screenshare.analyzer = {"screenshare_slides_simulcast", 0.0, 0.0,
                           kFullStackTestDurationSecs};
@@ -1258,10 +1258,9 @@ TEST_P(DualStreamsTest,
 
   // Screenshare Settings.
   dual_streams.screenshare[first_stream] = {true, false, 10};
-  dual_streams.video[first_stream] = {true,    1850,    1110,  5,     800000,
-                                      2500000, 2500000, false, "VP8", 3,
-                                      2,       400000,  false, false, false,
-                                      ""};
+  dual_streams.video[first_stream] = {true,    1850,  1110,  5, 800000, 2500000,
+                                      2500000, false, "VP8", 2, 1,      400000,
+                                      false,   false, false, ""};
 
   ParamsWithLogging screenshare_params_high;
   screenshare_params_high.video[0] = {
