@@ -624,8 +624,9 @@ StreamResult OpenSSLStreamAdapter::Read(void* data,
 
   ssl_read_needs_write_ = false;
 
-  int code = SSL_read(ssl_, data, checked_cast<int>(data_len));
-  int ssl_error = SSL_get_error(ssl_, code);
+  const int code = SSL_read(ssl_, data, checked_cast<int>(data_len));
+  const int ssl_error = SSL_get_error(ssl_, code);
+
   switch (ssl_error) {
     case SSL_ERROR_NONE:
       RTC_LOG(LS_VERBOSE) << " -- success";
@@ -676,10 +677,10 @@ void OpenSSLStreamAdapter::FlushInput(unsigned int left) {
 
   while (left) {
     // This should always succeed
-    int toread = (sizeof(buf) < left) ? sizeof(buf) : left;
-    int code = SSL_read(ssl_, buf, toread);
+    const int toread = (sizeof(buf) < left) ? sizeof(buf) : left;
+    const int code = SSL_read(ssl_, buf, toread);
 
-    int ssl_error = SSL_get_error(ssl_, code);
+    const int ssl_error = SSL_get_error(ssl_, code);
     RTC_DCHECK(ssl_error == SSL_ERROR_NONE);
 
     if (ssl_error != SSL_ERROR_NONE) {
@@ -831,9 +832,10 @@ int OpenSSLStreamAdapter::ContinueSSL() {
   // Clear the DTLS timer
   Thread::Current()->Clear(this, MSG_TIMEOUT);
 
-  int code = (role_ == SSL_CLIENT) ? SSL_connect(ssl_) : SSL_accept(ssl_);
-  int ssl_error;
-  switch (ssl_error = SSL_get_error(ssl_, code)) {
+  const int code = (role_ == SSL_CLIENT) ? SSL_connect(ssl_) : SSL_accept(ssl_);
+  const int ssl_error = SSL_get_error(ssl_, code);
+
+  switch (ssl_error) {
     case SSL_ERROR_NONE:
       RTC_LOG(LS_VERBOSE) << " -- success";
       // By this point, OpenSSL should have given us a certificate, or errored
