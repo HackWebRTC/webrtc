@@ -65,7 +65,7 @@ ScopedJavaLocalRef<jobject> NativeToJavaRtpTransceiver(
 JavaRtpTransceiverGlobalOwner::JavaRtpTransceiverGlobalOwner(
     JNIEnv* env,
     const JavaRef<jobject>& j_transceiver)
-    : j_transceiver_(env, j_transceiver){};
+    : j_transceiver_(env, j_transceiver) {}
 
 JavaRtpTransceiverGlobalOwner::JavaRtpTransceiverGlobalOwner(
     JavaRtpTransceiverGlobalOwner&& other) = default;

@@ -67,7 +67,7 @@ class CaptureSinkFilter : public CBaseFilter {
 
   //  --------------------------------------------------------------------
   //  COM interfaces
-  DECLARE_IUNKNOWN;
+  DECLARE_IUNKNOWN
   STDMETHODIMP SetMatchingMediaType(const VideoCaptureCapability& capability);
 
   //  --------------------------------------------------------------------
