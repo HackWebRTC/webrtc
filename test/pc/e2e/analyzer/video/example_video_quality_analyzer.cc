@@ -44,13 +44,16 @@ uint16_t ExampleVideoQualityAnalyzer::OnFrameCaptured(
 }
 
 void ExampleVideoQualityAnalyzer::OnFramePreEncode(
-    const webrtc::VideoFrame& frame) {}
+    const webrtc::VideoFrame& frame) {
+  rtc::CritScope crit(&lock_);
+  ++frames_pre_encoded_;
+}
 
 void ExampleVideoQualityAnalyzer::OnFrameEncoded(
     uint16_t frame_id,
     const webrtc::EncodedImage& encoded_image) {
   rtc::CritScope crit(&lock_);
-  ++frames_sent_;
+  ++frames_encoded_;
 }
 
 void ExampleVideoQualityAnalyzer::OnFrameDropped(
@@ -70,7 +73,10 @@ void ExampleVideoQualityAnalyzer::OnFrameReceived(
 void ExampleVideoQualityAnalyzer::OnFrameDecoded(
     const webrtc::VideoFrame& frame,
     absl::optional<int32_t> decode_time_ms,
-    absl::optional<uint8_t> qp) {}
+    absl::optional<uint8_t> qp) {
+  rtc::CritScope crit(&lock_);
+  ++frames_decoded_;
+}
 
 void ExampleVideoQualityAnalyzer::OnFrameRendered(
     const webrtc::VideoFrame& frame) {
@@ -112,9 +118,14 @@ uint64_t ExampleVideoQualityAnalyzer::frames_captured() const {
   return frames_captured_;
 }
 
-uint64_t ExampleVideoQualityAnalyzer::frames_sent() const {
+uint64_t ExampleVideoQualityAnalyzer::frames_pre_encoded() const {
   rtc::CritScope crit(&lock_);
-  return frames_sent_;
+  return frames_pre_encoded_;
+}
+
+uint64_t ExampleVideoQualityAnalyzer::frames_encoded() const {
+  rtc::CritScope crit(&lock_);
+  return frames_encoded_;
 }
 
 uint64_t ExampleVideoQualityAnalyzer::frames_received() const {
@@ -122,14 +133,19 @@ uint64_t ExampleVideoQualityAnalyzer::frames_received() const {
   return frames_received_;
 }
 
-uint64_t ExampleVideoQualityAnalyzer::frames_dropped() const {
+uint64_t ExampleVideoQualityAnalyzer::frames_decoded() const {
   rtc::CritScope crit(&lock_);
-  return frames_dropped_;
+  return frames_decoded_;
 }
 
 uint64_t ExampleVideoQualityAnalyzer::frames_rendered() const {
   rtc::CritScope crit(&lock_);
   return frames_rendered_;
+}
+
+uint64_t ExampleVideoQualityAnalyzer::frames_dropped() const {
+  rtc::CritScope crit(&lock_);
+  return frames_dropped_;
 }
 
 }  // namespace test

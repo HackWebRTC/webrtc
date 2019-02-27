@@ -52,10 +52,12 @@ class ExampleVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   std::string GetStreamLabel(uint16_t frame_id) override;
 
   uint64_t frames_captured() const;
-  uint64_t frames_sent() const;
+  uint64_t frames_pre_encoded() const;
+  uint64_t frames_encoded() const;
   uint64_t frames_received() const;
-  uint64_t frames_dropped() const;
+  uint64_t frames_decoded() const;
   uint64_t frames_rendered() const;
+  uint64_t frames_dropped() const;
 
  private:
   // When peer A captured the frame it will come into analyzer's OnFrameCaptured
@@ -71,10 +73,12 @@ class ExampleVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   std::map<uint16_t, std::string> frames_to_stream_label_ RTC_GUARDED_BY(lock_);
   uint16_t next_frame_id_ RTC_GUARDED_BY(lock_) = 0;
   uint64_t frames_captured_ RTC_GUARDED_BY(lock_) = 0;
-  uint64_t frames_sent_ RTC_GUARDED_BY(lock_) = 0;
+  uint64_t frames_pre_encoded_ RTC_GUARDED_BY(lock_) = 0;
+  uint64_t frames_encoded_ RTC_GUARDED_BY(lock_) = 0;
   uint64_t frames_received_ RTC_GUARDED_BY(lock_) = 0;
-  uint64_t frames_dropped_ RTC_GUARDED_BY(lock_) = 0;
+  uint64_t frames_decoded_ RTC_GUARDED_BY(lock_) = 0;
   uint64_t frames_rendered_ RTC_GUARDED_BY(lock_) = 0;
+  uint64_t frames_dropped_ RTC_GUARDED_BY(lock_) = 0;
 };
 
 }  // namespace test
