@@ -15,6 +15,7 @@
 #include "modules/video_coding/utility/vp8_header_parser.h"
 #include "modules/video_coding/utility/vp9_uncompressed_header_parser.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/time_utils.h"
 #include "sdk/android/generated_video_jni/jni/VideoDecoderWrapper_jni.h"
 #include "sdk/android/generated_video_jni/jni/VideoDecoder_jni.h"

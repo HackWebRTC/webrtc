@@ -266,10 +266,6 @@ specific_include_rules = {
     "+modules/video_coding/include/video_codec_interface.h"
   ],
 
-  "video_timing\.h": [
-    "+rtc_base/numerics/safe_conversions.h",
-  ],
-
   "video_encoder_config\.h": [
     "+rtc_base/ref_count.h",
   ],
