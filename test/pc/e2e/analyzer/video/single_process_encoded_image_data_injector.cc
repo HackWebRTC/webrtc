@@ -10,6 +10,7 @@
 
 #include "test/pc/e2e/analyzer/video/single_process_encoded_image_data_injector.h"
 
+#include <algorithm>
 #include <cstddef>
 
 #include "absl/memory/memory.h"
@@ -41,7 +42,8 @@ EncodedImage SingleProcessEncodedImageDataInjector::InjectData(
   ExtractionInfo info;
   info.length = source.size();
   info.discard = discard;
-  memcpy(info.origin_data, source.data(), kUsedBufferSize);
+  size_t insertion_pos = source.size() - kUsedBufferSize;
+  memcpy(info.origin_data, &source.data()[insertion_pos], kUsedBufferSize);
   {
     rtc::CritScope crit(&lock_);
     // Will create new one if missed.
@@ -51,9 +53,9 @@ EncodedImage SingleProcessEncodedImageDataInjector::InjectData(
   }
 
   EncodedImage out = source;
-  out.data()[0] = id & 0x00ff;
-  out.data()[1] = (id & 0xff00) >> 8;
-  out.data()[2] = info.sub_id;
+  out.data()[insertion_pos] = id & 0x00ff;
+  out.data()[insertion_pos + 1] = (id & 0xff00) >> 8;
+  out.data()[insertion_pos + 2] = info.sub_id;
   return out;
 }
 
@@ -67,34 +69,59 @@ EncodedImageExtractionResult SingleProcessEncodedImageDataInjector::ExtractData(
   uint8_t* buffer = out.data();
   size_t size = out.size();
 
-  size_t pos = 0;
+  // |pos| is pointing to end of current encoded image.
+  size_t pos = size - 1;
   absl::optional<uint16_t> id = absl::nullopt;
   bool discard = true;
-  while (pos < size) {
-    // Extract frame id from first 2 bytes of the payload.
-    uint16_t next_id = buffer[pos] + (buffer[pos + 1] << 8);
-    // Extract frame sub id from second 2 byte of the payload.
-    uint16_t sub_id = buffer[pos + 2];
-
-    RTC_CHECK(!id || id.value() == next_id)
-        << "Different frames encoded into single encoded image: " << id.value()
+  std::vector<ExtractionInfo> extraction_infos;
+  // Go through whole buffer and find all related extraction infos in
+  // order from 1st encoded image to the last.
+  while (true) {
+    size_t insertion_pos = pos - kUsedBufferSize + 1;
+    // Extract frame id from first 2 bytes starting from insertion pos.
+    uint16_t next_id = buffer[insertion_pos] + (buffer[insertion_pos + 1] << 8);
+    // Extract frame sub id from second 3 byte starting from insertion pos.
+    uint16_t sub_id = buffer[insertion_pos + 2];
+    RTC_CHECK(!id || *id == next_id)
+        << "Different frames encoded into single encoded image: " << *id
         << " vs " << next_id;
     id = next_id;
-
     ExtractionInfo info;
     {
       rtc::CritScope crit(&lock_);
       auto ext_vector_it = extraction_cache_.find(next_id);
       RTC_CHECK(ext_vector_it != extraction_cache_.end())
-          << "Unknown frame id " << next_id;
+          << "Unknown frame_id=" << next_id;
 
       auto info_it = ext_vector_it->second.infos.find(sub_id);
       RTC_CHECK(info_it != ext_vector_it->second.infos.end())
-          << "Unknown sub id " << sub_id << " for frame " << next_id;
+          << "Unknown sub_id=" << sub_id << " for frame_id=" << next_id;
       info = info_it->second;
       ext_vector_it->second.infos.erase(info_it);
     }
+    extraction_infos.push_back(info);
+    // We need to discard encoded image only if all concatenated encoded images
+    // have to be discarded.
+    discard = discard & info.discard;
+    if (pos < info.length) {
+      break;
+    }
+    pos -= info.length;
+  }
+  RTC_CHECK(id);
+  std::reverse(extraction_infos.begin(), extraction_infos.end());
+  if (discard) {
+    out.set_size(0);
+    return EncodedImageExtractionResult{*id, out, true};
+  }
 
+  // Make a pass from begin to end to restore origin payload and erase discarded
+  // encoded images.
+  pos = 0;
+  auto extraction_infos_it = extraction_infos.begin();
+  while (pos < size) {
+    RTC_DCHECK(extraction_infos_it != extraction_infos.end());
+    const ExtractionInfo& info = *extraction_infos_it;
     if (info.discard) {
       // If this encoded image is marked to be discarded - erase it's payload
       // from the buffer.
@@ -102,16 +129,15 @@ EncodedImageExtractionResult SingleProcessEncodedImageDataInjector::ExtractData(
               size - pos - info.length);
       size -= info.length;
     } else {
-      memmove(&buffer[pos], info.origin_data, kUsedBufferSize);
+      memcpy(&buffer[pos + info.length - kUsedBufferSize], info.origin_data,
+             kUsedBufferSize);
       pos += info.length;
     }
-    // We need to discard encoded image only if all concatenated encoded images
-    // have to be discarded.
-    discard = discard & info.discard;
+    ++extraction_infos_it;
   }
   out.set_size(pos);
 
-  return EncodedImageExtractionResult{id.value(), out, discard};
+  return EncodedImageExtractionResult{*id, out, discard};
 }
 
 SingleProcessEncodedImageDataInjector::ExtractionInfoVector::

@@ -28,11 +28,11 @@ namespace test {
 // and uses same QualityAnalyzingVideoContext to obtain
 // EncodedImageDataInjector.
 //
-// To inject frame id and discard flag into EncodedImage injector uses first 2
-// bytes of EncodedImage payload. Then it uses 3rd byte for frame sub id, that
-// is required to distinguish different spatial layers. The origin data from
-// these 3 bytes will be stored inside injector's internal storage and then will
-// be restored during extraction phase.
+// To inject frame id and discard flag into EncodedImage injector uses last 3rd
+// and 2nd bytes of EncodedImage payload. Then it uses last byte for frame
+// sub id, that is required to distinguish different spatial layers. The origin
+// data from these 3 bytes will be stored inside injector's internal storage and
+// then will be restored during extraction phase.
 //
 // This injector won't add any extra overhead into EncodedImage payload and
 // support frames with any size of payload. Also assumes that every EncodedImage
