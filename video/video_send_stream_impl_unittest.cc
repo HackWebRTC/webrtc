@@ -95,8 +95,6 @@ class VideoSendStreamImplTest : public ::testing::Test {
     config_.rtp.ssrcs.push_back(8080);
     config_.rtp.payload_type = 1;
 
-    EXPECT_CALL(transport_controller_, keepalive_config())
-        .WillRepeatedly(ReturnRef(keepalive_config_));
     EXPECT_CALL(transport_controller_, packet_router())
         .WillRepeatedly(Return(&packet_router_));
     EXPECT_CALL(transport_controller_,

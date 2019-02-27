@@ -71,13 +71,11 @@ class RtpTransportControllerSend final
 
   TransportFeedbackObserver* transport_feedback_observer() override;
   RtpPacketSender* packet_sender() override;
-  const RtpKeepAliveConfig& keepalive_config() const override;
 
   void SetAllocatedSendBitrateLimits(int min_send_bitrate_bps,
                                      int max_padding_bitrate_bps,
                                      int max_total_bitrate_bps) override;
 
-  void SetKeepAliveConfig(const RtpKeepAliveConfig& config);
   void SetPacingFactor(float pacing_factor) override;
   void SetQueueTimeLimit(int limit_ms) override;
   void RegisterPacketFeedbackObserver(
@@ -133,7 +131,6 @@ class RtpTransportControllerSend final
   PacketRouter packet_router_;
   std::vector<std::unique_ptr<RtpVideoSenderInterface>> video_rtp_senders_;
   PacedSender pacer_;
-  RtpKeepAliveConfig keepalive_;
   RtpBitrateConfigurator bitrate_configurator_;
   std::map<std::string, rtc::NetworkRoute> network_routes_;
   const std::unique_ptr<ProcessThread> process_thread_;

@@ -213,7 +213,8 @@ RtpVideoSender::RtpVideoSender(
                                         event_log,
                                         retransmission_limiter,
                                         this,
-                                        transport->keepalive_config(),
+                                        // TODO(srte): Remove this argument.
+                                        RtpKeepAliveConfig(),
                                         frame_encryptor,
                                         crypto_options)),
       rtp_config_(rtp_config),

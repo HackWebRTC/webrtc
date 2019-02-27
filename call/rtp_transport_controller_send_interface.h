@@ -116,7 +116,6 @@ class RtpTransportControllerSendInterface {
   virtual TransportFeedbackObserver* transport_feedback_observer() = 0;
 
   virtual RtpPacketSender* packet_sender() = 0;
-  virtual const RtpKeepAliveConfig& keepalive_config() const = 0;
 
   // SetAllocatedSendBitrateLimits sets bitrates limits imposed by send codec
   // settings.

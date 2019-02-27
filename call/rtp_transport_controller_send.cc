@@ -156,10 +156,6 @@ RtpPacketSender* RtpTransportControllerSend::packet_sender() {
   return &pacer_;
 }
 
-const RtpKeepAliveConfig& RtpTransportControllerSend::keepalive_config() const {
-  return keepalive_;
-}
-
 void RtpTransportControllerSend::SetAllocatedSendBitrateLimits(
     int min_send_bitrate_bps,
     int max_padding_bitrate_bps,
@@ -170,11 +166,6 @@ void RtpTransportControllerSend::SetAllocatedSendBitrateLimits(
   streams_config_.max_total_allocated_bitrate =
       DataRate::bps(max_total_bitrate_bps);
   UpdateStreamsConfig();
-}
-
-void RtpTransportControllerSend::SetKeepAliveConfig(
-    const RtpKeepAliveConfig& config) {
-  keepalive_ = config;
 }
 void RtpTransportControllerSend::SetPacingFactor(float pacing_factor) {
   RTC_DCHECK_RUN_ON(&task_queue_);

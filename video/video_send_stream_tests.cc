@@ -3719,52 +3719,6 @@ TEST_F(VideoSendStreamTest, RemoveOverheadFromBandwidth) {
   RunBaseTest(&test);
 }
 
-TEST_F(VideoSendStreamTest, SendsKeepAlive) {
-  const int kTimeoutMs = 50;  // Really short timeout for testing.
-
-  class KeepaliveObserver : public test::SendTest {
-   public:
-    KeepaliveObserver() : SendTest(kDefaultTimeoutMs) {}
-
-    void OnRtpTransportControllerSendCreated(
-        RtpTransportControllerSend* controller) override {
-      RtpKeepAliveConfig config;
-      config.timeout_interval_ms = kTimeoutMs;
-      config.payload_type = CallTest::kDefaultKeepalivePayloadType;
-      controller->SetKeepAliveConfig(config);
-    }
-
-   private:
-    Action OnSendRtp(const uint8_t* packet, size_t length) override {
-      RTPHeader header;
-      EXPECT_TRUE(parser_->Parse(packet, length, &header));
-
-      if (header.payloadType != CallTest::kDefaultKeepalivePayloadType) {
-        // The video stream has started. Stop it now.
-        if (capturer_)
-          capturer_->Stop();
-      } else {
-        observation_complete_.Set();
-      }
-
-      return SEND_PACKET;
-    }
-
-    void PerformTest() override {
-      EXPECT_TRUE(Wait()) << "Timed out while waiting for keep-alive packet.";
-    }
-
-    void OnFrameGeneratorCapturerCreated(
-        test::FrameGeneratorCapturer* frame_generator_capturer) override {
-      capturer_ = frame_generator_capturer;
-    }
-
-    test::FrameGeneratorCapturer* capturer_ = nullptr;
-  } test;
-
-  RunBaseTest(&test);
-}
-
 class PacingFactorObserver : public test::SendTest {
  public:
   PacingFactorObserver(bool configure_send_side,

@@ -48,7 +48,6 @@ class MockRtpTransportControllerSend
   MOCK_METHOD0(packet_router, PacketRouter*());
   MOCK_METHOD0(transport_feedback_observer, TransportFeedbackObserver*());
   MOCK_METHOD0(packet_sender, RtpPacketSender*());
-  MOCK_CONST_METHOD0(keepalive_config, RtpKeepAliveConfig&());
   MOCK_METHOD3(SetAllocatedSendBitrateLimits, void(int, int, int));
   MOCK_METHOD1(SetPacingFactor, void(float));
   MOCK_METHOD1(SetQueueTimeLimit, void(int));
