@@ -97,9 +97,12 @@ class FixturePeerConnectionObserver : public MockPeerConnectionObserver {
 }  // namespace
 
 PeerConnectionE2EQualityTest::PeerConnectionE2EQualityTest(
+    std::string test_case_name,
     std::unique_ptr<AudioQualityAnalyzerInterface> audio_quality_analyzer,
     std::unique_ptr<VideoQualityAnalyzerInterface> video_quality_analyzer)
-    : clock_(Clock::GetRealTimeClock()), task_queue_("pc_e2e_quality_test") {
+    : clock_(Clock::GetRealTimeClock()),
+      test_case_name_(std::move(test_case_name)),
+      task_queue_("pc_e2e_quality_test") {
   // Create default video quality analyzer. We will always create an analyzer,
   // even if there are no video streams, because it will be installed into video
   // encoder/decoder factories.
@@ -194,7 +197,9 @@ void PeerConnectionE2EQualityTest::Run(
       std::min(video_analyzer_threads, kMaxVideoAnalyzerThreads);
   RTC_LOG(INFO) << "video_analyzer_threads=" << video_analyzer_threads;
 
-  video_quality_analyzer_injection_helper_->Start(video_analyzer_threads);
+  video_quality_analyzer_injection_helper_->Start(test_case_name_,
+                                                  video_analyzer_threads);
+  audio_quality_analyzer_->Start(test_case_name_);
 
   // Start RTCEventLog recording if requested.
   if (alice_->params()->rtc_event_log_path) {

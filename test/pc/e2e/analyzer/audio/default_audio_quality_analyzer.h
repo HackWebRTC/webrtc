@@ -20,8 +20,12 @@ namespace test {
 
 class DefaultAudioQualityAnalyzer : public AudioQualityAnalyzerInterface {
  public:
+  void Start(std::string test_case_name) override;
   void OnStatsReports(absl::string_view pc_label,
                       const StatsReports& stats_reports) override;
+
+ private:
+  std::string test_case_name_;
 };
 
 }  // namespace test

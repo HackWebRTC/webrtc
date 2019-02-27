@@ -54,11 +54,14 @@ class VideoQualityAnalyzerInterface : public StatsObserverInterface {
  public:
   ~VideoQualityAnalyzerInterface() override = default;
 
-  // Will be called by framework before test. |threads_count| is number of
-  // threads that analyzer can use for heavy calculations. Analyzer can perform
-  // simple calculations on the calling thread in each method, but should
-  // remember, that it is the same thread, that is used in video pipeline.
-  virtual void Start(int max_threads_count) {}
+  // Will be called by framework before test.
+  // |test_case_name| is name of test case, that should be used to report all
+  // video metrics.
+  // |threads_count| is number of threads that analyzer can use for heavy
+  // calculations. Analyzer can perform simple calculations on the calling
+  // thread in each method, but should remember, that it is the same thread,
+  // that is used in video pipeline.
+  virtual void Start(std::string test_case_name, int max_threads_count) {}
 
   // Will be called when frame was generated from the input stream.
   // Returns frame id, that will be set by framework to the frame.

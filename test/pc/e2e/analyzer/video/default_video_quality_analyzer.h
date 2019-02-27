@@ -117,10 +117,10 @@ struct AnalyzerStats {
 
 class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
  public:
-  explicit DefaultVideoQualityAnalyzer(std::string test_label);
+  DefaultVideoQualityAnalyzer();
   ~DefaultVideoQualityAnalyzer() override;
 
-  void Start(int max_threads_count) override;
+  void Start(std::string test_case_name, int max_threads_count) override;
   uint16_t OnFrameCaptured(const std::string& stream_label,
                            const VideoFrame& frame) override;
   void OnFramePreEncode(const VideoFrame& frame) override;
@@ -247,10 +247,10 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   std::string GetTestCaseName(const std::string& stream_label) const;
   Timestamp Now();
 
-  const std::string test_label_;
-
   webrtc::Clock* const clock_;
   std::atomic<uint16_t> next_frame_id_{0};
+
+  std::string test_label_;
 
   rtc::CriticalSection lock_;
   State state_ RTC_GUARDED_BY(lock_) = State::kNew;

@@ -46,13 +46,15 @@ double RateCounter::GetEventsPerSecond() const {
          (event_last_time_ - event_first_time_).us() * kMicrosPerSecond;
 }
 
-DefaultVideoQualityAnalyzer::DefaultVideoQualityAnalyzer(std::string test_label)
-    : test_label_(std::move(test_label)), clock_(Clock::GetRealTimeClock()) {}
+DefaultVideoQualityAnalyzer::DefaultVideoQualityAnalyzer()
+    : clock_(Clock::GetRealTimeClock()) {}
 DefaultVideoQualityAnalyzer::~DefaultVideoQualityAnalyzer() {
   Stop();
 }
 
-void DefaultVideoQualityAnalyzer::Start(int max_threads_count) {
+void DefaultVideoQualityAnalyzer::Start(std::string test_case_name,
+                                        int max_threads_count) {
+  test_label_ = std::move(test_case_name);
   for (int i = 0; i < max_threads_count; i++) {
     auto thread = absl::make_unique<rtc::PlatformThread>(
         &DefaultVideoQualityAnalyzer::ProcessComparisonsThread, this,

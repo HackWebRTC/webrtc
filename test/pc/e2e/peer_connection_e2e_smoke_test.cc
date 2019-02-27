@@ -100,7 +100,7 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
 
   // Create analyzers.
   std::unique_ptr<VideoQualityAnalyzerInterface> video_quality_analyzer =
-      absl::make_unique<DefaultVideoQualityAnalyzer>("smoke_test");
+      absl::make_unique<DefaultVideoQualityAnalyzer>();
   // This is only done for the sake of smoke testing. In general there should
   // be no need to explicitly pull data from analyzers after the run.
   auto* video_analyzer_ptr =
@@ -110,7 +110,8 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
       absl::make_unique<DefaultAudioQualityAnalyzer>();
 
   auto fixture = CreatePeerConnectionE2EQualityTestFixture(
-      std::move(audio_quality_analyzer), std::move(video_quality_analyzer));
+      "smoke_test", std::move(audio_quality_analyzer),
+      std::move(video_quality_analyzer));
   fixture->Run(std::move(alice_components), std::move(alice_params),
                std::move(bob_components), absl::make_unique<Params>(),
                RunParams{TimeDelta::seconds(5)});

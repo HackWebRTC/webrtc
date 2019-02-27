@@ -33,7 +33,7 @@ class ExampleVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   ExampleVideoQualityAnalyzer();
   ~ExampleVideoQualityAnalyzer() override;
 
-  void Start(int max_threads_count) override;
+  void Start(std::string test_case_name, int max_threads_count) override;
   uint16_t OnFrameCaptured(const std::string& stream_label,
                            const VideoFrame& frame) override;
   void OnFramePreEncode(const VideoFrame& frame) override;

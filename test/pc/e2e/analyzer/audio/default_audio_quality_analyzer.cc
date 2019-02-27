@@ -15,6 +15,10 @@
 namespace webrtc {
 namespace test {
 
+void DefaultAudioQualityAnalyzer::Start(std::string test_case_name) {
+  test_case_name_ = std::move(test_case_name);
+}
+
 void DefaultAudioQualityAnalyzer::OnStatsReports(
     absl::string_view pc_label,
     const StatsReports& stats_reports) {

@@ -18,7 +18,8 @@ namespace test {
 ExampleVideoQualityAnalyzer::ExampleVideoQualityAnalyzer() = default;
 ExampleVideoQualityAnalyzer::~ExampleVideoQualityAnalyzer() = default;
 
-void ExampleVideoQualityAnalyzer::Start(int max_threads_count) {}
+void ExampleVideoQualityAnalyzer::Start(std::string test_case_name,
+                                        int max_threads_count) {}
 
 uint16_t ExampleVideoQualityAnalyzer::OnFrameCaptured(
     const std::string& stream_label,

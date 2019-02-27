@@ -19,6 +19,11 @@ namespace test {
 class AudioQualityAnalyzerInterface : public StatsObserverInterface {
  public:
   ~AudioQualityAnalyzerInterface() override = default;
+
+  // Will be called by framework before test.
+  // |test_case_name| is name of test case, that should be used to report all
+  // audio metrics.
+  virtual void Start(std::string test_case_name) = 0;
 };
 
 }  // namespace test
