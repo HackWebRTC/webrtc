@@ -16,7 +16,6 @@
 
 namespace rtc {
 
-class TaskQueue;
 // Real implementation of SequencedTaskChecker, for use in debug mode, or
 // for temporary use in release mode.
 //

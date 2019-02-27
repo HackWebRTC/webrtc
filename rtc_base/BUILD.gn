@@ -611,8 +611,8 @@ rtc_source_set("sequenced_task_checker") {
     ":checks",
     ":criticalsection",
     ":macromagic",
-    ":rtc_task_queue",
     ":thread_checker",
+    "../api/task_queue",
   ]
 }
 

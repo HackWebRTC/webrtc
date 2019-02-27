@@ -14,19 +14,19 @@
 #include <dispatch/dispatch.h>
 #endif
 
+#include "api/task_queue/task_queue_base.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/sequenced_task_checker.h"
-#include "rtc_base/task_queue.h"
 
 namespace rtc {
 
 SequencedTaskCheckerImpl::SequencedTaskCheckerImpl()
-    : attached_(true), valid_queue_(TaskQueue::Current()) {}
+    : attached_(true), valid_queue_(webrtc::TaskQueueBase::Current()) {}
 
 SequencedTaskCheckerImpl::~SequencedTaskCheckerImpl() {}
 
 bool SequencedTaskCheckerImpl::CalledSequentially() const {
-  QueueId current_queue = TaskQueue::Current();
+  QueueId current_queue = webrtc::TaskQueueBase::Current();
 #if defined(WEBRTC_MAC)
   // If we're not running on a TaskQueue, use the system dispatch queue
   // label as an identifier.
