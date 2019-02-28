@@ -10,6 +10,7 @@
 
 #include "api/peer_connection_interface.h"
 #include "api/dtls_transport_interface.h"
+#include "api/sctp_transport_interface.h"
 
 namespace webrtc {
 
@@ -183,6 +184,12 @@ bool PeerConnectionInterface::StartRtcEventLog(
 
 rtc::scoped_refptr<DtlsTransportInterface>
 PeerConnectionInterface::LookupDtlsTransportByMid(const std::string& mid) {
+  RTC_NOTREACHED();
+  return nullptr;
+}
+
+rtc::scoped_refptr<SctpTransportInterface>
+PeerConnectionInterface::GetSctpTransport() const {
   RTC_NOTREACHED();
   return nullptr;
 }

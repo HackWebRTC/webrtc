@@ -36,10 +36,10 @@ struct sctp_stream_reset_event;
 struct socket;
 namespace cricket {
 
-// Holds data to be passed on to a channel.
+// Holds data to be passed on to a transport.
 struct SctpInboundPacket;
 
-// From channel calls, data flows like this:
+// From transport calls, data flows like this:
 // [network thread (although it can in princple be another thread)]
 //  1.  SctpTransport::SendData(data)
 //  2.  usrsctp_sendv(data)
@@ -59,16 +59,15 @@ struct SctpInboundPacket;
 //  12. SctpTransport::SignalDataReceived(data)
 // [from the same thread, methods registered/connected to
 //  SctpTransport are called with the recieved data]
-// TODO(zhihuang): Rename "channel" to "transport" on network-level.
 class SctpTransport : public SctpTransportInternal,
                       public sigslot::has_slots<> {
  public:
   // |network_thread| is where packets will be processed and callbacks from
   // this transport will be posted, and is the only thread on which public
   // methods can be called.
-  // |channel| is required (must not be null).
+  // |transport| is not required (can be null).
   SctpTransport(rtc::Thread* network_thread,
-                rtc::PacketTransportInternal* channel);
+                rtc::PacketTransportInternal* transport);
   ~SctpTransport() override;
 
   // SctpTransportInternal overrides (see sctptransportinternal.h for comments).
@@ -108,7 +107,7 @@ class SctpTransport : public SctpTransportInternal,
   // Sets the "ready to send" flag and fires signal if needed.
   void SetReadyToSendData();
 
-  // Callbacks from DTLS channel.
+  // Callbacks from DTLS transport.
   void OnWritableState(rtc::PacketTransportInternal* transport);
   virtual void OnPacketRead(rtc::PacketTransportInternal* transport,
                             const char* data,
@@ -135,12 +134,12 @@ class SctpTransport : public SctpTransportInternal,
 
   void OnStreamResetEvent(const struct sctp_stream_reset_event* evt);
 
-  // Responsible for marshalling incoming data to the channels listeners, and
+  // Responsible for marshalling incoming data to the transports listeners, and
   // outgoing data to the network interface.
   rtc::Thread* network_thread_;
   // Helps pass inbound/outbound packets asynchronously to the network thread.
   rtc::AsyncInvoker invoker_;
-  // Underlying DTLS channel.
+  // Underlying DTLS transport.
   rtc::PacketTransportInternal* transport_ = nullptr;
 
   // Track the data received from usrsctp between callbacks until the EOR bit

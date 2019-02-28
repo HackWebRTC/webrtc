@@ -41,6 +41,7 @@
 #include "pc/rtp_media_utils.h"
 #include "pc/rtp_receiver.h"
 #include "pc/rtp_sender.h"
+#include "pc/sctp_transport.h"
 #include "pc/sctp_utils.h"
 #include "pc/sdp_utils.h"
 #include "pc/stream_collection.h"
@@ -3658,6 +3659,11 @@ PeerConnection::LookupDtlsTransportByMidInternal(const std::string& mid) {
   return transport_controller_->LookupDtlsTransportByMid(mid);
 }
 
+rtc::scoped_refptr<SctpTransportInterface> PeerConnection::GetSctpTransport()
+    const {
+  return sctp_transport_;
+}
+
 const SessionDescriptionInterface* PeerConnection::local_description() const {
   return pending_local_description_ ? pending_local_description_.get()
                                     : current_local_description_.get();
@@ -5497,7 +5503,7 @@ bool PeerConnection::PushdownSctpParameters_n(cricket::ContentSource source) {
   RTC_DCHECK(remote_description());
   // Apply the SCTP port (which is hidden inside a DataCodec structure...)
   // When we support "max-message-size", that would also be pushed down here.
-  return sctp_transport_->Start(
+  return cricket_sctp_transport()->Start(
       GetSctpPort(local_description()->description()),
       GetSctpPort(remote_description()->description()));
 }
@@ -5631,7 +5637,7 @@ bool PeerConnection::SendData(const cricket::SendDataParams& params,
              : network_thread()->Invoke<bool>(
                    RTC_FROM_HERE,
                    Bind(&cricket::SctpTransportInternal::SendData,
-                        sctp_transport_.get(), params, payload, result));
+                        cricket_sctp_transport(), params, payload, result));
 }
 
 bool PeerConnection::ConnectDataChannel(DataChannel* webrtc_data_channel) {
@@ -5705,7 +5711,7 @@ void PeerConnection::AddSctpDataStream(int sid) {
   }
   network_thread()->Invoke<void>(
       RTC_FROM_HERE, rtc::Bind(&cricket::SctpTransportInternal::OpenStream,
-                               sctp_transport_.get(), sid));
+                               cricket_sctp_transport(), sid));
 }
 
 void PeerConnection::RemoveSctpDataStream(int sid) {
@@ -5720,7 +5726,7 @@ void PeerConnection::RemoveSctpDataStream(int sid) {
   }
   network_thread()->Invoke<void>(
       RTC_FROM_HERE, rtc::Bind(&cricket::SctpTransportInternal::ResetStream,
-                               sctp_transport_.get(), sid));
+                               cricket_sctp_transport(), sid));
 }
 
 bool PeerConnection::ReadyToSendData() const {
@@ -6243,32 +6249,38 @@ Call::Stats PeerConnection::GetCallStats() {
 bool PeerConnection::CreateSctpTransport_n(const std::string& mid) {
   RTC_DCHECK(network_thread()->IsCurrent());
   RTC_DCHECK(sctp_factory_);
+  rtc::scoped_refptr<DtlsTransport> webrtc_dtls_transport =
+      transport_controller_->LookupDtlsTransportByMid(mid);
   cricket::DtlsTransportInternal* dtls_transport =
-      transport_controller_->GetDtlsTransport(mid);
+      webrtc_dtls_transport->internal();
   RTC_DCHECK(dtls_transport);
-  sctp_transport_ = sctp_factory_->CreateSctpTransport(dtls_transport);
-  RTC_DCHECK(sctp_transport_);
+  std::unique_ptr<cricket::SctpTransportInternal> cricket_sctp_transport =
+      sctp_factory_->CreateSctpTransport(dtls_transport);
+  RTC_DCHECK(cricket_sctp_transport);
   sctp_invoker_.reset(new rtc::AsyncInvoker());
-  sctp_transport_->SignalReadyToSendData.connect(
+  cricket_sctp_transport->SignalReadyToSendData.connect(
       this, &PeerConnection::OnSctpTransportReadyToSendData_n);
-  sctp_transport_->SignalDataReceived.connect(
+  cricket_sctp_transport->SignalDataReceived.connect(
       this, &PeerConnection::OnSctpTransportDataReceived_n);
   // TODO(deadbeef): All we do here is AsyncInvoke to fire the signal on
   // another thread. Would be nice if there was a helper class similar to
   // sigslot::repeater that did this for us, eliminating a bunch of boilerplate
   // code.
-  sctp_transport_->SignalClosingProcedureStartedRemotely.connect(
+  cricket_sctp_transport->SignalClosingProcedureStartedRemotely.connect(
       this, &PeerConnection::OnSctpClosingProcedureStartedRemotely_n);
-  sctp_transport_->SignalClosingProcedureComplete.connect(
+  cricket_sctp_transport->SignalClosingProcedureComplete.connect(
       this, &PeerConnection::OnSctpClosingProcedureComplete_n);
   sctp_mid_ = mid;
-  sctp_transport_->SetDtlsTransport(dtls_transport);
+  sctp_transport_ = new rtc::RefCountedObject<SctpTransport>(
+      std::move(cricket_sctp_transport));
+  sctp_transport_->SetDtlsTransport(std::move(webrtc_dtls_transport));
   return true;
 }
 
 void PeerConnection::DestroySctpTransport_n() {
   RTC_DCHECK(network_thread()->IsCurrent());
-  sctp_transport_.reset(nullptr);
+  sctp_transport_->Clear();
+  sctp_transport_ = nullptr;
   sctp_mid_.reset();
   sctp_invoker_.reset(nullptr);
   sctp_ready_to_send_data_ = false;
@@ -6949,7 +6961,7 @@ void PeerConnection::DestroyChannelInterface(
 bool PeerConnection::OnTransportChanged(
     const std::string& mid,
     RtpTransportInternal* rtp_transport,
-    cricket::DtlsTransportInternal* dtls_transport,
+    rtc::scoped_refptr<DtlsTransport> dtls_transport,
     MediaTransportInterface* media_transport) {
   RTC_DCHECK_RUNS_SERIALIZED(&use_media_transport_race_checker_);
   bool ret = true;

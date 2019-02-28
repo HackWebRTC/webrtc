@@ -113,6 +113,8 @@ rtc_static_library("libjingle_peerconnection_api") {
     "rtp_sender_interface.h",
     "rtp_transceiver_interface.cc",
     "rtp_transceiver_interface.h",
+    "sctp_transport_interface.cc",
+    "sctp_transport_interface.h",
     "set_remote_description_observer_interface.h",
     "stats_types.cc",
     "stats_types.h",

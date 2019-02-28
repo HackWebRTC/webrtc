@@ -58,7 +58,7 @@ class JsepTransportController : public sigslot::has_slots<> {
     virtual bool OnTransportChanged(
         const std::string& mid,
         RtpTransportInternal* rtp_transport,
-        cricket::DtlsTransportInternal* dtls_transport,
+        rtc::scoped_refptr<DtlsTransport> dtls_transport,
         MediaTransportInterface* media_transport) = 0;
   };
 

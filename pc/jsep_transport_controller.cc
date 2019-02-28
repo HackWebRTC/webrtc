@@ -818,8 +818,8 @@ bool JsepTransportController::SetTransportForMid(
 
   mid_to_transport_[mid] = jsep_transport;
   return config_.transport_observer->OnTransportChanged(
-      mid, jsep_transport->rtp_transport(),
-      jsep_transport->rtp_dtls_transport(), jsep_transport->media_transport());
+      mid, jsep_transport->rtp_transport(), jsep_transport->RtpDtlsTransport(),
+      jsep_transport->media_transport());
 }
 
 void JsepTransportController::RemoveTransportForMid(const std::string& mid) {

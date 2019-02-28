@@ -166,6 +166,10 @@ specific_include_rules = {
     "+rtc_base/ref_count.h",
   ],
 
+  "sctp_transport_interface\.h": [
+    "+rtc_base/ref_count.h",
+  ],
+
   "set_remote_description_observer_interface\.h": [
     "+rtc_base/ref_count.h",
   ],

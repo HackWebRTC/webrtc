@@ -383,9 +383,8 @@ SctpTransport::SctpTransport(rtc::Thread* network_thread,
                              rtc::PacketTransportInternal* transport)
     : network_thread_(network_thread),
       transport_(transport),
-      was_ever_writable_(transport->writable()) {
+      was_ever_writable_(transport ? transport->writable() : false) {
   RTC_DCHECK(network_thread_);
-  RTC_DCHECK(transport_);
   RTC_DCHECK_RUN_ON(network_thread_);
   ConnectTransportSignals();
 }

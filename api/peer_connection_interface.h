@@ -122,6 +122,7 @@ class AudioDeviceModule;
 class AudioMixer;
 class AudioProcessing;
 class DtlsTransportInterface;
+class SctpTransportInterface;
 class VideoDecoderFactory;
 class VideoEncoderFactory;
 
@@ -1037,6 +1038,10 @@ class PeerConnectionInterface : public rtc::RefCountInterface {
   // TODO(hta): Remove default implementation after updating Chrome.
   virtual rtc::scoped_refptr<DtlsTransportInterface> LookupDtlsTransportByMid(
       const std::string& mid);
+
+  // Returns the SCTP transport, if any.
+  // TODO(hta): Remove default implementation after updating Chrome.
+  virtual rtc::scoped_refptr<SctpTransportInterface> GetSctpTransport() const;
 
   // Returns the current SignalingState.
   virtual SignalingState signaling_state() = 0;
