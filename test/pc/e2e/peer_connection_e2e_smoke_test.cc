@@ -53,8 +53,6 @@ void PrintFrameCounters(const std::string& name,
 TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
   using Params = PeerConnectionE2EQualityTestFixture::Params;
   using RunParams = PeerConnectionE2EQualityTestFixture::RunParams;
-  using VideoGeneratorType =
-      PeerConnectionE2EQualityTestFixture::VideoGeneratorType;
   using VideoConfig = PeerConnectionE2EQualityTestFixture::VideoConfig;
   using AudioConfig = PeerConnectionE2EQualityTestFixture::AudioConfig;
   using InjectableComponents =
@@ -63,22 +61,16 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
   auto alice_params = absl::make_unique<Params>();
   VideoConfig alice_video_config(1280, 720, 30);
   alice_video_config.stream_label = "alice-video";
-  alice_video_config.generator = VideoGeneratorType::kDefault;
 
   alice_params->video_configs.push_back(alice_video_config);
   alice_params->audio_config = AudioConfig();
-  alice_params->audio_config->mode = AudioConfig::Mode::kGenerated,
-  alice_params->audio_config->audio_options = cricket::AudioOptions();
 
   auto bob_params = absl::make_unique<Params>();
   VideoConfig bob_video_config(1280, 720, 30);
   bob_video_config.stream_label = "bob-video";
-  bob_video_config.generator = VideoGeneratorType::kDefault;
 
   bob_params->video_configs.push_back(bob_video_config);
   bob_params->audio_config = AudioConfig();
-  bob_params->audio_config->mode = AudioConfig::Mode::kGenerated,
-  bob_params->audio_config->audio_options = cricket::AudioOptions();
 
   // Setup emulated network
   NetworkEmulationManager network_emulation_manager;

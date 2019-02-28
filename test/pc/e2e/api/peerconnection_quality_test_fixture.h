@@ -121,8 +121,10 @@ class PeerConnectionE2EQualityTestFixture {
     // Have to be unique among all specified configs for all peers in the call.
     // Will be auto generated if omitted.
     absl::optional<std::string> stream_label;
-    // Only single from 3 next fields can be specified.
-    // If specified generator with this name will be used as input.
+    // Only 1 from |generator|, |input_file_name| and |screen_share_config| can
+    // be specified. If none of them are specified, then |generator| will be set
+    // to VideoGeneratorType::kDefault.
+    // If specified generator of this type will be used to produce input video.
     absl::optional<VideoGeneratorType> generator;
     // If specified this file will be used as input. Input video will be played
     // in a circle.
@@ -163,7 +165,7 @@ class PeerConnectionE2EQualityTestFixture {
     // Have to be unique among all specified configs for all peers in the call.
     // Will be auto generated if omitted.
     absl::optional<std::string> stream_label;
-    Mode mode;
+    Mode mode = kGenerated;
     // Have to be specified only if mode = kFile
     absl::optional<std::string> input_file_name;
     // If specified the input stream will be also copied to specified file.

@@ -133,7 +133,7 @@ void PeerConnectionE2EQualityTest::Run(
   RTC_CHECK(bob_components);
   RTC_CHECK(bob_params);
 
-  SetMissedVideoStreamLabels({alice_params.get(), bob_params.get()});
+  SetDefaultValuesForMissingParams({alice_params.get(), bob_params.get()});
   ValidateParams({alice_params.get(), bob_params.get()});
 
   // Print test summary
@@ -264,7 +264,7 @@ void PeerConnectionE2EQualityTest::Run(
   RTC_CHECK(video_writers_.empty());
 }
 
-void PeerConnectionE2EQualityTest::SetMissedVideoStreamLabels(
+void PeerConnectionE2EQualityTest::SetDefaultValuesForMissingParams(
     std::vector<Params*> params) {
   int video_counter = 0;
   int audio_counter = 0;
@@ -272,6 +272,10 @@ void PeerConnectionE2EQualityTest::SetMissedVideoStreamLabels(
   std::set<std::string> audio_labels;
   for (auto* p : params) {
     for (auto& video_config : p->video_configs) {
+      if (!video_config.generator && !video_config.input_file_name &&
+          !video_config.screen_share_config) {
+        video_config.generator = VideoGeneratorType::kDefault;
+      }
       if (!video_config.stream_label) {
         std::string label;
         do {

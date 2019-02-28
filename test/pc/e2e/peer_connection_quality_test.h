@@ -55,9 +55,11 @@ class PeerConnectionE2EQualityTest
            RunParams run_params) override;
 
  private:
-  // Sets video stream labels that are not specified in VideoConfigs to unique
-  // generated values.
-  void SetMissedVideoStreamLabels(std::vector<Params*> params);
+  // Set missing params to default values if it is required:
+  //  * Generate video stream labels if some of them missed
+  //  * Generate audio stream labels if some of them missed
+  //  * Set video source generation mode if it is not specified
+  void SetDefaultValuesForMissingParams(std::vector<Params*> params);
   // Validate peer's parameters, also ensure uniqueness of all video stream
   // labels.
   void ValidateParams(std::vector<Params*> params);
