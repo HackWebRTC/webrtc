@@ -1702,6 +1702,38 @@ TEST_F(NetEqDecodingTestFaxMode, TestJitterBufferDelayWithLoss) {
   TestJitterBufferDelay(true);
 }
 
+TEST_F(NetEqDecodingTestFaxMode, TestJitterBufferDelayWithAcceleration) {
+  const int kPacketLenMs = 10;  // All packets are of 10 ms size.
+  const size_t kSamples = kPacketLenMs * 16;
+  const size_t kPayloadBytes = kSamples * 2;
+  RTPHeader rtp_info;
+  rtp_info.ssrc = 0x1234;     // Just an arbitrary SSRC.
+  rtp_info.payloadType = 94;  // PCM16b WB codec.
+  rtp_info.markerBit = 0;
+  const uint8_t payload[kPayloadBytes] = {0};
+
+  neteq_->InsertPacket(rtp_info, payload, 0);
+
+  bool muted;
+  neteq_->GetAudio(&out_frame_, &muted);
+
+  rtp_info.sequenceNumber += 1;
+  rtp_info.timestamp += kSamples;
+  neteq_->InsertPacket(rtp_info, payload, 0);
+  rtp_info.sequenceNumber += 1;
+  rtp_info.timestamp += kSamples;
+  neteq_->InsertPacket(rtp_info, payload, 0);
+
+  // We have two packets in the buffer and kAccelerate operation will
+  // extract 20 ms of data.
+  neteq_->GetAudio(&out_frame_, &muted, Operations::kAccelerate);
+
+  // Check jitter buffer delay.
+  NetEqLifetimeStatistics stats = neteq_->GetLifetimeStatistics();
+  EXPECT_EQ(10 * kSamples * 3, stats.jitter_buffer_delay_ms);
+  EXPECT_EQ(kSamples * 3, stats.jitter_buffer_emitted_count);
+}
+
 namespace test {
 TEST(NetEqNoTimeStretchingMode, RunTest) {
   NetEq::Config config;
