@@ -10,6 +10,8 @@
 
 #include "logging/rtc_event_log/events/rtc_event_generic_packet_received.h"
 
+#include "absl/memory/memory.h"
+
 namespace webrtc {
 
 RtcEventGenericPacketReceived::RtcEventGenericPacketReceived(

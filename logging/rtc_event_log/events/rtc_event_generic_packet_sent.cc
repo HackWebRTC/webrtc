@@ -10,6 +10,8 @@
 
 #include "logging/rtc_event_log/events/rtc_event_generic_packet_sent.h"
 
+#include "absl/memory/memory.h"
+
 namespace webrtc {
 
 RtcEventGenericPacketSent::RtcEventGenericPacketSent(int64_t packet_number,

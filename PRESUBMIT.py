@@ -955,15 +955,16 @@ def CheckAbslMemoryInclude(input_api, output_api, source_file_filter):
     if pattern.search(contents):
       continue
     for _, line in f.ChangedContents():
-      if 'absl::make_unique' in line:
+      if 'absl::make_unique' in line or 'absl::WrapUnique' in line:
         files.append(f)
         break
 
   if len(files):
     return [output_api.PresubmitError(
         'Please include "absl/memory/memory.h" header for'
-        ' absl::make_unique.\nThis header may or may not be included'
-        ' transitively depends on the C++ standard version.',
+        ' absl::make_unique or absl::WrapUnique.\nThis header may or'
+        ' may not be included transitively depending on the C++ standard'
+        ' version.',
         files)]
   return []
 
