@@ -13,6 +13,7 @@
 #include <memory>
 #include <string>
 
+#include "api/task_queue/task_queue_factory.h"
 #include "api/video/video_frame.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/task_queue.h"
@@ -87,6 +88,10 @@ class FrameGeneratorCapturer : public TestVideoCapturer {
   FrameGeneratorCapturer(Clock* clock,
                          std::unique_ptr<FrameGenerator> frame_generator,
                          int target_fps);
+  FrameGeneratorCapturer(Clock* clock,
+                         std::unique_ptr<FrameGenerator> frame_generator,
+                         int target_fps,
+                         TaskQueueFactory& task_queue_factory);
   bool Init();
 
  private:

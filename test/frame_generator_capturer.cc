@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/task_queue/global_task_queue_factory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/logging.h"
@@ -94,6 +95,16 @@ FrameGeneratorCapturer::FrameGeneratorCapturer(
     Clock* clock,
     std::unique_ptr<FrameGenerator> frame_generator,
     int target_fps)
+    : FrameGeneratorCapturer(clock,
+                             std::move(frame_generator),
+                             target_fps,
+                             GlobalTaskQueueFactory()) {}
+
+FrameGeneratorCapturer::FrameGeneratorCapturer(
+    Clock* clock,
+    std::unique_ptr<FrameGenerator> frame_generator,
+    int target_fps,
+    TaskQueueFactory& task_queue_factory)
     : clock_(clock),
       sending_(true),
       sink_wants_observer_(nullptr),
@@ -101,7 +112,9 @@ FrameGeneratorCapturer::FrameGeneratorCapturer(
       source_fps_(target_fps),
       target_capture_fps_(target_fps),
       first_frame_capture_time_(-1),
-      task_queue_("FrameGenCapQ", rtc::TaskQueue::Priority::HIGH) {
+      task_queue_(task_queue_factory.CreateTaskQueue(
+          "FrameGenCapQ",
+          TaskQueueFactory::Priority::HIGH)) {
   RTC_DCHECK(frame_generator_);
   RTC_DCHECK_GT(target_fps, 0);
 }
