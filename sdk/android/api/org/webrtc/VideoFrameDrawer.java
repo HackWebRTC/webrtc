@@ -22,6 +22,7 @@ import java.nio.ByteBuffer;
  * taken into account. You can supply an additional render matrix for custom transformations.
  */
 public class VideoFrameDrawer {
+  public static final String TAG = "VideoFrameDrawer";
   /**
    * Draws a VideoFrame.TextureBuffer. Calls either drawer.drawOes or drawer.drawRgb
    * depending on the type of the buffer. You can supply an additional render matrix. This is
@@ -189,6 +190,10 @@ public class VideoFrameDrawer {
       int viewportHeight) {
     final int width = frame.getRotatedWidth();
     final int height = frame.getRotatedHeight();
+    if (width <= 0 || height <= 0) {
+      Logging.w(TAG, "Illegal frame size: " + height + "x" + width);
+      return;
+    }
 
     calculateTransformedRenderSize(width, height, additionalRenderMatrix);
 
