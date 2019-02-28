@@ -336,17 +336,18 @@ TEST_F(GoogCcNetworkControllerTest,
   EXPECT_NEAR(client->padding_rate().kbps(), client->target_rate_kbps(), 1);
 }
 
-TEST_F(GoogCcNetworkControllerTest, LimitsToMinRateIfRttIsHighInTrial) {
+TEST_F(GoogCcNetworkControllerTest, LimitsToFloorIfRttIsHighInTrial) {
   // The field trial limits maximum RTT to 2 seconds, higher RTT means that the
   // controller backs off until it reaches the minimum configured bitrate. This
   // allows the RTT to recover faster than the regular control mechanism would
   // achieve.
-  ScopedFieldTrials trial("WebRTC-Bwe-MaxRttLimit/limit:2s/");
+  const DataRate kBandwidthFloor = DataRate::kbps(50);
+  ScopedFieldTrials trial("WebRTC-Bwe-MaxRttLimit/limit:2s,floor:" +
+                          std::to_string(kBandwidthFloor.kbps()) + "kbps/");
   // In the test case, we limit the capacity and add a cross traffic packet
   // burst that blocks media from being sent. This causes the RTT to quickly
   // increase above the threshold in the trial.
   const DataRate kLinkCapacity = DataRate::kbps(100);
-  const DataRate kMinRate = DataRate::kbps(20);
   const TimeDelta kBufferBloatDuration = TimeDelta::seconds(10);
   Scenario s("googcc_unit/limit_trial", false);
   NetworkNodeConfig net_conf;
@@ -362,7 +363,6 @@ TEST_F(GoogCcNetworkControllerTest, LimitsToMinRateIfRttIsHighInTrial) {
   SimulatedTimeClientConfig config;
   config.transport.cc =
       TransportControllerConfig::CongestionController::kGoogCc;
-  config.transport.rates.min_rate = kMinRate;
   config.transport.rates.start_rate = kLinkCapacity;
   SimulatedTimeClient* client = s.CreateSimulatedTimeClient(
       "send", config, {PacketStreamConfig()}, {send_net}, {ret_net});
@@ -376,7 +376,7 @@ TEST_F(GoogCcNetworkControllerTest, LimitsToMinRateIfRttIsHighInTrial) {
   // Wait to allow the high RTT to be detected and acted upon.
   s.RunFor(TimeDelta::seconds(4));
   // By now the target rate should have dropped to the minimum configured rate.
-  EXPECT_NEAR(client->target_rate_kbps(), kMinRate.kbps(), 1);
+  EXPECT_NEAR(client->target_rate_kbps(), kBandwidthFloor.kbps(), 1);
 }
 
 TEST_F(GoogCcNetworkControllerTest, UpdatesTargetRateBasedOnLinkCapacity) {

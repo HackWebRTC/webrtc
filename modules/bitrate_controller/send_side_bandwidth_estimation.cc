@@ -152,14 +152,16 @@ RttBasedBackoff::RttBasedBackoff()
       drop_interval_("interval", TimeDelta::ms(300)),
       persist_on_route_change_("persist"),
       safe_timeout_("safe_timeout", true),
+      bandwidth_floor_("floor", DataRate::kbps(5)),
       // By initializing this to plus infinity, we make sure that we never
       // trigger rtt backoff unless packet feedback is enabled.
       last_propagation_rtt_update_(Timestamp::PlusInfinity()),
       last_propagation_rtt_(TimeDelta::Zero()),
       last_packet_sent_(Timestamp::MinusInfinity()) {
-  ParseFieldTrial({&rtt_limit_, &drop_fraction_, &drop_interval_,
-                   &persist_on_route_change_, &safe_timeout_},
-                  field_trial::FindFullName("WebRTC-Bwe-MaxRttLimit"));
+  ParseFieldTrial(
+      {&rtt_limit_, &drop_fraction_, &drop_interval_, &persist_on_route_change_,
+       &safe_timeout_, &bandwidth_floor_},
+      field_trial::FindFullName("WebRTC-Bwe-MaxRttLimit"));
 }
 
 void RttBasedBackoff::OnRouteChange() {
@@ -441,9 +443,11 @@ void SendSideBandwidthEstimation::UpdateRtt(TimeDelta rtt, Timestamp at_time) {
 void SendSideBandwidthEstimation::UpdateEstimate(Timestamp at_time) {
   DataRate new_bitrate = current_bitrate_;
   if (rtt_backoff_.CorrectedRtt(at_time) > rtt_backoff_.rtt_limit_) {
-    if (at_time - time_last_decrease_ >= rtt_backoff_.drop_interval_) {
+    if (at_time - time_last_decrease_ >= rtt_backoff_.drop_interval_ &&
+        current_bitrate_ > rtt_backoff_.bandwidth_floor_) {
       time_last_decrease_ = at_time;
-      new_bitrate = current_bitrate_ * rtt_backoff_.drop_fraction_;
+      new_bitrate = std::max(current_bitrate_ * rtt_backoff_.drop_fraction_,
+                             rtt_backoff_.bandwidth_floor_.Get());
       link_capacity_.OnRttBackoff(new_bitrate, at_time);
     }
     CapBitrateToThresholds(at_time, new_bitrate);

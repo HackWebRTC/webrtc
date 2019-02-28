@@ -60,6 +60,7 @@ class RttBasedBackoff {
   FieldTrialParameter<TimeDelta> drop_interval_;
   FieldTrialFlag persist_on_route_change_;
   FieldTrialParameter<bool> safe_timeout_;
+  FieldTrialParameter<DataRate> bandwidth_floor_;
 
  public:
   Timestamp last_propagation_rtt_update_;
