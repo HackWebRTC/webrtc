@@ -424,6 +424,18 @@ void CaptureSinkFilter::ProcessCapturedFrame(
   return;
 }
 
+STDMETHODIMP CaptureSinkFilter::QueryInterface(REFIID riid, void** ppv) {
+  return GetOwner()->QueryInterface(riid, ppv);
+}
+
+STDMETHODIMP_(ULONG) CaptureSinkFilter::AddRef() {
+  return GetOwner()->AddRef();
+}
+
+STDMETHODIMP_(ULONG) CaptureSinkFilter::Release() {
+  return GetOwner()->Release();
+}
+
 STDMETHODIMP CaptureSinkFilter::SetMatchingMediaType(
     const VideoCaptureCapability& capability) {
   LockReceive();

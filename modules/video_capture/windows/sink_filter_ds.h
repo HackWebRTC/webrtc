@@ -67,16 +67,19 @@ class CaptureSinkFilter : public CBaseFilter {
 
   //  --------------------------------------------------------------------
   //  COM interfaces
-  DECLARE_IUNKNOWN
-  STDMETHODIMP SetMatchingMediaType(const VideoCaptureCapability& capability);
+  STDMETHOD(QueryInterface)(REFIID riid, void** ppv) override;
+  STDMETHOD_(ULONG, AddRef)() override;
+  STDMETHOD_(ULONG, Release)() override;
+
+  STDMETHOD(SetMatchingMediaType)(const VideoCaptureCapability& capability);
 
   //  --------------------------------------------------------------------
   //  CBaseFilter methods
   int GetPinCount() override;
   CBasePin* GetPin(IN int Index) override;
-  STDMETHODIMP Pause() override;
-  STDMETHODIMP Stop() override;
-  STDMETHODIMP GetClassID(OUT CLSID* pCLSID) override;
+  STDMETHOD(Pause)() override;
+  STDMETHOD(Stop)() override;
+  STDMETHOD(GetClassID)(OUT CLSID* pCLSID) override;
   //  --------------------------------------------------------------------
   //  class factory calls this
   static CUnknown* CreateInstance(IN LPUNKNOWN punk, OUT HRESULT* phr);
