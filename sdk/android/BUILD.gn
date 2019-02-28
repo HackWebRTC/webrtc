@@ -961,7 +961,9 @@ if (is_android) {
     ]
 
     deps = [
-      "../../rtc_base",
+      "../../rtc_base:criticalsection",
+      "../../rtc_base:logging",
+      "../../rtc_base:stringutils",
     ]
   }
 
