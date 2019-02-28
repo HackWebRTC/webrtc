@@ -26,31 +26,8 @@
 #include "system_wrappers/include/field_trial.h"
 
 namespace {
-constexpr char kPostponeDecodingFieldTrial[] =
-    "WebRTC-Audio-NetEqPostponeDecodingAfterExpand";
 
-int GetPostponeDecodingLevel() {
-  const bool enabled =
-      webrtc::field_trial::IsEnabled(kPostponeDecodingFieldTrial);
-  if (!enabled)
-    return 0;
-
-  constexpr int kDefaultPostponeDecodingLevel = 50;
-  const std::string field_trial_string =
-      webrtc::field_trial::FindFullName(kPostponeDecodingFieldTrial);
-  int value = -1;
-  if (sscanf(field_trial_string.c_str(), "Enabled-%d", &value) == 1) {
-    if (value >= 0 && value <= 100) {
-      return value;
-    } else {
-      RTC_LOG(LS_WARNING)
-          << "Wrong value (" << value
-          << ") for postpone decoding after expand, using default ("
-          << kDefaultPostponeDecodingLevel << ")";
-    }
-  }
-  return kDefaultPostponeDecodingLevel;
-}
+constexpr int kPostponeDecodingLevel = 50;
 
 }  // namespace
 
@@ -89,8 +66,7 @@ DecisionLogic::DecisionLogic(int fs_hz,
       disallow_time_stretching_(disallow_time_stretching),
       timescale_countdown_(
           tick_timer_->GetNewCountdown(kMinTimescaleInterval + 1)),
-      num_consecutive_expands_(0),
-      postpone_decoding_level_(GetPostponeDecodingLevel()) {
+      num_consecutive_expands_(0) {
   delay_manager_->set_streaming_mode(false);
   SetSampleRate(fs_hz, output_size_samples);
 }
@@ -198,9 +174,8 @@ Operations DecisionLogic::GetDecision(const SyncBuffer& sync_buffer,
       expand.MuteFactor(0) < 16384 / 2 &&
       cur_size_samples < static_cast<size_t>(
               delay_manager_->TargetLevel() * packet_length_samples_ *
-              postpone_decoding_level_ / 100) >> 8 &&
+              kPostponeDecodingLevel / 100) >> 8 &&
       !packet_buffer_.ContainsDtxOrCngPacket(decoder_database_)) {
-    RTC_DCHECK(webrtc::field_trial::IsEnabled(kPostponeDecodingFieldTrial));
     return kExpand;
   }
 
