@@ -228,6 +228,7 @@ if (rtc_include_tests) {
       "../../../system_wrappers:system_wrappers",
       "../../../test:fileutils",
       "../../../test:video_test_support",
+      "api:audio_quality_analyzer_api",
       "api:peer_connection_quality_test_fixture_api",
       "api:video_quality_analyzer_api",
       "//third_party/abseil-cpp/absl/memory:memory",

@@ -25,6 +25,7 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "system_wrappers/include/cpu_info.h"
+#include "test/pc/e2e/analyzer/audio/default_audio_quality_analyzer.h"
 #include "test/pc/e2e/analyzer/video/example_video_quality_analyzer.h"
 #include "test/pc/e2e/api/video_quality_analyzer_interface.h"
 #include "test/pc/e2e/stats_poller.h"
