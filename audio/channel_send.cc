@@ -497,6 +497,12 @@ int32_t ChannelSend::SendData(FrameType frameType,
   rtc::ArrayView<const uint8_t> payload(payloadData, payloadSize);
 
   if (media_transport() != nullptr) {
+    if (frameType == kEmptyFrame) {
+      // TODO(bugs.webrtc.org/9719): Media transport Send doesn't support
+      // sending empty frames.
+      return 0;
+    }
+
     return SendMediaTransportAudio(frameType, payloadType, timeStamp, payload,
                                    fragmentation);
   } else {
