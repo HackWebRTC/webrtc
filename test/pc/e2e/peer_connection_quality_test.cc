@@ -336,15 +336,16 @@ void PeerConnectionE2EQualityTest::SetupVideoSink(
     return;
   }
 
+  RTC_CHECK_EQ(transceiver->receiver()->stream_ids().size(), 1);
+  std::string stream_label = transceiver->receiver()->stream_ids().front();
   VideoConfig* video_config = nullptr;
   for (auto& config : remote_video_configs) {
-    if (config.stream_label == track->id()) {
+    if (config.stream_label == stream_label) {
       video_config = &config;
       break;
     }
   }
   RTC_CHECK(video_config);
-
   VideoFrameWriter* writer = MaybeCreateVideoWriter(
       video_config->output_dump_file_name, *video_config);
   // It is safe to cast here, because it is checked above that
@@ -357,8 +358,25 @@ void PeerConnectionE2EQualityTest::SetupVideoSink(
 }
 
 void PeerConnectionE2EQualityTest::SetupCallOnSignalingThread() {
-  alice_video_sources_ = AddMedia(alice_.get());
-  bob_video_sources_ = AddMedia(bob_.get());
+  // We need receive-only transceivers for Bob's media stream, so there will
+  // be media section in SDP for that streams in Alice's offer, because it is
+  // forbidden to add new media sections in answer in Unified Plan.
+  RtpTransceiverInit receive_only_transceiver_init;
+  receive_only_transceiver_init.direction = RtpTransceiverDirection::kRecvOnly;
+  if (bob_->params()->audio_config) {
+    // Setup receive audio transceiver if Bob has audio to send. If we'll need
+    // multiple audio streams, then we need transceiver for each Bob's audio
+    // stream.
+    alice_->AddTransceiver(cricket::MediaType::MEDIA_TYPE_AUDIO,
+                           receive_only_transceiver_init);
+  }
+  for (size_t i = 0; i < bob_->params()->video_configs.size(); ++i) {
+    alice_->AddTransceiver(cricket::MediaType::MEDIA_TYPE_VIDEO,
+                           receive_only_transceiver_init);
+  }
+  // Then add media for Alice and Bob
+  alice_video_sources_ = MaybeAddMedia(alice_.get());
+  bob_video_sources_ = MaybeAddMedia(bob_.get());
 
   SetupCall();
 }
@@ -368,15 +386,13 @@ void PeerConnectionE2EQualityTest::TearDownCallOnSignalingThread() {
 }
 
 std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>
-PeerConnectionE2EQualityTest::AddMedia(TestPeer* peer) {
-  if (peer->params()->audio_config) {
-    AddAudio(peer);
-  }
-  return AddVideo(peer);
+PeerConnectionE2EQualityTest::MaybeAddMedia(TestPeer* peer) {
+  MaybeAddAudio(peer);
+  return MaybeAddVideo(peer);
 }
 
 std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>
-PeerConnectionE2EQualityTest::AddVideo(TestPeer* peer) {
+PeerConnectionE2EQualityTest::MaybeAddVideo(TestPeer* peer) {
   // Params here valid because of pre-run validation.
   Params* params = peer->params();
   std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>> out;
@@ -407,7 +423,7 @@ PeerConnectionE2EQualityTest::AddVideo(TestPeer* peer) {
     rtc::scoped_refptr<VideoTrackInterface> track =
         peer->pc_factory()->CreateVideoTrack(video_config.stream_label.value(),
                                              source);
-    peer->AddTransceiver(track);
+    peer->AddTrack(track, {video_config.stream_label.value()});
   }
   return out;
 }
@@ -446,14 +462,16 @@ PeerConnectionE2EQualityTest::CreateFrameGenerator(
   return nullptr;
 }
 
-void PeerConnectionE2EQualityTest::AddAudio(TestPeer* peer) {
-  RTC_CHECK(peer->params()->audio_config);
+void PeerConnectionE2EQualityTest::MaybeAddAudio(TestPeer* peer) {
+  if (!peer->params()->audio_config) {
+    return;
+  }
   rtc::scoped_refptr<webrtc::AudioSourceInterface> source =
       peer->pc_factory()->CreateAudioSource(
           peer->params()->audio_config->audio_options);
   rtc::scoped_refptr<AudioTrackInterface> track =
       peer->pc_factory()->CreateAudioTrack("audio", source);
-  peer->AddTransceiver(track);
+  peer->AddTrack(track, {"audio"});
 }
 
 void PeerConnectionE2EQualityTest::SetupCall() {

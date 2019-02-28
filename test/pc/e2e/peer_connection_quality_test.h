@@ -67,12 +67,12 @@ class PeerConnectionE2EQualityTest
   void SetupCallOnSignalingThread();
   void TearDownCallOnSignalingThread();
   std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>
-  AddMedia(TestPeer* peer);
+  MaybeAddMedia(TestPeer* peer);
   std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>
-  AddVideo(TestPeer* peer);
+  MaybeAddVideo(TestPeer* peer);
   std::unique_ptr<FrameGenerator> CreateFrameGenerator(
       const VideoConfig& video_config);
-  void AddAudio(TestPeer* peer);
+  void MaybeAddAudio(TestPeer* peer);
   void SetupCall();
   void StartVideo(
       const std::vector<

@@ -38,6 +38,16 @@ std::unique_ptr<rtc::NetworkManager> CreateFakeNetworkManager(
   return network_manager;
 }
 
+void PrintFrameCounters(const std::string& name,
+                        const FrameCounters& counters) {
+  RTC_LOG(INFO) << "[" << name << "] Captured    : " << counters.captured;
+  RTC_LOG(INFO) << "[" << name << "] Pre encoded : " << counters.pre_encoded;
+  RTC_LOG(INFO) << "[" << name << "] Encoded     : " << counters.encoded;
+  RTC_LOG(INFO) << "[" << name << "] Received    : " << counters.received;
+  RTC_LOG(INFO) << "[" << name << "] Rendered    : " << counters.rendered;
+  RTC_LOG(INFO) << "[" << name << "] Dropped     : " << counters.dropped;
+}
+
 }  // namespace
 
 TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
@@ -60,6 +70,21 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
 
   alice_params->video_configs.push_back(alice_video_config);
   alice_params->audio_config = AudioConfig{
+      AudioConfig::Mode::kGenerated,
+      /*input_file_name=*/absl::nullopt,
+      /*input_dump_file_name=*/absl::nullopt,
+      /*output_dump_file_name=*/absl::nullopt, cricket::AudioOptions()};
+
+  auto bob_params = absl::make_unique<Params>();
+  VideoConfig bob_video_config;
+  bob_video_config.width = 1280;
+  bob_video_config.height = 720;
+  bob_video_config.fps = 30;
+  bob_video_config.stream_label = "bob-video";
+  bob_video_config.generator = VideoGeneratorType::kDefault;
+
+  bob_params->video_configs.push_back(bob_video_config);
+  bob_params->audio_config = AudioConfig{
       AudioConfig::Mode::kGenerated,
       /*input_file_name=*/absl::nullopt,
       /*input_dump_file_name=*/absl::nullopt,
@@ -113,19 +138,25 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
       "smoke_test", std::move(audio_quality_analyzer),
       std::move(video_quality_analyzer));
   fixture->Run(std::move(alice_components), std::move(alice_params),
-               std::move(bob_components), absl::make_unique<Params>(),
+               std::move(bob_components), std::move(bob_params),
                RunParams{TimeDelta::seconds(5)});
 
-  // 150 = 30fps * 5s. On some devices pipeline can be too slow, so it can
-  // happen, that frames will stuck in the middle, so we actually can't force
-  // real constraints here, so lets just check, that at least 1 frame passed
-  // whole pipeline.
-  EXPECT_GE(video_analyzer_ptr->GetGlobalCounters().captured, 150);
-  EXPECT_GE(video_analyzer_ptr->GetGlobalCounters().pre_encoded, 1);
-  EXPECT_GE(video_analyzer_ptr->GetGlobalCounters().encoded, 1);
-  EXPECT_GE(video_analyzer_ptr->GetGlobalCounters().received, 1);
-  EXPECT_GE(video_analyzer_ptr->GetGlobalCounters().decoded, 1);
-  EXPECT_GE(video_analyzer_ptr->GetGlobalCounters().rendered, 1);
+  PrintFrameCounters("Global", video_analyzer_ptr->GetGlobalCounters());
+  for (auto stream_label : video_analyzer_ptr->GetKnownVideoStreams()) {
+    FrameCounters stream_conters =
+        video_analyzer_ptr->GetPerStreamCounters().at(stream_label);
+    PrintFrameCounters(stream_label, stream_conters);
+    // 150 = 30fps * 5s. On some devices pipeline can be too slow, so it can
+    // happen, that frames will stuck in the middle, so we actually can't force
+    // real constraints here, so lets just check, that at least 1 frame passed
+    // whole pipeline.
+    EXPECT_GE(stream_conters.captured, 150);
+    EXPECT_GE(stream_conters.pre_encoded, 1);
+    EXPECT_GE(stream_conters.encoded, 1);
+    EXPECT_GE(stream_conters.received, 1);
+    EXPECT_GE(stream_conters.decoded, 1);
+    EXPECT_GE(stream_conters.rendered, 1);
+  }
 }
 
 }  // namespace test
