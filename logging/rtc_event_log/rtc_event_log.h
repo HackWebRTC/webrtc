@@ -15,6 +15,7 @@
 #include <memory>
 
 #include "api/rtc_event_log_output.h"
+#include "api/task_queue/task_queue_factory.h"
 #include "logging/rtc_event_log/events/rtc_event.h"
 
 namespace webrtc {
@@ -35,6 +36,10 @@ class RtcEventLog {
 
   // Factory method to create an RtcEventLog object.
   static std::unique_ptr<RtcEventLog> Create(EncodingType encoding_type);
+
+  static std::unique_ptr<RtcEventLog> Create(
+      EncodingType encoding_type,
+      TaskQueueFactory* task_queue_factory);
 
   // Create an RtcEventLog object that does nothing.
   static std::unique_ptr<RtcEventLog> CreateNull();

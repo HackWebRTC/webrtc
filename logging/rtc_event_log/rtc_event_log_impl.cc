@@ -20,6 +20,7 @@
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/rtc_event_log_output.h"
+#include "api/task_queue/global_task_queue_factory.h"
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_legacy.h"
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_new_format.h"
 #include "rtc_base/checks.h"
@@ -370,10 +371,17 @@ void RtcEventLogImpl::WriteToOutput(const std::string& output_string) {
 
 // RtcEventLog member functions.
 std::unique_ptr<RtcEventLog> RtcEventLog::Create(EncodingType encoding_type) {
+  return RtcEventLog::Create(encoding_type, &GlobalTaskQueueFactory());
+}
+
+std::unique_ptr<RtcEventLog> RtcEventLog::Create(
+    RtcEventLog::EncodingType encoding_type,
+    TaskQueueFactory* task_queue_factory) {
 #ifdef ENABLE_RTC_EVENT_LOG
   return absl::make_unique<RtcEventLogImpl>(
       CreateEncoder(encoding_type),
-      absl::make_unique<rtc::TaskQueue>("rtc_event_log"));
+      absl::make_unique<rtc::TaskQueue>(task_queue_factory->CreateTaskQueue(
+          "rtc_event_log", TaskQueueFactory::Priority::NORMAL)));
 #else
   return CreateNull();
 #endif  // ENABLE_RTC_EVENT_LOG
