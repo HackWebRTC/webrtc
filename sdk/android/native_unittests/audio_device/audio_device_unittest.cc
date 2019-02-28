@@ -19,9 +19,9 @@
 #include "rtc_base/event.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/time_utils.h"
-#include "sdk/android/generated_native_unittests_jni/jni/ApplicationContextProvider_jni.h"
 #include "sdk/android/generated_native_unittests_jni/jni/BuildInfo_jni.h"
 #include "sdk/android/native_api/audio_device_module/audio_device_android.h"
+#include "sdk/android/native_unittests/application_context_provider.h"
 #include "sdk/android/src/jni/audio_device/audio_common.h"
 #include "sdk/android/src/jni/audio_device/audio_device_module.h"
 #include "sdk/android/src/jni/audio_device/opensles_common.h"
@@ -465,26 +465,16 @@ class AudioDeviceTest : public ::testing::Test {
     // implementations.
     // Creates an audio device using a default audio layer.
     jni_ = AttachCurrentThreadIfNeeded();
-    audio_device_ = CreateJavaAudioDeviceModule(jni_, context());
+    context_ = test::GetAppContextForTest(jni_);
+    audio_device_ = CreateJavaAudioDeviceModule(jni_, context_.obj());
     EXPECT_NE(audio_device_.get(), nullptr);
     EXPECT_EQ(0, audio_device_->Init());
-    audio_manager_ = GetAudioManager(jni_, context_javaref());
+    audio_manager_ = GetAudioManager(jni_, context_);
     UpdateParameters();
   }
   virtual ~AudioDeviceTest() { EXPECT_EQ(0, audio_device_->Terminate()); }
 
   int total_delay_ms() const { return 10; }
-
-  jobject context() {
-    return jni::NewGlobalRef(
-        jni_, Java_ApplicationContextProvider_getApplicationContextForTest(jni_)
-                  .obj());
-  }
-
-  ScopedJavaLocalRef<jobject> context_javaref() {
-    return ScopedJavaLocalRef<jobject>(
-        Java_ApplicationContextProvider_getApplicationContextForTest(jni_));
-  }
 
   void UpdateParameters() {
     int sample_rate = GetDefaultSampleRate(jni_, audio_manager_);
@@ -492,7 +482,7 @@ class AudioDeviceTest : public ::testing::Test {
     bool stereo_record_is_available;
     audio_device_->StereoPlayoutIsAvailable(&stereo_playout_is_available);
     audio_device_->StereoRecordingIsAvailable(&stereo_record_is_available);
-    GetAudioParameters(jni_, context_javaref(), audio_manager_, sample_rate,
+    GetAudioParameters(jni_, context_, audio_manager_, sample_rate,
                        stereo_playout_is_available, stereo_record_is_available,
                        &input_parameters_, &output_parameters_);
   }
@@ -524,19 +514,20 @@ class AudioDeviceTest : public ::testing::Test {
 #if defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
     if (audio_layer == AudioDeviceModule::kAndroidAAudioAudio) {
       return rtc::scoped_refptr<AudioDeviceModule>(
-          CreateAAudioAudioDeviceModule(jni_, context()));
+          CreateAAudioAudioDeviceModule(jni_, context_.obj()));
     }
 #endif
     if (audio_layer == AudioDeviceModule::kAndroidJavaAudio) {
       return rtc::scoped_refptr<AudioDeviceModule>(
-          CreateJavaAudioDeviceModule(jni_, context()));
+          CreateJavaAudioDeviceModule(jni_, context_.obj()));
     } else if (audio_layer == AudioDeviceModule::kAndroidOpenSLESAudio) {
       return rtc::scoped_refptr<AudioDeviceModule>(
-          CreateOpenSLESAudioDeviceModule(jni_, context()));
+          CreateOpenSLESAudioDeviceModule(jni_, context_.obj()));
     } else if (audio_layer ==
                AudioDeviceModule::kAndroidJavaInputAndOpenSLESOutputAudio) {
       return rtc::scoped_refptr<AudioDeviceModule>(
-          CreateJavaInputAndOpenSLESOutputAudioDeviceModule(jni_, context()));
+          CreateJavaInputAndOpenSLESOutputAudioDeviceModule(jni_,
+                                                            context_.obj()));
     } else {
       return nullptr;
     }
@@ -682,7 +673,7 @@ class AudioDeviceTest : public ::testing::Test {
   }
 
   JNIEnv* jni_;
-  std::unique_ptr<JavaParamRef<jobject>> context_;
+  ScopedJavaLocalRef<jobject> context_;
   rtc::Event test_is_done_;
   rtc::scoped_refptr<AudioDeviceModule> audio_device_;
   ScopedJavaLocalRef<jobject> audio_manager_;
@@ -1136,8 +1127,7 @@ TEST_F(AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
 
 TEST(JavaAudioDeviceTest, TestRunningTwoAdmsSimultaneously) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
-  ScopedJavaLocalRef<jobject> context =
-      Java_ApplicationContextProvider_getApplicationContextForTest(jni);
+  ScopedJavaLocalRef<jobject> context = test::GetAppContextForTest(jni);
 
   // Create and start the first ADM.
   rtc::scoped_refptr<AudioDeviceModule> adm_1 =

@@ -285,7 +285,6 @@ if (is_android) {
 
   rtc_android_library("peerconnection_java") {
     java_files = [
-      "api/org/webrtc/audio/LegacyAudioDeviceModule.java",
       "api/org/webrtc/AudioProcessingFactory.java",
       "api/org/webrtc/AudioSource.java",
       "api/org/webrtc/AudioTrack.java",
@@ -338,6 +337,9 @@ if (is_android) {
       ":base_java",
       ":builtin_audio_codecs_java",
       ":default_video_codec_factory_java",
+
+      #TODO(bugs.webrtc.org/7452): Make injection mandatory and remove this dep.
+      ":java_audio_device_module_java",
       ":logging_java",
       ":swcodecs_java",
       ":video_api_java",
@@ -1493,6 +1495,8 @@ if (is_android) {
     testonly = true
 
     sources = [
+      "native_unittests/application_context_provider.cc",
+      "native_unittests/application_context_provider.h",
       "native_unittests/audio_device/audio_device_unittest.cc",
       "native_unittests/codecs/wrapper_unittest.cc",
       "native_unittests/java_types_unittest.cc",

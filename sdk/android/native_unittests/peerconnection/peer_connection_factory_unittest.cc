@@ -20,7 +20,10 @@
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/logging.h"
 #include "sdk/android/generated_native_unittests_jni/jni/PeerConnectionFactoryInitializationHelper_jni.h"
+#include "sdk/android/native_api/audio_device_module/audio_device_android.h"
 #include "sdk/android/native_api/jni/jvm.h"
+#include "sdk/android/native_unittests/application_context_provider.h"
+#include "sdk/android/src/jni/jni_helpers.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -29,6 +32,7 @@ namespace {
 
 // Create native peer connection factory, that will be wrapped by java one
 rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> CreateTestPCF(
+    JNIEnv* jni,
     rtc::Thread* network_thread,
     rtc::Thread* worker_thread,
     rtc::Thread* signaling_thread) {
@@ -38,10 +42,11 @@ rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> CreateTestPCF(
   // webrtc/rtc_base/ are convoluted, we simply wrap here to avoid having to
   // think about ramifications of auto-wrapping there.
   rtc::ThreadManager::Instance()->WrapCurrentThread();
+  auto adm = CreateJavaAudioDeviceModule(jni, GetAppContextForTest(jni).obj());
 
   std::unique_ptr<cricket::MediaEngineInterface> media_engine =
       cricket::WebRtcMediaEngineFactory::Create(
-          nullptr /* adm */, webrtc::CreateBuiltinAudioEncoderFactory(),
+          adm, webrtc::CreateBuiltinAudioEncoderFactory(),
           webrtc::CreateBuiltinAudioDecoderFactory(),
           absl::make_unique<webrtc::InternalEncoderFactory>(),
           absl::make_unique<webrtc::InternalDecoderFactory>(),
@@ -81,7 +86,7 @@ TEST(PeerConnectionFactoryTest, NativeToJavaPeerConnectionFactory) {
   RTC_CHECK(signaling_thread->Start()) << "Failed to start thread";
 
   rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> factory =
-      CreateTestPCF(network_thread.get(), worker_thread.get(),
+      CreateTestPCF(jni, network_thread.get(), worker_thread.get(),
                     signaling_thread.get());
 
   jobject java_factory = NativeToJavaPeerConnectionFactory(
