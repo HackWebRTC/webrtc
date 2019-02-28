@@ -112,9 +112,12 @@ class PeerConnectionE2EQualityTestFixture {
 
   // Contains properties of single video stream.
   struct VideoConfig {
-    size_t width;
-    size_t height;
-    int32_t fps;
+    VideoConfig(size_t width, size_t height, int32_t fps)
+        : width(width), height(height), fps(fps) {}
+
+    const size_t width;
+    const size_t height;
+    const int32_t fps;
     // Have to be unique among all specified configs for all peers in the call.
     // Will be auto generated if omitted.
     absl::optional<std::string> stream_label;

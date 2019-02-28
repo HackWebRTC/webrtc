@@ -61,10 +61,7 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
       PeerConnectionE2EQualityTestFixture::InjectableComponents;
 
   auto alice_params = absl::make_unique<Params>();
-  VideoConfig alice_video_config;
-  alice_video_config.width = 1280;
-  alice_video_config.height = 720;
-  alice_video_config.fps = 30;
+  VideoConfig alice_video_config(1280, 720, 30);
   alice_video_config.stream_label = "alice-video";
   alice_video_config.generator = VideoGeneratorType::kDefault;
 
@@ -74,10 +71,7 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
   alice_params->audio_config->audio_options = cricket::AudioOptions();
 
   auto bob_params = absl::make_unique<Params>();
-  VideoConfig bob_video_config;
-  bob_video_config.width = 1280;
-  bob_video_config.height = 720;
-  bob_video_config.fps = 30;
+  VideoConfig bob_video_config(1280, 720, 30);
   bob_video_config.stream_label = "bob-video";
   bob_video_config.generator = VideoGeneratorType::kDefault;
 
