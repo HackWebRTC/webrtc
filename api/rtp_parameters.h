@@ -455,7 +455,6 @@ struct RtpEncodingParameters {
   absl::optional<int> num_temporal_layers;
 
   // For video, scale the resolution down by this factor.
-  // TODO(deadbeef): Not implemented.
   absl::optional<double> scale_resolution_down_by;
 
   // Scale the framerate down by this factor.
@@ -472,7 +471,6 @@ struct RtpEncodingParameters {
 
   // Value to use for RID RTP header extension.
   // Called "encodingId" in ORTC.
-  // TODO(deadbeef): Not implemented.
   std::string rid;
 
   // RIDs of encodings on which this layer depends.
