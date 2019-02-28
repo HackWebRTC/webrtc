@@ -163,6 +163,16 @@ void TestStacktrace(std::unique_ptr<DeadlockInterface> deadlock_impl) {
   thread.Stop();
 }
 
+TEST(Stacktrace, TestCurrentThread) {
+  const uint32_t start_addr = GetCurrentRelativeExecutionAddress();
+  const std::vector<StackTraceElement> stack_trace = GetStackTrace();
+  const uint32_t end_addr = GetCurrentRelativeExecutionAddress();
+  EXPECT_TRUE(StackTraceContainsRange(stack_trace, start_addr, end_addr))
+      << "Caller region: [" << rtc::ToHex(start_addr) << ", "
+      << rtc::ToHex(end_addr)
+      << "] not contained in: " << StackTraceToString(stack_trace);
+}
+
 TEST(Stacktrace, TestSpinLock) {
   TestStacktrace(absl::make_unique<SpinDeadlock>());
 }

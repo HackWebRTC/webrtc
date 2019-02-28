@@ -33,6 +33,9 @@ struct StackTraceElement {
 // on top of unwind.h and unwinds native (C++) stack traces only.
 std::vector<StackTraceElement> GetStackTrace(int tid);
 
+// Unwind the stack of the current thread.
+std::vector<StackTraceElement> GetStackTrace();
+
 // Get a string representation of the stack trace in a format ndk-stack accepts.
 std::string StackTraceToString(
     const std::vector<StackTraceElement>& stack_trace);

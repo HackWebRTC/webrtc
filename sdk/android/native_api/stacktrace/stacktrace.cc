@@ -164,26 +164,9 @@ const char* CaptureRawStacktrace(int pid,
   return nullptr;
 }
 
-}  // namespace
-
-std::vector<StackTraceElement> GetStackTrace(int tid) {
-  // Only a thread itself can unwind its stack, so we will interrupt the given
-  // tid with a custom signal handler in order to unwind its stack. The stack
-  // will be recorded to |params| through the use of the global pointer
-  // |g_signal_handler_param|.
-  SignalHandlerOutputState params;
-
-  const char* error_string = CaptureRawStacktrace(getpid(), tid, &params);
-  if (error_string != nullptr) {
-    RTC_LOG(LS_ERROR) << error_string << ". tid: " << tid
-                      << ". errno: " << errno;
-    return {};
-  }
-
-  if (params.stack_size_counter >= kMaxStackSize)
-    RTC_LOG(LS_WARNING) << "Stack trace for thread " << tid << " was truncated";
-
-  // Translate addresses into symbolic information using dladdr().
+// Translate addresses into symbolic information using dladdr().
+std::vector<StackTraceElement> FormatStackTrace(
+    const SignalHandlerOutputState& params) {
   std::vector<StackTraceElement> stack_trace;
   for (size_t i = 0; i < params.stack_size_counter; ++i) {
     const uintptr_t address = params.addresses[i];
@@ -206,6 +189,36 @@ std::vector<StackTraceElement> GetStackTrace(int tid) {
   }
 
   return stack_trace;
+}
+
+}  // namespace
+
+std::vector<StackTraceElement> GetStackTrace(int tid) {
+  // Only a thread itself can unwind its stack, so we will interrupt the given
+  // tid with a custom signal handler in order to unwind its stack. The stack
+  // will be recorded to |params| through the use of the global pointer
+  // |g_signal_handler_param|.
+  SignalHandlerOutputState params;
+
+  const char* error_string = CaptureRawStacktrace(getpid(), tid, &params);
+  if (error_string != nullptr) {
+    RTC_LOG(LS_ERROR) << error_string << ". tid: " << tid
+                      << ". errno: " << errno;
+    return {};
+  }
+  if (params.stack_size_counter >= kMaxStackSize) {
+    RTC_LOG(LS_WARNING) << "Stack trace for thread " << tid << " was truncated";
+  }
+  return FormatStackTrace(params);
+}
+
+std::vector<StackTraceElement> GetStackTrace() {
+  SignalHandlerOutputState params;
+  _Unwind_Backtrace(&UnwindBacktrace, &params);
+  if (params.stack_size_counter >= kMaxStackSize) {
+    RTC_LOG(LS_WARNING) << "Stack trace was truncated";
+  }
+  return FormatStackTrace(params);
 }
 
 std::string StackTraceToString(
