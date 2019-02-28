@@ -27,7 +27,7 @@
 #include "pc/data_channel.h"
 #include "pc/peer_connection_internal.h"
 #include "pc/track_media_info_map.h"
-#include "rtc_base/async_invoker.h"
+#include "rtc_base/event.h"
 #include "rtc_base/ref_count.h"
 #include "rtc_base/ssl_identity.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
@@ -77,14 +77,21 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   RTCStatsCollector(PeerConnectionInternal* pc, int64_t cache_lifetime_us);
   ~RTCStatsCollector();
 
-  // Stats gathering on a particular thread. Calls |AddPartialResults| before
-  // returning. Virtual for the sake of testing.
-  virtual void ProducePartialResultsOnSignalingThread(int64_t timestamp_us);
-  virtual void ProducePartialResultsOnNetworkThread(int64_t timestamp_us);
+  struct CertificateStatsPair {
+    std::unique_ptr<rtc::SSLCertificateStats> local;
+    std::unique_ptr<rtc::SSLCertificateStats> remote;
+  };
 
-  // Can be called on any thread.
-  void AddPartialResults(
-      const rtc::scoped_refptr<RTCStatsReport>& partial_report);
+  // Stats gathering on a particular thread. Virtual for the sake of testing.
+  virtual void ProducePartialResultsOnSignalingThreadImpl(
+      int64_t timestamp_us,
+      RTCStatsReport* partial_report);
+  virtual void ProducePartialResultsOnNetworkThreadImpl(
+      int64_t timestamp_us,
+      const std::map<std::string, cricket::TransportStats>&
+          transport_stats_by_name,
+      const std::map<std::string, CertificateStatsPair>& transport_cert_stats,
+      RTCStatsReport* partial_report);
 
  private:
   class RequestInfo {
@@ -130,11 +137,6 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
 
   void GetStatsReportInternal(RequestInfo request);
 
-  struct CertificateStatsPair {
-    std::unique_ptr<rtc::SSLCertificateStats> local;
-    std::unique_ptr<rtc::SSLCertificateStats> remote;
-  };
-
   // Structure for tracking stats about each RtpTransceiver managed by the
   // PeerConnection. This can either by a Plan B style or Unified Plan style
   // transceiver (i.e., can have 0 or many senders and receivers).
@@ -150,7 +152,6 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
     std::unique_ptr<TrackMediaInfoMap> track_media_info_map;
   };
 
-  void AddPartialResults_s(rtc::scoped_refptr<RTCStatsReport> partial_report);
   void DeliverCachedReport(
       rtc::scoped_refptr<const RTCStatsReport> cached_report,
       std::vector<RequestInfo> requests);
@@ -211,6 +212,13 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   std::vector<RtpTransceiverStatsInfo> PrepareTransceiverStatsInfos_s() const;
   std::set<std::string> PrepareTransportNames_s() const;
 
+  // Stats gathering on a particular thread.
+  void ProducePartialResultsOnSignalingThread(int64_t timestamp_us);
+  void ProducePartialResultsOnNetworkThread(int64_t timestamp_us);
+  // Merges |network_report_| into |partial_report_| and completes the request.
+  // This is a NO-OP if |network_report_| is null.
+  void MergeNetworkReport_s();
+
   // Slots for signals (sigslot) that are wired up to |pc_|.
   void OnDataChannelCreated(DataChannel* channel);
   // Slots for signals (sigslot) that are wired up to |channel|.
@@ -221,12 +229,24 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   rtc::Thread* const signaling_thread_;
   rtc::Thread* const worker_thread_;
   rtc::Thread* const network_thread_;
-  rtc::AsyncInvoker invoker_;
 
   int num_pending_partial_reports_;
   int64_t partial_report_timestamp_us_;
+  // Reports that are produced on the signaling thread or the network thread are
+  // merged into this report. It is only touched on the signaling thread. Once
+  // all partial reports are merged this is the result of a request.
   rtc::scoped_refptr<RTCStatsReport> partial_report_;
   std::vector<RequestInfo> requests_;
+  // Holds the result of ProducePartialResultsOnNetworkThread(). It is merged
+  // into |partial_report_| on the signaling thread and then nulled by
+  // MergeNetworkReport_s(). Thread-safety is ensured by using
+  // |network_report_event_|.
+  rtc::scoped_refptr<RTCStatsReport> network_report_;
+  // If set, it is safe to touch the |network_report_| on the signaling thread.
+  // This is reset before async-invoking ProducePartialResultsOnNetworkThread()
+  // and set when ProducePartialResultsOnNetworkThread() is complete, after it
+  // has updated the value of |network_report_|.
+  rtc::Event network_report_event_;
 
   // Set in |GetStatsReport|, read in |ProducePartialResultsOnNetworkThread| and
   // |ProducePartialResultsOnSignalingThread|, reset after work is complete. Not
