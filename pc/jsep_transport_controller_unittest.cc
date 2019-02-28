@@ -1264,7 +1264,7 @@ TEST_F(JsepTransportControllerTest, IceSignalingOccursOnSignalingThread) {
   network_thread_->Start();
   CreateJsepTransportController(JsepTransportController::Config(),
                                 signaling_thread_, network_thread_.get(),
-                                /*PortAllocator=*/nullptr);
+                                /*port_allocator=*/nullptr);
   CreateLocalDescriptionAndCompleteConnectionOnNetworkThread();
 
   // connecting --> connected --> completed

@@ -385,7 +385,7 @@ TEST(RtcpTransceiverImplTest, SetRembIncludesRembInNextCompoundPacket) {
   config.schedule_periodic_compound_packets = false;
   RtcpTransceiverImpl rtcp_transceiver(config);
 
-  rtcp_transceiver.SetRemb(/*bitrate_bps=*/10000, /*ssrc=*/{54321, 64321});
+  rtcp_transceiver.SetRemb(/*bitrate_bps=*/10000, /*ssrcs=*/{54321, 64321});
   rtcp_transceiver.SendCompoundPacket();
 
   EXPECT_EQ(rtcp_parser.remb()->num_packets(), 1);
@@ -404,14 +404,14 @@ TEST(RtcpTransceiverImplTest, SetRembUpdatesValuesToSend) {
   config.schedule_periodic_compound_packets = false;
   RtcpTransceiverImpl rtcp_transceiver(config);
 
-  rtcp_transceiver.SetRemb(/*bitrate_bps=*/10000, /*ssrc=*/{54321, 64321});
+  rtcp_transceiver.SetRemb(/*bitrate_bps=*/10000, /*ssrcs=*/{54321, 64321});
   rtcp_transceiver.SendCompoundPacket();
 
   EXPECT_EQ(rtcp_parser.remb()->num_packets(), 1);
   EXPECT_EQ(rtcp_parser.remb()->bitrate_bps(), 10000u);
   EXPECT_THAT(rtcp_parser.remb()->ssrcs(), ElementsAre(54321, 64321));
 
-  rtcp_transceiver.SetRemb(/*bitrate_bps=*/70000, /*ssrc=*/{67321});
+  rtcp_transceiver.SetRemb(/*bitrate_bps=*/70000, /*ssrcs=*/{67321});
   rtcp_transceiver.SendCompoundPacket();
 
   EXPECT_EQ(rtcp_parser.remb()->num_packets(), 2);
@@ -429,7 +429,7 @@ TEST(RtcpTransceiverImplTest, SetRembIncludesRembInAllCompoundPackets) {
   config.schedule_periodic_compound_packets = false;
   RtcpTransceiverImpl rtcp_transceiver(config);
 
-  rtcp_transceiver.SetRemb(/*bitrate_bps=*/10000, /*ssrc=*/{54321, 64321});
+  rtcp_transceiver.SetRemb(/*bitrate_bps=*/10000, /*ssrcs=*/{54321, 64321});
   rtcp_transceiver.SendCompoundPacket();
   rtcp_transceiver.SendCompoundPacket();
 
@@ -447,7 +447,7 @@ TEST(RtcpTransceiverImplTest, SendsNoRembAfterUnset) {
   config.schedule_periodic_compound_packets = false;
   RtcpTransceiverImpl rtcp_transceiver(config);
 
-  rtcp_transceiver.SetRemb(/*bitrate_bps=*/10000, /*ssrc=*/{54321, 64321});
+  rtcp_transceiver.SetRemb(/*bitrate_bps=*/10000, /*ssrcs=*/{54321, 64321});
   rtcp_transceiver.SendCompoundPacket();
   EXPECT_EQ(transport.num_packets(), 1);
   ASSERT_EQ(rtcp_parser.remb()->num_packets(), 1);
