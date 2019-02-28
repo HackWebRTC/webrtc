@@ -305,8 +305,7 @@ class MediaTransportInterface {
 
   // Opens a data |channel_id| for sending.  May return an error if the
   // specified |channel_id| is unusable.  Must be called before |SendData|.
-  // TODO(mellem):  Make pure virtual when all implementations support it.
-  virtual RTCError OpenChannel(int channel_id);
+  virtual RTCError OpenChannel(int channel_id) = 0;
 
   // Sends a data buffer to the remote endpoint using the given send parameters.
   // |buffer| may not be larger than 256 KiB. Returns an error if the send

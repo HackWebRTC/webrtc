@@ -113,6 +113,8 @@ class MediaTransportPair {
     void SetMediaTransportStateCallback(
         MediaTransportStateCallback* callback) override;
 
+    RTCError OpenChannel(int channel_id) override;
+
     RTCError SendData(int channel_id,
                       const SendDataParams& params,
                       const rtc::CopyOnWriteBuffer& buffer) override;

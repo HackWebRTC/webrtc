@@ -55,6 +55,8 @@ class FakeMediaTransport : public MediaTransportInterface {
     return settings_.pre_shared_key;
   }
 
+  RTCError OpenChannel(int channel_id) override { return RTCError::OK(); }
+
   RTCError SendData(int channel_id,
                     const SendDataParams& params,
                     const rtc::CopyOnWriteBuffer& buffer) override {

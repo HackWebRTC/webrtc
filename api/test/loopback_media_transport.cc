@@ -67,6 +67,10 @@ class WrapperMediaTransport : public MediaTransportInterface {
     wrapped_->SetMediaTransportStateCallback(callback);
   }
 
+  RTCError OpenChannel(int channel_id) override {
+    return wrapped_->OpenChannel(channel_id);
+  }
+
   RTCError SendData(int channel_id,
                     const SendDataParams& params,
                     const rtc::CopyOnWriteBuffer& buffer) override {
@@ -263,6 +267,12 @@ void MediaTransportPair::LoopbackMediaTransport::SetMediaTransportStateCallback(
     RTC_DCHECK_RUN_ON(thread_);
     OnStateChanged();
   });
+}
+
+RTCError MediaTransportPair::LoopbackMediaTransport::OpenChannel(
+    int channel_id) {
+  // No-op.  No need to open channels for the loopback.
+  return RTCError::OK();
 }
 
 RTCError MediaTransportPair::LoopbackMediaTransport::SendData(
