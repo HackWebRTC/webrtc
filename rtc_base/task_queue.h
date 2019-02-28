@@ -145,6 +145,8 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueue {
   // priorities, on others such as Mac and iOS, GCD queue priorities.
   using Priority = ::webrtc::TaskQueueFactory::Priority;
 
+  explicit TaskQueue(std::unique_ptr<webrtc::TaskQueueBase,
+                                     webrtc::TaskQueueDeleter> task_queue);
   explicit TaskQueue(const char* queue_name,
                      Priority priority = Priority::NORMAL);
   ~TaskQueue();
@@ -153,6 +155,9 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueue {
 
   // Used for DCHECKing the current queue.
   bool IsCurrent() const;
+
+  // Returns non-owning pointer to the task queue implementation.
+  webrtc::TaskQueueBase* Get() { return impl_; }
 
   // TODO(tommi): For better debuggability, implement RTC_FROM_HERE.
 
