@@ -266,17 +266,29 @@ void PeerConnectionE2EQualityTest::Run(
 
 void PeerConnectionE2EQualityTest::SetMissedVideoStreamLabels(
     std::vector<Params*> params) {
-  int counter = 0;
+  int video_counter = 0;
+  int audio_counter = 0;
   std::set<std::string> video_labels;
+  std::set<std::string> audio_labels;
   for (auto* p : params) {
     for (auto& video_config : p->video_configs) {
       if (!video_config.stream_label) {
         std::string label;
         do {
-          label = "_auto_video_stream_label_" + std::to_string(counter);
-          ++counter;
+          label = "_auto_video_stream_label_" + std::to_string(video_counter);
+          ++video_counter;
         } while (!video_labels.insert(label).second);
         video_config.stream_label = label;
+      }
+    }
+    if (p->audio_config) {
+      if (!p->audio_config->stream_label) {
+        std::string label;
+        do {
+          label = "_auto_audio_stream_label_" + std::to_string(audio_counter);
+          ++audio_counter;
+        } while (!audio_labels.insert(label).second);
+        p->audio_config->stream_label = label;
       }
     }
   }
@@ -284,6 +296,7 @@ void PeerConnectionE2EQualityTest::SetMissedVideoStreamLabels(
 
 void PeerConnectionE2EQualityTest::ValidateParams(std::vector<Params*> params) {
   std::set<std::string> video_labels;
+  std::set<std::string> audio_labels;
   int media_streams_count = 0;
 
   for (Params* p : params) {
@@ -313,6 +326,10 @@ void PeerConnectionE2EQualityTest::ValidateParams(std::vector<Params*> params) {
           << VideoConfigSourcePresenceToString(video_config);
     }
     if (p->audio_config) {
+      bool inserted =
+          audio_labels.insert(p->audio_config->stream_label.value()).second;
+      RTC_CHECK(inserted) << "Duplicate audio_config.stream_label="
+                          << p->audio_config->stream_label.value();
       // Check that if mode input file name specified only if mode is kFile.
       if (p->audio_config.value().mode == AudioConfig::Mode::kGenerated) {
         RTC_CHECK(!p->audio_config.value().input_file_name);
@@ -466,12 +483,12 @@ void PeerConnectionE2EQualityTest::MaybeAddAudio(TestPeer* peer) {
   if (!peer->params()->audio_config) {
     return;
   }
+  const AudioConfig& audio_config = peer->params()->audio_config.value();
   rtc::scoped_refptr<webrtc::AudioSourceInterface> source =
-      peer->pc_factory()->CreateAudioSource(
-          peer->params()->audio_config->audio_options);
+      peer->pc_factory()->CreateAudioSource(audio_config.audio_options);
   rtc::scoped_refptr<AudioTrackInterface> track =
-      peer->pc_factory()->CreateAudioTrack("audio", source);
-  peer->AddTrack(track, {"audio"});
+      peer->pc_factory()->CreateAudioTrack(*audio_config.stream_label, source);
+  peer->AddTrack(track, {*audio_config.stream_label});
 }
 
 void PeerConnectionE2EQualityTest::SetupCall() {

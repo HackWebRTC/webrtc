@@ -116,6 +116,7 @@ class PeerConnectionE2EQualityTestFixture {
     size_t height;
     int32_t fps;
     // Have to be unique among all specified configs for all peers in the call.
+    // Will be auto generated if omitted.
     absl::optional<std::string> stream_label;
     // Only single from 3 next fields can be specified.
     // If specified generator with this name will be used as input.
@@ -131,7 +132,7 @@ class PeerConnectionE2EQualityTestFixture {
     //    video stream has not spatial layers and simulcast streams.
     // 2. |target_spatial_index| presented and simulcast encoder is used:
     //    in such case |target_spatial_index| will specify the index of
-    //    simulcast strem, that should be analyzed. Other streams will be
+    //    simulcast stream, that should be analyzed. Other streams will be
     //    dropped.
     // 3. |target_spatial_index| presented and SVP encoder is used:
     //    in such case |target_spatial_index| will specify the top interesting
@@ -156,6 +157,9 @@ class PeerConnectionE2EQualityTestFixture {
       kGenerated,
       kFile,
     };
+    // Have to be unique among all specified configs for all peers in the call.
+    // Will be auto generated if omitted.
+    absl::optional<std::string> stream_label;
     Mode mode;
     // Have to be specified only if mode = kFile
     absl::optional<std::string> input_file_name;

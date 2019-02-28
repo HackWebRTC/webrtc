@@ -69,11 +69,9 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
   alice_video_config.generator = VideoGeneratorType::kDefault;
 
   alice_params->video_configs.push_back(alice_video_config);
-  alice_params->audio_config = AudioConfig{
-      AudioConfig::Mode::kGenerated,
-      /*input_file_name=*/absl::nullopt,
-      /*input_dump_file_name=*/absl::nullopt,
-      /*output_dump_file_name=*/absl::nullopt, cricket::AudioOptions()};
+  alice_params->audio_config = AudioConfig();
+  alice_params->audio_config->mode = AudioConfig::Mode::kGenerated,
+  alice_params->audio_config->audio_options = cricket::AudioOptions();
 
   auto bob_params = absl::make_unique<Params>();
   VideoConfig bob_video_config;
@@ -84,11 +82,9 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
   bob_video_config.generator = VideoGeneratorType::kDefault;
 
   bob_params->video_configs.push_back(bob_video_config);
-  bob_params->audio_config = AudioConfig{
-      AudioConfig::Mode::kGenerated,
-      /*input_file_name=*/absl::nullopt,
-      /*input_dump_file_name=*/absl::nullopt,
-      /*output_dump_file_name=*/absl::nullopt, cricket::AudioOptions()};
+  bob_params->audio_config = AudioConfig();
+  bob_params->audio_config->mode = AudioConfig::Mode::kGenerated,
+  bob_params->audio_config->audio_options = cricket::AudioOptions();
 
   // Setup emulated network
   NetworkEmulationManager network_emulation_manager;
