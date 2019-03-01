@@ -18,7 +18,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/exp_filter.h"
 #include "rtc_base/task_queue.h"
-#include "rtc_base/time_utils.h"
 
 // TODO(kthelgason): Some versions of Android have issues with log2.
 // See https://code.google.com/p/android/issues/detail?id=212634 for details
@@ -41,7 +40,11 @@ static const int kMinFramesNeededToScale = 2 * 30;
 class QualityScaler::QpSmoother {
  public:
   explicit QpSmoother(float alpha)
-      : alpha_(alpha), last_sample_ms_(rtc::TimeMillis()), smoother_(alpha) {}
+      : alpha_(alpha),
+        // The initial value of last_sample_ms doesn't matter since the smoother
+        // will ignore the time delta for the first update.
+        last_sample_ms_(0),
+        smoother_(alpha) {}
 
   absl::optional<int> GetAvg() const {
     float value = smoother_.filtered();
@@ -51,8 +54,8 @@ class QualityScaler::QpSmoother {
     return static_cast<int>(value);
   }
 
-  void Add(float sample) {
-    int64_t now_ms = rtc::TimeMillis();
+  void Add(float sample, int64_t time_sent_us) {
+    int64_t now_ms = time_sent_us / 1000;
     smoother_.Apply(static_cast<float>(now_ms - last_sample_ms_), sample);
     last_sample_ms_ = now_ms;
   }
@@ -128,15 +131,15 @@ void QualityScaler::ReportDroppedFrameByEncoder() {
   framedrop_percent_all_.AddSample(100);
 }
 
-void QualityScaler::ReportQp(int qp) {
+void QualityScaler::ReportQp(int qp, int64_t time_sent_us) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
   framedrop_percent_media_opt_.AddSample(0);
   framedrop_percent_all_.AddSample(0);
   average_qp_.AddSample(qp);
   if (qp_smoother_high_)
-    qp_smoother_high_->Add(qp);
+    qp_smoother_high_->Add(qp, time_sent_us);
   if (qp_smoother_low_)
-    qp_smoother_low_->Add(qp);
+    qp_smoother_low_->Add(qp, time_sent_us);
 }
 
 void QualityScaler::CheckQp() {

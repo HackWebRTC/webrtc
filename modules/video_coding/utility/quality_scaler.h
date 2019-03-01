@@ -55,7 +55,7 @@ class QualityScaler {
   void ReportDroppedFrameByMediaOpt();
   void ReportDroppedFrameByEncoder();
   // Inform the QualityScaler of the last seen QP.
-  void ReportQp(int qp);
+  void ReportQp(int qp, int64_t time_sent_us);
 
   // The following members declared protected for testing purposes.
  protected:

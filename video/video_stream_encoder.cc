@@ -1749,7 +1749,7 @@ void VideoStreamEncoder::RunPostEncode(EncodedImage encoded_image,
       encoded_image.capture_time_ms_ * rtc::kNumMicrosecsPerMillisec,
       encode_duration_us);
   if (quality_scaler_ && encoded_image.qp_ >= 0)
-    quality_scaler_->ReportQp(encoded_image.qp_);
+    quality_scaler_->ReportQp(encoded_image.qp_, time_sent_us);
   if (bitrate_adjuster_) {
     bitrate_adjuster_->OnEncodedFrame(encoded_image, temporal_index);
   }
