@@ -176,7 +176,6 @@ TEST(RtpVideoSenderTest, SendSimulcastSetActive) {
   RtpVideoSenderTestFixture test({kSsrc1, kSsrc2}, kPayloadType, {});
 
   CodecSpecificInfo codec_info;
-  memset(&codec_info, 0, sizeof(CodecSpecificInfo));
   codec_info.codecType = kVideoCodecVP8;
 
   test.router()->SetActive(true);
@@ -223,7 +222,6 @@ TEST(RtpVideoSenderTest, SendSimulcastSetActiveModules) {
 
   RtpVideoSenderTestFixture test({kSsrc1, kSsrc2}, kPayloadType, {});
   CodecSpecificInfo codec_info;
-  memset(&codec_info, 0, sizeof(CodecSpecificInfo));
   codec_info.codecType = kVideoCodecVP8;
 
   // Only setting one stream to active will still set the payload router to

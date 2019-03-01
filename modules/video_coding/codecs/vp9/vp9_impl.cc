@@ -174,7 +174,7 @@ VP9EncoderImpl::VP9EncoderImpl(const cricket::VideoCodec& codec)
       first_frame_in_picture_(true),
       ss_info_needed_(false),
       is_flexible_mode_(false) {
-  memset(&codec_, 0, sizeof(codec_));
+  codec_ = {};
   memset(&svc_params_, 0, sizeof(vpx_svc_extra_cfg_t));
 }
 
@@ -1279,7 +1279,7 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   }
   RTC_DCHECK_LE(encoded_image_.size(), encoded_image_.capacity());
 
-  memset(&codec_specific_, 0, sizeof(codec_specific_));
+  codec_specific_ = {};
   absl::optional<int> spatial_index;
   PopulateCodecSpecific(&codec_specific_, &spatial_index, *pkt,
                         input_image_->timestamp());

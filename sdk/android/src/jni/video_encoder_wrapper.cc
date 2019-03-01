@@ -374,7 +374,6 @@ CodecSpecificInfo VideoEncoderWrapper::ParseCodecSpecificInfo(
   const bool key_frame = frame._frameType == kVideoFrameKey;
 
   CodecSpecificInfo info;
-  memset(&info, 0, sizeof(info));
   info.codecType = codec_settings_.codecType;
 
   switch (codec_settings_.codecType) {

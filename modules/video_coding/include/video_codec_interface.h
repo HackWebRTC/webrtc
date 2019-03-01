@@ -103,6 +103,7 @@ struct CodecSpecificInfo {
   CodecSpecificInfo() : codecType(kVideoCodecGeneric) {
     memset(&codecSpecific, 0, sizeof(codecSpecific));
   }
+
   VideoCodecType codecType;
   CodecSpecificInfoUnion codecSpecific;
 };

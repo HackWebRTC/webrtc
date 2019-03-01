@@ -122,7 +122,6 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     }
 
     CodecSpecificInfo specifics;
-    memset(&specifics, 0, sizeof(specifics));
     specifics.codecType = kVideoCodecGeneric;
     std::unique_ptr<uint8_t[]> encoded_buffer(
         new uint8_t[frame_info.layers[i].size]);
@@ -338,7 +337,6 @@ EncodedImageCallback::Result FakeH264Encoder::OnEncodedImage(
     }
   }
   CodecSpecificInfo specifics;
-  memset(&specifics, 0, sizeof(specifics));
   specifics.codecType = kVideoCodecH264;
   specifics.codecSpecific.H264.packetization_mode =
       H264PacketizationMode::NonInterleaved;

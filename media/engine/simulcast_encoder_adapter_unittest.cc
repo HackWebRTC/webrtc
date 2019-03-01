@@ -236,7 +236,6 @@ class MockVideoEncoder : public VideoEncoder {
     image._encodedWidth = width;
     image._encodedHeight = height;
     CodecSpecificInfo codec_specific_info;
-    memset(&codec_specific_info, 0, sizeof(codec_specific_info));
     codec_specific_info.codecType = webrtc::kVideoCodecVP8;
     callback_->OnEncodedImage(image, &codec_specific_info, nullptr);
   }

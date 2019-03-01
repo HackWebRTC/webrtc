@@ -52,7 +52,6 @@ TEST(RtpPayloadParamsTest, InfoMappedToRtpVideoHeader_Vp8) {
   encoded_image.SetSpatialIndex(1);
 
   CodecSpecificInfo codec_info;
-  memset(&codec_info, 0, sizeof(CodecSpecificInfo));
   codec_info.codecType = kVideoCodecVP8;
   codec_info.codecSpecific.VP8.temporalIdx = 0;
   codec_info.codecSpecific.VP8.keyIdx = kNoKeyIdx;
@@ -93,7 +92,6 @@ TEST(RtpPayloadParamsTest, InfoMappedToRtpVideoHeader_Vp9) {
   encoded_image.content_type_ = VideoContentType::SCREENSHARE;
   encoded_image.SetSpatialIndex(0);
   CodecSpecificInfo codec_info;
-  memset(&codec_info, 0, sizeof(CodecSpecificInfo));
   codec_info.codecType = kVideoCodecVP9;
   codec_info.codecSpecific.VP9.num_spatial_layers = 3;
   codec_info.codecSpecific.VP9.first_frame_in_picture = true;
@@ -152,7 +150,6 @@ TEST(RtpPayloadParamsTest, InfoMappedToRtpVideoHeader_H264) {
   EncodedImage encoded_image;
   CodecSpecificInfo codec_info;
   CodecSpecificInfoH264 *h264info = &codec_info.codecSpecific.H264;
-  memset(&codec_info, 0, sizeof(CodecSpecificInfo));
   codec_info.codecType = kVideoCodecH264;
   h264info->packetization_mode = H264PacketizationMode::SingleNalUnit;
   h264info->temporal_idx = kNoTemporalIdx;
@@ -199,7 +196,6 @@ TEST(RtpPayloadParamsTest, PictureIdIsSetForVp8) {
 
   EncodedImage encoded_image;
   CodecSpecificInfo codec_info;
-  memset(&codec_info, 0, sizeof(CodecSpecificInfo));
   codec_info.codecType = kVideoCodecVP8;
 
   RtpPayloadParams params(kSsrc1, &state);
@@ -222,7 +218,6 @@ TEST(RtpPayloadParamsTest, PictureIdWraps) {
 
   EncodedImage encoded_image;
   CodecSpecificInfo codec_info;
-  memset(&codec_info, 0, sizeof(CodecSpecificInfo));
   codec_info.codecType = kVideoCodecVP8;
   codec_info.codecSpecific.VP8.temporalIdx = kNoTemporalIdx;
 
@@ -247,7 +242,6 @@ TEST(RtpPayloadParamsTest, Tl0PicIdxUpdatedForVp8) {
   // Modules are sending for this test.
   // OnEncodedImage, temporalIdx: 1.
   CodecSpecificInfo codec_info;
-  memset(&codec_info, 0, sizeof(CodecSpecificInfo));
   codec_info.codecType = kVideoCodecVP8;
   codec_info.codecSpecific.VP8.temporalIdx = 1;
 
@@ -283,7 +277,6 @@ TEST(RtpPayloadParamsTest, Tl0PicIdxUpdatedForVp9) {
   // Modules are sending for this test.
   // OnEncodedImage, temporalIdx: 1.
   CodecSpecificInfo codec_info;
-  memset(&codec_info, 0, sizeof(CodecSpecificInfo));
   codec_info.codecType = kVideoCodecVP9;
   codec_info.codecSpecific.VP9.temporal_idx = 1;
   codec_info.codecSpecific.VP9.first_frame_in_picture = true;
@@ -327,7 +320,7 @@ TEST(RtpPayloadParamsTest, PictureIdForOldGenericFormat) {
   RtpPayloadState state{};
 
   EncodedImage encoded_image;
-  CodecSpecificInfo codec_info{};
+  CodecSpecificInfo codec_info;
   codec_info.codecType = kVideoCodecGeneric;
 
   RtpPayloadParams params(kSsrc1, &state);
@@ -364,7 +357,7 @@ class RtpPayloadParamsVp8ToGenericTest : public ::testing::Test {
     encoded_image._encodedWidth = width;
     encoded_image._encodedHeight = height;
 
-    CodecSpecificInfo codec_info{};
+    CodecSpecificInfo codec_info;
     codec_info.codecType = kVideoCodecVP8;
     codec_info.codecSpecific.VP8.temporalIdx = temporal_index;
     codec_info.codecSpecific.VP8.layerSync = layer_sync == kSync;
@@ -403,7 +396,7 @@ TEST_F(RtpPayloadParamsVp8ToGenericTest, TooHighTemporalIndex) {
 
   EncodedImage encoded_image;
   encoded_image._frameType = kVideoFrameDelta;
-  CodecSpecificInfo codec_info{};
+  CodecSpecificInfo codec_info;
   codec_info.codecType = kVideoCodecVP8;
   codec_info.codecSpecific.VP8.temporalIdx =
       RtpGenericFrameDescriptor::kMaxTemporalLayers;
