@@ -1001,6 +1001,23 @@ bool PeerConnection::Initialize(
       return false;
     }
 
+    if (configuration.use_media_transport ||
+        configuration.use_media_transport_for_data_channels) {
+      // TODO(bugs.webrtc.org/9719): This check will eventually go away, when
+      // RTP media transport is introduced. But until then, we require SDES to
+      // be enabled.
+      if (configuration.enable_dtls_srtp.has_value() &&
+          configuration.enable_dtls_srtp.value()) {
+        RTC_LOG(LS_WARNING)
+            << "When media transport is used, SDES must be enabled. Set "
+               "configuration.enable_dtls_srtp to false. use_media_transport="
+            << configuration.use_media_transport
+            << ", use_media_transport_for_data_channels="
+            << configuration.use_media_transport_for_data_channels;
+        return false;
+      }
+    }
+
     config.use_media_transport_for_media = configuration.use_media_transport;
     config.use_media_transport_for_data_channels =
         configuration.use_media_transport_for_data_channels;
@@ -4140,6 +4157,12 @@ void PeerConnection::GetOptionsForOffer(
                     port_allocator_.get()));
   session_options->offer_extmap_allow_mixed =
       configuration_.offer_extmap_allow_mixed;
+
+  if (configuration_.enable_dtls_srtp &&
+      !configuration_.enable_dtls_srtp.value()) {
+    session_options->media_transport_settings =
+        transport_controller_->GenerateOrGetLastMediaTransportOffer();
+  }
 }
 
 void PeerConnection::GetOptionsForPlanBOffer(
@@ -6352,7 +6375,8 @@ bool PeerConnection::SetupMediaTransportForDataChannels_n(
     const std::string& mid) {
   media_transport_ = transport_controller_->GetMediaTransport(mid);
   if (!media_transport_) {
-    RTC_LOG(LS_ERROR) << "Media transport is not available for data channels";
+    RTC_LOG(LS_ERROR)
+        << "Media transport is not available for data channels, mid=" << mid;
     return false;
   }
 

@@ -532,6 +532,17 @@ static void InitAttrLine(const std::string& attribute, rtc::StringBuilder* os) {
   InitLine(kLineTypeAttributes, attribute, os);
 }
 
+// Writes an x-mt SDP attribute line based on the media transport settings.
+static void AddMediaTransportLine(
+    const cricket::SessionDescription::MediaTransportSetting& setting,
+    std::string* message) {
+  rtc::StringBuilder os;
+  InitAttrLine(kMediaTransportSettingLine, &os);
+  os << kSdpDelimiterColon << setting.transport_name << kSdpDelimiterColon
+     << rtc::Base64::Encode(setting.transport_setting);
+  AddLine(os.str(), message);
+}
+
 // Writes a SDP attribute line based on |attribute| and |value| to |message|.
 static void AddAttributeLine(const std::string& attribute,
                              int value,
@@ -872,6 +883,11 @@ std::string SdpSerialize(const JsepSessionDescription& jdesc) {
 
   // Time Description.
   AddLine(kTimeDescription, &message);
+
+  for (const cricket::SessionDescription::MediaTransportSetting& settings :
+       desc->MediaTransportSettings()) {
+    AddMediaTransportLine(settings, &message);
+  }
 
   // Group
   if (desc->HasGroup(cricket::GROUP_TYPE_BUNDLE)) {

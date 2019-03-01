@@ -275,6 +275,7 @@ if (rtc_include_tests) {
       "../api:fake_media_transport",
       "../api:ice_transport_factory",
       "../api:libjingle_peerconnection_api",
+      "../api:loopback_media_transport",
       "../call:rtp_interfaces",
       "../call:rtp_receiver",
       "../logging:rtc_event_log_api",

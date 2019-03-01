@@ -110,6 +110,12 @@ struct MediaSessionOptions {
   // descriptions will be generated.
   std::vector<MediaDescriptionOptions> media_description_options;
   std::vector<IceParameters> pooled_ice_credentials;
+
+  // An optional media transport settings.
+  // In the future we may consider using a vector here, to indicate multiple
+  // supported transports.
+  absl::optional<cricket::SessionDescription::MediaTransportSetting>
+      media_transport_settings;
 };
 
 // Creates media session descriptions according to the supplied codecs and

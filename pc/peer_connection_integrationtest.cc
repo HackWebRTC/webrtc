@@ -3465,6 +3465,8 @@ TEST_P(PeerConnectionIntegrationTest,
 // channel.
 TEST_P(PeerConnectionIntegrationTest, MediaTransportDataChannelEndToEnd) {
   PeerConnectionInterface::RTCConfiguration rtc_config;
+  rtc_config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  rtc_config.bundle_policy = PeerConnectionInterface::kBundlePolicyMaxBundle;
   rtc_config.use_media_transport_for_data_channels = true;
   rtc_config.enable_dtls_srtp = false;  // SDES is required for media transport.
   ASSERT_TRUE(CreatePeerConnectionWrappersWithConfigAndMediaTransportFactory(
@@ -3566,8 +3568,86 @@ TEST_P(PeerConnectionIntegrationTest,
   EXPECT_FALSE(callee()->data_channel()->negotiated());
 }
 
+TEST_P(PeerConnectionIntegrationTest, MediaTransportOfferUpgrade) {
+  PeerConnectionInterface::RTCConfiguration rtc_config;
+  rtc_config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  rtc_config.bundle_policy = PeerConnectionInterface::kBundlePolicyMaxBundle;
+  rtc_config.use_media_transport = true;
+  rtc_config.enable_dtls_srtp = false;  // SDES is required for media transport.
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfigAndMediaTransportFactory(
+      rtc_config, rtc_config, loopback_media_transports()->first_factory(),
+      loopback_media_transports()->second_factory()));
+  ConnectFakeSignaling();
+
+  // Do initial offer/answer with just a video track.
+  caller()->AddVideoTrack();
+  callee()->AddVideoTrack();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Ensure that the media transport is ready.
+  loopback_media_transports()->SetState(webrtc::MediaTransportState::kWritable);
+  loopback_media_transports()->FlushAsyncInvokes();
+
+  // Now add an audio track and do another offer/answer.
+  caller()->AddAudioTrack();
+  callee()->AddAudioTrack();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Ensure both audio and video frames are received end-to-end.
+  MediaExpectations media_expectations;
+  media_expectations.ExpectBidirectionalAudioAndVideo();
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+
+  // The second offer should not have generated another media transport.
+  // Media transport was kept alive, and was not recreated.
+  EXPECT_EQ(1, loopback_media_transports()->first_factory_transport_count());
+  EXPECT_EQ(1, loopback_media_transports()->second_factory_transport_count());
+}
+
+TEST_P(PeerConnectionIntegrationTest, MediaTransportOfferUpgradeOnTheCallee) {
+  PeerConnectionInterface::RTCConfiguration rtc_config;
+  rtc_config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  rtc_config.bundle_policy = PeerConnectionInterface::kBundlePolicyMaxBundle;
+  rtc_config.use_media_transport = true;
+  rtc_config.enable_dtls_srtp = false;  // SDES is required for media transport.
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfigAndMediaTransportFactory(
+      rtc_config, rtc_config, loopback_media_transports()->first_factory(),
+      loopback_media_transports()->second_factory()));
+  ConnectFakeSignaling();
+
+  // Do initial offer/answer with just a video track.
+  caller()->AddVideoTrack();
+  callee()->AddVideoTrack();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Ensure that the media transport is ready.
+  loopback_media_transports()->SetState(webrtc::MediaTransportState::kWritable);
+  loopback_media_transports()->FlushAsyncInvokes();
+
+  // Now add an audio track and do another offer/answer.
+  caller()->AddAudioTrack();
+  callee()->AddAudioTrack();
+  callee()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+
+  // Ensure both audio and video frames are received end-to-end.
+  MediaExpectations media_expectations;
+  media_expectations.ExpectBidirectionalAudioAndVideo();
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+
+  // The second offer should not have generated another media transport.
+  // Media transport was kept alive, and was not recreated.
+  EXPECT_EQ(1, loopback_media_transports()->first_factory_transport_count());
+  EXPECT_EQ(1, loopback_media_transports()->second_factory_transport_count());
+}
+
 TEST_P(PeerConnectionIntegrationTest, MediaTransportBidirectionalAudio) {
   PeerConnectionInterface::RTCConfiguration rtc_config;
+  rtc_config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  rtc_config.bundle_policy = PeerConnectionInterface::kBundlePolicyMaxBundle;
   rtc_config.use_media_transport = true;
   rtc_config.enable_dtls_srtp = false;  // SDES is required for media transport.
   ASSERT_TRUE(CreatePeerConnectionWrappersWithConfigAndMediaTransportFactory(

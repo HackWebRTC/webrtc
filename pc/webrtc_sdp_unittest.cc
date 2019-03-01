@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/memory/memory.h"
 #include "absl/strings/str_replace.h"
 #include "api/array_view.h"
 #include "api/crypto_params.h"
@@ -4417,4 +4418,26 @@ TEST_F(WebRtcSdpTest, ParseMediaTransportIgnoreNonsenseAttributeLines) {
   ASSERT_TRUE(webrtc::SdpDeserialize(sdp, &output, &error))
       << error.description;
   EXPECT_TRUE(output.description()->MediaTransportSettings().empty());
+}
+
+TEST_F(WebRtcSdpTest, SerializeMediaTransportSettings) {
+  cricket::SessionDescription* description = new cricket::SessionDescription();
+
+  JsepSessionDescription output(SdpType::kOffer);
+  // JsepSessionDescription takes ownership of the description.
+  output.Initialize(description, "session_id", "session_version");
+  output.description()->AddMediaTransportSetting("foo", "bar");
+  std::string serialized_out;
+  output.ToString(&serialized_out);
+  ASSERT_THAT(serialized_out, ::testing::HasSubstr("\r\na=x-mt:foo:YmFy\r\n"));
+}
+
+TEST_F(WebRtcSdpTest, SerializeMediaTransportSettingsTestCopy) {
+  cricket::SessionDescription description;
+  description.AddMediaTransportSetting("name", "setting");
+  std::unique_ptr<cricket::SessionDescription> copy =
+      absl::WrapUnique(description.Copy());
+  ASSERT_EQ(1u, copy->MediaTransportSettings().size());
+  EXPECT_EQ("name", copy->MediaTransportSettings()[0].transport_name);
+  EXPECT_EQ("setting", copy->MediaTransportSettings()[0].transport_setting);
 }
