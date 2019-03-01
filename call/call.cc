@@ -164,7 +164,8 @@ class Call final : public webrtc::Call,
                    public TargetTransferRateObserver,
                    public BitrateAllocator::LimitObserver {
  public:
-  Call(const Call::Config& config,
+  Call(Clock* clock,
+       const Call::Config& config,
        std::unique_ptr<RtpTransportControllerSendInterface> transport_send,
        std::unique_ptr<ProcessThread> module_process_thread,
        TaskQueueFactory* task_queue_factory);
@@ -415,21 +416,21 @@ std::string Call::Stats::ToString(int64_t time_ms) const {
 }
 
 Call* Call::Create(const Call::Config& config) {
-  return Create(config, ProcessThread::Create("PacerThread"),
-                ProcessThread::Create("ModuleProcessThread"),
-                &GlobalTaskQueueFactory());
+  return Create(
+      config, Clock::GetRealTimeClock(), ProcessThread::Create("PacerThread"),
+      ProcessThread::Create("ModuleProcessThread"), &GlobalTaskQueueFactory());
 }
 
 Call* Call::Create(const Call::Config& config,
+                   Clock* clock,
                    std::unique_ptr<ProcessThread> call_thread,
                    std::unique_ptr<ProcessThread> pacer_thread,
                    TaskQueueFactory* task_queue_factory) {
   return new internal::Call(
-      config,
+      clock, config,
       absl::make_unique<RtpTransportControllerSend>(
-          Clock::GetRealTimeClock(), config.event_log,
-          config.network_controller_factory, config.bitrate_config,
-          std::move(pacer_thread), task_queue_factory),
+          clock, config.event_log, config.network_controller_factory,
+          config.bitrate_config, std::move(pacer_thread), task_queue_factory),
       std::move(call_thread), task_queue_factory);
 }
 
@@ -445,11 +446,12 @@ VideoSendStream* Call::CreateVideoSendStream(
 
 namespace internal {
 
-Call::Call(const Call::Config& config,
+Call::Call(Clock* clock,
+           const Call::Config& config,
            std::unique_ptr<RtpTransportControllerSendInterface> transport_send,
            std::unique_ptr<ProcessThread> module_process_thread,
            TaskQueueFactory* task_queue_factory)
-    : clock_(Clock::GetRealTimeClock()),
+    : clock_(clock),
       task_queue_factory_(task_queue_factory),
       num_cpu_cores_(CpuInfo::DetectNumberOfCores()),
       module_process_thread_(std::move(module_process_thread)),
