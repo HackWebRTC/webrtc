@@ -661,10 +661,12 @@ bool WebRtcVideoChannel::GetChangedSendParameters(
 }
 
 rtc::DiffServCodePoint WebRtcVideoChannel::PreferredDscp() const {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   return preferred_dscp_;
 }
 
 bool WebRtcVideoChannel::SetSendParameters(const VideoSendParameters& params) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   TRACE_EVENT0("webrtc", "WebRtcVideoChannel::SetSendParameters");
   RTC_LOG(LS_INFO) << "SetSendParameters: " << params.ToString();
   ChangedSendParameters changed_params;
@@ -720,8 +722,6 @@ bool WebRtcVideoChannel::SetSendParameters(const VideoSendParameters& params) {
         bitrate_config_);
   }
 
-  {
-    rtc::CritScope stream_lock(&stream_crit_);
     for (auto& kv : send_streams_) {
       kv.second->SetSendParameters(changed_params);
     }
@@ -739,14 +739,13 @@ bool WebRtcVideoChannel::SetSendParameters(const VideoSendParameters& params) {
                                      : webrtc::RtcpMode::kCompound);
       }
     }
-  }
   send_params_ = params;
   return true;
 }
 
 webrtc::RtpParameters WebRtcVideoChannel::GetRtpSendParameters(
     uint32_t ssrc) const {
-  rtc::CritScope stream_lock(&stream_crit_);
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   auto it = send_streams_.find(ssrc);
   if (it == send_streams_.end()) {
     RTC_LOG(LS_WARNING) << "Attempting to get RTP send parameters for stream "
@@ -766,8 +765,8 @@ webrtc::RtpParameters WebRtcVideoChannel::GetRtpSendParameters(
 webrtc::RTCError WebRtcVideoChannel::SetRtpSendParameters(
     uint32_t ssrc,
     const webrtc::RtpParameters& parameters) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   TRACE_EVENT0("webrtc", "WebRtcVideoChannel::SetRtpSendParameters");
-  rtc::CritScope stream_lock(&stream_crit_);
   auto it = send_streams_.find(ssrc);
   if (it == send_streams_.end()) {
     RTC_LOG(LS_ERROR) << "Attempting to set RTP send parameters for stream "
@@ -812,8 +811,8 @@ webrtc::RTCError WebRtcVideoChannel::SetRtpSendParameters(
 
 webrtc::RtpParameters WebRtcVideoChannel::GetRtpReceiveParameters(
     uint32_t ssrc) const {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   webrtc::RtpParameters rtp_params;
-  rtc::CritScope stream_lock(&stream_crit_);
   // SSRC of 0 represents an unsignaled receive stream.
   if (ssrc == 0) {
     if (!default_unsignalled_ssrc_handler_.GetDefaultSink()) {
@@ -846,8 +845,8 @@ webrtc::RtpParameters WebRtcVideoChannel::GetRtpReceiveParameters(
 bool WebRtcVideoChannel::SetRtpReceiveParameters(
     uint32_t ssrc,
     const webrtc::RtpParameters& parameters) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   TRACE_EVENT0("webrtc", "WebRtcVideoChannel::SetRtpReceiveParameters");
-  rtc::CritScope stream_lock(&stream_crit_);
 
   // SSRC of 0 represents an unsignaled receive stream.
   if (ssrc == 0) {
@@ -927,6 +926,7 @@ bool WebRtcVideoChannel::GetChangedRecvParameters(
 }
 
 bool WebRtcVideoChannel::SetRecvParameters(const VideoRecvParameters& params) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   TRACE_EVENT0("webrtc", "WebRtcVideoChannel::SetRecvParameters");
   RTC_LOG(LS_INFO) << "SetRecvParameters: " << params.ToString();
   ChangedRecvParameters changed_params;
@@ -950,11 +950,8 @@ bool WebRtcVideoChannel::SetRecvParameters(const VideoRecvParameters& params) {
     recv_codecs_ = *changed_params.codec_settings;
   }
 
-  {
-    rtc::CritScope stream_lock(&stream_crit_);
-    for (auto& kv : receive_streams_) {
-      kv.second->SetRecvParameters(changed_params);
-    }
+  for (auto& kv : receive_streams_) {
+    kv.second->SetRecvParameters(changed_params);
   }
   recv_params_ = params;
   return true;
@@ -975,6 +972,7 @@ std::string WebRtcVideoChannel::CodecSettingsVectorToString(
 }
 
 bool WebRtcVideoChannel::GetSendCodec(VideoCodec* codec) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   if (!send_codec_) {
     RTC_LOG(LS_VERBOSE) << "GetSendCodec: No send codec set.";
     return false;
@@ -984,18 +982,16 @@ bool WebRtcVideoChannel::GetSendCodec(VideoCodec* codec) {
 }
 
 bool WebRtcVideoChannel::SetSend(bool send) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   TRACE_EVENT0("webrtc", "WebRtcVideoChannel::SetSend");
   RTC_LOG(LS_VERBOSE) << "SetSend: " << (send ? "true" : "false");
   if (send && !send_codec_) {
     RTC_DLOG(LS_ERROR) << "SetSend(true) called before setting codec.";
     return false;
   }
-  {
-    rtc::CritScope stream_lock(&stream_crit_);
     for (const auto& kv : send_streams_) {
       kv.second->SetSend(send);
     }
-  }
   sending_ = send;
   return true;
 }
@@ -1004,13 +1000,13 @@ bool WebRtcVideoChannel::SetVideoSend(
     uint32_t ssrc,
     const VideoOptions* options,
     rtc::VideoSourceInterface<webrtc::VideoFrame>* source) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   TRACE_EVENT0("webrtc", "SetVideoSend");
   RTC_DCHECK(ssrc != 0);
   RTC_LOG(LS_INFO) << "SetVideoSend (ssrc= " << ssrc << ", options: "
                    << (options ? options->ToString() : "nullptr")
                    << ", source = " << (source ? "(source)" : "nullptr") << ")";
 
-  rtc::CritScope stream_lock(&stream_crit_);
   const auto& kv = send_streams_.find(ssrc);
   if (kv == send_streams_.end()) {
     // Allow unknown ssrc only if source is null.
@@ -1047,11 +1043,10 @@ bool WebRtcVideoChannel::ValidateReceiveSsrcAvailability(
 }
 
 bool WebRtcVideoChannel::AddSendStream(const StreamParams& sp) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_LOG(LS_INFO) << "AddSendStream: " << sp.ToString();
   if (!ValidateStreamParams(sp))
     return false;
-
-  rtc::CritScope stream_lock(&stream_crit_);
 
   if (!ValidateSendSsrcAvailability(sp))
     return false;
@@ -1102,11 +1097,10 @@ bool WebRtcVideoChannel::AddSendStream(const StreamParams& sp) {
 }
 
 bool WebRtcVideoChannel::RemoveSendStream(uint32_t ssrc) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_LOG(LS_INFO) << "RemoveSendStream: " << ssrc;
 
   WebRtcVideoSendStream* removed_stream;
-  {
-    rtc::CritScope stream_lock(&stream_crit_);
     std::map<uint32_t, WebRtcVideoSendStream*>::iterator it =
         send_streams_.find(ssrc);
     if (it == send_streams_.end()) {
@@ -1131,7 +1125,6 @@ bool WebRtcVideoChannel::RemoveSendStream(uint32_t ssrc) {
         kv.second->SetLocalSsrc(rtcp_receiver_report_ssrc_);
       }
     }
-  }
 
   delete removed_stream;
 
@@ -1151,7 +1144,7 @@ bool WebRtcVideoChannel::AddRecvStream(const StreamParams& sp) {
 
 bool WebRtcVideoChannel::AddRecvStream(const StreamParams& sp,
                                        bool default_stream) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK_RUN_ON(&thread_checker_);
 
   RTC_LOG(LS_INFO) << "AddRecvStream"
                    << (default_stream ? " (default stream)" : "") << ": "
@@ -1169,7 +1162,6 @@ bool WebRtcVideoChannel::AddRecvStream(const StreamParams& sp,
   uint32_t ssrc = sp.first_ssrc();
   RTC_DCHECK(ssrc != 0);  // TODO(pbos): Is this ever valid?
 
-  rtc::CritScope stream_lock(&stream_crit_);
   // Remove running stream if this was a default stream.
   const auto& prev_stream = receive_streams_.find(ssrc);
   if (prev_stream != receive_streams_.end()) {
@@ -1259,6 +1251,7 @@ void WebRtcVideoChannel::ConfigureReceiverRtp(
 }
 
 bool WebRtcVideoChannel::RemoveRecvStream(uint32_t ssrc) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_LOG(LS_INFO) << "RemoveRecvStream: " << ssrc;
   if (ssrc == 0) {
     // This indicates that we need to remove the unsignaled stream parameters
@@ -1267,7 +1260,6 @@ bool WebRtcVideoChannel::RemoveRecvStream(uint32_t ssrc) {
     return true;
   }
 
-  rtc::CritScope stream_lock(&stream_crit_);
   std::map<uint32_t, WebRtcVideoReceiveStream*>::iterator stream =
       receive_streams_.find(ssrc);
   if (stream == receive_streams_.end()) {
@@ -1283,16 +1275,14 @@ bool WebRtcVideoChannel::RemoveRecvStream(uint32_t ssrc) {
 bool WebRtcVideoChannel::SetSink(
     uint32_t ssrc,
     rtc::VideoSinkInterface<webrtc::VideoFrame>* sink) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_LOG(LS_INFO) << "SetSink: ssrc:" << ssrc << " "
                    << (sink ? "(ptr)" : "nullptr");
   if (ssrc == 0) {
-    // Do not hold |stream_crit_| here, since SetDefaultSink will call
-    // WebRtcVideoChannel::GetDefaultReceiveStreamSsrc().
     default_unsignalled_ssrc_handler_.SetDefaultSink(this, sink);
     return true;
   }
 
-  rtc::CritScope stream_lock(&stream_crit_);
   std::map<uint32_t, WebRtcVideoReceiveStream*>::iterator it =
       receive_streams_.find(ssrc);
   if (it == receive_streams_.end()) {
@@ -1304,6 +1294,7 @@ bool WebRtcVideoChannel::SetSink(
 }
 
 bool WebRtcVideoChannel::GetStats(VideoMediaInfo* info) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   TRACE_EVENT0("webrtc", "WebRtcVideoChannel::GetStats");
 
   // Log stats periodically.
@@ -1337,7 +1328,6 @@ bool WebRtcVideoChannel::GetStats(VideoMediaInfo* info) {
 
 void WebRtcVideoChannel::FillSenderStats(VideoMediaInfo* video_media_info,
                                          bool log_stats) {
-  rtc::CritScope stream_lock(&stream_crit_);
   for (std::map<uint32_t, WebRtcVideoSendStream*>::iterator it =
            send_streams_.begin();
        it != send_streams_.end(); ++it) {
@@ -1348,7 +1338,6 @@ void WebRtcVideoChannel::FillSenderStats(VideoMediaInfo* video_media_info,
 
 void WebRtcVideoChannel::FillReceiverStats(VideoMediaInfo* video_media_info,
                                            bool log_stats) {
-  rtc::CritScope stream_lock(&stream_crit_);
   for (std::map<uint32_t, WebRtcVideoReceiveStream*>::iterator it =
            receive_streams_.begin();
        it != receive_streams_.end(); ++it) {
@@ -1358,7 +1347,7 @@ void WebRtcVideoChannel::FillReceiverStats(VideoMediaInfo* video_media_info,
 }
 
 void WebRtcVideoChannel::FillBitrateInfo(BandwidthEstimationInfo* bwe_info) {
-  rtc::CritScope stream_lock(&stream_crit_);
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   for (std::map<uint32_t, WebRtcVideoSendStream*>::iterator stream =
            send_streams_.begin();
        stream != send_streams_.end(); ++stream) {
@@ -1382,6 +1371,7 @@ void WebRtcVideoChannel::FillSendAndReceiveCodecStats(
 
 void WebRtcVideoChannel::OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
                                           int64_t packet_time_us) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   const webrtc::PacketReceiver::DeliveryStatus delivery_result =
       call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, *packet,
                                        packet_time_us);
@@ -1441,6 +1431,7 @@ void WebRtcVideoChannel::OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
 
 void WebRtcVideoChannel::OnRtcpReceived(rtc::CopyOnWriteBuffer* packet,
                                         int64_t packet_time_us) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   // TODO(pbos): Check webrtc::PacketReceiver::DELIVERY_OK once we deliver
   // for both audio and video on the same path. Since BundleFilter doesn't
   // filter RTCP anymore incoming RTCP packets could've been going to audio (so
@@ -1450,6 +1441,7 @@ void WebRtcVideoChannel::OnRtcpReceived(rtc::CopyOnWriteBuffer* packet,
 }
 
 void WebRtcVideoChannel::OnReadyToSend(bool ready) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_LOG(LS_VERBOSE) << "OnReadyToSend: " << (ready ? "Ready." : "Not ready.");
   call_->SignalChannelNetworkState(
       webrtc::MediaType::VIDEO,
@@ -1459,6 +1451,7 @@ void WebRtcVideoChannel::OnReadyToSend(bool ready) {
 void WebRtcVideoChannel::OnNetworkRouteChanged(
     const std::string& transport_name,
     const rtc::NetworkRoute& network_route) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   call_->GetTransportControllerSend()->OnNetworkRouteChanged(transport_name,
                                                              network_route);
   call_->GetTransportControllerSend()->OnTransportOverheadChanged(
@@ -1468,6 +1461,7 @@ void WebRtcVideoChannel::OnNetworkRouteChanged(
 void WebRtcVideoChannel::SetInterface(
     NetworkInterface* iface,
     webrtc::MediaTransportInterface* media_transport) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   MediaChannel::SetInterface(iface, media_transport);
   // Set the RTP recv/send buffer to a bigger size.
 
@@ -1485,7 +1479,7 @@ void WebRtcVideoChannel::SetInterface(
 void WebRtcVideoChannel::SetFrameDecryptor(
     uint32_t ssrc,
     rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor) {
-  rtc::CritScope stream_lock(&stream_crit_);
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   auto matching_stream = receive_streams_.find(ssrc);
   if (matching_stream != receive_streams_.end()) {
     matching_stream->second->SetFrameDecryptor(frame_decryptor);
@@ -1495,7 +1489,7 @@ void WebRtcVideoChannel::SetFrameDecryptor(
 void WebRtcVideoChannel::SetFrameEncryptor(
     uint32_t ssrc,
     rtc::scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor) {
-  rtc::CritScope stream_lock(&stream_crit_);
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   auto matching_stream = send_streams_.find(ssrc);
   if (matching_stream != send_streams_.end()) {
     matching_stream->second->SetFrameEncryptor(frame_encryptor);
@@ -1506,8 +1500,8 @@ void WebRtcVideoChannel::SetFrameEncryptor(
 
 bool WebRtcVideoChannel::SetBaseMinimumPlayoutDelayMs(uint32_t ssrc,
                                                       int delay_ms) {
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   absl::optional<uint32_t> default_ssrc = GetDefaultReceiveStreamSsrc();
-  rtc::CritScope stream_lock(&stream_crit_);
 
   // SSRC of 0 represents the default receive stream.
   if (ssrc == 0) {
@@ -1534,7 +1528,7 @@ bool WebRtcVideoChannel::SetBaseMinimumPlayoutDelayMs(uint32_t ssrc,
 
 absl::optional<int> WebRtcVideoChannel::GetBaseMinimumPlayoutDelayMs(
     uint32_t ssrc) const {
-  rtc::CritScope stream_lock(&stream_crit_);
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   // SSRC of 0 represents the default receive stream.
   if (ssrc == 0) {
     return default_recv_base_minimum_delay_ms_;
@@ -1550,7 +1544,7 @@ absl::optional<int> WebRtcVideoChannel::GetBaseMinimumPlayoutDelayMs(
 }
 
 absl::optional<uint32_t> WebRtcVideoChannel::GetDefaultReceiveStreamSsrc() {
-  rtc::CritScope stream_lock(&stream_crit_);
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   absl::optional<uint32_t> ssrc;
   for (auto it = receive_streams_.begin(); it != receive_streams_.end(); ++it) {
     if (it->second->IsDefaultStream()) {
@@ -1563,7 +1557,7 @@ absl::optional<uint32_t> WebRtcVideoChannel::GetDefaultReceiveStreamSsrc() {
 
 std::vector<webrtc::RtpSource> WebRtcVideoChannel::GetSources(
     uint32_t ssrc) const {
-  rtc::CritScope stream_lock(&stream_crit_);
+  RTC_DCHECK_RUN_ON(&thread_checker_);
   auto it = receive_streams_.find(ssrc);
   if (it == receive_streams_.end()) {
     // TODO(bugs.webrtc.org/9781): Investigate standard compliance
