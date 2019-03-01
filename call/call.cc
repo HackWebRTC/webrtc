@@ -53,7 +53,6 @@
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/synchronization/rw_lock_wrapper.h"
-#include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
@@ -414,9 +413,11 @@ std::string Call::Stats::ToString(int64_t time_ms) const {
 
 Call* Call::Create(const Call::Config& config) {
   return new internal::Call(
-      config, absl::make_unique<RtpTransportControllerSend>(
-                  Clock::GetRealTimeClock(), config.event_log,
-                  config.network_controller_factory, config.bitrate_config));
+      config,
+      absl::make_unique<RtpTransportControllerSend>(
+          Clock::GetRealTimeClock(), config.event_log,
+          config.network_controller_factory, config.bitrate_config,
+          ProcessThread::Create("PacerThread"), &GlobalTaskQueueFactory()));
 }
 
 // This method here to avoid subclasses has to implement this method.

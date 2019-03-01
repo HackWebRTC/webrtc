@@ -48,7 +48,9 @@ class RtpTransportControllerSend final
       Clock* clock,
       RtcEventLog* event_log,
       NetworkControllerFactoryInterface* controller_factory,
-      const BitrateConstraints& bitrate_config);
+      const BitrateConstraints& bitrate_config,
+      std::unique_ptr<ProcessThread> process_thread,
+      TaskQueueFactory* task_queue_factory);
   ~RtpTransportControllerSend() override;
 
   RtpVideoSenderInterface* CreateRtpVideoSender(
