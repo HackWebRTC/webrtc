@@ -492,6 +492,7 @@ if (rtc_include_tests) {
       "rtc_base:sigslot_unittest",
       "rtc_base:weak_ptr_unittests",
       "rtc_base/experiments:experiments_unittests",
+      "rtc_base/task_utils:to_queued_task_unittests",
       "sdk:sdk_tests",
       "test/scenario/network:network_emulation_unittests",
     ]

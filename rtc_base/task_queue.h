@@ -13,7 +13,6 @@
 
 #include <stdint.h>
 #include <memory>
-#include <type_traits>
 #include <utility>
 
 #include "absl/memory/memory.h"
@@ -22,6 +21,7 @@
 #include "api/task_queue/task_queue_factory.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/system/rtc_export.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace rtc {
@@ -29,54 +29,11 @@ namespace rtc {
 // TODO(danilchap): Remove the alias when all of webrtc is updated to use
 // webrtc::QueuedTask directly.
 using ::webrtc::QueuedTask;
-
-// Simple implementation of QueuedTask for use with rtc::Bind and lambdas.
-template <class Closure>
-class ClosureTask : public QueuedTask {
- public:
-  explicit ClosureTask(Closure&& closure)
-      : closure_(std::forward<Closure>(closure)) {}
-
- private:
-  bool Run() override {
-    closure_();
-    return true;
-  }
-
-  typename std::remove_const<
-      typename std::remove_reference<Closure>::type>::type closure_;
-};
-
-// Extends ClosureTask to also allow specifying cleanup code.
-// This is useful when using lambdas if guaranteeing cleanup, even if a task
-// was dropped (queue is too full), is required.
-template <class Closure, class Cleanup>
-class ClosureTaskWithCleanup : public ClosureTask<Closure> {
- public:
-  ClosureTaskWithCleanup(Closure&& closure, Cleanup&& cleanup)
-      : ClosureTask<Closure>(std::forward<Closure>(closure)),
-        cleanup_(std::forward<Cleanup>(cleanup)) {}
-  ~ClosureTaskWithCleanup() { cleanup_(); }
-
- private:
-  typename std::remove_const<
-      typename std::remove_reference<Cleanup>::type>::type cleanup_;
-};
-
-// Convenience function to construct closures that can be passed directly
-// to methods that support std::unique_ptr<QueuedTask> but not template
-// based parameters.
-template <class Closure>
-static std::unique_ptr<QueuedTask> NewClosure(Closure&& closure) {
-  return absl::make_unique<ClosureTask<Closure>>(
-      std::forward<Closure>(closure));
-}
-
-template <class Closure, class Cleanup>
-static std::unique_ptr<QueuedTask> NewClosure(Closure&& closure,
-                                              Cleanup&& cleanup) {
-  return absl::make_unique<ClosureTaskWithCleanup<Closure, Cleanup>>(
-      std::forward<Closure>(closure), std::forward<Cleanup>(cleanup));
+// TODO(danilchap): Remove the alias when all of webrtc is updated to use
+// webrtc::ToQueuedTask directly.
+template <typename... Args>
+std::unique_ptr<QueuedTask> NewClosure(Args&&... args) {
+  return webrtc::ToQueuedTask(std::forward<Args>(args)...);
 }
 
 // Implements a task queue that asynchronously executes tasks in a way that

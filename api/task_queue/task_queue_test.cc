@@ -12,7 +12,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "rtc_base/event.h"
-#include "rtc_base/task_queue.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/time_utils.h"
 
 namespace webrtc {
@@ -40,7 +40,7 @@ TEST_P(TaskQueueTest, PostAndCheckCurrent) {
   EXPECT_FALSE(queue->IsCurrent());
   EXPECT_FALSE(TaskQueueBase::Current());
 
-  queue->PostTask(rtc::NewClosure([&event, &queue] {
+  queue->PostTask(ToQueuedTask([&event, &queue] {
     EXPECT_TRUE(queue->IsCurrent());
     event.Set();
   }));
@@ -74,7 +74,7 @@ TEST_P(TaskQueueTest, PostDelayedZero) {
   rtc::Event event;
   auto queue = CreateTaskQueue(factory, "PostDelayedZero");
 
-  queue->PostDelayedTask(rtc::NewClosure([&event] { event.Set(); }), 0);
+  queue->PostDelayedTask(ToQueuedTask([&event] { event.Set(); }), 0);
   EXPECT_TRUE(event.Wait(1000));
 }
 
@@ -83,8 +83,8 @@ TEST_P(TaskQueueTest, PostFromQueue) {
   rtc::Event event;
   auto queue = CreateTaskQueue(factory, "PostFromQueue");
 
-  queue->PostTask(rtc::NewClosure([&event, &queue] {
-    queue->PostTask(rtc::NewClosure([&event] { event.Set(); }));
+  queue->PostTask(ToQueuedTask([&event, &queue] {
+    queue->PostTask(ToQueuedTask([&event] { event.Set(); }));
   }));
   EXPECT_TRUE(event.Wait(1000));
 }
@@ -96,7 +96,7 @@ TEST_P(TaskQueueTest, PostDelayed) {
       CreateTaskQueue(factory, "PostDelayed", TaskQueueFactory::Priority::HIGH);
 
   int64_t start = rtc::TimeMillis();
-  queue->PostDelayedTask(rtc::NewClosure([&event, &queue] {
+  queue->PostDelayedTask(ToQueuedTask([&event, &queue] {
                            EXPECT_TRUE(queue->IsCurrent());
                            event.Set();
                          }),
@@ -117,7 +117,7 @@ TEST_P(TaskQueueTest, PostMultipleDelayed) {
   std::vector<rtc::Event> events(100);
   for (int i = 0; i < 100; ++i) {
     rtc::Event* event = &events[i];
-    queue->PostDelayedTask(rtc::NewClosure([event, &queue] {
+    queue->PostDelayedTask(ToQueuedTask([event, &queue] {
                              EXPECT_TRUE(queue->IsCurrent());
                              event->Set();
                            }),
@@ -134,8 +134,7 @@ TEST_P(TaskQueueTest, PostDelayedAfterDestruct) {
   rtc::Event deleted;
   auto queue = CreateTaskQueue(factory, "PostDelayedAfterDestruct");
   queue->PostDelayedTask(
-      rtc::NewClosure([&run] { run.Set(); }, [&deleted] { deleted.Set(); }),
-      100);
+      ToQueuedTask([&run] { run.Set(); }, [&deleted] { deleted.Set(); }), 100);
   // Destroy the queue.
   queue = nullptr;
   // Task might outlive the TaskQueue, but still should be deleted.
@@ -206,11 +205,11 @@ TEST_P(TaskQueueTest, PostALot) {
     // case inside of the libevent queue implementation.
 
     queue->PostTask(
-        rtc::NewClosure([&event] { event.Wait(rtc::Event::kForever); }));
+        ToQueuedTask([&event] { event.Wait(rtc::Event::kForever); }));
     for (int i = 0; i < kTaskCount; ++i)
       queue->PostTask(
-          rtc::NewClosure([&tasks_executed] { ++tasks_executed; },
-                          [&tasks_cleaned_up] { ++tasks_cleaned_up; }));
+          ToQueuedTask([&tasks_executed] { ++tasks_executed; },
+                       [&tasks_cleaned_up] { ++tasks_cleaned_up; }));
     event.Set();  // Unblock the first task.
   }
 
@@ -237,11 +236,11 @@ TEST_P(TaskQueueTest, PostTwoWithSharedUnprotectedState) {
 
   auto queue = CreateTaskQueue(factory, "PostTwoWithSharedUnprotectedState");
   rtc::Event done;
-  queue->PostTask(rtc::NewClosure([&state, &queue, &done] {
+  queue->PostTask(ToQueuedTask([&state, &queue, &done] {
     // Post tasks from queue to guarantee, that 1st task won't be
     // executed before the second one will be posted.
-    queue->PostTask(rtc::NewClosure([&state] { state.state = 1; }));
-    queue->PostTask(rtc::NewClosure([&state, &done] {
+    queue->PostTask(ToQueuedTask([&state] { state.state = 1; }));
+    queue->PostTask(ToQueuedTask([&state, &done] {
       EXPECT_EQ(state.state, 1);
       done.Set();
     }));

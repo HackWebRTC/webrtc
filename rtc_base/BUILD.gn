@@ -500,6 +500,7 @@ rtc_source_set("rtc_task_queue_api") {
     ":macromagic",
     "../api/task_queue",
     "system:rtc_export",
+    "task_utils:to_queued_task",
     "//third_party/abseil-cpp/absl/memory",
   ]
 }
