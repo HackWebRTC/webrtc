@@ -18,7 +18,6 @@
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video_codecs/video_encoder_config.h"
 #include "call/fake_network_pipe.h"
-#include "call/rtp_transport_controller_send.h"
 #include "call/simulated_network.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "rtc_base/checks.h"
@@ -33,7 +32,6 @@ CallTest::CallTest()
     : clock_(Clock::GetRealTimeClock()),
       send_event_log_(RtcEventLog::CreateNull()),
       recv_event_log_(RtcEventLog::CreateNull()),
-      sender_call_transport_controller_(nullptr),
       audio_send_config_(/*send_transport=*/nullptr,
                          /*media_transport=*/nullptr),
       audio_send_stream_(nullptr),
@@ -113,10 +111,6 @@ void CallTest::RunBaseTest(BaseTest* test) {
           send_config.audio_state->audio_transport());
     }
     CreateSenderCall(send_config);
-    if (sender_call_transport_controller_ != nullptr) {
-      test->OnRtpTransportControllerSendCreated(
-          sender_call_transport_controller_);
-    }
     if (test->ShouldCreateReceivers()) {
       Call::Config recv_config(recv_event_log_.get());
       test->ModifyReceiverBitrateConfig(&recv_config.bitrate_config);
@@ -221,20 +215,7 @@ void CallTest::CreateSenderCall() {
 }
 
 void CallTest::CreateSenderCall(const Call::Config& config) {
-  NetworkControllerFactoryInterface* injected_factory =
-      config.network_controller_factory;
-  if (injected_factory) {
-    RTC_LOG(LS_INFO) << "Using injected network controller factory";
-  } else {
-    RTC_LOG(LS_INFO) << "Using default network controller factory";
-  }
-
-  std::unique_ptr<RtpTransportControllerSend> controller_send =
-      absl::make_unique<RtpTransportControllerSend>(
-          Clock::GetRealTimeClock(), config.event_log, injected_factory,
-          config.bitrate_config);
-  sender_call_transport_controller_ = controller_send.get();
-  sender_call_.reset(Call::Create(config, std::move(controller_send)));
+  sender_call_.reset(Call::Create(config));
 }
 
 void CallTest::CreateReceiverCall(const Call::Config& config) {
@@ -760,9 +741,6 @@ void BaseTest::ModifySenderBitrateConfig(BitrateConstraints* bitrate_config) {}
 
 void BaseTest::ModifyReceiverBitrateConfig(BitrateConstraints* bitrate_config) {
 }
-
-void BaseTest::OnRtpTransportControllerSendCreated(
-    RtpTransportControllerSend* controller) {}
 
 void BaseTest::OnCallsCreated(Call* sender_call, Call* receiver_call) {}
 

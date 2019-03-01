@@ -20,7 +20,6 @@
 #include "api/test/video/function_video_encoder_factory.h"
 #include "api/video/video_bitrate_allocator_factory.h"
 #include "call/call.h"
-#include "call/rtp_transport_controller_send.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/audio_device/include/test_audio_device.h"
 #include "test/encoder_settings.h"
@@ -179,7 +178,6 @@ class CallTest : public ::testing::Test {
   std::unique_ptr<webrtc::RtcEventLog> send_event_log_;
   std::unique_ptr<webrtc::RtcEventLog> recv_event_log_;
   std::unique_ptr<Call> sender_call_;
-  RtpTransportControllerSend* sender_call_transport_controller_;
   std::unique_ptr<PacketTransport> send_transport_;
   std::vector<VideoSendStream::Config> video_send_configs_;
   std::vector<VideoEncoderConfig> video_encoder_configs_;
@@ -254,8 +252,6 @@ class BaseTest : public RtpRtcpObserver {
   virtual void ModifySenderBitrateConfig(BitrateConstraints* bitrate_config);
   virtual void ModifyReceiverBitrateConfig(BitrateConstraints* bitrate_config);
 
-  virtual void OnRtpTransportControllerSendCreated(
-      RtpTransportControllerSend* controller);
   virtual void OnCallsCreated(Call* sender_call, Call* receiver_call);
 
   virtual test::PacketTransport* CreateSendTransport(

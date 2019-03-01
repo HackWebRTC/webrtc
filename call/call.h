@@ -50,11 +50,6 @@ class Call {
 
   static Call* Create(const Call::Config& config);
 
-  // Allows mocking |transport_send| for testing.
-  static Call* Create(
-      const Call::Config& config,
-      std::unique_ptr<RtpTransportControllerSendInterface> transport_send);
-
   virtual AudioSendStream* CreateAudioSendStream(
       const AudioSendStream::Config& config) = 0;
 

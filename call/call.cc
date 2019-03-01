@@ -419,12 +419,6 @@ Call* Call::Create(const Call::Config& config) {
                   config.network_controller_factory, config.bitrate_config));
 }
 
-Call* Call::Create(
-    const Call::Config& config,
-    std::unique_ptr<RtpTransportControllerSendInterface> transport_send) {
-  return new internal::Call(config, std::move(transport_send));
-}
-
 // This method here to avoid subclasses has to implement this method.
 // Call perf test will use Internal::Call::CreateVideoSendStream() to inject
 // FecController.
