@@ -372,25 +372,33 @@ class PerfTestThread {
   int my_id_ = 0;
 };
 
-// Comparison of output of this test as tested on a MacBook Pro Retina, 15-inch,
-// Mid 2014, 2,8 GHz Intel Core i7, 16 GB 1600 MHz DDR3,
-// running OS X El Capitan, 10.11.2.
+// Comparison of output of this test as tested on a MacBook Pro, 13-inch,
+// 2017, 3,5 GHz Intel Core i7, 16 GB 2133 MHz LPDDR3,
+// running macOS Mojave, 10.14.3.
 //
-// Native mutex implementation:
+// Native mutex implementation using fair policy (previously macOS default):
 // Approximate CPU usage:
-//   System: ~16%
-//   User mode: ~1.3%
-//   Idle: ~82%
+// real    4m54.612s
+// user    1m20.575s
+// sys     3m48.872s
 // Unit test output:
-// [       OK ] CriticalSectionTest.Performance (234545 ms)
+// [       OK ] CriticalSectionTest.Performance (294375 ms)
+//
+// Native mutex implementation using first fit policy (current macOS default):
+// Approximate CPU usage:
+// real    0m11.535s
+// user    0m12.738s
+// sys     0m31.207s
+// Unit test output:
+// [       OK ] CriticalSectionTest.Performance (11444 ms)
 //
 // Special partially spin lock based implementation:
 // Approximate CPU usage:
-//   System: ~75%
-//   User mode: ~16%
-//   Idle: ~8%
+// real    0m2.113s
+// user    0m3.014s
+// sys     0m4.495s
 // Unit test output:
-// [       OK ] CriticalSectionTest.Performance (2107 ms)
+// [       OK ] CriticalSectionTest.Performance (1885 ms)
 //
 // The test is disabled by default to avoid unecessarily loading the bots.
 TEST(CriticalSectionTest, DISABLED_Performance) {
