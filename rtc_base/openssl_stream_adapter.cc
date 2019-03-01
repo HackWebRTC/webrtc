@@ -38,15 +38,18 @@
 #include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
 
-namespace {
-bool g_use_time_callback_for_testing = false;
-}
-
-namespace rtc {
-
 #if (OPENSSL_VERSION_NUMBER < 0x10100000L)
 #error "webrtc requires at least OpenSSL version 1.1.0, to support DTLS-SRTP"
 #endif
+
+// Defines for the TLS Cipher Suite Map.
+#define DEFINE_CIPHER_ENTRY_SSL3(name) \
+  { SSL3_CK_##name, "TLS_" #name }
+#define DEFINE_CIPHER_ENTRY_TLS1(name) \
+  { TLS1_CK_##name, "TLS_" #name }
+
+namespace rtc {
+namespace {
 
 // SRTP cipher suite table. |internal_name| is used to construct a
 // colon-separated profile strings which is needed by
@@ -56,37 +59,23 @@ struct SrtpCipherMapEntry {
   const int id;
 };
 
-// This isn't elegant, but it's better than an external reference
-static SrtpCipherMapEntry SrtpCipherMap[] = {
-    {"SRTP_AES128_CM_SHA1_80", SRTP_AES128_CM_SHA1_80},
-    {"SRTP_AES128_CM_SHA1_32", SRTP_AES128_CM_SHA1_32},
-    {"SRTP_AEAD_AES_128_GCM", SRTP_AEAD_AES_128_GCM},
-    {"SRTP_AEAD_AES_256_GCM", SRTP_AEAD_AES_256_GCM},
-    {nullptr, 0}};
-
-#ifdef OPENSSL_IS_BORINGSSL
-// Not used in production code. Actual time should be relative to Jan 1, 1970.
-static void TimeCallbackForTesting(const SSL* ssl, struct timeval* out_clock) {
-  int64_t time = TimeNanos();
-  out_clock->tv_sec = time / kNumNanosecsPerSec;
-  out_clock->tv_usec = (time % kNumNanosecsPerSec) / kNumNanosecsPerMicrosec;
-}
-#else  // #ifdef OPENSSL_IS_BORINGSSL
-
 // Cipher name table. Maps internal OpenSSL cipher ids to the RFC name.
 struct SslCipherMapEntry {
   uint32_t openssl_id;
   const char* rfc_name;
 };
 
-#define DEFINE_CIPHER_ENTRY_SSL3(name) \
-  { SSL3_CK_##name, "TLS_" #name }
-#define DEFINE_CIPHER_ENTRY_TLS1(name) \
-  { TLS1_CK_##name, "TLS_" #name }
+// This isn't elegant, but it's better than an external reference
+constexpr SrtpCipherMapEntry kSrtpCipherMap[] = {
+    {"SRTP_AES128_CM_SHA1_80", SRTP_AES128_CM_SHA1_80},
+    {"SRTP_AES128_CM_SHA1_32", SRTP_AES128_CM_SHA1_32},
+    {"SRTP_AEAD_AES_128_GCM", SRTP_AEAD_AES_128_GCM},
+    {"SRTP_AEAD_AES_256_GCM", SRTP_AEAD_AES_256_GCM}};
 
+#ifndef OPENSSL_IS_BORINGSSL
 // The "SSL_CIPHER_standard_name" function is only available in OpenSSL when
 // compiled with tracing, so we need to define the mapping manually here.
-static const SslCipherMapEntry kSslCipherMap[] = {
+constexpr SslCipherMapEntry kSslCipherMap[] = {
     // TLS v1.0 ciphersuites from RFC2246.
     DEFINE_CIPHER_ENTRY_SSL3(RSA_RC4_128_SHA),
     {SSL3_CK_RSA_DES_192_CBC3_SHA, "TLS_RSA_WITH_3DES_EDE_CBC_SHA"},
@@ -145,15 +134,19 @@ static const SslCipherMapEntry kSslCipherMap[] = {
     {0, nullptr}};
 #endif  // #ifndef OPENSSL_IS_BORINGSSL
 
-#if defined(_MSC_VER)
-#pragma warning(push)
-#pragma warning(disable : 4309)
-#pragma warning(disable : 4310)
-#endif  // defined(_MSC_VER)
+#ifdef OPENSSL_IS_BORINGSSL
+// Enabled by EnableTimeCallbackForTesting. Should never be set in production
+// code.
+bool g_use_time_callback_for_testing = false;
+// Not used in production code. Actual time should be relative to Jan 1, 1970.
+void TimeCallbackForTesting(const SSL* ssl, struct timeval* out_clock) {
+  int64_t time = TimeNanos();
+  out_clock->tv_sec = time / kNumNanosecsPerSec;
+  out_clock->tv_usec = (time % kNumNanosecsPerSec) / kNumNanosecsPerMicrosec;
+}
+#endif
 
-#if defined(_MSC_VER)
-#pragma warning(pop)
-#endif  // defined(_MSC_VER)
+}  // namespace
 
 //////////////////////////////////////////////////////////////////////
 // StreamBIO
@@ -382,8 +375,9 @@ bool OpenSSLStreamAdapter::GetSslCipherSuite(int* cipher_suite) {
 }
 
 int OpenSSLStreamAdapter::GetSslVersion() const {
-  if (state_ != SSL_CONNECTED)
+  if (state_ != SSL_CONNECTED) {
     return -1;
+  }
 
   int ssl_version = SSL_version(ssl_);
   if (ssl_mode_ == SSL_MODE_DTLS) {
@@ -422,29 +416,26 @@ bool OpenSSLStreamAdapter::ExportKeyingMaterial(const std::string& label,
 
 bool OpenSSLStreamAdapter::SetDtlsSrtpCryptoSuites(
     const std::vector<int>& ciphers) {
-  std::string internal_ciphers;
-
   if (state_ != SSL_NONE) {
     return false;
   }
 
-  for (std::vector<int>::const_iterator cipher = ciphers.begin();
-       cipher != ciphers.end(); ++cipher) {
+  std::string internal_ciphers;
+  for (const int cipher : ciphers) {
     bool found = false;
-    for (SrtpCipherMapEntry* entry = SrtpCipherMap; entry->internal_name;
-         ++entry) {
-      if (*cipher == entry->id) {
+    for (const auto& entry : kSrtpCipherMap) {
+      if (cipher == entry.id) {
         found = true;
         if (!internal_ciphers.empty()) {
           internal_ciphers += ":";
         }
-        internal_ciphers += entry->internal_name;
+        internal_ciphers += entry.internal_name;
         break;
       }
     }
 
     if (!found) {
-      RTC_LOG(LS_ERROR) << "Could not find cipher: " << *cipher;
+      RTC_LOG(LS_ERROR) << "Could not find cipher: " << cipher;
       return false;
     }
   }
