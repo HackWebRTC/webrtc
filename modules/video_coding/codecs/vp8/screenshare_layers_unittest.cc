@@ -21,7 +21,7 @@
 #include "modules/video_coding/codecs/vp8/screenshare_layers.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/checks.h"
-#include "system_wrappers/include/clock.h"
+#include "rtc_base/fake_clock.h"
 #include "system_wrappers/include/metrics.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -62,13 +62,12 @@ class ScreenshareLayerTest : public ::testing::Test {
       : min_qp_(2),
         max_qp_(kDefaultQp),
         frame_size_(-1),
-        clock_(1),
         timestamp_(90),
         config_updated_(false) {}
   virtual ~ScreenshareLayerTest() {}
 
   void SetUp() override {
-    layers_.reset(new ScreenshareLayers(2, &clock_));
+    layers_.reset(new ScreenshareLayers(2));
     cfg_ = ConfigureBitrates();
   }
 
@@ -103,7 +102,7 @@ class ScreenshareLayerTest : public ::testing::Test {
 
   Vp8FrameConfig UpdateLayerConfig(uint32_t timestamp) {
     int64_t timestamp_ms = timestamp / 90;
-    clock_.AdvanceTimeMilliseconds(timestamp_ms - clock_.TimeInMilliseconds());
+    clock_.AdvanceTime(TimeDelta::ms(timestamp_ms - rtc::TimeMillis()));
     return layers_->UpdateLayerConfig(timestamp);
   }
 
@@ -181,7 +180,7 @@ class ScreenshareLayerTest : public ::testing::Test {
   int min_qp_;
   uint32_t max_qp_;
   int frame_size_;
-  SimulatedClock clock_;
+  rtc::ScopedFakeClock clock_;
   std::unique_ptr<ScreenshareLayers> layers_;
 
   uint32_t timestamp_;
@@ -199,7 +198,7 @@ class ScreenshareLayerTest : public ::testing::Test {
 };
 
 TEST_F(ScreenshareLayerTest, 1Layer) {
-  layers_.reset(new ScreenshareLayers(1, &clock_));
+  layers_.reset(new ScreenshareLayers(1));
   ConfigureBitrates();
   // One layer screenshare should not use the frame dropper as all frames will
   // belong to the base layer.
@@ -554,7 +553,7 @@ TEST_F(ScreenshareLayerTest, UpdatesHistograms) {
     } else {
       RTC_NOTREACHED() << "Unexpected flags";
     }
-    clock_.AdvanceTimeMilliseconds(1000 / 5);
+    clock_.AdvanceTime(TimeDelta::ms(1000 / 5));
   }
 
   EXPECT_TRUE(overshoot);
@@ -594,7 +593,7 @@ TEST_F(ScreenshareLayerTest, UpdatesHistograms) {
 }
 
 TEST_F(ScreenshareLayerTest, AllowsUpdateConfigBeforeSetRates) {
-  layers_.reset(new ScreenshareLayers(2, &clock_));
+  layers_.reset(new ScreenshareLayers(2));
   // New layer instance, OnRatesUpdated() never called.
   // UpdateConfiguration() call should not cause crash.
   layers_->UpdateConfiguration(&cfg_);
@@ -618,7 +617,8 @@ TEST_F(ScreenshareLayerTest, RespectsConfiguredFramerate) {
                             IgnoredCodecSpecificInfoVp8());
     }
     timestamp += kFrameIntervalsMs * 90;
-    clock_.AdvanceTimeMilliseconds(kFrameIntervalsMs);
+    clock_.AdvanceTime(TimeDelta::ms(kFrameIntervalsMs));
+
     ++num_input_frames;
   }
   EXPECT_EQ(0, num_discarded_frames);
@@ -635,7 +635,7 @@ TEST_F(ScreenshareLayerTest, RespectsConfiguredFramerate) {
                             IgnoredCodecSpecificInfoVp8());
     }
     timestamp += kFrameIntervalsMs * 90 / 2;
-    clock_.AdvanceTimeMilliseconds(kFrameIntervalsMs / 2);
+    clock_.AdvanceTime(TimeDelta::ms(kFrameIntervalsMs));
     ++num_input_frames;
   }
 

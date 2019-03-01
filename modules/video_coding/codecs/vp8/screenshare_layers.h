@@ -31,8 +31,7 @@ class ScreenshareLayers : public Vp8TemporalLayers {
   static const double kAcceptableTargetOvershoot;
   static const int kMaxFrameIntervalMs;
 
-  ScreenshareLayers(int num_temporal_layers,
-                    Clock* clock);
+  explicit ScreenshareLayers(int num_temporal_layers);
   ~ScreenshareLayers() override;
 
   bool SupportsEncoderFrameDropping() const override;
@@ -60,8 +59,6 @@ class ScreenshareLayers : public Vp8TemporalLayers {
 
   bool TimeToSync(int64_t timestamp) const;
   uint32_t GetCodecTargetBitrateKbps() const;
-
-  Clock* const clock_;
 
   int number_of_temporal_layers_;
   int active_layer_;

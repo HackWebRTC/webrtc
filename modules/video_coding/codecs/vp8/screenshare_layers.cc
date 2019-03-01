@@ -18,7 +18,7 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "system_wrappers/include/clock.h"
+#include "rtc_base/time_utils.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -48,9 +48,8 @@ constexpr int ScreenshareLayers::kMaxNumTemporalLayers;
 // been exceeded. This prevents needless keyframe requests.
 const int ScreenshareLayers::kMaxFrameIntervalMs = 2750;
 
-ScreenshareLayers::ScreenshareLayers(int num_temporal_layers, Clock* clock)
-    : clock_(clock),
-      number_of_temporal_layers_(
+ScreenshareLayers::ScreenshareLayers(int num_temporal_layers)
+    : number_of_temporal_layers_(
           std::min(kMaxNumTemporalLayers, num_temporal_layers)),
       active_layer_(-1),
       last_timestamp_(-1),
@@ -94,7 +93,7 @@ Vp8FrameConfig ScreenshareLayers::UpdateLayerConfig(uint32_t timestamp) {
     return tl_config;
   }
 
-  const int64_t now_ms = clock_->TimeInMilliseconds();
+  const int64_t now_ms = rtc::TimeMillis();
 
   int64_t unwrapped_timestamp = time_wrap_handler_.Unwrap(timestamp);
   int64_t ts_diff;
@@ -326,7 +325,7 @@ void ScreenshareLayers::OnEncodeDone(uint32_t rtp_timestamp,
     }
   }
 
-  encode_framerate_.Update(1, clock_->TimeInMilliseconds());
+  encode_framerate_.Update(1, rtc::TimeMillis());
 
   if (number_of_temporal_layers_ == 1)
     return;
@@ -496,7 +495,7 @@ void ScreenshareLayers::UpdateHistograms() {
   if (stats_.first_frame_time_ms_ == -1)
     return;
   int64_t duration_sec =
-      (clock_->TimeInMilliseconds() - stats_.first_frame_time_ms_ + 500) / 1000;
+      (rtc::TimeMillis() - stats_.first_frame_time_ms_ + 500) / 1000;
   if (duration_sec >= metrics::kMinRunTimeInSeconds) {
     RTC_HISTOGRAM_COUNTS_10000(
         "WebRTC.Video.Screenshare.Layer0.FrameRate",

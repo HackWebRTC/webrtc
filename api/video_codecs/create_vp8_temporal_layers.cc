@@ -13,7 +13,6 @@
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "modules/video_coding/codecs/vp8/default_temporal_layers.h"
 #include "modules/video_coding/codecs/vp8/screenshare_layers.h"
-#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 
@@ -25,8 +24,7 @@ std::unique_ptr<Vp8TemporalLayers> CreateVp8TemporalLayers(
       return absl::make_unique<DefaultTemporalLayers>(num_temporal_layers);
     case Vp8TemporalLayersType::kBitrateDynamic:
       // Conference mode temporal layering for screen content in base stream.
-      return absl::make_unique<ScreenshareLayers>(num_temporal_layers,
-                                                  Clock::GetRealTimeClock());
+      return absl::make_unique<ScreenshareLayers>(num_temporal_layers);
   }
 }
 
