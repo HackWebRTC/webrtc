@@ -65,7 +65,7 @@ class FakeNetworkManager : public NetworkManagerBase, public MessageHandler {
     DoUpdateNetworks();
   }
 
-  virtual void StartUpdating() {
+  void StartUpdating() override {
     ++start_count_;
     if (start_count_ == 1) {
       sent_first_update_ = false;
@@ -77,10 +77,10 @@ class FakeNetworkManager : public NetworkManagerBase, public MessageHandler {
     }
   }
 
-  virtual void StopUpdating() { --start_count_; }
+  void StopUpdating() override { --start_count_; }
 
   // MessageHandler interface.
-  virtual void OnMessage(Message* msg) { DoUpdateNetworks(); }
+  void OnMessage(Message* msg) override { DoUpdateNetworks(); }
 
   void CreateMdnsResponder(rtc::Thread* network_thread) {
     if (mdns_responder_ == nullptr) {
