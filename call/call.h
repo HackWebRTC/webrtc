@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "api/media_types.h"
+#include "api/task_queue/task_queue_factory.h"
 #include "call/audio_receive_stream.h"
 #include "call/audio_send_stream.h"
 #include "call/call_config.h"
@@ -24,6 +25,7 @@
 #include "call/rtp_transport_controller_send_interface.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
+#include "modules/utility/include/process_thread.h"
 #include "rtc_base/bitrate_allocation_strategy.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/network/sent_packet.h"
@@ -49,6 +51,10 @@ class Call {
   };
 
   static Call* Create(const Call::Config& config);
+  static Call* Create(const Call::Config& config,
+                      std::unique_ptr<ProcessThread> call_thread,
+                      std::unique_ptr<ProcessThread> pacer_thread,
+                      TaskQueueFactory* task_queue_factory);
 
   virtual AudioSendStream* CreateAudioSendStream(
       const AudioSendStream::Config& config) = 0;

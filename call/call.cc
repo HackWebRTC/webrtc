@@ -165,7 +165,9 @@ class Call final : public webrtc::Call,
                    public BitrateAllocator::LimitObserver {
  public:
   Call(const Call::Config& config,
-       std::unique_ptr<RtpTransportControllerSendInterface> transport_send);
+       std::unique_ptr<RtpTransportControllerSendInterface> transport_send,
+       std::unique_ptr<ProcessThread> module_process_thread,
+       TaskQueueFactory* task_queue_factory);
   ~Call() override;
 
   // Implements webrtc::Call.
@@ -269,6 +271,7 @@ class Call final : public webrtc::Call,
       RTC_LOCKS_EXCLUDED(target_observer_crit_);
 
   Clock* const clock_;
+  TaskQueueFactory* const task_queue_factory_;
 
   const int num_cpu_cores_;
   const std::unique_ptr<ProcessThread> module_process_thread_;
@@ -412,12 +415,22 @@ std::string Call::Stats::ToString(int64_t time_ms) const {
 }
 
 Call* Call::Create(const Call::Config& config) {
+  return Create(config, ProcessThread::Create("PacerThread"),
+                ProcessThread::Create("ModuleProcessThread"),
+                &GlobalTaskQueueFactory());
+}
+
+Call* Call::Create(const Call::Config& config,
+                   std::unique_ptr<ProcessThread> call_thread,
+                   std::unique_ptr<ProcessThread> pacer_thread,
+                   TaskQueueFactory* task_queue_factory) {
   return new internal::Call(
       config,
       absl::make_unique<RtpTransportControllerSend>(
           Clock::GetRealTimeClock(), config.event_log,
           config.network_controller_factory, config.bitrate_config,
-          ProcessThread::Create("PacerThread"), &GlobalTaskQueueFactory()));
+          std::move(pacer_thread), task_queue_factory),
+      std::move(call_thread), task_queue_factory);
 }
 
 // This method here to avoid subclasses has to implement this method.
@@ -433,10 +446,13 @@ VideoSendStream* Call::CreateVideoSendStream(
 namespace internal {
 
 Call::Call(const Call::Config& config,
-           std::unique_ptr<RtpTransportControllerSendInterface> transport_send)
+           std::unique_ptr<RtpTransportControllerSendInterface> transport_send,
+           std::unique_ptr<ProcessThread> module_process_thread,
+           TaskQueueFactory* task_queue_factory)
     : clock_(Clock::GetRealTimeClock()),
+      task_queue_factory_(task_queue_factory),
       num_cpu_cores_(CpuInfo::DetectNumberOfCores()),
-      module_process_thread_(ProcessThread::Create("ModuleProcessThread")),
+      module_process_thread_(std::move(module_process_thread)),
       call_stats_(new CallStats(clock_, module_process_thread_.get())),
       bitrate_allocator_(new BitrateAllocator(this)),
       config_(config),
@@ -788,7 +804,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   // having it injected.
   VideoSendStream* send_stream = new VideoSendStream(
       num_cpu_cores_, module_process_thread_.get(),
-      transport_send_ptr_->GetWorkerQueue(), &GlobalTaskQueueFactory(),
+      transport_send_ptr_->GetWorkerQueue(), task_queue_factory_,
       call_stats_.get(), transport_send_ptr_, bitrate_allocator_.get(),
       video_send_delay_stats_.get(), event_log_, std::move(config),
       std::move(encoder_config), suspended_video_send_ssrcs_,
@@ -870,7 +886,7 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   RegisterRateObserver();
 
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
-      &GlobalTaskQueueFactory(), &video_receiver_controller_, num_cpu_cores_,
+      task_queue_factory_, &video_receiver_controller_, num_cpu_cores_,
       transport_send_ptr_->packet_router(), std::move(configuration),
       module_process_thread_.get(), call_stats_.get());
 
