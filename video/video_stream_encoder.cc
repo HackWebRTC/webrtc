@@ -422,7 +422,8 @@ VideoStreamEncoder::VideoStreamEncoder(
     uint32_t number_of_cores,
     VideoStreamEncoderObserver* encoder_stats_observer,
     const VideoStreamEncoderSettings& settings,
-    std::unique_ptr<OveruseFrameDetector> overuse_detector)
+    std::unique_ptr<OveruseFrameDetector> overuse_detector,
+    TaskQueueFactory* task_queue_factory)
     : shutdown_event_(true /* manual_reset */, false),
       number_of_cores_(number_of_cores),
       initial_framedrop_(0),
@@ -464,7 +465,9 @@ VideoStreamEncoder::VideoStreamEncoder(
       next_frame_types_(1, kVideoFrameDelta),
       frame_encoder_timer_(this),
       experiment_groups_(GetExperimentGroups()),
-      encoder_queue_("EncoderQueue") {
+      encoder_queue_(task_queue_factory->CreateTaskQueue(
+          "EncoderQueue",
+          TaskQueueFactory::Priority::NORMAL)) {
   RTC_DCHECK(encoder_stats_observer);
   RTC_DCHECK(overuse_detector_);
   RTC_DCHECK_GE(number_of_cores, 1);

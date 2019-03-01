@@ -19,17 +19,16 @@
 #include "rtc_base/trace_event.h"
 
 namespace webrtc {
-namespace {
-const char kIncomingQueueName[] = "IncomingVideoStream";
-}
 
 IncomingVideoStream::IncomingVideoStream(
+    TaskQueueFactory* task_queue_factory,
     int32_t delay_ms,
     rtc::VideoSinkInterface<VideoFrame>* callback)
     : render_buffers_(delay_ms),
       callback_(callback),
-      incoming_render_queue_(kIncomingQueueName,
-                             rtc::TaskQueue::Priority::HIGH) {}
+      incoming_render_queue_(task_queue_factory->CreateTaskQueue(
+          "IncomingVideoStream",
+          TaskQueueFactory::Priority::HIGH)) {}
 
 IncomingVideoStream::~IncomingVideoStream() {
   RTC_DCHECK(main_thread_checker_.CalledOnValidThread());

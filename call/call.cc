@@ -18,6 +18,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
+#include "api/task_queue/global_task_queue_factory.h"
 #include "api/transport/network_control.h"
 #include "audio/audio_receive_stream.h"
 #include "audio/audio_send_stream.h"
@@ -792,8 +793,8 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   // having it injected.
   VideoSendStream* send_stream = new VideoSendStream(
       num_cpu_cores_, module_process_thread_.get(),
-      transport_send_ptr_->GetWorkerQueue(), call_stats_.get(),
-      transport_send_ptr_, bitrate_allocator_.get(),
+      transport_send_ptr_->GetWorkerQueue(), &GlobalTaskQueueFactory(),
+      call_stats_.get(), transport_send_ptr_, bitrate_allocator_.get(),
       video_send_delay_stats_.get(), event_log_, std::move(config),
       std::move(encoder_config), suspended_video_send_ssrcs_,
       suspended_video_payload_states_, std::move(fec_controller));
@@ -874,7 +875,7 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   RegisterRateObserver();
 
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
-      &video_receiver_controller_, num_cpu_cores_,
+      &GlobalTaskQueueFactory(), &video_receiver_controller_, num_cpu_cores_,
       transport_send_ptr_->packet_router(), std::move(configuration),
       module_process_thread_.get(), call_stats_.get());
 

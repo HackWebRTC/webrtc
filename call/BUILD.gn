@@ -219,6 +219,7 @@ rtc_static_library("call") {
     "../api:libjingle_peerconnection_api",
     "../api:simulated_network_api",
     "../api:transport_api",
+    "../api/task_queue:global_task_queue_factory",
     "../api/transport:network_control",
     "../api/units:time_delta",
     "../api/video_codecs:video_codecs_api",

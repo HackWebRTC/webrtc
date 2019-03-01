@@ -164,6 +164,7 @@ constexpr int kInactiveStreamThresholdMs = 600000;  //  10 minutes.
 namespace internal {
 
 VideoReceiveStream::VideoReceiveStream(
+    TaskQueueFactory* task_queue_factory,
     RtpStreamReceiverControllerInterface* receiver_controller,
     int num_cpu_cores,
     PacketRouter* packet_router,
@@ -172,7 +173,8 @@ VideoReceiveStream::VideoReceiveStream(
     CallStats* call_stats,
     Clock* clock,
     VCMTiming* timing)
-    : transport_adapter_(config.rtcp_send_transport),
+    : task_queue_factory_(task_queue_factory),
+      transport_adapter_(config.rtcp_send_transport),
       config_(std::move(config)),
       num_cpu_cores_(num_cpu_cores),
       process_thread_(process_thread),
@@ -251,13 +253,15 @@ VideoReceiveStream::VideoReceiveStream(
 }
 
 VideoReceiveStream::VideoReceiveStream(
+    TaskQueueFactory* task_queue_factory,
     RtpStreamReceiverControllerInterface* receiver_controller,
     int num_cpu_cores,
     PacketRouter* packet_router,
     VideoReceiveStream::Config config,
     ProcessThread* process_thread,
     CallStats* call_stats)
-    : VideoReceiveStream(receiver_controller,
+    : VideoReceiveStream(task_queue_factory,
+                         receiver_controller,
                          num_cpu_cores,
                          packet_router,
                          std::move(config),
@@ -311,8 +315,8 @@ void VideoReceiveStream::Start() {
   transport_adapter_.Enable();
   rtc::VideoSinkInterface<VideoFrame>* renderer = nullptr;
   if (config_.enable_prerenderer_smoothing) {
-    incoming_video_stream_.reset(
-        new IncomingVideoStream(config_.render_delay_ms, this));
+    incoming_video_stream_.reset(new IncomingVideoStream(
+        task_queue_factory_, config_.render_delay_ms, this));
     renderer = incoming_video_stream_.get();
   } else {
     renderer = this;

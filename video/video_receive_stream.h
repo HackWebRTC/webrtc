@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "api/media_transport_interface.h"
+#include "api/task_queue/task_queue_factory.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "call/syncable.h"
 #include "call/video_receive_stream.h"
@@ -52,7 +53,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public MediaTransportVideoSinkInterface,
                            public MediaTransportRttObserver {
  public:
-  VideoReceiveStream(RtpStreamReceiverControllerInterface* receiver_controller,
+  VideoReceiveStream(TaskQueueFactory* task_queue_factory,
+                     RtpStreamReceiverControllerInterface* receiver_controller,
                      int num_cpu_cores,
                      PacketRouter* packet_router,
                      VideoReceiveStream::Config config,
@@ -60,7 +62,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                      CallStats* call_stats,
                      Clock* clock,
                      VCMTiming* timing);
-  VideoReceiveStream(RtpStreamReceiverControllerInterface* receiver_controller,
+  VideoReceiveStream(TaskQueueFactory* task_queue_factory,
+                     RtpStreamReceiverControllerInterface* receiver_controller,
                      int num_cpu_cores,
                      PacketRouter* packet_router,
                      VideoReceiveStream::Config config,
@@ -133,6 +136,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   rtc::SequencedTaskChecker worker_sequence_checker_;
   rtc::SequencedTaskChecker module_process_sequence_checker_;
   rtc::SequencedTaskChecker network_sequence_checker_;
+
+  TaskQueueFactory* const task_queue_factory_;
 
   TransportAdapter transport_adapter_;
   const VideoReceiveStream::Config config_;

@@ -14,6 +14,7 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
+#include "api/task_queue/global_task_queue_factory.h"
 #include "api/video_codecs/video_decoder.h"
 #include "call/rtp_stream_receiver_controller.h"
 #include "media/base/fake_video_renderer.h"
@@ -100,8 +101,9 @@ class VideoReceiveStreamTest : public testing::Test {
     timing_ = new VCMTiming(clock);
 
     video_receive_stream_.reset(new webrtc::internal::VideoReceiveStream(
-        &rtp_stream_receiver_controller_, kDefaultNumCpuCores, &packet_router_,
-        config_.Copy(), process_thread_.get(), &call_stats_, clock, timing_));
+        &GlobalTaskQueueFactory(), &rtp_stream_receiver_controller_,
+        kDefaultNumCpuCores, &packet_router_, config_.Copy(),
+        process_thread_.get(), &call_stats_, clock, timing_));
   }
 
  protected:

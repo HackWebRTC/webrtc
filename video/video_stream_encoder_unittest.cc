@@ -14,6 +14,7 @@
 #include <limits>
 #include <utility>
 
+#include "api/task_queue/global_task_queue_factory.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_bitrate_allocation.h"
@@ -104,7 +105,8 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
                            settings,
                            std::unique_ptr<OveruseFrameDetector>(
                                overuse_detector_proxy_ =
-                                   new CpuOveruseDetectorProxy(stats_proxy))) {}
+                                   new CpuOveruseDetectorProxy(stats_proxy)),
+                           &GlobalTaskQueueFactory()) {}
 
   void PostTaskAndWait(bool down, AdaptReason reason) {
     rtc::Event event;

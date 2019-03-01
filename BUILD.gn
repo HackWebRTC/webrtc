@@ -476,6 +476,7 @@ if (rtc_include_tests) {
       "api:rtc_api_unittests",
       "api/audio/test:audio_api_unittests",
       "api/audio_codecs/test:audio_codecs_api_unittests",
+      "api/task_queue:global_task_queue_factory",
       "api/video/test:rtc_api_video_unittests",
       "api/video_codecs/test:video_codecs_api_unittests",
       "call:fake_network_pipe_unittests",

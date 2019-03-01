@@ -56,7 +56,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   VideoStreamEncoder(uint32_t number_of_cores,
                      VideoStreamEncoderObserver* encoder_stats_observer,
                      const VideoStreamEncoderSettings& settings,
-                     std::unique_ptr<OveruseFrameDetector> overuse_detector);
+                     std::unique_ptr<OveruseFrameDetector> overuse_detector,
+                     TaskQueueFactory* task_queue_factory);
   ~VideoStreamEncoder() override;
 
   void SetSource(rtc::VideoSourceInterface<VideoFrame>* source,
