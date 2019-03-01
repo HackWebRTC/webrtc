@@ -20,11 +20,13 @@ namespace webrtc {
 
 BufferedFrameDecryptor::BufferedFrameDecryptor(
     OnDecryptedFrameCallback* decrypted_frame_callback,
+    OnDecryptionStatusChangeCallback* decryption_status_change_callback,
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor)
     : generic_descriptor_auth_experiment_(
           field_trial::IsEnabled("WebRTC-GenericDescriptorAuth")),
       frame_decryptor_(std::move(frame_decryptor)),
-      decrypted_frame_callback_(decrypted_frame_callback) {}
+      decrypted_frame_callback_(decrypted_frame_callback),
+      decryption_status_change_callback_(decryption_status_change_callback) {}
 
 BufferedFrameDecryptor::~BufferedFrameDecryptor() {}
 
@@ -78,9 +80,17 @@ BufferedFrameDecryptor::FrameDecision BufferedFrameDecryptor::DecryptFrame(
 
   // Attempt to decrypt the video frame.
   size_t bytes_written = 0;
-  if (frame_decryptor_->Decrypt(
-          cricket::MEDIA_TYPE_VIDEO, /*csrcs=*/{}, additional_data, *frame,
-          inline_decrypted_bitstream, &bytes_written) != 0) {
+  const int status = frame_decryptor_->Decrypt(
+      cricket::MEDIA_TYPE_VIDEO, /*csrcs=*/{}, additional_data, *frame,
+      inline_decrypted_bitstream, &bytes_written);
+
+  // Optionally call the callback if there was a change in status
+  if (status != last_status_) {
+    last_status_ = status;
+    decryption_status_change_callback_->OnDecryptionStatusChange(status);
+  }
+
+  if (status != 0) {
     // Only stash frames if we have never decrypted a frame before.
     return first_frame_decrypted_ ? FrameDecision::kDrop
                                   : FrameDecision::kStash;

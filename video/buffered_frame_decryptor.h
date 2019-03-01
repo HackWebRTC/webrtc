@@ -32,6 +32,19 @@ class OnDecryptedFrameCallback {
       std::unique_ptr<video_coding::RtpFrameObject> frame) = 0;
 };
 
+// This callback is called each time there is a status change in the decryption
+// stream. For example going from a none state to a first decryption or going
+// frome a decryptable state to a non decryptable state.
+class OnDecryptionStatusChangeCallback {
+ public:
+  virtual ~OnDecryptionStatusChangeCallback() = default;
+  // Called each time the decryption stream status changes. This call is
+  // blocking so the caller must relinquish the callback quickly. This status
+  // must match what is specified in the FrameDecryptorInterface file. Notably
+  // 0 must indicate success and any positive integer is a failure.
+  virtual void OnDecryptionStatusChange(int status) = 0;
+};
+
 // The BufferedFrameDecryptor is responsible for deciding when to pass
 // decrypted received frames onto the OnDecryptedFrameCallback. Frames can be
 // delayed when frame encryption is enabled but the key hasn't arrived yet. In
@@ -45,6 +58,7 @@ class BufferedFrameDecryptor final {
   // Constructs a new BufferedFrameDecryptor that can hold
   explicit BufferedFrameDecryptor(
       OnDecryptedFrameCallback* decrypted_frame_callback,
+      OnDecryptionStatusChangeCallback* decryption_status_change_callback,
       rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor);
   ~BufferedFrameDecryptor();
   // This object cannot be copied.
@@ -71,8 +85,10 @@ class BufferedFrameDecryptor final {
 
   const bool generic_descriptor_auth_experiment_;
   bool first_frame_decrypted_ = false;
+  int last_status_ = -1;
   const rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor_;
   OnDecryptedFrameCallback* const decrypted_frame_callback_;
+  OnDecryptionStatusChangeCallback* const decryption_status_change_callback_;
   std::deque<std::unique_ptr<video_coding::RtpFrameObject>> stashed_frames_;
 };
 

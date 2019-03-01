@@ -620,7 +620,9 @@ bool VideoReceiveStream::Decode() {
         last_keyframe_packet_ms &&
         now_ms - *last_keyframe_packet_ms < kMaxWaitForKeyFrameMs;
 
-    if (stream_is_active && !receiving_keyframe) {
+    if (stream_is_active && !receiving_keyframe &&
+        (!config_.crypto_options.sframe.require_frame_encryption ||
+         rtp_video_stream_receiver_.IsDecryptable())) {
       RTC_LOG(LS_WARNING) << "No decodable frame in " << wait_ms
                           << " ms, requesting keyframe.";
       RequestKeyFrame();

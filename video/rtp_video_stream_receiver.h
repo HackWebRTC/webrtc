@@ -11,6 +11,7 @@
 #ifndef VIDEO_RTP_VIDEO_STREAM_RECEIVER_H_
 #define VIDEO_RTP_VIDEO_STREAM_RECEIVER_H_
 
+#include <atomic>
 #include <list>
 #include <map>
 #include <memory>
@@ -62,7 +63,8 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
                                public VCMPacketRequestCallback,
                                public video_coding::OnAssembledFrameCallback,
                                public video_coding::OnCompleteFrameCallback,
-                               public OnDecryptedFrameCallback {
+                               public OnDecryptedFrameCallback,
+                               public OnDecryptionStatusChangeCallback {
  public:
   RtpVideoStreamReceiver(
       Transport* transport,
@@ -126,6 +128,12 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
 
   bool IsUlpfecEnabled() const;
   bool IsRetransmissionsEnabled() const;
+
+  // Returns true if a decryptor is attached and frames can be decrypted.
+  // Updated by OnDecryptionStatusChangeCallback. Note this refers to Frame
+  // Decryption not SRTP.
+  bool IsDecryptable() const;
+
   // Don't use, still experimental.
   void RequestPacketRetransmit(const std::vector<uint16_t>& sequence_numbers);
 
@@ -144,6 +152,9 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   // Implements OnDecryptedFrameCallback.
   void OnDecryptedFrame(
       std::unique_ptr<video_coding::RtpFrameObject> frame) override;
+
+  // Implements OnDecryptionStatusChangeCallback.
+  void OnDecryptionStatusChange(int status) override;
 
   // Called by VideoReceiveStream when stats are updated.
   void UpdateRtt(int64_t max_rtt_ms);
@@ -230,6 +241,7 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   // rtp_reference_finder if they are decryptable.
   std::unique_ptr<BufferedFrameDecryptor> buffered_frame_decryptor_
       RTC_PT_GUARDED_BY(network_tc_);
+  std::atomic<bool> frames_decryptable_;
   absl::optional<ColorSpace> last_color_space_;
 };
 

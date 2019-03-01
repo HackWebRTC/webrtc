@@ -60,12 +60,17 @@ class FakePacketBuffer : public video_coding::PacketBuffer {
 class BufferedFrameDecryptorTest
     : public ::testing::Test,
       public OnDecryptedFrameCallback,
+      public OnDecryptionStatusChangeCallback,
       public video_coding::OnAssembledFrameCallback {
  public:
   // Implements the OnDecryptedFrameCallbackInterface
   void OnDecryptedFrame(
       std::unique_ptr<video_coding::RtpFrameObject> frame) override {
     decrypted_frame_call_count_++;
+  }
+
+  void OnDecryptionStatusChange(int status) {
+    ++decryption_status_change_count_;
   }
 
   // Implements the OnAssembledFrameCallback interface.
@@ -98,10 +103,11 @@ class BufferedFrameDecryptorTest
   void SetUp() override {
     fake_packet_data_ = std::vector<uint8_t>(100);
     decrypted_frame_call_count_ = 0;
+    decryption_status_change_count_ = 0;
     seq_num_ = 0;
     mock_frame_decryptor_ = new rtc::RefCountedObject<MockFrameDecryptor>();
     buffered_frame_decryptor_ = absl::make_unique<BufferedFrameDecryptor>(
-        this, mock_frame_decryptor_.get());
+        this, this, mock_frame_decryptor_.get());
   }
 
   static const size_t kMaxStashedFrames;
@@ -111,6 +117,7 @@ class BufferedFrameDecryptorTest
   rtc::scoped_refptr<MockFrameDecryptor> mock_frame_decryptor_;
   std::unique_ptr<BufferedFrameDecryptor> buffered_frame_decryptor_;
   size_t decrypted_frame_call_count_;
+  size_t decryption_status_change_count_ = 0;
   uint16_t seq_num_;
 };
 
@@ -124,6 +131,7 @@ TEST_F(BufferedFrameDecryptorTest, CallbackCalledOnSuccessfulDecryption) {
       .WillOnce(Return(0));
   buffered_frame_decryptor_->ManageEncryptedFrame(CreateRtpFrameObject(true));
   EXPECT_EQ(decrypted_frame_call_count_, static_cast<size_t>(1));
+  EXPECT_EQ(decryption_status_change_count_, static_cast<size_t>(1));
 }
 
 // An initial fail to decrypt should not trigger the callback.
@@ -134,6 +142,7 @@ TEST_F(BufferedFrameDecryptorTest, CallbackNotCalledOnFailedDecryption) {
       .WillOnce(Return(0));
   buffered_frame_decryptor_->ManageEncryptedFrame(CreateRtpFrameObject(true));
   EXPECT_EQ(decrypted_frame_call_count_, static_cast<size_t>(0));
+  EXPECT_EQ(decryption_status_change_count_, static_cast<size_t>(1));
 }
 
 // Initial failures should be stored and retried after the first successful
@@ -151,9 +160,11 @@ TEST_F(BufferedFrameDecryptorTest, DelayedCallbackOnBufferedFrames) {
   // The first decrypt will fail stashing the first frame.
   buffered_frame_decryptor_->ManageEncryptedFrame(CreateRtpFrameObject(true));
   EXPECT_EQ(decrypted_frame_call_count_, static_cast<size_t>(0));
+  EXPECT_EQ(decryption_status_change_count_, static_cast<size_t>(1));
   // The second call will succeed playing back both frames.
   buffered_frame_decryptor_->ManageEncryptedFrame(CreateRtpFrameObject(false));
   EXPECT_EQ(decrypted_frame_call_count_, static_cast<size_t>(2));
+  EXPECT_EQ(decryption_status_change_count_, static_cast<size_t>(2));
 }
 
 // Subsequent failure to decrypts after the first successful decryption should
@@ -172,13 +183,16 @@ TEST_F(BufferedFrameDecryptorTest, FTDDiscardedAfterFirstSuccess) {
   // The first decrypt will fail stashing the first frame.
   buffered_frame_decryptor_->ManageEncryptedFrame(CreateRtpFrameObject(true));
   EXPECT_EQ(decrypted_frame_call_count_, static_cast<size_t>(0));
+  EXPECT_EQ(decryption_status_change_count_, static_cast<size_t>(1));
   // The second call will succeed playing back both frames.
   buffered_frame_decryptor_->ManageEncryptedFrame(CreateRtpFrameObject(false));
   EXPECT_EQ(decrypted_frame_call_count_, static_cast<size_t>(2));
+  EXPECT_EQ(decryption_status_change_count_, static_cast<size_t>(2));
   // A new failure call will not result in an additional decrypted frame
   // callback.
   buffered_frame_decryptor_->ManageEncryptedFrame(CreateRtpFrameObject(true));
   EXPECT_EQ(decrypted_frame_call_count_, static_cast<size_t>(2));
+  EXPECT_EQ(decryption_status_change_count_, static_cast<size_t>(3));
 }
 
 // Validate that the maximum number of stashed frames cannot be exceeded even if
@@ -195,12 +209,14 @@ TEST_F(BufferedFrameDecryptorTest, MaximumNumberOfFramesStored) {
     buffered_frame_decryptor_->ManageEncryptedFrame(CreateRtpFrameObject(true));
   }
   EXPECT_EQ(decrypted_frame_call_count_, static_cast<size_t>(0));
+  EXPECT_EQ(decryption_status_change_count_, static_cast<size_t>(1));
 
   EXPECT_CALL(*mock_frame_decryptor_, Decrypt)
       .Times(kMaxStashedFrames + 1)
       .WillRepeatedly(Return(0));
   buffered_frame_decryptor_->ManageEncryptedFrame(CreateRtpFrameObject(true));
   EXPECT_EQ(decrypted_frame_call_count_, kMaxStashedFrames + 1);
+  EXPECT_EQ(decryption_status_change_count_, static_cast<size_t>(2));
 }
 
 }  // namespace webrtc
