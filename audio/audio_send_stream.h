@@ -122,9 +122,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   static void ReconfigureBitrateObserver(AudioSendStream* stream,
                                          const Config& new_config);
 
-  void ConfigureBitrateObserver(int min_bitrate_bps,
-                                int max_bitrate_bps,
-                                double bitrate_priority);
+  void ConfigureBitrateObserver() RTC_RUN_ON(worker_queue_);
   void RemoveBitrateObserver();
 
   // Sets per-packet overhead on encoded (for ANA) based on current known values
@@ -153,7 +151,8 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   size_t encoder_num_channels_ = 0;
   bool sending_ = false;
 
-  BitrateAllocatorInterface* const bitrate_allocator_;
+  BitrateAllocatorInterface* const bitrate_allocator_
+      RTC_GUARDED_BY(worker_queue_);
   RtpTransportControllerSendInterface* const rtp_transport_;
 
   rtc::CriticalSection packet_loss_tracker_cs_;
@@ -186,6 +185,9 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   // Current audio packetization overhead (RTP or Media Transport).
   size_t audio_overhead_per_packet_bytes_
       RTC_GUARDED_BY(overhead_per_packet_lock_) = 0;
+
+  bool registered_with_allocator_ RTC_GUARDED_BY(worker_queue_) = false;
+  size_t total_packet_overhead_bytes_ RTC_GUARDED_BY(worker_queue_) = 0;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioSendStream);
 };
