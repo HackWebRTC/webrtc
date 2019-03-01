@@ -84,10 +84,6 @@ if (rtc_include_internal_audio_device && is_ios) {
       "../../sdk:base_objc",
       "../../system_wrappers:metrics",
     ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 }
 
@@ -104,10 +100,6 @@ rtc_source_set("audio_device_api") {
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:stringutils",
   ]
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 rtc_source_set("audio_device_buffer") {
@@ -128,10 +120,6 @@ rtc_source_set("audio_device_buffer") {
     "../../system_wrappers",
     "../../system_wrappers:metrics",
   ]
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 rtc_source_set("audio_device_generic") {
@@ -144,10 +132,6 @@ rtc_source_set("audio_device_generic") {
     ":audio_device_buffer",
     "../../rtc_base:rtc_base_approved",
   ]
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 rtc_source_set("audio_device_name") {
@@ -389,11 +373,6 @@ rtc_source_set("audio_device_impl") {
       "dummy/file_audio_device_factory.h",
     ]
   }
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 rtc_source_set("mock_audio_device") {
@@ -435,10 +414,6 @@ if (rtc_include_tests) {
         "../../test:test_support",
         "//third_party/ocmock",
       ]
-      if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-      }
     }
   }
 
@@ -492,10 +467,6 @@ if (rtc_include_tests) {
         "../../base",
         "../../sdk/android:libjingle_peerconnection_java",
       ]
-    }
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
     if (!rtc_include_internal_audio_device) {
       defines = [ "WEBRTC_DUMMY_AUDIO_BUILD" ]

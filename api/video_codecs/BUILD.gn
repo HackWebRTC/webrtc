@@ -122,11 +122,6 @@ rtc_static_library("rtc_software_fallback_wrappers") {
     "video_encoder_software_fallback_wrapper.h",
   ]
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = [
     ":video_codecs_api",
     "../../:webrtc_common",

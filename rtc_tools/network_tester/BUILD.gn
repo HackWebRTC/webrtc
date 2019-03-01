@@ -53,11 +53,6 @@ if (rtc_enable_protobuf) {
       "../../rtc_base/third_party/sigslot:sigslot",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   network_tester_unittests_resources = [
@@ -97,11 +92,6 @@ if (rtc_enable_protobuf) {
     defines = [ "WEBRTC_NETWORK_TESTER_TEST_ENABLED" ]
 
     data = network_tester_unittests_resources
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   rtc_executable("network_tester_server") {
@@ -112,11 +102,6 @@ if (rtc_enable_protobuf) {
     deps = [
       ":network_tester",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 }
 

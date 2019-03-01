@@ -286,6 +286,9 @@ rtc_common_inherited_config = webrtc_root + ":common_inherited_config"
 
 # Common configs to remove or add in all rtc targets.
 rtc_remove_configs = []
+if (!build_with_chromium && is_clang) {
+  rtc_remove_configs += [ "//build/config/clang:find_bad_constructs" ]
+}
 rtc_add_configs = rtc_common_configs
 rtc_prod_configs = [ webrtc_root + ":rtc_prod_config" ]
 rtc_library_impl_config = [ webrtc_root + ":library_impl_config" ]

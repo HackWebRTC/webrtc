@@ -38,9 +38,9 @@ rtc_source_set("rtc_event_log_api") {
   ]
 
   deps = [
-    "../api/task_queue",
     "../api:libjingle_logging_api",
     "../api:scoped_refptr",
+    "../api/task_queue",
     "../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/memory",
   ]
@@ -129,9 +129,6 @@ rtc_source_set("rtc_event_generic_packet_events") {
     ":rtc_event_log_api",
     "//third_party/abseil-cpp/absl/memory",
   ]
-  if (!build_with_chromium && is_clang) {
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 rtc_source_set("rtc_event_rtp_rtcp") {
@@ -226,10 +223,6 @@ rtc_static_library("rtc_event_log_impl_encoder") {
       "rtc_event_log/encoder/rtc_event_log_encoder_new_format.cc",
       "rtc_event_log/encoder/rtc_event_log_encoder_new_format.h",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 }
 
@@ -262,8 +255,8 @@ rtc_static_library("rtc_event_log_impl_base") {
   deps = [
     ":ice_log",
     ":rtc_event_log_api",
-    "../api/task_queue:global_task_queue_factory",
     "../api:libjingle_logging_api",
+    "../api/task_queue:global_task_queue_factory",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "../rtc_base:rtc_task_queue",
@@ -350,10 +343,6 @@ if (rtc_enable_protobuf) {
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   if (rtc_include_tests) {
@@ -405,10 +394,6 @@ if (rtc_enable_protobuf) {
         "//third_party/abseil-cpp/absl/memory",
         "//third_party/abseil-cpp/absl/types:optional",
       ]
-      if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-      }
     }
 
     rtc_test("rtc_event_log2rtp_dump") {
@@ -430,10 +415,6 @@ if (rtc_enable_protobuf) {
         "//third_party/abseil-cpp/absl/memory",
         "//third_party/abseil-cpp/absl/types:optional",
       ]
-      if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-      }
     }
   }
 }

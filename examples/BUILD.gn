@@ -497,11 +497,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "objcnativeapi/objc/objc_call_client.mm",
       ]
 
-      if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-      }
-
       deps = [
         "../api:libjingle_peerconnection_api",
         "../api:scoped_refptr",
@@ -685,10 +680,6 @@ if (is_linux || is_win) {
       "peerconnection/client/peer_connection_client.h",
     ]
 
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
     deps = [
       "../api:audio_options_api",
       "../api:create_peerconnection_factory",
@@ -772,10 +763,6 @@ if (is_linux || is_win) {
       "../system_wrappers:field_trial",
       "../test:field_trial",
     ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
   rtc_executable("relayserver") {
     testonly = true
@@ -789,10 +776,6 @@ if (is_linux || is_win) {
       "../rtc_base:rtc_base",
       "../rtc_base:rtc_base_approved",
     ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
   rtc_executable("turnserver") {
     testonly = true
@@ -807,10 +790,6 @@ if (is_linux || is_win) {
       "../rtc_base:rtc_base",
       "../rtc_base:rtc_base_approved",
     ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
   rtc_executable("stunserver") {
     testonly = true
@@ -824,10 +803,6 @@ if (is_linux || is_win) {
       "../rtc_base:rtc_base",
       "../rtc_base:rtc_base_approved",
     ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 }
 
@@ -852,10 +827,6 @@ if (is_win || is_android) {
       suppressed_configs += [ "//build/config/android:hide_all_but_jni_onload" ]
     }
 
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
     if (is_win) {
       configs += [ "//build/config/win:windowed" ]
     }
@@ -925,13 +896,6 @@ if (!build_with_chromium) {
     sources = [
       "stunprober/main.cc",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from Chrome's Clang plugins.
-      # See http://code.google.com/p/webrtc/issues/detail?id=163 for details.
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-
     deps = [
       "../p2p:libstunprober",
       "../p2p:rtc_p2p",

@@ -28,11 +28,6 @@ rtc_static_library("congestion_controller") {
     "send_side_congestion_controller.cc",
   ]
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = [
     ":transport_feedback",
     "..:module_api",
@@ -93,10 +88,6 @@ if (rtc_include_tests) {
       "test/controller_printer.cc",
       "test/controller_printer.h",
     ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
     deps = [
       "../../api/transport:network_control",
       "../../api/units:data_rate",
@@ -140,10 +131,6 @@ if (rtc_include_tests) {
       "pcc:pcc_unittests",
       "rtp:congestion_controller_unittests",
     ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   rtc_source_set("mock_congestion_controller") {

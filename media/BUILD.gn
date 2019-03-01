@@ -30,11 +30,6 @@ rtc_source_set("rtc_h264_profile_id") {
     "base/h264_profile_level_id.h",
   ]
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = [
     "..:webrtc_common",
     "../rtc_base:checks",
@@ -115,11 +110,6 @@ rtc_static_library("rtc_media_base") {
     "base/video_source_base.h",
   ]
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps += [
     ":rtc_h264_profile_id",
     ":rtc_media_config",
@@ -187,10 +177,6 @@ rtc_static_library("rtc_simulcast_encoder_adapter") {
     "//third_party/abseil-cpp/absl/types:optional",
     "//third_party/libyuv",
   ]
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 rtc_static_library("rtc_encoder_simulcast_proxy") {
@@ -209,10 +195,6 @@ rtc_static_library("rtc_encoder_simulcast_proxy") {
     "../api/video_codecs:video_codecs_api",
     "../modules/video_coding:video_codec_interface",
   ]
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 rtc_static_library("rtc_internal_video_codecs") {
@@ -244,11 +226,6 @@ rtc_static_library("rtc_internal_video_codecs") {
     # targets depend on :rtc_encoder_simulcast_proxy directly.
     "engine/encoder_simulcast_proxy.h",
   ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 
   include_dirs = []
 
@@ -317,11 +294,6 @@ rtc_static_library("rtc_audio_video") {
     "engine/webrtc_voice_engine.h",
   ]
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   include_dirs = []
 
   public_configs = []
@@ -388,11 +360,6 @@ rtc_static_library("rtc_data") {
     sources = [
       "sctp/noop.cc",
     ]
-  }
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   if (rtc_enable_sctp && rtc_build_usrsctp) {
@@ -473,11 +440,6 @@ if (rtc_include_tests) {
       "engine/fake_webrtc_video_engine.cc",
       "engine/fake_webrtc_video_engine.h",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
 
     deps += [
       ":rtc_internal_video_codecs",
@@ -584,13 +546,6 @@ if (rtc_include_tests) {
       defines += [ "WEBRTC_OPUS_SUPPORT_120MS_PTIME=1" ]
     } else {
       defines += [ "WEBRTC_OPUS_SUPPORT_120MS_PTIME=0" ]
-    }
-
-    if (!build_with_chromium && is_clang) {
-      suppressed_configs += [
-        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-        "//build/config/clang:find_bad_constructs",
-      ]
     }
 
     data = rtc_media_unittests_resources

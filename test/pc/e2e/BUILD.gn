@@ -193,10 +193,6 @@ if (rtc_include_tests) {
       "//third_party/abseil-cpp/absl/memory:memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   rtc_source_set("peerconnection_quality_test") {
@@ -233,10 +229,6 @@ if (rtc_include_tests) {
       "api:video_quality_analyzer_api",
       "//third_party/abseil-cpp/absl/memory:memory",
     ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   rtc_source_set("single_process_encoded_image_data_injector_unittest") {
@@ -300,11 +292,6 @@ if (rtc_include_tests) {
       "api:peer_connection_quality_test_fixture_api",
       "//third_party/abseil-cpp/absl/memory:memory",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   rtc_source_set("stats_poller") {
@@ -319,10 +306,6 @@ if (rtc_include_tests) {
       "../../../rtc_base:logging",
       "api:stats_observer_interface",
     ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 }
 
@@ -384,9 +367,4 @@ rtc_source_set("default_video_quality_analyzer") {
     "api:video_quality_analyzer_api",
     "//third_party/abseil-cpp/absl/memory:memory",
   ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }

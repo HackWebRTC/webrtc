@@ -144,9 +144,6 @@ if (rtc_include_tests) {
     if (rtc_enable_protobuf) {
       deps += [ "../../modules/audio_coding:ana_config_proto" ]
     }
-    if (!build_with_chromium && is_clang) {
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
     data = scenario_resources
     if (is_ios) {
       deps += [ ":scenario_resources_bundle_data" ]
@@ -158,9 +155,6 @@ if (rtc_include_tests) {
       "scenario_unittest.cc",
       "video_stream_unittest.cc",
     ]
-    if (!build_with_chromium && is_clang) {
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
     deps = [
       ":scenario",
       "../../logging:mocks",
@@ -183,9 +177,6 @@ if (rtc_include_tests) {
     sources = [
       "quality_stats_unittest.cc",
     ]
-    if (!build_with_chromium && is_clang) {
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
     deps = [
       ":scenario",
       "../../logging:mocks",

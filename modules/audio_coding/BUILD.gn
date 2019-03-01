@@ -900,11 +900,6 @@ rtc_static_library("audio_network_adaptor") {
       ":ana_debug_dump_proto",
     ]
   }
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 rtc_static_library("neteq") {
@@ -1063,11 +1058,6 @@ rtc_source_set("neteq_test_tools") {
     "neteq/tools/rtp_generator.h",
   ]
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = [
     ":pcm16b",
     "../..:webrtc_common",
@@ -1113,11 +1103,6 @@ rtc_source_set("neteq_tools") {
     "neteq/tools/neteq_stats_plotter.h",
   ]
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = [
     "..:module_api",
     "../..:webrtc_common",
@@ -1162,11 +1147,6 @@ if (rtc_enable_protobuf) {
       "neteq/tools/rtc_event_log_source.cc",
       "neteq/tools/rtc_event_log_source.h",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
 
     deps = [
       ":neteq_tools_minimal",
@@ -1325,10 +1305,6 @@ if (rtc_include_tests) {
       "//third_party/abseil-cpp/absl/types:optional",
     ]
     defines = audio_coding_defines
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   rtc_source_set("audio_coding_perf_tests") {
@@ -1351,11 +1327,6 @@ if (rtc_include_tests) {
       "../../test:perf_test",
       "../../test:test_support",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   rtc_source_set("acm_receive_test") {
@@ -1474,11 +1445,6 @@ if (rtc_include_tests) {
         "neteq/tools/neteq_test_factory.h",
       ]
 
-      if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-      }
-
       deps += [
         ":neteq",
         ":neteq_test_tools",
@@ -1536,11 +1502,6 @@ if (rtc_include_tests) {
       "codecs/tools/audio_codec_speed_test.h",
     ]
 
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-
     data = audio_codec_speed_tests_resources
 
     if (is_android) {
@@ -1572,11 +1533,6 @@ if (rtc_include_tests) {
       "neteq/tools/neteq_performance_test.h",
     ]
 
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
-
     deps = [
       ":neteq",
       ":neteq_test_tools",
@@ -1600,11 +1556,6 @@ if (rtc_include_tests) {
       "neteq/tools/neteq_quality_test.cc",
       "neteq/tools/neteq_quality_test.h",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
 
     deps = [
       ":neteq",
@@ -2073,11 +2024,6 @@ if (rtc_include_tests) {
         ":ana_config_proto",
         ":neteq_unittest_proto",
       ]
-    }
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 }

@@ -54,11 +54,6 @@ rtc_source_set("video_test_common") {
     "video_codec_settings.h",
   ]
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = [
     "..:webrtc_common",
     "../api:libjingle_peerconnection_api",
@@ -93,11 +88,6 @@ rtc_source_set("rtp_test_utils") {
     "rtp_file_writer.cc",
     "rtp_file_writer.h",
   ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 
   deps = [
     "..:webrtc_common",
@@ -206,11 +196,6 @@ rtc_source_set("test_support") {
     "//testing/gmock",
     "//testing/gtest",
   ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 if (rtc_include_tests) {
@@ -289,11 +274,6 @@ if (rtc_include_tests) {
       sources += [ "testsupport/jpeg_frame_writer.cc" ]
     } else {
       sources += [ "testsupport/jpeg_frame_writer_ios.cc" ]
-    }
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     if (is_android) {
@@ -387,11 +367,6 @@ if (rtc_include_tests) {
       "testsupport/yuv_frame_reader_unittest.cc",
       "testsupport/yuv_frame_writer_unittest.cc",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
 
     data = test_support_unittests_resources
     if (is_android) {
@@ -573,10 +548,6 @@ rtc_source_set("direct_transport") {
     "direct_transport.cc",
     "direct_transport.h",
   ]
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
   deps = [
     "..:webrtc_common",
     "../api:simulated_network_api",
@@ -623,10 +594,6 @@ rtc_source_set("fake_video_codecs") {
     "fake_vp8_encoder.cc",
     "fake_vp8_encoder.h",
   ]
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
   deps = [
     "..:webrtc_common",
     "../api:scoped_refptr",
@@ -687,11 +654,6 @@ rtc_source_set("test_common") {
       "run_loop.cc",
       "run_loop.h",
     ]
-  }
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 
   deps = [
@@ -782,10 +744,6 @@ if (is_mac) {
       "OpenGL.framework",
       "CoreVideo.framework",
     ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 }
 
@@ -840,11 +798,6 @@ rtc_source_set("test_renderer_generic") {
       "GLESv2",
       "log",
     ]
-  }
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
   }
 }
 

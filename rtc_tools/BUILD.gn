@@ -192,10 +192,6 @@ if (!build_with_chromium) {
       "../test:video_test_common",
       "//third_party/abseil-cpp/absl/strings",
     ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   rtc_executable("psnr_ssim_analyzer") {
@@ -297,10 +293,6 @@ if (!build_with_chromium) {
         "event_log_visualizer/plot_python.h",
         "event_log_visualizer/triage_notifications.h",
       ]
-      if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-      }
       defines = [ "ENABLE_RTC_EVENT_LOG" ]
       deps = [
         ":chart_proto",
@@ -345,11 +337,6 @@ if (rtc_include_tests) {
       sources = [
         "event_log_visualizer/main.cc",
       ]
-
-      if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-      }
 
       defines = [ "ENABLE_RTC_EVENT_LOG" ]
       deps = [
@@ -418,11 +405,6 @@ if (rtc_include_tests) {
       "video_file_reader_unittest.cc",
       "video_file_writer_unittest.cc",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
 
     deps = [
       ":command_line_parser",

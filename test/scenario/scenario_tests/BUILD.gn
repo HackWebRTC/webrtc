@@ -26,8 +26,5 @@ if (rtc_include_tests) {
       "../../../rtc_base/experiments:field_trial_parser",
       "//testing/gtest",
     ]
-    if (!build_with_chromium && is_clang) {
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 }

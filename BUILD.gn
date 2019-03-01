@@ -454,11 +454,6 @@ rtc_source_set("webrtc_common") {
     "rtc_base:checks",
     "//third_party/abseil-cpp/absl/strings",
   ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 if (use_libfuzzer || use_drfuzz || use_afl) {
@@ -564,10 +559,6 @@ if (rtc_include_tests) {
       "video:video_tests",
     ]
     data = video_engine_tests_resources
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
       shard_timeout = 900

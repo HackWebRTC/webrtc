@@ -31,11 +31,6 @@ rtc_static_library("encoded_frame") {
     "//third_party/abseil-cpp/absl/types:optional",
     "//third_party/abseil-cpp/absl/types:variant",
   ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 }
 
 rtc_static_library("nack_module") {
@@ -46,11 +41,6 @@ rtc_static_library("nack_module") {
     "nack_module.cc",
     "nack_module.h",
   ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 
   deps = [
     ":packet",
@@ -151,11 +141,6 @@ rtc_static_library("video_coding") {
     "video_receiver.cc",
   ]
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps += [
     ":codec_globals_headers",
     ":encoded_frame",
@@ -254,11 +239,6 @@ rtc_source_set("video_coding_utility") {
     "utility/vp9_uncompressed_header_parser.h",
   ]
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = [
     ":video_codec_interface",
     "..:module_api",
@@ -293,11 +273,6 @@ rtc_static_library("webrtc_h264") {
     "codecs/h264/h264.cc",
     "codecs/h264/include/h264.h",
   ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 
   defines = []
   deps = [
@@ -353,11 +328,6 @@ rtc_static_library("webrtc_multiplex") {
     "codecs/multiplex/multiplex_encoder_adapter.cc",
   ]
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = [
     ":video_codec_interface",
     ":video_coding_utility",
@@ -389,11 +359,6 @@ rtc_static_library("webrtc_vp8") {
     "codecs/vp8/libvpx_vp8_encoder.cc",
     "codecs/vp8/libvpx_vp8_encoder.h",
   ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 
   deps = [
     ":codec_globals_headers",
@@ -439,11 +404,6 @@ rtc_static_library("webrtc_vp8_temporal_layers") {
     "codecs/vp8/temporal_layers_checker.cc",
   ]
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = [
     ":codec_globals_headers",
     ":video_codec_interface",
@@ -471,11 +431,6 @@ rtc_static_library("webrtc_vp9_helpers") {
     "codecs/vp9/svc_rate_allocator.h",
   ]
 
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
-
   deps = [
     ":codec_globals_headers",
     ":video_codec_interface",
@@ -499,11 +454,6 @@ rtc_static_library("webrtc_vp9") {
     "codecs/vp9/vp9_impl.cc",
     "codecs/vp9/vp9_impl.h",
   ]
-
-  if (!build_with_chromium && is_clang) {
-    # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-    suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-  }
 
   deps = [
     ":video_codec_interface",
@@ -571,11 +521,6 @@ if (rtc_include_tests) {
         "../../sdk:videosource_objc",
         "../../sdk:videotoolbox_objc",
       ]
-
-      if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-      }
     }
   }
 
@@ -585,11 +530,6 @@ if (rtc_include_tests) {
       "utility/simulcast_test_fixture_impl.cc",
       "utility/simulcast_test_fixture_impl.h",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
 
     deps = [
       ":video_codec_interface",
@@ -619,11 +559,6 @@ if (rtc_include_tests) {
       "codecs/test/videoprocessor.cc",
       "codecs/test/videoprocessor.h",
     ]
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
 
     deps = [
       ":codec_globals_headers",
@@ -735,10 +670,6 @@ if (rtc_include_tests) {
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
   }
 
   rtc_source_set("video_coding_modules_tests") {
@@ -815,11 +746,6 @@ if (rtc_include_tests) {
       if (num_video_coding_modules_tests_resources > 0) {
         deps += [ ":video_coding_modules_tests_resources_bundle_data" ]
       }
-    }
-
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
 
     if (rtc_build_libvpx) {
@@ -937,10 +863,6 @@ if (rtc_include_tests) {
     ]
     if (rtc_build_libvpx) {
       deps += [ rtc_libvpx_dir ]
-    }
-    if (!build_with_chromium && is_clang) {
-      # Suppress warnings from the Chromium Clang plugin (bugs.webrtc.org/163).
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
     }
   }
 }

@@ -238,12 +238,6 @@ if (is_ios || is_mac) {
           "../rtc_base:rtc_base_approved",
           "../system_wrappers",
         ]
-
-        if (is_clang) {
-          # Suppress warnings from the Chromium Clang plugin
-          # (bugs.webrtc.org/163).
-          suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-        }
       }
 
       rtc_source_set("audio_session_observer") {
@@ -287,12 +281,6 @@ if (is_ios || is_mac) {
         ]
 
         libs = [ "AudioToolbox.framework" ]
-
-        if (is_clang) {
-          # Suppress warnings from the Chromium Clang plugin
-          # (bugs.webrtc.org/163).
-          suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-        }
       }
 
       rtc_static_library("audio_objc") {
@@ -565,11 +553,7 @@ if (is_ios || is_mac) {
           "objc/components/video_codec/UIDevice+H264Profile.mm",
         ]
       }
-      if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin
-        # (bugs.webrtc.org/163).
-        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-      }
+
       public_configs = [ ":common_config_objc" ]
       deps = [
         ":base_objc",
@@ -775,12 +759,6 @@ if (is_ios || is_mac) {
         "../modules/video_coding:video_codec_interface",
         "../rtc_base:rtc_base",
       ]
-
-      if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin
-        # (bugs.webrtc.org/163).
-        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-      }
     }
 
     rtc_static_library("peerconnectionfactory_base_objc") {
@@ -1588,12 +1566,6 @@ if (is_ios || is_mac) {
       configs += [ "..:common_objc" ]
 
       public_configs = [ ":common_config_objc" ]
-
-      if (!build_with_chromium && is_clang) {
-        # Suppress warnings from the Chromium Clang plugin
-        # (bugs.webrtc.org/163).
-        suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-      }
 
       deps = [
         ":base_native_additions_objc",

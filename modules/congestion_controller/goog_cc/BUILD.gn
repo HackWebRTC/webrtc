@@ -224,9 +224,6 @@ if (rtc_include_tests) {
       "probe_controller_unittest.cc",
       "trendline_estimator_unittest.cc",
     ]
-    if (!build_with_chromium && is_clang) {
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
     deps = [
       ":alr_detector",
       ":delay_based_bwe",
@@ -263,9 +260,6 @@ if (rtc_include_tests) {
     sources = [
       "goog_cc_network_control_slowtest.cc",
     ]
-    if (!build_with_chromium && is_clang) {
-      suppressed_configs += [ "//build/config/clang:find_bad_constructs" ]
-    }
     deps = [
       ":alr_detector",
       ":delay_based_bwe",
