@@ -3060,6 +3060,18 @@ static RTCError UpdateSimulcastLayerStatusInSender(
   return result;
 }
 
+static bool SimulcastIsRejected(
+    const ContentInfo* local_content,
+    const MediaContentDescription& answer_media_desc) {
+  bool simulcast_offered = local_content &&
+                           local_content->media_description() &&
+                           local_content->media_description()->HasSimulcast();
+  bool simulcast_answered = answer_media_desc.HasSimulcast();
+  bool rids_supported = RtpExtension::FindHeaderExtensionByUri(
+      answer_media_desc.rtp_header_extensions(), RtpExtension::kRidUri);
+  return simulcast_offered && (!simulcast_answered || !rids_supported);
+}
+
 static RTCError DisableSimulcastInSender(
     rtc::scoped_refptr<RtpSenderInternal> sender) {
   RTC_DCHECK(sender);
@@ -3155,12 +3167,7 @@ PeerConnection::AssociateTransceiver(cricket::ContentSource source,
 
     // Check if the offer indicated simulcast but the answer rejected it.
     // This can happen when simulcast is not supported on the remote party.
-    // This check can be simplified to comparing the number of send encodings,
-    // but that might break legacy implementation in which simulcast is not
-    // signaled in the remote description.
-    if (old_local_content && old_local_content->media_description() &&
-        old_local_content->media_description()->HasSimulcast() &&
-        !media_desc->HasSimulcast()) {
+    if (SimulcastIsRejected(old_local_content, *media_desc)) {
       RTCError error =
           DisableSimulcastInSender(transceiver->internal()->sender_internal());
       if (!error.ok()) {
