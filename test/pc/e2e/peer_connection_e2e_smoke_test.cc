@@ -96,14 +96,14 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
 
   // Setup components. We need to provide rtc::NetworkManager compatible with
   // emulated network layer.
-  auto alice_components =
-      absl::make_unique<InjectableComponents>(alice_network_thread);
-  alice_components->pc_dependencies->network_manager =
+  std::unique_ptr<rtc::NetworkManager> alice_network_manager =
       CreateFakeNetworkManager({alice_endpoint});
-  auto bob_components =
-      absl::make_unique<InjectableComponents>(bob_network_thread);
-  bob_components->pc_dependencies->network_manager =
+  auto alice_components = absl::make_unique<InjectableComponents>(
+      alice_network_thread, alice_network_manager.get());
+  std::unique_ptr<rtc::NetworkManager> bob_network_manager =
       CreateFakeNetworkManager({bob_endpoint});
+  auto bob_components = absl::make_unique<InjectableComponents>(
+      bob_network_thread, bob_network_manager.get());
 
   // Create analyzers.
   std::unique_ptr<VideoQualityAnalyzerInterface> video_quality_analyzer =

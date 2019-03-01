@@ -47,13 +47,8 @@ using AudioConfig = PeerConnectionE2EQualityTestFixture::AudioConfig;
 // dependencies, that won't be specially provided by factory and will be just
 // transferred to peer connection creation code.
 void SetMandatoryEntities(InjectableComponents* components) {
-  if (components->pcf_dependencies == nullptr) {
-    components->pcf_dependencies =
-        absl::make_unique<PeerConnectionFactoryComponents>();
-  }
-  if (components->pc_dependencies == nullptr) {
-    components->pc_dependencies = absl::make_unique<PeerConnectionComponents>();
-  }
+  RTC_DCHECK(components->pcf_dependencies);
+  RTC_DCHECK(components->pc_dependencies);
 
   // Setup required peer connection factory dependencies.
   if (components->pcf_dependencies->call_factory == nullptr) {
@@ -209,16 +204,8 @@ PeerConnectionDependencies CreatePCDependencies(
     PeerConnectionObserver* observer) {
   PeerConnectionDependencies pc_deps(observer);
 
-  // We need to create network manager, because it is required for port
-  // allocator. TestPeer will take ownership of this object and will store it
-  // until the end of the test.
-  if (pc_dependencies->network_manager == nullptr) {
-    pc_dependencies->network_manager =
-        // Use real network (on the loopback interface)
-        absl::make_unique<rtc::BasicNetworkManager>();
-  }
   auto port_allocator = absl::make_unique<cricket::BasicPortAllocator>(
-      pc_dependencies->network_manager.get());
+      pc_dependencies->network_manager);
 
   // This test does not support TCP
   int flags = cricket::PORTALLOCATOR_DISABLE_TCP;
@@ -281,8 +268,7 @@ std::unique_ptr<TestPeer> TestPeer::CreateTestPeer(
       pcf->CreatePeerConnection(params->rtc_configuration, std::move(pc_deps));
 
   return absl::WrapUnique(
-      new TestPeer(pcf, pc, std::move(observer), std::move(params),
-                   std::move(components->pc_dependencies->network_manager)));
+      new TestPeer(pcf, pc, std::move(observer), std::move(params)));
 }
 
 bool TestPeer::AddIceCandidates(
@@ -305,13 +291,11 @@ TestPeer::TestPeer(
     rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory,
     rtc::scoped_refptr<PeerConnectionInterface> pc,
     std::unique_ptr<MockPeerConnectionObserver> observer,
-    std::unique_ptr<Params> params,
-    std::unique_ptr<rtc::NetworkManager> network_manager)
+    std::unique_ptr<Params> params)
     : PeerConnectionWrapper::PeerConnectionWrapper(std::move(pc_factory),
                                                    std::move(pc),
                                                    std::move(observer)),
-      params_(std::move(params)),
-      network_manager_(std::move(network_manager)) {}
+      params_(std::move(params)) {}
 
 }  // namespace test
 }  // namespace webrtc

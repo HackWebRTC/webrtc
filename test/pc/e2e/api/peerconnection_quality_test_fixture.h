@@ -73,7 +73,12 @@ class PeerConnectionE2EQualityTestFixture {
   // so client can't inject its own. Also only network manager can be overridden
   // inside port allocator.
   struct PeerConnectionComponents {
-    std::unique_ptr<rtc::NetworkManager> network_manager;
+    PeerConnectionComponents(rtc::NetworkManager* network_manager)
+        : network_manager(network_manager) {
+      RTC_CHECK(network_manager);
+    }
+
+    rtc::NetworkManager* const network_manager;
     std::unique_ptr<webrtc::AsyncResolverFactory> async_resolver_factory;
     std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator;
     std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier;
@@ -82,11 +87,13 @@ class PeerConnectionE2EQualityTestFixture {
   // Contains all components, that can be overridden in peer connection. Also
   // has a network thread, that will be used to communicate with another peers.
   struct InjectableComponents {
-    explicit InjectableComponents(rtc::Thread* network_thread)
+    explicit InjectableComponents(rtc::Thread* network_thread,
+                                  rtc::NetworkManager* network_manager)
         : network_thread(network_thread),
           pcf_dependencies(
               absl::make_unique<PeerConnectionFactoryComponents>()),
-          pc_dependencies(absl::make_unique<PeerConnectionComponents>()) {
+          pc_dependencies(
+              absl::make_unique<PeerConnectionComponents>(network_manager)) {
       RTC_CHECK(network_thread);
     }
 
