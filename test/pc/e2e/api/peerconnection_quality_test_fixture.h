@@ -35,6 +35,7 @@
 #include "test/pc/e2e/api/video_quality_analyzer_interface.h"
 
 namespace webrtc {
+namespace test {
 
 // TODO(titovartem) move to API when it will be stabilized.
 class PeerConnectionE2EQualityTestFixture {
@@ -208,6 +209,7 @@ class PeerConnectionE2EQualityTestFixture {
   virtual ~PeerConnectionE2EQualityTestFixture() = default;
 };
 
+}  // namespace test
 }  // namespace webrtc
 
 #endif  // TEST_PC_E2E_API_PEERCONNECTION_QUALITY_TEST_FIXTURE_H_
