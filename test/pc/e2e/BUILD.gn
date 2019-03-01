@@ -166,9 +166,6 @@ if (rtc_include_tests) {
       "test_peer.h",
     ]
     deps = [
-      ":default_encoded_image_data_injector",
-      ":encoded_image_data_injector_api",
-      ":example_video_quality_analyzer",
       ":video_quality_analyzer_injection_helper",
       "../../../api:array_view",
       "../../../api:scoped_refptr",
@@ -204,7 +201,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":default_audio_quality_analyzer",
-      ":example_video_quality_analyzer",
+      ":default_video_quality_analyzer",
       ":single_process_encoded_image_data_injector",
       ":stats_poller",
       ":test_peer",

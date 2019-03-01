@@ -21,16 +21,9 @@
 #include "logging/rtc_event_log/rtc_event_log_factory.h"
 #include "media/engine/webrtc_media_engine.h"
 #include "modules/audio_device/include/audio_device.h"
-#include "modules/audio_device/include/test_audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "p2p/client/basic_port_allocator.h"
-#include "pc/test/mock_peer_connection_observers.h"
-#include "rtc_base/bind.h"
 #include "rtc_base/location.h"
-#include "rtc_base/network.h"
-#include "test/frame_generator_capturer.h"
-#include "test/pc/e2e/analyzer/video/default_encoded_image_data_injector.h"
-#include "test/pc/e2e/analyzer/video/example_video_quality_analyzer.h"
 #include "test/testsupport/copy_to_file_audio_capturer.h"
 
 namespace webrtc {
