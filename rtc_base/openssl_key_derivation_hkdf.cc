@@ -10,6 +10,9 @@
 
 #include "rtc_base/openssl_key_derivation_hkdf.h"
 
+#include <algorithm>
+#include <utility>
+
 #include <openssl/ossl_typ.h>
 #ifdef OPENSSL_IS_BORINGSSL
 #include <openssl/digest.h>
@@ -17,9 +20,20 @@
 #else
 #include <openssl/evp.h>
 #include <openssl/kdf.h>
+#endif
+#include <openssl/err.h>
+#include <openssl/sha.h>
+
+#include "rtc_base/buffer.h"
+#include "rtc_base/openssl.h"
+
+namespace rtc {
+
+#ifndef OPENSSL_IS_BORINGSSL
 namespace {
-// the function with this interface is static within openssl and hence not
-// accessible to the caller. Implementing here to match boringssl.
+
+// HKDF is static within OpenSSL and hence not accessible to the caller.
+// This internal implementation allows for compatibility with BoringSSL.
 static int HKDF(uint8_t* out_key,
                 size_t out_len,
                 const EVP_MD* digest,
@@ -43,18 +57,9 @@ static int HKDF(uint8_t* out_key,
   EVP_PKEY_CTX_free(pctx);
   return 1;
 }
+
 }  // namespace
 #endif
-#include <openssl/err.h>
-#include <openssl/sha.h>
-
-#include <algorithm>
-#include <utility>
-
-#include "rtc_base/buffer.h"
-#include "rtc_base/openssl.h"
-
-namespace rtc {
 
 OpenSSLKeyDerivationHKDF::OpenSSLKeyDerivationHKDF() = default;
 OpenSSLKeyDerivationHKDF::~OpenSSLKeyDerivationHKDF() = default;
