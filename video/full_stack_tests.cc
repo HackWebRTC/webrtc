@@ -296,6 +296,26 @@ TEST(FullStackTest, ForemanCifLink150kbpsBadRateController) {
   fixture->RunWithAnalyzer(foreman_cif);
 }
 
+// Weak 3G-style link: 250kbps, 1% loss, 100ms delay, 15 packets queue.
+// Packet rate and loss are low enough that loss will happen with ~3s interval.
+// This triggers protection overhead to toggle between zero and non-zero.
+// Link queue is restrictive enough to trigger loss on probes.
+TEST(FullStackTest, ForemanCifMediaCapacitySmallLossAndQueue) {
+  auto fixture = CreateVideoQualityTestFixture();
+  ParamsWithLogging foreman_cif;
+  foreman_cif.call.send_side_bwe = true;
+  foreman_cif.video[0] = {true,  352,           288, 30, 30000, 500000, 2000000,
+                          false, "VP8",         1,   0,  0,     false,  false,
+                          true,  "foreman_cif", 0,   {}, 1.30};
+  foreman_cif.analyzer = {"foreman_cif_link_250kbps_delay100ms_10pkts_loss1",
+                          0.0, 0.0, kFullStackTestDurationSecs};
+  foreman_cif.config->link_capacity_kbps = 250;
+  foreman_cif.config->queue_length_packets = 10;
+  foreman_cif.config->queue_delay_ms = 100;
+  foreman_cif.config->loss_percent = 1;
+  fixture->RunWithAnalyzer(foreman_cif);
+}
+
 TEST_P(GenericDescriptorTest, ForemanCifPlr5) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
