@@ -309,6 +309,10 @@ int NumSamples(const std::string& name);
 // Returns the minimum sample value (or -1 if the histogram has no samples).
 int MinSample(const std::string& name);
 
+// Returns a map with keys the samples with at least one event and values the
+// number of events for that sample.
+std::map<int, int> Samples(const std::string& name);
+
 }  // namespace metrics
 }  // namespace webrtc
 
