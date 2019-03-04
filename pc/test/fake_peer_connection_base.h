@@ -17,7 +17,6 @@
 #include <string>
 #include <vector>
 
-#include "api/sctp_transport_interface.h"
 #include "pc/peer_connection_internal.h"
 
 namespace webrtc {
@@ -108,10 +107,6 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
       rtc::scoped_refptr<RTCStatsCollectorCallback> callback) override {}
 
   void ClearStatsCache() override {}
-
-  rtc::scoped_refptr<SctpTransportInterface> GetSctpTransport() const {
-    return nullptr;
-  }
 
   rtc::scoped_refptr<DataChannelInterface> CreateDataChannel(
       const std::string& label,
