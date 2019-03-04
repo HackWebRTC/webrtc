@@ -850,15 +850,16 @@ void LibvpxVp8Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                                              uint32_t timestamp) {
   assert(codec_specific != NULL);
   codec_specific->codecType = kVideoCodecVP8;
-  CodecSpecificInfoVP8* vp8Info = &(codec_specific->codecSpecific.VP8);
-  vp8Info->keyIdx = kNoKeyIdx;  // TODO(hlundin) populate this
-  vp8Info->nonReference = (pkt.data.frame.flags & VPX_FRAME_IS_DROPPABLE) != 0;
+  codec_specific->codecSpecific.VP8.keyIdx =
+      kNoKeyIdx;  // TODO(hlundin) populate this
+  codec_specific->codecSpecific.VP8.nonReference =
+      (pkt.data.frame.flags & VPX_FRAME_IS_DROPPABLE) != 0;
 
   int qp = 0;
   vpx_codec_control(&encoders_[encoder_idx], VP8E_GET_LAST_QUANTIZER_64, &qp);
   temporal_layers_[stream_idx]->OnEncodeDone(
       timestamp, encoded_images_[encoder_idx].size(),
-      (pkt.data.frame.flags & VPX_FRAME_IS_KEY) != 0, qp, vp8Info);
+      (pkt.data.frame.flags & VPX_FRAME_IS_KEY) != 0, qp, codec_specific);
 }
 
 int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image) {

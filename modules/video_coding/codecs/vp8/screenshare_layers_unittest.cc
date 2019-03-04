@@ -80,8 +80,7 @@ class ScreenshareLayerTest : public ::testing::Test {
     int flags = ConfigureFrame(base_sync);
     if (flags != -1)
       layers_->OnEncodeDone(timestamp_, frame_size_, base_sync, kDefaultQp,
-                            &info->codecSpecific.VP8);
-
+                            info);
     return flags;
   }
 
@@ -133,10 +132,9 @@ class ScreenshareLayerTest : public ::testing::Test {
     bool got_tl1 = false;
     for (int i = 0; i < 10; ++i) {
       CodecSpecificInfo info;
-      const CodecSpecificInfoVP8& vp8_info = info.codecSpecific.VP8;
       EXPECT_NE(-1, EncodeFrame(false, &info));
       timestamp_ += kTimestampDelta5Fps;
-      if (vp8_info.temporalIdx == 0) {
+      if (info.codecSpecific.VP8.temporalIdx == 0) {
         got_tl0 = true;
       } else {
         got_tl1 = true;
@@ -164,9 +162,8 @@ class ScreenshareLayerTest : public ::testing::Test {
       if (tl_config_.packetizer_temporal_idx != layer ||
           (sync && *sync != tl_config_.layer_sync)) {
         CodecSpecificInfo info;
-        CodecSpecificInfoVP8* vp8_info = &info.codecSpecific.VP8;
         layers_->OnEncodeDone(timestamp_, frame_size_, false, kDefaultQp,
-                              vp8_info);
+                              &info);
         timestamp_ += kTimestampDelta5Fps;
       } else {
         // Found frame from sought after layer.
@@ -188,9 +185,9 @@ class ScreenshareLayerTest : public ::testing::Test {
   Vp8EncoderConfig cfg_;
   bool config_updated_;
 
-  CodecSpecificInfoVP8* IgnoredCodecSpecificInfoVp8() {
+  CodecSpecificInfo* IgnoredCodecSpecificInfo() {
     ignored_codec_specific_info_ = absl::make_unique<CodecSpecificInfo>();
-    return &ignored_codec_specific_info_->codecSpecific.VP8;
+    return ignored_codec_specific_info_.get();
   }
 
  private:
@@ -223,10 +220,10 @@ TEST_F(ScreenshareLayerTest, 2LayersPeriodicSync) {
   const int kNumFrames = kSyncPeriodSeconds * kFrameRate * 2 - 1;
   for (int i = 0; i < kNumFrames; ++i) {
     CodecSpecificInfo info;
-    const CodecSpecificInfoVP8& vp8_info = info.codecSpecific.VP8;
     EncodeFrame(false, &info);
     timestamp_ += kTimestampDelta5Fps;
-    if (vp8_info.temporalIdx == 1 && vp8_info.layerSync) {
+    if (info.codecSpecific.VP8.temporalIdx == 1 &&
+        info.codecSpecific.VP8.layerSync) {
       sync_times.push_back(timestamp_);
     }
   }
@@ -240,21 +237,20 @@ TEST_F(ScreenshareLayerTest, 2LayersSyncAfterTimeout) {
   const int kNumFrames = kMaxSyncPeriodSeconds * kFrameRate * 2 - 1;
   for (int i = 0; i < kNumFrames; ++i) {
     CodecSpecificInfo info;
-    CodecSpecificInfoVP8* vp8_info = &info.codecSpecific.VP8;
 
     tl_config_ = UpdateLayerConfig(timestamp_);
     config_updated_ = layers_->UpdateConfiguration(&cfg_);
 
     // Simulate TL1 being at least 8 qp steps better.
     if (tl_config_.packetizer_temporal_idx == 0) {
-      layers_->OnEncodeDone(timestamp_, frame_size_, false, kDefaultQp,
-                            vp8_info);
+      layers_->OnEncodeDone(timestamp_, frame_size_, false, kDefaultQp, &info);
     } else {
       layers_->OnEncodeDone(timestamp_, frame_size_, false, kDefaultQp - 8,
-                            vp8_info);
+                            &info);
     }
 
-    if (vp8_info->temporalIdx == 1 && vp8_info->layerSync)
+    if (info.codecSpecific.VP8.temporalIdx == 1 &&
+        info.codecSpecific.VP8.layerSync)
       sync_times.push_back(timestamp_);
 
     timestamp_ += kTimestampDelta5Fps;
@@ -272,20 +268,19 @@ TEST_F(ScreenshareLayerTest, 2LayersSyncAfterSimilarQP) {
                          kFrameRate;
   for (int i = 0; i < kNumFrames; ++i) {
     CodecSpecificInfo info;
-    CodecSpecificInfoVP8* vp8_info = &info.codecSpecific.VP8;
 
     ConfigureFrame(false);
 
     // Simulate TL1 being at least 8 qp steps better.
     if (tl_config_.packetizer_temporal_idx == 0) {
-      layers_->OnEncodeDone(timestamp_, frame_size_, false, kDefaultQp,
-                            vp8_info);
+      layers_->OnEncodeDone(timestamp_, frame_size_, false, kDefaultQp, &info);
     } else {
       layers_->OnEncodeDone(timestamp_, frame_size_, false, kDefaultQp - 8,
-                            vp8_info);
+                            &info);
     }
 
-    if (vp8_info->temporalIdx == 1 && vp8_info->layerSync)
+    if (info.codecSpecific.VP8.temporalIdx == 1 &&
+        info.codecSpecific.VP8.layerSync)
       sync_times.push_back(timestamp_);
 
     timestamp_ += kTimestampDelta5Fps;
@@ -296,17 +291,16 @@ TEST_F(ScreenshareLayerTest, 2LayersSyncAfterSimilarQP) {
   bool bumped_tl0_quality = false;
   for (int i = 0; i < 3; ++i) {
     CodecSpecificInfo info;
-    CodecSpecificInfoVP8* vp8_info = &info.codecSpecific.VP8;
 
     int flags = ConfigureFrame(false);
     layers_->OnEncodeDone(timestamp_, frame_size_, false, kDefaultQp - 8,
-                          vp8_info);
-    if (vp8_info->temporalIdx == 0) {
+                          &info);
+    if (info.codecSpecific.VP8.temporalIdx == 0) {
       // Bump TL0 to same quality as TL1.
       bumped_tl0_quality = true;
     } else {
       if (bumped_tl0_quality) {
-        EXPECT_TRUE(vp8_info->layerSync);
+        EXPECT_TRUE(info.codecSpecific.VP8.layerSync);
         EXPECT_EQ(kTl1SyncFlags, flags);
         return;
       }
@@ -324,10 +318,9 @@ TEST_F(ScreenshareLayerTest, 2LayersToggling) {
   int tl1_frames = 0;
   for (int i = 0; i < 50; ++i) {
     CodecSpecificInfo info;
-    const CodecSpecificInfoVP8& vp8_info = info.codecSpecific.VP8;
     EncodeFrame(false, &info);
     timestamp_ += kTimestampDelta5Fps;
-    switch (vp8_info.temporalIdx) {
+    switch (info.codecSpecific.VP8.temporalIdx) {
       case 0:
         ++tl0_frames;
         break;
@@ -348,11 +341,10 @@ TEST_F(ScreenshareLayerTest, AllFitsLayer0) {
   // Insert 50 frames, small enough that all fits in TL0.
   for (int i = 0; i < 50; ++i) {
     CodecSpecificInfo info;
-    const CodecSpecificInfoVP8& vp8_info = info.codecSpecific.VP8;
     int flags = EncodeFrame(false, &info);
     timestamp_ += kTimestampDelta5Fps;
     EXPECT_EQ(kTl0Flags, flags);
-    EXPECT_EQ(0, vp8_info.temporalIdx);
+    EXPECT_EQ(0, info.codecSpecific.VP8.temporalIdx);
   }
 }
 
@@ -365,13 +357,12 @@ TEST_F(ScreenshareLayerTest, TooHighBitrate) {
   int dropped_frames = 0;
   for (int i = 0; i < 100; ++i) {
     CodecSpecificInfo info;
-    const CodecSpecificInfoVP8& vp8_info = info.codecSpecific.VP8;
     int flags = EncodeFrame(false, &info);
     timestamp_ += kTimestampDelta5Fps;
     if (flags == -1) {
       ++dropped_frames;
     } else {
-      switch (vp8_info.temporalIdx) {
+      switch (info.codecSpecific.VP8.temporalIdx) {
         case 0:
           ++tl0_frames;
           break;
@@ -428,7 +419,7 @@ TEST_F(ScreenshareLayerTest, EncoderDrop) {
   SkipUntilTl(0);
 
   // Size 0 indicates dropped frame.
-  layers_->OnEncodeDone(timestamp_, 0, false, 0, IgnoredCodecSpecificInfoVp8());
+  layers_->OnEncodeDone(timestamp_, 0, false, 0, IgnoredCodecSpecificInfo());
 
   // Re-encode frame (so don't advance timestamp).
   int flags = EncodeFrame(false);
@@ -441,19 +432,19 @@ TEST_F(ScreenshareLayerTest, EncoderDrop) {
   EXPECT_TRUE(config_updated_);
   EXPECT_LT(cfg_.rc_max_quantizer, static_cast<unsigned int>(kDefaultQp));
   layers_->OnEncodeDone(timestamp_, frame_size_, false, kDefaultQp,
-                        IgnoredCodecSpecificInfoVp8());
+                        IgnoredCodecSpecificInfo());
   timestamp_ += kTimestampDelta5Fps;
 
   // ...then back to standard setup.
   SkipUntilTl(0);
   layers_->OnEncodeDone(timestamp_, frame_size_, false, kDefaultQp,
-                        IgnoredCodecSpecificInfoVp8());
+                        IgnoredCodecSpecificInfo());
   timestamp_ += kTimestampDelta5Fps;
   EXPECT_EQ(cfg_.rc_max_quantizer, static_cast<unsigned int>(kDefaultQp));
 
   // Next drop in TL1.
   SkipUntilTl(1);
-  layers_->OnEncodeDone(timestamp_, 0, false, 0, IgnoredCodecSpecificInfoVp8());
+  layers_->OnEncodeDone(timestamp_, 0, false, 0, IgnoredCodecSpecificInfo());
 
   // Re-encode frame (so don't advance timestamp).
   flags = EncodeFrame(false);
@@ -466,14 +457,14 @@ TEST_F(ScreenshareLayerTest, EncoderDrop) {
   EXPECT_TRUE(config_updated_);
   EXPECT_LT(cfg_.rc_max_quantizer, static_cast<unsigned int>(kDefaultQp));
   layers_->OnEncodeDone(timestamp_, frame_size_, false, kDefaultQp,
-                        IgnoredCodecSpecificInfoVp8());
+                        IgnoredCodecSpecificInfo());
   timestamp_ += kTimestampDelta5Fps;
 
   // ...and back to normal.
   SkipUntilTl(1);
   EXPECT_EQ(cfg_.rc_max_quantizer, static_cast<unsigned int>(kDefaultQp));
   layers_->OnEncodeDone(timestamp_, frame_size_, false, kDefaultQp,
-                        IgnoredCodecSpecificInfoVp8());
+                        IgnoredCodecSpecificInfo());
   timestamp_ += kTimestampDelta5Fps;
 }
 
@@ -489,7 +480,7 @@ TEST_F(ScreenshareLayerTest, RespectsMaxIntervalBetweenFrames) {
   EXPECT_EQ(kTl0Flags,
             LibvpxVp8Encoder::EncodeFlags(UpdateLayerConfig(kStartTimestamp)));
   layers_->OnEncodeDone(kStartTimestamp, kLargeFrameSizeBytes, false,
-                        kDefaultQp, IgnoredCodecSpecificInfoVp8());
+                        kDefaultQp, IgnoredCodecSpecificInfo());
 
   const uint32_t kTwoSecondsLater =
       kStartTimestamp + (ScreenshareLayers::kMaxFrameIntervalMs * 90);
@@ -539,15 +530,15 @@ TEST_F(ScreenshareLayerTest, UpdatesHistograms) {
       if (timestamp >= kTimestampDelta5Fps * 20 && !trigger_drop) {
         // Simulate a too large frame, to cause frame drop.
         layers_->OnEncodeDone(timestamp, frame_size_ * 10, false, kTl0Qp,
-                              IgnoredCodecSpecificInfoVp8());
+                              IgnoredCodecSpecificInfo());
         trigger_drop = true;
       } else {
         layers_->OnEncodeDone(timestamp, frame_size_, false, kTl0Qp,
-                              IgnoredCodecSpecificInfoVp8());
+                              IgnoredCodecSpecificInfo());
       }
     } else if (flags == kTl1Flags || flags == kTl1SyncFlags) {
       layers_->OnEncodeDone(timestamp, frame_size_, false, kTl1Qp,
-                            IgnoredCodecSpecificInfoVp8());
+                            IgnoredCodecSpecificInfo());
     } else if (flags == -1) {
       dropped_frame = true;
     } else {
@@ -614,7 +605,7 @@ TEST_F(ScreenshareLayerTest, RespectsConfiguredFramerate) {
     } else {
       size_t frame_size_bytes = kDefaultTl0BitrateKbps * kFrameIntervalsMs / 8;
       layers_->OnEncodeDone(timestamp, frame_size_bytes, false, kDefaultQp,
-                            IgnoredCodecSpecificInfoVp8());
+                            IgnoredCodecSpecificInfo());
     }
     timestamp += kFrameIntervalsMs * 90;
     clock_.AdvanceTime(TimeDelta::ms(kFrameIntervalsMs));
@@ -632,7 +623,7 @@ TEST_F(ScreenshareLayerTest, RespectsConfiguredFramerate) {
     } else {
       size_t frame_size_bytes = kDefaultTl0BitrateKbps * kFrameIntervalsMs / 8;
       layers_->OnEncodeDone(timestamp, frame_size_bytes, false, kDefaultQp,
-                            IgnoredCodecSpecificInfoVp8());
+                            IgnoredCodecSpecificInfo());
     }
     timestamp += kFrameIntervalsMs * 90 / 2;
     clock_.AdvanceTime(TimeDelta::ms(kFrameIntervalsMs));
@@ -657,10 +648,9 @@ TEST_F(ScreenshareLayerTest, 2LayersSyncAtOvershootDrop) {
   config_updated_ = layers_->UpdateConfiguration(&cfg_);
   EXPECT_EQ(kTl1SyncFlags, LibvpxVp8Encoder::EncodeFlags(tl_config_));
 
-  CodecSpecificInfo info;
-  CodecSpecificInfoVP8* vp8_info = &info.codecSpecific.VP8;
-  layers_->OnEncodeDone(timestamp_, frame_size_, false, kDefaultQp, vp8_info);
-  EXPECT_TRUE(vp8_info->layerSync);
+  CodecSpecificInfo new_info;
+  layers_->OnEncodeDone(timestamp_, frame_size_, false, kDefaultQp, &new_info);
+  EXPECT_TRUE(new_info.codecSpecific.VP8.layerSync);
 }
 
 TEST_F(ScreenshareLayerTest, DropOnTooShortFrameInterval) {
@@ -671,7 +661,7 @@ TEST_F(ScreenshareLayerTest, DropOnTooShortFrameInterval) {
   timestamp_ += kTimestampDelta5Fps * 3;
   EXPECT_FALSE(UpdateLayerConfig(timestamp_).drop_frame);
   layers_->OnEncodeDone(timestamp_, frame_size_, false, kDefaultQp,
-                        IgnoredCodecSpecificInfoVp8());
+                        IgnoredCodecSpecificInfo());
 
   // Frame interval below 90% if desired time is not allowed, try inserting
   // frame just before this limit.
@@ -735,7 +725,7 @@ TEST_F(ScreenshareLayerTest, DISABLED_MaxQpRestoredAfterDoubleDrop) {
 
   // Simulate re-encoded frame.
   layers_->OnEncodeDone(timestamp_, 1, false, max_qp_,
-                        IgnoredCodecSpecificInfoVp8());
+                        IgnoredCodecSpecificInfo());
 
   // Next frame, expect boosted quality.
   // Slightly alter bitrate between each frame.
@@ -752,7 +742,7 @@ TEST_F(ScreenshareLayerTest, DISABLED_MaxQpRestoredAfterDoubleDrop) {
 
   // Simulate re-encoded frame.
   layers_->OnEncodeDone(timestamp_, frame_size_, false, max_qp_,
-                        IgnoredCodecSpecificInfoVp8());
+                        IgnoredCodecSpecificInfo());
 
   // A third frame, expect boosted quality.
   layers_->OnRatesUpdated(kDefault2TlBitratesBps, kFrameRate);
@@ -763,7 +753,7 @@ TEST_F(ScreenshareLayerTest, DISABLED_MaxQpRestoredAfterDoubleDrop) {
 
   // Frame encoded.
   layers_->OnEncodeDone(timestamp_, frame_size_, false, max_qp_,
-                        IgnoredCodecSpecificInfoVp8());
+                        IgnoredCodecSpecificInfo());
 
   // A fourth frame, max qp should be restored.
   layers_->OnRatesUpdated(kDefault2TlBitratesBpsAlt, kFrameRate);

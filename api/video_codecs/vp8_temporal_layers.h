@@ -44,7 +44,7 @@ namespace webrtc {
 // the bitrate produced.
 enum class Vp8TemporalLayersType { kFixedPattern, kBitrateDynamic };
 
-struct CodecSpecificInfoVP8;
+struct CodecSpecificInfo;
 
 struct Vp8EncoderConfig {
   static constexpr size_t kMaxPeriodicity = 16;
@@ -115,8 +115,8 @@ class Vp8TemporalLayers {
   // a keyframe.
   // If the encoder decided to drop this frame, |size_bytes| must be set to 0,
   // otherwise it should indicate the size in bytes of the encoded frame.
-  // If |size_bytes| > 0, and |vp8_info| is not null, the TemporalLayers
-  // instance my update |vp8_info| with codec specific data such as temporal id.
+  // If |size_bytes| > 0, and |info| is not null, the TemporalLayers
+  // instance my update |info| with codec specific data such as temporal id.
   // Some fields of this struct may have already been populated by the encoder,
   // check before overwriting.
   // If |size_bytes| > 0, |qp| should indicate the frame-level QP this frame was
@@ -126,7 +126,7 @@ class Vp8TemporalLayers {
                             size_t size_bytes,
                             bool is_keyframe,
                             int qp,
-                            CodecSpecificInfoVP8* vp8_info) = 0;
+                            CodecSpecificInfo* info) = 0;
 };
 
 }  // namespace webrtc

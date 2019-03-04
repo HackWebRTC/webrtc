@@ -41,7 +41,7 @@ class MockTemporalLayers : public Vp8TemporalLayers {
   MOCK_METHOD2(OnRatesUpdated, void(const std::vector<uint32_t>&, int));
   MOCK_METHOD1(UpdateConfiguration, bool(Vp8EncoderConfig*));
   MOCK_METHOD5(OnEncodeDone,
-               void(uint32_t, size_t, bool, int, CodecSpecificInfoVP8*));
+               void(uint32_t, size_t, bool, int, CodecSpecificInfo*));
   MOCK_METHOD3(FrameEncoded, void(uint32_t, size_t, int));
   MOCK_CONST_METHOD0(Tl0PicIdx, uint8_t());
   MOCK_CONST_METHOD1(GetTemporalLayerId, int(const Vp8FrameConfig&));

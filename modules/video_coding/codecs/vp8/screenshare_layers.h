@@ -16,6 +16,7 @@
 #include "api/video_codecs/vp8_frame_config.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "modules/video_coding/codecs/vp8/include/temporal_layers_checker.h"
+#include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/utility/frame_dropper.h"
 #include "rtc_base/rate_statistics.h"
 #include "rtc_base/time_utils.h"
@@ -52,7 +53,7 @@ class ScreenshareLayers : public Vp8TemporalLayers {
                     size_t size_bytes,
                     bool is_keyframe,
                     int qp,
-                    CodecSpecificInfoVP8* vp8_info) override;
+                    CodecSpecificInfo* info) override;
 
  private:
   enum class TemporalLayerState : int { kDrop, kTl0, kTl1, kTl1Sync };
@@ -77,6 +78,7 @@ class ScreenshareLayers : public Vp8TemporalLayers {
   absl::optional<uint32_t> target_framerate_;
   // Incoming framerate from capturer.
   absl::optional<uint32_t> capture_framerate_;
+
   // Tracks what framerate we actually encode, and drops frames on overshoot.
   RateStatistics encode_framerate_;
   bool bitrate_updated_;
@@ -107,6 +109,8 @@ class ScreenshareLayers : public Vp8TemporalLayers {
   } layers_[kMaxNumTemporalLayers];
 
   void UpdateHistograms();
+  TemplateStructure GetTemplateStructure(int num_layers) const;
+
   // Data for histogram statistics.
   struct Stats {
     int64_t first_frame_time_ms_ = -1;
