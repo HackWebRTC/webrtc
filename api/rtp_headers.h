@@ -171,23 +171,6 @@ enum NetworkState {
   kNetworkDown,
 };
 
-struct RtpKeepAliveConfig final {
-  // If no packet has been sent for |timeout_interval_ms|, send a keep-alive
-  // packet. The keep-alive packet is an empty (no payload) RTP packet with a
-  // payload type of 20 as long as the other end has not negotiated the use of
-  // this value. If this value has already been negotiated, then some other
-  // unused static payload type from table 5 of RFC 3551 shall be used and set
-  // in |payload_type|.
-  int64_t timeout_interval_ms = -1;
-  uint8_t payload_type = 20;
-
-  bool operator==(const RtpKeepAliveConfig& o) const {
-    return timeout_interval_ms == o.timeout_interval_ms &&
-           payload_type == o.payload_type;
-  }
-  bool operator!=(const RtpKeepAliveConfig& o) const { return !(*this == o); }
-};
-
 }  // namespace webrtc
 
 #endif  // API_RTP_HEADERS_H_

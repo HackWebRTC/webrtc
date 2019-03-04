@@ -67,7 +67,6 @@ class CallTest : public ::testing::Test {
   static const uint32_t kReceiverLocalVideoSsrc;
   static const uint32_t kReceiverLocalAudioSsrc;
   static const int kNackRtpHistoryMs;
-  static const uint8_t kDefaultKeepalivePayloadType;
   static const std::map<uint8_t, MediaType> payload_type_map_;
 
  protected:

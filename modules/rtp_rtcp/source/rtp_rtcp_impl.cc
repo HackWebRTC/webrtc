@@ -82,12 +82,10 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                                                 : kDefaultVideoReportInterval),
                      this),
       clock_(configuration.clock),
-      keepalive_config_(configuration.keepalive_config),
       last_bitrate_process_time_(clock_->TimeInMilliseconds()),
       last_rtt_process_time_(clock_->TimeInMilliseconds()),
       next_process_time_(clock_->TimeInMilliseconds() +
                          kRtpRtcpMaxIdleTimeProcessMs),
-      next_keepalive_time_(-1),
       packet_overhead_(28),  // IPV4 UDP.
       nack_last_time_sent_full_ms_(0),
       nack_last_seq_number_sent_(0),
@@ -119,11 +117,6 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
 
     // Make sure rtcp sender use same timestamp offset as rtp sender.
     rtcp_sender_.SetTimestampOffset(rtp_sender_->TimestampOffset());
-
-    if (keepalive_config_.timeout_interval_ms != -1) {
-      next_keepalive_time_ =
-          clock_->TimeInMilliseconds() + keepalive_config_.timeout_interval_ms;
-    }
   }
 
   // Set default packet size limit.
@@ -153,20 +146,6 @@ void ModuleRtpRtcpImpl::Process() {
       last_bitrate_process_time_ = now;
       next_process_time_ =
           std::min(next_process_time_, now + kRtpRtcpBitrateProcessTimeMs);
-    }
-    if (keepalive_config_.timeout_interval_ms > 0 &&
-        now >= next_keepalive_time_) {
-      int64_t last_send_time_ms = rtp_sender_->LastTimestampTimeMs();
-      // If no packet has been sent, |last_send_time_ms| will be 0, and so the
-      // keep-alive will be triggered as expected.
-      if (now >= last_send_time_ms + keepalive_config_.timeout_interval_ms) {
-        rtp_sender_->SendKeepAlive(keepalive_config_.payload_type);
-        next_keepalive_time_ = now + keepalive_config_.timeout_interval_ms;
-      } else {
-        next_keepalive_time_ =
-            last_send_time_ms + keepalive_config_.timeout_interval_ms;
-      }
-      next_process_time_ = std::min(next_process_time_, next_keepalive_time_);
     }
   }
 

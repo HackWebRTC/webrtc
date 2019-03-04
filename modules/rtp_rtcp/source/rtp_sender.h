@@ -171,7 +171,6 @@ class RTPSender {
   RtpState GetRtxRtpState() const;
 
   int64_t LastTimestampTimeMs() const;
-  void SendKeepAlive(uint8_t payload_type);
 
   void SetRtt(int64_t rtt_ms);
 

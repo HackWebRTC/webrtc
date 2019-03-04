@@ -97,8 +97,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
     OverheadObserver* overhead_observer = nullptr;
     RtcpAckObserver* ack_observer = nullptr;
 
-    RtpKeepAliveConfig keepalive_config;
-
     int rtcp_report_interval_ms = 0;
 
     // Update network2 instead of pacer_exit field of video timing extension.

@@ -97,7 +97,7 @@ enum RTCPPacketType : uint32_t {
 
 enum KeyFrameRequestMethod { kKeyFrameReqPliRtcp, kKeyFrameReqFirRtcp };
 
-enum RtpRtcpPacketType { kPacketRtp = 0, kPacketKeepAlive = 1 };
+enum RtpRtcpPacketType { kPacketRtp = 0 };
 
 enum RtxMode {
   kRtxOff = 0x0,

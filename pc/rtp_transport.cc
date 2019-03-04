@@ -169,12 +169,6 @@ RTCError RtpTransport::SetParameters(const RtpTransportParameters& parameters) {
     LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_STATE,
                          "Disabling RTCP muxing is not allowed.");
   }
-  if (parameters.keepalive != parameters_.keepalive) {
-    // TODO(sprang): Wire up support for keep-alive (only ORTC support for now).
-    LOG_AND_RETURN_ERROR(
-        RTCErrorType::INVALID_MODIFICATION,
-        "RTP keep-alive parameters not supported by this channel.");
-  }
 
   RtpTransportParameters new_parameters = parameters;
 

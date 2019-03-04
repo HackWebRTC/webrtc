@@ -26,12 +26,8 @@ class RtpTransportAdapter;
 struct RtpTransportParameters final {
   RtcpParameters rtcp;
 
-  // Enabled periodic sending of keep-alive packets, that help prevent timeouts
-  // on the network level, such as NAT bindings. See RFC6263 section 4.6.
-  RtpKeepAliveConfig keepalive;
-
   bool operator==(const RtpTransportParameters& o) const {
-    return rtcp == o.rtcp && keepalive == o.keepalive;
+    return rtcp == o.rtcp;
   }
   bool operator!=(const RtpTransportParameters& o) const {
     return !(*this == o);

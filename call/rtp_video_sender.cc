@@ -74,7 +74,6 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
     RtcEventLog* event_log,
     RateLimiter* retransmission_rate_limiter,
     OverheadObserver* overhead_observer,
-    RtpKeepAliveConfig keepalive_config,
     FrameEncryptorInterface* frame_encryptor,
     const CryptoOptions& crypto_options) {
   RTC_DCHECK_GT(rtp_config.ssrcs.size(), 0);
@@ -100,7 +99,6 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
   configuration.event_log = event_log;
   configuration.retransmission_rate_limiter = retransmission_rate_limiter;
   configuration.overhead_observer = overhead_observer;
-  configuration.keepalive_config = keepalive_config;
   configuration.frame_encryptor = frame_encryptor;
   configuration.require_frame_encryption =
       crypto_options.sframe.require_frame_encryption;
@@ -247,8 +245,6 @@ RtpVideoSender::RtpVideoSender(
                                           event_log,
                                           retransmission_limiter,
                                           this,
-                                          // TODO(srte): Remove this argument.
-                                          RtpKeepAliveConfig(),
                                           frame_encryptor,
                                           crypto_options)),
       rtp_config_(rtp_config),

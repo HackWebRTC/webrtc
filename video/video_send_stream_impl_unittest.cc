@@ -144,7 +144,6 @@ class VideoSendStreamImplTest : public ::testing::Test {
   CallStats call_stats_;
   SendStatisticsProxy stats_proxy_;
   PacketRouter packet_router_;
-  RtpKeepAliveConfig keepalive_config_;
 };
 
 TEST_F(VideoSendStreamImplTest, RegistersAsBitrateObserverOnStart) {

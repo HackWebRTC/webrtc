@@ -48,7 +48,6 @@ class RtpVideoSenderInterface;
 class RateLimiter;
 class RtcpBandwidthObserver;
 class RtpPacketSender;
-struct RtpKeepAliveConfig;
 class SendDelayStats;
 class SendStatisticsProxy;
 class TransportFeedbackObserver;
