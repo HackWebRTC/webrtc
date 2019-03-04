@@ -163,8 +163,9 @@ struct ConfigHelper {
   std::unique_ptr<internal::AudioSendStream> CreateAudioSendStream() {
     return std::unique_ptr<internal::AudioSendStream>(
         new internal::AudioSendStream(
-            stream_config_, audio_state_, &worker_queue_, &rtp_transport_,
-            &bitrate_allocator_, &event_log_, &rtcp_rtt_stats_, absl::nullopt,
+            Clock::GetRealTimeClock(), stream_config_, audio_state_,
+            &worker_queue_, &rtp_transport_, &bitrate_allocator_, &event_log_,
+            &rtcp_rtt_stats_, absl::nullopt,
             std::unique_ptr<voe::ChannelSendInterface>(channel_send_)));
   }
 

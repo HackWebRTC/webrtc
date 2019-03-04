@@ -76,7 +76,8 @@ class ChannelReceive : public ChannelReceiveInterface,
                        public MediaTransportAudioSinkInterface {
  public:
   // Used for receive streams.
-  ChannelReceive(ProcessThread* module_process_thread,
+  ChannelReceive(Clock* clock,
+                 ProcessThread* module_process_thread,
                  AudioDeviceModule* audio_device_module,
                  MediaTransportInterface* media_transport,
                  Transport* rtcp_send_transport,
@@ -428,6 +429,7 @@ int ChannelReceive::PreferredSampleRate() const {
 }
 
 ChannelReceive::ChannelReceive(
+    Clock* clock,
     ProcessThread* module_process_thread,
     AudioDeviceModule* audio_device_module,
     MediaTransportInterface* media_transport,
@@ -443,11 +445,10 @@ ChannelReceive::ChannelReceive(
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
     const webrtc::CryptoOptions& crypto_options)
     : event_log_(rtc_event_log),
-      rtp_receive_statistics_(
-          ReceiveStatistics::Create(Clock::GetRealTimeClock())),
+      rtp_receive_statistics_(ReceiveStatistics::Create(clock)),
       remote_ssrc_(remote_ssrc),
       _outputAudioLevel(),
-      ntp_estimator_(Clock::GetRealTimeClock()),
+      ntp_estimator_(clock),
       playout_timestamp_rtp_(0),
       playout_delay_ms_(0),
       rtp_ts_wraparound_handler_(new rtc::TimestampWrapAroundHandler()),
@@ -480,6 +481,7 @@ ChannelReceive::ChannelReceive(
 
   rtp_receive_statistics_->EnableRetransmitDetection(remote_ssrc_, true);
   RtpRtcp::Configuration configuration;
+  configuration.clock = clock;
   configuration.audio = true;
   configuration.receiver_only = true;
   configuration.outgoing_transport = rtcp_send_transport;
@@ -959,6 +961,7 @@ int64_t ChannelReceive::GetRTT() const {
 }  // namespace
 
 std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
+    Clock* clock,
     ProcessThread* module_process_thread,
     AudioDeviceModule* audio_device_module,
     MediaTransportInterface* media_transport,
@@ -974,7 +977,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
     const webrtc::CryptoOptions& crypto_options) {
   return absl::make_unique<ChannelReceive>(
-      module_process_thread, audio_device_module, media_transport,
+      clock, module_process_thread, audio_device_module, media_transport,
       rtcp_send_transport, rtc_event_log, remote_ssrc,
       jitter_buffer_max_packets, jitter_buffer_fast_playout,
       jitter_buffer_min_delay_ms, jitter_buffer_enable_rtx_handling,

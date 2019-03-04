@@ -37,7 +37,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/audio_format_to_string.h"
 #include "rtc_base/task_queue.h"
-#include "rtc_base/time_utils.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
@@ -83,6 +82,7 @@ void UpdateEventLogStreamConfig(RtcEventLog* event_log,
 }  // namespace
 
 AudioSendStream::AudioSendStream(
+    Clock* clock,
     const webrtc::AudioSendStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
     rtc::TaskQueue* worker_queue,
@@ -92,7 +92,8 @@ AudioSendStream::AudioSendStream(
     RtcEventLog* event_log,
     RtcpRttStats* rtcp_rtt_stats,
     const absl::optional<RtpState>& suspended_rtp_state)
-    : AudioSendStream(config,
+    : AudioSendStream(clock,
+                      config,
                       audio_state,
                       worker_queue,
                       rtp_transport,
@@ -100,7 +101,8 @@ AudioSendStream::AudioSendStream(
                       event_log,
                       rtcp_rtt_stats,
                       suspended_rtp_state,
-                      voe::CreateChannelSend(worker_queue,
+                      voe::CreateChannelSend(clock,
+                                             worker_queue,
                                              module_process_thread,
                                              config.media_transport,
                                              /*overhead_observer=*/this,
@@ -113,6 +115,7 @@ AudioSendStream::AudioSendStream(
                                              config.rtcp_report_interval_ms)) {}
 
 AudioSendStream::AudioSendStream(
+    Clock* clock,
     const webrtc::AudioSendStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
     rtc::TaskQueue* worker_queue,
@@ -122,7 +125,8 @@ AudioSendStream::AudioSendStream(
     RtcpRttStats* rtcp_rtt_stats,
     const absl::optional<RtpState>& suspended_rtp_state,
     std::unique_ptr<voe::ChannelSendInterface> channel_send)
-    : worker_queue_(worker_queue),
+    : clock_(clock),
+      worker_queue_(worker_queue),
       config_(Config(/*send_transport=*/nullptr,
                      /*media_transport=*/nullptr)),
       audio_state_(audio_state),
@@ -455,7 +459,7 @@ void AudioSendStream::OnPacketAdded(uint32_t ssrc, uint16_t seq_num) {
     // TODO(eladalon): This function call could potentially reset the window,
     // setting both PLR and RPLR to unknown. Consider (during upcoming
     // refactoring) passing an indication of such an event.
-    packet_loss_tracker_.OnPacketAdded(seq_num, rtc::TimeMillis());
+    packet_loss_tracker_.OnPacketAdded(seq_num, clock_->TimeInMilliseconds());
   }
 }
 

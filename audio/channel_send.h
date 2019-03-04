@@ -115,6 +115,7 @@ class ChannelSendInterface {
 };
 
 std::unique_ptr<ChannelSendInterface> CreateChannelSend(
+    Clock* clock,
     rtc::TaskQueue* encoder_queue,
     ProcessThread* module_process_thread,
     MediaTransportInterface* media_transport,

@@ -115,8 +115,8 @@ struct ConfigHelper {
   std::unique_ptr<internal::AudioReceiveStream> CreateAudioReceiveStream() {
     return std::unique_ptr<internal::AudioReceiveStream>(
         new internal::AudioReceiveStream(
-            &rtp_stream_receiver_controller_, &packet_router_, stream_config_,
-            audio_state_, &event_log_,
+            Clock::GetRealTimeClock(), &rtp_stream_receiver_controller_,
+            &packet_router_, stream_config_, audio_state_, &event_log_,
             std::unique_ptr<voe::ChannelReceiveInterface>(channel_receive_)));
   }
 

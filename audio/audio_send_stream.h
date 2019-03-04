@@ -39,7 +39,8 @@ class AudioSendStream final : public webrtc::AudioSendStream,
                               public webrtc::PacketFeedbackObserver,
                               public webrtc::OverheadObserver {
  public:
-  AudioSendStream(const webrtc::AudioSendStream::Config& config,
+  AudioSendStream(Clock* clock,
+                  const webrtc::AudioSendStream::Config& config,
                   const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
                   rtc::TaskQueue* worker_queue,
                   ProcessThread* module_process_thread,
@@ -49,7 +50,8 @@ class AudioSendStream final : public webrtc::AudioSendStream,
                   RtcpRttStats* rtcp_rtt_stats,
                   const absl::optional<RtpState>& suspended_rtp_state);
   // For unit tests, which need to supply a mock ChannelSend.
-  AudioSendStream(const webrtc::AudioSendStream::Config& config,
+  AudioSendStream(Clock* clock,
+                  const webrtc::AudioSendStream::Config& config,
                   const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
                   rtc::TaskQueue* worker_queue,
                   RtpTransportControllerSendInterface* rtp_transport,
@@ -135,6 +137,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
       RTC_EXCLUSIVE_LOCKS_REQUIRED(overhead_per_packet_lock_);
 
   void RegisterCngPayloadType(int payload_type, int clockrate_hz);
+  Clock* clock_;
 
   rtc::ThreadChecker worker_thread_checker_;
   rtc::ThreadChecker pacer_thread_checker_;

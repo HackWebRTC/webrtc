@@ -136,6 +136,7 @@ class ChannelReceiveInterface : public RtpPacketSinkInterface {
 };
 
 std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
+    Clock* clock,
     ProcessThread* module_process_thread,
     AudioDeviceModule* audio_device_module,
     MediaTransportInterface* media_transport,

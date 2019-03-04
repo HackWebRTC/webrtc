@@ -106,6 +106,7 @@ TEST(AudioWithMediaTransport, DeliversAudio) {
       ProcessThread::Create("audio recv thread");
 
   webrtc::internal::AudioReceiveStream receive_stream(
+      Clock::GetRealTimeClock(),
       /*rtp_stream_receiver_controller=*/nullptr,
       /*packet_router=*/nullptr, receive_process_thread.get(), receive_config,
       audio_state, null_event_log.get());
@@ -120,7 +121,8 @@ TEST(AudioWithMediaTransport, DeliversAudio) {
   std::unique_ptr<ProcessThread> send_process_thread =
       ProcessThread::Create("audio send thread");
   webrtc::internal::AudioSendStream send_stream(
-      send_config, audio_state, &send_tq, send_process_thread.get(),
+      Clock::GetRealTimeClock(), send_config, audio_state, &send_tq,
+      send_process_thread.get(),
       /*transport=*/nullptr, &bitrate_allocator, null_event_log.get(),
       /*rtcp_rtt_stats=*/nullptr, absl::optional<RtpState>());
 

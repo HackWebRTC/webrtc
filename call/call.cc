@@ -670,10 +670,10 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
   // having it injected.
 
   AudioSendStream* send_stream = new AudioSendStream(
-      config, config_.audio_state, transport_send_ptr_->GetWorkerQueue(),
-      module_process_thread_.get(), transport_send_ptr_,
-      bitrate_allocator_.get(), event_log_, call_stats_.get(),
-      suspended_rtp_state);
+      clock_, config, config_.audio_state,
+      transport_send_ptr_->GetWorkerQueue(), module_process_thread_.get(),
+      transport_send_ptr_, bitrate_allocator_.get(), event_log_,
+      call_stats_.get(), suspended_rtp_state);
   {
     WriteLockScoped write_lock(*send_crit_);
     RTC_DCHECK(audio_send_ssrcs_.find(config.rtp.ssrc) ==
@@ -729,7 +729,7 @@ webrtc::AudioReceiveStream* Call::CreateAudioReceiveStream(
   event_log_->Log(absl::make_unique<RtcEventAudioReceiveStreamConfig>(
       CreateRtcLogStreamConfig(config)));
   AudioReceiveStream* receive_stream = new AudioReceiveStream(
-      &audio_receiver_controller_, transport_send_ptr_->packet_router(),
+      clock_, &audio_receiver_controller_, transport_send_ptr_->packet_router(),
       module_process_thread_.get(), config, config_.audio_state, event_log_);
   {
     WriteLockScoped write_lock(*receive_crit_);
