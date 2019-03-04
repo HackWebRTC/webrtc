@@ -87,7 +87,7 @@ class DataChannelObserver {
   //  A data buffer was successfully received.
   virtual void OnMessage(const DataBuffer& buffer) = 0;
   // The data channel's buffered_amount has changed.
-  virtual void OnBufferedAmountChange(uint64_t previous_amount) {}
+  virtual void OnBufferedAmountChange(uint64_t sent_data_size) {}
 
  protected:
   virtual ~DataChannelObserver() = default;

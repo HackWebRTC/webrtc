@@ -269,6 +269,9 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   uint64_t bytes_sent_;
   uint32_t messages_received_;
   uint64_t bytes_received_;
+  // Number of bytes of data that have been queued using Send(). Increased
+  // before each transport send and decreased after each successful send.
+  uint64_t buffered_amount_;
   cricket::DataChannelType data_channel_type_;
   DataChannelProviderInterface* provider_;
   HandshakeState handshake_state_;
