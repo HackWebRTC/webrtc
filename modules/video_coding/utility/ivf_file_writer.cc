@@ -144,7 +144,7 @@ bool IvfFileWriter::WriteFrame(const EncodedImage& encoded_image,
       (encoded_image._encodedHeight != height_ ||
        encoded_image._encodedWidth != width_)) {
     RTC_LOG(LS_WARNING)
-        << "Incomig frame has diffferent resolution then previous: (" << width_
+        << "Incoming frame has resolution different from previous: (" << width_
         << "x" << height_ << ") -> (" << encoded_image._encodedWidth << "x"
         << encoded_image._encodedHeight << ")";
   }
