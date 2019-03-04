@@ -70,6 +70,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
                             public VideoBitrateAllocationObserver {
  public:
   VideoSendStreamImpl(
+      Clock* clock,
       SendStatisticsProxy* stats_proxy,
       rtc::TaskQueue* worker_queue,
       CallStats* call_stats,
@@ -141,7 +142,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   void SignalEncoderActive();
   MediaStreamAllocationConfig GetAllocationConfig() const
       RTC_RUN_ON(worker_queue_);
-
+  Clock* const clock_;
   const bool has_alr_probing_;
   const PacingConfig pacing_config_;
 

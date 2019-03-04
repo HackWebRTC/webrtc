@@ -805,7 +805,7 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   // TODO(srte): VideoSendStream should call GetWorkerQueue directly rather than
   // having it injected.
   VideoSendStream* send_stream = new VideoSendStream(
-      num_cpu_cores_, module_process_thread_.get(),
+      clock_, num_cpu_cores_, module_process_thread_.get(),
       transport_send_ptr_->GetWorkerQueue(), task_queue_factory_,
       call_stats_.get(), transport_send_ptr_, bitrate_allocator_.get(),
       video_send_delay_stats_.get(), event_log_, std::move(config),

@@ -65,6 +65,7 @@ size_t CalculateMaxHeaderSize(const RtpConfig& config) {
 namespace internal {
 
 VideoSendStream::VideoSendStream(
+    Clock* clock,
     int num_cpu_cores,
     ProcessThread* module_process_thread,
     rtc::TaskQueue* worker_queue,
@@ -80,26 +81,24 @@ VideoSendStream::VideoSendStream(
     const std::map<uint32_t, RtpPayloadState>& suspended_payload_states,
     std::unique_ptr<FecController> fec_controller)
     : worker_queue_(worker_queue),
-      stats_proxy_(Clock::GetRealTimeClock(),
-                   config,
-                   encoder_config.content_type),
+      stats_proxy_(clock, config, encoder_config.content_type),
       config_(std::move(config)),
       content_type_(encoder_config.content_type) {
   RTC_DCHECK(config_.encoder_settings.encoder_factory);
   RTC_DCHECK(config_.encoder_settings.bitrate_allocator_factory);
 
   video_stream_encoder_ =
-      CreateVideoStreamEncoder(task_queue_factory, num_cpu_cores, &stats_proxy_,
-                               config_.encoder_settings);
+      CreateVideoStreamEncoder(clock, task_queue_factory, num_cpu_cores,
+                               &stats_proxy_, config_.encoder_settings);
   // TODO(srte): Initialization should not be done posted on a task queue.
   // Note that the posted task must not outlive this scope since the closure
   // references local variables.
   worker_queue_->PostTask(rtc::NewClosure(
-      [this, call_stats, transport, bitrate_allocator, send_delay_stats,
+      [this, clock, call_stats, transport, bitrate_allocator, send_delay_stats,
        event_log, &suspended_ssrcs, &encoder_config, &suspended_payload_states,
        &fec_controller]() {
         send_stream_.reset(new VideoSendStreamImpl(
-            &stats_proxy_, worker_queue_, call_stats, transport,
+            clock, &stats_proxy_, worker_queue_, call_stats, transport,
             bitrate_allocator, send_delay_stats, video_stream_encoder_.get(),
             event_log, &config_, encoder_config.max_bitrate_bps,
             encoder_config.bitrate_priority, suspended_ssrcs,

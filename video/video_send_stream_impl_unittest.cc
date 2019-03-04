@@ -118,11 +118,11 @@ class VideoSendStreamImplTest : public ::testing::Test {
     std::map<uint32_t, RtpState> suspended_ssrcs;
     std::map<uint32_t, RtpPayloadState> suspended_payload_states;
     return absl::make_unique<VideoSendStreamImpl>(
-        &stats_proxy_, &test_queue_, &call_stats_, &transport_controller_,
-        &bitrate_allocator_, &send_delay_stats_, &video_stream_encoder_,
-        &event_log_, &config_, initial_encoder_max_bitrate,
-        initial_encoder_bitrate_priority, suspended_ssrcs,
-        suspended_payload_states, content_type,
+        &clock_, &stats_proxy_, &test_queue_, &call_stats_,
+        &transport_controller_, &bitrate_allocator_, &send_delay_stats_,
+        &video_stream_encoder_, &event_log_, &config_,
+        initial_encoder_max_bitrate, initial_encoder_bitrate_priority,
+        suspended_ssrcs, suspended_payload_states, content_type,
         absl::make_unique<FecControllerDefault>(&clock_),
         /*media_transport=*/nullptr);
   }
@@ -524,9 +524,6 @@ TEST_F(VideoSendStreamImplTest, ForwardsVideoBitrateAllocationOnLayerChange) {
 
 TEST_F(VideoSendStreamImplTest, ForwardsVideoBitrateAllocationAfterTimeout) {
   test_queue_.SendTask([this] {
-    rtc::ScopedFakeClock fake_clock;
-    fake_clock.SetTimeMicros(clock_.TimeInMicroseconds());
-
     auto vss_impl = CreateVideoSendStreamImpl(
         kDefaultInitialBitrateBps, kDefaultBitratePriority,
         VideoEncoderConfig::ContentType::kScreen);
@@ -571,7 +568,7 @@ TEST_F(VideoSendStreamImplTest, ForwardsVideoBitrateAllocationAfterTimeout) {
       observer->OnBitrateAllocationUpdated(alloc);
     }
 
-    fake_clock.AdvanceTimeMicros(kMaxVbaThrottleTimeMs * 1000);
+    clock_.AdvanceTimeMicroseconds(kMaxVbaThrottleTimeMs * 1000);
 
     {
       // Sending similar allocation again after timeout, should forward.
@@ -598,7 +595,7 @@ TEST_F(VideoSendStreamImplTest, ForwardsVideoBitrateAllocationAfterTimeout) {
     {
       // Advance time and send encoded image, this should wake up and send
       // cached bitrate allocation.
-      fake_clock.AdvanceTimeMicros(kMaxVbaThrottleTimeMs * 1000);
+      clock_.AdvanceTimeMicroseconds(kMaxVbaThrottleTimeMs * 1000);
       EXPECT_CALL(rtp_video_sender_, OnBitrateAllocationUpdated(alloc))
           .Times(1);
       static_cast<EncodedImageCallback*>(vss_impl.get())
@@ -608,7 +605,7 @@ TEST_F(VideoSendStreamImplTest, ForwardsVideoBitrateAllocationAfterTimeout) {
     {
       // Advance time and send encoded image, there should be no cached
       // allocation to send.
-      fake_clock.AdvanceTimeMicros(kMaxVbaThrottleTimeMs * 1000);
+      clock_.AdvanceTimeMicroseconds(kMaxVbaThrottleTimeMs * 1000);
       EXPECT_CALL(rtp_video_sender_, OnBitrateAllocationUpdated(alloc))
           .Times(0);
       static_cast<EncodedImageCallback*>(vss_impl.get())

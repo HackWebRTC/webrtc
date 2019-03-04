@@ -31,7 +31,6 @@
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/thread_checker.h"
-#include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"
@@ -195,6 +194,7 @@ PacingConfig::PacingConfig(const PacingConfig&) = default;
 PacingConfig::~PacingConfig() = default;
 
 VideoSendStreamImpl::VideoSendStreamImpl(
+    Clock* clock,
     SendStatisticsProxy* stats_proxy,
     rtc::TaskQueue* worker_queue,
     CallStats* call_stats,
@@ -211,7 +211,8 @@ VideoSendStreamImpl::VideoSendStreamImpl(
     VideoEncoderConfig::ContentType content_type,
     std::unique_ptr<FecController> fec_controller,
     MediaTransportInterface* media_transport)
-    : has_alr_probing_(config->periodic_alr_bandwidth_probing ||
+    : clock_(clock),
+      has_alr_probing_(config->periodic_alr_bandwidth_probing ||
                        GetAlrSettings(content_type)),
       pacing_config_(PacingConfig()),
       stats_proxy_(stats_proxy),
@@ -227,9 +228,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       encoder_bitrate_priority_(initial_encoder_bitrate_priority),
       has_packet_feedback_(false),
       video_stream_encoder_(video_stream_encoder),
-      encoder_feedback_(Clock::GetRealTimeClock(),
-                        config_->rtp.ssrcs,
-                        video_stream_encoder),
+      encoder_feedback_(clock, config_->rtp.ssrcs, video_stream_encoder),
       bandwidth_observer_(transport->GetBandwidthObserver()),
       rtp_video_sender_(transport_->CreateRtpVideoSender(
           suspended_ssrcs,
@@ -454,7 +453,7 @@ void VideoSendStreamImpl::OnBitrateAllocationUpdated(
 
   RTC_DCHECK_RUN_ON(worker_queue_);
 
-  int64_t now_ms = rtc::TimeMillis();
+  int64_t now_ms = clock_->TimeInMilliseconds();
   if (encoder_target_rate_bps_ != 0) {
     if (video_bitrate_allocation_context_) {
       // If new allocation is within kMaxVbaSizeDifferencePercent larger than

@@ -100,7 +100,8 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
  public:
   VideoStreamEncoderUnderTest(SendStatisticsProxy* stats_proxy,
                               const VideoStreamEncoderSettings& settings)
-      : VideoStreamEncoder(1 /* number_of_cores */,
+      : VideoStreamEncoder(Clock::GetRealTimeClock(),
+                           1 /* number_of_cores */,
                            stats_proxy,
                            settings,
                            std::unique_ptr<OveruseFrameDetector>(

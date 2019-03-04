@@ -20,17 +20,19 @@ std::unique_ptr<VideoStreamEncoderInterface> CreateVideoStreamEncoder(
     uint32_t number_of_cores,
     VideoStreamEncoderObserver* encoder_stats_observer,
     const VideoStreamEncoderSettings& settings) {
-  return CreateVideoStreamEncoder(&GlobalTaskQueueFactory(), number_of_cores,
+  return CreateVideoStreamEncoder(Clock::GetRealTimeClock(),
+                                  &GlobalTaskQueueFactory(), number_of_cores,
                                   encoder_stats_observer, settings);
 }
 
 std::unique_ptr<VideoStreamEncoderInterface> CreateVideoStreamEncoder(
+    Clock* clock,
     TaskQueueFactory* task_queue_factory,
     uint32_t number_of_cores,
     VideoStreamEncoderObserver* encoder_stats_observer,
     const VideoStreamEncoderSettings& settings) {
   return absl::make_unique<VideoStreamEncoder>(
-      number_of_cores, encoder_stats_observer, settings,
+      clock, number_of_cores, encoder_stats_observer, settings,
       absl::make_unique<OveruseFrameDetector>(encoder_stats_observer),
       task_queue_factory);
 }

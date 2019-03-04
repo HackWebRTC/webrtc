@@ -58,6 +58,7 @@ static const size_t kPathMTU = 1500;
 using webrtc_internal_rtp_video_sender::RtpStreamSender;
 
 std::vector<RtpStreamSender> CreateRtpStreamSenders(
+    Clock* clock,
     const RtpConfig& rtp_config,
     int rtcp_report_interval_ms,
     Transport* send_transport,
@@ -79,6 +80,7 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
   RTC_DCHECK_GT(rtp_config.ssrcs.size(), 0);
 
   RtpRtcp::Configuration configuration;
+  configuration.clock = clock;
   configuration.audio = false;
   configuration.clock = Clock::GetRealTimeClock();
   configuration.receiver_only = false;
@@ -147,6 +149,7 @@ bool PayloadTypeSupportsSkippingFecPackets(const std::string& payload_name) {
 
 // TODO(brandtr): Update this function when we support multistream protection.
 std::unique_ptr<FlexfecSender> MaybeCreateFlexfecSender(
+    Clock* clock,
     const RtpConfig& rtp,
     const std::map<uint32_t, RtpState>& suspended_ssrcs) {
   if (rtp.flexfec.payload_type < 0) {
@@ -185,7 +188,7 @@ std::unique_ptr<FlexfecSender> MaybeCreateFlexfecSender(
   return absl::make_unique<FlexfecSender>(
       rtp.flexfec.payload_type, rtp.flexfec.ssrc,
       rtp.flexfec.protected_media_ssrcs[0], rtp.mid, rtp.extensions,
-      RTPSender::FecExtensionSizes(), rtp_state, Clock::GetRealTimeClock());
+      RTPSender::FecExtensionSizes(), rtp_state, clock);
 }
 
 uint32_t CalculateOverheadRateBps(int packets_per_second,
@@ -205,6 +208,7 @@ int CalculatePacketRate(uint32_t bitrate_bps, size_t packet_size_bytes) {
 }  // namespace
 
 RtpVideoSender::RtpVideoSender(
+    Clock* clock,
     std::map<uint32_t, RtpState> suspended_ssrcs,
     const std::map<uint32_t, RtpPayloadState>& states,
     const RtpConfig& rtp_config,
@@ -224,9 +228,11 @@ RtpVideoSender::RtpVideoSender(
       active_(false),
       module_process_thread_(nullptr),
       suspended_ssrcs_(std::move(suspended_ssrcs)),
-      flexfec_sender_(MaybeCreateFlexfecSender(rtp_config, suspended_ssrcs_)),
+      flexfec_sender_(
+          MaybeCreateFlexfecSender(clock, rtp_config, suspended_ssrcs_)),
       fec_controller_(std::move(fec_controller)),
-      rtp_streams_(CreateRtpStreamSenders(rtp_config,
+      rtp_streams_(CreateRtpStreamSenders(clock,
+                                          rtp_config,
                                           rtcp_report_interval_ms,
                                           send_transport,
                                           observers.intra_frame_callback,

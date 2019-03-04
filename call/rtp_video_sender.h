@@ -70,6 +70,7 @@ class RtpVideoSender : public RtpVideoSenderInterface,
  public:
   // Rtp modules are assumed to be sorted in simulcast index order.
   RtpVideoSender(
+      Clock* clock,
       std::map<uint32_t, RtpState> suspended_ssrcs,
       const std::map<uint32_t, RtpPayloadState>& states,
       const RtpConfig& rtp_config,

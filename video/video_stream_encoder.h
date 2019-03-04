@@ -53,7 +53,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
                            // Protected only to provide access to tests.
                            protected AdaptationObserverInterface {
  public:
-  VideoStreamEncoder(uint32_t number_of_cores,
+  VideoStreamEncoder(Clock* clock,
+                     uint32_t number_of_cores,
                      VideoStreamEncoderObserver* encoder_stats_observer,
                      const VideoStreamEncoderSettings& settings,
                      std::unique_ptr<OveruseFrameDetector> overuse_detector,
