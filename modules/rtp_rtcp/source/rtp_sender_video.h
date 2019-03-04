@@ -53,6 +53,7 @@ class RTPSenderVideo {
   RTPSenderVideo(Clock* clock,
                  RTPSender* rtpSender,
                  FlexfecSender* flexfec_sender,
+                 PlayoutDelayOracle* playout_delay_oracle,
                  FrameEncryptorInterface* frame_encryptor,
                  bool require_frame_encryption,
                  const WebRtcKeyValueConfig& field_trials);
@@ -70,10 +71,15 @@ class RTPSenderVideo {
 
   void RegisterPayloadType(int8_t payload_type, absl::string_view payload_name);
 
-  // ULPFEC.
+  // Set RED and ULPFEC payload types. A payload type of -1 means that the
+  // corresponding feature is turned off. Note that we DO NOT support enabling
+  // ULPFEC without enabling RED, and RED is only ever used when ULPFEC is
+  // enabled.
   void SetUlpfecConfig(int red_payload_type, int ulpfec_payload_type);
 
   // FlexFEC/ULPFEC.
+  // Set FEC rates, max frames before FEC is sent, and type of FEC masks.
+  // Returns false on failure.
   void SetFecParameters(const FecProtectionParams& delta_params,
                         const FecProtectionParams& key_params);
 
@@ -82,11 +88,11 @@ class RTPSenderVideo {
 
   uint32_t VideoBitrateSent() const;
   uint32_t FecOverheadRate() const;
-  uint32_t PacketizationOverheadBps() const;
 
-  void OnReceivedAck(int64_t extended_highest_sequence_number) {
-    playout_delay_oracle_.OnReceivedAck(extended_highest_sequence_number);
-  }
+  // Returns the current packetization overhead rate, in bps. Note that this is
+  // the payload overhead, eg the VP8 payload headers, not the RTP headers
+  // or extension/
+  uint32_t PacketizationOverheadBps() const;
 
  protected:
   static uint8_t GetTemporalId(const RTPVideoHeader& header);
@@ -159,7 +165,7 @@ class RTPSenderVideo {
   // Tracks the current request for playout delay limits from application
   // and decides whether the current RTP frame should include the playout
   // delay extension on header.
-  PlayoutDelayOracle playout_delay_oracle_;
+  PlayoutDelayOracle* const playout_delay_oracle_;
 
   // RED/ULPFEC.
   int red_payload_type_ RTC_GUARDED_BY(crit_);

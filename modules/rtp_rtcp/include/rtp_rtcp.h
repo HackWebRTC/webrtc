@@ -24,6 +24,7 @@
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/deprecation.h"
 
@@ -93,6 +94,8 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
     SendPacketObserver* send_packet_observer = nullptr;
     RateLimiter* retransmission_rate_limiter = nullptr;
     OverheadObserver* overhead_observer = nullptr;
+    RtcpAckObserver* ack_observer = nullptr;
+
     RtpKeepAliveConfig keepalive_config;
 
     int rtcp_report_interval_ms = 0;
@@ -145,8 +148,8 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
                                         int frequency,
                                         int channels,
                                         int rate) = 0;
-  virtual void RegisterVideoSendPayload(int payload_type,
-                                        const char* payload_name) = 0;
+  virtual void RegisterSendPayloadFrequency(int payload_type,
+                                            int payload_frequency) = 0;
 
   // Unregisters a send payload.
   // |payload_type| - payload type of codec
@@ -248,10 +251,8 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
                            uint32_t* fec_rate,
                            uint32_t* nack_rate) const = 0;
 
-  // Returns the current packetization overhead rate, in bps. Note that this is
-  // the payload overhead, eg the VP8 payload headers, not the RTP headers
-  // or extension/
-  virtual uint32_t PacketizationOverheadBps() const = 0;
+  virtual RTPSender* RtpSender() = 0;
+  virtual const RTPSender* RtpSender() const = 0;
 
   // Used by the codec module to deliver a video or audio frame for
   // packetization.
@@ -273,6 +274,13 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
                                 const RTPFragmentationHeader* fragmentation,
                                 const RTPVideoHeader* rtp_video_header,
                                 uint32_t* transport_frame_id_out) = 0;
+
+  // Record that a frame is about to be sent. Returns true on success, and false
+  // if the module isn't ready to send.
+  virtual bool OnSendingRtpFrame(uint32_t timestamp,
+                                 int64_t capture_time_ms,
+                                 int payload_type,
+                                 bool force_sender_report) = 0;
 
   virtual bool TimeToSendPacket(uint32_t ssrc,
                                 uint16_t sequence_number,
@@ -330,6 +338,9 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
                       int64_t* avg_rtt,
                       int64_t* min_rtt,
                       int64_t* max_rtt) const = 0;
+
+  // Returns the estimated RTT, with fallback to a default value.
+  virtual int64_t ExpectedRetransmissionTimeMs() const = 0;
 
   // Forces a send of a RTCP packet. Periodic SR and RR are triggered via the
   // process function.
@@ -437,23 +448,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   // **************************************************************************
   // Video
   // **************************************************************************
-
-  // Set RED and ULPFEC payload types. A payload type of -1 means that the
-  // corresponding feature is turned off. Note that we DO NOT support enabling
-  // ULPFEC without enabling RED, and RED is only ever used when ULPFEC is
-  // enabled.
-  virtual void SetUlpfecConfig(int red_payload_type,
-                               int ulpfec_payload_type) = 0;
-
-  // Set FEC rates, max frames before FEC is sent, and type of FEC masks.
-  // Returns false on failure.
-  virtual bool SetFecParameters(const FecProtectionParams& delta_params,
-                                const FecProtectionParams& key_params) = 0;
-
-  // Deprecated version of member function above.
-  RTC_DEPRECATED
-  int32_t SetFecParameters(const FecProtectionParams* delta_params,
-                           const FecProtectionParams* key_params);
 
   // Set method for requestion a new key frame.
   // Returns -1 on failure else 0.

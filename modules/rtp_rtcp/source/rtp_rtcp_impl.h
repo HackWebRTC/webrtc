@@ -70,8 +70,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
                                 int frequency,
                                 int channels,
                                 int rate) override;
-  void RegisterVideoSendPayload(int payload_type,
-                                const char* payload_name) override;
+  void RegisterSendPayloadFrequency(int payload_type,
+                                    int payload_frequency) override;
 
   int32_t DeRegisterSendPayload(int8_t payload_type) override;
 
@@ -149,6 +149,11 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
                         const RTPVideoHeader* rtp_video_header,
                         uint32_t* transport_frame_id_out) override;
 
+  bool OnSendingRtpFrame(uint32_t timestamp,
+                         int64_t capture_time_ms,
+                         int payload_type,
+                         bool force_sender_report) override;
+
   bool TimeToSendPacket(uint32_t ssrc,
                         uint16_t sequence_number,
                         int64_t capture_time_ms,
@@ -192,6 +197,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
               int64_t* avg_rtt,
               int64_t* min_rtt,
               int64_t* max_rtt) const override;
+
+  int64_t ExpectedRetransmissionTimeMs() const override;
 
   // Force a send of an RTCP packet.
   // Normal SR and RR are triggered via the process function.
@@ -286,11 +293,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
                                uint16_t last_received_seq_num,
                                bool decodability_flag) override;
 
-  void SetUlpfecConfig(int red_payload_type, int ulpfec_payload_type) override;
-
-  bool SetFecParameters(const FecProtectionParams& delta_params,
-                        const FecProtectionParams& key_params) override;
-
   bool LastReceivedNTP(uint32_t* NTPsecs,
                        uint32_t* NTPfrac,
                        uint32_t* remote_sr) const;
@@ -301,7 +303,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
                    uint32_t* video_rate,
                    uint32_t* fec_rate,
                    uint32_t* nackRate) const override;
-  uint32_t PacketizationOverheadBps() const override;
 
   void RegisterSendChannelRtpStatisticsCallback(
       StreamDataCountersCallback* callback) override;
@@ -316,6 +317,9 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   void SetVideoBitrateAllocation(
       const VideoBitrateAllocation& bitrate) override;
+
+  RTPSender* RtpSender() override;
+  const RTPSender* RtpSender() const override;
 
  protected:
   bool UpdateRTCPReceiveInformationTimers();
@@ -343,7 +347,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   std::unique_ptr<RTPSender> rtp_sender_;
   std::unique_ptr<RTPSenderAudio> audio_;
-  std::unique_ptr<RTPSenderVideo> video_;
   RTCPSender rtcp_sender_;
   RTCPReceiver rtcp_receiver_;
 
@@ -362,7 +365,9 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   KeyFrameRequestMethod key_frame_req_method_;
 
-  RemoteBitrateEstimator* remote_bitrate_;
+  RemoteBitrateEstimator* const remote_bitrate_;
+
+  RtcpAckObserver* const ack_observer_;
 
   RtcpRttStats* const rtt_stats_;
 

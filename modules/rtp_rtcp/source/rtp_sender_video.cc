@@ -186,6 +186,7 @@ const char* FrameTypeToString(FrameType frame_type) {
 RTPSenderVideo::RTPSenderVideo(Clock* clock,
                                RTPSender* rtp_sender,
                                FlexfecSender* flexfec_sender,
+                               PlayoutDelayOracle* playout_delay_oracle,
                                FrameEncryptorInterface* frame_encryptor,
                                bool require_frame_encryption,
                                const WebRtcKeyValueConfig& field_trials)
@@ -195,6 +196,7 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock,
                                kConditionallyRetransmitHigherLayers),
       last_rotation_(kVideoRotation_0),
       transmit_color_space_next_frame_(false),
+      playout_delay_oracle_(playout_delay_oracle),
       red_payload_type_(-1),
       ulpfec_payload_type_(-1),
       flexfec_sender_(flexfec_sender),
@@ -207,7 +209,9 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock,
       require_frame_encryption_(require_frame_encryption),
       generic_descriptor_auth_experiment_(
           field_trials.Lookup("WebRTC-GenericDescriptorAuth").find("Enabled") ==
-          0) {}
+          0) {
+  RTC_DCHECK(playout_delay_oracle_);
+}
 
 RTPSenderVideo::~RTPSenderVideo() {}
 
@@ -448,7 +452,7 @@ bool RTPSenderVideo::SendVideo(FrameType frame_type,
         video_header->frame_marking.temporal_id != kNoTemporalIdx;
 
   const absl::optional<PlayoutDelay> playout_delay =
-      playout_delay_oracle_.PlayoutDelayToSend(video_header->playout_delay);
+      playout_delay_oracle_->PlayoutDelayToSend(video_header->playout_delay);
   {
     rtc::CritScope cs(&crit_);
     // According to
@@ -667,8 +671,8 @@ bool RTPSenderVideo::SendVideo(FrameType frame_type,
     packetized_payload_size += packet->payload_size();
 
     if (i == 0) {
-      playout_delay_oracle_.OnSentPacket(packet->SequenceNumber(),
-                                         playout_delay);
+      playout_delay_oracle_->OnSentPacket(packet->SequenceNumber(),
+                                          playout_delay);
     }
     // No FEC protection for upper temporal layers, if used.
     bool protect_packet = temporal_id == 0 || temporal_id == kNoTemporalIdx;

@@ -43,8 +43,8 @@ class MockRtpRtcp : public RtpRtcp {
                     int frequency,
                     int channels,
                     int rate));
-  MOCK_METHOD2(RegisterVideoSendPayload,
-               void(int payload_type, const char* payload_name));
+  MOCK_METHOD2(RegisterSendPayloadFrequency,
+               void(int payload_type, int frequency));
   MOCK_METHOD1(DeRegisterSendPayload, int32_t(int8_t payload_type));
   MOCK_METHOD1(SetExtmapAllowMixed, void(bool extmap_allow_mixed));
   MOCK_METHOD2(RegisterSendRtpHeaderExtension,
@@ -85,7 +85,6 @@ class MockRtpRtcp : public RtpRtcp {
                           uint32_t* video_rate,
                           uint32_t* fec_rate,
                           uint32_t* nack_rate));
-  MOCK_CONST_METHOD0(PacketizationOverheadBps, uint32_t());
   MOCK_CONST_METHOD1(EstimatedReceiveBandwidth,
                      int(uint32_t* available_bandwidth));
   MOCK_METHOD9(SendOutgoingData,
@@ -98,6 +97,7 @@ class MockRtpRtcp : public RtpRtcp {
                     const RTPFragmentationHeader* fragmentation,
                     const RTPVideoHeader* rtp_video_header,
                     uint32_t* frame_id_out));
+  MOCK_METHOD4(OnSendingRtpFrame, bool(uint32_t, int64_t, int, bool));
   MOCK_METHOD5(TimeToSendPacket,
                bool(uint32_t ssrc,
                     uint16_t sequence_number,
@@ -130,6 +130,7 @@ class MockRtpRtcp : public RtpRtcp {
                              int64_t* avg_rtt,
                              int64_t* min_rtt,
                              int64_t* max_rtt));
+  MOCK_CONST_METHOD0(ExpectedRetransmissionTimeMs, int64_t());
   MOCK_METHOD1(SendRTCP, int32_t(RTCPPacketType packet_type));
   MOCK_METHOD1(SendCompoundRTCP,
                int32_t(const std::set<RTCPPacketType>& packet_types));
@@ -165,11 +166,6 @@ class MockRtpRtcp : public RtpRtcp {
                int32_t(uint8_t key, uint16_t time_ms, uint8_t level));
   MOCK_METHOD1(SetAudioLevel, int32_t(uint8_t level_dbov));
   MOCK_METHOD1(SetTargetSendBitrate, void(uint32_t bitrate_bps));
-  MOCK_METHOD2(SetUlpfecConfig,
-               void(int red_payload_type, int fec_payload_type));
-  MOCK_METHOD2(SetFecParameters,
-               bool(const FecProtectionParams& delta_params,
-                    const FecProtectionParams& key_params));
   MOCK_METHOD1(SetKeyFrameRequestMethod, int32_t(KeyFrameRequestMethod method));
   MOCK_METHOD0(RequestKeyFrame, int32_t());
   MOCK_METHOD3(SendLossNotification,
@@ -182,6 +178,9 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_CONST_METHOD0(GetSendChannelRtpStatisticsCallback,
                      StreamDataCountersCallback*(void));
   MOCK_METHOD1(SetVideoBitrateAllocation, void(const VideoBitrateAllocation&));
+  MOCK_METHOD0(RtpSender, RTPSender*());
+  MOCK_CONST_METHOD0(RtpSender, const RTPSender*());
+
   // Members.
   unsigned int remote_ssrc_;
 

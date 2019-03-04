@@ -14,14 +14,18 @@
 #include <memory>
 #include <set>
 
+#include "absl/memory/memory.h"
 #include "api/call/transport.h"
+#include "api/transport/field_trial_based_config.h"
 #include "call/rtp_stream_receiver_controller.h"
 #include "call/rtx_receive_stream.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/playout_delay_oracle.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "rtc_base/rate_limiter.h"
 #include "test/gtest.h"
 
@@ -132,8 +136,10 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     configuration.receive_statistics = receive_statistics_.get();
     configuration.outgoing_transport = &transport_;
     configuration.retransmission_rate_limiter = &retransmission_rate_limiter_;
-    rtp_rtcp_module_ = RtpRtcp::CreateRtpRtcp(configuration);
-
+    rtp_rtcp_module_ = absl::WrapUnique(RtpRtcp::CreateRtpRtcp(configuration));
+    rtp_sender_video_ = absl::make_unique<RTPSenderVideo>(
+        &fake_clock, rtp_rtcp_module_->RtpSender(), nullptr,
+        &playout_delay_oracle_, nullptr, false, FieldTrialBasedConfig());
     rtp_rtcp_module_->SetSSRC(kTestSsrc);
     rtp_rtcp_module_->SetRTCPStatus(RtcpMode::kCompound);
     rtp_rtcp_module_->SetStorePacketsStatus(true, 600);
@@ -146,9 +152,9 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     // single rtp_rtcp module for both send and receive side.
     rtp_rtcp_module_->SetRemoteSSRC(kTestSsrc);
 
-    rtp_rtcp_module_->RegisterVideoSendPayload(kPayloadType, "video");
+    rtp_sender_video_->RegisterPayloadType(kPayloadType, "video");
     rtp_rtcp_module_->SetRtxSendPayloadType(kRtxPayloadType, kPayloadType);
-    transport_.SetSendModule(rtp_rtcp_module_);
+    transport_.SetSendModule(rtp_rtcp_module_.get());
     media_receiver_ = transport_.stream_receiver_controller_.CreateReceiver(
         kTestSsrc, &media_stream_);
 
@@ -203,9 +209,11 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     uint16_t nack_list[kVideoNackListSize];
     for (int frame = 0; frame < kNumFrames; ++frame) {
       RTPVideoHeader video_header;
-      EXPECT_TRUE(rtp_rtcp_module_->SendOutgoingData(
+      EXPECT_TRUE(rtp_rtcp_module_->OnSendingRtpFrame(timestamp, timestamp / 90,
+                                                      kPayloadType, false));
+      EXPECT_TRUE(rtp_sender_video_->SendVideo(
           webrtc::kVideoFrameDelta, kPayloadType, timestamp, timestamp / 90,
-          payload_data, payload_data_length, nullptr, &video_header, nullptr));
+          payload_data, payload_data_length, nullptr, &video_header, 0));
       // Min required delay until retransmit = 5 + RTT ms (RTT = 0).
       fake_clock.AdvanceTimeMilliseconds(5);
       int length = BuildNackList(nack_list);
@@ -219,10 +227,10 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     media_stream_.sequence_numbers_.sort();
   }
 
-  void TearDown() override { delete rtp_rtcp_module_; }
-
   std::unique_ptr<ReceiveStatistics> receive_statistics_;
-  RtpRtcp* rtp_rtcp_module_;
+  std::unique_ptr<RtpRtcp> rtp_rtcp_module_;
+  PlayoutDelayOracle playout_delay_oracle_;
+  std::unique_ptr<RTPSenderVideo> rtp_sender_video_;
   RtxLoopBackTransport transport_;
   const std::map<int, int> rtx_associated_payload_types_ = {
       {kRtxPayloadType, kPayloadType}};
@@ -252,9 +260,11 @@ TEST_F(RtpRtcpRtxNackTest, LongNackList) {
   // enough packets.
   for (int frame = 0; frame < kNumFrames; ++frame) {
     RTPVideoHeader video_header;
-    EXPECT_TRUE(rtp_rtcp_module_->SendOutgoingData(
+    EXPECT_TRUE(rtp_rtcp_module_->OnSendingRtpFrame(timestamp, timestamp / 90,
+                                                    kPayloadType, false));
+    EXPECT_TRUE(rtp_sender_video_->SendVideo(
         webrtc::kVideoFrameDelta, kPayloadType, timestamp, timestamp / 90,
-        payload_data, payload_data_length, nullptr, &video_header, nullptr));
+        payload_data, payload_data_length, nullptr, &video_header, 0));
     // Prepare next frame.
     timestamp += 3000;
     fake_clock.AdvanceTimeMilliseconds(33);

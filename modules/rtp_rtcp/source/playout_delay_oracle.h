@@ -16,6 +16,7 @@
 #include "absl/types/optional.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types_public.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/thread_annotations.h"
@@ -33,10 +34,10 @@ namespace webrtc {
 // The application specifies a minimum and maximum limit for the playout delay
 // which are both communicated to the receiver and the receiver can adapt
 // the playout delay within this range based on observed network jitter.
-class PlayoutDelayOracle {
+class PlayoutDelayOracle : public RtcpAckObserver {
  public:
   PlayoutDelayOracle();
-  ~PlayoutDelayOracle();
+  ~PlayoutDelayOracle() override;
 
   // The playout delay to be added to a packet. The input delays are provided by
   // the application, with -1 meaning unchanged/unspecified. The output delay
@@ -49,7 +50,7 @@ class PlayoutDelayOracle {
   void OnSentPacket(uint16_t sequence_number,
                     absl::optional<PlayoutDelay> playout_delay);
 
-  void OnReceivedAck(int64_t extended_highest_sequence_number);
+  void OnReceivedAck(int64_t extended_highest_sequence_number) override;
 
  private:
   // The playout delay information is updated from the encoder thread(s).

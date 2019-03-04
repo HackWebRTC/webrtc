@@ -53,14 +53,6 @@ RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
   }
 }
 
-// Deprecated.
-int32_t RtpRtcp::SetFecParameters(const FecProtectionParams* delta_params,
-                                  const FecProtectionParams* key_params) {
-  RTC_DCHECK(delta_params);
-  RTC_DCHECK(key_params);
-  return SetFecParameters(*delta_params, *key_params) ? 0 : -1;
-}
-
 ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
     : rtcp_sender_(configuration.audio,
                    configuration.clock,
@@ -96,6 +88,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       nack_last_seq_number_sent_(0),
       key_frame_req_method_(kKeyFrameReqPliRtcp),
       remote_bitrate_(configuration.remote_bitrate_estimator),
+      ack_observer_(configuration.ack_observer),
       rtt_stats_(configuration.rtt_stats),
       rtt_ms_(0) {
   FieldTrialBasedConfig default_trials;
@@ -120,12 +113,6 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
                                    : default_trials));
     if (configuration.audio) {
       audio_ = absl::make_unique<RTPSenderAudio>(clock_, rtp_sender_.get());
-    } else {
-      video_ = absl::make_unique<RTPSenderVideo>(
-          clock_, rtp_sender_.get(), configuration.flexfec_sender,
-          configuration.frame_encryptor, configuration.require_frame_encryption,
-          configuration.field_trials ? *configuration.field_trials
-                                     : default_trials);
     }
     // Make sure rtcp sender use same timestamp offset as rtp sender.
     rtcp_sender_.SetTimestampOffset(rtp_sender_->TimestampOffset());
@@ -289,11 +276,9 @@ void ModuleRtpRtcpImpl::RegisterAudioSendPayload(int payload_type,
                                                frequency, channels, rate));
 }
 
-void ModuleRtpRtcpImpl::RegisterVideoSendPayload(int payload_type,
-                                                 const char* payload_name) {
-  RTC_DCHECK(video_);
-  rtcp_sender_.SetRtpClockRate(payload_type, kVideoPayloadTypeFrequency);
-  video_->RegisterPayloadType(payload_type, payload_name);
+void ModuleRtpRtcpImpl::RegisterSendPayloadFrequency(int payload_type,
+                                                     int payload_frequency) {
+  rtcp_sender_.SetRtpClockRate(payload_type, payload_frequency);
 }
 
 int32_t ModuleRtpRtcpImpl::DeRegisterSendPayload(const int8_t payload_type) {
@@ -445,37 +430,33 @@ bool ModuleRtpRtcpImpl::SendOutgoingData(
     const RTPFragmentationHeader* fragmentation,
     const RTPVideoHeader* rtp_video_header,
     uint32_t* transport_frame_id_out) {
-  rtcp_sender_.SetLastRtpTime(time_stamp, capture_time_ms, payload_type);
-  // Make sure an RTCP report isn't queued behind a key frame.
-  if (rtcp_sender_.TimeToSendRTCPReport(kVideoFrameKey == frame_type)) {
-    rtcp_sender_.SendRTCP(GetFeedbackState(), kRtcpReport);
-  }
-  int64_t expected_retransmission_time_ms = rtt_ms();
-  if (expected_retransmission_time_ms == 0) {
-    // No rtt available (|kRtpRtcpRttProcessTimeMs| not yet passed?), so try to
-    // poll avg_rtt_ms directly from rtcp receiver.
-    if (rtcp_receiver_.RTT(rtcp_receiver_.RemoteSSRC(), nullptr,
-                           &expected_retransmission_time_ms, nullptr,
-                           nullptr) == -1) {
-      expected_retransmission_time_ms = kDefaultExpectedRetransmissionTimeMs;
-    }
-  }
+  OnSendingRtpFrame(time_stamp, capture_time_ms, payload_type,
+                    kVideoFrameKey == frame_type);
 
   const uint32_t rtp_timestamp = time_stamp + rtp_sender_->TimestampOffset();
   if (transport_frame_id_out)
     *transport_frame_id_out = rtp_timestamp;
 
-  if (audio_) {
-    RTC_DCHECK(fragmentation == nullptr);
+  RTC_DCHECK(audio_);
+  RTC_DCHECK(fragmentation == nullptr);
 
-    return audio_->SendAudio(frame_type, payload_type, rtp_timestamp,
-                             payload_data, payload_size);
-  } else {
-    return video_->SendVideo(frame_type, payload_type, rtp_timestamp,
-                             capture_time_ms, payload_data, payload_size,
-                             fragmentation, rtp_video_header,
-                             expected_retransmission_time_ms);
-  }
+  return audio_->SendAudio(frame_type, payload_type, rtp_timestamp,
+                           payload_data, payload_size);
+}
+
+bool ModuleRtpRtcpImpl::OnSendingRtpFrame(uint32_t timestamp,
+                                          int64_t capture_time_ms,
+                                          int payload_type,
+                                          bool force_sender_report) {
+  if (!Sending())
+    return false;
+
+  rtcp_sender_.SetLastRtpTime(timestamp, capture_time_ms, payload_type);
+  // Make sure an RTCP report isn't queued behind a key frame.
+  if (rtcp_sender_.TimeToSendRTCPReport(force_sender_report))
+    rtcp_sender_.SendRTCP(GetFeedbackState(), kRtcpReport);
+
+  return true;
 }
 
 bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
@@ -558,6 +539,21 @@ int32_t ModuleRtpRtcpImpl::RTT(const uint32_t remote_ssrc,
     *rtt = rtt_ms();
   }
   return ret;
+}
+
+int64_t ModuleRtpRtcpImpl::ExpectedRetransmissionTimeMs() const {
+  int64_t expected_retransmission_time_ms = rtt_ms();
+  if (expected_retransmission_time_ms > 0) {
+    return expected_retransmission_time_ms;
+  }
+  // No rtt available (|kRtpRtcpRttProcessTimeMs| not yet passed?), so try to
+  // poll avg_rtt_ms directly from rtcp receiver.
+  if (rtcp_receiver_.RTT(rtcp_receiver_.RemoteSSRC(), nullptr,
+                         &expected_retransmission_time_ms, nullptr,
+                         nullptr) == 0) {
+    return expected_retransmission_time_ms;
+  }
+  return kDefaultExpectedRetransmissionTimeMs;
 }
 
 // Force a send of an RTCP packet.
@@ -821,40 +817,23 @@ int32_t ModuleRtpRtcpImpl::SendLossNotification(uint16_t last_decoded_seq_num,
       decodability_flag);
 }
 
-void ModuleRtpRtcpImpl::SetUlpfecConfig(int red_payload_type,
-                                        int ulpfec_payload_type) {
-  RTC_DCHECK(video_);
-  video_->SetUlpfecConfig(red_payload_type, ulpfec_payload_type);
-}
-
-bool ModuleRtpRtcpImpl::SetFecParameters(
-    const FecProtectionParams& delta_params,
-    const FecProtectionParams& key_params) {
-  if (!video_) {
-    return false;
-  }
-  video_->SetFecParameters(delta_params, key_params);
-  return true;
-}
-
 void ModuleRtpRtcpImpl::SetRemoteSSRC(const uint32_t ssrc) {
   // Inform about the incoming SSRC.
   rtcp_sender_.SetRemoteSSRC(ssrc);
   rtcp_receiver_.SetRemoteSSRC(ssrc);
 }
 
+// TODO(nisse): Delete video_rate amd fec_rate arguments.
 void ModuleRtpRtcpImpl::BitrateSent(uint32_t* total_rate,
                                     uint32_t* video_rate,
                                     uint32_t* fec_rate,
                                     uint32_t* nack_rate) const {
   *total_rate = rtp_sender_->BitrateSent();
-  *video_rate = video_ ? video_->VideoBitrateSent() : 0;
-  *fec_rate = video_ ? video_->FecOverheadRate() : 0;
+  if (video_rate)
+    *video_rate = 0;
+  if (fec_rate)
+    *fec_rate = 0;
   *nack_rate = rtp_sender_->NackOverheadRate();
-}
-
-uint32_t ModuleRtpRtcpImpl::PacketizationOverheadBps() const {
-  return video_ ? video_->PacketizationOverheadBps() : 0;
 }
 
 void ModuleRtpRtcpImpl::OnRequestSendReport() {
@@ -882,12 +861,13 @@ void ModuleRtpRtcpImpl::OnReceivedNack(
 
 void ModuleRtpRtcpImpl::OnReceivedRtcpReportBlocks(
     const ReportBlockList& report_blocks) {
-  if (video_) {
+  if (ack_observer_) {
     uint32_t ssrc = SSRC();
 
     for (const RTCPReportBlock& report_block : report_blocks) {
       if (ssrc == report_block.source_ssrc) {
-        video_->OnReceivedAck(report_block.extended_highest_sequence_number);
+        ack_observer_->OnReceivedAck(
+            report_block.extended_highest_sequence_number);
       }
     }
   }
@@ -952,4 +932,13 @@ void ModuleRtpRtcpImpl::SetVideoBitrateAllocation(
     const VideoBitrateAllocation& bitrate) {
   rtcp_sender_.SetVideoBitrateAllocation(bitrate);
 }
+
+RTPSender* ModuleRtpRtcpImpl::RtpSender() {
+  return rtp_sender_.get();
+}
+
+const RTPSender* ModuleRtpRtcpImpl::RtpSender() const {
+  return rtp_sender_.get();
+}
+
 }  // namespace webrtc

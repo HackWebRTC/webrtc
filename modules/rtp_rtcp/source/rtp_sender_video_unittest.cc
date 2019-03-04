@@ -101,6 +101,7 @@ class TestRtpSenderVideo : public RTPSenderVideo {
       : RTPSenderVideo(clock,
                        rtp_sender,
                        flexfec_sender,
+                       &playout_delay_oracle_,
                        nullptr,
                        false,
                        field_trials) {}
@@ -113,6 +114,7 @@ class TestRtpSenderVideo : public RTPSenderVideo {
                                           retransmission_settings,
                                           expected_retransmission_time_ms);
   }
+  PlayoutDelayOracle playout_delay_oracle_;
 };
 
 class FieldTrials : public WebRtcKeyValueConfig {
