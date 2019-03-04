@@ -183,6 +183,7 @@ class YuvFileGenerator : public FrameGenerator {
                    size_t height,
                    int frame_repeat_count)
       : file_index_(0),
+        frame_index_(std::numeric_limits<size_t>::max()),
         files_(files),
         width_(width),
         height_(height),
@@ -203,8 +204,16 @@ class YuvFileGenerator : public FrameGenerator {
   }
 
   VideoFrame* NextFrame() override {
-    if (current_display_count_ == 0)
-      ReadNextFrame();
+    // Empty update by default.
+    VideoFrame::UpdateRect update_rect{0, 0, 0, 0};
+    if (current_display_count_ == 0) {
+      const bool got_new_frame = ReadNextFrame();
+      // Full update on a new frame from file.
+      if (got_new_frame) {
+        update_rect = VideoFrame::UpdateRect{0, 0, static_cast<int>(width_),
+                                             static_cast<int>(height_)};
+      }
+    }
     if (++current_display_count_ >= frame_display_count_)
       current_display_count_ = 0;
 
@@ -213,18 +222,26 @@ class YuvFileGenerator : public FrameGenerator {
             .set_video_frame_buffer(last_read_buffer_)
             .set_rotation(webrtc::kVideoRotation_0)
             .set_timestamp_us(0)
+            .set_update_rect(update_rect)
             .build());
     return temp_frame_.get();
   }
 
-  void ReadNextFrame() {
+  // Returns true if the new frame was loaded.
+  // False only in case of a single file with a single frame in it.
+  bool ReadNextFrame() {
+    size_t prev_frame_index = frame_index_;
+    size_t prev_file_index = file_index_;
     last_read_buffer_ =
         test::ReadI420Buffer(static_cast<int>(width_),
                              static_cast<int>(height_),
                              files_[file_index_]);
+    ++frame_index_;
     if (!last_read_buffer_) {
       // No more frames to read in this file, rewind and move to next file.
       rewind(files_[file_index_]);
+
+      frame_index_ = 0;
       file_index_ = (file_index_ + 1) % files_.size();
       last_read_buffer_ =
           test::ReadI420Buffer(static_cast<int>(width_),
@@ -232,10 +249,12 @@ class YuvFileGenerator : public FrameGenerator {
                                files_[file_index_]);
       RTC_CHECK(last_read_buffer_);
     }
+    return frame_index_ != prev_frame_index || file_index_ != prev_file_index;
   }
 
  private:
   size_t file_index_;
+  size_t frame_index_;
   const std::vector<FILE*> files_;
   const size_t width_;
   const size_t height_;
@@ -348,6 +367,7 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
         target_width_(static_cast<int>(target_width)),
         target_height_(static_cast<int>(target_height)),
         current_frame_num_(num_frames_ - 1),
+        prev_frame_not_scrolled_(false),
         current_source_frame_(nullptr),
         file_generator_(files, source_width, source_height, 1) {
     RTC_DCHECK(clock_ != nullptr);
@@ -369,25 +389,42 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
     size_t frame_num = (ms_since_start / kFrameDisplayTime) % num_frames_;
     UpdateSourceFrame(frame_num);
 
+    bool cur_frame_not_scrolled;
+
     double scroll_factor;
     int64_t time_into_frame = ms_since_start % kFrameDisplayTime;
     if (time_into_frame < scroll_time_) {
       scroll_factor = static_cast<double>(time_into_frame) / scroll_time_;
+      cur_frame_not_scrolled = false;
     } else {
       scroll_factor = 1.0;
+      cur_frame_not_scrolled = true;
     }
     CropSourceToScrolledImage(scroll_factor);
+
+    bool same_scroll_position =
+        prev_frame_not_scrolled_ && cur_frame_not_scrolled;
+    if (!same_scroll_position && current_frame_) {
+      // If scrolling is not finished yet, force full frame update.
+      current_frame_->set_update_rect(
+          VideoFrame::UpdateRect{0, 0, target_width_, target_height_});
+    }
+    prev_frame_not_scrolled_ = cur_frame_not_scrolled;
 
     return current_frame_ ? &*current_frame_ : nullptr;
   }
 
   void UpdateSourceFrame(size_t frame_num) {
+    VideoFrame::UpdateRect acc_update{0, 0, 0, 0};
     while (current_frame_num_ != frame_num ||
            current_source_frame_ == nullptr) {
       current_source_frame_ = file_generator_.NextFrame();
+      if (current_source_frame_)
+        acc_update.Union(current_source_frame_->update_rect());
       current_frame_num_ = (current_frame_num_ + 1) % num_frames_;
     }
     RTC_DCHECK(current_source_frame_ != nullptr);
+    current_source_frame_->set_update_rect(acc_update);
   }
 
   void CropSourceToScrolledImage(double scroll_factor) {
@@ -407,6 +444,10 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
     int offset_v = (i420_buffer->StrideV() * (pixels_scrolled_y / 2)) +
                    (pixels_scrolled_x / 2);
 
+    VideoFrame::UpdateRect update_rect =
+        current_source_frame_->update_rect().IsEmpty()
+            ? VideoFrame::UpdateRect{0, 0, 0, 0}
+            : VideoFrame::UpdateRect{0, 0, target_width_, target_height_};
     current_frame_ =
         VideoFrame::Builder()
             .set_video_frame_buffer(WrapI420Buffer(
@@ -416,6 +457,7 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
                 i420_buffer->StrideV(), KeepRefUntilDone(i420_buffer)))
             .set_rotation(kVideoRotation_0)
             .set_timestamp_us(0)
+            .set_update_rect(update_rect)
             .build();
   }
 
@@ -428,6 +470,7 @@ class ScrollingImageFrameGenerator : public FrameGenerator {
   const int target_height_;
 
   size_t current_frame_num_;
+  bool prev_frame_not_scrolled_;
   VideoFrame* current_source_frame_;
   absl::optional<VideoFrame> current_frame_;
   YuvFileGenerator file_generator_;
