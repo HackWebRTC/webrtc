@@ -49,8 +49,10 @@ class FlexfecReceiverForTest : public FlexfecReceiver {
   FlexfecReceiverForTest(uint32_t ssrc,
                          uint32_t protected_media_ssrc,
                          RecoveredPacketReceiver* recovered_packet_receiver)
-      : FlexfecReceiver(ssrc, protected_media_ssrc, recovered_packet_receiver) {
-  }
+      : FlexfecReceiver(Clock::GetRealTimeClock(),
+                        ssrc,
+                        protected_media_ssrc,
+                        recovered_packet_receiver) {}
   // Expose methods for tests.
   using FlexfecReceiver::AddReceivedPacket;
   using FlexfecReceiver::ProcessReceivedPacket;
@@ -466,7 +468,7 @@ TEST_F(FlexfecReceiverTest, SurvivesOldRecoveredPacketBeingReinserted) {
   } loopback_recovered_packet_receiver;
 
   // Feed recovered packets back into |receiver|.
-  FlexfecReceiver receiver(kFlexfecSsrc, kMediaSsrc,
+  FlexfecReceiver receiver(Clock::GetRealTimeClock(), kFlexfecSsrc, kMediaSsrc,
                            &loopback_recovered_packet_receiver);
   loopback_recovered_packet_receiver.SetReceiver(&receiver);
 
@@ -590,7 +592,7 @@ TEST_F(FlexfecReceiverTest, RecoveryCallbackDoesNotLoopInfinitely) {
   } loopback_recovered_packet_receiver;
 
   // Feed recovered packets back into |receiver|.
-  FlexfecReceiver receiver(kFlexfecSsrc, kMediaSsrc,
+  FlexfecReceiver receiver(Clock::GetRealTimeClock(), kFlexfecSsrc, kMediaSsrc,
                            &loopback_recovered_packet_receiver);
   loopback_recovered_packet_receiver.SetReceiver(&receiver);
 

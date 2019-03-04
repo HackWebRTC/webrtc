@@ -192,7 +192,8 @@ VideoReceiveStream::VideoReceiveStream(
                       timing_.get(),
                       this,   // NackSender
                       this),  // KeyFrameRequestSender
-      rtp_video_stream_receiver_(&transport_adapter_,
+      rtp_video_stream_receiver_(clock_,
+                                 &transport_adapter_,
                                  call_stats,
                                  packet_router,
                                  &config_,
@@ -259,7 +260,8 @@ VideoReceiveStream::VideoReceiveStream(
     PacketRouter* packet_router,
     VideoReceiveStream::Config config,
     ProcessThread* process_thread,
-    CallStats* call_stats)
+    CallStats* call_stats,
+    Clock* clock)
     : VideoReceiveStream(task_queue_factory,
                          receiver_controller,
                          num_cpu_cores,
@@ -267,8 +269,8 @@ VideoReceiveStream::VideoReceiveStream(
                          std::move(config),
                          process_thread,
                          call_stats,
-                         Clock::GetRealTimeClock(),
-                         new VCMTiming(Clock::GetRealTimeClock())) {}
+                         clock,
+                         new VCMTiming(clock)) {}
 
 VideoReceiveStream::~VideoReceiveStream() {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_sequence_checker_);

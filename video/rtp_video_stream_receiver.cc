@@ -52,12 +52,14 @@ constexpr int kPacketBufferMaxSize = 2048;
 }  // namespace
 
 std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
+    Clock* clock,
     ReceiveStatistics* receive_statistics,
     Transport* outgoing_transport,
     RtcpRttStats* rtt_stats,
     RtcpPacketTypeCounterObserver* rtcp_packet_type_counter_observer,
     TransportSequenceNumberAllocator* transport_sequence_number_allocator) {
   RtpRtcp::Configuration configuration;
+  configuration.clock = clock;
   configuration.audio = false;
   configuration.receiver_only = true;
   configuration.receive_statistics = receive_statistics;
@@ -83,6 +85,7 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
 static const int kPacketLogIntervalMs = 10000;
 
 RtpVideoStreamReceiver::RtpVideoStreamReceiver(
+    Clock* clock,
     Transport* transport,
     RtcpRttStats* rtt_stats,
     PacketRouter* packet_router,
@@ -94,17 +97,18 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
     KeyFrameRequestSender* keyframe_request_sender,
     video_coding::OnCompleteFrameCallback* complete_frame_callback,
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor)
-    : clock_(Clock::GetRealTimeClock()),
+    : clock_(clock),
       config_(*config),
       packet_router_(packet_router),
       process_thread_(process_thread),
-      ntp_estimator_(clock_),
+      ntp_estimator_(clock),
       rtp_header_extensions_(config_.rtp.extensions),
       rtp_receive_statistics_(rtp_receive_statistics),
       ulpfec_receiver_(UlpfecReceiver::Create(config->rtp.remote_ssrc, this)),
       receiving_(false),
       last_packet_log_ms_(-1),
-      rtp_rtcp_(CreateRtpRtcpModule(rtp_receive_statistics_,
+      rtp_rtcp_(CreateRtpRtcpModule(clock,
+                                    rtp_receive_statistics_,
                                     transport,
                                     rtt_stats,
                                     receive_stats_proxy,

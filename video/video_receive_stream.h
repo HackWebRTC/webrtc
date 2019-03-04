@@ -68,7 +68,8 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
                      PacketRouter* packet_router,
                      VideoReceiveStream::Config config,
                      ProcessThread* process_thread,
-                     CallStats* call_stats);
+                     CallStats* call_stats,
+                     Clock* clock);
   ~VideoReceiveStream() override;
 
   const Config& config() const { return config_; }

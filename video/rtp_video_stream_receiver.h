@@ -67,6 +67,7 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
                                public OnDecryptionStatusChangeCallback {
  public:
   RtpVideoStreamReceiver(
+      Clock* clock,
       Transport* transport,
       RtcpRttStats* rtt_stats,
       PacketRouter* packet_router,

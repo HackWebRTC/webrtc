@@ -30,6 +30,10 @@ class FlexfecReceiver {
   FlexfecReceiver(uint32_t ssrc,
                   uint32_t protected_media_ssrc,
                   RecoveredPacketReceiver* recovered_packet_receiver);
+  FlexfecReceiver(Clock* clock,
+                  uint32_t ssrc,
+                  uint32_t protected_media_ssrc,
+                  RecoveredPacketReceiver* recovered_packet_receiver);
   ~FlexfecReceiver();
 
   // Inserts a received packet (can be either media or FlexFEC) into the

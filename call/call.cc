@@ -890,7 +890,7 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   VideoReceiveStream* receive_stream = new VideoReceiveStream(
       task_queue_factory_, &video_receiver_controller_, num_cpu_cores_,
       transport_send_ptr_->packet_router(), std::move(configuration),
-      module_process_thread_.get(), call_stats_.get());
+      module_process_thread_.get(), call_stats_.get(), clock_);
 
   const webrtc::VideoReceiveStream::Config& config = receive_stream->config();
   {
@@ -962,7 +962,7 @@ FlexfecReceiveStream* Call::CreateFlexfecReceiveStream(
     // TODO(nisse): Fix constructor so that it can be moved outside of
     // this locked scope.
     receive_stream = new FlexfecReceiveStreamImpl(
-        &video_receiver_controller_, config, recovered_packet_receiver,
+        clock_, &video_receiver_controller_, config, recovered_packet_receiver,
         call_stats_.get(), module_process_thread_.get());
 
     RTC_DCHECK(receive_rtp_config_.find(config.remote_ssrc) ==
