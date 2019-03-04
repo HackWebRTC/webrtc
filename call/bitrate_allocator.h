@@ -90,7 +90,7 @@ class BitrateAllocator : public BitrateAllocatorInterface {
     virtual ~LimitObserver() = default;
   };
 
-  explicit BitrateAllocator(LimitObserver* limit_observer);
+  BitrateAllocator(Clock* clock, LimitObserver* limit_observer);
   ~BitrateAllocator() override;
 
   void UpdateStartRate(uint32_t start_rate_bps);

@@ -28,6 +28,7 @@
 #include "modules/rtp_rtcp/mocks/mock_rtcp_rtt_stats.h"
 #include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "rtc_base/task_queue.h"
+#include "system_wrappers/include/clock.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 #include "test/mock_audio_encoder.h"
@@ -125,9 +126,10 @@ rtc::scoped_refptr<MockAudioEncoderFactory> SetupEncoderFactoryMock() {
 
 struct ConfigHelper {
   ConfigHelper(bool audio_bwe_enabled, bool expect_set_encoder_call)
-      : stream_config_(/*send_transport=*/nullptr, /*media_transport=*/nullptr),
+      : clock_(1000000),
+        stream_config_(/*send_transport=*/nullptr, /*media_transport=*/nullptr),
         audio_processing_(new rtc::RefCountedObject<MockAudioProcessing>()),
-        bitrate_allocator_(&limit_observer_),
+        bitrate_allocator_(&clock_, &limit_observer_),
         worker_queue_("ConfigHelper_worker_queue"),
         audio_encoder_(nullptr) {
     using testing::Invoke;
@@ -283,6 +285,7 @@ struct ConfigHelper {
   }
 
  private:
+  SimulatedClock clock_;
   rtc::scoped_refptr<AudioState> audio_state_;
   AudioSendStream::Config stream_config_;
   testing::StrictMock<MockChannelSend>* channel_send_ = nullptr;

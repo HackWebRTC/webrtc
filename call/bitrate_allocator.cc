@@ -51,7 +51,7 @@ double MediaRatio(uint32_t allocated_bitrate, uint32_t protection_bitrate) {
 
 }  // namespace
 
-BitrateAllocator::BitrateAllocator(LimitObserver* limit_observer)
+BitrateAllocator::BitrateAllocator(Clock* clock, LimitObserver* limit_observer)
     : limit_observer_(limit_observer),
       last_target_bps_(0),
       last_link_capacity_bps_(0),
@@ -60,7 +60,7 @@ BitrateAllocator::BitrateAllocator(LimitObserver* limit_observer)
       last_rtt_(0),
       last_bwe_period_ms_(1000),
       num_pause_events_(0),
-      clock_(Clock::GetRealTimeClock()),
+      clock_(clock),
       last_bwe_log_time_(0),
       total_requested_padding_bitrate_(0),
       total_requested_min_bitrate_(0),

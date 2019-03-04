@@ -87,7 +87,8 @@ const double kDefaultBitratePriority = 1.0;
 class BitrateAllocatorTest : public ::testing::Test {
  protected:
   BitrateAllocatorTest()
-      : allocator_(new BitrateAllocatorForTest(&limit_observer_)) {
+      : allocator_(new BitrateAllocatorForTest(Clock::GetRealTimeClock(),
+                                               &limit_observer_)) {
     allocator_->OnNetworkChanged(300000u, 0, 0, kDefaultProbingIntervalMs);
   }
   ~BitrateAllocatorTest() {}
@@ -267,7 +268,8 @@ TEST_F(BitrateAllocatorTest, RemoveObserverTriggersLimitObserver) {
 class BitrateAllocatorTestNoEnforceMin : public ::testing::Test {
  protected:
   BitrateAllocatorTestNoEnforceMin()
-      : allocator_(new BitrateAllocatorForTest(&limit_observer_)) {
+      : allocator_(new BitrateAllocatorForTest(Clock::GetRealTimeClock(),
+                                               &limit_observer_)) {
     allocator_->OnNetworkChanged(300000u, 0, 0, kDefaultProbingIntervalMs);
   }
   ~BitrateAllocatorTestNoEnforceMin() {}
