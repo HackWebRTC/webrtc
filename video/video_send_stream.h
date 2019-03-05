@@ -71,7 +71,7 @@ class VideoSendStream : public webrtc::VideoSendStream {
 
   ~VideoSendStream() override;
 
-  bool DeliverRtcp(const uint8_t* packet, size_t length);
+  void DeliverRtcp(const uint8_t* packet, size_t length);
 
   // webrtc::VideoSendStream implementation.
   void UpdateActiveSimulcastLayers(

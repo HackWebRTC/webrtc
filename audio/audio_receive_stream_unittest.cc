@@ -255,8 +255,8 @@ TEST(AudioReceiveStreamTest, ReceiveRtcpPacket) {
   std::vector<uint8_t> rtcp_packet = CreateRtcpSenderReport();
   EXPECT_CALL(*helper.channel_receive(),
               ReceivedRTCPPacket(&rtcp_packet[0], rtcp_packet.size()))
-      .WillOnce(Return(true));
-  EXPECT_TRUE(recv_stream->DeliverRtcp(&rtcp_packet[0], rtcp_packet.size()));
+      .WillOnce(Return());
+  recv_stream->DeliverRtcp(&rtcp_packet[0], rtcp_packet.size());
 }
 
 TEST(AudioReceiveStreamTest, GetStats) {

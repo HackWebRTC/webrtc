@@ -353,9 +353,9 @@ bool AudioSendStream::SendTelephoneEvent(int payload_type,
                                          int event,
                                          int duration_ms) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  return channel_send_->SetSendTelephoneEventPayloadType(payload_type,
-                                                         payload_frequency) &&
-         channel_send_->SendTelephoneEventOutband(event, duration_ms);
+  channel_send_->SetSendTelephoneEventPayloadType(payload_type,
+                                                  payload_frequency);
+  return channel_send_->SendTelephoneEventOutband(event, duration_ms);
 }
 
 void AudioSendStream::SetMuted(bool muted) {
@@ -422,12 +422,12 @@ void AudioSendStream::SignalNetworkState(NetworkState state) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
 }
 
-bool AudioSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
+void AudioSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   // TODO(solenberg): Tests call this function on a network thread, libjingle
   // calls on the worker thread. We should move towards always using a network
   // thread. Then this check can be enabled.
   // RTC_DCHECK(!worker_thread_checker_.CalledOnValidThread());
-  return channel_send_->ReceivedRTCPPacket(packet, length);
+  channel_send_->ReceivedRTCPPacket(packet, length);
 }
 
 uint32_t AudioSendStream::OnBitrateUpdated(BitrateAllocationUpdate update) {

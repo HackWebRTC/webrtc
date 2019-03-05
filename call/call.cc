@@ -1292,22 +1292,22 @@ PacketReceiver::DeliveryStatus Call::DeliverRtcp(MediaType media_type,
   if (media_type == MediaType::ANY || media_type == MediaType::AUDIO) {
     ReadLockScoped read_lock(*receive_crit_);
     for (AudioReceiveStream* stream : audio_receive_streams_) {
-      if (stream->DeliverRtcp(packet, length))
-        rtcp_delivered = true;
+      stream->DeliverRtcp(packet, length);
+      rtcp_delivered = true;
     }
   }
   if (media_type == MediaType::ANY || media_type == MediaType::VIDEO) {
     ReadLockScoped read_lock(*send_crit_);
     for (VideoSendStream* stream : video_send_streams_) {
-      if (stream->DeliverRtcp(packet, length))
-        rtcp_delivered = true;
+      stream->DeliverRtcp(packet, length);
+      rtcp_delivered = true;
     }
   }
   if (media_type == MediaType::ANY || media_type == MediaType::AUDIO) {
     ReadLockScoped read_lock(*send_crit_);
     for (auto& kv : audio_send_ssrcs_) {
-      if (kv.second->DeliverRtcp(packet, length))
-        rtcp_delivered = true;
+      kv.second->DeliverRtcp(packet, length);
+      rtcp_delivered = true;
     }
   }
 

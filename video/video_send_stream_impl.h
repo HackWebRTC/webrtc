@@ -97,7 +97,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
   void RegisterProcessThread(ProcessThread* module_process_thread);
   void DeRegisterProcessThread();
 
-  bool DeliverRtcp(const uint8_t* packet, size_t length);
+  void DeliverRtcp(const uint8_t* packet, size_t length);
   void UpdateActiveSimulcastLayers(const std::vector<bool> active_layers);
   void Start();
   void Stop();

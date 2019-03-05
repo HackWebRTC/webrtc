@@ -42,7 +42,7 @@ class MockChannelReceive : public voe::ChannelReceiveInterface {
   MOCK_CONST_METHOD0(GetDelayEstimate, uint32_t());
   MOCK_METHOD1(SetSink, void(AudioSinkInterface* sink));
   MOCK_METHOD1(OnRtpPacket, void(const RtpPacketReceived& packet));
-  MOCK_METHOD2(ReceivedRTCPPacket, bool(const uint8_t* packet, size_t length));
+  MOCK_METHOD2(ReceivedRTCPPacket, void(const uint8_t* packet, size_t length));
   MOCK_METHOD1(SetChannelOutputVolumeScaling, void(float scaling));
   MOCK_METHOD2(GetAudioFrameWithInfo,
                AudioMixer::Source::AudioFrameInfo(int sample_rate_hz,
@@ -67,12 +67,12 @@ class MockChannelReceive : public voe::ChannelReceiveInterface {
 class MockChannelSend : public voe::ChannelSendInterface {
  public:
   // GMock doesn't like move-only types, like std::unique_ptr.
-  virtual bool SetEncoder(int payload_type,
+  virtual void SetEncoder(int payload_type,
                           std::unique_ptr<AudioEncoder> encoder) {
     return SetEncoderForMock(payload_type, &encoder);
   }
   MOCK_METHOD2(SetEncoderForMock,
-               bool(int payload_type, std::unique_ptr<AudioEncoder>* encoder));
+               void(int payload_type, std::unique_ptr<AudioEncoder>* encoder));
   MOCK_METHOD1(
       ModifyEncoder,
       void(rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier));
@@ -96,11 +96,11 @@ class MockChannelSend : public voe::ChannelSendInterface {
   MOCK_CONST_METHOD0(GetRemoteRTCPReportBlocks, std::vector<ReportBlock>());
   MOCK_CONST_METHOD0(GetANAStatistics, ANAStats());
   MOCK_METHOD2(SetSendTelephoneEventPayloadType,
-               bool(int payload_type, int payload_frequency));
+               void(int payload_type, int payload_frequency));
   MOCK_METHOD2(SendTelephoneEventOutband, bool(int event, int duration_ms));
   MOCK_METHOD1(OnBitrateAllocation, void(BitrateAllocationUpdate update));
   MOCK_METHOD1(SetInputMute, void(bool muted));
-  MOCK_METHOD2(ReceivedRTCPPacket, bool(const uint8_t* packet, size_t length));
+  MOCK_METHOD2(ReceivedRTCPPacket, void(const uint8_t* packet, size_t length));
   // GMock doesn't like move-only types, like std::unique_ptr.
   virtual void ProcessAndEncodeAudio(std::unique_ptr<AudioFrame> audio_frame) {
     ProcessAndEncodeAudioForMock(&audio_frame);

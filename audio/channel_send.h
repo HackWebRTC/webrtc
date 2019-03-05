@@ -55,11 +55,11 @@ class ChannelSendInterface {
  public:
   virtual ~ChannelSendInterface() = default;
 
-  virtual bool ReceivedRTCPPacket(const uint8_t* packet, size_t length) = 0;
+  virtual void ReceivedRTCPPacket(const uint8_t* packet, size_t length) = 0;
 
   virtual CallSendStatistics GetRTCPStatistics() const = 0;
 
-  virtual bool SetEncoder(int payload_type,
+  virtual void SetEncoder(int payload_type,
                           std::unique_ptr<AudioEncoder> encoder) = 0;
   virtual void ModifyEncoder(
       rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) = 0;
@@ -81,7 +81,7 @@ class ChannelSendInterface {
   virtual void ResetSenderCongestionControlObjects() = 0;
   virtual std::vector<ReportBlock> GetRemoteRTCPReportBlocks() const = 0;
   virtual ANAStats GetANAStatistics() const = 0;
-  virtual bool SetSendTelephoneEventPayloadType(int payload_type,
+  virtual void SetSendTelephoneEventPayloadType(int payload_type,
                                                 int payload_frequency) = 0;
   virtual bool SendTelephoneEventOutband(int event, int duration_ms) = 0;
   virtual void OnBitrateAllocation(BitrateAllocationUpdate update) = 0;

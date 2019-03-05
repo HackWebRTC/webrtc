@@ -240,8 +240,7 @@ struct ConfigHelper {
     EXPECT_TRUE(channel_send_);
     EXPECT_CALL(*channel_send_, SetSendTelephoneEventPayloadType(
                                     kTelephoneEventPayloadType,
-                                    kTelephoneEventPayloadFrequency))
-        .WillOnce(Return(true));
+                                    kTelephoneEventPayloadFrequency));
     EXPECT_CALL(
         *channel_send_,
         SendTelephoneEventOutband(kTelephoneEventCode, kTelephoneEventDuration))
@@ -500,7 +499,7 @@ TEST(AudioSendStreamTest, DontRecreateEncoder) {
   // to ConfigHelper (say to WillRepeatedly) would silently make this test
   // useless.
   EXPECT_CALL(*helper.channel_send(), SetEncoderForMock(_, _))
-      .WillOnce(Return(true));
+      .WillOnce(Return());
 
   helper.config().send_codec_spec =
       AudioSendStream::Config::SendCodecSpec(9, kG722Format);

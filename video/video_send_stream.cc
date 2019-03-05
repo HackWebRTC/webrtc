@@ -207,9 +207,9 @@ void VideoSendStream::StopPermanentlyAndGetRtpStates(
   thread_sync_event_.Wait(rtc::Event::kForever);
 }
 
-bool VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
+void VideoSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   // Called on a network thread.
-  return send_stream_->DeliverRtcp(packet, length);
+  send_stream_->DeliverRtcp(packet, length);
 }
 
 }  // namespace internal

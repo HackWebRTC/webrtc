@@ -91,7 +91,7 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
 
   void AssociateSendStream(AudioSendStream* send_stream);
   void SignalNetworkState(NetworkState state);
-  bool DeliverRtcp(const uint8_t* packet, size_t length);
+  void DeliverRtcp(const uint8_t* packet, size_t length);
   const webrtc::AudioReceiveStream::Config& config() const;
   const AudioSendStream* GetAssociatedSendStreamForTesting() const;
 

@@ -310,12 +310,12 @@ void AudioReceiveStream::SignalNetworkState(NetworkState state) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
 }
 
-bool AudioReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
+void AudioReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   // TODO(solenberg): Tests call this function on a network thread, libjingle
   // calls on the worker thread. We should move towards always using a network
   // thread. Then this check can be enabled.
   // RTC_DCHECK(!thread_checker_.CalledOnValidThread());
-  return channel_receive_->ReceivedRTCPPacket(packet, length);
+  channel_receive_->ReceivedRTCPPacket(packet, length);
 }
 
 void AudioReceiveStream::OnRtpPacket(const RtpPacketReceived& packet) {

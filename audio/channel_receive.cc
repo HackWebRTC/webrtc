@@ -106,7 +106,7 @@ class ChannelReceive : public ChannelReceiveInterface,
   absl::optional<std::pair<int, SdpAudioFormat>>
       GetReceiveCodec() const override;
 
-  bool ReceivedRTCPPacket(const uint8_t* data, size_t length) override;
+  void ReceivedRTCPPacket(const uint8_t* data, size_t length) override;
 
   // RtpPacketSinkInterface.
   void OnRtpPacket(const RtpPacketReceived& packet) override;
@@ -664,8 +664,7 @@ bool ChannelReceive::ReceivePacket(const uint8_t* packet,
 }
 
 // May be called on either worker thread or network thread.
-// TODO(nisse): Drop always-true return value.
-bool ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
+void ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   // Store playout timestamp for the received RTCP packet
   UpdatePlayoutTimestamp(true);
 
@@ -675,7 +674,7 @@ bool ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   int64_t rtt = GetRTT();
   if (rtt == 0) {
     // Waiting for valid RTT.
-    return true;
+    return;
   }
 
   uint32_t ntp_secs = 0;
@@ -684,14 +683,13 @@ bool ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   if (0 != _rtpRtcpModule->RemoteNTP(&ntp_secs, &ntp_frac, NULL, NULL,
                                      &rtp_timestamp)) {
     // Waiting for RTCP.
-    return true;
+    return;
   }
 
   {
     rtc::CritScope lock(&ts_stats_lock_);
     ntp_estimator_.UpdateRtcpTimestamp(rtt, ntp_secs, ntp_frac, rtp_timestamp);
   }
-  return true;
 }
 
 int ChannelReceive::GetSpeechOutputLevelFullRange() const {

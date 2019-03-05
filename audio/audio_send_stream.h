@@ -78,7 +78,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
       bool has_remote_tracks) const override;
 
   void SignalNetworkState(NetworkState state);
-  bool DeliverRtcp(const uint8_t* packet, size_t length);
+  void DeliverRtcp(const uint8_t* packet, size_t length);
 
   // Implements BitrateAllocatorObserver.
   uint32_t OnBitrateUpdated(BitrateAllocationUpdate update) override;

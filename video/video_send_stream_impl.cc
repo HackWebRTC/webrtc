@@ -350,11 +350,10 @@ void VideoSendStreamImpl::DeRegisterProcessThread() {
   rtp_video_sender_->DeRegisterProcessThread();
 }
 
-bool VideoSendStreamImpl::DeliverRtcp(const uint8_t* packet, size_t length) {
+void VideoSendStreamImpl::DeliverRtcp(const uint8_t* packet, size_t length) {
   // Runs on a network thread.
   RTC_DCHECK(!worker_queue_->IsCurrent());
   rtp_video_sender_->DeliverRtcp(packet, length);
-  return true;
 }
 
 void VideoSendStreamImpl::UpdateActiveSimulcastLayers(

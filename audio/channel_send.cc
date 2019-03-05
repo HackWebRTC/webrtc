@@ -103,7 +103,7 @@ class ChannelSend
   ~ChannelSend() override;
 
   // Send using this encoder, with this payload type.
-  bool SetEncoder(int payload_type,
+  void SetEncoder(int payload_type,
                   std::unique_ptr<AudioEncoder> encoder) override;
   void ModifyEncoder(rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)>
                          modifier) override;
@@ -118,7 +118,7 @@ class ChannelSend
   int GetBitrate() const override;
 
   // Network
-  bool ReceivedRTCPPacket(const uint8_t* data, size_t length) override;
+  void ReceivedRTCPPacket(const uint8_t* data, size_t length) override;
 
   // Muting, Volume and Level.
   void SetInputMute(bool enable) override;
@@ -131,7 +131,7 @@ class ChannelSend
 
   // DTMF.
   bool SendTelephoneEventOutband(int event, int duration_ms) override;
-  bool SetSendTelephoneEventPayloadType(int payload_type,
+  void SetSendTelephoneEventPayloadType(int payload_type,
                                         int payload_frequency) override;
 
   // RTP+RTCP
@@ -789,7 +789,7 @@ void ChannelSend::StopSend() {
   _rtpRtcpModule->SetSendingMediaStatus(false);
 }
 
-bool ChannelSend::SetEncoder(int payload_type,
+void ChannelSend::SetEncoder(int payload_type,
                              std::unique_ptr<AudioEncoder> encoder) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   RTC_DCHECK_GE(payload_type, 0);
@@ -811,7 +811,6 @@ bool ChannelSend::SetEncoder(int payload_type,
     media_transport_sampling_frequency_ = encoder->RtpTimestampRateHz();
   }
   audio_coding_->SetEncoder(std::move(encoder));
-  return true;
 }
 
 void ChannelSend::ModifyEncoder(
@@ -879,13 +878,12 @@ void ChannelSend::OnUplinkPacketLossRate(float packet_loss_rate) {
   });
 }
 
-// TODO(nisse): Delete always-true return value.
-bool ChannelSend::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
+void ChannelSend::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   // May be called on either worker thread or network thread.
   if (media_transport_) {
     // Ignore RTCP packets while media transport is used.
     // Those packets should not arrive, but we are seeing occasional packets.
-    return 0;
+    return;
   }
 
   // Deliver RTCP packet to RTP/RTCP module for parsing
@@ -894,7 +892,7 @@ bool ChannelSend::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   int64_t rtt = GetRTT();
   if (rtt == 0) {
     // Waiting for valid RTT.
-    return true;
+    return;
   }
 
   int64_t nack_window_ms = rtt;
@@ -906,7 +904,6 @@ bool ChannelSend::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
   retransmission_rate_limiter_->SetWindowSize(nack_window_ms);
 
   OnReceivedRtt(rtt);
-  return true;
 }
 
 void ChannelSend::SetInputMute(bool enable) {
@@ -937,14 +934,13 @@ bool ChannelSend::SendTelephoneEventOutband(int event, int duration_ms) {
   return true;
 }
 
-bool ChannelSend::SetSendTelephoneEventPayloadType(int payload_type,
+void ChannelSend::SetSendTelephoneEventPayloadType(int payload_type,
                                                    int payload_frequency) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   RTC_DCHECK_LE(0, payload_type);
   RTC_DCHECK_GE(127, payload_type);
   _rtpRtcpModule->RegisterAudioSendPayload(payload_type, "telephone-event",
                                            payload_frequency, 0, 0);
-  return true;
 }
 
 void ChannelSend::SetLocalSSRC(uint32_t ssrc) {
