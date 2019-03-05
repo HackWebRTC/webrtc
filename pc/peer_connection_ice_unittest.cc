@@ -32,6 +32,7 @@
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/virtual_socket_server.h"
 #include "system_wrappers/include/metrics.h"
+#include "test/gmock.h"
 
 namespace webrtc {
 
@@ -39,6 +40,8 @@ using RTCConfiguration = PeerConnectionInterface::RTCConfiguration;
 using RTCOfferAnswerOptions = PeerConnectionInterface::RTCOfferAnswerOptions;
 using rtc::SocketAddress;
 using ::testing::Combine;
+using ::testing::ElementsAre;
+using ::testing::Pair;
 using ::testing::Values;
 
 constexpr int kIceCandidatesTimeout = 10000;
@@ -435,11 +438,8 @@ TEST_P(PeerConnectionIceTest, CannotAddCandidateWhenRemoteDescriptionNotSet) {
   caller->CreateOfferAndSetAsLocal();
 
   EXPECT_FALSE(caller->pc()->AddIceCandidate(jsep_candidate.get()));
-  EXPECT_EQ(
-      2, webrtc::metrics::NumSamples("WebRTC.PeerConnection.AddIceCandidate"));
-  EXPECT_EQ(
-      2, webrtc::metrics::NumEvents("WebRTC.PeerConnection.AddIceCandidate",
-                                    kAddIceCandidateFailNoRemoteDescription));
+  EXPECT_THAT(webrtc::metrics::Samples("WebRTC.PeerConnection.AddIceCandidate"),
+              ElementsAre(Pair(kAddIceCandidateFailNoRemoteDescription, 2)));
 }
 
 TEST_P(PeerConnectionIceTest, CannotAddCandidateWhenPeerConnectionClosed) {
