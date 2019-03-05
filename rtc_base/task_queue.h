@@ -29,12 +29,6 @@ namespace rtc {
 // TODO(danilchap): Remove the alias when all of webrtc is updated to use
 // webrtc::QueuedTask directly.
 using ::webrtc::QueuedTask;
-// TODO(danilchap): Remove the alias when all of webrtc is updated to use
-// webrtc::ToQueuedTask directly.
-template <typename... Args>
-std::unique_ptr<QueuedTask> NewClosure(Args&&... args) {
-  return webrtc::ToQueuedTask(std::forward<Args>(args)...);
-}
 
 // Implements a task queue that asynchronously executes tasks in a way that
 // guarantees that they're executed in FIFO order and that tasks never overlap.
@@ -54,19 +48,7 @@ std::unique_ptr<QueuedTask> NewClosure(Args&&... args) {
 //       queue_.PostTask([]() { Work(); });
 //     ...
 //
-//   2) Doing work asynchronously on a worker queue and providing a notification
-//      callback on the current queue, when the work has been done:
-//
-//     void MyClass::StartWorkAndLetMeKnowWhenDone(
-//         std::unique_ptr<QueuedTask> callback) {
-//       DCHECK(TaskQueue::Current()) << "Need to be running on a queue";
-//       queue_.PostTaskAndReply([]() { Work(); }, std::move(callback));
-//     }
-//     ...
-//     my_class->StartWorkAndLetMeKnowWhenDone(
-//         NewClosure([]() { RTC_LOG(INFO) << "The work is done!";}));
-//
-//   3) Posting a custom task on a timer.  The task posts itself again after
+//   2) Posting a custom task on a timer.  The task posts itself again after
 //      every running:
 //
 //     class TimerTask : public QueuedTask {
@@ -136,7 +118,7 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueue {
                 Closure,
                 std::unique_ptr<QueuedTask>>::value>::type* = nullptr>
   void PostTask(Closure&& closure) {
-    PostTask(NewClosure(std::forward<Closure>(closure)));
+    PostTask(webrtc::ToQueuedTask(std::forward<Closure>(closure)));
   }
 
   // See documentation above for performance expectations.
@@ -145,7 +127,8 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueue {
                 Closure,
                 std::unique_ptr<QueuedTask>>::value>::type* = nullptr>
   void PostDelayedTask(Closure&& closure, uint32_t milliseconds) {
-    PostDelayedTask(NewClosure(std::forward<Closure>(closure)), milliseconds);
+    PostDelayedTask(webrtc::ToQueuedTask(std::forward<Closure>(closure)),
+                    milliseconds);
   }
 
  private:

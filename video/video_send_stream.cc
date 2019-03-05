@@ -19,6 +19,7 @@
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"
 #include "video/video_send_stream_impl.h"
@@ -93,7 +94,7 @@ VideoSendStream::VideoSendStream(
   // TODO(srte): Initialization should not be done posted on a task queue.
   // Note that the posted task must not outlive this scope since the closure
   // references local variables.
-  worker_queue_->PostTask(rtc::NewClosure(
+  worker_queue_->PostTask(ToQueuedTask(
       [this, clock, call_stats, transport, bitrate_allocator, send_delay_stats,
        event_log, &suspended_ssrcs, &encoder_config, &suspended_payload_states,
        &fec_controller]() {

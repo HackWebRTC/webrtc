@@ -1147,6 +1147,7 @@ rtc_source_set("rtc_task_queue_for_test") {
     ":checks",
     ":rtc_base_approved",
     ":rtc_task_queue",
+    "task_utils:to_queued_task",
   ]
 }
 

@@ -16,7 +16,7 @@
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/event.h"
 #include "rtc_base/location.h"
-#include "rtc_base/task_queue.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "system_wrappers/include/metrics.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -168,7 +168,7 @@ TEST_F(CallStatsTest, MultipleObservers) {
   // Flush the queue on the process thread to make sure we return after
   // Process() has been called.
   rtc::Event event;
-  process_thread_->PostTask(rtc::NewClosure([&event]() { event.Set(); }));
+  process_thread_->PostTask(ToQueuedTask([&event] { event.Set(); }));
   event.Wait(rtc::Event::kForever);
 }
 

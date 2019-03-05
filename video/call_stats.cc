@@ -16,7 +16,7 @@
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
-#include "rtc_base/task_queue.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -177,7 +177,7 @@ int64_t CallStats::LastProcessedRtt() const {
 
 void CallStats::OnRttUpdate(int64_t rtt) {
   int64_t now_ms = clock_->TimeInMilliseconds();
-  process_thread_->PostTask(rtc::NewClosure([rtt, now_ms, this]() {
+  process_thread_->PostTask(ToQueuedTask([rtt, now_ms, this]() {
     RTC_DCHECK_RUN_ON(&process_thread_checker_);
     reports_.push_back(RttTime(rtt, now_ms));
     if (time_of_first_rtt_ms_ == -1)
