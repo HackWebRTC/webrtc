@@ -181,14 +181,9 @@ void CallClient::OnPacketReceived(EmulatedIpPacket packet) {
 
   MediaType media_type = MediaType::ANY;
   if (!RtpHeaderParser::IsRtcp(packet.cdata(), packet.data.size())) {
-    RTPHeader header;
-    bool success =
-        header_parser_->Parse(packet.cdata(), packet.data.size(), &header);
-    if (!success) {
-      RTC_DLOG(LS_ERROR) << "Failed to parse RTP header of packet";
-      return;
-    }
-    media_type = ssrc_media_types_[header.ssrc];
+    auto ssrc = RtpHeaderParser::GetSsrc(packet.cdata(), packet.data.size());
+    RTC_CHECK(ssrc.has_value());
+    media_type = ssrc_media_types_[*ssrc];
   }
   call_->Receiver()->DeliverPacket(media_type, packet.data,
                                    packet.arrival_time.us());

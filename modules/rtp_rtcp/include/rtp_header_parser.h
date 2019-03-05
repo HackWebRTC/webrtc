@@ -24,6 +24,7 @@ class RtpHeaderParser {
 
   // Returns true if the packet is an RTCP packet, false otherwise.
   static bool IsRtcp(const uint8_t* packet, size_t length);
+  static absl::optional<uint32_t> GetSsrc(const uint8_t* packet, size_t length);
 
   // Parses the packet and stores the parsed packet in |header|. Returns true on
   // success, false otherwise.

@@ -50,6 +50,16 @@ bool RtpHeaderParser::IsRtcp(const uint8_t* packet, size_t length) {
   return rtp_parser.RTCP();
 }
 
+absl::optional<uint32_t> RtpHeaderParser::GetSsrc(const uint8_t* packet,
+                                                  size_t length) {
+  RtpUtility::RtpHeaderParser rtp_parser(packet, length);
+  RTPHeader header;
+  if (rtp_parser.Parse(&header, nullptr)) {
+    return header.ssrc;
+  }
+  return absl::nullopt;
+}
+
 bool RtpHeaderParserImpl::Parse(const uint8_t* packet,
                                 size_t length,
                                 RTPHeader* header) const {
