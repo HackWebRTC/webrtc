@@ -122,7 +122,7 @@ DelayBasedBwe::Result DelayBasedBwe::IncomingPacketFeedbackVector(
                             PacketFeedbackComparator()));
   RTC_DCHECK_RUNS_SERIALIZED(&network_race_);
 
-  // TOOD(holmer): An empty feedback vector here likely means that
+  // TODO(holmer): An empty feedback vector here likely means that
   // all acks were too late and that the send time history had
   // timed out. We should reduce the rate when this occurs.
   if (packet_feedback_vector.empty()) {

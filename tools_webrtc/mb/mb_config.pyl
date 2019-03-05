@@ -255,7 +255,7 @@
     'gcc_release_bot_x64': [
       'gcc', 'release_bot', 'x64', 'no_rtc_tests'
     ],
-    # TOOD(kjellander): Restore Goma for this when crbug.com/726706 is fixed.
+    # TODO(kjellander): Restore Goma for this when crbug.com/726706 is fixed.
     'debug_bot_arm': [
       'openh264', 'debug', 'arm'
     ],
