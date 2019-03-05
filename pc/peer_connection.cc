@@ -104,6 +104,15 @@ const char kDtlsSrtpSetupFailureRtcp[] =
 
 namespace {
 
+// UMA metric names.
+const char kSimulcastVersionApplyLocalDescription[] =
+    "WebRTC.PeerConnection.Simulcast.ApplyLocalDescription";
+const char kSimulcastVersionApplyRemoteDescription[] =
+    "WebRTC.PeerConnection.Simulcast.ApplyRemoteDescription";
+const char kSimulcastNumberOfEncodings[] =
+    "WebRTC.PeerConnection.Simulcast.NumberOfSendEncodings";
+const char kSimulcastDisabled[] = "WebRTC.PeerConnection.Simulcast.Disabled";
+
 static const char kDefaultStreamId[] = "default";
 static const char kDefaultAudioSenderId[] = "defaulta0";
 static const char kDefaultVideoSenderId[] = "defaultv0";
@@ -656,6 +665,34 @@ DataMessageType ToWebrtcDataMessageType(cricket::DataMessageType type) {
       RTC_NOTREACHED();
   }
   return DataMessageType::kControl;
+}
+
+void ReportSimulcastApiVersion(const char* name,
+                               const SessionDescription& session) {
+  bool has_legacy = false;
+  bool has_spec_compliant = false;
+  for (const ContentInfo& content : session.contents()) {
+    if (!content.description) {
+      continue;
+    }
+    has_spec_compliant |= content.description->HasSimulcast();
+    for (const StreamParams& sp : content.description->streams()) {
+      has_legacy |= sp.has_ssrc_group(cricket::kSimSsrcGroupSemantics);
+    }
+  }
+
+  if (has_legacy) {
+    RTC_HISTOGRAM_ENUMERATION(name, kSimulcastApiVersionLegacy,
+                              kSimulcastApiVersionMax);
+  }
+  if (has_spec_compliant) {
+    RTC_HISTOGRAM_ENUMERATION(name, kSimulcastApiVersionSpecCompliant,
+                              kSimulcastApiVersionMax);
+  }
+  if (!has_legacy && !has_spec_compliant) {
+    RTC_HISTOGRAM_ENUMERATION(name, kSimulcastApiVersionNone,
+                              kSimulcastApiVersionMax);
+  }
 }
 
 }  // namespace
@@ -1494,6 +1531,9 @@ PeerConnection::AddTransceiver(
                        : cricket::MEDIA_TYPE_VIDEO));
   }
 
+  RTC_HISTOGRAM_COUNTS_LINEAR(kSimulcastNumberOfEncodings,
+                              init.send_encodings.size(), 0, 7, 8);
+
   size_t num_rids = absl::c_count_if(init.send_encodings,
                                      [](const RtpEncodingParameters& encoding) {
                                        return !encoding.rid.empty();
@@ -2165,6 +2205,10 @@ RTCError PeerConnection::ApplyLocalDescription(
   // |local_description()|.
   RTC_DCHECK(local_description());
 
+  // Report statistics about any use of simulcast.
+  ReportSimulcastApiVersion(kSimulcastVersionApplyLocalDescription,
+                            *local_description()->description());
+
   if (!is_caller_) {
     if (remote_description()) {
       // Remote description was applied first, so this PC is the callee.
@@ -2518,6 +2562,10 @@ RTCError PeerConnection::ApplyRemoteDescription(
   // The session description to apply now must be accessed by
   // |remote_description()|.
   RTC_DCHECK(remote_description());
+
+  // Report statistics about any use of simulcast.
+  ReportSimulcastApiVersion(kSimulcastVersionApplyRemoteDescription,
+                            *remote_description()->description());
 
   RTCError error = PushdownTransportDescription(cricket::CS_REMOTE, type);
   if (!error.ok()) {
@@ -3168,6 +3216,7 @@ PeerConnection::AssociateTransceiver(cricket::ContentSource source,
     // Check if the offer indicated simulcast but the answer rejected it.
     // This can happen when simulcast is not supported on the remote party.
     if (SimulcastIsRejected(old_local_content, *media_desc)) {
+      RTC_HISTOGRAM_BOOLEAN(kSimulcastDisabled, true);
       RTCError error =
           DisableSimulcastInSender(transceiver->internal()->sender_internal());
       if (!error.ok()) {

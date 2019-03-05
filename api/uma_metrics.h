@@ -155,6 +155,14 @@ enum AddIceCandidateResult {
   kAddIceCandidateMax
 };
 
+// Metric for recording which api surface was used to enable simulcast.
+enum SimulcastApiVersion {
+  kSimulcastApiVersionNone,
+  kSimulcastApiVersionLegacy,
+  kSimulcastApiVersionSpecCompliant,
+  kSimulcastApiVersionMax,
+};
+
 }  // namespace webrtc
 
 #endif  // API_UMA_METRICS_H_
