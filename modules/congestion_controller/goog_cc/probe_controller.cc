@@ -140,8 +140,8 @@ std::vector<ProbeClusterConfig> ProbeController::SetBitrates(
       break;
 
     case State::kProbingComplete:
-      // If the new max bitrate is higher than the old max bitrate and the
-      // estimate is lower than the new max bitrate then initiate probing.
+      // If the new max bitrate is higher than both the old max bitrate and the
+      // estimate then initiate probing.
       if (estimated_bitrate_bps_ != 0 &&
           old_max_bitrate_bps < max_bitrate_bps_ &&
           estimated_bitrate_bps_ < max_bitrate_bps_) {
@@ -156,7 +156,7 @@ std::vector<ProbeClusterConfig> ProbeController::SetBitrates(
         RTC_HISTOGRAM_COUNTS_10000("WebRTC.BWE.MidCallProbing.Initiated",
                                    max_bitrate_bps_ / 1000);
 
-        return InitiateProbing(at_time_ms, {max_bitrate_bps}, false);
+        return InitiateProbing(at_time_ms, {max_bitrate_bps_}, false);
       }
       break;
   }
@@ -211,8 +211,6 @@ std::vector<ProbeClusterConfig> ProbeController::InitiateExponentialProbing(
 std::vector<ProbeClusterConfig> ProbeController::SetEstimatedBitrate(
     int64_t bitrate_bps,
     int64_t at_time_ms) {
-  int64_t now_ms = at_time_ms;
-
   if (mid_call_probing_waiting_for_result_ &&
       bitrate_bps >= mid_call_probing_succcess_threshold_) {
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.BWE.MidCallProbing.Success",
@@ -232,12 +230,12 @@ std::vector<ProbeClusterConfig> ProbeController::SetEstimatedBitrate(
     if (min_bitrate_to_probe_further_bps_ != kExponentialProbingDisabled &&
         bitrate_bps > min_bitrate_to_probe_further_bps_) {
       // Double the probing bitrate.
-      pending_probes = InitiateProbing(now_ms, {2 * bitrate_bps}, true);
+      pending_probes = InitiateProbing(at_time_ms, {2 * bitrate_bps}, true);
     }
   }
 
   if (bitrate_bps < kBitrateDropThreshold * estimated_bitrate_bps_) {
-    time_of_last_large_drop_ms_ = now_ms;
+    time_of_last_large_drop_ms_ = at_time_ms;
     bitrate_before_last_large_drop_bps_ = estimated_bitrate_bps_;
   }
 
@@ -325,9 +323,7 @@ void ProbeController::Reset(int64_t at_time_ms) {
 }
 
 std::vector<ProbeClusterConfig> ProbeController::Process(int64_t at_time_ms) {
-  int64_t now_ms = at_time_ms;
-
-  if (now_ms - time_last_probing_initiated_ms_ >
+  if (at_time_ms - time_last_probing_initiated_ms_ >
       kMaxWaitingTimeForProbingResultMs) {
     mid_call_probing_waiting_for_result_ = false;
 
@@ -344,8 +340,8 @@ std::vector<ProbeClusterConfig> ProbeController::Process(int64_t at_time_ms) {
       int64_t next_probe_time_ms =
           std::max(*alr_start_time_ms_, time_last_probing_initiated_ms_) +
           kAlrPeriodicProbingIntervalMs;
-      if (now_ms >= next_probe_time_ms) {
-        return InitiateProbing(now_ms, {estimated_bitrate_bps_ * 2}, true);
+      if (at_time_ms >= next_probe_time_ms) {
+        return InitiateProbing(at_time_ms, {estimated_bitrate_bps_ * 2}, true);
       }
     }
   }
@@ -356,22 +352,24 @@ std::vector<ProbeClusterConfig> ProbeController::InitiateProbing(
     int64_t now_ms,
     std::initializer_list<int64_t> bitrates_to_probe,
     bool probe_further) {
+  int64_t max_probe_bitrate_bps =
+      max_bitrate_bps_ > 0 ? max_bitrate_bps_ : kDefaultMaxProbingBitrateBps;
+  if (limit_probes_with_allocateable_rate_ &&
+      max_total_allocated_bitrate_ > 0) {
+    // If a max allocated bitrate has been configured, allow probing up to 2x
+    // that rate. This allows some overhead to account for bursty streams,
+    // which otherwise would have to ramp up when the overshoot is already in
+    // progress.
+    // It also avoids minor quality reduction caused by probes often being
+    // received at slightly less than the target probe bitrate.
+    max_probe_bitrate_bps =
+        std::min(max_probe_bitrate_bps, max_total_allocated_bitrate_ * 2);
+  }
+
   std::vector<ProbeClusterConfig> pending_probes;
   for (int64_t bitrate : bitrates_to_probe) {
     RTC_DCHECK_GT(bitrate, 0);
-    int64_t max_probe_bitrate_bps =
-        max_bitrate_bps_ > 0 ? max_bitrate_bps_ : kDefaultMaxProbingBitrateBps;
-    if (limit_probes_with_allocateable_rate_ &&
-        max_total_allocated_bitrate_ > 0) {
-      // If a max allocated bitrate has been configured, allow probing up to 2x
-      // that rate. This allows some overhead to account for bursty streams,
-      // which otherwise would have to ramp up when the overshoot is already in
-      // progress.
-      // It also avoids minor quality reduction caused by probes often being
-      // received at slightly less than the target probe bitrate.
-      max_probe_bitrate_bps =
-          std::min(max_probe_bitrate_bps, max_total_allocated_bitrate_ * 2);
-    }
+
     if (bitrate > max_probe_bitrate_bps) {
       bitrate = max_probe_bitrate_bps;
       probe_further = false;
