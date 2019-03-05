@@ -99,6 +99,7 @@ class NetEqImpl : public webrtc::NetEq {
     ~Dependencies();
 
     std::unique_ptr<TickTimer> tick_timer;
+    std::unique_ptr<StatisticsCalculator> stats;
     std::unique_ptr<BufferLevelFilter> buffer_level_filter;
     std::unique_ptr<DecoderDatabase> decoder_database;
     std::unique_ptr<DelayPeakDetector> delay_peak_detector;
@@ -361,6 +362,7 @@ class NetEqImpl : public webrtc::NetEq {
       RTC_GUARDED_BY(crit_sect_);
   const std::unique_ptr<PreemptiveExpandFactory> preemptive_expand_factory_
       RTC_GUARDED_BY(crit_sect_);
+  const std::unique_ptr<StatisticsCalculator> stats_ RTC_GUARDED_BY(crit_sect_);
 
   std::unique_ptr<BackgroundNoise> background_noise_ RTC_GUARDED_BY(crit_sect_);
   std::unique_ptr<DecisionLogic> decision_logic_ RTC_GUARDED_BY(crit_sect_);
@@ -375,7 +377,6 @@ class NetEqImpl : public webrtc::NetEq {
       RTC_GUARDED_BY(crit_sect_);
   RandomVector random_vector_ RTC_GUARDED_BY(crit_sect_);
   std::unique_ptr<ComfortNoise> comfort_noise_ RTC_GUARDED_BY(crit_sect_);
-  StatisticsCalculator stats_ RTC_GUARDED_BY(crit_sect_);
   int fs_hz_ RTC_GUARDED_BY(crit_sect_);
   int fs_mult_ RTC_GUARDED_BY(crit_sect_);
   int last_output_sample_rate_hz_ RTC_GUARDED_BY(crit_sect_);

@@ -21,6 +21,7 @@ class MockStatisticsCalculator : public StatisticsCalculator {
  public:
   MOCK_METHOD1(PacketsDiscarded, void(size_t num_packets));
   MOCK_METHOD1(SecondaryPacketsDiscarded, void(size_t num_packets));
+  MOCK_METHOD1(RelativePacketArrivalDelay, void(size_t delay_ms));
 };
 
 }  // namespace webrtc

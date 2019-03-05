@@ -15,6 +15,7 @@
 
 #include "modules/audio_coding/neteq/delay_manager.h"
 #include "modules/audio_coding/neteq/histogram.h"
+#include "modules/audio_coding/neteq/statistics_calculator.h"
 #include "test/gmock.h"
 
 namespace webrtc {
@@ -28,6 +29,7 @@ class MockDelayManager : public DelayManager {
                    bool enable_rtx_handling,
                    DelayPeakDetector* peak_detector,
                    const TickTimer* tick_timer,
+                   StatisticsCalculator* stats,
                    std::unique_ptr<Histogram> histogram)
       : DelayManager(max_packets_in_buffer,
                      base_min_target_delay_ms,
@@ -36,6 +38,7 @@ class MockDelayManager : public DelayManager {
                      enable_rtx_handling,
                      peak_detector,
                      tick_timer,
+                     stats,
                      std::move(histogram)) {}
   virtual ~MockDelayManager() { Die(); }
   MOCK_METHOD0(Die, void());

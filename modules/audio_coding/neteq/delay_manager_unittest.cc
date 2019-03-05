@@ -18,6 +18,7 @@
 #include "modules/audio_coding/neteq/histogram.h"
 #include "modules/audio_coding/neteq/mock/mock_delay_peak_detector.h"
 #include "modules/audio_coding/neteq/mock/mock_histogram.h"
+#include "modules/audio_coding/neteq/mock/mock_statistics_calculator.h"
 #include "rtc_base/checks.h"
 #include "test/field_trial.h"
 #include "test/gmock.h"
@@ -53,6 +54,7 @@ class DelayManagerTest : public ::testing::Test {
 
   std::unique_ptr<DelayManager> dm_;
   TickTimer tick_timer_;
+  MockStatisticsCalculator stats_;
   MockDelayPeakDetector detector_;
   MockHistogram* mock_histogram_;
   uint16_t seq_no_;
@@ -81,10 +83,11 @@ void DelayManagerTest::RecreateDelayManager() {
     dm_ = absl::make_unique<DelayManager>(
         kMaxNumberOfPackets, kMinDelayMs, kDefaultHistogramQuantile,
         histogram_mode_, enable_rtx_handling_, &detector_, &tick_timer_,
-        std::move(histogram));
+        &stats_, std::move(histogram));
   } else {
     dm_ = DelayManager::Create(kMaxNumberOfPackets, kMinDelayMs,
-                               enable_rtx_handling_, &detector_, &tick_timer_);
+                               enable_rtx_handling_, &detector_, &tick_timer_,
+                               &stats_);
   }
 }
 
@@ -707,6 +710,19 @@ TEST_F(DelayManagerTest, RelativeArrivalDelayMode) {
 
   EXPECT_CALL(*mock_histogram_, Add(1));  // Reordered, 20ms delayed.
   EXPECT_EQ(0, dm_->Update(seq_no_, ts_, kFs));
+}
+
+TEST_F(DelayManagerTest, RelativeArrivalDelayStatistic) {
+  SetPacketAudioLength(kFrameSizeMs);
+  InsertNextPacket();
+
+  IncreaseTime(kFrameSizeMs);
+  EXPECT_CALL(stats_, RelativePacketArrivalDelay(0));
+  InsertNextPacket();
+
+  IncreaseTime(2 * kFrameSizeMs);
+  EXPECT_CALL(stats_, RelativePacketArrivalDelay(20));
+  InsertNextPacket();
 }
 
 }  // namespace webrtc

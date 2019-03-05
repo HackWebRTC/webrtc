@@ -26,6 +26,7 @@
 #include "modules/audio_coding/neteq/mock/mock_red_payload_splitter.h"
 #include "modules/audio_coding/neteq/neteq_impl.h"
 #include "modules/audio_coding/neteq/preemptive_expand.h"
+#include "modules/audio_coding/neteq/statistics_calculator.h"
 #include "modules/audio_coding/neteq/sync_buffer.h"
 #include "modules/audio_coding/neteq/timestamp_scaler.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -100,7 +101,7 @@ class NetEqImplTest : public ::testing::Test {
           config_.max_packets_in_buffer, config_.min_delay_ms, 1020054733,
           DelayManager::HistogramMode::INTER_ARRIVAL_TIME,
           config_.enable_rtx_handling, delay_peak_detector_, tick_timer_,
-          absl::make_unique<Histogram>(50, 32745)));
+          deps.stats.get(), absl::make_unique<Histogram>(50, 32745)));
       mock_delay_manager_ = mock.get();
       EXPECT_CALL(*mock_delay_manager_, set_streaming_mode(false)).Times(1);
       deps.delay_manager = std::move(mock);

@@ -16,6 +16,7 @@
 #include "modules/audio_coding/neteq/delay_manager.h"
 #include "modules/audio_coding/neteq/delay_peak_detector.h"
 #include "modules/audio_coding/neteq/packet_buffer.h"
+#include "modules/audio_coding/neteq/statistics_calculator.h"
 #include "modules/audio_coding/neteq/tick_timer.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
@@ -29,10 +30,11 @@ TEST(DecisionLogic, CreateAndDestroy) {
   DecoderDatabase decoder_database(
       new rtc::RefCountedObject<MockAudioDecoderFactory>, absl::nullopt);
   TickTimer tick_timer;
+  StatisticsCalculator stats;
   PacketBuffer packet_buffer(10, &tick_timer);
   DelayPeakDetector delay_peak_detector(&tick_timer, false);
-  auto delay_manager =
-      DelayManager::Create(240, 0, false, &delay_peak_detector, &tick_timer);
+  auto delay_manager = DelayManager::Create(240, 0, false, &delay_peak_detector,
+                                            &tick_timer, &stats);
   BufferLevelFilter buffer_level_filter;
   DecisionLogic* logic = DecisionLogic::Create(
       fs_hz, output_size_samples, false, &decoder_database, packet_buffer,

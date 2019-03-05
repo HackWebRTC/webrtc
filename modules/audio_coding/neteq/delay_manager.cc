@@ -20,6 +20,7 @@
 #include "absl/memory/memory.h"
 #include "modules/audio_coding/neteq/delay_peak_detector.h"
 #include "modules/audio_coding/neteq/histogram.h"
+#include "modules/audio_coding/neteq/statistics_calculator.h"
 #include "modules/include/module_common_types_public.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -114,6 +115,7 @@ DelayManager::DelayManager(size_t max_packets_in_buffer,
                            bool enable_rtx_handling,
                            DelayPeakDetector* peak_detector,
                            const TickTimer* tick_timer,
+                           StatisticsCalculator* statistics,
                            std::unique_ptr<Histogram> histogram)
     : first_packet_received_(false),
       max_packets_in_buffer_(max_packets_in_buffer),
@@ -121,6 +123,7 @@ DelayManager::DelayManager(size_t max_packets_in_buffer,
       histogram_quantile_(histogram_quantile),
       histogram_mode_(histogram_mode),
       tick_timer_(tick_timer),
+      statistics_(statistics),
       base_minimum_delay_ms_(base_minimum_delay_ms),
       effective_minimum_delay_ms_(base_minimum_delay_ms),
       base_target_level_(4),                   // In Q0 domain.
@@ -150,7 +153,8 @@ std::unique_ptr<DelayManager> DelayManager::Create(
     int base_minimum_delay_ms,
     bool enable_rtx_handling,
     DelayPeakDetector* peak_detector,
-    const TickTimer* tick_timer) {
+    const TickTimer* tick_timer,
+    StatisticsCalculator* statistics) {
   int quantile;
   std::unique_ptr<Histogram> histogram;
   HistogramMode mode;
@@ -168,7 +172,8 @@ std::unique_ptr<DelayManager> DelayManager::Create(
   }
   return absl::make_unique<DelayManager>(
       max_packets_in_buffer, base_minimum_delay_ms, quantile, mode,
-      enable_rtx_handling, peak_detector, tick_timer, std::move(histogram));
+      enable_rtx_handling, peak_detector, tick_timer, statistics,
+      std::move(histogram));
 }
 
 DelayManager::~DelayManager() {}
@@ -234,16 +239,18 @@ int DelayManager::Update(uint16_t sequence_number,
       reordered = true;
     }
 
+    int iat_delay = iat_ms - packet_len_ms;
+    int relative_delay;
+    if (reordered) {
+      relative_delay = std::max(iat_delay, 0);
+    } else {
+      UpdateDelayHistory(iat_delay);
+      relative_delay = CalculateRelativePacketArrivalDelay();
+    }
+    statistics_->RelativePacketArrivalDelay(relative_delay);
+
     switch (histogram_mode_) {
       case RELATIVE_ARRIVAL_DELAY: {
-        int iat_delay = iat_ms - packet_len_ms;
-        int relative_delay;
-        if (reordered) {
-          relative_delay = std::max(iat_delay, 0);
-        } else {
-          UpdateDelayHistory(iat_delay);
-          relative_delay = CalculateRelativePacketArrivalDelay();
-        }
         const int index = relative_delay / kBucketSizeMs;
         if (index < histogram_->NumBuckets()) {
           // Maximum delay to register is 2000 ms.

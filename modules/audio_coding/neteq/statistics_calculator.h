@@ -83,8 +83,14 @@ class StatisticsCalculator {
   // Reports that |num_samples| samples were decoded from secondary packets.
   void SecondaryDecodedSamples(int num_samples);
 
-  // Rerport that the packet buffer was flushed.
+  // Reports that the packet buffer was flushed.
   void FlushedPacketBuffer();
+
+  // Reports that the jitter buffer received a packet.
+  void ReceivedPacket();
+
+  // Reports that a received packet was delayed by |delay_ms| milliseconds.
+  virtual void RelativePacketArrivalDelay(size_t delay_ms);
 
   // Logs a delayed packet outage event of |num_samples| expanded at a sample
   // rate of |fs_hz|. A delayed packet outage event is defined as an expand

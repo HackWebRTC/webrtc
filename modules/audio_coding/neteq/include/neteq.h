@@ -71,9 +71,18 @@ struct NetEqLifetimeStatistics {
   uint64_t concealment_events = 0;
   uint64_t jitter_buffer_delay_ms = 0;
   uint64_t jitter_buffer_emitted_count = 0;
-  // Below stat is not part of the spec.
+  // Below stats are not part of the spec.
   uint64_t voice_concealed_samples = 0;
   uint64_t delayed_packet_outage_samples = 0;
+  // This is sum of relative packet arrival delays of received packets so far.
+  // Since end-to-end delay of a packet is difficult to measure and is not
+  // necessarily useful for measuring jitter buffer performance, we report a
+  // relative packet arrival delay. The relative packet arrival delay of a
+  // packet is defined as the arrival delay compared to the first packet
+  // received, given that it had zero delay. To avoid clock drift, the "first"
+  // packet can be made dynamic.
+  uint64_t relative_packet_arrival_delay_ms = 0;
+  uint64_t jitter_buffer_packets_received = 0;
 };
 
 // Metrics that describe the operations performed in NetEq, and the internal
