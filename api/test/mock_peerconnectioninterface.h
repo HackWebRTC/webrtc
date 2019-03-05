@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "api/peer_connection_interface.h"
+#include "api/sctp_transport_interface.h"
 #include "test/gmock.h"
 
 namespace webrtc {
@@ -74,6 +75,8 @@ class MockPeerConnectionInterface
                void(rtc::scoped_refptr<RtpReceiverInterface>,
                     rtc::scoped_refptr<RTCStatsCollectorCallback>));
   MOCK_METHOD0(ClearStatsCache, void());
+  MOCK_CONST_METHOD0(GetSctpTransport,
+                     rtc::scoped_refptr<SctpTransportInterface>());
   MOCK_METHOD2(
       CreateDataChannel,
       rtc::scoped_refptr<DataChannelInterface>(const std::string&,
