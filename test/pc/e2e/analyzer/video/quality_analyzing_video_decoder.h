@@ -88,8 +88,18 @@ class QualityAnalyzingVideoDecoder : public VideoDecoder {
     int32_t ReceivedDecodedReferenceFrame(uint64_t pictureId) override;
     int32_t ReceivedDecodedFrame(uint64_t pictureId) override;
 
+    int32_t IrrelevantSimulcastStreamDecoded(uint16_t frame_id,
+                                             int64_t timestamp_ms);
+
    private:
+    rtc::scoped_refptr<webrtc::VideoFrameBuffer> GetBlackFrameBuffer(
+        int width,
+        int height);
+
     QualityAnalyzingVideoDecoder* const decoder_;
+
+    rtc::scoped_refptr<webrtc::VideoFrameBuffer> black_frame_buffer_;
+
     rtc::CriticalSection callback_lock_;
     DecodedImageCallback* delegate_callback_ RTC_GUARDED_BY(callback_lock_);
   };

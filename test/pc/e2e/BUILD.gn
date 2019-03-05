@@ -104,6 +104,7 @@ rtc_source_set("quality_analyzing_video_decoder") {
     ":id_generator",
     "../../../api/video:encoded_image",
     "../../../api/video:video_frame",
+    "../../../api/video:video_frame_i420",
     "../../../api/video_codecs:video_codecs_api",
     "../../../modules/video_coding:video_codec_interface",
     "../../../rtc_base:criticalsection",

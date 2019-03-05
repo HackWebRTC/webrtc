@@ -16,11 +16,18 @@
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
+#include "api/video/i420_buffer.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {
 namespace test {
+namespace {
+
+constexpr size_t kIrrelatedSimulcastStreamFrameWidth = 320;
+constexpr size_t kIrrelatedSimulcastStreamFrameHeight = 480;
+
+}  // namespace
 
 QualityAnalyzingVideoDecoder::QualityAnalyzingVideoDecoder(
     int id,
@@ -55,8 +62,24 @@ int32_t QualityAnalyzingVideoDecoder::Decode(
   // deleting it.
   EncodedImageExtractionResult out = extractor_->ExtractData(input_image, id_);
 
-  // TODO(titovartem) add support for simulcast.
-  RTC_CHECK(!out.discard) << "Simulcast is not supported yet";
+  if (out.discard) {
+    // To partly emulate behavior of Selective Forwarding Unit (SFU) in the
+    // test, on receiver side we will "discard" frames from irrelevant streams.
+    // When all encoded images were marked to discarded, black frame have to be
+    // returned. Because simulcast streams will be received by receiver as 3
+    // different independent streams we don't want that irrelevant streams
+    // affect video quality metrics and also we don't want to use CPU time to
+    // decode them to prevent regressions on relevant streams. Also we can't
+    // just drop frame, because in such case, receiving part will be confused
+    // with all frames missing and will request a key frame, which will result
+    // into extra load on network and sender side. Because of it, discarded
+    // image will be always decoded as black frame and will be passed to
+    // callback directly without reaching decoder and video quality analyzer.
+    //
+    // For more details see QualityAnalyzingVideoEncoder.
+    return analyzing_callback_->IrrelevantSimulcastStreamDecoded(
+        out.id, input_image.Timestamp());
+  }
 
   EncodedImage* origin_image;
   {
@@ -166,6 +189,38 @@ int32_t QualityAnalyzingVideoDecoder::DecoderCallback::ReceivedDecodedFrame(
   rtc::CritScope crit(&callback_lock_);
   RTC_DCHECK(delegate_callback_);
   return delegate_callback_->ReceivedDecodedFrame(pictureId);
+}
+
+int32_t
+QualityAnalyzingVideoDecoder::DecoderCallback::IrrelevantSimulcastStreamDecoded(
+    uint16_t frame_id,
+    int64_t timestamp_ms) {
+  webrtc::VideoFrame black_frame =
+      webrtc::VideoFrame::Builder()
+          .set_video_frame_buffer(
+              GetBlackFrameBuffer(kIrrelatedSimulcastStreamFrameWidth,
+                                  kIrrelatedSimulcastStreamFrameHeight))
+          .set_timestamp_ms(timestamp_ms)
+          .set_id(frame_id)
+          .build();
+  rtc::CritScope crit(&callback_lock_);
+  RTC_DCHECK(delegate_callback_);
+  return delegate_callback_->Decoded(black_frame);
+}
+
+rtc::scoped_refptr<webrtc::VideoFrameBuffer>
+QualityAnalyzingVideoDecoder::DecoderCallback::GetBlackFrameBuffer(int width,
+                                                                   int height) {
+  if (!black_frame_buffer_ || black_frame_buffer_->width() != width ||
+      black_frame_buffer_->height() != height) {
+    // Use i420 buffer here as default one and supported by all codecs.
+    rtc::scoped_refptr<webrtc::I420Buffer> buffer =
+        webrtc::I420Buffer::Create(width, height);
+    webrtc::I420Buffer::SetBlack(buffer.get());
+    black_frame_buffer_ = buffer;
+  }
+
+  return black_frame_buffer_;
 }
 
 void QualityAnalyzingVideoDecoder::OnFrameDecoded(
