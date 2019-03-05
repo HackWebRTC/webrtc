@@ -9,6 +9,7 @@
  */
 
 #include <algorithm>
+#include <cstdlib>
 #include <numeric>
 
 #include "modules/audio_coding/neteq/histogram.h"
@@ -61,10 +62,10 @@ void Histogram::Add(int value) {
     int flip_sign = vector_sum > 0 ? -1 : 1;
     for (int& bucket : buckets_) {
       // Add/subtract 1/16 of the element, but not more than |vector_sum|.
-      int correction = flip_sign * std::min(abs(vector_sum), bucket >> 4);
+      int correction = flip_sign * std::min(std::abs(vector_sum), bucket >> 4);
       bucket += correction;
       vector_sum += correction;
-      if (abs(vector_sum) == 0) {
+      if (std::abs(vector_sum) == 0) {
         break;
       }
     }
