@@ -15,7 +15,7 @@ rtc_source_set("repeating_task") {
   ]
   deps = [
     "..:logging",
-    "..:rtc_task_queue_api",
+    "..:rtc_task_queue",
     "..:sequenced_task_checker",
     "..:thread_checker",
     "..:timeutils",

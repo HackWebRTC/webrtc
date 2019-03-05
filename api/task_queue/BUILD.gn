@@ -59,44 +59,17 @@ rtc_source_set("default_task_queue_factory") {
     ":task_queue",
   ]
 
-  # TODO(bugs.webrtc.org/10284): Include implementation unconditionally when
-  # global task queue factory is removed.
-  if (rtc_link_task_queue_impl) {
-    deps += [ ":default_task_queue_factory_impl" ]
-  }
-}
-
-# TODO(bugs.webrtc.org/10191): Merge back to default_task_queue_factory when
-# rtc_task_queue_impl build target is removed.
-rtc_source_set("default_task_queue_factory_impl") {
-  # Include the implementation when rtc_link_task_queue_impl is set to default
-  # value of true or when explicit dependency on "rtc_task_queue_impl" is added.
-  visibility = [
-    ":default_task_queue_factory",
-    "../../rtc_base:rtc_task_queue_impl",
-  ]
-  deps = [
-    ":task_queue",
-  ]
   if (rtc_enable_libevent) {
-    sources = [
-      "default_task_queue_factory_libevent.cc",
-    ]
+    sources += [ "default_task_queue_factory_libevent.cc" ]
     deps += [ "../../rtc_base:rtc_task_queue_libevent" ]
   } else if (is_mac || is_ios) {
-    sources = [
-      "default_task_queue_factory_gcd.cc",
-    ]
+    sources += [ "default_task_queue_factory_gcd.cc" ]
     deps += [ "../../rtc_base:rtc_task_queue_gcd" ]
   } else if (is_win && current_os != "winuwp") {
-    sources = [
-      "default_task_queue_factory_win.cc",
-    ]
+    sources += [ "default_task_queue_factory_win.cc" ]
     deps += [ "../../rtc_base:rtc_task_queue_win" ]
   } else {
-    sources = [
-      "default_task_queue_factory_stdlib.cc",
-    ]
+    sources += [ "default_task_queue_factory_stdlib.cc" ]
     deps += [ "../../rtc_base:rtc_task_queue_stdlib" ]
   }
 }
@@ -115,8 +88,6 @@ if (rtc_include_tests) {
   }
 }
 
-# Linking with global_task_queue_factory adds link-time implementation of the
-# rtc::TaskQueue that allows run-time injection of the TaskQueue implementaion.
 rtc_source_set("global_task_queue_factory") {
   # TODO(bugs.webrtc.org/10284): Remove this target when task queue factory
   # propagated to all components that create TaskQueues.
@@ -124,16 +95,16 @@ rtc_source_set("global_task_queue_factory") {
   sources = [
     "global_task_queue_factory.cc",
     "global_task_queue_factory.h",
-
-    # TODO(bugs.webrtc.org/10191): Move task_queue.cc to private build
-    # "rtc_task_queue" when "rtc_task_queue_api", "rtc_task_queue",
-    # and "rtc_task_queue_impl" can be joined.
-    "task_queue.cc",
   ]
   deps = [
-    ":default_task_queue_factory",
     ":task_queue",
     "../../rtc_base:checks",
-    "../../rtc_base:rtc_task_queue_api",
   ]
+
+  if (build_with_chromium) {
+    # Chromium uses link-time injection of the CreateDefaultTaskQueueFactory
+    sources += [ "default_task_queue_factory.h" ]
+  } else {
+    deps += [ ":default_task_queue_factory" ]
+  }
 }

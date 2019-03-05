@@ -47,10 +47,6 @@ template("webrtc_fuzzer_test") {
     deps += [
       ":fuzz_data_helper",
       ":webrtc_fuzzer_main",
-
-      # Link unconditionally with webrtc's TaskQueue, regardless of
-      # rtc_link_task_queue_impl flag.
-      "../../rtc_base:rtc_task_queue_impl",
     ]
     if (!build_with_chromium && is_clang) {
       suppressed_configs = [ "//build/config/clang:find_bad_constructs" ]

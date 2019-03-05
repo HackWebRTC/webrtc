@@ -629,7 +629,7 @@ if (is_android) {
       "../../modules/video_coding:video_coding_utility",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base",
-      "../../rtc_base:rtc_task_queue_api",
+      "../../rtc_base:rtc_task_queue",
       "../../rtc_base:sequenced_task_checker",
       "../../rtc_base:weak_ptr",
       "../../system_wrappers:field_trial",
@@ -690,7 +690,7 @@ if (is_android) {
       "../../modules/video_coding:video_coding_utility",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base",
-      "../../rtc_base:rtc_task_queue_api",
+      "../../rtc_base:rtc_task_queue",
       "//third_party/libyuv",
     ]
   }
