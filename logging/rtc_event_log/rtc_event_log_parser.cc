@@ -1988,6 +1988,11 @@ std::vector<LoggedPacketInfo> ParsedRtcEventLog::GetPacketInfos(
 
     auto& last_fb = msg->packet_feedbacks.back();
     Timestamp last_recv_time = last_fb.receive_time;
+    // This can happen if send time info is missing for the real last packet in
+    // the feedback, allowing the reported last packet to med indicated as lost.
+    if (last_recv_time.IsInfinite())
+      RTC_LOG(LS_WARNING) << "No receive time for last packet in feedback.";
+
     for (auto& fb : msg->packet_feedbacks) {
       if (indices.find(fb.sent_packet.sequence_number) == indices.end()) {
         RTC_LOG(LS_ERROR) << "Received feedback for unknown packet: "
@@ -1997,17 +2002,19 @@ std::vector<LoggedPacketInfo> ParsedRtcEventLog::GetPacketInfos(
       LoggedPacketInfo* sent =
           &packets[indices[fb.sent_packet.sequence_number]];
       sent->reported_recv_time = fb.receive_time;
-      // Is we have received feedback with a valid receive time for this packet
+      // If we have received feedback with a valid receive time for this packet
       // before, we keep the previous values.
       if (sent->log_feedback_time.IsFinite() &&
           sent->reported_recv_time.IsFinite())
         continue;
       sent->log_feedback_time = msg->feedback_time;
-      if (direction == PacketDirection::kOutgoingPacket) {
-        sent->feedback_hold_duration = last_recv_time - fb.receive_time;
-      } else {
-        sent->feedback_hold_duration =
-            Timestamp::ms(logged.log_time_ms()) - sent->log_packet_time;
+      if (last_recv_time.IsFinite()) {
+        if (direction == PacketDirection::kOutgoingPacket) {
+          sent->feedback_hold_duration = last_recv_time - fb.receive_time;
+        } else {
+          sent->feedback_hold_duration =
+              Timestamp::ms(logged.log_time_ms()) - sent->log_packet_time;
+        }
       }
       sent->last_in_feedback = (&fb == &last_fb);
     }
