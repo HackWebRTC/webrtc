@@ -688,11 +688,6 @@ ChannelSend::ChannelSend(Clock* clock,
   // RTPMediaTransport. In this case it means that overhead and bandwidth
   // observers should not be called when using media transport.
   if (!media_transport_) {
-    // TODO(sukhanov): Overhead observer is only needed for RTP path, because in
-    // media transport audio overhead is currently considered constant (see
-    // getter MediaTransportInterface::GetAudioPacketOverhead).  In the future
-    // when we introduce RTP media transport we should make audio overhead
-    // interface consistent and work for both RTP and non-RTP implementations.
     configuration.overhead_observer = overhead_observer;
     configuration.bandwidth_callback = rtcp_observer_.get();
     configuration.transport_feedback_callback = feedback_observer_proxy_.get();
@@ -725,6 +720,7 @@ ChannelSend::ChannelSend(Clock* clock,
   if (media_transport_) {
     RTC_DLOG(LS_INFO) << "Setting media_transport_ rate observers.";
     media_transport_->AddTargetTransferRateObserver(this);
+    media_transport_->SetAudioOverheadObserver(overhead_observer);
   } else {
     RTC_DLOG(LS_INFO) << "Not setting media_transport_ rate observers.";
   }
@@ -748,6 +744,7 @@ ChannelSend::~ChannelSend() {
 
   if (media_transport_) {
     media_transport_->RemoveTargetTransferRateObserver(this);
+    media_transport_->SetAudioOverheadObserver(nullptr);
   }
 
   StopSend();
