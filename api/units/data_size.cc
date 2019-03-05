@@ -18,8 +18,10 @@ namespace webrtc {
 std::string ToString(DataSize value) {
   char buf[64];
   rtc::SimpleStringBuilder sb(buf);
-  if (value.IsInfinite()) {
-    sb << "inf bytes";
+  if (value.IsPlusInfinity()) {
+    sb << "+inf bytes";
+  } else if (value.IsMinusInfinity()) {
+    sb << "-inf bytes";
   } else {
     sb << value.bytes() << " bytes";
   }
