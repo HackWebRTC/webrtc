@@ -203,6 +203,7 @@ VideoBitrateAllocation SvcRateAllocator::GetAllocationScreenSharing(
         codec_.spatialLayers[sl_idx].minBitrate * 1000;
     const size_t target_bitrate_bps =
         codec_.spatialLayers[sl_idx].targetBitrate * 1000;
+    RTC_DCHECK_LE(min_bitrate_bps, target_bitrate_bps);
 
     const size_t bitrate_bps = std::min(left_bitrate_bps, target_bitrate_bps);
     if (bitrate_bps >= min_bitrate_bps) {

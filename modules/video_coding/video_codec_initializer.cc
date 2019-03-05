@@ -190,6 +190,7 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
         if (no_spatial_layering) {
           // Use codec's bitrate limits.
           spatial_layers.back().minBitrate = video_codec.minBitrate;
+          spatial_layers.back().targetBitrate = video_codec.maxBitrate;
           spatial_layers.back().maxBitrate = video_codec.maxBitrate;
         }
 
