@@ -91,7 +91,8 @@ class VideoEncoderWrapper : public VideoEncoder {
   const ScopedJavaGlobalRef<jobject> encoder_;
   const ScopedJavaGlobalRef<jclass> int_array_class_;
 
-  rtc::TaskQueue* encoder_queue_;
+  rtc::CriticalSection encoder_queue_crit_;
+  rtc::TaskQueue* encoder_queue_ RTC_GUARDED_BY(encoder_queue_crit_);
   std::deque<FrameExtraInfo> frame_extra_infos_;
   EncodedImageCallback* callback_;
   bool initialized_;

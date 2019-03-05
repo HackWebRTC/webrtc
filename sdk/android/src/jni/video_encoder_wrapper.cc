@@ -45,7 +45,10 @@ int32_t VideoEncoderWrapper::InitEncode(const VideoCodec* codec_settings,
   number_of_cores_ = number_of_cores;
   codec_settings_ = *codec_settings;
   num_resets_ = 0;
-  encoder_queue_ = rtc::TaskQueue::Current();
+  {
+    rtc::CritScope lock(&encoder_queue_crit_);
+    encoder_queue_ = rtc::TaskQueue::Current();
+  }
 
   return InitEncodeInternal(jni);
 }
@@ -106,7 +109,10 @@ int32_t VideoEncoderWrapper::Release() {
   RTC_LOG(LS_INFO) << "release: " << status;
   frame_extra_infos_.clear();
   initialized_ = false;
-  encoder_queue_ = nullptr;
+  {
+    rtc::CritScope lock(&encoder_queue_crit_);
+    encoder_queue_ = nullptr;
+  }
 
   return status;
 }
@@ -284,10 +290,15 @@ void VideoEncoderWrapper::OnEncodedFrame(JNIEnv* jni,
     }
   };
 
-  encoder_queue_->PostTask(
-      Lambda{this, std::move(buffer_copy), qp, encoded_width, encoded_height,
-             capture_time_ns, frame_type, rotation, complete_frame,
-             &frame_extra_infos_, callback_});
+  {
+    rtc::CritScope lock(&encoder_queue_crit_);
+    if (encoder_queue_ != nullptr) {
+      encoder_queue_->PostTask(
+          Lambda{this, std::move(buffer_copy), qp, encoded_width,
+                 encoded_height, capture_time_ns, frame_type, rotation,
+                 complete_frame, &frame_extra_infos_, callback_});
+    }
+  }
 }
 
 int32_t VideoEncoderWrapper::HandleReturnCode(JNIEnv* jni,
