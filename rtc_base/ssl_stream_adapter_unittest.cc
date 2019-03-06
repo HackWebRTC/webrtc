@@ -23,11 +23,12 @@
 #include "rtc_base/ssl_identity.h"
 #include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/stream.h"
+#include "test/field_trial.h"
 
-using ::testing::WithParamInterface;
-using ::testing::Values;
 using ::testing::Combine;
 using ::testing::tuple;
+using ::testing::Values;
+using ::testing::WithParamInterface;
 
 static const int kBlockSize = 4096;
 static const char kExporterLabel[] = "label";
@@ -283,6 +284,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
       const std::string& client_cert_pem,
       const std::string& client_private_key_pem,
       bool dtls,
+      bool legacy_tls_protocols = false,
       rtc::KeyParams client_key_type = rtc::KeyParams(rtc::KT_DEFAULT),
       rtc::KeyParams server_key_type = rtc::KeyParams(rtc::KT_DEFAULT))
       : client_cert_pem_(client_cert_pem),
@@ -300,7 +302,8 @@ class SSLStreamAdapterTestBase : public testing::Test,
         damage_(false),
         dtls_(dtls),
         handshake_wait_(5000),
-        identities_set_(false) {
+        identities_set_(false),
+        legacy_tls_protocols_(legacy_tls_protocols) {
     // Set use of the test RNG to get predictable loss patterns.
     rtc::SetRandomTestMode(true);
   }
@@ -312,6 +315,10 @@ class SSLStreamAdapterTestBase : public testing::Test,
 
   void SetUp() override {
     CreateStreams();
+
+    // Enable legacy protocols if required
+    webrtc::test::ScopedFieldTrials trial(
+        legacy_tls_protocols_ ? "WebRTC-LegacyTlsProtocols/Enabled/" : "");
 
     client_ssl_.reset(rtc::SSLStreamAdapter::Create(client_stream_));
     server_ssl_.reset(rtc::SSLStreamAdapter::Create(server_stream_));
@@ -645,6 +652,7 @@ class SSLStreamAdapterTestBase : public testing::Test,
   bool dtls_;
   int handshake_wait_;
   bool identities_set_;
+  bool legacy_tls_protocols_;
 };
 
 class SSLStreamAdapterTestTLS
@@ -654,6 +662,7 @@ class SSLStreamAdapterTestTLS
   SSLStreamAdapterTestTLS()
       : SSLStreamAdapterTestBase("",
                                  "",
+                                 false,
                                  false,
                                  ::testing::get<0>(GetParam()),
                                  ::testing::get<1>(GetParam())),
@@ -771,9 +780,13 @@ class SSLStreamAdapterTestDTLS
       public WithParamInterface<tuple<rtc::KeyParams, rtc::KeyParams>> {
  public:
   SSLStreamAdapterTestDTLS()
+      : SSLStreamAdapterTestDTLS(/*legacy_tls_protocols=*/false) {}
+
+  SSLStreamAdapterTestDTLS(bool legacy_tls_protocols)
       : SSLStreamAdapterTestBase("",
                                  "",
                                  true,
+                                 legacy_tls_protocols,
                                  ::testing::get<0>(GetParam()),
                                  ::testing::get<1>(GetParam())),
         client_buffer_(kBufferCapacity, kDefaultBufferSize),
@@ -945,6 +958,13 @@ class SSLStreamAdapterTestDTLSCertChain : public SSLStreamAdapterTestDTLS {
   }
 };
 
+// Enable legacy TLS protocols in DTLS.
+class SSLStreamAdapterTestDTLSLegacyProtocols
+    : public SSLStreamAdapterTestDTLS {
+ public:
+  SSLStreamAdapterTestDTLSLegacyProtocols()
+      : SSLStreamAdapterTestDTLS(/*legacy_tls_protocols=*/true) {}
+};
 // Basic tests: TLS
 
 // Test that we can make a handshake work
@@ -1381,8 +1401,66 @@ TEST_F(SSLStreamAdapterTestDTLSFromPEMStrings, TestDTLSGetPeerCertificate) {
 
 // Test getting the used DTLS ciphers.
 // DTLS 1.2 enabled for neither client nor server -> DTLS 1.0 will be used.
-TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuite) {
+TEST_P(SSLStreamAdapterTestDTLSLegacyProtocols, TestGetSslCipherSuite) {
   SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_10, rtc::SSL_PROTOCOL_DTLS_10);
+  TestHandshake();
+
+  int client_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
+  int server_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
+
+  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_10, GetSslVersion(true));
+  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_10, GetSslVersion(false));
+
+  ASSERT_EQ(client_cipher, server_cipher);
+  ASSERT_TRUE(rtc::SSLStreamAdapter::IsAcceptableCipher(
+      server_cipher, ::testing::get<1>(GetParam()).type()));
+}
+
+// Test getting the used DTLS 1.2 ciphers.
+// DTLS 1.2 enabled for client and server -> DTLS 1.2 will be used.
+TEST_P(SSLStreamAdapterTestDTLSLegacyProtocols,
+       TestGetSslCipherSuiteDtls12Both) {
+  SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_12);
+  TestHandshake();
+
+  int client_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
+  int server_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
+
+  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_12, GetSslVersion(true));
+  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_12, GetSslVersion(false));
+
+  ASSERT_EQ(client_cipher, server_cipher);
+  ASSERT_TRUE(rtc::SSLStreamAdapter::IsAcceptableCipher(
+      server_cipher, ::testing::get<1>(GetParam()).type()));
+}
+
+// DTLS 1.2 enabled for client only -> DTLS 1.0 will be used.
+TEST_P(SSLStreamAdapterTestDTLSLegacyProtocols,
+       TestGetSslCipherSuiteDtls12Client) {
+  SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_10, rtc::SSL_PROTOCOL_DTLS_12);
+  TestHandshake();
+
+  int client_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
+  int server_cipher;
+  ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
+
+  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_10, GetSslVersion(true));
+  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_10, GetSslVersion(false));
+
+  ASSERT_EQ(client_cipher, server_cipher);
+  ASSERT_TRUE(rtc::SSLStreamAdapter::IsAcceptableCipher(
+      server_cipher, ::testing::get<1>(GetParam()).type()));
+}
+
+// DTLS 1.2 enabled for server only -> DTLS 1.0 will be used.
+TEST_P(SSLStreamAdapterTestDTLSLegacyProtocols,
+       TestGetSslCipherSuiteDtls12Server) {
+  SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_10);
   TestHandshake();
 
   int client_cipher;
@@ -1417,9 +1495,10 @@ TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Both) {
       server_cipher, ::testing::get<1>(GetParam()).type()));
 }
 
-// DTLS 1.2 enabled for client only -> DTLS 1.0 will be used.
-TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Client) {
-  SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_10, rtc::SSL_PROTOCOL_DTLS_12);
+// Test getting the used DTLS ciphers.
+// DTLS 1.0 enabled for client and server, both will be upgraded to DTLS 1.2
+TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuite) {
+  SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_10, rtc::SSL_PROTOCOL_DTLS_10);
   TestHandshake();
 
   int client_cipher;
@@ -1427,26 +1506,8 @@ TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Client) {
   int server_cipher;
   ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
 
-  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_10, GetSslVersion(true));
-  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_10, GetSslVersion(false));
-
-  ASSERT_EQ(client_cipher, server_cipher);
-  ASSERT_TRUE(rtc::SSLStreamAdapter::IsAcceptableCipher(
-      server_cipher, ::testing::get<1>(GetParam()).type()));
-}
-
-// DTLS 1.2 enabled for server only -> DTLS 1.0 will be used.
-TEST_P(SSLStreamAdapterTestDTLS, TestGetSslCipherSuiteDtls12Server) {
-  SetupProtocolVersions(rtc::SSL_PROTOCOL_DTLS_12, rtc::SSL_PROTOCOL_DTLS_10);
-  TestHandshake();
-
-  int client_cipher;
-  ASSERT_TRUE(GetSslCipherSuite(true, &client_cipher));
-  int server_cipher;
-  ASSERT_TRUE(GetSslCipherSuite(false, &server_cipher));
-
-  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_10, GetSslVersion(true));
-  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_10, GetSslVersion(false));
+  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_12, GetSslVersion(true));
+  ASSERT_EQ(rtc::SSL_PROTOCOL_DTLS_12, GetSslVersion(false));
 
   ASSERT_EQ(client_cipher, server_cipher);
   ASSERT_TRUE(rtc::SSLStreamAdapter::IsAcceptableCipher(

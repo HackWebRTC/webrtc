@@ -90,6 +90,11 @@ bool IsGcmCryptoSuiteName(const std::string& crypto_suite);
 
 enum SSLRole { SSL_CLIENT, SSL_SERVER };
 enum SSLMode { SSL_MODE_TLS, SSL_MODE_DTLS };
+
+// Note: By default TLS_10, TLS_11, and DTLS_10 will all be upgraded to DTLS1_2
+// unless the trial flag WebRTC-LegacyTlsProtocols/Enabled/ is passed in. These
+// protocol versions will be completely removed in M75
+// TODO(https://bugs.webrtc.org/10261).
 enum SSLProtocolVersion {
   SSL_PROTOCOL_TLS_10,
   SSL_PROTOCOL_TLS_11,

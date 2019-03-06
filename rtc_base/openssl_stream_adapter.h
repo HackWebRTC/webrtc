@@ -217,6 +217,9 @@ class OpenSSLStreamAdapter final : public SSLStreamAdapter {
   // A 50-ms initial timeout ensures rapid setup on fast connections, but may
   // be too aggressive for low bandwidth links.
   int dtls_handshake_timeout_ms_ = 50;
+
+  // TODO(https://bugs.webrtc.org/10261): Completely remove this option in M75.
+  const bool support_legacy_tls_protocols_flag_;
 };
 
 /////////////////////////////////////////////////////////////////////////////
