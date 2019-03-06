@@ -25,9 +25,15 @@ namespace webrtc {
 class VCMPacket {
  public:
   VCMPacket();
+
+  VCMPacket(const uint8_t* ptr, size_t size, const WebRtcRTPHeader& rtpHeader);
+
   VCMPacket(const uint8_t* ptr,
-            const size_t size,
-            const WebRtcRTPHeader& rtpHeader);
+            size_t size,
+            const RTPHeader& rtp_header,
+            const RTPVideoHeader& video_header,
+            FrameType frame_type,
+            int64_t ntp_time_ms);
 
   ~VCMPacket();
 
