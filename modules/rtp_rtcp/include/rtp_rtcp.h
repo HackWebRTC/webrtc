@@ -146,11 +146,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   // FEC/ULP/RED overhead (when FEC is enabled).
   virtual size_t MaxRtpPacketSize() const = 0;
 
-  virtual void RegisterAudioSendPayload(int payload_type,
-                                        absl::string_view payload_name,
-                                        int frequency,
-                                        int channels,
-                                        int rate) = 0;
   virtual void RegisterSendPayloadFrequency(int payload_type,
                                             int payload_frequency) = 0;
 
@@ -256,27 +251,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
 
   virtual RTPSender* RtpSender() = 0;
   virtual const RTPSender* RtpSender() const = 0;
-
-  // Used by the codec module to deliver a video or audio frame for
-  // packetization.
-  // |frame_type|    - type of frame to send
-  // |payload_type|  - payload type of frame to send
-  // |timestamp|     - timestamp of frame to send
-  // |payload_data|  - payload buffer of frame to send
-  // |payload_size|  - size of payload buffer to send
-  // |fragmentation| - fragmentation offset data for fragmented frames such
-  //                   as layers or RED
-  // |transport_frame_id_out| - set to RTP timestamp.
-  // Returns true on success.
-  virtual bool SendOutgoingData(FrameType frame_type,
-                                int8_t payload_type,
-                                uint32_t timestamp,
-                                int64_t capture_time_ms,
-                                const uint8_t* payload_data,
-                                size_t payload_size,
-                                const RTPFragmentationHeader* fragmentation,
-                                const RTPVideoHeader* rtp_video_header,
-                                uint32_t* transport_frame_id_out) = 0;
 
   // Record that a frame is about to be sent. Returns true on success, and false
   // if the module isn't ready to send.
@@ -430,23 +404,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
 
   virtual void SetVideoBitrateAllocation(
       const VideoBitrateAllocation& bitrate) = 0;
-
-  // **************************************************************************
-  // Audio
-  // **************************************************************************
-
-  // Sends a TelephoneEvent tone using RFC 2833 (4733).
-  // Returns -1 on failure else 0.
-  virtual int32_t SendTelephoneEventOutband(uint8_t key,
-                                            uint16_t time_ms,
-                                            uint8_t level) = 0;
-
-  // Store the audio level in dBov for header-extension-for-audio-level-
-  // indication.
-  // This API shall be called before transmision of an RTP packet to ensure
-  // that the |level| part of the extended RTP header is updated.
-  // return -1 on failure else 0.
-  virtual int32_t SetAudioLevel(uint8_t level_dbov) = 0;
 
   // **************************************************************************
   // Video

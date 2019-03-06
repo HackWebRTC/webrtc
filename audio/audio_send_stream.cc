@@ -796,8 +796,7 @@ void AudioSendStream::RemoveBitrateObserver() {
 
 void AudioSendStream::RegisterCngPayloadType(int payload_type,
                                              int clockrate_hz) {
-  rtp_rtcp_module_->RegisterAudioSendPayload(payload_type, "CN", clockrate_hz,
-                                             1, 0);
+  channel_send_->RegisterCngPayloadType(payload_type, clockrate_hz);
 }
 }  // namespace internal
 }  // namespace webrtc

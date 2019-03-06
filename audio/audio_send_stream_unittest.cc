@@ -450,6 +450,7 @@ TEST(AudioSendStreamTest, SendCodecCanApplyVad) {
             stolen_encoder = std::move(*encoder);
             return true;
           }));
+  EXPECT_CALL(*helper.channel_send(), RegisterCngPayloadType(105, 8000));
 
   auto send_stream = helper.CreateAudioSendStream();
 
@@ -500,6 +501,8 @@ TEST(AudioSendStreamTest, DontRecreateEncoder) {
   // useless.
   EXPECT_CALL(*helper.channel_send(), SetEncoderForMock(_, _))
       .WillOnce(Return());
+
+  EXPECT_CALL(*helper.channel_send(), RegisterCngPayloadType(105, 8000));
 
   helper.config().send_codec_spec =
       AudioSendStream::Config::SendCodecSpec(9, kG722Format);

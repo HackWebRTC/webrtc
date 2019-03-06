@@ -20,6 +20,7 @@
 #include "api/crypto/crypto_options.h"
 #include "api/media_transport_interface.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
+#include "modules/rtp_rtcp/source/rtp_sender_audio.h"
 #include "rtc_base/function_view.h"
 #include "rtc_base/task_queue.h"
 
@@ -81,6 +82,8 @@ class ChannelSendInterface {
   virtual void ResetSenderCongestionControlObjects() = 0;
   virtual std::vector<ReportBlock> GetRemoteRTCPReportBlocks() const = 0;
   virtual ANAStats GetANAStatistics() const = 0;
+  virtual void RegisterCngPayloadType(int payload_type,
+                                      int payload_frequency) = 0;
   virtual void SetSendTelephoneEventPayloadType(int payload_type,
                                                 int payload_frequency) = 0;
   virtual bool SendTelephoneEventOutband(int event, int duration_ms) = 0;

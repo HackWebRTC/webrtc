@@ -95,6 +95,8 @@ class MockChannelSend : public voe::ChannelSendInterface {
   MOCK_CONST_METHOD0(GetRTCPStatistics, CallSendStatistics());
   MOCK_CONST_METHOD0(GetRemoteRTCPReportBlocks, std::vector<ReportBlock>());
   MOCK_CONST_METHOD0(GetANAStatistics, ANAStats());
+  MOCK_METHOD2(RegisterCngPayloadType,
+               void(int payload_type, int payload_frequency));
   MOCK_METHOD2(SetSendTelephoneEventPayloadType,
                void(int payload_type, int payload_frequency));
   MOCK_METHOD2(SendTelephoneEventOutband, bool(int event, int duration_ms));

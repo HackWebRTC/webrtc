@@ -116,9 +116,7 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
         configuration.extmap_allow_mixed,
         configuration.field_trials ? *configuration.field_trials
                                    : default_trials));
-    if (configuration.audio) {
-      audio_ = absl::make_unique<RTPSenderAudio>(clock_, rtp_sender_.get());
-    }
+
     // Make sure rtcp sender use same timestamp offset as rtp sender.
     rtcp_sender_.SetTimestampOffset(rtp_sender_->TimestampOffset());
 
@@ -270,17 +268,6 @@ void ModuleRtpRtcpImpl::IncomingRtcpPacket(const uint8_t* rtcp_packet,
   rtcp_receiver_.IncomingPacket(rtcp_packet, length);
 }
 
-void ModuleRtpRtcpImpl::RegisterAudioSendPayload(int payload_type,
-                                                 absl::string_view payload_name,
-                                                 int frequency,
-                                                 int channels,
-                                                 int rate) {
-  RTC_DCHECK(audio_);
-  rtcp_sender_.SetRtpClockRate(payload_type, frequency);
-  RTC_CHECK_EQ(0, audio_->RegisterAudioPayload(payload_name, payload_type,
-                                               frequency, channels, rate));
-}
-
 void ModuleRtpRtcpImpl::RegisterSendPayloadFrequency(int payload_type,
                                                      int payload_frequency) {
   rtcp_sender_.SetRtpClockRate(payload_type, payload_frequency);
@@ -423,30 +410,6 @@ bool ModuleRtpRtcpImpl::SendingMedia() const {
 void ModuleRtpRtcpImpl::SetAsPartOfAllocation(bool part_of_allocation) {
   RTC_CHECK(rtp_sender_);
   rtp_sender_->SetAsPartOfAllocation(part_of_allocation);
-}
-
-bool ModuleRtpRtcpImpl::SendOutgoingData(
-    FrameType frame_type,
-    int8_t payload_type,
-    uint32_t time_stamp,
-    int64_t capture_time_ms,
-    const uint8_t* payload_data,
-    size_t payload_size,
-    const RTPFragmentationHeader* fragmentation,
-    const RTPVideoHeader* rtp_video_header,
-    uint32_t* transport_frame_id_out) {
-  OnSendingRtpFrame(time_stamp, capture_time_ms, payload_type,
-                    kVideoFrameKey == frame_type);
-
-  const uint32_t rtp_timestamp = time_stamp + rtp_sender_->TimestampOffset();
-  if (transport_frame_id_out)
-    *transport_frame_id_out = rtp_timestamp;
-
-  RTC_DCHECK(audio_);
-  RTC_DCHECK(fragmentation == nullptr);
-
-  return audio_->SendAudio(frame_type, payload_type, rtp_timestamp,
-                           payload_data, payload_size);
 }
 
 bool ModuleRtpRtcpImpl::OnSendingRtpFrame(uint32_t timestamp,
@@ -785,17 +748,6 @@ RtcpStatisticsCallback* ModuleRtpRtcpImpl::GetRtcpStatisticsCallback() {
 bool ModuleRtpRtcpImpl::SendFeedbackPacket(
     const rtcp::TransportFeedback& packet) {
   return rtcp_sender_.SendFeedbackPacket(packet);
-}
-
-// Send a TelephoneEvent tone using RFC 2833 (4733).
-int32_t ModuleRtpRtcpImpl::SendTelephoneEventOutband(const uint8_t key,
-                                                     const uint16_t time_ms,
-                                                     const uint8_t level) {
-  return audio_ ? audio_->SendTelephoneEvent(key, time_ms, level) : -1;
-}
-
-int32_t ModuleRtpRtcpImpl::SetAudioLevel(const uint8_t level_d_bov) {
-  return audio_ ? audio_->SetAudioLevel(level_d_bov) : -1;
 }
 
 int32_t ModuleRtpRtcpImpl::SetKeyFrameRequestMethod(

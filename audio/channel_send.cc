@@ -129,6 +129,8 @@ class ChannelSend
   // Used by AudioSendStream.
   RtpRtcp* GetRtpRtcp() const override;
 
+  void RegisterCngPayloadType(int payload_type, int payload_frequency) override;
+
   // DTMF.
   bool SendTelephoneEventOutband(int event, int duration_ms) override;
   void SetSendTelephoneEventPayloadType(int payload_type,
@@ -236,6 +238,7 @@ class ChannelSend
   RtcEventLog* const event_log_;
 
   std::unique_ptr<RtpRtcp> _rtpRtcpModule;
+  std::unique_ptr<RTPSenderAudio> rtp_sender_audio_;
 
   std::unique_ptr<AudioCodingModule> audio_coding_;
   uint32_t _timeStamp RTC_GUARDED_BY(encoder_queue_);
@@ -520,10 +523,10 @@ int32_t ChannelSend::SendRtpAudio(FrameType frameType,
                                   const RTPFragmentationHeader* fragmentation) {
   RTC_DCHECK_RUN_ON(encoder_queue_);
   if (_includeAudioLevelIndication) {
-    // Store current audio level in the RTP/RTCP module.
+    // Store current audio level in the RTP sender.
     // The level will be used in combination with voice-activity state
     // (frameType) to add an RTP header extension
-    _rtpRtcpModule->SetAudioLevel(rms_level_.Average());
+    rtp_sender_audio_->SetAudioLevel(rms_level_.Average());
   }
 
   // E2EE Custom Audio Frame Encryption (This is optional).
@@ -559,14 +562,24 @@ int32_t ChannelSend::SendRtpAudio(FrameType frameType,
 
   // Push data from ACM to RTP/RTCP-module to deliver audio frame for
   // packetization.
+  if (!_rtpRtcpModule->OnSendingRtpFrame(timeStamp,
+                                         // Leaving the time when this frame was
+                                         // received from the capture device as
+                                         // undefined for voice for now.
+                                         -1, payloadType,
+                                         /*force_sender_report=*/false)) {
+    return false;
+  }
+
+  // RTCPSender has it's own copy of the timestamp offset, added in
+  // RTCPSender::BuildSR, hence we must not add the in the offset for the above
+  // call.
+  // TODO(nisse): Delete RTCPSender:timestamp_offset_, and see if we can confine
+  // knowledge of the offset to a single place.
+  const uint32_t rtp_timestamp = timeStamp + _rtpRtcpModule->StartTimestamp();
   // This call will trigger Transport::SendPacket() from the RTP/RTCP module.
-  if (!_rtpRtcpModule->SendOutgoingData((FrameType&)frameType, payloadType,
-                                        timeStamp,
-                                        // Leaving the time when this frame was
-                                        // received from the capture device as
-                                        // undefined for voice for now.
-                                        -1, payload.data(), payload.size(),
-                                        fragmentation, nullptr, nullptr)) {
+  if (!rtp_sender_audio_->SendAudio(frameType, payloadType, rtp_timestamp,
+                                    payload.data(), payload.size())) {
     RTC_DLOG(LS_ERROR)
         << "ChannelSend::SendData() failed to send data to RTP/RTCP module";
     return -1;
@@ -687,6 +700,7 @@ ChannelSend::ChannelSend(Clock* clock,
 
   configuration.clock = clock;
   configuration.audio = true;
+  configuration.clock = Clock::GetRealTimeClock();
   configuration.outgoing_transport = rtp_transport;
 
   configuration.paced_sender = rtp_packet_sender_proxy_.get();
@@ -702,6 +716,9 @@ ChannelSend::ChannelSend(Clock* clock,
 
   _rtpRtcpModule = RtpRtcp::Create(configuration);
   _rtpRtcpModule->SetSendingMediaStatus(false);
+
+  rtp_sender_audio_ = absl::make_unique<RTPSenderAudio>(
+      configuration.clock, _rtpRtcpModule->RtpSender());
 
   // We want to invoke the 'TargetRateObserver' and |OnOverheadChanged|
   // callbacks after the audio_coding_ is fully initialized.
@@ -797,11 +814,11 @@ void ChannelSend::SetEncoder(int payload_type,
 
   // The RTP/RTCP module needs to know the RTP timestamp rate (i.e. clockrate)
   // as well as some other things, so we collect this info and send it along.
-  _rtpRtcpModule->RegisterAudioSendPayload(payload_type,
-                                           "audio",
-                                           encoder->RtpTimestampRateHz(),
-                                           encoder->NumChannels(),
-                                           0);
+  _rtpRtcpModule->RegisterSendPayloadFrequency(payload_type,
+                                               encoder->RtpTimestampRateHz());
+  rtp_sender_audio_->RegisterAudioPayload("audio", payload_type,
+                                          encoder->RtpTimestampRateHz(),
+                                          encoder->NumChannels(), 0);
 
   if (media_transport_) {
     rtc::CritScope cs(&media_transport_lock_);
@@ -926,12 +943,19 @@ bool ChannelSend::SendTelephoneEventOutband(int event, int duration_ms) {
   if (!sending_) {
     return false;
   }
-  if (_rtpRtcpModule->SendTelephoneEventOutband(
+  if (rtp_sender_audio_->SendTelephoneEvent(
           event, duration_ms, kTelephoneEventAttenuationdB) != 0) {
-    RTC_DLOG(LS_ERROR) << "SendTelephoneEventOutband() failed to send event";
+    RTC_DLOG(LS_ERROR) << "SendTelephoneEvent() failed to send event";
     return false;
   }
   return true;
+}
+
+void ChannelSend::RegisterCngPayloadType(int payload_type,
+                                         int payload_frequency) {
+  _rtpRtcpModule->RegisterSendPayloadFrequency(payload_type, payload_frequency);
+  rtp_sender_audio_->RegisterAudioPayload("CN", payload_type, payload_frequency,
+                                          1, 0);
 }
 
 void ChannelSend::SetSendTelephoneEventPayloadType(int payload_type,
@@ -939,8 +963,9 @@ void ChannelSend::SetSendTelephoneEventPayloadType(int payload_type,
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
   RTC_DCHECK_LE(0, payload_type);
   RTC_DCHECK_GE(127, payload_type);
-  _rtpRtcpModule->RegisterAudioSendPayload(payload_type, "telephone-event",
-                                           payload_frequency, 0, 0);
+  _rtpRtcpModule->RegisterSendPayloadFrequency(payload_type, payload_frequency);
+  rtp_sender_audio_->RegisterAudioPayload("telephone-event", payload_type,
+                                          payload_frequency, 0, 0);
 }
 
 void ChannelSend::SetLocalSSRC(uint32_t ssrc) {

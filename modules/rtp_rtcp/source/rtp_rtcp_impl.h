@@ -32,8 +32,6 @@
 #include "modules/rtp_rtcp/source/rtcp_receiver.h"
 #include "modules/rtp_rtcp/source/rtcp_sender.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
-#include "modules/rtp_rtcp/source/rtp_sender_audio.h"
-#include "modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/gtest_prod_util.h"
 
@@ -64,12 +62,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   void SetRemoteSSRC(uint32_t ssrc) override;
 
   // Sender part.
-
-  void RegisterAudioSendPayload(int payload_type,
-                                absl::string_view payload_name,
-                                int frequency,
-                                int channels,
-                                int rate) override;
   void RegisterSendPayloadFrequency(int payload_type,
                                     int payload_frequency) override;
 
@@ -136,18 +128,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   bool SendingMedia() const override;
 
   void SetAsPartOfAllocation(bool part_of_allocation) override;
-
-  // Used by the codec module to deliver a video or audio frame for
-  // packetization.
-  bool SendOutgoingData(FrameType frame_type,
-                        int8_t payload_type,
-                        uint32_t time_stamp,
-                        int64_t capture_time_ms,
-                        const uint8_t* payload_data,
-                        size_t payload_size,
-                        const RTPFragmentationHeader* fragmentation,
-                        const RTPVideoHeader* rtp_video_header,
-                        uint32_t* transport_frame_id_out) override;
 
   bool OnSendingRtpFrame(uint32_t timestamp,
                          int64_t capture_time_ms,
@@ -270,17 +250,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   bool RtcpXrRrtrStatus() const override;
 
-  // Audio part.
-
-  // Send a TelephoneEvent tone using RFC 2833 (4733).
-  int32_t SendTelephoneEventOutband(uint8_t key,
-                                    uint16_t time_ms,
-                                    uint8_t level) override;
-
-  // Store the audio level in d_bov for header-extension-for-audio-level-
-  // indication.
-  int32_t SetAudioLevel(uint8_t level_d_bov) override;
-
   // Video part.
 
   // Set method for requesting a new key frame.
@@ -346,7 +315,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   bool TimeToSendFullNackList(int64_t now) const;
 
   std::unique_ptr<RTPSender> rtp_sender_;
-  std::unique_ptr<RTPSenderAudio> audio_;
   RTCPSender rtcp_sender_;
   RTCPReceiver rtcp_receiver_;
 

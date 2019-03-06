@@ -37,12 +37,6 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(SetRemoteSSRC, void(uint32_t ssrc));
   MOCK_METHOD1(SetMaxRtpPacketSize, void(size_t size));
   MOCK_CONST_METHOD0(MaxRtpPacketSize, size_t());
-  MOCK_METHOD5(RegisterAudioSendPayload,
-               void(int payload_type,
-                    absl::string_view payload_name,
-                    int frequency,
-                    int channels,
-                    int rate));
   MOCK_METHOD2(RegisterSendPayloadFrequency,
                void(int payload_type, int frequency));
   MOCK_METHOD1(DeRegisterSendPayload, int32_t(int8_t payload_type));
@@ -87,16 +81,6 @@ class MockRtpRtcp : public RtpRtcp {
                           uint32_t* nack_rate));
   MOCK_CONST_METHOD1(EstimatedReceiveBandwidth,
                      int(uint32_t* available_bandwidth));
-  MOCK_METHOD9(SendOutgoingData,
-               bool(FrameType frame_type,
-                    int8_t payload_type,
-                    uint32_t timestamp,
-                    int64_t capture_time_ms,
-                    const uint8_t* payload_data,
-                    size_t payload_size,
-                    const RTPFragmentationHeader* fragmentation,
-                    const RTPVideoHeader* rtp_video_header,
-                    uint32_t* frame_id_out));
   MOCK_METHOD4(OnSendingRtpFrame, bool(uint32_t, int64_t, int, bool));
   MOCK_METHOD5(TimeToSendPacket,
                bool(uint32_t ssrc,
@@ -162,9 +146,6 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(RegisterRtcpStatisticsCallback, void(RtcpStatisticsCallback*));
   MOCK_METHOD0(GetRtcpStatisticsCallback, RtcpStatisticsCallback*());
   MOCK_METHOD1(SendFeedbackPacket, bool(const rtcp::TransportFeedback& packet));
-  MOCK_METHOD3(SendTelephoneEventOutband,
-               int32_t(uint8_t key, uint16_t time_ms, uint8_t level));
-  MOCK_METHOD1(SetAudioLevel, int32_t(uint8_t level_dbov));
   MOCK_METHOD1(SetTargetSendBitrate, void(uint32_t bitrate_bps));
   MOCK_METHOD1(SetKeyFrameRequestMethod, int32_t(KeyFrameRequestMethod method));
   MOCK_METHOD0(RequestKeyFrame, int32_t());

@@ -47,7 +47,9 @@ const char* FrameTypeToString(FrameType frame_type) {
 }  // namespace
 
 RTPSenderAudio::RTPSenderAudio(Clock* clock, RTPSender* rtp_sender)
-    : clock_(clock), rtp_sender_(rtp_sender) {}
+    : clock_(clock), rtp_sender_(rtp_sender) {
+  RTC_DCHECK(clock_);
+}
 
 RTPSenderAudio::~RTPSenderAudio() {}
 
