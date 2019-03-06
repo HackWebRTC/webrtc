@@ -18,8 +18,8 @@
 #include "api/video/encoded_image.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_encoder.h"
+#include "api/video_codecs/vp8_frame_buffer_controller.h"
 #include "api/video_codecs/vp8_frame_config.h"
-#include "api/video_codecs/vp8_temporal_layers.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp8/libvpx_interface.h"
@@ -101,7 +101,8 @@ class LibvpxVp8Encoder : public VideoEncoder {
   int cpu_speed_default_;
   int number_of_cores_;
   uint32_t rc_max_intra_target_;
-  std::vector<std::unique_ptr<Vp8TemporalLayers>> temporal_layers_;
+  std::vector<std::unique_ptr<Vp8FrameBufferController>>
+      frame_buffer_controllers_;
   std::vector<bool> key_frame_request_;
   std::vector<bool> send_stream_;
   std::vector<int> cpu_speed_;

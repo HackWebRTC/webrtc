@@ -8,10 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/video_coding/codecs/vp8/libvpx_vp8_encoder.h"
+
 #include <assert.h>
 #include <string.h>
+
 #include <algorithm>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
@@ -26,7 +30,6 @@
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/codecs/interface/common_constants.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
-#include "modules/video_coding/codecs/vp8/libvpx_vp8_encoder.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "modules/video_coding/utility/simulcast_utility.h"
@@ -119,10 +122,10 @@ static void FillInEncoderConfig(vpx_codec_enc_cfg* vpx_config,
   vpx_config->rc_max_quantizer = config.rc_max_quantizer;
 }
 
-bool UpdateVpxConfiguration(Vp8TemporalLayers* temporal_layers,
+bool UpdateVpxConfiguration(Vp8FrameBufferController* frame_buffer_controller,
                             vpx_codec_enc_cfg_t* cfg) {
   Vp8EncoderConfig config = GetEncoderConfig(cfg);
-  const bool res = temporal_layers->UpdateConfiguration(&config);
+  const bool res = frame_buffer_controller->UpdateConfiguration(&config);
   if (res)
     FillInEncoderConfig(cfg, config);
   return res;
@@ -182,7 +185,7 @@ LibvpxVp8Encoder::LibvpxVp8Encoder(std::unique_ptr<LibvpxInterface> interface)
           "WebRTC-VP8VariableFramerateScreenshare")),
       framerate_controller_(variable_framerate_experiment_.framerate_limit),
       num_steady_state_frames_(0) {
-  temporal_layers_.reserve(kMaxSimulcastStreams);
+  frame_buffer_controllers_.reserve(kMaxSimulcastStreams);
   raw_images_.reserve(kMaxSimulcastStreams);
   encoded_images_.reserve(kMaxSimulcastStreams);
   send_stream_.reserve(kMaxSimulcastStreams);
@@ -217,7 +220,7 @@ int LibvpxVp8Encoder::Release() {
     libvpx_->img_free(&raw_images_.back());
     raw_images_.pop_back();
   }
-  temporal_layers_.clear();
+  frame_buffer_controllers_.clear();
   inited_ = false;
   return ret_val;
 }
@@ -276,11 +279,11 @@ int LibvpxVp8Encoder::SetRateAllocation(const VideoBitrateAllocation& bitrate,
 
     configurations_[i].rc_target_bitrate = target_bitrate_kbps;
     if (send_stream) {
-      temporal_layers_[stream_idx]->OnRatesUpdated(
+      frame_buffer_controllers_[stream_idx]->OnRatesUpdated(
           bitrate.GetTemporalLayerAllocation(stream_idx), new_framerate);
     }
 
-    UpdateVpxConfiguration(temporal_layers_[stream_idx].get(),
+    UpdateVpxConfiguration(frame_buffer_controllers_[stream_idx].get(),
                            &configurations_[i]);
 
     if (libvpx_->codec_enc_config_set(&encoders_[i], &configurations_[i])) {
@@ -299,21 +302,22 @@ void LibvpxVp8Encoder::SetStreamState(bool send_stream, int stream_idx) {
 }
 
 void LibvpxVp8Encoder::SetupTemporalLayers(const VideoCodec& codec) {
-  RTC_DCHECK(temporal_layers_.empty());
-  int num_streams = SimulcastUtility::NumberOfSimulcastStreams(codec);
+  RTC_DCHECK(frame_buffer_controllers_.empty());
+  const int num_streams = SimulcastUtility::NumberOfSimulcastStreams(codec);
   for (int i = 0; i < num_streams; ++i) {
     Vp8TemporalLayersType type;
-    int num_temporal_layers =
+    int num_frame_buffer_controllers =
         SimulcastUtility::NumberOfTemporalLayers(codec, i);
     if (SimulcastUtility::IsConferenceModeScreenshare(codec) && i == 0) {
       type = Vp8TemporalLayersType::kBitrateDynamic;
       // Legacy screenshare layers supports max 2 layers.
-      num_temporal_layers = std::max<int>(2, num_temporal_layers);
+      num_frame_buffer_controllers =
+          std::max<int>(2, num_frame_buffer_controllers);
     } else {
       type = Vp8TemporalLayersType::kFixedPattern;
     }
-    temporal_layers_.emplace_back(
-        CreateVp8TemporalLayers(type, num_temporal_layers));
+    frame_buffer_controllers_.emplace_back(
+        CreateVp8TemporalLayers(type, num_frame_buffer_controllers));
   }
 }
 
@@ -488,10 +492,10 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
 
   configurations_[0].rc_target_bitrate = stream_bitrates[stream_idx];
   if (stream_bitrates[stream_idx] > 0) {
-    temporal_layers_[stream_idx]->OnRatesUpdated(
+    frame_buffer_controllers_[stream_idx]->OnRatesUpdated(
         allocation.GetTemporalLayerAllocation(stream_idx), inst->maxFramerate);
   }
-  UpdateVpxConfiguration(temporal_layers_[stream_idx].get(),
+  UpdateVpxConfiguration(frame_buffer_controllers_[stream_idx].get(),
                          &configurations_[0]);
   configurations_[0].rc_dropframe_thresh = FrameDropThreshold(stream_idx);
 
@@ -518,11 +522,11 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
     SetStreamState(stream_bitrates[stream_idx] > 0, stream_idx);
     configurations_[i].rc_target_bitrate = stream_bitrates[stream_idx];
     if (stream_bitrates[stream_idx] > 0) {
-      temporal_layers_[stream_idx]->OnRatesUpdated(
+      frame_buffer_controllers_[stream_idx]->OnRatesUpdated(
           allocation.GetTemporalLayerAllocation(stream_idx),
           inst->maxFramerate);
     }
-    UpdateVpxConfiguration(temporal_layers_[stream_idx].get(),
+    UpdateVpxConfiguration(frame_buffer_controllers_[stream_idx].get(),
                            &configurations_[i]);
   }
 
@@ -691,9 +695,9 @@ uint32_t LibvpxVp8Encoder::FrameDropThreshold(size_t spatial_idx) const {
   // setting, as eg. ScreenshareLayers does not work as intended with frame
   // dropping on and DefaultTemporalLayers will have performance issues with
   // frame dropping off.
-  if (temporal_layers_.size() <= spatial_idx) {
+  if (frame_buffer_controllers_.size() <= spatial_idx) {
     enable_frame_dropping =
-        temporal_layers_[spatial_idx]->SupportsEncoderFrameDropping();
+        frame_buffer_controllers_[spatial_idx]->SupportsEncoderFrameDropping();
   }
   return enable_frame_dropping ? 30 : 0;
 }
@@ -808,7 +812,8 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
   vpx_enc_frame_flags_t flags[kMaxSimulcastStreams];
   Vp8FrameConfig tl_configs[kMaxSimulcastStreams];
   for (size_t i = 0; i < encoders_.size(); ++i) {
-    tl_configs[i] = temporal_layers_[i]->UpdateLayerConfig(frame.timestamp());
+    tl_configs[i] =
+        frame_buffer_controllers_[i]->UpdateLayerConfig(frame.timestamp());
     if (tl_configs[i].drop_frame) {
       if (send_key_frame) {
         continue;
@@ -837,9 +842,10 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
   }
 
   // Set the encoder frame flags and temporal layer_id for each spatial stream.
-  // Note that |temporal_layers_| are defined starting from lowest resolution at
-  // position 0 to highest resolution at position |encoders_.size() - 1|,
-  // whereas |encoder_| is from highest to lowest resolution.
+  // Note that |frame_buffer_controllers_| are defined starting from lowest
+  // resolution at position 0 to highest resolution at position
+  // |encoders_.size() - 1|, whereas |encoder_| is from highest to lowest
+  // resolution.
   size_t stream_idx = encoders_.size() - 1;
   for (size_t i = 0; i < encoders_.size(); ++i, --stream_idx) {
     // Allow the layers adapter to temporarily modify the configuration. This
@@ -847,7 +853,7 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
     // the next update.
     vpx_codec_enc_cfg_t temp_config;
     memcpy(&temp_config, &configurations_[i], sizeof(vpx_codec_enc_cfg_t));
-    if (UpdateVpxConfiguration(temporal_layers_[stream_idx].get(),
+    if (UpdateVpxConfiguration(frame_buffer_controllers_[stream_idx].get(),
                                &temp_config)) {
       if (libvpx_->codec_enc_config_set(&encoders_[i], &temp_config))
         return WEBRTC_VIDEO_CODEC_ERROR;
@@ -909,7 +915,7 @@ void LibvpxVp8Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
 
   int qp = 0;
   vpx_codec_control(&encoders_[encoder_idx], VP8E_GET_LAST_QUANTIZER_64, &qp);
-  temporal_layers_[stream_idx]->OnEncodeDone(
+  frame_buffer_controllers_[stream_idx]->OnEncodeDone(
       timestamp, encoded_images_[encoder_idx].size(),
       (pkt.data.frame.flags & VPX_FRAME_IS_KEY) != 0, qp, codec_specific);
 }
@@ -984,13 +990,13 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image) {
         } else {
           ++num_steady_state_frames_;
         }
-      } else if (!temporal_layers_[stream_idx]
+      } else if (!frame_buffer_controllers_[stream_idx]
                       ->SupportsEncoderFrameDropping()) {
         result = WEBRTC_VIDEO_CODEC_TARGET_BITRATE_OVERSHOOT;
         if (encoded_images_[encoder_idx].size() == 0) {
           // Dropped frame that will be re-encoded.
-          temporal_layers_[stream_idx]->OnEncodeDone(input_image.timestamp(), 0,
-                                                     false, 0, nullptr);
+          frame_buffer_controllers_[stream_idx]->OnEncodeDone(
+              input_image.timestamp(), 0, false, 0, nullptr);
         }
       }
     }
