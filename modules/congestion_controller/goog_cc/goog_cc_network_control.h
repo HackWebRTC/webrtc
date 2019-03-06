@@ -108,7 +108,7 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   int64_t last_estimated_rtt_ms_ = 0;
 
   double pacing_factor_;
-  DataRate min_pacing_rate_;
+  DataRate min_total_allocated_bitrate_;
   DataRate max_padding_rate_;
   DataRate max_total_allocated_bitrate_;
 

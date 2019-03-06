@@ -12,7 +12,8 @@
 
 namespace webrtc {
 
-StreamsConfig::StreamsConfig() = default;
+// TODO(srte): Revert to using default after removing union member.
+StreamsConfig::StreamsConfig() {}
 StreamsConfig::StreamsConfig(const StreamsConfig&) = default;
 StreamsConfig::~StreamsConfig() = default;
 

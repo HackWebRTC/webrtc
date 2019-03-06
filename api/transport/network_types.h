@@ -18,6 +18,7 @@
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "rtc_base/deprecation.h"
 
 namespace webrtc {
 
@@ -33,7 +34,11 @@ struct StreamsConfig {
   Timestamp at_time = Timestamp::PlusInfinity();
   absl::optional<bool> requests_alr_probing;
   absl::optional<double> pacing_factor;
-  absl::optional<DataRate> min_pacing_rate;
+  union {
+    absl::optional<DataRate> min_total_allocated_bitrate = absl::nullopt;
+    // Use min_total_allocated_bitrate instead.
+    RTC_DEPRECATED absl::optional<DataRate> min_pacing_rate;
+  };
   absl::optional<DataRate> max_padding_rate;
   absl::optional<DataRate> max_total_allocated_bitrate;
 };

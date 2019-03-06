@@ -122,8 +122,9 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
       last_pushback_target_rate_(last_raw_target_rate_),
       pacing_factor_(config.stream_based_config.pacing_factor.value_or(
           kDefaultPaceMultiplier)),
-      min_pacing_rate_(config.stream_based_config.min_pacing_rate.value_or(
-          DataRate::Zero())),
+      min_total_allocated_bitrate_(
+          config.stream_based_config.min_total_allocated_bitrate.value_or(
+              DataRate::Zero())),
       max_padding_rate_(config.stream_based_config.max_padding_rate.value_or(
           DataRate::Zero())),
       max_total_allocated_bitrate_(DataRate::Zero()) {
@@ -308,8 +309,9 @@ NetworkControlUpdate GoogCcNetworkController::OnStreamsConfig(
     pacing_factor_ = *msg.pacing_factor;
     pacing_changed = true;
   }
-  if (msg.min_pacing_rate && *msg.min_pacing_rate != min_pacing_rate_) {
-    min_pacing_rate_ = *msg.min_pacing_rate;
+  if (msg.min_total_allocated_bitrate &&
+      *msg.min_total_allocated_bitrate != min_total_allocated_bitrate_) {
+    min_total_allocated_bitrate_ = *msg.min_total_allocated_bitrate;
     pacing_changed = true;
   }
   if (msg.max_padding_rate && *msg.max_padding_rate != max_padding_rate_) {
@@ -633,7 +635,8 @@ PacerConfig GoogCcNetworkController::GetPacingRates(Timestamp at_time) const {
   // Pacing rate is based on target rate before congestion window pushback,
   // because we don't want to build queues in the pacer when pushback occurs.
   DataRate pacing_rate =
-      std::max(min_pacing_rate_, last_raw_target_rate_) * pacing_factor_;
+      std::max(min_total_allocated_bitrate_, last_raw_target_rate_) *
+      pacing_factor_;
   DataRate padding_rate =
       std::min(max_padding_rate_, last_pushback_target_rate_);
   PacerConfig msg;
