@@ -574,7 +574,7 @@ TEST_F(TestSimulcastEncoderAdapterFake, ReusesEncodersInOrder) {
   EXPECT_CALL(*original_encoders[2], Encode(_, _, _))
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
   frame_types.resize(3, kVideoFrameKey);
-  EXPECT_EQ(0, adapter_->Encode(input_frame, nullptr, &frame_types));
+  EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
   EXPECT_CALL(*original_encoders[0], Release())
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
   EXPECT_CALL(*original_encoders[1], Release())
@@ -599,7 +599,7 @@ TEST_F(TestSimulcastEncoderAdapterFake, ReusesEncodersInOrder) {
   EXPECT_CALL(*original_encoders[1], Encode(_, _, _))
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
   frame_types.resize(2, kVideoFrameKey);
-  EXPECT_EQ(0, adapter_->Encode(input_frame, nullptr, &frame_types));
+  EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
   EXPECT_CALL(*original_encoders[0], Release())
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
   EXPECT_CALL(*original_encoders[1], Release())
@@ -619,7 +619,7 @@ TEST_F(TestSimulcastEncoderAdapterFake, ReusesEncodersInOrder) {
   EXPECT_CALL(*original_encoders[0], Encode(_, _, _))
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
   frame_types.resize(1, kVideoFrameKey);
-  EXPECT_EQ(0, adapter_->Encode(input_frame, nullptr, &frame_types));
+  EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
   EXPECT_CALL(*original_encoders[0], Release())
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
   EXPECT_EQ(0, adapter_->Release());
@@ -643,7 +643,7 @@ TEST_F(TestSimulcastEncoderAdapterFake, ReusesEncodersInOrder) {
   EXPECT_CALL(*new_encoders[2], Encode(_, _, _))
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
   frame_types.resize(3, kVideoFrameKey);
-  EXPECT_EQ(0, adapter_->Encode(input_frame, nullptr, &frame_types));
+  EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
   EXPECT_CALL(*original_encoders[0], Release())
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
   EXPECT_CALL(*new_encoders[1], Release())
@@ -891,7 +891,7 @@ TEST_F(TestSimulcastEncoderAdapterFake,
   for (MockVideoEncoder* encoder : helper_->factory()->encoders())
     EXPECT_CALL(*encoder, Encode(::testing::Ref(input_frame), _, _)).Times(1);
   std::vector<FrameType> frame_types(3, kVideoFrameKey);
-  EXPECT_EQ(0, adapter_->Encode(input_frame, nullptr, &frame_types));
+  EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
 }
 
 TEST_F(TestSimulcastEncoderAdapterFake, TestFailureReturnCodesFromEncodeCalls) {
@@ -918,7 +918,7 @@ TEST_F(TestSimulcastEncoderAdapterFake, TestFailureReturnCodesFromEncodeCalls) {
                                .build();
   std::vector<FrameType> frame_types(3, kVideoFrameKey);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE,
-            adapter_->Encode(input_frame, nullptr, &frame_types));
+            adapter_->Encode(input_frame, &frame_types));
 }
 
 TEST_F(TestSimulcastEncoderAdapterFake, TestInitFailureCleansUpEncoders) {
@@ -1033,7 +1033,7 @@ TEST_F(TestSimulcastEncoderAdapterFake, ActivatesCorrectStreamsInInitEncode) {
 
   std::vector<FrameType> frame_types;
   frame_types.resize(3, kVideoFrameKey);
-  EXPECT_EQ(0, adapter_->Encode(input_frame, nullptr, &frame_types));
+  EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
 }
 
 TEST_F(TestSimulcastEncoderAdapterFake, TrustedRateControl) {

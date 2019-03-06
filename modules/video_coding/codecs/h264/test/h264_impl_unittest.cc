@@ -65,8 +65,7 @@ class TestH264Impl : public VideoCodecUnitTest {
 
 TEST_F(TestH264Impl, MAYBE_EncodeDecode) {
   VideoFrame* input_frame = NextInputFrame();
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame, nullptr, nullptr));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Encode(*input_frame, nullptr));
   EncodedImage encoded_frame;
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
@@ -93,7 +92,7 @@ TEST_F(TestH264Impl, MAYBE_EncodeDecode) {
 
 TEST_F(TestH264Impl, MAYBE_DecodedQpEqualsEncodedQp) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
+            encoder_->Encode(*NextInputFrame(), nullptr));
   EncodedImage encoded_frame;
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
@@ -111,8 +110,7 @@ TEST_F(TestH264Impl, MAYBE_DecodedQpEqualsEncodedQp) {
 
 TEST_F(TestH264Impl, MAYBE_EncodedColorSpaceEqualsInputColorSpace) {
   VideoFrame* input_frame = NextInputFrame();
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame, nullptr, nullptr));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Encode(*input_frame, nullptr));
   EncodedImage encoded_frame;
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
@@ -127,7 +125,7 @@ TEST_F(TestH264Impl, MAYBE_EncodedColorSpaceEqualsInputColorSpace) {
           .build();
 
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(input_frame_w_color_space, nullptr, nullptr));
+            encoder_->Encode(input_frame_w_color_space, nullptr));
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
   ASSERT_TRUE(encoded_frame.ColorSpace());
   EXPECT_EQ(*encoded_frame.ColorSpace(), color_space);
@@ -135,7 +133,7 @@ TEST_F(TestH264Impl, MAYBE_EncodedColorSpaceEqualsInputColorSpace) {
 
 TEST_F(TestH264Impl, MAYBE_DecodedColorSpaceEqualsEncodedColorSpace) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
+            encoder_->Encode(*NextInputFrame(), nullptr));
   EncodedImage encoded_frame;
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));

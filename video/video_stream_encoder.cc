@@ -1268,8 +1268,7 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   frame_encoder_timer_.OnEncodeStarted(out_frame.timestamp(),
                                        out_frame.render_time_ms());
 
-  const int32_t encode_status =
-      encoder_->Encode(out_frame, nullptr, &next_frame_types_);
+  const int32_t encode_status = encoder_->Encode(out_frame, &next_frame_types_);
 
   if (encode_status < 0) {
     RTC_LOG(LS_ERROR) << "Failed to encode frame. Error code: "
@@ -1307,7 +1306,6 @@ void VideoStreamEncoder::SendKeyFrame() {
                              .set_rotation(kVideoRotation_0)
                              .set_timestamp_us(0)
                              .build(),
-                         nullptr,
                          &next_frame_types_) == WEBRTC_VIDEO_CODEC_OK) {
       // Try to remove just-performed keyframe request, if stream still exists.
       next_frame_types_[0] = kVideoFrameDelta;

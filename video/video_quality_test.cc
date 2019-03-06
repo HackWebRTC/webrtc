@@ -142,12 +142,11 @@ class QualityTestVideoEncoder : public VideoEncoder,
   }
   int32_t Release() override { return encoder_->Release(); }
   int32_t Encode(const VideoFrame& frame,
-                 const CodecSpecificInfo* codec_specific_info,
                  const std::vector<FrameType>* frame_types) {
     if (analyzer_) {
       analyzer_->PreEncodeOnFrame(frame);
     }
-    return encoder_->Encode(frame, codec_specific_info, frame_types);
+    return encoder_->Encode(frame, frame_types);
   }
   int32_t SetRateAllocation(const VideoBitrateAllocation& allocation,
                             uint32_t framerate) override {

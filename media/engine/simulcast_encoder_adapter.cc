@@ -338,7 +338,6 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
 
 int SimulcastEncoderAdapter::Encode(
     const VideoFrame& input_image,
-    const CodecSpecificInfo* codec_specific_info,
     const std::vector<FrameType>* frame_types) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_);
 
@@ -399,8 +398,8 @@ int SimulcastEncoderAdapter::Encode(
     if ((dst_width == src_width && dst_height == src_height) ||
         input_image.video_frame_buffer()->type() ==
             VideoFrameBuffer::Type::kNative) {
-      int ret = streaminfos_[stream_idx].encoder->Encode(
-          input_image, codec_specific_info, &stream_frame_types);
+      int ret = streaminfos_[stream_idx].encoder->Encode(input_image,
+                                                         &stream_frame_types);
       if (ret != WEBRTC_VIDEO_CODEC_OK) {
         return ret;
       }
@@ -426,8 +425,8 @@ int SimulcastEncoderAdapter::Encode(
                              .set_rotation(webrtc::kVideoRotation_0)
                              .set_timestamp_ms(input_image.render_time_ms())
                              .build();
-      int ret = streaminfos_[stream_idx].encoder->Encode(
-          frame, codec_specific_info, &stream_frame_types);
+      int ret =
+          streaminfos_[stream_idx].encoder->Encode(frame, &stream_frame_types);
       if (ret != WEBRTC_VIDEO_CODEC_OK) {
         return ret;
       }

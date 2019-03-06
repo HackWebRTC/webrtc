@@ -45,7 +45,6 @@ class SimulcastEncoderAdapter : public VideoEncoder {
                  int number_of_cores,
                  size_t max_payload_size) override;
   int Encode(const VideoFrame& input_image,
-             const CodecSpecificInfo* codec_specific_info,
              const std::vector<FrameType>* frame_types) override;
   int RegisterEncodeCompleteCallback(EncodedImageCallback* callback) override;
   int SetRateAllocation(const VideoBitrateAllocation& bitrate,

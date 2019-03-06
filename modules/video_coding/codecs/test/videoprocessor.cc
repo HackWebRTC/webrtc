@@ -288,8 +288,7 @@ void VideoProcessor::ProcessFrame() {
   const std::vector<FrameType> frame_types =
       (frame_number == 0) ? std::vector<FrameType>{kVideoFrameKey}
                           : std::vector<FrameType>{kVideoFrameDelta};
-  const int encode_return_code =
-      encoder_->Encode(input_frame, nullptr, &frame_types);
+  const int encode_return_code = encoder_->Encode(input_frame, &frame_types);
   for (size_t i = 0; i < num_simulcast_or_spatial_layers_; ++i) {
     FrameStatistics* frame_stat = stats_->GetFrame(frame_number, i);
     frame_stat->encode_return_code = encode_return_code;

@@ -189,7 +189,7 @@ void VideoEncoderSoftwareFallbackWrapperTest::EncodeFrame(int expected_ret) {
                                         .set_rotation(webrtc::kVideoRotation_0)
                                         .set_timestamp_us(0)
                                         .build());
-  EXPECT_EQ(expected_ret, fallback_wrapper_->Encode(*frame_, nullptr, &types));
+  EXPECT_EQ(expected_ret, fallback_wrapper_->Encode(*frame_, &types));
 }
 
 void VideoEncoderSoftwareFallbackWrapperTest::UtilizeFallbackEncoder() {
@@ -295,8 +295,7 @@ TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
   // Encoding a frame using the fallback should arrive at the new callback.
   std::vector<FrameType> types(1, kVideoFrameKey);
   frame_->set_timestamp(frame_->timestamp() + 1000);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            fallback_wrapper_->Encode(*frame_, nullptr, &types));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_->Encode(*frame_, &types));
 
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_->Release());
 }
@@ -605,7 +604,7 @@ TEST(SoftwareFallbackEncoderTest, HwRateControllerTrusted) {
   VideoFrame frame = VideoFrame::Builder()
                          .set_video_frame_buffer(I420Buffer::Create(100, 100))
                          .build();
-  wrapper->Encode(frame, nullptr, nullptr);
+  wrapper->Encode(frame, nullptr);
 
   EXPECT_FALSE(wrapper->GetEncoderInfo().has_trusted_rate_controller);
 }
@@ -645,7 +644,7 @@ TEST(SoftwareFallbackEncoderTest, ReportsHardwareAccelerated) {
   VideoFrame frame = VideoFrame::Builder()
                          .set_video_frame_buffer(I420Buffer::Create(100, 100))
                          .build();
-  wrapper->Encode(frame, nullptr, nullptr);
+  wrapper->Encode(frame, nullptr);
   EXPECT_FALSE(wrapper->GetEncoderInfo().is_hardware_accelerated);
 }
 
@@ -669,7 +668,7 @@ TEST(SoftwareFallbackEncoderTest, ReportsInternalSource) {
   VideoFrame frame = VideoFrame::Builder()
                          .set_video_frame_buffer(I420Buffer::Create(100, 100))
                          .build();
-  wrapper->Encode(frame, nullptr, nullptr);
+  wrapper->Encode(frame, nullptr);
   EXPECT_FALSE(wrapper->GetEncoderInfo().has_internal_source);
 }
 

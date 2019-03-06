@@ -88,7 +88,6 @@ class VideoEncoderSoftwareFallbackWrapper final : public VideoEncoder {
 
   int32_t Release() override;
   int32_t Encode(const VideoFrame& frame,
-                 const CodecSpecificInfo* codec_specific_info,
                  const std::vector<FrameType>* frame_types) override;
   int32_t SetRateAllocation(const VideoBitrateAllocation& bitrate_allocation,
                             uint32_t framerate) override;
@@ -253,16 +252,15 @@ int32_t VideoEncoderSoftwareFallbackWrapper::Release() {
 
 int32_t VideoEncoderSoftwareFallbackWrapper::Encode(
     const VideoFrame& frame,
-    const CodecSpecificInfo* codec_specific_info,
     const std::vector<FrameType>* frame_types) {
   if (use_fallback_encoder_)
-    return fallback_encoder_->Encode(frame, codec_specific_info, frame_types);
-  int32_t ret = encoder_->Encode(frame, codec_specific_info, frame_types);
+    return fallback_encoder_->Encode(frame, frame_types);
+  int32_t ret = encoder_->Encode(frame, frame_types);
   // If requested, try a software fallback.
   bool fallback_requested = (ret == WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE);
   if (fallback_requested && InitFallbackEncoder()) {
     // Start using the fallback with this frame.
-    return fallback_encoder_->Encode(frame, codec_specific_info, frame_types);
+    return fallback_encoder_->Encode(frame, frame_types);
   }
   return ret;
 }

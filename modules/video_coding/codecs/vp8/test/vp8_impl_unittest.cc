@@ -81,7 +81,7 @@ class TestVp8Impl : public VideoCodecUnitTest {
       frame_types.emplace_back(FrameType::kVideoFrameDelta);
     }
     EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-              encoder_->Encode(input_frame, nullptr, &frame_types));
+              encoder_->Encode(input_frame, &frame_types));
     ASSERT_TRUE(WaitForEncodedFrame(encoded_frame, codec_specific_info));
     VerifyQpParser(*encoded_frame);
     VideoEncoder::EncoderInfo encoder_info = encoder_->GetEncoderInfo();
@@ -138,7 +138,7 @@ TEST_F(TestVp8Impl, EncodeFrameAndRelease) {
 
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_UNINITIALIZED,
-            encoder_->Encode(*NextInputFrame(), nullptr, nullptr));
+            encoder_->Encode(*NextInputFrame(), nullptr));
 }
 
 TEST_F(TestVp8Impl, InitDecode) {

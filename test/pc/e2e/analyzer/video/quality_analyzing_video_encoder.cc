@@ -87,7 +87,6 @@ int32_t QualityAnalyzingVideoEncoder::Release() {
 
 int32_t QualityAnalyzingVideoEncoder::Encode(
     const VideoFrame& frame,
-    const CodecSpecificInfo* codec_specific_info,
     const std::vector<FrameType>* frame_types) {
   {
     rtc::CritScope crit(&lock_);
@@ -98,7 +97,7 @@ int32_t QualityAnalyzingVideoEncoder::Encode(
     RTC_DCHECK_LT(timestamp_to_frame_id_list_.size(), kMaxFrameInPipelineCount);
   }
   analyzer_->OnFramePreEncode(frame);
-  int32_t result = delegate_->Encode(frame, codec_specific_info, frame_types);
+  int32_t result = delegate_->Encode(frame, frame_types);
   if (result != WEBRTC_VIDEO_CODEC_OK) {
     // If origin encoder failed, then cleanup data for this frame.
     {

@@ -219,8 +219,7 @@ TEST_P(TestMultiplexAdapter, ConstructAndDestructEncoder) {
 
 TEST_P(TestMultiplexAdapter, EncodeDecodeI420Frame) {
   std::unique_ptr<VideoFrame> input_frame = CreateInputFrame(false);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame, nullptr, nullptr));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Encode(*input_frame, nullptr));
   EncodedImage encoded_frame;
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
@@ -238,8 +237,7 @@ TEST_P(TestMultiplexAdapter, EncodeDecodeI420Frame) {
 
 TEST_P(TestMultiplexAdapter, EncodeDecodeI420AFrame) {
   std::unique_ptr<VideoFrame> yuva_frame = CreateInputFrame(true);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*yuva_frame, nullptr, nullptr));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Encode(*yuva_frame, nullptr));
   EncodedImage encoded_frame;
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
@@ -264,8 +262,7 @@ TEST_P(TestMultiplexAdapter, EncodeDecodeI420AFrame) {
 
 TEST_P(TestMultiplexAdapter, CheckSingleFrameEncodedBitstream) {
   std::unique_ptr<VideoFrame> input_frame = CreateInputFrame(false);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*input_frame, nullptr, nullptr));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Encode(*input_frame, nullptr));
   EncodedImage encoded_frame;
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
@@ -284,8 +281,7 @@ TEST_P(TestMultiplexAdapter, CheckSingleFrameEncodedBitstream) {
 
 TEST_P(TestMultiplexAdapter, CheckDoubleFramesEncodedBitstream) {
   std::unique_ptr<VideoFrame> yuva_frame = CreateInputFrame(true);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*yuva_frame, nullptr, nullptr));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Encode(*yuva_frame, nullptr));
   EncodedImage encoded_frame;
   CodecSpecificInfo codec_specific_info;
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
@@ -311,8 +307,7 @@ TEST_P(TestMultiplexAdapter, ImageIndexIncreases) {
   std::unique_ptr<VideoFrame> yuva_frame = CreateInputFrame(true);
   const size_t expected_num_encoded_frames = 3;
   for (size_t i = 0; i < expected_num_encoded_frames; ++i) {
-    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-              encoder_->Encode(*yuva_frame, nullptr, nullptr));
+    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Encode(*yuva_frame, nullptr));
     EncodedImage encoded_frame;
     CodecSpecificInfo codec_specific_info;
     ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));

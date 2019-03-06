@@ -138,7 +138,6 @@ int MultiplexEncoderAdapter::InitEncode(const VideoCodec* inst,
 
 int MultiplexEncoderAdapter::Encode(
     const VideoFrame& input_image,
-    const CodecSpecificInfo* codec_specific_info,
     const std::vector<FrameType>* frame_types) {
   if (!encoded_complete_callback_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
@@ -181,8 +180,7 @@ int MultiplexEncoderAdapter::Encode(
   ++picture_index_;
 
   // Encode YUV
-  int rv = encoders_[kYUVStream]->Encode(input_image, codec_specific_info,
-                                         &adjusted_frame_types);
+  int rv = encoders_[kYUVStream]->Encode(input_image, &adjusted_frame_types);
 
   // If we do not receive an alpha frame, we send a single frame for this
   // |picture_index_|. The receiver will receive |frame_count| as 1 which
@@ -208,8 +206,7 @@ int MultiplexEncoderAdapter::Encode(
                                .set_rotation(input_image.rotation())
                                .set_id(input_image.id())
                                .build();
-  rv = encoders_[kAXXStream]->Encode(alpha_image, codec_specific_info,
-                                     &adjusted_frame_types);
+  rv = encoders_[kAXXStream]->Encode(alpha_image, &adjusted_frame_types);
   return rv;
 }
 

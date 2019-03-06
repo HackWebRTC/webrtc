@@ -303,11 +303,11 @@ void SimulcastTestFixtureImpl::RunActiveStreamsTest(
 
   ExpectStreams(kVideoFrameKey, active_streams);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   ExpectStreams(kVideoFrameDelta, active_streams);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 }
 
 void SimulcastTestFixtureImpl::UpdateActiveStreams(
@@ -399,33 +399,33 @@ void SimulcastTestFixtureImpl::TestKeyFrameRequestsOnAllStreams() {
   std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
                                      kVideoFrameDelta);
   ExpectStreams(kVideoFrameKey, kNumberOfSimulcastStreams);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   ExpectStreams(kVideoFrameDelta, kNumberOfSimulcastStreams);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   frame_types[0] = kVideoFrameKey;
   ExpectStreams(kVideoFrameKey, kNumberOfSimulcastStreams);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   std::fill(frame_types.begin(), frame_types.end(), kVideoFrameDelta);
   frame_types[1] = kVideoFrameKey;
   ExpectStreams(kVideoFrameKey, kNumberOfSimulcastStreams);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   std::fill(frame_types.begin(), frame_types.end(), kVideoFrameDelta);
   frame_types[2] = kVideoFrameKey;
   ExpectStreams(kVideoFrameKey, kNumberOfSimulcastStreams);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   std::fill(frame_types.begin(), frame_types.end(), kVideoFrameDelta);
   ExpectStreams(kVideoFrameDelta, kNumberOfSimulcastStreams);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 }
 
 void SimulcastTestFixtureImpl::TestPaddingAllStreams() {
@@ -434,11 +434,11 @@ void SimulcastTestFixtureImpl::TestPaddingAllStreams() {
   std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
                                      kVideoFrameDelta);
   ExpectStreams(kVideoFrameKey, 1);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   ExpectStreams(kVideoFrameDelta, 1);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 }
 
 void SimulcastTestFixtureImpl::TestPaddingTwoStreams() {
@@ -447,11 +447,11 @@ void SimulcastTestFixtureImpl::TestPaddingTwoStreams() {
   std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
                                      kVideoFrameDelta);
   ExpectStreams(kVideoFrameKey, 1);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   ExpectStreams(kVideoFrameDelta, 1);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 }
 
 void SimulcastTestFixtureImpl::TestPaddingTwoStreamsOneMaxedOut() {
@@ -461,11 +461,11 @@ void SimulcastTestFixtureImpl::TestPaddingTwoStreamsOneMaxedOut() {
   std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
                                      kVideoFrameDelta);
   ExpectStreams(kVideoFrameKey, 1);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   ExpectStreams(kVideoFrameDelta, 1);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 }
 
 void SimulcastTestFixtureImpl::TestPaddingOneStream() {
@@ -474,11 +474,11 @@ void SimulcastTestFixtureImpl::TestPaddingOneStream() {
   std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
                                      kVideoFrameDelta);
   ExpectStreams(kVideoFrameKey, 2);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   ExpectStreams(kVideoFrameDelta, 2);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 }
 
 void SimulcastTestFixtureImpl::TestPaddingOneStreamTwoMaxedOut() {
@@ -488,11 +488,11 @@ void SimulcastTestFixtureImpl::TestPaddingOneStreamTwoMaxedOut() {
   std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
                                      kVideoFrameDelta);
   ExpectStreams(kVideoFrameKey, 2);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   ExpectStreams(kVideoFrameDelta, 2);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 }
 
 void SimulcastTestFixtureImpl::TestSendAllStreams() {
@@ -501,11 +501,11 @@ void SimulcastTestFixtureImpl::TestSendAllStreams() {
   std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
                                      kVideoFrameDelta);
   ExpectStreams(kVideoFrameKey, 3);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   ExpectStreams(kVideoFrameDelta, 3);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 }
 
 void SimulcastTestFixtureImpl::TestDisablingStreams() {
@@ -514,44 +514,44 @@ void SimulcastTestFixtureImpl::TestDisablingStreams() {
   std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
                                      kVideoFrameDelta);
   ExpectStreams(kVideoFrameKey, 3);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   ExpectStreams(kVideoFrameDelta, 3);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   // We should only get two streams and padding for one.
   SetRates(kTargetBitrates[0] + kTargetBitrates[1] + kMinBitrates[2] / 2, 30);
   ExpectStreams(kVideoFrameDelta, 2);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   // We should only get the first stream and padding for two.
   SetRates(kTargetBitrates[0] + kMinBitrates[1] / 2, 30);
   ExpectStreams(kVideoFrameDelta, 1);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   // We don't have enough bitrate for the thumbnail stream, but we should get
   // it anyway with current configuration.
   SetRates(kTargetBitrates[0] - 1, 30);
   ExpectStreams(kVideoFrameDelta, 1);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   // We should only get two streams and padding for one.
   SetRates(kTargetBitrates[0] + kTargetBitrates[1] + kMinBitrates[2] / 2, 30);
   // We get a key frame because a new stream is being enabled.
   ExpectStreams(kVideoFrameKey, 2);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   // We should get all three streams.
   SetRates(kTargetBitrates[0] + kTargetBitrates[1] + kTargetBitrates[2], 30);
   // We get a key frame because a new stream is being enabled.
   ExpectStreams(kVideoFrameKey, 3);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 }
 
 void SimulcastTestFixtureImpl::TestActiveStreams() {
@@ -628,7 +628,7 @@ void SimulcastTestFixtureImpl::SwitchingToOneStream(int width, int height) {
       .Times(1)
       .WillRepeatedly(Return(
           EncodedImageCallback::Result(EncodedImageCallback::Result::OK, 0)));
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
   // Switch back.
   DefaultSettings(&settings_, temporal_layer_profile, codec_type_);
@@ -647,7 +647,7 @@ void SimulcastTestFixtureImpl::SwitchingToOneStream(int width, int height) {
           .set_rotation(webrtc::kVideoRotation_0)
           .set_timestamp_us(0)
           .build());
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, &frame_types));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 }
 
 void SimulcastTestFixtureImpl::TestSwitchingToOneStream() {
@@ -675,7 +675,7 @@ void SimulcastTestFixtureImpl::TestSpatioTemporalLayers333PatternEncoder() {
   bool expected_layer_sync[3] = {false, false, false};
 
   // First frame: #0.
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, NULL));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL));
   SetExpectedValues3<int>(0, 0, 0, expected_temporal_idx);
   SetExpectedValues3<bool>(true, true, true, expected_layer_sync);
   VerifyTemporalIdxAndSyncForAllSpatialLayers(
@@ -683,7 +683,7 @@ void SimulcastTestFixtureImpl::TestSpatioTemporalLayers333PatternEncoder() {
 
   // Next frame: #1.
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, NULL));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL));
   SetExpectedValues3<int>(2, 2, 2, expected_temporal_idx);
   SetExpectedValues3<bool>(true, true, true, expected_layer_sync);
   VerifyTemporalIdxAndSyncForAllSpatialLayers(
@@ -691,7 +691,7 @@ void SimulcastTestFixtureImpl::TestSpatioTemporalLayers333PatternEncoder() {
 
   // Next frame: #2.
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, NULL));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL));
   SetExpectedValues3<int>(1, 1, 1, expected_temporal_idx);
   SetExpectedValues3<bool>(true, true, true, expected_layer_sync);
   VerifyTemporalIdxAndSyncForAllSpatialLayers(
@@ -699,7 +699,7 @@ void SimulcastTestFixtureImpl::TestSpatioTemporalLayers333PatternEncoder() {
 
   // Next frame: #3.
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, NULL));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL));
   SetExpectedValues3<int>(2, 2, 2, expected_temporal_idx);
   SetExpectedValues3<bool>(false, false, false, expected_layer_sync);
   VerifyTemporalIdxAndSyncForAllSpatialLayers(
@@ -707,7 +707,7 @@ void SimulcastTestFixtureImpl::TestSpatioTemporalLayers333PatternEncoder() {
 
   // Next frame: #4.
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, NULL));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL));
   SetExpectedValues3<int>(0, 0, 0, expected_temporal_idx);
   SetExpectedValues3<bool>(false, false, false, expected_layer_sync);
   VerifyTemporalIdxAndSyncForAllSpatialLayers(
@@ -715,7 +715,7 @@ void SimulcastTestFixtureImpl::TestSpatioTemporalLayers333PatternEncoder() {
 
   // Next frame: #5.
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, NULL));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL));
   SetExpectedValues3<int>(2, 2, 2, expected_temporal_idx);
   SetExpectedValues3<bool>(false, false, false, expected_layer_sync);
   VerifyTemporalIdxAndSyncForAllSpatialLayers(
@@ -745,7 +745,7 @@ void SimulcastTestFixtureImpl::TestSpatioTemporalLayers321PatternEncoder() {
   bool expected_layer_sync[3] = {false, false, false};
 
   // First frame: #0.
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, NULL));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL));
   SetExpectedValues3<int>(0, 0, 255, expected_temporal_idx);
   SetExpectedValues3<bool>(true, true, false, expected_layer_sync);
   VerifyTemporalIdxAndSyncForAllSpatialLayers(
@@ -753,7 +753,7 @@ void SimulcastTestFixtureImpl::TestSpatioTemporalLayers321PatternEncoder() {
 
   // Next frame: #1.
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, NULL));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL));
   SetExpectedValues3<int>(2, 1, 255, expected_temporal_idx);
   SetExpectedValues3<bool>(true, true, false, expected_layer_sync);
   VerifyTemporalIdxAndSyncForAllSpatialLayers(
@@ -761,7 +761,7 @@ void SimulcastTestFixtureImpl::TestSpatioTemporalLayers321PatternEncoder() {
 
   // Next frame: #2.
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, NULL));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL));
   SetExpectedValues3<int>(1, 0, 255, expected_temporal_idx);
   SetExpectedValues3<bool>(true, false, false, expected_layer_sync);
   VerifyTemporalIdxAndSyncForAllSpatialLayers(
@@ -769,7 +769,7 @@ void SimulcastTestFixtureImpl::TestSpatioTemporalLayers321PatternEncoder() {
 
   // Next frame: #3.
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, NULL));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL));
   SetExpectedValues3<int>(2, 1, 255, expected_temporal_idx);
   SetExpectedValues3<bool>(false, false, false, expected_layer_sync);
   VerifyTemporalIdxAndSyncForAllSpatialLayers(
@@ -777,7 +777,7 @@ void SimulcastTestFixtureImpl::TestSpatioTemporalLayers321PatternEncoder() {
 
   // Next frame: #4.
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, NULL));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL));
   SetExpectedValues3<int>(0, 0, 255, expected_temporal_idx);
   SetExpectedValues3<bool>(false, false, false, expected_layer_sync);
   VerifyTemporalIdxAndSyncForAllSpatialLayers(
@@ -785,7 +785,7 @@ void SimulcastTestFixtureImpl::TestSpatioTemporalLayers321PatternEncoder() {
 
   // Next frame: #5.
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, NULL));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL));
   SetExpectedValues3<int>(2, 1, 255, expected_temporal_idx);
   SetExpectedValues3<bool>(false, true, false, expected_layer_sync);
   VerifyTemporalIdxAndSyncForAllSpatialLayers(
@@ -819,7 +819,7 @@ void SimulcastTestFixtureImpl::TestStrideEncodeDecode() {
   plane_offset[kVPlane] = kColorV;
   CreateImage(input_buffer_, plane_offset);
 
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, NULL));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL));
 
   // Change color.
   plane_offset[kYPlane] += 1;
@@ -827,7 +827,7 @@ void SimulcastTestFixtureImpl::TestStrideEncodeDecode() {
   plane_offset[kVPlane] += 1;
   CreateImage(input_buffer_, plane_offset);
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, NULL));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL));
 
   EncodedImage encoded_frame;
   // Only encoding one frame - so will be a key frame.
@@ -866,7 +866,7 @@ void SimulcastTestFixtureImpl::TestDecodeWidthHeightSet() {
             return EncodedImageCallback::Result(
                 EncodedImageCallback::Result::OK, 0);
           }));
-  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL, NULL));
+  EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL));
 
   EXPECT_CALL(decoder_callback, Decoded(_, _, _))
       .WillOnce(testing::Invoke([](VideoFrame& decodedImage,
