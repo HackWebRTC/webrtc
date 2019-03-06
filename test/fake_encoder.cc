@@ -16,6 +16,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "api/video/video_content_type.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
@@ -80,7 +81,7 @@ int32_t FakeEncoder::InitEncode(const VideoCodec* config,
 }
 
 int32_t FakeEncoder::Encode(const VideoFrame& input_image,
-                            const CodecSpecificInfo* codec_specific_info,
+                            const CodecSpecificInfo* /*codec_specific_info*/,
                             const std::vector<FrameType>* frame_types) {
   unsigned char max_framerate;
   unsigned char num_simulcast_streams;
@@ -121,16 +122,14 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
       continue;
     }
 
-    CodecSpecificInfo specifics;
-    specifics.codecType = kVideoCodecGeneric;
-    std::unique_ptr<uint8_t[]> encoded_buffer(
-        new uint8_t[frame_info.layers[i].size]);
+    EncodedImage encoded;
+    encoded.Allocate(frame_info.layers[i].size);
+    encoded.set_size(frame_info.layers[i].size);
+
     // Fill the buffer with arbitrary data. Write someting to make Asan happy.
-    memset(encoded_buffer.get(), 9, frame_info.layers[i].size);
+    memset(encoded.data(), 9, frame_info.layers[i].size);
     // Write a counter to the image to make each frame unique.
-    WriteCounter(encoded_buffer.get() + frame_info.layers[i].size - 4, counter);
-    EncodedImage encoded(encoded_buffer.get(), frame_info.layers[i].size,
-                         frame_info.layers[i].size);
+    WriteCounter(encoded.data() + frame_info.layers[i].size - 4, counter);
     encoded.SetTimestamp(input_image.timestamp());
     encoded.capture_time_ms_ = input_image.render_time_ms();
     encoded._frameType =
@@ -142,12 +141,23 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
                                 ? VideoContentType::SCREENSHARE
                                 : VideoContentType::UNSPECIFIED;
     encoded.SetSpatialIndex(i);
-    if (callback->OnEncodedImage(encoded, &specifics, nullptr).error !=
-        EncodedImageCallback::Result::OK) {
+    CodecSpecificInfo codec_specific;
+    std::unique_ptr<RTPFragmentationHeader> fragmentation =
+        EncodeHook(&encoded, &codec_specific);
+
+    if (callback->OnEncodedImage(encoded, &codec_specific, fragmentation.get())
+            .error != EncodedImageCallback::Result::OK) {
       return -1;
     }
   }
   return 0;
+}
+
+std::unique_ptr<RTPFragmentationHeader> FakeEncoder::EncodeHook(
+    EncodedImage* encoded_image,
+    CodecSpecificInfo* codec_specific) {
+  codec_specific->codecType = kVideoCodecGeneric;
+  return nullptr;
 }
 
 FakeEncoder::FrameInfo FakeEncoder::NextFrame(
@@ -271,77 +281,65 @@ int FakeEncoder::GetConfiguredInputFramerate() const {
 }
 
 FakeH264Encoder::FakeH264Encoder(Clock* clock)
-    : FakeEncoder(clock), callback_(nullptr), idr_counter_(0) {
-  FakeEncoder::RegisterEncodeCompleteCallback(this);
-}
+    : FakeEncoder(clock), idr_counter_(0) {}
 
-int32_t FakeH264Encoder::RegisterEncodeCompleteCallback(
-    EncodedImageCallback* callback) {
-  rtc::CritScope cs(&local_crit_sect_);
-  callback_ = callback;
-  return 0;
-}
-
-EncodedImageCallback::Result FakeH264Encoder::OnEncodedImage(
-    const EncodedImage& encoded_image,
-    const CodecSpecificInfo* codec_specific_info,
-    const RTPFragmentationHeader* fragments) {
+std::unique_ptr<RTPFragmentationHeader> FakeH264Encoder::EncodeHook(
+    EncodedImage* encoded_image,
+    CodecSpecificInfo* codec_specific) {
   const size_t kSpsSize = 8;
   const size_t kPpsSize = 11;
   const int kIdrFrequency = 10;
-  EncodedImageCallback* callback;
   int current_idr_counter;
   {
     rtc::CritScope cs(&local_crit_sect_);
-    callback = callback_;
     current_idr_counter = idr_counter_;
     ++idr_counter_;
   }
-  RTPFragmentationHeader fragmentation;
+  auto fragmentation = absl::make_unique<RTPFragmentationHeader>();
+
   if (current_idr_counter % kIdrFrequency == 0 &&
-      encoded_image.size() > kSpsSize + kPpsSize + 1) {
+      encoded_image->size() > kSpsSize + kPpsSize + 1) {
     const size_t kNumSlices = 3;
-    fragmentation.VerifyAndAllocateFragmentationHeader(kNumSlices);
-    fragmentation.fragmentationOffset[0] = 0;
-    fragmentation.fragmentationLength[0] = kSpsSize;
-    fragmentation.fragmentationOffset[1] = kSpsSize;
-    fragmentation.fragmentationLength[1] = kPpsSize;
-    fragmentation.fragmentationOffset[2] = kSpsSize + kPpsSize;
-    fragmentation.fragmentationLength[2] =
-        encoded_image.size() - (kSpsSize + kPpsSize);
+    fragmentation->VerifyAndAllocateFragmentationHeader(kNumSlices);
+    fragmentation->fragmentationOffset[0] = 0;
+    fragmentation->fragmentationLength[0] = kSpsSize;
+    fragmentation->fragmentationOffset[1] = kSpsSize;
+    fragmentation->fragmentationLength[1] = kPpsSize;
+    fragmentation->fragmentationOffset[2] = kSpsSize + kPpsSize;
+    fragmentation->fragmentationLength[2] =
+        encoded_image->size() - (kSpsSize + kPpsSize);
     const size_t kSpsNalHeader = 0x67;
     const size_t kPpsNalHeader = 0x68;
     const size_t kIdrNalHeader = 0x65;
-    encoded_image.buffer()[fragmentation.fragmentationOffset[0]] =
+    encoded_image->data()[fragmentation->fragmentationOffset[0]] =
         kSpsNalHeader;
-    encoded_image.buffer()[fragmentation.fragmentationOffset[1]] =
+    encoded_image->data()[fragmentation->fragmentationOffset[1]] =
         kPpsNalHeader;
-    encoded_image.buffer()[fragmentation.fragmentationOffset[2]] =
+    encoded_image->data()[fragmentation->fragmentationOffset[2]] =
         kIdrNalHeader;
   } else {
     const size_t kNumSlices = 1;
-    fragmentation.VerifyAndAllocateFragmentationHeader(kNumSlices);
-    fragmentation.fragmentationOffset[0] = 0;
-    fragmentation.fragmentationLength[0] = encoded_image.size();
+    fragmentation->VerifyAndAllocateFragmentationHeader(kNumSlices);
+    fragmentation->fragmentationOffset[0] = 0;
+    fragmentation->fragmentationLength[0] = encoded_image->size();
     const size_t kNalHeader = 0x41;
-    encoded_image.buffer()[fragmentation.fragmentationOffset[0]] = kNalHeader;
+    encoded_image->data()[fragmentation->fragmentationOffset[0]] = kNalHeader;
   }
   uint8_t value = 0;
   int fragment_counter = 0;
-  for (size_t i = 0; i < encoded_image.size(); ++i) {
-    if (fragment_counter == fragmentation.fragmentationVectorSize ||
-        i != fragmentation.fragmentationOffset[fragment_counter]) {
-      encoded_image.buffer()[i] = value++;
+  for (size_t i = 0; i < encoded_image->size(); ++i) {
+    if (fragment_counter == fragmentation->fragmentationVectorSize ||
+        i != fragmentation->fragmentationOffset[fragment_counter]) {
+      encoded_image->data()[i] = value++;
     } else {
       ++fragment_counter;
     }
   }
-  CodecSpecificInfo specifics;
-  specifics.codecType = kVideoCodecH264;
-  specifics.codecSpecific.H264.packetization_mode =
+  codec_specific->codecType = kVideoCodecH264;
+  codec_specific->codecSpecific.H264.packetization_mode =
       H264PacketizationMode::NonInterleaved;
-  RTC_DCHECK(callback);
-  return callback->OnEncodedImage(encoded_image, &specifics, &fragmentation);
+
+  return fragmentation;
 }
 
 DelayedEncoder::DelayedEncoder(Clock* clock, int delay_ms)

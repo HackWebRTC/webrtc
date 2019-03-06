@@ -79,6 +79,13 @@ class FakeEncoder : public VideoEncoder {
                       SimulcastStream simulcast_streams[kMaxSimulcastStreams],
                       int framerate);
 
+  // Called before the frame is passed to callback_->OnEncodedImage, to let
+  // subclasses fill out codec_specific, possibly modify encodedImage.
+  // Returns an RTPFragmentationHeader, if needed by the codec.
+  virtual std::unique_ptr<RTPFragmentationHeader> EncodeHook(
+      EncodedImage* encoded_image,
+      CodecSpecificInfo* codec_specific);
+
   FrameInfo last_frame_info_ RTC_GUARDED_BY(crit_sect_);
   Clock* const clock_;
 
@@ -97,20 +104,16 @@ class FakeEncoder : public VideoEncoder {
   size_t debt_bytes_;
 };
 
-class FakeH264Encoder : public FakeEncoder, public EncodedImageCallback {
+class FakeH264Encoder : public FakeEncoder {
  public:
   explicit FakeH264Encoder(Clock* clock);
   virtual ~FakeH264Encoder() = default;
 
-  int32_t RegisterEncodeCompleteCallback(
-      EncodedImageCallback* callback) override;
-
-  Result OnEncodedImage(const EncodedImage& encodedImage,
-                        const CodecSpecificInfo* codecSpecificInfo,
-                        const RTPFragmentationHeader* fragments) override;
-
  private:
-  EncodedImageCallback* callback_ RTC_GUARDED_BY(local_crit_sect_);
+  std::unique_ptr<RTPFragmentationHeader> EncodeHook(
+      EncodedImage* encoded_image,
+      CodecSpecificInfo* codec_specific) override;
+
   int idr_counter_ RTC_GUARDED_BY(local_crit_sect_);
   rtc::CriticalSection local_crit_sect_;
 };

@@ -31,23 +31,16 @@
 namespace webrtc {
 namespace test {
 
-class FakeVP8Encoder : public FakeEncoder, public EncodedImageCallback {
+class FakeVP8Encoder : public FakeEncoder {
  public:
   explicit FakeVP8Encoder(Clock* clock);
   virtual ~FakeVP8Encoder() = default;
-
-  int32_t RegisterEncodeCompleteCallback(
-      EncodedImageCallback* callback) override;
 
   int32_t InitEncode(const VideoCodec* config,
                      int32_t number_of_cores,
                      size_t max_payload_size) override;
 
   int32_t Release() override;
-
-  Result OnEncodedImage(const EncodedImage& encodedImage,
-                        const CodecSpecificInfo* codecSpecificInfo,
-                        const RTPFragmentationHeader* fragments) override;
 
   EncoderInfo GetEncoderInfo() const override;
 
@@ -59,8 +52,11 @@ class FakeVP8Encoder : public FakeEncoder, public EncodedImageCallback {
                              int stream_idx,
                              uint32_t timestamp);
 
+  std::unique_ptr<RTPFragmentationHeader> EncodeHook(
+      EncodedImage* encoded_image,
+      CodecSpecificInfo* codec_specific) override;
+
   rtc::SequencedTaskChecker sequence_checker_;
-  EncodedImageCallback* callback_ RTC_GUARDED_BY(sequence_checker_);
 
   std::vector<std::unique_ptr<Vp8TemporalLayers>> temporal_layers_
       RTC_GUARDED_BY(sequence_checker_);
