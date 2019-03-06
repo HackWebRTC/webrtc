@@ -569,9 +569,7 @@ bool AudioSendStream::SetupSendCodec(AudioSendStream* stream,
 
   // If a bitrate has been specified for the codec, use it over the
   // codec's default.
-  if (stream->allocation_settings_.UpdateAudioTargetBitrate(
-          TransportSeqNumId(new_config)) &&
-      spec.target_bitrate_bps) {
+  if (spec.target_bitrate_bps) {
     encoder->OnReceivedTargetAudioBitrate(*spec.target_bitrate_bps);
   }
 
@@ -646,9 +644,7 @@ bool AudioSendStream::ReconfigureSendCodec(AudioSendStream* stream,
       new_config.send_codec_spec->target_bitrate_bps;
   // If a bitrate has been specified for the codec, use it over the
   // codec's default.
-  if (stream->allocation_settings_.UpdateAudioTargetBitrate(
-          TransportSeqNumId(new_config)) &&
-      new_target_bitrate_bps &&
+  if (new_target_bitrate_bps &&
       new_target_bitrate_bps !=
           old_config.send_codec_spec->target_bitrate_bps) {
     stream->channel_send_->CallEncoder([&](AudioEncoder* encoder) {

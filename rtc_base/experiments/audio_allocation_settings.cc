@@ -22,7 +22,6 @@ AudioAllocationSettings::AudioAllocationSettings()
     : audio_send_side_bwe_("Enabled"),
       allocate_audio_without_feedback_("Enabled"),
       force_no_audio_feedback_("Enabled"),
-      audio_feedback_to_improve_video_bwe_("Enabled"),
       send_side_bwe_with_overhead_("Enabled"),
       default_min_bitrate_("min", DataRate::bps(kOpusMinBitrateBps)),
       default_max_bitrate_("max", DataRate::bps(kOpusBitrateFbBps)),
@@ -33,9 +32,6 @@ AudioAllocationSettings::AudioAllocationSettings()
                   field_trial::FindFullName("WebRTC-Audio-ABWENoTWCC"));
   ParseFieldTrial({&force_no_audio_feedback_},
                   field_trial::FindFullName("WebRTC-Audio-ForceNoTWCC"));
-  ParseFieldTrial(
-      {&audio_feedback_to_improve_video_bwe_},
-      field_trial::FindFullName("WebRTC-Audio-SendSideBwe-For-Video"));
 
   ParseFieldTrial({&send_side_bwe_with_overhead_},
                   field_trial::FindFullName("WebRTC-SendSideBwe-WithOverhead"));
@@ -71,19 +67,6 @@ bool AudioAllocationSettings::ShouldSendTransportSequenceNumber(
     return false;
   return audio_send_side_bwe_ && !allocate_audio_without_feedback_ &&
          transport_seq_num_extension_header_id != 0;
-}
-
-bool AudioAllocationSettings::UpdateAudioTargetBitrate(
-    int transport_seq_num_extension_header_id) const {
-  // If other side does not support audio TWCC and WebRTC-Audio-ABWENoTWCC is
-  // not enabled, do not update target audio bitrate if we are in
-  // WebRTC-Audio-SendSideBwe-For-Video experiment
-  if (allocate_audio_without_feedback_ ||
-      transport_seq_num_extension_header_id != 0)
-    return true;
-  if (audio_feedback_to_improve_video_bwe_)
-    return false;
-  return true;
 }
 
 bool AudioAllocationSettings::IncludeAudioInAllocationOnStart(
