@@ -189,6 +189,7 @@ rtc_source_set("video_stream_encoder") {
     ":video_bitrate_allocator",
     ":video_bitrate_allocator_factory",
     ":video_frame",
+    "../units:data_rate",
 
     # For rtpparameters.h
     "..:libjingle_peerconnection_api",

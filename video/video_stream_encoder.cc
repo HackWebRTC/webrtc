@@ -1409,20 +1409,23 @@ void VideoStreamEncoder::OnDroppedFrame(DropReason reason) {
   }
 }
 
-void VideoStreamEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
+void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
+                                          DataRate target_headroom,
                                           uint8_t fraction_lost,
                                           int64_t round_trip_time_ms) {
   if (!encoder_queue_.IsCurrent()) {
-    encoder_queue_.PostTask(
-        [this, bitrate_bps, fraction_lost, round_trip_time_ms] {
-          OnBitrateUpdated(bitrate_bps, fraction_lost, round_trip_time_ms);
-        });
+    encoder_queue_.PostTask([this, target_bitrate, target_headroom,
+                             fraction_lost, round_trip_time_ms] {
+      OnBitrateUpdated(target_bitrate, target_headroom, fraction_lost,
+                       round_trip_time_ms);
+    });
     return;
   }
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   RTC_DCHECK(sink_) << "sink_ must be set before the encoder is active.";
 
-  RTC_LOG(LS_VERBOSE) << "OnBitrateUpdated, bitrate " << bitrate_bps
+  RTC_LOG(LS_VERBOSE) << "OnBitrateUpdated, bitrate " << target_bitrate.bps()
+                      << " headroom = " << target_headroom.bps()
                       << " packet loss " << static_cast<int>(fraction_lost)
                       << " rtt " << round_trip_time_ms;
   // On significant changes to BWE at the start of the call,
@@ -1430,7 +1433,7 @@ void VideoStreamEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
   if (encoder_start_bitrate_bps_ != 0 &&
       !has_seen_first_significant_bwe_change_ && quality_scaler_ &&
       initial_framedrop_on_bwe_enabled_ &&
-      abs_diff(bitrate_bps, encoder_start_bitrate_bps_) >=
+      abs_diff(target_bitrate.bps(), encoder_start_bitrate_bps_) >=
           kFramedropThreshold * encoder_start_bitrate_bps_) {
     // Reset initial framedrop feature when first real BW estimate arrives.
     // TODO(kthelgason): Update BitrateAllocator to not call OnBitrateUpdated
@@ -1440,16 +1443,17 @@ void VideoStreamEncoder::OnBitrateUpdated(uint32_t bitrate_bps,
   }
 
   uint32_t framerate_fps = GetInputFramerateFps();
-  frame_dropper_.SetRates((bitrate_bps + 500) / 1000, framerate_fps);
-  SetEncoderRates(
-      GetBitrateAllocationAndNotifyObserver(bitrate_bps, framerate_fps),
-      framerate_fps);
+  frame_dropper_.SetRates((target_bitrate.bps() + 500) / 1000, framerate_fps);
+  SetEncoderRates(GetBitrateAllocationAndNotifyObserver(target_bitrate.bps(),
+                                                        framerate_fps),
+                  framerate_fps);
 
-  encoder_start_bitrate_bps_ =
-      bitrate_bps != 0 ? bitrate_bps : encoder_start_bitrate_bps_;
-  bool video_is_suspended = bitrate_bps == 0;
+  encoder_start_bitrate_bps_ = target_bitrate.bps() != 0
+                                   ? target_bitrate.bps()
+                                   : encoder_start_bitrate_bps_;
+  bool video_is_suspended = target_bitrate == DataRate::Zero();
   bool video_suspension_changed = video_is_suspended != EncoderPaused();
-  last_observed_bitrate_bps_ = bitrate_bps;
+  last_observed_bitrate_bps_ = target_bitrate.bps();
 
   if (video_suspension_changed) {
     RTC_LOG(LS_INFO) << "Video suspend state changed to: "

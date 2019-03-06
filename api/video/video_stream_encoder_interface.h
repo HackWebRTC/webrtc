@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "api/rtp_parameters.h"  // For DegradationPreference.
+#include "api/units/data_rate.h"
 #include "api/video/video_bitrate_allocator.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
@@ -79,7 +80,8 @@ class VideoStreamEncoderInterface : public rtc::VideoSinkInterface<VideoFrame> {
 
   // Set the currently estimated network properties. A |bitrate_bps|
   // of zero pauses the encoder.
-  virtual void OnBitrateUpdated(uint32_t bitrate_bps,
+  virtual void OnBitrateUpdated(DataRate target_bitrate,
+                                DataRate target_headroom,
                                 uint8_t fraction_lost,
                                 int64_t round_trip_time_ms) = 0;
 

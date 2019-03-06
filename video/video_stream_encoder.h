@@ -81,7 +81,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   void SendKeyFrame() override;
 
-  void OnBitrateUpdated(uint32_t bitrate_bps,
+  void OnBitrateUpdated(DataRate target_bitrate,
+                        DataRate target_headroom,
                         uint8_t fraction_lost,
                         int64_t round_trip_time_ms) override;
 

@@ -616,5 +616,77 @@ TEST_F(VideoSendStreamImplTest, ForwardsVideoBitrateAllocationAfterTimeout) {
   });
 }
 
+TEST_F(VideoSendStreamImplTest, CallsVideoStreamEncoderOnBitrateUpdate) {
+  test_queue_.SendTask([this] {
+    config_.track_id = "test";
+    const bool kSuspend = false;
+    config_.suspend_below_min_bitrate = kSuspend;
+    config_.rtp.extensions.emplace_back(
+        RtpExtension::kTransportSequenceNumberUri, 1);
+    auto vss_impl = CreateVideoSendStreamImpl(
+        kDefaultInitialBitrateBps, kDefaultBitratePriority,
+        VideoEncoderConfig::ContentType::kRealtimeVideo);
+    vss_impl->Start();
+
+    VideoStream qvga_stream;
+    qvga_stream.width = 320;
+    qvga_stream.height = 180;
+    qvga_stream.max_framerate = 30;
+    qvga_stream.min_bitrate_bps = 30000;
+    qvga_stream.target_bitrate_bps = 150000;
+    qvga_stream.max_bitrate_bps = 200000;
+    qvga_stream.max_qp = 56;
+    qvga_stream.bitrate_priority = 1;
+
+    int min_transmit_bitrate_bps = 30000;
+
+    config_.rtp.ssrcs.emplace_back(1);
+
+    static_cast<VideoStreamEncoderInterface::EncoderSink*>(vss_impl.get())
+        ->OnEncoderConfigurationChanged(
+            std::vector<VideoStream>{qvga_stream},
+            VideoEncoderConfig::ContentType::kRealtimeVideo,
+            min_transmit_bitrate_bps);
+
+    const DataRate network_constrained_rate =
+        DataRate::bps(qvga_stream.target_bitrate_bps);
+    BitrateAllocationUpdate update;
+    update.target_bitrate = network_constrained_rate;
+    update.link_capacity = network_constrained_rate;
+    update.round_trip_time = TimeDelta::ms(1);
+    EXPECT_CALL(rtp_video_sender_,
+                OnBitrateUpdated(network_constrained_rate.bps(), _,
+                                 update.round_trip_time.ms(), _));
+    EXPECT_CALL(rtp_video_sender_, GetPayloadBitrateBps())
+        .WillOnce(Return(network_constrained_rate.bps()));
+    EXPECT_CALL(
+        video_stream_encoder_,
+        OnBitrateUpdated(network_constrained_rate, DataRate::Zero(), 0, _));
+    static_cast<BitrateAllocatorObserver*>(vss_impl.get())
+        ->OnBitrateUpdated(update);
+
+    const DataRate qvga_max_bitrate =
+        DataRate::bps(qvga_stream.max_bitrate_bps);
+    const DataRate headroom = DataRate::bps(50000);
+    const DataRate rate_with_headroom = qvga_max_bitrate + headroom;
+    EXPECT_CALL(rtp_video_sender_,
+                OnBitrateUpdated(rate_with_headroom.bps(), _,
+                                 update.round_trip_time.ms(), _));
+    EXPECT_CALL(rtp_video_sender_, GetPayloadBitrateBps())
+        .WillOnce(Return(rate_with_headroom.bps()));
+    EXPECT_CALL(video_stream_encoder_,
+                OnBitrateUpdated(qvga_max_bitrate, headroom, 0, _));
+    update.target_bitrate = rate_with_headroom;
+    update.link_capacity = rate_with_headroom;
+    static_cast<BitrateAllocatorObserver*>(vss_impl.get())
+        ->OnBitrateUpdated(update);
+
+    // Set rates to zero on stop.
+    EXPECT_CALL(video_stream_encoder_,
+                OnBitrateUpdated(DataRate::Zero(), DataRate::Zero(), 0, 0));
+    vss_impl->Stop();
+  });
+}
+
 }  // namespace internal
 }  // namespace webrtc
