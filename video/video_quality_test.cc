@@ -35,9 +35,9 @@
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
 #include "rtc_base/strings/string_builder.h"
+#include "test/platform_video_capturer.h"
 #include "test/run_loop.h"
 #include "test/testsupport/file_utils.h"
-#include "test/vcm_capturer.h"
 #include "test/video_renderer.h"
 #include "video/frame_dumping_decoder.h"
 #ifdef WEBRTC_WIN
@@ -1076,10 +1076,10 @@ void VideoQualityTest::CreateCapturers() {
             test::FrameGenerator::OutputType::I010, absl::nullopt,
             params_.video[video_idx].fps, clock_));
       } else if (params_.video[video_idx].clip_name.empty()) {
-        video_sources_[video_idx].reset(test::VcmCapturer::Create(
+        video_sources_[video_idx] = test::CreateVideoCapturer(
             params_.video[video_idx].width, params_.video[video_idx].height,
             params_.video[video_idx].fps,
-            params_.video[video_idx].capture_device_index));
+            params_.video[video_idx].capture_device_index);
         if (!video_sources_[video_idx]) {
           // Failed to get actual camera, use chroma generator as backup.
           video_sources_[video_idx].reset(test::FrameGeneratorCapturer::Create(

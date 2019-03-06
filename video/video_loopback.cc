@@ -7,6 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "video/video_loopback.h"
 
 #include <stdio.h>
 #include <memory>
@@ -389,9 +390,8 @@ void Loopback() {
     fixture->RunWithRenderers(params);
   }
 }
-}  // namespace webrtc
 
-int main(int argc, char* argv[]) {
+int RunLoopbackTest(int argc, char* argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
   if (webrtc::flags::FLAG_help) {
@@ -411,3 +411,4 @@ int main(int argc, char* argv[]) {
   webrtc::test::RunTest(webrtc::Loopback);
   return 0;
 }
+}  // namespace webrtc

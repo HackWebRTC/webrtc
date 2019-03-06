@@ -49,8 +49,6 @@ rtc_source_set("video_test_common") {
     "frame_utils.h",
     "test_video_capturer.cc",
     "test_video_capturer.h",
-    "vcm_capturer.cc",
-    "vcm_capturer.h",
     "video_codec_settings.h",
   ]
 
@@ -67,7 +65,6 @@ rtc_source_set("video_test_common") {
     "../call:video_stream_api",
     "../common_video",
     "../media:rtc_media_base",
-    "../modules/video_capture:video_capture_module",
     "../rtc_base:checks",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_task_queue",
@@ -76,6 +73,55 @@ rtc_source_set("video_test_common") {
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
+}
+
+if (!build_with_chromium) {
+  if (is_mac || is_ios) {
+    rtc_source_set("video_test_mac") {
+      testonly = true
+      sources = [
+        "mac_capturer.h",
+        "mac_capturer.mm",
+      ]
+      deps = [
+        ":video_test_common",
+        "../api:libjingle_peerconnection_api",
+        "../api:scoped_refptr",
+        "../modules/video_capture:video_capture_module",
+        "../rtc_base:rtc_base",
+        "../sdk:base_objc",
+        "../sdk:native_api",
+        "../sdk:native_video",
+        "../sdk:videocapture_objc",
+      ]
+    }
+  }
+
+  rtc_source_set("platform_video_capturer") {
+    testonly = true
+    sources = [
+      "platform_video_capturer.cc",
+      "platform_video_capturer.h",
+    ]
+    deps = [
+      ":video_test_common",
+      "//third_party/abseil-cpp/absl/memory",
+    ]
+    if (is_mac || is_ios) {
+      deps += [ ":video_test_mac" ]
+    } else {
+      sources += [
+        "vcm_capturer.cc",
+        "vcm_capturer.h",
+      ]
+      deps += [
+        "../api:scoped_refptr",
+        "../modules/video_capture:video_capture_module",
+        "../rtc_base:checks",
+        "../rtc_base:logging",
+      ]
+    }
+  }
 }
 
 rtc_source_set("rtp_test_utils") {
@@ -185,9 +231,9 @@ rtc_source_set("test_support") {
     "gtest.h",
   ]
 
-  public_deps = []
+  public_deps = []  # no-presubmit-check TODO(webrtc:8603)
   if (is_ios) {
-    public_deps += [ ":test_support_objc" ]
+    public_deps += [ ":test_support_objc" ]  # no-presubmit-check TODO(webrtc:8603)
   }
 
   public_configs = [ ":test_main_direct_config" ]
@@ -485,11 +531,11 @@ rtc_source_set("fileutils_override_impl") {
 rtc_source_set("run_test") {
   testonly = true
   if (is_mac) {
-    public_deps = [
+    public_deps = [  # no-presubmit-check TODO(webrtc:8603)
       ":run_test_objc",
     ]
   } else {
-    public_deps = [
+    public_deps = [  # no-presubmit-check TODO(webrtc:8603)
       ":run_test_generic",
     ]
   }
@@ -560,7 +606,7 @@ rtc_source_set("direct_transport") {
     "../system_wrappers",
     "//third_party/abseil-cpp/absl/memory",
   ]
-  public_deps = [
+  public_deps = [  # no-presubmit-check TODO(webrtc:8603)
     ":single_threaded_task_queue",
     "../call:fake_network",
   ]
@@ -719,12 +765,12 @@ rtc_source_set("test_common") {
 }
 
 rtc_source_set("test_renderer") {
-  public_deps = [
+  public_deps = [  # no-presubmit-check TODO(webrtc:8603)
     ":test_renderer_generic",
   ]
   testonly = true
   if (is_mac) {
-    public_deps += [ ":test_renderer_objc" ]
+    public_deps += [ ":test_renderer_objc" ]  # no-presubmit-check TODO(webrtc:8603)
   }
 }
 

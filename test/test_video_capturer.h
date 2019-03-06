@@ -25,7 +25,7 @@ namespace test {
 class TestVideoCapturer : public rtc::VideoSourceInterface<VideoFrame> {
  public:
   TestVideoCapturer();
-  virtual ~TestVideoCapturer();
+  ~TestVideoCapturer() override;
 
   void AddOrUpdateSink(rtc::VideoSinkInterface<VideoFrame>* sink,
                        const rtc::VideoSinkWants& wants) override;

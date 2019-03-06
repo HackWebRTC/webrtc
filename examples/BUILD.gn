@@ -695,6 +695,7 @@ if (is_linux || is_win) {
       "../rtc_base/third_party/sigslot",
       "../system_wrappers:field_trial",
       "../test:field_trial",
+      "../test:platform_video_capturer",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
@@ -847,6 +848,7 @@ if (is_win || is_android) {
       "../pc:libjingle_peerconnection",
       "../pc:peerconnection",
       "../rtc_base:rtc_base",
+      "../test:platform_video_capturer",
       "../test:video_test_common",
       "//third_party/abseil-cpp/absl/memory",
     ]

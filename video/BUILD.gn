@@ -271,6 +271,7 @@ if (rtc_include_tests) {
       "../test:fake_video_codecs",
       "../test:fileutils",
       "../test:perf_test",
+      "../test:platform_video_capturer",
       "../test:rtp_test_utils",
       "../test:test_common",
       "../test:test_renderer",
@@ -280,6 +281,10 @@ if (rtc_include_tests) {
       "../test:video_test_support",
       "//third_party/abseil-cpp/absl/memory:memory",
     ]
+
+    if (is_mac || is_ios) {
+      deps += [ "../test:video_test_mac" ]
+    }
   }
 
   rtc_source_set("video_full_stack_tests") {
@@ -309,10 +314,11 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_executable("video_loopback") {
+  rtc_static_library("video_loopback_lib") {
     testonly = true
     sources = [
       "video_loopback.cc",
+      "video_loopback.h",
     ]
     deps = [
       ":video_quality_test",
@@ -333,6 +339,29 @@ if (rtc_include_tests) {
       "//testing/gtest",
       "//third_party/abseil-cpp/absl/memory",
     ]
+  }
+
+  if (is_mac) {
+    mac_app_bundle("video_loopback") {
+      testonly = true
+      sources = [
+        "video_loopback_main.mm",
+      ]
+      info_plist = "../test/mac/Info.plist"
+      deps = [
+        ":video_loopback_lib",
+      ]
+    }
+  } else {
+    rtc_executable("video_loopback") {
+      testonly = true
+      sources = [
+        "video_loopback_main.cc",
+      ]
+      deps = [
+        ":video_loopback_lib",
+      ]
+    }
   }
 
   rtc_executable("screenshare_loopback") {
