@@ -88,7 +88,8 @@ struct FeedbackRequest {
   // should be included.
   bool include_timestamps;
   // Include feedback of received packets in the range [sequence_number -
-  // sequence_count, sequence_number].
+  // sequence_count + 1, sequence_number]. That is, no feedback will be sent if
+  // sequence_count is zero.
   int sequence_count;
 };
 

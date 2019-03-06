@@ -166,10 +166,13 @@ bool TransportSequenceNumber::Write(rtc::ArrayView<uint8_t> data,
 //  +-+-+-+-+-+-+-+-+
 //
 // The bit |T| determines whether the feedback should include timing information
-// or not and |seq_count| determines how many additional packets the feedback
-// packet should cover.
+// or not and |seq_count| determines how many packets the feedback packet should
+// cover including the current packet. If |seq_count| is zero no feedback is
+// requested.
 constexpr RTPExtensionType TransportSequenceNumberV2::kId;
-constexpr uint8_t TransportSequenceNumberV2::kValueSizeBytesWithFeedbackRequest;
+constexpr uint8_t TransportSequenceNumberV2::kValueSizeBytes;
+constexpr uint8_t
+    TransportSequenceNumberV2::kValueSizeBytesWithoutFeedbackRequest;
 constexpr const char TransportSequenceNumberV2::kUri[];
 constexpr uint16_t TransportSequenceNumberV2::kIncludeTimestampsBit;
 
@@ -177,21 +180,24 @@ bool TransportSequenceNumberV2::Parse(
     rtc::ArrayView<const uint8_t> data,
     uint16_t* transport_sequence_number,
     absl::optional<FeedbackRequest>* feedback_request) {
-  if (data.size() != TransportSequenceNumber::kValueSizeBytes &&
-      data.size() != kValueSizeBytesWithFeedbackRequest)
+  if (data.size() != kValueSizeBytes &&
+      data.size() != kValueSizeBytesWithoutFeedbackRequest)
     return false;
 
   *transport_sequence_number = ByteReader<uint16_t>::ReadBigEndian(data.data());
 
-  if (data.size() == kValueSizeBytesWithFeedbackRequest) {
+  *feedback_request = absl::nullopt;
+  if (data.size() == kValueSizeBytes) {
     uint16_t feedback_request_raw =
         ByteReader<uint16_t>::ReadBigEndian(data.data() + 2);
     bool include_timestamps =
         (feedback_request_raw & kIncludeTimestampsBit) != 0;
     uint16_t sequence_count = feedback_request_raw & ~kIncludeTimestampsBit;
-    *feedback_request = {include_timestamps, sequence_count};
-  } else {
-    *feedback_request = absl::nullopt;
+
+    // If |sequence_count| is zero no feedback is requested.
+    if (sequence_count != 0) {
+      *feedback_request = {include_timestamps, sequence_count};
+    }
   }
   return true;
 }
