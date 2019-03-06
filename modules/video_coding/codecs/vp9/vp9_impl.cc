@@ -47,7 +47,7 @@ uint8_t kUpdBufIdx[4] = {0, 0, 1, 0};
 
 int kMaxNumTiles4kVideo = 8;
 
-// Maximum allowed PID difference for variable frame-rate mode.
+// Maximum allowed PID difference for differnet per-layer frame-rate case.
 const int kMaxAllowedPidDIff = 30;
 
 // Only positive speeds, range for real-time coding currently is: 5 - 8.
@@ -173,7 +173,12 @@ VP9EncoderImpl::VP9EncoderImpl(const cricket::VideoCodec& codec)
       full_superframe_drop_(true),
       first_frame_in_picture_(true),
       ss_info_needed_(false),
-      is_flexible_mode_(false) {
+      is_flexible_mode_(false),
+      variable_framerate_experiment_(ParseVariableFramerateConfig(
+          "WebRTC-VP9VariableFramerateScreenshare")),
+      variable_framerate_controller_(
+          variable_framerate_experiment_.framerate_limit),
+      num_steady_state_frames_(0) {
   codec_ = {};
   memset(&svc_params_, 0, sizeof(vpx_svc_extra_cfg_t));
 }
@@ -742,12 +747,38 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
       const uint32_t frame_timestamp_ms =
           1000 * input_image.timestamp() / kVideoPayloadTypeFrequency;
 
+      // To ensure that several rate-limiters with different limits don't
+      // interfere, they must be queried in order of increasing limit.
+
+      bool use_steady_state_limiter =
+          variable_framerate_experiment_.enabled &&
+          input_image.update_rect().IsEmpty() &&
+          num_steady_state_frames_ >=
+              variable_framerate_experiment_.frames_before_steady_state;
+
       for (uint8_t sl_idx = 0; sl_idx < num_active_spatial_layers_; ++sl_idx) {
+        const float layer_fps =
+            framerate_controller_[layer_id.spatial_layer_id].GetTargetRate();
+        // Use steady state rate-limiter at the correct place.
+        if (use_steady_state_limiter &&
+            layer_fps > variable_framerate_experiment_.framerate_limit - 1e-9) {
+          if (variable_framerate_controller_.DropFrame(frame_timestamp_ms)) {
+            layer_id.spatial_layer_id = num_active_spatial_layers_;
+          }
+          // Break always: if rate limiter triggered frame drop, no need to
+          // continue; otherwise, the rate is less than the next limiters.
+          break;
+        }
         if (framerate_controller_[sl_idx].DropFrame(frame_timestamp_ms)) {
           ++layer_id.spatial_layer_id;
         } else {
           break;
         }
+      }
+
+      if (use_steady_state_limiter &&
+          layer_id.spatial_layer_id < num_active_spatial_layers_) {
+        variable_framerate_controller_.AddFrame(frame_timestamp_ms);
       }
     }
 
@@ -1328,14 +1359,30 @@ void VP9EncoderImpl::DeliverBufferedFrame(bool end_of_picture) {
 
     encoded_complete_callback_->OnEncodedImage(encoded_image_, &codec_specific_,
                                                &frag_info);
-    encoded_image_.set_size(0);
 
     if (codec_.mode == VideoCodecMode::kScreensharing) {
       const uint8_t spatial_idx = encoded_image_.SpatialIndex().value_or(0);
       const uint32_t frame_timestamp_ms =
           1000 * encoded_image_.Timestamp() / kVideoPayloadTypeFrequency;
       framerate_controller_[spatial_idx].AddFrame(frame_timestamp_ms);
+
+      const size_t steady_state_size = SteadyStateSize(
+          spatial_idx, codec_specific_.codecSpecific.VP9.temporal_idx);
+
+      // Only frames on spatial layers, which may be limited in a steady state
+      // are considered for steady state detection.
+      if (framerate_controller_[spatial_idx].GetTargetRate() >
+          variable_framerate_experiment_.framerate_limit + 1e-9) {
+        if (encoded_image_.qp_ <=
+                variable_framerate_experiment_.steady_state_qp &&
+            encoded_image_.size() <= steady_state_size) {
+          ++num_steady_state_frames_;
+        } else {
+          num_steady_state_frames_ = 0;
+        }
+      }
     }
+    encoded_image_.set_size(0);
   }
 }
 
@@ -1370,6 +1417,42 @@ VideoEncoder::EncoderInfo VP9EncoderImpl::GetEncoderInfo() const {
     }
   }
   return info;
+}
+
+size_t VP9EncoderImpl::SteadyStateSize(int sid, int tid) {
+  const size_t bitrate_bps = current_bitrate_allocation_.GetBitrate(
+      sid, tid == kNoTemporalIdx ? 0 : tid);
+  const float fps = (codec_.mode == VideoCodecMode::kScreensharing)
+                        ? framerate_controller_[sid].GetTargetRate()
+                        : codec_.maxFramerate;
+  return static_cast<size_t>(
+      bitrate_bps / (8 * fps) *
+          (100 -
+           variable_framerate_experiment_.steady_state_undershoot_percentage) /
+          100 +
+      0.5);
+}
+
+// static
+VP9EncoderImpl::VariableFramerateExperiment
+VP9EncoderImpl::ParseVariableFramerateConfig(std::string group_name) {
+  FieldTrialFlag enabled = FieldTrialFlag("Enabled");
+  FieldTrialParameter<double> framerate_limit("min_fps", 5.0);
+  FieldTrialParameter<int> qp("min_qp", 32);
+  FieldTrialParameter<int> undershoot_percentage("undershoot", 30);
+  FieldTrialParameter<int> frames_before_steady_state(
+      "frames_before_steady_state", 5);
+  ParseFieldTrial({&enabled, &framerate_limit, &qp, &undershoot_percentage,
+                   &frames_before_steady_state},
+                  field_trial::FindFullName(group_name));
+  VariableFramerateExperiment config;
+  config.enabled = enabled.Get();
+  config.framerate_limit = framerate_limit.Get();
+  config.steady_state_qp = qp.Get();
+  config.steady_state_undershoot_percentage = undershoot_percentage.Get();
+  config.frames_before_steady_state = frames_before_steady_state.Get();
+
+  return config;
 }
 
 VP9DecoderImpl::VP9DecoderImpl()

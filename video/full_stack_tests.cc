@@ -877,19 +877,40 @@ const ParamsWithLogging::Video kSimulcastVp8VideoLow = {
     2,      400000, false, false, false, "ConferenceMotion_1280_720_50"};
 
 #if defined(RTC_ENABLE_VP9)
-TEST(FullStackTest, ScreenshareSlidesVP9_2SL) {
+
+TEST(FullStackTest, ScreenshareSlidesVP9_3SL_High_Fps) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging screenshare;
   screenshare.call.send_side_bwe = true;
-  screenshare.video[0] = {true,   1850,    1110,  5,     50000,
-                          200000, 2000000, false, "VP9", 1,
-                          0,      400000,  false, false, false, ""};
+  screenshare.video[0] = {true,    1850,  1110,  30, 50000, 200000,
+                          2000000, false, "VP9", 1,  0,     400000,
+                          false,   false, false, ""};
   screenshare.screenshare[0] = {true, false, 10};
-  screenshare.analyzer = {"screenshare_slides_vp9_2sl", 0.0, 0.0,
+  screenshare.analyzer = {"screenshare_slides_vp9_3sl_high_fps", 0.0, 0.0,
                           kFullStackTestDurationSecs};
   screenshare.ss[0] = {
-      std::vector<VideoStream>(),  0,    2, 1, InterLayerPredMode::kOn,
-      std::vector<SpatialLayer>(), false};
+      std::vector<VideoStream>(),  0,   3, 2, InterLayerPredMode::kOn,
+      std::vector<SpatialLayer>(), true};
+  fixture->RunWithAnalyzer(screenshare);
+}
+
+TEST(FullStackTest, ScreenshareSlidesVP9_3SL_Variable_Fps) {
+  webrtc::test::ScopedFieldTrials override_trials(
+      AppendFieldTrials("WebRTC-VP9VariableFramerateScreenshare/"
+                        "Enabled,min_qp:32,min_fps:5.0,undershoot:30,frames_"
+                        "before_steady_state:5/"));
+  auto fixture = CreateVideoQualityTestFixture();
+  ParamsWithLogging screenshare;
+  screenshare.call.send_side_bwe = true;
+  screenshare.video[0] = {true,    1850,  1110,  30, 50000, 200000,
+                          2000000, false, "VP9", 1,  0,     400000,
+                          false,   false, false, ""};
+  screenshare.screenshare[0] = {true, false, 10};
+  screenshare.analyzer = {"screenshare_slides_vp9_3sl_variable_fps", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
+  screenshare.ss[0] = {
+      std::vector<VideoStream>(),  0,   3, 2, InterLayerPredMode::kOn,
+      std::vector<SpatialLayer>(), true};
   fixture->RunWithAnalyzer(screenshare);
 }
 
