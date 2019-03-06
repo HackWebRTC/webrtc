@@ -1619,9 +1619,10 @@ TEST_F(VideoSendStreamTest, MinTransmitBitrateRespectsRemb) {
         const std::vector<VideoReceiveStream*>& receive_streams) override {
       stream_ = send_stream;
       RtpRtcp::Configuration config;
+      config.clock = Clock::GetRealTimeClock();
       config.outgoing_transport = feedback_transport_.get();
       config.retransmission_rate_limiter = &retranmission_rate_limiter_;
-      rtp_rtcp_.reset(RtpRtcp::CreateRtpRtcp(config));
+      rtp_rtcp_ = RtpRtcp::Create(config);
       rtp_rtcp_->SetRTCPStatus(RtcpMode::kReducedSize);
     }
 

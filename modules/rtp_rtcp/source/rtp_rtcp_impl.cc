@@ -41,6 +41,11 @@ constexpr int32_t kDefaultAudioReportInterval = 5000;
 
 RtpRtcp::Configuration::Configuration() = default;
 
+std::unique_ptr<RtpRtcp> RtpRtcp::Create(const Configuration& configuration) {
+  RTC_DCHECK(configuration.clock);
+  return absl::make_unique<ModuleRtpRtcpImpl>(configuration);
+}
+
 RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
   if (configuration.clock) {
     return new ModuleRtpRtcpImpl(configuration);

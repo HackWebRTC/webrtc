@@ -119,7 +119,7 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
     auto playout_delay_oracle = absl::make_unique<PlayoutDelayOracle>();
 
     configuration.ack_observer = playout_delay_oracle.get();
-    auto rtp_rtcp = absl::WrapUnique(RtpRtcp::CreateRtpRtcp(configuration));
+    auto rtp_rtcp = RtpRtcp::Create(configuration);
     rtp_rtcp->SetSendingStatus(false);
     rtp_rtcp->SetSendingMediaStatus(false);
     rtp_rtcp->SetRTCPStatus(RtcpMode::kCompound);

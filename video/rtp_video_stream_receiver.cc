@@ -76,7 +76,7 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
   configuration.bandwidth_callback = nullptr;
   configuration.transport_feedback_callback = nullptr;
 
-  std::unique_ptr<RtpRtcp> rtp_rtcp(RtpRtcp::CreateRtpRtcp(configuration));
+  std::unique_ptr<RtpRtcp> rtp_rtcp = RtpRtcp::Create(configuration);
   rtp_rtcp->SetRTCPStatus(RtcpMode::kCompound);
 
   return rtp_rtcp;

@@ -130,8 +130,7 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
   configuration.receive_statistics = receive_statistics;
   configuration.outgoing_transport = rtcp_send_transport;
   configuration.rtt_stats = rtt_stats;
-  std::unique_ptr<RtpRtcp> rtp_rtcp(RtpRtcp::CreateRtpRtcp(configuration));
-  return rtp_rtcp;
+  return RtpRtcp::Create(configuration);
 }
 
 }  // namespace
