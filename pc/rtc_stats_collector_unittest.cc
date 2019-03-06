@@ -1428,6 +1428,7 @@ TEST_F(RTCStatsCollectorTest,
   voice_receiver_info.jitter_buffer_emitted_count = 13;
   voice_receiver_info.jitter_buffer_flushes = 7;
   voice_receiver_info.delayed_packet_outage_samples = 15;
+  voice_receiver_info.relative_packet_arrival_delay_seconds = 16;
 
   stats_->CreateMockRtpSendersReceiversAndChannels(
       {}, {std::make_pair(remote_audio_track.get(), voice_receiver_info)}, {},
@@ -1464,6 +1465,7 @@ TEST_F(RTCStatsCollectorTest,
   expected_remote_audio_track.jitter_buffer_emitted_count = 13;
   expected_remote_audio_track.jitter_buffer_flushes = 7;
   expected_remote_audio_track.delayed_packet_outage_samples = 15;
+  expected_remote_audio_track.relative_packet_arrival_delay = 16;
   ASSERT_TRUE(report->Get(expected_remote_audio_track.id()));
   EXPECT_EQ(expected_remote_audio_track,
             report->Get(expected_remote_audio_track.id())

@@ -122,6 +122,8 @@ struct NetworkStatistics {
   uint64_t packetBufferFlushes;
   // number of samples expanded due to delayed packets
   uint64_t delayedPacketOutageSamples;
+  // arrival delay of incoming packets
+  uint64_t relativePacketArrivalDelayMs;
 };
 
 }  // namespace webrtc

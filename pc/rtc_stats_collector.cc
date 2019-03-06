@@ -460,6 +460,8 @@ ProduceMediaStreamTrackStatsFromVoiceReceiverInfo(
       voice_receiver_info.jitter_buffer_flushes;
   audio_track_stats->delayed_packet_outage_samples =
       voice_receiver_info.delayed_packet_outage_samples;
+  audio_track_stats->relative_packet_arrival_delay =
+      voice_receiver_info.relative_packet_arrival_delay_seconds;
   return audio_track_stats;
 }
 

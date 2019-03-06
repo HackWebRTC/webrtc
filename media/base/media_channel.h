@@ -487,6 +487,8 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   uint64_t jitter_buffer_flushes = 0;
   // Number of samples expanded due to delayed packets.
   uint64_t delayed_packet_outage_samples = 0;
+  // Arrival delay of received audio packets.
+  double relative_packet_arrival_delay_seconds = 0.0;
 };
 
 struct VideoSenderInfo : public MediaSenderInfo {

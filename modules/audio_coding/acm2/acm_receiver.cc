@@ -257,6 +257,8 @@ void AcmReceiver::GetNetworkStatistics(NetworkStatistics* acm_stat) {
       neteq_lifetime_stat.jitter_buffer_emitted_count;
   acm_stat->delayedPacketOutageSamples =
       neteq_lifetime_stat.delayed_packet_outage_samples;
+  acm_stat->relativePacketArrivalDelayMs =
+      neteq_lifetime_stat.relative_packet_arrival_delay_ms;
 
   NetEqOperationsAndState neteq_operations_and_state =
       neteq_->GetOperationsAndState();
