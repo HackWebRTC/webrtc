@@ -113,10 +113,9 @@ WEBRTC_DEFINE_int(delay_agnostic,
 WEBRTC_DEFINE_int(extended_filter,
                   kParameterNotSpecifiedValue,
                   "Activate (1) or deactivate(0) the AEC extended filter mode");
-WEBRTC_DEFINE_int(
-    aec3,
-    kParameterNotSpecifiedValue,
-    "Activate (1) or deactivate(0) the experimental AEC mode AEC3");
+WEBRTC_DEFINE_int(use_legacy_aec,
+                  kParameterNotSpecifiedValue,
+                  "Activate (1) or deactivate(0) the legacy AEC");
 WEBRTC_DEFINE_int(experimental_agc,
                   kParameterNotSpecifiedValue,
                   "Activate (1) or deactivate(0) the experimental AGC");
@@ -207,12 +206,12 @@ WEBRTC_DEFINE_bool(store_intermediate_output,
 WEBRTC_DEFINE_string(custom_call_order_file,
                      "",
                      "Custom process API call order file");
-WEBRTC_DEFINE_bool(print_aec3_parameter_values,
+WEBRTC_DEFINE_bool(print_aec_parameter_values,
                    false,
-                   "Print parameter values used in AEC3 in JSON-format");
-WEBRTC_DEFINE_string(aec3_settings,
+                   "Print parameter values used in AEC in JSON-format");
+WEBRTC_DEFINE_string(aec_settings,
                      "",
-                     "File in JSON-format with custom AEC3 settings");
+                     "File in JSON-format with custom AEC settings");
 WEBRTC_DEFINE_bool(dump_data,
                    false,
                    "Dump internal data during the call (requires build flag)");
@@ -314,7 +313,7 @@ SimulationSettings CreateSettings() {
   SetSettingIfFlagSet(FLAG_refined_adaptive_filter,
                       &settings.use_refined_adaptive_filter);
 
-  SetSettingIfFlagSet(FLAG_aec3, &settings.use_aec3);
+  SetSettingIfFlagSet(FLAG_use_legacy_aec, &settings.use_legacy_aec);
   SetSettingIfFlagSet(FLAG_experimental_agc, &settings.use_experimental_agc);
   SetSettingIfFlagSet(FLAG_experimental_agc_disable_digital_adaptive,
                       &settings.experimental_agc_disable_digital_adaptive);
@@ -341,7 +340,7 @@ SimulationSettings CreateSettings() {
                         &settings.stream_drift_samples);
   SetSettingIfSpecified(FLAG_custom_call_order_file,
                         &settings.custom_call_order_filename);
-  SetSettingIfSpecified(FLAG_aec3_settings, &settings.aec3_settings_filename);
+  SetSettingIfSpecified(FLAG_aec_settings, &settings.aec_settings_filename);
   settings.initial_mic_level = FLAG_initial_mic_level;
   settings.simulate_mic_gain = FLAG_simulate_mic_gain;
   SetSettingIfSpecified(FLAG_simulated_mic_kind, &settings.simulated_mic_kind);
@@ -352,7 +351,7 @@ SimulationSettings CreateSettings() {
   settings.discard_all_settings_in_aecdump = FLAG_discard_settings_in_aecdump;
   settings.fixed_interface = FLAG_fixed_interface;
   settings.store_intermediate_output = FLAG_store_intermediate_output;
-  settings.print_aec3_parameter_values = FLAG_print_aec3_parameter_values;
+  settings.print_aec_parameter_values = FLAG_print_aec_parameter_values;
   settings.dump_internal_data = FLAG_dump_data;
   SetSettingIfSpecified(FLAG_dump_data_output_dir,
                         &settings.dump_internal_data_output_dir);

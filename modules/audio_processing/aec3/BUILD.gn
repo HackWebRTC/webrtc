@@ -133,7 +133,7 @@ rtc_static_library("aec3") {
 
   deps = [
     "..:apm_logging",
-    "..:audio_processing",
+    "..:audio_buffer",
     "../../../api:array_view",
     "../../../api/audio:aec3_config",
     "../../../api/audio:echo_control",
@@ -169,6 +169,7 @@ if (rtc_include_tests) {
     deps = [
       ":aec3",
       "..:apm_logging",
+      "..:audio_buffer",
       "..:audio_processing",
       "..:audio_processing_unittests",
       "../../../api:array_view",

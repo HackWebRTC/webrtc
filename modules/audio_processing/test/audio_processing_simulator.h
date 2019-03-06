@@ -64,7 +64,7 @@ struct SimulationSettings {
   absl::optional<bool> use_delay_agnostic;
   absl::optional<bool> use_extended_filter;
   absl::optional<bool> use_drift_compensation;
-  absl::optional<bool> use_aec3;
+  absl::optional<bool> use_legacy_aec;
   absl::optional<bool> use_experimental_agc;
   absl::optional<bool> use_experimental_agc_agc2_level_estimator;
   absl::optional<bool> experimental_agc_disable_digital_adaptive;
@@ -93,11 +93,11 @@ struct SimulationSettings {
   absl::optional<std::string> aec_dump_output_filename;
   bool fixed_interface = false;
   bool store_intermediate_output = false;
-  bool print_aec3_parameter_values = false;
+  bool print_aec_parameter_values = false;
   bool dump_internal_data = false;
   absl::optional<std::string> dump_internal_data_output_dir;
   absl::optional<std::string> custom_call_order_filename;
-  absl::optional<std::string> aec3_settings_filename;
+  absl::optional<std::string> aec_settings_filename;
 };
 
 // Holds a few statistics about a series of TickIntervals.

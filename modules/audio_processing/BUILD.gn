@@ -57,15 +57,33 @@ rtc_source_set("api") {
     "../../rtc_base:macromagic",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base/system:rtc_export",
+    "//third_party/abseil-cpp/absl/memory:memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
 rtc_static_library("audio_buffer") {
   visibility = [ "*" ]
+
+  configs += [ ":apm_debug_dump" ]
+
   sources = [
-    "audio_buffer_placeholder.cc",
-    "audio_buffer_placeholder.h",
+    "audio_buffer.cc",
+    "audio_buffer.h",
+    "splitting_filter.cc",
+    "splitting_filter.h",
+    "three_band_filter_bank.cc",
+    "three_band_filter_bank.h",
+  ]
+
+  defines = []
+
+  deps = [
+    ":api",
+    "../../api/audio:audio_frame_api",
+    "../../common_audio:common_audio",
+    "../../common_audio:common_audio_c",
+    "../../rtc_base:checks",
   ]
 }
 
@@ -73,8 +91,6 @@ rtc_static_library("audio_processing") {
   visibility = [ "*" ]
   configs += [ ":apm_debug_dump" ]
   sources = [
-    "audio_buffer.cc",
-    "audio_buffer.h",
     "audio_processing_impl.cc",
     "audio_processing_impl.h",
     "common.h",
@@ -109,10 +125,6 @@ rtc_static_library("audio_processing") {
     "residual_echo_detector.h",
     "rms_level.cc",
     "rms_level.h",
-    "splitting_filter.cc",
-    "splitting_filter.h",
-    "three_band_filter_bank.cc",
-    "three_band_filter_bank.h",
     "transient/common.h",
     "transient/daubechies_8_wavelet_coeffs.h",
     "transient/dyadic_decimator.h",
@@ -164,6 +176,7 @@ rtc_static_library("audio_processing") {
     "../../system_wrappers:metrics",
     "aec:aec",
     "aec:aec_core",
+    "aec3:aec3",
     "aecm:aecm_core",
     "agc",
     "agc:agc_legacy_c",
@@ -171,6 +184,7 @@ rtc_static_library("audio_processing") {
     "agc2:fixed_digital",
     "agc2:gain_applier",
     "vad",
+    "//third_party/abseil-cpp/absl/memory:memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 

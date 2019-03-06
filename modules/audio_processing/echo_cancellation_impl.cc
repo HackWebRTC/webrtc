@@ -322,7 +322,12 @@ bool EchoCancellationImpl::is_delay_agnostic_enabled() const {
 }
 
 std::string EchoCancellationImpl::GetExperimentsDescription() {
-  return refined_adaptive_filter_enabled_ ? "RefinedAdaptiveFilter;" : "";
+  if (enabled_) {
+    return refined_adaptive_filter_enabled_
+               ? "Legacy AEC;RefinedAdaptiveFilter;"
+               : "Legacy AEC;";
+  }
+  return "";
 }
 
 bool EchoCancellationImpl::is_refined_adaptive_filter_enabled() const {

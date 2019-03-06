@@ -182,10 +182,11 @@ void EnableAllAPComponents(AudioProcessing* ap) {
   apm_config.echo_canceller.enabled = true;
 #if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
   apm_config.echo_canceller.mobile_mode = true;
-
   EXPECT_NOERR(ap->gain_control()->set_mode(GainControl::kAdaptiveDigital));
   EXPECT_NOERR(ap->gain_control()->Enable(true));
 #elif defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
+  // TODO(peah): Update tests to instead use AEC3.
+  apm_config.echo_canceller.use_legacy_aec = true;
   apm_config.echo_canceller.mobile_mode = false;
   apm_config.echo_canceller.legacy_moderate_suppression_level = true;
 
@@ -720,28 +721,24 @@ void ApmTest::StreamParametersTest(Format format) {
 
   // -- Missing delay --
   EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(format));
-  EXPECT_EQ(apm_->kStreamParameterNotSetError,
-            ProcessStreamChooser(format));
+  EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(format));
 
   // Resets after successful ProcessStream().
   EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
   EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(format));
-  EXPECT_EQ(apm_->kStreamParameterNotSetError,
-            ProcessStreamChooser(format));
+  EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(format));
 
   // Other stream parameters set correctly.
   EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
   EXPECT_EQ(apm_->kNoError,
             apm_->gain_control()->set_stream_analog_level(127));
-  EXPECT_EQ(apm_->kStreamParameterNotSetError,
-            ProcessStreamChooser(format));
+  EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(format));
   EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(false));
 
   // -- No stream parameters --
   EXPECT_EQ(apm_->kNoError,
             AnalyzeReverseStreamChooser(format));
-  EXPECT_EQ(apm_->kStreamParameterNotSetError,
-            ProcessStreamChooser(format));
+  EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(format));
 
   // -- All there --
   EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
@@ -873,6 +870,8 @@ TEST_F(ApmTest, DISABLED_EchoCancellationReportsCorrectDelays) {
   // Enable AEC only.
   AudioProcessing::Config apm_config = apm_->GetConfig();
   apm_config.echo_canceller.enabled = true;
+  // TODO(peah): Update tests to instead use AEC3.
+  apm_config.echo_canceller.use_legacy_aec = true;
   apm_config.echo_canceller.mobile_mode = false;
   apm_->ApplyConfig(apm_config);
   Config config;
@@ -1430,6 +1429,8 @@ TEST_F(ApmTest, SplittingFilter) {
   // Check the test is valid. We should have distortion from the filter
   // when AEC is enabled (which won't affect the audio).
   apm_config.echo_canceller.enabled = true;
+  // TODO(peah): Update tests to instead use AEC3.
+  apm_config.echo_canceller.use_legacy_aec = true;
   apm_config.echo_canceller.mobile_mode = false;
   apm_->ApplyConfig(apm_config);
   frame_->samples_per_channel_ = 320;
@@ -2443,11 +2444,11 @@ INSTANTIATE_TEST_SUITE_P(
                     std::make_tuple(44100, 16000, 16000, 16000, 25, 0),
 
                     std::make_tuple(32000, 48000, 48000, 48000, 30, 0),
-                    std::make_tuple(32000, 48000, 32000, 48000, 35, 30),
+                    std::make_tuple(32000, 48000, 32000, 48000, 32, 30),
                     std::make_tuple(32000, 48000, 16000, 48000, 30, 20),
-                    std::make_tuple(32000, 44100, 48000, 44100, 20, 20),
-                    std::make_tuple(32000, 44100, 32000, 44100, 20, 15),
-                    std::make_tuple(32000, 44100, 16000, 44100, 20, 15),
+                    std::make_tuple(32000, 44100, 48000, 44100, 19, 20),
+                    std::make_tuple(32000, 44100, 32000, 44100, 19, 15),
+                    std::make_tuple(32000, 44100, 16000, 44100, 19, 15),
                     std::make_tuple(32000, 32000, 48000, 32000, 40, 35),
                     std::make_tuple(32000, 32000, 32000, 32000, 0, 0),
                     std::make_tuple(32000, 32000, 16000, 32000, 40, 20),
@@ -2455,16 +2456,16 @@ INSTANTIATE_TEST_SUITE_P(
                     std::make_tuple(32000, 16000, 32000, 16000, 25, 20),
                     std::make_tuple(32000, 16000, 16000, 16000, 25, 0),
 
-                    std::make_tuple(16000, 48000, 48000, 48000, 25, 0),
-                    std::make_tuple(16000, 48000, 32000, 48000, 25, 30),
-                    std::make_tuple(16000, 48000, 16000, 48000, 25, 20),
+                    std::make_tuple(16000, 48000, 48000, 48000, 24, 0),
+                    std::make_tuple(16000, 48000, 32000, 48000, 24, 30),
+                    std::make_tuple(16000, 48000, 16000, 48000, 24, 20),
                     std::make_tuple(16000, 44100, 48000, 44100, 15, 20),
                     std::make_tuple(16000, 44100, 32000, 44100, 15, 15),
                     std::make_tuple(16000, 44100, 16000, 44100, 15, 15),
                     std::make_tuple(16000, 32000, 48000, 32000, 25, 35),
                     std::make_tuple(16000, 32000, 32000, 32000, 25, 0),
                     std::make_tuple(16000, 32000, 16000, 32000, 25, 20),
-                    std::make_tuple(16000, 16000, 48000, 16000, 40, 20),
+                    std::make_tuple(16000, 16000, 48000, 16000, 39, 20),
                     std::make_tuple(16000, 16000, 32000, 16000, 40, 20),
                     std::make_tuple(16000, 16000, 16000, 16000, 0, 0)));
 
@@ -2684,12 +2685,14 @@ std::unique_ptr<AudioProcessing> CreateApm(bool use_AEC2) {
   }
 
   // Disable all components except for an AEC and the residual echo detector.
+  // TODO(peah): Update this to also work on AEC3.
   AudioProcessing::Config apm_config;
   apm_config.residual_echo_detector.enabled = true;
   apm_config.high_pass_filter.enabled = false;
   apm_config.gain_controller2.enabled = false;
   apm_config.echo_canceller.enabled = true;
   apm_config.echo_canceller.mobile_mode = !use_AEC2;
+  apm_config.echo_canceller.use_legacy_aec = use_AEC2;
   apm->ApplyConfig(apm_config);
   EXPECT_EQ(apm->gain_control()->Enable(false), 0);
   EXPECT_EQ(apm->level_estimator()->Enable(false), 0);
@@ -2708,6 +2711,11 @@ TEST(MAYBE_ApmStatistics, AEC2EnabledTest) {
   // Set up APM with AEC2 and process some audio.
   std::unique_ptr<AudioProcessing> apm = CreateApm(true);
   ASSERT_TRUE(apm);
+  AudioProcessing::Config apm_config;
+  apm_config.echo_canceller.enabled = true;
+  // TODO(peah): Update tests to instead use AEC3.
+  apm_config.echo_canceller.use_legacy_aec = true;
+  apm->ApplyConfig(apm_config);
 
   // Set up an audioframe.
   AudioFrame frame;
