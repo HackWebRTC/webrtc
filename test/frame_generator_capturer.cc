@@ -141,8 +141,8 @@ bool FrameGeneratorCapturer::Init() {
     return false;
 
   RepeatingTaskHandle::DelayedStart(
-      &task_queue_, TimeDelta::seconds(1) / GetCurrentConfiguredFramerate(),
-      [this] {
+      task_queue_.Get(),
+      TimeDelta::seconds(1) / GetCurrentConfiguredFramerate(), [this] {
         InsertFrame();
         return TimeDelta::seconds(1) / GetCurrentConfiguredFramerate();
       });

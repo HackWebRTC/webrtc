@@ -21,6 +21,7 @@ rtc_source_set("task_queue") {
 
   deps = [
     "../../rtc_base:checks",
+    "../../rtc_base:macromagic",
     "//third_party/abseil-cpp/absl/base:config",
     "//third_party/abseil-cpp/absl/base:core_headers",
     "//third_party/abseil-cpp/absl/strings",

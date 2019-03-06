@@ -9,12 +9,14 @@
  */
 
 #include "rtc_base/task_utils/repeating_task.h"
+
 #include "rtc_base/logging.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/time_utils.h"
 
 namespace webrtc {
 namespace webrtc_repeating_task_impl {
-RepeatingTaskBase::RepeatingTaskBase(rtc::TaskQueue* task_queue,
+RepeatingTaskBase::RepeatingTaskBase(TaskQueueBase* task_queue,
                                      TimeDelta first_delay)
     : task_queue_(task_queue),
       next_run_time_(Timestamp::us(rtc::TimeMicros()) + first_delay) {}
@@ -57,10 +59,10 @@ void RepeatingTaskBase::PostStop() {
     RTC_DLOG(LS_INFO) << "Using PostStop() from the task queue running the "
                          "repeated task. Consider calling Stop() instead.";
   }
-  task_queue_->PostTask([this] {
+  task_queue_->PostTask(ToQueuedTask([this] {
     RTC_DCHECK_RUN_ON(task_queue_);
     Stop();
-  });
+  }));
 }
 
 }  // namespace webrtc_repeating_task_impl

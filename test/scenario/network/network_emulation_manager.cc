@@ -41,7 +41,7 @@ NetworkEmulationManager::NetworkEmulationManager()
       next_node_id_(1),
       next_ip4_address_(kMinIPv4Address),
       task_queue_("network_emulation_manager") {
-  process_task_handle_ = RepeatingTaskHandle::Start(&task_queue_, [this] {
+  process_task_handle_ = RepeatingTaskHandle::Start(task_queue_.Get(), [this] {
     ProcessNetworkPackets();
     return TimeDelta::ms(kPacketProcessingIntervalMs);
   });

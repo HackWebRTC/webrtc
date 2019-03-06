@@ -15,10 +15,11 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "api/task_queue/queued_task.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/sequenced_task_checker.h"
-#include "rtc_base/task_queue.h"
 #include "rtc_base/thread_checker.h"
 
 namespace webrtc {
@@ -26,9 +27,9 @@ namespace webrtc {
 class RepeatingTaskHandle;
 
 namespace webrtc_repeating_task_impl {
-class RepeatingTaskBase : public rtc::QueuedTask {
+class RepeatingTaskBase : public QueuedTask {
  public:
-  RepeatingTaskBase(rtc::TaskQueue* task_queue, TimeDelta first_delay);
+  RepeatingTaskBase(TaskQueueBase* task_queue, TimeDelta first_delay);
   ~RepeatingTaskBase() override;
   virtual TimeDelta RunClosure() = 0;
 
@@ -39,7 +40,7 @@ class RepeatingTaskBase : public rtc::QueuedTask {
   void Stop() RTC_RUN_ON(task_queue_);
   void PostStop();
 
-  rtc::TaskQueue* const task_queue_;
+  TaskQueueBase* const task_queue_;
   // This is always finite, except for the special case where it's PlusInfinity
   // to signal that the task should stop.
   Timestamp next_run_time_ RTC_GUARDED_BY(task_queue_);
@@ -49,7 +50,7 @@ class RepeatingTaskBase : public rtc::QueuedTask {
 template <class Closure>
 class RepeatingTaskImpl final : public RepeatingTaskBase {
  public:
-  RepeatingTaskImpl(rtc::TaskQueue* task_queue,
+  RepeatingTaskImpl(TaskQueueBase* task_queue,
                     TimeDelta first_delay,
                     Closure&& closure)
       : RepeatingTaskBase(task_queue, first_delay),
@@ -91,7 +92,7 @@ class RepeatingTaskHandle {
   // perfectly fine to destroy the handle while the task is running, since the
   // repeated task is owned by the TaskQueue.
   template <class Closure>
-  static RepeatingTaskHandle Start(rtc::TaskQueue* task_queue,
+  static RepeatingTaskHandle Start(TaskQueueBase* task_queue,
                                    Closure&& closure) {
     auto repeating_task = absl::make_unique<
         webrtc_repeating_task_impl::RepeatingTaskImpl<Closure>>(
@@ -102,13 +103,13 @@ class RepeatingTaskHandle {
   }
   template <class Closure>
   static RepeatingTaskHandle Start(Closure&& closure) {
-    return Start(rtc::TaskQueue::Current(), std::forward<Closure>(closure));
+    return Start(TaskQueueBase::Current(), std::forward<Closure>(closure));
   }
 
   // DelayedStart is equivalent to Start except that the first invocation of the
   // closure will be delayed by the given amount.
   template <class Closure>
-  static RepeatingTaskHandle DelayedStart(rtc::TaskQueue* task_queue,
+  static RepeatingTaskHandle DelayedStart(TaskQueueBase* task_queue,
                                           TimeDelta first_delay,
                                           Closure&& closure) {
     auto repeating_task = absl::make_unique<
@@ -121,7 +122,7 @@ class RepeatingTaskHandle {
   template <class Closure>
   static RepeatingTaskHandle DelayedStart(TimeDelta first_delay,
                                           Closure&& closure) {
-    return DelayedStart(rtc::TaskQueue::Current(), first_delay,
+    return DelayedStart(TaskQueueBase::Current(), first_delay,
                         std::forward<Closure>(closure));
   }
 
