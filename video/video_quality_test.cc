@@ -142,7 +142,7 @@ class QualityTestVideoEncoder : public VideoEncoder,
   }
   int32_t Release() override { return encoder_->Release(); }
   int32_t Encode(const VideoFrame& frame,
-                 const std::vector<FrameType>* frame_types) {
+                 const std::vector<VideoFrameType>* frame_types) {
     if (analyzer_) {
       analyzer_->PreEncodeOnFrame(frame);
     }

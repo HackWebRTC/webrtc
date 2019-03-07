@@ -45,7 +45,7 @@ class VP9EncoderImpl : public VP9Encoder {
 
   int Encode(const VideoFrame& input_image,
              const CodecSpecificInfo* codec_specific_info,
-             const std::vector<FrameType>* frame_types) override;
+             const std::vector<VideoFrameType>* frame_types) override;
 
   int RegisterEncodeCompleteCallback(EncodedImageCallback* callback) override;
 

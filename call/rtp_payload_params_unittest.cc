@@ -347,7 +347,7 @@ class RtpPayloadParamsVp8ToGenericTest : public ::testing::Test {
 
   void ConvertAndCheck(int temporal_index,
                        int64_t shared_frame_id,
-                       FrameType frame_type,
+                       VideoFrameType frame_type,
                        LayerSync layer_sync,
                        const std::set<int64_t>& expected_deps,
                        uint16_t width = 0,

@@ -316,7 +316,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   // TODO(sprang): Change actually support keyframe per simulcast stream, or
   // turn this into a simple bool |pending_keyframe_request_|.
-  std::vector<FrameType> next_frame_types_ RTC_GUARDED_BY(&encoder_queue_);
+  std::vector<VideoFrameType> next_frame_types_ RTC_GUARDED_BY(&encoder_queue_);
 
   FrameEncodeTimer frame_encoder_timer_;
 

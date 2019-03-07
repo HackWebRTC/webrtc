@@ -31,7 +31,7 @@ class TestPackStereo : public AudioPacketizationCallback {
 
   void RegisterReceiverACM(AudioCodingModule* acm);
 
-  int32_t SendData(const FrameType frame_type,
+  int32_t SendData(const AudioFrameType frame_type,
                    const uint8_t payload_type,
                    const uint32_t timestamp,
                    const uint8_t* payload_data,

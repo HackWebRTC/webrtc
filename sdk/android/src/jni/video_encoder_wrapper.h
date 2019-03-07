@@ -43,7 +43,7 @@ class VideoEncoderWrapper : public VideoEncoder {
 
   int32_t Encode(const VideoFrame& frame,
                  const CodecSpecificInfo* codec_specific_info,
-                 const std::vector<FrameType>* frame_types) override;
+                 const std::vector<VideoFrameType>* frame_types) override;
 
   int32_t SetRateAllocation(const VideoBitrateAllocation& allocation,
                             uint32_t framerate) override;

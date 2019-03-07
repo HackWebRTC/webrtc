@@ -138,12 +138,12 @@ int MultiplexEncoderAdapter::InitEncode(const VideoCodec* inst,
 
 int MultiplexEncoderAdapter::Encode(
     const VideoFrame& input_image,
-    const std::vector<FrameType>* frame_types) {
+    const std::vector<VideoFrameType>* frame_types) {
   if (!encoded_complete_callback_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
 
-  std::vector<FrameType> adjusted_frame_types;
+  std::vector<VideoFrameType> adjusted_frame_types;
   if (key_frame_interval_ > 0 && picture_index_ % key_frame_interval_ == 0) {
     adjusted_frame_types.push_back(kVideoFrameKey);
   } else {

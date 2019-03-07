@@ -87,7 +87,7 @@ int32_t QualityAnalyzingVideoEncoder::Release() {
 
 int32_t QualityAnalyzingVideoEncoder::Encode(
     const VideoFrame& frame,
-    const std::vector<FrameType>* frame_types) {
+    const std::vector<VideoFrameType>* frame_types) {
   {
     rtc::CritScope crit(&lock_);
     // Store id to be able to retrieve it in analyzing callback.
@@ -245,7 +245,7 @@ bool QualityAnalyzingVideoEncoder::ShouldDiscard(
       // are equal or less than required one are interesting, so all above
       // have to be discarded. For other frames only required spatial index
       // is interesting, so all others have to be discarded.
-      if (encoded_image._frameType == FrameType::kVideoFrameKey) {
+      if (encoded_image._frameType == VideoFrameType::kVideoFrameKey) {
         return *encoded_image.SpatialIndex() > *required_spatial_index;
       } else {
         return *encoded_image.SpatialIndex() != *required_spatial_index;

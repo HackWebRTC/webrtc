@@ -84,7 +84,7 @@ TEST(ObjCVideoEncoderFactoryTest, EncodeReturnsOKOnSuccess) {
                                  .set_rotation(webrtc::kVideoRotation_0)
                                  .set_timestamp_us(0)
                                  .build();
-  std::vector<webrtc::FrameType> frame_types;
+  std::vector<webrtc::VideoFrameType> frame_types;
 
   EXPECT_EQ(encoder->Encode(frame, &frame_types), WEBRTC_VIDEO_CODEC_OK);
 }
@@ -102,7 +102,7 @@ TEST(ObjCVideoEncoderFactoryTest, EncodeReturnsErrorOnFail) {
                                  .set_rotation(webrtc::kVideoRotation_0)
                                  .set_timestamp_us(0)
                                  .build();
-  std::vector<webrtc::FrameType> frame_types;
+  std::vector<webrtc::VideoFrameType> frame_types;
 
   EXPECT_EQ(encoder->Encode(frame, &frame_types), WEBRTC_VIDEO_CODEC_ERROR);
 }

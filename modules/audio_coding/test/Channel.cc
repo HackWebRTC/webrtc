@@ -18,7 +18,7 @@
 
 namespace webrtc {
 
-int32_t Channel::SendData(FrameType frameType,
+int32_t Channel::SendData(AudioFrameType frameType,
                           uint8_t payloadType,
                           uint32_t timeStamp,
                           const uint8_t* payloadData,

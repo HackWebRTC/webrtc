@@ -88,7 +88,7 @@ class VideoEncoderSoftwareFallbackWrapper final : public VideoEncoder {
 
   int32_t Release() override;
   int32_t Encode(const VideoFrame& frame,
-                 const std::vector<FrameType>* frame_types) override;
+                 const std::vector<VideoFrameType>* frame_types) override;
   int32_t SetRateAllocation(const VideoBitrateAllocation& bitrate_allocation,
                             uint32_t framerate) override;
   EncoderInfo GetEncoderInfo() const override;
@@ -252,7 +252,7 @@ int32_t VideoEncoderSoftwareFallbackWrapper::Release() {
 
 int32_t VideoEncoderSoftwareFallbackWrapper::Encode(
     const VideoFrame& frame,
-    const std::vector<FrameType>* frame_types) {
+    const std::vector<VideoFrameType>* frame_types) {
   if (use_fallback_encoder_)
     return fallback_encoder_->Encode(frame, frame_types);
   int32_t ret = encoder_->Encode(frame, frame_types);

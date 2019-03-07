@@ -43,7 +43,7 @@ class VideoCodecTestStats {
     size_t encode_time_us = 0;
     size_t target_bitrate_kbps = 0;
     size_t length_bytes = 0;
-    webrtc::FrameType frame_type = kVideoFrameDelta;
+    webrtc::VideoFrameType frame_type = kVideoFrameDelta;
 
     // Layering.
     size_t spatial_idx = 0;

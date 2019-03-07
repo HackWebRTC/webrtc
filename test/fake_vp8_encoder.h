@@ -48,7 +48,7 @@ class FakeVP8Encoder : public FakeEncoder {
   void SetupTemporalLayers(const VideoCodec& codec);
   void PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                              size_t size_bytes,
-                             FrameType frame_type,
+                             VideoFrameType frame_type,
                              int stream_idx,
                              uint32_t timestamp);
 

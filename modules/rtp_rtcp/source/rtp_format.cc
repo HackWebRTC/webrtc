@@ -29,7 +29,7 @@ std::unique_ptr<RtpPacketizer> RtpPacketizer::Create(
     PayloadSizeLimits limits,
     // Codec-specific details.
     const RTPVideoHeader& rtp_video_header,
-    FrameType frame_type,
+    VideoFrameType frame_type,
     const RTPFragmentationHeader* fragmentation) {
   switch (type) {
     case kVideoCodecH264: {

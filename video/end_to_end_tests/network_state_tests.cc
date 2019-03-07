@@ -269,7 +269,7 @@ TEST_F(NetworkStateEndToEndTest, RespectsNetworkState) {
 
     int32_t Encode(const VideoFrame& input_image,
                    const CodecSpecificInfo* codec_specific_info,
-                   const std::vector<FrameType>* frame_types) override {
+                   const std::vector<VideoFrameType>* frame_types) override {
       {
         rtc::CritScope lock(&test_crit_);
         if (sender_state_ == kNetworkDown) {
@@ -365,7 +365,7 @@ TEST_F(NetworkStateEndToEndTest, NewVideoSendStreamsRespectVideoNetworkDown) {
     }
     int32_t Encode(const VideoFrame& input_image,
                    const CodecSpecificInfo* codec_specific_info,
-                   const std::vector<FrameType>* frame_types) override {
+                   const std::vector<VideoFrameType>* frame_types) override {
       ADD_FAILURE() << "Unexpected frame encode.";
       return test::FakeEncoder::Encode(input_image, codec_specific_info,
                                        frame_types);
@@ -390,7 +390,7 @@ TEST_F(NetworkStateEndToEndTest, NewVideoSendStreamsIgnoreAudioNetworkDown) {
     }
     int32_t Encode(const VideoFrame& input_image,
                    const CodecSpecificInfo* codec_specific_info,
-                   const std::vector<FrameType>* frame_types) override {
+                   const std::vector<VideoFrameType>* frame_types) override {
       encoded_frame_ = true;
       return test::FakeEncoder::Encode(input_image, codec_specific_info,
                                        frame_types);

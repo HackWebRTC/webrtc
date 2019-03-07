@@ -100,7 +100,7 @@ class MediaCodecVideoEncoder : public VideoEncoder {
                      size_t /* max_payload_size */) override;
   int32_t Encode(const VideoFrame& input_image,
                  const CodecSpecificInfo* /* codec_specific_info */,
-                 const std::vector<FrameType>* frame_types) override;
+                 const std::vector<VideoFrameType>* frame_types) override;
   int32_t RegisterEncodeCompleteCallback(
       EncodedImageCallback* callback) override;
   int32_t Release() override;
@@ -595,7 +595,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
 int32_t MediaCodecVideoEncoder::Encode(
     const VideoFrame& frame,
     const CodecSpecificInfo* /* codec_specific_info */,
-    const std::vector<FrameType>* frame_types) {
+    const std::vector<VideoFrameType>* frame_types) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_checker_);
   if (sw_fallback_required_)
     return WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;

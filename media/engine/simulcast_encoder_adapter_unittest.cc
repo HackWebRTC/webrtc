@@ -198,7 +198,7 @@ class MockVideoEncoder : public VideoEncoder {
       Encode,
       int32_t(const VideoFrame& inputImage,
               const CodecSpecificInfo* codecSpecificInfo,
-              const std::vector<FrameType>* frame_types) /* override */);
+              const std::vector<VideoFrameType>* frame_types) /* override */);
 
   int32_t RegisterEncodeCompleteCallback(
       EncodedImageCallback* callback) /* override */ {
@@ -556,7 +556,7 @@ TEST_F(TestSimulcastEncoderAdapterFake, ReusesEncodersInOrder) {
                                .set_timestamp_ms(1000)
                                .set_rotation(kVideoRotation_180)
                                .build();
-  std::vector<FrameType> frame_types;
+  std::vector<VideoFrameType> frame_types;
 
   // Encode with three streams.
   EXPECT_EQ(0, adapter_->InitEncode(&codec_, 1, 1200));
@@ -890,7 +890,7 @@ TEST_F(TestSimulcastEncoderAdapterFake,
   // frame and can't otherwise be modified/resized.
   for (MockVideoEncoder* encoder : helper_->factory()->encoders())
     EXPECT_CALL(*encoder, Encode(::testing::Ref(input_frame), _, _)).Times(1);
-  std::vector<FrameType> frame_types(3, kVideoFrameKey);
+  std::vector<VideoFrameType> frame_types(3, kVideoFrameKey);
   EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
 }
 
@@ -916,7 +916,7 @@ TEST_F(TestSimulcastEncoderAdapterFake, TestFailureReturnCodesFromEncodeCalls) {
                                .set_timestamp_us(0)
                                .set_rotation(kVideoRotation_0)
                                .build();
-  std::vector<FrameType> frame_types(3, kVideoFrameKey);
+  std::vector<VideoFrameType> frame_types(3, kVideoFrameKey);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE,
             adapter_->Encode(input_frame, &frame_types));
 }
@@ -1031,7 +1031,7 @@ TEST_F(TestSimulcastEncoderAdapterFake, ActivatesCorrectStreamsInInitEncode) {
   EXPECT_CALL(*original_encoders[1], Encode(_, _, _)).Times(0);
   EXPECT_CALL(*original_encoders[2], Encode(_, _, _)).Times(0);
 
-  std::vector<FrameType> frame_types;
+  std::vector<VideoFrameType> frame_types;
   frame_types.resize(3, kVideoFrameKey);
   EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
 }

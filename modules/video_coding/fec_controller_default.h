@@ -44,8 +44,9 @@ class FecControllerDefault : public FecController {
                           uint8_t fraction_lost,
                           std::vector<bool> loss_mask_vector,
                           int64_t round_trip_time_ms) override;
-  void UpdateWithEncodedData(const size_t encoded_image_length,
-                             const FrameType encoded_image_frametype) override;
+  void UpdateWithEncodedData(
+      const size_t encoded_image_length,
+      const VideoFrameType encoded_image_frametype) override;
   bool UseLossVectorMask() override;
   float GetProtectionOverheadRateThreshold();
 

@@ -177,7 +177,7 @@ void FecControllerDefault::SetProtectionMethod(bool enable_fec,
 }
 void FecControllerDefault::UpdateWithEncodedData(
     const size_t encoded_image_length,
-    const FrameType encoded_image_frametype) {
+    const VideoFrameType encoded_image_frametype) {
   const size_t encoded_length = encoded_image_length;
   CritScope lock(&crit_sect_);
   if (encoded_length > 0) {

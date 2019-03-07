@@ -39,7 +39,7 @@ class RtpPacketizer {
       PayloadSizeLimits limits,
       // Codec-specific details.
       const RTPVideoHeader& rtp_video_header,
-      FrameType frame_type,
+      VideoFrameType frame_type,
       const RTPFragmentationHeader* fragmentation);
 
   virtual ~RtpPacketizer() = default;
@@ -71,7 +71,7 @@ class RtpDepacketizer {
 
     const uint8_t* payload;
     size_t payload_length;
-    FrameType frame_type;
+    VideoFrameType frame_type;
   };
 
   static RtpDepacketizer* Create(VideoCodecType type);

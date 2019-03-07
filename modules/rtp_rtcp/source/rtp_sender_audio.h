@@ -39,7 +39,7 @@ class RTPSenderAudio {
                                size_t channels,
                                uint32_t rate);
 
-  bool SendAudio(FrameType frame_type,
+  bool SendAudio(AudioFrameType frame_type,
                  int8_t payload_type,
                  uint32_t capture_timestamp,
                  const uint8_t* payload_data,
@@ -60,7 +60,7 @@ class RTPSenderAudio {
       uint16_t duration,
       bool marker_bit);  // set on first packet in talk burst
 
-  bool MarkerBit(FrameType frame_type, int8_t payload_type);
+  bool MarkerBit(AudioFrameType frame_type, int8_t payload_type);
 
  private:
   bool LogAndSendToNetwork(std::unique_ptr<RtpPacketToSend> packet,

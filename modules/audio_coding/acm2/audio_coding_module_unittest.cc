@@ -104,7 +104,7 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
         last_payload_type_(-1),
         last_timestamp_(0) {}
 
-  int32_t SendData(FrameType frame_type,
+  int32_t SendData(AudioFrameType frame_type,
                    uint8_t payload_type,
                    uint32_t timestamp,
                    const uint8_t* payload_data,
@@ -129,7 +129,7 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
     return rtc::checked_cast<int>(last_payload_vec_.size());
   }
 
-  FrameType last_frame_type() const {
+  AudioFrameType last_frame_type() const {
     rtc::CritScope lock(&crit_sect_);
     return last_frame_type_;
   }
@@ -151,7 +151,7 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
 
  private:
   int num_calls_ RTC_GUARDED_BY(crit_sect_);
-  FrameType last_frame_type_ RTC_GUARDED_BY(crit_sect_);
+  AudioFrameType last_frame_type_ RTC_GUARDED_BY(crit_sect_);
   int last_payload_type_ RTC_GUARDED_BY(crit_sect_);
   uint32_t last_timestamp_ RTC_GUARDED_BY(crit_sect_);
   std::vector<uint8_t> last_payload_vec_ RTC_GUARDED_BY(crit_sect_);
@@ -430,7 +430,7 @@ class AudioCodingModuleTestWithComfortNoiseOldApi
     // that is contain comfort noise.
     const struct {
       int ix;
-      FrameType type;
+      AudioFrameType type;
     } expectation[] = {
         {2, kAudioFrameCN},  {5, kEmptyFrame},    {8, kEmptyFrame},
         {11, kAudioFrameCN}, {14, kEmptyFrame},   {17, kEmptyFrame},

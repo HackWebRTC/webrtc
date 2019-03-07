@@ -55,7 +55,7 @@ constexpr int64_t kMaxRetransmissionWindowMs = 1000;
 constexpr int64_t kMinRetransmissionWindowMs = 30;
 
 MediaTransportEncodedAudioFrame::FrameType
-MediaTransportFrameTypeForWebrtcFrameType(webrtc::FrameType frame_type) {
+MediaTransportFrameTypeForWebrtcFrameType(webrtc::AudioFrameType frame_type) {
   switch (frame_type) {
     case kAudioFrameSpeech:
       return MediaTransportEncodedAudioFrame::FrameType::kSpeech;
@@ -184,7 +184,7 @@ class ChannelSend
   class ProcessAndEncodeAudioTask;
 
   // From AudioPacketizationCallback in the ACM
-  int32_t SendData(FrameType frameType,
+  int32_t SendData(AudioFrameType frameType,
                    uint8_t payloadType,
                    uint32_t timeStamp,
                    const uint8_t* payloadData,
@@ -196,13 +196,13 @@ class ChannelSend
 
   int SetSendRtpHeaderExtension(bool enable, RTPExtensionType type, int id);
 
-  int32_t SendRtpAudio(FrameType frameType,
+  int32_t SendRtpAudio(AudioFrameType frameType,
                        uint8_t payloadType,
                        uint32_t timeStamp,
                        rtc::ArrayView<const uint8_t> payload,
                        const RTPFragmentationHeader* fragmentation);
 
-  int32_t SendMediaTransportAudio(FrameType frameType,
+  int32_t SendMediaTransportAudio(AudioFrameType frameType,
                                   uint8_t payloadType,
                                   uint32_t timeStamp,
                                   rtc::ArrayView<const uint8_t> payload,
@@ -492,7 +492,7 @@ class ChannelSend::ProcessAndEncodeAudioTask : public rtc::QueuedTask {
   ChannelSend* const channel_;
 };
 
-int32_t ChannelSend::SendData(FrameType frameType,
+int32_t ChannelSend::SendData(AudioFrameType frameType,
                               uint8_t payloadType,
                               uint32_t timeStamp,
                               const uint8_t* payloadData,
@@ -516,7 +516,7 @@ int32_t ChannelSend::SendData(FrameType frameType,
   }
 }
 
-int32_t ChannelSend::SendRtpAudio(FrameType frameType,
+int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
                                   uint8_t payloadType,
                                   uint32_t timeStamp,
                                   rtc::ArrayView<const uint8_t> payload,
@@ -589,7 +589,7 @@ int32_t ChannelSend::SendRtpAudio(FrameType frameType,
 }
 
 int32_t ChannelSend::SendMediaTransportAudio(
-    FrameType frameType,
+    AudioFrameType frameType,
     uint8_t payloadType,
     uint32_t timeStamp,
     rtc::ArrayView<const uint8_t> payload,

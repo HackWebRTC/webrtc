@@ -70,7 +70,7 @@ class VCMFrameBuffer : public VCMEncodedFrame {
 
   int64_t LatestPacketTimeMs() const;
 
-  webrtc::FrameType FrameType() const;
+  webrtc::VideoFrameType FrameType() const;
 
  private:
   void SetState(VCMFrameBufferStateEnum state);  // Set state of frame

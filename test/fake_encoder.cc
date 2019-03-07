@@ -82,7 +82,7 @@ int32_t FakeEncoder::InitEncode(const VideoCodec* config,
 
 int32_t FakeEncoder::Encode(const VideoFrame& input_image,
                             const CodecSpecificInfo* /*codec_specific_info*/,
-                            const std::vector<FrameType>* frame_types) {
+                            const std::vector<VideoFrameType>* frame_types) {
   unsigned char max_framerate;
   unsigned char num_simulcast_streams;
   SimulcastStream simulcast_streams[kMaxSimulcastStreams];
@@ -161,7 +161,7 @@ std::unique_ptr<RTPFragmentationHeader> FakeEncoder::EncodeHook(
 }
 
 FakeEncoder::FrameInfo FakeEncoder::NextFrame(
-    const std::vector<FrameType>* frame_types,
+    const std::vector<VideoFrameType>* frame_types,
     bool keyframe,
     uint8_t num_simulcast_streams,
     const VideoBitrateAllocation& target_bitrate,
@@ -171,7 +171,7 @@ FakeEncoder::FrameInfo FakeEncoder::NextFrame(
   frame_info.keyframe = keyframe;
 
   if (frame_types) {
-    for (FrameType frame_type : *frame_types) {
+    for (VideoFrameType frame_type : *frame_types) {
       if (frame_type == kVideoFrameKey) {
         frame_info.keyframe = true;
         break;
@@ -356,7 +356,7 @@ void DelayedEncoder::SetDelay(int delay_ms) {
 
 int32_t DelayedEncoder::Encode(const VideoFrame& input_image,
                                const CodecSpecificInfo* codec_specific_info,
-                               const std::vector<FrameType>* frame_types) {
+                               const std::vector<VideoFrameType>* frame_types) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
   SleepMs(delay_ms_);
@@ -390,7 +390,7 @@ class MultithreadedFakeH264Encoder::EncodeTask : public rtc::QueuedTask {
   EncodeTask(MultithreadedFakeH264Encoder* encoder,
              const VideoFrame& input_image,
              const CodecSpecificInfo* codec_specific_info,
-             const std::vector<FrameType>* frame_types)
+             const std::vector<VideoFrameType>* frame_types)
       : encoder_(encoder),
         input_image_(input_image),
         codec_specific_info_(),
@@ -409,13 +409,13 @@ class MultithreadedFakeH264Encoder::EncodeTask : public rtc::QueuedTask {
   MultithreadedFakeH264Encoder* const encoder_;
   VideoFrame input_image_;
   CodecSpecificInfo codec_specific_info_;
-  std::vector<FrameType> frame_types_;
+  std::vector<VideoFrameType> frame_types_;
 };
 
 int32_t MultithreadedFakeH264Encoder::Encode(
     const VideoFrame& input_image,
     const CodecSpecificInfo* codec_specific_info,
-    const std::vector<FrameType>* frame_types) {
+    const std::vector<VideoFrameType>* frame_types) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
   std::unique_ptr<rtc::TaskQueue>& queue =
@@ -434,7 +434,7 @@ int32_t MultithreadedFakeH264Encoder::Encode(
 int32_t MultithreadedFakeH264Encoder::EncodeCallback(
     const VideoFrame& input_image,
     const CodecSpecificInfo* codec_specific_info,
-    const std::vector<FrameType>* frame_types) {
+    const std::vector<VideoFrameType>* frame_types) {
   return FakeH264Encoder::Encode(input_image, codec_specific_info, frame_types);
 }
 

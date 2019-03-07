@@ -92,7 +92,7 @@ void FakeVP8Encoder::SetupTemporalLayers(const VideoCodec& codec) {
 
 void FakeVP8Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                                            size_t size_bytes,
-                                           FrameType frame_type,
+                                           VideoFrameType frame_type,
                                            int stream_idx,
                                            uint32_t timestamp) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);

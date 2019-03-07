@@ -74,11 +74,11 @@ class TestVp8Impl : public VideoCodecUnitTest {
                              EncodedImage* encoded_frame,
                              CodecSpecificInfo* codec_specific_info,
                              bool keyframe = false) {
-    std::vector<FrameType> frame_types;
+    std::vector<VideoFrameType> frame_types;
     if (keyframe) {
-      frame_types.emplace_back(FrameType::kVideoFrameKey);
+      frame_types.emplace_back(VideoFrameType::kVideoFrameKey);
     } else {
-      frame_types.emplace_back(FrameType::kVideoFrameDelta);
+      frame_types.emplace_back(VideoFrameType::kVideoFrameDelta);
     }
     EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
               encoder_->Encode(input_frame, &frame_types));
@@ -484,7 +484,7 @@ TEST_F(TestVp8Impl, KeepsTimestampOnReencode) {
       .Times(2)
       .WillRepeatedly(Return(vpx_codec_err_t::VPX_CODEC_OK));
 
-  auto delta_frame = std::vector<FrameType>{kVideoFrameDelta};
+  auto delta_frame = std::vector<VideoFrameType>{kVideoFrameDelta};
   encoder.Encode(*NextInputFrame(), nullptr, &delta_frame);
 }
 

@@ -30,7 +30,7 @@ namespace webrtc {
 
 namespace {
 
-const char* FrameTypeToString(FrameType frame_type) {
+const char* FrameTypeToString(AudioFrameType frame_type) {
   switch (frame_type) {
     case kEmptyFrame:
       return "empty";
@@ -88,7 +88,7 @@ int32_t RTPSenderAudio::RegisterAudioPayload(absl::string_view payload_name,
   return 0;
 }
 
-bool RTPSenderAudio::MarkerBit(FrameType frame_type, int8_t payload_type) {
+bool RTPSenderAudio::MarkerBit(AudioFrameType frame_type, int8_t payload_type) {
   rtc::CritScope cs(&send_audio_critsect_);
   // for audio true for first packet in a speech burst
   bool marker_bit = false;
@@ -131,7 +131,7 @@ bool RTPSenderAudio::MarkerBit(FrameType frame_type, int8_t payload_type) {
   return marker_bit;
 }
 
-bool RTPSenderAudio::SendAudio(FrameType frame_type,
+bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
                                int8_t payload_type,
                                uint32_t rtp_timestamp,
                                const uint8_t* payload_data,

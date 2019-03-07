@@ -29,7 +29,7 @@ VCMFrameBuffer::VCMFrameBuffer()
 
 VCMFrameBuffer::~VCMFrameBuffer() {}
 
-webrtc::FrameType VCMFrameBuffer::FrameType() const {
+webrtc::VideoFrameType VCMFrameBuffer::FrameType() const {
   return _sessionInfo.FrameType();
 }
 

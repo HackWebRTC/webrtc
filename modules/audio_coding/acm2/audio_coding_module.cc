@@ -393,7 +393,7 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
 
   RTPFragmentationHeader my_fragmentation;
   ConvertEncodedInfoToFragmentationHeader(encoded_info, &my_fragmentation);
-  FrameType frame_type;
+  AudioFrameType frame_type;
   if (encode_buffer_.size() == 0 && encoded_info.send_even_if_empty) {
     frame_type = kEmptyFrame;
     encoded_info.payload_type = previous_pltype;

@@ -43,8 +43,9 @@ int EncoderSimulcastProxy::InitEncode(const VideoCodec* inst,
   return ret;
 }
 
-int EncoderSimulcastProxy::Encode(const VideoFrame& input_image,
-                                  const std::vector<FrameType>* frame_types) {
+int EncoderSimulcastProxy::Encode(
+    const VideoFrame& input_image,
+    const std::vector<VideoFrameType>* frame_types) {
   return encoder_->Encode(input_image, frame_types);
 }
 

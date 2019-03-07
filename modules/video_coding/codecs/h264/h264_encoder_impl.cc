@@ -64,7 +64,7 @@ int NumberOfThreads(int width, int height, int number_of_cores) {
   return 1;
 }
 
-FrameType ConvertToVideoFrameType(EVideoFrameType type) {
+VideoFrameType ConvertToVideoFrameType(EVideoFrameType type) {
   switch (type) {
     case videoFrameTypeIDR:
       return kVideoFrameKey;
@@ -381,9 +381,10 @@ int32_t H264EncoderImpl::SetRateAllocation(
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t H264EncoderImpl::Encode(const VideoFrame& input_frame,
-                                const CodecSpecificInfo* codec_specific_info,
-                                const std::vector<FrameType>* frame_types) {
+int32_t H264EncoderImpl::Encode(
+    const VideoFrame& input_frame,
+    const CodecSpecificInfo* codec_specific_info,
+    const std::vector<VideoFrameType>* frame_types) {
   if (encoders_.empty()) {
     ReportError();
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;

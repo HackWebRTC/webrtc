@@ -103,7 +103,7 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
     return num_10ms_frames;
   }
 
-  int SendData(FrameType frame_type,
+  int SendData(AudioFrameType frame_type,
                uint8_t payload_type,
                uint32_t timestamp,
                const uint8_t* payload_data,
@@ -139,7 +139,7 @@ class AcmReceiverTestOldApi : public AudioPacketizationCallback,
   uint32_t timestamp_;
   bool packet_sent_;  // Set when SendData is called reset when inserting audio.
   uint32_t last_packet_send_timestamp_;
-  FrameType last_frame_type_;
+  AudioFrameType last_frame_type_;
 };
 
 #if defined(WEBRTC_ANDROID)

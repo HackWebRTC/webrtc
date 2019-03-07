@@ -606,14 +606,14 @@ class VideoStreamEncoderTest : public ::testing::Test {
       return last_update_rect_;
     }
 
-    const std::vector<FrameType>& LastFrameTypes() const {
+    const std::vector<VideoFrameType>& LastFrameTypes() const {
       rtc::CritScope lock(&local_crit_sect_);
       return last_frame_types_;
     }
 
     void InjectFrame(const VideoFrame& input_image, bool keyframe) {
-      const std::vector<FrameType> frame_type = {keyframe ? kVideoFrameKey
-                                                          : kVideoFrameDelta};
+      const std::vector<VideoFrameType> frame_type = {
+          keyframe ? kVideoFrameKey : kVideoFrameDelta};
       {
         rtc::CritScope lock(&local_crit_sect_);
         last_frame_types_ = frame_type;
@@ -640,7 +640,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
    private:
     int32_t Encode(const VideoFrame& input_image,
                    const CodecSpecificInfo* codec_specific_info,
-                   const std::vector<FrameType>* frame_types) override {
+                   const std::vector<VideoFrameType>* frame_types) override {
       bool block_encode;
       {
         rtc::CritScope lock(&local_crit_sect_);
@@ -747,7 +747,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
     absl::optional<VideoBitrateAllocation> last_bitrate_allocation_;
     VideoFrame::UpdateRect last_update_rect_
         RTC_GUARDED_BY(local_crit_sect_) = {0, 0, 0, 0};
-    std::vector<FrameType> last_frame_types_;
+    std::vector<VideoFrameType> last_frame_types_;
     bool expect_null_frame_ = false;
     EncodedImageCallback* encoded_image_callback_
         RTC_GUARDED_BY(local_crit_sect_) = nullptr;
@@ -3605,20 +3605,20 @@ TEST_F(VideoStreamEncoderTest, SetsFrameTypes) {
   video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
   WaitForEncodedFrame(1);
   EXPECT_THAT(fake_encoder_.LastFrameTypes(),
-              testing::ElementsAre(FrameType{kVideoFrameKey}));
+              testing::ElementsAre(VideoFrameType{kVideoFrameKey}));
 
   // Insert delta frame.
   video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
   WaitForEncodedFrame(2);
   EXPECT_THAT(fake_encoder_.LastFrameTypes(),
-              testing::ElementsAre(FrameType{kVideoFrameDelta}));
+              testing::ElementsAre(VideoFrameType{kVideoFrameDelta}));
 
   // Request next frame be a key-frame.
   video_stream_encoder_->SendKeyFrame();
   video_source_.IncomingCapturedFrame(CreateFrame(3, nullptr));
   WaitForEncodedFrame(3);
   EXPECT_THAT(fake_encoder_.LastFrameTypes(),
-              testing::ElementsAre(FrameType{kVideoFrameKey}));
+              testing::ElementsAre(VideoFrameType{kVideoFrameKey}));
 
   video_stream_encoder_->Stop();
 }
@@ -3669,23 +3669,23 @@ TEST_F(VideoStreamEncoderTest, RequestKeyframeInternalSource) {
   fake_encoder_.InjectFrame(CreateFrame(1, nullptr), true);
   EXPECT_TRUE(WaitForFrame(kDefaultTimeoutMs));
   EXPECT_THAT(fake_encoder_.LastFrameTypes(),
-              testing::ElementsAre(FrameType{kVideoFrameKey}));
+              testing::ElementsAre(VideoFrameType{kVideoFrameKey}));
 
-  const std::vector<FrameType> kDeltaFrame = {kVideoFrameDelta};
+  const std::vector<VideoFrameType> kDeltaFrame = {kVideoFrameDelta};
   // Need to set timestamp manually since manually for injected frame.
   VideoFrame frame = CreateFrame(101, nullptr);
   frame.set_timestamp(101);
   fake_encoder_.InjectFrame(frame, false);
   EXPECT_TRUE(WaitForFrame(kDefaultTimeoutMs));
   EXPECT_THAT(fake_encoder_.LastFrameTypes(),
-              testing::ElementsAre(FrameType{kVideoFrameDelta}));
+              testing::ElementsAre(VideoFrameType{kVideoFrameDelta}));
 
   // Request key-frame. The forces a dummy frame down into the encoder.
   fake_encoder_.ExpectNullFrame();
   video_stream_encoder_->SendKeyFrame();
   EXPECT_TRUE(WaitForFrame(kDefaultTimeoutMs));
   EXPECT_THAT(fake_encoder_.LastFrameTypes(),
-              testing::ElementsAre(FrameType{kVideoFrameKey}));
+              testing::ElementsAre(VideoFrameType{kVideoFrameKey}));
 
   video_stream_encoder_->Stop();
 }

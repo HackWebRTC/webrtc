@@ -46,7 +46,7 @@ class FakeEncoder : public VideoEncoder {
                      size_t max_payload_size) override;
   int32_t Encode(const VideoFrame& input_image,
                  const CodecSpecificInfo* codec_specific_info,
-                 const std::vector<FrameType>* frame_types) override;
+                 const std::vector<VideoFrameType>* frame_types) override;
   int32_t RegisterEncodeCompleteCallback(
       EncodedImageCallback* callback) override;
   int32_t Release() override;
@@ -72,7 +72,7 @@ class FakeEncoder : public VideoEncoder {
     std::vector<SpatialLayer> layers;
   };
 
-  FrameInfo NextFrame(const std::vector<FrameType>* frame_types,
+  FrameInfo NextFrame(const std::vector<VideoFrameType>* frame_types,
                       bool keyframe,
                       uint8_t num_simulcast_streams,
                       const VideoBitrateAllocation& target_bitrate,
@@ -126,7 +126,7 @@ class DelayedEncoder : public test::FakeEncoder {
   void SetDelay(int delay_ms);
   int32_t Encode(const VideoFrame& input_image,
                  const CodecSpecificInfo* codec_specific_info,
-                 const std::vector<FrameType>* frame_types) override;
+                 const std::vector<VideoFrameType>* frame_types) override;
 
  private:
   int delay_ms_ RTC_GUARDED_BY(sequence_checker_);
@@ -148,11 +148,11 @@ class MultithreadedFakeH264Encoder : public test::FakeH264Encoder {
 
   int32_t Encode(const VideoFrame& input_image,
                  const CodecSpecificInfo* codec_specific_info,
-                 const std::vector<FrameType>* frame_types) override;
+                 const std::vector<VideoFrameType>* frame_types) override;
 
   int32_t EncodeCallback(const VideoFrame& input_image,
                          const CodecSpecificInfo* codec_specific_info,
-                         const std::vector<FrameType>* frame_types);
+                         const std::vector<VideoFrameType>* frame_types);
 
   int32_t Release() override;
 

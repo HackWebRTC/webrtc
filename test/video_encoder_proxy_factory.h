@@ -62,7 +62,7 @@ class VideoEncoderProxyFactory final : public VideoEncoderFactory {
 
    private:
     int32_t Encode(const VideoFrame& input_image,
-                   const std::vector<FrameType>* frame_types) override {
+                   const std::vector<VideoFrameType>* frame_types) override {
       return encoder_->Encode(input_image, frame_types);
     }
     int32_t InitEncode(const VideoCodec* config,

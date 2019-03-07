@@ -56,7 +56,7 @@ class TestVCMReceiver : public ::testing::Test {
     return receiver_.InsertPacket(packet);
   }
 
-  int32_t InsertFrame(FrameType frame_type, bool complete) {
+  int32_t InsertFrame(VideoFrameType frame_type, bool complete) {
     int num_of_packets = complete ? 1 : 2;
     stream_generator_->GenerateFrame(
         frame_type, (frame_type != kEmptyFrame) ? num_of_packets : 0,
@@ -322,7 +322,7 @@ class SimulatedClockWithFrames : public SimulatedClock {
 
   void GenerateAndInsertFrame(int64_t render_timestamp_ms) {
     VCMPacket packet;
-    stream_generator_->GenerateFrame(FrameType::kVideoFrameKey,
+    stream_generator_->GenerateFrame(VideoFrameType::kVideoFrameKey,
                                      1,  // media packets
                                      0,  // empty packets
                                      render_timestamp_ms);

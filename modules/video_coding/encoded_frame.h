@@ -67,7 +67,7 @@ class VCMEncodedFrame : protected EncodedImage {
   /**
    *   Get frame type
    */
-  webrtc::FrameType FrameType() const { return _frameType; }
+  webrtc::VideoFrameType FrameType() const { return _frameType; }
   /**
    *   Get frame rotation
    */

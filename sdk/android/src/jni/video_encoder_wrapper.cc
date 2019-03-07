@@ -120,7 +120,7 @@ int32_t VideoEncoderWrapper::Release() {
 int32_t VideoEncoderWrapper::Encode(
     const VideoFrame& frame,
     const CodecSpecificInfo* /* codec_specific_info */,
-    const std::vector<FrameType>* frame_types) {
+    const std::vector<VideoFrameType>* frame_types) {
   if (!initialized_) {
     // Most likely initializing the codec failed.
     return WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
@@ -275,7 +275,7 @@ void VideoEncoderWrapper::OnEncodedFrame(JNIEnv* jni,
       frame._encodedHeight = encoded_height;
       frame.SetTimestamp(frame_extra_info.timestamp_rtp);
       frame.capture_time_ms_ = capture_time_ns / rtc::kNumNanosecsPerMillisec;
-      frame._frameType = (FrameType)frame_type;
+      frame._frameType = (VideoFrameType)frame_type;
       frame.rotation_ = (VideoRotation)rotation;
       frame._completeFrame = complete_frame;
       if (qp == -1) {

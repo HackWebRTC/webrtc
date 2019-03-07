@@ -46,7 +46,7 @@ VCMPacket::VCMPacket(const uint8_t* ptr,
                      size_t size,
                      const RTPHeader& rtp_header,
                      const RTPVideoHeader& videoHeader,
-                     FrameType frame_type,
+                     VideoFrameType frame_type,
                      int64_t ntp_time_ms)
     : payloadType(rtp_header.payloadType),
       timestamp(rtp_header.timestamp),

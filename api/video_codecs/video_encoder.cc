@@ -104,13 +104,13 @@ VideoEncoder::EncoderInfo::~EncoderInfo() = default;
 // Implementations of the interface must implement one or the other of these two
 // methods.
 int32_t VideoEncoder::Encode(const VideoFrame& frame,
-                             const std::vector<FrameType>* frame_types) {
+                             const std::vector<VideoFrameType>* frame_types) {
   return Encode(frame, nullptr, frame_types);
 }
 
 int32_t VideoEncoder::Encode(const VideoFrame& frame,
                              const CodecSpecificInfo* codec_specific_info,
-                             const std::vector<FrameType>* frame_types) {
+                             const std::vector<VideoFrameType>* frame_types) {
   return Encode(frame, frame_types);
 }
 

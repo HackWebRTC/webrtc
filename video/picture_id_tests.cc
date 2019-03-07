@@ -72,7 +72,7 @@ class PictureIdObserver : public test::RtpRtcpObserver {
     int16_t picture_id;
     int16_t tl0_pic_idx;
     uint8_t temporal_idx;
-    FrameType frame_type;
+    VideoFrameType frame_type;
   };
 
   bool ParsePayload(const uint8_t* packet,

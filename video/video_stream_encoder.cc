@@ -1731,7 +1731,8 @@ void VideoStreamEncoder::RunPostEncode(EncodedImage encoded_image,
   // Run post encode tasks, such as overuse detection and frame rate/drop
   // stats for internal encoders.
   const size_t frame_size = encoded_image.size();
-  const bool keyframe = encoded_image._frameType == FrameType::kVideoFrameKey;
+  const bool keyframe =
+      encoded_image._frameType == VideoFrameType::kVideoFrameKey;
 
   if (frame_size > 0) {
     frame_dropper_.Fill(frame_size, !keyframe);

@@ -121,7 +121,7 @@ int RtpFrameObject::times_nacked() const {
   return times_nacked_;
 }
 
-FrameType RtpFrameObject::frame_type() const {
+VideoFrameType RtpFrameObject::frame_type() const {
   return frame_type_;
 }
 

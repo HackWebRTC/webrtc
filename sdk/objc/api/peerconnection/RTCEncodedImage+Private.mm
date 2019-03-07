@@ -52,7 +52,7 @@
   encodedImage.timing_.flags = self.flags;
   encodedImage.timing_.encode_start_ms = self.encodeStartMs;
   encodedImage.timing_.encode_finish_ms = self.encodeFinishMs;
-  encodedImage._frameType = webrtc::FrameType(self.frameType);
+  encodedImage._frameType = webrtc::VideoFrameType(self.frameType);
   encodedImage.rotation_ = webrtc::VideoRotation(self.rotation);
   encodedImage._completeFrame = self.completeFrame;
   encodedImage.qp_ = self.qp ? self.qp.intValue : -1;

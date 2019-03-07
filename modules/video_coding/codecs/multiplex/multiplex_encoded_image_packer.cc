@@ -115,11 +115,13 @@ MultiplexImageComponentHeader UnpackFrameHeader(const uint8_t* buffer) {
       ByteReader<uint32_t>::ReadBigEndian(buffer + offset);
   offset += sizeof(uint32_t);
 
+  // TODO(nisse): This makes the wire format depend on the numeric values of the
+  // VideoCodecType and VideoFrameType enum constants.
   frame_header.codec_type = static_cast<VideoCodecType>(
       ByteReader<uint8_t>::ReadBigEndian(buffer + offset));
   offset += sizeof(uint8_t);
 
-  frame_header.frame_type = static_cast<FrameType>(
+  frame_header.frame_type = static_cast<VideoFrameType>(
       ByteReader<uint8_t>::ReadBigEndian(buffer + offset));
   offset += sizeof(uint8_t);
 
@@ -181,8 +183,8 @@ EncodedImage MultiplexEncodedImagePacker::PackAndRelease(
     // key frame so as to decode the whole image without previous frame data.
     // Thus only when all components are key frames, we can mark the combined
     // frame as key frame.
-    if (frame_header.frame_type == FrameType::kVideoFrameDelta) {
-      combined_image._frameType = FrameType::kVideoFrameDelta;
+    if (frame_header.frame_type == VideoFrameType::kVideoFrameDelta) {
+      combined_image._frameType = VideoFrameType::kVideoFrameDelta;
     }
 
     frame_headers.push_back(frame_header);

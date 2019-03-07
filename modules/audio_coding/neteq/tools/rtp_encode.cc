@@ -107,7 +107,7 @@ class Packetizer : public AudioPacketizationCallback {
         ssrc_(ssrc),
         timestamp_rate_hz_(timestamp_rate_hz) {}
 
-  int32_t SendData(FrameType frame_type,
+  int32_t SendData(AudioFrameType frame_type,
                    uint8_t payload_type,
                    uint32_t timestamp,
                    const uint8_t* payload_data,

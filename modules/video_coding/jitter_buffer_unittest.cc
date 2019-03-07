@@ -362,7 +362,7 @@ class TestRunningJitterBuffer : public ::testing::TestWithParam<std::string>,
     return jitter_buffer_->InsertPacket(packet, &retransmitted);
   }
 
-  VCMFrameBufferEnum InsertFrame(FrameType frame_type) {
+  VCMFrameBufferEnum InsertFrame(VideoFrameType frame_type) {
     stream_generator_->GenerateFrame(
         frame_type, (frame_type != kEmptyFrame) ? 1 : 0,
         (frame_type == kEmptyFrame) ? 1 : 0, clock_->TimeInMilliseconds());
@@ -371,7 +371,7 @@ class TestRunningJitterBuffer : public ::testing::TestWithParam<std::string>,
     return ret;
   }
 
-  VCMFrameBufferEnum InsertFrames(int num_frames, FrameType frame_type) {
+  VCMFrameBufferEnum InsertFrames(int num_frames, VideoFrameType frame_type) {
     VCMFrameBufferEnum ret_for_all = kNoError;
     for (int i = 0; i < num_frames; ++i) {
       VCMFrameBufferEnum ret = InsertFrame(frame_type);

@@ -38,7 +38,7 @@ class RtpPacketizerGeneric : public RtpPacketizer {
   RtpPacketizerGeneric(rtc::ArrayView<const uint8_t> payload,
                        PayloadSizeLimits limits,
                        const RTPVideoHeader& rtp_video_header,
-                       FrameType frametype);
+                       VideoFrameType frametype);
 
   ~RtpPacketizerGeneric() override;
 
@@ -52,7 +52,7 @@ class RtpPacketizerGeneric : public RtpPacketizer {
  private:
   // Fills header_ and header_size_ members.
   void BuildHeader(const RTPVideoHeader& rtp_video_header,
-                   FrameType frame_type);
+                   VideoFrameType frame_type);
 
   uint8_t header_[3];
   size_t header_size_;

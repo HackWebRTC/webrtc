@@ -54,7 +54,7 @@ void BuildRedPayload(const RtpPacketToSend& media_packet,
 
 void AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
                             const absl::optional<PlayoutDelay>& playout_delay,
-                            FrameType frame_type,
+                            VideoFrameType frame_type,
                             bool set_video_rotation,
                             bool set_color_space,
                             bool set_frame_marking,
@@ -167,7 +167,7 @@ bool IsBaseLayer(const RTPVideoHeader& video_header) {
   return true;
 }
 
-const char* FrameTypeToString(FrameType frame_type) {
+const char* FrameTypeToString(VideoFrameType frame_type) {
   switch (frame_type) {
     case kEmptyFrame:
       return "empty";
@@ -421,7 +421,7 @@ absl::optional<uint32_t> RTPSenderVideo::FlexfecSsrc() const {
   return absl::nullopt;
 }
 
-bool RTPSenderVideo::SendVideo(FrameType frame_type,
+bool RTPSenderVideo::SendVideo(VideoFrameType frame_type,
                                int8_t payload_type,
                                uint32_t rtp_timestamp,
                                int64_t capture_time_ms,

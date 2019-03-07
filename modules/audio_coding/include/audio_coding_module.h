@@ -40,7 +40,7 @@ class AudioPacketizationCallback {
  public:
   virtual ~AudioPacketizationCallback() {}
 
-  virtual int32_t SendData(FrameType frame_type,
+  virtual int32_t SendData(AudioFrameType frame_type,
                            uint8_t payload_type,
                            uint32_t timestamp,
                            const uint8_t* payload_data,
@@ -53,7 +53,7 @@ class ACMVADCallback {
  public:
   virtual ~ACMVADCallback() {}
 
-  virtual int32_t InFrameType(FrameType frame_type) = 0;
+  virtual int32_t InFrameType(AudioFrameType frame_type) = 0;
 };
 
 class AudioCodingModule {

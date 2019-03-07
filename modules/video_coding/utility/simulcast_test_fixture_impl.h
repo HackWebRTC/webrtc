@@ -67,9 +67,9 @@ class SimulcastTestFixtureImpl final : public SimulcastTestFixture {
   void SetRates(uint32_t bitrate_kbps, uint32_t fps);
   void RunActiveStreamsTest(const std::vector<bool> active_streams);
   void UpdateActiveStreams(const std::vector<bool> active_streams);
-  void ExpectStreams(FrameType frame_type,
+  void ExpectStreams(VideoFrameType frame_type,
                      const std::vector<bool> expected_streams_active);
-  void ExpectStreams(FrameType frame_type, int expected_video_streams);
+  void ExpectStreams(VideoFrameType frame_type, int expected_video_streams);
   void VerifyTemporalIdxAndSyncForAllSpatialLayers(
       TestEncodedImageCallback* encoder_callback,
       const int* expected_temporal_idx,

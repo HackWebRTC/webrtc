@@ -26,7 +26,7 @@ RtpPacketizerGeneric::RtpPacketizerGeneric(
     rtc::ArrayView<const uint8_t> payload,
     PayloadSizeLimits limits,
     const RTPVideoHeader& rtp_video_header,
-    FrameType frame_type)
+    VideoFrameType frame_type)
     : remaining_payload_(payload) {
   BuildHeader(rtp_video_header, frame_type);
 
@@ -72,7 +72,7 @@ bool RtpPacketizerGeneric::NextPacket(RtpPacketToSend* packet) {
 }
 
 void RtpPacketizerGeneric::BuildHeader(const RTPVideoHeader& rtp_video_header,
-                                       FrameType frame_type) {
+                                       VideoFrameType frame_type) {
   header_size_ = kGenericHeaderLength;
   header_[0] = RtpFormatVideoGeneric::kFirstPacketBit;
   if (frame_type == kVideoFrameKey) {

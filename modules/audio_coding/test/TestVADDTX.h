@@ -25,7 +25,7 @@ namespace webrtc {
 class ActivityMonitor : public ACMVADCallback {
  public:
   ActivityMonitor();
-  int32_t InFrameType(FrameType frame_type);
+  int32_t InFrameType(AudioFrameType frame_type);
   void PrintStatistics();
   void ResetStatistics();
   void GetStatistics(uint32_t* stats);

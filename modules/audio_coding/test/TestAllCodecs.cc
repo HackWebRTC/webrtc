@@ -60,7 +60,7 @@ void TestPack::RegisterReceiverACM(AudioCodingModule* acm) {
   return;
 }
 
-int32_t TestPack::SendData(FrameType frame_type,
+int32_t TestPack::SendData(AudioFrameType frame_type,
                            uint8_t payload_type,
                            uint32_t timestamp,
                            const uint8_t* payload_data,

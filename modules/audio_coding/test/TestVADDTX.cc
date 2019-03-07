@@ -33,7 +33,7 @@ ActivityMonitor::ActivityMonitor() {
   ResetStatistics();
 }
 
-int32_t ActivityMonitor::InFrameType(FrameType frame_type) {
+int32_t ActivityMonitor::InFrameType(AudioFrameType frame_type) {
   counter_[frame_type]++;
   return 0;
 }

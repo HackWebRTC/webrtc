@@ -30,7 +30,8 @@ struct WebRtcRTPHeader {
   RTPVideoHeader video;
 
   RTPHeader header;
-  FrameType frameType;
+  // Used for video only.
+  VideoFrameType frameType;
   // NTP time of the capture time in local timebase in milliseconds.
   int64_t ntp_time_ms;
 };

@@ -294,8 +294,8 @@ void SimulcastTestFixtureImpl::SetRates(uint32_t bitrate_kbps, uint32_t fps) {
 
 void SimulcastTestFixtureImpl::RunActiveStreamsTest(
     const std::vector<bool> active_streams) {
-  std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
-                                     kVideoFrameDelta);
+  std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
+                                          kVideoFrameDelta);
   UpdateActiveStreams(active_streams);
   // Set sufficient bitrate for all streams so we can test active without
   // bitrate being an issue.
@@ -326,7 +326,7 @@ void SimulcastTestFixtureImpl::UpdateActiveStreams(
 }
 
 void SimulcastTestFixtureImpl::ExpectStreams(
-    FrameType frame_type,
+    VideoFrameType frame_type,
     const std::vector<bool> expected_streams_active) {
   ASSERT_EQ(static_cast<int>(expected_streams_active.size()),
             kNumberOfSimulcastStreams);
@@ -367,7 +367,7 @@ void SimulcastTestFixtureImpl::ExpectStreams(
   }
 }
 
-void SimulcastTestFixtureImpl::ExpectStreams(FrameType frame_type,
+void SimulcastTestFixtureImpl::ExpectStreams(VideoFrameType frame_type,
                                              int expected_video_streams) {
   ASSERT_GE(expected_video_streams, 0);
   ASSERT_LE(expected_video_streams, kNumberOfSimulcastStreams);
@@ -396,8 +396,8 @@ void SimulcastTestFixtureImpl::VerifyTemporalIdxAndSyncForAllSpatialLayers(
 // a key frame was only requested for some of them.
 void SimulcastTestFixtureImpl::TestKeyFrameRequestsOnAllStreams() {
   SetRates(kMaxBitrates[2], 30);  // To get all three streams.
-  std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
-                                     kVideoFrameDelta);
+  std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
+                                          kVideoFrameDelta);
   ExpectStreams(kVideoFrameKey, kNumberOfSimulcastStreams);
   EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
@@ -431,8 +431,8 @@ void SimulcastTestFixtureImpl::TestKeyFrameRequestsOnAllStreams() {
 void SimulcastTestFixtureImpl::TestPaddingAllStreams() {
   // We should always encode the base layer.
   SetRates(kMinBitrates[0] - 1, 30);
-  std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
-                                     kVideoFrameDelta);
+  std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
+                                          kVideoFrameDelta);
   ExpectStreams(kVideoFrameKey, 1);
   EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
@@ -444,8 +444,8 @@ void SimulcastTestFixtureImpl::TestPaddingAllStreams() {
 void SimulcastTestFixtureImpl::TestPaddingTwoStreams() {
   // We have just enough to get only the first stream and padding for two.
   SetRates(kMinBitrates[0], 30);
-  std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
-                                     kVideoFrameDelta);
+  std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
+                                          kVideoFrameDelta);
   ExpectStreams(kVideoFrameKey, 1);
   EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
@@ -458,8 +458,8 @@ void SimulcastTestFixtureImpl::TestPaddingTwoStreamsOneMaxedOut() {
   // We are just below limit of sending second stream, so we should get
   // the first stream maxed out (at |maxBitrate|), and padding for two.
   SetRates(kTargetBitrates[0] + kMinBitrates[1] - 1, 30);
-  std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
-                                     kVideoFrameDelta);
+  std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
+                                          kVideoFrameDelta);
   ExpectStreams(kVideoFrameKey, 1);
   EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
@@ -471,8 +471,8 @@ void SimulcastTestFixtureImpl::TestPaddingTwoStreamsOneMaxedOut() {
 void SimulcastTestFixtureImpl::TestPaddingOneStream() {
   // We have just enough to send two streams, so padding for one stream.
   SetRates(kTargetBitrates[0] + kMinBitrates[1], 30);
-  std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
-                                     kVideoFrameDelta);
+  std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
+                                          kVideoFrameDelta);
   ExpectStreams(kVideoFrameKey, 2);
   EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
@@ -485,8 +485,8 @@ void SimulcastTestFixtureImpl::TestPaddingOneStreamTwoMaxedOut() {
   // We are just below limit of sending third stream, so we should get
   // first stream's rate maxed out at |targetBitrate|, second at |maxBitrate|.
   SetRates(kTargetBitrates[0] + kTargetBitrates[1] + kMinBitrates[2] - 1, 30);
-  std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
-                                     kVideoFrameDelta);
+  std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
+                                          kVideoFrameDelta);
   ExpectStreams(kVideoFrameKey, 2);
   EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
@@ -498,8 +498,8 @@ void SimulcastTestFixtureImpl::TestPaddingOneStreamTwoMaxedOut() {
 void SimulcastTestFixtureImpl::TestSendAllStreams() {
   // We have just enough to send all streams.
   SetRates(kTargetBitrates[0] + kTargetBitrates[1] + kMinBitrates[2], 30);
-  std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
-                                     kVideoFrameDelta);
+  std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
+                                          kVideoFrameDelta);
   ExpectStreams(kVideoFrameKey, 3);
   EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
@@ -511,8 +511,8 @@ void SimulcastTestFixtureImpl::TestSendAllStreams() {
 void SimulcastTestFixtureImpl::TestDisablingStreams() {
   // We should get three media streams.
   SetRates(kMaxBitrates[0] + kMaxBitrates[1] + kMaxBitrates[2], 30);
-  std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
-                                     kVideoFrameDelta);
+  std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
+                                          kVideoFrameDelta);
   ExpectStreams(kVideoFrameKey, 3);
   EXPECT_EQ(0, encoder_->Encode(*input_frame_, &frame_types));
 
@@ -617,8 +617,8 @@ void SimulcastTestFixtureImpl::SwitchingToOneStream(int width, int height) {
 
   // Encode one frame and verify.
   SetRates(kMaxBitrates[0] + kMaxBitrates[1], 30);
-  std::vector<FrameType> frame_types(kNumberOfSimulcastStreams,
-                                     kVideoFrameDelta);
+  std::vector<VideoFrameType> frame_types(kNumberOfSimulcastStreams,
+                                          kVideoFrameDelta);
   EXPECT_CALL(
       encoder_callback_,
       OnEncodedImage(AllOf(Field(&EncodedImage::_frameType, kVideoFrameKey),
