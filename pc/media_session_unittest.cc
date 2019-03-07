@@ -223,15 +223,15 @@ static const RtpExtension kRtpExtensionTransportSequenceNumber01And02[] = {
     RtpExtension("http://www.ietf.org/id/"
                  "draft-holmer-rmcat-transport-wide-cc-extensions-01",
                  1),
-    RtpExtension("http://www.ietf.org/id/"
-                 "draft-holmer-rmcat-transport-wide-cc-extensions-02",
-                 2),
+    RtpExtension(
+        "http://www.webrtc.org/experiments/rtp-hdrext/transport-wide-cc-02",
+        2),
 };
 
 static const RtpExtension kRtpExtensionTransportSequenceNumber02[] = {
-    RtpExtension("http://www.ietf.org/id/"
-                 "draft-holmer-rmcat-transport-wide-cc-extensions-02",
-                 2),
+    RtpExtension(
+        "http://www.webrtc.org/experiments/rtp-hdrext/transport-wide-cc-02",
+        2),
 };
 
 static const uint32_t kSimulcastParamsSsrc[] = {10, 11, 20, 21, 30, 31};

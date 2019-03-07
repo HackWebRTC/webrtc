@@ -105,7 +105,7 @@ const char RtpExtension::kVideoRotationUri[] = "urn:3gpp:video-orientation";
 const char RtpExtension::kTransportSequenceNumberUri[] =
     "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01";
 const char RtpExtension::kTransportSequenceNumberV2Uri[] =
-    "http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-02";
+    "http://www.webrtc.org/experiments/rtp-hdrext/transport-wide-cc-02";
 
 // This extension allows applications to adaptively limit the playout delay
 // on frames as per the current needs. For example, a gaming application

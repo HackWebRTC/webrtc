@@ -97,8 +97,7 @@ class TransportSequenceNumberV2 {
   static constexpr uint8_t kValueSizeBytes = 4;
   static constexpr uint8_t kValueSizeBytesWithoutFeedbackRequest = 2;
   static constexpr const char kUri[] =
-      "http://www.ietf.org/id/"
-      "draft-holmer-rmcat-transport-wide-cc-extensions-02";
+      "http://www.webrtc.org/experiments/rtp-hdrext/transport-wide-cc-02";
   static bool Parse(rtc::ArrayView<const uint8_t> data,
                     uint16_t* transport_sequence_number,
                     absl::optional<FeedbackRequest>* feedback_request);

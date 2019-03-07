@@ -1113,7 +1113,7 @@ static void NegotiateRtpHeaderExtensions(
         // Don't respond to
         // http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-01
         // if we get an offer including
-        // http://www.ietf.org/id/draft-holmer-rmcat-transport-wide-cc-extensions-02
+        // http://www.webrtc.org/experiments/rtp-hdrext/transport-wide-cc-02
         continue;
       } else {
         // We respond with their RTP header extension id.
