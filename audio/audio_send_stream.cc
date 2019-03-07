@@ -85,7 +85,6 @@ AudioSendStream::AudioSendStream(
     Clock* clock,
     const webrtc::AudioSendStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
-    rtc::TaskQueue* worker_queue,
     ProcessThread* module_process_thread,
     RtpTransportControllerSendInterface* rtp_transport,
     BitrateAllocatorInterface* bitrate_allocator,
@@ -95,14 +94,13 @@ AudioSendStream::AudioSendStream(
     : AudioSendStream(clock,
                       config,
                       audio_state,
-                      worker_queue,
                       rtp_transport,
                       bitrate_allocator,
                       event_log,
                       rtcp_rtt_stats,
                       suspended_rtp_state,
                       voe::CreateChannelSend(clock,
-                                             worker_queue,
+                                             rtp_transport->GetWorkerQueue(),
                                              module_process_thread,
                                              config.media_transport,
                                              /*overhead_observer=*/this,
@@ -118,7 +116,6 @@ AudioSendStream::AudioSendStream(
     Clock* clock,
     const webrtc::AudioSendStream::Config& config,
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
-    rtc::TaskQueue* worker_queue,
     RtpTransportControllerSendInterface* rtp_transport,
     BitrateAllocatorInterface* bitrate_allocator,
     RtcEventLog* event_log,
@@ -126,7 +123,7 @@ AudioSendStream::AudioSendStream(
     const absl::optional<RtpState>& suspended_rtp_state,
     std::unique_ptr<voe::ChannelSendInterface> channel_send)
     : clock_(clock),
-      worker_queue_(worker_queue),
+      worker_queue_(rtp_transport->GetWorkerQueue()),
       config_(Config(/*send_transport=*/nullptr,
                      /*media_transport=*/nullptr)),
       audio_state_(audio_state),
@@ -144,6 +141,9 @@ AudioSendStream::AudioSendStream(
   RTC_DCHECK(audio_state_);
   RTC_DCHECK(channel_send_);
   RTC_DCHECK(bitrate_allocator_);
+  // Currently we require the rtp transport even when media transport is used.
+  RTC_DCHECK(rtp_transport);
+
   // TODO(nisse): Eventually, we should have only media_transport. But for the
   // time being, we can have either. When media transport is injected, there
   // should be no rtp_transport, and below check should be strengthened to XOR

@@ -13,10 +13,12 @@
 #include "api/audio_codecs/audio_encoder_factory_template.h"
 #include "api/audio_codecs/opus/audio_decoder_opus.h"
 #include "api/audio_codecs/opus/audio_encoder_opus.h"
+#include "api/task_queue/global_task_queue_factory.h"
 #include "api/test/loopback_media_transport.h"
 #include "api/test/mock_audio_mixer.h"
 #include "audio/audio_receive_stream.h"
 #include "audio/audio_send_stream.h"
+#include "call/rtp_transport_controller_send.h"
 #include "call/test/mock_bitrate_allocator.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/audio_device/include/test_audio_device.h"
@@ -32,6 +34,10 @@ namespace webrtc {
 namespace test {
 
 namespace {
+using testing::_;
+using testing::NiceMock;
+using testing::Return;
+
 constexpr int kPayloadTypeOpus = 17;
 constexpr int kSamplingFrequency = 48000;
 constexpr int kNumChannels = 2;
@@ -69,10 +75,10 @@ TEST(AudioWithMediaTransport, DeliversAudio) {
   std::unique_ptr<rtc::Thread> transport_thread = rtc::Thread::Create();
   transport_thread->Start();
   MediaTransportPair transport_pair(transport_thread.get());
-  MockTransport rtcp_send_transport;
-  MockTransport send_transport;
+  NiceMock<MockTransport> rtcp_send_transport;
+  NiceMock<MockTransport> send_transport;
   std::unique_ptr<RtcEventLog> null_event_log = RtcEventLog::CreateNull();
-  MockBitrateAllocator bitrate_allocator;
+  NiceMock<MockBitrateAllocator> bitrate_allocator;
 
   rtc::scoped_refptr<TestAudioDeviceModule> audio_device =
       TestAudioDeviceModule::CreateTestAudioDeviceModule(
@@ -117,13 +123,16 @@ TEST(AudioWithMediaTransport, DeliversAudio) {
   send_config.send_codec_spec =
       AudioSendStream::Config::SendCodecSpec(kPayloadTypeOpus, audio_format);
   send_config.encoder_factory = CreateAudioEncoderFactory<AudioEncoderOpus>();
-  rtc::TaskQueue send_tq("audio send queue");
   std::unique_ptr<ProcessThread> send_process_thread =
       ProcessThread::Create("audio send thread");
+  RtpTransportControllerSend rtp_transport(
+      Clock::GetRealTimeClock(), null_event_log.get(), nullptr,
+      BitrateConstraints(), ProcessThread::Create("Pacer"),
+      &GlobalTaskQueueFactory());
   webrtc::internal::AudioSendStream send_stream(
-      Clock::GetRealTimeClock(), send_config, audio_state, &send_tq,
-      send_process_thread.get(),
-      /*transport=*/nullptr, &bitrate_allocator, null_event_log.get(),
+      Clock::GetRealTimeClock(), send_config, audio_state,
+      send_process_thread.get(), &rtp_transport, &bitrate_allocator,
+      null_event_log.get(),
       /*rtcp_rtt_stats=*/nullptr, absl::optional<RtpState>());
 
   audio_device->Init();  // Starts thread.

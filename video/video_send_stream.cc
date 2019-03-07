@@ -69,7 +69,6 @@ VideoSendStream::VideoSendStream(
     Clock* clock,
     int num_cpu_cores,
     ProcessThread* module_process_thread,
-    rtc::TaskQueue* worker_queue,
     TaskQueueFactory* task_queue_factory,
     CallStats* call_stats,
     RtpTransportControllerSendInterface* transport,
@@ -81,7 +80,7 @@ VideoSendStream::VideoSendStream(
     const std::map<uint32_t, RtpState>& suspended_ssrcs,
     const std::map<uint32_t, RtpPayloadState>& suspended_payload_states,
     std::unique_ptr<FecController> fec_controller)
-    : worker_queue_(worker_queue),
+    : worker_queue_(transport->GetWorkerQueue()),
       stats_proxy_(clock, config, encoder_config.content_type),
       config_(std::move(config)),
       content_type_(encoder_config.content_type) {

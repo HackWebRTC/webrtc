@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/task_queue/global_task_queue_factory.h"
 #include "api/test/mock_frame_encryptor.h"
 #include "audio/audio_send_stream.h"
 #include "audio/audio_state.h"
@@ -161,11 +162,13 @@ struct ConfigHelper {
   }
 
   std::unique_ptr<internal::AudioSendStream> CreateAudioSendStream() {
+    EXPECT_CALL(rtp_transport_, GetWorkerQueue())
+        .WillRepeatedly(Return(&worker_queue_));
     return std::unique_ptr<internal::AudioSendStream>(
         new internal::AudioSendStream(
             Clock::GetRealTimeClock(), stream_config_, audio_state_,
-            &worker_queue_, &rtp_transport_, &bitrate_allocator_, &event_log_,
-            &rtcp_rtt_stats_, absl::nullopt,
+            &rtp_transport_, &bitrate_allocator_, &event_log_, &rtcp_rtt_stats_,
+            absl::nullopt,
             std::unique_ptr<voe::ChannelSendInterface>(channel_send_)));
   }
 

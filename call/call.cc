@@ -666,12 +666,8 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
     }
   }
 
-  // TODO(srte): AudioSendStream should call GetWorkerQueue directly rather than
-  // having it injected.
-
   AudioSendStream* send_stream = new AudioSendStream(
-      clock_, config, config_.audio_state,
-      transport_send_ptr_->GetWorkerQueue(), module_process_thread_.get(),
+      clock_, config, config_.audio_state, module_process_thread_.get(),
       transport_send_ptr_, bitrate_allocator_.get(), event_log_,
       call_stats_.get(), suspended_rtp_state);
   {
@@ -802,11 +798,8 @@ webrtc::VideoSendStream* Call::CreateVideoSendStream(
   // Copy ssrcs from |config| since |config| is moved.
   std::vector<uint32_t> ssrcs = config.rtp.ssrcs;
 
-  // TODO(srte): VideoSendStream should call GetWorkerQueue directly rather than
-  // having it injected.
   VideoSendStream* send_stream = new VideoSendStream(
-      clock_, num_cpu_cores_, module_process_thread_.get(),
-      transport_send_ptr_->GetWorkerQueue(), task_queue_factory_,
+      clock_, num_cpu_cores_, module_process_thread_.get(), task_queue_factory_,
       call_stats_.get(), transport_send_ptr_, bitrate_allocator_.get(),
       video_send_delay_stats_.get(), event_log_, std::move(config),
       std::move(encoder_config), suspended_video_send_ssrcs_,
