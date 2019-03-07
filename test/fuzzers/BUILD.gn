@@ -15,7 +15,9 @@ rtc_static_library("webrtc_fuzzer_main") {
     "webrtc_fuzzer_main.cc",
   ]
   deps = [
+    "../../api/task_queue:global_task_queue_factory",
     "../../rtc_base:rtc_base_approved",
+    "../../rtc_base:rtc_task_queue_stdlib",
     "//testing/libfuzzer:libfuzzer_main",
   ]
 

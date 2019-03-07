@@ -12,7 +12,9 @@
 // It's intended to set sane defaults, such as removing logging for further
 // fuzzing efficiency.
 
+#include "api/task_queue/global_task_queue_factory.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/task_queue_stdlib.h"
 
 namespace {
 bool g_initialized = false;
@@ -25,6 +27,13 @@ void InitializeWebRtcFuzzDefaults() {
 #if !defined(WEBRTC_CHROMIUM_BUILD)
   rtc::LogMessage::LogToDebug(rtc::LS_NONE);
 #endif  // !defined(WEBRTC_CHROMIUM_BUILD)
+
+  // Chromium hijacked DefaultTaskQueueFactory with own implementation, but
+  // unable to use it without base::test::ScopedTaskEnvironment. Actual used
+  // task queue implementation shouldn't matter for the purpose of the fuzzers,
+  // so use stdlib implementation: that one is multiplatform. This is a
+  // temporary solution until bugs.webrtc.org/10284 is resolved.
+  webrtc::SetGlobalTaskQueueFactory(webrtc::CreateTaskQueueStdlibFactory());
 
   g_initialized = true;
 }
