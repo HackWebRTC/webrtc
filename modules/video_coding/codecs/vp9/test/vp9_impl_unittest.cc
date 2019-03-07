@@ -128,8 +128,7 @@ TEST_F(TestVp9Impl, EncodeDecode) {
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
   // First frame should be a key frame.
   encoded_frame._frameType = kVideoFrameKey;
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            decoder_->Decode(encoded_frame, false, nullptr, 0));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(encoded_frame, false, 0));
   std::unique_ptr<VideoFrame> decoded_frame;
   absl::optional<uint8_t> decoded_qp;
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
@@ -198,8 +197,7 @@ TEST_F(TestVp9Impl, DecodedColorSpaceEqualsEncodedColorSpace) {
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
 
   // Encoded frame without explicit color space information.
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            decoder_->Decode(encoded_frame, false, nullptr, 0));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(encoded_frame, false, 0));
   std::unique_ptr<VideoFrame> decoded_frame;
   absl::optional<uint8_t> decoded_qp;
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
@@ -212,8 +210,7 @@ TEST_F(TestVp9Impl, DecodedColorSpaceEqualsEncodedColorSpace) {
   // Encoded frame with explicit color space information.
   ColorSpace color_space = CreateTestColorSpace(/*with_hdr_metadata=*/true);
   encoded_frame.SetColorSpace(color_space);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            decoder_->Decode(encoded_frame, false, nullptr, 0));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(encoded_frame, false, 0));
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
   ASSERT_TRUE(decoded_frame);
   ASSERT_TRUE(decoded_frame->color_space());
@@ -228,8 +225,7 @@ TEST_F(TestVp9Impl, DecodedQpEqualsEncodedQp) {
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
   // First frame should be a key frame.
   encoded_frame._frameType = kVideoFrameKey;
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            decoder_->Decode(encoded_frame, false, nullptr, 0));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(encoded_frame, false, 0));
   std::unique_ptr<VideoFrame> decoded_frame;
   absl::optional<uint8_t> decoded_qp;
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
@@ -1431,8 +1427,7 @@ TEST_F(TestVp9ImplProfile2, EncodeDecode) {
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
   // First frame should be a key frame.
   encoded_frame._frameType = kVideoFrameKey;
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            decoder_->Decode(encoded_frame, false, nullptr, 0));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(encoded_frame, false, 0));
   std::unique_ptr<VideoFrame> decoded_frame;
   absl::optional<uint8_t> decoded_qp;
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));

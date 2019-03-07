@@ -53,7 +53,6 @@ int32_t QualityAnalyzingVideoDecoder::InitDecode(
 int32_t QualityAnalyzingVideoDecoder::Decode(
     const EncodedImage& input_image,
     bool missing_frames,
-    const CodecSpecificInfo* codec_specific_info,
     int64_t render_time_ms) {
   // Image  extractor extracts id from provided EncodedImage and also returns
   // the image with the original buffer. Buffer can be modified in place, so
@@ -95,8 +94,8 @@ int32_t QualityAnalyzingVideoDecoder::Decode(
   // the map only after |delegate_| Decode method will be invoked. Image will be
   // removed inside DecodedImageCallback, which can be done on separate thread.
   analyzer_->OnFrameReceived(out.id, *origin_image);
-  int32_t result = delegate_->Decode(*origin_image, missing_frames,
-                                     codec_specific_info, render_time_ms);
+  int32_t result =
+      delegate_->Decode(*origin_image, missing_frames, render_time_ms);
   if (result != WEBRTC_VIDEO_CODEC_OK) {
     // If delegate decoder failed, then cleanup data for this image.
     {

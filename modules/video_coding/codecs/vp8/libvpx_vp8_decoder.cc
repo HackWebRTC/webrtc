@@ -153,7 +153,6 @@ int LibvpxVp8Decoder::InitDecode(const VideoCodec* inst, int number_of_cores) {
 
 int LibvpxVp8Decoder::Decode(const EncodedImage& input_image,
                              bool missing_frames,
-                             const CodecSpecificInfo* codec_specific_info,
                              int64_t /*render_time_ms*/) {
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;

@@ -34,7 +34,6 @@ class LibvpxVp8Decoder : public VideoDecoder {
 
   int Decode(const EncodedImage& input_image,
              bool missing_frames,
-             const CodecSpecificInfo* codec_specific_info,
              int64_t /*render_time_ms*/) override;
 
   int RegisterDecodeCompleteCallback(DecodedImageCallback* callback) override;

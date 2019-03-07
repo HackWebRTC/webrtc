@@ -228,7 +228,6 @@ int32_t H264DecoderImpl::RegisterDecodeCompleteCallback(
 
 int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
                                 bool /*missing_frames*/,
-                                const CodecSpecificInfo* codec_specific_info,
                                 int64_t /*render_time_ms*/) {
   if (!IsInitialized()) {
     ReportError();
@@ -242,11 +241,6 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
   if (!input_image.data() || !input_image.size()) {
-    ReportError();
-    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
-  }
-  if (codec_specific_info &&
-      codec_specific_info->codecType != kVideoCodecH264) {
     ReportError();
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }

@@ -39,7 +39,6 @@ int32_t FakeDecoder::InitDecode(const VideoCodec* config,
 
 int32_t FakeDecoder::Decode(const EncodedImage& input,
                             bool missing_frames,
-                            const CodecSpecificInfo* codec_specific_info,
                             int64_t render_time_ms) {
   if (input._encodedWidth > 0 && input._encodedHeight > 0) {
     width_ = input._encodedWidth;
@@ -77,7 +76,6 @@ const char* FakeDecoder::ImplementationName() const {
 
 int32_t FakeH264Decoder::Decode(const EncodedImage& input,
                                 bool missing_frames,
-                                const CodecSpecificInfo* codec_specific_info,
                                 int64_t render_time_ms) {
   uint8_t value = 0;
   for (size_t i = 0; i < input.size(); ++i) {
@@ -93,8 +91,7 @@ int32_t FakeH264Decoder::Decode(const EncodedImage& input,
     }
     ++value;
   }
-  return FakeDecoder::Decode(input, missing_frames, codec_specific_info,
-                             render_time_ms);
+  return FakeDecoder::Decode(input, missing_frames, render_time_ms);
 }
 
 }  // namespace test

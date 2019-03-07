@@ -71,8 +71,7 @@ TEST_F(TestH264Impl, MAYBE_EncodeDecode) {
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
   // First frame should be a key frame.
   encoded_frame._frameType = kVideoFrameKey;
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            decoder_->Decode(encoded_frame, false, nullptr, 0));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(encoded_frame, false, 0));
   std::unique_ptr<VideoFrame> decoded_frame;
   absl::optional<uint8_t> decoded_qp;
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
@@ -98,8 +97,7 @@ TEST_F(TestH264Impl, MAYBE_DecodedQpEqualsEncodedQp) {
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
   // First frame should be a key frame.
   encoded_frame._frameType = kVideoFrameKey;
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            decoder_->Decode(encoded_frame, false, nullptr, 0));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(encoded_frame, false, 0));
   std::unique_ptr<VideoFrame> decoded_frame;
   absl::optional<uint8_t> decoded_qp;
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
@@ -140,8 +138,7 @@ TEST_F(TestH264Impl, MAYBE_DecodedColorSpaceEqualsEncodedColorSpace) {
   // Add color space to encoded frame.
   ColorSpace color_space = CreateTestColorSpace(/*with_hdr_metadata=*/false);
   encoded_frame.SetColorSpace(color_space);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            decoder_->Decode(encoded_frame, false, nullptr, 0));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(encoded_frame, false, 0));
   std::unique_ptr<VideoFrame> decoded_frame;
   absl::optional<uint8_t> decoded_qp;
   ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));

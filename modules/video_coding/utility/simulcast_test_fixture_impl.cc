@@ -832,9 +832,9 @@ void SimulcastTestFixtureImpl::TestStrideEncodeDecode() {
   EncodedImage encoded_frame;
   // Only encoding one frame - so will be a key frame.
   encoder_callback.GetLastEncodedKeyFrame(&encoded_frame);
-  EXPECT_EQ(0, decoder_->Decode(encoded_frame, false, NULL, 0));
+  EXPECT_EQ(0, decoder_->Decode(encoded_frame, false, 0));
   encoder_callback.GetLastEncodedFrame(&encoded_frame);
-  decoder_->Decode(encoded_frame, false, NULL, 0);
+  decoder_->Decode(encoded_frame, false, 0);
   EXPECT_EQ(2, decoder_callback.DecodedFrames());
 }
 
@@ -875,7 +875,7 @@ void SimulcastTestFixtureImpl::TestDecodeWidthHeightSet() {
         EXPECT_EQ(decodedImage.width(), kDefaultWidth / 4);
         EXPECT_EQ(decodedImage.height(), kDefaultHeight / 4);
       }));
-  EXPECT_EQ(0, decoder_->Decode(encoded_frame[0], false, NULL, 0));
+  EXPECT_EQ(0, decoder_->Decode(encoded_frame[0], false, 0));
 
   EXPECT_CALL(decoder_callback, Decoded(_, _, _))
       .WillOnce(testing::Invoke([](VideoFrame& decodedImage,
@@ -884,7 +884,7 @@ void SimulcastTestFixtureImpl::TestDecodeWidthHeightSet() {
         EXPECT_EQ(decodedImage.width(), kDefaultWidth / 2);
         EXPECT_EQ(decodedImage.height(), kDefaultHeight / 2);
       }));
-  EXPECT_EQ(0, decoder_->Decode(encoded_frame[1], false, NULL, 0));
+  EXPECT_EQ(0, decoder_->Decode(encoded_frame[1], false, 0));
 
   EXPECT_CALL(decoder_callback, Decoded(_, _, _))
       .WillOnce(testing::Invoke([](VideoFrame& decodedImage,
@@ -893,7 +893,7 @@ void SimulcastTestFixtureImpl::TestDecodeWidthHeightSet() {
         EXPECT_EQ(decodedImage.width(), kDefaultWidth);
         EXPECT_EQ(decodedImage.height(), kDefaultHeight);
       }));
-  EXPECT_EQ(0, decoder_->Decode(encoded_frame[2], false, NULL, 0));
+  EXPECT_EQ(0, decoder_->Decode(encoded_frame[2], false, 0));
 }
 
 }  // namespace test
