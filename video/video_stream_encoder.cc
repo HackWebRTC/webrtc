@@ -1177,7 +1177,12 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
     } else {
       cropped_buffer->ScaleFrom(
           *video_frame.video_frame_buffer()->ToI420().get());
-      update_rect = VideoFrame::UpdateRect{0, 0, cropped_width, cropped_height};
+      if (!update_rect.IsEmpty()) {
+        // Since we can't reason about pixels after scaling, we invalidate whole
+        // picture, if anything changed.
+        update_rect =
+            VideoFrame::UpdateRect{0, 0, cropped_width, cropped_height};
+      }
     }
     out_frame = VideoFrame::Builder()
                     .set_video_frame_buffer(cropped_buffer)
@@ -1250,15 +1255,22 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
       return;
     }
 
-    // UpdatedRect is not propagated because buffer was converted,
-    // therefore we can't guarantee that pixels outside of UpdateRect didn't
-    // change comparing to the previous frame.
+    // UpdatedRect is reset to full update if it's not empty, because buffer was
+    // converted, therefore we can't guarantee that pixels outside of UpdateRect
+    // didn't change comparing to the previous frame.
+    VideoFrame::UpdateRect update_rect =
+        out_frame.update_rect().IsEmpty()
+            ? out_frame.update_rect()
+            : VideoFrame::UpdateRect{0, 0, out_frame.width(),
+                                     out_frame.height()};
+
     out_frame = VideoFrame::Builder()
                     .set_video_frame_buffer(converted_buffer)
                     .set_timestamp_rtp(out_frame.timestamp())
                     .set_timestamp_ms(out_frame.render_time_ms())
                     .set_rotation(out_frame.rotation())
                     .set_id(out_frame.id())
+                    .set_update_rect(update_rect)
                     .build();
   }
 
