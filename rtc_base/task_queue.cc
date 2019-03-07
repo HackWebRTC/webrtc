@@ -16,9 +16,7 @@ namespace rtc {
 
 TaskQueue::TaskQueue(
     std::unique_ptr<webrtc::TaskQueueBase, webrtc::TaskQueueDeleter> task_queue)
-    : impl_(task_queue.release()) {
-  impl_->task_queue_ = this;
-}
+    : impl_(task_queue.release()) {}
 
 TaskQueue::TaskQueue(const char* queue_name, Priority priority)
     : TaskQueue(webrtc::GlobalTaskQueueFactory().CreateTaskQueue(queue_name,
@@ -32,17 +30,8 @@ TaskQueue::~TaskQueue() {
   impl_->Delete();
 }
 
-// static
-TaskQueue* TaskQueue::Current() {
-  webrtc::TaskQueueBase* impl = webrtc::TaskQueueBase::Current();
-  if (impl == nullptr) {
-    return nullptr;
-  }
-  return impl->task_queue_;
-}
-
 bool TaskQueue::IsCurrent() const {
-  return Current() == this;
+  return impl_->IsCurrent();
 }
 
 void TaskQueue::PostTask(std::unique_ptr<QueuedTask> task) {
