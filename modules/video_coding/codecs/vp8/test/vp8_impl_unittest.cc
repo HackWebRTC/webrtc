@@ -485,7 +485,7 @@ TEST_F(TestVp8Impl, KeepsTimestampOnReencode) {
       .WillRepeatedly(Return(vpx_codec_err_t::VPX_CODEC_OK));
 
   auto delta_frame = std::vector<VideoFrameType>{kVideoFrameDelta};
-  encoder.Encode(*NextInputFrame(), nullptr, &delta_frame);
+  encoder.Encode(*NextInputFrame(), &delta_frame);
 }
 
 TEST_F(TestVp8Impl, GetEncoderInfoFpsAllocationNoLayers) {

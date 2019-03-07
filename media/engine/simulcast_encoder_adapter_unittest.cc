@@ -194,10 +194,9 @@ class MockVideoEncoder : public VideoEncoder {
     return init_encode_return_value_;
   }
 
-  MOCK_METHOD3(
+  MOCK_METHOD2(
       Encode,
       int32_t(const VideoFrame& inputImage,
-              const CodecSpecificInfo* codecSpecificInfo,
               const std::vector<VideoFrameType>* frame_types) /* override */);
 
   int32_t RegisterEncodeCompleteCallback(
@@ -567,11 +566,11 @@ TEST_F(TestSimulcastEncoderAdapterFake, ReusesEncodersInOrder) {
   std::vector<MockVideoEncoder*> original_encoders =
       helper_->factory()->encoders();
   ASSERT_EQ(3u, original_encoders.size());
-  EXPECT_CALL(*original_encoders[0], Encode(_, _, _))
+  EXPECT_CALL(*original_encoders[0], Encode(_, _))
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
-  EXPECT_CALL(*original_encoders[1], Encode(_, _, _))
+  EXPECT_CALL(*original_encoders[1], Encode(_, _))
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
-  EXPECT_CALL(*original_encoders[2], Encode(_, _, _))
+  EXPECT_CALL(*original_encoders[2], Encode(_, _))
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
   frame_types.resize(3, kVideoFrameKey);
   EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
@@ -593,10 +592,10 @@ TEST_F(TestSimulcastEncoderAdapterFake, ReusesEncodersInOrder) {
   std::vector<MockVideoEncoder*> new_encoders = helper_->factory()->encoders();
   ASSERT_EQ(2u, new_encoders.size());
   ASSERT_EQ(original_encoders[0], new_encoders[0]);
-  EXPECT_CALL(*original_encoders[0], Encode(_, _, _))
+  EXPECT_CALL(*original_encoders[0], Encode(_, _))
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
   ASSERT_EQ(original_encoders[1], new_encoders[1]);
-  EXPECT_CALL(*original_encoders[1], Encode(_, _, _))
+  EXPECT_CALL(*original_encoders[1], Encode(_, _))
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
   frame_types.resize(2, kVideoFrameKey);
   EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
@@ -616,7 +615,7 @@ TEST_F(TestSimulcastEncoderAdapterFake, ReusesEncodersInOrder) {
   new_encoders = helper_->factory()->encoders();
   ASSERT_EQ(1u, new_encoders.size());
   ASSERT_EQ(original_encoders[0], new_encoders[0]);
-  EXPECT_CALL(*original_encoders[0], Encode(_, _, _))
+  EXPECT_CALL(*original_encoders[0], Encode(_, _))
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
   frame_types.resize(1, kVideoFrameKey);
   EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
@@ -635,12 +634,12 @@ TEST_F(TestSimulcastEncoderAdapterFake, ReusesEncodersInOrder) {
   ASSERT_EQ(3u, new_encoders.size());
   // The first encoder is reused.
   ASSERT_EQ(original_encoders[0], new_encoders[0]);
-  EXPECT_CALL(*original_encoders[0], Encode(_, _, _))
+  EXPECT_CALL(*original_encoders[0], Encode(_, _))
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
   // The second and third encoders are new.
-  EXPECT_CALL(*new_encoders[1], Encode(_, _, _))
+  EXPECT_CALL(*new_encoders[1], Encode(_, _))
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
-  EXPECT_CALL(*new_encoders[2], Encode(_, _, _))
+  EXPECT_CALL(*new_encoders[2], Encode(_, _))
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
   frame_types.resize(3, kVideoFrameKey);
   EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
@@ -889,7 +888,7 @@ TEST_F(TestSimulcastEncoderAdapterFake,
   // Expect calls with the given video frame verbatim, since it's a texture
   // frame and can't otherwise be modified/resized.
   for (MockVideoEncoder* encoder : helper_->factory()->encoders())
-    EXPECT_CALL(*encoder, Encode(::testing::Ref(input_frame), _, _)).Times(1);
+    EXPECT_CALL(*encoder, Encode(::testing::Ref(input_frame), _)).Times(1);
   std::vector<VideoFrameType> frame_types(3, kVideoFrameKey);
   EXPECT_EQ(0, adapter_->Encode(input_frame, &frame_types));
 }
@@ -903,7 +902,7 @@ TEST_F(TestSimulcastEncoderAdapterFake, TestFailureReturnCodesFromEncodeCalls) {
   adapter_->RegisterEncodeCompleteCallback(this);
   ASSERT_EQ(3u, helper_->factory()->encoders().size());
   // Tell the 2nd encoder to request software fallback.
-  EXPECT_CALL(*helper_->factory()->encoders()[1], Encode(_, _, _))
+  EXPECT_CALL(*helper_->factory()->encoders()[1], Encode(_, _))
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE));
 
   // Send a fake frame and assert the return is software fallback.
@@ -1026,10 +1025,10 @@ TEST_F(TestSimulcastEncoderAdapterFake, ActivatesCorrectStreamsInInitEncode) {
       helper_->factory()->encoders();
   ASSERT_EQ(3u, original_encoders.size());
   // Only first encoder will be active and called.
-  EXPECT_CALL(*original_encoders[0], Encode(_, _, _))
+  EXPECT_CALL(*original_encoders[0], Encode(_, _))
       .WillOnce(Return(WEBRTC_VIDEO_CODEC_OK));
-  EXPECT_CALL(*original_encoders[1], Encode(_, _, _)).Times(0);
-  EXPECT_CALL(*original_encoders[2], Encode(_, _, _)).Times(0);
+  EXPECT_CALL(*original_encoders[1], Encode(_, _)).Times(0);
+  EXPECT_CALL(*original_encoders[2], Encode(_, _)).Times(0);
 
   std::vector<VideoFrameType> frame_types;
   frame_types.resize(3, kVideoFrameKey);

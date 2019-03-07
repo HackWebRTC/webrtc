@@ -383,7 +383,6 @@ int32_t H264EncoderImpl::SetRateAllocation(
 
 int32_t H264EncoderImpl::Encode(
     const VideoFrame& input_frame,
-    const CodecSpecificInfo* codec_specific_info,
     const std::vector<VideoFrameType>* frame_types) {
   if (encoders_.empty()) {
     ReportError();

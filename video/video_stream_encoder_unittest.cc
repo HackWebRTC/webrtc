@@ -618,7 +618,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
         rtc::CritScope lock(&local_crit_sect_);
         last_frame_types_ = frame_type;
       }
-      FakeEncoder::Encode(input_image, nullptr, &frame_type);
+      FakeEncoder::Encode(input_image, &frame_type);
     }
 
     void InjectEncodedImage(const EncodedImage& image) {
@@ -639,7 +639,6 @@ class VideoStreamEncoderTest : public ::testing::Test {
 
    private:
     int32_t Encode(const VideoFrame& input_image,
-                   const CodecSpecificInfo* codec_specific_info,
                    const std::vector<VideoFrameType>* frame_types) override {
       bool block_encode;
       {
@@ -664,8 +663,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
         last_update_rect_ = input_image.update_rect();
         last_frame_types_ = *frame_types;
       }
-      int32_t result =
-          FakeEncoder::Encode(input_image, codec_specific_info, frame_types);
+      int32_t result = FakeEncoder::Encode(input_image, frame_types);
       if (block_encode)
         EXPECT_TRUE(continue_encode_event_.Wait(kDefaultTimeoutMs));
       return result;

@@ -44,10 +44,9 @@ class MockEncoder : public VideoEncoder {
 
   MOCK_METHOD0(Release, int32_t());
 
-  MOCK_METHOD3(
+  MOCK_METHOD2(
       Encode,
       int32_t(const VideoFrame& inputImage,
-              const CodecSpecificInfo* codecSpecificInfo,
               const std::vector<VideoFrameType>* frame_types) /* override */);
 
   MOCK_CONST_METHOD0(GetEncoderInfo, VideoEncoder::EncoderInfo(void));

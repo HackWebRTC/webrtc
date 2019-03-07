@@ -150,7 +150,6 @@ int32_t FakeWebRtcVideoEncoder::InitEncode(
 
 int32_t FakeWebRtcVideoEncoder::Encode(
     const webrtc::VideoFrame& inputImage,
-    const webrtc::CodecSpecificInfo* codecSpecificInfo,
     const std::vector<webrtc::VideoFrameType>* frame_types) {
   rtc::CritScope lock(&crit_);
   ++num_frames_encoded_;

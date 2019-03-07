@@ -46,7 +46,6 @@ class LibvpxVp8Encoder : public VideoEncoder {
                  size_t max_payload_size) override;
 
   int Encode(const VideoFrame& input_image,
-             const CodecSpecificInfo* codec_specific_info,
              const std::vector<VideoFrameType>* frame_types) override;
 
   int RegisterEncodeCompleteCallback(EncodedImageCallback* callback) override;

@@ -713,7 +713,6 @@ uint32_t VP9EncoderImpl::MaxIntraTarget(uint32_t optimal_buffer_size) {
 }
 
 int VP9EncoderImpl::Encode(const VideoFrame& input_image,
-                           const CodecSpecificInfo* codec_specific_info,
                            const std::vector<VideoFrameType>* frame_types) {
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;

@@ -81,7 +81,6 @@ int32_t FakeEncoder::InitEncode(const VideoCodec* config,
 }
 
 int32_t FakeEncoder::Encode(const VideoFrame& input_image,
-                            const CodecSpecificInfo* /*codec_specific_info*/,
                             const std::vector<VideoFrameType>* frame_types) {
   unsigned char max_framerate;
   unsigned char num_simulcast_streams;
@@ -355,13 +354,12 @@ void DelayedEncoder::SetDelay(int delay_ms) {
 }
 
 int32_t DelayedEncoder::Encode(const VideoFrame& input_image,
-                               const CodecSpecificInfo* codec_specific_info,
                                const std::vector<VideoFrameType>* frame_types) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
   SleepMs(delay_ms_);
 
-  return FakeEncoder::Encode(input_image, codec_specific_info, frame_types);
+  return FakeEncoder::Encode(input_image, frame_types);
 }
 
 MultithreadedFakeH264Encoder::MultithreadedFakeH264Encoder(Clock* clock)
@@ -389,32 +387,24 @@ class MultithreadedFakeH264Encoder::EncodeTask : public rtc::QueuedTask {
  public:
   EncodeTask(MultithreadedFakeH264Encoder* encoder,
              const VideoFrame& input_image,
-             const CodecSpecificInfo* codec_specific_info,
              const std::vector<VideoFrameType>* frame_types)
       : encoder_(encoder),
         input_image_(input_image),
-        codec_specific_info_(),
-        frame_types_(*frame_types) {
-    if (codec_specific_info)
-      codec_specific_info_ = *codec_specific_info;
-  }
+        frame_types_(*frame_types) {}
 
  private:
   bool Run() override {
-    encoder_->EncodeCallback(input_image_, &codec_specific_info_,
-                             &frame_types_);
+    encoder_->EncodeCallback(input_image_, &frame_types_);
     return true;
   }
 
   MultithreadedFakeH264Encoder* const encoder_;
   VideoFrame input_image_;
-  CodecSpecificInfo codec_specific_info_;
   std::vector<VideoFrameType> frame_types_;
 };
 
 int32_t MultithreadedFakeH264Encoder::Encode(
     const VideoFrame& input_image,
-    const CodecSpecificInfo* codec_specific_info,
     const std::vector<VideoFrameType>* frame_types) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
 
@@ -426,16 +416,15 @@ int32_t MultithreadedFakeH264Encoder::Encode(
   }
 
   queue->PostTask(std::unique_ptr<rtc::QueuedTask>(
-      new EncodeTask(this, input_image, codec_specific_info, frame_types)));
+      new EncodeTask(this, input_image, frame_types)));
 
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
 int32_t MultithreadedFakeH264Encoder::EncodeCallback(
     const VideoFrame& input_image,
-    const CodecSpecificInfo* codec_specific_info,
     const std::vector<VideoFrameType>* frame_types) {
-  return FakeH264Encoder::Encode(input_image, codec_specific_info, frame_types);
+  return FakeH264Encoder::Encode(input_image, frame_types);
 }
 
 int32_t MultithreadedFakeH264Encoder::Release() {

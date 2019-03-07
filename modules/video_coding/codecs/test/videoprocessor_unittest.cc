@@ -105,13 +105,13 @@ TEST_F(VideoProcessorTest, ProcessFrames_FixedFramerate) {
       .WillRepeatedly(Return(I420Buffer::Create(kWidth, kHeight)));
   EXPECT_CALL(
       encoder_mock_,
-      Encode(Property(&VideoFrame::timestamp, 1 * 90000 / kFramerateFps), _, _))
+      Encode(Property(&VideoFrame::timestamp, 1 * 90000 / kFramerateFps), _))
       .Times(1);
   q_.SendTask([this] { video_processor_->ProcessFrame(); });
 
   EXPECT_CALL(
       encoder_mock_,
-      Encode(Property(&VideoFrame::timestamp, 2 * 90000 / kFramerateFps), _, _))
+      Encode(Property(&VideoFrame::timestamp, 2 * 90000 / kFramerateFps), _))
       .Times(1);
   q_.SendTask([this] { video_processor_->ProcessFrame(); });
 
@@ -131,7 +131,7 @@ TEST_F(VideoProcessorTest, ProcessFrames_VariableFramerate) {
   EXPECT_CALL(frame_reader_mock_, ReadFrame())
       .WillRepeatedly(Return(I420Buffer::Create(kWidth, kHeight)));
   EXPECT_CALL(encoder_mock_,
-              Encode(Property(&VideoFrame::timestamp, kStartTimestamp), _, _))
+              Encode(Property(&VideoFrame::timestamp, kStartTimestamp), _))
       .Times(1);
   q_.SendTask([this] { video_processor_->ProcessFrame(); });
 
@@ -145,7 +145,7 @@ TEST_F(VideoProcessorTest, ProcessFrames_VariableFramerate) {
   EXPECT_CALL(encoder_mock_,
               Encode(Property(&VideoFrame::timestamp,
                               kStartTimestamp + 90000 / kNewFramerateFps),
-                     _, _))
+                     _))
       .Times(1);
   q_.SendTask([this] { video_processor_->ProcessFrame(); });
 

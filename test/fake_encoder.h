@@ -45,7 +45,6 @@ class FakeEncoder : public VideoEncoder {
                      int32_t number_of_cores,
                      size_t max_payload_size) override;
   int32_t Encode(const VideoFrame& input_image,
-                 const CodecSpecificInfo* codec_specific_info,
                  const std::vector<VideoFrameType>* frame_types) override;
   int32_t RegisterEncodeCompleteCallback(
       EncodedImageCallback* callback) override;
@@ -125,7 +124,6 @@ class DelayedEncoder : public test::FakeEncoder {
 
   void SetDelay(int delay_ms);
   int32_t Encode(const VideoFrame& input_image,
-                 const CodecSpecificInfo* codec_specific_info,
                  const std::vector<VideoFrameType>* frame_types) override;
 
  private:
@@ -147,11 +145,9 @@ class MultithreadedFakeH264Encoder : public test::FakeH264Encoder {
                      size_t max_payload_size) override;
 
   int32_t Encode(const VideoFrame& input_image,
-                 const CodecSpecificInfo* codec_specific_info,
                  const std::vector<VideoFrameType>* frame_types) override;
 
   int32_t EncodeCallback(const VideoFrame& input_image,
-                         const CodecSpecificInfo* codec_specific_info,
                          const std::vector<VideoFrameType>* frame_types);
 
   int32_t Release() override;

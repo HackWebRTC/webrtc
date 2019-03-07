@@ -94,7 +94,6 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
       return init_encode_return_code_;
     }
     int32_t Encode(const VideoFrame& frame,
-                   const CodecSpecificInfo* codec_specific_info,
                    const std::vector<VideoFrameType>* frame_types) override {
       ++encode_count_;
       if (encode_complete_callback_ &&
