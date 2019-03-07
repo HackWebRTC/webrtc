@@ -306,6 +306,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       ":apprtc_common",
       ":socketrocket",
     ]
+
     if (is_ios) {
       # iOS must use WebRTC.framework which is dynamically linked.
       deps += [
@@ -315,7 +316,10 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
     } else {
       deps += [ "../sdk:mac_framework_objc+link" ]
     }
-    libs = [ "QuartzCore.framework" ]
+    libs = [
+      "CoreMedia.framework",
+      "QuartzCore.framework",
+    ]
   }
 
   if (is_ios) {
@@ -353,6 +357,8 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "../sdk:framework_objc+link",
         "../sdk:ios_framework_bundle",
       ]
+
+      libs = [ "AVFoundation.framework" ]
     }
 
     ios_app_bundle("AppRTCMobile") {
