@@ -87,6 +87,9 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
       fall_back_to_probe_rate_(
           key_value_config_->Lookup("WebRTC-Bwe-ProbeRateFallback")
               .find("Enabled") == 0),
+      use_min_allocatable_as_lower_bound_(
+          key_value_config_->Lookup("WebRTC-Bwe-MinAllocAsLowerBound")
+              .find("Disabled") != 0),
       rate_control_settings_(
           RateControlSettings::ParseFromKeyValueConfig(key_value_config_)),
       probe_controller_(new ProbeController(key_value_config_, event_log)),
@@ -281,6 +284,14 @@ NetworkControlUpdate GoogCcNetworkController::OnStreamsConfig(
       *msg.min_total_allocated_bitrate != min_total_allocated_bitrate_) {
     min_total_allocated_bitrate_ = *msg.min_total_allocated_bitrate;
     pacing_changed = true;
+
+    if (use_min_allocatable_as_lower_bound_) {
+      ClampConstraints();
+      bandwidth_estimation_->SetBitrates(starting_rate_, min_data_rate_,
+                                         max_data_rate_, msg.at_time);
+      delay_based_bwe_->SetMinBitrate(min_data_rate_);
+      MaybeTriggerOnNetworkChanged(&update, msg.at_time);
+    }
   }
   if (msg.max_padding_rate && *msg.max_padding_rate != max_padding_rate_) {
     max_padding_rate_ = *msg.max_padding_rate;
@@ -306,6 +317,8 @@ void GoogCcNetworkController::ClampConstraints() {
   // The congestion controller should allow a min bitrate of 0.
   min_data_rate_ =
       std::max(min_data_rate_, congestion_controller::GetMinBitrate());
+  if (use_min_allocatable_as_lower_bound_)
+    min_data_rate_ = std::max(min_data_rate_, min_total_allocated_bitrate_);
   if (max_data_rate_ < min_data_rate_) {
     RTC_LOG(LS_WARNING) << "max bitrate smaller than min bitrate";
     max_data_rate_ = min_data_rate_;
