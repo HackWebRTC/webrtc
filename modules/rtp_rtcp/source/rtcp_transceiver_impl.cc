@@ -97,13 +97,7 @@ RtcpTransceiverImpl::RtcpTransceiverImpl(const RtcpTransceiverConfig& config)
   }
 }
 
-RtcpTransceiverImpl::~RtcpTransceiverImpl() {
-  // If RtcpTransceiverImpl is destroyed off task queue, assume it is destroyed
-  // after TaskQueue. In that case there is no need to Cancel periodic task.
-  if (config_.task_queue == rtc::TaskQueue::Current()) {
-    periodic_task_handle_.Stop();
-  }
-}
+RtcpTransceiverImpl::~RtcpTransceiverImpl() = default;
 
 void RtcpTransceiverImpl::AddMediaReceiverRtcpObserver(
     uint32_t remote_ssrc,

@@ -136,7 +136,7 @@ RtcpTransceiverConfig DefaultTestConfig() {
   return config;
 }
 
-TEST(RtcpTransceiverImplTest, CanDestroyOnTaskQueue) {
+TEST(RtcpTransceiverImplTest, NeedToStopPeriodicTaskToDestroyOnTaskQueue) {
   FakeRtcpTransport transport;
   rtc::TaskQueue queue("rtcp");
   RtcpTransceiverConfig config = DefaultTestConfig();
@@ -149,6 +149,7 @@ TEST(RtcpTransceiverImplTest, CanDestroyOnTaskQueue) {
 
   rtc::Event done;
   queue.PostTask([rtcp_transceiver, &done] {
+    rtcp_transceiver->StopPeriodicTask();
     delete rtcp_transceiver;
     done.Set();
   });
@@ -188,6 +189,7 @@ TEST(RtcpTransceiverImplTest, DelaysSendingFirstCompondPacket) {
   // Cleanup.
   rtc::Event done;
   queue.PostTask([&] {
+    rtcp_transceiver->StopPeriodicTask();
     rtcp_transceiver.reset();
     done.Set();
   });
@@ -221,6 +223,7 @@ TEST(RtcpTransceiverImplTest, PeriodicallySendsPackets) {
   // Cleanup.
   rtc::Event done;
   queue.PostTask([&] {
+    rtcp_transceiver->StopPeriodicTask();
     rtcp_transceiver.reset();
     done.Set();
   });
@@ -266,6 +269,7 @@ TEST(RtcpTransceiverImplTest, SendCompoundPacketDelaysPeriodicSendPackets) {
   // Cleanup.
   rtc::Event done;
   queue.PostTask([&] {
+    rtcp_transceiver->StopPeriodicTask();
     rtcp_transceiver.reset();
     done.Set();
   });
@@ -330,6 +334,7 @@ TEST(RtcpTransceiverImplTest, SendsPeriodicRtcpWhenNetworkStateIsUp) {
   // Cleanup.
   rtc::Event done;
   queue.PostTask([&] {
+    rtcp_transceiver->StopPeriodicTask();
     rtcp_transceiver.reset();
     done.Set();
   });

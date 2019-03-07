@@ -39,6 +39,8 @@ class RtcpTransceiverImpl {
   RtcpTransceiverImpl& operator=(const RtcpTransceiverImpl&) = delete;
   ~RtcpTransceiverImpl();
 
+  void StopPeriodicTask() { periodic_task_handle_.Stop(); }
+
   void AddMediaReceiverRtcpObserver(uint32_t remote_ssrc,
                                     MediaReceiverRtcpObserver* observer);
   void RemoveMediaReceiverRtcpObserver(uint32_t remote_ssrc,
