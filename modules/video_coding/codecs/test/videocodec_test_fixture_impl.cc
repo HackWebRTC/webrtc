@@ -46,6 +46,7 @@
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 #include "test/testsupport/frame_writer.h"
+#include "test/testsupport/perf_test.h"
 #include "test/video_codec_settings.h"
 
 namespace webrtc {
@@ -251,7 +252,8 @@ size_t VideoCodecTestFixtureImpl::Config::NumberOfSimulcastStreams() const {
 std::string VideoCodecTestFixtureImpl::Config::ToString() const {
   std::string codec_type = CodecTypeToPayloadString(codec_settings.codecType);
   rtc::StringBuilder ss;
-  ss << "filename: " << filename;
+  ss << "test_name: " << test_name;
+  ss << "\nfilename: " << filename;
   ss << "\nnum_frames: " << num_frames;
   ss << "\nmax_payload_size_bytes: " << max_payload_size_bytes;
   ss << "\ndecode: " << decode;
@@ -478,6 +480,34 @@ void VideoCodecTestFixtureImpl::AnalyzeAllFrames(
     printf("==> Receive stats\n");
     for (const auto& layer_stat : layer_stats) {
       printf("%s\n\n", layer_stat.ToString("recv_").c_str());
+
+      // For perf dashboard.
+      char modifier_buf[256];
+      rtc::SimpleStringBuilder modifier(modifier_buf);
+      modifier << "_sl" << layer_stat.spatial_idx << "tl"
+               << layer_stat.temporal_idx;
+      PrintResult("enc_speed", modifier.str(), config_.test_name,
+                  layer_stat.enc_speed_fps, "fps", /*important=*/false);
+      PrintResult("dec_speed", modifier.str(), config_.test_name,
+                  layer_stat.dec_speed_fps, "fps", /*important=*/false);
+      PrintResult("avg_key_frame_size", modifier.str(), config_.test_name,
+                  layer_stat.avg_key_frame_size_bytes, "bytes",
+                  /*important=*/false);
+      PrintResult("avg_delta_frame_size", modifier.str(), config_.test_name,
+                  layer_stat.avg_delta_frame_size_bytes, "bytes",
+                  /*important=*/false);
+      PrintResult("avg_qp", modifier.str(), config_.test_name,
+                  layer_stat.avg_qp, "", /*important=*/false);
+      PrintResult("avg_psnr_y", modifier.str(), config_.test_name,
+                  layer_stat.avg_psnr_y, "dB", /*important=*/false);
+      PrintResult("min_psnr", modifier.str(), config_.test_name,
+                  layer_stat.min_psnr, "dB", /*important=*/false);
+      PrintResult("num_dropped_frames", modifier.str(), config_.test_name,
+                  layer_stat.num_input_frames - layer_stat.num_encoded_frames,
+                  "frames", /*important=*/false);
+      PrintResult("num_key_frames", modifier.str(), config_.test_name,
+                  layer_stat.num_key_frames, "frames", /*important=*/false);
+      printf("\n");
     }
 
     VideoStatistics send_stat = stats_.SliceAndCalcAggregatedVideoStatistic(

@@ -82,6 +82,9 @@ class VideoCodecTestFixture {
     std::string ToString() const;
     std::string CodecName() const;
 
+    // Name of this config, to be used for accounting by the test runner.
+    std::string test_name;
+
     // Plain name of YUV file to process without file extension.
     std::string filename;
 
