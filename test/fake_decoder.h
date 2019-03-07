@@ -31,6 +31,7 @@ class FakeDecoder : public VideoDecoder {
 
   int32_t Decode(const EncodedImage& input,
                  bool missing_frames,
+                 const CodecSpecificInfo* codec_specific_info,
                  int64_t render_time_ms) override;
 
   int32_t RegisterDecodeCompleteCallback(
@@ -54,6 +55,7 @@ class FakeH264Decoder : public FakeDecoder {
 
   int32_t Decode(const EncodedImage& input,
                  bool missing_frames,
+                 const CodecSpecificInfo* codec_specific_info,
                  int64_t render_time_ms) override;
 };
 
