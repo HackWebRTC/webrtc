@@ -54,7 +54,7 @@ TEST(SvcConfig, ScreenSharing) {
     const SpatialLayer& layer = spatial_layers[i];
     EXPECT_EQ(layer.width, 1920);
     EXPECT_EQ(layer.height, 1080);
-    EXPECT_EQ(layer.maxFramerate, (i < 1) ? 5 : (i < 2 ? 10 : 30));
+    EXPECT_EQ(layer.maxFramerate, (i < 2) ? 5 : 30);
     EXPECT_EQ(layer.numberOfTemporalLayers, 1);
     EXPECT_LE(layer.minBitrate, layer.maxBitrate);
     EXPECT_LE(layer.minBitrate, layer.targetBitrate);

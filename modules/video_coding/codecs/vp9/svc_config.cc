@@ -23,10 +23,10 @@ namespace {
 const size_t kMinVp9SvcBitrateKbps = 30;
 
 const size_t kMaxNumLayersForScreenSharing = 3;
-const float kMaxScreenSharingLayerFramerateFps[] = {5.0, 10.0, 30.0};
-const size_t kMinScreenSharingLayerBitrateKbps[] = {30, 200, 500};
-const size_t kTargetScreenSharingLayerBitrateKbps[] = {150, 350, 950};
-const size_t kMaxScreenSharingLayerBitrateKbps[] = {250, 500, 950};
+const float kMaxScreenSharingLayerFramerateFps[] = {5.0, 5.0, 30.0};
+const size_t kMinScreenSharingLayerBitrateKbps[] = {30, 150, 500};
+const size_t kTargetScreenSharingLayerBitrateKbps[] = {150, 350, 1000};
+const size_t kMaxScreenSharingLayerBitrateKbps[] = {200, 500, 1000};
 
 }  // namespace
 
