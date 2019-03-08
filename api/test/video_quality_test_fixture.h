@@ -57,7 +57,7 @@ class VideoQualityTestFixtureInterface {
       bool ulpfec;
       bool flexfec;
       bool automatic_scaling;
-      std::string clip_name;  // "Generator" to generate frames instead.
+      std::string clip_path;  // "Generator" to generate frames instead.
       size_t capture_device_index;
       SdpVideoFormat::Parameters sdp_params;
       double encoder_overshoot_factor;

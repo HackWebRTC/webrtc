@@ -1058,24 +1058,24 @@ void VideoQualityTest::CreateCapturers() {
       EXPECT_TRUE(frame_generator_capturer->Init());
       video_sources_[video_idx].reset(frame_generator_capturer);
     } else {
-      if (params_.video[video_idx].clip_name == "Generator") {
+      if (params_.video[video_idx].clip_path == "Generator") {
         video_sources_[video_idx].reset(test::FrameGeneratorCapturer::Create(
             static_cast<int>(params_.video[video_idx].width),
             static_cast<int>(params_.video[video_idx].height), absl::nullopt,
             absl::nullopt, params_.video[video_idx].fps, clock_));
-      } else if (params_.video[video_idx].clip_name == "GeneratorI420A") {
+      } else if (params_.video[video_idx].clip_path == "GeneratorI420A") {
         video_sources_[video_idx].reset(test::FrameGeneratorCapturer::Create(
             static_cast<int>(params_.video[video_idx].width),
             static_cast<int>(params_.video[video_idx].height),
             test::FrameGenerator::OutputType::I420A, absl::nullopt,
             params_.video[video_idx].fps, clock_));
-      } else if (params_.video[video_idx].clip_name == "GeneratorI010") {
+      } else if (params_.video[video_idx].clip_path == "GeneratorI010") {
         video_sources_[video_idx].reset(test::FrameGeneratorCapturer::Create(
             static_cast<int>(params_.video[video_idx].width),
             static_cast<int>(params_.video[video_idx].height),
             test::FrameGenerator::OutputType::I010, absl::nullopt,
             params_.video[video_idx].fps, clock_));
-      } else if (params_.video[video_idx].clip_name.empty()) {
+      } else if (params_.video[video_idx].clip_path.empty()) {
         video_sources_[video_idx] = test::CreateVideoCapturer(
             params_.video[video_idx].width, params_.video[video_idx].height,
             params_.video[video_idx].fps,
@@ -1090,13 +1090,13 @@ void VideoQualityTest::CreateCapturers() {
       } else {
         video_sources_[video_idx].reset(
             test::FrameGeneratorCapturer::CreateFromYuvFile(
-                test::ResourcePath(params_.video[video_idx].clip_name, "yuv"),
+                params_.video[video_idx].clip_path,
                 params_.video[video_idx].width, params_.video[video_idx].height,
                 params_.video[video_idx].fps, clock_));
         ASSERT_TRUE(video_sources_[video_idx])
             << "Could not create capturer for "
-            << params_.video[video_idx].clip_name
-            << ".yuv. Is this resource file present?";
+            << params_.video[video_idx].clip_path
+            << ".yuv. Is this file present?";
       }
     }
     RTC_DCHECK(video_sources_[video_idx]);
