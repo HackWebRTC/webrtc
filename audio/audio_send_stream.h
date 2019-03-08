@@ -23,6 +23,7 @@
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/experiments/audio_allocation_settings.h"
 #include "rtc_base/race_checker.h"
+#include "rtc_base/task_queue.h"
 #include "rtc_base/thread_checker.h"
 
 namespace webrtc {
@@ -42,6 +43,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   AudioSendStream(Clock* clock,
                   const webrtc::AudioSendStream::Config& config,
                   const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
+                  TaskQueueFactory* task_queue_factory,
                   ProcessThread* module_process_thread,
                   RtpTransportControllerSendInterface* rtp_transport,
                   BitrateAllocatorInterface* bitrate_allocator,
@@ -52,6 +54,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   AudioSendStream(Clock* clock,
                   const webrtc::AudioSendStream::Config& config,
                   const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
+                  TaskQueueFactory* task_queue_factory,
                   RtpTransportControllerSendInterface* rtp_transport,
                   BitrateAllocatorInterface* bitrate_allocator,
                   RtcEventLog* event_log,

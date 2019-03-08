@@ -131,8 +131,8 @@ TEST(AudioWithMediaTransport, DeliversAudio) {
       &GlobalTaskQueueFactory());
   webrtc::internal::AudioSendStream send_stream(
       Clock::GetRealTimeClock(), send_config, audio_state,
-      send_process_thread.get(), &rtp_transport, &bitrate_allocator,
-      null_event_log.get(),
+      &GlobalTaskQueueFactory(), send_process_thread.get(), &rtp_transport,
+      &bitrate_allocator, null_event_log.get(),
       /*rtcp_rtt_stats=*/nullptr, absl::optional<RtpState>());
 
   audio_device->Init();  // Starts thread.
