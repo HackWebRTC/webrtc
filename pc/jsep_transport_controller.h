@@ -89,6 +89,10 @@ class JsepTransportController : public sigslot::has_slots<> {
     // Whether media transport is used for data channels.
     bool use_media_transport_for_data_channels = false;
 
+    // Whether an RtpMediaTransport should be created as default, when no
+    // MediaTransportFactory is provided.
+    bool use_rtp_media_transport = false;
+
     // Optional media transport factory (experimental). If provided it will be
     // used to create media_transport (as long as either
     // |use_media_transport_for_media| or
@@ -379,12 +383,6 @@ class JsepTransportController : public sigslot::has_slots<> {
   cricket::IceGatheringState ice_gathering_state_ = cricket::kIceGatheringNew;
 
   Config config_;
-  // Determines if Config::media_transport_factory should be used
-  // to create a media transport. (when falling back to RTP this may be false).
-  // This is a prerequisite, but is not sufficient to create media transport
-  // (the factory needs to be provided in the config, and config must allow for
-  // media transport).
-  bool is_media_transport_factory_enabled_ = true;
 
   // Early on in the call we don't know if media transport is going to be used,
   // but we need to get the server-supported parameters to add to an SDP.
