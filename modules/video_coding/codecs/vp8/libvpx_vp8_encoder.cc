@@ -695,10 +695,9 @@ uint32_t LibvpxVp8Encoder::FrameDropThreshold(size_t spatial_idx) const {
   // setting, as eg. ScreenshareLayers does not work as intended with frame
   // dropping on and DefaultTemporalLayers will have performance issues with
   // frame dropping off.
-  if (frame_buffer_controllers_.size() <= spatial_idx) {
-    enable_frame_dropping =
-        frame_buffer_controllers_[spatial_idx]->SupportsEncoderFrameDropping();
-  }
+  RTC_CHECK_LT(spatial_idx, frame_buffer_controllers_.size());
+  enable_frame_dropping =
+      frame_buffer_controllers_[spatial_idx]->SupportsEncoderFrameDropping();
   return enable_frame_dropping ? 30 : 0;
 }
 
