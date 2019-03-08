@@ -16,10 +16,10 @@
 #include <string>
 #include <vector>
 
-#include "api/task_queue/task_queue_base.h"
 #include "api/video_codecs/video_encoder.h"
 #include "common_video/h264/h264_bitstream_parser.h"
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
+#include "rtc_base/task_queue.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/video_frame.h"
 
@@ -92,7 +92,7 @@ class VideoEncoderWrapper : public VideoEncoder {
   const ScopedJavaGlobalRef<jclass> int_array_class_;
 
   rtc::CriticalSection encoder_queue_crit_;
-  TaskQueueBase* encoder_queue_ RTC_GUARDED_BY(encoder_queue_crit_);
+  rtc::TaskQueue* encoder_queue_ RTC_GUARDED_BY(encoder_queue_crit_);
   std::deque<FrameExtraInfo> frame_extra_infos_;
   EncodedImageCallback* callback_;
   bool initialized_;

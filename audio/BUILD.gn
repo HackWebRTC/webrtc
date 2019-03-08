@@ -248,7 +248,6 @@ if (rtc_include_tests) {
     ]
     deps = [
       "../api:simulated_network_api",
-      "../api/task_queue",
       "../call:fake_network",
       "../call:simulated_network",
       "../common_audio",

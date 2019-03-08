@@ -57,8 +57,8 @@ using ::webrtc::QueuedTask;
 //      private:
 //       bool Run() override {
 //         ++count_;
-//         TaskQueueBase::Current()->PostDelayedTask(
-//             absl::WrapUnique(this), 1000);
+//         TaskQueue::Current()->PostDelayedTask(
+//             std::unique_ptr<QueuedTask>(this), 1000);
 //         // Ownership has been transferred to the next occurance,
 //         // so return false to prevent from being deleted now.
 //         return false;
@@ -66,7 +66,8 @@ using ::webrtc::QueuedTask;
 //       int count_ = 0;
 //     };
 //     ...
-//     queue_.PostDelayedTask(absl::make_unique<TimerTask>(), 1000);
+//     queue_.PostDelayedTask(
+//         std::unique_ptr<QueuedTask>(new TimerTask()), 1000);
 //
 // For more examples, see task_queue_unittests.cc.
 //
@@ -88,6 +89,8 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueue {
   explicit TaskQueue(const char* queue_name,
                      Priority priority = Priority::NORMAL);
   ~TaskQueue();
+
+  static TaskQueue* Current();
 
   // Used for DCHECKing the current queue.
   bool IsCurrent() const;

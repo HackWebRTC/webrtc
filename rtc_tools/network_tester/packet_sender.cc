@@ -16,7 +16,6 @@
 #include <utility>
 
 #include "absl/types/optional.h"
-#include "api/task_queue/task_queue_base.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_tools/network_tester/config_reader.h"
 #include "rtc_tools/network_tester/test_controller.h"
@@ -37,7 +36,7 @@ class SendPacketTask : public rtc::QueuedTask {
       target_time_ms_ += packet_sender_->GetSendIntervalMs();
       int64_t delay_ms = std::max(static_cast<int64_t>(0),
                                   target_time_ms_ - rtc::TimeMillis());
-      TaskQueueBase::Current()->PostDelayedTask(
+      rtc::TaskQueue::Current()->PostDelayedTask(
           std::unique_ptr<QueuedTask>(this), delay_ms);
       return false;
     } else {
@@ -61,7 +60,7 @@ class UpdateTestSettingTask : public rtc::QueuedTask {
     if (config) {
       packet_sender_->UpdateTestSetting((*config).packet_size,
                                         (*config).packet_send_interval_ms);
-      TaskQueueBase::Current()->PostDelayedTask(
+      rtc::TaskQueue::Current()->PostDelayedTask(
           std::unique_ptr<QueuedTask>(this), (*config).execution_time_ms);
       return false;
     } else {

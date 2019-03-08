@@ -621,7 +621,6 @@ if (is_android) {
       ":videoframe_jni",
       "../..:webrtc_common",
       "../../api:scoped_refptr",
-      "../../api/task_queue",
       "../../api/video_codecs:video_codecs_api",
       "../../common_video:common_video",
       "../../media:rtc_internal_video_codecs",
@@ -680,7 +679,6 @@ if (is_android) {
       ":videoframe_jni",
       "../..:webrtc_common",
       "../../api:libjingle_peerconnection_api",
-      "../../api/task_queue",
       "../../api/video:encoded_image",
       "../../api/video:video_frame",
       "../../api/video_codecs:rtc_software_fallback_wrappers",
@@ -693,7 +691,6 @@ if (is_android) {
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_task_queue",
-      "../../rtc_base/task_utils:to_queued_task",
       "//third_party/libyuv",
     ]
   }

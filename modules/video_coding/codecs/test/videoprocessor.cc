@@ -31,7 +31,6 @@
 #include "modules/video_coding/codecs/interface/common_constants.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/time_utils.h"
 #include "test/gtest.h"
 #include "third_party/libyuv/include/libyuv/compare.h"
@@ -192,7 +191,7 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
       decoded_frame_buffer_(num_simulcast_or_spatial_layers_),
       post_encode_time_ns_(0) {
   // Sanity checks.
-  RTC_CHECK(TaskQueueBase::Current())
+  RTC_CHECK(rtc::TaskQueue::Current())
       << "VideoProcessor must be run on a task queue.";
   RTC_CHECK(encoder);
   RTC_CHECK(decoders);
@@ -322,9 +321,9 @@ int32_t VideoProcessor::VideoProcessorDecodeCompleteCallback::Decoded(
                           .build();
     copy.set_timestamp(image.timestamp());
 
-    task_queue_->PostTask(ToQueuedTask([this, copy]() {
+    task_queue_->PostTask([this, copy]() {
       video_processor_->FrameDecoded(copy, simulcast_svc_idx_);
-    }));
+    });
     return 0;
   }
   video_processor_->FrameDecoded(image, simulcast_svc_idx_);
