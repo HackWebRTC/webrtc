@@ -1310,7 +1310,7 @@ void ParsedRtcEventLog::StoreParsedLegacyEvent(const rtclog::Event& event) {
       RTPHeader parsed_header;
 
       if (extension_map != nullptr) {
-        rtp_parser.Parse(&parsed_header, extension_map);
+        rtp_parser.Parse(&parsed_header, extension_map, true);
       } else {
         // Use the default extension map.
         // TODO(terelius): This should be removed. GetRtpHeader will return the
@@ -1318,7 +1318,7 @@ void ParsedRtcEventLog::StoreParsedLegacyEvent(const rtclog::Event& event) {
         // TODO(ivoc): Once configuration of audio streams is stored in the
         //             event log, this can be removed.
         //             Tracking bug: webrtc:6399
-        rtp_parser.Parse(&parsed_header, &default_extension_map_);
+        rtp_parser.Parse(&parsed_header, &default_extension_map_, true);
       }
 
       // Since we give the parser only a header, there is no way for it to know

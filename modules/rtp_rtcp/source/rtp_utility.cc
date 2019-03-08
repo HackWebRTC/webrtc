@@ -156,9 +156,9 @@ bool RtpHeaderParser::ParseRtcp(RTPHeader* header) const {
   return true;
 }
 
-bool RtpHeaderParser::Parse(
-    RTPHeader* header,
-    const RtpHeaderExtensionMap* ptrExtensionMap) const {
+bool RtpHeaderParser::Parse(RTPHeader* header,
+                            const RtpHeaderExtensionMap* ptrExtensionMap,
+                            bool header_only) const {
   const ptrdiff_t length = _ptrRTPDataEnd - _ptrRTPDataBegin;
   if (length < kRtpMinParseLength) {
     return false;
@@ -202,7 +202,7 @@ bool RtpHeaderParser::Parse(
   header->timestamp = RTPTimestamp;
   header->ssrc = SSRC;
   header->numCSRCs = CC;
-  if (!P) {
+  if (!P || header_only) {
     header->paddingLength = 0;
   }
 
@@ -286,7 +286,7 @@ bool RtpHeaderParser::Parse(
   if (header->headerLength > static_cast<size_t>(length))
     return false;
 
-  if (P) {
+  if (P && !header_only) {
     // Packet has padding.
     if (header->headerLength != static_cast<size_t>(length)) {
       // Packet is not header only. We can parse padding length now.
