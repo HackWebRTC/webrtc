@@ -169,10 +169,8 @@ EncodedImage MultiplexEncodedImagePacker::PackAndRelease(
     frame_header.component_index = images[i].component_index;
 
     frame_header.bitstream_offset = bitstream_offset;
-    const size_t padding =
-        EncodedImage::GetBufferPaddingBytes(images[i].codec_type);
     frame_header.bitstream_length =
-        static_cast<uint32_t>(images[i].encoded_image.size() + padding);
+        static_cast<uint32_t>(images[i].encoded_image.size());
     bitstream_offset += frame_header.bitstream_length;
 
     frame_header.codec_type = images[i].codec_type;
@@ -267,9 +265,8 @@ MultiplexImage MultiplexEncodedImagePacker::Unpack(
     encoded_image.set_buffer(
         combined_image.mutable_data() + frame_headers[i].bitstream_offset,
         static_cast<size_t>(frame_headers[i].bitstream_length));
-    const size_t padding =
-        EncodedImage::GetBufferPaddingBytes(image_component.codec_type);
-    encoded_image.set_size(encoded_image.capacity() - padding);
+
+    encoded_image.set_size(encoded_image.capacity());
 
     image_component.encoded_image = encoded_image;
 

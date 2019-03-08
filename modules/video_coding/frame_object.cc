@@ -167,14 +167,8 @@ absl::optional<FrameMarking> RtpFrameObject::GetFrameMarking() const {
 }
 
 void RtpFrameObject::AllocateBitstreamBuffer(size_t frame_size) {
-  // Since FFmpeg use an optimized bitstream reader that reads in chunks of
-  // 32/64 bits we have to add at least that much padding to the buffer
-  // to make sure the decoder doesn't read out of bounds.
-  size_t new_size = frame_size + (codec_type_ == kVideoCodecH264
-                                      ? EncodedImage::kBufferPaddingBytesH264
-                                      : 0);
-  if (capacity() < new_size) {
-    Allocate(new_size);
+  if (capacity() < frame_size) {
+    Allocate(frame_size);
   }
 
   set_size(frame_size);

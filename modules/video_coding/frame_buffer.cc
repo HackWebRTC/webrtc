@@ -102,8 +102,7 @@ VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
 
   uint32_t requiredSizeBytes =
       size() + packet.sizeBytes +
-      (packet.insertStartCode ? kH264StartCodeLengthBytes : 0) +
-      EncodedImage::GetBufferPaddingBytes(packet.codec());
+      (packet.insertStartCode ? kH264StartCodeLengthBytes : 0);
   if (requiredSizeBytes >= capacity()) {
     const uint8_t* prevBuffer = data();
     const uint32_t increments =

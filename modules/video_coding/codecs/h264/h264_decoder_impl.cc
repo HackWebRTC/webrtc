@@ -251,17 +251,6 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
-  // FFmpeg requires padding due to some optimized bitstream readers reading 32
-  // or 64 bits at once and could read over the end. See avcodec_decode_video2.
-  RTC_CHECK_GE(input_image.capacity(),
-               input_image.size() +
-                   EncodedImage::GetBufferPaddingBytes(kVideoCodecH264));
-  // "If the first 23 bits of the additional bytes are not 0, then damaged MPEG
-  // bitstreams could cause overread and segfault." See
-  // AV_INPUT_BUFFER_PADDING_SIZE. We'll zero the entire padding just in case.
-  memset(input_image.mutable_data() + input_image.size(), 0,
-         EncodedImage::GetBufferPaddingBytes(kVideoCodecH264));
-
   AVPacket packet;
   av_init_packet(&packet);
   packet.data = input_image.mutable_data();
