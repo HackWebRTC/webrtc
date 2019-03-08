@@ -118,8 +118,6 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   ~WebRtcVideoChannel() override;
 
   // VideoMediaChannel implementation
-  rtc::DiffServCodePoint PreferredDscp() const override;
-
   bool SetSendParameters(const VideoSendParameters& params) override;
   bool SetRecvParameters(const VideoRecvParameters& params) override;
   webrtc::RtpParameters GetRtpSendParameters(uint32_t ssrc) const override;
@@ -529,7 +527,6 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   // TODO(deadbeef): Don't duplicate information between
   // send_params/recv_params, rtp_extensions, options, etc.
   VideoSendParameters send_params_ RTC_GUARDED_BY(thread_checker_);
-  rtc::DiffServCodePoint preferred_dscp_ RTC_GUARDED_BY(thread_checker_);
   VideoOptions default_send_options_ RTC_GUARDED_BY(thread_checker_);
   VideoRecvParameters recv_params_ RTC_GUARDED_BY(thread_checker_);
   int64_t last_stats_log_ms_ RTC_GUARDED_BY(thread_checker_);

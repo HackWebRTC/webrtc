@@ -1275,10 +1275,6 @@ WebRtcVoiceMediaChannel::~WebRtcVoiceMediaChannel() {
   engine()->UnregisterChannel(this);
 }
 
-rtc::DiffServCodePoint WebRtcVoiceMediaChannel::PreferredDscp() const {
-  return preferred_dscp_;
-}
-
 bool WebRtcVoiceMediaChannel::SetSendParameters(
     const AudioSendParameters& params) {
   TRACE_EVENT0("webrtc", "WebRtcVoiceMediaChannel::SetSendParameters");
@@ -1407,10 +1403,7 @@ webrtc::RTCError WebRtcVoiceMediaChannel::SetRtpSendParameters(
       return webrtc::RTCError(webrtc::RTCErrorType::INVALID_RANGE);
     }
 
-    if (new_dscp != preferred_dscp_) {
-      preferred_dscp_ = new_dscp;
-      MediaChannel::UpdateDscp();
-    }
+    SetPreferredDscp(new_dscp);
   }
 
   // TODO(minyue): The following legacy actions go into

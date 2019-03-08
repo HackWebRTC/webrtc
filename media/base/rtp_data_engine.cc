@@ -56,6 +56,7 @@ static const DataCodec* FindCodecByName(const std::vector<DataCodec>& codecs,
 RtpDataMediaChannel::RtpDataMediaChannel(const MediaConfig& config)
     : DataMediaChannel(config) {
   Construct();
+  SetPreferredDscp(rtc::DSCP_AF41);
 }
 
 void RtpDataMediaChannel::Construct() {
@@ -329,10 +330,6 @@ bool RtpDataMediaChannel::SendData(const SendDataParams& params,
     *result = SDR_SUCCESS;
   }
   return true;
-}
-
-rtc::DiffServCodePoint RtpDataMediaChannel::PreferredDscp() const {
-  return rtc::DSCP_AF41;
 }
 
 }  // namespace cricket

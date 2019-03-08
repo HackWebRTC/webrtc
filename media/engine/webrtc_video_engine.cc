@@ -524,7 +524,6 @@ WebRtcVideoChannel::WebRtcVideoChannel(
       encoder_factory_(encoder_factory),
       decoder_factory_(decoder_factory),
       bitrate_allocator_factory_(bitrate_allocator_factory),
-      preferred_dscp_(rtc::DSCP_DEFAULT),
       default_send_options_(options),
       last_stats_log_ms_(-1),
       discard_unknown_ssrc_packets_(webrtc::field_trial::IsEnabled(
@@ -658,11 +657,6 @@ bool WebRtcVideoChannel::GetChangedSendParameters(
   }
 
   return true;
-}
-
-rtc::DiffServCodePoint WebRtcVideoChannel::PreferredDscp() const {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  return preferred_dscp_;
 }
 
 bool WebRtcVideoChannel::SetSendParameters(const VideoSendParameters& params) {
@@ -800,10 +794,7 @@ webrtc::RTCError WebRtcVideoChannel::SetRtpSendParameters(
       return webrtc::RTCError(webrtc::RTCErrorType::INVALID_RANGE);
     }
 
-    if (new_dscp != preferred_dscp_) {
-      preferred_dscp_ = new_dscp;
-      MediaChannel::UpdateDscp();
-    }
+    SetPreferredDscp(new_dscp);
   }
 
   return it->second->SetRtpParameters(parameters);

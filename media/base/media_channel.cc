@@ -35,10 +35,6 @@ int MediaChannel::GetRtpSendTimeExtnId() const {
   return -1;
 }
 
-rtc::DiffServCodePoint MediaChannel::PreferredDscp() const {
-  return rtc::DSCP_DEFAULT;
-}
-
 void MediaChannel::SetFrameEncryptor(
     uint32_t ssrc,
     rtc::scoped_refptr<webrtc::FrameEncryptorInterface> frame_encryptor) {

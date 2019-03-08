@@ -280,23 +280,37 @@ class MediaChannel : public sigslot::has_slots<> {
       const webrtc::RtpParameters& parameters) = 0;
 
  protected:
-  virtual rtc::DiffServCodePoint PreferredDscp() const;
-
   bool DscpEnabled() const { return enable_dscp_; }
 
-  // This method sets DSCP |value| on both RTP and RTCP channels.
-  int UpdateDscp() {
+  // This is the DSCP value used for both RTP and RTCP channels if DSCP is
+  // enabled. It can be changed at any time via |SetPreferredDscp|.
+  rtc::DiffServCodePoint PreferredDscp() const {
+    rtc::CritScope cs(&network_interface_crit_);
+    return preferred_dscp_;
+  }
+
+  int SetPreferredDscp(rtc::DiffServCodePoint preferred_dscp) {
+    rtc::CritScope cs(&network_interface_crit_);
+    if (preferred_dscp == preferred_dscp_) {
+      return 0;
+    }
+    preferred_dscp_ = preferred_dscp;
+    return UpdateDscp();
+  }
+
+ private:
+  // Apply the preferred DSCP setting to the underlying network interface RTP
+  // and RTCP channels. If DSCP is disabled, then apply the default DSCP value.
+  int UpdateDscp() RTC_EXCLUSIVE_LOCKS_REQUIRED(network_interface_crit_) {
     rtc::DiffServCodePoint value =
-        enable_dscp_ ? PreferredDscp() : rtc::DSCP_DEFAULT;
-    int ret;
-    ret = SetOption(NetworkInterface::ST_RTP, rtc::Socket::OPT_DSCP, value);
+        enable_dscp_ ? preferred_dscp_ : rtc::DSCP_DEFAULT;
+    int ret = SetOption(NetworkInterface::ST_RTP, rtc::Socket::OPT_DSCP, value);
     if (ret == 0) {
       ret = SetOption(NetworkInterface::ST_RTCP, rtc::Socket::OPT_DSCP, value);
     }
     return ret;
   }
 
- private:
   bool DoSendPacket(rtc::CopyOnWriteBuffer* packet,
                     bool rtcp,
                     const rtc::PacketOptions& options) {
@@ -313,7 +327,10 @@ class MediaChannel : public sigslot::has_slots<> {
   // from any MediaEngine threads. This critical section is to protect accessing
   // of network_interface_ object.
   rtc::CriticalSection network_interface_crit_;
-  NetworkInterface* network_interface_ = nullptr;
+  NetworkInterface* network_interface_ RTC_GUARDED_BY(network_interface_crit_) =
+      nullptr;
+  rtc::DiffServCodePoint preferred_dscp_
+      RTC_GUARDED_BY(network_interface_crit_) = rtc::DSCP_DEFAULT;
   webrtc::MediaTransportInterface* media_transport_ = nullptr;
   bool extmap_allow_mixed_ = false;
 };

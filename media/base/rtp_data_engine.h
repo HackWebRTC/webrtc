@@ -89,7 +89,6 @@ class RtpDataMediaChannel : public DataMediaChannel {
   virtual bool SendData(const SendDataParams& params,
                         const rtc::CopyOnWriteBuffer& payload,
                         SendDataResult* result);
-  virtual rtc::DiffServCodePoint PreferredDscp() const;
 
  private:
   void Construct();
