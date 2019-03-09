@@ -481,12 +481,6 @@ rtc_source_set("rtc_task_queue") {
     "task_utils:to_queued_task",
     "//third_party/abseil-cpp/absl/memory",
   ]
-
-  # TODO(danilchap): Move this conditional dependency to global_task_queue_factory
-  # after removing task_queue_impl -> global_task_queue_factory dependency in chromium.
-  if (build_with_chromium) {
-    deps += [ "../../webrtc_overrides:task_queue_impl" ]
-  }
 }
 
 rtc_source_set("rtc_task_queue_api") {
