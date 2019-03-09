@@ -301,10 +301,9 @@ RtpVideoSender::RtpVideoSender(
     }
   }
 
-  // TODO(pbos): Should we set CNAME on all RTP modules?
-  rtp_streams_.front().rtp_rtcp->SetCNAME(rtp_config.c_name.c_str());
-
   for (const RtpStreamSender& stream : rtp_streams_) {
+    // Simulcast has one module for each layer. Set the CNAME on all modules.
+    stream.rtp_rtcp->SetCNAME(rtp_config.c_name.c_str());
     stream.rtp_rtcp->RegisterRtcpStatisticsCallback(observers.rtcp_stats);
     stream.rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(
         observers.rtp_stats);
