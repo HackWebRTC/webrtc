@@ -101,10 +101,6 @@ class RepeatingTaskHandle {
     task_queue->PostTask(std::move(repeating_task));
     return RepeatingTaskHandle(repeating_task_ptr);
   }
-  template <class Closure>
-  static RepeatingTaskHandle Start(Closure&& closure) {
-    return Start(TaskQueueBase::Current(), std::forward<Closure>(closure));
-  }
 
   // DelayedStart is equivalent to Start except that the first invocation of the
   // closure will be delayed by the given amount.
@@ -118,12 +114,6 @@ class RepeatingTaskHandle {
     auto* repeating_task_ptr = repeating_task.get();
     task_queue->PostDelayedTask(std::move(repeating_task), first_delay.ms());
     return RepeatingTaskHandle(repeating_task_ptr);
-  }
-  template <class Closure>
-  static RepeatingTaskHandle DelayedStart(TimeDelta first_delay,
-                                          Closure&& closure) {
-    return DelayedStart(TaskQueueBase::Current(), first_delay,
-                        std::forward<Closure>(closure));
   }
 
   // Stops future invocations of the repeating task closure. Can only be called
