@@ -338,11 +338,16 @@ void VideoReceiveStream::Start() {
 
     std::string decoded_output_file =
         field_trial::FindFullName("WebRTC-DecoderDataDumpDirectory");
+    // Because '/' can't be used inside a field trial parameter, we use ':'
+    // instead.
+    std::replace(decoded_output_file.begin(), decoded_output_file.end(), ':',
+                 '/');
     if (!decoded_output_file.empty()) {
       char filename_buffer[256];
       rtc::SimpleStringBuilder ssb(filename_buffer);
       ssb << decoded_output_file << "/webrtc_receive_stream_"
-          << this->config_.rtp.local_ssrc << ".ivf";
+          << this->config_.rtp.remote_ssrc << "-" << rtc::TimeMicros()
+          << ".ivf";
       video_decoder = absl::make_unique<FrameDumpingDecoder>(
           std::move(video_decoder), FileWrapper::OpenWriteOnly(ssb.str()));
     }
