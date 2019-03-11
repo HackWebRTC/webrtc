@@ -150,6 +150,9 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
 }  // namespace
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
+  if (size > 400000) {
+    return;
+  }
   test::FuzzDataHelper fuzz_data(rtc::ArrayView<const uint8_t>(data, size));
   // This string must be in scope during execution, according to documentation
   // for field_trial.h. Hence it's created here and not in CreateApm.
