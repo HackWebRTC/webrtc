@@ -34,11 +34,11 @@ bool TaskQueue::IsCurrent() const {
   return impl_->IsCurrent();
 }
 
-void TaskQueue::PostTask(std::unique_ptr<QueuedTask> task) {
+void TaskQueue::PostTask(std::unique_ptr<webrtc::QueuedTask> task) {
   return impl_->PostTask(std::move(task));
 }
 
-void TaskQueue::PostDelayedTask(std::unique_ptr<QueuedTask> task,
+void TaskQueue::PostDelayedTask(std::unique_ptr<webrtc::QueuedTask> task,
                                 uint32_t milliseconds) {
   return impl_->PostDelayedTask(std::move(task), milliseconds);
 }

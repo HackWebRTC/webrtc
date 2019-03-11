@@ -17,6 +17,7 @@
 #include <string>
 
 #include "absl/memory/memory.h"
+#include "api/task_queue/queued_task.h"
 #include "api/video/video_content_type.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
@@ -383,7 +384,7 @@ int32_t MultithreadedFakeH264Encoder::InitEncode(const VideoCodec* config,
   return FakeH264Encoder::InitEncode(config, number_of_cores, max_payload_size);
 }
 
-class MultithreadedFakeH264Encoder::EncodeTask : public rtc::QueuedTask {
+class MultithreadedFakeH264Encoder::EncodeTask : public QueuedTask {
  public:
   EncodeTask(MultithreadedFakeH264Encoder* encoder,
              const VideoFrame& input_image,
@@ -415,8 +416,8 @@ int32_t MultithreadedFakeH264Encoder::Encode(
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
 
-  queue->PostTask(std::unique_ptr<rtc::QueuedTask>(
-      new EncodeTask(this, input_image, frame_types)));
+  queue->PostTask(
+      absl::make_unique<EncodeTask>(this, input_image, frame_types));
 
   return WEBRTC_VIDEO_CODEC_OK;
 }

@@ -11,6 +11,7 @@
 #include "audio/test/audio_bwe_integration_test.h"
 
 #include "absl/memory/memory.h"
+#include "api/task_queue/queued_task.h"
 #include "api/task_queue/task_queue_base.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
@@ -81,7 +82,7 @@ void AudioBweTest::PerformTest() {
   SleepMs(GetNetworkPipeConfig().queue_delay_ms + kExtraProcessTimeMs);
 }
 
-class StatsPollTask : public rtc::QueuedTask {
+class StatsPollTask : public QueuedTask {
  public:
   explicit StatsPollTask(Call* sender_call) : sender_call_(sender_call) {}
 
@@ -142,7 +143,7 @@ class NoBandwidthDropAfterDtx : public AudioBweTest {
 
   void PerformTest() override {
     stats_poller_.PostDelayedTask(
-        std::unique_ptr<rtc::QueuedTask>(new StatsPollTask(sender_call_)), 100);
+        absl::make_unique<StatsPollTask>(sender_call_), 100);
     sender_call_->OnAudioTransportOverheadChanged(0);
     AudioBweTest::PerformTest();
   }

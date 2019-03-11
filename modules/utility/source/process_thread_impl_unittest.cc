@@ -11,10 +11,10 @@
 #include <memory>
 #include <utility>
 
+#include "api/task_queue/queued_task.h"
 #include "modules/include/module.h"
 #include "modules/utility/source/process_thread_impl.h"
 #include "rtc_base/location.h"
-#include "rtc_base/task_queue.h"
 #include "rtc_base/time_utils.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -40,7 +40,7 @@ class MockModule : public Module {
   MOCK_METHOD1(ProcessThreadAttached, void(ProcessThread*));
 };
 
-class RaiseEventTask : public rtc::QueuedTask {
+class RaiseEventTask : public QueuedTask {
  public:
   RaiseEventTask(rtc::Event* event) : event_(event) {}
   bool Run() override {

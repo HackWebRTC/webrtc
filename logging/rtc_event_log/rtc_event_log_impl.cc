@@ -21,6 +21,7 @@
 #include "absl/types/optional.h"
 #include "api/rtc_event_log_output.h"
 #include "api/task_queue/global_task_queue_factory.h"
+#include "api/task_queue/queued_task.h"
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_legacy.h"
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_new_format.h"
 #include "rtc_base/checks.h"
@@ -48,7 +49,7 @@ constexpr size_t kMaxEventsInConfigHistory = 1000;
 // unique_ptr to a lambda (a copy constructor is required). We should get
 // rid of this when we move to C++14.
 template <typename T>
-class ResourceOwningTask final : public rtc::QueuedTask {
+class ResourceOwningTask final : public QueuedTask {
  public:
   ResourceOwningTask(std::unique_ptr<T> resource,
                      std::function<void(std::unique_ptr<T>)> handler)

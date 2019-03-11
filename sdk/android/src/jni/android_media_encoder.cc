@@ -14,6 +14,8 @@
 #include <string>
 #include <utility>
 
+#include "absl/memory/memory.h"
+#include "api/task_queue/queued_task.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder.h"
@@ -32,7 +34,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/sequenced_task_checker.h"
-#include "rtc_base/task_queue.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/weak_ptr.h"
@@ -120,7 +121,7 @@ class MediaCodecVideoEncoder : public VideoEncoder {
                        int stride_v);
 
  private:
-  class EncodeTask : public rtc::QueuedTask {
+  class EncodeTask : public QueuedTask {
    public:
     explicit EncodeTask(rtc::WeakPtr<MediaCodecVideoEncoder> encoder);
     bool Run() override;
@@ -223,7 +224,7 @@ class MediaCodecVideoEncoder : public VideoEncoder {
   int64_t last_input_timestamp_ms_;   // Timestamp of last received yuv frame.
   int64_t last_output_timestamp_ms_;  // Timestamp of last encoded frame.
   // Holds the task while the polling loop is paused.
-  std::unique_ptr<rtc::QueuedTask> encode_task_;
+  std::unique_ptr<QueuedTask> encode_task_;
 
   struct InputFrameInfo {
     InputFrameInfo(int64_t encode_start_time,
@@ -397,7 +398,7 @@ bool MediaCodecVideoEncoder::EncodeTask::Run() {
   ScopedLocalRefFrame local_ref_frame(jni);
 
   if (!encoder_->inited_) {
-    encoder_->encode_task_ = std::unique_ptr<rtc::QueuedTask>(this);
+    encoder_->encode_task_ = absl::WrapUnique(this);
     return false;
   }
 
@@ -417,11 +418,11 @@ bool MediaCodecVideoEncoder::EncodeTask::Run() {
 
   // If there aren't more frames to deliver, we can start polling at lower rate.
   if (encoder_->input_frame_infos_.empty()) {
-    TaskQueueBase::Current()->PostDelayedTask(
-        std::unique_ptr<rtc::QueuedTask>(this), kMediaCodecPollNoFramesMs);
+    TaskQueueBase::Current()->PostDelayedTask(absl::WrapUnique(this),
+                                              kMediaCodecPollNoFramesMs);
   } else {
-    TaskQueueBase::Current()->PostDelayedTask(
-        std::unique_ptr<rtc::QueuedTask>(this), kMediaCodecPollMs);
+    TaskQueueBase::Current()->PostDelayedTask(absl::WrapUnique(this),
+                                              kMediaCodecPollMs);
   }
 
   return false;

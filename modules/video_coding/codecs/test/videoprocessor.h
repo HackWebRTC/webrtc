@@ -17,7 +17,9 @@
 #include <memory>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
+#include "api/task_queue/queued_task.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/test/videocodec_test_fixture.h"
 #include "api/test/videocodec_test_stats.h"
@@ -35,7 +37,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/sequenced_task_checker.h"
-#include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
 #include "test/testsupport/frame_reader.h"
@@ -93,9 +94,8 @@ class VideoProcessor {
 
       // Post the callback to the right task queue, if needed.
       if (!task_queue_->IsCurrent()) {
-        task_queue_->PostTask(
-            std::unique_ptr<rtc::QueuedTask>(new EncodeCallbackTask(
-                video_processor_, encoded_image, codec_specific_info)));
+        task_queue_->PostTask(absl::make_unique<EncodeCallbackTask>(
+            video_processor_, encoded_image, codec_specific_info));
         return Result(Result::OK, 0);
       }
 
@@ -104,7 +104,7 @@ class VideoProcessor {
     }
 
    private:
-    class EncodeCallbackTask : public rtc::QueuedTask {
+    class EncodeCallbackTask : public QueuedTask {
      public:
       EncodeCallbackTask(VideoProcessor* video_processor,
                          const webrtc::EncodedImage& encoded_image,

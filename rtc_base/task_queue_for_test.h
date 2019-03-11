@@ -37,7 +37,7 @@ class RTC_LOCKABLE TaskQueueForTest : public TaskQueue {
     rtc::Event event;
     PostTask(webrtc::ToQueuedTask(
         [&task]() {
-          RTC_CHECK_EQ(false, static_cast<QueuedTask*>(task)->Run());
+          RTC_CHECK_EQ(false, static_cast<webrtc::QueuedTask*>(task)->Run());
         },
         [&event]() { event.Set(); }));
     event.Wait(rtc::Event::kForever);

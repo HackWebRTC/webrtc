@@ -25,11 +25,6 @@
 #include "rtc_base/thread_annotations.h"
 
 namespace rtc {
-
-// TODO(danilchap): Remove the alias when all of webrtc is updated to use
-// webrtc::QueuedTask directly.
-using ::webrtc::QueuedTask;
-
 // Implements a task queue that asynchronously executes tasks in a way that
 // guarantees that they're executed in FIFO order and that tasks never overlap.
 // Tasks may always execute on the same worker thread and they may not.
@@ -98,14 +93,15 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueue {
   // TODO(tommi): For better debuggability, implement RTC_FROM_HERE.
 
   // Ownership of the task is passed to PostTask.
-  void PostTask(std::unique_ptr<QueuedTask> task);
+  void PostTask(std::unique_ptr<webrtc::QueuedTask> task);
 
   // Schedules a task to execute a specified number of milliseconds from when
   // the call is made. The precision should be considered as "best effort"
   // and in some cases, such as on Windows when all high precision timers have
   // been used up, can be off by as much as 15 millseconds (although 8 would be
   // more likely). This can be mitigated by limiting the use of delayed tasks.
-  void PostDelayedTask(std::unique_ptr<QueuedTask> task, uint32_t milliseconds);
+  void PostDelayedTask(std::unique_ptr<webrtc::QueuedTask> task,
+                       uint32_t milliseconds);
 
   // std::enable_if is used here to make sure that calls to PostTask() with
   // std::unique_ptr<SomeClassDerivedFromQueuedTask> would not end up being
@@ -113,7 +109,7 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueue {
   template <class Closure,
             typename std::enable_if<!std::is_convertible<
                 Closure,
-                std::unique_ptr<QueuedTask>>::value>::type* = nullptr>
+                std::unique_ptr<webrtc::QueuedTask>>::value>::type* = nullptr>
   void PostTask(Closure&& closure) {
     PostTask(webrtc::ToQueuedTask(std::forward<Closure>(closure)));
   }
@@ -122,7 +118,7 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueue {
   template <class Closure,
             typename std::enable_if<!std::is_convertible<
                 Closure,
-                std::unique_ptr<QueuedTask>>::value>::type* = nullptr>
+                std::unique_ptr<webrtc::QueuedTask>>::value>::type* = nullptr>
   void PostDelayedTask(Closure&& closure, uint32_t milliseconds) {
     PostDelayedTask(webrtc::ToQueuedTask(std::forward<Closure>(closure)),
                     milliseconds);

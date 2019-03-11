@@ -11,6 +11,7 @@
 #include "video/video_stream_decoder_impl.h"
 
 #include "absl/memory/memory.h"
+#include "api/task_queue/queued_task.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/mod_ops.h"
 #include "rtc_base/time_utils.h"
@@ -48,7 +49,7 @@ VideoStreamDecoderImpl::~VideoStreamDecoderImpl() {
 void VideoStreamDecoderImpl::OnFrame(
     std::unique_ptr<video_coding::EncodedFrame> frame) {
   if (!bookkeeping_queue_.IsCurrent()) {
-    struct OnFrameTask : rtc::QueuedTask {
+    struct OnFrameTask : QueuedTask {
       OnFrameTask(std::unique_ptr<video_coding::EncodedFrame> frame,
                   VideoStreamDecoderImpl* video_stream_decoder)
           : frame_(std::move(frame)),

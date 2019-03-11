@@ -634,6 +634,7 @@ if (is_android) {
       "../../rtc_base:sequenced_task_checker",
       "../../rtc_base:weak_ptr",
       "../../system_wrappers:field_trial",
+      "//third_party/abseil-cpp/absl/memory:memory",
       "//third_party/libyuv",
     ]
   }

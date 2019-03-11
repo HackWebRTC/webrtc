@@ -15,7 +15,9 @@
 #include <string>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
+#include "api/task_queue/queued_task.h"
 #include "api/task_queue/task_queue_base.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_tools/network_tester/config_reader.h"
@@ -25,7 +27,7 @@ namespace webrtc {
 
 namespace {
 
-class SendPacketTask : public rtc::QueuedTask {
+class SendPacketTask : public QueuedTask {
  public:
   explicit SendPacketTask(PacketSender* packet_sender)
       : target_time_ms_(rtc::TimeMillis()), packet_sender_(packet_sender) {}
@@ -48,7 +50,7 @@ class SendPacketTask : public rtc::QueuedTask {
   PacketSender* const packet_sender_;
 };
 
-class UpdateTestSettingTask : public rtc::QueuedTask {
+class UpdateTestSettingTask : public QueuedTask {
  public:
   UpdateTestSettingTask(PacketSender* packet_sender,
                         std::unique_ptr<ConfigReader> config_reader)
@@ -93,12 +95,9 @@ void PacketSender::StartSending() {
     RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_queue_checker_);
     sending_ = true;
   });
-  worker_queue_.PostTask(
-      std::unique_ptr<rtc::QueuedTask>(new UpdateTestSettingTask(
-          this,
-          std::unique_ptr<ConfigReader>(new ConfigReader(config_file_path_)))));
-  worker_queue_.PostTask(
-      std::unique_ptr<rtc::QueuedTask>(new SendPacketTask(this)));
+  worker_queue_.PostTask(absl::make_unique<UpdateTestSettingTask>(
+      this, absl::make_unique<ConfigReader>(config_file_path_)));
+  worker_queue_.PostTask(absl::make_unique<SendPacketTask>(this));
 }
 
 void PacketSender::StopSending() {

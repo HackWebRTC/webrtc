@@ -256,6 +256,7 @@ rtc_static_library("rtc_event_log_impl_base") {
     ":ice_log",
     ":rtc_event_log_api",
     "../api:libjingle_logging_api",
+    "../api/task_queue",
     "../api/task_queue:global_task_queue_factory",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
