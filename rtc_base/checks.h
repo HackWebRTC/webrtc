@@ -42,6 +42,7 @@ RTC_NORETURN void rtc_FatalMessage(const char* file, int line, const char* msg);
 
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "rtc_base/numerics/safe_compare.h"
 #include "rtc_base/system/inline.h"
 
@@ -99,6 +100,7 @@ enum class CheckArgType : int8_t {
   kLongDouble,
   kCharP,
   kStdString,
+  kStringView,
   kVoidP,
 
   // kCheckOp doesn't represent an argument type. Instead, it is sent as the
@@ -155,6 +157,10 @@ inline Val<CheckArgType::kCharP, const char*> MakeVal(const char* x) {
 }
 inline Val<CheckArgType::kStdString, const std::string*> MakeVal(
     const std::string& x) {
+  return {&x};
+}
+inline Val<CheckArgType::kStringView, const absl::string_view*> MakeVal(
+    const absl::string_view& x) {
   return {&x};
 }
 

@@ -341,6 +341,7 @@ rtc_source_set("checks") {
   deps = [
     ":safe_compare",
     "system:inline",
+    "//third_party/abseil-cpp/absl/strings",
   ]
   if (is_android) {
     libs += [ "log" ]

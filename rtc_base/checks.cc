@@ -39,7 +39,7 @@ namespace {
 #if defined(__GNUC__)
 __attribute__((__format__(__printf__, 2, 3)))
 #endif
-  void AppendFormat(std::string* s, const char* fmt, ...) {
+void AppendFormat(std::string* s, const char* fmt, ...) {
   va_list args, copy;
   va_start(args, fmt);
   va_copy(copy, args);
@@ -54,7 +54,7 @@ __attribute__((__format__(__printf__, 2, 3)))
   }
   va_end(args);
 }
-}
+}  // namespace
 
 namespace rtc {
 namespace webrtc_checks_impl {
@@ -96,6 +96,11 @@ bool ParseArg(va_list* args, const CheckArgType** fmt, std::string* s) {
     case CheckArgType::kStdString:
       s->append(*va_arg(*args, const std::string*));
       break;
+    case CheckArgType::kStringView: {
+      const absl::string_view sv = *va_arg(*args, const absl::string_view*);
+      s->append(sv.data(), sv.size());
+      break;
+    }
     case CheckArgType::kVoidP:
       AppendFormat(s, "%p", va_arg(*args, const void*));
       break;
