@@ -287,10 +287,8 @@ NetworkControlUpdate GoogCcNetworkController::OnStreamsConfig(
 
     if (use_min_allocatable_as_lower_bound_) {
       ClampConstraints();
-      bandwidth_estimation_->SetBitrates(starting_rate_, min_data_rate_,
-                                         max_data_rate_, msg.at_time);
       delay_based_bwe_->SetMinBitrate(min_data_rate_);
-      MaybeTriggerOnNetworkChanged(&update, msg.at_time);
+      bandwidth_estimation_->SetMinMaxBitrate(min_data_rate_, max_data_rate_);
     }
   }
   if (msg.max_padding_rate && *msg.max_padding_rate != max_padding_rate_) {
