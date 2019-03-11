@@ -11,6 +11,7 @@
 #include "audio/test/audio_bwe_integration_test.h"
 
 #include "absl/memory/memory.h"
+#include "api/task_queue/task_queue_base.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
 #include "common_audio/wav_file.h"
@@ -89,8 +90,8 @@ class StatsPollTask : public rtc::QueuedTask {
     RTC_CHECK(sender_call_);
     Call::Stats call_stats = sender_call_->GetStats();
     EXPECT_GT(call_stats.send_bandwidth_bps, 25000);
-    rtc::TaskQueue::Current()->PostDelayedTask(
-        std::unique_ptr<QueuedTask>(this), 100);
+    TaskQueueBase::Current()->PostDelayedTask(std::unique_ptr<QueuedTask>(this),
+                                              100);
     return false;
   }
   Call* sender_call_;

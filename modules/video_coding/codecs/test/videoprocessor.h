@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/test/videocodec_test_fixture.h"
 #include "api/test/videocodec_test_stats.h"
 #include "api/video/encoded_image.h"
@@ -79,7 +80,7 @@ class VideoProcessor {
     explicit VideoProcessorEncodeCompleteCallback(
         VideoProcessor* video_processor)
         : video_processor_(video_processor),
-          task_queue_(rtc::TaskQueue::Current()) {
+          task_queue_(TaskQueueBase::Current()) {
       RTC_DCHECK(video_processor_);
       RTC_DCHECK(task_queue_);
     }
@@ -126,7 +127,7 @@ class VideoProcessor {
     };
 
     VideoProcessor* const video_processor_;
-    rtc::TaskQueue* const task_queue_;
+    TaskQueueBase* const task_queue_;
   };
 
   class VideoProcessorDecodeCompleteCallback
@@ -137,7 +138,7 @@ class VideoProcessor {
         size_t simulcast_svc_idx)
         : video_processor_(video_processor),
           simulcast_svc_idx_(simulcast_svc_idx),
-          task_queue_(rtc::TaskQueue::Current()) {
+          task_queue_(TaskQueueBase::Current()) {
       RTC_DCHECK(video_processor_);
       RTC_DCHECK(task_queue_);
     }
@@ -158,7 +159,7 @@ class VideoProcessor {
    private:
     VideoProcessor* const video_processor_;
     const size_t simulcast_svc_idx_;
-    rtc::TaskQueue* const task_queue_;
+    TaskQueueBase* const task_queue_;
   };
 
   // Invoked by the callback adapter when a frame has completed encoding.

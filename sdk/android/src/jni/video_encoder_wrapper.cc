@@ -18,6 +18,7 @@
 #include "modules/video_coding/utility/vp8_header_parser.h"
 #include "modules/video_coding/utility/vp9_uncompressed_header_parser.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/time_utils.h"
 #include "sdk/android/generated_video_jni/jni/VideoEncoderWrapper_jni.h"
 #include "sdk/android/generated_video_jni/jni/VideoEncoder_jni.h"
@@ -47,7 +48,7 @@ int32_t VideoEncoderWrapper::InitEncode(const VideoCodec* codec_settings,
   num_resets_ = 0;
   {
     rtc::CritScope lock(&encoder_queue_crit_);
-    encoder_queue_ = rtc::TaskQueue::Current();
+    encoder_queue_ = TaskQueueBase::Current();
   }
 
   return InitEncodeInternal(jni);
@@ -293,10 +294,10 @@ void VideoEncoderWrapper::OnEncodedFrame(JNIEnv* jni,
   {
     rtc::CritScope lock(&encoder_queue_crit_);
     if (encoder_queue_ != nullptr) {
-      encoder_queue_->PostTask(
+      encoder_queue_->PostTask(ToQueuedTask(
           Lambda{this, std::move(buffer_copy), qp, encoded_width,
                  encoded_height, capture_time_ns, frame_type, rotation,
-                 complete_frame, &frame_extra_infos_, callback_});
+                 complete_frame, &frame_extra_infos_, callback_}));
     }
   }
 }

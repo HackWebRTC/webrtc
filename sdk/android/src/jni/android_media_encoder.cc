@@ -14,6 +14,7 @@
 #include <string>
 #include <utility>
 
+#include "api/task_queue/task_queue_base.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder.h"
 #include "common_types.h"  // NOLINT(build/include)
@@ -416,10 +417,10 @@ bool MediaCodecVideoEncoder::EncodeTask::Run() {
 
   // If there aren't more frames to deliver, we can start polling at lower rate.
   if (encoder_->input_frame_infos_.empty()) {
-    rtc::TaskQueue::Current()->PostDelayedTask(
+    TaskQueueBase::Current()->PostDelayedTask(
         std::unique_ptr<rtc::QueuedTask>(this), kMediaCodecPollNoFramesMs);
   } else {
-    rtc::TaskQueue::Current()->PostDelayedTask(
+    TaskQueueBase::Current()->PostDelayedTask(
         std::unique_ptr<rtc::QueuedTask>(this), kMediaCodecPollMs);
   }
 
@@ -741,8 +742,8 @@ int32_t MediaCodecVideoEncoder::Encode(
 
   // Start the polling loop if it is not started.
   if (encode_task_) {
-    rtc::TaskQueue::Current()->PostDelayedTask(std::move(encode_task_),
-                                               kMediaCodecPollMs);
+    TaskQueueBase::Current()->PostDelayedTask(std::move(encode_task_),
+                                              kMediaCodecPollMs);
   }
 
   if (!DeliverPendingOutputs(jni)) {
