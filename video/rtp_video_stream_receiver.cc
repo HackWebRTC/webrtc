@@ -226,31 +226,21 @@ absl::optional<Syncable::Info> RtpVideoStreamReceiver::GetSyncInfo() const {
 int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
     const uint8_t* payload_data,
     size_t payload_size,
-    const WebRtcRTPHeader* rtp_header) {
-  return OnReceivedPayloadData(payload_data, payload_size, rtp_header,
-                               absl::nullopt, false);
-}
-
-int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
-    const uint8_t* payload_data,
-    size_t payload_size,
-    const WebRtcRTPHeader* rtp_header,
+    const RTPHeader& rtp_header,
+    const RTPVideoHeader& video_header,
+    FrameType frame_type,
     const absl::optional<RtpGenericFrameDescriptor>& generic_descriptor,
     bool is_recovered) {
-  WebRtcRTPHeader rtp_header_with_ntp = *rtp_header;
-  rtp_header_with_ntp.ntp_time_ms =
-      ntp_estimator_.Estimate(rtp_header->header.timestamp);
-
-  VCMPacket packet(payload_data, payload_size, rtp_header_with_ntp);
+  VCMPacket packet(payload_data, payload_size, rtp_header, video_header,
+                   frame_type, ntp_estimator_.Estimate(rtp_header.timestamp));
   packet.generic_descriptor = generic_descriptor;
 
   if (nack_module_) {
     const bool is_keyframe =
-        rtp_header->video_header().is_first_packet_in_frame &&
-        rtp_header->frameType == kVideoFrameKey;
+        video_header.is_first_packet_in_frame && frame_type == kVideoFrameKey;
 
     packet.timesNacked = nack_module_->OnReceivedPacket(
-        rtp_header->header.sequenceNumber, is_keyframe, is_recovered);
+        rtp_header.sequenceNumber, is_keyframe, is_recovered);
 
   } else {
     packet.timesNacked = -1;
@@ -528,49 +518,36 @@ void RtpVideoStreamReceiver::ReceivePacket(const RtpPacketReceived& packet) {
     return;
   }
 
-  WebRtcRTPHeader webrtc_rtp_header = {};
-  packet.GetHeader(&webrtc_rtp_header.header);
-
-  webrtc_rtp_header.frameType = parsed_payload.frame_type;
-  webrtc_rtp_header.video_header() = parsed_payload.video_header();
-  webrtc_rtp_header.video_header().rotation = kVideoRotation_0;
-  webrtc_rtp_header.video_header().content_type = VideoContentType::UNSPECIFIED;
-  webrtc_rtp_header.video_header().video_timing.flags =
-      VideoSendTiming::kInvalid;
-  webrtc_rtp_header.video_header().is_last_packet_in_frame =
-      webrtc_rtp_header.header.markerBit;
-  webrtc_rtp_header.video_header().frame_marking.temporal_id = kNoTemporalIdx;
+  RTPHeader rtp_header;
+  packet.GetHeader(&rtp_header);
+  RTPVideoHeader video_header = parsed_payload.video_header();
+  video_header.rotation = kVideoRotation_0;
+  video_header.content_type = VideoContentType::UNSPECIFIED;
+  video_header.video_timing.flags = VideoSendTiming::kInvalid;
+  video_header.is_last_packet_in_frame = rtp_header.markerBit;
+  video_header.frame_marking.temporal_id = kNoTemporalIdx;
 
   if (parsed_payload.video_header().codec == kVideoCodecVP9) {
     const RTPVideoHeaderVP9& codec_header = absl::get<RTPVideoHeaderVP9>(
         parsed_payload.video_header().video_type_header);
-    webrtc_rtp_header.video_header().is_last_packet_in_frame |=
-        codec_header.end_of_frame;
-    webrtc_rtp_header.video_header().is_first_packet_in_frame |=
-        codec_header.beginning_of_frame;
+    video_header.is_last_packet_in_frame |= codec_header.end_of_frame;
+    video_header.is_first_packet_in_frame |= codec_header.beginning_of_frame;
   }
 
-  packet.GetExtension<VideoOrientation>(
-      &webrtc_rtp_header.video_header().rotation);
-  packet.GetExtension<VideoContentTypeExtension>(
-      &webrtc_rtp_header.video_header().content_type);
-  packet.GetExtension<VideoTimingExtension>(
-      &webrtc_rtp_header.video_header().video_timing);
-  packet.GetExtension<PlayoutDelayLimits>(
-      &webrtc_rtp_header.video_header().playout_delay);
-  packet.GetExtension<FrameMarkingExtension>(
-      &webrtc_rtp_header.video_header().frame_marking);
+  packet.GetExtension<VideoOrientation>(&video_header.rotation);
+  packet.GetExtension<VideoContentTypeExtension>(&video_header.content_type);
+  packet.GetExtension<VideoTimingExtension>(&video_header.video_timing);
+  packet.GetExtension<PlayoutDelayLimits>(&video_header.playout_delay);
+  packet.GetExtension<FrameMarkingExtension>(&video_header.frame_marking);
 
-  webrtc_rtp_header.video_header().color_space =
-      packet.GetExtension<ColorSpaceExtension>();
-  if (webrtc_rtp_header.video_header().color_space ||
-      webrtc_rtp_header.frameType == kVideoFrameKey) {
+  video_header.color_space = packet.GetExtension<ColorSpaceExtension>();
+  if (video_header.color_space || parsed_payload.frame_type == kVideoFrameKey) {
     // Store color space since it's only transmitted when changed or for key
     // frames. Color space will be cleared if a key frame is transmitted without
     // color space information.
-    last_color_space_ = webrtc_rtp_header.video_header().color_space;
+    last_color_space_ = video_header.color_space;
   } else if (last_color_space_) {
-    webrtc_rtp_header.video_header().color_space = last_color_space_;
+    video_header.color_space = last_color_space_;
   }
 
   absl::optional<RtpGenericFrameDescriptor> generic_descriptor_wire;
@@ -595,28 +572,27 @@ void RtpVideoStreamReceiver::ReceivePacket(const RtpPacketReceived& packet) {
           packet.GetRawExtension<RtpGenericFrameDescriptorExtension01>());
     }
 
-    webrtc_rtp_header.video_header().is_first_packet_in_frame =
+    video_header.is_first_packet_in_frame =
         generic_descriptor_wire->FirstPacketInSubFrame();
-    webrtc_rtp_header.video_header().is_last_packet_in_frame =
-        webrtc_rtp_header.header.markerBit ||
-        generic_descriptor_wire->LastPacketInSubFrame();
+    video_header.is_last_packet_in_frame =
+        rtp_header.markerBit || generic_descriptor_wire->LastPacketInSubFrame();
 
     if (generic_descriptor_wire->FirstPacketInSubFrame()) {
-      webrtc_rtp_header.frameType =
+      parsed_payload.frame_type =
           generic_descriptor_wire->FrameDependenciesDiffs().empty()
               ? kVideoFrameKey
               : kVideoFrameDelta;
     }
 
-    webrtc_rtp_header.video_header().width = generic_descriptor_wire->Width();
-    webrtc_rtp_header.video_header().height = generic_descriptor_wire->Height();
+    video_header.width = generic_descriptor_wire->Width();
+    video_header.height = generic_descriptor_wire->Height();
   } else {
     generic_descriptor_wire.reset();
   }
 
   OnReceivedPayloadData(parsed_payload.payload, parsed_payload.payload_length,
-                        &webrtc_rtp_header, generic_descriptor_wire,
-                        packet.recovered());
+                        rtp_header, video_header, parsed_payload.frame_type,
+                        generic_descriptor_wire, packet.recovered());
 }
 
 void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(

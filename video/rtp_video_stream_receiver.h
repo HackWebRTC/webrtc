@@ -105,14 +105,13 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   void OnRtpPacket(const RtpPacketReceived& packet) override;
 
   // TODO(philipel): Stop using VCMPacket in the new jitter buffer and then
-  //                 remove this function.
-  int32_t OnReceivedPayloadData(const uint8_t* payload_data,
-                                size_t payload_size,
-                                const WebRtcRTPHeader* rtp_header);
+  //                 remove this function. Public only for tests.
   int32_t OnReceivedPayloadData(
       const uint8_t* payload_data,
       size_t payload_size,
-      const WebRtcRTPHeader* rtp_header,
+      const RTPHeader& rtp_header,
+      const RTPVideoHeader& video_header,
+      FrameType frame_type,
       const absl::optional<RtpGenericFrameDescriptor>& generic_descriptor,
       bool is_recovered);
 
