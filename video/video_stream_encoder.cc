@@ -741,6 +741,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   if (pending_encoder_creation_) {
     overuse_detector_->StopCheckForOveruse();
     overuse_detector_->StartCheckForOveruse(
+        &encoder_queue_,
         GetCpuOveruseOptions(
             settings_, encoder_->GetEncoderInfo().is_hardware_accelerated),
         this);
@@ -829,8 +830,9 @@ void VideoStreamEncoder::ConfigureQualityScaler(
       // upcast.
       AdaptationObserverInterface* observer = this;
       quality_scaler_ = absl::make_unique<QualityScaler>(
-          observer, experimental_thresholds ? *experimental_thresholds
-                                            : *(scaling_settings.thresholds));
+          &encoder_queue_, observer,
+          experimental_thresholds ? *experimental_thresholds
+                                  : *(scaling_settings.thresholds));
       has_seen_first_significant_bwe_change_ = false;
       initial_framedrop_ = 0;
     }

@@ -390,8 +390,8 @@ void VideoSendStreamImpl::StartupVideoSendStream() {
 
     activity_ = false;
     timed_out_ = false;
-    check_encoder_activity_task_ =
-        RepeatingTaskHandle::DelayedStart(kEncoderTimeOut, [this] {
+    check_encoder_activity_task_ = RepeatingTaskHandle::DelayedStart(
+        worker_queue_->Get(), kEncoderTimeOut, [this] {
           RTC_DCHECK_RUN_ON(worker_queue_);
           if (!activity_) {
             if (!timed_out_) {

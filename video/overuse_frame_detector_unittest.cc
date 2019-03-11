@@ -428,8 +428,8 @@ TEST_F(OveruseFrameDetectorTest, RunOnTqNormalUsage) {
   rtc::TaskQueue queue("OveruseFrameDetectorTestQueue");
 
   rtc::Event event;
-  queue.PostTask([this, &event] {
-    overuse_detector_->StartCheckForOveruse(options_, observer_);
+  queue.PostTask([this, &event, &queue] {
+    overuse_detector_->StartCheckForOveruse(&queue, options_, observer_);
     event.Set();
   });
   event.Wait(rtc::Event::kForever);
@@ -908,8 +908,8 @@ TEST_F(OveruseFrameDetectorTest2, RunOnTqNormalUsage) {
   rtc::TaskQueue queue("OveruseFrameDetectorTestQueue");
 
   rtc::Event event;
-  queue.PostTask([this, &event] {
-    overuse_detector_->StartCheckForOveruse(options_, observer_);
+  queue.PostTask([this, &event, &queue] {
+    overuse_detector_->StartCheckForOveruse(&queue, options_, observer_);
     event.Set();
   });
   event.Wait(rtc::Event::kForever);

@@ -57,7 +57,8 @@ class OveruseFrameDetector {
   virtual ~OveruseFrameDetector();
 
   // Start to periodically check for overuse.
-  void StartCheckForOveruse(const CpuOveruseOptions& options,
+  void StartCheckForOveruse(rtc::TaskQueue* task_queue,
+                            const CpuOveruseOptions& options,
                             AdaptationObserverInterface* overuse_observer);
 
   // StopCheckForOveruse must be called before destruction if
