@@ -91,7 +91,6 @@ if (rtc_include_tests) {
       "../../../system_wrappers",
       "../../../test:field_trial",
       "../../../test:test_support",
-      "../../bitrate_controller:mocks",
       "../../pacing:mock_paced_sender",
       "../../pacing:pacing",
       "../../remote_bitrate_estimator:remote_bitrate_estimator",

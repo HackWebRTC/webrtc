@@ -22,7 +22,6 @@
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "modules/audio_device/include/mock_audio_device.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
-#include "modules/bitrate_controller/include/mock/mock_bitrate_controller.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "rtc_base/time_utils.h"

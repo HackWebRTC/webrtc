@@ -149,7 +149,6 @@ if (rtc_include_tests) {
       "../modules/audio_mixer:audio_mixer_impl",
       "../modules/audio_processing:audio_processing_statistics",
       "../modules/audio_processing:mocks",
-      "../modules/bitrate_controller:mocks",
       "../modules/pacing:pacing",
       "../modules/rtp_rtcp:mock_rtp_rtcp",
       "../modules/rtp_rtcp:rtp_rtcp_format",
