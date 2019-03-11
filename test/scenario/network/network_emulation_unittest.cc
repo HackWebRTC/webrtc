@@ -63,7 +63,7 @@ TEST(NetworkEmulationManagerTest, GeneratedIpv4AddressDoesNotCollide) {
   EndpointConfig config;
   config.generated_ip_family = EndpointConfig::IpAddressFamily::kIpv4;
   for (int i = 0; i < 1000; i++) {
-    EndpointNode* endpoint = network_manager.CreateEndpoint(config);
+    EmulatedEndpoint* endpoint = network_manager.CreateEndpoint(config);
     ASSERT_EQ(endpoint->GetPeerLocalAddress().family(), AF_INET);
     bool result = ips.insert(endpoint->GetPeerLocalAddress()).second;
     ASSERT_TRUE(result);
@@ -76,7 +76,7 @@ TEST(NetworkEmulationManagerTest, GeneratedIpv6AddressDoesNotCollide) {
   EndpointConfig config;
   config.generated_ip_family = EndpointConfig::IpAddressFamily::kIpv6;
   for (int i = 0; i < 1000; i++) {
-    EndpointNode* endpoint = network_manager.CreateEndpoint(config);
+    EmulatedEndpoint* endpoint = network_manager.CreateEndpoint(config);
     ASSERT_EQ(endpoint->GetPeerLocalAddress().family(), AF_INET6);
     bool result = ips.insert(endpoint->GetPeerLocalAddress()).second;
     ASSERT_TRUE(result);
@@ -90,9 +90,10 @@ TEST(NetworkEmulationManagerTest, Run) {
       absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
   EmulatedNetworkNode* bob_node = network_manager.CreateEmulatedNode(
       absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
-  EndpointNode* alice_endpoint =
+  EmulatedEndpoint* alice_endpoint =
       network_manager.CreateEndpoint(EndpointConfig());
-  EndpointNode* bob_endpoint = network_manager.CreateEndpoint(EndpointConfig());
+  EmulatedEndpoint* bob_endpoint =
+      network_manager.CreateEndpoint(EndpointConfig());
   network_manager.CreateRoute(alice_endpoint, {alice_node}, bob_endpoint);
   network_manager.CreateRoute(bob_endpoint, {bob_node}, alice_endpoint);
 

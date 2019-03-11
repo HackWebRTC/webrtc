@@ -112,10 +112,10 @@ class EmulatedNetworkNode : public EmulatedNetworkReceiverInterface {
 // It will be used as sender from socket side to send data to the network and
 // will act as packet receiver from emulated network side to receive packets
 // from other EmulatedNetworkNodes.
-class EndpointNode : public EmulatedNetworkReceiverInterface {
+class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
  public:
-  EndpointNode(uint64_t id, rtc::IPAddress, Clock* clock);
-  ~EndpointNode() override;
+  EmulatedEndpoint(uint64_t id, rtc::IPAddress, Clock* clock);
+  ~EmulatedEndpoint() override;
 
   uint64_t GetId() const;
 

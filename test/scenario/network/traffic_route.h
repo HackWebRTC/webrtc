@@ -27,7 +27,7 @@ class TrafficRoute {
  public:
   TrafficRoute(Clock* clock,
                EmulatedNetworkReceiverInterface* receiver,
-               EndpointNode* endpoint);
+               EmulatedEndpoint* endpoint);
   ~TrafficRoute();
 
   // Triggers sending of dummy packets with size |packet_size| bytes.
@@ -42,7 +42,7 @@ class TrafficRoute {
 
   Clock* const clock_;
   EmulatedNetworkReceiverInterface* const receiver_;
-  EndpointNode* const endpoint_;
+  EmulatedEndpoint* const endpoint_;
 
   uint16_t null_receiver_port_;
   std::unique_ptr<EmulatedNetworkReceiverInterface> null_receiver_;

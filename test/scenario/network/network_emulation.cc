@@ -129,26 +129,26 @@ void EmulatedNetworkNode::RemoveReceiver(uint64_t dest_endpoint_id) {
   routing_.erase(dest_endpoint_id);
 }
 
-EndpointNode::EndpointNode(uint64_t id, rtc::IPAddress ip, Clock* clock)
+EmulatedEndpoint::EmulatedEndpoint(uint64_t id, rtc::IPAddress ip, Clock* clock)
     : id_(id),
       peer_local_addr_(ip),
       send_node_(nullptr),
       clock_(clock),
       next_port_(kFirstEphemeralPort),
       connected_endpoint_id_(absl::nullopt) {}
-EndpointNode::~EndpointNode() = default;
+EmulatedEndpoint::~EmulatedEndpoint() = default;
 
-uint64_t EndpointNode::GetId() const {
+uint64_t EmulatedEndpoint::GetId() const {
   return id_;
 }
 
-void EndpointNode::SetSendNode(EmulatedNetworkNode* send_node) {
+void EmulatedEndpoint::SetSendNode(EmulatedNetworkNode* send_node) {
   send_node_ = send_node;
 }
 
-void EndpointNode::SendPacket(const rtc::SocketAddress& from,
-                              const rtc::SocketAddress& to,
-                              rtc::CopyOnWriteBuffer packet) {
+void EmulatedEndpoint::SendPacket(const rtc::SocketAddress& from,
+                                  const rtc::SocketAddress& to,
+                                  rtc::CopyOnWriteBuffer packet) {
   RTC_CHECK(from.ipaddr() == peer_local_addr_);
   RTC_CHECK(connected_endpoint_id_);
   RTC_CHECK(send_node_);
@@ -157,7 +157,7 @@ void EndpointNode::SendPacket(const rtc::SocketAddress& from,
       Timestamp::us(clock_->TimeInMicroseconds())));
 }
 
-absl::optional<uint16_t> EndpointNode::BindReceiver(
+absl::optional<uint16_t> EmulatedEndpoint::BindReceiver(
     uint16_t desired_port,
     EmulatedNetworkReceiverInterface* receiver) {
   rtc::CritScope crit(&receiver_lock_);
@@ -188,7 +188,7 @@ absl::optional<uint16_t> EndpointNode::BindReceiver(
   return port;
 }
 
-uint16_t EndpointNode::NextPort() {
+uint16_t EmulatedEndpoint::NextPort() {
   uint16_t out = next_port_;
   if (next_port_ == std::numeric_limits<uint16_t>::max()) {
     next_port_ = kFirstEphemeralPort;
@@ -198,16 +198,16 @@ uint16_t EndpointNode::NextPort() {
   return out;
 }
 
-void EndpointNode::UnbindReceiver(uint16_t port) {
+void EmulatedEndpoint::UnbindReceiver(uint16_t port) {
   rtc::CritScope crit(&receiver_lock_);
   port_to_receiver_.erase(port);
 }
 
-rtc::IPAddress EndpointNode::GetPeerLocalAddress() const {
+rtc::IPAddress EmulatedEndpoint::GetPeerLocalAddress() const {
   return peer_local_addr_;
 }
 
-void EndpointNode::OnPacketReceived(EmulatedIpPacket packet) {
+void EmulatedEndpoint::OnPacketReceived(EmulatedIpPacket packet) {
   RTC_CHECK(packet.dest_endpoint_id == id_)
       << "Routing error: wrong destination endpoint. Destination id: "
       << packet.dest_endpoint_id << "; Receiver id: " << id_;
@@ -227,11 +227,11 @@ void EndpointNode::OnPacketReceived(EmulatedIpPacket packet) {
   it->second->OnPacketReceived(std::move(packet));
 }
 
-EmulatedNetworkNode* EndpointNode::GetSendNode() const {
+EmulatedNetworkNode* EmulatedEndpoint::GetSendNode() const {
   return send_node_;
 }
 
-void EndpointNode::SetConnectedEndpointId(uint64_t endpoint_id) {
+void EmulatedEndpoint::SetConnectedEndpointId(uint64_t endpoint_id) {
   connected_endpoint_id_ = endpoint_id;
 }
 

@@ -29,7 +29,7 @@ namespace test {
 namespace {
 
 std::unique_ptr<rtc::NetworkManager> CreateFakeNetworkManager(
-    std::vector<EndpointNode*> endpoints) {
+    std::vector<EmulatedEndpoint*> endpoints) {
   auto network_manager = absl::make_unique<rtc::FakeNetworkManager>();
   for (auto* endpoint : endpoints) {
     network_manager->AddInterface(
@@ -80,9 +80,9 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
           absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
   EmulatedNetworkNode* bob_node = network_emulation_manager.CreateEmulatedNode(
       absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
-  EndpointNode* alice_endpoint =
+  EmulatedEndpoint* alice_endpoint =
       network_emulation_manager.CreateEndpoint(EndpointConfig());
-  EndpointNode* bob_endpoint =
+  EmulatedEndpoint* bob_endpoint =
       network_emulation_manager.CreateEndpoint(EndpointConfig());
   network_emulation_manager.CreateRoute(alice_endpoint, {alice_node},
                                         bob_endpoint);

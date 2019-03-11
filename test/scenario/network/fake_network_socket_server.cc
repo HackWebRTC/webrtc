@@ -17,7 +17,7 @@ namespace test {
 
 FakeNetworkSocketServer::FakeNetworkSocketServer(
     Clock* clock,
-    std::vector<EndpointNode*> endpoints)
+    std::vector<EmulatedEndpoint*> endpoints)
     : clock_(clock),
       endpoints_(std::move(endpoints)),
       wakeup_(/*manual_reset=*/false, /*initially_signaled=*/false) {}
@@ -27,7 +27,7 @@ void FakeNetworkSocketServer::OnMessageQueueDestroyed() {
   msg_queue_ = nullptr;
 }
 
-EndpointNode* FakeNetworkSocketServer::GetEndpointNode(
+EmulatedEndpoint* FakeNetworkSocketServer::GetEndpointNode(
     const rtc::IPAddress& ip) {
   for (auto* endpoint : endpoints_) {
     rtc::IPAddress peerLocalAddress = endpoint->GetPeerLocalAddress();

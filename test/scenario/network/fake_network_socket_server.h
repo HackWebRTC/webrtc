@@ -34,10 +34,11 @@ class FakeNetworkSocketServer : public rtc::SocketServer,
                                 public sigslot::has_slots<>,
                                 public SocketManager {
  public:
-  FakeNetworkSocketServer(Clock* clock, std::vector<EndpointNode*> endpoints);
+  FakeNetworkSocketServer(Clock* clock,
+                          std::vector<EmulatedEndpoint*> endpoints);
   ~FakeNetworkSocketServer() override;
 
-  EndpointNode* GetEndpointNode(const rtc::IPAddress& ip) override;
+  EmulatedEndpoint* GetEndpointNode(const rtc::IPAddress& ip) override;
   void Unregister(SocketIoProcessor* io_processor) override;
   void OnMessageQueueDestroyed();
 
@@ -56,7 +57,7 @@ class FakeNetworkSocketServer : public rtc::SocketServer,
   Timestamp Now() const;
 
   Clock* const clock_;
-  const std::vector<EndpointNode*> endpoints_;
+  const std::vector<EmulatedEndpoint*> endpoints_;
   rtc::Event wakeup_;
   rtc::MessageQueue* msg_queue_;
 

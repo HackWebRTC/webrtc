@@ -67,7 +67,8 @@ EmulatedNetworkNode* NetworkEmulationManager::CreateEmulatedNode(
   return out;
 }
 
-EndpointNode* NetworkEmulationManager::CreateEndpoint(EndpointConfig config) {
+EmulatedEndpoint* NetworkEmulationManager::CreateEndpoint(
+    EndpointConfig config) {
   absl::optional<rtc::IPAddress> ip = config.ip;
   if (!ip) {
     switch (config.generated_ip_family) {
@@ -85,16 +86,16 @@ EndpointNode* NetworkEmulationManager::CreateEndpoint(EndpointConfig config) {
 
   bool res = used_ip_addresses_.insert(*ip).second;
   RTC_CHECK(res) << "IP=" << ip->ToString() << " already in use";
-  auto node = absl::make_unique<EndpointNode>(next_node_id_++, *ip, clock_);
-  EndpointNode* out = node.get();
+  auto node = absl::make_unique<EmulatedEndpoint>(next_node_id_++, *ip, clock_);
+  EmulatedEndpoint* out = node.get();
   endpoints_.push_back(std::move(node));
   return out;
 }
 
 void NetworkEmulationManager::CreateRoute(
-    EndpointNode* from,
+    EmulatedEndpoint* from,
     std::vector<EmulatedNetworkNode*> via_nodes,
-    EndpointNode* to) {
+    EmulatedEndpoint* to) {
   // Because endpoint has no send node by default at least one should be
   // provided here.
   RTC_CHECK(!via_nodes.empty());
@@ -110,9 +111,9 @@ void NetworkEmulationManager::CreateRoute(
 }
 
 void NetworkEmulationManager::ClearRoute(
-    EndpointNode* from,
+    EmulatedEndpoint* from,
     std::vector<EmulatedNetworkNode*> via_nodes,
-    EndpointNode* to) {
+    EmulatedEndpoint* to) {
   // Remove receiver from intermediate nodes.
   for (auto* node : via_nodes) {
     node->RemoveReceiver(to->GetId());
@@ -127,7 +128,7 @@ void NetworkEmulationManager::ClearRoute(
 TrafficRoute* NetworkEmulationManager::CreateTrafficRoute(
     std::vector<EmulatedNetworkNode*> via_nodes) {
   RTC_CHECK(!via_nodes.empty());
-  EndpointNode* endpoint = CreateEndpoint(EndpointConfig());
+  EmulatedEndpoint* endpoint = CreateEndpoint(EndpointConfig());
 
   // Setup a route via specified nodes.
   EmulatedNetworkNode* cur_node = via_nodes[0];
@@ -179,7 +180,7 @@ PulsedPeaksCrossTraffic* NetworkEmulationManager::CreatePulsedPeaksCrossTraffic(
 }
 
 rtc::Thread* NetworkEmulationManager::CreateNetworkThread(
-    std::vector<EndpointNode*> endpoints) {
+    std::vector<EmulatedEndpoint*> endpoints) {
   FakeNetworkSocketServer* socket_server = CreateSocketServer(endpoints);
   std::unique_ptr<rtc::Thread> network_thread =
       absl::make_unique<rtc::Thread>(socket_server);
@@ -192,7 +193,7 @@ rtc::Thread* NetworkEmulationManager::CreateNetworkThread(
 }
 
 FakeNetworkSocketServer* NetworkEmulationManager::CreateSocketServer(
-    std::vector<EndpointNode*> endpoints) {
+    std::vector<EmulatedEndpoint*> endpoints) {
   auto socket_server =
       absl::make_unique<FakeNetworkSocketServer>(clock_, endpoints);
   FakeNetworkSocketServer* out = socket_server.get();

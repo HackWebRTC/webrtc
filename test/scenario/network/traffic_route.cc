@@ -28,7 +28,7 @@ class NullReceiver : public EmulatedNetworkReceiverInterface {
 
 class ActionReceiver : public EmulatedNetworkReceiverInterface {
  public:
-  ActionReceiver(std::function<void()> action, EndpointNode* endpoint)
+  ActionReceiver(std::function<void()> action, EmulatedEndpoint* endpoint)
       : action_(action), endpoint_(endpoint) {}
   ~ActionReceiver() override = default;
 
@@ -46,7 +46,7 @@ class ActionReceiver : public EmulatedNetworkReceiverInterface {
   std::function<void()> action_;
   // Endpoint and port will be used to free port in the endpoint after action
   // will be done.
-  EndpointNode* endpoint_;
+  EmulatedEndpoint* endpoint_;
   absl::optional<uint16_t> port_ = absl::nullopt;
 };
 
@@ -54,7 +54,7 @@ class ActionReceiver : public EmulatedNetworkReceiverInterface {
 
 TrafficRoute::TrafficRoute(Clock* clock,
                            EmulatedNetworkReceiverInterface* receiver,
-                           EndpointNode* endpoint)
+                           EmulatedEndpoint* endpoint)
     : clock_(clock), receiver_(receiver), endpoint_(endpoint) {
   null_receiver_ = absl::make_unique<NullReceiver>();
   absl::optional<uint16_t> port =
