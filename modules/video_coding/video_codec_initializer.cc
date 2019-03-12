@@ -86,7 +86,6 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
                                          kDefaultOutlierFrameSizePercent};
   RTC_DCHECK_LE(streams.size(), kMaxSimulcastStreams);
 
-  int max_framerate = 0;
   for (size_t i = 0; i < streams.size(); ++i) {
     SimulcastStream* sim_stream = &video_codec.simulcastStream[i];
     RTC_DCHECK_GT(streams[i].width, 0);
@@ -106,7 +105,6 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
     sim_stream->width = static_cast<uint16_t>(streams[i].width);
     sim_stream->height = static_cast<uint16_t>(streams[i].height);
     sim_stream->maxFramerate = streams[i].max_framerate;
-    max_framerate = std::max(max_framerate, streams[i].max_framerate);
     sim_stream->minBitrate = streams[i].min_bitrate_bps / 1000;
     sim_stream->targetBitrate = streams[i].target_bitrate_bps / 1000;
     sim_stream->maxBitrate = streams[i].max_bitrate_bps / 1000;
@@ -136,8 +134,8 @@ VideoCodec VideoCodecInitializer::VideoEncoderConfigToVideoCodec(
   if (video_codec.maxBitrate < kEncoderMinBitrateKbps)
     video_codec.maxBitrate = kEncoderMinBitrateKbps;
 
-  RTC_DCHECK_GT(max_framerate, 0);
-  video_codec.maxFramerate = max_framerate;
+  RTC_DCHECK_GT(streams[0].max_framerate, 0);
+  video_codec.maxFramerate = streams[0].max_framerate;
 
   // Set codec specific options
   if (config.encoder_specific_settings)
