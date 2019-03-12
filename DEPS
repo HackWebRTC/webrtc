@@ -237,11 +237,6 @@ deps = {
   },
   'src/third_party/usrsctp/usrsctplib':
     Var('chromium_git') + '/external/github.com/sctplab/usrsctp' + '@' + '7a8bc9a90ca96634aa56ee712856d97f27d903f8',
-  # WebRTC-only dependency (not present in Chromium).
-  'src/third_party/winsdk_samples': {
-    'url': Var('webrtc_git') + '/deps/third_party/winsdk_samples_v71' + '@' + 'a9ac2ba82fd54721ec3c229593bcb524beea81a7',
-    'condition': 'checkout_win',
-  },
   # Dependency used by libjpeg-turbo.
   'src/third_party/yasm/binaries': {
     'url': Var('chromium_git') + '/chromium/deps/yasm/binaries.git' + '@' + '52f9b3f4b0aa06da24ef8b123058bb61ee468881',
