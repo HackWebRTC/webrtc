@@ -81,9 +81,9 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
   EmulatedNetworkNode* bob_node = network_emulation_manager.CreateEmulatedNode(
       absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
   EmulatedEndpoint* alice_endpoint =
-      network_emulation_manager.CreateEndpoint(EndpointConfig());
+      network_emulation_manager.CreateEndpoint(EmulatedEndpointConfig());
   EmulatedEndpoint* bob_endpoint =
-      network_emulation_manager.CreateEndpoint(EndpointConfig());
+      network_emulation_manager.CreateEndpoint(EmulatedEndpointConfig());
   network_emulation_manager.CreateRoute(alice_endpoint, {alice_node},
                                         bob_endpoint);
   network_emulation_manager.CreateRoute(bob_endpoint, {bob_node},

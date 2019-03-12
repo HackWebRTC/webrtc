@@ -31,18 +31,18 @@
 namespace webrtc {
 namespace test {
 
-struct EndpointConfig {
-  enum IpAddressFamily { kIpv4, kIpv6 };
+struct EmulatedEndpointConfig {
+  enum class IpAddressFamily { kIpv4, kIpv6 };
 
-  EndpointConfig();
-  ~EndpointConfig();
-  EndpointConfig(EndpointConfig&);
-  EndpointConfig& operator=(EndpointConfig&);
-  EndpointConfig(EndpointConfig&&);
-  EndpointConfig& operator=(EndpointConfig&&);
+  EmulatedEndpointConfig();
+  ~EmulatedEndpointConfig();
+  EmulatedEndpointConfig(EmulatedEndpointConfig&);
+  EmulatedEndpointConfig& operator=(EmulatedEndpointConfig&);
+  EmulatedEndpointConfig(EmulatedEndpointConfig&&);
+  EmulatedEndpointConfig& operator=(EmulatedEndpointConfig&&);
 
   IpAddressFamily generated_ip_family = IpAddressFamily::kIpv4;
-  // If specified will be used as IP address for endpoint node. Should be unique
+  // If specified will be used as IP address for endpoint node. Must be unique
   // among all created nodes.
   absl::optional<rtc::IPAddress> ip;
 };
@@ -55,7 +55,7 @@ class NetworkEmulationManager {
   EmulatedNetworkNode* CreateEmulatedNode(
       std::unique_ptr<NetworkBehaviorInterface> network_behavior);
 
-  EmulatedEndpoint* CreateEndpoint(EndpointConfig config);
+  EmulatedEndpoint* CreateEndpoint(EmulatedEndpointConfig config);
 
   void CreateRoute(EmulatedEndpoint* from,
                    std::vector<EmulatedNetworkNode*> via_nodes,

@@ -60,8 +60,8 @@ class SocketReader : public sigslot::has_slots<> {
 TEST(NetworkEmulationManagerTest, GeneratedIpv4AddressDoesNotCollide) {
   NetworkEmulationManager network_manager;
   std::set<rtc::IPAddress> ips;
-  EndpointConfig config;
-  config.generated_ip_family = EndpointConfig::IpAddressFamily::kIpv4;
+  EmulatedEndpointConfig config;
+  config.generated_ip_family = EmulatedEndpointConfig::IpAddressFamily::kIpv4;
   for (int i = 0; i < 1000; i++) {
     EmulatedEndpoint* endpoint = network_manager.CreateEndpoint(config);
     ASSERT_EQ(endpoint->GetPeerLocalAddress().family(), AF_INET);
@@ -73,8 +73,8 @@ TEST(NetworkEmulationManagerTest, GeneratedIpv4AddressDoesNotCollide) {
 TEST(NetworkEmulationManagerTest, GeneratedIpv6AddressDoesNotCollide) {
   NetworkEmulationManager network_manager;
   std::set<rtc::IPAddress> ips;
-  EndpointConfig config;
-  config.generated_ip_family = EndpointConfig::IpAddressFamily::kIpv6;
+  EmulatedEndpointConfig config;
+  config.generated_ip_family = EmulatedEndpointConfig::IpAddressFamily::kIpv6;
   for (int i = 0; i < 1000; i++) {
     EmulatedEndpoint* endpoint = network_manager.CreateEndpoint(config);
     ASSERT_EQ(endpoint->GetPeerLocalAddress().family(), AF_INET6);
@@ -91,9 +91,9 @@ TEST(NetworkEmulationManagerTest, Run) {
   EmulatedNetworkNode* bob_node = network_manager.CreateEmulatedNode(
       absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
   EmulatedEndpoint* alice_endpoint =
-      network_manager.CreateEndpoint(EndpointConfig());
+      network_manager.CreateEndpoint(EmulatedEndpointConfig());
   EmulatedEndpoint* bob_endpoint =
-      network_manager.CreateEndpoint(EndpointConfig());
+      network_manager.CreateEndpoint(EmulatedEndpointConfig());
   network_manager.CreateRoute(alice_endpoint, {alice_node}, bob_endpoint);
   network_manager.CreateRoute(bob_endpoint, {bob_node}, alice_endpoint);
 

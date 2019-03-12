@@ -109,9 +109,9 @@ TEST(NetworkEmulationManagerPCTest, Run) {
   EmulatedNetworkNode* bob_node = network_manager.CreateEmulatedNode(
       absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
   EmulatedEndpoint* alice_endpoint =
-      network_manager.CreateEndpoint(EndpointConfig());
+      network_manager.CreateEndpoint(EmulatedEndpointConfig());
   EmulatedEndpoint* bob_endpoint =
-      network_manager.CreateEndpoint(EndpointConfig());
+      network_manager.CreateEndpoint(EmulatedEndpointConfig());
   network_manager.CreateRoute(alice_endpoint, {alice_node}, bob_endpoint);
   network_manager.CreateRoute(bob_endpoint, {bob_node}, alice_endpoint);
 

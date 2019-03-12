@@ -29,12 +29,16 @@ constexpr uint32_t kMaxIPv4Address = 0xC0A8FFFF;
 
 }  // namespace
 
-EndpointConfig::EndpointConfig() = default;
-EndpointConfig::~EndpointConfig() = default;
-EndpointConfig::EndpointConfig(EndpointConfig&) = default;
-EndpointConfig& EndpointConfig::operator=(EndpointConfig&) = default;
-EndpointConfig::EndpointConfig(EndpointConfig&&) = default;
-EndpointConfig& EndpointConfig::operator=(EndpointConfig&&) = default;
+EmulatedEndpointConfig::EmulatedEndpointConfig() = default;
+EmulatedEndpointConfig::~EmulatedEndpointConfig() = default;
+EmulatedEndpointConfig::EmulatedEndpointConfig(EmulatedEndpointConfig&) =
+    default;
+EmulatedEndpointConfig& EmulatedEndpointConfig::operator=(
+    EmulatedEndpointConfig&) = default;
+EmulatedEndpointConfig::EmulatedEndpointConfig(EmulatedEndpointConfig&&) =
+    default;
+EmulatedEndpointConfig& EmulatedEndpointConfig::operator=(
+    EmulatedEndpointConfig&&) = default;
 
 NetworkEmulationManager::NetworkEmulationManager()
     : clock_(Clock::GetRealTimeClock()),
@@ -68,15 +72,15 @@ EmulatedNetworkNode* NetworkEmulationManager::CreateEmulatedNode(
 }
 
 EmulatedEndpoint* NetworkEmulationManager::CreateEndpoint(
-    EndpointConfig config) {
+    EmulatedEndpointConfig config) {
   absl::optional<rtc::IPAddress> ip = config.ip;
   if (!ip) {
     switch (config.generated_ip_family) {
-      case EndpointConfig::IpAddressFamily::kIpv4:
+      case EmulatedEndpointConfig::IpAddressFamily::kIpv4:
         ip = GetNextIPv4Address();
         RTC_CHECK(ip) << "All auto generated IPv4 addresses exhausted";
         break;
-      case EndpointConfig::IpAddressFamily::kIpv6:
+      case EmulatedEndpointConfig::IpAddressFamily::kIpv6:
         ip = GetNextIPv4Address();
         RTC_CHECK(ip) << "All auto generated IPv6 addresses exhausted";
         ip = ip->AsIPv6Address();
@@ -128,7 +132,7 @@ void NetworkEmulationManager::ClearRoute(
 TrafficRoute* NetworkEmulationManager::CreateTrafficRoute(
     std::vector<EmulatedNetworkNode*> via_nodes) {
   RTC_CHECK(!via_nodes.empty());
-  EmulatedEndpoint* endpoint = CreateEndpoint(EndpointConfig());
+  EmulatedEndpoint* endpoint = CreateEndpoint(EmulatedEndpointConfig());
 
   // Setup a route via specified nodes.
   EmulatedNetworkNode* cur_node = via_nodes[0];
