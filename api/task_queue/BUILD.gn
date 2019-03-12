@@ -28,11 +28,6 @@ rtc_source_set("task_queue") {
   ]
 }
 
-# TODO(danilchap): Remove this empty target when downstream project stop depending on it.
-rtc_source_set("task_queue_factory") {
-  visibility = [ "*" ]
-}
-
 rtc_source_set("task_queue_test") {
   visibility = [ "*" ]
   testonly = true
