@@ -123,9 +123,9 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
     rtp_rtcp->SetRTCPStatus(RtcpMode::kCompound);
 
     auto sender_video = absl::make_unique<RTPSenderVideo>(
-        configuration.clock, rtp_rtcp->RtpSender(), flexfec_sender,
-        playout_delay_oracle.get(), frame_encryptor,
-        crypto_options.sframe.require_frame_encryption,
+        configuration.clock, rtp_rtcp->RtpSender(),
+        configuration.flexfec_sender, playout_delay_oracle.get(),
+        frame_encryptor, crypto_options.sframe.require_frame_encryption,
         FieldTrialBasedConfig());
     rtp_streams.emplace_back(std::move(playout_delay_oracle),
                              std::move(rtp_rtcp), std::move(sender_video));
