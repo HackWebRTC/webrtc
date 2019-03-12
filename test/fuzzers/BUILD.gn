@@ -65,6 +65,15 @@ webrtc_fuzzer_test("h264_depacketizer_fuzzer") {
   ]
 }
 
+webrtc_fuzzer_test("generic_depacketizer_fuzzer") {
+  sources = [
+    "generic_depacketizer_fuzzer.cc",
+  ]
+  deps = [
+    "../../modules/rtp_rtcp",
+  ]
+}
+
 webrtc_fuzzer_test("vp8_depacketizer_fuzzer") {
   sources = [
     "vp8_depacketizer_fuzzer.cc",
