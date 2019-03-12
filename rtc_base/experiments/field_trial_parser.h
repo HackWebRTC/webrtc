@@ -183,7 +183,7 @@ class FieldTrialOptional : public FieldTrialParameterInterface {
   const T& Value() const { return value_.value(); }
   const T& operator*() const { return value_.value(); }
   const T* operator->() const { return &value_.value(); }
-  operator bool() const { return value_.has_value(); }
+  explicit operator bool() const { return value_.has_value(); }
 
  protected:
   bool Parse(absl::optional<std::string> str_value) override {

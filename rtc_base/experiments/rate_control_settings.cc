@@ -147,7 +147,7 @@ RateControlSettings RateControlSettings::ParseFromKeyValueConfig(
 }
 
 bool RateControlSettings::UseCongestionWindow() const {
-  return congestion_window_;
+  return static_cast<bool>(congestion_window_);
 }
 
 int64_t RateControlSettings::GetCongestionWindowAdditionalTimeMs() const {
