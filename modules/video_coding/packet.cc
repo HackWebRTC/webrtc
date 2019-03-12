@@ -11,7 +11,6 @@
 #include "modules/video_coding/packet.h"
 
 #include "api/rtp_headers.h"
-#include "modules/include/module_common_types.h"
 
 namespace webrtc {
 
@@ -31,16 +30,6 @@ VCMPacket::VCMPacket()
       receive_time_ms(0) {
   video_header.playout_delay = {-1, -1};
 }
-
-VCMPacket::VCMPacket(const uint8_t* ptr,
-                     const size_t size,
-                     const WebRtcRTPHeader& rtpHeader)
-    : VCMPacket(ptr,
-                size,
-                rtpHeader.header,
-                rtpHeader.video_header(),
-                rtpHeader.frameType,
-                rtpHeader.ntp_time_ms) {}
 
 VCMPacket::VCMPacket(const uint8_t* ptr,
                      size_t size,

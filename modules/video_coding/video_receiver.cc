@@ -394,7 +394,9 @@ int32_t VideoReceiver::IncomingPacket(const uint8_t* incomingPayload,
     // TODO(holmer): We should fix this in the jitter buffer.
     payloadLength = 0;
   }
-  const VCMPacket packet(incomingPayload, payloadLength, rtpInfo);
+  const VCMPacket packet(incomingPayload, payloadLength, rtpInfo.header,
+                         rtpInfo.video_header(), rtpInfo.frameType,
+                         rtpInfo.ntp_time_ms);
   int32_t ret = _receiver.InsertPacket(packet);
 
   // TODO(holmer): Investigate if this somehow should use the key frame

@@ -240,15 +240,15 @@ class TestBasicJitterBuffer : public ::testing::TestWithParam<std::string>,
         i += 3;
       }
     }
-    WebRtcRTPHeader rtpHeader;
-    memset(&rtpHeader, 0, sizeof(rtpHeader));
-    rtpHeader.header.sequenceNumber = seq_num_;
-    rtpHeader.header.timestamp = timestamp_;
-    rtpHeader.header.markerBit = true;
-    rtpHeader.frameType = kVideoFrameDelta;
-    rtpHeader.video_header().codec = kVideoCodecGeneric;
-    rtpHeader.video_header().is_first_packet_in_frame = true;
-    packet_.reset(new VCMPacket(data_, size_, rtpHeader));
+    RTPHeader rtp_header;
+    RTPVideoHeader video_header;
+    rtp_header.sequenceNumber = seq_num_;
+    rtp_header.timestamp = timestamp_;
+    rtp_header.markerBit = true;
+    video_header.codec = kVideoCodecGeneric;
+    video_header.is_first_packet_in_frame = true;
+    packet_.reset(new VCMPacket(data_, size_, rtp_header, video_header,
+                                kVideoFrameDelta, /*ntp_time_ms=*/0));
   }
 
   VCMEncodedFrame* DecodeCompleteFrame() {
@@ -763,13 +763,14 @@ TEST_F(TestBasicJitterBuffer, TestReorderingWithPadding) {
 
   // Add in the padding. These are empty packets (data length is 0) with no
   // marker bit and matching the timestamp of Frame B.
-  WebRtcRTPHeader rtpHeader;
-  memset(&rtpHeader, 0, sizeof(rtpHeader));
-  rtpHeader.header.sequenceNumber = seq_num_ + 2;
-  rtpHeader.header.timestamp = timestamp_ + (33 * 90);
-  rtpHeader.header.markerBit = false;
-  rtpHeader.video_header().codec = kVideoCodecGeneric;
-  VCMPacket empty_packet(data_, 0, rtpHeader);
+  RTPHeader rtp_header;
+  RTPVideoHeader video_header;
+  rtp_header.sequenceNumber = seq_num_ + 2;
+  rtp_header.timestamp = timestamp_ + (33 * 90);
+  rtp_header.markerBit = false;
+  video_header.codec = kVideoCodecGeneric;
+  VCMPacket empty_packet(data_, 0, rtp_header, video_header,
+                         VideoFrameType::kEmptyFrame, /*ntp_time_ms=*/0);
   EXPECT_EQ(kOldPacket,
             jitter_buffer_->InsertPacket(empty_packet, &retransmitted));
   empty_packet.seqNum += 1;
