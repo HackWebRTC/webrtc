@@ -331,32 +331,32 @@ bool StatsReport::Value::operator==(const Id& value) const {
 }
 
 int StatsReport::Value::int_val() const {
-  RTC_DCHECK(type_ == kInt);
+  RTC_DCHECK_EQ(type_, kInt);
   return value_.int_;
 }
 
 int64_t StatsReport::Value::int64_val() const {
-  RTC_DCHECK(type_ == kInt64);
+  RTC_DCHECK_EQ(type_, kInt64);
   return value_.int64_;
 }
 
 float StatsReport::Value::float_val() const {
-  RTC_DCHECK(type_ == kFloat);
+  RTC_DCHECK_EQ(type_, kFloat);
   return value_.float_;
 }
 
 const char* StatsReport::Value::static_string_val() const {
-  RTC_DCHECK(type_ == kStaticString);
+  RTC_DCHECK_EQ(type_, kStaticString);
   return value_.static_string_;
 }
 
 const std::string& StatsReport::Value::string_val() const {
-  RTC_DCHECK(type_ == kString);
+  RTC_DCHECK_EQ(type_, kString);
   return *value_.string_;
 }
 
 bool StatsReport::Value::bool_val() const {
-  RTC_DCHECK(type_ == kBool);
+  RTC_DCHECK_EQ(type_, kBool);
   return value_.bool_;
 }
 
