@@ -18,7 +18,6 @@
 
 #include "absl/memory/memory.h"
 #include "api/array_view.h"
-#include "api/task_queue/global_task_queue_factory.h"
 #include "common_audio/wav_file.h"
 #include "modules/audio_device/include/audio_device_default.h"
 #include "modules/audio_device/include/test_audio_device.h"
@@ -31,8 +30,7 @@
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/random.h"
 #include "rtc_base/ref_counted_object.h"
-#include "rtc_base/task_queue.h"
-#include "rtc_base/task_utils/repeating_task.h"
+#include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/time_utils.h"
 
@@ -55,17 +53,16 @@ class TestAudioDeviceModuleImpl
   // |renderer| is an object that receives audio data that would have been
   // played out. Can be nullptr if this device is never used for playing.
   // Use one of the Create... functions to get these instances.
-  TestAudioDeviceModuleImpl(TaskQueueFactory* task_queue_factory,
-                            std::unique_ptr<Capturer> capturer,
+  TestAudioDeviceModuleImpl(std::unique_ptr<Capturer> capturer,
                             std::unique_ptr<Renderer> renderer,
                             float speed = 1)
-      : task_queue_factory_(task_queue_factory),
-        capturer_(std::move(capturer)),
+      : capturer_(std::move(capturer)),
         renderer_(std::move(renderer)),
         process_interval_us_(kFrameLengthUs / speed),
         audio_callback_(nullptr),
         rendering_(false),
-        capturing_(false) {
+        capturing_(false),
+        stop_thread_(false) {
     auto good_sample_rate = [](int sr) {
       return sr == 8000 || sr == 16000 || sr == 32000 || sr == 44100 ||
              sr == 48000;
@@ -85,17 +82,20 @@ class TestAudioDeviceModuleImpl
   ~TestAudioDeviceModuleImpl() override {
     StopPlayout();
     StopRecording();
+    if (thread_) {
+      {
+        rtc::CritScope cs(&lock_);
+        stop_thread_ = true;
+      }
+      thread_->Stop();
+    }
   }
 
   int32_t Init() override {
-    task_queue_ =
-        absl::make_unique<rtc::TaskQueue>(task_queue_factory_->CreateTaskQueue(
-            "TestAudioDeviceModuleImpl", TaskQueueFactory::Priority::NORMAL));
-
-    RepeatingTaskHandle::Start(task_queue_->Get(), [this]() {
-      ProcessAudio();
-      return TimeDelta::us(process_interval_us_);
-    });
+    thread_ = absl::make_unique<rtc::PlatformThread>(
+        TestAudioDeviceModuleImpl::Run, this, "TestAudioDeviceModuleImpl",
+        rtc::kHighPriority);
+    thread_->Start();
     return 0;
   }
 
@@ -156,41 +156,71 @@ class TestAudioDeviceModuleImpl
 
  private:
   void ProcessAudio() {
-    rtc::CritScope cs(&lock_);
-    if (capturing_) {
-      // Capture 10ms of audio. 2 bytes per sample.
-      const bool keep_capturing = capturer_->Capture(&recording_buffer_);
-      uint32_t new_mic_level = 0;
-      if (recording_buffer_.size() > 0) {
-        audio_callback_->RecordedDataIsAvailable(
-            recording_buffer_.data(),
-            recording_buffer_.size() / capturer_->NumChannels(),
-            2 * capturer_->NumChannels(), capturer_->NumChannels(),
-            capturer_->SamplingFrequency(), 0, 0, 0, false, new_mic_level);
+    int64_t time_us = rtc::TimeMicros();
+    bool logged_once = false;
+    for (;;) {
+      {
+        rtc::CritScope cs(&lock_);
+        if (stop_thread_) {
+          return;
+        }
+        if (capturing_) {
+          // Capture 10ms of audio. 2 bytes per sample.
+          const bool keep_capturing = capturer_->Capture(&recording_buffer_);
+          uint32_t new_mic_level = 0;
+          if (recording_buffer_.size() > 0) {
+            audio_callback_->RecordedDataIsAvailable(
+                recording_buffer_.data(),
+                recording_buffer_.size() / capturer_->NumChannels(),
+                2 * capturer_->NumChannels(), capturer_->NumChannels(),
+                capturer_->SamplingFrequency(), 0, 0, 0, false, new_mic_level);
+          }
+          if (!keep_capturing) {
+            capturing_ = false;
+            done_capturing_.Set();
+          }
+        }
+        if (rendering_) {
+          size_t samples_out = 0;
+          int64_t elapsed_time_ms = -1;
+          int64_t ntp_time_ms = -1;
+          const int sampling_frequency = renderer_->SamplingFrequency();
+          audio_callback_->NeedMorePlayData(
+              SamplesPerFrame(sampling_frequency), 2 * renderer_->NumChannels(),
+              renderer_->NumChannels(), sampling_frequency,
+              playout_buffer_.data(), samples_out, &elapsed_time_ms,
+              &ntp_time_ms);
+          const bool keep_rendering =
+              renderer_->Render(rtc::ArrayView<const int16_t>(
+                  playout_buffer_.data(), samples_out));
+          if (!keep_rendering) {
+            rendering_ = false;
+            done_rendering_.Set();
+          }
+        }
       }
-      if (!keep_capturing) {
-        capturing_ = false;
-        done_capturing_.Set();
-      }
-    }
-    if (rendering_) {
-      size_t samples_out = 0;
-      int64_t elapsed_time_ms = -1;
-      int64_t ntp_time_ms = -1;
-      const int sampling_frequency = renderer_->SamplingFrequency();
-      audio_callback_->NeedMorePlayData(
-          SamplesPerFrame(sampling_frequency), 2 * renderer_->NumChannels(),
-          renderer_->NumChannels(), sampling_frequency, playout_buffer_.data(),
-          samples_out, &elapsed_time_ms, &ntp_time_ms);
-      const bool keep_rendering = renderer_->Render(
-          rtc::ArrayView<const int16_t>(playout_buffer_.data(), samples_out));
-      if (!keep_rendering) {
-        rendering_ = false;
-        done_rendering_.Set();
+      time_us += process_interval_us_;
+
+      int64_t time_left_us = time_us - rtc::TimeMicros();
+      if (time_left_us < 0) {
+        if (!logged_once) {
+          RTC_LOG(LS_ERROR) << "ProcessAudio is too slow";
+          logged_once = true;
+        }
+      } else {
+        while (time_left_us > 1000) {
+          if (rtc::Thread::SleepMs(time_left_us / 1000))
+            break;
+          time_left_us = time_us - rtc::TimeMicros();
+        }
       }
     }
   }
-  TaskQueueFactory* const task_queue_factory_;
+
+  static void Run(void* obj) {
+    static_cast<TestAudioDeviceModuleImpl*>(obj)->ProcessAudio();
+  }
+
   const std::unique_ptr<Capturer> capturer_ RTC_GUARDED_BY(lock_);
   const std::unique_ptr<Renderer> renderer_ RTC_GUARDED_BY(lock_);
   const int64_t process_interval_us_;
@@ -204,7 +234,9 @@ class TestAudioDeviceModuleImpl
 
   std::vector<int16_t> playout_buffer_ RTC_GUARDED_BY(lock_);
   rtc::BufferT<int16_t> recording_buffer_ RTC_GUARDED_BY(lock_);
-  std::unique_ptr<rtc::TaskQueue> task_queue_;
+
+  std::unique_ptr<rtc::PlatformThread> thread_;
+  bool stop_thread_ RTC_GUARDED_BY(lock_);
 };
 
 // A fake capturer that generates pulses with random samples between
@@ -462,19 +494,8 @@ TestAudioDeviceModule::CreateTestAudioDeviceModule(
     std::unique_ptr<Capturer> capturer,
     std::unique_ptr<Renderer> renderer,
     float speed) {
-  return CreateTestAudioDeviceModule(&GlobalTaskQueueFactory(),
-                                     std::move(capturer), std::move(renderer),
-                                     speed);
-}
-
-rtc::scoped_refptr<TestAudioDeviceModule>
-TestAudioDeviceModule::CreateTestAudioDeviceModule(
-    TaskQueueFactory* task_queue_factory,
-    std::unique_ptr<TestAudioDeviceModule::Capturer> capturer,
-    std::unique_ptr<TestAudioDeviceModule::Renderer> renderer,
-    float speed) {
   return new rtc::RefCountedObject<TestAudioDeviceModuleImpl>(
-      task_queue_factory, std::move(capturer), std::move(renderer), speed);
+      std::move(capturer), std::move(renderer), speed);
 }
 
 std::unique_ptr<TestAudioDeviceModule::PulsedNoiseCapturer>
