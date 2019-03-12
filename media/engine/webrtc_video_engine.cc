@@ -1360,11 +1360,11 @@ void WebRtcVideoChannel::FillSendAndReceiveCodecStats(
   }
 }
 
-void WebRtcVideoChannel::OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
+void WebRtcVideoChannel::OnPacketReceived(rtc::CopyOnWriteBuffer packet,
                                           int64_t packet_time_us) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   const webrtc::PacketReceiver::DeliveryStatus delivery_result =
-      call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, *packet,
+      call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, packet,
                                        packet_time_us);
   switch (delivery_result) {
     case webrtc::PacketReceiver::DELIVERY_OK:
@@ -1380,12 +1380,12 @@ void WebRtcVideoChannel::OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
   }
 
   uint32_t ssrc = 0;
-  if (!GetRtpSsrc(packet->cdata(), packet->size(), &ssrc)) {
+  if (!GetRtpSsrc(packet.cdata(), packet.size(), &ssrc)) {
     return;
   }
 
   int payload_type = 0;
-  if (!GetRtpPayloadType(packet->cdata(), packet->size(), &payload_type)) {
+  if (!GetRtpPayloadType(packet.cdata(), packet.size(), &payload_type)) {
     return;
   }
 
@@ -1412,7 +1412,7 @@ void WebRtcVideoChannel::OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
       break;
   }
 
-  if (call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, *packet,
+  if (call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, packet,
                                        packet_time_us) !=
       webrtc::PacketReceiver::DELIVERY_OK) {
     RTC_LOG(LS_WARNING) << "Failed to deliver RTP packet on re-delivery.";
@@ -1420,14 +1420,14 @@ void WebRtcVideoChannel::OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
   }
 }
 
-void WebRtcVideoChannel::OnRtcpReceived(rtc::CopyOnWriteBuffer* packet,
+void WebRtcVideoChannel::OnRtcpReceived(rtc::CopyOnWriteBuffer packet,
                                         int64_t packet_time_us) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   // TODO(pbos): Check webrtc::PacketReceiver::DELIVERY_OK once we deliver
   // for both audio and video on the same path. Since BundleFilter doesn't
   // filter RTCP anymore incoming RTCP packets could've been going to audio (so
   // logging failures spam the log).
-  call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, *packet,
+  call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, packet,
                                    packet_time_us);
 }
 

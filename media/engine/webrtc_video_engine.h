@@ -144,9 +144,9 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   void FillBitrateInfo(BandwidthEstimationInfo* bwe_info) override;
   bool GetStats(VideoMediaInfo* info) override;
 
-  void OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
+  void OnPacketReceived(rtc::CopyOnWriteBuffer packet,
                         int64_t packet_time_us) override;
-  void OnRtcpReceived(rtc::CopyOnWriteBuffer* packet,
+  void OnRtcpReceived(rtc::CopyOnWriteBuffer packet,
                       int64_t packet_time_us) override;
   void OnReadyToSend(bool ready) override;
   void OnNetworkRouteChanged(const std::string& transport_name,

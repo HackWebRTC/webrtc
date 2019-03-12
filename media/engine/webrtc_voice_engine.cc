@@ -2058,12 +2058,12 @@ bool WebRtcVoiceMediaChannel::InsertDtmf(uint32_t ssrc,
                                         event, duration);
 }
 
-void WebRtcVoiceMediaChannel::OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
+void WebRtcVoiceMediaChannel::OnPacketReceived(rtc::CopyOnWriteBuffer packet,
                                                int64_t packet_time_us) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
 
   webrtc::PacketReceiver::DeliveryStatus delivery_result =
-      call_->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO, *packet,
+      call_->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO, packet,
                                        packet_time_us);
 
   if (delivery_result != webrtc::PacketReceiver::DELIVERY_UNKNOWN_SSRC) {
@@ -2074,7 +2074,7 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
   // If there already is N unsignaled receive streams, delete the oldest.
   // See: https://bugs.chromium.org/p/webrtc/issues/detail?id=5208
   uint32_t ssrc = 0;
-  if (!GetRtpSsrc(packet->cdata(), packet->size(), &ssrc)) {
+  if (!GetRtpSsrc(packet.cdata(), packet.size(), &ssrc)) {
     return;
   }
   RTC_DCHECK(!absl::c_linear_search(unsignaled_recv_ssrcs_, ssrc));
@@ -2117,16 +2117,16 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
   }
 
   delivery_result = call_->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO,
-                                                     *packet, packet_time_us);
+                                                     packet, packet_time_us);
   RTC_DCHECK_NE(webrtc::PacketReceiver::DELIVERY_UNKNOWN_SSRC, delivery_result);
 }
 
-void WebRtcVoiceMediaChannel::OnRtcpReceived(rtc::CopyOnWriteBuffer* packet,
+void WebRtcVoiceMediaChannel::OnRtcpReceived(rtc::CopyOnWriteBuffer packet,
                                              int64_t packet_time_us) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
 
   // Forward packet to Call as well.
-  call_->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO, *packet,
+  call_->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO, packet,
                                    packet_time_us);
 }
 

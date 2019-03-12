@@ -407,8 +407,7 @@ webrtc::RTCError JsepTransport::SetNegotiatedDtlsParameters(
   // Apply remote fingerprint.
   if (!remote_fingerprint ||
       !dtls_transport->SetRemoteFingerprint(
-          remote_fingerprint->algorithm,
-          reinterpret_cast<const uint8_t*>(remote_fingerprint->digest.data()),
+          remote_fingerprint->algorithm, remote_fingerprint->digest.cdata(),
           remote_fingerprint->digest.size())) {
     return webrtc::RTCError(webrtc::RTCErrorType::INVALID_PARAMETER,
                             "Failed to apply remote fingerprint.");

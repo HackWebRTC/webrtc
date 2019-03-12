@@ -196,10 +196,10 @@ class MediaChannel : public sigslot::has_slots<> {
   virtual void SetInterface(NetworkInterface* iface,
                             webrtc::MediaTransportInterface* media_transport);
   // Called when a RTP packet is received.
-  virtual void OnPacketReceived(rtc::CopyOnWriteBuffer* packet,
+  virtual void OnPacketReceived(rtc::CopyOnWriteBuffer packet,
                                 int64_t packet_time_us) = 0;
   // Called when a RTCP packet is received.
-  virtual void OnRtcpReceived(rtc::CopyOnWriteBuffer* packet,
+  virtual void OnRtcpReceived(rtc::CopyOnWriteBuffer packet,
                               int64_t packet_time_us) = 0;
   // Called when the socket's ability to send has changed.
   virtual void OnReadyToSend(bool ready) = 0;

@@ -255,7 +255,7 @@ class WebRtcVoiceEngineTestFake : public testing::Test {
 
   void DeliverPacket(const void* data, int len) {
     rtc::CopyOnWriteBuffer packet(reinterpret_cast<const uint8_t*>(data), len);
-    channel_->OnPacketReceived(&packet, /* packet_time_us */ -1);
+    channel_->OnPacketReceived(packet, /* packet_time_us */ -1);
   }
 
   void TearDown() override { delete channel_; }
@@ -3322,9 +3322,9 @@ TEST_F(WebRtcVoiceEngineTestFake, DeliverAudioPacket_Call) {
   const cricket::FakeAudioReceiveStream* s =
       call_.GetAudioReceiveStream(kAudioSsrc);
   EXPECT_EQ(0, s->received_packets());
-  channel_->OnPacketReceived(&kPcmuPacket, /* packet_time_us */ -1);
+  channel_->OnPacketReceived(kPcmuPacket, /* packet_time_us */ -1);
   EXPECT_EQ(1, s->received_packets());
-  channel_->OnRtcpReceived(&kRtcpPacket, /* packet_time_us */ -1);
+  channel_->OnRtcpReceived(kRtcpPacket, /* packet_time_us */ -1);
   EXPECT_EQ(2, s->received_packets());
 }
 

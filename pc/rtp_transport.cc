@@ -129,8 +129,8 @@ bool RtpTransport::SendPacket(bool rtcp,
   rtc::PacketTransportInternal* transport = rtcp && !rtcp_mux_enabled_
                                                 ? rtcp_packet_transport_
                                                 : rtp_packet_transport_;
-  int ret = transport->SendPacket(packet->data<char>(), packet->size(), options,
-                                  flags);
+  int ret = transport->SendPacket(packet->cdata<char>(), packet->size(),
+                                  options, flags);
   if (ret != static_cast<int>(packet->size())) {
     if (transport->GetError() == ENOTCONN) {
       RTC_LOG(LS_WARNING) << "Got ENOTCONN from transport.";

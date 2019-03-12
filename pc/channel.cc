@@ -539,13 +539,10 @@ void BaseChannel::ProcessPacket(bool rtcp,
                                 int64_t packet_time_us) {
   RTC_DCHECK(worker_thread_->IsCurrent());
 
-  // Need to copy variable because OnRtcpReceived/OnPacketReceived
-  // requires non-const pointer to buffer. This doesn't memcpy the actual data.
-  rtc::CopyOnWriteBuffer data(packet);
   if (rtcp) {
-    media_channel_->OnRtcpReceived(&data, packet_time_us);
+    media_channel_->OnRtcpReceived(packet, packet_time_us);
   } else {
-    media_channel_->OnPacketReceived(&data, packet_time_us);
+    media_channel_->OnPacketReceived(packet, packet_time_us);
   }
 }
 
