@@ -45,15 +45,6 @@ constexpr int kExponentialProbingDisabled = 0;
 // specify max bitrate.
 constexpr int64_t kDefaultMaxProbingBitrateBps = 5000000;
 
-// Interval between probes when ALR periodic probing is enabled.
-constexpr int64_t kAlrPeriodicProbingIntervalMs = 5000;
-
-// Minimum probe bitrate percentage to probe further for repeated probes,
-// relative to the previous probe. For example, if 1Mbps probe results in
-// 80kbps, then we'll probe again at 1.6Mbps. In that case second probe won't be
-// sent if we get 600kbps from the first one.
-constexpr int kRepeatedProbeMinPercentage = 70;
-
 // If the bitrate drops to a factor |kBitrateDropThreshold| or lower
 // and we recover within |kBitrateDropTimeoutMs|, then we'll send
 // a probe at a fraction |kProbeFractionAfterDrop| of the original bitrate.
@@ -82,6 +73,9 @@ constexpr char kBweRapidRecoveryExperiment[] =
 // Never probe higher than configured by OnMaxTotalAllocatedBitrate().
 constexpr char kCappedProbingFieldTrialName[] = "WebRTC-BweCappedProbing";
 
+constexpr char kConfigurableProbingFieldTrialName[] =
+    "WebRTC-Bwe-ConfigurableProbing";
+
 void MaybeLogProbeClusterCreated(RtcEventLog* event_log,
                                  const ProbeClusterConfig& probe) {
   RTC_DCHECK(event_log);
@@ -98,6 +92,25 @@ void MaybeLogProbeClusterCreated(RtcEventLog* event_log,
 
 }  // namespace
 
+ProbeControllerConfig::ProbeControllerConfig(
+    const WebRtcKeyValueConfig* key_value_config)
+    : first_exponential_probe_scale_("p1", 3.0),
+      second_exponential_probe_scale_("p2", 6.0),
+      further_exponential_probe_scale_("step_size", 2),
+      further_probe_threshold("further_probe_threshold", 0.7),
+      alr_probing_interval_("alr_interval", TimeDelta::seconds(5)),
+      alr_probe_scale_("alr_scale", 2) {
+  ParseFieldTrial(
+      {&first_exponential_probe_scale_, &second_exponential_probe_scale_,
+       &further_exponential_probe_scale_, &further_probe_threshold,
+       &alr_probing_interval_, &alr_probe_scale_},
+      key_value_config->Lookup(kConfigurableProbingFieldTrialName));
+}
+
+ProbeControllerConfig::ProbeControllerConfig(const ProbeControllerConfig&) =
+    default;
+ProbeControllerConfig::~ProbeControllerConfig() = default;
+
 ProbeController::ProbeController(const WebRtcKeyValueConfig* key_value_config,
                                  RtcEventLog* event_log)
     : enable_periodic_alr_probing_(false),
@@ -107,7 +120,8 @@ ProbeController::ProbeController(const WebRtcKeyValueConfig* key_value_config,
       limit_probes_with_allocateable_rate_(
           key_value_config->Lookup(kCappedProbingFieldTrialName)
               .find("Disabled") != 0),
-      event_log_(event_log) {
+      event_log_(event_log),
+      config_(ProbeControllerConfig(key_value_config)) {
   Reset(0);
 }
 
@@ -204,8 +218,13 @@ std::vector<ProbeClusterConfig> ProbeController::InitiateExponentialProbing(
 
   // When probing at 1.8 Mbps ( 6x 300), this represents a threshold of
   // 1.2 Mbps to continue probing.
-  return InitiateProbing(
-      at_time_ms, {3 * start_bitrate_bps_, 6 * start_bitrate_bps_}, true);
+  std::vector<int64_t> probes = {static_cast<int64_t>(
+      config_.first_exponential_probe_scale_ * start_bitrate_bps_)};
+  if (config_.second_exponential_probe_scale_) {
+    probes.push_back(config_.second_exponential_probe_scale_.Value() *
+                     start_bitrate_bps_);
+  }
+  return InitiateProbing(at_time_ms, probes, true);
 }
 
 std::vector<ProbeClusterConfig> ProbeController::SetEstimatedBitrate(
@@ -229,8 +248,11 @@ std::vector<ProbeClusterConfig> ProbeController::SetEstimatedBitrate(
 
     if (min_bitrate_to_probe_further_bps_ != kExponentialProbingDisabled &&
         bitrate_bps > min_bitrate_to_probe_further_bps_) {
-      // Double the probing bitrate.
-      pending_probes = InitiateProbing(at_time_ms, {2 * bitrate_bps}, true);
+      pending_probes = InitiateProbing(
+          at_time_ms,
+          {static_cast<int64_t>(config_.further_exponential_probe_scale_ *
+                                bitrate_bps)},
+          true);
     }
   }
 
@@ -291,16 +313,6 @@ std::vector<ProbeClusterConfig> ProbeController::RequestProbe(
   return std::vector<ProbeClusterConfig>();
 }
 
-std::vector<ProbeClusterConfig> ProbeController::InitiateCapacityProbing(
-    int64_t bitrate_bps,
-    int64_t at_time_ms) {
-  if (state_ != State::kWaitingForProbingResult) {
-    RTC_DCHECK(network_available_);
-    return InitiateProbing(at_time_ms, {2 * bitrate_bps}, true);
-  }
-  return std::vector<ProbeClusterConfig>();
-}
-
 void ProbeController::SetMaxBitrate(int64_t max_bitrate_bps) {
   max_bitrate_bps_ = max_bitrate_bps;
 }
@@ -339,9 +351,12 @@ std::vector<ProbeClusterConfig> ProbeController::Process(int64_t at_time_ms) {
     if (alr_start_time_ms_ && estimated_bitrate_bps_ > 0) {
       int64_t next_probe_time_ms =
           std::max(*alr_start_time_ms_, time_last_probing_initiated_ms_) +
-          kAlrPeriodicProbingIntervalMs;
+          config_.alr_probing_interval_->ms();
       if (at_time_ms >= next_probe_time_ms) {
-        return InitiateProbing(at_time_ms, {estimated_bitrate_bps_ * 2}, true);
+        return InitiateProbing(at_time_ms,
+                               {static_cast<int64_t>(estimated_bitrate_bps_ *
+                                                     config_.alr_probe_scale_)},
+                               true);
       }
     }
   }
@@ -350,7 +365,7 @@ std::vector<ProbeClusterConfig> ProbeController::Process(int64_t at_time_ms) {
 
 std::vector<ProbeClusterConfig> ProbeController::InitiateProbing(
     int64_t now_ms,
-    std::initializer_list<int64_t> bitrates_to_probe,
+    std::vector<int64_t> bitrates_to_probe,
     bool probe_further) {
   int64_t max_probe_bitrate_bps =
       max_bitrate_bps_ > 0 ? max_bitrate_bps_ : kDefaultMaxProbingBitrateBps;
@@ -389,7 +404,7 @@ std::vector<ProbeClusterConfig> ProbeController::InitiateProbing(
   if (probe_further) {
     state_ = State::kWaitingForProbingResult;
     min_bitrate_to_probe_further_bps_ =
-        (*(bitrates_to_probe.end() - 1)) * kRepeatedProbeMinPercentage / 100;
+        (*(bitrates_to_probe.end() - 1)) * config_.further_probe_threshold;
   } else {
     state_ = State::kProbingComplete;
     min_bitrate_to_probe_further_bps_ = kExponentialProbingDisabled;

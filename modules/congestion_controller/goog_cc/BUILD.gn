@@ -179,6 +179,7 @@ rtc_source_set("probe_controller") {
     "../../../rtc_base:logging",
     "../../../rtc_base:macromagic",
     "../../../rtc_base:safe_conversions",
+    "../../../rtc_base/experiments:field_trial_parser",
     "../../../rtc_base/system:unused",
     "../../../system_wrappers:metrics",
     "//third_party/abseil-cpp/absl/memory:memory",
