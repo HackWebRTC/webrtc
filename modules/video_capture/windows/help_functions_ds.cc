@@ -14,6 +14,8 @@
 
 #include "modules/video_capture/windows/help_functions_ds.h"
 
+#include "rtc_base/logging.h"
+
 #include <cguid.h>
 
 namespace webrtc {
@@ -101,5 +103,56 @@ BOOL PinMatchesCategory(IPin* pPin, REFGUID Category) {
   }
   return bFound;
 }
+
+void ResetMediaType(AM_MEDIA_TYPE* media_type) {
+  if (!media_type)
+    return;
+  if (media_type->cbFormat != 0) {
+    CoTaskMemFree(media_type->pbFormat);
+    media_type->cbFormat = 0;
+    media_type->pbFormat = nullptr;
+  }
+  if (media_type->pUnk) {
+    media_type->pUnk->Release();
+    media_type->pUnk = nullptr;
+  }
+}
+
+void FreeMediaType(AM_MEDIA_TYPE* media_type) {
+  if (!media_type)
+    return;
+  ResetMediaType(media_type);
+  CoTaskMemFree(media_type);
+}
+
+HRESULT CopyMediaType(AM_MEDIA_TYPE* target, const AM_MEDIA_TYPE* source) {
+  RTC_DCHECK_NE(source, target);
+  *target = *source;
+  if (source->cbFormat != 0) {
+    RTC_DCHECK(source->pbFormat);
+    target->pbFormat =
+        reinterpret_cast<BYTE*>(CoTaskMemAlloc(source->cbFormat));
+    if (target->pbFormat == nullptr) {
+      target->cbFormat = 0;
+      return E_OUTOFMEMORY;
+    } else {
+      CopyMemory(target->pbFormat, source->pbFormat, target->cbFormat);
+    }
+  }
+
+  if (target->pUnk != nullptr)
+    target->pUnk->AddRef();
+
+  return S_OK;
+}
+
+wchar_t* DuplicateWideString(const wchar_t* str) {
+  size_t len = lstrlenW(str);
+  wchar_t* ret =
+      reinterpret_cast<LPWSTR>(CoTaskMemAlloc((len + 1) * sizeof(wchar_t)));
+  lstrcpyW(ret, str);
+  return ret;
+}
+
 }  // namespace videocapturemodule
 }  // namespace webrtc
