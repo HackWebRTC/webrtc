@@ -558,3 +558,13 @@ webrtc_fuzzer_test("url_decode_fuzzer") {
     "../../rtc_base:rtc_base_approved",
   ]
 }
+
+webrtc_fuzzer_test("field_trial_fuzzer") {
+  sources = [
+    "field_trial_fuzzer.cc",
+  ]
+  deps = [
+    "../../system_wrappers:field_trial",
+  ]
+  seed_corpus = "corpora/field_trial-corpus"
+}
