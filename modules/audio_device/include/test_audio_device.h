@@ -17,6 +17,7 @@
 
 #include "api/array_view.h"
 #include "api/scoped_refptr.h"
+#include "api/task_queue/task_queue_factory.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "rtc_base/buffer.h"
@@ -79,6 +80,11 @@ class TestAudioDeviceModule : public AudioDeviceModule {
   // played out. Can be nullptr if this device is never used for playing.
   // Use one of the Create... functions to get these instances.
   static rtc::scoped_refptr<TestAudioDeviceModule> CreateTestAudioDeviceModule(
+      std::unique_ptr<Capturer> capturer,
+      std::unique_ptr<Renderer> renderer,
+      float speed = 1);
+  static rtc::scoped_refptr<TestAudioDeviceModule> CreateTestAudioDeviceModule(
+      TaskQueueFactory* task_queue_factory,
       std::unique_ptr<Capturer> capturer,
       std::unique_ptr<Renderer> renderer,
       float speed = 1);
