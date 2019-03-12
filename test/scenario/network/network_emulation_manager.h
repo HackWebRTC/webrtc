@@ -57,12 +57,10 @@ class NetworkEmulationManager {
 
   EmulatedEndpoint* CreateEndpoint(EmulatedEndpointConfig config);
 
-  void CreateRoute(EmulatedEndpoint* from,
-                   std::vector<EmulatedNetworkNode*> via_nodes,
-                   EmulatedEndpoint* to);
-  void ClearRoute(EmulatedEndpoint* from,
-                  std::vector<EmulatedNetworkNode*> via_nodes,
-                  EmulatedEndpoint* to);
+  EmulatedRoute* CreateRoute(EmulatedEndpoint* from,
+                             std::vector<EmulatedNetworkNode*> via_nodes,
+                             EmulatedEndpoint* to);
+  void ClearRoute(EmulatedRoute* route);
 
   TrafficRoute* CreateTrafficRoute(std::vector<EmulatedNetworkNode*> via_nodes);
   RandomWalkCrossTraffic* CreateRandomWalkCrossTraffic(
@@ -92,6 +90,7 @@ class NetworkEmulationManager {
   // All objects can be added to the manager only when it is idle.
   std::vector<std::unique_ptr<EmulatedEndpoint>> endpoints_;
   std::vector<std::unique_ptr<EmulatedNetworkNode>> network_nodes_;
+  std::vector<std::unique_ptr<EmulatedRoute>> routes_;
   std::vector<std::unique_ptr<TrafficRoute>> traffic_routes_;
   std::vector<std::unique_ptr<RandomWalkCrossTraffic>> random_cross_traffics_;
   std::vector<std::unique_ptr<PulsedPeaksCrossTraffic>> pulsed_cross_traffics_;

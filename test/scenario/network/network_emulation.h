@@ -174,6 +174,19 @@ class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
   absl::optional<uint64_t> connected_endpoint_id_;
 };
 
+class EmulatedRoute {
+ public:
+  EmulatedRoute(EmulatedEndpoint* from,
+                std::vector<EmulatedNetworkNode*> via_nodes,
+                EmulatedEndpoint* to)
+      : from(from), via_nodes(std::move(via_nodes)), to(to), active(true) {}
+
+  EmulatedEndpoint* from;
+  std::vector<EmulatedNetworkNode*> via_nodes;
+  EmulatedEndpoint* to;
+  bool active;
+};
+
 }  // namespace test
 }  // namespace webrtc
 

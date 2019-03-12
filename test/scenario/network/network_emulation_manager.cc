@@ -96,7 +96,7 @@ EmulatedEndpoint* NetworkEmulationManager::CreateEndpoint(
   return out;
 }
 
-void NetworkEmulationManager::CreateRoute(
+EmulatedRoute* NetworkEmulationManager::CreateRoute(
     EmulatedEndpoint* from,
     std::vector<EmulatedNetworkNode*> via_nodes,
     EmulatedEndpoint* to) {
@@ -112,21 +112,28 @@ void NetworkEmulationManager::CreateRoute(
   }
   cur_node->SetReceiver(to->GetId(), to);
   from->SetConnectedEndpointId(to->GetId());
+
+  std::unique_ptr<EmulatedRoute> route =
+      absl::make_unique<EmulatedRoute>(from, std::move(via_nodes), to);
+  EmulatedRoute* out = route.get();
+  routes_.push_back(std::move(route));
+  return out;
 }
 
-void NetworkEmulationManager::ClearRoute(
-    EmulatedEndpoint* from,
-    std::vector<EmulatedNetworkNode*> via_nodes,
-    EmulatedEndpoint* to) {
+void NetworkEmulationManager::ClearRoute(EmulatedRoute* route) {
+  RTC_CHECK(route->active) << "Route already cleared";
+
   // Remove receiver from intermediate nodes.
-  for (auto* node : via_nodes) {
-    node->RemoveReceiver(to->GetId());
+  for (auto* node : route->via_nodes) {
+    node->RemoveReceiver(route->to->GetId());
   }
   // Detach endpoint from current send node.
-  if (from->GetSendNode()) {
-    from->GetSendNode()->RemoveReceiver(to->GetId());
-    from->SetSendNode(nullptr);
+  if (route->from->GetSendNode()) {
+    route->from->GetSendNode()->RemoveReceiver(route->to->GetId());
+    route->from->SetSendNode(nullptr);
   }
+
+  route->active = false;
 }
 
 TrafficRoute* NetworkEmulationManager::CreateTrafficRoute(
