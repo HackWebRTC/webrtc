@@ -29,7 +29,7 @@ class CopyOnWriteBuffer {
  public:
   // An empty buffer.
   CopyOnWriteBuffer();
-  // Copy size and contents of an existing buffer.
+  // Share the data with an existing buffer.
   CopyOnWriteBuffer(const CopyOnWriteBuffer& buf);
   // Move contents from an existing buffer.
   CopyOnWriteBuffer(CopyOnWriteBuffer&& buf);
