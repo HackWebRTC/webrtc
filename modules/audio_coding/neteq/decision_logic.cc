@@ -116,6 +116,7 @@ Operations DecisionLogic::GetDecision(const SyncBuffer& sync_buffer,
 
   const size_t samples_left =
       sync_buffer.FutureLength() - expand.overlap_length();
+  // TODO(jakobi): Use buffer span instead of num samples.
   const size_t cur_size_samples =
       samples_left + packet_buffer_.NumSamplesInBuffer(decoder_frame_length);
 
@@ -169,11 +170,13 @@ Operations DecisionLogic::GetDecision(const SyncBuffer& sync_buffer,
   // if the mute factor is low enough (otherwise the expansion was short enough
   // to not be noticable).
   // Note that the MuteFactor is in Q14, so a value of 16384 corresponds to 1.
+  size_t current_span =
+      samples_left + packet_buffer_.GetSpanSamples(decoder_frame_length);
   if ((prev_mode == kModeExpand || prev_mode == kModeCodecPlc) &&
       expand.MuteFactor(0) < 16384 / 2 &&
-      cur_size_samples < static_cast<size_t>(
-              delay_manager_->TargetLevel() * packet_length_samples_ *
-              kPostponeDecodingLevel / 100) >> 8 &&
+      current_span < static_cast<size_t>(delay_manager_->TargetLevel() *
+                                         packet_length_samples_ *
+                                         kPostponeDecodingLevel / 100)>> 8 &&
       !packet_buffer_.ContainsDtxOrCngPacket(decoder_database_)) {
     return kExpand;
   }

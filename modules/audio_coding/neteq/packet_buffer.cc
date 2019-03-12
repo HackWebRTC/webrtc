@@ -287,6 +287,20 @@ size_t PacketBuffer::NumSamplesInBuffer(size_t last_decoded_length) const {
   return num_samples;
 }
 
+size_t PacketBuffer::GetSpanSamples(size_t last_decoded_length) const {
+  if (buffer_.size() == 0) {
+    return 0;
+  }
+
+  size_t span = buffer_.back().timestamp - buffer_.front().timestamp;
+  if (buffer_.back().frame && buffer_.back().frame->Duration() > 0) {
+    span += buffer_.back().frame->Duration();
+  } else {
+    span += last_decoded_length;
+  }
+  return span;
+}
+
 bool PacketBuffer::ContainsDtxOrCngPacket(
     const DecoderDatabase* decoder_database) const {
   RTC_DCHECK(decoder_database);

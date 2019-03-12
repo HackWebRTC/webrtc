@@ -121,6 +121,10 @@ class PacketBuffer {
   // duplicate and redundant packets.
   virtual size_t NumSamplesInBuffer(size_t last_decoded_length) const;
 
+  // Returns the total duration in samples that the packets in the buffer spans
+  // across.
+  virtual size_t GetSpanSamples(size_t last_decoded_length) const;
+
   // Returns true if the packet buffer contains any DTX or CNG packets.
   virtual bool ContainsDtxOrCngPacket(
       const DecoderDatabase* decoder_database) const;
