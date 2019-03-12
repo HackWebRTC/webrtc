@@ -24,7 +24,6 @@
 #include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
-#include "modules/audio_coding/neteq/tools/audio_sink.h"
 #include "modules/audio_coding/neteq/tools/fake_decode_from_file.h"
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "modules/audio_coding/neteq/tools/neteq_delay_analyzer.h"
@@ -110,6 +109,7 @@ NetEqTestFactory::Config::~Config() = default;
 
 std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
     std::string input_file_name,
+    std::string output_file_name,
     const Config& config) {
   // Gather RTP header extensions in a map.
   NetEqPacketSourceInput::RtpHeaderExtensionMap rtp_ext_map = {
@@ -166,25 +166,19 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
     RTC_NOTREACHED();
   }
 
-  // If an output file is requested, open it.
+  // Open the output file now that we know the sample rate. (Rate is only needed
+  // for wav files.)
   std::unique_ptr<AudioSink> output;
-  if (!config.output_audio_filename.has_value()) {
-    output = absl::make_unique<VoidAudioSink>();
-    std::cout << "No output audio file" << std::endl;
-  } else if (config.output_audio_filename->size() >= 4 &&
-             config.output_audio_filename->substr(
-                 config.output_audio_filename->size() - 4) == ".wav") {
-    // Open a wav file with the known sample rate.
-    output = absl::make_unique<OutputWavFile>(*config.output_audio_filename,
-                                              *sample_rate_hz);
-    std::cout << "Output WAV file: " << *config.output_audio_filename
-              << std::endl;
+  if (output_file_name.size() >= 4 &&
+      output_file_name.substr(output_file_name.size() - 4) == ".wav") {
+    // Open a wav file.
+    output.reset(new OutputWavFile(output_file_name, *sample_rate_hz));
   } else {
     // Open a pcm file.
-    output = absl::make_unique<OutputAudioFile>(*config.output_audio_filename);
-    std::cout << "Output PCM file: " << *config.output_audio_filename
-              << std::endl;
+    output.reset(new OutputAudioFile(output_file_name));
   }
+
+  std::cout << "Output file: " << output_file_name << std::endl;
 
   NetEqTest::DecoderMap codecs = NetEqTest::StandardDecoderMap();
 
@@ -240,16 +234,16 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
 
   // Create a text log file if needed.
   std::unique_ptr<std::ofstream> text_log;
-  if (config.textlog_filename.has_value()) {
-    text_log = absl::make_unique<std::ofstream>(*config.textlog_filename);
+  if (config.textlog) {
+    text_log =
+        absl::make_unique<std::ofstream>(output_file_name + ".text_log.txt");
   }
 
   NetEqTest::Callbacks callbacks;
-  stats_plotter_ = absl::make_unique<NetEqStatsPlotter>(
-      config.matlabplot, config.pythonplot, config.concealment_events,
-      config.plot_scripts_basename.value_or(""));
+  stats_plotter_.reset(
+      new NetEqStatsPlotter(config.matlabplot, config.pythonplot,
+                            config.concealment_events, output_file_name));
 
-  RTC_CHECK(stats_plotter_);
   ssrc_switch_detector_.reset(
       new SsrcSwitchDetector(stats_plotter_->stats_getter()->delay_analyzer()));
   callbacks.post_insert_packet = ssrc_switch_detector_.get();

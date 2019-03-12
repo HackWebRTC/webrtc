@@ -117,6 +117,8 @@ class NetEqTestFactory {
     bool matlabplot = false;
     // Generates a python script for plotting the delay profile.
     bool pythonplot = false;
+    // Generates a text log describing the simulation on a step-by-step basis.
+    bool textlog = false;
     // Prints concealment events.
     bool concealment_events = false;
     // Maximum allowed number of packets in the buffer.
@@ -124,16 +126,10 @@ class NetEqTestFactory {
     int max_nr_packets_in_buffer = default_max_nr_packets_in_buffer();
     // Enables jitter buffer fast accelerate.
     bool enable_fast_accelerate = false;
-    // Path to the output text log file that describes the simulation on a
-    // step-by-step basis.
-    absl::optional<std::string> textlog_filename;
-    // Base name for the output script files for plotting the delay profile.
-    absl::optional<std::string> plot_scripts_basename;
-    // Path to the output audio file.
-    absl::optional<std::string> output_audio_filename;
   };
 
   std::unique_ptr<NetEqTest> InitializeTest(std::string input_filename,
+                                            std::string output_filename,
                                             const Config& config);
 
  private:
