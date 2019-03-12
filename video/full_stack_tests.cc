@@ -806,6 +806,37 @@ TEST(FullStackTest, ScreenshareSlidesVP8_2TL_Simulcast_Variable_Framerate) {
       false};
   fixture->RunWithAnalyzer(screenshare);
 }
+
+TEST(FullStackTest, ScreenshareSlidesVP8_2TL_Simulcast_low) {
+  test::ScopedFieldTrials field_trial(
+      AppendFieldTrials(kScreenshareSimulcastExperiment));
+  auto fixture = CreateVideoQualityTestFixture();
+  ParamsWithLogging screenshare;
+  screenshare.call.send_side_bwe = true;
+  screenshare.screenshare[0] = {true, false, 10};
+  screenshare.video[0] = {true,    1850,  1110,  30, 800000, 2500000,
+                          2500000, false, "VP8", 2,  1,      400000,
+                          false,   false, false, ""};
+  screenshare.analyzer = {"screenshare_slides_simulcast_low", 0.0, 0.0,
+                          kFullStackTestDurationSecs};
+  VideoQualityTest::Params screenshare_params_high;
+  screenshare_params_high.video[0] = {
+      true,  1850, 1110, 60,     600000, 1250000, 1250000, false,
+      "VP8", 2,    0,    400000, false,  false,   false,   ""};
+  VideoQualityTest::Params screenshare_params_low;
+  screenshare_params_low.video[0] = {true,    1850,  1110,  5, 30000, 200000,
+                                     1000000, false, "VP8", 2, 0,     400000,
+                                     false,   false, false, ""};
+
+  std::vector<VideoStream> streams = {
+      VideoQualityTest::DefaultVideoStream(screenshare_params_low, 0),
+      VideoQualityTest::DefaultVideoStream(screenshare_params_high, 0)};
+  screenshare.ss[0] = {
+      streams, 0, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
+      false};
+  fixture->RunWithAnalyzer(screenshare);
+}
+
 #endif  // !defined(WEBRTC_WIN)
 #endif  // !defined(WEBRTC_MAC)
 
