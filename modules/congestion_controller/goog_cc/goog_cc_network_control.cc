@@ -381,7 +381,6 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
   for (const auto& feedback : feedbacks) {
     TimeDelta feedback_rtt =
         report.feedback_time - feedback.sent_packet.send_time;
-    RTC_DCHECK_GE(feedback_rtt.ms(), 0);
     TimeDelta min_pending_time = feedback.receive_time - max_recv_time;
     TimeDelta propagation_rtt = feedback_rtt - min_pending_time;
     max_feedback_rtt = std::max(max_feedback_rtt, feedback_rtt);
