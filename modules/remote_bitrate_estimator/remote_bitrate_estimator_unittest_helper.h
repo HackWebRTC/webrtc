@@ -166,7 +166,7 @@ class RemoteBitrateEstimatorTest : public ::testing::Test {
   // Helper to add two absolute send time values and keep it less than 1<<24.
   static uint32_t AddAbsSendTime(uint32_t t1, uint32_t t2);
 
-  // Helper to create a WebRtcRTPHeader containing the relevant data for the
+  // Helper to create an RTPHeader containing the relevant data for the
   // estimator (all other fields are cleared) and call IncomingPacket on the
   // estimator.
   void IncomingPacket(uint32_t ssrc,

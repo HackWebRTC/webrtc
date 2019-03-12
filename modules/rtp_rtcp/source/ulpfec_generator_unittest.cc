@@ -118,7 +118,7 @@ TEST_F(UlpfecGeneratorTest, OneFrameFec) {
         packet_generator_.NextPacket(i, 10);
     EXPECT_EQ(0, ulpfec_generator_.AddRtpPacketAndGenerateFec(
                      packet->data, packet->length, kRtpHeaderSize));
-    last_timestamp = packet->header.header.timestamp;
+    last_timestamp = packet->header.timestamp;
   }
   EXPECT_TRUE(ulpfec_generator_.FecAvailable());
   const uint16_t seq_num = packet_generator_.NextPacketSeqNum();
@@ -152,7 +152,7 @@ TEST_F(UlpfecGeneratorTest, TwoFrameFec) {
           packet_generator_.NextPacket(i * kNumPackets + j, 10);
       EXPECT_EQ(0, ulpfec_generator_.AddRtpPacketAndGenerateFec(
                        packet->data, packet->length, kRtpHeaderSize));
-      last_timestamp = packet->header.header.timestamp;
+      last_timestamp = packet->header.timestamp;
     }
   }
   EXPECT_TRUE(ulpfec_generator_.FecAvailable());

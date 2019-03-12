@@ -124,16 +124,16 @@ void UlpfecReceiverTest::BuildAndAddRedMediaPacket(AugmentedPacket* packet) {
   std::unique_ptr<AugmentedPacket> red_packet(
       packet_generator_.BuildMediaRedPacket(*packet));
   EXPECT_EQ(0, receiver_fec_->AddReceivedRedPacket(
-                   red_packet->header.header, red_packet->data,
-                   red_packet->length, kFecPayloadType));
+                   red_packet->header, red_packet->data, red_packet->length,
+                   kFecPayloadType));
 }
 
 void UlpfecReceiverTest::BuildAndAddRedFecPacket(Packet* packet) {
   std::unique_ptr<AugmentedPacket> red_packet(
       packet_generator_.BuildUlpfecRedPacket(*packet));
   EXPECT_EQ(0, receiver_fec_->AddReceivedRedPacket(
-                   red_packet->header.header, red_packet->data,
-                   red_packet->length, kFecPayloadType));
+                   red_packet->header, red_packet->data, red_packet->length,
+                   kFecPayloadType));
 }
 
 void UlpfecReceiverTest::VerifyReconstructedMediaPacket(
