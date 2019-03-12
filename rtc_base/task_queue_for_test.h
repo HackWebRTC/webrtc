@@ -22,8 +22,7 @@ namespace rtc {
 namespace test {
 class RTC_LOCKABLE TaskQueueForTest : public TaskQueue {
  public:
-  explicit TaskQueueForTest(const char* queue_name,
-                            Priority priority = Priority::NORMAL);
+  using TaskQueue::TaskQueue;
   ~TaskQueueForTest();
 
   // A convenience, test-only method that blocks the current thread while

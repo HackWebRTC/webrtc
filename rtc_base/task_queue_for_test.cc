@@ -12,8 +12,6 @@
 
 namespace rtc {
 namespace test {
-TaskQueueForTest::TaskQueueForTest(const char* queue_name, Priority priority)
-    : TaskQueue(queue_name, priority) {}
-TaskQueueForTest::~TaskQueueForTest() {}
+TaskQueueForTest::~TaskQueueForTest() = default;
 }  // namespace test
 }  // namespace rtc
