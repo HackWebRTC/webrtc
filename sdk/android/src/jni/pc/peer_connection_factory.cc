@@ -23,6 +23,7 @@
 // The user may pass in a nullptr.
 #include "modules/audio_processing/include/audio_processing.h"  // nogncheck
 #include "rtc_base/event_tracer.h"
+#include "rtc_base/system/thread_registry.h"
 #include "rtc_base/thread.h"
 #include "sdk/android/generated_peerconnection_jni/jni/PeerConnectionFactory_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
@@ -518,6 +519,11 @@ static void JNI_PeerConnectionFactory_DeleteLoggable(JNIEnv* jni) {
 
 static void JNI_PeerConnectionFactory_PrintStackTrace(JNIEnv* env, jint tid) {
   RTC_LOG(LS_WARNING) << StackTraceToString(GetStackTrace(tid));
+}
+
+static void JNI_PeerConnectionFactory_PrintStackTracesOfRegisteredThreads(
+    JNIEnv* env) {
+  PrintStackTracesOfRegisteredThreads();
 }
 
 }  // namespace jni

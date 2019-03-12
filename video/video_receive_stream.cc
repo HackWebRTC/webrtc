@@ -43,6 +43,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_file.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/system/thread_registry.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
@@ -556,6 +557,7 @@ void VideoReceiveStream::SetMinimumPlayoutDelay(int delay_ms) {
 }
 
 void VideoReceiveStream::DecodeThreadFunction(void* ptr) {
+  ScopedRegisterThreadForDebugging thread_dbg(RTC_FROM_HERE);
   while (static_cast<VideoReceiveStream*>(ptr)->Decode()) {
   }
 }

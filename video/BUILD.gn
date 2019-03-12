@@ -102,6 +102,7 @@ rtc_static_library("video") {
     "../rtc_base/experiments:quality_scaling_experiment",
     "../rtc_base/experiments:rate_control_settings",
     "../rtc_base/system:fallthrough",
+    "../rtc_base/system:thread_registry",
     "../rtc_base/task_utils:repeating_task",
     "../rtc_base/task_utils:to_queued_task",
     "../rtc_base/time:timestamp_extrapolator",
