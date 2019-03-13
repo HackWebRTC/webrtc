@@ -515,7 +515,6 @@ void VideoReceiveStream::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&module_process_sequence_checker_);
   frame_buffer_->UpdateRtt(max_rtt_ms);
   rtp_video_stream_receiver_.UpdateRtt(max_rtt_ms);
-  video_stream_decoder_->UpdateRtt(max_rtt_ms);
 }
 
 void VideoReceiveStream::OnRttUpdated(int64_t rtt_ms) {

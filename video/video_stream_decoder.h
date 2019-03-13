@@ -77,9 +77,6 @@ class VideoStreamDecoder : public VCMReceiveCallback,
   void RegisterReceiveStatisticsProxy(
       ReceiveStatisticsProxy* receive_statistics_proxy);
 
-  // Called by VideoReceiveStream when stats are updated.
-  void UpdateRtt(int64_t max_rtt_ms);
-
  private:
   // Used for all registered callbacks except rendering.
   rtc::CriticalSection crit_;
