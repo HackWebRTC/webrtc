@@ -35,6 +35,27 @@
 
 @end
 
+namespace {
+
+AVCaptureDeviceFormat *SelectClosestFormat(AVCaptureDevice *device, size_t width, size_t height) {
+  NSArray<AVCaptureDeviceFormat *> *formats =
+      [RTCCameraVideoCapturer supportedFormatsForDevice:device];
+  AVCaptureDeviceFormat *selectedFormat = nil;
+  int currentDiff = INT_MAX;
+  for (AVCaptureDeviceFormat *format in formats) {
+    CMVideoDimensions dimension = CMVideoFormatDescriptionGetDimensions(format.formatDescription);
+    int diff =
+        std::abs((int64_t)width - dimension.width) + std::abs((int64_t)height - dimension.height);
+    if (diff < currentDiff) {
+      selectedFormat = format;
+      currentDiff = diff;
+    }
+  }
+  return selectedFormat;
+}
+
+}  // namespace
+
 namespace webrtc {
 namespace test {
 
@@ -51,8 +72,7 @@ MacCapturer::MacCapturer(size_t width,
 
   AVCaptureDevice *device =
       [[RTCCameraVideoCapturer captureDevices] objectAtIndex:capture_device_index];
-  AVCaptureDeviceFormat *format =
-      [[RTCCameraVideoCapturer supportedFormatsForDevice:device] objectAtIndex:0];
+  AVCaptureDeviceFormat *format = SelectClosestFormat(device, width, height);
   [capturer startCaptureWithDevice:device format:format fps:target_fps];
 }
 
