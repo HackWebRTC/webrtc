@@ -598,3 +598,16 @@ webrtc_fuzzer_test("rtp_rtcp_demuxer_helper_fuzzer") {
   ]
   seed_corpus = "corpora/rtcp-corpus"
 }
+
+webrtc_fuzzer_test("sctp_utils_fuzzer") {
+  sources = [
+    "sctp_utils_fuzzer.cc",
+  ]
+  deps = [
+    "../../api:libjingle_peerconnection_api",
+    "../../pc:libjingle_peerconnection",
+    "../../pc:peerconnection",
+    "../../rtc_base:rtc_base_approved",
+  ]
+}
+
