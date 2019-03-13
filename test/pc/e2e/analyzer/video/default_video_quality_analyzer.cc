@@ -135,7 +135,6 @@ void DefaultVideoQualityAnalyzer::OnFrameEncoded(
     uint16_t frame_id,
     const webrtc::EncodedImage& encoded_image) {
   rtc::CritScope crit(&lock_);
-  // TODO(titovartem) we need to pick right spatial index here.
   auto it = frame_stats_.find(frame_id);
   RTC_DCHECK(it != frame_stats_.end());
   RTC_DCHECK(it->second.encoded_time.IsInfinite())
@@ -154,7 +153,6 @@ void DefaultVideoQualityAnalyzer::OnFrameDropped(
 void DefaultVideoQualityAnalyzer::OnFrameReceived(
     uint16_t frame_id,
     const webrtc::EncodedImage& input_image) {
-  // TODO(titovartem) We should always receive only single spatial layer here.
   rtc::CritScope crit(&lock_);
   auto it = frame_stats_.find(frame_id);
   RTC_DCHECK(it != frame_stats_.end());
