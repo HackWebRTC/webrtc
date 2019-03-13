@@ -75,7 +75,7 @@ void UpdatesTargetRateBasedOnLinkCapacity(std::string test_name = "") {
       [](NetworkNodeConfig* c) { c->simulation.delay = TimeDelta::ms(200); });
 
   truth->PrintRow();
-  s.RunFor(TimeDelta::seconds(30));
+  s.RunFor(TimeDelta::seconds(50));
   truth->PrintRow();
   EXPECT_NEAR(client->target_rate_kbps(), 90, 20);
 }
