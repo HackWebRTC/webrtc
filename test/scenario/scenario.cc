@@ -224,12 +224,11 @@ SimulationNode* Scenario::CreateSimulationNode(NetworkNodeConfig config) {
 }
 
 EmulatedNetworkNode* Scenario::CreateNetworkNode(
-    NetworkNodeConfig config,
     std::unique_ptr<NetworkBehaviorInterface> behavior) {
-  RTC_DCHECK(config.mode == NetworkNodeConfig::TrafficMode::kCustom);
   network_nodes_.emplace_back(new EmulatedNetworkNode(std::move(behavior)));
   EmulatedNetworkNode* network_node = network_nodes_.back().get();
-  Every(config.update_frequency,
+  // TODO(srte): Use the update interval as provided by |behavior|.
+  Every(TimeDelta::ms(5),
         [this, network_node] { network_node->Process(Now()); });
   return network_node;
 }
@@ -315,24 +314,21 @@ AudioStreamPair* Scenario::CreateAudioStream(
   return audio_streams_.back().get();
 }
 
-RepeatedActivity* Scenario::Every(TimeDelta interval,
-                                  std::function<void(TimeDelta)> function) {
+void Scenario::Every(TimeDelta interval,
+                     std::function<void(TimeDelta)> function) {
   repeated_activities_.emplace_back(new RepeatedActivity(interval, function));
   if (start_time_.IsFinite()) {
     repeated_activities_.back()->SetStartTime(Now());
   }
-  return repeated_activities_.back().get();
 }
 
-RepeatedActivity* Scenario::Every(TimeDelta interval,
-                                  std::function<void()> function) {
+void Scenario::Every(TimeDelta interval, std::function<void()> function) {
   auto function_with_argument = [function](TimeDelta) { function(); };
   repeated_activities_.emplace_back(
       new RepeatedActivity(interval, function_with_argument));
   if (start_time_.IsFinite()) {
     repeated_activities_.back()->SetStartTime(Now());
   }
-  return repeated_activities_.back().get();
 }
 
 void Scenario::At(TimeDelta offset, std::function<void()> function) {
@@ -340,24 +336,25 @@ void Scenario::At(TimeDelta offset, std::function<void()> function) {
 }
 
 void Scenario::RunFor(TimeDelta duration) {
-  RunUntil(Duration() + duration);
+  RunUntil(TimeSinceStart() + duration);
 }
 
-void Scenario::RunUntil(TimeDelta max_duration) {
-  RunUntil(max_duration, TimeDelta::PlusInfinity(), []() { return false; });
+void Scenario::RunUntil(TimeDelta target_time_since_start) {
+  RunUntil(target_time_since_start, TimeDelta::PlusInfinity(),
+           []() { return false; });
 }
 
-void Scenario::RunUntil(TimeDelta max_duration,
-                        TimeDelta poll_interval,
+void Scenario::RunUntil(TimeDelta target_time_since_start,
+                        TimeDelta check_interval,
                         std::function<bool()> exit_function) {
   if (start_time_.IsInfinite())
     Start();
 
   rtc::Event done_;
-  while (!exit_function() && Duration() < max_duration) {
+  while (!exit_function() && TimeSinceStart() < target_time_since_start) {
     Timestamp current_time = Now();
     TimeDelta duration = current_time - start_time_;
-    Timestamp next_time = current_time + poll_interval;
+    Timestamp next_time = current_time + check_interval;
     for (auto& activity : repeated_activities_) {
       activity->Poll(current_time);
       next_time = std::min(next_time, activity->NextTime());
@@ -423,7 +420,7 @@ Timestamp Scenario::Now() {
   return Timestamp::us(clock_->TimeInMicroseconds());
 }
 
-TimeDelta Scenario::Duration() {
+TimeDelta Scenario::TimeSinceStart() {
   if (start_time_.IsInfinite())
     return TimeDelta::Zero();
   return Now() - start_time_;

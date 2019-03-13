@@ -32,9 +32,7 @@ VideoQualityAnalyzer::VideoQualityAnalyzer(
 }
 
 VideoQualityAnalyzer::~VideoQualityAnalyzer() {
-  rtc::Event event;
-  task_queue_.PostTask([&event] { event.Set(); });
-  event.Wait(rtc::Event::kForever);
+  task_queue_.SendTask([] {});
 }
 
 void VideoQualityAnalyzer::OnCapturedFrame(const VideoFrame& frame) {

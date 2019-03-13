@@ -74,7 +74,6 @@ class Scenario {
   SimulationNode* CreateSimulationNode(
       std::function<void(NetworkNodeConfig*)> config_modifier);
   EmulatedNetworkNode* CreateNetworkNode(
-      NetworkNodeConfig config,
       std::unique_ptr<NetworkBehaviorInterface> behavior);
 
   CallClient* CreateClient(std::string name, CallClientConfig config);
@@ -130,9 +129,8 @@ class Scenario {
       CrossTrafficConfig config);
 
   // Runs the provided function with a fixed interval.
-  RepeatedActivity* Every(TimeDelta interval,
-                          std::function<void(TimeDelta)> function);
-  RepeatedActivity* Every(TimeDelta interval, std::function<void()> function);
+  void Every(TimeDelta interval, std::function<void(TimeDelta)> function);
+  void Every(TimeDelta interval, std::function<void()> function);
 
   // Runs the provided function after given duration has passed in a session.
   void At(TimeDelta offset, std::function<void()> function);
@@ -145,9 +143,12 @@ class Scenario {
   // Runs the scenario for the given time or until the exit function returns
   // true.
   void RunFor(TimeDelta duration);
-  void RunUntil(TimeDelta max_duration);
-  void RunUntil(TimeDelta max_duration,
-                TimeDelta probe_interval,
+  void RunUntil(TimeDelta target_time_since_start);
+  // Will check |exit_function| every |check_interval|. It stops after a check
+  // if either |target_time_since_start| has passed or if |exit_function|
+  // returns true.
+  void RunUntil(TimeDelta target_time_since_start,
+                TimeDelta check_interval,
                 std::function<bool()> exit_function);
   void Start();
   void Stop();
@@ -165,7 +166,7 @@ class Scenario {
   // Returns the current time.
   Timestamp Now();
   // Return the duration of the current session so far.
-  TimeDelta Duration();
+  TimeDelta TimeSinceStart();
 
   std::unique_ptr<RtcEventLogOutput> GetLogWriter(std::string name) {
     if (!log_writer_factory_ || name.empty())

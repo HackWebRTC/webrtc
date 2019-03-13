@@ -20,7 +20,7 @@
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
-#include "rtc_base/task_queue.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/clock.h"
 #include "test/logging/log_writer.h"
@@ -50,7 +50,7 @@ class VideoQualityAnalyzer {
   std::vector<std::function<void(const VideoFrameQualityInfo&)>>
       frame_info_handlers_;
   std::deque<VideoFrame> captured_frames_;
-  rtc::TaskQueue task_queue_;
+  rtc::test::TaskQueueForTest task_queue_;
 };
 
 struct VideoQualityStats {
