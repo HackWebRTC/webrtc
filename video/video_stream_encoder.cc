@@ -1331,15 +1331,14 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
     const EncodedImage& encoded_image,
     const CodecSpecificInfo* codec_specific_info,
     const RTPFragmentationHeader* fragmentation) {
-  const int64_t time_sent_us = rtc::TimeMicros();
-
   TRACE_EVENT_INSTANT1("webrtc", "VCMEncodedFrameCallback::Encoded",
                        "timestamp", encoded_image.Timestamp());
   const size_t spatial_idx = encoded_image.SpatialIndex().value_or(0);
   EncodedImage image_copy(encoded_image);
 
   frame_encoder_timer_.FillTimingInfo(
-      spatial_idx, &image_copy, time_sent_us / rtc::kNumMicrosecsPerMillisec);
+      spatial_idx, &image_copy,
+      rtc::TimeMicros() / rtc::kNumMicrosecsPerMillisec);
 
   // Piggyback ALR experiment group id and simulcast id into the content type.
   const uint8_t experiment_id =
@@ -1382,7 +1381,7 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
     temporal_index = 0;
   }
 
-  RunPostEncode(image_copy, time_sent_us, temporal_index);
+  RunPostEncode(image_copy, rtc::TimeMicros(), temporal_index);
 
   if (result.error == Result::OK) {
     // In case of an internal encoder running on a separate thread, the
