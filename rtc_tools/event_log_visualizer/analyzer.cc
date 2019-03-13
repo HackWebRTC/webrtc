@@ -59,6 +59,7 @@
 #include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/rate_statistics.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_tools/event_log_visualizer/log_simulation.h"
 
 #ifndef BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
 #define BWE_TEST_LOGGING_COMPILE_TIME_ENABLE 0
@@ -1154,6 +1155,51 @@ void EventLogAnalyzer::CreateBitrateAllocationGraph(PacketDirection direction,
     plot->SetTitle("Target bitrate per incoming layer");
   else
     plot->SetTitle("Target bitrate per outgoing layer");
+}
+
+void EventLogAnalyzer::CreateGoogCcSimulationGraph(Plot* plot) {
+  TimeSeries target_rates("Simulated target rate", LineStyle::kStep,
+                          PointStyle::kHighlight);
+  TimeSeries delay_based("Logged delay-based estimate", LineStyle::kStep,
+                         PointStyle::kHighlight);
+  TimeSeries loss_based("Logged loss-based estimate", LineStyle::kStep,
+                        PointStyle::kHighlight);
+  TimeSeries probe_results("Logged probe success", LineStyle::kNone,
+                           PointStyle::kHighlight);
+
+  RtcEventLogNullImpl null_event_log;
+  LogBasedNetworkControllerSimulation simulation(
+      absl::make_unique<GoogCcNetworkControllerFactory>(&null_event_log),
+      [&](const NetworkControlUpdate& update, Timestamp at_time) {
+        if (update.target_rate) {
+          target_rates.points.emplace_back(
+              config_.GetCallTimeSec(at_time.us()),
+              update.target_rate->target_rate.kbps<float>());
+        }
+      });
+
+  simulation.ProcessEventsInLog(parsed_log_);
+  for (const auto& logged : parsed_log_.bwe_delay_updates())
+    delay_based.points.emplace_back(
+        config_.GetCallTimeSec(logged.log_time_us()),
+        logged.bitrate_bps / 1000);
+  for (const auto& logged : parsed_log_.bwe_probe_success_events())
+    probe_results.points.emplace_back(
+        config_.GetCallTimeSec(logged.log_time_us()),
+        logged.bitrate_bps / 1000);
+  for (const auto& logged : parsed_log_.bwe_loss_updates())
+    loss_based.points.emplace_back(config_.GetCallTimeSec(logged.log_time_us()),
+                                   logged.bitrate_bps / 1000);
+
+  plot->AppendTimeSeries(std::move(delay_based));
+  plot->AppendTimeSeries(std::move(loss_based));
+  plot->AppendTimeSeries(std::move(probe_results));
+  plot->AppendTimeSeries(std::move(target_rates));
+
+  plot->SetXAxis(config_.CallBeginTimeSec(), config_.CallEndTimeSec(),
+                 "Time (s)", kLeftMargin, kRightMargin);
+  plot->SetSuggestedYAxis(0, 10, "Bitrate (kbps)", kBottomMargin, kTopMargin);
+  plot->SetTitle("Simulated BWE behavior");
 }
 
 void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {

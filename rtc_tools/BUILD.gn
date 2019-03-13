@@ -285,6 +285,8 @@ if (!build_with_chromium) {
       sources = [
         "event_log_visualizer/analyzer.cc",
         "event_log_visualizer/analyzer.h",
+        "event_log_visualizer/log_simulation.cc",
+        "event_log_visualizer/log_simulation.h",
         "event_log_visualizer/plot_base.cc",
         "event_log_visualizer/plot_base.h",
         "event_log_visualizer/plot_protobuf.cc",
@@ -302,6 +304,7 @@ if (!build_with_chromium) {
         "../api/audio_codecs:audio_codecs_api",
         "../api/transport:field_trial_based_config",
         "../api/transport:goog_cc",
+        "../api/transport:network_control",
         "../call:call_interfaces",
         "../call:video_stream_api",
         "../logging:rtc_event_log_api",

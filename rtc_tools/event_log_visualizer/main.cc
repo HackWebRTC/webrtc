@@ -112,6 +112,10 @@ WEBRTC_DEFINE_bool(
     false,
     "Run the send-side bandwidth estimator with the outgoing rtp and "
     "incoming rtcp and plot the resulting estimate.");
+WEBRTC_DEFINE_bool(plot_simulated_goog_cc,
+                   false,
+                   "Run the GoogCC congestion controller based on the logged "
+                   "events and plot the target bitrate.");
 WEBRTC_DEFINE_bool(
     plot_network_delay_feedback,
     true,
@@ -365,6 +369,9 @@ int main(int argc, char* argv[]) {
   if (FLAG_plot_simulated_sendside_bwe) {
     analyzer.CreateSendSideBweSimulationGraph(collection->AppendNewPlot());
   }
+  if (FLAG_plot_simulated_goog_cc) {
+    analyzer.CreateGoogCcSimulationGraph(collection->AppendNewPlot());
+  }
   if (FLAG_plot_network_delay_feedback) {
     analyzer.CreateNetworkDelayFeedbackGraph(collection->AppendNewPlot());
   }
@@ -542,6 +549,7 @@ void SetAllPlotFlags(bool setting) {
   FLAG_plot_outgoing_layer_bitrate_allocation = setting;
   FLAG_plot_simulated_receiveside_bwe = setting;
   FLAG_plot_simulated_sendside_bwe = setting;
+  FLAG_plot_simulated_goog_cc = setting;
   FLAG_plot_network_delay_feedback = setting;
   FLAG_plot_fraction_loss_feedback = setting;
   FLAG_plot_timestamps = setting;
