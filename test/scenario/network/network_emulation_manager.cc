@@ -16,6 +16,7 @@
 #include "absl/memory/memory.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "rtc_base/fake_network.h"
 
 namespace webrtc {
 namespace test {
@@ -200,6 +201,18 @@ rtc::Thread* NetworkEmulationManager::CreateNetworkThread(
   network_thread->Start();
   rtc::Thread* out = network_thread.get();
   threads_.push_back(std::move(network_thread));
+  return out;
+}
+
+rtc::NetworkManager* NetworkEmulationManager::CreateNetworkManager(
+    std::vector<EmulatedEndpoint*> endpoints) {
+  auto network_manager = absl::make_unique<rtc::FakeNetworkManager>();
+  for (auto* endpoint : endpoints) {
+    network_manager->AddInterface(
+        rtc::SocketAddress(endpoint->GetPeerLocalAddress(), /*port=*/0));
+  }
+  rtc::NetworkManager* out = network_manager.get();
+  managers_.push_back(std::move(network_manager));
   return out;
 }
 

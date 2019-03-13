@@ -19,6 +19,7 @@
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/network.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread.h"
@@ -71,6 +72,8 @@ class NetworkEmulationManager {
       PulsedPeaksConfig config);
 
   rtc::Thread* CreateNetworkThread(std::vector<EmulatedEndpoint*> endpoints);
+  rtc::NetworkManager* CreateNetworkManager(
+      std::vector<EmulatedEndpoint*> endpoints);
 
  private:
   FakeNetworkSocketServer* CreateSocketServer(
@@ -96,6 +99,7 @@ class NetworkEmulationManager {
   std::vector<std::unique_ptr<PulsedPeaksCrossTraffic>> pulsed_cross_traffics_;
   std::vector<std::unique_ptr<FakeNetworkSocketServer>> socket_servers_;
   std::vector<std::unique_ptr<rtc::Thread>> threads_;
+  std::vector<std::unique_ptr<rtc::NetworkManager>> managers_;
 
   // Must be the last field, so it will be deleted first, because tasks
   // in the TaskQueue can access other fields of the instance of this class.

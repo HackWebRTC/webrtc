@@ -13,8 +13,6 @@
 
 #include "absl/memory/memory.h"
 #include "call/simulated_network.h"
-#include "rtc_base/async_invoker.h"
-#include "rtc_base/fake_network.h"
 #include "test/gtest.h"
 #include "test/pc/e2e/analyzer/audio/default_audio_quality_analyzer.h"
 #include "test/pc/e2e/analyzer/video/default_video_quality_analyzer.h"
@@ -27,16 +25,6 @@
 namespace webrtc {
 namespace test {
 namespace {
-
-std::unique_ptr<rtc::NetworkManager> CreateFakeNetworkManager(
-    std::vector<EmulatedEndpoint*> endpoints) {
-  auto network_manager = absl::make_unique<rtc::FakeNetworkManager>();
-  for (auto* endpoint : endpoints) {
-    network_manager->AddInterface(
-        rtc::SocketAddress(endpoint->GetPeerLocalAddress(), /*port=*/0));
-  }
-  return network_manager;
-}
 
 void PrintFrameCounters(const std::string& name,
                         const FrameCounters& counters) {
@@ -96,14 +84,14 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
 
   // Setup components. We need to provide rtc::NetworkManager compatible with
   // emulated network layer.
-  std::unique_ptr<rtc::NetworkManager> alice_network_manager =
-      CreateFakeNetworkManager({alice_endpoint});
+  rtc::NetworkManager* alice_network_manager =
+      network_emulation_manager.CreateNetworkManager({alice_endpoint});
   auto alice_components = absl::make_unique<InjectableComponents>(
-      alice_network_thread, alice_network_manager.get());
-  std::unique_ptr<rtc::NetworkManager> bob_network_manager =
-      CreateFakeNetworkManager({bob_endpoint});
+      alice_network_thread, alice_network_manager);
+  rtc::NetworkManager* bob_network_manager =
+      network_emulation_manager.CreateNetworkManager({bob_endpoint});
   auto bob_components = absl::make_unique<InjectableComponents>(
-      bob_network_thread, bob_network_manager.get());
+      bob_network_thread, bob_network_manager);
 
   // Create analyzers.
   std::unique_ptr<VideoQualityAnalyzerInterface> video_quality_analyzer =
