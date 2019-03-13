@@ -10,6 +10,8 @@
 
 #include "api/test/neteq_simulator_factory.h"
 
+#include <string>
+
 #include "absl/memory/memory.h"
 #include "modules/audio_coding/neteq/tools/neteq_test_factory.h"
 #include "rtc_base/checks.h"
@@ -43,10 +45,12 @@ std::unique_ptr<NetEqSimulator> NetEqSimulatorFactory::CreateSimulator(
   RTC_CHECK_EQ(argc, 3) << "Wrong number of input arguments. Expected 3, got "
                         << argc;
   // TODO(ivoc) Stop (ab)using command-line flags in this function.
+  const std::string output_audio_filename(argv[2]);
   NetEqTestFactory::Config config;
   config.replacement_audio_file = FLAG_replacement_audio_file;
   config.max_nr_packets_in_buffer = FLAG_max_nr_packets_in_buffer;
-  return factory_->InitializeTest(argv[1], argv[2], config);
+  config.output_audio_filename = output_audio_filename;
+  return factory_->InitializeTest(argv[1], config);
 }
 
 }  // namespace test

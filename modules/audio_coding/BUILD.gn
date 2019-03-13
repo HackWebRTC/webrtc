@@ -1462,8 +1462,11 @@ if (rtc_include_tests) {
         ":neteq_test_factory",
         ":neteq_test_tools",
         "../../rtc_base:rtc_base_approved",
+        "../../rtc_base:stringutils",
         "../../system_wrappers:field_trial",
         "../../test:field_trial",
+        "//third_party/abseil-cpp/absl/strings",
+        "//third_party/abseil-cpp/absl/types:optional",
       ]
       sources = [
         "neteq/tools/neteq_rtpplay.cc",
