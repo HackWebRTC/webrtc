@@ -96,7 +96,8 @@ struct SimulationSettings {
   bool print_aec_parameter_values = false;
   bool dump_internal_data = false;
   absl::optional<std::string> dump_internal_data_output_dir;
-  absl::optional<std::string> custom_call_order_filename;
+  absl::optional<std::string> call_order_input_filename;
+  absl::optional<std::string> call_order_output_filename;
   absl::optional<std::string> aec_settings_filename;
 };
 
@@ -183,12 +184,14 @@ class AudioProcessingSimulator {
   bool bitexact_output_ = true;
   int aec_dump_mic_level_ = 0;
 
+ protected:
+  size_t output_reset_counter_ = 0;
+
  private:
   void SetupOutput();
 
   size_t num_process_stream_calls_ = 0;
   size_t num_reverse_process_stream_calls_ = 0;
-  size_t output_reset_counter_ = 0;
   std::unique_ptr<ChannelBufferWavWriter> buffer_writer_;
   std::unique_ptr<ChannelBufferWavWriter> reverse_buffer_writer_;
   TickIntervalStats proc_time_;

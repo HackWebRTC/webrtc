@@ -206,6 +206,10 @@ WEBRTC_DEFINE_bool(store_intermediate_output,
 WEBRTC_DEFINE_string(custom_call_order_file,
                      "",
                      "Custom process API call order file");
+WEBRTC_DEFINE_string(
+    output_custom_call_order_file,
+    "",
+    "Generate custom process API call order file from AEC dump");
 WEBRTC_DEFINE_bool(print_aec_parameter_values,
                    false,
                    "Print parameter values used in AEC in JSON-format");
@@ -339,7 +343,9 @@ SimulationSettings CreateSettings() {
   SetSettingIfSpecified(FLAG_stream_drift_samples,
                         &settings.stream_drift_samples);
   SetSettingIfSpecified(FLAG_custom_call_order_file,
-                        &settings.custom_call_order_filename);
+                        &settings.call_order_input_filename);
+  SetSettingIfSpecified(FLAG_output_custom_call_order_file,
+                        &settings.call_order_output_filename);
   SetSettingIfSpecified(FLAG_aec_settings, &settings.aec_settings_filename);
   settings.initial_mic_level = FLAG_initial_mic_level;
   settings.simulate_mic_gain = FLAG_simulate_mic_gain;
@@ -454,7 +460,7 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
       "aecdump\n");
 
   ReportConditionalErrorAndExit(
-      settings.custom_call_order_filename && settings.aec_dump_input_filename,
+      settings.call_order_input_filename && settings.aec_dump_input_filename,
       "Error: --custom_call_order_file cannot be used when operating on an "
       "aecdump\n");
 
@@ -514,6 +520,11 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
       !settings.dump_internal_data &&
           settings.dump_internal_data_output_dir.has_value(),
       "Error: --dump_data_output_dir cannot be set without --dump_data.\n");
+
+  ReportConditionalErrorAndExit(
+      !settings.aec_dump_input_filename &&
+          settings.call_order_output_filename.has_value(),
+      "Error: --output_custom_call_order_file needs an AEC dump input file.\n");
 }
 
 }  // namespace
