@@ -628,3 +628,27 @@ webrtc_fuzzer_test("ssl_certificate_fuzzer") {
     "../../modules/rtp_rtcp",
   ]
 }
+
+webrtc_fuzzer_test("vp8_replay_fuzzer") {
+  sources = [
+    "vp8_replay_fuzzer.cc",
+  ]
+  deps = [
+    "../../rtc_base:rtc_base_approved",
+    "utils:rtp_replayer",
+    "//third_party/abseil-cpp/absl/memory",
+  ]
+  seed_corpus = "corpora/rtpdump-corpus/vp8"
+}
+
+webrtc_fuzzer_test("vp9_replay_fuzzer") {
+  sources = [
+    "vp9_replay_fuzzer.cc",
+  ]
+  deps = [
+    "../../rtc_base:rtc_base_approved",
+    "utils:rtp_replayer",
+    "//third_party/abseil-cpp/absl/memory",
+  ]
+  seed_corpus = "corpora/rtpdump-corpus/vp9"
+}
