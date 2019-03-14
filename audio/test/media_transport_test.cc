@@ -34,9 +34,7 @@ namespace webrtc {
 namespace test {
 
 namespace {
-using testing::_;
 using testing::NiceMock;
-using testing::Return;
 
 constexpr int kPayloadTypeOpus = 17;
 constexpr int kSamplingFrequency = 48000;
@@ -113,7 +111,7 @@ TEST(AudioWithMediaTransport, DeliversAudio) {
 
   webrtc::internal::AudioReceiveStream receive_stream(
       Clock::GetRealTimeClock(),
-      /*rtp_stream_receiver_controller=*/nullptr,
+      /*receiver_controller=*/nullptr,
       /*packet_router=*/nullptr, receive_process_thread.get(), receive_config,
       audio_state, null_event_log.get());
 

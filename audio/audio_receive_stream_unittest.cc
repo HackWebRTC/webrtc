@@ -36,7 +36,6 @@ namespace {
 using testing::_;
 using testing::FloatEq;
 using testing::Return;
-using testing::ReturnRef;
 
 AudioDecodingCallStats MakeAudioDecodeStatsForTest() {
   AudioDecodingCallStats audio_decode_stats;
@@ -64,8 +63,9 @@ const double kTotalOutputDuration = 0.5;
 
 const CallReceiveStatistics kCallStats = {345, 678, 901, 234,
                                           -12, 567, 890, 123};
-const std::pair<int, SdpAudioFormat> kReceiveCodec =
-    {123, {"codec_name_recv", 96000, 0}};
+const std::pair<int, SdpAudioFormat> kReceiveCodec = {
+    123,
+    {"codec_name_recv", 96000, 0}};
 const NetworkStatistics kNetworkStats = {
     123, 456, false, 789012, 3456, 123, 456, 789, 0,  {}, 789,
     12,  345, 678,   901,    0,    -1,  -1,  -1,  -1, -1, 0};

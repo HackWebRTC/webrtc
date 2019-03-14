@@ -76,11 +76,10 @@ class TransportFeedbackProxy;
 class TransportSequenceNumberProxy;
 class VoERtcpObserver;
 
-class ChannelSend
-    : public ChannelSendInterface,
-      public AudioPacketizationCallback,  // receive encoded packets from the
-                                          // ACM
-      public TargetTransferRateObserver {
+class ChannelSend : public ChannelSendInterface,
+                    public AudioPacketizationCallback,  // receive encoded
+                                                        // packets from the ACM
+                    public TargetTransferRateObserver {
  public:
   // TODO(nisse): Make OnUplinkPacketLossRate public, and delete friend
   // declaration.
@@ -603,7 +602,7 @@ int32_t ChannelSend::SendMediaTransportAudio(
       // Sample count isn't conveniently available from the AudioCodingModule,
       // and needs some refactoring to wire up in a good way. For now, left as
       // zero.
-      /*sample_count=*/0,
+      /*samples_per_channel=*/0,
 
       /*sequence_number=*/media_transport_sequence_number_,
       MediaTransportFrameTypeForWebrtcFrameType(frameType), payloadType,

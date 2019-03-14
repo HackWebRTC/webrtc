@@ -144,7 +144,7 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
 
   // Measure audio level of speech after all processing.
   double sample_duration = static_cast<double>(number_of_frames) / sample_rate;
-  audio_level_.ComputeLevel(*audio_frame.get(), sample_duration);
+  audio_level_.ComputeLevel(*audio_frame, sample_duration);
 
   // Copy frame and push to each sending stream. The copy is required since an
   // encoding task will be posted internally to each stream.
@@ -157,7 +157,7 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
       auto it = sending_streams_.begin();
       while (++it != sending_streams_.end()) {
         std::unique_ptr<AudioFrame> audio_frame_copy(new AudioFrame());
-        audio_frame_copy->CopyFrom(*audio_frame.get());
+        audio_frame_copy->CopyFrom(*audio_frame);
         (*it)->SendAudioData(std::move(audio_frame_copy));
       }
       // Send the original frame to the first stream w/o copying.
