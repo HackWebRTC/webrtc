@@ -84,9 +84,9 @@ class DownscaledVideo : public rtc::RefCountedObject<Video> {
  public:
   DownscaledVideo(float scale_factor, const rtc::scoped_refptr<Video>& video)
       : downscaled_width_(
-            static_cast<int>(round(scale_factor * video->width()))),
+            static_cast<int>(std::round(scale_factor * video->width()))),
         downscaled_height_(
-            static_cast<int>(round(scale_factor * video->height()))),
+            static_cast<int>(std::round(scale_factor * video->height()))),
         video_(video) {}
 
   int width() const override { return downscaled_width_; }

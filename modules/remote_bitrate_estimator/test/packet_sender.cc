@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <math.h>
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <list>
 #include <vector>
@@ -422,7 +423,7 @@ int TcpSender::GetFeedbackIntervalMs() const {
 }
 
 void TcpSender::SendPackets(Packets* in_out) {
-  int cwnd = ceil(cwnd_);
+  int cwnd = std::ceil(cwnd_);
   int packets_to_send = std::max(cwnd - static_cast<int>(in_flight_.size()), 0);
   int timed_out = TriggerTimeouts();
   if (timed_out > 0) {
