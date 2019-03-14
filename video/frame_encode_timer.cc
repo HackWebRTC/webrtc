@@ -203,7 +203,7 @@ absl::optional<int64_t> FrameEncodeTimer::ExtractEncodeStartTime(
           EncodedImageCallback::DropReason::kDroppedByEncoder);
       encode_start_list->pop_front();
     }
-    if (encode_start_list->size() > 0 &&
+    if (!encode_start_list->empty() &&
         encode_start_list->front().rtp_timestamp ==
             encoded_image->Timestamp()) {
       result.emplace(encode_start_list->front().encode_start_time_ms);

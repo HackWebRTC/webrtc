@@ -34,7 +34,7 @@ size_t CalculateMaxHeaderSize(const RtpConfig& config) {
   size_t header_size = kRtpHeaderSize;
   size_t extensions_size = 0;
   size_t fec_extensions_size = 0;
-  if (config.extensions.size() > 0) {
+  if (!config.extensions.empty()) {
     RtpHeaderExtensionMap extensions_map(config.extensions);
     extensions_size = RtpHeaderExtensionSize(RTPSender::VideoExtensionSizes(),
                                              extensions_map);

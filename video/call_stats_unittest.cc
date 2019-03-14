@@ -21,7 +21,6 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
-using ::testing::_;
 using ::testing::AnyNumber;
 using ::testing::InvokeWithoutArgs;
 using ::testing::Return;

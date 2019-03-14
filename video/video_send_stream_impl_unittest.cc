@@ -30,12 +30,10 @@
 namespace webrtc {
 namespace internal {
 namespace {
-using testing::NiceMock;
-using testing::StrictMock;
-using testing::ReturnRef;
-using testing::Return;
-using testing::Invoke;
 using testing::_;
+using testing::Invoke;
+using testing::NiceMock;
+using testing::Return;
 
 constexpr int64_t kDefaultInitialBitrateBps = 333000;
 const double kDefaultBitratePriority = 0.5;

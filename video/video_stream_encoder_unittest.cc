@@ -42,7 +42,6 @@ namespace webrtc {
 
 using ScaleReason = AdaptationObserverInterface::AdaptReason;
 using ::testing::_;
-using ::testing::Return;
 
 namespace {
 const int kMinPixelsPerFrame = 320 * 180;

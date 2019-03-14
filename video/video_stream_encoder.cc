@@ -817,7 +817,7 @@ void VideoStreamEncoder::ConfigureQualityScaler(
       scaling_settings.thresholds;
 
   if (quality_scaling_allowed) {
-    if (quality_scaler_.get() == nullptr) {
+    if (quality_scaler_ == nullptr) {
       // Quality scaler has not already been configured.
 
       // Use experimental thresholds if available.

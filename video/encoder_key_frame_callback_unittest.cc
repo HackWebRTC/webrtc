@@ -16,8 +16,6 @@
 #include "test/gtest.h"
 #include "video/test/mock_video_stream_encoder.h"
 
-using ::testing::NiceMock;
-
 namespace webrtc {
 
 class VieKeyRequestTest : public ::testing::Test {

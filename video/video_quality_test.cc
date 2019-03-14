@@ -1012,7 +1012,7 @@ std::unique_ptr<test::FrameGenerator> VideoQualityTest::CreateFrameGenerator(
             params_.video[video_idx].fps);
   } else {
     std::vector<std::string> slides = params_.screenshare[video_idx].slides;
-    if (slides.size() == 0) {
+    if (slides.empty()) {
       slides.push_back(test::ResourcePath("web_screenshot_1850_1110", "yuv"));
       slides.push_back(test::ResourcePath("presentation_1850_1110", "yuv"));
       slides.push_back(test::ResourcePath("photo_1850_1110", "yuv"));
@@ -1206,8 +1206,8 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
   task_queue_.SendTask([this, &send_call_config, &recv_call_config,
                         &send_transport, &recv_transport]() {
     if (params_.audio.enabled)
-      InitializeAudioDevice(
-          &send_call_config, &recv_call_config, params_.audio.use_real_adm);
+      InitializeAudioDevice(&send_call_config, &recv_call_config,
+                            params_.audio.use_real_adm);
 
     CreateCalls(send_call_config, recv_call_config);
     send_transport = CreateSendTransport();
@@ -1298,21 +1298,21 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
 
 rtc::scoped_refptr<AudioDeviceModule> VideoQualityTest::CreateAudioDevice() {
 #ifdef WEBRTC_WIN
-    RTC_LOG(INFO) << "Using latest version of ADM on Windows";
-    // We must initialize the COM library on a thread before we calling any of
-    // the library functions. All COM functions in the ADM will return
-    // CO_E_NOTINITIALIZED otherwise. The legacy ADM for Windows used internal
-    // COM initialization but the new ADM requires COM to be initialized
-    // externally.
-    com_initializer_ = absl::make_unique<webrtc_win::ScopedCOMInitializer>(
-        webrtc_win::ScopedCOMInitializer::kMTA);
-    RTC_CHECK(com_initializer_->Succeeded());
-    RTC_CHECK(webrtc_win::core_audio_utility::IsSupported());
-    RTC_CHECK(webrtc_win::core_audio_utility::IsMMCSSSupported());
-    return CreateWindowsCoreAudioAudioDeviceModule();
+  RTC_LOG(INFO) << "Using latest version of ADM on Windows";
+  // We must initialize the COM library on a thread before we calling any of
+  // the library functions. All COM functions in the ADM will return
+  // CO_E_NOTINITIALIZED otherwise. The legacy ADM for Windows used internal
+  // COM initialization but the new ADM requires COM to be initialized
+  // externally.
+  com_initializer_ = absl::make_unique<webrtc_win::ScopedCOMInitializer>(
+      webrtc_win::ScopedCOMInitializer::kMTA);
+  RTC_CHECK(com_initializer_->Succeeded());
+  RTC_CHECK(webrtc_win::core_audio_utility::IsSupported());
+  RTC_CHECK(webrtc_win::core_audio_utility::IsMMCSSSupported());
+  return CreateWindowsCoreAudioAudioDeviceModule();
 #else
-    // Use legacy factory method on all platforms except Windows.
-    return AudioDeviceModule::Create(AudioDeviceModule::kPlatformDefaultAudio);
+  // Use legacy factory method on all platforms except Windows.
+  return AudioDeviceModule::Create(AudioDeviceModule::kPlatformDefaultAudio);
 #endif
 }
 
@@ -1348,7 +1348,7 @@ void VideoQualityTest::InitializeAudioDevice(Call::Config* send_call_config,
   }
   // Always initialize the ADM before injecting a valid audio transport.
   RTC_CHECK(audio_device->RegisterAudioCallback(
-            send_call_config->audio_state->audio_transport()) == 0);
+                send_call_config->audio_state->audio_transport()) == 0);
 }
 
 void VideoQualityTest::SetupAudio(Transport* transport) {
@@ -1428,8 +1428,8 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
     Call::Config recv_call_config(recv_event_log_.get());
 
     if (params_.audio.enabled)
-      InitializeAudioDevice(
-          &send_call_config, &recv_call_config, params_.audio.use_real_adm);
+      InitializeAudioDevice(&send_call_config, &recv_call_config,
+                            params_.audio.use_real_adm);
 
     CreateCalls(send_call_config, recv_call_config);
 
