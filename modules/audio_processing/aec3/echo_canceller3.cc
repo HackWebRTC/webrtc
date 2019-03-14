@@ -15,6 +15,7 @@
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomic_ops.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
@@ -34,6 +35,12 @@ bool DetectSaturation(rtc::ArrayView<const float> y) {
 // Method for adjusting config parameter dependencies..
 EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
   EchoCanceller3Config adjusted_cfg = config;
+
+  if (field_trial::IsEnabled("WebRTC-Aec3ShortHeadroomKillSwitch")) {
+    // Two blocks headroom.
+    adjusted_cfg.delay.delay_headroom_samples = kBlockSize * 2;
+  }
+
   return adjusted_cfg;
 }
 

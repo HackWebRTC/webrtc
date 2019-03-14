@@ -115,7 +115,7 @@ TEST(SignalDependentErleEstimator, SweepSettings) {
         cfg.filter.main.length_blocks = blocks;
         cfg.filter.main_initial.length_blocks =
             std::min(cfg.filter.main_initial.length_blocks, blocks);
-        cfg.delay.delay_headroom_blocks = delay_headroom;
+        cfg.delay.delay_headroom_samples = delay_headroom * kBlockSize;
         cfg.erle.num_sections = num_sections;
         if (EchoCanceller3Config::Validate(&cfg)) {
           SignalDependentErleEstimator s(cfg);
@@ -137,9 +137,8 @@ TEST(SignalDependentErleEstimator, LongerRun) {
   EchoCanceller3Config cfg;
   cfg.filter.main.length_blocks = 2;
   cfg.filter.main_initial.length_blocks = 1;
-  cfg.delay.delay_headroom_blocks = 0;
-  cfg.delay.hysteresis_limit_1_blocks = 0;
-  cfg.delay.hysteresis_limit_2_blocks = 0;
+  cfg.delay.delay_headroom_samples = 0;
+  cfg.delay.hysteresis_limit_blocks = 0;
   cfg.erle.num_sections = 2;
   EXPECT_EQ(EchoCanceller3Config::Validate(&cfg), true);
   std::array<float, kFftLengthBy2Plus1> average_erle;

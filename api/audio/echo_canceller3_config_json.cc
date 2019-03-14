@@ -148,12 +148,10 @@ void Aec3ConfigFromJsonString(absl::string_view json_string,
     ReadParam(section, "default_delay", &cfg.delay.default_delay);
     ReadParam(section, "down_sampling_factor", &cfg.delay.down_sampling_factor);
     ReadParam(section, "num_filters", &cfg.delay.num_filters);
-    ReadParam(section, "delay_headroom_blocks",
-              &cfg.delay.delay_headroom_blocks);
-    ReadParam(section, "hysteresis_limit_1_blocks",
-              &cfg.delay.hysteresis_limit_1_blocks);
-    ReadParam(section, "hysteresis_limit_2_blocks",
-              &cfg.delay.hysteresis_limit_2_blocks);
+    ReadParam(section, "delay_headroom_samples",
+              &cfg.delay.delay_headroom_samples);
+    ReadParam(section, "hysteresis_limit_blocks",
+              &cfg.delay.hysteresis_limit_blocks);
     ReadParam(section, "fixed_capture_delay_samples",
               &cfg.delay.fixed_capture_delay_samples);
     ReadParam(section, "delay_estimate_smoothing",
@@ -344,12 +342,10 @@ std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config) {
   ost << "\"down_sampling_factor\": " << config.delay.down_sampling_factor
       << ",";
   ost << "\"num_filters\": " << config.delay.num_filters << ",";
-  ost << "\"delay_headroom_blocks\": " << config.delay.delay_headroom_blocks
+  ost << "\"delay_headroom_samples\": " << config.delay.delay_headroom_samples
       << ",";
-  ost << "\"hysteresis_limit_1_blocks\": "
-      << config.delay.hysteresis_limit_1_blocks << ",";
-  ost << "\"hysteresis_limit_2_blocks\": "
-      << config.delay.hysteresis_limit_2_blocks << ",";
+  ost << "\"hysteresis_limit_blocks\": " << config.delay.hysteresis_limit_blocks
+      << ",";
   ost << "\"fixed_capture_delay_samples\": "
       << config.delay.fixed_capture_delay_samples << ",";
   ost << "\"delay_estimate_smoothing\": "

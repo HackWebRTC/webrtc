@@ -192,7 +192,7 @@ class AecState {
                 size_t blocks_with_proper_filter_adaptation);
 
    private:
-    const int delay_headroom_blocks_;
+    const int delay_headroom_samples_;
     bool external_delay_reported_ = false;
     int filter_delay_blocks_ = 0;
     absl::optional<DelayEstimate> external_delay_;

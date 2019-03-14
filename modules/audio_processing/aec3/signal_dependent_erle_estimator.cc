@@ -122,7 +122,7 @@ SignalDependentErleEstimator::SignalDependentErleEstimator(
     : min_erle_(config.erle.min),
       num_sections_(config.erle.num_sections),
       num_blocks_(config.filter.main.length_blocks),
-      delay_headroom_blocks_(config.delay.delay_headroom_blocks),
+      delay_headroom_blocks_(config.delay.delay_headroom_samples / kBlockSize),
       band_to_subband_(FormSubbandMap()),
       max_erle_(SetMaxErleSubbands(config.erle.max_l,
                                    config.erle.max_h,
