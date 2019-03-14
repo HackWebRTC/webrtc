@@ -52,7 +52,6 @@ class DefaultTemporalLayers : public Vp8TemporalLayers {
                     CodecSpecificInfo* info) override;
 
  private:
-  static constexpr size_t kKeyframeBuffer = std::numeric_limits<size_t>::max();
   static std::vector<Vp8FrameConfig> GetTemporalPattern(size_t num_layers);
   bool IsSyncFrame(const Vp8FrameConfig& config) const;
   void ValidateReferences(Vp8FrameConfig::BufferFlags* flags,
