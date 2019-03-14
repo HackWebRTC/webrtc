@@ -375,7 +375,9 @@ void VideoReceiveStream::Start() {
   // |video_stream_decoder_|.
   call_stats_->RegisterStatsObserver(this);
 
-  process_thread_->RegisterModule(&video_receiver_, RTC_FROM_HERE);
+  // NOTE: *Not* registering video_receiver_ on process_thread_. Its Process
+  // method does nothing that is useful for us, since we no longer use the old
+  // jitter buffer.
 
   // Start the decode thread
   video_receiver_.DecoderThreadStarting();
@@ -393,7 +395,6 @@ void VideoReceiveStream::Stop() {
 
   frame_buffer_->Stop();
   call_stats_->DeregisterStatsObserver(this);
-  process_thread_->DeRegisterModule(&video_receiver_);
 
   if (decode_thread_.IsRunning()) {
     // TriggerDecoderShutdown will release any waiting decoder thread and make
