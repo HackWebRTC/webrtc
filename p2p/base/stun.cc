@@ -364,8 +364,10 @@ bool StunMessage::Read(ByteBufferReader* buf) {
   if (!buf->ReadString(&transaction_id, kStunTransactionIdLength))
     return false;
 
-  uint32_t magic_cookie_int =
-      *reinterpret_cast<const uint32_t*>(magic_cookie.data());
+  uint32_t magic_cookie_int;
+  static_assert(sizeof(magic_cookie_int) == kStunMagicCookieLength,
+                "Integer size mismatch: magic_cookie_int and kStunMagicCookie");
+  std::memcpy(&magic_cookie_int, magic_cookie.data(), sizeof(magic_cookie_int));
   if (rtc::NetworkToHost32(magic_cookie_int) != kStunMagicCookie) {
     // If magic cookie is invalid it means that the peer implements
     // RFC3489 instead of RFC5389.

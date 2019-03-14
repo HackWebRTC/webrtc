@@ -110,7 +110,7 @@ const size_t kStunHeaderSize = 20;
 const size_t kStunTransactionIdOffset = 8;
 const size_t kStunTransactionIdLength = 12;
 const uint32_t kStunMagicCookie = 0x2112A442;
-const size_t kStunMagicCookieLength = sizeof(kStunMagicCookie);
+constexpr size_t kStunMagicCookieLength = sizeof(kStunMagicCookie);
 
 // Following value corresponds to an earlier version of STUN from
 // RFC3489.
