@@ -1092,16 +1092,16 @@ void Call::UpdateAggregateNetworkState() {
   bool have_video = false;
   {
     ReadLockScoped read_lock(*send_crit_);
-    if (audio_send_ssrcs_.size() > 0)
+    if (!audio_send_ssrcs_.empty())
       have_audio = true;
-    if (video_send_ssrcs_.size() > 0)
+    if (!video_send_ssrcs_.empty())
       have_video = true;
   }
   {
     ReadLockScoped read_lock(*receive_crit_);
-    if (audio_receive_streams_.size() > 0)
+    if (!audio_receive_streams_.empty())
       have_audio = true;
-    if (video_receive_streams_.size() > 0)
+    if (!video_receive_streams_.empty())
       have_video = true;
   }
 

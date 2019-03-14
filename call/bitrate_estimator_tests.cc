@@ -66,7 +66,7 @@ class LogObserver {
         num_popped++;
         EXPECT_TRUE(a.find(b) != std::string::npos) << a << " != " << b;
       }
-      if (expected_log_lines_.size() <= 0) {
+      if (expected_log_lines_.empty()) {
         if (num_popped > 0) {
           done_.Set();
         }

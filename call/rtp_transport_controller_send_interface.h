@@ -35,7 +35,6 @@ class TaskQueue;
 }  // namespace rtc
 namespace webrtc {
 
-class CallStats;
 class CallStatsObserver;
 class FrameEncryptorInterface;
 class TargetTransferRateObserver;
