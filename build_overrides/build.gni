@@ -41,12 +41,8 @@ if (host_os == "mac") {
   _result = exec_script("//build/mac/should_use_hermetic_xcode.py",
                         [ target_os ],
                         "value")
-
-  # TODO(crbug.com/904400): Re-enable this once the hermetic toolchain runs on
-  # latest macOS release [Mojave].
-  # assert(_result != 2,
-  #        "Do not allow building targets with the default " +
-  #        "hermetic toolchain if the minimum OS version is not met.")
-  # use_system_xcode = _result == 0
-  use_system_xcode = _result != 1  # Remove when crbug.com/904400 is fixed.
+  assert(_result != 2,
+         "Do not allow building targets with the default " +
+             "hermetic toolchain if the minimum OS version is not met.")
+  use_system_xcode = _result == 0
 }
