@@ -33,7 +33,9 @@
 static const char kPeerIdHeader[] = "Pragma: ";
 
 static const char* kRequestPaths[] = {
-    "/wait", "/sign_out", "/message",
+    "/wait",
+    "/sign_out",
+    "/message",
 };
 
 enum RequestPathIndex {
@@ -127,7 +129,7 @@ void ChannelMember::QueueResponse(const std::string& status,
                                   const std::string& extra_headers,
                                   const std::string& data) {
   if (waiting_socket_) {
-    assert(queue_.size() == 0);
+    assert(queue_.empty());
     assert(waiting_socket_->method() == DataSocket::GET);
     bool ok =
         waiting_socket_->Send(status, true, content_type, extra_headers, data);
