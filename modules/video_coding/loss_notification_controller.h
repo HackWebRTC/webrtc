@@ -41,7 +41,7 @@ class LossNotificationController {
   void DiscardOldInformation();
 
   bool AllDependenciesDecodable(
-      uint64_t unwrapped_frame_id,
+      int64_t unwrapped_frame_id,
       rtc::ArrayView<const uint16_t> frame_dependency_diffs) const;
 
   // When the loss of a packet or the non-decodability of a frame is detected,
@@ -70,7 +70,7 @@ class LossNotificationController {
       RTC_GUARDED_BY(sequenced_task_checker_);
 
   // Tracked to avoid processing repeated frames (buggy/malicious remote).
-  absl::optional<uint64_t> last_received_unwrapped_frame_id_
+  absl::optional<int64_t> last_received_unwrapped_frame_id_
       RTC_GUARDED_BY(sequenced_task_checker_);
 
   // Tracked to avoid processing repeated packets.
@@ -97,7 +97,7 @@ class LossNotificationController {
   // Track which frames are decodable. Later frames are also decodable if
   // all of their dependencies can be found in this container.
   // (Naturally, later frames must also be assemblable to be decodable.)
-  std::set<uint64_t> decodable_unwrapped_frame_ids_
+  std::set<int64_t> decodable_unwrapped_frame_ids_
       RTC_GUARDED_BY(sequenced_task_checker_);
 
   rtc::SequencedTaskChecker sequenced_task_checker_;
