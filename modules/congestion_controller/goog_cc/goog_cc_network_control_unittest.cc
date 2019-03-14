@@ -488,7 +488,7 @@ TEST_F(GoogCcNetworkControllerTest, LossBasedEstimatorCapsRateAtModerateLoss) {
   auto send_net = s.CreateSimulationNode([](NetworkNodeConfig* c) {
     c->simulation.bandwidth = DataRate::kbps(5000);
     c->simulation.delay = TimeDelta::ms(100);
-    c->simulation.loss_rate = 0.02;
+    c->simulation.loss_rate = 0.03;
     c->update_frequency = TimeDelta::ms(5);
   });
   auto ret_net = s.CreateSimulationNode([](NetworkNodeConfig* c) {
