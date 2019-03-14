@@ -50,7 +50,7 @@ FilterAnalyzer::FilterAnalyzer(const EchoCanceller3Config& config)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       bounded_erl_(config.ep_strength.bounded_erl),
-      default_gain_(config.ep_strength.lf),
+      default_gain_(config.ep_strength.default_gain),
       h_highpass_(GetTimeDomainLength(config.filter.main.length_blocks), 0.f),
       filter_length_blocks_(config.filter.main_initial.length_blocks),
       consistent_filter_detector_(config) {

@@ -113,7 +113,7 @@ void ResidualEchoEstimator::Estimate(
 
     float echo_path_gain;
     echo_path_gain =
-        aec_state.TransparentMode() ? 0.01f : config_.ep_strength.lf;
+        aec_state.TransparentMode() ? 0.01f : config_.ep_strength.default_gain;
     NonLinearEstimate(echo_path_gain, X2, Y2, R2);
 
     // When there is saturated echo, assume the same spectral content as is

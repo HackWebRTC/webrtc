@@ -142,9 +142,7 @@ bool EchoCanceller3Config::Validate(EchoCanceller3Config* config) {
   }
   res = res & Limit(&c->erle.num_sections, 1, c->filter.main.length_blocks);
 
-  res = res & Limit(&c->ep_strength.lf, 0.f, 1000000.f);
-  res = res & Limit(&c->ep_strength.mf, 0.f, 1000000.f);
-  res = res & Limit(&c->ep_strength.hf, 0.f, 1000000.f);
+  res = res & Limit(&c->ep_strength.default_gain, 0.f, 1000000.f);
   res = res & Limit(&c->ep_strength.default_len, -1.f, 1.f);
 
   res =
@@ -165,13 +163,6 @@ bool EchoCanceller3Config::Validate(EchoCanceller3Config* config) {
                     32768.f * 32768.f);
   res = res & Limit(&c->render_levels.poor_excitation_render_limit_ds8, 0.f,
                     32768.f * 32768.f);
-
-  res =
-      res & Limit(&c->echo_removal_control.gain_rampup.initial_gain, 0.f, 1.f);
-  res = res & Limit(&c->echo_removal_control.gain_rampup.non_zero_gain_blocks,
-                    0, 100000);
-  res = res &
-        Limit(&c->echo_removal_control.gain_rampup.full_gain_blocks, 0, 100000);
 
   res = res & Limit(&c->echo_model.noise_floor_hold, 0, 1000);
   res = res & Limit(&c->echo_model.min_noise_floor_power, 0, 2000000.f);

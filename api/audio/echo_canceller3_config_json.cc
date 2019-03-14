@@ -193,9 +193,7 @@ void Aec3ConfigFromJsonString(absl::string_view json_string,
   }
 
   if (rtc::GetValueFromJsonObject(aec3_root, "ep_strength", &section)) {
-    ReadParam(section, "lf", &cfg.ep_strength.lf);
-    ReadParam(section, "mf", &cfg.ep_strength.mf);
-    ReadParam(section, "hf", &cfg.ep_strength.hf);
+    ReadParam(section, "default_gain", &cfg.ep_strength.default_gain);
     ReadParam(section, "default_len", &cfg.ep_strength.default_len);
     ReadParam(section, "reverb_based_on_render",
               &cfg.ep_strength.reverb_based_on_render);
@@ -233,15 +231,6 @@ void Aec3ConfigFromJsonString(absl::string_view json_string,
 
   if (rtc::GetValueFromJsonObject(aec3_root, "echo_removal_control",
                                   &section)) {
-    Json::Value subsection;
-    if (rtc::GetValueFromJsonObject(section, "gain_rampup", &subsection)) {
-      ReadParam(subsection, "initial_gain",
-                &cfg.echo_removal_control.gain_rampup.initial_gain);
-      ReadParam(subsection, "non_zero_gain_blocks",
-                &cfg.echo_removal_control.gain_rampup.non_zero_gain_blocks);
-      ReadParam(subsection, "full_gain_blocks",
-                &cfg.echo_removal_control.gain_rampup.full_gain_blocks);
-    }
     ReadParam(section, "has_clock_drift",
               &cfg.echo_removal_control.has_clock_drift);
     ReadParam(section, "linear_and_stable_echo_path",
@@ -413,9 +402,7 @@ std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config) {
   ost << "},";
 
   ost << "\"ep_strength\": {";
-  ost << "\"lf\": " << config.ep_strength.lf << ",";
-  ost << "\"mf\": " << config.ep_strength.mf << ",";
-  ost << "\"hf\": " << config.ep_strength.hf << ",";
+  ost << "\"default_gain\": " << config.ep_strength.default_gain << ",";
   ost << "\"default_len\": " << config.ep_strength.default_len << ",";
   ost << "\"reverb_based_on_render\": "
       << (config.ep_strength.reverb_based_on_render ? "true" : "false") << ",";
@@ -456,14 +443,6 @@ std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config) {
   ost << "},";
 
   ost << "\"echo_removal_control\": {";
-  ost << "\"gain_rampup\": {";
-  ost << "\"initial_gain\": "
-      << config.echo_removal_control.gain_rampup.initial_gain << ",";
-  ost << "\"non_zero_gain_blocks\": "
-      << config.echo_removal_control.gain_rampup.non_zero_gain_blocks << ",";
-  ost << "\"full_gain_blocks\": "
-      << config.echo_removal_control.gain_rampup.full_gain_blocks;
-  ost << "},";
   ost << "\"has_clock_drift\": "
       << (config.echo_removal_control.has_clock_drift ? "true" : "false")
       << ",";
