@@ -315,7 +315,7 @@ size_t RemoveNonWhitelistedRtcpBlocks(const rtc::Buffer& packet,
 template <typename EventType, typename ProtoType>
 void EncodeRtcpPacket(rtc::ArrayView<const EventType*> batch,
                       ProtoType* proto_batch) {
-  if (batch.size() == 0) {
+  if (batch.empty()) {
     return;
   }
 
@@ -366,7 +366,7 @@ void EncodeRtcpPacket(rtc::ArrayView<const EventType*> batch,
 template <typename EventType, typename ProtoType>
 void EncodeRtpPacket(const std::vector<const EventType*>& batch,
                      ProtoType* proto_batch) {
-  if (batch.size() == 0) {
+  if (batch.empty()) {
     return;
   }
 
@@ -889,7 +889,7 @@ void RtcEventLogEncoderNewFormat::EncodeAlrState(
 void RtcEventLogEncoderNewFormat::EncodeAudioNetworkAdaptation(
     rtc::ArrayView<const RtcEventAudioNetworkAdaptation*> batch,
     rtclog2::EventStream* event_stream) {
-  if (batch.size() == 0)
+  if (batch.empty())
     return;
 
   // Base event
@@ -1041,7 +1041,7 @@ void RtcEventLogEncoderNewFormat::EncodeAudioNetworkAdaptation(
 void RtcEventLogEncoderNewFormat::EncodeAudioPlayout(
     rtc::ArrayView<const RtcEventAudioPlayout*> batch,
     rtclog2::EventStream* event_stream) {
-  if (batch.size() == 0)
+  if (batch.empty())
     return;
 
   // Base event
@@ -1120,7 +1120,7 @@ void RtcEventLogEncoderNewFormat::EncodeAudioSendStreamConfig(
 void RtcEventLogEncoderNewFormat::EncodeBweUpdateDelayBased(
     rtc::ArrayView<const RtcEventBweUpdateDelayBased*> batch,
     rtclog2::EventStream* event_stream) {
-  if (batch.size() == 0)
+  if (batch.empty())
     return;
 
   // Base event
@@ -1177,7 +1177,7 @@ void RtcEventLogEncoderNewFormat::EncodeBweUpdateDelayBased(
 void RtcEventLogEncoderNewFormat::EncodeBweUpdateLossBased(
     rtc::ArrayView<const RtcEventBweUpdateLossBased*> batch,
     rtclog2::EventStream* event_stream) {
-  if (batch.size() == 0)
+  if (batch.empty())
     return;
 
   // Base event

@@ -330,9 +330,9 @@ void RtcEventLogImpl::WriteConfigsAndHistoryToOutput(
   // This function is used to merge the strings instead of calling the output
   // object twice with small strings. The function also avoids copying any
   // strings in the typical case where there are no config events.
-  if (encoded_configs.size() == 0) {
+  if (encoded_configs.empty()) {
     WriteToOutput(encoded_history);  // Typical case.
-  } else if (encoded_history.size() == 0) {
+  } else if (encoded_history.empty()) {
     WriteToOutput(encoded_configs);  // Very unusual case.
   } else {
     WriteToOutput(encoded_configs + encoded_history);
