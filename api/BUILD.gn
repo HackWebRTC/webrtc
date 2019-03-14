@@ -662,4 +662,31 @@ if (rtc_include_tests) {
       "units:units_unittests",
     ]
   }
+
+  rtc_source_set("compile_all_headers") {
+    testonly = true
+
+    sources = [
+      "test/compile_all_headers.cc",
+    ]
+
+    deps = [
+      ":fake_frame_decryptor",
+      ":fake_frame_encryptor",
+      ":fake_media_transport",
+      ":loopback_media_transport",
+      ":mock_audio_mixer",
+      ":mock_frame_decryptor",
+      ":mock_frame_encryptor",
+      ":mock_peerconnectioninterface",
+      ":mock_rtp",
+      ":mock_video_bitrate_allocator",
+      ":mock_video_bitrate_allocator_factory",
+      ":mock_video_codec_factory",
+      ":mock_video_decoder",
+      ":mock_video_encoder",
+      ":rtc_api_unittests",
+      "units:units_unittests",
+    ]
+  }
 }
