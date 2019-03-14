@@ -20,8 +20,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"
 
-using rtc::checked_cast;
-
 namespace webrtc {
 
 class CopyConverter : public AudioConverter {
