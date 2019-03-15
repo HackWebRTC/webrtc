@@ -114,7 +114,7 @@ class AudioReceiveStream {
     MediaTransportInterface* media_transport = nullptr;
 
     // NetEq settings.
-    size_t jitter_buffer_max_packets = 50;
+    size_t jitter_buffer_max_packets = 200;
     bool jitter_buffer_fast_accelerate = false;
     int jitter_buffer_min_delay_ms = 0;
     bool jitter_buffer_enable_rtx_handling = false;

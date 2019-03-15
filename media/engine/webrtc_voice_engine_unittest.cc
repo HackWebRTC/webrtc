@@ -2841,7 +2841,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
       .Times(2)
       .WillRepeatedly(Return(false));
 
-  EXPECT_EQ(50u, GetRecvStreamConfig(kSsrcY).jitter_buffer_max_packets);
+  EXPECT_EQ(200u, GetRecvStreamConfig(kSsrcY).jitter_buffer_max_packets);
   EXPECT_FALSE(GetRecvStreamConfig(kSsrcY).jitter_buffer_fast_accelerate);
 
   // Nothing set in AudioOptions, so everything should be as default.
@@ -2850,7 +2850,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_TRUE(IsEchoCancellationEnabled());
   EXPECT_TRUE(IsHighPassFilterEnabled());
   EXPECT_TRUE(IsTypingDetectionEnabled());
-  EXPECT_EQ(50u, GetRecvStreamConfig(kSsrcY).jitter_buffer_max_packets);
+  EXPECT_EQ(200u, GetRecvStreamConfig(kSsrcY).jitter_buffer_max_packets);
   EXPECT_FALSE(GetRecvStreamConfig(kSsrcY).jitter_buffer_fast_accelerate);
 
   // Turn typing detection off.
