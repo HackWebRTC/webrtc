@@ -1457,6 +1457,7 @@ if (rtc_include_tests) {
 
     rtc_test("neteq_rtpplay") {
       testonly = true
+      visibility += [ "*" ]
       defines = []
       deps = [
         ":neteq_test_factory",
