@@ -121,12 +121,11 @@ void AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
                                          video_header.height);
       }
     }
+
     if (!packet->SetExtension<RtpGenericFrameDescriptorExtension01>(
-            generic_descriptor) &&
-        !packet->SetExtension<RtpGenericFrameDescriptorExtension00>(
             generic_descriptor)) {
-      RTC_LOG(LS_ERROR)
-          << "Could not set RTP extension - Generic Frame Descriptor";
+      packet->SetExtension<RtpGenericFrameDescriptorExtension00>(
+          generic_descriptor);
     }
   }
 }
