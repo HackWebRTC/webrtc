@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "api/test/network_emulation_manager.h"
 #include "api/test/simulated_network.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -32,38 +33,23 @@
 namespace webrtc {
 namespace test {
 
-struct EmulatedEndpointConfig {
-  enum class IpAddressFamily { kIpv4, kIpv6 };
-
-  EmulatedEndpointConfig();
-  ~EmulatedEndpointConfig();
-  EmulatedEndpointConfig(EmulatedEndpointConfig&);
-  EmulatedEndpointConfig& operator=(EmulatedEndpointConfig&);
-  EmulatedEndpointConfig(EmulatedEndpointConfig&&);
-  EmulatedEndpointConfig& operator=(EmulatedEndpointConfig&&);
-
-  IpAddressFamily generated_ip_family = IpAddressFamily::kIpv4;
-  // If specified will be used as IP address for endpoint node. Must be unique
-  // among all created nodes.
-  absl::optional<rtc::IPAddress> ip;
-};
-
-class NetworkEmulationManager {
+class NetworkEmulationManagerImpl : public NetworkEmulationManager {
  public:
-  NetworkEmulationManager();
-  ~NetworkEmulationManager();
+  NetworkEmulationManagerImpl();
+  ~NetworkEmulationManagerImpl();
 
   EmulatedNetworkNode* CreateEmulatedNode(
-      std::unique_ptr<NetworkBehaviorInterface> network_behavior);
+      std::unique_ptr<NetworkBehaviorInterface> network_behavior) override;
 
-  EmulatedEndpoint* CreateEndpoint(EmulatedEndpointConfig config);
+  EmulatedEndpoint* CreateEndpoint(EmulatedEndpointConfig config) override;
 
   EmulatedRoute* CreateRoute(EmulatedEndpoint* from,
-                             std::vector<EmulatedNetworkNode*> via_nodes,
-                             EmulatedEndpoint* to);
-  void ClearRoute(EmulatedRoute* route);
+                             const std::vector<EmulatedNetworkNode*>& via_nodes,
+                             EmulatedEndpoint* to) override;
+  void ClearRoute(EmulatedRoute* route) override;
 
-  TrafficRoute* CreateTrafficRoute(std::vector<EmulatedNetworkNode*> via_nodes);
+  TrafficRoute* CreateTrafficRoute(
+      const std::vector<EmulatedNetworkNode*>& via_nodes);
   RandomWalkCrossTraffic* CreateRandomWalkCrossTraffic(
       TrafficRoute* traffic_route,
       RandomWalkConfig config);
@@ -71,13 +57,14 @@ class NetworkEmulationManager {
       TrafficRoute* traffic_route,
       PulsedPeaksConfig config);
 
-  rtc::Thread* CreateNetworkThread(std::vector<EmulatedEndpoint*> endpoints);
+  rtc::Thread* CreateNetworkThread(
+      const std::vector<EmulatedEndpoint*>& endpoints) override;
   rtc::NetworkManager* CreateNetworkManager(
-      std::vector<EmulatedEndpoint*> endpoints);
+      const std::vector<EmulatedEndpoint*>& endpoints) override;
 
  private:
   FakeNetworkSocketServer* CreateSocketServer(
-      std::vector<EmulatedEndpoint*> endpoints);
+      const std::vector<EmulatedEndpoint*>& endpoints);
   absl::optional<rtc::IPAddress> GetNextIPv4Address();
   void ProcessNetworkPackets();
   Timestamp Now() const;

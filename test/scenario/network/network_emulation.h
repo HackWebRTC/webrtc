@@ -31,6 +31,12 @@
 namespace webrtc {
 namespace test {
 
+// Forward declare NetworkEmulationManagerImpl for friend access from
+// EmulatedEndpoint.
+class NetworkEmulationManagerImpl;
+
+}  // namespace test
+
 struct EmulatedIpPacket {
  public:
   EmulatedIpPacket(const rtc::SocketAddress& from,
@@ -150,7 +156,7 @@ class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
   void OnPacketReceived(EmulatedIpPacket packet) override;
 
  protected:
-  friend class NetworkEmulationManager;
+  friend class test::NetworkEmulationManagerImpl;
 
   EmulatedNetworkNode* GetSendNode() const;
   void SetConnectedEndpointId(uint64_t endpoint_id);
@@ -187,7 +193,6 @@ class EmulatedRoute {
   bool active;
 };
 
-}  // namespace test
 }  // namespace webrtc
 
 #endif  // TEST_SCENARIO_NETWORK_NETWORK_EMULATION_H_

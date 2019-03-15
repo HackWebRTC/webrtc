@@ -58,7 +58,7 @@ class SocketReader : public sigslot::has_slots<> {
 };
 
 TEST(NetworkEmulationManagerTest, GeneratedIpv4AddressDoesNotCollide) {
-  NetworkEmulationManager network_manager;
+  NetworkEmulationManagerImpl network_manager;
   std::set<rtc::IPAddress> ips;
   EmulatedEndpointConfig config;
   config.generated_ip_family = EmulatedEndpointConfig::IpAddressFamily::kIpv4;
@@ -71,7 +71,7 @@ TEST(NetworkEmulationManagerTest, GeneratedIpv4AddressDoesNotCollide) {
 }
 
 TEST(NetworkEmulationManagerTest, GeneratedIpv6AddressDoesNotCollide) {
-  NetworkEmulationManager network_manager;
+  NetworkEmulationManagerImpl network_manager;
   std::set<rtc::IPAddress> ips;
   EmulatedEndpointConfig config;
   config.generated_ip_family = EmulatedEndpointConfig::IpAddressFamily::kIpv6;
@@ -84,7 +84,7 @@ TEST(NetworkEmulationManagerTest, GeneratedIpv6AddressDoesNotCollide) {
 }
 
 TEST(NetworkEmulationManagerTest, Run) {
-  NetworkEmulationManager network_manager;
+  NetworkEmulationManagerImpl network_manager;
 
   EmulatedNetworkNode* alice_node = network_manager.CreateEmulatedNode(
       absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));

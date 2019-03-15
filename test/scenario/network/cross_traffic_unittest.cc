@@ -63,7 +63,7 @@ class CountingBehavior : public NetworkBehaviorInterface {
 }  // namespace
 
 TEST(CrossTrafficTest, TriggerPacketBurst) {
-  NetworkEmulationManager network_manager;
+  NetworkEmulationManagerImpl network_manager;
 
   std::unique_ptr<CountingBehavior> behavior =
       absl::make_unique<CountingBehavior>();
@@ -86,7 +86,7 @@ TEST(CrossTrafficTest, TriggerPacketBurst) {
 }
 
 TEST(CrossTrafficTest, PulsedPeaksCrossTraffic) {
-  NetworkEmulationManager network_manager;
+  NetworkEmulationManagerImpl network_manager;
 
   std::unique_ptr<CountingBehavior> behavior =
       absl::make_unique<CountingBehavior>();
@@ -119,7 +119,7 @@ TEST(CrossTrafficTest, PulsedPeaksCrossTraffic) {
 }
 
 TEST(CrossTrafficTest, RandomWalkCrossTraffic) {
-  NetworkEmulationManager network_manager;
+  NetworkEmulationManagerImpl network_manager;
 
   std::unique_ptr<CountingBehavior> behavior =
       absl::make_unique<CountingBehavior>();

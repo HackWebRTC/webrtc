@@ -18,7 +18,6 @@
 #include "rtc_base/logging.h"
 
 namespace webrtc {
-namespace test {
 
 EmulatedIpPacket::EmulatedIpPacket(const rtc::SocketAddress& from,
                                    const rtc::SocketAddress& to,
@@ -235,5 +234,4 @@ void EmulatedEndpoint::SetConnectedEndpointId(uint64_t endpoint_id) {
   connected_endpoint_id_ = endpoint_id;
 }
 
-}  // namespace test
 }  // namespace webrtc

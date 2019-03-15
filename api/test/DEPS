@@ -14,4 +14,8 @@ specific_include_rules = {
     "+rtc_base/thread.h",
     "+rtc_base/thread_checker.h",
   ],
+  "network_emulation_manager\.h": [
+    "+rtc_base/thread.h",
+    "+rtc_base/network.h",
+  ],
 }

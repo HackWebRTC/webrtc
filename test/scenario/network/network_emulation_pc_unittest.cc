@@ -100,7 +100,7 @@ TEST(NetworkEmulationManagerPCTest, Run) {
   signaling_thread->Start();
 
   // Setup emulated network
-  NetworkEmulationManager emulation;
+  NetworkEmulationManagerImpl emulation;
 
   EmulatedNetworkNode* alice_node = emulation.CreateEmulatedNode(
       absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));

@@ -219,6 +219,20 @@ if (rtc_include_tests) {
       "//third_party/abseil-cpp/absl/memory",
     ]
   }
+
+  rtc_source_set("create_network_emulation_manager_api") {
+    visibility = [ "*" ]
+    testonly = true
+    sources = [
+      "test/create_network_emulation_manager.cc",
+      "test/create_network_emulation_manager.h",
+    ]
+    deps = [
+      ":network_emulation_manager_api",
+      "../test/scenario/network:emulated_network",
+      "//third_party/abseil-cpp/absl/memory:memory",
+    ]
+  }
 }
 
 rtc_source_set("libjingle_logging_api") {
@@ -302,6 +316,17 @@ rtc_source_set("simulated_network_api") {
     "../rtc_base:criticalsection",
     "../rtc_base:rtc_base",
     "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
+rtc_source_set("network_emulation_manager_api") {
+  visibility = [ "*" ]
+  sources = [
+    "test/network_emulation_manager.h",
+  ]
+  deps = [
+    ":simulated_network_api",
+    "../rtc_base:rtc_base",
   ]
 }
 

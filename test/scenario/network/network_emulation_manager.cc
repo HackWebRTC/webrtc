@@ -30,18 +30,7 @@ constexpr uint32_t kMaxIPv4Address = 0xC0A8FFFF;
 
 }  // namespace
 
-EmulatedEndpointConfig::EmulatedEndpointConfig() = default;
-EmulatedEndpointConfig::~EmulatedEndpointConfig() = default;
-EmulatedEndpointConfig::EmulatedEndpointConfig(EmulatedEndpointConfig&) =
-    default;
-EmulatedEndpointConfig& EmulatedEndpointConfig::operator=(
-    EmulatedEndpointConfig&) = default;
-EmulatedEndpointConfig::EmulatedEndpointConfig(EmulatedEndpointConfig&&) =
-    default;
-EmulatedEndpointConfig& EmulatedEndpointConfig::operator=(
-    EmulatedEndpointConfig&&) = default;
-
-NetworkEmulationManager::NetworkEmulationManager()
+NetworkEmulationManagerImpl::NetworkEmulationManagerImpl()
     : clock_(Clock::GetRealTimeClock()),
       next_node_id_(1),
       next_ip4_address_(kMinIPv4Address),
@@ -55,9 +44,9 @@ NetworkEmulationManager::NetworkEmulationManager()
 // TODO(srte): Ensure that any pending task that must be run for consistency
 // (such as stats collection tasks) are not cancelled when the task queue is
 // destroyed.
-NetworkEmulationManager::~NetworkEmulationManager() = default;
+NetworkEmulationManagerImpl::~NetworkEmulationManagerImpl() = default;
 
-EmulatedNetworkNode* NetworkEmulationManager::CreateEmulatedNode(
+EmulatedNetworkNode* NetworkEmulationManagerImpl::CreateEmulatedNode(
     std::unique_ptr<NetworkBehaviorInterface> network_behavior) {
   auto node =
       absl::make_unique<EmulatedNetworkNode>(std::move(network_behavior));
@@ -65,14 +54,14 @@ EmulatedNetworkNode* NetworkEmulationManager::CreateEmulatedNode(
 
   struct Closure {
     void operator()() { manager->network_nodes_.push_back(std::move(node)); }
-    NetworkEmulationManager* manager;
+    NetworkEmulationManagerImpl* manager;
     std::unique_ptr<EmulatedNetworkNode> node;
   };
   task_queue_.PostTask(Closure{this, std::move(node)});
   return out;
 }
 
-EmulatedEndpoint* NetworkEmulationManager::CreateEndpoint(
+EmulatedEndpoint* NetworkEmulationManagerImpl::CreateEndpoint(
     EmulatedEndpointConfig config) {
   absl::optional<rtc::IPAddress> ip = config.ip;
   if (!ip) {
@@ -97,9 +86,9 @@ EmulatedEndpoint* NetworkEmulationManager::CreateEndpoint(
   return out;
 }
 
-EmulatedRoute* NetworkEmulationManager::CreateRoute(
+EmulatedRoute* NetworkEmulationManagerImpl::CreateRoute(
     EmulatedEndpoint* from,
-    std::vector<EmulatedNetworkNode*> via_nodes,
+    const std::vector<EmulatedNetworkNode*>& via_nodes,
     EmulatedEndpoint* to) {
   // Because endpoint has no send node by default at least one should be
   // provided here.
@@ -121,7 +110,7 @@ EmulatedRoute* NetworkEmulationManager::CreateRoute(
   return out;
 }
 
-void NetworkEmulationManager::ClearRoute(EmulatedRoute* route) {
+void NetworkEmulationManagerImpl::ClearRoute(EmulatedRoute* route) {
   RTC_CHECK(route->active) << "Route already cleared";
 
   // Remove receiver from intermediate nodes.
@@ -137,8 +126,8 @@ void NetworkEmulationManager::ClearRoute(EmulatedRoute* route) {
   route->active = false;
 }
 
-TrafficRoute* NetworkEmulationManager::CreateTrafficRoute(
-    std::vector<EmulatedNetworkNode*> via_nodes) {
+TrafficRoute* NetworkEmulationManagerImpl::CreateTrafficRoute(
+    const std::vector<EmulatedNetworkNode*>& via_nodes) {
   RTC_CHECK(!via_nodes.empty());
   EmulatedEndpoint* endpoint = CreateEndpoint(EmulatedEndpointConfig());
 
@@ -157,7 +146,8 @@ TrafficRoute* NetworkEmulationManager::CreateTrafficRoute(
   return out;
 }
 
-RandomWalkCrossTraffic* NetworkEmulationManager::CreateRandomWalkCrossTraffic(
+RandomWalkCrossTraffic*
+NetworkEmulationManagerImpl::CreateRandomWalkCrossTraffic(
     TrafficRoute* traffic_route,
     RandomWalkConfig config) {
   auto traffic = absl::make_unique<RandomWalkCrossTraffic>(std::move(config),
@@ -167,14 +157,15 @@ RandomWalkCrossTraffic* NetworkEmulationManager::CreateRandomWalkCrossTraffic(
     void operator()() {
       manager->random_cross_traffics_.push_back(std::move(traffic));
     }
-    NetworkEmulationManager* manager;
+    NetworkEmulationManagerImpl* manager;
     std::unique_ptr<RandomWalkCrossTraffic> traffic;
   };
   task_queue_.PostTask(Closure{this, std::move(traffic)});
   return out;
 }
 
-PulsedPeaksCrossTraffic* NetworkEmulationManager::CreatePulsedPeaksCrossTraffic(
+PulsedPeaksCrossTraffic*
+NetworkEmulationManagerImpl::CreatePulsedPeaksCrossTraffic(
     TrafficRoute* traffic_route,
     PulsedPeaksConfig config) {
   auto traffic = absl::make_unique<PulsedPeaksCrossTraffic>(std::move(config),
@@ -184,15 +175,15 @@ PulsedPeaksCrossTraffic* NetworkEmulationManager::CreatePulsedPeaksCrossTraffic(
     void operator()() {
       manager->pulsed_cross_traffics_.push_back(std::move(traffic));
     }
-    NetworkEmulationManager* manager;
+    NetworkEmulationManagerImpl* manager;
     std::unique_ptr<PulsedPeaksCrossTraffic> traffic;
   };
   task_queue_.PostTask(Closure{this, std::move(traffic)});
   return out;
 }
 
-rtc::Thread* NetworkEmulationManager::CreateNetworkThread(
-    std::vector<EmulatedEndpoint*> endpoints) {
+rtc::Thread* NetworkEmulationManagerImpl::CreateNetworkThread(
+    const std::vector<EmulatedEndpoint*>& endpoints) {
   FakeNetworkSocketServer* socket_server = CreateSocketServer(endpoints);
   std::unique_ptr<rtc::Thread> network_thread =
       absl::make_unique<rtc::Thread>(socket_server);
@@ -204,8 +195,8 @@ rtc::Thread* NetworkEmulationManager::CreateNetworkThread(
   return out;
 }
 
-rtc::NetworkManager* NetworkEmulationManager::CreateNetworkManager(
-    std::vector<EmulatedEndpoint*> endpoints) {
+rtc::NetworkManager* NetworkEmulationManagerImpl::CreateNetworkManager(
+    const std::vector<EmulatedEndpoint*>& endpoints) {
   auto network_manager = absl::make_unique<rtc::FakeNetworkManager>();
   for (auto* endpoint : endpoints) {
     network_manager->AddInterface(
@@ -216,8 +207,8 @@ rtc::NetworkManager* NetworkEmulationManager::CreateNetworkManager(
   return out;
 }
 
-FakeNetworkSocketServer* NetworkEmulationManager::CreateSocketServer(
-    std::vector<EmulatedEndpoint*> endpoints) {
+FakeNetworkSocketServer* NetworkEmulationManagerImpl::CreateSocketServer(
+    const std::vector<EmulatedEndpoint*>& endpoints) {
   auto socket_server =
       absl::make_unique<FakeNetworkSocketServer>(clock_, endpoints);
   FakeNetworkSocketServer* out = socket_server.get();
@@ -225,7 +216,8 @@ FakeNetworkSocketServer* NetworkEmulationManager::CreateSocketServer(
   return out;
 }
 
-absl::optional<rtc::IPAddress> NetworkEmulationManager::GetNextIPv4Address() {
+absl::optional<rtc::IPAddress>
+NetworkEmulationManagerImpl::GetNextIPv4Address() {
   uint32_t addresses_count = kMaxIPv4Address - kMinIPv4Address;
   for (uint32_t i = 0; i < addresses_count; i++) {
     rtc::IPAddress ip(next_ip4_address_);
@@ -241,7 +233,7 @@ absl::optional<rtc::IPAddress> NetworkEmulationManager::GetNextIPv4Address() {
   return absl::nullopt;
 }
 
-void NetworkEmulationManager::ProcessNetworkPackets() {
+void NetworkEmulationManagerImpl::ProcessNetworkPackets() {
   Timestamp current_time = Now();
   for (auto& traffic : random_cross_traffics_) {
     traffic->Process(current_time);
@@ -254,7 +246,7 @@ void NetworkEmulationManager::ProcessNetworkPackets() {
   }
 }
 
-Timestamp NetworkEmulationManager::Now() const {
+Timestamp NetworkEmulationManagerImpl::Now() const {
   return Timestamp::us(clock_->TimeInMicroseconds());
 }
 
