@@ -102,8 +102,7 @@ PeerConnectionE2EQualityTest::PeerConnectionE2EQualityTest(
     std::unique_ptr<AudioQualityAnalyzerInterface> audio_quality_analyzer,
     std::unique_ptr<VideoQualityAnalyzerInterface> video_quality_analyzer)
     : clock_(Clock::GetRealTimeClock()),
-      test_case_name_(std::move(test_case_name)),
-      task_queue_("pc_e2e_quality_test") {
+      test_case_name_(std::move(test_case_name)) {
   // Create default video quality analyzer. We will always create an analyzer,
   // even if there are no video streams, because it will be installed into video
   // encoder/decoder factories.
@@ -121,6 +120,79 @@ PeerConnectionE2EQualityTest::PeerConnectionE2EQualityTest(
     audio_quality_analyzer = absl::make_unique<DefaultAudioQualityAnalyzer>();
   }
   audio_quality_analyzer_.swap(audio_quality_analyzer);
+}
+
+void PeerConnectionE2EQualityTest::ExecuteAt(
+    TimeDelta target_time_since_start,
+    std::function<void(TimeDelta)> func) {
+  ExecuteTask(target_time_since_start, absl::nullopt, func);
+}
+
+void PeerConnectionE2EQualityTest::ExecuteEvery(
+    TimeDelta initial_delay_since_start,
+    TimeDelta interval,
+    std::function<void(TimeDelta)> func) {
+  ExecuteTask(initial_delay_since_start, interval, func);
+}
+
+void PeerConnectionE2EQualityTest::ExecuteTask(
+    TimeDelta initial_delay_since_start,
+    absl::optional<TimeDelta> interval,
+    std::function<void(TimeDelta)> func) {
+  RTC_CHECK(initial_delay_since_start.IsFinite() &&
+            initial_delay_since_start >= TimeDelta::Zero());
+  RTC_CHECK(!interval ||
+            (interval->IsFinite() && *interval > TimeDelta::Zero()));
+  rtc::CritScope crit(&lock_);
+  ScheduledActivity activity(initial_delay_since_start, interval, func);
+  if (start_time_.IsInfinite()) {
+    scheduled_activities_.push(std::move(activity));
+  } else {
+    PostTask(std::move(activity));
+  }
+}
+
+void PeerConnectionE2EQualityTest::PostTask(ScheduledActivity activity) {
+  // Because start_time_ will never change at this point copy it to local
+  // variable to capture in in lambda without requirement to hold a lock.
+  Timestamp start_time = start_time_;
+
+  TimeDelta remaining_delay =
+      activity.initial_delay_since_start == TimeDelta::Zero()
+          ? TimeDelta::Zero()
+          : activity.initial_delay_since_start - (Now() - start_time_);
+  if (remaining_delay < TimeDelta::Zero()) {
+    RTC_LOG(WARNING) << "Executing late task immediately, late by="
+                     << ToString(remaining_delay.Abs());
+    remaining_delay = TimeDelta::Zero();
+  }
+
+  if (activity.interval) {
+    if (remaining_delay == TimeDelta::Zero()) {
+      repeating_task_handles_.push_back(RepeatingTaskHandle::Start(
+          task_queue_->Get(), [activity, start_time, this]() {
+            activity.func(Now() - start_time);
+            return *activity.interval;
+          }));
+      return;
+    }
+    repeating_task_handles_.push_back(RepeatingTaskHandle::DelayedStart(
+        task_queue_->Get(), remaining_delay, [activity, start_time, this]() {
+          activity.func(Now() - start_time);
+          return *activity.interval;
+        }));
+    return;
+  }
+
+  if (remaining_delay == TimeDelta::Zero()) {
+    task_queue_->PostTask(
+        [activity, start_time, this]() { activity.func(Now() - start_time); });
+    return;
+  }
+
+  task_queue_->PostDelayedTask(
+      [activity, start_time, this]() { activity.func(Now() - start_time); },
+      remaining_delay.ms());
 }
 
 void PeerConnectionE2EQualityTest::Run(
@@ -216,20 +288,31 @@ void PeerConnectionE2EQualityTest::Run(
                                  webrtc::RtcEventLog::kImmediateOutput);
   }
 
+  // Create a |task_queue_|.
+  task_queue_ = absl::make_unique<rtc::TaskQueue>("pc_e2e_quality_test");
+  // Setup call.
   signaling_thread->Invoke<void>(
       RTC_FROM_HERE,
       rtc::Bind(&PeerConnectionE2EQualityTest::SetupCallOnSignalingThread,
                 this));
+  {
+    rtc::CritScope crit(&lock_);
+    start_time_ = Now();
+    while (!scheduled_activities_.empty()) {
+      PostTask(std::move(scheduled_activities_.front()));
+      scheduled_activities_.pop();
+    }
+  }
 
   StatsPoller stats_poller({audio_quality_analyzer_.get(),
                             video_quality_analyzer_injection_helper_.get()},
                            {{"alice", alice_.get()}, {"bob", bob_.get()}});
 
-  task_queue_.PostTask([&stats_poller, this]() {
-    RTC_DCHECK_RUN_ON(&task_queue_);
+  task_queue_->PostTask([&stats_poller, this]() {
+    RTC_DCHECK_RUN_ON(task_queue_.get());
     stats_polling_task_ =
-        RepeatingTaskHandle::Start(task_queue_.Get(), [this, &stats_poller]() {
-          RTC_DCHECK_RUN_ON(&task_queue_);
+        RepeatingTaskHandle::Start(task_queue_->Get(), [this, &stats_poller]() {
+          RTC_DCHECK_RUN_ON(task_queue_.get());
           stats_poller.PollStatsAndNotifyObservers();
           return kStatsUpdateInterval;
         });
@@ -239,8 +322,8 @@ void PeerConnectionE2EQualityTest::Run(
   done.Wait(run_params.run_duration.ms());
 
   rtc::Event stats_polling_stopped;
-  task_queue_.PostTask([&stats_polling_stopped, this]() {
-    RTC_DCHECK_RUN_ON(&task_queue_);
+  task_queue_->PostTask([&stats_polling_stopped, this]() {
+    RTC_DCHECK_RUN_ON(task_queue_.get());
     stats_polling_task_.Stop();
     stats_polling_stopped.Set();
   });
@@ -248,6 +331,11 @@ void PeerConnectionE2EQualityTest::Run(
   RTC_CHECK(no_timeout) << "Failed to stop Stats polling after "
                         << kStatsPollingStopTimeout.seconds() << " seconds.";
 
+  // Destroy |task_queue_|. It is done to stop all running tasks and prevent
+  // their access to any call related objects after these objects will be
+  // destroyed during call tear down.
+  task_queue_.reset();
+  // Tear down the call.
   signaling_thread->Invoke<void>(
       RTC_FROM_HERE,
       rtc::Bind(&PeerConnectionE2EQualityTest::TearDownCallOnSignalingThread,
@@ -558,6 +646,18 @@ VideoFrameWriter* PeerConnectionE2EQualityTest::MaybeCreateVideoWriter(
   video_writers_.push_back(std::move(video_writer));
   return out;
 }
+
+Timestamp PeerConnectionE2EQualityTest::Now() const {
+  return Timestamp::us(clock_->TimeInMicroseconds());
+}
+
+PeerConnectionE2EQualityTest::ScheduledActivity::ScheduledActivity(
+    TimeDelta initial_delay_since_start,
+    absl::optional<TimeDelta> interval,
+    std::function<void(TimeDelta)> func)
+    : initial_delay_since_start(initial_delay_since_start),
+      interval(std::move(interval)),
+      func(std::move(func)) {}
 
 }  // namespace test
 }  // namespace webrtc

@@ -64,9 +64,12 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
 
+  auto alice_network_behavior =
+      absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig());
+  SimulatedNetwork* alice_network_behavior_ptr = alice_network_behavior.get();
   EmulatedNetworkNode* alice_node =
       network_emulation_manager->CreateEmulatedNode(
-          absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
+          std::move(alice_network_behavior));
   EmulatedNetworkNode* bob_node = network_emulation_manager->CreateEmulatedNode(
       absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
   EmulatedEndpoint* alice_endpoint =
@@ -108,6 +111,12 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
   auto fixture = CreatePeerConnectionE2EQualityTestFixture(
       "smoke_test", std::move(audio_quality_analyzer),
       std::move(video_quality_analyzer));
+  fixture->ExecuteAt(TimeDelta::seconds(2),
+                     [alice_network_behavior_ptr](TimeDelta) {
+                       BuiltInNetworkBehaviorConfig config;
+                       config.loss_percent = 5;
+                       alice_network_behavior_ptr->SetConfig(config);
+                     });
   fixture->Run(std::move(alice_components), std::move(alice_params),
                std::move(bob_components), std::move(bob_params),
                RunParams{TimeDelta::seconds(5)});

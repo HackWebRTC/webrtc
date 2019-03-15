@@ -11,9 +11,12 @@
 #define TEST_PC_E2E_PEER_CONNECTION_QUALITY_TEST_H_
 
 #include <memory>
+#include <queue>
 #include <string>
 #include <vector>
 
+#include "api/units/time_delta.h"
+#include "api/units/timestamp.h"
 #include "pc/test/frame_generator_capturer_video_track_source.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/task_utils/repeating_task.h"
@@ -54,7 +57,27 @@ class PeerConnectionE2EQualityTest
            std::unique_ptr<Params> bob_params,
            RunParams run_params) override;
 
+  void ExecuteAt(TimeDelta target_time_since_start,
+                 std::function<void(TimeDelta)> func) override;
+  void ExecuteEvery(TimeDelta initial_delay_since_start,
+                    TimeDelta interval,
+                    std::function<void(TimeDelta)> func) override;
+
  private:
+  struct ScheduledActivity {
+    ScheduledActivity(TimeDelta initial_delay_since_start,
+                      absl::optional<TimeDelta> interval,
+                      std::function<void(TimeDelta)> func);
+
+    TimeDelta initial_delay_since_start;
+    absl::optional<TimeDelta> interval;
+    std::function<void(TimeDelta)> func;
+  };
+
+  void ExecuteTask(TimeDelta initial_delay_since_start,
+                   absl::optional<TimeDelta> interval,
+                   std::function<void(TimeDelta)> func);
+  void PostTask(ScheduledActivity activity) RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
   // Set missing params to default values if it is required:
   //  * Generate video stream labels if some of them missed
   //  * Generate audio stream labels if some of them missed
@@ -83,6 +106,7 @@ class PeerConnectionE2EQualityTest
   VideoFrameWriter* MaybeCreateVideoWriter(
       absl::optional<std::string> file_name,
       const VideoConfig& config);
+  Timestamp Now() const;
 
   Clock* const clock_;
   std::string test_case_name_;
@@ -103,10 +127,25 @@ class PeerConnectionE2EQualityTest
   std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>
       output_video_sinks_;
 
+  rtc::CriticalSection lock_;
+  // Time when test call was started. Minus infinity means that call wasn't
+  // started yet.
+  Timestamp start_time_ RTC_GUARDED_BY(lock_) = Timestamp::MinusInfinity();
+  // Queue of activities that were added before test call was started.
+  // Activities from this queue will be posted on the |task_queue_| after test
+  // call will be set up and then this queue will be unused.
+  std::queue<ScheduledActivity> scheduled_activities_ RTC_GUARDED_BY(lock_);
+  // List of task handles for activities, that are posted on |task_queue_| as
+  // repeated during the call.
+  std::vector<RepeatingTaskHandle> repeating_task_handles_
+      RTC_GUARDED_BY(lock_);
+
   RepeatingTaskHandle stats_polling_task_ RTC_GUARDED_BY(&task_queue_);
-  // Must be the last field, so it will be deleted first, because tasks
-  // in the TaskQueue can access other fields of the instance of this class.
-  rtc::TaskQueue task_queue_;
+
+  // Task queue, that is used for running activities during test call.
+  // This task queue will be created before call set up and will be destroyed
+  // immediately before call tear down.
+  std::unique_ptr<rtc::TaskQueue> task_queue_;
 };
 
 }  // namespace test
