@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #include <numeric>
 
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -192,6 +193,7 @@ VideoStatistics VideoCodecTestStatsImpl::SliceAndCalcVideoStatistic(
   const size_t target_bitrate_kbps =
       CalcLayerTargetBitrateKbps(first_frame_num, last_frame_num, spatial_idx,
                                  temporal_idx, aggregate_independent_layers);
+  RTC_CHECK_GT(target_bitrate_kbps, 0);  // We divide by |target_bitrate_kbps|.
 
   for (size_t frame_num = first_frame_num; frame_num <= last_frame_num;
        ++frame_num) {
@@ -262,6 +264,7 @@ VideoStatistics VideoCodecTestStatsImpl::SliceAndCalcVideoStatistic(
 
     if (video_stat.num_input_frames > 0) {
       if (video_stat.time_to_reach_target_bitrate_sec == 0.0f) {
+        RTC_CHECK_GT(time_since_first_frame_sec, 0);
         const float curr_kbps =
             8.0 * video_stat.length_bytes / 1000 / time_since_first_frame_sec;
         const float bitrate_mismatch_percent =
@@ -286,8 +289,10 @@ VideoStatistics VideoCodecTestStatsImpl::SliceAndCalcVideoStatistic(
   const size_t timestamp_delta =
       GetFrame(first_frame_num + 1, spatial_idx)->rtp_timestamp -
       GetFrame(first_frame_num, spatial_idx)->rtp_timestamp;
+  RTC_CHECK_GT(timestamp_delta, 0);
   const float input_framerate_fps =
       1.0 * kVideoPayloadTypeFrequency / timestamp_delta;
+  RTC_CHECK_GT(input_framerate_fps, 0);
   const float duration_sec = num_frames / input_framerate_fps;
 
   video_stat.target_bitrate_kbps = target_bitrate_kbps;
@@ -296,12 +301,22 @@ VideoStatistics VideoCodecTestStatsImpl::SliceAndCalcVideoStatistic(
   video_stat.spatial_idx = spatial_idx;
   video_stat.temporal_idx = temporal_idx;
 
+  RTC_CHECK_GT(duration_sec, 0);
   video_stat.bitrate_kbps =
       static_cast<size_t>(8 * video_stat.length_bytes / 1000 / duration_sec);
   video_stat.framerate_fps = video_stat.num_encoded_frames / duration_sec;
 
-  video_stat.enc_speed_fps = 1000000 / frame_encoding_time_us.Mean();
-  video_stat.dec_speed_fps = 1000000 / frame_decoding_time_us.Mean();
+  // http://bugs.webrtc.org/10400: On Windows, we only get millisecond
+  // granularity in the frame encode/decode timing measurements.
+  // So we need to softly avoid a div-by-zero here.
+  const float mean_encode_time_us = frame_encoding_time_us.Mean();
+  video_stat.enc_speed_fps = mean_encode_time_us > 0.0f
+                                 ? 1000000.0f / mean_encode_time_us
+                                 : std::numeric_limits<float>::max();
+  const float mean_decode_time_us = frame_decoding_time_us.Mean();
+  video_stat.dec_speed_fps = mean_decode_time_us > 0.0f
+                                 ? 1000000.0f / mean_decode_time_us
+                                 : std::numeric_limits<float>::max();
 
   video_stat.avg_delay_sec = buffer_level_sec.Mean();
   video_stat.max_key_frame_delay_sec =
