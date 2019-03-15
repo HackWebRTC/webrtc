@@ -13,6 +13,7 @@
 #include <math.h>
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <numeric>
 #include <string>
 #include <vector>
@@ -46,8 +47,8 @@ void ProduceDecimatedSinusoidalOutputPower(int sample_rate_hz,
 
   // Produce a sinusoid of the specified frequency.
   for (size_t k = 0; k < kBlockSize * kNumBlocks; ++k) {
-    input[k] =
-        32767.f * sin(2.f * kPi * sinusoidal_frequency_hz * k / sample_rate_hz);
+    input[k] = 32767.f * std::sin(2.f * kPi * sinusoidal_frequency_hz * k /
+                                  sample_rate_hz);
   }
 
   Decimator decimator(down_sampling_factor);

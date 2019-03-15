@@ -13,6 +13,7 @@
 #include <stddef.h>
 #include <algorithm>
 #include <array>
+#include <cmath>
 #include <memory>
 
 #include "api/array_view.h"
@@ -171,7 +172,7 @@ EchoRemoverImpl::~EchoRemoverImpl() = default;
 
 void EchoRemoverImpl::GetMetrics(EchoControl::Metrics* metrics) const {
   // Echo return loss (ERL) is inverted to go from gain to attenuation.
-  metrics->echo_return_loss = -10.0 * log10(aec_state_.ErlTimeDomain());
+  metrics->echo_return_loss = -10.0 * std::log10(aec_state_.ErlTimeDomain());
   metrics->echo_return_loss_enhancement =
       Log2TodB(aec_state_.FullBandErleLog2());
 }

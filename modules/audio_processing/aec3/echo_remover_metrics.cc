@@ -13,6 +13,7 @@
 #include <math.h>
 #include <stddef.h>
 #include <algorithm>
+#include <cmath>
 #include <numeric>
 
 #include "rtc_base/checks.h"
@@ -314,7 +315,7 @@ int TransformDbMetricForReporting(bool negate,
                                   float offset,
                                   float scaling,
                                   float value) {
-  float new_value = 10.f * log10(value * scaling + 1e-10f) + offset;
+  float new_value = 10.f * std::log10(value * scaling + 1e-10f) + offset;
   if (negate) {
     new_value = -new_value;
   }

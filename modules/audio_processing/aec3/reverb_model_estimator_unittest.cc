@@ -39,8 +39,8 @@ class ReverbModelEstimatorTest {
   void RunEstimator();
   float GetDecay() { return estimated_decay_; }
   float GetTrueDecay() { return kTruePowerDecay; }
-  float GetPowerTailDb() { return 10.f * log10(estimated_power_tail_); }
-  float GetTruePowerTailDb() { return 10.f * log10(true_power_tail_); }
+  float GetPowerTailDb() { return 10.f * std::log10(estimated_power_tail_); }
+  float GetTruePowerTailDb() { return 10.f * std::log10(true_power_tail_); }
 
  private:
   void CreateImpulseResponseWithDecay();

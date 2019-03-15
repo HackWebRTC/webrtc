@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <algorithm>
+#include <cmath>
 
 #include "rtc_base/checks.h"
 
@@ -446,8 +447,8 @@ static void UpdateLogRatioMetric(Stats* metric,
   RTC_CHECK(numerator >= 0);
   RTC_CHECK(denominator >= 0);
 
-  const float log_numerator = log10(numerator + 1e-10f);
-  const float log_denominator = log10(denominator + 1e-10f);
+  const float log_numerator = std::log10(numerator + 1e-10f);
+  const float log_denominator = std::log10(denominator + 1e-10f);
   metric->instant = 10.0f * (log_numerator - log_denominator);
 
   // Max.
@@ -1110,10 +1111,10 @@ static void FormSuppressionGain(AecCore* aec,
       // preferred.
       memcpy(hNlPref, &hNl[minPrefBand], sizeof(float) * prefBandSize);
       qsort(hNlPref, prefBandSize, sizeof(float), CmpFloat);
-      hNlFb =
-          hNlPref[static_cast<int>(floor(prefBandQuant * (prefBandSize - 1)))];
+      hNlFb = hNlPref[static_cast<int>(
+          std::floor(prefBandQuant * (prefBandSize - 1)))];
       hNlFbLow = hNlPref[static_cast<int>(
-          floor(prefBandQuantLow * (prefBandSize - 1)))];
+          std::floor(prefBandQuantLow * (prefBandSize - 1)))];
     }
   }
 
@@ -1136,7 +1137,7 @@ static void FormSuppressionGain(AecCore* aec,
     aec->hNlMinCtr = 0;
     aec->overDrive = WEBRTC_SPL_MAX(
         kTargetSupp[aec->nlp_mode] /
-            static_cast<float>(log(aec->hNlFbMin + 1e-10f) + 1e-10f),
+            static_cast<float>(std::log(aec->hNlFbMin + 1e-10f) + 1e-10f),
         min_overdrive[aec->nlp_mode]);
   }
 
