@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <math.h>
+#include <cmath>
 
 #include "audio/remix_resample.h"
 #include "common_audio/resampler/include/push_resampler.h"
@@ -133,7 +133,7 @@ float ComputeSNR(const AudioFrame& ref_frame,
     }
     float snr = 100;  // We assign 100 dB to the zero-error case.
     if (mse > 0)
-      snr = 10 * log10(variance / mse);
+      snr = 10 * std::log10(variance / mse);
     if (snr > best_snr) {
       best_snr = snr;
       best_delay = delay;
