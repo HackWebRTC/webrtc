@@ -318,7 +318,10 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
 
   // In quick test synchronization may not be achieved in time.
   if (!field_trial::IsEnabled("WebRTC-QuickPerfTest")) {
+// TODO(bugs.webrtc.org/10417): Reenable this for iOS
+#if !defined(WEBRTC_IOS)
     EXPECT_EQ(1, metrics::NumSamples("WebRTC.Video.AVSyncOffsetInMs"));
+#endif
   }
 }
 
