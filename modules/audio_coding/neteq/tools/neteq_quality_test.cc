@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <math.h>
 #include <stdio.h>
+#include <cmath>
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_coding/neteq/tools/neteq_quality_test.h"
@@ -114,19 +114,19 @@ static double ProbTrans00Solver(int units,
   const int kIterations = 100;
   const double a = (1.0f - loss_rate) / prob_trans_10;
   const double b = (loss_rate - 1.0f) * (1.0f + 1.0f / prob_trans_10);
-  double x = 0.0f;  // Starting point;
+  double x = 0.0;  // Starting point;
   double f = b;
   double f_p;
   int iter = 0;
   while ((f >= kPrecision || f <= -kPrecision) && iter < kIterations) {
-    f_p = (units - 1.0f) * pow(x, units - 2) + a;
+    f_p = (units - 1.0f) * std::pow(x, units - 2) + a;
     x -= f / f_p;
     if (x > 1.0f) {
       x = 1.0f;
     } else if (x < 0.0f) {
       x = 0.0f;
     }
-    f = pow(x, units - 1) + a * x + b;
+    f = std::pow(x, units - 1) + a * x + b;
     iter++;
   }
   return x;
@@ -284,7 +284,7 @@ void NetEqQualityTest::SetUp() {
       // (1 - unit_loss_rate) ^ (block_duration_ms_ / kPacketLossTimeUnitMs) ==
       // 1 - packet_loss_rate.
       double unit_loss_rate =
-          (1.0f - pow(1.0f - 0.01f * packet_loss_rate_, 1.0f / units));
+          (1.0 - std::pow(1.0 - 0.01 * packet_loss_rate_, 1.0 / units));
       loss_model_.reset(new UniformLoss(unit_loss_rate));
       break;
     }
