@@ -410,6 +410,10 @@ rtc_source_set("timeutils") {
     ":safe_conversions",
     ":stringutils",
   ]
+  libs = []
+  if (is_win) {
+    libs += [ "winmm.lib" ]
+  }
 }
 
 rtc_source_set("stringutils") {
