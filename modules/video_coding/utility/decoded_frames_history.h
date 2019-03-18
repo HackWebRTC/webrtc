@@ -42,12 +42,11 @@ class DecodedFramesHistory {
     LayerHistory();
     ~LayerHistory();
     // Cyclic bitset buffer. Stores last known |window_size| bits.
-    // last_stored_index is the last actually stored bit. Previous
-    // |window_size-1| bits are also in the memory. Value for i-th bit is at
-    // buffer[i % window_size].
     std::vector<bool> buffer;
-    int64_t last_stored_index;
+    absl::optional<int64_t> last_picture_id;
   };
+
+  int PictureIdToIndex(int64_t frame_id) const;
 
   const int window_size_;
   std::vector<LayerHistory> layers_;
