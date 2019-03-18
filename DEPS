@@ -41,6 +41,10 @@ vars = {
   # the commit queue can handle CLs rolling luci-go CIPD package version
   # and whatever else without interference from each other.
   'luci_go': 'git_revision:25958d48e89e980e2a97daeddc977fb5e2e1fb8c',
+  # Three lines of non-changing comments so that
+  # the commit queue can handle CLs rolling GN CIPD package version
+  # and whatever else without interference from each other.
+  'gn_version': 'git_revision:0790d3043387c762a6bacb1ae0a9ebe883188ab2',
 }
 deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
@@ -50,7 +54,7 @@ deps = {
   'src/build':
     Var('chromium_git') + '/chromium/src/build' + '@' + 'f89a8d1d0f9a5f6105cf2deebe6a977943440ad2',
   'src/buildtools':
-    Var('chromium_git') + '/chromium/src/buildtools' + '@' + '62f9eb0d64d6bf48f620b8233d9f7a1dc07f8414',
+    Var('chromium_git') + '/chromium/src/buildtools' + '@' + 'c79f3482c8152172a31e5c17823a27835a511dac',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
   'src/examples/androidtests/third_party/gradle': {
     'url': Var('chromium_git') + '/external/github.com/gradle/gradle.git' + '@' +
@@ -65,6 +69,37 @@ deps = {
     Var('chromium_git') + '/chromium/src/testing' + '@' + '00f6ad162561bef9747d85122e5771080e8e9225',
   'src/third_party':
     Var('chromium_git') + '/chromium/src/third_party' + '@' + '345968dc5db2cd479a86e5a93af14c141d31f3a0',
+
+  'src/buildtools/linux64': {
+    'packages': [
+      {
+        'package': 'gn/gn/linux-amd64',
+        'version': Var('gn_version'),
+      }
+    ],
+    'dep_type': 'cipd',
+    'condition': 'checkout_linux',
+  },
+  'src/buildtools/mac': {
+    'packages': [
+      {
+        'package': 'gn/gn/mac-amd64',
+        'version': Var('gn_version'),
+      }
+    ],
+    'dep_type': 'cipd',
+    'condition': 'checkout_mac',
+  },
+  'src/buildtools/win': {
+    'packages': [
+      {
+        'package': 'gn/gn/windows-amd64',
+        'version': Var('gn_version'),
+      }
+    ],
+    'dep_type': 'cipd',
+    'condition': 'checkout_win',
+  },
 
   'src/buildtools/clang_format/script':
     Var('chromium_git') + '/chromium/llvm-project/cfe/tools/clang-format.git' + '@' + '96636aa0e9f047f17447f2d45a094d0b59ed7917',
@@ -1335,43 +1370,6 @@ hooks = [
     'pattern': '.',
     'action': ['python', 'src/build/util/lastchange.py',
                '-o', 'src/build/util/LASTCHANGE'],
-  },
-  # Pull GN binaries.
-  {
-    'name': 'gn_win',
-    'pattern': '.',
-    'condition': 'host_os == "win"',
-    'action': [ 'download_from_google_storage',
-                '--no_resume',
-                '--platform=win32',
-                '--no_auth',
-                '--bucket', 'chromium-gn',
-                '-s', 'src/buildtools/win/gn.exe.sha1',
-    ],
-  },
-  {
-    'name': 'gn_mac',
-    'pattern': '.',
-    'condition': 'host_os == "mac"',
-    'action': [ 'download_from_google_storage',
-                '--no_resume',
-                '--platform=darwin',
-                '--no_auth',
-                '--bucket', 'chromium-gn',
-                '-s', 'src/buildtools/mac/gn.sha1',
-    ],
-  },
-  {
-    'name': 'gn_linux64',
-    'pattern': '.',
-    'condition': 'host_os == "linux"',
-    'action': [ 'download_from_google_storage',
-                '--no_resume',
-                '--platform=linux*',
-                '--no_auth',
-                '--bucket', 'chromium-gn',
-                '-s', 'src/buildtools/linux64/gn.sha1',
-    ],
   },
   # Pull clang-format binaries using checked-in hashes.
   {
