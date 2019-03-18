@@ -457,7 +457,7 @@ rtc_source_set("webrtc_common") {
   ]
 }
 
-if (use_libfuzzer || use_drfuzz || use_afl) {
+if (use_libfuzzer || use_afl) {
   # This target is only here for gn to discover fuzzer build targets under
   # webrtc/test/fuzzers/.
   group("webrtc_fuzzers_dummy") {
