@@ -184,10 +184,10 @@ RtpTransportParameters RtpTransport::GetParameters() const {
   return parameters_;
 }
 
-void RtpTransport::DemuxPacket(rtc::CopyOnWriteBuffer* packet,
+void RtpTransport::DemuxPacket(rtc::CopyOnWriteBuffer packet,
                                int64_t packet_time_us) {
   webrtc::RtpPacketReceived parsed_packet(&header_extension_map_);
-  if (!parsed_packet.Parse(std::move(*packet))) {
+  if (!parsed_packet.Parse(std::move(packet))) {
     RTC_LOG(LS_ERROR)
         << "Failed to parse the incoming RTP packet before demuxing. Drop it.";
     return;
@@ -233,14 +233,14 @@ void RtpTransport::OnSentPacket(rtc::PacketTransportInternal* packet_transport,
   SignalSentPacket(sent_packet);
 }
 
-void RtpTransport::OnRtpPacketReceived(rtc::CopyOnWriteBuffer* packet,
+void RtpTransport::OnRtpPacketReceived(rtc::CopyOnWriteBuffer packet,
                                        int64_t packet_time_us) {
   DemuxPacket(packet, packet_time_us);
 }
 
-void RtpTransport::OnRtcpPacketReceived(rtc::CopyOnWriteBuffer* packet,
+void RtpTransport::OnRtcpPacketReceived(rtc::CopyOnWriteBuffer packet,
                                         int64_t packet_time_us) {
-  SignalRtcpPacketReceived(packet, packet_time_us);
+  SignalRtcpPacketReceived(&packet, packet_time_us);
 }
 
 void RtpTransport::OnReadPacket(rtc::PacketTransportInternal* transport,
@@ -252,27 +252,26 @@ void RtpTransport::OnReadPacket(rtc::PacketTransportInternal* transport,
 
   // When using RTCP multiplexing we might get RTCP packets on the RTP
   // transport. We check the RTP payload type to determine if it is RTCP.
-  bool rtcp =
-      transport == rtcp_packet_transport() || cricket::IsRtcpPacket(data, len);
-
+  auto array_view = rtc::MakeArrayView(data, len);
+  cricket::RtpPacketType packet_type = cricket::InferRtpPacketType(array_view);
   // Filter out the packet that is neither RTP nor RTCP.
-  if (!rtcp && !cricket::IsRtpPacket(data, len)) {
+  if (packet_type == cricket::RtpPacketType::kUnknown) {
+    return;
+  }
+
+  // Protect ourselves against crazy data.
+  if (!cricket::IsValidRtpPacketSize(packet_type, len)) {
+    RTC_LOG(LS_ERROR) << "Dropping incoming "
+                      << cricket::RtpPacketTypeToString(packet_type)
+                      << " packet: wrong size=" << len;
     return;
   }
 
   rtc::CopyOnWriteBuffer packet(data, len);
-  // Protect ourselves against crazy data.
-  if (!cricket::IsValidRtpRtcpPacketSize(rtcp, packet.size())) {
-    RTC_LOG(LS_ERROR) << "Dropping incoming "
-                      << cricket::RtpRtcpStringLiteral(rtcp)
-                      << " packet: wrong size=" << packet.size();
-    return;
-  }
-
-  if (rtcp) {
-    OnRtcpPacketReceived(&packet, packet_time_us);
+  if (packet_type == cricket::RtpPacketType::kRtcp) {
+    OnRtcpPacketReceived(std::move(packet), packet_time_us);
   } else {
-    OnRtpPacketReceived(&packet, packet_time_us);
+    OnRtpPacketReceived(std::move(packet), packet_time_us);
   }
 }
 

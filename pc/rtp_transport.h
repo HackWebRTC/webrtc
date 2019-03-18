@@ -87,7 +87,7 @@ class RtpTransport : public RtpTransportInternal {
   RtpTransportAdapter* GetInternal() override;
 
   // These methods will be used in the subclasses.
-  void DemuxPacket(rtc::CopyOnWriteBuffer* packet, int64_t packet_time_us);
+  void DemuxPacket(rtc::CopyOnWriteBuffer packet, int64_t packet_time_us);
 
   bool SendPacket(bool rtcp,
                   rtc::CopyOnWriteBuffer* packet,
@@ -97,9 +97,9 @@ class RtpTransport : public RtpTransportInternal {
   // Overridden by SrtpTransport.
   virtual void OnNetworkRouteChanged(
       absl::optional<rtc::NetworkRoute> network_route);
-  virtual void OnRtpPacketReceived(rtc::CopyOnWriteBuffer* packet,
+  virtual void OnRtpPacketReceived(rtc::CopyOnWriteBuffer packet,
                                    int64_t packet_time_us);
-  virtual void OnRtcpPacketReceived(rtc::CopyOnWriteBuffer* packet,
+  virtual void OnRtcpPacketReceived(rtc::CopyOnWriteBuffer packet,
                                     int64_t packet_time_us);
   // Overridden by SrtpTransport and DtlsSrtpTransport.
   virtual void OnWritableState(rtc::PacketTransportInternal* packet_transport);

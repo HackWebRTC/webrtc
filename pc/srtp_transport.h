@@ -116,9 +116,9 @@ class SrtpTransport : public RtpTransport {
   void ConnectToRtpTransport();
   void CreateSrtpSessions();
 
-  void OnRtpPacketReceived(rtc::CopyOnWriteBuffer* packet,
+  void OnRtpPacketReceived(rtc::CopyOnWriteBuffer packet,
                            int64_t packet_time_us) override;
-  void OnRtcpPacketReceived(rtc::CopyOnWriteBuffer* packet,
+  void OnRtcpPacketReceived(rtc::CopyOnWriteBuffer packet,
                             int64_t packet_time_us) override;
   void OnNetworkRouteChanged(
       absl::optional<rtc::NetworkRoute> network_route) override;

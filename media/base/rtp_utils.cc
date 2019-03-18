@@ -277,26 +277,22 @@ bool SetRtpHeader(void* data, size_t len, const RtpHeader& header) {
           SetRtpSsrc(data, len, header.ssrc));
 }
 
-bool IsRtpPacket(const void* data, size_t len) {
-  if (len < kMinRtpPacketLen)
-    return false;
+static bool HasCorrectRtpVersion(rtc::ArrayView<const char> packet) {
+  return reinterpret_cast<const uint8_t*>(packet.data())[0] >> 6 == kRtpVersion;
+}
 
-  return (static_cast<const uint8_t*>(data)[0] >> 6) == kRtpVersion;
+bool IsRtpPacket(rtc::ArrayView<const char> packet) {
+  return packet.size() >= kMinRtpPacketLen && HasCorrectRtpVersion(packet);
 }
 
 // Check the RTP payload type. If 63 < payload type < 96, it's RTCP.
 // For additional details, see http://tools.ietf.org/html/rfc5761.
-bool IsRtcpPacket(const char* data, size_t len) {
-  if (len < kMinRtcpPacketLen) {
+bool IsRtcpPacket(rtc::ArrayView<const char> packet) {
+  if (packet.size() < kMinRtcpPacketLen || !HasCorrectRtpVersion(packet)) {
     return false;
   }
 
-  // RTCP must be a valid RTP packet.
-  if ((static_cast<uint8_t>(data[0]) >> 6) != kRtpVersion) {
-    return false;
-  }
-
-  char pt = data[1] & 0x7F;
+  char pt = packet[1] & 0x7F;
   return (63 < pt) && (pt < 96);
 }
 
@@ -304,13 +300,35 @@ bool IsValidRtpPayloadType(int payload_type) {
   return payload_type >= 0 && payload_type <= 127;
 }
 
-bool IsValidRtpRtcpPacketSize(bool rtcp, size_t size) {
-  return (rtcp ? size >= kMinRtcpPacketLen : size >= kMinRtpPacketLen) &&
-         size <= kMaxRtpPacketLen;
+bool IsValidRtpPacketSize(RtpPacketType packet_type, size_t size) {
+  // TODO(webrtc:10418): uncomment when relands.
+  // RTC_DCHECK_NE(RtpPacketType::kUnknown, packet_type);
+  size_t min_packet_length = packet_type == RtpPacketType::kRtcp
+                                 ? kMinRtcpPacketLen
+                                 : kMinRtpPacketLen;
+  return size >= min_packet_length && size <= kMaxRtpPacketLen;
 }
 
-const char* RtpRtcpStringLiteral(bool rtcp) {
-  return rtcp ? "RTCP" : "RTP";
+absl::string_view RtpPacketTypeToString(RtpPacketType packet_type) {
+  switch (packet_type) {
+    case RtpPacketType::kRtp:
+      return "RTP";
+    case RtpPacketType::kRtcp:
+      return "RTCP";
+    case RtpPacketType::kUnknown:
+      return "Unknown";
+  }
+}
+
+RtpPacketType InferRtpPacketType(rtc::ArrayView<const char> packet) {
+  // RTCP packets are RTP packets so must check that first.
+  if (IsRtcpPacket(packet)) {
+    return RtpPacketType::kRtcp;
+  }
+  if (IsRtpPacket(packet)) {
+    return RtpPacketType::kRtp;
+  }
+  return RtpPacketType::kUnknown;
 }
 
 bool ValidateRtpHeader(const uint8_t* rtp,
@@ -475,7 +493,9 @@ bool ApplyPacketOptions(uint8_t* data,
   }
 
   // Making sure we have a valid RTP packet at the end.
-  if (!IsRtpPacket(data + rtp_start_pos, rtp_length) ||
+  auto packet = rtc::MakeArrayView(
+      reinterpret_cast<const char*>(data + rtp_start_pos), rtp_length);
+  if (!IsRtpPacket(packet) ||
       !ValidateRtpHeader(data + rtp_start_pos, rtp_length, nullptr)) {
     RTC_NOTREACHED();
     return false;

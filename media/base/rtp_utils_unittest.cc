@@ -79,8 +79,18 @@ static uint8_t kRtpMsgWithAbsSendTimeExtension[] = {
 // Index of AbsSendTimeExtn data in message |kRtpMsgWithAbsSendTimeExtension|.
 static const int kAstIndexInRtpMsg = 21;
 
+static const rtc::ArrayView<const char> kPcmuFrameArrayView =
+    rtc::MakeArrayView(reinterpret_cast<const char*>(kPcmuFrame),
+                       sizeof(kPcmuFrame));
+static const rtc::ArrayView<const char> kRtcpReportArrayView =
+    rtc::MakeArrayView(reinterpret_cast<const char*>(kRtcpReport),
+                       sizeof(kRtcpReport));
+static const rtc::ArrayView<const char> kInvalidPacketArrayView =
+    rtc::MakeArrayView(reinterpret_cast<const char*>(kInvalidPacket),
+                       sizeof(kInvalidPacket));
+
 TEST(RtpUtilsTest, GetRtp) {
-  EXPECT_TRUE(IsRtpPacket(kPcmuFrame, sizeof(kPcmuFrame)));
+  EXPECT_TRUE(IsRtpPacket(kPcmuFrameArrayView));
 
   int pt;
   EXPECT_TRUE(GetRtpPayloadType(kPcmuFrame, sizeof(kPcmuFrame), &pt));
@@ -342,6 +352,13 @@ TEST(RtpUtilsTest, ApplyPacketOptionsWithAuthParamsAndAbsSendTime) {
   const uint8_t kExpectedTimestamp[3] = {0xcc, 0xbb, 0xaa};
   EXPECT_EQ(0, memcmp(&rtp_packet[kAstIndexInRtpMsg], kExpectedTimestamp,
                       sizeof(kExpectedTimestamp)));
+}
+
+TEST(RtpUtilsTest, InferRtpPacketType) {
+  EXPECT_EQ(RtpPacketType::kRtp, InferRtpPacketType(kPcmuFrameArrayView));
+  EXPECT_EQ(RtpPacketType::kRtcp, InferRtpPacketType(kRtcpReportArrayView));
+  EXPECT_EQ(RtpPacketType::kUnknown,
+            InferRtpPacketType(kInvalidPacketArrayView));
 }
 
 }  // namespace cricket
