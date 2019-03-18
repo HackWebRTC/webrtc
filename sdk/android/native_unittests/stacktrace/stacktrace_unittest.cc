@@ -9,22 +9,57 @@
  */
 
 #include "sdk/android/native_api/stacktrace/stacktrace.h"
+
 #include <dlfcn.h>
+#include <atomic>
 #include <vector>
+
 #include "absl/memory/memory.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/system/inline.h"
+#include "system_wrappers/include/sleep.h"
 #include "test/gtest.h"
 
 namespace webrtc {
 namespace test {
 
+namespace {
+
+// A simple atomic spin event. Implemented with std::atomic_flag, since the C++
+// standard guarantees that that type is implemented with actual atomic
+// instructions (as opposed to e.g. with a mutex). Uses sequentially consistent
+// memory order since this is a test, where simplicity trumps performance.
+class SimpleSpinEvent {
+ public:
+  // Initialize the event to its blocked state.
+  SimpleSpinEvent() {
+    static_cast<void>(blocked_.test_and_set(std::memory_order_seq_cst));
+  }
+
+  // Busy-wait for the event to become unblocked, and block it behind us as we
+  // leave.
+  void Wait() {
+    bool was_blocked;
+    do {
+      // Check if the event was blocked, and set it to blocked.
+      was_blocked = blocked_.test_and_set(std::memory_order_seq_cst);
+    } while (was_blocked);
+  }
+
+  // Unblock the event.
+  void Set() { blocked_.clear(std::memory_order_seq_cst); }
+
+ private:
+  std::atomic_flag blocked_;
+};
+
 // Returns the execution address relative to the .so base address. This matches
 // the addresses we get from GetStacktrace().
-uint32_t GetCurrentRelativeExecutionAddress() {
+RTC_NO_INLINE uint32_t GetCurrentRelativeExecutionAddress() {
   void* pc = __builtin_return_address(0);
   Dl_info dl_info = {};
   const bool success = dladdr(pc, &dl_info);
@@ -61,7 +96,7 @@ class DeadlockInterface {
 struct ThreadParams {
   volatile int tid;
   // Signaled when the deadlock region is entered.
-  rtc::Event deadlock_start_event;
+  SimpleSpinEvent deadlock_start_event;
   DeadlockInterface* volatile deadlock_impl;
   // Defines an address range within the deadlock will occur.
   volatile uint32_t deadlock_region_start_address;
@@ -139,8 +174,10 @@ void TestStacktrace(std::unique_ptr<DeadlockInterface> deadlock_impl) {
   rtc::PlatformThread thread(&ThreadFunction, &params, "StacktraceTest");
   thread.Start();
 
-  // Wait until the thread has entered the deadlock region.
-  params.deadlock_start_event.Wait(rtc::Event::kForever);
+  // Wait until the thread has entered the deadlock region, and take a very
+  // brief nap to give it time to reach the actual deadlock.
+  params.deadlock_start_event.Wait();
+  SleepMs(1);
 
   // Acquire the stack trace of the thread which should now be deadlocking.
   std::vector<StackTraceElement> stack_trace = GetStackTrace(params.tid);
@@ -162,6 +199,8 @@ void TestStacktrace(std::unique_ptr<DeadlockInterface> deadlock_impl) {
 
   thread.Stop();
 }
+
+}  // namespace
 
 TEST(Stacktrace, TestCurrentThread) {
   const uint32_t start_addr = GetCurrentRelativeExecutionAddress();
