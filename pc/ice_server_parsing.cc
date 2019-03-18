@@ -20,13 +20,9 @@
 #include "rtc_base/ip_address.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/socket_address.h"
-#include "rtc_base/string_encode.h"
 
 namespace webrtc {
 
-// The min number of tokens must present in Turn host uri.
-// e.g. user@turn.example.org
-static const size_t kTurnHostTokensNum = 2;
 // Number of tokens must be preset when TURN uri has transport param.
 static const size_t kTurnTransportTokensNum = 2;
 // The default stun port.
@@ -50,15 +46,12 @@ static_assert(INVALID == arraysize(kValidIceServiceTypes),
               "kValidIceServiceTypes must have as many strings as ServiceType "
               "has values.");
 
-// |in_str| should be of format
-// stunURI       = scheme ":" stun-host [ ":" stun-port ]
-// scheme        = "stun" / "stuns"
-// stun-host     = IP-literal / IPv4address / reg-name
-// stun-port     = *DIGIT
-//
-// draft-petithuguenin-behave-turn-uris-01
-// turnURI       = scheme ":" turn-host [ ":" turn-port ]
-// turn-host     = username@IP-literal / IPv4address / reg-name
+// |in_str| should follow of RFC 7064/7065 syntax, but with an optional
+// "?transport=" already stripped. I.e.,
+// stunURI       = scheme ":" host [ ":" port ]
+// scheme        = "stun" / "stuns" / "turn" / "turns"
+// host          = IP-literal / IPv4address / reg-name
+// port          = *DIGIT
 static bool GetServiceTypeAndHostnameFromUri(const std::string& in_str,
                                              ServiceType* service_type,
                                              std::string* hostname) {
@@ -139,20 +132,21 @@ static RTCErrorType ParseIceServerUrl(
     const std::string& url,
     cricket::ServerAddresses* stun_servers,
     std::vector<cricket::RelayServerConfig>* turn_servers) {
-  // draft-nandakumar-rtcweb-stun-uri-01
-  // stunURI       = scheme ":" stun-host [ ":" stun-port ]
+  // RFC 7064
+  // stunURI       = scheme ":" host [ ":" port ]
   // scheme        = "stun" / "stuns"
-  // stun-host     = IP-literal / IPv4address / reg-name
-  // stun-port     = *DIGIT
 
-  // draft-petithuguenin-behave-turn-uris-01
-  // turnURI       = scheme ":" turn-host [ ":" turn-port ]
+  // RFC 7065
+  // turnURI       = scheme ":" host [ ":" port ]
   //                 [ "?transport=" transport ]
   // scheme        = "turn" / "turns"
   // transport     = "udp" / "tcp" / transport-ext
   // transport-ext = 1*unreserved
-  // turn-host     = IP-literal / IPv4address / reg-name
-  // turn-port     = *DIGIT
+
+  // RFC 3986
+  // host     = IP-literal / IPv4address / reg-name
+  // port     = *DIGIT
+
   RTC_DCHECK(stun_servers != nullptr);
   RTC_DCHECK(turn_servers != nullptr);
   std::vector<std::string> tokens;
@@ -191,32 +185,18 @@ static RTCErrorType ParseIceServerUrl(
   // GetServiceTypeAndHostnameFromUri should never give an empty hoststring
   RTC_DCHECK(!hoststring.empty());
 
-  // Let's break hostname.
-  tokens.clear();
-  rtc::tokenize_with_empty_tokens(hoststring, '@', &tokens);
-
-  std::string username(server.username);
-  if (tokens.size() > kTurnHostTokensNum) {
-    RTC_LOG(LS_WARNING) << "Invalid user@hostname format: " << hoststring;
-    return RTCErrorType::SYNTAX_ERROR;
-  }
-  if (tokens.size() == kTurnHostTokensNum) {
-    if (tokens[0].empty() || tokens[1].empty()) {
-      RTC_LOG(LS_WARNING) << "Invalid user@hostname format: " << hoststring;
-      return RTCErrorType::SYNTAX_ERROR;
-    }
-    username.assign(rtc::s_url_decode(tokens[0]));
-    hoststring = tokens[1];
-  } else {
-    hoststring = tokens[0];
-  }
-
   int port = kDefaultStunPort;
   if (service_type == TURNS) {
     port = kDefaultStunTlsPort;
     turn_transport_type = cricket::PROTO_TLS;
   }
 
+  if (hoststring.find('@') != std::string::npos) {
+    RTC_LOG(WARNING) << "Invalid url: " << uri_without_transport;
+    RTC_LOG(WARNING)
+        << "Note that user-info@ in turn:-urls is long-deprecated.";
+    return RTCErrorType::SYNTAX_ERROR;
+  }
   std::string address;
   if (!ParseHostnameAndPortFromString(hoststring, &address, &port)) {
     RTC_LOG(WARNING) << "Invalid hostname format: " << uri_without_transport;
@@ -235,10 +215,10 @@ static RTCErrorType ParseIceServerUrl(
       break;
     case TURN:
     case TURNS: {
-      if (username.empty() || server.password.empty()) {
+      if (server.username.empty() || server.password.empty()) {
         // The WebRTC spec requires throwing an InvalidAccessError when username
         // or credential are ommitted; this is the native equivalent.
-        RTC_LOG(LS_ERROR) << "TURN URL without username, or password empty";
+        RTC_LOG(LS_ERROR) << "TURN server with empty username or password";
         return RTCErrorType::INVALID_PARAMETER;
       }
       // If the hostname field is not empty, then the server address must be
@@ -259,8 +239,9 @@ static RTCErrorType ParseIceServerUrl(
         }
         socket_address.SetResolvedIP(ip);
       }
-      cricket::RelayServerConfig config = cricket::RelayServerConfig(
-          socket_address, username, server.password, turn_transport_type);
+      cricket::RelayServerConfig config =
+          cricket::RelayServerConfig(socket_address, server.username,
+                                     server.password, turn_transport_type);
       if (server.tls_cert_policy ==
           PeerConnectionInterface::kTlsCertPolicyInsecureNoCheck) {
         config.tls_cert_policy =

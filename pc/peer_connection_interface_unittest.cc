@@ -104,7 +104,7 @@ static const char kStunAddressOnly[] = "stun:address";
 static const char kStunInvalidPort[] = "stun:address:-1";
 static const char kStunAddressPortAndMore1[] = "stun:address:port:more";
 static const char kStunAddressPortAndMore2[] = "stun:address:port more";
-static const char kTurnIceServerUri[] = "turn:user@turn.example.org";
+static const char kTurnIceServerUri[] = "turn:turn.example.org";
 static const char kTurnUsername[] = "user";
 static const char kTurnPassword[] = "password";
 static const char kTurnHostname[] = "turn.example.org";
@@ -729,10 +729,12 @@ class PeerConnectionInterfaceBaseTest : public testing::Test {
   }
 
   void CreatePeerConnectionWithIceServer(const std::string& uri,
+                                         const std::string& username,
                                          const std::string& password) {
     PeerConnectionInterface::RTCConfiguration config;
     PeerConnectionInterface::IceServer server;
     server.uri = uri;
+    server.username = username;
     server.password = password;
     config.servers.push_back(server);
     CreatePeerConnection(config);
@@ -785,7 +787,7 @@ class PeerConnectionInterfaceBaseTest : public testing::Test {
   }
 
   void CreatePeerConnectionWithDifferentConfigurations() {
-    CreatePeerConnectionWithIceServer(kStunAddressOnly, "");
+    CreatePeerConnectionWithIceServer(kStunAddressOnly, "", "");
     EXPECT_EQ(1u, port_allocator_->stun_servers().size());
     EXPECT_EQ(0u, port_allocator_->turn_servers().size());
     EXPECT_EQ("address", port_allocator_->stun_servers().begin()->hostname());
@@ -796,7 +798,8 @@ class PeerConnectionInterfaceBaseTest : public testing::Test {
     CreatePeerConnectionExpectFail(kStunAddressPortAndMore1);
     CreatePeerConnectionExpectFail(kStunAddressPortAndMore2);
 
-    CreatePeerConnectionWithIceServer(kTurnIceServerUri, kTurnPassword);
+    CreatePeerConnectionWithIceServer(kTurnIceServerUri, kTurnUsername,
+                                      kTurnPassword);
     EXPECT_EQ(0u, port_allocator_->stun_servers().size());
     EXPECT_EQ(1u, port_allocator_->turn_servers().size());
     EXPECT_EQ(kTurnUsername,
