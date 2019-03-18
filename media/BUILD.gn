@@ -492,6 +492,7 @@ if (rtc_include_tests) {
       ":rtc_constants",
       ":rtc_data",
       "../:webrtc_common",
+      "../api:fake_media_transport",
       "../api:scoped_refptr",
       "../api/test/video:function_video_factory",
       "../api/units:time_delta",

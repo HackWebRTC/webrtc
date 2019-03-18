@@ -567,6 +567,20 @@ void Call::MediaTransportChange(MediaTransportInterface* media_transport) {
         << ", (media_transport_==media_transport)="
         << (media_transport_ == media_transport);
     media_transport_ = media_transport;
+    MediaTransportTargetRateConstraints constraints;
+    if (config_.bitrate_config.start_bitrate_bps > 0) {
+      constraints.starting_bitrate =
+          DataRate::bps(config_.bitrate_config.start_bitrate_bps);
+    }
+    if (config_.bitrate_config.max_bitrate_bps > 0) {
+      constraints.max_bitrate =
+          DataRate::bps(config_.bitrate_config.max_bitrate_bps);
+    }
+    if (config_.bitrate_config.min_bitrate_bps > 0) {
+      constraints.min_bitrate =
+          DataRate::bps(config_.bitrate_config.min_bitrate_bps);
+    }
+    media_transport_->SetTargetBitrateLimits(constraints);
   }
 }
 

@@ -717,8 +717,26 @@ bool WebRtcVideoChannel::SetSendParameters(const VideoSendParameters& params) {
       bitrate_config_.max_bitrate_bps =
           params.max_bandwidth_bps == 0 ? -1 : params.max_bandwidth_bps;
     }
-    call_->GetTransportControllerSend()->SetSdpBitrateParameters(
-        bitrate_config_);
+
+    if (media_transport()) {
+      webrtc::MediaTransportTargetRateConstraints constraints;
+      if (bitrate_config_.start_bitrate_bps >= 0) {
+        constraints.starting_bitrate =
+            webrtc::DataRate::bps(bitrate_config_.start_bitrate_bps);
+      }
+      if (bitrate_config_.max_bitrate_bps > 0) {
+        constraints.max_bitrate =
+            webrtc::DataRate::bps(bitrate_config_.max_bitrate_bps);
+      }
+      if (bitrate_config_.min_bitrate_bps >= 0) {
+        constraints.min_bitrate =
+            webrtc::DataRate::bps(bitrate_config_.min_bitrate_bps);
+      }
+      media_transport()->SetTargetBitrateLimits(constraints);
+    } else {
+      call_->GetTransportControllerSend()->SetSdpBitrateParameters(
+          bitrate_config_);
+    }
   }
 
     for (auto& kv : send_streams_) {

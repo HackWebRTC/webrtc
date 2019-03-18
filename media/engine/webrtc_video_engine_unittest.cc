@@ -17,6 +17,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "api/rtp_parameters.h"
+#include "api/test/fake_media_transport.h"
 #include "api/test/mock_video_bitrate_allocator.h"
 #include "api/test/mock_video_bitrate_allocator_factory.h"
 #include "api/test/mock_video_decoder_factory.h"
@@ -3890,6 +3891,81 @@ TEST_F(WebRtcVideoChannelTest, SetSendCodecsWithBitratesAndMaxSendBandwidth) {
   send_parameters_.codecs[0].params[kCodecParamMaxBitrate] = "350";
   ExpectSetBitrateParameters(100000, 200000, 300000);
   EXPECT_TRUE(channel_->SetSendParameters(send_parameters_));
+}
+
+// Test that when both the codec-specific bitrate params and max_bandwidth_bps
+// are present in the same send parameters, the settings are combined correctly.
+TEST_F(WebRtcVideoChannelTest,
+       SetSendCodecsWithBitratesAndMaxSendBandwidthForMediaTransport) {
+  // Same as SetSendCodecsWithBitratesAndMaxSendBandwidth but with Media
+  // Transport.
+  webrtc::MediaTransportSettings settings;
+  settings.is_caller = true;
+  webrtc::FakeMediaTransport fake_media_transport(settings);
+  std::unique_ptr<cricket::FakeNetworkInterface> network_interface(
+      new cricket::FakeNetworkInterface);
+  channel_->SetInterface(network_interface.get(), &fake_media_transport);
+
+  send_parameters_.codecs[0].params[kCodecParamMinBitrate] = "100";
+  send_parameters_.codecs[0].params[kCodecParamStartBitrate] = "200";
+  send_parameters_.codecs[0].params[kCodecParamMaxBitrate] = "300";
+  send_parameters_.max_bandwidth_bps = 400000;
+  {
+    // We expect max_bandwidth_bps to take priority, if set.
+    ASSERT_TRUE(channel_->SetSendParameters(send_parameters_));
+    ASSERT_EQ(1u,
+              fake_media_transport.target_rate_constraints_in_order().size());
+    const webrtc::MediaTransportTargetRateConstraints& constraint =
+        fake_media_transport.target_rate_constraints_in_order()[0];
+    ASSERT_EQ(webrtc::DataRate::bps(100000), constraint.min_bitrate);
+    ASSERT_EQ(webrtc::DataRate::bps(200000), constraint.starting_bitrate);
+    ASSERT_EQ(webrtc::DataRate::bps(400000), constraint.max_bitrate);
+  }
+
+  {
+    // Decrease max_bandwidth_bps.
+    send_parameters_.max_bandwidth_bps = 350000;
+    ASSERT_TRUE(channel_->SetSendParameters(send_parameters_));
+    ASSERT_EQ(2u,
+              fake_media_transport.target_rate_constraints_in_order().size());
+    const webrtc::MediaTransportTargetRateConstraints& constraint =
+        fake_media_transport.target_rate_constraints_in_order()[1];
+
+    // Since the codec isn't changing, start_bitrate_bps should be 0.
+    ASSERT_EQ(webrtc::DataRate::bps(100000), constraint.min_bitrate);
+    ASSERT_EQ(absl::nullopt, constraint.starting_bitrate);
+    ASSERT_EQ(webrtc::DataRate::bps(350000), constraint.max_bitrate);
+  }
+
+  {
+    // Now try again with the values flipped around.
+    send_parameters_.codecs[0].params[kCodecParamMaxBitrate] = "400";
+    send_parameters_.max_bandwidth_bps = 300000;
+    ASSERT_TRUE(channel_->SetSendParameters(send_parameters_));
+    ASSERT_EQ(3u,
+              fake_media_transport.target_rate_constraints_in_order().size());
+    const webrtc::MediaTransportTargetRateConstraints& constraint =
+        fake_media_transport.target_rate_constraints_in_order()[2];
+
+    ASSERT_EQ(webrtc::DataRate::bps(100000), constraint.min_bitrate);
+    ASSERT_EQ(webrtc::DataRate::bps(200000), constraint.starting_bitrate);
+    ASSERT_EQ(webrtc::DataRate::bps(300000), constraint.max_bitrate);
+  }
+
+  {
+    // Now try again with the values flipped around.
+    // If we change the codec max, max_bandwidth_bps should still apply.
+    send_parameters_.codecs[0].params[kCodecParamMaxBitrate] = "350";
+    ASSERT_TRUE(channel_->SetSendParameters(send_parameters_));
+    ASSERT_EQ(4u,
+              fake_media_transport.target_rate_constraints_in_order().size());
+    const webrtc::MediaTransportTargetRateConstraints& constraint =
+        fake_media_transport.target_rate_constraints_in_order()[3];
+
+    ASSERT_EQ(webrtc::DataRate::bps(100000), constraint.min_bitrate);
+    ASSERT_EQ(webrtc::DataRate::bps(200000), constraint.starting_bitrate);
+    ASSERT_EQ(webrtc::DataRate::bps(300000), constraint.max_bitrate);
+  }
 }
 
 TEST_F(WebRtcVideoChannelTest, SetMaxSendBandwidthShouldPreserveOtherBitrates) {

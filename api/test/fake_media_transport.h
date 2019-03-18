@@ -103,6 +103,16 @@ class FakeMediaTransport : public MediaTransportInterface {
   void SetAllocatedBitrateLimits(
       const MediaTransportAllocatedBitrateLimits& limits) override {}
 
+  void SetTargetBitrateLimits(const MediaTransportTargetRateConstraints&
+                                  target_rate_constraints) override {
+    target_rate_constraints_in_order_.push_back(target_rate_constraints);
+  }
+
+  const std::vector<MediaTransportTargetRateConstraints>&
+  target_rate_constraints_in_order() {
+    return target_rate_constraints_in_order_;
+  }
+
   int target_rate_observers_size() { return target_rate_observers_.size(); }
 
   // Settings that were passed down to fake media transport.
@@ -133,6 +143,8 @@ class FakeMediaTransport : public MediaTransportInterface {
   const absl::optional<std::string> transport_offer_;
   const absl::optional<std::string> remote_transport_parameters_;
   bool is_connected_ = false;
+  std::vector<MediaTransportTargetRateConstraints>
+      target_rate_constraints_in_order_;
 };
 
 // Fake media transport factory creates fake media transport.
