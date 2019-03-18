@@ -286,6 +286,8 @@ rtc_static_library("rtc_audio_video") {
     "engine/payload_type_mapper.h",
     "engine/simulcast.cc",
     "engine/simulcast.h",
+    "engine/unhandled_packets_buffer.cc",
+    "engine/unhandled_packets_buffer.h",
     "engine/webrtc_media_engine.cc",
     "engine/webrtc_media_engine.h",
     "engine/webrtc_video_engine.cc",
@@ -528,6 +530,7 @@ if (rtc_include_tests) {
       "engine/payload_type_mapper_unittest.cc",
       "engine/simulcast_encoder_adapter_unittest.cc",
       "engine/simulcast_unittest.cc",
+      "engine/unhandled_packets_buffer_unittest.cc",
       "engine/webrtc_media_engine_unittest.cc",
       "engine/webrtc_video_engine_unittest.cc",
     ]

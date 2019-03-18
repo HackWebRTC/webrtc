@@ -29,6 +29,7 @@
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
 #include "media/base/media_engine.h"
+#include "media/engine/unhandled_packets_buffer.h"
 #include "rtc_base/async_invoker.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/network_route.h"
@@ -198,6 +199,10 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   static constexpr int kDefaultQpMax = 56;
 
   std::vector<webrtc::RtpSource> GetSources(uint32_t ssrc) const override;
+
+  // Take the buffered packets for |ssrcs| and feed them into DeliverPacket.
+  // This method does nothing unless unknown_ssrc_packet_buffer_ is configured.
+  void BackfillBufferedPackets(rtc::ArrayView<const uint32_t> ssrcs);
 
  private:
   class WebRtcVideoReceiveStream;
@@ -375,6 +380,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
       : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
    public:
     WebRtcVideoReceiveStream(
+        WebRtcVideoChannel* channel,
         webrtc::Call* call,
         const StreamParams& sp,
         webrtc::VideoReceiveStream::Config config,
@@ -425,6 +431,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
 
     std::string GetCodecNameFromPayloadType(int payload_type);
 
+    WebRtcVideoChannel* const channel_;
     webrtc::Call* const call_;
     const StreamParams stream_params_;
 
@@ -539,6 +546,10 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   // Per peer connection crypto options that last for the lifetime of the peer
   // connection.
   const webrtc::CryptoOptions crypto_options_ RTC_GUARDED_BY(thread_checker_);
+
+  // Buffer for unhandled packets.
+  std::unique_ptr<UnhandledPacketsBuffer> unknown_ssrc_packet_buffer_
+      RTC_GUARDED_BY(thread_checker_);
 };
 
 class EncoderStreamFactory

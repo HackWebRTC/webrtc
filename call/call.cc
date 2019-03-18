@@ -58,6 +58,7 @@
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/cpu_info.h"
+#include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 #include "video/call_stats.h"
 #include "video/send_delay_stats.h"
@@ -398,6 +399,8 @@ class Call final : public webrtc::Call,
   MediaTransportInterface* media_transport_
       RTC_GUARDED_BY(&target_observer_crit_) = nullptr;
 
+  const bool field_trial_webrtc_video_buffer_packets_with_unknown_ssrc_;
+
   RTC_DISALLOW_COPY_AND_ASSIGN(Call);
 };
 }  // namespace internal
@@ -476,7 +479,10 @@ Call::Call(Clock* clock,
       receive_side_cc_(clock_, transport_send->packet_router()),
       receive_time_calculator_(ReceiveTimeCalculator::CreateFromFieldTrial()),
       video_send_delay_stats_(new SendDelayStats(clock_)),
-      start_ms_(clock_->TimeInMilliseconds()) {
+      start_ms_(clock_->TimeInMilliseconds()),
+      field_trial_webrtc_video_buffer_packets_with_unknown_ssrc_(
+          webrtc::field_trial::IsEnabled(
+              "WebRTC-Video-BufferPacketsWithUnknownSsrc")) {
   RTC_DCHECK(config.event_log != nullptr);
   transport_send_ = std::move(transport_send);
   transport_send_ptr_ = transport_send_.get();
@@ -1355,6 +1361,28 @@ PacketReceiver::DeliveryStatus Call::DeliverRtp(MediaType media_type,
     // which is being torned down.
     return DELIVERY_UNKNOWN_SSRC;
   }
+
+  if (field_trial_webrtc_video_buffer_packets_with_unknown_ssrc_) {
+    // Check if packet arrives for a stream that requires decryption
+    // but does not yet have a FrameDecryptor.
+    // In that case buffer the packet and replay it when the frame decryptor
+    // is set.
+    // TODO(bugs.webrtc.org/10416) : Remove this check once FrameDecryptor
+    // is created as part of creating receive stream.
+    const uint32_t ssrc = parsed_packet.Ssrc();
+    auto vrs = std::find_if(
+        video_receive_streams_.begin(), video_receive_streams_.end(),
+        [&](const VideoReceiveStream* stream) {
+          return (stream->config().rtp.remote_ssrc == ssrc ||
+                  stream->config().rtp.rtx_ssrc == ssrc);
+        });
+    if (vrs != video_receive_streams_.end() &&
+        (*vrs)->config().crypto_options.sframe.require_frame_encryption &&
+        (*vrs)->config().frame_decryptor == nullptr) {
+      return DELIVERY_UNKNOWN_SSRC;
+    }
+  }
+
   parsed_packet.IdentifyExtensions(it->second.extensions);
 
   NotifyBweOfReceivedPacket(parsed_packet, media_type);
