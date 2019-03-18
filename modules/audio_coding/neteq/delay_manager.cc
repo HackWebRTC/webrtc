@@ -223,14 +223,11 @@ int DelayManager::Update(uint16_t sequence_number,
     // Check for discontinuous packet sequence and re-ordering.
     if (IsNewerSequenceNumber(sequence_number, last_seq_no_ + 1)) {
       // Compensate for gap in the sequence numbers. Reduce IAT with the
-      // expected extra time due to lost packets, but ensure that the IAT is
-      // not negative.
+      // expected extra time due to lost packets.
       int packet_offset =
           static_cast<uint16_t>(sequence_number - last_seq_no_ - 1);
       iat_packets -= packet_offset;
-      iat_packets = std::max(iat_packets, 0);
       iat_ms -= packet_offset * packet_len_ms;
-      iat_ms = std::max(iat_ms, 0);
     } else if (!IsNewerSequenceNumber(sequence_number, last_seq_no_)) {
       int packet_offset =
           static_cast<uint16_t>(last_seq_no_ + 1 - sequence_number);
@@ -259,8 +256,9 @@ int DelayManager::Update(uint16_t sequence_number,
         break;
       }
       case INTER_ARRIVAL_TIME: {
-        // Saturate IAT at maximum value.
-        iat_packets = std::min(iat_packets, histogram_->NumBuckets() - 1);
+        // Saturate IAT between 0 and maximum value.
+        iat_packets =
+            std::max(std::min(iat_packets, histogram_->NumBuckets() - 1), 0);
         histogram_->Add(iat_packets);
         break;
       }
