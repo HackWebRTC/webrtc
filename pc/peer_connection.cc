@@ -3611,7 +3611,7 @@ RTCError PeerConnection::SetBitrate(const BitrateSettings& bitrate) {
   }
 
   RTC_DCHECK(call_.get());
-  call_->GetTransportControllerSend()->SetClientBitratePreferences(bitrate);
+  call_->SetClientBitratePreferences(bitrate);
 
   return RTCError::OK();
 }

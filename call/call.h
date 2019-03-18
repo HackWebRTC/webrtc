@@ -124,6 +124,9 @@ class Call {
 
   virtual void OnSentPacket(const rtc::SentPacket& sent_packet) = 0;
 
+  virtual void SetClientBitratePreferences(
+      const BitrateSettings& preferences) = 0;
+
   virtual ~Call() {}
 };
 

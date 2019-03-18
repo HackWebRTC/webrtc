@@ -303,6 +303,9 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
   void MediaTransportChange(
       webrtc::MediaTransportInterface* media_transport_interface) override;
 
+  void SetClientBitratePreferences(
+      const webrtc::BitrateSettings& preferences) override {}
+
  private:
   webrtc::AudioSendStream* CreateAudioSendStream(
       const webrtc::AudioSendStream::Config& config) override;

@@ -244,6 +244,8 @@ class Call final : public webrtc::Call,
   // at least once after that.
   void MediaTransportChange(MediaTransportInterface* media_transport) override;
 
+  void SetClientBitratePreferences(const BitrateSettings& preferences) override;
+
  private:
   DeliveryStatus DeliverRtcp(MediaType media_type,
                              const uint8_t* packet,
@@ -275,6 +277,9 @@ class Call final : public webrtc::Call,
   Clock* const clock_;
   TaskQueueFactory* const task_queue_factory_;
 
+  // Caching the last SetBitrate for media transport.
+  absl::optional<MediaTransportTargetRateConstraints> last_set_bitrate_
+      RTC_GUARDED_BY(&target_observer_crit_);
   const int num_cpu_cores_;
   const std::unique_ptr<ProcessThread> module_process_thread_;
   const std::unique_ptr<CallStats> call_stats_;
@@ -580,6 +585,37 @@ void Call::MediaTransportChange(MediaTransportInterface* media_transport) {
       constraints.min_bitrate =
           DataRate::bps(config_.bitrate_config.min_bitrate_bps);
     }
+
+    // User called ::SetBitrate on peer connection before
+    // media transport was created.
+    if (last_set_bitrate_) {
+      media_transport_->SetTargetBitrateLimits(*last_set_bitrate_);
+    } else {
+      media_transport_->SetTargetBitrateLimits(constraints);
+    }
+  }
+}
+
+void Call::SetClientBitratePreferences(const BitrateSettings& preferences) {
+  GetTransportControllerSend()->SetClientBitratePreferences(preferences);
+  // Can the client code invoke 'SetBitrate' before media transport is created?
+  // It's probably possible :/
+  MediaTransportTargetRateConstraints constraints;
+  if (preferences.start_bitrate_bps.has_value()) {
+    constraints.starting_bitrate =
+        webrtc::DataRate::bps(*preferences.start_bitrate_bps);
+  }
+  if (preferences.max_bitrate_bps.has_value()) {
+    constraints.max_bitrate =
+        webrtc::DataRate::bps(*preferences.max_bitrate_bps);
+  }
+  if (preferences.min_bitrate_bps.has_value()) {
+    constraints.min_bitrate =
+        webrtc::DataRate::bps(*preferences.min_bitrate_bps);
+  }
+  rtc::CritScope lock(&target_observer_crit_);
+  last_set_bitrate_ = constraints;
+  if (media_transport_) {
     media_transport_->SetTargetBitrateLimits(constraints);
   }
 }
