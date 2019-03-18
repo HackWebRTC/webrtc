@@ -47,14 +47,14 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
       PeerConnectionE2EQualityTestFixture::InjectableComponents;
 
   auto alice_params = absl::make_unique<Params>();
-  VideoConfig alice_video_config(1280, 720, 30);
+  VideoConfig alice_video_config(640, 360, 30);
   alice_video_config.stream_label = "alice-video";
 
   alice_params->video_configs.push_back(alice_video_config);
   alice_params->audio_config = AudioConfig();
 
   auto bob_params = absl::make_unique<Params>();
-  VideoConfig bob_video_config(1280, 720, 30);
+  VideoConfig bob_video_config(640, 360, 30);
   bob_video_config.stream_label = "bob-video";
 
   bob_params->video_configs.push_back(bob_video_config);
