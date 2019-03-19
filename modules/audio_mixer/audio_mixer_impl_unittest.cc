@@ -372,7 +372,7 @@ TEST(AudioMixer, RampedOutSourcesShouldNotBeMarkedMixed) {
 // This test checks that the initialization and participant addition
 // can be done on a different thread.
 TEST(AudioMixer, ConstructFromOtherThread) {
-  rtc::test::TaskQueueForTest init_queue("init");
+  TaskQueueForTest init_queue("init");
   rtc::scoped_refptr<AudioMixer> mixer;
   init_queue.SendTask([&mixer]() { mixer = AudioMixerImpl::Create(); });
 
@@ -382,7 +382,7 @@ TEST(AudioMixer, ConstructFromOtherThread) {
 
   ResetFrame(participant.fake_frame());
 
-  rtc::test::TaskQueueForTest participant_queue("participant");
+  TaskQueueForTest participant_queue("participant");
   participant_queue.SendTask(
       [&mixer, &participant]() { mixer->AddSource(&participant); });
 

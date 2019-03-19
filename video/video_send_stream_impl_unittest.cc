@@ -137,7 +137,7 @@ class VideoSendStreamImplTest : public ::testing::Test {
   RtcEventLogNullImpl event_log_;
   VideoSendStream::Config config_;
   SendDelayStats send_delay_stats_;
-  rtc::test::TaskQueueForTest test_queue_;
+  TaskQueueForTest test_queue_;
   std::unique_ptr<ProcessThread> process_thread_;
   CallStats call_stats_;
   SendStatisticsProxy stats_proxy_;

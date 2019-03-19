@@ -50,7 +50,7 @@ class VideoQualityAnalyzer {
   std::vector<std::function<void(const VideoFrameQualityInfo&)>>
       frame_info_handlers_;
   std::deque<VideoFrame> captured_frames_;
-  rtc::test::TaskQueueForTest task_queue_;
+  TaskQueueForTest task_queue_;
 };
 
 struct VideoQualityStats {

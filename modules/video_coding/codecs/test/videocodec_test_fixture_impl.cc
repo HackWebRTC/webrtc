@@ -405,7 +405,7 @@ void VideoCodecTestFixtureImpl::RunTest(
 
   // To emulate operation on a production VideoStreamEncoder, we call the
   // codecs on a task queue.
-  rtc::test::TaskQueueForTest task_queue("VidProc TQ");
+  TaskQueueForTest task_queue("VidProc TQ");
 
   SetUpAndInitObjects(&task_queue,
                       static_cast<const int>(rate_profiles[0].target_kbps),
@@ -625,7 +625,7 @@ VideoCodecTestStats& VideoCodecTestFixtureImpl::GetStats() {
 }
 
 void VideoCodecTestFixtureImpl::SetUpAndInitObjects(
-    rtc::test::TaskQueueForTest* task_queue,
+    TaskQueueForTest* task_queue,
     int initial_bitrate_kbps,
     int initial_framerate_fps) {
   config_.codec_settings.minBitrate = 0;
@@ -681,7 +681,7 @@ void VideoCodecTestFixtureImpl::SetUpAndInitObjects(
 }
 
 void VideoCodecTestFixtureImpl::ReleaseAndCloseObjects(
-    rtc::test::TaskQueueForTest* task_queue) {
+    TaskQueueForTest* task_queue) {
   task_queue->SendTask([this]() {
     processor_.reset();
     // The VideoProcessor must be destroyed before the codecs.
@@ -702,7 +702,7 @@ void VideoCodecTestFixtureImpl::ReleaseAndCloseObjects(
 }
 
 void VideoCodecTestFixtureImpl::PrintSettings(
-    rtc::test::TaskQueueForTest* task_queue) const {
+    TaskQueueForTest* task_queue) const {
   printf("==> Config\n");
   printf("%s\n", config_.ToString().c_str());
 

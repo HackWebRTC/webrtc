@@ -77,7 +77,7 @@ class VideoProcessorTest : public testing::Test {
     EXPECT_CALL(*decoder_mock_, RegisterDecodeCompleteCallback(_)).Times(1);
   }
 
-  rtc::test::TaskQueueForTest q_;
+  TaskQueueForTest q_;
 
   VideoCodecTestFixture::Config config_;
 

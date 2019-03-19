@@ -456,7 +456,6 @@ if (rtc_include_tests) {
       "../call:mock_rtp_interfaces",
       "../rtc_base:rtc_base",
       "../rtc_base:rtc_base_approved",
-      "../rtc_base:rtc_task_queue_for_test",
       "../rtc_base/third_party/sigslot",
       "../test:test_support",
       "//testing/gtest",
