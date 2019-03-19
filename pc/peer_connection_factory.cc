@@ -101,41 +101,19 @@ CreateModularPeerConnectionFactory(
 }
 
 PeerConnectionFactory::PeerConnectionFactory(
-    rtc::Thread* network_thread,
-    rtc::Thread* worker_thread,
-    rtc::Thread* signaling_thread,
-    std::unique_ptr<cricket::MediaEngineInterface> media_engine,
-    std::unique_ptr<webrtc::CallFactoryInterface> call_factory,
-    std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory)
-    : PeerConnectionFactory(network_thread,
-                            worker_thread,
-                            signaling_thread,
-                            std::move(media_engine),
-                            std::move(call_factory),
-                            std::move(event_log_factory),
-                            nullptr,
-                            nullptr) {}
-
-PeerConnectionFactory::PeerConnectionFactory(
-    rtc::Thread* network_thread,
-    rtc::Thread* worker_thread,
-    rtc::Thread* signaling_thread,
-    std::unique_ptr<cricket::MediaEngineInterface> media_engine,
-    std::unique_ptr<webrtc::CallFactoryInterface> call_factory,
-    std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory,
-    std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory,
-    std::unique_ptr<NetworkControllerFactoryInterface>
-        network_controller_factory)
+    PeerConnectionFactoryDependencies dependencies)
     : wraps_current_thread_(false),
-      network_thread_(network_thread),
-      worker_thread_(worker_thread),
-      signaling_thread_(signaling_thread),
-      media_engine_(std::move(media_engine)),
-      call_factory_(std::move(call_factory)),
-      event_log_factory_(std::move(event_log_factory)),
-      fec_controller_factory_(std::move(fec_controller_factory)),
+      network_thread_(dependencies.network_thread),
+      worker_thread_(dependencies.worker_thread),
+      signaling_thread_(dependencies.signaling_thread),
+      media_engine_(std::move(dependencies.media_engine)),
+      call_factory_(std::move(dependencies.call_factory)),
+      event_log_factory_(std::move(dependencies.event_log_factory)),
+      fec_controller_factory_(std::move(dependencies.fec_controller_factory)),
       injected_network_controller_factory_(
-          std::move(network_controller_factory)) {
+          std::move(dependencies.network_controller_factory)),
+      media_transport_factory_(
+          std::move(dependencies.media_transport_factory)) {
   if (!network_thread_) {
     owned_network_thread_ = rtc::Thread::CreateWithSocketServer();
     owned_network_thread_->SetName("pc_network_thread", nullptr);
@@ -159,24 +137,6 @@ PeerConnectionFactory::PeerConnectionFactory(
       wraps_current_thread_ = true;
     }
   }
-
-  // TODO(deadbeef): Currently there is no way to create an external adm in
-  // libjingle source tree. So we can 't currently assert if this is NULL.
-  // RTC_DCHECK(default_adm != NULL);
-}
-
-PeerConnectionFactory::PeerConnectionFactory(
-    PeerConnectionFactoryDependencies dependencies)
-    : PeerConnectionFactory(
-          dependencies.network_thread,
-          dependencies.worker_thread,
-          dependencies.signaling_thread,
-          std::move(dependencies.media_engine),
-          std::move(dependencies.call_factory),
-          std::move(dependencies.event_log_factory),
-          std::move(dependencies.fec_controller_factory),
-          std::move(dependencies.network_controller_factory)) {
-  media_transport_factory_ = std::move(dependencies.media_transport_factory);
 }
 
 PeerConnectionFactory::~PeerConnectionFactory() {

@@ -46,20 +46,22 @@ using ::testing::UnorderedElementsAre;
 class PeerConnectionFactoryForJsepTest : public PeerConnectionFactory {
  public:
   PeerConnectionFactoryForJsepTest()
-      : PeerConnectionFactory(rtc::Thread::Current(),
-                              rtc::Thread::Current(),
-                              rtc::Thread::Current(),
-                              cricket::WebRtcMediaEngineFactory::Create(
-                                  rtc::scoped_refptr<AudioDeviceModule>(
-                                      FakeAudioCaptureModule::Create()),
-                                  CreateBuiltinAudioEncoderFactory(),
-                                  CreateBuiltinAudioDecoderFactory(),
-                                  CreateBuiltinVideoEncoderFactory(),
-                                  CreateBuiltinVideoDecoderFactory(),
-                                  nullptr,
-                                  AudioProcessingBuilder().Create()),
-                              CreateCallFactory(),
-                              nullptr) {}
+      : PeerConnectionFactory([] {
+          PeerConnectionFactoryDependencies dependencies;
+          dependencies.worker_thread = rtc::Thread::Current();
+          dependencies.network_thread = rtc::Thread::Current();
+          dependencies.signaling_thread = rtc::Thread::Current();
+          dependencies.media_engine = cricket::WebRtcMediaEngineFactory::Create(
+              rtc::scoped_refptr<AudioDeviceModule>(
+                  FakeAudioCaptureModule::Create()),
+              CreateBuiltinAudioEncoderFactory(),
+              CreateBuiltinAudioDecoderFactory(),
+              CreateBuiltinVideoEncoderFactory(),
+              CreateBuiltinVideoDecoderFactory(), nullptr,
+              AudioProcessingBuilder().Create());
+          dependencies.call_factory = CreateCallFactory();
+          return dependencies;
+        }()) {}
 
   std::unique_ptr<cricket::SctpTransportInternalFactory>
   CreateSctpTransportInternalFactory() {

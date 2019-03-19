@@ -64,13 +64,16 @@ class PeerConnectionFactoryForUsageHistogramTest
     : public rtc::RefCountedObject<PeerConnectionFactory> {
  public:
   PeerConnectionFactoryForUsageHistogramTest()
-      : rtc::RefCountedObject<PeerConnectionFactory>(
-            rtc::Thread::Current(),
-            rtc::Thread::Current(),
-            rtc::Thread::Current(),
-            absl::make_unique<cricket::FakeMediaEngine>(),
-            CreateCallFactory(),
-            nullptr) {}
+      : rtc::RefCountedObject<PeerConnectionFactory>([] {
+          PeerConnectionFactoryDependencies dependencies;
+          dependencies.network_thread = rtc::Thread::Current();
+          dependencies.worker_thread = rtc::Thread::Current();
+          dependencies.signaling_thread = rtc::Thread::Current();
+          dependencies.media_engine =
+              absl::make_unique<cricket::FakeMediaEngine>();
+          dependencies.call_factory = CreateCallFactory();
+          return dependencies;
+        }()) {}
 
   void ActionsBeforeInitializeForTesting(PeerConnectionInterface* pc) override {
     PeerConnection* internal_pc = static_cast<PeerConnection*>(pc);
