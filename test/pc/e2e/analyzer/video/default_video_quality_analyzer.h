@@ -93,7 +93,7 @@ struct StreamStats {
   SamplesStatsCounter freeze_time_ms;
   // Mean time between one freeze end and next freeze start.
   SamplesStatsCounter time_between_freezes_ms;
-  SamplesStatsCounter resolution_of_encoded_image;
+  SamplesStatsCounter resolution_of_rendered_frame;
 
   int64_t dropped_by_encoder = 0;
   int64_t dropped_before_encoder = 0;

@@ -433,7 +433,7 @@ void DefaultVideoQualityAnalyzer::ProcessComparison(
   }
   // Next stats can be calculated only if frame was received on remote side.
   if (!comparison.dropped) {
-    stats->resolution_of_encoded_image.AddSample(
+    stats->resolution_of_rendered_frame.AddSample(
         *comparison.frame_stats.rendered_frame_width *
         *comparison.frame_stats.rendered_frame_height);
     stats->transport_time_ms.AddSample(
@@ -494,7 +494,7 @@ void DefaultVideoQualityAnalyzer::ReportResults(std::string test_case_name,
   ReportResult("time_between_freezes", test_case_name,
                stats.time_between_freezes_ms, "ms");
   ReportResult("pixels_per_frame", test_case_name,
-               stats.resolution_of_encoded_image, "unitless");
+               stats.resolution_of_rendered_frame, "unitless");
   test::PrintResult("min_psnr", "", test_case_name,
                     stats.psnr.IsEmpty() ? 0 : stats.psnr.GetMin(), "dB",
                     /*important=*/false);
