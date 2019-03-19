@@ -32,15 +32,12 @@ namespace {
 
 const char* FrameTypeToString(AudioFrameType frame_type) {
   switch (frame_type) {
-    case kEmptyFrame:
+    case AudioFrameType::kEmptyFrame:
       return "empty";
-    case kAudioFrameSpeech:
+    case AudioFrameType::kAudioFrameSpeech:
       return "audio_speech";
-    case kAudioFrameCN:
+    case AudioFrameType::kAudioFrameCN:
       return "audio_cn";
-    default:
-      RTC_NOTREACHED();
-      return "";
   }
 }
 
@@ -103,7 +100,7 @@ bool RTPSenderAudio::MarkerBit(AudioFrameType frame_type, int8_t payload_type) {
 
     // payload_type differ
     if (last_payload_type_ == -1) {
-      if (frame_type != kAudioFrameCN) {
+      if (frame_type != AudioFrameType::kAudioFrameCN) {
         // first packet and NOT CNG
         return true;
       } else {
@@ -122,7 +119,7 @@ bool RTPSenderAudio::MarkerBit(AudioFrameType frame_type, int8_t payload_type) {
   }
 
   // For G.723 G.729, AMR etc we can have inband VAD
-  if (frame_type == kAudioFrameCN) {
+  if (frame_type == AudioFrameType::kAudioFrameCN) {
     inband_vad_active_ = true;
   } else if (inband_vad_active_) {
     inband_vad_active_ = false;
@@ -136,9 +133,6 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
                                uint32_t rtp_timestamp,
                                const uint8_t* payload_data,
                                size_t payload_size) {
-  RTC_DCHECK(frame_type == kAudioFrameSpeech || frame_type == kAudioFrameCN ||
-             frame_type == kEmptyFrame);
-
   TRACE_EVENT_ASYNC_STEP1("webrtc", "Audio", rtp_timestamp, "Send", "type",
                           FrameTypeToString(frame_type));
 
@@ -174,7 +168,7 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
   // A source MAY send events and coded audio packets for the same time
   // but we don't support it
   if (dtmf_event_is_on_) {
-    if (frame_type == kEmptyFrame) {
+    if (frame_type == AudioFrameType::kEmptyFrame) {
       // kEmptyFrame is used to drive the DTMF when in CN mode
       // it can be triggered more frequently than we want to send the
       // DTMF packets.
@@ -228,7 +222,7 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
     return true;
   }
   if (payload_size == 0 || payload_data == NULL) {
-    if (frame_type == kEmptyFrame) {
+    if (frame_type == AudioFrameType::kEmptyFrame) {
       // we don't send empty audio RTP packets
       // no error since we use it to drive DTMF when we use VAD
       return true;
@@ -242,8 +236,8 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
   packet->SetTimestamp(rtp_timestamp);
   packet->set_capture_time_ms(clock_->TimeInMilliseconds());
   // Update audio level extension, if included.
-  packet->SetExtension<AudioLevel>(frame_type == kAudioFrameSpeech,
-                                   audio_level_dbov);
+  packet->SetExtension<AudioLevel>(
+      frame_type == AudioFrameType::kAudioFrameSpeech, audio_level_dbov);
 
   uint8_t* payload = packet->AllocatePayload(payload_size);
   if (!payload)  // Too large payload buffer.

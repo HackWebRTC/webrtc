@@ -39,7 +39,7 @@ int32_t Channel::SendData(AudioFrameType frameType,
                              ? timeStamp
                              : static_cast<uint32_t>(external_send_timestamp_);
 
-  if (frameType == kEmptyFrame) {
+  if (frameType == AudioFrameType::kEmptyFrame) {
     // When frame is empty, we should not transmit it. The frame size of the
     // next non-empty frame will be based on the previous frame size.
     _useLastFrameSize = _lastFrameSizeSample > 0;

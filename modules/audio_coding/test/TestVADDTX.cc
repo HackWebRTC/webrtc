@@ -34,17 +34,18 @@ ActivityMonitor::ActivityMonitor() {
 }
 
 int32_t ActivityMonitor::InFrameType(AudioFrameType frame_type) {
-  counter_[frame_type]++;
+  counter_[static_cast<int>(frame_type)]++;
   return 0;
 }
 
 void ActivityMonitor::PrintStatistics() {
   printf("\n");
-  printf("kEmptyFrame       %u\n", counter_[kEmptyFrame]);
-  printf("kAudioFrameSpeech %u\n", counter_[kAudioFrameSpeech]);
-  printf("kAudioFrameCN     %u\n", counter_[kAudioFrameCN]);
-  printf("kVideoFrameKey    %u\n", counter_[kVideoFrameKey]);
-  printf("kVideoFrameDelta  %u\n", counter_[kVideoFrameDelta]);
+  printf("kEmptyFrame       %u\n",
+         counter_[static_cast<int>(AudioFrameType::kEmptyFrame)]);
+  printf("kAudioFrameSpeech %u\n",
+         counter_[static_cast<int>(AudioFrameType::kAudioFrameSpeech)]);
+  printf("kAudioFrameCN     %u\n",
+         counter_[static_cast<int>(AudioFrameType::kAudioFrameCN)]);
   printf("\n\n");
 }
 
@@ -146,7 +147,7 @@ void TestVadDtx::Run(std::string in_filename,
   monitor_->PrintStatistics();
 #endif
 
-  uint32_t stats[5];
+  uint32_t stats[3];
   monitor_->GetStatistics(stats);
   monitor_->ResetStatistics();
 

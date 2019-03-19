@@ -34,9 +34,7 @@ class ActivityMonitor : public ACMVADCallback {
   // 0 - kEmptyFrame
   // 1 - kAudioFrameSpeech
   // 2 - kAudioFrameCN
-  // 3 - kVideoFrameKey (not used by audio)
-  // 4 - kVideoFrameDelta (not used by audio)
-  uint32_t counter_[5];
+  uint32_t counter_[3];
 };
 
 // TestVadDtx is to verify that VAD/DTX perform as they should. It runs through
@@ -64,8 +62,6 @@ class TestVadDtx {
   // 0 - kEmptyFrame
   // 1 - kAudioFrameSpeech
   // 2 - kAudioFrameCN
-  // 3 - kVideoFrameKey (not used by audio)
-  // 4 - kVideoFrameDelta (not used by audio)
   void Run(std::string in_filename,
            int frequency,
            int channels,

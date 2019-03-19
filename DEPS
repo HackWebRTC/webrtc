@@ -1603,3 +1603,11 @@ include_rules = [
   "+absl/types/optional.h",
   "+absl/types/variant.h",
 ]
+
+specific_include_rules = {
+  "common_types\.h" : [
+    # TODO(bugs.webrtc.org/5876). For migration of AudioFrameType.
+    # Delete when downstream code is updated.
+    "+modules/audio_coding/include/audio_coding_module_typedefs.h"
+  ],
+}

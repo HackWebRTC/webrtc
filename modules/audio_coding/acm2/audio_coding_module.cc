@@ -395,11 +395,12 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
   ConvertEncodedInfoToFragmentationHeader(encoded_info, &my_fragmentation);
   AudioFrameType frame_type;
   if (encode_buffer_.size() == 0 && encoded_info.send_even_if_empty) {
-    frame_type = kEmptyFrame;
+    frame_type = AudioFrameType::kEmptyFrame;
     encoded_info.payload_type = previous_pltype;
   } else {
     RTC_DCHECK_GT(encode_buffer_.size(), 0);
-    frame_type = encoded_info.speech ? kAudioFrameSpeech : kAudioFrameCN;
+    frame_type = encoded_info.speech ? AudioFrameType::kAudioFrameSpeech
+                                     : AudioFrameType::kAudioFrameCN;
   }
 
   {

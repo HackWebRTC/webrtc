@@ -100,7 +100,7 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
  public:
   PacketizationCallbackStubOldApi()
       : num_calls_(0),
-        last_frame_type_(kEmptyFrame),
+        last_frame_type_(AudioFrameType::kEmptyFrame),
         last_payload_type_(-1),
         last_timestamp_(0) {}
 
@@ -350,11 +350,12 @@ TEST_F(AudioCodingModuleTestOldApi, TransportCallbackIsInvokedForEachPacket) {
   for (int i = 0; i < kLoops; ++i) {
     EXPECT_EQ(i / k10MsBlocksPerPacket, packet_cb_.num_calls());
     if (packet_cb_.num_calls() > 0)
-      EXPECT_EQ(kAudioFrameSpeech, packet_cb_.last_frame_type());
+      EXPECT_EQ(AudioFrameType::kAudioFrameSpeech,
+                packet_cb_.last_frame_type());
     InsertAudioAndVerifyEncoding();
   }
   EXPECT_EQ(kLoops / k10MsBlocksPerPacket, packet_cb_.num_calls());
-  EXPECT_EQ(kAudioFrameSpeech, packet_cb_.last_frame_type());
+  EXPECT_EQ(AudioFrameType::kAudioFrameSpeech, packet_cb_.last_frame_type());
 }
 
 #if defined(WEBRTC_CODEC_ISAC) || defined(WEBRTC_CODEC_ISACFX)
@@ -431,12 +432,19 @@ class AudioCodingModuleTestWithComfortNoiseOldApi
     const struct {
       int ix;
       AudioFrameType type;
-    } expectation[] = {
-        {2, kAudioFrameCN},  {5, kEmptyFrame},    {8, kEmptyFrame},
-        {11, kAudioFrameCN}, {14, kEmptyFrame},   {17, kEmptyFrame},
-        {20, kAudioFrameCN}, {23, kEmptyFrame},   {26, kEmptyFrame},
-        {29, kEmptyFrame},   {32, kAudioFrameCN}, {35, kEmptyFrame},
-        {38, kEmptyFrame}};
+    } expectation[] = {{2, AudioFrameType::kAudioFrameCN},
+                       {5, AudioFrameType::kEmptyFrame},
+                       {8, AudioFrameType::kEmptyFrame},
+                       {11, AudioFrameType::kAudioFrameCN},
+                       {14, AudioFrameType::kEmptyFrame},
+                       {17, AudioFrameType::kEmptyFrame},
+                       {20, AudioFrameType::kAudioFrameCN},
+                       {23, AudioFrameType::kEmptyFrame},
+                       {26, AudioFrameType::kEmptyFrame},
+                       {29, AudioFrameType::kEmptyFrame},
+                       {32, AudioFrameType::kAudioFrameCN},
+                       {35, AudioFrameType::kEmptyFrame},
+                       {38, AudioFrameType::kEmptyFrame}};
     for (int i = 0; i < kLoops; ++i) {
       int num_calls_before = packet_cb_.num_calls();
       EXPECT_EQ(i / blocks_per_packet, num_calls_before);

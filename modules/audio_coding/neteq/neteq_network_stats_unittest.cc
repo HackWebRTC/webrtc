@@ -13,7 +13,6 @@
 #include "absl/memory/memory.h"
 #include "api/audio/audio_frame.h"
 #include "api/audio_codecs/audio_decoder.h"
-#include "common_types.h"  // NOLINT(build/include)
 
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/audio_coding/neteq/tools/rtp_generator.h"

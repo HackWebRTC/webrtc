@@ -44,7 +44,7 @@ AcmSendTestOldApi::AcmSendTestOldApi(InputAudioFile* audio_source,
           static_cast<size_t>(source_rate_hz_ * kBlockSizeMs / 1000)),
       codec_registered_(false),
       test_duration_ms_(test_duration_ms),
-      frame_type_(kAudioFrameSpeech),
+      frame_type_(AudioFrameType::kAudioFrameSpeech),
       payload_type_(0),
       timestamp_(0),
       sequence_number_(0) {

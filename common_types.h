@@ -16,6 +16,9 @@
 
 // TODO(bugs.webrtc.org/7660): Delete include once downstream code is updated.
 #include "api/video/video_codec_type.h"
+// TODO(bugs.webrtc.org/5876): For AudioFrameType. Delete when downstream code
+// is updated.
+#include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 
 #if defined(_MSC_VER)
 // Disable "new behavior: elements of array will be default initialized"
@@ -38,7 +41,6 @@ enum FrameTypeDeprecated {
 // Can't use RTC_DEPRECATED until Chromium is updated.
 typedef FrameTypeDeprecated FrameType;
 
-using AudioFrameType = FrameTypeDeprecated;
 using VideoFrameType = FrameTypeDeprecated;
 
 // Statistics for RTCP packet types.

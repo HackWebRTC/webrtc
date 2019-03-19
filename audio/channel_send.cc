@@ -56,17 +56,18 @@ constexpr int64_t kMinRetransmissionWindowMs = 30;
 MediaTransportEncodedAudioFrame::FrameType
 MediaTransportFrameTypeForWebrtcFrameType(webrtc::AudioFrameType frame_type) {
   switch (frame_type) {
-    case kAudioFrameSpeech:
+    case AudioFrameType::kAudioFrameSpeech:
       return MediaTransportEncodedAudioFrame::FrameType::kSpeech;
       break;
 
-    case kAudioFrameCN:
+    case AudioFrameType::kAudioFrameCN:
       return MediaTransportEncodedAudioFrame::FrameType::
           kDiscontinuousTransmission;
       break;
 
     default:
-      RTC_CHECK(false) << "Unexpected frame type=" << frame_type;
+      RTC_CHECK(false) << "Unexpected frame type="
+                       << static_cast<int>(frame_type);
       break;
   }
 }
@@ -485,7 +486,7 @@ int32_t ChannelSend::SendData(AudioFrameType frameType,
   rtc::ArrayView<const uint8_t> payload(payloadData, payloadSize);
 
   if (media_transport() != nullptr) {
-    if (frameType == kEmptyFrame) {
+    if (frameType == AudioFrameType::kEmptyFrame) {
       // TODO(bugs.webrtc.org/9719): Media transport Send doesn't support
       // sending empty frames.
       return 0;

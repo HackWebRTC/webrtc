@@ -33,6 +33,12 @@ enum ACMVADMode {
   VADVeryAggr = 3
 };
 
+enum class AudioFrameType {
+  kEmptyFrame = 0,
+  kAudioFrameSpeech = 1,
+  kAudioFrameCN = 2,
+};
+
 ///////////////////////////////////////////////////////////////////////////
 //
 // Enumeration of Opus mode for intended application.
