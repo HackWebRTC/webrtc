@@ -14,6 +14,8 @@
 
 #include "rtc_base/checks.h"
 
+#include "api/stats/rtc_stats.h"
+
 namespace webrtc {
 
 const char* const RTCDataChannelState::kConnecting = "connecting";
@@ -426,9 +428,16 @@ RTCMediaStreamTrackStats::RTCMediaStreamTrackStats(std::string&& id,
       total_samples_duration("totalSamplesDuration"),
       concealed_samples("concealedSamples"),
       concealment_events("concealmentEvents"),
-      jitter_buffer_flushes("jitterBufferFlushes"),
-      delayed_packet_outage_samples("delayedPacketOutageSamples"),
-      relative_packet_arrival_delay("relativePacketArrivalDelay"),
+      jitter_buffer_flushes(
+          "jitterBufferFlushes",
+          {NonStandardGroupId::kRtcAudioJitterBufferMaxPackets}),
+      delayed_packet_outage_samples(
+          "delayedPacketOutageSamples",
+          {NonStandardGroupId::kRtcAudioJitterBufferMaxPackets,
+           NonStandardGroupId::kRtcStatsRelativePacketArrivalDelay}),
+      relative_packet_arrival_delay(
+          "relativePacketArrivalDelay",
+          {NonStandardGroupId::kRtcStatsRelativePacketArrivalDelay}),
       freeze_count("freezeCount"),
       pause_count("pauseCount"),
       total_freezes_duration("totalFreezesDuration"),

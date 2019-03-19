@@ -319,8 +319,19 @@ class RTC_EXPORT RTCStatsMember : public RTCStatsMemberInterface {
   T value_;
 };
 
-// Same as above, but "is_standardized" returns false.
-//
+// Non-standard stats members can be exposed to the JavaScript API in Chrome
+// e.g. through origin trials. The group ID can be used by the blink layer to
+// determine if a stats member should be exposed or not. Multiple non-standard
+// stats members can share the same group ID so that they are exposed together.
+enum class NonStandardGroupId {
+  // I2E:
+  // https://groups.google.com/a/chromium.org/forum/#!topic/blink-dev/hE2B1iItPDk
+  kRtcAudioJitterBufferMaxPackets,
+  // I2E:
+  // https://groups.google.com/a/chromium.org/forum/#!topic/blink-dev/YbhMyqLXXXo
+  kRtcStatsRelativePacketArrivalDelay,
+};
+
 // Using inheritance just so that it's obvious from the member's declaration
 // whether it's standardized or not.
 template <typename T>
@@ -328,21 +339,30 @@ class RTCNonStandardStatsMember : public RTCStatsMember<T> {
  public:
   explicit RTCNonStandardStatsMember(const char* name)
       : RTCStatsMember<T>(name) {}
+  RTCNonStandardStatsMember(const char* name,
+                            std::initializer_list<NonStandardGroupId> group_ids)
+      : RTCStatsMember<T>(name), group_ids_(group_ids) {}
   RTCNonStandardStatsMember(const char* name, const T& value)
       : RTCStatsMember<T>(name, value) {}
   RTCNonStandardStatsMember(const char* name, T&& value)
       : RTCStatsMember<T>(name, std::move(value)) {}
   explicit RTCNonStandardStatsMember(const RTCNonStandardStatsMember<T>& other)
-      : RTCStatsMember<T>(other) {}
+      : RTCStatsMember<T>(other), group_ids_(other.group_ids_) {}
   explicit RTCNonStandardStatsMember(RTCNonStandardStatsMember<T>&& other)
-      : RTCStatsMember<T>(std::move(other)) {}
+      : group_ids_(std::move(other.group_ids_)),
+        RTCStatsMember<T>(std::move(other)) {}
 
   bool is_standardized() const override { return false; }
+
+  std::vector<NonStandardGroupId> group_ids() const { return group_ids_; }
 
   T& operator=(const T& value) { return RTCStatsMember<T>::operator=(value); }
   T& operator=(const T&& value) {
     return RTCStatsMember<T>::operator=(std::move(value));
   }
+
+ private:
+  std::vector<NonStandardGroupId> group_ids_;
 };
 }  // namespace webrtc
 

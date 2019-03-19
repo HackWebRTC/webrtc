@@ -339,6 +339,16 @@ TEST(RTCStatsTest, IsStandardized) {
   EXPECT_FALSE(unstandardized.is_standardized());
 }
 
+TEST(RTCStatsTest, NonStandardGroupId) {
+  auto group_id = NonStandardGroupId::kRtcAudioJitterBufferMaxPackets;
+  RTCNonStandardStatsMember<int32_t> with_group_id("stat", {group_id});
+  std::vector<NonStandardGroupId> expected_ids({group_id});
+  EXPECT_EQ(expected_ids, with_group_id.group_ids());
+
+  RTCNonStandardStatsMember<int32_t> without_group_id("stat");
+  EXPECT_TRUE(without_group_id.group_ids().empty());
+}
+
 // Death tests.
 // Disabled on Android because death tests misbehave on Android, see
 // base/test/gtest_util.h.
