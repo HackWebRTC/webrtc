@@ -209,9 +209,7 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
     // If we received frame with id frame_id3, then we will pop frame_id1 and
     // frame_id2 and consider that frames as dropped and then compare received
     // frame with the one from |captured_frames_in_flight_| with id frame_id3.
-    // Also we will put it into the |last_rendered_frame|.
     std::deque<uint16_t> frame_ids;
-    absl::optional<VideoFrame> last_rendered_frame = absl::nullopt;
     absl::optional<Timestamp> last_rendered_frame_time = absl::nullopt;
   };
 

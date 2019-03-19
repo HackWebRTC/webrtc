@@ -105,8 +105,7 @@ uint16_t DefaultVideoQualityAnalyzer::OnFrameCaptured(
       state->frame_ids.pop_front();
       frame_counters_.dropped++;
       stream_frame_counters_[stream_label].dropped++;
-      AddComparison(it->second, state->last_rendered_frame, true,
-                    stats_it->second);
+      AddComparison(it->second, absl::nullopt, true, stats_it->second);
 
       captured_frames_in_flight_.erase(it);
       frame_stats_.erase(stats_it);
@@ -221,7 +220,7 @@ void DefaultVideoQualityAnalyzer::OnFrameRendered(
     auto dropped_frame_it = captured_frames_in_flight_.find(dropped_frame_id);
     RTC_CHECK(dropped_frame_it != captured_frames_in_flight_.end());
 
-    AddComparison(dropped_frame_it->second, state->last_rendered_frame, true,
+    AddComparison(dropped_frame_it->second, absl::nullopt, true,
                   dropped_frame_stats_it->second);
 
     frame_stats_.erase(dropped_frame_stats_it);
@@ -230,7 +229,6 @@ void DefaultVideoQualityAnalyzer::OnFrameRendered(
   RTC_DCHECK(!state->frame_ids.empty());
   state->frame_ids.pop_front();
 
-  state->last_rendered_frame = frame;
   if (state->last_rendered_frame_time) {
     frame_stats->prev_frame_rendered_time =
         state->last_rendered_frame_time.value();
