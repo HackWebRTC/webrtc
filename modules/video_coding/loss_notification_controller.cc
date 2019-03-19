@@ -69,7 +69,7 @@ void LossNotificationController::OnReceivedPacket(const VCMPacket& packet) {
 
   if (packet.generic_descriptor->FirstPacketInSubFrame()) {
     const uint16_t frame_id = packet.generic_descriptor->FrameId();
-    const uint64_t unwrapped_frame_id = frame_id_unwrapper_.Unwrap(frame_id);
+    const int64_t unwrapped_frame_id = frame_id_unwrapper_.Unwrap(frame_id);
 
     // Ignore repeated or reordered frames.
     // TODO(TODO(bugs.webrtc.org/10336): Handle frame reordering.
@@ -124,7 +124,7 @@ void LossNotificationController::OnAssembledFrame(
     return;
   }
 
-  const uint64_t unwrapped_frame_id = frame_id_unwrapper_.Unwrap(frame_id);
+  const int64_t unwrapped_frame_id = frame_id_unwrapper_.Unwrap(frame_id);
   if (!AllDependenciesDecodable(unwrapped_frame_id, frame_dependency_diffs)) {
     return;
   }
@@ -142,7 +142,7 @@ void LossNotificationController::DiscardOldInformation() {
 }
 
 bool LossNotificationController::AllDependenciesDecodable(
-    uint64_t unwrapped_frame_id,
+    int64_t unwrapped_frame_id,
     rtc::ArrayView<const uint16_t> frame_dependency_diffs) const {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_task_checker_);
 
@@ -154,8 +154,7 @@ bool LossNotificationController::AllDependenciesDecodable(
   // One possibility that is ignored, is that the packet may be corrupt.
 
   for (uint16_t frame_dependency_diff : frame_dependency_diffs) {
-    RTC_DCHECK_GT(unwrapped_frame_id, frame_dependency_diff);
-    const uint64_t unwrapped_ref_frame_id =
+    const int64_t unwrapped_ref_frame_id =
         unwrapped_frame_id - frame_dependency_diff;
 
     const auto ref_frame_it =

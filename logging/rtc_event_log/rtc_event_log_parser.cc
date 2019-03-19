@@ -57,18 +57,10 @@ constexpr size_t kStunOverhead = 4;
 constexpr uint16_t kDefaultOverhead =
     kUdpOverhead + kSrtpOverhead + kIpv4Overhead;
 
-// Starting at a multiple of common audio sample rate (48000) and video tick
-// rate (90000) to make a tick count of 0 to correspond to something without
-// decimals in base 10. Starting at 0 is not safe as it would cause negative
-// wraparound if the first timestamps are out of order.
-constexpr uint64_t kStartingCaptureTimeTicks = 90 * 48 * 1000;
-
 struct MediaStreamInfo {
-  MediaStreamInfo() : unwrap_capture_ticks(kStartingCaptureTimeTicks) {}
+  MediaStreamInfo() = default;
   MediaStreamInfo(LoggedMediaType media_type, bool rtx)
-      : media_type(media_type),
-        rtx(rtx),
-        unwrap_capture_ticks(kStartingCaptureTimeTicks) {}
+      : media_type(media_type), rtx(rtx) {}
   LoggedMediaType media_type = LoggedMediaType::kUnknown;
   bool rtx = false;
   SeqNumUnwrapper<uint32_t> unwrap_capture_ticks;
@@ -1953,7 +1945,12 @@ std::vector<LoggedPacketInfo> ParsedRtcEventLog::GetPacketInfos(
       // RTX copy the timestamp of the retransmitted packets. This means that
       // RTX streams don't have a unique clock offset and frequency, so
       // the RTP timstamps can't be unwrapped.
-      uint64_t capture_ticks =
+
+      // Add an offset to avoid |capture_ticks| to become negative in the case
+      // of reordering.
+      constexpr int64_t kStartingCaptureTimeTicks = 90 * 48 * 1000;
+      int64_t capture_ticks =
+          kStartingCaptureTimeTicks +
           stream->unwrap_capture_ticks.Unwrap(rtp.header.timestamp);
       // TODO(srte): Use logged sample rate when it is added to the format.
       capture_time = Timestamp::seconds(

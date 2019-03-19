@@ -328,11 +328,8 @@ void FrameBuffer::UpdateRtt(int64_t rtt_ms) {
 }
 
 bool FrameBuffer::ValidReferences(const EncodedFrame& frame) const {
-  if (frame.id.picture_id < 0)
-    return false;
-
   for (size_t i = 0; i < frame.num_references; ++i) {
-    if (frame.references[i] < 0 || frame.references[i] >= frame.id.picture_id)
+    if (frame.references[i] >= frame.id.picture_id)
       return false;
 
     for (size_t j = i + 1; j < frame.num_references; ++j) {

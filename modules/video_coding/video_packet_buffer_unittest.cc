@@ -501,7 +501,7 @@ TEST_F(TestPacketBuffer, InsertPacketAfterOldFrameObjectIsRemoved) {
   uint16_t seq_num = kFirstSeqNum;
 
   // Loop until seq_num wraps around.
-  SeqNumUnwrapper<uint16_t> unwrapper(0);
+  SeqNumUnwrapper<uint16_t> unwrapper;
   while (unwrapper.Unwrap(seq_num) < std::numeric_limits<uint16_t>::max()) {
     Insert(seq_num++, kKeyFrame, kFirst, kNotLast, 0, nullptr, timestamp);
     for (int i = 0; i < 5; ++i) {

@@ -140,10 +140,10 @@ absl::optional<uint32_t> EstimateRtpClockFrequency(
     int64_t end_time_us) {
   RTC_CHECK(packets.size() >= 2);
   SeqNumUnwrapper<uint32_t> unwrapper;
-  uint64_t first_rtp_timestamp =
+  int64_t first_rtp_timestamp =
       unwrapper.Unwrap(packets[0].rtp.header.timestamp);
   int64_t first_log_timestamp = packets[0].log_time_us();
-  uint64_t last_rtp_timestamp = first_rtp_timestamp;
+  int64_t last_rtp_timestamp = first_rtp_timestamp;
   int64_t last_log_timestamp = first_log_timestamp;
   for (size_t i = 1; i < packets.size(); i++) {
     if (packets[i].log_time_us() > end_time_us)
