@@ -29,8 +29,6 @@ struct CodecSpecificInfo;
 
 class VideoCodingModule : public Module {
  public:
-  enum SenderNackMode { kNackNone, kNackAll, kNackSelective };
-
   // DEPRECATED.
   static VideoCodingModule* Create(Clock* clock);
 
