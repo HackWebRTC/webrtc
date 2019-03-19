@@ -413,15 +413,6 @@ int32_t VideoReceiver::IncomingPacket(const uint8_t* incomingPayload,
   return VCM_OK;
 }
 
-// Minimum playout delay (used for lip-sync). This is the minimum delay required
-// to sync with audio. Not included in  VideoCodingModule::Delay()
-// Defaults to 0 ms.
-int32_t VideoReceiver::SetMinimumPlayoutDelay(uint32_t minPlayoutDelayMs) {
-  RTC_DCHECK_RUN_ON(&module_thread_checker_);
-  _timing->set_min_playout_delay(minPlayoutDelayMs);
-  return VCM_OK;
-}
-
 // The estimated delay caused by rendering, defaults to
 // kDefaultRenderDelayMs = 10 ms
 int32_t VideoReceiver::SetRenderDelay(uint32_t timeMS) {
