@@ -200,7 +200,7 @@ PeerConnectionFactoryDependencies CreatePCFDependencies(
 // Creates PeerConnectionDependencies objects, providing entities
 // from InjectableComponents::PeerConnectionComponents.
 PeerConnectionDependencies CreatePCDependencies(
-    PeerConnectionComponents* pc_dependencies,
+    std::unique_ptr<PeerConnectionComponents> pc_dependencies,
     PeerConnectionObserver* observer) {
   PeerConnectionDependencies pc_deps(observer);
 
@@ -262,8 +262,8 @@ std::unique_ptr<TestPeer> TestPeer::CreateTestPeer(
       CreateModularPeerConnectionFactory(std::move(pcf_deps));
 
   // Create peer connection.
-  PeerConnectionDependencies pc_deps =
-      CreatePCDependencies(components->pc_dependencies.get(), observer.get());
+  PeerConnectionDependencies pc_deps = CreatePCDependencies(
+      std::move(components->pc_dependencies), observer.get());
   rtc::scoped_refptr<PeerConnectionInterface> pc =
       pcf->CreatePeerConnection(params->rtc_configuration, std::move(pc_deps));
 
