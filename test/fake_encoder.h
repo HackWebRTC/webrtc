@@ -16,6 +16,7 @@
 #include <memory>
 #include <vector>
 
+#include "api/task_queue/task_queue_factory.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_frame.h"
@@ -26,7 +27,6 @@
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/sequenced_task_checker.h"
-#include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
 
@@ -137,7 +137,8 @@ class DelayedEncoder : public test::FakeEncoder {
 // as it is called from the task queue in VideoStreamEncoder.
 class MultithreadedFakeH264Encoder : public test::FakeH264Encoder {
  public:
-  explicit MultithreadedFakeH264Encoder(Clock* clock);
+  MultithreadedFakeH264Encoder(Clock* clock,
+                               TaskQueueFactory* task_queue_factory);
   virtual ~MultithreadedFakeH264Encoder() = default;
 
   int32_t InitEncode(const VideoCodec* config,
@@ -155,9 +156,12 @@ class MultithreadedFakeH264Encoder : public test::FakeH264Encoder {
  protected:
   class EncodeTask;
 
+  TaskQueueFactory* const task_queue_factory_;
   int current_queue_ RTC_GUARDED_BY(sequence_checker_);
-  std::unique_ptr<rtc::TaskQueue> queue1_ RTC_GUARDED_BY(sequence_checker_);
-  std::unique_ptr<rtc::TaskQueue> queue2_ RTC_GUARDED_BY(sequence_checker_);
+  std::unique_ptr<TaskQueueBase, TaskQueueDeleter> queue1_
+      RTC_GUARDED_BY(sequence_checker_);
+  std::unique_ptr<TaskQueueBase, TaskQueueDeleter> queue2_
+      RTC_GUARDED_BY(sequence_checker_);
   rtc::SequencedTaskChecker sequence_checker_;
 };
 

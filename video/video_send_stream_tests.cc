@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/simulated_network.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_bitrate_allocation.h"
@@ -681,9 +682,11 @@ TEST_F(VideoSendStreamTest, DISABLED_DoesUtilizeUlpfecForVp9WithNackEnabled) {
 #endif  // defined(RTC_ENABLE_VP9)
 
 TEST_F(VideoSendStreamTest, SupportsUlpfecWithMultithreadedH264) {
-  test::FunctionVideoEncoderFactory encoder_factory([]() {
+  std::unique_ptr<TaskQueueFactory> task_queue_factory =
+      CreateDefaultTaskQueueFactory();
+  test::FunctionVideoEncoderFactory encoder_factory([&]() {
     return absl::make_unique<test::MultithreadedFakeH264Encoder>(
-        Clock::GetRealTimeClock());
+        Clock::GetRealTimeClock(), task_queue_factory.get());
   });
   UlpfecObserver test(false, false, true, true, "H264", &encoder_factory);
   RunBaseTest(&test);
@@ -861,9 +864,11 @@ TEST_F(VideoSendStreamTest, SupportsFlexfecWithNackH264) {
 }
 
 TEST_F(VideoSendStreamTest, SupportsFlexfecWithMultithreadedH264) {
-  test::FunctionVideoEncoderFactory encoder_factory([]() {
+  std::unique_ptr<TaskQueueFactory> task_queue_factory =
+      CreateDefaultTaskQueueFactory();
+  test::FunctionVideoEncoderFactory encoder_factory([&]() {
     return absl::make_unique<test::MultithreadedFakeH264Encoder>(
-        Clock::GetRealTimeClock());
+        Clock::GetRealTimeClock(), task_queue_factory.get());
   });
 
   FlexfecObserver test(false, false, "H264", &encoder_factory, 1);
