@@ -27,6 +27,7 @@
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
+#include "rtc_base/function_view.h"
 #include "rtc_base/network.h"
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/ssl_certificate.h"
@@ -199,6 +200,55 @@ class PeerConnectionE2EQualityTestFixture {
     PeerConnectionInterface::RTCConfiguration rtc_configuration;
   };
 
+  // This class is used to fully configure one peer inside the call.
+  class PeerConfigurer {
+   public:
+    virtual ~PeerConfigurer() = default;
+
+    // The parameters of the following 7 methods will be passed to the
+    // PeerConnectionFactoryInterface implementation that will be created for
+    // this peer.
+    virtual PeerConfigurer* SetCallFactory(
+        std::unique_ptr<CallFactoryInterface> call_factory) = 0;
+    virtual PeerConfigurer* SetEventLogFactory(
+        std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory) = 0;
+    virtual PeerConfigurer* SetFecControllerFactory(
+        std::unique_ptr<FecControllerFactoryInterface>
+            fec_controller_factory) = 0;
+    virtual PeerConfigurer* SetNetworkControllerFactory(
+        std::unique_ptr<NetworkControllerFactoryInterface>
+            network_controller_factory) = 0;
+    virtual PeerConfigurer* SetMediaTransportFactory(
+        std::unique_ptr<MediaTransportFactory> media_transport_factory) = 0;
+    virtual PeerConfigurer* SetVideoEncoderFactory(
+        std::unique_ptr<VideoEncoderFactory> video_encoder_factory) = 0;
+    virtual PeerConfigurer* SetVideoDecoderFactory(
+        std::unique_ptr<VideoDecoderFactory> video_decoder_factory) = 0;
+
+    // The parameters of the following 3 methods will be passed to the
+    // PeerConnectionInterface implementation that will be created for this
+    // peer.
+    virtual PeerConfigurer* SetAsyncResolverFactory(
+        std::unique_ptr<webrtc::AsyncResolverFactory>
+            async_resolver_factory) = 0;
+    virtual PeerConfigurer* SetRTCCertificateGenerator(
+        std::unique_ptr<rtc::RTCCertificateGeneratorInterface>
+            cert_generator) = 0;
+    virtual PeerConfigurer* SetSSLCertificateVerifier(
+        std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier) = 0;
+
+    // Add new video stream to the call that will be sent from this peer.
+    virtual PeerConfigurer* AddVideoConfig(VideoConfig config) = 0;
+    // Set the audio stream for the call from this peer. If this method won't
+    // be invoked, this peer will send no audio.
+    virtual PeerConfigurer* SetAudioConfig(AudioConfig config) = 0;
+    // If is set, an RTCEventLog will be saved in that location and it will be
+    // available for further analysis.
+    virtual PeerConfigurer* SetRtcEventLogPath(std::string path) = 0;
+    virtual PeerConfigurer* SetRTCConfiguration(
+        PeerConnectionInterface::RTCConfiguration configuration) = 0;
+  };
+
   // Contains parameters, that describe how long framework should run quality
   // test.
   struct RunParams {
@@ -207,6 +257,8 @@ class PeerConnectionE2EQualityTestFixture {
     // it will be shut downed.
     TimeDelta run_duration;
   };
+
+  virtual ~PeerConnectionE2EQualityTestFixture() = default;
 
   // Add activity that will be executed on the best effort at least after
   // |target_time_since_start| after call will be set up (after offer/answer
@@ -222,12 +274,16 @@ class PeerConnectionE2EQualityTestFixture {
                             TimeDelta interval,
                             std::function<void(TimeDelta)> func) = 0;
 
-  virtual void Run(std::unique_ptr<InjectableComponents> alice_components,
-                   std::unique_ptr<Params> alice_params,
-                   std::unique_ptr<InjectableComponents> bob_components,
-                   std::unique_ptr<Params> bob_params,
-                   RunParams run_params) = 0;
-  virtual ~PeerConnectionE2EQualityTestFixture() = default;
+  // Add a new peer to the call and return an object through which caller
+  // can configure peer's behavior.
+  // |network_thread| will be used as network thread for peer's peer connection
+  // |network_manager| will be used to provide network interfaces for peer's
+  // peer connection.
+  // |configurer| function will be used to configure peer in the call.
+  virtual void AddPeer(rtc::Thread* network_thread,
+                       rtc::NetworkManager* network_manager,
+                       rtc::FunctionView<void(PeerConfigurer*)> configurer) = 0;
+  virtual void Run(RunParams run_params) = 0;
 };
 
 }  // namespace webrtc_pc_e2e

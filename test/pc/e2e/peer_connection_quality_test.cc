@@ -195,16 +195,28 @@ void PeerConnectionE2EQualityTest::PostTask(ScheduledActivity activity) {
       remaining_delay.ms());
 }
 
+void PeerConnectionE2EQualityTest::AddPeer(
+    rtc::Thread* network_thread,
+    rtc::NetworkManager* network_manager,
+    rtc::FunctionView<void(PeerConfigurer*)> configurer) {
+  peer_configurations_.push_back(
+      absl::make_unique<PeerConfigurerImpl>(network_thread, network_manager));
+  configurer(peer_configurations_.back().get());
+}
+
 void PeerConnectionE2EQualityTest::Run(
-    std::unique_ptr<InjectableComponents> alice_components,
-    std::unique_ptr<Params> alice_params,
-    std::unique_ptr<InjectableComponents> bob_components,
-    std::unique_ptr<Params> bob_params,
     RunParams run_params) {
-  RTC_CHECK(alice_components);
-  RTC_CHECK(alice_params);
-  RTC_CHECK(bob_components);
-  RTC_CHECK(bob_params);
+  RTC_CHECK_EQ(peer_configurations_.size(), 2)
+      << "Only peer to peer calls are allowed, please add 2 peers";
+
+  std::unique_ptr<Params> alice_params =
+      peer_configurations_[0]->ReleaseParams();
+  std::unique_ptr<InjectableComponents> alice_components =
+      peer_configurations_[0]->ReleaseComponents();
+  std::unique_ptr<Params> bob_params = peer_configurations_[1]->ReleaseParams();
+  std::unique_ptr<InjectableComponents> bob_components =
+      peer_configurations_[1]->ReleaseComponents();
+  peer_configurations_.clear();
 
   SetDefaultValuesForMissingParams({alice_params.get(), bob_params.get()});
   ValidateParams({alice_params.get(), bob_params.get()});

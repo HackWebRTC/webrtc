@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "pc/test/frame_generator_capturer_video_track_source.h"
@@ -33,6 +34,116 @@
 namespace webrtc {
 namespace webrtc_pc_e2e {
 
+class PeerConfigurerImpl final
+    : public PeerConnectionE2EQualityTestFixture::PeerConfigurer {
+ public:
+  using Params = PeerConnectionE2EQualityTestFixture::Params;
+  using InjectableComponents =
+      PeerConnectionE2EQualityTestFixture::InjectableComponents;
+
+  PeerConfigurerImpl(rtc::Thread* network_thread,
+                     rtc::NetworkManager* network_manager)
+      : components_(absl::make_unique<InjectableComponents>(network_thread,
+                                                            network_manager)),
+        params_(absl::make_unique<Params>()) {}
+
+  PeerConfigurer* SetCallFactory(
+      std::unique_ptr<CallFactoryInterface> call_factory) override {
+    components_->pcf_dependencies->call_factory = std::move(call_factory);
+    return this;
+  }
+  PeerConfigurer* SetEventLogFactory(
+      std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory) override {
+    components_->pcf_dependencies->event_log_factory =
+        std::move(event_log_factory);
+    return this;
+  }
+  PeerConfigurer* SetFecControllerFactory(
+      std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory)
+      override {
+    components_->pcf_dependencies->fec_controller_factory =
+        std::move(fec_controller_factory);
+    return this;
+  }
+  PeerConfigurer* SetNetworkControllerFactory(
+      std::unique_ptr<NetworkControllerFactoryInterface>
+          network_controller_factory) override {
+    components_->pcf_dependencies->network_controller_factory =
+        std::move(network_controller_factory);
+    return this;
+  }
+  PeerConfigurer* SetMediaTransportFactory(
+      std::unique_ptr<MediaTransportFactory> media_transport_factory) override {
+    components_->pcf_dependencies->media_transport_factory =
+        std::move(media_transport_factory);
+    return this;
+  }
+  PeerConfigurer* SetVideoEncoderFactory(
+      std::unique_ptr<VideoEncoderFactory> video_encoder_factory) override {
+    components_->pcf_dependencies->video_encoder_factory =
+        std::move(video_encoder_factory);
+    return this;
+  }
+  PeerConfigurer* SetVideoDecoderFactory(
+      std::unique_ptr<VideoDecoderFactory> video_decoder_factory) override {
+    components_->pcf_dependencies->video_decoder_factory =
+        std::move(video_decoder_factory);
+    return this;
+  }
+
+  PeerConfigurer* SetAsyncResolverFactory(
+      std::unique_ptr<webrtc::AsyncResolverFactory> async_resolver_factory)
+      override {
+    components_->pc_dependencies->async_resolver_factory =
+        std::move(async_resolver_factory);
+    return this;
+  }
+  PeerConfigurer* SetRTCCertificateGenerator(
+      std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator)
+      override {
+    components_->pc_dependencies->cert_generator = std::move(cert_generator);
+    return this;
+  }
+  PeerConfigurer* SetSSLCertificateVerifier(
+      std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier) override {
+    components_->pc_dependencies->tls_cert_verifier =
+        std::move(tls_cert_verifier);
+    return this;
+  }
+
+  PeerConfigurer* AddVideoConfig(
+      PeerConnectionE2EQualityTestFixture::VideoConfig config) override {
+    params_->video_configs.push_back(std::move(config));
+    return this;
+  }
+  PeerConfigurer* SetAudioConfig(
+      PeerConnectionE2EQualityTestFixture::AudioConfig config) override {
+    params_->audio_config = std::move(config);
+    return this;
+  }
+  PeerConfigurer* SetRtcEventLogPath(std::string path) override {
+    params_->rtc_event_log_path = std::move(path);
+    return this;
+  }
+  PeerConfigurer* SetRTCConfiguration(
+      PeerConnectionInterface::RTCConfiguration configuration) override {
+    params_->rtc_configuration = std::move(configuration);
+    return this;
+  }
+
+ protected:
+  friend class PeerConnectionE2EQualityTest;
+
+  std::unique_ptr<InjectableComponents> ReleaseComponents() {
+    return std::move(components_);
+  }
+  std::unique_ptr<Params> ReleaseParams() { return std::move(params_); }
+
+ private:
+  std::unique_ptr<InjectableComponents> components_;
+  std::unique_ptr<Params> params_;
+};
+
 class PeerConnectionE2EQualityTest
     : public PeerConnectionE2EQualityTestFixture {
  public:
@@ -43,6 +154,7 @@ class PeerConnectionE2EQualityTest
       PeerConnectionE2EQualityTestFixture::VideoGeneratorType;
   using RunParams = PeerConnectionE2EQualityTestFixture::RunParams;
   using VideoConfig = PeerConnectionE2EQualityTestFixture::VideoConfig;
+  using PeerConfigurer = PeerConnectionE2EQualityTestFixture::PeerConfigurer;
 
   PeerConnectionE2EQualityTest(
       std::string test_case_name,
@@ -51,17 +163,16 @@ class PeerConnectionE2EQualityTest
 
   ~PeerConnectionE2EQualityTest() override = default;
 
-  void Run(std::unique_ptr<InjectableComponents> alice_components,
-           std::unique_ptr<Params> alice_params,
-           std::unique_ptr<InjectableComponents> bob_components,
-           std::unique_ptr<Params> bob_params,
-           RunParams run_params) override;
-
   void ExecuteAt(TimeDelta target_time_since_start,
                  std::function<void(TimeDelta)> func) override;
   void ExecuteEvery(TimeDelta initial_delay_since_start,
                     TimeDelta interval,
                     std::function<void(TimeDelta)> func) override;
+
+  void AddPeer(rtc::Thread* network_thread,
+               rtc::NetworkManager* network_manager,
+               rtc::FunctionView<void(PeerConfigurer*)> configurer) override;
+  void Run(RunParams run_params) override;
 
  private:
   struct ScheduledActivity {
@@ -115,6 +226,8 @@ class PeerConnectionE2EQualityTest
   std::unique_ptr<SingleProcessEncodedImageDataInjector>
       encoded_image_id_controller_;
   std::unique_ptr<AudioQualityAnalyzerInterface> audio_quality_analyzer_;
+
+  std::vector<std::unique_ptr<PeerConfigurerImpl>> peer_configurations_;
 
   std::unique_ptr<TestPeer> alice_;
   std::unique_ptr<TestPeer> bob_;
