@@ -113,7 +113,10 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTestFromString(
     const Config& config) {
   std::unique_ptr<NetEqInput> input(
       NetEqEventLogInput::CreateFromString(input_string, config.ssrc_filter));
-  RTC_CHECK(input) << "Cannot parse input string";
+  if (!input) {
+    std::cerr << "Error: Cannot parse input string" << std::endl;
+    return nullptr;
+  }
   return InitializeTest(std::move(input), config);
 }
 
@@ -139,14 +142,20 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTestFromFile(
   }
 
   std::cout << "Input file: " << input_file_name << std::endl;
-  RTC_CHECK(input) << "Cannot open input file";
+  if (!input) {
+    std::cerr << "Error: Cannot open input file" << std::endl;
+    return nullptr;
+  }
   return InitializeTest(std::move(input), config);
 }
 
 std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
     std::unique_ptr<NetEqInput> input,
     const Config& config) {
-  RTC_CHECK(!input->ended()) << "Input is empty";
+  if (input->ended()) {
+    std::cerr << "Error: Input is empty" << std::endl;
+    return nullptr;
+  }
 
   // Check the sample rate.
   absl::optional<int> sample_rate_hz;
@@ -177,9 +186,9 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
     }
   }
   if (!sample_rate_hz) {
-    std::cout << "Cannot find any packets with known payload types"
+    std::cerr << "Cannot find any packets with known payload types"
               << std::endl;
-    RTC_NOTREACHED();
+    return nullptr;
   }
 
   // If an output file is requested, open it.
@@ -213,7 +222,11 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
     int replacement_pt = 127;
     while (codecs.find(replacement_pt) != codecs.end()) {
       --replacement_pt;
-      RTC_CHECK_GE(replacement_pt, 0);
+      if (replacement_pt <= 0) {
+        std::cerr << "Error: Unable to find available replacement payload type"
+                  << std::endl;
+        return nullptr;
+      }
     }
 
     auto std_set_int32_to_uint8 = [](const std::set<int32_t>& a) {
@@ -249,9 +262,13 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
           return decoder;
         });
 
-    RTC_CHECK(
-        codecs.insert({replacement_pt, SdpAudioFormat("replacement", 48000, 1)})
-            .second);
+    if (!codecs
+             .insert({replacement_pt, SdpAudioFormat("replacement", 48000, 1)})
+             .second) {
+      std::cerr << "Error: Unable to insert replacement audio codec"
+                << std::endl;
+      return nullptr;
+    }
   }
 
   // Create a text log file if needed.
@@ -265,7 +282,6 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
       config.matlabplot, config.pythonplot, config.concealment_events,
       config.plot_scripts_basename.value_or(""));
 
-  RTC_CHECK(stats_plotter_);
   ssrc_switch_detector_.reset(
       new SsrcSwitchDetector(stats_plotter_->stats_getter()->delay_analyzer()));
   callbacks.post_insert_packet = ssrc_switch_detector_.get();
