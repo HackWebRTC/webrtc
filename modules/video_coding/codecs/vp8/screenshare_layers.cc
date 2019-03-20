@@ -72,12 +72,21 @@ ScreenshareLayers::~ScreenshareLayers() {
   UpdateHistograms();
 }
 
-bool ScreenshareLayers::SupportsEncoderFrameDropping() const {
+size_t ScreenshareLayers::StreamCount() const {
+  return 1;
+}
+
+bool ScreenshareLayers::SupportsEncoderFrameDropping(
+    size_t stream_index) const {
+  RTC_DCHECK_LT(stream_index, StreamCount());
   // Frame dropping is handled internally by this class.
   return false;
 }
 
-Vp8FrameConfig ScreenshareLayers::UpdateLayerConfig(uint32_t timestamp) {
+Vp8FrameConfig ScreenshareLayers::UpdateLayerConfig(size_t stream_index,
+                                                    uint32_t timestamp) {
+  RTC_DCHECK_LT(stream_index, StreamCount());
+
   auto it = pending_frame_configs_.find(timestamp);
   if (it != pending_frame_configs_.end()) {
     // Drop and re-encode, reuse the previous config.
@@ -222,8 +231,10 @@ Vp8FrameConfig ScreenshareLayers::UpdateLayerConfig(uint32_t timestamp) {
 }
 
 void ScreenshareLayers::OnRatesUpdated(
+    size_t stream_index,
     const std::vector<uint32_t>& bitrates_bps,
     int framerate_fps) {
+  RTC_DCHECK_LT(stream_index, StreamCount());
   RTC_DCHECK_GT(framerate_fps, 0);
   RTC_DCHECK_GE(bitrates_bps.size(), 1);
   RTC_DCHECK_LE(bitrates_bps.size(), 2);
@@ -261,11 +272,14 @@ void ScreenshareLayers::OnRatesUpdated(
   layers_[1].target_rate_kbps_ = tl1_kbps;
 }
 
-void ScreenshareLayers::OnEncodeDone(uint32_t rtp_timestamp,
+void ScreenshareLayers::OnEncodeDone(size_t stream_index,
+                                     uint32_t rtp_timestamp,
                                      size_t size_bytes,
                                      bool is_keyframe,
                                      int qp,
                                      CodecSpecificInfo* info) {
+  RTC_DCHECK_LT(stream_index, StreamCount());
+
   if (size_bytes == 0) {
     layers_[active_layer_].state = TemporalLayer::State::kDropped;
     ++stats_.num_overshoots_;
@@ -355,6 +369,10 @@ void ScreenshareLayers::OnEncodeDone(uint32_t rtp_timestamp,
   }
 }
 
+void ScreenshareLayers::OnPacketLossRateUpdate(float packet_loss_rate) {}
+
+void ScreenshareLayers::OnRttUpdate(int64_t rtt_ms) {}
+
 TemplateStructure ScreenshareLayers::GetTemplateStructure(
     int num_layers) const {
   RTC_CHECK_LT(num_layers, 3);
@@ -428,7 +446,10 @@ uint32_t ScreenshareLayers::GetCodecTargetBitrateKbps() const {
   return std::max(layers_[0].target_rate_kbps_, target_bitrate_kbps);
 }
 
-bool ScreenshareLayers::UpdateConfiguration(Vp8EncoderConfig* cfg) {
+bool ScreenshareLayers::UpdateConfiguration(size_t stream_index,
+                                            Vp8EncoderConfig* cfg) {
+  RTC_DCHECK_LT(stream_index, StreamCount());
+
   if (min_qp_ == -1 || max_qp_ == -1) {
     // Store the valid qp range. This must not change during the lifetime of
     // this class.

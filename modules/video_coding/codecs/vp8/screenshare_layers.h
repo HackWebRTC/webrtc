@@ -26,7 +26,7 @@ namespace webrtc {
 struct CodecSpecificInfoVP8;
 class Clock;
 
-class ScreenshareLayers : public Vp8TemporalLayers {
+class ScreenshareLayers final : public Vp8FrameBufferController {
  public:
   static const double kMaxTL0FpsReduction;
   static const double kAcceptableTargetOvershoot;
@@ -35,25 +35,34 @@ class ScreenshareLayers : public Vp8TemporalLayers {
   explicit ScreenshareLayers(int num_temporal_layers);
   ~ScreenshareLayers() override;
 
-  bool SupportsEncoderFrameDropping() const override;
+  size_t StreamCount() const override;
+
+  bool SupportsEncoderFrameDropping(size_t stream_index) const override;
 
   // Returns the recommended VP8 encode flags needed. May refresh the decoder
   // and/or update the reference buffers.
-  Vp8FrameConfig UpdateLayerConfig(uint32_t rtp_timestamp) override;
+  Vp8FrameConfig UpdateLayerConfig(size_t stream_index,
+                                   uint32_t rtp_timestamp) override;
 
   // New target bitrate, per temporal layer.
-  void OnRatesUpdated(const std::vector<uint32_t>& bitrates_bps,
+  void OnRatesUpdated(size_t stream_index,
+                      const std::vector<uint32_t>& bitrates_bps,
                       int framerate_fps) override;
 
   // Update the encoder configuration with target bitrates or other parameters.
   // Returns true iff the configuration was actually modified.
-  bool UpdateConfiguration(Vp8EncoderConfig* cfg) override;
+  bool UpdateConfiguration(size_t stream_index, Vp8EncoderConfig* cfg) override;
 
-  void OnEncodeDone(uint32_t rtp_timestamp,
+  void OnEncodeDone(size_t stream_index,
+                    uint32_t rtp_timestamp,
                     size_t size_bytes,
                     bool is_keyframe,
                     int qp,
                     CodecSpecificInfo* info) override;
+
+  void OnPacketLossRateUpdate(float packet_loss_rate) override;
+
+  void OnRttUpdate(int64_t rtt_ms) override;
 
  private:
   enum class TemporalLayerState : int { kDrop, kTl0, kTl1, kTl1Sync };

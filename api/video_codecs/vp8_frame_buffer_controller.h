@@ -11,8 +11,10 @@
 #ifndef API_VIDEO_CODECS_VP8_FRAME_BUFFER_CONTROLLER_H_
 #define API_VIDEO_CODECS_VP8_FRAME_BUFFER_CONTROLLER_H_
 
+#include <memory>
 #include <vector>
 
+#include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/vp8_frame_config.h"
 
 namespace webrtc {
@@ -66,9 +68,14 @@ struct Vp8EncoderConfig {
 };
 
 // This interface defines a way of delegating the logic of buffer management.
+// Multiple streams may be controlled by a single controller, demuxing between
+// them using stream_index.
 class Vp8FrameBufferController {
  public:
   virtual ~Vp8FrameBufferController() = default;
+
+  // Number of streamed controlled by |this|.
+  virtual size_t StreamCount() const = 0;
 
   // If this method returns true, the encoder is free to drop frames for
   // instance in an effort to uphold encoding bitrate.
@@ -79,10 +86,11 @@ class Vp8FrameBufferController {
   //     re-encode the image at a low bitrate. In this case the encoder should
   //     call OnEncodeDone() once with size = 0 to indicate drop, and then call
   //     OnEncodeDone() again when the frame has actually been encoded.
-  virtual bool SupportsEncoderFrameDropping() const = 0;
+  virtual bool SupportsEncoderFrameDropping(size_t stream_index) const = 0;
 
   // New target bitrate, per temporal layer.
-  virtual void OnRatesUpdated(const std::vector<uint32_t>& bitrates_bps,
+  virtual void OnRatesUpdated(size_t stream_index,
+                              const std::vector<uint32_t>& bitrates_bps,
                               int framerate_fps) = 0;
 
   // Called by the encoder before encoding a frame. |cfg| contains the current
@@ -90,7 +98,8 @@ class Vp8FrameBufferController {
   // to be changed before the encode step, |cfg| should be changed and then
   // return true. If false is returned, the encoder will proceed without
   // updating the configuration.
-  virtual bool UpdateConfiguration(Vp8EncoderConfig* cfg) = 0;
+  virtual bool UpdateConfiguration(size_t stream_index,
+                                   Vp8EncoderConfig* cfg) = 0;
 
   // Returns the recommended VP8 encode flags needed, and moves the temporal
   // pattern to the next frame.
@@ -99,7 +108,8 @@ class Vp8FrameBufferController {
   // The timestamp uses a 90kHz RTP clock.
   // After calling this method, first call the actual encoder with the provided
   // frame configuration, and then OnEncodeDone() below.
-  virtual Vp8FrameConfig UpdateLayerConfig(uint32_t rtp_timestamp) = 0;
+  virtual Vp8FrameConfig UpdateLayerConfig(size_t stream_index,
+                                           uint32_t rtp_timestamp) = 0;
 
   // Called after the encode step is done. |rtp_timestamp| must match the
   // parameter use in the UpdateLayerConfig() call.
@@ -114,11 +124,28 @@ class Vp8FrameBufferController {
   // If |size_bytes| > 0, |qp| should indicate the frame-level QP this frame was
   // encoded at. If the encoder does not support extracting this, |qp| should be
   // set to 0.
-  virtual void OnEncodeDone(uint32_t rtp_timestamp,
+  virtual void OnEncodeDone(size_t stream_index,
+                            uint32_t rtp_timestamp,
                             size_t size_bytes,
                             bool is_keyframe,
                             int qp,
                             CodecSpecificInfo* info) = 0;
+
+  // Called by the encoder when the packet loss rate changes.
+  // |packet_loss_rate| runs between 0.0 (no loss) and 1.0 (everything lost).
+  virtual void OnPacketLossRateUpdate(float packet_loss_rate) = 0;
+
+  // Called by the encoder when the round trip time changes.
+  virtual void OnRttUpdate(int64_t rtt_ms) = 0;
+};
+
+// Interface for a factory of Vp8FrameBufferController instances.
+class Vp8FrameBufferControllerFactory {
+ public:
+  virtual ~Vp8FrameBufferControllerFactory() = default;
+
+  virtual std::unique_ptr<Vp8FrameBufferController> Create(
+      const VideoCodec& codec) = 0;
 };
 
 }  // namespace webrtc

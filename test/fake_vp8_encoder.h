@@ -13,12 +13,13 @@
 
 #include <stddef.h>
 #include <stdint.h>
+
 #include <memory>
-#include <vector>
 
 #include "api/video/encoded_image.h"
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
+#include "api/video_codecs/vp8_frame_buffer_controller.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
@@ -45,7 +46,6 @@ class FakeVP8Encoder : public FakeEncoder {
   EncoderInfo GetEncoderInfo() const override;
 
  private:
-  void SetupTemporalLayers(const VideoCodec& codec);
   void PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                              size_t size_bytes,
                              VideoFrameType frame_type,
@@ -58,7 +58,7 @@ class FakeVP8Encoder : public FakeEncoder {
 
   rtc::SequencedTaskChecker sequence_checker_;
 
-  std::vector<std::unique_ptr<Vp8TemporalLayers>> temporal_layers_
+  std::unique_ptr<Vp8FrameBufferController> frame_buffer_controller_
       RTC_GUARDED_BY(sequence_checker_);
 };
 

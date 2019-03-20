@@ -31,6 +31,7 @@ rtc_source_set("video_codecs_api") {
     "vp8_frame_buffer_controller.h",
     "vp8_frame_config.cc",
     "vp8_frame_config.h",
+    "vp8_temporal_layers.cc",
     "vp8_temporal_layers.h",
   ]
 
@@ -95,20 +96,19 @@ rtc_static_library("builtin_video_encoder_factory") {
   ]
 }
 
-rtc_static_library("create_vp8_temporal_layers") {
+rtc_static_library("vp8_temporal_layers_factory") {
   visibility = [ "*" ]
   allow_poison = [ "software_video_codecs" ]
   sources = [
-    "create_vp8_temporal_layers.cc",
-    "create_vp8_temporal_layers.h",
+    "vp8_temporal_layers_factory.cc",
+    "vp8_temporal_layers_factory.h",
   ]
 
   deps = [
     ":video_codecs_api",
-    "../..:webrtc_common",
-    "../../modules/video_coding:video_codec_interface",
+    "../../modules/video_coding:video_coding_utility",
     "../../modules/video_coding:webrtc_vp8_temporal_layers",
-    "../../system_wrappers:system_wrappers",
+    "../../rtc_base:checks",
     "//third_party/abseil-cpp/absl/memory",
   ]
 }

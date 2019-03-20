@@ -125,6 +125,10 @@ int32_t VideoEncoder::SetRateAllocation(
   return SetRates(allocation.get_sum_kbps(), framerate);
 }
 
+void VideoEncoder::OnPacketLossRateUpdate(float packet_loss_rate) {}
+
+void VideoEncoder::OnRttUpdate(int64_t rtt_ms) {}
+
 // TODO(webrtc:9722): Remove and make pure virtual.
 VideoEncoder::EncoderInfo VideoEncoder::GetEncoderInfo() const {
   return EncoderInfo();

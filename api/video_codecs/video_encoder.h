@@ -263,6 +263,16 @@ class RTC_EXPORT VideoEncoder {
   virtual int32_t SetRateAllocation(const VideoBitrateAllocation& allocation,
                                     uint32_t framerate);
 
+  // Inform the encoder when the packet loss rate changes.
+  //
+  // Input:   - packet_loss_rate  : The packet loss rate (0.0 to 1.0).
+  virtual void OnPacketLossRateUpdate(float packet_loss_rate);
+
+  // Inform the encoder when the round trip time changes.
+  //
+  // Input:   - rtt_ms            : The new RTT, in milliseconds.
+  virtual void OnRttUpdate(int64_t rtt_ms);
+
   // Returns meta-data about the encoder, such as implementation name.
   // The output of this method may change during runtime. For instance if a
   // hardware encoder fails, it may fall back to doing software encoding using
