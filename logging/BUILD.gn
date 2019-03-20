@@ -55,6 +55,7 @@ rtc_source_set("rtc_stream_config") {
   deps = [
     ":rtc_event_log_api",
     "../api:libjingle_peerconnection_api",
+    "../api:rtp_headers",
   ]
 }
 
@@ -189,6 +190,7 @@ rtc_static_library("rtc_event_log_impl_encoder") {
 
   deps = [
     "../api:libjingle_peerconnection_api",
+    "../api:rtp_headers",
     "../api/transport:network_control",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
@@ -327,6 +329,7 @@ if (rtc_enable_protobuf) {
       ":rtc_event_log_proto",
       ":rtc_stream_config",
       "../api:libjingle_peerconnection_api",
+      "../api:rtp_headers",
       "../api/units:data_rate",
       "../api/units:time_delta",
       "../api/units:timestamp",
@@ -380,6 +383,7 @@ if (rtc_enable_protobuf) {
         ":rtc_stream_config",
         "../api:array_view",
         "../api:libjingle_peerconnection_api",
+        "../api:rtp_headers",
         "../call",
         "../call:call_interfaces",
         "../modules/audio_coding:audio_network_adaptor",
@@ -407,6 +411,7 @@ if (rtc_enable_protobuf) {
         ":rtc_event_log_parser",
         "../api:array_view",
         "../api:libjingle_peerconnection_api",
+        "../api:rtp_headers",
         "../modules/rtp_rtcp",
         "../modules/rtp_rtcp:rtp_rtcp_format",
         "../rtc_base:checks",

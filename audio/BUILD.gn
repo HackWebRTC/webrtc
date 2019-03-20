@@ -41,6 +41,7 @@ rtc_static_library("audio") {
     "../api:array_view",
     "../api:call_api",
     "../api:libjingle_peerconnection_api",
+    "../api:rtp_headers",
     "../api:scoped_refptr",
     "../api:transport_api",
     "../api/audio:aec3_factory",

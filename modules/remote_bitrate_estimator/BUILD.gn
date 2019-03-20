@@ -41,7 +41,7 @@ rtc_static_library("remote_bitrate_estimator") {
 
   deps = [
     "../..:webrtc_common",
-    "../../api:libjingle_peerconnection_api",
+    "../../api:rtp_headers",
     "../../api/units:data_rate",
     "../../api/units:timestamp",
     "../../modules:module_api",
@@ -128,7 +128,7 @@ if (rtc_include_tests) {
       "..:module_api",
       "..:module_api_public",
       "../..:webrtc_common",
-      "../../api:libjingle_peerconnection_api",
+      "../../api:rtp_headers",
       "../../api/transport:field_trial_based_config",
       "../../api/transport:network_control",
       "../../logging:mocks",
