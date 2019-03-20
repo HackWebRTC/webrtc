@@ -36,11 +36,23 @@ bool ShouldSkipStream(ParsedRtcEventLog::MediaType media_type,
 }
 }  // namespace
 
-RtcEventLogSource* RtcEventLogSource::Create(
+std::unique_ptr<RtcEventLogSource> RtcEventLogSource::CreateFromFile(
     const std::string& file_name,
     absl::optional<uint32_t> ssrc_filter) {
-  RtcEventLogSource* source = new RtcEventLogSource();
-  RTC_CHECK(source->OpenFile(file_name, ssrc_filter));
+  auto source = std::unique_ptr<RtcEventLogSource>(new RtcEventLogSource());
+  ParsedRtcEventLog parsed_log;
+  RTC_CHECK(parsed_log.ParseFile(file_name));
+  RTC_CHECK(source->Initialize(parsed_log, ssrc_filter));
+  return source;
+}
+
+std::unique_ptr<RtcEventLogSource> RtcEventLogSource::CreateFromString(
+    const std::string& file_contents,
+    absl::optional<uint32_t> ssrc_filter) {
+  auto source = std::unique_ptr<RtcEventLogSource>(new RtcEventLogSource());
+  ParsedRtcEventLog parsed_log;
+  RTC_CHECK(parsed_log.ParseString(file_contents));
+  RTC_CHECK(source->Initialize(parsed_log, ssrc_filter));
   return source;
 }
 
@@ -64,12 +76,8 @@ int64_t RtcEventLogSource::NextAudioOutputEventMs() {
 
 RtcEventLogSource::RtcEventLogSource() : PacketSource() {}
 
-bool RtcEventLogSource::OpenFile(const std::string& file_name,
-                                 absl::optional<uint32_t> ssrc_filter) {
-  ParsedRtcEventLog parsed_log;
-  if (!parsed_log.ParseFile(file_name))
-    return false;
-
+bool RtcEventLogSource::Initialize(const ParsedRtcEventLog& parsed_log,
+                                   absl::optional<uint32_t> ssrc_filter) {
   const auto first_log_end_time_us =
       parsed_log.stop_log_events().empty()
           ? std::numeric_limits<int64_t>::max()

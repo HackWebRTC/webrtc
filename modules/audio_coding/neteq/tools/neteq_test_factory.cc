@@ -108,8 +108,17 @@ NetEqTestFactory::Config::Config() = default;
 NetEqTestFactory::Config::Config(const Config& other) = default;
 NetEqTestFactory::Config::~Config() = default;
 
-std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
-    std::string input_file_name,
+std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTestFromString(
+    const std::string& input_string,
+    const Config& config) {
+  std::unique_ptr<NetEqInput> input(
+      NetEqEventLogInput::CreateFromString(input_string, config.ssrc_filter));
+  RTC_CHECK(input) << "Cannot parse input string";
+  return InitializeTest(std::move(input), config);
+}
+
+std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTestFromFile(
+    const std::string& input_file_name,
     const Config& config) {
   // Gather RTP header extensions in a map.
   NetEqPacketSourceInput::RtpHeaderExtensionMap rtp_ext_map = {
@@ -125,12 +134,19 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
     input.reset(new NetEqRtpDumpInput(input_file_name, rtp_ext_map,
                                       config.ssrc_filter));
   } else {
-    input.reset(new NetEqEventLogInput(input_file_name, config.ssrc_filter));
+    input.reset(NetEqEventLogInput::CreateFromFile(input_file_name,
+                                                   config.ssrc_filter));
   }
 
   std::cout << "Input file: " << input_file_name << std::endl;
   RTC_CHECK(input) << "Cannot open input file";
-  RTC_CHECK(!input->ended()) << "Input file is empty";
+  return InitializeTest(std::move(input), config);
+}
+
+std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
+    std::unique_ptr<NetEqInput> input,
+    const Config& config) {
+  RTC_CHECK(!input->ended()) << "Input is empty";
 
   // Check the sample rate.
   absl::optional<int> sample_rate_hz;

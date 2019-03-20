@@ -133,10 +133,16 @@ class NetEqTestFactory {
     absl::optional<std::string> output_audio_filename;
   };
 
-  std::unique_ptr<NetEqTest> InitializeTest(std::string input_filename,
-                                            const Config& config);
+  std::unique_ptr<NetEqTest> InitializeTestFromFile(
+      const std::string& input_filename,
+      const Config& config);
+  std::unique_ptr<NetEqTest> InitializeTestFromString(
+      const std::string& input_string,
+      const Config& config);
 
  private:
+  std::unique_ptr<NetEqTest> InitializeTest(std::unique_ptr<NetEqInput> input,
+                                            const Config& config);
   std::unique_ptr<SsrcSwitchDetector> ssrc_switch_detector_;
   std::unique_ptr<NetEqStatsPlotter> stats_plotter_;
 };

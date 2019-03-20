@@ -50,7 +50,30 @@ std::unique_ptr<NetEqSimulator> NetEqSimulatorFactory::CreateSimulator(
   config.replacement_audio_file = FLAG_replacement_audio_file;
   config.max_nr_packets_in_buffer = FLAG_max_nr_packets_in_buffer;
   config.output_audio_filename = output_audio_filename;
-  return factory_->InitializeTest(argv[1], config);
+  return factory_->InitializeTestFromFile(argv[1], config);
+}
+
+std::unique_ptr<NetEqSimulator> NetEqSimulatorFactory::CreateSimulatorFromFile(
+    absl::string_view event_log_filename,
+    absl::string_view replacement_audio_filename,
+    Config simulation_config) {
+  NetEqTestFactory::Config config;
+  config.replacement_audio_file = std::string(replacement_audio_filename);
+  config.max_nr_packets_in_buffer = simulation_config.max_nr_packets_in_buffer;
+  return factory_->InitializeTestFromFile(std::string(event_log_filename),
+                                          config);
+}
+
+std::unique_ptr<NetEqSimulator>
+NetEqSimulatorFactory::CreateSimulatorFromString(
+    absl::string_view event_log_file_contents,
+    absl::string_view replacement_audio_filename,
+    Config simulation_config) {
+  NetEqTestFactory::Config config;
+  config.replacement_audio_file = std::string(replacement_audio_filename);
+  config.max_nr_packets_in_buffer = simulation_config.max_nr_packets_in_buffer;
+  return factory_->InitializeTestFromString(
+      std::string(event_log_file_contents), config);
 }
 
 }  // namespace test

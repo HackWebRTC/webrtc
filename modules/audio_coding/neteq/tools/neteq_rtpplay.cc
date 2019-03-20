@@ -377,8 +377,8 @@ int main(int argc, char* argv[]) {
     config.ssrc_filter = absl::make_optional(ssrc);
   }
 
-  std::unique_ptr<webrtc::test::NetEqTest> test = factory.InitializeTest(
-      /*input_filename=*/argv[1], config);
+  std::unique_ptr<webrtc::test::NetEqTest> test =
+      factory.InitializeTestFromFile(/*input_filename=*/argv[1], config);
   test->Run();
   return 0;
 }
