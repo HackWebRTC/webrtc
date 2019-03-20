@@ -33,13 +33,6 @@ namespace {
 constexpr int16_t kGeneratedAudioMaxAmplitude = 32000;
 constexpr int kSamplingFrequencyInHz = 48000;
 
-using Params = PeerConnectionE2EQualityTestFixture::Params;
-using InjectableComponents =
-    PeerConnectionE2EQualityTestFixture::InjectableComponents;
-using PeerConnectionFactoryComponents =
-    PeerConnectionE2EQualityTestFixture::PeerConnectionFactoryComponents;
-using PeerConnectionComponents =
-    PeerConnectionE2EQualityTestFixture::PeerConnectionComponents;
 using AudioConfig = PeerConnectionE2EQualityTestFixture::AudioConfig;
 
 // Sets mandatory entities in injectable components like |pcf_dependencies|

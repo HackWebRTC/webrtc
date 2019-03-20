@@ -41,69 +41,6 @@ namespace webrtc_pc_e2e {
 // TODO(titovartem) move to API when it will be stabilized.
 class PeerConnectionE2EQualityTestFixture {
  public:
-  // Contains most part from PeerConnectionFactoryDependencies. Also all fields
-  // are optional and defaults will be provided by fixture implementation if
-  // any will be omitted.
-  //
-  // Separate class was introduced to clarify which components can be
-  // overridden. For example worker and signaling threads will be provided by
-  // fixture implementation. The same is applicable to the media engine. So user
-  // can override only some parts of media engine like video encoder/decoder
-  // factories.
-  struct PeerConnectionFactoryComponents {
-    std::unique_ptr<CallFactoryInterface> call_factory;
-    std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory;
-    std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory;
-    std::unique_ptr<NetworkControllerFactoryInterface>
-        network_controller_factory;
-    std::unique_ptr<MediaTransportFactory> media_transport_factory;
-
-    // Will be passed to MediaEngineInterface, that will be used in
-    // PeerConnectionFactory.
-    std::unique_ptr<VideoEncoderFactory> video_encoder_factory;
-    std::unique_ptr<VideoDecoderFactory> video_decoder_factory;
-  };
-
-  // Contains most parts from PeerConnectionDependencies. Also all fields are
-  // optional and defaults will be provided by fixture implementation if any
-  // will be omitted.
-  //
-  // Separate class was introduced to clarify which components can be
-  // overridden. For example observer, which is required to
-  // PeerConnectionDependencies, will be provided by fixture implementation,
-  // so client can't inject its own. Also only network manager can be overridden
-  // inside port allocator.
-  struct PeerConnectionComponents {
-    PeerConnectionComponents(rtc::NetworkManager* network_manager)
-        : network_manager(network_manager) {
-      RTC_CHECK(network_manager);
-    }
-
-    rtc::NetworkManager* const network_manager;
-    std::unique_ptr<webrtc::AsyncResolverFactory> async_resolver_factory;
-    std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator;
-    std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier;
-  };
-
-  // Contains all components, that can be overridden in peer connection. Also
-  // has a network thread, that will be used to communicate with another peers.
-  struct InjectableComponents {
-    explicit InjectableComponents(rtc::Thread* network_thread,
-                                  rtc::NetworkManager* network_manager)
-        : network_thread(network_thread),
-          pcf_dependencies(
-              absl::make_unique<PeerConnectionFactoryComponents>()),
-          pc_dependencies(
-              absl::make_unique<PeerConnectionComponents>(network_manager)) {
-      RTC_CHECK(network_thread);
-    }
-
-    rtc::Thread* const network_thread;
-
-    std::unique_ptr<PeerConnectionFactoryComponents> pcf_dependencies;
-    std::unique_ptr<PeerConnectionComponents> pc_dependencies;
-  };
-
   // Contains screen share video stream properties.
   struct ScreenShareConfig {
     // If true, slides will be generated programmatically.
@@ -183,21 +120,6 @@ class PeerConnectionE2EQualityTestFixture {
     absl::optional<std::string> output_dump_file_name;
     // Audio options to use.
     cricket::AudioOptions audio_options;
-  };
-
-  // Contains information about call media streams (up to 1 audio stream and
-  // unlimited amount of video streams) and rtc configuration, that will be used
-  // to set up peer connection.
-  struct Params {
-    // If |video_configs| is empty - no video should be added to the test call.
-    std::vector<VideoConfig> video_configs;
-    // If |audio_config| is set audio stream will be configured
-    absl::optional<AudioConfig> audio_config;
-    // If |rtc_event_log_path| is set, an RTCEventLog will be saved in that
-    // location and it will be available for further analysis.
-    absl::optional<std::string> rtc_event_log_path;
-
-    PeerConnectionInterface::RTCConfiguration rtc_configuration;
   };
 
   // This class is used to fully configure one peer inside the call.

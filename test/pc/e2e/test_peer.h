@@ -24,6 +24,7 @@
 #include "rtc_base/thread.h"
 #include "test/pc/e2e/analyzer/video/video_quality_analyzer_injection_helper.h"
 #include "test/pc/e2e/api/peerconnection_quality_test_fixture.h"
+#include "test/pc/e2e/peer_connection_quality_test_params.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
@@ -32,11 +33,8 @@ namespace webrtc_pc_e2e {
 class TestPeer final : public PeerConnectionWrapper {
  public:
   using PeerConnectionWrapper::PeerConnectionWrapper;
-  using Params = PeerConnectionE2EQualityTestFixture::Params;
   using VideoConfig = PeerConnectionE2EQualityTestFixture::VideoConfig;
   using AudioConfig = PeerConnectionE2EQualityTestFixture::AudioConfig;
-  using InjectableComponents =
-      PeerConnectionE2EQualityTestFixture::InjectableComponents;
 
   // Setups all components, that should be provided to WebRTC
   // PeerConnectionFactory and PeerConnection creation methods,
