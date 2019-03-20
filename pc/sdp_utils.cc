@@ -51,7 +51,12 @@ bool SdpContentsAll(SdpContentPredicate pred,
 
 bool SdpContentsNone(SdpContentPredicate pred,
                      const cricket::SessionDescription* desc) {
-  return SdpContentsAll(std::not2(pred), desc);
+  return SdpContentsAll(
+      [pred](const cricket::ContentInfo* content_info,
+             const cricket::TransportInfo* transport_info) {
+        return !pred(content_info, transport_info);
+      },
+      desc);
 }
 
 void SdpContentsForEach(SdpContentMutator fn,
