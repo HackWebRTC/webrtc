@@ -258,6 +258,7 @@ rtc_source_set("rtc_event") {
       "../../webrtc_overrides/rtc_base/event.h",
     ]
   } else {
+    deps += [ "synchronization:yield_policy" ]
     sources = [
       "event.cc",
       "event.h",
@@ -1409,6 +1410,7 @@ if (rtc_include_tests) {
       "../test:field_trial",
       "../test:fileutils",
       "../test:test_support",
+      "synchronization:synchronization_unittests",
       "third_party/sigslot",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",

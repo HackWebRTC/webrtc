@@ -35,3 +35,27 @@ rtc_source_set("rw_lock_wrapper") {
     ]
   }
 }
+
+rtc_source_set("yield_policy") {
+  sources = [
+    "yield_policy.cc",
+    "yield_policy.h",
+  ]
+  deps = [
+    "//third_party/abseil-cpp/absl/base:core_headers",
+  ]
+}
+
+if (rtc_include_tests) {
+  rtc_source_set("synchronization_unittests") {
+    testonly = true
+    sources = [
+      "yield_policy_unittest.cc",
+    ]
+    deps = [
+      ":yield_policy",
+      "..:rtc_event",
+      "../../test:test_support",
+    ]
+  }
+}
