@@ -26,7 +26,7 @@
 #include "test/pc/e2e/api/peerconnection_quality_test_fixture.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 
 // Describes a single participant in the call.
 class TestPeer final : public PeerConnectionWrapper {
@@ -72,7 +72,7 @@ class TestPeer final : public PeerConnectionWrapper {
   std::unique_ptr<Params> params_;
 };
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc
 
 #endif  // TEST_PC_E2E_TEST_PEER_H_

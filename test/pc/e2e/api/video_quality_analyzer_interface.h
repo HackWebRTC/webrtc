@@ -22,7 +22,7 @@
 #include "test/pc/e2e/api/stats_observer_interface.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 
 // Base interface for video quality analyzer for peer connection level end-2-end
 // tests. Interface has only one abstract method, which have to return frame id.
@@ -107,7 +107,7 @@ class VideoQualityAnalyzerInterface : public StatsObserverInterface {
   virtual std::string GetStreamLabel(uint16_t frame_id) = 0;
 };
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc
 
 #endif  // TEST_PC_E2E_API_VIDEO_QUALITY_ANALYZER_INTERFACE_H_

@@ -17,7 +17,7 @@
 #include "test/pc/e2e/api/video_quality_analyzer_interface.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 
 // API is in development. Can be changed/removed without notice.
 // Create test fixture to establish test call between Alice and Bob.
@@ -30,7 +30,7 @@ CreatePeerConnectionE2EQualityTestFixture(
     std::unique_ptr<AudioQualityAnalyzerInterface> audio_quality_analyzer,
     std::unique_ptr<VideoQualityAnalyzerInterface> video_quality_analyzer);
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc
 
 #endif  // TEST_PC_E2E_API_CREATE_PEERCONNECTION_QUALITY_TEST_FIXTURE_H_

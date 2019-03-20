@@ -18,7 +18,7 @@
 #include "rtc_base/checks.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 namespace {
 
 // Number of bytes from the beginning of the EncodedImage buffer that will be
@@ -145,5 +145,5 @@ SingleProcessEncodedImageDataInjector::ExtractionInfoVector::
 SingleProcessEncodedImageDataInjector::ExtractionInfoVector::
     ~ExtractionInfoVector() = default;
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc

@@ -14,7 +14,7 @@
 #include "test/pc/e2e/api/stats_observer_interface.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 
 class AudioQualityAnalyzerInterface : public StatsObserverInterface {
  public:
@@ -26,7 +26,7 @@ class AudioQualityAnalyzerInterface : public StatsObserverInterface {
   virtual void Start(std::string test_case_name) = 0;
 };
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc
 
 #endif  // TEST_PC_E2E_API_AUDIO_QUALITY_ANALYZER_INTERFACE_H_

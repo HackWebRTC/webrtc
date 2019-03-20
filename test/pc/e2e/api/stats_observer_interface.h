@@ -15,7 +15,7 @@
 #include "api/stats_types.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 
 class StatsObserverInterface {
  public:
@@ -27,7 +27,7 @@ class StatsObserverInterface {
                               const StatsReports& reports) = 0;
 };
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc
 
 #endif  // TEST_PC_E2E_API_STATS_OBSERVER_INTERFACE_H_

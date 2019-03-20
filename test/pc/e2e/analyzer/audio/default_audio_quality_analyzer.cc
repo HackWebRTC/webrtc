@@ -13,7 +13,7 @@
 #include "rtc_base/logging.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 
 void DefaultAudioQualityAnalyzer::Start(std::string test_case_name) {
   test_case_name_ = std::move(test_case_name);
@@ -25,5 +25,5 @@ void DefaultAudioQualityAnalyzer::OnStatsReports(
   // TODO(bugs.webrtc.org/10138): Implement audio stats collection.
 }
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc

@@ -32,7 +32,7 @@
 #include "test/testsupport/file_utils.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 namespace {
 
 using VideoConfig = PeerConnectionE2EQualityTestFixture::VideoConfig;
@@ -430,7 +430,8 @@ void PeerConnectionE2EQualityTest::ValidateParams(std::vector<Params*> params) {
       }
       if (p->audio_config.value().mode == AudioConfig::Mode::kFile) {
         RTC_CHECK(p->audio_config.value().input_file_name);
-        RTC_CHECK(FileExists(p->audio_config.value().input_file_name.value()));
+        RTC_CHECK(
+            test::FileExists(p->audio_config.value().input_file_name.value()));
       }
     }
   }
@@ -457,7 +458,7 @@ void PeerConnectionE2EQualityTest::SetupVideoSink(
     }
   }
   RTC_CHECK(video_config);
-  VideoFrameWriter* writer = MaybeCreateVideoWriter(
+  test::VideoFrameWriter* writer = MaybeCreateVideoWriter(
       video_config->output_dump_file_name, *video_config);
   // It is safe to cast here, because it is checked above that
   // track->kind() is kVideoKind.
@@ -509,12 +510,12 @@ PeerConnectionE2EQualityTest::MaybeAddVideo(TestPeer* peer) {
   std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>> out;
   for (auto video_config : params->video_configs) {
     // Create video generator.
-    std::unique_ptr<FrameGenerator> frame_generator =
+    std::unique_ptr<test::FrameGenerator> frame_generator =
         CreateFrameGenerator(video_config);
 
     // Wrap it to inject video quality analyzer and enable dump of input video
     // if required.
-    VideoFrameWriter* writer =
+    test::VideoFrameWriter* writer =
         MaybeCreateVideoWriter(video_config.input_dump_file_name, video_config);
     frame_generator =
         video_quality_analyzer_injection_helper_->WrapFrameGenerator(
@@ -522,8 +523,8 @@ PeerConnectionE2EQualityTest::MaybeAddVideo(TestPeer* peer) {
             writer);
 
     // Setup FrameGenerator into peer connection.
-    std::unique_ptr<FrameGeneratorCapturer> capturer =
-        absl::WrapUnique(FrameGeneratorCapturer::Create(
+    std::unique_ptr<test::FrameGeneratorCapturer> capturer =
+        absl::WrapUnique(test::FrameGeneratorCapturer::Create(
             std::move(frame_generator), video_config.fps, clock_));
     rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource> source =
         new rtc::RefCountedObject<FrameGeneratorCapturerVideoTrackSource>(
@@ -539,26 +540,26 @@ PeerConnectionE2EQualityTest::MaybeAddVideo(TestPeer* peer) {
   return out;
 }
 
-std::unique_ptr<FrameGenerator>
+std::unique_ptr<test::FrameGenerator>
 PeerConnectionE2EQualityTest::CreateFrameGenerator(
     const VideoConfig& video_config) {
   if (video_config.generator) {
-    absl::optional<FrameGenerator::OutputType> frame_generator_type =
+    absl::optional<test::FrameGenerator::OutputType> frame_generator_type =
         absl::nullopt;
     if (video_config.generator == VideoGeneratorType::kDefault) {
-      frame_generator_type = FrameGenerator::OutputType::I420;
+      frame_generator_type = test::FrameGenerator::OutputType::I420;
     } else if (video_config.generator == VideoGeneratorType::kI420A) {
-      frame_generator_type = FrameGenerator::OutputType::I420A;
+      frame_generator_type = test::FrameGenerator::OutputType::I420A;
     } else if (video_config.generator == VideoGeneratorType::kI010) {
-      frame_generator_type = FrameGenerator::OutputType::I010;
+      frame_generator_type = test::FrameGenerator::OutputType::I010;
     }
-    return FrameGenerator::CreateSquareGenerator(
+    return test::FrameGenerator::CreateSquareGenerator(
         static_cast<int>(video_config.width),
         static_cast<int>(video_config.height), frame_generator_type,
         absl::nullopt);
   }
   if (video_config.input_file_name) {
-    return FrameGenerator::CreateFromYuvFile(
+    return test::FrameGenerator::CreateFromYuvFile(
         std::vector<std::string>(/*count=*/1,
                                  video_config.input_file_name.value()),
         video_config.width, video_config.height, /*frame_repeat_count=*/1);
@@ -634,15 +635,15 @@ void PeerConnectionE2EQualityTest::TearDownCall() {
   bob_.reset();
 }
 
-VideoFrameWriter* PeerConnectionE2EQualityTest::MaybeCreateVideoWriter(
+test::VideoFrameWriter* PeerConnectionE2EQualityTest::MaybeCreateVideoWriter(
     absl::optional<std::string> file_name,
     const VideoConfig& config) {
   if (!file_name) {
     return nullptr;
   }
-  auto video_writer = absl::make_unique<VideoFrameWriter>(
+  auto video_writer = absl::make_unique<test::VideoFrameWriter>(
       file_name.value(), config.width, config.height, config.fps);
-  VideoFrameWriter* out = video_writer.get();
+  test::VideoFrameWriter* out = video_writer.get();
   video_writers_.push_back(std::move(video_writer));
   return out;
 }
@@ -659,5 +660,5 @@ PeerConnectionE2EQualityTest::ScheduledActivity::ScheduledActivity(
       interval(std::move(interval)),
       func(std::move(func)) {}
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc

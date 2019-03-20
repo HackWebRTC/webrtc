@@ -23,7 +23,7 @@
 #include "test/testsupport/file_utils.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 namespace {
 
 void PrintFrameCounters(const std::string& name,
@@ -139,5 +139,5 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
   }
 }
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc

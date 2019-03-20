@@ -31,7 +31,7 @@
 #include "test/testsupport/video_frame_writer.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 
 class PeerConnectionE2EQualityTest
     : public PeerConnectionE2EQualityTestFixture {
@@ -95,7 +95,7 @@ class PeerConnectionE2EQualityTest
   MaybeAddMedia(TestPeer* peer);
   std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>
   MaybeAddVideo(TestPeer* peer);
-  std::unique_ptr<FrameGenerator> CreateFrameGenerator(
+  std::unique_ptr<test::FrameGenerator> CreateFrameGenerator(
       const VideoConfig& video_config);
   void MaybeAddAudio(TestPeer* peer);
   void SetupCall();
@@ -103,7 +103,7 @@ class PeerConnectionE2EQualityTest
       const std::vector<
           rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>& sources);
   void TearDownCall();
-  VideoFrameWriter* MaybeCreateVideoWriter(
+  test::VideoFrameWriter* MaybeCreateVideoWriter(
       absl::optional<std::string> file_name,
       const VideoConfig& config);
   Timestamp Now() const;
@@ -123,7 +123,7 @@ class PeerConnectionE2EQualityTest
       alice_video_sources_;
   std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>
       bob_video_sources_;
-  std::vector<std::unique_ptr<VideoFrameWriter>> video_writers_;
+  std::vector<std::unique_ptr<test::VideoFrameWriter>> video_writers_;
   std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>
       output_video_sinks_;
 
@@ -148,7 +148,7 @@ class PeerConnectionE2EQualityTest
   std::unique_ptr<rtc::TaskQueue> task_queue_;
 };
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc
 
 #endif  // TEST_PC_E2E_PEER_CONNECTION_QUALITY_TEST_H_

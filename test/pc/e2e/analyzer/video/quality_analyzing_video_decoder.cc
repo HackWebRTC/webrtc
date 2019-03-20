@@ -21,7 +21,7 @@
 #include "rtc_base/logging.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 namespace {
 
 constexpr size_t kIrrelatedSimulcastStreamFrameWidth = 320;
@@ -285,5 +285,5 @@ QualityAnalyzingVideoDecoderFactory::LegacyCreateVideoDecoder(
       id_generator_->GetNextId(), std::move(decoder), extractor_, analyzer_);
 }
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc

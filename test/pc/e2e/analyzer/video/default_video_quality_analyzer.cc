@@ -20,7 +20,7 @@
 #include "test/testsupport/perf_test.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 namespace {
 
 constexpr int kMaxActiveComparisons = 10;
@@ -547,5 +547,5 @@ DefaultVideoQualityAnalyzer::FrameComparison::FrameComparison(
       dropped(dropped),
       frame_stats(std::move(frame_stats)) {}
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc

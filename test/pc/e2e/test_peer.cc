@@ -27,7 +27,7 @@
 #include "test/testsupport/copy_to_file_audio_capturer.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 namespace {
 
 constexpr int16_t kGeneratedAudioMaxAmplitude = 32000;
@@ -91,7 +91,7 @@ rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModule(
   RTC_DCHECK(capturer);
 
   if (audio_config && audio_config->input_dump_file_name) {
-    capturer = absl::make_unique<CopyToFileAudioCapturer>(
+    capturer = absl::make_unique<test::CopyToFileAudioCapturer>(
         std::move(capturer), audio_config->input_dump_file_name.value());
   }
 
@@ -297,5 +297,5 @@ TestPeer::TestPeer(
                                                    std::move(observer)),
       params_(std::move(params)) {}
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc

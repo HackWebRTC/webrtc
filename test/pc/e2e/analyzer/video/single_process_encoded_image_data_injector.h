@@ -22,7 +22,7 @@
 #include "test/pc/e2e/analyzer/video/encoded_image_data_injector.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 
 // Based on assumption that all call participants are in the same OS process
 // and uses same QualityAnalyzingVideoContext to obtain
@@ -87,7 +87,7 @@ class SingleProcessEncodedImageDataInjector : public EncodedImageDataInjector,
       RTC_GUARDED_BY(lock_);
 };
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc
 
 #endif  // TEST_PC_E2E_ANALYZER_VIDEO_SINGLE_PROCESS_ENCODED_IMAGE_DATA_INJECTOR_H_

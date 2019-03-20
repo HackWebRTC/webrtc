@@ -30,7 +30,7 @@
 #include "test/pc/e2e/api/video_quality_analyzer_interface.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 
 class RateCounter {
  public:
@@ -275,7 +275,7 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   rtc::Event comparison_available_event_;
 };
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc
 
 #endif  // TEST_PC_E2E_ANALYZER_VIDEO_DEFAULT_VIDEO_QUALITY_ANALYZER_H_

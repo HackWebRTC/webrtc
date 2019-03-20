@@ -27,7 +27,7 @@
 #include "test/pc/e2e/api/video_quality_analyzer_interface.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 
 // QualityAnalyzingVideoDecoder is used to wrap origin video decoder and inject
 // VideoQualityAnalyzerInterface before and after decoder.
@@ -155,7 +155,7 @@ class QualityAnalyzingVideoDecoderFactory : public VideoDecoderFactory {
   VideoQualityAnalyzerInterface* const analyzer_;
 };
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc
 
 #endif  // TEST_PC_E2E_ANALYZER_VIDEO_QUALITY_ANALYZING_VIDEO_DECODER_H_

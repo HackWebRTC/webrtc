@@ -21,7 +21,7 @@
 #include "test/pc/e2e/test_peer.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 
 // Helper class that will notify all the webrtc::test::StatsObserverInterface
 // objects subscribed.
@@ -58,7 +58,7 @@ class StatsPoller {
   std::vector<rtc::scoped_refptr<InternalStatsObserver>> pollers_;
 };
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc
 
 #endif  // TEST_PC_E2E_STATS_POLLER_H_

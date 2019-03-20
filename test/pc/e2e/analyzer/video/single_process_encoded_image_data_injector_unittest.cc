@@ -17,7 +17,7 @@
 #include "test/gtest.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 namespace {
 
 rtc::Buffer CreateBufferOfSizeNFilledWithValuesFromX(size_t n, uint8_t x) {
@@ -194,5 +194,5 @@ TEST(SingleProcessEncodedImageDataInjector,
   EXPECT_EQ(out.image.capacity(), 3 * 10ul);
 }
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc

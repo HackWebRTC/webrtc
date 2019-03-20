@@ -18,7 +18,7 @@
 #include "rtc_base/checks.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 namespace {
 
 // The amount on which encoded image buffer will be expanded to inject frame id.
@@ -126,5 +126,5 @@ EncodedImageExtractionResult DefaultEncodedImageDataInjector::ExtractData(
   return EncodedImageExtractionResult{id.value(), out, discard};
 }
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc

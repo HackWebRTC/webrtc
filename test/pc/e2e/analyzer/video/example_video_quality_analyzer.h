@@ -22,7 +22,7 @@
 #include "test/pc/e2e/api/video_quality_analyzer_interface.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 
 // This class is an example implementation of
 // webrtc::VideoQualityAnalyzerInterface and calculates simple metrics
@@ -81,7 +81,7 @@ class ExampleVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   uint64_t frames_dropped_ RTC_GUARDED_BY(lock_) = 0;
 };
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc
 
 #endif  // TEST_PC_E2E_ANALYZER_VIDEO_EXAMPLE_VIDEO_QUALITY_ANALYZER_H_

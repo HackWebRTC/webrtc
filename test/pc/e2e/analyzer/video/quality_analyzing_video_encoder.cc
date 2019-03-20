@@ -19,7 +19,7 @@
 #include "rtc_base/logging.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 namespace {
 
 constexpr size_t kMaxFrameInPipelineCount = 1000;
@@ -290,5 +290,5 @@ QualityAnalyzingVideoEncoderFactory::CreateVideoEncoder(
       stream_required_spatial_index_, injector_, analyzer_);
 }
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc

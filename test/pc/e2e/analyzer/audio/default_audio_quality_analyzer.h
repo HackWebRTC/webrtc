@@ -16,7 +16,7 @@
 #include "test/pc/e2e/api/audio_quality_analyzer_interface.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 
 class DefaultAudioQualityAnalyzer : public AudioQualityAnalyzerInterface {
  public:
@@ -28,7 +28,7 @@ class DefaultAudioQualityAnalyzer : public AudioQualityAnalyzerInterface {
   std::string test_case_name_;
 };
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc
 
 #endif  // TEST_PC_E2E_ANALYZER_AUDIO_DEFAULT_AUDIO_QUALITY_ANALYZER_H_

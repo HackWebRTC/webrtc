@@ -15,7 +15,7 @@
 #include "rtc_base/logging.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 
 void InternalStatsObserver::PollStats() {
   peer_->pc()->GetStats(this, nullptr,
@@ -43,5 +43,5 @@ void StatsPoller::PollStatsAndNotifyObservers() {
   }
 }
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc

@@ -13,7 +13,7 @@
 #include "rtc_base/logging.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 
 ExampleVideoQualityAnalyzer::ExampleVideoQualityAnalyzer() = default;
 ExampleVideoQualityAnalyzer::~ExampleVideoQualityAnalyzer() = default;
@@ -149,5 +149,5 @@ uint64_t ExampleVideoQualityAnalyzer::frames_dropped() const {
   return frames_dropped_;
 }
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc

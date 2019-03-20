@@ -23,7 +23,7 @@
 #include "test/pc/e2e/analyzer/video/encoded_image_data_injector.h"
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 
 // Injects frame id and discard flag into EncodedImage payload buffer. The
 // payload buffer will be appended in the injector with 2 bytes frame id and 4
@@ -69,7 +69,7 @@ class DefaultEncodedImageDataInjector : public EncodedImageDataInjector,
                                            int coding_entity_id) override;
 };
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc
 
 #endif  // TEST_PC_E2E_ANALYZER_VIDEO_DEFAULT_ENCODED_IMAGE_DATA_INJECTOR_H_

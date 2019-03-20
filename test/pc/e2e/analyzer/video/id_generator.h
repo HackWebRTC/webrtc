@@ -14,7 +14,7 @@
 #include <atomic>
 
 namespace webrtc {
-namespace test {
+namespace webrtc_pc_e2e {
 
 // IdGenerator generates ids. All provided ids have to be unique. There is no
 // any order guarantees for provided ids.
@@ -40,7 +40,7 @@ class IntIdGenerator : public IdGenerator<int> {
   std::atomic<int> next_id_;
 };
 
-}  // namespace test
+}  // namespace webrtc_pc_e2e
 }  // namespace webrtc
 
 #endif  // TEST_PC_E2E_ANALYZER_VIDEO_ID_GENERATOR_H_
