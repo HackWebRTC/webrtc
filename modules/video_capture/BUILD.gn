@@ -29,7 +29,6 @@ rtc_static_library("video_capture_module") {
   deps = [
     "..:module_api",
     "../..:webrtc_common",
-    "../../api:libjingle_peerconnection_api",
     "../../api:scoped_refptr",
     "../../api/video:video_frame",
     "../../api/video:video_frame_i420",

@@ -51,7 +51,7 @@ rtc_source_set("module_api") {
     ":module_api_public",
     ":module_fec_api",
     "..:webrtc_common",
-    "../api:libjingle_peerconnection_api",
+    "../api:rtp_headers",
     "../modules/rtp_rtcp:rtp_video_header",
     "../rtc_base:safe_conversions",
     "../rtc_base/system:rtc_export",

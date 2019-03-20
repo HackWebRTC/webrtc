@@ -63,7 +63,7 @@ rtc_static_library("packet") {
   deps = [
     "..:module_api",
     "../../:webrtc_common",
-    "../../api:libjingle_peerconnection_api",
+    "../../api:rtp_headers",
     "../rtp_rtcp:rtp_rtcp_format",
     "../rtp_rtcp:rtp_video_header",
     "//third_party/abseil-cpp/absl/types:optional",
@@ -74,7 +74,6 @@ rtc_static_library("video_coding") {
   visibility = [ "*" ]
   deps = [
     "..:module_fec_api",
-    "../../api:libjingle_peerconnection_api",
     "../../api:scoped_refptr",
     "../../api/video:encoded_image",
     "../../api/video:video_bitrate_allocation",
@@ -152,6 +151,7 @@ rtc_static_library("video_coding") {
     "..:module_api_public",
     "../..:webrtc_common",
     "../../api:fec_controller_api",
+    "../../api:rtp_headers",
     "../../api/units:data_rate",
     "../../api/video:builtin_video_bitrate_allocator_factory",
     "../../api/video:encoded_frame",

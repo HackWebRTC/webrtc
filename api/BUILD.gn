@@ -65,6 +65,16 @@ rtc_static_library("create_peerconnection_factory") {
 
 rtc_source_set("rtp_headers") {
   visibility = [ "*" ]
+  sources = [
+    "rtp_headers.cc",
+    "rtp_headers.h",
+  ]
+  deps = [
+    ":array_view",
+    "..:webrtc_common",
+    "video:video_frame",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
 }
 
 rtc_static_library("libjingle_peerconnection_api") {
@@ -107,8 +117,6 @@ rtc_static_library("libjingle_peerconnection_api") {
     "proxy.h",
     "rtc_error.cc",
     "rtc_error.h",
-    "rtp_headers.cc",
-    "rtp_headers.h",
     "rtp_parameters.cc",
     "rtp_parameters.h",
     "rtp_receiver_interface.cc",
