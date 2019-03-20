@@ -960,7 +960,7 @@ rtc_static_library("neteq") {
     "..:module_api",
     "..:module_api_public",
     "../../api:array_view",
-    "../../api:rtp_headers",
+    "../../api:libjingle_peerconnection_api",
     "../../api:scoped_refptr",
     "../../api/audio:audio_frame_api",
     "../../api/audio_codecs:audio_codecs_api",
@@ -1004,8 +1004,8 @@ rtc_source_set("neteq_tools_minimal") {
 
   deps = [
     ":neteq",
+    "../../api:libjingle_peerconnection_api",
     "../../api:neteq_simulator_api",
-    "../../api:rtp_headers",
     "../../api/audio:audio_frame_api",
     "../../api/audio_codecs:audio_codecs_api",
     "../../rtc_base:checks",
@@ -1039,7 +1039,7 @@ rtc_source_set("neteq_test_tools") {
   deps = [
     ":pcm16b",
     "../../api:array_view",
-    "../../api:rtp_headers",
+    "../../api:libjingle_peerconnection_api",
     "../../common_audio",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base",
@@ -1491,6 +1491,7 @@ if (rtc_include_tests) {
     deps += [
       ":isac_fix",
       ":webrtc_opus",
+      "../../api:libjingle_peerconnection_api",
       "../../rtc_base:rtc_base_approved",
       "../../test:test_main",
       "../../test:test_support",

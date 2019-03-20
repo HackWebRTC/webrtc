@@ -508,7 +508,6 @@ if (rtc_include_tests) {
       "../api:fake_frame_encryptor",
       "../api:libjingle_peerconnection_api",
       "../api:mock_frame_decryptor",
-      "../api:rtp_headers",
       "../api:scoped_refptr",
       "../api:simulated_network_api",
       "../api/task_queue:default_task_queue_factory",
