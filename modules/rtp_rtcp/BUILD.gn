@@ -450,7 +450,7 @@ if (rtc_include_tests) {
       "../../rtc_base:rate_limiter",
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_base_tests_utils",
-      "../../rtc_base:rtc_task_queue",
+      "../../rtc_base:task_queue_for_test",
       "../../system_wrappers",
       "../../test:field_trial",
       "../../test:rtp_test_utils",
