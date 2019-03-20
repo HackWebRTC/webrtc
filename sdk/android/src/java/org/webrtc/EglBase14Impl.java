@@ -29,10 +29,10 @@ import org.webrtc.EglBase;
  */
 @SuppressWarnings("ReferenceEquality") // We want to compare to EGL14 constants.
 @TargetApi(18)
-class EglBase14 implements EglBase {
+class EglBase14Impl implements EglBase14 {
   private static final String TAG = "EglBase14";
-  private static final int EGLExt_SDK_VERSION = android.os.Build.VERSION_CODES.JELLY_BEAN_MR2;
-  private static final int CURRENT_SDK_VERSION = android.os.Build.VERSION.SDK_INT;
+  private static final int EGLExt_SDK_VERSION = Build.VERSION_CODES.JELLY_BEAN_MR2;
+  private static final int CURRENT_SDK_VERSION = Build.VERSION.SDK_INT;
   private EGLContext eglContext;
   @Nullable private EGLConfig eglConfig;
   private EGLDisplay eglDisplay;
@@ -47,8 +47,13 @@ class EglBase14 implements EglBase {
     return (CURRENT_SDK_VERSION >= EGLExt_SDK_VERSION);
   }
 
-  public static class Context implements EglBase.Context {
-    private final android.opengl.EGLContext egl14Context;
+  public static class Context implements EglBase14.Context {
+    private final EGLContext egl14Context;
+
+    @Override
+    public EGLContext getRawContext() {
+      return egl14Context;
+    }
 
     @Override
     @SuppressWarnings("deprecation")
@@ -65,7 +70,7 @@ class EglBase14 implements EglBase {
 
   // Create a new context with the specified config type, sharing data with sharedContext.
   // |sharedContext| may be null.
-  public EglBase14(EglBase14.Context sharedContext, int[] configAttributes) {
+  public EglBase14Impl(EGLContext sharedContext, int[] configAttributes) {
     eglDisplay = getEglDisplay();
     eglConfig = getEglConfig(eglDisplay, configAttributes);
     eglContext = createEglContext(sharedContext, eglDisplay, eglConfig);
@@ -121,7 +126,7 @@ class EglBase14 implements EglBase {
 
   @Override
   public Context getEglBaseContext() {
-    return new EglBase14.Context(eglContext);
+    return new Context(eglContext);
   }
 
   @Override
@@ -258,13 +263,12 @@ class EglBase14 implements EglBase {
 
   // Return an EGLConfig, or die trying.
   private static EGLContext createEglContext(
-      @Nullable EglBase14.Context sharedContext, EGLDisplay eglDisplay, EGLConfig eglConfig) {
-    if (sharedContext != null && sharedContext.egl14Context == EGL14.EGL_NO_CONTEXT) {
+      @Nullable EGLContext sharedContext, EGLDisplay eglDisplay, EGLConfig eglConfig) {
+    if (sharedContext != null && sharedContext == EGL14.EGL_NO_CONTEXT) {
       throw new RuntimeException("Invalid sharedContext");
     }
     int[] contextAttributes = {EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE};
-    EGLContext rootContext =
-        sharedContext == null ? EGL14.EGL_NO_CONTEXT : sharedContext.egl14Context;
+    EGLContext rootContext = sharedContext == null ? EGL14.EGL_NO_CONTEXT : sharedContext;
     final EGLContext eglContext;
     synchronized (EglBase.lock) {
       eglContext = EGL14.eglCreateContext(eglDisplay, eglConfig, rootContext, contextAttributes, 0);

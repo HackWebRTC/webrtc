@@ -26,7 +26,7 @@ import javax.microedition.khronos.egl.EGLSurface;
  * Holds EGL state and utility methods for handling an egl 1.0 EGLContext, an EGLDisplay,
  * and an EGLSurface.
  */
-class EglBase10 implements EglBase {
+class EglBase10Impl implements EglBase10 {
   // This constant is taken from EGL14.EGL_CONTEXT_CLIENT_VERSION.
   private static final int EGL_CONTEXT_CLIENT_VERSION = 0x3098;
 
@@ -37,8 +37,13 @@ class EglBase10 implements EglBase {
   private EGLSurface eglSurface = EGL10.EGL_NO_SURFACE;
 
   // EGL wrapper for an actual EGLContext.
-  public static class Context implements EglBase.Context {
+  private static class Context implements EglBase10.Context {
     private final EGLContext eglContext;
+
+    @Override
+    public EGLContext getRawContext() {
+      return eglContext;
+    }
 
     @Override
     public long getNativeEglContext() {
@@ -55,7 +60,7 @@ class EglBase10 implements EglBase {
   }
 
   // Create a new context with the specified config type, sharing data with sharedContext.
-  public EglBase10(Context sharedContext, int[] configAttributes) {
+  public EglBase10Impl(EGLContext sharedContext, int[] configAttributes) {
     this.egl = (EGL10) EGLContext.getEGL();
     eglDisplay = getEglDisplay();
     eglConfig = getEglConfig(eglDisplay, configAttributes);
@@ -178,7 +183,7 @@ class EglBase10 implements EglBase {
 
   @Override
   public org.webrtc.EglBase.Context getEglBaseContext() {
-    return new EglBase10.Context(eglContext);
+    return new Context(eglContext);
   }
 
   @Override
@@ -305,13 +310,12 @@ class EglBase10 implements EglBase {
 
   // Return an EGLConfig, or die trying.
   private EGLContext createEglContext(
-      @Nullable Context sharedContext, EGLDisplay eglDisplay, EGLConfig eglConfig) {
-    if (sharedContext != null && sharedContext.eglContext == EGL10.EGL_NO_CONTEXT) {
+      @Nullable EGLContext sharedContext, EGLDisplay eglDisplay, EGLConfig eglConfig) {
+    if (sharedContext != null && sharedContext == EGL10.EGL_NO_CONTEXT) {
       throw new RuntimeException("Invalid sharedContext");
     }
     int[] contextAttributes = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL10.EGL_NONE};
-    EGLContext rootContext =
-        sharedContext == null ? EGL10.EGL_NO_CONTEXT : sharedContext.eglContext;
+    EGLContext rootContext = sharedContext == null ? EGL10.EGL_NO_CONTEXT : sharedContext;
     final EGLContext eglContext;
     synchronized (EglBase.lock) {
       eglContext = egl.eglCreateContext(eglDisplay, eglConfig, rootContext, contextAttributes);

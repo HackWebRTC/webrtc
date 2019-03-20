@@ -162,7 +162,7 @@ public final class AndroidVideoDecoderInstrumentationTest {
 
     TEST_FRAMES = generateTestFrames();
 
-    eglBase = new EglBase14(null, EglBase.CONFIG_PLAIN);
+    eglBase = EglBase.createEgl14(EglBase.CONFIG_PLAIN);
     eglBase.createDummyPbufferSurface();
     eglBase.makeCurrent();
 

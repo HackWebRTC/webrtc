@@ -96,10 +96,15 @@ public interface EglBase {
    * 1.4 context if possible, and an EGL 1.0 context otherwise.
    */
   public static EglBase create(@Nullable Context sharedContext, int[] configAttributes) {
-    return (EglBase14.isEGL14Supported()
-               && (sharedContext == null || sharedContext instanceof EglBase14.Context))
-        ? new EglBase14((EglBase14.Context) sharedContext, configAttributes)
-        : new EglBase10((EglBase10.Context) sharedContext, configAttributes);
+    if (sharedContext == null) {
+      return EglBase14Impl.isEGL14Supported() ? createEgl14(configAttributes)
+                                              : createEgl10(configAttributes);
+    } else if (sharedContext instanceof EglBase14.Context) {
+      return createEgl14((EglBase14.Context) sharedContext, configAttributes);
+    } else if (sharedContext instanceof EglBase10.Context) {
+      return createEgl10((EglBase10.Context) sharedContext, configAttributes);
+    }
+    throw new IllegalArgumentException("Unrecognized Context");
   }
 
   /**
@@ -118,36 +123,50 @@ public interface EglBase {
     return create(sharedContext, CONFIG_PLAIN);
   }
 
+  /** Explicitly create a root EGl 1.0 context with the specified config attributes. */
+  public static EglBase10 createEgl10(int[] configAttributes) {
+    return new EglBase10Impl(/* sharedContext= */ null, configAttributes);
+  }
+
   /**
-   * Explicitly create a root EGl 1.0 context with the specified config attributes.
+   * Explicitly create a root EGl 1.0 context with the specified config attributes and shared
+   * context.
    */
-  public static EglBase createEgl10(int[] configAttributes) {
-    return new EglBase10(null /* shaderContext */, configAttributes);
+  public static EglBase10 createEgl10(EglBase10.Context sharedContext, int[] configAttributes) {
+    return new EglBase10Impl(
+        sharedContext == null ? null : sharedContext.getRawContext(), configAttributes);
   }
 
   /**
    * Explicitly create a root EGl 1.0 context with the specified config attributes
    * and shared context.
    */
-  public static EglBase createEgl10(
+  public static EglBase10 createEgl10(
       javax.microedition.khronos.egl.EGLContext sharedContext, int[] configAttributes) {
-    return new EglBase10(new EglBase10.Context(sharedContext), configAttributes);
+    return new EglBase10Impl(sharedContext, configAttributes);
+  }
+
+  /** Explicitly create a root EGl 1.4 context with the specified config attributes. */
+  public static EglBase14 createEgl14(int[] configAttributes) {
+    return new EglBase14Impl(/* sharedContext= */ null, configAttributes);
   }
 
   /**
-   * Explicitly create a root EGl 1.4 context with the specified config attributes.
+   * Explicitly create a root EGl 1.4 context with the specified config attributes and shared
+   * context.
    */
-  public static EglBase createEgl14(int[] configAttributes) {
-    return new EglBase14(null /* shaderContext */, configAttributes);
+  public static EglBase14 createEgl14(EglBase14.Context sharedContext, int[] configAttributes) {
+    return new EglBase14Impl(
+        sharedContext == null ? null : sharedContext.getRawContext(), configAttributes);
   }
 
   /**
    * Explicitly create a root EGl 1.4 context with the specified config attributes
    * and shared context.
    */
-  public static EglBase createEgl14(
+  public static EglBase14 createEgl14(
       android.opengl.EGLContext sharedContext, int[] configAttributes) {
-    return new EglBase14(new EglBase14.Context(sharedContext), configAttributes);
+    return new EglBase14Impl(sharedContext, configAttributes);
   }
 
   void createSurface(Surface surface);

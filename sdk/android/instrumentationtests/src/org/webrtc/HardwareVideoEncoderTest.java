@@ -356,7 +356,7 @@ public class HardwareVideoEncoderTest {
   public void setUp() {
     NativeLibrary.initialize(new NativeLibrary.DefaultLoader(), TestConstants.NATIVE_LIBRARY);
 
-    eglBase = new EglBase14(null, EglBase.CONFIG_PLAIN);
+    eglBase = EglBase.createEgl14(EglBase.CONFIG_PLAIN);
     eglBase.createDummyPbufferSurface();
     eglBase.makeCurrent();
     lastTimestampNs = System.nanoTime();

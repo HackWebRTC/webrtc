@@ -247,6 +247,8 @@ if (is_android) {
   rtc_android_library("video_java") {
     java_files = [
       "api/org/webrtc/EglBase.java",
+      "api/org/webrtc/EglBase10.java",
+      "api/org/webrtc/EglBase14.java",
       "api/org/webrtc/EglRenderer.java",
       "api/org/webrtc/GlRectDrawer.java",
       "api/org/webrtc/GlShader.java",
@@ -263,8 +265,8 @@ if (is_android) {
       "api/org/webrtc/YuvConverter.java",
       "api/org/webrtc/YuvHelper.java",
       "api/org/webrtc/TimestampAligner.java",
-      "src/java/org/webrtc/EglBase10.java",
-      "src/java/org/webrtc/EglBase14.java",
+      "src/java/org/webrtc/EglBase10Impl.java",
+      "src/java/org/webrtc/EglBase14Impl.java",
       "src/java/org/webrtc/GlGenericDrawer.java",
       "src/java/org/webrtc/H264Utils.java",
       "src/java/org/webrtc/NV21Buffer.java",
