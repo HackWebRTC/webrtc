@@ -53,8 +53,8 @@ rtc_static_library("create_peerconnection_factory") {
     "../modules/audio_device:audio_device_api",
     "../modules/audio_processing:api",
     "../pc:peerconnection",
+    "../rtc_base",
     "../rtc_base:deprecation",
-    "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
     "audio:audio_mixer_api",
     "audio_codecs:audio_codecs_api",
@@ -162,9 +162,9 @@ rtc_static_library("libjingle_peerconnection_api") {
     "../logging:rtc_event_log_api",
     "../media:rtc_media_config",
     "../modules/audio_processing:audio_processing_statistics",
+    "../rtc_base",
     "../rtc_base:checks",
     "../rtc_base:deprecation",
-    "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
     "../rtc_base/system:rtc_export",
   ]
@@ -326,8 +326,8 @@ rtc_source_set("simulated_network_api") {
     "test/simulated_network.h",
   ]
   deps = [
+    "../rtc_base",
     "../rtc_base:criticalsection",
-    "../rtc_base:rtc_base",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -339,7 +339,7 @@ rtc_source_set("network_emulation_manager_api") {
   ]
   deps = [
     ":simulated_network_api",
-    "../rtc_base:rtc_base",
+    "../rtc_base",
   ]
 }
 
@@ -386,7 +386,7 @@ rtc_source_set("ice_transport_factory") {
     ":libjingle_peerconnection_api",
     ":scoped_refptr",
     "../p2p:rtc_p2p",
-    "../rtc_base:rtc_base",
+    "../rtc_base",
     "//third_party/abseil-cpp/absl/memory",
   ]
 }
@@ -410,8 +410,8 @@ if (rtc_include_tests) {
       ]
 
       deps = [
+        "../modules/audio_processing",
         "../modules/audio_processing:api",
-        "../modules/audio_processing:audio_processing",
         "../modules/audio_processing:audioproc_f_impl",
       ]
     }
@@ -673,8 +673,8 @@ if (rtc_include_tests) {
 
     deps = [
       ":libjingle_peerconnection_api",
+      "../rtc_base",
       "../rtc_base:checks",
-      "../rtc_base:rtc_base",
       "//third_party/abseil-cpp/absl/memory",
     ]
   }

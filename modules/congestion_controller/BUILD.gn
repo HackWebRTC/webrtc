@@ -58,7 +58,7 @@ rtc_static_library("congestion_controller") {
   ]
 
   if (!build_with_mozilla) {
-    deps += [ "../../rtc_base:rtc_base" ]
+    deps += [ "../../rtc_base" ]
   }
 }
 
@@ -75,7 +75,7 @@ rtc_static_library("transport_feedback") {
     "../../modules:module_api",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
-    "../../system_wrappers:system_wrappers",
+    "../../system_wrappers",
     "../rtp_rtcp:rtp_rtcp_format",
     "rtp:transport_feedback",
   ]
@@ -112,17 +112,17 @@ if (rtc_include_tests) {
       ":mock_congestion_controller",
       ":transport_feedback",
       "../../logging:mocks",
+      "../../rtc_base",
       "../../rtc_base:checks",
-      "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base/network:sent_packet",
       "../../system_wrappers",
       "../../test:field_trial",
       "../../test:test_support",
-      "../bitrate_controller:bitrate_controller",
+      "../bitrate_controller",
+      "../pacing",
       "../pacing:mock_paced_sender",
-      "../pacing:pacing",
-      "../remote_bitrate_estimator:remote_bitrate_estimator",
+      "../remote_bitrate_estimator",
       "../rtp_rtcp:rtp_rtcp_format",
       "bbr:bbr_unittests",
       "goog_cc:estimators",

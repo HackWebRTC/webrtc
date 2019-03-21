@@ -252,7 +252,7 @@ rtc_source_set("rtc_event") {
 
   if (build_with_chromium) {
     # Dependency on chromium's waitable_event (in //base).
-    deps += [ "//base:base" ]
+    deps += [ "//base" ]
     sources = [
       "../../webrtc_overrides/rtc_base/event.cc",
       "../../webrtc_overrides/rtc_base/event.h",
@@ -281,7 +281,7 @@ rtc_source_set("logging") {
 
   if (build_with_chromium) {
     # Dependency on chromium's logging (in //base).
-    deps += [ "//base:base" ]
+    deps += [ "//base" ]
     sources = [
       "../../webrtc_overrides/rtc_base/logging.cc",
       "../../webrtc_overrides/rtc_base/logging.h",
@@ -433,7 +433,7 @@ rtc_source_set("stringutils") {
     ":macromagic",
     ":safe_minmax",
     "../api:array_view",
-    "//third_party/abseil-cpp/absl/strings:strings",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -1181,10 +1181,10 @@ if (rtc_include_tests) {
       ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
       ":testclient",
-      "../system_wrappers:system_wrappers",
+      "../system_wrappers",
       "../test:fileutils",
       "../test:test_support",
-      "third_party/sigslot:sigslot",
+      "third_party/sigslot",
       "//testing/gtest",
       "//third_party/abseil-cpp/absl/memory",
     ]
@@ -1259,12 +1259,12 @@ if (rtc_include_tests) {
       "../api:array_view",
       "../api:scoped_refptr",
       "../api/units:time_delta",
-      "../system_wrappers:system_wrappers",
+      "../system_wrappers",
       "../test:fileutils",
       "../test:test_support",
       "memory:unittests",
       "third_party/base64",
-      "third_party/sigslot:sigslot",
+      "third_party/sigslot",
       "//third_party/abseil-cpp/absl/memory",
     ]
   }

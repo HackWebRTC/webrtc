@@ -205,7 +205,7 @@ if (rtc_include_tests) {
       "../../../api/units:timestamp",
       "../../../logging:rtc_event_log_api",
       "../../../rtc_base:checks",
-      "../../remote_bitrate_estimator:remote_bitrate_estimator",
+      "../../remote_bitrate_estimator",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }

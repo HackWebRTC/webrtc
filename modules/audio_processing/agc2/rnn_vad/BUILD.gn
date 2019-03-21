@@ -122,7 +122,7 @@ if (rtc_include_tests) {
     deps = [
       ":rnn_vad",
       "../../../../api:array_view",
-      "../../../../common_audio:common_audio",
+      "../../../../common_audio",
       "../../../../rtc_base:rtc_base_approved",
       "../../../../test:test_support",
     ]

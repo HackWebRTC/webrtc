@@ -64,7 +64,7 @@ rtc_source_set("peer_connection_quality_test_fixture_api") {
     "../../../../api/units:time_delta",
     "../../../../api/video_codecs:video_codecs_api",
     "../../../../logging:rtc_event_log_api",
-    "../../../../rtc_base:rtc_base",
+    "../../../../rtc_base",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]

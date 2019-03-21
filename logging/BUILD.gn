@@ -111,7 +111,7 @@ rtc_source_set("rtc_event_bwe") {
   deps = [
     ":rtc_event_log_api",
     "../api:scoped_refptr",
-    "../modules/remote_bitrate_estimator:remote_bitrate_estimator",
+    "../modules/remote_bitrate_estimator",
     "//third_party/abseil-cpp/absl/memory",
   ]
 }
@@ -195,7 +195,7 @@ rtc_static_library("rtc_event_log_impl_encoder") {
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/memory",
-    "//third_party/abseil-cpp/absl/strings:strings",
+    "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 
@@ -216,7 +216,7 @@ rtc_static_library("rtc_event_log_impl_encoder") {
       ":rtc_stream_config",
       "../api:array_view",
       "../modules/audio_coding:audio_network_adaptor",
-      "../modules/remote_bitrate_estimator:remote_bitrate_estimator",
+      "../modules/remote_bitrate_estimator",
       "../modules/rtp_rtcp:rtp_rtcp_format",
     ]
     sources += [
@@ -287,8 +287,8 @@ rtc_source_set("fake_rtc_event_log") {
   deps = [
     ":ice_log",
     ":rtc_event_log_api",
+    "../rtc_base",
     "../rtc_base:checks",
-    "../rtc_base:rtc_base",
   ]
 }
 
@@ -336,7 +336,7 @@ if (rtc_enable_protobuf) {
       "../call:video_stream_api",
       "../modules/audio_coding:audio_network_adaptor",
       "../modules/congestion_controller/rtp:transport_feedback",
-      "../modules/remote_bitrate_estimator:remote_bitrate_estimator",
+      "../modules/remote_bitrate_estimator",
       "../modules/rtp_rtcp",
       "../modules/rtp_rtcp:rtp_rtcp_format",
       "../rtc_base:checks",
@@ -387,12 +387,12 @@ if (rtc_enable_protobuf) {
         "../call",
         "../call:call_interfaces",
         "../modules/audio_coding:audio_network_adaptor",
-        "../modules/remote_bitrate_estimator:remote_bitrate_estimator",
+        "../modules/remote_bitrate_estimator",
         "../modules/rtp_rtcp:rtp_rtcp_format",
         "../rtc_base:checks",
         "../rtc_base:rtc_base_approved",
         "../rtc_base:rtc_base_tests_utils",
-        "../system_wrappers:system_wrappers",
+        "../system_wrappers",
         "../test:fileutils",
         "../test:test_support",
         "//testing/gtest",

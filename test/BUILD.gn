@@ -65,8 +65,8 @@ rtc_source_set("video_test_common") {
     "../call:video_stream_api",
     "../common_video",
     "../media:rtc_media_base",
+    "../rtc_base",
     "../rtc_base:checks",
-    "../rtc_base:rtc_base",
     "../rtc_base:rtc_task_queue",
     "../rtc_base/task_utils:repeating_task",
     "../system_wrappers",
@@ -88,7 +88,7 @@ if (!build_with_chromium) {
         "../api:libjingle_peerconnection_api",
         "../api:scoped_refptr",
         "../modules/video_capture:video_capture_module",
-        "../rtc_base:rtc_base",
+        "../rtc_base",
         "../sdk:base_objc",
         "../sdk:native_api",
         "../sdk:native_video",
@@ -257,8 +257,8 @@ if (rtc_include_tests) {
       ":field_trial",
       ":perf_test",
       ":test_support",
+      "../rtc_base",
       "../rtc_base:checks",
-      "../rtc_base:rtc_base",
       "../system_wrappers:field_trial",
       "../system_wrappers:metrics",
       "//testing/gtest",
@@ -323,7 +323,7 @@ if (rtc_include_tests) {
     }
 
     if (is_android) {
-      deps += [ "//base:base" ]
+      deps += [ "//base" ]
     }
   }
 
@@ -384,7 +384,7 @@ if (rtc_include_tests) {
       "../api/video:video_frame",
       "../api/video:video_frame_i420",
       "../call:video_stream_api",
-      "../modules/rtp_rtcp:rtp_rtcp",
+      "../modules/rtp_rtcp",
       "../modules/video_capture",
       "../modules/video_coding:simulcast_test_fixture_impl",
       "../rtc_base:rtc_base_approved",
@@ -490,7 +490,7 @@ rtc_source_set("fileutils") {
     deps += [ ":fileutils_mac_objc" ]
   }
   if (is_win) {
-    deps += [ "../rtc_base:rtc_base" ]
+    deps += [ "../rtc_base" ]
   }
 }
 
@@ -524,7 +524,7 @@ rtc_source_set("fileutils_override_impl") {
     deps += [ ":fileutils_mac_objc" ]
   }
   if (is_win) {
-    deps += [ "../rtc_base:rtc_base" ]
+    deps += [ "../rtc_base" ]
   }
 }
 
@@ -650,7 +650,7 @@ rtc_source_set("fake_video_codecs") {
     "../api/video:video_frame_i420",
     "../api/video_codecs:video_codecs_api",
     "../api/video_codecs:vp8_temporal_layers_factory",
-    "../common_video:common_video",
+    "../common_video",
     "../modules:module_api",
     "../modules/video_coding:codec_globals_headers",
     "../modules/video_coding:video_codec_interface",
@@ -885,7 +885,7 @@ rtc_source_set("copy_to_file_audio_capturer") {
   ]
   deps = [
     "../api:array_view",
-    "../common_audio:common_audio",
+    "../common_audio",
     "../modules/audio_device:audio_device_impl",
     "../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/memory",

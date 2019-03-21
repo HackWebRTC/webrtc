@@ -108,7 +108,7 @@ if (rtc_include_tests) {
       "../../api:scoped_refptr",
       "../../api/video:video_frame",
       "../../api/video:video_frame_i420",
-      "../../common_video:common_video",
+      "../../common_video",
       "../../test:fileutils",
       "../../test:test_support",
       "../../test:video_test_common",

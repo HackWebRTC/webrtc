@@ -37,7 +37,7 @@ rtc_static_library("primitives") {
   ]
 
   if (!build_with_mozilla) {
-    deps += [ "../../rtc_base:rtc_base" ]  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
+    deps += [ "../../rtc_base" ]  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
   }
 }
 
@@ -56,7 +56,7 @@ if (rtc_include_tests) {
         ":desktop_capture_mock",
         ":primitives",
         ":screen_drawer",
-        "../../rtc_base:rtc_base",
+        "../../rtc_base",
         "../../rtc_base:rtc_base_approved",
         "../../rtc_base/third_party/base64",
         "../../system_wrappers",
@@ -240,8 +240,8 @@ if (is_mac) {
       ":desktop_capture_generic",
       ":primitives",
       "../../api:scoped_refptr",
+      "../../rtc_base",
       "../../rtc_base:checks",
-      "../../rtc_base:rtc_base",
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base/synchronization:rw_lock_wrapper",
       "../../sdk:helpers_objc",
@@ -430,8 +430,8 @@ rtc_static_library("desktop_capture_generic") {
     ":primitives",
     "../../api:refcountedbase",
     "../../api:scoped_refptr",
+    "../../rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
     "../../rtc_base:checks",
-    "../../rtc_base:rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.
     "../../rtc_base/synchronization:rw_lock_wrapper",
     "../../rtc_base/system:arch",
     "../../rtc_base/system:rtc_export",

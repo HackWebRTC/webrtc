@@ -33,7 +33,7 @@ group("examples") {
     # TODO(sakal): We include some code from the tests. Remove this dependency
     # and remove this if-clause.
     if (rtc_include_tests) {
-      deps += [ "androidnativeapi:androidnativeapi" ]
+      deps += [ "androidnativeapi" ]
     }
   }
 
@@ -69,7 +69,7 @@ rtc_source_set("read_auth_file") {
     "turnserver/read_auth_file.h",
   ]
   deps = [
-    "../rtc_base:rtc_base",
+    "../rtc_base",
   ]
 }
 
@@ -387,7 +387,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       }
 
       if (target_cpu == "x86") {
-        deps += [ "//testing/iossim:iossim" ]
+        deps += [ "//testing/iossim" ]
       }
     }
 
@@ -511,10 +511,10 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "../api/video:builtin_video_bitrate_allocator_factory",
         "../logging:rtc_event_log_impl_base",
         "../media:rtc_audio_video",
+        "../modules/audio_processing",
         "../modules/audio_processing:api",
-        "../modules/audio_processing:audio_processing",
         "../pc:libjingle_peerconnection",
-        "../rtc_base:rtc_base",
+        "../rtc_base",
         "../sdk:base_objc",
         "../sdk:default_codec_factory_objc",
         "../sdk:helpers_objc",
@@ -546,7 +546,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       ]
 
       if (target_cpu == "x86") {
-        deps += [ "//testing/iossim:iossim" ]
+        deps += [ "//testing/iossim" ]
       }
     }
   }
@@ -649,7 +649,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         deps = [
           ":AppRTCMobile_lib",
           ":apprtc_signaling",
-          "../rtc_base:rtc_base",
+          "../rtc_base",
           "../sdk:framework_objc+link",
           "../sdk:ios_framework_bundle",
           "//build/config/ios:xctest",
@@ -739,13 +739,13 @@ if (is_linux || is_win) {
       "../api/video_codecs:builtin_video_decoder_factory",
       "../api/video_codecs:builtin_video_encoder_factory",
       "../media:rtc_audio_video",
-      "../modules/audio_device:audio_device",
+      "../modules/audio_device",
+      "../modules/audio_processing",
       "../modules/audio_processing:api",
-      "../modules/audio_processing:audio_processing",
       "../modules/video_capture:video_capture_module",
       "../pc:libjingle_peerconnection",
       "../pc:peerconnection",
-      "../rtc_base:rtc_base",
+      "../rtc_base",
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_json",
       "../test:video_test_common",
@@ -780,7 +780,7 @@ if (is_linux || is_win) {
       "../p2p:p2p_server_utils",
       "../p2p:rtc_p2p",
       "../pc:rtc_pc",
-      "../rtc_base:rtc_base",
+      "../rtc_base",
       "../rtc_base:rtc_base_approved",
     ]
   }
@@ -794,7 +794,7 @@ if (is_linux || is_win) {
       "../p2p:p2p_server_utils",
       "../p2p:rtc_p2p",
       "../pc:rtc_pc",
-      "../rtc_base:rtc_base",
+      "../rtc_base",
       "../rtc_base:rtc_base_approved",
     ]
   }
@@ -807,7 +807,7 @@ if (is_linux || is_win) {
       "../p2p:p2p_server_utils",
       "../p2p:rtc_p2p",
       "../pc:rtc_pc",
-      "../rtc_base:rtc_base",
+      "../rtc_base",
       "../rtc_base:rtc_base_approved",
     ]
   }
@@ -847,20 +847,20 @@ if (is_win || is_android) {
       "../media:rtc_internal_video_codecs",
       "../media:rtc_media",
       "../media:rtc_media_base",
-      "../modules/audio_device:audio_device",
+      "../modules/audio_device",
+      "../modules/audio_processing",
       "../modules/audio_processing:api",
-      "../modules/audio_processing:audio_processing",
       "../modules/video_capture:video_capture_module",
       "../pc:libjingle_peerconnection",
       "../pc:peerconnection",
-      "../rtc_base:rtc_base",
+      "../rtc_base",
       "../test:platform_video_capturer",
       "../test:video_test_common",
       "//third_party/abseil-cpp/absl/memory",
     ]
     if (is_android) {
       deps += [
-        "../modules/utility:utility",
+        "../modules/utility",
         "../sdk/android:libjingle_peerconnection_jni",
       ]
     }
@@ -907,8 +907,8 @@ if (!build_with_chromium) {
     deps = [
       "../p2p:libstunprober",
       "../p2p:rtc_p2p",
+      "../rtc_base",
       "../rtc_base:checks",
-      "../rtc_base:rtc_base",
       "../rtc_base:rtc_base_approved",
     ]
   }

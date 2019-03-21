@@ -18,6 +18,6 @@ rtc_source_set("generic_frame_descriptor") {
     "../../api:array_view",
     "../../rtc_base:checks",
     "//third_party/abseil-cpp/absl/container:inlined_vector",
-    "//third_party/abseil-cpp/absl/strings:strings",
+    "//third_party/abseil-cpp/absl/strings",
   ]
 }
