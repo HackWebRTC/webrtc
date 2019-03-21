@@ -24,6 +24,7 @@ namespace webrtc {
 
 class RTC_LOCKABLE TaskQueueForTest : public rtc::TaskQueue {
  public:
+  using rtc::TaskQueue::TaskQueue;
   explicit TaskQueueForTest(absl::string_view name = "TestQueue",
                             Priority priority = Priority::NORMAL);
   TaskQueueForTest(const TaskQueueForTest&) = delete;
