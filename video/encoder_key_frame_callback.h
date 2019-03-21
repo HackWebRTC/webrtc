@@ -46,6 +46,8 @@ class EncoderKeyFrameCallback : public RtcpIntraFrameObserver,
 
   rtc::CriticalSection crit_;
   int64_t time_last_intra_request_ms_ RTC_GUARDED_BY(crit_);
+
+  const int min_keyframe_send_interval_ms_;
 };
 
 }  // namespace webrtc

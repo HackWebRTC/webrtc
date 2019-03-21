@@ -184,6 +184,10 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   int64_t last_keyframe_request_ms_ = 0;
   int64_t last_complete_frame_time_ms_ = 0;
 
+  // Keyframe request intervals are configurable through field trials.
+  const int max_wait_for_keyframe_ms_;
+  const int max_wait_for_frame_ms_;
+
   rtc::CriticalSection playout_delay_lock_;
 
   // All of them tries to change current min_playout_delay on |timing_| but

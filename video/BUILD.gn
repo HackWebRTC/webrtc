@@ -99,6 +99,7 @@ rtc_static_library("video") {
     "../rtc_base:stringutils",
     "../rtc_base:weak_ptr",
     "../rtc_base/experiments:alr_experiment",
+    "../rtc_base/experiments:keyframe_interval_settings_experiment",
     "../rtc_base/experiments:quality_scaling_experiment",
     "../rtc_base/experiments:rate_control_settings",
     "../rtc_base/system:fallthrough",
