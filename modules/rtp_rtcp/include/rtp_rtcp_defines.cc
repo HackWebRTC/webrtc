@@ -20,9 +20,8 @@
 
 namespace webrtc {
 
-StreamDataCounters::StreamDataCounters() : first_packet_time_ms(-1) {}
-
-constexpr size_t StreamId::kMaxSize;
+namespace {
+constexpr size_t kMidRsidMaxSize = 16;
 
 // Check if passed character is a "token-char" from RFC 4566.
 static bool IsTokenChar(char ch) {
@@ -31,14 +30,28 @@ static bool IsTokenChar(char ch) {
          (ch >= 0x41 && ch <= 0x5a) || (ch >= 0x5e && ch <= 0x7e);
 }
 
-bool StreamId::IsLegalMidName(rtc::ArrayView<const char> name) {
-  return (name.size() <= kMaxSize && name.size() > 0 &&
+}  // namespace
+
+StreamDataCounters::StreamDataCounters() : first_packet_time_ms(-1) {}
+
+constexpr size_t StreamId::kMaxSize;
+
+bool IsLegalMidName(absl::string_view name) {
+  return (name.size() <= kMidRsidMaxSize && name.size() > 0 &&
           std::all_of(name.data(), name.data() + name.size(), IsTokenChar));
 }
 
-bool StreamId::IsLegalRsidName(rtc::ArrayView<const char> name) {
-  return (name.size() <= kMaxSize && name.size() > 0 &&
+bool StreamId::IsLegalMidName(rtc::ArrayView<const char> name) {
+  return ::webrtc::IsLegalMidName(absl::string_view(name.data(), name.size()));
+}
+
+bool IsLegalRsidName(absl::string_view name) {
+  return (name.size() <= kMidRsidMaxSize && name.size() > 0 &&
           std::all_of(name.data(), name.data() + name.size(), isalnum));
+}
+
+bool StreamId::IsLegalRsidName(rtc::ArrayView<const char> name) {
+  return ::webrtc::IsLegalRsidName(absl::string_view(name.data(), name.size()));
 }
 
 void StreamId::Set(const char* data, size_t size) {
