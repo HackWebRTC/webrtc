@@ -686,7 +686,8 @@ int32_t MediaCodecVideoEncoder::Encode(
   }
 
   const bool key_frame =
-      frame_types->front() != kVideoFrameDelta || send_key_frame;
+      frame_types->front() != VideoFrameType::kVideoFrameDelta ||
+      send_key_frame;
   bool encode_status = true;
 
   int j_input_buffer_index = -1;
@@ -1009,7 +1010,8 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
                                  ? VideoContentType::SCREENSHARE
                                  : VideoContentType::UNSPECIFIED;
       image->timing_.flags = VideoSendTiming::kInvalid;
-      image->_frameType = (key_frame ? kVideoFrameKey : kVideoFrameDelta);
+      image->_frameType = (key_frame ? VideoFrameType::kVideoFrameKey
+                                     : VideoFrameType::kVideoFrameDelta);
       image->_completeFrame = true;
       CodecSpecificInfo info;
       memset(&info, 0, sizeof(info));

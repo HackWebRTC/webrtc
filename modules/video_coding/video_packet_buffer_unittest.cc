@@ -65,8 +65,8 @@ class TestPacketBuffer : public ::testing::Test,
     packet.video_header.codec = kVideoCodecGeneric;
     packet.timestamp = timestamp;
     packet.seqNum = seq_num;
-    packet.frameType =
-        keyframe == kKeyFrame ? kVideoFrameKey : kVideoFrameDelta;
+    packet.frameType = keyframe == kKeyFrame ? VideoFrameType::kVideoFrameKey
+                                             : VideoFrameType::kVideoFrameDelta;
     packet.video_header.is_first_packet_in_frame = first == kFirst;
     packet.video_header.is_last_packet_in_frame = last == kLast;
     packet.sizeBytes = data_size;
@@ -163,7 +163,7 @@ TEST_F(TestPacketBuffer, NackCount) {
   VCMPacket packet;
   packet.video_header.codec = kVideoCodecGeneric;
   packet.seqNum = seq_num;
-  packet.frameType = kVideoFrameKey;
+  packet.frameType = VideoFrameType::kVideoFrameKey;
   packet.video_header.is_first_packet_in_frame = true;
   packet.video_header.is_last_packet_in_frame = false;
   packet.timesNacked = 0;
@@ -788,7 +788,7 @@ TEST_F(TestPacketBuffer, IncomingCodecChange) {
   packet.video_header.video_type_header.emplace<RTPVideoHeaderVP8>();
   packet.timestamp = 1;
   packet.seqNum = 1;
-  packet.frameType = kVideoFrameKey;
+  packet.frameType = VideoFrameType::kVideoFrameKey;
   EXPECT_TRUE(packet_buffer_->InsertPacket(&packet));
 
   packet.video_header.codec = kVideoCodecH264;
@@ -803,7 +803,7 @@ TEST_F(TestPacketBuffer, IncomingCodecChange) {
   packet.video_header.video_type_header.emplace<RTPVideoHeaderVP8>();
   packet.timestamp = 2;
   packet.seqNum = 2;
-  packet.frameType = kVideoFrameDelta;
+  packet.frameType = VideoFrameType::kVideoFrameDelta;
 
   EXPECT_TRUE(packet_buffer_->InsertPacket(&packet));
 
@@ -815,7 +815,7 @@ TEST_F(TestPacketBuffer, TooManyNalusInPacket) {
   packet.video_header.codec = kVideoCodecH264;
   packet.timestamp = 1;
   packet.seqNum = 1;
-  packet.frameType = kVideoFrameKey;
+  packet.frameType = VideoFrameType::kVideoFrameKey;
   packet.video_header.is_first_packet_in_frame = true;
   packet.video_header.is_last_packet_in_frame = true;
   auto& h264_header =
@@ -922,7 +922,8 @@ TEST_F(TestPacketBufferH264IdrIsKeyframe, IdrIsKeyframe) {
   packet_buffer_->InsertPacket(&packet_);
 
   ASSERT_EQ(1u, frames_from_callback_.size());
-  EXPECT_EQ(kVideoFrameKey, frames_from_callback_[kSeqNum]->frame_type());
+  EXPECT_EQ(VideoFrameType::kVideoFrameKey,
+            frames_from_callback_[kSeqNum]->frame_type());
 }
 
 TEST_F(TestPacketBufferH264IdrIsKeyframe, SpsPpsIdrIsKeyframe) {
@@ -936,7 +937,8 @@ TEST_F(TestPacketBufferH264IdrIsKeyframe, SpsPpsIdrIsKeyframe) {
   packet_buffer_->InsertPacket(&packet_);
 
   ASSERT_EQ(1u, frames_from_callback_.size());
-  EXPECT_EQ(kVideoFrameKey, frames_from_callback_[kSeqNum]->frame_type());
+  EXPECT_EQ(VideoFrameType::kVideoFrameKey,
+            frames_from_callback_[kSeqNum]->frame_type());
 }
 
 class TestPacketBufferH264SpsPpsIdrIsKeyframe
@@ -955,7 +957,8 @@ TEST_F(TestPacketBufferH264SpsPpsIdrIsKeyframe, IdrIsNotKeyframe) {
   packet_buffer_->InsertPacket(&packet_);
 
   ASSERT_EQ(1u, frames_from_callback_.size());
-  EXPECT_EQ(kVideoFrameDelta, frames_from_callback_[5]->frame_type());
+  EXPECT_EQ(VideoFrameType::kVideoFrameDelta,
+            frames_from_callback_[5]->frame_type());
 }
 
 TEST_F(TestPacketBufferH264SpsPpsIdrIsKeyframe, SpsPpsIsNotKeyframe) {
@@ -968,7 +971,8 @@ TEST_F(TestPacketBufferH264SpsPpsIdrIsKeyframe, SpsPpsIsNotKeyframe) {
   packet_buffer_->InsertPacket(&packet_);
 
   ASSERT_EQ(1u, frames_from_callback_.size());
-  EXPECT_EQ(kVideoFrameDelta, frames_from_callback_[kSeqNum]->frame_type());
+  EXPECT_EQ(VideoFrameType::kVideoFrameDelta,
+            frames_from_callback_[kSeqNum]->frame_type());
 }
 
 TEST_F(TestPacketBufferH264SpsPpsIdrIsKeyframe, SpsPpsIdrIsKeyframe) {
@@ -982,7 +986,8 @@ TEST_F(TestPacketBufferH264SpsPpsIdrIsKeyframe, SpsPpsIdrIsKeyframe) {
   packet_buffer_->InsertPacket(&packet_);
 
   ASSERT_EQ(1u, frames_from_callback_.size());
-  EXPECT_EQ(kVideoFrameKey, frames_from_callback_[kSeqNum]->frame_type());
+  EXPECT_EQ(VideoFrameType::kVideoFrameKey,
+            frames_from_callback_[kSeqNum]->frame_type());
 }
 
 }  // namespace video_coding

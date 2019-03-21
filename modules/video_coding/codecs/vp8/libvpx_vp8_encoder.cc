@@ -756,7 +756,8 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
   if (!send_key_frame && frame_types) {
     for (size_t i = 0; i < frame_types->size() && i < send_stream_.size();
          ++i) {
-      if ((*frame_types)[i] == kVideoFrameKey && send_stream_[i]) {
+      if ((*frame_types)[i] == VideoFrameType::kVideoFrameKey &&
+          send_stream_[i]) {
         send_key_frame = true;
         break;
       }
@@ -925,7 +926,7 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image) {
        ++encoder_idx, --stream_idx) {
     vpx_codec_iter_t iter = NULL;
     encoded_images_[encoder_idx].set_size(0);
-    encoded_images_[encoder_idx]._frameType = kVideoFrameDelta;
+    encoded_images_[encoder_idx]._frameType = VideoFrameType::kVideoFrameDelta;
     CodecSpecificInfo codec_specific;
     const vpx_codec_cx_pkt_t* pkt = NULL;
     while ((pkt = libvpx_->codec_get_cx_data(&encoders_[encoder_idx], &iter)) !=
@@ -947,7 +948,8 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image) {
       if ((pkt->data.frame.flags & VPX_FRAME_IS_FRAGMENT) == 0) {
         // check if encoded frame is a key frame
         if (pkt->data.frame.flags & VPX_FRAME_IS_KEY) {
-          encoded_images_[encoder_idx]._frameType = kVideoFrameKey;
+          encoded_images_[encoder_idx]._frameType =
+              VideoFrameType::kVideoFrameKey;
         }
         encoded_images_[encoder_idx].SetSpatialIndex(stream_idx);
         PopulateCodecSpecific(&codec_specific, *pkt, stream_idx, encoder_idx,

@@ -140,7 +140,7 @@ TEST(RtpVideoSenderTest, SendOnOneModule) {
   EncodedImage encoded_image;
   encoded_image.SetTimestamp(1);
   encoded_image.capture_time_ms_ = 2;
-  encoded_image._frameType = kVideoFrameKey;
+  encoded_image._frameType = VideoFrameType::kVideoFrameKey;
   encoded_image.Allocate(1);
   encoded_image.data()[0] = kPayload;
   encoded_image.set_size(1);
@@ -171,7 +171,7 @@ TEST(RtpVideoSenderTest, SendSimulcastSetActive) {
   EncodedImage encoded_image_1;
   encoded_image_1.SetTimestamp(1);
   encoded_image_1.capture_time_ms_ = 2;
-  encoded_image_1._frameType = kVideoFrameKey;
+  encoded_image_1._frameType = VideoFrameType::kVideoFrameKey;
   encoded_image_1.Allocate(1);
   encoded_image_1.data()[0] = kPayload;
   encoded_image_1.set_size(1);
@@ -215,7 +215,7 @@ TEST(RtpVideoSenderTest, SendSimulcastSetActiveModules) {
   EncodedImage encoded_image_1;
   encoded_image_1.SetTimestamp(1);
   encoded_image_1.capture_time_ms_ = 2;
-  encoded_image_1._frameType = kVideoFrameKey;
+  encoded_image_1._frameType = VideoFrameType::kVideoFrameKey;
   encoded_image_1.Allocate(1);
   encoded_image_1.data()[0] = kPayload;
   encoded_image_1.set_size(1);
@@ -304,12 +304,12 @@ TEST(RtpVideoSenderTest, FrameCountCallbacks) {
   EncodedImage encoded_image;
   encoded_image.SetTimestamp(1);
   encoded_image.capture_time_ms_ = 2;
-  encoded_image._frameType = kVideoFrameKey;
+  encoded_image._frameType = VideoFrameType::kVideoFrameKey;
   encoded_image.Allocate(1);
   encoded_image.data()[0] = kPayload;
   encoded_image.set_size(1);
 
-  encoded_image._frameType = kVideoFrameKey;
+  encoded_image._frameType = VideoFrameType::kVideoFrameKey;
 
   // No callbacks when not active.
   EXPECT_CALL(callback, FrameCountUpdated).Times(0);
@@ -332,7 +332,7 @@ TEST(RtpVideoSenderTest, FrameCountCallbacks) {
 
   testing::Mock::VerifyAndClearExpectations(&callback);
 
-  encoded_image._frameType = kVideoFrameDelta;
+  encoded_image._frameType = VideoFrameType::kVideoFrameDelta;
   EXPECT_CALL(callback, FrameCountUpdated(_, kSsrc1))
       .WillOnce(SaveArg<0>(&frame_counts));
   EXPECT_EQ(

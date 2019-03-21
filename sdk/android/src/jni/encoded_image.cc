@@ -21,7 +21,7 @@ namespace jni {
 
 ScopedJavaLocalRef<jobject> NativeToJavaFrameType(JNIEnv* env,
                                                   VideoFrameType frame_type) {
-  return Java_FrameType_fromNativeIndex(env, frame_type);
+  return Java_FrameType_fromNativeIndex(env, static_cast<int>(frame_type));
 }
 
 ScopedJavaLocalRef<jobject> NativeToJavaEncodedImage(

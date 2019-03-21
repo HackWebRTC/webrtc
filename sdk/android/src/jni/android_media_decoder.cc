@@ -398,7 +398,7 @@ int32_t MediaCodecVideoDecoder::Decode(
 
   // Always start with a complete key frame.
   if (key_frame_required_) {
-    if (inputImage._frameType != kVideoFrameKey) {
+    if (inputImage._frameType != VideoFrameType::kVideoFrameKey) {
       ALOGE << "Decode() - key frame is required";
       return WEBRTC_VIDEO_CODEC_ERROR;
     }
@@ -487,8 +487,8 @@ int32_t MediaCodecVideoDecoder::DecodeOnCodecThread(
 
   if (frames_decoded_ < frames_decoded_logged_) {
     ALOGD << "Decoder frame in # " << frames_received_
-          << ". Type: " << inputImage._frameType << ". Buffer # "
-          << j_input_buffer_index
+          << ". Type: " << static_cast<int>(inputImage._frameType)
+          << ". Buffer # " << j_input_buffer_index
           << ". TS: " << presentation_timestamp_us / 1000
           << ". Size: " << inputImage.size();
   }

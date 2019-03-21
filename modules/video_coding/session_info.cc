@@ -36,7 +36,7 @@ uint16_t BufferToUWord16(const uint8_t* dataBuffer) {
 
 VCMSessionInfo::VCMSessionInfo()
     : complete_(false),
-      frame_type_(kVideoFrameDelta),
+      frame_type_(VideoFrameType::kVideoFrameDelta),
       packets_(),
       empty_seq_num_low_(-1),
       empty_seq_num_high_(-1),
@@ -172,7 +172,7 @@ void VCMSessionInfo::SetGofInfo(const GofInfoVP9& gof_info, size_t idx) {
 
 void VCMSessionInfo::Reset() {
   complete_ = false;
-  frame_type_ = kVideoFrameDelta;
+  frame_type_ = VideoFrameType::kVideoFrameDelta;
   packets_.clear();
   empty_seq_num_low_ = -1;
   empty_seq_num_high_ = -1;
@@ -426,7 +426,7 @@ bool VCMSessionInfo::HaveLastPacket() const {
 int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
                                  uint8_t* frame_buffer,
                                  const FrameData& frame_data) {
-  if (packet.frameType == kEmptyFrame) {
+  if (packet.frameType == VideoFrameType::kEmptyFrame) {
     // Update sequence number of an empty packet.
     // Only media packets are inserted into the packet list.
     InformOfEmptyPacket(packet.seqNum);
@@ -479,7 +479,8 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
           << "Received packet with a sequence number which is out "
              "of frame boundaries";
       return -3;
-    } else if (frame_type_ == kEmptyFrame && packet.frameType != kEmptyFrame) {
+    } else if (frame_type_ == VideoFrameType::kEmptyFrame &&
+               packet.frameType != VideoFrameType::kEmptyFrame) {
       // Update the frame type with the type of the first media packet.
       // TODO(mikhal): Can this trigger?
       frame_type_ = packet.frameType;

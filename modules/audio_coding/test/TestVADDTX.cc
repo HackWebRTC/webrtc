@@ -226,8 +226,8 @@ void TestOpusDtx::Perform() {
       out_filename, false, expects);
 
   EXPECT_EQ(0, acm_send_->EnableOpusDtx());
-  expects[kEmptyFrame] = 1;
-  expects[kAudioFrameCN] = 1;
+  expects[static_cast<int>(AudioFrameType::kEmptyFrame)] = 1;
+  expects[static_cast<int>(AudioFrameType::kAudioFrameCN)] = 1;
   Run(webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm"), 32000, 1,
       out_filename, true, expects);
 
@@ -235,15 +235,15 @@ void TestOpusDtx::Perform() {
   out_filename = webrtc::test::OutputPath() + "testOpusDtx_outFile_stereo.pcm";
   RegisterCodec({"opus", 48000, 2, {{"stereo", "1"}}}, absl::nullopt);
   EXPECT_EQ(0, acm_send_->DisableOpusDtx());
-  expects[kEmptyFrame] = 0;
-  expects[kAudioFrameCN] = 0;
+  expects[static_cast<int>(AudioFrameType::kEmptyFrame)] = 0;
+  expects[static_cast<int>(AudioFrameType::kAudioFrameCN)] = 0;
   Run(webrtc::test::ResourcePath("audio_coding/teststereo32kHz", "pcm"), 32000,
       2, out_filename, false, expects);
 
   EXPECT_EQ(0, acm_send_->EnableOpusDtx());
 
-  expects[kEmptyFrame] = 1;
-  expects[kAudioFrameCN] = 1;
+  expects[static_cast<int>(AudioFrameType::kEmptyFrame)] = 1;
+  expects[static_cast<int>(AudioFrameType::kAudioFrameCN)] = 1;
   Run(webrtc::test::ResourcePath("audio_coding/teststereo32kHz", "pcm"), 32000,
       2, out_filename, true, expects);
 }

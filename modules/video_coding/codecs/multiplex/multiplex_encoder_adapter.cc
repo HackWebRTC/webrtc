@@ -145,9 +145,9 @@ int MultiplexEncoderAdapter::Encode(
 
   std::vector<VideoFrameType> adjusted_frame_types;
   if (key_frame_interval_ > 0 && picture_index_ % key_frame_interval_ == 0) {
-    adjusted_frame_types.push_back(kVideoFrameKey);
+    adjusted_frame_types.push_back(VideoFrameType::kVideoFrameKey);
   } else {
-    adjusted_frame_types.push_back(kVideoFrameDelta);
+    adjusted_frame_types.push_back(VideoFrameType::kVideoFrameDelta);
   }
   const bool has_alpha = input_image.video_frame_buffer()->type() ==
                          VideoFrameBuffer::Type::kI420A;

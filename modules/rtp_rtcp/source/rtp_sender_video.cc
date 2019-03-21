@@ -72,7 +72,7 @@ void AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
     packet->SetExtension<VideoOrientation>(video_header.rotation);
 
   // Report content type only for key frames.
-  if (last_packet && frame_type == kVideoFrameKey &&
+  if (last_packet && frame_type == VideoFrameType::kVideoFrameKey &&
       video_header.content_type != VideoContentType::UNSPECIFIED)
     packet->SetExtension<VideoContentTypeExtension>(video_header.content_type);
 
@@ -116,7 +116,7 @@ void AddRtpHeaderExtensions(const RTPVideoHeader& video_header,
 
       generic_descriptor.SetTemporalLayer(video_header.generic->temporal_index);
 
-      if (frame_type == kVideoFrameKey) {
+      if (frame_type == VideoFrameType::kVideoFrameKey) {
         generic_descriptor.SetResolution(video_header.width,
                                          video_header.height);
       }
@@ -168,11 +168,11 @@ bool IsBaseLayer(const RTPVideoHeader& video_header) {
 
 const char* FrameTypeToString(VideoFrameType frame_type) {
   switch (frame_type) {
-    case kEmptyFrame:
+    case VideoFrameType::kEmptyFrame:
       return "empty";
-    case kVideoFrameKey:
+    case VideoFrameType::kVideoFrameKey:
       return "video_key";
-    case kVideoFrameDelta:
+    case VideoFrameType::kVideoFrameDelta:
       return "video_delta";
     default:
       RTC_NOTREACHED();
@@ -429,13 +429,10 @@ bool RTPSenderVideo::SendVideo(VideoFrameType frame_type,
                                const RTPFragmentationHeader* fragmentation,
                                const RTPVideoHeader* video_header,
                                int64_t expected_retransmission_time_ms) {
-  RTC_DCHECK(frame_type == kVideoFrameKey || frame_type == kVideoFrameDelta ||
-             frame_type == kEmptyFrame);
-
   TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", capture_time_ms, "Send", "type",
                           FrameTypeToString(frame_type));
 
-  if (frame_type == kEmptyFrame)
+  if (frame_type == VideoFrameType::kEmptyFrame)
     return true;
 
   if (payload_size == 0)
@@ -466,7 +463,7 @@ bool RTPSenderVideo::SendVideo(VideoFrameType frame_type,
     // value sent.
     // Set rotation when key frame or when changed (to follow standard).
     // Or when different from 0 (to follow current receiver implementation).
-    set_video_rotation = frame_type == kVideoFrameKey ||
+    set_video_rotation = frame_type == VideoFrameType::kVideoFrameKey ||
                          video_header->rotation != last_rotation_ ||
                          video_header->rotation != kVideoRotation_0;
     last_rotation_ = video_header->rotation;
@@ -479,8 +476,8 @@ bool RTPSenderVideo::SendVideo(VideoFrameType frame_type,
       set_color_space = true;
       transmit_color_space_next_frame_ = !IsBaseLayer(*video_header);
     } else {
-      set_color_space =
-          frame_type == kVideoFrameKey || transmit_color_space_next_frame_;
+      set_color_space = frame_type == VideoFrameType::kVideoFrameKey ||
+                        transmit_color_space_next_frame_;
       transmit_color_space_next_frame_ = transmit_color_space_next_frame_
                                              ? !IsBaseLayer(*video_header)
                                              : false;
@@ -488,7 +485,8 @@ bool RTPSenderVideo::SendVideo(VideoFrameType frame_type,
 
     // FEC settings.
     const FecProtectionParams& fec_params =
-        frame_type == kVideoFrameKey ? key_fec_params_ : delta_fec_params_;
+        frame_type == VideoFrameType::kVideoFrameKey ? key_fec_params_
+                                                     : delta_fec_params_;
     if (flexfec_enabled())
       flexfec_sender_->SetFecParameters(fec_params);
     if (ulpfec_enabled())

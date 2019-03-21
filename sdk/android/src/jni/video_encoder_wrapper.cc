@@ -383,7 +383,7 @@ int VideoEncoderWrapper::ParseQp(const std::vector<uint8_t>& buffer) {
 
 CodecSpecificInfo VideoEncoderWrapper::ParseCodecSpecificInfo(
     const EncodedImage& frame) {
-  const bool key_frame = frame._frameType == kVideoFrameKey;
+  const bool key_frame = frame._frameType == VideoFrameType::kVideoFrameKey;
 
   CodecSpecificInfo info;
   info.codecType = codec_settings_.codecType;

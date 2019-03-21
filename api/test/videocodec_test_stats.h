@@ -16,7 +16,7 @@
 #include <string>
 #include <vector>
 
-#include "common_types.h"  // NOLINT(build/include)
+#include "api/video/video_frame_type.h"
 
 namespace webrtc {
 namespace test {
@@ -43,7 +43,7 @@ class VideoCodecTestStats {
     size_t encode_time_us = 0;
     size_t target_bitrate_kbps = 0;
     size_t length_bytes = 0;
-    webrtc::VideoFrameType frame_type = kVideoFrameDelta;
+    VideoFrameType frame_type = VideoFrameType::kVideoFrameDelta;
 
     // Layering.
     size_t spatial_idx = 0;

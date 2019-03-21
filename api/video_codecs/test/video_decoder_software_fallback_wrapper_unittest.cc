@@ -88,7 +88,7 @@ TEST_F(VideoDecoderSoftwareFallbackWrapperTest, InitializesDecoder) {
   EXPECT_EQ(1, fake_decoder_->init_decode_count_);
 
   EncodedImage encoded_image;
-  encoded_image._frameType = kVideoFrameKey;
+  encoded_image._frameType = VideoFrameType::kVideoFrameKey;
   fallback_wrapper_->Decode(encoded_image, false, nullptr, -1);
   EXPECT_EQ(1, fake_decoder_->init_decode_count_)
       << "Initialized decoder should not be reinitialized.";
@@ -103,7 +103,7 @@ TEST_F(VideoDecoderSoftwareFallbackWrapperTest,
   EXPECT_EQ(1, fake_decoder_->init_decode_count_);
 
   EncodedImage encoded_image;
-  encoded_image._frameType = kVideoFrameKey;
+  encoded_image._frameType = VideoFrameType::kVideoFrameKey;
   fallback_wrapper_->Decode(encoded_image, false, nullptr, -1);
   EXPECT_EQ(1, fake_decoder_->init_decode_count_)
       << "Should not have attempted reinitializing the fallback decoder on "
@@ -124,7 +124,7 @@ TEST_F(VideoDecoderSoftwareFallbackWrapperTest, IsSoftwareFallbackSticky) {
   EXPECT_EQ(1, fake_decoder_->decode_count_);
 
   // Software fallback should be sticky, fake_decoder_ shouldn't be used.
-  encoded_image._frameType = kVideoFrameKey;
+  encoded_image._frameType = VideoFrameType::kVideoFrameKey;
   fallback_wrapper_->Decode(encoded_image, false, nullptr, -1);
   EXPECT_EQ(1, fake_decoder_->decode_count_)
       << "Decoder shouldn't be used after failure.";
@@ -242,7 +242,7 @@ TEST_F(ForcedSoftwareDecoderFallbackTest, UsesForcedFallback) {
   EXPECT_EQ(1, sw_fallback_decoder_->init_decode_count_);
 
   EncodedImage encoded_image;
-  encoded_image._frameType = kVideoFrameKey;
+  encoded_image._frameType = VideoFrameType::kVideoFrameKey;
   fallback_wrapper_->Decode(encoded_image, false, nullptr, -1);
   EXPECT_EQ(1, sw_fallback_decoder_->init_decode_count_);
   EXPECT_EQ(1, sw_fallback_decoder_->decode_count_);

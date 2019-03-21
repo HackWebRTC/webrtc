@@ -727,7 +727,7 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
 
   // We only support one stream at the moment.
   if (frame_types && !frame_types->empty()) {
-    if ((*frame_types)[0] == kVideoFrameKey) {
+    if ((*frame_types)[0] == VideoFrameType::kVideoFrameKey) {
       force_key_frame_ = true;
     }
   }
@@ -1324,9 +1324,9 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   RTC_DCHECK(is_key_frame || !force_key_frame_);
 
   // Check if encoded frame is a key frame.
-  encoded_image_._frameType = kVideoFrameDelta;
+  encoded_image_._frameType = VideoFrameType::kVideoFrameDelta;
   if (is_key_frame) {
-    encoded_image_._frameType = kVideoFrameKey;
+    encoded_image_._frameType = VideoFrameType::kVideoFrameKey;
     force_key_frame_ = false;
   }
   RTC_DCHECK_LE(encoded_image_.size(), encoded_image_.capacity());
@@ -1539,7 +1539,7 @@ int VP9DecoderImpl::Decode(const EncodedImage& input_image,
   }
   // Always start with a complete key frame.
   if (key_frame_required_) {
-    if (input_image._frameType != kVideoFrameKey)
+    if (input_image._frameType != VideoFrameType::kVideoFrameKey)
       return WEBRTC_VIDEO_CODEC_ERROR;
     // We have a key frame - is it complete?
     if (input_image._completeFrame) {

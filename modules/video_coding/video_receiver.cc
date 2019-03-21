@@ -288,7 +288,7 @@ int32_t VideoReceiver::Decode(uint16_t maxWaitTimeMs) {
     if (drop_frames_until_keyframe_) {
       // Still getting delta frames, schedule another keyframe request as if
       // decode failed.
-      if (frame->FrameType() != kVideoFrameKey) {
+      if (frame->FrameType() != VideoFrameType::kVideoFrameKey) {
         drop_frame = true;
         _scheduleKeyRequest = true;
         // TODO(tommi): Consider if we could instead post a task to the module
@@ -384,7 +384,7 @@ int32_t VideoReceiver::IncomingPacket(const uint8_t* incomingPayload,
                                       size_t payloadLength,
                                       const WebRtcRTPHeader& rtpInfo) {
   RTC_DCHECK_RUN_ON(&module_thread_checker_);
-  if (rtpInfo.frameType == kVideoFrameKey) {
+  if (rtpInfo.frameType == VideoFrameType::kVideoFrameKey) {
     TRACE_EVENT1("webrtc", "VCM::PacketKeyFrame", "seqnum",
                  rtpInfo.header.sequenceNumber);
   }

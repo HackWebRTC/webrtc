@@ -209,7 +209,7 @@ TEST_F(TestVp8Impl, DecodedQpEqualsEncodedQp) {
   EncodeAndWaitForFrame(*input_frame, &encoded_frame, &codec_specific_info);
 
   // First frame should be a key frame.
-  encoded_frame._frameType = kVideoFrameKey;
+  encoded_frame._frameType = VideoFrameType::kVideoFrameKey;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             decoder_->Decode(encoded_frame, false, nullptr, -1));
   std::unique_ptr<VideoFrame> decoded_frame;
@@ -323,7 +323,7 @@ TEST_F(TestVp8Impl, MAYBE_AlignedStrideEncodeDecode) {
   EncodeAndWaitForFrame(*input_frame, &encoded_frame, &codec_specific_info);
 
   // First frame should be a key frame.
-  encoded_frame._frameType = kVideoFrameKey;
+  encoded_frame._frameType = VideoFrameType::kVideoFrameKey;
   encoded_frame.ntp_time_ms_ = kTestNtpTimeMs;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             decoder_->Decode(encoded_frame, false, nullptr, -1));
@@ -354,12 +354,12 @@ TEST_F(TestVp8Impl, MAYBE_DecodeWithACompleteKeyFrame) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_ERROR,
             decoder_->Decode(encoded_frame, false, nullptr, -1));
   // Setting complete back to true. Forcing a delta frame.
-  encoded_frame._frameType = kVideoFrameDelta;
+  encoded_frame._frameType = VideoFrameType::kVideoFrameDelta;
   encoded_frame._completeFrame = true;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_ERROR,
             decoder_->Decode(encoded_frame, false, nullptr, -1));
   // Now setting a key frame.
-  encoded_frame._frameType = kVideoFrameKey;
+  encoded_frame._frameType = VideoFrameType::kVideoFrameKey;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             decoder_->Decode(encoded_frame, false, nullptr, -1));
   std::unique_ptr<VideoFrame> decoded_frame;
@@ -484,7 +484,8 @@ TEST_F(TestVp8Impl, KeepsTimestampOnReencode) {
       .Times(2)
       .WillRepeatedly(Return(vpx_codec_err_t::VPX_CODEC_OK));
 
-  auto delta_frame = std::vector<VideoFrameType>{kVideoFrameDelta};
+  auto delta_frame =
+      std::vector<VideoFrameType>{VideoFrameType::kVideoFrameDelta};
   encoder.Encode(*NextInputFrame(), &delta_frame);
 }
 

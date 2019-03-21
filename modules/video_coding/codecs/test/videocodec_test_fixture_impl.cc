@@ -332,11 +332,11 @@ void VideoCodecTestFixtureImpl::H264KeyframeChecker::CheckEncodedFrame(
       contains_idr = true;
     }
   }
-  if (encoded_frame._frameType == kVideoFrameKey) {
+  if (encoded_frame._frameType == VideoFrameType::kVideoFrameKey) {
     EXPECT_TRUE(contains_sps) << "Keyframe should contain SPS.";
     EXPECT_TRUE(contains_pps) << "Keyframe should contain PPS.";
     EXPECT_TRUE(contains_idr) << "Keyframe should contain IDR.";
-  } else if (encoded_frame._frameType == kVideoFrameDelta) {
+  } else if (encoded_frame._frameType == VideoFrameType::kVideoFrameDelta) {
     EXPECT_FALSE(contains_sps) << "Delta frame should not contain SPS.";
     EXPECT_FALSE(contains_pps) << "Delta frame should not contain PPS.";
     EXPECT_FALSE(contains_idr) << "Delta frame should not contain IDR.";

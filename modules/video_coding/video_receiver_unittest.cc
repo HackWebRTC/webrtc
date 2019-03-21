@@ -58,7 +58,7 @@ class TestVideoReceiver : public ::testing::Test {
 
   WebRtcRTPHeader GetDefaultVp8Header() const {
     WebRtcRTPHeader header = {};
-    header.frameType = kEmptyFrame;
+    header.frameType = VideoFrameType::kEmptyFrame;
     header.header.markerBit = false;
     header.header.payloadType = kUnusedPayloadType;
     header.header.ssrc = 1;
@@ -122,14 +122,14 @@ TEST_F(TestVideoReceiver, PaddingOnlyFramesWithLosses) {
   header.video_header().video_type_header.emplace<RTPVideoHeaderVP8>();
 
   // Insert one video frame to get one frame decoded.
-  header.frameType = kVideoFrameKey;
+  header.frameType = VideoFrameType::kVideoFrameKey;
   header.video_header().is_first_packet_in_frame = true;
   header.header.markerBit = true;
   InsertAndVerifyDecodableFrame(kPayload, kFrameSize, &header);
 
   clock_.AdvanceTimeMilliseconds(33);
   header.header.timestamp += 3000;
-  header.frameType = kEmptyFrame;
+  header.frameType = VideoFrameType::kEmptyFrame;
   header.video_header().is_first_packet_in_frame = false;
   header.header.markerBit = false;
   // Insert padding frames.
@@ -172,9 +172,9 @@ TEST_F(TestVideoReceiver, PaddingOnlyAndVideo) {
     // Insert 2 video frames.
     for (int j = 0; j < 2; ++j) {
       if (i == 0 && j == 0)  // First frame should be a key frame.
-        header.frameType = kVideoFrameKey;
+        header.frameType = VideoFrameType::kVideoFrameKey;
       else
-        header.frameType = kVideoFrameDelta;
+        header.frameType = VideoFrameType::kVideoFrameDelta;
       header.video_header().is_first_packet_in_frame = true;
       header.header.markerBit = true;
       InsertAndVerifyDecodableFrame(kPayload, kFrameSize, &header);
@@ -183,7 +183,7 @@ TEST_F(TestVideoReceiver, PaddingOnlyAndVideo) {
     }
 
     // Insert 2 padding only frames.
-    header.frameType = kEmptyFrame;
+    header.frameType = VideoFrameType::kEmptyFrame;
     header.video_header().is_first_packet_in_frame = false;
     header.header.markerBit = false;
     for (int j = 0; j < 2; ++j) {

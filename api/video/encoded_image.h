@@ -18,6 +18,7 @@
 #include "api/video/video_codec_constants.h"
 #include "api/video/video_codec_type.h"
 #include "api/video/video_content_type.h"
+#include "api/video/video_frame_type.h"
 #include "api/video/video_rotation.h"
 #include "api/video/video_timing.h"
 #include "common_types.h"  // NOLINT(build/include)
@@ -109,7 +110,7 @@ class RTC_EXPORT EncodedImage {
   // NTP time of the capture time in local timebase in milliseconds.
   int64_t ntp_time_ms_ = 0;
   int64_t capture_time_ms_ = 0;
-  VideoFrameType _frameType = kVideoFrameDelta;
+  VideoFrameType _frameType = VideoFrameType::kVideoFrameDelta;
   VideoRotation rotation_ = kVideoRotation_0;
   VideoContentType content_type_ = VideoContentType::UNSPECIFIED;
   bool _completeFrame = false;

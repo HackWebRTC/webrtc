@@ -23,7 +23,7 @@ VCMPacket::VCMPacket()
       sizeBytes(0),
       markerBit(false),
       timesNacked(-1),
-      frameType(kEmptyFrame),
+      frameType(VideoFrameType::kEmptyFrame),
       completeNALU(kNaluUnset),
       insertStartCode(false),
       video_header(),

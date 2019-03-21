@@ -14,7 +14,7 @@
 #include <memory>
 #include <vector>
 
-#include "common_types.h"  // NOLINT(build/include)
+#include "api/video/video_frame_type.h"
 #include "modules/include/module_fec_types.h"
 
 namespace webrtc {

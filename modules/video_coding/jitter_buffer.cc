@@ -45,7 +45,7 @@ static const int64_t kMaxDiscontinuousFramesTime = 1000;
 typedef std::pair<uint32_t, VCMFrameBuffer*> FrameListPair;
 
 bool IsKeyFrame(FrameListPair pair) {
-  return pair.second->FrameType() == kVideoFrameKey;
+  return pair.second->FrameType() == VideoFrameType::kVideoFrameKey;
 }
 
 bool HasNonEmptyState(FrameListPair pair) {
@@ -83,7 +83,8 @@ int FrameList::RecycleFramesUntilKeyFrame(FrameList::iterator* key_frame_it,
     free_frames->push_back(it->second);
     erase(it++);
     ++drop_count;
-    if (it != end() && it->second->FrameType() == kVideoFrameKey) {
+    if (it != end() &&
+        it->second->FrameType() == VideoFrameType::kVideoFrameKey) {
       *key_frame_it = it;
       return drop_count;
     }
@@ -651,7 +652,7 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
 
   // Empty packets may bias the jitter estimate (lacking size component),
   // therefore don't let empty packet trigger the following updates:
-  if (packet.frameType != kEmptyFrame) {
+  if (packet.frameType != VideoFrameType::kEmptyFrame) {
     if (waiting_for_completion_.timestamp == packet.timestamp) {
       // This can get bad if we have a lot of duplicate packets,
       // we will then count some packet multiple times.
@@ -690,7 +691,7 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
         frame->IncrementNackCount();
       }
       if (!UpdateNackList(packet.seqNum) &&
-          packet.frameType != kVideoFrameKey) {
+          packet.frameType != VideoFrameType::kVideoFrameKey) {
         buffer_state = kFlushIndicator;
       }
 
@@ -926,9 +927,10 @@ std::vector<uint16_t> VCMJitterBuffer::GetNackList(bool* request_key_frame) {
   }
   if (last_decoded_state_.in_initial_state()) {
     VCMFrameBuffer* next_frame = NextFrame();
-    const bool first_frame_is_key = next_frame &&
-                                    next_frame->FrameType() == kVideoFrameKey &&
-                                    next_frame->HaveFirstPacket();
+    const bool first_frame_is_key =
+        next_frame &&
+        next_frame->FrameType() == VideoFrameType::kVideoFrameKey &&
+        next_frame->HaveFirstPacket();
     if (!first_frame_is_key) {
       bool have_non_empty_frame =
           decodable_frames_.end() != find_if(decodable_frames_.begin(),
@@ -1131,7 +1133,7 @@ bool VCMJitterBuffer::RecycleFramesUntilKeyFrame() {
 void VCMJitterBuffer::CountFrame(const VCMFrameBuffer& frame) {
   incoming_frame_count_++;
 
-  if (frame.FrameType() == kVideoFrameKey) {
+  if (frame.FrameType() == VideoFrameType::kVideoFrameKey) {
     TRACE_EVENT_ASYNC_STEP0("webrtc", "Video", frame.Timestamp(),
                             "KeyComplete");
   } else {
@@ -1142,7 +1144,7 @@ void VCMJitterBuffer::CountFrame(const VCMFrameBuffer& frame) {
   // Update receive statistics. We count all layers, thus when you use layers
   // adding all key and delta frames might differ from frame count.
   if (frame.IsSessionComplete()) {
-    if (frame.FrameType() == kVideoFrameKey) {
+    if (frame.FrameType() == VideoFrameType::kVideoFrameKey) {
       ++receive_statistics_.key_frames;
       if (receive_statistics_.key_frames == 1) {
         RTC_LOG(LS_INFO) << "Received first complete key frame";

@@ -213,8 +213,8 @@ TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrame) {
                                                            data.size());
   EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame(_));
   rtp_video_stream_receiver_->OnReceivedPayloadData(
-      data.data(), data.size(), rtp_header, video_header, kVideoFrameKey,
-      absl::nullopt, false);
+      data.data(), data.size(), rtp_header, video_header,
+      VideoFrameType::kVideoFrameKey, absl::nullopt, false);
 }
 
 TEST_F(RtpVideoStreamReceiverTest, NoInfiniteRecursionOnEncapsulatedRedPacket) {
@@ -273,8 +273,8 @@ TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrameBitstreamError) {
   EXPECT_CALL(mock_on_complete_frame_callback_,
               DoOnCompleteFrameFailBitstream(_));
   rtp_video_stream_receiver_->OnReceivedPayloadData(
-      data.data(), data.size(), rtp_header, video_header, kVideoFrameKey,
-      absl::nullopt, false);
+      data.data(), data.size(), rtp_header, video_header,
+      VideoFrameType::kVideoFrameKey, absl::nullopt, false);
 }
 
 class RtpVideoStreamReceiverTestH264
@@ -301,7 +301,7 @@ TEST_P(RtpVideoStreamReceiverTestH264, InBandSpsPps) {
                                                            sps_data.size());
   rtp_video_stream_receiver_->OnReceivedPayloadData(
       sps_data.data(), sps_data.size(), rtp_header, sps_video_header,
-      kEmptyFrame, absl::nullopt, false);
+      VideoFrameType::kEmptyFrame, absl::nullopt, false);
 
   std::vector<uint8_t> pps_data;
   RTPVideoHeader pps_video_header = GetDefaultH264VideoHeader();
@@ -314,7 +314,7 @@ TEST_P(RtpVideoStreamReceiverTestH264, InBandSpsPps) {
                                                            pps_data.size());
   rtp_video_stream_receiver_->OnReceivedPayloadData(
       pps_data.data(), pps_data.size(), rtp_header, pps_video_header,
-      kEmptyFrame, absl::nullopt, false);
+      VideoFrameType::kEmptyFrame, absl::nullopt, false);
 
   std::vector<uint8_t> idr_data;
   RTPVideoHeader idr_video_header = GetDefaultH264VideoHeader();
@@ -330,7 +330,7 @@ TEST_P(RtpVideoStreamReceiverTestH264, InBandSpsPps) {
   EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame(_));
   rtp_video_stream_receiver_->OnReceivedPayloadData(
       idr_data.data(), idr_data.size(), rtp_header, idr_video_header,
-      kVideoFrameKey, absl::nullopt, false);
+      VideoFrameType::kVideoFrameKey, absl::nullopt, false);
 }
 
 TEST_P(RtpVideoStreamReceiverTestH264, OutOfBandFmtpSpsPps) {
@@ -371,8 +371,8 @@ TEST_P(RtpVideoStreamReceiverTestH264, OutOfBandFmtpSpsPps) {
                                                            data.size());
   EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame(_));
   rtp_video_stream_receiver_->OnReceivedPayloadData(
-      data.data(), data.size(), rtp_header, video_header, kVideoFrameKey,
-      absl::nullopt, false);
+      data.data(), data.size(), rtp_header, video_header,
+      VideoFrameType::kVideoFrameKey, absl::nullopt, false);
 }
 
 TEST_F(RtpVideoStreamReceiverTest, PaddingInMediaStream) {
@@ -390,30 +390,30 @@ TEST_F(RtpVideoStreamReceiverTest, PaddingInMediaStream) {
 
   EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame(_));
   rtp_video_stream_receiver_->OnReceivedPayloadData(
-      data.data(), data.size(), rtp_header, video_header, kVideoFrameKey,
-      absl::nullopt, false);
+      data.data(), data.size(), rtp_header, video_header,
+      VideoFrameType::kVideoFrameKey, absl::nullopt, false);
 
   rtp_header.sequenceNumber = 3;
   rtp_video_stream_receiver_->OnReceivedPayloadData(
-      nullptr, 0, rtp_header, video_header, kVideoFrameKey, absl::nullopt,
-      false);
+      nullptr, 0, rtp_header, video_header, VideoFrameType::kVideoFrameKey,
+      absl::nullopt, false);
 
   rtp_header.sequenceNumber = 4;
   EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame(_));
   rtp_video_stream_receiver_->OnReceivedPayloadData(
-      data.data(), data.size(), rtp_header, video_header, kVideoFrameDelta,
-      absl::nullopt, false);
+      data.data(), data.size(), rtp_header, video_header,
+      VideoFrameType::kVideoFrameDelta, absl::nullopt, false);
 
   rtp_header.sequenceNumber = 6;
   rtp_video_stream_receiver_->OnReceivedPayloadData(
-      data.data(), data.size(), rtp_header, video_header, kVideoFrameDelta,
-      absl::nullopt, false);
+      data.data(), data.size(), rtp_header, video_header,
+      VideoFrameType::kVideoFrameDelta, absl::nullopt, false);
 
   EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame(_));
   rtp_header.sequenceNumber = 5;
   rtp_video_stream_receiver_->OnReceivedPayloadData(
-      nullptr, 0, rtp_header, video_header, kVideoFrameDelta, absl::nullopt,
-      false);
+      nullptr, 0, rtp_header, video_header, VideoFrameType::kVideoFrameDelta,
+      absl::nullopt, false);
 }
 
 TEST_F(RtpVideoStreamReceiverTest, RequestKeyframeIfFirstFrameIsDelta) {
@@ -427,8 +427,8 @@ TEST_F(RtpVideoStreamReceiverTest, RequestKeyframeIfFirstFrameIsDelta) {
 
   EXPECT_CALL(mock_key_frame_request_sender_, RequestKeyFrame());
   rtp_video_stream_receiver_->OnReceivedPayloadData(
-      data.data(), data.size(), rtp_header, video_header, kVideoFrameDelta,
-      absl::nullopt, false);
+      data.data(), data.size(), rtp_header, video_header,
+      VideoFrameType::kVideoFrameDelta, absl::nullopt, false);
 }
 
 TEST_F(RtpVideoStreamReceiverTest, SecondarySinksGetRtpNotifications) {

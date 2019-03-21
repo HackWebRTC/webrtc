@@ -126,7 +126,7 @@ bool PacketBuffer::InsertPacket(VCMPacket* packet) {
 
     int64_t now_ms = clock_->TimeInMilliseconds();
     last_received_packet_ms_ = now_ms;
-    if (packet->frameType == kVideoFrameKey)
+    if (packet->frameType == VideoFrameType::kVideoFrameKey)
       last_received_keyframe_packet_ms_ = now_ms;
 
     found_frames = FindFrames(seq_num);
@@ -378,9 +378,11 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
         const size_t first_packet_index = start_seq_num % size_;
         RTC_CHECK_LT(first_packet_index, size_);
         if (is_h264_keyframe) {
-          data_buffer_[first_packet_index].frameType = kVideoFrameKey;
+          data_buffer_[first_packet_index].frameType =
+              VideoFrameType::kVideoFrameKey;
         } else {
-          data_buffer_[first_packet_index].frameType = kVideoFrameDelta;
+          data_buffer_[first_packet_index].frameType =
+              VideoFrameType::kVideoFrameDelta;
         }
 
         // If this is not a keyframe, make sure there are no gaps in the

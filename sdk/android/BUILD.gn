@@ -686,6 +686,7 @@ if (is_android) {
       "../../api/task_queue",
       "../../api/video:encoded_image",
       "../../api/video:video_frame",
+      "../../api/video:video_frame_type",
       "../../api/video_codecs:rtc_software_fallback_wrappers",
       "../../api/video_codecs:video_codecs_api",
       "../../common_video",

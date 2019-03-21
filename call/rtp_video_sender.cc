@@ -414,7 +414,7 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
   if (!rtp_streams_[stream_index].rtp_rtcp->OnSendingRtpFrame(
           encoded_image.Timestamp(), encoded_image.capture_time_ms_,
           rtp_config_.payload_type,
-          encoded_image._frameType == kVideoFrameKey)) {
+          encoded_image._frameType == VideoFrameType::kVideoFrameKey)) {
     // The payload router could be active but this module isn't sending.
     return Result(Result::ERROR_SEND_FAILED);
   }
@@ -428,12 +428,12 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
       expected_retransmission_time_ms);
   if (frame_count_observer_) {
     FrameCounts& counts = frame_counts_[stream_index];
-    if (encoded_image._frameType == kVideoFrameKey) {
+    if (encoded_image._frameType == VideoFrameType::kVideoFrameKey) {
       ++counts.key_frames;
-    } else if (encoded_image._frameType == kVideoFrameDelta) {
+    } else if (encoded_image._frameType == VideoFrameType::kVideoFrameDelta) {
       ++counts.delta_frames;
     } else {
-      RTC_DCHECK_EQ(encoded_image._frameType, kEmptyFrame);
+      RTC_DCHECK(encoded_image._frameType == VideoFrameType::kEmptyFrame);
     }
     frame_count_observer_->FrameCountUpdated(counts,
                                              rtp_config_.ssrcs[stream_index]);

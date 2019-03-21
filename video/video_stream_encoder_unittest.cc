@@ -612,7 +612,8 @@ class VideoStreamEncoderTest : public ::testing::Test {
 
     void InjectFrame(const VideoFrame& input_image, bool keyframe) {
       const std::vector<VideoFrameType> frame_type = {
-          keyframe ? kVideoFrameKey : kVideoFrameDelta};
+          keyframe ? VideoFrameType::kVideoFrameKey
+                   : VideoFrameType::kVideoFrameDelta};
       {
         rtc::CritScope lock(&local_crit_sect_);
         last_frame_types_ = frame_type;
@@ -3597,21 +3598,24 @@ TEST_F(VideoStreamEncoderTest, SetsFrameTypes) {
   // First frame is always keyframe.
   video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
   WaitForEncodedFrame(1);
-  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
-              testing::ElementsAre(VideoFrameType{kVideoFrameKey}));
+  EXPECT_THAT(
+      fake_encoder_.LastFrameTypes(),
+      testing::ElementsAre(VideoFrameType{VideoFrameType::kVideoFrameKey}));
 
   // Insert delta frame.
   video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
   WaitForEncodedFrame(2);
-  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
-              testing::ElementsAre(VideoFrameType{kVideoFrameDelta}));
+  EXPECT_THAT(
+      fake_encoder_.LastFrameTypes(),
+      testing::ElementsAre(VideoFrameType{VideoFrameType::kVideoFrameDelta}));
 
   // Request next frame be a key-frame.
   video_stream_encoder_->SendKeyFrame();
   video_source_.IncomingCapturedFrame(CreateFrame(3, nullptr));
   WaitForEncodedFrame(3);
-  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
-              testing::ElementsAre(VideoFrameType{kVideoFrameKey}));
+  EXPECT_THAT(
+      fake_encoder_.LastFrameTypes(),
+      testing::ElementsAre(VideoFrameType{VideoFrameType::kVideoFrameKey}));
 
   video_stream_encoder_->Stop();
 }
@@ -3628,15 +3632,17 @@ TEST_F(VideoStreamEncoderTest, SetsFrameTypesSimulcast) {
   video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
   WaitForEncodedFrame(1);
   EXPECT_THAT(fake_encoder_.LastFrameTypes(),
-              testing::ElementsAreArray(
-                  {kVideoFrameKey, kVideoFrameKey, kVideoFrameKey}));
+              testing::ElementsAreArray({VideoFrameType::kVideoFrameKey,
+                                         VideoFrameType::kVideoFrameKey,
+                                         VideoFrameType::kVideoFrameKey}));
 
   // Insert delta frame.
   video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
   WaitForEncodedFrame(2);
   EXPECT_THAT(fake_encoder_.LastFrameTypes(),
-              testing::ElementsAreArray(
-                  {kVideoFrameDelta, kVideoFrameDelta, kVideoFrameDelta}));
+              testing::ElementsAreArray({VideoFrameType::kVideoFrameDelta,
+                                         VideoFrameType::kVideoFrameDelta,
+                                         VideoFrameType::kVideoFrameDelta}));
 
   // Request next frame be a key-frame.
   // Only first stream is configured to produce key-frame.
@@ -3644,8 +3650,9 @@ TEST_F(VideoStreamEncoderTest, SetsFrameTypesSimulcast) {
   video_source_.IncomingCapturedFrame(CreateFrame(3, nullptr));
   WaitForEncodedFrame(3);
   EXPECT_THAT(fake_encoder_.LastFrameTypes(),
-              testing::ElementsAreArray(
-                  {kVideoFrameKey, kVideoFrameDelta, kVideoFrameDelta}));
+              testing::ElementsAreArray({VideoFrameType::kVideoFrameKey,
+                                         VideoFrameType::kVideoFrameDelta,
+                                         VideoFrameType::kVideoFrameDelta}));
 
   video_stream_encoder_->Stop();
 }
@@ -3661,24 +3668,28 @@ TEST_F(VideoStreamEncoderTest, RequestKeyframeInternalSource) {
   // callback in VideoStreamEncoder is called despite no OnFrame().
   fake_encoder_.InjectFrame(CreateFrame(1, nullptr), true);
   EXPECT_TRUE(WaitForFrame(kDefaultTimeoutMs));
-  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
-              testing::ElementsAre(VideoFrameType{kVideoFrameKey}));
+  EXPECT_THAT(
+      fake_encoder_.LastFrameTypes(),
+      testing::ElementsAre(VideoFrameType{VideoFrameType::kVideoFrameKey}));
 
-  const std::vector<VideoFrameType> kDeltaFrame = {kVideoFrameDelta};
+  const std::vector<VideoFrameType> kDeltaFrame = {
+      VideoFrameType::kVideoFrameDelta};
   // Need to set timestamp manually since manually for injected frame.
   VideoFrame frame = CreateFrame(101, nullptr);
   frame.set_timestamp(101);
   fake_encoder_.InjectFrame(frame, false);
   EXPECT_TRUE(WaitForFrame(kDefaultTimeoutMs));
-  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
-              testing::ElementsAre(VideoFrameType{kVideoFrameDelta}));
+  EXPECT_THAT(
+      fake_encoder_.LastFrameTypes(),
+      testing::ElementsAre(VideoFrameType{VideoFrameType::kVideoFrameDelta}));
 
   // Request key-frame. The forces a dummy frame down into the encoder.
   fake_encoder_.ExpectNullFrame();
   video_stream_encoder_->SendKeyFrame();
   EXPECT_TRUE(WaitForFrame(kDefaultTimeoutMs));
-  EXPECT_THAT(fake_encoder_.LastFrameTypes(),
-              testing::ElementsAre(VideoFrameType{kVideoFrameKey}));
+  EXPECT_THAT(
+      fake_encoder_.LastFrameTypes(),
+      testing::ElementsAre(VideoFrameType{VideoFrameType::kVideoFrameKey}));
 
   video_stream_encoder_->Stop();
 }

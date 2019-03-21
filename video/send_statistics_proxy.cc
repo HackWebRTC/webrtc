@@ -927,7 +927,7 @@ void SendStatisticsProxy::OnSendEncodedImage(
   }
 
   uma_container_->key_frame_counter_.Add(encoded_image._frameType ==
-                                         kVideoFrameKey);
+                                         VideoFrameType::kVideoFrameKey);
 
   if (encoded_image.qp_ != -1) {
     if (!stats_.qp_sum)

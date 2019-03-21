@@ -86,7 +86,8 @@ class BufferedFrameDecryptorTest
     VCMPacket packet;
     packet.video_header.codec = kVideoCodecGeneric;
     packet.seqNum = seq_num_;
-    packet.frameType = key_frame ? kVideoFrameKey : kVideoFrameDelta;
+    packet.frameType = key_frame ? VideoFrameType::kVideoFrameKey
+                                 : VideoFrameType::kVideoFrameDelta;
     packet.generic_descriptor = RtpGenericFrameDescriptor();
     fake_packet_buffer_->InsertPacket(&packet);
     packet.seqNum = seq_num_;

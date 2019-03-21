@@ -132,8 +132,8 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     WriteCounter(encoded.data() + frame_info.layers[i].size - 4, counter);
     encoded.SetTimestamp(input_image.timestamp());
     encoded.capture_time_ms_ = input_image.render_time_ms();
-    encoded._frameType =
-        frame_info.keyframe ? kVideoFrameKey : kVideoFrameDelta;
+    encoded._frameType = frame_info.keyframe ? VideoFrameType::kVideoFrameKey
+                                             : VideoFrameType::kVideoFrameDelta;
     encoded._encodedWidth = simulcast_streams[i].width;
     encoded._encodedHeight = simulcast_streams[i].height;
     encoded.rotation_ = input_image.rotation();
@@ -172,7 +172,7 @@ FakeEncoder::FrameInfo FakeEncoder::NextFrame(
 
   if (frame_types) {
     for (VideoFrameType frame_type : *frame_types) {
-      if (frame_type == kVideoFrameKey) {
+      if (frame_type == VideoFrameType::kVideoFrameKey) {
         frame_info.keyframe = true;
         break;
       }

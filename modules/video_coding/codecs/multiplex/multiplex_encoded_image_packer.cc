@@ -88,7 +88,8 @@ int PackFrameHeader(uint8_t* buffer,
   ByteWriter<uint8_t>::WriteBigEndian(buffer + offset, frame_header.codec_type);
   offset += sizeof(uint8_t);
 
-  ByteWriter<uint8_t>::WriteBigEndian(buffer + offset, frame_header.frame_type);
+  ByteWriter<uint8_t>::WriteBigEndian(
+      buffer + offset, static_cast<uint8_t>(frame_header.frame_type));
   offset += sizeof(uint8_t);
 
   RTC_DCHECK_EQ(offset, kMultiplexImageComponentHeaderSize);

@@ -598,7 +598,7 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
     // will need to do some translation to produce reference info using frame
     // ids.
     std::vector<int64_t> referenced_frame_ids;
-    if (encoded_image._frameType != kVideoFrameKey) {
+    if (encoded_image._frameType != VideoFrameType::kVideoFrameKey) {
       RTC_DCHECK_GT(frame_id, 0);
       referenced_frame_ids.push_back(frame_id - 1);
     }

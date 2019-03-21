@@ -222,7 +222,7 @@ VideoStatistics VideoCodecTestStatsImpl::SliceAndCalcVideoStatistic(
     if (frame_stat.encoding_successful) {
       ++video_stat.num_encoded_frames;
 
-      if (frame_stat.frame_type == kVideoFrameKey) {
+      if (frame_stat.frame_type == VideoFrameType::kVideoFrameKey) {
         key_frame_size_bytes.AddSample(frame_stat.length_bytes);
         ++video_stat.num_key_frames;
       } else {

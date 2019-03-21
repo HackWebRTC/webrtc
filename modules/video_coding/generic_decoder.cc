@@ -220,7 +220,7 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
   // Set correctly only for key frames. Thus, use latest key frame
   // content type. If the corresponding key frame was lost, decode will fail
   // and content type will be ignored.
-  if (frame.FrameType() == kVideoFrameKey) {
+  if (frame.FrameType() == VideoFrameType::kVideoFrameKey) {
     _frameInfos[_nextFrameInfoIdx].content_type = frame.contentType();
     _last_keyframe_content_type = frame.contentType();
   } else {

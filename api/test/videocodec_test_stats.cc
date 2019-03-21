@@ -24,7 +24,7 @@ std::string VideoCodecTestStats::FrameStatistics::ToString() const {
   ss << " temporal_idx " << temporal_idx;
   ss << " inter_layer_predicted " << inter_layer_predicted;
   ss << " non_ref_for_inter_layer_pred " << non_ref_for_inter_layer_pred;
-  ss << " frame_type " << frame_type;
+  ss << " frame_type " << static_cast<int>(frame_type);
   ss << " length_bytes " << length_bytes;
   ss << " qp " << qp;
   ss << " psnr " << psnr;

@@ -463,7 +463,7 @@ VideoStreamEncoder::VideoStreamEncoder(
       force_disable_frame_dropper_(false),
       input_framerate_(kFrameRateAvergingWindowSizeMs, 1000),
       pending_frame_drops_(0),
-      next_frame_types_(1, kVideoFrameDelta),
+      next_frame_types_(1, VideoFrameType::kVideoFrameDelta),
       frame_encoder_timer_(this),
       experiment_groups_(GetExperimentGroups()),
       encoder_queue_(task_queue_factory->CreateTaskQueue(
@@ -728,7 +728,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     next_frame_types_.clear();
     next_frame_types_.resize(
         std::max(static_cast<int>(codec.numberOfSimulcastStreams), 1),
-        kVideoFrameKey);
+        VideoFrameType::kVideoFrameKey);
     RTC_LOG(LS_VERBOSE) << " max bitrate " << codec.maxBitrate
                         << " start bitrate " << codec.startBitrate
                         << " max frame rate " << codec.maxFramerate
@@ -1291,7 +1291,7 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   }
 
   for (auto& it : next_frame_types_) {
-    it = kVideoFrameDelta;
+    it = VideoFrameType::kVideoFrameDelta;
   }
 }
 
@@ -1303,7 +1303,7 @@ void VideoStreamEncoder::SendKeyFrame() {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   TRACE_EVENT0("webrtc", "OnKeyFrameRequest");
   RTC_DCHECK(!next_frame_types_.empty());
-  next_frame_types_[0] = kVideoFrameKey;
+  next_frame_types_[0] = VideoFrameType::kVideoFrameKey;
   if (HasInternalSource()) {
     // Try to request the frame if we have an external encoder with
     // internal source since AddVideoFrame never will be called.
@@ -1322,7 +1322,7 @@ void VideoStreamEncoder::SendKeyFrame() {
                              .build(),
                          &next_frame_types_) == WEBRTC_VIDEO_CODEC_OK) {
       // Try to remove just-performed keyframe request, if stream still exists.
-      next_frame_types_[0] = kVideoFrameDelta;
+      next_frame_types_[0] = VideoFrameType::kVideoFrameDelta;
     }
   }
 }

@@ -14,7 +14,7 @@
 #include <jni.h>
 #include <vector>
 
-#include "common_types.h"  // NOLINT(build/include)
+#include "api/video/video_frame_type.h"
 
 #include "sdk/android/native_api/jni/scoped_java_ref.h"
 

@@ -350,8 +350,8 @@ rtc_source_set("fec_controller_api") {
   ]
 
   deps = [
-    "..:webrtc_common",
     "../modules:module_fec_api",
+    "video:video_frame_type",
   ]
 }
 
@@ -480,6 +480,7 @@ if (rtc_include_tests) {
       "..:webrtc_common",
       "../modules/video_coding:video_codec_interface",
       "../rtc_base:stringutils",
+      "video:video_frame_type",
       "video_codecs:video_codecs_api",
     ]
   }

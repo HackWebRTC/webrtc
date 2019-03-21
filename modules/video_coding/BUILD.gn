@@ -64,6 +64,7 @@ rtc_static_library("packet") {
     "..:module_api",
     "../../:webrtc_common",
     "../../api:rtp_headers",
+    "../../api/video:video_frame_type",
     "../rtp_rtcp:rtp_rtcp_format",
     "../rtp_rtcp:rtp_video_header",
     "//third_party/abseil-cpp/absl/types:optional",

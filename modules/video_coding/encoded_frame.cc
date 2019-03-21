@@ -39,7 +39,7 @@ void VCMEncodedFrame::Reset() {
   SetSpatialIndex(absl::nullopt);
   _renderTimeMs = -1;
   _payloadType = 0;
-  _frameType = kVideoFrameDelta;
+  _frameType = VideoFrameType::kVideoFrameDelta;
   _encodedWidth = 0;
   _encodedHeight = 0;
   _completeFrame = false;

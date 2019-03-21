@@ -111,7 +111,7 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
       size_t payload_size,
       const RTPHeader& rtp_header,
       const RTPVideoHeader& video_header,
-      FrameType frame_type,
+      VideoFrameType frame_type,
       const absl::optional<RtpGenericFrameDescriptor>& generic_descriptor,
       bool is_recovered);
 

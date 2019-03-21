@@ -67,17 +67,17 @@ int NumberOfThreads(int width, int height, int number_of_cores) {
 VideoFrameType ConvertToVideoFrameType(EVideoFrameType type) {
   switch (type) {
     case videoFrameTypeIDR:
-      return kVideoFrameKey;
+      return VideoFrameType::kVideoFrameKey;
     case videoFrameTypeSkip:
     case videoFrameTypeI:
     case videoFrameTypeP:
     case videoFrameTypeIPMixed:
-      return kVideoFrameDelta;
+      return VideoFrameType::kVideoFrameDelta;
     case videoFrameTypeInvalid:
       break;
   }
   RTC_NOTREACHED() << "Unexpected/invalid frame type: " << type;
-  return kEmptyFrame;
+  return VideoFrameType::kEmptyFrame;
 }
 
 }  // namespace
@@ -409,7 +409,8 @@ int32_t H264EncoderImpl::Encode(
   if (!send_key_frame && frame_types) {
     for (size_t i = 0; i < frame_types->size() && i < configurations_.size();
          ++i) {
-      if ((*frame_types)[i] == kVideoFrameKey && configurations_[i].sending) {
+      if ((*frame_types)[i] == VideoFrameType::kVideoFrameKey &&
+          configurations_[i].sending) {
         send_key_frame = true;
         break;
       }
@@ -462,7 +463,7 @@ int32_t H264EncoderImpl::Encode(
     }
     if (frame_types != nullptr) {
       // Skip frame?
-      if ((*frame_types)[i] == kEmptyFrame) {
+      if ((*frame_types)[i] == VideoFrameType::kEmptyFrame) {
         continue;
       }
     }

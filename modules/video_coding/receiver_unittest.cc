@@ -59,8 +59,10 @@ class TestVCMReceiver : public ::testing::Test {
   int32_t InsertFrame(VideoFrameType frame_type, bool complete) {
     int num_of_packets = complete ? 1 : 2;
     stream_generator_->GenerateFrame(
-        frame_type, (frame_type != kEmptyFrame) ? num_of_packets : 0,
-        (frame_type == kEmptyFrame) ? 1 : 0, clock_->TimeInMilliseconds());
+        frame_type,
+        (frame_type != VideoFrameType::kEmptyFrame) ? num_of_packets : 0,
+        (frame_type == VideoFrameType::kEmptyFrame) ? 1 : 0,
+        clock_->TimeInMilliseconds());
     int32_t ret = InsertPacketAndPop(0);
     if (!complete) {
       // Drop the second packet.
@@ -94,7 +96,7 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_Empty) {
   const int kMinDelayMs = 500;
   receiver_.SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack,
                             kMaxNonDecodableDuration);
-  EXPECT_GE(InsertFrame(kVideoFrameKey, true), kNoError);
+  EXPECT_GE(InsertFrame(VideoFrameType::kVideoFrameKey, true), kNoError);
   // Advance time until it's time to decode the key frame.
   clock_->AdvanceTimeMilliseconds(kMinDelayMs);
   EXPECT_TRUE(DecodeNextFrame());
@@ -113,7 +115,7 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_NoKeyFrame) {
                             kMaxNonDecodableDuration);
   const int kNumFrames = kDefaultFrameRate * kMaxNonDecodableDuration / 1000;
   for (int i = 0; i < kNumFrames; ++i) {
-    EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
+    EXPECT_GE(InsertFrame(VideoFrameType::kVideoFrameDelta, true), kNoError);
   }
   bool request_key_frame = false;
   std::vector<uint16_t> nack_list = receiver_.NackList(&request_key_frame);
@@ -133,12 +135,12 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_OneIncomplete) {
                             kMaxNonDecodableDuration);
   timing_.set_min_playout_delay(kMinDelayMs);
   int64_t key_frame_inserted = clock_->TimeInMilliseconds();
-  EXPECT_GE(InsertFrame(kVideoFrameKey, true), kNoError);
+  EXPECT_GE(InsertFrame(VideoFrameType::kVideoFrameKey, true), kNoError);
   // Insert an incomplete frame.
-  EXPECT_GE(InsertFrame(kVideoFrameDelta, false), kNoError);
+  EXPECT_GE(InsertFrame(VideoFrameType::kVideoFrameDelta, false), kNoError);
   // Insert enough frames to have too long non-decodable sequence.
   for (int i = 0; i < kMaxNonDecodableDurationFrames; ++i) {
-    EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
+    EXPECT_GE(InsertFrame(VideoFrameType::kVideoFrameDelta, true), kNoError);
   }
   // Advance time until it's time to decode the key frame.
   clock_->AdvanceTimeMilliseconds(kMinDelayMs - clock_->TimeInMilliseconds() -
@@ -163,13 +165,13 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_NoTrigger) {
                             kMaxNonDecodableDuration);
   timing_.set_min_playout_delay(kMinDelayMs);
   int64_t key_frame_inserted = clock_->TimeInMilliseconds();
-  EXPECT_GE(InsertFrame(kVideoFrameKey, true), kNoError);
+  EXPECT_GE(InsertFrame(VideoFrameType::kVideoFrameKey, true), kNoError);
   // Insert an incomplete frame.
-  EXPECT_GE(InsertFrame(kVideoFrameDelta, false), kNoError);
+  EXPECT_GE(InsertFrame(VideoFrameType::kVideoFrameDelta, false), kNoError);
   // Insert all but one frame to not trigger a key frame request due to
   // too long duration of non-decodable frames.
   for (int i = 0; i < kMaxNonDecodableDurationFrames - 1; ++i) {
-    EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
+    EXPECT_GE(InsertFrame(VideoFrameType::kVideoFrameDelta, true), kNoError);
   }
   // Advance time until it's time to decode the key frame.
   clock_->AdvanceTimeMilliseconds(kMinDelayMs - clock_->TimeInMilliseconds() -
@@ -195,14 +197,14 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_NoTrigger2) {
                             kMaxNonDecodableDuration);
   timing_.set_min_playout_delay(kMinDelayMs);
   int64_t key_frame_inserted = clock_->TimeInMilliseconds();
-  EXPECT_GE(InsertFrame(kVideoFrameKey, true), kNoError);
+  EXPECT_GE(InsertFrame(VideoFrameType::kVideoFrameKey, true), kNoError);
   // Insert enough frames to have too long non-decodable sequence, except that
   // we don't have any losses.
   for (int i = 0; i < kMaxNonDecodableDurationFrames; ++i) {
-    EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
+    EXPECT_GE(InsertFrame(VideoFrameType::kVideoFrameDelta, true), kNoError);
   }
   // Insert an incomplete frame.
-  EXPECT_GE(InsertFrame(kVideoFrameDelta, false), kNoError);
+  EXPECT_GE(InsertFrame(VideoFrameType::kVideoFrameDelta, false), kNoError);
   // Advance time until it's time to decode the key frame.
   clock_->AdvanceTimeMilliseconds(kMinDelayMs - clock_->TimeInMilliseconds() -
                                   key_frame_inserted);
@@ -227,14 +229,14 @@ TEST_F(TestVCMReceiver, NonDecodableDuration_KeyFrameAfterIncompleteFrames) {
                             kMaxNonDecodableDuration);
   timing_.set_min_playout_delay(kMinDelayMs);
   int64_t key_frame_inserted = clock_->TimeInMilliseconds();
-  EXPECT_GE(InsertFrame(kVideoFrameKey, true), kNoError);
+  EXPECT_GE(InsertFrame(VideoFrameType::kVideoFrameKey, true), kNoError);
   // Insert an incomplete frame.
-  EXPECT_GE(InsertFrame(kVideoFrameDelta, false), kNoError);
+  EXPECT_GE(InsertFrame(VideoFrameType::kVideoFrameDelta, false), kNoError);
   // Insert enough frames to have too long non-decodable sequence.
   for (int i = 0; i < kMaxNonDecodableDurationFrames; ++i) {
-    EXPECT_GE(InsertFrame(kVideoFrameDelta, true), kNoError);
+    EXPECT_GE(InsertFrame(VideoFrameType::kVideoFrameDelta, true), kNoError);
   }
-  EXPECT_GE(InsertFrame(kVideoFrameKey, true), kNoError);
+  EXPECT_GE(InsertFrame(VideoFrameType::kVideoFrameKey, true), kNoError);
   // Advance time until it's time to decode the key frame.
   clock_->AdvanceTimeMilliseconds(kMinDelayMs - clock_->TimeInMilliseconds() -
                                   key_frame_inserted);

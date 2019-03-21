@@ -16,7 +16,7 @@
 #include <vector>
 
 #include "api/rtp_headers.h"
-#include "common_types.h"  // NOLINT(build/include)
+#include "api/video/video_frame_type.h"
 #include "modules/include/module_common_types_public.h"
 #include "modules/include/module_fec_types.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"

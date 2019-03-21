@@ -16,7 +16,7 @@
 
 #include "absl/types/optional.h"
 #include "api/rtp_headers.h"
-#include "common_types.h"  // NOLINT(build/include)
+#include "api/video/video_frame_type.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 

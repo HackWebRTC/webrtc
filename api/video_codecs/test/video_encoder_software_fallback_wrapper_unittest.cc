@@ -180,7 +180,7 @@ void VideoEncoderSoftwareFallbackWrapperTest::EncodeFrame(int expected_ret) {
   rtc::scoped_refptr<I420Buffer> buffer =
       I420Buffer::Create(codec_.width, codec_.height);
   I420Buffer::SetBlack(buffer);
-  std::vector<VideoFrameType> types(1, kVideoFrameKey);
+  std::vector<VideoFrameType> types(1, VideoFrameType::kVideoFrameKey);
 
   frame_ =
       absl::make_unique<VideoFrame>(VideoFrame::Builder()
@@ -292,7 +292,7 @@ TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
   EXPECT_EQ(&callback2, fake_encoder_->encode_complete_callback_);
 
   // Encoding a frame using the fallback should arrive at the new callback.
-  std::vector<VideoFrameType> types(1, kVideoFrameKey);
+  std::vector<VideoFrameType> types(1, VideoFrameType::kVideoFrameKey);
   frame_->set_timestamp(frame_->timestamp() + 1000);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_->Encode(*frame_, &types));
 

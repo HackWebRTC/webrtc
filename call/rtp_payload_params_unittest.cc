@@ -386,16 +386,16 @@ class RtpPayloadParamsVp8ToGenericTest : public ::testing::Test {
 };
 
 TEST_F(RtpPayloadParamsVp8ToGenericTest, Keyframe) {
-  ConvertAndCheck(0, 0, kVideoFrameKey, kNoSync, {}, 480, 360);
-  ConvertAndCheck(0, 1, kVideoFrameDelta, kNoSync, {0});
-  ConvertAndCheck(0, 2, kVideoFrameKey, kNoSync, {}, 480, 360);
+  ConvertAndCheck(0, 0, VideoFrameType::kVideoFrameKey, kNoSync, {}, 480, 360);
+  ConvertAndCheck(0, 1, VideoFrameType::kVideoFrameDelta, kNoSync, {0});
+  ConvertAndCheck(0, 2, VideoFrameType::kVideoFrameKey, kNoSync, {}, 480, 360);
 }
 
 TEST_F(RtpPayloadParamsVp8ToGenericTest, TooHighTemporalIndex) {
-  ConvertAndCheck(0, 0, kVideoFrameKey, kNoSync, {}, 480, 360);
+  ConvertAndCheck(0, 0, VideoFrameType::kVideoFrameKey, kNoSync, {}, 480, 360);
 
   EncodedImage encoded_image;
-  encoded_image._frameType = kVideoFrameDelta;
+  encoded_image._frameType = VideoFrameType::kVideoFrameDelta;
   CodecSpecificInfo codec_info;
   codec_info.codecType = kVideoCodecVP8;
   codec_info.codecSpecific.VP8.temporalIdx =
@@ -409,27 +409,28 @@ TEST_F(RtpPayloadParamsVp8ToGenericTest, TooHighTemporalIndex) {
 
 TEST_F(RtpPayloadParamsVp8ToGenericTest, LayerSync) {
   // 02120212 pattern
-  ConvertAndCheck(0, 0, kVideoFrameKey, kNoSync, {}, 480, 360);
-  ConvertAndCheck(2, 1, kVideoFrameDelta, kNoSync, {0});
-  ConvertAndCheck(1, 2, kVideoFrameDelta, kNoSync, {0});
-  ConvertAndCheck(2, 3, kVideoFrameDelta, kNoSync, {0, 1, 2});
+  ConvertAndCheck(0, 0, VideoFrameType::kVideoFrameKey, kNoSync, {}, 480, 360);
+  ConvertAndCheck(2, 1, VideoFrameType::kVideoFrameDelta, kNoSync, {0});
+  ConvertAndCheck(1, 2, VideoFrameType::kVideoFrameDelta, kNoSync, {0});
+  ConvertAndCheck(2, 3, VideoFrameType::kVideoFrameDelta, kNoSync, {0, 1, 2});
 
-  ConvertAndCheck(0, 4, kVideoFrameDelta, kNoSync, {0});
-  ConvertAndCheck(2, 5, kVideoFrameDelta, kNoSync, {2, 3, 4});
-  ConvertAndCheck(1, 6, kVideoFrameDelta, kSync, {4});  // layer sync
-  ConvertAndCheck(2, 7, kVideoFrameDelta, kNoSync, {4, 5, 6});
+  ConvertAndCheck(0, 4, VideoFrameType::kVideoFrameDelta, kNoSync, {0});
+  ConvertAndCheck(2, 5, VideoFrameType::kVideoFrameDelta, kNoSync, {2, 3, 4});
+  ConvertAndCheck(1, 6, VideoFrameType::kVideoFrameDelta, kSync,
+                  {4});  // layer sync
+  ConvertAndCheck(2, 7, VideoFrameType::kVideoFrameDelta, kNoSync, {4, 5, 6});
 }
 
 TEST_F(RtpPayloadParamsVp8ToGenericTest, FrameIdGaps) {
   // 0101 pattern
-  ConvertAndCheck(0, 0, kVideoFrameKey, kNoSync, {}, 480, 360);
-  ConvertAndCheck(1, 1, kVideoFrameDelta, kNoSync, {0});
+  ConvertAndCheck(0, 0, VideoFrameType::kVideoFrameKey, kNoSync, {}, 480, 360);
+  ConvertAndCheck(1, 1, VideoFrameType::kVideoFrameDelta, kNoSync, {0});
 
-  ConvertAndCheck(0, 5, kVideoFrameDelta, kNoSync, {0});
-  ConvertAndCheck(1, 10, kVideoFrameDelta, kNoSync, {1, 5});
+  ConvertAndCheck(0, 5, VideoFrameType::kVideoFrameDelta, kNoSync, {0});
+  ConvertAndCheck(1, 10, VideoFrameType::kVideoFrameDelta, kNoSync, {1, 5});
 
-  ConvertAndCheck(0, 15, kVideoFrameDelta, kNoSync, {5});
-  ConvertAndCheck(1, 20, kVideoFrameDelta, kNoSync, {10, 15});
+  ConvertAndCheck(0, 15, VideoFrameType::kVideoFrameDelta, kNoSync, {5});
+  ConvertAndCheck(1, 20, VideoFrameType::kVideoFrameDelta, kNoSync, {10, 15});
 }
 
 }  // namespace webrtc

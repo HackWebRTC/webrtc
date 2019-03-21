@@ -353,7 +353,7 @@ int SimulcastEncoderAdapter::Encode(
   bool send_key_frame = false;
   if (frame_types) {
     for (size_t i = 0; i < frame_types->size(); ++i) {
-      if (frame_types->at(i) == kVideoFrameKey) {
+      if (frame_types->at(i) == VideoFrameType::kVideoFrameKey) {
         send_key_frame = true;
         break;
       }
@@ -377,10 +377,10 @@ int SimulcastEncoderAdapter::Encode(
 
     std::vector<VideoFrameType> stream_frame_types;
     if (send_key_frame) {
-      stream_frame_types.push_back(kVideoFrameKey);
+      stream_frame_types.push_back(VideoFrameType::kVideoFrameKey);
       streaminfos_[stream_idx].key_frame_request = false;
     } else {
-      stream_frame_types.push_back(kVideoFrameDelta);
+      stream_frame_types.push_back(VideoFrameType::kVideoFrameDelta);
     }
 
     int dst_width = streaminfos_[stream_idx].width;

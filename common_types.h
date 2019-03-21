@@ -28,21 +28,6 @@
 
 namespace webrtc {
 
-// TODO(bugs.webrtc.org/6883): This type should be split into separate types for
-// audio and video, and then moved out of this file.
-enum FrameTypeDeprecated {
-  kEmptyFrame = 0,
-  kAudioFrameSpeech = 1,
-  kAudioFrameCN = 2,
-  kVideoFrameKey = 3,
-  kVideoFrameDelta = 4,
-};
-
-// Can't use RTC_DEPRECATED until Chromium is updated.
-typedef FrameTypeDeprecated FrameType;
-
-using VideoFrameType = FrameTypeDeprecated;
-
 // Statistics for RTCP packet types.
 struct RtcpPacketTypeCounter {
   RtcpPacketTypeCounter()

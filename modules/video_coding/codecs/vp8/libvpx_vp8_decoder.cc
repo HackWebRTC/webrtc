@@ -209,7 +209,7 @@ int LibvpxVp8Decoder::Decode(const EncodedImage& input_image,
 
   // Always start with a complete key frame.
   if (key_frame_required_) {
-    if (input_image._frameType != kVideoFrameKey)
+    if (input_image._frameType != VideoFrameType::kVideoFrameKey)
       return WEBRTC_VIDEO_CODEC_ERROR;
     // We have a key frame - is it complete?
     if (input_image._completeFrame) {
@@ -220,7 +220,8 @@ int LibvpxVp8Decoder::Decode(const EncodedImage& input_image,
   }
   // Restrict error propagation using key frame requests.
   // Reset on a key frame refresh.
-  if (input_image._frameType == kVideoFrameKey && input_image._completeFrame) {
+  if (input_image._frameType == VideoFrameType::kVideoFrameKey &&
+      input_image._completeFrame) {
     propagation_cnt_ = -1;
     // Start count on first loss.
   } else if ((!input_image._completeFrame || missing_frames) &&
