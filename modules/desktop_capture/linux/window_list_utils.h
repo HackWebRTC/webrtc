@@ -15,9 +15,9 @@
 #include <X11/Xlib.h>
 #include <stdint.h>
 
+#include "api/function_view.h"
 #include "modules/desktop_capture/desktop_geometry.h"
 #include "modules/desktop_capture/linux/x_atom_cache.h"
-#include "rtc_base/function_view.h"
 
 namespace webrtc {
 

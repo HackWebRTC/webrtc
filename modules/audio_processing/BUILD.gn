@@ -158,6 +158,7 @@ rtc_static_library("audio_processing") {
     ":noise_suppression_proxy",
     "../..:webrtc_common",
     "../../api:array_view",
+    "../../api:function_view",
     "../../api/audio:aec3_config",
     "../../api/audio:audio_frame_api",
     "../../api/audio:echo_control",

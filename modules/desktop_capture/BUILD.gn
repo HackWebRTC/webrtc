@@ -47,6 +47,7 @@ if (rtc_include_tests) {
 
     sources = []
     deps = [
+      "../../api:function_view",
       "../../api:scoped_refptr",
       "../../rtc_base:checks",
       "//third_party/abseil-cpp/absl/memory",
@@ -428,6 +429,7 @@ rtc_static_library("desktop_capture_generic") {
 
   deps = [
     ":primitives",
+    "../../api:function_view",
     "../../api:refcountedbase",
     "../../api:scoped_refptr",
     "../../rtc_base",  # TODO(kjellander): Cleanup in bugs.webrtc.org/3806.

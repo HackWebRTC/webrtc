@@ -299,6 +299,7 @@ if (!build_with_chromium) {
       deps = [
         ":chart_proto",
         "../:webrtc_common",
+        "../api:function_view",
 
         # TODO(kwiberg): Remove this dependency.
         "../api/audio_codecs:audio_codecs_api",

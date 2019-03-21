@@ -328,6 +328,7 @@ if (rtc_enable_protobuf) {
       ":rtc_event_log_impl_encoder",
       ":rtc_event_log_proto",
       ":rtc_stream_config",
+      "../api:function_view",
       "../api:libjingle_peerconnection_api",
       "../api:rtp_headers",
       "../api/units:data_rate",

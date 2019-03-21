@@ -399,6 +399,16 @@ rtc_source_set("neteq_simulator_api") {
   ]
 }
 
+rtc_source_set("function_view") {
+  visibility = [ "*" ]
+  sources = [
+    "function_view.h",
+  ]
+  deps = [
+    "../rtc_base:checks",
+  ]
+}
+
 if (rtc_include_tests) {
   if (rtc_enable_protobuf) {
     rtc_source_set("audioproc_f_api") {
@@ -684,6 +694,7 @@ if (rtc_include_tests) {
 
     sources = [
       "array_view_unittest.cc",
+      "function_view_unittest.cc",
       "rtc_error_unittest.cc",
       "rtp_parameters_unittest.cc",
       "test/loopback_media_transport_unittest.cc",
@@ -691,6 +702,7 @@ if (rtc_include_tests) {
 
     deps = [
       ":array_view",
+      ":function_view",
       ":libjingle_peerconnection_api",
       ":loopback_media_transport",
       "../rtc_base:checks",

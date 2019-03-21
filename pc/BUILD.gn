@@ -355,6 +355,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":pc_test_utils",
+      "../api:function_view",
       "../api:libjingle_peerconnection_api",
       "../api:rtc_stats_api",
       "../api:scoped_refptr",
@@ -490,6 +491,7 @@ if (rtc_include_tests) {
       "../api:create_peerconnection_factory",
       "../api:fake_frame_decryptor",
       "../api:fake_frame_encryptor",
+      "../api:function_view",
       "../api:libjingle_logging_api",
       "../api:libjingle_peerconnection_api",
       "../api:loopback_media_transport",

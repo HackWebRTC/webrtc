@@ -16,11 +16,11 @@
 #include <utility>
 #include <vector>
 
+#include "api/function_view.h"
 #include "api/set_remote_description_observer_interface.h"
 #include "pc/sdp_utils.h"
 #include "pc/test/fake_video_track_source.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/function_view.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ref_counted_object.h"

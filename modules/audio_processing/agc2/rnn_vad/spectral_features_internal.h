@@ -16,8 +16,8 @@
 #include <complex>
 
 #include "api/array_view.h"
+#include "api/function_view.h"
 #include "modules/audio_processing/agc2/rnn_vad/common.h"
-#include "rtc_base/function_view.h"
 
 namespace webrtc {
 namespace rnn_vad {
