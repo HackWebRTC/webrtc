@@ -492,24 +492,36 @@ TEST_F(TestVp9Impl, InterLayerPred) {
     ASSERT_TRUE(WaitForEncodedFrames(&frames, &codec_specific));
 
     // Key frame.
-    EXPECT_FALSE(codec_specific[0].codecSpecific.VP9.inter_pic_predicted);
-    EXPECT_EQ(frames[0].SpatialIndex(), 0);
+    ASSERT_EQ(frames[0].SpatialIndex(), 0);
+    ASSERT_FALSE(codec_specific[0].codecSpecific.VP9.inter_pic_predicted);
+    EXPECT_FALSE(codec_specific[0].codecSpecific.VP9.inter_layer_predicted);
     EXPECT_EQ(codec_specific[0].codecSpecific.VP9.non_ref_for_inter_layer_pred,
               inter_layer_pred == InterLayerPredMode::kOff);
+
+    ASSERT_EQ(frames[1].SpatialIndex(), 1);
+    ASSERT_FALSE(codec_specific[1].codecSpecific.VP9.inter_pic_predicted);
+    EXPECT_EQ(codec_specific[1].codecSpecific.VP9.inter_layer_predicted,
+              inter_layer_pred == InterLayerPredMode::kOn ||
+                  inter_layer_pred == InterLayerPredMode::kOnKeyPic);
     EXPECT_TRUE(
         codec_specific[1].codecSpecific.VP9.non_ref_for_inter_layer_pred);
 
+    // Delta frame.
     SetWaitForEncodedFramesThreshold(2);
     EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
               encoder_->Encode(*NextInputFrame(), nullptr));
     ASSERT_TRUE(WaitForEncodedFrames(&frames, &codec_specific));
 
-    // Delta frame.
-    EXPECT_TRUE(codec_specific[0].codecSpecific.VP9.inter_pic_predicted);
-    EXPECT_EQ(frames[0].SpatialIndex(), 0);
+    ASSERT_EQ(frames[0].SpatialIndex(), 0);
+    ASSERT_TRUE(codec_specific[0].codecSpecific.VP9.inter_pic_predicted);
+    EXPECT_FALSE(codec_specific[0].codecSpecific.VP9.inter_layer_predicted);
     EXPECT_EQ(codec_specific[0].codecSpecific.VP9.non_ref_for_inter_layer_pred,
-              inter_layer_pred == InterLayerPredMode::kOff ||
-                  inter_layer_pred == InterLayerPredMode::kOnKeyPic);
+              inter_layer_pred != InterLayerPredMode::kOn);
+
+    ASSERT_EQ(frames[1].SpatialIndex(), 1);
+    ASSERT_TRUE(codec_specific[1].codecSpecific.VP9.inter_pic_predicted);
+    EXPECT_EQ(codec_specific[1].codecSpecific.VP9.inter_layer_predicted,
+              inter_layer_pred == InterLayerPredMode::kOn);
     EXPECT_TRUE(
         codec_specific[1].codecSpecific.VP9.non_ref_for_inter_layer_pred);
   }
