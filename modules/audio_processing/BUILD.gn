@@ -57,7 +57,7 @@ rtc_source_set("api") {
     "../../rtc_base:macromagic",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base/system:rtc_export",
-    "//third_party/abseil-cpp/absl/memory:memory",
+    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -184,7 +184,7 @@ rtc_static_library("audio_processing") {
     "agc2:fixed_digital",
     "agc2:gain_applier",
     "vad",
-    "//third_party/abseil-cpp/absl/memory:memory",
+    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 

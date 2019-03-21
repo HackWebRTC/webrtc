@@ -127,7 +127,7 @@ rtc_static_library("rate_control_settings") {
     "../../api/transport:webrtc_key_value_config",
     "../../api/video_codecs:video_codecs_api",
     "../../system_wrappers:field_trial",
-    "//third_party/abseil-cpp/absl/memory:memory",
+    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }

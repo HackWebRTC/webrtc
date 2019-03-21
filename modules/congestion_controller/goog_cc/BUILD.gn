@@ -182,7 +182,7 @@ rtc_source_set("probe_controller") {
     "../../../rtc_base/experiments:field_trial_parser",
     "../../../rtc_base/system:unused",
     "../../../system_wrappers:metrics",
-    "//third_party/abseil-cpp/absl/memory:memory",
+    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }

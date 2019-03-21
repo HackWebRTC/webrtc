@@ -39,7 +39,7 @@ rtc_source_set("emulated_network") {
     "../../../rtc_base/task_utils:repeating_task",
     "../../../rtc_base/third_party/sigslot:sigslot",
     "../../../system_wrappers:system_wrappers",
-    "//third_party/abseil-cpp/absl/memory:memory",
+    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -56,7 +56,7 @@ rtc_source_set("network_emulation_unittest") {
     "../../../rtc_base:logging",
     "../../../rtc_base:rtc_event",
     "../../../test:test_support",
-    "//third_party/abseil-cpp/absl/memory:memory",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -87,7 +87,7 @@ rtc_source_set("network_emulation_pc_unittest") {
     "../../../rtc_base:rtc_base",
     "../../../rtc_base:rtc_event",
     "../../../test:test_support",
-    "//third_party/abseil-cpp/absl/memory:memory",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -103,7 +103,7 @@ rtc_source_set("cross_traffic_unittest") {
     "../../../rtc_base:logging",
     "../../../rtc_base:rtc_event",
     "../../../test:test_support",
-    "//third_party/abseil-cpp/absl/memory:memory",
+    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 

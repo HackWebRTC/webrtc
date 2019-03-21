@@ -65,7 +65,7 @@ rtc_source_set("peer_connection_quality_test_fixture_api") {
     "../../../../api/video_codecs:video_codecs_api",
     "../../../../logging:rtc_event_log_api",
     "../../../../rtc_base:rtc_base",
-    "//third_party/abseil-cpp/absl/memory:memory",
+    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -84,7 +84,7 @@ if (rtc_include_tests) {
       ":peer_connection_quality_test_fixture_api",
       ":video_quality_analyzer_api",
       "../:peerconnection_quality_test",
-      "//third_party/abseil-cpp/absl/memory:memory",
+      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 }

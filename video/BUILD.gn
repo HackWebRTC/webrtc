@@ -281,7 +281,7 @@ if (rtc_include_tests) {
       "../test:test_support_test_artifacts",
       "../test:video_test_common",
       "../test:video_test_support",
-      "//third_party/abseil-cpp/absl/memory:memory",
+      "//third_party/abseil-cpp/absl/memory",
     ]
 
     if (is_mac || is_ios) {
