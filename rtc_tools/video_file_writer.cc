@@ -20,17 +20,19 @@
 
 namespace webrtc {
 namespace test {
+namespace {
 
 void WriteVideoToFile(const rtc::scoped_refptr<Video>& video,
                       const std::string& file_name,
-                      int fps) {
+                      int fps,
+                      bool isY4m) {
+  RTC_CHECK(video);
   FILE* output_file = fopen(file_name.c_str(), "wb");
   if (output_file == nullptr) {
     RTC_LOG(LS_ERROR) << "Could not open file for writing: " << file_name;
     return;
   }
 
-  bool isY4m = absl::EndsWith(file_name, ".y4m");
   if (isY4m) {
     fprintf(output_file, "YUV4MPEG2 W%d H%d F%d:1 C420\n", video->width(),
             video->height(), fps);
@@ -41,6 +43,8 @@ void WriteVideoToFile(const rtc::scoped_refptr<Video>& video,
       fwrite(frame.c_str(), 1, 6, output_file);
     }
     rtc::scoped_refptr<I420BufferInterface> buffer = video->GetFrame(i);
+    RTC_CHECK(buffer) << "Frame: " << i
+                      << "\nWhile trying to create: " << file_name;
     const uint8_t* data_y = buffer->DataY();
     int stride = buffer->StrideY();
     for (int i = 0; i < video->height(); ++i) {
@@ -61,6 +65,27 @@ void WriteVideoToFile(const rtc::scoped_refptr<Video>& video,
     RTC_LOG(LS_ERROR) << "Error writing to file " << file_name;
   }
   fclose(output_file);
+}
+
+}  // Anonymous namespace
+
+void WriteVideoToFile(const rtc::scoped_refptr<Video>& video,
+                      const std::string& file_name,
+                      int fps) {
+  WriteVideoToFile(video, file_name, fps,
+                   /*isY4m=*/absl::EndsWith(file_name, ".y4m"));
+}
+
+void WriteY4mVideoToFile(const rtc::scoped_refptr<Video>& video,
+                         const std::string& file_name,
+                         int fps) {
+  WriteVideoToFile(video, file_name, fps, /*isY4m=*/true);
+}
+
+void WriteYuvVideoToFile(const rtc::scoped_refptr<Video>& video,
+                         const std::string& file_name,
+                         int fps) {
+  WriteVideoToFile(video, file_name, fps, /*isY4m=*/false);
 }
 
 }  // namespace test

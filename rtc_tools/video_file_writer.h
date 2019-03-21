@@ -23,6 +23,16 @@ void WriteVideoToFile(const rtc::scoped_refptr<Video>& video,
                       const std::string& file_name,
                       int fps);
 
+// Writes Y4M video to file.
+void WriteY4mVideoToFile(const rtc::scoped_refptr<Video>& video,
+                         const std::string& file_name,
+                         int fps);
+
+// Writes YUV video to file.
+void WriteYuvVideoToFile(const rtc::scoped_refptr<Video>& video,
+                         const std::string& file_name,
+                         int fps);
+
 }  // namespace test
 }  // namespace webrtc
 
