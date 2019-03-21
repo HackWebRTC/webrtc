@@ -40,9 +40,11 @@ void GetDefaultAudioParameters(JNIEnv* env,
   const JavaParamRef<jobject> j_context(application_context);
   const ScopedJavaLocalRef<jobject> j_audio_manager =
       jni::GetAudioManager(env, j_context);
-  const int sample_rate = jni::GetDefaultSampleRate(env, j_audio_manager);
-  jni::GetAudioParameters(env, j_context, j_audio_manager, sample_rate,
-                          false /* use_stereo_input */,
+  const int input_sample_rate = jni::GetDefaultSampleRate(env, j_audio_manager);
+  const int output_sample_rate =
+      jni::GetDefaultSampleRate(env, j_audio_manager);
+  jni::GetAudioParameters(env, j_context, j_audio_manager, input_sample_rate,
+                          output_sample_rate, false /* use_stereo_input */,
                           false /* use_stereo_output */, input_parameters,
                           output_parameters);
 }
