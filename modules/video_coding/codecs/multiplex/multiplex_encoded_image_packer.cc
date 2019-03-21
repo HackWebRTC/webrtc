@@ -263,11 +263,11 @@ MultiplexImage MultiplexEncodedImagePacker::Unpack(
     EncodedImage encoded_image = combined_image;
     encoded_image.SetTimestamp(combined_image.Timestamp());
     encoded_image._frameType = frame_headers[i].frame_type;
-    encoded_image.set_buffer(
-        combined_image.mutable_data() + frame_headers[i].bitstream_offset,
-        static_cast<size_t>(frame_headers[i].bitstream_length));
-
-    encoded_image.set_size(encoded_image.capacity());
+    encoded_image.Allocate(frame_headers[i].bitstream_length);
+    encoded_image.set_size(frame_headers[i].bitstream_length);
+    memcpy(encoded_image.data(),
+           combined_image.data() + frame_headers[i].bitstream_offset,
+           frame_headers[i].bitstream_length);
 
     image_component.encoded_image = encoded_image;
 
