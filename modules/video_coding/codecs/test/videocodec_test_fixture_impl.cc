@@ -475,6 +475,11 @@ void VideoCodecTestFixtureImpl::AnalyzeAllFrames(
             : config_.num_frames - 1;
     RTC_CHECK(last_frame_num >= first_frame_num);
 
+    VideoStatistics send_stat = stats_.SliceAndCalcAggregatedVideoStatistic(
+        first_frame_num, last_frame_num);
+    printf("==> Send stats\n");
+    printf("%s\n\n", send_stat.ToString("send_").c_str());
+
     std::vector<VideoStatistics> layer_stats =
         stats_.SliceAndCalcLayerVideoStatistic(first_frame_num, last_frame_num);
     printf("==> Receive stats\n");
@@ -484,36 +489,37 @@ void VideoCodecTestFixtureImpl::AnalyzeAllFrames(
       // For perf dashboard.
       char modifier_buf[256];
       rtc::SimpleStringBuilder modifier(modifier_buf);
-      modifier << "_sl" << layer_stat.spatial_idx << "tl"
-               << layer_stat.temporal_idx;
-      PrintResult("enc_speed", modifier.str(), config_.test_name,
-                  layer_stat.enc_speed_fps, "fps", /*important=*/false);
-      PrintResult("dec_speed", modifier.str(), config_.test_name,
-                  layer_stat.dec_speed_fps, "fps", /*important=*/false);
-      PrintResult("avg_key_frame_size", modifier.str(), config_.test_name,
-                  layer_stat.avg_key_frame_size_bytes, "bytes",
-                  /*important=*/false);
-      PrintResult("avg_delta_frame_size", modifier.str(), config_.test_name,
-                  layer_stat.avg_delta_frame_size_bytes, "bytes",
-                  /*important=*/false);
-      PrintResult("avg_qp", modifier.str(), config_.test_name,
-                  layer_stat.avg_qp, "", /*important=*/false);
-      PrintResult("avg_psnr_y", modifier.str(), config_.test_name,
-                  layer_stat.avg_psnr_y, "dB", /*important=*/false);
-      PrintResult("min_psnr", modifier.str(), config_.test_name,
-                  layer_stat.min_psnr, "dB", /*important=*/false);
-      PrintResult("num_dropped_frames", modifier.str(), config_.test_name,
-                  layer_stat.num_input_frames - layer_stat.num_encoded_frames,
-                  "frames", /*important=*/false);
-      PrintResult("num_key_frames", modifier.str(), config_.test_name,
-                  layer_stat.num_key_frames, "frames", /*important=*/false);
+      modifier << "_r" << rate_profile_idx << "_sl" << layer_stat.spatial_idx;
+
+      auto PrintResultHelper = [&modifier, this](const std::string& measurement,
+                                                 double value,
+                                                 const std::string& units) {
+        PrintResult(measurement, modifier.str(), config_.test_name, value,
+                    units, /*important=*/false);
+      };
+
+      if (layer_stat.temporal_idx == config_.NumberOfTemporalLayers() - 1) {
+        PrintResultHelper("enc_speed", layer_stat.enc_speed_fps, "fps");
+        PrintResultHelper("avg_key_frame_size",
+                          layer_stat.avg_key_frame_size_bytes, "bytes");
+        PrintResultHelper("num_key_frames", layer_stat.num_key_frames,
+                          "frames");
+        printf("\n");
+      }
+
+      modifier << "tl" << layer_stat.temporal_idx;
+      PrintResultHelper("dec_speed", layer_stat.dec_speed_fps, "fps");
+      PrintResultHelper("avg_delta_frame_size",
+                        layer_stat.avg_delta_frame_size_bytes, "bytes");
+      PrintResultHelper("bitrate", layer_stat.bitrate_kbps, "kbps");
+      PrintResultHelper("framerate", layer_stat.framerate_fps, "fps");
+      PrintResultHelper("avg_psnr_y", layer_stat.avg_psnr_y, "dB");
+      PrintResultHelper("avg_psnr_u", layer_stat.avg_psnr_u, "dB");
+      PrintResultHelper("avg_psnr_v", layer_stat.avg_psnr_v, "dB");
+      PrintResultHelper("min_psnr_yuv", layer_stat.min_psnr, "dB");
+      PrintResultHelper("avg_qp", layer_stat.avg_qp, "");
       printf("\n");
     }
-
-    VideoStatistics send_stat = stats_.SliceAndCalcAggregatedVideoStatistic(
-        first_frame_num, last_frame_num);
-    printf("==> Send stats\n");
-    printf("%s\n", send_stat.ToString("send_").c_str());
 
     const RateControlThresholds* rc_threshold =
         rc_thresholds ? &(*rc_thresholds)[rate_profile_idx] : nullptr;
