@@ -52,6 +52,16 @@ rtc_source_set("video_codecs_api") {
   ]
 }
 
+rtc_source_set("bitstream_parser_api") {
+  visibility = [ "*" ]
+  sources = [
+    "bitstream_parser.h",
+  ]
+  deps = [
+    "..:array_view",
+  ]
+}
+
 rtc_static_library("builtin_video_decoder_factory") {
   visibility = [ "*" ]
   allow_poison = [
