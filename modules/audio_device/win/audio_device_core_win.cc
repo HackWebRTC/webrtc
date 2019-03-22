@@ -92,7 +92,7 @@ enum { kAecCaptureStreamIndex = 0, kAecRenderStreamIndex = 1 };
 //
 // Example implementation:
 // http://msdn.microsoft.com/en-us/library/dd376684(v=vs.85).aspx
-class MediaBufferImpl : public IMediaBuffer {
+class MediaBufferImpl final : public IMediaBuffer {
  public:
   explicit MediaBufferImpl(DWORD maxLength)
       : _data(new BYTE[maxLength]),
