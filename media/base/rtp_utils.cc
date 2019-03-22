@@ -277,18 +277,22 @@ bool SetRtpHeader(void* data, size_t len, const RtpHeader& header) {
           SetRtpSsrc(data, len, header.ssrc));
 }
 
-static bool HasCorrectRtpVersion(rtc::ArrayView<const char> packet) {
-  return reinterpret_cast<const uint8_t*>(packet.data())[0] >> 6 == kRtpVersion;
+static bool HasCorrectRtpVersion(rtc::ArrayView<const uint8_t> packet) {
+  return packet.data()[0] >> 6 == kRtpVersion;
 }
 
 bool IsRtpPacket(rtc::ArrayView<const char> packet) {
-  return packet.size() >= kMinRtpPacketLen && HasCorrectRtpVersion(packet);
+  return packet.size() >= kMinRtpPacketLen &&
+         HasCorrectRtpVersion(
+             rtc::reinterpret_array_view<const uint8_t>(packet));
 }
 
 // Check the RTP payload type. If 63 < payload type < 96, it's RTCP.
 // For additional details, see http://tools.ietf.org/html/rfc5761.
 bool IsRtcpPacket(rtc::ArrayView<const char> packet) {
-  if (packet.size() < kMinRtcpPacketLen || !HasCorrectRtpVersion(packet)) {
+  if (packet.size() < kMinRtcpPacketLen ||
+      !HasCorrectRtpVersion(
+          rtc::reinterpret_array_view<const uint8_t>(packet))) {
     return false;
   }
 
@@ -301,8 +305,7 @@ bool IsValidRtpPayloadType(int payload_type) {
 }
 
 bool IsValidRtpPacketSize(RtpPacketType packet_type, size_t size) {
-  // TODO(webrtc:10418): uncomment when relands.
-  // RTC_DCHECK_NE(RtpPacketType::kUnknown, packet_type);
+  RTC_DCHECK_NE(RtpPacketType::kUnknown, packet_type);
   size_t min_packet_length = packet_type == RtpPacketType::kRtcp
                                  ? kMinRtcpPacketLen
                                  : kMinRtpPacketLen;
@@ -493,9 +496,8 @@ bool ApplyPacketOptions(uint8_t* data,
   }
 
   // Making sure we have a valid RTP packet at the end.
-  auto packet = rtc::MakeArrayView(
-      reinterpret_cast<const char*>(data + rtp_start_pos), rtp_length);
-  if (!IsRtpPacket(packet) ||
+  auto packet = rtc::MakeArrayView(data + rtp_start_pos, rtp_length);
+  if (!IsRtpPacket(rtc::reinterpret_array_view<const char>(packet)) ||
       !ValidateRtpHeader(data + rtp_start_pos, rtp_length, nullptr)) {
     RTC_NOTREACHED();
     return false;
