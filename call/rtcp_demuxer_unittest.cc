@@ -16,6 +16,7 @@
 #include "api/rtp_headers.h"
 #include "call/rtcp_packet_sink_interface.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/bye.h"
+#include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
@@ -494,7 +495,7 @@ TEST_F(RtcpDemuxerTest, RsidMustBeAlphaNumeric) {
 
 TEST_F(RtcpDemuxerTest, RsidMustNotExceedMaximumLength) {
   MockRtcpPacketSink sink;
-  std::string rsid(StreamId::kMaxSize + 1, 'a');
+  std::string rsid(BaseRtpStringExtension::kMaxValueSizeBytes + 1, 'a');
   EXPECT_DEATH(AddRsidSink(rsid, &sink), "");
 }
 

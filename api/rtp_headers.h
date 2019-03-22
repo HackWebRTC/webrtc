@@ -13,7 +13,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include <string.h>
+#include <string>
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
@@ -25,62 +25,6 @@
 #include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {
-
-// Class to represent the value of RTP header extensions that are
-// variable-length strings (e.g., RtpStreamId and RtpMid).
-// Unlike std::string, it can be copied with memcpy and cleared with memset.
-//
-// Empty value represents unset header extension (use empty() to query).
-class StringRtpHeaderExtension {
- public:
-  // String RTP header extensions are limited to 16 bytes because it is the
-  // maximum length that can be encoded with one-byte header extensions.
-  static constexpr size_t kMaxSize = 16;
-
-  static bool IsLegalMidName(rtc::ArrayView<const char> name);
-  static bool IsLegalRsidName(rtc::ArrayView<const char> name);
-
-  // TODO(bugs.webrtc.org/9537): Deprecate and remove when third parties have
-  // migrated to "IsLegalRsidName".
-  static bool IsLegalName(rtc::ArrayView<const char> name) {
-    return IsLegalRsidName(name);
-  }
-
-  StringRtpHeaderExtension() { value_[0] = 0; }
-  explicit StringRtpHeaderExtension(rtc::ArrayView<const char> value) {
-    Set(value.data(), value.size());
-  }
-  StringRtpHeaderExtension(const StringRtpHeaderExtension&) = default;
-  StringRtpHeaderExtension& operator=(const StringRtpHeaderExtension&) =
-      default;
-
-  bool empty() const { return value_[0] == 0; }
-  const char* data() const { return value_; }
-  size_t size() const { return strnlen(value_, kMaxSize); }
-
-  void Set(rtc::ArrayView<const uint8_t> value) {
-    Set(reinterpret_cast<const char*>(value.data()), value.size());
-  }
-  void Set(const char* data, size_t size);
-
-  friend bool operator==(const StringRtpHeaderExtension& lhs,
-                         const StringRtpHeaderExtension& rhs) {
-    return strncmp(lhs.value_, rhs.value_, kMaxSize) == 0;
-  }
-  friend bool operator!=(const StringRtpHeaderExtension& lhs,
-                         const StringRtpHeaderExtension& rhs) {
-    return !(lhs == rhs);
-  }
-
- private:
-  char value_[kMaxSize];
-};
-
-// StreamId represents RtpStreamId which is a string.
-typedef StringRtpHeaderExtension StreamId;
-
-// Mid represents RtpMid which is a string.
-typedef StringRtpHeaderExtension Mid;
 
 struct FeedbackRequest {
   // Determines whether the recv delta as specified in
@@ -134,12 +78,12 @@ struct RTPHeaderExtension {
   // For identification of a stream when ssrc is not signaled. See
   // https://tools.ietf.org/html/draft-ietf-avtext-rid-09
   // TODO(danilchap): Update url from draft to release version.
-  StreamId stream_id;
-  StreamId repaired_stream_id;
+  std::string stream_id;
+  std::string repaired_stream_id;
 
   // For identifying the media section used to interpret this RTP packet. See
   // https://tools.ietf.org/html/draft-ietf-mmusic-sdp-bundle-negotiation-38
-  Mid mid;
+  std::string mid;
 
   absl::optional<ColorSpace> color_space;
 };

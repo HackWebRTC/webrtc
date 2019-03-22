@@ -259,14 +259,6 @@ class BaseRtpStringExtension {
   // maximum length that can be encoded with one-byte header extensions.
   static constexpr uint8_t kMaxValueSizeBytes = 16;
 
-  static bool Parse(rtc::ArrayView<const uint8_t> data,
-                    StringRtpHeaderExtension* str);
-  static size_t ValueSize(const StringRtpHeaderExtension& str) {
-    return str.size();
-  }
-  static bool Write(rtc::ArrayView<uint8_t> data,
-                    const StringRtpHeaderExtension& str);
-
   static bool Parse(rtc::ArrayView<const uint8_t> data, std::string* str);
   static size_t ValueSize(const std::string& str) { return str.size(); }
   static bool Write(rtc::ArrayView<uint8_t> data, const std::string& str);

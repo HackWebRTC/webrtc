@@ -1497,13 +1497,13 @@ TEST_F(RtpDemuxerTest, MidMustBeToken) {
 
 TEST_F(RtpDemuxerTest, RsidMustNotExceedMaximumLength) {
   MockRtpPacketSink sink;
-  std::string rsid(StreamId::kMaxSize + 1, 'a');
+  std::string rsid(BaseRtpStringExtension::kMaxValueSizeBytes + 1, 'a');
   EXPECT_DEATH(AddSinkOnlyRsid(rsid, &sink), "");
 }
 
 TEST_F(RtpDemuxerTest, MidMustNotExceedMaximumLength) {
   MockRtpPacketSink sink;
-  std::string mid(Mid::kMaxSize + 1, 'a');
+  std::string mid(BaseRtpStringExtension::kMaxValueSizeBytes + 1, 'a');
   EXPECT_DEATH(AddSinkOnlyMid(mid, &sink), "");
 }
 

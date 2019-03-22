@@ -204,8 +204,8 @@ TEST(RtpHeaderParser, ParseAll8Extensions) {
             header.extension.playout_delay.min_ms);
   EXPECT_EQ(0x876 * PlayoutDelayLimits::kGranularityMs,
             header.extension.playout_delay.max_ms);
-  EXPECT_EQ(header.extension.stream_id, StreamId("rtx"));
-  EXPECT_EQ(header.extension.repaired_stream_id, StreamId("stream"));
+  EXPECT_EQ(header.extension.stream_id, "rtx");
+  EXPECT_EQ(header.extension.repaired_stream_id, "stream");
 }
 
 TEST(RtpHeaderParser, ParseMalformedRsidExtensions) {
@@ -230,7 +230,7 @@ TEST(RtpHeaderParser, ParseMalformedRsidExtensions) {
 
   EXPECT_TRUE(parser.Parse(&header, &extensions));
   EXPECT_TRUE(header.extension.stream_id.empty());
-  EXPECT_EQ(header.extension.repaired_stream_id, StreamId("str"));
+  EXPECT_TRUE(header.extension.repaired_stream_id.empty());
 }
 
 TEST(RtpHeaderParser, ParseWithCsrcsExtensionAndPadding) {
