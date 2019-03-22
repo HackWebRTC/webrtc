@@ -22,6 +22,8 @@ class YieldInterface {
 class ScopedYieldPolicy final {
  public:
   explicit ScopedYieldPolicy(YieldInterface* policy);
+  ScopedYieldPolicy(const ScopedYieldPolicy&) = delete;
+  ScopedYieldPolicy& operator=(const ScopedYieldPolicy&) = delete;
   ~ScopedYieldPolicy();
   // Will yield as specified by the currently active thread-local yield policy
   // (which by default is a no-op).

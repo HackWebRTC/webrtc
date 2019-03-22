@@ -160,6 +160,9 @@ class RTC_LOCKABLE Thread : public MessageQueue {
   class ScopedDisallowBlockingCalls {
    public:
     ScopedDisallowBlockingCalls();
+    ScopedDisallowBlockingCalls(const ScopedDisallowBlockingCalls&) = delete;
+    ScopedDisallowBlockingCalls& operator=(const ScopedDisallowBlockingCalls&) =
+        delete;
     ~ScopedDisallowBlockingCalls();
 
    private:

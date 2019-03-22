@@ -313,7 +313,7 @@ TEST_F(ProbeControllerTest, TestAllocatedBitrateCap) {
 }
 
 TEST_F(ProbeControllerTest, ConfigurableProbingFieldTrial) {
-  auto trials = test::ScopedFieldTrials(
+  test::ScopedFieldTrials trials(
       "WebRTC-Bwe-ConfigurableProbing/"
       "p1:2,p2:5,step_size:3,further_probe_threshold:0.8/");
   probe_controller_.reset(

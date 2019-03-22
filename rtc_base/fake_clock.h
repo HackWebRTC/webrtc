@@ -54,6 +54,8 @@ class FakeClock : public ClockInterface {
 class ScopedFakeClock : public FakeClock {
  public:
   ScopedFakeClock();
+  ScopedFakeClock(const ScopedFakeClock&) = delete;
+  ScopedFakeClock& operator=(const ScopedFakeClock&) = delete;
   ~ScopedFakeClock() override;
 
  private:
