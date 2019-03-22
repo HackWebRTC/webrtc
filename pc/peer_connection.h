@@ -1125,10 +1125,14 @@ class PeerConnection : public PeerConnectionInternal,
       RTC_GUARDED_BY(signaling_thread());
 
   // These lists store sender info seen in local/remote descriptions.
-  std::vector<RtpSenderInfo> remote_audio_sender_infos_;
-  std::vector<RtpSenderInfo> remote_video_sender_infos_;
-  std::vector<RtpSenderInfo> local_audio_sender_infos_;
-  std::vector<RtpSenderInfo> local_video_sender_infos_;
+  std::vector<RtpSenderInfo> remote_audio_sender_infos_
+      RTC_GUARDED_BY(signaling_thread());
+  std::vector<RtpSenderInfo> remote_video_sender_infos_
+      RTC_GUARDED_BY(signaling_thread());
+  std::vector<RtpSenderInfo> local_audio_sender_infos_
+      RTC_GUARDED_BY(signaling_thread());
+  std::vector<RtpSenderInfo> local_video_sender_infos_
+      RTC_GUARDED_BY(signaling_thread());
 
   SctpSidAllocator sid_allocator_;
   // label -> DataChannel
