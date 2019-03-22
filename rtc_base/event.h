@@ -49,18 +49,24 @@ class Event {
 #endif
 };
 
-// This class is provided for compatibility with Chromium.
+// These classes are provided for compatibility with Chromium.
 // The rtc::Event implementation is overriden inside of Chromium for the
 // purposes of detecting when threads are blocked that shouldn't be as well as
 // to use the more accurate event implementation that's there than is provided
 // by default on some platforms (e.g. Windows).
 // When building with standalone WebRTC, this class is a noop.
-// For further information, please see the ScopedAllowBaseSyncPrimitives class
-// in Chromium.
+// For further information, please see the
+// ScopedAllowBaseSyncPrimitives(ForTesting) classes in Chromium.
 class ScopedAllowBaseSyncPrimitives {
  public:
   ScopedAllowBaseSyncPrimitives() {}
   ~ScopedAllowBaseSyncPrimitives() {}
+};
+
+class ScopedAllowBaseSyncPrimitivesForTesting {
+ public:
+  ScopedAllowBaseSyncPrimitivesForTesting() {}
+  ~ScopedAllowBaseSyncPrimitivesForTesting() {}
 };
 
 }  // namespace rtc

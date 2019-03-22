@@ -204,8 +204,10 @@ TEST_P(TaskQueueTest, PostALot) {
     // So here we post a total of 0xffff+1 messages, which triggers a failure
     // case inside of the libevent queue implementation.
 
-    queue->PostTask(
-        ToQueuedTask([&event] { event.Wait(rtc::Event::kForever); }));
+    queue->PostTask(ToQueuedTask([&event] {
+      rtc::ScopedAllowBaseSyncPrimitivesForTesting allow_base_sync_primitives;
+      event.Wait(rtc::Event::kForever);
+    }));
     for (int i = 0; i < kTaskCount; ++i)
       queue->PostTask(
           ToQueuedTask([&tasks_executed] { ++tasks_executed; },
