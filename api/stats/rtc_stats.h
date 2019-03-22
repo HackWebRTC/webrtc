@@ -179,6 +179,19 @@ class RTC_EXPORT RTCStats {
     return local_var_members_vec;                                              \
   }
 
+// Non-standard stats members can be exposed to the JavaScript API in Chrome
+// e.g. through origin trials. The group ID can be used by the blink layer to
+// determine if a stats member should be exposed or not. Multiple non-standard
+// stats members can share the same group ID so that they are exposed together.
+enum class NonStandardGroupId {
+  // I2E:
+  // https://groups.google.com/a/chromium.org/forum/#!topic/blink-dev/hE2B1iItPDk
+  kRtcAudioJitterBufferMaxPackets,
+  // I2E:
+  // https://groups.google.com/a/chromium.org/forum/#!topic/blink-dev/YbhMyqLXXXo
+  kRtcStatsRelativePacketArrivalDelay,
+};
+
 // Interface for |RTCStats| members, which have a name and a value of a type
 // defined in a subclass. Only the types listed in |Type| are supported, these
 // are implemented by |RTCStatsMember<T>|. The value of a member may be
@@ -214,6 +227,9 @@ class RTCStatsMemberInterface {
   // Is this part of the stats spec? Used so that chromium can easily filter
   // out anything unstandardized.
   virtual bool is_standardized() const = 0;
+  // Non-standard stats members can have group IDs in order to be exposed in
+  // JavaScript through experiments. Standardized stats have no group IDs.
+  virtual std::vector<NonStandardGroupId> group_ids() const { return {}; }
   // Type and value comparator. The names are not compared. These operators are
   // exposed for testing.
   virtual bool operator==(const RTCStatsMemberInterface& other) const = 0;
@@ -319,19 +335,6 @@ class RTC_EXPORT RTCStatsMember : public RTCStatsMemberInterface {
   T value_;
 };
 
-// Non-standard stats members can be exposed to the JavaScript API in Chrome
-// e.g. through origin trials. The group ID can be used by the blink layer to
-// determine if a stats member should be exposed or not. Multiple non-standard
-// stats members can share the same group ID so that they are exposed together.
-enum class NonStandardGroupId {
-  // I2E:
-  // https://groups.google.com/a/chromium.org/forum/#!topic/blink-dev/hE2B1iItPDk
-  kRtcAudioJitterBufferMaxPackets,
-  // I2E:
-  // https://groups.google.com/a/chromium.org/forum/#!topic/blink-dev/YbhMyqLXXXo
-  kRtcStatsRelativePacketArrivalDelay,
-};
-
 // Using inheritance just so that it's obvious from the member's declaration
 // whether it's standardized or not.
 template <typename T>
@@ -354,7 +357,9 @@ class RTCNonStandardStatsMember : public RTCStatsMember<T> {
 
   bool is_standardized() const override { return false; }
 
-  std::vector<NonStandardGroupId> group_ids() const { return group_ids_; }
+  std::vector<NonStandardGroupId> group_ids() const override {
+    return group_ids_;
+  }
 
   T& operator=(const T& value) { return RTCStatsMember<T>::operator=(value); }
   T& operator=(const T&& value) {
