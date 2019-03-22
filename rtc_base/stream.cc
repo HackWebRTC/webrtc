@@ -50,24 +50,6 @@ StreamResult StreamInterface::WriteAll(const void* data,
   return result;
 }
 
-StreamResult StreamInterface::ReadAll(void* buffer,
-                                      size_t buffer_len,
-                                      size_t* read,
-                                      int* error) {
-  StreamResult result = SR_SUCCESS;
-  size_t total_read = 0, current_read;
-  while (total_read < buffer_len) {
-    result = Read(static_cast<char*>(buffer) + total_read,
-                  buffer_len - total_read, &current_read, error);
-    if (result != SR_SUCCESS)
-      break;
-    total_read += current_read;
-  }
-  if (read)
-    *read = total_read;
-  return result;
-}
-
 void StreamInterface::PostEvent(Thread* t, int events, int err) {
   t->Post(RTC_FROM_HERE, this, MSG_POST_EVENT,
           new StreamEventData(events, err));

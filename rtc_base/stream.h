@@ -126,13 +126,6 @@ class StreamInterface : public MessageHandler {
                         size_t* written,
                         int* error);
 
-  // Similar to ReadAll.  Calls Read until buffer_len bytes have been read, or
-  // until a non-SR_SUCCESS result is returned.  'read' is always set.
-  StreamResult ReadAll(void* buffer,
-                       size_t buffer_len,
-                       size_t* read,
-                       int* error);
-
  protected:
   StreamInterface();
 
