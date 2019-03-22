@@ -512,7 +512,8 @@ class PeerConnection : public PeerConnectionInternal,
       rtc::scoped_refptr<RtpReceiverInternal> receiver,
       const std::vector<std::string>& stream_ids,
       std::vector<rtc::scoped_refptr<MediaStreamInterface>>* added_streams,
-      std::vector<rtc::scoped_refptr<MediaStreamInterface>>* removed_streams);
+      std::vector<rtc::scoped_refptr<MediaStreamInterface>>* removed_streams)
+      RTC_RUN_ON(signaling_thread());
 
   // Runs the algorithm **process the removal of a remote track** specified in
   // the WebRTC specification.
@@ -526,12 +527,14 @@ class PeerConnection : public PeerConnectionInternal,
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>
           transceiver,
       std::vector<rtc::scoped_refptr<RtpTransceiverInterface>>* remove_list,
-      std::vector<rtc::scoped_refptr<MediaStreamInterface>>* removed_streams);
+      std::vector<rtc::scoped_refptr<MediaStreamInterface>>* removed_streams)
+      RTC_RUN_ON(signaling_thread());
 
   void RemoveRemoteStreamsIfEmpty(
       const std::vector<rtc::scoped_refptr<MediaStreamInterface>>&
           remote_streams,
-      std::vector<rtc::scoped_refptr<MediaStreamInterface>>* removed_streams);
+      std::vector<rtc::scoped_refptr<MediaStreamInterface>>* removed_streams)
+      RTC_RUN_ON(signaling_thread());
 
   void OnNegotiationNeeded();
 
@@ -1112,11 +1115,14 @@ class PeerConnection : public PeerConnectionInternal,
   const std::string rtcp_cname_;
 
   // Streams added via AddStream.
-  rtc::scoped_refptr<StreamCollection> local_streams_;
+  const rtc::scoped_refptr<StreamCollection> local_streams_
+      RTC_GUARDED_BY(signaling_thread());
   // Streams created as a result of SetRemoteDescription.
-  rtc::scoped_refptr<StreamCollection> remote_streams_;
+  const rtc::scoped_refptr<StreamCollection> remote_streams_
+      RTC_GUARDED_BY(signaling_thread());
 
-  std::vector<std::unique_ptr<MediaStreamObserver>> stream_observers_;
+  std::vector<std::unique_ptr<MediaStreamObserver>> stream_observers_
+      RTC_GUARDED_BY(signaling_thread());
 
   // These lists store sender info seen in local/remote descriptions.
   std::vector<RtpSenderInfo> remote_audio_sender_infos_;
