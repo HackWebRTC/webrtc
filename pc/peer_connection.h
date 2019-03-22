@@ -749,7 +749,10 @@ class PeerConnection : public PeerConnectionInternal,
   DataChannel* FindDataChannelBySid(int sid) const;
 
   // Called when first configuring the port allocator.
-  bool InitializePortAllocator_n(
+  struct InitializePortAllocatorResult {
+    bool enable_ipv6;
+  };
+  InitializePortAllocatorResult InitializePortAllocator_n(
       const cricket::ServerAddresses& stun_servers,
       const std::vector<cricket::RelayServerConfig>& turn_servers,
       const RTCConfiguration& configuration);
@@ -1095,14 +1098,18 @@ class PeerConnection : public PeerConnectionInternal,
 
   // TODO(zstein): |async_resolver_factory_| can currently be nullptr if it
   // is not injected. It should be required once chromium supplies it.
-  std::unique_ptr<AsyncResolverFactory> async_resolver_factory_;
-  std::unique_ptr<cricket::PortAllocator> port_allocator_;
-  std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier_;
-  int port_allocator_flags_ = 0;
+  std::unique_ptr<AsyncResolverFactory> async_resolver_factory_
+      RTC_GUARDED_BY(signaling_thread());
+  std::unique_ptr<cricket::PortAllocator>
+      port_allocator_;  // TODO(bugs.webrtc.org/9987): Accessed on both
+                        // signaling and network thread.
+  std::unique_ptr<rtc::SSLCertificateVerifier>
+      tls_cert_verifier_;  // TODO(bugs.webrtc.org/9987): Accessed on both
+                           // signaling and network thread.
 
   // One PeerConnection has only one RTCP CNAME.
   // https://tools.ietf.org/html/draft-ietf-rtcweb-rtp-usage-26#section-4.9
-  std::string rtcp_cname_;
+  const std::string rtcp_cname_;
 
   // Streams added via AddStream.
   rtc::scoped_refptr<StreamCollection> local_streams_;
