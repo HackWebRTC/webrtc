@@ -14,18 +14,6 @@
 #include <stddef.h>  // For size_t
 #include <cstdint>
 
-// TODO(bugs.webrtc.org/7660): Delete include once downstream code is updated.
-#include "api/video/video_codec_type.h"
-// TODO(bugs.webrtc.org/5876): For AudioFrameType. Delete when downstream code
-// is updated.
-#include "modules/audio_coding/include/audio_coding_module_typedefs.h"
-
-#if defined(_MSC_VER)
-// Disable "new behavior: elements of array will be default initialized"
-// warning. Affects OverUseDetectorOptions.
-#pragma warning(disable : 4351)
-#endif
-
 namespace webrtc {
 
 // Statistics for RTCP packet types.
