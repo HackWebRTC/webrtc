@@ -1359,6 +1359,7 @@ if (rtc_include_tests) {
       "callback_unittest.cc",
       "crc32_unittest.cc",
       "data_rate_limiter_unittest.cc",
+      "fake_clock_unittest.cc",
       "helpers_unittest.cc",
       "ip_address_unittest.cc",
       "memory_usage_unittest.cc",
