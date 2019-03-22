@@ -199,10 +199,6 @@ void RtpTransport::DemuxPacket(rtc::CopyOnWriteBuffer packet,
   rtp_demuxer_.OnRtpPacket(parsed_packet);
 }
 
-RtpTransportAdapter* RtpTransport::GetInternal() {
-  return nullptr;
-}
-
 bool RtpTransport::IsTransportWritable() {
   auto rtcp_packet_transport =
       rtcp_mux_enabled_ ? nullptr : rtcp_packet_transport_;

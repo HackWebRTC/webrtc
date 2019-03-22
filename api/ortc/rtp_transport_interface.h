@@ -21,8 +21,6 @@
 
 namespace webrtc {
 
-class RtpTransportAdapter;
-
 struct RtpTransportParameters final {
   RtcpParameters rtcp;
 
@@ -73,16 +71,11 @@ class RtpTransportInterface {
   virtual RtpTransportParameters GetParameters() const = 0;
 
  protected:
-  // Only for internal use. Returns a pointer to an internal interface, for use
-  // by the implementation.
-  virtual RtpTransportAdapter* GetInternal() = 0;
-
   // Classes that can use this internal interface.
   friend class OrtcFactory;
   friend class OrtcRtpSenderAdapter;
   friend class OrtcRtpReceiverAdapter;
   friend class RtpTransportControllerAdapter;
-  friend class RtpTransportAdapter;
 };
 
 }  // namespace webrtc

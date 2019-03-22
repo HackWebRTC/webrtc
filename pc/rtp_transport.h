@@ -83,9 +83,6 @@ class RtpTransport : public RtpTransportInternal {
   bool UnregisterRtpDemuxerSink(RtpPacketSinkInterface* sink) override;
 
  protected:
-  // TODO(zstein): Remove this when we remove RtpTransportAdapter.
-  RtpTransportAdapter* GetInternal() override;
-
   // These methods will be used in the subclasses.
   void DemuxPacket(rtc::CopyOnWriteBuffer packet, int64_t packet_time_us);
 
