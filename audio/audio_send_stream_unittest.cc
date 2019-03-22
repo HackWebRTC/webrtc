@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
-#include "api/task_queue/global_task_queue_factory.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/mock_frame_encryptor.h"
 #include "audio/audio_send_stream.h"
 #include "audio/audio_state.h"
@@ -28,7 +28,7 @@
 #include "modules/rtp_rtcp/mocks/mock_rtcp_bandwidth_observer.h"
 #include "modules/rtp_rtcp/mocks/mock_rtcp_rtt_stats.h"
 #include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
-#include "rtc_base/task_queue.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "system_wrappers/include/clock.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
@@ -128,10 +128,13 @@ rtc::scoped_refptr<MockAudioEncoderFactory> SetupEncoderFactoryMock() {
 struct ConfigHelper {
   ConfigHelper(bool audio_bwe_enabled, bool expect_set_encoder_call)
       : clock_(1000000),
+        task_queue_factory_(CreateDefaultTaskQueueFactory()),
         stream_config_(/*send_transport=*/nullptr, /*media_transport=*/nullptr),
         audio_processing_(new rtc::RefCountedObject<MockAudioProcessing>()),
         bitrate_allocator_(&clock_, &limit_observer_),
-        worker_queue_("ConfigHelper_worker_queue"),
+        worker_queue_(task_queue_factory_->CreateTaskQueue(
+            "ConfigHelper_worker_queue",
+            TaskQueueFactory::Priority::NORMAL)),
         audio_encoder_(nullptr) {
     using testing::Invoke;
 
@@ -167,7 +170,7 @@ struct ConfigHelper {
     return std::unique_ptr<internal::AudioSendStream>(
         new internal::AudioSendStream(
             Clock::GetRealTimeClock(), stream_config_, audio_state_,
-            &GlobalTaskQueueFactory(), &rtp_transport_, &bitrate_allocator_,
+            task_queue_factory_.get(), &rtp_transport_, &bitrate_allocator_,
             &event_log_, &rtcp_rtt_stats_, absl::nullopt,
             std::unique_ptr<voe::ChannelSendInterface>(channel_send_)));
   }
@@ -289,6 +292,7 @@ struct ConfigHelper {
 
  private:
   SimulatedClock clock_;
+  std::unique_ptr<TaskQueueFactory> task_queue_factory_;
   rtc::scoped_refptr<AudioState> audio_state_;
   AudioSendStream::Config stream_config_;
   testing::StrictMock<MockChannelSend>* channel_send_ = nullptr;
@@ -303,7 +307,7 @@ struct ConfigHelper {
   BitrateAllocator bitrate_allocator_;
   // |worker_queue| is defined last to ensure all pending tasks are cancelled
   // and deleted before any other members.
-  rtc::TaskQueue worker_queue_;
+  TaskQueueForTest worker_queue_;
   std::unique_ptr<AudioEncoder> audio_encoder_;
 };
 }  // namespace

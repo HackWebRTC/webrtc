@@ -16,6 +16,7 @@
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
 #include "common_audio/wav_file.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
@@ -150,7 +151,7 @@ class NoBandwidthDropAfterDtx : public AudioBweTest {
 
  private:
   Call* sender_call_;
-  rtc::TaskQueue stats_poller_;
+  TaskQueueForTest stats_poller_;
 };
 
 using AudioBweIntegrationTest = CallTest;

@@ -13,7 +13,7 @@
 #include "api/audio_codecs/audio_encoder_factory_template.h"
 #include "api/audio_codecs/opus/audio_decoder_opus.h"
 #include "api/audio_codecs/opus/audio_encoder_opus.h"
-#include "api/task_queue/global_task_queue_factory.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/loopback_media_transport.h"
 #include "api/test/mock_audio_mixer.h"
 #include "audio/audio_receive_stream.h"
@@ -25,7 +25,6 @@
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
 #include "modules/utility/include/process_thread.h"
-#include "rtc_base/task_queue.h"
 #include "rtc_base/time_utils.h"
 #include "test/gtest.h"
 #include "test/mock_transport.h"
@@ -123,13 +122,15 @@ TEST(AudioWithMediaTransport, DeliversAudio) {
   send_config.encoder_factory = CreateAudioEncoderFactory<AudioEncoderOpus>();
   std::unique_ptr<ProcessThread> send_process_thread =
       ProcessThread::Create("audio send thread");
+  std::unique_ptr<TaskQueueFactory> task_queue_factory =
+      CreateDefaultTaskQueueFactory();
   RtpTransportControllerSend rtp_transport(
       Clock::GetRealTimeClock(), null_event_log.get(), nullptr,
       BitrateConstraints(), ProcessThread::Create("Pacer"),
-      &GlobalTaskQueueFactory());
+      task_queue_factory.get());
   webrtc::internal::AudioSendStream send_stream(
       Clock::GetRealTimeClock(), send_config, audio_state,
-      &GlobalTaskQueueFactory(), send_process_thread.get(), &rtp_transport,
+      task_queue_factory.get(), send_process_thread.get(), &rtp_transport,
       &bitrate_allocator, null_event_log.get(),
       /*rtcp_rtt_stats=*/nullptr, absl::optional<RtpState>());
 
