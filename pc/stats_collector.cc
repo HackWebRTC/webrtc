@@ -737,6 +737,7 @@ StatsReport* StatsCollector::AddCandidateReport(
     report->AddString(StatsReport::kStatsValueNameCandidateTransportType,
                       candidate.protocol());
   }
+  report->set_timestamp(stats_gathering_started_);
 
   if (local && candidate_stats.stun_stats.has_value()) {
     const auto& stun_stats = candidate_stats.stun_stats.value();
