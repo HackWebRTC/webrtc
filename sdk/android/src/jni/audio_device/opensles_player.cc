@@ -44,7 +44,7 @@ namespace jni {
 
 OpenSLESPlayer::OpenSLESPlayer(
     const AudioParameters& audio_parameters,
-    std::unique_ptr<OpenSLEngineManager> engine_manager)
+    rtc::scoped_refptr<OpenSLEngineManager> engine_manager)
     : audio_parameters_(audio_parameters),
       audio_device_buffer_(nullptr),
       initialized_(false),

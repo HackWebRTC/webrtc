@@ -43,13 +43,14 @@ namespace webrtc {
 
 namespace jni {
 
-OpenSLESRecorder::OpenSLESRecorder(const AudioParameters& audio_parameters,
-                                   OpenSLEngineManager* engine_manager)
+OpenSLESRecorder::OpenSLESRecorder(
+    const AudioParameters& audio_parameters,
+    rtc::scoped_refptr<OpenSLEngineManager> engine_manager)
     : audio_parameters_(audio_parameters),
       audio_device_buffer_(nullptr),
       initialized_(false),
       recording_(false),
-      engine_manager_(engine_manager),
+      engine_manager_(std::move(engine_manager)),
       engine_(nullptr),
       recorder_(nullptr),
       simple_buffer_queue_(nullptr),
