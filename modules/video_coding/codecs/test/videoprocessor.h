@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <map>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "absl/memory/memory.h"
@@ -53,7 +54,10 @@ namespace test {
 class VideoProcessor {
  public:
   using VideoDecoderList = std::vector<std::unique_ptr<VideoDecoder>>;
-  using IvfFileWriterList = std::vector<std::unique_ptr<IvfFileWriter>>;
+  using LayerKey = std::pair<int /* spatial_idx */, int /* temporal_idx */>;
+  using IvfFileWriterMap = std::map<LayerKey, std::unique_ptr<IvfFileWriter>>;
+  // TODO(brandtr): Consider changing FrameWriterList to be a FrameWriterMap,
+  // to be able to save different TLs separately.
   using FrameWriterList = std::vector<std::unique_ptr<FrameWriter>>;
 
   VideoProcessor(webrtc::VideoEncoder* encoder,
@@ -61,7 +65,7 @@ class VideoProcessor {
                  FrameReader* input_frame_reader,
                  const VideoCodecTestFixture::Config& config,
                  VideoCodecTestStats* stats,
-                 IvfFileWriterList* encoded_frame_writers,
+                 IvfFileWriterMap* encoded_frame_writers,
                  FrameWriterList* decoded_frame_writers);
   ~VideoProcessor();
 
@@ -220,7 +224,7 @@ class VideoProcessor {
 
   // These (optional) file writers are used to persistently store the encoded
   // and decoded bitstreams. Each frame writer is enabled by being non-null.
-  IvfFileWriterList* const encoded_frame_writers_;
+  IvfFileWriterMap* const encoded_frame_writers_;
   FrameWriterList* const decoded_frame_writers_;
 
   // Metadata for inputed/encoded/decoded frames. Used for frame identification,

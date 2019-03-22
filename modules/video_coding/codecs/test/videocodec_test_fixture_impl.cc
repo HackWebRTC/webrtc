@@ -648,18 +648,26 @@ void VideoCodecTestFixtureImpl::SetUpAndInitObjects(
   RTC_DCHECK(decoded_frame_writers_.empty());
   const size_t num_simulcast_or_spatial_layers = std::max(
       config_.NumberOfSimulcastStreams(), config_.NumberOfSpatialLayers());
+  const size_t num_temporal_layers = config_.NumberOfTemporalLayers();
   for (size_t simulcast_svc_idx = 0;
        simulcast_svc_idx < num_simulcast_or_spatial_layers;
        ++simulcast_svc_idx) {
-    const std::string output_filename_base = OutputPath() +
-                                             FilenameWithParams(config_) + "_" +
-                                             std::to_string(simulcast_svc_idx);
+    const std::string output_filename_base =
+        OutputPath() + FilenameWithParams(config_) + "_sl" +
+        std::to_string(simulcast_svc_idx);
 
     if (config_.visualization_params.save_encoded_ivf) {
-      FileWrapper post_encode_file =
-          FileWrapper::OpenWriteOnly(output_filename_base + ".ivf");
-      encoded_frame_writers_.push_back(
-          IvfFileWriter::Wrap(std::move(post_encode_file), 0));
+      for (size_t temporal_idx = 0; temporal_idx < num_temporal_layers;
+           ++temporal_idx) {
+        const std::string output_file_path =
+            output_filename_base + "tl" + std::to_string(temporal_idx) + ".ivf";
+        FileWrapper ivf_file = FileWrapper::OpenWriteOnly(output_file_path);
+
+        const VideoProcessor::LayerKey layer_key(simulcast_svc_idx,
+                                                 temporal_idx);
+        encoded_frame_writers_[layer_key] =
+            IvfFileWriter::Wrap(std::move(ivf_file), /*byte_limit=*/0);
+      }
     }
 
     if (config_.visualization_params.save_decoded_y4m) {
@@ -680,8 +688,7 @@ void VideoCodecTestFixtureImpl::SetUpAndInitObjects(
     CreateEncoderAndDecoder();
     processor_ = absl::make_unique<VideoProcessor>(
         encoder_.get(), &decoders_, source_frame_reader_.get(), config_,
-        &stats_,
-        encoded_frame_writers_.empty() ? nullptr : &encoded_frame_writers_,
+        &stats_, &encoded_frame_writers_,
         decoded_frame_writers_.empty() ? nullptr : &decoded_frame_writers_);
   });
 }
@@ -698,7 +705,7 @@ void VideoCodecTestFixtureImpl::ReleaseAndCloseObjects(
 
   // Close visualization files.
   for (auto& encoded_frame_writer : encoded_frame_writers_) {
-    EXPECT_TRUE(encoded_frame_writer->Close());
+    EXPECT_TRUE(encoded_frame_writer.second->Close());
   }
   encoded_frame_writers_.clear();
   for (auto& decoded_frame_writer : decoded_frame_writers_) {

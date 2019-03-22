@@ -54,8 +54,7 @@ class VideoProcessorTest : public testing::Test {
     q_.SendTask([this] {
       video_processor_ = absl::make_unique<VideoProcessor>(
           &encoder_mock_, &decoders_, &frame_reader_mock_, config_, &stats_,
-          nullptr /* encoded_frame_writer */,
-          nullptr /* decoded_frame_writer */);
+          &encoded_frame_writers_, /*decoded_frame_writers=*/nullptr);
     });
   }
 
@@ -86,6 +85,7 @@ class VideoProcessorTest : public testing::Test {
   std::vector<std::unique_ptr<VideoDecoder>> decoders_;
   MockFrameReader frame_reader_mock_;
   VideoCodecTestStatsImpl stats_;
+  VideoProcessor::IvfFileWriterMap encoded_frame_writers_;
   std::unique_ptr<VideoProcessor> video_processor_;
 };
 

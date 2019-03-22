@@ -165,7 +165,7 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
                                FrameReader* input_frame_reader,
                                const VideoCodecTestFixture::Config& config,
                                VideoCodecTestStats* stats,
-                               IvfFileWriterList* encoded_frame_writers,
+                               IvfFileWriterMap* encoded_frame_writers,
                                FrameWriterList* decoded_frame_writers)
     : config_(config),
       num_simulcast_or_spatial_layers_(
@@ -194,13 +194,12 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
   // Sanity checks.
   RTC_CHECK(TaskQueueBase::Current())
       << "VideoProcessor must be run on a task queue.";
-  RTC_CHECK(encoder);
-  RTC_CHECK(decoders);
-  RTC_CHECK_EQ(decoders->size(), num_simulcast_or_spatial_layers_);
-  RTC_CHECK(input_frame_reader);
-  RTC_CHECK(stats);
-  RTC_CHECK(!encoded_frame_writers ||
-            encoded_frame_writers->size() == num_simulcast_or_spatial_layers_);
+  RTC_CHECK(stats_);
+  RTC_CHECK(encoder_);
+  RTC_CHECK(decoders_);
+  RTC_CHECK_EQ(decoders_->size(), num_simulcast_or_spatial_layers_);
+  RTC_CHECK(input_frame_reader_);
+  RTC_CHECK(encoded_frame_writers_);
   RTC_CHECK(!decoded_frame_writers ||
             decoded_frame_writers->size() == num_simulcast_or_spatial_layers_);
 
@@ -360,8 +359,8 @@ void VideoProcessor::FrameEncoded(
             last_encoded_frame_num_[spatial_idx] < frame_number);
 
   // Ensure SVC spatial layers are delivered in ascending order.
-  if (!first_encoded_frame_[spatial_idx] &&
-      config_.NumberOfSpatialLayers() > 1) {
+  const size_t num_spatial_layers = config_.NumberOfSpatialLayers();
+  if (!first_encoded_frame_[spatial_idx] && num_spatial_layers > 1) {
     for (size_t i = 0; i < spatial_idx; ++i) {
       RTC_CHECK_LE(last_encoded_frame_num_[i], frame_number);
     }
@@ -385,7 +384,6 @@ void VideoProcessor::FrameEncoded(
   frame_stat->max_nalu_size_bytes = GetMaxNaluSizeBytes(encoded_image, config_);
   frame_stat->qp = encoded_image.qp_;
 
-  const size_t num_spatial_layers = config_.NumberOfSpatialLayers();
   bool end_of_picture = false;
   if (codec_type == kVideoCodecVP9) {
     const CodecSpecificInfoVP9& vp9_info = codec_specific.codecSpecific.VP9;
@@ -399,7 +397,7 @@ void VideoProcessor::FrameEncoded(
   }
 
   const webrtc::EncodedImage* encoded_image_for_decode = &encoded_image;
-  if (config_.decode || encoded_frame_writers_) {
+  if (config_.decode || !encoded_frame_writers_->empty()) {
     if (num_spatial_layers > 1) {
       encoded_image_for_decode = BuildAndStoreSuperframe(
           encoded_image, codec_type, frame_number, spatial_idx,
@@ -436,10 +434,17 @@ void VideoProcessor::FrameEncoded(
     frame_stat->decode_return_code = WEBRTC_VIDEO_CODEC_NO_OUTPUT;
   }
 
-  if (encoded_frame_writers_) {
-    RTC_CHECK(encoded_frame_writers_->at(spatial_idx)
-                  ->WriteFrame(*encoded_image_for_decode,
-                               config_.codec_settings.codecType));
+  // Since frames in higher TLs typically depend on frames in lower TLs,
+  // write out frames in lower TLs to bitstream dumps of higher TLs.
+  for (size_t write_temporal_idx = temporal_idx;
+       write_temporal_idx < config_.NumberOfTemporalLayers();
+       ++write_temporal_idx) {
+    const VideoProcessor::LayerKey layer_key(spatial_idx, write_temporal_idx);
+    auto it = encoded_frame_writers_->find(layer_key);
+    if (it != encoded_frame_writers_->cend()) {
+      RTC_CHECK(it->second->WriteFrame(*encoded_image_for_decode,
+                                       config_.codec_settings.codecType));
+    }
   }
 
   if (!config_.encode_in_real_time) {

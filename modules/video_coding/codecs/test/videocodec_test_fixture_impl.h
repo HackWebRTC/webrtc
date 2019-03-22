@@ -95,7 +95,7 @@ class VideoCodecTestFixtureImpl : public VideoCodecTestFixture {
   Config config_;
   VideoCodecTestStatsImpl stats_;
   std::unique_ptr<FrameReader> source_frame_reader_;
-  VideoProcessor::IvfFileWriterList encoded_frame_writers_;
+  VideoProcessor::IvfFileWriterMap encoded_frame_writers_;
   VideoProcessor::FrameWriterList decoded_frame_writers_;
   std::unique_ptr<VideoProcessor> processor_;
   std::unique_ptr<CpuProcessTime> cpu_process_time_;
