@@ -81,7 +81,6 @@ class VCMReceiveCallback {
 // rate.
 class VCMReceiveStatisticsCallback {
  public:
-  virtual void OnReceiveRatesUpdated(uint32_t bitRate, uint32_t frameRate) = 0;
   virtual void OnCompleteFrame(bool is_keyframe,
                                size_t size_bytes,
                                VideoContentType content_type) = 0;

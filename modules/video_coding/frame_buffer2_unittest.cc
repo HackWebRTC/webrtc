@@ -95,8 +95,6 @@ class FrameObjectFake : public EncodedFrame {
 
 class VCMReceiveStatisticsCallbackMock : public VCMReceiveStatisticsCallback {
  public:
-  MOCK_METHOD2(OnReceiveRatesUpdated,
-               void(uint32_t bitRate, uint32_t frameRate));
   MOCK_METHOD3(OnCompleteFrame,
                void(bool is_keyframe,
                     size_t size_bytes,

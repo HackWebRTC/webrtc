@@ -79,9 +79,6 @@ void VideoReceiver::Process() {
   //                 ReceiveStatisticsProxy::QualitySample.
   if (_receiveStatsTimer.TimeUntilProcess() == 0) {
     _receiveStatsTimer.Processed();
-    if (_receiveStatsCallback != nullptr) {
-      _receiveStatsCallback->OnReceiveRatesUpdated(0, 0);
-    }
   }
 
   // Key frame requests

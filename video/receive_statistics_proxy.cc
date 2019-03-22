@@ -488,8 +488,6 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
 }
 
 void ReceiveStatisticsProxy::QualitySample() {
-  RTC_DCHECK_RUN_ON(&network_thread_);
-
   int64_t now = clock_->TimeInMilliseconds();
   if (last_sample_time_ + kMinSampleLengthMs > now)
     return;
@@ -606,13 +604,6 @@ void ReceiveStatisticsProxy::OnDecoderImplementationName(
     const char* implementation_name) {
   rtc::CritScope lock(&crit_);
   stats_.decoder_implementation_name = implementation_name;
-}
-void ReceiveStatisticsProxy::OnIncomingRate(unsigned int framerate,
-                                            unsigned int bitrate_bps) {
-  RTC_DCHECK_RUN_ON(&network_thread_);
-  rtc::CritScope lock(&crit_);
-  if (stats_.rtp_stats.first_packet_time_ms != -1)
-    QualitySample();
 }
 
 void ReceiveStatisticsProxy::OnFrameBufferTimingsUpdated(
@@ -808,6 +799,7 @@ void ReceiveStatisticsProxy::OnRenderedFrame(const VideoFrame& frame) {
       content_specific_stats->e2e_delay_counter.Add(delay_ms);
     }
   }
+  QualitySample();
 }
 
 void ReceiveStatisticsProxy::OnSyncOffsetUpdated(int64_t sync_offset_ms,
@@ -824,9 +816,6 @@ void ReceiveStatisticsProxy::OnSyncOffsetUpdated(int64_t sync_offset_ms,
 
   freq_offset_counter_.Add(offset_khz);
 }
-
-void ReceiveStatisticsProxy::OnReceiveRatesUpdated(uint32_t bitRate,
-                                                   uint32_t frameRate) {}
 
 void ReceiveStatisticsProxy::OnCompleteFrame(bool is_keyframe,
                                              size_t size_bytes,

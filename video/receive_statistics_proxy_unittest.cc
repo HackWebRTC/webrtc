@@ -565,16 +565,18 @@ TEST_F(ReceiveStatisticsProxyTest, BadCallHistogramsAreUpdated) {
   // then 10 certainly bad states. There has to be 10 certain states before
   // any histograms are recorded.
   const int kNumBadSamples = 17;
+  // We only count one sample per second.
+  const int kBadFameIntervalMs = 1100;
 
   StreamDataCounters counters;
   counters.first_packet_time_ms = fake_clock_.TimeInMilliseconds();
   statistics_proxy_->DataCountersUpdated(counters, config_.rtp.remote_ssrc);
 
+  webrtc::VideoFrame frame = CreateFrame(kWidth, kHeight);
+
   for (int i = 0; i < kNumBadSamples; ++i) {
-    // Since OnRenderedFrame is never called the fps in each sample will be 0,
-    // i.e. bad
-    fake_clock_.AdvanceTimeMilliseconds(1000);
-    statistics_proxy_->OnIncomingRate(0, 0);
+    fake_clock_.AdvanceTimeMilliseconds(kBadFameIntervalMs);
+    statistics_proxy_->OnRenderedFrame(frame);
   }
   // Histograms are updated when the statistics_proxy_ is deleted.
   statistics_proxy_.reset();

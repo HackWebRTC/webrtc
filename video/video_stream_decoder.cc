@@ -86,11 +86,6 @@ void VideoStreamDecoder::OnDecoderImplementationName(
   receive_stats_callback_->OnDecoderImplementationName(implementation_name);
 }
 
-void VideoStreamDecoder::OnReceiveRatesUpdated(uint32_t bit_rate,
-                                               uint32_t frame_rate) {
-  receive_stats_callback_->OnIncomingRate(frame_rate, bit_rate);
-}
-
 void VideoStreamDecoder::OnDiscardedPacketsUpdated(int discarded_packets) {
   receive_stats_callback_->OnDiscardedPacketsUpdated(discarded_packets);
 }

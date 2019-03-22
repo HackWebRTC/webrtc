@@ -53,7 +53,6 @@ class VideoStreamDecoder : public VCMReceiveCallback,
   void OnDecoderImplementationName(const char* implementation_name) override;
 
   // Implements VCMReceiveStatisticsCallback.
-  void OnReceiveRatesUpdated(uint32_t bit_rate, uint32_t frame_rate) override;
   void OnDiscardedPacketsUpdated(int discarded_packets) override;
   void OnFrameCountsUpdated(const FrameCounts& frame_counts) override;
   void OnCompleteFrame(bool is_keyframe,
