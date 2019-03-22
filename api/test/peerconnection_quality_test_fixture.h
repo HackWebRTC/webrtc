@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef TEST_PC_E2E_API_PEERCONNECTION_QUALITY_TEST_FIXTURE_H_
-#define TEST_PC_E2E_API_PEERCONNECTION_QUALITY_TEST_FIXTURE_H_
+#ifndef API_TEST_PEERCONNECTION_QUALITY_TEST_FIXTURE_H_
+#define API_TEST_PEERCONNECTION_QUALITY_TEST_FIXTURE_H_
 
 #include <memory>
 #include <string>
@@ -21,7 +21,9 @@
 #include "api/function_view.h"
 #include "api/media_transport_interface.h"
 #include "api/peer_connection_interface.h"
+#include "api/test/audio_quality_analyzer_interface.h"
 #include "api/test/simulated_network.h"
+#include "api/test/video_quality_analyzer_interface.h"
 #include "api/transport/network_control.h"
 #include "api/units/time_delta.h"
 #include "api/video_codecs/video_decoder_factory.h"
@@ -32,13 +34,11 @@
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/thread.h"
-#include "test/pc/e2e/api/audio_quality_analyzer_interface.h"
-#include "test/pc/e2e/api/video_quality_analyzer_interface.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
 
-// TODO(titovartem) move to API when it will be stabilized.
+// API is in development. Can be changed/removed without notice.
 class PeerConnectionE2EQualityTestFixture {
  public:
   // Contains screen share video stream properties.
@@ -211,4 +211,4 @@ class PeerConnectionE2EQualityTestFixture {
 }  // namespace webrtc_pc_e2e
 }  // namespace webrtc
 
-#endif  // TEST_PC_E2E_API_PEERCONNECTION_QUALITY_TEST_FIXTURE_H_
+#endif  // API_TEST_PEERCONNECTION_QUALITY_TEST_FIXTURE_H_

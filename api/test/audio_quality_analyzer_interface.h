@@ -8,14 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_PC_E2E_API_AUDIO_QUALITY_ANALYZER_INTERFACE_H_
-#define TEST_PC_E2E_API_AUDIO_QUALITY_ANALYZER_INTERFACE_H_
+#ifndef API_TEST_AUDIO_QUALITY_ANALYZER_INTERFACE_H_
+#define API_TEST_AUDIO_QUALITY_ANALYZER_INTERFACE_H_
 
-#include "test/pc/e2e/api/stats_observer_interface.h"
+#include <string>
+
+#include "api/test/stats_observer_interface.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
 
+// API is in development. Can be changed/removed without notice.
 class AudioQualityAnalyzerInterface : public StatsObserverInterface {
  public:
   ~AudioQualityAnalyzerInterface() override = default;
@@ -29,4 +32,4 @@ class AudioQualityAnalyzerInterface : public StatsObserverInterface {
 }  // namespace webrtc_pc_e2e
 }  // namespace webrtc
 
-#endif  // TEST_PC_E2E_API_AUDIO_QUALITY_ANALYZER_INTERFACE_H_
+#endif  // API_TEST_AUDIO_QUALITY_ANALYZER_INTERFACE_H_

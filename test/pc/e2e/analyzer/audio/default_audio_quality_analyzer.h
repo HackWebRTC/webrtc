@@ -13,7 +13,7 @@
 
 #include "absl/strings/string_view.h"
 #include "api/stats_types.h"
-#include "test/pc/e2e/api/audio_quality_analyzer_interface.h"
+#include "api/test/audio_quality_analyzer_interface.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {

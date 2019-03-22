@@ -16,6 +16,8 @@
 #include <string>
 
 #include "absl/strings/string_view.h"
+#include "api/test/stats_observer_interface.h"
+#include "api/test/video_quality_analyzer_interface.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video_codecs/video_decoder_factory.h"
@@ -23,8 +25,6 @@
 #include "test/frame_generator.h"
 #include "test/pc/e2e/analyzer/video/encoded_image_data_injector.h"
 #include "test/pc/e2e/analyzer/video/id_generator.h"
-#include "test/pc/e2e/api/stats_observer_interface.h"
-#include "test/pc/e2e/api/video_quality_analyzer_interface.h"
 #include "test/testsupport/video_frame_writer.h"
 
 namespace webrtc {

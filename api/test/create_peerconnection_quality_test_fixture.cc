@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "test/pc/e2e/api/create_peerconnection_quality_test_fixture.h"
+#include "api/test/create_peerconnection_quality_test_fixture.h"
 
 #include <utility>
 

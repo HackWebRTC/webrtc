@@ -17,7 +17,7 @@
 #include <vector>
 
 #include "api/peer_connection_interface.h"
-#include "test/pc/e2e/api/stats_observer_interface.h"
+#include "api/test/stats_observer_interface.h"
 #include "test/pc/e2e/test_peer.h"
 
 namespace webrtc {

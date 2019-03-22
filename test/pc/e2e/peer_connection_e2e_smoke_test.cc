@@ -13,13 +13,13 @@
 
 #include "absl/memory/memory.h"
 #include "api/test/create_network_emulation_manager.h"
+#include "api/test/create_peerconnection_quality_test_fixture.h"
 #include "api/test/network_emulation_manager.h"
+#include "api/test/peerconnection_quality_test_fixture.h"
 #include "call/simulated_network.h"
 #include "test/gtest.h"
 #include "test/pc/e2e/analyzer/audio/default_audio_quality_analyzer.h"
 #include "test/pc/e2e/analyzer/video/default_video_quality_analyzer.h"
-#include "test/pc/e2e/api/create_peerconnection_quality_test_fixture.h"
-#include "test/pc/e2e/api/peerconnection_quality_test_fixture.h"
 #include "test/testsupport/file_utils.h"
 
 namespace webrtc {

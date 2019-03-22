@@ -16,10 +16,10 @@
 #include <set>
 #include <string>
 
+#include "api/test/video_quality_analyzer_interface.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_frame.h"
 #include "rtc_base/critical_section.h"
-#include "test/pc/e2e/api/video_quality_analyzer_interface.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {

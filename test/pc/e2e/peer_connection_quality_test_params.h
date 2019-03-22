@@ -19,6 +19,7 @@
 #include "api/call/call_factory_interface.h"
 #include "api/fec_controller.h"
 #include "api/media_transport_interface.h"
+#include "api/test/peerconnection_quality_test_fixture.h"
 #include "api/transport/network_control.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
@@ -27,7 +28,6 @@
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/ssl_certificate.h"
 #include "rtc_base/thread.h"
-#include "test/pc/e2e/api/peerconnection_quality_test_fixture.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {

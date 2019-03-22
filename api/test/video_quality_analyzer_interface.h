@@ -8,21 +8,23 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_PC_E2E_API_VIDEO_QUALITY_ANALYZER_INTERFACE_H_
-#define TEST_PC_E2E_API_VIDEO_QUALITY_ANALYZER_INTERFACE_H_
+#ifndef API_TEST_VIDEO_QUALITY_ANALYZER_INTERFACE_H_
+#define API_TEST_VIDEO_QUALITY_ANALYZER_INTERFACE_H_
 
 #include <memory>
 #include <string>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "api/test/stats_observer_interface.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_encoder.h"
-#include "test/pc/e2e/api/stats_observer_interface.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
+
+// API is in development and can be changed without notice.
 
 // Base interface for video quality analyzer for peer connection level end-2-end
 // tests. Interface has only one abstract method, which have to return frame id.
@@ -110,4 +112,4 @@ class VideoQualityAnalyzerInterface : public StatsObserverInterface {
 }  // namespace webrtc_pc_e2e
 }  // namespace webrtc
 
-#endif  // TEST_PC_E2E_API_VIDEO_QUALITY_ANALYZER_INTERFACE_H_
+#endif  // API_TEST_VIDEO_QUALITY_ANALYZER_INTERFACE_H_

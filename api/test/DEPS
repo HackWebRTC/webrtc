@@ -18,4 +18,11 @@ specific_include_rules = {
     "+rtc_base/thread.h",
     "+rtc_base/network.h",
   ],
+  "peerconnection_quality_test_fixture\.h": [
+    "+logging/rtc_event_log/rtc_event_log_factory_interface.h",
+    "+rtc_base/network.h",
+    "+rtc_base/rtc_certificate_generator.h",
+    "+rtc_base/ssl_certificate.h",
+    "+rtc_base/thread.h",
+  ],
 }

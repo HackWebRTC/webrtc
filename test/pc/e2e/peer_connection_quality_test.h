@@ -16,6 +16,8 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/test/audio_quality_analyzer_interface.h"
+#include "api/test/peerconnection_quality_test_fixture.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "pc/test/frame_generator_capturer_video_track_source.h"
@@ -26,8 +28,6 @@
 #include "system_wrappers/include/clock.h"
 #include "test/pc/e2e/analyzer/video/single_process_encoded_image_data_injector.h"
 #include "test/pc/e2e/analyzer/video/video_quality_analyzer_injection_helper.h"
-#include "test/pc/e2e/api/audio_quality_analyzer_interface.h"
-#include "test/pc/e2e/api/peerconnection_quality_test_fixture.h"
 #include "test/pc/e2e/peer_connection_quality_test_params.h"
 #include "test/pc/e2e/test_peer.h"
 #include "test/testsupport/video_frame_writer.h"

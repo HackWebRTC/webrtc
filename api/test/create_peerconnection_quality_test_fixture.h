@@ -7,14 +7,15 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef TEST_PC_E2E_API_CREATE_PEERCONNECTION_QUALITY_TEST_FIXTURE_H_
-#define TEST_PC_E2E_API_CREATE_PEERCONNECTION_QUALITY_TEST_FIXTURE_H_
+#ifndef API_TEST_CREATE_PEERCONNECTION_QUALITY_TEST_FIXTURE_H_
+#define API_TEST_CREATE_PEERCONNECTION_QUALITY_TEST_FIXTURE_H_
 
 #include <memory>
+#include <string>
 
-#include "test/pc/e2e/api/audio_quality_analyzer_interface.h"
-#include "test/pc/e2e/api/peerconnection_quality_test_fixture.h"
-#include "test/pc/e2e/api/video_quality_analyzer_interface.h"
+#include "api/test/audio_quality_analyzer_interface.h"
+#include "api/test/peerconnection_quality_test_fixture.h"
+#include "api/test/video_quality_analyzer_interface.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
@@ -33,4 +34,4 @@ CreatePeerConnectionE2EQualityTestFixture(
 }  // namespace webrtc_pc_e2e
 }  // namespace webrtc
 
-#endif  // TEST_PC_E2E_API_CREATE_PEERCONNECTION_QUALITY_TEST_FIXTURE_H_
+#endif  // API_TEST_CREATE_PEERCONNECTION_QUALITY_TEST_FIXTURE_H_
