@@ -31,11 +31,6 @@ namespace vcm {
 class VideoReceiver;
 }  // namespace vcm
 
-enum StreamType {
-  kViEStreamTypeNormal = 0,  // Normal media stream
-  kViEStreamTypeRtx = 1      // Retransmission media stream
-};
-
 class VideoStreamDecoder : public VCMReceiveCallback,
                            public VCMReceiveStatisticsCallback {
  public:

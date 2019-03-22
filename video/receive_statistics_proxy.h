@@ -31,7 +31,6 @@
 #include "video/report_block_stats.h"
 #include "video/stats_counter.h"
 #include "video/video_quality_observer.h"
-#include "video/video_stream_decoder.h"
 
 namespace webrtc {
 
