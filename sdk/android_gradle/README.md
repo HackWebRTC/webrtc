@@ -9,9 +9,7 @@ Edit `gradle.properties`, set `compile_native_code=true` and other variables acc
 Note:
 
 + You need download and sync WebRTC repo by yourself, this project won't do that for you;
-+ Checkout the same WebRTC commit as this project does, which is #26131;
++ Checkout the same WebRTC commit as this project does, which is [#27225](https://webrtc.googlesource.com/src/+/94b57c044e81c6d1938f60aeabe7115a373f626d);
 + Use the same version of Android SDK and NDK as WebRTC does;
-+ (re)Create `protoc` after updating webrtc repo, build WebRTC with ninja would create it;
-+ Delete `webrtc_build_dir` after updating webrtc repo;
-
-To create the `protoc` program, you need build WebRTC Android via ninja once, let's assume the output dir is `out/android_ninja`, then the `protoc` will be `out/android_ninja/clang_x64/protoc`.
++ (re)Create `protoc` after updating WebRTC repo, to create the `protoc` program, you need build WebRTC Android via ninja once, let's assume the output dir is `out/android_ninja`, then the `protoc` will be `out/android_ninja/clang_x64/protoc`;
++ Delete `webrtc_build_dir` after updating WebRTC repo;

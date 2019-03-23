@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.4.1)
+cmake_minimum_required(VERSION 3.7)
 
 set(CWD ${CMAKE_CURRENT_LIST_DIR})
 
@@ -8,7 +8,7 @@ set(OTHER_PLATFORM_CC_FILTER ".*_chromeos.cc|.*_freebsd.cc|.*_fuchsia.cc|.*/fuch
 # add at first, avoid header search path, definition chaos
 add_subdirectory(third_party)
 
-add_definitions(-DWEBRTC_POSIX, -DWEBRTC_LINUX, -DWEBRTC_ANDROID)
+add_definitions(-DWEBRTC_POSIX=1, -DWEBRTC_LINUX=1, -DWEBRTC_ANDROID=1)
 add_definitions(-DWEBRTC_ENABLE_PROTOBUF=1)
 add_definitions(-DWEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)
 add_definitions(-DHAVE_PTHREAD -DHAVE_SCTP -DHAVE_WEBRTC_VIDEO -DHAVE_WEBRTC_VOICE)
@@ -65,7 +65,7 @@ file(GLOB_RECURSE src_api
 )
 list(FILTER src_api EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_api EXCLUDE REGEX
-    ".*echo_canceller3_config_json.cc|.*task_queue.cc"
+    ".*echo_canceller3_config_json.cc|.*default_task_queue_factory_gcd.cc|.*default_task_queue_factory_stdlib.cc|.*default_task_queue_factory_win.cc"
 )
 
 file(GLOB_RECURSE src_audio
@@ -119,7 +119,7 @@ file(GLOB_RECURSE src_modules
 list(FILTER src_modules EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_modules EXCLUDE REGEX ${OTHER_PLATFORM_CC_FILTER})
 list(FILTER src_modules EXCLUDE REGEX 
-    ".*/desktop_capture/.|.*/linux/.*|.*include/audio_device_factory.cc|.*bwe_simulations.cc|.*/audio_coding/neteq/tools/.*|.*/remote_bitrate_estimator/tools/.*|.*rnn_vad_tool.cc|.*null_aec_dump_factory.cc|.*h264_color_space.cc|.*vp9_noop.cc|.*h264_decoder_impl.cc|.*h264_encoder_impl.cc|.*/android/aaudio_.*|.*ensure_initialized.cc|.*fixed_gain_controller.cc"
+    ".*/desktop_capture/.|.*/linux/.*|.*include/audio_device_factory.cc|.*bwe_simulations.cc|.*/audio_coding/neteq/tools/.*|.*/remote_bitrate_estimator/tools/.*|.*rnn_vad_tool.cc|.*null_aec_dump_factory.cc|.*h264_color_space.cc|.*vp9_noop.cc|.*h264_decoder_impl.cc|.*h264_encoder_impl.cc|.*/android/aaudio_.*|.*ensure_initialized.cc|.*fixed_gain_controller.cc|.*pffft_wrapper.cc|.*click_annotate.cc"
 )
 
 file(GLOB_RECURSE src_ortc
@@ -151,6 +151,7 @@ list(FILTER src_rtc_base EXCLUDE REGEX
 
 file(GLOB_RECURSE src_sdk
     ${WEBRTC_REPO}/sdk/android/*.cc
+    ${WEBRTC_REPO}/sdk/media_constraints.cc
 )
 list(FILTER src_sdk EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_sdk EXCLUDE REGEX 
@@ -173,7 +174,7 @@ file(GLOB_RECURSE src_video
 )
 list(FILTER src_video EXCLUDE REGEX ${TEST_CC_FILTER})
 list(FILTER src_video EXCLUDE REGEX 
-    ".*_loopback.cc|.*replay.cc|.*video_analyzer.cc"
+    ".*_loopback.cc|.*replay.cc|.*video_analyzer.cc|.*video_loopback_main.cc"
 )
 
 add_library(jingle_peerconnection_so SHARED

@@ -35,5 +35,5 @@ ext {
     androidSupportSdkVersion = '28.0.0'
 
     releaseVersionCode = 1
-    releaseVersionName = '1.0'
+    releaseVersionName = '1.0.27225'
 }
