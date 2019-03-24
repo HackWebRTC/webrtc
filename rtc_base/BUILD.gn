@@ -247,22 +247,24 @@ rtc_source_set("platform_thread") {
 }
 
 rtc_source_set("rtc_event") {
-  deps = [
-    ":checks",
-  ]
-
   if (build_with_chromium) {
-    # Dependency on chromium's waitable_event (in //base).
-    deps += [ "//base" ]
     sources = [
       "../../webrtc_overrides/rtc_base/event.cc",
       "../../webrtc_overrides/rtc_base/event.h",
     ]
+    deps = [
+      ":checks",
+      "//base",  # Dependency on chromium's waitable_event.
+    ]
   } else {
-    deps += [ "synchronization:yield_policy" ]
     sources = [
       "event.cc",
       "event.h",
+    ]
+    deps = [
+      ":checks",
+      "synchronization:yield_policy",
+      "system:warn_current_thread_is_deadlocked",
     ]
   }
 }

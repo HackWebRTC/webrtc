@@ -200,6 +200,22 @@ void TestStacktrace(std::unique_ptr<DeadlockInterface> deadlock_impl) {
   thread.Stop();
 }
 
+class LookoutLogSink final : public rtc::LogSink {
+ public:
+  explicit LookoutLogSink(std::string look_for)
+      : look_for_(std::move(look_for)) {}
+  void OnLogMessage(const std::string& message) override {
+    if (message.find(look_for_) != std::string::npos) {
+      when_found_.Set();
+    }
+  }
+  rtc::Event& WhenFound() { return when_found_; }
+
+ private:
+  const std::string look_for_;
+  rtc::Event when_found_;
+};
+
 }  // namespace
 
 TEST(Stacktrace, TestCurrentThread) {
@@ -223,6 +239,7 @@ TEST(Stacktrace, TestSleep) {
 // Stack traces originating from kernel space does not include user space stack
 // traces for ARM 32.
 #ifdef WEBRTC_ARCH_ARM64
+
 TEST(Stacktrace, TestRtcEvent) {
   TestStacktrace(absl::make_unique<RtcEventDeadlock>());
 }
@@ -230,7 +247,33 @@ TEST(Stacktrace, TestRtcEvent) {
 TEST(Stacktrace, TestRtcCriticalSection) {
   TestStacktrace(absl::make_unique<RtcCriticalSectionDeadlock>());
 }
+
 #endif
+
+TEST(Stacktrace, TestRtcEventDeadlockDetection) {
+  // Start looking for the expected log output.
+  LookoutLogSink sink(/*look_for=*/"Probable deadlock");
+  rtc::LogMessage::AddLogToStream(&sink, rtc::LS_WARNING);
+
+  // Start a thread that waits for an event.
+  rtc::Event ev;
+  rtc::PlatformThread thread(
+      [](void* arg) {
+        auto* ev = static_cast<rtc::Event*>(arg);
+        ev->Wait(rtc::Event::kForever);
+      },
+      &ev, "TestRtcEventDeadlockDetection");
+  thread.Start();
+
+  // The message should appear after 3 sec. We'll wait up to 10 sec in an
+  // attempt to not be flaky.
+  EXPECT_TRUE(sink.WhenFound().Wait(10000));
+
+  // Unblock the thread and shut it down.
+  ev.Set();
+  thread.Stop();
+  rtc::LogMessage::RemoveLogToStream(&sink);
+}
 
 }  // namespace test
 }  // namespace webrtc
