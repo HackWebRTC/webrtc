@@ -48,6 +48,12 @@ RtpTransceiverInit JavaToNativeRtpTransceiverInit(
       Java_RtpTransceiverInit_getStreamIds(jni, j_init);
   init.stream_ids = JavaListToNativeVector<std::string, jstring>(
       jni, j_stream_ids, &JavaToNativeString);
+
+  // Convert the send encodings.
+  ScopedJavaLocalRef<jobject> j_send_encodings =
+      Java_RtpTransceiverInit_getSendEncodings(jni, j_init);
+  init.send_encodings = JavaListToNativeVector<RtpEncodingParameters, jobject>(
+      jni, j_send_encodings, &JavaToNativeRtpEncodingParameters);
   return init;
 }
 
