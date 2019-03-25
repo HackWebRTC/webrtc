@@ -1299,9 +1299,11 @@ if (rtc_include_tests) {
       ":checks",
       ":rtc_base_approved",
       ":rtc_base_tests_main",
-      ":rtc_task_queue",
       ":sequenced_task_checker",
+      ":task_queue_for_test",
+      "../api:function_view",
       "../test:test_support",
+      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 
