@@ -230,7 +230,7 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
 
   _nextFrameInfoIdx = (_nextFrameInfoIdx + 1) % kDecoderFrameMemoryLength;
   int32_t ret = decoder_->Decode(frame.EncodedImage(), frame.MissingFrame(),
-                                 frame.CodecSpecific(), frame.RenderTimeMs());
+                                 frame.RenderTimeMs());
 
   _callback->OnDecoderImplementationName(decoder_->ImplementationName());
   if (ret < WEBRTC_VIDEO_CODEC_OK) {

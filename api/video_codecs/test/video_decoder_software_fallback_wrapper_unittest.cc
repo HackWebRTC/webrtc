@@ -48,7 +48,6 @@ class VideoDecoderSoftwareFallbackWrapperTest : public ::testing::Test {
 
     int32_t Decode(const EncodedImage& input_image,
                    bool missing_frames,
-                   const CodecSpecificInfo* codec_specific_info,
                    int64_t render_time_ms) override {
       ++decode_count_;
       return decode_return_code_;
@@ -88,7 +87,7 @@ TEST_F(VideoDecoderSoftwareFallbackWrapperTest, InitializesDecoder) {
 
   EncodedImage encoded_image;
   encoded_image._frameType = VideoFrameType::kVideoFrameKey;
-  fallback_wrapper_->Decode(encoded_image, false, nullptr, -1);
+  fallback_wrapper_->Decode(encoded_image, false, -1);
   EXPECT_EQ(1, fake_decoder_->init_decode_count_)
       << "Initialized decoder should not be reinitialized.";
   EXPECT_EQ(1, fake_decoder_->decode_count_);
@@ -103,7 +102,7 @@ TEST_F(VideoDecoderSoftwareFallbackWrapperTest,
 
   EncodedImage encoded_image;
   encoded_image._frameType = VideoFrameType::kVideoFrameKey;
-  fallback_wrapper_->Decode(encoded_image, false, nullptr, -1);
+  fallback_wrapper_->Decode(encoded_image, false, -1);
   EXPECT_EQ(1, fake_decoder_->init_decode_count_)
       << "Should not have attempted reinitializing the fallback decoder on "
          "keyframe.";
@@ -119,12 +118,12 @@ TEST_F(VideoDecoderSoftwareFallbackWrapperTest, IsSoftwareFallbackSticky) {
 
   fake_decoder_->decode_return_code_ = WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
   EncodedImage encoded_image;
-  fallback_wrapper_->Decode(encoded_image, false, nullptr, -1);
+  fallback_wrapper_->Decode(encoded_image, false, -1);
   EXPECT_EQ(1, fake_decoder_->decode_count_);
 
   // Software fallback should be sticky, fake_decoder_ shouldn't be used.
   encoded_image._frameType = VideoFrameType::kVideoFrameKey;
-  fallback_wrapper_->Decode(encoded_image, false, nullptr, -1);
+  fallback_wrapper_->Decode(encoded_image, false, -1);
   EXPECT_EQ(1, fake_decoder_->decode_count_)
       << "Decoder shouldn't be used after failure.";
 
@@ -138,10 +137,10 @@ TEST_F(VideoDecoderSoftwareFallbackWrapperTest, DoesNotFallbackOnEveryError) {
   fake_decoder_->decode_return_code_ = WEBRTC_VIDEO_CODEC_ERROR;
   EncodedImage encoded_image;
   EXPECT_EQ(fake_decoder_->decode_return_code_,
-            fallback_wrapper_->Decode(encoded_image, false, nullptr, -1));
+            fallback_wrapper_->Decode(encoded_image, false, -1));
   EXPECT_EQ(1, fake_decoder_->decode_count_);
 
-  fallback_wrapper_->Decode(encoded_image, false, nullptr, -1);
+  fallback_wrapper_->Decode(encoded_image, false, -1);
   EXPECT_EQ(2, fake_decoder_->decode_count_)
       << "Decoder should be active even though previous decode failed.";
 }
@@ -152,14 +151,14 @@ TEST_F(VideoDecoderSoftwareFallbackWrapperTest, UsesHwDecoderAfterReinit) {
 
   fake_decoder_->decode_return_code_ = WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
   EncodedImage encoded_image;
-  fallback_wrapper_->Decode(encoded_image, false, nullptr, -1);
+  fallback_wrapper_->Decode(encoded_image, false, -1);
   EXPECT_EQ(1, fake_decoder_->decode_count_);
 
   fallback_wrapper_->Release();
   fallback_wrapper_->InitDecode(&codec, 2);
 
   fake_decoder_->decode_return_code_ = WEBRTC_VIDEO_CODEC_OK;
-  fallback_wrapper_->Decode(encoded_image, false, nullptr, -1);
+  fallback_wrapper_->Decode(encoded_image, false, -1);
   EXPECT_EQ(2, fake_decoder_->decode_count_)
       << "Should not be using fallback after reinit.";
 }
@@ -173,7 +172,7 @@ TEST_F(VideoDecoderSoftwareFallbackWrapperTest, ForwardsReleaseCall) {
   fallback_wrapper_->InitDecode(&codec, 2);
   fake_decoder_->decode_return_code_ = WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
   EncodedImage encoded_image;
-  fallback_wrapper_->Decode(encoded_image, false, nullptr, -1);
+  fallback_wrapper_->Decode(encoded_image, false, -1);
   EXPECT_EQ(2, fake_decoder_->release_count_)
       << "Decoder should be released during fallback.";
   fallback_wrapper_->Release();
@@ -211,7 +210,7 @@ TEST_F(VideoDecoderSoftwareFallbackWrapperTest,
 
   fake_decoder_->decode_return_code_ = WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
   EncodedImage encoded_image;
-  fallback_wrapper_->Decode(encoded_image, false, nullptr, -1);
+  fallback_wrapper_->Decode(encoded_image, false, -1);
   // Hard coded expected value since libvpx is the software implementation name
   // for VP8. Change accordingly if the underlying implementation does.
   EXPECT_STREQ("libvpx (fallback from: fake-decoder)",
@@ -242,7 +241,7 @@ TEST_F(ForcedSoftwareDecoderFallbackTest, UsesForcedFallback) {
 
   EncodedImage encoded_image;
   encoded_image._frameType = VideoFrameType::kVideoFrameKey;
-  fallback_wrapper_->Decode(encoded_image, false, nullptr, -1);
+  fallback_wrapper_->Decode(encoded_image, false, -1);
   EXPECT_EQ(1, sw_fallback_decoder_->init_decode_count_);
   EXPECT_EQ(1, sw_fallback_decoder_->decode_count_);
 

@@ -26,17 +26,16 @@ FrameDumpingDecoder::~FrameDumpingDecoder() = default;
 
 int32_t FrameDumpingDecoder::InitDecode(const VideoCodec* codec_settings,
                                         int32_t number_of_cores) {
+  codec_type_ = codec_settings->codecType;
   return decoder_->InitDecode(codec_settings, number_of_cores);
 }
 
 int32_t FrameDumpingDecoder::Decode(
     const EncodedImage& input_image,
     bool missing_frames,
-    const CodecSpecificInfo* codec_specific_info,
     int64_t render_time_ms) {
-  int32_t ret = decoder_->Decode(input_image, missing_frames,
-                                 codec_specific_info, render_time_ms);
-  writer_->WriteFrame(input_image, codec_specific_info->codecType);
+  int32_t ret = decoder_->Decode(input_image, missing_frames, render_time_ms);
+  writer_->WriteFrame(input_image, codec_type_);
 
   return ret;
 }
