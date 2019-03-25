@@ -1436,7 +1436,13 @@ class TestVp9ImplProfile2 : public TestVp9Impl {
   }
 };
 
-TEST_F(TestVp9ImplProfile2, EncodeDecode) {
+#if defined(OS_IOS)
+// TODO(webrtc:10473): Libvpx VP9 encoder crashes on iOS simulator.
+#define MAYBE_EncodeDecode DISABLED_EncodeDecode
+#else
+#define MAYBE_EncodeDecode EncodeDecode
+#endif
+TEST_F(TestVp9ImplProfile2, MAYBE_EncodeDecode) {
   if (!encoder_)
     return;
 
