@@ -94,6 +94,7 @@ rtc_source_set("alr_detector") {
     "../../../logging:rtc_event_pacing",
     "../../../rtc_base:checks",
     "../../../rtc_base:safe_conversions",
+    "../../../rtc_base:timeutils",
     "../../../rtc_base/experiments:alr_experiment",
     "../../pacing:interval_budget",
     "//third_party/abseil-cpp/absl/memory",
