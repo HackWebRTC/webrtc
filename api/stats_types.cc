@@ -12,6 +12,7 @@
 
 #include <string.h>
 
+#include "absl/algorithm/container.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ref_counted_object.h"
 
@@ -817,8 +818,8 @@ StatsReport* StatsCollection::FindOrAddNew(const StatsReport::Id& id) {
 StatsReport* StatsCollection::ReplaceOrAddNew(const StatsReport::Id& id) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
   RTC_DCHECK(id.get());
-  Container::iterator it = std::find_if(
-      list_.begin(), list_.end(),
+  Container::iterator it = absl::c_find_if(
+      list_,
       [&id](const StatsReport* r) -> bool { return r->id()->Equals(id); });
   if (it != end()) {
     StatsReport* report = new StatsReport((*it)->id());
@@ -833,8 +834,8 @@ StatsReport* StatsCollection::ReplaceOrAddNew(const StatsReport::Id& id) {
 // will be returned.
 StatsReport* StatsCollection::Find(const StatsReport::Id& id) {
   RTC_DCHECK(thread_checker_.CalledOnValidThread());
-  Container::iterator it = std::find_if(
-      list_.begin(), list_.end(),
+  Container::iterator it = absl::c_find_if(
+      list_,
       [&id](const StatsReport* r) -> bool { return r->id()->Equals(id); });
   return it == list_.end() ? nullptr : *it;
 }

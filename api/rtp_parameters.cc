@@ -221,10 +221,10 @@ std::vector<RtpExtension> RtpExtension::FilterDuplicateNonEncrypted(
 
     // Only add non-encrypted extension if no encrypted with the same URI
     // is also present...
-    if (std::find_if(extension + 1, extensions.end(),
-                     [extension](const RtpExtension& check) {
-                       return extension->uri == check.uri;
-                     }) != extensions.end()) {
+    if (std::any_of(extension + 1, extensions.end(),
+                    [&](const RtpExtension& check) {
+                      return extension->uri == check.uri;
+                    })) {
       continue;
     }
 

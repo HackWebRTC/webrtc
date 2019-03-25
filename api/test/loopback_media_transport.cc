@@ -10,6 +10,7 @@
 
 #include "api/test/loopback_media_transport.h"
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "rtc_base/time_utils.h"
 
@@ -242,9 +243,8 @@ void MediaTransportPair::LoopbackMediaTransport::AddTargetTransferRateObserver(
   RTC_CHECK(observer);
   {
     rtc::CritScope cs(&sink_lock_);
-    RTC_CHECK(std::find(target_transfer_rate_observers_.begin(),
-                        target_transfer_rate_observers_.end(),
-                        observer) == target_transfer_rate_observers_.end());
+    RTC_CHECK(
+        !absl::c_linear_search(target_transfer_rate_observers_, observer));
     target_transfer_rate_observers_.push_back(observer);
   }
   invoker_.AsyncInvoke<void>(RTC_FROM_HERE, thread_, [this] {
@@ -271,8 +271,7 @@ void MediaTransportPair::LoopbackMediaTransport::AddTargetTransferRateObserver(
 void MediaTransportPair::LoopbackMediaTransport::
     RemoveTargetTransferRateObserver(TargetTransferRateObserver* observer) {
   rtc::CritScope cs(&sink_lock_);
-  auto it = std::find(target_transfer_rate_observers_.begin(),
-                      target_transfer_rate_observers_.end(), observer);
+  auto it = absl::c_find(target_transfer_rate_observers_, observer);
   if (it == target_transfer_rate_observers_.end()) {
     RTC_LOG(LS_WARNING)
         << "Attempt to remove an unknown TargetTransferRate observer";
@@ -286,8 +285,7 @@ void MediaTransportPair::LoopbackMediaTransport::AddRttObserver(
   RTC_CHECK(observer);
   {
     rtc::CritScope cs(&sink_lock_);
-    RTC_CHECK(std::find(rtt_observers_.begin(), rtt_observers_.end(),
-                        observer) == rtt_observers_.end());
+    RTC_CHECK(!absl::c_linear_search(rtt_observers_, observer));
     rtt_observers_.push_back(observer);
   }
   invoker_.AsyncInvoke<void>(RTC_FROM_HERE, thread_, [this] {
@@ -303,7 +301,7 @@ void MediaTransportPair::LoopbackMediaTransport::AddRttObserver(
 void MediaTransportPair::LoopbackMediaTransport::RemoveRttObserver(
     MediaTransportRttObserver* observer) {
   rtc::CritScope cs(&sink_lock_);
-  auto it = std::find(rtt_observers_.begin(), rtt_observers_.end(), observer);
+  auto it = absl::c_find(rtt_observers_, observer);
   if (it == rtt_observers_.end()) {
     RTC_LOG(LS_WARNING) << "Attempt to remove an unknown RTT observer";
     return;

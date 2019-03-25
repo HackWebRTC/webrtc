@@ -12,6 +12,7 @@
 
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -20,8 +21,8 @@ Vp8TemporalLayers::Vp8TemporalLayers(
     std::vector<std::unique_ptr<Vp8FrameBufferController>>&& controllers)
     : controllers_(std::move(controllers)) {
   RTC_DCHECK(!controllers_.empty());
-  RTC_DCHECK(std::none_of(
-      controllers_.begin(), controllers_.end(),
+  RTC_DCHECK(absl::c_none_of(
+      controllers_,
       [](const std::unique_ptr<Vp8FrameBufferController>& controller) {
         return controller.get() == nullptr;
       }));

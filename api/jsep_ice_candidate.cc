@@ -10,8 +10,9 @@
 
 #include "api/jsep_ice_candidate.h"
 
-#include <algorithm>
 #include <utility>
+
+#include "absl/algorithm/container.h"
 
 namespace webrtc {
 
@@ -71,10 +72,9 @@ bool JsepCandidateCollection::HasCandidate(
 }
 
 size_t JsepCandidateCollection::remove(const cricket::Candidate& candidate) {
-  auto iter = std::find_if(candidates_.begin(), candidates_.end(),
-                           [candidate](JsepIceCandidate* c) {
-                             return candidate.MatchesForRemoval(c->candidate());
-                           });
+  auto iter = absl::c_find_if(candidates_, [&](JsepIceCandidate* c) {
+    return candidate.MatchesForRemoval(c->candidate());
+  });
   if (iter != candidates_.end()) {
     delete *iter;
     candidates_.erase(iter);
