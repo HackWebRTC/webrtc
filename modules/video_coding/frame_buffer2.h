@@ -140,6 +140,10 @@ class FrameBuffer {
 
   void ClearFramesAndHistory() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
+  // Checks if the superframe, which current frame belongs to, is complete.
+  bool IsCompleteSuperFrame(const EncodedFrame& frame)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
   bool HasBadRenderTiming(const EncodedFrame& frame, int64_t now_ms)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 

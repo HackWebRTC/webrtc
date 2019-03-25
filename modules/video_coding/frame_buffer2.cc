@@ -344,15 +344,58 @@ bool FrameBuffer::ValidReferences(const EncodedFrame& frame) const {
   return true;
 }
 
+bool FrameBuffer::IsCompleteSuperFrame(const EncodedFrame& frame) {
+  if (frame.inter_layer_predicted) {
+    // Check that all previous spatial layers are already inserted.
+    VideoLayerFrameId id = frame.id;
+    RTC_DCHECK_GT(id.spatial_layer, 0);
+    --id.spatial_layer;
+    FrameMap::iterator prev_frame = frames_.find(id);
+    if (prev_frame == frames_.end())
+      return false;
+    while (prev_frame->second.frame->inter_layer_predicted) {
+      --prev_frame;
+      --id.spatial_layer;
+      if (prev_frame == frames_.end() ||
+          prev_frame->first.picture_id != id.picture_id ||
+          prev_frame->first.spatial_layer != id.spatial_layer) {
+        return false;
+      }
+    }
+  }
+
+  if (!frame.is_last_spatial_layer) {
+    // Check that all following spatial layers are already inserted.
+    VideoLayerFrameId id = frame.id;
+    ++id.spatial_layer;
+    FrameMap::iterator next_frame = frames_.find(id);
+    if (next_frame == frames_.end())
+      return false;
+    while (!next_frame->second.frame->is_last_spatial_layer) {
+      ++next_frame;
+      ++id.spatial_layer;
+      if (next_frame == frames_.end() ||
+          next_frame->first.picture_id != id.picture_id ||
+          next_frame->first.spatial_layer != id.spatial_layer) {
+        return false;
+      }
+    }
+  }
+
+  return true;
+}
+
 int64_t FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
   TRACE_EVENT0("webrtc", "FrameBuffer::InsertFrame");
   RTC_DCHECK(frame);
-  if (stats_callback_)
-    stats_callback_->OnCompleteFrame(frame->is_keyframe(), frame->size(),
-                                     frame->contentType());
-  const VideoLayerFrameId& id = frame->id;
 
   rtc::CritScope lock(&crit_);
+
+  if (stats_callback_ && IsCompleteSuperFrame(*frame)) {
+    stats_callback_->OnCompleteFrame(frame->is_keyframe(), frame->size(),
+                                     frame->contentType());
+  }
+  const VideoLayerFrameId& id = frame->id;
 
   int64_t last_continuous_picture_id =
       !last_continuous_frame_ ? -1 : last_continuous_frame_->picture_id;
