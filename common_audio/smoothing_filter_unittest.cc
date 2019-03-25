@@ -122,7 +122,8 @@ TEST(SmoothingFilterTest, InitTimeEqualsOne) {
   constexpr int kInitTimeMs = 1;
   SmoothingFilterStates states(kInitTimeMs);
   CheckOutput(&states, 1.0f, 1, 1.0f);
-  CheckOutput(&states, 0.5f, 1, 1.0f * exp(-1.0f) + (1.0f - exp(-1.0f)) * 0.5f);
+  CheckOutput(&states, 0.5f, 1,
+              1.0f * std::exp(-1.0f) + (1.0f - std::exp(-1.0f)) * 0.5f);
 }
 
 TEST(SmoothingFilterTest, GetAverageOutputsEmptyBeforeFirstSample) {
@@ -144,17 +145,19 @@ TEST(SmoothingFilterTest, CannotChangeTimeConstantDuringInitialization) {
   states.smoothing_filter.AddSample(0.0);
 
   EXPECT_FALSE(states.smoothing_filter.SetTimeConstantMs(kInitTimeMs * 2));
-  EXPECT_NE(exp(-1.0f / (kInitTimeMs * 2)), states.smoothing_filter.alpha());
+  EXPECT_NE(std::exp(-1.0f / (kInitTimeMs * 2)),
+            states.smoothing_filter.alpha());
 
   states.fake_clock.AdvanceTime(TimeDelta::ms(1));
   states.smoothing_filter.AddSample(0.0);
   // When initialization finishes, the time constant should be come
   // |kInitTimeConstantMs|.
-  EXPECT_FLOAT_EQ(exp(-1.0f / kInitTimeMs), states.smoothing_filter.alpha());
+  EXPECT_FLOAT_EQ(std::exp(-1.0f / kInitTimeMs),
+                  states.smoothing_filter.alpha());
 
   // After initialization, |SetTimeConstantMs| takes effect.
   EXPECT_TRUE(states.smoothing_filter.SetTimeConstantMs(kInitTimeMs * 2));
-  EXPECT_FLOAT_EQ(exp(-1.0f / (kInitTimeMs * 2)),
+  EXPECT_FLOAT_EQ(std::exp(-1.0f / (kInitTimeMs * 2)),
                   states.smoothing_filter.alpha());
 }
 
