@@ -368,8 +368,8 @@ void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
   }
 }
 
-int32_t RtpVideoStreamReceiver::RequestKeyFrame() {
-  return rtp_rtcp_->RequestKeyFrame();
+void RtpVideoStreamReceiver::RequestKeyFrame() {
+  rtp_rtcp_->RequestKeyFrame();
 }
 
 void RtpVideoStreamReceiver::SendLossNotification(

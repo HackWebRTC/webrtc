@@ -54,7 +54,6 @@ VideoReceiver::VideoReceiver(Clock* clock,
                 keyframe_request_sender),
       _decodedFrameCallback(_timing, clock_),
       _frameTypeCallback(nullptr),
-      _receiveStatsCallback(nullptr),
       _packetRequestCallback(nullptr),
       _scheduleKeyRequest(false),
       drop_frames_until_keyframe_(false),
@@ -197,9 +196,8 @@ int32_t VideoReceiver::RegisterReceiveStatisticsCallback(
   // |_receiver| is used on both the decoder and module threads.
   // However, since we make sure that we never do anything on the module thread
   // when the decoder thread is not running, we don't need a lock for the
-  // |_receiver| or |_receiveStatsCallback| here.
+  // |_receiver| here.
   _receiver.RegisterStatsCallback(receiveStats);
-  _receiveStatsCallback = receiveStats;
   return VCM_OK;
 }
 

@@ -31,12 +31,10 @@ namespace vcm {
 class VideoReceiver;
 }  // namespace vcm
 
-class VideoStreamDecoder : public VCMReceiveCallback,
-                           public VCMReceiveStatisticsCallback {
+class VideoStreamDecoder : public VCMReceiveCallback {
  public:
   VideoStreamDecoder(
       vcm::VideoReceiver* video_receiver,
-      VCMFrameTypeCallback* vcm_frame_type_callback,
       VCMPacketRequestCallback* vcm_packet_request_callback,
       bool enable_nack,
       bool enable_fec,
@@ -51,22 +49,6 @@ class VideoStreamDecoder : public VCMReceiveCallback,
   int32_t ReceivedDecodedReferenceFrame(const uint64_t picture_id) override;
   void OnIncomingPayloadType(int payload_type) override;
   void OnDecoderImplementationName(const char* implementation_name) override;
-
-  // Implements VCMReceiveStatisticsCallback.
-  void OnDiscardedPacketsUpdated(int discarded_packets) override;
-  void OnFrameCountsUpdated(const FrameCounts& frame_counts) override;
-  void OnCompleteFrame(bool is_keyframe,
-                       size_t size_bytes,
-                       VideoContentType content_type) override;
-  void OnFrameBufferTimingsUpdated(int decode_ms,
-                                   int max_decode_ms,
-                                   int current_delay_ms,
-                                   int target_delay_ms,
-                                   int jitter_buffer_ms,
-                                   int min_playout_delay_ms,
-                                   int render_delay_ms) override;
-
-  void OnTimingFrameInfoUpdated(const TimingFrameInfo& info) override;
 
   void RegisterReceiveStatisticsProxy(
       ReceiveStatisticsProxy* receive_statistics_proxy);

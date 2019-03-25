@@ -132,7 +132,6 @@ class VideoReceiver : public Module {
   // These callbacks are set on the construction thread before being attached
   // to the module thread or decoding started, so a lock is not required.
   VCMFrameTypeCallback* _frameTypeCallback;
-  VCMReceiveStatisticsCallback* _receiveStatsCallback;
   VCMPacketRequestCallback* _packetRequestCallback;
 
   // Used on both the module and decoder thread.

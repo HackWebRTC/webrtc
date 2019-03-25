@@ -377,7 +377,6 @@ void VideoReceiveStream::Start() {
   RTC_DCHECK(renderer != nullptr);
   video_stream_decoder_.reset(new VideoStreamDecoder(
       &video_receiver_, &rtp_video_stream_receiver_,
-      &rtp_video_stream_receiver_,
       rtp_video_stream_receiver_.IsRetransmissionsEnabled(), protected_by_fec,
       &stats_proxy_, renderer));
 
