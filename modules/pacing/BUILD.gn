@@ -42,6 +42,7 @@ rtc_static_library("pacing") {
     "../../rtc_base/experiments:field_trial_parser",
     "../../system_wrappers",
     "../../system_wrappers:field_trial",
+    "../../system_wrappers:metrics",
     "../congestion_controller/goog_cc:alr_detector",
     "../remote_bitrate_estimator",
     "../rtp_rtcp",

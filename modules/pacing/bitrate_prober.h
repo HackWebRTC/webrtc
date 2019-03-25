@@ -98,6 +98,9 @@ class BitrateProber {
 
   // Time the next probe should be sent when in kActive state.
   int64_t next_probe_time_ms_;
+
+  int total_probe_count_;
+  int total_failed_probe_count_;
 };
 
 }  // namespace webrtc
