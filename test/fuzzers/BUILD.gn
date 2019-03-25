@@ -559,15 +559,6 @@ webrtc_fuzzer_test("frame_buffer2_fuzzer") {
   ]
 }
 
-webrtc_fuzzer_test("url_decode_fuzzer") {
-  sources = [
-    "url_decode_fuzzer.cc",
-  ]
-  deps = [
-    "../../rtc_base:rtc_base_approved",
-  ]
-}
-
 webrtc_fuzzer_test("field_trial_fuzzer") {
   sources = [
     "field_trial_fuzzer.cc",

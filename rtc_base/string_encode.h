@@ -26,12 +26,6 @@ namespace rtc {
 // String Encoding Utilities
 //////////////////////////////////////////////////////////////////////
 
-// Note: in-place decoding (buffer == source) is allowed.
-size_t url_decode(char* buffer,
-                  size_t buflen,
-                  const char* source,
-                  size_t srclen);
-
 // Convert an unsigned value from 0 to 15 to the hex character equivalent...
 char hex_encode(unsigned char val);
 // ...and vice-versa.
@@ -81,26 +75,6 @@ size_t hex_decode_with_delimiter(char* buffer,
                                  size_t buflen,
                                  const std::string& source,
                                  char delimiter);
-
-// Apply any suitable string transform (including the ones above) to an STL
-// string.  Stack-allocated temporary space is used for the transformation,
-// so value and source may refer to the same string.
-typedef size_t (*Transform)(char* buffer,
-                            size_t buflen,
-                            const char* source,
-                            size_t srclen);
-size_t transform(std::string& value,
-                 size_t maxlen,
-                 const std::string& source,
-                 Transform t);
-
-// Return the result of applying transform t to source.
-std::string s_transform(const std::string& source, Transform t);
-
-// Convenience wrappers.
-inline std::string s_url_decode(const std::string& source) {
-  return s_transform(source, url_decode);
-}
 
 // Joins the source vector of strings into a single string, with each
 // field in source being separated by delimiter. No trailing delimiter is added.
