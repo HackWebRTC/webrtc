@@ -136,7 +136,14 @@ bool UpdateVpxConfiguration(size_t stream_index,
 }  // namespace
 
 std::unique_ptr<VideoEncoder> VP8Encoder::Create() {
-  return absl::make_unique<LibvpxVp8Encoder>();
+  return VP8Encoder::Create(nullptr);
+}
+
+std::unique_ptr<VideoEncoder> VP8Encoder::Create(
+    std::unique_ptr<Vp8FrameBufferControllerFactory>
+        frame_buffer_controller_factory) {
+  return absl::make_unique<LibvpxVp8Encoder>(
+      std::move(frame_buffer_controller_factory));
 }
 
 vpx_enc_frame_flags_t LibvpxVp8Encoder::EncodeFlags(
@@ -169,9 +176,21 @@ vpx_enc_frame_flags_t LibvpxVp8Encoder::EncodeFlags(
 }
 
 LibvpxVp8Encoder::LibvpxVp8Encoder()
-    : LibvpxVp8Encoder(LibvpxInterface::CreateEncoder()) {}
+    : LibvpxVp8Encoder(nullptr, LibvpxInterface::CreateEncoder()) {}
+
+LibvpxVp8Encoder::LibvpxVp8Encoder(
+    std::unique_ptr<Vp8FrameBufferControllerFactory>
+        frame_buffer_controller_factory)
+    : LibvpxVp8Encoder(std::move(frame_buffer_controller_factory),
+                       LibvpxInterface::CreateEncoder()) {}
 
 LibvpxVp8Encoder::LibvpxVp8Encoder(std::unique_ptr<LibvpxInterface> interface)
+    : LibvpxVp8Encoder(nullptr, std::move(interface)) {}
+
+LibvpxVp8Encoder::LibvpxVp8Encoder(
+    std::unique_ptr<Vp8FrameBufferControllerFactory>
+        frame_buffer_controller_factory,
+    std::unique_ptr<LibvpxInterface> interface)
     : libvpx_(std::move(interface)),
       experimental_cpu_speed_config_arm_(CpuSpeedExperiment::GetConfigs()),
       rate_control_settings_(RateControlSettings::ParseFromFieldTrials()),
@@ -182,6 +201,8 @@ LibvpxVp8Encoder::LibvpxVp8Encoder(std::unique_ptr<LibvpxInterface> interface)
       cpu_speed_default_(-6),
       number_of_cores_(0),
       rc_max_intra_target_(0),
+      frame_buffer_controller_factory_(
+          std::move(frame_buffer_controller_factory)),
       key_frame_request_(kMaxSimulcastStreams, false),
       variable_framerate_experiment_(ParseVariableFramerateConfig(
           "WebRTC-VP8VariableFramerateScreenshare")),
@@ -351,9 +372,12 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   }
 
   RTC_DCHECK(!frame_buffer_controller_);
-  // TODO(bugs.webrtc.org/10382): Inject the factory.
-  Vp8TemporalLayersFactory factory;
-  frame_buffer_controller_ = factory.Create(*inst);
+  if (frame_buffer_controller_factory_) {
+    frame_buffer_controller_ = frame_buffer_controller_factory_->Create(*inst);
+  } else {
+    Vp8TemporalLayersFactory factory;
+    frame_buffer_controller_ = factory.Create(*inst);
+  }
 
   number_of_cores_ = number_of_cores;
   timestamp_ = 0;

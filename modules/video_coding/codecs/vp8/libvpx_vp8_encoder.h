@@ -36,7 +36,12 @@ namespace webrtc {
 class LibvpxVp8Encoder : public VideoEncoder {
  public:
   LibvpxVp8Encoder();
+  explicit LibvpxVp8Encoder(std::unique_ptr<Vp8FrameBufferControllerFactory>
+                                frame_buffer_controller_factory);
   explicit LibvpxVp8Encoder(std::unique_ptr<LibvpxInterface> interface);
+  LibvpxVp8Encoder(std::unique_ptr<Vp8FrameBufferControllerFactory>
+                       frame_buffer_controller_factory,
+                   std::unique_ptr<LibvpxInterface> interface);
   ~LibvpxVp8Encoder() override;
 
   int Release() override;
@@ -102,6 +107,8 @@ class LibvpxVp8Encoder : public VideoEncoder {
   int cpu_speed_default_;
   int number_of_cores_;
   uint32_t rc_max_intra_target_;
+  const std::unique_ptr<Vp8FrameBufferControllerFactory>
+      frame_buffer_controller_factory_;
   std::unique_ptr<Vp8FrameBufferController> frame_buffer_controller_;
   std::vector<bool> key_frame_request_;
   std::vector<bool> send_stream_;
