@@ -613,6 +613,19 @@ TEST_F(SctpDataChannelTest, TransportDestroyedWhileDataBuffered) {
                  webrtc_data_channel_->state(), kDefaultTimeout);
 }
 
+// Verifies that if the allocator is exhausted before connecting, the
+// datachannel does not cause a crash, but remains unconnected.
+TEST_F(SctpDataChannelTest, NoCrashAfterTransportBecomesAvailable) {
+  // This is the same as SetChannelReady, but without setting the id.
+  provider_->set_transport_available(true);
+  webrtc_data_channel_->OnTransportChannelCreated();
+  provider_->set_ready_to_send(true);
+  // The datachannel's ID is not set, and it remains in "connecting" state.
+  EXPECT_EQ(-1, webrtc_data_channel_->id());
+  EXPECT_EQ(webrtc::DataChannelInterface::kConnecting,
+            webrtc_data_channel_->state());
+}
+
 class SctpSidAllocatorTest : public testing::Test {
  protected:
   SctpSidAllocator allocator_;

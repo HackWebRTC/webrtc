@@ -414,7 +414,10 @@ void DataChannel::OnChannelReady(bool writable) {
   if (!writable) {
     return;
   }
-
+  // If the datachannel has not been assigned an ID, ignore update.
+  if (id() < 0) {
+    return;
+  }
   SendQueuedControlMessages();
   SendQueuedDataMessages();
   UpdateState();
