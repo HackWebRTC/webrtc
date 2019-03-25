@@ -13,6 +13,7 @@
 #include <stddef.h>
 #include <algorithm>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/socket_factory.h"
@@ -35,12 +36,7 @@ ProxyServer::ProxyServer(SocketFactory* int_factory,
   server_socket_->SignalReadEvent.connect(this, &ProxyServer::OnAcceptEvent);
 }
 
-ProxyServer::~ProxyServer() {
-  for (BindingList::iterator it = bindings_.begin(); it != bindings_.end();
-       ++it) {
-    delete (*it);
-  }
-}
+ProxyServer::~ProxyServer() = default;
 
 SocketAddress ProxyServer::GetServerAddress() {
   return server_socket_->GetLocalAddress();
@@ -55,18 +51,12 @@ void ProxyServer::OnAcceptEvent(AsyncSocket* socket) {
       ext_factory_->CreateAsyncSocket(ext_ip_.family(), SOCK_STREAM);
   if (ext_socket) {
     ext_socket->Bind(ext_ip_);
-    bindings_.push_back(new ProxyBinding(wrapped_socket, ext_socket));
+    bindings_.emplace_back(
+        absl::make_unique<ProxyBinding>(wrapped_socket, ext_socket));
   } else {
     RTC_LOG(LS_ERROR)
         << "Unable to create external socket on proxy accept event";
   }
-}
-
-void ProxyServer::OnBindingDestroyed(ProxyBinding* binding) {
-  BindingList::iterator it =
-      std::find(bindings_.begin(), bindings_.end(), binding);
-  delete (*it);
-  bindings_.erase(it);
 }
 
 // ProxyBinding

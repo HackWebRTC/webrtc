@@ -11,8 +11,10 @@
 #ifndef RTC_BASE_PROXY_SERVER_H_
 #define RTC_BASE_PROXY_SERVER_H_
 
-#include <list>
 #include <memory>
+#include <vector>
+
+#include "absl/memory/memory.h"
 #include "rtc_base/async_socket.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/server_socket_adapters.h"
@@ -74,14 +76,12 @@ class ProxyServer : public sigslot::has_slots<> {
  protected:
   void OnAcceptEvent(AsyncSocket* socket);
   virtual AsyncProxyServerSocket* WrapSocket(AsyncSocket* socket) = 0;
-  void OnBindingDestroyed(ProxyBinding* binding);
 
  private:
-  typedef std::list<ProxyBinding*> BindingList;
   SocketFactory* ext_factory_;
   SocketAddress ext_ip_;
   std::unique_ptr<AsyncSocket> server_socket_;
-  BindingList bindings_;
+  std::vector<std::unique_ptr<ProxyBinding>> bindings_;
   RTC_DISALLOW_COPY_AND_ASSIGN(ProxyServer);
 };
 
