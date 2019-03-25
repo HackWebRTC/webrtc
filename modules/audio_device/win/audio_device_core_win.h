@@ -235,7 +235,7 @@ class AudioDeviceWindowsCore : public AudioDeviceGeneric {
 
   // Converts from wide-char to UTF-8 if UNICODE is defined.
   // Does nothing if UNICODE is undefined.
-  char* WideToUTF8(const TCHAR* src) const;
+  char* WideToUTF8(const wchar_t* src) const;
 
   int32_t InitRecordingDMO();
 

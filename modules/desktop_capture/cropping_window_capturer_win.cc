@@ -36,7 +36,7 @@ struct TopWindowVerifierContext {
         is_top_window(false) {
     RTC_DCHECK_NE(selected_window, excluded_window);
 
-    GetWindowText(selected_window, selected_window_title, kTitleLength);
+    GetWindowTextW(selected_window, selected_window_title, kTitleLength);
     GetWindowThreadProcessId(selected_window, &selected_window_process_id);
   }
 
@@ -105,7 +105,7 @@ BOOL CALLBACK TopWindowVerifier(HWND hwnd, LPARAM param) {
   // menu of the child-window is covering the main window. See
   // https://bugs.chromium.org/p/webrtc/issues/detail?id=8062 for details.
   WCHAR window_title[kTitleLength];
-  GetWindowText(hwnd, window_title, kTitleLength);
+  GetWindowTextW(hwnd, window_title, kTitleLength);
   if (wcsnlen_s(window_title, kTitleLength) == 0 ||
       wcscmp(window_title, context->selected_window_title) == 0) {
     DWORD enumerated_window_process_id;

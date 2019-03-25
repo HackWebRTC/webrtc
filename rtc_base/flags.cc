@@ -292,7 +292,7 @@ void FlagList::Register(Flag* flag) {
 #if defined(WEBRTC_WIN)
 WindowsCommandLineArguments::WindowsCommandLineArguments() {
   // start by getting the command line.
-  LPTSTR command_line = ::GetCommandLine();
+  LPCWSTR command_line = ::GetCommandLineW();
   // now, convert it to a list of wide char strings.
   LPWSTR* wide_argv = ::CommandLineToArgvW(command_line, &argc_);
   // now allocate an array big enough to hold that many string pointers.

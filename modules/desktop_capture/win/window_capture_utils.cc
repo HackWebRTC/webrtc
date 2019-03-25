@@ -142,7 +142,7 @@ WindowCaptureHelperWin::WindowCaptureHelperWin()
       func_(nullptr),
       virtual_desktop_manager_(nullptr) {
   // Try to load dwmapi.dll dynamically since it is not available on XP.
-  dwmapi_library_ = LoadLibrary(L"dwmapi.dll");
+  dwmapi_library_ = LoadLibraryW(L"dwmapi.dll");
   if (dwmapi_library_) {
     func_ = reinterpret_cast<DwmIsCompositionEnabledFunc>(
         GetProcAddress(dwmapi_library_, "DwmIsCompositionEnabled"));
@@ -178,14 +178,14 @@ bool WindowCaptureHelperWin::IsAeroEnabled() {
 bool WindowCaptureHelperWin::IsWindowChromeNotification(HWND hwnd) {
   const size_t kTitleLength = 32;
   WCHAR window_title[kTitleLength];
-  GetWindowText(hwnd, window_title, kTitleLength);
+  GetWindowTextW(hwnd, window_title, kTitleLength);
   if (wcsnlen_s(window_title, kTitleLength) != 0) {
     return false;
   }
 
   const size_t kClassLength = 256;
   WCHAR class_name[kClassLength];
-  const int class_name_length = GetClassName(hwnd, class_name, kClassLength);
+  const int class_name_length = GetClassNameW(hwnd, class_name, kClassLength);
   RTC_DCHECK(class_name_length)
       << "Error retrieving the application's class name";
   if (wcsncmp(class_name, kChromeWindowClassPrefix,

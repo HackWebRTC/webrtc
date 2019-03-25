@@ -64,8 +64,8 @@ class RegKey {
     RTC_DCHECK(rootkey && subkey && access && disposition);
     HKEY subhkey = NULL;
     LONG result =
-        ::RegCreateKeyEx(rootkey, subkey, 0, NULL, REG_OPTION_NON_VOLATILE,
-                         access, NULL, &subhkey, disposition);
+        ::RegCreateKeyExW(rootkey, subkey, 0, NULL, REG_OPTION_NON_VOLATILE,
+                          access, NULL, &subhkey, disposition);
     if (result == ERROR_SUCCESS) {
       Close();
       key_ = subhkey;
@@ -80,7 +80,7 @@ class RegKey {
     RTC_DCHECK(rootkey && subkey && access);
     HKEY subhkey = NULL;
 
-    LONG result = ::RegOpenKeyEx(rootkey, subkey, 0, access, &subhkey);
+    LONG result = ::RegOpenKeyExW(rootkey, subkey, 0, access, &subhkey);
     if (result == ERROR_SUCCESS) {
       Close();
       key_ = subhkey;
@@ -131,7 +131,7 @@ class RegKey {
       } else if (type == REG_EXPAND_SZ) {
         wchar_t expanded[kMaxStringLength];
         size =
-            ::ExpandEnvironmentStrings(raw_value, expanded, kMaxStringLength);
+            ::ExpandEnvironmentStringsW(raw_value, expanded, kMaxStringLength);
         // Success: returns the number of wchar_t's copied
         // Fail: buffer too small, returns the size required
         // Fail: other, returns 0
@@ -153,8 +153,8 @@ class RegKey {
                  void* data,
                  DWORD* dsize,
                  DWORD* dtype) const {
-    LONG result = RegQueryValueEx(key_, name, 0, dtype,
-                                  reinterpret_cast<LPBYTE>(data), dsize);
+    LONG result = RegQueryValueExW(key_, name, 0, dtype,
+                                   reinterpret_cast<LPBYTE>(data), dsize);
     return result;
   }
 
@@ -261,14 +261,14 @@ OSInfo::OSInfo()
     : version_(VERSION_PRE_XP),
       architecture_(OTHER_ARCHITECTURE),
       wow64_status_(GetWOW64StatusForProcess(GetCurrentProcess())) {
-  OSVERSIONINFOEX version_info = {sizeof version_info};
+  OSVERSIONINFOEXW version_info = {sizeof version_info};
   // Applications not manifested for Windows 8.1 or Windows 10 will return the
   // Windows 8 OS version value (6.2). Once an application is manifested for a
   // given operating system version, GetVersionEx() will always return the
   // version that the application is manifested for in future releases.
   // https://docs.microsoft.com/en-us/windows/desktop/SysInfo/targeting-your-application-at-windows-8-1.
   // https://www.codeproject.com/Articles/678606/Part-Overcoming-Windows-s-deprecation-of-GetVe.
-  ::GetVersionEx(reinterpret_cast<OSVERSIONINFO*>(&version_info));
+  ::GetVersionExW(reinterpret_cast<OSVERSIONINFOW*>(&version_info));
   version_number_.major = version_info.dwMajorVersion;
   version_number_.minor = version_info.dwMinorVersion;
   version_number_.build = version_info.dwBuildNumber;
@@ -301,8 +301,8 @@ OSInfo::OSInfo()
 
   if (version_info.dwMajorVersion == 6 || version_info.dwMajorVersion == 10) {
     // Only present on Vista+.
-    get_product_info = reinterpret_cast<GetProductInfoPtr>(
-        ::GetProcAddress(::GetModuleHandle(L"kernel32.dll"), "GetProductInfo"));
+    get_product_info = reinterpret_cast<GetProductInfoPtr>(::GetProcAddress(
+        ::GetModuleHandleW(L"kernel32.dll"), "GetProductInfo"));
 
     get_product_info(version_info.dwMajorVersion, version_info.dwMinorVersion,
                      0, 0, &os_type);
@@ -404,7 +404,7 @@ OSInfo::WOW64Status OSInfo::GetWOW64StatusForProcess(HANDLE process_handle) {
 #else
   typedef BOOL(WINAPI * IsWow64ProcessFunc)(HANDLE, PBOOL);
   IsWow64ProcessFunc is_wow64_process = reinterpret_cast<IsWow64ProcessFunc>(
-      GetProcAddress(GetModuleHandle(L"kernel32.dll"), "IsWow64Process"));
+      GetProcAddress(GetModuleHandleW(L"kernel32.dll"), "IsWow64Process"));
   if (!is_wow64_process)
     return WOW64_DISABLED;
   if (!(*is_wow64_process)(process_handle, &is_wow64))

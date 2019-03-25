@@ -337,14 +337,14 @@ bool Utf8ToWindowsFilename(const std::string& utf8, std::wstring* filename) {
   filename->assign(wfilename);
 #else
   // Convert to complete filename
-  DWORD full_len = ::GetFullPathName(wfilename, 0, nullptr, nullptr);
+  DWORD full_len = ::GetFullPathNameW(wfilename, 0, nullptr, nullptr);
   if (0 == full_len) {
     return false;
   }
   wchar_t* filepart = nullptr;
   wchar_t* full_filename = STACK_ARRAY(wchar_t, full_len + 6);
   wchar_t* start = full_filename + 6;
-  if (0 == ::GetFullPathName(wfilename, full_len, start, &filepart)) {
+  if (0 == ::GetFullPathNameW(wfilename, full_len, start, &filepart)) {
     return false;
   }
   // Add long-path prefix

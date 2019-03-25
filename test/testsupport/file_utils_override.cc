@@ -99,7 +99,7 @@ absl::optional<std::string> ProjectRootPath() {
 #elif defined(WEBRTC_WIN)
   wchar_t buf[MAX_PATH];
   buf[0] = 0;
-  if (GetModuleFileName(NULL, buf, MAX_PATH) == 0)
+  if (GetModuleFileNameW(NULL, buf, MAX_PATH) == 0)
     return absl::nullopt;
 
   std::string exe_path = rtc::ToUtf8(std::wstring(buf));

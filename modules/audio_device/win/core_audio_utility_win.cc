@@ -1386,8 +1386,7 @@ double FramesToMilliseconds(uint32_t num_frames, uint16_t sample_rate) {
 std::string ErrorToString(const _com_error& error) {
   char ss_buf[1024];
   rtc::SimpleStringBuilder ss(ss_buf);
-  ss.AppendFormat("%s (0x%08X)", rtc::ToUtf8(error.ErrorMessage()).c_str(),
-                  error.Error());
+  ss.AppendFormat("(HRESULT: 0x%08X)", error.Error());
   return ss.str();
 }
 

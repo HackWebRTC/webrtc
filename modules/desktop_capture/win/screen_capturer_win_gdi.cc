@@ -42,7 +42,7 @@ ScreenCapturerWinGdi::ScreenCapturerWinGdi(
   if (options.disable_effects()) {
     // Load dwmapi.dll dynamically since it is not available on XP.
     if (!dwmapi_library_)
-      dwmapi_library_ = LoadLibrary(kDwmapiLibraryName);
+      dwmapi_library_ = LoadLibraryW(kDwmapiLibraryName);
 
     if (dwmapi_library_) {
       composition_func_ = reinterpret_cast<DwmEnableCompositionFunc>(

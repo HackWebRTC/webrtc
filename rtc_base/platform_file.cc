@@ -44,22 +44,22 @@ bool ClosePlatformFile(PlatformFile file) {
 }
 
 bool RemoveFile(const std::string& path) {
-  return ::DeleteFile(ToUtf16(path).c_str()) != 0;
+  return ::DeleteFileW(ToUtf16(path).c_str()) != 0;
 }
 
 PlatformFile OpenPlatformFile(const std::string& path) {
-  return ::CreateFile(ToUtf16(path).c_str(), GENERIC_READ | GENERIC_WRITE, 0,
-                      nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+  return ::CreateFileW(ToUtf16(path).c_str(), GENERIC_READ | GENERIC_WRITE, 0,
+                       nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 }
 
 PlatformFile OpenPlatformFileReadOnly(const std::string& path) {
-  return ::CreateFile(ToUtf16(path).c_str(), GENERIC_READ, FILE_SHARE_READ,
-                      nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
+  return ::CreateFileW(ToUtf16(path).c_str(), GENERIC_READ, FILE_SHARE_READ,
+                       nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, nullptr);
 }
 
 PlatformFile CreatePlatformFile(const std::string& path) {
-  return ::CreateFile(ToUtf16(path).c_str(), GENERIC_READ | GENERIC_WRITE, 0,
-                      nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+  return ::CreateFileW(ToUtf16(path).c_str(), GENERIC_READ | GENERIC_WRITE, 0,
+                       nullptr, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
 }
 
 #else  // defined(WEBRTC_WIN)

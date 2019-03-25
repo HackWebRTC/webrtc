@@ -62,41 +62,41 @@ std::string AddTrailingPathDelimiterIfNeeded(std::string directory) {
 std::vector<std::string> GetFilesWithPrefix(const std::string& directory,
                                             const std::string& prefix) {
   RTC_DCHECK(absl::EndsWith(directory, "\\"));
-  WIN32_FIND_DATA data;
+  WIN32_FIND_DATAW data;
   HANDLE handle;
-  handle = ::FindFirstFile(ToUtf16(directory + prefix + '*').c_str(), &data);
+  handle = ::FindFirstFileW(ToUtf16(directory + prefix + '*').c_str(), &data);
   if (handle == INVALID_HANDLE_VALUE)
     return {};
 
   std::vector<std::string> file_list;
   do {
     file_list.emplace_back(directory + ToUtf8(data.cFileName));
-  } while (::FindNextFile(handle, &data) == TRUE);
+  } while (::FindNextFileW(handle, &data) == TRUE);
 
   ::FindClose(handle);
   return file_list;
 }
 
 bool DeleteFile(const std::string& file) {
-  return ::DeleteFile(ToUtf16(file).c_str()) != 0;
+  return ::DeleteFileW(ToUtf16(file).c_str()) != 0;
 }
 
 bool MoveFile(const std::string& old_file, const std::string& new_file) {
-  return ::MoveFile(ToUtf16(old_file).c_str(), ToUtf16(new_file).c_str()) != 0;
+  return ::MoveFileW(ToUtf16(old_file).c_str(), ToUtf16(new_file).c_str()) != 0;
 }
 
 bool IsFile(const std::string& file) {
   WIN32_FILE_ATTRIBUTE_DATA data = {0};
-  if (0 == ::GetFileAttributesEx(ToUtf16(file).c_str(), GetFileExInfoStandard,
-                                 &data))
+  if (0 == ::GetFileAttributesExW(ToUtf16(file).c_str(), GetFileExInfoStandard,
+                                  &data))
     return false;
   return (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == 0;
 }
 
 bool IsFolder(const std::string& file) {
   WIN32_FILE_ATTRIBUTE_DATA data = {0};
-  if (0 == ::GetFileAttributesEx(ToUtf16(file).c_str(), GetFileExInfoStandard,
-                                 &data))
+  if (0 == ::GetFileAttributesExW(ToUtf16(file).c_str(), GetFileExInfoStandard,
+                                  &data))
     return false;
   return (data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) ==
          FILE_ATTRIBUTE_DIRECTORY;
@@ -104,8 +104,8 @@ bool IsFolder(const std::string& file) {
 
 absl::optional<size_t> GetFileSize(const std::string& file) {
   WIN32_FILE_ATTRIBUTE_DATA data = {0};
-  if (::GetFileAttributesEx(ToUtf16(file).c_str(), GetFileExInfoStandard,
-                            &data) == 0)
+  if (::GetFileAttributesExW(ToUtf16(file).c_str(), GetFileExInfoStandard,
+                             &data) == 0)
     return absl::nullopt;
   return data.nFileSizeLow;
 }

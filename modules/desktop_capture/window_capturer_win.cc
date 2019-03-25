@@ -53,7 +53,7 @@ BOOL CALLBACK WindowsEnumerationHandler(HWND hwnd, LPARAM param) {
   // Skip the Program Manager window and the Start button.
   const size_t kClassLength = 256;
   WCHAR class_name[kClassLength];
-  const int class_name_length = GetClassName(hwnd, class_name, kClassLength);
+  const int class_name_length = GetClassNameW(hwnd, class_name, kClassLength);
   RTC_DCHECK(class_name_length)
       << "Error retrieving the application's class name";
 
@@ -79,7 +79,7 @@ BOOL CALLBACK WindowsEnumerationHandler(HWND hwnd, LPARAM param) {
   const size_t kTitleLength = 500;
   WCHAR window_title[kTitleLength];
   // Truncate the title if it's longer than kTitleLength.
-  GetWindowText(hwnd, window_title, kTitleLength);
+  GetWindowTextW(hwnd, window_title, kTitleLength);
   window.title = rtc::ToUtf8(window_title);
 
   // Skip windows when we failed to convert the title or it is empty.

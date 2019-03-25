@@ -121,7 +121,7 @@ class Win32SocketServer : public SocketServer {
     Win32SocketServer* ss_;
   };
 
-  static const TCHAR kWindowName[];
+  static const wchar_t kWindowName[];
   MessageQueue* message_queue_;
   MessageWindow wnd_;
   CriticalSection cs_;
