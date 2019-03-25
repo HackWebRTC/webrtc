@@ -11,10 +11,10 @@
 #include "rtc_base/ssl_fingerprint.h"
 
 #include <ctype.h>
-#include <algorithm>
 #include <cstdint>
 #include <string>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/message_digest.h"
@@ -113,8 +113,7 @@ bool SSLFingerprint::operator==(const SSLFingerprint& other) const {
 std::string SSLFingerprint::GetRfc4572Fingerprint() const {
   std::string fingerprint =
       rtc::hex_encode_with_delimiter(digest.data<char>(), digest.size(), ':');
-  std::transform(fingerprint.begin(), fingerprint.end(), fingerprint.begin(),
-                 ::toupper);
+  absl::c_transform(fingerprint, fingerprint.begin(), ::toupper);
   return fingerprint;
 }
 

@@ -10,10 +10,10 @@
 
 #include "rtc_base/ssl_certificate.h"
 
-#include <algorithm>
 #include <string>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/openssl_certificate.h"
@@ -89,8 +89,8 @@ SSLCertChain::~SSLCertChain() = default;
 
 std::unique_ptr<SSLCertChain> SSLCertChain::Clone() const {
   std::vector<std::unique_ptr<SSLCertificate>> new_certs(certs_.size());
-  std::transform(
-      certs_.begin(), certs_.end(), new_certs.begin(),
+  absl::c_transform(
+      certs_, new_certs.begin(),
       [](const std::unique_ptr<SSLCertificate>& cert)
           -> std::unique_ptr<SSLCertificate> { return cert->Clone(); });
   return absl::make_unique<SSLCertChain>(std::move(new_certs));

@@ -24,9 +24,15 @@
 #include "rtc_base/ifaddrs_converter.h"
 #endif  // defined(WEBRTC_POSIX)
 #include "rtc_base/gunit.h"
+#include "test/gmock.h"
 #if defined(WEBRTC_WIN)
 #include "rtc_base/logging.h"  // For RTC_LOG_GLE
 #endif
+
+using ::testing::Contains;
+using ::testing::Not;
+using ::testing::UnorderedElementsAre;
+using ::testing::UnorderedElementsAreArray;
 
 namespace rtc {
 
@@ -478,12 +484,8 @@ TEST_F(NetworkTest, TestIPv6MergeNetworkList) {
   EXPECT_EQ(stats.ipv4_network_count, 0);
   NetworkManager::NetworkList list;
   manager.GetNetworks(&list);
-  EXPECT_EQ(original_list.size(), list.size());
   // Verify that the original members are in the merged list.
-  for (NetworkManager::NetworkList::iterator it = original_list.begin();
-       it != original_list.end(); ++it) {
-    EXPECT_NE(list.end(), std::find(list.begin(), list.end(), *it));
-  }
+  EXPECT_THAT(list, UnorderedElementsAreArray(original_list));
 }
 
 // Tests that when two network lists that describe the same set of networks are
@@ -506,18 +508,11 @@ TEST_F(NetworkTest, TestNoChangeMerge) {
   EXPECT_FALSE(changed);
   NetworkManager::NetworkList resulting_list;
   manager.GetNetworks(&resulting_list);
-  EXPECT_EQ(original_list.size(), resulting_list.size());
   // Verify that the original members are in the merged list.
-  for (NetworkManager::NetworkList::iterator it = original_list.begin();
-       it != original_list.end(); ++it) {
-    EXPECT_NE(resulting_list.end(),
-              std::find(resulting_list.begin(), resulting_list.end(), *it));
-  }
+  EXPECT_THAT(resulting_list, UnorderedElementsAreArray(original_list));
   // Doublecheck that the new networks aren't in the list.
-  for (NetworkManager::NetworkList::iterator it = second_list.begin();
-       it != second_list.end(); ++it) {
-    EXPECT_EQ(resulting_list.end(),
-              std::find(resulting_list.begin(), resulting_list.end(), *it));
+  for (const Network* network : second_list) {
+    EXPECT_THAT(resulting_list, Not(Contains(network)));
   }
 }
 
@@ -554,7 +549,7 @@ TEST_F(NetworkTest, MergeWithChangedIP) {
   manager.GetNetworks(&list);
   EXPECT_EQ(original_list.size(), list.size());
   // Make sure the original network is still in the merged list.
-  EXPECT_NE(list.end(), std::find(list.begin(), list.end(), network_to_change));
+  EXPECT_THAT(list, Contains(network_to_change));
   EXPECT_EQ(changed_ip, network_to_change->GetIPs().at(0));
 }
 
@@ -598,18 +593,12 @@ TEST_F(NetworkTest, TestMultipleIPMergeNetworkList) {
       // This should be the same network object as before.
       EXPECT_EQ((*it), original_list[2]);
       // But with two addresses now.
-      EXPECT_EQ(2U, (*it)->GetIPs().size());
-      EXPECT_NE((*it)->GetIPs().end(),
-                std::find((*it)->GetIPs().begin(), (*it)->GetIPs().end(),
-                          InterfaceAddress(check_ip)));
-      EXPECT_NE((*it)->GetIPs().end(),
-                std::find((*it)->GetIPs().begin(), (*it)->GetIPs().end(),
-                          InterfaceAddress(ip)));
+      EXPECT_THAT((*it)->GetIPs(),
+                  UnorderedElementsAre(InterfaceAddress(check_ip),
+                                       InterfaceAddress(ip)));
     } else {
       // Check the IP didn't get added anywhere it wasn't supposed to.
-      EXPECT_EQ((*it)->GetIPs().end(),
-                std::find((*it)->GetIPs().begin(), (*it)->GetIPs().end(),
-                          InterfaceAddress(ip)));
+      EXPECT_THAT((*it)->GetIPs(), Not(Contains(InterfaceAddress(ip))));
     }
   }
 }
@@ -650,9 +639,7 @@ TEST_F(NetworkTest, TestMultiplePublicNetworksOnOneInterfaceMerge) {
       EXPECT_EQ(ip, (*it)->GetIPs().at(0));
     } else {
       // Check the IP didn't get added anywhere it wasn't supposed to.
-      EXPECT_EQ((*it)->GetIPs().end(),
-                std::find((*it)->GetIPs().begin(), (*it)->GetIPs().end(),
-                          InterfaceAddress(ip)));
+      EXPECT_THAT((*it)->GetIPs(), Not(Contains(InterfaceAddress(ip))));
     }
   }
 }

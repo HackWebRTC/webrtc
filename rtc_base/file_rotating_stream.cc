@@ -10,7 +10,6 @@
 
 #include "rtc_base/file_rotating_stream.h"
 
-#include <algorithm>
 #include <cstdio>
 #include <string>
 #include <utility>
@@ -24,6 +23,7 @@
 #include <unistd.h>
 #endif  // WEBRTC_WIN
 
+#include "absl/algorithm/container.h"
 #include "absl/strings/match.h"
 #include "absl/types/optional.h"
 #include "rtc_base/checks.h"
@@ -391,8 +391,7 @@ FileRotatingStreamReader::FileRotatingStreamReader(
 
   // Plain sort of the file names would sort by age, i.e., oldest last. Using
   // std::greater gives us the desired chronological older, oldest first.
-  std::sort(file_names_.begin(), file_names_.end(),
-            std::greater<std::string>());
+  absl::c_sort(file_names_, std::greater<std::string>());
 }
 
 FileRotatingStreamReader::~FileRotatingStreamReader() = default;

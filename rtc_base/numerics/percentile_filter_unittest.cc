@@ -9,11 +9,12 @@
  */
 
 #include <stdlib.h>
-#include <algorithm>
+#include <array>
 #include <climits>
 #include <cstdint>
 #include <random>
 
+#include "absl/algorithm/container.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/numerics/percentile_filter.h"
 #include "test/gtest.h"
@@ -110,14 +111,13 @@ TEST_P(PercentileFilterTest, DuplicateElements) {
 }
 
 TEST_P(PercentileFilterTest, InsertAndEraseTenValuesInRandomOrder) {
-  int64_t zero_to_nine[10] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  std::array<int64_t, 10> zero_to_nine = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
   // The percentile value of the ten values above.
   const int64_t expected_value = static_cast<int64_t>(GetParam() * 9);
 
   // Insert two sets of |zero_to_nine| in random order.
   for (int i = 0; i < 2; ++i) {
-    std::shuffle(zero_to_nine, zero_to_nine + 10,
-                 std::mt19937(std::random_device()()));
+    absl::c_shuffle(zero_to_nine, std::mt19937(std::random_device()()));
     for (int64_t value : zero_to_nine)
       filter_.Insert(value);
     // After inserting a full set of |zero_to_nine|, the percentile should
@@ -127,13 +127,11 @@ TEST_P(PercentileFilterTest, InsertAndEraseTenValuesInRandomOrder) {
 
   // Insert and erase sets of |zero_to_nine| in random order a few times.
   for (int i = 0; i < 3; ++i) {
-    std::shuffle(zero_to_nine, zero_to_nine + 10,
-                 std::mt19937(std::random_device()()));
+    absl::c_shuffle(zero_to_nine, std::mt19937(std::random_device()()));
     for (int64_t value : zero_to_nine)
       filter_.Erase(value);
     EXPECT_EQ(expected_value, filter_.GetPercentileValue());
-    std::shuffle(zero_to_nine, zero_to_nine + 10,
-                 std::mt19937(std::random_device()()));
+    absl::c_shuffle(zero_to_nine, std::mt19937(std::random_device()()));
     for (int64_t value : zero_to_nine)
       filter_.Insert(value);
     EXPECT_EQ(expected_value, filter_.GetPercentileValue());

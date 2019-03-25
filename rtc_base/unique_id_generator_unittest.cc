@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "algorithm"
-#include "string"
-#include "vector"
+#include <string>
+#include <vector>
 
+#include "absl/algorithm/container.h"
 #include "api/array_view.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/helpers.h"
@@ -69,11 +69,11 @@ TYPED_TEST(UniqueIdGeneratorTest, KnownElementsAreNotGenerated) {
     values.push_back(generator2());
   }
   EXPECT_THAT(values, ::testing::SizeIs(num_elements));
-  std::sort(values.begin(), values.end());
-  std::sort(known_values.begin(), known_values.end());
+  absl::c_sort(values);
+  absl::c_sort(known_values);
   std::vector<typename Generator::value_type> intersection;
-  std::set_intersection(values.begin(), values.end(), known_values.begin(),
-                        known_values.end(), std::back_inserter(intersection));
+  absl::c_set_intersection(values, known_values,
+                           std::back_inserter(intersection));
   EXPECT_THAT(intersection, IsEmpty());
 }
 
@@ -100,11 +100,11 @@ TYPED_TEST(UniqueIdGeneratorTest, AddedElementsAreNotGenerated) {
     values.push_back(generator2());
   }
   EXPECT_THAT(values, ::testing::SizeIs(num_elements));
-  std::sort(values.begin(), values.end());
-  std::sort(known_values.begin(), known_values.end());
+  absl::c_sort(values);
+  absl::c_sort(known_values);
   std::vector<typename Generator::value_type> intersection;
-  std::set_intersection(values.begin(), values.end(), known_values.begin(),
-                        known_values.end(), std::back_inserter(intersection));
+  absl::c_set_intersection(values, known_values,
+                           std::back_inserter(intersection));
   EXPECT_THAT(intersection, IsEmpty());
 }
 

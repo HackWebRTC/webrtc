@@ -7,10 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include <algorithm>
 #include <string>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -78,8 +78,7 @@ void MessageQueueManager::RemoveInternal(MessageQueue* message_queue) {
     // Prevent changes while the list of message queues is processed.
     RTC_DCHECK_EQ(processing_, 0);
     std::vector<MessageQueue*>::iterator iter;
-    iter = std::find(message_queues_.begin(), message_queues_.end(),
-                     message_queue);
+    iter = absl::c_find(message_queues_, message_queue);
     if (iter != message_queues_.end()) {
       message_queues_.erase(iter);
     }

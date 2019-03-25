@@ -10,8 +10,9 @@
 
 #include "rtc_base/numerics/samples_stats_counter.h"
 
-#include <algorithm>
 #include <cmath>
+
+#include "absl/algorithm/container.h"
 
 namespace webrtc {
 
@@ -42,7 +43,7 @@ double SamplesStatsCounter::GetPercentile(double percentile) {
   RTC_CHECK_GE(percentile, 0);
   RTC_CHECK_LE(percentile, 1);
   if (!sorted_) {
-    std::sort(samples_.begin(), samples_.end());
+    absl::c_sort(samples_);
     sorted_ = true;
   }
   const double raw_rank = percentile * (samples_.size() - 1);

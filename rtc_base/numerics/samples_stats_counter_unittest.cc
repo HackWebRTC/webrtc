@@ -11,10 +11,10 @@
 #include "rtc_base/numerics/samples_stats_counter.h"
 
 #include <math.h>
-#include <algorithm>
 #include <random>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -25,7 +25,7 @@ SamplesStatsCounter CreateStatsFilledWithIntsFrom1ToN(int n) {
   for (int i = 1; i <= n; i++) {
     data.push_back(i);
   }
-  std::shuffle(data.begin(), data.end(), std::mt19937(std::random_device()()));
+  absl::c_shuffle(data, std::mt19937(std::random_device()()));
 
   SamplesStatsCounter stats;
   for (double v : data) {

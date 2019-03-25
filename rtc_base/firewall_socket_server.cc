@@ -13,9 +13,9 @@
 #include <errno.h>
 #include <stddef.h>
 #include <stdint.h>
-#include <algorithm>
 #include <string>
 
+#include "absl/algorithm/container.h"
 #include "rtc_base/async_socket.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -198,8 +198,7 @@ void FirewallSocketServer::SetUnbindableIps(
 }
 
 bool FirewallSocketServer::IsBindableIp(const rtc::IPAddress& ip) {
-  return std::find(unbindable_ips_.begin(), unbindable_ips_.end(), ip) ==
-         unbindable_ips_.end();
+  return !absl::c_linear_search(unbindable_ips_, ip);
 }
 
 Socket* FirewallSocketServer::CreateSocket(int family, int type) {

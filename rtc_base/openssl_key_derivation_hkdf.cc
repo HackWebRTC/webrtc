@@ -10,7 +10,6 @@
 
 #include "rtc_base/openssl_key_derivation_hkdf.h"
 
-#include <algorithm>
 #include <utility>
 
 #include <openssl/ossl_typ.h>
@@ -24,6 +23,7 @@
 #include <openssl/err.h>
 #include <openssl/sha.h>
 
+#include "absl/algorithm/container.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/openssl.h"
 
@@ -91,7 +91,7 @@ absl::optional<ZeroOnFreeBuffer<uint8_t>> OpenSSLKeyDerivationHKDF::DeriveKey(
   rtc::Buffer salt_buffer;
   if (salt.data() == nullptr || salt.size() == 0) {
     salt_buffer.SetSize(SHA256_DIGEST_LENGTH);
-    std::fill(salt_buffer.begin(), salt_buffer.end(), 0);
+    absl::c_fill(salt_buffer, 0);
     salt = salt_buffer;
   }
   // This buffer will erase itself on release.
