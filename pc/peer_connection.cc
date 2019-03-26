@@ -3628,13 +3628,18 @@ void PeerConnection::SetBitrateAllocationStrategy(
     std::unique_ptr<rtc::BitrateAllocationStrategy>
         bitrate_allocation_strategy) {
   if (!worker_thread()->IsCurrent()) {
-    rtc::BitrateAllocationStrategy* strategy_raw =
-        bitrate_allocation_strategy.release();
-    worker_thread()->Invoke<void>(RTC_FROM_HERE, [this, strategy_raw]() {
-      RTC_DCHECK_RUN_ON(worker_thread());
-      call_->SetBitrateAllocationStrategy(
-          absl::WrapUnique<rtc::BitrateAllocationStrategy>(strategy_raw));
-    });
+    // TODO(kwiberg): Use a lambda instead when C++14 makes it possible to
+    // move-capture values in lambdas.
+    struct Task {
+      PeerConnection* const pc;
+      std::unique_ptr<rtc::BitrateAllocationStrategy> strategy;
+      void operator()() {
+        RTC_DCHECK_RUN_ON(pc->worker_thread());
+        pc->call_->SetBitrateAllocationStrategy(std::move(strategy));
+      }
+    };
+    worker_thread()->Invoke<void>(
+        RTC_FROM_HERE, Task{this, std::move(bitrate_allocation_strategy)});
     return;
   }
   RTC_DCHECK_RUN_ON(worker_thread());
