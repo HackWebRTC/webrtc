@@ -15,6 +15,13 @@
 namespace webrtc {
 namespace test {
 
+VideoCodecTestStats::FrameStatistics::FrameStatistics(size_t frame_number,
+                                                      size_t rtp_timestamp,
+                                                      size_t spatial_idx)
+    : frame_number(frame_number),
+      rtp_timestamp(rtp_timestamp),
+      spatial_idx(spatial_idx) {}
+
 std::string VideoCodecTestStats::FrameStatistics::ToString() const {
   rtc::StringBuilder ss;
   ss << "frame_number " << frame_number;
@@ -38,10 +45,6 @@ std::string VideoCodecTestStats::FrameStatistics::ToString() const {
   ss << " target_bitrate_kbps " << target_bitrate_kbps;
   return ss.Release();
 }
-
-VideoCodecTestStats::VideoStatistics::VideoStatistics() = default;
-VideoCodecTestStats::VideoStatistics::VideoStatistics(const VideoStatistics&) =
-    default;
 
 std::string VideoCodecTestStats::VideoStatistics::ToString(
     std::string prefix) const {
@@ -85,16 +88,6 @@ std::string VideoCodecTestStats::VideoStatistics::ToString(
   ss << "\n" << prefix << "max_nalu_size_bytes: " << max_nalu_size_bytes;
   return ss.Release();
 }
-
-VideoCodecTestStats::FrameStatistics::FrameStatistics(size_t frame_number,
-                                                      size_t rtp_timestamp,
-                                                      size_t spatial_idx)
-    : frame_number(frame_number),
-      rtp_timestamp(rtp_timestamp),
-      spatial_idx(spatial_idx) {}
-
-VideoCodecTestStats::FrameStatistics::FrameStatistics(
-    const FrameStatistics& rhs) = default;
 
 }  // namespace test
 }  // namespace webrtc

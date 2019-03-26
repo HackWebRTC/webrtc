@@ -164,7 +164,7 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
                                VideoDecoderList* decoders,
                                FrameReader* input_frame_reader,
                                const VideoCodecTestFixture::Config& config,
-                               VideoCodecTestStats* stats,
+                               VideoCodecTestStatsImpl* stats,
                                IvfFileWriterMap* encoded_frame_writers,
                                FrameWriterList* decoded_frame_writers)
     : config_(config),

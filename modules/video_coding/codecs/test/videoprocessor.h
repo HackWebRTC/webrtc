@@ -23,7 +23,6 @@
 #include "api/task_queue/queued_task.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/test/videocodec_test_fixture.h"
-#include "api/test/videocodec_test_stats.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_bitrate_allocator.h"
@@ -32,6 +31,7 @@
 #include "api/video_codecs/video_encoder.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
+#include "modules/video_coding/codecs/test/videocodec_test_stats_impl.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/utility/ivf_file_writer.h"
 #include "rtc_base/buffer.h"
@@ -64,7 +64,7 @@ class VideoProcessor {
                  VideoDecoderList* decoders,
                  FrameReader* input_frame_reader,
                  const VideoCodecTestFixture::Config& config,
-                 VideoCodecTestStats* stats,
+                 VideoCodecTestStatsImpl* stats,
                  IvfFileWriterMap* encoded_frame_writers,
                  FrameWriterList* decoded_frame_writers);
   ~VideoProcessor();
@@ -187,7 +187,7 @@ class VideoProcessor {
   // Test input/output.
   VideoCodecTestFixture::Config config_ RTC_GUARDED_BY(sequence_checker_);
   const size_t num_simulcast_or_spatial_layers_;
-  VideoCodecTestStats* const stats_;
+  VideoCodecTestStatsImpl* const stats_;
 
   // Codecs.
   webrtc::VideoEncoder* const encoder_;

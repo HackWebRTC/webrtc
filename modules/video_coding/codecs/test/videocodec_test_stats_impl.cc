@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <iterator>
 #include <limits>
 #include <numeric>
 
@@ -54,6 +55,22 @@ FrameStatistics* VideoCodecTestStatsImpl::GetFrameWithTimestamp(
              rtp_timestamp_to_frame_num_[layer_idx].end());
 
   return GetFrame(rtp_timestamp_to_frame_num_[layer_idx][timestamp], layer_idx);
+}
+
+std::vector<FrameStatistics> VideoCodecTestStatsImpl::GetFrameStatistics() {
+  size_t capacity = 0;
+  for (const auto& layer_stat : layer_stats_) {
+    capacity += layer_stat.second.size();
+  }
+
+  std::vector<FrameStatistics> frame_statistics;
+  frame_statistics.reserve(capacity);
+  for (const auto& layer_stat : layer_stats_) {
+    std::copy(layer_stat.second.cbegin(), layer_stat.second.cend(),
+              std::back_inserter(frame_statistics));
+  }
+
+  return frame_statistics;
 }
 
 std::vector<VideoStatistics>

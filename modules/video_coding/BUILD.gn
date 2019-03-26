@@ -568,6 +568,7 @@ if (rtc_include_tests) {
       ":video_codec_interface",
       ":video_coding",
       ":video_coding_utility",
+      ":videocodec_test_stats_impl",
       ":webrtc_vp9_helpers",
       "..:module_api",
       "../..:webrtc_common",
@@ -638,14 +639,13 @@ if (rtc_include_tests) {
     sources = [
       "codecs/test/videocodec_test_fixture_impl.cc",
       "codecs/test/videocodec_test_fixture_impl.h",
-      "codecs/test/videocodec_test_stats_impl.cc",
-      "codecs/test/videocodec_test_stats_impl.h",
     ]
     deps = [
       ":codec_globals_headers",
       ":video_codec_interface",
       ":video_codecs_test_framework",
       ":video_coding_utility",
+      ":videocodec_test_stats_impl",
       ":webrtc_vp9_helpers",
       "../..:webrtc_common",
       "../../api:array_view",
@@ -667,13 +667,25 @@ if (rtc_include_tests) {
       "../../system_wrappers",
       "../../test:fileutils",
       "../../test:perf_test",
-      "../../test:test_common",
       "../../test:test_support",
       "../../test:video_test_common",
       "../../test:video_test_support",
-      "../rtp_rtcp:rtp_rtcp_format",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
+    ]
+  }
+
+  rtc_source_set("videocodec_test_stats_impl") {
+    testonly = true
+    sources = [
+      "codecs/test/videocodec_test_stats_impl.cc",
+      "codecs/test/videocodec_test_stats_impl.h",
+    ]
+    deps = [
+      "../../api:videocodec_test_fixture_api",
+      "../../rtc_base:checks",
+      "../../test:test_common",
+      "../rtp_rtcp:rtp_rtcp_format",
     ]
   }
 
@@ -816,6 +828,7 @@ if (rtc_include_tests) {
       ":video_coding",
       ":video_coding_utility",
       ":videocodec_test_impl",
+      ":videocodec_test_stats_impl",
       ":webrtc_h264",
       ":webrtc_vp8",
       ":webrtc_vp8_temporal_layers",
