@@ -49,7 +49,6 @@ if (!rtc_build_ssl) {
 }
 
 rtc_source_set("protobuf_utils") {
-  visibility = [ "*" ]
   sources = [
     "protobuf_utils.h",
   ]
@@ -1025,7 +1024,6 @@ rtc_static_library("rtc_base") {
 }
 
 rtc_source_set("gtest_prod") {
-  visibility = [ "*" ]
   sources = [
     "gtest_prod_util.h",
   ]
@@ -1275,7 +1273,6 @@ if (rtc_include_tests) {
   }
 
   rtc_source_set("rtc_task_queue_unittests") {
-    visibility = [ "*" ]
     testonly = true
 
     sources = [
