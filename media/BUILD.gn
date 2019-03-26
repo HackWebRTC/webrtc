@@ -260,8 +260,6 @@ rtc_static_library("rtc_audio_video") {
   libs = []
   deps = [
     "../api:scoped_refptr",
-    "../api/task_queue",
-    "../api/task_queue:global_task_queue_factory",
     "../api/video:video_bitrate_allocation",
     "../api/video:video_bitrate_allocator_factory",
     "../modules/audio_processing:api",
@@ -495,8 +493,6 @@ if (rtc_include_tests) {
       "../:webrtc_common",
       "../api:fake_media_transport",
       "../api:scoped_refptr",
-      "../api/task_queue",
-      "../api/task_queue:default_task_queue_factory",
       "../api/test/video:function_video_factory",
       "../api/units:time_delta",
       "../api/video:video_frame_i420",

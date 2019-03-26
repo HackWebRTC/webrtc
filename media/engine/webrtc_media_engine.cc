@@ -14,7 +14,6 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
-#include "api/task_queue/global_task_queue_factory.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
@@ -62,9 +61,9 @@ std::unique_ptr<MediaEngineInterface> WebRtcMediaEngineFactory::Create(
   auto video_engine = absl::make_unique<NullWebRtcVideoEngine>();
 #endif
   return std::unique_ptr<MediaEngineInterface>(new CompositeMediaEngine(
-      absl::make_unique<WebRtcVoiceEngine>(
-          &webrtc::GlobalTaskQueueFactory(), adm, audio_encoder_factory,
-          audio_decoder_factory, audio_mixer, audio_processing),
+      absl::make_unique<WebRtcVoiceEngine>(adm, audio_encoder_factory,
+                                           audio_decoder_factory, audio_mixer,
+                                           audio_processing),
       std::move(video_engine)));
 }
 
