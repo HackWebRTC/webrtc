@@ -54,38 +54,16 @@ void RepeatingTaskBase::Stop() {
   next_run_time_ = Timestamp::PlusInfinity();
 }
 
-void RepeatingTaskBase::PostStop() {
-  if (task_queue_->IsCurrent()) {
-    RTC_DLOG(LS_INFO) << "Using PostStop() from the task queue running the "
-                         "repeated task. Consider calling Stop() instead.";
-  }
-  task_queue_->PostTask(ToQueuedTask([this] {
-    RTC_DCHECK_RUN_ON(task_queue_);
-    Stop();
-  }));
-}
-
 }  // namespace webrtc_repeating_task_impl
-RepeatingTaskHandle::RepeatingTaskHandle() {
-  sequence_checker_.Detach();
-}
-RepeatingTaskHandle::~RepeatingTaskHandle() {
-  sequence_checker_.Detach();
-}
 
 RepeatingTaskHandle::RepeatingTaskHandle(RepeatingTaskHandle&& other)
     : repeating_task_(other.repeating_task_) {
-  RTC_DCHECK_RUN_ON(&sequence_checker_);
   other.repeating_task_ = nullptr;
 }
 
 RepeatingTaskHandle& RepeatingTaskHandle::operator=(
     RepeatingTaskHandle&& other) {
-  RTC_DCHECK_RUN_ON(&other.sequence_checker_);
-  {
-    RTC_DCHECK_RUN_ON(&sequence_checker_);
-    repeating_task_ = other.repeating_task_;
-  }
+  repeating_task_ = other.repeating_task_;
   other.repeating_task_ = nullptr;
   return *this;
 }
@@ -95,7 +73,6 @@ RepeatingTaskHandle::RepeatingTaskHandle(
     : repeating_task_(repeating_task) {}
 
 void RepeatingTaskHandle::Stop() {
-  RTC_DCHECK_RUN_ON(&sequence_checker_);
   if (repeating_task_) {
     RTC_DCHECK_RUN_ON(repeating_task_->task_queue_);
     repeating_task_->Stop();
@@ -103,16 +80,7 @@ void RepeatingTaskHandle::Stop() {
   }
 }
 
-void RepeatingTaskHandle::PostStop() {
-  RTC_DCHECK_RUN_ON(&sequence_checker_);
-  if (repeating_task_) {
-    repeating_task_->PostStop();
-    repeating_task_ = nullptr;
-  }
-}
-
 bool RepeatingTaskHandle::Running() const {
-  RTC_DCHECK_RUN_ON(&sequence_checker_);
   return repeating_task_ != nullptr;
 }
 

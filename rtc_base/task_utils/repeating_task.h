@@ -38,7 +38,6 @@ class RepeatingTaskBase : public QueuedTask {
 
   bool Run() final;
   void Stop() RTC_RUN_ON(task_queue_);
-  void PostStop();
 
   TaskQueueBase* const task_queue_;
   // This is always finite, except for the special case where it's PlusInfinity
@@ -77,8 +76,8 @@ class RepeatingTaskImpl final : public RepeatingTaskBase {
 // not thread safe.
 class RepeatingTaskHandle {
  public:
-  RepeatingTaskHandle();
-  ~RepeatingTaskHandle();
+  RepeatingTaskHandle() = default;
+  ~RepeatingTaskHandle() = default;
   RepeatingTaskHandle(RepeatingTaskHandle&& other);
   RepeatingTaskHandle& operator=(RepeatingTaskHandle&& other);
   RepeatingTaskHandle(const RepeatingTaskHandle&) = delete;
@@ -122,11 +121,6 @@ class RepeatingTaskHandle {
   // closure itself.
   void Stop();
 
-  // Stops future invocations of the repeating task closure. The closure might
-  // still be running when PostStop() returns, but there will be no future
-  // invocation.
-  void PostStop();
-
   // Returns true if Start() or DelayedStart() was called most recently. Returns
   // false initially and if Stop() or PostStop() was called most recently.
   bool Running() const;
@@ -134,10 +128,8 @@ class RepeatingTaskHandle {
  private:
   explicit RepeatingTaskHandle(
       webrtc_repeating_task_impl::RepeatingTaskBase* repeating_task);
-  rtc::SequencedTaskChecker sequence_checker_;
   // Owned by the task queue.
-  webrtc_repeating_task_impl::RepeatingTaskBase* repeating_task_
-      RTC_GUARDED_BY(sequence_checker_) = nullptr;
+  webrtc_repeating_task_impl::RepeatingTaskBase* repeating_task_ = nullptr;
 };
 
 }  // namespace webrtc
