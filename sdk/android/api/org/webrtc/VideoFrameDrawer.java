@@ -190,12 +190,11 @@ public class VideoFrameDrawer {
       int viewportHeight) {
     final int width = frame.getRotatedWidth();
     final int height = frame.getRotatedHeight();
-    if (width <= 0 || height <= 0) {
-      Logging.w(TAG, "Illegal frame size: " + height + "x" + width);
+    calculateTransformedRenderSize(width, height, additionalRenderMatrix);
+    if (renderWidth <= 0 || renderHeight <= 0) {
+      Logging.w(TAG, "Illegal frame size: " + renderWidth + "x" + renderHeight);
       return;
     }
-
-    calculateTransformedRenderSize(width, height, additionalRenderMatrix);
 
     final boolean isTextureFrame = frame.getBuffer() instanceof VideoFrame.TextureBuffer;
     renderMatrix.reset();
