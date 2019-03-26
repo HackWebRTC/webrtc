@@ -219,7 +219,6 @@ rtc_source_set("video_stream_encoder_create") {
     "../../api:scoped_refptr",
     "../../video:video_stream_encoder_impl",
     "../task_queue",
-    "../task_queue:global_task_queue_factory",
     "../video_codecs:video_codecs_api",
     "//third_party/abseil-cpp/absl/memory",
   ]

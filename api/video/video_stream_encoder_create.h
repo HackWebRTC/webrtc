@@ -26,11 +26,6 @@ namespace webrtc {
 class Clock;
 
 std::unique_ptr<VideoStreamEncoderInterface> CreateVideoStreamEncoder(
-    uint32_t number_of_cores,
-    VideoStreamEncoderObserver* encoder_stats_observer,
-    const VideoStreamEncoderSettings& settings);
-
-std::unique_ptr<VideoStreamEncoderInterface> CreateVideoStreamEncoder(
     Clock* clock,
     TaskQueueFactory* task_queue_factory,
     uint32_t number_of_cores,

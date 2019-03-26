@@ -11,19 +11,10 @@
 #include "api/video/video_stream_encoder_create.h"
 
 #include "absl/memory/memory.h"
-#include "api/task_queue/global_task_queue_factory.h"
 #include "video/overuse_frame_detector.h"
 #include "video/video_stream_encoder.h"
 
 namespace webrtc {
-std::unique_ptr<VideoStreamEncoderInterface> CreateVideoStreamEncoder(
-    uint32_t number_of_cores,
-    VideoStreamEncoderObserver* encoder_stats_observer,
-    const VideoStreamEncoderSettings& settings) {
-  return CreateVideoStreamEncoder(Clock::GetRealTimeClock(),
-                                  &GlobalTaskQueueFactory(), number_of_cores,
-                                  encoder_stats_observer, settings);
-}
 
 std::unique_ptr<VideoStreamEncoderInterface> CreateVideoStreamEncoder(
     Clock* clock,
