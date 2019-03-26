@@ -293,7 +293,7 @@ if (rtc_include_tests) {
       ":default_audio_quality_analyzer",
       ":default_video_quality_analyzer",
       "../../../api:callfactory_api",
-      "../../../api:create_network_emulation_manager_api",
+      "../../../api:create_network_emulation_manager",
       "../../../api:create_peerconnection_quality_test_fixture",
       "../../../api:libjingle_peerconnection_api",
       "../../../api:network_emulation_manager_api",
