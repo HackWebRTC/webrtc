@@ -10,8 +10,11 @@
 
 #import "RTCRtpEncodingParameters+Private.h"
 
+#import "helpers/NSString+StdString.h"
+
 @implementation RTCRtpEncodingParameters
 
+@synthesize rid = _rid;
 @synthesize isActive = _isActive;
 @synthesize maxBitrateBps = _maxBitrateBps;
 @synthesize minBitrateBps = _minBitrateBps;
@@ -27,6 +30,9 @@
 - (instancetype)initWithNativeParameters:
     (const webrtc::RtpEncodingParameters &)nativeParameters {
   if (self = [self init]) {
+    if (!nativeParameters.rid.empty()) {
+      _rid = [NSString stringForStdString:nativeParameters.rid];
+    }
     _isActive = nativeParameters.active;
     if (nativeParameters.max_bitrate_bps) {
       _maxBitrateBps =
@@ -55,6 +61,9 @@
 
 - (webrtc::RtpEncodingParameters)nativeParameters {
   webrtc::RtpEncodingParameters parameters;
+  if (_rid != nil) {
+    parameters.rid = [NSString stdStringForString:_rid];
+  }
   parameters.active = _isActive;
   if (_maxBitrateBps != nil) {
     parameters.max_bitrate_bps = absl::optional<int>(_maxBitrateBps.intValue);
