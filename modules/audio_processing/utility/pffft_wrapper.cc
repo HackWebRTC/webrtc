@@ -91,20 +91,34 @@ std::unique_ptr<Pffft::FloatBuffer> Pffft::CreateBuffer() const {
   return buffer;
 }
 
-void Pffft::ForwardTransform(const FloatBuffer& in, FloatBuffer* out) {
+void Pffft::ForwardTransform(const FloatBuffer& in,
+                             FloatBuffer* out,
+                             bool ordered) {
   RTC_DCHECK_EQ(in.size(), GetBufferSize(fft_size_, fft_type_));
   RTC_DCHECK_EQ(in.size(), out->size());
   RTC_DCHECK(scratch_buffer_);
-  pffft_transform(pffft_status_, in.const_data(), out->data(), scratch_buffer_,
-                  PFFFT_FORWARD);
+  if (ordered) {
+    pffft_transform_ordered(pffft_status_, in.const_data(), out->data(),
+                            scratch_buffer_, PFFFT_FORWARD);
+  } else {
+    pffft_transform(pffft_status_, in.const_data(), out->data(),
+                    scratch_buffer_, PFFFT_FORWARD);
+  }
 }
 
-void Pffft::BackwardTransform(const FloatBuffer& in, FloatBuffer* out) {
+void Pffft::BackwardTransform(const FloatBuffer& in,
+                              FloatBuffer* out,
+                              bool ordered) {
   RTC_DCHECK_EQ(in.size(), GetBufferSize(fft_size_, fft_type_));
   RTC_DCHECK_EQ(in.size(), out->size());
   RTC_DCHECK(scratch_buffer_);
-  pffft_transform(pffft_status_, in.const_data(), out->data(), scratch_buffer_,
-                  PFFFT_BACKWARD);
+  if (ordered) {
+    pffft_transform_ordered(pffft_status_, in.const_data(), out->data(),
+                            scratch_buffer_, PFFFT_BACKWARD);
+  } else {
+    pffft_transform(pffft_status_, in.const_data(), out->data(),
+                    scratch_buffer_, PFFFT_BACKWARD);
+  }
 }
 
 }  // namespace webrtc

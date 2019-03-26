@@ -69,9 +69,9 @@ class Pffft {
 
   // TODO(https://crbug.com/webrtc/9577): Overload with rtc::ArrayView args.
   // Computes the forward fast Fourier transform.
-  void ForwardTransform(const FloatBuffer& in, FloatBuffer* out);
+  void ForwardTransform(const FloatBuffer& in, FloatBuffer* out, bool ordered);
   // Computes the backward fast Fourier transform.
-  void BackwardTransform(const FloatBuffer& in, FloatBuffer* out);
+  void BackwardTransform(const FloatBuffer& in, FloatBuffer* out, bool ordered);
 
  private:
   const size_t fft_size_;
