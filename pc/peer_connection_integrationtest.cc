@@ -80,6 +80,7 @@ using ::rtc::SocketAddress;
 using ::testing::_;
 using ::testing::Combine;
 using ::testing::Contains;
+using ::testing::DoAll;
 using ::testing::ElementsAre;
 using ::testing::NiceMock;
 using ::testing::Return;
