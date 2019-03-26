@@ -231,7 +231,7 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   void ProcessComparisons();
   void ProcessComparison(const FrameComparison& comparison);
   // Report results for all metrics for all streams.
-  void ReportResults() const;
+  void ReportResults();
   static void ReportResults(std::string test_case_name,
                             StreamStats stats,
                             FrameCounters frame_counters);

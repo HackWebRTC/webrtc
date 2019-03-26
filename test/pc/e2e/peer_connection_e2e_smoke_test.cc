@@ -24,19 +24,6 @@
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
-namespace {
-
-void PrintFrameCounters(const std::string& name,
-                        const FrameCounters& counters) {
-  RTC_LOG(INFO) << "[" << name << "] Captured    : " << counters.captured;
-  RTC_LOG(INFO) << "[" << name << "] Pre encoded : " << counters.pre_encoded;
-  RTC_LOG(INFO) << "[" << name << "] Encoded     : " << counters.encoded;
-  RTC_LOG(INFO) << "[" << name << "] Received    : " << counters.received;
-  RTC_LOG(INFO) << "[" << name << "] Rendered    : " << counters.rendered;
-  RTC_LOG(INFO) << "[" << name << "] Dropped     : " << counters.dropped;
-}
-
-}  // namespace
 
 TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
   using PeerConfigurer = PeerConnectionE2EQualityTestFixture::PeerConfigurer;
@@ -110,11 +97,9 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
 
   fixture->Run(RunParams{TimeDelta::seconds(5)});
 
-  PrintFrameCounters("Global", video_analyzer_ptr->GetGlobalCounters());
   for (auto stream_label : video_analyzer_ptr->GetKnownVideoStreams()) {
     FrameCounters stream_conters =
         video_analyzer_ptr->GetPerStreamCounters().at(stream_label);
-    PrintFrameCounters(stream_label, stream_conters);
     // 150 = 30fps * 5s. On some devices pipeline can be too slow, so it can
     // happen, that frames will stuck in the middle, so we actually can't force
     // real constraints here, so lets just check, that at least 1 frame passed

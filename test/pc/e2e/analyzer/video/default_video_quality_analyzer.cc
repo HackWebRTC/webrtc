@@ -27,6 +27,22 @@ constexpr int kMaxActiveComparisons = 10;
 constexpr int kFreezeThresholdMs = 150;
 constexpr int kMicrosPerSecond = 1000000;
 
+void LogFrameCounters(const std::string& name, const FrameCounters& counters) {
+  RTC_LOG(INFO) << "[" << name << "] Captured    : " << counters.captured;
+  RTC_LOG(INFO) << "[" << name << "] Pre encoded : " << counters.pre_encoded;
+  RTC_LOG(INFO) << "[" << name << "] Encoded     : " << counters.encoded;
+  RTC_LOG(INFO) << "[" << name << "] Received    : " << counters.received;
+  RTC_LOG(INFO) << "[" << name << "] Rendered    : " << counters.rendered;
+  RTC_LOG(INFO) << "[" << name << "] Dropped     : " << counters.dropped;
+}
+
+void LogStreamInternalStats(const std::string& name, const StreamStats& stats) {
+  RTC_LOG(INFO) << "[" << name
+                << "] Dropped by encoder     : " << stats.dropped_by_encoder;
+  RTC_LOG(INFO) << "[" << name << "] Dropped before encoder : "
+                << stats.dropped_before_encoder;
+}
+
 }  // namespace
 
 void RateCounter::AddEvent(Timestamp event_time) {
@@ -464,13 +480,26 @@ void DefaultVideoQualityAnalyzer::ProcessComparison(
   }
 }
 
-void DefaultVideoQualityAnalyzer::ReportResults() const {
+void DefaultVideoQualityAnalyzer::ReportResults() {
   rtc::CritScope crit1(&lock_);
   rtc::CritScope crit2(&comparison_lock_);
   for (auto& item : stream_stats_) {
     ReportResults(GetTestCaseName(item.first), item.second,
                   stream_frame_counters_.at(item.first));
   }
+  LogFrameCounters("Global", frame_counters_);
+  for (auto& item : stream_stats_) {
+    LogFrameCounters(item.first, stream_frame_counters_.at(item.first));
+    LogStreamInternalStats(item.first, item.second);
+  }
+  RTC_LOG(INFO) << "comparisons_queue_size min="
+                << analyzer_stats_.comparisons_queue_size.GetMin()
+                << "; max=" << analyzer_stats_.comparisons_queue_size.GetMax()
+                << "; 99%="
+                << analyzer_stats_.comparisons_queue_size.GetPercentile(0.99);
+  RTC_LOG(INFO) << "comparisons_done=" << analyzer_stats_.comparisons_done;
+  RTC_LOG(INFO) << "overloaded_comparisons_done="
+                << analyzer_stats_.overloaded_comparisons_done;
 }
 
 void DefaultVideoQualityAnalyzer::ReportResults(std::string test_case_name,
