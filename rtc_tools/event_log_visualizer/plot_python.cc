@@ -169,6 +169,12 @@ void PythonPlotCollection::Draw() {
   printf("import colorsys\n");
   for (size_t i = 0; i < plots_.size(); i++) {
     printf("plt.figure(%zu)\n", i);
+    // Link x-axes across all figures for synchronized zooming.
+    if (i == 0) {
+      printf("axis0 = plt.subplot(111)\n");
+    } else {
+      printf("plt.subplot(111, sharex=axis0)\n");
+    }
     plots_[i]->Draw();
   }
   printf("plt.show()\n");
