@@ -875,7 +875,8 @@ PeerConnection::PeerConnection(PeerConnectionFactory* factory,
       rtcp_cname_(GenerateRtcpCname()),
       local_streams_(StreamCollection::Create()),
       remote_streams_(StreamCollection::Create()),
-      call_(std::move(call)) {}
+      call_(std::move(call)),
+      call_ptr_(call_.get()) {}
 
 PeerConnection::~PeerConnection() {
   TRACE_EVENT0("webrtc", "PeerConnection::~PeerConnection");
@@ -1618,6 +1619,7 @@ PeerConnection::CreateSender(
     rtc::scoped_refptr<MediaStreamTrackInterface> track,
     const std::vector<std::string>& stream_ids,
     const std::vector<RtpEncodingParameters>& send_encodings) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender;
   if (media_type == cricket::MEDIA_TYPE_AUDIO) {
     RTC_DCHECK(!track ||
@@ -1793,7 +1795,7 @@ bool PeerConnection::GetStats(StatsObserver* observer,
                               MediaStreamTrackInterface* track,
                               StatsOutputLevel level) {
   TRACE_EVENT0("webrtc", "PeerConnection::GetStats");
-  RTC_DCHECK(signaling_thread()->IsCurrent());
+  RTC_DCHECK_RUN_ON(signaling_thread());
   if (!observer) {
     RTC_LOG(LS_ERROR) << "GetStats - observer is NULL.";
     return false;
@@ -1814,6 +1816,7 @@ bool PeerConnection::GetStats(StatsObserver* observer,
 
 void PeerConnection::GetStats(RTCStatsCollectorCallback* callback) {
   TRACE_EVENT0("webrtc", "PeerConnection::GetStats");
+  RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(stats_collector_);
   RTC_DCHECK(callback);
   stats_collector_->GetStatsReport(callback);
@@ -1823,6 +1826,7 @@ void PeerConnection::GetStats(
     rtc::scoped_refptr<RtpSenderInterface> selector,
     rtc::scoped_refptr<RTCStatsCollectorCallback> callback) {
   TRACE_EVENT0("webrtc", "PeerConnection::GetStats");
+  RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(callback);
   RTC_DCHECK(stats_collector_);
   rtc::scoped_refptr<RtpSenderInternal> internal_sender;
@@ -1851,6 +1855,7 @@ void PeerConnection::GetStats(
     rtc::scoped_refptr<RtpReceiverInterface> selector,
     rtc::scoped_refptr<RTCStatsCollectorCallback> callback) {
   TRACE_EVENT0("webrtc", "PeerConnection::GetStats");
+  RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK(callback);
   RTC_DCHECK(stats_collector_);
   rtc::scoped_refptr<RtpReceiverInternal> internal_receiver;
@@ -3582,6 +3587,7 @@ RTCError PeerConnection::SetBitrate(const BitrateSettings& bitrate) {
     return worker_thread()->Invoke<RTCError>(
         RTC_FROM_HERE, [&]() { return SetBitrate(bitrate); });
   }
+  RTC_DCHECK_RUN_ON(worker_thread());
 
   const bool has_min = bitrate.min_bitrate_bps.has_value();
   const bool has_start = bitrate.start_bitrate_bps.has_value();
@@ -3621,17 +3627,17 @@ RTCError PeerConnection::SetBitrate(const BitrateSettings& bitrate) {
 void PeerConnection::SetBitrateAllocationStrategy(
     std::unique_ptr<rtc::BitrateAllocationStrategy>
         bitrate_allocation_strategy) {
-  rtc::Thread* worker_thread = factory_->worker_thread();
-  if (!worker_thread->IsCurrent()) {
+  if (!worker_thread()->IsCurrent()) {
     rtc::BitrateAllocationStrategy* strategy_raw =
         bitrate_allocation_strategy.release();
-    auto functor = [this, strategy_raw]() {
+    worker_thread()->Invoke<void>(RTC_FROM_HERE, [this, strategy_raw]() {
+      RTC_DCHECK_RUN_ON(worker_thread());
       call_->SetBitrateAllocationStrategy(
           absl::WrapUnique<rtc::BitrateAllocationStrategy>(strategy_raw));
-    };
-    worker_thread->Invoke<void>(RTC_FROM_HERE, functor);
+    });
     return;
   }
+  RTC_DCHECK_RUN_ON(worker_thread());
   RTC_DCHECK(call_.get());
   call_->SetBitrateAllocationStrategy(std::move(bitrate_allocation_strategy));
 }
@@ -6232,7 +6238,7 @@ cricket::VoiceChannel* PeerConnection::CreateVoiceChannel(
   }
 
   cricket::VoiceChannel* voice_channel = channel_manager()->CreateVoiceChannel(
-      call_.get(), configuration_.media_config, rtp_transport, media_transport,
+      call_ptr_, configuration_.media_config, rtp_transport, media_transport,
       signaling_thread(), mid, SrtpRequired(), GetCryptoOptions(),
       &ssrc_generator_, audio_options_);
   if (!voice_channel) {
@@ -6257,7 +6263,7 @@ cricket::VideoChannel* PeerConnection::CreateVideoChannel(
   }
 
   cricket::VideoChannel* video_channel = channel_manager()->CreateVideoChannel(
-      call_.get(), configuration_.media_config, rtp_transport, media_transport,
+      call_ptr_, configuration_.media_config, rtp_transport, media_transport,
       signaling_thread(), mid, SrtpRequired(), GetCryptoOptions(),
       &ssrc_generator_, video_options_);
   if (!video_channel) {
@@ -6326,6 +6332,7 @@ Call::Stats PeerConnection::GetCallStats() {
     return worker_thread()->Invoke<Call::Stats>(
         RTC_FROM_HERE, rtc::Bind(&PeerConnection::GetCallStats, this));
   }
+  RTC_DCHECK_RUN_ON(worker_thread());
   if (call_) {
     return call_->GetStats();
   } else {
@@ -6963,7 +6970,7 @@ void PeerConnection::ReportNegotiatedCiphers(
 }
 
 void PeerConnection::OnSentPacket_w(const rtc::SentPacket& sent_packet) {
-  RTC_DCHECK(worker_thread()->IsCurrent());
+  RTC_DCHECK_RUN_ON(worker_thread());
   RTC_DCHECK(call_);
   call_->OnSentPacket(sent_packet);
 }
@@ -7089,6 +7096,7 @@ CryptoOptions PeerConnection::GetCryptoOptions() {
 }
 
 void PeerConnection::ClearStatsCache() {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   if (stats_collector_) {
     stats_collector_->ClearCachedStatsReport();
   }

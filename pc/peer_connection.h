@@ -1030,7 +1030,8 @@ class PeerConnection : public PeerConnectionInternal,
   bool OnTransportChanged(const std::string& mid,
                           RtpTransportInternal* rtp_transport,
                           rtc::scoped_refptr<DtlsTransport> dtls_transport,
-                          MediaTransportInterface* media_transport) override;
+                          MediaTransportInterface* media_transport) override
+      RTC_RUN_ON(worker_thread());
 
   // Returns the observer. Will crash on CHECK if the observer is removed.
   PeerConnectionObserver* Observer() const RTC_RUN_ON(signaling_thread());
@@ -1150,9 +1151,16 @@ class PeerConnection : public PeerConnectionInternal,
 
   bool remote_peer_supports_msid_ RTC_GUARDED_BY(signaling_thread()) = false;
 
-  std::unique_ptr<Call> call_;
-  std::unique_ptr<StatsCollector> stats_;  // A pointer is passed to senders_
-  rtc::scoped_refptr<RTCStatsCollector> stats_collector_;
+  std::unique_ptr<Call> call_ RTC_GUARDED_BY(worker_thread());
+
+  // Points to the same thing as `call_`. Since it's const, we may read the
+  // pointer (but not touch the object) from any thread.
+  Call* const call_ptr_ RTC_PT_GUARDED_BY(worker_thread());
+
+  std::unique_ptr<StatsCollector> stats_
+      RTC_GUARDED_BY(signaling_thread());  // A pointer is passed to senders_
+  rtc::scoped_refptr<RTCStatsCollector> stats_collector_
+      RTC_GUARDED_BY(signaling_thread());
 
   std::vector<
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
