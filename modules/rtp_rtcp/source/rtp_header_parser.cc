@@ -64,7 +64,7 @@ bool RtpHeaderParserImpl::Parse(const uint8_t* packet,
                                 size_t length,
                                 RTPHeader* header) const {
   RtpUtility::RtpHeaderParser rtp_parser(packet, length);
-  memset(header, 0, sizeof(*header));
+  *header = RTPHeader();
 
   RtpHeaderExtensionMap map;
   {

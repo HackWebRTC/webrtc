@@ -163,19 +163,7 @@ bool Packet::ParseHeader(const RtpHeaderParser& parser) {
 }
 
 void Packet::CopyToHeader(RTPHeader* destination) const {
-  destination->markerBit = header_.markerBit;
-  destination->payloadType = header_.payloadType;
-  destination->sequenceNumber = header_.sequenceNumber;
-  destination->timestamp = header_.timestamp;
-  destination->ssrc = header_.ssrc;
-  destination->numCSRCs = header_.numCSRCs;
-  destination->paddingLength = header_.paddingLength;
-  destination->headerLength = header_.headerLength;
-  destination->payload_type_frequency = header_.payload_type_frequency;
-  memcpy(&destination->arrOfCSRCs, &header_.arrOfCSRCs,
-         sizeof(header_.arrOfCSRCs));
-  memcpy(&destination->extension, &header_.extension,
-         sizeof(header_.extension));
+  *destination = header_;
 }
 
 }  // namespace test
