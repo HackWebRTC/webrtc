@@ -178,12 +178,16 @@ absl::optional<int> ComputeSendBitrate(int max_send_bitrate_bps,
 }  // namespace
 
 WebRtcVoiceEngine::WebRtcVoiceEngine(
+    webrtc::TaskQueueFactory* task_queue_factory,
     webrtc::AudioDeviceModule* adm,
     const rtc::scoped_refptr<webrtc::AudioEncoderFactory>& encoder_factory,
     const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
     rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
     rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing)
-    : adm_(adm),
+    : low_priority_worker_queue_(task_queue_factory->CreateTaskQueue(
+          "rtc-low-prio",
+          webrtc::TaskQueueFactory::Priority::LOW)),
+      adm_(adm),
       encoder_factory_(encoder_factory),
       decoder_factory_(decoder_factory),
       audio_mixer_(audio_mixer),
@@ -215,10 +219,6 @@ WebRtcVoiceEngine::~WebRtcVoiceEngine() {
 void WebRtcVoiceEngine::Init() {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
   RTC_LOG(LS_INFO) << "WebRtcVoiceEngine::Init";
-
-  // TaskQueue expects to be created/destroyed on the same thread.
-  low_priority_worker_queue_.reset(
-      new rtc::TaskQueue("rtc-low-prio", rtc::TaskQueue::Priority::LOW));
 
   // Load our audio codec lists.
   RTC_LOG(LS_INFO) << "Supported send codecs in order of preference:";
@@ -580,8 +580,8 @@ void WebRtcVoiceEngine::UnregisterChannel(WebRtcVoiceMediaChannel* channel) {
 bool WebRtcVoiceEngine::StartAecDump(rtc::PlatformFile file,
                                      int64_t max_size_bytes) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
-  auto aec_dump = webrtc::AecDumpFactory::Create(
-      file, max_size_bytes, low_priority_worker_queue_.get());
+  auto aec_dump = webrtc::AecDumpFactory::Create(file, max_size_bytes,
+                                                 &low_priority_worker_queue_);
   if (!aec_dump) {
     return false;
   }
@@ -592,8 +592,8 @@ bool WebRtcVoiceEngine::StartAecDump(rtc::PlatformFile file,
 void WebRtcVoiceEngine::StartAecDump(const std::string& filename) {
   RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
 
-  auto aec_dump = webrtc::AecDumpFactory::Create(
-      filename, -1, low_priority_worker_queue_.get());
+  auto aec_dump =
+      webrtc::AecDumpFactory::Create(filename, -1, &low_priority_worker_queue_);
   if (aec_dump) {
     apm()->AttachAecDump(std::move(aec_dump));
   }
