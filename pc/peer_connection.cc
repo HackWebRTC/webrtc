@@ -7063,6 +7063,7 @@ bool PeerConnection::OnTransportChanged(
     RtpTransportInternal* rtp_transport,
     rtc::scoped_refptr<DtlsTransport> dtls_transport,
     MediaTransportInterface* media_transport) {
+  RTC_DCHECK_RUN_ON(network_thread());
   RTC_DCHECK_RUNS_SERIALIZED(&use_media_transport_race_checker_);
   bool ret = true;
   auto base_channel = GetChannel(mid);
@@ -7076,7 +7077,7 @@ bool PeerConnection::OnTransportChanged(
   if (use_media_transport_) {
     // Only pass media transport to call object if media transport is used
     // for media (and not data channel).
-    call_->MediaTransportChange(media_transport);
+    call_ptr_->MediaTransportChange(media_transport);
   }
 
   return ret;
