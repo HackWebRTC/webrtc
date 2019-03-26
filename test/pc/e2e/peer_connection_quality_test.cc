@@ -301,7 +301,7 @@ void PeerConnectionE2EQualityTest::Run(
   }
 
   // Create a |task_queue_|.
-  task_queue_ = absl::make_unique<rtc::TaskQueue>("pc_e2e_quality_test");
+  task_queue_ = absl::make_unique<TaskQueueForTest>("pc_e2e_quality_test");
   // Setup call.
   signaling_thread->Invoke<void>(
       RTC_FROM_HERE,

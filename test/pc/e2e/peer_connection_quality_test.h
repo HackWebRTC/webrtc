@@ -21,7 +21,7 @@
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "pc/test/frame_generator_capturer_video_track_source.h"
-#include "rtc_base/task_queue.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_annotations.h"
@@ -252,7 +252,7 @@ class PeerConnectionE2EQualityTest
   // Task queue, that is used for running activities during test call.
   // This task queue will be created before call set up and will be destroyed
   // immediately before call tear down.
-  std::unique_ptr<rtc::TaskQueue> task_queue_;
+  std::unique_ptr<TaskQueueForTest> task_queue_;
 };
 
 }  // namespace webrtc_pc_e2e

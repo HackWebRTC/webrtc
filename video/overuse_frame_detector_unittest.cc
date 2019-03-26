@@ -17,6 +17,7 @@
 #include "rtc_base/event.h"
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/random.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "video/overuse_frame_detector.h"
@@ -425,15 +426,13 @@ TEST_F(OveruseFrameDetectorTest, UpdatesExistingSamples) {
 }
 
 TEST_F(OveruseFrameDetectorTest, RunOnTqNormalUsage) {
-  rtc::TaskQueue queue("OveruseFrameDetectorTestQueue");
+  TaskQueueForTest queue("OveruseFrameDetectorTestQueue");
+
+  queue.SendTask([&] {
+    overuse_detector_->StartCheckForOveruse(&queue, options_, observer_);
+  });
 
   rtc::Event event;
-  queue.PostTask([this, &event, &queue] {
-    overuse_detector_->StartCheckForOveruse(&queue, options_, observer_);
-    event.Set();
-  });
-  event.Wait(rtc::Event::kForever);
-
   // Expect NormalUsage(). When called, stop the |overuse_detector_| and then
   // set |event| to end the test.
   EXPECT_CALL(mock_observer_, AdaptUp(reason_))
@@ -905,15 +904,13 @@ TEST_F(OveruseFrameDetectorTest2, UpdatesExistingSamples) {
 }
 
 TEST_F(OveruseFrameDetectorTest2, RunOnTqNormalUsage) {
-  rtc::TaskQueue queue("OveruseFrameDetectorTestQueue");
+  TaskQueueForTest queue("OveruseFrameDetectorTestQueue");
+
+  queue.SendTask([&] {
+    overuse_detector_->StartCheckForOveruse(&queue, options_, observer_);
+  });
 
   rtc::Event event;
-  queue.PostTask([this, &event, &queue] {
-    overuse_detector_->StartCheckForOveruse(&queue, options_, observer_);
-    event.Set();
-  });
-  event.Wait(rtc::Event::kForever);
-
   // Expect NormalUsage(). When called, stop the |overuse_detector_| and then
   // set |event| to end the test.
   EXPECT_CALL(mock_observer_, AdaptUp(reason_))

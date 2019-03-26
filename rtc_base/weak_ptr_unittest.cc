@@ -13,7 +13,7 @@
 
 #include "absl/memory/memory.h"
 #include "rtc_base/event.h"
-#include "rtc_base/task_queue.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/weak_ptr.h"
 #include "test/gtest.h"
 
@@ -203,13 +203,8 @@ TEST(WeakPtrTest, HasWeakPtrs) {
 template <class T>
 std::unique_ptr<T> NewObjectCreatedOnTaskQueue() {
   std::unique_ptr<T> obj;
-  TaskQueue queue("NewObjectCreatedOnTaskQueue");
-  Event event;
-  queue.PostTask([&event, &obj] {
-    obj.reset(new T());
-    event.Set();
-  });
-  EXPECT_TRUE(event.Wait(1000));
+  webrtc::TaskQueueForTest queue("NewObjectCreatedOnTaskQueue");
+  queue.SendTask([&] { obj = absl::make_unique<T>(); });
   return obj;
 }
 
@@ -230,15 +225,12 @@ TEST(WeakPtrTest, WeakPtrInitiateAndUseOnDifferentThreads) {
   auto target = absl::make_unique<TargetWithFactory>();
   // Create weak ptr on main thread
   WeakPtr<Target> weak_ptr = target->factory.GetWeakPtr();
-  rtc::TaskQueue queue("queue");
-  rtc::Event done;
-  queue.PostTask([&] {
+  webrtc::TaskQueueForTest queue("queue");
+  queue.SendTask([&] {
     // Dereference and invalide weak_ptr on another thread.
     EXPECT_EQ(weak_ptr.get(), target.get());
     target.reset();
-    done.Set();
   });
-  EXPECT_TRUE(done.Wait(1000));
 }
 
 }  // namespace rtc

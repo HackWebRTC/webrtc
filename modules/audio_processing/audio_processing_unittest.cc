@@ -38,7 +38,7 @@
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/swap_queue.h"
 #include "rtc_base/system/arch.h"
-#include "rtc_base/task_queue.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
@@ -1448,7 +1448,7 @@ void ApmTest::ProcessDebugDump(const std::string& in_filename,
                                const std::string& out_filename,
                                Format format,
                                int max_size_bytes) {
-  rtc::TaskQueue worker_queue("ApmTest_worker_queue");
+  TaskQueueForTest worker_queue("ApmTest_worker_queue");
   FILE* in_file = fopen(in_filename.c_str(), "rb");
   ASSERT_TRUE(in_file != NULL);
   audioproc::Event event_msg;
@@ -1616,7 +1616,7 @@ TEST_F(ApmTest, VerifyDebugDumpFloat) {
 
 // TODO(andrew): expand test to verify output.
 TEST_F(ApmTest, DebugDump) {
-  rtc::TaskQueue worker_queue("ApmTest_worker_queue");
+  TaskQueueForTest worker_queue("ApmTest_worker_queue");
   const std::string filename =
       test::TempFilename(test::OutputPath(), "debug_aec");
   {
@@ -1650,7 +1650,7 @@ TEST_F(ApmTest, DebugDump) {
 
 // TODO(andrew): expand test to verify output.
 TEST_F(ApmTest, DebugDumpFromFileHandle) {
-  rtc::TaskQueue worker_queue("ApmTest_worker_queue");
+  TaskQueueForTest worker_queue("ApmTest_worker_queue");
 
   const std::string filename =
       test::TempFilename(test::OutputPath(), "debug_aec");

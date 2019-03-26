@@ -23,7 +23,7 @@
 #include "absl/memory/memory.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/event.h"
-#include "rtc_base/task_queue.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/time_utils.h"
 #include "test/gtest.h"
 
@@ -64,7 +64,7 @@ TEST(TaskQueueTest, DISABLED_PostDelayedHighRes) {
 
   static const char kQueueName[] = "PostDelayedHighRes";
   Event event;
-  TaskQueue queue(kQueueName, TaskQueue::Priority::HIGH);
+  webrtc::TaskQueueForTest queue(kQueueName, TaskQueue::Priority::HIGH);
 
   uint32_t start = Time();
   queue.PostDelayedTask(Bind(&CheckCurrent, &event, &queue), 3);

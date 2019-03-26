@@ -19,7 +19,7 @@
 #include "modules/audio_processing/aec_dump/aec_dump_factory.h"
 #include "modules/audio_processing/test/debug_dump_replayer.h"
 #include "modules/audio_processing/test/test_utils.h"
-#include "rtc_base/task_queue.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 
@@ -110,7 +110,7 @@ class DebugDumpGenerator {
 
   bool enable_pre_amplifier_;
 
-  rtc::TaskQueue worker_queue_;
+  TaskQueueForTest worker_queue_;
   std::unique_ptr<AudioProcessing> apm_;
 
   const std::string dump_file_name_;

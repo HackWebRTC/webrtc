@@ -23,7 +23,7 @@
 #include "modules/audio_processing/test/fake_recording_device.h"
 #include "modules/audio_processing/test/test_utils.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/task_queue.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/time_utils.h"
 
 namespace webrtc {
@@ -199,7 +199,7 @@ class AudioProcessingSimulator {
   int analog_mic_level_;
   FakeRecordingDevice fake_recording_device_;
 
-  rtc::TaskQueue worker_queue_;
+  TaskQueueForTest worker_queue_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(AudioProcessingSimulator);
 };

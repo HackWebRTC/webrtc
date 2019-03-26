@@ -1284,6 +1284,7 @@ if (rtc_include_tests) {
       ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
       ":rtc_task_queue",
+      ":task_queue_for_test",
       "../test:test_support",
       "//third_party/abseil-cpp/absl/memory",
     ]
@@ -1319,7 +1320,7 @@ if (rtc_include_tests) {
       ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
       ":rtc_event",
-      ":rtc_task_queue",
+      ":task_queue_for_test",
       ":weak_ptr",
       "../test:test_support",
       "//third_party/abseil-cpp/absl/memory",
