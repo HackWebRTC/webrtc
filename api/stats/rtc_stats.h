@@ -184,6 +184,8 @@ class RTC_EXPORT RTCStats {
 // determine if a stats member should be exposed or not. Multiple non-standard
 // stats members can share the same group ID so that they are exposed together.
 enum class NonStandardGroupId {
+  // Group ID used for testing purposes only.
+  kGroupIdForTesting,
   // I2E:
   // https://groups.google.com/a/chromium.org/forum/#!topic/blink-dev/hE2B1iItPDk
   kRtcAudioJitterBufferMaxPackets,

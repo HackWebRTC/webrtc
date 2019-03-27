@@ -340,7 +340,7 @@ TEST(RTCStatsTest, IsStandardized) {
 }
 
 TEST(RTCStatsTest, NonStandardGroupId) {
-  auto group_id = NonStandardGroupId::kRtcAudioJitterBufferMaxPackets;
+  auto group_id = NonStandardGroupId::kGroupIdForTesting;
   RTCNonStandardStatsMember<int32_t> with_group_id("stat", {group_id});
   std::vector<NonStandardGroupId> expected_ids({group_id});
   EXPECT_EQ(expected_ids, with_group_id.group_ids());
