@@ -17,9 +17,11 @@
 #include <cstdio>
 #include <string>
 
+#include "api/units/data_rate.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/remote_bitrate_estimator/overuse_detector.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_minmax.h"
 #include "system_wrappers/include/field_trial.h"
@@ -27,11 +29,8 @@
 namespace webrtc {
 constexpr TimeDelta kDefaultRtt = TimeDelta::Millis<200>();
 constexpr double kDefaultBackoffFactor = 0.85;
-constexpr TimeDelta kDefaultInitialBackOffInterval = TimeDelta::Millis<200>();
 
 const char kBweBackOffFactorExperiment[] = "WebRTC-BweBackOffFactor";
-const char kBweInitialBackOffIntervalExperiment[] =
-    "WebRTC-BweInitialBackOffInterval";
 
 double ReadBackoffFactor() {
   std::string experiment_string =
@@ -53,25 +52,6 @@ double ReadBackoffFactor() {
   return kDefaultBackoffFactor;
 }
 
-TimeDelta ReadInitialBackoffInterval() {
-  std::string experiment_string =
-      webrtc::field_trial::FindFullName(kBweInitialBackOffIntervalExperiment);
-  int64_t backoff_interval;
-  int parsed_values =
-      sscanf(experiment_string.c_str(), "Enabled-%" SCNd64, &backoff_interval);
-  if (parsed_values == 1) {
-    if (10 <= backoff_interval && backoff_interval <= 200) {
-      return TimeDelta::ms(backoff_interval);
-    }
-    RTC_LOG(WARNING)
-        << "Initial back-off interval must be between 10 and 200 ms.";
-  }
-  RTC_LOG(LS_WARNING) << "Failed to parse parameters for "
-                      << kBweInitialBackOffIntervalExperiment
-                      << " experiment. Using default.";
-  return kDefaultInitialBackOffInterval;
-}
-
 AimdRateControl::AimdRateControl()
     : min_configured_bitrate_(congestion_controller::GetMinBitrate()),
       max_configured_bitrate_(DataRate::kbps(30000)),
@@ -90,13 +70,16 @@ AimdRateControl::AimdRateControl()
       in_experiment_(!AdaptiveThresholdExperimentIsDisabled()),
       smoothing_experiment_(
           webrtc::field_trial::IsEnabled("WebRTC-Audio-BandwidthSmoothing")),
-      in_initial_backoff_interval_experiment_(
-          webrtc::field_trial::IsEnabled(kBweInitialBackOffIntervalExperiment)),
-      initial_backoff_interval_(kDefaultInitialBackOffInterval) {
-  if (in_initial_backoff_interval_experiment_) {
-    initial_backoff_interval_ = ReadInitialBackoffInterval();
+      initial_backoff_interval_("initial_backoff_interval"),
+      low_throughput_threshold_("low_throughput", DataRate::Zero()) {
+  // E.g
+  // WebRTC-BweAimdRateControlConfig/initial_backoff_interval:100ms,
+  // critical_low_bitrate:100kbps/
+  ParseFieldTrial({&initial_backoff_interval_, &low_throughput_threshold_},
+                  field_trial::FindFullName("WebRTC-BweAimdRateControlConfig"));
+  if (initial_backoff_interval_) {
     RTC_LOG(LS_INFO) << "Using aimd rate control with initial back-off interval"
-                     << " " << ToString(initial_backoff_interval_) << ".";
+                     << " " << ToString(*initial_backoff_interval_) << ".";
   }
   RTC_LOG(LS_INFO) << "Using aimd rate control with back off factor " << beta_;
 }
@@ -146,7 +129,7 @@ bool AimdRateControl::TimeToReduceFurther(Timestamp at_time,
 }
 
 bool AimdRateControl::InitialTimeToReduceFurther(Timestamp at_time) const {
-  if (!in_initial_backoff_interval_experiment_) {
+  if (!initial_backoff_interval_) {
     return ValidEstimate() &&
            TimeToReduceFurther(at_time,
                                LatestEstimate() / 2 - DataRate::bps(1));
@@ -154,7 +137,7 @@ bool AimdRateControl::InitialTimeToReduceFurther(Timestamp at_time) const {
   // TODO(terelius): We could use the RTT (clamped to suitable limits) instead
   // of a fixed bitrate_reduction_interval.
   if (time_last_bitrate_decrease_.IsInfinite() ||
-      at_time - time_last_bitrate_decrease_ >= initial_backoff_interval_) {
+      at_time - time_last_bitrate_decrease_ >= *initial_backoff_interval_) {
     return true;
   }
   return false;
@@ -280,16 +263,24 @@ DataRate AimdRateControl::ChangeBitrate(DataRate new_bitrate,
       break;
 
     case kRcDecrease:
-      // Set bit rate to something slightly lower than the measured throughput
-      // to get rid of any self-induced delay.
-      new_bitrate = estimated_throughput * beta_;
-      if (new_bitrate > current_bitrate_) {
-        // Avoid increasing the rate when over-using.
-        if (link_capacity_.has_estimate()) {
-          new_bitrate = beta_ * link_capacity_.estimate();
+      if (estimated_throughput > low_throughput_threshold_) {
+        // Set bit rate to something slightly lower than the measured throughput
+        // to get rid of any self-induced delay.
+        new_bitrate = estimated_throughput * beta_;
+        if (new_bitrate > current_bitrate_) {
+          // Avoid increasing the rate when over-using.
+          if (link_capacity_.has_estimate()) {
+            new_bitrate = beta_ * link_capacity_.estimate();
+          }
         }
-        new_bitrate = std::min(new_bitrate, current_bitrate_);
+      } else {
+        new_bitrate = estimated_throughput;
+        if (link_capacity_.has_estimate()) {
+          new_bitrate = std::max(new_bitrate, link_capacity_.estimate());
+        }
+        new_bitrate = std::min(new_bitrate, low_throughput_threshold_.Get());
       }
+      new_bitrate = std::min(new_bitrate, current_bitrate_);
 
       if (bitrate_is_initialized_ && estimated_throughput < current_bitrate_) {
         constexpr double kDegradationFactor = 0.9;

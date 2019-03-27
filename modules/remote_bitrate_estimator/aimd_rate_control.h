@@ -18,6 +18,7 @@
 #include "api/units/timestamp.h"
 #include "modules/congestion_controller/goog_cc/link_capacity_estimator.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 
 namespace webrtc {
 // A rate control implementation based on additive increases of
@@ -95,9 +96,9 @@ class AimdRateControl {
   TimeDelta rtt_;
   const bool in_experiment_;
   const bool smoothing_experiment_;
-  const bool in_initial_backoff_interval_experiment_;
-  TimeDelta initial_backoff_interval_;
   absl::optional<DataRate> last_decrease_;
+  FieldTrialOptional<TimeDelta> initial_backoff_interval_;
+  FieldTrialParameter<DataRate> low_throughput_threshold_;
 };
 }  // namespace webrtc
 

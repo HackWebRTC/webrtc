@@ -241,7 +241,9 @@ TEST_F(DelayBasedBweTest, TestInitialOveruse) {
 class DelayBasedBweTestWithBackoffTimeoutExperiment : public DelayBasedBweTest {
  public:
   DelayBasedBweTestWithBackoffTimeoutExperiment()
-      : DelayBasedBweTest("WebRTC-BweInitialBackOffInterval/Enabled-200/") {}
+      : DelayBasedBweTest(
+            "WebRTC-BweAimdRateControlConfig/initial_backoff_interval:200ms/") {
+  }
 };
 
 // This test subsumes and improves DelayBasedBweTest.TestInitialOveruse above.
