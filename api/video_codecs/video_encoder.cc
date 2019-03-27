@@ -125,6 +125,11 @@ int32_t VideoEncoder::SetRateAllocation(
   return SetRates(allocation.get_sum_kbps(), framerate);
 }
 
+void VideoEncoder::SetRates(const RateControlParameters& parameters) {
+  SetRateAllocation(parameters.bitrate,
+                    static_cast<uint32_t>(parameters.framerate_fps + 0.5));
+}
+
 void VideoEncoder::OnPacketLossRateUpdate(float packet_loss_rate) {}
 
 void VideoEncoder::OnRttUpdate(int64_t rtt_ms) {}

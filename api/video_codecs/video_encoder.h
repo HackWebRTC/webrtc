@@ -18,6 +18,7 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
+#include "api/units/data_rate.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_codec_constants.h"
@@ -192,6 +193,21 @@ class RTC_EXPORT VideoEncoder {
         fps_allocation[kMaxSpatialLayers];
   };
 
+  struct RateControlParameters {
+    // Target bitrate, per spatial/temporal layer.
+    // A target bitrate of 0bps indicates a layer should not be encoded at all.
+    VideoBitrateAllocation bitrate;
+    // Target framerate, in fps. A value <= 0.0 is invalid and should be
+    // interpreted as framerate target not available. In this case the encoder
+    // should fall back to the max framerate specified in |codec_settings| of
+    // the last InitEncode() call.
+    double framerate_fps;
+    // The network bandwidth available for video. This is at least
+    // |bitrate.get_sum_bps()|, but may be higher if the application is not
+    // network constrained.
+    DataRate bandwidth_allocation;
+  };
+
   static VideoCodecVP8 GetDefaultVp8Settings();
   static VideoCodecVP9 GetDefaultVp9Settings();
   static VideoCodecH264 GetDefaultH264Settings();
@@ -249,19 +265,26 @@ class RTC_EXPORT VideoEncoder {
                          const CodecSpecificInfo* codec_specific_info,
                          const std::vector<VideoFrameType>* frame_types);
 
-  // Inform the encoder about the new target bit rate.
-  //
-  // Input:
-  //          - bitrate         : New target bit rate
-  //          - framerate       : The target frame rate
-  //
-  // Return value                : WEBRTC_VIDEO_CODEC_OK if OK, < 0 otherwise.
+  // DEPRECATED! Instead use the one below:
+  // void SetRateAllocation(const VideoBitrateAllocation&, DataRate, uint32)
+  // For now has a default implementation that call RTC_NOTREACHED().
+  // TODO(bugs.webrtc.org/10481): Remove this once all usage is gone.
   virtual int32_t SetRates(uint32_t bitrate, uint32_t framerate);
 
-  // Default fallback: Just use the sum of bitrates as the single target rate.
-  // TODO(sprang): Remove this default implementation when we remove SetRates().
+  // DEPRECATED! Instead, use void SetRates(const RateControlParameters&);
+  // For now has a default implementation that calls
+  // int32_t SetRates(uin32_t, uint32_t) with |allocation.get_sum_kbps()| and
+  // |framerate| as arguments. This will be removed.
+  // TODO(bugs.webrtc.org/10481): Remove this once all usage is gone.
   virtual int32_t SetRateAllocation(const VideoBitrateAllocation& allocation,
                                     uint32_t framerate);
+
+  // Sets rate control parameters: bitrate, framerate, etc. These settings are
+  // instantaneous (i.e. not moving averages) and should apply from now until
+  // the next call to SetRates().
+  // Default implementation will call SetRateAllocation() with appropriate
+  // members of |parameters| as parameters.
+  virtual void SetRates(const RateControlParameters& parameters);
 
   // Inform the encoder when the packet loss rate changes.
   //
