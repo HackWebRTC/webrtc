@@ -938,6 +938,9 @@ void RTCPSender::SetVideoBitrateAllocation(
       CheckAndUpdateLayerStructure(bitrate);
   if (new_bitrate) {
     video_bitrate_allocation_ = *new_bitrate;
+    RTC_LOG(LS_INFO) << "Emitting TargetBitrate XR for SSRC " << ssrc_
+                     << " with new layers enabled/disabled: "
+                     << video_bitrate_allocation_.ToString();
     next_time_to_send_rtcp_ = clock_->TimeInMilliseconds();
   } else {
     video_bitrate_allocation_ = bitrate;
