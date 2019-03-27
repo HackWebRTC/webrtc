@@ -9,6 +9,7 @@
 import("../../../../webrtc.gni")
 
 rtc_source_set("rnn_vad") {
+  visibility = [ "../*" ]
   sources = [
     "common.h",
     "features_extraction.cc",

@@ -84,6 +84,7 @@ rtc_source_set("ooura_fft") {
 }
 
 rtc_source_set("pffft_wrapper") {
+  visibility = [ "../*" ]
   sources = [
     "pffft_wrapper.cc",
     "pffft_wrapper.h",
