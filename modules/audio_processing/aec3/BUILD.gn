@@ -207,6 +207,7 @@ if (rtc_include_tests) {
         "erl_estimator_unittest.cc",
         "erle_estimator_unittest.cc",
         "fft_data_unittest.cc",
+        "filter_analyzer_unittest.cc",
         "frame_blocker_unittest.cc",
         "main_filter_update_gain_unittest.cc",
         "matched_filter_lag_aggregator_unittest.cc",

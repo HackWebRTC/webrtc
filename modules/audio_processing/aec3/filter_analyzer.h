@@ -55,6 +55,9 @@ class FilterAnalyzer {
   // Returns the preprocessed filter.
   rtc::ArrayView<const float> GetAdjustedFilter() const { return h_highpass_; }
 
+  // Public for testing purposes only.
+  void SetRegionToAnalyze(rtc::ArrayView<const float> filter_time_domain);
+
  private:
   void AnalyzeRegion(rtc::ArrayView<const float> filter_time_domain,
                      const RenderBuffer& render_buffer);
@@ -64,8 +67,6 @@ class FilterAnalyzer {
   void PreProcessFilter(rtc::ArrayView<const float> filter_time_domain);
 
   void ResetRegion();
-
-  void SetRegionToAnalyze(rtc::ArrayView<const float> filter_time_domain);
 
   struct FilterRegion {
     size_t start_sample_;

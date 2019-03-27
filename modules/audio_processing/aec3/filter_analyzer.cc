@@ -144,11 +144,16 @@ void FilterAnalyzer::SetRegionToAnalyze(
     rtc::ArrayView<const float> filter_time_domain) {
   constexpr size_t kNumberBlocksToUpdate = 1;
   auto& r = region_;
-    r.start_sample_ =
-        r.end_sample_ == filter_time_domain.size() - 1 ? 0 : r.end_sample_ + 1;
-    r.end_sample_ =
-        std::min(r.start_sample_ + kNumberBlocksToUpdate * kBlockSize - 1,
-                 filter_time_domain.size() - 1);
+  r.start_sample_ =
+      r.end_sample_ >= filter_time_domain.size() - 1 ? 0 : r.end_sample_ + 1;
+  r.end_sample_ =
+      std::min(r.start_sample_ + kNumberBlocksToUpdate * kBlockSize - 1,
+               filter_time_domain.size() - 1);
+
+  // Check range.
+  RTC_DCHECK_LT(r.start_sample_, filter_time_domain.size());
+  RTC_DCHECK_LT(r.end_sample_, filter_time_domain.size());
+  RTC_DCHECK_LE(r.start_sample_, r.end_sample_);
 }
 
 FilterAnalyzer::ConsistentFilterDetector::ConsistentFilterDetector(
