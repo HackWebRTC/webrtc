@@ -91,16 +91,20 @@ void MaybeLogProbeClusterCreated(RtcEventLog* event_log,
 
 ProbeControllerConfig::ProbeControllerConfig(
     const WebRtcKeyValueConfig* key_value_config)
-    : first_exponential_probe_scale_("p1", 3.0),
-      second_exponential_probe_scale_("p2", 6.0),
-      further_exponential_probe_scale_("step_size", 2),
+    : first_exponential_probe_scale("p1", 3.0),
+      second_exponential_probe_scale("p2", 6.0),
+      further_exponential_probe_scale("step_size", 2),
       further_probe_threshold("further_probe_threshold", 0.7),
-      alr_probing_interval_("alr_interval", TimeDelta::seconds(5)),
-      alr_probe_scale_("alr_scale", 2) {
+      alr_probing_interval("alr_interval", TimeDelta::seconds(5)),
+      alr_probe_scale("alr_scale", 2),
+      first_allocation_probe_scale("alloc_p1", 1),
+      second_allocation_probe_scale("alloc_p2", 2),
+      allocation_allow_further_probing("alloc_probe_further", false) {
   ParseFieldTrial(
-      {&first_exponential_probe_scale_, &second_exponential_probe_scale_,
-       &further_exponential_probe_scale_, &further_probe_threshold,
-       &alr_probing_interval_, &alr_probe_scale_},
+      {&first_exponential_probe_scale, &second_exponential_probe_scale,
+       &further_exponential_probe_scale, &further_probe_threshold,
+       &alr_probing_interval, &alr_probe_scale, &first_allocation_probe_scale,
+       &second_allocation_probe_scale, &allocation_allow_further_probing},
       key_value_config->Lookup("WebRTC-Bwe-ProbingConfiguration"));
 }
 
@@ -183,11 +187,19 @@ std::vector<ProbeClusterConfig> ProbeController::OnMaxTotalAllocatedBitrate(
       (max_bitrate_bps_ <= 0 || estimated_bitrate_bps_ < max_bitrate_bps_) &&
       estimated_bitrate_bps_ < max_total_allocated_bitrate) {
     max_total_allocated_bitrate_ = max_total_allocated_bitrate;
-    // Also probe at 2x the max bitrate, to account for the transmission max
-    // bitrate multiplier functionality of the BitrateAllocator.
-    return InitiateProbing(
-        at_time_ms,
-        {max_total_allocated_bitrate, 2 * max_total_allocated_bitrate}, false);
+
+    if (!config_.first_allocation_probe_scale)
+      return std::vector<ProbeClusterConfig>();
+
+    std::vector<int64_t> probes = {
+        static_cast<int64_t>(config_.first_allocation_probe_scale.Value() *
+                             max_total_allocated_bitrate)};
+    if (config_.second_allocation_probe_scale) {
+      probes.push_back(config_.second_allocation_probe_scale.Value() *
+                       max_total_allocated_bitrate);
+    }
+    return InitiateProbing(at_time_ms, probes,
+                           config_.allocation_allow_further_probing);
   }
   max_total_allocated_bitrate_ = max_total_allocated_bitrate;
   return std::vector<ProbeClusterConfig>();
@@ -216,9 +228,9 @@ std::vector<ProbeClusterConfig> ProbeController::InitiateExponentialProbing(
   // When probing at 1.8 Mbps ( 6x 300), this represents a threshold of
   // 1.2 Mbps to continue probing.
   std::vector<int64_t> probes = {static_cast<int64_t>(
-      config_.first_exponential_probe_scale_ * start_bitrate_bps_)};
-  if (config_.second_exponential_probe_scale_) {
-    probes.push_back(config_.second_exponential_probe_scale_.Value() *
+      config_.first_exponential_probe_scale * start_bitrate_bps_)};
+  if (config_.second_exponential_probe_scale) {
+    probes.push_back(config_.second_exponential_probe_scale.Value() *
                      start_bitrate_bps_);
   }
   return InitiateProbing(at_time_ms, probes, true);
@@ -247,7 +259,7 @@ std::vector<ProbeClusterConfig> ProbeController::SetEstimatedBitrate(
         bitrate_bps > min_bitrate_to_probe_further_bps_) {
       pending_probes = InitiateProbing(
           at_time_ms,
-          {static_cast<int64_t>(config_.further_exponential_probe_scale_ *
+          {static_cast<int64_t>(config_.further_exponential_probe_scale *
                                 bitrate_bps)},
           true);
     }
@@ -348,11 +360,11 @@ std::vector<ProbeClusterConfig> ProbeController::Process(int64_t at_time_ms) {
     if (alr_start_time_ms_ && estimated_bitrate_bps_ > 0) {
       int64_t next_probe_time_ms =
           std::max(*alr_start_time_ms_, time_last_probing_initiated_ms_) +
-          config_.alr_probing_interval_->ms();
+          config_.alr_probing_interval->ms();
       if (at_time_ms >= next_probe_time_ms) {
         return InitiateProbing(at_time_ms,
                                {static_cast<int64_t>(estimated_bitrate_bps_ *
-                                                     config_.alr_probe_scale_)},
+                                                     config_.alr_probe_scale)},
                                true);
       }
     }

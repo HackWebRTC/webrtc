@@ -315,11 +315,12 @@ TEST_F(ProbeControllerTest, TestAllocatedBitrateCap) {
 TEST_F(ProbeControllerTest, ConfigurableProbingFieldTrial) {
   test::ScopedFieldTrials trials(
       "WebRTC-Bwe-ProbingConfiguration/"
-      "p1:2,p2:5,step_size:3,further_probe_threshold:0.8/");
+      "p1:2,p2:5,step_size:3,further_probe_threshold:0.8,"
+      "alloc_p1:2,alloc_p2/");
   probe_controller_.reset(
       new ProbeController(&field_trial_config_, &mock_rtc_event_log));
   auto probes = probe_controller_->SetBitrates(kMinBitrateBps, kStartBitrateBps,
-                                               kMaxBitrateBps, NowMs());
+                                               5000000, NowMs());
   EXPECT_EQ(probes.size(), 2u);
   EXPECT_EQ(probes[0].target_data_rate.bps(), 600);
   EXPECT_EQ(probes[1].target_data_rate.bps(), 1500);
@@ -332,6 +333,13 @@ TEST_F(ProbeControllerTest, ConfigurableProbingFieldTrial) {
   probes = probe_controller_->SetEstimatedBitrate(1250, NowMs());
   EXPECT_EQ(probes.size(), 1u);
   EXPECT_EQ(probes[0].target_data_rate.bps(), 3 * 1250);
+
+  clock_.AdvanceTimeMilliseconds(5000);
+  probes = probe_controller_->Process(NowMs());
+
+  probes = probe_controller_->OnMaxTotalAllocatedBitrate(200000, NowMs());
+  EXPECT_EQ(probes.size(), 1u);
+  EXPECT_EQ(probes[0].target_data_rate.bps(), 400000);
 }
 
 }  // namespace test

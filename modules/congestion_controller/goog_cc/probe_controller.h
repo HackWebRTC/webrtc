@@ -39,14 +39,19 @@ struct ProbeControllerConfig {
   // Then whenever we get a bitrate estimate of at least further_probe_threshold
   // times the size of the last sent probe we'll send another one of size
   // step_size times the new estimate.
-  FieldTrialParameter<double> first_exponential_probe_scale_;
-  FieldTrialOptional<double> second_exponential_probe_scale_;
-  FieldTrialParameter<double> further_exponential_probe_scale_;
+  FieldTrialParameter<double> first_exponential_probe_scale;
+  FieldTrialOptional<double> second_exponential_probe_scale;
+  FieldTrialParameter<double> further_exponential_probe_scale;
   FieldTrialParameter<double> further_probe_threshold;
 
   // Configures how often we send ALR probes and how big they are.
-  FieldTrialParameter<TimeDelta> alr_probing_interval_;
-  FieldTrialParameter<double> alr_probe_scale_;
+  FieldTrialParameter<TimeDelta> alr_probing_interval;
+  FieldTrialParameter<double> alr_probe_scale;
+
+  // Configures the probes emitted by changed to the allocated bitrate.
+  FieldTrialOptional<double> first_allocation_probe_scale;
+  FieldTrialOptional<double> second_allocation_probe_scale;
+  FieldTrialFlag allocation_allow_further_probing;
 };
 
 // This class controls initiation of probing to estimate initial channel
