@@ -178,12 +178,14 @@ absl::optional<int> ComputeSendBitrate(int max_send_bitrate_bps,
 }  // namespace
 
 WebRtcVoiceEngine::WebRtcVoiceEngine(
+    webrtc::TaskQueueFactory* task_queue_factory,
     webrtc::AudioDeviceModule* adm,
     const rtc::scoped_refptr<webrtc::AudioEncoderFactory>& encoder_factory,
     const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
     rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
     rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing)
-    : adm_(adm),
+    : task_queue_factory_(task_queue_factory),
+      adm_(adm),
       encoder_factory_(encoder_factory),
       decoder_factory_(decoder_factory),
       audio_mixer_(audio_mixer),
@@ -218,7 +220,8 @@ void WebRtcVoiceEngine::Init() {
 
   // TaskQueue expects to be created/destroyed on the same thread.
   low_priority_worker_queue_.reset(
-      new rtc::TaskQueue("rtc-low-prio", rtc::TaskQueue::Priority::LOW));
+      new rtc::TaskQueue(task_queue_factory_->CreateTaskQueue(
+          "rtc-low-prio", webrtc::TaskQueueFactory::Priority::LOW)));
 
   // Load our audio codec lists.
   RTC_LOG(LS_INFO) << "Supported send codecs in order of preference:";

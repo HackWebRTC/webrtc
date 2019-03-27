@@ -19,6 +19,7 @@
 #include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/rtp_receiver_interface.h"
 #include "api/scoped_refptr.h"
+#include "api/task_queue/task_queue_factory.h"
 #include "call/audio_state.h"
 #include "call/call.h"
 #include "media/base/rtp_utils.h"
@@ -46,6 +47,7 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
 
  public:
   WebRtcVoiceEngine(
+      webrtc::TaskQueueFactory* task_queue_factory,
       webrtc::AudioDeviceModule* adm,
       const rtc::scoped_refptr<webrtc::AudioEncoderFactory>& encoder_factory,
       const rtc::scoped_refptr<webrtc::AudioDecoderFactory>& decoder_factory,
@@ -91,6 +93,7 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
   void StartAecDump(const std::string& filename);
   int CreateVoEChannel();
 
+  webrtc::TaskQueueFactory* const task_queue_factory_;
   std::unique_ptr<rtc::TaskQueue> low_priority_worker_queue_;
 
   webrtc::AudioDeviceModule* adm();

@@ -9,7 +9,13 @@
  */
 
 #include "media/engine/null_webrtc_video_engine.h"
+
+#include <memory>
+#include <utility>
+
 #include "absl/memory/memory.h"
+#include "api/task_queue/default_task_queue_factory.h"
+#include "api/task_queue/task_queue_factory.h"
 #include "media/engine/webrtc_voice_engine.h"
 #include "modules/audio_device/include/mock_audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
@@ -19,30 +25,21 @@
 
 namespace cricket {
 
-class WebRtcMediaEngineNullVideo : public CompositeMediaEngine {
- public:
-  WebRtcMediaEngineNullVideo(
-      webrtc::AudioDeviceModule* adm,
-      const rtc::scoped_refptr<webrtc::AudioEncoderFactory>&
-          audio_encoder_factory,
-      const rtc::scoped_refptr<webrtc::AudioDecoderFactory>&
-          audio_decoder_factory)
-      : CompositeMediaEngine(absl::make_unique<WebRtcVoiceEngine>(
-                                 adm,
-                                 audio_encoder_factory,
-                                 audio_decoder_factory,
-                                 nullptr,
-                                 webrtc::AudioProcessingBuilder().Create()),
-                             absl::make_unique<NullWebRtcVideoEngine>()) {}
-};
-
 // Simple test to check if NullWebRtcVideoEngine implements the methods
 // required by CompositeMediaEngine.
 TEST(NullWebRtcVideoEngineTest, CheckInterface) {
+  std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory =
+      webrtc::CreateDefaultTaskQueueFactory();
   testing::NiceMock<webrtc::test::MockAudioDeviceModule> adm;
-  WebRtcMediaEngineNullVideo engine(
-      &adm, webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
-      webrtc::MockAudioDecoderFactory::CreateUnusedFactory());
+  auto audio_engine = absl::make_unique<WebRtcVoiceEngine>(
+      task_queue_factory.get(), &adm,
+      webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
+      webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr,
+      webrtc::AudioProcessingBuilder().Create());
+
+  CompositeMediaEngine engine(std::move(audio_engine),
+                              absl::make_unique<NullWebRtcVideoEngine>());
+
   EXPECT_TRUE(engine.Init());
 }
 
