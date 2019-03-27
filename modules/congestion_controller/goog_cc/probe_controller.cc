@@ -73,9 +73,6 @@ constexpr char kBweRapidRecoveryExperiment[] =
 // Never probe higher than configured by OnMaxTotalAllocatedBitrate().
 constexpr char kCappedProbingFieldTrialName[] = "WebRTC-BweCappedProbing";
 
-constexpr char kConfigurableProbingFieldTrialName[] =
-    "WebRTC-Bwe-ConfigurableProbing";
-
 void MaybeLogProbeClusterCreated(RtcEventLog* event_log,
                                  const ProbeClusterConfig& probe) {
   RTC_DCHECK(event_log);
@@ -104,7 +101,7 @@ ProbeControllerConfig::ProbeControllerConfig(
       {&first_exponential_probe_scale_, &second_exponential_probe_scale_,
        &further_exponential_probe_scale_, &further_probe_threshold,
        &alr_probing_interval_, &alr_probe_scale_},
-      key_value_config->Lookup(kConfigurableProbingFieldTrialName));
+      key_value_config->Lookup("WebRTC-Bwe-ProbingConfiguration"));
 }
 
 ProbeControllerConfig::ProbeControllerConfig(const ProbeControllerConfig&) =

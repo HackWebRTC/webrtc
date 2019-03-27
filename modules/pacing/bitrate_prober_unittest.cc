@@ -14,8 +14,10 @@
 namespace webrtc {
 
 TEST(BitrateProberTest, VerifyStatesAndTimeBetweenProbes) {
-  BitrateProber prober;
+  const FieldTrialBasedConfig config;
+  BitrateProber prober(config);
   EXPECT_FALSE(prober.IsProbing());
+
   int64_t now_ms = 0;
   EXPECT_EQ(-1, prober.TimeUntilNextProbe(now_ms));
 
@@ -71,8 +73,9 @@ TEST(BitrateProberTest, VerifyStatesAndTimeBetweenProbes) {
 }
 
 TEST(BitrateProberTest, DoesntProbeWithoutRecentPackets) {
-  BitrateProber prober;
-  EXPECT_FALSE(prober.IsProbing());
+  const FieldTrialBasedConfig config;
+  BitrateProber prober(config);
+
   int64_t now_ms = 0;
   EXPECT_EQ(-1, prober.TimeUntilNextProbe(now_ms));
 
@@ -93,7 +96,9 @@ TEST(BitrateProberTest, DoesntProbeWithoutRecentPackets) {
 }
 
 TEST(BitrateProberTest, DoesntInitializeProbingForSmallPackets) {
-  BitrateProber prober;
+  const FieldTrialBasedConfig config;
+  BitrateProber prober(config);
+
   prober.SetEnabled(true);
   EXPECT_FALSE(prober.IsProbing());
 
@@ -102,7 +107,9 @@ TEST(BitrateProberTest, DoesntInitializeProbingForSmallPackets) {
 }
 
 TEST(BitrateProberTest, VerifyProbeSizeOnHighBitrate) {
-  BitrateProber prober;
+  const FieldTrialBasedConfig config;
+  BitrateProber prober(config);
+
   constexpr unsigned kHighBitrateBps = 10000000;  // 10 Mbps
 
   prober.CreateProbeCluster(kHighBitrateBps, 0, /*cluster_id=*/0);
@@ -111,7 +118,8 @@ TEST(BitrateProberTest, VerifyProbeSizeOnHighBitrate) {
 }
 
 TEST(BitrateProberTest, MinumumNumberOfProbingPackets) {
-  BitrateProber prober;
+  const FieldTrialBasedConfig config;
+  BitrateProber prober(config);
   // Even when probing at a low bitrate we expect a minimum number
   // of packets to be sent.
   constexpr int kBitrateBps = 100000;  // 100 kbps
@@ -128,7 +136,8 @@ TEST(BitrateProberTest, MinumumNumberOfProbingPackets) {
 }
 
 TEST(BitrateProberTest, ScaleBytesUsedForProbing) {
-  BitrateProber prober;
+  const FieldTrialBasedConfig config;
+  BitrateProber prober(config);
   constexpr int kBitrateBps = 10000000;  // 10 Mbps
   constexpr int kPacketSizeBytes = 1000;
   constexpr int kExpectedBytesSent = kBitrateBps * 15 / 8000;
@@ -146,7 +155,8 @@ TEST(BitrateProberTest, ScaleBytesUsedForProbing) {
 }
 
 TEST(BitrateProberTest, HighBitrateProbing) {
-  BitrateProber prober;
+  const FieldTrialBasedConfig config;
+  BitrateProber prober(config);
   constexpr int kBitrateBps = 1000000000;  // 1 Gbps.
   constexpr int kPacketSizeBytes = 1000;
   constexpr int kExpectedBytesSent = (kBitrateBps / 8000) * 15;
@@ -164,7 +174,8 @@ TEST(BitrateProberTest, HighBitrateProbing) {
 }
 
 TEST(BitrateProberTest, ProbeClusterTimeout) {
-  BitrateProber prober;
+  const FieldTrialBasedConfig config;
+  BitrateProber prober(config);
   constexpr int kBitrateBps = 300000;  // 300 kbps
   constexpr int kSmallPacketSize = 20;
   // Expecting two probe clusters of 5 packets each.

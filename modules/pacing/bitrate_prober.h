@@ -15,17 +15,35 @@
 #include <stdint.h>
 #include <queue>
 
+#include "api/transport/field_trial_based_config.h"
 #include "api/transport/network_types.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 
 namespace webrtc {
 class RtcEventLog;
+
+struct BitrateProberConfig {
+  explicit BitrateProberConfig(const WebRtcKeyValueConfig* key_value_config);
+  BitrateProberConfig(const BitrateProberConfig&) = default;
+  BitrateProberConfig& operator=(const BitrateProberConfig&) = default;
+  ~BitrateProberConfig() = default;
+
+  // The minimum number probing packets used.
+  FieldTrialParameter<int> min_probe_packets_sent;
+  // A minimum interval between probes to allow scheduling to be feasible.
+  FieldTrialParameter<TimeDelta> min_probe_delta;
+  // The minimum probing duration.
+  FieldTrialParameter<TimeDelta> min_probe_duration;
+  // Maximum amount of time each probe can be delayed. Probe cluster is reset
+  // and retried from the start when this limit is reached.
+  FieldTrialParameter<TimeDelta> max_probe_delay;
+};
 
 // Note that this class isn't thread-safe by itself and therefore relies
 // on being protected by the caller.
 class BitrateProber {
  public:
-  BitrateProber();
-  explicit BitrateProber(RtcEventLog* event_log);
+  explicit BitrateProber(const WebRtcKeyValueConfig& field_trials);
   ~BitrateProber();
 
   void SetEnabled(bool enable);
@@ -101,6 +119,8 @@ class BitrateProber {
 
   int total_probe_count_;
   int total_failed_probe_count_;
+
+  BitrateProberConfig config_;
 };
 
 }  // namespace webrtc
