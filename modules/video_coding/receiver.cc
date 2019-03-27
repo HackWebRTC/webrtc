@@ -259,9 +259,4 @@ std::vector<uint16_t> VCMReceiver::NackList(bool* request_key_frame) {
   return jitter_buffer_.GetNackList(request_key_frame);
 }
 
-void VCMReceiver::RegisterStatsCallback(
-    VCMReceiveStatisticsCallback* callback) {
-  jitter_buffer_.RegisterStatsCallback(callback);
-}
-
 }  // namespace webrtc

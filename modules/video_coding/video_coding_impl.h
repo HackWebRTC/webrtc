@@ -70,8 +70,6 @@ class VideoReceiver : public Module {
   void RegisterExternalDecoder(VideoDecoder* externalDecoder,
                                uint8_t payloadType);
   int32_t RegisterReceiveCallback(VCMReceiveCallback* receiveCallback);
-  int32_t RegisterReceiveStatisticsCallback(
-      VCMReceiveStatisticsCallback* receiveStats);
   int32_t RegisterFrameTypeCallback(VCMFrameTypeCallback* frameTypeCallback);
   int32_t RegisterPacketRequestCallback(VCMPacketRequestCallback* callback);
 

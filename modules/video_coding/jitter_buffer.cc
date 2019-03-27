@@ -234,7 +234,6 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
       incomplete_frames_(),
       last_decoded_state_(),
       first_packet_since_reset_(true),
-      stats_callback_(nullptr),
       incoming_frame_rate_(0),
       incoming_frame_count_(0),
       time_last_incoming_frame_count_(0),
@@ -611,8 +610,6 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
     if (packet.sizeBytes > 0) {
       num_discarded_packets_++;
       num_consecutive_old_packets_++;
-      if (stats_callback_ != NULL)
-        stats_callback_->OnDiscardedPacketsUpdated(num_discarded_packets_);
     }
     // Update last decoded sequence number if the packet arrived late and
     // belongs to a frame with a timestamp equal to the last decoded
@@ -1071,12 +1068,6 @@ void VCMJitterBuffer::DropPacketsFromNackList(
       missing_sequence_numbers_.upper_bound(last_decoded_sequence_number));
 }
 
-void VCMJitterBuffer::RegisterStatsCallback(
-    VCMReceiveStatisticsCallback* callback) {
-  rtc::CritScope cs(&crit_sect_);
-  stats_callback_ = callback;
-}
-
 VCMFrameBuffer* VCMJitterBuffer::GetEmptyFrame() {
   if (free_frames_.empty()) {
     if (!TryToIncreaseJitterBufferSize()) {
@@ -1152,9 +1143,6 @@ void VCMJitterBuffer::CountFrame(const VCMFrameBuffer& frame) {
     } else {
       ++receive_statistics_.delta_frames;
     }
-
-    if (stats_callback_ != NULL)
-      stats_callback_->OnFrameCountsUpdated(receive_statistics_);
   }
 }
 

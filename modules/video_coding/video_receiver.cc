@@ -189,18 +189,6 @@ int32_t VideoReceiver::RegisterReceiveCallback(
   return VCM_OK;
 }
 
-int32_t VideoReceiver::RegisterReceiveStatisticsCallback(
-    VCMReceiveStatisticsCallback* receiveStats) {
-  RTC_DCHECK_RUN_ON(&construction_thread_checker_);
-  RTC_DCHECK(!IsDecoderThreadRunning() && !is_attached_to_process_thread_);
-  // |_receiver| is used on both the decoder and module threads.
-  // However, since we make sure that we never do anything on the module thread
-  // when the decoder thread is not running, we don't need a lock for the
-  // |_receiver| here.
-  _receiver.RegisterStatsCallback(receiveStats);
-  return VCM_OK;
-}
-
 // Register an externally defined decoder object.
 void VideoReceiver::RegisterExternalDecoder(VideoDecoder* externalDecoder,
                                             uint8_t payloadType) {

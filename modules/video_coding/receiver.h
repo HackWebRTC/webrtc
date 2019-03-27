@@ -79,8 +79,6 @@ class VCMReceiver {
   VCMNackMode NackMode() const;
   std::vector<uint16_t> NackList(bool* request_key_frame);
 
-  void RegisterStatsCallback(VCMReceiveStatisticsCallback* callback);
-
   void TriggerDecoderShutdown();
 
  private:

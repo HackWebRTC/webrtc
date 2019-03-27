@@ -190,8 +190,6 @@ class VCMJitterBuffer {
   // Returns a list of the sequence numbers currently missing.
   std::vector<uint16_t> GetNackList(bool* request_key_frame);
 
-  void RegisterStatsCallback(VCMReceiveStatisticsCallback* callback);
-
  private:
   class SequenceNumberLessThan {
    public:
@@ -317,8 +315,6 @@ class VCMJitterBuffer {
   VCMDecodingState last_decoded_state_ RTC_GUARDED_BY(crit_sect_);
   bool first_packet_since_reset_;
 
-  // Statistics.
-  VCMReceiveStatisticsCallback* stats_callback_ RTC_GUARDED_BY(crit_sect_);
   // Frame counts for each type (key, delta, ...)
   FrameCounts receive_statistics_;
   // Latest calculated frame rates of incoming stream.
