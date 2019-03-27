@@ -247,7 +247,7 @@ rtc_source_set("audio_device_impl") {
     defines += [ "AUDIO_DEVICE_PLAYS_SINUS_TONE" ]
   }
   if (rtc_enable_android_aaudio) {
-    defines += [ "AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO" ]
+    defines += [ "WEBRTC_AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO" ]
   }
   if (rtc_include_internal_audio_device) {
     sources += [

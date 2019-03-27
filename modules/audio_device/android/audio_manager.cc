@@ -215,7 +215,7 @@ bool AudioManager::IsProAudioSupported() const {
 
 // TODO(henrika): improve comments...
 bool AudioManager::IsAAudioSupported() const {
-#if defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
+#if defined(WEBRTC_AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
   return a_audio_;
 #else
   return false;

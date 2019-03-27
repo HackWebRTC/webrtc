@@ -513,7 +513,7 @@ class AudioDeviceTest : public ::testing::Test {
 
   rtc::scoped_refptr<AudioDeviceModule> CreateAudioDevice(
       AudioDeviceModule::AudioLayer audio_layer) {
-#if defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
+#if defined(WEBRTC_AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
     if (audio_layer == AudioDeviceModule::kAndroidAAudioAudio) {
       return rtc::scoped_refptr<AudioDeviceModule>(
           CreateAAudioAudioDeviceModule(jni_, context_.obj()));
@@ -717,7 +717,7 @@ TEST_F(AudioDeviceTest, CorrectAudioLayerIsUsedForOpenSLInBothDirections) {
 // TODO(bugs.webrtc.org/8914)
 // TODO(phensman): Add test for AAudio/Java combination when this combination
 // is supported.
-#if !defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
+#if !defined(WEBRTC_AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
 #define MAYBE_CorrectAudioLayerIsUsedForAAudioInBothDirections \
   DISABLED_CorrectAudioLayerIsUsedForAAudioInBothDirections
 #else

@@ -701,7 +701,7 @@ TEST_F(AudioDeviceTest, CorrectAudioLayerIsUsedForOpenSLInBothDirections) {
 }
 
 // TODO(bugs.webrtc.org/8914)
-#if !defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
+#if !defined(WEBRTC_AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
 #define MAYBE_CorrectAudioLayerIsUsedForAAudioInBothDirections \
   DISABLED_CorrectAudioLayerIsUsedForAAudioInBothDirections
 #else
@@ -718,7 +718,7 @@ TEST_F(AudioDeviceTest,
 }
 
 // TODO(bugs.webrtc.org/8914)
-#if !defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
+#if !defined(WEBRTC_AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
 #define MAYBE_CorrectAudioLayerIsUsedForCombinedJavaAAudioCombo \
   DISABLED_CorrectAudioLayerIsUsedForCombinedJavaAAudioCombo
 #else

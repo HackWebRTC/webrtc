@@ -1162,7 +1162,7 @@ if (is_android) {
   if (rtc_enable_android_aaudio) {
     rtc_source_set("aaudio_audio_device_module") {
       visibility = [ "*" ]
-      defines = [ "AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO" ]
+      defines = [ "WEBRTC_AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO" ]
       sources = [
         "src/jni/audio_device/aaudio_player.cc",
         "src/jni/audio_device/aaudio_player.h",

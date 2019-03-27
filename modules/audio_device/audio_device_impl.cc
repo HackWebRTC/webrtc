@@ -26,7 +26,7 @@
 #endif
 #elif defined(WEBRTC_ANDROID)
 #include <stdlib.h>
-#if defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
+#if defined(WEBRTC_AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
 #include "modules/audio_device/android/aaudio_player.h"
 #include "modules/audio_device/android/aaudio_recorder.h"
 #endif
@@ -218,13 +218,13 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects() {
     audio_device_.reset(new AudioDeviceTemplate<AudioRecordJni, OpenSLESPlayer>(
         audio_layer, audio_manager));
   } else if (audio_layer == kAndroidAAudioAudio) {
-#if defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
+#if defined(WEBRTC_AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
     // AAudio based audio for both input and output.
     audio_device_.reset(new AudioDeviceTemplate<AAudioRecorder, AAudioPlayer>(
         audio_layer, audio_manager));
 #endif
   } else if (audio_layer == kAndroidJavaInputAndAAudioOutputAudio) {
-#if defined(AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
+#if defined(WEBRTC_AUDIO_DEVICE_INCLUDE_ANDROID_AAUDIO)
     // Java audio for input and AAudio for output audio (i.e. mixed APIs).
     audio_device_.reset(new AudioDeviceTemplate<AudioRecordJni, AAudioPlayer>(
         audio_layer, audio_manager));
