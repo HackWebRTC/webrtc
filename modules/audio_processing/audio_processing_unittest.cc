@@ -11,6 +11,7 @@
 #include <stdio.h>
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 #include <memory>
 #include <queue>
@@ -1780,7 +1781,7 @@ TEST_F(ApmTest, FloatAndIntInterfacesGiveSimilarResults) {
         const float kSNRThreshold = 20;
 
         // Skip frames with low energy.
-        if (sqrt(variance) > kVarianceThreshold && snr < kSNRThreshold) {
+        if (std::sqrt(variance) > kVarianceThreshold && snr < kSNRThreshold) {
           ++num_bad_chunks;
         }
       }
@@ -2393,7 +2394,7 @@ TEST_P(AudioProcessingTest, Formats) {
             PushSincResampler::AlgorithmicDelaySeconds(out_rate);
       }
       int expected_delay =
-          floor(expected_delay_sec * ref_rate + 0.5f) * out_num;
+          std::floor(expected_delay_sec * ref_rate + 0.5f) * out_num;
 
       double variance = 0;
       double sq_error = 0;
