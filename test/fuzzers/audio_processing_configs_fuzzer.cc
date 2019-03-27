@@ -125,6 +125,8 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
   apm_config.echo_canceller.mobile_mode = use_aecm;
   apm_config.residual_echo_detector.enabled = red;
   apm_config.high_pass_filter.enabled = hpf;
+  apm_config.gain_controller1.enabled = use_agc;
+  apm_config.gain_controller1.enable_limiter = use_agc_limiter;
   apm_config.gain_controller2.enabled = use_agc2;
   apm_config.gain_controller2.fixed_digital.gain_db = gain_controller2_gain_db;
   apm_config.gain_controller2.adaptive_digital.enabled =
@@ -141,10 +143,8 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
   apm_config.voice_detection.enabled = use_vad;
   apm->ApplyConfig(apm_config);
 
-  apm->gain_control()->Enable(use_agc);
   apm->level_estimator()->Enable(use_le);
   apm->voice_detection()->Enable(use_vad);
-  apm->gain_control()->enable_limiter(use_agc_limiter);
 
   return apm;
 }

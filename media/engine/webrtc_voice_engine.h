@@ -82,10 +82,6 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
   // Stops AEC dump.
   void StopAecDump() override;
 
-  const webrtc::AudioProcessing::Config GetApmConfigForTest() const {
-    return apm()->GetConfig();
-  }
-
  private:
   // Every option that is "set" will be applied. Every option not "set" will be
   // ignored. This allows us to selectively turn on and off different options
@@ -124,7 +120,6 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
   bool is_dumping_aec_ = false;
   bool initialized_ = false;
 
-  webrtc::AgcConfig default_agc_config_;
   // Cache received extended_filter_aec, delay_agnostic_aec and experimental_ns
   // values, and apply them in case they are missing in the audio options.
   // We need to do this because SetExtraOptions() will revert to defaults for

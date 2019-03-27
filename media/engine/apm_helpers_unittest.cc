@@ -18,8 +18,6 @@
 namespace webrtc {
 namespace {
 
-constexpr AgcConfig kDefaultAgcConfig = {3, 9, true};
-
 struct TestHelper {
   TestHelper() {
     // This replicates the conditions from voe_auto_test.
@@ -38,63 +36,6 @@ struct TestHelper {
   rtc::scoped_refptr<AudioProcessing> apm_;
 };
 }  // namespace
-
-TEST(ApmHelpersTest, AgcConfig_DefaultConfiguration) {
-  TestHelper helper;
-  AgcConfig agc_config = apm_helpers::GetAgcConfig(helper.apm());
-
-  EXPECT_EQ(kDefaultAgcConfig.targetLeveldBOv, agc_config.targetLeveldBOv);
-  EXPECT_EQ(kDefaultAgcConfig.digitalCompressionGaindB,
-            agc_config.digitalCompressionGaindB);
-  EXPECT_EQ(kDefaultAgcConfig.limiterEnable, agc_config.limiterEnable);
-}
-
-TEST(ApmHelpersTest, AgcConfig_GetAndSet) {
-  const AgcConfig agc_config = {11, 17, false};
-
-  TestHelper helper;
-  apm_helpers::SetAgcConfig(helper.apm(), agc_config);
-  AgcConfig actual_config = apm_helpers::GetAgcConfig(helper.apm());
-
-  EXPECT_EQ(agc_config.digitalCompressionGaindB,
-            actual_config.digitalCompressionGaindB);
-  EXPECT_EQ(agc_config.limiterEnable, actual_config.limiterEnable);
-  EXPECT_EQ(agc_config.targetLeveldBOv, actual_config.targetLeveldBOv);
-}
-
-TEST(ApmHelpersTest, AgcStatus_DefaultMode) {
-  TestHelper helper;
-  GainControl* gc = helper.apm()->gain_control();
-  EXPECT_FALSE(gc->is_enabled());
-#if defined(TARGET_IPHONE_SIMULATOR) && TARGET_IPHONE_SIMULATOR
-  EXPECT_EQ(GainControl::kAdaptiveAnalog, gc->mode());
-#elif defined(WEBRTC_IOS) || defined(WEBRTC_ANDROID)
-  EXPECT_EQ(GainControl::kFixedDigital, gc->mode());
-#else
-  EXPECT_EQ(GainControl::kAdaptiveAnalog, gc->mode());
-#endif
-}
-
-TEST(ApmHelpersTest, AgcStatus_EnableDisable) {
-  TestHelper helper;
-  GainControl* gc = helper.apm()->gain_control();
-#if defined(WEBRTC_IOS) || defined(WEBRTC_ANDROID)
-  apm_helpers::SetAgcStatus(helper.apm(), false);
-  EXPECT_FALSE(gc->is_enabled());
-  EXPECT_EQ(GainControl::kFixedDigital, gc->mode());
-
-  apm_helpers::SetAgcStatus(helper.apm(), true);
-  EXPECT_TRUE(gc->is_enabled());
-  EXPECT_EQ(GainControl::kFixedDigital, gc->mode());
-#else
-  apm_helpers::SetAgcStatus(helper.apm(), false);
-  EXPECT_FALSE(gc->is_enabled());
-  EXPECT_EQ(GainControl::kAdaptiveAnalog, gc->mode());
-  apm_helpers::SetAgcStatus(helper.apm(), true);
-  EXPECT_TRUE(gc->is_enabled());
-  EXPECT_EQ(GainControl::kAdaptiveAnalog, gc->mode());
-#endif
-}
 
 TEST(ApmHelpersTest, EcStatus_DefaultMode) {
   TestHelper helper;

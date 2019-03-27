@@ -27,7 +27,7 @@ class MockGainControl : public GainControl {
   MOCK_METHOD1(Enable, int(bool enable));
   MOCK_CONST_METHOD0(is_enabled, bool());
   MOCK_METHOD1(set_stream_analog_level, int(int level));
-  MOCK_METHOD0(stream_analog_level, int());
+  MOCK_CONST_METHOD0(stream_analog_level, int());
   MOCK_METHOD1(set_mode, int(Mode mode));
   MOCK_CONST_METHOD0(mode, Mode());
   MOCK_METHOD1(set_target_level_dbfs, int(int level));
@@ -163,6 +163,8 @@ class MockAudioProcessing : public testing::NiceMock<AudioProcessing> {
   MOCK_METHOD1(set_stream_key_pressed, void(bool key_pressed));
   MOCK_METHOD1(set_delay_offset_ms, void(int offset));
   MOCK_CONST_METHOD0(delay_offset_ms, int());
+  MOCK_METHOD1(set_stream_analog_level, void(int));
+  MOCK_CONST_METHOD0(recommended_stream_analog_level, int());
 
   virtual void AttachAecDump(std::unique_ptr<AecDump> aec_dump) {}
   MOCK_METHOD0(DetachAecDump, void());

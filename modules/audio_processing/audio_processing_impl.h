@@ -84,6 +84,8 @@ class AudioProcessingImpl : public AudioProcessing {
   void set_delay_offset_ms(int offset) override;
   int delay_offset_ms() const override;
   void set_stream_key_pressed(bool key_pressed) override;
+  void set_stream_analog_level(int level) override;
+  int recommended_stream_analog_level() const override;
 
   // Render-side exclusive methods possibly running APM in a
   // multi-threaded manner. Acquire the render lock.
@@ -255,6 +257,13 @@ class AudioProcessingImpl : public AudioProcessing {
   void HandleCaptureRuntimeSettings()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void HandleRenderRuntimeSettings() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
+  void ApplyAgc1Config(const Config::GainController1& agc_config)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+
+  // Returns a direct pointer to the AGC1 submodule: either a GainControlImpl
+  // or GainControlForExperimentalAgc instance.
+  GainControl* agc1();
+  const GainControl* agc1() const;
 
   void EmptyQueuedRenderAudio();
   void AllocateRenderQueue()
