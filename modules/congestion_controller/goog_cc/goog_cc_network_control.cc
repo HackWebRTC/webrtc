@@ -229,6 +229,7 @@ NetworkControlUpdate GoogCcNetworkController::OnRoundTripTimeUpdate(
     RoundTripTimeUpdate msg) {
   if (packet_feedback_only_ || msg.smoothed)
     return NetworkControlUpdate();
+  RTC_DCHECK(!msg.round_trip_time.IsZero());
   if (delay_based_bwe_)
     delay_based_bwe_->OnRttUpdate(msg.round_trip_time);
   bandwidth_estimation_->UpdateRtt(msg.round_trip_time, msg.receive_time);
