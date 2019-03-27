@@ -17,6 +17,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "api/task_queue/queued_task.h"
 #include "api/task_queue/task_queue_base.h"
 #include "rtc_base/time_utils.h"
@@ -85,7 +86,10 @@ PacketSender::PacketSender(TestController* test_controller,
       sending_(false),
       config_file_path_(config_file_path),
       test_controller_(test_controller),
-      worker_queue_("Packet Sender", rtc::TaskQueue::Priority::HIGH) {}
+      task_queue_factory_(CreateDefaultTaskQueueFactory()),
+      worker_queue_(task_queue_factory_->CreateTaskQueue(
+          "Packet Sender",
+          TaskQueueFactory::Priority::HIGH)) {}
 
 PacketSender::~PacketSender() = default;
 

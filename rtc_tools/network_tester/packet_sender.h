@@ -14,6 +14,7 @@
 #include <memory>
 #include <string>
 
+#include "api/task_queue/task_queue_factory.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/ignore_wundef.h"
 #include "rtc_base/sequenced_task_checker.h"
@@ -55,6 +56,7 @@ class PacketSender {
   bool sending_ RTC_GUARDED_BY(worker_queue_checker_);
   const std::string config_file_path_;
   TestController* const test_controller_;
+  std::unique_ptr<TaskQueueFactory> task_queue_factory_;
   rtc::TaskQueue worker_queue_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(PacketSender);
