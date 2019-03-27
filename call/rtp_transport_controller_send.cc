@@ -400,7 +400,7 @@ void RtpTransportControllerSend::OnReceivedRtcpReceiverReport(
     report.receive_time = Timestamp::ms(now_ms);
     report.round_trip_time = TimeDelta::ms(rtt_ms);
     report.smoothed = false;
-    if (controller_ && !report.round_trip_time.IsZero())
+    if (controller_)
       PostUpdates(controller_->OnRoundTripTimeUpdate(report));
   });
 }
