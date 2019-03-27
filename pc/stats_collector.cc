@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "pc/channel.h"
 #include "pc/peer_connection.h"
 #include "rtc_base/checks.h"
@@ -372,26 +373,56 @@ void ExtractRemoteStats(const cricket::MediaReceiverInfo& info,
   // TODO(hta): Extract some stats here.
 }
 
+std::string GetTrackIdBySsrc(
+    uint32_t ssrc,
+    StatsReport::Direction direction,
+    const std::map<uint32_t, std::string>& track_id_by_ssrc) {
+  auto it = track_id_by_ssrc.find(ssrc);
+  if (it != track_id_by_ssrc.end()) {
+    return it->second;
+  }
+  if (direction == StatsReport::kReceive) {
+    // If the track ID was not found, this might be an unsignaled receive
+    // SSRC, so try looking up by the special SSRC 0.
+    it = track_id_by_ssrc.find(0);
+    if (it != track_id_by_ssrc.end()) {
+      RTC_LOG(LS_INFO) << "Assuming SSRC=" << ssrc
+                       << " is an unsignalled receive stream corresponding "
+                          "to the RtpReceiver with track ID \""
+                       << it->second << "\".";
+      return it->second;
+    }
+  }
+  RTC_LOG(LS_INFO) << "Missing track ID for "
+                   << (direction == StatsReport::kSend ? "send" : "recv")
+                   << " SSRC=" << ssrc << ".";
+  return "";
+}
+
 // Template to extract stats from a data vector.
 // In order to use the template, the functions that are called from it,
 // ExtractStats and ExtractRemoteStats, must be defined and overloaded
 // for each type.
 template <typename T>
-void ExtractStatsFromList(const std::vector<T>& data,
-                          const StatsReport::Id& transport_id,
-                          StatsCollector* collector,
-                          StatsReport::Direction direction) {
+void ExtractStatsFromList(
+    const std::vector<T>& data,
+    const StatsReport::Id& transport_id,
+    StatsCollector* collector,
+    StatsReport::Direction direction,
+    const std::map<uint32_t, std::string>& track_id_by_ssrc) {
   for (const auto& d : data) {
     uint32_t ssrc = d.ssrc();
+    std::string track_id = GetTrackIdBySsrc(ssrc, direction, track_id_by_ssrc);
     // Each track can have stats for both local and remote objects.
     // TODO(hta): Handle the case of multiple SSRCs per object.
     StatsReport* report =
-        collector->PrepareReport(true, ssrc, transport_id, direction);
+        collector->PrepareReport(true, ssrc, track_id, transport_id, direction);
     if (report)
       ExtractStats(d, report);
 
     if (!d.remote_stats.empty()) {
-      report = collector->PrepareReport(false, ssrc, transport_id, direction);
+      report = collector->PrepareReport(false, ssrc, track_id, transport_id,
+                                        direction);
       if (report)
         ExtractRemoteStats(d, report);
     }
@@ -580,6 +611,7 @@ void StatsCollector::UpdateStats(
 
 StatsReport* StatsCollector::PrepareReport(bool local,
                                            uint32_t ssrc,
+                                           const std::string& track_id,
                                            const StatsReport::Id& transport_id,
                                            StatsReport::Direction direction) {
   RTC_DCHECK(pc_->signaling_thread()->IsCurrent());
@@ -588,22 +620,6 @@ StatsReport* StatsCollector::PrepareReport(bool local,
             : StatsReport::kStatsReportTypeRemoteSsrc,
       rtc::ToString(ssrc), direction));
   StatsReport* report = reports_.Find(id);
-
-  // Use the ID of the track that is currently mapped to the SSRC, if any.
-  absl::string_view track_id = GetTrackIdBySsrc(ssrc, direction);
-  if (track_id.empty()) {
-    // The SSRC is not used by any existing track (or lookup failed since the
-    // SSRC wasn't signaled in SDP). Try copying the track ID from a previous
-    // report: if one exists.
-    if (report) {
-      const StatsReport::Value* v =
-          report->FindValue(StatsReport::kStatsValueNameTrackId);
-      if (v) {
-        track_id = v->string_val();
-      }
-    }
-  }
-
   if (!report) {
     report = reports_.InsertNew(id);
   }
@@ -613,8 +629,7 @@ StatsReport* StatsCollector::PrepareReport(bool local,
 
   report->AddInt64(StatsReport::kStatsValueNameSsrc, ssrc);
   if (!track_id.empty()) {
-    report->AddString(StatsReport::kStatsValueNameTrackId,
-                      std::string(track_id));
+    report->AddString(StatsReport::kStatsValueNameTrackId, track_id);
   }
   // Add the mapping of SSRC to transport.
   report->AddId(StatsReport::kStatsValueNameTransportId, transport_id);
@@ -895,68 +910,140 @@ void StatsCollector::ExtractBweInfo() {
 
 namespace {
 
-struct VoiceChannelStatsInfo {
+class MediaChannelStatsGatherer {
+ public:
+  virtual ~MediaChannelStatsGatherer() = default;
+
+  virtual bool GetStatsOnWorkerThread() = 0;
+
+  virtual void ExtractStats(StatsCollector* collector) const = 0;
+
+  virtual bool HasRemoteAudio() const = 0;
+
+  std::string mid;
   std::string transport_name;
-  cricket::VoiceMediaChannel* voice_media_channel;
+  std::map<uint32_t, std::string> sender_track_id_by_ssrc;
+  std::map<uint32_t, std::string> receiver_track_id_by_ssrc;
+
+ protected:
+  template <typename ReceiverT, typename SenderT>
+  void ExtractSenderReceiverStats(
+      StatsCollector* collector,
+      const std::vector<ReceiverT>& receiver_data,
+      const std::vector<SenderT>& sender_data) const {
+    RTC_DCHECK(collector);
+    StatsReport::Id transport_id = StatsReport::NewComponentId(
+        transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
+    ExtractStatsFromList(receiver_data, transport_id, collector,
+                         StatsReport::kReceive, receiver_track_id_by_ssrc);
+    ExtractStatsFromList(sender_data, transport_id, collector,
+                         StatsReport::kSend, sender_track_id_by_ssrc);
+  }
+};
+
+class VoiceMediaChannelStatsGatherer final : public MediaChannelStatsGatherer {
+ public:
+  VoiceMediaChannelStatsGatherer(
+      cricket::VoiceMediaChannel* voice_media_channel)
+      : voice_media_channel_(voice_media_channel) {
+    RTC_DCHECK(voice_media_channel_);
+  }
+
+  bool GetStatsOnWorkerThread() override {
+    return voice_media_channel_->GetStats(&voice_media_info);
+  }
+
+  void ExtractStats(StatsCollector* collector) const override {
+    ExtractSenderReceiverStats(collector, voice_media_info.receivers,
+                               voice_media_info.senders);
+  }
+
+  bool HasRemoteAudio() const override {
+    return !voice_media_info.receivers.empty();
+  }
+
+ private:
+  cricket::VoiceMediaChannel* voice_media_channel_;
   cricket::VoiceMediaInfo voice_media_info;
 };
 
-struct VideoChannelStatsInfo {
-  std::string transport_name;
-  cricket::VideoMediaChannel* video_media_channel;
+class VideoMediaChannelStatsGatherer final : public MediaChannelStatsGatherer {
+ public:
+  VideoMediaChannelStatsGatherer(
+      cricket::VideoMediaChannel* video_media_channel)
+      : video_media_channel_(video_media_channel) {
+    RTC_DCHECK(video_media_channel_);
+  }
+
+  bool GetStatsOnWorkerThread() override {
+    return video_media_channel_->GetStats(&video_media_info);
+  }
+
+  void ExtractStats(StatsCollector* collector) const override {
+    ExtractSenderReceiverStats(collector, video_media_info.receivers,
+                               video_media_info.senders);
+  }
+
+  bool HasRemoteAudio() const override { return false; }
+
+ private:
+  cricket::VideoMediaChannel* video_media_channel_;
   cricket::VideoMediaInfo video_media_info;
 };
+
+std::unique_ptr<MediaChannelStatsGatherer> CreateMediaChannelStatsGatherer(
+    cricket::MediaChannel* channel) {
+  RTC_DCHECK(channel);
+  if (channel->media_type() == cricket::MEDIA_TYPE_AUDIO) {
+    return absl::make_unique<VoiceMediaChannelStatsGatherer>(
+        static_cast<cricket::VoiceMediaChannel*>(channel));
+  } else {
+    RTC_DCHECK_EQ(channel->media_type(), cricket::MEDIA_TYPE_VIDEO);
+    return absl::make_unique<VideoMediaChannelStatsGatherer>(
+        static_cast<cricket::VideoMediaChannel*>(channel));
+  }
+}
 
 }  // namespace
 
 void StatsCollector::ExtractMediaInfo() {
   RTC_DCHECK_RUN_ON(pc_->signaling_thread());
 
-  std::vector<VoiceChannelStatsInfo> voice_channel_infos;
-  std::vector<VideoChannelStatsInfo> video_channel_infos;
+  std::vector<std::unique_ptr<MediaChannelStatsGatherer>> gatherers;
 
   {
     rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
     for (const auto& transceiver : pc_->GetTransceiversInternal()) {
-      if (!transceiver->internal()->channel()) {
+      cricket::ChannelInterface* channel = transceiver->internal()->channel();
+      if (!channel) {
         continue;
       }
-      cricket::MediaType media_type = transceiver->internal()->media_type();
-      if (media_type == cricket::MEDIA_TYPE_AUDIO) {
-        auto* voice_channel = static_cast<cricket::VoiceChannel*>(
-            transceiver->internal()->channel());
-        voice_channel_infos.emplace_back();
-        VoiceChannelStatsInfo& info = voice_channel_infos.back();
-        info.transport_name = voice_channel->transport_name();
-        info.voice_media_channel = voice_channel->media_channel();
-      } else {
-        RTC_DCHECK_EQ(media_type, cricket::MEDIA_TYPE_VIDEO);
-        auto* video_channel = static_cast<cricket::VideoChannel*>(
-            transceiver->internal()->channel());
-        video_channel_infos.emplace_back();
-        VideoChannelStatsInfo& info = video_channel_infos.back();
-        info.transport_name = video_channel->transport_name();
-        info.video_media_channel = video_channel->media_channel();
+      std::unique_ptr<MediaChannelStatsGatherer> gatherer =
+          CreateMediaChannelStatsGatherer(channel->media_channel());
+      gatherer->mid = channel->content_name();
+      gatherer->transport_name = channel->transport_name();
+      for (const auto& sender : transceiver->internal()->senders()) {
+        std::string track_id = (sender->track() ? sender->track()->id() : "");
+        gatherer->sender_track_id_by_ssrc.insert(
+            std::make_pair(sender->ssrc(), track_id));
       }
+      for (const auto& receiver : transceiver->internal()->receivers()) {
+        gatherer->receiver_track_id_by_ssrc.insert(std::make_pair(
+            receiver->internal()->ssrc(), receiver->track()->id()));
+      }
+      gatherers.push_back(std::move(gatherer));
     }
   }
 
   pc_->worker_thread()->Invoke<void>(RTC_FROM_HERE, [&] {
     rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
-    for (auto it = voice_channel_infos.begin(); it != voice_channel_infos.end();
+    for (auto it = gatherers.begin(); it != gatherers.end();
          /* incremented manually */) {
-      if (!it->voice_media_channel->GetStats(&it->voice_media_info)) {
-        RTC_LOG(LS_ERROR) << "Failed to get voice channel stats";
-        it = voice_channel_infos.erase(it);
-        continue;
-      }
-      ++it;
-    }
-    for (auto it = video_channel_infos.begin(); it != video_channel_infos.end();
-         /* incremented manually */) {
-      if (!it->video_media_channel->GetStats(&it->video_media_info)) {
-        RTC_LOG(LS_ERROR) << "Failed to get video channel stats";
-        it = video_channel_infos.erase(it);
+      MediaChannelStatsGatherer* gatherer = it->get();
+      if (!gatherer->GetStatsOnWorkerThread()) {
+        RTC_LOG(LS_ERROR) << "Failed to get media channel stats for mid="
+                          << gatherer->mid;
+        it = gatherers.erase(it);
         continue;
       }
       ++it;
@@ -966,24 +1053,9 @@ void StatsCollector::ExtractMediaInfo() {
   rtc::Thread::ScopedDisallowBlockingCalls no_blocking_calls;
 
   bool has_remote_audio = false;
-  for (const auto& info : voice_channel_infos) {
-    StatsReport::Id transport_id = StatsReport::NewComponentId(
-        info.transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
-    ExtractStatsFromList(info.voice_media_info.receivers, transport_id, this,
-                         StatsReport::kReceive);
-    ExtractStatsFromList(info.voice_media_info.senders, transport_id, this,
-                         StatsReport::kSend);
-    if (!info.voice_media_info.receivers.empty()) {
-      has_remote_audio = true;
-    }
-  }
-  for (const auto& info : video_channel_infos) {
-    StatsReport::Id transport_id = StatsReport::NewComponentId(
-        info.transport_name, cricket::ICE_CANDIDATE_COMPONENT_RTP);
-    ExtractStatsFromList(info.video_media_info.receivers, transport_id, this,
-                         StatsReport::kReceive);
-    ExtractStatsFromList(info.video_media_info.senders, transport_id, this,
-                         StatsReport::kSend);
+  for (const auto& gatherer : gatherers) {
+    gatherer->ExtractStats(this);
+    has_remote_audio |= gatherer->HasRemoteAudio();
   }
 
   UpdateStatsFromExistingLocalAudioTracks(has_remote_audio);
@@ -1101,17 +1173,6 @@ void StatsCollector::UpdateReportFromAudioTrack(AudioTrackInterface* track,
     SetAudioProcessingStats(report, stats.typing_noise_detected,
                             stats.apm_statistics);
   }
-}
-
-absl::string_view StatsCollector::GetTrackIdBySsrc(
-    uint32_t ssrc,
-    StatsReport::Direction direction) {
-  RTC_DCHECK(pc_->signaling_thread()->IsCurrent());
-  if (direction == StatsReport::kSend) {
-    return pc_->GetLocalTrackIdBySsrc(ssrc);
-  }
-  RTC_DCHECK_EQ(direction, StatsReport::kReceive);
-  return pc_->GetRemoteTrackIdBySsrc(ssrc);
 }
 
 void StatsCollector::UpdateTrackReports() {

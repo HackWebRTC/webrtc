@@ -237,9 +237,6 @@ class PeerConnection : public PeerConnectionInternal,
     return transceivers_;
   }
 
-  absl::string_view GetLocalTrackIdBySsrc(uint32_t ssrc) override;
-  absl::string_view GetRemoteTrackIdBySsrc(uint32_t ssrc) override;
-
   sigslot::signal1<DataChannel*>& SignalDataChannelCreated() override {
     return SignalDataChannelCreated_;
   }

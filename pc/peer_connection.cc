@@ -5684,36 +5684,6 @@ cricket::IceConfig PeerConnection::ParseIceConfig(
   return ice_config;
 }
 
-static absl::string_view GetTrackIdBySsrc(
-    const SessionDescriptionInterface* session_description,
-    uint32_t ssrc) {
-  if (!session_description) {
-    return {};
-  }
-  for (const cricket::ContentInfo& content :
-       session_description->description()->contents()) {
-    const cricket::MediaContentDescription& media =
-        *content.media_description();
-    if (media.type() == cricket::MEDIA_TYPE_AUDIO ||
-        media.type() == cricket::MEDIA_TYPE_VIDEO) {
-      const cricket::StreamParams* stream_params =
-          cricket::GetStreamBySsrc(media.streams(), ssrc);
-      if (stream_params) {
-        return stream_params->id;
-      }
-    }
-  }
-  return {};
-}
-
-absl::string_view PeerConnection::GetLocalTrackIdBySsrc(uint32_t ssrc) {
-  return GetTrackIdBySsrc(local_description(), ssrc);
-}
-
-absl::string_view PeerConnection::GetRemoteTrackIdBySsrc(uint32_t ssrc) {
-  return GetTrackIdBySsrc(remote_description(), ssrc);
-}
-
 bool PeerConnection::SendData(const cricket::SendDataParams& params,
                               const rtc::CopyOnWriteBuffer& payload,
                               cricket::SendDataResult* result) {

@@ -98,16 +98,25 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
     return remote_streams_;
   }
 
-  void AddSender(rtc::scoped_refptr<RtpSenderInternal> sender) {
+  rtc::scoped_refptr<RtpSenderInterface> AddSender(
+      rtc::scoped_refptr<RtpSenderInternal> sender) {
     // TODO(steveanton): Switch tests to use RtpTransceivers directly.
     auto sender_proxy = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
         signaling_thread_, sender);
     GetOrCreateFirstTransceiverOfType(sender->media_type())
         ->internal()
         ->AddSender(sender_proxy);
+    return sender_proxy;
   }
 
-  void AddReceiver(rtc::scoped_refptr<RtpReceiverInternal> receiver) {
+  void RemoveSender(rtc::scoped_refptr<RtpSenderInterface> sender) {
+    GetOrCreateFirstTransceiverOfType(sender->media_type())
+        ->internal()
+        ->RemoveSender(sender);
+  }
+
+  rtc::scoped_refptr<RtpReceiverInterface> AddReceiver(
+      rtc::scoped_refptr<RtpReceiverInternal> receiver) {
     // TODO(steveanton): Switch tests to use RtpTransceivers directly.
     auto receiver_proxy =
         RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
@@ -115,6 +124,13 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
     GetOrCreateFirstTransceiverOfType(receiver->media_type())
         ->internal()
         ->AddReceiver(receiver_proxy);
+    return receiver_proxy;
+  }
+
+  void RemoveReceiver(rtc::scoped_refptr<RtpReceiverInterface> receiver) {
+    GetOrCreateFirstTransceiverOfType(receiver->media_type())
+        ->internal()
+        ->RemoveReceiver(receiver);
   }
 
   FakeVoiceMediaChannelForStats* AddVoiceChannel(
@@ -151,14 +167,6 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
         ->internal()
         ->SetChannel(video_channel_.get());
     return video_media_channel_ptr;
-  }
-
-  void AddLocalTrack(uint32_t ssrc, const std::string& track_id) {
-    local_track_id_by_ssrc_[ssrc] = track_id;
-  }
-
-  void AddRemoteTrack(uint32_t ssrc, const std::string& track_id) {
-    remote_track_id_by_ssrc_[ssrc] = track_id;
   }
 
   void AddSctpDataChannel(const std::string& label) {
@@ -248,22 +256,6 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
   GetTransceiversInternal() const override {
     return transceivers_;
-  }
-
-  absl::string_view GetLocalTrackIdBySsrc(uint32_t ssrc) override {
-    auto it = local_track_id_by_ssrc_.find(ssrc);
-    if (it != local_track_id_by_ssrc_.end()) {
-      return it->second;
-    }
-    return {};
-  }
-
-  absl::string_view GetRemoteTrackIdBySsrc(uint32_t ssrc) override {
-    auto it = remote_track_id_by_ssrc_.find(ssrc);
-    if (it != remote_track_id_by_ssrc_.end()) {
-      return it->second;
-    }
-    return {};
   }
 
   std::vector<rtc::scoped_refptr<DataChannel>> sctp_data_channels()
@@ -367,8 +359,6 @@ class FakePeerConnectionForStats : public FakePeerConnectionBase {
 
   std::unique_ptr<cricket::VoiceChannel> voice_channel_;
   std::unique_ptr<cricket::VideoChannel> video_channel_;
-  std::map<uint32_t, std::string> local_track_id_by_ssrc_;
-  std::map<uint32_t, std::string> remote_track_id_by_ssrc_;
 
   std::vector<rtc::scoped_refptr<DataChannel>> sctp_data_channels_;
 

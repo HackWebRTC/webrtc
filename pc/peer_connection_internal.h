@@ -41,10 +41,6 @@ class PeerConnectionInternal : public PeerConnectionInterface {
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
   GetTransceiversInternal() const = 0;
 
-  // Get the id used as a media stream track's "id" field from ssrc.
-  virtual absl::string_view GetLocalTrackIdBySsrc(uint32_t ssrc) = 0;
-  virtual absl::string_view GetRemoteTrackIdBySsrc(uint32_t ssrc) = 0;
-
   virtual sigslot::signal1<DataChannel*>& SignalDataChannelCreated() = 0;
 
   // Only valid when using deprecated RTP data channels.
