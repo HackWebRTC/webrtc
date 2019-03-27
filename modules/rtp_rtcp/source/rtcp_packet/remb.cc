@@ -20,8 +20,6 @@
 
 namespace webrtc {
 namespace rtcp {
-// TODO(bugs.webrtc.org/10353): Remove once dependencies are updated.
-constexpr uint8_t Remb::kFeedbackMessageType;
 // Receiver Estimated Max Bitrate (REMB) (draft-alvestrand-rmcat-remb).
 //
 //     0                   1                   2                   3
