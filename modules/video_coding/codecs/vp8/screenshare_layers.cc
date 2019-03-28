@@ -379,7 +379,7 @@ TemplateStructure ScreenshareLayers::GetTemplateStructure(
   RTC_CHECK_GT(num_layers, 0);
 
   TemplateStructure template_structure;
-  template_structure.num_operating_points = num_layers;
+  template_structure.num_decode_targets = num_layers;
 
   using Builder = GenericFrameInfo::Builder;
   switch (num_layers) {

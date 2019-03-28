@@ -39,16 +39,16 @@ GenericFrameInfo::Builder& GenericFrameInfo::Builder::S(int spatial_id) {
 GenericFrameInfo::Builder& GenericFrameInfo::Builder::Dtis(
     absl::string_view indication_symbols) {
   for (const auto& symbol : indication_symbols) {
-    OperatingPointIndication indication;
+    DecodeTargetIndication indication;
     switch (symbol) {
-      case '-': indication = OperatingPointIndication::kNotPresent; break;
-      case 'D': indication = OperatingPointIndication::kDiscardable; break;
-      case 'R': indication = OperatingPointIndication::kRequired; break;
-      case 'S': indication = OperatingPointIndication::kSwitch; break;
+      case '-': indication = DecodeTargetIndication::kNotPresent; break;
+      case 'D': indication = DecodeTargetIndication::kDiscardable; break;
+      case 'R': indication = DecodeTargetIndication::kRequired; break;
+      case 'S': indication = DecodeTargetIndication::kSwitch; break;
       default: RTC_NOTREACHED();
     }
 
-    info_.operating_points.push_back(indication);
+    info_.decode_target_indications.push_back(indication);
   }
 
   return *this;
