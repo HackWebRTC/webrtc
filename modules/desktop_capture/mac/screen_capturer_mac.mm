@@ -13,6 +13,7 @@
 #include "modules/desktop_capture/mac/screen_capturer_mac.h"
 
 #include "modules/desktop_capture/mac/desktop_frame_provider.h"
+#include "modules/desktop_capture/mac/window_list_utils.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/logging.h"
@@ -75,11 +76,7 @@ CFArrayRef CreateWindowListWithExclusion(CGWindowID window_to_exclude) {
     CFDictionaryRef window =
         reinterpret_cast<CFDictionaryRef>(CFArrayGetValueAtIndex(all_windows, i));
 
-    CFNumberRef id_ref =
-        reinterpret_cast<CFNumberRef>(CFDictionaryGetValue(window, kCGWindowNumber));
-
-    CGWindowID id;
-    CFNumberGetValue(id_ref, kCFNumberIntType, &id);
+    CGWindowID id = GetWindowId(window);
     if (id == window_to_exclude) {
       found = true;
       continue;
