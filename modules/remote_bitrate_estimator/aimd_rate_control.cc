@@ -74,7 +74,7 @@ AimdRateControl::AimdRateControl()
       low_throughput_threshold_("low_throughput", DataRate::Zero()) {
   // E.g
   // WebRTC-BweAimdRateControlConfig/initial_backoff_interval:100ms,
-  // critical_low_bitrate:100kbps/
+  // low_throughput:50kbps/
   ParseFieldTrial({&initial_backoff_interval_, &low_throughput_threshold_},
                   field_trial::FindFullName("WebRTC-BweAimdRateControlConfig"));
   if (initial_backoff_interval_) {
