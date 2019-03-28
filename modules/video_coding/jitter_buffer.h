@@ -125,18 +125,11 @@ class VCMJitterBuffer {
   // Empty the jitter buffer of all its data.
   void Flush();
 
-  // Get the number of received frames, by type, since the jitter buffer
-  // was started.
-  FrameCounts FrameStatistics() const;
-
   // Gets number of packets received.
   int num_packets() const;
 
   // Gets number of duplicated packets received.
   int num_duplicated_packets() const;
-
-  // Gets number of packets discarded by the jitter buffer.
-  int num_discarded_packets() const;
 
   // Statistics, Calculate frame and bit rates.
   void IncomingRateStatistics(unsigned int* framerate, unsigned int* bitrate);
@@ -295,8 +288,6 @@ class VCMJitterBuffer {
 
   uint16_t EstimatedLowSequenceNumber(const VCMFrameBuffer& frame) const;
 
-  void UpdateHistograms() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-
   // Reset frame buffer and return it to free_frames_.
   void RecycleFrameBuffer(VCMFrameBuffer* frame)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
@@ -315,8 +306,6 @@ class VCMJitterBuffer {
   VCMDecodingState last_decoded_state_ RTC_GUARDED_BY(crit_sect_);
   bool first_packet_since_reset_;
 
-  // Frame counts for each type (key, delta, ...)
-  FrameCounts receive_statistics_;
   // Latest calculated frame rates of incoming stream.
   unsigned int incoming_frame_rate_;
   unsigned int incoming_frame_count_;
@@ -329,10 +318,6 @@ class VCMJitterBuffer {
   int num_packets_ RTC_GUARDED_BY(crit_sect_);
   // Number of duplicated packets received.
   int num_duplicated_packets_ RTC_GUARDED_BY(crit_sect_);
-  // Number of packets discarded by the jitter buffer.
-  int num_discarded_packets_ RTC_GUARDED_BY(crit_sect_);
-  // Time when first packet is received.
-  int64_t time_first_packet_ms_ RTC_GUARDED_BY(crit_sect_);
 
   // Jitter estimation.
   // Filter for estimating jitter.
