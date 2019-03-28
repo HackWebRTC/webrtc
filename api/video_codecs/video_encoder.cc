@@ -101,19 +101,6 @@ VideoEncoder::EncoderInfo::EncoderInfo(const EncoderInfo&) = default;
 
 VideoEncoder::EncoderInfo::~EncoderInfo() = default;
 
-// Implementations of the interface must implement one or the other of these two
-// methods.
-int32_t VideoEncoder::Encode(const VideoFrame& frame,
-                             const std::vector<VideoFrameType>* frame_types) {
-  return Encode(frame, nullptr, frame_types);
-}
-
-int32_t VideoEncoder::Encode(const VideoFrame& frame,
-                             const CodecSpecificInfo* codec_specific_info,
-                             const std::vector<VideoFrameType>* frame_types) {
-  return Encode(frame, frame_types);
-}
-
 int32_t VideoEncoder::SetRates(uint32_t bitrate, uint32_t framerate) {
   RTC_NOTREACHED() << "SetRate(uint32_t, uint32_t) is deprecated.";
   return -1;

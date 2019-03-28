@@ -258,12 +258,7 @@ class RTC_EXPORT VideoEncoder {
   //                                  WEBRTC_VIDEO_CODEC_MEMORY
   //                                  WEBRTC_VIDEO_CODEC_ERROR
   virtual int32_t Encode(const VideoFrame& frame,
-                         const std::vector<VideoFrameType>* frame_types);
-  // TODO(bugs.webrtc.org/10379): Deprecated. Delete, and make above method pure
-  // virtual, as soon as downstream applications are updated.
-  virtual int32_t Encode(const VideoFrame& frame,
-                         const CodecSpecificInfo* codec_specific_info,
-                         const std::vector<VideoFrameType>* frame_types);
+                         const std::vector<VideoFrameType>* frame_types) = 0;
 
   // DEPRECATED! Instead use the one below:
   // void SetRateAllocation(const VideoBitrateAllocation&, DataRate, uint32)

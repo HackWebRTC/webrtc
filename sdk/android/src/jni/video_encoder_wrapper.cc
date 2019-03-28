@@ -120,7 +120,6 @@ int32_t VideoEncoderWrapper::Release() {
 
 int32_t VideoEncoderWrapper::Encode(
     const VideoFrame& frame,
-    const CodecSpecificInfo* /* codec_specific_info */,
     const std::vector<VideoFrameType>* frame_types) {
   if (!initialized_) {
     // Most likely initializing the codec failed.
