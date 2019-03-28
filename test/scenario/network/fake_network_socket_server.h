@@ -35,7 +35,7 @@ class FakeNetworkSocketServer : public rtc::SocketServer,
                                 public SocketManager {
  public:
   FakeNetworkSocketServer(Clock* clock,
-                          std::vector<EmulatedEndpoint*> endpoints);
+                          EndpointsContainer* endpoints_controller);
   ~FakeNetworkSocketServer() override;
 
   EmulatedEndpoint* GetEndpointNode(const rtc::IPAddress& ip) override;
@@ -57,7 +57,7 @@ class FakeNetworkSocketServer : public rtc::SocketServer,
   Timestamp Now() const;
 
   Clock* const clock_;
-  const std::vector<EmulatedEndpoint*> endpoints_;
+  const EndpointsContainer* endpoints_container_;
   rtc::Event wakeup_;
   rtc::MessageQueue* msg_queue_;
 

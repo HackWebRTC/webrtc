@@ -80,10 +80,25 @@ EmulatedEndpoint* NetworkEmulationManagerImpl::CreateEndpoint(
 
   bool res = used_ip_addresses_.insert(*ip).second;
   RTC_CHECK(res) << "IP=" << ip->ToString() << " already in use";
-  auto node = absl::make_unique<EmulatedEndpoint>(next_node_id_++, *ip, clock_);
+  auto node = absl::make_unique<EmulatedEndpoint>(
+      next_node_id_++, *ip, config.start_as_enabled, clock_);
   EmulatedEndpoint* out = node.get();
   endpoints_.push_back(std::move(node));
   return out;
+}
+
+void NetworkEmulationManagerImpl::EnableEndpoint(EmulatedEndpoint* endpoint) {
+  EmulatedNetworkManager* network_manager =
+      endpoint_to_network_manager_[endpoint];
+  RTC_CHECK(network_manager);
+  network_manager->EnableEndpoint(endpoint);
+}
+
+void NetworkEmulationManagerImpl::DisableEndpoint(EmulatedEndpoint* endpoint) {
+  EmulatedNetworkManager* network_manager =
+      endpoint_to_network_manager_[endpoint];
+  RTC_CHECK(network_manager);
+  network_manager->DisableEndpoint(endpoint);
 }
 
 EmulatedRoute* NetworkEmulationManagerImpl::CreateRoute(
@@ -182,37 +197,26 @@ NetworkEmulationManagerImpl::CreatePulsedPeaksCrossTraffic(
   return out;
 }
 
-rtc::Thread* NetworkEmulationManagerImpl::CreateNetworkThread(
+EmulatedNetworkManagerInterface*
+NetworkEmulationManagerImpl::CreateEmulatedNetworkManagerInterface(
     const std::vector<EmulatedEndpoint*>& endpoints) {
-  FakeNetworkSocketServer* socket_server = CreateSocketServer(endpoints);
-  std::unique_ptr<rtc::Thread> network_thread =
-      absl::make_unique<rtc::Thread>(socket_server);
-  network_thread->SetName("network_thread" + std::to_string(threads_.size()),
-                          nullptr);
-  network_thread->Start();
-  rtc::Thread* out = network_thread.get();
-  threads_.push_back(std::move(network_thread));
-  return out;
-}
-
-rtc::NetworkManager* NetworkEmulationManagerImpl::CreateNetworkManager(
-    const std::vector<EmulatedEndpoint*>& endpoints) {
-  auto network_manager = absl::make_unique<rtc::FakeNetworkManager>();
+  auto endpoints_controller = absl::make_unique<EndpointsContainer>(endpoints);
+  auto network_manager = absl::make_unique<EmulatedNetworkManager>(
+      clock_, endpoints_controller.get());
   for (auto* endpoint : endpoints) {
-    network_manager->AddInterface(
-        rtc::SocketAddress(endpoint->GetPeerLocalAddress(), /*port=*/0));
+    // Associate endpoint with network manager.
+    bool insertion_result =
+        endpoint_to_network_manager_.insert({endpoint, network_manager.get()})
+            .second;
+    RTC_CHECK(insertion_result)
+        << "Endpoint ip=" << endpoint->GetPeerLocalAddress().ToString()
+        << " is already used for another network";
   }
-  rtc::NetworkManager* out = network_manager.get();
-  managers_.push_back(std::move(network_manager));
-  return out;
-}
 
-FakeNetworkSocketServer* NetworkEmulationManagerImpl::CreateSocketServer(
-    const std::vector<EmulatedEndpoint*>& endpoints) {
-  auto socket_server =
-      absl::make_unique<FakeNetworkSocketServer>(clock_, endpoints);
-  FakeNetworkSocketServer* out = socket_server.get();
-  socket_servers_.push_back(std::move(socket_server));
+  EmulatedNetworkManagerInterface* out = network_manager.get();
+
+  endpoints_controllers_.push_back(std::move(endpoints_controller));
+  network_managers_.push_back(std::move(network_manager));
   return out;
 }
 

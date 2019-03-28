@@ -24,8 +24,10 @@
 #include "rtc_base/async_socket.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/critical_section.h"
+#include "rtc_base/network.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/thread.h"
+#include "rtc_base/thread_checker.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -120,7 +122,10 @@ class EmulatedNetworkNode : public EmulatedNetworkReceiverInterface {
 // from other EmulatedNetworkNodes.
 class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
  public:
-  EmulatedEndpoint(uint64_t id, rtc::IPAddress, Clock* clock);
+  EmulatedEndpoint(uint64_t id,
+                   rtc::IPAddress ip,
+                   bool is_enabled,
+                   Clock* clock);
   ~EmulatedEndpoint() override;
 
   uint64_t GetId() const;
@@ -155,6 +160,12 @@ class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
   // Will be called to deliver packet into endpoint from network node.
   void OnPacketReceived(EmulatedIpPacket packet) override;
 
+  void Enable();
+  void Disable();
+  bool Enabled() const;
+
+  const rtc::Network& network() const { return *network_.get(); }
+
  protected:
   friend class test::NetworkEmulationManagerImpl;
 
@@ -166,12 +177,15 @@ class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
   uint16_t NextPort() RTC_EXCLUSIVE_LOCKS_REQUIRED(receiver_lock_);
 
   rtc::CriticalSection receiver_lock_;
+  rtc::ThreadChecker enabled_state_checker_;
 
   uint64_t id_;
   // Peer's local IP address for this endpoint network interface.
   const rtc::IPAddress peer_local_addr_;
+  bool is_enabled_ RTC_GUARDED_BY(enabled_state_checker_);
   EmulatedNetworkNode* send_node_;
   Clock* const clock_;
+  std::unique_ptr<rtc::Network> network_;
 
   uint16_t next_port_ RTC_GUARDED_BY(receiver_lock_);
   std::map<uint16_t, EmulatedNetworkReceiverInterface*> port_to_receiver_
@@ -191,6 +205,20 @@ class EmulatedRoute {
   std::vector<EmulatedNetworkNode*> via_nodes;
   EmulatedEndpoint* to;
   bool active;
+};
+
+class EndpointsContainer {
+ public:
+  EndpointsContainer(const std::vector<EmulatedEndpoint*>& endpoints);
+
+  EmulatedEndpoint* LookupByLocalAddress(const rtc::IPAddress& local_ip) const;
+  bool HasEndpoint(EmulatedEndpoint* endpoint) const;
+  // Returns list of networks for enabled endpoints. Caller takes ownership of
+  // returned rtc::Network objects.
+  std::vector<std::unique_ptr<rtc::Network>> GetEnabledNetworks() const;
+
+ private:
+  const std::vector<EmulatedEndpoint*> endpoints_;
 };
 
 }  // namespace webrtc

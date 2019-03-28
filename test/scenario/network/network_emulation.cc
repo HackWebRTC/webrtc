@@ -128,13 +128,34 @@ void EmulatedNetworkNode::RemoveReceiver(uint64_t dest_endpoint_id) {
   routing_.erase(dest_endpoint_id);
 }
 
-EmulatedEndpoint::EmulatedEndpoint(uint64_t id, rtc::IPAddress ip, Clock* clock)
+EmulatedEndpoint::EmulatedEndpoint(uint64_t id,
+                                   rtc::IPAddress ip,
+                                   bool is_enabled,
+                                   Clock* clock)
     : id_(id),
       peer_local_addr_(ip),
+      is_enabled_(is_enabled),
       send_node_(nullptr),
       clock_(clock),
       next_port_(kFirstEphemeralPort),
-      connected_endpoint_id_(absl::nullopt) {}
+      connected_endpoint_id_(absl::nullopt) {
+  constexpr int kIPv4NetworkPrefixLength = 24;
+  constexpr int kIPv6NetworkPrefixLength = 64;
+
+  int prefix_length = 0;
+  if (ip.family() == AF_INET) {
+    prefix_length = kIPv4NetworkPrefixLength;
+  } else if (ip.family() == AF_INET6) {
+    prefix_length = kIPv6NetworkPrefixLength;
+  }
+  rtc::IPAddress prefix = TruncateIP(ip, prefix_length);
+  network_ = absl::make_unique<rtc::Network>(
+      ip.ToString(), "Endpoint id=" + std::to_string(id_), prefix,
+      prefix_length, rtc::AdapterType::ADAPTER_TYPE_UNKNOWN);
+  network_->AddIP(ip);
+
+  enabled_state_checker_.DetachFromThread();
+}
 EmulatedEndpoint::~EmulatedEndpoint() = default;
 
 uint64_t EmulatedEndpoint::GetId() const {
@@ -226,12 +247,65 @@ void EmulatedEndpoint::OnPacketReceived(EmulatedIpPacket packet) {
   it->second->OnPacketReceived(std::move(packet));
 }
 
+void EmulatedEndpoint::Enable() {
+  RTC_DCHECK_RUN_ON(&enabled_state_checker_);
+  RTC_CHECK(!is_enabled_);
+  is_enabled_ = true;
+}
+
+void EmulatedEndpoint::Disable() {
+  RTC_DCHECK_RUN_ON(&enabled_state_checker_);
+  RTC_CHECK(is_enabled_);
+  is_enabled_ = false;
+}
+
+bool EmulatedEndpoint::Enabled() const {
+  RTC_DCHECK_RUN_ON(&enabled_state_checker_);
+  return is_enabled_;
+}
+
 EmulatedNetworkNode* EmulatedEndpoint::GetSendNode() const {
   return send_node_;
 }
 
 void EmulatedEndpoint::SetConnectedEndpointId(uint64_t endpoint_id) {
   connected_endpoint_id_ = endpoint_id;
+}
+
+EndpointsContainer::EndpointsContainer(
+    const std::vector<EmulatedEndpoint*>& endpoints)
+    : endpoints_(endpoints) {}
+
+EmulatedEndpoint* EndpointsContainer::LookupByLocalAddress(
+    const rtc::IPAddress& local_ip) const {
+  for (auto* endpoint : endpoints_) {
+    rtc::IPAddress peerLocalAddress = endpoint->GetPeerLocalAddress();
+    if (peerLocalAddress == local_ip) {
+      return endpoint;
+    }
+  }
+  RTC_CHECK(false) << "No network found for address" << local_ip.ToString();
+}
+
+bool EndpointsContainer::HasEndpoint(EmulatedEndpoint* endpoint) const {
+  for (auto* e : endpoints_) {
+    if (e->GetId() == endpoint->GetId()) {
+      return true;
+    }
+  }
+  return false;
+}
+
+std::vector<std::unique_ptr<rtc::Network>>
+EndpointsContainer::GetEnabledNetworks() const {
+  std::vector<std::unique_ptr<rtc::Network>> networks;
+  for (auto* endpoint : endpoints_) {
+    if (endpoint->Enabled()) {
+      networks.emplace_back(
+          absl::make_unique<rtc::Network>(endpoint->network()));
+    }
+  }
+  return networks;
 }
 
 }  // namespace webrtc

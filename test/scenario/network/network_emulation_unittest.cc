@@ -97,12 +97,16 @@ TEST(NetworkEmulationManagerTest, Run) {
   network_manager.CreateRoute(alice_endpoint, {alice_node}, bob_endpoint);
   network_manager.CreateRoute(bob_endpoint, {bob_node}, alice_endpoint);
 
-  auto* nt1 = network_manager.CreateNetworkThread({alice_endpoint});
-  auto* nt2 = network_manager.CreateNetworkThread({bob_endpoint});
+  EmulatedNetworkManagerInterface* nt1 =
+      network_manager.CreateEmulatedNetworkManagerInterface({alice_endpoint});
+  EmulatedNetworkManagerInterface* nt2 =
+      network_manager.CreateEmulatedNetworkManagerInterface({bob_endpoint});
 
   for (uint64_t j = 0; j < 2; j++) {
-    auto* s1 = nt1->socketserver()->CreateAsyncSocket(AF_INET, SOCK_DGRAM);
-    auto* s2 = nt2->socketserver()->CreateAsyncSocket(AF_INET, SOCK_DGRAM);
+    auto* s1 = nt1->network_thread()->socketserver()->CreateAsyncSocket(
+        AF_INET, SOCK_DGRAM);
+    auto* s2 = nt2->network_thread()->socketserver()->CreateAsyncSocket(
+        AF_INET, SOCK_DGRAM);
 
     SocketReader r1(s1);
     SocketReader r2(s2);
@@ -113,8 +117,8 @@ TEST(NetworkEmulationManagerTest, Run) {
     s1->Bind(a1);
     s2->Bind(a2);
 
-    s1->Connect(s1->GetLocalAddress());
-    s2->Connect(s2->GetLocalAddress());
+    s1->Connect(s2->GetLocalAddress());
+    s2->Connect(s1->GetLocalAddress());
 
     rtc::CopyOnWriteBuffer data("Hello");
     for (uint64_t i = 0; i < 1000; i++) {

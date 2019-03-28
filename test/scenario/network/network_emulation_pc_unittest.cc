@@ -113,36 +113,32 @@ TEST(NetworkEmulationManagerPCTest, Run) {
   emulation.CreateRoute(alice_endpoint, {alice_node}, bob_endpoint);
   emulation.CreateRoute(bob_endpoint, {bob_node}, alice_endpoint);
 
-  rtc::Thread* alice_network_thread =
-      emulation.CreateNetworkThread({alice_endpoint});
-  rtc::Thread* bob_network_thread =
-      emulation.CreateNetworkThread({bob_endpoint});
+  EmulatedNetworkManagerInterface* alice_network =
+      emulation.CreateEmulatedNetworkManagerInterface({alice_endpoint});
+  EmulatedNetworkManagerInterface* bob_network =
+      emulation.CreateEmulatedNetworkManagerInterface({bob_endpoint});
 
   // Setup peer connections.
   rtc::scoped_refptr<PeerConnectionFactoryInterface> alice_pcf;
   rtc::scoped_refptr<PeerConnectionInterface> alice_pc;
   std::unique_ptr<MockPeerConnectionObserver> alice_observer =
       absl::make_unique<MockPeerConnectionObserver>();
-  rtc::NetworkManager* alice_network_manager =
-      emulation.CreateNetworkManager({alice_endpoint});
 
   rtc::scoped_refptr<PeerConnectionFactoryInterface> bob_pcf;
   rtc::scoped_refptr<PeerConnectionInterface> bob_pc;
   std::unique_ptr<MockPeerConnectionObserver> bob_observer =
       absl::make_unique<MockPeerConnectionObserver>();
-  rtc::NetworkManager* bob_network_manager =
-      emulation.CreateNetworkManager({bob_endpoint});
 
   signaling_thread->Invoke<void>(RTC_FROM_HERE, [&]() {
     alice_pcf = CreatePeerConnectionFactory(signaling_thread.get(),
-                                            alice_network_thread);
+                                            alice_network->network_thread());
     alice_pc = CreatePeerConnection(alice_pcf, alice_observer.get(),
-                                    alice_network_manager);
+                                    alice_network->network_manager());
 
-    bob_pcf =
-        CreatePeerConnectionFactory(signaling_thread.get(), bob_network_thread);
-    bob_pc =
-        CreatePeerConnection(bob_pcf, bob_observer.get(), bob_network_manager);
+    bob_pcf = CreatePeerConnectionFactory(signaling_thread.get(),
+                                          bob_network->network_thread());
+    bob_pc = CreatePeerConnection(bob_pcf, bob_observer.get(),
+                                  bob_network->network_manager());
   });
 
   std::unique_ptr<PeerConnectionWrapper> alice =

@@ -17,9 +17,9 @@ namespace test {
 
 FakeNetworkSocketServer::FakeNetworkSocketServer(
     Clock* clock,
-    std::vector<EmulatedEndpoint*> endpoints)
+    EndpointsContainer* endpoints_container)
     : clock_(clock),
-      endpoints_(std::move(endpoints)),
+      endpoints_container_(endpoints_container),
       wakeup_(/*manual_reset=*/false, /*initially_signaled=*/false) {}
 FakeNetworkSocketServer::~FakeNetworkSocketServer() = default;
 
@@ -29,13 +29,7 @@ void FakeNetworkSocketServer::OnMessageQueueDestroyed() {
 
 EmulatedEndpoint* FakeNetworkSocketServer::GetEndpointNode(
     const rtc::IPAddress& ip) {
-  for (auto* endpoint : endpoints_) {
-    rtc::IPAddress peerLocalAddress = endpoint->GetPeerLocalAddress();
-    if (peerLocalAddress == ip) {
-      return endpoint;
-    }
-  }
-  RTC_CHECK(false) << "No network found for address" << ip.ToString();
+  return endpoints_container_->LookupByLocalAddress(ip);
 }
 
 void FakeNetworkSocketServer::Unregister(SocketIoProcessor* io_processor) {

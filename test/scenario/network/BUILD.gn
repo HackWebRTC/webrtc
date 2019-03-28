@@ -13,6 +13,8 @@ rtc_source_set("emulated_network") {
   sources = [
     "cross_traffic.cc",
     "cross_traffic.h",
+    "emulated_network_manager.cc",
+    "emulated_network_manager.h",
     "fake_network_socket.cc",
     "fake_network_socket.h",
     "fake_network_socket_server.cc",

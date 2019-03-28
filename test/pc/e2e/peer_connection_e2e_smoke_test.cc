@@ -75,25 +75,27 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
 
   // Setup components. We need to provide rtc::NetworkManager compatible with
   // emulated network layer.
-  fixture->AddPeer(
-      network_emulation_manager->CreateNetworkThread({alice_endpoint}),
-      network_emulation_manager->CreateNetworkManager({alice_endpoint}),
-      [](PeerConfigurer* alice) {
-        VideoConfig alice_video_config(640, 360, 30);
-        alice_video_config.stream_label = "alice-video";
-        alice->AddVideoConfig(std::move(alice_video_config));
-        alice->SetAudioConfig(AudioConfig());
-      });
+  EmulatedNetworkManagerInterface* alice_network =
+      network_emulation_manager->CreateEmulatedNetworkManagerInterface(
+          {alice_endpoint});
+  fixture->AddPeer(alice_network->network_thread(),
+                   alice_network->network_manager(), [](PeerConfigurer* alice) {
+                     VideoConfig alice_video_config(640, 360, 30);
+                     alice_video_config.stream_label = "alice-video";
+                     alice->AddVideoConfig(std::move(alice_video_config));
+                     alice->SetAudioConfig(AudioConfig());
+                   });
 
-  fixture->AddPeer(
-      network_emulation_manager->CreateNetworkThread({bob_endpoint}),
-      network_emulation_manager->CreateNetworkManager({bob_endpoint}),
-      [](PeerConfigurer* bob) {
-        VideoConfig bob_video_config(640, 360, 30);
-        bob_video_config.stream_label = "bob-video";
-        bob->AddVideoConfig(std::move(bob_video_config));
-        bob->SetAudioConfig(AudioConfig());
-      });
+  EmulatedNetworkManagerInterface* bob_network =
+      network_emulation_manager->CreateEmulatedNetworkManagerInterface(
+          {bob_endpoint});
+  fixture->AddPeer(bob_network->network_thread(),
+                   bob_network->network_manager(), [](PeerConfigurer* bob) {
+                     VideoConfig bob_video_config(640, 360, 30);
+                     bob_video_config.stream_label = "bob-video";
+                     bob->AddVideoConfig(std::move(bob_video_config));
+                     bob->SetAudioConfig(AudioConfig());
+                   });
 
   fixture->Run(RunParams{TimeDelta::seconds(5)});
 
