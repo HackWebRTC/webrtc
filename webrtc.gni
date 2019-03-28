@@ -187,6 +187,14 @@ declare_args() {
   # (they will still be included in libjingle_peerconnection_so.so and
   # WebRTC.framework)
   rtc_include_builtin_video_codecs = true
+
+  # When set to true and in a standalone build, it will undefine UNICODE and
+  # _UNICODE (which are always defined globally by the Chromium Windows
+  # toolchain).
+  # This is only needed for testing purposes, WebRTC wants to be sure it
+  # doesn't assume /DUNICODE and /D_UNICODE but that it explicitly uses
+  # wide character functions.
+  rtc_win_undef_unicode = false
 }
 
 if (!build_with_mozilla) {

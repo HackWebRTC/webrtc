@@ -361,6 +361,13 @@ config("common_config") {
     # Used in Chromium's overrides to disable logging
     defines += [ "WEBRTC_UNSAFE_FUZZER_MODE" ]
   }
+
+  if (!build_with_chromium && rtc_win_undef_unicode) {
+    cflags += [
+      "/UUNICODE",
+      "/U_UNICODE",
+    ]
+  }
 }
 
 config("common_objc") {
