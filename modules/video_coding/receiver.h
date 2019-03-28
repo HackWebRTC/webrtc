@@ -48,7 +48,6 @@ class VCMReceiver {
   VCMEncodedFrame* FrameForDecoding(uint16_t max_wait_time_ms,
                                     bool prefer_late_decoding);
   void ReleaseFrame(VCMEncodedFrame* frame);
-  void ReceiveStatistics(uint32_t* bitrate, uint32_t* framerate);
 
   // NACK.
   void SetNackMode(VCMNackMode nackMode,

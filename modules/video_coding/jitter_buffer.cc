@@ -228,11 +228,6 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
       incomplete_frames_(),
       last_decoded_state_(),
       first_packet_since_reset_(true),
-      incoming_frame_rate_(0),
-      incoming_frame_count_(0),
-      time_last_incoming_frame_count_(0),
-      incoming_bit_count_(0),
-      incoming_bit_rate_(0),
       num_consecutive_old_packets_(0),
       num_packets_(0),
       num_duplicated_packets_(0),
@@ -272,11 +267,6 @@ VCMJitterBuffer::~VCMJitterBuffer() {
 void VCMJitterBuffer::Start() {
   rtc::CritScope cs(&crit_sect_);
   running_ = true;
-  incoming_frame_count_ = 0;
-  incoming_frame_rate_ = 0;
-  incoming_bit_count_ = 0;
-  incoming_bit_rate_ = 0;
-  time_last_incoming_frame_count_ = clock_->TimeInMilliseconds();
 
   num_consecutive_old_packets_ = 0;
   num_packets_ = 0;
@@ -332,65 +322,6 @@ int VCMJitterBuffer::num_packets() const {
 int VCMJitterBuffer::num_duplicated_packets() const {
   rtc::CritScope cs(&crit_sect_);
   return num_duplicated_packets_;
-}
-
-// Calculate framerate and bitrate.
-void VCMJitterBuffer::IncomingRateStatistics(unsigned int* framerate,
-                                             unsigned int* bitrate) {
-  assert(framerate);
-  assert(bitrate);
-  rtc::CritScope cs(&crit_sect_);
-  const int64_t now = clock_->TimeInMilliseconds();
-  int64_t diff = now - time_last_incoming_frame_count_;
-  if (diff < 1000 && incoming_frame_rate_ > 0 && incoming_bit_rate_ > 0) {
-    // Make sure we report something even though less than
-    // 1 second has passed since last update.
-    *framerate = incoming_frame_rate_;
-    *bitrate = incoming_bit_rate_;
-  } else if (incoming_frame_count_ != 0) {
-    // We have received frame(s) since last call to this function
-
-    // Prepare calculations
-    if (diff <= 0) {
-      diff = 1;
-    }
-    // we add 0.5f for rounding
-    float rate = 0.5f + ((incoming_frame_count_ * 1000.0f) / diff);
-    if (rate < 1.0f) {
-      rate = 1.0f;
-    }
-
-    // Calculate frame rate
-    // Let r be rate.
-    // r(0) = 1000*framecount/delta_time.
-    // (I.e. frames per second since last calculation.)
-    // frame_rate = r(0)/2 + r(-1)/2
-    // (I.e. fr/s average this and the previous calculation.)
-    *framerate = (incoming_frame_rate_ + static_cast<unsigned int>(rate)) / 2;
-    incoming_frame_rate_ = static_cast<unsigned int>(rate);
-
-    // Calculate bit rate
-    if (incoming_bit_count_ == 0) {
-      *bitrate = 0;
-    } else {
-      *bitrate =
-          10 * ((100 * incoming_bit_count_) / static_cast<unsigned int>(diff));
-    }
-    incoming_bit_rate_ = *bitrate;
-
-    // Reset count
-    incoming_frame_count_ = 0;
-    incoming_bit_count_ = 0;
-    time_last_incoming_frame_count_ = now;
-
-  } else {
-    // No frames since last call
-    time_last_incoming_frame_count_ = clock_->TimeInMilliseconds();
-    *framerate = 0;
-    *bitrate = 0;
-    incoming_frame_rate_ = 0;
-    incoming_bit_rate_ = 0;
-  }
 }
 
 // Returns immediately or a |max_wait_time_ms| ms event hang waiting for a
@@ -618,7 +549,6 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
       frame->InsertPacket(packet, now_ms, frame_data);
 
   if (buffer_state > 0) {
-    incoming_bit_count_ += packet.sizeBytes << 3;
     if (first_packet_since_reset_) {
       latest_received_sequence_number_ = packet.seqNum;
       first_packet_since_reset_ = false;
@@ -647,7 +577,6 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
     }
     case kCompleteSession: {
       if (previous_state != kStateComplete) {
-        CountFrame(*frame);
         if (continuous) {
           // Signal that we have a complete session.
           frame_event_->Set();
@@ -1055,11 +984,6 @@ bool VCMJitterBuffer::RecycleFramesUntilKeyFrame() {
     missing_sequence_numbers_.clear();
   }
   return key_frame_found;
-}
-
-// Must be called under the critical section |crit_sect_|.
-void VCMJitterBuffer::CountFrame(const VCMFrameBuffer& frame) {
-  incoming_frame_count_++;
 }
 
 void VCMJitterBuffer::UpdateAveragePacketsPerFrame(int current_number_packets) {

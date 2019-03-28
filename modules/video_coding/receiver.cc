@@ -196,12 +196,6 @@ void VCMReceiver::ReleaseFrame(VCMEncodedFrame* frame) {
   jitter_buffer_.ReleaseFrame(frame);
 }
 
-void VCMReceiver::ReceiveStatistics(uint32_t* bitrate, uint32_t* framerate) {
-  assert(bitrate);
-  assert(framerate);
-  jitter_buffer_.IncomingRateStatistics(framerate, bitrate);
-}
-
 void VCMReceiver::SetNackMode(VCMNackMode nackMode,
                               int64_t low_rtt_nack_threshold_ms,
                               int64_t high_rtt_nack_threshold_ms) {

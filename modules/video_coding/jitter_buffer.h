@@ -128,9 +128,6 @@ class VCMJitterBuffer {
   // Gets number of duplicated packets received.
   int num_duplicated_packets() const;
 
-  // Statistics, Calculate frame and bit rates.
-  void IncomingRateStatistics(unsigned int* framerate, unsigned int* bitrate);
-
   // Wait |max_wait_time_ms| for a complete frame to arrive.
   // If found, a pointer to the frame is returned. Returns nullptr otherwise.
   VCMEncodedFrame* NextCompleteFrame(uint32_t max_wait_time_ms);
@@ -251,12 +248,6 @@ class VCMJitterBuffer {
   // completely full. Returns true if a key frame was found.
   bool RecycleFramesUntilKeyFrame() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
-  // Updates the frame statistics.
-  // Counts only complete frames, so decodable incomplete frames will not be
-  // counted.
-  void CountFrame(const VCMFrameBuffer& frame)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
-
   // Update rolling average of packets per frame.
   void UpdateAveragePacketsPerFrame(int current_number_packets_);
 
@@ -303,12 +294,6 @@ class VCMJitterBuffer {
   VCMDecodingState last_decoded_state_ RTC_GUARDED_BY(crit_sect_);
   bool first_packet_since_reset_;
 
-  // Latest calculated frame rates of incoming stream.
-  unsigned int incoming_frame_rate_;
-  unsigned int incoming_frame_count_;
-  int64_t time_last_incoming_frame_count_;
-  unsigned int incoming_bit_count_;
-  unsigned int incoming_bit_rate_;
   // Number of packets in a row that have been too old.
   int num_consecutive_old_packets_;
   // Number of packets received.
