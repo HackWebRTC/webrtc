@@ -13,9 +13,9 @@
 
 #include <ctype.h>
 #include <string.h>
-#include <algorithm>
 #include <type_traits>
 
+#include "absl/algorithm/container.h"
 #include "api/array_view.h"
 
 namespace webrtc {
@@ -33,12 +33,12 @@ bool IsTokenChar(char ch) {
 
 bool IsLegalMidName(absl::string_view name) {
   return (name.size() <= kMidRsidMaxSize && name.size() > 0 &&
-          std::all_of(name.data(), name.data() + name.size(), IsTokenChar));
+          absl::c_all_of(name, IsTokenChar));
 }
 
 bool IsLegalRsidName(absl::string_view name) {
   return (name.size() <= kMidRsidMaxSize && name.size() > 0 &&
-          std::all_of(name.data(), name.data() + name.size(), isalnum));
+          absl::c_all_of(name, isalnum));
 }
 
 StreamDataCounters::StreamDataCounters() : first_packet_time_ms(-1) {}

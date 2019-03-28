@@ -12,6 +12,7 @@
 
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "api/call/transport.h"
 #include "api/video/video_bitrate_allocation.h"
@@ -103,7 +104,7 @@ void RtcpTransceiverImpl::AddMediaReceiverRtcpObserver(
     uint32_t remote_ssrc,
     MediaReceiverRtcpObserver* observer) {
   auto& stored = remote_senders_[remote_ssrc].observers;
-  RTC_DCHECK(std::find(stored.begin(), stored.end(), observer) == stored.end());
+  RTC_DCHECK(!absl::c_linear_search(stored, observer));
   stored.push_back(observer);
 }
 
@@ -114,7 +115,7 @@ void RtcpTransceiverImpl::RemoveMediaReceiverRtcpObserver(
   if (remote_sender_it == remote_senders_.end())
     return;
   auto& stored = remote_sender_it->second.observers;
-  auto it = std::find(stored.begin(), stored.end(), observer);
+  auto it = absl::c_find(stored, observer);
   if (it == stored.end())
     return;
   stored.erase(it);

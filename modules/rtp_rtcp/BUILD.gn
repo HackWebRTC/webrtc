@@ -104,6 +104,7 @@ rtc_source_set("rtp_rtcp_format") {
     "../../rtc_base/system:unused",
     "../../system_wrappers",
     "../video_coding:codec_globals_headers",
+    "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
     "//third_party/abseil-cpp/absl/types:variant",
@@ -232,6 +233,7 @@ rtc_static_library("rtp_rtcp") {
     "../../system_wrappers:metrics",
     "../remote_bitrate_estimator",
     "../video_coding:codec_globals_headers",
+    "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/container:inlined_vector",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",
@@ -266,6 +268,7 @@ rtc_source_set("rtcp_transceiver") {
     "../../rtc_base/task_utils:repeating_task",
     "../../rtc_base/task_utils:to_queued_task",
     "../../system_wrappers",
+    "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -461,6 +464,7 @@ if (rtc_include_tests) {
       "../../test:test_common",
       "../../test:test_support",
       "../video_coding:codec_globals_headers",
+      "//third_party/abseil-cpp/absl/algorithm:container",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]

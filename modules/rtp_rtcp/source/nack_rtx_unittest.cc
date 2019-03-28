@@ -8,12 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <algorithm>
 #include <iterator>
 #include <list>
 #include <memory>
 #include <set>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "api/call/transport.h"
 #include "api/transport/field_trial_based_config.h"
@@ -189,14 +189,11 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
 
   bool ExpectedPacketsReceived() {
     std::list<uint16_t> received_sorted;
-    std::copy(media_stream_.sequence_numbers_.begin(),
-              media_stream_.sequence_numbers_.end(),
-              std::back_inserter(received_sorted));
+    absl::c_copy(media_stream_.sequence_numbers_,
+                 std::back_inserter(received_sorted));
     received_sorted.sort();
-    return received_sorted.size() ==
-               transport_.expected_sequence_numbers_.size() &&
-           std::equal(received_sorted.begin(), received_sorted.end(),
-                      transport_.expected_sequence_numbers_.begin());
+    return absl::c_equal(received_sorted,
+                         transport_.expected_sequence_numbers_);
   }
 
   void RunRtxTest(RtxMode rtx_method, int loss) {
