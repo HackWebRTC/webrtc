@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
@@ -738,10 +739,9 @@ void VideoAnalyzer::PrintResult(const char* result_type,
 void VideoAnalyzer::PrintSamplesToFile() {
   FILE* out = graph_data_output_file_;
   rtc::CritScope crit(&comparison_lock_);
-  std::sort(samples_.begin(), samples_.end(),
-            [](const Sample& A, const Sample& B) -> bool {
-              return A.input_time_ms < B.input_time_ms;
-            });
+  absl::c_sort(samples_, [](const Sample& A, const Sample& B) -> bool {
+    return A.input_time_ms < B.input_time_ms;
+  });
 
   fprintf(out, "%s\n", graph_title_.c_str());
   fprintf(out, "%" PRIuS "\n", samples_.size());

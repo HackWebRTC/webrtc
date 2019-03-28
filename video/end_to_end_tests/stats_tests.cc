@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "api/test/simulated_network.h"
 #include "api/test/video/function_video_encoder_factory.h"
@@ -628,8 +629,7 @@ TEST_F(StatsEndToEndTest, VerifyNackStats) {
       test::RtcpPacketParser rtcp_parser;
       rtcp_parser.Parse(packet, length);
       const std::vector<uint16_t>& nacks = rtcp_parser.nack()->packet_ids();
-      if (!nacks.empty() && std::find(nacks.begin(), nacks.end(),
-                                      dropped_rtp_packet_) != nacks.end()) {
+      if (!nacks.empty() && absl::c_linear_search(nacks, dropped_rtp_packet_)) {
         dropped_rtp_packet_requested_ = true;
       }
       return SEND_PACKET;

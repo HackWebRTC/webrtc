@@ -10,11 +10,13 @@
 
 #include "video/send_statistics_proxy.h"
 
+#include <algorithm>
 #include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "system_wrappers/include/metrics.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
@@ -1685,10 +1687,8 @@ TEST_F(SendStatisticsProxyTest, GetStatsReportsTargetMediaBitrate) {
 
 TEST_F(SendStatisticsProxyTest, NoSubstreams) {
   uint32_t excluded_ssrc =
-      std::max(
-          *std::max_element(config_.rtp.ssrcs.begin(), config_.rtp.ssrcs.end()),
-          *std::max_element(config_.rtp.rtx.ssrcs.begin(),
-                            config_.rtp.rtx.ssrcs.end())) +
+      std::max(*absl::c_max_element(config_.rtp.ssrcs),
+               *absl::c_max_element(config_.rtp.rtx.ssrcs)) +
       1;
   // From RtcpStatisticsCallback.
   RtcpStatistics rtcp_stats;

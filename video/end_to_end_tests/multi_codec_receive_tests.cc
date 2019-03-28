@@ -17,7 +17,10 @@
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "test/call_test.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
+
+using ::testing::Contains;
 
 namespace webrtc {
 namespace {
@@ -98,9 +101,7 @@ class FrameObserver : public test::RtpRtcpObserver,
   // Verifies that all sent frames are decoded and rendered.
   void OnFrame(const VideoFrame& rendered_frame) override {
     rtc::CritScope lock(&crit_);
-    EXPECT_NE(std::find(sent_timestamps_.begin(), sent_timestamps_.end(),
-                        rendered_frame.timestamp()),
-              sent_timestamps_.end());
+    EXPECT_THAT(sent_timestamps_, Contains(rendered_frame.timestamp()));
 
     // Remove old timestamps too, only the newest decoded frame is rendered.
     num_rendered_frames_ +=

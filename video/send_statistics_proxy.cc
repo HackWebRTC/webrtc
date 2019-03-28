@@ -15,6 +15,7 @@
 #include <limits>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -749,13 +750,10 @@ VideoSendStream::StreamStats* SendStatisticsProxy::GetStatsEntry(
   if (it != stats_.substreams.end())
     return &it->second;
 
-  bool is_media = std::find(rtp_config_.ssrcs.begin(), rtp_config_.ssrcs.end(),
-                            ssrc) != rtp_config_.ssrcs.end();
+  bool is_media = absl::c_linear_search(rtp_config_.ssrcs, ssrc);
   bool is_flexfec = rtp_config_.flexfec.payload_type != -1 &&
                     ssrc == rtp_config_.flexfec.ssrc;
-  bool is_rtx =
-      std::find(rtp_config_.rtx.ssrcs.begin(), rtp_config_.rtx.ssrcs.end(),
-                ssrc) != rtp_config_.rtx.ssrcs.end();
+  bool is_rtx = absl::c_linear_search(rtp_config_.rtx.ssrcs, ssrc);
   if (!is_media && !is_flexfec && !is_rtx)
     return nullptr;
 

@@ -110,6 +110,7 @@ rtc_static_library("video") {
     "../system_wrappers",
     "../system_wrappers:field_trial",
     "../system_wrappers:metrics",
+    "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -211,6 +212,7 @@ rtc_source_set("video_stream_encoder_impl") {
     "../rtc_base/system:fallthrough",
     "../rtc_base/task_utils:repeating_task",
     "../system_wrappers:field_trial",
+    "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -282,6 +284,7 @@ if (rtc_include_tests) {
       "../test:test_support_test_artifacts",
       "../test:video_test_common",
       "../test:video_test_support",
+      "//third_party/abseil-cpp/absl/algorithm:container",
       "//third_party/abseil-cpp/absl/memory",
     ]
 
@@ -580,6 +583,7 @@ if (rtc_include_tests) {
       "../test:test_support",
       "../test:video_test_common",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/algorithm:container",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]

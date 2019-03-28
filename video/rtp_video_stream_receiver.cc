@@ -10,10 +10,10 @@
 
 #include "video/rtp_video_stream_receiver.h"
 
-#include <algorithm>
 #include <utility>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "media/base/media_constants.h"
 #include "modules/pacing/packet_router.h"
@@ -468,15 +468,14 @@ absl::optional<int64_t> RtpVideoStreamReceiver::LastReceivedKeyframePacketMs()
 
 void RtpVideoStreamReceiver::AddSecondarySink(RtpPacketSinkInterface* sink) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
-  RTC_DCHECK(std::find(secondary_sinks_.cbegin(), secondary_sinks_.cend(),
-                       sink) == secondary_sinks_.cend());
+  RTC_DCHECK(!absl::c_linear_search(secondary_sinks_, sink));
   secondary_sinks_.push_back(sink);
 }
 
 void RtpVideoStreamReceiver::RemoveSecondarySink(
     const RtpPacketSinkInterface* sink) {
   RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
-  auto it = std::find(secondary_sinks_.begin(), secondary_sinks_.end(), sink);
+  auto it = absl::c_find(secondary_sinks_, sink);
   if (it == secondary_sinks_.end()) {
     // We might be rolling-back a call whose setup failed mid-way. In such a
     // case, it's simpler to remove "everything" rather than remember what

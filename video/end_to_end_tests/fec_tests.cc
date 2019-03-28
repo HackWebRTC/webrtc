@@ -18,8 +18,12 @@
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "test/call_test.h"
 #include "test/field_trial.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/rtcp_packet_parser.h"
+
+using ::testing::Contains;
+using ::testing::Not;
 
 namespace webrtc {
 namespace {
@@ -416,8 +420,7 @@ TEST_F(FecEndToEndTest, ReceivedUlpfecPacketsNotNacked) {
         test::RtcpPacketParser rtcp_parser;
         rtcp_parser.Parse(packet, length);
         const std::vector<uint16_t>& nacks = rtcp_parser.nack()->packet_ids();
-        EXPECT_TRUE(std::find(nacks.begin(), nacks.end(),
-                              ulpfec_sequence_number_) == nacks.end())
+        EXPECT_THAT(nacks, Not(Contains(ulpfec_sequence_number_)))
             << "Got nack for ULPFEC packet";
         if (!nacks.empty() &&
             IsNewerSequenceNumber(nacks.back(), ulpfec_sequence_number_)) {

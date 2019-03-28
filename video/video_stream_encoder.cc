@@ -15,6 +15,7 @@
 #include <numeric>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "api/video/encoded_image.h"
 #include "api/video/i420_buffer.h"
@@ -642,9 +643,8 @@ void VideoStreamEncoder::ReconfigureEncoder() {
 
   // Stream dimensions may be not equal to given because of a simulcast
   // restrictions.
-  auto highest_stream = std::max_element(
-      streams.begin(), streams.end(),
-      [](const webrtc::VideoStream& a, const webrtc::VideoStream& b) {
+  auto highest_stream = absl::c_max_element(
+      streams, [](const webrtc::VideoStream& a, const webrtc::VideoStream& b) {
         return std::tie(a.width, a.height) < std::tie(b.width, b.height);
       });
   int highest_stream_width = static_cast<int>(highest_stream->width);
@@ -1898,7 +1898,7 @@ void VideoStreamEncoder::AdaptCounter::DecrementFramerate(int reason,
   DecrementFramerate(reason);
   // Reset if at max fps (i.e. in case of fewer steps up than down).
   if (cur_fps == std::numeric_limits<int>::max())
-    std::fill(fps_counters_.begin(), fps_counters_.end(), 0);
+    absl::c_fill(fps_counters_, 0);
 }
 
 int VideoStreamEncoder::AdaptCounter::FramerateCount() const {
@@ -1923,7 +1923,7 @@ int VideoStreamEncoder::AdaptCounter::TotalCount(int reason) const {
 
 int VideoStreamEncoder::AdaptCounter::Count(
     const std::vector<int>& counters) const {
-  return std::accumulate(counters.begin(), counters.end(), 0);
+  return absl::c_accumulate(counters, 0);
 }
 
 void VideoStreamEncoder::AdaptCounter::MoveCount(std::vector<int>* counters,

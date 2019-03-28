@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <memory>
 
+#include "absl/algorithm/container.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
@@ -158,8 +159,7 @@ void CallStats::RegisterStatsObserver(CallStatsObserver* observer) {
   TemporaryDeregistration deregister(this, process_thread_,
                                      process_thread_running_);
 
-  auto it = std::find(observers_.begin(), observers_.end(), observer);
-  if (it == observers_.end())
+  if (!absl::c_linear_search(observers_, observer))
     observers_.push_back(observer);
 }
 

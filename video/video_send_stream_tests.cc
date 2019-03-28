@@ -11,6 +11,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/simulated_network.h"
@@ -935,8 +936,7 @@ void VideoSendStreamTest::TestNackRetransmission(
         sequence_number = (rtx_header[0] << 8) + rtx_header[1];
       }
 
-      auto found = std::find(nacked_sequence_numbers_.begin(),
-                             nacked_sequence_numbers_.end(), sequence_number);
+      auto found = absl::c_find(nacked_sequence_numbers_, sequence_number);
       if (found != nacked_sequence_numbers_.end()) {
         nacked_sequence_numbers_.erase(found);
 

@@ -17,6 +17,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/array_view.h"
@@ -351,8 +352,7 @@ void VideoReceiveStream::Start() {
         field_trial::FindFullName("WebRTC-DecoderDataDumpDirectory");
     // Because '/' can't be used inside a field trial parameter, we use ':'
     // instead.
-    std::replace(decoded_output_file.begin(), decoded_output_file.end(), ':',
-                 '/');
+    absl::c_replace(decoded_output_file, ':', '/');
     if (!decoded_output_file.empty()) {
       char filename_buffer[256];
       rtc::SimpleStringBuilder ssb(filename_buffer);

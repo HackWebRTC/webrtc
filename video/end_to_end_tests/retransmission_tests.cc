@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "api/test/simulated_network.h"
 #include "api/test/video/function_video_encoder_factory.h"
@@ -370,8 +371,8 @@ void RetransmissionEndToEndTest::DecodesRetransmittedFrame(bool enable_rtx,
         // This should be the only dropped packet.
         EXPECT_EQ(0u, retransmitted_timestamp_);
         retransmitted_timestamp_ = header.timestamp;
-        if (std::find(rendered_timestamps_.begin(), rendered_timestamps_.end(),
-                      retransmitted_timestamp_) != rendered_timestamps_.end()) {
+        if (absl::c_linear_search(rendered_timestamps_,
+                                  retransmitted_timestamp_)) {
           // Frame was rendered before last packet was scheduled for sending.
           // This is extremly rare but possible scenario because prober able to
           // resend packet before it was send.

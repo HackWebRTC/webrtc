@@ -15,6 +15,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "api/crypto/crypto_options.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
@@ -48,10 +49,9 @@ constexpr TimeDelta kEncoderTimeOut = TimeDelta::Seconds<2>();
 
 bool TransportSeqNumExtensionConfigured(const VideoSendStream::Config& config) {
   const std::vector<RtpExtension>& extensions = config.rtp.extensions;
-  return std::find_if(
-             extensions.begin(), extensions.end(), [](const RtpExtension& ext) {
-               return ext.uri == RtpExtension::kTransportSequenceNumberUri;
-             }) != extensions.end();
+  return absl::c_any_of(extensions, [](const RtpExtension& ext) {
+    return ext.uri == RtpExtension::kTransportSequenceNumberUri;
+  });
 }
 
 const char kForcedFallbackFieldTrial[] =
@@ -320,12 +320,10 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   // side doesn't support the rotation extension. This allows us to prepare the
   // encoder in the expectation that rotation is supported - which is the common
   // case.
-  bool rotation_applied =
-      std::find_if(config_->rtp.extensions.begin(),
-                   config_->rtp.extensions.end(),
-                   [](const RtpExtension& extension) {
-                     return extension.uri == RtpExtension::kVideoRotationUri;
-                   }) == config_->rtp.extensions.end();
+  bool rotation_applied = absl::c_none_of(
+      config_->rtp.extensions, [](const RtpExtension& extension) {
+        return extension.uri == RtpExtension::kVideoRotationUri;
+      });
 
   video_stream_encoder_->SetSink(this, rotation_applied);
 }
