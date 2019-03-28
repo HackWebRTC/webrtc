@@ -226,78 +226,67 @@ void VideoEncoderWrapper::OnEncodedFrame(JNIEnv* jni,
       static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_buffer.obj()));
   const size_t buffer_size = jni->GetDirectBufferCapacity(j_buffer.obj());
 
-  std::vector<uint8_t> buffer_copy(buffer_size);
-  memcpy(buffer_copy.data(), buffer, buffer_size);
-  const int qp = JavaToNativeOptionalInt(jni, j_qp).value_or(-1);
+  EncodedImage frame;
+  frame.Allocate(buffer_size);
+  frame.set_size(buffer_size);
+  memcpy(frame.data(), buffer, buffer_size);
+  frame._encodedWidth = encoded_width;
+  frame._encodedHeight = encoded_height;
+  frame.rotation_ = (VideoRotation)rotation;
+  frame._completeFrame = complete_frame;
 
-  struct Lambda {
-    VideoEncoderWrapper* video_encoder_wrapper;
-    std::vector<uint8_t> task_buffer;
-    int qp;
-    jint encoded_width;
-    jint encoded_height;
-    jlong capture_time_ns;
-    jint frame_type;
-    jint rotation;
-    jboolean complete_frame;
-    std::deque<FrameExtraInfo>* frame_extra_infos;
-    EncodedImageCallback* callback;
+  const absl::optional<int> qp = JavaToNativeOptionalInt(jni, j_qp);
 
-    void operator()() const {
-      // Encoded frames are delivered in the order received, but some of them
-      // may be dropped, so remove records of frames older than the current one.
-      //
-      // NOTE: if the current frame is associated with Encoder A, in the time
-      // since this frame was received, Encoder A could have been Release()'ed,
-      // Encoder B InitEncode()'ed (due to reuse of Encoder A), and frames
-      // received by Encoder B. Thus there may be frame_extra_infos entries that
-      // don't belong to us, and we need to be careful not to remove them.
-      // Removing only those entries older than the current frame provides this
-      // guarantee.
-      while (!frame_extra_infos->empty() &&
-             frame_extra_infos->front().capture_time_ns < capture_time_ns) {
-        frame_extra_infos->pop_front();
-      }
-      if (frame_extra_infos->empty() ||
-          frame_extra_infos->front().capture_time_ns != capture_time_ns) {
-        RTC_LOG(LS_WARNING)
-            << "Java encoder produced an unexpected frame with timestamp: "
-            << capture_time_ns;
-        return;
-      }
-      FrameExtraInfo frame_extra_info = std::move(frame_extra_infos->front());
-      frame_extra_infos->pop_front();
-
-      RTPFragmentationHeader header =
-          video_encoder_wrapper->ParseFragmentationHeader(task_buffer);
-      EncodedImage frame(const_cast<uint8_t*>(task_buffer.data()),
-                         task_buffer.size(), task_buffer.size());
-      frame._encodedWidth = encoded_width;
-      frame._encodedHeight = encoded_height;
-      frame.SetTimestamp(frame_extra_info.timestamp_rtp);
-      frame.capture_time_ms_ = capture_time_ns / rtc::kNumNanosecsPerMillisec;
-      frame._frameType = (VideoFrameType)frame_type;
-      frame.rotation_ = (VideoRotation)rotation;
-      frame._completeFrame = complete_frame;
-      if (qp == -1) {
-        frame.qp_ = video_encoder_wrapper->ParseQp(task_buffer);
-      } else {
-        frame.qp_ = qp;
-      }
-
-      CodecSpecificInfo info(
-          video_encoder_wrapper->ParseCodecSpecificInfo(frame));
-      callback->OnEncodedImage(frame, &info, &header);
-    }
-  };
+  frame._frameType = (VideoFrameType)frame_type;
 
   {
     rtc::CritScope lock(&encoder_queue_crit_);
     if (encoder_queue_ != nullptr) {
-      encoder_queue_->PostTask(ToQueuedTask(
-          Lambda{this, std::move(buffer_copy), qp, encoded_width,
-                 encoded_height, capture_time_ns, frame_type, rotation,
-                 complete_frame, &frame_extra_infos_, callback_}));
+      encoder_queue_->PostTask(ToQueuedTask([this, frame, qp,
+                                             capture_time_ns]() {
+        // Encoded frames are delivered in the order received, but some of them
+        // may be dropped, so remove records of frames older than the current
+        // one.
+        //
+        // NOTE: if the current frame is associated with Encoder A, in the time
+        // since this frame was received, Encoder A could have been
+        // Release()'ed, Encoder B InitEncode()'ed (due to reuse of Encoder A),
+        // and frames received by Encoder B. Thus there may be frame_extra_infos
+        // entries that don't belong to us, and we need to be careful not to
+        // remove them. Removing only those entries older than the current frame
+        // provides this guarantee.
+        while (!frame_extra_infos_.empty() &&
+               frame_extra_infos_.front().capture_time_ns < capture_time_ns) {
+          frame_extra_infos_.pop_front();
+        }
+        if (frame_extra_infos_.empty() ||
+            frame_extra_infos_.front().capture_time_ns != capture_time_ns) {
+          RTC_LOG(LS_WARNING)
+              << "Java encoder produced an unexpected frame with timestamp: "
+              << capture_time_ns;
+          return;
+        }
+        FrameExtraInfo frame_extra_info = std::move(frame_extra_infos_.front());
+        frame_extra_infos_.pop_front();
+
+        // This is a bit subtle. The |frame| variable from the lambda capture is
+        // const. Which implies that (i) we need to make a copy to be able to
+        // write to the metadata, and (ii) we should avoid using the .data()
+        // method (including implicit conversion to ArrayView) on the non-const
+        // copy, since that would trigget a copy operation on the underlying
+        // CopyOnWriteBuffer.
+        EncodedImage frame_copy = frame;
+
+        frame_copy.SetTimestamp(frame_extra_info.timestamp_rtp);
+        frame_copy.capture_time_ms_ =
+            capture_time_ns / rtc::kNumNanosecsPerMillisec;
+
+        RTPFragmentationHeader header = ParseFragmentationHeader(frame);
+        frame_copy.qp_ = qp ? *qp : ParseQp(frame);
+        CodecSpecificInfo info(ParseCodecSpecificInfo(frame));
+
+        callback_->OnEncodedImage(frame_copy, &info, &header);
+      }));
     }
   }
 }
@@ -329,7 +318,7 @@ int32_t VideoEncoderWrapper::HandleReturnCode(JNIEnv* jni,
 }
 
 RTPFragmentationHeader VideoEncoderWrapper::ParseFragmentationHeader(
-    const std::vector<uint8_t>& buffer) {
+    rtc::ArrayView<const uint8_t> buffer) {
   RTPFragmentationHeader header;
   if (codec_settings_.codecType == kVideoCodecH264) {
     h264_bitstream_parser_.ParseBitstream(buffer.data(), buffer.size());
@@ -361,7 +350,7 @@ RTPFragmentationHeader VideoEncoderWrapper::ParseFragmentationHeader(
   return header;
 }
 
-int VideoEncoderWrapper::ParseQp(const std::vector<uint8_t>& buffer) {
+int VideoEncoderWrapper::ParseQp(rtc::ArrayView<const uint8_t> buffer) {
   int qp;
   bool success;
   switch (codec_settings_.codecType) {
