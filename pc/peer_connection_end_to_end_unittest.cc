@@ -19,6 +19,7 @@
 #include "api/audio_codecs/audio_encoder_factory_template.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "media/sctp/sctp_transport_internal.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
 
@@ -721,6 +722,29 @@ TEST_P(PeerConnectionEndToEndTest, CloseDataChannelRemotelyWhileNotReferenced) {
   // close message and be destroyed.
   rtc::Thread::Current()->ProcessMessages(100);
 }
+
+// Test behavior of creating too many datachannels.
+TEST_P(PeerConnectionEndToEndTest, TooManyDataChannelsOpenedBeforeConnecting) {
+  CreatePcs(webrtc::MockAudioEncoderFactory::CreateEmptyFactory(),
+            webrtc::MockAudioDecoderFactory::CreateEmptyFactory());
+
+  webrtc::DataChannelInit init;
+  std::vector<rtc::scoped_refptr<DataChannelInterface>> channels;
+  for (int i = 0; i <= cricket::kMaxSctpStreams / 2; i++) {
+    rtc::scoped_refptr<DataChannelInterface> caller_dc(
+        caller_->CreateDataChannel("data", init));
+    channels.push_back(std::move(caller_dc));
+  }
+  Negotiate();
+  WaitForConnection();
+  EXPECT_EQ_WAIT(callee_signaled_data_channels_.size(),
+                 static_cast<size_t>(cricket::kMaxSctpStreams / 2), kMaxWait);
+  EXPECT_EQ(DataChannelInterface::kOpen,
+            channels[(cricket::kMaxSctpStreams / 2) - 1]->state());
+  EXPECT_EQ(DataChannelInterface::kClosed,
+            channels[cricket::kMaxSctpStreams / 2]->state());
+}
+
 #endif  // HAVE_SCTP
 
 INSTANTIATE_TEST_SUITE_P(PeerConnectionEndToEndTest,

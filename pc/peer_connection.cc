@@ -5102,15 +5102,22 @@ bool PeerConnection::HasDataChannels() const {
 }
 
 void PeerConnection::AllocateSctpSids(rtc::SSLRole role) {
+  std::vector<rtc::scoped_refptr<DataChannel>> channels_to_close;
   for (const auto& channel : sctp_data_channels_) {
     if (channel->id() < 0) {
       int sid;
       if (!sid_allocator_.AllocateSid(role, &sid)) {
-        RTC_LOG(LS_ERROR) << "Failed to allocate SCTP sid.";
+        RTC_LOG(LS_ERROR) << "Failed to allocate SCTP sid, closing channel.";
+        channels_to_close.push_back(channel);
         continue;
       }
       channel->SetSctpSid(sid);
     }
+  }
+  // Since closing modifies the list of channels, we have to do the actual
+  // closing outside the loop.
+  for (const auto& channel : channels_to_close) {
+    channel->CloseAbruptly();
   }
 }
 

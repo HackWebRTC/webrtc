@@ -147,6 +147,13 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   virtual uint64_t bytes_received() const { return bytes_received_; }
   virtual bool Send(const DataBuffer& buffer);
 
+  // Close immediately, ignoring any queued data or closing procedure.
+  // This is called for RTP data channels when SDP indicates a channel should
+  // be removed, or SCTP data channels when the underlying SctpTransport is
+  // being destroyed.
+  // It is also called by the PeerConnection if SCTP ID assignment fails.
+  void CloseAbruptly();
+
   // Called when the channel's ready to use.  That can happen when the
   // underlying DataMediaChannel becomes ready, or when this channel is a new
   // stream on an existing DataMediaChannel, and we've finished negotiation.
@@ -242,11 +249,6 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   };
 
   bool Init(const InternalDataChannelInit& config);
-  // Close immediately, ignoring any queued data or closing procedure.
-  // This is called for RTP data channels when SDP indicates a channel should
-  // be removed, or SCTP data channels when the underlying SctpTransport is
-  // being destroyed.
-  void CloseAbruptly();
   void UpdateState();
   void SetState(DataState state);
   void DisconnectFromProvider();
