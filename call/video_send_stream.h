@@ -151,6 +151,10 @@ class VideoSendStream {
     // Per PeerConnection cryptography options.
     CryptoOptions crypto_options;
 
+    // Forces spatial scalability to be implemented via spatial layers
+    // instead of simulcast.
+    bool is_svc;
+
    private:
     // Access to the copy constructor is private to force use of the Copy()
     // method for those exceptional cases where we do use it.
