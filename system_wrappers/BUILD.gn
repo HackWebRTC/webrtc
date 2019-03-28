@@ -146,7 +146,7 @@ if (is_android && !build_with_mozilla) {
     ]
 
     deps = [
-      "//third_party/android_tools:cpu_features",
+      "//third_party/android_sdk:cpu_features",
     ]
   }
 }
