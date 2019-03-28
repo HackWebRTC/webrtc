@@ -11,6 +11,7 @@
 
 #include <map>
 #include <memory>
+#include <utility>
 #include <vector>
 
 #include "api/video_codecs/vp8_frame_config.h"
@@ -67,6 +68,19 @@ class ScreenshareLayers final : public Vp8FrameBufferController {
  private:
   enum class TemporalLayerState : int { kDrop, kTl0, kTl1, kTl1Sync };
 
+  struct DependencyInfo {
+    DependencyInfo() = default;
+    DependencyInfo(absl::string_view indication_symbols,
+                   Vp8FrameConfig frame_config)
+        : decode_target_indications(
+              GenericFrameInfo::DecodeTargetInfo(indication_symbols)),
+          frame_config(frame_config) {}
+
+    absl::InlinedVector<GenericFrameInfo::DecodeTargetIndication, 10>
+        decode_target_indications;
+    Vp8FrameConfig frame_config;
+  };
+
   bool TimeToSync(int64_t timestamp) const;
   uint32_t GetCodecTargetBitrateKbps() const;
 
@@ -81,7 +95,7 @@ class ScreenshareLayers final : public Vp8FrameBufferController {
   int max_qp_;
   uint32_t max_debt_bytes_;
 
-  std::map<uint32_t, Vp8FrameConfig> pending_frame_configs_;
+  std::map<uint32_t, DependencyInfo> pending_frame_configs_;
 
   // Configured max framerate.
   absl::optional<uint32_t> target_framerate_;

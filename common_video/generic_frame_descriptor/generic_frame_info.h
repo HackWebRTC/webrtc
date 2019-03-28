@@ -22,11 +22,14 @@ namespace webrtc {
 
 struct GenericFrameInfo {
   enum class DecodeTargetIndication {
-    kNotPresent,   // GenericFrameInfo::Builder symbol '-'
-    kDiscardable,  // GenericFrameInfo::Builder symbol 'D'
-    kSwitch,       // GenericFrameInfo::Builder symbol 'S'
-    kRequired      // GenericFrameInfo::Builder symbol 'R'
+    kNotPresent,   // DecodeTargetInfo symbol '-'
+    kDiscardable,  // DecodeTargetInfo symbol 'D'
+    kSwitch,       // DecodeTargetInfo symbol 'S'
+    kRequired      // DecodeTargetInfo symbol 'R'
   };
+
+  static absl::InlinedVector<DecodeTargetIndication, 10> DecodeTargetInfo(
+      absl::string_view indication_symbols);
 
   class Builder;
 

@@ -90,16 +90,16 @@ Vp8FrameConfig ScreenshareLayers::UpdateLayerConfig(size_t stream_index,
   auto it = pending_frame_configs_.find(timestamp);
   if (it != pending_frame_configs_.end()) {
     // Drop and re-encode, reuse the previous config.
-    return it->second;
+    return it->second.frame_config;
   }
 
   if (number_of_temporal_layers_ <= 1) {
     // No flags needed for 1 layer screenshare.
     // TODO(pbos): Consider updating only last, and not all buffers.
-    Vp8FrameConfig tl_config(kReferenceAndUpdate, kReferenceAndUpdate,
-                             kReferenceAndUpdate);
-    pending_frame_configs_[timestamp] = tl_config;
-    return tl_config;
+    DependencyInfo dependency_info{
+        "S", {kReferenceAndUpdate, kReferenceAndUpdate, kReferenceAndUpdate}};
+    pending_frame_configs_[timestamp] = dependency_info;
+    return dependency_info.frame_config;
   }
 
   const int64_t now_ms = rtc::TimeMillis();
@@ -199,35 +199,35 @@ Vp8FrameConfig ScreenshareLayers::UpdateLayerConfig(size_t stream_index,
       RTC_NOTREACHED();
   }
 
-  Vp8FrameConfig tl_config;
+  DependencyInfo dependency_info;
   // TODO(pbos): Consider referencing but not updating the 'alt' buffer for all
   // layers.
   switch (layer_state) {
     case TemporalLayerState::kDrop:
-      tl_config = Vp8FrameConfig(kNone, kNone, kNone);
+      dependency_info = {"", {kNone, kNone, kNone}};
       break;
     case TemporalLayerState::kTl0:
       // TL0 only references and updates 'last'.
-      tl_config = Vp8FrameConfig(kReferenceAndUpdate, kNone, kNone);
-      tl_config.packetizer_temporal_idx = 0;
+      dependency_info = {"SS", {kReferenceAndUpdate, kNone, kNone}};
+      dependency_info.frame_config.packetizer_temporal_idx = 0;
       break;
     case TemporalLayerState::kTl1:
       // TL1 references both 'last' and 'golden' but only updates 'golden'.
-      tl_config = Vp8FrameConfig(kReference, kReferenceAndUpdate, kNone);
-      tl_config.packetizer_temporal_idx = 1;
+      dependency_info = {"-R", {kReference, kReferenceAndUpdate, kNone}};
+      dependency_info.frame_config.packetizer_temporal_idx = 1;
       break;
     case TemporalLayerState::kTl1Sync:
       // Predict from only TL0 to allow participants to switch to the high
       // bitrate stream. Updates 'golden' so that TL1 can continue to refer to
       // and update 'golden' from this point on.
-      tl_config = Vp8FrameConfig(kReference, kUpdate, kNone);
-      tl_config.packetizer_temporal_idx = 1;
+      dependency_info = {"-S", {kReference, kUpdate, kNone}};
+      dependency_info.frame_config.packetizer_temporal_idx = 1;
+      dependency_info.frame_config.layer_sync = true;
       break;
   }
 
-  tl_config.layer_sync = layer_state == TemporalLayerState::kTl1Sync;
-  pending_frame_configs_[timestamp] = tl_config;
-  return tl_config;
+  pending_frame_configs_[timestamp] = dependency_info;
+  return dependency_info.frame_config;
 }
 
 void ScreenshareLayers::OnRatesUpdated(
@@ -286,28 +286,38 @@ void ScreenshareLayers::OnEncodeDone(size_t stream_index,
     return;
   }
 
-  absl::optional<Vp8FrameConfig> frame_config;
+  absl::optional<DependencyInfo> dependency_info;
   auto it = pending_frame_configs_.find(rtp_timestamp);
   if (it != pending_frame_configs_.end()) {
-    frame_config = it->second;
+    dependency_info = it->second;
     pending_frame_configs_.erase(it);
 
     if (checker_) {
-      RTC_DCHECK(checker_->CheckTemporalConfig(is_keyframe, *frame_config));
+      RTC_DCHECK(checker_->CheckTemporalConfig(is_keyframe,
+                                               dependency_info->frame_config));
     }
   }
 
   CodecSpecificInfoVP8& vp8_info = info->codecSpecific.VP8;
+  GenericFrameInfo& generic_frame_info = info->generic_frame_info.emplace();
+
   if (number_of_temporal_layers_ == 1) {
     vp8_info.temporalIdx = kNoTemporalIdx;
     vp8_info.layerSync = false;
+    generic_frame_info.decode_target_indications =
+        GenericFrameInfo::DecodeTargetInfo("S");
   } else {
     int64_t unwrapped_timestamp = time_wrap_handler_.Unwrap(rtp_timestamp);
-    if (frame_config) {
-      vp8_info.temporalIdx = frame_config->packetizer_temporal_idx;
-      vp8_info.layerSync = frame_config->layer_sync;
+    if (dependency_info) {
+      vp8_info.temporalIdx =
+          dependency_info->frame_config.packetizer_temporal_idx;
+      vp8_info.layerSync = dependency_info->frame_config.layer_sync;
+      generic_frame_info.decode_target_indications =
+          dependency_info->decode_target_indications;
     } else {
       RTC_DCHECK(is_keyframe);
+      generic_frame_info.decode_target_indications =
+          GenericFrameInfo::DecodeTargetInfo("SS");
     }
 
     if (is_keyframe) {
@@ -328,13 +338,15 @@ void ScreenshareLayers::OnEncodeDone(size_t stream_index,
     // Note that |frame_config| is not derefernced if |is_keyframe|,
     // meaning it's never dereferenced if the optional may be unset.
     for (int i = 0; i < static_cast<int>(Buffer::kCount); ++i) {
-      if (!is_keyframe && frame_config->References(static_cast<Buffer>(i))) {
+      if (!is_keyframe &&
+          dependency_info->frame_config.References(static_cast<Buffer>(i))) {
         RTC_DCHECK_LT(vp8_info.referencedBuffersCount,
                       arraysize(CodecSpecificInfoVP8::referencedBuffers));
         vp8_info.referencedBuffers[vp8_info.referencedBuffersCount++] = i;
       }
 
-      if (is_keyframe || frame_config->Updates(static_cast<Buffer>(i))) {
+      if (is_keyframe ||
+          dependency_info->frame_config.Updates(static_cast<Buffer>(i))) {
         RTC_DCHECK_LT(vp8_info.updatedBuffersCount,
                       arraysize(CodecSpecificInfoVP8::updatedBuffers));
         vp8_info.updatedBuffers[vp8_info.updatedBuffersCount++] = i;
