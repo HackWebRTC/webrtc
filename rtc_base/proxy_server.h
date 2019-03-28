@@ -17,9 +17,9 @@
 #include "absl/memory/memory.h"
 #include "rtc_base/async_socket.h"
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/memory/fifo_buffer.h"
 #include "rtc_base/server_socket_adapters.h"
 #include "rtc_base/socket_address.h"
-#include "rtc_base/stream.h"
 
 namespace rtc {
 

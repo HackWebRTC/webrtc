@@ -8,64 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_base/stream.h"
-
 #include <string.h>
 
+#include "rtc_base/memory/fifo_buffer.h"
 #include "test/gtest.h"
 
 namespace rtc {
-
-///////////////////////////////////////////////////////////////////////////////
-// TestStream
-///////////////////////////////////////////////////////////////////////////////
-
-class TestStream : public StreamInterface {
- public:
-  TestStream() : pos_(0) {}
-
-  StreamState GetState() const override { return SS_OPEN; }
-
-  StreamResult Read(void* buffer,
-                    size_t buffer_len,
-                    size_t* read,
-                    int* error) override {
-    unsigned char* uc_buffer = static_cast<unsigned char*>(buffer);
-    for (size_t i = 0; i < buffer_len; ++i) {
-      uc_buffer[i] = static_cast<unsigned char>(pos_++);
-    }
-    if (read)
-      *read = buffer_len;
-    return SR_SUCCESS;
-  }
-
-  StreamResult Write(const void* data,
-                     size_t data_len,
-                     size_t* written,
-                     int* error) override {
-    if (error)
-      *error = -1;
-    return SR_ERROR;
-  }
-
-  void Close() override {}
-
- private:
-  size_t pos_;
-};
-
-bool VerifyTestBuffer(unsigned char* buffer, size_t len, unsigned char value) {
-  bool passed = true;
-  for (size_t i = 0; i < len; ++i) {
-    if (buffer[i] != value++) {
-      passed = false;
-      break;
-    }
-  }
-  // Ensure that we don't pass again without re-writing
-  memset(buffer, 0, len);
-  return passed;
-}
 
 TEST(FifoBufferTest, TestAll) {
   const size_t kSize = 16;

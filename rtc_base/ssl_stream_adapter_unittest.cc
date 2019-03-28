@@ -17,6 +17,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/helpers.h"
+#include "rtc_base/memory/fifo_buffer.h"
 #include "rtc_base/memory_stream.h"
 #include "rtc_base/message_digest.h"
 #include "rtc_base/ssl_adapter.h"

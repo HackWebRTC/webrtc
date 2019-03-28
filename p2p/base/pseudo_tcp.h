@@ -15,7 +15,7 @@
 #include <stdint.h>
 #include <list>
 
-#include "rtc_base/stream.h"
+#include "rtc_base/memory/fifo_buffer.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace cricket {
