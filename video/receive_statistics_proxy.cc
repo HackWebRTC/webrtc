@@ -849,17 +849,6 @@ void ReceiveStatisticsProxy::OnCompleteFrame(bool is_keyframe,
   UpdateFramerate(now_ms);
 }
 
-void ReceiveStatisticsProxy::OnFrameCountsUpdated(
-    const FrameCounts& frame_counts) {
-  rtc::CritScope lock(&crit_);
-  stats_.frame_counts = frame_counts;
-}
-
-void ReceiveStatisticsProxy::OnDiscardedPacketsUpdated(int discarded_packets) {
-  rtc::CritScope lock(&crit_);
-  stats_.discarded_packets = discarded_packets;
-}
-
 void ReceiveStatisticsProxy::OnPreDecode(VideoCodecType codec_type, int qp) {
   RTC_DCHECK_RUN_ON(&decode_thread_);
   rtc::CritScope lock(&crit_);

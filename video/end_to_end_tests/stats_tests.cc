@@ -126,8 +126,7 @@ TEST_F(StatsEndToEndTest, GetStats) {
             stats.rtp_stats.transmitted.padding_bytes != 0 ||
             stats.rtp_stats.retransmitted.packets != 0;
 
-        receive_stats_filled_["CodecStats"] |=
-            stats.target_delay_ms != 0 || stats.discarded_packets != 0;
+        receive_stats_filled_["CodecStats"] |= stats.target_delay_ms != 0;
 
         receive_stats_filled_["FrameCounts"] |=
             stats.frame_counts.key_frames != 0 ||

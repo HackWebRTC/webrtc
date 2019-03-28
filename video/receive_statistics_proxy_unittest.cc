@@ -443,19 +443,16 @@ TEST_F(ReceiveStatisticsProxyTest,
 TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsFrameCounts) {
   const int kKeyFrames = 3;
   const int kDeltaFrames = 22;
-  FrameCounts frame_counts;
-  frame_counts.key_frames = kKeyFrames;
-  frame_counts.delta_frames = kDeltaFrames;
-  statistics_proxy_->OnFrameCountsUpdated(frame_counts);
+  for (int i = 0; i < kKeyFrames; i++) {
+    statistics_proxy_->OnCompleteFrame(true, 0, VideoContentType::UNSPECIFIED);
+  }
+  for (int i = 0; i < kDeltaFrames; i++) {
+    statistics_proxy_->OnCompleteFrame(false, 0, VideoContentType::UNSPECIFIED);
+  }
+
   VideoReceiveStream::Stats stats = statistics_proxy_->GetStats();
   EXPECT_EQ(kKeyFrames, stats.frame_counts.key_frames);
   EXPECT_EQ(kDeltaFrames, stats.frame_counts.delta_frames);
-}
-
-TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsDiscardedPackets) {
-  const int kDiscardedPackets = 12;
-  statistics_proxy_->OnDiscardedPacketsUpdated(kDiscardedPackets);
-  EXPECT_EQ(kDiscardedPackets, statistics_proxy_->GetStats().discarded_packets);
 }
 
 TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsRtcpStats) {

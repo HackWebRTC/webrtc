@@ -84,10 +84,7 @@ class VCMReceiveStatisticsCallback {
   virtual void OnCompleteFrame(bool is_keyframe,
                                size_t size_bytes,
                                VideoContentType content_type) = 0;
-  // TODO(nisse): Delete.
-  virtual void OnDiscardedPacketsUpdated(int discarded_packets) = 0;
-  // TODO(nisse): Delete.
-  virtual void OnFrameCountsUpdated(const FrameCounts& frame_counts) = 0;
+
   virtual void OnFrameBufferTimingsUpdated(int decode_ms,
                                            int max_decode_ms,
                                            int current_delay_ms,

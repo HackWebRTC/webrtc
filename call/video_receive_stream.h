@@ -85,7 +85,6 @@ class VideoReceiveStream {
     int current_payload_type = -1;
 
     int total_bitrate_bps = 0;
-    int discarded_packets = 0;
 
     int width = 0;
     int height = 0;
