@@ -9,6 +9,8 @@
  */
 
 #include "media/engine/unhandled_packets_buffer.h"
+
+#include "absl/algorithm/container.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
 
@@ -53,7 +55,7 @@ void UnhandledPacketsBuffer::BackfillPackets(
     // One or maybe 2 ssrcs is expected => loop array instead of more elaborate
     // scheme.
     const uint32_t ssrc = buffer_[pos].ssrc;
-    if (std::find(ssrcs.begin(), ssrcs.end(), ssrc) != ssrcs.end()) {
+    if (absl::c_linear_search(ssrcs, ssrc)) {
       ++count;
       consumer(ssrc, buffer_[pos].packet_time_us, buffer_[pos].packet);
     } else {

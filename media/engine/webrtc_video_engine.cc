@@ -16,6 +16,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/algorithm/container.h"
 #include "absl/strings/match.h"
 #include "api/video/video_codec_constants.h"
 #include "api/video_codecs/sdp_video_format.h"
@@ -2860,12 +2861,10 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
     const int max_framerate = GetMaxFramerate(encoder_config, layers.size());
     // Update the active simulcast layers and configured bitrates.
     bool is_highest_layer_max_bitrate_configured = false;
-    const bool has_scale_resolution_down_by =
-        std::any_of(encoder_config.simulcast_layers.begin(),
-                    encoder_config.simulcast_layers.end(),
-                    [](const webrtc::VideoStream& layer) {
-                      return layer.scale_resolution_down_by != -1.;
-                    });
+    const bool has_scale_resolution_down_by = absl::c_any_of(
+        encoder_config.simulcast_layers, [](const webrtc::VideoStream& layer) {
+          return layer.scale_resolution_down_by != -1.;
+        });
     const int normalized_width =
         NormalizeSimulcastSize(width, encoder_config.number_of_streams);
     const int normalized_height =
