@@ -12,6 +12,7 @@ package org.webrtc;
 
 import android.support.annotation.Nullable;
 import java.lang.Double;
+import java.lang.String;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -28,6 +29,9 @@ import org.webrtc.MediaStreamTrack;
  */
 public class RtpParameters {
   public static class Encoding {
+    // If non-null, this represents the RID that identifies this encoding layer.
+    // RIDs are used to identify layers in simulcast.
+    @Nullable public String rid;
     // Set to true to cause this encoding to be sent, and false for it not to
     // be sent.
     public boolean active = true;
@@ -48,9 +52,17 @@ public class RtpParameters {
     // Can't be changed between getParameters/setParameters.
     public Long ssrc;
 
+    // This constructor is useful for creating simulcast layers.
+    Encoding(String rid, boolean active, Double scaleResolutionDownBy) {
+      this.rid = rid;
+      this.active = active;
+      this.scaleResolutionDownBy = scaleResolutionDownBy;
+    }
+
     @CalledByNative("Encoding")
-    Encoding(boolean active, Integer maxBitrateBps, Integer minBitrateBps, Integer maxFramerate,
-        Integer numTemporalLayers, Double scaleResolutionDownBy, Long ssrc) {
+    Encoding(String rid, boolean active, Integer maxBitrateBps, Integer minBitrateBps,
+        Integer maxFramerate, Integer numTemporalLayers, Double scaleResolutionDownBy, Long ssrc) {
+      this.rid = rid;
       this.active = active;
       this.maxBitrateBps = maxBitrateBps;
       this.minBitrateBps = minBitrateBps;
@@ -58,6 +70,12 @@ public class RtpParameters {
       this.numTemporalLayers = numTemporalLayers;
       this.scaleResolutionDownBy = scaleResolutionDownBy;
       this.ssrc = ssrc;
+    }
+
+    @Nullable
+    @CalledByNative("Encoding")
+    String getRid() {
+      return rid;
     }
 
     @CalledByNative("Encoding")

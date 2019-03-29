@@ -31,6 +31,7 @@ import java.nio.charset.Charset;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
@@ -50,6 +51,10 @@ import org.webrtc.PeerConnection.IceGatheringState;
 import org.webrtc.PeerConnection.PeerConnectionState;
 import org.webrtc.PeerConnection.SignalingState;
 import org.webrtc.PeerConnection.TlsCertPolicy;
+import org.webrtc.RtpParameters;
+import org.webrtc.RtpParameters.Encoding;
+import org.webrtc.RtpTransceiver;
+import org.webrtc.RtpTransceiver.RtpTransceiverInit;
 
 /** End-to-end tests for PeerConnection.java. */
 @RunWith(BaseJUnit4ClassRunner.class)
@@ -832,6 +837,33 @@ public class PeerConnectionTest {
     assertNotNull(offeringPC);
   }
 
+  // Test that RIDs get set in the RTP sender when passed in through an RtpTransceiverInit.
+  @Test
+  @SmallTest
+  public void testSetRidInSimulcast() throws Exception {
+    PeerConnectionFactory factory = PeerConnectionFactory.builder().createPeerConnectionFactory();
+    PeerConnection.RTCConfiguration config = new PeerConnection.RTCConfiguration(Arrays.asList());
+    config.sdpSemantics = PeerConnection.SdpSemantics.UNIFIED_PLAN;
+    ObserverExpectations expectations = new ObserverExpectations("PCTest:simulcast_rids");
+    expectations.expectRenegotiationNeeded();
+    PeerConnection pc = factory.createPeerConnection(config, expectations);
+    List<Encoding> encodings = new ArrayList<Encoding>();
+    encodings.add(new Encoding("F", true, null));
+    encodings.add(new Encoding("H", true, null));
+    RtpTransceiverInit init = new RtpTransceiverInit(
+        RtpTransceiver.RtpTransceiverDirection.SEND_ONLY, Collections.emptyList(), encodings);
+    RtpTransceiver transceiver =
+        pc.addTransceiver(MediaStreamTrack.MediaType.MEDIA_TYPE_VIDEO, init);
+    RtpSender sender = transceiver.getSender();
+    RtpParameters parameters = sender.getParameters();
+    assertNotNull(parameters);
+    List<Encoding> sendEncodings = parameters.getEncodings();
+    assertNotNull(sendEncodings);
+    assertEquals(2, sendEncodings.size());
+    assertEquals("F", sendEncodings.get(0).getRid());
+    assertEquals("H", sendEncodings.get(1).getRid());
+  }
+
   @Test
   @MediumTest
   public void testCompleteSession() throws Exception {
@@ -1030,6 +1062,7 @@ public class PeerConnectionTest {
     assertNull(rtpParameters.encodings.get(0).maxFramerate);
     assertNull(rtpParameters.encodings.get(0).numTemporalLayers);
     assertNull(rtpParameters.encodings.get(0).scaleResolutionDownBy);
+    assertTrue(rtpParameters.encodings.get(0).rid.isEmpty());
 
     rtpParameters.encodings.get(0).maxBitrateBps = 300000;
     rtpParameters.encodings.get(0).minBitrateBps = 100000;
