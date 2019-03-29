@@ -22,7 +22,6 @@
 
 namespace webrtc {
 
-class Clock;
 class PacketReceiver;
 
 namespace test {
@@ -65,7 +64,6 @@ class DirectTransport : public Transport {
   void Start();
 
   Call* const send_call_;
-  Clock* const clock_;
 
   SingleThreadedTaskQueueForTesting* const task_queue_;
 

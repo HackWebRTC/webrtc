@@ -220,8 +220,7 @@ PacketReceiver::DeliveryStatus VideoAnalyzer::DeliverPacket(
     rtc::CritScope lock(&crit_);
     int64_t timestamp =
         wrap_handler_.Unwrap(header.timestamp - rtp_timestamp_delta_);
-    recv_times_[timestamp] =
-        Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
+    recv_times_[timestamp] = clock_->CurrentNtpInMilliseconds();
   }
 
   return receiver_->DeliverPacket(media_type, std::move(packet),
@@ -254,7 +253,7 @@ bool VideoAnalyzer::SendRtp(const uint8_t* packet,
   RTPHeader header;
   parser.Parse(&header);
 
-  int64_t current_time = Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
+  int64_t current_time = clock_->CurrentNtpInMilliseconds();
 
   bool result = transport_->SendRtp(packet, length, options);
   {
@@ -292,8 +291,7 @@ bool VideoAnalyzer::SendRtcp(const uint8_t* packet, size_t length) {
 }
 
 void VideoAnalyzer::OnFrame(const VideoFrame& video_frame) {
-  int64_t render_time_ms =
-      Clock::GetRealTimeClock()->CurrentNtpInMilliseconds();
+  int64_t render_time_ms = clock_->CurrentNtpInMilliseconds();
 
   rtc::CritScope lock(&crit_);
 

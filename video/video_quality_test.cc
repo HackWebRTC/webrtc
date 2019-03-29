@@ -1133,8 +1133,7 @@ VideoQualityTest::CreateSendTransport() {
   }
   return absl::make_unique<test::LayerFilteringTransport>(
       &task_queue_,
-      absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
-                                         std::move(network_behavior)),
+      absl::make_unique<FakeNetworkPipe>(clock_, std::move(network_behavior)),
       sender_call_.get(), kPayloadTypeVP8, kPayloadTypeVP9,
       params_.video[0].selected_tl, params_.ss[0].selected_sl,
       payload_type_map_, kVideoSendSsrcs[0],
@@ -1152,8 +1151,7 @@ VideoQualityTest::CreateReceiveTransport() {
   }
   return absl::make_unique<test::DirectTransport>(
       &task_queue_,
-      absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
-                                         std::move(network_behavior)),
+      absl::make_unique<FakeNetworkPipe>(clock_, std::move(network_behavior)),
       receiver_call_.get(), payload_type_map_);
 }
 

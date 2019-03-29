@@ -13,7 +13,7 @@
 #include "call/call.h"
 #include "call/fake_network_pipe.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
-#include "system_wrappers/include/clock.h"
+#include "rtc_base/time_utils.h"
 #include "test/single_threaded_task_queue.h"
 
 namespace webrtc {
@@ -42,7 +42,6 @@ DirectTransport::DirectTransport(
     Call* send_call,
     const std::map<uint8_t, MediaType>& payload_type_map)
     : send_call_(send_call),
-      clock_(Clock::GetRealTimeClock()),
       task_queue_(task_queue),
       demuxer_(payload_type_map),
       fake_network_(std::move(pipe)) {
@@ -69,8 +68,7 @@ bool DirectTransport::SendRtp(const uint8_t* data,
                               size_t length,
                               const PacketOptions& options) {
   if (send_call_) {
-    rtc::SentPacket sent_packet(options.packet_id,
-                                clock_->TimeInMilliseconds());
+    rtc::SentPacket sent_packet(options.packet_id, rtc::TimeMillis());
     sent_packet.info.included_in_feedback = options.included_in_feedback;
     sent_packet.info.included_in_allocation = options.included_in_allocation;
     sent_packet.info.packet_size_bytes = length;
@@ -88,9 +86,9 @@ bool DirectTransport::SendRtcp(const uint8_t* data, size_t length) {
 
 void DirectTransport::SendPacket(const uint8_t* data, size_t length) {
   MediaType media_type = demuxer_.GetMediaType(data, length);
-  int64_t send_time = clock_->TimeInMicroseconds();
+  int64_t send_time_us = rtc::TimeMicros();
   fake_network_->DeliverPacket(media_type, rtc::CopyOnWriteBuffer(data, length),
-                               send_time);
+                               send_time_us);
   rtc::CritScope cs(&process_lock_);
   if (!next_process_task_)
     ProcessPackets();

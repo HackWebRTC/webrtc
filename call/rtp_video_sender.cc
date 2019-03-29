@@ -81,7 +81,6 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
   RtpRtcp::Configuration configuration;
   configuration.clock = clock;
   configuration.audio = false;
-  configuration.clock = Clock::GetRealTimeClock();
   configuration.receiver_only = false;
   configuration.outgoing_transport = send_transport;
   configuration.intra_frame_callback = intra_frame_callback;
