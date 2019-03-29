@@ -10,6 +10,7 @@
 
 #include "test/fuzzers/utils/rtp_replayer.h"
 
+#include <algorithm>
 #include <string>
 #include <utility>
 
@@ -140,7 +141,8 @@ void RtpReplayer::ReplayPackets(Call* call, test::RtpFileReader* rtp_reader) {
 
     int64_t deliver_in_ms = replay_start_ms + packet.time_ms - now_ms;
     if (deliver_in_ms > 0) {
-      SleepMs(deliver_in_ms);
+      // Set an upper limit on sleep to prevent timing out.
+      SleepMs(std::min(deliver_in_ms, static_cast<int64_t>(100)));
     }
 
     ++num_packets;
