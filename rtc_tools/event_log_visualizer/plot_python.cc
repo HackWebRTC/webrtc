@@ -164,6 +164,7 @@ PythonPlotCollection::~PythonPlotCollection() {}
 
 void PythonPlotCollection::Draw() {
   printf("import matplotlib.pyplot as plt\n");
+  printf("plt.rcParams.update({'figure.max_open_warning': 0})\n");
   printf("import matplotlib.patches as mpatches\n");
   printf("import matplotlib.patheffects as pe\n");
   printf("import colorsys\n");
