@@ -24,8 +24,7 @@ ScopedJavaLocalRef<jobject> NativeToJavaRtpEncodingParameter(
     JNIEnv* env,
     const RtpEncodingParameters& encoding) {
   return Java_Encoding_Constructor(
-      env, NativeToJavaString(env, encoding.rid), encoding.active,
-      NativeToJavaInteger(env, encoding.max_bitrate_bps),
+      env, encoding.active, NativeToJavaInteger(env, encoding.max_bitrate_bps),
       NativeToJavaInteger(env, encoding.min_bitrate_bps),
       NativeToJavaInteger(env, encoding.max_framerate),
       NativeToJavaInteger(env, encoding.num_temporal_layers),
@@ -65,11 +64,6 @@ RtpEncodingParameters JavaToNativeRtpEncodingParameters(
     JNIEnv* jni,
     const JavaRef<jobject>& j_encoding_parameters) {
   RtpEncodingParameters encoding;
-  ScopedJavaLocalRef<jstring> j_rid =
-      Java_Encoding_getRid(jni, j_encoding_parameters);
-  if (!IsNull(jni, j_rid)) {
-    encoding.rid = JavaToNativeString(jni, j_rid);
-  }
   encoding.active = Java_Encoding_getActive(jni, j_encoding_parameters);
   ScopedJavaLocalRef<jobject> j_max_bitrate =
       Java_Encoding_getMaxBitrateBps(jni, j_encoding_parameters);
