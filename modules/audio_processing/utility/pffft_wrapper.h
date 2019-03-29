@@ -73,6 +73,15 @@ class Pffft {
   // Computes the backward fast Fourier transform.
   void BackwardTransform(const FloatBuffer& in, FloatBuffer* out, bool ordered);
 
+  // Multiplies the frequency components of |fft_x| and |fft_y| and accumulates
+  // them into |out|. The arrays must have been obtained with
+  // ForwardTransform(..., /*ordered=*/false) - i.e., |fft_x| and |fft_y| must
+  // not be ordered.
+  void FrequencyDomainConvolve(const FloatBuffer& fft_x,
+                               const FloatBuffer& fft_y,
+                               FloatBuffer* out,
+                               float scaling = 1.f);
+
  private:
   const size_t fft_size_;
   const FftType fft_type_;

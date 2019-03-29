@@ -121,4 +121,15 @@ void Pffft::BackwardTransform(const FloatBuffer& in,
   }
 }
 
+void Pffft::FrequencyDomainConvolve(const FloatBuffer& fft_x,
+                                    const FloatBuffer& fft_y,
+                                    FloatBuffer* out,
+                                    float scaling) {
+  RTC_DCHECK_EQ(fft_x.size(), GetBufferSize(fft_size_, fft_type_));
+  RTC_DCHECK_EQ(fft_x.size(), fft_y.size());
+  RTC_DCHECK_EQ(fft_x.size(), out->size());
+  pffft_zconvolve_accumulate(pffft_status_, fft_x.const_data(),
+                             fft_y.const_data(), out->data(), scaling);
+}
+
 }  // namespace webrtc
