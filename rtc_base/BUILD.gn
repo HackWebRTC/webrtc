@@ -316,14 +316,9 @@ rtc_source_set("logging") {
 rtc_source_set("thread_checker") {
   sources = [
     "thread_checker.h",
-    "thread_checker_impl.cc",
-    "thread_checker_impl.h",
   ]
   deps = [
-    ":checks",
-    ":criticalsection",
-    ":macromagic",
-    ":platform_thread_types",
+    "synchronization:sequence_checker",
   ]
 }
 
@@ -579,15 +574,9 @@ rtc_source_set("rtc_task_queue_stdlib") {
 rtc_source_set("sequenced_task_checker") {
   sources = [
     "sequenced_task_checker.h",
-    "sequenced_task_checker_impl.cc",
-    "sequenced_task_checker_impl.h",
   ]
   deps = [
-    ":checks",
-    ":criticalsection",
-    ":macromagic",
-    ":thread_checker",
-    "../api/task_queue",
+    "synchronization:sequence_checker",
   ]
 }
 
