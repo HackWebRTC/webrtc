@@ -10,6 +10,7 @@
 #ifndef TEST_TIME_CONTROLLER_SIMULATED_TIME_CONTROLLER_H_
 #define TEST_TIME_CONTROLLER_SIMULATED_TIME_CONTROLLER_H_
 
+#include <list>
 #include <memory>
 #include <unordered_set>
 #include <utility>
@@ -68,7 +69,7 @@ class SimulatedTimeControllerImpl : public TaskQueueFactory,
   rtc::CriticalSection time_lock_;
   Timestamp current_time_ RTC_GUARDED_BY(time_lock_);
   rtc::CriticalSection lock_;
-  std::unordered_set<SimulatedSequenceRunner*> runners_ RTC_GUARDED_BY(lock_);
+  std::vector<SimulatedSequenceRunner*> runners_ RTC_GUARDED_BY(lock_);
   // Task queues on which YieldExecution has been called.
   std::unordered_set<TaskQueueBase*> yielded_ RTC_GUARDED_BY(thread_checker_);
 };
