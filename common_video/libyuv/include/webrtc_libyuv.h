@@ -29,10 +29,6 @@ namespace webrtc {
 // This is the max PSNR value our algorithms can return.
 const double kPerfectPSNR = 48.0f;
 
-// TODO(nisse): Some downstream apps call CalcBufferSize with
-// ::webrtc::kI420 as the first argument. Delete after they are updated.
-const VideoType kI420 = VideoType::kI420;
-
 // Calculate the required buffer size.
 // Input:
 //   - type         :The type of the designated video frame.
