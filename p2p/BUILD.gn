@@ -108,12 +108,6 @@ rtc_static_library("rtc_p2p") {
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
-
-  if (build_with_chromium) {
-    if (is_nacl) {
-      deps += [ "//native_client_sdk/src/libraries/nacl_io" ]
-    }
-  }
 }
 
 if (rtc_include_tests) {

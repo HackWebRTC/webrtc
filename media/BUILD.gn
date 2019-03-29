@@ -136,10 +136,6 @@ rtc_static_library("rtc_media_base") {
   if (!build_with_mozilla) {
     deps += [ "../p2p" ]
   }
-
-  if (is_nacl) {
-    deps += [ "//native_client_sdk/src/libraries/nacl_io" ]
-  }
 }
 
 rtc_static_library("rtc_constants") {
