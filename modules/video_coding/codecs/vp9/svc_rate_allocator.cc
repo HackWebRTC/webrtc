@@ -15,7 +15,6 @@
 #include <cstddef>
 #include <numeric>
 
-#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/checks.h"
 
 namespace webrtc {

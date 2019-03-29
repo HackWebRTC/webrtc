@@ -13,7 +13,6 @@
 #include <queue>
 #include <vector>
 
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/encoded_frame.h"
 #include "modules/video_coding/jitter_buffer_common.h"
 #include "modules/video_coding/packet.h"

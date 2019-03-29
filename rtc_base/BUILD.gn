@@ -782,7 +782,6 @@ rtc_static_library("rtc_base") {
   deps = [
     ":checks",
     ":stringutils",
-    "..:webrtc_common",
     "../api:array_view",
     "../api:scoped_refptr",
     "../system_wrappers:field_trial",

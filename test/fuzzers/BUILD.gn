@@ -271,7 +271,6 @@ rtc_static_library("audio_decoder_fuzzer") {
     "audio_decoder_fuzzer.h",
   ]
   deps = [
-    "../..:webrtc_common",
     "../../api/audio_codecs:audio_codecs_api",
     "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:checks",

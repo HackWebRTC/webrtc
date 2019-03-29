@@ -30,7 +30,6 @@ rtc_source_set("call_interfaces") {
   deps = [
     ":rtp_interfaces",
     ":video_stream_api",
-    "..:webrtc_common",
     "../api:fec_controller_api",
     "../api:libjingle_peerconnection_api",
     "../api:rtp_headers",
@@ -100,7 +99,6 @@ rtc_source_set("rtp_receiver") {
   ]
   deps = [
     ":rtp_interfaces",
-    "..:webrtc_common",
     "../api:array_view",
     "../api:rtp_headers",
     "../modules/rtp_rtcp",
@@ -125,7 +123,6 @@ rtc_source_set("rtp_sender") {
   deps = [
     ":bitrate_configurator",
     ":rtp_interfaces",
-    "..:webrtc_common",
     "../api:fec_controller_api",
     "../api:transport_api",
     "../api/transport:field_trial_based_config",
@@ -217,7 +214,6 @@ rtc_static_library("call") {
     ":rtp_sender",
     ":simulated_network",
     ":video_stream_api",
-    "..:webrtc_common",
     "../api:array_view",
     "../api:callfactory_api",
     "../api:fec_controller_api",
@@ -322,7 +318,6 @@ rtc_source_set("fake_network") {
     ":call_interfaces",
     ":simulated_network",
     ":simulated_packet_receiver",
-    "..:webrtc_common",
     "../api:libjingle_peerconnection_api",
     "../api:simulated_network_api",
     "../api:transport_api",
@@ -363,7 +358,6 @@ if (rtc_include_tests) {
       ":rtp_receiver",
       ":rtp_sender",
       ":simulated_network",
-      "../:webrtc_common",
       "../api:array_view",
       "../api:fake_media_transport",
       "../api:fake_media_transport",

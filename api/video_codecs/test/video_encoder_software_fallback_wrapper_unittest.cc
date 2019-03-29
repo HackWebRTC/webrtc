@@ -27,7 +27,6 @@
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_software_fallback_wrapper.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/include/video_codec_interface.h"

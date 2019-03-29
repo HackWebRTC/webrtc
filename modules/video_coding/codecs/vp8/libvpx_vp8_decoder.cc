@@ -20,7 +20,6 @@
 #include "api/video/video_frame.h"
 #include "api/video/video_frame_buffer.h"
 #include "api/video/video_rotation.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp8/libvpx_vp8_decoder.h"
 #include "modules/video_coding/include/video_error_codes.h"

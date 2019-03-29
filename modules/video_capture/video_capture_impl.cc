@@ -13,7 +13,6 @@
 
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame_buffer.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_capture/video_capture_config.h"
 #include "modules/video_capture/video_capture_impl.h"

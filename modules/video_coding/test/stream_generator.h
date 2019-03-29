@@ -13,7 +13,6 @@
 #include <stdint.h>
 #include <list>
 
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/packet.h"
 #include "rtc_base/constructor_magic.h"
 

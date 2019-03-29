@@ -16,7 +16,6 @@
 
 #include "api/transport/field_trial_based_config.h"
 #include "api/transport/webrtc_key_value_config.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
 #include "modules/congestion_controller/include/network_changed_observer.h"
 #include "modules/congestion_controller/include/send_side_congestion_controller_interface.h"

@@ -72,7 +72,6 @@ rtc_static_library("rtc_pc_base") {
   ]
 
   deps = [
-    "..:webrtc_common",
     "../api:array_view",
     "../api:audio_options_api",
     "../api:call_api",
@@ -192,7 +191,6 @@ rtc_static_library("peerconnection") {
 
   deps = [
     ":rtc_pc_base",
-    "..:webrtc_common",
     "../api:array_view",
     "../api:audio_options_api",
     "../api:call_api",
@@ -398,7 +396,6 @@ if (rtc_include_tests) {
       ":libjingle_peerconnection",
       ":peerconnection",
       ":rtc_pc_base",
-      "..:webrtc_common",
       "../api:audio_options_api",
       "../api:create_peerconnection_factory",
       "../api:libjingle_peerconnection_api",
@@ -522,7 +519,6 @@ if (rtc_include_tests) {
     deps += [
       ":libjingle_peerconnection",
       ":pc_test_utils",
-      "..:webrtc_common",
       "../api:callfactory_api",
       "../api:fake_media_transport",
       "../api:rtc_stats_api",

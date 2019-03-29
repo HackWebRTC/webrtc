@@ -12,7 +12,6 @@
 
 #include <cmath>
 
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/utility/simulcast_utility.h"
 #include "rtc_base/checks.h"
 

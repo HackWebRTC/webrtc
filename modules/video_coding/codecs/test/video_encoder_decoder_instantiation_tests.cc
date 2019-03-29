@@ -16,7 +16,6 @@
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
-#include "common_types.h"  // NOLINT(build/include)
 #if defined(WEBRTC_ANDROID)
 #include "modules/video_coding/codecs/test/android_codec_factory_helper.h"
 #elif defined(WEBRTC_IOS)

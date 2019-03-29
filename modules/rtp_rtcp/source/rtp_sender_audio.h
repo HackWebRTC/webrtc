@@ -17,7 +17,6 @@
 #include <memory>
 
 #include "absl/strings/string_view.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/rtp_rtcp/source/dtmf_queue.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"

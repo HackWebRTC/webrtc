@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "api/video/encoded_image.h"
-#include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

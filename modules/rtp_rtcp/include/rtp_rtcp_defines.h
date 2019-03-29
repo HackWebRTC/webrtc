@@ -20,7 +20,6 @@
 #include "api/audio_codecs/audio_format.h"
 #include "api/rtp_headers.h"
 #include "api/transport/network_types.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
 #include "system_wrappers/include/clock.h"
 

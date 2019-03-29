@@ -18,7 +18,6 @@
 #include "absl/memory/memory.h"
 #include "api/scoped_refptr.h"
 #include "api/video/i420_buffer.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "rtc_base/logging.h"
 

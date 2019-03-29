@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "api/video/encoded_image.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_coding_defines.h"

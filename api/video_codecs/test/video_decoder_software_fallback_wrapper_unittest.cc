@@ -17,7 +17,6 @@
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_decoder.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_error_codes.h"

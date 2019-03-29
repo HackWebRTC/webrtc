@@ -130,7 +130,6 @@ rtc_source_set("metrics") {
     defines = [ "WEBRTC_EXCLUDE_METRICS_DEFAULT" ]
   }
   deps = [
-    "..:webrtc_common",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
   ]
@@ -177,7 +176,6 @@ if (rtc_include_tests) {
     deps = [
       ":metrics",
       ":system_wrappers",
-      "..:webrtc_common",
       "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
       "../test:test_main",

@@ -18,7 +18,6 @@
 #include "api/video/video_content_type.h"
 #include "api/video/video_rotation.h"
 #include "call/rtp_payload_params.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/codecs/interface/common_constants.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_globals.h"

@@ -185,7 +185,6 @@ rtc_static_library("rtc_encoder_simulcast_proxy") {
   ]
   deps = [
     ":rtc_simulcast_encoder_adapter",
-    "../:webrtc_common",
     "../api/video:video_bitrate_allocation",
     "../api/video:video_frame",
     "../api/video_codecs:video_codecs_api",
@@ -445,7 +444,6 @@ if (rtc_include_tests) {
       ":rtc_internal_video_codecs",
       ":rtc_media",
       ":rtc_media_base",
-      "..:webrtc_common",
       "../api:call_api",
       "../api/video:video_bitrate_allocation",
       "../api/video:video_frame",

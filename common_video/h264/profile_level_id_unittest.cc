@@ -14,7 +14,6 @@
 #include <string>
 
 #include "absl/types/optional.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "media/base/h264_profile_level_id.h"
 #include "test/gtest.h"
 

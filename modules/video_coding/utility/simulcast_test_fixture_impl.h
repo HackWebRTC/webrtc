@@ -21,7 +21,6 @@
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 
 namespace webrtc {

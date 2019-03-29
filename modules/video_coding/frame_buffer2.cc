@@ -19,7 +19,6 @@
 
 #include "api/video/encoded_image.h"
 #include "api/video/video_timing.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/jitter_estimator.h"
 #include "modules/video_coding/timing.h"

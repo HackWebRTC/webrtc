@@ -18,7 +18,6 @@
 #include "api/scoped_refptr.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video_codecs/video_encoder.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/codecs/vp9/svc_config.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "rtc_base/checks.h"

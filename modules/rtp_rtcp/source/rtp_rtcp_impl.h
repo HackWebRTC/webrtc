@@ -21,7 +21,6 @@
 #include "absl/types/optional.h"
 #include "api/rtp_headers.h"
 #include "api/video/video_bitrate_allocation.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
 #include "modules/include/module_fec_types.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"

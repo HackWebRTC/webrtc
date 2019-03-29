@@ -11,7 +11,6 @@
 #include "sdk/android/src/jni/video_encoder_factory_wrapper.h"
 
 #include "api/video_codecs/video_encoder.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/logging.h"
 #include "sdk/android/generated_video_jni/jni/VideoEncoderFactory_jni.h"
 #include "sdk/android/native_api/jni/class_loader.h"

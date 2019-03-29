@@ -116,7 +116,6 @@ rtc_executable("fake_polqa") {
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
   output_dir = "${root_out_dir}/py_quality_assessment/quality_assessment"
   deps = [
-    "../../../..:webrtc_common",
     "../../../../rtc_base:checks",
     "../../../../rtc_base:rtc_base_approved",
   ]
@@ -127,7 +126,6 @@ rtc_executable("vad") {
     "quality_assessment/vad.cc",
   ]
   deps = [
-    "../../../..:webrtc_common",
     "../../../../common_audio",
     "../../../../rtc_base:rtc_base_approved",
   ]
@@ -139,7 +137,6 @@ rtc_executable("apm_vad") {
   ]
   deps = [
     "../..",
-    "../../../..:webrtc_common",
     "../../../../common_audio",
     "../../../../rtc_base:rtc_base_approved",
     "../../vad",
@@ -152,7 +149,6 @@ rtc_executable("sound_level") {
   ]
   deps = [
     "../..",
-    "../../../..:webrtc_common",
     "../../../../common_audio",
     "../../../../rtc_base:rtc_base_approved",
   ]

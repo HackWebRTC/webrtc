@@ -255,7 +255,6 @@ if (!build_with_chromium) {
     ]
 
     deps = [
-      "..:webrtc_common",
       "../common_video",
     ]
   }
@@ -298,7 +297,6 @@ if (!build_with_chromium) {
       defines = [ "ENABLE_RTC_EVENT_LOG" ]
       deps = [
         ":chart_proto",
-        "../:webrtc_common",
         "../api:function_view",
 
         # TODO(kwiberg): Remove this dependency.
@@ -415,7 +413,6 @@ if (rtc_include_tests) {
       ":video_file_reader",
       ":video_file_writer",
       ":video_quality_analysis",
-      "../:webrtc_common",
       "../api:scoped_refptr",
       "../api/video:video_frame",
       "../api/video:video_frame_i420",
@@ -475,7 +472,6 @@ if (rtc_include_tests) {
       ]
 
       deps = [
-        "..:webrtc_common",
         "../common_audio",
         "../modules/audio_processing",
         "../modules/audio_processing:audioproc_debug_proto",

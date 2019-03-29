@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "api/array_view.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 

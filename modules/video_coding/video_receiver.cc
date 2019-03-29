@@ -15,7 +15,6 @@
 #include "api/rtp_headers.h"
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_decoder.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
 #include "modules/utility/include/process_thread.h"
 #include "modules/video_coding/decoder_database.h"

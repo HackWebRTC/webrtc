@@ -21,7 +21,6 @@
 #include "api/video/video_frame_marking.h"
 #include "api/video/video_rotation.h"
 #include "api/video/video_timing.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 namespace webrtc {

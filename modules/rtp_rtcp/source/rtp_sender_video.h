@@ -16,7 +16,6 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/playout_delay_oracle.h"

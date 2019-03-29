@@ -12,7 +12,6 @@
 
 #include "api/test/videocodec_test_fixture.h"
 #include "api/video_codecs/video_codec.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/video_codec_settings.h"

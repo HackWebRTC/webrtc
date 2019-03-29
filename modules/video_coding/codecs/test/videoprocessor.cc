@@ -24,7 +24,6 @@
 #include "api/video/video_frame_buffer.h"
 #include "api/video/video_rotation.h"
 #include "api/video_codecs/video_codec.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/h264/h264_common.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"

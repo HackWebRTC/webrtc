@@ -22,7 +22,6 @@
 #include "api/video_codecs/video_codec.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "call/video_send_stream.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/pacing/paced_sender.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"

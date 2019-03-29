@@ -14,7 +14,6 @@
 #include <vector>
 
 #include "api/array_view.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "rtc_base/constructor_magic.h"
 

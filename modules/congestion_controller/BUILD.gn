@@ -31,7 +31,6 @@ rtc_static_library("congestion_controller") {
   deps = [
     ":transport_feedback",
     "..:module_api",
-    "../..:webrtc_common",
     "../../api:scoped_refptr",
     "../../api/transport:field_trial_based_config",
     "../../api/transport:network_control",

@@ -14,7 +14,6 @@
 #include <string.h>  // memcpy
 #include <vector>
 
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "modules/video_coding/codecs/interface/common_constants.h"
 #include "rtc_base/checks.h"

@@ -21,7 +21,6 @@
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_codec.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"

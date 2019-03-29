@@ -17,7 +17,6 @@ rtc_static_library("encoded_frame") {
   deps = [
     ":codec_globals_headers",
     ":video_codec_interface",
-    "../../:webrtc_common",
     "../../api/video:encoded_image",
     "../../api/video:video_frame",
     "../../api/video:video_frame_i420",
@@ -150,7 +149,6 @@ rtc_static_library("video_coding") {
     ":webrtc_vp9_helpers",
     "..:module_api",
     "..:module_api_public",
-    "../..:webrtc_common",
     "../../api:fec_controller_api",
     "../../api:rtp_headers",
     "../../api/units:data_rate",
@@ -195,7 +193,6 @@ rtc_source_set("video_codec_interface") {
   ]
   deps = [
     "..:module_api",
-    "../..:webrtc_common",
     "../../api/video:video_frame",
     "../../api/video_codecs:video_codecs_api",
     "../../common_video",
@@ -246,7 +243,6 @@ rtc_source_set("video_coding_utility") {
   deps = [
     ":video_codec_interface",
     "..:module_api",
-    "../..:webrtc_common",
     "../../api/video:encoded_frame",
     "../../api/video:encoded_image",
     "../../api/video:video_bitrate_allocation",
@@ -281,7 +277,6 @@ rtc_static_library("webrtc_h264") {
   deps = [
     ":video_codec_interface",
     ":video_coding_utility",
-    "../../:webrtc_common",
     "../../api/video:video_frame",
     "../../api/video:video_frame_i420",
     "../../api/video_codecs:video_codecs_api",
@@ -335,7 +330,6 @@ rtc_static_library("webrtc_multiplex") {
     ":video_codec_interface",
     ":video_coding_utility",
     "..:module_api",
-    "../..:webrtc_common",
     "../../api:scoped_refptr",
     "../../api/video:encoded_image",
     "../../api/video:video_frame",
@@ -567,7 +561,6 @@ if (rtc_include_tests) {
       ":videocodec_test_stats_impl",
       ":webrtc_vp9_helpers",
       "..:module_api",
-      "../..:webrtc_common",
       "../../api:scoped_refptr",
       "../../api:videocodec_test_fixture_api",
       "../../api/task_queue",
@@ -832,7 +825,6 @@ if (rtc_include_tests) {
       ":webrtc_vp9_helpers",
       "..:module_api",
       "..:module_fec_api",
-      "../..:webrtc_common",
       "../../api:array_view",
       "../../api:create_simulcast_test_fixture_api",
       "../../api:fec_controller_api",

@@ -27,7 +27,6 @@
 #include "call/call.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "logging/rtc_event_log/rtc_stream_config.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor.h"
 #include "modules/audio_coding/neteq/tools/audio_sink.h"

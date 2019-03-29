@@ -26,7 +26,6 @@
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_decoder.h"
 #include "api/video_codecs/video_encoder_config.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/h264/h264_common.h"
 #include "media/base/h264_profile_level_id.h"
 #include "media/base/media_constants.h"

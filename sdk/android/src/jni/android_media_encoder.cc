@@ -19,7 +19,6 @@
 #include "api/task_queue/task_queue_base.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/h264/h264_bitstream_parser.h"
 #include "common_video/h264/h264_common.h"
 #include "common_video/h264/profile_level_id.h"

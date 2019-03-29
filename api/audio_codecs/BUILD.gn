@@ -32,7 +32,6 @@ rtc_source_set("audio_codecs_api") {
     "..:array_view",
     "..:bitrate_allocation",
     "..:scoped_refptr",
-    "../..:webrtc_common",
     "../../rtc_base:checks",
     "../../rtc_base:deprecation",
     "../../rtc_base:rtc_base_approved",

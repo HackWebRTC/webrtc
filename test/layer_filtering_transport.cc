@@ -14,7 +14,6 @@
 #include <utility>
 
 #include "api/rtp_headers.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"

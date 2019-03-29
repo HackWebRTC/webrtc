@@ -20,7 +20,6 @@
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame_buffer.h"
 #include "api/video/video_rotation.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_frame_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "rtc_base/bind.h"

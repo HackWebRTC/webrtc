@@ -23,7 +23,6 @@
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "api/video_codecs/vp8_temporal_layers_factory.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ref_counted_object.h"

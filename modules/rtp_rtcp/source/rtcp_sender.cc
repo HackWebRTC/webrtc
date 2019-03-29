@@ -16,7 +16,6 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "logging/rtc_event_log/events/rtc_event_rtcp_packet_outgoing.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/app.h"

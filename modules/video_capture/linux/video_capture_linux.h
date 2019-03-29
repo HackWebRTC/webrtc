@@ -15,7 +15,6 @@
 #include <stdint.h>
 #include <memory>
 
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_capture/video_capture_defines.h"
 #include "modules/video_capture/video_capture_impl.h"
 #include "rtc_base/critical_section.h"

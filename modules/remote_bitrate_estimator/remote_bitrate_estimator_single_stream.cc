@@ -15,7 +15,6 @@
 #include <utility>
 
 #include "absl/types/optional.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/remote_bitrate_estimator/aimd_rate_control.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/remote_bitrate_estimator/inter_arrival.h"

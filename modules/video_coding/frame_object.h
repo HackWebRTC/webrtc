@@ -13,7 +13,6 @@
 
 #include "absl/types/optional.h"
 #include "api/video/encoded_frame.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor.h"
 

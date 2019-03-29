@@ -23,7 +23,6 @@
 #include <memory>
 
 #include "api/scoped_refptr.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/audio_device/include/audio_device.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/message_handler.h"

@@ -50,7 +50,6 @@ rtc_static_library("video") {
 
   deps = [
     ":frame_dumping_decoder",
-    "..:webrtc_common",
     "../api:array_view",
     "../api:fec_controller_api",
     "../api:libjingle_peerconnection_api",
@@ -301,7 +300,6 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":video_quality_test",
-      "../:webrtc_common",
       "../api:simulated_network_api",
       "../api:test_dependency_factory",
       "../api:video_quality_test_fixture_api",
@@ -507,7 +505,6 @@ if (rtc_include_tests) {
       ":video",
       ":video_mocks",
       ":video_stream_encoder_impl",
-      "../:webrtc_common",
       "../api:fake_frame_decryptor",
       "../api:fake_frame_encryptor",
       "../api:libjingle_peerconnection_api",

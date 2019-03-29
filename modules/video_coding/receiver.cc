@@ -18,7 +18,6 @@
 
 #include "absl/memory/memory.h"
 #include "api/video/encoded_image.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/encoded_frame.h"
 #include "modules/video_coding/internal_defines.h"
 #include "modules/video_coding/jitter_buffer_common.h"

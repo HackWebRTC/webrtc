@@ -20,7 +20,6 @@
 #include "api/units/data_size.h"
 #include "api/units/time_delta.h"
 #include "api/video/video_codec_type.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "test/frame_generator.h"
 #include "test/scenario/quality_info.h"
 

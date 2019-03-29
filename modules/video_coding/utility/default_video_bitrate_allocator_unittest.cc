@@ -11,7 +11,6 @@
 #include <limits>
 #include <memory>
 
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
 #include "test/gtest.h"
 

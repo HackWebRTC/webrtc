@@ -18,7 +18,6 @@
 #include "api/video/video_content_type.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_timing.h"
-#include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {
 

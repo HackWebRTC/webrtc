@@ -27,7 +27,6 @@
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_decoder.h"
 #include "api/video_codecs/video_encoder.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "common_video/include/video_frame_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "media/base/media_constants.h"

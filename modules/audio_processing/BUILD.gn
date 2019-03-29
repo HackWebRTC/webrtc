@@ -157,7 +157,6 @@ rtc_static_library("audio_processing") {
     ":gain_control_config_proxy",
     ":gain_control_interface",
     ":noise_suppression_proxy",
-    "../..:webrtc_common",
     "../../api:array_view",
     "../../api:function_view",
     "../../api/audio:aec3_config",
@@ -330,7 +329,6 @@ rtc_source_set("audio_processing_c") {
   }
 
   deps = [
-    "../..:webrtc_common",
     "../../common_audio",
     "../../common_audio:common_audio_c",
     "../../common_audio/third_party/fft4g",
@@ -455,7 +453,6 @@ if (rtc_include_tests) {
       ":file_audio_generator_unittests",
       ":gain_control_config_proxy",
       ":mocks",
-      "../..:webrtc_common",
       "../../api:array_view",
       "../../api:scoped_refptr",
       "../../api/audio:aec3_config",
@@ -705,7 +702,6 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":audio_processing",
-      "../..:webrtc_common",
       "../../common_audio",
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base/system:file_wrapper",
@@ -726,7 +722,6 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":audio_processing",
-      "../..:webrtc_common",
       "../../rtc_base/system:file_wrapper",
       "../../system_wrappers",
     ]
@@ -748,7 +743,6 @@ if (rtc_include_tests) {
 
       deps = [
         ":audioproc_debug_proto",
-        "../..:webrtc_common",
         "../../rtc_base:checks",
         "../../rtc_base:protobuf_utils",
         "../../rtc_base:rtc_base_approved",

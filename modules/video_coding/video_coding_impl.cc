@@ -14,7 +14,6 @@
 #include <memory>
 
 #include "api/video/encoded_image.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/timing.h"
 #include "rtc_base/critical_section.h"

@@ -19,7 +19,6 @@
 #include "absl/memory/memory.h"
 #include "api/task_queue/queued_task.h"
 #include "api/video/video_content_type.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_error_codes.h"

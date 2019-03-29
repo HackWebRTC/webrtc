@@ -21,7 +21,6 @@
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/vp8_frame_buffer_controller.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
-#include "common_types.h"  // NOLINT(build/include)
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/sequenced_task_checker.h"
