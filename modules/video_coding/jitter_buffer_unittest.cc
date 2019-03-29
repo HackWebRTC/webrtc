@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "common_video/h264/h264_common.h"
 #include "modules/video_coding/frame_buffer.h"
 #include "modules/video_coding/jitter_buffer.h"
@@ -200,26 +201,13 @@ TEST_F(Vp9SsMapTest, UpdatePacket) {
   EXPECT_EQ(1, vp9_header.pid_diff[0]);
 }
 
-class TestBasicJitterBuffer : public ::testing::TestWithParam<std::string>,
-                              public NackSender,
-                              public KeyFrameRequestSender {
- public:
-  void SendNack(const std::vector<uint16_t>& sequence_numbers) override {
-    nack_sent_.insert(nack_sent_.end(), sequence_numbers.begin(),
-                      sequence_numbers.end());
-  }
-
-  void RequestKeyFrame() override { ++keyframe_requests_; }
-
-  std::vector<uint16_t> nack_sent_;
-  int keyframe_requests_;
-
+class TestBasicJitterBuffer : public ::testing::Test {
  protected:
   TestBasicJitterBuffer() {}
   void SetUp() override {
     clock_.reset(new SimulatedClock(0));
     jitter_buffer_.reset(new VCMJitterBuffer(
-        clock_.get(), absl::WrapUnique(EventWrapper::Create()), this, this));
+        clock_.get(), absl::WrapUnique(EventWrapper::Create())));
     jitter_buffer_->Start();
     seq_num_ = 1234;
     timestamp_ = 0;
@@ -305,20 +293,7 @@ class TestBasicJitterBuffer : public ::testing::TestWithParam<std::string>,
   std::unique_ptr<VCMJitterBuffer> jitter_buffer_;
 };
 
-class TestRunningJitterBuffer : public ::testing::TestWithParam<std::string>,
-                                public NackSender,
-                                public KeyFrameRequestSender {
- public:
-  void SendNack(const std::vector<uint16_t>& sequence_numbers) {
-    nack_sent_.insert(nack_sent_.end(), sequence_numbers.begin(),
-                      sequence_numbers.end());
-  }
-
-  void RequestKeyFrame() { ++keyframe_requests_; }
-
-  std::vector<uint16_t> nack_sent_;
-  int keyframe_requests_;
-
+class TestRunningJitterBuffer : public ::testing::Test {
  protected:
   enum { kDataBufferSize = 10 };
 
@@ -327,7 +302,7 @@ class TestRunningJitterBuffer : public ::testing::TestWithParam<std::string>,
     max_nack_list_size_ = 150;
     oldest_packet_to_nack_ = 250;
     jitter_buffer_ = new VCMJitterBuffer(
-        clock_.get(), absl::WrapUnique(EventWrapper::Create()), this, this);
+        clock_.get(), absl::WrapUnique(EventWrapper::Create()));
     stream_generator_ = new StreamGenerator(0, clock_->TimeInMilliseconds());
     jitter_buffer_->Start();
     jitter_buffer_->SetNackSettings(max_nack_list_size_, oldest_packet_to_nack_,

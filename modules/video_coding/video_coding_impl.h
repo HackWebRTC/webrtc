@@ -57,10 +57,7 @@ class VCMProcessTimer {
 
 class VideoReceiver : public Module {
  public:
-  VideoReceiver(Clock* clock,
-                VCMTiming* timing,
-                NackSender* nack_sender = nullptr,
-                KeyFrameRequestSender* keyframe_request_sender = nullptr);
+  VideoReceiver(Clock* clock, VCMTiming* timing);
   ~VideoReceiver() override;
 
   int32_t RegisterReceiveCodec(const VideoCodec* receiveCodec,

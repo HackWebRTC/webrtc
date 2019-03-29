@@ -41,16 +41,10 @@
 namespace webrtc {
 namespace vcm {
 
-VideoReceiver::VideoReceiver(Clock* clock,
-                             VCMTiming* timing,
-                             NackSender* nack_sender,
-                             KeyFrameRequestSender* keyframe_request_sender)
+VideoReceiver::VideoReceiver(Clock* clock, VCMTiming* timing)
     : clock_(clock),
       _timing(timing),
-      _receiver(_timing,
-                clock_,
-                nack_sender,
-                keyframe_request_sender),
+      _receiver(_timing, clock_),
       _decodedFrameCallback(_timing, clock_),
       _frameTypeCallback(nullptr),
       _packetRequestCallback(nullptr),

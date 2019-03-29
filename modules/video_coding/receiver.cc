@@ -34,45 +34,14 @@ VCMReceiver::VCMReceiver(VCMTiming* timing, Clock* clock)
     : VCMReceiver::VCMReceiver(timing,
                                clock,
                                absl::WrapUnique(EventWrapper::Create()),
-                               absl::WrapUnique(EventWrapper::Create()),
-                               nullptr,  // NackSender
-                               nullptr)  // KeyframeRequestSender
-{}
-
-VCMReceiver::VCMReceiver(VCMTiming* timing,
-                         Clock* clock,
-                         NackSender* nack_sender,
-                         KeyFrameRequestSender* keyframe_request_sender)
-    : VCMReceiver(timing,
-                  clock,
-                  absl::WrapUnique(EventWrapper::Create()),
-                  absl::WrapUnique(EventWrapper::Create()),
-                  nack_sender,
-                  keyframe_request_sender) {}
+                               absl::WrapUnique(EventWrapper::Create())) {}
 
 VCMReceiver::VCMReceiver(VCMTiming* timing,
                          Clock* clock,
                          std::unique_ptr<EventWrapper> receiver_event,
                          std::unique_ptr<EventWrapper> jitter_buffer_event)
-    : VCMReceiver::VCMReceiver(timing,
-                               clock,
-                               std::move(receiver_event),
-                               std::move(jitter_buffer_event),
-                               nullptr,  // NackSender
-                               nullptr)  // KeyframeRequestSender
-{}
-
-VCMReceiver::VCMReceiver(VCMTiming* timing,
-                         Clock* clock,
-                         std::unique_ptr<EventWrapper> receiver_event,
-                         std::unique_ptr<EventWrapper> jitter_buffer_event,
-                         NackSender* nack_sender,
-                         KeyFrameRequestSender* keyframe_request_sender)
     : clock_(clock),
-      jitter_buffer_(clock_,
-                     std::move(jitter_buffer_event),
-                     nack_sender,
-                     keyframe_request_sender),
+      jitter_buffer_(clock_, std::move(jitter_buffer_event)),
       timing_(timing),
       render_wait_event_(std::move(receiver_event)),
       max_video_delay_ms_(kMaxVideoDelayMs) {

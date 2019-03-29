@@ -106,10 +106,7 @@ class Vp9SsMap {
 
 class VCMJitterBuffer {
  public:
-  VCMJitterBuffer(Clock* clock,
-                  std::unique_ptr<EventWrapper> event,
-                  NackSender* nack_sender = nullptr,
-                  KeyFrameRequestSender* keyframe_request_sender = nullptr);
+  VCMJitterBuffer(Clock* clock, std::unique_ptr<EventWrapper> event);
 
   ~VCMJitterBuffer();
 

@@ -29,35 +29,16 @@ class VCMEncodedFrame;
 
 class VCMReceiver {
  public:
-  // Constructor for current interface, will be removed when the
-  // new jitter buffer is in place.
   VCMReceiver(VCMTiming* timing, Clock* clock);
-
-  // Create method for the new jitter buffer.
-  VCMReceiver(VCMTiming* timing,
-              Clock* clock,
-              NackSender* nack_sender,
-              KeyFrameRequestSender* keyframe_request_sender);
 
   // Using this constructor, you can specify a different event implemetation for
   // the jitter buffer. Useful for unit tests when you want to simulate incoming
   // packets, in which case the jitter buffer's wait event is different from
   // that of VCMReceiver itself.
-  //
-  // Constructor for current interface, will be removed when the
-  // new jitter buffer is in place.
   VCMReceiver(VCMTiming* timing,
               Clock* clock,
               std::unique_ptr<EventWrapper> receiver_event,
               std::unique_ptr<EventWrapper> jitter_buffer_event);
-
-  // Create method for the new jitter buffer.
-  VCMReceiver(VCMTiming* timing,
-              Clock* clock,
-              std::unique_ptr<EventWrapper> receiver_event,
-              std::unique_ptr<EventWrapper> jitter_buffer_event,
-              NackSender* nack_sender,
-              KeyFrameRequestSender* keyframe_request_sender);
 
   ~VCMReceiver();
 

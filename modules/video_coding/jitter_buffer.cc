@@ -218,9 +218,7 @@ void Vp9SsMap::UpdateFrames(FrameList* frames) {
 }
 
 VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
-                                 std::unique_ptr<EventWrapper> event,
-                                 NackSender* nack_sender,
-                                 KeyFrameRequestSender* keyframe_request_sender)
+                                 std::unique_ptr<EventWrapper> event)
     : clock_(clock),
       running_(false),
       frame_event_(std::move(event)),
