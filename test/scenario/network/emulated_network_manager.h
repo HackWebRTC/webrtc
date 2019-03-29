@@ -32,8 +32,7 @@ class EmulatedNetworkManager : public rtc::NetworkManagerBase,
                                public sigslot::has_slots<>,
                                public EmulatedNetworkManagerInterface {
  public:
-  EmulatedNetworkManager(Clock* clock,
-                         EndpointsContainer* endpoints_controller);
+  EmulatedNetworkManager(Clock* clock, EndpointsContainer* endpoints_container);
 
   void EnableEndpoint(EmulatedEndpoint* endpoint);
   void DisableEndpoint(EmulatedEndpoint* endpoint);
@@ -51,7 +50,7 @@ class EmulatedNetworkManager : public rtc::NetworkManagerBase,
   void UpdateNetworksOnce();
   void MaybeSignalNetworksChanged();
 
-  EndpointsContainer* const endpoints_controller_;
+  EndpointsContainer* const endpoints_container_;
   FakeNetworkSocketServer socket_server_;
   rtc::Thread network_thread_;
 

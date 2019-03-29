@@ -20,9 +20,9 @@ namespace test {
 
 EmulatedNetworkManager::EmulatedNetworkManager(
     Clock* clock,
-    EndpointsContainer* endpoints_controller)
-    : endpoints_controller_(endpoints_controller),
-      socket_server_(clock, endpoints_controller),
+    EndpointsContainer* endpoints_container)
+    : endpoints_container_(endpoints_container),
+      socket_server_(clock, endpoints_container),
       network_thread_(&socket_server_),
       sent_first_update_(false),
       start_count_(0) {
@@ -31,7 +31,7 @@ EmulatedNetworkManager::EmulatedNetworkManager(
 }
 
 void EmulatedNetworkManager::EnableEndpoint(EmulatedEndpoint* endpoint) {
-  RTC_CHECK(endpoints_controller_->HasEndpoint(endpoint))
+  RTC_CHECK(endpoints_container_->HasEndpoint(endpoint))
       << "No such interface: " << endpoint->GetPeerLocalAddress().ToString();
   network_thread_.PostTask(RTC_FROM_HERE, [this, endpoint]() {
     endpoint->Enable();
@@ -40,7 +40,7 @@ void EmulatedNetworkManager::EnableEndpoint(EmulatedEndpoint* endpoint) {
 }
 
 void EmulatedNetworkManager::DisableEndpoint(EmulatedEndpoint* endpoint) {
-  RTC_CHECK(endpoints_controller_->HasEndpoint(endpoint))
+  RTC_CHECK(endpoints_container_->HasEndpoint(endpoint))
       << "No such interface: " << endpoint->GetPeerLocalAddress().ToString();
   network_thread_.PostTask(RTC_FROM_HERE, [this, endpoint]() {
     endpoint->Disable();
@@ -82,7 +82,7 @@ void EmulatedNetworkManager::UpdateNetworksOnce() {
 
   std::vector<rtc::Network*> networks;
   for (std::unique_ptr<rtc::Network>& net :
-       endpoints_controller_->GetEnabledNetworks()) {
+       endpoints_container_->GetEnabledNetworks()) {
     net->set_default_local_address_provider(this);
     networks.push_back(net.release());
   }
