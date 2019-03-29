@@ -212,7 +212,6 @@ RtpVideoSender::RtpVideoSender(
     const RtpConfig& rtp_config,
     int rtcp_report_interval_ms,
     Transport* send_transport,
-    bool is_svc,
     const RtpSenderObservers& observers,
     RtpTransportControllerSendInterface* transport,
     RtcEventLog* event_log,
@@ -254,8 +253,7 @@ RtpVideoSender::RtpVideoSender(
       overhead_bytes_per_packet_(0),
       encoder_target_rate_bps_(0),
       frame_counts_(rtp_config.ssrcs.size()),
-      frame_count_observer_(observers.frame_count_observer),
-      is_svc_(is_svc) {
+      frame_count_observer_(observers.frame_count_observer) {
   RTC_DCHECK_EQ(rtp_config.ssrcs.size(), rtp_streams_.size());
   module_process_thread_checker_.DetachFromThread();
   // SSRCs are assumed to be sorted in the same order as |rtp_modules|.
@@ -450,7 +448,7 @@ void RtpVideoSender::OnBitrateAllocationUpdated(
     const VideoBitrateAllocation& bitrate) {
   rtc::CritScope lock(&crit_);
   if (IsActive()) {
-    if (rtp_streams_.size() == 1 || is_svc_) {
+    if (rtp_streams_.size() == 1) {
       // If spatial scalability is enabled, it is covered by a single stream.
       rtp_streams_[0].rtp_rtcp->SetVideoBitrateAllocation(bitrate);
     } else {

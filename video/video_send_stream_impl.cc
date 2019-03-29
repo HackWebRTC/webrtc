@@ -236,7 +236,6 @@ VideoSendStreamImpl::VideoSendStreamImpl(
           config_->rtp,
           config_->rtcp_report_interval_ms,
           config_->send_transport,
-          config_->is_svc,
           CreateObservers(call_stats,
                           &encoder_feedback_,
                           stats_proxy_,

@@ -104,7 +104,6 @@ class RtpTransportControllerSendInterface {
       const RtpConfig& rtp_config,
       int rtcp_report_interval_ms,
       Transport* send_transport,
-      bool is_svc,
       const RtpSenderObservers& observers,
       RtcEventLog* event_log,
       std::unique_ptr<FecController> fec_controller,

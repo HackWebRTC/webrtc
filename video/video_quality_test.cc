@@ -762,9 +762,6 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
     video_send_configs_[video_idx].suspend_below_min_bitrate =
         params_.video[video_idx].suspend_below_min_bitrate;
 
-    video_send_configs_[video_idx].is_svc =
-        params_.ss[video_idx].streams.size() == 1;
-
     video_encoder_configs_[video_idx].number_of_streams =
         params_.ss[video_idx].streams.size();
     video_encoder_configs_[video_idx].max_bitrate_bps = 0;

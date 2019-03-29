@@ -76,7 +76,6 @@ class RtpVideoSender : public RtpVideoSenderInterface,
       const RtpConfig& rtp_config,
       int rtcp_report_interval_ms,
       Transport* send_transport,
-      bool is_svc,
       const RtpSenderObservers& observers,
       RtpTransportControllerSendInterface* transport,
       RtcEventLog* event_log,
@@ -190,8 +189,6 @@ class RtpVideoSender : public RtpVideoSenderInterface,
 
   std::vector<FrameCounts> frame_counts_ RTC_GUARDED_BY(crit_);
   FrameCountObserver* const frame_count_observer_;
-
-  const bool is_svc_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpVideoSender);
 };
