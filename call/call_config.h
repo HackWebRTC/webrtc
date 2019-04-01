@@ -13,6 +13,7 @@
 #include "api/bitrate_constraints.h"
 #include "api/fec_controller.h"
 #include "api/rtc_error.h"
+#include "api/task_queue/task_queue_factory.h"
 #include "api/transport/network_control.h"
 #include "call/audio_state.h"
 
@@ -44,6 +45,9 @@ struct CallConfig {
 
   // FecController to use for this call.
   FecControllerFactoryInterface* fec_controller_factory = nullptr;
+
+  // Task Queue Factory to be used in this call.
+  TaskQueueFactory* task_queue_factory = nullptr;
 
   // Network controller factory to use for this call.
   NetworkControllerFactoryInterface* network_controller_factory = nullptr;
