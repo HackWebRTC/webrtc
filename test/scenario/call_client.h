@@ -109,7 +109,6 @@ class CallClient : public EmulatedNetworkReceiverInterface {
   std::unique_ptr<NetworkNodeTransport> transport_;
   std::unique_ptr<RtpHeaderParser> const header_parser_;
 
-  std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory_;
   // Stores the configured overhead per known destination endpoint. This is used
   // to subtract the overhead before processing.
   std::map<rtc::IPAddress, DataSize> route_overhead_;

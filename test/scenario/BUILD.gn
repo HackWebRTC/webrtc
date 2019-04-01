@@ -78,6 +78,7 @@ if (rtc_include_tests) {
       "../:test_common",
       "../:test_support",
       "../:video_test_common",
+      "../../api:fec_controller_api",
       "../../api:libjingle_peerconnection_api",
       "../../api:transport_api",
       "../../api/audio_codecs:builtin_audio_decoder_factory",

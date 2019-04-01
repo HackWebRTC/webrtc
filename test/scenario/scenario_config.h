@@ -14,6 +14,7 @@
 #include <string>
 
 #include "absl/types/optional.h"
+#include "api/fec_controller.h"
 #include "api/rtp_parameters.h"
 #include "api/transport/network_control.h"
 #include "api/units/data_rate.h"
@@ -174,10 +175,12 @@ struct VideoStreamConfig {
     TimeDelta nack_history_time = TimeDelta::ms(1000);
     bool use_flexfec = false;
     bool use_ulpfec = false;
+    FecControllerFactoryInterface* fec_controller_factory = nullptr;
   } stream;
-  struct Renderer {
+  struct Rendering {
     enum Type { kFake } type = kFake;
-  };
+    std::string sync_group;
+  } render;
   struct analyzer {
     bool log_to_file = false;
     std::function<void(const VideoFrameQualityInfo&)> frame_quality_handler;
@@ -221,7 +224,7 @@ struct AudioStreamConfig {
     ~Stream();
     bool in_bandwidth_estimation = false;
   } stream;
-  struct Render {
+  struct Rendering {
     std::string sync_group;
   } render;
 };

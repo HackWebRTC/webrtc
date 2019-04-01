@@ -328,6 +328,7 @@ VideoReceiveStream::Config CreateVideoReceiveStreamConfig(
     recv.rtp.rtx_associated_payload_types[CallTest::kRtxRedPayloadType] =
         CallTest::kRedPayloadType;
   }
+  recv.sync_group = config.render.sync_group;
   return recv;
 }
 }  // namespace
@@ -386,8 +387,14 @@ SendVideoStream::SendVideoStream(CallClient* sender,
       bitrate_allocator_factory_.get();
 
   sender_->SendTask([&] {
-    send_stream_ = sender_->call_->CreateVideoSendStream(
-        std::move(send_config), std::move(encoder_config));
+    if (config.stream.fec_controller_factory) {
+      send_stream_ = sender_->call_->CreateVideoSendStream(
+          std::move(send_config), std::move(encoder_config),
+          config.stream.fec_controller_factory->CreateFecController());
+    } else {
+      send_stream_ = sender_->call_->CreateVideoSendStream(
+          std::move(send_config), std::move(encoder_config));
+    }
     std::vector<std::function<void(const VideoFrameQualityInfo&)> >
         frame_info_handlers;
     if (config.analyzer.frame_quality_handler)
