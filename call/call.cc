@@ -424,20 +424,16 @@ std::string Call::Stats::ToString(int64_t time_ms) const {
 }
 
 Call* Call::Create(const Call::Config& config) {
-  return Create(config, Clock::GetRealTimeClock(),
-                ProcessThread::Create("PacerThread"),
-                ProcessThread::Create("ModuleProcessThread"));
+  return Create(
+      config, Clock::GetRealTimeClock(), ProcessThread::Create("PacerThread"),
+      ProcessThread::Create("ModuleProcessThread"), &GlobalTaskQueueFactory());
 }
 
 Call* Call::Create(const Call::Config& config,
                    Clock* clock,
                    std::unique_ptr<ProcessThread> call_thread,
-                   std::unique_ptr<ProcessThread> pacer_thread) {
-  // TODO(bugs.webrtc.org/10284): DCHECK task_queue_factory dependency is
-  // always provided in the config.
-  TaskQueueFactory* task_queue_factory = config.task_queue_factory
-                                             ? config.task_queue_factory
-                                             : &GlobalTaskQueueFactory();
+                   std::unique_ptr<ProcessThread> pacer_thread,
+                   TaskQueueFactory* task_queue_factory) {
   return new internal::Call(
       clock, config,
       absl::make_unique<RtpTransportControllerSend>(
