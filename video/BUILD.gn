@@ -247,6 +247,8 @@ if (rtc_include_tests) {
       "../api:fec_controller_api",
       "../api:test_dependency_factory",
       "../api:video_quality_test_fixture_api",
+      "../api/task_queue",
+      "../api/task_queue:default_task_queue_factory",
       "../api/video:builtin_video_bitrate_allocator_factory",
       "../api/video:video_bitrate_allocator_factory",
       "../api/video:video_frame",

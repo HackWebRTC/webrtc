@@ -17,6 +17,8 @@
 #include <vector>
 
 #include "api/scoped_refptr.h"
+#include "api/task_queue/default_task_queue_factory.h"
+#include "api/task_queue/task_queue_factory.h"
 #include "modules/audio_device/android/audio_common.h"
 #include "modules/audio_device/android/audio_manager.h"
 #include "modules/audio_device/android/build_info.h"
@@ -460,7 +462,7 @@ class MockAudioTransportAndroid : public test::MockAudioTransport {
 // AudioDeviceTest test fixture.
 class AudioDeviceTest : public ::testing::Test {
  protected:
-  AudioDeviceTest() {
+  AudioDeviceTest() : task_queue_factory_(CreateDefaultTaskQueueFactory()) {
     // One-time initialization of JVM and application context. Ensures that we
     // can do calls between C++ and Java. Initializes both Java and OpenSL ES
     // implementations.
@@ -514,7 +516,7 @@ class AudioDeviceTest : public ::testing::Test {
   rtc::scoped_refptr<AudioDeviceModule> CreateAudioDevice(
       AudioDeviceModule::AudioLayer audio_layer) {
     rtc::scoped_refptr<AudioDeviceModule> module(
-        AudioDeviceModule::Create(audio_layer));
+        AudioDeviceModule::Create(audio_layer, task_queue_factory_.get()));
     return module;
   }
 
@@ -639,6 +641,7 @@ class AudioDeviceTest : public ::testing::Test {
   }
 
   rtc::Event test_is_done_;
+  std::unique_ptr<TaskQueueFactory> task_queue_factory_;
   rtc::scoped_refptr<AudioDeviceModule> audio_device_;
   AudioParameters playout_parameters_;
   AudioParameters record_parameters_;

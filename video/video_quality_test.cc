@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
@@ -323,6 +324,7 @@ std::unique_ptr<VideoEncoder> VideoQualityTest::CreateVideoEncoder(
 VideoQualityTest::VideoQualityTest(
     std::unique_ptr<InjectionComponents> injection_components)
     : clock_(Clock::GetRealTimeClock()),
+      task_queue_factory_(CreateDefaultTaskQueueFactory()),
       video_decoder_factory_([this](const SdpVideoFormat& format) {
         return this->CreateVideoDecoder(format);
       }),
@@ -1307,10 +1309,11 @@ rtc::scoped_refptr<AudioDeviceModule> VideoQualityTest::CreateAudioDevice() {
   RTC_CHECK(com_initializer_->Succeeded());
   RTC_CHECK(webrtc_win::core_audio_utility::IsSupported());
   RTC_CHECK(webrtc_win::core_audio_utility::IsMMCSSSupported());
-  return CreateWindowsCoreAudioAudioDeviceModule();
+  return CreateWindowsCoreAudioAudioDeviceModule(task_queue_factory_.get());
 #else
   // Use legacy factory method on all platforms except Windows.
-  return AudioDeviceModule::Create(AudioDeviceModule::kPlatformDefaultAudio);
+  return AudioDeviceModule::Create(AudioDeviceModule::kPlatformDefaultAudio,
+                                   task_queue_factory_.get());
 #endif
 }
 

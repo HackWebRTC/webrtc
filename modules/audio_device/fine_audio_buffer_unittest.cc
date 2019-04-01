@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "api/array_view.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "modules/audio_device/mock_audio_device_buffer.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -91,7 +92,8 @@ void RunFineBufferTest(int frame_size_in_samples) {
   const int kNumberOfUpdateBufferCalls =
       1 + ((kNumberOfFrames * frame_size_in_samples - 1) / kSamplesPer10Ms);
 
-  MockAudioDeviceBuffer audio_device_buffer;
+  auto task_queue_factory = CreateDefaultTaskQueueFactory();
+  MockAudioDeviceBuffer audio_device_buffer(task_queue_factory.get());
   audio_device_buffer.SetPlayoutSampleRate(kSampleRate);
   audio_device_buffer.SetPlayoutChannels(kChannels);
   audio_device_buffer.SetRecordingSampleRate(kSampleRate);

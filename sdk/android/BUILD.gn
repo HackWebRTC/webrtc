@@ -1124,6 +1124,7 @@ if (is_android) {
       ":base_jni",
       ":generated_audio_device_module_base_jni",
       ":native_api_jni",
+      "../../api/task_queue:global_task_queue_factory",
       "../../modules/audio_device:audio_device_api",
       "../../modules/audio_device:audio_device_buffer",
       "../../rtc_base:checks",

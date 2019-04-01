@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "api/task_queue/global_task_queue_factory.h"
 #include "modules/audio_device/audio_device_buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -88,7 +89,8 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
   int32_t Init() override {
     RTC_LOG(INFO) << __FUNCTION__;
     RTC_DCHECK(thread_checker_.CalledOnValidThread());
-    audio_device_buffer_ = absl::make_unique<AudioDeviceBuffer>();
+    audio_device_buffer_ =
+        absl::make_unique<AudioDeviceBuffer>(&GlobalTaskQueueFactory());
     AttachAudioBuffer();
     if (initialized_) {
       return 0;

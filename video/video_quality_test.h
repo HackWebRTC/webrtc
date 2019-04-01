@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "api/fec_controller.h"
+#include "api/task_queue/task_queue_factory.h"
 #include "api/test/video_quality_test_fixture.h"
 #include "api/video/video_bitrate_allocator_factory.h"
 #include "call/fake_network_pipe.h"
@@ -100,6 +101,7 @@ class VideoQualityTest :
   std::vector<std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>>>
       thumbnail_capturers_;
   Clock* const clock_;
+  const std::unique_ptr<TaskQueueFactory> task_queue_factory_;
 
   test::FunctionVideoDecoderFactory video_decoder_factory_;
   InternalDecoderFactory internal_decoder_factory_;

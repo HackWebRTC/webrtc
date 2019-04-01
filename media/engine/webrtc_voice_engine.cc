@@ -240,7 +240,7 @@ void WebRtcVoiceEngine::Init() {
   // No ADM supplied? Create a default one.
   if (!adm_) {
     adm_ = webrtc::AudioDeviceModule::Create(
-        webrtc::AudioDeviceModule::kPlatformDefaultAudio);
+        webrtc::AudioDeviceModule::kPlatformDefaultAudio, task_queue_factory_);
   }
 #endif  // WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE
   RTC_CHECK(adm());

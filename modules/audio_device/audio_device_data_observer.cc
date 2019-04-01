@@ -10,6 +10,7 @@
 
 #include "modules/audio_device/include/audio_device_data_observer.h"
 
+#include "api/task_queue/global_task_queue_factory.h"
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ref_counted_object.h"
@@ -22,8 +23,11 @@ namespace {
 // callback and redirects the PCM data to AudioDeviceDataObserver callback.
 class ADMWrapper : public AudioDeviceModule, public AudioTransport {
  public:
-  ADMWrapper(const AudioLayer audio_layer, AudioDeviceDataObserver* observer)
-      : impl_(AudioDeviceModule::Create(audio_layer)), observer_(observer) {
+  ADMWrapper(AudioLayer audio_layer,
+             TaskQueueFactory* task_queue_factory,
+             AudioDeviceDataObserver* observer)
+      : impl_(AudioDeviceModule::Create(audio_layer, task_queue_factory)),
+        observer_(observer) {
     // Register self as the audio transport callback for underlying ADM impl.
     auto res = impl_->RegisterAudioCallback(this);
     is_valid_ = (impl_.get() != nullptr) && (res == 0);
@@ -280,8 +284,17 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
 rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceWithDataObserver(
     const AudioDeviceModule::AudioLayer audio_layer,
     AudioDeviceDataObserver* observer) {
+  return CreateAudioDeviceWithDataObserver(audio_layer,
+                                           &GlobalTaskQueueFactory(), observer);
+}
+
+rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceWithDataObserver(
+    AudioDeviceModule::AudioLayer audio_layer,
+    TaskQueueFactory* task_queue_factory,
+    AudioDeviceDataObserver* observer) {
   rtc::scoped_refptr<ADMWrapper> audio_device(
-      new rtc::RefCountedObject<ADMWrapper>(audio_layer, observer));
+      new rtc::RefCountedObject<ADMWrapper>(audio_layer, task_queue_factory,
+                                            observer));
 
   if (!audio_device->IsValid()) {
     return nullptr;

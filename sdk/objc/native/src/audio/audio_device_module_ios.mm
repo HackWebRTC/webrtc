@@ -10,6 +10,7 @@
 
 #include "audio_device_module_ios.h"
 
+#include "api/task_queue/global_task_queue_factory.h"
 #include "modules/audio_device/audio_device_config.h"
 #include "modules/audio_device/audio_device_generic.h"
 #include "rtc_base/checks.h"
@@ -69,7 +70,7 @@ namespace ios_adm {
     if (initialized_)
       return 0;
 
-    audio_device_buffer_.reset(new webrtc::AudioDeviceBuffer());
+    audio_device_buffer_.reset(new webrtc::AudioDeviceBuffer(&GlobalTaskQueueFactory()));
     audio_device_.reset(new ios_adm::AudioDeviceIOS());
     RTC_CHECK(audio_device_);
 

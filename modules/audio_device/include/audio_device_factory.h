@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_DEVICE_INCLUDE_AUDIO_DEVICE_FACTORY_H_
 
 #include "absl/memory/memory.h"
+#include "api/task_queue/task_queue_factory.h"
 #include "modules/audio_device/include/audio_device.h"
 
 namespace webrtc {
@@ -34,10 +35,12 @@ namespace webrtc {
 //   private:
 //    std::unique_ptr<webrtc_win::ScopedCOMInitializer> com_initializer_;
 //
-rtc::scoped_refptr<AudioDeviceModule> CreateWindowsCoreAudioAudioDeviceModule();
+rtc::scoped_refptr<AudioDeviceModule> CreateWindowsCoreAudioAudioDeviceModule(
+    TaskQueueFactory* task_queue_factory);
 
 rtc::scoped_refptr<AudioDeviceModuleForTest>
-CreateWindowsCoreAudioAudioDeviceModuleForTest();
+CreateWindowsCoreAudioAudioDeviceModuleForTest(
+    TaskQueueFactory* task_queue_factory);
 
 }  // namespace webrtc
 
