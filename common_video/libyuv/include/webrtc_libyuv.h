@@ -77,6 +77,9 @@ int ConvertFromI420(const VideoFrame& src_frame,
                     int dst_sample_size,
                     uint8_t* dst_frame);
 
+double I420SSE(const I420BufferInterface& ref_buffer,
+               const I420BufferInterface& test_buffer);
+
 // Compute PSNR for an I420 frame (all planes).
 // Returns the PSNR in decibel, to a maximum of kInfinitePSNR.
 double I420PSNR(const VideoFrame* ref_frame, const VideoFrame* test_frame);

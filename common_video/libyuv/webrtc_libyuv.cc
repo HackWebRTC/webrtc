@@ -201,6 +201,28 @@ rtc::scoped_refptr<I420ABufferInterface> ScaleI420ABuffer(
   return merged_buffer;
 }
 
+double I420SSE(const I420BufferInterface& ref_buffer,
+               const I420BufferInterface& test_buffer) {
+  RTC_DCHECK_EQ(ref_buffer.width(), test_buffer.width());
+  RTC_DCHECK_EQ(ref_buffer.height(), test_buffer.height());
+  const uint64_t width = test_buffer.width();
+  const uint64_t height = test_buffer.height();
+  const uint64_t sse_y = libyuv::ComputeSumSquareErrorPlane(
+      ref_buffer.DataY(), ref_buffer.StrideY(), test_buffer.DataY(),
+      test_buffer.StrideY(), width, height);
+  const int width_uv = (width + 1) >> 1;
+  const int height_uv = (height + 1) >> 1;
+  const uint64_t sse_u = libyuv::ComputeSumSquareErrorPlane(
+      ref_buffer.DataU(), ref_buffer.StrideU(), test_buffer.DataU(),
+      test_buffer.StrideU(), width_uv, height_uv);
+  const uint64_t sse_v = libyuv::ComputeSumSquareErrorPlane(
+      ref_buffer.DataV(), ref_buffer.StrideV(), test_buffer.DataV(),
+      test_buffer.StrideV(), width_uv, height_uv);
+  const double samples = width * height + 2 * (width_uv * height_uv);
+  const double sse = sse_y + sse_u + sse_v;
+  return sse / (samples * 255.0 * 255.0);
+}
+
 // Compute PSNR for an I420A frame (all planes). Can upscale test frame.
 double I420APSNR(const I420ABufferInterface& ref_buffer,
                  const I420ABufferInterface& test_buffer) {
