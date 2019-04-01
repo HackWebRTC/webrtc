@@ -564,8 +564,6 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
   bandwidth_estimation_->CurrentEstimate(&estimated_bitrate_bps, &fraction_loss,
                                          &rtt_ms);
 
-  estimated_bitrate_bps = std::max<int32_t>(
-      estimated_bitrate_bps, bandwidth_estimation_->GetMinBitrate());
 
   BWE_TEST_LOGGING_PLOT(1, "fraction_loss_%", at_time.ms(),
                         (fraction_loss * 100) / 256);
