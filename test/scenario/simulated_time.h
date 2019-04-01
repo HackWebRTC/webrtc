@@ -121,6 +121,7 @@ class SimulatedSender {
 class SimulatedTimeClient : EmulatedNetworkReceiverInterface {
  public:
   SimulatedTimeClient(
+      TimeController* time_controller,
       std::unique_ptr<LogWriterFactoryInterface> log_writer_factory,
       SimulatedTimeClientConfig config,
       std::vector<PacketStreamConfig> stream_configs,

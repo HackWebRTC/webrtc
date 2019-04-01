@@ -30,12 +30,13 @@ const uint32_t kReceiverLocalAudioSsrc = 0x1234567;
 
 const char* kPriorityStreamId = "priority-track";
 
-CallClientFakeAudio InitAudio() {
+CallClientFakeAudio InitAudio(TimeController* time_controller) {
   CallClientFakeAudio setup;
   auto capturer = TestAudioDeviceModule::CreatePulsedNoiseCapturer(256, 48000);
   auto renderer = TestAudioDeviceModule::CreateDiscardRenderer(48000);
-  setup.fake_audio_device = TestAudioDeviceModule::CreateTestAudioDeviceModule(
-      std::move(capturer), std::move(renderer), 1.f);
+  setup.fake_audio_device = TestAudioDeviceModule::Create(
+      time_controller->GetTaskQueueFactory(), std::move(capturer),
+      std::move(renderer), 1.f);
   setup.apm = AudioProcessingBuilder().Create();
   setup.fake_audio_device->Init();
   AudioState::Config audio_state_config;
@@ -48,30 +49,37 @@ CallClientFakeAudio InitAudio() {
   return setup;
 }
 
-Call* CreateCall(CallClientConfig config,
-                 LoggingNetworkControllerFactory* network_controller_factory_,
+Call* CreateCall(TimeController* time_controller,
+                 CallClientConfig config,
+                 LoggingNetworkControllerFactory* network_controller_factory,
                  rtc::scoped_refptr<AudioState> audio_state) {
-  CallConfig call_config(network_controller_factory_->GetEventLog());
+  CallConfig call_config(network_controller_factory->GetEventLog());
   call_config.bitrate_config.max_bitrate_bps =
       config.transport.rates.max_rate.bps_or(-1);
   call_config.bitrate_config.min_bitrate_bps =
       config.transport.rates.min_rate.bps();
   call_config.bitrate_config.start_bitrate_bps =
       config.transport.rates.start_rate.bps();
-  call_config.network_controller_factory = network_controller_factory_;
+  call_config.network_controller_factory = network_controller_factory;
   call_config.audio_state = audio_state;
-  return Call::Create(call_config);
+  return Call::Create(call_config, time_controller->GetClock(),
+                      time_controller->CreateProcessThread("CallModules"),
+                      time_controller->CreateProcessThread("Pacer"),
+                      time_controller->GetTaskQueueFactory());
 }
 }
 
 LoggingNetworkControllerFactory::LoggingNetworkControllerFactory(
+    TimeController* time_controller,
     LogWriterFactoryInterface* log_writer_factory,
-    TransportControllerConfig config) {
+    TransportControllerConfig config)
+    : time_controller_(time_controller) {
   std::unique_ptr<RtcEventLogOutput> cc_out;
   if (!log_writer_factory) {
     event_log_ = RtcEventLog::CreateNull();
   } else {
-    event_log_ = RtcEventLog::Create(RtcEventLog::EncodingType::Legacy);
+    event_log_ = RtcEventLog::Create(RtcEventLog::EncodingType::Legacy,
+                                     time_controller->GetTaskQueueFactory());
     bool success = event_log_->StartLogging(
         log_writer_factory->Create(".rtc.dat"), RtcEventLog::kImmediateOutput);
     RTC_CHECK(success);
@@ -118,6 +126,7 @@ LoggingNetworkControllerFactory::LoggingNetworkControllerFactory(
 }
 
 LoggingNetworkControllerFactory::~LoggingNetworkControllerFactory() {
+  time_controller_->InvokeWithControlledYield([this]() { event_log_.reset(); });
 }
 
 void LoggingNetworkControllerFactory::LogCongestionControllerStats(
@@ -140,21 +149,33 @@ TimeDelta LoggingNetworkControllerFactory::GetProcessInterval() const {
 }
 
 CallClient::CallClient(
-    Clock* clock,
+    TimeController* time_controller,
     std::unique_ptr<LogWriterFactoryInterface> log_writer_factory,
     CallClientConfig config)
-    : clock_(clock),
+    : time_controller_(time_controller),
+      clock_(time_controller->GetClock()),
       log_writer_factory_(std::move(log_writer_factory)),
-      network_controller_factory_(log_writer_factory_.get(), config.transport),
-      fake_audio_setup_(InitAudio()),
-      call_(CreateCall(config,
-                       &network_controller_factory_,
-                       fake_audio_setup_.audio_state)),
-      transport_(clock_, call_.get()),
-      header_parser_(RtpHeaderParser::Create()) {}
+      network_controller_factory_(time_controller,
+                                  log_writer_factory_.get(),
+                                  config.transport),
+      header_parser_(RtpHeaderParser::Create()),
+      task_queue_(time_controller->GetTaskQueueFactory()->CreateTaskQueue(
+          "CallClient",
+          TaskQueueFactory::Priority::NORMAL)) {
+  SendTask([this, config] {
+    fake_audio_setup_ = InitAudio(time_controller_);
+    call_.reset(CreateCall(time_controller_, config,
+                           &network_controller_factory_,
+                           fake_audio_setup_.audio_state));
+    transport_ = absl::make_unique<NetworkNodeTransport>(clock_, call_.get());
+  });
+}
 
 CallClient::~CallClient() {
-  delete header_parser_;
+  SendTask([&] {
+    call_.reset();
+    fake_audio_setup_ = {};
+  });
 }
 
 ColumnPrinter CallClient::StatsPrinter() {
@@ -185,8 +206,16 @@ void CallClient::OnPacketReceived(EmulatedIpPacket packet) {
     RTC_CHECK(ssrc.has_value());
     media_type = ssrc_media_types_[*ssrc];
   }
-  call_->Receiver()->DeliverPacket(media_type, packet.data,
-                                   packet.arrival_time.us());
+  struct Closure {
+    void operator()() {
+      call->Receiver()->DeliverPacket(media_type, packet.data,
+                                      packet.arrival_time.us());
+    }
+    Call* call;
+    MediaType media_type;
+    EmulatedIpPacket packet;
+  };
+  task_queue_.PostTask(Closure{call_.get(), media_type, std::move(packet)});
 }
 
 std::unique_ptr<RtcEventLogOutput> CallClient::GetLogWriter(std::string name) {
@@ -230,6 +259,11 @@ std::string CallClient::GetNextPriorityId() {
 void CallClient::AddExtensions(std::vector<RtpExtension> extensions) {
   for (const auto& extension : extensions)
     header_parser_->RegisterRtpHeaderExtension(extension);
+}
+
+void CallClient::SendTask(std::function<void()> task) {
+  time_controller_->InvokeWithControlledYield(
+      [&] { task_queue_.SendTask(std::move(task)); });
 }
 
 CallClientPair::~CallClientPair() = default;

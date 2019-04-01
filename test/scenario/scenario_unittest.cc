@@ -7,12 +7,15 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include <atomic>
 
 #include "test/scenario/scenario.h"
 #include "test/gtest.h"
 namespace webrtc {
 namespace test {
 TEST(ScenarioTest, StartsAndStopsWithoutErrors) {
+  std::atomic<bool> packet_received(false);
+  std::atomic<bool> bitrate_changed(false);
   Scenario s;
   CallClientConfig call_client_config;
   call_client_config.transport.rates.start_rate = DataRate::kbps(300);
@@ -38,10 +41,8 @@ TEST(ScenarioTest, StartsAndStopsWithoutErrors) {
   CrossTrafficConfig cross_traffic_config;
   s.CreateCrossTraffic({alice_net}, cross_traffic_config);
 
-  bool packet_received = false;
   s.NetworkDelayedAction({alice_net, bob_net}, 100,
                          [&packet_received] { packet_received = true; });
-  bool bitrate_changed = false;
   s.Every(TimeDelta::ms(10), [alice, bob, &bitrate_changed] {
     if (alice->GetStats().send_bandwidth_bps != 300000 &&
         bob->GetStats().send_bandwidth_bps != 300000)

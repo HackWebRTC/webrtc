@@ -245,6 +245,7 @@ void SimulatedFeedback::OnPacketReceived(EmulatedIpPacket packet) {
 }
 
 SimulatedTimeClient::SimulatedTimeClient(
+    TimeController* time_controller,
     std::unique_ptr<LogWriterFactoryInterface> log_writer_factory,
     SimulatedTimeClientConfig config,
     std::vector<PacketStreamConfig> stream_configs,
@@ -254,7 +255,9 @@ SimulatedTimeClient::SimulatedTimeClient(
     uint64_t return_receiver_id,
     Timestamp at_time)
     : log_writer_factory_(std::move(log_writer_factory)),
-      network_controller_factory_(log_writer_factory_.get(), config.transport),
+      network_controller_factory_(time_controller,
+                                  log_writer_factory_.get(),
+                                  config.transport),
       send_link_(send_link),
       return_link_(return_link),
       sender_(send_link.front(), send_receiver_id),

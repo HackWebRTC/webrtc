@@ -22,11 +22,13 @@
 #include "modules/congestion_controller/test/controller_printer.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/task_queue_for_test.h"
 #include "test/logging/log_writer.h"
 #include "test/scenario/column_printer.h"
 #include "test/scenario/network/network_emulation.h"
 #include "test/scenario/network_node.h"
 #include "test/scenario/scenario_config.h"
+#include "test/time_controller/time_controller.h"
 
 namespace webrtc {
 
@@ -34,7 +36,8 @@ namespace test {
 class LoggingNetworkControllerFactory
     : public NetworkControllerFactoryInterface {
  public:
-  LoggingNetworkControllerFactory(LogWriterFactoryInterface* log_writer_factory,
+  LoggingNetworkControllerFactory(TimeController* time_controller,
+                                  LogWriterFactoryInterface* log_writer_factory,
                                   TransportControllerConfig config);
   RTC_DISALLOW_COPY_AND_ASSIGN(LoggingNetworkControllerFactory);
   ~LoggingNetworkControllerFactory();
@@ -46,6 +49,7 @@ class LoggingNetworkControllerFactory
   RtcEventLog* GetEventLog() const;
 
  private:
+  TimeController* time_controller_;
   std::unique_ptr<RtcEventLog> event_log_;
   std::unique_ptr<NetworkControllerFactoryInterface> owned_cc_factory_;
   NetworkControllerFactoryInterface* cc_factory_ = nullptr;
@@ -62,7 +66,7 @@ struct CallClientFakeAudio {
 // stream session.
 class CallClient : public EmulatedNetworkReceiverInterface {
  public:
-  CallClient(Clock* clock,
+  CallClient(TimeController* time_controller,
              std::unique_ptr<LogWriterFactoryInterface> log_writer_factory,
              CallClientConfig config);
   RTC_DISALLOW_COPY_AND_ASSIGN(CallClient);
@@ -94,14 +98,16 @@ class CallClient : public EmulatedNetworkReceiverInterface {
   uint32_t GetNextRtxSsrc();
   std::string GetNextPriorityId();
   void AddExtensions(std::vector<RtpExtension> extensions);
+  void SendTask(std::function<void()> task);
 
+  TimeController* const time_controller_;
   Clock* clock_;
   const std::unique_ptr<LogWriterFactoryInterface> log_writer_factory_;
   LoggingNetworkControllerFactory network_controller_factory_;
   CallClientFakeAudio fake_audio_setup_;
   std::unique_ptr<Call> call_;
-  NetworkNodeTransport transport_;
-  RtpHeaderParser* const header_parser_;
+  std::unique_ptr<NetworkNodeTransport> transport_;
+  std::unique_ptr<RtpHeaderParser> const header_parser_;
 
   std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory_;
   // Stores the configured overhead per known destination endpoint. This is used
@@ -114,6 +120,8 @@ class CallClient : public EmulatedNetworkReceiverInterface {
   int next_audio_local_ssrc_index_ = 0;
   int next_priority_index_ = 0;
   std::map<uint32_t, MediaType> ssrc_media_types_;
+  // Defined last so it's destroyed first.
+  TaskQueueForTest task_queue_;
 };
 
 class CallClientPair {
