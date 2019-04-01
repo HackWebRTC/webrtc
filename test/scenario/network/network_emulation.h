@@ -68,6 +68,52 @@ class EmulatedNetworkReceiverInterface {
   virtual void OnPacketReceived(EmulatedIpPacket packet) = 0;
 };
 
+class LinkEmulation : public EmulatedNetworkReceiverInterface {
+ public:
+  LinkEmulation(Clock* clock,
+                rtc::TaskQueue* task_queue,
+                std::unique_ptr<NetworkBehaviorInterface> network_behavior,
+                EmulatedNetworkReceiverInterface* receiver)
+      : clock_(clock),
+        task_queue_(task_queue),
+        network_behavior_(std::move(network_behavior)),
+        receiver_(receiver) {}
+  void OnPacketReceived(EmulatedIpPacket packet) override;
+
+ private:
+  struct StoredPacket {
+    uint64_t id;
+    EmulatedIpPacket packet;
+    bool removed;
+  };
+  void Process(Timestamp at_time) RTC_RUN_ON(task_queue_);
+  void HandlePacketReceived(EmulatedIpPacket packet) RTC_RUN_ON(task_queue_);
+
+  Clock* const clock_;
+  rtc::TaskQueue* const task_queue_;
+  const std::unique_ptr<NetworkBehaviorInterface> network_behavior_
+      RTC_GUARDED_BY(task_queue_);
+  EmulatedNetworkReceiverInterface* const receiver_;
+  RepeatingTaskHandle process_task_ RTC_GUARDED_BY(task_queue_);
+  std::deque<StoredPacket> packets_ RTC_GUARDED_BY(task_queue_);
+  uint64_t next_packet_id_ RTC_GUARDED_BY(task_queue_) = 1;
+};
+
+class NetworkRouterNode : public EmulatedNetworkReceiverInterface {
+ public:
+  explicit NetworkRouterNode(rtc::TaskQueue* task_queue);
+
+  void OnPacketReceived(EmulatedIpPacket packet) override;
+  void SetReceiver(rtc::IPAddress dest_ip,
+                   EmulatedNetworkReceiverInterface* receiver);
+  void RemoveReceiver(rtc::IPAddress dest_ip);
+
+ private:
+  rtc::TaskQueue* const task_queue_;
+  std::map<rtc::IPAddress, EmulatedNetworkReceiverInterface*> routing_
+      RTC_GUARDED_BY(task_queue_);
+};
+
 // Represents node in the emulated network. Nodes can be connected with each
 // other to form different networks with different behavior. The behavior of
 // the node itself is determined by a concrete implementation of
@@ -79,7 +125,7 @@ class EmulatedNetworkNode : public EmulatedNetworkReceiverInterface {
   // |network_behavior|.
   // |task_queue| is used to process packets and to forward the packets when
   // they are ready.
-  explicit EmulatedNetworkNode(
+  EmulatedNetworkNode(
       Clock* clock,
       rtc::TaskQueue* task_queue,
       std::unique_ptr<NetworkBehaviorInterface> network_behavior);
@@ -87,9 +133,9 @@ class EmulatedNetworkNode : public EmulatedNetworkReceiverInterface {
   RTC_DISALLOW_COPY_AND_ASSIGN(EmulatedNetworkNode);
 
   void OnPacketReceived(EmulatedIpPacket packet) override;
-  void SetReceiver(rtc::IPAddress dest_ip,
-                   EmulatedNetworkReceiverInterface* receiver);
-  void RemoveReceiver(rtc::IPAddress dest_ip);
+
+  LinkEmulation* link() { return &link_; }
+  NetworkRouterNode* router() { return &router_; }
 
   // Creates a route for the given receiver_ip over all the given nodes to the
   // given receiver.
@@ -100,23 +146,8 @@ class EmulatedNetworkNode : public EmulatedNetworkReceiverInterface {
                          std::vector<EmulatedNetworkNode*> nodes);
 
  private:
-  void Process(Timestamp at_time) RTC_RUN_ON(task_queue_);
-  void HandlePacketReceived(EmulatedIpPacket packet) RTC_RUN_ON(task_queue_);
-  struct StoredPacket {
-    uint64_t id;
-    EmulatedIpPacket packet;
-    bool removed;
-  };
-  Clock* const clock_;
-  rtc::TaskQueue* const task_queue_;
-  RepeatingTaskHandle process_task_;
-  std::map<rtc::IPAddress, EmulatedNetworkReceiverInterface*> routing_
-      RTC_GUARDED_BY(task_queue_);
-  const std::unique_ptr<NetworkBehaviorInterface> network_behavior_
-      RTC_GUARDED_BY(task_queue_);
-  std::deque<StoredPacket> packets_ RTC_GUARDED_BY(task_queue_);
-
-  uint64_t next_packet_id_ RTC_GUARDED_BY(task_queue_) = 1;
+  NetworkRouterNode router_;
+  LinkEmulation link_;
 };
 
 // Represents single network interface on the device.

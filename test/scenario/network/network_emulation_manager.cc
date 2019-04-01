@@ -112,10 +112,10 @@ EmulatedRoute* NetworkEmulationManagerImpl::CreateRoute(
   from->SetSendNode(via_nodes[0]);
   EmulatedNetworkNode* cur_node = via_nodes[0];
   for (size_t i = 1; i < via_nodes.size(); ++i) {
-    cur_node->SetReceiver(to->GetPeerLocalAddress(), via_nodes[i]);
+    cur_node->router()->SetReceiver(to->GetPeerLocalAddress(), via_nodes[i]);
     cur_node = via_nodes[i];
   }
-  cur_node->SetReceiver(to->GetPeerLocalAddress(), to);
+  cur_node->router()->SetReceiver(to->GetPeerLocalAddress(), to);
 
   std::unique_ptr<EmulatedRoute> route =
       absl::make_unique<EmulatedRoute>(from, std::move(via_nodes), to);
@@ -129,11 +129,11 @@ void NetworkEmulationManagerImpl::ClearRoute(EmulatedRoute* route) {
   task_queue_.SendTask([route]() {
     // Remove receiver from intermediate nodes.
     for (auto* node : route->via_nodes) {
-      node->RemoveReceiver(route->to->GetPeerLocalAddress());
+      node->router()->RemoveReceiver(route->to->GetPeerLocalAddress());
     }
     // Detach endpoint from current send node.
     if (route->from->GetSendNode()) {
-      route->from->GetSendNode()->RemoveReceiver(
+      route->from->GetSendNode()->router()->RemoveReceiver(
           route->to->GetPeerLocalAddress());
       route->from->SetSendNode(nullptr);
     }
@@ -150,10 +150,11 @@ TrafficRoute* NetworkEmulationManagerImpl::CreateTrafficRoute(
   // Setup a route via specified nodes.
   EmulatedNetworkNode* cur_node = via_nodes[0];
   for (size_t i = 1; i < via_nodes.size(); ++i) {
-    cur_node->SetReceiver(endpoint->GetPeerLocalAddress(), via_nodes[i]);
+    cur_node->router()->SetReceiver(endpoint->GetPeerLocalAddress(),
+                                    via_nodes[i]);
     cur_node = via_nodes[i];
   }
-  cur_node->SetReceiver(endpoint->GetPeerLocalAddress(), endpoint);
+  cur_node->router()->SetReceiver(endpoint->GetPeerLocalAddress(), endpoint);
 
   std::unique_ptr<TrafficRoute> traffic_route =
       absl::make_unique<TrafficRoute>(clock_, via_nodes[0], endpoint);
