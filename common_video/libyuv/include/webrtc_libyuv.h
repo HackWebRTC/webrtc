@@ -77,6 +77,11 @@ int ConvertFromI420(const VideoFrame& src_frame,
                     int dst_sample_size,
                     uint8_t* dst_frame);
 
+rtc::scoped_refptr<I420BufferInterface> ScaleVideoFrameBuffer(
+    const I420BufferInterface& source,
+    int dst_width,
+    int dst_height);
+
 double I420SSE(const I420BufferInterface& ref_buffer,
                const I420BufferInterface& test_buffer);
 

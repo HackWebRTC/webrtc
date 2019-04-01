@@ -201,6 +201,16 @@ rtc::scoped_refptr<I420ABufferInterface> ScaleI420ABuffer(
   return merged_buffer;
 }
 
+rtc::scoped_refptr<I420BufferInterface> ScaleVideoFrameBuffer(
+    const I420BufferInterface& source,
+    int dst_width,
+    int dst_height) {
+  rtc::scoped_refptr<I420Buffer> scaled_buffer =
+      I420Buffer::Create(dst_width, dst_height);
+  scaled_buffer->ScaleFrom(source);
+  return scaled_buffer;
+}
+
 double I420SSE(const I420BufferInterface& ref_buffer,
                const I420BufferInterface& test_buffer) {
   RTC_DCHECK_EQ(ref_buffer.width(), test_buffer.width());
