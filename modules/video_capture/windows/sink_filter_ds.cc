@@ -236,7 +236,27 @@ bool TranslateMediaTypeToVideoCaptureCapability(
 class MediaTypesEnum : public IEnumMediaTypes {
  public:
   MediaTypesEnum(const VideoCaptureCapability& capability)
-      : capability_(capability) {}
+      : capability_(capability),
+        format_preference_order_(
+            {// Default preferences, sorted by cost-to-convert-to-i420.
+             VideoType::kI420, VideoType::kYUY2, VideoType::kRGB24,
+             VideoType::kUYVY, VideoType::kMJPEG}) {
+    // Use the preferred video type, if supported.
+    auto it = std::find(format_preference_order_.begin(),
+                        format_preference_order_.end(), capability_.videoType);
+    if (it != format_preference_order_.end()) {
+      RTC_LOG(LS_INFO) << "Selected video type: " << *it;
+      // Move it to the front of the list, if it isn't already there.
+      if (it != format_preference_order_.begin()) {
+        format_preference_order_.splice(format_preference_order_.begin(),
+                                        format_preference_order_, it,
+                                        std::next(it));
+      }
+    } else {
+      RTC_LOG(LS_WARNING) << "Unsupported video type: " << *it
+                          << ", using default preference list.";
+    }
+  }
 
  protected:
   virtual ~MediaTypesEnum() {}
@@ -264,10 +284,9 @@ class MediaTypesEnum : public IEnumMediaTypes {
     if (fetched)
       *fetched = 0;
 
-    // Note, must match switch statement below.
-    constexpr int kNumTypes = 5;
-
-    for (ULONG i = 0; i < count && pos_ < kNumTypes; ++i) {
+    for (ULONG i = 0;
+         i < count && pos_ < static_cast<int>(format_preference_order_.size());
+         ++i) {
       AM_MEDIA_TYPE* media_type = reinterpret_cast<AM_MEDIA_TYPE*>(
           CoTaskMemAlloc(sizeof(AM_MEDIA_TYPE)));
       ZeroMemory(media_type, sizeof(*media_type));
@@ -289,39 +308,9 @@ class MediaTypesEnum : public IEnumMediaTypes {
       media_type->formattype = FORMAT_VideoInfo;
       media_type->bTemporalCompression = FALSE;
 
-      switch (pos_++) {
-        case 0:
-          // Note: The previous implementation had a bug that caused this
-          // format to always be omitted. Perhaps including it now will have
-          // a sideffect.
-          vih->bmiHeader.biCompression = MAKEFOURCC('I', '4', '2', '0');
-          vih->bmiHeader.biBitCount = 12;  // bit per pixel
-          media_type->subtype = MEDIASUBTYPE_I420;
-          break;
-        case 1:
-          vih->bmiHeader.biCompression = MAKEFOURCC('Y', 'U', 'Y', '2');
-          vih->bmiHeader.biBitCount = 16;  // bit per pixel
-          media_type->subtype = MEDIASUBTYPE_YUY2;
-          break;
-        case 2:
-          vih->bmiHeader.biCompression = BI_RGB;
-          vih->bmiHeader.biBitCount = 24;  // bit per pixel
-          media_type->subtype = MEDIASUBTYPE_RGB24;
-          break;
-        case 3:
-          vih->bmiHeader.biCompression = MAKEFOURCC('U', 'Y', 'V', 'Y');
-          vih->bmiHeader.biBitCount = 16;  // bit per pixel
-          media_type->subtype = MEDIASUBTYPE_UYVY;
-          break;
-        case 4:
-          vih->bmiHeader.biCompression = MAKEFOURCC('M', 'J', 'P', 'G');
-          vih->bmiHeader.biBitCount = 12;  // bit per pixel
-          media_type->subtype = MEDIASUBTYPE_MJPG;
-          break;
-        default:
-          RTC_NOTREACHED();
-          break;
-      }
+      // Set format information.
+      auto format_it = std::next(format_preference_order_.begin(), pos_++);
+      SetMediaInfoFromVideoType(*format_it, &vih->bmiHeader, media_type);
 
       vih->bmiHeader.biWidth = capability_.width;
       vih->bmiHeader.biHeight = capability_.height;
@@ -335,8 +324,42 @@ class MediaTypesEnum : public IEnumMediaTypes {
       if (fetched)
         ++(*fetched);
     }
-    RTC_DCHECK(pos_ <= kNumTypes);
-    return pos_ == kNumTypes ? S_FALSE : S_OK;
+    return pos_ == static_cast<int>(format_preference_order_.size()) ? S_FALSE
+                                                                     : S_OK;
+  }
+
+  static void SetMediaInfoFromVideoType(VideoType video_type,
+                                        BITMAPINFOHEADER* bitmap_header,
+                                        AM_MEDIA_TYPE* media_type) {
+    switch (video_type) {
+      case VideoType::kI420:
+        bitmap_header->biCompression = MAKEFOURCC('I', '4', '2', '0');
+        bitmap_header->biBitCount = 12;  // bit per pixel
+        media_type->subtype = MEDIASUBTYPE_I420;
+        break;
+      case VideoType::kYUY2:
+        bitmap_header->biCompression = MAKEFOURCC('Y', 'U', 'Y', '2');
+        bitmap_header->biBitCount = 16;  // bit per pixel
+        media_type->subtype = MEDIASUBTYPE_YUY2;
+        break;
+      case VideoType::kRGB24:
+        bitmap_header->biCompression = BI_RGB;
+        bitmap_header->biBitCount = 24;  // bit per pixel
+        media_type->subtype = MEDIASUBTYPE_RGB24;
+        break;
+      case VideoType::kUYVY:
+        bitmap_header->biCompression = MAKEFOURCC('U', 'Y', 'V', 'Y');
+        bitmap_header->biBitCount = 16;  // bit per pixel
+        media_type->subtype = MEDIASUBTYPE_UYVY;
+        break;
+      case VideoType::kMJPEG:
+        bitmap_header->biCompression = MAKEFOURCC('M', 'J', 'P', 'G');
+        bitmap_header->biBitCount = 12;  // bit per pixel
+        media_type->subtype = MEDIASUBTYPE_MJPG;
+        break;
+      default:
+        RTC_NOTREACHED();
+    }
   }
 
   STDMETHOD(Skip)(ULONG count) {
@@ -351,6 +374,7 @@ class MediaTypesEnum : public IEnumMediaTypes {
 
   int pos_ = 0;
   const VideoCaptureCapability capability_;
+  std::list<VideoType> format_preference_order_;
 };
 
 }  // namespace
