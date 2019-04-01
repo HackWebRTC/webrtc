@@ -12,7 +12,6 @@
 #define MODULES_AUDIO_PROCESSING_AGC2_RNN_VAD_TEST_UTILS_H_
 
 #include <algorithm>
-#include <array>
 #include <fstream>
 #include <limits>
 #include <memory>
@@ -21,7 +20,6 @@
 #include <vector>
 
 #include "api/array_view.h"
-#include "modules/audio_processing/agc2/rnn_vad/common.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -119,27 +117,6 @@ CreateSilenceFlagsFeatureMatrixReader();
 // Creates a reader for the VAD probabilities.
 std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
 CreateVadProbsReader();
-
-constexpr size_t kNumPitchBufAutoCorrCoeffs = 147;
-constexpr size_t kNumPitchBufSquareEnergies = 385;
-constexpr size_t kPitchTestDataSize =
-    kBufSize24kHz + kNumPitchBufSquareEnergies + kNumPitchBufAutoCorrCoeffs;
-
-// Class to retrieve a test pitch buffer content and the expected output for the
-// analysis steps.
-class PitchTestData {
- public:
-  PitchTestData();
-  ~PitchTestData();
-  rtc::ArrayView<const float, kBufSize24kHz> GetPitchBufView();
-  rtc::ArrayView<const float, kNumPitchBufSquareEnergies>
-  GetPitchBufSquareEnergiesView();
-  rtc::ArrayView<const float, kNumPitchBufAutoCorrCoeffs>
-  GetPitchBufAutoCorrCoeffsView();
-
- private:
-  std::array<float, kPitchTestDataSize> test_data_;
-};
 
 }  // namespace test
 }  // namespace rnn_vad

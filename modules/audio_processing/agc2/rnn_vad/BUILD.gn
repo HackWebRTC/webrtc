@@ -11,8 +11,6 @@ import("../../../../webrtc.gni")
 rtc_source_set("rnn_vad") {
   visibility = [ "../*" ]
   sources = [
-    "auto_correlation.cc",
-    "auto_correlation.h",
     "common.h",
     "features_extraction.cc",
     "features_extraction.h",
@@ -39,9 +37,9 @@ rtc_source_set("rnn_vad") {
     "..:biquad_filter",
     "../../../../api:array_view",
     "../../../../api:function_view",
+    "../../../../common_audio/",
     "../../../../rtc_base:checks",
     "../../../../rtc_base:rtc_base_approved",
-    "../../utility:pffft_wrapper",
     "//third_party/rnnoise:kiss_fft",
     "//third_party/rnnoise:rnn_vad",
   ]
@@ -55,7 +53,6 @@ if (rtc_include_tests) {
       "test_utils.h",
     ]
     deps = [
-      ":rnn_vad",
       "../../../../api:array_view",
       "../../../../api:scoped_refptr",
       "../../../../rtc_base:checks",
@@ -89,7 +86,6 @@ if (rtc_include_tests) {
   rtc_source_set("unittests") {
     testonly = true
     sources = [
-      "auto_correlation_unittest.cc",
       "features_extraction_unittest.cc",
       "fft_util_unittest.cc",
       "lp_residual_unittest.cc",
