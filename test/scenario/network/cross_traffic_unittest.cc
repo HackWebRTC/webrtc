@@ -21,81 +21,42 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/scenario/network/cross_traffic.h"
-#include "test/scenario/network/network_emulation.h"
-#include "test/scenario/network/network_emulation_manager.h"
 
 namespace webrtc {
 namespace test {
 namespace {
 
-class CountingBehavior : public NetworkBehaviorInterface {
+class CountingReceiver : public EmulatedNetworkReceiverInterface {
  public:
-  bool EnqueuePacket(PacketInFlightInfo packet_info) override {
-    packets_to_send_.push_back(packet_info);
-    return true;
+  void OnPacketReceived(EmulatedIpPacket packet) override {
+    packets_count_++;
+    total_packets_size_ += packet.size();
   }
-
-  std::vector<PacketDeliveryInfo> DequeueDeliverablePackets(
-      int64_t receive_time_us) override {
-    std::vector<PacketDeliveryInfo> out;
-    for (auto packet : packets_to_send_) {
-      // we want to count packets, that went through this behavior.
-      packets_count_++;
-      total_packets_size_ += packet.size;
-      out.push_back(PacketDeliveryInfo(packet, receive_time_us));
-    }
-    packets_to_send_.clear();
-    return out;
-  }
-
-  absl::optional<int64_t> NextDeliveryTimeUs() const override { return 1000; }
-
-  int packets_count() const { return packets_count_; }
-  uint64_t total_packets_size() const { return total_packets_size_; }
-
- private:
-  std::vector<PacketInFlightInfo> packets_to_send_;
 
   std::atomic<int> packets_count_{0};
   std::atomic<uint64_t> total_packets_size_{0};
+};
+struct TrafficCounterFixture {
+  SimulatedClock clock{0};
+  CountingReceiver counter;
+  EmulatedEndpoint endpoint{1 /*id */, rtc::IPAddress(), true /*is_enabled*/,
+                            &clock};
 };
 
 }  // namespace
 
 TEST(CrossTrafficTest, TriggerPacketBurst) {
-  NetworkEmulationManagerImpl network_manager;
+  TrafficCounterFixture fixture;
+  TrafficRoute traffic(&fixture.clock, &fixture.counter, &fixture.endpoint);
+  traffic.TriggerPacketBurst(100, 1000);
 
-  std::unique_ptr<CountingBehavior> behavior =
-      absl::make_unique<CountingBehavior>();
-  CountingBehavior* counter = behavior.get();
-
-  EmulatedNetworkNode* node_a = network_manager.CreateEmulatedNode(
-      absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
-  EmulatedNetworkNode* node_b =
-      network_manager.CreateEmulatedNode(std::move(behavior));
-
-  TrafficRoute* traffic = network_manager.CreateTrafficRoute({node_a, node_b});
-
-  traffic->TriggerPacketBurst(100, 1000);
-
-  rtc::Event event;
-  event.Wait(1000);
-
-  EXPECT_EQ(counter->packets_count(), 100);
-  EXPECT_EQ(counter->total_packets_size(), 100 * 1000ul);
+  EXPECT_EQ(fixture.counter.packets_count_, 100);
+  EXPECT_EQ(fixture.counter.total_packets_size_, 100 * 1000ul);
 }
 
 TEST(CrossTrafficTest, PulsedPeaksCrossTraffic) {
-  NetworkEmulationManagerImpl network_manager;
-
-  std::unique_ptr<CountingBehavior> behavior =
-      absl::make_unique<CountingBehavior>();
-  CountingBehavior* counter = behavior.get();
-
-  EmulatedNetworkNode* node_a = network_manager.CreateEmulatedNode(
-      absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
-  EmulatedNetworkNode* node_b =
-      network_manager.CreateEmulatedNode(std::move(behavior));
+  TrafficCounterFixture fixture;
+  TrafficRoute traffic(&fixture.clock, &fixture.counter, &fixture.endpoint);
 
   PulsedPeaksConfig config;
   config.peak_rate = DataRate::kbps(1000);
@@ -103,32 +64,24 @@ TEST(CrossTrafficTest, PulsedPeaksCrossTraffic) {
   config.min_packet_interval = TimeDelta::ms(25);
   config.send_duration = TimeDelta::ms(500);
   config.hold_duration = TimeDelta::ms(250);
-  TrafficRoute* traffic = network_manager.CreateTrafficRoute({node_a, node_b});
-  network_manager.CreatePulsedPeaksCrossTraffic(traffic, config);
+  PulsedPeaksCrossTraffic pulsed_peaks(config, &traffic);
   const auto kRunTime = TimeDelta::seconds(1);
+  while (fixture.clock.TimeInMilliseconds() < kRunTime.ms()) {
+    pulsed_peaks.Process(Timestamp::ms(fixture.clock.TimeInMilliseconds()));
+    fixture.clock.AdvanceTimeMilliseconds(1);
+  }
 
-  rtc::Event event;
-  event.Wait(kRunTime.ms());
-
-  RTC_LOG(INFO) << counter->packets_count() << " packets; "
-                << counter->total_packets_size() << " bytes";
+  RTC_LOG(INFO) << fixture.counter.packets_count_ << " packets; "
+                << fixture.counter.total_packets_size_ << " bytes";
   // Using 50% duty cycle.
   const auto kExpectedDataSent = kRunTime * config.peak_rate * 0.5;
-  EXPECT_NEAR(counter->total_packets_size(), kExpectedDataSent.bytes(),
+  EXPECT_NEAR(fixture.counter.total_packets_size_, kExpectedDataSent.bytes(),
               kExpectedDataSent.bytes() * 0.1);
 }
 
 TEST(CrossTrafficTest, RandomWalkCrossTraffic) {
-  NetworkEmulationManagerImpl network_manager;
-
-  std::unique_ptr<CountingBehavior> behavior =
-      absl::make_unique<CountingBehavior>();
-  CountingBehavior* counter = behavior.get();
-
-  EmulatedNetworkNode* node_a = network_manager.CreateEmulatedNode(
-      absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
-  EmulatedNetworkNode* node_b =
-      network_manager.CreateEmulatedNode(std::move(behavior));
+  TrafficCounterFixture fixture;
+  TrafficRoute traffic(&fixture.clock, &fixture.counter, &fixture.endpoint);
 
   RandomWalkConfig config;
   config.peak_rate = DataRate::kbps(1000);
@@ -137,18 +90,19 @@ TEST(CrossTrafficTest, RandomWalkCrossTraffic) {
   config.update_interval = TimeDelta::ms(500);
   config.variance = 0.0;
   config.bias = 1.0;
-  TrafficRoute* traffic = network_manager.CreateTrafficRoute({node_a, node_b});
-  network_manager.CreateRandomWalkCrossTraffic(traffic, config);
+
+  RandomWalkCrossTraffic random_walk(config, &traffic);
   const auto kRunTime = TimeDelta::seconds(1);
+  while (fixture.clock.TimeInMilliseconds() < kRunTime.ms()) {
+    random_walk.Process(Timestamp::ms(fixture.clock.TimeInMilliseconds()));
+    fixture.clock.AdvanceTimeMilliseconds(1);
+  }
 
-  rtc::Event event;
-  event.Wait(kRunTime.ms());
-
-  RTC_LOG(INFO) << counter->packets_count() << " packets; "
-                << counter->total_packets_size() << " bytes";
+  RTC_LOG(INFO) << fixture.counter.packets_count_ << " packets; "
+                << fixture.counter.total_packets_size_ << " bytes";
   // Sending at peak rate since bias = 1.
   const auto kExpectedDataSent = kRunTime * config.peak_rate;
-  EXPECT_NEAR(counter->total_packets_size(), kExpectedDataSent.bytes(),
+  EXPECT_NEAR(fixture.counter.total_packets_size_, kExpectedDataSent.bytes(),
               kExpectedDataSent.bytes() * 0.1);
 }
 

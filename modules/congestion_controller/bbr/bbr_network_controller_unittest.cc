@@ -118,7 +118,7 @@ TEST_F(BbrNetworkControllerTest, SendsConfigurationOnNetworkRouteChanged) {
 TEST_F(BbrNetworkControllerTest, UpdatesTargetSendRate) {
   BbrNetworkControllerFactory factory;
   Scenario s("bbr_unit/updates_rate", false);
-  SimulatedTimeClientConfig config;
+  CallClientConfig config;
   config.transport.cc =
       TransportControllerConfig::CongestionController::kInjected;
   config.transport.cc_factory = &factory;
@@ -136,11 +136,14 @@ TEST_F(BbrNetworkControllerTest, UpdatesTargetSendRate) {
     c->simulation.delay = TimeDelta::ms(100);
     c->update_frequency = TimeDelta::ms(5);
   });
-  SimulatedTimeClient* client = s.CreateSimulatedTimeClient(
-      "send", config, {PacketStreamConfig()}, {send_net}, {ret_net});
+  auto* client = s.CreateClient("send", config);
+  auto routes =
+      s.CreateRoutes(client, {send_net},
+                     s.CreateClient("recv", CallClientConfig()), {ret_net});
+  s.CreateVideoStream(routes->forward(), VideoStreamConfig());
 
   s.RunFor(TimeDelta::seconds(25));
-  EXPECT_NEAR(client->target_rate_kbps(), 450, 100);
+  EXPECT_NEAR(client->send_bandwidth().kbps(), 450, 100);
 
   send_net->UpdateConfig([](NetworkNodeConfig* c) {
     c->simulation.bandwidth = DataRate::kbps(800);
@@ -148,7 +151,7 @@ TEST_F(BbrNetworkControllerTest, UpdatesTargetSendRate) {
   });
 
   s.RunFor(TimeDelta::seconds(20));
-  EXPECT_NEAR(client->target_rate_kbps(), 750, 150);
+  EXPECT_NEAR(client->send_bandwidth().kbps(), 750, 150);
 
   send_net->UpdateConfig([](NetworkNodeConfig* c) {
     c->simulation.bandwidth = DataRate::kbps(200);
@@ -158,7 +161,7 @@ TEST_F(BbrNetworkControllerTest, UpdatesTargetSendRate) {
       [](NetworkNodeConfig* c) { c->simulation.delay = TimeDelta::ms(200); });
 
   s.RunFor(TimeDelta::seconds(40));
-  EXPECT_NEAR(client->target_rate_kbps(), 200, 40);
+  EXPECT_NEAR(client->send_bandwidth().kbps(), 200, 40);
 }
 
 }  // namespace test

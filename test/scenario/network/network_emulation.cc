@@ -48,13 +48,28 @@ void EmulatedNetworkNode::ClearRoute(rtc::IPAddress receiver_ip,
 }
 
 EmulatedNetworkNode::EmulatedNetworkNode(
+    Clock* clock,
+    rtc::TaskQueue* task_queue,
     std::unique_ptr<NetworkBehaviorInterface> network_behavior)
-    : network_behavior_(std::move(network_behavior)) {}
+    : clock_(clock),
+      task_queue_(task_queue),
+      network_behavior_(std::move(network_behavior)) {}
 
 EmulatedNetworkNode::~EmulatedNetworkNode() = default;
 
 void EmulatedNetworkNode::OnPacketReceived(EmulatedIpPacket packet) {
-  rtc::CritScope crit(&lock_);
+  struct Closure {
+    void operator()() {
+      RTC_DCHECK_RUN_ON(node->task_queue_);
+      node->HandlePacketReceived(std::move(packet));
+    }
+    EmulatedNetworkNode* node;
+    EmulatedIpPacket packet;
+  };
+  task_queue_->PostTask(Closure{this, std::move(packet)});
+}
+
+void EmulatedNetworkNode::HandlePacketReceived(EmulatedIpPacket packet) {
   if (routing_.find(packet.to.ipaddr()) == routing_.end()) {
     return;
   }
@@ -64,48 +79,55 @@ void EmulatedNetworkNode::OnPacketReceived(EmulatedIpPacket packet) {
   if (sent) {
     packets_.emplace_back(StoredPacket{packet_id, std::move(packet), false});
   }
+  if (process_task_.Running())
+    return;
+  absl::optional<int64_t> next_time_us =
+      network_behavior_->NextDeliveryTimeUs();
+  if (!next_time_us)
+    return;
+  Timestamp current_time = Timestamp::us(clock_->TimeInMicroseconds());
+  process_task_ = RepeatingTaskHandle::DelayedStart(
+      task_queue_->Get(),
+      std::max(TimeDelta::Zero(), Timestamp::us(*next_time_us) - current_time),
+      [this]() {
+        RTC_DCHECK_RUN_ON(task_queue_);
+        Timestamp current_time = Timestamp::us(clock_->TimeInMicroseconds());
+        Process(current_time);
+        absl::optional<int64_t> next_time_us =
+            network_behavior_->NextDeliveryTimeUs();
+        if (!next_time_us) {
+          process_task_.Stop();
+          return TimeDelta::Zero();  // This is ignored.
+        }
+        RTC_DCHECK_GE(*next_time_us, current_time.us());
+        return Timestamp::us(*next_time_us) - current_time;
+      });
 }
 
 void EmulatedNetworkNode::Process(Timestamp at_time) {
-  std::vector<PacketDeliveryInfo> delivery_infos;
-  {
-    rtc::CritScope crit(&lock_);
-    absl::optional<int64_t> delivery_us =
-        network_behavior_->NextDeliveryTimeUs();
-    if (delivery_us && *delivery_us > at_time.us())
-      return;
-
-    delivery_infos = network_behavior_->DequeueDeliverablePackets(at_time.us());
-  }
+  std::vector<PacketDeliveryInfo> delivery_infos =
+      network_behavior_->DequeueDeliverablePackets(at_time.us());
   for (PacketDeliveryInfo& delivery_info : delivery_infos) {
     StoredPacket* packet = nullptr;
-    EmulatedNetworkReceiverInterface* receiver = nullptr;
-    {
-      rtc::CritScope crit(&lock_);
-      for (auto& stored_packet : packets_) {
-        if (stored_packet.id == delivery_info.packet_id) {
-          packet = &stored_packet;
-          break;
-        }
+    for (auto& stored_packet : packets_) {
+      if (stored_packet.id == delivery_info.packet_id) {
+        packet = &stored_packet;
+        break;
       }
-      RTC_CHECK(packet);
-      RTC_DCHECK(!packet->removed);
-      receiver = routing_[packet->packet.to.ipaddr()];
-      packet->removed = true;
     }
-    RTC_CHECK(receiver);
-    // We don't want to keep the lock here. Otherwise we would get a deadlock if
-    // the receiver tries to push a new packet.
+    RTC_CHECK(packet);
+    RTC_DCHECK(!packet->removed);
+    auto receiver_it = routing_.find(packet->packet.to.ipaddr());
+    RTC_CHECK(receiver_it != routing_.end());
+    packet->removed = true;
+
     if (delivery_info.receive_time_us != PacketDeliveryInfo::kNotReceived) {
       packet->packet.arrival_time =
           Timestamp::us(delivery_info.receive_time_us);
-      receiver->OnPacketReceived(std::move(packet->packet));
+      receiver_it->second->OnPacketReceived(std::move(packet->packet));
     }
-    {
-      rtc::CritScope crit(&lock_);
-      while (!packets_.empty() && packets_.front().removed) {
-        packets_.pop_front();
-      }
+    while (!packets_.empty() && packets_.front().removed) {
+      packets_.pop_front();
     }
   }
 }
@@ -113,15 +135,17 @@ void EmulatedNetworkNode::Process(Timestamp at_time) {
 void EmulatedNetworkNode::SetReceiver(
     rtc::IPAddress dest_ip,
     EmulatedNetworkReceiverInterface* receiver) {
-  rtc::CritScope crit(&lock_);
-  EmulatedNetworkReceiverInterface* cur_receiver = routing_[dest_ip];
-  RTC_CHECK(cur_receiver == nullptr || cur_receiver == receiver)
-      << "Routing for dest_ip=" << dest_ip.ToString() << " already exists";
-  routing_[dest_ip] = receiver;
+  task_queue_->PostTask([=] {
+    RTC_DCHECK_RUN_ON(task_queue_);
+    EmulatedNetworkReceiverInterface* cur_receiver = routing_[dest_ip];
+    RTC_CHECK(cur_receiver == nullptr || cur_receiver == receiver)
+        << "Routing for dest_ip=" << dest_ip.ToString() << " already exists";
+    routing_[dest_ip] = receiver;
+  });
 }
 
 void EmulatedNetworkNode::RemoveReceiver(rtc::IPAddress dest_ip) {
-  rtc::CritScope crit(&lock_);
+  RTC_DCHECK_RUN_ON(task_queue_);
   routing_.erase(dest_ip);
 }
 

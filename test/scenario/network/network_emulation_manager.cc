@@ -48,8 +48,8 @@ NetworkEmulationManagerImpl::~NetworkEmulationManagerImpl() = default;
 
 EmulatedNetworkNode* NetworkEmulationManagerImpl::CreateEmulatedNode(
     std::unique_ptr<NetworkBehaviorInterface> network_behavior) {
-  auto node =
-      absl::make_unique<EmulatedNetworkNode>(std::move(network_behavior));
+  auto node = absl::make_unique<EmulatedNetworkNode>(
+      clock_, &task_queue_, std::move(network_behavior));
   EmulatedNetworkNode* out = node.get();
 
   struct Closure {
@@ -126,19 +126,20 @@ EmulatedRoute* NetworkEmulationManagerImpl::CreateRoute(
 
 void NetworkEmulationManagerImpl::ClearRoute(EmulatedRoute* route) {
   RTC_CHECK(route->active) << "Route already cleared";
+  task_queue_.SendTask([route]() {
+    // Remove receiver from intermediate nodes.
+    for (auto* node : route->via_nodes) {
+      node->RemoveReceiver(route->to->GetPeerLocalAddress());
+    }
+    // Detach endpoint from current send node.
+    if (route->from->GetSendNode()) {
+      route->from->GetSendNode()->RemoveReceiver(
+          route->to->GetPeerLocalAddress());
+      route->from->SetSendNode(nullptr);
+    }
 
-  // Remove receiver from intermediate nodes.
-  for (auto* node : route->via_nodes) {
-    node->RemoveReceiver(route->to->GetPeerLocalAddress());
-  }
-  // Detach endpoint from current send node.
-  if (route->from->GetSendNode()) {
-    route->from->GetSendNode()->RemoveReceiver(
-        route->to->GetPeerLocalAddress());
-    route->from->SetSendNode(nullptr);
-  }
-
-  route->active = false;
+    route->active = false;
+  });
 }
 
 TrafficRoute* NetworkEmulationManagerImpl::CreateTrafficRoute(
@@ -244,9 +245,6 @@ void NetworkEmulationManagerImpl::ProcessNetworkPackets() {
   }
   for (auto& traffic : pulsed_cross_traffics_) {
     traffic->Process(current_time);
-  }
-  for (auto& node : network_nodes_) {
-    node->Process(current_time);
   }
 }
 

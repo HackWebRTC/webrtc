@@ -78,6 +78,8 @@ Scenario::Scenario(
 Scenario::~Scenario() {
   if (start_time_.IsFinite())
     Stop();
+  for (auto& call_client : clients_)
+    call_client->transport_->Disconnect();
 }
 
 ColumnPrinter Scenario::TimePrinter() {
@@ -198,21 +200,17 @@ SimulationNode* Scenario::CreateSimulationNode(
 
 SimulationNode* Scenario::CreateSimulationNode(NetworkNodeConfig config) {
   RTC_DCHECK(config.mode == NetworkNodeConfig::TrafficMode::kSimulation);
-  auto network_node = SimulationNode::Create(config);
+  auto network_node = SimulationNode::Create(clock_, &task_queue_, config);
   SimulationNode* sim_node = network_node.get();
   network_nodes_.emplace_back(std::move(network_node));
-  Every(config.update_frequency,
-        [this, sim_node] { sim_node->Process(Now()); });
   return sim_node;
 }
 
 EmulatedNetworkNode* Scenario::CreateNetworkNode(
     std::unique_ptr<NetworkBehaviorInterface> behavior) {
-  network_nodes_.emplace_back(new EmulatedNetworkNode(std::move(behavior)));
+  network_nodes_.emplace_back(
+      new EmulatedNetworkNode(clock_, &task_queue_, std::move(behavior)));
   EmulatedNetworkNode* network_node = network_nodes_.back().get();
-  // TODO(srte): Use the update interval as provided by |behavior|.
-  Every(TimeDelta::ms(5),
-        [this, network_node] { network_node->Process(Now()); });
   return network_node;
 }
 

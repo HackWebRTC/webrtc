@@ -18,6 +18,7 @@
 namespace webrtc {
 namespace test {
 namespace {
+constexpr char kDummyTransportName[] = "dummy";
 SimulatedNetwork::Config CreateSimulationConfig(NetworkNodeConfig config) {
   SimulatedNetwork::Config sim_config;
   sim_config.link_capacity_kbps = config.simulation.bandwidth.kbps_or(0);
@@ -41,13 +42,15 @@ void ActionReceiver::OnPacketReceived(EmulatedIpPacket packet) {
 }
 
 std::unique_ptr<SimulationNode> SimulationNode::Create(
+    Clock* clock,
+    rtc::TaskQueue* task_queue,
     NetworkNodeConfig config) {
   RTC_DCHECK(config.mode == NetworkNodeConfig::TrafficMode::kSimulation);
   SimulatedNetwork::Config sim_config = CreateSimulationConfig(config);
   auto network = absl::make_unique<SimulatedNetwork>(sim_config);
   SimulatedNetwork* simulation_ptr = network.get();
-  return std::unique_ptr<SimulationNode>(
-      new SimulationNode(config, std::move(network), simulation_ptr));
+  return std::unique_ptr<SimulationNode>(new SimulationNode(
+      clock, task_queue, config, std::move(network), simulation_ptr));
 }
 
 void SimulationNode::UpdateConfig(
@@ -73,10 +76,12 @@ ColumnPrinter SimulationNode::ConfigPrinter() const {
 }
 
 SimulationNode::SimulationNode(
+    Clock* clock,
+    rtc::TaskQueue* task_queue,
     NetworkNodeConfig config,
     std::unique_ptr<NetworkBehaviorInterface> behavior,
     SimulatedNetwork* simulation)
-    : EmulatedNetworkNode(std::move(behavior)),
+    : EmulatedNetworkNode(clock, task_queue, std::move(behavior)),
       simulated_network_(simulation),
       config_(config) {}
 
@@ -126,26 +131,37 @@ bool NetworkNodeTransport::SendRtcp(const uint8_t* packet, size_t length) {
 void NetworkNodeTransport::Connect(EmulatedNetworkNode* send_node,
                                    rtc::IPAddress receiver_ip,
                                    DataSize packet_overhead) {
-  // Only IPv4 address is supported. We don't use full range of IPs in scenario
-  // framework and also we need a simple way to convert IP into network_id
-  // to signal network route.
-  RTC_CHECK_EQ(receiver_ip.family(), AF_INET);
-  RTC_CHECK_LE(receiver_ip.v4AddressAsHostOrderInteger(),
-               std::numeric_limits<uint16_t>::max());
-  rtc::CritScope crit(&crit_sect_);
-  send_net_ = send_node;
-  receiver_address_ = rtc::SocketAddress(receiver_ip, 0);
-  packet_overhead_ = packet_overhead;
-
   rtc::NetworkRoute route;
   route.connected = true;
   route.local_network_id =
       static_cast<uint16_t>(receiver_ip.v4AddressAsHostOrderInteger());
   route.remote_network_id =
       static_cast<uint16_t>(receiver_ip.v4AddressAsHostOrderInteger());
-  std::string transport_name = "dummy";
+  {
+    // Only IPv4 address is supported. We don't use full range of IPs in
+    // scenario framework and also we need a simple way to convert IP into
+    // network_id to signal network route.
+    RTC_CHECK_EQ(receiver_ip.family(), AF_INET);
+    RTC_CHECK_LE(receiver_ip.v4AddressAsHostOrderInteger(),
+                 std::numeric_limits<uint16_t>::max());
+    rtc::CritScope crit(&crit_sect_);
+    send_net_ = send_node;
+    receiver_address_ = rtc::SocketAddress(receiver_ip, 0);
+    packet_overhead_ = packet_overhead;
+    current_network_route_ = route;
+  }
+
   sender_call_->GetTransportControllerSend()->OnNetworkRouteChanged(
-      transport_name, route);
+      kDummyTransportName, route);
+}
+
+void NetworkNodeTransport::Disconnect() {
+  rtc::CritScope crit(&crit_sect_);
+  current_network_route_.connected = false;
+  sender_call_->GetTransportControllerSend()->OnNetworkRouteChanged(
+      kDummyTransportName, current_network_route_);
+  current_network_route_ = {};
+  send_net_ = nullptr;
 }
 
 CrossTrafficSource::CrossTrafficSource(EmulatedNetworkReceiverInterface* target,

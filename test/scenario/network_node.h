@@ -22,6 +22,7 @@
 #include "call/simulated_network.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/copy_on_write_buffer.h"
+#include "rtc_base/task_queue.h"
 #include "test/scenario/column_printer.h"
 #include "test/scenario/network/network_emulation.h"
 #include "test/scenario/scenario_config.h"
@@ -55,10 +56,14 @@ class SimulationNode : public EmulatedNetworkNode {
  private:
   friend class Scenario;
 
-  SimulationNode(NetworkNodeConfig config,
+  SimulationNode(Clock* clock,
+                 rtc::TaskQueue* task_queue,
+                 NetworkNodeConfig config,
                  std::unique_ptr<NetworkBehaviorInterface> behavior,
                  SimulatedNetwork* simulation);
-  static std::unique_ptr<SimulationNode> Create(NetworkNodeConfig config);
+  static std::unique_ptr<SimulationNode> Create(Clock* clock,
+                                                rtc::TaskQueue* task_queue,
+                                                NetworkNodeConfig config);
 
   SimulatedNetwork* const simulated_network_;
   NetworkNodeConfig config_;
@@ -77,6 +82,7 @@ class NetworkNodeTransport : public Transport {
   void Connect(EmulatedNetworkNode* send_node,
                rtc::IPAddress receiver_ip,
                DataSize packet_overhead);
+  void Disconnect();
 
   DataSize packet_overhead() {
     rtc::CritScope crit(&crit_sect_);
@@ -92,6 +98,7 @@ class NetworkNodeTransport : public Transport {
   EmulatedNetworkNode* send_net_ RTC_GUARDED_BY(crit_sect_) = nullptr;
   rtc::SocketAddress receiver_address_ RTC_GUARDED_BY(crit_sect_);
   DataSize packet_overhead_ RTC_GUARDED_BY(crit_sect_) = DataSize::Zero();
+  rtc::NetworkRoute current_network_route_ RTC_GUARDED_BY(crit_sect_);
 };
 
 // CrossTrafficSource is created by a Scenario and generates cross traffic. It
