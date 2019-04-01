@@ -76,6 +76,8 @@ class FieldTrialParameter : public FieldTrialParameterInterface {
   operator T() const { return Get(); }
   const T* operator->() const { return &value_; }
 
+  void SetForTest(T value) { value_ = value; }
+
  protected:
   bool Parse(absl::optional<std::string> str_value) override {
     if (str_value) {
