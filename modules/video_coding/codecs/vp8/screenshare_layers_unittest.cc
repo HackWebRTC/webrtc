@@ -126,20 +126,23 @@ class ScreenshareLayerTest : public ::testing::Test {
   }
 
   // Runs a few initial frames and makes sure we have seen frames on both
-  // temporal layers.
+  // temporal layers, including sync and non-sync frames.
   bool RunGracePeriod() {
     bool got_tl0 = false;
     bool got_tl1 = false;
+    bool got_tl1_sync = false;
     for (int i = 0; i < 10; ++i) {
       CodecSpecificInfo info;
       EXPECT_NE(-1, EncodeFrame(false, &info));
       timestamp_ += kTimestampDelta5Fps;
       if (info.codecSpecific.VP8.temporalIdx == 0) {
         got_tl0 = true;
+      } else if (info.codecSpecific.VP8.layerSync) {
+        got_tl1_sync = true;
       } else {
         got_tl1 = true;
       }
-      if (got_tl0 && got_tl1)
+      if (got_tl0 && got_tl1 && got_tl1_sync)
         return true;
     }
     return false;
@@ -161,9 +164,13 @@ class ScreenshareLayerTest : public ::testing::Test {
       flags = ConfigureFrame(false);
       if (tl_config_.packetizer_temporal_idx != layer ||
           (sync && *sync != tl_config_.layer_sync)) {
-        CodecSpecificInfo info;
-        layers_->OnEncodeDone(0, timestamp_, frame_size_, false, kDefaultQp,
-                              &info);
+        if (flags != -1) {
+          // If flags do not request a frame drop, report some default values
+          // for frame size etc.
+          CodecSpecificInfo info;
+          layers_->OnEncodeDone(0, timestamp_, frame_size_, false, kDefaultQp,
+                                &info);
+        }
         timestamp_ += kTimestampDelta5Fps;
       } else {
         // Found frame from sought after layer.
@@ -714,8 +721,7 @@ TEST_F(ScreenshareLayerTest, UpdatesConfigurationAfterRateChange) {
   EXPECT_TRUE(layers_->UpdateConfiguration(0, &cfg_));
 }
 
-// TODO(bugs.webrtc.org/10260): Fix.
-TEST_F(ScreenshareLayerTest, DISABLED_MaxQpRestoredAfterDoubleDrop) {
+TEST_F(ScreenshareLayerTest, MaxQpRestoredAfterDoubleDrop) {
   // Run grace period so we have existing frames in both TL0 and Tl1.
   EXPECT_TRUE(RunGracePeriod());
 

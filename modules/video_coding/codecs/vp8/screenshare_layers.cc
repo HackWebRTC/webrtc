@@ -329,6 +329,9 @@ void ScreenshareLayers::OnEncodeDone(size_t stream_index,
       active_layer_ = 1;
       info->template_structure =
           GetTemplateStructure(number_of_temporal_layers_);
+    } else if (active_layer_ >= 0 && layers_[active_layer_].state ==
+                                         TemporalLayer::State::kKeyFrame) {
+      layers_[active_layer_].state = TemporalLayer::State::kNormal;
     }
 
     vp8_info.useExplicitDependencies = true;
