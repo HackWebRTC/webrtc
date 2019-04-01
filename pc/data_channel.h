@@ -62,6 +62,10 @@ struct InternalDataChannelInit : public DataChannelInit {
     // If the channel is externally negotiated, do not send the OPEN message.
     if (base.negotiated) {
       open_handshake_role = kNone;
+    } else {
+      // Datachannel is externally negotiated. Ignore the id value.
+      // Specified in createDataChannel, WebRTC spec section 6.1 bullet 13.
+      id = -1;
     }
   }
 

@@ -3320,7 +3320,8 @@ TEST_P(PeerConnectionIntegrationTest, SctpDataChannelConfigSentToOtherSide) {
   ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
   ASSERT_TRUE_WAIT(callee()->data_channel() != nullptr, kDefaultTimeout);
   ASSERT_TRUE_WAIT(callee()->data_observer()->IsOpen(), kDefaultTimeout);
-  EXPECT_EQ(init.id, callee()->data_channel()->id());
+  // Since "negotiated" is false, the "id" parameter should be ignored.
+  EXPECT_NE(init.id, callee()->data_channel()->id());
   EXPECT_EQ("data-channel", callee()->data_channel()->label());
   EXPECT_EQ(init.maxRetransmits, callee()->data_channel()->maxRetransmits());
   EXPECT_FALSE(callee()->data_channel()->negotiated());
@@ -3576,7 +3577,8 @@ TEST_P(PeerConnectionIntegrationTest,
   // configuration.
   ASSERT_TRUE_WAIT(callee()->data_channel() != nullptr, kDefaultTimeout);
   ASSERT_TRUE_WAIT(callee()->data_observer()->IsOpen(), kDefaultTimeout);
-  EXPECT_EQ(init.id, callee()->data_channel()->id());
+  // Since "negotiate" is false, the "id" parameter is ignored.
+  EXPECT_NE(init.id, callee()->data_channel()->id());
   EXPECT_EQ("data-channel", callee()->data_channel()->label());
   EXPECT_EQ(init.maxRetransmits, callee()->data_channel()->maxRetransmits());
   EXPECT_FALSE(callee()->data_channel()->negotiated());

@@ -2141,6 +2141,7 @@ TEST_P(PeerConnectionInterfaceTest,
   rtc::scoped_refptr<DataChannelInterface> channel;
 
   config.id = 1;
+  config.negotiated = true;
   channel = pc_->CreateDataChannel("1", &config);
   EXPECT_TRUE(channel != NULL);
   EXPECT_EQ(1, channel->id());
@@ -2149,11 +2150,13 @@ TEST_P(PeerConnectionInterfaceTest,
   EXPECT_TRUE(channel == NULL);
 
   config.id = cricket::kMaxSctpSid;
+  config.negotiated = true;
   channel = pc_->CreateDataChannel("max", &config);
   EXPECT_TRUE(channel != NULL);
   EXPECT_EQ(config.id, channel->id());
 
   config.id = cricket::kMaxSctpSid + 1;
+  config.negotiated = true;
   channel = pc_->CreateDataChannel("x", &config);
   EXPECT_TRUE(channel == NULL);
 }
