@@ -98,9 +98,9 @@ VideoBitrateAllocation EncoderBitrateAdjuster::AdjustRateAllocation(
       // encoder does not support temporal layers. Merge target bitrates for
       // this spatial layer.
       RTC_DCHECK(overshoot_detectors_[si][0]);
-      utilization_factor =
-          overshoot_detectors_[si][0]->GetUtilizationFactor(now_ms).value_or(
-              kDefaultUtilizationFactor);
+      utilization_factor = overshoot_detectors_[si][0]
+                               ->GetNetworkRateUtilizationFactor(now_ms)
+                               .value_or(kDefaultUtilizationFactor);
     } else if (spatial_layer_bitrate_bps > 0) {
       // Multiple temporal layers enabled for this spatial layer. Update rate
       // for each of them and make a weighted average of utilization factors,
@@ -110,7 +110,8 @@ VideoBitrateAllocation EncoderBitrateAdjuster::AdjustRateAllocation(
       for (size_t ti = 0; ti < active_tls_[si]; ++ti) {
         RTC_DCHECK(overshoot_detectors_[si][ti]);
         const absl::optional<double> ti_utilization_factor =
-            overshoot_detectors_[si][ti]->GetUtilizationFactor(now_ms);
+            overshoot_detectors_[si][ti]->GetNetworkRateUtilizationFactor(
+                now_ms);
         if (!ti_utilization_factor) {
           utilization_factor = kDefaultUtilizationFactor;
           break;
