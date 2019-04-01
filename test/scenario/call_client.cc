@@ -195,10 +195,10 @@ Call::Stats CallClient::GetStats() {
 
 void CallClient::OnPacketReceived(EmulatedIpPacket packet) {
   // Removes added overhead before delivering packet to sender.
-  RTC_DCHECK_GE(packet.data.size(),
-                route_overhead_.at(packet.dest_endpoint_id).bytes());
-  packet.data.SetSize(packet.data.size() -
-                      route_overhead_.at(packet.dest_endpoint_id).bytes());
+  size_t size =
+      packet.data.size() - route_overhead_.at(packet.to.ipaddr()).bytes();
+  RTC_DCHECK_GE(size, 0);
+  packet.data.SetSize(size);
 
   MediaType media_type = MediaType::ANY;
   if (!RtpHeaderParser::IsRtcp(packet.cdata(), packet.data.size())) {

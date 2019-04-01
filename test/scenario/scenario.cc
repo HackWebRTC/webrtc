@@ -155,10 +155,10 @@ void Scenario::ChangeRoute(std::pair<CallClient*, CallClient*> clients,
 void Scenario::ChangeRoute(std::pair<CallClient*, CallClient*> clients,
                            std::vector<EmulatedNetworkNode*> over_nodes,
                            DataSize overhead) {
-  uint64_t route_id = next_route_id_++;
-  clients.second->route_overhead_.insert({route_id, overhead});
-  EmulatedNetworkNode::CreateRoute(route_id, over_nodes, clients.second);
-  clients.first->transport_->Connect(over_nodes.front(), route_id, overhead);
+  rtc::IPAddress route_ip(next_route_id_++);
+  clients.second->route_overhead_.insert({route_ip, overhead});
+  EmulatedNetworkNode::CreateRoute(route_ip, over_nodes, clients.second);
+  clients.first->transport_->Connect(over_nodes.front(), route_ip, overhead);
 }
 
 SimulatedTimeClient* Scenario::CreateSimulatedTimeClient(
@@ -167,11 +167,11 @@ SimulatedTimeClient* Scenario::CreateSimulatedTimeClient(
     std::vector<PacketStreamConfig> stream_configs,
     std::vector<EmulatedNetworkNode*> send_link,
     std::vector<EmulatedNetworkNode*> return_link) {
-  uint64_t send_id = next_route_id_++;
-  uint64_t return_id = next_route_id_++;
+  rtc::IPAddress send_ip(next_route_id_++);
+  rtc::IPAddress return_ip(next_route_id_++);
   SimulatedTimeClient* client = new SimulatedTimeClient(
       time_controller_.get(), GetLogWriterFactory(name), config, stream_configs,
-      send_link, return_link, send_id, return_id, Now());
+      send_link, return_link, send_ip, return_ip, Now());
   if (log_writer_factory_ && !name.empty() &&
       config.transport.state_log_interval.IsFinite()) {
     Every(config.transport.state_log_interval, [this, client]() {
@@ -219,24 +219,24 @@ EmulatedNetworkNode* Scenario::CreateNetworkNode(
 void Scenario::TriggerPacketBurst(std::vector<EmulatedNetworkNode*> over_nodes,
                                   size_t num_packets,
                                   size_t packet_size) {
-  uint64_t route_id = next_route_id_++;
-  EmulatedNetworkNode::CreateRoute(route_id, over_nodes, &null_receiver_);
+  rtc::IPAddress route_ip(next_route_id_++);
+  EmulatedNetworkNode::CreateRoute(route_ip, over_nodes, &null_receiver_);
   for (size_t i = 0; i < num_packets; ++i)
     over_nodes[0]->OnPacketReceived(EmulatedIpPacket(
-        rtc::SocketAddress() /*from*/, rtc::SocketAddress(), /*to*/
-        route_id, rtc::CopyOnWriteBuffer(packet_size), Now()));
+        rtc::SocketAddress() /*from*/, rtc::SocketAddress(route_ip, 0) /*to*/,
+        rtc::CopyOnWriteBuffer(packet_size), Now()));
 }
 
 void Scenario::NetworkDelayedAction(
     std::vector<EmulatedNetworkNode*> over_nodes,
     size_t packet_size,
     std::function<void()> action) {
-  uint64_t route_id = next_route_id_++;
+  rtc::IPAddress route_ip(next_route_id_++);
   action_receivers_.emplace_back(new ActionReceiver(action));
-  EmulatedNetworkNode::CreateRoute(route_id, over_nodes,
+  EmulatedNetworkNode::CreateRoute(route_ip, over_nodes,
                                    action_receivers_.back().get());
   over_nodes[0]->OnPacketReceived(EmulatedIpPacket(
-      rtc::SocketAddress() /*from*/, rtc::SocketAddress() /*to*/, route_id,
+      rtc::SocketAddress() /*from*/, rtc::SocketAddress(route_ip, 0) /*to*/,
       rtc::CopyOnWriteBuffer(packet_size), Now()));
 }
 
@@ -251,11 +251,11 @@ CrossTrafficSource* Scenario::CreateCrossTraffic(
 CrossTrafficSource* Scenario::CreateCrossTraffic(
     std::vector<EmulatedNetworkNode*> over_nodes,
     CrossTrafficConfig config) {
-  uint64_t route_id = next_route_id_++;
+  rtc::IPAddress route_ip(next_route_id_++);
   cross_traffic_sources_.emplace_back(
-      new CrossTrafficSource(over_nodes.front(), route_id, config));
+      new CrossTrafficSource(over_nodes.front(), route_ip, config));
   CrossTrafficSource* node = cross_traffic_sources_.back().get();
-  EmulatedNetworkNode::CreateRoute(route_id, over_nodes, &null_receiver_);
+  EmulatedNetworkNode::CreateRoute(route_ip, over_nodes, &null_receiver_);
   Every(config.min_packet_interval,
         [this, node](TimeDelta delta) { node->Process(Now(), delta); });
   return node;

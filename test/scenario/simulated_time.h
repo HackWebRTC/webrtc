@@ -50,7 +50,7 @@ class PacketStream {
 class SimulatedFeedback : EmulatedNetworkReceiverInterface {
  public:
   SimulatedFeedback(SimulatedTimeClientConfig config,
-                    uint64_t return_receiver_id,
+                    rtc::IPAddress return_receiver_ip,
                     EmulatedNetworkNode* return_node);
 
   void OnPacketReceived(EmulatedIpPacket packet) override;
@@ -58,7 +58,7 @@ class SimulatedFeedback : EmulatedNetworkReceiverInterface {
  private:
   friend class SimulatedTimeClient;
   const SimulatedTimeClientConfig config_;
-  const uint64_t return_receiver_id_;
+  const rtc::SocketAddress return_receiver_address_;
   EmulatedNetworkNode* return_node_;
   Timestamp last_feedback_time_ = Timestamp::MinusInfinity();
   int32_t next_feedback_seq_num_ = 1;
@@ -88,7 +88,8 @@ class SimulatedSender {
     int64_t size;
   };
 
-  SimulatedSender(EmulatedNetworkNode* send_node, uint64_t send_receiver_id);
+  SimulatedSender(EmulatedNetworkNode* send_node,
+                  rtc::IPAddress send_receiver_ip);
   SimulatedSender(const SimulatedSender&) = delete;
   ~SimulatedSender();
   TransportPacketsFeedback PullFeedbackReport(SimpleFeedbackReportPacket report,
@@ -99,7 +100,7 @@ class SimulatedSender {
  private:
   friend class SimulatedTimeClient;
   EmulatedNetworkNode* send_node_;
-  uint64_t send_receiver_id_;
+  const rtc::SocketAddress send_receiver_address_;
   PacerConfig pacer_config_;
   DataSize max_in_flight_ = DataSize::Infinity();
 
@@ -127,8 +128,8 @@ class SimulatedTimeClient : EmulatedNetworkReceiverInterface {
       std::vector<PacketStreamConfig> stream_configs,
       std::vector<EmulatedNetworkNode*> send_link,
       std::vector<EmulatedNetworkNode*> return_link,
-      uint64_t send_receiver_id,
-      uint64_t return_receiver_id,
+      rtc::IPAddress send_receiver_ip,
+      rtc::IPAddress return_receiver_ip,
       Timestamp at_time);
   SimulatedTimeClient(const SimulatedTimeClient&) = delete;
   ~SimulatedTimeClient();

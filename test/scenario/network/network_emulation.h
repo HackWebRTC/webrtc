@@ -43,7 +43,6 @@ struct EmulatedIpPacket {
  public:
   EmulatedIpPacket(const rtc::SocketAddress& from,
                    const rtc::SocketAddress& to,
-                   uint64_t dest_endpoint_id,
                    rtc::CopyOnWriteBuffer data,
                    Timestamp arrival_time);
   ~EmulatedIpPacket();
@@ -59,7 +58,6 @@ struct EmulatedIpPacket {
 
   rtc::SocketAddress from;
   rtc::SocketAddress to;
-  uint64_t dest_endpoint_id;
   rtc::CopyOnWriteBuffer data;
   Timestamp arrival_time;
 };
@@ -87,16 +85,16 @@ class EmulatedNetworkNode : public EmulatedNetworkReceiverInterface {
 
   void OnPacketReceived(EmulatedIpPacket packet) override;
   void Process(Timestamp at_time);
-  void SetReceiver(uint64_t dest_endpoint_id,
+  void SetReceiver(rtc::IPAddress dest_ip,
                    EmulatedNetworkReceiverInterface* receiver);
-  void RemoveReceiver(uint64_t dest_endpoint_id);
+  void RemoveReceiver(rtc::IPAddress dest_ip);
 
-  // Creates a route for the given receiver_id over all the given nodes to the
+  // Creates a route for the given receiver_ip over all the given nodes to the
   // given receiver.
-  static void CreateRoute(uint64_t receiver_id,
+  static void CreateRoute(rtc::IPAddress receiver_ip,
                           std::vector<EmulatedNetworkNode*> nodes,
                           EmulatedNetworkReceiverInterface* receiver);
-  static void ClearRoute(uint64_t receiver_id,
+  static void ClearRoute(rtc::IPAddress receiver_ip,
                          std::vector<EmulatedNetworkNode*> nodes);
 
  private:
@@ -107,7 +105,7 @@ class EmulatedNetworkNode : public EmulatedNetworkReceiverInterface {
   };
 
   rtc::CriticalSection lock_;
-  std::map<uint64_t, EmulatedNetworkReceiverInterface*> routing_
+  std::map<rtc::IPAddress, EmulatedNetworkReceiverInterface*> routing_
       RTC_GUARDED_BY(lock_);
   const std::unique_ptr<NetworkBehaviorInterface> network_behavior_
       RTC_GUARDED_BY(lock_);
@@ -170,7 +168,6 @@ class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
   friend class test::NetworkEmulationManagerImpl;
 
   EmulatedNetworkNode* GetSendNode() const;
-  void SetConnectedEndpointId(uint64_t endpoint_id);
 
  private:
   static constexpr uint16_t kFirstEphemeralPort = 49152;
@@ -190,8 +187,6 @@ class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
   uint16_t next_port_ RTC_GUARDED_BY(receiver_lock_);
   std::map<uint16_t, EmulatedNetworkReceiverInterface*> port_to_receiver_
       RTC_GUARDED_BY(receiver_lock_);
-
-  absl::optional<uint64_t> connected_endpoint_id_;
 };
 
 class EmulatedRoute {

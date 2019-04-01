@@ -89,7 +89,7 @@ void TrafficRoute::SendPacket(size_t packet_size, uint16_t dest_port) {
   receiver_->OnPacketReceived(EmulatedIpPacket(
       /*from=*/rtc::SocketAddress(),
       rtc::SocketAddress(endpoint_->GetPeerLocalAddress(), dest_port),
-      endpoint_->GetId(), rtc::CopyOnWriteBuffer(packet_size),
+      rtc::CopyOnWriteBuffer(packet_size),
       Timestamp::us(clock_->TimeInMicroseconds())));
 }
 

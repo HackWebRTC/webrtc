@@ -112,7 +112,7 @@ class CallClient : public EmulatedNetworkReceiverInterface {
   std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory_;
   // Stores the configured overhead per known destination endpoint. This is used
   // to subtract the overhead before processing.
-  std::map<uint64_t, DataSize> route_overhead_;
+  std::map<rtc::IPAddress, DataSize> route_overhead_;
   int next_video_ssrc_index_ = 0;
   int next_video_local_ssrc_index_ = 0;
   int next_rtx_ssrc_index_ = 0;
