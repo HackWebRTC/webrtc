@@ -60,12 +60,12 @@ Call* CreateCall(TimeController* time_controller,
       config.transport.rates.min_rate.bps();
   call_config.bitrate_config.start_bitrate_bps =
       config.transport.rates.start_rate.bps();
+  call_config.task_queue_factory = time_controller->GetTaskQueueFactory();
   call_config.network_controller_factory = network_controller_factory;
   call_config.audio_state = audio_state;
   return Call::Create(call_config, time_controller->GetClock(),
                       time_controller->CreateProcessThread("CallModules"),
-                      time_controller->CreateProcessThread("Pacer"),
-                      time_controller->GetTaskQueueFactory());
+                      time_controller->CreateProcessThread("Pacer"));
 }
 }
 

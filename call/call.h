@@ -16,7 +16,6 @@
 #include <vector>
 
 #include "api/media_types.h"
-#include "api/task_queue/task_queue_factory.h"
 #include "call/audio_receive_stream.h"
 #include "call/audio_send_stream.h"
 #include "call/call_config.h"
@@ -54,8 +53,7 @@ class Call {
   static Call* Create(const Call::Config& config,
                       Clock* clock,
                       std::unique_ptr<ProcessThread> call_thread,
-                      std::unique_ptr<ProcessThread> pacer_thread,
-                      TaskQueueFactory* task_queue_factory);
+                      std::unique_ptr<ProcessThread> pacer_thread);
 
   virtual AudioSendStream* CreateAudioSendStream(
       const AudioSendStream::Config& config) = 0;
