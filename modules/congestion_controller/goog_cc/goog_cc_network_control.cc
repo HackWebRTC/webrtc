@@ -69,7 +69,12 @@ int64_t GetBpsOrDefault(const absl::optional<DataRate>& rate,
     return fallback_bps;
   }
 }
-
+bool IsEnabled(const WebRtcKeyValueConfig* config, absl::string_view key) {
+  return config->Lookup(key).find("Enabled") == 0;
+}
+bool IsNotDisabled(const WebRtcKeyValueConfig* config, absl::string_view key) {
+  return config->Lookup(key).find("Disabled") != 0;
+}
 }  // namespace
 
 GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
@@ -82,14 +87,11 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
       safe_reset_on_route_change_("Enabled"),
       safe_reset_acknowledged_rate_("ack"),
       use_stable_bandwidth_estimate_(
-          key_value_config_->Lookup("WebRTC-Bwe-StableBandwidthEstimate")
-              .find("Enabled") == 0),
+          IsEnabled(key_value_config_, "WebRTC-Bwe-StableBandwidthEstimate")),
       fall_back_to_probe_rate_(
-          key_value_config_->Lookup("WebRTC-Bwe-ProbeRateFallback")
-              .find("Enabled") == 0),
+          IsEnabled(key_value_config_, "WebRTC-Bwe-ProbeRateFallback")),
       use_min_allocatable_as_lower_bound_(
-          key_value_config_->Lookup("WebRTC-Bwe-MinAllocAsLowerBound")
-              .find("Disabled") != 0),
+          IsNotDisabled(key_value_config_, "WebRTC-Bwe-MinAllocAsLowerBound")),
       rate_control_settings_(
           RateControlSettings::ParseFromKeyValueConfig(key_value_config_)),
       probe_controller_(new ProbeController(key_value_config_, event_log)),
