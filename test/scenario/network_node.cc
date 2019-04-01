@@ -201,7 +201,7 @@ void CrossTrafficSource::Process(Timestamp at_time, TimeDelta delta) {
   pending_size_ += TrafficRate() * delta;
   if (pending_size_ > config_.min_packet_size) {
     target_->OnPacketReceived(EmulatedIpPacket(
-        rtc::SocketAddress() /*from*/, receiver_address_,
+        /*from=*/rtc::SocketAddress(), receiver_address_,
         rtc::CopyOnWriteBuffer(pending_size_.bytes()), at_time));
     pending_size_ = DataSize::Zero();
   }
