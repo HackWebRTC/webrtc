@@ -27,9 +27,6 @@ EmulatedIpPacket::EmulatedIpPacket(const rtc::SocketAddress& from,
       to(to),
       data(data),
       arrival_time(arrival_time) {}
-EmulatedIpPacket::~EmulatedIpPacket() = default;
-EmulatedIpPacket::EmulatedIpPacket(EmulatedIpPacket&&) = default;
-EmulatedIpPacket& EmulatedIpPacket::operator=(EmulatedIpPacket&&) = default;
 
 void EmulatedNetworkNode::CreateRoute(
     rtc::IPAddress receiver_ip,
@@ -150,7 +147,7 @@ void EmulatedNetworkNode::RemoveReceiver(rtc::IPAddress dest_ip) {
 }
 
 EmulatedEndpoint::EmulatedEndpoint(uint64_t id,
-                                   rtc::IPAddress ip,
+                                   const rtc::IPAddress& ip,
                                    bool is_enabled,
                                    Clock* clock)
     : id_(id),

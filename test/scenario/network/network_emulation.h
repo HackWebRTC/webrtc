@@ -44,13 +44,13 @@ struct EmulatedIpPacket {
                    const rtc::SocketAddress& to,
                    rtc::CopyOnWriteBuffer data,
                    Timestamp arrival_time);
-  ~EmulatedIpPacket();
+  ~EmulatedIpPacket() = default;
   // This object is not copyable or assignable.
   EmulatedIpPacket(const EmulatedIpPacket&) = delete;
   EmulatedIpPacket& operator=(const EmulatedIpPacket&) = delete;
   // This object is only moveable.
-  EmulatedIpPacket(EmulatedIpPacket&&);
-  EmulatedIpPacket& operator=(EmulatedIpPacket&&);
+  EmulatedIpPacket(EmulatedIpPacket&&) = default;
+  EmulatedIpPacket& operator=(EmulatedIpPacket&&) = default;
 
   size_t size() const { return data.size(); }
   const uint8_t* cdata() const { return data.cdata(); }
@@ -126,7 +126,7 @@ class EmulatedNetworkNode : public EmulatedNetworkReceiverInterface {
 class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
  public:
   EmulatedEndpoint(uint64_t id,
-                   rtc::IPAddress ip,
+                   const rtc::IPAddress& ip,
                    bool is_enabled,
                    Clock* clock);
   ~EmulatedEndpoint() override;
