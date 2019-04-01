@@ -52,6 +52,7 @@ LIB_TO_LICENSES_DICT = {
     'libvpx': ['third_party/libvpx/source/libvpx/LICENSE'],
     'libyuv': ['third_party/libyuv/LICENSE'],
     'opus': ['third_party/opus/src/COPYING'],
+    'pffft': ['third_party/pffft/LICENSE'],
     'protobuf': ['third_party/protobuf/LICENSE'],
     'rnnoise': ['third_party/rnnoise/COPYING'],
     'usrsctp': ['third_party/usrsctp/LICENSE'],
