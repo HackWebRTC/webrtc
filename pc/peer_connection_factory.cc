@@ -106,6 +106,7 @@ PeerConnectionFactory::PeerConnectionFactory(
       network_thread_(dependencies.network_thread),
       worker_thread_(dependencies.worker_thread),
       signaling_thread_(dependencies.signaling_thread),
+      task_queue_factory_(std::move(dependencies.task_queue_factory)),
       media_engine_(std::move(dependencies.media_engine)),
       call_factory_(std::move(dependencies.call_factory)),
       event_log_factory_(std::move(dependencies.event_log_factory)),
@@ -386,6 +387,7 @@ std::unique_ptr<Call> PeerConnectionFactory::CreateCall_w(
   call_config.bitrate_config.max_bitrate_bps = kMaxBandwidthBps;
 
   call_config.fec_controller_factory = fec_controller_factory_.get();
+  call_config.task_queue_factory = task_queue_factory_.get();
 
   if (field_trial::IsEnabled("WebRTC-Bwe-InjectedCongestionController")) {
     RTC_LOG(LS_INFO) << "Using injected network controller factory";

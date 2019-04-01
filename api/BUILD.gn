@@ -144,6 +144,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     ":scoped_refptr",
     "audio:audio_mixer_api",
     "audio_codecs:audio_codecs_api",
+    "task_queue",
     "transport:bitrate_settings",
     "transport:network_control",
     "transport/media:audio_interfaces",

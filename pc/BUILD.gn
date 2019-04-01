@@ -198,6 +198,7 @@ rtc_static_library("peerconnection") {
     "../api:libjingle_peerconnection_api",
     "../api:rtc_stats_api",
     "../api:scoped_refptr",
+    "../api/task_queue",
     "../api/video:video_frame",
     "../api/video_codecs:video_codecs_api",
     "../call:call_interfaces",
