@@ -3063,7 +3063,6 @@ TEST_F(Vp9SettingsTest, MultipleSsrcsEnablesSvc) {
       AddSendStream(CreateSimStreamParams("cname", ssrcs));
 
   webrtc::VideoSendStream::Config config = stream->GetConfig().Copy();
-  EXPECT_EQ(ssrcs.size(), config.rtp.ssrcs.size());
 
   webrtc::test::FrameForwarder frame_forwarder;
   EXPECT_TRUE(channel_->SetVideoSend(ssrcs[0], nullptr, &frame_forwarder));
@@ -3078,6 +3077,36 @@ TEST_F(Vp9SettingsTest, MultipleSsrcsEnablesSvc) {
   const size_t kNumTemporalLayers = 3;
   EXPECT_EQ(vp9_settings.numberOfSpatialLayers, kNumSpatialLayers);
   EXPECT_EQ(vp9_settings.numberOfTemporalLayers, kNumTemporalLayers);
+
+  EXPECT_TRUE(channel_->SetVideoSend(ssrcs[0], nullptr, nullptr));
+}
+
+TEST_F(Vp9SettingsTest, SvcModeCreatesSingleRtpStream) {
+  cricket::VideoSendParameters parameters;
+  parameters.codecs.push_back(GetEngineCodec("VP9"));
+  ASSERT_TRUE(channel_->SetSendParameters(parameters));
+
+  std::vector<uint32_t> ssrcs = MAKE_VECTOR(kSsrcs3);
+
+  FakeVideoSendStream* stream =
+      AddSendStream(CreateSimStreamParams("cname", ssrcs));
+
+  webrtc::VideoSendStream::Config config = stream->GetConfig().Copy();
+
+  // Despite 3 ssrcs provided, single layer is used.
+  EXPECT_EQ(1u, config.rtp.ssrcs.size());
+
+  webrtc::test::FrameForwarder frame_forwarder;
+  EXPECT_TRUE(channel_->SetVideoSend(ssrcs[0], nullptr, &frame_forwarder));
+  channel_->SetSend(true);
+
+  frame_forwarder.IncomingCapturedFrame(frame_source_.GetFrame());
+
+  webrtc::VideoCodecVP9 vp9_settings;
+  ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
+
+  const size_t kNumSpatialLayers = ssrcs.size();
+  EXPECT_EQ(vp9_settings.numberOfSpatialLayers, kNumSpatialLayers);
 
   EXPECT_TRUE(channel_->SetVideoSend(ssrcs[0], nullptr, nullptr));
 }
@@ -7090,6 +7119,7 @@ class WebRtcVideoChannelSimulcastTest : public testing::Test {
 
     std::vector<webrtc::VideoStream> video_streams = stream->GetVideoStreams();
     ASSERT_EQ(expected_num_streams, video_streams.size());
+    EXPECT_LE(expected_num_streams, stream->GetConfig().rtp.ssrcs.size());
 
     std::vector<webrtc::VideoStream> expected_streams;
     if (conference_mode) {

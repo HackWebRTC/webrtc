@@ -1996,8 +1996,13 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::UpdateSendState() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   if (sending_) {
     RTC_DCHECK(stream_ != nullptr);
-    std::vector<bool> active_layers(rtp_parameters_.encodings.size());
-    for (size_t i = 0; i < active_layers.size(); ++i) {
+    size_t num_layers = rtp_parameters_.encodings.size();
+    if (parameters_.encoder_config.number_of_streams == 1) {
+      // SVC is used. Only one simulcast layer is present.
+      num_layers = 1;
+    }
+    std::vector<bool> active_layers(num_layers);
+    for (size_t i = 0; i < num_layers; ++i) {
       active_layers[i] = rtp_parameters_.encodings[i].active;
     }
     // This updates what simulcast layers are sending, and possibly starts
@@ -2301,6 +2306,15 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::RecreateWebRtcStream() {
     RTC_LOG(LS_WARNING) << "RTX SSRCs configured but there's no configured RTX "
                            "payload type the set codec. Ignoring RTX.";
     config.rtp.rtx.ssrcs.clear();
+  }
+  if (parameters_.encoder_config.number_of_streams == 1) {
+    // SVC is used instead of simulcast. Remove unnecessary SSRCs.
+    if (config.rtp.ssrcs.size() > 1) {
+      config.rtp.ssrcs.resize(1);
+      if (config.rtp.rtx.ssrcs.size() > 1) {
+        config.rtp.rtx.ssrcs.resize(1);
+      }
+    }
   }
   stream_ = call_->CreateVideoSendStream(std::move(config),
                                          parameters_.encoder_config.Copy());
