@@ -108,6 +108,7 @@ StreamDataCounters StreamStatisticianImpl::UpdateCounters(
   int64_t now_ms = clock_->TimeInMilliseconds();
 
   incoming_bitrate_.Update(packet.size(), now_ms);
+  receive_counters_.last_packet_received_timestamp_ms = now_ms;
   receive_counters_.transmitted.AddPacket(packet);
 
   int64_t sequence_number =

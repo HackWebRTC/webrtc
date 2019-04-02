@@ -605,6 +605,19 @@ TEST_F(ReceiveStatisticsTest, RtpCallbacks) {
   callback.Matches(5, kSsrc1, expected);
 }
 
+TEST_F(ReceiveStatisticsTest, LastPacketReceivedTimestamp) {
+  RtpTestCallback callback;
+  receive_statistics_ = ReceiveStatistics::Create(&clock_, nullptr, &callback);
+
+  clock_.AdvanceTimeMilliseconds(42);
+  receive_statistics_->OnRtpPacket(packet1_);
+  EXPECT_EQ(42, callback.stats_.last_packet_received_timestamp_ms);
+
+  clock_.AdvanceTimeMilliseconds(3);
+  receive_statistics_->OnRtpPacket(packet1_);
+  EXPECT_EQ(45, callback.stats_.last_packet_received_timestamp_ms);
+}
+
 TEST_F(ReceiveStatisticsTest, RtpCallbacksFecFirst) {
   RtpTestCallback callback;
   receive_statistics_ = ReceiveStatistics::Create(&clock_, nullptr, &callback);
