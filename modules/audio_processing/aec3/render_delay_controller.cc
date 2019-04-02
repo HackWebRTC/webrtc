@@ -39,7 +39,6 @@ class RenderDelayControllerImpl final : public RenderDelayController {
   absl::optional<DelayEstimate> GetDelay(
       const DownsampledRenderBuffer& render_buffer,
       size_t render_delay_buffer_delay,
-      const absl::optional<int>& echo_remover_delay,
       rtc::ArrayView<const float> capture) override;
   bool HasClockdrift() const override;
 
@@ -117,20 +116,11 @@ void RenderDelayControllerImpl::LogRenderCall() {}
 absl::optional<DelayEstimate> RenderDelayControllerImpl::GetDelay(
     const DownsampledRenderBuffer& render_buffer,
     size_t render_delay_buffer_delay,
-    const absl::optional<int>& echo_remover_delay,
     rtc::ArrayView<const float> capture) {
   RTC_DCHECK_EQ(kBlockSize, capture.size());
   ++capture_call_counter_;
 
   auto delay_samples = delay_estimator_.EstimateDelay(render_buffer, capture);
-
-  // Overrule the delay estimator delay if the echo remover reports a delay.
-  if (echo_remover_delay) {
-    int total_echo_remover_delay_samples =
-        (render_delay_buffer_delay + *echo_remover_delay) * kBlockSize;
-    delay_samples = DelayEstimate(DelayEstimate::Quality::kRefined,
-                                  total_echo_remover_delay_samples);
-  }
 
   if (delay_samples) {
     if (!delay_samples_ || delay_samples->delay != delay_samples_->delay) {

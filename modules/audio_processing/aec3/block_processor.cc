@@ -71,7 +71,6 @@ class BlockProcessorImpl final : public BlockProcessor {
   RenderDelayBuffer::BufferingEvent render_event_;
   size_t capture_call_counter_ = 0;
   absl::optional<DelayEstimate> estimated_delay_;
-  absl::optional<int> echo_remover_delay_;
 };
 
 int BlockProcessorImpl::instance_count_ = 0;
@@ -150,11 +149,11 @@ void BlockProcessorImpl::ProcessCapture(
                         &(*capture_block)[0][0],
                         LowestBandRate(sample_rate_hz_), 1);
 
-  // Compute and and apply the render delay required to achieve proper signal
+  // Compute and apply the render delay required to achieve proper signal
   // alignment.
-  estimated_delay_ = delay_controller_->GetDelay(
-      render_buffer_->GetDownsampledRenderBuffer(), render_buffer_->Delay(),
-      echo_remover_delay_, (*capture_block)[0]);
+  estimated_delay_ =
+      delay_controller_->GetDelay(render_buffer_->GetDownsampledRenderBuffer(),
+                                  render_buffer_->Delay(), (*capture_block)[0]);
 
   if (estimated_delay_) {
     bool delay_change = render_buffer_->SetDelay(estimated_delay_->delay);
@@ -172,10 +171,6 @@ void BlockProcessorImpl::ProcessCapture(
   echo_remover_->ProcessCapture(
       echo_path_variability, capture_signal_saturation, estimated_delay_,
       render_buffer_->GetRenderBuffer(), capture_block);
-
-  // Check to see if a refined delay estimate has been obtained from the echo
-  // remover.
-  echo_remover_delay_ = echo_remover_->Delay();
 
   // Update the metrics.
   metrics_.UpdateCapture(false);

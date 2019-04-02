@@ -97,12 +97,6 @@ class EchoRemoverImpl final : public EchoRemover {
                       RenderBuffer* render_buffer,
                       std::vector<std::vector<float>>* capture) override;
 
-  // Returns the internal delay estimate in blocks.
-  absl::optional<int> Delay() const override {
-    // TODO(peah): Remove or reactivate this functionality.
-    return absl::nullopt;
-  }
-
   // Updates the status on whether echo leakage is detected in the output of the
   // echo remover.
   void UpdateEchoLeakageStatus(bool leakage_detected) override {

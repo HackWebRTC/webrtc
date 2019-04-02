@@ -42,9 +42,6 @@ class EchoRemover {
       RenderBuffer* render_buffer,
       std::vector<std::vector<float>>* capture) = 0;
 
-  // Returns the internal delay estimate in blocks.
-  virtual absl::optional<int> Delay() const = 0;
-
   // Updates the status on whether echo leakage is detected in the output of the
   // echo remover.
   virtual void UpdateEchoLeakageStatus(bool leakage_detected) = 0;
