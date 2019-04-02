@@ -97,7 +97,9 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
                      bob->SetAudioConfig(AudioConfig());
                    });
 
-  fixture->Run(RunParams{TimeDelta::seconds(5)});
+  RunParams run_params(TimeDelta::seconds(5));
+  run_params.video_encoder_bitrate_multiplier = 1.1;
+  fixture->Run(run_params);
 
   for (auto stream_label : video_analyzer_ptr->GetKnownVideoStreams()) {
     FrameCounters stream_conters =

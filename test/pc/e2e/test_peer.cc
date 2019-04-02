@@ -104,6 +104,7 @@ rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModule(
 std::unique_ptr<VideoEncoderFactory> CreateVideoEncoderFactory(
     PeerConnectionFactoryComponents* pcf_dependencies,
     VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
+    double bitrate_multiplier,
     std::map<std::string, absl::optional<int>> stream_required_spatial_index) {
   std::unique_ptr<VideoEncoderFactory> video_encoder_factory;
   if (pcf_dependencies->video_encoder_factory != nullptr) {
@@ -112,7 +113,7 @@ std::unique_ptr<VideoEncoderFactory> CreateVideoEncoderFactory(
     video_encoder_factory = CreateBuiltinVideoEncoderFactory();
   }
   return video_analyzer_helper->WrapVideoEncoderFactory(
-      std::move(video_encoder_factory),
+      std::move(video_encoder_factory), bitrate_multiplier,
       std::move(stream_required_spatial_index));
 }
 
@@ -132,6 +133,7 @@ std::unique_ptr<VideoDecoderFactory> CreateVideoDecoderFactory(
 std::unique_ptr<cricket::MediaEngineInterface> CreateMediaEngine(
     PeerConnectionFactoryComponents* pcf_dependencies,
     absl::optional<AudioConfig> audio_config,
+    double bitrate_multiplier,
     std::map<std::string, absl::optional<int>> stream_required_spatial_index,
     VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
     absl::optional<std::string> audio_output_file_name) {
@@ -140,6 +142,7 @@ std::unique_ptr<cricket::MediaEngineInterface> CreateMediaEngine(
 
   std::unique_ptr<VideoEncoderFactory> video_encoder_factory =
       CreateVideoEncoderFactory(pcf_dependencies, video_analyzer_helper,
+                                bitrate_multiplier,
                                 std::move(stream_required_spatial_index));
   std::unique_ptr<VideoDecoderFactory> video_decoder_factory =
       CreateVideoDecoderFactory(pcf_dependencies, video_analyzer_helper);
@@ -158,6 +161,7 @@ std::unique_ptr<cricket::MediaEngineInterface> CreateMediaEngine(
 PeerConnectionFactoryDependencies CreatePCFDependencies(
     std::unique_ptr<PeerConnectionFactoryComponents> pcf_dependencies,
     absl::optional<AudioConfig> audio_config,
+    double bitrate_multiplier,
     std::map<std::string, absl::optional<int>> stream_required_spatial_index,
     VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
     rtc::Thread* network_thread,
@@ -167,7 +171,7 @@ PeerConnectionFactoryDependencies CreatePCFDependencies(
   pcf_deps.network_thread = network_thread;
   pcf_deps.signaling_thread = signaling_thread;
   pcf_deps.media_engine = CreateMediaEngine(
-      pcf_dependencies.get(), std::move(audio_config),
+      pcf_dependencies.get(), std::move(audio_config), bitrate_multiplier,
       std::move(stream_required_spatial_index), video_analyzer_helper,
       std::move(audio_output_file_name));
 
@@ -227,7 +231,8 @@ std::unique_ptr<TestPeer> TestPeer::CreateTestPeer(
     std::unique_ptr<MockPeerConnectionObserver> observer,
     VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
     rtc::Thread* signaling_thread,
-    absl::optional<std::string> audio_output_file_name) {
+    absl::optional<std::string> audio_output_file_name,
+    double bitrate_multiplier) {
   RTC_DCHECK(components);
   RTC_DCHECK(params);
   SetMandatoryEntities(components.get());
@@ -248,8 +253,8 @@ std::unique_ptr<TestPeer> TestPeer::CreateTestPeer(
   // Create peer connection factory.
   PeerConnectionFactoryDependencies pcf_deps = CreatePCFDependencies(
       std::move(components->pcf_dependencies), params->audio_config,
-      std::move(stream_required_spatial_index), video_analyzer_helper,
-      components->network_thread, signaling_thread,
+      bitrate_multiplier, std::move(stream_required_spatial_index),
+      video_analyzer_helper, components->network_thread, signaling_thread,
       std::move(audio_output_file_name));
   rtc::scoped_refptr<PeerConnectionFactoryInterface> pcf =
       CreateModularPeerConnectionFactory(std::move(pcf_deps));

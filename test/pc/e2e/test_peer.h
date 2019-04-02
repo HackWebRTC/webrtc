@@ -53,7 +53,8 @@ class TestPeer final : public PeerConnectionWrapper {
       std::unique_ptr<MockPeerConnectionObserver> observer,
       VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
       rtc::Thread* signaling_thread,
-      absl::optional<std::string> audio_output_file_name);
+      absl::optional<std::string> audio_output_file_name,
+      double bitrate_multiplier);
 
   Params* params() const { return params_.get(); }
 

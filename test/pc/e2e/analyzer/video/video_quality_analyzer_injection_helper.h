@@ -44,6 +44,7 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
   // before encoding and encoded images after.
   std::unique_ptr<VideoEncoderFactory> WrapVideoEncoderFactory(
       std::unique_ptr<VideoEncoderFactory> delegate,
+      double bitrate_multiplier,
       std::map<std::string, absl::optional<int>> stream_required_spatial_index)
       const;
   // Wraps video decoder factory to give video quality analyzer access to

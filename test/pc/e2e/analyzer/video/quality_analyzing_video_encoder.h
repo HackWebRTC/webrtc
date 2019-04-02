@@ -55,6 +55,7 @@ class QualityAnalyzingVideoEncoder : public VideoEncoder,
   QualityAnalyzingVideoEncoder(
       int id,
       std::unique_ptr<VideoEncoder> delegate,
+      double bitrate_multiplier,
       std::map<std::string, absl::optional<int>> stream_required_spatial_index,
       EncodedImageDataInjector* injector,
       VideoQualityAnalyzerInterface* analyzer);
@@ -135,6 +136,7 @@ class QualityAnalyzingVideoEncoder : public VideoEncoder,
 
   const int id_;
   std::unique_ptr<VideoEncoder> delegate_;
+  const double bitrate_multiplier_;
   std::map<std::string, absl::optional<int>> stream_required_spatial_index_;
   EncodedImageDataInjector* const injector_;
   VideoQualityAnalyzerInterface* const analyzer_;
@@ -144,6 +146,7 @@ class QualityAnalyzingVideoEncoder : public VideoEncoder,
   // from received VideoFrame to resulted EncodedImage.
   rtc::CriticalSection lock_;
 
+  VideoCodec codec_settings_;
   SimulcastMode mode_ RTC_GUARDED_BY(lock_);
   EncodedImageCallback* delegate_callback_ RTC_GUARDED_BY(lock_);
   std::list<std::pair<uint32_t, uint16_t>> timestamp_to_frame_id_list_
@@ -157,6 +160,7 @@ class QualityAnalyzingVideoEncoderFactory : public VideoEncoderFactory {
  public:
   QualityAnalyzingVideoEncoderFactory(
       std::unique_ptr<VideoEncoderFactory> delegate,
+      double bitrate_multiplier,
       std::map<std::string, absl::optional<int>> stream_required_spatial_index,
       IdGenerator<int>* id_generator,
       EncodedImageDataInjector* injector,
@@ -172,6 +176,7 @@ class QualityAnalyzingVideoEncoderFactory : public VideoEncoderFactory {
 
  private:
   std::unique_ptr<VideoEncoderFactory> delegate_;
+  const double bitrate_multiplier_;
   std::map<std::string, absl::optional<int>> stream_required_spatial_index_;
   IdGenerator<int>* const id_generator_;
   EncodedImageDataInjector* const injector_;

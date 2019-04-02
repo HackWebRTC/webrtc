@@ -190,7 +190,7 @@ class PeerConnectionE2EQualityTest
   void SetDefaultValuesForMissingParams(std::vector<Params*> params);
   // Validate peer's parameters, also ensure uniqueness of all video stream
   // labels.
-  void ValidateParams(std::vector<Params*> params);
+  void ValidateParams(const RunParams& run_params, std::vector<Params*> params);
   void SetupVideoSink(rtc::scoped_refptr<RtpTransceiverInterface> transceiver,
                       std::vector<VideoConfig> remote_video_configs);
   // Have to be run on the signaling thread.

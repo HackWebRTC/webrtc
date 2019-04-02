@@ -10,6 +10,7 @@
 
 #include "test/pc/e2e/analyzer/video/quality_analyzing_video_encoder.h"
 
+#include <cmath>
 #include <utility>
 
 #include "absl/memory/memory.h"
@@ -23,17 +24,43 @@ namespace webrtc_pc_e2e {
 namespace {
 
 constexpr size_t kMaxFrameInPipelineCount = 1000;
+constexpr double kNoMultiplier = 1.0;
+constexpr double kEps = 1e-6;
+
+std::pair<uint32_t, uint32_t> GetMinMaxBitratesBps(const VideoCodec& codec,
+                                                   size_t spatial_idx) {
+  uint32_t min_bitrate = codec.minBitrate;
+  uint32_t max_bitrate = codec.maxBitrate;
+  if (spatial_idx < codec.numberOfSimulcastStreams &&
+      codec.codecType != VideoCodecType::kVideoCodecVP9) {
+    min_bitrate =
+        std::max(min_bitrate, codec.simulcastStream[spatial_idx].minBitrate);
+    max_bitrate =
+        std::min(max_bitrate, codec.simulcastStream[spatial_idx].maxBitrate);
+  }
+  if (codec.codecType == VideoCodecType::kVideoCodecVP9 &&
+      spatial_idx < codec.VP9().numberOfSpatialLayers) {
+    min_bitrate =
+        std::max(min_bitrate, codec.spatialLayers[spatial_idx].minBitrate);
+    max_bitrate =
+        std::min(max_bitrate, codec.spatialLayers[spatial_idx].maxBitrate);
+  }
+  RTC_DCHECK_GT(max_bitrate, min_bitrate);
+  return {min_bitrate * 1000, max_bitrate * 1000};
+}
 
 }  // namespace
 
 QualityAnalyzingVideoEncoder::QualityAnalyzingVideoEncoder(
     int id,
     std::unique_ptr<VideoEncoder> delegate,
+    double bitrate_multiplier,
     std::map<std::string, absl::optional<int>> stream_required_spatial_index,
     EncodedImageDataInjector* injector,
     VideoQualityAnalyzerInterface* analyzer)
     : id_(id),
       delegate_(std::move(delegate)),
+      bitrate_multiplier_(bitrate_multiplier),
       stream_required_spatial_index_(std::move(stream_required_spatial_index)),
       injector_(injector),
       analyzer_(analyzer) {}
@@ -44,6 +71,7 @@ int32_t QualityAnalyzingVideoEncoder::InitEncode(
     int32_t number_of_cores,
     size_t max_payload_size) {
   rtc::CritScope crit(&lock_);
+  codec_settings_ = *codec_settings;
   mode_ = SimulcastMode::kNormal;
   if (codec_settings->codecType == kVideoCodecVP9) {
     if (codec_settings->VP9().numberOfSpatialLayers > 1) {
@@ -127,7 +155,46 @@ int32_t QualityAnalyzingVideoEncoder::SetRates(uint32_t bitrate,
 int32_t QualityAnalyzingVideoEncoder::SetRateAllocation(
     const VideoBitrateAllocation& allocation,
     uint32_t framerate) {
-  return delegate_->SetRateAllocation(allocation, framerate);
+  RTC_DCHECK_GT(bitrate_multiplier_, 0.0);
+  if (fabs(bitrate_multiplier_ - kNoMultiplier) < kEps) {
+    return delegate_->SetRateAllocation(allocation, framerate);
+  }
+
+  // Simulating encoder overshooting target bitrate, by configuring actual
+  // encoder too high. Take care not to adjust past limits of config,
+  // otherwise encoders may crash on DCHECK.
+  VideoBitrateAllocation multiplied_allocation;
+  for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
+    const uint32_t spatial_layer_bitrate_bps =
+        allocation.GetSpatialLayerSum(si);
+    if (spatial_layer_bitrate_bps == 0) {
+      continue;
+    }
+
+    uint32_t min_bitrate_bps;
+    uint32_t max_bitrate_bps;
+    std::tie(min_bitrate_bps, max_bitrate_bps) =
+        GetMinMaxBitratesBps(codec_settings_, si);
+    double bitrate_multiplier = bitrate_multiplier_;
+    const uint32_t corrected_bitrate = rtc::checked_cast<uint32_t>(
+        bitrate_multiplier * spatial_layer_bitrate_bps);
+    if (corrected_bitrate < min_bitrate_bps) {
+      bitrate_multiplier = min_bitrate_bps / spatial_layer_bitrate_bps;
+    } else if (corrected_bitrate > max_bitrate_bps) {
+      bitrate_multiplier = max_bitrate_bps / spatial_layer_bitrate_bps;
+    }
+
+    for (size_t ti = 0; ti < kMaxTemporalStreams; ++ti) {
+      if (allocation.HasBitrate(si, ti)) {
+        multiplied_allocation.SetBitrate(
+            si, ti,
+            rtc::checked_cast<uint32_t>(bitrate_multiplier *
+                                        allocation.GetBitrate(si, ti)));
+      }
+    }
+  }
+
+  return delegate_->SetRateAllocation(multiplied_allocation, framerate);
 }
 
 VideoEncoder::EncoderInfo QualityAnalyzingVideoEncoder::GetEncoderInfo() const {
@@ -259,11 +326,13 @@ bool QualityAnalyzingVideoEncoder::ShouldDiscard(
 
 QualityAnalyzingVideoEncoderFactory::QualityAnalyzingVideoEncoderFactory(
     std::unique_ptr<VideoEncoderFactory> delegate,
+    double bitrate_multiplier,
     std::map<std::string, absl::optional<int>> stream_required_spatial_index,
     IdGenerator<int>* id_generator,
     EncodedImageDataInjector* injector,
     VideoQualityAnalyzerInterface* analyzer)
     : delegate_(std::move(delegate)),
+      bitrate_multiplier_(bitrate_multiplier),
       stream_required_spatial_index_(std::move(stream_required_spatial_index)),
       id_generator_(id_generator),
       injector_(injector),
@@ -287,7 +356,8 @@ QualityAnalyzingVideoEncoderFactory::CreateVideoEncoder(
     const SdpVideoFormat& format) {
   return absl::make_unique<QualityAnalyzingVideoEncoder>(
       id_generator_->GetNextId(), delegate_->CreateVideoEncoder(format),
-      stream_required_spatial_index_, injector_, analyzer_);
+      bitrate_multiplier_, stream_required_spatial_index_, injector_,
+      analyzer_);
 }
 
 }  // namespace webrtc_pc_e2e

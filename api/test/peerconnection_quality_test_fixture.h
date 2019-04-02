@@ -174,10 +174,20 @@ class PeerConnectionE2EQualityTestFixture {
   // Contains parameters, that describe how long framework should run quality
   // test.
   struct RunParams {
+    explicit RunParams(TimeDelta run_duration) : run_duration(run_duration) {}
+
     // Specifies how long the test should be run. This time shows how long
     // the media should flow after connection was established and before
     // it will be shut downed.
     TimeDelta run_duration;
+
+    // Specifies how much video encoder target bitrate should be different than
+    // target bitrate, provided by WebRTC stack. Must be greater then 0. Can be
+    // used to emulate overshooting of video encoders. This multiplier will
+    // be applied for all video encoder on both sides for all layers. Bitrate
+    // estimated by WebRTC stack will be multiplied on this multiplier and then
+    // provided into VideoEncoder::SetRateAllocation(...).
+    double video_encoder_bitrate_multiplier = 1.0;
   };
 
   virtual ~PeerConnectionE2EQualityTestFixture() = default;

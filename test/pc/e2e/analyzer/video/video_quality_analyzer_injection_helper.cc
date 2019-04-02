@@ -103,10 +103,12 @@ VideoQualityAnalyzerInjectionHelper::~VideoQualityAnalyzerInjectionHelper() =
 std::unique_ptr<VideoEncoderFactory>
 VideoQualityAnalyzerInjectionHelper::WrapVideoEncoderFactory(
     std::unique_ptr<VideoEncoderFactory> delegate,
+    double bitrate_multiplier,
     std::map<std::string, absl::optional<int>> stream_required_spatial_index)
     const {
   return absl::make_unique<QualityAnalyzingVideoEncoderFactory>(
-      std::move(delegate), std::move(stream_required_spatial_index),
+      std::move(delegate), bitrate_multiplier,
+      std::move(stream_required_spatial_index),
       encoding_entities_id_generator_.get(), injector_, analyzer_.get());
 }
 
