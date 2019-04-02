@@ -27,6 +27,8 @@
 #include "rtc_base/event.h"
 #include "rtc_base/experiments/rtt_mult_experiment.h"
 #include "rtc_base/numerics/sequence_number_util.h"
+#include "rtc_base/task_queue.h"
+#include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
@@ -45,7 +47,13 @@ class FrameBuffer {
   FrameBuffer(Clock* clock,
               VCMJitterEstimator* jitter_estimator,
               VCMTiming* timing,
-              VCMReceiveStatisticsCallback* stats_proxy);
+              VCMReceiveStatisticsCallback* stats_callback);
+
+  FrameBuffer(Clock* clock,
+              TaskQueueFactory* task_queue_factory,
+              VCMJitterEstimator* jitter_estimator,
+              VCMTiming* timing,
+              VCMReceiveStatisticsCallback* stats_callback);
 
   virtual ~FrameBuffer();
 
@@ -53,6 +61,9 @@ class FrameBuffer {
   // of the last continuous frame or -1 if there is no continuous frame.
   // TODO(philipel): Return a VideoLayerFrameId and not only the picture id.
   int64_t InsertFrame(std::unique_ptr<EncodedFrame> frame);
+
+  void InsertFrame(std::unique_ptr<EncodedFrame> frame,
+                   std::function<void(int64_t)> picture_id_handler);
 
   // Get the next frame for decoding. Will return at latest after
   // |max_wait_time_ms|.
@@ -64,6 +75,10 @@ class FrameBuffer {
   ReturnReason NextFrame(int64_t max_wait_time_ms,
                          std::unique_ptr<EncodedFrame>* frame_out,
                          bool keyframe_required = false);
+  void NextFrame(
+      int64_t max_wait_time_ms,
+      bool keyframe_required,
+      std::function<void(std::unique_ptr<EncodedFrame>, ReturnReason)> handler);
 
   // Tells the FrameBuffer which protection mode that is in use. Affects
   // the frame timing.
@@ -115,8 +130,15 @@ class FrameBuffer {
 
   using FrameMap = std::map<VideoLayerFrameId, FrameInfo>;
 
+  void SafePost(std::function<void()> func);
+
   // Check that the references of |frame| are valid.
   bool ValidReferences(const EncodedFrame& frame) const;
+
+  void NextFrameOnQueue() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  int64_t UpdateFramesToDecode(int64_t now_ms)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  EncodedFrame* GetFrameToDecode() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Update all directly dependent and indirectly dependent frames and mark
   // them as continuous if all their references has been fulfilled.
@@ -158,9 +180,19 @@ class FrameBuffer {
   FrameMap frames_ RTC_GUARDED_BY(crit_);
   DecodedFramesHistory decoded_frames_history_ RTC_GUARDED_BY(crit_);
 
+  // TODO(srte): Remove this lock when always running on task queue.
   rtc::CriticalSection crit_;
   Clock* const clock_;
+  const bool use_task_queue_;
+
+  RepeatingTaskHandle callback_task_ RTC_GUARDED_BY(crit_);
+  std::function<void(std::unique_ptr<EncodedFrame>, ReturnReason)>
+      frame_handler_ RTC_GUARDED_BY(crit_);
+  int64_t latest_return_time_ms_ RTC_GUARDED_BY(crit_);
+  bool keyframe_required_ RTC_GUARDED_BY(crit_);
+
   rtc::Event new_continuous_frame_event_;
+
   VCMJitterEstimator* const jitter_estimator_ RTC_GUARDED_BY(crit_);
   VCMTiming* const timing_ RTC_GUARDED_BY(crit_);
   VCMInterFrameDelay inter_frame_delay_ RTC_GUARDED_BY(crit_);
@@ -174,6 +206,8 @@ class FrameBuffer {
 
   const bool add_rtt_to_playout_delay_;
 
+  // Defined last so it is destroyed before other members.
+  rtc::TaskQueue task_queue_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FrameBuffer);
 };
 
