@@ -674,10 +674,12 @@ void SendStatisticsProxy::OnEncoderReconfigured(
 
 void SendStatisticsProxy::OnEncodedFrameTimeMeasured(int encode_time_ms,
                                                      int encode_usage_percent) {
+  RTC_DCHECK_GE(encode_time_ms, 0);
   rtc::CritScope lock(&crit_);
   uma_container_->encode_time_counter_.Add(encode_time_ms);
   encode_time_.Apply(1.0f, encode_time_ms);
   stats_.avg_encode_time_ms = round(encode_time_.filtered());
+  stats_.total_encode_time_ms += encode_time_ms;
   stats_.encode_usage_percent = encode_usage_percent;
 }
 

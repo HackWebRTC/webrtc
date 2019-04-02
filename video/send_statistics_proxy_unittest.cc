@@ -318,6 +318,15 @@ TEST_F(SendStatisticsProxyTest, OnEncodedFrameTimeMeasured) {
   EXPECT_EQ(encode_usage_percent, stats.encode_usage_percent);
 }
 
+TEST_F(SendStatisticsProxyTest, TotalEncodeTimeIncreasesPerFrameMeasured) {
+  const int kEncodeUsagePercent = 0;  // Don't care for this test.
+  EXPECT_EQ(0u, statistics_proxy_->GetStats().total_encode_time_ms);
+  statistics_proxy_->OnEncodedFrameTimeMeasured(10, kEncodeUsagePercent);
+  EXPECT_EQ(10u, statistics_proxy_->GetStats().total_encode_time_ms);
+  statistics_proxy_->OnEncodedFrameTimeMeasured(20, kEncodeUsagePercent);
+  EXPECT_EQ(30u, statistics_proxy_->GetStats().total_encode_time_ms);
+}
+
 TEST_F(SendStatisticsProxyTest, OnSendEncodedImageIncreasesFramesEncoded) {
   EncodedImage encoded_image;
   CodecSpecificInfo codec_info;

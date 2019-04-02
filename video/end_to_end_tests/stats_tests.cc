@@ -161,7 +161,8 @@ TEST_F(StatsEndToEndTest, GetStats) {
           stats.substreams.size() == expected_num_streams;
 
       send_stats_filled_["CpuOveruseMetrics"] |=
-          stats.avg_encode_time_ms != 0 && stats.encode_usage_percent != 0;
+          stats.avg_encode_time_ms != 0 && stats.encode_usage_percent != 0 &&
+          stats.total_encode_time_ms != 0;
 
       send_stats_filled_["EncoderImplementationName"] |=
           stats.encoder_implementation_name ==
