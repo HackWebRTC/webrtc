@@ -111,6 +111,28 @@ ReaderPairType CreateVadProbsReader() {
   return {std::move(ptr), ptr->data_length()};
 }
 
+PitchTestData::PitchTestData() {
+  auto test_data_reader = CreatePitchSearchTestDataReader();
+  test_data_reader->ReadChunk(test_data_);
+}
+
+PitchTestData::~PitchTestData() = default;
+
+rtc::ArrayView<const float, kBufSize24kHz> PitchTestData::GetPitchBufView() {
+  return {test_data_.data(), kBufSize24kHz};
+}
+
+rtc::ArrayView<const float, kNumPitchBufSquareEnergies>
+PitchTestData::GetPitchBufSquareEnergiesView() {
+  return {test_data_.data() + kBufSize24kHz, kNumPitchBufSquareEnergies};
+}
+
+rtc::ArrayView<const float, kNumPitchBufAutoCorrCoeffs>
+PitchTestData::GetPitchBufAutoCorrCoeffsView() {
+  return {test_data_.data() + kBufSize24kHz + kNumPitchBufSquareEnergies,
+          kNumPitchBufAutoCorrCoeffs};
+}
+
 }  // namespace test
 }  // namespace rnn_vad
 }  // namespace webrtc
