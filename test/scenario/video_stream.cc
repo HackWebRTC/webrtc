@@ -336,7 +336,7 @@ VideoReceiveStream::Config CreateVideoReceiveStreamConfig(
 SendVideoStream::SendVideoStream(CallClient* sender,
                                  VideoStreamConfig config,
                                  Transport* send_transport,
-                                 VideoQualityAnalyzer* analyzer)
+                                 VideoFrameMatcher* matcher)
     : sender_(sender), config_(config) {
   video_capturer_ = absl::make_unique<FrameGeneratorCapturer>(
       sender_->clock_, CreateFrameGenerator(sender_->clock_, config.source),
@@ -395,14 +395,10 @@ SendVideoStream::SendVideoStream(CallClient* sender,
       send_stream_ = sender_->call_->CreateVideoSendStream(
           std::move(send_config), std::move(encoder_config));
     }
-    std::vector<std::function<void(const VideoFrameQualityInfo&)> >
-        frame_info_handlers;
-    if (config.analyzer.frame_quality_handler)
-      frame_info_handlers.push_back(config.analyzer.frame_quality_handler);
 
-    if (analyzer->Active()) {
-      frame_tap_.reset(new ForwardingCapturedFrameTap(sender_->clock_, analyzer,
-                                                      video_capturer_.get()));
+    if (matcher->Active()) {
+      frame_tap_ = absl::make_unique<ForwardingCapturedFrameTap>(
+          sender_->clock_, matcher, video_capturer_.get());
       send_stream_->SetSource(frame_tap_.get(),
                               config.encoder.degradation_preference);
     } else {
@@ -481,9 +477,8 @@ ReceiveVideoStream::ReceiveVideoStream(CallClient* receiver,
                                        SendVideoStream* send_stream,
                                        size_t chosen_stream,
                                        Transport* feedback_transport,
-                                       VideoQualityAnalyzer* analyzer)
+                                       VideoFrameMatcher* matcher)
     : receiver_(receiver), config_(config) {
-
   if (config.encoder.codec ==
       VideoStreamConfig::Encoder::Codec::kVideoCodecGeneric) {
     decoder_factory_ = absl::make_unique<FunctionVideoDecoderFactory>(
@@ -501,9 +496,9 @@ ReceiveVideoStream::ReceiveVideoStream(CallClient* receiver,
     num_streams = config.encoder.layers.spatial;
   for (size_t i = 0; i < num_streams; ++i) {
     rtc::VideoSinkInterface<VideoFrame>* renderer = &fake_renderer_;
-    if (analyzer->Active() && i == chosen_stream) {
-      analyzer_ = absl::make_unique<DecodedFrameTap>(analyzer);
-      renderer = analyzer_.get();
+    if (matcher->Active()) {
+      render_taps_.emplace_back(absl::make_unique<DecodedFrameTap>(matcher, i));
+      renderer = render_taps_.back().get();
     }
     auto recv_config = CreateVideoReceiveStreamConfig(
         config, feedback_transport, decoder, renderer,
@@ -556,21 +551,18 @@ void ReceiveVideoStream::Stop() {
 
 VideoStreamPair::~VideoStreamPair() = default;
 
-VideoStreamPair::VideoStreamPair(
-    CallClient* sender,
-    CallClient* receiver,
-    VideoStreamConfig config,
-    std::unique_ptr<RtcEventLogOutput> quality_writer)
+VideoStreamPair::VideoStreamPair(CallClient* sender,
+                                 CallClient* receiver,
+                                 VideoStreamConfig config)
     : config_(config),
-      analyzer_(std::move(quality_writer),
-                config.analyzer.frame_quality_handler),
-      send_stream_(sender, config, sender->transport_.get(), &analyzer_),
+      matcher_(config.hooks.frame_pair_handlers),
+      send_stream_(sender, config, sender->transport_.get(), &matcher_),
       receive_stream_(receiver,
                       config,
                       &send_stream_,
                       /*chosen_stream=*/0,
                       receiver->transport_.get(),
-                      &analyzer_) {}
+                      &matcher_) {}
 
 }  // namespace test
 }  // namespace webrtc

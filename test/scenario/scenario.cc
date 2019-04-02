@@ -270,11 +270,8 @@ VideoStreamPair* Scenario::CreateVideoStream(
 VideoStreamPair* Scenario::CreateVideoStream(
     std::pair<CallClient*, CallClient*> clients,
     VideoStreamConfig config) {
-  std::unique_ptr<RtcEventLogOutput> quality_logger;
-  if (config.analyzer.log_to_file)
-    quality_logger = clients.first->GetLogWriter(".video_quality.txt");
-  video_streams_.emplace_back(new VideoStreamPair(
-      clients.first, clients.second, config, std::move(quality_logger)));
+  video_streams_.emplace_back(
+      new VideoStreamPair(clients.first, clients.second, config));
   return video_streams_.back().get();
 }
 

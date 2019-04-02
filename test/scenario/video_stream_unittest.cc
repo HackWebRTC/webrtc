@@ -36,9 +36,8 @@ TEST(VideoStreamTest, DISABLED_ReceivesFramesFromFileBasedStreams) {
                                 {s.CreateSimulationNode(NetworkNodeConfig())});
 
     s.CreateVideoStream(route->forward(), [&](VideoStreamConfig* c) {
-      c->analyzer.frame_quality_handler = [&](const VideoFrameQualityInfo&) {
-        frame_counts[0]++;
-      };
+      c->hooks.frame_pair_handlers = {
+          [&](const VideoFramePair&) { frame_counts[0]++; }};
       c->source.capture = Capture::kVideoFile;
       c->source.video_file.name = "foreman_cif";
       c->source.video_file.width = 352;
@@ -48,9 +47,8 @@ TEST(VideoStreamTest, DISABLED_ReceivesFramesFromFileBasedStreams) {
       c->encoder.codec = Codec::kVideoCodecVP8;
     });
     s.CreateVideoStream(route->forward(), [&](VideoStreamConfig* c) {
-      c->analyzer.frame_quality_handler = [&](const VideoFrameQualityInfo&) {
-        frame_counts[1]++;
-      };
+      c->hooks.frame_pair_handlers = {
+          [&](const VideoFramePair&) { frame_counts[1]++; }};
       c->source.capture = Capture::kImageSlides;
       c->source.slides.images.crop.width = 320;
       c->source.slides.images.crop.height = 240;
@@ -70,11 +68,14 @@ TEST(VideoStreamTest, DISABLED_ReceivesFramesFromFileBasedStreams) {
 }
 
 // TODO(srte): Enable this after resolving flakiness issues.
-TEST(VideoStreamTest, DISABLED_RecievesVp8SimulcastFrames) {
+TEST(VideoStreamTest, RecievesVp8SimulcastFrames) {
   TimeDelta kRunTime = TimeDelta::ms(500);
   int kFrameRate = 30;
 
-  std::atomic<int> frame_count(0);
+  std::deque<std::atomic<int>> frame_counts(3);
+  frame_counts[0] = 0;
+  frame_counts[1] = 0;
+  frame_counts[2] = 0;
   {
     Scenario s;
     auto route = s.CreateRoutes(s.CreateClient("caller", CallClientConfig()),
@@ -84,15 +85,18 @@ TEST(VideoStreamTest, DISABLED_RecievesVp8SimulcastFrames) {
     s.CreateVideoStream(route->forward(), [&](VideoStreamConfig* c) {
       // TODO(srte): Replace with code checking for all simulcast streams when
       // there's a hook available for that.
-      c->analyzer.frame_quality_handler = [&](const VideoFrameQualityInfo&) {
-        frame_count++;
-      };
+      c->hooks.frame_pair_handlers = {[&](const VideoFramePair& info) {
+        frame_counts[info.layer_id]++;
+        RTC_DCHECK(info.decoded);
+        printf("%i: [%3i->%3i, %i], %i->%i, \n", info.layer_id, info.capture_id,
+               info.decode_id, info.repeated, info.captured->width(),
+               info.decoded->width());
+      }};
       c->source.framerate = kFrameRate;
       // The resolution must be high enough to allow smaller layers to be
       // created.
       c->source.generator.width = 1024;
       c->source.generator.height = 768;
-
       c->encoder.implementation = CodecImpl::kSoftware;
       c->encoder.codec = Codec::kVideoCodecVP8;
       // By enabling multiple spatial layers, simulcast will be enabled for VP8.
@@ -101,11 +105,13 @@ TEST(VideoStreamTest, DISABLED_RecievesVp8SimulcastFrames) {
     s.RunFor(kRunTime);
   }
 
-  // Using 20% error margin to avoid flakyness.
+  // Using high error margin to avoid flakyness.
   const int kExpectedCount =
-      static_cast<int>(kRunTime.seconds<double>() * kFrameRate * 0.8);
+      static_cast<int>(kRunTime.seconds<double>() * kFrameRate * 0.5);
 
-  EXPECT_GE(frame_count, kExpectedCount);
+  EXPECT_GE(frame_counts[0], kExpectedCount);
+  EXPECT_GE(frame_counts[1], kExpectedCount);
+  EXPECT_GE(frame_counts[2], kExpectedCount);
 }
 }  // namespace test
 }  // namespace webrtc

@@ -13,50 +13,49 @@
 namespace webrtc {
 namespace test {
 namespace {
-VideoStreamConfig AnalyzerVideoConfig(VideoQualityStats* stats) {
+void CreateAnalyzedStream(Scenario* s,
+                          NetworkNodeConfig network_config,
+                          VideoQualityAnalyzer* analyzer) {
   VideoStreamConfig config;
   config.encoder.codec = VideoStreamConfig::Encoder::Codec::kVideoCodecVP8;
   config.encoder.implementation =
       VideoStreamConfig::Encoder::Implementation::kSoftware;
-  config.analyzer.frame_quality_handler = [stats](VideoFrameQualityInfo info) {
-    stats->HandleFrameInfo(info);
-  };
-  return config;
+  config.hooks.frame_pair_handlers = {analyzer->Handler()};
+  auto route = s->CreateRoutes(s->CreateClient("caller", CallClientConfig()),
+                               {s->CreateSimulationNode(network_config)},
+                               s->CreateClient("callee", CallClientConfig()),
+                               {s->CreateSimulationNode(NetworkNodeConfig())});
+  s->CreateVideoStream(route->forward(), config);
 }
 }  // namespace
 
 TEST(ScenarioAnalyzerTest, PsnrIsHighWhenNetworkIsGood) {
-  VideoQualityStats stats;
+  VideoQualityAnalyzer analyzer;
   {
     Scenario s;
     NetworkNodeConfig good_network;
     good_network.simulation.bandwidth = DataRate::kbps(1000);
-    auto route = s.CreateRoutes(s.CreateClient("caller", CallClientConfig()),
-                                {s.CreateSimulationNode(good_network)},
-                                s.CreateClient("callee", CallClientConfig()),
-                                {s.CreateSimulationNode(NetworkNodeConfig())});
-    s.CreateVideoStream(route->forward(), AnalyzerVideoConfig(&stats));
+    CreateAnalyzedStream(&s, good_network, &analyzer);
     s.RunFor(TimeDelta::seconds(1));
   }
-  EXPECT_GT(stats.psnr.Mean(), 46);
+  // This is mainty a regression test, the target is based on previous runs and
+  // might change due to changes in configuration and encoder etc.
+  EXPECT_GT(analyzer.stats().psnr.Mean(), 45);
 }
 
 TEST(ScenarioAnalyzerTest, PsnrIsLowWhenNetworkIsBad) {
-  VideoQualityStats stats;
+  VideoQualityAnalyzer analyzer;
   {
     Scenario s;
     NetworkNodeConfig bad_network;
     bad_network.simulation.bandwidth = DataRate::kbps(100);
     bad_network.simulation.loss_rate = 0.02;
-    auto route = s.CreateRoutes(s.CreateClient("caller", CallClientConfig()),
-                                {s.CreateSimulationNode(bad_network)},
-                                s.CreateClient("callee", CallClientConfig()),
-                                {s.CreateSimulationNode(NetworkNodeConfig())});
-
-    s.CreateVideoStream(route->forward(), AnalyzerVideoConfig(&stats));
-    s.RunFor(TimeDelta::seconds(2));
+    CreateAnalyzedStream(&s, bad_network, &analyzer);
+    s.RunFor(TimeDelta::seconds(1));
   }
-  EXPECT_LT(stats.psnr.Mean(), 40);
+  // This is mainty a regression test, the target is based on previous runs and
+  // might change due to changes in configuration and encoder etc.
+  EXPECT_LT(analyzer.stats().psnr.Mean(), 43);
 }
 }  // namespace test
 }  // namespace webrtc

@@ -156,6 +156,7 @@ if (rtc_include_tests) {
   rtc_source_set("scenario_unittests") {
     testonly = true
     sources = [
+      "quality_stats_unittest.cc",
       "scenario_unittest.cc",
       "video_stream_unittest.cc",
     ]
@@ -175,23 +176,5 @@ if (rtc_include_tests) {
     if (is_ios) {
       deps += [ ":scenario_unittest_resources_bundle_data" ]
     }
-  }
-  rtc_source_set("scenario_slow_tests") {
-    testonly = true
-    sources = [
-      "quality_stats_unittest.cc",
-    ]
-    deps = [
-      ":scenario",
-      "../../logging:mocks",
-      "../../rtc_base:checks",
-      "../../rtc_base:rtc_base_approved",
-      "../../system_wrappers",
-      "../../system_wrappers:field_trial",
-      "../../test:field_trial",
-      "../../test:test_support",
-      "//testing/gmock",
-      "//third_party/abseil-cpp/absl/memory",
-    ]
   }
 }

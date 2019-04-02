@@ -11,7 +11,9 @@
 #define TEST_SCENARIO_QUALITY_STATS_H_
 
 #include <deque>
+#include <map>
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -20,6 +22,7 @@
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
+#include "rtc_base/ref_counted_object.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/clock.h"
@@ -31,38 +34,64 @@
 namespace webrtc {
 namespace test {
 
-class VideoQualityAnalyzer {
+class VideoFrameMatcher {
  public:
-  VideoQualityAnalyzer(
-      std::unique_ptr<RtcEventLogOutput> writer,
-      std::function<void(const VideoFrameQualityInfo&)> frame_info_handler);
-  ~VideoQualityAnalyzer();
-  void OnCapturedFrame(const VideoFrame& frame);
-  void OnDecodedFrame(const VideoFrame& frame);
-  void Synchronize();
+  explicit VideoFrameMatcher(
+      std::vector<std::function<void(const VideoFramePair&)>>
+          frame_pair_handlers);
+  ~VideoFrameMatcher();
+  void RegisterLayer(int layer_id);
+  void OnCapturedFrame(const VideoFrame& frame, Timestamp at_time);
+  void OnDecodedFrame(const VideoFrame& frame,
+                      Timestamp render_time,
+                      int layer_id);
   bool Active() const;
   Clock* clock();
 
  private:
-  void PrintHeaders();
-  void PrintFrameInfo(const VideoFrameQualityInfo& sample);
-  const std::unique_ptr<RtcEventLogOutput> writer_;
-  std::vector<std::function<void(const VideoFrameQualityInfo&)>>
-      frame_info_handlers_;
-  std::deque<VideoFrame> captured_frames_;
+  struct DecodedFrameBase {
+    int id;
+    Timestamp render_time = Timestamp::PlusInfinity();
+    rtc::scoped_refptr<VideoFrameBuffer> frame;
+    rtc::scoped_refptr<VideoFrameBuffer> thumb;
+    int repeat_count = 0;
+  };
+  using DecodedFrame = rtc::RefCountedObject<DecodedFrameBase>;
+  struct CapturedFrame {
+    int id;
+    Timestamp capture_time = Timestamp::PlusInfinity();
+    rtc::scoped_refptr<VideoFrameBuffer> frame;
+    rtc::scoped_refptr<VideoFrameBuffer> thumb;
+    double best_score = INFINITY;
+    rtc::scoped_refptr<DecodedFrame> best_decode;
+    bool matched = false;
+  };
+  struct VideoLayer {
+    int layer_id;
+    std::deque<CapturedFrame> captured_frames;
+    rtc::scoped_refptr<DecodedFrame> last_decode;
+    int next_decoded_id = 1;
+  };
+  void HandleMatch(CapturedFrame& captured, int layer_id) {
+    VideoFramePair frame_pair;
+    frame_pair.layer_id = layer_id;
+    frame_pair.captured = captured.frame;
+    frame_pair.capture_id = captured.id;
+    if (captured.best_decode) {
+      frame_pair.decode_id = captured.best_decode->id;
+      frame_pair.capture_time = captured.capture_time;
+      frame_pair.decoded = captured.best_decode->frame;
+      frame_pair.render_time = captured.best_decode->render_time;
+      frame_pair.repeated = captured.best_decode->repeat_count++;
+    }
+    for (auto& handler : frame_pair_handlers_)
+      handler(frame_pair);
+  }
+  void Finalize();
+  int next_capture_id_ = 1;
+  std::vector<std::function<void(const VideoFramePair&)>> frame_pair_handlers_;
+  std::map<int, VideoLayer> layers_;
   TaskQueueForTest task_queue_;
-};
-
-struct VideoQualityStats {
-  int total = 0;
-  int valid = 0;
-  int lost = 0;
-  Statistics end_to_end_seconds;
-  Statistics frame_size;
-  Statistics psnr;
-  Statistics ssim;
-
-  void HandleFrameInfo(VideoFrameQualityInfo sample);
 };
 
 class ForwardingCapturedFrameTap
@@ -70,7 +99,7 @@ class ForwardingCapturedFrameTap
       public rtc::VideoSourceInterface<VideoFrame> {
  public:
   ForwardingCapturedFrameTap(Clock* clock,
-                             VideoQualityAnalyzer* analyzer,
+                             VideoFrameMatcher* matcher,
                              rtc::VideoSourceInterface<VideoFrame>* source);
   ForwardingCapturedFrameTap(ForwardingCapturedFrameTap&) = delete;
   ForwardingCapturedFrameTap& operator=(ForwardingCapturedFrameTap&) = delete;
@@ -88,7 +117,7 @@ class ForwardingCapturedFrameTap
 
  private:
   Clock* const clock_;
-  VideoQualityAnalyzer* const analyzer_;
+  VideoFrameMatcher* const matcher_;
   rtc::VideoSourceInterface<VideoFrame>* const source_;
   VideoSinkInterface<VideoFrame>* sink_;
   int discarded_count_ = 0;
@@ -96,12 +125,42 @@ class ForwardingCapturedFrameTap
 
 class DecodedFrameTap : public rtc::VideoSinkInterface<VideoFrame> {
  public:
-  explicit DecodedFrameTap(VideoQualityAnalyzer* analyzer);
+  explicit DecodedFrameTap(VideoFrameMatcher* matcher, int layer_id);
   // VideoSinkInterface interface
   void OnFrame(const VideoFrame& frame) override;
 
  private:
-  VideoQualityAnalyzer* const analyzer_;
+  VideoFrameMatcher* const matcher_;
+  int layer_id_;
+};
+struct VideoQualityAnalyzerConfig {
+  double psnr_coverage = 1;
+};
+struct VideoQualityStats {
+  int captures_count = 0;
+  int valid_count = 0;
+  int lost_count = 0;
+  Statistics end_to_end_seconds;
+  Statistics frame_size;
+  Statistics psnr;
+};
+
+class VideoQualityAnalyzer {
+ public:
+  explicit VideoQualityAnalyzer(
+      VideoQualityAnalyzerConfig config = VideoQualityAnalyzerConfig(),
+      std::unique_ptr<RtcEventLogOutput> writer = nullptr);
+  ~VideoQualityAnalyzer();
+  void HandleFramePair(VideoFramePair sample);
+  VideoQualityStats stats() const;
+  void PrintHeaders();
+  void PrintFrameInfo(const VideoFramePair& sample);
+  std::function<void(const VideoFramePair&)> Handler();
+
+ private:
+  const VideoQualityAnalyzerConfig config_;
+  VideoQualityStats stats_;
+  const std::unique_ptr<RtcEventLogOutput> writer_;
 };
 }  // namespace test
 }  // namespace webrtc

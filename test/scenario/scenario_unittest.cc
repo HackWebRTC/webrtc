@@ -55,5 +55,67 @@ TEST(ScenarioTest, StartsAndStopsWithoutErrors) {
   EXPECT_TRUE(packet_received);
   EXPECT_TRUE(bitrate_changed);
 }
+namespace {
+void SetupVideoCall(Scenario& s, VideoQualityAnalyzer* analyzer) {
+  CallClientConfig call_config;
+  auto* alice = s.CreateClient("alice", call_config);
+  auto* bob = s.CreateClient("bob", call_config);
+  NetworkNodeConfig network_config;
+  network_config.simulation.bandwidth = DataRate::kbps(1000);
+  network_config.simulation.delay = TimeDelta::ms(50);
+  auto alice_net = s.CreateSimulationNode(network_config);
+  auto bob_net = s.CreateSimulationNode(network_config);
+  auto route = s.CreateRoutes(alice, {alice_net}, bob, {bob_net});
+  VideoStreamConfig video;
+  if (analyzer) {
+    video.source.capture = VideoStreamConfig::Source::Capture::kVideoFile;
+    video.source.video_file.name = "foreman_cif";
+    video.source.video_file.width = 352;
+    video.source.video_file.height = 288;
+    video.source.framerate = 30;
+    video.encoder.codec = VideoStreamConfig::Encoder::Codec::kVideoCodecVP8;
+    video.encoder.implementation =
+        VideoStreamConfig::Encoder::Implementation::kSoftware;
+    video.hooks.frame_pair_handlers = {analyzer->Handler()};
+  }
+  s.CreateVideoStream(route->forward(), video);
+  s.CreateAudioStream(route->forward(), AudioStreamConfig());
+}
+}  // namespace
+
+TEST(ScenarioTest, SimTimeEncoding) {
+  VideoQualityAnalyzerConfig analyzer_config;
+  analyzer_config.psnr_coverage = 0.1;
+  VideoQualityAnalyzer analyzer(analyzer_config);
+  {
+    Scenario s("scenario/encode_sim", false);
+    SetupVideoCall(s, &analyzer);
+    s.RunFor(TimeDelta::seconds(60));
+  }
+  // Regression tests based on previous runs.
+  EXPECT_NEAR(analyzer.stats().psnr.Mean(), 38, 2);
+  EXPECT_EQ(analyzer.stats().lost_count, 0);
+}
+
+TEST(ScenarioTest, RealTimeEncoding) {
+  VideoQualityAnalyzerConfig analyzer_config;
+  analyzer_config.psnr_coverage = 0.1;
+  VideoQualityAnalyzer analyzer(analyzer_config);
+  {
+    Scenario s("scenario/encode_real", true);
+    SetupVideoCall(s, &analyzer);
+    s.RunFor(TimeDelta::seconds(10));
+  }
+  // Regression tests based on previous runs.
+  EXPECT_NEAR(analyzer.stats().psnr.Mean(), 38, 2);
+  EXPECT_LT(analyzer.stats().lost_count, 2);
+}
+
+TEST(ScenarioTest, SimTimeFakeing) {
+  Scenario s("scenario/encode_sim", false);
+  SetupVideoCall(s, nullptr);
+  s.RunFor(TimeDelta::seconds(10));
+}
+
 }  // namespace test
 }  // namespace webrtc

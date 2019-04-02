@@ -17,96 +17,103 @@
 
 namespace webrtc {
 namespace test {
+namespace {
+constexpr int kThumbWidth = 96;
+constexpr int kThumbHeight = 96;
+}  // namespace
 
-VideoQualityAnalyzer::VideoQualityAnalyzer(
-    std::unique_ptr<RtcEventLogOutput> writer,
-    std::function<void(const VideoFrameQualityInfo&)> frame_info_handler)
-    : writer_(std::move(writer)), task_queue_("VideoAnalyzer") {
-  if (writer_) {
-    PrintHeaders();
-    frame_info_handlers_.push_back(
-        [this](const VideoFrameQualityInfo& info) { PrintFrameInfo(info); });
-  }
-  if (frame_info_handler)
-    frame_info_handlers_.push_back(frame_info_handler);
-}
+VideoFrameMatcher::VideoFrameMatcher(
+    std::vector<std::function<void(const VideoFramePair&)> >
+        frame_pair_handlers)
+    : frame_pair_handlers_(frame_pair_handlers), task_queue_("VideoAnalyzer") {}
 
-VideoQualityAnalyzer::~VideoQualityAnalyzer() {
+VideoFrameMatcher::~VideoFrameMatcher() {
   task_queue_.SendTask([] {});
 }
 
-void VideoQualityAnalyzer::OnCapturedFrame(const VideoFrame& frame) {
-  VideoFrame copy = frame;
-  task_queue_.PostTask([this, copy]() mutable {
-    captured_frames_.push_back(std::move(copy));
+void VideoFrameMatcher::RegisterLayer(int layer_id) {
+  task_queue_.PostTask([this, layer_id] { layers_[layer_id] = VideoLayer(); });
+}
+
+void VideoFrameMatcher::OnCapturedFrame(const VideoFrame& frame,
+                                        Timestamp at_time) {
+  CapturedFrame captured;
+  captured.id = next_capture_id_++;
+  captured.capture_time = at_time;
+  captured.frame = frame.video_frame_buffer();
+  captured.thumb = ScaleVideoFrameBuffer(*frame.video_frame_buffer()->ToI420(),
+                                         kThumbWidth, kThumbHeight),
+  task_queue_.PostTask([this, captured]() {
+    for (auto& layer : layers_) {
+      CapturedFrame copy = captured;
+      if (layer.second.last_decode) {
+        copy.best_score = I420SSE(*captured.thumb->GetI420(),
+                                  *layer.second.last_decode->thumb->GetI420());
+        copy.best_decode = layer.second.last_decode;
+      }
+      layer.second.captured_frames.push_back(std::move(copy));
+    }
   });
 }
 
-void VideoQualityAnalyzer::OnDecodedFrame(const VideoFrame& frame) {
-  VideoFrame decoded = frame;
-  RTC_CHECK(frame.ntp_time_ms());
-  RTC_CHECK(frame.timestamp());
-  task_queue_.PostTask([this, decoded] {
-    // TODO(srte): Add detection and handling of lost frames.
-    RTC_CHECK(!captured_frames_.empty());
-    VideoFrame captured = std::move(captured_frames_.front());
-    captured_frames_.pop_front();
-    VideoFrameQualityInfo decoded_info =
-        VideoFrameQualityInfo{Timestamp::us(captured.timestamp_us()),
-                              Timestamp::ms(decoded.timestamp() / 90.0),
-                              Timestamp::ms(decoded.render_time_ms()),
-                              decoded.width(),
-                              decoded.height(),
-                              I420PSNR(&captured, &decoded)};
-    for (auto& handler : frame_info_handlers_)
-      handler(decoded_info);
+void VideoFrameMatcher::OnDecodedFrame(const VideoFrame& frame,
+                                       Timestamp render_time,
+                                       int layer_id) {
+  rtc::scoped_refptr<DecodedFrame> decoded(new DecodedFrame{});
+  decoded->render_time = render_time;
+  decoded->frame = frame.video_frame_buffer();
+  decoded->thumb = ScaleVideoFrameBuffer(*frame.video_frame_buffer()->ToI420(),
+                                         kThumbWidth, kThumbHeight);
+  decoded->render_time = render_time;
+
+  task_queue_.PostTask([this, decoded, layer_id] {
+    auto& layer = layers_[layer_id];
+    decoded->id = layer.next_decoded_id++;
+    layer.last_decode = decoded;
+    for (auto& captured : layer.captured_frames) {
+      double score =
+          I420SSE(*captured.thumb->GetI420(), *decoded->thumb->GetI420());
+      if (score < captured.best_score) {
+        captured.best_score = score;
+        captured.best_decode = decoded;
+        captured.matched = false;
+      } else {
+        captured.matched = true;
+      }
+    }
+    while (!layer.captured_frames.empty() &&
+           layer.captured_frames.front().matched) {
+      HandleMatch(layer.captured_frames.front(), layer_id);
+      layer.captured_frames.pop_front();
+    }
   });
 }
 
-bool VideoQualityAnalyzer::Active() const {
-  return !frame_info_handlers_.empty();
+bool VideoFrameMatcher::Active() const {
+  return !frame_pair_handlers_.empty();
 }
 
-void VideoQualityAnalyzer::PrintHeaders() {
-  writer_->Write("capt recv_capt render width height psnr\n");
-}
-
-void VideoQualityAnalyzer::PrintFrameInfo(const VideoFrameQualityInfo& sample) {
-  LogWriteFormat(writer_.get(), "%.3f %.3f %.3f %i %i %.3f\n",
-                 sample.capture_time.seconds<double>(),
-                 sample.received_capture_time.seconds<double>(),
-                 sample.render_time.seconds<double>(), sample.width,
-                 sample.height, sample.psnr);
-}
-
-void VideoQualityStats::HandleFrameInfo(VideoFrameQualityInfo sample) {
-  total++;
-  if (sample.render_time.IsInfinite()) {
-    ++lost;
-  } else {
-    ++valid;
-    end_to_end_seconds.AddSample(
-        (sample.render_time - sample.capture_time).seconds<double>());
-    psnr.AddSample(sample.psnr);
+void VideoFrameMatcher::Finalize() {
+  for (auto& layer : layers_) {
+    while (!layer.second.captured_frames.empty()) {
+      HandleMatch(layer.second.captured_frames.front(), layer.first);
+      layer.second.captured_frames.pop_front();
+    }
   }
 }
 
 ForwardingCapturedFrameTap::ForwardingCapturedFrameTap(
     Clock* clock,
-    VideoQualityAnalyzer* analyzer,
+    VideoFrameMatcher* matcher,
     rtc::VideoSourceInterface<VideoFrame>* source)
-    : clock_(clock), analyzer_(analyzer), source_(source) {}
+    : clock_(clock), matcher_(matcher), source_(source) {}
 
 ForwardingCapturedFrameTap::~ForwardingCapturedFrameTap() {}
 
 void ForwardingCapturedFrameTap::OnFrame(const VideoFrame& frame) {
   RTC_CHECK(sink_);
-  VideoFrame copy = frame;
-  if (frame.ntp_time_ms() == 0)
-    copy.set_ntp_time_ms(clock_->CurrentNtpInMilliseconds());
-  copy.set_timestamp(copy.ntp_time_ms() * 90);
-  analyzer_->OnCapturedFrame(copy);
-  sink_->OnFrame(copy);
+  matcher_->OnCapturedFrame(frame, Timestamp::ms(clock_->TimeInMilliseconds()));
+  sink_->OnFrame(frame);
 }
 void ForwardingCapturedFrameTap::OnDiscardedFrame() {
   RTC_CHECK(sink_);
@@ -126,11 +133,61 @@ void ForwardingCapturedFrameTap::RemoveSink(
   sink_ = nullptr;
 }
 
-DecodedFrameTap::DecodedFrameTap(VideoQualityAnalyzer* analyzer)
-    : analyzer_(analyzer) {}
+DecodedFrameTap::DecodedFrameTap(VideoFrameMatcher* matcher, int layer_id)
+    : matcher_(matcher), layer_id_(layer_id) {
+  matcher_->RegisterLayer(layer_id_);
+}
 
 void DecodedFrameTap::OnFrame(const VideoFrame& frame) {
-  analyzer_->OnDecodedFrame(frame);
+  matcher_->OnDecodedFrame(frame, Timestamp::ms(frame.render_time_ms()),
+                           layer_id_);
+}
+
+VideoQualityAnalyzer::VideoQualityAnalyzer(
+    VideoQualityAnalyzerConfig config,
+    std::unique_ptr<RtcEventLogOutput> writer)
+    : config_(config), writer_(std::move(writer)) {
+  if (writer_) {
+    PrintHeaders();
+  }
+}
+
+VideoQualityAnalyzer::~VideoQualityAnalyzer() = default;
+
+void VideoQualityAnalyzer::PrintHeaders() {
+  writer_->Write(
+      "capture_time render_time capture_width capture_height render_width "
+      "render_height psnr\n");
+}
+
+std::function<void(const VideoFramePair&)> VideoQualityAnalyzer::Handler() {
+  return [this](VideoFramePair pair) { HandleFramePair(pair); };
+}
+
+void VideoQualityAnalyzer::HandleFramePair(VideoFramePair sample) {
+  double psnr = NAN;
+  RTC_CHECK(sample.captured);
+  ++stats_.captures_count;
+  if (!sample.decoded) {
+    ++stats_.lost_count;
+  } else {
+    psnr = I420PSNR(*sample.captured->ToI420(), *sample.decoded->ToI420());
+    ++stats_.valid_count;
+    stats_.end_to_end_seconds.AddSample(
+        (sample.render_time - sample.capture_time).seconds<double>());
+    stats_.psnr.AddSample(psnr);
+  }
+  if (writer_) {
+    LogWriteFormat(writer_.get(), "%.3f %.3f %.3f %i %i %i %i %.3f\n",
+                   sample.capture_time.seconds<double>(),
+                   sample.render_time.seconds<double>(),
+                   sample.captured->width(), sample.captured->height(),
+                   sample.decoded->width(), sample.decoded->height(), psnr);
+  }
+}
+
+VideoQualityStats VideoQualityAnalyzer::stats() const {
+  return stats_;
 }
 
 }  // namespace test

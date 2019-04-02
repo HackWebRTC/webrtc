@@ -11,16 +11,24 @@
 #define TEST_SCENARIO_QUALITY_INFO_H_
 
 #include "api/units/timestamp.h"
+#include "api/video/video_frame_buffer.h"
 
 namespace webrtc {
 namespace test {
-struct VideoFrameQualityInfo {
-  Timestamp capture_time;
-  Timestamp received_capture_time;
-  Timestamp render_time;
-  int width;
-  int height;
-  double psnr;
+struct VideoFramePair {
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> captured;
+  rtc::scoped_refptr<webrtc::VideoFrameBuffer> decoded;
+  Timestamp capture_time = Timestamp::MinusInfinity();
+  Timestamp render_time = Timestamp::PlusInfinity();
+  // A unique identifier for the spatial/temporal layer the decoded frame
+  // belongs to. Note that this does not reflect the id as defined by the
+  // underlying layer setup.
+  int layer_id = 0;
+  int capture_id = 0;
+  int decode_id = 0;
+  // Indicates the repeat count for the decoded frame. Meaning that the same
+  // decoded frame has matched differend captured frames.
+  int repeated = 0;
 };
 }  // namespace test
 }  // namespace webrtc

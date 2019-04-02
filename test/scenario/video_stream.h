@@ -48,7 +48,7 @@ class SendVideoStream {
   SendVideoStream(CallClient* sender,
                   VideoStreamConfig config,
                   Transport* send_transport,
-                  VideoQualityAnalyzer* analyzer);
+                  VideoFrameMatcher* matcher);
 
   rtc::CriticalSection crit_;
   std::vector<uint32_t> ssrcs_;
@@ -81,12 +81,13 @@ class ReceiveVideoStream {
                      SendVideoStream* send_stream,
                      size_t chosen_stream,
                      Transport* feedback_transport,
-                     VideoQualityAnalyzer* analyzer);
+                     VideoFrameMatcher* matcher);
 
   std::vector<VideoReceiveStream*> receive_streams_;
   FlexfecReceiveStream* flecfec_stream_ = nullptr;
   FakeVideoRenderer fake_renderer_;
-  std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> analyzer_;
+  std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>
+      render_taps_;
   CallClient* const receiver_;
   const VideoStreamConfig config_;
   std::unique_ptr<VideoDecoderFactory> decoder_factory_;
@@ -101,18 +102,17 @@ class VideoStreamPair {
   ~VideoStreamPair();
   SendVideoStream* send() { return &send_stream_; }
   ReceiveVideoStream* receive() { return &receive_stream_; }
-  VideoQualityAnalyzer* analyzer() { return &analyzer_; }
+  VideoFrameMatcher* matcher() { return &matcher_; }
 
  private:
   friend class Scenario;
   VideoStreamPair(CallClient* sender,
                   CallClient* receiver,
-                  VideoStreamConfig config,
-                  std::unique_ptr<RtcEventLogOutput> quality_writer);
+                  VideoStreamConfig config);
 
   const VideoStreamConfig config_;
 
-  VideoQualityAnalyzer analyzer_;
+  VideoFrameMatcher matcher_;
   SendVideoStream send_stream_;
   ReceiveVideoStream receive_stream_;
 };

@@ -181,10 +181,9 @@ struct VideoStreamConfig {
     enum Type { kFake } type = kFake;
     std::string sync_group;
   } render;
-  struct analyzer {
-    bool log_to_file = false;
-    std::function<void(const VideoFrameQualityInfo&)> frame_quality_handler;
-  } analyzer;
+  struct Hooks {
+    std::vector<std::function<void(const VideoFramePair&)>> frame_pair_handlers;
+  } hooks;
 };
 
 struct AudioStreamConfig {
