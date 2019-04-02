@@ -87,7 +87,7 @@ enum class DegradationPreference {
   BALANCED,
 };
 
-extern const double kDefaultBitratePriority;
+RTC_EXPORT extern const double kDefaultBitratePriority;
 
 struct RtcpFeedback {
   RtcpFeedbackType type = RtcpFeedbackType::CCM;
@@ -362,7 +362,7 @@ struct RtpRtxParameters {
   bool operator!=(const RtpRtxParameters& o) const { return !(*this == o); }
 };
 
-struct RtpEncodingParameters {
+struct RTC_EXPORT RtpEncodingParameters {
   RtpEncodingParameters();
   RtpEncodingParameters(const RtpEncodingParameters&);
   ~RtpEncodingParameters();
@@ -561,7 +561,7 @@ struct RtpCodecParameters {
 // RtpCapabilities is used to represent the static capabilities of an
 // endpoint. An application can use these capabilities to construct an
 // RtpParameters.
-struct RtpCapabilities {
+struct RTC_EXPORT RtpCapabilities {
   RtpCapabilities();
   ~RtpCapabilities();
 

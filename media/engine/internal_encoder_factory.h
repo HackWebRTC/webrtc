@@ -17,10 +17,11 @@
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
-class InternalEncoderFactory : public VideoEncoderFactory {
+class RTC_EXPORT InternalEncoderFactory : public VideoEncoderFactory {
  public:
   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
 

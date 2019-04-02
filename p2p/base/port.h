@@ -46,9 +46,9 @@ namespace cricket {
 class Connection;
 class ConnectionRequest;
 
-extern const char LOCAL_PORT_TYPE[];
-extern const char STUN_PORT_TYPE[];
-extern const char PRFLX_PORT_TYPE[];
+RTC_EXPORT extern const char LOCAL_PORT_TYPE[];
+RTC_EXPORT extern const char STUN_PORT_TYPE[];
+RTC_EXPORT extern const char PRFLX_PORT_TYPE[];
 RTC_EXPORT extern const char RELAY_PORT_TYPE[];
 
 // RFC 6544, TCP candidate encoding rules.

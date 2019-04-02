@@ -67,9 +67,9 @@ bool SdpDeserialize(const std::string& message,
 // candidates - The JsepIceCandidate from the SDP string.
 // error - The detail error information when parsing fails.
 // return - true on success, false on failure.
-bool SdpDeserializeCandidate(const std::string& message,
-                             JsepIceCandidate* candidate,
-                             SdpParseError* error);
+RTC_EXPORT bool SdpDeserializeCandidate(const std::string& message,
+                                        JsepIceCandidate* candidate,
+                                        SdpParseError* error);
 
 // Deserializes the passed in SDP string to a cricket Candidate.
 // The first line must be a=candidate line and only the first line will be

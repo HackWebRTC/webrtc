@@ -20,6 +20,7 @@
 #include "absl/strings/string_view.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
@@ -80,7 +81,7 @@ enum class RTCErrorType {
 //
 // Doesn't contain anything beyond a type and message now, but will in the
 // future as more errors are implemented.
-class RTCError {
+class RTC_EXPORT RTCError {
  public:
   // Constructors.
 

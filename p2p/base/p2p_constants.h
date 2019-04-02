@@ -31,15 +31,15 @@ extern const char CN_OTHER[];
 // GN stands for group name
 extern const char GROUP_TYPE_BUNDLE[];
 
-extern const int ICE_UFRAG_LENGTH;
+RTC_EXPORT extern const int ICE_UFRAG_LENGTH;
 RTC_EXPORT extern const int ICE_PWD_LENGTH;
 extern const size_t ICE_UFRAG_MIN_LENGTH;
 extern const size_t ICE_PWD_MIN_LENGTH;
 extern const size_t ICE_UFRAG_MAX_LENGTH;
 extern const size_t ICE_PWD_MAX_LENGTH;
 
-extern const int ICE_CANDIDATE_COMPONENT_RTP;
-extern const int ICE_CANDIDATE_COMPONENT_RTCP;
+RTC_EXPORT extern const int ICE_CANDIDATE_COMPONENT_RTP;
+RTC_EXPORT extern const int ICE_CANDIDATE_COMPONENT_RTCP;
 extern const int ICE_CANDIDATE_COMPONENT_DEFAULT;
 
 // RFC 4145, SDP setup attribute values.

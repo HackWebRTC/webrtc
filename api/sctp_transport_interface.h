@@ -33,7 +33,7 @@ enum class SctpTransportState {
 // SctpTransport.
 // It reflects the readonly attributes of the object in the specification.
 // http://w3c.github.io/webrtc-pc/#rtcsctptransport-interface
-class SctpTransportInformation {
+class RTC_EXPORT SctpTransportInformation {
  public:
   explicit SctpTransportInformation(SctpTransportState state);
   SctpTransportInformation(

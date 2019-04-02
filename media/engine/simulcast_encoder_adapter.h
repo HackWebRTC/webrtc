@@ -23,6 +23,7 @@
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
@@ -33,7 +34,7 @@ class VideoEncoderFactory;
 // webrtc::VideoEncoder instances with the given VideoEncoderFactory.
 // The object is created and destroyed on the worker thread, but all public
 // interfaces should be called from the encoder task queue.
-class SimulcastEncoderAdapter : public VideoEncoder {
+class RTC_EXPORT SimulcastEncoderAdapter : public VideoEncoder {
  public:
   explicit SimulcastEncoderAdapter(VideoEncoderFactory* factory,
                                    const SdpVideoFormat& format);

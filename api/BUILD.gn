@@ -466,6 +466,7 @@ rtc_source_set("ice_transport_factory") {
     ":scoped_refptr",
     "../p2p:rtc_p2p",
     "../rtc_base",
+    "../rtc_base/system:rtc_export",
     "//third_party/abseil-cpp/absl/memory",
   ]
 }

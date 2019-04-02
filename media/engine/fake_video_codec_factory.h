@@ -16,12 +16,13 @@
 
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
 // Provides a fake video encoder instance that produces frames large enough for
 // the given bitrate constraints.
-class FakeVideoEncoderFactory : public VideoEncoderFactory {
+class RTC_EXPORT FakeVideoEncoderFactory : public VideoEncoderFactory {
  public:
   FakeVideoEncoderFactory();
 
@@ -37,7 +38,7 @@ class FakeVideoEncoderFactory : public VideoEncoderFactory {
 
 // Provides a fake video decoder instance that ignores the given bitstream and
 // produces frames.
-class FakeVideoDecoderFactory : public VideoDecoderFactory {
+class RTC_EXPORT FakeVideoDecoderFactory : public VideoDecoderFactory {
  public:
   FakeVideoDecoderFactory();
 

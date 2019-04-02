@@ -151,7 +151,7 @@ class StatsObserver : public rtc::RefCountInterface {
 
 enum class SdpSemantics { kPlanB, kUnifiedPlan };
 
-class PeerConnectionInterface : public rtc::RefCountInterface {
+class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
  public:
   // See https://w3c.github.io/webrtc-pc/#dom-rtcsignalingstate
   enum SignalingState {

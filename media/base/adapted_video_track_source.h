@@ -22,6 +22,7 @@
 #include "media/base/video_adapter.h"
 #include "media/base/video_broadcaster.h"
 #include "rtc_base/critical_section.h"
+#include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace rtc {
@@ -30,7 +31,7 @@ namespace rtc {
 // capture sources. Sinks must be added and removed on one and only
 // one thread, while AdaptFrame and OnFrame may be called on any
 // thread.
-class AdaptedVideoTrackSource
+class RTC_EXPORT AdaptedVideoTrackSource
     : public webrtc::Notifier<webrtc::VideoTrackSourceInterface> {
  public:
   AdaptedVideoTrackSource();

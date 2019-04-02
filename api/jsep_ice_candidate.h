@@ -21,11 +21,12 @@
 #include "api/candidate.h"
 #include "api/jsep.h"
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
 // Implementation of IceCandidateInterface.
-class JsepIceCandidate : public IceCandidateInterface {
+class RTC_EXPORT JsepIceCandidate : public IceCandidateInterface {
  public:
   JsepIceCandidate(const std::string& sdp_mid, int sdp_mline_index);
   JsepIceCandidate(const std::string& sdp_mid,
