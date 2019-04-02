@@ -227,6 +227,7 @@ class PeerConnection : public PeerConnectionInternal,
   }
 
   bool initial_offerer() const override {
+    RTC_DCHECK_RUN_ON(signaling_thread());
     return transport_controller_ && transport_controller_->initial_offerer();
   }
 
@@ -252,6 +253,7 @@ class PeerConnection : public PeerConnectionInternal,
   }
 
   absl::optional<std::string> sctp_content_name() const override {
+    RTC_DCHECK_RUN_ON(signaling_thread());
     return sctp_mid_;
   }
 
@@ -616,7 +618,7 @@ class PeerConnection : public PeerConnectionInternal,
   // Returns the MID for the data section associated with either the
   // RtpDataChannel or SCTP data channel, if it has been set. If no data
   // channels are configured this will return nullopt.
-  absl::optional<std::string> GetDataMid() const;
+  absl::optional<std::string> GetDataMid() const RTC_RUN_ON(signaling_thread());
 
   // Remove all local and remote senders of type |media_type|.
   // Called when a media type is rejected (m-line set to port 0).
@@ -1053,7 +1055,8 @@ class PeerConnection : public PeerConnectionInternal,
   CryptoOptions GetCryptoOptions() RTC_RUN_ON(signaling_thread());
 
   // Returns rtp transport, result can not be nullptr.
-  RtpTransportInternal* GetRtpTransport(const std::string& mid) {
+  RtpTransportInternal* GetRtpTransport(const std::string& mid)
+      RTC_RUN_ON(signaling_thread()) {
     auto rtp_transport = transport_controller_->GetRtpTransport(mid);
     RTC_DCHECK(rtp_transport);
     return rtp_transport;
@@ -1177,7 +1180,9 @@ class PeerConnection : public PeerConnectionInternal,
 
   std::vector<
       rtc::scoped_refptr<RtpTransceiverProxyWithInternal<RtpTransceiver>>>
-      transceivers_;
+      transceivers_;  // TODO(bugs.webrtc.org/9987): Accessed on both signaling
+                      // and network thread.
+
   // In Unified Plan, if we encounter remote SDP that does not contain an a=msid
   // line we create and use a stream with a random ID for our receivers. This is
   // to support legacy endpoints that do not support the a=msid attribute (as
@@ -1194,21 +1199,34 @@ class PeerConnection : public PeerConnectionInternal,
 
   std::string session_id_ RTC_GUARDED_BY(signaling_thread());
 
-  std::unique_ptr<JsepTransportController> transport_controller_;
-  std::unique_ptr<cricket::SctpTransportInternalFactory> sctp_factory_;
+  std::unique_ptr<JsepTransportController>
+      transport_controller_;  // TODO(bugs.webrtc.org/9987): Accessed on both
+                              // signaling and network thread.
+  std::unique_ptr<cricket::SctpTransportInternalFactory>
+      sctp_factory_;  // TODO(bugs.webrtc.org/9987): Accessed on both
+                      // signaling and network thread.
   // |rtp_data_channel_| is used if in RTP data channel mode, |sctp_transport_|
   // when using SCTP.
-  cricket::RtpDataChannel* rtp_data_channel_ = nullptr;
+  cricket::RtpDataChannel* rtp_data_channel_ =
+      nullptr;  // TODO(bugs.webrtc.org/9987): Accessed on both
+                // signaling and some other thread.
 
   cricket::SctpTransportInternal* cricket_sctp_transport() {
     return sctp_transport_->internal();
   }
-  rtc::scoped_refptr<SctpTransport> sctp_transport_;
+  rtc::scoped_refptr<SctpTransport>
+      sctp_transport_;  // TODO(bugs.webrtc.org/9987): Accessed on both
+                        // signaling and network thread.
+
   // |sctp_mid_| is the content name (MID) in SDP.
-  absl::optional<std::string> sctp_mid_;
+  absl::optional<std::string>
+      sctp_mid_;  // TODO(bugs.webrtc.org/9987): Accessed on both signaling
+                  // and network thread.
+
   // Value cached on signaling thread. Only updated when SctpReadyToSendData
   // fires on the signaling thread.
-  bool sctp_ready_to_send_data_ = false;
+  bool sctp_ready_to_send_data_ RTC_GUARDED_BY(signaling_thread()) = false;
+
   // Same as signals provided by SctpTransport, but these are guaranteed to
   // fire on the signaling thread, whereas SctpTransport fires on the networking
   // thread.

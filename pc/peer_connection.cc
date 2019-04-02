@@ -3549,6 +3549,7 @@ bool PeerConnection::AddIceCandidate(
 bool PeerConnection::RemoveIceCandidates(
     const std::vector<cricket::Candidate>& candidates) {
   TRACE_EVENT0("webrtc", "PeerConnection::RemoveIceCandidates");
+  RTC_DCHECK_RUN_ON(signaling_thread());
   if (IsClosed()) {
     RTC_LOG(LS_ERROR) << "RemoveIceCandidates: PeerConnection is closed.";
     return false;
@@ -3740,16 +3741,19 @@ void PeerConnection::StopRtcEventLog() {
 
 rtc::scoped_refptr<DtlsTransportInterface>
 PeerConnection::LookupDtlsTransportByMid(const std::string& mid) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   return transport_controller_->LookupDtlsTransportByMid(mid);
 }
 
 rtc::scoped_refptr<DtlsTransport>
 PeerConnection::LookupDtlsTransportByMidInternal(const std::string& mid) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   return transport_controller_->LookupDtlsTransportByMid(mid);
 }
 
 rtc::scoped_refptr<SctpTransportInterface> PeerConnection::GetSctpTransport()
     const {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   return sctp_transport_;
 }
 
@@ -5474,6 +5478,7 @@ bool PeerConnection::GetSctpSslRole(rtc::SSLRole* role) {
 
 bool PeerConnection::GetSslRole(const std::string& content_name,
                                 rtc::SSLRole* role) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   if (!local_description() || !remote_description()) {
     RTC_LOG(LS_INFO)
         << "Local and Remote descriptions must be applied to get the "
@@ -5694,6 +5699,7 @@ cricket::IceConfig PeerConnection::ParseIceConfig(
 bool PeerConnection::SendData(const cricket::SendDataParams& params,
                               const rtc::CopyOnWriteBuffer& payload,
                               cricket::SendDataResult* result) {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   if (!rtp_data_channel_ && !sctp_transport_ && !media_transport_) {
     RTC_LOG(LS_ERROR) << "SendData called when rtp_data_channel_, "
                          "sctp_transport_, and media_transport_ are NULL.";
@@ -5846,6 +5852,7 @@ void PeerConnection::OnChannelClosed(int channel_id) {
 }
 
 absl::optional<std::string> PeerConnection::sctp_transport_name() const {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   if (sctp_mid_ && transport_controller_) {
     auto dtls_transport = transport_controller_->GetDtlsTransport(*sctp_mid_);
     if (dtls_transport) {
@@ -5897,6 +5904,7 @@ PeerConnection::GetTransportStatsByNames(
             RTC_FROM_HERE,
             [&] { return GetTransportStatsByNames(transport_names); });
   }
+  RTC_DCHECK_RUN_ON(network_thread());
   std::map<std::string, cricket::TransportStats> transport_stats_by_name;
   for (const std::string& transport_name : transport_names) {
     cricket::TransportStats transport_stats;
@@ -6327,7 +6335,7 @@ Call::Stats PeerConnection::GetCallStats() {
 }
 
 bool PeerConnection::CreateSctpTransport_n(const std::string& mid) {
-  RTC_DCHECK(network_thread()->IsCurrent());
+  RTC_DCHECK_RUN_ON(network_thread());
   RTC_DCHECK(sctp_factory_);
   rtc::scoped_refptr<DtlsTransport> webrtc_dtls_transport =
       transport_controller_->LookupDtlsTransportByMid(mid);
@@ -6363,7 +6371,6 @@ void PeerConnection::DestroySctpTransport_n() {
   sctp_transport_ = nullptr;
   sctp_mid_.reset();
   sctp_invoker_.reset(nullptr);
-  sctp_ready_to_send_data_ = false;
 }
 
 void PeerConnection::OnSctpTransportReadyToSendData_n() {
@@ -6380,7 +6387,7 @@ void PeerConnection::OnSctpTransportReadyToSendData_n() {
 }
 
 void PeerConnection::OnSctpTransportReadyToSendData_s(bool ready) {
-  RTC_DCHECK(signaling_thread()->IsCurrent());
+  RTC_DCHECK_RUN_ON(signaling_thread());
   sctp_ready_to_send_data_ = ready;
   SignalSctpReadyToSendData(ready);
 }
@@ -7006,6 +7013,7 @@ void PeerConnection::DestroyDataChannel() {
     OnDataChannelDestroyed();
     network_thread()->Invoke<void>(RTC_FROM_HERE,
                                    [this] { DestroySctpTransport_n(); });
+    sctp_ready_to_send_data_ = false;
   }
 
   if (media_transport_) {
