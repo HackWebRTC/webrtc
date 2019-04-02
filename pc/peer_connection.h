@@ -1236,13 +1236,17 @@ class PeerConnection : public PeerConnectionInternal,
   // TODO(deadbeef): Use a proxy object to ensure that method calls/signals
   // are marshalled to the right thread. Could almost use proxy.h for this,
   // but it doesn't have a mechanism for marshalling sigslot::signals
-  std::unique_ptr<rtc::AsyncInvoker> sctp_invoker_;
-  sigslot::signal1<bool> SignalSctpReadyToSendData;
+  std::unique_ptr<rtc::AsyncInvoker> sctp_invoker_
+      RTC_GUARDED_BY(network_thread());
+  sigslot::signal1<bool> SignalSctpReadyToSendData
+      RTC_GUARDED_BY(signaling_thread());
   sigslot::signal2<const cricket::ReceiveDataParams&,
                    const rtc::CopyOnWriteBuffer&>
-      SignalSctpDataReceived;
-  sigslot::signal1<int> SignalSctpClosingProcedureStartedRemotely;
-  sigslot::signal1<int> SignalSctpClosingProcedureComplete;
+      SignalSctpDataReceived RTC_GUARDED_BY(signaling_thread());
+  sigslot::signal1<int> SignalSctpClosingProcedureStartedRemotely
+      RTC_GUARDED_BY(signaling_thread());
+  sigslot::signal1<int> SignalSctpClosingProcedureComplete
+      RTC_GUARDED_BY(signaling_thread());
 
   // Whether this peer is the caller. Set when the local description is applied.
   absl::optional<bool> is_caller_ RTC_GUARDED_BY(signaling_thread());

@@ -6366,7 +6366,7 @@ bool PeerConnection::CreateSctpTransport_n(const std::string& mid) {
 }
 
 void PeerConnection::DestroySctpTransport_n() {
-  RTC_DCHECK(network_thread()->IsCurrent());
+  RTC_DCHECK_RUN_ON(network_thread());
   sctp_transport_->Clear();
   sctp_transport_ = nullptr;
   sctp_mid_.reset();
@@ -6374,8 +6374,8 @@ void PeerConnection::DestroySctpTransport_n() {
 }
 
 void PeerConnection::OnSctpTransportReadyToSendData_n() {
+  RTC_DCHECK_RUN_ON(network_thread());
   RTC_DCHECK(data_channel_type_ == cricket::DCT_SCTP);
-  RTC_DCHECK(network_thread()->IsCurrent());
   // Note: Cannot use rtc::Bind here because it will grab a reference to
   // PeerConnection and potentially cause PeerConnection to live longer than
   // expected. It is safe not to grab a reference since the sctp_invoker_ will
@@ -6395,8 +6395,8 @@ void PeerConnection::OnSctpTransportReadyToSendData_s(bool ready) {
 void PeerConnection::OnSctpTransportDataReceived_n(
     const cricket::ReceiveDataParams& params,
     const rtc::CopyOnWriteBuffer& payload) {
+  RTC_DCHECK_RUN_ON(network_thread());
   RTC_DCHECK(data_channel_type_ == cricket::DCT_SCTP);
-  RTC_DCHECK(network_thread()->IsCurrent());
   // Note: Cannot use rtc::Bind here because it will grab a reference to
   // PeerConnection and potentially cause PeerConnection to live longer than
   // expected. It is safe not to grab a reference since the sctp_invoker_ will
@@ -6418,8 +6418,8 @@ void PeerConnection::OnSctpTransportDataReceived_s(
 }
 
 void PeerConnection::OnSctpClosingProcedureStartedRemotely_n(int sid) {
+  RTC_DCHECK_RUN_ON(network_thread());
   RTC_DCHECK(data_channel_type_ == cricket::DCT_SCTP);
-  RTC_DCHECK(network_thread()->IsCurrent());
   sctp_invoker_->AsyncInvoke<void>(
       RTC_FROM_HERE, signaling_thread(),
       rtc::Bind(&sigslot::signal1<int>::operator(),
@@ -6427,8 +6427,8 @@ void PeerConnection::OnSctpClosingProcedureStartedRemotely_n(int sid) {
 }
 
 void PeerConnection::OnSctpClosingProcedureComplete_n(int sid) {
+  RTC_DCHECK_RUN_ON(network_thread());
   RTC_DCHECK(data_channel_type_ == cricket::DCT_SCTP);
-  RTC_DCHECK(network_thread()->IsCurrent());
   sctp_invoker_->AsyncInvoke<void>(
       RTC_FROM_HERE, signaling_thread(),
       rtc::Bind(&sigslot::signal1<int>::operator(),
