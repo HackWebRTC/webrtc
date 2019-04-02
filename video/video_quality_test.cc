@@ -1203,13 +1203,11 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
     recv_event_log_ = RtcEventLog::CreateNull();
   }
 
-  Call::Config send_call_config(send_event_log_.get());
-  Call::Config recv_call_config(recv_event_log_.get());
-  send_call_config.bitrate_config = params.call.call_bitrate_config;
-  recv_call_config.bitrate_config = params.call.call_bitrate_config;
-
-  task_queue_.SendTask([this, &send_call_config, &recv_call_config,
-                        &send_transport, &recv_transport]() {
+  task_queue_.SendTask([this, &params, &send_transport, &recv_transport]() {
+    Call::Config send_call_config(send_event_log_.get());
+    Call::Config recv_call_config(recv_event_log_.get());
+    send_call_config.bitrate_config = params.call.call_bitrate_config;
+    recv_call_config.bitrate_config = params.call.call_bitrate_config;
     if (params_.audio.enabled)
       InitializeAudioDevice(&send_call_config, &recv_call_config,
                             params_.audio.use_real_adm);
@@ -1234,7 +1232,8 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
       kSendRtxSsrcs[params_.ss[0].selected_stream],
       static_cast<size_t>(params_.ss[0].selected_stream),
       params.ss[0].selected_sl, params_.video[0].selected_tl,
-      is_quick_test_enabled, clock_, params_.logging.rtp_dump_name);
+      is_quick_test_enabled, clock_, params_.logging.rtp_dump_name,
+      &task_queue_);
 
   task_queue_.SendTask([&]() {
     analyzer_->SetCall(sender_call_.get());
