@@ -14,9 +14,9 @@
 #include <map>
 #include <vector>
 
-#include "modules/include/module_common_types.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "rtc_base/critical_section.h"
+#include "rtc_base/numerics/sequence_number_util.h"
 
 namespace webrtc {
 
@@ -81,8 +81,8 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
 
   uint32_t media_ssrc_ RTC_GUARDED_BY(&lock_);
   uint8_t feedback_packet_count_ RTC_GUARDED_BY(&lock_);
-  SequenceNumberUnwrapper unwrapper_ RTC_GUARDED_BY(&lock_);
-  int64_t window_start_seq_ RTC_GUARDED_BY(&lock_);
+  SeqNumUnwrapper<uint16_t> unwrapper_ RTC_GUARDED_BY(&lock_);
+  absl::optional<int64_t> periodic_window_start_seq_ RTC_GUARDED_BY(&lock_);
   // Map unwrapped seq -> time.
   std::map<int64_t, int64_t> packet_arrival_times_ RTC_GUARDED_BY(&lock_);
   int64_t send_interval_ms_ RTC_GUARDED_BY(&lock_);

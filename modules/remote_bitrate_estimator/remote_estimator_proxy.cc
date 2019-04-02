@@ -42,7 +42,6 @@ RemoteEstimatorProxy::RemoteEstimatorProxy(
       last_process_time_ms_(-1),
       media_ssrc_(0),
       feedback_packet_count_(0),
-      window_start_seq_(-1),
       send_interval_ms_(kDefaultSendIntervalMs),
       send_feedback_on_request_only_(false) {}
 
@@ -125,40 +124,27 @@ void RemoteEstimatorProxy::OnPacketArrival(
     return;
   }
 
-  // TODO(holmer): We should handle a backwards wrap here if the first
-  // sequence number was small and the new sequence number is large. The
-  // SequenceNumberUnwrapper doesn't do this, so we should replace this with
-  // calls to IsNewerSequenceNumber instead.
   int64_t seq = unwrapper_.Unwrap(sequence_number);
-  if (window_start_seq_ != -1 && seq > window_start_seq_ + 0xFFFF / 2) {
-    RTC_LOG(LS_WARNING) << "Skipping this sequence number (" << sequence_number
-                        << ") since it likely is reordered, but the unwrapper"
-                           "failed to handle it. Feedback window starts at "
-                        << window_start_seq_ << ".";
-    return;
-  }
 
   if (send_feedback_on_request_only_) {
     // Remove old packet arrival times.
     auto clear_to_it =
         packet_arrival_times_.lower_bound(seq - kMaxNumberOfPackets);
     packet_arrival_times_.erase(packet_arrival_times_.begin(), clear_to_it);
-  } else if (packet_arrival_times_.lower_bound(window_start_seq_) ==
-             packet_arrival_times_.end()) {
-    // Start new feedback packet, cull old packets.
-    for (auto it = packet_arrival_times_.begin();
-         it != packet_arrival_times_.end() && it->first < seq &&
-         arrival_time - it->second >= kBackWindowMs;) {
-      auto delete_it = it;
-      ++it;
-      packet_arrival_times_.erase(delete_it);
+  } else {
+    if (periodic_window_start_seq_ &&
+        packet_arrival_times_.lower_bound(*periodic_window_start_seq_) ==
+            packet_arrival_times_.end()) {
+      // Start new feedback packet, cull old packets.
+      for (auto it = packet_arrival_times_.begin();
+           it != packet_arrival_times_.end() && it->first < seq &&
+           arrival_time - it->second >= kBackWindowMs;) {
+        it = packet_arrival_times_.erase(it);
+      }
     }
-  }
-
-  if (window_start_seq_ == -1) {
-    window_start_seq_ = sequence_number;
-  } else if (seq < window_start_seq_) {
-    window_start_seq_ = seq;
+    if (!periodic_window_start_seq_ || seq < *periodic_window_start_seq_) {
+      periodic_window_start_seq_ = seq;
+    }
   }
 
   // We are only interested in the first time a packet is received.
@@ -174,16 +160,20 @@ void RemoteEstimatorProxy::OnPacketArrival(
 }
 
 void RemoteEstimatorProxy::SendPeriodicFeedbacks() {
-  // |window_start_seq_| is the first sequence number to include in the current
-  // feedback packet. Some older may still be in the map, in case a reordering
-  // happens and we need to retransmit them.
+  // |periodic_window_start_seq_| is the first sequence number to include in the
+  // current feedback packet. Some older may still be in the map, in case a
+  // reordering happens and we need to retransmit them.
+  if (!periodic_window_start_seq_)
+    return;
+
   for (auto begin_iterator =
-           packet_arrival_times_.lower_bound(window_start_seq_);
+           packet_arrival_times_.lower_bound(*periodic_window_start_seq_);
        begin_iterator != packet_arrival_times_.cend();
-       begin_iterator = packet_arrival_times_.lower_bound(window_start_seq_)) {
+       begin_iterator =
+           packet_arrival_times_.lower_bound(*periodic_window_start_seq_)) {
     rtcp::TransportFeedback feedback_packet;
-    window_start_seq_ = BuildFeedbackPacket(
-        feedback_packet_count_++, media_ssrc_, window_start_seq_,
+    periodic_window_start_seq_ = BuildFeedbackPacket(
+        feedback_packet_count_++, media_ssrc_, *periodic_window_start_seq_,
         begin_iterator, packet_arrival_times_.cend(), &feedback_packet);
 
     RTC_DCHECK(feedback_sender_ != nullptr);
@@ -208,11 +198,9 @@ void RemoteEstimatorProxy::SendFeedbackOnRequest(
       packet_arrival_times_.lower_bound(first_sequence_number);
   auto end_iterator = packet_arrival_times_.upper_bound(sequence_number);
 
-  // window_start_seq must be updated to make sure that we detect incorrectly
-  // unwrapped sequence_numbers in OnPacketArrival().
-  window_start_seq_ = BuildFeedbackPacket(feedback_packet_count_++, media_ssrc_,
-                                          first_sequence_number, begin_iterator,
-                                          end_iterator, &feedback_packet);
+  BuildFeedbackPacket(feedback_packet_count_++, media_ssrc_,
+                      first_sequence_number, begin_iterator, end_iterator,
+                      &feedback_packet);
 
   // Clear up to the first packet that is included in this feedback packet.
   packet_arrival_times_.erase(packet_arrival_times_.begin(), begin_iterator);

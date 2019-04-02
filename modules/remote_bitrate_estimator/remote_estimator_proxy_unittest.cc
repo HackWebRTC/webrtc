@@ -196,18 +196,19 @@ TEST_F(RemoteEstimatorProxyTest, SendsFragmentedFeedback) {
   Process();
 }
 
-TEST_F(RemoteEstimatorProxyTest, GracefullyHandlesReorderingAndWrap) {
+TEST_F(RemoteEstimatorProxyTest, HandlesReorderingAndWrap) {
   const int64_t kDeltaMs = 1000;
   const uint16_t kLargeSeq = 62762;
   IncomingPacket(kBaseSeq, kBaseTimeMs);
   IncomingPacket(kLargeSeq, kBaseTimeMs + kDeltaMs);
 
   EXPECT_CALL(router_, SendTransportFeedback(_))
-      .WillOnce(Invoke([](rtcp::TransportFeedback* feedback_packet) {
-        EXPECT_EQ(kBaseSeq, feedback_packet->GetBaseSequence());
+      .WillOnce(Invoke([&](rtcp::TransportFeedback* feedback_packet) {
+        EXPECT_EQ(kLargeSeq, feedback_packet->GetBaseSequence());
         EXPECT_EQ(kMediaSsrc, feedback_packet->media_ssrc());
 
-        EXPECT_THAT(TimestampsMs(*feedback_packet), ElementsAre(kBaseTimeMs));
+        EXPECT_THAT(TimestampsMs(*feedback_packet),
+                    ElementsAre(kBaseTimeMs + kDeltaMs, kBaseTimeMs));
         return true;
       }));
 
