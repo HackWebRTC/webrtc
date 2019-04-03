@@ -66,7 +66,7 @@ class VideoCodecTestFixtureImpl : public VideoCodecTestFixture {
                            int initial_framerate_fps);
   void ReleaseAndCloseObjects(TaskQueueForTest* task_queue);
 
-  void ProcessAllFrames(rtc::TaskQueue* task_queue,
+  void ProcessAllFrames(TaskQueueForTest* task_queue,
                         const std::vector<RateProfile>& rate_profiles);
   void AnalyzeAllFrames(
       const std::vector<RateProfile>& rate_profiles,
