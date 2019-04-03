@@ -747,6 +747,24 @@ TEST_P(PeerConnectionEndToEndTest, TooManyDataChannelsOpenedBeforeConnecting) {
 
 #endif  // HAVE_SCTP
 
+TEST_P(PeerConnectionEndToEndTest, CanRestartIce) {
+  rtc::scoped_refptr<webrtc::AudioDecoderFactory> real_decoder_factory =
+      webrtc::CreateBuiltinAudioDecoderFactory();
+  CreatePcs(webrtc::CreateBuiltinAudioEncoderFactory(),
+            CreateForwardingMockDecoderFactory(real_decoder_factory.get()));
+  GetAndAddUserMedia();
+  Negotiate();
+  WaitForCallEstablished();
+  // Cause ICE restart to be requested.
+  auto config = caller_->pc()->GetConfiguration();
+  ASSERT_NE(PeerConnectionInterface::kRelay, config.type);
+  config.type = PeerConnectionInterface::kRelay;
+  webrtc::RTCError error;
+  ASSERT_TRUE(caller_->pc()->SetConfiguration(config, &error));
+  // When solving https://crbug.com/webrtc/10504, all we need to check
+  // is that we do not crash. We should also be testing that restart happens.
+}
+
 INSTANTIATE_TEST_SUITE_P(PeerConnectionEndToEndTest,
                          PeerConnectionEndToEndTest,
                          Values(SdpSemantics::kPlanB,
