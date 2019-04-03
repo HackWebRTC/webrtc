@@ -260,6 +260,11 @@ class VideoReceiveStream {
   // Returns current value of base minimum delay in milliseconds.
   virtual int GetBaseMinimumPlayoutDelayMs() const = 0;
 
+  // Allows a FrameDecryptor to be attached to a VideoReceiveStream after
+  // creation without resetting the decoder state.
+  virtual void SetFrameDecryptor(
+      rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) = 0;
+
  protected:
   virtual ~VideoReceiveStream() {}
 };

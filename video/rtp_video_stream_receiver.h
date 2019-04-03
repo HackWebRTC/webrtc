@@ -155,6 +155,11 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   // Implements OnDecryptionStatusChangeCallback.
   void OnDecryptionStatusChange(int status) override;
 
+  // Optionally set a frame decryptor after a stream has started. This will not
+  // reset the decoder state.
+  void SetFrameDecryptor(
+      rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor);
+
   // Called by VideoReceiveStream when stats are updated.
   void UpdateRtt(int64_t max_rtt_ms);
 

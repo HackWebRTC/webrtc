@@ -175,11 +175,14 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
       clock_, kPacketBufferStartSize, packet_buffer_max_size, this);
   reference_finder_ =
       absl::make_unique<video_coding::RtpFrameReferenceFinder>(this);
+
   // Only construct the encrypted receiver if frame encryption is enabled.
-  if (frame_decryptor != nullptr ||
-      config_.crypto_options.sframe.require_frame_encryption) {
+  if (config_.crypto_options.sframe.require_frame_encryption) {
     buffered_frame_decryptor_ =
-        absl::make_unique<BufferedFrameDecryptor>(this, this, frame_decryptor);
+        absl::make_unique<BufferedFrameDecryptor>(this, this);
+    if (frame_decryptor != nullptr) {
+      buffered_frame_decryptor_->SetFrameDecryptor(std::move(frame_decryptor));
+    }
   }
 }
 
@@ -450,6 +453,16 @@ void RtpVideoStreamReceiver::OnDecryptedFrame(
 
 void RtpVideoStreamReceiver::OnDecryptionStatusChange(int status) {
   frames_decryptable_.store(status == 0);
+}
+
+void RtpVideoStreamReceiver::SetFrameDecryptor(
+    rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) {
+  RTC_DCHECK_RUN_ON(&network_tc_);
+  if (buffered_frame_decryptor_ == nullptr) {
+    buffered_frame_decryptor_ =
+        absl::make_unique<BufferedFrameDecryptor>(this, this);
+  }
+  buffered_frame_decryptor_->SetFrameDecryptor(std::move(frame_decryptor));
 }
 
 void RtpVideoStreamReceiver::UpdateRtt(int64_t max_rtt_ms) {

@@ -2538,12 +2538,7 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::RecreateWebRtcVideoStream() {
 
   if (webrtc::field_trial::IsEnabled(
           "WebRTC-Video-BufferPacketsWithUnknownSsrc")) {
-    // TODO(bugs.webrtc.org/10416) : Remove this check and backfill
-    // when the stream is created (i.e remote check for frame_decryptor)
-    // once FrameDecryptor is created as part of creating receive stream.
-    if (config_.frame_decryptor) {
-      channel_->BackfillBufferedPackets(stream_params_.ssrcs);
-    }
+    channel_->BackfillBufferedPackets(stream_params_.ssrcs);
   }
 }
 
@@ -2602,9 +2597,9 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::SetFrameDecryptor(
   config_.frame_decryptor = frame_decryptor;
   if (stream_) {
     RTC_LOG(LS_INFO)
-        << "RecreateWebRtcStream (recv) because of SetFrameDecryptor, "
+        << "Setting FrameDecryptor (recv) because of SetFrameDecryptor, "
         << "remote_ssrc=" << config_.rtp.remote_ssrc;
-    RecreateWebRtcVideoStream();
+    stream_->SetFrameDecryptor(frame_decryptor);
   }
 }
 

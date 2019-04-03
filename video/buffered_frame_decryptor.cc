@@ -20,21 +20,25 @@ namespace webrtc {
 
 BufferedFrameDecryptor::BufferedFrameDecryptor(
     OnDecryptedFrameCallback* decrypted_frame_callback,
-    OnDecryptionStatusChangeCallback* decryption_status_change_callback,
-    rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor)
+    OnDecryptionStatusChangeCallback* decryption_status_change_callback)
     : generic_descriptor_auth_experiment_(
           field_trial::IsEnabled("WebRTC-GenericDescriptorAuth")),
-      frame_decryptor_(std::move(frame_decryptor)),
       decrypted_frame_callback_(decrypted_frame_callback),
       decryption_status_change_callback_(decryption_status_change_callback) {}
 
 BufferedFrameDecryptor::~BufferedFrameDecryptor() {}
+
+void BufferedFrameDecryptor::SetFrameDecryptor(
+    rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor) {
+  frame_decryptor_ = std::move(frame_decryptor);
+}
 
 void BufferedFrameDecryptor::ManageEncryptedFrame(
     std::unique_ptr<video_coding::RtpFrameObject> encrypted_frame) {
   switch (DecryptFrame(encrypted_frame.get())) {
     case FrameDecision::kStash:
       if (stashed_frames_.size() >= kMaxStashedFrames) {
+        RTC_LOG(LS_WARNING) << "Encrypted frame stash full poping oldest item.";
         stashed_frames_.pop_front();
       }
       stashed_frames_.push_back(std::move(encrypted_frame));
@@ -52,9 +56,9 @@ BufferedFrameDecryptor::FrameDecision BufferedFrameDecryptor::DecryptFrame(
     video_coding::RtpFrameObject* frame) {
   // Optionally attempt to decrypt the raw video frame if it was provided.
   if (frame_decryptor_ == nullptr) {
-    RTC_LOG(LS_WARNING) << "Frame decryption required but not attached to this "
-                           "stream. Dropping frame.";
-    return FrameDecision::kDrop;
+    RTC_LOG(LS_INFO) << "Frame decryption required but not attached to this "
+                        "stream. Stashing frame.";
+    return FrameDecision::kStash;
   }
   // When using encryption we expect the frame to have the generic descriptor.
   absl::optional<RtpGenericFrameDescriptor> descriptor =

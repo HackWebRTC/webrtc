@@ -107,8 +107,9 @@ class BufferedFrameDecryptorTest
     decryption_status_change_count_ = 0;
     seq_num_ = 0;
     mock_frame_decryptor_ = new rtc::RefCountedObject<MockFrameDecryptor>();
-    buffered_frame_decryptor_ = absl::make_unique<BufferedFrameDecryptor>(
-        this, this, mock_frame_decryptor_.get());
+    buffered_frame_decryptor_ =
+        absl::make_unique<BufferedFrameDecryptor>(this, this);
+    buffered_frame_decryptor_->SetFrameDecryptor(mock_frame_decryptor_.get());
   }
 
   static const size_t kMaxStashedFrames;
@@ -218,6 +219,28 @@ TEST_F(BufferedFrameDecryptorTest, MaximumNumberOfFramesStored) {
   buffered_frame_decryptor_->ManageEncryptedFrame(CreateRtpFrameObject(true));
   EXPECT_EQ(decrypted_frame_call_count_, kMaxStashedFrames + 1);
   EXPECT_EQ(decryption_status_change_count_, static_cast<size_t>(2));
+}
+
+// Verifies if a BufferedFrameDecryptor is attached but has no FrameDecryptor
+// attached it will still store frames up to the frame max.
+TEST_F(BufferedFrameDecryptorTest, FramesStoredIfDecryptorNull) {
+  buffered_frame_decryptor_->SetFrameDecryptor(nullptr);
+  for (size_t i = 0; i < (2 * kMaxStashedFrames); ++i) {
+    buffered_frame_decryptor_->ManageEncryptedFrame(CreateRtpFrameObject(true));
+  }
+
+  EXPECT_CALL(*mock_frame_decryptor_, Decrypt)
+      .Times(kMaxStashedFrames + 1)
+      .WillRepeatedly(Return(0));
+  EXPECT_CALL(*mock_frame_decryptor_, GetMaxPlaintextByteSize)
+      .WillRepeatedly(Return(0));
+
+  // Attach the frame decryptor at a later point after frames have arrived.
+  buffered_frame_decryptor_->SetFrameDecryptor(mock_frame_decryptor_.get());
+
+  // Next frame should trigger kMaxStashedFrame decryptions.
+  buffered_frame_decryptor_->ManageEncryptedFrame(CreateRtpFrameObject(true));
+  EXPECT_EQ(decrypted_frame_call_count_, kMaxStashedFrames + 1);
 }
 
 }  // namespace webrtc

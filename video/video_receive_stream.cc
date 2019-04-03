@@ -479,6 +479,11 @@ void VideoReceiveStream::OnFrame(const VideoFrame& video_frame) {
   stats_proxy_.OnRenderedFrame(video_frame);
 }
 
+void VideoReceiveStream::SetFrameDecryptor(
+    rtc::scoped_refptr<webrtc::FrameDecryptorInterface> frame_decryptor) {
+  rtp_video_stream_receiver_.SetFrameDecryptor(std::move(frame_decryptor));
+}
+
 void VideoReceiveStream::SendNack(
     const std::vector<uint16_t>& sequence_numbers) {
   rtp_video_stream_receiver_.RequestPacketRetransmit(sequence_numbers);
