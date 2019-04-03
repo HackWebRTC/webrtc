@@ -100,4 +100,19 @@ TEST_F(PlayoutLatencyTest, Rounding) {
   latency_->SetLatency(0.005);
 }
 
+TEST_F(PlayoutLatencyTest, Clamping) {
+  latency_->OnStart(&delayable_, kSsrc);
+
+  // In current Jitter Buffer implementation (Audio or Video) maximum supported
+  // value is 10000 milliseconds.
+  EXPECT_CALL(delayable_, SetBaseMinimumPlayoutDelayMs(kSsrc, 10000))
+      .WillOnce(Return(true));
+  latency_->SetLatency(10.5);
+
+  EXPECT_CALL(delayable_, SetBaseMinimumPlayoutDelayMs(kSsrc, 0))
+      .WillOnce(Return(true));
+
+  latency_->SetLatency(-2.0);
+}
+
 }  // namespace webrtc

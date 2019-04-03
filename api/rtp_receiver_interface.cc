@@ -58,4 +58,7 @@ RtpReceiverInterface::dtls_transport() const {
   return nullptr;
 }
 
+void RtpReceiverInterface::SetJitterBufferMinimumDelay(
+    absl::optional<double> delay_seconds) {}
+
 }  // namespace webrtc

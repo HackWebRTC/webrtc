@@ -30,6 +30,7 @@ class MockRtpReceiver : public rtc::RefCountedObject<RtpReceiverInterface> {
   MOCK_CONST_METHOD0(GetParameters, RtpParameters());
   MOCK_METHOD1(SetParameters, bool(const RtpParameters&));
   MOCK_METHOD1(SetObserver, void(RtpReceiverObserverInterface*));
+  MOCK_METHOD1(SetJitterBufferMinimumDelay, void(absl::optional<double>));
   MOCK_CONST_METHOD0(GetSources, std::vector<RtpSource>());
 };
 

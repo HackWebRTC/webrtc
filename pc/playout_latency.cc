@@ -10,8 +10,6 @@
 
 #include "pc/playout_latency.h"
 
-#include "iostream"
-
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
@@ -21,6 +19,7 @@
 
 namespace {
 constexpr int kDefaultLatency = 0;
+constexpr int kMaximumDelayMs = 10000;
 constexpr int kRoundToZeroThresholdMs = 10;
 }  // namespace
 
@@ -52,8 +51,6 @@ void PlayoutLatency::OnStop() {
 
 void PlayoutLatency::SetLatency(double latency) {
   RTC_DCHECK_RUN_ON(worker_thread_);
-  RTC_DCHECK_GE(latency, 0);
-  RTC_DCHECK_LE(latency, 10);
 
   int delay_ms = rtc::dchecked_cast<int>(latency * 1000);
   // In JitterBuffer 0 delay has special meaning of being unconstrained value
@@ -61,6 +58,10 @@ void PlayoutLatency::SetLatency(double latency) {
   // from latency.
   if (delay_ms <= kRoundToZeroThresholdMs) {
     delay_ms = 0;
+  }
+
+  if (delay_ms > kMaximumDelayMs) {
+    delay_ms = kMaximumDelayMs;
   }
 
   cached_latency_ = latency;

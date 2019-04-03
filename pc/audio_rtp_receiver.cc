@@ -25,6 +25,10 @@
 
 namespace webrtc {
 
+namespace {
+constexpr double kDefaultLatency = 0.0;
+}  // namespace
+
 AudioRtpReceiver::AudioRtpReceiver(rtc::Thread* worker_thread,
                                    std::string receiver_id,
                                    std::vector<std::string> stream_ids)
@@ -230,6 +234,11 @@ void AudioRtpReceiver::SetObserver(RtpReceiverObserverInterface* observer) {
   if (received_first_packet_ && observer_) {
     observer_->OnFirstPacketReceived(media_type());
   }
+}
+
+void AudioRtpReceiver::SetJitterBufferMinimumDelay(
+    absl::optional<double> delay_seconds) {
+  source_->SetLatency(delay_seconds.value_or(kDefaultLatency));
 }
 
 void AudioRtpReceiver::SetMediaChannel(cricket::MediaChannel* media_channel) {

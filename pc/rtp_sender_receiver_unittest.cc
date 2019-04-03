@@ -491,6 +491,17 @@ class RtpSenderReceiverTest
     EXPECT_DOUBLE_EQ(latency_s, delay_ms.value_or(0) / 1000.0);
   }
 
+  // Check that minimum Jitter Buffer delay is propagated to the underlying
+  // |media_channel|.
+  void VerifyRtpReceiverDelayBehaviour(cricket::Delayable* media_channel,
+                                       RtpReceiverInterface* receiver,
+                                       uint32_t ssrc) {
+    receiver->SetJitterBufferMinimumDelay(/*delay_seconds=*/0.5);
+    absl::optional<int> delay_ms =
+        media_channel->GetBaseMinimumPlayoutDelayMs(ssrc);  // In milliseconds.
+    EXPECT_DOUBLE_EQ(0.5, delay_ms.value_or(0) / 1000.0);
+  }
+
  protected:
   rtc::Thread* const network_thread_;
   rtc::Thread* const worker_thread_;
@@ -701,6 +712,20 @@ TEST_F(RtpSenderReceiverTest, RemoteVideoTrackLatency) {
   CreateVideoRtpReceiver();
   VerifyTrackLatencyBehaviour(video_media_channel_, video_track_.get(),
                               video_track_->GetSource(), kVideoSsrc);
+}
+
+TEST_F(RtpSenderReceiverTest, AudioRtpReceiverDelay) {
+  CreateAudioRtpReceiver();
+  VerifyRtpReceiverDelayBehaviour(voice_media_channel_,
+                                  audio_rtp_receiver_.get(), kAudioSsrc);
+  VerifyTrackLatencyBehaviour(voice_media_channel_, audio_track_.get(),
+                              audio_track_->GetSource(), kAudioSsrc);
+}
+
+TEST_F(RtpSenderReceiverTest, VideoRtpReceiverDelay) {
+  CreateVideoRtpReceiver();
+  VerifyRtpReceiverDelayBehaviour(video_media_channel_,
+                                  video_rtp_receiver_.get(), kVideoSsrc);
 }
 
 // Test that the media channel isn't enabled for sending if the audio sender
