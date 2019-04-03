@@ -3463,7 +3463,8 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
                     modified_config.ice_candidate_pool_size,
                     modified_config.prune_turn_ports,
                     modified_config.turn_customizer,
-                    modified_config.stun_candidate_keepalive_interval))) {
+                    modified_config.stun_candidate_keepalive_interval,
+                    static_cast<bool>(local_description())))) {
     RTC_LOG(LS_ERROR) << "Failed to apply configuration to PortAllocator.";
     return SafeSetError(RTCErrorType::INTERNAL_ERROR, error);
   }
@@ -3758,32 +3759,38 @@ rtc::scoped_refptr<SctpTransportInterface> PeerConnection::GetSctpTransport()
 }
 
 const SessionDescriptionInterface* PeerConnection::local_description() const {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   return pending_local_description_ ? pending_local_description_.get()
                                     : current_local_description_.get();
 }
 
 const SessionDescriptionInterface* PeerConnection::remote_description() const {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   return pending_remote_description_ ? pending_remote_description_.get()
                                      : current_remote_description_.get();
 }
 
 const SessionDescriptionInterface* PeerConnection::current_local_description()
     const {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   return current_local_description_.get();
 }
 
 const SessionDescriptionInterface* PeerConnection::current_remote_description()
     const {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   return current_remote_description_.get();
 }
 
 const SessionDescriptionInterface* PeerConnection::pending_local_description()
     const {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   return pending_local_description_.get();
 }
 
 const SessionDescriptionInterface* PeerConnection::pending_remote_description()
     const {
+  RTC_DCHECK_RUN_ON(signaling_thread());
   return pending_remote_description_.get();
 }
 
@@ -5392,13 +5399,14 @@ bool PeerConnection::ReconfigurePortAllocator_n(
     int candidate_pool_size,
     bool prune_turn_ports,
     webrtc::TurnCustomizer* turn_customizer,
-    absl::optional<int> stun_candidate_keepalive_interval) {
+    absl::optional<int> stun_candidate_keepalive_interval,
+    bool have_local_description) {
   port_allocator_->set_candidate_filter(
       ConvertIceTransportTypeToCandidateFilter(type));
   // According to JSEP, after setLocalDescription, changing the candidate pool
   // size is not allowed, and changing the set of ICE servers will not result
   // in new candidates being gathered.
-  if (local_description()) {
+  if (have_local_description) {
     port_allocator_->FreezeCandidatePool();
   }
   // Add the custom tls turn servers if they exist.
@@ -5600,7 +5608,9 @@ RTCError PeerConnection::PushdownMediaDescription(
       cricket::GetFirstDataContent(remote_description()->description())) {
     bool success = network_thread()->Invoke<bool>(
         RTC_FROM_HERE,
-        rtc::Bind(&PeerConnection::PushdownSctpParameters_n, this, source));
+        rtc::Bind(&PeerConnection::PushdownSctpParameters_n, this, source,
+                  GetSctpPort(local_description()->description()),
+                  GetSctpPort(remote_description()->description())));
     if (!success) {
       LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
                            "Failed to push down SCTP parameters.");
@@ -5610,15 +5620,13 @@ RTCError PeerConnection::PushdownMediaDescription(
   return RTCError::OK();
 }
 
-bool PeerConnection::PushdownSctpParameters_n(cricket::ContentSource source) {
-  RTC_DCHECK(network_thread()->IsCurrent());
-  RTC_DCHECK(local_description());
-  RTC_DCHECK(remote_description());
+bool PeerConnection::PushdownSctpParameters_n(cricket::ContentSource source,
+                                              int local_sctp_port,
+                                              int remote_sctp_port) {
+  RTC_DCHECK_RUN_ON(network_thread());
   // Apply the SCTP port (which is hidden inside a DataCodec structure...)
   // When we support "max-message-size", that would also be pushed down here.
-  return cricket_sctp_transport()->Start(
-      GetSctpPort(local_description()->description()),
-      GetSctpPort(remote_description()->description()));
+  return cricket_sctp_transport()->Start(local_sctp_port, remote_sctp_port);
 }
 
 RTCError PeerConnection::PushdownTransportDescription(
@@ -5823,6 +5831,7 @@ bool PeerConnection::ReadyToSendData() const {
 void PeerConnection::OnDataReceived(int channel_id,
                                     DataMessageType type,
                                     const rtc::CopyOnWriteBuffer& buffer) {
+  RTC_DCHECK_RUN_ON(network_thread());
   cricket::ReceiveDataParams params;
   params.sid = channel_id;
   params.type = ToCricketDataMessageType(type);
@@ -5836,6 +5845,7 @@ void PeerConnection::OnDataReceived(int channel_id,
 }
 
 void PeerConnection::OnChannelClosing(int channel_id) {
+  RTC_DCHECK_RUN_ON(network_thread());
   media_transport_invoker_->AsyncInvoke<void>(
       RTC_FROM_HERE, signaling_thread(), [this, channel_id] {
         RTC_DCHECK_RUN_ON(signaling_thread());
@@ -5844,6 +5854,7 @@ void PeerConnection::OnChannelClosing(int channel_id) {
 }
 
 void PeerConnection::OnChannelClosed(int channel_id) {
+  RTC_DCHECK_RUN_ON(network_thread());
   media_transport_invoker_->AsyncInvoke<void>(
       RTC_FROM_HERE, signaling_thread(), [this, channel_id] {
         RTC_DCHECK_RUN_ON(signaling_thread());
