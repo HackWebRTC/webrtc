@@ -1263,30 +1263,41 @@ TEST_P(ReceiveStatisticsProxyTestWithContent, FreezesAreReported) {
 }
 
 TEST_P(ReceiveStatisticsProxyTestWithContent, HarmonicFrameRateIsReported) {
-  const int kInterFrameDelayMs = 33;
-  const int kFreezeDelayMs = 200;
-  const int kCallDurationMs =
-      kMinRequiredSamples * kInterFrameDelayMs + kFreezeDelayMs;
+  const int kFrameDurationMs = 33;
+  const int kFreezeDurationMs = 200;
+  const int kPauseDurationMs = 10000;
+  const int kCallDurationMs = kMinRequiredSamples * kFrameDurationMs +
+                              kFreezeDurationMs + kPauseDurationMs;
   webrtc::VideoFrame frame = CreateFrame(kWidth, kHeight);
 
   for (int i = 0; i < kMinRequiredSamples; ++i) {
-    fake_clock_.AdvanceTimeMilliseconds(kInterFrameDelayMs);
+    fake_clock_.AdvanceTimeMilliseconds(kFrameDurationMs);
     statistics_proxy_->OnDecodedFrame(frame, absl::nullopt, content_type_);
     statistics_proxy_->OnRenderedFrame(frame);
   }
-  // Add extra freeze.
-  fake_clock_.AdvanceTimeMilliseconds(kFreezeDelayMs);
+
+  // Freezes and pauses should be included into harmonic frame rate.
+  // Add freeze.
+  fake_clock_.AdvanceTimeMilliseconds(kFreezeDurationMs);
+  statistics_proxy_->OnDecodedFrame(frame, absl::nullopt, content_type_);
+  statistics_proxy_->OnRenderedFrame(frame);
+
+  // Add pause.
+  fake_clock_.AdvanceTimeMilliseconds(kPauseDurationMs);
+  statistics_proxy_->OnStreamInactive();
   statistics_proxy_->OnDecodedFrame(frame, absl::nullopt, content_type_);
   statistics_proxy_->OnRenderedFrame(frame);
 
   statistics_proxy_.reset();
-  double kSumSquaredInterframeDelaysSecs =
+  double kSumSquaredFrameDurationSecs =
       (kMinRequiredSamples - 1) *
-      (kInterFrameDelayMs / 1000.0 * kInterFrameDelayMs / 1000.0);
-  kSumSquaredInterframeDelaysSecs +=
-      kFreezeDelayMs / 1000.0 * kFreezeDelayMs / 1000.0;
+      (kFrameDurationMs / 1000.0 * kFrameDurationMs / 1000.0);
+  kSumSquaredFrameDurationSecs +=
+      kFreezeDurationMs / 1000.0 * kFreezeDurationMs / 1000.0;
+  kSumSquaredFrameDurationSecs +=
+      kPauseDurationMs / 1000.0 * kPauseDurationMs / 1000.0;
   const int kExpectedHarmonicFrameRateFps =
-      std::round(kCallDurationMs / (1000 * kSumSquaredInterframeDelaysSecs));
+      std::round(kCallDurationMs / (1000 * kSumSquaredFrameDurationSecs));
   if (videocontenttypehelpers::IsScreenshare(content_type_)) {
     EXPECT_EQ(kExpectedHarmonicFrameRateFps,
               metrics::MinSample("WebRTC.Video.Screenshare.HarmonicFrameRate"));

@@ -146,35 +146,42 @@ void VideoQualityObserver::OnRenderedFrame(const VideoFrame& frame,
 
   auto blocky_frame_it = blocky_frames_.find(frame.timestamp());
 
-  if (!is_paused_ && num_frames_rendered_ > 0) {
+  if (num_frames_rendered_ > 0) {
     // Process inter-frame delay.
     const int64_t interframe_delay_ms = now_ms - last_frame_rendered_ms_;
     const double interframe_delays_secs = interframe_delay_ms / 1000.0;
+
+    // Sum of squared inter frame intervals is used to calculate the harmonic
+    // frame rate metric. The metric aims to reflect overall experience related
+    // to smoothness of video playback and includes both freezes and pauses.
     sum_squared_interframe_delays_secs_ +=
         interframe_delays_secs * interframe_delays_secs;
-    render_interframe_delays_.AddSample(interframe_delay_ms);
 
-    bool was_freeze = false;
-    if (render_interframe_delays_.Size() >= kMinFrameSamplesToDetectFreeze) {
-      const absl::optional<int64_t> avg_interframe_delay =
-          render_interframe_delays_.GetAverageRoundedDown();
-      RTC_DCHECK(avg_interframe_delay);
-      was_freeze = interframe_delay_ms >=
-                   std::max(3 * *avg_interframe_delay,
-                            *avg_interframe_delay + kMinIncreaseForFreezeMs);
-    }
+    if (!is_paused_) {
+      render_interframe_delays_.AddSample(interframe_delay_ms);
 
-    if (was_freeze) {
-      freezes_durations_.Add(interframe_delay_ms);
-      smooth_playback_durations_.Add(last_frame_rendered_ms_ -
-                                     last_unfreeze_time_ms_);
-      last_unfreeze_time_ms_ = now_ms;
-    } else {
-      // Count spatial metrics if there were no freeze.
-      time_in_resolution_ms_[current_resolution_] += interframe_delay_ms;
+      bool was_freeze = false;
+      if (render_interframe_delays_.Size() >= kMinFrameSamplesToDetectFreeze) {
+        const absl::optional<int64_t> avg_interframe_delay =
+            render_interframe_delays_.GetAverageRoundedDown();
+        RTC_DCHECK(avg_interframe_delay);
+        was_freeze = interframe_delay_ms >=
+                     std::max(3 * *avg_interframe_delay,
+                              *avg_interframe_delay + kMinIncreaseForFreezeMs);
+      }
 
-      if (is_last_frame_blocky_) {
-        time_in_blocky_video_ms_ += interframe_delay_ms;
+      if (was_freeze) {
+        freezes_durations_.Add(interframe_delay_ms);
+        smooth_playback_durations_.Add(last_frame_rendered_ms_ -
+                                       last_unfreeze_time_ms_);
+        last_unfreeze_time_ms_ = now_ms;
+      } else {
+        // Count spatial metrics if there were no freeze.
+        time_in_resolution_ms_[current_resolution_] += interframe_delay_ms;
+
+        if (is_last_frame_blocky_) {
+          time_in_blocky_video_ms_ += interframe_delay_ms;
+        }
       }
     }
   }
