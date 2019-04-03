@@ -27,10 +27,10 @@ typedef struct WebRtcOpusDecInst OpusDecInst;
 /****************************************************************************
  * WebRtcOpus_EncoderCreate(...)
  *
- * This function create an Opus encoder.
+ * This function creates an Opus encoder that encodes mono or stereo.
  *
  * Input:
- *      - channels           : number of channels.
+ *      - channels           : number of channels; 1 or 2.
  *      - application        : 0 - VOIP applications.
  *                                 Favor speech intelligibility.
  *                             1 - Audio applications.
@@ -46,6 +46,36 @@ typedef struct WebRtcOpusDecInst OpusDecInst;
 int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst,
                                  size_t channels,
                                  int32_t application);
+
+/****************************************************************************
+ * WebRtcOpus_MultistreamEncoderCreate(...)
+ *
+ * This function creates an Opus encoder with any supported channel count.
+ *
+ * Input:
+ *      - channels           : number of channels.
+ *      - application        : 0 - VOIP applications.
+ *                                 Favor speech intelligibility.
+ *                             1 - Audio applications.
+ *                                 Favor faithfulness to the original input.
+ *      - coupled_streams    : number of coupled streams, as described in
+ *                             RFC 7845.
+ *      - channel_mapping    : the channel mapping; pointer to array of
+ *                             `channel` bytes, as described in RFC 7845.
+ *
+ * Output:
+ *      - inst               : a pointer to Encoder context that is created
+ *                             if success.
+ *
+ * Return value              : 0 - Success
+ *                            -1 - Error
+ */
+int16_t WebRtcOpus_MultistreamEncoderCreate(
+    OpusEncInst** inst,
+    size_t channels,
+    int32_t application,
+    size_t coupled_streams,
+    const unsigned char* channel_mapping);
 
 int16_t WebRtcOpus_EncoderFree(OpusEncInst* inst);
 
@@ -295,6 +325,32 @@ int16_t WebRtcOpus_SetBandwidth(OpusEncInst* inst, int32_t bandwidth);
 int16_t WebRtcOpus_SetForceChannels(OpusEncInst* inst, size_t num_channels);
 
 int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, size_t channels);
+
+/****************************************************************************
+ * WebRtcOpus_MultistreamDecoderCreate(...)
+ *
+ * This function creates an Opus decoder with any supported channel count.
+ *
+ * Input:
+ *      - channels           : number of channels.
+ *      - coupled_streams    : number of coupled streams, as described in
+ *                             RFC 7845.
+ *      - channel_mapping    : the channel mapping; pointer to array of
+ *                             `channel` bytes, as described in RFC 7845.
+ *
+ * Output:
+ *      - inst               : a pointer to a Decoder context that is created
+ *                             if success.
+ *
+ * Return value              : 0 - Success
+ *                            -1 - Error
+ */
+int16_t WebRtcOpus_MultistreamDecoderCreate(
+    OpusDecInst** inst,
+    size_t channels,
+    size_t coupled_streams,
+    const unsigned char* channel_mapping);
+
 int16_t WebRtcOpus_DecoderFree(OpusDecInst* inst);
 
 /****************************************************************************
