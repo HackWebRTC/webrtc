@@ -190,6 +190,10 @@ WEBRTC_DEFINE_int(
     kParameterNotSpecifiedValue,
     "Specify which microphone kind to use for microphone simulation");
 WEBRTC_DEFINE_bool(performance_report, false, "Report the APM performance ");
+WEBRTC_DEFINE_string(performance_report_output_file,
+                     "",
+                     "Generate a CSV file with the API call durations");
+
 WEBRTC_DEFINE_bool(verbose, false, "Produce verbose output");
 WEBRTC_DEFINE_bool(quiet,
                    false,
@@ -351,6 +355,8 @@ SimulationSettings CreateSettings() {
   settings.simulate_mic_gain = FLAG_simulate_mic_gain;
   SetSettingIfSpecified(FLAG_simulated_mic_kind, &settings.simulated_mic_kind);
   settings.report_performance = FLAG_performance_report;
+  SetSettingIfSpecified(FLAG_performance_report_output_file,
+                        &settings.performance_report_output_filename);
   settings.use_verbose_logging = FLAG_verbose;
   settings.use_quiet_output = FLAG_quiet;
   settings.report_bitexactness = FLAG_bitexactness_report;
@@ -555,18 +561,11 @@ int AudioprocFloatImpl(std::unique_ptr<AudioProcessingBuilder> ap_builder,
   processor->Process();
 
   if (settings.report_performance) {
-    const auto& proc_time = processor->proc_time();
-    int64_t exec_time_us = proc_time.sum / rtc::kNumNanosecsPerMicrosec;
-    std::cout << std::endl
-              << "Execution time: " << exec_time_us * 1e-6 << " s, File time: "
-              << processor->get_num_process_stream_calls() * 1.f /
-                     AudioProcessingSimulator::kChunksPerSecond
-              << std::endl
-              << "Time per fwd stream chunk (mean, max, min): " << std::endl
-              << exec_time_us * 1.f / processor->get_num_process_stream_calls()
-              << " us, " << 1.f * proc_time.max / rtc::kNumNanosecsPerMicrosec
-              << " us, " << 1.f * proc_time.min / rtc::kNumNanosecsPerMicrosec
-              << " us" << std::endl;
+    processor->GetApiCallStatistics().PrintReport();
+  }
+  if (settings.performance_report_output_filename) {
+    processor->GetApiCallStatistics().WriteReportToFile(
+        *settings.performance_report_output_filename);
   }
 
   if (settings.report_bitexactness && settings.aec_dump_input_filename) {
