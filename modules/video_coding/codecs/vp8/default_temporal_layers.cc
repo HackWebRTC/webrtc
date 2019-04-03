@@ -177,14 +177,14 @@ DefaultTemporalLayers::GetDependencyInfo(size_t num_layers) {
         // TL0 also references and updates the 'last' buffer.
         // TL1 also references 'last' and references and updates 'golden'.
         // TL2 references both 'last' and 'golden' but updates no buffer.
-        return {{"SSS", {kReferenceAndUpdate, kNone, kReference}},
-                {"--D", {kReference, kNone, kReference, kFreezeEntropy}},
-                {"-SS", {kReference, kUpdate, kReference}},
-                {"--D", {kReference, kReference, kReference, kFreezeEntropy}},
-                {"SRR", {kReferenceAndUpdate, kNone, kReference}},
-                {"--D", {kReference, kReference, kReference, kFreezeEntropy}},
-                {"-DS", {kReference, kReferenceAndUpdate, kReference}},
-                {"--D", {kReference, kReference, kReference, kFreezeEntropy}}};
+        return {{"SSS", {kReferenceAndUpdate, kNone, kNone}},
+                {"--D", {kReference, kNone, kNone, kFreezeEntropy}},
+                {"-SS", {kReference, kUpdate, kNone}},
+                {"--D", {kReference, kReference, kNone, kFreezeEntropy}},
+                {"SRR", {kReferenceAndUpdate, kNone, kNone}},
+                {"--D", {kReference, kReference, kNone, kFreezeEntropy}},
+                {"-DS", {kReference, kReferenceAndUpdate, kNone}},
+                {"--D", {kReference, kReference, kNone, kFreezeEntropy}}};
       }
     case 4:
       // TL0 references and updates only the 'last' buffer.
