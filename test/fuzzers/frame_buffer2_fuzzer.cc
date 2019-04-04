@@ -67,7 +67,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   }
   DataReader reader(data, size);
   Clock* clock = Clock::GetRealTimeClock();
-  VCMJitterEstimator jitter_estimator(clock, 0, 0);
+  VCMJitterEstimator jitter_estimator(clock);
   VCMTiming timing(clock);
   video_coding::FrameBuffer frame_buffer(clock, &jitter_estimator, &timing,
                                          nullptr);

@@ -30,7 +30,7 @@ class TestVCMJitterEstimator : public ::testing::Test {
   TestVCMJitterEstimator() : fake_clock_(0) {}
 
   virtual void SetUp() {
-    estimator_ = absl::make_unique<VCMJitterEstimator>(&fake_clock_, 0, 0);
+    estimator_ = absl::make_unique<VCMJitterEstimator>(&fake_clock_);
   }
 
   void AdvanceClock(int64_t microseconds) {
@@ -48,9 +48,9 @@ class ValueGenerator {
       : amplitude_(amplitude), counter_(0) {}
   virtual ~ValueGenerator() {}
 
-  int64_t Delay() { return ((counter_ % 11) - 5) * amplitude_; }
+  int64_t Delay() const { return ((counter_ % 11) - 5) * amplitude_; }
 
-  uint32_t FrameSize() { return 1000 + Delay(); }
+  uint32_t FrameSize() const { return 1000 + Delay(); }
 
   void Advance() { ++counter_; }
 
