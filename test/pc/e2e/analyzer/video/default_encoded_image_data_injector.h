@@ -60,7 +60,6 @@ class DefaultEncodedImageDataInjector : public EncodedImageDataInjector,
   DefaultEncodedImageDataInjector();
   ~DefaultEncodedImageDataInjector() override;
 
-  // TODO(titovartem) add support for discard injection and update the doc.
   EncodedImage InjectData(uint16_t id,
                           bool discard,
                           const EncodedImage& source,
