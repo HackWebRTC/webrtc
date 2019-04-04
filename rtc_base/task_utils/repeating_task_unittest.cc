@@ -75,8 +75,8 @@ class TaskHandleStopper {
 }  // namespace
 
 TEST(RepeatingTaskTest, TaskIsStoppedOnStop) {
-  const TimeDelta kShortInterval = TimeDelta::ms(5);
-  const TimeDelta kLongInterval = TimeDelta::ms(20);
+  const TimeDelta kShortInterval = TimeDelta::ms(50);
+  const TimeDelta kLongInterval = TimeDelta::ms(200);
   const int kShortIntervalCount = 4;
   const int kMargin = 1;
 
@@ -125,14 +125,14 @@ TEST(RepeatingTaskTest, CompensatesForShortRunTime) {
   TaskQueueForTest task_queue("TestQueue");
   RepeatingTaskHandle::Start(task_queue.Get(), [&] {
     ++counter;
-    // Sleeping for the 10 ms should be compensated.
-    Sleep(TimeDelta::ms(10));
-    return TimeDelta::ms(30);
+    // Sleeping for the 100 ms should be compensated.
+    Sleep(TimeDelta::ms(100));
+    return TimeDelta::ms(300);
   });
-  Sleep(TimeDelta::ms(40));
+  Sleep(TimeDelta::ms(400));
 
   // We expect that the task have been called twice, once directly at Start and
-  // once after 30 ms has passed.
+  // once after 300 ms has passed.
   EXPECT_EQ(counter.load(), 2);
 }
 
