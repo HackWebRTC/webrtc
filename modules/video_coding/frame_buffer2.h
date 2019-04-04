@@ -45,7 +45,7 @@ class FrameBuffer {
   FrameBuffer(Clock* clock,
               VCMJitterEstimator* jitter_estimator,
               VCMTiming* timing,
-              VCMReceiveStatisticsCallback* stats_proxy);
+              VCMReceiveStatisticsCallback* stats_callback);
 
   virtual ~FrameBuffer();
 
@@ -118,6 +118,9 @@ class FrameBuffer {
   // Check that the references of |frame| are valid.
   bool ValidReferences(const EncodedFrame& frame) const;
 
+  int64_t FindNextFrame(int64_t now_ms) RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  EncodedFrame* GetNextFrame() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+
   // Update all directly dependent and indirectly dependent frames and mark
   // them as continuous if all their references has been fulfilled.
   void PropagateContinuity(FrameMap::iterator start)
@@ -160,6 +163,9 @@ class FrameBuffer {
 
   rtc::CriticalSection crit_;
   Clock* const clock_;
+  int64_t latest_return_time_ms_ RTC_GUARDED_BY(crit_);
+  bool keyframe_required_ RTC_GUARDED_BY(crit_);
+
   rtc::Event new_continuous_frame_event_;
   VCMJitterEstimator* const jitter_estimator_ RTC_GUARDED_BY(crit_);
   VCMTiming* const timing_ RTC_GUARDED_BY(crit_);

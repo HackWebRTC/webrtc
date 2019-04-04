@@ -83,183 +83,22 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
       if (stopped_)
         return kStopped;
 
-      wait_ms = max_wait_time_ms;
-
-      // Need to hold |crit_| in order to access frames_to_decode_. therefore we
-      // set it here in the loop instead of outside the loop in order to not
-      // acquire the lock unnecessarily.
-      frames_to_decode_.clear();
-
-      // |last_continuous_frame_| may be empty below, but nullopt is smaller
-      // than everything else and loop will immediately terminate as expected.
-      for (auto frame_it = frames_.begin();
-           frame_it != frames_.end() &&
-           frame_it->first <= last_continuous_frame_;
-           ++frame_it) {
-        if (!frame_it->second.continuous ||
-            frame_it->second.num_missing_decodable > 0) {
-          continue;
-        }
-
-        EncodedFrame* frame = frame_it->second.frame.get();
-
-        if (keyframe_required && !frame->is_keyframe())
-          continue;
-
-        auto last_decoded_frame_timestamp =
-            decoded_frames_history_.GetLastDecodedFrameTimestamp();
-
-        // TODO(https://bugs.webrtc.org/9974): consider removing this check
-        // as it may make a stream undecodable after a very long delay between
-        // frames.
-        if (last_decoded_frame_timestamp &&
-            AheadOf(*last_decoded_frame_timestamp, frame->Timestamp())) {
-          continue;
-        }
-
-        // Only ever return all parts of a superframe. Therefore skip this
-        // frame if it's not a beginning of a superframe.
-        if (frame->inter_layer_predicted) {
-          continue;
-        }
-
-        // Gather all remaining frames for the same superframe.
-        std::vector<FrameMap::iterator> current_superframe;
-        current_superframe.push_back(frame_it);
-        bool last_layer_completed =
-            frame_it->second.frame->is_last_spatial_layer;
-        FrameMap::iterator next_frame_it = frame_it;
-        while (true) {
-          ++next_frame_it;
-          if (next_frame_it == frames_.end() ||
-              next_frame_it->first.picture_id != frame->id.picture_id ||
-              !next_frame_it->second.continuous) {
-            break;
-          }
-          // Check if the next frame has some undecoded references other than
-          // the previous frame in the same superframe.
-          size_t num_allowed_undecoded_refs =
-              (next_frame_it->second.frame->inter_layer_predicted) ? 1 : 0;
-          if (next_frame_it->second.num_missing_decodable >
-              num_allowed_undecoded_refs) {
-            break;
-          }
-          // All frames in the superframe should have the same timestamp.
-          if (frame->Timestamp() != next_frame_it->second.frame->Timestamp()) {
-            RTC_LOG(LS_WARNING)
-                << "Frames in a single superframe have different"
-                   " timestamps. Skipping undecodable superframe.";
-            break;
-          }
-          current_superframe.push_back(next_frame_it);
-          last_layer_completed =
-              next_frame_it->second.frame->is_last_spatial_layer;
-        }
-        // Check if the current superframe is complete.
-        // TODO(bugs.webrtc.org/10064): consider returning all available to
-        // decode frames even if the superframe is not complete yet.
-        if (!last_layer_completed) {
-          continue;
-        }
-
-        frames_to_decode_ = std::move(current_superframe);
-
-        if (frame->RenderTime() == -1) {
-          frame->SetRenderTime(
-              timing_->RenderTimeMs(frame->Timestamp(), now_ms));
-        }
-        wait_ms = timing_->MaxWaitingTime(frame->RenderTime(), now_ms);
-
-        // This will cause the frame buffer to prefer high framerate rather
-        // than high resolution in the case of the decoder not decoding fast
-        // enough and the stream has multiple spatial and temporal layers.
-        // For multiple temporal layers it may cause non-base layer frames to be
-        // skipped if they are late.
-        if (wait_ms < -kMaxAllowedFrameDelayMs)
-          continue;
-
-        break;
-      }
-    }  // rtc::Critscope lock(&crit_);
-
-    wait_ms = std::min<int64_t>(wait_ms, latest_return_time_ms - now_ms);
-    wait_ms = std::max<int64_t>(wait_ms, 0);
+      keyframe_required_ = keyframe_required;
+      latest_return_time_ms_ = latest_return_time_ms;
+      wait_ms = FindNextFrame(now_ms);
+    }
   } while (new_continuous_frame_event_.Wait(wait_ms));
 
   {
     rtc::CritScope lock(&crit_);
-    now_ms = clock_->TimeInMilliseconds();
-    // TODO(ilnik): remove |frames_out| use frames_to_decode_ directly.
-    std::vector<EncodedFrame*> frames_out;
 
     if (!frames_to_decode_.empty()) {
-      bool superframe_delayed_by_retransmission = false;
-      size_t superframe_size = 0;
-      EncodedFrame* first_frame = frames_to_decode_[0]->second.frame.get();
-      int64_t render_time_ms = first_frame->RenderTime();
-      int64_t receive_time_ms = first_frame->ReceivedTime();
-      // Gracefully handle bad RTP timestamps and render time issues.
-      if (HasBadRenderTiming(*first_frame, now_ms)) {
-        jitter_estimator_->Reset();
-        timing_->Reset();
-        render_time_ms =
-            timing_->RenderTimeMs(first_frame->Timestamp(), now_ms);
-      }
-
-      for (FrameMap::iterator& frame_it : frames_to_decode_) {
-        RTC_DCHECK(frame_it != frames_.end());
-        EncodedFrame* frame = frame_it->second.frame.release();
-
-        frame->SetRenderTime(render_time_ms);
-
-        superframe_delayed_by_retransmission |=
-            frame->delayed_by_retransmission();
-        receive_time_ms = std::max(receive_time_ms, frame->ReceivedTime());
-        superframe_size += frame->size();
-
-        PropagateDecodability(frame_it->second);
-        decoded_frames_history_.InsertDecoded(frame_it->first,
-                                              frame->Timestamp());
-
-        // Remove decoded frame and all undecoded frames before it.
-        frames_.erase(frames_.begin(), ++frame_it);
-
-        frames_out.push_back(frame);
-      }
-
-      if (!superframe_delayed_by_retransmission) {
-        int64_t frame_delay;
-
-        if (inter_frame_delay_.CalculateDelay(first_frame->Timestamp(),
-                                              &frame_delay, receive_time_ms)) {
-          jitter_estimator_->UpdateEstimate(frame_delay, superframe_size);
-        }
-
-        float rtt_mult = protection_mode_ == kProtectionNackFEC ? 0.0 : 1.0;
-        if (RttMultExperiment::RttMultEnabled()) {
-          rtt_mult = RttMultExperiment::GetRttMultValue();
-        }
-        timing_->SetJitterDelay(jitter_estimator_->GetJitterEstimate(rtt_mult));
-        timing_->UpdateCurrentDelay(render_time_ms, now_ms);
-      } else {
-        if (RttMultExperiment::RttMultEnabled() || add_rtt_to_playout_delay_)
-          jitter_estimator_->FrameNacked();
-      }
-
-      UpdateJitterDelay();
-      UpdateTimingFrameInfo();
-    }
-    if (!frames_out.empty()) {
-      if (frames_out.size() == 1) {
-        frame_out->reset(frames_out[0]);
-      } else {
-        frame_out->reset(CombineAndDeleteFrames(frames_out));
-      }
+      frame_out->reset(GetNextFrame());
       return kFrameFound;
     }
-  }  // rtc::Critscope lock(&crit_)
+  }
 
-  if (latest_return_time_ms - now_ms > 0) {
+  if (latest_return_time_ms - clock_->TimeInMilliseconds() > 0) {
     // If |next_frame_it_ == frames_.end()| and there is still time left, it
     // means that the frame buffer was cleared as the thread in this function
     // was waiting to acquire |crit_| in order to return. Wait for the
@@ -267,6 +106,166 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
     return NextFrame(latest_return_time_ms - now_ms, frame_out);
   }
   return kTimeout;
+}
+
+int64_t FrameBuffer::FindNextFrame(int64_t now_ms) {
+  int64_t wait_ms = latest_return_time_ms_ - now_ms;
+  frames_to_decode_.clear();
+
+  // |last_continuous_frame_| may be empty below, but nullopt is smaller
+  // than everything else and loop will immediately terminate as expected.
+  for (auto frame_it = frames_.begin();
+       frame_it != frames_.end() && frame_it->first <= last_continuous_frame_;
+       ++frame_it) {
+    if (!frame_it->second.continuous ||
+        frame_it->second.num_missing_decodable > 0) {
+      continue;
+    }
+
+    EncodedFrame* frame = frame_it->second.frame.get();
+
+    if (keyframe_required_ && !frame->is_keyframe())
+      continue;
+
+    auto last_decoded_frame_timestamp =
+        decoded_frames_history_.GetLastDecodedFrameTimestamp();
+
+    // TODO(https://bugs.webrtc.org/9974): consider removing this check
+    // as it may make a stream undecodable after a very long delay between
+    // frames.
+    if (last_decoded_frame_timestamp &&
+        AheadOf(*last_decoded_frame_timestamp, frame->Timestamp())) {
+      continue;
+    }
+
+    // Only ever return all parts of a superframe. Therefore skip this
+    // frame if it's not a beginning of a superframe.
+    if (frame->inter_layer_predicted) {
+      continue;
+    }
+
+    // Gather all remaining frames for the same superframe.
+    std::vector<FrameMap::iterator> current_superframe;
+    current_superframe.push_back(frame_it);
+    bool last_layer_completed = frame_it->second.frame->is_last_spatial_layer;
+    FrameMap::iterator next_frame_it = frame_it;
+    while (true) {
+      ++next_frame_it;
+      if (next_frame_it == frames_.end() ||
+          next_frame_it->first.picture_id != frame->id.picture_id ||
+          !next_frame_it->second.continuous) {
+        break;
+      }
+      // Check if the next frame has some undecoded references other than
+      // the previous frame in the same superframe.
+      size_t num_allowed_undecoded_refs =
+          (next_frame_it->second.frame->inter_layer_predicted) ? 1 : 0;
+      if (next_frame_it->second.num_missing_decodable >
+          num_allowed_undecoded_refs) {
+        break;
+      }
+      // All frames in the superframe should have the same timestamp.
+      if (frame->Timestamp() != next_frame_it->second.frame->Timestamp()) {
+        RTC_LOG(LS_WARNING) << "Frames in a single superframe have different"
+                               " timestamps. Skipping undecodable superframe.";
+        break;
+      }
+      current_superframe.push_back(next_frame_it);
+      last_layer_completed = next_frame_it->second.frame->is_last_spatial_layer;
+    }
+    // Check if the current superframe is complete.
+    // TODO(bugs.webrtc.org/10064): consider returning all available to
+    // decode frames even if the superframe is not complete yet.
+    if (!last_layer_completed) {
+      continue;
+    }
+
+    frames_to_decode_ = std::move(current_superframe);
+
+    if (frame->RenderTime() == -1) {
+      frame->SetRenderTime(timing_->RenderTimeMs(frame->Timestamp(), now_ms));
+    }
+    wait_ms = timing_->MaxWaitingTime(frame->RenderTime(), now_ms);
+
+    // This will cause the frame buffer to prefer high framerate rather
+    // than high resolution in the case of the decoder not decoding fast
+    // enough and the stream has multiple spatial and temporal layers.
+    // For multiple temporal layers it may cause non-base layer frames to be
+    // skipped if they are late.
+    if (wait_ms < -kMaxAllowedFrameDelayMs)
+      continue;
+
+    break;
+  }
+  wait_ms = std::min<int64_t>(wait_ms, latest_return_time_ms_ - now_ms);
+  wait_ms = std::max<int64_t>(wait_ms, 0);
+  return wait_ms;
+}
+
+EncodedFrame* FrameBuffer::GetNextFrame() {
+  int64_t now_ms = clock_->TimeInMilliseconds();
+  // TODO(ilnik): remove |frames_out| use frames_to_decode_ directly.
+  std::vector<EncodedFrame*> frames_out;
+
+  RTC_DCHECK(!frames_to_decode_.empty());
+  bool superframe_delayed_by_retransmission = false;
+  size_t superframe_size = 0;
+  EncodedFrame* first_frame = frames_to_decode_[0]->second.frame.get();
+  int64_t render_time_ms = first_frame->RenderTime();
+  int64_t receive_time_ms = first_frame->ReceivedTime();
+  // Gracefully handle bad RTP timestamps and render time issues.
+  if (HasBadRenderTiming(*first_frame, now_ms)) {
+    jitter_estimator_->Reset();
+    timing_->Reset();
+    render_time_ms = timing_->RenderTimeMs(first_frame->Timestamp(), now_ms);
+  }
+
+  for (FrameMap::iterator& frame_it : frames_to_decode_) {
+    RTC_DCHECK(frame_it != frames_.end());
+    EncodedFrame* frame = frame_it->second.frame.release();
+
+    frame->SetRenderTime(render_time_ms);
+
+    superframe_delayed_by_retransmission |= frame->delayed_by_retransmission();
+    receive_time_ms = std::max(receive_time_ms, frame->ReceivedTime());
+    superframe_size += frame->size();
+
+    PropagateDecodability(frame_it->second);
+    decoded_frames_history_.InsertDecoded(frame_it->first, frame->Timestamp());
+
+    // Remove decoded frame and all undecoded frames before it.
+    frames_.erase(frames_.begin(), ++frame_it);
+
+    frames_out.push_back(frame);
+  }
+
+  if (!superframe_delayed_by_retransmission) {
+    int64_t frame_delay;
+
+    if (inter_frame_delay_.CalculateDelay(first_frame->Timestamp(),
+                                          &frame_delay, receive_time_ms)) {
+      jitter_estimator_->UpdateEstimate(frame_delay, superframe_size);
+    }
+
+    float rtt_mult = protection_mode_ == kProtectionNackFEC ? 0.0 : 1.0;
+    if (RttMultExperiment::RttMultEnabled()) {
+      rtt_mult = RttMultExperiment::GetRttMultValue();
+    }
+    timing_->SetJitterDelay(jitter_estimator_->GetJitterEstimate(rtt_mult));
+    timing_->UpdateCurrentDelay(render_time_ms, now_ms);
+  } else {
+    if (RttMultExperiment::RttMultEnabled() || add_rtt_to_playout_delay_)
+      jitter_estimator_->FrameNacked();
+  }
+
+  UpdateJitterDelay();
+  UpdateTimingFrameInfo();
+
+  if (frames_out.size() == 1) {
+    return frames_out[0];
+  } else {
+    return CombineAndDeleteFrames(frames_out);
+  }
 }
 
 bool FrameBuffer::HasBadRenderTiming(const EncodedFrame& frame,
