@@ -250,12 +250,6 @@ void Aec3ConfigFromJsonString(absl::string_view json_string,
               &cfg.echo_model.render_pre_window_size);
     ReadParam(section, "render_post_window_size",
               &cfg.echo_model.render_post_window_size);
-    ReadParam(section, "render_pre_window_size_init",
-              &cfg.echo_model.render_pre_window_size_init);
-    ReadParam(section, "render_post_window_size_init",
-              &cfg.echo_model.render_post_window_size_init);
-    ReadParam(section, "nonlinear_hold", &cfg.echo_model.nonlinear_hold);
-    ReadParam(section, "nonlinear_release", &cfg.echo_model.nonlinear_release);
   }
 
   Json::Value subsection;
@@ -463,13 +457,7 @@ std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config) {
   ost << "\"render_pre_window_size\": "
       << config.echo_model.render_pre_window_size << ",";
   ost << "\"render_post_window_size\": "
-      << config.echo_model.render_post_window_size << ",";
-  ost << "\"render_pre_window_size_init\": "
-      << config.echo_model.render_pre_window_size_init << ",";
-  ost << "\"render_post_window_size_init\": "
-      << config.echo_model.render_post_window_size_init << ",";
-  ost << "\"nonlinear_hold\": " << config.echo_model.nonlinear_hold << ",";
-  ost << "\"nonlinear_release\": " << config.echo_model.nonlinear_release;
+      << config.echo_model.render_post_window_size;
   ost << "},";
 
   ost << "\"suppressor\": {";

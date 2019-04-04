@@ -171,10 +171,6 @@ bool EchoCanceller3Config::Validate(EchoCanceller3Config* config) {
   res = res & Limit(&c->echo_model.noise_gate_slope, 0, 1000000.f);
   res = res & Limit(&c->echo_model.render_pre_window_size, 0, 100);
   res = res & Limit(&c->echo_model.render_post_window_size, 0, 100);
-  res = res & Limit(&c->echo_model.render_pre_window_size_init, 0, 100);
-  res = res & Limit(&c->echo_model.render_post_window_size_init, 0, 100);
-  res = res & Limit(&c->echo_model.nonlinear_hold, 0, 100);
-  res = res & Limit(&c->echo_model.nonlinear_release, 0, 1.f);
 
   res = res & Limit(&c->suppressor.nearend_average_blocks, 1, 5000);
 
