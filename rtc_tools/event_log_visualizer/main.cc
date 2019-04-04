@@ -494,6 +494,12 @@ int main(int argc, char* argv[]) {
     analyzer.CreateNetEqNetworkStatsGraph(
         neteq_stats,
         [](const webrtc::NetEqNetworkStatistics& stats) {
+          return stats.preemptive_rate / 16384.f;
+        },
+        "Preemptive rate", collection->AppendNewPlot());
+    analyzer.CreateNetEqNetworkStatsGraph(
+        neteq_stats,
+        [](const webrtc::NetEqNetworkStatistics& stats) {
           return stats.packet_loss_rate / 16384.f;
         },
         "Packet loss rate", collection->AppendNewPlot());
@@ -503,6 +509,12 @@ int main(int argc, char* argv[]) {
           return static_cast<float>(stats.concealment_events);
         },
         "Concealment events", collection->AppendNewPlot());
+    analyzer.CreateNetEqNetworkStatsGraph(
+        neteq_stats,
+        [](const webrtc::NetEqNetworkStatistics& stats) {
+          return stats.preferred_buffer_size_ms;
+        },
+        "Preferred buffer size (ms)", collection->AppendNewPlot());
   }
 
   if (FLAG_plot_ice_candidate_pair_config) {
