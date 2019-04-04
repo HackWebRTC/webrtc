@@ -61,6 +61,9 @@ class DefaultTemporalLayers final : public Vp8FrameBufferController {
 
   void OnRttUpdate(int64_t rtt_ms) override;
 
+  void OnLossNotification(
+      const VideoEncoder::LossNotification loss_notification) override;
+
  private:
   struct DependencyInfo {
     DependencyInfo() = default;

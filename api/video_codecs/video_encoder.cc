@@ -121,6 +121,9 @@ void VideoEncoder::OnPacketLossRateUpdate(float packet_loss_rate) {}
 
 void VideoEncoder::OnRttUpdate(int64_t rtt_ms) {}
 
+void VideoEncoder::OnLossNotification(
+    const LossNotification& loss_notification) {}
+
 // TODO(webrtc:9722): Remove and make pure virtual.
 VideoEncoder::EncoderInfo VideoEncoder::GetEncoderInfo() const {
   return EncoderInfo();

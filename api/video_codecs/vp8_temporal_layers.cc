@@ -82,4 +82,11 @@ void Vp8TemporalLayers::OnRttUpdate(int64_t rtt_ms) {
   }
 }
 
+void Vp8TemporalLayers::OnLossNotification(
+    const VideoEncoder::LossNotification loss_notification) {
+  for (auto& controller : controllers_) {
+    controller->OnLossNotification(loss_notification);
+  }
+}
+
 }  // namespace webrtc

@@ -208,6 +208,27 @@ class RTC_EXPORT VideoEncoder {
     DataRate bandwidth_allocation;
   };
 
+  struct LossNotification {
+    // The timestamp of the last decodable frame *prior* to the last received.
+    // (The last received - described below - might itself be decodable or not.)
+    uint32_t timestamp_of_last_decodable;
+    // The timestamp of the last received frame.
+    uint32_t timestamp_of_last_received;
+    // Describes whether the dependencies of the last received frame were
+    // all decodable.
+    // |false| if some dependencies were undecodable, |true| if all dependencies
+    // were decodable, and |nullopt| if the dependencies are unknown.
+    absl::optional<bool> is_last_received_dependencies_decodable;
+    // Describes whether the received frame was decodable.
+    // |false| if some dependency was undecodable or if some packet belonging
+    // to the last received frame was missed.
+    // |true| if all dependencies were decodable and all packets belonging
+    // to the last received frame were received.
+    // |nullopt| if no packet belonging to the last frame was missed, but the
+    // last packet in the frame was not yet received.
+    absl::optional<bool> is_last_received_decodable;
+  };
+
   static VideoCodecVP8 GetDefaultVp8Settings();
   static VideoCodecVP9 GetDefaultVp9Settings();
   static VideoCodecH264 GetDefaultH264Settings();
@@ -290,6 +311,9 @@ class RTC_EXPORT VideoEncoder {
   //
   // Input:   - rtt_ms            : The new RTT, in milliseconds.
   virtual void OnRttUpdate(int64_t rtt_ms);
+
+  // Called when a loss notification is received.
+  virtual void OnLossNotification(const LossNotification& loss_notification);
 
   // Returns meta-data about the encoder, such as implementation name.
   // The output of this method may change during runtime. For instance if a

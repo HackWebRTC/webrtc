@@ -14,7 +14,9 @@
 #include <memory>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/video_codecs/video_codec.h"
+#include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/vp8_frame_config.h"
 
 namespace webrtc {
@@ -137,6 +139,10 @@ class Vp8FrameBufferController {
 
   // Called by the encoder when the round trip time changes.
   virtual void OnRttUpdate(int64_t rtt_ms) = 0;
+
+  // Called when a loss notification is received.
+  virtual void OnLossNotification(
+      const VideoEncoder::LossNotification loss_notification) = 0;
 };
 
 // Interface for a factory of Vp8FrameBufferController instances.
