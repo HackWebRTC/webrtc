@@ -28,6 +28,7 @@
 #include "system_wrappers/include/clock.h"
 #include "test/pc/e2e/analyzer/video/single_process_encoded_image_data_injector.h"
 #include "test/pc/e2e/analyzer/video/video_quality_analyzer_injection_helper.h"
+#include "test/pc/e2e/analyzer_helper.h"
 #include "test/pc/e2e/peer_connection_quality_test_params.h"
 #include "test/pc/e2e/test_peer.h"
 #include "test/testsupport/video_frame_writer.h"
@@ -191,8 +192,8 @@ class PeerConnectionE2EQualityTest
   // Validate peer's parameters, also ensure uniqueness of all video stream
   // labels.
   void ValidateParams(const RunParams& run_params, std::vector<Params*> params);
-  void SetupVideoSink(rtc::scoped_refptr<RtpTransceiverInterface> transceiver,
-                      std::vector<VideoConfig> remote_video_configs);
+  void OnTrackCallback(rtc::scoped_refptr<RtpTransceiverInterface> transceiver,
+                       std::vector<VideoConfig> remote_video_configs);
   // Have to be run on the signaling thread.
   void SetupCallOnSignalingThread();
   void TearDownCallOnSignalingThread();
@@ -233,6 +234,7 @@ class PeerConnectionE2EQualityTest
   std::vector<std::unique_ptr<test::VideoFrameWriter>> video_writers_;
   std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>
       output_video_sinks_;
+  AnalyzerHelper analyzer_helper_;
 
   rtc::CriticalSection lock_;
   // Time when test call was started. Minus infinity means that call wasn't

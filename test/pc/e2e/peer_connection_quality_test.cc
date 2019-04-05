@@ -254,7 +254,7 @@ void PeerConnectionE2EQualityTest::Run(
       absl::make_unique<FixturePeerConnectionObserver>(
           [this, bob_video_configs](
               rtc::scoped_refptr<RtpTransceiverInterface> transceiver) {
-            SetupVideoSink(transceiver, bob_video_configs);
+            OnTrackCallback(transceiver, bob_video_configs);
           },
           [this]() { StartVideo(alice_video_sources_); }),
       video_quality_analyzer_injection_helper_.get(), signaling_thread.get(),
@@ -265,7 +265,7 @@ void PeerConnectionE2EQualityTest::Run(
       absl::make_unique<FixturePeerConnectionObserver>(
           [this, alice_video_configs](
               rtc::scoped_refptr<RtpTransceiverInterface> transceiver) {
-            SetupVideoSink(transceiver, alice_video_configs);
+            OnTrackCallback(transceiver, alice_video_configs);
           },
           [this]() { StartVideo(bob_video_sources_); }),
       video_quality_analyzer_injection_helper_.get(), signaling_thread.get(),
@@ -286,7 +286,7 @@ void PeerConnectionE2EQualityTest::Run(
 
   video_quality_analyzer_injection_helper_->Start(test_case_name_,
                                                   video_analyzer_threads);
-  audio_quality_analyzer_->Start(test_case_name_);
+  audio_quality_analyzer_->Start(test_case_name_, &analyzer_helper_);
 
   // Start RTCEventLog recording if requested.
   if (alice_->params()->rtc_event_log_path) {
@@ -355,6 +355,7 @@ void PeerConnectionE2EQualityTest::Run(
       rtc::Bind(&PeerConnectionE2EQualityTest::TearDownCallOnSignalingThread,
                 this));
 
+  audio_quality_analyzer_->Stop();
   video_quality_analyzer_injection_helper_->Stop();
 
   // Ensuring that TestPeers have been destroyed in order to correctly close
@@ -456,17 +457,18 @@ void PeerConnectionE2EQualityTest::ValidateParams(const RunParams& run_params,
   RTC_CHECK_GT(media_streams_count, 0) << "No media in the call.";
 }
 
-void PeerConnectionE2EQualityTest::SetupVideoSink(
+void PeerConnectionE2EQualityTest::OnTrackCallback(
     rtc::scoped_refptr<RtpTransceiverInterface> transceiver,
     std::vector<VideoConfig> remote_video_configs) {
   const rtc::scoped_refptr<MediaStreamTrackInterface>& track =
       transceiver->receiver()->track();
+  RTC_CHECK_EQ(transceiver->receiver()->stream_ids().size(), 1);
+  std::string stream_label = transceiver->receiver()->stream_ids().front();
+  analyzer_helper_.AddTrackToStreamMapping(track->id(), stream_label);
   if (track->kind() != MediaStreamTrackInterface::kVideoKind) {
     return;
   }
 
-  RTC_CHECK_EQ(transceiver->receiver()->stream_ids().size(), 1);
-  std::string stream_label = transceiver->receiver()->stream_ids().front();
   VideoConfig* video_config = nullptr;
   for (auto& config : remote_video_configs) {
     if (config.stream_label == stream_label) {
