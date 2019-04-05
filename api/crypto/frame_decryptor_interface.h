@@ -30,6 +30,18 @@ namespace webrtc {
 // Note: This interface is not ready for production use.
 class FrameDecryptorInterface : public rtc::RefCountInterface {
  public:
+  // The Status enum represents all possible states that can be
+  // returned when attempting to decrypt a frame. kRecoverable indicates that
+  // there was an error with the given frame and so it should not be passed to
+  // the decoder, however it hints that the receive stream is still decryptable
+  // which is important for determining when to send key frame requests.
+  enum class Status { kOk, kRecoverable, kFailedToDecrypt };
+
+  struct Result {
+    Status status;
+    size_t bytes_written;
+  };
+
   ~FrameDecryptorInterface() override {}
 
   // Attempts to decrypt the encrypted frame. You may assume the frame size will
@@ -40,12 +52,36 @@ class FrameDecryptorInterface : public rtc::RefCountInterface {
   // bytes you wrote to in the frame buffer. 0 must be returned if successful
   // all other numbers can be selected by the implementer to represent error
   // codes.
+  // TODO(bugs.webrtc.org/10512) - Remove this after implementation rewrite.
   virtual int Decrypt(cricket::MediaType media_type,
                       const std::vector<uint32_t>& csrcs,
                       rtc::ArrayView<const uint8_t> additional_data,
                       rtc::ArrayView<const uint8_t> encrypted_frame,
                       rtc::ArrayView<uint8_t> frame,
-                      size_t* bytes_written) = 0;
+                      size_t* bytes_written) {
+    bytes_written = 0;
+    return 1;
+  }
+
+  // TODO(bugs.webrtc.org/10512) - Remove the other decrypt function and turn
+  // this to a pure virtual.
+  virtual Result Decrypt(cricket::MediaType media_type,
+                         const std::vector<uint32_t>& csrcs,
+                         rtc::ArrayView<const uint8_t> additional_data,
+                         rtc::ArrayView<const uint8_t> encrypted_frame,
+                         rtc::ArrayView<uint8_t> frame) {
+    size_t bytes_written = 0;
+    const int status = Decrypt(media_type, csrcs, additional_data,
+                               encrypted_frame, frame, &bytes_written);
+    Result decryption_result;
+    decryption_result.bytes_written = bytes_written;
+    if (status == 0) {
+      decryption_result.status = Status::kOk;
+    } else {
+      decryption_result.status = Status::kFailedToDecrypt;
+    }
+    return decryption_result;
+  }
 
   // Returns the total required length in bytes for the output of the
   // decryption. This can be larger than the actual number of bytes you need but
