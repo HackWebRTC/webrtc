@@ -18,6 +18,7 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/task_queue.h"
+#include "rtc_base/task_queue_stdlib.h"
 #include "system_wrappers/include/field_trial.h"
 #include "test/fuzzers/audio_processing_fuzzer_helper.h"
 #include "test/fuzzers/fuzz_data_helper.h"
@@ -148,6 +149,19 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
 
   return apm;
 }
+
+TaskQueueFactory* GetTaskQueueFactory() {
+  // Chromium hijacked DefaultTaskQueueFactory with own implementation, but
+  // unable to use it without base::test::ScopedTaskEnvironment. Actual used
+  // task queue implementation shouldn't matter for the purpose of this fuzzer,
+  // so use stdlib implementation: that one is multiplatform.
+  // When bugs.webrtc.org/10284 is resolved and chromium stops hijacking
+  // DefaultTaskQueueFactory, Stdlib can be replaced with default one.
+  static TaskQueueFactory* const factory =
+      CreateTaskQueueStdlibFactory().release();
+  return factory;
+}
+
 }  // namespace
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
@@ -159,9 +173,9 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   // for field_trial.h. Hence it's created here and not in CreateApm.
   std::string field_trial_string = "";
 
-  std::unique_ptr<rtc::TaskQueue> worker_queue(
-      new rtc::TaskQueue("rtc-low-prio", rtc::TaskQueue::Priority::LOW));
-  auto apm = CreateApm(&fuzz_data, &field_trial_string, worker_queue.get());
+  rtc::TaskQueue worker_queue(GetTaskQueueFactory()->CreateTaskQueue(
+      "rtc-low-prio", rtc::TaskQueue::Priority::LOW));
+  auto apm = CreateApm(&fuzz_data, &field_trial_string, &worker_queue);
 
   if (apm) {
     FuzzAudioProcessing(&fuzz_data, std::move(apm));

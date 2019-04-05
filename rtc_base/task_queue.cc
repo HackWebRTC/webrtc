@@ -9,7 +9,6 @@
  */
 #include "rtc_base/task_queue.h"
 
-#include "api/task_queue/global_task_queue_factory.h"
 #include "api/task_queue/task_queue_base.h"
 
 namespace rtc {
@@ -17,10 +16,6 @@ namespace rtc {
 TaskQueue::TaskQueue(
     std::unique_ptr<webrtc::TaskQueueBase, webrtc::TaskQueueDeleter> task_queue)
     : impl_(task_queue.release()) {}
-
-TaskQueue::TaskQueue(const char* queue_name, Priority priority)
-    : TaskQueue(webrtc::GlobalTaskQueueFactory().CreateTaskQueue(queue_name,
-                                                                 priority)) {}
 
 TaskQueue::~TaskQueue() {
   // There might running task that tries to rescheduler itself to the TaskQueue

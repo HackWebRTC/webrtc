@@ -15,9 +15,7 @@ rtc_static_library("webrtc_fuzzer_main") {
     "webrtc_fuzzer_main.cc",
   ]
   deps = [
-    "../../api/task_queue:global_task_queue_factory",
     "../../rtc_base:rtc_base_approved",
-    "../../rtc_base:rtc_task_queue_stdlib",
     "//testing/libfuzzer:libfuzzer_main",
   ]
 
@@ -501,6 +499,7 @@ webrtc_fuzzer_test("audio_processing_fuzzer") {
     "../../modules/audio_processing/aec_dump:aec_dump_impl",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:rtc_task_queue",
+    "../../rtc_base:rtc_task_queue_stdlib",
     "../../rtc_base:safe_minmax",
     "../../system_wrappers:field_trial",
     "//third_party/abseil-cpp/absl/memory",

@@ -479,7 +479,6 @@ rtc_source_set("rtc_task_queue") {
   deps = [
     ":macromagic",
     "../api/task_queue",
-    "../api/task_queue:global_task_queue_factory",
     "system:rtc_export",
     "task_utils:to_queued_task",
     "//third_party/abseil-cpp/absl/memory",
