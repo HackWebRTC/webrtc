@@ -161,12 +161,14 @@ EmulatedNetworkNode::~EmulatedNetworkNode() = default;
 EmulatedEndpoint::EmulatedEndpoint(uint64_t id,
                                    const rtc::IPAddress& ip,
                                    bool is_enabled,
+                                   rtc::TaskQueue* task_queue,
                                    Clock* clock)
     : id_(id),
       peer_local_addr_(ip),
       is_enabled_(is_enabled),
-      send_node_(nullptr),
       clock_(clock),
+      task_queue_(task_queue),
+      router_(task_queue_),
       next_port_(kFirstEphemeralPort) {
   constexpr int kIPv4NetworkPrefixLength = 24;
   constexpr int kIPv6NetworkPrefixLength = 64;
@@ -191,18 +193,18 @@ uint64_t EmulatedEndpoint::GetId() const {
   return id_;
 }
 
-void EmulatedEndpoint::SetSendNode(EmulatedNetworkNode* send_node) {
-  send_node_ = send_node;
-}
-
 void EmulatedEndpoint::SendPacket(const rtc::SocketAddress& from,
                                   const rtc::SocketAddress& to,
                                   rtc::CopyOnWriteBuffer packet) {
   RTC_CHECK(from.ipaddr() == peer_local_addr_);
-  RTC_CHECK(send_node_);
-  send_node_->OnPacketReceived(
-      EmulatedIpPacket(from, to, std::move(packet),
-                       Timestamp::us(clock_->TimeInMicroseconds())));
+  struct Closure {
+    void operator()() { endpoint->router_.OnPacketReceived(std::move(packet)); }
+    EmulatedEndpoint* endpoint;
+    EmulatedIpPacket packet;
+  };
+  task_queue_->PostTask(Closure{
+      this, EmulatedIpPacket(from, to, std::move(packet),
+                             Timestamp::us(clock_->TimeInMicroseconds()))});
 }
 
 absl::optional<uint16_t> EmulatedEndpoint::BindReceiver(
@@ -291,10 +293,6 @@ void EmulatedEndpoint::Disable() {
 bool EmulatedEndpoint::Enabled() const {
   RTC_DCHECK_RUN_ON(&enabled_state_checker_);
   return is_enabled_;
-}
-
-EmulatedNetworkNode* EmulatedEndpoint::GetSendNode() const {
-  return send_node_;
 }
 
 EndpointsContainer::EndpointsContainer(

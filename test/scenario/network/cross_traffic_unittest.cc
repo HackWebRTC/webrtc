@@ -39,8 +39,9 @@ class CountingReceiver : public EmulatedNetworkReceiverInterface {
 struct TrafficCounterFixture {
   SimulatedClock clock{0};
   CountingReceiver counter;
-  EmulatedEndpoint endpoint{1 /*id */, rtc::IPAddress(), true /*is_enabled*/,
-                            &clock};
+  TaskQueueForTest task_queue_;
+  EmulatedEndpoint endpoint{/*id=*/1, rtc::IPAddress(), /*is_enabled=*/true,
+                            &task_queue_, &clock};
 };
 
 }  // namespace

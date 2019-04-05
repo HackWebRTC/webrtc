@@ -81,7 +81,7 @@ EmulatedEndpoint* NetworkEmulationManagerImpl::CreateEndpoint(
   bool res = used_ip_addresses_.insert(*ip).second;
   RTC_CHECK(res) << "IP=" << ip->ToString() << " already in use";
   auto node = absl::make_unique<EmulatedEndpoint>(
-      next_node_id_++, *ip, config.start_as_enabled, clock_);
+      next_node_id_++, *ip, config.start_as_enabled, &task_queue_, clock_);
   EmulatedEndpoint* out = node.get();
   endpoints_.push_back(std::move(node));
   return out;
@@ -109,7 +109,7 @@ EmulatedRoute* NetworkEmulationManagerImpl::CreateRoute(
   // provided here.
   RTC_CHECK(!via_nodes.empty());
 
-  from->SetSendNode(via_nodes[0]);
+  from->router()->SetReceiver(to->GetPeerLocalAddress(), via_nodes[0]);
   EmulatedNetworkNode* cur_node = via_nodes[0];
   for (size_t i = 1; i < via_nodes.size(); ++i) {
     cur_node->router()->SetReceiver(to->GetPeerLocalAddress(), via_nodes[i]);
@@ -131,12 +131,8 @@ void NetworkEmulationManagerImpl::ClearRoute(EmulatedRoute* route) {
     for (auto* node : route->via_nodes) {
       node->router()->RemoveReceiver(route->to->GetPeerLocalAddress());
     }
-    // Detach endpoint from current send node.
-    if (route->from->GetSendNode()) {
-      route->from->GetSendNode()->router()->RemoveReceiver(
-          route->to->GetPeerLocalAddress());
-      route->from->SetSendNode(nullptr);
-    }
+    // Remove destination endpoint from source endpoint's router.
+    route->from->router()->RemoveReceiver(route->to->GetPeerLocalAddress());
 
     route->active = false;
   });

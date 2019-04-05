@@ -8,13 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <atomic>
 #include <memory>
 
 #include "absl/memory/memory.h"
 #include "api/test/simulated_network.h"
 #include "call/simulated_network.h"
 #include "rtc_base/event.h"
+#include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
+#include "system_wrappers/include/sleep.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/scenario/network/network_emulation.h"
@@ -22,6 +25,9 @@
 
 namespace webrtc {
 namespace test {
+namespace {
+
+constexpr int kNetworkPacketWaitTimeoutMs = 100;
 
 class SocketReader : public sigslot::has_slots<> {
  public:
@@ -56,6 +62,93 @@ class SocketReader : public sigslot::has_slots<> {
   rtc::CriticalSection lock_;
   int received_count_ RTC_GUARDED_BY(lock_) = 0;
 };
+
+class MockReceiver : public EmulatedNetworkReceiverInterface {
+ public:
+  MOCK_METHOD1(OnPacketReceived, void(EmulatedIpPacket packet));
+};
+
+class NetworkEmulationManagerThreeNodesRoutingTest : public ::testing::Test {
+ public:
+  NetworkEmulationManagerThreeNodesRoutingTest() {
+    e1_ = emulation_.CreateEndpoint(EmulatedEndpointConfig());
+    e2_ = emulation_.CreateEndpoint(EmulatedEndpointConfig());
+    e3_ = emulation_.CreateEndpoint(EmulatedEndpointConfig());
+  }
+
+  void SetupRouting(
+      std::function<void(EmulatedEndpoint*,
+                         EmulatedEndpoint*,
+                         EmulatedEndpoint*,
+                         NetworkEmulationManager*)> create_routing_func) {
+    create_routing_func(e1_, e2_, e3_, &emulation_);
+  }
+
+  void SendPacketsAndValidateDelivery() {
+    EXPECT_CALL(r_e1_e2_, OnPacketReceived(testing::_)).Times(1);
+    EXPECT_CALL(r_e2_e1_, OnPacketReceived(testing::_)).Times(1);
+    EXPECT_CALL(r_e1_e3_, OnPacketReceived(testing::_)).Times(1);
+    EXPECT_CALL(r_e3_e1_, OnPacketReceived(testing::_)).Times(1);
+
+    uint16_t common_send_port = 80;
+    uint16_t r_e1_e2_port = e2_->BindReceiver(0, &r_e1_e2_).value();
+    uint16_t r_e2_e1_port = e1_->BindReceiver(0, &r_e2_e1_).value();
+    uint16_t r_e1_e3_port = e3_->BindReceiver(0, &r_e1_e3_).value();
+    uint16_t r_e3_e1_port = e1_->BindReceiver(0, &r_e3_e1_).value();
+
+    // Next code is using API of EmulatedEndpoint, that is visible only for
+    // internals of network emulation layer. Don't use this API in other tests.
+    // Send packet from e1 to e2.
+    e1_->SendPacket(
+        rtc::SocketAddress(e1_->GetPeerLocalAddress(), common_send_port),
+        rtc::SocketAddress(e2_->GetPeerLocalAddress(), r_e1_e2_port),
+        rtc::CopyOnWriteBuffer(10));
+
+    // Send packet from e2 to e1.
+    e2_->SendPacket(
+        rtc::SocketAddress(e2_->GetPeerLocalAddress(), common_send_port),
+        rtc::SocketAddress(e1_->GetPeerLocalAddress(), r_e2_e1_port),
+        rtc::CopyOnWriteBuffer(10));
+
+    // Send packet from e1 to e3.
+    e1_->SendPacket(
+        rtc::SocketAddress(e1_->GetPeerLocalAddress(), common_send_port),
+        rtc::SocketAddress(e3_->GetPeerLocalAddress(), r_e1_e3_port),
+        rtc::CopyOnWriteBuffer(10));
+
+    // Send packet from e3 to e1.
+    e3_->SendPacket(
+        rtc::SocketAddress(e3_->GetPeerLocalAddress(), common_send_port),
+        rtc::SocketAddress(e1_->GetPeerLocalAddress(), r_e3_e1_port),
+        rtc::CopyOnWriteBuffer(10));
+
+    // Sleep at the end to wait for async packets delivery.
+    SleepMs(kNetworkPacketWaitTimeoutMs);
+  }
+
+ private:
+  // Receivers: r_<source endpoint>_<destination endpoint>
+  // They must be destroyed after emulation, so they should be declared before.
+  MockReceiver r_e1_e2_;
+  MockReceiver r_e2_e1_;
+  MockReceiver r_e1_e3_;
+  MockReceiver r_e3_e1_;
+
+  NetworkEmulationManagerImpl emulation_;
+  EmulatedEndpoint* e1_;
+  EmulatedEndpoint* e2_;
+  EmulatedEndpoint* e3_;
+};
+
+EmulatedNetworkNode* CreateEmulatedNodeWithDefaultBuiltInConfig(
+    NetworkEmulationManager* emulation) {
+  return emulation->CreateEmulatedNode(
+      absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
+}
+
+}  // namespace
+
+using testing::_;
 
 TEST(NetworkEmulationManagerTest, GeneratedIpv4AddressDoesNotCollide) {
   NetworkEmulationManagerImpl network_manager;
@@ -134,6 +227,53 @@ TEST(NetworkEmulationManagerTest, Run) {
     delete s1;
     delete s2;
   }
+}
+
+// Testing that packets are delivered via all routes using a routing scheme as
+// follows:
+//  * e1 -> n1 -> e2
+//  * e2 -> n2 -> e1
+//  * e1 -> n3 -> e3
+//  * e3 -> n4 -> e1
+TEST_F(NetworkEmulationManagerThreeNodesRoutingTest,
+       PacketsAreDeliveredInBothWaysWhenConnectedToTwoPeers) {
+  SetupRouting([](EmulatedEndpoint* e1, EmulatedEndpoint* e2,
+                  EmulatedEndpoint* e3, NetworkEmulationManager* emulation) {
+    auto* node1 = CreateEmulatedNodeWithDefaultBuiltInConfig(emulation);
+    auto* node2 = CreateEmulatedNodeWithDefaultBuiltInConfig(emulation);
+    auto* node3 = CreateEmulatedNodeWithDefaultBuiltInConfig(emulation);
+    auto* node4 = CreateEmulatedNodeWithDefaultBuiltInConfig(emulation);
+
+    emulation->CreateRoute(e1, {node1}, e2);
+    emulation->CreateRoute(e2, {node2}, e1);
+
+    emulation->CreateRoute(e1, {node3}, e3);
+    emulation->CreateRoute(e3, {node4}, e1);
+  });
+  SendPacketsAndValidateDelivery();
+}
+
+// Testing that packets are delivered via all routes using a routing scheme as
+// follows:
+//  * e1 -> n1 -> e2
+//  * e2 -> n2 -> e1
+//  * e1 -> n1 -> e3
+//  * e3 -> n4 -> e1
+TEST_F(NetworkEmulationManagerThreeNodesRoutingTest,
+       PacketsAreDeliveredInBothWaysWhenConnectedToTwoPeersOverSameSendLink) {
+  SetupRouting([](EmulatedEndpoint* e1, EmulatedEndpoint* e2,
+                  EmulatedEndpoint* e3, NetworkEmulationManager* emulation) {
+    auto* node1 = CreateEmulatedNodeWithDefaultBuiltInConfig(emulation);
+    auto* node2 = CreateEmulatedNodeWithDefaultBuiltInConfig(emulation);
+    auto* node3 = CreateEmulatedNodeWithDefaultBuiltInConfig(emulation);
+
+    emulation->CreateRoute(e1, {node1}, e2);
+    emulation->CreateRoute(e2, {node2}, e1);
+
+    emulation->CreateRoute(e1, {node1}, e3);
+    emulation->CreateRoute(e3, {node3}, e1);
+  });
+  SendPacketsAndValidateDelivery();
 }
 
 }  // namespace test

@@ -9,6 +9,13 @@
 import("../../../webrtc.gni")
 
 rtc_source_set("emulated_network") {
+  visibility = [
+    "../../../api:create_network_emulation_manager",
+    ":*",
+  ]
+  if (rtc_include_tests) {
+    visibility += [ "../:scenario" ]
+  }
   testonly = true
   sources = [
     "cross_traffic.cc",
@@ -57,8 +64,10 @@ rtc_source_set("network_emulation_unittest") {
     ":emulated_network",
     "../../../api:simulated_network_api",
     "../../../call:simulated_network",
+    "../../../rtc_base:gunit_helpers",
     "../../../rtc_base:logging",
     "../../../rtc_base:rtc_event",
+    "../../../system_wrappers:system_wrappers",
     "../../../test:test_support",
     "//third_party/abseil-cpp/absl/memory",
   ]

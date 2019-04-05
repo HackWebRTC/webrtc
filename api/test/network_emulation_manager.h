@@ -86,18 +86,23 @@ class NetworkEmulationManager {
   // Creates a route between endpoints going through specified network nodes.
   // This route is single direction only and describe how traffic that was
   // sent by network interface |from| have to be delivered to the network
-  // interface |to|. Return object can be used to remove created route.
+  // interface |to|. Return object can be used to remove created route. The
+  // route must contains at least one network node inside it.
   //
-  // Assume there are endpoints E1, E2 and E3 and network nodes A, B, C and D.
-  // Also assume, that there is a route constructed via A, B and C like this:
-  // E1 -> A -> B -> C -> E2. In such case:
-  //   * Caller mustn't use A, B and C in any route, that is leading to E2.
-  //   * If caller will then create a new route E1 -> D -> E3, then first
-  //     route will be corrupted, so if caller want to do this, first route
-  //     should be deleted by ClearRoute(...) and then a new one should be
-  //     created.
-  //   * Caller can use A, B or C for any other routes.
-  //   * Caller can create other routes leading to E2.
+  // Assume that E{0-9} are endpoints and N{0-9} are network nodes, then
+  // creation of the route have to follow these rules:
+  //   1. A route consists of a source endpoint, an ordered list of one or
+  //      more network nodes, and a destination endpoint.
+  //   2. If (E1, ..., E2) is a route, then E1 != E2.
+  //      In other words, the source and the destination may not be the same.
+  //   3. Given two simultaneously existing routes (E1, ..., E2) and
+  //      (E3, ..., E4), either E1 != E3 or E2 != E4.
+  //      In other words, there may be at most one route from any given source
+  //      endpoint to any given destination endpoint.
+  //   4. Given two simultaneously existing routes (E1, ..., N1, ..., E2)
+  //      and (E3, ..., N2, ..., E4), either N1 != N2 or E2 != E4.
+  //      In other words, a network node may not belong to two routes that lead
+  //      to the same destination endpoint.
   virtual EmulatedRoute* CreateRoute(
       EmulatedEndpoint* from,
       const std::vector<EmulatedNetworkNode*>& via_nodes,
