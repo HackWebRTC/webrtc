@@ -142,27 +142,6 @@ enum { kRtpCsrcSize = 15 };  // RFC 3550 page 13
 // Video specific types
 // ==================================================================
 
-// TODO(nisse): Delete, and switch to fourcc values everywhere?
-// Supported video types.
-enum class VideoType {
-  kUnknown,
-  kI420,
-  kIYUV,
-  kRGB24,
-  kABGR,
-  kARGB,
-  kARGB4444,
-  kRGB565,
-  kARGB1555,
-  kYUY2,
-  kYV12,
-  kUYVY,
-  kMJPEG,
-  kNV21,
-  kNV12,
-  kBGRA,
-};
-
 // TODO(magjed): Move this and other H264 related classes out to their own file.
 namespace H264 {
 

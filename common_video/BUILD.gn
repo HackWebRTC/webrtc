@@ -39,7 +39,6 @@ rtc_static_library("common_video") {
   ]
 
   deps = [
-    "..:webrtc_common",
     "../api:scoped_refptr",
     "../api/task_queue",
     "../api/video:encoded_image",

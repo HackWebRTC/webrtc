@@ -22,9 +22,27 @@
 #include "api/scoped_refptr.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_frame_buffer.h"
-#include "common_types.h"  // NOLINT(build/include)
 
 namespace webrtc {
+
+enum class VideoType {
+  kUnknown,
+  kI420,
+  kIYUV,
+  kRGB24,
+  kABGR,
+  kARGB,
+  kARGB4444,
+  kRGB565,
+  kARGB1555,
+  kYUY2,
+  kYV12,
+  kUYVY,
+  kMJPEG,
+  kNV21,
+  kNV12,
+  kBGRA,
+};
 
 // This is the max PSNR value our algorithms can return.
 const double kPerfectPSNR = 48.0f;
