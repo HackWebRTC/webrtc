@@ -32,7 +32,7 @@ void CreateAnalyzedStream(Scenario* s,
 TEST(ScenarioAnalyzerTest, PsnrIsHighWhenNetworkIsGood) {
   VideoQualityAnalyzer analyzer;
   {
-    Scenario s;
+    Scenario s("", /*real_time*/ false);
     NetworkNodeConfig good_network;
     good_network.simulation.bandwidth = DataRate::kbps(1000);
     CreateAnalyzedStream(&s, good_network, &analyzer);
@@ -46,7 +46,7 @@ TEST(ScenarioAnalyzerTest, PsnrIsHighWhenNetworkIsGood) {
 TEST(ScenarioAnalyzerTest, PsnrIsLowWhenNetworkIsBad) {
   VideoQualityAnalyzer analyzer;
   {
-    Scenario s;
+    Scenario s("", /*real_time*/ false);
     NetworkNodeConfig bad_network;
     bad_network.simulation.bandwidth = DataRate::kbps(100);
     bad_network.simulation.loss_rate = 0.02;
