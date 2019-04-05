@@ -198,9 +198,9 @@ NetworkEmulationManagerImpl::CreatePulsedPeaksCrossTraffic(
 EmulatedNetworkManagerInterface*
 NetworkEmulationManagerImpl::CreateEmulatedNetworkManagerInterface(
     const std::vector<EmulatedEndpoint*>& endpoints) {
-  auto endpoints_controller = absl::make_unique<EndpointsContainer>(endpoints);
+  auto endpoints_container = absl::make_unique<EndpointsContainer>(endpoints);
   auto network_manager = absl::make_unique<EmulatedNetworkManager>(
-      clock_, endpoints_controller.get());
+      clock_, endpoints_container.get());
   for (auto* endpoint : endpoints) {
     // Associate endpoint with network manager.
     bool insertion_result =
@@ -213,7 +213,7 @@ NetworkEmulationManagerImpl::CreateEmulatedNetworkManagerInterface(
 
   EmulatedNetworkManagerInterface* out = network_manager.get();
 
-  endpoints_controllers_.push_back(std::move(endpoints_controller));
+  endpoints_containers_.push_back(std::move(endpoints_container));
   network_managers_.push_back(std::move(network_manager));
   return out;
 }

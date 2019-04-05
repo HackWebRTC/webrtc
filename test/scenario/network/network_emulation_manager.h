@@ -85,7 +85,7 @@ class NetworkEmulationManagerImpl : public NetworkEmulationManager {
   std::vector<std::unique_ptr<TrafficRoute>> traffic_routes_;
   std::vector<std::unique_ptr<RandomWalkCrossTraffic>> random_cross_traffics_;
   std::vector<std::unique_ptr<PulsedPeaksCrossTraffic>> pulsed_cross_traffics_;
-  std::vector<std::unique_ptr<EndpointsContainer>> endpoints_controllers_;
+  std::vector<std::unique_ptr<EndpointsContainer>> endpoints_containers_;
   std::vector<std::unique_ptr<EmulatedNetworkManager>> network_managers_;
 
   std::map<EmulatedEndpoint*, EmulatedNetworkManager*>
