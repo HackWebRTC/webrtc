@@ -65,7 +65,7 @@ TestInputs::TestInputs(const EchoCanceller3Config& cfg)
     : render_delay_buffer_(RenderDelayBuffer::Create(cfg, 1)),
       H2_(cfg.filter.main.length_blocks),
       x_(1, std::vector<float>(kBlockSize, 0.f)) {
-  render_delay_buffer_->SetDelay(4);
+  render_delay_buffer_->AlignFromDelay(4);
   render_buffer_ = render_delay_buffer_->GetRenderBuffer();
   for (auto& H : H2_) {
     H.fill(0.f);

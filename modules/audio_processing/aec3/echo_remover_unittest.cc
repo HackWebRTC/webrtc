@@ -161,7 +161,7 @@ TEST(EchoRemover, BasicEchoRemoval) {
       std::unique_ptr<EchoRemover> remover(EchoRemover::Create(config, rate));
       std::unique_ptr<RenderDelayBuffer> render_buffer(
           RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
-      render_buffer->SetDelay(delay_samples / kBlockSize);
+      render_buffer->AlignFromDelay(delay_samples / kBlockSize);
 
       std::vector<std::unique_ptr<DelayBuffer<float>>> delay_buffers(x.size());
       for (size_t j = 0; j < x.size(); ++j) {

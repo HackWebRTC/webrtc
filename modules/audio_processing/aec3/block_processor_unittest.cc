@@ -118,7 +118,7 @@ TEST(BlockProcessor, DISABLED_DelayControllerIntegration) {
     EXPECT_CALL(*render_delay_buffer_mock, Insert(_))
         .Times(kNumBlocks)
         .WillRepeatedly(Return(RenderDelayBuffer::BufferingEvent::kNone));
-    EXPECT_CALL(*render_delay_buffer_mock, SetDelay(kDelayInBlocks))
+    EXPECT_CALL(*render_delay_buffer_mock, AlignFromDelay(kDelayInBlocks))
         .Times(AtLeast(1));
     EXPECT_CALL(*render_delay_buffer_mock, MaxDelay()).WillOnce(Return(30));
     EXPECT_CALL(*render_delay_buffer_mock, Delay())
@@ -162,7 +162,7 @@ TEST(BlockProcessor, DISABLED_SubmoduleIntegration) {
         .WillRepeatedly(Return(RenderDelayBuffer::BufferingEvent::kNone));
     EXPECT_CALL(*render_delay_buffer_mock, PrepareCaptureProcessing())
         .Times(kNumBlocks);
-    EXPECT_CALL(*render_delay_buffer_mock, SetDelay(9)).Times(AtLeast(1));
+    EXPECT_CALL(*render_delay_buffer_mock, AlignFromDelay(9)).Times(AtLeast(1));
     EXPECT_CALL(*render_delay_buffer_mock, Delay())
         .Times(kNumBlocks)
         .WillRepeatedly(Return(0));

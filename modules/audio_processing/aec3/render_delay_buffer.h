@@ -48,7 +48,10 @@ class RenderDelayBuffer {
 
   // Sets the buffer delay and returns a bool indicating whether the delay
   // changed.
-  virtual bool SetDelay(size_t delay) = 0;
+  virtual bool AlignFromDelay(size_t delay) = 0;
+
+  // Sets the buffer delay from the most recently reported external delay.
+  virtual void AlignFromExternalDelay() = 0;
 
   // Gets the buffer delay.
   virtual size_t Delay() const = 0;
@@ -67,6 +70,10 @@ class RenderDelayBuffer {
 
   // Provides an optional external estimate of the audio buffer delay.
   virtual void SetAudioBufferDelay(size_t delay_ms) = 0;
+
+  // Returns whether an external delay estimate has been reported via
+  // SetAudioBufferDelay.
+  virtual bool HasReceivedBufferDelay() = 0;
 };
 
 }  // namespace webrtc

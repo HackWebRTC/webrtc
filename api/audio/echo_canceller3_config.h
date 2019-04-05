@@ -46,6 +46,7 @@ struct RTC_EXPORT EchoCanceller3Config {
       int initial;
       int converged;
     } delay_selection_thresholds = {5, 20};
+    bool use_external_delay_estimator = false;
   } delay;
 
   struct Filter {

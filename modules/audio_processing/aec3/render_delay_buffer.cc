@@ -44,7 +44,8 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   void Reset() override;
   BufferingEvent Insert(const std::vector<std::vector<float>>& block) override;
   BufferingEvent PrepareCaptureProcessing() override;
-  bool SetDelay(size_t delay) override;
+  bool AlignFromDelay(size_t delay) override;
+  void AlignFromExternalDelay() override;
   size_t Delay() const override { return ComputeDelay(); }
   size_t MaxDelay() const override {
     return blocks_.buffer.size() - 1 - buffer_headroom_;
@@ -57,6 +58,7 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
 
   int BufferLatency() const;
   void SetAudioBufferDelay(size_t delay_ms) override;
+  bool HasReceivedBufferDelay() override;
 
  private:
   static int instance_count_;
@@ -78,8 +80,8 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   bool last_call_was_render_ = false;
   int num_api_calls_in_a_row_ = 0;
   int max_observed_jitter_ = 1;
-  size_t capture_call_counter_ = 0;
-  size_t render_call_counter_ = 0;
+  int64_t capture_call_counter_ = 0;
+  int64_t render_call_counter_ = 0;
   bool render_activity_ = false;
   size_t render_activity_counter_ = 0;
   absl::optional<size_t> external_audio_buffer_delay_;
@@ -172,7 +174,7 @@ void RenderDelayBufferImpl::Reset() {
     // initial delay. Set the render buffer delays to the default delay.
     ApplyTotalDelay(config_.delay.default_delay);
 
-    // Unset the delays which are set by SetDelay.
+    // Unset the delays which are set by AlignFromDelay.
     delay_ = absl::nullopt;
   }
 }
@@ -277,7 +279,8 @@ RenderDelayBufferImpl::PrepareCaptureProcessing() {
 }
 
 // Sets the delay and returns a bool indicating whether the delay was changed.
-bool RenderDelayBufferImpl::SetDelay(size_t delay) {
+bool RenderDelayBufferImpl::AlignFromDelay(size_t delay) {
+  RTC_DCHECK(!config_.delay.use_external_delay_estimator);
   if (!external_audio_buffer_delay_verified_after_reset_ &&
       external_audio_buffer_delay_ && delay_) {
     int difference = static_cast<int>(delay) - static_cast<int>(*delay_);
@@ -312,6 +315,10 @@ void RenderDelayBufferImpl::SetAudioBufferDelay(size_t delay_ms) {
   external_audio_buffer_delay_ = delay_ms >> ((num_bands_ == 1) ? 1 : 2);
 }
 
+bool RenderDelayBufferImpl::HasReceivedBufferDelay() {
+  return external_audio_buffer_delay_.has_value();
+}
+
 // Maps the externally computed delay to the delay used internally.
 int RenderDelayBufferImpl::MapDelayToTotalDelay(
     size_t external_delay_blocks) const {
@@ -335,6 +342,15 @@ void RenderDelayBufferImpl::ApplyTotalDelay(int delay) {
   blocks_.read = blocks_.OffsetIndex(blocks_.write, -delay);
   spectra_.read = spectra_.OffsetIndex(spectra_.write, delay);
   ffts_.read = ffts_.OffsetIndex(ffts_.write, delay);
+}
+
+void RenderDelayBufferImpl::AlignFromExternalDelay() {
+  RTC_DCHECK(config_.delay.use_external_delay_estimator);
+  if (external_audio_buffer_delay_) {
+    int64_t delay = render_call_counter_ - capture_call_counter_ +
+                    *external_audio_buffer_delay_;
+    ApplyTotalDelay(delay);
+  }
 }
 
 // Inserts a block into the render buffers.
