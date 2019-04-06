@@ -38,8 +38,13 @@ class FrameDecryptorInterface : public rtc::RefCountInterface {
   enum class Status { kOk, kRecoverable, kFailedToDecrypt };
 
   struct Result {
-    Status status;
-    size_t bytes_written;
+    Result(Status status, size_t bytes_written)
+        : status(status), bytes_written(bytes_written) {}
+
+    bool IsOk() const { return status == Status::kOk; }
+
+    const Status status;
+    const size_t bytes_written;
   };
 
   ~FrameDecryptorInterface() override {}
@@ -73,14 +78,8 @@ class FrameDecryptorInterface : public rtc::RefCountInterface {
     size_t bytes_written = 0;
     const int status = Decrypt(media_type, csrcs, additional_data,
                                encrypted_frame, frame, &bytes_written);
-    Result decryption_result;
-    decryption_result.bytes_written = bytes_written;
-    if (status == 0) {
-      decryption_result.status = Status::kOk;
-    } else {
-      decryption_result.status = Status::kFailedToDecrypt;
-    }
-    return decryption_result;
+    return Result(status == 0 ? Status::kOk : Status::kFailedToDecrypt,
+                  bytes_written);
   }
 
   // Returns the total required length in bytes for the output of the
