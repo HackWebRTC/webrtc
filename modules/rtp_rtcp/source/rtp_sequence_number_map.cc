@@ -12,6 +12,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <limits>
 
 #include "absl/algorithm/container.h"
 #include "rtc_base/checks.h"
@@ -28,7 +29,7 @@ RtpSequenceNumberMap::RtpSequenceNumberMap(size_t max_entries)
 
 RtpSequenceNumberMap::~RtpSequenceNumberMap() = default;
 
-void RtpSequenceNumberMap::Insert(uint16_t sequence_number, Info info) {
+void RtpSequenceNumberMap::InsertPacket(uint16_t sequence_number, Info info) {
   RTC_DCHECK(associations_.size() < 2 ||
              AheadOf(associations_.back().sequence_number,
                      associations_.front().sequence_number));
@@ -77,6 +78,20 @@ void RtpSequenceNumberMap::Insert(uint16_t sequence_number, Info info) {
   RTC_DCHECK(associations_.size() == 1 ||
              AheadOf(associations_.back().sequence_number,
                      associations_.front().sequence_number));
+}
+
+void RtpSequenceNumberMap::InsertFrame(uint16_t first_sequence_number,
+                                       size_t packet_count,
+                                       uint32_t timestamp) {
+  RTC_DCHECK_GT(packet_count, 0);
+  RTC_DCHECK_LE(packet_count, std::numeric_limits<size_t>::max());
+
+  for (size_t i = 0; i < packet_count; ++i) {
+    const bool is_first = (i == 0);
+    const bool is_last = (i == packet_count - 1);
+    InsertPacket(static_cast<uint16_t>(first_sequence_number + i),
+                 Info(timestamp, is_first, is_last));
+  }
 }
 
 absl::optional<RtpSequenceNumberMap::Info> RtpSequenceNumberMap::Get(

@@ -147,7 +147,7 @@ TEST_F(RtpSequenceNumberMapTest, GetUnknownSequenceNumberReturnsNullOpt1) {
 
   constexpr uint16_t kKnownSequenceNumber = 10;
   constexpr uint32_t kArbitrary = 987;
-  uut.Insert(kKnownSequenceNumber, {kArbitrary, false, false});
+  uut.InsertPacket(kKnownSequenceNumber, {kArbitrary, false, false});
 
   constexpr uint16_t kUnknownSequenceNumber = kKnownSequenceNumber + 1;
   EXPECT_FALSE(uut.Get(kUnknownSequenceNumber));
@@ -161,7 +161,7 @@ TEST_F(RtpSequenceNumberMapTest, GetUnknownSequenceNumberReturnsNullOpt2) {
   const std::vector<Association> setup = {CreateAssociation(1000, 500),  //
                                           CreateAssociation(1020, 501)};
   for (const Association& association : setup) {
-    uut.Insert(association.sequence_number, association.info);
+    uut.InsertPacket(association.sequence_number, association.info);
   }
 
   EXPECT_FALSE(uut.Get(1001));
@@ -179,10 +179,55 @@ TEST_P(RtpSequenceNumberMapTestWithParams,
                                        /*allow_obsoletion=*/false);
 
   for (const Association& association : associations) {
-    uut.Insert(association.sequence_number, association.info);
+    uut.InsertPacket(association.sequence_number, association.info);
   }
 
   VerifyAssociations(uut, associations);
+}
+
+TEST_F(RtpSequenceNumberMapTest, InsertFrameOnSinglePacketFrame) {
+  RtpSequenceNumberMap uut(kMaxPossibleMaxEntries);
+
+  constexpr uint16_t kSequenceNumber = 888;
+  constexpr uint32_t kTimestamp = 98765;
+  uut.InsertFrame(kSequenceNumber, 1, kTimestamp);
+
+  EXPECT_EQ(uut.Get(kSequenceNumber), Info(kTimestamp, true, true));
+}
+
+TEST_F(RtpSequenceNumberMapTest, InsertFrameOnMultiPacketFrameNoWrapAround) {
+  RtpSequenceNumberMap uut(kMaxPossibleMaxEntries);
+
+  constexpr uint16_t kFirstSequenceNumber = 0;
+  constexpr uint32_t kTimestamp = 98765;
+  uut.InsertFrame(kFirstSequenceNumber, 3, kTimestamp);
+
+  EXPECT_EQ(uut.Get(kFirstSequenceNumber + 0), Info(kTimestamp, true, false));
+  EXPECT_EQ(uut.Get(kFirstSequenceNumber + 1), Info(kTimestamp, false, false));
+  EXPECT_EQ(uut.Get(kFirstSequenceNumber + 2), Info(kTimestamp, false, true));
+}
+
+TEST_F(RtpSequenceNumberMapTest, InsertFrameOnMultiPacketFrameWithWrapAround) {
+  RtpSequenceNumberMap uut(kMaxPossibleMaxEntries);
+
+  constexpr uint16_t kFirstSequenceNumber = kUint16Max;
+  constexpr uint32_t kTimestamp = 98765;
+  uut.InsertFrame(kFirstSequenceNumber, 3, kTimestamp);
+
+// Suppress "truncation of constant value" warning; wrap-around is intended.
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4309)
+#endif
+  EXPECT_EQ(uut.Get(static_cast<uint16_t>(kFirstSequenceNumber + 0u)),
+            Info(kTimestamp, true, false));
+  EXPECT_EQ(uut.Get(static_cast<uint16_t>(kFirstSequenceNumber + 1u)),
+            Info(kTimestamp, false, false));
+  EXPECT_EQ(uut.Get(static_cast<uint16_t>(kFirstSequenceNumber + 2u)),
+            Info(kTimestamp, false, true));
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 }
 
 TEST_F(RtpSequenceNumberMapTest,
@@ -194,18 +239,18 @@ TEST_F(RtpSequenceNumberMapTest,
       CreateAssociation(0x8000, 20),  //
       CreateAssociation(0x8001u, 30)};
 
-  uut.Insert(associations[0].sequence_number, associations[0].info);
+  uut.InsertPacket(associations[0].sequence_number, associations[0].info);
 
   // First association not yet obsolete, and therefore remembered.
   RTC_DCHECK(AheadOf(associations[1].sequence_number,
                      associations[0].sequence_number));
-  uut.Insert(associations[1].sequence_number, associations[1].info);
+  uut.InsertPacket(associations[1].sequence_number, associations[1].info);
   VerifyAssociations(uut, {associations[0], associations[1]});
 
   // Test focus - new entry obsoletes first entry.
   RTC_DCHECK(!AheadOf(associations[2].sequence_number,
                       associations[0].sequence_number));
-  uut.Insert(associations[2].sequence_number, associations[2].info);
+  uut.InsertPacket(associations[2].sequence_number, associations[2].info);
   VerifyAssociations(uut, {associations[1], associations[2]});
 }
 
@@ -231,7 +276,7 @@ void RtpSequenceNumberMapTest::
   }
 
   for (auto association : associations) {
-    uut.Insert(association.sequence_number, association.info);
+    uut.InsertPacket(association.sequence_number, association.info);
   }
   VerifyAssociations(uut, associations);
 
@@ -261,7 +306,7 @@ void RtpSequenceNumberMapTest::
   // Record the new association.
   const Association new_association =
       CreateAssociation(new_sequence_number, 60);
-  uut.Insert(new_association.sequence_number, new_association.info);
+  uut.InsertPacket(new_association.sequence_number, new_association.info);
 
   // Make sure all obsoleted elements were removed.
   const size_t obsoleted_count =
@@ -320,12 +365,12 @@ void RtpSequenceNumberMapTest::RepeatedSequenceNumberInvalidatesAll(
                                           CreateAssociation(102, 502)};
   RTC_DCHECK_LT(index_of_repeated, setup.size());
   for (const Association& association : setup) {
-    uut.Insert(association.sequence_number, association.info);
+    uut.InsertPacket(association.sequence_number, association.info);
   }
 
   const Association new_association =
       CreateAssociation(setup[index_of_repeated].sequence_number, 503);
-  uut.Insert(new_association.sequence_number, new_association.info);
+  uut.InsertPacket(new_association.sequence_number, new_association.info);
 
   // All entries from setup invalidated.
   // New entry valid and mapped to new value.
@@ -361,11 +406,11 @@ TEST_F(RtpSequenceNumberMapTest,
                                           CreateAssociation(1020, 501),  //
                                           CreateAssociation(1030, 502)};
   for (const Association& association : setup) {
-    uut.Insert(association.sequence_number, association.info);
+    uut.InsertPacket(association.sequence_number, association.info);
   }
 
   const Association new_association = CreateAssociation(1010, 503);
-  uut.Insert(new_association.sequence_number, new_association.info);
+  uut.InsertPacket(new_association.sequence_number, new_association.info);
 
   // All entries from setup invalidated.
   // New entry valid and mapped to new value.
@@ -384,13 +429,13 @@ TEST_F(RtpSequenceNumberMapTest, MaxEntriesObserved) {
   uint32_t timestamp = 789;
   for (size_t i = 0; i < kMaxEntries; ++i) {
     associations.push_back(CreateAssociation(i, ++timestamp));
-    uut.Insert(associations[i].sequence_number, associations[i].info);
+    uut.InsertPacket(associations[i].sequence_number, associations[i].info);
   }
   VerifyAssociations(uut, associations);  // Sanity.
 
   const Association new_association =
       CreateAssociation(kMaxEntries, ++timestamp);
-  uut.Insert(new_association.sequence_number, new_association.info);
+  uut.InsertPacket(new_association.sequence_number, new_association.info);
   associations.push_back(new_association);
 
   // The +1 is for |new_association|.
@@ -410,7 +455,7 @@ void RtpSequenceNumberMapTest::MaxEntriesReachedAtSameTimeAsObsoletionOfItem(
   uint32_t timestamp = 789;
   for (size_t i = 0; i < max_entries; ++i) {
     associations.push_back(CreateAssociation(i, ++timestamp));
-    uut.Insert(associations[i].sequence_number, associations[i].info);
+    uut.InsertPacket(associations[i].sequence_number, associations[i].info);
   }
   VerifyAssociations(uut, associations);  // Sanity.
 
@@ -418,7 +463,7 @@ void RtpSequenceNumberMapTest::MaxEntriesReachedAtSameTimeAsObsoletionOfItem(
       static_cast<uint16_t>(obsoleted_count) + (1 << 15);
   const Association new_association =
       CreateAssociation(new_association_sequence_number, ++timestamp);
-  uut.Insert(new_association.sequence_number, new_association.info);
+  uut.InsertPacket(new_association.sequence_number, new_association.info);
   associations.push_back(new_association);
 
   // The +1 is for |new_association|.

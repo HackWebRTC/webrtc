@@ -53,7 +53,10 @@ class RtpSequenceNumberMap final {
   RtpSequenceNumberMap& operator=(const RtpSequenceNumberMap& other) = delete;
   ~RtpSequenceNumberMap();
 
-  void Insert(uint16_t sequence_number, Info info);
+  void InsertPacket(uint16_t sequence_number, Info info);
+  void InsertFrame(uint16_t first_sequence_number,
+                   size_t packet_count,
+                   uint32_t timestamp);
 
   absl::optional<Info> Get(uint16_t sequence_number) const;
 
