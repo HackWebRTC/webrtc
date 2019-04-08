@@ -143,7 +143,7 @@ RtpSenderFrameEncryptionConfig CreateFrameEncryptionConfig(
 }
 
 RtpSenderObservers CreateObservers(CallStats* call_stats,
-                                   EncoderKeyFrameCallback* encoder_feedback,
+                                   EncoderRtcpFeedback* encoder_feedback,
                                    SendStatisticsProxy* stats_proxy,
                                    SendDelayStats* send_delay_stats) {
   RtpSenderObservers observers;
