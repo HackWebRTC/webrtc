@@ -45,7 +45,7 @@
 #include "modules/audio_device/linux/audio_device_pulse_linux.h"
 #endif
 #elif defined(WEBRTC_IOS)
-#include "sdk/objc/native/src/audio/audio_device_ios.h"
+#include "modules/audio_device/ios/audio_device_ios.h"
 #elif defined(WEBRTC_MAC)
 #include "modules/audio_device/mac/audio_device_mac.h"
 #endif
@@ -287,7 +287,7 @@ int32_t AudioDeviceModuleImpl::CreatePlatformSpecificObjects() {
 // iOS ADM implementation.
 #if defined(WEBRTC_IOS)
   if (audio_layer == kPlatformDefaultAudio) {
-    audio_device_.reset(new ios_adm::AudioDeviceIOS());
+    audio_device_.reset(new AudioDeviceIOS());
     RTC_LOG(INFO) << "iPhone Audio APIs will be utilized.";
   }
 // END #if defined(WEBRTC_IOS)
