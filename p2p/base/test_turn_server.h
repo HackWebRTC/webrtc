@@ -65,25 +65,25 @@ class TestTurnServer : public TurnAuthInterface {
     server_.set_auth_hook(this);
   }
 
-  ~TestTurnServer() { RTC_DCHECK(thread_checker_.CalledOnValidThread()); }
+  ~TestTurnServer() { RTC_DCHECK(thread_checker_.IsCurrent()); }
 
   void set_enable_otu_nonce(bool enable) {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     server_.set_enable_otu_nonce(enable);
   }
 
   TurnServer* server() {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     return &server_;
   }
 
   void set_redirect_hook(TurnRedirectInterface* redirect_hook) {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     server_.set_redirect_hook(redirect_hook);
   }
 
   void set_enable_permission_checks(bool enable) {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     server_.set_enable_permission_checks(enable);
   }
 
@@ -91,7 +91,7 @@ class TestTurnServer : public TurnAuthInterface {
                          ProtocolType proto,
                          bool ignore_bad_cert = true,
                          const std::string& common_name = "test turn server") {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     if (proto == cricket::PROTO_UDP) {
       server_.AddInternalSocket(
           rtc::AsyncUDPSocket::Create(thread_->socketserver(), int_addr),
@@ -124,7 +124,7 @@ class TestTurnServer : public TurnAuthInterface {
   // Finds the first allocation in the server allocation map with a source
   // ip and port matching the socket address provided.
   TurnServerAllocation* FindAllocation(const rtc::SocketAddress& src) {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     const TurnServer::AllocationMap& map = server_.allocations();
     for (TurnServer::AllocationMap::const_iterator it = map.begin();
          it != map.end(); ++it) {
@@ -141,7 +141,7 @@ class TestTurnServer : public TurnAuthInterface {
   virtual bool GetKey(const std::string& username,
                       const std::string& realm,
                       std::string* key) {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     return ComputeStunCredentialHash(username, realm, username, key);
   }
 

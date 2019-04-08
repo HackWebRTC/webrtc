@@ -223,8 +223,8 @@ class LatencyAudioStream : public AudioStream {
   LatencyAudioStream() {
     // Delay thread checkers from being initialized until first callback from
     // respective thread.
-    read_thread_checker_.DetachFromThread();
-    write_thread_checker_.DetachFromThread();
+    read_thread_checker_.Detach();
+    write_thread_checker_.Detach();
   }
 
   // Insert periodic impulses in first two samples of |destination|.

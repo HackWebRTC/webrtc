@@ -158,7 +158,7 @@ class AudioManager {
                               jint input_buffer_size);
 
   // Stores thread ID in the constructor.
-  // We can then use ThreadChecker::CalledOnValidThread() to ensure that
+  // We can then use ThreadChecker::IsCurrent() to ensure that
   // other methods are called from the same thread.
   rtc::ThreadChecker thread_checker_;
 

@@ -63,7 +63,7 @@ SharedMemoryFactoryProxy::~SharedMemoryFactoryProxy() = default;
 
 std::unique_ptr<SharedMemory> SharedMemoryFactoryProxy::CreateSharedMemory(
     size_t size) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   return factory_->CreateSharedMemory(size);
 }
 

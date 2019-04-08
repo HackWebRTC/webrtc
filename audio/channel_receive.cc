@@ -462,7 +462,7 @@ ChannelReceive::ChannelReceive(
       frame_decryptor_(frame_decryptor),
       crypto_options_(crypto_options) {
   // TODO(nisse): Use _moduleProcessThreadPtr instead?
-  module_process_thread_checker_.DetachFromThread();
+  module_process_thread_checker_.Detach();
 
   RTC_DCHECK(module_process_thread);
   RTC_DCHECK(audio_device_module);
@@ -509,7 +509,7 @@ ChannelReceive::ChannelReceive(
 }
 
 ChannelReceive::~ChannelReceive() {
-  RTC_DCHECK(construction_thread_.CalledOnValidThread());
+  RTC_DCHECK(construction_thread_.IsCurrent());
 
   if (media_transport_) {
     media_transport_->SetReceiveAudioSink(nullptr);
@@ -525,19 +525,19 @@ ChannelReceive::~ChannelReceive() {
 }
 
 void ChannelReceive::SetSink(AudioSinkInterface* sink) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   rtc::CritScope cs(&_callbackCritSect);
   audio_sink_ = sink;
 }
 
 void ChannelReceive::StartPlayout() {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   rtc::CritScope lock(&playing_lock_);
   playing_ = true;
 }
 
 void ChannelReceive::StopPlayout() {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   rtc::CritScope lock(&playing_lock_);
   playing_ = false;
   _outputAudioLevel.Clear();
@@ -545,12 +545,12 @@ void ChannelReceive::StopPlayout() {
 
 absl::optional<std::pair<int, SdpAudioFormat>>
     ChannelReceive::GetReceiveCodec() const {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   return audio_coding_->ReceiveCodec();
 }
 
 std::vector<webrtc::RtpSource> ChannelReceive::GetSources() const {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   int64_t now_ms = rtc::TimeMillis();
   std::vector<RtpSource> sources;
   {
@@ -568,7 +568,7 @@ std::vector<webrtc::RtpSource> ChannelReceive::GetSources() const {
 
 void ChannelReceive::SetReceiveCodecs(
     const std::map<int, SdpAudioFormat>& codecs) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   for (const auto& kv : codecs) {
     RTC_DCHECK_GE(kv.second.clockrate_hz, 1000);
     payload_type_frequencies_[kv.first] = kv.second.clockrate_hz;
@@ -693,34 +693,34 @@ void ChannelReceive::ReceivedRTCPPacket(const uint8_t* data, size_t length) {
 }
 
 int ChannelReceive::GetSpeechOutputLevelFullRange() const {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   return _outputAudioLevel.LevelFullRange();
 }
 
 double ChannelReceive::GetTotalOutputEnergy() const {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   return _outputAudioLevel.TotalEnergy();
 }
 
 double ChannelReceive::GetTotalOutputDuration() const {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   return _outputAudioLevel.TotalDuration();
 }
 
 void ChannelReceive::SetChannelOutputVolumeScaling(float scaling) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   rtc::CritScope cs(&volume_settings_critsect_);
   _outputGain = scaling;
 }
 
 void ChannelReceive::SetLocalSSRC(uint32_t ssrc) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   _rtpRtcpModule->SetSSRC(ssrc);
 }
 
 void ChannelReceive::RegisterReceiverCongestionControlObjects(
     PacketRouter* packet_router) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   RTC_DCHECK(packet_router);
   RTC_DCHECK(!packet_router_);
   constexpr bool remb_candidate = false;
@@ -729,14 +729,14 @@ void ChannelReceive::RegisterReceiverCongestionControlObjects(
 }
 
 void ChannelReceive::ResetReceiverCongestionControlObjects() {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   RTC_DCHECK(packet_router_);
   packet_router_->RemoveReceiveRtpModule(_rtpRtcpModule.get());
   packet_router_ = nullptr;
 }
 
 CallReceiveStatistics ChannelReceive::GetRTCPStatistics() const {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   // --- RtcpStatistics
   CallReceiveStatistics stats;
 
@@ -779,7 +779,7 @@ CallReceiveStatistics ChannelReceive::GetRTCPStatistics() const {
 }
 
 void ChannelReceive::SetNACKStatus(bool enable, int max_packets) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   // None of these functions can fail.
   if (enable) {
     rtp_receive_statistics_->SetMaxReorderingThreshold(max_packets);
@@ -799,13 +799,13 @@ int ChannelReceive::ResendPackets(const uint16_t* sequence_numbers,
 
 void ChannelReceive::SetAssociatedSendChannel(
     const ChannelSendInterface* channel) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   rtc::CritScope lock(&assoc_send_channel_lock_);
   associated_send_channel_ = channel;
 }
 
 NetworkStatistics ChannelReceive::GetNetworkStatistics() const {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   NetworkStatistics stats;
   int error = audio_coding_->GetNetworkStatistics(&stats);
   RTC_DCHECK_EQ(0, error);
@@ -813,21 +813,21 @@ NetworkStatistics ChannelReceive::GetNetworkStatistics() const {
 }
 
 AudioDecodingCallStats ChannelReceive::GetDecodingCallStatistics() const {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   AudioDecodingCallStats stats;
   audio_coding_->GetDecodingCallStatistics(&stats);
   return stats;
 }
 
 uint32_t ChannelReceive::GetDelayEstimate() const {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread() ||
-             module_process_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent() ||
+             module_process_thread_checker_.IsCurrent());
   rtc::CritScope lock(&video_sync_lock_);
   return audio_coding_->FilteredCurrentDelayMs() + playout_delay_ms_;
 }
 
 void ChannelReceive::SetMinimumPlayoutDelay(int delay_ms) {
-  RTC_DCHECK(module_process_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(module_process_thread_checker_.IsCurrent());
   // Limit to range accepted by both VoE and ACM, so we're at least getting as
   // close as possible, instead of failing.
   delay_ms = rtc::SafeClamp(delay_ms, kVoiceEngineMinMinPlayoutDelayMs,
@@ -855,7 +855,7 @@ int ChannelReceive::GetBaseMinimumPlayoutDelayMs() const {
 }
 
 absl::optional<Syncable::Info> ChannelReceive::GetSyncInfo() const {
-  RTC_DCHECK(module_process_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(module_process_thread_checker_.IsCurrent());
   Syncable::Info info;
   if (_rtpRtcpModule->RemoteNTP(&info.capture_time_ntp_secs,
                                 &info.capture_time_ntp_frac, nullptr, nullptr,

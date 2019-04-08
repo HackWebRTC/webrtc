@@ -69,7 +69,7 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
     RTC_CHECK(input_);
     RTC_CHECK(output_);
     RTC_LOG(INFO) << __FUNCTION__;
-    thread_checker_.DetachFromThread();
+    thread_checker_.Detach();
   }
 
   ~AndroidAudioDeviceModule() override { RTC_LOG(INFO) << __FUNCTION__; }
@@ -88,7 +88,7 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
 
   int32_t Init() override {
     RTC_LOG(INFO) << __FUNCTION__;
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     audio_device_buffer_ =
         absl::make_unique<AudioDeviceBuffer>(&GlobalTaskQueueFactory());
     AttachAudioBuffer();
@@ -119,11 +119,11 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
     RTC_LOG(INFO) << __FUNCTION__;
     if (!initialized_)
       return 0;
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     int32_t err = input_->Terminate();
     err |= output_->Terminate();
     initialized_ = false;
-    thread_checker_.DetachFromThread();
+    thread_checker_.Detach();
     audio_device_buffer_.reset(nullptr);
     RTC_DCHECK_EQ(err, 0);
     return err;

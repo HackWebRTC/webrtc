@@ -181,53 +181,53 @@ class TurnServer : public sigslot::has_slots<> {
 
   // Gets/sets the realm value to use for the server.
   const std::string& realm() const {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     return realm_;
   }
   void set_realm(const std::string& realm) {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     realm_ = realm;
   }
 
   // Gets/sets the value for the SOFTWARE attribute for TURN messages.
   const std::string& software() const {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     return software_;
   }
   void set_software(const std::string& software) {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     software_ = software;
   }
 
   const AllocationMap& allocations() const {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     return allocations_;
   }
 
   // Sets the authentication callback; does not take ownership.
   void set_auth_hook(TurnAuthInterface* auth_hook) {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     auth_hook_ = auth_hook;
   }
 
   void set_redirect_hook(TurnRedirectInterface* redirect_hook) {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     redirect_hook_ = redirect_hook;
   }
 
   void set_enable_otu_nonce(bool enable) {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     enable_otu_nonce_ = enable;
   }
 
   // If set to true, reject CreatePermission requests to RFC1918 addresses.
   void set_reject_private_addresses(bool filter) {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     reject_private_addresses_ = filter;
   }
 
   void set_enable_permission_checks(bool enable) {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     enable_permission_checks_ = enable;
   }
 
@@ -244,14 +244,14 @@ class TurnServer : public sigslot::has_slots<> {
                                 const rtc::SocketAddress& address);
   // For testing only.
   std::string SetTimestampForNextNonce(int64_t timestamp) {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     ts_for_next_nonce_ = timestamp;
     return GenerateNonce(timestamp);
   }
 
   void SetStunMessageObserver(
       std::unique_ptr<StunMessageObserver> observer) {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     stun_message_observer_ = std::move(observer);
   }
 

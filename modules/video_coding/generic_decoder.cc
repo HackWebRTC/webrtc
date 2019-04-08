@@ -37,7 +37,7 @@ VCMDecodedFrameCallback::~VCMDecodedFrameCallback() {}
 
 void VCMDecodedFrameCallback::SetUserReceiveCallback(
     VCMReceiveCallback* receiveCallback) {
-  RTC_DCHECK(construction_thread_.CalledOnValidThread());
+  RTC_DCHECK(construction_thread_.IsCurrent());
   RTC_DCHECK((!_receiveCallback && receiveCallback) ||
              (_receiveCallback && !receiveCallback));
   _receiveCallback = receiveCallback;

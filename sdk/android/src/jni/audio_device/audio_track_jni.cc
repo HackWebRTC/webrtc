@@ -48,34 +48,34 @@ AudioTrackJni::AudioTrackJni(JNIEnv* env,
                                             jni::jlongFromPointer(this));
   // Detach from this thread since construction is allowed to happen on a
   // different thread.
-  thread_checker_.DetachFromThread();
-  thread_checker_java_.DetachFromThread();
+  thread_checker_.Detach();
+  thread_checker_java_.Detach();
 }
 
 AudioTrackJni::~AudioTrackJni() {
   RTC_LOG(INFO) << "dtor";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   Terminate();
 }
 
 int32_t AudioTrackJni::Init() {
   RTC_LOG(INFO) << "Init";
   env_ = AttachCurrentThreadIfNeeded();
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   return 0;
 }
 
 int32_t AudioTrackJni::Terminate() {
   RTC_LOG(INFO) << "Terminate";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   StopPlayout();
-  thread_checker_.DetachFromThread();
+  thread_checker_.Detach();
   return 0;
 }
 
 int32_t AudioTrackJni::InitPlayout() {
   RTC_LOG(INFO) << "InitPlayout";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   if (initialized_) {
     // Already initialized.
     return 0;
@@ -97,7 +97,7 @@ bool AudioTrackJni::PlayoutIsInitialized() const {
 
 int32_t AudioTrackJni::StartPlayout() {
   RTC_LOG(INFO) << "StartPlayout";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   if (playing_) {
     // Already playing.
     return 0;
@@ -117,7 +117,7 @@ int32_t AudioTrackJni::StartPlayout() {
 
 int32_t AudioTrackJni::StopPlayout() {
   RTC_LOG(INFO) << "StopPlayout";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   if (!initialized_ || !playing_) {
     return 0;
   }
@@ -127,7 +127,7 @@ int32_t AudioTrackJni::StopPlayout() {
   }
   // If we don't detach here, we will hit a RTC_DCHECK next time StartPlayout()
   // is called since it will create a new Java thread.
-  thread_checker_java_.DetachFromThread();
+  thread_checker_java_.Detach();
   initialized_ = false;
   playing_ = false;
   direct_buffer_address_ = nullptr;
@@ -144,7 +144,7 @@ bool AudioTrackJni::SpeakerVolumeIsAvailable() {
 
 int AudioTrackJni::SetSpeakerVolume(uint32_t volume) {
   RTC_LOG(INFO) << "SetSpeakerVolume(" << volume << ")";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   return Java_WebRtcAudioTrack_setStreamVolume(env_, j_audio_track_,
                                                static_cast<int>(volume))
              ? 0
@@ -152,17 +152,17 @@ int AudioTrackJni::SetSpeakerVolume(uint32_t volume) {
 }
 
 absl::optional<uint32_t> AudioTrackJni::MaxSpeakerVolume() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   return Java_WebRtcAudioTrack_getStreamMaxVolume(env_, j_audio_track_);
 }
 
 absl::optional<uint32_t> AudioTrackJni::MinSpeakerVolume() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   return 0;
 }
 
 absl::optional<uint32_t> AudioTrackJni::SpeakerVolume() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   const uint32_t volume =
       Java_WebRtcAudioTrack_getStreamVolume(env_, j_audio_track_);
   RTC_LOG(INFO) << "SpeakerVolume: " << volume;
@@ -172,7 +172,7 @@ absl::optional<uint32_t> AudioTrackJni::SpeakerVolume() const {
 // TODO(henrika): possibly add stereo support.
 void AudioTrackJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   RTC_LOG(INFO) << "AttachAudioBuffer";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   audio_device_buffer_ = audioBuffer;
   const int sample_rate_hz = audio_parameters_.sample_rate();
   RTC_LOG(INFO) << "SetPlayoutSampleRate(" << sample_rate_hz << ")";
@@ -187,7 +187,7 @@ void AudioTrackJni::CacheDirectBufferAddress(
     const JavaParamRef<jobject>&,
     const JavaParamRef<jobject>& byte_buffer) {
   RTC_LOG(INFO) << "OnCacheDirectBufferAddress";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   RTC_DCHECK(!direct_buffer_address_);
   direct_buffer_address_ = env->GetDirectBufferAddress(byte_buffer.obj());
   jlong capacity = env->GetDirectBufferCapacity(byte_buffer.obj());
@@ -203,7 +203,7 @@ void AudioTrackJni::CacheDirectBufferAddress(
 void AudioTrackJni::GetPlayoutData(JNIEnv* env,
                                    const JavaParamRef<jobject>&,
                                    size_t length) {
-  RTC_DCHECK(thread_checker_java_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_java_.IsCurrent());
   const size_t bytes_per_frame = audio_parameters_.channels() * sizeof(int16_t);
   RTC_DCHECK_EQ(frames_per_buffer_, length / bytes_per_frame);
   if (!audio_device_buffer_) {

@@ -88,31 +88,31 @@ AudioTrackJni::AudioTrackJni(AudioManager* audio_manager)
                              "<init>", "(J)V", PointerTojlong(this))));
   // Detach from this thread since we want to use the checker to verify calls
   // from the Java based audio thread.
-  thread_checker_java_.DetachFromThread();
+  thread_checker_java_.Detach();
 }
 
 AudioTrackJni::~AudioTrackJni() {
   RTC_LOG(INFO) << "dtor";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   Terminate();
 }
 
 int32_t AudioTrackJni::Init() {
   RTC_LOG(INFO) << "Init";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   return 0;
 }
 
 int32_t AudioTrackJni::Terminate() {
   RTC_LOG(INFO) << "Terminate";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   StopPlayout();
   return 0;
 }
 
 int32_t AudioTrackJni::InitPlayout() {
   RTC_LOG(INFO) << "InitPlayout";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   RTC_DCHECK(!initialized_);
   RTC_DCHECK(!playing_);
   if (!j_audio_track_->InitPlayout(audio_parameters_.sample_rate(),
@@ -126,7 +126,7 @@ int32_t AudioTrackJni::InitPlayout() {
 
 int32_t AudioTrackJni::StartPlayout() {
   RTC_LOG(INFO) << "StartPlayout";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   RTC_DCHECK(!playing_);
   if (!initialized_) {
     RTC_DLOG(LS_WARNING)
@@ -143,7 +143,7 @@ int32_t AudioTrackJni::StartPlayout() {
 
 int32_t AudioTrackJni::StopPlayout() {
   RTC_LOG(INFO) << "StopPlayout";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   if (!initialized_ || !playing_) {
     return 0;
   }
@@ -154,7 +154,7 @@ int32_t AudioTrackJni::StopPlayout() {
   // If we don't detach here, we will hit a RTC_DCHECK in OnDataIsRecorded()
   // next time StartRecording() is called since it will create a new Java
   // thread.
-  thread_checker_java_.DetachFromThread();
+  thread_checker_java_.Detach();
   initialized_ = false;
   playing_ = false;
   direct_buffer_address_ = nullptr;
@@ -168,24 +168,24 @@ int AudioTrackJni::SpeakerVolumeIsAvailable(bool& available) {
 
 int AudioTrackJni::SetSpeakerVolume(uint32_t volume) {
   RTC_LOG(INFO) << "SetSpeakerVolume(" << volume << ")";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   return j_audio_track_->SetStreamVolume(volume) ? 0 : -1;
 }
 
 int AudioTrackJni::MaxSpeakerVolume(uint32_t& max_volume) const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   max_volume = j_audio_track_->GetStreamMaxVolume();
   return 0;
 }
 
 int AudioTrackJni::MinSpeakerVolume(uint32_t& min_volume) const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   min_volume = 0;
   return 0;
 }
 
 int AudioTrackJni::SpeakerVolume(uint32_t& volume) const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   volume = j_audio_track_->GetStreamVolume();
   RTC_LOG(INFO) << "SpeakerVolume: " << volume;
   return 0;
@@ -194,7 +194,7 @@ int AudioTrackJni::SpeakerVolume(uint32_t& volume) const {
 // TODO(henrika): possibly add stereo support.
 void AudioTrackJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   RTC_LOG(INFO) << "AttachAudioBuffer";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   audio_device_buffer_ = audioBuffer;
   const int sample_rate_hz = audio_parameters_.sample_rate();
   RTC_LOG(INFO) << "SetPlayoutSampleRate(" << sample_rate_hz << ")";
@@ -217,7 +217,7 @@ void JNICALL AudioTrackJni::CacheDirectBufferAddress(JNIEnv* env,
 void AudioTrackJni::OnCacheDirectBufferAddress(JNIEnv* env,
                                                jobject byte_buffer) {
   RTC_LOG(INFO) << "OnCacheDirectBufferAddress";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   RTC_DCHECK(!direct_buffer_address_);
   direct_buffer_address_ = env->GetDirectBufferAddress(byte_buffer);
   jlong capacity = env->GetDirectBufferCapacity(byte_buffer);
@@ -241,7 +241,7 @@ void JNICALL AudioTrackJni::GetPlayoutData(JNIEnv* env,
 // This method is called on a high-priority thread from Java. The name of
 // the thread is 'AudioRecordTrack'.
 void AudioTrackJni::OnGetPlayoutData(size_t length) {
-  RTC_DCHECK(thread_checker_java_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_java_.IsCurrent());
   const size_t bytes_per_frame = audio_parameters_.channels() * sizeof(int16_t);
   RTC_DCHECK_EQ(frames_per_buffer_, length / bytes_per_frame);
   if (!audio_device_buffer_) {

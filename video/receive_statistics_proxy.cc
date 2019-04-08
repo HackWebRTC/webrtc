@@ -117,8 +117,8 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
       num_delayed_frames_rendered_(0),
       sum_missed_render_deadline_ms_(0),
       timing_frame_info_counter_(kMovingMaxWindowMs) {
-  decode_thread_.DetachFromThread();
-  network_thread_.DetachFromThread();
+  decode_thread_.Detach();
+  network_thread_.Detach();
   stats_.ssrc = config_.rtp.remote_ssrc;
   // TODO(brandtr): Replace |rtx_stats_| with a single instance of
   // StreamDataCounters.
@@ -880,7 +880,7 @@ void ReceiveStatisticsProxy::DecoderThreadStarting() {
 
 void ReceiveStatisticsProxy::DecoderThreadStopped() {
   RTC_DCHECK_RUN_ON(&main_thread_);
-  decode_thread_.DetachFromThread();
+  decode_thread_.Detach();
 }
 
 ReceiveStatisticsProxy::ContentSpecificStats::ContentSpecificStats()

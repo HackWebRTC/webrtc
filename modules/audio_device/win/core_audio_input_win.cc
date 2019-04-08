@@ -32,7 +32,7 @@ CoreAudioInput::CoreAudioInput()
                     [this](ErrorType err) { return OnErrorCallback(err); }) {
   RTC_DLOG(INFO) << __FUNCTION__;
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  thread_checker_audio_.DetachFromThread();
+  thread_checker_audio_.Detach();
 }
 
 CoreAudioInput::~CoreAudioInput() {

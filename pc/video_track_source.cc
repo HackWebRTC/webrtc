@@ -17,7 +17,7 @@ namespace webrtc {
 VideoTrackSource::VideoTrackSource(
     bool remote)
     : state_(kInitializing), remote_(remote) {
-  worker_thread_checker_.DetachFromThread();
+  worker_thread_checker_.Detach();
 }
 
 void VideoTrackSource::SetState(SourceState new_state) {
@@ -30,12 +30,12 @@ void VideoTrackSource::SetState(SourceState new_state) {
 void VideoTrackSource::AddOrUpdateSink(
     rtc::VideoSinkInterface<VideoFrame>* sink,
     const rtc::VideoSinkWants& wants) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   source()->AddOrUpdateSink(sink, wants);
 }
 
 void VideoTrackSource::RemoveSink(rtc::VideoSinkInterface<VideoFrame>* sink) {
-  RTC_DCHECK(worker_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
   source()->RemoveSink(sink);
 }
 

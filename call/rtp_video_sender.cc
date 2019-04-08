@@ -254,7 +254,7 @@ RtpVideoSender::RtpVideoSender(
       frame_counts_(rtp_config.ssrcs.size()),
       frame_count_observer_(observers.frame_count_observer) {
   RTC_DCHECK_EQ(rtp_config.ssrcs.size(), rtp_streams_.size());
-  module_process_thread_checker_.DetachFromThread();
+  module_process_thread_checker_.Detach();
   // SSRCs are assumed to be sorted in the same order as |rtp_modules|.
   for (uint32_t ssrc : rtp_config.ssrcs) {
     // Restore state if it previously existed.

@@ -71,7 +71,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
 
   int32_t RegisterReceiveCallback(
       VCMReceiveCallback* receiveCallback) override {
-    RTC_DCHECK(construction_thread_.CalledOnValidThread());
+    RTC_DCHECK(construction_thread_.IsCurrent());
     return receiver_.RegisterReceiveCallback(receiveCallback);
   }
 
@@ -82,7 +82,7 @@ class VideoCodingModuleImpl : public VideoCodingModule {
 
   int32_t RegisterPacketRequestCallback(
       VCMPacketRequestCallback* callback) override {
-    RTC_DCHECK(construction_thread_.CalledOnValidThread());
+    RTC_DCHECK(construction_thread_.IsCurrent());
     return receiver_.RegisterPacketRequestCallback(callback);
   }
 

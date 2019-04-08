@@ -40,7 +40,7 @@ RtpStreamsSynchronizer::RtpStreamsSynchronizer(Syncable* syncable_video)
       sync_(),
       last_sync_time_(rtc::TimeNanos()) {
   RTC_DCHECK(syncable_video);
-  process_thread_checker_.DetachFromThread();
+  process_thread_checker_.Detach();
 }
 
 RtpStreamsSynchronizer::~RtpStreamsSynchronizer() = default;

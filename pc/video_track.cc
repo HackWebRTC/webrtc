@@ -68,7 +68,7 @@ void VideoTrack::set_content_hint(ContentHint hint) {
 }
 
 bool VideoTrack::set_enabled(bool enable) {
-  RTC_DCHECK(signaling_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(signaling_thread_checker_.IsCurrent());
   worker_thread_->Invoke<void>(RTC_FROM_HERE, [enable, this] {
     RTC_DCHECK(worker_thread_->IsCurrent());
     for (auto& sink_pair : sink_pairs()) {
@@ -81,7 +81,7 @@ bool VideoTrack::set_enabled(bool enable) {
 }
 
 void VideoTrack::OnChanged() {
-  RTC_DCHECK(signaling_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(signaling_thread_checker_.IsCurrent());
   if (video_source_->state() == MediaSourceInterface::kEnded) {
     set_state(kEnded);
   } else {

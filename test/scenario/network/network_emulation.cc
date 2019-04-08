@@ -185,7 +185,7 @@ EmulatedEndpoint::EmulatedEndpoint(uint64_t id,
       prefix_length, rtc::AdapterType::ADAPTER_TYPE_UNKNOWN);
   network_->AddIP(ip);
 
-  enabled_state_checker_.DetachFromThread();
+  enabled_state_checker_.Detach();
 }
 EmulatedEndpoint::~EmulatedEndpoint() = default;
 

@@ -77,7 +77,7 @@ TEST(SequencedTaskCheckerTest, DestructorAllowedOnDifferentThread) {
   });
 }
 
-TEST(SequencedTaskCheckerTest, DetachFromThread) {
+TEST(SequencedTaskCheckerTest, Detach) {
   SequencedTaskChecker sequenced_task_checker;
   sequenced_task_checker.Detach();
   RunOnDifferentThread(

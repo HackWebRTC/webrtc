@@ -115,15 +115,15 @@ AudioDeviceIOS::AudioDeviceIOS()
       num_playout_callbacks_(0),
       last_output_volume_change_time_(0) {
   LOGI() << "ctor" << ios::GetCurrentThreadDescription();
-  io_thread_checker_.DetachFromThread();
-  thread_checker_.DetachFromThread();
+  io_thread_checker_.Detach();
+  thread_checker_.Detach();
   thread_ = rtc::Thread::Current();
 
   audio_session_observer_ = [[RTCNativeAudioSessionDelegateAdapter alloc] initWithObserver:this];
 }
 
 AudioDeviceIOS::~AudioDeviceIOS() {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   LOGI() << "~dtor" << ios::GetCurrentThreadDescription();
   Terminate();
   audio_session_observer_ = nil;
@@ -132,14 +132,14 @@ AudioDeviceIOS::~AudioDeviceIOS() {
 void AudioDeviceIOS::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   LOGI() << "AttachAudioBuffer";
   RTC_DCHECK(audioBuffer);
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   audio_device_buffer_ = audioBuffer;
 }
 
 AudioDeviceGeneric::InitStatus AudioDeviceIOS::Init() {
   LOGI() << "Init";
-  io_thread_checker_.DetachFromThread();
-  thread_checker_.DetachFromThread();
+  io_thread_checker_.Detach();
+  thread_checker_.Detach();
 
   RTC_DCHECK_RUN_ON(&thread_checker_);
   if (initialized_) {
@@ -322,7 +322,7 @@ int32_t AudioDeviceIOS::PlayoutDelay(uint16_t& delayMS) const {
 int AudioDeviceIOS::GetPlayoutAudioParameters(AudioParameters* params) const {
   LOGI() << "GetPlayoutAudioParameters";
   RTC_DCHECK(playout_parameters_.is_valid());
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   *params = playout_parameters_;
   return 0;
 }
@@ -330,7 +330,7 @@ int AudioDeviceIOS::GetPlayoutAudioParameters(AudioParameters* params) const {
 int AudioDeviceIOS::GetRecordAudioParameters(AudioParameters* params) const {
   LOGI() << "GetRecordAudioParameters";
   RTC_DCHECK(record_parameters_.is_valid());
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   *params = record_parameters_;
   return 0;
 }
@@ -911,7 +911,7 @@ void AudioDeviceIOS::ShutdownPlayOrRecord() {
 
   // Detach thread checker for the AURemoteIO::IOThread to ensure that the
   // next session uses a fresh thread id.
-  io_thread_checker_.DetachFromThread();
+  io_thread_checker_.Detach();
 
   // Remove audio session notification observers.
   RTCAudioSession* session = [RTCAudioSession sharedInstance];
@@ -928,7 +928,7 @@ void AudioDeviceIOS::PrepareForNewStart() {
   // restart. It will result in audio callbacks from a new native I/O thread
   // which means that we must detach thread checkers here to be prepared for an
   // upcoming new audio stream.
-  io_thread_checker_.DetachFromThread();
+  io_thread_checker_.Detach();
 }
 
 bool AudioDeviceIOS::IsInterrupted() {

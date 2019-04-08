@@ -79,7 +79,7 @@ PeerConnectionTestWrapper::PeerConnectionTestWrapper(
     : name_(name),
       network_thread_(network_thread),
       worker_thread_(worker_thread) {
-  pc_thread_checker_.DetachFromThread();
+  pc_thread_checker_.Detach();
 }
 
 PeerConnectionTestWrapper::~PeerConnectionTestWrapper() {

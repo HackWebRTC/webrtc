@@ -579,11 +579,11 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
   // The following thread checks are only done in DCHECK for the consistency
   // with the exsiting thread checks.
   void CheckRunOnValidThreadIfInitialized() const {
-    RTC_DCHECK(!initialized_ || thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(!initialized_ || thread_checker_.IsCurrent());
   }
 
   void CheckRunOnValidThreadAndInitialized() const {
-    RTC_DCHECK(initialized_ && thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(initialized_ && thread_checker_.IsCurrent());
   }
 
   bool initialized_ = false;

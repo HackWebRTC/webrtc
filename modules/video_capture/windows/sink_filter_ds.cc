@@ -380,7 +380,7 @@ class MediaTypesEnum : public IEnumMediaTypes {
 }  // namespace
 
 CaptureInputPin::CaptureInputPin(CaptureSinkFilter* filter) {
-  capture_checker_.DetachFromThread();
+  capture_checker_.Detach();
   // No reference held to avoid circular references.
   info_.pFilter = filter;
   info_.dir = PINDIR_INPUT;
@@ -404,7 +404,7 @@ void CaptureInputPin::OnFilterActivated() {
   RTC_DCHECK_RUN_ON(&main_checker_);
   runtime_error_ = false;
   flushing_ = false;
-  capture_checker_.DetachFromThread();
+  capture_checker_.Detach();
   capture_thread_id_ = 0;
 }
 

@@ -26,14 +26,14 @@ class RTCStatsObtainer : public RTCStatsCollectorCallback {
 
   void OnStatsDelivered(
       const rtc::scoped_refptr<const RTCStatsReport>& report) override {
-    EXPECT_TRUE(thread_checker_.CalledOnValidThread());
+    EXPECT_TRUE(thread_checker_.IsCurrent());
     report_ = report;
     if (report_ptr_)
       *report_ptr_ = report_;
   }
 
   rtc::scoped_refptr<const RTCStatsReport> report() const {
-    EXPECT_TRUE(thread_checker_.CalledOnValidThread());
+    EXPECT_TRUE(thread_checker_.IsCurrent());
     return report_;
   }
 

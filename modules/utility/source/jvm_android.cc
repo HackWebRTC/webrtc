@@ -83,7 +83,7 @@ JvmThreadConnector::JvmThreadConnector() : attached_(false) {
 
 JvmThreadConnector::~JvmThreadConnector() {
   RTC_LOG(INFO) << "JvmThreadConnector::dtor";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   if (attached_) {
     RTC_LOG(INFO) << "Detaching thread from JVM";
     jint res = JVM::GetInstance()->jvm()->DetachCurrentThread();
@@ -186,7 +186,7 @@ JNIEnvironment::JNIEnvironment(JNIEnv* jni) : jni_(jni) {
 
 JNIEnvironment::~JNIEnvironment() {
   RTC_LOG(INFO) << "JNIEnvironment::dtor";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
 }
 
 std::unique_ptr<NativeRegistration> JNIEnvironment::RegisterNatives(
@@ -194,7 +194,7 @@ std::unique_ptr<NativeRegistration> JNIEnvironment::RegisterNatives(
     const JNINativeMethod* methods,
     int num_methods) {
   RTC_LOG(INFO) << "JNIEnvironment::RegisterNatives: " << name;
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   jclass clazz = LookUpClass(name);
   jni_->RegisterNatives(clazz, methods, num_methods);
   CHECK_EXCEPTION(jni_) << "Error during RegisterNatives";
@@ -203,7 +203,7 @@ std::unique_ptr<NativeRegistration> JNIEnvironment::RegisterNatives(
 }
 
 std::string JNIEnvironment::JavaToStdString(const jstring& j_string) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   const char* jchars = jni_->GetStringUTFChars(j_string, nullptr);
   CHECK_EXCEPTION(jni_);
   const int size = jni_->GetStringUTFLength(j_string);
@@ -254,7 +254,7 @@ JVM::JVM(JavaVM* jvm) : jvm_(jvm) {
 
 JVM::~JVM() {
   RTC_LOG(INFO) << "JVM::~JVM";
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   FreeClassReferences(jni());
 }
 
@@ -277,7 +277,7 @@ std::unique_ptr<JNIEnvironment> JVM::environment() {
 
 JavaClass JVM::GetClass(const char* name) {
   RTC_LOG(INFO) << "JVM::GetClass: " << name;
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   return JavaClass(jni(), LookUpClass(name));
 }
 

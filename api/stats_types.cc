@@ -781,28 +781,28 @@ const StatsReport::Value* StatsReport::FindValue(StatsValueName name) const {
 StatsCollection::StatsCollection() {}
 
 StatsCollection::~StatsCollection() {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   for (auto* r : list_)
     delete r;
 }
 
 StatsCollection::const_iterator StatsCollection::begin() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   return list_.begin();
 }
 
 StatsCollection::const_iterator StatsCollection::end() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   return list_.end();
 }
 
 size_t StatsCollection::size() const {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   return list_.size();
 }
 
 StatsReport* StatsCollection::InsertNew(const StatsReport::Id& id) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   RTC_DCHECK(Find(id) == nullptr);
   StatsReport* report = new StatsReport(id);
   list_.push_back(report);
@@ -810,13 +810,13 @@ StatsReport* StatsCollection::InsertNew(const StatsReport::Id& id) {
 }
 
 StatsReport* StatsCollection::FindOrAddNew(const StatsReport::Id& id) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   StatsReport* ret = Find(id);
   return ret ? ret : InsertNew(id);
 }
 
 StatsReport* StatsCollection::ReplaceOrAddNew(const StatsReport::Id& id) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   RTC_DCHECK(id.get());
   Container::iterator it = absl::c_find_if(
       list_,
@@ -833,7 +833,7 @@ StatsReport* StatsCollection::ReplaceOrAddNew(const StatsReport::Id& id) {
 // Looks for a report with the given |id|.  If one is not found, null
 // will be returned.
 StatsReport* StatsCollection::Find(const StatsReport::Id& id) {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   Container::iterator it = absl::c_find_if(
       list_,
       [&id](const StatsReport* r) -> bool { return r->id()->Equals(id); });

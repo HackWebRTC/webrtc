@@ -58,7 +58,7 @@ Iterable::Iterator::~Iterator() = default;
 
 // Advances the iterator one step.
 Iterable::Iterator& Iterable::Iterator::operator++() {
-  RTC_CHECK(thread_checker_.CalledOnValidThread());
+  RTC_CHECK(thread_checker_.IsCurrent());
   if (AtEnd()) {
     // Can't move past the end.
     return *this;
@@ -93,7 +93,7 @@ ScopedJavaLocalRef<jobject>& Iterable::Iterator::operator*() {
 }
 
 bool Iterable::Iterator::AtEnd() const {
-  RTC_CHECK(thread_checker_.CalledOnValidThread());
+  RTC_CHECK(thread_checker_.IsCurrent());
   return jni_ == nullptr || IsNull(jni_, iterator_);
 }
 

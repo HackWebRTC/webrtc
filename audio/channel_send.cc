@@ -302,13 +302,13 @@ const int kTelephoneEventAttenuationdB = 10;
 class TransportFeedbackProxy : public TransportFeedbackObserver {
  public:
   TransportFeedbackProxy() : feedback_observer_(nullptr) {
-    pacer_thread_.DetachFromThread();
-    network_thread_.DetachFromThread();
+    pacer_thread_.Detach();
+    network_thread_.Detach();
   }
 
   void SetTransportFeedbackObserver(
       TransportFeedbackObserver* feedback_observer) {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     rtc::CritScope lock(&crit_);
     feedback_observer_ = feedback_observer;
   }
@@ -318,14 +318,14 @@ class TransportFeedbackProxy : public TransportFeedbackObserver {
                  uint16_t sequence_number,
                  size_t length,
                  const PacedPacketInfo& pacing_info) override {
-    RTC_DCHECK(pacer_thread_.CalledOnValidThread());
+    RTC_DCHECK(pacer_thread_.IsCurrent());
     rtc::CritScope lock(&crit_);
     if (feedback_observer_)
       feedback_observer_->AddPacket(ssrc, sequence_number, length, pacing_info);
   }
 
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override {
-    RTC_DCHECK(network_thread_.CalledOnValidThread());
+    RTC_DCHECK(network_thread_.IsCurrent());
     rtc::CritScope lock(&crit_);
     if (feedback_observer_)
       feedback_observer_->OnTransportFeedback(feedback);
@@ -342,19 +342,19 @@ class TransportFeedbackProxy : public TransportFeedbackObserver {
 class TransportSequenceNumberProxy : public TransportSequenceNumberAllocator {
  public:
   TransportSequenceNumberProxy() : seq_num_allocator_(nullptr) {
-    pacer_thread_.DetachFromThread();
+    pacer_thread_.Detach();
   }
 
   void SetSequenceNumberAllocator(
       TransportSequenceNumberAllocator* seq_num_allocator) {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     rtc::CritScope lock(&crit_);
     seq_num_allocator_ = seq_num_allocator;
   }
 
   // Implements TransportSequenceNumberAllocator.
   uint16_t AllocateSequenceNumber() override {
-    RTC_DCHECK(pacer_thread_.CalledOnValidThread());
+    RTC_DCHECK(pacer_thread_.IsCurrent());
     rtc::CritScope lock(&crit_);
     if (!seq_num_allocator_)
       return 0;
@@ -373,7 +373,7 @@ class RtpPacketSenderProxy : public RtpPacketSender {
   RtpPacketSenderProxy() : rtp_packet_sender_(nullptr) {}
 
   void SetPacketSender(RtpPacketSender* rtp_packet_sender) {
-    RTC_DCHECK(thread_checker_.CalledOnValidThread());
+    RTC_DCHECK(thread_checker_.IsCurrent());
     rtc::CritScope lock(&crit_);
     rtp_packet_sender_ = rtp_packet_sender;
   }
@@ -660,7 +660,7 @@ ChannelSend::ChannelSend(Clock* clock,
           "AudioEncoder",
           TaskQueueFactory::Priority::NORMAL)) {
   RTC_DCHECK(module_process_thread);
-  module_process_thread_checker_.DetachFromThread();
+  module_process_thread_checker_.Detach();
 
   audio_coding_.reset(AudioCodingModule::Create(AudioCodingModule::Config()));
 
@@ -723,7 +723,7 @@ ChannelSend::ChannelSend(Clock* clock,
 }
 
 ChannelSend::~ChannelSend() {
-  RTC_DCHECK(construction_thread_.CalledOnValidThread());
+  RTC_DCHECK(construction_thread_.IsCurrent());
 
   if (media_transport_) {
     media_transport_->RemoveTargetTransferRateObserver(this);
@@ -823,8 +823,8 @@ void ChannelSend::OnBitrateAllocation(BitrateAllocationUpdate update) {
   // or on a TaskQueue via VideoSendStreamImpl::OnEncoderConfigurationChanged.
   // TODO(solenberg): Figure out a good way to check this or enforce calling
   // rules.
-  // RTC_DCHECK(worker_thread_checker_.CalledOnValidThread() ||
-  //            module_process_thread_checker_.CalledOnValidThread());
+  // RTC_DCHECK(worker_thread_checker_.IsCurrent() ||
+  //            module_process_thread_checker_.IsCurrent());
   rtc::CritScope lock(&bitrate_crit_section_);
 
   CallEncoder([&](AudioEncoder* encoder) {
@@ -1152,7 +1152,7 @@ ANAStats ChannelSend::GetANAStatistics() const {
 }
 
 RtpRtcp* ChannelSend::GetRtpRtcp() const {
-  RTC_DCHECK(module_process_thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(module_process_thread_checker_.IsCurrent());
   return _rtpRtcpModule.get();
 }
 

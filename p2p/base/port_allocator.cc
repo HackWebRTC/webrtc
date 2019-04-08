@@ -121,11 +121,11 @@ PortAllocator::PortAllocator()
       allow_tcp_listen_(true),
       candidate_filter_(CF_ALL) {
   // The allocator will be attached to a thread in Initialize.
-  thread_checker_.DetachFromThread();
+  thread_checker_.Detach();
 }
 
 void PortAllocator::Initialize() {
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   initialized_ = true;
 }
 
@@ -148,7 +148,7 @@ bool PortAllocator::SetConfiguration(
   // A positive candidate pool size would lead to the creation of a pooled
   // allocator session and starting getting ports, which we should only do on
   // the network thread.
-  RTC_DCHECK(candidate_pool_size == 0 || thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(candidate_pool_size == 0 || thread_checker_.IsCurrent());
   bool ice_servers_changed =
       (stun_servers != stun_servers_ || turn_servers != turn_servers_);
   stun_servers_ = stun_servers;

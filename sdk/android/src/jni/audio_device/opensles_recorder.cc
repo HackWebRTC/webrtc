@@ -59,7 +59,7 @@ OpenSLESRecorder::OpenSLESRecorder(
   ALOGD("ctor[tid=%d]", rtc::CurrentThreadId());
   // Detach from this thread since we want to use the checker to verify calls
   // from the internal  audio thread.
-  thread_checker_opensles_.DetachFromThread();
+  thread_checker_opensles_.Detach();
   // Use native audio output parameters provided by the audio manager and
   // define the PCM format structure.
   pcm_format_ = CreatePCMConfiguration(audio_parameters_.channels(),
@@ -69,7 +69,7 @@ OpenSLESRecorder::OpenSLESRecorder(
 
 OpenSLESRecorder::~OpenSLESRecorder() {
   ALOGD("dtor[tid=%d]", rtc::CurrentThreadId());
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   Terminate();
   DestroyAudioRecorder();
   engine_ = nullptr;
@@ -80,7 +80,7 @@ OpenSLESRecorder::~OpenSLESRecorder() {
 
 int OpenSLESRecorder::Init() {
   ALOGD("Init[tid=%d]", rtc::CurrentThreadId());
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   if (audio_parameters_.channels() == 2) {
     ALOGD("Stereo mode is enabled");
   }
@@ -89,14 +89,14 @@ int OpenSLESRecorder::Init() {
 
 int OpenSLESRecorder::Terminate() {
   ALOGD("Terminate[tid=%d]", rtc::CurrentThreadId());
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   StopRecording();
   return 0;
 }
 
 int OpenSLESRecorder::InitRecording() {
   ALOGD("InitRecording[tid=%d]", rtc::CurrentThreadId());
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   RTC_DCHECK(!initialized_);
   RTC_DCHECK(!recording_);
   if (!ObtainEngineInterface()) {
@@ -115,7 +115,7 @@ bool OpenSLESRecorder::RecordingIsInitialized() const {
 
 int OpenSLESRecorder::StartRecording() {
   ALOGD("StartRecording[tid=%d]", rtc::CurrentThreadId());
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   RTC_DCHECK(initialized_);
   RTC_DCHECK(!recording_);
   if (fine_audio_buffer_) {
@@ -152,7 +152,7 @@ int OpenSLESRecorder::StartRecording() {
 
 int OpenSLESRecorder::StopRecording() {
   ALOGD("StopRecording[tid=%d]", rtc::CurrentThreadId());
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   if (!initialized_ || !recording_) {
     return 0;
   }
@@ -165,7 +165,7 @@ int OpenSLESRecorder::StopRecording() {
   if (LOG_ON_ERROR((*simple_buffer_queue_)->Clear(simple_buffer_queue_))) {
     return -1;
   }
-  thread_checker_opensles_.DetachFromThread();
+  thread_checker_opensles_.Detach();
   initialized_ = false;
   recording_ = false;
   return 0;
@@ -177,7 +177,7 @@ bool OpenSLESRecorder::Recording() const {
 
 void OpenSLESRecorder::AttachAudioBuffer(AudioDeviceBuffer* audio_buffer) {
   ALOGD("AttachAudioBuffer");
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   RTC_CHECK(audio_buffer);
   audio_device_buffer_ = audio_buffer;
   // Ensure that the audio device buffer is informed about the native sample
@@ -204,21 +204,21 @@ bool OpenSLESRecorder::IsNoiseSuppressorSupported() const {
 
 int OpenSLESRecorder::EnableBuiltInAEC(bool enable) {
   ALOGD("EnableBuiltInAEC(%d)", enable);
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   ALOGE("Not implemented");
   return 0;
 }
 
 int OpenSLESRecorder::EnableBuiltInNS(bool enable) {
   ALOGD("EnableBuiltInNS(%d)", enable);
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   ALOGE("Not implemented");
   return 0;
 }
 
 bool OpenSLESRecorder::ObtainEngineInterface() {
   ALOGD("ObtainEngineInterface");
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   if (engine_)
     return true;
   // Get access to (or create if not already existing) the global OpenSL Engine
@@ -239,7 +239,7 @@ bool OpenSLESRecorder::ObtainEngineInterface() {
 
 bool OpenSLESRecorder::CreateAudioRecorder() {
   ALOGD("CreateAudioRecorder");
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   if (recorder_object_.Get())
     return true;
   RTC_DCHECK(!recorder_);
@@ -320,7 +320,7 @@ bool OpenSLESRecorder::CreateAudioRecorder() {
 
 void OpenSLESRecorder::DestroyAudioRecorder() {
   ALOGD("DestroyAudioRecorder");
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   if (!recorder_object_.Get())
     return;
   (*simple_buffer_queue_)
@@ -339,7 +339,7 @@ void OpenSLESRecorder::SimpleBufferQueueCallback(
 
 void OpenSLESRecorder::AllocateDataBuffers() {
   ALOGD("AllocateDataBuffers");
-  RTC_DCHECK(thread_checker_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_.IsCurrent());
   RTC_DCHECK(!simple_buffer_queue_);
   RTC_CHECK(audio_device_buffer_);
   // Create a modified audio buffer class which allows us to deliver any number
@@ -364,7 +364,7 @@ void OpenSLESRecorder::AllocateDataBuffers() {
 }
 
 void OpenSLESRecorder::ReadBufferQueue() {
-  RTC_DCHECK(thread_checker_opensles_.CalledOnValidThread());
+  RTC_DCHECK(thread_checker_opensles_.IsCurrent());
   SLuint32 state = GetRecordState();
   if (state != SL_RECORDSTATE_RECORDING) {
     ALOGW("Buffer callback in non-recording state!");

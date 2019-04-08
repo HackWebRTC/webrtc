@@ -319,6 +319,7 @@ rtc_source_set("thread_checker") {
     "thread_checker.h",
   ]
   deps = [
+    ":deprecation",
     "synchronization:sequence_checker",
   ]
 }

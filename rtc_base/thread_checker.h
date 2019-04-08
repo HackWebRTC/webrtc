@@ -13,14 +13,15 @@
 #ifndef RTC_BASE_THREAD_CHECKER_H_
 #define RTC_BASE_THREAD_CHECKER_H_
 
+#include "rtc_base/deprecation.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 
 namespace rtc {
 // TODO(srte): Replace usages of this with SequenceChecker.
 class ThreadChecker : public webrtc::SequenceChecker {
  public:
-  bool CalledOnValidThread() const { return IsCurrent(); }
-  void DetachFromThread() { Detach(); }
+  RTC_DEPRECATED bool CalledOnValidThread() const { return IsCurrent(); }
+  RTC_DEPRECATED void DetachFromThread() { Detach(); }
 };
 }  // namespace rtc
 #endif  // RTC_BASE_THREAD_CHECKER_H_
