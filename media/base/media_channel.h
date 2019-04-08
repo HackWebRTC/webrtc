@@ -527,6 +527,8 @@ struct VideoSenderInfo : public MediaSenderInfo {
   int avg_encode_ms = 0;
   int encode_usage_percent = 0;
   uint32_t frames_encoded = 0;
+  // https://w3c.github.io/webrtc-stats/#dom-rtcoutboundrtpstreamstats-totalencodetime
+  uint64_t total_encode_time_ms = 0;
   bool has_entered_low_resolution = false;
   absl::optional<uint64_t> qp_sum;
   webrtc::VideoContentType content_type = webrtc::VideoContentType::UNSPECIFIED;

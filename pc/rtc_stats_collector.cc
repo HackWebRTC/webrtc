@@ -319,6 +319,9 @@ void SetOutboundRTPStreamStatsFromVideoSenderInfo(
   if (video_sender_info.qp_sum)
     outbound_video->qp_sum = *video_sender_info.qp_sum;
   outbound_video->frames_encoded = video_sender_info.frames_encoded;
+  outbound_video->total_encode_time =
+      static_cast<double>(video_sender_info.total_encode_time_ms) /
+      rtc::kNumMillisecsPerSec;
 }
 
 void ProduceCertificateStatsFromSSLCertificateStats(

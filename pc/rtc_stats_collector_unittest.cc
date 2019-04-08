@@ -1804,6 +1804,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   video_media_info.senders[0].bytes_sent = 6;
   video_media_info.senders[0].codec_payload_type = 42;
   video_media_info.senders[0].frames_encoded = 8;
+  video_media_info.senders[0].total_encode_time_ms = 9000;
   video_media_info.senders[0].qp_sum = absl::nullopt;
 
   RtpCodecParameters codec_parameters;
@@ -1841,6 +1842,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   expected_video.packets_sent = 5;
   expected_video.bytes_sent = 6;
   expected_video.frames_encoded = 8;
+  expected_video.total_encode_time = 9.0;
   // |expected_video.qp_sum| should be undefined.
   ASSERT_TRUE(report->Get(expected_video.id()));
 

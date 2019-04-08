@@ -2243,6 +2243,7 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
   info.avg_encode_ms = stats.avg_encode_time_ms;
   info.encode_usage_percent = stats.encode_usage_percent;
   info.frames_encoded = stats.frames_encoded;
+  info.total_encode_time_ms = stats.total_encode_time_ms;
   info.qp_sum = stats.qp_sum;
 
   info.nominal_bitrate = stats.media_bitrate_bps;

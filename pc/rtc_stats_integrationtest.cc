@@ -762,8 +762,11 @@ class RTCStatsReportVerifier {
     if (outbound_stream.media_type.is_defined() &&
         *outbound_stream.media_type == "video") {
       verifier.TestMemberIsDefined(outbound_stream.frames_encoded);
+      verifier.TestMemberIsNonNegative<double>(
+          outbound_stream.total_encode_time);
     } else {
       verifier.TestMemberIsUndefined(outbound_stream.frames_encoded);
+      verifier.TestMemberIsUndefined(outbound_stream.total_encode_time);
     }
     return verifier.ExpectAllMembersSuccessfullyTested();
   }

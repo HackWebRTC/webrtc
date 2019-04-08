@@ -437,6 +437,7 @@ class RTC_EXPORT RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
   // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7066
   RTCStatsMember<double> target_bitrate;
   RTCStatsMember<uint32_t> frames_encoded;
+  RTCStatsMember<double> total_encode_time;
 };
 
 // https://w3c.github.io/webrtc-stats/#transportstats-dict*
