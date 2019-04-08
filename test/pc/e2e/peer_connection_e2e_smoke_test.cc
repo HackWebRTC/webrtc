@@ -80,10 +80,12 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
           {alice_endpoint});
   fixture->AddPeer(alice_network->network_thread(),
                    alice_network->network_manager(), [](PeerConfigurer* alice) {
-                     VideoConfig alice_video_config(640, 360, 30);
-                     alice_video_config.stream_label = "alice-video";
-                     alice->AddVideoConfig(std::move(alice_video_config));
-                     alice->SetAudioConfig(AudioConfig());
+                     VideoConfig video_config(640, 360, 30);
+                     video_config.stream_label = "alice-video";
+                     alice->AddVideoConfig(std::move(video_config));
+                     AudioConfig audio_config;
+                     audio_config.stream_label = "alice-audio";
+                     alice->SetAudioConfig(std::move(audio_config));
                    });
 
   EmulatedNetworkManagerInterface* bob_network =
@@ -91,10 +93,12 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
           {bob_endpoint});
   fixture->AddPeer(bob_network->network_thread(),
                    bob_network->network_manager(), [](PeerConfigurer* bob) {
-                     VideoConfig bob_video_config(640, 360, 30);
-                     bob_video_config.stream_label = "bob-video";
-                     bob->AddVideoConfig(std::move(bob_video_config));
-                     bob->SetAudioConfig(AudioConfig());
+                     VideoConfig video_config(640, 360, 30);
+                     video_config.stream_label = "bob-video";
+                     bob->AddVideoConfig(std::move(video_config));
+                     AudioConfig audio_config;
+                     audio_config.stream_label = "bob-audio";
+                     bob->SetAudioConfig(std::move(audio_config));
                    });
 
   RunParams run_params(TimeDelta::seconds(5));
