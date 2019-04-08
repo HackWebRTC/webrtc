@@ -10,8 +10,6 @@
 
 #include "api/scoped_refptr.h"
 #include "modules/video_capture/windows/video_capture_ds.h"
-#include "modules/video_capture/windows/video_capture_mf.h"
-#include "rtc_base/ref_count.h"
 #include "rtc_base/ref_counted_object.h"
 
 namespace webrtc {

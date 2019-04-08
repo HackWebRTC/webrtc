@@ -80,8 +80,6 @@ if (!build_with_chromium) {
       sources = [
         "windows/device_info_ds.cc",
         "windows/device_info_ds.h",
-        "windows/device_info_mf.cc",
-        "windows/device_info_mf.h",
         "windows/help_functions_ds.cc",
         "windows/help_functions_ds.h",
         "windows/sink_filter_ds.cc",
@@ -89,8 +87,6 @@ if (!build_with_chromium) {
         "windows/video_capture_ds.cc",
         "windows/video_capture_ds.h",
         "windows/video_capture_factory_windows.cc",
-        "windows/video_capture_mf.cc",
-        "windows/video_capture_mf.h",
       ]
 
       libs = [ "strmiids.lib" ]
