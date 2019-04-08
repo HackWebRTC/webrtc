@@ -15,6 +15,8 @@
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/create_peerconnection_factory.h"
+#include "api/media_types.h"
+#include "api/rtc_error.h"
 #include "api/rtp_transceiver_interface.h"
 #include "api/uma_metrics.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
@@ -250,6 +252,16 @@ TEST_F(PeerConnectionSimulcastTests, MustSupplyAllOrNoRidsInSimulcast) {
   auto layers = CreateLayers({"f", "h", "remove"}, true);
   auto init = CreateTransceiverInit(layers);
   init.send_encodings[2].rid = "";
+  auto error = pc->AddTransceiver(cricket::MEDIA_TYPE_VIDEO, init);
+  EXPECT_EQ(RTCErrorType::INVALID_PARAMETER, error.error().type());
+}
+
+// Validates that an error is returned when illegal RIDs are supplied.
+TEST_F(PeerConnectionSimulcastTests, ChecksForIllegalRidValues) {
+  auto pc_wrapper = CreatePeerConnectionWrapper();
+  auto pc = pc_wrapper->pc();
+  auto layers = CreateLayers({"f", "h", "~q"}, true);
+  auto init = CreateTransceiverInit(layers);
   auto error = pc->AddTransceiver(cricket::MEDIA_TYPE_VIDEO, init);
   EXPECT_EQ(RTCErrorType::INVALID_PARAMETER, error.error().type());
 }

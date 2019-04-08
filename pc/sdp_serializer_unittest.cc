@@ -469,6 +469,10 @@ const char* kRidDescriptionMalformedStrings[] = {
     "1 send pt=",
     "1 send pt=abc",
     "1 recv ;;",
+    "~1 recv",
+    "1$2 send",
+    "1=2 send",
+    "1* send",
 };
 
 INSTANTIATE_TEST_SUITE_P(RidDescriptionDeserializationErrors,

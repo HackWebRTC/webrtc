@@ -16,6 +16,7 @@
 
 #include "absl/algorithm/container.h"
 #include "api/jsep.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/string_to_number.h"
@@ -326,6 +327,10 @@ RTCErrorOr<RidDescription> SdpSerializer::DeserializeRidDescription(
 
   if (tokens.size() > 3) {
     return ParseError("Invalid RID Description format. Too many arguments.");
+  }
+
+  if (!IsLegalRsidName(tokens[0])) {
+    return ParseError("Invalid RID value: " + tokens[0] + ".");
   }
 
   if (tokens[1] != kSendDirection && tokens[1] != kReceiveDirection) {
