@@ -83,25 +83,25 @@ BufferedFrameDecryptor::FrameDecision BufferedFrameDecryptor::DecryptFrame(
   }
 
   // Attempt to decrypt the video frame.
-  size_t bytes_written = 0;
-  const int status = frame_decryptor_->Decrypt(
-      cricket::MEDIA_TYPE_VIDEO, /*csrcs=*/{}, additional_data, *frame,
-      inline_decrypted_bitstream, &bytes_written);
-
+  const FrameDecryptorInterface::Result decrypt_result =
+      frame_decryptor_->Decrypt(cricket::MEDIA_TYPE_VIDEO, /*csrcs=*/{},
+                                additional_data, *frame,
+                                inline_decrypted_bitstream);
   // Optionally call the callback if there was a change in status
-  if (status != last_status_) {
-    last_status_ = status;
-    decryption_status_change_callback_->OnDecryptionStatusChange(status);
+  if (decrypt_result.status != last_status_) {
+    last_status_ = decrypt_result.status;
+    decryption_status_change_callback_->OnDecryptionStatusChange(
+        decrypt_result.status);
   }
 
-  if (status != 0) {
+  if (!decrypt_result.IsOk()) {
     // Only stash frames if we have never decrypted a frame before.
     return first_frame_decrypted_ ? FrameDecision::kDrop
                                   : FrameDecision::kStash;
   }
-  RTC_CHECK_LE(bytes_written, max_plaintext_byte_size);
+  RTC_CHECK_LE(decrypt_result.bytes_written, max_plaintext_byte_size);
   // Update the frame to contain just the written bytes.
-  frame->set_size(bytes_written);
+  frame->set_size(decrypt_result.bytes_written);
 
   // Indicate that all future fail to decrypt frames should be dropped.
   if (!first_frame_decrypted_) {
