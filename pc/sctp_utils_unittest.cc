@@ -34,23 +34,22 @@ class SctpUtilsTest : public testing::Test {
 
     ASSERT_TRUE(buffer.ReadUInt8(&channel_type));
     if (config.ordered) {
-      EXPECT_EQ(config.maxRetransmits > -1
-                    ? 0x01
-                    : (config.maxRetransmitTime > -1 ? 0x02 : 0),
-                channel_type);
+      EXPECT_EQ(
+          config.maxRetransmits ? 0x01 : (config.maxRetransmitTime ? 0x02 : 0),
+          channel_type);
     } else {
-      EXPECT_EQ(config.maxRetransmits > -1
+      EXPECT_EQ(config.maxRetransmits
                     ? 0x81
-                    : (config.maxRetransmitTime > -1 ? 0x82 : 0x80),
+                    : (config.maxRetransmitTime ? 0x82 : 0x80),
                 channel_type);
     }
 
     ASSERT_TRUE(buffer.ReadUInt16(&priority));
 
     ASSERT_TRUE(buffer.ReadUInt32(&reliability));
-    if (config.maxRetransmits > -1 || config.maxRetransmitTime > -1) {
-      EXPECT_EQ(config.maxRetransmits > -1 ? config.maxRetransmits
-                                           : config.maxRetransmitTime,
+    if (config.maxRetransmits || config.maxRetransmitTime) {
+      EXPECT_EQ(config.maxRetransmits ? *config.maxRetransmits
+                                      : *config.maxRetransmitTime,
                 static_cast<int>(reliability));
     }
 
@@ -110,8 +109,8 @@ TEST_F(SctpUtilsTest, WriteParseOpenMessageWithMaxRetransmitTime) {
   EXPECT_EQ(label, output_label);
   EXPECT_EQ(config.protocol, output_config.protocol);
   EXPECT_EQ(config.ordered, output_config.ordered);
-  EXPECT_EQ(config.maxRetransmitTime, output_config.maxRetransmitTime);
-  EXPECT_EQ(-1, output_config.maxRetransmits);
+  EXPECT_EQ(*config.maxRetransmitTime, *output_config.maxRetransmitTime);
+  EXPECT_FALSE(output_config.maxRetransmits);
 }
 
 TEST_F(SctpUtilsTest, WriteParseOpenMessageWithMaxRetransmits) {
@@ -134,7 +133,7 @@ TEST_F(SctpUtilsTest, WriteParseOpenMessageWithMaxRetransmits) {
   EXPECT_EQ(config.protocol, output_config.protocol);
   EXPECT_EQ(config.ordered, output_config.ordered);
   EXPECT_EQ(config.maxRetransmits, output_config.maxRetransmits);
-  EXPECT_EQ(-1, output_config.maxRetransmitTime);
+  EXPECT_FALSE(output_config.maxRetransmitTime);
 }
 
 TEST_F(SctpUtilsTest, WriteParseAckMessage) {

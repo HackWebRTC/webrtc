@@ -2082,7 +2082,6 @@ TEST_P(PeerConnectionInterfaceTest, CreateSctpDataChannel) {
   CreatePeerConnection(rtc_config);
 
   webrtc::DataChannelInit config;
-
   rtc::scoped_refptr<DataChannelInterface> channel =
       pc_->CreateDataChannel("1", &config);
   EXPECT_TRUE(channel != NULL);
@@ -2103,12 +2102,27 @@ TEST_P(PeerConnectionInterfaceTest, CreateSctpDataChannel) {
   EXPECT_FALSE(channel->reliable());
   EXPECT_FALSE(observer_.renegotiation_needed_);
 
-  config.maxRetransmits = -1;
+  config.maxRetransmits = absl::nullopt;
   config.maxRetransmitTime = 0;
   channel = pc_->CreateDataChannel("4", &config);
   EXPECT_TRUE(channel != NULL);
   EXPECT_FALSE(channel->reliable());
   EXPECT_FALSE(observer_.renegotiation_needed_);
+}
+
+// For backwards compatibility, we want people who "unset" maxRetransmits
+// and maxRetransmitTime by setting them to -1 to get what they want.
+TEST_P(PeerConnectionInterfaceTest, CreateSctpDataChannelWithMinusOne) {
+  RTCConfiguration rtc_config;
+  rtc_config.enable_dtls_srtp = true;
+  CreatePeerConnection(rtc_config);
+
+  webrtc::DataChannelInit config;
+  config.maxRetransmitTime = -1;
+  config.maxRetransmits = -1;
+  rtc::scoped_refptr<DataChannelInterface> channel =
+      pc_->CreateDataChannel("1", &config);
+  EXPECT_TRUE(channel != NULL);
 }
 
 // This tests that no data channel is returned if both maxRetransmits and

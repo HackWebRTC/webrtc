@@ -28,6 +28,30 @@ namespace webrtc {
 static size_t kMaxQueuedReceivedDataBytes = 16 * 1024 * 1024;
 static size_t kMaxQueuedSendDataBytes = 16 * 1024 * 1024;
 
+InternalDataChannelInit::InternalDataChannelInit(const DataChannelInit& base)
+    : DataChannelInit(base), open_handshake_role(kOpener) {
+  // If the channel is externally negotiated, do not send the OPEN message.
+  if (base.negotiated) {
+    open_handshake_role = kNone;
+  } else {
+    // Datachannel is externally negotiated. Ignore the id value.
+    // Specified in createDataChannel, WebRTC spec section 6.1 bullet 13.
+    id = -1;
+  }
+  // Backwards compatibility: If base.maxRetransmits or base.maxRetransmitTime
+  // have been set to -1, unset them.
+  if (maxRetransmits && *maxRetransmits == -1) {
+    RTC_LOG(LS_ERROR)
+        << "Accepting maxRetransmits = -1 for backwards compatibility";
+    maxRetransmits = absl::nullopt;
+  }
+  if (maxRetransmitTime && *maxRetransmitTime == -1) {
+    RTC_LOG(LS_ERROR)
+        << "Accepting maxRetransmitTime = -1 for backwards compatibility";
+    maxRetransmitTime = absl::nullopt;
+  }
+}
+
 bool SctpSidAllocator::AllocateSid(rtc::SSLRole role, int* sid) {
   int potential_sid = (role == rtc::SSL_CLIENT) ? 0 : 1;
   while (!IsSidAvailable(potential_sid)) {
@@ -140,21 +164,22 @@ DataChannel::DataChannel(DataChannelProviderInterface* provider,
 
 bool DataChannel::Init(const InternalDataChannelInit& config) {
   if (data_channel_type_ == cricket::DCT_RTP) {
-    if (config.reliable || config.id != -1 || config.maxRetransmits != -1 ||
-        config.maxRetransmitTime != -1) {
+    if (config.reliable || config.id != -1 || config.maxRetransmits ||
+        config.maxRetransmitTime) {
       RTC_LOG(LS_ERROR) << "Failed to initialize the RTP data channel due to "
                            "invalid DataChannelInit.";
       return false;
     }
     handshake_state_ = kHandshakeReady;
   } else if (IsSctpLike(data_channel_type_)) {
-    if (config.id < -1 || config.maxRetransmits < -1 ||
-        config.maxRetransmitTime < -1) {
+    if (config.id < -1 ||
+        (config.maxRetransmits && *config.maxRetransmits < 0) ||
+        (config.maxRetransmitTime && *config.maxRetransmitTime < 0)) {
       RTC_LOG(LS_ERROR) << "Failed to initialize the SCTP data channel due to "
                            "invalid DataChannelInit.";
       return false;
     }
-    if (config.maxRetransmits != -1 && config.maxRetransmitTime != -1) {
+    if (config.maxRetransmits && config.maxRetransmitTime) {
       RTC_LOG(LS_ERROR)
           << "maxRetransmits and maxRetransmitTime should not be both set.";
       return false;
@@ -206,7 +231,7 @@ bool DataChannel::reliable() const {
   if (data_channel_type_ == cricket::DCT_RTP) {
     return false;
   } else {
-    return config_.maxRetransmits == -1 && config_.maxRetransmitTime == -1;
+    return !config_.maxRetransmits && !config_.maxRetransmitTime;
   }
 }
 
@@ -575,8 +600,10 @@ bool DataChannel::SendDataMessage(const DataBuffer& buffer,
              "because the OPEN_ACK message has not been received.";
     }
 
-    send_params.max_rtx_count = config_.maxRetransmits;
-    send_params.max_rtx_ms = config_.maxRetransmitTime;
+    send_params.max_rtx_count =
+        config_.maxRetransmits ? *config_.maxRetransmits : -1;
+    send_params.max_rtx_ms =
+        config_.maxRetransmitTime ? *config_.maxRetransmitTime : -1;
     send_params.sid = config_.id;
   } else {
     send_params.ssrc = send_ssrc_;

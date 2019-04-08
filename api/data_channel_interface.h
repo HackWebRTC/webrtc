@@ -18,6 +18,7 @@
 #include <stdint.h>
 #include <string>
 
+#include "absl/types/optional.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/ref_count.h"
@@ -35,15 +36,16 @@ struct DataChannelInit {
   bool ordered = true;
 
   // The max period of time in milliseconds in which retransmissions will be
-  // sent. After this time, no more retransmissions will be sent. -1 if unset.
+  // sent. After this time, no more retransmissions will be sent.
   //
   // Cannot be set along with |maxRetransmits|.
-  int maxRetransmitTime = -1;
+  // This is called |maxPacketLifeTime| in the WebRTC JS API.
+  absl::optional<int> maxRetransmitTime;
 
-  // The max number of retransmissions. -1 if unset.
+  // The max number of retransmissions.
   //
   // Cannot be set along with |maxRetransmitTime|.
-  int maxRetransmits = -1;
+  absl::optional<int> maxRetransmits;
 
   // This is set by the application and opaque to the WebRTC implementation.
   std::string protocol;
@@ -137,8 +139,11 @@ class DataChannelInterface : public rtc::RefCountInterface {
   // implemented these APIs. They should all just return the values the
   // DataChannel was created with.
   virtual bool ordered() const;
+  // TODO(hta): Deprecate and remove the following two functions.
   virtual uint16_t maxRetransmitTime() const;
   virtual uint16_t maxRetransmits() const;
+  virtual absl::optional<int> maxRetransmitsOpt() const;
+  virtual absl::optional<int> maxPacketLifeTime() const;
   virtual std::string protocol() const;
   virtual bool negotiated() const;
 

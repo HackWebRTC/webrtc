@@ -57,18 +57,7 @@ struct InternalDataChannelInit : public DataChannelInit {
   enum OpenHandshakeRole { kOpener, kAcker, kNone };
   // The default role is kOpener because the default |negotiated| is false.
   InternalDataChannelInit() : open_handshake_role(kOpener) {}
-  explicit InternalDataChannelInit(const DataChannelInit& base)
-      : DataChannelInit(base), open_handshake_role(kOpener) {
-    // If the channel is externally negotiated, do not send the OPEN message.
-    if (base.negotiated) {
-      open_handshake_role = kNone;
-    } else {
-      // Datachannel is externally negotiated. Ignore the id value.
-      // Specified in createDataChannel, WebRTC spec section 6.1 bullet 13.
-      id = -1;
-    }
-  }
-
+  explicit InternalDataChannelInit(const DataChannelInit& base);
   OpenHandshakeRole open_handshake_role;
 };
 
@@ -135,10 +124,21 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   virtual std::string label() const { return label_; }
   virtual bool reliable() const;
   virtual bool ordered() const { return config_.ordered; }
+  // Backwards compatible accessors
   virtual uint16_t maxRetransmitTime() const {
+    return config_.maxRetransmitTime ? *config_.maxRetransmitTime
+                                     : static_cast<uint16_t>(-1);
+  }
+  virtual uint16_t maxRetransmits() const {
+    return config_.maxRetransmits ? *config_.maxRetransmits
+                                  : static_cast<uint16_t>(-1);
+  }
+  virtual absl::optional<int> maxPacketLifeTime() const {
     return config_.maxRetransmitTime;
   }
-  virtual uint16_t maxRetransmits() const { return config_.maxRetransmits; }
+  virtual absl::optional<int> maxRetransmitsOpt() const {
+    return config_.maxRetransmits;
+  }
   virtual std::string protocol() const { return config_.protocol; }
   virtual bool negotiated() const { return config_.negotiated; }
   virtual int id() const { return config_.id; }
@@ -307,6 +307,8 @@ PROXY_CONSTMETHOD0(bool, reliable)
 PROXY_CONSTMETHOD0(bool, ordered)
 PROXY_CONSTMETHOD0(uint16_t, maxRetransmitTime)
 PROXY_CONSTMETHOD0(uint16_t, maxRetransmits)
+PROXY_CONSTMETHOD0(absl::optional<int>, maxRetransmitsOpt)
+PROXY_CONSTMETHOD0(absl::optional<int>, maxPacketLifeTime)
 PROXY_CONSTMETHOD0(std::string, protocol)
 PROXY_CONSTMETHOD0(bool, negotiated)
 PROXY_CONSTMETHOD0(int, id)
