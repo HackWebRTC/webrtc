@@ -275,6 +275,7 @@ class PeerConnection : public PeerConnectionInternal,
   bool GetSslRole(const std::string& content_name, rtc::SSLRole* role) override;
 
   void ReturnHistogramVeryQuicklyForTesting() {
+    RTC_DCHECK_RUN_ON(signaling_thread());
     return_histogram_very_quickly_ = true;
   }
   void RequestUsagePatternReportForTesting();
@@ -1303,24 +1304,31 @@ class PeerConnection : public PeerConnectionInternal,
   // not set or false, SCTP is allowed (DCT_SCTP);
   // 2. If constraint kEnableRtpDataChannels is true, RTP is allowed (DCT_RTP);
   // 3. If both 1&2 are false, data channel is not allowed (DCT_NONE).
-  cricket::DataChannelType data_channel_type_ = cricket::DCT_NONE;
-  // List of content names for which the remote side triggered an ICE restart.
-  std::set<std::string> pending_ice_restarts_;
+  cricket::DataChannelType data_channel_type_ =
+      cricket::DCT_NONE;  // TODO(bugs.webrtc.org/9987): Accessed on both
+                          // signaling and network thread.
 
-  std::unique_ptr<WebRtcSessionDescriptionFactory> webrtc_session_desc_factory_;
+  // List of content names for which the remote side triggered an ICE restart.
+  std::set<std::string> pending_ice_restarts_
+      RTC_GUARDED_BY(signaling_thread());
+
+  std::unique_ptr<WebRtcSessionDescriptionFactory> webrtc_session_desc_factory_
+      RTC_GUARDED_BY(signaling_thread());
 
   // Member variables for caching global options.
-  cricket::AudioOptions audio_options_;
-  cricket::VideoOptions video_options_;
+  cricket::AudioOptions audio_options_ RTC_GUARDED_BY(signaling_thread());
+  cricket::VideoOptions video_options_ RTC_GUARDED_BY(signaling_thread());
 
-  int usage_event_accumulator_ = 0;
-  bool return_histogram_very_quickly_ = false;
+  int usage_event_accumulator_ RTC_GUARDED_BY(signaling_thread()) = 0;
+  bool return_histogram_very_quickly_ RTC_GUARDED_BY(signaling_thread()) =
+      false;
 
   // This object should be used to generate any SSRC that is not explicitly
   // specified by the user (or by the remote party).
   // The generator is not used directly, instead it is passed on to the
   // channel manager and the session description factory.
-  rtc::UniqueRandomIdGenerator ssrc_generator_;
+  rtc::UniqueRandomIdGenerator ssrc_generator_
+      RTC_GUARDED_BY(signaling_thread());
 };
 
 }  // namespace webrtc
