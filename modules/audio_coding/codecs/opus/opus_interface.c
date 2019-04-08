@@ -79,6 +79,7 @@ int16_t WebRtcOpus_MultistreamEncoderCreate(
     OpusEncInst** inst,
     size_t channels,
     int32_t application,
+    size_t streams,
     size_t coupled_streams,
     const unsigned char *channel_mapping) {
   int opus_app;
@@ -99,7 +100,6 @@ int16_t WebRtcOpus_MultistreamEncoderCreate(
   OpusEncInst* state = (OpusEncInst*)calloc(1, sizeof(OpusEncInst));
   RTC_DCHECK(state);
 
-  int streams = channels - coupled_streams;
   int error;
   state->multistream_encoder =
       opus_multistream_encoder_create(
@@ -407,6 +407,7 @@ int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, size_t channels) {
 
 int16_t WebRtcOpus_MultistreamDecoderCreate(
     OpusDecInst** inst, size_t channels,
+    size_t streams,
     size_t coupled_streams,
     const unsigned char* channel_mapping) {
   int error;
@@ -419,11 +420,9 @@ int16_t WebRtcOpus_MultistreamDecoderCreate(
       return -1;
     }
 
-    int streams = channels - coupled_streams;
-
     // Create new memory, always at 48000 Hz.
     state->multistream_decoder = opus_multistream_decoder_create(
-        48000, (int)channels,
+        48000, channels,
         streams,
         coupled_streams,
         channel_mapping,

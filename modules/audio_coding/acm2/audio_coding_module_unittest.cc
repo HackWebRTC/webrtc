@@ -17,6 +17,7 @@
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/audio_codecs/opus/audio_decoder_multi_channel_opus.h"
 #include "api/audio_codecs/opus/audio_decoder_opus.h"
 #include "api/audio_codecs/opus/audio_encoder_opus.h"
 #include "modules/audio_coding/acm2/acm_receive_test.h"
@@ -1522,20 +1523,31 @@ TEST_F(AcmSenderBitExactnessNewApi, DISABLED_OpusManyChannels) {
 
   // TODO(webrtc:8649): change to higher level
   // AudioEncoderOpus::MakeAudioEncoder once a multistream encoder can be set up
-  // from SDP.
+  // from SDP. - This is now done for the Decoder.
+
+  // The Encoder and Decoder are set up differently (and the test is disabled)
+  // until the changes from
+  // https://webrtc-review.googlesource.com/c/src/+/121764 land.
   AudioEncoderOpusConfig config = *AudioEncoderOpus::SdpToConfig(
       SdpAudioFormat("opus", 48000, 2, {{"stereo", "1"}}));
   config.num_channels = kNumChannels;
   config.bitrate_bps = kBitrateBps;
 
+  const auto sdp_format = SdpAudioFormat(
+      "multiopus", 48000, kNumChannels,
+      {{"channel_mapping", "0,1,2,3"}, {"coupled_streams", "2"}});
+  const auto decoder_config =
+      AudioDecoderMultiChannelOpus::SdpToConfig(sdp_format);
+  const auto opus_decoder =
+      AudioDecoderMultiChannelOpus::MakeAudioDecoder(*decoder_config);
+
   ASSERT_NO_FATAL_FAILURE(SetUpTestExternalEncoder(
       absl::make_unique<AudioEncoderOpusImpl>(config, kOpusPayloadType),
       kOpusPayloadType));
 
-  AudioDecoderOpusImpl opus_decoder(kNumChannels);
-
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory =
-      new rtc::RefCountedObject<test::AudioDecoderProxyFactory>(&opus_decoder);
+      new rtc::RefCountedObject<test::AudioDecoderProxyFactory>(
+          opus_decoder.get());
 
   // Set up an EXTERNAL DECODER to parse 4 channels.
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(  // audio checksum

@@ -25,12 +25,15 @@ namespace {
 // Equivalent to SDP params
 // {{"channel_mapping", "0,1,2,3"}, {"coupled_streams", "2"}}.
 constexpr unsigned char kQuadChannelMapping[] = {0, 1, 2, 3};
+constexpr int kQuadTotalStreams = 2;
 constexpr int kQuadCoupledStreams = 2;
 
 constexpr unsigned char kStereoChannelMapping[] = {0, 1};
+constexpr int kStereoTotalStreams = 1;
 constexpr int kStereoCoupledStreams = 1;
 
 constexpr unsigned char kMonoChannelMapping[] = {0};
+constexpr int kMonoTotalStreams = 1;
 constexpr int kMonoCoupledStreams = 0;
 
 void CreateSingleOrMultiStreamEncoder(WebRtcOpusEncInst** opus_encoder,
@@ -41,16 +44,16 @@ void CreateSingleOrMultiStreamEncoder(WebRtcOpusEncInst** opus_encoder,
     EXPECT_EQ(0, WebRtcOpus_EncoderCreate(opus_encoder, channels, application));
   } else if (force_multistream && channels == 1) {
     EXPECT_EQ(0, WebRtcOpus_MultistreamEncoderCreate(
-                     opus_encoder, channels, application, kMonoCoupledStreams,
-                     kMonoChannelMapping));
+                     opus_encoder, channels, application, kMonoTotalStreams,
+                     kMonoCoupledStreams, kMonoChannelMapping));
   } else if (force_multistream && channels == 2) {
     EXPECT_EQ(0, WebRtcOpus_MultistreamEncoderCreate(
-                     opus_encoder, channels, application, kStereoCoupledStreams,
-                     kStereoChannelMapping));
+                     opus_encoder, channels, application, kStereoTotalStreams,
+                     kStereoCoupledStreams, kStereoChannelMapping));
   } else if (channels == 4) {
     EXPECT_EQ(0, WebRtcOpus_MultistreamEncoderCreate(
-                     opus_encoder, channels, application, kQuadCoupledStreams,
-                     kQuadChannelMapping));
+                     opus_encoder, channels, application, kQuadTotalStreams,
+                     kQuadCoupledStreams, kQuadChannelMapping));
   } else {
     EXPECT_TRUE(false) << channels;
   }
@@ -62,17 +65,17 @@ void CreateSingleOrMultiStreamDecoder(WebRtcOpusDecInst** opus_decoder,
   if (!force_multistream && (channels == 1 || channels == 2)) {
     EXPECT_EQ(0, WebRtcOpus_DecoderCreate(opus_decoder, channels));
   } else if (channels == 1) {
-    EXPECT_EQ(0, WebRtcOpus_MultistreamDecoderCreate(opus_decoder, channels,
-                                                     kMonoCoupledStreams,
-                                                     kMonoChannelMapping));
+    EXPECT_EQ(0, WebRtcOpus_MultistreamDecoderCreate(
+                     opus_decoder, channels, kMonoTotalStreams,
+                     kMonoCoupledStreams, kMonoChannelMapping));
   } else if (channels == 2) {
-    EXPECT_EQ(0, WebRtcOpus_MultistreamDecoderCreate(opus_decoder, channels,
-                                                     kStereoCoupledStreams,
-                                                     kStereoChannelMapping));
+    EXPECT_EQ(0, WebRtcOpus_MultistreamDecoderCreate(
+                     opus_decoder, channels, kStereoTotalStreams,
+                     kStereoCoupledStreams, kStereoChannelMapping));
   } else if (channels == 4) {
-    EXPECT_EQ(0, WebRtcOpus_MultistreamDecoderCreate(opus_decoder, channels,
-                                                     kQuadCoupledStreams,
-                                                     kQuadChannelMapping));
+    EXPECT_EQ(0, WebRtcOpus_MultistreamDecoderCreate(
+                     opus_decoder, channels, kQuadTotalStreams,
+                     kQuadCoupledStreams, kQuadChannelMapping));
   } else {
     EXPECT_TRUE(false) << channels;
   }
@@ -886,7 +889,7 @@ INSTANTIATE_TEST_SUITE_P(VariousMode,
                          OpusTest,
                          ::testing::ValuesIn({
                              std::make_tuple(1, 0, true),
-                             std::make_tuple(1, 1, true),
+                             std::make_tuple(2, 1, true),
                              std::make_tuple(2, 0, false),
                              std::make_tuple(4, 0, false),
                              std::make_tuple(1, 1, false),

@@ -19,6 +19,7 @@
 #include "absl/strings/match.h"
 #include "modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
 #include "modules/audio_coding/audio_network_adaptor/controller_manager.h"
+#include "modules/audio_coding/codecs/opus/audio_coder_opus_common.h"
 #include "modules/audio_coding/codecs/opus/opus_interface.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
@@ -103,21 +104,6 @@ float OptimizePacketLossRate(float new_loss_rate, float old_loss_rate) {
   } else {
     return 0.0f;
   }
-}
-
-absl::optional<std::string> GetFormatParameter(const SdpAudioFormat& format,
-                                               const std::string& param) {
-  auto it = format.parameters.find(param);
-  if (it == format.parameters.end())
-    return absl::nullopt;
-
-  return it->second;
-}
-
-template <typename T>
-absl::optional<T> GetFormatParameter(const SdpAudioFormat& format,
-                                     const std::string& param) {
-  return rtc::StringToNumber<T>(GetFormatParameter(format, param).value_or(""));
 }
 
 int CalculateDefaultBitrate(int max_playback_rate, size_t num_channels) {

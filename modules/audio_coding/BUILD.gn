@@ -735,6 +735,22 @@ rtc_source_set("pcm16b_c") {
   ]
 }
 
+rtc_static_library("audio_coding_opus_common") {
+  sources = [
+    "codecs/opus/audio_coder_opus_common.cc",
+    "codecs/opus/audio_coder_opus_common.h",
+  ]
+
+  deps = [
+    "../../api:array_view",
+    "../../api/audio_codecs:audio_codecs_api",
+    "../../rtc_base:checks",
+    "../../rtc_base:stringutils",
+    "//third_party/abseil-cpp/absl/strings",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
 rtc_static_library("webrtc_opus") {
   visibility += webrtc_default_visibility
   poisonous = [ "audio_codecs" ]
@@ -746,6 +762,7 @@ rtc_static_library("webrtc_opus") {
   ]
 
   deps = [
+    ":audio_coding_opus_common",
     ":audio_network_adaptor",
     "../../api:array_view",
     "../../api/audio_codecs:audio_codecs_api",
@@ -761,7 +778,41 @@ rtc_static_library("webrtc_opus") {
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
-  public_deps = [
+  public_deps = [  # no-presubmit-check TODO(webrtc:8603)
+    ":webrtc_opus_c",
+  ]
+
+  defines = audio_codec_defines
+
+  if (rtc_build_opus) {
+    public_deps += [ rtc_opus_dir ]  # no-presubmit-check TODO(webrtc:8603)
+  } else if (build_with_mozilla) {
+    include_dirs = [ "/media/libopus/include" ]
+  }
+}
+
+rtc_static_library("webrtc_multiopus") {
+  visibility += webrtc_default_visibility
+  poisonous = [ "audio_codecs" ]
+  sources = [
+    "codecs/opus/audio_decoder_multi_channel_opus_impl.cc",
+    "codecs/opus/audio_decoder_multi_channel_opus_impl.h",
+  ]
+
+  deps = [
+    ":audio_coding_opus_common",
+    "../../api/audio_codecs:audio_codecs_api",
+    "../../api/audio_codecs/opus:audio_encoder_opus_config",
+    "../../rtc_base:checks",
+    "../../rtc_base:logging",
+    "../../rtc_base:macromagic",
+    "../../rtc_base:rtc_base_approved",
+    "../../rtc_base:safe_minmax",
+    "../../rtc_base:stringutils",
+    "//third_party/abseil-cpp/absl/memory",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+  public_deps = [  # no-presubmit-check TODO(webrtc:8603)
     ":webrtc_opus_c",
   ]
 
@@ -1876,6 +1927,7 @@ if (rtc_include_tests) {
       "codecs/isac/main/source/isac_unittest.cc",
       "codecs/isac/unittest.cc",
       "codecs/legacy_encoded_audio_frame_unittest.cc",
+      "codecs/opus/audio_decoder_multi_channel_opus_unittest.cc",
       "codecs/opus/audio_encoder_opus_unittest.cc",
       "codecs/opus/opus_bandwidth_unittest.cc",
       "codecs/opus/opus_unittest.cc",
@@ -1931,6 +1983,7 @@ if (rtc_include_tests) {
       ":acm_send_test",
       ":audio_coding",
       ":audio_coding_module_typedefs",
+      ":audio_coding_opus_common",
       ":audio_encoder_cng",
       ":audio_network_adaptor",
       ":g711",
@@ -1953,6 +2006,7 @@ if (rtc_include_tests) {
       "../../api/audio_codecs:audio_codecs_api",
       "../../api/audio_codecs:builtin_audio_decoder_factory",
       "../../api/audio_codecs:builtin_audio_encoder_factory",
+      "../../api/audio_codecs/opus:audio_decoder_multiopus",
       "../../api/audio_codecs/opus:audio_decoder_opus",
       "../../api/audio_codecs/opus:audio_encoder_opus",
       "../../common_audio",

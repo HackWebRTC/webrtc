@@ -53,11 +53,12 @@ int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst,
  * This function creates an Opus encoder with any supported channel count.
  *
  * Input:
- *      - channels           : number of channels.
+ *      - channels           : number of channels in the input of the encoder.
  *      - application        : 0 - VOIP applications.
  *                                 Favor speech intelligibility.
  *                             1 - Audio applications.
  *                                 Favor faithfulness to the original input.
+ *      - streams            : number of streams, as described in RFC 7845.
  *      - coupled_streams    : number of coupled streams, as described in
  *                             RFC 7845.
  *      - channel_mapping    : the channel mapping; pointer to array of
@@ -74,6 +75,7 @@ int16_t WebRtcOpus_MultistreamEncoderCreate(
     OpusEncInst** inst,
     size_t channels,
     int32_t application,
+    size_t streams,
     size_t coupled_streams,
     const unsigned char* channel_mapping);
 
@@ -332,7 +334,10 @@ int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, size_t channels);
  * This function creates an Opus decoder with any supported channel count.
  *
  * Input:
- *      - channels           : number of channels.
+ *      - channels           : number of output channels that the decoder
+ *                             will produce.
+ *      - streams            : number of encoded streams, as described in
+ *                             RFC 7845.
  *      - coupled_streams    : number of coupled streams, as described in
  *                             RFC 7845.
  *      - channel_mapping    : the channel mapping; pointer to array of
@@ -348,6 +353,7 @@ int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, size_t channels);
 int16_t WebRtcOpus_MultistreamDecoderCreate(
     OpusDecInst** inst,
     size_t channels,
+    size_t streams,
     size_t coupled_streams,
     const unsigned char* channel_mapping);
 

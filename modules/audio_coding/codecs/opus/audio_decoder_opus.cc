@@ -15,64 +15,14 @@
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
+#include "modules/audio_coding/codecs/opus/audio_coder_opus_common.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
 
-namespace {
-class OpusFrame : public AudioDecoder::EncodedAudioFrame {
- public:
-  OpusFrame(AudioDecoderOpusImpl* decoder,
-            rtc::Buffer&& payload,
-            bool is_primary_payload)
-      : decoder_(decoder),
-        payload_(std::move(payload)),
-        is_primary_payload_(is_primary_payload) {}
-
-  size_t Duration() const override {
-    int ret;
-    if (is_primary_payload_) {
-      ret = decoder_->PacketDuration(payload_.data(), payload_.size());
-    } else {
-      ret = decoder_->PacketDurationRedundant(payload_.data(), payload_.size());
-    }
-    return (ret < 0) ? 0 : static_cast<size_t>(ret);
-  }
-
-  bool IsDtxPacket() const override { return payload_.size() <= 2; }
-
-  absl::optional<DecodeResult> Decode(
-      rtc::ArrayView<int16_t> decoded) const override {
-    AudioDecoder::SpeechType speech_type = AudioDecoder::kSpeech;
-    int ret;
-    if (is_primary_payload_) {
-      ret = decoder_->Decode(
-          payload_.data(), payload_.size(), decoder_->SampleRateHz(),
-          decoded.size() * sizeof(int16_t), decoded.data(), &speech_type);
-    } else {
-      ret = decoder_->DecodeRedundant(
-          payload_.data(), payload_.size(), decoder_->SampleRateHz(),
-          decoded.size() * sizeof(int16_t), decoded.data(), &speech_type);
-    }
-
-    if (ret < 0)
-      return absl::nullopt;
-
-    return DecodeResult{static_cast<size_t>(ret), speech_type};
-  }
-
- private:
-  AudioDecoderOpusImpl* const decoder_;
-  const rtc::Buffer payload_;
-  const bool is_primary_payload_;
-};
-
-}  // namespace
-
 AudioDecoderOpusImpl::AudioDecoderOpusImpl(size_t num_channels)
     : channels_(num_channels) {
-  RTC_DCHECK(num_channels == 1 || num_channels == 2 || num_channels == 4 ||
-             num_channels == 6 || num_channels == 8);
+  RTC_DCHECK(num_channels == 1 || num_channels == 2);
   const int error = WebRtcOpus_DecoderCreate(&dec_state_, channels_);
   RTC_DCHECK(error == 0);
   WebRtcOpus_DecoderInit(dec_state_);

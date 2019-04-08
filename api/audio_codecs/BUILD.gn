@@ -66,7 +66,10 @@ rtc_static_library("builtin_audio_decoder_factory") {
     defines += [ "WEBRTC_USE_BUILTIN_ILBC=0" ]
   }
   if (rtc_include_opus) {
-    deps += [ "opus:audio_decoder_opus" ]
+    deps += [
+      "opus:audio_decoder_multiopus",
+      "opus:audio_decoder_opus",
+    ]
     defines += [ "WEBRTC_USE_BUILTIN_OPUS=1" ]
   } else {
     defines += [ "WEBRTC_USE_BUILTIN_OPUS=0" ]
