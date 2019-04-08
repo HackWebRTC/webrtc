@@ -69,12 +69,12 @@
 namespace webrtc {
 
 namespace {
-bool SendFeedbackOnRequestOnly(const std::vector<RtpExtension>& extensions) {
+bool SendPeriodicFeedback(const std::vector<RtpExtension>& extensions) {
   for (const auto& extension : extensions) {
     if (extension.uri == RtpExtension::kTransportSequenceNumberV2Uri)
-      return true;
+      return false;
   }
-  return false;
+  return true;
 }
 
 // TODO(nisse): This really begs for a shared context struct.
@@ -931,8 +931,8 @@ webrtc::VideoReceiveStream* Call::CreateVideoReceiveStream(
   TRACE_EVENT0("webrtc", "Call::CreateVideoReceiveStream");
   RTC_DCHECK_CALLED_SEQUENTIALLY(&configuration_sequence_checker_);
 
-  receive_side_cc_.SetSendFeedbackOnRequestOnly(
-      SendFeedbackOnRequestOnly(configuration.rtp.extensions));
+  receive_side_cc_.SetSendPeriodicFeedback(
+      SendPeriodicFeedback(configuration.rtp.extensions));
 
   RegisterRateObserver();
 

@@ -43,7 +43,7 @@ RemoteEstimatorProxy::RemoteEstimatorProxy(
       media_ssrc_(0),
       feedback_packet_count_(0),
       send_interval_ms_(kDefaultSendIntervalMs),
-      send_feedback_on_request_only_(false) {}
+      send_periodic_feedback_(true) {}
 
 RemoteEstimatorProxy::~RemoteEstimatorProxy() {}
 
@@ -69,7 +69,7 @@ bool RemoteEstimatorProxy::LatestEstimate(std::vector<unsigned int>* ssrcs,
 
 int64_t RemoteEstimatorProxy::TimeUntilNextProcess() {
   rtc::CritScope cs(&lock_);
-  if (send_feedback_on_request_only_) {
+  if (!send_periodic_feedback_) {
     // Wait a day until next process.
     return 24 * 60 * 60 * 1000;
   } else if (last_process_time_ms_ != -1) {
@@ -82,7 +82,7 @@ int64_t RemoteEstimatorProxy::TimeUntilNextProcess() {
 
 void RemoteEstimatorProxy::Process() {
   rtc::CritScope cs(&lock_);
-  if (send_feedback_on_request_only_) {
+  if (!send_periodic_feedback_) {
     return;
   }
   last_process_time_ms_ = clock_->TimeInMilliseconds();
@@ -109,10 +109,10 @@ void RemoteEstimatorProxy::OnBitrateChanged(int bitrate_bps) {
                 rtc::SafeClamp(0.05 * bitrate_bps, kMinTwccRate, kMaxTwccRate));
 }
 
-void RemoteEstimatorProxy::SetSendFeedbackOnRequestOnly(
-    bool send_feedback_on_request_only) {
+void RemoteEstimatorProxy::SetSendPeriodicFeedback(
+    bool send_periodic_feedback) {
   rtc::CritScope cs(&lock_);
-  send_feedback_on_request_only_ = send_feedback_on_request_only;
+  send_periodic_feedback_ = send_periodic_feedback;
 }
 
 void RemoteEstimatorProxy::OnPacketArrival(
@@ -126,12 +126,7 @@ void RemoteEstimatorProxy::OnPacketArrival(
 
   int64_t seq = unwrapper_.Unwrap(sequence_number);
 
-  if (send_feedback_on_request_only_) {
-    // Remove old packet arrival times.
-    auto clear_to_it =
-        packet_arrival_times_.lower_bound(seq - kMaxNumberOfPackets);
-    packet_arrival_times_.erase(packet_arrival_times_.begin(), clear_to_it);
-  } else {
+  if (send_periodic_feedback_) {
     if (periodic_window_start_seq_ &&
         packet_arrival_times_.lower_bound(*periodic_window_start_seq_) ==
             packet_arrival_times_.end()) {
@@ -152,6 +147,20 @@ void RemoteEstimatorProxy::OnPacketArrival(
     return;
 
   packet_arrival_times_[seq] = arrival_time;
+
+  // Limit the range of sequence numbers to send feedback for.
+  auto first_arrival_time_to_keep = packet_arrival_times_.lower_bound(
+      packet_arrival_times_.rbegin()->first - kMaxNumberOfPackets);
+  if (first_arrival_time_to_keep != packet_arrival_times_.begin()) {
+    packet_arrival_times_.erase(packet_arrival_times_.begin(),
+                                first_arrival_time_to_keep);
+    if (send_periodic_feedback_) {
+      // |packet_arrival_times_| cannot be empty since we just added one element
+      // and the last element is not deleted.
+      RTC_DCHECK(!packet_arrival_times_.empty());
+      periodic_window_start_seq_ = packet_arrival_times_.begin()->first;
+    }
+  }
 
   if (feedback_request) {
     // Send feedback packet immediately.
