@@ -24,11 +24,14 @@
 #include "api/jsep_session_description.h"
 #include "api/media_stream_proxy.h"
 #include "api/media_stream_track_proxy.h"
+#include "api/rtc_error.h"
+#include "api/rtp_parameters.h"
 #include "api/uma_metrics.h"
 #include "call/call.h"
 #include "logging/rtc_event_log/ice_logger.h"
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
+#include "media/base/rid_description.h"
 #include "media/sctp/sctp_transport.h"
 #include "pc/audio_rtp_receiver.h"
 #include "pc/audio_track.h"
@@ -1545,6 +1548,14 @@ PeerConnection::AddTransceiver(
     LOG_AND_RETURN_ERROR(
         RTCErrorType::INVALID_PARAMETER,
         "RIDs must be provided for either all or none of the send encodings.");
+  }
+
+  if (num_rids > 0 && absl::c_any_of(init.send_encodings,
+                                     [](const RtpEncodingParameters& encoding) {
+                                       return !IsLegalRsidName(encoding.rid);
+                                     })) {
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
+                         "Invalid RID value provided.");
   }
 
   if (absl::c_any_of(init.send_encodings,
