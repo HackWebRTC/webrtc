@@ -40,7 +40,7 @@ TEST(ScenarioAnalyzerTest, PsnrIsHighWhenNetworkIsGood) {
   }
   // This is mainty a regression test, the target is based on previous runs and
   // might change due to changes in configuration and encoder etc.
-  EXPECT_GT(analyzer.stats().psnr.Mean(), 45);
+  EXPECT_GT(analyzer.stats().psnr.Mean(), 40);
 }
 
 TEST(ScenarioAnalyzerTest, PsnrIsLowWhenNetworkIsBad) {
@@ -55,7 +55,7 @@ TEST(ScenarioAnalyzerTest, PsnrIsLowWhenNetworkIsBad) {
   }
   // This is mainty a regression test, the target is based on previous runs and
   // might change due to changes in configuration and encoder etc.
-  EXPECT_LT(analyzer.stats().psnr.Mean(), 43);
+  EXPECT_LT(analyzer.stats().psnr.Mean(), 30);
 }
 }  // namespace test
 }  // namespace webrtc

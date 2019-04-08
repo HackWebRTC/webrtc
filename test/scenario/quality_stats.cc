@@ -28,7 +28,7 @@ VideoFrameMatcher::VideoFrameMatcher(
     : frame_pair_handlers_(frame_pair_handlers), task_queue_("VideoAnalyzer") {}
 
 VideoFrameMatcher::~VideoFrameMatcher() {
-  task_queue_.SendTask([] {});
+  task_queue_.SendTask([this] { Finalize(); });
 }
 
 void VideoFrameMatcher::RegisterLayer(int layer_id) {

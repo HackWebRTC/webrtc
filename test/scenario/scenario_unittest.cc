@@ -83,7 +83,7 @@ void SetupVideoCall(Scenario& s, VideoQualityAnalyzer* analyzer) {
 }
 }  // namespace
 
-TEST(ScenarioTest, SimTimeEncoding) {
+TEST(ScenarioTest, MAYBE_SimTimeEncoding) {
   VideoQualityAnalyzerConfig analyzer_config;
   analyzer_config.psnr_coverage = 0.1;
   VideoQualityAnalyzer analyzer(analyzer_config);
@@ -97,7 +97,12 @@ TEST(ScenarioTest, SimTimeEncoding) {
   EXPECT_EQ(analyzer.stats().lost_count, 0);
 }
 
-TEST(ScenarioTest, RealTimeEncoding) {
+#if defined(WEBRTC_IOS) && defined(WEBRTC_ARCH_ARM64) && !defined(NDEBUG)
+#define MAYBE_RealTimeEncoding DISABLED_RealTimeEncoding
+#else
+#define MAYBE_RealTimeEncoding RealTimeEncoding
+#endif
+TEST(ScenarioTest, MAYBE_RealTimeEncoding) {
   VideoQualityAnalyzerConfig analyzer_config;
   analyzer_config.psnr_coverage = 0.1;
   VideoQualityAnalyzer analyzer(analyzer_config);
