@@ -19,13 +19,16 @@
 namespace webrtc {
 
 VideoStreamDecoderImpl::VideoStreamDecoderImpl(
-    VideoStreamDecoder::Callbacks* callbacks,
+    VideoStreamDecoderInterface::Callbacks* callbacks,
     VideoDecoderFactory* decoder_factory,
+    TaskQueueFactory* task_queue_factory,
     std::map<int, std::pair<SdpVideoFormat, int>> decoder_settings)
     : callbacks_(callbacks),
       decoder_factory_(decoder_factory),
       decoder_settings_(std::move(decoder_settings)),
-      bookkeeping_queue_("video_stream_decoder_bookkeeping_queue"),
+      bookkeeping_queue_(task_queue_factory->CreateTaskQueue(
+          "video_stream_decoder_bookkeeping_queue",
+          TaskQueueFactory::Priority::NORMAL)),
       decode_thread_(&DecodeLoop,
                      this,
                      "video_stream_decoder_decode_thread",

@@ -27,12 +27,13 @@
 
 namespace webrtc {
 
-class VideoStreamDecoderImpl : public VideoStreamDecoder,
+class VideoStreamDecoderImpl : public VideoStreamDecoderInterface,
                                private DecodedImageCallback {
  public:
   VideoStreamDecoderImpl(
-      VideoStreamDecoder::Callbacks* callbacks,
+      VideoStreamDecoderInterface::Callbacks* callbacks,
       VideoDecoderFactory* decoder_factory,
+      TaskQueueFactory* task_queue_factory,
       std::map<int, std::pair<SdpVideoFormat, int>> decoder_settings);
 
   ~VideoStreamDecoderImpl() override;
@@ -67,7 +68,7 @@ class VideoStreamDecoderImpl : public VideoStreamDecoder,
                absl::optional<int32_t> decode_time_ms,
                absl::optional<uint8_t> qp) override;
 
-  VideoStreamDecoder::Callbacks* const callbacks_
+  VideoStreamDecoderInterface::Callbacks* const callbacks_
       RTC_PT_GUARDED_BY(bookkeeping_queue_);
   VideoDecoderFactory* const decoder_factory_;
   std::map<int, std::pair<SdpVideoFormat, int>> decoder_settings_;
