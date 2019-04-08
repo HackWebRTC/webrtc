@@ -16,6 +16,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/call/transport.h"
 #include "api/fec_controller.h"
 #include "api/video_codecs/video_encoder.h"
@@ -26,6 +27,7 @@
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/source/rtp_sender_video.h"
+#include "modules/rtp_rtcp/source/rtp_sequence_number_map.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/constructor_magic.h"
@@ -137,6 +139,10 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   void SetEncodingData(size_t width,
                        size_t height,
                        size_t num_temporal_layers) override;
+
+  absl::optional<RtpSequenceNumberMap::Info> GetSentRtpPacketInfo(
+      uint32_t ssrc,
+      uint16_t seq_num) const override;
 
   // From PacketFeedbackObserver.
   void OnPacketAdded(uint32_t ssrc, uint16_t seq_num) override;

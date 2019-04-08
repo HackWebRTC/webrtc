@@ -21,6 +21,7 @@
 #include "modules/rtp_rtcp/source/playout_delay_oracle.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
+#include "modules/rtp_rtcp/source/rtp_sequence_number_map.h"
 #include "modules/rtp_rtcp/source/ulpfec_generator.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/one_time_event.h"
@@ -92,6 +93,14 @@ class RTPSenderVideo {
   // the payload overhead, eg the VP8 payload headers, not the RTP headers
   // or extension/
   uint32_t PacketizationOverheadBps() const;
+
+  // Recall the last RTP packet whose sequence number was |sequence_number|.
+  // Return the timestamp of the video frame that packet belonged too, as well
+  // as whether the packet was the first and/or last packet in the frame.
+  // absl::nullopt returned if no such packet can be recalled (e.g. it happened
+  // too long ago).
+  absl::optional<RtpSequenceNumberMap::Info> GetSentRtpPacketInfo(
+      uint16_t sequence_number) const;
 
  protected:
   static uint8_t GetTemporalId(const RTPVideoHeader& header);
@@ -165,6 +174,13 @@ class RTPSenderVideo {
   // and decides whether the current RTP frame should include the playout
   // delay extension on header.
   PlayoutDelayOracle* const playout_delay_oracle_;
+
+  // Maps sent packets' sequence numbers to a tuple consisting of:
+  // 1. The timestamp, without the randomizing offset mandated by the RFC.
+  // 2. Whether the packet was the first in its frame.
+  // 3. Whether the packet was the last in its frame.
+  const std::unique_ptr<RtpSequenceNumberMap> rtp_sequence_number_map_
+      RTC_PT_GUARDED_BY(crit_);
 
   // RED/ULPFEC.
   int red_payload_type_ RTC_GUARDED_BY(crit_);
