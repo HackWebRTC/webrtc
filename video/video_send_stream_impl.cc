@@ -649,17 +649,18 @@ uint32_t VideoSendStreamImpl::OnBitrateUpdated(BitrateAllocationUpdate update) {
   encoder_target_rate_bps_ = rtp_video_sender_->GetPayloadBitrateBps();
   const uint32_t protection_bitrate_bps =
       rtp_video_sender_->GetProtectionBitrateBps();
-  DataRate headroom = DataRate::Zero();
-  if (encoder_target_rate_bps_ >
-      encoder_max_bitrate_bps_ + protection_bitrate_bps) {
-    headroom =
-        DataRate::bps(encoder_target_rate_bps_ -
-                      (encoder_max_bitrate_bps_ + protection_bitrate_bps));
+  DataRate link_allocation = DataRate::Zero();
+  if (encoder_target_rate_bps_ > protection_bitrate_bps) {
+    link_allocation =
+        DataRate::bps(encoder_target_rate_bps_ - protection_bitrate_bps);
   }
   encoder_target_rate_bps_ =
       std::min(encoder_max_bitrate_bps_, encoder_target_rate_bps_);
+
+  DataRate encoder_target_rate = DataRate::bps(encoder_target_rate_bps_);
+  link_allocation = std::max(encoder_target_rate, link_allocation);
   video_stream_encoder_->OnBitrateUpdated(
-      DataRate::bps(encoder_target_rate_bps_), headroom,
+      encoder_target_rate, link_allocation,
       rtc::dchecked_cast<uint8_t>(update.packet_loss_ratio * 256),
       update.round_trip_time.ms());
   stats_proxy_->OnSetEncoderTargetRate(encoder_target_rate_bps_);

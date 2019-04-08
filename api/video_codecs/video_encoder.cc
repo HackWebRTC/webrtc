@@ -101,6 +101,21 @@ VideoEncoder::EncoderInfo::EncoderInfo(const EncoderInfo&) = default;
 
 VideoEncoder::EncoderInfo::~EncoderInfo() = default;
 
+VideoEncoder::RateControlParameters::RateControlParameters()
+    : bitrate(VideoBitrateAllocation()),
+      framerate_fps(0.0),
+      bandwidth_allocation(DataRate::Zero()) {}
+
+VideoEncoder::RateControlParameters::RateControlParameters(
+    const VideoBitrateAllocation& bitrate,
+    double framerate_fps,
+    DataRate bandwidth_allocation)
+    : bitrate(bitrate),
+      framerate_fps(framerate_fps),
+      bandwidth_allocation(bandwidth_allocation) {}
+
+VideoEncoder::RateControlParameters::~RateControlParameters() = default;
+
 int32_t VideoEncoder::SetRates(uint32_t bitrate, uint32_t framerate) {
   RTC_NOTREACHED() << "SetRate(uint32_t, uint32_t) is deprecated.";
   return -1;
