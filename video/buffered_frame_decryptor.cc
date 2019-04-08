@@ -112,6 +112,10 @@ BufferedFrameDecryptor::FrameDecision BufferedFrameDecryptor::DecryptFrame(
 }
 
 void BufferedFrameDecryptor::RetryStashedFrames() {
+  if (!stashed_frames_.empty()) {
+    RTC_LOG(LS_INFO) << "Retrying stashed encrypted frames. Count: "
+                     << stashed_frames_.size();
+  }
   for (auto& frame : stashed_frames_) {
     if (DecryptFrame(frame.get()) == FrameDecision::kDecrypted) {
       decrypted_frame_callback_->OnDecryptedFrame(std::move(frame));
