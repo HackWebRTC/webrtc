@@ -785,6 +785,7 @@ if (is_android) {
 
   # JNI target for java_audio_device_module_java
   rtc_source_set("java_audio_device_module_jni") {
+    visibility = [ "*" ]
     sources = [
       "src/jni/audio_device/java_audio_device_module.cc",
     ]
