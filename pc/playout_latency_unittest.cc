@@ -90,16 +90,6 @@ TEST_F(PlayoutLatencyTest, Caching) {
   EXPECT_DOUBLE_EQ(4.0, latency_->GetLatency());
 }
 
-TEST_F(PlayoutLatencyTest, Rounding) {
-  latency_->OnStart(&delayable_, kSsrc);
-  // In Jitter Buffer (Audio or Video) delay 0 has a special meaning of
-  // unconstrained variable, that is why here if latency is small enough we
-  // round it to 0 delay.
-  EXPECT_CALL(delayable_, SetBaseMinimumPlayoutDelayMs(kSsrc, 0))
-      .WillOnce(Return(true));
-  latency_->SetLatency(0.005);
-}
-
 TEST_F(PlayoutLatencyTest, Clamping) {
   latency_->OnStart(&delayable_, kSsrc);
 
@@ -108,6 +98,11 @@ TEST_F(PlayoutLatencyTest, Clamping) {
   EXPECT_CALL(delayable_, SetBaseMinimumPlayoutDelayMs(kSsrc, 10000))
       .WillOnce(Return(true));
   latency_->SetLatency(10.5);
+
+  // Boundary value in seconds to milliseconds conversion.
+  EXPECT_CALL(delayable_, SetBaseMinimumPlayoutDelayMs(kSsrc, 0))
+      .WillOnce(Return(true));
+  latency_->SetLatency(0.0009);
 
   EXPECT_CALL(delayable_, SetBaseMinimumPlayoutDelayMs(kSsrc, 0))
       .WillOnce(Return(true));
