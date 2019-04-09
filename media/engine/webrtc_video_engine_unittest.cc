@@ -3196,13 +3196,20 @@ TEST_F(Vp9SettingsTest, AllEncodingParametersCopied) {
   EXPECT_TRUE(encoder_config.simulcast_layers[2].active);
 }
 
-class Vp9SettingsTestWithFieldTrial : public Vp9SettingsTest {
- public:
-  explicit Vp9SettingsTestWithFieldTrial(const char* field_trials)
-      : Vp9SettingsTest(field_trials) {}
-
+class Vp9SettingsTestWithFieldTrial
+    : public Vp9SettingsTest,
+      public ::testing::WithParamInterface<
+          ::testing::tuple<const char*, int, int, webrtc::InterLayerPredMode>> {
  protected:
-  void VerifySettings(int num_spatial_layers, int num_temporal_layers) {
+  Vp9SettingsTestWithFieldTrial()
+      : Vp9SettingsTest(::testing::get<0>(GetParam())),
+        num_spatial_layers_(::testing::get<1>(GetParam())),
+        num_temporal_layers_(::testing::get<2>(GetParam())),
+        inter_layer_pred_(::testing::get<3>(GetParam())) {}
+
+  void VerifySettings(int num_spatial_layers,
+                      int num_temporal_layers,
+                      webrtc::InterLayerPredMode interLayerPred) {
     cricket::VideoSendParameters parameters;
     parameters.codecs.push_back(GetEngineCodec("VP9"));
     ASSERT_TRUE(channel_->SetSendParameters(parameters));
@@ -3219,46 +3226,45 @@ class Vp9SettingsTestWithFieldTrial : public Vp9SettingsTest {
     ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
     EXPECT_EQ(num_spatial_layers, vp9_settings.numberOfSpatialLayers);
     EXPECT_EQ(num_temporal_layers, vp9_settings.numberOfTemporalLayers);
+    EXPECT_EQ(inter_layer_pred_, vp9_settings.interLayerPred);
 
     EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, nullptr, nullptr));
   }
+
+  const uint8_t num_spatial_layers_;
+  const uint8_t num_temporal_layers_;
+  const webrtc::InterLayerPredMode inter_layer_pred_;
 };
 
-class Vp9SettingsTestWithNoFlag : public Vp9SettingsTestWithFieldTrial {
- public:
-  Vp9SettingsTestWithNoFlag() : Vp9SettingsTestWithFieldTrial("") {}
-};
-
-TEST_F(Vp9SettingsTestWithNoFlag, VerifySettings) {
-  const int kNumSpatialLayers = 1;
-  const int kNumTemporalLayers = 1;
-  VerifySettings(kNumSpatialLayers, kNumTemporalLayers);
+TEST_P(Vp9SettingsTestWithFieldTrial, VerifyCodecSettings) {
+  VerifySettings(num_spatial_layers_, num_temporal_layers_, inter_layer_pred_);
 }
 
-class Vp9SettingsTestWithInvalidFlag : public Vp9SettingsTestWithFieldTrial {
- public:
-  Vp9SettingsTestWithInvalidFlag()
-      : Vp9SettingsTestWithFieldTrial("WebRTC-SupportVP9SVC/Default/") {}
-};
-
-TEST_F(Vp9SettingsTestWithInvalidFlag, VerifySettings) {
-  const int kNumSpatialLayers = 1;
-  const int kNumTemporalLayers = 1;
-  VerifySettings(kNumSpatialLayers, kNumTemporalLayers);
-}
-
-class Vp9SettingsTestWith2SL3TLFlag : public Vp9SettingsTestWithFieldTrial {
- public:
-  Vp9SettingsTestWith2SL3TLFlag()
-      : Vp9SettingsTestWithFieldTrial(
-            "WebRTC-SupportVP9SVC/EnabledByFlag_2SL3TL/") {}
-};
-
-TEST_F(Vp9SettingsTestWith2SL3TLFlag, VerifySettings) {
-  const int kNumSpatialLayers = 2;
-  const int kNumTemporalLayers = 3;
-  VerifySettings(kNumSpatialLayers, kNumTemporalLayers);
-}
+INSTANTIATE_TEST_SUITE_P(
+    ,
+    Vp9SettingsTestWithFieldTrial,
+    ::testing::Values(
+        std::make_tuple("", 1, 1, webrtc::InterLayerPredMode::kOnKeyPic),
+        std::make_tuple("WebRTC-SupportVP9SVC/Default/",
+                        1,
+                        1,
+                        webrtc::InterLayerPredMode::kOnKeyPic),
+        std::make_tuple("WebRTC-SupportVP9SVC/EnabledByFlag_2SL3TL/",
+                        2,
+                        3,
+                        webrtc::InterLayerPredMode::kOnKeyPic),
+        std::make_tuple("WebRTC-Vp9InterLayerPred/0/",
+                        1,
+                        1,
+                        webrtc::InterLayerPredMode::kOff),
+        std::make_tuple("WebRTC-Vp9InterLayerPred/1/",
+                        1,
+                        1,
+                        webrtc::InterLayerPredMode::kOn),
+        std::make_tuple("WebRTC-Vp9InterLayerPred/2/",
+                        1,
+                        1,
+                        webrtc::InterLayerPredMode::kOnKeyPic)));
 
 TEST_F(WebRtcVideoChannelTest, VerifyMinBitrate) {
   std::vector<webrtc::VideoStream> streams = AddSendStream()->GetVideoStreams();
