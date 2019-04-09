@@ -42,8 +42,7 @@ class OnDecryptionStatusChangeCallback {
   // blocking so the caller must relinquish the callback quickly. This status
   // must match what is specified in the FrameDecryptorInterface file. Notably
   // 0 must indicate success and any positive integer is a failure.
-  virtual void OnDecryptionStatusChange(
-      FrameDecryptorInterface::Status status) = 0;
+  virtual void OnDecryptionStatusChange(int status) = 0;
 };
 
 // The BufferedFrameDecryptor is responsible for deciding when to pass
@@ -92,8 +91,7 @@ class BufferedFrameDecryptor final {
 
   const bool generic_descriptor_auth_experiment_;
   bool first_frame_decrypted_ = false;
-  FrameDecryptorInterface::Status last_status_ =
-      FrameDecryptorInterface::Status::kUnknown;
+  int last_status_ = -1;
   rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor_;
   OnDecryptedFrameCallback* const decrypted_frame_callback_;
   OnDecryptionStatusChangeCallback* const decryption_status_change_callback_;

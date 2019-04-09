@@ -35,11 +35,12 @@ class FakeFrameDecryptor final
                               uint8_t expected_postfix_byte = 255);
   // Fake decryption that just xors the payload with the 1 byte key and checks
   // the postfix byte. This will always fail if fail_decryption_ is set to true.
-  Result Decrypt(cricket::MediaType media_type,
-                 const std::vector<uint32_t>& csrcs,
-                 rtc::ArrayView<const uint8_t> additional_data,
-                 rtc::ArrayView<const uint8_t> encrypted_frame,
-                 rtc::ArrayView<uint8_t> frame) override;
+  int Decrypt(cricket::MediaType media_type,
+              const std::vector<uint32_t>& csrcs,
+              rtc::ArrayView<const uint8_t> additional_data,
+              rtc::ArrayView<const uint8_t> encrypted_frame,
+              rtc::ArrayView<uint8_t> frame,
+              size_t* bytes_written) override;
   // Always returns 1 less than the size of the encrypted frame.
   size_t GetMaxPlaintextByteSize(cricket::MediaType media_type,
                                  size_t encrypted_frame_size) override;

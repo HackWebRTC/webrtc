@@ -18,14 +18,14 @@ FakeFrameDecryptor::FakeFrameDecryptor(uint8_t fake_key,
                                        uint8_t expected_postfix_byte)
     : fake_key_(fake_key), expected_postfix_byte_(expected_postfix_byte) {}
 
-FakeFrameDecryptor::Result FakeFrameDecryptor::Decrypt(
-    cricket::MediaType media_type,
-    const std::vector<uint32_t>& csrcs,
-    rtc::ArrayView<const uint8_t> additional_data,
-    rtc::ArrayView<const uint8_t> encrypted_frame,
-    rtc::ArrayView<uint8_t> frame) {
+int FakeFrameDecryptor::Decrypt(cricket::MediaType media_type,
+                                const std::vector<uint32_t>& csrcs,
+                                rtc::ArrayView<const uint8_t> additional_data,
+                                rtc::ArrayView<const uint8_t> encrypted_frame,
+                                rtc::ArrayView<uint8_t> frame,
+                                size_t* bytes_written) {
   if (fail_decryption_) {
-    return Result(Status::kFailedToDecrypt, 0);
+    return static_cast<int>(FakeDecryptStatus::FORCED_FAILURE);
   }
 
   RTC_CHECK_EQ(frame.size() + 1, encrypted_frame.size());
@@ -34,10 +34,11 @@ FakeFrameDecryptor::Result FakeFrameDecryptor::Decrypt(
   }
 
   if (encrypted_frame[frame.size()] != expected_postfix_byte_) {
-    return Result(Status::kFailedToDecrypt, 0);
+    return static_cast<int>(FakeDecryptStatus::INVALID_POSTFIX);
   }
 
-  return Result(Status::kOk, frame.size());
+  *bytes_written = frame.size();
+  return static_cast<int>(FakeDecryptStatus::OK);
 }
 
 size_t FakeFrameDecryptor::GetMaxPlaintextByteSize(
