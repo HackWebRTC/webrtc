@@ -60,8 +60,6 @@ namespace webrtc {
 
 namespace {
 static const int kFullStackTestDurationSecs = 45;
-const char kPacerPushBackExperiment[] =
-    "WebRTC-PacerPushbackExperiment/Enabled/";
 const char kVp8TrustedRateControllerFieldTrial[] =
     "WebRTC-LibvpxVp8TrustedRateController/Enabled/";
 
@@ -1485,8 +1483,7 @@ class DualStreamsTest : public ::testing::TestWithParam<int> {};
 TEST_P(DualStreamsTest,
        ModeratelyRestricted_SlidesVp8_2TL_Simulcast_Video_Simulcast_High) {
   test::ScopedFieldTrials field_trial(
-      AppendFieldTrials(std::string(kPacerPushBackExperiment) +
-                        std::string(kScreenshareSimulcastExperiment)));
+      AppendFieldTrials(std::string(kScreenshareSimulcastExperiment)));
   const int first_stream = GetParam();
   ParamsWithLogging dual_streams;
 
@@ -1548,8 +1545,6 @@ TEST_P(DualStreamsTest,
         // !defined(WEBRTC_MAC)
 
 TEST_P(DualStreamsTest, Conference_Restricted) {
-  test::ScopedFieldTrials field_trial(
-      AppendFieldTrials(std::string(kPacerPushBackExperiment)));
   const int first_stream = GetParam();
   ParamsWithLogging dual_streams;
 

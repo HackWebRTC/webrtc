@@ -101,7 +101,6 @@ struct CallTestConfig {
     if (tuning.use_bbr) {
       trials +=
           "WebRTC-BweCongestionController/Enabled,BBR/"
-          "WebRTC-PacerPushbackExperiment/Enabled/"
           "WebRTC-Pacer-DrainQueue/Disabled/"
           "WebRTC-Pacer-PadInSilence/Enabled/"
           "WebRTC-Pacer-BlockAudio/Disabled/"

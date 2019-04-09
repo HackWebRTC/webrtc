@@ -37,7 +37,6 @@
 namespace webrtc {
 namespace {
 
-const char kPacerPushbackExperiment[] = "WebRTC-PacerPushbackExperiment";
 static const int64_t kRetransmitWindowSizeMs = 500;
 
 // Makes sure that the bitrate and the min, max values are in valid range.
@@ -72,12 +71,6 @@ void SortPacketFeedbackVector(
     std::vector<webrtc::PacketFeedback>* const input) {
   RTC_DCHECK(input);
   std::sort(input->begin(), input->end(), PacketFeedbackComparator());
-}
-
-bool IsPacerPushbackExperimentEnabled(
-    const WebRtcKeyValueConfig* const key_value_config) {
-  return key_value_config->Lookup(kPacerPushbackExperiment).find("Enabled") ==
-         0;
 }
 
 }  // namespace
@@ -116,9 +109,7 @@ DEPRECATED_SendSideCongestionController::
       send_side_bwe_with_overhead_(
           key_value_config_->Lookup("WebRTC-SendSideBwe-WithOverhead")
               .find("Enabled") == 0),
-      transport_overhead_bytes_per_packet_(0),
-      pacer_pushback_experiment_(
-          IsPacerPushbackExperimentEnabled(key_value_config_)) {
+      transport_overhead_bytes_per_packet_(0) {
   RateControlSettings experiment_params =
       RateControlSettings::ParseFromKeyValueConfig(key_value_config);
   if (experiment_params.UseCongestionWindow()) {
@@ -500,21 +491,8 @@ void DEPRECATED_SendSideCongestionController::MaybeTriggerOnNetworkChanged() {
     rtc::CritScope lock(&network_state_lock_);
     bitrate_bps = congestion_window_pushback_controller_->UpdateTargetBitrate(
         bitrate_bps);
-  } else if (!pacer_pushback_experiment_) {
-    bitrate_bps = IsSendQueueFull() ? 0 : bitrate_bps;
   } else {
-    int64_t queue_length_ms = pacer_->ExpectedQueueTimeMs();
-
-    if (queue_length_ms == 0) {
-      encoding_rate_ = 1.0;
-    } else if (queue_length_ms > 50) {
-      float encoding_rate = 1.0 - queue_length_ms / 1000.0;
-      encoding_rate_ = std::min(encoding_rate_, encoding_rate);
-      encoding_rate_ = std::max(encoding_rate_, 0.0f);
-    }
-
-    bitrate_bps *= encoding_rate_;
-    bitrate_bps = bitrate_bps < 50000 ? 0 : bitrate_bps;
+    bitrate_bps = IsSendQueueFull() ? 0 : bitrate_bps;
   }
 
   if (HasNetworkParametersToReportChanged(bitrate_bps, fraction_loss, rtt)) {

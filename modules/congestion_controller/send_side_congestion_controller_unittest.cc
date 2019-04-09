@@ -365,43 +365,5 @@ TEST_F(LegacySendSideCongestionControllerTest, UpdatesDelayBasedEstimate) {
   EXPECT_LT(*target_bitrate_bps_, bitrate_before_delay);
 }
 
-TEST_F(LegacySendSideCongestionControllerTest, PacerQueueEncodeRatePushback) {
-  ScopedFieldTrials pushback_field_trial(
-      "WebRTC-PacerPushbackExperiment/Enabled/");
-  SetUp();
-
-  EXPECT_CALL(*pacer_, ExpectedQueueTimeMs()).WillOnce(Return(0));
-  controller_->Process();
-
-  EXPECT_CALL(*pacer_, ExpectedQueueTimeMs()).WillOnce(Return(100));
-  EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps * 0.9, _, _, _));
-  controller_->Process();
-
-  EXPECT_CALL(*pacer_, ExpectedQueueTimeMs()).WillOnce(Return(50));
-  controller_->Process();
-
-  EXPECT_CALL(*pacer_, ExpectedQueueTimeMs()).WillOnce(Return(0));
-  EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps, _, _, _));
-  controller_->Process();
-
-  const uint32_t kMinAdjustedBps = 50000;
-  int expected_queue_threshold =
-      1000 - kMinAdjustedBps * 1000.0 / kInitialBitrateBps;
-
-  EXPECT_CALL(*pacer_, ExpectedQueueTimeMs())
-      .WillOnce(Return(expected_queue_threshold));
-  EXPECT_CALL(observer_, OnNetworkChanged(Ge(kMinAdjustedBps), _, _, _));
-  controller_->Process();
-
-  EXPECT_CALL(*pacer_, ExpectedQueueTimeMs())
-      .WillOnce(Return(expected_queue_threshold + 1));
-  EXPECT_CALL(observer_, OnNetworkChanged(0, _, _, _));
-  controller_->Process();
-
-  EXPECT_CALL(*pacer_, ExpectedQueueTimeMs()).WillOnce(Return(0));
-  EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps, _, _, _));
-  controller_->Process();
-}
-
 }  // namespace test
 }  // namespace webrtc

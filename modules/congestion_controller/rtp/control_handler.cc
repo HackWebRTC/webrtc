@@ -22,12 +22,6 @@
 namespace webrtc {
 namespace {
 
-// When PacerPushbackExperiment is enabled, build-up in the pacer due to
-// the congestion window and/or data spikes reduces encoder allocations.
-bool IsPacerPushbackExperimentEnabled() {
-  return field_trial::IsEnabled("WebRTC-PacerPushbackExperiment");
-}
-
 // By default, pacer emergency stops encoder when buffer reaches a high level.
 bool IsPacerEmergencyStopDisabled() {
   return field_trial::IsEnabled("WebRTC-DisablePacerEmergencyStop");
@@ -35,8 +29,7 @@ bool IsPacerEmergencyStopDisabled() {
 
 }  // namespace
 CongestionControlHandler::CongestionControlHandler()
-    : pacer_pushback_experiment_(IsPacerPushbackExperimentEnabled()),
-      disable_pacer_emergency_stop_(IsPacerEmergencyStopDisabled()) {
+    : disable_pacer_emergency_stop_(IsPacerEmergencyStopDisabled()) {
   sequenced_checker_.Detach();
 }
 
@@ -67,19 +60,6 @@ absl::optional<TargetTransferRate> CongestionControlHandler::GetUpdate() {
   bool pause_encoding = false;
   if (!network_available_) {
     pause_encoding = true;
-  } else if (pacer_pushback_experiment_) {
-    const int64_t queue_length_ms = pacer_expected_queue_ms_;
-    if (queue_length_ms == 0) {
-      encoding_rate_ratio_ = 1.0;
-    } else if (queue_length_ms > 50) {
-      double encoding_ratio = 1.0 - queue_length_ms / 1000.0;
-      encoding_rate_ratio_ = std::min(encoding_rate_ratio_, encoding_ratio);
-      encoding_rate_ratio_ = std::max(encoding_rate_ratio_, 0.0);
-    }
-    new_outgoing.target_rate = new_outgoing.target_rate * encoding_rate_ratio_;
-    log_target_rate = new_outgoing.target_rate;
-    if (new_outgoing.target_rate < DataRate::kbps(50))
-      pause_encoding = true;
   } else if (!disable_pacer_emergency_stop_ &&
              pacer_expected_queue_ms_ > PacedSender::kMaxQueueLengthMs) {
     pause_encoding = true;

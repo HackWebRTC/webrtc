@@ -174,9 +174,6 @@ class DEPRECATED_SendSideCongestionController
 
   rtc::RaceChecker worker_race_;
 
-  bool pacer_pushback_experiment_ = false;
-  float encoding_rate_ = 1.0;
-
   std::unique_ptr<CongestionWindowPushbackController>
       congestion_window_pushback_controller_;
 
