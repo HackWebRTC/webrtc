@@ -66,6 +66,16 @@ class MockRtcpIntraFrameObserver : public RtcpIntraFrameObserver {
   MOCK_METHOD1(OnReceivedIntraFrameRequest, void(uint32_t));
 };
 
+class MockRtcpLossNotificationObserver : public RtcpLossNotificationObserver {
+ public:
+  ~MockRtcpLossNotificationObserver() override = default;
+  MOCK_METHOD4(OnReceivedLossNotification,
+               void(uint32_t ssrc,
+                    uint16_t seq_num_of_last_decodable,
+                    uint16_t seq_num_of_last_received,
+                    bool decodability_flag));
+};
+
 class MockRtcpCallbackImpl : public RtcpStatisticsCallback {
  public:
   MOCK_METHOD2(StatisticsUpdated, void(const RtcpStatistics&, uint32_t));
@@ -119,6 +129,7 @@ class RtcpReceiverTest : public ::testing::Test {
                        &packet_type_counter_observer_,
                        &bandwidth_observer_,
                        &intra_frame_observer_,
+                       &rtcp_loss_notification_observer_,
                        &transport_feedback_observer_,
                        &bitrate_allocation_observer_,
                        kRtcpIntervalMs,
@@ -145,6 +156,7 @@ class RtcpReceiverTest : public ::testing::Test {
   NiceMock<MockRtcpPacketTypeCounterObserver> packet_type_counter_observer_;
   StrictMock<MockRtcpBandwidthObserver> bandwidth_observer_;
   StrictMock<MockRtcpIntraFrameObserver> intra_frame_observer_;
+  StrictMock<MockRtcpLossNotificationObserver> rtcp_loss_notification_observer_;
   StrictMock<MockTransportFeedbackObserver> transport_feedback_observer_;
   StrictMock<MockVideoBitrateAllocationObserver> bitrate_allocation_observer_;
   StrictMock<MockModuleRtpRtcp> rtp_rtcp_impl_;

@@ -27,15 +27,24 @@ class VideoStreamEncoderInterface;
 // TODO(bugs.webrtc.org/9719): Should be eliminated when RtpMediaTransport is
 // implemented.
 class EncoderRtcpFeedback : public RtcpIntraFrameObserver,
+                            public RtcpLossNotificationObserver,
                             public MediaTransportKeyFrameRequestCallback {
  public:
   EncoderRtcpFeedback(Clock* clock,
                       const std::vector<uint32_t>& ssrcs,
                       VideoStreamEncoderInterface* encoder);
+  ~EncoderRtcpFeedback() override = default;
+
   void OnReceivedIntraFrameRequest(uint32_t ssrc) override;
 
   // Implements MediaTransportKeyFrameRequestCallback
   void OnKeyFrameRequested(uint64_t channel_id) override;
+
+  // Implements RtcpLossNotificationObserver.
+  void OnReceivedLossNotification(uint32_t ssrc,
+                                  uint16_t seq_num_of_last_decodable,
+                                  uint16_t seq_num_of_last_received,
+                                  bool decodability_flag) override;
 
  private:
   bool HasSsrc(uint32_t ssrc);

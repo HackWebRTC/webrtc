@@ -64,8 +64,11 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
     // out on the network.
     Transport* outgoing_transport = nullptr;
 
-    // Called when the receiver request a intra frame.
+    // Called when the receiver requests an intra frame.
     RtcpIntraFrameObserver* intra_frame_callback = nullptr;
+
+    // Called when the receiver sends a loss notification.
+    RtcpLossNotificationObserver* rtcp_loss_notification_observer = nullptr;
 
     // Called when we receive a changed estimate from the receiver of out
     // stream.

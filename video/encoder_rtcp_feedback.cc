@@ -68,4 +68,12 @@ void EncoderRtcpFeedback::OnKeyFrameRequested(uint64_t channel_id) {
   video_stream_encoder_->SendKeyFrame();
 }
 
+void EncoderRtcpFeedback::OnReceivedLossNotification(
+    uint32_t ssrc,
+    uint16_t seq_num_of_last_decodable,
+    uint16_t seq_num_of_last_received,
+    bool decodability_flag) {
+  // TODO(eladalon): Handle.
+}
+
 }  // namespace webrtc

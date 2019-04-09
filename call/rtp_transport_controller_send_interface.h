@@ -54,6 +54,7 @@ class TransportFeedbackObserver;
 struct RtpSenderObservers {
   RtcpRttStats* rtcp_rtt_stats;
   RtcpIntraFrameObserver* intra_frame_callback;
+  RtcpLossNotificationObserver* rtcp_loss_notification_observer;
   RtcpStatisticsCallback* rtcp_stats;
   StreamDataCountersCallback* rtp_stats;
   BitrateStatisticsObserver* bitrate_observer;

@@ -55,6 +55,7 @@ class RTCPReceiver {
                RtcpPacketTypeCounterObserver* packet_type_counter_observer,
                RtcpBandwidthObserver* rtcp_bandwidth_observer,
                RtcpIntraFrameObserver* rtcp_intra_frame_observer,
+               RtcpLossNotificationObserver* rtcp_loss_notification_observer,
                TransportFeedbackObserver* transport_feedback_observer,
                VideoBitrateAllocationObserver* bitrate_allocation_observer,
                int report_interval_ms,
@@ -215,6 +216,7 @@ class RTCPReceiver {
   rtc::CriticalSection feedbacks_lock_;
   RtcpBandwidthObserver* const rtcp_bandwidth_observer_;
   RtcpIntraFrameObserver* const rtcp_intra_frame_observer_;
+  RtcpLossNotificationObserver* const rtcp_loss_notification_observer_;
   TransportFeedbackObserver* const transport_feedback_observer_;
   VideoBitrateAllocationObserver* const bitrate_allocation_observer_;
   const int report_interval_ms_;
