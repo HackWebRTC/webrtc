@@ -72,6 +72,7 @@ class ReceiveVideoStream {
   ~ReceiveVideoStream();
   void Start();
   void Stop();
+  VideoReceiveStream::Stats GetStats() const;
 
  private:
   friend class Scenario;

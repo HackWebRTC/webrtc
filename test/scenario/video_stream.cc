@@ -549,6 +549,13 @@ void ReceiveVideoStream::Stop() {
   });
 }
 
+VideoReceiveStream::Stats ReceiveVideoStream::GetStats() const {
+  if (receive_streams_.empty())
+    return VideoReceiveStream::Stats();
+  // TODO(srte): Handle multiple receive streams.
+  return receive_streams_.front()->GetStats();
+}
+
 VideoStreamPair::~VideoStreamPair() = default;
 
 VideoStreamPair::VideoStreamPair(CallClient* sender,

@@ -54,6 +54,7 @@ class ReceiveAudioStream {
   ~ReceiveAudioStream();
   void Start();
   void Stop();
+  AudioReceiveStream::Stats GetStats() const;
 
  private:
   friend class Scenario;

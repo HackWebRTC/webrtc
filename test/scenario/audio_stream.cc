@@ -209,6 +209,12 @@ void ReceiveAudioStream::Stop() {
   receiver_->SendTask([&] { receive_stream_->Stop(); });
 }
 
+AudioReceiveStream::Stats ReceiveAudioStream::GetStats() const {
+  AudioReceiveStream::Stats result;
+  receiver_->SendTask([&] { result = receive_stream_->GetStats(); });
+  return result;
+}
+
 AudioStreamPair::~AudioStreamPair() = default;
 
 AudioStreamPair::AudioStreamPair(
