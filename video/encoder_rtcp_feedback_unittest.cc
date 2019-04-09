@@ -32,7 +32,7 @@ class VieKeyRequestTest : public ::testing::Test {
   const uint32_t kSsrc = 1234;
 
   SimulatedClock simulated_clock_;
-  testing::StrictMock<MockVideoStreamEncoder> encoder_;
+  ::testing::StrictMock<MockVideoStreamEncoder> encoder_;
   EncoderRtcpFeedback encoder_rtcp_feedback_;
 };
 

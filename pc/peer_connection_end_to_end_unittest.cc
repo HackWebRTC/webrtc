@@ -33,11 +33,11 @@
 #include "test/mock_audio_decoder_factory.h"
 #include "test/mock_audio_encoder_factory.h"
 
-using testing::AtLeast;
-using testing::Invoke;
-using testing::StrictMock;
-using testing::Values;
-using testing::_;
+using ::testing::_;
+using ::testing::AtLeast;
+using ::testing::Invoke;
+using ::testing::StrictMock;
+using ::testing::Values;
 
 using webrtc::DataChannelInterface;
 using webrtc::MediaStreamInterface;
@@ -51,7 +51,7 @@ const int kMaxWait = 25000;
 }  // namespace
 
 class PeerConnectionEndToEndBaseTest : public sigslot::has_slots<>,
-                                       public testing::Test {
+                                       public ::testing::Test {
  public:
   typedef std::vector<rtc::scoped_refptr<DataChannelInterface>> DataChannelList;
 

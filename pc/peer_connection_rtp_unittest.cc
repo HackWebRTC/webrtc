@@ -87,7 +87,7 @@ class OnSuccessObserver : public rtc::RefCountedObject<
   MethodFunctor on_success_;
 };
 
-class PeerConnectionRtpBaseTest : public testing::Test {
+class PeerConnectionRtpBaseTest : public ::testing::Test {
  public:
   explicit PeerConnectionRtpBaseTest(SdpSemantics sdp_semantics)
       : sdp_semantics_(sdp_semantics),

@@ -683,7 +683,7 @@ TEST_F(AgcManagerDirectTest, TakesNoActionOnZeroMicVolume) {
 }
 
 TEST(AgcManagerDirectStandaloneTest, DisableDigitalDisablesDigital) {
-  auto agc = std::unique_ptr<Agc>(new testing::NiceMock<MockAgc>());
+  auto agc = std::unique_ptr<Agc>(new ::testing::NiceMock<MockAgc>());
   test::MockGainControl gctrl;
   TestVolumeCallbacks volume;
 

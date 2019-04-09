@@ -67,7 +67,7 @@ TEST(SimpleStringBuilder, BufferOverrunConstCharP) {
   EXPECT_DEATH(sb << msg, "");
 #else
   sb << msg;
-  EXPECT_THAT(sb.str(), testing::StrEq("Thi"));
+  EXPECT_THAT(sb.str(), ::testing::StrEq("Thi"));
 #endif
 }
 
@@ -80,7 +80,7 @@ TEST(SimpleStringBuilder, BufferOverrunStdString) {
   EXPECT_DEATH(sb << msg, "");
 #else
   sb << msg;
-  EXPECT_THAT(sb.str(), testing::StrEq("12A"));
+  EXPECT_THAT(sb.str(), ::testing::StrEq("12A"));
 #endif
 }
 
@@ -96,7 +96,7 @@ TEST(SimpleStringBuilder, BufferOverrunInt) {
   // the append has no effect or that it's truncated at the point where the
   // buffer ends.
   EXPECT_THAT(sb.str(),
-              testing::AnyOf(testing::StrEq(""), testing::StrEq("-12")));
+              ::testing::AnyOf(::testing::StrEq(""), ::testing::StrEq("-12")));
 #endif
 }
 
@@ -109,7 +109,7 @@ TEST(SimpleStringBuilder, BufferOverrunDouble) {
 #else
   sb << num;
   EXPECT_THAT(sb.str(),
-              testing::AnyOf(testing::StrEq(""), testing::StrEq("123.")));
+              ::testing::AnyOf(::testing::StrEq(""), ::testing::StrEq("123.")));
 #endif
 }
 
@@ -122,7 +122,7 @@ TEST(SimpleStringBuilder, BufferOverrunConstCharPAlreadyFull) {
   EXPECT_DEATH(sb << msg, "");
 #else
   sb << msg;
-  EXPECT_THAT(sb.str(), testing::StrEq("123"));
+  EXPECT_THAT(sb.str(), ::testing::StrEq("123"));
 #endif
 }
 
@@ -135,7 +135,7 @@ TEST(SimpleStringBuilder, BufferOverrunIntAlreadyFull) {
   EXPECT_DEATH(sb << num, "");
 #else
   sb << num;
-  EXPECT_THAT(sb.str(), testing::StrEq("xyz"));
+  EXPECT_THAT(sb.str(), ::testing::StrEq("xyz"));
 #endif
 }
 
@@ -157,7 +157,7 @@ TEST(StringBuilder, NumbersAndChars) {
   sb << 1 << ":" << 2.1 << ":" << 2.2f << ":" << 78187493520ll << ":"
      << 78187493520ul;
   EXPECT_THAT(sb.str(),
-              testing::MatchesRegex("1:2.10*:2.20*:78187493520:78187493520"));
+              ::testing::MatchesRegex("1:2.10*:2.20*:78187493520:78187493520"));
 }
 
 TEST(StringBuilder, Format) {

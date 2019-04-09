@@ -18,7 +18,7 @@
 
 namespace rtc {
 
-class AsyncUdpSocketTest : public testing::Test, public sigslot::has_slots<> {
+class AsyncUdpSocketTest : public ::testing::Test, public sigslot::has_slots<> {
  public:
   AsyncUdpSocketTest()
       : pss_(new rtc::PhysicalSocketServer),

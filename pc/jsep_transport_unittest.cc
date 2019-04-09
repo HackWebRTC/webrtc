@@ -40,7 +40,7 @@ struct NegotiateRoleParams {
   SdpType remote_type;
 };
 
-class JsepTransport2Test : public testing::Test, public sigslot::has_slots<> {
+class JsepTransport2Test : public ::testing::Test, public sigslot::has_slots<> {
  protected:
   std::unique_ptr<webrtc::SrtpTransport> CreateSdesTransport(
       rtc::PacketTransportInternal* rtp_packet_transport,
@@ -156,7 +156,7 @@ class JsepTransport2Test : public testing::Test, public sigslot::has_slots<> {
 // The parameterized tests cover both cases when RTCP mux is enable and
 // disabled.
 class JsepTransport2WithRtcpMux : public JsepTransport2Test,
-                                  public testing::WithParamInterface<bool> {};
+                                  public ::testing::WithParamInterface<bool> {};
 
 // This test verifies the ICE parameters are properly applied to the transports.
 TEST_P(JsepTransport2WithRtcpMux, SetIceParameters) {
@@ -640,7 +640,7 @@ TEST_P(JsepTransport2WithRtcpMux, InvalidDtlsRoleNegotiation) {
 
 INSTANTIATE_TEST_SUITE_P(JsepTransport2Test,
                          JsepTransport2WithRtcpMux,
-                         testing::Bool());
+                         ::testing::Bool());
 
 // Test that a reoffer in the opposite direction is successful as long as the
 // role isn't changing. Doesn't test every possible combination like the test

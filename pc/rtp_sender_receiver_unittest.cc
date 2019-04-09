@@ -87,8 +87,8 @@ static const int kDefaultTimeout = 10000;  // 10 seconds.
 namespace webrtc {
 
 class RtpSenderReceiverTest
-    : public testing::Test,
-      public testing::WithParamInterface<std::pair<RidList, RidList>>,
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<std::pair<RidList, RidList>>,
       public sigslot::has_slots<> {
  public:
   RtpSenderReceiverTest()

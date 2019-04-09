@@ -143,7 +143,7 @@ TEST_F(FlexfecReceiveStreamTest, RecoversPacket) {
       kPayloadBits,    kPayloadBits,    kPayloadBits,       kPayloadBits};
   // clang-format on
 
-  testing::StrictMock<MockRecoveredPacketReceiver> recovered_packet_receiver;
+  ::testing::StrictMock<MockRecoveredPacketReceiver> recovered_packet_receiver;
   EXPECT_CALL(process_thread_, RegisterModule(_, _)).Times(1);
   FlexfecReceiveStreamImpl receive_stream(
       Clock::GetRealTimeClock(), &rtp_stream_receiver_controller_, config_,

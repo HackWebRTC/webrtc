@@ -69,7 +69,7 @@ class SimulateOutgoingTrafficIn {
 };
 }  // namespace
 
-class AlrDetectorTest : public testing::Test {
+class AlrDetectorTest : public ::testing::Test {
  public:
   void SetUp() override {
     alr_detector_.SetEstimatedBitrate(kEstimatedBitrateBps);

@@ -201,11 +201,12 @@ class RtpSenderTest : public ::testing::TestWithParam<bool> {
   }
 
   SimulatedClock fake_clock_;
-  testing::NiceMock<MockRtcEventLog> mock_rtc_event_log_;
+  ::testing::NiceMock<MockRtcEventLog> mock_rtc_event_log_;
   MockRtpPacketSender mock_paced_sender_;
-  testing::StrictMock<MockTransportSequenceNumberAllocator> seq_num_allocator_;
-  testing::StrictMock<MockSendPacketObserver> send_packet_observer_;
-  testing::StrictMock<MockTransportFeedbackObserver> feedback_observer_;
+  ::testing::StrictMock<MockTransportSequenceNumberAllocator>
+      seq_num_allocator_;
+  ::testing::StrictMock<MockSendPacketObserver> send_packet_observer_;
+  ::testing::StrictMock<MockTransportFeedbackObserver> feedback_observer_;
   RateLimiter retransmission_rate_limiter_;
   std::unique_ptr<RTPSender> rtp_sender_;
   LoopbackTransportTest transport_;
@@ -346,14 +347,14 @@ TEST_P(RtpSenderTest, AssignSequenceNumberAllowsPaddingOnAudio) {
 
   const size_t kPaddingSize = 59;
   EXPECT_CALL(transport, SendRtp(_, kPaddingSize + kRtpHeaderSize, _))
-      .WillOnce(testing::Return(true));
+      .WillOnce(::testing::Return(true));
   EXPECT_EQ(kPaddingSize,
             rtp_sender_->TimeToSendPadding(kPaddingSize, PacedPacketInfo()));
 
   // Requested padding size is too small, will send a larger one.
   const size_t kMinPaddingSize = 50;
   EXPECT_CALL(transport, SendRtp(_, kMinPaddingSize + kRtpHeaderSize, _))
-      .WillOnce(testing::Return(true));
+      .WillOnce(::testing::Return(true));
   EXPECT_EQ(kMinPaddingSize, rtp_sender_->TimeToSendPadding(kMinPaddingSize - 5,
                                                             PacedPacketInfo()));
 }
@@ -376,7 +377,7 @@ TEST_P(RtpSenderTestWithoutPacer, AssignSequenceNumberSetPaddingTimestamps) {
 TEST_P(RtpSenderTestWithoutPacer,
        TransportFeedbackObserverGetsCorrectByteCount) {
   constexpr int kRtpOverheadBytesPerPacket = 12 + 8;
-  testing::NiceMock<MockOverheadObserver> mock_overhead_observer;
+  ::testing::NiceMock<MockOverheadObserver> mock_overhead_observer;
   rtp_sender_.reset(
       new RTPSender(false, &fake_clock_, &transport_, nullptr, absl::nullopt,
                     &seq_num_allocator_, &feedback_observer_, nullptr, nullptr,
@@ -388,7 +389,7 @@ TEST_P(RtpSenderTestWithoutPacer,
                    kRtpExtensionTransportSequenceNumber,
                    kTransportSequenceNumberExtensionId));
   EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
-      .WillOnce(testing::Return(kTransportSequenceNumber));
+      .WillOnce(::testing::Return(kTransportSequenceNumber));
 
   const size_t expected_bytes =
       GetParam() ? sizeof(kPayloadData) + kRtpOverheadBytesPerPacket
@@ -417,7 +418,7 @@ TEST_P(RtpSenderTestWithoutPacer, SendsPacketsWithTransportSequenceNumber) {
                    kTransportSequenceNumberExtensionId));
 
   EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
-      .WillOnce(testing::Return(kTransportSequenceNumber));
+      .WillOnce(::testing::Return(kTransportSequenceNumber));
   EXPECT_CALL(send_packet_observer_,
               OnSendPacket(kTransportSequenceNumber, _, _))
       .Times(1);
@@ -457,7 +458,7 @@ TEST_P(RtpSenderTestWithoutPacer,
   rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionTransportSequenceNumber,
                                           kTransportSequenceNumberExtensionId);
   EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
-      .WillOnce(testing::Return(kTransportSequenceNumber));
+      .WillOnce(::testing::Return(kTransportSequenceNumber));
   EXPECT_CALL(send_packet_observer_, OnSendPacket).Times(1);
   SendGenericPacket();
   EXPECT_TRUE(transport_.last_options_.included_in_feedback);
@@ -470,7 +471,7 @@ TEST_P(
   rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionTransportSequenceNumber,
                                           kTransportSequenceNumberExtensionId);
   EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
-      .WillOnce(testing::Return(kTransportSequenceNumber));
+      .WillOnce(::testing::Return(kTransportSequenceNumber));
   EXPECT_CALL(send_packet_observer_, OnSendPacket).Times(1);
   SendGenericPacket();
   EXPECT_TRUE(transport_.last_options_.included_in_allocation);
@@ -493,7 +494,7 @@ TEST_P(RtpSenderTestWithoutPacer, DoesnSetIncludedInAllocationByDefault) {
 }
 
 TEST_P(RtpSenderTestWithoutPacer, OnSendSideDelayUpdated) {
-  testing::StrictMock<MockSendSideDelayObserver> send_side_delay_observer_;
+  ::testing::StrictMock<MockSendSideDelayObserver> send_side_delay_observer_;
   rtp_sender_.reset(
       new RTPSender(false, &fake_clock_, &transport_, nullptr, absl::nullopt,
                     nullptr, nullptr, nullptr, &send_side_delay_observer_,
@@ -567,7 +568,7 @@ TEST_P(RtpSenderTestWithoutPacer, OnSendPacketUpdated) {
                    kRtpExtensionTransportSequenceNumber,
                    kTransportSequenceNumberExtensionId));
   EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
-      .WillOnce(testing::Return(kTransportSequenceNumber));
+      .WillOnce(::testing::Return(kTransportSequenceNumber));
   EXPECT_CALL(send_packet_observer_,
               OnSendPacket(kTransportSequenceNumber, _, _))
       .Times(1);
@@ -591,7 +592,7 @@ TEST_P(RtpSenderTest, SendsPacketsWithTransportSequenceNumber) {
 
   EXPECT_CALL(mock_paced_sender_, InsertPacket(_, kSsrc, kSeqNum, _, _, _));
   EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
-      .WillOnce(testing::Return(kTransportSequenceNumber));
+      .WillOnce(::testing::Return(kTransportSequenceNumber));
   EXPECT_CALL(send_packet_observer_,
               OnSendPacket(kTransportSequenceNumber, _, _))
       .Times(1);
@@ -928,7 +929,7 @@ TEST_P(RtpSenderTest, OnSendPacketUpdated) {
               OnSendPacket(kTransportSequenceNumber, _, _))
       .Times(1);
   EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
-      .WillOnce(testing::Return(kTransportSequenceNumber));
+      .WillOnce(::testing::Return(kTransportSequenceNumber));
   EXPECT_CALL(mock_paced_sender_, InsertPacket(_, kSsrc, kSeqNum, _, _, _))
       .Times(1);
 
@@ -948,7 +949,7 @@ TEST_P(RtpSenderTest, OnSendPacketNotUpdatedForRetransmits) {
 
   EXPECT_CALL(send_packet_observer_, OnSendPacket(_, _, _)).Times(0);
   EXPECT_CALL(seq_num_allocator_, AllocateSequenceNumber())
-      .WillOnce(testing::Return(kTransportSequenceNumber));
+      .WillOnce(::testing::Return(kTransportSequenceNumber));
   EXPECT_CALL(mock_paced_sender_, InsertPacket(_, kSsrc, kSeqNum, _, _, _))
       .Times(1);
 
@@ -1024,7 +1025,7 @@ TEST_P(RtpSenderTest, SendRedundantPayloads) {
   // Send 10 packets of increasing size.
   for (size_t i = 0; i < kNumPayloadSizes; ++i) {
     int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
-    EXPECT_CALL(transport, SendRtp(_, _, _)).WillOnce(testing::Return(true));
+    EXPECT_CALL(transport, SendRtp(_, _, _)).WillOnce(::testing::Return(true));
     SendPacket(capture_time_ms, kPayloadSizes[i]);
     rtp_sender_->TimeToSendPacket(kSsrc, seq_num++, capture_time_ms, false,
                                   PacedPacketInfo());
@@ -1037,15 +1038,15 @@ TEST_P(RtpSenderTest, SendRedundantPayloads) {
 
   // The amount of padding to send it too small to send a payload packet.
   EXPECT_CALL(transport, SendRtp(_, kMaxPaddingSize + rtp_header_len, _))
-      .WillOnce(testing::Return(true));
+      .WillOnce(::testing::Return(true));
   EXPECT_EQ(kMaxPaddingSize,
             rtp_sender_->TimeToSendPadding(49, PacedPacketInfo()));
 
   PacketOptions options;
   EXPECT_CALL(transport,
               SendRtp(_, kPayloadSizes[0] + rtp_header_len + kRtxHeaderSize, _))
-      .WillOnce(
-          testing::DoAll(testing::SaveArg<2>(&options), testing::Return(true)));
+      .WillOnce(::testing::DoAll(::testing::SaveArg<2>(&options),
+                                 ::testing::Return(true)));
   EXPECT_EQ(kPayloadSizes[0],
             rtp_sender_->TimeToSendPadding(500, PacedPacketInfo()));
   EXPECT_TRUE(options.is_retransmit);
@@ -1054,12 +1055,12 @@ TEST_P(RtpSenderTest, SendRedundantPayloads) {
                                  kPayloadSizes[kNumPayloadSizes - 1] +
                                      rtp_header_len + kRtxHeaderSize,
                                  _))
-      .WillOnce(testing::Return(true));
+      .WillOnce(::testing::Return(true));
 
   options.is_retransmit = false;
   EXPECT_CALL(transport, SendRtp(_, kMaxPaddingSize + rtp_header_len, _))
-      .WillOnce(
-          testing::DoAll(testing::SaveArg<2>(&options), testing::Return(true)));
+      .WillOnce(::testing::DoAll(::testing::SaveArg<2>(&options),
+                                 ::testing::Return(true)));
   EXPECT_EQ(kPayloadSizes[kNumPayloadSizes - 1] + kMaxPaddingSize,
             rtp_sender_->TimeToSendPadding(999, PacedPacketInfo()));
   EXPECT_FALSE(options.is_retransmit);
@@ -1146,7 +1147,7 @@ TEST_P(RtpSenderTest, SendFlexfecPackets) {
   uint16_t flexfec_seq_num;
   EXPECT_CALL(mock_paced_sender_, InsertPacket(RtpPacketSender::kLowPriority,
                                                kFlexfecSsrc, _, _, _, false))
-      .WillOnce(testing::SaveArg<2>(&flexfec_seq_num));
+      .WillOnce(::testing::SaveArg<2>(&flexfec_seq_num));
 
   RTPVideoHeader video_header;
   EXPECT_TRUE(rtp_sender_video.SendVideo(
@@ -1248,7 +1249,7 @@ TEST_P(RtpSenderTest, NoFlexfecForTimingFrames) {
   uint16_t flexfec_seq_num;
   EXPECT_CALL(mock_paced_sender_, InsertPacket(RtpPacketSender::kLowPriority,
                                                kFlexfecSsrc, _, _, _, false))
-      .WillOnce(testing::SaveArg<2>(&flexfec_seq_num));
+      .WillOnce(::testing::SaveArg<2>(&flexfec_seq_num));
   EXPECT_CALL(mock_paced_sender_,
               InsertPacket(RtpPacketSender::kLowPriority, kMediaSsrc,
                            kSeqNum + 1, _, _, false));

@@ -62,7 +62,7 @@ class FakeDataChannelObserver : public webrtc::DataChannelObserver {
 // TODO(deadbeef): The fact that these tests use a fake provider makes them not
 // too valuable. Should rewrite using the
 // peerconnection_datachannel_unittest.cc infrastructure.
-class SctpDataChannelTest : public testing::Test {
+class SctpDataChannelTest : public ::testing::Test {
  protected:
   SctpDataChannelTest()
       : provider_(new FakeDataChannelProvider()),
@@ -613,7 +613,7 @@ TEST_F(SctpDataChannelTest, TransportDestroyedWhileDataBuffered) {
                  webrtc_data_channel_->state(), kDefaultTimeout);
 }
 
-class SctpSidAllocatorTest : public testing::Test {
+class SctpSidAllocatorTest : public ::testing::Test {
  protected:
   SctpSidAllocator allocator_;
 };

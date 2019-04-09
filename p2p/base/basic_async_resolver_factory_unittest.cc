@@ -17,7 +17,7 @@
 
 namespace webrtc {
 
-class BasicAsyncResolverFactoryTest : public testing::Test,
+class BasicAsyncResolverFactoryTest : public ::testing::Test,
                                       public sigslot::has_slots<> {
  public:
   void TestCreate() {

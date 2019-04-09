@@ -39,7 +39,7 @@ class MockRtcpPacketSink : public RtcpPacketSinkInterface {
   MOCK_METHOD1(OnRtcpPacket, void(rtc::ArrayView<const uint8_t>));
 };
 
-class RtcpDemuxerTest : public testing::Test {
+class RtcpDemuxerTest : public ::testing::Test {
  protected:
   ~RtcpDemuxerTest() {
     for (auto* sink : sinks_to_tear_down_) {

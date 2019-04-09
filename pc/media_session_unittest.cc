@@ -82,17 +82,17 @@ using rtc::CS_AEAD_AES_256_GCM;
 using rtc::CS_AES_CM_128_HMAC_SHA1_32;
 using rtc::CS_AES_CM_128_HMAC_SHA1_80;
 using rtc::UniqueRandomIdGenerator;
-using testing::Contains;
-using testing::Each;
-using testing::ElementsAreArray;
-using testing::Eq;
-using testing::Field;
-using testing::IsEmpty;
-using testing::IsFalse;
-using testing::Ne;
-using testing::Not;
-using testing::Pointwise;
-using testing::SizeIs;
+using ::testing::Contains;
+using ::testing::Each;
+using ::testing::ElementsAreArray;
+using ::testing::Eq;
+using ::testing::Field;
+using ::testing::IsEmpty;
+using ::testing::IsFalse;
+using ::testing::Ne;
+using ::testing::Not;
+using ::testing::Pointwise;
+using ::testing::SizeIs;
 using webrtc::RtpExtension;
 using webrtc::RtpTransceiverDirection;
 
@@ -405,7 +405,7 @@ static MediaSessionOptions CreatePlanBMediaSessionOptions() {
 // was designed for Plan B SDP, where only one audio "m=" section and one video
 // "m=" section could be generated, and ordering couldn't be controlled. Many of
 // these tests may be obsolete as a result, and should be refactored or removed.
-class MediaSessionDescriptionFactoryTest : public testing::Test {
+class MediaSessionDescriptionFactoryTest : public ::testing::Test {
  public:
   MediaSessionDescriptionFactoryTest()
       : f1_(&tdf1_, &ssrc_generator1), f2_(&tdf2_, &ssrc_generator2) {

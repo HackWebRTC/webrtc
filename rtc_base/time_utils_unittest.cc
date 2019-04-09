@@ -64,7 +64,7 @@ TEST(TimeTest, TestTimeDiff64) {
   EXPECT_EQ(-ts_diff, rtc::TimeDiff(ts_earlier, ts_later));
 }
 
-class TimestampWrapAroundHandlerTest : public testing::Test {
+class TimestampWrapAroundHandlerTest : public ::testing::Test {
  public:
   TimestampWrapAroundHandlerTest() {}
 
@@ -117,7 +117,7 @@ TEST_F(TimestampWrapAroundHandlerTest, NoNegativeStart) {
             wraparound_handler_.Unwrap(static_cast<uint32_t>(ts & 0xffffffff)));
 }
 
-class TmToSeconds : public testing::Test {
+class TmToSeconds : public ::testing::Test {
  public:
   TmToSeconds() {
     // Set use of the test RNG to get deterministic expiration timestamp.

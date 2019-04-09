@@ -18,7 +18,7 @@
 #include "rtc_base/numerics/safe_conversions.h"
 #include "test/testsupport/file_utils.h"
 
-using testing::InitGoogleTest;
+using ::testing::InitGoogleTest;
 
 namespace webrtc {
 namespace test {

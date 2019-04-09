@@ -590,7 +590,7 @@ class StatsCollectorForTest : public StatsCollector {
   double time_now_;
 };
 
-class StatsCollectorTest : public testing::Test {
+class StatsCollectorTest : public ::testing::Test {
  protected:
   rtc::scoped_refptr<FakePeerConnectionForStats> CreatePeerConnection() {
     return new rtc::RefCountedObject<FakePeerConnectionForStats>();

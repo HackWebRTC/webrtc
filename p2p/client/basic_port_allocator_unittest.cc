@@ -145,7 +145,7 @@ std::ostream& operator<<(std::ostream& os,
   return os;
 }
 
-class BasicPortAllocatorTestBase : public testing::Test,
+class BasicPortAllocatorTestBase : public ::testing::Test,
                                    public sigslot::has_slots<> {
  public:
   BasicPortAllocatorTestBase()

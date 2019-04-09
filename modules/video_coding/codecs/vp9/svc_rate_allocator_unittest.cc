@@ -197,8 +197,8 @@ TEST(SvcRateAllocatorTest, NoPaddingIfAllLayersAreDeactivated) {
 }
 
 class SvcRateAllocatorTestParametrizedContentType
-    : public testing::Test,
-      public testing::WithParamInterface<bool> {
+    : public ::testing::Test,
+      public ::testing::WithParamInterface<bool> {
  public:
   SvcRateAllocatorTestParametrizedContentType()
       : is_screen_sharing_(GetParam()) {}

@@ -59,7 +59,7 @@ void RunTestViaRtcPlatformFileAPI(
     std::vector<int16_t> read_samples(expected_samples.size());
     EXPECT_EQ(expected_samples.size(),
               reader.ReadSamples(read_samples.size(), read_samples.data()));
-    EXPECT_THAT(expected_samples, testing::ElementsAreArray(read_samples));
+    EXPECT_THAT(expected_samples, ::testing::ElementsAreArray(read_samples));
 
     EXPECT_EQ(0u, reader.ReadSamples(read_samples.size(), read_samples.data()));
   }

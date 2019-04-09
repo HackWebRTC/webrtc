@@ -17,7 +17,7 @@
 
 namespace rtc {
 
-class HexEncodeTest : public testing::Test {
+class HexEncodeTest : public ::testing::Test {
  public:
   HexEncodeTest() : enc_res_(0), dec_res_(0) {
     for (size_t i = 0; i < sizeof(data_); ++i) {

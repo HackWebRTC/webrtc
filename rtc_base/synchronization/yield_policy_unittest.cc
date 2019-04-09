@@ -23,7 +23,7 @@ class MockYieldHandler : public YieldInterface {
 };
 }  // namespace
 TEST(YieldPolicyTest, HandlerReceivesYieldSignalWhenSet) {
-  testing::StrictMock<MockYieldHandler> handler;
+  ::testing::StrictMock<MockYieldHandler> handler;
   {
     Event event;
     EXPECT_CALL(handler, YieldExecution()).Times(1);
@@ -42,7 +42,7 @@ TEST(YieldPolicyTest, HandlerReceivesYieldSignalWhenSet) {
 TEST(YieldPolicyTest, IsThreadLocal) {
   Event events[3];
   std::thread other_thread([&]() {
-    testing::StrictMock<MockYieldHandler> local_handler;
+    ::testing::StrictMock<MockYieldHandler> local_handler;
     // The local handler is never called as we never Wait on this thread.
     EXPECT_CALL(local_handler, YieldExecution()).Times(0);
     ScopedYieldPolicy policy(&local_handler);
@@ -58,7 +58,7 @@ TEST(YieldPolicyTest, IsThreadLocal) {
   events[1].Wait(Event::kForever);
 
   // We can set a policy that's active on this thread independently.
-  testing::StrictMock<MockYieldHandler> main_handler;
+  ::testing::StrictMock<MockYieldHandler> main_handler;
   EXPECT_CALL(main_handler, YieldExecution()).Times(1);
   ScopedYieldPolicy policy(&main_handler);
   events[2].Wait(Event::kForever);

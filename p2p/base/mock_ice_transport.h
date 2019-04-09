@@ -19,8 +19,8 @@
 #include "rtc_base/gunit.h"
 #include "test/gmock.h"
 
-using testing::_;
-using testing::Return;
+using ::testing::_;
+using ::testing::Return;
 
 namespace cricket {
 

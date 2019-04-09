@@ -55,13 +55,13 @@ rtc::scoped_refptr<MockRtpSenderInternal> CreateMockRtpSender(
   rtc::scoped_refptr<MockRtpSenderInternal> sender(
       new rtc::RefCountedObject<MockRtpSenderInternal>());
   EXPECT_CALL(*sender, track())
-      .WillRepeatedly(testing::Return(std::move(track)));
-  EXPECT_CALL(*sender, ssrc()).WillRepeatedly(testing::Return(first_ssrc));
+      .WillRepeatedly(::testing::Return(std::move(track)));
+  EXPECT_CALL(*sender, ssrc()).WillRepeatedly(::testing::Return(first_ssrc));
   EXPECT_CALL(*sender, media_type())
-      .WillRepeatedly(testing::Return(media_type));
+      .WillRepeatedly(::testing::Return(media_type));
   EXPECT_CALL(*sender, GetParameters())
-      .WillRepeatedly(testing::Return(CreateRtpParametersWithSsrcs(ssrcs)));
-  EXPECT_CALL(*sender, AttachmentId()).WillRepeatedly(testing::Return(1));
+      .WillRepeatedly(::testing::Return(CreateRtpParametersWithSsrcs(ssrcs)));
+  EXPECT_CALL(*sender, AttachmentId()).WillRepeatedly(::testing::Return(1));
   return sender;
 }
 
@@ -72,16 +72,16 @@ rtc::scoped_refptr<MockRtpReceiverInternal> CreateMockRtpReceiver(
   rtc::scoped_refptr<MockRtpReceiverInternal> receiver(
       new rtc::RefCountedObject<MockRtpReceiverInternal>());
   EXPECT_CALL(*receiver, track())
-      .WillRepeatedly(testing::Return(std::move(track)));
+      .WillRepeatedly(::testing::Return(std::move(track)));
   EXPECT_CALL(*receiver, media_type())
-      .WillRepeatedly(testing::Return(media_type));
+      .WillRepeatedly(::testing::Return(media_type));
   EXPECT_CALL(*receiver, GetParameters())
-      .WillRepeatedly(testing::Return(CreateRtpParametersWithSsrcs(ssrcs)));
-  EXPECT_CALL(*receiver, AttachmentId()).WillRepeatedly(testing::Return(1));
+      .WillRepeatedly(::testing::Return(CreateRtpParametersWithSsrcs(ssrcs)));
+  EXPECT_CALL(*receiver, AttachmentId()).WillRepeatedly(::testing::Return(1));
   return receiver;
 }
 
-class TrackMediaInfoMapTest : public testing::Test {
+class TrackMediaInfoMapTest : public ::testing::Test {
  public:
   TrackMediaInfoMapTest()
       : voice_media_info_(new cricket::VoiceMediaInfo()),

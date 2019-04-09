@@ -26,10 +26,10 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
-using testing::_;
-using testing::Exactly;
-using testing::Invoke;
-using testing::Return;
+using ::testing::_;
+using ::testing::Exactly;
+using ::testing::Invoke;
+using ::testing::Return;
 
 namespace webrtc {
 
@@ -63,7 +63,7 @@ AudioFrame frame_for_mixing;
 
 }  // namespace
 
-class MockMixerAudioSource : public testing::NiceMock<AudioMixer::Source> {
+class MockMixerAudioSource : public ::testing::NiceMock<AudioMixer::Source> {
  public:
   MockMixerAudioSource()
       : fake_audio_frame_info_(AudioMixer::Source::AudioFrameInfo::kNormal) {
@@ -296,7 +296,7 @@ TEST(AudioMixer, ShouldNotCauseQualityLossForMultipleSources) {
     const auto sample_rate = source_sample_rates[i];
     EXPECT_CALL(source, PreferredSampleRate()).WillOnce(Return(sample_rate));
 
-    EXPECT_CALL(source, GetAudioFrameWithInfo(testing::Ge(sample_rate), _));
+    EXPECT_CALL(source, GetAudioFrameWithInfo(::testing::Ge(sample_rate), _));
   }
   mixer->Mix(1, &frame_for_mixing);
 }

@@ -23,7 +23,7 @@ namespace {
 // 10 seconds.
 static const int kTimeout = 10000;
 
-class SignalThreadTest : public testing::Test, public sigslot::has_slots<> {
+class SignalThreadTest : public ::testing::Test, public sigslot::has_slots<> {
  public:
   class SlowSignalThread : public SignalThread {
    public:

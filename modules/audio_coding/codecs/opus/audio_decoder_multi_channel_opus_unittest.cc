@@ -94,7 +94,7 @@ TEST(AudioDecoderMultiOpusTest, ValidSdpToConfigProducesCorrectConfig) {
   EXPECT_TRUE(decoder_config->IsOk());
   EXPECT_EQ(decoder_config->coupled_streams, 2);
   EXPECT_THAT(decoder_config->channel_mapping,
-              testing::ContainerEq(std::vector<unsigned char>({3, 1, 2, 0})));
+              ::testing::ContainerEq(std::vector<unsigned char>({3, 1, 2, 0})));
 }
 
 TEST(AudioDecoderMultiOpusTest, InvalidSdpToConfigDoesNotProduceConfig) {

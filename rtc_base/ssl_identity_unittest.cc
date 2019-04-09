@@ -191,7 +191,7 @@ IdentityAndInfo CreateFakeIdentityAndInfoFromDers(
   return info;
 }
 
-class SSLIdentityTest : public testing::Test {
+class SSLIdentityTest : public ::testing::Test {
  public:
   void SetUp() override {
     identity_rsa1_.reset(SSLIdentity::Generate("test1", rtc::KT_RSA));
@@ -476,7 +476,7 @@ TEST_F(SSLIdentityTest, SSLCertificateGetStatsWithChain) {
   }
 }
 
-class SSLIdentityExpirationTest : public testing::Test {
+class SSLIdentityExpirationTest : public ::testing::Test {
  public:
   SSLIdentityExpirationTest() {
     // Set use of the test RNG to get deterministic expiration timestamp.

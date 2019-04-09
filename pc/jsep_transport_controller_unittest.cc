@@ -78,7 +78,7 @@ class FakeTransportFactory : public cricket::TransportFactoryInterface {
 };
 
 class JsepTransportControllerTest : public JsepTransportController::Observer,
-                                    public testing::Test,
+                                    public ::testing::Test,
                                     public sigslot::has_slots<> {
  public:
   JsepTransportControllerTest() : signaling_thread_(rtc::Thread::Current()) {

@@ -22,7 +22,7 @@
 
 namespace webrtc {
 
-class MouseCursorMonitorTest : public testing::Test,
+class MouseCursorMonitorTest : public ::testing::Test,
                                public MouseCursorMonitor::Callback {
  public:
   MouseCursorMonitorTest() : position_received_(false) {}

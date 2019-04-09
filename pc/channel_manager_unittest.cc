@@ -40,7 +40,7 @@ static const VideoCodec kVideoCodecs[] = {
     VideoCodec(99, "H264"), VideoCodec(100, "VP8"), VideoCodec(96, "rtx"),
 };
 
-class ChannelManagerTest : public testing::Test {
+class ChannelManagerTest : public ::testing::Test {
  protected:
   ChannelManagerTest()
       : network_(rtc::Thread::CreateWithSocketServer()),

@@ -82,7 +82,7 @@ static cricket::SessionDescription* CreateCricketSessionDescription() {
   return desc;
 }
 
-class JsepSessionDescriptionTest : public testing::Test {
+class JsepSessionDescriptionTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
     int port = 1234;

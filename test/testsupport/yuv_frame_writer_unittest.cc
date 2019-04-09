@@ -27,7 +27,7 @@ const size_t kFrameHeight = 20;
 const size_t kFrameLength = 3 * kFrameWidth * kFrameHeight / 2;  // I420.
 }  // namespace
 
-class YuvFrameWriterTest : public testing::Test {
+class YuvFrameWriterTest : public ::testing::Test {
  protected:
   YuvFrameWriterTest() = default;
   ~YuvFrameWriterTest() override = default;

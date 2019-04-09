@@ -19,7 +19,7 @@
 
 namespace webrtc {
 
-class IceServerParsingTest : public testing::Test {
+class IceServerParsingTest : public ::testing::Test {
  public:
   // Convenience functions for parsing a single URL. Result is stored in
   // |stun_servers_| and |turn_servers_|.

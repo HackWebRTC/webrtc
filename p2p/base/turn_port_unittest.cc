@@ -144,7 +144,7 @@ class TestConnectionWrapper : public sigslot::has_slots<> {
 
 // Note: This test uses a fake clock with a simulated network round trip
 // (between local port and TURN server) of kSimulatedRtt.
-class TurnPortTest : public testing::Test,
+class TurnPortTest : public ::testing::Test,
                      public sigslot::has_slots<>,
                      public rtc::MessageHandler {
  public:

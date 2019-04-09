@@ -40,7 +40,7 @@ bool ValidRates(int in_rate, int out_rate) {
   return true;
 }
 
-class ResamplerTest : public testing::Test {
+class ResamplerTest : public ::testing::Test {
  protected:
   ResamplerTest();
   void SetUp() override;

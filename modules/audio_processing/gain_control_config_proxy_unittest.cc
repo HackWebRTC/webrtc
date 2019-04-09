@@ -16,23 +16,23 @@
 #include "test/gtest.h"
 
 namespace webrtc {
-class GainControlConfigProxyTest : public testing::Test {
+class GainControlConfigProxyTest : public ::testing::Test {
  protected:
   GainControlConfigProxyTest()
       : apm_(new rtc::RefCountedObject<
-             testing::StrictMock<test::MockAudioProcessing>>()),
+             ::testing::StrictMock<test::MockAudioProcessing>>()),
         agc_(),
         proxy_(&lock_, apm_, &agc_) {
     EXPECT_CALL(*apm_, GetConfig())
-        .WillRepeatedly(testing::ReturnPointee(&apm_config_));
-    EXPECT_CALL(*apm_, ApplyConfig(testing::_))
-        .WillRepeatedly(testing::SaveArg<0>(&apm_config_));
+        .WillRepeatedly(::testing::ReturnPointee(&apm_config_));
+    EXPECT_CALL(*apm_, ApplyConfig(::testing::_))
+        .WillRepeatedly(::testing::SaveArg<0>(&apm_config_));
   }
 
   GainControl* proxy() { return &proxy_; }
 
   rtc::scoped_refptr<testing::StrictMock<test::MockAudioProcessing>> apm_;
-  testing::StrictMock<test::MockGainControl> agc_;
+  ::testing::StrictMock<test::MockGainControl> agc_;
   AudioProcessing::Config apm_config_;
 
  private:
@@ -48,7 +48,7 @@ TEST_F(GainControlConfigProxyTest, SetStreamAnalogLevel) {
 
 TEST_F(GainControlConfigProxyTest, StreamAnalogLevel) {
   EXPECT_CALL(*apm_, recommended_stream_analog_level())
-      .WillOnce(testing::Return(100));
+      .WillOnce(::testing::Return(100));
   EXPECT_EQ(100, proxy()->stream_analog_level());
 }
 
@@ -82,8 +82,8 @@ TEST_F(GainControlConfigProxyTest, SetTargetLevelDbfs) {
 
 TEST_F(GainControlConfigProxyTest, SetCompressionGainDb) {
   AudioProcessing::RuntimeSetting setting;
-  EXPECT_CALL(*apm_, SetRuntimeSetting(testing::_))
-      .WillOnce(testing::SaveArg<0>(&setting));
+  EXPECT_CALL(*apm_, SetRuntimeSetting(::testing::_))
+      .WillOnce(::testing::SaveArg<0>(&setting));
   proxy()->set_compression_gain_db(17);
   EXPECT_EQ(AudioProcessing::RuntimeSetting::Type::kCaptureCompressionGain,
             setting.type());
@@ -107,53 +107,53 @@ TEST_F(GainControlConfigProxyTest, SetAnalogLevelLimits) {
 
 TEST_F(GainControlConfigProxyTest, GetEnabled) {
   EXPECT_CALL(agc_, is_enabled())
-      .WillOnce(testing::Return(true))
-      .WillOnce(testing::Return(false));
+      .WillOnce(::testing::Return(true))
+      .WillOnce(::testing::Return(false));
   EXPECT_TRUE(proxy()->is_enabled());
   EXPECT_FALSE(proxy()->is_enabled());
 }
 
 TEST_F(GainControlConfigProxyTest, GetLimiterEnabled) {
   EXPECT_CALL(agc_, is_enabled())
-      .WillOnce(testing::Return(true))
-      .WillOnce(testing::Return(false));
+      .WillOnce(::testing::Return(true))
+      .WillOnce(::testing::Return(false));
   EXPECT_TRUE(proxy()->is_enabled());
   EXPECT_FALSE(proxy()->is_enabled());
 }
 
 TEST_F(GainControlConfigProxyTest, GetCompressionGainDb) {
-  EXPECT_CALL(agc_, compression_gain_db()).WillOnce(testing::Return(17));
+  EXPECT_CALL(agc_, compression_gain_db()).WillOnce(::testing::Return(17));
   EXPECT_EQ(17, proxy()->compression_gain_db());
 }
 
 TEST_F(GainControlConfigProxyTest, GetTargetLevelDbfs) {
-  EXPECT_CALL(agc_, target_level_dbfs()).WillOnce(testing::Return(17));
+  EXPECT_CALL(agc_, target_level_dbfs()).WillOnce(::testing::Return(17));
   EXPECT_EQ(17, proxy()->target_level_dbfs());
 }
 
 TEST_F(GainControlConfigProxyTest, GetAnalogLevelMinimum) {
-  EXPECT_CALL(agc_, analog_level_minimum()).WillOnce(testing::Return(17));
+  EXPECT_CALL(agc_, analog_level_minimum()).WillOnce(::testing::Return(17));
   EXPECT_EQ(17, proxy()->analog_level_minimum());
 }
 
 TEST_F(GainControlConfigProxyTest, GetAnalogLevelMaximum) {
-  EXPECT_CALL(agc_, analog_level_maximum()).WillOnce(testing::Return(17));
+  EXPECT_CALL(agc_, analog_level_maximum()).WillOnce(::testing::Return(17));
   EXPECT_EQ(17, proxy()->analog_level_maximum());
 }
 
 TEST_F(GainControlConfigProxyTest, GetStreamIsSaturated) {
   EXPECT_CALL(agc_, stream_is_saturated())
-      .WillOnce(testing::Return(true))
-      .WillOnce(testing::Return(false));
+      .WillOnce(::testing::Return(true))
+      .WillOnce(::testing::Return(false));
   EXPECT_TRUE(proxy()->stream_is_saturated());
   EXPECT_FALSE(proxy()->stream_is_saturated());
 }
 
 TEST_F(GainControlConfigProxyTest, GetMode) {
   EXPECT_CALL(agc_, mode())
-      .WillOnce(testing::Return(GainControl::Mode::kAdaptiveAnalog))
-      .WillOnce(testing::Return(GainControl::Mode::kAdaptiveDigital))
-      .WillOnce(testing::Return(GainControl::Mode::kFixedDigital));
+      .WillOnce(::testing::Return(GainControl::Mode::kAdaptiveAnalog))
+      .WillOnce(::testing::Return(GainControl::Mode::kAdaptiveDigital))
+      .WillOnce(::testing::Return(GainControl::Mode::kFixedDigital));
   EXPECT_EQ(GainControl::Mode::kAdaptiveAnalog, proxy()->mode());
   EXPECT_EQ(GainControl::Mode::kAdaptiveDigital, proxy()->mode());
   EXPECT_EQ(GainControl::Mode::kFixedDigital, proxy()->mode());

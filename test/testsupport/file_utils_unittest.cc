@@ -68,7 +68,7 @@ void WriteStringInFile(const std::string& what, const std::string& file_path) {
 // Test fixture to restore the working directory between each test, since some
 // of them change it with chdir during execution (not restored by the
 // gtest framework).
-class FileUtilsTest : public testing::Test {
+class FileUtilsTest : public ::testing::Test {
  protected:
   FileUtilsTest() {}
   ~FileUtilsTest() override {}

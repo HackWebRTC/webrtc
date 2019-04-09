@@ -998,7 +998,7 @@ static void ReplaceRejected(bool audio_rejected,
 
 // WebRtcSdpTest
 
-class WebRtcSdpTest : public testing::Test {
+class WebRtcSdpTest : public ::testing::Test {
  public:
   WebRtcSdpTest() : jdesc_(kDummyType) {
 #ifdef WEBRTC_ANDROID
@@ -2989,7 +2989,7 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsAndBandwidth) {
 }
 
 class WebRtcSdpExtmapTest : public WebRtcSdpTest,
-                            public testing::WithParamInterface<bool> {};
+                            public ::testing::WithParamInterface<bool> {};
 
 TEST_P(WebRtcSdpExtmapTest,
        DeserializeSessionDescriptionWithSessionLevelExtmap) {

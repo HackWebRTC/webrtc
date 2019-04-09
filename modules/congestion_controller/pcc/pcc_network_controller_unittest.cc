@@ -17,12 +17,12 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
-using testing::Field;
-using testing::Matcher;
-using testing::AllOf;
-using testing::Ge;
-using testing::Le;
-using testing::Property;
+using ::testing::AllOf;
+using ::testing::Field;
+using ::testing::Ge;
+using ::testing::Le;
+using ::testing::Matcher;
+using ::testing::Property;
 
 namespace webrtc {
 namespace test {

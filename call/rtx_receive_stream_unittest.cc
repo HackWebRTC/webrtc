@@ -74,11 +74,11 @@ TEST(RtxReceiveStreamTest, RestoresPacketPayload) {
   EXPECT_TRUE(rtx_packet.Parse(rtc::ArrayView<const uint8_t>(kRtxPacket)));
 
   EXPECT_CALL(media_sink, OnRtpPacket(_))
-      .WillOnce(testing::Invoke([](const RtpPacketReceived& packet) {
+      .WillOnce(::testing::Invoke([](const RtpPacketReceived& packet) {
         EXPECT_EQ(packet.SequenceNumber(), kMediaSeqno);
         EXPECT_EQ(packet.Ssrc(), kMediaSSRC);
         EXPECT_EQ(packet.PayloadType(), kMediaPayloadType);
-        EXPECT_THAT(packet.payload(), testing::ElementsAre(0xee));
+        EXPECT_THAT(packet.payload(), ::testing::ElementsAre(0xee));
       }));
 
   rtx_sink.OnRtpPacket(rtx_packet);
@@ -91,7 +91,7 @@ TEST(RtxReceiveStreamTest, SetsRecoveredFlag) {
   EXPECT_TRUE(rtx_packet.Parse(rtc::ArrayView<const uint8_t>(kRtxPacket)));
   EXPECT_FALSE(rtx_packet.recovered());
   EXPECT_CALL(media_sink, OnRtpPacket(_))
-      .WillOnce(testing::Invoke([](const RtpPacketReceived& packet) {
+      .WillOnce(::testing::Invoke([](const RtpPacketReceived& packet) {
         EXPECT_TRUE(packet.recovered());
       }));
 
@@ -132,11 +132,11 @@ TEST(RtxReceiveStreamTest, CopiesRtpHeaderExtensions) {
   EXPECT_EQ(kVideoRotation_90, rotation);
 
   EXPECT_CALL(media_sink, OnRtpPacket(_))
-      .WillOnce(testing::Invoke([](const RtpPacketReceived& packet) {
+      .WillOnce(::testing::Invoke([](const RtpPacketReceived& packet) {
         EXPECT_EQ(packet.SequenceNumber(), kMediaSeqno);
         EXPECT_EQ(packet.Ssrc(), kMediaSSRC);
         EXPECT_EQ(packet.PayloadType(), kMediaPayloadType);
-        EXPECT_THAT(packet.payload(), testing::ElementsAre(0xee));
+        EXPECT_THAT(packet.payload(), ::testing::ElementsAre(0xee));
         VideoRotation rotation = kVideoRotation_0;
         EXPECT_TRUE(packet.GetExtension<VideoOrientation>(&rotation));
         EXPECT_EQ(rotation, kVideoRotation_90);

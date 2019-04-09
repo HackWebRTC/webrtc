@@ -14,12 +14,12 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
-using testing::_;
-using testing::AtLeast;
-using testing::NiceMock;
-using testing::Return;
-using testing::SaveArg;
-using testing::StrictMock;
+using ::testing::_;
+using ::testing::AtLeast;
+using ::testing::NiceMock;
+using ::testing::Return;
+using ::testing::SaveArg;
+using ::testing::StrictMock;
 
 namespace webrtc {
 

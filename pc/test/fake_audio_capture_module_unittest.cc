@@ -18,7 +18,7 @@
 #include "rtc_base/gunit.h"
 #include "test/gtest.h"
 
-class FakeAdmTest : public testing::Test, public webrtc::AudioTransport {
+class FakeAdmTest : public ::testing::Test, public webrtc::AudioTransport {
  protected:
   static const int kMsInSecond = 1000;
 

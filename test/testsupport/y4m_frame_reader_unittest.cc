@@ -35,7 +35,7 @@ const size_t kFrameLength = 3 * kFrameWidth * kFrameHeight / 2;  // I420.
 
 }  // namespace
 
-class Y4mFrameReaderTest : public testing::Test {
+class Y4mFrameReaderTest : public ::testing::Test {
  protected:
   Y4mFrameReaderTest() = default;
   ~Y4mFrameReaderTest() override = default;

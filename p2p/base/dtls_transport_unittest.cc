@@ -297,7 +297,7 @@ class DtlsTestClient : public sigslot::has_slots<> {
 };
 
 // Base class for DtlsTransportTest and DtlsEventOrderingTest, which
-// inherit from different variants of testing::Test.
+// inherit from different variants of ::testing::Test.
 //
 // Note that this test always uses a FakeClock, due to the |fake_clock_| member
 // variable.

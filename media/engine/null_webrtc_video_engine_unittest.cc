@@ -30,7 +30,7 @@ namespace cricket {
 TEST(NullWebRtcVideoEngineTest, CheckInterface) {
   std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory =
       webrtc::CreateDefaultTaskQueueFactory();
-  testing::NiceMock<webrtc::test::MockAudioDeviceModule> adm;
+  ::testing::NiceMock<webrtc::test::MockAudioDeviceModule> adm;
   auto audio_engine = absl::make_unique<WebRtcVoiceEngine>(
       task_queue_factory.get(), &adm,
       webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),

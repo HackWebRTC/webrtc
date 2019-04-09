@@ -3697,14 +3697,14 @@ TEST_F(VideoStreamEncoderTest, SetsFrameTypes) {
   WaitForEncodedFrame(1);
   EXPECT_THAT(
       fake_encoder_.LastFrameTypes(),
-      testing::ElementsAre(VideoFrameType{VideoFrameType::kVideoFrameKey}));
+      ::testing::ElementsAre(VideoFrameType{VideoFrameType::kVideoFrameKey}));
 
   // Insert delta frame.
   video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
   WaitForEncodedFrame(2);
   EXPECT_THAT(
       fake_encoder_.LastFrameTypes(),
-      testing::ElementsAre(VideoFrameType{VideoFrameType::kVideoFrameDelta}));
+      ::testing::ElementsAre(VideoFrameType{VideoFrameType::kVideoFrameDelta}));
 
   // Request next frame be a key-frame.
   video_stream_encoder_->SendKeyFrame();
@@ -3712,7 +3712,7 @@ TEST_F(VideoStreamEncoderTest, SetsFrameTypes) {
   WaitForEncodedFrame(3);
   EXPECT_THAT(
       fake_encoder_.LastFrameTypes(),
-      testing::ElementsAre(VideoFrameType{VideoFrameType::kVideoFrameKey}));
+      ::testing::ElementsAre(VideoFrameType{VideoFrameType::kVideoFrameKey}));
 
   video_stream_encoder_->Stop();
 }
@@ -3730,17 +3730,17 @@ TEST_F(VideoStreamEncoderTest, SetsFrameTypesSimulcast) {
   video_source_.IncomingCapturedFrame(CreateFrame(1, nullptr));
   WaitForEncodedFrame(1);
   EXPECT_THAT(fake_encoder_.LastFrameTypes(),
-              testing::ElementsAreArray({VideoFrameType::kVideoFrameKey,
-                                         VideoFrameType::kVideoFrameKey,
-                                         VideoFrameType::kVideoFrameKey}));
+              ::testing::ElementsAreArray({VideoFrameType::kVideoFrameKey,
+                                           VideoFrameType::kVideoFrameKey,
+                                           VideoFrameType::kVideoFrameKey}));
 
   // Insert delta frame.
   video_source_.IncomingCapturedFrame(CreateFrame(2, nullptr));
   WaitForEncodedFrame(2);
   EXPECT_THAT(fake_encoder_.LastFrameTypes(),
-              testing::ElementsAreArray({VideoFrameType::kVideoFrameDelta,
-                                         VideoFrameType::kVideoFrameDelta,
-                                         VideoFrameType::kVideoFrameDelta}));
+              ::testing::ElementsAreArray({VideoFrameType::kVideoFrameDelta,
+                                           VideoFrameType::kVideoFrameDelta,
+                                           VideoFrameType::kVideoFrameDelta}));
 
   // Request next frame be a key-frame.
   // Only first stream is configured to produce key-frame.
@@ -3748,9 +3748,9 @@ TEST_F(VideoStreamEncoderTest, SetsFrameTypesSimulcast) {
   video_source_.IncomingCapturedFrame(CreateFrame(3, nullptr));
   WaitForEncodedFrame(3);
   EXPECT_THAT(fake_encoder_.LastFrameTypes(),
-              testing::ElementsAreArray({VideoFrameType::kVideoFrameKey,
-                                         VideoFrameType::kVideoFrameDelta,
-                                         VideoFrameType::kVideoFrameDelta}));
+              ::testing::ElementsAreArray({VideoFrameType::kVideoFrameKey,
+                                           VideoFrameType::kVideoFrameDelta,
+                                           VideoFrameType::kVideoFrameDelta}));
 
   video_stream_encoder_->Stop();
 }
@@ -3768,7 +3768,7 @@ TEST_F(VideoStreamEncoderTest, RequestKeyframeInternalSource) {
   EXPECT_TRUE(WaitForFrame(kDefaultTimeoutMs));
   EXPECT_THAT(
       fake_encoder_.LastFrameTypes(),
-      testing::ElementsAre(VideoFrameType{VideoFrameType::kVideoFrameKey}));
+      ::testing::ElementsAre(VideoFrameType{VideoFrameType::kVideoFrameKey}));
 
   const std::vector<VideoFrameType> kDeltaFrame = {
       VideoFrameType::kVideoFrameDelta};
@@ -3779,7 +3779,7 @@ TEST_F(VideoStreamEncoderTest, RequestKeyframeInternalSource) {
   EXPECT_TRUE(WaitForFrame(kDefaultTimeoutMs));
   EXPECT_THAT(
       fake_encoder_.LastFrameTypes(),
-      testing::ElementsAre(VideoFrameType{VideoFrameType::kVideoFrameDelta}));
+      ::testing::ElementsAre(VideoFrameType{VideoFrameType::kVideoFrameDelta}));
 
   // Request key-frame. The forces a dummy frame down into the encoder.
   fake_encoder_.ExpectNullFrame();
@@ -3787,7 +3787,7 @@ TEST_F(VideoStreamEncoderTest, RequestKeyframeInternalSource) {
   EXPECT_TRUE(WaitForFrame(kDefaultTimeoutMs));
   EXPECT_THAT(
       fake_encoder_.LastFrameTypes(),
-      testing::ElementsAre(VideoFrameType{VideoFrameType::kVideoFrameKey}));
+      ::testing::ElementsAre(VideoFrameType{VideoFrameType::kVideoFrameKey}));
 
   video_stream_encoder_->Stop();
 }

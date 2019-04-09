@@ -552,8 +552,8 @@ TEST_F(ForcedFallbackTestEnabled, ScalingDisabledIfResizeOff) {
 }
 
 TEST(SoftwareFallbackEncoderTest, BothRateControllersNotTrusted) {
-  auto* sw_encoder = new testing::NiceMock<MockVideoEncoder>();
-  auto* hw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  auto* sw_encoder = new ::testing::NiceMock<MockVideoEncoder>();
+  auto* hw_encoder = new ::testing::NiceMock<MockVideoEncoder>();
 
   EXPECT_CALL(*sw_encoder, GetEncoderInfo())
       .WillRepeatedly(Return(GetEncoderInfoWithTrustedRateController(false)));
@@ -568,8 +568,8 @@ TEST(SoftwareFallbackEncoderTest, BothRateControllersNotTrusted) {
 }
 
 TEST(SoftwareFallbackEncoderTest, SwRateControllerTrusted) {
-  auto* sw_encoder = new testing::NiceMock<MockVideoEncoder>();
-  auto* hw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  auto* sw_encoder = new ::testing::NiceMock<MockVideoEncoder>();
+  auto* hw_encoder = new ::testing::NiceMock<MockVideoEncoder>();
   EXPECT_CALL(*sw_encoder, GetEncoderInfo())
       .WillRepeatedly(Return(GetEncoderInfoWithTrustedRateController(true)));
   EXPECT_CALL(*hw_encoder, GetEncoderInfo())
@@ -583,8 +583,8 @@ TEST(SoftwareFallbackEncoderTest, SwRateControllerTrusted) {
 }
 
 TEST(SoftwareFallbackEncoderTest, HwRateControllerTrusted) {
-  auto* sw_encoder = new testing::NiceMock<MockVideoEncoder>();
-  auto* hw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  auto* sw_encoder = new ::testing::NiceMock<MockVideoEncoder>();
+  auto* hw_encoder = new ::testing::NiceMock<MockVideoEncoder>();
   EXPECT_CALL(*sw_encoder, GetEncoderInfo())
       .WillRepeatedly(Return(GetEncoderInfoWithTrustedRateController(false)));
   EXPECT_CALL(*hw_encoder, GetEncoderInfo())
@@ -608,8 +608,8 @@ TEST(SoftwareFallbackEncoderTest, HwRateControllerTrusted) {
 }
 
 TEST(SoftwareFallbackEncoderTest, BothRateControllersTrusted) {
-  auto* sw_encoder = new testing::NiceMock<MockVideoEncoder>();
-  auto* hw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  auto* sw_encoder = new ::testing::NiceMock<MockVideoEncoder>();
+  auto* hw_encoder = new ::testing::NiceMock<MockVideoEncoder>();
   EXPECT_CALL(*sw_encoder, GetEncoderInfo())
       .WillRepeatedly(Return(GetEncoderInfoWithTrustedRateController(true)));
   EXPECT_CALL(*hw_encoder, GetEncoderInfo())
@@ -623,8 +623,8 @@ TEST(SoftwareFallbackEncoderTest, BothRateControllersTrusted) {
 }
 
 TEST(SoftwareFallbackEncoderTest, ReportsHardwareAccelerated) {
-  auto* sw_encoder = new testing::NiceMock<MockVideoEncoder>();
-  auto* hw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  auto* sw_encoder = new ::testing::NiceMock<MockVideoEncoder>();
+  auto* hw_encoder = new ::testing::NiceMock<MockVideoEncoder>();
   EXPECT_CALL(*sw_encoder, GetEncoderInfo())
       .WillRepeatedly(Return(GetEncoderInfoWithHardwareAccelerated(false)));
   EXPECT_CALL(*hw_encoder, GetEncoderInfo())
@@ -647,8 +647,8 @@ TEST(SoftwareFallbackEncoderTest, ReportsHardwareAccelerated) {
 }
 
 TEST(SoftwareFallbackEncoderTest, ReportsInternalSource) {
-  auto* sw_encoder = new testing::NiceMock<MockVideoEncoder>();
-  auto* hw_encoder = new testing::NiceMock<MockVideoEncoder>();
+  auto* sw_encoder = new ::testing::NiceMock<MockVideoEncoder>();
+  auto* hw_encoder = new ::testing::NiceMock<MockVideoEncoder>();
   EXPECT_CALL(*sw_encoder, GetEncoderInfo())
       .WillRepeatedly(Return(GetEncoderInfoWithInternalSource(false)));
   EXPECT_CALL(*hw_encoder, GetEncoderInfo())

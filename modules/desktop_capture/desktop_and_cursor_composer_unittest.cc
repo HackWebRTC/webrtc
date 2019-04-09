@@ -173,7 +173,7 @@ void VerifyFrame(const DesktopFrame& frame,
 
 }  // namespace
 
-class DesktopAndCursorComposerTest : public testing::Test,
+class DesktopAndCursorComposerTest : public ::testing::Test,
                                      public DesktopCapturer::Callback {
  public:
   DesktopAndCursorComposerTest()

@@ -125,7 +125,7 @@ TEST(PffftTest, CreateWrapperWithValidSize) {
 
 #if !defined(NDEBUG) && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 
-class PffftInvalidSizeTest : public testing::Test,
+class PffftInvalidSizeTest : public ::testing::Test,
                              public ::testing::WithParamInterface<size_t> {};
 
 TEST_P(PffftInvalidSizeTest, DoNotCreateRealWrapper) {

@@ -12,7 +12,7 @@
 #include "modules/audio_coding/neteq/tools/neteq_quality_test.h"
 #include "rtc_base/flags.h"
 
-using testing::InitGoogleTest;
+using ::testing::InitGoogleTest;
 
 namespace webrtc {
 namespace test {

@@ -187,7 +187,7 @@ namespace cricket {
 // and that the result is what we expect.
 // Note that this class is a base class for use by other tests, who will provide
 // specialized test behavior.
-class P2PTransportChannelTestBase : public testing::Test,
+class P2PTransportChannelTestBase : public ::testing::Test,
                                     public rtc::MessageHandler,
                                     public sigslot::has_slots<> {
  public:
@@ -3074,7 +3074,7 @@ TEST_F(P2PTransportChannelMultihomedTest, TestRestoreBackupConnection) {
 
 // A collection of tests which tests a single P2PTransportChannel by sending
 // pings.
-class P2PTransportChannelPingTest : public testing::Test,
+class P2PTransportChannelPingTest : public ::testing::Test,
                                     public sigslot::has_slots<> {
  public:
   P2PTransportChannelPingTest()

@@ -44,7 +44,7 @@ const char kIcePwd[] = "TESTICEPWD00000000000000";
 
 namespace webrtc {
 
-class RegatheringControllerTest : public testing::Test,
+class RegatheringControllerTest : public ::testing::Test,
                                   public sigslot::has_slots<> {
  public:
   RegatheringControllerTest()

@@ -22,7 +22,7 @@
 
 namespace webrtc {
 
-class RTCStatsTraversalTest : public testing::Test {
+class RTCStatsTraversalTest : public ::testing::Test {
  public:
   RTCStatsTraversalTest() {
     transport_ = new RTCTransportStats("transport", 0);

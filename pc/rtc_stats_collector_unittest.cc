@@ -38,9 +38,9 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/time_utils.h"
 
-using testing::AtLeast;
-using testing::Invoke;
-using testing::Return;
+using ::testing::AtLeast;
+using ::testing::Invoke;
+using ::testing::Return;
 
 namespace webrtc {
 
@@ -496,7 +496,7 @@ class RTCStatsCollectorWrapper {
   rtc::scoped_refptr<RTCStatsCollector> stats_collector_;
 };
 
-class RTCStatsCollectorTest : public testing::Test {
+class RTCStatsCollectorTest : public ::testing::Test {
  public:
   RTCStatsCollectorTest()
       : pc_(new rtc::RefCountedObject<FakePeerConnectionForStats>()),

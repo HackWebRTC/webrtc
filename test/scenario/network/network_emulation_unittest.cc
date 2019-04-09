@@ -85,10 +85,10 @@ class NetworkEmulationManagerThreeNodesRoutingTest : public ::testing::Test {
   }
 
   void SendPacketsAndValidateDelivery() {
-    EXPECT_CALL(r_e1_e2_, OnPacketReceived(testing::_)).Times(1);
-    EXPECT_CALL(r_e2_e1_, OnPacketReceived(testing::_)).Times(1);
-    EXPECT_CALL(r_e1_e3_, OnPacketReceived(testing::_)).Times(1);
-    EXPECT_CALL(r_e3_e1_, OnPacketReceived(testing::_)).Times(1);
+    EXPECT_CALL(r_e1_e2_, OnPacketReceived(::testing::_)).Times(1);
+    EXPECT_CALL(r_e2_e1_, OnPacketReceived(::testing::_)).Times(1);
+    EXPECT_CALL(r_e1_e3_, OnPacketReceived(::testing::_)).Times(1);
+    EXPECT_CALL(r_e3_e1_, OnPacketReceived(::testing::_)).Times(1);
 
     uint16_t common_send_port = 80;
     uint16_t r_e1_e2_port = e2_->BindReceiver(0, &r_e1_e2_).value();
@@ -148,7 +148,7 @@ EmulatedNetworkNode* CreateEmulatedNodeWithDefaultBuiltInConfig(
 
 }  // namespace
 
-using testing::_;
+using ::testing::_;
 
 TEST(NetworkEmulationManagerTest, GeneratedIpv4AddressDoesNotCollide) {
   NetworkEmulationManagerImpl network_manager;

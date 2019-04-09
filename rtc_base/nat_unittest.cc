@@ -321,7 +321,7 @@ TEST(NatTest, TestVirtualIPv6) {
   }
 }
 
-class NatTcpTest : public testing::Test, public sigslot::has_slots<> {
+class NatTcpTest : public ::testing::Test, public sigslot::has_slots<> {
  public:
   NatTcpTest()
       : int_addr_("192.168.0.1", 0),

@@ -17,7 +17,7 @@
 
 namespace rtc {
 
-class AsyncTCPSocketTest : public testing::Test, public sigslot::has_slots<> {
+class AsyncTCPSocketTest : public ::testing::Test, public sigslot::has_slots<> {
  public:
   AsyncTCPSocketTest()
       : vss_(new rtc::VirtualSocketServer()),

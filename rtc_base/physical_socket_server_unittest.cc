@@ -499,7 +499,7 @@ TEST_F(PhysicalSocketTest,
   server_->set_network_binder(nullptr);
 }
 
-class PosixSignalDeliveryTest : public testing::Test {
+class PosixSignalDeliveryTest : public ::testing::Test {
  public:
   static void RecordSignal(int signum) {
     signals_received_.push_back(signum);

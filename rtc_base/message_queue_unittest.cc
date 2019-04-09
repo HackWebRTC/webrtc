@@ -26,7 +26,7 @@
 namespace rtc {
 namespace {
 
-class MessageQueueTest : public testing::Test, public MessageQueue {
+class MessageQueueTest : public ::testing::Test, public MessageQueue {
  public:
   MessageQueueTest() : MessageQueue(SocketServer::CreateDefault(), true) {}
   bool IsLocked_Worker() {

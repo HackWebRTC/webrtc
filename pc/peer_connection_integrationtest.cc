@@ -1123,7 +1123,7 @@ class MediaExpectations {
 // virtual network, fake A/V capture and fake encoder/decoders. The
 // PeerConnections share the threads/socket servers, but use separate versions
 // of everything else (including "PeerConnectionFactory"s).
-class PeerConnectionIntegrationBaseTest : public testing::Test {
+class PeerConnectionIntegrationBaseTest : public ::testing::Test {
  public:
   explicit PeerConnectionIntegrationBaseTest(SdpSemantics sdp_semantics)
       : sdp_semantics_(sdp_semantics),
@@ -4841,8 +4841,8 @@ TEST_P(PeerConnectionIntegrationTest, RtcEventLogOutputWriteCalled) {
   ConnectFakeSignaling();
 
   auto output = absl::make_unique<testing::NiceMock<MockRtcEventLogOutput>>();
-  ON_CALL(*output, IsActive()).WillByDefault(testing::Return(true));
-  ON_CALL(*output, Write(::testing::_)).WillByDefault(testing::Return(true));
+  ON_CALL(*output, IsActive()).WillByDefault(::testing::Return(true));
+  ON_CALL(*output, Write(::testing::_)).WillByDefault(::testing::Return(true));
   EXPECT_CALL(*output, Write(::testing::_)).Times(::testing::AtLeast(1));
   EXPECT_TRUE(caller()->pc()->StartRtcEventLog(
       std::move(output), webrtc::RtcEventLog::kImmediateOutput));

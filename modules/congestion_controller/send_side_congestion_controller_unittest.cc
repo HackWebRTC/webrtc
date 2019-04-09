@@ -24,13 +24,13 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
-using testing::_;
-using testing::AtLeast;
-using testing::Ge;
-using testing::NiceMock;
-using testing::Return;
-using testing::SaveArg;
-using testing::StrictMock;
+using ::testing::_;
+using ::testing::AtLeast;
+using ::testing::Ge;
+using ::testing::NiceMock;
+using ::testing::Return;
+using ::testing::SaveArg;
+using ::testing::StrictMock;
 
 namespace webrtc {
 
@@ -216,7 +216,7 @@ TEST_F(LegacySendSideCongestionControllerTest, SignalNetworkState) {
 
 TEST_F(LegacySendSideCongestionControllerTest, OnNetworkRouteChanged) {
   int new_bitrate = 200000;
-  testing::Mock::VerifyAndClearExpectations(pacer_.get());
+  ::testing::Mock::VerifyAndClearExpectations(pacer_.get());
   EXPECT_CALL(observer_, OnNetworkChanged(new_bitrate, _, _, _));
   EXPECT_CALL(*pacer_, SetEstimatedBitrate(new_bitrate));
   rtc::NetworkRoute route;
@@ -236,7 +236,7 @@ TEST_F(LegacySendSideCongestionControllerTest, OnNetworkRouteChanged) {
 
 TEST_F(LegacySendSideCongestionControllerTest, OldFeedback) {
   int new_bitrate = 200000;
-  testing::Mock::VerifyAndClearExpectations(pacer_.get());
+  ::testing::Mock::VerifyAndClearExpectations(pacer_.get());
   EXPECT_CALL(observer_, OnNetworkChanged(new_bitrate, _, _, _));
   EXPECT_CALL(*pacer_, SetEstimatedBitrate(new_bitrate));
 
@@ -326,7 +326,7 @@ TEST_F(LegacySendSideCongestionControllerTest, GetProbingInterval) {
   clock_.AdvanceTimeMilliseconds(25);
   controller_->Process();
 
-  EXPECT_CALL(observer_, OnNetworkChanged(_, _, _, testing::Ne(0)));
+  EXPECT_CALL(observer_, OnNetworkChanged(_, _, _, ::testing::Ne(0)));
   EXPECT_CALL(*pacer_, SetEstimatedBitrate(_));
   bandwidth_observer_->OnReceivedEstimatedBitrate(kInitialBitrateBps * 2);
   clock_.AdvanceTimeMilliseconds(25);
@@ -334,7 +334,7 @@ TEST_F(LegacySendSideCongestionControllerTest, GetProbingInterval) {
 }
 
 TEST_F(LegacySendSideCongestionControllerTest, ProbeOnRouteChange) {
-  testing::Mock::VerifyAndClearExpectations(pacer_.get());
+  ::testing::Mock::VerifyAndClearExpectations(pacer_.get());
   EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 6, _));
   EXPECT_CALL(*pacer_, CreateProbeCluster(kInitialBitrateBps * 12, _));
   EXPECT_CALL(observer_, OnNetworkChanged(kInitialBitrateBps * 2, _, _, _));

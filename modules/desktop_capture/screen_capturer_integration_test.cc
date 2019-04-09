@@ -78,7 +78,7 @@ bool ArePixelsColoredBy(const DesktopFrame& frame,
 
 }  // namespace
 
-class ScreenCapturerIntegrationTest : public testing::Test {
+class ScreenCapturerIntegrationTest : public ::testing::Test {
  public:
   void SetUp() override {
     capturer_ = DesktopCapturer::CreateScreenCapturer(
@@ -270,7 +270,7 @@ class ScreenCapturerIntegrationTest : public testing::Test {
       EXPECT_CALL(callback_, OnCaptureResultPtr(_, _))
           .WillOnce(SaveCaptureResult(&result, &frame));
       capturer->CaptureFrame();
-      testing::Mock::VerifyAndClearExpectations(&callback_);
+      ::testing::Mock::VerifyAndClearExpectations(&callback_);
       if (result == DesktopCapturer::Result::SUCCESS) {
         EXPECT_TRUE(frame);
         return frame;

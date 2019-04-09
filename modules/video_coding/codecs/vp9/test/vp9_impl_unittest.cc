@@ -24,7 +24,7 @@
 
 namespace webrtc {
 
-using testing::ElementsAreArray;
+using ::testing::ElementsAreArray;
 using EncoderInfo = webrtc::VideoEncoder::EncoderInfo;
 using FramerateFractions =
     absl::InlinedVector<uint8_t, webrtc::kMaxTemporalStreams>;

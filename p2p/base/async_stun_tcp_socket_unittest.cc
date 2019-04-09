@@ -56,7 +56,7 @@ static unsigned char kTurnChannelDataMessageWithOddLength[] = {
 static const rtc::SocketAddress kClientAddr("11.11.11.11", 0);
 static const rtc::SocketAddress kServerAddr("22.22.22.22", 0);
 
-class AsyncStunTCPSocketTest : public testing::Test,
+class AsyncStunTCPSocketTest : public ::testing::Test,
                                public sigslot::has_slots<> {
  protected:
   AsyncStunTCPSocketTest()

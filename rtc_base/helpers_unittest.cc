@@ -17,7 +17,7 @@
 
 namespace rtc {
 
-class RandomTest : public testing::Test {};
+class RandomTest : public ::testing::Test {};
 
 TEST_F(RandomTest, TestCreateRandomId) {
   CreateRandomId();

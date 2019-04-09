@@ -26,7 +26,7 @@ const int kHeight = 720;
 const int kDefaultFps = 30;
 }  // namespace
 
-class VideoAdapterTest : public testing::Test,
+class VideoAdapterTest : public ::testing::Test,
                          public ::testing::WithParamInterface<bool> {
  public:
   VideoAdapterTest()

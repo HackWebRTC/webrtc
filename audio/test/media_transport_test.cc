@@ -33,7 +33,7 @@ namespace webrtc {
 namespace test {
 
 namespace {
-using testing::NiceMock;
+using ::testing::NiceMock;
 
 constexpr int kPayloadTypeOpus = 17;
 constexpr int kSamplingFrequency = 48000;

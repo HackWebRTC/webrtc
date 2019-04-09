@@ -316,7 +316,7 @@ TEST(RtpVideoSenderTest, FrameCountCallbacks) {
   EXPECT_NE(
       EncodedImageCallback::Result::OK,
       test.router()->OnEncodedImage(encoded_image, nullptr, nullptr).error);
-  testing::Mock::VerifyAndClearExpectations(&callback);
+  ::testing::Mock::VerifyAndClearExpectations(&callback);
 
   test.router()->SetActive(true);
 
@@ -330,7 +330,7 @@ TEST(RtpVideoSenderTest, FrameCountCallbacks) {
   EXPECT_EQ(1, frame_counts.key_frames);
   EXPECT_EQ(0, frame_counts.delta_frames);
 
-  testing::Mock::VerifyAndClearExpectations(&callback);
+  ::testing::Mock::VerifyAndClearExpectations(&callback);
 
   encoded_image._frameType = VideoFrameType::kVideoFrameDelta;
   EXPECT_CALL(callback, FrameCountUpdated(_, kSsrc1))

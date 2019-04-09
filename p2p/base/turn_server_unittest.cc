@@ -19,7 +19,7 @@
 
 namespace cricket {
 
-class TurnServerConnectionTest : public testing::Test {
+class TurnServerConnectionTest : public ::testing::Test {
  public:
   TurnServerConnectionTest() : thread_(&vss_) {}
 

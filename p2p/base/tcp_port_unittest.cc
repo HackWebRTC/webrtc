@@ -55,7 +55,7 @@ class ConnectionObserver : public sigslot::has_slots<> {
   bool connection_destroyed_ = false;
 };
 
-class TCPPortTest : public testing::Test, public sigslot::has_slots<> {
+class TCPPortTest : public ::testing::Test, public sigslot::has_slots<> {
  public:
   TCPPortTest()
       : ss_(new rtc::VirtualSocketServer()),

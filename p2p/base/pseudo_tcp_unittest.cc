@@ -42,7 +42,7 @@ class PseudoTcpForTest : public cricket::PseudoTcp {
   void disableWindowScale() { PseudoTcp::disableWindowScale(); }
 };
 
-class PseudoTcpTestBase : public testing::Test,
+class PseudoTcpTestBase : public ::testing::Test,
                           public rtc::MessageHandler,
                           public cricket::IPseudoTcpNotify {
  public:

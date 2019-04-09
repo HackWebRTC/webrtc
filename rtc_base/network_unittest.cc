@@ -81,7 +81,7 @@ bool SameNameAndPrefix(const rtc::Network& a, const rtc::Network& b) {
 
 }  // namespace
 
-class NetworkTest : public testing::Test, public sigslot::has_slots<> {
+class NetworkTest : public ::testing::Test, public sigslot::has_slots<> {
  public:
   NetworkTest() : callback_called_(false) {}
 

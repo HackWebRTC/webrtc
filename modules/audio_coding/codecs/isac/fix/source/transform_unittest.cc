@@ -136,7 +136,7 @@ static const int16_t time2spec_out_expected_2[kSamples] = {
     294,   -339,   344,    -396,  407,   -429,  438,   -439,  485,   -556,
     629,   -612,   637,    -645,  661,   -737,  829,   -830,  831,   -1041};
 
-class TransformTest : public testing::Test {
+class TransformTest : public ::testing::Test {
  protected:
   TransformTest() { WebRtcSpl_Init(); }
 

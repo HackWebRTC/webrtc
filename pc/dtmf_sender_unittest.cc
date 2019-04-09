@@ -114,7 +114,7 @@ class FakeDtmfProvider : public DtmfProviderInterface {
   sigslot::signal0<> SignalDestroyed;
 };
 
-class DtmfSenderTest : public testing::Test {
+class DtmfSenderTest : public ::testing::Test {
  protected:
   DtmfSenderTest()
       : observer_(new rtc::RefCountedObject<FakeDtmfObserver>()),

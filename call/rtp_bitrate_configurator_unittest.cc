@@ -15,7 +15,7 @@
 namespace webrtc {
 using absl::nullopt;
 
-class RtpBitrateConfiguratorTest : public testing::Test {
+class RtpBitrateConfiguratorTest : public ::testing::Test {
  public:
   RtpBitrateConfiguratorTest()
       : configurator_(new RtpBitrateConfigurator(BitrateConstraints())) {}

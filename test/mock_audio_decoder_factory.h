@@ -43,9 +43,9 @@ class MockAudioDecoderFactory : public AudioDecoderFactory {
   // example.
   static rtc::scoped_refptr<webrtc::MockAudioDecoderFactory>
   CreateUnusedFactory() {
-    using testing::_;
-    using testing::AnyNumber;
-    using testing::Return;
+    using ::testing::_;
+    using ::testing::AnyNumber;
+    using ::testing::Return;
 
     rtc::scoped_refptr<webrtc::MockAudioDecoderFactory> factory =
         new rtc::RefCountedObject<webrtc::MockAudioDecoderFactory>;
@@ -63,10 +63,10 @@ class MockAudioDecoderFactory : public AudioDecoderFactory {
   // call, since it supports no codecs.
   static rtc::scoped_refptr<webrtc::MockAudioDecoderFactory>
   CreateEmptyFactory() {
-    using testing::_;
-    using testing::AnyNumber;
-    using testing::Return;
-    using testing::SetArgPointee;
+    using ::testing::_;
+    using ::testing::AnyNumber;
+    using ::testing::Return;
+    using ::testing::SetArgPointee;
 
     rtc::scoped_refptr<webrtc::MockAudioDecoderFactory> factory =
         new rtc::RefCountedObject<webrtc::MockAudioDecoderFactory>;

@@ -49,7 +49,7 @@ class FakeDataReceiver : public sigslot::has_slots<> {
   cricket::ReceiveDataParams last_received_data_params_;
 };
 
-class RtpDataMediaChannelTest : public testing::Test {
+class RtpDataMediaChannelTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
     // Seed needed for each test to satisfy expectations.

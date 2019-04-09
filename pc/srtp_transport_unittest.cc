@@ -42,7 +42,7 @@ static const uint8_t kTestKeyGcm256_2[] =
     "rqponmlkjihgfedcbaZYXWVUTSRQPONMLKJIHGFEDCBA";
 static const int kTestKeyGcm256Len = 44;  // 256 bits key + 96 bits salt.
 
-class SrtpTransportTest : public testing::Test, public sigslot::has_slots<> {
+class SrtpTransportTest : public ::testing::Test, public sigslot::has_slots<> {
  protected:
   SrtpTransportTest() {
     bool rtcp_mux_enabled = true;
@@ -336,7 +336,7 @@ class SrtpTransportTest : public testing::Test, public sigslot::has_slots<> {
 
 class SrtpTransportTestWithExternalAuth
     : public SrtpTransportTest,
-      public testing::WithParamInterface<bool> {};
+      public ::testing::WithParamInterface<bool> {};
 
 TEST_P(SrtpTransportTestWithExternalAuth,
        SendAndRecvPacket_AES_CM_128_HMAC_SHA1_80) {

@@ -32,8 +32,8 @@
 namespace webrtc {
 namespace {
 
-using testing::_;
-using testing::Invoke;
+using ::testing::_;
+using ::testing::Invoke;
 
 constexpr int kDefaultTimeOutMs = 50;
 
@@ -70,7 +70,7 @@ class FrameObjectFake : public video_coding::EncodedFrame {
 
 }  // namespace
 
-class VideoReceiveStreamTest : public testing::Test {
+class VideoReceiveStreamTest : public ::testing::Test {
  public:
   VideoReceiveStreamTest()
       : process_thread_(ProcessThread::Create("TestThread")),

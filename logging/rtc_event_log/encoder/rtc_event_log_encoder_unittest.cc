@@ -43,7 +43,7 @@
 
 namespace webrtc {
 class RtcEventLogEncoderTest
-    : public testing::TestWithParam<std::tuple<int, bool, size_t, bool>> {
+    : public ::testing::TestWithParam<std::tuple<int, bool, size_t, bool>> {
  protected:
   RtcEventLogEncoderTest()
       : seed_(std::get<0>(GetParam())),

@@ -19,7 +19,7 @@
 
 namespace cricket {
 
-class StunRequestTest : public testing::Test, public sigslot::has_slots<> {
+class StunRequestTest : public ::testing::Test, public sigslot::has_slots<> {
  public:
   StunRequestTest()
       : manager_(rtc::Thread::Current()),

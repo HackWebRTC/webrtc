@@ -30,7 +30,7 @@ using cricket::TransportOptions;
 using ::testing::Contains;
 using ::testing::Not;
 
-class TransportDescriptionFactoryTest : public testing::Test {
+class TransportDescriptionFactoryTest : public ::testing::Test {
  public:
   TransportDescriptionFactoryTest()
       : ice_credentials_({}),

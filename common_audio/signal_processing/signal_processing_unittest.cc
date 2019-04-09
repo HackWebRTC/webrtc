@@ -25,7 +25,7 @@ static const int16_t vector16[kVector16Size] = {1,
                                                 -3333,
                                                 345};
 
-class SplTest : public testing::Test {
+class SplTest : public ::testing::Test {
  protected:
   SplTest() { WebRtcSpl_Init(); }
   ~SplTest() override {}

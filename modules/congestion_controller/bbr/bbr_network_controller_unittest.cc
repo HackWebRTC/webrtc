@@ -17,15 +17,15 @@
 #include "test/gtest.h"
 #include "test/scenario/scenario.h"
 
-using testing::Field;
-using testing::Matcher;
-using testing::AllOf;
-using testing::Ge;
-using testing::Le;
-using testing::NiceMock;
-using testing::Property;
-using testing::StrictMock;
-using testing::_;
+using ::testing::_;
+using ::testing::AllOf;
+using ::testing::Field;
+using ::testing::Ge;
+using ::testing::Le;
+using ::testing::Matcher;
+using ::testing::NiceMock;
+using ::testing::Property;
+using ::testing::StrictMock;
 
 namespace webrtc {
 namespace test {

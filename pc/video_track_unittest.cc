@@ -27,7 +27,7 @@ using webrtc::VideoTrack;
 using webrtc::VideoTrackInterface;
 using webrtc::VideoTrackSource;
 
-class VideoTrackTest : public testing::Test {
+class VideoTrackTest : public ::testing::Test {
  public:
   VideoTrackTest() : frame_source_(640, 480, rtc::kNumMicrosecsPerSec / 30) {
     static const char kVideoTrackId[] = "track_id";

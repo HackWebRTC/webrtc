@@ -27,11 +27,11 @@
 
 namespace webrtc {
 
-using testing::_;
-using testing::ElementsAreArray;
-using testing::Invoke;
-using testing::NiceMock;
-using testing::Return;
+using ::testing::_;
+using ::testing::ElementsAreArray;
+using ::testing::Invoke;
+using ::testing::NiceMock;
+using ::testing::Return;
 using EncoderInfo = webrtc::VideoEncoder::EncoderInfo;
 using FramerateFractions =
     absl::InlinedVector<uint8_t, webrtc::kMaxTemporalStreams>;

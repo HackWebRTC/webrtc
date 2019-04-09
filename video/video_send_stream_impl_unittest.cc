@@ -32,10 +32,10 @@
 namespace webrtc {
 namespace internal {
 namespace {
-using testing::_;
-using testing::Invoke;
-using testing::NiceMock;
-using testing::Return;
+using ::testing::_;
+using ::testing::Invoke;
+using ::testing::NiceMock;
+using ::testing::Return;
 
 constexpr int64_t kDefaultInitialBitrateBps = 333000;
 const double kDefaultBitratePriority = 0.5;
@@ -105,11 +105,11 @@ class VideoSendStreamImplTest : public ::testing::Test {
                 CreateRtpVideoSender(_, _, _, _, _, _, _, _, _))
         .WillRepeatedly(Return(&rtp_video_sender_));
     EXPECT_CALL(rtp_video_sender_, SetActive(_))
-        .WillRepeatedly(testing::Invoke(
+        .WillRepeatedly(::testing::Invoke(
             [&](bool active) { rtp_video_sender_active_ = active; }));
     EXPECT_CALL(rtp_video_sender_, IsActive())
         .WillRepeatedly(
-            testing::Invoke([&]() { return rtp_video_sender_active_; }));
+            ::testing::Invoke([&]() { return rtp_video_sender_active_; }));
   }
   ~VideoSendStreamImplTest() {}
 

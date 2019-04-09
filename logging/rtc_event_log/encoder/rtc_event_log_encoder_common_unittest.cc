@@ -21,7 +21,7 @@ namespace webrtc_event_logging {
 namespace {
 
 template <typename T>
-class SignednessConversionTest : public testing::Test {
+class SignednessConversionTest : public ::testing::Test {
  public:
   static_assert(std::is_integral<T>::value, "");
   static_assert(std::is_signed<T>::value, "");

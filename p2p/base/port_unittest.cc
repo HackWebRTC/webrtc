@@ -397,7 +397,7 @@ class TestChannel : public sigslot::has_slots<> {
   bool connection_ready_to_send_ = false;
 };
 
-class PortTest : public testing::Test, public sigslot::has_slots<> {
+class PortTest : public ::testing::Test, public sigslot::has_slots<> {
  public:
   PortTest()
       : ss_(new rtc::VirtualSocketServer()),

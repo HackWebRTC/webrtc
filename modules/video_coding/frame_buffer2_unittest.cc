@@ -25,8 +25,8 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
-using testing::_;
-using testing::Return;
+using ::testing::_;
+using ::testing::Return;
 
 namespace webrtc {
 namespace video_coding {

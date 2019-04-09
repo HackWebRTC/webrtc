@@ -162,7 +162,7 @@ struct Receiver : public MessageHandler, public sigslot::has_slots<> {
 };
 
 // Note: This test uses a fake clock in addition to a virtual network.
-class VirtualSocketServerTest : public testing::Test {
+class VirtualSocketServerTest : public ::testing::Test {
  public:
   VirtualSocketServerTest()
       : ss_(&fake_clock_),

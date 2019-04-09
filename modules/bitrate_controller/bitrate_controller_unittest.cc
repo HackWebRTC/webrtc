@@ -94,7 +94,7 @@ class BitrateControllerTest : public ::testing::Test {
   TestBitrateObserver bitrate_observer_;
   std::unique_ptr<BitrateController> controller_;
   RtcpBandwidthObserver* bandwidth_observer_;
-  testing::NiceMock<webrtc::MockRtcEventLog> event_log_;
+  ::testing::NiceMock<webrtc::MockRtcEventLog> event_log_;
 };
 
 TEST_F(BitrateControllerTest, DefaultMinMaxBitrate) {

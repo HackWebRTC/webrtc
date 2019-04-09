@@ -21,12 +21,12 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
-using testing::_;
-using testing::AtLeast;
-using testing::Field;
-using testing::Matcher;
-using testing::NiceMock;
-using testing::Return;
+using ::testing::_;
+using ::testing::AtLeast;
+using ::testing::Field;
+using ::testing::Matcher;
+using ::testing::NiceMock;
+using ::testing::Return;
 
 namespace webrtc {
 namespace test {

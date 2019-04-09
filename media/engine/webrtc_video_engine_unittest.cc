@@ -57,7 +57,7 @@
 #include "test/frame_generator.h"
 #include "test/gmock.h"
 
-using testing::Field;
+using ::testing::Field;
 using webrtc::BitrateConstraints;
 using webrtc::RtpExtension;
 
@@ -342,7 +342,7 @@ TEST_F(WebRtcVideoEngineTestWithGenericDescriptor,
 TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionBeforeCapturer) {
   // Allocate the source first to prevent early destruction before channel's
   // dtor is called.
-  testing::NiceMock<MockVideoSource> video_source;
+  ::testing::NiceMock<MockVideoSource> video_source;
 
   encoder_factory_->AddSupportedVideoCodecType("VP8");
 
@@ -360,19 +360,19 @@ TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionBeforeCapturer) {
 
   EXPECT_CALL(
       video_source,
-      AddOrUpdateSink(testing::_,
+      AddOrUpdateSink(::testing::_,
                       Field(&rtc::VideoSinkWants::rotation_applied, false)));
   // Set capturer.
   EXPECT_TRUE(channel->SetVideoSend(kSsrc, nullptr, &video_source));
 
   // Verify capturer has turned off applying rotation.
-  testing::Mock::VerifyAndClear(&video_source);
+  ::testing::Mock::VerifyAndClear(&video_source);
 
   // Verify removing header extension turns on applying rotation.
   parameters.extensions.clear();
   EXPECT_CALL(
       video_source,
-      AddOrUpdateSink(testing::_,
+      AddOrUpdateSink(::testing::_,
                       Field(&rtc::VideoSinkWants::rotation_applied, true)));
 
   EXPECT_TRUE(channel->SetSendParameters(parameters));
@@ -381,7 +381,7 @@ TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionBeforeCapturer) {
 TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionBeforeAddSendStream) {
   // Allocate the source first to prevent early destruction before channel's
   // dtor is called.
-  testing::NiceMock<MockVideoSource> video_source;
+  ::testing::NiceMock<MockVideoSource> video_source;
 
   encoder_factory_->AddSupportedVideoCodecType("VP8");
 
@@ -399,13 +399,13 @@ TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionBeforeAddSendStream) {
   // Set source.
   EXPECT_CALL(
       video_source,
-      AddOrUpdateSink(testing::_,
+      AddOrUpdateSink(::testing::_,
                       Field(&rtc::VideoSinkWants::rotation_applied, false)));
   EXPECT_TRUE(channel->SetVideoSend(kSsrc, nullptr, &video_source));
 }
 
 TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionAfterCapturer) {
-  testing::NiceMock<MockVideoSource> video_source;
+  ::testing::NiceMock<MockVideoSource> video_source;
 
   encoder_factory_->AddSupportedVideoCodecType("VP8");
   encoder_factory_->AddSupportedVideoCodecType("VP9");
@@ -417,12 +417,12 @@ TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionAfterCapturer) {
   // Set capturer.
   EXPECT_CALL(
       video_source,
-      AddOrUpdateSink(testing::_,
+      AddOrUpdateSink(::testing::_,
                       Field(&rtc::VideoSinkWants::rotation_applied, true)));
   EXPECT_TRUE(channel->SetVideoSend(kSsrc, nullptr, &video_source));
 
   // Verify capturer has turned on applying rotation.
-  testing::Mock::VerifyAndClear(&video_source);
+  ::testing::Mock::VerifyAndClear(&video_source);
 
   // Add CVO extension.
   const int id = 1;
@@ -435,18 +435,18 @@ TEST_F(WebRtcVideoEngineTest, CVOSetHeaderExtensionAfterCapturer) {
   parameters.codecs.erase(parameters.codecs.begin());
   EXPECT_CALL(
       video_source,
-      AddOrUpdateSink(testing::_,
+      AddOrUpdateSink(::testing::_,
                       Field(&rtc::VideoSinkWants::rotation_applied, false)));
   EXPECT_TRUE(channel->SetSendParameters(parameters));
 
   // Verify capturer has turned off applying rotation.
-  testing::Mock::VerifyAndClear(&video_source);
+  ::testing::Mock::VerifyAndClear(&video_source);
 
   // Verify removing header extension turns on applying rotation.
   parameters.extensions.clear();
   EXPECT_CALL(
       video_source,
-      AddOrUpdateSink(testing::_,
+      AddOrUpdateSink(::testing::_,
                       Field(&rtc::VideoSinkWants::rotation_applied, true)));
   EXPECT_TRUE(channel->SetSendParameters(parameters));
 }
@@ -710,11 +710,11 @@ void WebRtcVideoEngineTest::ExpectRtpCapabilitySupport(const char* uri,
   const RtpCapabilities capabilities = engine_.GetCapabilities();
   if (supported) {
     EXPECT_THAT(capabilities.header_extensions,
-                testing::Contains(testing::Field(&RtpExtension::uri, uri)));
+                ::testing::Contains(::testing::Field(&RtpExtension::uri, uri)));
   } else {
-    EXPECT_THAT(
-        capabilities.header_extensions,
-        testing::Each(testing::Field(&RtpExtension::uri, testing::StrNe(uri))));
+    EXPECT_THAT(capabilities.header_extensions,
+                ::testing::Each(::testing::Field(&RtpExtension::uri,
+                                                 ::testing::StrNe(uri))));
   }
 }
 
@@ -1053,7 +1053,7 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, Vp8) {
   EXPECT_CALL(*rate_allocator_factory,
               CreateVideoBitrateAllocatorProxy(Field(
                   &webrtc::VideoCodec::codecType, webrtc::kVideoCodecVP8)))
-      .WillOnce(testing::Return(new webrtc::MockVideoBitrateAllocator()));
+      .WillOnce(::testing::Return(new webrtc::MockVideoBitrateAllocator()));
   WebRtcVideoEngine engine(
       (std::unique_ptr<webrtc::VideoEncoderFactory>(encoder_factory)),
       (std::unique_ptr<webrtc::VideoDecoderFactory>(decoder_factory)),
@@ -1062,7 +1062,7 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, Vp8) {
   const webrtc::SdpVideoFormat vp8_format("VP8");
   const std::vector<webrtc::SdpVideoFormat> supported_formats = {vp8_format};
   EXPECT_CALL(*encoder_factory, GetSupportedFormats())
-      .WillRepeatedly(testing::Return(supported_formats));
+      .WillRepeatedly(::testing::Return(supported_formats));
 
   // Verify the codecs from the engine.
   const std::vector<VideoCodec> engine_codecs = engine.codecs();
@@ -1101,7 +1101,7 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, Vp8) {
   codec_info.has_internal_source = false;
   const webrtc::SdpVideoFormat format("VP8");
   EXPECT_CALL(*encoder_factory, QueryVideoEncoder(format))
-      .WillRepeatedly(testing::Return(codec_info));
+      .WillRepeatedly(::testing::Return(codec_info));
   FakeWebRtcVideoEncoder* const encoder = new FakeWebRtcVideoEncoder(nullptr);
   rtc::Event encoder_created;
   EXPECT_CALL(*encoder_factory, CreateVideoEncoderProxy(format))
@@ -1113,7 +1113,7 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, Vp8) {
   // Mock decoder creation. |engine| take ownership of the decoder.
   FakeWebRtcVideoDecoder* const decoder = new FakeWebRtcVideoDecoder(nullptr);
   EXPECT_CALL(*decoder_factory, CreateVideoDecoderProxy(format))
-      .WillOnce(testing::Return(decoder));
+      .WillOnce(::testing::Return(decoder));
 
   // Create a call.
   webrtc::RtcEventLogNullImpl event_log;
@@ -1176,11 +1176,11 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, NullDecoder) {
   const webrtc::SdpVideoFormat vp8_format("VP8");
   const std::vector<webrtc::SdpVideoFormat> supported_formats = {vp8_format};
   EXPECT_CALL(*encoder_factory, GetSupportedFormats())
-      .WillRepeatedly(testing::Return(supported_formats));
+      .WillRepeatedly(::testing::Return(supported_formats));
 
   // Decoder creation fails.
-  EXPECT_CALL(*decoder_factory, CreateVideoDecoderProxy(testing::_))
-      .WillOnce(testing::Return(nullptr));
+  EXPECT_CALL(*decoder_factory, CreateVideoDecoderProxy(::testing::_))
+      .WillOnce(::testing::Return(nullptr));
 
   // Create a call.
   webrtc::RtcEventLogNullImpl event_log;
@@ -1261,7 +1261,7 @@ TEST_F(WebRtcVideoEngineTest, DISABLED_RecreatesEncoderOnContentTypeChange) {
   EXPECT_EQ(0u, encoder_factory_->encoders().size());
 }
 
-class WebRtcVideoChannelBaseTest : public testing::Test {
+class WebRtcVideoChannelBaseTest : public ::testing::Test {
  protected:
   WebRtcVideoChannelBaseTest()
       : engine_(webrtc::CreateBuiltinVideoEncoderFactory(),
@@ -7113,7 +7113,7 @@ TEST_F(WebRtcVideoChannelTest, ConfiguresLocalSsrcOnExistingReceivers) {
   TestReceiverLocalSsrcConfiguration(true);
 }
 
-class WebRtcVideoChannelSimulcastTest : public testing::Test {
+class WebRtcVideoChannelSimulcastTest : public ::testing::Test {
  public:
   WebRtcVideoChannelSimulcastTest()
       : fake_call_(),

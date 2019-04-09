@@ -118,7 +118,7 @@ MATCHER_P(SamePacketAs, other, "") {
 
 }  // namespace
 
-class RtpVideoStreamReceiverTest : public testing::Test {
+class RtpVideoStreamReceiverTest : public ::testing::Test {
  public:
   RtpVideoStreamReceiverTest() : RtpVideoStreamReceiverTest("") {}
   explicit RtpVideoStreamReceiverTest(std::string field_trials)
@@ -279,7 +279,7 @@ TEST_F(RtpVideoStreamReceiverTest, GenericKeyFrameBitstreamError) {
 
 class RtpVideoStreamReceiverTestH264
     : public RtpVideoStreamReceiverTest,
-      public testing::WithParamInterface<std::string> {
+      public ::testing::WithParamInterface<std::string> {
  protected:
   RtpVideoStreamReceiverTestH264() : RtpVideoStreamReceiverTest(GetParam()) {}
 };

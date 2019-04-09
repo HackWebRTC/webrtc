@@ -28,10 +28,10 @@
 namespace webrtc {
 namespace {
 
-using testing::AtLeast;
-using testing::Return;
-using testing::StrictMock;
-using testing::_;
+using ::testing::_;
+using ::testing::AtLeast;
+using ::testing::Return;
+using ::testing::StrictMock;
 
 // Verifies that the basic BlockProcessor functionality works and that the API
 // methods are callable.
@@ -151,7 +151,7 @@ TEST(BlockProcessor, DISABLED_SubmoduleIntegration) {
         render_delay_buffer_mock(
             new StrictMock<webrtc::test::MockRenderDelayBuffer>(rate));
     std::unique_ptr<
-        testing::StrictMock<webrtc::test::MockRenderDelayController>>
+        ::testing::StrictMock<webrtc::test::MockRenderDelayController>>
         render_delay_controller_mock(
             new StrictMock<webrtc::test::MockRenderDelayController>());
     std::unique_ptr<testing::StrictMock<webrtc::test::MockEchoRemover>>

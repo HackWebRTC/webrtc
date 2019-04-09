@@ -50,7 +50,7 @@ class MockObserver : public ObserverInterface {
   NotifierInterface* notifier_;
 };
 
-class MediaStreamTest : public testing::Test {
+class MediaStreamTest : public ::testing::Test {
  protected:
   virtual void SetUp() {
     stream_ = MediaStream::Create(kStreamId1);

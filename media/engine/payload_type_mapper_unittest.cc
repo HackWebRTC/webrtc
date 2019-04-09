@@ -18,7 +18,7 @@
 
 namespace cricket {
 
-class PayloadTypeMapperTest : public testing::Test {
+class PayloadTypeMapperTest : public ::testing::Test {
  protected:
   PayloadTypeMapper mapper_;
 };

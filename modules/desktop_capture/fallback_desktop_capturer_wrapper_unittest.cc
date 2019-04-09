@@ -65,7 +65,7 @@ std::unique_ptr<SharedMemory> FakeSharedMemoryFactory::CreateSharedMemory(
 
 }  // namespace
 
-class FallbackDesktopCapturerWrapperTest : public testing::Test,
+class FallbackDesktopCapturerWrapperTest : public ::testing::Test,
                                            public DesktopCapturer::Callback {
  public:
   FallbackDesktopCapturerWrapperTest();

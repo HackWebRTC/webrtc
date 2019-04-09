@@ -19,9 +19,9 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
-using testing::_;
-using testing::Field;
-using testing::Return;
+using ::testing::_;
+using ::testing::Field;
+using ::testing::Return;
 
 namespace {
 constexpr unsigned kFirstClusterBps = 900000;
@@ -106,7 +106,7 @@ class PacedSenderProbing : public PacedSender::PacketSender {
   int padding_sent_;
 };
 
-class PacedSenderTest : public testing::TestWithParam<std::string> {
+class PacedSenderTest : public ::testing::TestWithParam<std::string> {
  protected:
   PacedSenderTest() : clock_(123456) {
     srand(0);
@@ -141,7 +141,7 @@ class PacedSenderTest : public testing::TestWithParam<std::string> {
   std::unique_ptr<PacedSender> send_bucket_;
 };
 
-class PacedSenderFieldTrialTest : public testing::Test {
+class PacedSenderFieldTrialTest : public ::testing::Test {
  protected:
   struct MediaStream {
     const RtpPacketSender::Priority priority;
@@ -215,7 +215,7 @@ TEST_F(PacedSenderFieldTrialTest, DefaultCongestionWindowAffectsAudio) {
   ProcessNext(&pacer);
   ProcessNext(&pacer);
   // Audio packet unblocked when congestion window clear.
-  testing::Mock::VerifyAndClearExpectations(&callback_);
+  ::testing::Mock::VerifyAndClearExpectations(&callback_);
   pacer.UpdateOutstandingData(0);
   EXPECT_CALL(callback_, TimeToSendPacket).WillOnce(Return(true));
   ProcessNext(&pacer);
@@ -251,7 +251,7 @@ TEST_F(PacedSenderFieldTrialTest, DefaultBudgetAffectsAudio) {
   InsertPacket(&pacer, &audio);
   ProcessNext(&pacer);
   ProcessNext(&pacer);
-  testing::Mock::VerifyAndClearExpectations(&callback_);
+  ::testing::Mock::VerifyAndClearExpectations(&callback_);
   // Audio packet unblocked when the budget has recovered.
   EXPECT_CALL(callback_, TimeToSendPacket).WillOnce(Return(true));
   ProcessNext(&pacer);
@@ -699,7 +699,7 @@ TEST_F(PacedSenderTest, SendsOnlyPaddingWhenCongested) {
     clock_.AdvanceTimeMilliseconds(5);
     send_bucket_->Process();
   }
-  testing::Mock::VerifyAndClearExpectations(&callback_);
+  ::testing::Mock::VerifyAndClearExpectations(&callback_);
   EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, _, _)).Times(0);
   EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
 
@@ -714,7 +714,7 @@ TEST_F(PacedSenderTest, SendsOnlyPaddingWhenCongested) {
     send_bucket_->Process();
     expected_time_until_padding -= 5;
   }
-  testing::Mock::VerifyAndClearExpectations(&callback_);
+  ::testing::Mock::VerifyAndClearExpectations(&callback_);
   EXPECT_CALL(callback_, TimeToSendPadding(1, _)).Times(1);
   clock_.AdvanceTimeMilliseconds(5);
   send_bucket_->Process();
@@ -781,7 +781,7 @@ TEST_F(PacedSenderTest, ResumesSendingWhenCongestionEnds) {
     clock_.AdvanceTimeMilliseconds(5);
     send_bucket_->Process();
   }
-  testing::Mock::VerifyAndClearExpectations(&callback_);
+  ::testing::Mock::VerifyAndClearExpectations(&callback_);
   EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, _, _)).Times(0);
   int unacked_packets = 0;
   for (int duration = 0; duration < kCongestionTimeMs; duration += 5) {
@@ -792,7 +792,7 @@ TEST_F(PacedSenderTest, ResumesSendingWhenCongestionEnds) {
     clock_.AdvanceTimeMilliseconds(5);
     send_bucket_->Process();
   }
-  testing::Mock::VerifyAndClearExpectations(&callback_);
+  ::testing::Mock::VerifyAndClearExpectations(&callback_);
 
   // First mark half of the congested packets as cleared and make sure that just
   // as many are sent
@@ -808,7 +808,7 @@ TEST_F(PacedSenderTest, ResumesSendingWhenCongestionEnds) {
     send_bucket_->Process();
   }
   unacked_packets -= ack_count;
-  testing::Mock::VerifyAndClearExpectations(&callback_);
+  ::testing::Mock::VerifyAndClearExpectations(&callback_);
 
   // Second make sure all packets are sent if sent packets are continuously
   // marked as acked.
@@ -882,11 +882,11 @@ TEST_F(PacedSenderTest, Pause) {
     clock_.AdvanceTimeMilliseconds(5);
     expected_time_until_send -= 5;
   }
-  testing::Mock::VerifyAndClearExpectations(&callback_);
+  ::testing::Mock::VerifyAndClearExpectations(&callback_);
   EXPECT_CALL(callback_, TimeToSendPadding(1, _)).Times(1);
   clock_.AdvanceTimeMilliseconds(5);
   send_bucket_->Process();
-  testing::Mock::VerifyAndClearExpectations(&callback_);
+  ::testing::Mock::VerifyAndClearExpectations(&callback_);
 
   // Expect high prio packets to come out first followed by normal
   // prio packets and low prio packets (all in capture order).

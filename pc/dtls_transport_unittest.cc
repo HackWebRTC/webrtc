@@ -47,7 +47,7 @@ class TestDtlsTransportObserver : public DtlsTransportObserverInterface {
   std::vector<DtlsTransportState> states_;
 };
 
-class DtlsTransportTest : public testing::Test {
+class DtlsTransportTest : public ::testing::Test {
  public:
   DtlsTransport* transport() { return transport_.get(); }
   DtlsTransportObserverInterface* observer() { return &observer_; }

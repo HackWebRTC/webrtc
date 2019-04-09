@@ -16,7 +16,7 @@
 #include "rtc_base/copy_on_write_buffer.h"
 #include "test/gtest.h"
 
-class SctpUtilsTest : public testing::Test {
+class SctpUtilsTest : public ::testing::Test {
  public:
   void VerifyOpenMessageFormat(const rtc::CopyOnWriteBuffer& packet,
                                const std::string& label,

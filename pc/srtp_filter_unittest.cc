@@ -62,7 +62,7 @@ static const cricket::CryptoParams kTestCryptoParamsGcm4(1,
                                                          kTestKeyParamsGcm4,
                                                          "");
 
-class SrtpFilterTest : public testing::Test {
+class SrtpFilterTest : public ::testing::Test {
  protected:
   SrtpFilterTest() {}
   static std::vector<CryptoParams> MakeVector(const CryptoParams& params) {

@@ -87,7 +87,7 @@ std::vector<SimulcastLayer> CreateLayers(int num_layers, bool active) {
 }  // namespace
 namespace webrtc {
 
-class PeerConnectionSimulcastTests : public testing::Test {
+class PeerConnectionSimulcastTests : public ::testing::Test {
  public:
   PeerConnectionSimulcastTests()
       : pc_factory_(

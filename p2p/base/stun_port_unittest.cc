@@ -41,7 +41,7 @@ static const int kInfiniteLifetime = -1;
 static const int kHighCostPortKeepaliveLifetimeMs = 2 * 60 * 1000;
 
 // Tests connecting a StunPort to a fake STUN server (cricket::StunServer)
-class StunPortTestBase : public testing::Test, public sigslot::has_slots<> {
+class StunPortTestBase : public ::testing::Test, public sigslot::has_slots<> {
  public:
   StunPortTestBase()
       : ss_(new rtc::VirtualSocketServer()),
@@ -419,17 +419,18 @@ TEST_F(StunPortTest, TestStunPacketsHaveDscpPacketOption) {
   EXPECT_CALL(*socket, SetOption(_, _)).WillRepeatedly(Return(0));
 
   // If DSCP is not set on the socket, stun packets should have no value.
-  EXPECT_CALL(*socket, SendTo(_, _, _,
-                              testing::Field(&rtc::PacketOptions::dscp,
-                                             testing::Eq(rtc::DSCP_NO_CHANGE))))
+  EXPECT_CALL(*socket,
+              SendTo(_, _, _,
+                     ::testing::Field(&rtc::PacketOptions::dscp,
+                                      ::testing::Eq(rtc::DSCP_NO_CHANGE))))
       .WillOnce(Return(100));
   PrepareAddress();
 
   // Once it is set transport wide, they should inherit that value.
   port()->SetOption(rtc::Socket::OPT_DSCP, rtc::DSCP_AF41);
   EXPECT_CALL(*socket, SendTo(_, _, _,
-                              testing::Field(&rtc::PacketOptions::dscp,
-                                             testing::Eq(rtc::DSCP_AF41))))
+                              ::testing::Field(&rtc::PacketOptions::dscp,
+                                               ::testing::Eq(rtc::DSCP_AF41))))
       .WillRepeatedly(Return(100));
   EXPECT_TRUE_SIMULATED_WAIT(done(), kTimeoutMs, fake_clock);
 }

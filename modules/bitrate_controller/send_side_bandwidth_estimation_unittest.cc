@@ -34,7 +34,7 @@ MATCHER(LossBasedBweUpdateWithBitrateAndLossFraction, "") {
 }
 
 void TestProbing(bool use_delay_based) {
-  testing::NiceMock<MockRtcEventLog> event_log;
+  ::testing::NiceMock<MockRtcEventLog> event_log;
   SendSideBandwidthEstimation bwe(&event_log);
   int64_t now_ms = 0;
   bwe.SetMinMaxBitrate(DataRate::bps(100000), DataRate::bps(1500000));

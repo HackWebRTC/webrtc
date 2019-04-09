@@ -710,7 +710,7 @@ TEST_F(PeerConnectionJsepTest, CreateOfferRecyclesWhenOfferingTwice) {
 // - The new transceiver is associated with the new MID value.
 class RecycleMediaSectionTest
     : public PeerConnectionJsepTest,
-      public testing::WithParamInterface<
+      public ::testing::WithParamInterface<
           std::tuple<cricket::MediaType, cricket::MediaType>> {
  protected:
   RecycleMediaSectionTest() {

@@ -31,17 +31,17 @@ class MockDataChannel : public rtc::RefCountedObject<DataChannel> {
                   uint32_t messages_received,
                   uint64_t bytes_received)
       : rtc::RefCountedObject<DataChannel>(nullptr, cricket::DCT_NONE, label) {
-    EXPECT_CALL(*this, id()).WillRepeatedly(testing::Return(id));
-    EXPECT_CALL(*this, state()).WillRepeatedly(testing::Return(state));
-    EXPECT_CALL(*this, protocol()).WillRepeatedly(testing::Return(protocol));
+    EXPECT_CALL(*this, id()).WillRepeatedly(::testing::Return(id));
+    EXPECT_CALL(*this, state()).WillRepeatedly(::testing::Return(state));
+    EXPECT_CALL(*this, protocol()).WillRepeatedly(::testing::Return(protocol));
     EXPECT_CALL(*this, messages_sent())
-        .WillRepeatedly(testing::Return(messages_sent));
+        .WillRepeatedly(::testing::Return(messages_sent));
     EXPECT_CALL(*this, bytes_sent())
-        .WillRepeatedly(testing::Return(bytes_sent));
+        .WillRepeatedly(::testing::Return(bytes_sent));
     EXPECT_CALL(*this, messages_received())
-        .WillRepeatedly(testing::Return(messages_received));
+        .WillRepeatedly(::testing::Return(messages_received));
     EXPECT_CALL(*this, bytes_received())
-        .WillRepeatedly(testing::Return(bytes_received));
+        .WillRepeatedly(::testing::Return(bytes_received));
   }
   MOCK_CONST_METHOD0(id, int());
   MOCK_CONST_METHOD0(state, DataState());

@@ -21,7 +21,7 @@
 
 namespace webrtc {
 
-class WindowCapturerTest : public testing::Test,
+class WindowCapturerTest : public ::testing::Test,
                            public DesktopCapturer::Callback {
  public:
   void SetUp() override {

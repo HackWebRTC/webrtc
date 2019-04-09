@@ -67,7 +67,7 @@ class RTCCertificateGeneratorFixture : public RTCCertificateGeneratorCallback {
   bool generate_async_completed_;
 };
 
-class RTCCertificateGeneratorTest : public testing::Test {
+class RTCCertificateGeneratorTest : public ::testing::Test {
  public:
   RTCCertificateGeneratorTest()
       : fixture_(new RefCountedObject<RTCCertificateGeneratorFixture>()) {}

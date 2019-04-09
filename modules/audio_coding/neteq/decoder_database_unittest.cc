@@ -21,8 +21,8 @@
 #include "test/mock_audio_decoder.h"
 #include "test/mock_audio_decoder_factory.h"
 
-using testing::_;
-using testing::Invoke;
+using ::testing::_;
+using ::testing::Invoke;
 
 namespace webrtc {
 

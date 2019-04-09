@@ -76,7 +76,7 @@ class TestSctpTransportObserver : public SctpTransportObserverInterface {
   std::vector<SctpTransportState> states_;
 };
 
-class SctpTransportTest : public testing::Test {
+class SctpTransportTest : public ::testing::Test {
  public:
   SctpTransport* transport() { return transport_.get(); }
   SctpTransportObserverInterface* observer() { return &observer_; }

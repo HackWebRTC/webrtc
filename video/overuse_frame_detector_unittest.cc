@@ -250,7 +250,7 @@ TEST_F(OveruseFrameDetectorTest, OveruseAndRecover) {
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(1);
   TriggerOveruse(options_.high_threshold_consecutive_count);
   // usage < low => underuse
-  EXPECT_CALL(mock_observer_, AdaptUp(reason_)).Times(testing::AtLeast(1));
+  EXPECT_CALL(mock_observer_, AdaptUp(reason_)).Times(::testing::AtLeast(1));
   TriggerUnderuse();
 }
 
@@ -259,7 +259,7 @@ TEST_F(OveruseFrameDetectorTest, DoubleOveruseAndRecover) {
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(2);
   TriggerOveruse(options_.high_threshold_consecutive_count);
   TriggerOveruse(options_.high_threshold_consecutive_count);
-  EXPECT_CALL(mock_observer_, AdaptUp(reason_)).Times(testing::AtLeast(1));
+  EXPECT_CALL(mock_observer_, AdaptUp(reason_)).Times(::testing::AtLeast(1));
   TriggerUnderuse();
 }
 
@@ -370,7 +370,7 @@ TEST_F(OveruseFrameDetectorTest, InitialProcessingUsage) {
 
 TEST_F(OveruseFrameDetectorTest, MeasuresMultipleConcurrentSamples) {
   overuse_detector_->SetOptions(options_);
-  EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(testing::AtLeast(1));
+  EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(::testing::AtLeast(1));
   static const int kIntervalUs = 33 * rtc::kNumMicrosecsPerMillisec;
   static const size_t kNumFramesEncodingDelay = 3;
   VideoFrame frame =
@@ -397,7 +397,7 @@ TEST_F(OveruseFrameDetectorTest, MeasuresMultipleConcurrentSamples) {
 TEST_F(OveruseFrameDetectorTest, UpdatesExistingSamples) {
   // >85% encoding time should trigger overuse.
   overuse_detector_->SetOptions(options_);
-  EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(testing::AtLeast(1));
+  EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(::testing::AtLeast(1));
   static const int kIntervalUs = 33 * rtc::kNumMicrosecsPerMillisec;
   static const int kDelayUs = 30 * rtc::kNumMicrosecsPerMillisec;
   VideoFrame frame =
@@ -576,7 +576,7 @@ TEST_F(OveruseFrameDetectorTest, NoOveruseForLargeRandomFrameInterval) {
 
   // EXPECT_CALL(mock_observer_, AdaptDown(_)).Times(0);
   // EXPECT_CALL(mock_observer_, AdaptUp(reason_))
-  //     .Times(testing::AtLeast(1));
+  //     .Times(::testing::AtLeast(1));
   overuse_detector_->SetOptions(options_);
 
   const int kNumFrames = 500;
@@ -605,7 +605,7 @@ TEST_F(OveruseFrameDetectorTest, NoOveruseForRandomFrameIntervalWithReset) {
   overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptDown(_)).Times(0);
   // EXPECT_CALL(mock_observer_, AdaptUp(reason_))
-  //     .Times(testing::AtLeast(1));
+  //     .Times(::testing::AtLeast(1));
 
   const int kNumFrames = 500;
   const int kEncodeTimeUs = 100 * rtc::kNumMicrosecsPerMillisec;
@@ -728,7 +728,7 @@ TEST_F(OveruseFrameDetectorTest2, OveruseAndRecover) {
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(1);
   TriggerOveruse(options_.high_threshold_consecutive_count);
   // usage < low => underuse
-  EXPECT_CALL(mock_observer_, AdaptUp(reason_)).Times(testing::AtLeast(1));
+  EXPECT_CALL(mock_observer_, AdaptUp(reason_)).Times(::testing::AtLeast(1));
   TriggerUnderuse();
 }
 
@@ -737,7 +737,7 @@ TEST_F(OveruseFrameDetectorTest2, DoubleOveruseAndRecover) {
   EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(2);
   TriggerOveruse(options_.high_threshold_consecutive_count);
   TriggerOveruse(options_.high_threshold_consecutive_count);
-  EXPECT_CALL(mock_observer_, AdaptUp(reason_)).Times(testing::AtLeast(1));
+  EXPECT_CALL(mock_observer_, AdaptUp(reason_)).Times(::testing::AtLeast(1));
   TriggerUnderuse();
 }
 
@@ -848,7 +848,7 @@ TEST_F(OveruseFrameDetectorTest2, InitialProcessingUsage) {
 
 TEST_F(OveruseFrameDetectorTest2, MeasuresMultipleConcurrentSamples) {
   overuse_detector_->SetOptions(options_);
-  EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(testing::AtLeast(1));
+  EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(::testing::AtLeast(1));
   static const int kIntervalUs = 33 * rtc::kNumMicrosecsPerMillisec;
   static const size_t kNumFramesEncodingDelay = 3;
   VideoFrame frame =
@@ -875,7 +875,7 @@ TEST_F(OveruseFrameDetectorTest2, MeasuresMultipleConcurrentSamples) {
 TEST_F(OveruseFrameDetectorTest2, UpdatesExistingSamples) {
   // >85% encoding time should trigger overuse.
   overuse_detector_->SetOptions(options_);
-  EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(testing::AtLeast(1));
+  EXPECT_CALL(mock_observer_, AdaptDown(reason_)).Times(::testing::AtLeast(1));
   static const int kIntervalUs = 33 * rtc::kNumMicrosecsPerMillisec;
   static const int kDelayUs = 30 * rtc::kNumMicrosecsPerMillisec;
   VideoFrame frame =
@@ -936,7 +936,7 @@ TEST_F(OveruseFrameDetectorTest2, RunOnTqNormalUsage) {
 TEST_F(OveruseFrameDetectorTest2, NoOveruseForLargeRandomFrameInterval) {
   overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptDown(_)).Times(0);
-  EXPECT_CALL(mock_observer_, AdaptUp(reason_)).Times(testing::AtLeast(1));
+  EXPECT_CALL(mock_observer_, AdaptUp(reason_)).Times(::testing::AtLeast(1));
 
   const int kNumFrames = 500;
   const int kEncodeTimeUs = 100 * rtc::kNumMicrosecsPerMillisec;
@@ -956,7 +956,7 @@ TEST_F(OveruseFrameDetectorTest2, NoOveruseForLargeRandomFrameInterval) {
 TEST_F(OveruseFrameDetectorTest2, NoOveruseForRandomFrameIntervalWithReset) {
   overuse_detector_->SetOptions(options_);
   EXPECT_CALL(mock_observer_, AdaptDown(_)).Times(0);
-  EXPECT_CALL(mock_observer_, AdaptUp(reason_)).Times(testing::AtLeast(1));
+  EXPECT_CALL(mock_observer_, AdaptUp(reason_)).Times(::testing::AtLeast(1));
 
   const int kNumFrames = 500;
   const int kEncodeTimeUs = 100 * rtc::kNumMicrosecsPerMillisec;

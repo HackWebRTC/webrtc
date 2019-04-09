@@ -101,7 +101,7 @@ class DataTraits : public Traits<cricket::RtpDataChannel,
 
 // Base class for Voice/Video/RtpDataChannel tests
 template <class T>
-class ChannelTest : public testing::Test, public sigslot::has_slots<> {
+class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
  public:
   enum Flags {
     RTCP_MUX = 0x1,

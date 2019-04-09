@@ -48,7 +48,7 @@ class MockSsrcBindingObserver : public SsrcBindingObserver {
                void(uint8_t payload_type, uint32_t ssrc));
 };
 
-class RtpDemuxerTest : public testing::Test {
+class RtpDemuxerTest : public ::testing::Test {
  protected:
   ~RtpDemuxerTest() {
     for (auto* sink : sinks_to_tear_down_) {

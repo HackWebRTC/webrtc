@@ -277,7 +277,7 @@ static const int kFifoBufferSize = 4096;
 static const int kBufferCapacity = 1;
 static const size_t kDefaultBufferSize = 2048;
 
-class SSLStreamAdapterTestBase : public testing::Test,
+class SSLStreamAdapterTestBase : public ::testing::Test,
                                  public sigslot::has_slots<> {
  public:
   SSLStreamAdapterTestBase(

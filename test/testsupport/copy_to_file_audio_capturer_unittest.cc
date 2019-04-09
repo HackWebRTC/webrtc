@@ -21,7 +21,7 @@
 namespace webrtc {
 namespace test {
 
-class CopyToFileAudioCapturerTest : public testing::Test {
+class CopyToFileAudioCapturerTest : public ::testing::Test {
  protected:
   void SetUp() override {
     temp_filename_ = webrtc::test::TempFilename(

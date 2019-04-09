@@ -19,10 +19,10 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
-using testing::_;
-using testing::NiceMock;
-using testing::InSequence;
-using testing::Return;
+using ::testing::_;
+using ::testing::InSequence;
+using ::testing::NiceMock;
+using ::testing::Return;
 
 namespace webrtc {
 

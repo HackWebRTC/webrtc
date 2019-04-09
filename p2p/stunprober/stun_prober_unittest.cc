@@ -35,7 +35,7 @@ const rtc::SocketAddress kStunMappedAddr("77.77.77.77", 0);
 
 }  // namespace
 
-class StunProberTest : public testing::Test {
+class StunProberTest : public ::testing::Test {
  public:
   StunProberTest()
       : ss_(new rtc::VirtualSocketServer()),

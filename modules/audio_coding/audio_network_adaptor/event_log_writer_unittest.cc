@@ -48,7 +48,7 @@ struct EventLogWriterStates {
 
 EventLogWriterStates CreateEventLogWriter() {
   EventLogWriterStates state;
-  state.event_log.reset(new testing::StrictMock<MockRtcEventLog>());
+  state.event_log.reset(new ::testing::StrictMock<MockRtcEventLog>());
   state.event_log_writer.reset(new EventLogWriter(
       state.event_log.get(), kMinBitrateChangeBps, kMinBitrateChangeFraction,
       kMinPacketLossChangeFraction));

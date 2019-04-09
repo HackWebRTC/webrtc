@@ -33,9 +33,9 @@ namespace webrtc {
 namespace test {
 namespace {
 
-using testing::_;
-using testing::FloatEq;
-using testing::Return;
+using ::testing::_;
+using ::testing::FloatEq;
+using ::testing::Return;
 
 AudioDecodingCallStats MakeAudioDecodeStatsForTest() {
   AudioDecodingCallStats audio_decode_stats;
@@ -76,7 +76,7 @@ struct ConfigHelper {
 
   explicit ConfigHelper(rtc::scoped_refptr<MockAudioMixer> audio_mixer)
       : audio_mixer_(audio_mixer) {
-    using testing::Invoke;
+    using ::testing::Invoke;
 
     AudioState::Config config;
     config.audio_mixer = audio_mixer_;
@@ -85,7 +85,7 @@ struct ConfigHelper {
         new rtc::RefCountedObject<testing::NiceMock<MockAudioDeviceModule>>();
     audio_state_ = AudioState::Create(config);
 
-    channel_receive_ = new testing::StrictMock<MockChannelReceive>();
+    channel_receive_ = new ::testing::StrictMock<MockChannelReceive>();
     EXPECT_CALL(*channel_receive_, SetLocalSSRC(kLocalSsrc)).Times(1);
     EXPECT_CALL(*channel_receive_, SetNACKStatus(true, 15)).Times(1);
     EXPECT_CALL(*channel_receive_,
@@ -96,7 +96,7 @@ struct ConfigHelper {
     EXPECT_CALL(*channel_receive_, SetAssociatedSendChannel(nullptr)).Times(1);
     EXPECT_CALL(*channel_receive_, SetReceiveCodecs(_))
         .WillRepeatedly(Invoke([](const std::map<int, SdpAudioFormat>& codecs) {
-          EXPECT_THAT(codecs, testing::IsEmpty());
+          EXPECT_THAT(codecs, ::testing::IsEmpty());
         }));
 
     stream_config_.rtp.local_ssrc = kLocalSsrc;
@@ -124,8 +124,8 @@ struct ConfigHelper {
   MockChannelReceive* channel_receive() { return channel_receive_; }
 
   void SetupMockForGetStats() {
-    using testing::DoAll;
-    using testing::SetArgPointee;
+    using ::testing::DoAll;
+    using ::testing::SetArgPointee;
 
     ASSERT_TRUE(channel_receive_);
     EXPECT_CALL(*channel_receive_, GetRTCPStatistics())
@@ -152,7 +152,7 @@ struct ConfigHelper {
   rtc::scoped_refptr<AudioState> audio_state_;
   rtc::scoped_refptr<MockAudioMixer> audio_mixer_;
   AudioReceiveStream::Config stream_config_;
-  testing::StrictMock<MockChannelReceive>* channel_receive_ = nullptr;
+  ::testing::StrictMock<MockChannelReceive>* channel_receive_ = nullptr;
   RtpStreamReceiverController rtp_stream_receiver_controller_;
   MockTransport rtcp_send_transport_;
 };
@@ -242,7 +242,7 @@ TEST(AudioReceiveStreamTest, ReceiveRtpPacket) {
   parsed_packet.set_arrival_time_ms((packet_time_us + 500) / 1000);
 
   EXPECT_CALL(*helper.channel_receive(),
-              OnRtpPacket(testing::Ref(parsed_packet)));
+              OnRtpPacket(::testing::Ref(parsed_packet)));
 
   recv_stream->OnRtpPacket(parsed_packet);
 }

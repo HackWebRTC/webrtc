@@ -425,7 +425,7 @@ TEST(ThreadTest, SetNameOnSignalQueueDestroyed) {
   delete thread2;
 }
 
-class AsyncInvokeTest : public testing::Test {
+class AsyncInvokeTest : public ::testing::Test {
  public:
   void IntCallback(int value) {
     EXPECT_EQ(expected_thread_, Thread::Current());
@@ -572,7 +572,7 @@ TEST_F(AsyncInvokeTest, FlushWithIds) {
   EXPECT_TRUE(flag2.get());
 }
 
-class GuardedAsyncInvokeTest : public testing::Test {
+class GuardedAsyncInvokeTest : public ::testing::Test {
  public:
   void IntCallback(int value) {
     EXPECT_EQ(expected_thread_, Thread::Current());

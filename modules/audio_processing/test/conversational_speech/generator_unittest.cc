@@ -167,7 +167,7 @@ void DeleteFolderAndContents(const std::string& dir) {
 
 }  // namespace
 
-using testing::_;
+using ::testing::_;
 
 TEST(ConversationalSpeechTest, Settings) {
   const conversational_speech::Config config(
@@ -223,7 +223,7 @@ TEST(ConversationalSpeechTest, MultiEndCallSetupDifferentSampleRates) {
   auto mock_wavreader_factory = CreateMockWavReaderFactory();
 
   // There are two unique audio tracks to read.
-  EXPECT_CALL(*mock_wavreader_factory, Create(testing::_)).Times(2);
+  EXPECT_CALL(*mock_wavreader_factory, Create(::testing::_)).Times(2);
 
   MultiEndCall multiend_call(
       timing, audiotracks_path, std::move(mock_wavreader_factory));
@@ -237,7 +237,7 @@ TEST(ConversationalSpeechTest, MultiEndCallSetupMultipleChannels) {
   auto mock_wavreader_factory = CreateMockWavReaderFactory();
 
   // There is one unique audio track to read.
-  EXPECT_CALL(*mock_wavreader_factory, Create(testing::_)).Times(1);
+  EXPECT_CALL(*mock_wavreader_factory, Create(::testing::_)).Times(1);
 
   MultiEndCall multiend_call(
       timing, audiotracks_path, std::move(mock_wavreader_factory));
@@ -252,7 +252,7 @@ TEST(ConversationalSpeechTest,
   auto mock_wavreader_factory = CreateMockWavReaderFactory();
 
   // There are two unique audio tracks to read.
-  EXPECT_CALL(*mock_wavreader_factory, Create(testing::_)).Times(2);
+  EXPECT_CALL(*mock_wavreader_factory, Create(::testing::_)).Times(2);
 
   MultiEndCall multiend_call(
       timing, audiotracks_path, std::move(mock_wavreader_factory));

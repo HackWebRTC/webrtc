@@ -116,7 +116,7 @@ class SignalTransportClosedReopener : public sigslot::has_slots<> {
 };
 
 // SCTP Data Engine testing framework.
-class SctpTransportTest : public testing::Test, public sigslot::has_slots<> {
+class SctpTransportTest : public ::testing::Test, public sigslot::has_slots<> {
  protected:
   // usrsctp uses the NSS random number generator on non-Android platforms,
   // so we need to initialize SSL.

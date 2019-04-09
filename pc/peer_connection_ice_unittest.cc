@@ -975,7 +975,7 @@ INSTANTIATE_TEST_SUITE_P(PeerConnectionIceTest,
                          Values(SdpSemantics::kPlanB,
                                 SdpSemantics::kUnifiedPlan));
 
-class PeerConnectionIceConfigTest : public testing::Test {
+class PeerConnectionIceConfigTest : public ::testing::Test {
  protected:
   void SetUp() override {
     pc_factory_ = CreatePeerConnectionFactory(

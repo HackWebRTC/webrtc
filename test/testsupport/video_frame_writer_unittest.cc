@@ -86,7 +86,7 @@ void AssertI420BuffersEq(
 
 }  // namespace
 
-class VideoFrameWriterTest : public testing::Test {
+class VideoFrameWriterTest : public ::testing::Test {
  protected:
   VideoFrameWriterTest() = default;
   ~VideoFrameWriterTest() override = default;

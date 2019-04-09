@@ -13,7 +13,7 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
-using testing::_;
+using ::testing::_;
 
 namespace webrtc {
 namespace test {

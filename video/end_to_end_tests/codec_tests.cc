@@ -35,7 +35,7 @@ enum : int {  // The first valid value is 1.
 }  // namespace
 
 class CodecEndToEndTest : public test::CallTest,
-                          public testing::WithParamInterface<std::string> {
+                          public ::testing::WithParamInterface<std::string> {
  public:
   CodecEndToEndTest() : field_trial_(GetParam()) {
     RegisterRtpExtension(
@@ -233,7 +233,7 @@ TEST_P(CodecEndToEndTest, SendsAndReceivesMultiplexVideoRotation90) {
 
 #if defined(WEBRTC_USE_H264)
 class EndToEndTestH264 : public test::CallTest,
-                         public testing::WithParamInterface<std::string> {
+                         public ::testing::WithParamInterface<std::string> {
  public:
   EndToEndTestH264() : field_trial_(GetParam()) {
     RegisterRtpExtension(RtpExtension(RtpExtension::kVideoRotationUri,

@@ -44,8 +44,8 @@
 #include "test/gtest.h"
 #include "test/video_codec_settings.h"
 
-using testing::_;
-using testing::Return;
+using ::testing::_;
+using ::testing::Return;
 
 namespace webrtc {
 
@@ -53,9 +53,9 @@ constexpr const char* kMultiplexAssociatedCodecName = cricket::kVp9CodecName;
 const VideoCodecType kMultiplexAssociatedCodecType =
     PayloadStringToCodecType(kMultiplexAssociatedCodecName);
 
-class TestMultiplexAdapter
-    : public VideoCodecUnitTest,
-      public testing::WithParamInterface<bool /* supports_augmenting_data */> {
+class TestMultiplexAdapter : public VideoCodecUnitTest,
+                             public ::testing::WithParamInterface<
+                                 bool /* supports_augmenting_data */> {
  public:
   TestMultiplexAdapter()
       : decoder_factory_(new webrtc::MockVideoDecoderFactory),

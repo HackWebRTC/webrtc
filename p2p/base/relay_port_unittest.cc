@@ -41,7 +41,7 @@ static const int kMaxTimeoutMs = 5000;
 // RelayPort and created sockets by listening for signals such as,
 // SignalConnectFailure, SignalConnectTimeout, SignalSocketClosed and
 // SignalReadPacket.
-class RelayPortTest : public testing::Test, public sigslot::has_slots<> {
+class RelayPortTest : public ::testing::Test, public sigslot::has_slots<> {
  public:
   RelayPortTest()
       : virtual_socket_server_(new rtc::VirtualSocketServer()),

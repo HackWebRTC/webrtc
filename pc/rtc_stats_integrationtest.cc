@@ -103,7 +103,7 @@ class RTCStatsReportTraceListener {
 RTCStatsReportTraceListener* RTCStatsReportTraceListener::traced_report_ =
     nullptr;
 
-class RTCStatsIntegrationTest : public testing::Test {
+class RTCStatsIntegrationTest : public ::testing::Test {
  public:
   RTCStatsIntegrationTest()
       : network_thread_(new rtc::Thread(&virtual_socket_server_)),

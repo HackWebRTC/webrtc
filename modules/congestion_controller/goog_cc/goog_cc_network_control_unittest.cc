@@ -16,11 +16,11 @@
 #include "test/gtest.h"
 #include "test/scenario/scenario.h"
 
-using testing::Field;
-using testing::Matcher;
-using testing::NiceMock;
-using testing::Property;
-using testing::_;
+using ::testing::_;
+using ::testing::Field;
+using ::testing::Matcher;
+using ::testing::NiceMock;
+using ::testing::Property;
 
 namespace webrtc {
 namespace test {

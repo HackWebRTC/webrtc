@@ -563,6 +563,6 @@ constexpr uint16_t kBases[] = {0x0000, 0x3456, 0xc032, 0xfffe};
 
 INSTANTIATE_TEST_SUITE_P(_,
                          TransportFeedbackPacketLossTrackerTest,
-                         testing::ValuesIn(kBases));
+                         ::testing::ValuesIn(kBases));
 
 }  // namespace webrtc

@@ -39,7 +39,7 @@ using webrtc::RtpTransport;
 
 const int kRtpAuthTagLen = 10;
 
-class DtlsSrtpTransportTest : public testing::Test,
+class DtlsSrtpTransportTest : public ::testing::Test,
                               public sigslot::has_slots<> {
  protected:
   DtlsSrtpTransportTest() {}

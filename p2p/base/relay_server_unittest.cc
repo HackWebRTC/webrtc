@@ -43,7 +43,7 @@ const char* msg2 = "Lobster Thermidor a Crevette with a mornay sauce...";
 
 }  // namespace
 
-class RelayServerTest : public testing::Test {
+class RelayServerTest : public ::testing::Test {
  public:
   RelayServerTest()
       : ss_(new rtc::VirtualSocketServer()),

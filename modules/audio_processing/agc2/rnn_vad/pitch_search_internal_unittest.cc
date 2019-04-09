@@ -32,7 +32,7 @@ constexpr std::array<float, 2> kTestPitchGains = {0.35f, 0.75f};
 }  // namespace
 
 class ComputePitchGainThresholdTest
-    : public testing::Test,
+    : public ::testing::Test,
       public ::testing::WithParamInterface<
           std::tuple<size_t, size_t, size_t, float, size_t, float, float>> {};
 
@@ -124,7 +124,7 @@ TEST(RnnVadTest, RefinePitchPeriod48kHzBitExactness) {
 }
 
 class CheckLowerPitchPeriodsAndComputePitchGainTest
-    : public testing::Test,
+    : public ::testing::Test,
       public ::testing::WithParamInterface<
           std::tuple<int, int, float, int, float>> {};
 

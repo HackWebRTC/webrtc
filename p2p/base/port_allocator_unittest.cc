@@ -24,7 +24,7 @@ static const char kIcePwd[] = "TESTICEPWD00000000000000";
 static const char kTurnUsername[] = "test";
 static const char kTurnPassword[] = "test";
 
-class PortAllocatorTest : public testing::Test, public sigslot::has_slots<> {
+class PortAllocatorTest : public ::testing::Test, public sigslot::has_slots<> {
  public:
   PortAllocatorTest()
       : vss_(new rtc::VirtualSocketServer()), main_(vss_.get()) {

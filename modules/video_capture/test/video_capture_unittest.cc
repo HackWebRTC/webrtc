@@ -145,7 +145,7 @@ class TestVideoCaptureCallback
   webrtc::VideoRotation rotate_frame_;
 };
 
-class VideoCaptureTest : public testing::Test {
+class VideoCaptureTest : public ::testing::Test {
  public:
   VideoCaptureTest() : number_of_devices_(0) {}
 

@@ -293,7 +293,7 @@ class SSLAdapterTestDummyServer : public sigslot::has_slots<> {
   std::string data_;
 };
 
-class SSLAdapterTestBase : public testing::Test, public sigslot::has_slots<> {
+class SSLAdapterTestBase : public ::testing::Test, public sigslot::has_slots<> {
  public:
   explicit SSLAdapterTestBase(const rtc::SSLMode& ssl_mode,
                               const rtc::KeyParams& key_params)

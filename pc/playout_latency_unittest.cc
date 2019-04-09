@@ -27,7 +27,7 @@ constexpr int kSsrc = 1234;
 
 namespace webrtc {
 
-class PlayoutLatencyTest : public testing::Test {
+class PlayoutLatencyTest : public ::testing::Test {
  public:
   PlayoutLatencyTest()
       : latency_(

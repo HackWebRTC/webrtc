@@ -24,7 +24,7 @@
 namespace webrtc {
 
 class BlankDetectorDesktopCapturerWrapperTest
-    : public testing::Test,
+    : public ::testing::Test,
       public DesktopCapturer::Callback {
  public:
   BlankDetectorDesktopCapturerWrapperTest();

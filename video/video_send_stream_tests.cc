@@ -732,9 +732,9 @@ class FlexfecObserver : public test::EndToEndTest {
     } else {
       EXPECT_EQ(VideoSendStreamTest::kFakeVideoSendPayloadType,
                 header.payloadType);
-      EXPECT_THAT(testing::make_tuple(VideoSendStreamTest::kVideoSendSsrcs,
-                                      num_video_streams_),
-                  testing::Contains(header.ssrc));
+      EXPECT_THAT(::testing::make_tuple(VideoSendStreamTest::kVideoSendSsrcs,
+                                        num_video_streams_),
+                  ::testing::Contains(header.ssrc));
       sent_media_ = true;
     }
 

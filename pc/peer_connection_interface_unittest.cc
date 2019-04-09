@@ -667,7 +667,7 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
 };
 
 // TODO(steveanton): Convert to use the new PeerConnectionWrapper.
-class PeerConnectionInterfaceBaseTest : public testing::Test {
+class PeerConnectionInterfaceBaseTest : public ::testing::Test {
  protected:
   explicit PeerConnectionInterfaceBaseTest(SdpSemantics sdp_semantics)
       : vss_(new rtc::VirtualSocketServer()),
@@ -3959,7 +3959,7 @@ INSTANTIATE_TEST_SUITE_P(PeerConnectionInterfaceTest,
                          Values(SdpSemantics::kPlanB,
                                 SdpSemantics::kUnifiedPlan));
 
-class PeerConnectionMediaConfigTest : public testing::Test {
+class PeerConnectionMediaConfigTest : public ::testing::Test {
  protected:
   void SetUp() override {
     pcf_ = PeerConnectionFactoryForTest::CreatePeerConnectionFactoryForTest();

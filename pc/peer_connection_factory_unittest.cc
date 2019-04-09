@@ -98,7 +98,7 @@ class NullPeerConnectionObserver : public PeerConnectionObserver {
 
 }  // namespace
 
-class PeerConnectionFactoryTest : public testing::Test {
+class PeerConnectionFactoryTest : public ::testing::Test {
   void SetUp() {
 #ifdef WEBRTC_ANDROID
     webrtc::InitializeAndroidObjects();

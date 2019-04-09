@@ -83,7 +83,7 @@ class RemoteEstimatorProxyTest : public ::testing::Test {
   }
 
   SimulatedClock clock_;
-  testing::StrictMock<MockTransportFeedbackSender> router_;
+  ::testing::StrictMock<MockTransportFeedbackSender> router_;
   RemoteEstimatorProxy proxy_;
 };
 

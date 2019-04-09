@@ -103,13 +103,13 @@ class MockVoiceDetection : public VoiceDetection {
   MOCK_CONST_METHOD0(frame_size_ms, int());
 };
 
-class MockAudioProcessing : public testing::NiceMock<AudioProcessing> {
+class MockAudioProcessing : public ::testing::NiceMock<AudioProcessing> {
  public:
   MockAudioProcessing()
-      : gain_control_(new testing::NiceMock<MockGainControl>()),
-        level_estimator_(new testing::NiceMock<MockLevelEstimator>()),
-        noise_suppression_(new testing::NiceMock<MockNoiseSuppression>()),
-        voice_detection_(new testing::NiceMock<MockVoiceDetection>()) {}
+      : gain_control_(new ::testing::NiceMock<MockGainControl>()),
+        level_estimator_(new ::testing::NiceMock<MockLevelEstimator>()),
+        noise_suppression_(new ::testing::NiceMock<MockNoiseSuppression>()),
+        voice_detection_(new ::testing::NiceMock<MockVoiceDetection>()) {}
 
   virtual ~MockAudioProcessing() {}
 

@@ -1031,7 +1031,7 @@ TEST_F(ReceiveStatisticsProxyTest, RtcpHistogramsAreUpdated) {
 
 class ReceiveStatisticsProxyTestWithFreezeDuration
     : public ReceiveStatisticsProxyTest,
-      public testing::WithParamInterface<
+      public ::testing::WithParamInterface<
           std::tuple<uint32_t, uint32_t, uint32_t>> {
  protected:
   const uint32_t frame_duration_ms_ = {std::get<0>(GetParam())};

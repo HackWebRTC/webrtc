@@ -15,7 +15,7 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
-using testing::Eq;
+using ::testing::Eq;
 
 namespace rtc {
 

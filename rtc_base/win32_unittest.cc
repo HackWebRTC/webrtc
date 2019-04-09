@@ -20,7 +20,7 @@
 
 namespace rtc {
 
-class Win32Test : public testing::Test {
+class Win32Test : public ::testing::Test {
  public:
   Win32Test() {}
 };
