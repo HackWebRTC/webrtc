@@ -451,8 +451,11 @@ void RtpVideoStreamReceiver::OnDecryptedFrame(
   reference_finder_->ManageFrame(std::move(frame));
 }
 
-void RtpVideoStreamReceiver::OnDecryptionStatusChange(int status) {
-  frames_decryptable_.store(status == 0);
+void RtpVideoStreamReceiver::OnDecryptionStatusChange(
+    FrameDecryptorInterface::Status status) {
+  frames_decryptable_.store(
+      (status == FrameDecryptorInterface::Status::kOk) ||
+      (status == FrameDecryptorInterface::Status::kRecoverable));
 }
 
 void RtpVideoStreamReceiver::SetFrameDecryptor(

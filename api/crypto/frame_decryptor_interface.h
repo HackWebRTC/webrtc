@@ -34,8 +34,9 @@ class FrameDecryptorInterface : public rtc::RefCountInterface {
   // returned when attempting to decrypt a frame. kRecoverable indicates that
   // there was an error with the given frame and so it should not be passed to
   // the decoder, however it hints that the receive stream is still decryptable
-  // which is important for determining when to send key frame requests.
-  enum class Status { kOk, kRecoverable, kFailedToDecrypt };
+  // which is important for determining when to send key frame requests
+  // kUnknown should never be returned by the implementor.
+  enum class Status { kOk, kRecoverable, kFailedToDecrypt, kUnknown };
 
   struct Result {
     Result(Status status, size_t bytes_written)
@@ -54,33 +55,15 @@ class FrameDecryptorInterface : public rtc::RefCountInterface {
   // that the frames are in order if SRTP is enabled. The stream is not provided
   // here and it is up to the implementor to transport this information to the
   // receiver if they care about it. You must set bytes_written to how many
-  // bytes you wrote to in the frame buffer. 0 must be returned if successful
-  // all other numbers can be selected by the implementer to represent error
-  // codes.
-  // TODO(bugs.webrtc.org/10512) - Remove this after implementation rewrite.
-  virtual int Decrypt(cricket::MediaType media_type,
-                      const std::vector<uint32_t>& csrcs,
-                      rtc::ArrayView<const uint8_t> additional_data,
-                      rtc::ArrayView<const uint8_t> encrypted_frame,
-                      rtc::ArrayView<uint8_t> frame,
-                      size_t* bytes_written) {
-    bytes_written = 0;
-    return 1;
-  }
-
-  // TODO(bugs.webrtc.org/10512) - Remove the other decrypt function and turn
-  // this to a pure virtual.
+  // bytes you wrote to in the frame buffer. kOk must be returned if successful,
+  // kRecoverable should be returned if the failure was due to something other
+  // than a decryption failure. kFailedToDecrypt should be returned in all other
+  // cases.
   virtual Result Decrypt(cricket::MediaType media_type,
                          const std::vector<uint32_t>& csrcs,
                          rtc::ArrayView<const uint8_t> additional_data,
                          rtc::ArrayView<const uint8_t> encrypted_frame,
-                         rtc::ArrayView<uint8_t> frame) {
-    size_t bytes_written = 0;
-    const int status = Decrypt(media_type, csrcs, additional_data,
-                               encrypted_frame, frame, &bytes_written);
-    return Result(status == 0 ? Status::kOk : Status::kFailedToDecrypt,
-                  bytes_written);
-  }
+                         rtc::ArrayView<uint8_t> frame) = 0;
 
   // Returns the total required length in bytes for the output of the
   // decryption. This can be larger than the actual number of bytes you need but

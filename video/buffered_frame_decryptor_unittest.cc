@@ -55,6 +55,16 @@ class FakePacketBuffer : public video_coding::PacketBuffer {
   std::map<uint16_t, VCMPacket> packets_;
 };
 
+FrameDecryptorInterface::Result DecryptSuccess() {
+  return FrameDecryptorInterface::Result(FrameDecryptorInterface::Status::kOk,
+                                         0);
+}
+
+FrameDecryptorInterface::Result DecryptFail() {
+  return FrameDecryptorInterface::Result(
+      FrameDecryptorInterface::Status::kFailedToDecrypt, 0);
+}
+
 }  // namespace
 
 class BufferedFrameDecryptorTest
@@ -69,7 +79,7 @@ class BufferedFrameDecryptorTest
     decrypted_frame_call_count_++;
   }
 
-  void OnDecryptionStatusChange(int status) {
+  void OnDecryptionStatusChange(FrameDecryptorInterface::Status status) {
     ++decryption_status_change_count_;
   }
 
@@ -127,7 +137,9 @@ const size_t BufferedFrameDecryptorTest::kMaxStashedFrames = 24;
 
 // Callback should always be triggered on a successful decryption.
 TEST_F(BufferedFrameDecryptorTest, CallbackCalledOnSuccessfulDecryption) {
-  EXPECT_CALL(*mock_frame_decryptor_, Decrypt).Times(1).WillOnce(Return(0));
+  EXPECT_CALL(*mock_frame_decryptor_, Decrypt)
+      .Times(1)
+      .WillOnce(Return(DecryptSuccess()));
   EXPECT_CALL(*mock_frame_decryptor_, GetMaxPlaintextByteSize)
       .Times(1)
       .WillOnce(Return(0));
@@ -138,7 +150,9 @@ TEST_F(BufferedFrameDecryptorTest, CallbackCalledOnSuccessfulDecryption) {
 
 // An initial fail to decrypt should not trigger the callback.
 TEST_F(BufferedFrameDecryptorTest, CallbackNotCalledOnFailedDecryption) {
-  EXPECT_CALL(*mock_frame_decryptor_, Decrypt).Times(1).WillOnce(Return(1));
+  EXPECT_CALL(*mock_frame_decryptor_, Decrypt)
+      .Times(1)
+      .WillOnce(Return(DecryptFail()));
   EXPECT_CALL(*mock_frame_decryptor_, GetMaxPlaintextByteSize)
       .Times(1)
       .WillOnce(Return(0));
@@ -152,9 +166,9 @@ TEST_F(BufferedFrameDecryptorTest, CallbackNotCalledOnFailedDecryption) {
 TEST_F(BufferedFrameDecryptorTest, DelayedCallbackOnBufferedFrames) {
   EXPECT_CALL(*mock_frame_decryptor_, Decrypt)
       .Times(3)
-      .WillOnce(Return(1))
-      .WillOnce(Return(0))
-      .WillOnce(Return(0));
+      .WillOnce(Return(DecryptFail()))
+      .WillOnce(Return(DecryptSuccess()))
+      .WillOnce(Return(DecryptSuccess()));
   EXPECT_CALL(*mock_frame_decryptor_, GetMaxPlaintextByteSize)
       .Times(3)
       .WillRepeatedly(Return(0));
@@ -174,10 +188,10 @@ TEST_F(BufferedFrameDecryptorTest, DelayedCallbackOnBufferedFrames) {
 TEST_F(BufferedFrameDecryptorTest, FTDDiscardedAfterFirstSuccess) {
   EXPECT_CALL(*mock_frame_decryptor_, Decrypt)
       .Times(4)
-      .WillOnce(Return(1))
-      .WillOnce(Return(0))
-      .WillOnce(Return(0))
-      .WillOnce(Return(1));
+      .WillOnce(Return(DecryptFail()))
+      .WillOnce(Return(DecryptSuccess()))
+      .WillOnce(Return(DecryptSuccess()))
+      .WillOnce(Return(DecryptFail()));
   EXPECT_CALL(*mock_frame_decryptor_, GetMaxPlaintextByteSize)
       .Times(4)
       .WillRepeatedly(Return(0));
@@ -203,7 +217,7 @@ TEST_F(BufferedFrameDecryptorTest, MaximumNumberOfFramesStored) {
   const size_t failed_to_decrypt_count = kMaxStashedFrames * 2;
   EXPECT_CALL(*mock_frame_decryptor_, Decrypt)
       .Times(failed_to_decrypt_count)
-      .WillRepeatedly(Return(1));
+      .WillRepeatedly(Return(DecryptFail()));
   EXPECT_CALL(*mock_frame_decryptor_, GetMaxPlaintextByteSize)
       .WillRepeatedly(Return(0));
 
@@ -215,7 +229,7 @@ TEST_F(BufferedFrameDecryptorTest, MaximumNumberOfFramesStored) {
 
   EXPECT_CALL(*mock_frame_decryptor_, Decrypt)
       .Times(kMaxStashedFrames + 1)
-      .WillRepeatedly(Return(0));
+      .WillRepeatedly(Return(DecryptSuccess()));
   buffered_frame_decryptor_->ManageEncryptedFrame(CreateRtpFrameObject(true));
   EXPECT_EQ(decrypted_frame_call_count_, kMaxStashedFrames + 1);
   EXPECT_EQ(decryption_status_change_count_, static_cast<size_t>(2));
@@ -231,7 +245,7 @@ TEST_F(BufferedFrameDecryptorTest, FramesStoredIfDecryptorNull) {
 
   EXPECT_CALL(*mock_frame_decryptor_, Decrypt)
       .Times(kMaxStashedFrames + 1)
-      .WillRepeatedly(Return(0));
+      .WillRepeatedly(Return(DecryptSuccess()));
   EXPECT_CALL(*mock_frame_decryptor_, GetMaxPlaintextByteSize)
       .WillRepeatedly(Return(0));
 
