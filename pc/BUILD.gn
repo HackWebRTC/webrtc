@@ -208,7 +208,6 @@ rtc_static_library("peerconnection") {
     "../logging:rtc_event_log_impl_output",
     "../media:rtc_data",
     "../media:rtc_media_base",
-    "../modules/rtp_rtcp:rtp_rtcp_format",
     "../p2p:rtc_p2p",
     "../rtc_base",
     "../rtc_base:checks",
