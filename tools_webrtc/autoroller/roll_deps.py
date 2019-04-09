@@ -44,7 +44,6 @@ WEBRTC_ONLY_DEPS = [
   'src/third_party',
   'src/third_party/findbugs',
   'src/third_party/gtest-parallel',
-  'src/third_party/winsdk_samples',
   'src/third_party/yasm/binaries',
   'src/tools',
 ]
