@@ -23,11 +23,6 @@ rtc::scoped_refptr<VideoCaptureModule> VideoCaptureFactory::Create(
 #endif
 }
 
-rtc::scoped_refptr<VideoCaptureModule> VideoCaptureFactory::Create(
-    VideoCaptureExternal*& externalCapture) {
-  return videocapturemodule::VideoCaptureImpl::Create(externalCapture);
-}
-
 VideoCaptureModule::DeviceInfo* VideoCaptureFactory::CreateDeviceInfo() {
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_MAC)
   return nullptr;

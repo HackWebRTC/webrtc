@@ -784,7 +784,7 @@ STDMETHODIMP CaptureInputPin::ReceiveCanBlock() {
 
 //  ----------------------------------------------------------------------------
 
-CaptureSinkFilter::CaptureSinkFilter(VideoCaptureExternal* capture_observer)
+CaptureSinkFilter::CaptureSinkFilter(VideoCaptureImpl* capture_observer)
     : input_pin_(new ComRefCount<CaptureInputPin>(this)),
       capture_observer_(capture_observer) {}
 

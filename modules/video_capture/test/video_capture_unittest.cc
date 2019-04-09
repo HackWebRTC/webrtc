@@ -52,9 +52,11 @@ using webrtc::VideoCaptureModule;
   } while (0)
 
 static const int kTimeOut = 5000;
+#ifdef WEBRTC_MAC
 static const int kTestHeight = 288;
 static const int kTestWidth = 352;
 static const int kTestFramerate = 30;
+#endif
 
 class TestVideoCaptureCallback
     : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
@@ -343,84 +345,4 @@ TEST_F(VideoCaptureTest, DISABLED_TestTwoCameras) {
   EXPECT_TRUE_WAIT(capture_observer2.incoming_frames() >= 5, kTimeOut);
   EXPECT_EQ(0, module2->StopCapture());
   EXPECT_EQ(0, module1->StopCapture());
-}
-
-// Test class for testing external capture and capture feedback information
-// such as frame rate and picture alarm.
-class VideoCaptureExternalTest : public testing::Test {
- public:
-  void SetUp() override {
-    capture_module_ = VideoCaptureFactory::Create(capture_input_interface_);
-
-    VideoCaptureCapability capability;
-    capability.width = kTestWidth;
-    capability.height = kTestHeight;
-    capability.videoType = webrtc::VideoType::kYV12;
-    capability.maxFPS = kTestFramerate;
-    capture_callback_.SetExpectedCapability(capability);
-
-    rtc::scoped_refptr<webrtc::I420Buffer> buffer =
-        webrtc::I420Buffer::Create(kTestWidth, kTestHeight);
-
-    memset(buffer->MutableDataY(), 127, buffer->height() * buffer->StrideY());
-    memset(buffer->MutableDataU(), 127,
-           buffer->ChromaHeight() * buffer->StrideU());
-    memset(buffer->MutableDataV(), 127,
-           buffer->ChromaHeight() * buffer->StrideV());
-    test_frame_ = absl::make_unique<webrtc::VideoFrame>(
-        webrtc::VideoFrame::Builder()
-            .set_video_frame_buffer(buffer)
-            .set_rotation(webrtc::kVideoRotation_0)
-            .set_timestamp_us(0)
-            .build());
-
-    SleepMs(1);  // Wait 1ms so that two tests can't have the same timestamp.
-
-    capture_module_->RegisterCaptureDataCallback(&capture_callback_);
-  }
-
-  void TearDown() override {}
-
-  webrtc::VideoCaptureExternal* capture_input_interface_;
-  rtc::scoped_refptr<VideoCaptureModule> capture_module_;
-  std::unique_ptr<webrtc::VideoFrame> test_frame_;
-  TestVideoCaptureCallback capture_callback_;
-};
-
-// Test input of external video frames.
-TEST_F(VideoCaptureExternalTest, TestExternalCapture) {
-  size_t length = webrtc::CalcBufferSize(
-      webrtc::VideoType::kI420, test_frame_->width(), test_frame_->height());
-  std::unique_ptr<uint8_t[]> test_buffer(new uint8_t[length]);
-  webrtc::ExtractBuffer(*test_frame_, length, test_buffer.get());
-  EXPECT_EQ(0,
-            capture_input_interface_->IncomingFrame(
-                test_buffer.get(), length, capture_callback_.capability(), 0));
-  EXPECT_TRUE(capture_callback_.CompareLastFrame(*test_frame_));
-}
-
-TEST_F(VideoCaptureExternalTest, Rotation) {
-  EXPECT_EQ(0, capture_module_->SetCaptureRotation(webrtc::kVideoRotation_0));
-  size_t length = webrtc::CalcBufferSize(
-      webrtc::VideoType::kI420, test_frame_->width(), test_frame_->height());
-  std::unique_ptr<uint8_t[]> test_buffer(new uint8_t[length]);
-  webrtc::ExtractBuffer(*test_frame_, length, test_buffer.get());
-  EXPECT_EQ(0,
-            capture_input_interface_->IncomingFrame(
-                test_buffer.get(), length, capture_callback_.capability(), 0));
-  EXPECT_EQ(0, capture_module_->SetCaptureRotation(webrtc::kVideoRotation_90));
-  capture_callback_.SetExpectedCaptureRotation(webrtc::kVideoRotation_90);
-  EXPECT_EQ(0,
-            capture_input_interface_->IncomingFrame(
-                test_buffer.get(), length, capture_callback_.capability(), 0));
-  EXPECT_EQ(0, capture_module_->SetCaptureRotation(webrtc::kVideoRotation_180));
-  capture_callback_.SetExpectedCaptureRotation(webrtc::kVideoRotation_180);
-  EXPECT_EQ(0,
-            capture_input_interface_->IncomingFrame(
-                test_buffer.get(), length, capture_callback_.capability(), 0));
-  EXPECT_EQ(0, capture_module_->SetCaptureRotation(webrtc::kVideoRotation_270));
-  capture_callback_.SetExpectedCaptureRotation(webrtc::kVideoRotation_270);
-  EXPECT_EQ(0,
-            capture_input_interface_->IncomingFrame(
-                test_buffer.get(), length, capture_callback_.capability(), 0));
 }

@@ -55,21 +55,6 @@ struct VideoCaptureCapability {
   }
 };
 
-/* External Capture interface. Returned by Create
- and implemented by the capture module.
- */
-class VideoCaptureExternal {
- public:
-  // |capture_time| must be specified in the NTP time format in milliseconds.
-  virtual int32_t IncomingFrame(uint8_t* videoFrame,
-                                size_t videoFrameLength,
-                                const VideoCaptureCapability& frameInfo,
-                                int64_t captureTime = 0) = 0;
-
- protected:
-  ~VideoCaptureExternal() {}
-};
-
 }  // namespace webrtc
 
 #endif  // MODULES_VIDEO_CAPTURE_VIDEO_CAPTURE_DEFINES_H_

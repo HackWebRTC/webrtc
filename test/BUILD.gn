@@ -379,7 +379,6 @@ if (rtc_include_tests) {
       "../api/video:video_frame_i420",
       "../call:video_stream_api",
       "../modules/rtp_rtcp",
-      "../modules/video_capture",
       "../modules/video_coding:simulcast_test_fixture_impl",
       "../rtc_base:rtc_base_approved",
       "../rtc_base/system:file_wrapper",

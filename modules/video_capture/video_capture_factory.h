@@ -29,12 +29,6 @@ class VideoCaptureFactory {
   static rtc::scoped_refptr<VideoCaptureModule> Create(
       const char* deviceUniqueIdUTF8);
 
-  // Create a video capture module object used for external capture.
-  // id - unique identifier of this video capture module object
-  // externalCapture - [out] interface to call when a new frame is captured.
-  static rtc::scoped_refptr<VideoCaptureModule> Create(
-      VideoCaptureExternal*& externalCapture);
-
   static VideoCaptureModule::DeviceInfo* CreateDeviceInfo();
 
  private:

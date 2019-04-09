@@ -24,13 +24,6 @@
 
 namespace webrtc {
 namespace videocapturemodule {
-rtc::scoped_refptr<VideoCaptureModule> VideoCaptureImpl::Create(
-    VideoCaptureExternal*& externalCapture) {
-  rtc::scoped_refptr<VideoCaptureImpl> implementation(
-      new rtc::RefCountedObject<VideoCaptureImpl>());
-  externalCapture = implementation.get();
-  return implementation;
-}
 
 const char* VideoCaptureImpl::CurrentDeviceName() const {
   return _deviceUniqueId;

@@ -299,9 +299,7 @@ rtc_static_library("rtc_audio_video") {
   include_dirs = []
 
   public_configs = []
-  if (build_with_chromium) {
-    deps += [ "../modules/video_capture" ]
-  } else {
+  if (!build_with_chromium) {
     public_configs += [ ":rtc_media_defines_config" ]
     deps += [ "../modules/video_capture:video_capture_internal_impl" ]
   }

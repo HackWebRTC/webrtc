@@ -31,8 +31,7 @@ namespace webrtc {
 
 namespace videocapturemodule {
 // Class definitions
-class VideoCaptureImpl : public VideoCaptureModule,
-                         public VideoCaptureExternal {
+class VideoCaptureImpl : public VideoCaptureModule {
  public:
   /*
    *   Create a video capture module object
@@ -43,15 +42,6 @@ class VideoCaptureImpl : public VideoCaptureModule,
    */
   static rtc::scoped_refptr<VideoCaptureModule> Create(
       const char* deviceUniqueIdUTF8);
-
-  /*
-   *   Create a video capture module object used for external capture.
-   *
-   *   id              - unique identifier of this video capture module object
-   *   externalCapture - [out] interface to call when a new frame is captured.
-   */
-  static rtc::scoped_refptr<VideoCaptureModule> Create(
-      VideoCaptureExternal*& externalCapture);
 
   static DeviceInfo* CreateDeviceInfo();
 
@@ -71,12 +61,11 @@ class VideoCaptureImpl : public VideoCaptureModule,
 
   const char* CurrentDeviceName() const override;
 
-  // Implement VideoCaptureExternal
   // |capture_time| must be specified in NTP time format in milliseconds.
   int32_t IncomingFrame(uint8_t* videoFrame,
                         size_t videoFrameLength,
                         const VideoCaptureCapability& frameInfo,
-                        int64_t captureTime = 0) override;
+                        int64_t captureTime = 0);
 
   // Platform dependent
   int32_t StartCapture(const VideoCaptureCapability& capability) override;
@@ -87,7 +76,6 @@ class VideoCaptureImpl : public VideoCaptureModule,
  protected:
   VideoCaptureImpl();
   ~VideoCaptureImpl() override;
-  int32_t DeliverCapturedFrame(VideoFrame& captureFrame);
 
   char* _deviceUniqueId;  // current Device unique name;
   rtc::CriticalSection _apiCs;
@@ -97,6 +85,7 @@ class VideoCaptureImpl : public VideoCaptureModule,
  private:
   void UpdateFrameCount();
   uint32_t CalculateFrameRate(int64_t now_ns);
+  int32_t DeliverCapturedFrame(VideoFrame& captureFrame);
 
   // last time the module process function was called.
   int64_t _lastProcessTimeNanos;

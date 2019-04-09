@@ -95,7 +95,6 @@ if (rtc_include_tests) {
       "../api/video:video_frame_i010",
       "../api/video:video_frame_i420",
       "../media:rtc_h264_profile_id",
-      "../modules/video_capture",
       "../rtc_base",
       "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
