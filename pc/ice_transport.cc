@@ -16,9 +16,9 @@
 namespace webrtc {
 
 IceTransportWithPointer::~IceTransportWithPointer() {
-  // We depend on the signaling thread to call Clear() before dropping
+  // We depend on the networking thread to call Clear() before dropping
   // its last reference to this object; if the destructor is called
-  // on the signaling thread, it's OK to not have called Clear().
+  // on the networking thread, it's OK to not have called Clear().
   if (internal_) {
     RTC_DCHECK_RUN_ON(creator_thread_);
   }
