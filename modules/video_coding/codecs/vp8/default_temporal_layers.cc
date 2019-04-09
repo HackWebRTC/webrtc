@@ -37,7 +37,6 @@ DefaultTemporalLayers::PendingFrame::PendingFrame(
       dependency_info(dependency_info) {}
 
 namespace {
-using Buffer = Vp8FrameConfig::Buffer;
 using BufferFlags = Vp8FrameConfig::BufferFlags;
 using FreezeEntropy = Vp8FrameConfig::FreezeEntropy;
 using Vp8BufferReference = Vp8FrameConfig::Vp8BufferReference;
@@ -505,14 +504,16 @@ void DefaultTemporalLayers::OnEncodeDone(size_t stream_index,
   RTC_DCHECK_EQ(vp8_info.referencedBuffersCount, 0u);
   RTC_DCHECK_EQ(vp8_info.updatedBuffersCount, 0u);
 
-  for (int i = 0; i < static_cast<int>(Buffer::kCount); ++i) {
-    if (!is_keyframe && frame_config.References(static_cast<Buffer>(i))) {
+  for (int i = 0; i < static_cast<int>(Vp8FrameConfig::Buffer::kCount); ++i) {
+    if (!is_keyframe &&
+        frame_config.References(static_cast<Vp8FrameConfig::Buffer>(i))) {
       RTC_DCHECK_LT(vp8_info.referencedBuffersCount,
                     arraysize(CodecSpecificInfoVP8::referencedBuffers));
       vp8_info.referencedBuffers[vp8_info.referencedBuffersCount++] = i;
     }
 
-    if (is_keyframe || frame_config.Updates(static_cast<Buffer>(i))) {
+    if (is_keyframe ||
+        frame_config.Updates(static_cast<Vp8FrameConfig::Buffer>(i))) {
       RTC_DCHECK_LT(vp8_info.updatedBuffersCount,
                     arraysize(CodecSpecificInfoVP8::updatedBuffers));
       vp8_info.updatedBuffers[vp8_info.updatedBuffersCount++] = i;

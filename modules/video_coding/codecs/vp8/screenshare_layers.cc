@@ -23,7 +23,6 @@
 
 namespace webrtc {
 namespace {
-using Buffer = Vp8FrameConfig::Buffer;
 using BufferFlags = Vp8FrameConfig::BufferFlags;
 
 constexpr BufferFlags kNone = Vp8FrameConfig::BufferFlags::kNone;
@@ -340,16 +339,16 @@ void ScreenshareLayers::OnEncodeDone(size_t stream_index,
 
     // Note that |frame_config| is not derefernced if |is_keyframe|,
     // meaning it's never dereferenced if the optional may be unset.
-    for (int i = 0; i < static_cast<int>(Buffer::kCount); ++i) {
-      if (!is_keyframe &&
-          dependency_info->frame_config.References(static_cast<Buffer>(i))) {
+    for (int i = 0; i < static_cast<int>(Vp8FrameConfig::Buffer::kCount); ++i) {
+      if (!is_keyframe && dependency_info->frame_config.References(
+                              static_cast<Vp8FrameConfig::Buffer>(i))) {
         RTC_DCHECK_LT(vp8_info.referencedBuffersCount,
                       arraysize(CodecSpecificInfoVP8::referencedBuffers));
         vp8_info.referencedBuffers[vp8_info.referencedBuffersCount++] = i;
       }
 
-      if (is_keyframe ||
-          dependency_info->frame_config.Updates(static_cast<Buffer>(i))) {
+      if (is_keyframe || dependency_info->frame_config.Updates(
+                             static_cast<Vp8FrameConfig::Buffer>(i))) {
         RTC_DCHECK_LT(vp8_info.updatedBuffersCount,
                       arraysize(CodecSpecificInfoVP8::updatedBuffers));
         vp8_info.updatedBuffers[vp8_info.updatedBuffersCount++] = i;
