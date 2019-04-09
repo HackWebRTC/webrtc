@@ -740,8 +740,12 @@ class RTCStatsReportVerifier {
     if (inbound_stream.media_type.is_defined() &&
         *inbound_stream.media_type == "video") {
       verifier.TestMemberIsDefined(inbound_stream.frames_decoded);
+      // The integration test is not set up to test screen share; don't require
+      // this to be present.
+      verifier.MarkMemberTested(inbound_stream.content_type, true);
     } else {
       verifier.TestMemberIsUndefined(inbound_stream.frames_decoded);
+      verifier.TestMemberIsUndefined(inbound_stream.content_type);
     }
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
@@ -764,9 +768,13 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsDefined(outbound_stream.frames_encoded);
       verifier.TestMemberIsNonNegative<double>(
           outbound_stream.total_encode_time);
+      // The integration test is not set up to test screen share; don't require
+      // this to be present.
+      verifier.MarkMemberTested(outbound_stream.content_type, true);
     } else {
       verifier.TestMemberIsUndefined(outbound_stream.frames_encoded);
       verifier.TestMemberIsUndefined(outbound_stream.total_encode_time);
+      verifier.TestMemberIsUndefined(outbound_stream.content_type);
     }
     return verifier.ExpectAllMembersSuccessfullyTested();
   }

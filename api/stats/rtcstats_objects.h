@@ -74,6 +74,12 @@ struct RTCNetworkType {
   static const char* const kUnknown;
 };
 
+// https://webrtc.org/experiments/rtp-hdrext/video-content-type/
+struct RTCContentType {
+  static const char* const kUnspecified;
+  static const char* const kScreenshare;
+};
+
 // https://w3c.github.io/webrtc-stats/#certificatestats-dict*
 class RTC_EXPORT RTCCertificateStats final : public RTCStats {
  public:
@@ -418,6 +424,8 @@ class RTC_EXPORT RTCInboundRTPStreamStats final : public RTCRTPStreamStats {
   // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7065
   RTCStatsMember<double> gap_discard_rate;
   RTCStatsMember<uint32_t> frames_decoded;
+  // https://henbos.github.io/webrtc-provisional-stats/#dom-rtcinboundrtpstreamstats-contenttype
+  RTCStatsMember<std::string> content_type;
 };
 
 // https://w3c.github.io/webrtc-stats/#outboundrtpstats-dict*
@@ -438,6 +446,8 @@ class RTC_EXPORT RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
   RTCStatsMember<double> target_bitrate;
   RTCStatsMember<uint32_t> frames_encoded;
   RTCStatsMember<double> total_encode_time;
+  // https://henbos.github.io/webrtc-provisional-stats/#dom-rtcoutboundrtpstreamstats-contenttype
+  RTCStatsMember<std::string> content_type;
 };
 
 // https://w3c.github.io/webrtc-stats/#transportstats-dict*

@@ -19,6 +19,7 @@
 #include "api/candidate.h"
 #include "api/media_stream_interface.h"
 #include "api/peer_connection_interface.h"
+#include "api/video/video_content_type.h"
 #include "media/base/media_channel.h"
 #include "p2p/base/p2p_constants.h"
 #include "p2p/base/port.h"
@@ -266,6 +267,10 @@ void SetInboundRTPStreamStatsFromVideoReceiverInfo(
   inbound_video->frames_decoded = video_receiver_info.frames_decoded;
   if (video_receiver_info.qp_sum)
     inbound_video->qp_sum = *video_receiver_info.qp_sum;
+  // TODO(https://crbug.com/webrtc/10529): When info's |content_info| is
+  // optional, support the "unspecified" value.
+  if (video_receiver_info.content_type == VideoContentType::SCREENSHARE)
+    inbound_video->content_type = RTCContentType::kScreenshare;
 }
 
 // Provides the media independent counters (both audio and video).
@@ -322,6 +327,10 @@ void SetOutboundRTPStreamStatsFromVideoSenderInfo(
   outbound_video->total_encode_time =
       static_cast<double>(video_sender_info.total_encode_time_ms) /
       rtc::kNumMillisecsPerSec;
+  // TODO(https://crbug.com/webrtc/10529): When info's |content_info| is
+  // optional, support the "unspecified" value.
+  if (video_sender_info.content_type == VideoContentType::SCREENSHARE)
+    outbound_video->content_type = RTCContentType::kScreenshare;
 }
 
 void ProduceCertificateStatsFromSSLCertificateStats(
