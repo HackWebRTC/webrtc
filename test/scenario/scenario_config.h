@@ -22,7 +22,7 @@
 #include "api/units/time_delta.h"
 #include "api/video/video_codec_type.h"
 #include "test/frame_generator.h"
-#include "test/scenario/quality_info.h"
+#include "test/scenario/performance_stats.h"
 
 namespace webrtc {
 namespace test {

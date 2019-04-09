@@ -21,8 +21,8 @@
 #include "test/scenario/call_client.h"
 #include "test/scenario/column_printer.h"
 #include "test/scenario/network_node.h"
-#include "test/scenario/quality_stats.h"
 #include "test/scenario/scenario_config.h"
+#include "test/scenario/video_frame_matcher.h"
 #include "test/test_video_capturer.h"
 
 namespace webrtc {

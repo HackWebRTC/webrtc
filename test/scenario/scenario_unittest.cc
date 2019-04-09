@@ -9,8 +9,10 @@
  */
 #include <atomic>
 
-#include "test/scenario/scenario.h"
 #include "test/gtest.h"
+#include "test/scenario/scenario.h"
+#include "test/scenario/stats_collection.h"
+
 namespace webrtc {
 namespace test {
 TEST(ScenarioTest, StartsAndStopsWithoutErrors) {

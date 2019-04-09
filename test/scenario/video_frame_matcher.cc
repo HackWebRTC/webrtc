@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "test/scenario/quality_stats.h"
+#include "test/scenario/video_frame_matcher.h"
 
 #include <utility>
 
@@ -83,7 +83,7 @@ void VideoFrameMatcher::OnDecodedFrame(const VideoFrame& frame,
     }
     while (!layer.captured_frames.empty() &&
            layer.captured_frames.front().matched) {
-      HandleMatch(layer.captured_frames.front(), layer_id);
+      HandleMatch(std::move(layer.captured_frames.front()), layer_id);
       layer.captured_frames.pop_front();
     }
   });
@@ -93,10 +93,27 @@ bool VideoFrameMatcher::Active() const {
   return !frame_pair_handlers_.empty();
 }
 
+void VideoFrameMatcher::HandleMatch(VideoFrameMatcher::CapturedFrame captured,
+                                    int layer_id) {
+  VideoFramePair frame_pair;
+  frame_pair.layer_id = layer_id;
+  frame_pair.captured = captured.frame;
+  frame_pair.capture_id = captured.id;
+  if (captured.best_decode) {
+    frame_pair.decode_id = captured.best_decode->id;
+    frame_pair.capture_time = captured.capture_time;
+    frame_pair.decoded = captured.best_decode->frame;
+    frame_pair.render_time = captured.best_decode->render_time;
+    frame_pair.repeated = captured.best_decode->repeat_count++;
+  }
+  for (auto& handler : frame_pair_handlers_)
+    handler(frame_pair);
+}
+
 void VideoFrameMatcher::Finalize() {
   for (auto& layer : layers_) {
     while (!layer.second.captured_frames.empty()) {
-      HandleMatch(layer.second.captured_frames.front(), layer.first);
+      HandleMatch(std::move(layer.second.captured_frames.front()), layer.first);
       layer.second.captured_frames.pop_front();
     }
   }
@@ -141,53 +158,6 @@ DecodedFrameTap::DecodedFrameTap(VideoFrameMatcher* matcher, int layer_id)
 void DecodedFrameTap::OnFrame(const VideoFrame& frame) {
   matcher_->OnDecodedFrame(frame, Timestamp::ms(frame.render_time_ms()),
                            layer_id_);
-}
-
-VideoQualityAnalyzer::VideoQualityAnalyzer(
-    VideoQualityAnalyzerConfig config,
-    std::unique_ptr<RtcEventLogOutput> writer)
-    : config_(config), writer_(std::move(writer)) {
-  if (writer_) {
-    PrintHeaders();
-  }
-}
-
-VideoQualityAnalyzer::~VideoQualityAnalyzer() = default;
-
-void VideoQualityAnalyzer::PrintHeaders() {
-  writer_->Write(
-      "capture_time render_time capture_width capture_height render_width "
-      "render_height psnr\n");
-}
-
-std::function<void(const VideoFramePair&)> VideoQualityAnalyzer::Handler() {
-  return [this](VideoFramePair pair) { HandleFramePair(pair); };
-}
-
-void VideoQualityAnalyzer::HandleFramePair(VideoFramePair sample) {
-  double psnr = NAN;
-  RTC_CHECK(sample.captured);
-  ++stats_.captures_count;
-  if (!sample.decoded) {
-    ++stats_.lost_count;
-  } else {
-    psnr = I420PSNR(*sample.captured->ToI420(), *sample.decoded->ToI420());
-    ++stats_.valid_count;
-    stats_.end_to_end_seconds.AddSample(
-        (sample.render_time - sample.capture_time).seconds<double>());
-    stats_.psnr.AddSample(psnr);
-  }
-  if (writer_) {
-    LogWriteFormat(writer_.get(), "%.3f %.3f %.3f %i %i %i %i %.3f\n",
-                   sample.capture_time.seconds<double>(),
-                   sample.render_time.seconds<double>(),
-                   sample.captured->width(), sample.captured->height(),
-                   sample.decoded->width(), sample.decoded->height(), psnr);
-  }
-}
-
-VideoQualityStats VideoQualityAnalyzer::stats() const {
-  return stats_;
 }
 
 }  // namespace test

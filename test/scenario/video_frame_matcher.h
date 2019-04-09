@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef TEST_SCENARIO_QUALITY_STATS_H_
-#define TEST_SCENARIO_QUALITY_STATS_H_
+#ifndef TEST_SCENARIO_VIDEO_FRAME_MATCHER_H_
+#define TEST_SCENARIO_VIDEO_FRAME_MATCHER_H_
 
 #include <deque>
 #include <map>
@@ -17,19 +17,14 @@
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/units/timestamp.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
 #include "rtc_base/ref_counted_object.h"
 #include "rtc_base/task_queue_for_test.h"
-#include "rtc_base/time_utils.h"
 #include "system_wrappers/include/clock.h"
-#include "test/logging/log_writer.h"
-#include "test/scenario/quality_info.h"
-#include "test/scenario/scenario_config.h"
-#include "test/statistics.h"
+#include "test/scenario/performance_stats.h"
 
 namespace webrtc {
 namespace test {
@@ -72,21 +67,7 @@ class VideoFrameMatcher {
     rtc::scoped_refptr<DecodedFrame> last_decode;
     int next_decoded_id = 1;
   };
-  void HandleMatch(CapturedFrame& captured, int layer_id) {
-    VideoFramePair frame_pair;
-    frame_pair.layer_id = layer_id;
-    frame_pair.captured = captured.frame;
-    frame_pair.capture_id = captured.id;
-    if (captured.best_decode) {
-      frame_pair.decode_id = captured.best_decode->id;
-      frame_pair.capture_time = captured.capture_time;
-      frame_pair.decoded = captured.best_decode->frame;
-      frame_pair.render_time = captured.best_decode->render_time;
-      frame_pair.repeated = captured.best_decode->repeat_count++;
-    }
-    for (auto& handler : frame_pair_handlers_)
-      handler(frame_pair);
-  }
+  void HandleMatch(CapturedFrame captured, int layer_id);
   void Finalize();
   int next_capture_id_ = 1;
   std::vector<std::function<void(const VideoFramePair&)>> frame_pair_handlers_;
@@ -133,35 +114,6 @@ class DecodedFrameTap : public rtc::VideoSinkInterface<VideoFrame> {
   VideoFrameMatcher* const matcher_;
   int layer_id_;
 };
-struct VideoQualityAnalyzerConfig {
-  double psnr_coverage = 1;
-};
-struct VideoQualityStats {
-  int captures_count = 0;
-  int valid_count = 0;
-  int lost_count = 0;
-  Statistics end_to_end_seconds;
-  Statistics frame_size;
-  Statistics psnr;
-};
-
-class VideoQualityAnalyzer {
- public:
-  explicit VideoQualityAnalyzer(
-      VideoQualityAnalyzerConfig config = VideoQualityAnalyzerConfig(),
-      std::unique_ptr<RtcEventLogOutput> writer = nullptr);
-  ~VideoQualityAnalyzer();
-  void HandleFramePair(VideoFramePair sample);
-  VideoQualityStats stats() const;
-  void PrintHeaders();
-  void PrintFrameInfo(const VideoFramePair& sample);
-  std::function<void(const VideoFramePair&)> Handler();
-
- private:
-  const VideoQualityAnalyzerConfig config_;
-  VideoQualityStats stats_;
-  const std::unique_ptr<RtcEventLogOutput> writer_;
-};
 }  // namespace test
 }  // namespace webrtc
-#endif  // TEST_SCENARIO_QUALITY_STATS_H_
+#endif  // TEST_SCENARIO_VIDEO_FRAME_MATCHER_H_

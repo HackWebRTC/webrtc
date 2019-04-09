@@ -59,15 +59,17 @@ if (rtc_include_tests) {
       "hardware_codecs.h",
       "network_node.cc",
       "network_node.h",
-      "quality_info.h",
-      "quality_stats.cc",
-      "quality_stats.h",
+      "performance_stats.h",
       "scenario.cc",
       "scenario.h",
       "scenario_config.cc",
       "scenario_config.h",
       "simulated_time.cc",
       "simulated_time.h",
+      "stats_collection.cc",
+      "stats_collection.h",
+      "video_frame_matcher.cc",
+      "video_frame_matcher.h",
       "video_stream.cc",
       "video_stream.h",
     ]
@@ -156,8 +158,8 @@ if (rtc_include_tests) {
   rtc_source_set("scenario_unittests") {
     testonly = true
     sources = [
-      "quality_stats_unittest.cc",
       "scenario_unittest.cc",
+      "stats_collection_unittest.cc",
       "video_stream_unittest.cc",
     ]
     deps = [
