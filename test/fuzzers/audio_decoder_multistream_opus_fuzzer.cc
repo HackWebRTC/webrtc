@@ -16,10 +16,12 @@ namespace webrtc {
 
 AudioDecoderMultiChannelOpusConfig MakeDecoderConfig(
     int num_channels,
+    int num_streams,
     int coupled_streams,
     std::vector<unsigned char> channel_mapping) {
   AudioDecoderMultiChannelOpusConfig config;
   config.num_channels = num_channels;
+  config.num_streams = num_streams;
   config.coupled_streams = coupled_streams;
   config.channel_mapping = channel_mapping;
   return config;
@@ -27,22 +29,23 @@ AudioDecoderMultiChannelOpusConfig MakeDecoderConfig(
 
 void FuzzOneInput(const uint8_t* data, size_t size) {
   const std::vector<AudioDecoderMultiChannelOpusConfig> surround_configs = {
-      MakeDecoderConfig(1, 0, {0}),  // Mono
+      MakeDecoderConfig(1, 1, 0, {0}),  // Mono
 
-      MakeDecoderConfig(2, 0, {0, 0}),  // Copy the first (of
-                                        // 2) decoded streams
-                                        // into both output
-                                        // channel 0 and output
-                                        // channel 1. Ignore
-                                        // the 2nd decoded
-                                        // stream.
+      MakeDecoderConfig(2, 2, 0, {0, 0}),  // Copy the first (of
+                                           // 2) decoded streams
+                                           // into both output
+                                           // channel 0 and output
+                                           // channel 1. Ignore
+                                           // the 2nd decoded
+                                           // stream.
 
-      MakeDecoderConfig(4, 2, {0, 1, 2, 3}),             // Quad.
-      MakeDecoderConfig(6, 2, {0, 4, 1, 2, 3, 5}),       // 5.1
-      MakeDecoderConfig(8, 3, {0, 6, 1, 2, 3, 4, 5, 7})  // 7.1
+      MakeDecoderConfig(4, 2, 2, {0, 1, 2, 3}),             // Quad.
+      MakeDecoderConfig(6, 4, 2, {0, 4, 1, 2, 3, 5}),       // 5.1
+      MakeDecoderConfig(8, 5, 3, {0, 6, 1, 2, 3, 4, 5, 7})  // 7.1
   };
 
   const auto config = surround_configs[data[0] % surround_configs.size()];
+  RTC_CHECK(config.IsOk());
   std::unique_ptr<AudioDecoder> dec =
       AudioDecoderMultiChannelOpus::MakeAudioDecoder(config);
   RTC_CHECK(dec);
