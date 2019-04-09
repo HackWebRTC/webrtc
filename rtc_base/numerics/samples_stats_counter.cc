@@ -38,6 +38,16 @@ void SamplesStatsCounter::AddSample(double value) {
   sum_squared_ += value * value;
 }
 
+void SamplesStatsCounter::AddSamples(const SamplesStatsCounter& other) {
+  for (double sample : other.samples_)
+    samples_.push_back(sample);
+  sorted_ = false;
+  max_ = std::max(max_, other.max_);
+  min_ = std::min(min_, other.min_);
+  sum_ += other.sum_;
+  sum_squared_ += other.sum_squared_;
+}
+
 double SamplesStatsCounter::GetPercentile(double percentile) {
   RTC_DCHECK(!IsEmpty());
   RTC_CHECK_GE(percentile, 0);

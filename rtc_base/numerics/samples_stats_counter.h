@@ -31,6 +31,9 @@ class SamplesStatsCounter {
   // Adds sample to the stats in amortized O(1) time.
   void AddSample(double value);
 
+  // Adds samples from another counter.
+  void AddSamples(const SamplesStatsCounter& other);
+
   // Returns if there are any values in O(1) time.
   bool IsEmpty() const { return samples_.empty(); }
 
