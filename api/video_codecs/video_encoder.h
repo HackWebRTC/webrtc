@@ -224,7 +224,7 @@ class RTC_EXPORT VideoEncoder {
     // all decodable.
     // |false| if some dependencies were undecodable, |true| if all dependencies
     // were decodable, and |nullopt| if the dependencies are unknown.
-    absl::optional<bool> is_last_received_dependencies_decodable;
+    absl::optional<bool> dependencies_of_last_received_decodable;
     // Describes whether the received frame was decodable.
     // |false| if some dependency was undecodable or if some packet belonging
     // to the last received frame was missed.
@@ -232,7 +232,7 @@ class RTC_EXPORT VideoEncoder {
     // to the last received frame were received.
     // |nullopt| if no packet belonging to the last frame was missed, but the
     // last packet in the frame was not yet received.
-    absl::optional<bool> is_last_received_decodable;
+    absl::optional<bool> last_received_decodable;
   };
 
   static VideoCodecVP8 GetDefaultVp8Settings();
