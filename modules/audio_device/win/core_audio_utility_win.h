@@ -11,11 +11,11 @@
 #ifndef MODULES_AUDIO_DEVICE_WIN_CORE_AUDIO_UTILITY_WIN_H_
 #define MODULES_AUDIO_DEVICE_WIN_CORE_AUDIO_UTILITY_WIN_H_
 
-#include <Audioclient.h>
-#include <Audiopolicy.h>
-#include <Mmdeviceapi.h>
+#include <audioclient.h>
+#include <audiopolicy.h>
 #include <avrt.h>
 #include <comdef.h>
+#include <mmdeviceapi.h>
 #include <objbase.h>
 #include <propidl.h>
 #include <wrl/client.h>

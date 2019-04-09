@@ -10,8 +10,7 @@
 
 #include "modules/audio_device/win/core_audio_utility_win.h"
 
-#include <Functiondiscoverykeys_devpkey.h>
-#include <atlbase.h>
+#include <functiondiscoverykeys_devpkey.h>
 #include <stdio.h>
 #include <tchar.h>
 
@@ -26,7 +25,6 @@
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/win/windows_version.h"
 
-using ATL::CComHeapPtr;
 using Microsoft::WRL::ComPtr;
 using webrtc::AudioDeviceName;
 using webrtc::AudioParameters;
@@ -303,9 +301,11 @@ ComPtr<IMMDevice> CreateDeviceInternal(const std::string& device_id,
 std::string GetDeviceIdInternal(IMMDevice* device) {
   // Retrieve unique name of endpoint device.
   // Example: "{0.0.1.00000000}.{8db6020f-18e3-4f25-b6f5-7726c9122574}".
-  CComHeapPtr<WCHAR> device_id;
+  LPWSTR device_id;
   if (SUCCEEDED(device->GetId(&device_id))) {
-    return rtc::ToUtf8(device_id, wcslen(device_id));
+    std::string device_id_utf8 = rtc::ToUtf8(device_id, wcslen(device_id));
+    CoTaskMemFree(device_id);
+    return device_id_utf8;
   } else {
     return std::string();
   }
@@ -735,10 +735,11 @@ int NumberOfActiveSessions(IMMDevice* device) {
     }
 
     // Log the display name of the audio session for debugging purposes.
-    CComHeapPtr<WCHAR> display_name;
+    LPWSTR display_name;
     if (SUCCEEDED(session_control->GetDisplayName(&display_name))) {
       RTC_DLOG(INFO) << "display name: "
                      << rtc::ToUtf8(display_name, wcslen(display_name));
+      CoTaskMemFree(display_name);
     }
 
     // Get the current state and check if the state is active or not.
