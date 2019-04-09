@@ -16,12 +16,12 @@ rtc_source_set("repeating_task") {
   deps = [
     ":to_queued_task",
     "..:logging",
-    "..:sequenced_task_checker",
     "..:thread_checker",
     "..:timeutils",
     "../../api/task_queue",
     "../../api/units:time_delta",
     "../../api/units:timestamp",
+    "../synchronization:sequence_checker",
     "//third_party/abseil-cpp/absl/memory",
   ]
 }

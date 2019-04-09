@@ -36,7 +36,7 @@
 #include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
 #include "test/testsupport/frame_reader.h"
@@ -250,7 +250,7 @@ class VideoProcessor {
   int64_t post_encode_time_ns_ RTC_GUARDED_BY(sequence_checker_);
 
   // This class must be operated on a TaskQueue.
-  rtc::SequencedTaskChecker sequence_checker_;
+  SequenceChecker sequence_checker_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(VideoProcessor);
 };

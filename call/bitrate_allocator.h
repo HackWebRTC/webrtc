@@ -21,7 +21,7 @@
 
 #include "api/call/bitrate_allocation.h"
 #include "rtc_base/bitrate_allocation_strategy.h"
-#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 
 namespace webrtc {
 
@@ -226,7 +226,7 @@ class BitrateAllocator : public BitrateAllocatorInterface {
   // AudioPriorityBitrateAllocationStrategy.
   static uint8_t GetTransmissionMaxBitrateMultiplier();
 
-  rtc::SequencedTaskChecker sequenced_checker_;
+  SequenceChecker sequenced_checker_;
   LimitObserver* const limit_observer_ RTC_GUARDED_BY(&sequenced_checker_);
   // Stored in a list to keep track of the insertion order.
   ObserverConfigs bitrate_observer_configs_ RTC_GUARDED_BY(&sequenced_checker_);

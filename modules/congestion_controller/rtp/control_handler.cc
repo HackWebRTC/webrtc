@@ -37,22 +37,22 @@ CongestionControlHandler::~CongestionControlHandler() {}
 
 void CongestionControlHandler::SetTargetRate(
     TargetTransferRate new_target_rate) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
+  RTC_DCHECK_RUN_ON(&sequenced_checker_);
   last_incoming_ = new_target_rate;
 }
 
 void CongestionControlHandler::SetNetworkAvailability(bool network_available) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
+  RTC_DCHECK_RUN_ON(&sequenced_checker_);
   network_available_ = network_available;
 }
 
 void CongestionControlHandler::SetPacerQueue(TimeDelta expected_queue_time) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
+  RTC_DCHECK_RUN_ON(&sequenced_checker_);
   pacer_expected_queue_ms_ = expected_queue_time.ms();
 }
 
 absl::optional<TargetTransferRate> CongestionControlHandler::GetUpdate() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
+  RTC_DCHECK_RUN_ON(&sequenced_checker_);
   if (!last_incoming_.has_value())
     return absl::nullopt;
   TargetTransferRate new_outgoing = *last_incoming_;

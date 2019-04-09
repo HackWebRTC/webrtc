@@ -541,7 +541,7 @@ void OveruseFrameDetector::StartCheckForOveruse(
     rtc::TaskQueue* task_queue,
     const CpuOveruseOptions& options,
     AdaptationObserverInterface* overuse_observer) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   RTC_DCHECK(!check_overuse_task_.Running());
   RTC_DCHECK(overuse_observer != nullptr);
 
@@ -554,12 +554,12 @@ void OveruseFrameDetector::StartCheckForOveruse(
       });
 }
 void OveruseFrameDetector::StopCheckForOveruse() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   check_overuse_task_.Stop();
 }
 
 void OveruseFrameDetector::EncodedFrameTimeMeasured(int encode_duration_ms) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   encode_usage_percent_ = usage_->Value();
 
   metrics_observer_->OnEncodedFrameTimeMeasured(encode_duration_ms,
@@ -567,7 +567,7 @@ void OveruseFrameDetector::EncodedFrameTimeMeasured(int encode_duration_ms) {
 }
 
 bool OveruseFrameDetector::FrameSizeChanged(int num_pixels) const {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   if (num_pixels != num_pixels_) {
     return true;
   }
@@ -575,7 +575,7 @@ bool OveruseFrameDetector::FrameSizeChanged(int num_pixels) const {
 }
 
 bool OveruseFrameDetector::FrameTimeoutDetected(int64_t now_us) const {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   if (last_capture_time_us_ == -1)
     return false;
   return (now_us - last_capture_time_us_) >
@@ -585,7 +585,7 @@ bool OveruseFrameDetector::FrameTimeoutDetected(int64_t now_us) const {
 void OveruseFrameDetector::ResetAll(int num_pixels) {
   // Reset state, as a result resolution being changed. Do not however change
   // the current frame rate back to the default.
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   num_pixels_ = num_pixels;
   usage_->Reset();
   last_capture_time_us_ = -1;
@@ -595,7 +595,7 @@ void OveruseFrameDetector::ResetAll(int num_pixels) {
 }
 
 void OveruseFrameDetector::OnTargetFramerateUpdated(int framerate_fps) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   RTC_DCHECK_GE(framerate_fps, 0);
   max_framerate_ = std::min(kMaxFramerate, framerate_fps);
   usage_->SetMaxSampleDiffMs((1000 / std::max(kMinFramerate, max_framerate_)) *
@@ -604,7 +604,7 @@ void OveruseFrameDetector::OnTargetFramerateUpdated(int framerate_fps) {
 
 void OveruseFrameDetector::FrameCaptured(const VideoFrame& frame,
                                          int64_t time_when_first_seen_us) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
 
   if (FrameSizeChanged(frame.width() * frame.height()) ||
       FrameTimeoutDetected(time_when_first_seen_us)) {
@@ -619,7 +619,7 @@ void OveruseFrameDetector::FrameSent(uint32_t timestamp,
                                      int64_t time_sent_in_us,
                                      int64_t capture_time_us,
                                      absl::optional<int> encode_duration_us) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   encode_duration_us = usage_->FrameSent(timestamp, time_sent_in_us,
                                          capture_time_us, encode_duration_us);
 
@@ -631,7 +631,7 @@ void OveruseFrameDetector::FrameSent(uint32_t timestamp,
 
 void OveruseFrameDetector::CheckForOveruse(
     AdaptationObserverInterface* observer) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   RTC_DCHECK(observer);
   ++num_process_times_;
   if (num_process_times_ <= options_.min_process_count ||
@@ -681,7 +681,7 @@ void OveruseFrameDetector::CheckForOveruse(
 }
 
 void OveruseFrameDetector::SetOptions(const CpuOveruseOptions& options) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   options_ = options;
   // Force reset with next frame.
   num_pixels_ = 0;
@@ -689,7 +689,7 @@ void OveruseFrameDetector::SetOptions(const CpuOveruseOptions& options) {
 }
 
 bool OveruseFrameDetector::IsOverusing(int usage_percent) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
 
   if (usage_percent >= options_.high_encode_usage_threshold_percent) {
     ++checks_above_threshold_;
@@ -700,7 +700,7 @@ bool OveruseFrameDetector::IsOverusing(int usage_percent) {
 }
 
 bool OveruseFrameDetector::IsUnderusing(int usage_percent, int64_t time_now) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   int delay = in_quick_rampup_ ? kQuickRampUpDelayMs : current_rampup_delay_ms_;
   if (time_now < last_rampup_time_ms_ + delay)
     return false;

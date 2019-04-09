@@ -318,7 +318,7 @@ void RtpVideoStreamReceiver::OnRecoveredPacket(const uint8_t* rtp_packet,
 // This method handles both regular RTP packets and packets recovered
 // via FlexFEC.
 void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
+  RTC_DCHECK_RUN_ON(&worker_task_checker_);
 
   if (!receiving_) {
     return;
@@ -480,14 +480,14 @@ absl::optional<int64_t> RtpVideoStreamReceiver::LastReceivedKeyframePacketMs()
 }
 
 void RtpVideoStreamReceiver::AddSecondarySink(RtpPacketSinkInterface* sink) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
+  RTC_DCHECK_RUN_ON(&worker_task_checker_);
   RTC_DCHECK(!absl::c_linear_search(secondary_sinks_, sink));
   secondary_sinks_.push_back(sink);
 }
 
 void RtpVideoStreamReceiver::RemoveSecondarySink(
     const RtpPacketSinkInterface* sink) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
+  RTC_DCHECK_RUN_ON(&worker_task_checker_);
   auto it = absl::c_find(secondary_sinks_, sink);
   if (it == secondary_sinks_.end()) {
     // We might be rolling-back a call whose setup failed mid-way. In such a
@@ -610,7 +610,7 @@ void RtpVideoStreamReceiver::ReceivePacket(const RtpPacketReceived& packet) {
 
 void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(
     const RtpPacketReceived& packet) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
+  RTC_DCHECK_RUN_ON(&worker_task_checker_);
   if (packet.PayloadType() == config_.rtp.red_payload_type &&
       packet.payload_size() > 0) {
     if (packet.payload()[0] == config_.rtp.ulpfec_payload_type) {
@@ -648,7 +648,7 @@ void RtpVideoStreamReceiver::NotifyReceiverOfEmptyPacket(uint16_t seq_num) {
 
 bool RtpVideoStreamReceiver::DeliverRtcp(const uint8_t* rtcp_packet,
                                          size_t rtcp_packet_length) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
+  RTC_DCHECK_RUN_ON(&worker_task_checker_);
 
   if (!receiving_) {
     return false;
@@ -725,12 +725,12 @@ int RtpVideoStreamReceiver::GetUniqueFramesSeen() const {
 }
 
 void RtpVideoStreamReceiver::StartReceive() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
+  RTC_DCHECK_RUN_ON(&worker_task_checker_);
   receiving_ = true;
 }
 
 void RtpVideoStreamReceiver::StopReceive() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_task_checker_);
+  RTC_DCHECK_RUN_ON(&worker_task_checker_);
   receiving_ = false;
 }
 

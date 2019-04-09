@@ -30,7 +30,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/numerics/safe_minmax.h"
-#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/time_utils.h"
@@ -114,7 +114,7 @@ class RtcEventLogImpl final : public RtcEventLog {
 
   // Make sure that the event log is "managed" - created/destroyed, as well
   // as started/stopped - from the same thread/task-queue.
-  rtc::SequencedTaskChecker owner_sequence_checker_;
+  SequenceChecker owner_sequence_checker_;
 
   // History containing all past configuration events.
   std::deque<std::unique_ptr<RtcEvent>> config_history_
@@ -158,7 +158,7 @@ RtcEventLogImpl::RtcEventLogImpl(
 }
 
 RtcEventLogImpl::~RtcEventLogImpl() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&owner_sequence_checker_);
+  RTC_DCHECK_RUN_ON(&owner_sequence_checker_);
 
   // If we're logging to the output, this will stop that. Blocking function.
   StopLogging();
@@ -172,7 +172,7 @@ RtcEventLogImpl::~RtcEventLogImpl() {
 
 bool RtcEventLogImpl::StartLogging(std::unique_ptr<RtcEventLogOutput> output,
                                    int64_t output_period_ms) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&owner_sequence_checker_);
+  RTC_DCHECK_RUN_ON(&owner_sequence_checker_);
 
   RTC_DCHECK(output_period_ms == kImmediateOutput || output_period_ms > 0);
 
@@ -207,7 +207,7 @@ bool RtcEventLogImpl::StartLogging(std::unique_ptr<RtcEventLogOutput> output,
 }
 
 void RtcEventLogImpl::StopLogging() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&owner_sequence_checker_);
+  RTC_DCHECK_RUN_ON(&owner_sequence_checker_);
 
   RTC_LOG(LS_INFO) << "Stopping WebRTC event log.";
 

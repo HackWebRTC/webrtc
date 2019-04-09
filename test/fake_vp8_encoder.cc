@@ -51,7 +51,7 @@ FakeVP8Encoder::FakeVP8Encoder(Clock* clock) : FakeEncoder(clock) {
 int32_t FakeVP8Encoder::InitEncode(const VideoCodec* config,
                                    int32_t number_of_cores,
                                    size_t max_payload_size) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
   auto result =
       FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
   if (result != WEBRTC_VIDEO_CODEC_OK) {
@@ -75,7 +75,7 @@ void FakeVP8Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
                                            VideoFrameType frame_type,
                                            int stream_idx,
                                            uint32_t timestamp) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
   codec_specific->codecType = kVideoCodecVP8;
   codec_specific->codecSpecific.VP8.keyIdx = kNoKeyIdx;
   codec_specific->codecSpecific.VP8.nonReference = false;
@@ -87,7 +87,7 @@ void FakeVP8Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
 std::unique_ptr<RTPFragmentationHeader> FakeVP8Encoder::EncodeHook(
     EncodedImage* encoded_image,
     CodecSpecificInfo* codec_specific) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
   uint8_t stream_idx = encoded_image->SpatialIndex().value_or(0);
   frame_buffer_controller_->UpdateLayerConfig(stream_idx,
                                               encoded_image->Timestamp());

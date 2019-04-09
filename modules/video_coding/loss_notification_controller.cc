@@ -44,7 +44,7 @@ LossNotificationController::LossNotificationController(
 LossNotificationController::~LossNotificationController() = default;
 
 void LossNotificationController::OnReceivedPacket(const VCMPacket& packet) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_task_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   if (!packet.generic_descriptor) {
     RTC_LOG(LS_WARNING) << "Generic frame descriptor missing. Buggy remote? "
@@ -116,7 +116,7 @@ void LossNotificationController::OnAssembledFrame(
     uint16_t frame_id,
     bool discardable,
     rtc::ArrayView<const uint16_t> frame_dependency_diffs) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_task_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   DiscardOldInformation();  // Prevent memory overconsumption.
 
@@ -144,7 +144,7 @@ void LossNotificationController::DiscardOldInformation() {
 bool LossNotificationController::AllDependenciesDecodable(
     int64_t unwrapped_frame_id,
     rtc::ArrayView<const uint16_t> frame_dependency_diffs) const {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_task_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   // Due to packet reordering, frame buffering and asynchronous decoders, it is
   // infeasible to make reliable conclusions on the decodability of a frame
@@ -170,7 +170,7 @@ bool LossNotificationController::AllDependenciesDecodable(
 
 void LossNotificationController::HandleLoss(uint16_t last_received_seq_num,
                                             bool decodability_flag) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_task_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   if (last_decodable_non_discardable_) {
     RTC_DCHECK(AheadOf(last_received_seq_num,

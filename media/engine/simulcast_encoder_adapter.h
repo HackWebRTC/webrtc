@@ -22,7 +22,7 @@
 #include "api/video_codecs/sdp_video_format.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/atomic_ops.h"
-#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -109,7 +109,7 @@ class RTC_EXPORT SimulcastEncoderAdapter : public VideoEncoder {
   EncoderInfo encoder_info_;
 
   // Used for checking the single-threaded access of the encoder interface.
-  rtc::SequencedTaskChecker encoder_queue_;
+  SequenceChecker encoder_queue_;
 
   // Store encoders in between calls to Release and InitEncode, so they don't
   // have to be recreated. Remaining encoders are destroyed by the destructor.

@@ -32,7 +32,7 @@
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/rate_statistics.h"
-#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_queue.h"
 #include "video/encoder_bitrate_adjuster.h"
 #include "video/frame_encode_timer.h"

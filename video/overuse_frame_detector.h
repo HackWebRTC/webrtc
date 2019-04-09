@@ -19,7 +19,7 @@
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/numerics/exp_filter.h"
-#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread_annotations.h"
@@ -122,7 +122,7 @@ class OveruseFrameDetector {
   static std::unique_ptr<ProcessingUsage> CreateProcessingUsage(
       const CpuOveruseOptions& options);
 
-  rtc::SequencedTaskChecker task_checker_;
+  SequenceChecker task_checker_;
   // Owned by the task queue from where StartCheckForOveruse is called.
   RepeatingTaskHandle check_overuse_task_ RTC_GUARDED_BY(task_checker_);
 

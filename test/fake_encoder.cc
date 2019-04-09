@@ -349,13 +349,13 @@ DelayedEncoder::DelayedEncoder(Clock* clock, int delay_ms)
 }
 
 void DelayedEncoder::SetDelay(int delay_ms) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
   delay_ms_ = delay_ms;
 }
 
 int32_t DelayedEncoder::Encode(const VideoFrame& input_image,
                                const std::vector<VideoFrameType>* frame_types) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   SleepMs(delay_ms_);
 
@@ -378,7 +378,7 @@ MultithreadedFakeH264Encoder::MultithreadedFakeH264Encoder(
 int32_t MultithreadedFakeH264Encoder::InitEncode(const VideoCodec* config,
                                                  int32_t number_of_cores,
                                                  size_t max_payload_size) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   queue1_ = task_queue_factory_->CreateTaskQueue(
       "Queue 1", TaskQueueFactory::Priority::NORMAL);
@@ -411,7 +411,7 @@ class MultithreadedFakeH264Encoder::EncodeTask : public QueuedTask {
 int32_t MultithreadedFakeH264Encoder::Encode(
     const VideoFrame& input_image,
     const std::vector<VideoFrameType>* frame_types) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   TaskQueueBase* queue =
       (current_queue_++ % 2 == 0) ? queue1_.get() : queue2_.get();
@@ -433,7 +433,7 @@ int32_t MultithreadedFakeH264Encoder::EncodeCallback(
 }
 
 int32_t MultithreadedFakeH264Encoder::Release() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   queue1_.reset();
   queue2_.reset();

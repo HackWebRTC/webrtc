@@ -22,7 +22,7 @@
 #include "modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "modules/video_coding/frame_buffer2.h"
 #include "modules/video_coding/video_coding_impl.h"
-#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "system_wrappers/include/clock.h"
 #include "video/receive_statistics_proxy.h"
 #include "video/rtp_streams_synchronizer.h"
@@ -141,9 +141,9 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   void UpdatePlayoutDelays() const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(playout_delay_lock_);
 
-  rtc::SequencedTaskChecker worker_sequence_checker_;
-  rtc::SequencedTaskChecker module_process_sequence_checker_;
-  rtc::SequencedTaskChecker network_sequence_checker_;
+  SequenceChecker worker_sequence_checker_;
+  SequenceChecker module_process_sequence_checker_;
+  SequenceChecker network_sequence_checker_;
 
   TaskQueueFactory* const task_queue_factory_;
 

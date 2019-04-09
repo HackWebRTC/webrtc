@@ -29,7 +29,7 @@
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/thread_checker.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"

@@ -96,7 +96,7 @@ PacketSender::~PacketSender() = default;
 void PacketSender::StartSending() {
   worker_queue_checker_.Detach();
   worker_queue_.PostTask([this]() {
-    RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_queue_checker_);
+    RTC_DCHECK_RUN_ON(&worker_queue_checker_);
     sending_ = true;
   });
   worker_queue_.PostTask(absl::make_unique<UpdateTestSettingTask>(
@@ -105,18 +105,18 @@ void PacketSender::StartSending() {
 }
 
 void PacketSender::StopSending() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_queue_checker_);
+  RTC_DCHECK_RUN_ON(&worker_queue_checker_);
   sending_ = false;
   test_controller_->OnTestDone();
 }
 
 bool PacketSender::IsSending() const {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_queue_checker_);
+  RTC_DCHECK_RUN_ON(&worker_queue_checker_);
   return sending_;
 }
 
 void PacketSender::SendPacket() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_queue_checker_);
+  RTC_DCHECK_RUN_ON(&worker_queue_checker_);
   NetworkTesterPacket packet;
   packet.set_type(NetworkTesterPacket::TEST_DATA);
   packet.set_sequence_number(sequence_number_++);
@@ -125,13 +125,13 @@ void PacketSender::SendPacket() {
 }
 
 int64_t PacketSender::GetSendIntervalMs() const {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_queue_checker_);
+  RTC_DCHECK_RUN_ON(&worker_queue_checker_);
   return send_interval_ms_;
 }
 
 void PacketSender::UpdateTestSetting(size_t packet_size,
                                      int64_t send_interval_ms) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&worker_queue_checker_);
+  RTC_DCHECK_RUN_ON(&worker_queue_checker_);
   send_interval_ms_ = send_interval_ms;
   packet_size_ = packet_size;
 }

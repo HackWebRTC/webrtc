@@ -32,7 +32,7 @@
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/weak_ptr.h"
@@ -197,7 +197,7 @@ class MediaCodecVideoEncoder : public VideoEncoder {
 
   // State that is constant for the lifetime of this object once the ctor
   // returns.
-  rtc::SequencedTaskChecker encoder_queue_checker_;
+  SequenceChecker encoder_queue_checker_;
   ScopedJavaGlobalRef<jobject> j_media_codec_video_encoder_;
 
   // State that is valid only between InitEncode() and the next Release().
@@ -307,7 +307,7 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni,
 int32_t MediaCodecVideoEncoder::InitEncode(const VideoCodec* codec_settings,
                                            int32_t /* number_of_cores */,
                                            size_t /* max_payload_size */) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_checker_);
+  RTC_DCHECK_RUN_ON(&encoder_queue_checker_);
   if (codec_settings == NULL) {
     ALOGE << "NULL VideoCodec instance";
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
@@ -367,7 +367,7 @@ int32_t MediaCodecVideoEncoder::InitEncode(const VideoCodec* codec_settings,
 }
 
 bool MediaCodecVideoEncoder::ResetCodec() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_checker_);
+  RTC_DCHECK_RUN_ON(&encoder_queue_checker_);
   ALOGE << "Reset";
   if (Release() != WEBRTC_VIDEO_CODEC_OK) {
     ALOGE << "Releasing codec failed during reset.";
@@ -391,7 +391,7 @@ bool MediaCodecVideoEncoder::EncodeTask::Run() {
     return true;
   }
 
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_->encoder_queue_checker_);
+  RTC_DCHECK_RUN_ON(&encoder_->encoder_queue_checker_);
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
 
@@ -468,7 +468,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
                                                    int kbps,
                                                    int fps,
                                                    bool use_surface) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_checker_);
+  RTC_DCHECK_RUN_ON(&encoder_queue_checker_);
   if (sw_fallback_required_) {
     return WEBRTC_VIDEO_CODEC_OK;
   }
@@ -595,7 +595,7 @@ int32_t MediaCodecVideoEncoder::InitEncodeInternal(int width,
 int32_t MediaCodecVideoEncoder::Encode(
     const VideoFrame& frame,
     const std::vector<VideoFrameType>* frame_types) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_checker_);
+  RTC_DCHECK_RUN_ON(&encoder_queue_checker_);
   if (sw_fallback_required_)
     return WEBRTC_VIDEO_CODEC_FALLBACK_SOFTWARE;
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
@@ -753,7 +753,7 @@ int32_t MediaCodecVideoEncoder::Encode(
 
 bool MediaCodecVideoEncoder::MaybeReconfigureEncoder(JNIEnv* jni,
                                                      const VideoFrame& frame) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_checker_);
+  RTC_DCHECK_RUN_ON(&encoder_queue_checker_);
 
   bool is_texture = IsTextureFrame(jni, frame);
   const bool reconfigure_due_to_format = is_texture != use_surface_;
@@ -798,7 +798,7 @@ bool MediaCodecVideoEncoder::EncodeByteBuffer(JNIEnv* jni,
                                               bool key_frame,
                                               const VideoFrame& frame,
                                               int input_buffer_index) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_checker_);
+  RTC_DCHECK_RUN_ON(&encoder_queue_checker_);
   RTC_CHECK(!use_surface_);
 
   rtc::scoped_refptr<I420BufferInterface> i420_buffer =
@@ -861,7 +861,7 @@ bool MediaCodecVideoEncoder::EncodeJavaFrame(JNIEnv* jni,
 
 int32_t MediaCodecVideoEncoder::RegisterEncodeCompleteCallback(
     EncodedImageCallback* callback) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_checker_);
+  RTC_DCHECK_RUN_ON(&encoder_queue_checker_);
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
   ScopedLocalRefFrame local_ref_frame(jni);
   callback_ = callback;
@@ -869,7 +869,7 @@ int32_t MediaCodecVideoEncoder::RegisterEncodeCompleteCallback(
 }
 
 int32_t MediaCodecVideoEncoder::Release() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_checker_);
+  RTC_DCHECK_RUN_ON(&encoder_queue_checker_);
   if (!inited_) {
     return WEBRTC_VIDEO_CODEC_OK;
   }
@@ -903,7 +903,7 @@ int32_t MediaCodecVideoEncoder::Release() {
 int32_t MediaCodecVideoEncoder::SetRateAllocation(
     const VideoBitrateAllocation& rate_allocation,
     uint32_t frame_rate) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_checker_);
+  RTC_DCHECK_RUN_ON(&encoder_queue_checker_);
   const uint32_t new_bit_rate = rate_allocation.get_sum_kbps();
   if (sw_fallback_required_)
     return WEBRTC_VIDEO_CODEC_OK;
@@ -937,7 +937,7 @@ VideoEncoder::EncoderInfo MediaCodecVideoEncoder::GetEncoderInfo() const {
 }
 
 bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_checker_);
+  RTC_DCHECK_RUN_ON(&encoder_queue_checker_);
 
   while (true) {
     ScopedJavaLocalRef<jobject> j_output_buffer_info =

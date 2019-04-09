@@ -77,7 +77,7 @@ BitrateAllocator::~BitrateAllocator() {
 }
 
 void BitrateAllocator::UpdateStartRate(uint32_t start_rate_bps) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
+  RTC_DCHECK_RUN_ON(&sequenced_checker_);
   last_non_zero_bitrate_bps_ = start_rate_bps;
 }
 
@@ -100,7 +100,7 @@ void BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,
                                         uint8_t fraction_loss,
                                         int64_t rtt,
                                         int64_t bwe_period_ms) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
+  RTC_DCHECK_RUN_ON(&sequenced_checker_);
   last_target_bps_ = target_bitrate_bps;
   last_link_capacity_bps_ = link_capacity_bps;
   last_non_zero_bitrate_bps_ =
@@ -161,7 +161,7 @@ void BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,
 
 void BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
                                    MediaStreamAllocationConfig config) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
+  RTC_DCHECK_RUN_ON(&sequenced_checker_);
   RTC_DCHECK_GT(config.bitrate_priority, 0);
   RTC_DCHECK(std::isnormal(config.bitrate_priority));
   auto it = FindObserverConfig(observer);
@@ -254,7 +254,7 @@ void BitrateAllocator::UpdateAllocationLimits() {
 }
 
 void BitrateAllocator::RemoveObserver(BitrateAllocatorObserver* observer) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
+  RTC_DCHECK_RUN_ON(&sequenced_checker_);
 
   auto it = FindObserverConfig(observer);
   if (it != bitrate_observer_configs_.end()) {
@@ -266,7 +266,7 @@ void BitrateAllocator::RemoveObserver(BitrateAllocatorObserver* observer) {
 
 int BitrateAllocator::GetStartBitrate(
     BitrateAllocatorObserver* observer) const {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
+  RTC_DCHECK_RUN_ON(&sequenced_checker_);
   const auto& it = FindObserverConfig(observer);
   if (it == bitrate_observer_configs_.end()) {
     // This observer hasn't been added yet, just give it its fair share.
@@ -285,7 +285,7 @@ int BitrateAllocator::GetStartBitrate(
 void BitrateAllocator::SetBitrateAllocationStrategy(
     std::unique_ptr<rtc::BitrateAllocationStrategy>
         bitrate_allocation_strategy) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequenced_checker_);
+  RTC_DCHECK_RUN_ON(&sequenced_checker_);
   bitrate_allocation_strategy_ = std::move(bitrate_allocation_strategy);
 }
 

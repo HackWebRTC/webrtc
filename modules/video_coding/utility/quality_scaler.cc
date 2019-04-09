@@ -88,7 +88,7 @@ QualityScaler::QualityScaler(rtc::TaskQueue* task_queue,
       framedrop_percent_all_(5 * 30),
       experiment_enabled_(QualityScalingExperiment::Enabled()),
       observed_enough_frames_(false) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   if (experiment_enabled_) {
     config_ = QualityScalingExperiment::GetConfig();
     qp_smoother_high_.reset(new QpSmoother(config_.alpha_high));
@@ -105,12 +105,12 @@ QualityScaler::QualityScaler(rtc::TaskQueue* task_queue,
 }
 
 QualityScaler::~QualityScaler() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   check_qp_task_.Stop();
 }
 
 int64_t QualityScaler::GetSamplingPeriodMs() const {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   if (fast_rampup_) {
     return sampling_period_ms_;
   }
@@ -122,18 +122,18 @@ int64_t QualityScaler::GetSamplingPeriodMs() const {
 }
 
 void QualityScaler::ReportDroppedFrameByMediaOpt() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   framedrop_percent_media_opt_.AddSample(100);
   framedrop_percent_all_.AddSample(100);
 }
 
 void QualityScaler::ReportDroppedFrameByEncoder() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   framedrop_percent_all_.AddSample(100);
 }
 
 void QualityScaler::ReportQp(int qp, int64_t time_sent_us) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   framedrop_percent_media_opt_.AddSample(0);
   framedrop_percent_all_.AddSample(0);
   average_qp_.AddSample(qp);
@@ -144,7 +144,7 @@ void QualityScaler::ReportQp(int qp, int64_t time_sent_us) {
 }
 
 void QualityScaler::CheckQp() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   // Should be set through InitEncode -> Should be set by now.
   RTC_DCHECK_GE(thresholds_.low, 0);
 
@@ -193,13 +193,13 @@ void QualityScaler::CheckQp() {
 }
 
 void QualityScaler::ReportQpLow() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   ClearSamples();
   observer_->AdaptUp(AdaptationObserverInterface::AdaptReason::kQuality);
 }
 
 void QualityScaler::ReportQpHigh() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   ClearSamples();
   observer_->AdaptDown(AdaptationObserverInterface::AdaptReason::kQuality);
   // If we've scaled down, wait longer before scaling up again.
@@ -209,7 +209,7 @@ void QualityScaler::ReportQpHigh() {
 }
 
 void QualityScaler::ClearSamples() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&task_checker_);
+  RTC_DCHECK_RUN_ON(&task_checker_);
   framedrop_percent_media_opt_.Reset();
   framedrop_percent_all_.Reset();
   average_qp_.Reset();

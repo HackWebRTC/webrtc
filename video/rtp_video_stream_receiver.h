@@ -39,7 +39,7 @@
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/numerics/sequence_number_util.h"
-#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
 #include "video/buffered_frame_decryptor.h"
@@ -199,7 +199,7 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   ReceiveStatistics* const rtp_receive_statistics_;
   std::unique_ptr<UlpfecReceiver> ulpfec_receiver_;
 
-  rtc::SequencedTaskChecker worker_task_checker_;
+  SequenceChecker worker_task_checker_;
   bool receiving_ RTC_GUARDED_BY(worker_task_checker_);
   int64_t last_packet_log_ms_ RTC_GUARDED_BY(worker_task_checker_);
 

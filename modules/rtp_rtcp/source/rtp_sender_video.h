@@ -26,7 +26,7 @@
 #include "rtc_base/critical_section.h"
 #include "rtc_base/one_time_event.h"
 #include "rtc_base/rate_statistics.h"
-#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {

@@ -19,7 +19,7 @@
 #include "api/units/time_delta.h"
 #include "modules/pacing/paced_sender.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 
 namespace webrtc {
 // This is used to observe the network controller state and route calls to
@@ -46,7 +46,7 @@ class CongestionControlHandler {
   const bool disable_pacer_emergency_stop_;
   int64_t pacer_expected_queue_ms_ = 0;
 
-  rtc::SequencedTaskChecker sequenced_checker_;
+  SequenceChecker sequenced_checker_;
   RTC_DISALLOW_COPY_AND_ASSIGN(CongestionControlHandler);
 };
 }  // namespace webrtc

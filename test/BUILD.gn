@@ -592,7 +592,7 @@ rtc_source_set("direct_transport") {
     "../call:simulated_packet_receiver",
     "../modules/rtp_rtcp",
     "../rtc_base:rtc_base_approved",
-    "../rtc_base:sequenced_task_checker",
+    "../rtc_base/synchronization:sequence_checker",
     "../system_wrappers",
     "//third_party/abseil-cpp/absl/memory",
   ]
@@ -650,7 +650,7 @@ rtc_source_set("fake_video_codecs") {
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "../rtc_base:rtc_task_queue",
-    "../rtc_base:sequenced_task_checker",
+    "../rtc_base/synchronization:sequence_checker",
     "../system_wrappers",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",

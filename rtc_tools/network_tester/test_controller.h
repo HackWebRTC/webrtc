@@ -23,8 +23,8 @@
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/ignore_wundef.h"
-#include "rtc_base/sequenced_task_checker.h"
 #include "rtc_base/socket_address.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
@@ -70,7 +70,7 @@ class TestController : public sigslot::has_slots<> {
                     const rtc::SocketAddress& remote_addr,
                     const int64_t& packet_time_us);
   rtc::ThreadChecker test_controller_thread_checker_;
-  rtc::SequencedTaskChecker packet_sender_checker_;
+  SequenceChecker packet_sender_checker_;
   rtc::BasicPacketSocketFactory socket_factory_;
   const std::string config_file_path_;
   PacketLogger packet_logger_;

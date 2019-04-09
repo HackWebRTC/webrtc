@@ -228,7 +228,7 @@ class VideoStreamEncoder::VideoSourceProxy {
   void SetSource(rtc::VideoSourceInterface<VideoFrame>* source,
                  const DegradationPreference& degradation_preference) {
     // Called on libjingle's worker thread.
-    RTC_DCHECK_CALLED_SEQUENTIALLY(&main_checker_);
+    RTC_DCHECK_RUN_ON(&main_checker_);
     rtc::VideoSourceInterface<VideoFrame>* old_source = nullptr;
     rtc::VideoSinkWants wants;
     {
@@ -434,7 +434,7 @@ class VideoStreamEncoder::VideoSourceProxy {
   }
 
   rtc::CriticalSection crit_;
-  rtc::SequencedTaskChecker main_checker_;
+  SequenceChecker main_checker_;
   VideoStreamEncoder* const video_stream_encoder_;
   rtc::VideoSinkWants sink_wants_ RTC_GUARDED_BY(&crit_);
   DegradationPreference degradation_preference_ RTC_GUARDED_BY(&crit_);

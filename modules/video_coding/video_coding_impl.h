@@ -25,7 +25,7 @@
 #include "modules/video_coding/receiver.h"
 #include "modules/video_coding/timing.h"
 #include "rtc_base/one_time_event.h"
-#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
 #include "system_wrappers/include/clock.h"

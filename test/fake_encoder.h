@@ -25,7 +25,7 @@
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/critical_section.h"
-#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
 
@@ -127,7 +127,7 @@ class DelayedEncoder : public test::FakeEncoder {
 
  private:
   int delay_ms_ RTC_GUARDED_BY(sequence_checker_);
-  rtc::SequencedTaskChecker sequence_checker_;
+  SequenceChecker sequence_checker_;
 };
 
 // This class implements a multi-threaded fake encoder by posting
@@ -161,7 +161,7 @@ class MultithreadedFakeH264Encoder : public test::FakeH264Encoder {
       RTC_GUARDED_BY(sequence_checker_);
   std::unique_ptr<TaskQueueBase, TaskQueueDeleter> queue2_
       RTC_GUARDED_BY(sequence_checker_);
-  rtc::SequencedTaskChecker sequence_checker_;
+  SequenceChecker sequence_checker_;
 };
 
 }  // namespace test

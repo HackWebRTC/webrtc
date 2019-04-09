@@ -144,7 +144,7 @@ SimulcastEncoderAdapter::~SimulcastEncoderAdapter() {
 }
 
 int SimulcastEncoderAdapter::Release() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_);
+  RTC_DCHECK_RUN_ON(&encoder_queue_);
 
   while (!streaminfos_.empty()) {
     std::unique_ptr<VideoEncoder> encoder =
@@ -169,7 +169,7 @@ int SimulcastEncoderAdapter::Release() {
 int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
                                         int number_of_cores,
                                         size_t max_payload_size) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_);
+  RTC_DCHECK_RUN_ON(&encoder_queue_);
 
   if (number_of_cores < 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
@@ -339,7 +339,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
 int SimulcastEncoderAdapter::Encode(
     const VideoFrame& input_image,
     const std::vector<VideoFrameType>* frame_types) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_);
+  RTC_DCHECK_RUN_ON(&encoder_queue_);
 
   if (!Initialized()) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
@@ -438,7 +438,7 @@ int SimulcastEncoderAdapter::Encode(
 
 int SimulcastEncoderAdapter::RegisterEncodeCompleteCallback(
     EncodedImageCallback* callback) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_);
+  RTC_DCHECK_RUN_ON(&encoder_queue_);
   encoded_complete_callback_ = callback;
   return WEBRTC_VIDEO_CODEC_OK;
 }
@@ -446,7 +446,7 @@ int SimulcastEncoderAdapter::RegisterEncodeCompleteCallback(
 int SimulcastEncoderAdapter::SetRateAllocation(
     const VideoBitrateAllocation& bitrate,
     uint32_t new_framerate) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&encoder_queue_);
+  RTC_DCHECK_RUN_ON(&encoder_queue_);
 
   if (!Initialized()) {
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;

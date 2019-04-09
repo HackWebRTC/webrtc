@@ -18,7 +18,7 @@
 #include "modules/rtp_rtcp/include/ulpfec_receiver.h"
 #include "modules/rtp_rtcp/source/forward_error_correction.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
-#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
@@ -68,7 +68,7 @@ class FlexfecReceiver {
   int64_t last_recovered_packet_ms_ RTC_GUARDED_BY(sequence_checker_);
   FecPacketCounter packet_counter_ RTC_GUARDED_BY(sequence_checker_);
 
-  rtc::SequencedTaskChecker sequence_checker_;
+  SequenceChecker sequence_checker_;
 };
 
 }  // namespace webrtc

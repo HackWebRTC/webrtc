@@ -16,7 +16,7 @@
 #include "api/test/simulated_network.h"
 #include "call/call.h"
 #include "call/simulated_packet_receiver.h"
-#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/thread_annotations.h"
 #include "test/single_threaded_task_queue.h"
 

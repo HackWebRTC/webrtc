@@ -75,8 +75,8 @@ rtc_static_library("rtc_media_base") {
     "../rtc_base:rtc_base_approved",
     "../rtc_base:rtc_task_queue",
     "../rtc_base:sanitizer",
-    "../rtc_base:sequenced_task_checker",
     "../rtc_base:stringutils",
+    "../rtc_base/synchronization:sequence_checker",
   ]
   sources = [
     "base/adapted_video_track_source.cc",
@@ -167,8 +167,8 @@ rtc_static_library("rtc_simulcast_encoder_adapter") {
     "../modules/video_coding:video_coding_utility",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
-    "../rtc_base:sequenced_task_checker",
     "../rtc_base/experiments:rate_control_settings",
+    "../rtc_base/synchronization:sequence_checker",
     "../rtc_base/system:rtc_export",
     "../system_wrappers",
     "../system_wrappers:field_trial",

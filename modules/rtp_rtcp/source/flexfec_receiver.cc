@@ -61,7 +61,7 @@ FlexfecReceiver::FlexfecReceiver(
 FlexfecReceiver::~FlexfecReceiver() = default;
 
 void FlexfecReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   // If this packet was recovered, it might be originating from
   // ProcessReceivedPacket in this object. To avoid lifetime issues with
@@ -79,7 +79,7 @@ void FlexfecReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
 }
 
 FecPacketCounter FlexfecReceiver::GetPacketCounter() const {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
   return packet_counter_;
 }
 
@@ -87,7 +87,7 @@ FecPacketCounter FlexfecReceiver::GetPacketCounter() const {
 // recovered packets here.
 std::unique_ptr<ReceivedPacket> FlexfecReceiver::AddReceivedPacket(
     const RtpPacketReceived& packet) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   // RTP packets with a full base header (12 bytes), but without payload,
   // could conceivably be useful in the decoding. Therefore we check
@@ -145,7 +145,7 @@ std::unique_ptr<ReceivedPacket> FlexfecReceiver::AddReceivedPacket(
 // of non-recovered media packets.
 void FlexfecReceiver::ProcessReceivedPacket(
     const ReceivedPacket& received_packet) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   // Decode.
   erasure_code_->DecodeFec(received_packet, &recovered_packets_);

@@ -226,7 +226,7 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
 }
 
 VideoProcessor::~VideoProcessor() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   // Explicitly reset codecs, in case they don't do that themselves when they
   // go out of scope.
@@ -242,7 +242,7 @@ VideoProcessor::~VideoProcessor() {
 }
 
 void VideoProcessor::ProcessFrame() {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
   const size_t frame_number = last_inputed_frame_num_++;
 
   // Get input frame and store for future quality calculation.
@@ -296,7 +296,7 @@ void VideoProcessor::ProcessFrame() {
 }
 
 void VideoProcessor::SetRates(size_t bitrate_kbps, size_t framerate_fps) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
   framerate_fps_ = static_cast<uint32_t>(framerate_fps);
   bitrate_allocation_ = bitrate_allocator_->GetAllocation(
       static_cast<uint32_t>(bitrate_kbps * 1000), framerate_fps_);
@@ -333,7 +333,7 @@ int32_t VideoProcessor::VideoProcessorDecodeCompleteCallback::Decoded(
 void VideoProcessor::FrameEncoded(
     const webrtc::EncodedImage& encoded_image,
     const webrtc::CodecSpecificInfo& codec_specific) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   // For the highest measurement accuracy of the encode time, the start/stop
   // time recordings should wrap the Encode call as tightly as possible.
@@ -455,7 +455,7 @@ void VideoProcessor::FrameEncoded(
 
 void VideoProcessor::FrameDecoded(const VideoFrame& decoded_frame,
                                   size_t spatial_idx) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   // For the highest measurement accuracy of the decode time, the start/stop
   // time recordings should wrap the Decode call as tightly as possible.
@@ -529,7 +529,7 @@ void VideoProcessor::FrameDecoded(const VideoFrame& decoded_frame,
 
 void VideoProcessor::DecodeFrame(const EncodedImage& encoded_image,
                                  size_t spatial_idx) {
-  RTC_DCHECK_CALLED_SEQUENTIALLY(&sequence_checker_);
+  RTC_DCHECK_RUN_ON(&sequence_checker_);
   FrameStatistics* frame_stat =
       stats_->GetFrameWithTimestamp(encoded_image.Timestamp(), spatial_idx);
 

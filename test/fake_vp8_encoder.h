@@ -23,7 +23,7 @@
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/include/video_codec_interface.h"
-#include "rtc_base/sequenced_task_checker.h"
+#include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
 #include "test/fake_encoder.h"
@@ -55,7 +55,7 @@ class FakeVP8Encoder : public FakeEncoder {
       EncodedImage* encoded_image,
       CodecSpecificInfo* codec_specific) override;
 
-  rtc::SequencedTaskChecker sequence_checker_;
+  SequenceChecker sequence_checker_;
 
   std::unique_ptr<Vp8FrameBufferController> frame_buffer_controller_
       RTC_GUARDED_BY(sequence_checker_);
