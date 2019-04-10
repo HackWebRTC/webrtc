@@ -233,7 +233,7 @@ public class PeerConnectionFactory {
       return this;
     }
 
-    public Builder NetworkStatePredictorFactoryFactory(
+    public Builder setNetworkStatePredictorFactoryFactory(
         NetworkStatePredictorFactoryFactory networkStatePredictorFactoryFactory) {
       this.networkStatePredictorFactoryFactory = networkStatePredictorFactoryFactory;
       return this;
