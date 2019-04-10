@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "api/task_queue/task_queue_factory.h"
 #include "call/call.h"
 #include "media/base/media_engine.h"
 #include "modules/audio_device/include/audio_device.h"
@@ -29,6 +30,30 @@ class VideoBitrateAllocatorFactory;
 }  // namespace webrtc
 
 namespace cricket {
+
+struct MediaEngineDependencies {
+  MediaEngineDependencies() = default;
+  MediaEngineDependencies(const MediaEngineDependencies&) = delete;
+  MediaEngineDependencies(MediaEngineDependencies&&) = default;
+  MediaEngineDependencies& operator=(const MediaEngineDependencies&) = delete;
+  MediaEngineDependencies& operator=(MediaEngineDependencies&&) = default;
+  ~MediaEngineDependencies() = default;
+
+  webrtc::TaskQueueFactory* task_queue_factory = nullptr;
+  rtc::scoped_refptr<webrtc::AudioDeviceModule> adm;
+  rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory;
+  rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory;
+  rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer;
+  rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing;
+
+  std::unique_ptr<webrtc::VideoEncoderFactory> video_encoder_factory;
+  std::unique_ptr<webrtc::VideoDecoderFactory> video_decoder_factory;
+  std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
+      video_bitrate_allocator_factory;
+};
+
+std::unique_ptr<MediaEngineInterface> CreateMediaEngine(
+    MediaEngineDependencies dependencies);
 
 class WebRtcMediaEngineFactory {
  public:
