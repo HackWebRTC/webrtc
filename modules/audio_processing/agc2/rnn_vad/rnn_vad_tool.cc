@@ -108,6 +108,10 @@ int main(int argc, char* argv[]) {
     if (features_file) {
       const float float_is_silence = is_silence ? 1.f : 0.f;
       fwrite(&float_is_silence, sizeof(float), 1, features_file);
+      if (is_silence) {
+        // Do not write uninitialized values.
+        feature_vector.fill(0.f);
+      }
       fwrite(feature_vector.data(), sizeof(float), kFeatureVectorSize,
              features_file);
     }

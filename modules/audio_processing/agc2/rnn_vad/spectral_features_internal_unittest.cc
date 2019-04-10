@@ -18,6 +18,7 @@
 
 #include "api/array_view.h"
 #include "modules/audio_processing/agc2/rnn_vad/test_utils.h"
+#include "modules/audio_processing/utility/pffft_wrapper.h"
 // TODO(bugs.webrtc.org/8948): Add when the issue is fixed.
 // #include "test/fpe_observer.h"
 #include "test/gtest.h"
@@ -86,10 +87,13 @@ TEST(RnnVadTest, DISABLED_TestOpusScaleWeights) {
 
 TEST(RnnVadTest, SpectralCorrelatorValidOutput) {
   SpectralCorrelator e;
-  std::array<std::complex<float>, kFftSizeBy2Plus1> in;
+  Pffft fft(kFrameSize20ms24kHz, Pffft::FftType::kReal);
+  auto in = fft.CreateBuffer();
   std::array<float, kOpusBands24kHz> out;
-  in.fill({1.f, 1.f});
-  e.ComputeAutoCorrelation(in, out);
+  auto in_view = in->GetView();
+  std::fill(in_view.begin(), in_view.end(), 1.f);
+  in_view[1] = 0.f;  // Nyquist frequency.
+  e.ComputeAutoCorrelation(in_view, out);
   for (size_t i = 0; i < kOpusBands24kHz; ++i) {
     SCOPED_TRACE(i);
     EXPECT_GT(out[i], 0.f);

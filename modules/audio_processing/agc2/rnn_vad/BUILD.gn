@@ -16,8 +16,6 @@ rtc_source_set("rnn_vad") {
     "common.h",
     "features_extraction.cc",
     "features_extraction.h",
-    "fft_util.cc",
-    "fft_util.h",
     "lp_residual.cc",
     "lp_residual.h",
     "pitch_info.h",
@@ -90,7 +88,6 @@ if (rtc_include_tests) {
     sources = [
       "auto_correlation_unittest.cc",
       "features_extraction_unittest.cc",
-      "fft_util_unittest.cc",
       "lp_residual_unittest.cc",
       "pitch_search_internal_unittest.cc",
       "pitch_search_unittest.cc",
@@ -111,6 +108,7 @@ if (rtc_include_tests) {
       "../../../../rtc_base:checks",
       "../../../../rtc_base:logging",
       "../../../../test:test_support",
+      "../../utility:pffft_wrapper",
       "//third_party/rnnoise:rnn_vad",
     ]
     data = unittest_resources

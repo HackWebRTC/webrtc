@@ -13,7 +13,6 @@
 
 #include <stddef.h>
 #include <array>
-#include <complex>
 #include <vector>
 
 #include "api/array_view.h"
@@ -50,14 +49,22 @@ class SpectralCorrelator {
   ~SpectralCorrelator();
 
   // Computes the band-wise spectral auto-correlations.
+  // |x| must:
+  //  - have size equal to |kFrameSize20ms24kHz|;
+  //  - be encoded as vectors of interleaved real-complex FFT coefficients
+  //    where x[1] = y[1] = 0 (the Nyquist frequency coefficient is omitted).
   void ComputeAutoCorrelation(
-      rtc::ArrayView<const std::complex<float>, kFftSizeBy2Plus1> x,
+      rtc::ArrayView<const float> x,
       rtc::ArrayView<float, kOpusBands24kHz> auto_corr) const;
 
   // Computes the band-wise spectral cross-correlations.
+  // |x| and |y| must:
+  //  - have size equal to |kFrameSize20ms24kHz|;
+  //  - be encoded as vectors of interleaved real-complex FFT coefficients where
+  //    x[1] = y[1] = 0 (the Nyquist frequency coefficient is omitted).
   void ComputeCrossCorrelation(
-      rtc::ArrayView<const std::complex<float>, kFftSizeBy2Plus1> x,
-      rtc::ArrayView<const std::complex<float>, kFftSizeBy2Plus1> y,
+      rtc::ArrayView<const float> x,
+      rtc::ArrayView<const float> y,
       rtc::ArrayView<float, kOpusBands24kHz> cross_corr) const;
 
  private:

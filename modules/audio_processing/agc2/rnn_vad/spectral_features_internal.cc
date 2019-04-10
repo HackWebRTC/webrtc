@@ -91,22 +91,26 @@ SpectralCorrelator::SpectralCorrelator()
 SpectralCorrelator::~SpectralCorrelator() = default;
 
 void SpectralCorrelator::ComputeAutoCorrelation(
-    rtc::ArrayView<const std::complex<float>, kFftSizeBy2Plus1> x,
+    rtc::ArrayView<const float> x,
     rtc::ArrayView<float, kOpusBands24kHz> auto_corr) const {
   ComputeCrossCorrelation(x, x, auto_corr);
 }
 
 void SpectralCorrelator::ComputeCrossCorrelation(
-    rtc::ArrayView<const std::complex<float>, kFftSizeBy2Plus1> x,
-    rtc::ArrayView<const std::complex<float>, kFftSizeBy2Plus1> y,
+    rtc::ArrayView<const float> x,
+    rtc::ArrayView<const float> y,
     rtc::ArrayView<float, kOpusBands24kHz> cross_corr) const {
+  RTC_DCHECK_EQ(x.size(), kFrameSize20ms24kHz);
+  RTC_DCHECK_EQ(x.size(), y.size());
+  RTC_DCHECK_EQ(x[1], 0.f) << "The Nyquist coefficient must be zeroed.";
+  RTC_DCHECK_EQ(y[1], 0.f) << "The Nyquist coefficient must be zeroed.";
   constexpr auto kOpusScaleNumBins24kHz20ms = GetOpusScaleNumBins24kHz20ms();
   size_t k = 0;  // Next Fourier coefficient index.
   cross_corr[0] = 0.f;
   for (size_t i = 0; i < kOpusBands24kHz - 1; ++i) {
     cross_corr[i + 1] = 0.f;
     for (int j = 0; j < kOpusScaleNumBins24kHz20ms[i]; ++j) {  // Band size.
-      const float v = x[k].real() * y[k].real() + x[k].imag() * y[k].imag();
+      const float v = x[2 * k] * y[2 * k] + x[2 * k + 1] * y[2 * k + 1];
       const float tmp = weights_[k] * v;
       cross_corr[i] += v - tmp;
       cross_corr[i + 1] += tmp;
@@ -114,8 +118,7 @@ void SpectralCorrelator::ComputeCrossCorrelation(
     }
   }
   cross_corr[0] *= 2.f;  // The first band only gets half contribution.
-  // The Nyquist coefficient is never used.
-  RTC_DCHECK_EQ(k, kFftSizeBy2Plus1 - 1);
+  RTC_DCHECK_EQ(k, kFrameSize20ms24kHz / 2);  // Nyquist coefficient never used.
 }
 
 void ComputeSmoothedLogMagnitudeSpectrum(

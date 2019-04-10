@@ -45,12 +45,52 @@ void UpdateCepstralDifferenceStats(
   sym_matrix_buf->Push(distances);
 }
 
+// Computes the first half of the Vorbis window.
+std::array<float, kFrameSize20ms24kHz / 2> ComputeScaledHalfVorbisWindow(
+    float scaling = 1.f) {
+  constexpr size_t kHalfSize = kFrameSize20ms24kHz / 2;
+  std::array<float, kHalfSize> half_window{};
+  for (size_t i = 0; i < kHalfSize; ++i) {
+    half_window[i] =
+        scaling *
+        std::sin(0.5 * kPi * std::sin(0.5 * kPi * (i + 0.5) / kHalfSize) *
+                 std::sin(0.5 * kPi * (i + 0.5) / kHalfSize));
+  }
+  return half_window;
+}
+
+// Computes the forward FFT on a 20 ms frame to which a given window function is
+// applied. The Fourier coefficient corresponding to the Nyquist frequency is
+// set to zero (it is never used and this allows to simplify the code).
+void ComputeWindowedForwardFft(
+    rtc::ArrayView<const float, kFrameSize20ms24kHz> frame,
+    const std::array<float, kFrameSize20ms24kHz / 2>& half_window,
+    Pffft::FloatBuffer* fft_input_buffer,
+    Pffft::FloatBuffer* fft_output_buffer,
+    Pffft* fft) {
+  RTC_DCHECK_EQ(frame.size(), 2 * half_window.size());
+  // Apply windowing.
+  auto in = fft_input_buffer->GetView();
+  for (size_t i = 0, j = kFrameSize20ms24kHz - 1; i < half_window.size();
+       ++i, --j) {
+    in[i] = frame[i] * half_window[i];
+    in[j] = frame[j] * half_window[i];
+  }
+  fft->ForwardTransform(*fft_input_buffer, fft_output_buffer, /*ordered=*/true);
+  // Set the Nyquist frequency coefficient to zero.
+  auto out = fft_output_buffer->GetView();
+  out[1] = 0.f;
+}
+
 }  // namespace
 
 SpectralFeaturesExtractor::SpectralFeaturesExtractor()
-    : fft_(),
-      reference_frame_fft_(kFftSizeBy2Plus1),
-      lagged_frame_fft_(kFftSizeBy2Plus1),
+    : half_window_(ComputeScaledHalfVorbisWindow(
+          1.f / static_cast<float>(kFrameSize20ms24kHz))),
+      fft_(kFrameSize20ms24kHz, Pffft::FftType::kReal),
+      fft_buffer_(fft_.CreateBuffer()),
+      reference_frame_fft_(fft_.CreateBuffer()),
+      lagged_frame_fft_(fft_.CreateBuffer()),
       dct_table_(ComputeDctTable()) {}
 
 SpectralFeaturesExtractor::~SpectralFeaturesExtractor() = default;
@@ -70,10 +110,10 @@ bool SpectralFeaturesExtractor::CheckSilenceComputeFeatures(
     rtc::ArrayView<float, kNumLowerBands> bands_cross_corr,
     float* variability) {
   // Compute the Opus band energies for the reference frame.
-  fft_.WindowedFft(reference_frame, reference_frame_fft_);
+  ComputeWindowedForwardFft(reference_frame, half_window_, fft_buffer_.get(),
+                            reference_frame_fft_.get(), &fft_);
   spectral_correlator_.ComputeAutoCorrelation(
-      {reference_frame_fft_.data(), kFftSizeBy2Plus1},
-      reference_frame_bands_energy_);
+      reference_frame_fft_->GetConstView(), reference_frame_bands_energy_);
   // Check if the reference frame has silence.
   const float tot_energy =
       std::accumulate(reference_frame_bands_energy_.begin(),
@@ -82,9 +122,10 @@ bool SpectralFeaturesExtractor::CheckSilenceComputeFeatures(
     return true;
   }
   // Compute the Opus band energies for the lagged frame.
-  fft_.WindowedFft(lagged_frame, lagged_frame_fft_);
-  spectral_correlator_.ComputeAutoCorrelation(
-      {lagged_frame_fft_.data(), kFftSizeBy2Plus1}, lagged_frame_bands_energy_);
+  ComputeWindowedForwardFft(lagged_frame, half_window_, fft_buffer_.get(),
+                            lagged_frame_fft_.get(), &fft_);
+  spectral_correlator_.ComputeAutoCorrelation(lagged_frame_fft_->GetConstView(),
+                                              lagged_frame_bands_energy_);
   // Log of the band energies for the reference frame.
   std::array<float, kNumBands> log_bands_energy;
   ComputeSmoothedLogMagnitudeSpectrum(reference_frame_bands_energy_,
@@ -134,8 +175,8 @@ void SpectralFeaturesExtractor::ComputeAvgAndDerivatives(
 void SpectralFeaturesExtractor::ComputeNormalizedCepstralCorrelation(
     rtc::ArrayView<float, kNumLowerBands> bands_cross_corr) {
   spectral_correlator_.ComputeCrossCorrelation(
-      {reference_frame_fft_.data(), kFftSizeBy2Plus1},
-      {lagged_frame_fft_.data(), kFftSizeBy2Plus1}, bands_cross_corr_);
+      reference_frame_fft_->GetConstView(), lagged_frame_fft_->GetConstView(),
+      bands_cross_corr_);
   // Normalize.
   for (size_t i = 0; i < bands_cross_corr_.size(); ++i) {
     bands_cross_corr_[i] =

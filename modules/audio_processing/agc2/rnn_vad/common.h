@@ -53,7 +53,6 @@ constexpr size_t kMinPitch48kHz = kMinPitch24kHz * 2;
 constexpr size_t kMaxPitch48kHz = kMaxPitch24kHz * 2;
 
 // Spectral features.
-constexpr size_t kFftSizeBy2Plus1 = kFrameSize20ms24kHz / 2 + 1;
 constexpr size_t kNumBands = 22;
 constexpr size_t kNumLowerBands = 6;
 static_assert((0 < kNumLowerBands) && (kNumLowerBands < kNumBands), "");

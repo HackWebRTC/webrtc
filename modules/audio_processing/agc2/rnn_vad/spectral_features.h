@@ -12,16 +12,16 @@
 #define MODULES_AUDIO_PROCESSING_AGC2_RNN_VAD_SPECTRAL_FEATURES_H_
 
 #include <array>
-#include <complex>
 #include <cstddef>
+#include <memory>
 #include <vector>
 
 #include "api/array_view.h"
 #include "modules/audio_processing/agc2/rnn_vad/common.h"
-#include "modules/audio_processing/agc2/rnn_vad/fft_util.h"
 #include "modules/audio_processing/agc2/rnn_vad/ring_buffer.h"
 #include "modules/audio_processing/agc2/rnn_vad/spectral_features_internal.h"
 #include "modules/audio_processing/agc2/rnn_vad/symmetric_matrix_buffer.h"
+#include "modules/audio_processing/utility/pffft_wrapper.h"
 
 namespace webrtc {
 namespace rnn_vad {
@@ -58,9 +58,11 @@ class SpectralFeaturesExtractor {
       rtc::ArrayView<float, kNumLowerBands> bands_cross_corr);
   float ComputeVariability() const;
 
-  FftUtil fft_;
-  std::vector<std::complex<float>> reference_frame_fft_;
-  std::vector<std::complex<float>> lagged_frame_fft_;
+  const std::array<float, kFrameSize20ms24kHz / 2> half_window_;
+  Pffft fft_;
+  std::unique_ptr<Pffft::FloatBuffer> fft_buffer_;
+  std::unique_ptr<Pffft::FloatBuffer> reference_frame_fft_;
+  std::unique_ptr<Pffft::FloatBuffer> lagged_frame_fft_;
   SpectralCorrelator spectral_correlator_;
   std::array<float, kOpusBands24kHz> reference_frame_bands_energy_;
   std::array<float, kOpusBands24kHz> lagged_frame_bands_energy_;
