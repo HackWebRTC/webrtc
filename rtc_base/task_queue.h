@@ -80,8 +80,6 @@ class RTC_LOCKABLE RTC_EXPORT TaskQueue {
 
   explicit TaskQueue(std::unique_ptr<webrtc::TaskQueueBase,
                                      webrtc::TaskQueueDeleter> task_queue);
-  explicit TaskQueue(const char* queue_name,
-                     Priority priority = Priority::NORMAL);
   ~TaskQueue();
 
   // Used for DCHECKing the current queue.
