@@ -34,6 +34,24 @@ SamplesStatsCounter CreateStatsFilledWithIntsFrom1ToN(int n) {
   return stats;
 }
 
+// Add n samples drawn from uniform distribution in [a;b].
+SamplesStatsCounter CreateStatsFromUniformDistribution(int n,
+                                                       double a,
+                                                       double b) {
+  std::mt19937 gen{std::random_device()()};
+  std::uniform_real_distribution<> dis(a, b);
+
+  SamplesStatsCounter stats;
+  for (int i = 1; i <= n; i++) {
+    stats.AddSample(dis(gen));
+  }
+  return stats;
+}
+
+class SamplesStatsCounterTest : public ::testing::TestWithParam<int> {};
+
+constexpr int SIZE_FOR_MERGE = 10;
+
 }  // namespace
 
 TEST(SamplesStatsCounter, FullSimpleTest) {
@@ -75,5 +93,59 @@ TEST(SamplesStatsCounter, TestBorderValues) {
   EXPECT_LT(stats.GetPercentile(0.01), 2);
   EXPECT_DOUBLE_EQ(stats.GetPercentile(1.0), 5);
 }
+
+TEST(SamplesStatsCounter, VarianceFromUniformDistribution) {
+  // Check variance converge to 1/12 for [0;1) uniform distribution.
+  // Acts as a sanity check for NumericStabilityForVariance test.
+  SamplesStatsCounter stats = CreateStatsFromUniformDistribution(1e6, 0, 1);
+
+  EXPECT_NEAR(stats.GetVariance(), 1. / 12, 1e-3);
+}
+
+TEST(SamplesStatsCounter, NumericStabilityForVariance) {
+  // Same test as VarianceFromUniformDistribution,
+  // except the range is shifted to [1e9;1e9+1).
+  // Variance should also converge to 1/12.
+  // NB: Although we lose precision for the samples themselves, the fractional
+  //     part still enjoys 22 bits of mantissa and errors should even out,
+  //     so that couldn't explain a mismatch.
+  SamplesStatsCounter stats =
+      CreateStatsFromUniformDistribution(1e6, 1e9, 1e9 + 1);
+
+  EXPECT_NEAR(stats.GetVariance(), 1. / 12, 1e-3);
+}
+
+TEST_P(SamplesStatsCounterTest, AddSamples) {
+  int data[SIZE_FOR_MERGE] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+  // Split the data in different partitions.
+  // We have 11 distinct tests:
+  //   * Empty merged with full sequence.
+  //   * 1 sample merged with 9 last.
+  //   * 2 samples merged with 8 last.
+  //   [...]
+  //   * Full merged with empty sequence.
+  // All must lead to the same result.
+  SamplesStatsCounter stats0, stats1;
+  for (int i = 0; i < GetParam(); ++i) {
+    stats0.AddSample(data[i]);
+  }
+  for (int i = GetParam(); i < SIZE_FOR_MERGE; ++i) {
+    stats1.AddSample(data[i]);
+  }
+  stats0.AddSamples(stats1);
+
+  EXPECT_EQ(stats0.GetMin(), 0);
+  EXPECT_EQ(stats0.GetMax(), 9);
+  EXPECT_DOUBLE_EQ(stats0.GetAverage(), 4.5);
+  EXPECT_DOUBLE_EQ(stats0.GetVariance(), 8.25);
+  EXPECT_DOUBLE_EQ(stats0.GetStandardDeviation(), sqrt(8.25));
+  EXPECT_DOUBLE_EQ(stats0.GetPercentile(0.1), 0.9);
+  EXPECT_DOUBLE_EQ(stats0.GetPercentile(0.5), 4.5);
+  EXPECT_DOUBLE_EQ(stats0.GetPercentile(0.9), 8.1);
+}
+
+INSTANTIATE_TEST_SUITE_P(SamplesStatsCounterTests,
+                         SamplesStatsCounterTest,
+                         ::testing::Range(0, SIZE_FOR_MERGE + 1));
 
 }  // namespace webrtc
