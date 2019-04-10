@@ -36,7 +36,7 @@ class NativeCapturerObserver implements CapturerObserver {
 
   @Override
   public void onFrameCaptured(VideoFrame frame) {
-    final NativeAndroidVideoTrackSource.FrameAdaptationParameters parameters =
+    final VideoProcessor.FrameAdaptationParameters parameters =
         nativeAndroidVideoTrackSource.adaptFrame(frame);
     if (parameters == null) {
       // Drop frame.
