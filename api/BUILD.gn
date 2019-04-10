@@ -45,6 +45,7 @@ rtc_static_library("create_peerconnection_factory") {
     ":callfactory_api",
     ":fec_controller_api",
     ":libjingle_peerconnection_api",
+    ":network_state_predictor_api",
     ":scoped_refptr",
     "../logging:rtc_event_log_api",
     "../logging:rtc_event_log_impl_base",
@@ -140,6 +141,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     ":callfactory_api",
     ":fec_controller_api",
     ":libjingle_logging_api",
+    ":network_state_predictor_api",
     ":rtc_stats_api",
     ":scoped_refptr",
     "audio:audio_mixer_api",
@@ -187,6 +189,7 @@ rtc_source_set("video_quality_test_fixture_api") {
   deps = [
     ":fec_controller_api",
     ":libjingle_peerconnection_api",
+    ":network_state_predictor_api",
     ":simulated_network_api",
     "../call:fake_network",
     "../call:rtp_interfaces",
@@ -259,6 +262,7 @@ rtc_source_set("peer_connection_quality_test_fixture_api") {
     ":fec_controller_api",
     ":function_view",
     ":libjingle_peerconnection_api",
+    ":network_state_predictor_api",
     ":simulated_network_api",
     ":video_quality_analyzer_api",
     "../logging:rtc_event_log_api",
@@ -296,6 +300,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":fec_controller_api",
+      ":network_state_predictor_api",
       ":scoped_refptr",
       ":video_quality_test_fixture_api",
       "../video:video_quality_test",
@@ -440,6 +445,13 @@ rtc_source_set("fec_controller_api") {
   deps = [
     "../modules:module_fec_api",
     "video:video_frame_type",
+  ]
+}
+
+rtc_source_set("network_state_predictor_api") {
+  visibility = [ "*" ]
+  sources = [
+    "network_state_predictor.h",
   ]
 }
 

@@ -26,7 +26,9 @@ class DelayIncreaseDetectorInterface {
   // between timestamp groups as defined by the InterArrival class.
   virtual void Update(double recv_delta_ms,
                       double send_delta_ms,
-                      int64_t arrival_time_ms) = 0;
+                      int64_t send_time_ms,
+                      int64_t arrival_time_ms,
+                      bool calculated_deltas) = 0;
 
   virtual BandwidthUsage State() const = 0;
 

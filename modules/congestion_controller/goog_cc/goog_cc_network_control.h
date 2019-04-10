@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/network_state_predictor.h"
 #include "api/transport/field_trial_based_config.h"
 #include "api/transport/network_control.h"
 #include "api/transport/network_types.h"
@@ -40,9 +41,11 @@ namespace webrtc {
 
 class GoogCcNetworkController : public NetworkControllerInterface {
  public:
-  GoogCcNetworkController(RtcEventLog* event_log,
-                          NetworkControllerConfig config,
-                          bool feedback_only);
+  GoogCcNetworkController(
+      RtcEventLog* event_log,
+      NetworkControllerConfig config,
+      bool feedback_only,
+      std::unique_ptr<NetworkStatePredictor> network_state_predictor);
   ~GoogCcNetworkController() override;
 
   // NetworkControllerInterface
@@ -120,6 +123,8 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   bool previously_in_alr = false;
 
   absl::optional<DataSize> current_data_window_;
+
+  std::unique_ptr<NetworkStatePredictor> network_state_predictor_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(GoogCcNetworkController);
 };

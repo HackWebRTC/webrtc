@@ -83,7 +83,8 @@ DelayBasedBwe::Result::Result(bool probe, DataRate target_bitrate)
 DelayBasedBwe::Result::~Result() {}
 
 DelayBasedBwe::DelayBasedBwe(const WebRtcKeyValueConfig* key_value_config,
-                             RtcEventLog* event_log)
+                             RtcEventLog* event_log,
+                             NetworkStatePredictor* network_state_predictor)
     : event_log_(event_log),
       inter_arrival_(),
       delay_detector_(),
@@ -100,13 +101,14 @@ DelayBasedBwe::DelayBasedBwe(const WebRtcKeyValueConfig* key_value_config,
       prev_state_(BandwidthUsage::kBwNormal),
       alr_limited_backoff_enabled_(
           key_value_config->Lookup("WebRTC-Bwe-AlrLimitedBackoff")
-              .find("Enabled") == 0) {
+              .find("Enabled") == 0),
+      network_state_predictor_(network_state_predictor) {
   RTC_LOG(LS_INFO)
       << "Using Trendline filter for delay change estimation with window size "
       << trendline_window_size_;
-  delay_detector_.reset(new TrendlineEstimator(trendline_window_size_,
-                                               trendline_smoothing_coeff_,
-                                               trendline_threshold_gain_));
+  delay_detector_.reset(new TrendlineEstimator(
+      trendline_window_size_, trendline_smoothing_coeff_,
+      trendline_threshold_gain_, network_state_predictor_));
 }
 
 DelayBasedBwe::~DelayBasedBwe() {}
@@ -169,9 +171,9 @@ void DelayBasedBwe::IncomingPacketFeedback(
     inter_arrival_.reset(
         new InterArrival((kTimestampGroupLengthMs << kInterArrivalShift) / 1000,
                          kTimestampToMs, true));
-    delay_detector_.reset(new TrendlineEstimator(trendline_window_size_,
-                                                 trendline_smoothing_coeff_,
-                                                 trendline_threshold_gain_));
+    delay_detector_.reset(new TrendlineEstimator(
+        trendline_window_size_, trendline_smoothing_coeff_,
+        trendline_threshold_gain_, network_state_predictor_));
   }
   last_seen_packet_ = at_time;
 
@@ -189,13 +191,12 @@ void DelayBasedBwe::IncomingPacketFeedback(
   uint32_t ts_delta = 0;
   int64_t t_delta = 0;
   int size_delta = 0;
-  if (inter_arrival_->ComputeDeltas(timestamp, packet_feedback.arrival_time_ms,
-                                    at_time.ms(), packet_feedback.payload_size,
-                                    &ts_delta, &t_delta, &size_delta)) {
-    double ts_delta_ms = (1000.0 * ts_delta) / (1 << kInterArrivalShift);
-    delay_detector_->Update(t_delta, ts_delta_ms,
-                            packet_feedback.arrival_time_ms);
-  }
+  bool calculated_deltas = inter_arrival_->ComputeDeltas(
+      timestamp, packet_feedback.arrival_time_ms, at_time.ms(),
+      packet_feedback.payload_size, &ts_delta, &t_delta, &size_delta);
+  double ts_delta_ms = (1000.0 * ts_delta) / (1 << kInterArrivalShift);
+  delay_detector_->Update(t_delta, ts_delta_ms, packet_feedback.send_time_ms,
+                          packet_feedback.arrival_time_ms, calculated_deltas);
 }
 
 DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(

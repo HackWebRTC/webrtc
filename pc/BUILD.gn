@@ -196,6 +196,7 @@ rtc_static_library("peerconnection") {
     "../api:call_api",
     "../api:fec_controller_api",
     "../api:libjingle_peerconnection_api",
+    "../api:network_state_predictor_api",
     "../api:rtc_stats_api",
     "../api:scoped_refptr",
     "../api/task_queue",

@@ -10,6 +10,7 @@
 
 #include "pc/peer_connection_factory.h"
 
+#include <memory>
 #include <utility>
 #include <vector>
 
@@ -18,6 +19,7 @@
 #include "api/media_stream_proxy.h"
 #include "api/media_stream_track_proxy.h"
 #include "api/media_transport_interface.h"
+#include "api/network_state_predictor.h"
 #include "api/peer_connection_factory_proxy.h"
 #include "api/peer_connection_proxy.h"
 #include "api/turn_customizer.h"
@@ -25,16 +27,16 @@
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/base/rtp_data_engine.h"
 #include "media/sctp/sctp_transport.h"
-#include "pc/rtp_parameters_conversion.h"
-#include "rtc_base/bind.h"
-#include "rtc_base/checks.h"
 #include "p2p/base/basic_packet_socket_factory.h"
 #include "p2p/client/basic_port_allocator.h"
 #include "pc/audio_track.h"
 #include "pc/local_audio_source.h"
 #include "pc/media_stream.h"
 #include "pc/peer_connection.h"
+#include "pc/rtp_parameters_conversion.h"
 #include "pc/video_track.h"
+#include "rtc_base/bind.h"
+#include "rtc_base/checks.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
@@ -66,6 +68,8 @@ CreateModularPeerConnectionFactory(
     std::unique_ptr<CallFactoryInterface> call_factory,
     std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory,
     std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory,
+    std::unique_ptr<NetworkStatePredictorFactoryInterface>
+        network_state_predictor_factory,
     std::unique_ptr<NetworkControllerFactoryInterface>
         network_controller_factory) {
   PeerConnectionFactoryDependencies dependencies;
@@ -76,6 +80,8 @@ CreateModularPeerConnectionFactory(
   dependencies.call_factory = std::move(call_factory);
   dependencies.event_log_factory = std::move(event_log_factory);
   dependencies.fec_controller_factory = std::move(fec_controller_factory);
+  dependencies.network_state_predictor_factory =
+      std::move(network_state_predictor_factory);
   dependencies.network_controller_factory =
       std::move(network_controller_factory);
   return CreateModularPeerConnectionFactory(std::move(dependencies));
@@ -111,6 +117,8 @@ PeerConnectionFactory::PeerConnectionFactory(
       call_factory_(std::move(dependencies.call_factory)),
       event_log_factory_(std::move(dependencies.event_log_factory)),
       fec_controller_factory_(std::move(dependencies.fec_controller_factory)),
+      network_state_predictor_factory_(
+          std::move(dependencies.network_state_predictor_factory)),
       injected_network_controller_factory_(
           std::move(dependencies.network_controller_factory)),
       media_transport_factory_(
@@ -388,6 +396,8 @@ std::unique_ptr<Call> PeerConnectionFactory::CreateCall_w(
 
   call_config.fec_controller_factory = fec_controller_factory_.get();
   call_config.task_queue_factory = task_queue_factory_.get();
+  call_config.network_state_predictor_factory =
+      network_state_predictor_factory_.get();
 
   if (field_trial::IsEnabled("WebRTC-Bwe-InjectedCongestionController")) {
     RTC_LOG(LS_INFO) << "Using injected network controller factory";

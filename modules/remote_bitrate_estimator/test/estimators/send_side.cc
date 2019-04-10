@@ -38,7 +38,7 @@ SendSideBweSender::SendSideBweSender(int kbps,
           absl::make_unique<AcknowledgedBitrateEstimator>(
               &field_trial_config_)),
       probe_bitrate_estimator_(new ProbeBitrateEstimator(nullptr)),
-      bwe_(new DelayBasedBwe(&field_trial_config_, nullptr)),
+      bwe_(new DelayBasedBwe(&field_trial_config_, nullptr, nullptr)),
       feedback_observer_(bitrate_controller_.get()),
       clock_(clock),
       send_time_history_(10000),

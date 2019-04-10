@@ -155,7 +155,8 @@ DelayBasedBweTest::DelayBasedBweTest()
           absl::make_unique<AcknowledgedBitrateEstimator>(
               &field_trial_config_)),
       probe_bitrate_estimator_(new ProbeBitrateEstimator(nullptr)),
-      bitrate_estimator_(new DelayBasedBwe(&field_trial_config_, nullptr)),
+      bitrate_estimator_(
+          new DelayBasedBwe(&field_trial_config_, nullptr, nullptr)),
       stream_generator_(new test::StreamGenerator(1e6,  // Capacity.
                                                   clock_.TimeInMicroseconds())),
       arrival_time_offset_ms_(0),
@@ -169,7 +170,8 @@ DelayBasedBweTest::DelayBasedBweTest(const std::string& field_trial_string)
           absl::make_unique<AcknowledgedBitrateEstimator>(
               &field_trial_config_)),
       probe_bitrate_estimator_(new ProbeBitrateEstimator(nullptr)),
-      bitrate_estimator_(new DelayBasedBwe(&field_trial_config_, nullptr)),
+      bitrate_estimator_(
+          new DelayBasedBwe(&field_trial_config_, nullptr, nullptr)),
       stream_generator_(new test::StreamGenerator(1e6,  // Capacity.
                                                   clock_.TimeInMicroseconds())),
       arrival_time_offset_ms_(0),

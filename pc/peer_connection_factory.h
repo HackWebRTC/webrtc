@@ -122,6 +122,8 @@ class PeerConnectionFactory : public PeerConnectionFactoryInterface {
   std::unique_ptr<webrtc::CallFactoryInterface> call_factory_;
   std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory_;
   std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory_;
+  std::unique_ptr<NetworkStatePredictorFactoryInterface>
+      network_state_predictor_factory_;
   std::unique_ptr<NetworkControllerFactoryInterface>
       injected_network_controller_factory_;
   std::unique_ptr<MediaTransportFactory> media_transport_factory_;

@@ -104,7 +104,8 @@ DEPRECATED_SendSideCongestionController::
       pacer_paused_(false),
       min_bitrate_bps_(congestion_controller::GetMinBitrateBps()),
       probe_bitrate_estimator_(new ProbeBitrateEstimator(event_log_)),
-      delay_based_bwe_(new DelayBasedBwe(key_value_config_, event_log_)),
+      delay_based_bwe_(
+          new DelayBasedBwe(key_value_config_, event_log_, nullptr)),
       was_in_alr_(false),
       send_side_bwe_with_overhead_(
           key_value_config_->Lookup("WebRTC-SendSideBwe-WithOverhead")
@@ -235,7 +236,8 @@ void DEPRECATED_SendSideCongestionController::OnNetworkRouteChanged(
     transport_overhead_bytes_per_packet_ = network_route.packet_overhead;
     min_bitrate_bps_ = min_bitrate_bps;
     probe_bitrate_estimator_.reset(new ProbeBitrateEstimator(event_log_));
-    delay_based_bwe_.reset(new DelayBasedBwe(key_value_config_, event_log_));
+    delay_based_bwe_.reset(
+        new DelayBasedBwe(key_value_config_, event_log_, nullptr));
     acknowledged_bitrate_estimator_.reset(
         new AcknowledgedBitrateEstimator(key_value_config_));
     if (bitrate_bps > 0) {

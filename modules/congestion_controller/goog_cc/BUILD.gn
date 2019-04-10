@@ -30,6 +30,8 @@ rtc_static_library("goog_cc") {
     ":probe_controller",
     ":pushback_controller",
     "../..:module_api",
+    "../../..:webrtc_common",
+    "../../../api:network_state_predictor_api",
     "../../../api/transport:field_trial_based_config",
     "../../../api/transport:network_control",
     "../../../api/transport:webrtc_key_value_config",
@@ -116,6 +118,7 @@ rtc_source_set("estimators") {
   ]
 
   deps = [
+    "../../../api:network_state_predictor_api",
     "../../../api/transport:webrtc_key_value_config",
     "../../../api/units:data_rate",
     "../../../logging:rtc_event_bwe",
@@ -143,6 +146,7 @@ rtc_source_set("delay_based_bwe") {
 
   deps = [
     ":estimators",
+    "../../../api:network_state_predictor_api",
     "../../../api/transport:network_control",
     "../../../api/transport:webrtc_key_value_config",
     "../../../logging:rtc_event_bwe",

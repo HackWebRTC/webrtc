@@ -83,6 +83,7 @@ class RtpVideoSenderTestFixture {
         transport_controller_(&clock_,
                               &event_log_,
                               nullptr,
+                              nullptr,
                               bitrate_config_,
                               ProcessThread::Create("PacerThread"),
                               &GlobalTaskQueueFactory()),

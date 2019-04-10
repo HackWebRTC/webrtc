@@ -60,7 +60,7 @@ NetworkControlUpdate GoogCcStatePrinter::GetState(Timestamp at_time) const {
 
 GoogCcDebugFactory::GoogCcDebugFactory(RtcEventLog* event_log,
                                        GoogCcStatePrinter* printer)
-    : GoogCcNetworkControllerFactory(event_log), printer_(printer) {}
+    : GoogCcNetworkControllerFactory(event_log, nullptr), printer_(printer) {}
 
 std::unique_ptr<NetworkControllerInterface> GoogCcDebugFactory::Create(
     NetworkControllerConfig config) {

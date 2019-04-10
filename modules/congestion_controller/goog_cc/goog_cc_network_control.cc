@@ -17,6 +17,7 @@
 #include <memory>
 #include <numeric>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/memory/memory.h"
@@ -77,9 +78,11 @@ bool IsNotDisabled(const WebRtcKeyValueConfig* config, absl::string_view key) {
 }
 }  // namespace
 
-GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
-                                                 NetworkControllerConfig config,
-                                                 bool feedback_only)
+GoogCcNetworkController::GoogCcNetworkController(
+    RtcEventLog* event_log,
+    NetworkControllerConfig config,
+    bool feedback_only,
+    std::unique_ptr<NetworkStatePredictor> network_state_predictor)
     : key_value_config_(config.key_value_config ? config.key_value_config
                                                 : &trial_based_config_),
       event_log_(event_log),
@@ -104,7 +107,9 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
           absl::make_unique<SendSideBandwidthEstimation>(event_log_)),
       alr_detector_(absl::make_unique<AlrDetector>()),
       probe_bitrate_estimator_(new ProbeBitrateEstimator(event_log)),
-      delay_based_bwe_(new DelayBasedBwe(key_value_config_, event_log_)),
+      delay_based_bwe_(new DelayBasedBwe(key_value_config_,
+                                         event_log_,
+                                         network_state_predictor.get())),
       acknowledged_bitrate_estimator_(
           absl::make_unique<AcknowledgedBitrateEstimator>(key_value_config_)),
       initial_config_(config),
@@ -117,7 +122,8 @@ GoogCcNetworkController::GoogCcNetworkController(RtcEventLog* event_log,
               DataRate::Zero())),
       max_padding_rate_(config.stream_based_config.max_padding_rate.value_or(
           DataRate::Zero())),
-      max_total_allocated_bitrate_(DataRate::Zero()) {
+      max_total_allocated_bitrate_(DataRate::Zero()),
+      network_state_predictor_(std::move(network_state_predictor)) {
   RTC_DCHECK(config.constraints.at_time.IsFinite());
   ParseFieldTrial(
       {&safe_reset_on_route_change_, &safe_reset_acknowledged_rate_},
@@ -164,7 +170,8 @@ NetworkControlUpdate GoogCcNetworkController::OnNetworkRouteChange(
   acknowledged_bitrate_estimator_.reset(
       new AcknowledgedBitrateEstimator(key_value_config_));
   probe_bitrate_estimator_.reset(new ProbeBitrateEstimator(event_log_));
-  delay_based_bwe_.reset(new DelayBasedBwe(key_value_config_, event_log_));
+  delay_based_bwe_.reset(new DelayBasedBwe(key_value_config_, event_log_,
+                                           network_state_predictor_.get()));
   bandwidth_estimation_->OnRouteChange();
   probe_controller_->Reset(msg.at_time.ms());
   NetworkControlUpdate update;
