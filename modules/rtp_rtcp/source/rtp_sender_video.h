@@ -13,9 +13,11 @@
 
 #include <map>
 #include <memory>
+#include <vector>
 
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "api/array_view.h"
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/playout_delay_oracle.h"
@@ -94,13 +96,13 @@ class RTPSenderVideo {
   // or extension/
   uint32_t PacketizationOverheadBps() const;
 
-  // Recall the last RTP packet whose sequence number was |sequence_number|.
-  // Return the timestamp of the video frame that packet belonged too, as well
-  // as whether the packet was the first and/or last packet in the frame.
-  // absl::nullopt returned if no such packet can be recalled (e.g. it happened
-  // too long ago).
-  absl::optional<RtpSequenceNumberMap::Info> GetSentRtpPacketInfo(
-      uint16_t sequence_number) const;
+  // For each sequence number in |sequence_number|, recall the last RTP packet
+  // which bore it - its timestamp and whether it was the first and/or last
+  // packet in that frame. If all of the given sequence numbers could be
+  // recalled, return a vector with all of them (in corresponding order).
+  // If any could not be recalled, return an empty vector.
+  std::vector<RtpSequenceNumberMap::Info> GetSentRtpPacketInfos(
+      rtc::ArrayView<const uint16_t> sequence_numbers) const;
 
  protected:
   static uint8_t GetTemporalId(const RTPVideoHeader& header);

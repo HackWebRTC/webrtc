@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/array_view.h"
 #include "api/call/transport.h"
 #include "api/fec_controller.h"
 #include "api/video_codecs/video_encoder.h"
@@ -140,9 +141,9 @@ class RtpVideoSender : public RtpVideoSenderInterface,
                        size_t height,
                        size_t num_temporal_layers) override;
 
-  absl::optional<RtpSequenceNumberMap::Info> GetSentRtpPacketInfo(
+  std::vector<RtpSequenceNumberMap::Info> GetSentRtpPacketInfos(
       uint32_t ssrc,
-      uint16_t seq_num) const override;
+      rtc::ArrayView<const uint16_t> sequence_numbers) const override;
 
   // From PacketFeedbackObserver.
   void OnPacketAdded(uint32_t ssrc, uint16_t seq_num) override;

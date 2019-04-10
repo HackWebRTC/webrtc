@@ -69,10 +69,10 @@ class MockRtpVideoSender : public RtpVideoSenderInterface {
   MOCK_CONST_METHOD0(GetPayloadBitrateBps, uint32_t());
   MOCK_CONST_METHOD0(GetProtectionBitrateBps, uint32_t());
   MOCK_METHOD3(SetEncodingData, void(size_t, size_t, size_t));
-  MOCK_CONST_METHOD2(
-      GetSentRtpPacketInfo,
-      absl::optional<RtpSequenceNumberMap::Info>(uint32_t ssrc,
-                                                 uint16_t seq_num));
+  MOCK_CONST_METHOD2(GetSentRtpPacketInfos,
+                     std::vector<RtpSequenceNumberMap::Info>(
+                         uint32_t ssrc,
+                         rtc::ArrayView<const uint16_t> sequence_numbers));
 };
 
 BitrateAllocationUpdate CreateAllocation(int bitrate_bps) {

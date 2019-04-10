@@ -745,15 +745,15 @@ uint32_t RtpVideoSender::GetProtectionBitrateBps() const {
   return protection_bitrate_bps_;
 }
 
-absl::optional<RtpSequenceNumberMap::Info> RtpVideoSender::GetSentRtpPacketInfo(
+std::vector<RtpSequenceNumberMap::Info> RtpVideoSender::GetSentRtpPacketInfos(
     uint32_t ssrc,
-    uint16_t seq_num) const {
+    rtc::ArrayView<const uint16_t> sequence_numbers) const {
   for (const auto& rtp_stream : rtp_streams_) {
     if (ssrc == rtp_stream.rtp_rtcp->SSRC()) {
-      return rtp_stream.sender_video->GetSentRtpPacketInfo(seq_num);
+      return rtp_stream.sender_video->GetSentRtpPacketInfos(sequence_numbers);
     }
   }
-  return absl::nullopt;
+  return std::vector<RtpSequenceNumberMap::Info>();
 }
 
 int RtpVideoSender::ProtectionRequest(const FecProtectionParams* delta_params,
