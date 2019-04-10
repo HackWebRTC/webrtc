@@ -23,8 +23,7 @@ TEST(RateControlSettingsTest, CongestionWindow) {
   EXPECT_FALSE(
       RateControlSettings::ParseFromFieldTrials().UseCongestionWindow());
 
-  test::ScopedFieldTrials field_trials(
-      "WebRTC-CongestionWindow/QueueSize:100/");
+  test::ScopedFieldTrials field_trials("WebRTC-VideoRateControl/cwnd:100/");
   const RateControlSettings settings_after =
       RateControlSettings::ParseFromFieldTrials();
   EXPECT_TRUE(settings_after.UseCongestionWindow());
@@ -36,7 +35,7 @@ TEST(RateControlSettingsTest, CongestionWindowPushback) {
                    .UseCongestionWindowPushback());
 
   test::ScopedFieldTrials field_trials(
-      "WebRTC-CongestionWindow/QueueSize:100,MinBitrate:100000/");
+      "WebRTC-VideoRateControl/cwnd:100,cwnd_pushback:100000/");
   const RateControlSettings settings_after =
       RateControlSettings::ParseFromFieldTrials();
   EXPECT_TRUE(settings_after.UseCongestionWindowPushback());

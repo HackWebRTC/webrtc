@@ -239,7 +239,8 @@ TEST_F(GoogCcNetworkControllerTest, ReactsToChangedNetworkConditions) {
 // Test congestion window pushback on network delay happens.
 TEST_F(GoogCcNetworkControllerTest, CongestionWindowPushbackOnNetworkDelay) {
   ScopedFieldTrials trial(
-      "WebRTC-CongestionWindow/QueueSize:800,MinBitrate:30000/");
+      "WebRTC-CongestionWindowPushback/Enabled/WebRTC-CwndExperiment/"
+      "Enabled-800/");
   Scenario s("googcc_unit/cwnd_on_delay", false);
   auto send_net = s.CreateSimulationNode([=](NetworkNodeConfig* c) {
     c->simulation.bandwidth = DataRate::kbps(1000);
@@ -327,7 +328,8 @@ TEST_F(GoogCcNetworkControllerTest, UpdatesDelayBasedEstimate) {
 TEST_F(GoogCcNetworkControllerTest,
        PaddingRateLimitedByCongestionWindowInTrial) {
   ScopedFieldTrials trial(
-      "WebRTC-CongestionWindow/QueueSize:200,MinBitrate:30000/");
+      "WebRTC-CongestionWindowPushback/Enabled/WebRTC-CwndExperiment/"
+      "Enabled-200/");
 
   Scenario s("googcc_unit/padding_limited", false);
   NetworkNodeConfig net_conf;
@@ -631,8 +633,8 @@ TEST_F(GoogCcNetworkControllerTest,
        TargetRateReducedOnPacingBufferBuildupInTrial) {
   // Configure strict pacing to ensure build-up.
   ScopedFieldTrials trial(
-      "WebRTC-CongestionWindow/QueueSize:100,MinBitrate:30000/"
-      "WebRTC-Video-Pacing/factor:1.0/"
+      "WebRTC-CongestionWindowPushback/Enabled/WebRTC-CwndExperiment/"
+      "Enabled-100/WebRTC-Video-Pacing/factor:1.0/"
       "WebRTC-AddPacingToCongestionWindowPushback/Enabled/");
 
   const DataRate kLinkCapacity = DataRate::kbps(1000);
