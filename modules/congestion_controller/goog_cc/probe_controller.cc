@@ -73,6 +73,10 @@ constexpr char kBweRapidRecoveryExperiment[] =
 // Never probe higher than configured by OnMaxTotalAllocatedBitrate().
 constexpr char kCappedProbingFieldTrialName[] = "WebRTC-BweCappedProbing";
 
+// Only do allocation probing when in ALR (but not when network-limited).
+constexpr char kAllocProbingOnlyInAlrFieldTrialName[] =
+    "WebRTC-BweAllocProbingOnlyInAlr";
+
 void MaybeLogProbeClusterCreated(RtcEventLog* event_log,
                                  const ProbeClusterConfig& probe) {
   RTC_DCHECK(event_log);
@@ -121,6 +125,9 @@ ProbeController::ProbeController(const WebRtcKeyValueConfig* key_value_config,
       limit_probes_with_allocateable_rate_(
           key_value_config->Lookup(kCappedProbingFieldTrialName)
               .find("Disabled") != 0),
+      allocation_probing_only_in_alr_(
+          key_value_config->Lookup(kAllocProbingOnlyInAlrFieldTrialName)
+              .find("Enabled") == 0),
       event_log_(event_log),
       config_(ProbeControllerConfig(key_value_config)) {
   Reset(0);
@@ -181,11 +188,16 @@ std::vector<ProbeClusterConfig> ProbeController::SetBitrates(
 std::vector<ProbeClusterConfig> ProbeController::OnMaxTotalAllocatedBitrate(
     int64_t max_total_allocated_bitrate,
     int64_t at_time_ms) {
+  const bool in_alr = alr_start_time_ms_.has_value();
+  const bool allow_allocation_probe =
+      allocation_probing_only_in_alr_ ? in_alr : true;
+
   if (state_ == State::kProbingComplete &&
       max_total_allocated_bitrate != max_total_allocated_bitrate_ &&
       estimated_bitrate_bps_ != 0 &&
       (max_bitrate_bps_ <= 0 || estimated_bitrate_bps_ < max_bitrate_bps_) &&
-      estimated_bitrate_bps_ < max_total_allocated_bitrate) {
+      estimated_bitrate_bps_ < max_total_allocated_bitrate &&
+      allow_allocation_probe) {
     max_total_allocated_bitrate_ = max_total_allocated_bitrate;
 
     if (!config_.first_allocation_probe_scale)
