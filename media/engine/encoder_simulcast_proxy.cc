@@ -61,6 +61,19 @@ int EncoderSimulcastProxy::SetRateAllocation(
   return encoder_->SetRateAllocation(bitrate, new_framerate);
 }
 
+void EncoderSimulcastProxy::OnPacketLossRateUpdate(float packet_loss_rate) {
+  return encoder_->OnPacketLossRateUpdate(packet_loss_rate);
+}
+
+void EncoderSimulcastProxy::OnRttUpdate(int64_t rtt_ms) {
+  return encoder_->OnRttUpdate(rtt_ms);
+}
+
+void EncoderSimulcastProxy::OnLossNotification(
+    const LossNotification& loss_notification) {
+  encoder_->OnLossNotification(loss_notification);
+}
+
 VideoEncoder::EncoderInfo EncoderSimulcastProxy::GetEncoderInfo() const {
   return encoder_->GetEncoderInfo();
 }
