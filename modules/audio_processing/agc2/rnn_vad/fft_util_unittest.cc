@@ -39,16 +39,16 @@ std::vector<float> CreateSine(float amplitude,
 
 }  // namespace
 
-TEST(RnnVadTest, BandAnalysisFftTest) {
+TEST(RnnVadTest, FftUtilTest) {
   for (float frequency_hz : {200.f, 450.f, 1500.f}) {
     SCOPED_TRACE(frequency_hz);
     auto x = CreateSine(
         /*amplitude=*/1000.f, frequency_hz,
         /*duration_s=*/0.02f,
         /*sample_rate_hz=*/kSampleRate24kHz);
-    BandAnalysisFft analyzer;
+    FftUtil analyzer;
     std::vector<std::complex<float>> x_fft(x.size() / 2 + 1);
-    analyzer.ForwardFft(x, x_fft);
+    analyzer.WindowedFft(x, x_fft);
     int peak_fft_bin_index = std::distance(
         x_fft.begin(),
         std::max_element(x_fft.begin(), x_fft.end(),

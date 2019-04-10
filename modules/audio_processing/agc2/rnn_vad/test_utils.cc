@@ -87,14 +87,6 @@ ReaderPairType CreateFftCoeffsReader() {
   return {std::move(ptr), rtc::CheckedDivExact(ptr->data_length(), row_size)};
 }
 
-ReaderPairType CreateBandEnergyCoeffsReader() {
-  constexpr size_t num_bands = 22;
-  auto ptr = absl::make_unique<BinaryFileReader<float>>(
-      test::ResourcePath("audio_processing/agc2/rnn_vad/band_energies", "dat"),
-      num_bands);
-  return {std::move(ptr), rtc::CheckedDivExact(ptr->data_length(), num_bands)};
-}
-
 ReaderPairType CreateSilenceFlagsFeatureMatrixReader() {
   constexpr size_t feature_vector_size = 42;
   auto ptr = absl::make_unique<BinaryFileReader<float>>(

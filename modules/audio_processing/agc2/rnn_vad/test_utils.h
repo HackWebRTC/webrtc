@@ -110,9 +110,6 @@ CreateLpResidualAndPitchPeriodGainReader();
 // Creates a reader for the FFT coefficients.
 std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
 CreateFftCoeffsReader();
-// Instance a reader for the band energy coefficients.
-std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
-CreateBandEnergyCoeffsReader();
 // Creates a reader for the silence flags and the feature matrix.
 std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
 CreateSilenceFlagsFeatureMatrixReader();

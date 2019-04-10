@@ -35,16 +35,16 @@ std::array<float, kHalfFrameSize> ComputeHalfVorbisWindow() {
 
 }  // namespace
 
-BandAnalysisFft::BandAnalysisFft()
+FftUtil::FftUtil()
     : half_window_(ComputeHalfVorbisWindow()),
       fft_(static_cast<int>(input_buf_.size())) {}
 
-BandAnalysisFft::~BandAnalysisFft() = default;
+FftUtil::~FftUtil() = default;
 
-void BandAnalysisFft::ForwardFft(rtc::ArrayView<const float> samples,
-                                 rtc::ArrayView<std::complex<float>> dst) {
+void FftUtil::WindowedFft(rtc::ArrayView<const float> samples,
+                          rtc::ArrayView<std::complex<float>> dst) {
   RTC_DCHECK_EQ(samples.size(), kFrameSize20ms24kHz);
-  RTC_DCHECK_EQ(dst.size(), kFrameSize20ms24kHz / 2 + 1);
+  RTC_DCHECK_EQ(dst.size(), kFftSizeBy2Plus1);
   // Apply windowing.
   RTC_DCHECK_EQ(input_buf_.size(), 2 * half_window_.size());
   for (size_t i = 0; i < input_buf_.size() / 2; ++i) {

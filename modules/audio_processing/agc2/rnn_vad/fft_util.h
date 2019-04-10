@@ -21,32 +21,31 @@
 namespace webrtc {
 namespace rnn_vad {
 
-// TODO(alessiob): Switch to PFFFT using its own wrapper.
-// TODO(alessiob): Delete this class when switching to PFFFT.
+// TODO(alessiob): Switch to PFFFT and remove this class.
 // FFT implementation wrapper for the band-wise analysis step in which 20 ms
 // frames at 24 kHz are analyzed in the frequency domain. The goal of this class
 // are (i) making easy to switch to another FFT implementation, (ii) own the
 // input buffer for the FFT and (iii) apply a windowing function before
 // computing the FFT.
-class BandAnalysisFft {
+class FftUtil {
  public:
-  BandAnalysisFft();
-  BandAnalysisFft(const BandAnalysisFft&) = delete;
-  BandAnalysisFft& operator=(const BandAnalysisFft&) = delete;
-  ~BandAnalysisFft();
+  FftUtil();
+  FftUtil(const FftUtil&) = delete;
+  FftUtil& operator=(const FftUtil&) = delete;
+  ~FftUtil();
   // Applies a windowing function to |samples|, computes the real forward FFT
   // and writes the result in |dst|.
   // The size of |samples| must be 480 (20 ms at 24 kHz).
   // The size of |dst| must be 241 since the complex conjugate is not written.
-  void ForwardFft(rtc::ArrayView<const float> samples,
-                  rtc::ArrayView<std::complex<float>> dst);
+  void WindowedFft(rtc::ArrayView<const float> samples,
+                   rtc::ArrayView<std::complex<float>> dst);
 
  private:
   static_assert((kFrameSize20ms24kHz & 1) == 0,
                 "kFrameSize20ms24kHz must be even.");
   const std::array<float, kFrameSize20ms24kHz / 2> half_window_;
-  std::array<std::complex<float>, kFrameSize20ms24kHz> input_buf_{};
-  std::array<std::complex<float>, kFrameSize20ms24kHz> output_buf_{};
+  std::array<std::complex<float>, kFrameSize20ms24kHz> input_buf_;
+  std::array<std::complex<float>, kFrameSize20ms24kHz> output_buf_;
   rnnoise::KissFft fft_;
 };
 

@@ -52,17 +52,13 @@ constexpr size_t kNumInvertedLags12kHz = kMaxPitch12kHz - kInitialMinPitch12kHz;
 constexpr size_t kMinPitch48kHz = kMinPitch24kHz * 2;
 constexpr size_t kMaxPitch48kHz = kMaxPitch24kHz * 2;
 
-// Sub-band frequency boundaries.
+// Spectral features.
+constexpr size_t kFftSizeBy2Plus1 = kFrameSize20ms24kHz / 2 + 1;
 constexpr size_t kNumBands = 22;
-constexpr int kBandFrequencyBoundaries[kNumBands] = {
-    0,    200,  400,  600,  800,  1000, 1200, 1400, 1600,  2000,  2400,
-    2800, 3200, 4000, 4800, 5600, 6800, 8000, 9600, 12000, 15600, 20000};
-
-// Feature extraction parameters.
 constexpr size_t kNumLowerBands = 6;
 static_assert((0 < kNumLowerBands) && (kNumLowerBands < kNumBands), "");
-constexpr size_t kSpectralCoeffsHistorySize = 8;
-static_assert(kSpectralCoeffsHistorySize > 2,
+constexpr size_t kCepstralCoeffsHistorySize = 8;
+static_assert(kCepstralCoeffsHistorySize > 2,
               "The history size must at least be 3 to compute first and second "
               "derivatives.");
 
