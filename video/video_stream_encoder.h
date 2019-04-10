@@ -81,6 +81,9 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
 
   void SendKeyFrame() override;
 
+  void OnLossNotification(
+      const VideoEncoder::LossNotification& loss_notification) override;
+
   void OnBitrateUpdated(DataRate target_bitrate,
                         DataRate target_headroom,
                         uint8_t fraction_lost,

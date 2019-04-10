@@ -23,6 +23,7 @@ class MockVideoStreamEncoder : public VideoStreamEncoderInterface {
   MOCK_METHOD2(SetSink, void(EncoderSink*, bool));
   MOCK_METHOD1(SetStartBitrate, void(int));
   MOCK_METHOD0(SendKeyFrame, void());
+  MOCK_METHOD1(OnLossNotification, void(const VideoEncoder::LossNotification&));
   MOCK_METHOD4(OnBitrateUpdated, void(DataRate, DataRate, uint8_t, int64_t));
   MOCK_METHOD1(OnFrame, void(const VideoFrame&));
   MOCK_METHOD1(SetBitrateAllocationObserver,

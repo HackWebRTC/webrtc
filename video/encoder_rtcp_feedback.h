@@ -14,6 +14,7 @@
 
 #include "api/media_transport_interface.h"
 #include "api/video/video_stream_encoder_interface.h"
+#include "call/rtp_video_sender_interface.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/critical_section.h"
 #include "system_wrappers/include/clock.h"
@@ -35,6 +36,8 @@ class EncoderRtcpFeedback : public RtcpIntraFrameObserver,
                       VideoStreamEncoderInterface* encoder);
   ~EncoderRtcpFeedback() override = default;
 
+  void SetRtpVideoSender(const RtpVideoSenderInterface* rtp_video_sender);
+
   void OnReceivedIntraFrameRequest(uint32_t ssrc) override;
 
   // Implements MediaTransportKeyFrameRequestCallback
@@ -51,6 +54,7 @@ class EncoderRtcpFeedback : public RtcpIntraFrameObserver,
 
   Clock* const clock_;
   const std::vector<uint32_t> ssrcs_;
+  const RtpVideoSenderInterface* rtp_video_sender_;
   VideoStreamEncoderInterface* const video_stream_encoder_;
 
   rtc::CriticalSection crit_;

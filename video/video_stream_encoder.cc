@@ -1403,6 +1403,20 @@ void VideoStreamEncoder::SendKeyFrame() {
   }
 }
 
+void VideoStreamEncoder::OnLossNotification(
+    const VideoEncoder::LossNotification& loss_notification) {
+  if (!encoder_queue_.IsCurrent()) {
+    encoder_queue_.PostTask(
+        [this, loss_notification] { OnLossNotification(loss_notification); });
+    return;
+  }
+
+  RTC_DCHECK_RUN_ON(&encoder_queue_);
+  if (encoder_) {
+    encoder_->OnLossNotification(loss_notification);
+  }
+}
+
 EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
     const EncodedImage& encoded_image,
     const CodecSpecificInfo* codec_specific_info,

@@ -249,6 +249,8 @@ VideoSendStreamImpl::VideoSendStreamImpl(
   RTC_LOG(LS_INFO) << "VideoSendStreamInternal: " << config_->ToString();
   weak_ptr_ = weak_ptr_factory_.GetWeakPtr();
 
+  encoder_feedback_.SetRtpVideoSender(rtp_video_sender_);
+
   if (media_transport_) {
     // The configured ssrc is interpreted as a channel id, so there must be
     // exactly one.

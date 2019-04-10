@@ -90,6 +90,10 @@ void LossNotificationController::OnReceivedPacket(const VCMPacket& packet) {
     const bool key_frame = intra_frame;
     if (key_frame) {
       // Subsequent frames may not rely on frames before the key frame.
+      // Note that upon receiving a key frame, we do not issue a loss
+      // notification on RTP sequence number gap, unless that gap spanned
+      // the key frame itself. This is because any loss which occurred before
+      // the key frame is no longer relevant.
       decodable_unwrapped_frame_ids_.clear();
       current_frame_potentially_decodable_ = true;
     } else {
