@@ -45,47 +45,6 @@ rtc_source_set("audio_device") {
   ]
 }
 
-if (rtc_include_internal_audio_device && is_ios) {
-  rtc_source_set("audio_device_ios_objc") {
-    visibility = [
-      ":audio_device_impl",
-      ":audio_device_ios_objc_unittests",
-    ]
-    sources = [
-      "ios/audio_device_ios.h",
-      "ios/audio_device_ios.mm",
-      "ios/audio_device_not_implemented_ios.mm",
-      "ios/audio_session_observer.h",
-      "ios/objc/RTCAudioSession.h",
-      "ios/objc/RTCAudioSessionConfiguration.h",
-      "ios/objc/RTCAudioSessionDelegateAdapter.h",
-      "ios/objc/RTCAudioSessionDelegateAdapter.mm",
-      "ios/voice_processing_audio_unit.h",
-      "ios/voice_processing_audio_unit.mm",
-    ]
-    libs = [
-      "AudioToolbox.framework",
-      "AVFoundation.framework",
-      "Foundation.framework",
-      "UIKit.framework",
-    ]
-    deps = [
-      ":audio_device_api",
-      ":audio_device_buffer",
-      ":audio_device_generic",
-      "../../api:array_view",
-      "../../rtc_base",
-      "../../rtc_base:checks",
-      "../../rtc_base:gtest_prod",
-      "../../rtc_base/system:fallthrough",
-      "../../sdk:audio_device",
-      "../../sdk:audio_objc",
-      "../../sdk:base_objc",
-      "../../system_wrappers:metrics",
-    ]
-  }
-}
-
 rtc_source_set("audio_device_api") {
   visibility = [ "*" ]
   sources = [
@@ -225,7 +184,7 @@ rtc_source_set("audio_device_impl") {
     "//third_party/abseil-cpp/absl/memory",
   ]
   if (rtc_include_internal_audio_device && is_ios) {
-    deps += [ ":audio_device_ios_objc" ]
+    deps += [ "../../sdk:audio_device" ]
   }
 
   sources = [
@@ -398,32 +357,6 @@ rtc_source_set("mock_audio_device") {
 }
 
 if (rtc_include_tests) {
-  # TODO(kthelgason): Reenable these tests on simulator.
-  # See bugs.webrtc.org/7812
-  if (rtc_include_internal_audio_device && is_ios && !use_ios_simulator) {
-    rtc_source_set("audio_device_ios_objc_unittests") {
-      testonly = true
-      visibility = [ ":*" ]
-      sources = [
-        "ios/audio_device_unittest_ios.mm",
-      ]
-      deps = [
-        ":audio_device",
-        ":audio_device_buffer",
-        ":audio_device_impl",
-        ":audio_device_ios_objc",
-        ":mock_audio_device",
-        "../../api:scoped_refptr",
-        "../../rtc_base:rtc_base_approved",
-        "../../sdk:audio_objc",
-        "../../system_wrappers",
-        "../../test:fileutils",
-        "../../test:test_support",
-        "//third_party/ocmock",
-      ]
-    }
-  }
-
   rtc_source_set("audio_device_unittests") {
     testonly = true
 
