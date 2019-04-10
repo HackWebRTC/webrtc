@@ -12,7 +12,7 @@
 #include <string>
 
 #include "absl/memory/memory.h"
-#include "api/task_queue/global_task_queue_factory.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "call/rtp_transport_controller_send.h"
 #include "call/rtp_video_sender.h"
 #include "modules/video_coding/fec_controller_default.h"
@@ -80,13 +80,14 @@ class RtpVideoSenderTestFixture {
       : clock_(1000000),
         config_(&transport_),
         send_delay_stats_(&clock_),
+        task_queue_factory_(CreateDefaultTaskQueueFactory()),
         transport_controller_(&clock_,
                               &event_log_,
                               nullptr,
                               nullptr,
                               bitrate_config_,
                               ProcessThread::Create("PacerThread"),
-                              &GlobalTaskQueueFactory()),
+                              task_queue_factory_.get()),
         process_thread_(ProcessThread::Create("test_thread")),
         call_stats_(&clock_, process_thread_.get()),
         stats_proxy_(&clock_,
@@ -127,6 +128,7 @@ class RtpVideoSenderTestFixture {
   VideoSendStream::Config config_;
   SendDelayStats send_delay_stats_;
   BitrateConstraints bitrate_config_;
+  const std::unique_ptr<TaskQueueFactory> task_queue_factory_;
   RtpTransportControllerSend transport_controller_;
   std::unique_ptr<ProcessThread> process_thread_;
   CallStats call_stats_;

@@ -12,9 +12,10 @@
 
 #include <algorithm>
 #include <limits>
+#include <memory>
 #include <utility>
 
-#include "api/task_queue/global_task_queue_factory.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_bitrate_allocation.h"
@@ -99,7 +100,8 @@ class CpuOveruseDetectorProxy : public OveruseFrameDetector {
 class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
  public:
   VideoStreamEncoderUnderTest(SendStatisticsProxy* stats_proxy,
-                              const VideoStreamEncoderSettings& settings)
+                              const VideoStreamEncoderSettings& settings,
+                              TaskQueueFactory* task_queue_factory)
       : VideoStreamEncoder(Clock::GetRealTimeClock(),
                            1 /* number_of_cores */,
                            stats_proxy,
@@ -107,7 +109,7 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
                            std::unique_ptr<OveruseFrameDetector>(
                                overuse_detector_proxy_ =
                                    new CpuOveruseDetectorProxy(stats_proxy)),
-                           &GlobalTaskQueueFactory()) {}
+                           task_queue_factory) {}
 
   void PostTaskAndWait(bool down, AdaptReason reason) {
     rtc::Event event;
@@ -288,6 +290,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
         codec_width_(320),
         codec_height_(240),
         max_framerate_(kDefaultFramerate),
+        task_queue_factory_(CreateDefaultTaskQueueFactory()),
         fake_encoder_(),
         encoder_factory_(&fake_encoder_),
         bitrate_allocator_factory_(CreateBuiltinVideoBitrateAllocatorFactory()),
@@ -326,7 +329,8 @@ class VideoStreamEncoderTest : public ::testing::Test {
     if (video_stream_encoder_)
       video_stream_encoder_->Stop();
     video_stream_encoder_.reset(new VideoStreamEncoderUnderTest(
-        stats_proxy_.get(), video_send_config_.encoder_settings));
+        stats_proxy_.get(), video_send_config_.encoder_settings,
+        task_queue_factory_.get()));
     video_stream_encoder_->SetSink(&sink_, false /* rotation_applied */);
     video_stream_encoder_->SetSource(
         &video_source_, webrtc::DegradationPreference::MAINTAIN_FRAMERATE);
@@ -902,6 +906,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
   int codec_width_;
   int codec_height_;
   int max_framerate_;
+  const std::unique_ptr<TaskQueueFactory> task_queue_factory_;
   TestEncoder fake_encoder_;
   test::VideoEncoderProxyFactory encoder_factory_;
   std::unique_ptr<VideoBitrateAllocatorFactory> bitrate_allocator_factory_;
