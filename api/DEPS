@@ -75,6 +75,7 @@ specific_include_rules = {
 
   "dtls_transport_interface\.h": [
     "+rtc_base/ref_count.h",
+    "+rtc_base/ssl_certificate.h",
   ],
 
   "dtmf_sender_interface\.h": [

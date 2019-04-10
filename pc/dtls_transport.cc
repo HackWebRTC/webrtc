@@ -116,8 +116,15 @@ void DtlsTransport::UpdateInformation() {
   RTC_DCHECK_RUN_ON(owner_thread_);
   rtc::CritScope scope(&lock_);
   if (internal_dtls_transport_) {
-    info_ = DtlsTransportInformation(
-        TranslateState(internal_dtls_transport_->dtls_state()));
+    if (internal_dtls_transport_->dtls_state() ==
+        cricket::DTLS_TRANSPORT_CONNECTED) {
+      info_ = DtlsTransportInformation(
+          TranslateState(internal_dtls_transport_->dtls_state()),
+          internal_dtls_transport_->GetRemoteSSLCertChain());
+    } else {
+      info_ = DtlsTransportInformation(
+          TranslateState(internal_dtls_transport_->dtls_state()));
+    }
   } else {
     info_ = DtlsTransportInformation(DtlsTransportState::kClosed);
   }

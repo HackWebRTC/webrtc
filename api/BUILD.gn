@@ -93,6 +93,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     "crypto_params.h",
     "data_channel_interface.cc",
     "data_channel_interface.h",
+    "dtls_transport_interface.cc",
     "dtls_transport_interface.h",
     "dtmf_sender_interface.h",
     "ice_transport_interface.h",
