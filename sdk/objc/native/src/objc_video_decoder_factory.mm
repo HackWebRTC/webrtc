@@ -51,25 +51,13 @@ class ObjCVideoDecoder : public VideoDecoder {
 
   int32_t Decode(const EncodedImage &input_image,
                  bool missing_frames,
-                 const CodecSpecificInfo *codec_specific_info = NULL,
                  int64_t render_time_ms = -1) override {
     RTCEncodedImage *encodedImage =
         [[RTCEncodedImage alloc] initWithNativeEncodedImage:input_image];
 
-    // webrtc::CodecSpecificInfo only handles a hard coded list of codecs
-    id<RTCCodecSpecificInfo> rtcCodecSpecificInfo = nil;
-    if (codec_specific_info) {
-      if (codec_specific_info->codecType == kVideoCodecH264) {
-        RTCCodecSpecificInfoH264 *h264Info = [[RTCCodecSpecificInfoH264 alloc] init];
-        h264Info.packetizationMode =
-            (RTCH264PacketizationMode)codec_specific_info->codecSpecific.H264.packetization_mode;
-        rtcCodecSpecificInfo = h264Info;
-      }
-    }
-
     return [decoder_ decode:encodedImage
               missingFrames:missing_frames
-          codecSpecificInfo:rtcCodecSpecificInfo
+          codecSpecificInfo:nil
                renderTimeMs:render_time_ms];
   }
 

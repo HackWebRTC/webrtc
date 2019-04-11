@@ -210,7 +210,6 @@ VideoStreamDecoderImpl::DecodeResult VideoStreamDecoderImpl::DecodeNextFrame(
 
     int32_t decode_result = decoder->Decode(frame->EncodedImage(),
                                             false,    // missing_frame
-                                            nullptr,  // codec specific info
                                             frame->RenderTimeMs());
 
     return decode_result == WEBRTC_VIDEO_CODEC_OK ? kOk : kDecodeFailure;

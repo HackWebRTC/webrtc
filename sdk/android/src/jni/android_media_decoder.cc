@@ -65,7 +65,6 @@ class MediaCodecVideoDecoder : public VideoDecoder, public rtc::MessageHandler {
 
   int32_t Decode(const EncodedImage& inputImage,
                  bool missingFrames,
-                 const CodecSpecificInfo* codecSpecificInfo = NULL,
                  int64_t renderTimeMs = -1) override;
 
   int32_t RegisterDecodeCompleteCallback(
@@ -350,7 +349,6 @@ int32_t MediaCodecVideoDecoder::ProcessHWErrorOnCodecThread() {
 int32_t MediaCodecVideoDecoder::Decode(
     const EncodedImage& inputImage,
     bool missingFrames,
-    const CodecSpecificInfo* codecSpecificInfo,
     int64_t renderTimeMs) {
   if (sw_fallback_required_) {
     ALOGE << "Decode() - fallback to SW codec";

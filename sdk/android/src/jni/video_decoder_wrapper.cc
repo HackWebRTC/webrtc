@@ -88,7 +88,6 @@ int32_t VideoDecoderWrapper::InitDecodeInternal(JNIEnv* jni) {
 int32_t VideoDecoderWrapper::Decode(
     const EncodedImage& image_param,
     bool missing_frames,
-    const CodecSpecificInfo* codec_specific_info,
     int64_t render_time_ms) {
   RTC_DCHECK_RUN_ON(&decoder_thread_checker_);
   if (!initialized_) {
