@@ -8,9 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include "rtc_base/experiments/field_trial_parser.h"
+
+#include "rtc_base/experiments/field_trial_list.h"
 #include "rtc_base/gunit.h"
 #include "system_wrappers/include/field_trial.h"
 #include "test/field_trial.h"
+#include "test/gmock.h"
 
 namespace webrtc {
 namespace {
@@ -38,6 +41,7 @@ enum class CustomEnum {
   kRed = 1,
   kBlue = 2,
 };
+
 }  // namespace
 
 TEST(FieldTrialParserTest, ParsesValidParameters) {
@@ -152,4 +156,5 @@ TEST(FieldTrialParserTest, ParsesCustomEnumParameter) {
   ParseFieldTrial({&my_enum}, "e:5");
   EXPECT_EQ(my_enum.Get(), CustomEnum::kBlue);
 }
+
 }  // namespace webrtc

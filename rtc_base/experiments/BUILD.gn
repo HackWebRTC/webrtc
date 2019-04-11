@@ -40,6 +40,8 @@ rtc_static_library("audio_allocation_settings") {
 
 rtc_static_library("field_trial_parser") {
   sources = [
+    "field_trial_list.cc",
+    "field_trial_list.h",
     "field_trial_parser.cc",
     "field_trial_parser.h",
     "field_trial_units.cc",
@@ -51,6 +53,7 @@ rtc_static_library("field_trial_parser") {
     "../../api/units:time_delta",
     "../../rtc_base:checks",
     "../../rtc_base:logging",
+    "../../rtc_base:stringutils",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -151,6 +154,7 @@ if (rtc_include_tests) {
 
     sources = [
       "cpu_speed_experiment_unittest.cc",
+      "field_trial_list_unittest.cc",
       "field_trial_parser_unittest.cc",
       "field_trial_units_unittest.cc",
       "keyframe_interval_settings_unittest.cc",
