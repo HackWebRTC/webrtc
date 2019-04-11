@@ -1132,8 +1132,10 @@ public class PeerConnectionTest {
     System.gc();
   }
 
+  // TODO(https://bugs.webrtc.org/10526): Fix and re-enable this test.
   @Test
   @MediumTest
+  @DisabledTest
   public void testDataChannelOnlySession() throws Exception {
     // Allow loopback interfaces too since our Android devices often don't
     // have those.
@@ -1291,8 +1293,10 @@ public class PeerConnectionTest {
     System.gc();
   }
 
+  // TODO(https://bugs.webrtc.org/10526): Fix and re-enable this test.
   @Test
   @MediumTest
+  @DisabledTest
   public void testTrackRemovalAndAddition() throws Exception {
     // Allow loopback interfaces too since our Android devices often don't
     // have those.
