@@ -309,33 +309,29 @@ bool VP9EncoderImpl::SetSvcRates(
   return true;
 }
 
-void VP9EncoderImpl::SetRates(const RateControlParameters& parameters) {
+int VP9EncoderImpl::SetRateAllocation(
+    const VideoBitrateAllocation& bitrate_allocation,
+    uint32_t frame_rate) {
   if (!inited_) {
-    RTC_LOG(LS_WARNING) << "SetRates() calll while uninitialzied.";
-    return;
+    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
   if (encoder_->err) {
-    RTC_LOG(LS_WARNING) << "Encoder in error state: " << encoder_->err;
-    return;
+    return WEBRTC_VIDEO_CODEC_ERROR;
   }
-  if (parameters.framerate_fps < 1.0) {
-    RTC_LOG(LS_WARNING) << "Unsupported framerate: "
-                        << parameters.framerate_fps;
-    return;
+  if (frame_rate < 1) {
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   // Update bit rate
   if (codec_.maxBitrate > 0 &&
-      parameters.bitrate.get_sum_kbps() > codec_.maxBitrate) {
-    RTC_LOG(LS_WARNING) << "Target bitrate exceeds maximum: "
-                        << parameters.bitrate.get_sum_kbps() << " vs "
-                        << codec_.maxBitrate;
-    return;
+      bitrate_allocation.get_sum_kbps() > codec_.maxBitrate) {
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
-  codec_.maxFramerate = static_cast<uint32_t>(parameters.framerate_fps + 0.5);
-  requested_bitrate_allocation_ = parameters.bitrate;
+  codec_.maxFramerate = frame_rate;
 
-  return;
+  requested_bitrate_allocation_ = bitrate_allocation;
+
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
 int VP9EncoderImpl::InitEncode(const VideoCodec* inst,

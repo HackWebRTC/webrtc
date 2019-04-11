@@ -110,23 +110,20 @@ class TestVp8Impl : public VideoCodecUnitTest {
   }
 };
 
-TEST_F(TestVp8Impl, SetRates) {
-  auto* const vpx = new NiceMock<MockLibvpxVp8Interface>();
-  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)));
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder.InitEncode(&codec_settings_, 1, 1000));
+TEST_F(TestVp8Impl, SetRateAllocation) {
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Release());
 
-  const uint32_t kBitrateBps = 300000;
+  const int kBitrateBps = 300000;
   VideoBitrateAllocation bitrate_allocation;
   bitrate_allocation.SetBitrate(0, 0, kBitrateBps);
-  EXPECT_CALL(*vpx, codec_enc_config_set(_, _))
-      .WillOnce(
-          Invoke([&](vpx_codec_ctx_t* ctx, const vpx_codec_enc_cfg_t* cfg) {
-            EXPECT_EQ(cfg->rc_target_bitrate, kBitrateBps / 1000);
-            return VPX_CODEC_OK;
-          }));
-  encoder.SetRates(VideoEncoder::RateControlParameters(
-      bitrate_allocation, static_cast<double>(codec_settings_.maxFramerate)));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_UNINITIALIZED,
+            encoder_->SetRateAllocation(bitrate_allocation,
+                                        codec_settings_.maxFramerate));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, kNumCores, kMaxPayloadSize));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->SetRateAllocation(bitrate_allocation,
+                                        codec_settings_.maxFramerate));
 }
 
 TEST_F(TestVp8Impl, EncodeFrameAndRelease) {
@@ -444,8 +441,7 @@ TEST_F(TestVp8Impl, DontDropKeyframes) {
   VideoBitrateAllocation bitrate_allocation;
   // Bitrate only enough for TL0.
   bitrate_allocation.SetBitrate(0, 0, 200000);
-  encoder_->SetRates(
-      VideoEncoder::RateControlParameters(bitrate_allocation, 5.0));
+  encoder_->SetRateAllocation(bitrate_allocation, 5);
 
   EncodedImage encoded_frame;
   CodecSpecificInfo codec_specific_info;

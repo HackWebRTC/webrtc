@@ -44,7 +44,8 @@ class ConfigurableFrameSizeEncoder : public VideoEncoder {
 
   int32_t Release() override;
 
-  void SetRates(const RateControlParameters& parameters) override;
+  int32_t SetRateAllocation(const VideoBitrateAllocation& allocation,
+                            uint32_t framerate) override;
 
   int32_t SetFrameSize(size_t size);
 

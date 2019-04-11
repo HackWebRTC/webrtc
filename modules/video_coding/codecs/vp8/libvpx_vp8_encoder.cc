@@ -36,7 +36,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/experiments/field_trial_units.h"
-#include "rtc_base/logging.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
 #include "third_party/libyuv/include/libyuv/scale.h"
@@ -248,40 +247,33 @@ int LibvpxVp8Encoder::Release() {
   return ret_val;
 }
 
-void LibvpxVp8Encoder::SetRates(const RateControlParameters& parameters) {
-  if (!inited_) {
-    RTC_LOG(LS_WARNING) << "SetRates() while not initialize";
-    return;
-  }
+int LibvpxVp8Encoder::SetRateAllocation(const VideoBitrateAllocation& bitrate,
+                                        uint32_t new_framerate) {
+  if (!inited_)
+    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
 
-  if (encoders_[0].err) {
-    RTC_LOG(LS_WARNING) << "Encoder in error state.";
-    return;
-  }
+  if (encoders_[0].err)
+    return WEBRTC_VIDEO_CODEC_ERROR;
 
-  if (parameters.framerate_fps < 1.0) {
-    RTC_LOG(LS_WARNING) << "Unsupported framerate (must be >= 1.0): "
-                        << parameters.framerate_fps;
-    return;
-  }
+  if (new_framerate < 1)
+    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
 
-  if (parameters.bitrate.get_sum_bps() == 0) {
+  if (bitrate.get_sum_bps() == 0) {
     // Encoder paused, turn off all encoding.
     const int num_streams = static_cast<size_t>(encoders_.size());
     for (int i = 0; i < num_streams; ++i)
       SetStreamState(false, i);
-    return;
+    return WEBRTC_VIDEO_CODEC_OK;
   }
 
   // At this point, bitrate allocation should already match codec settings.
   if (codec_.maxBitrate > 0)
-    RTC_DCHECK_LE(parameters.bitrate.get_sum_kbps(), codec_.maxBitrate);
-  RTC_DCHECK_GE(parameters.bitrate.get_sum_kbps(), codec_.minBitrate);
+    RTC_DCHECK_LE(bitrate.get_sum_kbps(), codec_.maxBitrate);
+  RTC_DCHECK_GE(bitrate.get_sum_kbps(), codec_.minBitrate);
   if (codec_.numberOfSimulcastStreams > 0)
-    RTC_DCHECK_GE(parameters.bitrate.get_sum_kbps(),
-                  codec_.simulcastStream[0].minBitrate);
+    RTC_DCHECK_GE(bitrate.get_sum_kbps(), codec_.simulcastStream[0].minBitrate);
 
-  codec_.maxFramerate = static_cast<uint32_t>(parameters.framerate_fps + 0.5);
+  codec_.maxFramerate = new_framerate;
 
   if (encoders_.size() > 1) {
     // If we have more than 1 stream, reduce the qp_max for the low resolution
@@ -290,7 +282,7 @@ void LibvpxVp8Encoder::SetRates(const RateControlParameters& parameters) {
     // above some threshold (base temporal layer is down to 1/4 for 3 layers).
     // We may want to condition this on bitrate later.
     if (rate_control_settings_.Vp8BoostBaseLayerQuality() &&
-        parameters.framerate_fps > 20.0) {
+        new_framerate > 20) {
       configurations_[encoders_.size() - 1].rc_max_quantizer = 45;
     } else {
       // Go back to default value set in InitEncode.
@@ -301,7 +293,7 @@ void LibvpxVp8Encoder::SetRates(const RateControlParameters& parameters) {
   size_t stream_idx = encoders_.size() - 1;
   for (size_t i = 0; i < encoders_.size(); ++i, --stream_idx) {
     unsigned int target_bitrate_kbps =
-        parameters.bitrate.GetSpatialLayerSum(stream_idx) / 1000;
+        bitrate.GetSpatialLayerSum(stream_idx) / 1000;
 
     bool send_stream = target_bitrate_kbps > 0;
     if (send_stream || encoders_.size() > 1)
@@ -310,19 +302,18 @@ void LibvpxVp8Encoder::SetRates(const RateControlParameters& parameters) {
     configurations_[i].rc_target_bitrate = target_bitrate_kbps;
     if (send_stream) {
       frame_buffer_controller_->OnRatesUpdated(
-          stream_idx, parameters.bitrate.GetTemporalLayerAllocation(stream_idx),
-          static_cast<int>(parameters.framerate_fps + 0.5));
+          stream_idx, bitrate.GetTemporalLayerAllocation(stream_idx),
+          new_framerate);
     }
 
     UpdateVpxConfiguration(stream_idx, frame_buffer_controller_.get(),
                            &configurations_[i]);
 
-    vpx_codec_err_t err =
-        libvpx_->codec_enc_config_set(&encoders_[i], &configurations_[i]);
-    if (err != VPX_CODEC_OK) {
-      RTC_LOG(LS_WARNING) << "Error configuring codec, error code: " << err;
+    if (libvpx_->codec_enc_config_set(&encoders_[i], &configurations_[i])) {
+      return WEBRTC_VIDEO_CODEC_ERROR;
     }
   }
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
 void LibvpxVp8Encoder::OnPacketLossRateUpdate(float packet_loss_rate) {

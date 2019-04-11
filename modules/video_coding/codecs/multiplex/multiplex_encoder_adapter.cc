@@ -216,21 +216,23 @@ int MultiplexEncoderAdapter::RegisterEncodeCompleteCallback(
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-void MultiplexEncoderAdapter::SetRates(
-    const RateControlParameters& parameters) {
-  VideoBitrateAllocation bitrate_allocation(parameters.bitrate);
+int MultiplexEncoderAdapter::SetRateAllocation(
+    const VideoBitrateAllocation& bitrate,
+    uint32_t framerate) {
+  VideoBitrateAllocation bitrate_allocation(bitrate);
   bitrate_allocation.SetBitrate(
-      0, 0, parameters.bitrate.GetBitrate(0, 0) - augmenting_data_size_);
+      0, 0, bitrate.GetBitrate(0, 0) - augmenting_data_size_);
   for (auto& encoder : encoders_) {
     // TODO(emircan): |framerate| is used to calculate duration in encoder
     // instances. We report the total frame rate to keep real time for now.
     // Remove this after refactoring duration logic.
-    encoder->SetRates(RateControlParameters(
+    const int rv = encoder->SetRateAllocation(
         bitrate_allocation,
-        static_cast<uint32_t>(encoders_.size() * parameters.framerate_fps),
-        parameters.bandwidth_allocation -
-            DataRate::bps(augmenting_data_size_)));
+        static_cast<uint32_t>(encoders_.size()) * framerate);
+    if (rv)
+      return rv;
   }
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
 int MultiplexEncoderAdapter::Release() {

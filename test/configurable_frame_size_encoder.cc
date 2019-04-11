@@ -74,8 +74,11 @@ int32_t ConfigurableFrameSizeEncoder::Release() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-void ConfigurableFrameSizeEncoder::SetRates(
-    const RateControlParameters& parameters) {}
+int32_t ConfigurableFrameSizeEncoder::SetRateAllocation(
+    const VideoBitrateAllocation& allocation,
+    uint32_t framerate) {
+  return WEBRTC_VIDEO_CODEC_OK;
+}
 
 int32_t ConfigurableFrameSizeEncoder::SetFrameSize(size_t size) {
   RTC_DCHECK_LE(size, max_frame_size_);

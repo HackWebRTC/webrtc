@@ -149,11 +149,11 @@ class QualityTestVideoEncoder : public VideoEncoder,
     }
     return encoder_->Encode(frame, frame_types);
   }
-  void SetRates(const RateControlParameters& parameters) override {
+  int32_t SetRateAllocation(const VideoBitrateAllocation& allocation,
+                            uint32_t framerate) override {
     RTC_DCHECK_GT(overshoot_factor_, 0.0);
     if (overshoot_factor_ == 1.0) {
-      encoder_->SetRates(parameters);
-      return;
+      return encoder_->SetRateAllocation(allocation, framerate);
     }
 
     // Simulating encoder overshooting target bitrate, by configuring actual
@@ -162,7 +162,7 @@ class QualityTestVideoEncoder : public VideoEncoder,
     VideoBitrateAllocation overshot_allocation;
     for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
       const uint32_t spatial_layer_bitrate_bps =
-          parameters.bitrate.GetSpatialLayerSum(si);
+          allocation.GetSpatialLayerSum(si);
       if (spatial_layer_bitrate_bps == 0) {
         continue;
       }
@@ -181,18 +181,16 @@ class QualityTestVideoEncoder : public VideoEncoder,
       }
 
       for (size_t ti = 0; ti < kMaxTemporalStreams; ++ti) {
-        if (parameters.bitrate.HasBitrate(si, ti)) {
+        if (allocation.HasBitrate(si, ti)) {
           overshot_allocation.SetBitrate(
               si, ti,
-              rtc::checked_cast<uint32_t>(
-                  overshoot_factor * parameters.bitrate.GetBitrate(si, ti)));
+              rtc::checked_cast<uint32_t>(overshoot_factor *
+                                          allocation.GetBitrate(si, ti)));
         }
       }
     }
 
-    return encoder_->SetRates(
-        RateControlParameters(overshot_allocation, parameters.framerate_fps,
-                              parameters.bandwidth_allocation));
+    return encoder_->SetRateAllocation(overshot_allocation, framerate);
   }
   EncoderInfo GetEncoderInfo() const override {
     EncoderInfo info = encoder_->GetEncoderInfo();

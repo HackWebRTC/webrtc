@@ -300,8 +300,10 @@ void VideoProcessor::SetRates(size_t bitrate_kbps, size_t framerate_fps) {
   framerate_fps_ = static_cast<uint32_t>(framerate_fps);
   bitrate_allocation_ = bitrate_allocator_->GetAllocation(
       static_cast<uint32_t>(bitrate_kbps * 1000), framerate_fps_);
-  encoder_->SetRates(VideoEncoder::RateControlParameters(
-      bitrate_allocation_, static_cast<double>(framerate_fps_)));
+  const int set_rates_result =
+      encoder_->SetRateAllocation(bitrate_allocation_, framerate_fps_);
+  RTC_DCHECK_GE(set_rates_result, 0)
+      << "Failed to update encoder with new rate " << bitrate_kbps << ".";
 }
 
 int32_t VideoProcessor::VideoProcessorDecodeCompleteCallback::Decoded(

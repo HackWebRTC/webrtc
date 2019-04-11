@@ -54,7 +54,8 @@ class LibvpxVp8Encoder : public VideoEncoder {
 
   int RegisterEncodeCompleteCallback(EncodedImageCallback* callback) override;
 
-  void SetRates(const RateControlParameters& parameters) override;
+  int SetRateAllocation(const VideoBitrateAllocation& bitrate,
+                        uint32_t new_framerate) override;
 
   void OnPacketLossRateUpdate(float packet_loss_rate) override;
 

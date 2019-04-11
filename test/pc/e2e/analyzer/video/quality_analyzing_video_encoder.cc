@@ -63,9 +63,7 @@ QualityAnalyzingVideoEncoder::QualityAnalyzingVideoEncoder(
       bitrate_multiplier_(bitrate_multiplier),
       stream_required_spatial_index_(std::move(stream_required_spatial_index)),
       injector_(injector),
-      analyzer_(analyzer),
-      mode_(SimulcastMode::kNormal),
-      delegate_callback_(nullptr) {}
+      analyzer_(analyzer) {}
 QualityAnalyzingVideoEncoder::~QualityAnalyzingVideoEncoder() = default;
 
 int32_t QualityAnalyzingVideoEncoder::InitEncode(
@@ -149,11 +147,17 @@ int32_t QualityAnalyzingVideoEncoder::Encode(
   return result;
 }
 
-void QualityAnalyzingVideoEncoder::SetRates(
-    const VideoEncoder::RateControlParameters& parameters) {
+int32_t QualityAnalyzingVideoEncoder::SetRates(uint32_t bitrate,
+                                               uint32_t framerate) {
+  return delegate_->SetRates(bitrate, framerate);
+}
+
+int32_t QualityAnalyzingVideoEncoder::SetRateAllocation(
+    const VideoBitrateAllocation& allocation,
+    uint32_t framerate) {
   RTC_DCHECK_GT(bitrate_multiplier_, 0.0);
   if (fabs(bitrate_multiplier_ - kNoMultiplier) < kEps) {
-    return delegate_->SetRates(parameters);
+    return delegate_->SetRateAllocation(allocation, framerate);
   }
 
   // Simulating encoder overshooting target bitrate, by configuring actual
@@ -162,7 +166,7 @@ void QualityAnalyzingVideoEncoder::SetRates(
   VideoBitrateAllocation multiplied_allocation;
   for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
     const uint32_t spatial_layer_bitrate_bps =
-        parameters.bitrate.GetSpatialLayerSum(si);
+        allocation.GetSpatialLayerSum(si);
     if (spatial_layer_bitrate_bps == 0) {
       continue;
     }
@@ -181,18 +185,16 @@ void QualityAnalyzingVideoEncoder::SetRates(
     }
 
     for (size_t ti = 0; ti < kMaxTemporalStreams; ++ti) {
-      if (parameters.bitrate.HasBitrate(si, ti)) {
+      if (allocation.HasBitrate(si, ti)) {
         multiplied_allocation.SetBitrate(
             si, ti,
             rtc::checked_cast<uint32_t>(bitrate_multiplier *
-                                        parameters.bitrate.GetBitrate(si, ti)));
+                                        allocation.GetBitrate(si, ti)));
       }
     }
   }
 
-  RateControlParameters adjusted_params = parameters;
-  adjusted_params.bitrate = multiplied_allocation;
-  return delegate_->SetRates(adjusted_params);
+  return delegate_->SetRateAllocation(multiplied_allocation, framerate);
 }
 
 VideoEncoder::EncoderInfo QualityAnalyzingVideoEncoder::GetEncoderInfo() const {

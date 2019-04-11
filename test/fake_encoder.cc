@@ -51,6 +51,7 @@ void WriteCounter(unsigned char* payload, uint32_t counter) {
 FakeEncoder::FakeEncoder(Clock* clock)
     : clock_(clock),
       callback_(nullptr),
+      configured_input_framerate_(-1),
       max_target_bitrate_kbps_(-1),
       pending_keyframe_(true),
       counter_(0),
@@ -64,7 +65,7 @@ void FakeEncoder::SetMaxBitrate(int max_kbps) {
   RTC_DCHECK_GE(max_kbps, -1);  // max_kbps == -1 disables it.
   rtc::CritScope cs(&crit_sect_);
   max_target_bitrate_kbps_ = max_kbps;
-  SetRates(current_rate_settings_);
+  SetRateAllocation(target_bitrate_, configured_input_framerate_);
 }
 
 int32_t FakeEncoder::InitEncode(const VideoCodec* config,
@@ -72,8 +73,8 @@ int32_t FakeEncoder::InitEncode(const VideoCodec* config,
                                 size_t max_payload_size) {
   rtc::CritScope cs(&crit_sect_);
   config_ = *config;
-  current_rate_settings_.bitrate.SetBitrate(0, 0, config_.startBitrate * 1000);
-  current_rate_settings_.framerate_fps = config_.maxFramerate;
+  target_bitrate_.SetBitrate(0, 0, config_.startBitrate * 1000);
+  configured_input_framerate_ = config_.maxFramerate;
   pending_keyframe_ = true;
   last_frame_info_ = FrameInfo();
   return 0;
@@ -85,7 +86,8 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
   unsigned char num_simulcast_streams;
   SimulcastStream simulcast_streams[kMaxSimulcastStreams];
   EncodedImageCallback* callback;
-  RateControlParameters rates;
+  VideoBitrateAllocation target_bitrate;
+  int framerate;
   VideoCodecMode mode;
   bool keyframe;
   uint32_t counter;
@@ -97,10 +99,12 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
       simulcast_streams[i] = config_.simulcastStream[i];
     }
     callback = callback_;
-    rates = current_rate_settings_;
+    target_bitrate = target_bitrate_;
     mode = config_.mode;
-    if (rates.framerate_fps <= 0.0) {
-      rates.framerate_fps = max_framerate;
+    if (configured_input_framerate_ > 0) {
+      framerate = configured_input_framerate_;
+    } else {
+      framerate = max_framerate;
     }
     keyframe = pending_keyframe_;
     pending_keyframe_ = false;
@@ -108,8 +112,8 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
   }
 
   FrameInfo frame_info =
-      NextFrame(frame_types, keyframe, num_simulcast_streams, rates.bitrate,
-                simulcast_streams, static_cast<int>(rates.framerate_fps + 0.5));
+      NextFrame(frame_types, keyframe, num_simulcast_streams, target_bitrate,
+                simulcast_streams, framerate);
   for (uint8_t i = 0; i < frame_info.layers.size(); ++i) {
     constexpr int kMinPayLoadLength = 14;
     if (frame_info.layers[i].size < kMinPayLoadLength) {
@@ -233,10 +237,12 @@ int32_t FakeEncoder::Release() {
   return 0;
 }
 
-void FakeEncoder::SetRates(const RateControlParameters& parameters) {
+int32_t FakeEncoder::SetRateAllocation(
+    const VideoBitrateAllocation& rate_allocation,
+    uint32_t framerate) {
   rtc::CritScope cs(&crit_sect_);
-  current_rate_settings_ = parameters;
-  int allocated_bitrate_kbps = parameters.bitrate.get_sum_kbps();
+  target_bitrate_ = rate_allocation;
+  int allocated_bitrate_kbps = target_bitrate_.get_sum_kbps();
 
   // Scale bitrate allocation to not exceed the given max target bitrate.
   if (max_target_bitrate_kbps_ > 0 &&
@@ -245,19 +251,20 @@ void FakeEncoder::SetRates(const RateControlParameters& parameters) {
          ++spatial_idx) {
       for (uint8_t temporal_idx = 0; temporal_idx < kMaxTemporalStreams;
            ++temporal_idx) {
-        if (current_rate_settings_.bitrate.HasBitrate(spatial_idx,
-                                                      temporal_idx)) {
-          uint32_t bitrate = current_rate_settings_.bitrate.GetBitrate(
-              spatial_idx, temporal_idx);
+        if (target_bitrate_.HasBitrate(spatial_idx, temporal_idx)) {
+          uint32_t bitrate =
+              target_bitrate_.GetBitrate(spatial_idx, temporal_idx);
           bitrate = static_cast<uint32_t>(
               (bitrate * int64_t{max_target_bitrate_kbps_}) /
               allocated_bitrate_kbps);
-          current_rate_settings_.bitrate.SetBitrate(spatial_idx, temporal_idx,
-                                                    bitrate);
+          target_bitrate_.SetBitrate(spatial_idx, temporal_idx, bitrate);
         }
       }
     }
   }
+
+  configured_input_framerate_ = framerate;
+  return 0;
 }
 
 const char* FakeEncoder::kImplementationName = "fake_encoder";
@@ -269,7 +276,7 @@ VideoEncoder::EncoderInfo FakeEncoder::GetEncoderInfo() const {
 
 int FakeEncoder::GetConfiguredInputFramerate() const {
   rtc::CritScope cs(&crit_sect_);
-  return static_cast<int>(current_rate_settings_.framerate_fps + 0.5);
+  return configured_input_framerate_;
 }
 
 FakeH264Encoder::FakeH264Encoder(Clock* clock)

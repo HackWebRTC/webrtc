@@ -288,9 +288,8 @@ void SimulcastTestFixtureImpl::SetUpRateAllocator() {
 }
 
 void SimulcastTestFixtureImpl::SetRates(uint32_t bitrate_kbps, uint32_t fps) {
-  encoder_->SetRates(VideoEncoder::RateControlParameters(
-      rate_allocator_->GetAllocation(bitrate_kbps * 1000, fps),
-      static_cast<double>(fps)));
+  encoder_->SetRateAllocation(
+      rate_allocator_->GetAllocation(bitrate_kbps * 1000, fps), fps);
 }
 
 void SimulcastTestFixtureImpl::RunActiveStreamsTest(

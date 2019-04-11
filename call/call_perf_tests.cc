@@ -774,13 +774,14 @@ TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
       return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
     }
 
-    void SetRates(const RateControlParameters& parameters) override {
-      last_set_bitrate_kbps_ = parameters.bitrate.get_sum_kbps();
+    int32_t SetRateAllocation(const VideoBitrateAllocation& rate_allocation,
+                              uint32_t framerate) override {
+      last_set_bitrate_kbps_ = rate_allocation.get_sum_kbps();
       if (encoder_inits_ == 1 &&
-          parameters.bitrate.get_sum_kbps() > kReconfigureThresholdKbps) {
+          rate_allocation.get_sum_kbps() > kReconfigureThresholdKbps) {
         time_to_reconfigure_.Set();
       }
-      FakeEncoder::SetRates(parameters);
+      return FakeEncoder::SetRateAllocation(rate_allocation, framerate);
     }
 
     void ModifySenderBitrateConfig(
