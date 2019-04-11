@@ -17,6 +17,7 @@
 #include "absl/memory/memory.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "rtc_base/strings/json.h"
+#include "rtc_base/task_queue_stdlib.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/call_config_utils.h"
@@ -51,7 +52,12 @@ void RtpReplayer::Replay(
 
   // Setup the video streams based on the configuration.
   webrtc::RtcEventLogNullImpl event_log;
+  // TODO(bugs.webrtc.org/10284): Replace with DefaultTaskQueueFactory when
+  // chromium stops hijacking it.
+  std::unique_ptr<TaskQueueFactory> task_queue_factory =
+      CreateTaskQueueStdlibFactory();
   Call::Config call_config(&event_log);
+  call_config.task_queue_factory = task_queue_factory.get();
   std::unique_ptr<Call> call(Call::Create(call_config));
   SetupVideoStreams(&receive_stream_configs, stream_state.get(), call.get());
 

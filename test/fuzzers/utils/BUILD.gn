@@ -25,6 +25,7 @@ rtc_source_set("rtp_replayer") {
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
     "../../../rtc_base:rtc_json",
+    "../../../rtc_base:rtc_task_queue_stdlib",
     "../../../system_wrappers",
     "../../../test:call_config_utils",
     "../../../test:fake_video_codecs",
