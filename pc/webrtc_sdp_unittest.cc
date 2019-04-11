@@ -283,18 +283,19 @@ static const char kSdpSctpDataChannelString[] =
     "a=sctpmap:5000 webrtc-datachannel 1024\r\n";
 
 // draft-ietf-mmusic-sctp-sdp-12
+// Note - this is invalid per draft-ietf-mmusic-sctp-sdp-26,
+// since the separator after "sctp-port" needs to be a colon.
 static const char kSdpSctpDataChannelStringWithSctpPort[] =
     "m=application 9 DTLS/SCTP webrtc-datachannel\r\n"
-    "a=max-message-size=100000\r\n"
     "a=sctp-port 5000\r\n"
     "c=IN IP4 0.0.0.0\r\n"
     "a=ice-ufrag:ufrag_data\r\n"
     "a=ice-pwd:pwd_data\r\n"
     "a=mid:data_content_name\r\n";
 
+// draft-ietf-mmusic-sctp-sdp-26
 static const char kSdpSctpDataChannelStringWithSctpColonPort[] =
     "m=application 9 DTLS/SCTP webrtc-datachannel\r\n"
-    "a=max-message-size=100000\r\n"
     "a=sctp-port:5000\r\n"
     "c=IN IP4 0.0.0.0\r\n"
     "a=ice-ufrag:ufrag_data\r\n"
@@ -2844,6 +2845,48 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithSctpColonPort) {
 
   std::string sdp_with_data = kSdpString;
   sdp_with_data.append(kSdpSctpDataChannelStringWithSctpColonPort);
+  JsepSessionDescription jdesc_output(kDummyType);
+
+  // Verify with DTLS/SCTP.
+  EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
+  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
+
+  // Verify with UDP/DTLS/SCTP.
+  sdp_with_data.replace(sdp_with_data.find(kDtlsSctp), strlen(kDtlsSctp),
+                        kUdpDtlsSctp);
+  EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
+  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
+
+  // Verify with TCP/DTLS/SCTP.
+  sdp_with_data.replace(sdp_with_data.find(kUdpDtlsSctp), strlen(kUdpDtlsSctp),
+                        kTcpDtlsSctp);
+  EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
+  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
+}
+
+// Helper function to set the max-message-size parameter in the
+// SCTP data codec.
+void MutateJsepSctpMaxMessageSize(const SessionDescription& desc,
+                                  const std::string& new_value,
+                                  JsepSessionDescription* jdesc) {
+  cricket::SessionDescription* mutant = desc.Copy();
+  DataContentDescription* dcdesc =
+      mutant->GetContentDescriptionByName(kDataContentName)->as_data();
+  std::vector<cricket::DataCodec> codecs(dcdesc->codecs());
+  codecs[0].SetParam(cricket::kCodecParamMaxMessageSize, new_value);
+  dcdesc->set_codecs(codecs);
+  jdesc->Initialize(mutant, kSessionId, kSessionVersion);
+}
+
+TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithMaxMessageSize) {
+  bool use_sctpmap = false;
+  AddSctpDataChannel(use_sctpmap);
+  JsepSessionDescription jdesc(kDummyType);
+  std::string sdp_with_data = kSdpString;
+
+  sdp_with_data.append(kSdpSctpDataChannelStringWithSctpColonPort);
+  sdp_with_data.append("a=max-message-size:12345\r\n");
+  MutateJsepSctpMaxMessageSize(desc_, "12345", &jdesc);
   JsepSessionDescription jdesc_output(kDummyType);
 
   // Verify with DTLS/SCTP.

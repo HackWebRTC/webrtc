@@ -112,6 +112,7 @@ extern const char kCodecParamMinBitrate[];
 extern const char kCodecParamStartBitrate[];
 extern const char kCodecParamMaxQuantization[];
 extern const char kCodecParamPort[];
+extern const char kCodecParamMaxMessageSize[];
 
 // We put the data codec names here so callers of DataEngine::CreateChannel
 // don't have to import rtpdataengine.h to get the codec names they want to

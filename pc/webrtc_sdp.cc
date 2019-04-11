@@ -166,9 +166,10 @@ static const char kAttributeRecvOnly[] = "recvonly";
 static const char kAttributeRtcpFb[] = "rtcp-fb";
 static const char kAttributeSendRecv[] = "sendrecv";
 static const char kAttributeInactive[] = "inactive";
-// draft-ietf-mmusic-sctp-sdp-07
-// a=sctp-port
+// draft-ietf-mmusic-sctp-sdp-26
+// a=sctp-port, a=max-message-size
 static const char kAttributeSctpPort[] = "sctp-port";
+static const char kAttributeMaxMessageSize[] = "max-message-size";
 // draft-ietf-mmusic-sdp-simulcast-13
 // a=simulcast
 static const char kAttributeSimulcast[] = "simulcast";
@@ -1240,7 +1241,7 @@ bool ParseIceOptions(const std::string& line,
 bool ParseSctpPort(const std::string& line,
                    int* sctp_port,
                    SdpParseError* error) {
-  // draft-ietf-mmusic-sctp-sdp-07
+  // draft-ietf-mmusic-sctp-sdp-26
   // a=sctp-port
   std::vector<std::string> fields;
   const size_t expected_min_fields = 2;
@@ -1254,6 +1255,23 @@ bool ParseSctpPort(const std::string& line,
   }
   if (!rtc::FromString(fields[1], sctp_port)) {
     return ParseFailed(line, "Invalid sctp port value.", error);
+  }
+  return true;
+}
+
+bool ParseSctpMaxMessageSize(const std::string& line,
+                             int* max_message_size,
+                             SdpParseError* error) {
+  // draft-ietf-mmusic-sctp-sdp-26
+  // a=max-message-size:199999
+  std::vector<std::string> fields;
+  const size_t expected_min_fields = 2;
+  rtc::split(line.substr(kLinePrefixLength), kSdpDelimiterColonChar, &fields);
+  if (fields.size() < expected_min_fields) {
+    return ParseFailedExpectMinFieldNum(line, expected_min_fields, error);
+  }
+  if (!rtc::FromString(fields[1], max_message_size)) {
+    return ParseFailed(line, "Invalid SCTP max message size.", error);
   }
   return true;
 }
@@ -1815,18 +1833,40 @@ void AddRtcpFbLines(const T& codec, std::string* message) {
   }
 }
 
-bool AddSctpDataCodec(DataContentDescription* media_desc, int sctp_port) {
+cricket::DataCodec FindOrMakeSctpDataCodec(DataContentDescription* media_desc) {
   for (const auto& codec : media_desc->codecs()) {
     if (absl::EqualsIgnoreCase(codec.name, cricket::kGoogleSctpDataCodecName)) {
-      return ParseFailed("", "Can't have multiple sctp port attributes.", NULL);
+      return codec;
     }
   }
-  // Add the SCTP Port number as a pseudo-codec "port" parameter
   cricket::DataCodec codec_port(cricket::kGoogleSctpDataCodecPlType,
                                 cricket::kGoogleSctpDataCodecName);
-  codec_port.SetParam(cricket::kCodecParamPort, sctp_port);
-  RTC_LOG(INFO) << "AddSctpDataCodec: Got SCTP Port Number " << sctp_port;
-  media_desc->AddCodec(codec_port);
+  return codec_port;
+}
+
+bool AddOrModifySctpDataCodecPort(DataContentDescription* media_desc,
+                                  int sctp_port) {
+  // Add the SCTP Port number as a pseudo-codec "port" parameter
+  auto codec = FindOrMakeSctpDataCodec(media_desc);
+  int dummy;
+  if (codec.GetParam(cricket::kCodecParamPort, &dummy)) {
+    return false;
+  }
+  codec.SetParam(cricket::kCodecParamPort, sctp_port);
+  media_desc->AddOrReplaceCodec(codec);
+  return true;
+}
+
+bool AddOrModifySctpDataMaxMessageSize(DataContentDescription* media_desc,
+                                       int max_message_size) {
+  // Add the SCTP Max Message Size as a pseudo-parameter to the codec
+  auto codec = FindOrMakeSctpDataCodec(media_desc);
+  int dummy;
+  if (codec.GetParam(cricket::kCodecParamMaxMessageSize, &dummy)) {
+    return false;
+  }
+  codec.SetParam(cricket::kCodecParamMaxMessageSize, max_message_size);
+  media_desc->AddOrReplaceCodec(codec);
   return true;
 }
 
@@ -2716,7 +2756,7 @@ bool ParseMediaDescription(
       if (data_desc && IsDtlsSctp(protocol)) {
         int p;
         if (rtc::FromString(fields[3], &p)) {
-          if (!AddSctpDataCodec(data_desc.get(), p)) {
+          if (!AddOrModifySctpDataCodecPort(data_desc.get(), p)) {
             return false;
           }
         } else if (fields[3] == kDefaultSctpmapProtocol) {
@@ -3101,7 +3141,23 @@ bool ParseContent(const std::string& message,
       if (!ParseSctpPort(line, &sctp_port, error)) {
         return false;
       }
-      if (!AddSctpDataCodec(media_desc->as_data(), sctp_port)) {
+      if (!AddOrModifySctpDataCodecPort(media_desc->as_data(), sctp_port)) {
+        return false;
+      }
+    } else if (IsDtlsSctp(protocol) &&
+               HasAttribute(line, kAttributeMaxMessageSize)) {
+      if (media_type != cricket::MEDIA_TYPE_DATA) {
+        return ParseFailed(
+            line,
+            "max-message-size attribute found in non-data media description.",
+            error);
+      }
+      int max_message_size;
+      if (!ParseSctpMaxMessageSize(line, &max_message_size, error)) {
+        return false;
+      }
+      if (!AddOrModifySctpDataMaxMessageSize(media_desc->as_data(),
+                                             max_message_size)) {
         return false;
       }
     } else if (IsRtp(protocol)) {

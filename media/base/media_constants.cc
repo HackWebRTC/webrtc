@@ -90,6 +90,7 @@ const char kCodecParamMinBitrate[] = "x-google-min-bitrate";
 const char kCodecParamStartBitrate[] = "x-google-start-bitrate";
 const char kCodecParamMaxQuantization[] = "x-google-max-quantization";
 const char kCodecParamPort[] = "x-google-port";
+const char kCodecParamMaxMessageSize[] = "x-google-max-message-size";
 
 const int kGoogleRtpDataCodecPlType = 109;
 const char kGoogleRtpDataCodecName[] = "google-data";
