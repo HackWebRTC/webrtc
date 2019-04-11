@@ -11,14 +11,10 @@
 #ifndef RTC_BASE_NUMERICS_MATH_UTILS_H_
 #define RTC_BASE_NUMERICS_MATH_UTILS_H_
 
-#include <math.h>
+#include <limits>
 #include <type_traits>
 
 #include "rtc_base/checks.h"
-
-#ifndef M_PI
-#define M_PI 3.14159265359f
-#endif
 
 // Given two numbers |x| and |y| such that x >= y, computes the difference
 // x - y without causing undefined behavior due to signed overflow.
