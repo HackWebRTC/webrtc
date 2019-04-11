@@ -222,6 +222,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
       call_stats_(call_stats),
       transport_(transport),
       bitrate_allocator_(bitrate_allocator),
+      disable_padding_(true),
       max_padding_bitrate_(0),
       encoder_min_bitrate_bps_(0),
       encoder_target_rate_bps_(0),
@@ -398,6 +399,7 @@ void VideoSendStreamImpl::StartupVideoSendStream() {
               SignalEncoderTimedOut();
             }
             timed_out_ = true;
+            disable_padding_ = true;
           } else if (timed_out_) {
             SignalEncoderActive();
             timed_out_ = false;
@@ -490,15 +492,17 @@ void VideoSendStreamImpl::OnBitrateAllocationUpdated(
 
 void VideoSendStreamImpl::SignalEncoderActive() {
   RTC_DCHECK_RUN_ON(worker_queue_);
-  RTC_LOG(LS_INFO) << "SignalEncoderActive, Encoder is active.";
-  bitrate_allocator_->AddObserver(this, GetAllocationConfig());
+  if (rtp_video_sender_->IsActive()) {
+    RTC_LOG(LS_INFO) << "SignalEncoderActive, Encoder is active.";
+    bitrate_allocator_->AddObserver(this, GetAllocationConfig());
+  }
 }
 
 MediaStreamAllocationConfig VideoSendStreamImpl::GetAllocationConfig() const {
   return MediaStreamAllocationConfig{
       static_cast<uint32_t>(encoder_min_bitrate_bps_),
       encoder_max_bitrate_bps_,
-      static_cast<uint32_t>(max_padding_bitrate_),
+      static_cast<uint32_t>(disable_padding_ ? 0 : max_padding_bitrate_),
       /* priority_bitrate */ 0,
       !config_->suspend_below_min_bitrate,
       config_->track_id,
@@ -583,6 +587,20 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
 
   // Indicate that there still is activity going on.
   activity_ = true;
+
+  auto enable_padding_task = [this]() {
+    if (disable_padding_) {
+      RTC_DCHECK_RUN_ON(worker_queue_);
+      disable_padding_ = false;
+      // To ensure that padding bitrate is propagated to the bitrate allocator.
+      SignalEncoderActive();
+    }
+  };
+  if (!worker_queue_->IsCurrent()) {
+    worker_queue_->PostTask(enable_padding_task);
+  } else {
+    enable_padding_task();
+  }
 
   EncodedImageCallback::Result result(EncodedImageCallback::Result::OK);
   if (media_transport_) {

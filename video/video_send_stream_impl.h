@@ -163,6 +163,7 @@ class VideoSendStreamImpl : public webrtc::BitrateAllocatorObserver,
 
   rtc::CriticalSection ivf_writers_crit_;
 
+  bool disable_padding_;
   int max_padding_bitrate_;
   int encoder_min_bitrate_bps_;
   uint32_t encoder_max_bitrate_bps_;
