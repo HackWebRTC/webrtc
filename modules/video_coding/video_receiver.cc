@@ -124,12 +124,11 @@ void VideoReceiver::ProcessThreadAttached(ProcessThread* process_thread) {
 int64_t VideoReceiver::TimeUntilNextProcess() {
   RTC_DCHECK_RUN_ON(&module_thread_checker_);
   int64_t timeUntilNextProcess = _receiveStatsTimer.TimeUntilProcess();
-  if (_receiver.NackMode() != kNoNack) {
-    // We need a Process call more often if we are relying on
-    // retransmissions
-    timeUntilNextProcess =
-        VCM_MIN(timeUntilNextProcess, _retransmissionTimer.TimeUntilProcess());
-  }
+  // We need a Process call more often if we are relying on
+  // retransmissions
+  timeUntilNextProcess =
+      VCM_MIN(timeUntilNextProcess, _retransmissionTimer.TimeUntilProcess());
+
   timeUntilNextProcess =
       VCM_MIN(timeUntilNextProcess, _keyRequestTimer.TimeUntilProcess());
 
@@ -140,34 +139,6 @@ int32_t VideoReceiver::SetReceiveChannelParameters(int64_t rtt) {
   RTC_DCHECK_RUN_ON(&module_thread_checker_);
   _receiver.UpdateRtt(rtt);
   return 0;
-}
-
-// Enable or disable a video protection method.
-// Note: This API should be deprecated, as it does not offer a distinction
-// between the protection method and decoding with or without errors.
-int32_t VideoReceiver::SetVideoProtection(VCMVideoProtection videoProtection,
-                                          bool enable) {
-  switch (videoProtection) {
-    case kProtectionNack: {
-      RTC_DCHECK(enable);
-      _receiver.SetNackMode(kNack, -1, -1);
-      break;
-    }
-
-    case kProtectionNackFEC: {
-      RTC_DCHECK(enable);
-      _receiver.SetNackMode(kNack, media_optimization::kLowRttNackMs,
-                            media_optimization::kMaxRttDelayThreshold);
-      break;
-    }
-    case kProtectionFEC:
-    case kProtectionNone:
-      // No receiver-side protection.
-      RTC_DCHECK(enable);
-      _receiver.SetNackMode(kNoNack, -1, -1);
-      break;
-  }
-  return VCM_OK;
 }
 
 // Register a receive callback. Will be called whenever there is a new frame
@@ -402,25 +373,6 @@ int32_t VideoReceiver::SetRenderDelay(uint32_t timeMS) {
 int32_t VideoReceiver::Delay() const {
   RTC_DCHECK_RUN_ON(&module_thread_checker_);
   return _timing->TargetVideoDelay();
-}
-
-int VideoReceiver::SetReceiverRobustnessMode(
-    VideoCodingModule::ReceiverRobustness robustnessMode) {
-  RTC_DCHECK_RUN_ON(&construction_thread_checker_);
-  RTC_DCHECK(!IsDecoderThreadRunning());
-  switch (robustnessMode) {
-    case VideoCodingModule::kNone:
-      _receiver.SetNackMode(kNoNack, -1, -1);
-      break;
-    case VideoCodingModule::kHardNack:
-      // Always wait for retransmissions (except when decoding with errors).
-      _receiver.SetNackMode(kNack, -1, -1);
-      break;
-    default:
-      RTC_NOTREACHED();
-      return VCM_PARAMETER_ERROR;
-  }
-  return VCM_OK;
 }
 
 void VideoReceiver::SetNackSettings(size_t max_nack_list_size,

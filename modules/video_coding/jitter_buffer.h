@@ -32,8 +32,6 @@
 
 namespace webrtc {
 
-enum VCMNackMode { kNack, kNoNack };
-
 // forward declarations
 class Clock;
 class VCMFrameBuffer;
@@ -157,22 +155,9 @@ class VCMJitterBuffer {
   // Updates the round-trip time estimate.
   void UpdateRtt(int64_t rtt_ms);
 
-  // Set the NACK mode. |high_rtt_nack_threshold_ms| is an RTT threshold in ms
-  // above which NACK will be disabled if the NACK mode is |kNack|, -1 meaning
-  // that NACK is always enabled in the |kNack| mode.
-  // |low_rtt_nack_threshold_ms| is an RTT threshold in ms below which we expect
-  // to rely on NACK only, and therefore are using larger buffers to have time
-  // to wait for retransmissions.
-  void SetNackMode(VCMNackMode mode,
-                   int64_t low_rtt_nack_threshold_ms,
-                   int64_t high_rtt_nack_threshold_ms);
-
   void SetNackSettings(size_t max_nack_list_size,
                        int max_packet_age_to_nack,
                        int max_incomplete_time_ms);
-
-  // Returns the current NACK mode.
-  VCMNackMode nack_mode() const;
 
   // Returns a list of the sequence numbers currently missing.
   std::vector<uint16_t> GetNackList(bool* request_key_frame);
@@ -268,9 +253,6 @@ class VCMJitterBuffer {
                             unsigned int frame_size,
                             bool incomplete_frame);
 
-  // Returns true if we should wait for retransmissions, false otherwise.
-  bool WaitForRetransmissions();
-
   int NonContinuousOrIncompleteDuration()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_sect_);
 
@@ -309,10 +291,6 @@ class VCMJitterBuffer {
   VCMJitterSample waiting_for_completion_;
   int64_t rtt_ms_;
 
-  // NACK and retransmissions.
-  VCMNackMode nack_mode_;
-  int64_t low_rtt_nack_threshold_ms_;
-  int64_t high_rtt_nack_threshold_ms_;
   // Holds the internal NACK list (the missing sequence numbers).
   SequenceNumberSet missing_sequence_numbers_;
   uint16_t latest_received_sequence_number_;

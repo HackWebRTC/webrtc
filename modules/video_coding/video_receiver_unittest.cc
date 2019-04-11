@@ -44,7 +44,6 @@ class TestVideoReceiver : public ::testing::Test {
     const size_t kMaxNackListSize = 250;
     const int kMaxPacketAgeToNack = 450;
     receiver_.SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack, 0);
-    EXPECT_EQ(0, receiver_.SetVideoProtection(kProtectionNack, true));
     EXPECT_EQ(
         0, receiver_.RegisterPacketRequestCallback(&packet_request_callback_));
 

@@ -196,25 +196,11 @@ void VCMReceiver::ReleaseFrame(VCMEncodedFrame* frame) {
   jitter_buffer_.ReleaseFrame(frame);
 }
 
-void VCMReceiver::SetNackMode(VCMNackMode nackMode,
-                              int64_t low_rtt_nack_threshold_ms,
-                              int64_t high_rtt_nack_threshold_ms) {
-  rtc::CritScope cs(&crit_sect_);
-  // Default to always having NACK enabled in hybrid mode.
-  jitter_buffer_.SetNackMode(nackMode, low_rtt_nack_threshold_ms,
-                             high_rtt_nack_threshold_ms);
-}
-
 void VCMReceiver::SetNackSettings(size_t max_nack_list_size,
                                   int max_packet_age_to_nack,
                                   int max_incomplete_time_ms) {
   jitter_buffer_.SetNackSettings(max_nack_list_size, max_packet_age_to_nack,
                                  max_incomplete_time_ms);
-}
-
-VCMNackMode VCMReceiver::NackMode() const {
-  rtc::CritScope cs(&crit_sect_);
-  return jitter_buffer_.nack_mode();
 }
 
 std::vector<uint16_t> VCMReceiver::NackList(bool* request_key_frame) {
