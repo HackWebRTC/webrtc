@@ -20,6 +20,7 @@
 #include "api/test/video_quality_test_fixture.h"
 #include "api/video/video_bitrate_allocator_factory.h"
 #include "call/fake_network_pipe.h"
+#include "logging/rtc_event_log/rtc_event_log_factory.h"
 #include "media/engine/internal_decoder_factory.h"
 #include "media/engine/internal_encoder_factory.h"
 #include "test/call_test.h"
@@ -102,6 +103,7 @@ class VideoQualityTest :
       thumbnail_capturers_;
   Clock* const clock_;
   const std::unique_ptr<TaskQueueFactory> task_queue_factory_;
+  RtcEventLogFactory rtc_event_log_factory_;
 
   test::FunctionVideoDecoderFactory video_decoder_factory_;
   InternalDecoderFactory internal_decoder_factory_;

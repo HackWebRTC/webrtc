@@ -256,6 +256,7 @@ if (rtc_include_tests) {
       "../call:simulated_network",
       "../common_video",
       "../logging:rtc_event_log_api",
+      "../logging:rtc_event_log_impl_base",
       "../logging:rtc_event_log_impl_output",
       "../media:rtc_audio_video",
       "../media:rtc_encoder_simulcast_proxy",
