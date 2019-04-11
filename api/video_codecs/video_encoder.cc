@@ -54,11 +54,6 @@ VideoCodecH264 VideoEncoder::GetDefaultH264Settings() {
   h264_settings.frameDroppingOn = true;
   h264_settings.keyFrameInterval = 3000;
   h264_settings.numberOfTemporalLayers = 1;
-  h264_settings.spsData = nullptr;
-  h264_settings.spsLen = 0;
-  h264_settings.ppsData = nullptr;
-  h264_settings.ppsLen = 0;
-  h264_settings.profile = H264::kProfileConstrainedBaseline;
 
   return h264_settings;
 }

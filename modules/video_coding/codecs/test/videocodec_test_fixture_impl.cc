@@ -124,7 +124,6 @@ std::string CodecSpecificToString(const VideoCodec& codec) {
     case kVideoCodecH264:
       ss << "frame_dropping: " << codec.H264().frameDroppingOn;
       ss << "\nkey_frame_interval: " << codec.H264().keyFrameInterval;
-      ss << "\nprofile: " << codec.H264().profile;
       break;
     default:
       break;

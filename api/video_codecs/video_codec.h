@@ -80,12 +80,6 @@ struct VideoCodecH264 {
   bool frameDroppingOn;
   int keyFrameInterval;
   uint8_t numberOfTemporalLayers;
-  // These are NULL/0 if not externally negotiated.
-  const uint8_t* spsData;
-  size_t spsLen;
-  const uint8_t* ppsData;
-  size_t ppsLen;
-  H264::Profile profile;
 };
 
 // Translates from name of codec to codec type and vice versa.

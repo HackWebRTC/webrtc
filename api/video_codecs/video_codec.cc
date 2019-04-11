@@ -42,10 +42,7 @@ bool VideoCodecVP9::operator==(const VideoCodecVP9& other) const {
 bool VideoCodecH264::operator==(const VideoCodecH264& other) const {
   return (frameDroppingOn == other.frameDroppingOn &&
           keyFrameInterval == other.keyFrameInterval &&
-          spsLen == other.spsLen && ppsLen == other.ppsLen &&
-          profile == other.profile &&
-          (spsLen == 0 || memcmp(spsData, other.spsData, spsLen) == 0) &&
-          (ppsLen == 0 || memcmp(ppsData, other.ppsData, ppsLen) == 0));
+          numberOfTemporalLayers == other.numberOfTemporalLayers);
 }
 
 bool SpatialLayer::operator==(const SpatialLayer& other) const {
