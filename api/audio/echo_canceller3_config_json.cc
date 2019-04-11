@@ -167,6 +167,9 @@ void Aec3ConfigFromJsonString(absl::string_view json_string,
       ReadParam(subsection, "converged",
                 &cfg.delay.delay_selection_thresholds.converged);
     }
+
+    ReadParam(section, "use_external_delay_estimator",
+              &cfg.delay.use_external_delay_estimator);
   }
 
   if (rtc::GetValueFromJsonObject(aec3_root, "filter", &section)) {
@@ -182,6 +185,7 @@ void Aec3ConfigFromJsonString(absl::string_view json_string,
               &cfg.filter.conservative_initial_phase);
     ReadParam(section, "enable_shadow_filter_output_usage",
               &cfg.filter.enable_shadow_filter_output_usage);
+    ReadParam(section, "use_linear_filter", &cfg.filter.use_linear_filter);
   }
 
   if (rtc::GetValueFromJsonObject(aec3_root, "erle", &section)) {
