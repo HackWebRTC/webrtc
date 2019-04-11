@@ -17,6 +17,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_timing.h"
 #include "modules/video_coding/include/video_coding_defines.h"
@@ -53,6 +54,7 @@ FrameBuffer::FrameBuffer(Clock* clock,
                          VCMReceiveStatisticsCallback* stats_callback)
     : decoded_frames_history_(kMaxFramesHistory),
       clock_(clock),
+      callback_queue_(nullptr),
       jitter_estimator_(jitter_estimator),
       timing_(timing),
       inter_frame_delay_(clock_->TimeInMilliseconds()),
@@ -64,6 +66,55 @@ FrameBuffer::FrameBuffer(Clock* clock,
           webrtc::field_trial::IsEnabled("WebRTC-AddRttToPlayoutDelay")) {}
 
 FrameBuffer::~FrameBuffer() {}
+
+void FrameBuffer::NextFrame(
+    int64_t max_wait_time_ms,
+    bool keyframe_required,
+    rtc::TaskQueue* callback_queue,
+    std::function<void(std::unique_ptr<EncodedFrame>, ReturnReason)> handler) {
+  RTC_DCHECK_RUN_ON(callback_queue);
+  TRACE_EVENT0("webrtc", "FrameBuffer::NextFrame");
+  int64_t latest_return_time_ms =
+      clock_->TimeInMilliseconds() + max_wait_time_ms;
+  rtc::CritScope lock(&crit_);
+  if (stopped_) {
+    return;
+  }
+  latest_return_time_ms_ = latest_return_time_ms;
+  keyframe_required_ = keyframe_required;
+  frame_handler_ = handler;
+  callback_queue_ = callback_queue;
+  StartWaitForNextFrameOnQueue();
+}
+
+void FrameBuffer::StartWaitForNextFrameOnQueue() {
+  RTC_DCHECK(callback_queue_);
+  RTC_DCHECK(!callback_task_.Running());
+  int64_t wait_ms = FindNextFrame(clock_->TimeInMilliseconds());
+  callback_task_ = RepeatingTaskHandle::DelayedStart(
+      callback_queue_->Get(), TimeDelta::ms(wait_ms), [this] {
+        // If this task has not been cancelled, we did not get any new frames
+        // while waiting. Continue with frame delivery.
+        rtc::CritScope lock(&crit_);
+        if (!frames_to_decode_.empty()) {
+          // We have frames, deliver!
+          frame_handler_(absl::WrapUnique(GetNextFrame()), kFrameFound);
+          CancelCallback();
+          return TimeDelta::Zero();  // Ignored.
+        } else if (clock_->TimeInMilliseconds() >= latest_return_time_ms_) {
+          // We have timed out, signal this and stop repeating.
+          frame_handler_(nullptr, kTimeout);
+          CancelCallback();
+          return TimeDelta::Zero();  // Ignored.
+        } else {
+          // If there's no frames to decode and there is still time left, it
+          // means that the frame buffer was cleared between creation and
+          // execution of this task. Continue waiting for the remaining time.
+          int64_t wait_ms = FindNextFrame(clock_->TimeInMilliseconds());
+          return TimeDelta::ms(wait_ms);
+        }
+      });
+}
 
 FrameBuffer::ReturnReason FrameBuffer::NextFrame(
     int64_t max_wait_time_ms,
@@ -313,6 +364,7 @@ void FrameBuffer::Stop() {
   rtc::CritScope lock(&crit_);
   stopped_ = true;
   new_continuous_frame_event_.Set();
+  CancelCallback();
 }
 
 void FrameBuffer::Clear() {
@@ -340,6 +392,12 @@ bool FrameBuffer::ValidReferences(const EncodedFrame& frame) const {
     return false;
 
   return true;
+}
+
+void FrameBuffer::CancelCallback() {
+  frame_handler_ = {};
+  callback_task_.Stop();
+  callback_queue_ = nullptr;
 }
 
 bool FrameBuffer::IsCompleteSuperFrame(const EncodedFrame& frame) {
@@ -487,9 +545,19 @@ int64_t FrameBuffer::InsertFrame(std::unique_ptr<EncodedFrame> frame) {
     last_continuous_picture_id = last_continuous_frame_->picture_id;
 
     // Since we now have new continuous frames there might be a better frame
-    // to return from NextFrame. Signal that thread so that it again can choose
-    // which frame to return.
+    // to return from NextFrame.
     new_continuous_frame_event_.Set();
+
+    if (callback_queue_) {
+      callback_queue_->PostTask([this] {
+        rtc::CritScope lock(&crit_);
+        if (!callback_task_.Running())
+          return;
+        RTC_CHECK(frame_handler_);
+        callback_task_.Stop();
+        StartWaitForNextFrameOnQueue();
+      });
+    }
   }
 
   return last_continuous_picture_id;

@@ -23,6 +23,7 @@
 #include "modules/video_coding/frame_buffer2.h"
 #include "modules/video_coding/video_coding_impl.h"
 #include "rtc_base/synchronization/sequence_checker.h"
+#include "rtc_base/task_queue.h"
 #include "system_wrappers/include/clock.h"
 #include "video/receive_statistics_proxy.h"
 #include "video/rtp_streams_synchronizer.h"
@@ -133,6 +134,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
  private:
   int64_t GetWaitMs() const;
+  void StartNextDecode() RTC_RUN_ON(decode_queue_);
   static void DecodeThreadFunction(void* ptr);
   bool Decode();
   void HandleEncodedFrame(std::unique_ptr<video_coding::EncodedFrame> frame);
@@ -153,9 +155,14 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   ProcessThread* const process_thread_;
   Clock* const clock_;
 
+  const bool use_task_queue_;
+
   rtc::PlatformThread decode_thread_;
 
   CallStats* const call_stats_;
+
+  bool decoder_running_ RTC_GUARDED_BY(worker_sequence_checker_) = false;
+  bool decoder_stopped_ RTC_GUARDED_BY(decode_queue_) = true;
 
   ReceiveStatisticsProxy stats_proxy_;
   // Shared by media and rtx stream receivers, since the latter has no RtpRtcp
@@ -211,6 +218,9 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   // Maximum delay as decided by the RTP playout delay extension.
   int frame_maximum_playout_delay_ms_ RTC_GUARDED_BY(playout_delay_lock_) = -1;
+
+  // Defined last so they are destroyed before all other members.
+  rtc::TaskQueue decode_queue_;
 };
 }  // namespace internal
 }  // namespace webrtc
