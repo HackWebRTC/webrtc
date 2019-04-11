@@ -265,6 +265,7 @@ rtc_source_set("rtc_event") {
       ":checks",
       "synchronization:yield_policy",
       "system:warn_current_thread_is_deadlocked",
+      "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
 }

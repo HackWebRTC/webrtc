@@ -21,6 +21,7 @@
 #error "Must define either WEBRTC_WIN or WEBRTC_POSIX."
 #endif
 
+#include "absl/types/optional.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/synchronization/yield_policy.h"
 #include "rtc_base/system/warn_current_thread_is_deadlocked.h"
@@ -50,9 +51,9 @@ void Event::Reset() {
   ResetEvent(event_handle_);
 }
 
-bool Event::Wait(int milliseconds) {
+bool Event::Wait(const int give_up_after_ms, int /*warn_after_ms*/) {
   ScopedYieldPolicy::YieldExecution();
-  DWORD ms = (milliseconds == kForever) ? INFINITE : milliseconds;
+  const DWORD ms = give_up_after_ms == kForever ? INFINITE : give_up_after_ms;
   return (WaitForSingleObject(event_handle_, ms) == WAIT_OBJECT_0);
 }
 
@@ -135,34 +136,54 @@ timespec GetTimespec(const int milliseconds_from_now) {
 
 }  // namespace
 
-bool Event::Wait(const int milliseconds) {
-  // Set a timeout for the given number of milliseconds, or 3000 ms if the
-  // caller asked for kForever.
-  const timespec ts =
-      GetTimespec(milliseconds == kForever ? 3000 : milliseconds);
+bool Event::Wait(const int give_up_after_ms, const int warn_after_ms) {
+  // Instant when we'll log a warning message (because we've been waiting so
+  // long it might be a bug), but not yet give up waiting. nullopt if we
+  // shouldn't log a warning.
+  const absl::optional<timespec> warn_ts =
+      warn_after_ms == kForever ||
+              (give_up_after_ms != kForever && warn_after_ms > give_up_after_ms)
+          ? absl::nullopt
+          : absl::make_optional(GetTimespec(warn_after_ms));
+
+  // Instant when we'll stop waiting and return an error. nullopt if we should
+  // never give up.
+  const absl::optional<timespec> give_up_ts =
+      give_up_after_ms == kForever
+          ? absl::nullopt
+          : absl::make_optional(GetTimespec(give_up_after_ms));
 
   ScopedYieldPolicy::YieldExecution();
   pthread_mutex_lock(&event_mutex_);
 
-  // Wait for the event to trigger or the timeout to expire, whichever comes
-  // first.
-  int error = 0;
-  while (!event_status_ && error == 0) {
-#if USE_PTHREAD_COND_TIMEDWAIT_MONOTONIC_NP
-    error =
-        pthread_cond_timedwait_monotonic_np(&event_cond_, &event_mutex_, &ts);
-#else
-    error = pthread_cond_timedwait(&event_cond_, &event_mutex_, &ts);
-#endif
-  }
-
-  if (milliseconds == kForever && error == ETIMEDOUT) {
-    // Our 3000 ms timeout expired, but the caller asked us to wait forever, so
-    // do that.
-    webrtc::WarnThatTheCurrentThreadIsProbablyDeadlocked();
-    error = 0;
+  // Wait for `event_cond_` to trigger and `event_status_` to be set, with the
+  // given timeout (or without a timeout if none is given).
+  const auto wait = [&](const absl::optional<timespec> timeout_ts) {
+    int error = 0;
     while (!event_status_ && error == 0) {
-      error = pthread_cond_wait(&event_cond_, &event_mutex_);
+      if (timeout_ts == absl::nullopt) {
+        error = pthread_cond_wait(&event_cond_, &event_mutex_);
+      } else {
+#if USE_PTHREAD_COND_TIMEDWAIT_MONOTONIC_NP
+        error = pthread_cond_timedwait_monotonic_np(&event_cond_, &event_mutex_,
+                                                    &*timeout_ts);
+#else
+        error =
+            pthread_cond_timedwait(&event_cond_, &event_mutex_, &*timeout_ts);
+#endif
+      }
+    }
+    return error;
+  };
+
+  int error;
+  if (warn_ts == absl::nullopt) {
+    error = wait(give_up_ts);
+  } else {
+    error = wait(warn_ts);
+    if (error == ETIMEDOUT) {
+      webrtc::WarnThatTheCurrentThreadIsProbablyDeadlocked();
+      error = wait(give_up_ts);
     }
   }
 
