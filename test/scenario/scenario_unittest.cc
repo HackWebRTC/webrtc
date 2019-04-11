@@ -121,7 +121,7 @@ TEST(ScenarioTest, MAYBE_RealTimeEncoding) {
     s.RunFor(TimeDelta::seconds(10));
   }
   // Regression tests based on previous runs.
-  EXPECT_NEAR(analyzer.stats().psnr.Mean(), 38, 2);
+  EXPECT_NEAR(analyzer.stats().psnr.Mean(), 38, 10);
   EXPECT_LT(analyzer.stats().lost_count, 2);
 }
 
