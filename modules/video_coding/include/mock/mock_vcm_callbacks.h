@@ -16,11 +16,6 @@
 
 namespace webrtc {
 
-class MockVCMFrameTypeCallback : public VCMFrameTypeCallback {
- public:
-  MOCK_METHOD0(RequestKeyFrame, int32_t());
-};
-
 class MockPacketRequestCallback : public VCMPacketRequestCallback {
  public:
   MOCK_METHOD2(ResendPackets,
