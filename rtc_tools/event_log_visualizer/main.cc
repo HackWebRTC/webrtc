@@ -214,6 +214,12 @@ WEBRTC_DEFINE_bool(
     true,
     "Normalize the log timestamps so that the call starts at time 0.");
 
+WEBRTC_DEFINE_bool(shared_xaxis,
+                   false,
+                   "Share x-axis between all plots so that zooming in one plot "
+                   "updates all the others too. A downside is that certain "
+                   "operations like panning become much slower.");
+
 WEBRTC_DEFINE_bool(protobuf_output,
                    false,
                    "Output charts as protobuf instead of python code.");
@@ -294,7 +300,7 @@ int main(int argc, char* argv[]) {
   if (FLAG_protobuf_output) {
     collection.reset(new webrtc::ProtobufPlotCollection());
   } else {
-    collection.reset(new webrtc::PythonPlotCollection());
+    collection.reset(new webrtc::PythonPlotCollection(FLAG_shared_xaxis));
   }
 
   if (FLAG_plot_incoming_packet_sizes) {
