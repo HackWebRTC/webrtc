@@ -139,8 +139,9 @@ void ComfortNoiseGenerator::Compute(
     }
   }
 
-  // Limit the noise to a floor of -96 dBFS.
-  constexpr float kNoiseFloor = 440.f;
+  // Limit the noise to a floor matching a WGN input of -96 dBFS.
+  constexpr float kNoiseFloor = 17.1267f;
+
   for (auto& n : N2_) {
     n = std::max(n, kNoiseFloor);
   }
