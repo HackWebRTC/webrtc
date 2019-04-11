@@ -48,8 +48,7 @@ class RTC_EXPORT SimulcastEncoderAdapter : public VideoEncoder {
   int Encode(const VideoFrame& input_image,
              const std::vector<VideoFrameType>* frame_types) override;
   int RegisterEncodeCompleteCallback(EncodedImageCallback* callback) override;
-  int SetRateAllocation(const VideoBitrateAllocation& bitrate,
-                        uint32_t new_framerate) override;
+  void SetRates(const RateControlParameters& parameters) override;
 
   // Eventual handler for the contained encoders' EncodedImageCallbacks, but
   // called from an internal helper that also knows the correct stream

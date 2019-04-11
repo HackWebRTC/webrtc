@@ -166,10 +166,7 @@ int32_t FakeWebRtcVideoEncoder::Release() {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int32_t FakeWebRtcVideoEncoder::SetRateAllocation(
-    const webrtc::VideoBitrateAllocation& allocation,
-    uint32_t framerate) {
-  return WEBRTC_VIDEO_CODEC_OK;
+void FakeWebRtcVideoEncoder::SetRates(const RateControlParameters& parameters) {
 }
 
 webrtc::VideoEncoder::EncoderInfo FakeWebRtcVideoEncoder::GetEncoderInfo()

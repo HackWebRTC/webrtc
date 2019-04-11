@@ -48,8 +48,7 @@ class FakeEncoder : public VideoEncoder {
   int32_t RegisterEncodeCompleteCallback(
       EncodedImageCallback* callback) override;
   int32_t Release() override;
-  int32_t SetRateAllocation(const VideoBitrateAllocation& rate_allocation,
-                            uint32_t framerate) override;
+  void SetRates(const RateControlParameters& parameters) override;
   int GetConfiguredInputFramerate() const;
   EncoderInfo GetEncoderInfo() const override;
 
@@ -89,8 +88,7 @@ class FakeEncoder : public VideoEncoder {
 
   VideoCodec config_ RTC_GUARDED_BY(crit_sect_);
   EncodedImageCallback* callback_ RTC_GUARDED_BY(crit_sect_);
-  VideoBitrateAllocation target_bitrate_ RTC_GUARDED_BY(crit_sect_);
-  int configured_input_framerate_ RTC_GUARDED_BY(crit_sect_);
+  RateControlParameters current_rate_settings_ RTC_GUARDED_BY(crit_sect_);
   int max_target_bitrate_kbps_ RTC_GUARDED_BY(crit_sect_);
   bool pending_keyframe_ RTC_GUARDED_BY(crit_sect_);
   uint32_t counter_ RTC_GUARDED_BY(crit_sect_);

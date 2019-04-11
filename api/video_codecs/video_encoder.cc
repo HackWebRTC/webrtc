@@ -108,6 +108,13 @@ VideoEncoder::RateControlParameters::RateControlParameters()
 
 VideoEncoder::RateControlParameters::RateControlParameters(
     const VideoBitrateAllocation& bitrate,
+    double framerate_fps)
+    : bitrate(bitrate),
+      framerate_fps(framerate_fps),
+      bandwidth_allocation(DataRate::bps(bitrate.get_sum_bps())) {}
+
+VideoEncoder::RateControlParameters::RateControlParameters(
+    const VideoBitrateAllocation& bitrate,
     double framerate_fps,
     DataRate bandwidth_allocation)
     : bitrate(bitrate),

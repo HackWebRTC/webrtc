@@ -307,15 +307,13 @@ TEST_F(BandwidthEndToEndTest, ReportsSetEncoderRates) {
       RTC_DCHECK_EQ(1, encoder_config->number_of_streams);
     }
 
-    int32_t SetRateAllocation(const VideoBitrateAllocation& rate_allocation,
-                              uint32_t framerate) override {
+    void SetRates(const RateControlParameters& parameters) override {
       // Make sure not to trigger on any default zero bitrates.
-      if (rate_allocation.get_sum_bps() == 0)
-        return 0;
+      if (parameters.bitrate.get_sum_bps() == 0)
+        return;
       rtc::CritScope lock(&crit_);
-      bitrate_kbps_ = rate_allocation.get_sum_kbps();
+      bitrate_kbps_ = parameters.bitrate.get_sum_kbps();
       observation_complete_.Set();
-      return 0;
     }
 
     void PerformTest() override {
