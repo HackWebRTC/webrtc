@@ -177,7 +177,17 @@ class FakeDtlsTransport : public DtlsTransportInternal {
     return true;
   }
   void SetSrtpCryptoSuite(int crypto_suite) { crypto_suite_ = crypto_suite; }
-  bool GetSslCipherSuite(int* cipher_suite) override { return false; }
+
+  bool GetSslCipherSuite(int* cipher_suite) override {
+    if (ssl_cipher_suite_) {
+      *cipher_suite = *ssl_cipher_suite_;
+      return true;
+    }
+    return false;
+  }
+  void SetSslCipherSuite(absl::optional<int> cipher_suite) {
+    ssl_cipher_suite_ = cipher_suite;
+  }
   rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const override {
     return local_cert_;
   }
@@ -278,6 +288,7 @@ class FakeDtlsTransport : public DtlsTransportInternal {
   rtc::SSLFingerprint dtls_fingerprint_;
   absl::optional<rtc::SSLRole> dtls_role_;
   int crypto_suite_ = rtc::SRTP_AES128_CM_SHA1_80;
+  absl::optional<int> ssl_cipher_suite_;
   webrtc::CryptoOptions crypto_options_;
 
   DtlsTransportState dtls_state_ = DTLS_TRANSPORT_NEW;

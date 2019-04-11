@@ -118,9 +118,17 @@ void DtlsTransport::UpdateInformation() {
   if (internal_dtls_transport_) {
     if (internal_dtls_transport_->dtls_state() ==
         cricket::DTLS_TRANSPORT_CONNECTED) {
-      info_ = DtlsTransportInformation(
-          TranslateState(internal_dtls_transport_->dtls_state()),
-          internal_dtls_transport_->GetRemoteSSLCertChain());
+      int ssl_cipher_suite;
+      if (internal_dtls_transport_->GetSslCipherSuite(&ssl_cipher_suite)) {
+        info_ = DtlsTransportInformation(
+            TranslateState(internal_dtls_transport_->dtls_state()),
+            ssl_cipher_suite,
+            internal_dtls_transport_->GetRemoteSSLCertChain());
+      } else {
+        info_ = DtlsTransportInformation(
+            TranslateState(internal_dtls_transport_->dtls_state()),
+            absl::nullopt, internal_dtls_transport_->GetRemoteSSLCertChain());
+      }
     } else {
       info_ = DtlsTransportInformation(
           TranslateState(internal_dtls_transport_->dtls_state()));

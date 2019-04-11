@@ -20,6 +20,7 @@
 #include "test/gtest.h"
 
 constexpr int kDefaultTimeout = 1000;  // milliseconds
+constexpr int kNonsenseCipherSuite = 1234;
 
 using cricket::FakeDtlsTransport;
 using ::testing::ElementsAre;
@@ -60,6 +61,7 @@ class DtlsTransportTest : public ::testing::Test {
     if (certificate) {
       cricket_transport->SetRemoteSSLCertificate(certificate);
     }
+    cricket_transport->SetSslCipherSuite(kNonsenseCipherSuite);
     transport_ =
         new rtc::RefCountedObject<DtlsTransport>(std::move(cricket_transport));
   }
@@ -140,6 +142,20 @@ TEST_F(DtlsTransportTest, CertificateDisappearsOnClose) {
   ASSERT_TRUE_WAIT(observer_.state() == DtlsTransportState::kClosed,
                    kDefaultTimeout);
   EXPECT_FALSE(observer_.info_.remote_ssl_certificates());
+}
+
+TEST_F(DtlsTransportTest, CipherSuiteVisibleWhenConnected) {
+  CreateTransport();
+  transport()->RegisterObserver(observer());
+  CompleteDtlsHandshake();
+  ASSERT_TRUE_WAIT(observer_.state() == DtlsTransportState::kConnected,
+                   kDefaultTimeout);
+  ASSERT_TRUE(observer_.info_.ssl_cipher_suite());
+  EXPECT_EQ(kNonsenseCipherSuite, *observer_.info_.ssl_cipher_suite());
+  transport()->Clear();
+  ASSERT_TRUE_WAIT(observer_.state() == DtlsTransportState::kClosed,
+                   kDefaultTimeout);
+  EXPECT_FALSE(observer_.info_.ssl_cipher_suite());
 }
 
 }  // namespace webrtc

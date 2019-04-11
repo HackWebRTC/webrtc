@@ -14,6 +14,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/types/optional.h"
 #include "api/ice_transport_interface.h"
 #include "api/rtc_error.h"
 #include "api/scoped_refptr.h"
@@ -42,6 +43,7 @@ class DtlsTransportInformation {
   explicit DtlsTransportInformation(DtlsTransportState state);
   DtlsTransportInformation(
       DtlsTransportState state,
+      absl::optional<int> ssl_cipher_suite,
       std::unique_ptr<rtc::SSLCertChain> remote_ssl_certificates);
   // Copy and assign
   DtlsTransportInformation(const DtlsTransportInformation& c);
@@ -52,6 +54,7 @@ class DtlsTransportInformation {
       default;
 
   DtlsTransportState state() const { return state_; }
+  absl::optional<int> ssl_cipher_suite() const { return ssl_cipher_suite_; }
   // The accessor returns a temporary pointer, it does not release ownership.
   const rtc::SSLCertChain* remote_ssl_certificates() const {
     return remote_ssl_certificates_.get();
@@ -59,6 +62,7 @@ class DtlsTransportInformation {
 
  private:
   DtlsTransportState state_;
+  absl::optional<int> ssl_cipher_suite_;
   std::unique_ptr<rtc::SSLCertChain> remote_ssl_certificates_;
 };
 

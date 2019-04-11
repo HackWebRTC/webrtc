@@ -20,13 +20,16 @@ DtlsTransportInformation::DtlsTransportInformation(DtlsTransportState state)
 
 DtlsTransportInformation::DtlsTransportInformation(
     DtlsTransportState state,
+    absl::optional<int> ssl_cipher_suite,
     std::unique_ptr<rtc::SSLCertChain> remote_ssl_certificates)
     : state_(state),
+      ssl_cipher_suite_(ssl_cipher_suite),
       remote_ssl_certificates_(std::move(remote_ssl_certificates)) {}
 
 DtlsTransportInformation::DtlsTransportInformation(
     const DtlsTransportInformation& c)
     : state_(c.state()),
+      ssl_cipher_suite_(c.ssl_cipher_suite_),
       remote_ssl_certificates_(c.remote_ssl_certificates()
                                    ? c.remote_ssl_certificates()->Clone()
                                    : nullptr) {}
@@ -34,6 +37,7 @@ DtlsTransportInformation::DtlsTransportInformation(
 DtlsTransportInformation& DtlsTransportInformation::operator=(
     const DtlsTransportInformation& c) {
   state_ = c.state();
+  ssl_cipher_suite_ = c.ssl_cipher_suite_;
   remote_ssl_certificates_ = c.remote_ssl_certificates()
                                  ? c.remote_ssl_certificates()->Clone()
                                  : nullptr;
