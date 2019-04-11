@@ -296,8 +296,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
       "objc/AppRTCMobile/RTCIceCandidate+JSON.m",
       "objc/AppRTCMobile/RTCIceServer+JSON.h",
       "objc/AppRTCMobile/RTCIceServer+JSON.m",
-      "objc/AppRTCMobile/RTCMediaConstraints+JSON.h",
-      "objc/AppRTCMobile/RTCMediaConstraints+JSON.m",
       "objc/AppRTCMobile/RTCSessionDescription+JSON.h",
       "objc/AppRTCMobile/RTCSessionDescription+JSON.m",
     ]
