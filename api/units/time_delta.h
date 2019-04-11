@@ -95,6 +95,9 @@ class TimeDelta final : public rtc_units_impl::RelativeUnit<TimeDelta> {
 };
 
 std::string ToString(TimeDelta value);
+inline std::string ToLogString(TimeDelta value) {
+  return ToString(value);
+}
 
 #ifdef UNIT_TEST
 inline std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)

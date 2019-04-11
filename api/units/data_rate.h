@@ -107,6 +107,9 @@ inline DataSize operator*(const TimeDelta duration, const DataRate rate) {
 }
 
 std::string ToString(DataRate value);
+inline std::string ToLogString(DataRate value) {
+  return ToString(value);
+}
 
 #ifdef UNIT_TEST
 inline std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)

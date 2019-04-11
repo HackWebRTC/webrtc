@@ -85,6 +85,7 @@ if (rtc_include_tests) {
       ":data_size",
       ":time_delta",
       ":timestamp",
+      "../../rtc_base:logging",
       "../../test:test_support",
     ]
   }

@@ -52,6 +52,9 @@ class DataSize final : public rtc_units_impl::RelativeUnit<DataSize> {
 };
 
 std::string ToString(DataSize value);
+inline std::string ToLogString(DataSize value) {
+  return ToString(value);
+}
 
 #ifdef UNIT_TEST
 inline std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
