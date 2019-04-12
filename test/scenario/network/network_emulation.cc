@@ -14,6 +14,7 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
+#include "api/units/data_size.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/logging.h"
 
@@ -198,7 +199,10 @@ void EmulatedEndpoint::SendPacket(const rtc::SocketAddress& from,
                                   rtc::CopyOnWriteBuffer packet) {
   RTC_CHECK(from.ipaddr() == peer_local_addr_);
   struct Closure {
-    void operator()() { endpoint->router_.OnPacketReceived(std::move(packet)); }
+    void operator()() {
+      endpoint->UpdateSendStats(packet);
+      endpoint->router_.OnPacketReceived(std::move(packet));
+    }
     EmulatedEndpoint* endpoint;
     EmulatedIpPacket packet;
   };
@@ -258,18 +262,22 @@ rtc::IPAddress EmulatedEndpoint::GetPeerLocalAddress() const {
 }
 
 void EmulatedEndpoint::OnPacketReceived(EmulatedIpPacket packet) {
+  RTC_DCHECK_RUN_ON(task_queue_);
   RTC_CHECK(packet.to.ipaddr() == peer_local_addr_)
       << "Routing error: wrong destination endpoint. Packet.to.ipaddr()=: "
       << packet.to.ipaddr().ToString()
       << "; Receiver peer_local_addr_=" << peer_local_addr_.ToString();
   rtc::CritScope crit(&receiver_lock_);
+  UpdateReceiveStats(packet);
   auto it = port_to_receiver_.find(packet.to.port());
   if (it == port_to_receiver_.end()) {
     // It can happen, that remote peer closed connection, but there still some
     // packets, that are going to it. It can happen during peer connection close
     // process: one peer closed connection, second still sending data.
-    RTC_LOG(INFO) << "No receiver registered in " << id_ << " on port "
-                  << packet.to.port();
+    RTC_LOG(INFO) << "Drop packet: no receiver registered in " << id_
+                  << " on port " << packet.to.port();
+    stats_.packets_dropped++;
+    stats_.bytes_dropped += DataSize::bytes(packet.size());
     return;
   }
   // Endpoint assumes frequent calls to bind and unbind methods, so it holds
@@ -293,6 +301,35 @@ void EmulatedEndpoint::Disable() {
 bool EmulatedEndpoint::Enabled() const {
   RTC_DCHECK_RUN_ON(&enabled_state_checker_);
   return is_enabled_;
+}
+
+EmulatedNetworkStats EmulatedEndpoint::stats() {
+  RTC_DCHECK_RUN_ON(task_queue_);
+  return stats_;
+}
+
+void EmulatedEndpoint::UpdateSendStats(const EmulatedIpPacket& packet) {
+  RTC_DCHECK_RUN_ON(task_queue_);
+  Timestamp current_time = Timestamp::us(clock_->TimeInMicroseconds());
+  if (stats_.first_packet_sent_time.IsInfinite()) {
+    stats_.first_packet_sent_time = current_time;
+    stats_.first_sent_packet_size = DataSize::bytes(packet.size());
+  }
+  stats_.last_packet_sent_time = current_time;
+  stats_.packets_sent++;
+  stats_.bytes_sent += DataSize::bytes(packet.size());
+}
+
+void EmulatedEndpoint::UpdateReceiveStats(const EmulatedIpPacket& packet) {
+  RTC_DCHECK_RUN_ON(task_queue_);
+  Timestamp current_time = Timestamp::us(clock_->TimeInMicroseconds());
+  if (stats_.first_packet_received_time.IsInfinite()) {
+    stats_.first_packet_received_time = current_time;
+    stats_.first_received_packet_size = DataSize::bytes(packet.size());
+  }
+  stats_.last_packet_received_time = current_time;
+  stats_.packets_received++;
+  stats_.bytes_received += DataSize::bytes(packet.size());
 }
 
 EndpointsContainer::EndpointsContainer(
@@ -329,6 +366,41 @@ EndpointsContainer::GetEnabledNetworks() const {
     }
   }
   return networks;
+}
+
+EmulatedNetworkStats EndpointsContainer::GetStats() const {
+  EmulatedNetworkStats stats;
+  for (auto* endpoint : endpoints_) {
+    EmulatedNetworkStats endpoint_stats = endpoint->stats();
+    stats.packets_sent += endpoint_stats.packets_sent;
+    stats.bytes_sent += endpoint_stats.bytes_sent;
+    stats.packets_received += endpoint_stats.packets_received;
+    stats.bytes_received += endpoint_stats.bytes_received;
+    stats.packets_dropped += endpoint_stats.packets_dropped;
+    stats.bytes_dropped += endpoint_stats.bytes_dropped;
+    if (stats.first_packet_received_time >
+        endpoint_stats.first_packet_received_time) {
+      stats.first_packet_received_time =
+          endpoint_stats.first_packet_received_time;
+      stats.first_received_packet_size =
+          endpoint_stats.first_received_packet_size;
+    }
+    if (stats.first_packet_sent_time > endpoint_stats.first_packet_sent_time) {
+      stats.first_packet_sent_time = endpoint_stats.first_packet_sent_time;
+      stats.first_sent_packet_size = endpoint_stats.first_sent_packet_size;
+    }
+    if (stats.last_packet_received_time.IsInfinite() ||
+        stats.last_packet_received_time <
+            endpoint_stats.last_packet_received_time) {
+      stats.last_packet_received_time =
+          endpoint_stats.last_packet_received_time;
+    }
+    if (stats.last_packet_sent_time.IsInfinite() ||
+        stats.last_packet_sent_time < endpoint_stats.last_packet_sent_time) {
+      stats.last_packet_sent_time = endpoint_stats.last_packet_sent_time;
+    }
+  }
+  return stats;
 }
 
 }  // namespace webrtc

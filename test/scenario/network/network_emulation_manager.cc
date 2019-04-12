@@ -200,7 +200,7 @@ NetworkEmulationManagerImpl::CreateEmulatedNetworkManagerInterface(
     const std::vector<EmulatedEndpoint*>& endpoints) {
   auto endpoints_container = absl::make_unique<EndpointsContainer>(endpoints);
   auto network_manager = absl::make_unique<EmulatedNetworkManager>(
-      clock_, endpoints_container.get());
+      clock_, &task_queue_, endpoints_container.get());
   for (auto* endpoint : endpoints) {
     // Associate endpoint with network manager.
     bool insertion_result =

@@ -28,6 +28,7 @@ namespace test {
 namespace {
 
 constexpr int kNetworkPacketWaitTimeoutMs = 100;
+constexpr int kStatsWaitTimeoutMs = 1000;
 
 class SocketReader : public sigslot::has_slots<> {
  public:
@@ -195,6 +196,7 @@ TEST(NetworkEmulationManagerTest, Run) {
   EmulatedNetworkManagerInterface* nt2 =
       network_manager.CreateEmulatedNetworkManagerInterface({bob_endpoint});
 
+  rtc::CopyOnWriteBuffer data("Hello");
   for (uint64_t j = 0; j < 2; j++) {
     auto* s1 = nt1->network_thread()->socketserver()->CreateAsyncSocket(
         AF_INET, SOCK_DGRAM);
@@ -213,7 +215,6 @@ TEST(NetworkEmulationManagerTest, Run) {
     s1->Connect(s2->GetLocalAddress());
     s2->Connect(s1->GetLocalAddress());
 
-    rtc::CopyOnWriteBuffer data("Hello");
     for (uint64_t i = 0; i < 1000; i++) {
       s1->Send(data.data(), data.size());
       s2->Send(data.data(), data.size());
@@ -221,12 +222,96 @@ TEST(NetworkEmulationManagerTest, Run) {
 
     rtc::Event wait;
     wait.Wait(1000);
-    ASSERT_EQ(r1.ReceivedCount(), 1000);
-    ASSERT_EQ(r2.ReceivedCount(), 1000);
+    EXPECT_EQ(r1.ReceivedCount(), 1000);
+    EXPECT_EQ(r2.ReceivedCount(), 1000);
 
     delete s1;
     delete s2;
   }
+
+  int64_t single_packet_size = data.size();
+  std::atomic<int> received_stats_count{0};
+  nt1->GetStats([&](EmulatedNetworkStats st) {
+    EXPECT_EQ(st.packets_sent, 2000l);
+    EXPECT_EQ(st.bytes_sent.bytes(), single_packet_size * 2000l);
+    EXPECT_EQ(st.packets_received, 2000l);
+    EXPECT_EQ(st.bytes_received.bytes(), single_packet_size * 2000l);
+    EXPECT_EQ(st.packets_dropped, 0l);
+    EXPECT_EQ(st.bytes_dropped.bytes(), 0l);
+    received_stats_count++;
+  });
+  nt2->GetStats([&](EmulatedNetworkStats st) {
+    EXPECT_EQ(st.packets_sent, 2000l);
+    EXPECT_EQ(st.bytes_sent.bytes(), single_packet_size * 2000l);
+    EXPECT_EQ(st.packets_received, 2000l);
+    EXPECT_EQ(st.bytes_received.bytes(), single_packet_size * 2000l);
+    EXPECT_EQ(st.packets_dropped, 0l);
+    EXPECT_EQ(st.bytes_dropped.bytes(), 0l);
+    received_stats_count++;
+  });
+  ASSERT_EQ_WAIT(received_stats_count.load(), 2, kStatsWaitTimeoutMs);
+}
+
+TEST(NetworkEmulationManagerTest, ThoughputStats) {
+  NetworkEmulationManagerImpl network_manager;
+
+  EmulatedNetworkNode* alice_node = network_manager.CreateEmulatedNode(
+      absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
+  EmulatedNetworkNode* bob_node = network_manager.CreateEmulatedNode(
+      absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
+  EmulatedEndpoint* alice_endpoint =
+      network_manager.CreateEndpoint(EmulatedEndpointConfig());
+  EmulatedEndpoint* bob_endpoint =
+      network_manager.CreateEndpoint(EmulatedEndpointConfig());
+  network_manager.CreateRoute(alice_endpoint, {alice_node}, bob_endpoint);
+  network_manager.CreateRoute(bob_endpoint, {bob_node}, alice_endpoint);
+
+  EmulatedNetworkManagerInterface* nt1 =
+      network_manager.CreateEmulatedNetworkManagerInterface({alice_endpoint});
+  EmulatedNetworkManagerInterface* nt2 =
+      network_manager.CreateEmulatedNetworkManagerInterface({bob_endpoint});
+
+  int64_t single_packet_size = 100;
+  rtc::CopyOnWriteBuffer data(single_packet_size);
+  auto* s1 = nt1->network_thread()->socketserver()->CreateAsyncSocket(
+      AF_INET, SOCK_DGRAM);
+  auto* s2 = nt2->network_thread()->socketserver()->CreateAsyncSocket(
+      AF_INET, SOCK_DGRAM);
+
+  SocketReader r1(s1);
+  SocketReader r2(s2);
+
+  rtc::SocketAddress a1(alice_endpoint->GetPeerLocalAddress(), 0);
+  rtc::SocketAddress a2(bob_endpoint->GetPeerLocalAddress(), 0);
+
+  s1->Bind(a1);
+  s2->Bind(a2);
+
+  s1->Connect(s2->GetLocalAddress());
+  s2->Connect(s1->GetLocalAddress());
+
+  // Send 10 packets for 1
+  rtc::Event wait;
+  for (uint64_t i = 0; i < 11; i++) {
+    s1->Send(data.data(), data.size());
+    s2->Send(data.data(), data.size());
+    wait.Wait(100);
+  }
+  EXPECT_EQ(r1.ReceivedCount(), 11);
+  EXPECT_EQ(r2.ReceivedCount(), 11);
+
+  delete s1;
+  delete s2;
+
+  std::atomic<int> received_stats_count{0};
+  nt1->GetStats([&](EmulatedNetworkStats st) {
+    EXPECT_EQ(st.packets_sent, 11l);
+    EXPECT_EQ(st.bytes_sent.bytes(), single_packet_size * 11l);
+    EXPECT_NEAR(st.AverageSendRate().bps(), DataRate::bytes_per_sec(1000).bps(),
+                1000);
+    received_stats_count++;
+  });
+  ASSERT_EQ_WAIT(received_stats_count.load(), 1, kStatsWaitTimeoutMs);
 }
 
 // Testing that packets are delivered via all routes using a routing scheme as

@@ -434,6 +434,9 @@ rtc_source_set("network_emulation_manager_api") {
   deps = [
     ":simulated_network_api",
     "../rtc_base",
+    "units:data_rate",
+    "units:data_size",
+    "units:timestamp",
   ]
 }
 

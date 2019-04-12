@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/test/network_emulation_manager.h"
 #include "api/test/simulated_network.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/copy_on_write_buffer.h"
@@ -193,9 +194,13 @@ class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
 
   const rtc::Network& network() const { return *network_.get(); }
 
+  EmulatedNetworkStats stats();
+
  private:
   static constexpr uint16_t kFirstEphemeralPort = 49152;
   uint16_t NextPort() RTC_EXCLUSIVE_LOCKS_REQUIRED(receiver_lock_);
+  void UpdateSendStats(const EmulatedIpPacket& packet);
+  void UpdateReceiveStats(const EmulatedIpPacket& packet);
 
   rtc::CriticalSection receiver_lock_;
   rtc::ThreadChecker enabled_state_checker_;
@@ -212,6 +217,8 @@ class EmulatedEndpoint : public EmulatedNetworkReceiverInterface {
   uint16_t next_port_ RTC_GUARDED_BY(receiver_lock_);
   std::map<uint16_t, EmulatedNetworkReceiverInterface*> port_to_receiver_
       RTC_GUARDED_BY(receiver_lock_);
+
+  EmulatedNetworkStats stats_ RTC_GUARDED_BY(task_queue_);
 };
 
 class EmulatedRoute {
@@ -236,6 +243,7 @@ class EndpointsContainer {
   // Returns list of networks for enabled endpoints. Caller takes ownership of
   // returned rtc::Network objects.
   std::vector<std::unique_ptr<rtc::Network>> GetEnabledNetworks() const;
+  EmulatedNetworkStats GetStats() const;
 
  private:
   const std::vector<EmulatedEndpoint*> endpoints_;
