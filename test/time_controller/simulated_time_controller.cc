@@ -335,13 +335,16 @@ void SimulatedTimeControllerImpl::YieldExecution() {
 
 void SimulatedTimeControllerImpl::RunReadyRunners() {
   RTC_DCHECK_RUN_ON(&thread_checker_);
+  rtc::CritScope lock(&lock_);
   RTC_DCHECK_EQ(rtc::CurrentThreadId(), thread_id_);
   Timestamp current_time = CurrentTime();
+  // Clearing |ready_runners_| in case this is a recursive call:
+  // RunReadyRunners -> Run -> Event::Wait -> Yield ->RunReadyRunners
+  ready_runners_.clear();
+
   // We repeat until we have no ready left to handle tasks posted by ready
   // runners.
   while (true) {
-    rtc::CritScope lock(&lock_);
-    RTC_DCHECK(ready_runners_.empty());
     for (auto* runner : runners_) {
       if (yielded_.find(runner) == yielded_.end() &&
           runner->GetNextRunTime() <= current_time) {
