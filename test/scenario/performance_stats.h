@@ -14,7 +14,7 @@
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "api/video/video_frame_buffer.h"
-#include "rtc_base/numerics/samples_stats_counter.h"
+#include "test/statistics.h"
 
 namespace webrtc {
 namespace test {
@@ -35,125 +35,13 @@ struct VideoFramePair {
   int repeated = 0;
 };
 
-template <typename T>
-class SampleStats;
-
-template <>
-class SampleStats<double> : public SamplesStatsCounter {
- public:
-  double Max();
-  double Mean();
-  double Median();
-  double Quantile(double quantile);
-  double Min();
-  double Variance();
-  double StandardDeviation();
-};
-
-template <>
-class SampleStats<TimeDelta> {
- public:
-  void AddSample(TimeDelta delta);
-  void AddSampleMs(double delta_ms);
-  void AddSamples(const SampleStats<TimeDelta>& other);
-  TimeDelta Max();
-  TimeDelta Mean();
-  TimeDelta Median();
-  TimeDelta Quantile(double quantile);
-  TimeDelta Min();
-  TimeDelta Variance();
-  TimeDelta StandardDeviation();
-
- private:
-  SampleStats<double> stats_;
-};
-
-template <>
-class SampleStats<DataRate> {
- public:
-  void AddSample(DataRate rate);
-  void AddSampleBps(double rate_bps);
-  void AddSamples(const SampleStats<DataRate>& other);
-  DataRate Max();
-  DataRate Mean();
-  DataRate Median();
-  DataRate Quantile(double quantile);
-  DataRate Min();
-  DataRate Variance();
-  DataRate StandardDeviation();
-
- private:
-  SampleStats<double> stats_;
-};
-
-class EventRateCounter {
- public:
-  void AddEvent(Timestamp event_time);
-  void AddEvents(EventRateCounter other);
-  bool IsEmpty() const;
-  double Rate() const;
-  SampleStats<TimeDelta>& interval() { return interval_; }
-
- private:
-  Timestamp first_time_ = Timestamp::PlusInfinity();
-  Timestamp last_time_ = Timestamp::MinusInfinity();
-  int64_t event_count_ = 0;
-  SampleStats<TimeDelta> interval_;
-};
-
-struct VideoFramesStats {
-  int count = 0;
-  SampleStats<double> pixels;
-  SampleStats<double> resolution;
-  EventRateCounter frames;
-  void AddFrameInfo(const VideoFrameBuffer& frame, Timestamp at_time);
-  void AddStats(const VideoFramesStats& other);
-};
-
 struct VideoQualityStats {
+  int captures_count = 0;
+  int valid_count = 0;
   int lost_count = 0;
-  int freeze_count = 0;
-  VideoFramesStats capture;
-  VideoFramesStats render;
-  // Time from frame was captured on device to time frame was displayed on
-  // device.
-  SampleStats<TimeDelta> end_to_end_delay;
-  SampleStats<double> psnr;
-  // Frames skipped between two nearest.
-  SampleStats<double> skipped_between_rendered;
-  // In the next 2 metrics freeze is a pause that is longer, than maximum:
-  //  1. 150ms
-  //  2. 3 * average time between two sequential frames.
-  // Item 1 will cover high fps video and is a duration, that is noticeable by
-  // human eye. Item 2 will cover low fps video like screen sharing.
-  SampleStats<TimeDelta> freeze_duration;
-  // Mean time between one freeze end and next freeze start.
-  SampleStats<TimeDelta> time_between_freezes;
-  void AddStats(const VideoQualityStats& other);
-};
-
-struct CollectedCallStats {
-  SampleStats<DataRate> target_rate;
-  SampleStats<double> memory_usage;
-};
-
-struct CollectedAudioReceiveStats {
-  SampleStats<double> expand_rate;
-  SampleStats<double> accelerate_rate;
-  SampleStats<TimeDelta> jitter_buffer;
-};
-struct CollectedVideoSendStats {
-  SampleStats<double> encode_frame_rate;
-  SampleStats<TimeDelta> encode_time;
-  SampleStats<double> encode_usage;
-  SampleStats<DataRate> media_bitrate;
-  SampleStats<DataRate> fec_bitrate;
-};
-struct CollectedVideoReceiveStats {
-  SampleStats<TimeDelta> decode_time;
-  SampleStats<TimeDelta> decode_time_max;
-  SampleStats<double> decode_pixels;
-  SampleStats<double> resolution;
+  Statistics end_to_end_seconds;
+  Statistics frame_size;
+  Statistics psnr;
 };
 
 }  // namespace test

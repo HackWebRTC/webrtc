@@ -16,71 +16,47 @@ namespace test {
 namespace {
 void CreateAnalyzedStream(Scenario* s,
                           NetworkNodeConfig network_config,
-                          VideoQualityAnalyzer* analyzer,
-                          CallStatsCollectors* collectors) {
+                          VideoQualityAnalyzer* analyzer) {
   VideoStreamConfig config;
   config.encoder.codec = VideoStreamConfig::Encoder::Codec::kVideoCodecVP8;
   config.encoder.implementation =
       VideoStreamConfig::Encoder::Implementation::kSoftware;
   config.hooks.frame_pair_handlers = {analyzer->Handler()};
-  auto* caller = s->CreateClient("caller", CallClientConfig());
-  auto route =
-      s->CreateRoutes(caller, {s->CreateSimulationNode(network_config)},
-                      s->CreateClient("callee", CallClientConfig()),
-                      {s->CreateSimulationNode(NetworkNodeConfig())});
-  auto* video = s->CreateVideoStream(route->forward(), config);
-  auto* audio = s->CreateAudioStream(route->forward(), AudioStreamConfig());
-  if (collectors) {
-    s->Every(TimeDelta::seconds(1), [=] {
-      collectors->call.AddStats(caller->GetStats());
-      collectors->audio_receive.AddStats(audio->receive()->GetStats());
-      collectors->video_send.AddStats(video->send()->GetStats(), s->Now());
-      collectors->video_receive.AddStats(video->receive()->GetStats());
-    });
-  }
+  auto route = s->CreateRoutes(s->CreateClient("caller", CallClientConfig()),
+                               {s->CreateSimulationNode(network_config)},
+                               s->CreateClient("callee", CallClientConfig()),
+                               {s->CreateSimulationNode(NetworkNodeConfig())});
+  s->CreateVideoStream(route->forward(), config);
 }
 }  // namespace
 
 TEST(ScenarioAnalyzerTest, PsnrIsHighWhenNetworkIsGood) {
   VideoQualityAnalyzer analyzer;
-  CallStatsCollectors stats;
   {
-    Scenario s;
+    Scenario s("", /*real_time*/ false);
     NetworkNodeConfig good_network;
     good_network.simulation.bandwidth = DataRate::kbps(1000);
-    CreateAnalyzedStream(&s, good_network, &analyzer, &stats);
-    s.RunFor(TimeDelta::seconds(3));
+    CreateAnalyzedStream(&s, good_network, &analyzer);
+    s.RunFor(TimeDelta::seconds(1));
   }
-  // This is a change detecting test, the targets are based on previous runs and
-  // might change due to changes in configuration and encoder etc. The main
-  // purpose is to show how the stats can be used. To avoid being overly
-  // sensistive to change, the ranges are chosen to be quite large.
-  EXPECT_NEAR(analyzer.stats().psnr.Mean(), 43, 10);
-  EXPECT_NEAR(stats.call.stats().target_rate.Mean().kbps(), 700, 300);
-  EXPECT_NEAR(stats.video_send.stats().media_bitrate.Mean().kbps(), 500, 200);
-  EXPECT_NEAR(stats.video_receive.stats().resolution.Mean(), 180, 10);
-  EXPECT_NEAR(stats.audio_receive.stats().jitter_buffer.Mean().ms(), 40, 20);
+  // This is mainty a regression test, the target is based on previous runs and
+  // might change due to changes in configuration and encoder etc.
+  EXPECT_GT(analyzer.stats().psnr.Mean(), 40);
 }
 
 TEST(ScenarioAnalyzerTest, PsnrIsLowWhenNetworkIsBad) {
   VideoQualityAnalyzer analyzer;
-  CallStatsCollectors stats;
   {
-    Scenario s;
+    Scenario s("", /*real_time*/ false);
     NetworkNodeConfig bad_network;
     bad_network.simulation.bandwidth = DataRate::kbps(100);
     bad_network.simulation.loss_rate = 0.02;
-    CreateAnalyzedStream(&s, bad_network, &analyzer, &stats);
-    s.RunFor(TimeDelta::seconds(3));
+    CreateAnalyzedStream(&s, bad_network, &analyzer);
+    s.RunFor(TimeDelta::seconds(1));
   }
-  // This is a change detecting test, the targets are based on previous runs and
+  // This is mainty a regression test, the target is based on previous runs and
   // might change due to changes in configuration and encoder etc.
-  EXPECT_NEAR(analyzer.stats().psnr.Mean(), 16, 10);
-  EXPECT_NEAR(stats.call.stats().target_rate.Mean().kbps(), 75, 50);
-  EXPECT_NEAR(stats.video_send.stats().media_bitrate.Mean().kbps(), 100, 50);
-  EXPECT_NEAR(stats.video_receive.stats().resolution.Mean(), 180, 10);
-  EXPECT_NEAR(stats.audio_receive.stats().jitter_buffer.Mean().ms(), 45, 20);
+  EXPECT_LT(analyzer.stats().psnr.Mean(), 30);
 }
-
 }  // namespace test
 }  // namespace webrtc

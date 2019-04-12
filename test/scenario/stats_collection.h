@@ -10,11 +10,8 @@
 #ifndef TEST_SCENARIO_STATS_COLLECTION_H_
 #define TEST_SCENARIO_STATS_COLLECTION_H_
 
-#include <map>
 #include <memory>
 
-#include "absl/types/optional.h"
-#include "call/call.h"
 #include "test/logging/log_writer.h"
 #include "test/scenario/performance_stats.h"
 
@@ -25,18 +22,6 @@ struct VideoQualityAnalyzerConfig {
   double psnr_coverage = 1;
 };
 
-class VideoLayerAnalyzer {
- public:
-  void HandleCapturedFrame(const VideoFramePair& sample);
-  void HandleRenderedFrame(const VideoFramePair& sample);
-  void HandleFramePair(VideoFramePair sample, RtcEventLogOutput* writer);
-  VideoQualityStats stats_;
-  Timestamp last_capture_time_ = Timestamp::MinusInfinity();
-  Timestamp last_render_time_ = Timestamp::MinusInfinity();
-  Timestamp last_freeze_time_ = Timestamp::MinusInfinity();
-  int skip_count_ = 0;
-};
-
 class VideoQualityAnalyzer {
  public:
   explicit VideoQualityAnalyzer(
@@ -44,59 +29,15 @@ class VideoQualityAnalyzer {
       std::unique_ptr<RtcEventLogOutput> writer = nullptr);
   ~VideoQualityAnalyzer();
   void HandleFramePair(VideoFramePair sample);
-  std::vector<VideoQualityStats> layer_stats() const;
-  VideoQualityStats& stats();
+  VideoQualityStats stats() const;
   void PrintHeaders();
   void PrintFrameInfo(const VideoFramePair& sample);
   std::function<void(const VideoFramePair&)> Handler();
 
  private:
   const VideoQualityAnalyzerConfig config_;
-  std::map<int, VideoLayerAnalyzer> layer_analyzers_;
+  VideoQualityStats stats_;
   const std::unique_ptr<RtcEventLogOutput> writer_;
-  absl::optional<VideoQualityStats> cached_;
-};
-
-class CallStatsCollector {
- public:
-  void AddStats(Call::Stats sample);
-  CollectedCallStats& stats() { return stats_; }
-
- private:
-  CollectedCallStats stats_;
-};
-class AudioReceiveStatsCollector {
- public:
-  void AddStats(AudioReceiveStream::Stats sample);
-  CollectedAudioReceiveStats& stats() { return stats_; }
-
- private:
-  CollectedAudioReceiveStats stats_;
-};
-class VideoSendStatsCollector {
- public:
-  void AddStats(VideoSendStream::Stats sample, Timestamp at_time);
-  CollectedVideoSendStats& stats() { return stats_; }
-
- private:
-  CollectedVideoSendStats stats_;
-  Timestamp last_update_ = Timestamp::MinusInfinity();
-  size_t last_fec_bytes_ = 0;
-};
-class VideoReceiveStatsCollector {
- public:
-  void AddStats(VideoReceiveStream::Stats sample);
-  CollectedVideoReceiveStats& stats() { return stats_; }
-
- private:
-  CollectedVideoReceiveStats stats_;
-};
-
-struct CallStatsCollectors {
-  CallStatsCollector call;
-  AudioReceiveStatsCollector audio_receive;
-  VideoSendStatsCollector video_send;
-  VideoReceiveStatsCollector video_receive;
 };
 
 }  // namespace test
