@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <algorithm>
 #include <cstdint>
 #include <map>
 #include <memory>
@@ -1130,7 +1131,7 @@ class WebRtcSdpTest : public ::testing::Test {
         new JsepIceCandidate(std::string("audio_content_name"), 0, candidate1));
 
     // Set up JsepSessionDescription.
-    jdesc_.Initialize(desc_.Copy(), kSessionId, kSessionVersion);
+    jdesc_.Initialize(desc_.Clone(), kSessionId, kSessionVersion);
     std::string mline_id;
     int mline_index = 0;
     for (size_t i = 0; i < candidates_.size(); ++i) {
@@ -1178,7 +1179,7 @@ class WebRtcSdpTest : public ::testing::Test {
     group.AddContentName(kVideoContentName);
     desc_.AddGroup(group);
 
-    ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+    ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                   jdesc_.session_version()));
   }
 
@@ -1214,7 +1215,7 @@ class WebRtcSdpTest : public ::testing::Test {
     desc_.AddContent(kAudioContentName, MediaProtocolType::kRtp, audio_desc_);
     desc_.AddContent(kVideoContentName, MediaProtocolType::kRtp, video_desc_);
 
-    ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+    ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                   jdesc_.session_version()));
   }
 
@@ -1263,7 +1264,7 @@ class WebRtcSdpTest : public ::testing::Test {
         kVideoContentName3, TransportDescription(kUfragVideo3, kPwdVideo3)));
     desc_.set_msid_signaling(cricket::kMsidSignalingMediaSection);
 
-    ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+    ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                   jdesc_.session_version()));
   }
 
@@ -1318,7 +1319,7 @@ class WebRtcSdpTest : public ::testing::Test {
     desc_.AddTransportInfo(TransportInfo(
         kAudioContentName3, TransportDescription(kUfragVoice3, kPwdVoice3)));
     desc_.set_msid_signaling(msid_signaling);
-    ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+    ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                   jdesc_.session_version()));
   }
 
@@ -1340,7 +1341,7 @@ class WebRtcSdpTest : public ::testing::Test {
 
     // Enable signaling a=msid lines.
     desc_.set_msid_signaling(cricket::kMsidSignalingMediaSection);
-    ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+    ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                   jdesc_.session_version()));
   }
 
@@ -1724,7 +1725,7 @@ class WebRtcSdpTest : public ::testing::Test {
     std::string new_sdp = kSdpFullString;
     ReplaceDirection(direction, &new_sdp);
 
-    if (!jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+    if (!jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                            jdesc_.session_version())) {
       return false;
     }
@@ -1802,7 +1803,7 @@ class WebRtcSdpTest : public ::testing::Test {
 
     audio_desc_->set_direction(direction);
     video_desc_->set_direction(direction);
-    if (!jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+    if (!jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                            jdesc_.session_version())) {
       return false;
     }
@@ -1829,7 +1830,7 @@ class WebRtcSdpTest : public ::testing::Test {
     SetIceUfragPwd(kVideoContentName, video_rejected ? "" : kUfragVideo,
                    video_rejected ? "" : kPwdVideo);
     JsepSessionDescription jdesc_no_candidates(kDummyType);
-    if (!jdesc_no_candidates.Initialize(desc_.Copy(), jdesc_.session_id(),
+    if (!jdesc_no_candidates.Initialize(desc_.Clone(), jdesc_.session_id(),
                                         jdesc_.session_version())) {
       return false;
     }
@@ -1842,7 +1843,7 @@ class WebRtcSdpTest : public ::testing::Test {
                              bool encrypted) {
     AddExtmap(encrypted);
     JsepSessionDescription new_jdesc(SdpType::kOffer);
-    ASSERT_TRUE(new_jdesc.Initialize(desc_.Copy(), jdesc_.session_id(),
+    ASSERT_TRUE(new_jdesc.Initialize(desc_.Clone(), jdesc_.session_id(),
                                      jdesc_.session_version()));
     JsepSessionDescription jdesc_with_extmap(SdpType::kOffer);
     std::string sdp_with_extmap = kSdpString;
@@ -2035,7 +2036,7 @@ class WebRtcSdpTest : public ::testing::Test {
     rtc::SocketAddress video_addr("0.0.0.0", 9);
     audio_desc_->set_connection_address(audio_addr);
     video_desc_->set_connection_address(video_addr);
-    ASSERT_TRUE(jdesc->Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+    ASSERT_TRUE(jdesc->Initialize(desc_.Clone(), kSessionId, kSessionVersion));
   }
 
  protected:
@@ -2119,7 +2120,7 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithBundle) {
   group.AddContentName(kAudioContentName);
   group.AddContentName(kVideoContentName);
   desc_.AddGroup(group);
-  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                 jdesc_.session_version()));
   std::string message = webrtc::SdpSerialize(jdesc_);
   std::string sdp_with_bundle = kSdpFullString;
@@ -2134,7 +2135,7 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithBandwidth) {
   vcd->set_bandwidth(100 * 1000);
   AudioContentDescription* acd = GetFirstAudioContentDescription(&desc_);
   acd->set_bandwidth(50 * 1000);
-  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                 jdesc_.session_version()));
   std::string message = webrtc::SdpSerialize(jdesc_);
   std::string sdp_with_bandwidth = kSdpFullString;
@@ -2154,7 +2155,7 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithIceOptions) {
   transport_options.push_back(kIceOption2);
   transport_options.push_back(kIceOption3);
   AddIceOptions(kVideoContentName, transport_options);
-  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                 jdesc_.session_version()));
   std::string message = webrtc::SdpSerialize(jdesc_);
   std::string sdp_with_ice_options = kSdpFullString;
@@ -2295,7 +2296,7 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithExtmapEncrypted) {
   AddExtmap(encrypted);
   JsepSessionDescription desc_with_extmap(kDummyType);
   ASSERT_TRUE(
-      desc_with_extmap.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+      desc_with_extmap.Initialize(desc_.Clone(), kSessionId, kSessionVersion));
   TestSerialize(desc_with_extmap);
 }
 
@@ -2356,7 +2357,7 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithH264) {
   h264_codec.SetParam("packetization-mode", "1");
   video_desc_->AddCodec(h264_codec);
 
-  jdesc_.Initialize(desc_.Copy(), kSessionId, kSessionVersion);
+  jdesc_.Initialize(desc_.Clone(), kSessionId, kSessionVersion);
 
   std::string message = webrtc::SdpSerialize(jdesc_);
   size_t after_pt = message.find(" H264/90000");
@@ -2414,7 +2415,7 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithoutCarriageReturn) {
 TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithoutCandidates) {
   // SessionDescription with desc but without candidates.
   JsepSessionDescription jdesc_no_candidates(kDummyType);
-  ASSERT_TRUE(jdesc_no_candidates.Initialize(desc_.Copy(), kSessionId,
+  ASSERT_TRUE(jdesc_no_candidates.Initialize(desc_.Clone(), kSessionId,
                                              kSessionVersion));
   JsepSessionDescription new_jdesc(kDummyType);
   EXPECT_TRUE(SdpDeserialize(kSdpString, &new_jdesc));
@@ -2481,7 +2482,7 @@ TEST_F(WebRtcSdpTest, DeserializeJsepSessionDescriptionWithFingerprint) {
   // Add a DTLS a=fingerprint attribute to our session description.
   AddFingerprint();
   JsepSessionDescription new_jdesc(kDummyType);
-  ASSERT_TRUE(new_jdesc.Initialize(desc_.Copy(), jdesc_.session_id(),
+  ASSERT_TRUE(new_jdesc.Initialize(desc_.Clone(), jdesc_.session_id(),
                                    jdesc_.session_version()));
 
   JsepSessionDescription jdesc_with_fingerprint(kDummyType);
@@ -2503,7 +2504,7 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithBundle) {
   group.AddContentName(kAudioContentName);
   group.AddContentName(kVideoContentName);
   desc_.AddGroup(group);
-  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                 jdesc_.session_version()));
   EXPECT_TRUE(CompareSessionDescription(jdesc_, jdesc_with_bundle));
 }
@@ -2520,7 +2521,7 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithBandwidth) {
   vcd->set_bandwidth(100 * 1000);
   AudioContentDescription* acd = GetFirstAudioContentDescription(&desc_);
   acd->set_bandwidth(50 * 1000);
-  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                 jdesc_.session_version()));
   EXPECT_TRUE(CompareSessionDescription(jdesc_, jdesc_with_bandwidth));
 }
@@ -2543,7 +2544,7 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithIceOptions) {
   transport_options.push_back(kIceOption3);
   transport_options.push_back(kIceOption2);
   AddIceOptions(kVideoContentName, transport_options);
-  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                 jdesc_.session_version()));
   EXPECT_TRUE(CompareSessionDescription(jdesc_, jdesc_with_ice_options));
 }
@@ -2771,7 +2772,7 @@ TEST_F(WebRtcSdpTest, DeserializeInvalidCandidiate) {
 TEST_F(WebRtcSdpTest, DeserializeSdpWithRtpDataChannels) {
   AddRtpDataChannel();
   JsepSessionDescription jdesc(kDummyType);
-  ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+  ASSERT_TRUE(jdesc.Initialize(desc_.Clone(), kSessionId, kSessionVersion));
 
   std::string sdp_with_data = kSdpString;
   sdp_with_data.append(kSdpRtpDataChannelString);
@@ -2787,7 +2788,7 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannels) {
   bool use_sctpmap = true;
   AddSctpDataChannel(use_sctpmap);
   JsepSessionDescription jdesc(kDummyType);
-  ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+  ASSERT_TRUE(jdesc.Initialize(desc_.Clone(), kSessionId, kSessionVersion));
 
   std::string sdp_with_data = kSdpString;
   sdp_with_data.append(kSdpSctpDataChannelString);
@@ -2814,7 +2815,7 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithSctpPort) {
   bool use_sctpmap = false;
   AddSctpDataChannel(use_sctpmap);
   JsepSessionDescription jdesc(kDummyType);
-  ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+  ASSERT_TRUE(jdesc.Initialize(desc_.Clone(), kSessionId, kSessionVersion));
 
   std::string sdp_with_data = kSdpString;
   sdp_with_data.append(kSdpSctpDataChannelStringWithSctpPort);
@@ -2841,7 +2842,7 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithSctpColonPort) {
   bool use_sctpmap = false;
   AddSctpDataChannel(use_sctpmap);
   JsepSessionDescription jdesc(kDummyType);
-  ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+  ASSERT_TRUE(jdesc.Initialize(desc_.Clone(), kSessionId, kSessionVersion));
 
   std::string sdp_with_data = kSdpString;
   sdp_with_data.append(kSdpSctpDataChannelStringWithSctpColonPort);
@@ -2912,7 +2913,7 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithMultiSctpPort) {
   bool use_sctpmap = true;
   AddSctpDataChannel(use_sctpmap);
   JsepSessionDescription jdesc(kDummyType);
-  ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+  ASSERT_TRUE(jdesc.Initialize(desc_.Clone(), kSessionId, kSessionVersion));
 
   std::string sdp_with_data = kSdpString;
   // Append m= attributes
@@ -2939,7 +2940,7 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithCorruptedSctpDataChannels) {
 void MutateJsepSctpPort(JsepSessionDescription* jdesc,
                         const SessionDescription& desc) {
   // take our pre-built session description and change the SCTP port.
-  cricket::SessionDescription* mutant = desc.Copy();
+  std::unique_ptr<cricket::SessionDescription> mutant = desc.Clone();
   DataContentDescription* dcdesc =
       mutant->GetContentDescriptionByName(kDataContentName)->as_data();
   std::vector<cricket::DataCodec> codecs(dcdesc->codecs());
@@ -2948,9 +2949,8 @@ void MutateJsepSctpPort(JsepSessionDescription* jdesc,
   codecs[0].SetParam(cricket::kCodecParamPort, kUnusualSctpPort);
   dcdesc->set_codecs(codecs);
 
-  // note: mutant's owned by jdesc now.
-  ASSERT_TRUE(jdesc->Initialize(mutant, kSessionId, kSessionVersion));
-  mutant = NULL;
+  ASSERT_TRUE(
+      jdesc->Initialize(std::move(mutant), kSessionId, kSessionVersion));
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelAndUnusualPort) {
@@ -3017,7 +3017,7 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsAndBandwidth) {
   JsepSessionDescription jdesc(kDummyType);
   DataContentDescription* dcd = GetFirstDataContentDescription(&desc_);
   dcd->set_bandwidth(100 * 1000);
-  ASSERT_TRUE(jdesc.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+  ASSERT_TRUE(jdesc.Initialize(desc_.Clone(), kSessionId, kSessionVersion));
 
   std::string sdp_with_bandwidth = kSdpString;
   sdp_with_bandwidth.append(kSdpSctpDataChannelString);
@@ -3374,7 +3374,7 @@ TEST_F(WebRtcSdpTest, SerializeAudioFmtpWithUnknownParameter) {
   codecs[0].params["unknown-future-parameter"] = "SomeFutureValue";
   acd->set_codecs(codecs);
 
-  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                 jdesc_.session_version()));
   std::string message = webrtc::SdpSerialize(jdesc_);
   std::string sdp_with_fmtp = kSdpFullString;
@@ -3391,7 +3391,7 @@ TEST_F(WebRtcSdpTest, SerializeAudioFmtpWithKnownFmtpParameter) {
   codecs[0].params["stereo"] = "1";
   acd->set_codecs(codecs);
 
-  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                 jdesc_.session_version()));
   std::string message = webrtc::SdpSerialize(jdesc_);
   std::string sdp_with_fmtp = kSdpFullString;
@@ -3408,7 +3408,7 @@ TEST_F(WebRtcSdpTest, SerializeAudioFmtpWithPTimeAndMaxPTime) {
   codecs[0].params["maxptime"] = "120";
   acd->set_codecs(codecs);
 
-  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                 jdesc_.session_version()));
   std::string message = webrtc::SdpSerialize(jdesc_);
   std::string sdp_with_fmtp = kSdpFullString;
@@ -3426,7 +3426,7 @@ TEST_F(WebRtcSdpTest, SerializeVideoFmtp) {
   codecs[0].params["x-google-min-bitrate"] = "10";
   vcd->set_codecs(codecs);
 
-  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                 jdesc_.session_version()));
   std::string message = webrtc::SdpSerialize(jdesc_);
   std::string sdp_with_fmtp = kSdpFullString;
@@ -3497,7 +3497,7 @@ TEST_F(WebRtcSdpTest, SerializeDtlsSetupAttribute) {
   desc_.AddTransportInfo(audio_transport_info);
   desc_.AddTransportInfo(video_transport_info);
 
-  ASSERT_TRUE(jdesc_.Initialize(desc_.Copy(), jdesc_.session_id(),
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                 jdesc_.session_version()));
   std::string message = webrtc::SdpSerialize(jdesc_);
   std::string sdp_with_dtlssetup = kSdpFullString;
@@ -4098,7 +4098,7 @@ TEST_F(WebRtcSdpTest, SerializeAndDeserializeWithHostnameConnectionAddress) {
   audio_desc_->set_connection_address(hostname_addr);
   video_desc_->set_connection_address(hostname_addr);
   ASSERT_TRUE(
-      expected_jsep.Initialize(desc_.Copy(), kSessionId, kSessionVersion));
+      expected_jsep.Initialize(desc_.Clone(), kSessionId, kSessionVersion));
   // Serialization.
   std::string message = webrtc::SdpSerialize(expected_jsep);
   // Deserialization.
@@ -4464,11 +4464,11 @@ TEST_F(WebRtcSdpTest, ParseMediaTransportIgnoreNonsenseAttributeLines) {
 }
 
 TEST_F(WebRtcSdpTest, SerializeMediaTransportSettings) {
-  cricket::SessionDescription* description = new cricket::SessionDescription();
+  auto description = absl::make_unique<cricket::SessionDescription>();
 
   JsepSessionDescription output(SdpType::kOffer);
   // JsepSessionDescription takes ownership of the description.
-  output.Initialize(description, "session_id", "session_version");
+  output.Initialize(std::move(description), "session_id", "session_version");
   output.description()->AddMediaTransportSetting("foo", "bar");
   std::string serialized_out;
   output.ToString(&serialized_out);
@@ -4478,8 +4478,7 @@ TEST_F(WebRtcSdpTest, SerializeMediaTransportSettings) {
 TEST_F(WebRtcSdpTest, SerializeMediaTransportSettingsTestCopy) {
   cricket::SessionDescription description;
   description.AddMediaTransportSetting("name", "setting");
-  std::unique_ptr<cricket::SessionDescription> copy =
-      absl::WrapUnique(description.Copy());
+  std::unique_ptr<cricket::SessionDescription> copy = description.Clone();
   ASSERT_EQ(1u, copy->MediaTransportSettings().size());
   EXPECT_EQ("name", copy->MediaTransportSettings()[0].transport_name);
   EXPECT_EQ("setting", copy->MediaTransportSettings()[0].transport_setting);

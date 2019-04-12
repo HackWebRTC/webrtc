@@ -998,7 +998,7 @@ bool SdpDeserialize(const std::string& message,
     return false;
   }
 
-  jdesc->Initialize(desc.release(), session_id, session_version);
+  jdesc->Initialize(std::move(desc), session_id, session_version);
 
   for (const auto& candidate : candidates) {
     jdesc->AddCandidate(candidate.get());

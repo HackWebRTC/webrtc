@@ -3191,7 +3191,7 @@ TEST(MediaSessionDescription, CopySessionDescription) {
   vcd->AddLegacyStream(2);
   source.AddContent(cricket::CN_VIDEO, MediaProtocolType::kRtp, vcd);
 
-  std::unique_ptr<SessionDescription> copy(source.Copy());
+  std::unique_ptr<SessionDescription> copy = source.Clone();
   ASSERT_TRUE(copy.get() != NULL);
   EXPECT_TRUE(copy->HasGroup(cricket::CN_AUDIO));
   const ContentInfo* ac = copy->GetContentByName("audio");

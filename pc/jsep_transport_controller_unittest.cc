@@ -2089,13 +2089,13 @@ TEST_F(JsepTransportControllerTest, ChangeTaggedMediaSectionMaxBundle) {
                   .ok());
 
   std::unique_ptr<cricket::SessionDescription> remote_answer(
-      local_offer->Copy());
+      local_offer->Clone());
   EXPECT_TRUE(transport_controller_
                   ->SetRemoteDescription(SdpType::kAnswer, remote_answer.get())
                   .ok());
 
   std::unique_ptr<cricket::SessionDescription> local_reoffer(
-      local_offer->Copy());
+      local_offer->Clone());
   local_reoffer->contents()[0].rejected = true;
   AddVideoSection(local_reoffer.get(), kVideoMid1, kIceUfrag1, kIcePwd1,
                   cricket::ICEMODE_FULL, cricket::CONNECTIONROLE_ACTPASS,
@@ -2110,7 +2110,7 @@ TEST_F(JsepTransportControllerTest, ChangeTaggedMediaSectionMaxBundle) {
                   .ok());
 
   std::unique_ptr<cricket::SessionDescription> remote_reanswer(
-      local_reoffer->Copy());
+      local_reoffer->Clone());
   EXPECT_TRUE(
       transport_controller_
           ->SetRemoteDescription(SdpType::kAnswer, remote_reanswer.get())

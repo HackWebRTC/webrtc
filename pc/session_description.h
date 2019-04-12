@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <iosfwd>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -421,6 +422,8 @@ class SessionDescription {
   SessionDescription();
   ~SessionDescription();
 
+  std::unique_ptr<SessionDescription> Clone() const;
+  // Older API - to be deprecated. Still expects caller to take ownership.
   SessionDescription* Copy() const;
 
   struct MediaTransportSetting;
