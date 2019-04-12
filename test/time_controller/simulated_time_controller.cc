@@ -382,7 +382,7 @@ Timestamp SimulatedTimeControllerImpl::NextRunTime() const {
 
 void SimulatedTimeControllerImpl::AdvanceTime(Timestamp target_time) {
   rtc::CritScope time_lock(&time_lock_);
-  RTC_DCHECK(target_time >= current_time_);
+  RTC_DCHECK_GE(target_time, current_time_);
   current_time_ = target_time;
 }
 

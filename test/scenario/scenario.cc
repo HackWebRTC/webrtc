@@ -312,7 +312,7 @@ void Scenario::Every(TimeDelta interval, std::function<void()> function) {
 }
 
 void Scenario::At(TimeDelta offset, std::function<void()> function) {
-  RTC_DCHECK_GT(offset.ms(), TimeSinceStart().ms());
+  RTC_DCHECK_GT(offset, TimeSinceStart());
   task_queue_.PostDelayedTask(function, TimeUntilTarget(offset).ms());
 }
 

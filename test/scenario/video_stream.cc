@@ -258,7 +258,7 @@ std::unique_ptr<FrameGenerator> CreateImageSlideGenerator(
   if (slides.images.crop.width || slides.images.crop.height) {
     TimeDelta pause_duration =
         slides.change_interval - slides.images.crop.scroll_duration;
-    RTC_CHECK(pause_duration >= TimeDelta::Zero());
+    RTC_CHECK_GE(pause_duration, TimeDelta::Zero());
     int crop_width = slides.images.crop.width.value_or(slides.images.width);
     int crop_height = slides.images.crop.height.value_or(slides.images.height);
     RTC_CHECK_LE(crop_width, slides.images.width);

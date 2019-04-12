@@ -280,7 +280,7 @@ void SendSideBandwidthEstimation::SetBitrates(
 
 void SendSideBandwidthEstimation::SetSendBitrate(DataRate bitrate,
                                                  Timestamp at_time) {
-  RTC_DCHECK(bitrate > DataRate::Zero());
+  RTC_DCHECK_GT(bitrate, DataRate::Zero());
   // Reset to avoid being capped by the estimate.
   delay_based_bitrate_ = DataRate::Zero();
   if (loss_based_bandwidth_estimation_.Enabled()) {

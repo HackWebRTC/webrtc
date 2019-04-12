@@ -265,7 +265,7 @@ class SimulatedClockWithFrames : public SimulatedClock {
     bool frame_injected = false;
     while (!timestamps_.empty() &&
            timestamps_.front().arrive_time <= end_time) {
-      RTC_DCHECK(timestamps_.front().arrive_time >= start_time);
+      RTC_DCHECK_GE(timestamps_.front().arrive_time, start_time);
 
       SimulatedClock::AdvanceTimeMicroseconds(timestamps_.front().arrive_time -
                                               TimeInMicroseconds());
@@ -293,7 +293,7 @@ class SimulatedClockWithFrames : public SimulatedClock {
                  size_t size) {
     int64_t previous_arrive_timestamp = 0;
     for (size_t i = 0; i < size; i++) {
-      RTC_CHECK(arrive_timestamps[i] >= previous_arrive_timestamp);
+      RTC_CHECK_GE(arrive_timestamps[i], previous_arrive_timestamp);
       timestamps_.push(TimestampPair(arrive_timestamps[i] * 1000,
                                      render_timestamps[i] * 1000));
       previous_arrive_timestamp = arrive_timestamps[i];
