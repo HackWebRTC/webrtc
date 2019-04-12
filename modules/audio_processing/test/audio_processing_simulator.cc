@@ -384,8 +384,10 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
   }
   if (settings_.use_pre_amplifier) {
     apm_config.pre_amplifier.enabled = *settings_.use_pre_amplifier;
-    apm_config.pre_amplifier.fixed_gain_factor =
-        settings_.pre_amplifier_gain_factor;
+    if (settings_.pre_amplifier_gain_factor) {
+      apm_config.pre_amplifier.fixed_gain_factor =
+          *settings_.pre_amplifier_gain_factor;
+    }
   }
 
   const bool use_legacy_aec = settings_.use_aec && *settings_.use_aec &&

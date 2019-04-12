@@ -15,7 +15,6 @@
 #include "modules/audio_processing/echo_control_mobile_impl.h"
 #include "modules/audio_processing/test/aec_dump_based_simulator.h"
 #include "modules/audio_processing/test/protobuf_utils.h"
-#include "modules/audio_processing/test/runtime_setting_util.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -448,8 +447,10 @@ void AecDumpBasedSimulator::HandleMessage(
                               ? *settings_.use_pre_amplifier
                               : msg.pre_amplifier_enabled();
       apm_config.pre_amplifier.enabled = enable;
-      apm_config.pre_amplifier.fixed_gain_factor =
-          settings_.pre_amplifier_gain_factor;
+      if (settings_.pre_amplifier_gain_factor) {
+        apm_config.pre_amplifier.fixed_gain_factor =
+            *settings_.pre_amplifier_gain_factor;
+      }
     }
 
     if (settings_.use_verbose_logging && msg.has_experiments_description() &&
@@ -549,7 +550,13 @@ void AecDumpBasedSimulator::HandleMessage(
 void AecDumpBasedSimulator::HandleMessage(
     const webrtc::audioproc::RuntimeSetting& msg) {
   RTC_CHECK(ap_.get());
-  ReplayRuntimeSetting(ap_.get(), msg);
+  // Handle capture pre-gain runtime setting only if not overridden.
+  if ((!settings_.use_pre_amplifier || !(*settings_.use_pre_amplifier)) &&
+      !settings_.pre_amplifier_gain_factor) {
+    ap_->SetRuntimeSetting(
+        AudioProcessing::RuntimeSetting::CreateCapturePreGain(
+            msg.capture_pre_gain()));
+  }
 }
 
 void AecDumpBasedSimulator::MaybeOpenCallOrderFile() {
