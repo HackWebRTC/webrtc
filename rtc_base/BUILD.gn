@@ -825,8 +825,6 @@ rtc_static_library("rtc_base") {
     "ip_address.cc",
     "ip_address.h",
     "keep_ref_until_done.h",
-    "key_derivation.cc",
-    "key_derivation.h",
     "mdns_responder_interface.h",
     "message_digest.cc",
     "message_digest.h",
@@ -855,8 +853,6 @@ rtc_static_library("rtc_base") {
     "openssl_digest.h",
     "openssl_identity.cc",
     "openssl_identity.h",
-    "openssl_key_derivation_hkdf.cc",
-    "openssl_key_derivation_hkdf.h",
     "openssl_session_cache.cc",
     "openssl_session_cache.h",
     "openssl_stream_adapter.cc",
@@ -1363,7 +1359,6 @@ if (rtc_include_tests) {
     if (is_posix || is_fuchsia) {
       sources += [
         "openssl_adapter_unittest.cc",
-        "openssl_key_derivation_hkdf_unittest.cc",
         "openssl_session_cache_unittest.cc",
         "openssl_utility_unittest.cc",
         "ssl_adapter_unittest.cc",
