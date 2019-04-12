@@ -28,6 +28,7 @@
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/rate_control_settings.h"
+#include "rtc_base/logging.h"
 #include "system_wrappers/include/field_trial.h"
 #include "third_party/libyuv/include/libyuv/scale.h"
 
@@ -443,41 +444,54 @@ int SimulcastEncoderAdapter::RegisterEncodeCompleteCallback(
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int SimulcastEncoderAdapter::SetRateAllocation(
-    const VideoBitrateAllocation& bitrate,
-    uint32_t new_framerate) {
+void SimulcastEncoderAdapter::SetRates(
+    const RateControlParameters& parameters) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
 
   if (!Initialized()) {
-    return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
+    RTC_LOG(LS_WARNING) << "SetRates while not initialized";
+    return;
   }
 
-  if (new_framerate < 1) {
-    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  if (parameters.framerate_fps < 1.0) {
+    RTC_LOG(LS_WARNING) << "Invalid framerate: " << parameters.framerate_fps;
+    return;
   }
 
-  if (codec_.maxBitrate > 0 && bitrate.get_sum_kbps() > codec_.maxBitrate) {
-    return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+  if (codec_.maxBitrate > 0 &&
+      parameters.bitrate.get_sum_kbps() > codec_.maxBitrate) {
+    RTC_LOG(LS_WARNING) << "Total bitrate " << parameters.bitrate.get_sum_kbps()
+                        << " exceeds max bitrate: " << codec_.maxBitrate;
+    return;
   }
 
-  if (bitrate.get_sum_bps() > 0) {
+  if (parameters.bitrate.get_sum_bps() > 0) {
     // Make sure the bitrate fits the configured min bitrates. 0 is a special
     // value that means paused, though, so leave it alone.
-    if (bitrate.get_sum_kbps() < codec_.minBitrate) {
-      return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+    if (parameters.bitrate.get_sum_kbps() < codec_.minBitrate) {
+      RTC_LOG(LS_WARNING) << "Total bitrate "
+                          << parameters.bitrate.get_sum_kbps()
+                          << " is lower than minimum bitrate: "
+                          << codec_.minBitrate;
+      return;
     }
 
     if (codec_.numberOfSimulcastStreams > 0 &&
-        bitrate.get_sum_kbps() < codec_.simulcastStream[0].minBitrate) {
-      return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
+        parameters.bitrate.get_sum_kbps() <
+            codec_.simulcastStream[0].minBitrate) {
+      RTC_LOG(LS_WARNING) << "Total bitrate "
+                          << parameters.bitrate.get_sum_kbps()
+                          << " is lower than minimum bitrate of base layer: "
+                          << codec_.simulcastStream[0].minBitrate;
+      return;
     }
   }
 
-  codec_.maxFramerate = new_framerate;
+  codec_.maxFramerate = static_cast<uint32_t>(parameters.framerate_fps + 0.5);
 
   for (size_t stream_idx = 0; stream_idx < streaminfos_.size(); ++stream_idx) {
     uint32_t stream_bitrate_kbps =
-        bitrate.GetSpatialLayerSum(stream_idx) / 1000;
+        parameters.bitrate.GetSpatialLayerSum(stream_idx) / 1000;
 
     // Need a key frame if we have not sent this stream before.
     if (stream_bitrate_kbps > 0 && !streaminfos_[stream_idx].send_stream) {
@@ -487,17 +501,31 @@ int SimulcastEncoderAdapter::SetRateAllocation(
 
     // Slice the temporal layers out of the full allocation and pass it on to
     // the encoder handling the current simulcast stream.
-    VideoBitrateAllocation stream_allocation;
+    RateControlParameters stream_parameters = parameters;
+    stream_parameters.bitrate = VideoBitrateAllocation();
     for (int i = 0; i < kMaxTemporalStreams; ++i) {
-      if (bitrate.HasBitrate(stream_idx, i)) {
-        stream_allocation.SetBitrate(0, i, bitrate.GetBitrate(stream_idx, i));
+      if (parameters.bitrate.HasBitrate(stream_idx, i)) {
+        stream_parameters.bitrate.SetBitrate(
+            0, i, parameters.bitrate.GetBitrate(stream_idx, i));
       }
     }
-    streaminfos_[stream_idx].encoder->SetRateAllocation(stream_allocation,
-                                                        new_framerate);
-  }
 
-  return WEBRTC_VIDEO_CODEC_OK;
+    // Assign link allocation proportionally to spatial layer allocation.
+    if (parameters.bandwidth_allocation != DataRate::Zero()) {
+      stream_parameters.bandwidth_allocation =
+          DataRate::bps((parameters.bandwidth_allocation.bps() *
+                         stream_parameters.bitrate.get_sum_bps()) /
+                        parameters.bitrate.get_sum_bps());
+      // Make sure we don't allocate bandwidth lower than target bitrate.
+      if (stream_parameters.bandwidth_allocation.bps() <
+          stream_parameters.bitrate.get_sum_bps()) {
+        stream_parameters.bandwidth_allocation =
+            DataRate::bps(stream_parameters.bitrate.get_sum_bps());
+      }
+    }
+
+    streaminfos_[stream_idx].encoder->SetRates(stream_parameters);
+  }
 }
 
 // TODO(brandtr): Add task checker to this member function, when all encoder

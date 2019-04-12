@@ -48,6 +48,7 @@ class MockVideoEncoder : public VideoEncoder {
   MOCK_METHOD2(SetRateAllocation,
                int32_t(const VideoBitrateAllocation& newBitRate,
                        uint32_t frameRate));
+  MOCK_METHOD1(SetRates, void(const RateControlParameters& parameters));
   MOCK_CONST_METHOD0(GetEncoderInfo, EncoderInfo(void));
 };
 

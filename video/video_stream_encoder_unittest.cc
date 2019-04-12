@@ -726,24 +726,24 @@ class VideoStreamEncoderTest : public ::testing::Test {
       return FakeEncoder::Release();
     }
 
-    int32_t SetRateAllocation(const VideoBitrateAllocation& rate_allocation,
-                              uint32_t framerate) {
+    void SetRates(const RateControlParameters& parameters) {
       rtc::CritScope lock(&local_crit_sect_);
       VideoBitrateAllocation adjusted_rate_allocation;
       for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
         for (size_t ti = 0; ti < kMaxTemporalStreams; ++ti) {
-          if (rate_allocation.HasBitrate(si, ti)) {
+          if (parameters.bitrate.HasBitrate(si, ti)) {
             adjusted_rate_allocation.SetBitrate(
                 si, ti,
-                static_cast<uint32_t>(rate_allocation.GetBitrate(si, ti) *
+                static_cast<uint32_t>(parameters.bitrate.GetBitrate(si, ti) *
                                       rate_factor_));
           }
         }
       }
-      last_framerate_ = framerate;
-      last_bitrate_allocation_ = rate_allocation;
-      return FakeEncoder::SetRateAllocation(adjusted_rate_allocation,
-                                            framerate);
+      last_framerate_ = static_cast<uint32_t>(parameters.framerate_fps + 0.5);
+      last_bitrate_allocation_ = parameters.bitrate;
+      RateControlParameters adjusted_paramters = parameters;
+      adjusted_paramters.bitrate = adjusted_rate_allocation;
+      FakeEncoder::SetRates(adjusted_paramters);
     }
 
     rtc::CriticalSection local_crit_sect_;

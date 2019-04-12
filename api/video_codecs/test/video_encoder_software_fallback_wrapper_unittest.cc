@@ -114,10 +114,8 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
       return WEBRTC_VIDEO_CODEC_OK;
     }
 
-    int32_t SetRateAllocation(const VideoBitrateAllocation& bitrate_allocation,
-                              uint32_t framerate) override {
+    void SetRates(const RateControlParameters& parameters) override {
       ++set_rates_count_;
-      return WEBRTC_VIDEO_CODEC_OK;
     }
 
     EncoderInfo GetEncoderInfo() const override {
@@ -205,10 +203,8 @@ void VideoEncoderSoftwareFallbackWrapperTest::UtilizeFallbackEncoder() {
   fake_encoder_->init_encode_return_code_ = WEBRTC_VIDEO_CODEC_ERROR;
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             fallback_wrapper_->InitEncode(&codec_, kNumCores, kMaxPayloadSize));
-  EXPECT_EQ(
-      WEBRTC_VIDEO_CODEC_OK,
-      fallback_wrapper_->SetRateAllocation(
-          rate_allocator_->GetAllocation(300000, kFramerate), kFramerate));
+  fallback_wrapper_->SetRates(VideoEncoder::RateControlParameters(
+      rate_allocator_->GetAllocation(300000, kFramerate), kFramerate));
 
   int callback_count = callback_.callback_count_;
   int encode_count = fake_encoder_->encode_count_;
@@ -226,10 +222,8 @@ void VideoEncoderSoftwareFallbackWrapperTest::FallbackFromEncodeRequest() {
   codec_.VP8()->numberOfTemporalLayers = 1;
   rate_allocator_.reset(new SimulcastRateAllocator(codec_));
   fallback_wrapper_->InitEncode(&codec_, 2, kMaxPayloadSize);
-  EXPECT_EQ(
-      WEBRTC_VIDEO_CODEC_OK,
-      fallback_wrapper_->SetRateAllocation(
-          rate_allocator_->GetAllocation(300000, kFramerate), kFramerate));
+  fallback_wrapper_->SetRates(VideoEncoder::RateControlParameters(
+      rate_allocator_->GetAllocation(300000, kFramerate), kFramerate));
   EXPECT_EQ(1, fake_encoder_->init_encode_count_);
 
   // Have the non-fallback encoder request a software fallback.
@@ -302,7 +296,8 @@ TEST_F(VideoEncoderSoftwareFallbackWrapperTest,
        SetRatesForwardedDuringFallback) {
   UtilizeFallbackEncoder();
   EXPECT_EQ(1, fake_encoder_->set_rates_count_);
-  fallback_wrapper_->SetRateAllocation(VideoBitrateAllocation(), 1);
+  fallback_wrapper_->SetRates(
+      VideoEncoder::RateControlParameters(VideoBitrateAllocation(), 1));
   EXPECT_EQ(2, fake_encoder_->set_rates_count_);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_->Release());
 }
@@ -386,10 +381,9 @@ class ForcedFallbackTest : public VideoEncoderSoftwareFallbackWrapperTest {
   }
 
   void SetRateAllocation(uint32_t bitrate_kbps) {
-    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, fallback_wrapper_->SetRateAllocation(
-                                         rate_allocator_->GetAllocation(
-                                             bitrate_kbps * 1000, kFramerate),
-                                         kFramerate));
+    fallback_wrapper_->SetRates(VideoEncoder::RateControlParameters(
+        rate_allocator_->GetAllocation(bitrate_kbps * 1000, kFramerate),
+        kFramerate));
   }
 
   void EncodeFrameAndVerifyLastName(const char* expected_name) {

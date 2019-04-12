@@ -70,9 +70,7 @@ class QualityAnalyzingVideoEncoder : public VideoEncoder,
   int32_t Release() override;
   int32_t Encode(const VideoFrame& frame,
                  const std::vector<VideoFrameType>* frame_types) override;
-  int32_t SetRates(uint32_t bitrate, uint32_t framerate) override;
-  int32_t SetRateAllocation(const VideoBitrateAllocation& allocation,
-                            uint32_t framerate) override;
+  void SetRates(const VideoEncoder::RateControlParameters& parameters) override;
   EncoderInfo GetEncoderInfo() const override;
 
   // Methods of EncodedImageCallback interface.

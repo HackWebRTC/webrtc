@@ -48,8 +48,7 @@ class VP9EncoderImpl : public VP9Encoder {
 
   int RegisterEncodeCompleteCallback(EncodedImageCallback* callback) override;
 
-  int SetRateAllocation(const VideoBitrateAllocation& bitrate_allocation,
-                        uint32_t frame_rate) override;
+  void SetRates(const RateControlParameters& parameters) override;
 
   EncoderInfo GetEncoderInfo() const override;
 

@@ -88,8 +88,7 @@ class VideoEncoderSoftwareFallbackWrapper final : public VideoEncoder {
   int32_t Release() override;
   int32_t Encode(const VideoFrame& frame,
                  const std::vector<VideoFrameType>* frame_types) override;
-  int32_t SetRateAllocation(const VideoBitrateAllocation& bitrate_allocation,
-                            uint32_t framerate) override;
+  void SetRates(const RateControlParameters& parameters) override;
   EncoderInfo GetEncoderInfo() const override;
 
  private:
@@ -122,10 +121,8 @@ class VideoEncoderSoftwareFallbackWrapper final : public VideoEncoder {
   int32_t number_of_cores_;
   size_t max_payload_size_;
 
-  // The last bitrate/framerate set, and a flag for noting they are set.
-  bool rates_set_;
-  VideoBitrateAllocation bitrate_allocation_;
-  uint32_t framerate_;
+  // The last rate control settings, if set.
+  absl::optional<RateControlParameters> rate_control_parameters_;
 
   // The last channel parameters set, and a flag for noting they are set.
   bool channel_parameters_set_;
@@ -147,8 +144,6 @@ VideoEncoderSoftwareFallbackWrapper::VideoEncoderSoftwareFallbackWrapper(
     std::unique_ptr<webrtc::VideoEncoder> hw_encoder)
     : number_of_cores_(0),
       max_payload_size_(0),
-      rates_set_(false),
-      framerate_(0),
       channel_parameters_set_(false),
       packet_loss_(0),
       rtt_(0),
@@ -181,8 +176,8 @@ bool VideoEncoderSoftwareFallbackWrapper::InitFallbackEncoder() {
   // Replay callback, rates, and channel parameters.
   if (callback_)
     fallback_encoder_->RegisterEncodeCompleteCallback(callback_);
-  if (rates_set_)
-    fallback_encoder_->SetRateAllocation(bitrate_allocation_, framerate_);
+  if (rate_control_parameters_)
+    fallback_encoder_->SetRates(*rate_control_parameters_);
 
   // Since we're switching to the fallback encoder, Release the real encoder. It
   // may be re-initialized via InitEncode later, and it will continue to get
@@ -201,7 +196,7 @@ int32_t VideoEncoderSoftwareFallbackWrapper::InitEncode(
   number_of_cores_ = number_of_cores;
   max_payload_size_ = max_payload_size;
   // Clear stored rate/channel parameters.
-  rates_set_ = false;
+  rate_control_parameters_ = absl::nullopt;
   ValidateSettingsForForcedFallback();
 
   // Try to reinit forced software codec if it is in use.
@@ -264,16 +259,12 @@ int32_t VideoEncoderSoftwareFallbackWrapper::Encode(
   return ret;
 }
 
-int32_t VideoEncoderSoftwareFallbackWrapper::SetRateAllocation(
-    const VideoBitrateAllocation& bitrate_allocation,
-    uint32_t framerate) {
-  rates_set_ = true;
-  bitrate_allocation_ = bitrate_allocation;
-  framerate_ = framerate;
-  int32_t ret = encoder_->SetRateAllocation(bitrate_allocation_, framerate);
+void VideoEncoderSoftwareFallbackWrapper::SetRates(
+    const RateControlParameters& parameters) {
+  rate_control_parameters_ = parameters;
+  encoder_->SetRates(parameters);
   if (use_fallback_encoder_)
-    return fallback_encoder_->SetRateAllocation(bitrate_allocation_, framerate);
-  return ret;
+    fallback_encoder_->SetRates(parameters);
 }
 
 VideoEncoder::EncoderInfo VideoEncoderSoftwareFallbackWrapper::GetEncoderInfo()

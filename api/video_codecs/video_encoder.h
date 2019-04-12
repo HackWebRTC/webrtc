@@ -196,6 +196,8 @@ class RTC_EXPORT VideoEncoder {
   struct RateControlParameters {
     RateControlParameters();
     RateControlParameters(const VideoBitrateAllocation& bitrate,
+                          double framerate_fps);
+    RateControlParameters(const VideoBitrateAllocation& bitrate,
                           double framerate_fps,
                           DataRate bandwidth_allocation);
     virtual ~RateControlParameters();
