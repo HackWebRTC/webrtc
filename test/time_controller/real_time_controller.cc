@@ -9,19 +9,20 @@
  */
 #include "test/time_controller/real_time_controller.h"
 
-#include "api/task_queue/global_task_queue_factory.h"
-#include "rtc_base/event.h"
-#include "rtc_base/task_utils/to_queued_task.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "system_wrappers/include/sleep.h"
 
 namespace webrtc {
+
+RealTimeController::RealTimeController()
+    : task_queue_factory_(CreateDefaultTaskQueueFactory()) {}
 
 Clock* RealTimeController::GetClock() {
   return Clock::GetRealTimeClock();
 }
 
 TaskQueueFactory* RealTimeController::GetTaskQueueFactory() {
-  return &GlobalTaskQueueFactory();
+  return task_queue_factory_.get();
 }
 
 std::unique_ptr<ProcessThread> RealTimeController::CreateProcessThread(

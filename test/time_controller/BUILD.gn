@@ -21,7 +21,7 @@ if (rtc_include_tests) {
 
     deps = [
       "../../api/task_queue",
-      "../../api/task_queue:global_task_queue_factory",
+      "../../api/task_queue:default_task_queue_factory",
       "../../api/units:time_delta",
       "../../api/units:timestamp",
       "../../modules:module_api",
