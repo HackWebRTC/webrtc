@@ -81,14 +81,4 @@ const char* RtpTransceiverDirectionToString(RtpTransceiverDirection direction) {
   return "";
 }
 
-RtpTransceiverDirection RtpTransceiverDirectionIntersection(
-    RtpTransceiverDirection lhs,
-    RtpTransceiverDirection rhs) {
-  return RtpTransceiverDirectionFromSendRecv(
-      RtpTransceiverDirectionHasSend(lhs) &&
-          RtpTransceiverDirectionHasSend(rhs),
-      RtpTransceiverDirectionHasRecv(lhs) &&
-          RtpTransceiverDirectionHasRecv(rhs));
-}
-
 }  // namespace webrtc

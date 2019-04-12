@@ -814,6 +814,8 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
     auto sender_or_error =
         pc_->AddTrack(CreateVideoTrack(track_label), stream_ids);
     ASSERT_EQ(RTCErrorType::NONE, sender_or_error.error().type());
+    EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
+    observer_.renegotiation_needed_ = false;
   }
 
   void AddVideoStream(const std::string& label) {
@@ -821,6 +823,8 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
         pc_factory_->CreateLocalMediaStream(label));
     stream->AddTrack(CreateVideoTrack(label + "v0"));
     ASSERT_TRUE(pc_->AddStream(stream));
+    EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
+    observer_.renegotiation_needed_ = false;
   }
 
   rtc::scoped_refptr<AudioTrackInterface> CreateAudioTrack(
@@ -833,6 +837,8 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
     auto sender_or_error =
         pc_->AddTrack(CreateAudioTrack(track_label), stream_ids);
     ASSERT_EQ(RTCErrorType::NONE, sender_or_error.error().type());
+    EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
+    observer_.renegotiation_needed_ = false;
   }
 
   void AddAudioStream(const std::string& label) {
@@ -840,6 +846,8 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
         pc_factory_->CreateLocalMediaStream(label));
     stream->AddTrack(CreateAudioTrack(label + "a0"));
     ASSERT_TRUE(pc_->AddStream(stream));
+    EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
+    observer_.renegotiation_needed_ = false;
   }
 
   void AddAudioVideoStream(const std::string& stream_id,
@@ -851,6 +859,8 @@ class PeerConnectionInterfaceBaseTest : public ::testing::Test {
     stream->AddTrack(CreateAudioTrack(audio_track_label));
     stream->AddTrack(CreateVideoTrack(video_track_label));
     ASSERT_TRUE(pc_->AddStream(stream));
+    EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
+    observer_.renegotiation_needed_ = false;
   }
 
   rtc::scoped_refptr<RtpReceiverInterface> GetFirstReceiverOfType(
@@ -2194,12 +2204,9 @@ TEST_P(PeerConnectionInterfaceTest, RenegotiationNeededForNewRtpDataChannel) {
   EXPECT_TRUE(observer_.renegotiation_needed_);
   observer_.renegotiation_needed_ = false;
 
-  CreateOfferReceiveAnswer();
-
   rtc::scoped_refptr<DataChannelInterface> dc2 =
       pc_->CreateDataChannel("test2", NULL);
-  EXPECT_EQ(observer_.renegotiation_needed_,
-            GetParam() == SdpSemantics::kPlanB);
+  EXPECT_TRUE(observer_.renegotiation_needed_);
 }
 
 // This test that a data channel closes when a PeerConnection is deleted/closed.
@@ -3887,17 +3894,14 @@ TEST_F(PeerConnectionInterfaceTestPlanB,
   EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
   observer_.renegotiation_needed_ = false;
 
-  CreateOfferReceiveAnswer();
   stream->AddTrack(video_track);
   EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
   observer_.renegotiation_needed_ = false;
 
-  CreateOfferReceiveAnswer();
   stream->RemoveTrack(audio_track);
   EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
   observer_.renegotiation_needed_ = false;
 
-  CreateOfferReceiveAnswer();
   stream->RemoveTrack(video_track);
   EXPECT_TRUE_WAIT(observer_.renegotiation_needed_, kTimeout);
   observer_.renegotiation_needed_ = false;
