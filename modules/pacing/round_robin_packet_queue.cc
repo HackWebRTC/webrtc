@@ -69,22 +69,22 @@ void RoundRobinPacketQueue::Push(const Packet& packet_to_insert) {
     stream_info_it->second.ssrc = packet.ssrc;
   }
 
-  Stream* streams_ = &stream_info_it->second;
+  Stream* stream = &stream_info_it->second;
 
-  if (streams_->priority_it == stream_priorities_.end()) {
+  if (stream->priority_it == stream_priorities_.end()) {
     // If the SSRC is not currently scheduled, add it to |stream_priorities_|.
-    RTC_CHECK(!IsSsrcScheduled(streams_->ssrc));
-    streams_->priority_it = stream_priorities_.emplace(
-        StreamPrioKey(packet.priority, streams_->bytes), packet.ssrc);
-  } else if (packet.priority < streams_->priority_it->first.priority) {
+    RTC_CHECK(!IsSsrcScheduled(stream->ssrc));
+    stream->priority_it = stream_priorities_.emplace(
+        StreamPrioKey(packet.priority, stream->bytes), packet.ssrc);
+  } else if (packet.priority < stream->priority_it->first.priority) {
     // If the priority of this SSRC increased, remove the outdated StreamPrioKey
     // and insert a new one with the new priority. Note that
     // RtpPacketSender::Priority uses lower ordinal for higher priority.
-    stream_priorities_.erase(streams_->priority_it);
-    streams_->priority_it = stream_priorities_.emplace(
-        StreamPrioKey(packet.priority, streams_->bytes), packet.ssrc);
+    stream_priorities_.erase(stream->priority_it);
+    stream->priority_it = stream_priorities_.emplace(
+        StreamPrioKey(packet.priority, stream->bytes), packet.ssrc);
   }
-  RTC_CHECK(streams_->priority_it != stream_priorities_.end());
+  RTC_CHECK(stream->priority_it != stream_priorities_.end());
 
   packet.enqueue_time_it = enqueue_times_.insert(packet.enqueue_time_ms);
 
@@ -96,7 +96,7 @@ void RoundRobinPacketQueue::Push(const Packet& packet_to_insert) {
   // in a paused state.
   UpdateQueueTime(packet.enqueue_time_ms);
   packet.enqueue_time_ms -= pause_time_sum_ms_;
-  streams_->packet_queue.push(packet);
+  stream->packet_queue.push(packet);
 
   size_packets_ += 1;
   size_bytes_ += packet.bytes;
