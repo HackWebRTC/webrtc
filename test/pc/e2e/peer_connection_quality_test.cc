@@ -234,6 +234,9 @@ void PeerConnectionE2EQualityTest::Run(
   signaling_thread->SetName(kSignalThreadName, nullptr);
   signaling_thread->Start();
 
+  // Create a |task_queue_|.
+  task_queue_ = absl::make_unique<TaskQueueForTest>("pc_e2e_quality_test");
+
   // Create call participants: Alice and Bob.
   // Audio streams are intercepted in AudioDeviceModule, so if it is required to
   // catch output of Alice's stream, Alice's output_dump_file_name should be
@@ -259,7 +262,7 @@ void PeerConnectionE2EQualityTest::Run(
           [this]() { StartVideo(alice_video_sources_); }),
       video_quality_analyzer_injection_helper_.get(), signaling_thread.get(),
       alice_audio_output_dump_file_name,
-      run_params.video_encoder_bitrate_multiplier);
+      run_params.video_encoder_bitrate_multiplier, task_queue_.get());
   bob_ = TestPeer::CreateTestPeer(
       std::move(bob_components), std::move(bob_params),
       absl::make_unique<FixturePeerConnectionObserver>(
@@ -270,7 +273,7 @@ void PeerConnectionE2EQualityTest::Run(
           [this]() { StartVideo(bob_video_sources_); }),
       video_quality_analyzer_injection_helper_.get(), signaling_thread.get(),
       bob_audio_output_dump_file_name,
-      run_params.video_encoder_bitrate_multiplier);
+      run_params.video_encoder_bitrate_multiplier, task_queue_.get());
 
   int num_cores = CpuInfo::DetectNumberOfCores();
   RTC_DCHECK_GE(num_cores, 1);
@@ -302,8 +305,6 @@ void PeerConnectionE2EQualityTest::Run(
                                  webrtc::RtcEventLog::kImmediateOutput);
   }
 
-  // Create a |task_queue_|.
-  task_queue_ = absl::make_unique<TaskQueueForTest>("pc_e2e_quality_test");
   // Setup call.
   signaling_thread->Invoke<void>(
       RTC_FROM_HERE,
@@ -345,6 +346,10 @@ void PeerConnectionE2EQualityTest::Run(
   RTC_CHECK(no_timeout) << "Failed to stop Stats polling after "
                         << kStatsPollingStopTimeout.seconds() << " seconds.";
 
+  // We need to detach AEC dumping from peers, because dump uses |task_queue_|
+  // inside.
+  alice_->DetachAecDump();
+  bob_->DetachAecDump();
   // Destroy |task_queue_|. It is done to stop all running tasks and prevent
   // their access to any call related objects after these objects will be
   // destroyed during call tear down.
@@ -449,7 +454,9 @@ void PeerConnectionE2EQualityTest::ValidateParams(const RunParams& run_params,
       if (p->audio_config.value().mode == AudioConfig::Mode::kFile) {
         RTC_CHECK(p->audio_config.value().input_file_name);
         RTC_CHECK(
-            test::FileExists(p->audio_config.value().input_file_name.value()));
+            test::FileExists(p->audio_config.value().input_file_name.value()))
+            << p->audio_config.value().input_file_name.value()
+            << " doesn't exist";
       }
     }
   }

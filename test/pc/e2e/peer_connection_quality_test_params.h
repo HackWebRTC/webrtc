@@ -104,6 +104,9 @@ struct Params {
   // If |rtc_event_log_path| is set, an RTCEventLog will be saved in that
   // location and it will be available for further analysis.
   absl::optional<std::string> rtc_event_log_path;
+  // If |aec_dump_path| is set, an AEC dump will be saved in that location and
+  // it will be available for further analysis.
+  absl::optional<std::string> aec_dump_path;
 
   PeerConnectionInterface::RTCConfiguration rtc_configuration;
 };

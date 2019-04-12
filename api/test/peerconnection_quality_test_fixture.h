@@ -167,6 +167,9 @@ class PeerConnectionE2EQualityTestFixture {
     // If is set, an RTCEventLog will be saved in that location and it will be
     // available for further analysis.
     virtual PeerConfigurer* SetRtcEventLogPath(std::string path) = 0;
+    // If is set, an AEC dump will be saved in that location and it will be
+    // available for further analysis.
+    virtual PeerConfigurer* SetAecDumpPath(std::string path) = 0;
     virtual PeerConfigurer* SetRTCConfiguration(
         PeerConnectionInterface::RTCConfiguration configuration) = 0;
   };

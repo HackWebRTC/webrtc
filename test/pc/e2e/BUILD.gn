@@ -208,11 +208,13 @@ if (rtc_include_tests) {
       "../../../modules/audio_device:audio_device_api",
       "../../../modules/audio_device:audio_device_impl",
       "../../../modules/audio_processing:api",
+      "../../../modules/audio_processing/aec_dump:aec_dump",
       "../../../p2p:rtc_p2p",
       "../../../pc:pc_test_utils",
       "../../../pc:peerconnection_wrapper",
       "../../../rtc_base",
       "../../../rtc_base:rtc_base_approved",
+      "../../../rtc_base:rtc_task_queue",
       "../../../test:copy_to_file_audio_capturer",
       "../../../test:video_test_common",
       "//third_party/abseil-cpp/absl/memory",
@@ -286,6 +288,20 @@ if (rtc_include_tests) {
     ]
   }
 
+  peer_connection_e2e_smoke_test_resources = [
+    "../../../resources/pc_quality_smoke_test_alice_source.wav",
+    "../../../resources/pc_quality_smoke_test_bob_source.wav",
+  ]
+  if (is_ios) {
+    bundle_data("peer_connection_e2e_smoke_test_resources_bundle_data") {
+      testonly = true
+      sources = peer_connection_e2e_smoke_test_resources
+      outputs = [
+        "{{bundle_resources_dir}}/{{source_file_part}}",
+      ]
+    }
+  }
+
   rtc_source_set("peer_connection_e2e_smoke_test") {
     testonly = true
     sources = [
@@ -321,6 +337,10 @@ if (rtc_include_tests) {
       "../../../test:test_support",
       "//third_party/abseil-cpp/absl/memory",
     ]
+    data = peer_connection_e2e_smoke_test_resources
+    if (is_ios) {
+      deps += [ ":peer_connection_e2e_smoke_test_resources_bundle_data" ]
+    }
   }
 
   rtc_source_set("stats_poller") {

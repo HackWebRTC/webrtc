@@ -85,6 +85,9 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
                      alice->AddVideoConfig(std::move(video_config));
                      AudioConfig audio_config;
                      audio_config.stream_label = "alice-audio";
+                     audio_config.mode = AudioConfig::Mode::kFile;
+                     audio_config.input_file_name = test::ResourcePath(
+                         "pc_quality_smoke_test_alice_source", "wav");
                      alice->SetAudioConfig(std::move(audio_config));
                    });
 
@@ -98,10 +101,13 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
                      bob->AddVideoConfig(std::move(video_config));
                      AudioConfig audio_config;
                      audio_config.stream_label = "bob-audio";
+                     audio_config.mode = AudioConfig::Mode::kFile;
+                     audio_config.input_file_name = test::ResourcePath(
+                         "pc_quality_smoke_test_bob_source", "wav");
                      bob->SetAudioConfig(std::move(audio_config));
                    });
 
-  RunParams run_params(TimeDelta::seconds(5));
+  RunParams run_params(TimeDelta::seconds(7));
   run_params.video_encoder_bitrate_multiplier = 1.1;
   fixture->Run(run_params);
 

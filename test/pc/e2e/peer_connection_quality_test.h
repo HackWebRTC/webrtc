@@ -123,6 +123,10 @@ class PeerConfigurerImpl final
     params_->rtc_event_log_path = std::move(path);
     return this;
   }
+  PeerConfigurer* SetAecDumpPath(std::string path) override {
+    params_->aec_dump_path = std::move(path);
+    return this;
+  }
   PeerConfigurer* SetRTCConfiguration(
       PeerConnectionInterface::RTCConfiguration configuration) override {
     params_->rtc_configuration = std::move(configuration);

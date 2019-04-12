@@ -22,6 +22,7 @@
 #include "pc/peer_connection_wrapper.h"
 #include "pc/test/mock_peer_connection_observers.h"
 #include "rtc_base/network.h"
+#include "rtc_base/task_queue.h"
 #include "rtc_base/thread.h"
 #include "test/pc/e2e/analyzer/video/video_quality_analyzer_injection_helper.h"
 #include "test/pc/e2e/peer_connection_quality_test_params.h"
@@ -54,9 +55,11 @@ class TestPeer final : public PeerConnectionWrapper {
       VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
       rtc::Thread* signaling_thread,
       absl::optional<std::string> audio_output_file_name,
-      double bitrate_multiplier);
+      double bitrate_multiplier,
+      rtc::TaskQueue* task_queue);
 
   Params* params() const { return params_.get(); }
+  void DetachAecDump() { audio_processing_->DetachAecDump(); }
 
   // Adds provided |candidates| to the owned peer connection.
   bool AddIceCandidates(
@@ -66,9 +69,11 @@ class TestPeer final : public PeerConnectionWrapper {
   TestPeer(rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory,
            rtc::scoped_refptr<PeerConnectionInterface> pc,
            std::unique_ptr<MockPeerConnectionObserver> observer,
-           std::unique_ptr<Params> params);
+           std::unique_ptr<Params> params,
+           rtc::scoped_refptr<AudioProcessing> audio_processing);
 
   std::unique_ptr<Params> params_;
+  rtc::scoped_refptr<AudioProcessing> audio_processing_;
 };
 
 }  // namespace webrtc_pc_e2e
