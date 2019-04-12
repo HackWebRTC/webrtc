@@ -155,6 +155,8 @@ const int RTT_RATIO = 3;  // 3 : 1
 // it to a little higher than a total STUN timeout.
 const int kPortTimeoutDelay = cricket::STUN_TOTAL_TIMEOUT + 5000;
 
+constexpr int64_t kMinExtraPingDelayMs = 100;
+
 }  // namespace
 
 namespace cricket {
@@ -1331,8 +1333,26 @@ void Connection::HandleBindingRequest(IceMessage* msg) {
   ReceivedPing();
   if (webrtc::field_trial::IsEnabled("WebRTC-ExtraICEPing") &&
       last_ping_response_received_ == 0) {
-    RTC_LOG(LS_INFO) << ToString() << "WebRTC-ExtraICEPing/Sending extra ping";
-    Ping(rtc::TimeMillis());
+    if (local_candidate().type() == RELAY_PORT_TYPE ||
+        local_candidate().type() == PRFLX_PORT_TYPE ||
+        remote_candidate().type() == RELAY_PORT_TYPE ||
+        remote_candidate().type() == PRFLX_PORT_TYPE) {
+      const int64_t now = rtc::TimeMillis();
+      if (last_ping_sent_ + kMinExtraPingDelayMs <= now) {
+        RTC_LOG(LS_INFO) << ToString()
+                         << "WebRTC-ExtraICEPing/Sending extra ping"
+                         << " last_ping_sent_: " << last_ping_sent_
+                         << " now: " << now
+                         << " (diff: " << (now - last_ping_sent_) << ")";
+        Ping(now);
+      } else {
+        RTC_LOG(LS_INFO) << ToString()
+                         << "WebRTC-ExtraICEPing/Not sending extra ping"
+                         << " last_ping_sent_: " << last_ping_sent_
+                         << " now: " << now
+                         << " (diff: " << (now - last_ping_sent_) << ")";
+      }
+    }
   }
 
   const rtc::SocketAddress& remote_addr = remote_candidate_.address();
