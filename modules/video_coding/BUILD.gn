@@ -675,6 +675,7 @@ if (rtc_include_tests) {
     deps = [
       "../../api:videocodec_test_fixture_api",
       "../../rtc_base:checks",
+      "../../rtc_base:rtc_numerics",
       "../../test:test_common",
       "../rtp_rtcp:rtp_rtcp_format",
     ]

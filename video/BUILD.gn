@@ -274,6 +274,7 @@ if (rtc_include_tests) {
       "../modules/video_coding:webrtc_vp9",
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_base_tests_utils",
+      "../rtc_base:rtc_numerics",
       "../system_wrappers",
       "../test:fake_video_codecs",
       "../test:fileutils",

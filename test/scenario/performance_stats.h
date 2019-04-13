@@ -14,7 +14,7 @@
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "api/video/video_frame_buffer.h"
-#include "test/statistics.h"
+#include "rtc_base/numerics/running_statistics.h"
 
 namespace webrtc {
 namespace test {
@@ -39,9 +39,9 @@ struct VideoQualityStats {
   int captures_count = 0;
   int valid_count = 0;
   int lost_count = 0;
-  Statistics end_to_end_seconds;
-  Statistics frame_size;
-  Statistics psnr;
+  RunningStatistics<double> end_to_end_seconds;
+  RunningStatistics<int> frame_size;
+  RunningStatistics<double> psnr;
 };
 
 }  // namespace test

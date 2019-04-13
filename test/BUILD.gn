@@ -674,8 +674,6 @@ rtc_source_set("test_common") {
     "null_transport.cc",
     "null_transport.h",
     "rtp_rtcp_observer.h",
-    "statistics.cc",
-    "statistics.h",
     "video_decoder_proxy_factory.h",
     "video_encoder_proxy_factory.h",
   ]
@@ -742,6 +740,7 @@ rtc_source_set("test_common") {
     "../modules/video_coding:webrtc_vp9",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base:rtc_numerics",
     "../system_wrappers",
     "../system_wrappers:field_trial",
     "../video",

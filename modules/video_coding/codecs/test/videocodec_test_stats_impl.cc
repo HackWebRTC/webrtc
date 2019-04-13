@@ -18,7 +18,7 @@
 
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/checks.h"
-#include "test/statistics.h"
+#include "rtc_base/numerics/running_statistics.h"
 
 namespace webrtc {
 namespace test {
@@ -187,20 +187,20 @@ VideoStatistics VideoCodecTestStatsImpl::SliceAndCalcVideoStatistic(
   VideoStatistics video_stat;
 
   float buffer_level_bits = 0.0f;
-  Statistics buffer_level_sec;
+  RunningStatistics<float> buffer_level_sec;
 
-  Statistics key_frame_size_bytes;
-  Statistics delta_frame_size_bytes;
+  RunningStatistics<size_t> key_frame_size_bytes;
+  RunningStatistics<size_t> delta_frame_size_bytes;
 
-  Statistics frame_encoding_time_us;
-  Statistics frame_decoding_time_us;
+  RunningStatistics<size_t> frame_encoding_time_us;
+  RunningStatistics<size_t> frame_decoding_time_us;
 
-  Statistics psnr_y;
-  Statistics psnr_u;
-  Statistics psnr_v;
-  Statistics psnr;
-  Statistics ssim;
-  Statistics qp;
+  RunningStatistics<float> psnr_y;
+  RunningStatistics<float> psnr_u;
+  RunningStatistics<float> psnr_v;
+  RunningStatistics<float> psnr;
+  RunningStatistics<float> ssim;
+  RunningStatistics<int> qp;
 
   size_t rtp_timestamp_first_frame = 0;
   size_t rtp_timestamp_prev_frame = 0;
@@ -326,32 +326,41 @@ VideoStatistics VideoCodecTestStatsImpl::SliceAndCalcVideoStatistic(
   // http://bugs.webrtc.org/10400: On Windows, we only get millisecond
   // granularity in the frame encode/decode timing measurements.
   // So we need to softly avoid a div-by-zero here.
-  const float mean_encode_time_us = frame_encoding_time_us.Mean();
+  const float mean_encode_time_us =
+      frame_encoding_time_us.GetMean().value_or(0);
   video_stat.enc_speed_fps = mean_encode_time_us > 0.0f
                                  ? 1000000.0f / mean_encode_time_us
                                  : std::numeric_limits<float>::max();
-  const float mean_decode_time_us = frame_decoding_time_us.Mean();
+  const float mean_decode_time_us =
+      frame_decoding_time_us.GetMean().value_or(0);
   video_stat.dec_speed_fps = mean_decode_time_us > 0.0f
                                  ? 1000000.0f / mean_decode_time_us
                                  : std::numeric_limits<float>::max();
 
-  video_stat.avg_delay_sec = buffer_level_sec.Mean();
-  video_stat.max_key_frame_delay_sec =
-      8 * key_frame_size_bytes.Max() / 1000 / target_bitrate_kbps;
-  video_stat.max_delta_frame_delay_sec =
-      8 * delta_frame_size_bytes.Max() / 1000 / target_bitrate_kbps;
+  auto MaxDelaySec =
+      [target_bitrate_kbps](const RunningStatistics<size_t>& stats) {
+        return 8 * stats.GetMax().value_or(0) / 1000 / target_bitrate_kbps;
+      };
 
-  video_stat.avg_key_frame_size_bytes = key_frame_size_bytes.Mean();
-  video_stat.avg_delta_frame_size_bytes = delta_frame_size_bytes.Mean();
-  video_stat.avg_qp = qp.Mean();
+  video_stat.avg_delay_sec = buffer_level_sec.GetMean().value_or(0);
+  video_stat.max_key_frame_delay_sec = MaxDelaySec(key_frame_size_bytes);
+  video_stat.max_delta_frame_delay_sec = MaxDelaySec(key_frame_size_bytes);
 
-  video_stat.avg_psnr_y = psnr_y.Mean();
-  video_stat.avg_psnr_u = psnr_u.Mean();
-  video_stat.avg_psnr_v = psnr_v.Mean();
-  video_stat.avg_psnr = psnr.Mean();
-  video_stat.min_psnr = psnr.Min();
-  video_stat.avg_ssim = ssim.Mean();
-  video_stat.min_ssim = ssim.Min();
+  video_stat.avg_key_frame_size_bytes =
+      key_frame_size_bytes.GetMean().value_or(0);
+  video_stat.avg_delta_frame_size_bytes =
+      delta_frame_size_bytes.GetMean().value_or(0);
+  video_stat.avg_qp = qp.GetMean().value_or(0);
+
+  video_stat.avg_psnr_y = psnr_y.GetMean().value_or(0);
+  video_stat.avg_psnr_u = psnr_u.GetMean().value_or(0);
+  video_stat.avg_psnr_v = psnr_v.GetMean().value_or(0);
+  video_stat.avg_psnr = psnr.GetMean().value_or(0);
+  video_stat.min_psnr =
+      psnr.GetMin().value_or(std::numeric_limits<float>::max());
+  video_stat.avg_ssim = ssim.GetMean().value_or(0);
+  video_stat.min_ssim =
+      ssim.GetMin().value_or(std::numeric_limits<float>::max());
 
   return video_stat;
 }

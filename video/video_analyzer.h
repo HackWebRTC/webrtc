@@ -17,10 +17,10 @@
 #include <vector>
 
 #include "api/video/video_source_interface.h"
+#include "rtc_base/numerics/running_statistics.h"
 #include "rtc_base/time_utils.h"
 #include "test/layer_filtering_transport.h"
 #include "test/rtp_file_writer.h"
-#include "test/statistics.h"
 
 namespace webrtc {
 
@@ -28,6 +28,8 @@ class VideoAnalyzer : public PacketReceiver,
                       public Transport,
                       public rtc::VideoSinkInterface<VideoFrame> {
  public:
+  using Statistics = RunningStatistics<double>;
+
   VideoAnalyzer(test::LayerFilteringTransport* transport,
                 const std::string& test_label,
                 double avg_psnr_threshold,
@@ -190,9 +192,7 @@ class VideoAnalyzer : public PacketReceiver,
   bool FrameProcessed();
   void PrintResults();
   void PerformFrameComparison(const FrameComparison& comparison);
-  void PrintResult(const char* result_type,
-                   test::Statistics stats,
-                   const char* unit);
+  void PrintResult(const char* result_type, Statistics stats, const char* unit);
   void PrintSamplesToFile(void);
   double GetAverageMediaBitrateBps();
   void AddCapturedFrameForComparison(const VideoFrame& video_frame);
@@ -213,28 +213,28 @@ class VideoAnalyzer : public PacketReceiver,
 
   rtc::CriticalSection comparison_lock_;
   std::vector<Sample> samples_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics sender_time_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics receiver_time_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics network_time_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics psnr_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics ssim_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics end_to_end_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics rendered_delta_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics encoded_frame_size_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics encode_frame_rate_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics encode_time_ms_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics encode_usage_percent_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics decode_time_ms_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics decode_time_max_ms_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics media_bitrate_bps_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics fec_bitrate_bps_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics send_bandwidth_bps_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics memory_usage_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics time_between_freezes_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics audio_expand_rate_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics audio_accelerate_rate_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics audio_jitter_buffer_ms_ RTC_GUARDED_BY(comparison_lock_);
-  test::Statistics pixels_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics sender_time_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics receiver_time_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics network_time_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics psnr_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics ssim_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics end_to_end_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics rendered_delta_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics encoded_frame_size_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics encode_frame_rate_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics encode_time_ms_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics encode_usage_percent_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics decode_time_ms_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics decode_time_max_ms_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics media_bitrate_bps_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics fec_bitrate_bps_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics send_bandwidth_bps_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics memory_usage_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics time_between_freezes_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics audio_expand_rate_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics audio_accelerate_rate_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics audio_jitter_buffer_ms_ RTC_GUARDED_BY(comparison_lock_);
+  Statistics pixels_ RTC_GUARDED_BY(comparison_lock_);
   // Rendered frame with worst PSNR is saved for further analysis.
   absl::optional<FrameWithPsnr> worst_frame_ RTC_GUARDED_BY(comparison_lock_);
 

@@ -652,8 +652,8 @@ void VideoAnalyzer::PrintResults() {
   //  Disable quality check for quick test, as quality checks may fail
   //  because too few samples were collected.
   if (!is_quick_test_enabled_) {
-    EXPECT_GT(psnr_.Mean(), avg_psnr_threshold_);
-    EXPECT_GT(ssim_.Mean(), avg_ssim_threshold_);
+    EXPECT_GT(*psnr_.GetMean(), avg_psnr_threshold_);
+    EXPECT_GT(*ssim_.GetMean(), avg_ssim_threshold_);
   }
 }
 
@@ -727,11 +727,11 @@ void VideoAnalyzer::PerformFrameComparison(
 }
 
 void VideoAnalyzer::PrintResult(const char* result_type,
-                                test::Statistics stats,
+                                Statistics stats,
                                 const char* unit) {
-  test::PrintResultMeanAndError(result_type, "", test_label_.c_str(),
-                                stats.Mean(), stats.StandardDeviation(), unit,
-                                false);
+  test::PrintResultMeanAndError(
+      result_type, "", test_label_.c_str(), stats.GetMean().value_or(0),
+      stats.GetStandardDeviation().value_or(0), unit, false);
 }
 
 void VideoAnalyzer::PrintSamplesToFile() {
