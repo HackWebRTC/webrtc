@@ -63,14 +63,12 @@ class ResidualEchoEstimator {
   // gain.
   void NonLinearEstimate(float echo_path_gain,
                          const std::array<float, kFftLengthBy2Plus1>& X2,
-                         const std::array<float, kFftLengthBy2Plus1>& Y2,
                          std::array<float, kFftLengthBy2Plus1>* R2);
 
   // Estimates the echo generating signal power as gated maximal power over a
   // time window.
   void EchoGeneratingPower(const VectorBuffer& spectrum_buffer,
                            const EchoCanceller3Config::EchoModel& echo_model,
-                           int headroom_spectrum_buffer,
                            int filter_delay_blocks,
                            bool apply_noise_gating,
                            std::array<float, kFftLengthBy2Plus1>* X2) const;
@@ -83,8 +81,6 @@ class ResidualEchoEstimator {
       std::array<int, kFftLengthBy2Plus1>* X2_noise_floor_counter) const;
 
   const EchoCanceller3Config config_;
-  std::array<float, kFftLengthBy2Plus1> R2_old_;
-  std::array<int, kFftLengthBy2Plus1> R2_hold_counter_;
   std::array<float, kFftLengthBy2Plus1> X2_noise_floor_;
   std::array<int, kFftLengthBy2Plus1> X2_noise_floor_counter_;
   std::unique_ptr<ReverbModel> echo_reverb_;
