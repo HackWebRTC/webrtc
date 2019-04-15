@@ -134,6 +134,8 @@ struct VideoQualityStats {
 
 struct CollectedCallStats {
   SampleStats<DataRate> target_rate;
+  SampleStats<TimeDelta> pacer_delay;
+  SampleStats<TimeDelta> round_trip_time;
   SampleStats<double> memory_usage;
 };
 

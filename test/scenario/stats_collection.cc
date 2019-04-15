@@ -112,7 +112,12 @@ void VideoLayerAnalyzer::HandleRenderedFrame(const VideoFramePair& sample) {
 }
 
 void CallStatsCollector::AddStats(Call::Stats sample) {
-  stats_.target_rate.AddSampleBps(sample.send_bandwidth_bps);
+  if (sample.send_bandwidth_bps > 0)
+    stats_.target_rate.AddSampleBps(sample.send_bandwidth_bps);
+  if (sample.pacer_delay_ms > 0)
+    stats_.pacer_delay.AddSample(TimeDelta::ms(sample.pacer_delay_ms));
+  if (sample.rtt_ms > 0)
+    stats_.round_trip_time.AddSample(TimeDelta::ms(sample.rtt_ms));
   stats_.memory_usage.AddSample(rtc::GetProcessResidentSizeBytes());
 }
 
