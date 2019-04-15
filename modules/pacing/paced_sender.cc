@@ -46,7 +46,6 @@ bool IsEnabled(const WebRtcKeyValueConfig& field_trials,
 }
 
 }  // namespace
-
 const int64_t PacedSender::kMaxQueueLengthMs = 2000;
 const float PacedSender::kDefaultPaceMultiplier = 2.5f;
 
@@ -54,31 +53,23 @@ PacedSender::PacedSender(Clock* clock,
                          PacketSender* packet_sender,
                          RtcEventLog* event_log,
                          const WebRtcKeyValueConfig* field_trials)
-    : PacedSender(clock,
-                  packet_sender,
-                  event_log,
-                  field_trials
-                      ? *field_trials
-                      : static_cast<const webrtc::WebRtcKeyValueConfig&>(
-                            FieldTrialBasedConfig())) {}
-
-PacedSender::PacedSender(Clock* clock,
-                         PacketSender* packet_sender,
-                         RtcEventLog* event_log,
-                         const WebRtcKeyValueConfig& field_trials)
     : clock_(clock),
       packet_sender_(packet_sender),
+      fallback_field_trials_(
+          !field_trials ? absl::make_unique<FieldTrialBasedConfig>() : nullptr),
+      field_trials_(field_trials ? field_trials : fallback_field_trials_.get()),
       alr_detector_(),
-      drain_large_queues_(!IsDisabled(field_trials, "WebRTC-Pacer-DrainQueue")),
+      drain_large_queues_(
+          !IsDisabled(*field_trials_, "WebRTC-Pacer-DrainQueue")),
       send_padding_if_silent_(
-          IsEnabled(field_trials, "WebRTC-Pacer-PadInSilence")),
-      pace_audio_(!IsDisabled(field_trials, "WebRTC-Pacer-BlockAudio")),
+          IsEnabled(*field_trials_, "WebRTC-Pacer-PadInSilence")),
+      pace_audio_(!IsDisabled(*field_trials_, "WebRTC-Pacer-BlockAudio")),
       min_packet_limit_ms_("", kDefaultMinPacketLimitMs),
       last_timestamp_ms_(clock_->TimeInMilliseconds()),
       paused_(false),
       media_budget_(0),
       padding_budget_(0),
-      prober_(field_trials),
+      prober_(*field_trials_),
       probing_send_failure_(false),
       estimated_bitrate_bps_(0),
       min_send_bitrate_kbps_(0u),
@@ -97,7 +88,7 @@ PacedSender::PacedSender(Clock* clock,
                            "pushback experiment must be enabled.";
   }
   ParseFieldTrial({&min_packet_limit_ms_},
-                  field_trials.Lookup("WebRTC-Pacer-MinPacketLimitMs"));
+                  field_trials_->Lookup("WebRTC-Pacer-MinPacketLimitMs"));
   UpdateBudgetWithElapsedTime(min_packet_limit_ms_);
 }
 
@@ -184,7 +175,7 @@ void PacedSender::SetEstimatedBitrate(uint32_t bitrate_bps) {
       std::max(min_send_bitrate_kbps_, estimated_bitrate_bps_ / 1000) *
       pacing_factor_;
   if (!alr_detector_)
-    alr_detector_ = absl::make_unique<AlrDetector>(nullptr /*event_log*/);
+    alr_detector_ = absl::make_unique<AlrDetector>(field_trials_);
   alr_detector_->SetEstimatedBitrate(bitrate_bps);
 }
 
@@ -248,7 +239,7 @@ int64_t PacedSender::ExpectedQueueTimeMs() const {
 absl::optional<int64_t> PacedSender::GetApplicationLimitedRegionStartTime() {
   rtc::CritScope cs(&critsect_);
   if (!alr_detector_)
-    alr_detector_ = absl::make_unique<AlrDetector>(nullptr /*event_log*/);
+    alr_detector_ = absl::make_unique<AlrDetector>(field_trials_);
   return alr_detector_->GetApplicationLimitedRegionStartTime();
 }
 

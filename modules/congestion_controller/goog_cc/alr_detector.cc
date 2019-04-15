@@ -23,20 +23,25 @@
 #include "rtc_base/time_utils.h"
 
 namespace webrtc {
-AlrDetector::AlrDetector() : AlrDetector(nullptr) {}
 
-AlrDetector::AlrDetector(RtcEventLog* event_log)
+AlrDetector::AlrDetector(const WebRtcKeyValueConfig* key_value_config)
+    : AlrDetector(key_value_config, nullptr) {}
+
+AlrDetector::AlrDetector(const WebRtcKeyValueConfig* key_value_config,
+                         RtcEventLog* event_log)
     : bandwidth_usage_percent_(kDefaultAlrBandwidthUsagePercent),
       alr_start_budget_level_percent_(kDefaultAlrStartBudgetLevelPercent),
       alr_stop_budget_level_percent_(kDefaultAlrStopBudgetLevelPercent),
       alr_budget_(0, true),
       event_log_(event_log) {
-  RTC_CHECK(AlrExperimentSettings::MaxOneFieldTrialEnabled());
+  RTC_CHECK(AlrExperimentSettings::MaxOneFieldTrialEnabled(*key_value_config));
   absl::optional<AlrExperimentSettings> experiment_settings =
       AlrExperimentSettings::CreateFromFieldTrial(
+          *key_value_config,
           AlrExperimentSettings::kScreenshareProbingBweExperimentName);
   if (!experiment_settings) {
     experiment_settings = AlrExperimentSettings::CreateFromFieldTrial(
+        *key_value_config,
         AlrExperimentSettings::kStrictPacingAndProbingExperimentName);
   }
   if (experiment_settings) {

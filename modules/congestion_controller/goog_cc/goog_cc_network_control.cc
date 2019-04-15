@@ -105,7 +105,7 @@ GoogCcNetworkController::GoogCcNetworkController(
               : nullptr),
       bandwidth_estimation_(
           absl::make_unique<SendSideBandwidthEstimation>(event_log_)),
-      alr_detector_(absl::make_unique<AlrDetector>()),
+      alr_detector_(absl::make_unique<AlrDetector>(key_value_config_)),
       probe_bitrate_estimator_(new ProbeBitrateEstimator(event_log)),
       delay_based_bwe_(new DelayBasedBwe(key_value_config_,
                                          event_log_,

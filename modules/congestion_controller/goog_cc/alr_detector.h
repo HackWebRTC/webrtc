@@ -15,6 +15,7 @@
 #include <stdint.h>
 
 #include "absl/types/optional.h"
+#include "api/transport/webrtc_key_value_config.h"
 #include "modules/pacing/interval_budget.h"
 
 namespace webrtc {
@@ -30,8 +31,9 @@ class RtcEventLog;
 // Note: This class is not thread-safe.
 class AlrDetector {
  public:
-  AlrDetector();
-  explicit AlrDetector(RtcEventLog* event_log);
+  explicit AlrDetector(const WebRtcKeyValueConfig* key_value_config);
+  AlrDetector(const WebRtcKeyValueConfig* key_value_config,
+              RtcEventLog* event_log);
   ~AlrDetector();
 
   void OnBytesSent(size_t bytes_sent, int64_t send_time_ms);

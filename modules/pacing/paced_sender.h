@@ -150,11 +150,6 @@ class PacedSender : public Pacer {
   void SetQueueTimeLimit(int limit_ms);
 
  private:
-  PacedSender(Clock* clock,
-              PacketSender* packet_sender,
-              RtcEventLog* event_log,
-              const WebRtcKeyValueConfig& field_trials);
-
   int64_t UpdateTimeAndGetElapsedMs(int64_t now_us)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   bool ShouldSendKeepalive(int64_t at_time_us) const
@@ -179,6 +174,8 @@ class PacedSender : public Pacer {
 
   Clock* const clock_;
   PacketSender* const packet_sender_;
+  const std::unique_ptr<FieldTrialBasedConfig> fallback_field_trials_;
+  const WebRtcKeyValueConfig* field_trials_;
   std::unique_ptr<AlrDetector> alr_detector_ RTC_PT_GUARDED_BY(critsect_);
 
   const bool drain_large_queues_;

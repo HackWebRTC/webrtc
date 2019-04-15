@@ -15,7 +15,8 @@ rtc_static_library("alr_experiment") {
   ]
   deps = [
     "../:rtc_base_approved",
-    "../../system_wrappers:field_trial",
+    "../../api/transport:field_trial_based_config",
+    "../../api/transport:webrtc_key_value_config",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
