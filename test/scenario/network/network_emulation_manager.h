@@ -30,6 +30,7 @@
 #include "test/scenario/network/fake_network_socket_server.h"
 #include "test/scenario/network/network_emulation.h"
 #include "test/scenario/network/traffic_route.h"
+#include "test/time_controller/time_controller.h"
 
 namespace webrtc {
 namespace test {
@@ -37,6 +38,7 @@ namespace test {
 class NetworkEmulationManagerImpl : public NetworkEmulationManager {
  public:
   NetworkEmulationManagerImpl();
+  explicit NetworkEmulationManagerImpl(TimeController* time_controller);
   ~NetworkEmulationManagerImpl();
 
   EmulatedNetworkNode* CreateEmulatedNode(

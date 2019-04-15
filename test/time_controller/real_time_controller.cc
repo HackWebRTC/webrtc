@@ -38,4 +38,9 @@ void RealTimeController::InvokeWithControlledYield(
   closure();
 }
 
+RealTimeController* GlobalRealTimeController() {
+  static RealTimeController* time_controller = new RealTimeController();
+  return time_controller;
+}
+
 }  // namespace webrtc

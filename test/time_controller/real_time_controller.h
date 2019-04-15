@@ -25,6 +25,8 @@ class RealTimeController : public TimeController {
   void InvokeWithControlledYield(std::function<void()> closure) override;
 };
 
+RealTimeController* GlobalRealTimeController();
+
 }  // namespace webrtc
 
 #endif  // TEST_TIME_CONTROLLER_REAL_TIME_CONTROLLER_H_
