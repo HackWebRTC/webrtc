@@ -17,11 +17,31 @@
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
 
 RtpDemuxerCriteria::RtpDemuxerCriteria() = default;
 RtpDemuxerCriteria::~RtpDemuxerCriteria() = default;
+
+// static
+std::string RtpDemuxer::DescribePacket(const RtpPacketReceived& packet) {
+  rtc::StringBuilder sb;
+  sb << "PT=" << packet.PayloadType() << " SSRC=" << packet.Ssrc();
+  std::string mid;
+  if (packet.GetExtension<RtpMid>(&mid)) {
+    sb << " MID=" << mid;
+  }
+  std::string rsid;
+  if (packet.GetExtension<RtpStreamId>(&rsid)) {
+    sb << " RSID=" << rsid;
+  }
+  std::string rrsid;
+  if (packet.GetExtension<RepairedRtpStreamId>(&rrsid)) {
+    sb << " RRSID=" << rrsid;
+  }
+  return sb.Release();
+}
 
 RtpDemuxer::RtpDemuxer() = default;
 

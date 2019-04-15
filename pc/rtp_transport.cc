@@ -196,7 +196,10 @@ void RtpTransport::DemuxPacket(rtc::CopyOnWriteBuffer packet,
   if (packet_time_us != -1) {
     parsed_packet.set_arrival_time_ms((packet_time_us + 500) / 1000);
   }
-  rtp_demuxer_.OnRtpPacket(parsed_packet);
+  if (!rtp_demuxer_.OnRtpPacket(parsed_packet)) {
+    RTC_LOG(LS_WARNING) << "Failed to demux RTP packet: "
+                        << RtpDemuxer::DescribePacket(parsed_packet);
+  }
 }
 
 bool RtpTransport::IsTransportWritable() {
