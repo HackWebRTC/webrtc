@@ -1052,6 +1052,16 @@ int NetEqImpl::GetDecision(Operations* operation,
       *sync_buffer_, *expand_, decoder_frame_length_, packet, last_mode_,
       *play_dtmf, generated_noise_samples, &reset_decoder_);
 
+  // Disallow time stretching if this packet is DTX, because such a decision may
+  // be based on earlier buffer level estimate, as we do not update buffer level
+  // during DTX. When we have a better way to update buffer level during DTX,
+  // this can be discarded.
+  if (packet && packet->frame && packet->frame->IsDtxPacket() &&
+      (*operation == kMerge || *operation == kAccelerate ||
+       *operation == kFastAccelerate || *operation == kPreemptiveExpand)) {
+    *operation = kNormal;
+  }
+
   if (action_override) {
     // Use the provided action instead of the decision NetEq decided on.
     *operation = *action_override;
