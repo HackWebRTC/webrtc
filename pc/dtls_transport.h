@@ -17,7 +17,6 @@
 #include "api/ice_transport_interface.h"
 #include "api/scoped_refptr.h"
 #include "p2p/base/dtls_transport.h"
-#include "rtc_base/async_invoker.h"
 
 namespace webrtc {
 
