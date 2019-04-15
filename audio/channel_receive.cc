@@ -757,16 +757,22 @@ CallReceiveStatistics ChannelReceive::GetRTCPStatistics() const {
   stats.rttMs = GetRTT();
 
   // --- Data counters
-
-  size_t bytesReceived(0);
-  uint32_t packetsReceived(0);
-
   if (statistician) {
-    statistician->GetDataCounters(&bytesReceived, &packetsReceived);
+    StreamDataCounters data_counters;
+    statistician->GetReceiveStreamDataCounters(&data_counters);
+    // TODO(http://crbug.com/webrtc/10525): Bytes received should only include
+    // payload bytes, not header and padding bytes.
+    stats.bytesReceived = data_counters.transmitted.payload_bytes +
+                          data_counters.transmitted.header_bytes +
+                          data_counters.transmitted.padding_bytes;
+    stats.packetsReceived = data_counters.transmitted.packets;
+    stats.last_packet_received_timestamp_ms =
+        data_counters.last_packet_received_timestamp_ms;
+  } else {
+    stats.bytesReceived = 0;
+    stats.packetsReceived = 0;
+    stats.last_packet_received_timestamp_ms = absl::nullopt;
   }
-
-  stats.bytesReceived = bytesReceived;
-  stats.packetsReceived = packetsReceived;
 
   // --- Timestamps
   {

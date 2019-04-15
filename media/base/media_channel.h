@@ -435,6 +435,10 @@ struct MediaReceiverInfo {
   int packets_rcvd = 0;
   int packets_lost = 0;
   float fraction_lost = 0.0f;
+  // The timestamp at which the last packet was received, i.e. the time of the
+  // local clock when it was received - not the RTP timestamp of that packet.
+  // https://w3c.github.io/webrtc-stats/#dom-rtcinboundrtpstreamstats-lastpacketreceivedtimestamp
+  absl::optional<int64_t> last_packet_received_timestamp_ms;
   std::string codec_name;
   absl::optional<int> codec_payload_type;
   std::vector<SsrcReceiverInfo> local_stats;

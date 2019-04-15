@@ -719,6 +719,7 @@ class RTCStatsReportVerifier {
     // packets_lost is defined as signed, but this should never happen in
     // this test. See RFC 3550.
     verifier.TestMemberIsNonNegative<int32_t>(inbound_stream.packets_lost);
+    verifier.TestMemberIsDefined(inbound_stream.last_packet_received_timestamp);
     if (inbound_stream.media_type.is_defined() &&
         *inbound_stream.media_type == "video") {
       verifier.TestMemberIsUndefined(inbound_stream.jitter);

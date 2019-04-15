@@ -1625,6 +1625,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
   voice_media_info.receivers[0].codec_payload_type = 42;
   voice_media_info.receivers[0].jitter_ms = 4500;
   voice_media_info.receivers[0].fraction_lost = 5.5f;
+  voice_media_info.receivers[0].last_packet_received_timestamp_ms =
+      absl::nullopt;
 
   RtpCodecParameters codec_parameters;
   codec_parameters.payload_type = 42;
@@ -1656,8 +1658,21 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
   expected_audio.packets_received = 2;
   expected_audio.bytes_received = 3;
   expected_audio.packets_lost = -1;
+  // |expected_audio.last_packet_received_timestamp| should be undefined.
   expected_audio.jitter = 4.5;
   expected_audio.fraction_lost = 5.5;
+  ASSERT_TRUE(report->Get(expected_audio.id()));
+  EXPECT_EQ(
+      report->Get(expected_audio.id())->cast_to<RTCInboundRTPStreamStats>(),
+      expected_audio);
+
+  // Set previously undefined values and "GetStats" again.
+  voice_media_info.receivers[0].last_packet_received_timestamp_ms = 3000;
+  expected_audio.last_packet_received_timestamp = 3.0;
+  voice_media_channel->SetStats(voice_media_info);
+
+  report = stats_->GetFreshStatsReport();
+
   ASSERT_TRUE(report->Get(expected_audio.id()));
   EXPECT_EQ(
       report->Get(expected_audio.id())->cast_to<RTCInboundRTPStreamStats>(),
@@ -1684,6 +1699,8 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   video_media_info.receivers[0].nacks_sent = 7;
   video_media_info.receivers[0].frames_decoded = 8;
   video_media_info.receivers[0].qp_sum = absl::nullopt;
+  video_media_info.receivers[0].last_packet_received_timestamp_ms =
+      absl::nullopt;
   video_media_info.receivers[0].content_type = VideoContentType::UNSPECIFIED;
 
   RtpCodecParameters codec_parameters;
@@ -1719,6 +1736,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   expected_video.fraction_lost = 4.5;
   expected_video.frames_decoded = 8;
   // |expected_video.qp_sum| should be undefined.
+  // |expected_video.last_packet_received_timestamp| should be undefined.
   // |expected_video.content_type| should be undefined.
 
   ASSERT_TRUE(report->Get(expected_video.id()));
@@ -1728,7 +1746,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
 
   // Set previously undefined values and "GetStats" again.
   video_media_info.receivers[0].qp_sum = 9;
+  video_media_info.receivers[0].last_packet_received_timestamp_ms = 1000;
   expected_video.qp_sum = 9;
+  expected_video.last_packet_received_timestamp = 1.0;
   video_media_info.receivers[0].content_type = VideoContentType::SCREENSHARE;
   expected_video.content_type = "screenshare";
   video_media_channel->SetStats(video_media_info);
