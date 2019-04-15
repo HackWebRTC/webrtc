@@ -66,6 +66,10 @@ std::vector<VideoStream> CreateVideoStreams(
               : DefaultVideoStreamFactory::kMaxBitratePerStream[i];
       target_bitrate_bps = std::min(max_bitrate_bps, target_bitrate_bps);
 
+      if (stream.min_bitrate_bps > 0) {
+        RTC_DCHECK_LE(stream.min_bitrate_bps, target_bitrate_bps);
+        stream_settings[i].min_bitrate_bps = stream.min_bitrate_bps;
+      }
       if (stream.max_framerate > 0) {
         stream_settings[i].max_framerate = stream.max_framerate;
       }

@@ -27,7 +27,6 @@
 #include "modules/rtp_rtcp/source/rtp_format_vp9.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
-#include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
@@ -2891,26 +2890,6 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
       bitrate_config->max_bitrate_bps = kMaxBitrateKbps * 1000;
     }
 
-    class VideoStreamFactory
-        : public VideoEncoderConfig::VideoStreamFactoryInterface {
-     public:
-      explicit VideoStreamFactory(int min_bitrate_bps)
-          : min_bitrate_bps_(min_bitrate_bps) {}
-
-     private:
-      std::vector<VideoStream> CreateEncoderStreams(
-          int width,
-          int height,
-          const VideoEncoderConfig& encoder_config) override {
-        std::vector<VideoStream> streams =
-            test::CreateVideoStreams(width, height, encoder_config);
-        streams[0].min_bitrate_bps = min_bitrate_bps_;
-        return streams;
-      }
-
-      const int min_bitrate_bps_;
-    };
-
     void ModifyVideoConfigs(
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
@@ -2919,10 +2898,9 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
       // Set bitrates lower/higher than min/max to make sure they are properly
       // capped.
       encoder_config->max_bitrate_bps = kMaxBitrateKbps * 1000;
-      // Create a new StreamFactory to be able to set
-      // |VideoStream.min_bitrate_bps|.
-      encoder_config->video_stream_factory =
-          new rtc::RefCountedObject<VideoStreamFactory>(kMinBitrateKbps * 1000);
+      EXPECT_EQ(1u, encoder_config->simulcast_layers.size());
+      encoder_config->simulcast_layers[0].min_bitrate_bps =
+          kMinBitrateKbps * 1000;
       encoder_config_ = encoder_config->Copy();
     }
 
