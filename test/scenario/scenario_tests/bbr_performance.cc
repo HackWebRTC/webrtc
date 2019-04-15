@@ -191,11 +191,11 @@ TEST_P(BbrScenarioTest, ReceivesVideo) {
       }
     });
   }
-  CrossTrafficConfig cross_config;
+  RandomWalkConfig cross_config;
   cross_config.peak_rate = conf_.scenario.cross_traffic;
   cross_config.random_seed = conf_.scenario.random_seed;
-  CrossTrafficSource* cross_traffic =
-      s.CreateCrossTraffic({send_net}, cross_config);
+  auto* cross_traffic = s.net()->CreateRandomWalkCrossTraffic(
+      s.net()->CreateTrafficRoute({send_net->node()}), cross_config);
 
   s.CreatePrinter("send.stats.txt", TimeDelta::ms(100),
                   {alice->StatsPrinter(), alice_video->send()->StatsPrinter(),

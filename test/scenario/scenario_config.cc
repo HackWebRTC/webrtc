@@ -43,9 +43,5 @@ AudioStreamConfig::Stream::Stream() = default;
 AudioStreamConfig::Stream::Stream(const AudioStreamConfig::Stream&) = default;
 AudioStreamConfig::Stream::~Stream() = default;
 
-CrossTrafficConfig::CrossTrafficConfig() = default;
-CrossTrafficConfig::CrossTrafficConfig(const CrossTrafficConfig&) = default;
-CrossTrafficConfig::~CrossTrafficConfig() = default;
-
 }  // namespace test
 }  // namespace webrtc

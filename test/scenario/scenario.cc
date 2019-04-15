@@ -73,6 +73,7 @@ Scenario::Scenario(
       clock_(time_controller_->GetClock()),
       audio_decoder_factory_(CreateBuiltinAudioDecoderFactory()),
       audio_encoder_factory_(CreateBuiltinAudioEncoderFactory()),
+      network_manager_(time_controller_.get()),
       task_queue_(time_controller_->GetTaskQueueFactory()->CreateTaskQueue(
           "Scenario",
           TaskQueueFactory::Priority::NORMAL)) {}
@@ -192,6 +193,7 @@ SimulatedTimeClient* Scenario::CreateSimulatedTimeClient(
   simulated_time_clients_.emplace_back(client);
   return client;
 }
+
 EmulatedNetworkNode* Scenario::CreateSimulationNode(
     std::function<void(NetworkSimulationConfig*)> config_modifier) {
   NetworkSimulationConfig config;
@@ -201,7 +203,8 @@ EmulatedNetworkNode* Scenario::CreateSimulationNode(
 
 EmulatedNetworkNode* Scenario::CreateSimulationNode(
     NetworkSimulationConfig config) {
-  return CreateMutableSimulationNode(config);
+  return network_manager_.CreateEmulatedNode(
+      SimulationNode::CreateBehavior(config));
 }
 
 SimulationNode* Scenario::CreateMutableSimulationNode(
@@ -213,55 +216,29 @@ SimulationNode* Scenario::CreateMutableSimulationNode(
 
 SimulationNode* Scenario::CreateMutableSimulationNode(
     NetworkSimulationConfig config) {
-  auto network_node = SimulationNode::Create(clock_, &task_queue_, config);
-  SimulationNode* sim_node = network_node.get();
-  network_nodes_.emplace_back(std::move(network_node));
-  return sim_node;
+  std::unique_ptr<SimulatedNetwork> behavior =
+      SimulationNode::CreateBehavior(config);
+  SimulatedNetwork* behavior_ptr = behavior.get();
+  auto* emulated_node =
+      network_manager_.CreateEmulatedNode(std::move(behavior));
+  simulation_nodes_.emplace_back(
+      new SimulationNode(config, behavior_ptr, emulated_node));
+  return simulation_nodes_.back().get();
 }
 
 void Scenario::TriggerPacketBurst(std::vector<EmulatedNetworkNode*> over_nodes,
                                   size_t num_packets,
                                   size_t packet_size) {
-  rtc::IPAddress route_ip(next_route_id_++);
-  EmulatedNetworkNode::CreateRoute(route_ip, over_nodes, &null_receiver_);
-  for (size_t i = 0; i < num_packets; ++i)
-    over_nodes[0]->OnPacketReceived(EmulatedIpPacket(
-        /*from=*/rtc::SocketAddress(), /*to=*/rtc::SocketAddress(route_ip, 0),
-        rtc::CopyOnWriteBuffer(packet_size), Now()));
+  network_manager_.CreateTrafficRoute(over_nodes)
+      ->TriggerPacketBurst(num_packets, packet_size);
 }
 
 void Scenario::NetworkDelayedAction(
     std::vector<EmulatedNetworkNode*> over_nodes,
     size_t packet_size,
     std::function<void()> action) {
-  rtc::IPAddress route_ip(next_route_id_++);
-  action_receivers_.emplace_back(new ActionReceiver(action));
-  EmulatedNetworkNode::CreateRoute(route_ip, over_nodes,
-                                   action_receivers_.back().get());
-  over_nodes[0]->OnPacketReceived(EmulatedIpPacket(
-      /*from=*/rtc::SocketAddress(), /*to=*/rtc::SocketAddress(route_ip, 0),
-      rtc::CopyOnWriteBuffer(packet_size), Now()));
-}
-
-CrossTrafficSource* Scenario::CreateCrossTraffic(
-    std::vector<EmulatedNetworkNode*> over_nodes,
-    std::function<void(CrossTrafficConfig*)> config_modifier) {
-  CrossTrafficConfig cross_config;
-  config_modifier(&cross_config);
-  return CreateCrossTraffic(over_nodes, cross_config);
-}
-
-CrossTrafficSource* Scenario::CreateCrossTraffic(
-    std::vector<EmulatedNetworkNode*> over_nodes,
-    CrossTrafficConfig config) {
-  rtc::IPAddress route_ip(next_route_id_++);
-  cross_traffic_sources_.emplace_back(
-      new CrossTrafficSource(over_nodes.front(), route_ip, config));
-  CrossTrafficSource* node = cross_traffic_sources_.back().get();
-  EmulatedNetworkNode::CreateRoute(route_ip, over_nodes, &null_receiver_);
-  Every(config.min_packet_interval,
-        [this, node](TimeDelta delta) { node->Process(Now(), delta); });
-  return node;
+  network_manager_.CreateTrafficRoute(over_nodes)
+      ->NetworkDelayedAction(packet_size, action);
 }
 
 VideoStreamPair* Scenario::CreateVideoStream(

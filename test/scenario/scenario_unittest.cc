@@ -40,8 +40,9 @@ TEST(ScenarioTest, StartsAndStopsWithoutErrors) {
   s.CreateAudioStream(route->forward(), audio_stream_config);
   s.CreateAudioStream(route->reverse(), audio_stream_config);
 
-  CrossTrafficConfig cross_traffic_config;
-  s.CreateCrossTraffic({alice_net}, cross_traffic_config);
+  RandomWalkConfig cross_traffic_config;
+  s.net()->CreateRandomWalkCrossTraffic(
+      s.net()->CreateTrafficRoute({alice_net}), cross_traffic_config);
 
   s.NetworkDelayedAction({alice_net, bob_net}, 100,
                          [&packet_received] { packet_received = true; });

@@ -237,26 +237,6 @@ struct NetworkSimulationConfig {
   bool codel_active_queue_management = false;
   DataSize packet_overhead = DataSize::Zero();
 };
-
-struct CrossTrafficConfig {
-  CrossTrafficConfig();
-  CrossTrafficConfig(const CrossTrafficConfig&);
-  ~CrossTrafficConfig();
-  enum Mode { kRandomWalk, kPulsedPeaks } mode = kRandomWalk;
-  int random_seed = 1;
-  DataRate peak_rate = DataRate::kbps(100);
-  DataSize min_packet_size = DataSize::bytes(200);
-  TimeDelta min_packet_interval = TimeDelta::ms(1);
-  struct RandomWalk {
-    TimeDelta update_interval = TimeDelta::ms(200);
-    double variance = 0.6;
-    double bias = -0.1;
-  } random_walk;
-  struct PulsedPeaks {
-    TimeDelta send_duration = TimeDelta::ms(100);
-    TimeDelta hold_duration = TimeDelta::ms(2000);
-  } pulsed;
-};
 }  // namespace test
 }  // namespace webrtc
 
