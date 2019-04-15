@@ -280,8 +280,8 @@ void ScreenshareLayers::OnEncodeDone(size_t stream_index,
   RTC_DCHECK_LT(stream_index, StreamCount());
 
   if (size_bytes == 0) {
-    layers_[active_layer_].state = TemporalLayer::State::kDropped;
-    ++stats_.num_overshoots_;
+    RTC_LOG(LS_WARNING) << "Empty frame; treating as dropped.";
+    OnFrameDropped(stream_index, rtp_timestamp);
     return;
   }
 
@@ -381,6 +381,12 @@ void ScreenshareLayers::OnEncodeDone(size_t stream_index,
     stats_.tl1_target_bitrate_sum_ += layers_[1].target_rate_kbps_;
     stats_.tl1_qp_sum_ += qp;
   }
+}
+
+void ScreenshareLayers::OnFrameDropped(size_t stream_index,
+                                       uint32_t rtp_timestamp) {
+  layers_[active_layer_].state = TemporalLayer::State::kDropped;
+  ++stats_.num_overshoots_;
 }
 
 void ScreenshareLayers::OnPacketLossRateUpdate(float packet_loss_rate) {}

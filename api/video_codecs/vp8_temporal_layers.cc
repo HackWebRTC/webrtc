@@ -70,6 +70,12 @@ void Vp8TemporalLayers::OnEncodeDone(size_t stream_index,
                                                   is_keyframe, qp, info);
 }
 
+void Vp8TemporalLayers::OnFrameDropped(size_t stream_index,
+                                       uint32_t rtp_timestamp) {
+  RTC_DCHECK_LT(stream_index, controllers_.size());
+  controllers_[stream_index]->OnFrameDropped(stream_index, rtp_timestamp);
+}
+
 void Vp8TemporalLayers::OnPacketLossRateUpdate(float packet_loss_rate) {
   for (auto& controller : controllers_) {
     controller->OnPacketLossRateUpdate(packet_loss_rate);

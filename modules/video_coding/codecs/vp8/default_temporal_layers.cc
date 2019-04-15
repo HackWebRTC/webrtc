@@ -454,13 +454,14 @@ void DefaultTemporalLayers::OnEncodeDone(size_t stream_index,
   RTC_DCHECK_LT(stream_index, StreamCount());
   RTC_DCHECK_GT(num_layers_, 0);
 
-  auto pending_frame = pending_frames_.find(rtp_timestamp);
-  RTC_DCHECK(pending_frame != pending_frames_.end());
-
   if (size_bytes == 0) {
-    pending_frames_.erase(pending_frame);
+    RTC_LOG(LS_WARNING) << "Empty frame; treating as dropped.";
+    OnFrameDropped(stream_index, rtp_timestamp);
     return;
   }
+
+  auto pending_frame = pending_frames_.find(rtp_timestamp);
+  RTC_DCHECK(pending_frame != pending_frames_.end());
 
   PendingFrame& frame = pending_frame->second;
   const Vp8FrameConfig& frame_config = frame.dependency_info.frame_config;
@@ -537,6 +538,13 @@ void DefaultTemporalLayers::OnEncodeDone(size_t stream_index,
       }
     }
   }
+}
+
+void DefaultTemporalLayers::OnFrameDropped(size_t stream_index,
+                                           uint32_t rtp_timestamp) {
+  auto pending_frame = pending_frames_.find(rtp_timestamp);
+  RTC_DCHECK(pending_frame != pending_frames_.end());
+  pending_frames_.erase(pending_frame);
 }
 
 void DefaultTemporalLayers::OnPacketLossRateUpdate(float packet_loss_rate) {}

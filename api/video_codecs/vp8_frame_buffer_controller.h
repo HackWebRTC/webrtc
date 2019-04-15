@@ -117,21 +117,19 @@ class Vp8FrameBufferController {
   // parameter use in the UpdateLayerConfig() call.
   // |is_keyframe| must be true iff the encoder decided to encode this frame as
   // a keyframe.
-  // If the encoder decided to drop this frame, |size_bytes| must be set to 0,
-  // otherwise it should indicate the size in bytes of the encoded frame.
-  // If |size_bytes| > 0, and |info| is not null, the TemporalLayers
-  // instance my update |info| with codec specific data such as temporal id.
-  // Some fields of this struct may have already been populated by the encoder,
-  // check before overwriting.
-  // If |size_bytes| > 0, |qp| should indicate the frame-level QP this frame was
-  // encoded at. If the encoder does not support extracting this, |qp| should be
-  // set to 0.
+  // If |info| is not null, the TemporalLayers instance may update |info| with
+  // codec specific data such as temporal id.
+  // |qp| should indicate the frame-level QP this frame was encoded at. If the
+  // encoder does not support extracting this, |qp| should be set to 0.
   virtual void OnEncodeDone(size_t stream_index,
                             uint32_t rtp_timestamp,
                             size_t size_bytes,
                             bool is_keyframe,
                             int qp,
                             CodecSpecificInfo* info) = 0;
+
+  // Called when a frame is dropped by the encoder.
+  virtual void OnFrameDropped(size_t stream_index, uint32_t rtp_timestamp) = 0;
 
   // Called by the encoder when the packet loss rate changes.
   // |packet_loss_rate| runs between 0.0 (no loss) and 1.0 (everything lost).

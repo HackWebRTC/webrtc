@@ -55,6 +55,8 @@ class Vp8TemporalLayers final : public Vp8FrameBufferController {
                     int qp,
                     CodecSpecificInfo* info) override;
 
+  void OnFrameDropped(size_t stream_index, uint32_t rtp_timestamp) override;
+
   void OnPacketLossRateUpdate(float packet_loss_rate) override;
 
   void OnRttUpdate(int64_t rtt_ms) override;

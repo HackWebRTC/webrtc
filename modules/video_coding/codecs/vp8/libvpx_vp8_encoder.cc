@@ -1105,8 +1105,8 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image) {
         result = WEBRTC_VIDEO_CODEC_TARGET_BITRATE_OVERSHOOT;
         if (encoded_images_[encoder_idx].size() == 0) {
           // Dropped frame that will be re-encoded.
-          frame_buffer_controller_->OnEncodeDone(
-              stream_idx, input_image.timestamp(), 0, false, 0, nullptr);
+          frame_buffer_controller_->OnFrameDropped(stream_idx,
+                                                   input_image.timestamp());
         }
       }
     }
