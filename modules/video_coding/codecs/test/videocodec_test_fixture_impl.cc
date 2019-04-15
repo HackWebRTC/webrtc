@@ -12,11 +12,13 @@
 
 #include <stdint.h>
 #include <stdio.h>
+
 #include <algorithm>
 #include <cmath>
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
@@ -37,6 +39,7 @@
 #include "modules/video_coding/utility/ivf_file_writer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/cpu_time.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/cpu_info.h"
@@ -361,9 +364,8 @@ class VideoCodecTestFixtureImpl::CpuProcessTime final {
   }
   void Print() const {
     if (config_.measure_cpu) {
-      printf("cpu_usage_percent: %f\n",
-             GetUsagePercent() / config_.NumberOfCores());
-      printf("\n");
+      RTC_LOG(LS_INFO) << "cpu_usage_percent: "
+                       << GetUsagePercent() / config_.NumberOfCores();
     }
   }
 
@@ -461,6 +463,8 @@ void VideoCodecTestFixtureImpl::AnalyzeAllFrames(
     const std::vector<RateControlThresholds>* rc_thresholds,
     const std::vector<QualityThresholds>* quality_thresholds,
     const BitstreamThresholds* bs_thresholds) {
+  rtc::StringBuilder log_output;
+
   for (size_t rate_profile_idx = 0; rate_profile_idx < rate_profiles.size();
        ++rate_profile_idx) {
     const size_t first_frame_num = rate_profiles[rate_profile_idx].frame_num;
@@ -472,14 +476,14 @@ void VideoCodecTestFixtureImpl::AnalyzeAllFrames(
 
     VideoStatistics send_stat = stats_.SliceAndCalcAggregatedVideoStatistic(
         first_frame_num, last_frame_num);
-    printf("==> Send stats\n");
-    printf("%s\n\n", send_stat.ToString("send_").c_str());
+    log_output << "==> Send stats\n";
+    log_output << send_stat.ToString("send_") << "\n\n";
 
     std::vector<VideoStatistics> layer_stats =
         stats_.SliceAndCalcLayerVideoStatistic(first_frame_num, last_frame_num);
-    printf("==> Receive stats\n");
+    log_output << "==> Receive stats\n";
     for (const auto& layer_stat : layer_stats) {
-      printf("%s\n\n", layer_stat.ToString("recv_").c_str());
+      log_output << layer_stat.ToString("recv_") << "\n\n";
 
       // For perf dashboard.
       char modifier_buf[256];
@@ -514,6 +518,9 @@ void VideoCodecTestFixtureImpl::AnalyzeAllFrames(
       PrintResultHelper("min_psnr_yuv", layer_stat.min_psnr, "dB");
       PrintResultHelper("avg_qp", layer_stat.avg_qp, "");
       printf("\n");
+      if (layer_stat.temporal_idx == config_.NumberOfTemporalLayers() - 1) {
+        printf("\n");
+      }
     }
 
     const RateControlThresholds* rc_threshold =
@@ -528,11 +535,16 @@ void VideoCodecTestFixtureImpl::AnalyzeAllFrames(
   }
 
   if (config_.print_frame_level_stats) {
-    stats_.PrintFrameStatistics();
+    log_output << "==> Frame stats\n";
+    std::vector<VideoCodecTestStats::FrameStatistics> frame_stats =
+        stats_.GetFrameStatistics();
+    for (const auto& frame_stat : frame_stats) {
+      log_output << frame_stat.ToString() << "\n";
+    }
   }
 
+  RTC_LOG(LS_INFO) << log_output.str();
   cpu_process_time_->Print();
-  printf("\n");
 }
 
 void VideoCodecTestFixtureImpl::VerifyVideoStatistic(
@@ -711,23 +723,22 @@ void VideoCodecTestFixtureImpl::ReleaseAndCloseObjects(
 
 void VideoCodecTestFixtureImpl::PrintSettings(
     TaskQueueForTest* task_queue) const {
-  printf("==> Config\n");
-  printf("%s\n", config_.ToString().c_str());
+  rtc::StringBuilder log_output;
 
-  printf("==> Codec names\n");
+  log_output << "==> Config\n";
+  log_output << config_.ToString() << "\n";
+
+  log_output << "==> Codec names\n";
   std::string encoder_name;
   std::string decoder_name;
   task_queue->SendTask([this, &encoder_name, &decoder_name] {
     encoder_name = encoder_->GetEncoderInfo().implementation_name;
     decoder_name = decoders_.at(0)->ImplementationName();
   });
-  printf("enc_impl_name: %s\n", encoder_name.c_str());
-  printf("dec_impl_name: %s\n", decoder_name.c_str());
-  if (encoder_name == decoder_name) {
-    printf("codec_impl_name: %s_%s\n", config_.CodecName().c_str(),
-           encoder_name.c_str());
-  }
-  printf("\n");
+  log_output << "enc_impl_name: " << encoder_name << "\n";
+  log_output << "dec_impl_name: " << decoder_name << "\n";
+
+  RTC_LOG(LS_INFO) << log_output.str();
 }
 
 }  // namespace test

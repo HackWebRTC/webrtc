@@ -12,7 +12,9 @@
 #define MODULES_VIDEO_CODING_CODECS_TEST_VIDEOCODEC_TEST_STATS_IMPL_H_
 
 #include <stddef.h>
+
 #include <map>
+#include <string>
 #include <vector>
 
 #include "api/test/videocodec_test_stats.h"  // NOLINT(build/include)
@@ -41,8 +43,6 @@ class VideoCodecTestStatsImpl : public VideoCodecTestStats {
 
   VideoStatistics SliceAndCalcAggregatedVideoStatistic(size_t first_frame_num,
                                                        size_t last_frame_num);
-
-  void PrintFrameStatistics();
 
   size_t Size(size_t spatial_idx);
 

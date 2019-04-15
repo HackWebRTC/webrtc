@@ -19,6 +19,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/running_statistics.h"
+#include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
 namespace test {
@@ -112,15 +113,6 @@ VideoStatistics VideoCodecTestStatsImpl::SliceAndCalcAggregatedVideoStatistic(
   return SliceAndCalcVideoStatistic(first_frame_num, last_frame_num,
                                     num_spatial_layers - 1,
                                     num_temporal_layers - 1, true);
-}
-
-void VideoCodecTestStatsImpl::PrintFrameStatistics() {
-  for (size_t frame_num = 0; frame_num < layer_stats_[0].size(); ++frame_num) {
-    for (const auto& it : layer_stats_) {
-      const FrameStatistics& frame_stat = it.second[frame_num];
-      printf("\n%s", frame_stat.ToString().c_str());
-    }
-  }
 }
 
 size_t VideoCodecTestStatsImpl::Size(size_t spatial_idx) {
