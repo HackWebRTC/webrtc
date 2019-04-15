@@ -83,12 +83,15 @@ RateControlSettings::RateControlSettings(
                                 kDefaultScreenshareHysteresisFactor)),
       probe_max_allocation_("probe_max_allocation", true),
       bitrate_adjuster_("bitrate_adjuster", false),
-      vp8_s0_boost_("vp8_s0_boost", true) {
+      vp8_s0_boost_("vp8_s0_boost", true),
+      vp8_dynamic_rate_("vp8_dynamic_rate", false),
+      vp9_dynamic_rate_("vp9_dynamic_rate", false) {
   ParseFieldTrial({&congestion_window_, &congestion_window_pushback_},
                   key_value_config->Lookup("WebRTC-CongestionWindow"));
   ParseFieldTrial({&pacing_factor_, &alr_probing_, &trust_vp8_, &trust_vp9_,
                    &video_hysteresis_, &screenshare_hysteresis_,
-                   &probe_max_allocation_, &bitrate_adjuster_, &vp8_s0_boost_},
+                   &probe_max_allocation_, &bitrate_adjuster_, &vp8_s0_boost_,
+                   &vp8_dynamic_rate_, &vp9_dynamic_rate_},
                   key_value_config->Lookup("WebRTC-VideoRateControl"));
 }
 
@@ -141,8 +144,16 @@ bool RateControlSettings::Vp8BoostBaseLayerQuality() const {
   return vp8_s0_boost_.Get();
 }
 
+bool RateControlSettings::Vp8DynamicRateSettings() const {
+  return vp8_dynamic_rate_.Get();
+}
+
 bool RateControlSettings::LibvpxVp9TrustedRateController() const {
   return trust_vp9_.Get();
+}
+
+bool RateControlSettings::Vp9DynamicRateSettings() const {
+  return vp9_dynamic_rate_.Get();
 }
 
 double RateControlSettings::GetSimulcastHysteresisFactor(

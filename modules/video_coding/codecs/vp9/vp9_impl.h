@@ -123,10 +123,11 @@ class VP9EncoderImpl : public VP9Encoder {
   InterLayerPredMode inter_layer_pred_;
   bool external_ref_control_;
   const bool trusted_rate_controller_;
+  const bool dynamic_rate_settings_;
   const bool full_superframe_drop_;
   bool first_frame_in_picture_;
   VideoBitrateAllocation current_bitrate_allocation_;
-  absl::optional<VideoBitrateAllocation> requested_bitrate_allocation_;
+  absl::optional<RateControlParameters> requested_rate_settings_;
   bool ss_info_needed_;
 
   std::vector<FramerateController> framerate_controller_;

@@ -50,6 +50,18 @@ int kMaxNumTiles4kVideo = 8;
 // Maximum allowed PID difference for differnet per-layer frame-rate case.
 const int kMaxAllowedPidDIff = 30;
 
+constexpr double kLowRateFactor = 1.0;
+constexpr double kHighRateFactor = 2.0;
+
+// These settings correspond to the settings in vpx_codec_enc_cfg.
+struct Vp8RateSettings {
+  uint32_t rc_undershoot_pct;
+  uint32_t rc_overshoot_pct;
+  uint32_t rc_buf_sz;
+  uint32_t rc_buf_optimal_sz;
+  uint32_t rc_dropframe_thresh;
+};
+
 // Only positive speeds, range for real-time coding currently is: 5 - 8.
 // Lower means slower/better quality, higher means fastest/lower quality.
 int GetCpuSpeed(int width, int height) {
@@ -137,6 +149,56 @@ bool MoreLayersEnabled(const VideoBitrateAllocation& first,
   return false;
 }
 
+uint32_t Interpolate(uint32_t low,
+                     uint32_t high,
+                     double bandwidth_headroom_factor) {
+  RTC_DCHECK_GE(bandwidth_headroom_factor, kLowRateFactor);
+  RTC_DCHECK_LE(bandwidth_headroom_factor, kHighRateFactor);
+
+  // |factor| is between 0.0 and 1.0.
+  const double factor = bandwidth_headroom_factor - kLowRateFactor;
+
+  return static_cast<uint32_t>(((1.0 - factor) * low) + (factor * high) + 0.5);
+}
+
+Vp8RateSettings GetRateSettings(double bandwidth_headroom_factor) {
+  static const Vp8RateSettings low_settings{1000u, 0u, 100u, 30u, 40u};
+  static const Vp8RateSettings high_settings{100u, 15u, 1000u, 600u, 5u};
+
+  if (bandwidth_headroom_factor <= kLowRateFactor) {
+    return low_settings;
+  } else if (bandwidth_headroom_factor >= kHighRateFactor) {
+    return high_settings;
+  }
+
+  Vp8RateSettings settings;
+  settings.rc_undershoot_pct =
+      Interpolate(low_settings.rc_undershoot_pct,
+                  high_settings.rc_undershoot_pct, bandwidth_headroom_factor);
+  settings.rc_overshoot_pct =
+      Interpolate(low_settings.rc_overshoot_pct, high_settings.rc_overshoot_pct,
+                  bandwidth_headroom_factor);
+  settings.rc_buf_sz =
+      Interpolate(low_settings.rc_buf_sz, high_settings.rc_buf_sz,
+                  bandwidth_headroom_factor);
+  settings.rc_buf_optimal_sz =
+      Interpolate(low_settings.rc_buf_optimal_sz,
+                  high_settings.rc_buf_optimal_sz, bandwidth_headroom_factor);
+  settings.rc_dropframe_thresh =
+      Interpolate(low_settings.rc_dropframe_thresh,
+                  high_settings.rc_dropframe_thresh, bandwidth_headroom_factor);
+  return settings;
+}
+
+void UpdateRateSettings(vpx_codec_enc_cfg_t* config,
+                        const Vp8RateSettings& new_settings) {
+  config->rc_undershoot_pct = new_settings.rc_undershoot_pct;
+  config->rc_overshoot_pct = new_settings.rc_overshoot_pct;
+  config->rc_buf_sz = new_settings.rc_buf_sz;
+  config->rc_buf_optimal_sz = new_settings.rc_buf_optimal_sz;
+  config->rc_dropframe_thresh = new_settings.rc_dropframe_thresh;
+}
+
 }  // namespace
 
 void VP9EncoderImpl::EncoderOutputCodedPacketCallback(vpx_codec_cx_pkt* pkt,
@@ -170,6 +232,8 @@ VP9EncoderImpl::VP9EncoderImpl(const cricket::VideoCodec& codec)
       external_ref_control_(false),  // Set in InitEncode because of tests.
       trusted_rate_controller_(RateControlSettings::ParseFromFieldTrials()
                                    .LibvpxVp9TrustedRateController()),
+      dynamic_rate_settings_(
+          RateControlSettings::ParseFromFieldTrials().Vp9DynamicRateSettings()),
       full_superframe_drop_(true),
       first_frame_in_picture_(true),
       ss_info_needed_(false),
@@ -333,7 +397,7 @@ void VP9EncoderImpl::SetRates(const RateControlParameters& parameters) {
   }
 
   codec_.maxFramerate = static_cast<uint32_t>(parameters.framerate_fps + 0.5);
-  requested_bitrate_allocation_ = parameters.bitrate;
+  requested_rate_settings_ = parameters;
 
   return;
 }
@@ -798,11 +862,20 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
 
   vpx_codec_control(encoder_, VP9E_SET_SVC_LAYER_ID, &layer_id);
 
-  if (requested_bitrate_allocation_) {
+  if (requested_rate_settings_) {
+    if (dynamic_rate_settings_) {
+      // Tweak rate control settings based on available network headroom.
+      UpdateRateSettings(
+          config_,
+          GetRateSettings(
+              requested_rate_settings_->bandwidth_allocation.bps<double>() /
+              requested_rate_settings_->bitrate.get_sum_bps()));
+    }
+
     bool more_layers_requested = MoreLayersEnabled(
-        *requested_bitrate_allocation_, current_bitrate_allocation_);
+        requested_rate_settings_->bitrate, current_bitrate_allocation_);
     bool less_layers_requested = MoreLayersEnabled(
-        current_bitrate_allocation_, *requested_bitrate_allocation_);
+        current_bitrate_allocation_, requested_rate_settings_->bitrate);
     // In SVC can enable new layers only if all lower layers are encoded and at
     // the base temporal layer.
     // This will delay rate allocation change until the next frame on the base
@@ -813,8 +886,8 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
         inter_layer_pred_ != InterLayerPredMode::kOn ||
         (layer_id.spatial_layer_id == 0 && layer_id.temporal_layer_id == 0);
     if (!more_layers_requested || can_upswitch) {
-      current_bitrate_allocation_ = *requested_bitrate_allocation_;
-      requested_bitrate_allocation_ = absl::nullopt;
+      current_bitrate_allocation_ = requested_rate_settings_->bitrate;
+      requested_rate_settings_ = absl::nullopt;
       if (!SetSvcRates(current_bitrate_allocation_)) {
         return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
       }
