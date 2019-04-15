@@ -666,8 +666,9 @@ void CreateTrackWithNoSsrcs(const std::vector<std::string>& msid_stream_ids,
                             const std::vector<RidDescription>& rids,
                             StreamParamsVec* tracks) {
   StreamParams track;
-  if (msid_track_id.empty() || msid_stream_ids.empty()) {
+  if (msid_track_id.empty() && rids.empty()) {
     // We only create an unsignaled track if a=msid lines were signaled.
+    RTC_LOG(LS_INFO) << "MSID not signaled, skipping creation of StreamParams";
     return;
   }
   track.set_stream_ids(msid_stream_ids);
