@@ -40,8 +40,6 @@ class SuppressionGain {
       const std::array<float, kFftLengthBy2Plus1>& echo_spectrum,
       const std::array<float, kFftLengthBy2Plus1>& residual_echo_spectrum,
       const std::array<float, kFftLengthBy2Plus1>& comfort_noise_spectrum,
-      const FftData& linear_aec_fft,
-      const FftData& capture_fft,
       const RenderSignalAnalyzer& render_signal_analyzer,
       const AecState& aec_state,
       const std::vector<std::vector<float>>& render,
