@@ -19,15 +19,16 @@ namespace webrtc {
 namespace test {
 namespace {
 constexpr char kDummyTransportName[] = "dummy";
-SimulatedNetwork::Config CreateSimulationConfig(NetworkNodeConfig config) {
+SimulatedNetwork::Config CreateSimulationConfig(
+    NetworkSimulationConfig config) {
   SimulatedNetwork::Config sim_config;
-  sim_config.link_capacity_kbps = config.simulation.bandwidth.kbps_or(0);
-  sim_config.loss_percent = config.simulation.loss_rate * 100;
-  sim_config.queue_delay_ms = config.simulation.delay.ms();
-  sim_config.delay_standard_deviation_ms = config.simulation.delay_std_dev.ms();
+  sim_config.link_capacity_kbps = config.bandwidth.kbps_or(0);
+  sim_config.loss_percent = config.loss_rate * 100;
+  sim_config.queue_delay_ms = config.delay.ms();
+  sim_config.delay_standard_deviation_ms = config.delay_std_dev.ms();
   sim_config.packet_overhead = config.packet_overhead.bytes<int>();
   sim_config.codel_active_queue_management =
-      config.simulation.codel_active_queue_management;
+      config.codel_active_queue_management;
   return sim_config;
 }
 }  // namespace
@@ -44,8 +45,7 @@ void ActionReceiver::OnPacketReceived(EmulatedIpPacket packet) {
 std::unique_ptr<SimulationNode> SimulationNode::Create(
     Clock* clock,
     rtc::TaskQueue* task_queue,
-    NetworkNodeConfig config) {
-  RTC_DCHECK(config.mode == NetworkNodeConfig::TrafficMode::kSimulation);
+    NetworkSimulationConfig config) {
   SimulatedNetwork::Config sim_config = CreateSimulationConfig(config);
   auto network = absl::make_unique<SimulatedNetwork>(sim_config);
   SimulatedNetwork* simulation_ptr = network.get();
@@ -54,7 +54,7 @@ std::unique_ptr<SimulationNode> SimulationNode::Create(
 }
 
 void SimulationNode::UpdateConfig(
-    std::function<void(NetworkNodeConfig*)> modifier) {
+    std::function<void(NetworkSimulationConfig*)> modifier) {
   modifier(&config_);
   SimulatedNetwork::Config sim_config = CreateSimulationConfig(config_);
   simulated_network_->SetConfig(sim_config);
@@ -65,20 +65,18 @@ void SimulationNode::PauseTransmissionUntil(Timestamp until) {
 }
 
 ColumnPrinter SimulationNode::ConfigPrinter() const {
-  return ColumnPrinter::Lambda("propagation_delay capacity loss_rate",
-                               [this](rtc::SimpleStringBuilder& sb) {
-                                 sb.AppendFormat(
-                                     "%.3lf %.0lf %.2lf",
-                                     config_.simulation.delay.seconds<double>(),
-                                     config_.simulation.bandwidth.bps() / 8.0,
-                                     config_.simulation.loss_rate);
-                               });
+  return ColumnPrinter::Lambda(
+      "propagation_delay capacity loss_rate",
+      [this](rtc::SimpleStringBuilder& sb) {
+        sb.AppendFormat("%.3lf %.0lf %.2lf", config_.delay.seconds<double>(),
+                        config_.bandwidth.bps() / 8.0, config_.loss_rate);
+      });
 }
 
 SimulationNode::SimulationNode(
     Clock* clock,
     rtc::TaskQueue* task_queue,
-    NetworkNodeConfig config,
+    NetworkSimulationConfig config,
     std::unique_ptr<NetworkBehaviorInterface> behavior,
     SimulatedNetwork* simulation)
     : EmulatedNetworkNode(clock, task_queue, std::move(behavior)),

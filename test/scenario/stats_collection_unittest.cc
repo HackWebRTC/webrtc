@@ -15,7 +15,7 @@ namespace webrtc {
 namespace test {
 namespace {
 void CreateAnalyzedStream(Scenario* s,
-                          NetworkNodeConfig network_config,
+                          NetworkSimulationConfig network_config,
                           VideoQualityAnalyzer* analyzer,
                           CallStatsCollectors* collectors) {
   VideoStreamConfig config;
@@ -27,7 +27,7 @@ void CreateAnalyzedStream(Scenario* s,
   auto route =
       s->CreateRoutes(caller, {s->CreateSimulationNode(network_config)},
                       s->CreateClient("callee", CallClientConfig()),
-                      {s->CreateSimulationNode(NetworkNodeConfig())});
+                      {s->CreateSimulationNode(NetworkSimulationConfig())});
   auto* video = s->CreateVideoStream(route->forward(), config);
   auto* audio = s->CreateAudioStream(route->forward(), AudioStreamConfig());
   if (collectors) {
@@ -46,8 +46,8 @@ TEST(ScenarioAnalyzerTest, PsnrIsHighWhenNetworkIsGood) {
   CallStatsCollectors stats;
   {
     Scenario s;
-    NetworkNodeConfig good_network;
-    good_network.simulation.bandwidth = DataRate::kbps(1000);
+    NetworkSimulationConfig good_network;
+    good_network.bandwidth = DataRate::kbps(1000);
     CreateAnalyzedStream(&s, good_network, &analyzer, &stats);
     s.RunFor(TimeDelta::seconds(3));
   }
@@ -67,9 +67,9 @@ TEST(ScenarioAnalyzerTest, PsnrIsLowWhenNetworkIsBad) {
   CallStatsCollectors stats;
   {
     Scenario s;
-    NetworkNodeConfig bad_network;
-    bad_network.simulation.bandwidth = DataRate::kbps(100);
-    bad_network.simulation.loss_rate = 0.02;
+    NetworkSimulationConfig bad_network;
+    bad_network.bandwidth = DataRate::kbps(100);
+    bad_network.loss_rate = 0.02;
     CreateAnalyzedStream(&s, bad_network, &analyzer, &stats);
     s.RunFor(TimeDelta::seconds(3));
   }

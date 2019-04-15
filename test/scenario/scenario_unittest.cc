@@ -23,7 +23,7 @@ TEST(ScenarioTest, StartsAndStopsWithoutErrors) {
   call_client_config.transport.rates.start_rate = DataRate::kbps(300);
   auto* alice = s.CreateClient("alice", call_client_config);
   auto* bob = s.CreateClient("bob", call_client_config);
-  NetworkNodeConfig network_config;
+  NetworkSimulationConfig network_config;
   auto alice_net = s.CreateSimulationNode(network_config);
   auto bob_net = s.CreateSimulationNode(network_config);
   auto route = s.CreateRoutes(alice, {alice_net}, bob, {bob_net});
@@ -62,9 +62,9 @@ void SetupVideoCall(Scenario& s, VideoQualityAnalyzer* analyzer) {
   CallClientConfig call_config;
   auto* alice = s.CreateClient("alice", call_config);
   auto* bob = s.CreateClient("bob", call_config);
-  NetworkNodeConfig network_config;
-  network_config.simulation.bandwidth = DataRate::kbps(1000);
-  network_config.simulation.delay = TimeDelta::ms(50);
+  NetworkSimulationConfig network_config;
+  network_config.bandwidth = DataRate::kbps(1000);
+  network_config.delay = TimeDelta::ms(50);
   auto alice_net = s.CreateSimulationNode(network_config);
   auto bob_net = s.CreateSimulationNode(network_config);
   auto route = s.CreateRoutes(alice, {alice_net}, bob, {bob_net});

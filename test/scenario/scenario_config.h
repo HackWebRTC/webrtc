@@ -228,26 +228,14 @@ struct AudioStreamConfig {
   } render;
 };
 
-struct NetworkNodeConfig {
-  NetworkNodeConfig();
-  NetworkNodeConfig(const NetworkNodeConfig&);
-  ~NetworkNodeConfig();
-  enum class TrafficMode {
-    kSimulation,
-    kCustom
-  } mode = TrafficMode::kSimulation;
-  struct Simulation {
-    Simulation();
-    Simulation(const Simulation&);
-    ~Simulation();
-    DataRate bandwidth = DataRate::Infinity();
-    TimeDelta delay = TimeDelta::Zero();
-    TimeDelta delay_std_dev = TimeDelta::Zero();
-    double loss_rate = 0;
-    bool codel_active_queue_management = false;
-  } simulation;
+// TODO(srte): Merge this with BuiltInNetworkBehaviorConfig.
+struct NetworkSimulationConfig {
+  DataRate bandwidth = DataRate::Infinity();
+  TimeDelta delay = TimeDelta::Zero();
+  TimeDelta delay_std_dev = TimeDelta::Zero();
+  double loss_rate = 0;
+  bool codel_active_queue_management = false;
   DataSize packet_overhead = DataSize::Zero();
-  TimeDelta update_frequency = TimeDelta::ms(1);
 };
 
 struct CrossTrafficConfig {

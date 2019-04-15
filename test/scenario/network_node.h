@@ -45,28 +45,27 @@ class ActionReceiver : public EmulatedNetworkReceiverInterface {
   std::function<void()> action_;
 };
 
-// SimulationNode is a EmulatedNetworkNode that expose an interface for changing
-// run time behavior of the underlying simulation.
 class SimulationNode : public EmulatedNetworkNode {
  public:
-  void UpdateConfig(std::function<void(NetworkNodeConfig*)> modifier);
+  void UpdateConfig(std::function<void(NetworkSimulationConfig*)> modifier);
   void PauseTransmissionUntil(Timestamp until);
   ColumnPrinter ConfigPrinter() const;
+  EmulatedNetworkNode* node() { return this; }
 
  private:
   friend class Scenario;
 
   SimulationNode(Clock* clock,
                  rtc::TaskQueue* task_queue,
-                 NetworkNodeConfig config,
+                 NetworkSimulationConfig config,
                  std::unique_ptr<NetworkBehaviorInterface> behavior,
                  SimulatedNetwork* simulation);
   static std::unique_ptr<SimulationNode> Create(Clock* clock,
                                                 rtc::TaskQueue* task_queue,
-                                                NetworkNodeConfig config);
+                                                NetworkSimulationConfig config);
 
   SimulatedNetwork* const simulated_network_;
-  NetworkNodeConfig config_;
+  NetworkSimulationConfig config_;
 };
 
 class NetworkNodeTransport : public Transport {

@@ -192,28 +192,31 @@ SimulatedTimeClient* Scenario::CreateSimulatedTimeClient(
   simulated_time_clients_.emplace_back(client);
   return client;
 }
-
-SimulationNode* Scenario::CreateSimulationNode(
-    std::function<void(NetworkNodeConfig*)> config_modifier) {
-  NetworkNodeConfig config;
+EmulatedNetworkNode* Scenario::CreateSimulationNode(
+    std::function<void(NetworkSimulationConfig*)> config_modifier) {
+  NetworkSimulationConfig config;
   config_modifier(&config);
   return CreateSimulationNode(config);
 }
 
-SimulationNode* Scenario::CreateSimulationNode(NetworkNodeConfig config) {
-  RTC_DCHECK(config.mode == NetworkNodeConfig::TrafficMode::kSimulation);
+EmulatedNetworkNode* Scenario::CreateSimulationNode(
+    NetworkSimulationConfig config) {
+  return CreateMutableSimulationNode(config);
+}
+
+SimulationNode* Scenario::CreateMutableSimulationNode(
+    std::function<void(NetworkSimulationConfig*)> config_modifier) {
+  NetworkSimulationConfig config;
+  config_modifier(&config);
+  return CreateMutableSimulationNode(config);
+}
+
+SimulationNode* Scenario::CreateMutableSimulationNode(
+    NetworkSimulationConfig config) {
   auto network_node = SimulationNode::Create(clock_, &task_queue_, config);
   SimulationNode* sim_node = network_node.get();
   network_nodes_.emplace_back(std::move(network_node));
   return sim_node;
-}
-
-EmulatedNetworkNode* Scenario::CreateNetworkNode(
-    std::unique_ptr<NetworkBehaviorInterface> behavior) {
-  network_nodes_.emplace_back(
-      new EmulatedNetworkNode(clock_, &task_queue_, std::move(behavior)));
-  EmulatedNetworkNode* network_node = network_nodes_.back().get();
-  return network_node;
 }
 
 void Scenario::TriggerPacketBurst(std::vector<EmulatedNetworkNode*> over_nodes,

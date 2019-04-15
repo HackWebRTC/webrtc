@@ -82,37 +82,33 @@ TEST(PccNetworkControllerTest, UpdatesTargetSendRate) {
   config.transport.rates.min_rate = DataRate::kbps(10);
   config.transport.rates.max_rate = DataRate::kbps(1500);
   config.transport.rates.start_rate = DataRate::kbps(300);
-  NetworkNodeConfig net_conf;
-  auto send_net = s.CreateSimulationNode([](NetworkNodeConfig* c) {
-    c->simulation.bandwidth = DataRate::kbps(500);
-    c->simulation.delay = TimeDelta::ms(100);
-    c->simulation.loss_rate = 0.0;
-    c->update_frequency = TimeDelta::ms(5);
+  auto send_net = s.CreateMutableSimulationNode([](NetworkSimulationConfig* c) {
+    c->bandwidth = DataRate::kbps(500);
+    c->delay = TimeDelta::ms(100);
   });
-  auto ret_net = s.CreateSimulationNode([](NetworkNodeConfig* c) {
-    c->simulation.delay = TimeDelta::ms(100);
-    c->update_frequency = TimeDelta::ms(5);
-  });
-  SimulatedTimeClient* client = s.CreateSimulatedTimeClient(
-      "send", config, {PacketStreamConfig()}, {send_net}, {ret_net});
+  auto ret_net = s.CreateMutableSimulationNode(
+      [](NetworkSimulationConfig* c) { c->delay = TimeDelta::ms(100); });
+  SimulatedTimeClient* client =
+      s.CreateSimulatedTimeClient("send", config, {PacketStreamConfig()},
+                                  {send_net->node()}, {ret_net->node()});
 
   s.RunFor(TimeDelta::seconds(25));
   EXPECT_NEAR(client->target_rate_kbps(), 450, 100);
 
-  send_net->UpdateConfig([](NetworkNodeConfig* c) {
-    c->simulation.bandwidth = DataRate::kbps(800);
-    c->simulation.delay = TimeDelta::ms(100);
+  send_net->UpdateConfig([](NetworkSimulationConfig* c) {
+    c->bandwidth = DataRate::kbps(800);
+    c->delay = TimeDelta::ms(100);
   });
 
   s.RunFor(TimeDelta::seconds(20));
   EXPECT_NEAR(client->target_rate_kbps(), 750, 150);
 
-  send_net->UpdateConfig([](NetworkNodeConfig* c) {
-    c->simulation.bandwidth = DataRate::kbps(200);
-    c->simulation.delay = TimeDelta::ms(200);
+  send_net->UpdateConfig([](NetworkSimulationConfig* c) {
+    c->bandwidth = DataRate::kbps(200);
+    c->delay = TimeDelta::ms(200);
   });
   ret_net->UpdateConfig(
-      [](NetworkNodeConfig* c) { c->simulation.delay = TimeDelta::ms(200); });
+      [](NetworkSimulationConfig* c) { c->delay = TimeDelta::ms(200); });
 
   s.RunFor(TimeDelta::seconds(20));
   EXPECT_NEAR(client->target_rate_kbps(), 200, 40);

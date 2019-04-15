@@ -49,11 +49,13 @@ class Scenario {
   RTC_DISALLOW_COPY_AND_ASSIGN(Scenario);
   ~Scenario();
 
-  SimulationNode* CreateSimulationNode(NetworkNodeConfig config);
-  SimulationNode* CreateSimulationNode(
-      std::function<void(NetworkNodeConfig*)> config_modifier);
-  EmulatedNetworkNode* CreateNetworkNode(
-      std::unique_ptr<NetworkBehaviorInterface> behavior);
+  EmulatedNetworkNode* CreateSimulationNode(NetworkSimulationConfig config);
+  EmulatedNetworkNode* CreateSimulationNode(
+      std::function<void(NetworkSimulationConfig*)> config_modifier);
+
+  SimulationNode* CreateMutableSimulationNode(NetworkSimulationConfig config);
+  SimulationNode* CreateMutableSimulationNode(
+      std::function<void(NetworkSimulationConfig*)> config_modifier);
 
   CallClient* CreateClient(std::string name, CallClientConfig config);
   CallClient* CreateClient(

@@ -30,10 +30,11 @@ TEST(VideoStreamTest, DISABLED_ReceivesFramesFromFileBasedStreams) {
   frame_counts[1] = 0;
   {
     Scenario s;
-    auto route = s.CreateRoutes(s.CreateClient("caller", CallClientConfig()),
-                                {s.CreateSimulationNode(NetworkNodeConfig())},
-                                s.CreateClient("callee", CallClientConfig()),
-                                {s.CreateSimulationNode(NetworkNodeConfig())});
+    auto route =
+        s.CreateRoutes(s.CreateClient("caller", CallClientConfig()),
+                       {s.CreateSimulationNode(NetworkSimulationConfig())},
+                       s.CreateClient("callee", CallClientConfig()),
+                       {s.CreateSimulationNode(NetworkSimulationConfig())});
 
     s.CreateVideoStream(route->forward(), [&](VideoStreamConfig* c) {
       c->hooks.frame_pair_handlers = {
@@ -78,10 +79,11 @@ TEST(VideoStreamTest, RecievesVp8SimulcastFrames) {
   frame_counts[2] = 0;
   {
     Scenario s;
-    auto route = s.CreateRoutes(s.CreateClient("caller", CallClientConfig()),
-                                {s.CreateSimulationNode(NetworkNodeConfig())},
-                                s.CreateClient("callee", CallClientConfig()),
-                                {s.CreateSimulationNode(NetworkNodeConfig())});
+    auto route =
+        s.CreateRoutes(s.CreateClient("caller", CallClientConfig()),
+                       {s.CreateSimulationNode(NetworkSimulationConfig())},
+                       s.CreateClient("callee", CallClientConfig()),
+                       {s.CreateSimulationNode(NetworkSimulationConfig())});
     s.CreateVideoStream(route->forward(), [&](VideoStreamConfig* c) {
       // TODO(srte): Replace with code checking for all simulcast streams when
       // there's a hook available for that.

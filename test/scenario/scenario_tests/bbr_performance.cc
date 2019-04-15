@@ -157,14 +157,15 @@ TEST_P(BbrScenarioTest, ReceivesVideo) {
 
   CallClient* alice = s.CreateClient("send", call_config);
   CallClient* bob = s.CreateClient("return", call_config);
-  NetworkNodeConfig net_conf;
-  net_conf.simulation.bandwidth = conf_.scenario.capacity;
-  net_conf.simulation.delay = conf_.scenario.propagation_delay;
-  net_conf.simulation.loss_rate = conf_.scenario.loss_rate;
-  net_conf.simulation.delay_std_dev = conf_.scenario.delay_noise;
-  SimulationNode* send_net = s.CreateSimulationNode(net_conf);
-  SimulationNode* ret_net = s.CreateSimulationNode(net_conf);
-  auto route = s.CreateRoutes(alice, {send_net}, bob, {ret_net});
+  NetworkSimulationConfig net_conf;
+  net_conf.bandwidth = conf_.scenario.capacity;
+  net_conf.delay = conf_.scenario.propagation_delay;
+  net_conf.loss_rate = conf_.scenario.loss_rate;
+  net_conf.delay_std_dev = conf_.scenario.delay_noise;
+  auto* send_net = s.CreateMutableSimulationNode(net_conf);
+  auto* ret_net = s.CreateMutableSimulationNode(net_conf);
+  auto route =
+      s.CreateRoutes(alice, {send_net->node()}, bob, {ret_net->node()});
 
   VideoStreamPair* alice_video =
       s.CreateVideoStream(route->forward(), [&](VideoStreamConfig* c) {
