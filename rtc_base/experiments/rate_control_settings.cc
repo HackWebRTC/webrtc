@@ -83,16 +83,18 @@ RateControlSettings::RateControlSettings(
                                 kDefaultScreenshareHysteresisFactor)),
       probe_max_allocation_("probe_max_allocation", true),
       bitrate_adjuster_("bitrate_adjuster", false),
+      adjuster_use_headroom_("adjuster_use_headroom", false),
       vp8_s0_boost_("vp8_s0_boost", true),
       vp8_dynamic_rate_("vp8_dynamic_rate", false),
       vp9_dynamic_rate_("vp9_dynamic_rate", false) {
   ParseFieldTrial({&congestion_window_, &congestion_window_pushback_},
                   key_value_config->Lookup("WebRTC-CongestionWindow"));
-  ParseFieldTrial({&pacing_factor_, &alr_probing_, &trust_vp8_, &trust_vp9_,
-                   &video_hysteresis_, &screenshare_hysteresis_,
-                   &probe_max_allocation_, &bitrate_adjuster_, &vp8_s0_boost_,
-                   &vp8_dynamic_rate_, &vp9_dynamic_rate_},
-                  key_value_config->Lookup("WebRTC-VideoRateControl"));
+  ParseFieldTrial(
+      {&pacing_factor_, &alr_probing_, &trust_vp8_, &trust_vp9_,
+       &video_hysteresis_, &screenshare_hysteresis_, &probe_max_allocation_,
+       &bitrate_adjuster_, &adjuster_use_headroom_, &vp8_s0_boost_,
+       &vp8_dynamic_rate_, &vp9_dynamic_rate_},
+      key_value_config->Lookup("WebRTC-VideoRateControl"));
 }
 
 RateControlSettings::~RateControlSettings() = default;
@@ -186,6 +188,10 @@ bool RateControlSettings::TriggerProbeOnMaxAllocatedBitrateChange() const {
 
 bool RateControlSettings::UseEncoderBitrateAdjuster() const {
   return bitrate_adjuster_.Get();
+}
+
+bool RateControlSettings::BitrateAdjusterCanUseNetworkHeadroom() const {
+  return adjuster_use_headroom_.Get();
 }
 
 }  // namespace webrtc

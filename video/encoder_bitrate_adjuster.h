@@ -40,8 +40,7 @@ class EncoderBitrateAdjuster {
   // Adjusts the given rate allocation to make it paceable within the target
   // rates.
   VideoBitrateAllocation AdjustRateAllocation(
-      const VideoBitrateAllocation& bitrate_allocation,
-      int framerate_fps);
+      const VideoEncoder::RateControlParameters& rates);
 
   // Updated overuse detectors with data about the encoder, specifically about
   // the temporal layer frame rate allocation.
@@ -53,8 +52,9 @@ class EncoderBitrateAdjuster {
   void Reset();
 
  private:
-  VideoBitrateAllocation current_bitrate_allocation_;
-  int current_total_framerate_fps_;
+  const bool utilize_bandwidth_headroom_;
+
+  VideoEncoder::RateControlParameters current_rate_control_parameters_;
   // FPS allocation of temporal layers, per spatial layer. Represented as a Q8
   // fraction; 0 = 0%, 255 = 100%. See VideoEncoder::EncoderInfo.fps_allocation.
   absl::InlinedVector<uint8_t, kMaxTemporalStreams>

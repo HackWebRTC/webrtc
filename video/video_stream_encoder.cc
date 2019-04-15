@@ -1042,21 +1042,20 @@ VideoStreamEncoder::UpdateBitrateAllocationAndNotifyObserver(
     }
   }
 
+  EncoderRateSettings new_rate_settings = rate_settings;
+  new_rate_settings.bitrate = new_allocation;
+
   if (bitrate_adjuster_) {
     VideoBitrateAllocation adjusted_allocation =
-        bitrate_adjuster_->AdjustRateAllocation(
-            new_allocation,
-            static_cast<int>(rate_settings.framerate_fps + 0.5));
+        bitrate_adjuster_->AdjustRateAllocation(new_rate_settings);
     RTC_LOG(LS_VERBOSE) << "Adjusting allocation, fps = "
                         << rate_settings.framerate_fps << ", from "
                         << new_allocation.ToString() << ", to "
                         << adjusted_allocation.ToString();
-    new_allocation = adjusted_allocation;
+    new_rate_settings.bitrate = adjusted_allocation;
   }
 
-  return EncoderRateSettings(new_allocation, rate_settings.framerate_fps,
-                             rate_settings.bandwidth_allocation,
-                             rate_settings.encoder_target);
+  return new_rate_settings;
 }
 
 uint32_t VideoStreamEncoder::GetInputFramerateFps() {

@@ -16,19 +16,28 @@
 #include "api/units/data_rate.h"
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "test/field_trial.h"
 #include "test/gtest.h"
 
 namespace webrtc {
+namespace test {
 
 class EncoderBitrateAdjusterTest : public ::testing::Test {
  public:
   static constexpr int64_t kWindowSizeMs = 3000;
   static constexpr int kDefaultBitrateBps = 300000;
   static constexpr int kDefaultFrameRateFps = 30;
+  // For network utilization higher than media utilization, loop over a
+  // sequence where the first half undershoots and the second half overshoots
+  // by the same amount.
+  static constexpr int kSequenceLength = 4;
+  static_assert(kSequenceLength % 2 == 0, "Sequence length must be even.");
+
   EncoderBitrateAdjusterTest()
       : target_bitrate_(DataRate::bps(kDefaultBitrateBps)),
         target_framerate_fps_(kDefaultFrameRateFps),
-        tl_pattern_idx_{} {}
+        tl_pattern_idx_{},
+        sequence_idx_{} {}
 
  protected:
   void SetUpAdjuster(size_t num_spatial_layers,
@@ -73,12 +82,24 @@ class EncoderBitrateAdjusterTest : public ::testing::Test {
 
     adjuster_ = absl::make_unique<EncoderBitrateAdjuster>(codec_);
     adjuster_->OnEncoderInfo(encoder_info_);
-    current_adjusted_allocation_ = adjuster_->AdjustRateAllocation(
-        current_input_allocation_, target_framerate_fps_);
+    current_adjusted_allocation_ =
+        adjuster_->AdjustRateAllocation(VideoEncoder::RateControlParameters(
+            current_input_allocation_, target_framerate_fps_));
   }
 
-  void InsertFrames(std::vector<std::vector<double>> utilization_factors,
+  void InsertFrames(std::vector<std::vector<double>> media_utilization_factors,
                     int64_t duration_ms) {
+    InsertFrames(media_utilization_factors, media_utilization_factors,
+                 duration_ms);
+  }
+
+  void InsertFrames(
+      std::vector<std::vector<double>> media_utilization_factors,
+      std::vector<std::vector<double>> network_utilization_factors,
+      int64_t duration_ms) {
+    RTC_DCHECK_EQ(media_utilization_factors.size(),
+                  network_utilization_factors.size());
+
     constexpr size_t kMaxFrameSize = 100000;
     uint8_t buffer[kMaxFrameSize];
 
@@ -107,19 +128,52 @@ class EncoderBitrateAdjusterTest : public ::testing::Test {
               (target_framerate_fps_ * layer_fps_fraction) /
               VideoEncoder::EncoderInfo::kMaxFramerateFraction;
         }
-        double utilization_factor = 1.0;
-        if (utilization_factors.size() > si &&
-            utilization_factors[si].size() > ti) {
-          utilization_factor = utilization_factors[si][ti];
+        double media_utilization_factor = 1.0;
+        double network_utilization_factor = 1.0;
+        if (media_utilization_factors.size() > si) {
+          RTC_DCHECK_EQ(media_utilization_factors[si].size(),
+                        network_utilization_factors[si].size());
+          if (media_utilization_factors[si].size() > ti) {
+            media_utilization_factor = media_utilization_factors[si][ti];
+            network_utilization_factor = network_utilization_factors[si][ti];
+          }
         }
-        size_t frame_size_bytes = utilization_factor *
-                                  (layer_bitrate_bps / 8.0) /
-                                  layer_framerate_fps;
+        RTC_DCHECK_GE(network_utilization_factor, media_utilization_factor);
+
+        // Frame size based on constant (media) overshoot.
+        const size_t media_frame_size = media_utilization_factor *
+                                        (layer_bitrate_bps / 8.0) /
+                                        layer_framerate_fps;
+
+        constexpr int kFramesWithPenalty = (kSequenceLength / 2) - 1;
+        RTC_DCHECK_GT(kFramesWithPenalty, 0);
+
+        // The positive/negative size diff needed to achieve network rate but
+        // not media rate penalty is the difference between the utilization
+        // factors times the media rate frame size, then scaled by the fraction
+        // between total frames and penalized frames in the sequence.
+        // Cap to media frame size to avoid negative size undershoot.
+        const size_t network_frame_size_diff_bytes = std::min(
+            media_frame_size,
+            static_cast<size_t>(
+                (((network_utilization_factor - media_utilization_factor) *
+                  media_frame_size) *
+                 kSequenceLength) /
+                    kFramesWithPenalty +
+                0.5));
+
+        int sequence_idx = sequence_idx_[si][ti];
+        sequence_idx_[si][ti] = (sequence_idx_[si][ti] + 1) % kSequenceLength;
+        const size_t frame_size_bytes =
+            (sequence_idx < kSequenceLength / 2)
+                ? media_frame_size - network_frame_size_diff_bytes
+                : media_frame_size + network_frame_size_diff_bytes;
 
         EncodedImage image(buffer, 0, kMaxFrameSize);
         image.set_size(frame_size_bytes);
         image.SetSpatialIndex(si);
         adjuster_->OnEncodedFrame(image, ti);
+        sequence_idx = ++sequence_idx % kSequenceLength;
       }
     }
   }
@@ -184,6 +238,7 @@ class EncoderBitrateAdjusterTest : public ::testing::Test {
   DataRate target_bitrate_;
   double target_framerate_fps_;
   int tl_pattern_idx_[kMaxSpatialLayers];
+  int sequence_idx_[kMaxSpatialLayers][kMaxTemporalStreams];
 
   const std::vector<int> kTlPatterns[kMaxTemporalStreams] = {
       {0},
@@ -198,8 +253,9 @@ TEST_F(EncoderBitrateAdjusterTest, SingleLayerOptimal) {
   target_framerate_fps_ = 30;
   SetUpAdjuster(1, 1, false);
   InsertFrames({{1.0}}, kWindowSizeMs);
-  current_adjusted_allocation_ = adjuster_->AdjustRateAllocation(
-      current_input_allocation_, target_framerate_fps_);
+  current_adjusted_allocation_ =
+      adjuster_->AdjustRateAllocation(VideoEncoder::RateControlParameters(
+          current_input_allocation_, target_framerate_fps_));
   // Adjusted allocation near input. Allow 1% error margin due to rounding
   // errors etc.
   ExpectNear(current_input_allocation_, current_adjusted_allocation_, 0.01);
@@ -211,8 +267,9 @@ TEST_F(EncoderBitrateAdjusterTest, SingleLayerOveruse) {
   target_framerate_fps_ = 30;
   SetUpAdjuster(1, 1, false);
   InsertFrames({{1.2}}, kWindowSizeMs);
-  current_adjusted_allocation_ = adjuster_->AdjustRateAllocation(
-      current_input_allocation_, target_framerate_fps_);
+  current_adjusted_allocation_ =
+      adjuster_->AdjustRateAllocation(VideoEncoder::RateControlParameters(
+          current_input_allocation_, target_framerate_fps_));
   // Adjusted allocation lowered by 20%.
   ExpectNear(MultiplyAllocation(current_input_allocation_, 1 / 1.2),
              current_adjusted_allocation_, 0.01);
@@ -224,8 +281,9 @@ TEST_F(EncoderBitrateAdjusterTest, SingleLayerUnderuse) {
   target_framerate_fps_ = 30;
   SetUpAdjuster(1, 1, false);
   InsertFrames({{0.5}}, kWindowSizeMs);
-  current_adjusted_allocation_ = adjuster_->AdjustRateAllocation(
-      current_input_allocation_, target_framerate_fps_);
+  current_adjusted_allocation_ =
+      adjuster_->AdjustRateAllocation(VideoEncoder::RateControlParameters(
+          current_input_allocation_, target_framerate_fps_));
   // Undershoot, adjusted should exactly match input.
   ExpectNear(current_input_allocation_, current_adjusted_allocation_, 0.00);
 }
@@ -238,8 +296,9 @@ TEST_F(EncoderBitrateAdjusterTest, ThreeTemporalLayersOptimalSize) {
   target_framerate_fps_ = 30;
   SetUpAdjuster(1, 3, false);
   InsertFrames({{1.0, 1.0, 1.0}}, kWindowSizeMs);
-  current_adjusted_allocation_ = adjuster_->AdjustRateAllocation(
-      current_input_allocation_, target_framerate_fps_);
+  current_adjusted_allocation_ =
+      adjuster_->AdjustRateAllocation(VideoEncoder::RateControlParameters(
+          current_input_allocation_, target_framerate_fps_));
   ExpectNear(current_input_allocation_, current_adjusted_allocation_, 0.01);
 }
 
@@ -252,8 +311,9 @@ TEST_F(EncoderBitrateAdjusterTest, ThreeTemporalLayersOvershoot) {
   target_framerate_fps_ = 30;
   SetUpAdjuster(1, 3, false);
   InsertFrames({{1.1, 1.1, 1.1}}, kWindowSizeMs);
-  current_adjusted_allocation_ = adjuster_->AdjustRateAllocation(
-      current_input_allocation_, target_framerate_fps_);
+  current_adjusted_allocation_ =
+      adjuster_->AdjustRateAllocation(VideoEncoder::RateControlParameters(
+          current_input_allocation_, target_framerate_fps_));
   // Adjusted allocation lowered by 10%.
   ExpectNear(MultiplyAllocation(current_input_allocation_, 1 / 1.1),
              current_adjusted_allocation_, 0.01);
@@ -267,8 +327,9 @@ TEST_F(EncoderBitrateAdjusterTest, ThreeTemporalLayersUndershoot) {
   target_framerate_fps_ = 30;
   SetUpAdjuster(1, 3, false);
   InsertFrames({{0.8, 0.8, 0.8}}, kWindowSizeMs);
-  current_adjusted_allocation_ = adjuster_->AdjustRateAllocation(
-      current_input_allocation_, target_framerate_fps_);
+  current_adjusted_allocation_ =
+      adjuster_->AdjustRateAllocation(VideoEncoder::RateControlParameters(
+          current_input_allocation_, target_framerate_fps_));
   // Adjusted allocation identical since we don't boost bitrates.
   ExpectNear(current_input_allocation_, current_adjusted_allocation_, 0.0);
 }
@@ -282,8 +343,9 @@ TEST_F(EncoderBitrateAdjusterTest, ThreeTemporalLayersSkewedOvershoot) {
   target_framerate_fps_ = 30;
   SetUpAdjuster(1, 3, false);
   InsertFrames({{1.1, 1.2, 1.2}}, kWindowSizeMs);
-  current_adjusted_allocation_ = adjuster_->AdjustRateAllocation(
-      current_input_allocation_, target_framerate_fps_);
+  current_adjusted_allocation_ =
+      adjuster_->AdjustRateAllocation(VideoEncoder::RateControlParameters(
+          current_input_allocation_, target_framerate_fps_));
   // Expected overshoot is weighted by bitrate:
   // (0.6 * 1.1 + 0.2 * 1.2 + 0.2 * 1.2) = 1.14
   ExpectNear(MultiplyAllocation(current_input_allocation_, 1 / 1.14),
@@ -300,8 +362,9 @@ TEST_F(EncoderBitrateAdjusterTest, FourTemporalLayersSkewedOvershoot) {
   target_framerate_fps_ = 30;
   SetUpAdjuster(1, 4, false);
   InsertFrames({{1.1, 1.2, 1.2, 1.2}}, kWindowSizeMs);
-  current_adjusted_allocation_ = adjuster_->AdjustRateAllocation(
-      current_input_allocation_, target_framerate_fps_);
+  current_adjusted_allocation_ =
+      adjuster_->AdjustRateAllocation(VideoEncoder::RateControlParameters(
+          current_input_allocation_, target_framerate_fps_));
   // Expected overshoot is weighted by bitrate:
   // (0.4 * 1.1 + 0.3 * 1.2 + 0.15 * 1.2 + 0.15 * 1.2) = 1.16
   ExpectNear(MultiplyAllocation(current_input_allocation_, 1 / 1.16),
@@ -317,8 +380,9 @@ TEST_F(EncoderBitrateAdjusterTest, ThreeTemporalLayersNonLayeredEncoder) {
   target_framerate_fps_ = 30;
   SetUpAdjuster(1, 1, false);
   InsertFrames({{1.1}}, kWindowSizeMs);
-  current_adjusted_allocation_ = adjuster_->AdjustRateAllocation(
-      current_input_allocation_, target_framerate_fps_);
+  current_adjusted_allocation_ =
+      adjuster_->AdjustRateAllocation(VideoEncoder::RateControlParameters(
+          current_input_allocation_, target_framerate_fps_));
   // Expect the actual 10% overuse to be detected and the allocation to
   // only contain the one entry.
   VideoBitrateAllocation expected_allocation;
@@ -339,8 +403,9 @@ TEST_F(EncoderBitrateAdjusterTest, IgnoredStream) {
   adjuster_->OnEncoderInfo(encoder_info_);
 
   InsertFrames({{1.1}}, kWindowSizeMs);
-  current_adjusted_allocation_ = adjuster_->AdjustRateAllocation(
-      current_input_allocation_, target_framerate_fps_);
+  current_adjusted_allocation_ =
+      adjuster_->AdjustRateAllocation(VideoEncoder::RateControlParameters(
+          current_input_allocation_, target_framerate_fps_));
 
   // Values passed through.
   ExpectNear(current_input_allocation_, current_adjusted_allocation_, 0.00);
@@ -360,8 +425,9 @@ TEST_F(EncoderBitrateAdjusterTest, DifferentSpatialOvershoots) {
   for (int i = 0; i < 2; ++i) {
     SetUpAdjuster(2, 3, i == 0);
     InsertFrames({{1.05, 1.05, 1.05}, {1.25, 1.25, 1.25}}, kWindowSizeMs);
-    current_adjusted_allocation_ = adjuster_->AdjustRateAllocation(
-        current_input_allocation_, target_framerate_fps_);
+    current_adjusted_allocation_ =
+        adjuster_->AdjustRateAllocation(VideoEncoder::RateControlParameters(
+            current_input_allocation_, target_framerate_fps_));
     VideoBitrateAllocation expected_allocation;
     for (size_t ti = 0; ti < 3; ++ti) {
       expected_allocation.SetBitrate(
@@ -377,4 +443,89 @@ TEST_F(EncoderBitrateAdjusterTest, DifferentSpatialOvershoots) {
   }
 }
 
+TEST_F(EncoderBitrateAdjusterTest, HeadroomAllowsOvershootToMediaRate) {
+  // Two streams, both with three temporal layers.
+  // Media rate is 1.0, but network rate is higher.
+  ScopedFieldTrials field_trial(
+      "WebRTC-VideoRateControl/adjuster_use_headroom:true/");
+
+  const uint32_t kS0Bitrate = 300000;
+  const uint32_t kS1Bitrate = 900000;
+  current_input_allocation_.SetBitrate(0, 0, kS0Bitrate / 3);
+  current_input_allocation_.SetBitrate(0, 1, kS0Bitrate / 3);
+  current_input_allocation_.SetBitrate(0, 2, kS0Bitrate / 3);
+  current_input_allocation_.SetBitrate(1, 0, kS1Bitrate / 3);
+  current_input_allocation_.SetBitrate(1, 1, kS1Bitrate / 3);
+  current_input_allocation_.SetBitrate(1, 2, kS1Bitrate / 3);
+
+  target_framerate_fps_ = 30;
+
+  // Run twice, once configured as simulcast and once as VP9 SVC.
+  for (int i = 0; i < 2; ++i) {
+    SetUpAdjuster(2, 3, i == 0);
+    // Network rate has 10% overshoot, but media rate is correct at 1.0.
+    InsertFrames({{1.0, 1.0, 1.0}, {1.0, 1.0, 1.0}},
+                 {{1.1, 1.1, 1.1}, {1.1, 1.1, 1.1}},
+                 kWindowSizeMs * kSequenceLength);
+
+    // Push back by 10%.
+    current_adjusted_allocation_ =
+        adjuster_->AdjustRateAllocation(VideoEncoder::RateControlParameters(
+            current_input_allocation_, target_framerate_fps_));
+    ExpectNear(MultiplyAllocation(current_input_allocation_, 1 / 1.1),
+               current_adjusted_allocation_, 0.01);
+
+    // Add 10% link headroom, overshoot is now allowed.
+    current_adjusted_allocation_ =
+        adjuster_->AdjustRateAllocation(VideoEncoder::RateControlParameters(
+            current_input_allocation_, target_framerate_fps_,
+            DataRate::bps(current_input_allocation_.get_sum_bps() * 1.1)));
+    ExpectNear(current_input_allocation_, current_adjusted_allocation_, 0.01);
+  }
+}
+
+TEST_F(EncoderBitrateAdjusterTest, DontExceedMediaRateEvenWithHeadroom) {
+  // Two streams, both with three temporal layers.
+  // Media rate is 1.1, but network rate is higher.
+  ScopedFieldTrials field_trial(
+      "WebRTC-VideoRateControl/adjuster_use_headroom:true/");
+
+  const uint32_t kS0Bitrate = 300000;
+  const uint32_t kS1Bitrate = 900000;
+  current_input_allocation_.SetBitrate(0, 0, kS0Bitrate / 3);
+  current_input_allocation_.SetBitrate(0, 1, kS0Bitrate / 3);
+  current_input_allocation_.SetBitrate(0, 2, kS0Bitrate / 3);
+  current_input_allocation_.SetBitrate(1, 0, kS1Bitrate / 3);
+  current_input_allocation_.SetBitrate(1, 1, kS1Bitrate / 3);
+  current_input_allocation_.SetBitrate(1, 2, kS1Bitrate / 3);
+
+  target_framerate_fps_ = 30;
+
+  // Run twice, once configured as simulcast and once as VP9 SVC.
+  for (int i = 0; i < 2; ++i) {
+    SetUpAdjuster(2, 3, i == 0);
+    // Network rate has 30% overshoot, media rate has 10% overshoot.
+    InsertFrames({{1.1, 1.1, 1.1}, {1.1, 1.1, 1.1}},
+                 {{1.3, 1.3, 1.3}, {1.3, 1.3, 1.3}},
+                 kWindowSizeMs * kSequenceLength);
+
+    // Push back by 30%.
+    current_adjusted_allocation_ =
+        adjuster_->AdjustRateAllocation(VideoEncoder::RateControlParameters(
+            current_input_allocation_, target_framerate_fps_));
+    // The up-down causes a bit more noise, allow slightly more error margin.
+    ExpectNear(MultiplyAllocation(current_input_allocation_, 1 / 1.3),
+               current_adjusted_allocation_, 0.015);
+
+    // Add 100% link headroom, overshoot from network to media rate is allowed.
+    current_adjusted_allocation_ =
+        adjuster_->AdjustRateAllocation(VideoEncoder::RateControlParameters(
+            current_input_allocation_, target_framerate_fps_,
+            DataRate::bps(current_input_allocation_.get_sum_bps() * 2)));
+    ExpectNear(MultiplyAllocation(current_input_allocation_, 1 / 1.1),
+               current_adjusted_allocation_, 0.015);
+  }
+}
+
+}  // namespace test
 }  // namespace webrtc
