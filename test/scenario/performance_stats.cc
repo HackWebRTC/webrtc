@@ -14,13 +14,10 @@
 namespace webrtc {
 namespace test {
 void EventRateCounter::AddEvent(Timestamp event_time) {
-  if (first_time_.IsInfinite()) {
-    first_time_ = event_time;
-  } else {
-    RTC_DCHECK(event_time >= last_time_);
+  if (first_time_.IsFinite())
     interval_.AddSample(event_time - last_time_);
-  }
-  last_time_ = event_time;
+  first_time_ = std::min(first_time_, event_time);
+  last_time_ = std::max(last_time_, event_time);
   event_count_++;
 }
 
