@@ -197,7 +197,6 @@ void SuppressionGain::GainToNoAudibleEcho(
 // Compute the minimum gain as the attenuating gain to put the signal just
 // above the zero sample values.
 void SuppressionGain::GetMinGain(
-    rtc::ArrayView<const float> suppressor_input,
     rtc::ArrayView<const float> weighted_residual_echo,
     bool low_noise_render,
     bool saturated_echo,
@@ -207,10 +206,10 @@ void SuppressionGain::GetMinGain(
         low_noise_render ? config_.echo_audibility.low_render_limit
                          : config_.echo_audibility.normal_render_limit;
 
-    for (size_t k = 0; k < suppressor_input.size(); ++k) {
-      const float denom =
-          std::min(suppressor_input[k], weighted_residual_echo[k]);
-      min_gain[k] = denom > 0.f ? min_echo_power / denom : 1.f;
+    for (size_t k = 0; k < min_gain.size(); ++k) {
+      min_gain[k] = weighted_residual_echo[k] > 0.f
+                        ? min_echo_power / weighted_residual_echo[k]
+                        : 1.f;
       min_gain[k] = std::min(min_gain[k], 1.f);
     }
     for (size_t k = 0; k < 6; ++k) {
@@ -259,8 +258,8 @@ void SuppressionGain::LowerBandGain(
   WeightEchoForAudibility(config_, residual_echo, weighted_residual_echo);
 
   std::array<float, kFftLengthBy2Plus1> min_gain;
-  GetMinGain(suppressor_input, weighted_residual_echo, low_noise_render,
-             saturated_echo, min_gain);
+  GetMinGain(weighted_residual_echo, low_noise_render, saturated_echo,
+             min_gain);
 
   std::array<float, kFftLengthBy2Plus1> max_gain;
   GetMaxGain(max_gain);
@@ -311,7 +310,6 @@ SuppressionGain::SuppressionGain(const EchoCanceller3Config& config,
 SuppressionGain::~SuppressionGain() = default;
 
 void SuppressionGain::GetGain(
-    const std::array<float, kFftLengthBy2Plus1>& suppressor_input_spectrum,
     const std::array<float, kFftLengthBy2Plus1>& nearend_spectrum,
     const std::array<float, kFftLengthBy2Plus1>& echo_spectrum,
     const std::array<float, kFftLengthBy2Plus1>& residual_echo_spectrum,
@@ -340,9 +338,8 @@ void SuppressionGain::GetGain(
 
   // Compute gain for the lower band.
   bool low_noise_render = low_render_detector_.Detect(render);
-  LowerBandGain(low_noise_render, aec_state, suppressor_input_spectrum,
-                nearend_average, residual_echo_spectrum, comfort_noise_spectrum,
-                low_band_gain);
+  LowerBandGain(low_noise_render, aec_state, nearend_spectrum, nearend_average,
+                residual_echo_spectrum, comfort_noise_spectrum, low_band_gain);
 
   // Compute the gain for the upper bands.
   const absl::optional<int> narrow_peak_band =

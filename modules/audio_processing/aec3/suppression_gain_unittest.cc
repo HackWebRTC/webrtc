@@ -45,7 +45,7 @@ TEST(SuppressionGain, NullOutputGains) {
   AecState aec_state(EchoCanceller3Config{});
   EXPECT_DEATH(
       SuppressionGain(EchoCanceller3Config{}, DetectOptimization(), 16000)
-          .GetGain(E2, E2, S2, R2, N2,
+          .GetGain(E2, S2, R2, N2,
                    RenderSignalAnalyzer((EchoCanceller3Config{})), aec_state,
                    std::vector<std::vector<float>>(
                        3, std::vector<float>(kBlockSize, 0.f)),
@@ -100,7 +100,7 @@ TEST(SuppressionGain, BasicGainComputation) {
                      subtractor.FilterImpulseResponse(),
                      *render_delay_buffer->GetRenderBuffer(), E2, Y2, output,
                      y);
-    suppression_gain.GetGain(E2, E2, S2, R2, N2, analyzer, aec_state, x,
+    suppression_gain.GetGain(E2, S2, R2, N2, analyzer, aec_state, x,
                              &high_bands_gain, &g);
   }
   std::for_each(g.begin(), g.end(),
@@ -118,7 +118,7 @@ TEST(SuppressionGain, BasicGainComputation) {
                      subtractor.FilterImpulseResponse(),
                      *render_delay_buffer->GetRenderBuffer(), E2, Y2, output,
                      y);
-    suppression_gain.GetGain(E2, E2, S2, R2, N2, analyzer, aec_state, x,
+    suppression_gain.GetGain(E2, S2, R2, N2, analyzer, aec_state, x,
                              &high_bands_gain, &g);
   }
   std::for_each(g.begin(), g.end(),
@@ -129,7 +129,7 @@ TEST(SuppressionGain, BasicGainComputation) {
   R2.fill(10000000000000.f);
 
   for (int k = 0; k < 10; ++k) {
-    suppression_gain.GetGain(E2, E2, S2, R2, N2, analyzer, aec_state, x,
+    suppression_gain.GetGain(E2, S2, R2, N2, analyzer, aec_state, x,
                              &high_bands_gain, &g);
   }
   std::for_each(g.begin(), g.end(),

@@ -290,15 +290,22 @@ void EchoRemoverImpl::ProcessCapture(
   // Estimate the comfort noise.
   cng_.Compute(aec_state_, Y2, &comfort_noise, &high_band_comfort_noise);
 
-  // Compute and apply the suppression gain.
+  // Suppressor echo estimate.
   const auto& echo_spectrum =
       aec_state_.UsableLinearEstimate() ? S2_linear : R2;
 
-  std::array<float, kFftLengthBy2Plus1> E2_bounded;
-  std::transform(E2.begin(), E2.end(), Y2.begin(), E2_bounded.begin(),
-                 [](float a, float b) { return std::min(a, b); });
+  // Suppressor nearend estimate.
+  std::array<float, kFftLengthBy2Plus1> nearend_spectrum_bounded;
+  if (aec_state_.UsableLinearEstimate()) {
+    std::transform(E2.begin(), E2.end(), Y2.begin(),
+                   nearend_spectrum_bounded.begin(),
+                   [](float a, float b) { return std::min(a, b); });
+  }
+  auto& nearend_spectrum =
+      aec_state_.UsableLinearEstimate() ? nearend_spectrum_bounded : Y2;
 
-  suppression_gain_.GetGain(E2, E2_bounded, echo_spectrum, R2,
+  // Compute and apply the suppression gain.
+  suppression_gain_.GetGain(nearend_spectrum, echo_spectrum, R2,
                             cng_.NoiseSpectrum(), render_signal_analyzer_,
                             aec_state_, x, &high_bands_gain, &G);
 

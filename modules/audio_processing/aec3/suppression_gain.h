@@ -35,7 +35,6 @@ class SuppressionGain {
                   int sample_rate_hz);
   ~SuppressionGain();
   void GetGain(
-      const std::array<float, kFftLengthBy2Plus1>& suppressor_input_spectrum,
       const std::array<float, kFftLengthBy2Plus1>& nearend_spectrum,
       const std::array<float, kFftLengthBy2Plus1>& echo_spectrum,
       const std::array<float, kFftLengthBy2Plus1>& residual_echo_spectrum,
@@ -76,8 +75,7 @@ class SuppressionGain {
       const std::array<float, kFftLengthBy2Plus1>& comfort_noise,
       std::array<float, kFftLengthBy2Plus1>* gain);
 
-  void GetMinGain(rtc::ArrayView<const float> suppressor_input,
-                  rtc::ArrayView<const float> weighted_residual_echo,
+  void GetMinGain(rtc::ArrayView<const float> weighted_residual_echo,
                   bool low_noise_render,
                   bool saturated_echo,
                   rtc::ArrayView<float> min_gain) const;
