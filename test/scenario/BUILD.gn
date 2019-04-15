@@ -59,6 +59,7 @@ if (rtc_include_tests) {
       "hardware_codecs.h",
       "network_node.cc",
       "network_node.h",
+      "performance_stats.cc",
       "performance_stats.h",
       "scenario.cc",
       "scenario.h",
