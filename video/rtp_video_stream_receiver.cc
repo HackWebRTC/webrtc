@@ -550,15 +550,20 @@ void RtpVideoStreamReceiver::ReceivePacket(const RtpPacketReceived& packet) {
   packet.GetExtension<PlayoutDelayLimits>(&video_header.playout_delay);
   packet.GetExtension<FrameMarkingExtension>(&video_header.frame_marking);
 
-  video_header.color_space = packet.GetExtension<ColorSpaceExtension>();
-  if (video_header.color_space ||
-      parsed_payload.frame_type == VideoFrameType::kVideoFrameKey) {
-    // Store color space since it's only transmitted when changed or for key
-    // frames. Color space will be cleared if a key frame is transmitted without
-    // color space information.
-    last_color_space_ = video_header.color_space;
-  } else if (last_color_space_) {
-    video_header.color_space = last_color_space_;
+  // Color space should only be transmitted in the last packet of a frame,
+  // therefore, neglect it otherwise so that last_color_space_ is not reset by
+  // mistake.
+  if (video_header.is_last_packet_in_frame) {
+    video_header.color_space = packet.GetExtension<ColorSpaceExtension>();
+    if (video_header.color_space ||
+        parsed_payload.frame_type == VideoFrameType::kVideoFrameKey) {
+      // Store color space since it's only transmitted when changed or for key
+      // frames. Color space will be cleared if a key frame is transmitted
+      // without color space information.
+      last_color_space_ = video_header.color_space;
+    } else if (last_color_space_) {
+      video_header.color_space = last_color_space_;
+    }
   }
 
   absl::optional<RtpGenericFrameDescriptor> generic_descriptor_wire;
