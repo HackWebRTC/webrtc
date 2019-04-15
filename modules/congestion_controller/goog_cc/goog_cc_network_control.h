@@ -37,15 +37,16 @@
 #include "rtc_base/experiments/rate_control_settings.h"
 
 namespace webrtc {
-
+struct GoogCcConfig {
+  std::unique_ptr<NetworkStateEstimator> network_state_estimator = nullptr;
+  std::unique_ptr<NetworkStatePredictor> network_state_predictor = nullptr;
+  bool feedback_only = false;
+};
 
 class GoogCcNetworkController : public NetworkControllerInterface {
  public:
-  GoogCcNetworkController(
-      RtcEventLog* event_log,
-      NetworkControllerConfig config,
-      bool feedback_only,
-      std::unique_ptr<NetworkStatePredictor> network_state_predictor);
+  GoogCcNetworkController(NetworkControllerConfig config,
+                          GoogCcConfig goog_cc_config);
   ~GoogCcNetworkController() override;
 
   // NetworkControllerInterface
@@ -91,6 +92,8 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   std::unique_ptr<SendSideBandwidthEstimation> bandwidth_estimation_;
   std::unique_ptr<AlrDetector> alr_detector_;
   std::unique_ptr<ProbeBitrateEstimator> probe_bitrate_estimator_;
+  std::unique_ptr<NetworkStateEstimator> network_estimator_;
+  std::unique_ptr<NetworkStatePredictor> network_state_predictor_;
   std::unique_ptr<DelayBasedBwe> delay_based_bwe_;
   std::unique_ptr<AcknowledgedBitrateEstimator> acknowledged_bitrate_estimator_;
 
@@ -124,7 +127,6 @@ class GoogCcNetworkController : public NetworkControllerInterface {
 
   absl::optional<DataSize> current_data_window_;
 
-  std::unique_ptr<NetworkStatePredictor> network_state_predictor_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(GoogCcNetworkController);
 };

@@ -410,7 +410,8 @@ void DEPRECATED_SendSideCongestionController::OnTransportFeedback(
     result = delay_based_bwe_->IncomingPacketFeedbackVector(
         feedback_vector, acknowledged_bitrate_estimator_->bitrate(),
         probe_bitrate_estimator_->FetchAndResetLastEstimatedBitrate(),
-        currently_in_alr, Timestamp::ms(clock_->TimeInMilliseconds()));
+        absl::nullopt, currently_in_alr,
+        Timestamp::ms(clock_->TimeInMilliseconds()));
   }
   if (result.updated) {
     bitrate_controller_->OnDelayBasedBweResult(result);

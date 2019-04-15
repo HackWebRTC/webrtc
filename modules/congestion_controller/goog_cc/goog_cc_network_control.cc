@@ -78,15 +78,12 @@ bool IsNotDisabled(const WebRtcKeyValueConfig* config, absl::string_view key) {
 }
 }  // namespace
 
-GoogCcNetworkController::GoogCcNetworkController(
-    RtcEventLog* event_log,
-    NetworkControllerConfig config,
-    bool feedback_only,
-    std::unique_ptr<NetworkStatePredictor> network_state_predictor)
+GoogCcNetworkController::GoogCcNetworkController(NetworkControllerConfig config,
+                                                 GoogCcConfig goog_cc_config)
     : key_value_config_(config.key_value_config ? config.key_value_config
                                                 : &trial_based_config_),
-      event_log_(event_log),
-      packet_feedback_only_(feedback_only),
+      event_log_(config.event_log),
+      packet_feedback_only_(goog_cc_config.feedback_only),
       safe_reset_on_route_change_("Enabled"),
       safe_reset_acknowledged_rate_("ack"),
       use_stable_bandwidth_estimate_(
@@ -97,7 +94,8 @@ GoogCcNetworkController::GoogCcNetworkController(
           IsNotDisabled(key_value_config_, "WebRTC-Bwe-MinAllocAsLowerBound")),
       rate_control_settings_(
           RateControlSettings::ParseFromKeyValueConfig(key_value_config_)),
-      probe_controller_(new ProbeController(key_value_config_, event_log)),
+      probe_controller_(
+          new ProbeController(key_value_config_, config.event_log)),
       congestion_window_pushback_controller_(
           rate_control_settings_.UseCongestionWindowPushback()
               ? absl::make_unique<CongestionWindowPushbackController>(
@@ -106,10 +104,13 @@ GoogCcNetworkController::GoogCcNetworkController(
       bandwidth_estimation_(
           absl::make_unique<SendSideBandwidthEstimation>(event_log_)),
       alr_detector_(absl::make_unique<AlrDetector>(key_value_config_)),
-      probe_bitrate_estimator_(new ProbeBitrateEstimator(event_log)),
+      probe_bitrate_estimator_(new ProbeBitrateEstimator(config.event_log)),
+      network_estimator_(std::move(goog_cc_config.network_state_estimator)),
+      network_state_predictor_(
+          std::move(goog_cc_config.network_state_predictor)),
       delay_based_bwe_(new DelayBasedBwe(key_value_config_,
                                          event_log_,
-                                         network_state_predictor.get())),
+                                         network_state_predictor_.get())),
       acknowledged_bitrate_estimator_(
           absl::make_unique<AcknowledgedBitrateEstimator>(key_value_config_)),
       initial_config_(config),
@@ -122,8 +123,7 @@ GoogCcNetworkController::GoogCcNetworkController(
               DataRate::Zero())),
       max_padding_rate_(config.stream_based_config.max_padding_rate.value_or(
           DataRate::Zero())),
-      max_total_allocated_bitrate_(DataRate::Zero()),
-      network_state_predictor_(std::move(network_state_predictor)) {
+      max_total_allocated_bitrate_(DataRate::Zero()) {
   RTC_DCHECK(config.constraints.at_time.IsFinite());
   ParseFieldTrial(
       {&safe_reset_on_route_change_, &safe_reset_acknowledged_rate_},
@@ -170,6 +170,8 @@ NetworkControlUpdate GoogCcNetworkController::OnNetworkRouteChange(
   acknowledged_bitrate_estimator_.reset(
       new AcknowledgedBitrateEstimator(key_value_config_));
   probe_bitrate_estimator_.reset(new ProbeBitrateEstimator(event_log_));
+  if (network_estimator_)
+    network_estimator_->OnRouteChange(msg);
   delay_based_bwe_.reset(new DelayBasedBwe(key_value_config_, event_log_,
                                            network_state_predictor_.get()));
   bandwidth_estimation_->OnRouteChange();
@@ -472,14 +474,20 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
                                              report.feedback_time);
   bandwidth_estimation_->IncomingPacketFeedbackVector(report);
 
+  if (network_estimator_)
+    network_estimator_->OnTransportPacketsFeedback(report);
+
   NetworkControlUpdate update;
   bool recovered_from_overuse = false;
   bool backoff_in_alr = false;
 
   DelayBasedBwe::Result result;
+  absl::optional<NetworkStateEstimate> network_estimate =
+      network_estimator_ ? network_estimator_->GetCurrentEstimate()
+                         : absl::nullopt;
   result = delay_based_bwe_->IncomingPacketFeedbackVector(
       received_feedback_vector, acknowledged_bitrate, probe_bitrate,
-      alr_start_time.has_value(), report.feedback_time);
+      network_estimate, alr_start_time.has_value(), report.feedback_time);
 
   if (result.updated) {
     if (result.probe) {

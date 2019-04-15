@@ -211,7 +211,8 @@ void DelayBasedBweTest::IncomingFeedback(int64_t arrival_time_ms,
   DelayBasedBwe::Result result =
       bitrate_estimator_->IncomingPacketFeedbackVector(
           packets, acknowledged_bitrate_estimator_->bitrate(),
-          probe_bitrate_estimator_->FetchAndResetLastEstimatedBitrate(), false,
+          probe_bitrate_estimator_->FetchAndResetLastEstimatedBitrate(),
+          /*network_estimate*/ absl::nullopt, /*in_alr*/ false,
           Timestamp::ms(clock_.TimeInMilliseconds()));
   const uint32_t kDummySsrc = 0;
   if (result.updated) {
@@ -252,7 +253,8 @@ bool DelayBasedBweTest::GenerateAndProcessFrame(uint32_t ssrc,
   DelayBasedBwe::Result result =
       bitrate_estimator_->IncomingPacketFeedbackVector(
           packets, acknowledged_bitrate_estimator_->bitrate(),
-          probe_bitrate_estimator_->FetchAndResetLastEstimatedBitrate(), false,
+          probe_bitrate_estimator_->FetchAndResetLastEstimatedBitrate(),
+          /*network_estimate*/ absl::nullopt, /*in_alr*/ false,
           Timestamp::ms(clock_.TimeInMilliseconds()));
   const uint32_t kDummySsrc = 0;
   if (result.updated) {

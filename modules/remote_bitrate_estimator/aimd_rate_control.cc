@@ -17,6 +17,7 @@
 #include <cstdio>
 #include <string>
 
+#include "api/transport/network_types.h"
 #include "api/units/data_rate.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/remote_bitrate_estimator/overuse_detector.h"
@@ -71,7 +72,10 @@ AimdRateControl::AimdRateControl()
       smoothing_experiment_(
           webrtc::field_trial::IsEnabled("WebRTC-Audio-BandwidthSmoothing")),
       initial_backoff_interval_("initial_backoff_interval"),
-      low_throughput_threshold_("low_throughput", DataRate::Zero()) {
+      low_throughput_threshold_("low_throughput", DataRate::Zero()),
+      capacity_deviation_ratio_threshold_("cap_thr", 0.2),
+      cross_traffic_factor_("cross", 1.0),
+      capacity_limit_deviation_factor_("cap_lim", 1) {
   // E.g
   // WebRTC-BweAimdRateControlConfig/initial_backoff_interval:100ms,
   // low_throughput:50kbps/
@@ -82,6 +86,10 @@ AimdRateControl::AimdRateControl()
                      << " " << ToString(*initial_backoff_interval_) << ".";
   }
   RTC_LOG(LS_INFO) << "Using aimd rate control with back off factor " << beta_;
+  ParseFieldTrial(
+      {&capacity_deviation_ratio_threshold_, &cross_traffic_factor_,
+       &capacity_limit_deviation_factor_},
+      field_trial::FindFullName("WebRTC-Bwe-AimdRateControl-NetworkState"));
 }
 
 AimdRateControl::~AimdRateControl() {}
@@ -186,6 +194,11 @@ void AimdRateControl::SetEstimate(DataRate bitrate, Timestamp at_time) {
   }
 }
 
+void AimdRateControl::SetNetworkStateEstimate(
+    const absl::optional<NetworkStateEstimate>& estimate) {
+  network_estimate_ = estimate;
+}
+
 double AimdRateControl::GetNearMaxIncreaseRateBpsPerSecond() const {
   RTC_DCHECK(!current_bitrate_.IsZero());
   const TimeDelta kFrameInterval = TimeDelta::seconds(1) / 30;
@@ -263,6 +276,21 @@ DataRate AimdRateControl::ChangeBitrate(DataRate new_bitrate,
       break;
 
     case kRcDecrease:
+      if (network_estimate_ && capacity_deviation_ratio_threshold_) {
+        // If we have a low variance network estimate, we use it over the
+        // acknowledged rate to avoid dropping the bitrate too far. This avoids
+        // overcompensating when the send rate is lower than the capacity.
+        double deviation_ratio = network_estimate_->link_capacity_std_dev /
+                                 network_estimate_->link_capacity;
+        if (deviation_ratio < *capacity_deviation_ratio_threshold_) {
+          double available_ratio =
+              std::max(0.0, 1.0 - network_estimate_->cross_traffic_ratio *
+                                      cross_traffic_factor_);
+          DataRate available_rate =
+              network_estimate_->link_capacity * available_ratio;
+          estimated_throughput = std::max(available_rate, estimated_throughput);
+        }
+      }
       if (estimated_throughput > low_throughput_threshold_) {
         // Set bit rate to something slightly lower than the measured throughput
         // to get rid of any self-induced delay.
@@ -322,6 +350,12 @@ DataRate AimdRateControl::ClampBitrate(DataRate new_bitrate,
   const DataRate max_bitrate = 1.5 * estimated_throughput + DataRate::kbps(10);
   if (new_bitrate > current_bitrate_ && new_bitrate > max_bitrate) {
     new_bitrate = std::max(current_bitrate_, max_bitrate);
+  }
+  if (network_estimate_ && capacity_limit_deviation_factor_) {
+    DataRate upper_bound = network_estimate_->link_capacity +
+                           network_estimate_->link_capacity_std_dev *
+                               capacity_limit_deviation_factor_.Value();
+    new_bitrate = std::min(new_bitrate, upper_bound);
   }
   new_bitrate = std::max(new_bitrate, min_configured_bitrate_);
   return new_bitrate;

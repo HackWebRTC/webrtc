@@ -212,6 +212,22 @@ struct ProcessInterval {
   Timestamp at_time = Timestamp::PlusInfinity();
   absl::optional<DataSize> pacer_queue;
 };
+
+// Under development, subject to change without notice.
+struct NetworkStateEstimate {
+  Timestamp last_feed_time = Timestamp::MinusInfinity();
+  Timestamp last_send_time = Timestamp::MinusInfinity();
+  TimeDelta time_delta = TimeDelta::MinusInfinity();
+  DataRate link_capacity = DataRate::MinusInfinity();
+  DataRate link_capacity_std_dev = DataRate::MinusInfinity();
+  DataRate link_capacity_min = DataRate::MinusInfinity();
+  double cross_traffic_ratio;
+  TimeDelta pre_link_buffer_delay = TimeDelta::MinusInfinity();
+  TimeDelta post_link_buffer_delay = TimeDelta::MinusInfinity();
+  TimeDelta propagation_delay = TimeDelta::MinusInfinity();
+  double cross_delay_rate;
+  double spike_delay_rate;
+};
 }  // namespace webrtc
 
 #endif  // API_TRANSPORT_NETWORK_TYPES_H_

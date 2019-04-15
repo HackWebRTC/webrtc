@@ -132,6 +132,7 @@ class RtpTransportControllerSend final
   void UpdateControlState() RTC_RUN_ON(task_queue_);
 
   Clock* const clock_;
+  const FieldTrialBasedConfig trial_based_config_;
   PacketRouter packet_router_;
   std::vector<std::unique_ptr<RtpVideoSenderInterface>> video_rtp_senders_;
   PacedSender pacer_;

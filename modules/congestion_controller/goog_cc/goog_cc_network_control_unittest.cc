@@ -107,7 +107,7 @@ void UpdatesTargetRateBasedOnLinkCapacity(std::string test_name = "") {
 class GoogCcNetworkControllerTest : public ::testing::Test {
  protected:
   GoogCcNetworkControllerTest()
-      : current_time_(Timestamp::ms(123456)), factory_(&event_log_, nullptr) {}
+      : current_time_(Timestamp::ms(123456)), factory_(&event_log_) {}
   ~GoogCcNetworkControllerTest() override {}
 
   void SetUp() override {

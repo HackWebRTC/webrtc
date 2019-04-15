@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include "absl/types/optional.h"
+#include "api/transport/network_types.h"
 #include "api/units/data_rate.h"
 #include "api/units/timestamp.h"
 #include "modules/congestion_controller/goog_cc/link_capacity_estimator.h"
@@ -52,6 +53,8 @@ class AimdRateControl {
   void SetRtt(TimeDelta rtt);
   DataRate Update(const RateControlInput* input, Timestamp at_time);
   void SetEstimate(DataRate bitrate, Timestamp at_time);
+  void SetNetworkStateEstimate(
+      const absl::optional<NetworkStateEstimate>& estimate);
 
   // Returns the increase rate when used bandwidth is near the link capacity.
   double GetNearMaxIncreaseRateBpsPerSecond() const;
@@ -87,6 +90,7 @@ class AimdRateControl {
   DataRate current_bitrate_;
   DataRate latest_estimated_throughput_;
   LinkCapacityEstimator link_capacity_;
+  absl::optional<NetworkStateEstimate> network_estimate_;
   RateControlState rate_control_state_;
   Timestamp time_last_bitrate_change_;
   Timestamp time_last_bitrate_decrease_;
@@ -99,6 +103,9 @@ class AimdRateControl {
   absl::optional<DataRate> last_decrease_;
   FieldTrialOptional<TimeDelta> initial_backoff_interval_;
   FieldTrialParameter<DataRate> low_throughput_threshold_;
+  FieldTrialOptional<double> capacity_deviation_ratio_threshold_;
+  FieldTrialParameter<double> cross_traffic_factor_;
+  FieldTrialOptional<double> capacity_limit_deviation_factor_;
 };
 }  // namespace webrtc
 

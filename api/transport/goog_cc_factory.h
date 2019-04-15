@@ -18,35 +18,39 @@
 namespace webrtc {
 class RtcEventLog;
 
+struct GoogCcFactoryConfig {
+  std::unique_ptr<NetworkStateEstimatorFactory>
+      network_state_estimator_factory = nullptr;
+  NetworkStatePredictorFactoryInterface* network_state_predictor_factory =
+      nullptr;
+  bool feedback_only = false;
+};
+
 class GoogCcNetworkControllerFactory
     : public NetworkControllerFactoryInterface {
  public:
   explicit GoogCcNetworkControllerFactory(RtcEventLog* event_log);
   explicit GoogCcNetworkControllerFactory(
-      RtcEventLog* event_log,
       NetworkStatePredictorFactoryInterface* network_state_predictor_factory);
+
+  explicit GoogCcNetworkControllerFactory(GoogCcFactoryConfig config);
   std::unique_ptr<NetworkControllerInterface> Create(
       NetworkControllerConfig config) override;
   TimeDelta GetProcessInterval() const override;
 
- private:
-  RtcEventLog* const event_log_;
-  NetworkStatePredictorFactoryInterface* const network_state_predictor_factory_;
+ protected:
+  RtcEventLog* const event_log_ = nullptr;
+  GoogCcFactoryConfig factory_config_;
 };
 
 // Factory to create packet feedback only GoogCC, this can be used for
 // connections providing packet receive time feedback but no other reports.
 class GoogCcFeedbackNetworkControllerFactory
-    : public NetworkControllerFactoryInterface {
+    : public GoogCcNetworkControllerFactory {
  public:
   explicit GoogCcFeedbackNetworkControllerFactory(RtcEventLog* event_log);
-  std::unique_ptr<NetworkControllerInterface> Create(
-      NetworkControllerConfig config) override;
-  TimeDelta GetProcessInterval() const override;
-
- private:
-  RtcEventLog* const event_log_;
 };
+
 }  // namespace webrtc
 
 #endif  // API_TRANSPORT_GOOG_CC_FACTORY_H_
