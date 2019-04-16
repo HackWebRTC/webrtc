@@ -239,7 +239,7 @@ DefaultTemporalLayers::DefaultTemporalLayers(int number_of_temporal_layers)
   }
 
   kf_buffers_ = {kAllBuffers.begin(), kAllBuffers.end()};
-  for (DependencyInfo info : temporal_pattern_) {
+  for (const DependencyInfo& info : temporal_pattern_) {
     uint8_t updated_buffers = GetUpdatedBuffers(info.frame_config);
 
     for (Vp8BufferReference buffer : kAllBuffers) {
