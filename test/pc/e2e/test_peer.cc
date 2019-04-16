@@ -112,7 +112,7 @@ struct TestPeerComponents {
     if (audio_config.mode == AudioConfig::Mode::kFile) {
       RTC_DCHECK(audio_config.input_file_name);
       return TestAudioDeviceModule::CreateWavFileReader(
-          audio_config.input_file_name.value());
+          audio_config.input_file_name.value(), /*repeat=*/true);
     }
     RTC_NOTREACHED() << "Unknown audio_config->mode";
     return nullptr;

@@ -113,7 +113,10 @@ class TestAudioDeviceModule : public AudioDeviceModule {
 
   // Returns a Capturer instance that gets its data from a file.
   // Automatically detects sample rate and num of channels.
-  static std::unique_ptr<Capturer> CreateWavFileReader(std::string filename);
+  // |repeat| - if true, the file will be replayed from the start when we reach
+  // the end of file.
+  static std::unique_ptr<Capturer> CreateWavFileReader(std::string filename,
+                                                       bool repeat = false);
 
   // Returns a Renderer instance that writes its data to a file.
   static std::unique_ptr<Renderer> CreateWavFileWriter(
@@ -140,7 +143,10 @@ class TestAudioDeviceModule : public AudioDeviceModule {
 
   // Returns a Capturer instance that gets its data from a file.
   // Automatically detects sample rate and num of channels.
-  static std::unique_ptr<Capturer> CreateWavFileReader(rtc::PlatformFile file);
+  // |repeat| - if true, the file will be replayed from the start when we reach
+  // the end of file.
+  static std::unique_ptr<Capturer> CreateWavFileReader(rtc::PlatformFile file,
+                                                       bool repeat = false);
 
   // Returns a Renderer instance that writes its data to a file.
   static std::unique_ptr<Renderer> CreateWavFileWriter(

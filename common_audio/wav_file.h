@@ -77,6 +77,9 @@ class WavReader final : public WavFile {
   // Close the WAV file.
   ~WavReader() override;
 
+  // Resets position to the beginning of the file.
+  void Reset();
+
   // Returns the number of samples read. If this is less than requested,
   // verifies that the end of the file was reached.
   size_t ReadSamples(size_t num_samples, float* samples);
@@ -93,6 +96,7 @@ class WavReader final : public WavFile {
   size_t num_samples_;  // Total number of samples in the file.
   size_t num_samples_remaining_;
   FILE* file_handle_;  // Input file, owned by this class.
+  fpos_t data_start_pos_;  // Position in the file immediately after WAV header.
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WavReader);
 };
