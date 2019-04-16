@@ -102,7 +102,7 @@ struct RTC_EXPORT EchoCanceller3Config {
     float audibility_threshold_lf = 10;
     float audibility_threshold_mf = 10;
     float audibility_threshold_hf = 10;
-    bool use_stationary_properties = false;
+    bool use_stationarity_properties = false;
     bool use_stationarity_properties_at_init = false;
   } echo_audibility;
 

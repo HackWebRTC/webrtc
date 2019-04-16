@@ -218,8 +218,8 @@ void Aec3ConfigFromJsonString(absl::string_view json_string,
               &cfg.echo_audibility.audibility_threshold_mf);
     ReadParam(section, "audibility_threshold_hf",
               &cfg.echo_audibility.audibility_threshold_hf);
-    ReadParam(section, "use_stationary_properties",
-              &cfg.echo_audibility.use_stationary_properties);
+    ReadParam(section, "use_stationarity_properties",
+              &cfg.echo_audibility.use_stationarity_properties);
     ReadParam(section, "use_stationarity_properties_at_init",
               &cfg.echo_audibility.use_stationarity_properties_at_init);
   }
@@ -430,8 +430,8 @@ std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config) {
       << config.echo_audibility.audibility_threshold_mf << ",";
   ost << "\"audibility_threshold_hf\": "
       << config.echo_audibility.audibility_threshold_hf << ",";
-  ost << "\"use_stationary_properties\": "
-      << (config.echo_audibility.use_stationary_properties ? "true" : "false")
+  ost << "\"use_stationarity_properties\": "
+      << (config.echo_audibility.use_stationarity_properties ? "true" : "false")
       << ",";
   ost << "\"use_stationarity_properties_at_init\": "
       << (config.echo_audibility.use_stationarity_properties_at_init ? "true"

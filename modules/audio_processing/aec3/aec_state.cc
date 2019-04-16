@@ -82,10 +82,10 @@ void AecState::HandleEchoPathChange(
     blocks_with_active_render_ = 0;
     initial_state_.Reset();
     transparent_state_.Reset();
-      legacy_saturation_detector_.Reset();
+    legacy_saturation_detector_.Reset();
     erle_estimator_.Reset(true);
     erl_estimator_.Reset();
-      filter_quality_state_.Reset();
+    filter_quality_state_.Reset();
   };
 
   // TODO(peah): Refine the reset scheme according to the type of gain and
@@ -143,7 +143,7 @@ void AecState::Update(
       config_.ep_strength.reverb_based_on_render ? ReverbDecay() : 0.f,
       X2_reverb);
 
-  if (config_.echo_audibility.use_stationary_properties) {
+  if (config_.echo_audibility.use_stationarity_properties) {
     // Update the echo audibility evaluator.
     echo_audibility_.Update(render_buffer,
                             render_reverb_.GetReverbContributionPowerSpectrum(),
@@ -189,7 +189,7 @@ void AecState::Update(
 
   // Update the reverb estimate.
   const bool stationary_block =
-      config_.echo_audibility.use_stationary_properties &&
+      config_.echo_audibility.use_stationarity_properties &&
       echo_audibility_.IsBlockStationary();
 
   reverb_model_estimator_.Update(filter_analyzer_.GetAdjustedFilter(),

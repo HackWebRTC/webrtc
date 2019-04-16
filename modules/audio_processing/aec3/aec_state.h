@@ -68,7 +68,7 @@ class AecState {
   // Returns whether the stationary properties of the signals are used in the
   // aec.
   bool UseStationaryProperties() const {
-    return config_.echo_audibility.use_stationary_properties;
+    return config_.echo_audibility.use_stationarity_properties;
   }
 
   // Returns the ERLE.
