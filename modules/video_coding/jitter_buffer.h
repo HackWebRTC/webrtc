@@ -118,9 +118,6 @@ class VCMJitterBuffer {
   // Returns the estimated jitter in milliseconds.
   uint32_t EstimatedJitterMs();
 
-  // Updates the round-trip time estimate.
-  void UpdateRtt(int64_t rtt_ms);
-
   void SetNackSettings(size_t max_nack_list_size,
                        int max_packet_age_to_nack,
                        int max_incomplete_time_ms);
@@ -255,7 +252,6 @@ class VCMJitterBuffer {
   // Calculates network delays used for jitter calculations.
   VCMInterFrameDelay inter_frame_delay_;
   VCMJitterSample waiting_for_completion_;
-  int64_t rtt_ms_;
 
   // Holds the internal NACK list (the missing sequence numbers).
   SequenceNumberSet missing_sequence_numbers_;

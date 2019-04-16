@@ -84,7 +84,6 @@ class VideoReceiver : public Module {
                        int max_packet_age_to_nack,
                        int max_incomplete_time_ms);
 
-  int32_t SetReceiveChannelParameters(int64_t rtt);
   int64_t TimeUntilNextProcess() override;
   void Process() override;
   void ProcessThreadAttached(ProcessThread* process_thread) override;

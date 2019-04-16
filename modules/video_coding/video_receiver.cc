@@ -135,12 +135,6 @@ int64_t VideoReceiver::TimeUntilNextProcess() {
   return timeUntilNextProcess;
 }
 
-int32_t VideoReceiver::SetReceiveChannelParameters(int64_t rtt) {
-  RTC_DCHECK_RUN_ON(&module_thread_checker_);
-  _receiver.UpdateRtt(rtt);
-  return 0;
-}
-
 // Register a receive callback. Will be called whenever there is a new frame
 // ready for rendering.
 int32_t VideoReceiver::RegisterReceiveCallback(

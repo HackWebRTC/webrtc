@@ -128,7 +128,6 @@ VCMJitterBuffer::VCMJitterBuffer(Clock* clock,
       num_duplicated_packets_(0),
       jitter_estimate_(clock),
       inter_frame_delay_(clock_->TimeInMilliseconds()),
-      rtt_ms_(kDefaultRtt),
       missing_sequence_numbers_(SequenceNumberLessThan()),
       latest_received_sequence_number_(0),
       max_nack_list_size_(0),
@@ -169,7 +168,6 @@ void VCMJitterBuffer::Start() {
   waiting_for_completion_.timestamp = 0;
   waiting_for_completion_.latest_packet_time = -1;
   first_packet_since_reset_ = true;
-  rtt_ms_ = kDefaultRtt;
   last_decoded_state_.Reset();
 
   decodable_frames_.Reset(&free_frames_);
@@ -434,7 +432,7 @@ VCMFrameBufferEnum VCMJitterBuffer::InsertPacket(const VCMPacket& packet,
   VCMFrameBufferStateEnum previous_state = frame->GetState();
   // Insert packet.
   FrameData frame_data;
-  frame_data.rtt_ms = rtt_ms_;
+  frame_data.rtt_ms = kDefaultRtt;
   frame_data.rolling_average_packets_per_frame = average_packets_per_frame_;
   VCMFrameBufferEnum buffer_state =
       frame->InsertPacket(packet, now_ms, frame_data);
@@ -585,12 +583,6 @@ uint32_t VCMJitterBuffer::EstimatedJitterMs() {
   rtc::CritScope cs(&crit_sect_);
   const double rtt_mult = 1.0f;
   return jitter_estimate_.GetJitterEstimate(rtt_mult);
-}
-
-void VCMJitterBuffer::UpdateRtt(int64_t rtt_ms) {
-  rtc::CritScope cs(&crit_sect_);
-  rtt_ms_ = rtt_ms;
-  jitter_estimate_.UpdateRtt(rtt_ms);
 }
 
 void VCMJitterBuffer::SetNackSettings(size_t max_nack_list_size,
