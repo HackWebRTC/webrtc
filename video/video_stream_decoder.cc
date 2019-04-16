@@ -29,9 +29,6 @@ VideoStreamDecoder::VideoStreamDecoder(
       incoming_video_stream_(incoming_video_stream) {
   RTC_DCHECK(video_receiver_);
 
-  static const int kMaxPacketAgeToNack = 450;
-  static const int kMaxNackListSize = 250;
-  video_receiver_->SetNackSettings(kMaxNackListSize, kMaxPacketAgeToNack, 0);
   video_receiver_->RegisterReceiveCallback(this);
 
   VCMPacketRequestCallback* packet_request_callback =
