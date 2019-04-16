@@ -38,7 +38,8 @@ class EchoAudibility {
                               rtc::ArrayView<float> residual_scaling) const {
     for (size_t band = 0; band < residual_scaling.size(); ++band) {
       if (render_stationarity_.IsBandStationary(band) &&
-          filter_has_had_time_to_converge) {
+          (filter_has_had_time_to_converge ||
+           use_render_stationarity_at_init_)) {
         residual_scaling[band] = 0.f;
       } else {
         residual_scaling[band] = 1.0f;
