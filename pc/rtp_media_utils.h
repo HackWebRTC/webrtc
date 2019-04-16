@@ -44,6 +44,11 @@ RtpTransceiverDirection RtpTransceiverDirectionWithRecvSet(
 // Returns an unspecified string representation of the given direction.
 const char* RtpTransceiverDirectionToString(RtpTransceiverDirection direction);
 
+// Returns the intersection of the directions of two transceivers.
+RtpTransceiverDirection RtpTransceiverDirectionIntersection(
+    RtpTransceiverDirection lhs,
+    RtpTransceiverDirection rhs);
+
 #ifdef UNIT_TEST
 inline std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
     std::ostream& os,             // no-presubmit-check TODO(webrtc:8982)
