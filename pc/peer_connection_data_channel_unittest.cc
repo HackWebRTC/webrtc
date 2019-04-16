@@ -193,11 +193,14 @@ class PeerConnectionDataChannelBaseTest : public ::testing::Test {
   // Changes the SCTP data channel port on the given session description.
   void ChangeSctpPortOnDescription(cricket::SessionDescription* desc,
                                    int port) {
+    cricket::DataCodec sctp_codec(cricket::kGoogleSctpDataCodecPlType,
+                                  cricket::kGoogleSctpDataCodecName);
+    sctp_codec.SetParam(cricket::kCodecParamPort, port);
+
     auto* data_content = cricket::GetFirstDataContent(desc);
     RTC_DCHECK(data_content);
-    auto* data_desc = data_content->media_description()->as_sctp();
-    RTC_DCHECK(data_desc);
-    data_desc->set_port(port);
+    auto* data_desc = data_content->media_description()->as_data();
+    data_desc->set_codecs({sctp_codec});
   }
 
   std::unique_ptr<rtc::VirtualSocketServer> vss_;

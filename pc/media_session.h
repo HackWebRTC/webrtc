@@ -24,7 +24,6 @@
 #include "p2p/base/ice_credentials_iterator.h"
 #include "p2p/base/transport_description_factory.h"
 #include "pc/jsep_transport.h"
-#include "pc/media_protocol_names.h"
 #include "pc/session_description.h"
 #include "rtc_base/unique_id_generator.h"
 
@@ -240,23 +239,6 @@ class MediaSessionDescriptionFactory {
       SessionDescription* desc,
       IceCredentialsIterator* ice_credentials) const;
 
-  bool AddSctpDataContentForOffer(
-      const MediaDescriptionOptions& media_description_options,
-      const MediaSessionOptions& session_options,
-      const ContentInfo* current_content,
-      const SessionDescription* current_description,
-      StreamParamsVec* current_streams,
-      SessionDescription* desc,
-      IceCredentialsIterator* ice_credentials) const;
-  bool AddRtpDataContentForOffer(
-      const MediaDescriptionOptions& media_description_options,
-      const MediaSessionOptions& session_options,
-      const ContentInfo* current_content,
-      const SessionDescription* current_description,
-      const DataCodecs& data_codecs,
-      StreamParamsVec* current_streams,
-      SessionDescription* desc,
-      IceCredentialsIterator* ice_credentials) const;
   bool AddDataContentForOffer(
       const MediaDescriptionOptions& media_description_options,
       const MediaSessionOptions& session_options,
@@ -349,8 +331,6 @@ const VideoContentDescription* GetFirstVideoContentDescription(
     const SessionDescription* sdesc);
 const DataContentDescription* GetFirstDataContentDescription(
     const SessionDescription* sdesc);
-const SctpDataContentDescription* GetFirstSctpDataContentDescription(
-    const SessionDescription* sdesc);
 // Non-const versions of the above functions.
 // Useful when modifying an existing description.
 ContentInfo* GetFirstMediaContent(ContentInfos* contents, MediaType media_type);
@@ -367,8 +347,6 @@ AudioContentDescription* GetFirstAudioContentDescription(
 VideoContentDescription* GetFirstVideoContentDescription(
     SessionDescription* sdesc);
 DataContentDescription* GetFirstDataContentDescription(
-    SessionDescription* sdesc);
-SctpDataContentDescription* GetFirstSctpDataContentDescription(
     SessionDescription* sdesc);
 
 // Helper functions to return crypto suites used for SDES.
@@ -390,6 +368,9 @@ void GetSupportedVideoSdesCryptoSuiteNames(
 void GetSupportedDataSdesCryptoSuiteNames(
     const webrtc::CryptoOptions& crypto_options,
     std::vector<std::string>* crypto_suite_names);
+
+// Returns true if the given media section protocol indicates use of RTP.
+bool IsRtpProtocol(const std::string& protocol);
 
 }  // namespace cricket
 
