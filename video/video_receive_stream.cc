@@ -185,7 +185,8 @@ VideoReceiveStream::VideoReceiveStream(
       num_cpu_cores_(num_cpu_cores),
       process_thread_(process_thread),
       clock_(clock),
-      use_task_queue_(field_trial::IsEnabled("WebRTC-Video-DecodeOnTaskQueue")),
+      use_task_queue_(
+          !field_trial::IsDisabled("WebRTC-Video-DecodeOnTaskQueue")),
       decode_thread_(&DecodeThreadFunction,
                      this,
                      "DecodingThread",
