@@ -215,7 +215,10 @@ void CallTest::CreateSenderCall() {
 }
 
 void CallTest::CreateSenderCall(const Call::Config& config) {
-  sender_call_.reset(Call::Create(config));
+  auto sender_config = config;
+  sender_config.network_state_predictor_factory =
+      network_state_predictor_factory_.get();
+  sender_call_.reset(Call::Create(sender_config));
 }
 
 void CallTest::CreateReceiverCall(const Call::Config& config) {

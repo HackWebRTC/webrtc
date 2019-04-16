@@ -200,6 +200,8 @@ class CallTest : public ::testing::Test {
       DegradationPreference::MAINTAIN_FRAMERATE;
 
   std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory_;
+  std::unique_ptr<NetworkStatePredictorFactoryInterface>
+      network_state_predictor_factory_;
 
   test::FunctionVideoEncoderFactory fake_encoder_factory_;
   int fake_encoder_max_bitrate_ = -1;
