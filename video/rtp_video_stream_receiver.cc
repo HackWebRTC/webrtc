@@ -400,11 +400,6 @@ bool RtpVideoStreamReceiver::IsDecryptable() const {
   return frames_decryptable_.load();
 }
 
-int32_t RtpVideoStreamReceiver::ResendPackets(const uint16_t* sequence_numbers,
-                                              uint16_t length) {
-  return rtp_rtcp_->SendNACK(sequence_numbers, length);
-}
-
 void RtpVideoStreamReceiver::OnAssembledFrame(
     std::unique_ptr<video_coding::RtpFrameObject> frame) {
   RTC_DCHECK_RUN_ON(&network_tc_);

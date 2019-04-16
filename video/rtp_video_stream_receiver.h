@@ -32,7 +32,6 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/contributing_sources.h"
 #include "modules/video_coding/h264_sps_pps_tracker.h"
-#include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/loss_notification_controller.h"
 #include "modules/video_coding/packet_buffer.h"
 #include "modules/video_coding/rtp_frame_reference_finder.h"
@@ -59,7 +58,6 @@ class UlpfecReceiver;
 class RtpVideoStreamReceiver : public LossNotificationSender,
                                public RecoveredPacketReceiver,
                                public RtpPacketSinkInterface,
-                               public VCMPacketRequestCallback,
                                public video_coding::OnAssembledFrameCallback,
                                public video_coding::OnCompleteFrameCallback,
                                public OnDecryptedFrameCallback,
@@ -135,10 +133,6 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
 
   // Don't use, still experimental.
   void RequestPacketRetransmit(const std::vector<uint16_t>& sequence_numbers);
-
-  // Implements VCMPacketRequestCallback.
-  int32_t ResendPackets(const uint16_t* sequenceNumbers,
-                        uint16_t length) override;
 
   // Implements OnAssembledFrameCallback.
   void OnAssembledFrame(

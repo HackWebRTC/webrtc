@@ -377,10 +377,8 @@ void VideoReceiveStream::Start() {
   }
 
   RTC_DCHECK(renderer != nullptr);
-  video_stream_decoder_.reset(new VideoStreamDecoder(
-      &video_receiver_, &rtp_video_stream_receiver_,
-      rtp_video_stream_receiver_.IsRetransmissionsEnabled(), protected_by_fec,
-      &stats_proxy_, renderer));
+  video_stream_decoder_.reset(
+      new VideoStreamDecoder(&video_receiver_, &stats_proxy_, renderer));
 
   // Make sure we register as a stats observer *after* we've prepared the
   // |video_stream_decoder_|.

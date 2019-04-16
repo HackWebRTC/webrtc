@@ -35,9 +35,6 @@ class VideoStreamDecoder : public VCMReceiveCallback {
  public:
   VideoStreamDecoder(
       vcm::VideoReceiver* video_receiver,
-      VCMPacketRequestCallback* vcm_packet_request_callback,
-      bool enable_nack,
-      bool enable_fec,
       ReceiveStatisticsProxy* receive_statistics_proxy,
       rtc::VideoSinkInterface<VideoFrame>* incoming_video_stream);
   ~VideoStreamDecoder() override;
