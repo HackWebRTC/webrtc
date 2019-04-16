@@ -43,13 +43,14 @@ static const double kTimestampToMs = 1.0 / 90.0;
 struct RemoteBitrateEstimatorSingleStream::Detector {
   explicit Detector(int64_t last_packet_time_ms,
                     const OverUseDetectorOptions& options,
-                    bool enable_burst_grouping)
+                    bool enable_burst_grouping,
+                    const WebRtcKeyValueConfig* key_value_config)
       : last_packet_time_ms(last_packet_time_ms),
         inter_arrival(90 * kTimestampGroupLengthMs,
                       kTimestampToMs,
                       enable_burst_grouping),
         estimator(options),
-        detector() {}
+        detector(key_value_config) {}
   int64_t last_packet_time_ms;
   InterArrival inter_arrival;
   OveruseEstimator estimator;
@@ -62,7 +63,7 @@ RemoteBitrateEstimatorSingleStream::RemoteBitrateEstimatorSingleStream(
     : clock_(clock),
       incoming_bitrate_(kBitrateWindowMs, 8000),
       last_valid_incoming_bitrate_(0),
-      remote_rate_(new AimdRateControl()),
+      remote_rate_(new AimdRateControl(&field_trials_)),
       observer_(observer),
       last_process_time_(-1),
       process_interval_ms_(kProcessIntervalMs),
@@ -103,8 +104,9 @@ void RemoteBitrateEstimatorSingleStream::IncomingPacket(
     // automatically cleaned up when we have one RemoteBitrateEstimator per REMB
     // group.
     std::pair<SsrcOveruseEstimatorMap::iterator, bool> insert_result =
-        overuse_detectors_.insert(std::make_pair(
-            ssrc, new Detector(now_ms, OverUseDetectorOptions(), true)));
+        overuse_detectors_.insert(
+            std::make_pair(ssrc, new Detector(now_ms, OverUseDetectorOptions(),
+                                              true, &field_trials_)));
     it = insert_result.first;
   }
   Detector* estimator = it->second;
@@ -255,7 +257,7 @@ void RemoteBitrateEstimatorSingleStream::GetSsrcs(
 
 AimdRateControl* RemoteBitrateEstimatorSingleStream::GetRemoteRate() {
   if (!remote_rate_)
-    remote_rate_.reset(new AimdRateControl());
+    remote_rate_.reset(new AimdRateControl(&field_trials_));
   return remote_rate_.get();
 }
 

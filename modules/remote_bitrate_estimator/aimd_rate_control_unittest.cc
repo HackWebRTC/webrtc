@@ -9,6 +9,7 @@
  */
 #include <memory>
 
+#include "api/transport/field_trial_based_config.h"
 #include "modules/remote_bitrate_estimator/aimd_rate_control.h"
 #include "system_wrappers/include/clock.h"
 #include "test/field_trial.h"
@@ -32,11 +33,12 @@ constexpr double kFractionAfterOveruse = 0.85;
 struct AimdRateControlStates {
   std::unique_ptr<AimdRateControl> aimd_rate_control;
   std::unique_ptr<SimulatedClock> simulated_clock;
+  FieldTrialBasedConfig field_trials;
 };
 
 AimdRateControlStates CreateAimdRateControlStates() {
   AimdRateControlStates states;
-  states.aimd_rate_control.reset(new AimdRateControl());
+  states.aimd_rate_control.reset(new AimdRateControl(&states.field_trials));
   states.simulated_clock.reset(new SimulatedClock(kClockInitialTime));
   return states;
 }

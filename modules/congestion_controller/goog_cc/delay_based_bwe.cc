@@ -90,6 +90,7 @@ DelayBasedBwe::DelayBasedBwe(const WebRtcKeyValueConfig* key_value_config,
       delay_detector_(),
       last_seen_packet_(Timestamp::MinusInfinity()),
       uma_recorded_(false),
+      rate_control_(key_value_config),
       trendline_window_size_(
           key_value_config->Lookup(kBweWindowSizeInPacketsExperiment)
                       .find("Enabled") == 0

@@ -25,17 +25,23 @@
 #include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_minmax.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
+namespace {
+
 constexpr TimeDelta kDefaultRtt = TimeDelta::Millis<200>();
 constexpr double kDefaultBackoffFactor = 0.85;
 
 const char kBweBackOffFactorExperiment[] = "WebRTC-BweBackOffFactor";
 
-double ReadBackoffFactor() {
+bool IsEnabled(const WebRtcKeyValueConfig& field_trials,
+               absl::string_view key) {
+  return field_trials.Lookup(key).find("Enabled") == 0;
+}
+
+double ReadBackoffFactor(const WebRtcKeyValueConfig& key_value_config) {
   std::string experiment_string =
-      webrtc::field_trial::FindFullName(kBweBackOffFactorExperiment);
+      key_value_config.Lookup(kBweBackOffFactorExperiment);
   double backoff_factor;
   int parsed_values =
       sscanf(experiment_string.c_str(), "Enabled-%lf", &backoff_factor);
@@ -53,7 +59,9 @@ double ReadBackoffFactor() {
   return kDefaultBackoffFactor;
 }
 
-AimdRateControl::AimdRateControl()
+}  // namespace
+
+AimdRateControl::AimdRateControl(const WebRtcKeyValueConfig* key_value_config)
     : min_configured_bitrate_(congestion_controller::GetMinBitrate()),
       max_configured_bitrate_(DataRate::kbps(30000)),
       current_bitrate_(max_configured_bitrate_),
@@ -64,13 +72,13 @@ AimdRateControl::AimdRateControl()
       time_last_bitrate_decrease_(Timestamp::MinusInfinity()),
       time_first_throughput_estimate_(Timestamp::MinusInfinity()),
       bitrate_is_initialized_(false),
-      beta_(webrtc::field_trial::IsEnabled(kBweBackOffFactorExperiment)
-                ? ReadBackoffFactor()
+      beta_(IsEnabled(*key_value_config, kBweBackOffFactorExperiment)
+                ? ReadBackoffFactor(*key_value_config)
                 : kDefaultBackoffFactor),
       rtt_(kDefaultRtt),
-      in_experiment_(!AdaptiveThresholdExperimentIsDisabled()),
+      in_experiment_(!AdaptiveThresholdExperimentIsDisabled(*key_value_config)),
       smoothing_experiment_(
-          webrtc::field_trial::IsEnabled("WebRTC-Audio-BandwidthSmoothing")),
+          IsEnabled(*key_value_config, "WebRTC-Audio-BandwidthSmoothing")),
       initial_backoff_interval_("initial_backoff_interval"),
       low_throughput_threshold_("low_throughput", DataRate::Zero()),
       capacity_deviation_ratio_threshold_("cap_thr", 0.2),
@@ -80,7 +88,7 @@ AimdRateControl::AimdRateControl()
   // WebRTC-BweAimdRateControlConfig/initial_backoff_interval:100ms,
   // low_throughput:50kbps/
   ParseFieldTrial({&initial_backoff_interval_, &low_throughput_threshold_},
-                  field_trial::FindFullName("WebRTC-BweAimdRateControlConfig"));
+                  key_value_config->Lookup("WebRTC-BweAimdRateControlConfig"));
   if (initial_backoff_interval_) {
     RTC_LOG(LS_INFO) << "Using aimd rate control with initial back-off interval"
                      << " " << ToString(*initial_backoff_interval_) << ".";
@@ -89,7 +97,7 @@ AimdRateControl::AimdRateControl()
   ParseFieldTrial(
       {&capacity_deviation_ratio_threshold_, &cross_traffic_factor_,
        &capacity_limit_deviation_factor_},
-      field_trial::FindFullName("WebRTC-Bwe-AimdRateControl-NetworkState"));
+       key_value_config->Lookup("WebRTC-Bwe-AimdRateControl-NetworkState"));
 }
 
 AimdRateControl::~AimdRateControl() {}
