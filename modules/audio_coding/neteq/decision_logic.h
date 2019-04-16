@@ -116,7 +116,7 @@ class DecisionLogic final {
 
   // Updates the |buffer_level_filter_| with the current buffer level
   // |buffer_size_packets|.
-  void FilterBufferLevel(size_t buffer_size_packets, Modes prev_mode);
+  void FilterBufferLevel(size_t buffer_size_packets);
 
   // Returns the operation given that the next available packet is a comfort
   // noise payload (RFC 3389 only, not codec-internal).
