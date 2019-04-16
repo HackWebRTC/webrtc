@@ -41,8 +41,11 @@ std::unique_ptr<RtcEventLogSource> RtcEventLogSource::CreateFromFile(
     absl::optional<uint32_t> ssrc_filter) {
   auto source = std::unique_ptr<RtcEventLogSource>(new RtcEventLogSource());
   ParsedRtcEventLog parsed_log;
-  RTC_CHECK(parsed_log.ParseFile(file_name));
-  RTC_CHECK(source->Initialize(parsed_log, ssrc_filter));
+  if (!parsed_log.ParseFile(file_name) ||
+      !source->Initialize(parsed_log, ssrc_filter)) {
+    std::cerr << "Error while parsing event log, skipping." << std::endl;
+    return nullptr;
+  }
   return source;
 }
 
@@ -51,8 +54,11 @@ std::unique_ptr<RtcEventLogSource> RtcEventLogSource::CreateFromString(
     absl::optional<uint32_t> ssrc_filter) {
   auto source = std::unique_ptr<RtcEventLogSource>(new RtcEventLogSource());
   ParsedRtcEventLog parsed_log;
-  RTC_CHECK(parsed_log.ParseString(file_contents));
-  RTC_CHECK(source->Initialize(parsed_log, ssrc_filter));
+  if (!parsed_log.ParseString(file_contents) ||
+      !source->Initialize(parsed_log, ssrc_filter)) {
+    std::cerr << "Error while parsing event log, skipping." << std::endl;
+    return nullptr;
+  }
   return source;
 }
 
