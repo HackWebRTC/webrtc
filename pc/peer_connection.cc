@@ -558,24 +558,13 @@ bool VerifyIceUfragPwdPresent(const SessionDescription* desc) {
 // Get the SCTP port out of a SessionDescription.
 // Return -1 if not found.
 int GetSctpPort(const SessionDescription* session_description) {
-  const cricket::DataContentDescription* data_desc =
-      GetFirstDataContentDescription(session_description);
+  const cricket::SctpDataContentDescription* data_desc =
+      GetFirstSctpDataContentDescription(session_description);
   RTC_DCHECK(data_desc);
   if (!data_desc) {
     return -1;
   }
-  std::string value;
-  cricket::DataCodec match_pattern(cricket::kGoogleSctpDataCodecPlType,
-                                   cricket::kGoogleSctpDataCodecName);
-  for (const cricket::DataCodec& codec : data_desc->codecs()) {
-    if (!codec.Matches(match_pattern)) {
-      continue;
-    }
-    if (codec.GetParam(cricket::kCodecParamPort, &value)) {
-      return rtc::FromString<int>(value);
-    }
-  }
-  return -1;
+  return data_desc->port();
 }
 
 // Returns true if |new_desc| requests an ICE restart (i.e., new ufrag/pwd).
@@ -2415,8 +2404,9 @@ RTCError PeerConnection::ApplyLocalDescription(
   if (data_content) {
     const cricket::DataContentDescription* data_desc =
         data_content->media_description()->as_data();
-    if (absl::StartsWith(data_desc->protocol(),
-                         cricket::kMediaProtocolRtpPrefix)) {
+    // data_desc will be null if this is an SCTP description.
+    if (data_desc && absl::StartsWith(data_desc->protocol(),
+                                      cricket::kMediaProtocolRtpPrefix)) {
       UpdateLocalRtpDataChannels(data_desc->streams());
     }
   }

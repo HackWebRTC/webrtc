@@ -72,6 +72,7 @@ rtc_static_library("rtc_pc_base") {
   ]
 
   deps = [
+    ":media_protocol_names",
     "../api:array_view",
     "../api:audio_options_api",
     "../api:call_api",
@@ -117,6 +118,13 @@ rtc_source_set("rtc_pc") {
   deps = [
     ":rtc_pc_base",
     "../media:rtc_audio_video",
+  ]
+}
+
+rtc_source_set("media_protocol_names") {
+  sources = [
+    "media_protocol_names.cc",
+    "media_protocol_names.h",
   ]
 }
 

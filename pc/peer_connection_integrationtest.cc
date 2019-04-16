@@ -3443,8 +3443,8 @@ TEST_P(PeerConnectionIntegrationTest, SctpDataChannelToAudioVideoUpgrade) {
 }
 
 static void MakeSpecCompliantSctpOffer(cricket::SessionDescription* desc) {
-  cricket::DataContentDescription* dcd_offer =
-      GetFirstDataContentDescription(desc);
+  cricket::SctpDataContentDescription* dcd_offer =
+      GetFirstSctpDataContentDescription(desc);
   ASSERT_TRUE(dcd_offer);
   dcd_offer->set_use_sctpmap(false);
   dcd_offer->set_protocol("UDP/DTLS/SCTP");
