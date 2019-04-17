@@ -5420,7 +5420,7 @@ PeerConnection::InitializePortAllocator_n(
   port_allocator_->set_flags(port_allocator_flags);
   // No step delay is used while allocating ports.
   port_allocator_->set_step_delay(cricket::kMinimumStepDelay);
-  port_allocator_->SetCandidateFilter(
+  port_allocator_->set_candidate_filter(
       ConvertIceTransportTypeToCandidateFilter(configuration.type));
   port_allocator_->set_max_ipv6_networks(configuration.max_ipv6_networks);
 
@@ -5450,7 +5450,7 @@ bool PeerConnection::ReconfigurePortAllocator_n(
     webrtc::TurnCustomizer* turn_customizer,
     absl::optional<int> stun_candidate_keepalive_interval,
     bool have_local_description) {
-  port_allocator_->SetCandidateFilter(
+  port_allocator_->set_candidate_filter(
       ConvertIceTransportTypeToCandidateFilter(type));
   // According to JSEP, after setLocalDescription, changing the candidate pool
   // size is not allowed, and changing the set of ICE servers will not result

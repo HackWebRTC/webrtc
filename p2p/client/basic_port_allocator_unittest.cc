@@ -1266,7 +1266,7 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoAdapters) {
 TEST_F(BasicPortAllocatorTest,
        TestDisableAdapterEnumerationWithoutNatRelayTransportOnly) {
   ResetWithStunServerNoNat(kStunAddr);
-  allocator().SetCandidateFilter(CF_RELAY);
+  allocator().set_candidate_filter(CF_RELAY);
   // Expect to see no ports and no candidates.
   CheckDisableAdapterEnumeration(0U, rtc::IPAddress(), rtc::IPAddress(),
                                  rtc::IPAddress(), rtc::IPAddress());
@@ -1527,7 +1527,7 @@ TEST_F(BasicPortAllocatorTest, TestSessionUsesOwnCandidateFilter) {
   AddInterface(kClientAddr);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   // Set candidate filter *after* creating the session. Should have no effect.
-  allocator().SetCandidateFilter(CF_RELAY);
+  allocator().set_candidate_filter(CF_RELAY);
   session_->StartGettingPorts();
   // 7 candidates and 4 ports is what we would normally get (see the
   // TestGetAllPorts* tests).
@@ -1546,7 +1546,7 @@ TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithRelayOnly) {
   AddInterface(kClientAddr);
   // GTURN is not configured here.
   ResetWithTurnServersNoNat(kTurnUdpIntAddr, rtc::SocketAddress());
-  allocator().SetCandidateFilter(CF_RELAY);
+  allocator().set_candidate_filter(CF_RELAY);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
   EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
@@ -1565,7 +1565,7 @@ TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithRelayOnly) {
 TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithHostOnly) {
   AddInterface(kClientAddr);
   allocator().set_flags(PORTALLOCATOR_ENABLE_SHARED_SOCKET);
-  allocator().SetCandidateFilter(CF_HOST);
+  allocator().set_candidate_filter(CF_HOST);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
   EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
@@ -1583,7 +1583,7 @@ TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithReflexiveOnly) {
   ResetWithStunServerAndNat(kStunAddr);
 
   allocator().set_flags(PORTALLOCATOR_ENABLE_SHARED_SOCKET);
-  allocator().SetCandidateFilter(CF_REFLEXIVE);
+  allocator().set_candidate_filter(CF_REFLEXIVE);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
   EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
@@ -1602,7 +1602,7 @@ TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithReflexiveOnly) {
 TEST_F(BasicPortAllocatorTest, TestCandidateFilterWithReflexiveOnlyAndNoNAT) {
   AddInterface(kClientAddr);
   allocator().set_flags(PORTALLOCATOR_ENABLE_SHARED_SOCKET);
-  allocator().SetCandidateFilter(CF_REFLEXIVE);
+  allocator().set_candidate_filter(CF_REFLEXIVE);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
   EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
@@ -2133,7 +2133,7 @@ TEST_F(BasicPortAllocatorTest, TestSetCandidateFilterAfterCandidatesGathered) {
                            kDefaultAllocationTimeout, fake_clock);
   size_t initial_candidates_size = peeked_session->ReadyCandidates().size();
   size_t initial_ports_size = peeked_session->ReadyPorts().size();
-  allocator_->SetCandidateFilter(CF_RELAY);
+  allocator_->set_candidate_filter(CF_RELAY);
   // Assume that when TakePooledSession is called, the candidate filter will be
   // applied to the pooled session. This is tested by PortAllocatorTest.
   session_ =
@@ -2155,145 +2155,6 @@ TEST_F(BasicPortAllocatorTest, TestSetCandidateFilterAfterCandidatesGathered) {
     EXPECT_EQ(candidate.related_address(),
               rtc::EmptySocketAddressWithFamily(candidate.address().family()));
   }
-}
-
-// Test that candidates that do not match a previous candidate filter can be
-// surfaced if they match the new one after setting the filter value.
-TEST_F(BasicPortAllocatorTest,
-       SurfaceNewCandidatesAfterSetCandidateFilterToAddCandidateTypes) {
-  // We would still surface a host candidate if the IP is public, even though it
-  // is disabled by the candidate filter. See
-  // BasicPortAllocatorSession::CheckCandidateFilter. Use the private address so
-  // that the srflx candidate is not equivalent to the host candidate.
-  AddInterface(kPrivateAddr);
-  ResetWithStunServerAndNat(kStunAddr);
-
-  AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
-
-  allocator_->set_flags(allocator().flags() |
-                        PORTALLOCATOR_ENABLE_SHARED_SOCKET |
-                        PORTALLOCATOR_DISABLE_TCP);
-
-  allocator_->SetCandidateFilter(CF_NONE);
-  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
-  session_->StartGettingPorts();
-  EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
-                             kDefaultAllocationTimeout, fake_clock);
-  EXPECT_TRUE(candidates_.empty());
-  EXPECT_TRUE(ports_.empty());
-
-  // Surface the relay candidate previously gathered but not signaled.
-  session_->SetCandidateFilter(CF_RELAY);
-  ASSERT_EQ_SIMULATED_WAIT(1u, candidates_.size(), kDefaultAllocationTimeout,
-                           fake_clock);
-  EXPECT_EQ(RELAY_PORT_TYPE, candidates_.back().type());
-  EXPECT_EQ(1u, ports_.size());
-
-  // Surface the srflx candidate previously gathered but not signaled.
-  session_->SetCandidateFilter(CF_RELAY | CF_REFLEXIVE);
-  ASSERT_EQ_SIMULATED_WAIT(2u, candidates_.size(), kDefaultAllocationTimeout,
-                           fake_clock);
-  EXPECT_EQ(STUN_PORT_TYPE, candidates_.back().type());
-  EXPECT_EQ(2u, ports_.size());
-
-  // Surface the srflx candidate previously gathered but not signaled.
-  session_->SetCandidateFilter(CF_ALL);
-  ASSERT_EQ_SIMULATED_WAIT(3u, candidates_.size(), kDefaultAllocationTimeout,
-                           fake_clock);
-  EXPECT_EQ(LOCAL_PORT_TYPE, candidates_.back().type());
-  EXPECT_EQ(2u, ports_.size());
-}
-
-// This is a similar test as
-// SurfaceNewCandidatesAfterSetCandidateFilterToAddCandidateTypes, and we
-// test the transitions for which the new filter value is not a super set of the
-// previous value.
-TEST_F(
-    BasicPortAllocatorTest,
-    SurfaceNewCandidatesAfterSetCandidateFilterToAllowDifferentCandidateTypes) {
-  // We would still surface a host candidate if the IP is public, even though it
-  // is disabled by the candidate filter. See
-  // BasicPortAllocatorSession::CheckCandidateFilter. Use the private address so
-  // that the srflx candidate is not equivalent to the host candidate.
-  AddInterface(kPrivateAddr);
-  ResetWithStunServerAndNat(kStunAddr);
-
-  AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
-
-  allocator_->set_flags(allocator().flags() |
-                        PORTALLOCATOR_ENABLE_SHARED_SOCKET |
-                        PORTALLOCATOR_DISABLE_TCP);
-
-  allocator_->SetCandidateFilter(CF_NONE);
-  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
-  session_->StartGettingPorts();
-  EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
-                             kDefaultAllocationTimeout, fake_clock);
-  EXPECT_TRUE(candidates_.empty());
-  EXPECT_TRUE(ports_.empty());
-
-  // Surface the relay candidate previously gathered but not signaled.
-  session_->SetCandidateFilter(CF_RELAY);
-  EXPECT_EQ_SIMULATED_WAIT(1u, candidates_.size(), kDefaultAllocationTimeout,
-                           fake_clock);
-  EXPECT_EQ(RELAY_PORT_TYPE, candidates_.back().type());
-  EXPECT_EQ(1u, ports_.size());
-
-  // Surface the srflx candidate previously gathered but not signaled.
-  session_->SetCandidateFilter(CF_REFLEXIVE);
-  EXPECT_EQ_SIMULATED_WAIT(2u, candidates_.size(), kDefaultAllocationTimeout,
-                           fake_clock);
-  EXPECT_EQ(STUN_PORT_TYPE, candidates_.back().type());
-  EXPECT_EQ(2u, ports_.size());
-
-  // Surface the host candidate previously gathered but not signaled.
-  session_->SetCandidateFilter(CF_HOST);
-  EXPECT_EQ_SIMULATED_WAIT(3u, candidates_.size(), kDefaultAllocationTimeout,
-                           fake_clock);
-  EXPECT_EQ(LOCAL_PORT_TYPE, candidates_.back().type());
-  // We use a shared socket and cricket::UDPPort handles the srflx candidate.
-  EXPECT_EQ(2u, ports_.size());
-}
-
-// Test that after an allocation session has stopped getting ports, changing the
-// candidate filter to allow new types of gathered candidates does not surface
-// any candidate.
-TEST_F(BasicPortAllocatorTest,
-       NoCandidateSurfacedWhenUpdatingCandidateFilterIfSessionStopped) {
-  AddInterface(kPrivateAddr);
-  ResetWithStunServerAndNat(kStunAddr);
-
-  AddTurnServers(kTurnUdpIntAddr, rtc::SocketAddress());
-
-  allocator_->set_flags(allocator().flags() |
-                        PORTALLOCATOR_ENABLE_SHARED_SOCKET |
-                        PORTALLOCATOR_DISABLE_TCP);
-
-  allocator_->SetCandidateFilter(CF_NONE);
-  ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
-  session_->StartGettingPorts();
-  EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
-                             kDefaultAllocationTimeout, fake_clock);
-  auto test_invariants = [this]() {
-    EXPECT_TRUE(candidates_.empty());
-    EXPECT_TRUE(ports_.empty());
-  };
-
-  test_invariants();
-
-  session_->StopGettingPorts();
-
-  session_->SetCandidateFilter(CF_RELAY);
-  SIMULATED_WAIT(false, kDefaultAllocationTimeout, fake_clock);
-  test_invariants();
-
-  session_->SetCandidateFilter(CF_RELAY | CF_REFLEXIVE);
-  SIMULATED_WAIT(false, kDefaultAllocationTimeout, fake_clock);
-  test_invariants();
-
-  session_->SetCandidateFilter(CF_ALL);
-  SIMULATED_WAIT(false, kDefaultAllocationTimeout, fake_clock);
-  test_invariants();
 }
 
 TEST_F(BasicPortAllocatorTest, SetStunKeepaliveIntervalForPorts) {

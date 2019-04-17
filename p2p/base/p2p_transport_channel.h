@@ -292,7 +292,6 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
                         IceMessage* stun_msg,
                         const std::string& remote_username,
                         bool port_muxed);
-  void OnCandidateFilterChanged(uint32_t prev_filter, uint32_t cur_filter);
 
   // When a port is destroyed, remove it from both lists |ports_|
   // and |pruned_ports_|.
