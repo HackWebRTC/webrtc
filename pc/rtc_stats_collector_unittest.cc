@@ -1771,7 +1771,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
   voice_media_info.senders[0].local_stats.push_back(cricket::SsrcSenderInfo());
   voice_media_info.senders[0].local_stats[0].ssrc = 1;
   voice_media_info.senders[0].packets_sent = 2;
+  voice_media_info.senders[0].retransmitted_packets_sent = 20;
   voice_media_info.senders[0].bytes_sent = 3;
+  voice_media_info.senders[0].retransmitted_bytes_sent = 30;
   voice_media_info.senders[0].codec_payload_type = 42;
 
   RtpCodecParameters codec_parameters;
@@ -1799,7 +1801,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Audio) {
   expected_audio.transport_id = "RTCTransport_TransportName_1";
   expected_audio.codec_id = "RTCCodec_AudioMid_Outbound_42";
   expected_audio.packets_sent = 2;
+  expected_audio.retransmitted_packets_sent = 20;
   expected_audio.bytes_sent = 3;
+  expected_audio.retransmitted_bytes_sent = 30;
 
   ASSERT_TRUE(report->Get(expected_audio.id()));
   EXPECT_EQ(
@@ -1825,7 +1829,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   video_media_info.senders[0].plis_rcvd = 3;
   video_media_info.senders[0].nacks_rcvd = 4;
   video_media_info.senders[0].packets_sent = 5;
+  video_media_info.senders[0].retransmitted_packets_sent = 50;
   video_media_info.senders[0].bytes_sent = 6;
+  video_media_info.senders[0].retransmitted_bytes_sent = 60;
   video_media_info.senders[0].codec_payload_type = 42;
   video_media_info.senders[0].frames_encoded = 8;
   video_media_info.senders[0].total_encode_time_ms = 9000;
@@ -1865,7 +1871,9 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   expected_video.pli_count = 3;
   expected_video.nack_count = 4;
   expected_video.packets_sent = 5;
+  expected_video.retransmitted_packets_sent = 50;
   expected_video.bytes_sent = 6;
+  expected_video.retransmitted_bytes_sent = 60;
   expected_video.frames_encoded = 8;
   expected_video.total_encode_time = 9.0;
   // |expected_video.content_type| should be undefined.
@@ -2038,7 +2046,9 @@ TEST_F(RTCStatsCollectorTest, CollectNoStreamRTCOutboundRTPStreamStats_Audio) {
   voice_media_info.senders[0].local_stats.push_back(cricket::SsrcSenderInfo());
   voice_media_info.senders[0].local_stats[0].ssrc = 1;
   voice_media_info.senders[0].packets_sent = 2;
+  voice_media_info.senders[0].retransmitted_packets_sent = 20;
   voice_media_info.senders[0].bytes_sent = 3;
+  voice_media_info.senders[0].retransmitted_bytes_sent = 30;
   voice_media_info.senders[0].codec_payload_type = 42;
 
   RtpCodecParameters codec_parameters;
@@ -2067,7 +2077,9 @@ TEST_F(RTCStatsCollectorTest, CollectNoStreamRTCOutboundRTPStreamStats_Audio) {
   expected_audio.transport_id = "RTCTransport_TransportName_1";
   expected_audio.codec_id = "RTCCodec_AudioMid_Outbound_42";
   expected_audio.packets_sent = 2;
+  expected_audio.retransmitted_packets_sent = 20;
   expected_audio.bytes_sent = 3;
+  expected_audio.retransmitted_bytes_sent = 30;
 
   ASSERT_TRUE(report->Get(expected_audio.id()));
   EXPECT_EQ(

@@ -542,6 +542,8 @@ int32_t ModuleRtpRtcpImpl::DataCountersRTP(size_t* bytes_sent,
   rtp_sender_->GetDataCounters(&rtp_stats, &rtx_stats);
 
   if (bytes_sent) {
+    // TODO(http://crbug.com/webrtc/10525): Bytes sent should only include
+    // payload bytes, not header and padding bytes.
     *bytes_sent = rtp_stats.transmitted.payload_bytes +
                   rtp_stats.transmitted.padding_bytes +
                   rtp_stats.transmitted.header_bytes +

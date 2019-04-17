@@ -1070,17 +1070,22 @@ CallSendStatistics ChannelSend::GetRTCPStatistics() const {
   CallSendStatistics stats = {0};
   stats.rttMs = GetRTT();
 
-  size_t bytesSent(0);
-  uint32_t packetsSent(0);
-
-  if (_rtpRtcpModule->DataCountersRTP(&bytesSent, &packetsSent) != 0) {
-    RTC_DLOG(LS_WARNING)
-        << "GetRTPStatistics() failed to retrieve RTP datacounters"
-        << " => output will not be complete";
-  }
-
-  stats.bytesSent = bytesSent;
-  stats.packetsSent = packetsSent;
+  StreamDataCounters rtp_stats;
+  StreamDataCounters rtx_stats;
+  _rtpRtcpModule->GetSendStreamDataCounters(&rtp_stats, &rtx_stats);
+  // TODO(https://crbug.com/webrtc/10525): Bytes sent should only include
+  // payload bytes, not header and padding bytes.
+  stats.bytesSent =
+      rtp_stats.transmitted.payload_bytes +
+      rtp_stats.transmitted.padding_bytes + rtp_stats.transmitted.header_bytes +
+      rtx_stats.transmitted.payload_bytes +
+      rtx_stats.transmitted.padding_bytes + rtx_stats.transmitted.header_bytes;
+  // TODO(https://crbug.com/webrtc/10555): RTX retransmissions should show up in
+  // separate outbound-rtp stream objects.
+  stats.retransmitted_bytes_sent = rtp_stats.retransmitted.payload_bytes;
+  stats.packetsSent =
+      rtp_stats.transmitted.packets + rtx_stats.transmitted.packets;
+  stats.retransmitted_packets_sent = rtp_stats.retransmitted.packets;
 
   return stats;
 }

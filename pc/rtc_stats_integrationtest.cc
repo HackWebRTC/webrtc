@@ -762,7 +762,11 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsUndefined(outbound_stream.qp_sum);
     }
     verifier.TestMemberIsNonNegative<uint32_t>(outbound_stream.packets_sent);
+    verifier.TestMemberIsNonNegative<uint64_t>(
+        outbound_stream.retransmitted_packets_sent);
     verifier.TestMemberIsNonNegative<uint64_t>(outbound_stream.bytes_sent);
+    verifier.TestMemberIsNonNegative<uint64_t>(
+        outbound_stream.retransmitted_bytes_sent);
     verifier.TestMemberIsUndefined(outbound_stream.target_bitrate);
     if (outbound_stream.media_type.is_defined() &&
         *outbound_stream.media_type == "video") {

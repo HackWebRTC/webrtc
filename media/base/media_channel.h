@@ -387,7 +387,11 @@ struct MediaSenderInfo {
     }
   }
   int64_t bytes_sent = 0;
+  // https://w3c.github.io/webrtc-stats/#dom-rtcoutboundrtpstreamstats-retransmittedbytessent
+  uint64_t retransmitted_bytes_sent = 0;
   int packets_sent = 0;
+  // https://w3c.github.io/webrtc-stats/#dom-rtcoutboundrtpstreamstats-retransmittedpacketssent
+  uint64_t retransmitted_packets_sent = 0;
   int packets_lost = 0;
   float fraction_lost = 0.0f;
   int64_t rtt_ms = 0;

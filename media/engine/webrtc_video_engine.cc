@@ -2267,10 +2267,20 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
        it != stats.substreams.end(); ++it) {
     // TODO(pbos): Wire up additional stats, such as padding bytes.
     webrtc::VideoSendStream::StreamStats stream_stats = it->second;
+    // TODO(http://crbug.com/webrtc/10525): Bytes sent should only include
+    // payload bytes, not header and padding bytes.
     info.bytes_sent += stream_stats.rtp_stats.transmitted.payload_bytes +
                        stream_stats.rtp_stats.transmitted.header_bytes +
                        stream_stats.rtp_stats.transmitted.padding_bytes;
     info.packets_sent += stream_stats.rtp_stats.transmitted.packets;
+    // TODO(https://crbug.com/webrtc/10555): RTX retransmissions should show up
+    // in separate outbound-rtp stream objects.
+    if (!stream_stats.is_rtx && !stream_stats.is_flexfec) {
+      info.retransmitted_bytes_sent +=
+          stream_stats.rtp_stats.retransmitted.payload_bytes;
+      info.retransmitted_packets_sent +=
+          stream_stats.rtp_stats.retransmitted.packets;
+    }
     info.packets_lost += stream_stats.rtcp_stats.packets_lost;
     if (stream_stats.width > info.send_frame_width)
       info.send_frame_width = stream_stats.width;

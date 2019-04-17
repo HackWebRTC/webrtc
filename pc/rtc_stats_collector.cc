@@ -295,8 +295,12 @@ void SetOutboundRTPStreamStatsFromMediaSenderInfo(
   outbound_stats->is_remote = false;
   outbound_stats->packets_sent =
       static_cast<uint32_t>(media_sender_info.packets_sent);
+  outbound_stats->retransmitted_packets_sent =
+      media_sender_info.retransmitted_packets_sent;
   outbound_stats->bytes_sent =
       static_cast<uint64_t>(media_sender_info.bytes_sent);
+  outbound_stats->retransmitted_bytes_sent =
+      media_sender_info.retransmitted_bytes_sent;
 }
 
 void SetOutboundRTPStreamStatsFromVoiceSenderInfo(
