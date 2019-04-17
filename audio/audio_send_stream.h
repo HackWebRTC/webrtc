@@ -104,11 +104,6 @@ class AudioSendStream final : public webrtc::AudioSendStream,
 
  private:
   class TimedTransport;
-  // Constraints including overhead.
-  struct TargetAudioBitrateConstraints {
-    DataRate min;
-    DataRate max;
-  };
 
   internal::AudioState* audio_state();
   const internal::AudioState* audio_state() const;
@@ -130,10 +125,6 @@ class AudioSendStream final : public webrtc::AudioSendStream,
 
   void ConfigureBitrateObserver() RTC_RUN_ON(worker_queue_);
   void RemoveBitrateObserver();
-
-  // Returns bitrate constraints, maybe including overhead when enabled by
-  // field trial.
-  TargetAudioBitrateConstraints GetMinMaxBitrateConstraints() const;
 
   // Sets per-packet overhead on encoded (for ANA) based on current known values
   // of transport and packetization overheads.
