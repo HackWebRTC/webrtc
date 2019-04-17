@@ -28,7 +28,7 @@ TestClient::TestClient(std::unique_ptr<AsyncPacketSocket> socket)
     : TestClient(std::move(socket), nullptr) {}
 
 TestClient::TestClient(std::unique_ptr<AsyncPacketSocket> socket,
-                       FakeClock* fake_clock)
+                       ThreadProcessingFakeClock* fake_clock)
     : fake_clock_(fake_clock),
       socket_(std::move(socket)),
       prev_packet_timestamp_(-1) {

@@ -401,7 +401,7 @@ void SimulatedTimeControllerImpl::Unregister(SimulatedSequenceRunner* runner) {
 GlobalSimulatedTimeController::GlobalSimulatedTimeController(
     Timestamp start_time)
     : sim_clock_(start_time.us()), impl_(start_time) {
-  global_clock_.SetTimeMicros(start_time.us());
+  global_clock_.SetTime(start_time);
 }
 
 GlobalSimulatedTimeController::~GlobalSimulatedTimeController() = default;
@@ -431,7 +431,7 @@ void GlobalSimulatedTimeController::Sleep(TimeDelta duration) {
     auto delta = next_time - current_time;
     current_time = next_time;
     sim_clock_.AdvanceTimeMicroseconds(delta.us());
-    global_clock_.AdvanceTimeMicros(delta.us());
+    global_clock_.AdvanceTime(delta);
   }
 }
 

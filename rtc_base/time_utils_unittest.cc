@@ -217,11 +217,11 @@ TEST(FakeClock, TimeFunctionsUseFakeClock) {
   FakeClock clock;
   SetClockForTesting(&clock);
 
-  clock.SetTimeNanos(987654321);
+  clock.SetTime(webrtc::Timestamp::us(987654));
   EXPECT_EQ(987u, Time32());
   EXPECT_EQ(987, TimeMillis());
   EXPECT_EQ(987654, TimeMicros());
-  EXPECT_EQ(987654321, TimeNanos());
+  EXPECT_EQ(987654000, TimeNanos());
   EXPECT_EQ(1000u, TimeAfter(13));
 
   SetClockForTesting(nullptr);
@@ -234,12 +234,12 @@ TEST(FakeClock, InitialTime) {
   EXPECT_EQ(0, clock.TimeNanos());
 }
 
-TEST(FakeClock, SetTimeNanos) {
+TEST(FakeClock, SetTime) {
   FakeClock clock;
-  clock.SetTimeNanos(123);
-  EXPECT_EQ(123, clock.TimeNanos());
-  clock.SetTimeNanos(456);
-  EXPECT_EQ(456, clock.TimeNanos());
+  clock.SetTime(webrtc::Timestamp::us(123));
+  EXPECT_EQ(123000, clock.TimeNanos());
+  clock.SetTime(webrtc::Timestamp::us(456));
+  EXPECT_EQ(456000, clock.TimeNanos());
 }
 
 TEST(FakeClock, AdvanceTime) {
@@ -261,7 +261,7 @@ TEST(FakeClock, AdvanceTime) {
 TEST(FakeClock, SettingTimeWakesThreads) {
   int64_t real_start_time_ms = TimeMillis();
 
-  FakeClock clock;
+  ThreadProcessingFakeClock clock;
   SetClockForTesting(&clock);
 
   std::unique_ptr<Thread> worker(Thread::CreateWithSocketServer());

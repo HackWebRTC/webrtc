@@ -611,7 +611,7 @@ class P2PTransportChannelTestBase : public ::testing::Test,
     DestroyChannels();
   }
 
-  void TestSendRecv(rtc::FakeClock* clock) {
+  void TestSendRecv(rtc::ThreadProcessingFakeClock* clock) {
     for (int i = 0; i < 10; ++i) {
       const char* data = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
       int len = static_cast<int>(strlen(data));
@@ -3093,10 +3093,11 @@ class P2PTransportChannelPingTest : public ::testing::Test,
         this, &P2PTransportChannelPingTest::OnChannelStateChanged);
   }
 
-  Connection* WaitForConnectionTo(P2PTransportChannel* ch,
-                                  const std::string& ip,
-                                  int port_num,
-                                  rtc::FakeClock* clock = nullptr) {
+  Connection* WaitForConnectionTo(
+      P2PTransportChannel* ch,
+      const std::string& ip,
+      int port_num,
+      rtc::ThreadProcessingFakeClock* clock = nullptr) {
     if (clock == nullptr) {
       EXPECT_TRUE_WAIT(GetConnectionTo(ch, ip, port_num) != nullptr,
                        kMediumTimeout);

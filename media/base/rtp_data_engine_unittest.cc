@@ -58,9 +58,7 @@ class RtpDataMediaChannelTest : public ::testing::Test {
     receiver_.reset(new FakeDataReceiver());
   }
 
-  void SetNow(double now) {
-    clock_.SetTimeNanos(now * rtc::kNumNanosecsPerSec);
-  }
+  void SetNow(double now) { clock_.SetTime(webrtc::Timestamp::seconds(now)); }
 
   cricket::RtpDataEngine* CreateEngine() {
     cricket::RtpDataEngine* dme = new cricket::RtpDataEngine();

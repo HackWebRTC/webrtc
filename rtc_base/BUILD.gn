@@ -1084,6 +1084,7 @@ rtc_source_set("rtc_base_tests_utils") {
     ":checks",
     ":rtc_base",
     "../api/units:time_delta",
+    "../api/units:timestamp",
     "memory:fifo_buffer",
     "third_party/sigslot",
     "//third_party/abseil-cpp/absl/algorithm:container",

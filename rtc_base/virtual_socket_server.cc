@@ -523,7 +523,7 @@ void VirtualSocket::OnSocketServerReadyToSend() {
 
 VirtualSocketServer::VirtualSocketServer() : VirtualSocketServer(nullptr) {}
 
-VirtualSocketServer::VirtualSocketServer(FakeClock* fake_clock)
+VirtualSocketServer::VirtualSocketServer(ThreadProcessingFakeClock* fake_clock)
     : fake_clock_(fake_clock),
       msg_queue_(nullptr),
       stop_on_idle_(false),
