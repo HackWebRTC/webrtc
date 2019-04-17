@@ -320,7 +320,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
         video_encoder_config.video_stream_factory->CreateEncoderStreams(
             codec_width_, codec_height_, video_encoder_config);
     max_framerate_ = streams[0].max_framerate;
-    fake_clock_.SetTimeMicros(1234);
+    fake_clock_.SetTime(Timestamp::us(1234));
 
     ConfigureEncoder(std::move(video_encoder_config));
   }
@@ -527,28 +527,28 @@ class VideoStreamEncoderTest : public ::testing::Test {
 
   void WaitForEncodedFrame(int64_t expected_ntp_time) {
     sink_.WaitForEncodedFrame(expected_ntp_time);
-    fake_clock_.AdvanceTimeMicros(rtc::kNumMicrosecsPerSec / max_framerate_);
+    fake_clock_.AdvanceTime(TimeDelta::seconds(1) / max_framerate_);
   }
 
   bool TimedWaitForEncodedFrame(int64_t expected_ntp_time, int64_t timeout_ms) {
     bool ok = sink_.TimedWaitForEncodedFrame(expected_ntp_time, timeout_ms);
-    fake_clock_.AdvanceTimeMicros(rtc::kNumMicrosecsPerSec / max_framerate_);
+    fake_clock_.AdvanceTime(TimeDelta::seconds(1) / max_framerate_);
     return ok;
   }
 
   void WaitForEncodedFrame(uint32_t expected_width, uint32_t expected_height) {
     sink_.WaitForEncodedFrame(expected_width, expected_height);
-    fake_clock_.AdvanceTimeMicros(rtc::kNumMicrosecsPerSec / max_framerate_);
+    fake_clock_.AdvanceTime(TimeDelta::seconds(1) / max_framerate_);
   }
 
   void ExpectDroppedFrame() {
     sink_.ExpectDroppedFrame();
-    fake_clock_.AdvanceTimeMicros(rtc::kNumMicrosecsPerSec / max_framerate_);
+    fake_clock_.AdvanceTime(TimeDelta::seconds(1) / max_framerate_);
   }
 
   bool WaitForFrame(int64_t timeout_ms) {
     bool ok = sink_.WaitForFrame(timeout_ms);
-    fake_clock_.AdvanceTimeMicros(rtc::kNumMicrosecsPerSec / max_framerate_);
+    fake_clock_.AdvanceTime(TimeDelta::seconds(1) / max_framerate_);
     return ok;
   }
 
@@ -2334,7 +2334,9 @@ TEST_F(VideoStreamEncoderTest, CallsBitrateObserver) {
       fake_encoder_.GetAndResetLastBitrateAllocation();
   // Check that encoder has been updated too, not just allocation observer.
   EXPECT_EQ(bitrate_allocation->get_sum_bps(), kLowTargetBitrateBps);
-  fake_clock_.AdvanceTimeMicros(rtc::kNumMicrosecsPerMillisec / kDefaultFps);
+  // TODO(srte): The use of millisecs here looks like an error, but the tests
+  // fails using seconds, this should be investigated.
+  fake_clock_.AdvanceTime(TimeDelta::ms(1) / kDefaultFps);
 
   // Not called on second frame.
   EXPECT_CALL(bitrate_observer, OnBitrateAllocationUpdated(expected_bitrate))
@@ -2342,7 +2344,7 @@ TEST_F(VideoStreamEncoderTest, CallsBitrateObserver) {
   video_source_.IncomingCapturedFrame(
       CreateFrame(rtc::TimeMillis(), codec_width_, codec_height_));
   WaitForEncodedFrame(rtc::TimeMillis());
-  fake_clock_.AdvanceTimeMicros(rtc::kNumMicrosecsPerMillisec / kDefaultFps);
+  fake_clock_.AdvanceTime(TimeDelta::ms(1) / kDefaultFps);
 
   // Called after a process interval.
   const int64_t kProcessIntervalMs =
@@ -2354,7 +2356,7 @@ TEST_F(VideoStreamEncoderTest, CallsBitrateObserver) {
     video_source_.IncomingCapturedFrame(
         CreateFrame(rtc::TimeMillis(), codec_width_, codec_height_));
     WaitForEncodedFrame(rtc::TimeMillis());
-    fake_clock_.AdvanceTimeMicros(rtc::kNumMicrosecsPerMillisec / kDefaultFps);
+    fake_clock_.AdvanceTime(TimeDelta::ms(1) / kDefaultFps);
   }
 
   // Since rates are unchanged, encoder should not be reconfigured.
@@ -2959,8 +2961,7 @@ TEST_F(VideoStreamEncoderTest, DoesntAdaptDownPastMinFramerate) {
         sink_.WaitForEncodedFrame(timestamp_ms);
       }
       timestamp_ms += kFrameIntervalMs;
-      fake_clock_.AdvanceTimeMicros(kFrameIntervalMs *
-                                    rtc::kNumMicrosecsPerMillisec);
+      fake_clock_.AdvanceTime(TimeDelta::ms(kFrameIntervalMs));
     }
     // ...and then try to adapt again.
     video_stream_encoder_->TriggerCpuOveruse();
@@ -3497,9 +3498,8 @@ TEST_F(VideoStreamEncoderTest, DoesNotUpdateBitrateAllocationWhenSuspended) {
 
   // Skip ahead until a new periodic parameter update should have occured.
   timestamp_ms += vcm::VCMProcessTimer::kDefaultProcessIntervalMs;
-  fake_clock_.AdvanceTimeMicros(
-      vcm::VCMProcessTimer::kDefaultProcessIntervalMs *
-      rtc::kNumMicrosecsPerMillisec);
+  fake_clock_.AdvanceTime(
+      TimeDelta::ms(vcm::VCMProcessTimer::kDefaultProcessIntervalMs));
 
   // Bitrate observer should not be called.
   EXPECT_CALL(bitrate_observer, OnBitrateAllocationUpdated(_)).Times(0);

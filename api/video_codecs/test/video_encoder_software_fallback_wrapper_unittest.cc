@@ -352,7 +352,7 @@ class ForcedFallbackTest : public VideoEncoderSoftwareFallbackWrapperTest {
 
  protected:
   void SetUp() override {
-    clock_.SetTimeMicros(1234);
+    clock_.SetTime(Timestamp::us(1234));
     ConfigureVp8Codec();
   }
 

@@ -51,13 +51,8 @@ class ThreadProcessingFakeClock : public ClockInterface {
  public:
   int64_t TimeNanos() const override { return clock_.TimeNanos(); }
   void SetTime(webrtc::Timestamp time);
-  void SetTimeMicros(int64_t micros) {
-    SetTime(webrtc::Timestamp ::us(micros));
-  }
   void AdvanceTime(webrtc::TimeDelta delta);
-  void AdvanceTimeMicros(int64_t micros) {
-    AdvanceTime(webrtc::TimeDelta::us(micros));
-  }
+
  private:
   FakeClock clock_;
 };
