@@ -73,6 +73,13 @@ const AudioCodecSpec kCodecSpecs[] = {
     {kOpusFormat, {48000, 1, 32000, 6000, 510000}},
     {kG722Format, {16000, 1, 64000}}};
 
+// TODO(dklee): This mirrors calculation in audio_send_stream.cc, which
+// should be made more precise in the future. This can be changed when that
+// logic is more accurate.
+const DataSize kOverheadPerPacket = DataSize::bytes(20 + 8 + 10 + 12);
+const TimeDelta kMaxFrameLength = TimeDelta::ms(60);
+const DataRate kOverheadRate = kOverheadPerPacket / kMaxFrameLength;
+
 class MockLimitObserver : public BitrateAllocator::LimitObserver {
  public:
   MOCK_METHOD3(OnAllocationLimitsChanged,
@@ -480,6 +487,97 @@ TEST(AudioSendStreamTest, DoesNotPassHigherBitrateThanMaxBitrate) {
   update.packet_loss_ratio = 0;
   update.round_trip_time = TimeDelta::ms(50);
   update.bwe_period = TimeDelta::ms(6000);
+  send_stream->OnBitrateUpdated(update);
+}
+
+TEST(AudioSendStreamTest, SSBweTargetInRangeRespected) {
+  ScopedFieldTrials field_trials("WebRTC-Audio-SendSideBwe/Enabled/");
+  ConfigHelper helper(true, true);
+  auto send_stream = helper.CreateAudioSendStream();
+  EXPECT_CALL(*helper.channel_send(),
+              OnBitrateAllocation(Field(
+                  &BitrateAllocationUpdate::target_bitrate,
+                  Eq(DataRate::bps(helper.config().max_bitrate_bps - 5000)))));
+  BitrateAllocationUpdate update;
+  update.target_bitrate = DataRate::bps(helper.config().max_bitrate_bps - 5000);
+  send_stream->OnBitrateUpdated(update);
+}
+
+TEST(AudioSendStreamTest, SSBweFieldTrialMinRespected) {
+  ScopedFieldTrials field_trials(
+      "WebRTC-Audio-SendSideBwe/Enabled/"
+      "WebRTC-Audio-Allocation/min:6kbps,max:64kbps/");
+  ConfigHelper helper(true, true);
+  auto send_stream = helper.CreateAudioSendStream();
+  EXPECT_CALL(
+      *helper.channel_send(),
+      OnBitrateAllocation(Field(&BitrateAllocationUpdate::target_bitrate,
+                                Eq(DataRate::kbps(6)))));
+  BitrateAllocationUpdate update;
+  update.target_bitrate = DataRate::kbps(1);
+  send_stream->OnBitrateUpdated(update);
+}
+
+TEST(AudioSendStreamTest, SSBweFieldTrialMaxRespected) {
+  ScopedFieldTrials field_trials(
+      "WebRTC-Audio-SendSideBwe/Enabled/"
+      "WebRTC-Audio-Allocation/min:6kbps,max:64kbps/");
+  ConfigHelper helper(true, true);
+  auto send_stream = helper.CreateAudioSendStream();
+  EXPECT_CALL(
+      *helper.channel_send(),
+      OnBitrateAllocation(Field(&BitrateAllocationUpdate::target_bitrate,
+                                Eq(DataRate::kbps(64)))));
+  BitrateAllocationUpdate update;
+  update.target_bitrate = DataRate::kbps(128);
+  send_stream->OnBitrateUpdated(update);
+}
+
+TEST(AudioSendStreamTest, SSBweWithOverhead) {
+  ScopedFieldTrials field_trials(
+      "WebRTC-Audio-SendSideBwe/Enabled/"
+      "WebRTC-SendSideBwe-WithOverhead/Enabled/");
+  ConfigHelper helper(true, true);
+  auto send_stream = helper.CreateAudioSendStream();
+  const DataRate bitrate =
+      DataRate::bps(helper.config().max_bitrate_bps) + kOverheadRate;
+  EXPECT_CALL(*helper.channel_send(),
+              OnBitrateAllocation(Field(
+                  &BitrateAllocationUpdate::target_bitrate, Eq(bitrate))));
+  BitrateAllocationUpdate update;
+  update.target_bitrate = bitrate;
+  send_stream->OnBitrateUpdated(update);
+}
+
+TEST(AudioSendStreamTest, SSBweWithOverheadMinRespected) {
+  ScopedFieldTrials field_trials(
+      "WebRTC-Audio-SendSideBwe/Enabled/"
+      "WebRTC-SendSideBwe-WithOverhead/Enabled/"
+      "WebRTC-Audio-Allocation/min:6kbps,max:64kbps/");
+  ConfigHelper helper(true, true);
+  auto send_stream = helper.CreateAudioSendStream();
+  const DataRate bitrate = DataRate::kbps(6) + kOverheadRate;
+  EXPECT_CALL(*helper.channel_send(),
+              OnBitrateAllocation(Field(
+                  &BitrateAllocationUpdate::target_bitrate, Eq(bitrate))));
+  BitrateAllocationUpdate update;
+  update.target_bitrate = DataRate::kbps(1);
+  send_stream->OnBitrateUpdated(update);
+}
+
+TEST(AudioSendStreamTest, SSBweWithOverheadMaxRespected) {
+  ScopedFieldTrials field_trials(
+      "WebRTC-Audio-SendSideBwe/Enabled/"
+      "WebRTC-SendSideBwe-WithOverhead/Enabled/"
+      "WebRTC-Audio-Allocation/min:6kbps,max:64kbps/");
+  ConfigHelper helper(true, true);
+  auto send_stream = helper.CreateAudioSendStream();
+  const DataRate bitrate = DataRate::kbps(64) + kOverheadRate;
+  EXPECT_CALL(*helper.channel_send(),
+              OnBitrateAllocation(Field(
+                  &BitrateAllocationUpdate::target_bitrate, Eq(bitrate))));
+  BitrateAllocationUpdate update;
+  update.target_bitrate = DataRate::kbps(128);
   send_stream->OnBitrateUpdated(update);
 }
 
