@@ -29,7 +29,6 @@ class MockVCMReceiveCallback : public VCMReceiveCallback {
 
   MOCK_METHOD3(FrameToRender,
                int32_t(VideoFrame&, absl::optional<uint8_t>, VideoContentType));
-  MOCK_METHOD1(ReceivedDecodedReferenceFrame, int32_t(const uint64_t));
   MOCK_METHOD1(OnIncomingPayloadType, void(int));
   MOCK_METHOD1(OnDecoderImplementationName, void(const char*));
 };

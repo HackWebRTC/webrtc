@@ -51,12 +51,6 @@ int32_t VideoStreamDecoder::FrameToRender(VideoFrame& video_frame,
   return 0;
 }
 
-int32_t VideoStreamDecoder::ReceivedDecodedReferenceFrame(
-    const uint64_t picture_id) {
-  RTC_NOTREACHED();
-  return 0;
-}
-
 void VideoStreamDecoder::OnIncomingPayloadType(int payload_type) {
   receive_stats_callback_->OnIncomingPayloadType(payload_type);
 }

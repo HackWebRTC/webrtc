@@ -147,11 +147,6 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
   _receiveCallback->FrameToRender(decodedImage, qp, frameInfo->content_type);
 }
 
-int32_t VCMDecodedFrameCallback::ReceivedDecodedReferenceFrame(
-    const uint64_t pictureId) {
-  return _receiveCallback->ReceivedDecodedReferenceFrame(pictureId);
-}
-
 int32_t VCMDecodedFrameCallback::ReceivedDecodedFrame(
     const uint64_t pictureId) {
   _lastReceivedPictureID = pictureId;

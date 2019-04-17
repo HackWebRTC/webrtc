@@ -48,7 +48,6 @@ class VCMDecodedFrameCallback : public DecodedImageCallback {
   void Decoded(VideoFrame& decodedImage,
                absl::optional<int32_t> decode_time_ms,
                absl::optional<uint8_t> qp) override;
-  int32_t ReceivedDecodedReferenceFrame(const uint64_t pictureId) override;
   int32_t ReceivedDecodedFrame(const uint64_t pictureId) override;
 
   uint64_t LastReceivedPictureID() const;
