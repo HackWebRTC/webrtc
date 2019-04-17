@@ -58,10 +58,13 @@ EmulatedNetworkNode* NetworkEmulationManagerImpl::CreateEmulatedNode(
   auto node = absl::make_unique<EmulatedNetworkNode>(
       clock_, &task_queue_, std::move(network_behavior));
   EmulatedNetworkNode* out = node.get();
-  task_queue_.PostTask(CreateResourceOwningTask(
-      std::move(node), [this](std::unique_ptr<EmulatedNetworkNode> node) {
-        network_nodes_.push_back(std::move(node));
-      }));
+
+  struct Closure {
+    void operator()() { manager->network_nodes_.push_back(std::move(node)); }
+    NetworkEmulationManagerImpl* manager;
+    std::unique_ptr<EmulatedNetworkNode> node;
+  };
+  task_queue_.PostTask(Closure{this, std::move(node)});
   return out;
 }
 
