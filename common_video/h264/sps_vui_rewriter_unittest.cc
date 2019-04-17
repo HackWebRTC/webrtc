@@ -16,6 +16,7 @@
 #include "rtc_base/bit_buffer.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/logging.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -30,6 +31,11 @@ enum SpsMode {
 static const size_t kSpsBufferMaxSize = 256;
 static const size_t kWidth = 640;
 static const size_t kHeight = 480;
+
+static const uint8_t kStartSequence[] = {0x00, 0x00, 0x00, 0x01};
+static const uint8_t kSpsNaluType[] = {H264::NaluType::kSps};
+static const uint8_t kIdr1[] = {H264::NaluType::kIdr, 0xFF, 0x00, 0x00, 0x04};
+static const uint8_t kIdr2[] = {H264::NaluType::kIdr, 0xFF, 0x00, 0x11};
 
 // Generates a fake SPS with basically everything empty and with characteristics
 // based off SpsMode.
@@ -144,7 +150,8 @@ void TestSps(SpsMode mode, SpsVuiRewriter::ParseResult expected_parse_result) {
   absl::optional<SpsParser::SpsState> sps;
   rtc::Buffer rewritten_sps;
   SpsVuiRewriter::ParseResult result = SpsVuiRewriter::ParseAndRewriteSps(
-      original_sps.data(), original_sps.size(), &sps, &rewritten_sps);
+      original_sps.data(), original_sps.size(), &sps, &rewritten_sps,
+      SpsVuiRewriter::Direction::kIncoming);
   EXPECT_EQ(expected_parse_result, result);
   ASSERT_TRUE(sps);
   EXPECT_EQ(sps->width, kWidth);
@@ -157,7 +164,8 @@ void TestSps(SpsMode mode, SpsVuiRewriter::ParseResult expected_parse_result) {
     // Ensure that added/rewritten SPS is parsable.
     rtc::Buffer tmp;
     result = SpsVuiRewriter::ParseAndRewriteSps(
-        rewritten_sps.data(), rewritten_sps.size(), &sps, &tmp);
+        rewritten_sps.data(), rewritten_sps.size(), &sps, &tmp,
+        SpsVuiRewriter::Direction::kIncoming);
     EXPECT_EQ(SpsVuiRewriter::ParseResult::kVuiOk, result);
     ASSERT_TRUE(sps);
     EXPECT_EQ(sps->width, kWidth);
@@ -181,4 +189,108 @@ REWRITE_TEST(AddBitstreamRestriction,
 REWRITE_TEST(RewriteSuboptimalVui,
              kRewriteRequired_VuiSuboptimal,
              SpsVuiRewriter::ParseResult::kVuiRewritten)
+
+TEST(SpsVuiRewriterTest, ParseOutgoingBitstreamOptimalVui) {
+  rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
+
+  rtc::Buffer optimal_sps;
+  GenerateFakeSps(kNoRewriteRequired_VuiOptimal, &optimal_sps);
+
+  rtc::Buffer buffer;
+  const size_t kNumNalus = 2;
+  size_t nalu_offsets[kNumNalus];
+  size_t nalu_lengths[kNumNalus];
+  buffer.AppendData(kStartSequence);
+  nalu_offsets[0] = buffer.size();
+  nalu_lengths[0] = optimal_sps.size();
+  buffer.AppendData(optimal_sps);
+  buffer.AppendData(kStartSequence);
+  nalu_offsets[1] = buffer.size();
+  nalu_lengths[1] = sizeof(kIdr1);
+  buffer.AppendData(kIdr1);
+
+  rtc::Buffer modified_buffer;
+  size_t modified_nalu_offsets[kNumNalus];
+  size_t modified_nalu_lengths[kNumNalus];
+
+  SpsVuiRewriter::ParseOutgoingBitstreamAndRewriteSps(
+      buffer, kNumNalus, nalu_offsets, nalu_lengths, &modified_buffer,
+      modified_nalu_offsets, modified_nalu_lengths);
+
+  EXPECT_THAT(
+      std::vector<uint8_t>(modified_buffer.data(),
+                           modified_buffer.data() + modified_buffer.size()),
+      ::testing::ElementsAreArray(buffer.data(), buffer.size()));
+  EXPECT_THAT(std::vector<size_t>(modified_nalu_offsets,
+                                  modified_nalu_offsets + kNumNalus),
+              ::testing::ElementsAreArray(nalu_offsets, kNumNalus));
+  EXPECT_THAT(std::vector<size_t>(modified_nalu_lengths,
+                                  modified_nalu_lengths + kNumNalus),
+              ::testing::ElementsAreArray(nalu_lengths, kNumNalus));
+}
+
+TEST(SpsVuiRewriterTest, ParseOutgoingBitstreamNoVui) {
+  rtc::LogMessage::LogToDebug(rtc::LS_VERBOSE);
+
+  rtc::Buffer sps;
+  GenerateFakeSps(kRewriteRequired_NoVui, &sps);
+
+  rtc::Buffer buffer;
+  const size_t kNumNalus = 3;
+  size_t nalu_offsets[kNumNalus];
+  size_t nalu_lengths[kNumNalus];
+  buffer.AppendData(kStartSequence);
+  nalu_offsets[0] = buffer.size();
+  nalu_lengths[0] = sizeof(kIdr1);
+  buffer.AppendData(kIdr1);
+  buffer.AppendData(kStartSequence);
+  nalu_offsets[1] = buffer.size();
+  nalu_lengths[1] = sizeof(kSpsNaluType) + sps.size();
+  buffer.AppendData(kSpsNaluType);
+  buffer.AppendData(sps);
+  buffer.AppendData(kStartSequence);
+  nalu_offsets[2] = buffer.size();
+  nalu_lengths[2] = sizeof(kIdr2);
+  buffer.AppendData(kIdr2);
+
+  rtc::Buffer optimal_sps;
+  GenerateFakeSps(kNoRewriteRequired_VuiOptimal, &optimal_sps);
+
+  rtc::Buffer expected_buffer;
+  size_t expected_nalu_offsets[kNumNalus];
+  size_t expected_nalu_lengths[kNumNalus];
+  expected_buffer.AppendData(kStartSequence);
+  expected_nalu_offsets[0] = expected_buffer.size();
+  expected_nalu_lengths[0] = sizeof(kIdr1);
+  expected_buffer.AppendData(kIdr1);
+  expected_buffer.AppendData(kStartSequence);
+  expected_nalu_offsets[1] = expected_buffer.size();
+  expected_nalu_lengths[1] = sizeof(kSpsNaluType) + optimal_sps.size();
+  expected_buffer.AppendData(kSpsNaluType);
+  expected_buffer.AppendData(optimal_sps);
+  expected_buffer.AppendData(kStartSequence);
+  expected_nalu_offsets[2] = expected_buffer.size();
+  expected_nalu_lengths[2] = sizeof(kIdr2);
+  expected_buffer.AppendData(kIdr2);
+
+  rtc::Buffer modified_buffer;
+  size_t modified_nalu_offsets[kNumNalus];
+  size_t modified_nalu_lengths[kNumNalus];
+
+  SpsVuiRewriter::ParseOutgoingBitstreamAndRewriteSps(
+      buffer, kNumNalus, nalu_offsets, nalu_lengths, &modified_buffer,
+      modified_nalu_offsets, modified_nalu_lengths);
+
+  EXPECT_THAT(
+      std::vector<uint8_t>(modified_buffer.data(),
+                           modified_buffer.data() + modified_buffer.size()),
+      ::testing::ElementsAreArray(expected_buffer.data(),
+                                  expected_buffer.size()));
+  EXPECT_THAT(std::vector<size_t>(modified_nalu_offsets,
+                                  modified_nalu_offsets + kNumNalus),
+              ::testing::ElementsAreArray(expected_nalu_offsets, kNumNalus));
+  EXPECT_THAT(std::vector<size_t>(modified_nalu_lengths,
+                                  modified_nalu_lengths + kNumNalus),
+              ::testing::ElementsAreArray(expected_nalu_lengths, kNumNalus));
+}
 }  // namespace webrtc
