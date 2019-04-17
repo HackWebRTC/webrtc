@@ -18,7 +18,6 @@
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "rtc_base/random.h"
-#include "rtc_base/synchronization/sequence_checker.h"
 #include "test/scenario/column_printer.h"
 #include "test/scenario/network/traffic_route.h"
 
@@ -45,19 +44,15 @@ class RandomWalkCrossTraffic {
   ColumnPrinter StatsPrinter();
 
  private:
-  SequenceChecker sequence_checker_;
-  const RandomWalkConfig config_;
-  TrafficRoute* const traffic_route_ RTC_PT_GUARDED_BY(sequence_checker_);
-  webrtc::Random random_ RTC_GUARDED_BY(sequence_checker_);
+  RandomWalkConfig config_;
+  TrafficRoute* const traffic_route_;
+  webrtc::Random random_;
 
-  Timestamp last_process_time_ RTC_GUARDED_BY(sequence_checker_) =
-      Timestamp::MinusInfinity();
-  Timestamp last_update_time_ RTC_GUARDED_BY(sequence_checker_) =
-      Timestamp::MinusInfinity();
-  Timestamp last_send_time_ RTC_GUARDED_BY(sequence_checker_) =
-      Timestamp::MinusInfinity();
-  double intensity_ RTC_GUARDED_BY(sequence_checker_) = 0;
-  DataSize pending_size_ RTC_GUARDED_BY(sequence_checker_) = DataSize::Zero();
+  Timestamp last_process_time_ = Timestamp::MinusInfinity();
+  Timestamp last_update_time_ = Timestamp::MinusInfinity();
+  Timestamp last_send_time_ = Timestamp::MinusInfinity();
+  double intensity_ = 0;
+  DataSize pending_size_ = DataSize::Zero();
 };
 
 struct PulsedPeaksConfig {
@@ -79,15 +74,12 @@ class PulsedPeaksCrossTraffic {
   ColumnPrinter StatsPrinter();
 
  private:
-  SequenceChecker sequence_checker_;
-  const PulsedPeaksConfig config_;
-  TrafficRoute* const traffic_route_ RTC_PT_GUARDED_BY(sequence_checker_);
+  PulsedPeaksConfig config_;
+  TrafficRoute* const traffic_route_;
 
-  Timestamp last_update_time_ RTC_GUARDED_BY(sequence_checker_) =
-      Timestamp::MinusInfinity();
-  Timestamp last_send_time_ RTC_GUARDED_BY(sequence_checker_) =
-      Timestamp::MinusInfinity();
-  bool sending_ RTC_GUARDED_BY(sequence_checker_) = false;
+  Timestamp last_update_time_ = Timestamp::MinusInfinity();
+  Timestamp last_send_time_ = Timestamp::MinusInfinity();
+  bool sending_ = false;
 };
 
 }  // namespace test

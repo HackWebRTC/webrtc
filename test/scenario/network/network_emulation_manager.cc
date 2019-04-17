@@ -23,33 +23,12 @@ namespace webrtc {
 namespace test {
 namespace {
 
+constexpr int64_t kPacketProcessingIntervalMs = 1;
 // uint32_t representation of 192.168.0.0 address
 constexpr uint32_t kMinIPv4Address = 0xC0A80000;
 // uint32_t representation of 192.168.255.255 address
 constexpr uint32_t kMaxIPv4Address = 0xC0A8FFFF;
 
-template <typename T, typename Closure>
-class ResourceOwningTask final : public QueuedTask {
- public:
-  ResourceOwningTask(T&& resource, Closure&& handler)
-      : resource_(std::move(resource)),
-        handler_(std::forward<Closure>(handler)) {}
-
-  bool Run() override {
-    handler_(std::move(resource_));
-    return true;
-  }
-
- private:
-  T resource_;
-  Closure handler_;
-};
-template <typename T, typename Closure>
-std::unique_ptr<QueuedTask> CreateResourceOwningTask(T resource,
-                                                     Closure&& closure) {
-  return absl::make_unique<ResourceOwningTask<T, Closure>>(
-      std::forward<T>(resource), std::forward<Closure>(closure));
-}
 }  // namespace
 
 NetworkEmulationManagerImpl::NetworkEmulationManagerImpl()
@@ -63,6 +42,10 @@ NetworkEmulationManagerImpl::NetworkEmulationManagerImpl(
       task_queue_(time_controller->GetTaskQueueFactory()->CreateTaskQueue(
           "NetworkEmulation",
           TaskQueueFactory::Priority::NORMAL)) {
+  process_task_handle_ = RepeatingTaskHandle::Start(task_queue_.Get(), [this] {
+    ProcessNetworkPackets();
+    return TimeDelta::ms(kPacketProcessingIntervalMs);
+  });
 }
 
 // TODO(srte): Ensure that any pending task that must be run for consistency
@@ -184,21 +167,17 @@ RandomWalkCrossTraffic*
 NetworkEmulationManagerImpl::CreateRandomWalkCrossTraffic(
     TrafficRoute* traffic_route,
     RandomWalkConfig config) {
-  auto traffic =
-      absl::make_unique<RandomWalkCrossTraffic>(config, traffic_route);
+  auto traffic = absl::make_unique<RandomWalkCrossTraffic>(std::move(config),
+                                                           traffic_route);
   RandomWalkCrossTraffic* out = traffic.get();
-
-  task_queue_.PostTask(CreateResourceOwningTask(
-      std::move(traffic),
-      [this, config](std::unique_ptr<RandomWalkCrossTraffic> traffic) {
-        auto* traffic_ptr = traffic.get();
-        random_cross_traffics_.push_back(std::move(traffic));
-        RepeatingTaskHandle::Start(task_queue_.Get(),
-                                   [this, config, traffic_ptr] {
-                                     traffic_ptr->Process(Now());
-                                     return config.min_packet_interval;
-                                   });
-      }));
+  struct Closure {
+    void operator()() {
+      manager->random_cross_traffics_.push_back(std::move(traffic));
+    }
+    NetworkEmulationManagerImpl* manager;
+    std::unique_ptr<RandomWalkCrossTraffic> traffic;
+  };
+  task_queue_.PostTask(Closure{this, std::move(traffic)});
   return out;
 }
 
@@ -206,20 +185,17 @@ PulsedPeaksCrossTraffic*
 NetworkEmulationManagerImpl::CreatePulsedPeaksCrossTraffic(
     TrafficRoute* traffic_route,
     PulsedPeaksConfig config) {
-  auto traffic =
-      absl::make_unique<PulsedPeaksCrossTraffic>(config, traffic_route);
+  auto traffic = absl::make_unique<PulsedPeaksCrossTraffic>(std::move(config),
+                                                            traffic_route);
   PulsedPeaksCrossTraffic* out = traffic.get();
-  task_queue_.PostTask(CreateResourceOwningTask(
-      std::move(traffic),
-      [this, config](std::unique_ptr<PulsedPeaksCrossTraffic> traffic) {
-        auto* traffic_ptr = traffic.get();
-        pulsed_cross_traffics_.push_back(std::move(traffic));
-        RepeatingTaskHandle::Start(task_queue_.Get(),
-                                   [this, config, traffic_ptr] {
-                                     traffic_ptr->Process(Now());
-                                     return config.min_packet_interval;
-                                   });
-      }));
+  struct Closure {
+    void operator()() {
+      manager->pulsed_cross_traffics_.push_back(std::move(traffic));
+    }
+    NetworkEmulationManagerImpl* manager;
+    std::unique_ptr<PulsedPeaksCrossTraffic> traffic;
+  };
+  task_queue_.PostTask(Closure{this, std::move(traffic)});
   return out;
 }
 
@@ -261,6 +237,16 @@ NetworkEmulationManagerImpl::GetNextIPv4Address() {
     }
   }
   return absl::nullopt;
+}
+
+void NetworkEmulationManagerImpl::ProcessNetworkPackets() {
+  Timestamp current_time = Now();
+  for (auto& traffic : random_cross_traffics_) {
+    traffic->Process(current_time);
+  }
+  for (auto& traffic : pulsed_cross_traffics_) {
+    traffic->Process(current_time);
+  }
 }
 
 Timestamp NetworkEmulationManagerImpl::Now() const {
