@@ -93,8 +93,8 @@ std::unique_ptr<RTPFragmentationHeader> FakeVP8Encoder::EncodeHook(
     CodecSpecificInfo* codec_specific) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
   uint8_t stream_idx = encoded_image->SpatialIndex().value_or(0);
-  frame_buffer_controller_->UpdateLayerConfig(stream_idx,
-                                              encoded_image->Timestamp());
+  frame_buffer_controller_->NextFrameConfig(stream_idx,
+                                            encoded_image->Timestamp());
   PopulateCodecSpecific(codec_specific, encoded_image->size(),
                         encoded_image->_frameType, stream_idx,
                         encoded_image->Timestamp());

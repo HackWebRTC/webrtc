@@ -37,7 +37,7 @@ constexpr uint32_t kSimulcastScreenshareMaxBitrateKbps = 1250;
 
 class MockTemporalLayers : public Vp8FrameBufferController {
  public:
-  MOCK_METHOD2(UpdateLayerConfig, Vp8FrameConfig(size_t, uint32_t));
+  MOCK_METHOD2(NextFrameConfig, Vp8FrameConfig(size_t, uint32_t));
   MOCK_METHOD3(OnRatesUpdated, void(size_t, const std::vector<uint32_t>&, int));
   MOCK_METHOD2(UpdateConfiguration, bool(size_t, Vp8EncoderConfig*));
   MOCK_METHOD6(OnEncodeDone,

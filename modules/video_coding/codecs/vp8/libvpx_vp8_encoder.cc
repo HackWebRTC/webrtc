@@ -923,7 +923,7 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
   Vp8FrameConfig tl_configs[kMaxSimulcastStreams];
   for (size_t i = 0; i < encoders_.size(); ++i) {
     tl_configs[i] =
-        frame_buffer_controller_->UpdateLayerConfig(i, frame.timestamp());
+        frame_buffer_controller_->NextFrameConfig(i, frame.timestamp());
     if (tl_configs[i].drop_frame) {
       if (send_key_frame) {
         continue;

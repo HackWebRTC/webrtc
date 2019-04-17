@@ -330,8 +330,8 @@ bool DefaultTemporalLayers::IsSyncFrame(const Vp8FrameConfig& config) const {
   return true;
 }
 
-Vp8FrameConfig DefaultTemporalLayers::UpdateLayerConfig(size_t stream_index,
-                                                        uint32_t timestamp) {
+Vp8FrameConfig DefaultTemporalLayers::NextFrameConfig(size_t stream_index,
+                                                      uint32_t timestamp) {
   RTC_DCHECK_LT(stream_index, StreamCount());
   RTC_DCHECK_GT(num_layers_, 0);
   RTC_DCHECK_GT(temporal_pattern_.size(), 0);

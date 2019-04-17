@@ -45,8 +45,8 @@ class Vp8TemporalLayers final : public Vp8FrameBufferController {
 
   bool UpdateConfiguration(size_t stream_index, Vp8EncoderConfig* cfg) override;
 
-  Vp8FrameConfig UpdateLayerConfig(size_t stream_index,
-                                   uint32_t rtp_timestamp) override;
+  Vp8FrameConfig NextFrameConfig(size_t stream_index,
+                                 uint32_t rtp_timestamp) override;
 
   void OnEncodeDone(size_t stream_index,
                     uint32_t rtp_timestamp,

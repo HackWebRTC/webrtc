@@ -42,8 +42,8 @@ class ScreenshareLayers final : public Vp8FrameBufferController {
 
   // Returns the recommended VP8 encode flags needed. May refresh the decoder
   // and/or update the reference buffers.
-  Vp8FrameConfig UpdateLayerConfig(size_t stream_index,
-                                   uint32_t rtp_timestamp) override;
+  Vp8FrameConfig NextFrameConfig(size_t stream_index,
+                                 uint32_t rtp_timestamp) override;
 
   // New target bitrate, per temporal layer.
   void OnRatesUpdated(size_t stream_index,

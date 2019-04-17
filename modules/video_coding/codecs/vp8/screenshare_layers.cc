@@ -82,8 +82,8 @@ bool ScreenshareLayers::SupportsEncoderFrameDropping(
   return false;
 }
 
-Vp8FrameConfig ScreenshareLayers::UpdateLayerConfig(size_t stream_index,
-                                                    uint32_t timestamp) {
+Vp8FrameConfig ScreenshareLayers::NextFrameConfig(size_t stream_index,
+                                                  uint32_t timestamp) {
   RTC_DCHECK_LT(stream_index, StreamCount());
 
   auto it = pending_frame_configs_.find(timestamp);

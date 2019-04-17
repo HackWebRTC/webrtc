@@ -85,7 +85,7 @@ class ScreenshareLayerTest : public ::testing::Test {
   }
 
   int ConfigureFrame(bool key_frame) {
-    tl_config_ = UpdateLayerConfig(0, timestamp_);
+    tl_config_ = NextFrameConfig(0, timestamp_);
     EXPECT_EQ(0, tl_config_.encoder_layer_id)
         << "ScreenshareLayers always encodes using the bitrate allocator for "
            "layer 0, but may reference different buffers and packetize "
@@ -99,10 +99,10 @@ class ScreenshareLayerTest : public ::testing::Test {
     return flags;
   }
 
-  Vp8FrameConfig UpdateLayerConfig(size_t stream_index, uint32_t timestamp) {
+  Vp8FrameConfig NextFrameConfig(size_t stream_index, uint32_t timestamp) {
     int64_t timestamp_ms = timestamp / 90;
     clock_.AdvanceTime(TimeDelta::ms(timestamp_ms - rtc::TimeMillis()));
-    return layers_->UpdateLayerConfig(stream_index, timestamp);
+    return layers_->NextFrameConfig(stream_index, timestamp);
   }
 
   int FrameSizeForBitrate(int bitrate_kbps) {
@@ -245,7 +245,7 @@ TEST_F(ScreenshareLayerTest, 2LayersSyncAfterTimeout) {
   for (int i = 0; i < kNumFrames; ++i) {
     CodecSpecificInfo info;
 
-    tl_config_ = UpdateLayerConfig(0, timestamp_);
+    tl_config_ = NextFrameConfig(0, timestamp_);
     config_updated_ = layers_->UpdateConfiguration(0, &cfg_);
 
     // Simulate TL1 being at least 8 qp steps better.
@@ -486,8 +486,8 @@ TEST_F(ScreenshareLayerTest, RespectsMaxIntervalBetweenFrames) {
   layers_->OnRatesUpdated(0, layer_rates, kFrameRate);
   layers_->UpdateConfiguration(0, &cfg_);
 
-  EXPECT_EQ(kTl0Flags, LibvpxVp8Encoder::EncodeFlags(
-                           UpdateLayerConfig(0, kStartTimestamp)));
+  EXPECT_EQ(kTl0Flags,
+            LibvpxVp8Encoder::EncodeFlags(NextFrameConfig(0, kStartTimestamp)));
   layers_->OnEncodeDone(0, kStartTimestamp, kLargeFrameSizeBytes, false,
                         kDefaultQp, IgnoredCodecSpecificInfo());
 
@@ -502,12 +502,12 @@ TEST_F(ScreenshareLayerTest, RespectsMaxIntervalBetweenFrames) {
   // any later, the frame will be dropped anyway by the frame rate throttling
   // logic.
   EXPECT_TRUE(
-      UpdateLayerConfig(0, kTwoSecondsLater - kTimestampDelta5Fps).drop_frame);
+      NextFrameConfig(0, kTwoSecondsLater - kTimestampDelta5Fps).drop_frame);
 
   // More than two seconds has passed since last frame, one should be emitted
   // even if bitrate target is then exceeded.
   EXPECT_EQ(kTl0Flags, LibvpxVp8Encoder::EncodeFlags(
-                           UpdateLayerConfig(0, kTwoSecondsLater + 90)));
+                           NextFrameConfig(0, kTwoSecondsLater + 90)));
 }
 
 TEST_F(ScreenshareLayerTest, UpdatesHistograms) {
@@ -520,7 +520,7 @@ TEST_F(ScreenshareLayerTest, UpdatesHistograms) {
   for (int64_t timestamp = 0;
        timestamp < kTimestampDelta5Fps * 5 * metrics::kMinRunTimeInSeconds;
        timestamp += kTimestampDelta5Fps) {
-    tl_config_ = UpdateLayerConfig(0, timestamp);
+    tl_config_ = NextFrameConfig(0, timestamp);
     if (tl_config_.drop_frame) {
       dropped_frame = true;
       continue;
@@ -609,7 +609,7 @@ TEST_F(ScreenshareLayerTest, RespectsConfiguredFramerate) {
 
   // Send at regular rate - no drops expected.
   for (int64_t i = 0; i < kTestSpanMs; i += kFrameIntervalsMs) {
-    if (UpdateLayerConfig(0, timestamp).drop_frame) {
+    if (NextFrameConfig(0, timestamp).drop_frame) {
       ++num_discarded_frames;
     } else {
       size_t frame_size_bytes = kDefaultTl0BitrateKbps * kFrameIntervalsMs / 8;
@@ -627,7 +627,7 @@ TEST_F(ScreenshareLayerTest, RespectsConfiguredFramerate) {
   num_input_frames = 0;
   num_discarded_frames = 0;
   for (int64_t i = 0; i < kTestSpanMs; i += kFrameIntervalsMs / 2) {
-    if (UpdateLayerConfig(0, timestamp).drop_frame) {
+    if (NextFrameConfig(0, timestamp).drop_frame) {
       ++num_discarded_frames;
     } else {
       size_t frame_size_bytes = kDefaultTl0BitrateKbps * kFrameIntervalsMs / 8;
@@ -669,7 +669,7 @@ TEST_F(ScreenshareLayerTest, DropOnTooShortFrameInterval) {
 
   // Add a large gap, so there's plenty of room in the rate tracker.
   timestamp_ += kTimestampDelta5Fps * 3;
-  EXPECT_FALSE(UpdateLayerConfig(0, timestamp_).drop_frame);
+  EXPECT_FALSE(NextFrameConfig(0, timestamp_).drop_frame);
   layers_->OnEncodeDone(0, timestamp_, frame_size_, false, kDefaultQp,
                         IgnoredCodecSpecificInfo());
 
@@ -677,11 +677,11 @@ TEST_F(ScreenshareLayerTest, DropOnTooShortFrameInterval) {
   // frame just before this limit.
   const int64_t kMinFrameInterval = (kTimestampDelta5Fps * 85) / 100;
   timestamp_ += kMinFrameInterval - 90;
-  EXPECT_TRUE(UpdateLayerConfig(0, timestamp_).drop_frame);
+  EXPECT_TRUE(NextFrameConfig(0, timestamp_).drop_frame);
 
   // Try again at the limit, now it should pass.
   timestamp_ += 90;
-  EXPECT_FALSE(UpdateLayerConfig(0, timestamp_).drop_frame);
+  EXPECT_FALSE(NextFrameConfig(0, timestamp_).drop_frame);
 }
 
 TEST_F(ScreenshareLayerTest, AdjustsBitrateWhenDroppingFrames) {

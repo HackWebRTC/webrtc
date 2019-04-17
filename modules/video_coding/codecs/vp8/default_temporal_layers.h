@@ -40,8 +40,8 @@ class DefaultTemporalLayers final : public Vp8FrameBufferController {
 
   // Returns the recommended VP8 encode flags needed. May refresh the decoder
   // and/or update the reference buffers.
-  Vp8FrameConfig UpdateLayerConfig(size_t stream_index,
-                                   uint32_t timestamp) override;
+  Vp8FrameConfig NextFrameConfig(size_t stream_index,
+                                 uint32_t timestamp) override;
 
   // New target bitrate, per temporal layer.
   void OnRatesUpdated(size_t stream_index,
@@ -108,7 +108,7 @@ class DefaultTemporalLayers final : public Vp8FrameBufferController {
     // Bitmask of Vp8BufferReference flags, indicating which buffers this frame
     // updates.
     uint8_t updated_buffer_mask = 0;
-    // The frame config return by UpdateLayerConfig() for this frame.
+    // The frame config returned by NextFrameConfig() for this frame.
     DependencyInfo dependency_info;
   };
   // Map from rtp timestamp to pending frame status. Reset on pattern loop.

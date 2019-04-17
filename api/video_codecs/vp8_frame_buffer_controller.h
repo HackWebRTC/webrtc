@@ -25,7 +25,7 @@ namespace webrtc {
 // * Vp8FrameBufferController is not thread safe, synchronization is the
 //   caller's responsibility.
 // * The encoder is assumed to encode all frames in order, and callbacks to
-//   PopulateCodecSpecific() / FrameEncoded() must happen in the same order.
+//   PopulateCodecSpecific() / OnEncodeDone() must happen in the same order.
 //
 // This means that in the case of pipelining encoders, it is OK to have a chain
 // of calls such as this:
@@ -38,11 +38,15 @@ namespace webrtc {
 // - OnEncodeDone(timestampB, 0, ...)
 // - OnEncodeDone(timestampC, 1234, ...)
 // Note that UpdateLayerConfig() for a new frame can happen before
-// FrameEncoded() for a previous one, but calls themselves must be both
+// OnEncodeDone() for a previous one, but calls themselves must be both
 // synchronized (e.g. run on a task queue) and in order (per type).
+//
+// TODO(eladalon): Revise comment (referring to PopulateCodecSpecific in this
+// context is not very meaningful).
 
 struct CodecSpecificInfo;
 
+// TODO(eladalon): This configuration is temporal-layers specific; refactor.
 struct Vp8EncoderConfig {
   static constexpr size_t kMaxPeriodicity = 16;
   static constexpr size_t kMaxLayers = 5;
@@ -90,37 +94,36 @@ class Vp8FrameBufferController {
   //     OnEncodeDone() again when the frame has actually been encoded.
   virtual bool SupportsEncoderFrameDropping(size_t stream_index) const = 0;
 
-  // New target bitrate, per temporal layer.
+  // New target bitrate for a stream (each entry in
+  // |bitrates_bps| is for another temporal layer).
   virtual void OnRatesUpdated(size_t stream_index,
                               const std::vector<uint32_t>& bitrates_bps,
                               int framerate_fps) = 0;
 
   // Called by the encoder before encoding a frame. |cfg| contains the current
-  // configuration. If the TemporalLayers instance wishes any part of that
-  // to be changed before the encode step, |cfg| should be changed and then
-  // return true. If false is returned, the encoder will proceed without
-  // updating the configuration.
+  // configuration. If the encoder wishes any part of that to be changed before
+  // the encode step, |cfg| should be changed and then return true. If false is
+  // returned, the encoder will proceed without updating the configuration.
   virtual bool UpdateConfiguration(size_t stream_index,
                                    Vp8EncoderConfig* cfg) = 0;
 
-  // Returns the recommended VP8 encode flags needed, and moves the temporal
-  // pattern to the next frame.
+  // Returns the recommended VP8 encode flags needed.
   // The timestamp may be used as both a time and a unique identifier, and so
   // the caller must make sure no two frames use the same timestamp.
   // The timestamp uses a 90kHz RTP clock.
   // After calling this method, first call the actual encoder with the provided
   // frame configuration, and then OnEncodeDone() below.
-  virtual Vp8FrameConfig UpdateLayerConfig(size_t stream_index,
-                                           uint32_t rtp_timestamp) = 0;
+  virtual Vp8FrameConfig NextFrameConfig(size_t stream_index,
+                                         uint32_t rtp_timestamp) = 0;
 
   // Called after the encode step is done. |rtp_timestamp| must match the
   // parameter use in the UpdateLayerConfig() call.
   // |is_keyframe| must be true iff the encoder decided to encode this frame as
   // a keyframe.
-  // If |info| is not null, the TemporalLayers instance may update |info| with
-  // codec specific data such as temporal id.
-  // |qp| should indicate the frame-level QP this frame was encoded at. If the
-  // encoder does not support extracting this, |qp| should be set to 0.
+  // If |info| is not null, the encoder may update |info| with codec specific
+  // data such as temporal id. |qp| should indicate the frame-level QP this
+  // frame was encoded at. If the encoder does not support extracting this, |qp|
+  // should be set to 0.
   virtual void OnEncodeDone(size_t stream_index,
                             uint32_t rtp_timestamp,
                             size_t size_bytes,

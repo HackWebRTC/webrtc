@@ -53,10 +53,10 @@ bool Vp8TemporalLayers::UpdateConfiguration(size_t stream_index,
   return controllers_[stream_index]->UpdateConfiguration(0, cfg);
 }
 
-Vp8FrameConfig Vp8TemporalLayers::UpdateLayerConfig(size_t stream_index,
-                                                    uint32_t rtp_timestamp) {
+Vp8FrameConfig Vp8TemporalLayers::NextFrameConfig(size_t stream_index,
+                                                  uint32_t rtp_timestamp) {
   RTC_DCHECK_LT(stream_index, controllers_.size());
-  return controllers_[stream_index]->UpdateLayerConfig(0, rtp_timestamp);
+  return controllers_[stream_index]->NextFrameConfig(0, rtp_timestamp);
 }
 
 void Vp8TemporalLayers::OnEncodeDone(size_t stream_index,
