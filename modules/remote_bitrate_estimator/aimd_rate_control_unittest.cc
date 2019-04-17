@@ -36,9 +36,10 @@ struct AimdRateControlStates {
   FieldTrialBasedConfig field_trials;
 };
 
-AimdRateControlStates CreateAimdRateControlStates() {
+AimdRateControlStates CreateAimdRateControlStates(bool send_side = false) {
   AimdRateControlStates states;
-  states.aimd_rate_control.reset(new AimdRateControl(&states.field_trials));
+  states.aimd_rate_control.reset(
+      new AimdRateControl(&states.field_trials, send_side));
   states.simulated_clock.reset(new SimulatedClock(kClockInitialTime));
   return states;
 }
@@ -276,6 +277,64 @@ TEST(AimdRateControlTest, SendingRateBoundedWhenThroughputNotEstimated) {
   }
   EXPECT_LE(states.aimd_rate_control->LatestEstimate().bps(),
             kInitialBitrateBps * 1.5 + 10000);
+}
+
+TEST(AimdRateControlTest, EstimateDoesNotIncreaseInAlr) {
+  // When alr is detected, the delay based estimator is not allowed to increase
+  // bwe since there will be no feedback from the network if the new estimate
+  // is correct.
+  test::ScopedFieldTrials override_field_trials(
+      "WebRTC-DontIncreaseDelayBasedBweInAlr/Enabled/");
+  auto states = CreateAimdRateControlStates(/*send_side=*/true);
+  constexpr int kInitialBitrateBps = 123000;
+  SetEstimate(states, kInitialBitrateBps);
+  states.aimd_rate_control->SetInApplicationLimitedRegion(true);
+  UpdateRateControl(states, BandwidthUsage::kBwNormal, kInitialBitrateBps,
+                    states.simulated_clock->TimeInMilliseconds());
+  ASSERT_EQ(states.aimd_rate_control->LatestEstimate().bps(),
+            kInitialBitrateBps);
+
+  for (int i = 0; i < 100; ++i) {
+    UpdateRateControl(states, BandwidthUsage::kBwNormal, absl::nullopt,
+                      states.simulated_clock->TimeInMilliseconds());
+    states.simulated_clock->AdvanceTimeMilliseconds(100);
+  }
+  EXPECT_EQ(states.aimd_rate_control->LatestEstimate().bps(),
+            kInitialBitrateBps);
+}
+
+TEST(AimdRateControlTest, SetEstimateIncreaseBweInAlr) {
+  test::ScopedFieldTrials override_field_trials(
+      "WebRTC-DontIncreaseDelayBasedBweInAlr/Enabled/");
+  auto states = CreateAimdRateControlStates(/*send_side=*/true);
+  constexpr int kInitialBitrateBps = 123000;
+  SetEstimate(states, kInitialBitrateBps);
+  states.aimd_rate_control->SetInApplicationLimitedRegion(true);
+  ASSERT_EQ(states.aimd_rate_control->LatestEstimate().bps(),
+            kInitialBitrateBps);
+  SetEstimate(states, 2 * kInitialBitrateBps);
+  EXPECT_EQ(states.aimd_rate_control->LatestEstimate().bps(),
+            2 * kInitialBitrateBps);
+}
+
+TEST(AimdRateControlTest, EstimateIncreaseWhileNotInAlr) {
+  // Allow the estimate to increase as long as alr is not detected to ensure
+  // tha BWE can not get stuck at a certain bitrate.
+  test::ScopedFieldTrials override_field_trials(
+      "WebRTC-DontIncreaseDelayBasedBweInAlr/Enabled/");
+  auto states = CreateAimdRateControlStates(/*send_side=*/true);
+  constexpr int kInitialBitrateBps = 123000;
+  SetEstimate(states, kInitialBitrateBps);
+  states.aimd_rate_control->SetInApplicationLimitedRegion(false);
+  UpdateRateControl(states, BandwidthUsage::kBwNormal, kInitialBitrateBps,
+                    states.simulated_clock->TimeInMilliseconds());
+  for (int i = 0; i < 100; ++i) {
+    UpdateRateControl(states, BandwidthUsage::kBwNormal, absl::nullopt,
+                      states.simulated_clock->TimeInMilliseconds());
+    states.simulated_clock->AdvanceTimeMilliseconds(100);
+  }
+  EXPECT_GT(states.aimd_rate_control->LatestEstimate().bps(),
+            kInitialBitrateBps);
 }
 
 }  // namespace webrtc
