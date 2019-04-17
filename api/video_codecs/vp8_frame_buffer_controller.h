@@ -140,7 +140,7 @@ class Vp8FrameBufferController {
 
   // Called when a loss notification is received.
   virtual void OnLossNotification(
-      const VideoEncoder::LossNotification loss_notification) = 0;
+      const VideoEncoder::LossNotification& loss_notification) = 0;
 };
 
 // Interface for a factory of Vp8FrameBufferController instances.
