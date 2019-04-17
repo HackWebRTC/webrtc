@@ -21,11 +21,6 @@
 
 namespace webrtc {
 
-// TODO(sprang): Tune these!
-const int RemoteEstimatorProxy::kBackWindowMs = 500;
-const int RemoteEstimatorProxy::kMinSendIntervalMs = 50;
-const int RemoteEstimatorProxy::kMaxSendIntervalMs = 250;
-const int RemoteEstimatorProxy::kDefaultSendIntervalMs = 100;
 // Impossible to request feedback older than what can be represented by 15 bits.
 const int RemoteEstimatorProxy::kMaxNumberOfPackets = (1 << 15);
 
@@ -36,13 +31,15 @@ static constexpr int64_t kMaxTimeMs =
 
 RemoteEstimatorProxy::RemoteEstimatorProxy(
     Clock* clock,
-    TransportFeedbackSenderInterface* feedback_sender)
+    TransportFeedbackSenderInterface* feedback_sender,
+    const WebRtcKeyValueConfig* key_value_config)
     : clock_(clock),
       feedback_sender_(feedback_sender),
+      send_config_(key_value_config),
       last_process_time_ms_(-1),
       media_ssrc_(0),
       feedback_packet_count_(0),
-      send_interval_ms_(kDefaultSendIntervalMs),
+      send_interval_ms_(send_config_.default_interval->ms()),
       send_periodic_feedback_(true) {}
 
 RemoteEstimatorProxy::~RemoteEstimatorProxy() {}
@@ -97,10 +94,10 @@ void RemoteEstimatorProxy::OnBitrateChanged(int bitrate_bps) {
   // TwccReport size at 250ms interval is 36 byte.
   // AverageTwccReport = (TwccReport(50ms) + TwccReport(250ms)) / 2
   constexpr int kTwccReportSize = 20 + 8 + 10 + 30;
-  constexpr double kMinTwccRate =
-      kTwccReportSize * 8.0 * 1000.0 / kMaxSendIntervalMs;
-  constexpr double kMaxTwccRate =
-      kTwccReportSize * 8.0 * 1000.0 / kMinSendIntervalMs;
+  const double kMinTwccRate =
+      kTwccReportSize * 8.0 * 1000.0 / send_config_.max_interval->ms();
+  const double kMaxTwccRate =
+      kTwccReportSize * 8.0 * 1000.0 / send_config_.min_interval->ms();
 
   // Let TWCC reports occupy 5% of total bandwidth.
   rtc::CritScope cs(&lock_);
@@ -133,7 +130,7 @@ void RemoteEstimatorProxy::OnPacketArrival(
       // Start new feedback packet, cull old packets.
       for (auto it = packet_arrival_times_.begin();
            it != packet_arrival_times_.end() && it->first < seq &&
-           arrival_time - it->second >= kBackWindowMs;) {
+           arrival_time - it->second >= send_config_.back_window->ms();) {
         it = packet_arrival_times_.erase(it);
       }
     }

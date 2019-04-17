@@ -14,8 +14,10 @@
 #include <map>
 #include <vector>
 
+#include "api/transport/webrtc_key_value_config.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "rtc_base/critical_section.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/numerics/sequence_number_util.h"
 
 namespace webrtc {
@@ -32,12 +34,9 @@ class TransportFeedback;
 
 class RemoteEstimatorProxy : public RemoteBitrateEstimator {
  public:
-  static const int kMinSendIntervalMs;
-  static const int kMaxSendIntervalMs;
-  static const int kDefaultSendIntervalMs;
-  static const int kBackWindowMs;
   RemoteEstimatorProxy(Clock* clock,
-                       TransportFeedbackSenderInterface* feedback_sender);
+                       TransportFeedbackSenderInterface* feedback_sender,
+                       const WebRtcKeyValueConfig* key_value_config);
   ~RemoteEstimatorProxy() override;
 
   void IncomingPacket(int64_t arrival_time_ms,
@@ -54,6 +53,20 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
   void SetSendPeriodicFeedback(bool send_periodic_feedback);
 
  private:
+  struct TransportWideFeedbackConfig {
+    FieldTrialParameter<TimeDelta> back_window{"wind", TimeDelta::ms(500)};
+    FieldTrialParameter<TimeDelta> min_interval{"min", TimeDelta::ms(50)};
+    FieldTrialParameter<TimeDelta> max_interval{"max", TimeDelta::ms(250)};
+    FieldTrialParameter<TimeDelta> default_interval{"def", TimeDelta::ms(100)};
+    explicit TransportWideFeedbackConfig(
+        const WebRtcKeyValueConfig* key_value_config) {
+      ParseFieldTrial(
+          {&back_window, &min_interval, &max_interval, &default_interval},
+          key_value_config->Lookup(
+              "WebRTC-Bwe-TransportWideFeedbackIntervals"));
+    }
+  };
+
   static const int kMaxNumberOfPackets;
   void OnPacketArrival(uint16_t sequence_number,
                        int64_t arrival_time,
@@ -75,6 +88,7 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
 
   Clock* const clock_;
   TransportFeedbackSenderInterface* const feedback_sender_;
+  const TransportWideFeedbackConfig send_config_;
   int64_t last_process_time_ms_;
 
   rtc::CriticalSection lock_;

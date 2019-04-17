@@ -122,7 +122,7 @@ ReceiveSideCongestionController::ReceiveSideCongestionController(
     Clock* clock,
     PacketRouter* packet_router)
     : remote_bitrate_estimator_(packet_router, clock),
-      remote_estimator_proxy_(clock, packet_router) {}
+      remote_estimator_proxy_(clock, packet_router, &field_trial_config_) {}
 
 void ReceiveSideCongestionController::OnReceivedPacket(
     int64_t arrival_time_ms,

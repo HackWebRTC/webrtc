@@ -9,6 +9,7 @@
  */
 
 #include "modules/remote_bitrate_estimator/remote_estimator_proxy.h"
+#include "api/transport/field_trial_based_config.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "system_wrappers/include/clock.h"
@@ -29,6 +30,11 @@ constexpr uint16_t kBaseSeq = 10;
 constexpr int64_t kBaseTimeMs = 123;
 constexpr int64_t kMaxSmallDeltaMs =
     (rtcp::TransportFeedback::kDeltaScaleFactor * 0xFF) / 1000;
+
+constexpr int kBackWindowMs = 500;
+constexpr int kMinSendIntervalMs = 50;
+constexpr int kMaxSendIntervalMs = 250;
+constexpr int kDefaultSendIntervalMs = 100;
 
 std::vector<uint16_t> SequenceNumbers(
     const rtcp::TransportFeedback& feedback_packet) {
@@ -58,7 +64,8 @@ class MockTransportFeedbackSender : public TransportFeedbackSenderInterface {
 
 class RemoteEstimatorProxyTest : public ::testing::Test {
  public:
-  RemoteEstimatorProxyTest() : clock_(0), proxy_(&clock_, &router_) {}
+  RemoteEstimatorProxyTest()
+      : clock_(0), proxy_(&clock_, &router_, &field_trial_config_) {}
 
  protected:
   void IncomingPacket(uint16_t seq,
@@ -77,11 +84,11 @@ class RemoteEstimatorProxyTest : public ::testing::Test {
   }
 
   void Process() {
-    clock_.AdvanceTimeMilliseconds(
-        RemoteEstimatorProxy::kDefaultSendIntervalMs);
+    clock_.AdvanceTimeMilliseconds(kDefaultSendIntervalMs);
     proxy_.Process();
   }
 
+  FieldTrialBasedConfig field_trial_config_;
   SimulatedClock clock_;
   ::testing::StrictMock<MockTransportFeedbackSender> router_;
   RemoteEstimatorProxy proxy_;
@@ -305,8 +312,7 @@ TEST_F(RemoteEstimatorProxyTest, ResendsTimestampsOnReordering) {
 }
 
 TEST_F(RemoteEstimatorProxyTest, RemovesTimestampsOutOfScope) {
-  const int64_t kTimeoutTimeMs =
-      kBaseTimeMs + RemoteEstimatorProxy::kBackWindowMs;
+  const int64_t kTimeoutTimeMs = kBaseTimeMs + kBackWindowMs;
 
   IncomingPacket(kBaseSeq + 2, kBaseTimeMs);
 
@@ -361,15 +367,13 @@ TEST_F(RemoteEstimatorProxyTest, TimeUntilNextProcessIsZeroBeforeFirstProcess) {
 
 TEST_F(RemoteEstimatorProxyTest, TimeUntilNextProcessIsDefaultOnUnkownBitrate) {
   Process();
-  EXPECT_EQ(RemoteEstimatorProxy::kDefaultSendIntervalMs,
-            proxy_.TimeUntilNextProcess());
+  EXPECT_EQ(kDefaultSendIntervalMs, proxy_.TimeUntilNextProcess());
 }
 
 TEST_F(RemoteEstimatorProxyTest, TimeUntilNextProcessIsMinIntervalOn300kbps) {
   Process();
   proxy_.OnBitrateChanged(300000);
-  EXPECT_EQ(RemoteEstimatorProxy::kMinSendIntervalMs,
-            proxy_.TimeUntilNextProcess());
+  EXPECT_EQ(kMinSendIntervalMs, proxy_.TimeUntilNextProcess());
 }
 
 TEST_F(RemoteEstimatorProxyTest, TimeUntilNextProcessIsMaxIntervalOn0kbps) {
@@ -378,15 +382,13 @@ TEST_F(RemoteEstimatorProxyTest, TimeUntilNextProcessIsMaxIntervalOn0kbps) {
   // bitrate is small. We choose 0 bps as a special case, which also tests
   // erroneous behaviors like division-by-zero.
   proxy_.OnBitrateChanged(0);
-  EXPECT_EQ(RemoteEstimatorProxy::kMaxSendIntervalMs,
-            proxy_.TimeUntilNextProcess());
+  EXPECT_EQ(kMaxSendIntervalMs, proxy_.TimeUntilNextProcess());
 }
 
 TEST_F(RemoteEstimatorProxyTest, TimeUntilNextProcessIsMaxIntervalOn20kbps) {
   Process();
   proxy_.OnBitrateChanged(20000);
-  EXPECT_EQ(RemoteEstimatorProxy::kMaxSendIntervalMs,
-            proxy_.TimeUntilNextProcess());
+  EXPECT_EQ(kMaxSendIntervalMs, proxy_.TimeUntilNextProcess());
 }
 
 TEST_F(RemoteEstimatorProxyTest, TwccReportsUse5PercentOfAvailableBandwidth) {
