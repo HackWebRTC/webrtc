@@ -46,7 +46,8 @@ void VideoFrameMatcher::OnCapturedFrame(const VideoFrame& frame,
   task_queue_.PostTask([this, captured]() {
     for (auto& layer : layers_) {
       CapturedFrame copy = captured;
-      if (layer.second.last_decode) {
+      if (layer.second.last_decode &&
+          layer.second.last_decode->frame->width() <= captured.frame->width()) {
         copy.best_score = I420SSE(*captured.thumb->GetI420(),
                                   *layer.second.last_decode->thumb->GetI420());
         copy.best_decode = layer.second.last_decode;
@@ -71,6 +72,11 @@ void VideoFrameMatcher::OnDecodedFrame(const VideoFrame& frame,
     decoded->id = layer.next_decoded_id++;
     layer.last_decode = decoded;
     for (auto& captured : layer.captured_frames) {
+      // We can't match with a smaller capture.
+      if (captured.frame->width() < decoded->frame->width()) {
+        captured.matched = true;
+        continue;
+      }
       double score =
           I420SSE(*captured.thumb->GetI420(), *decoded->thumb->GetI420());
       if (score < captured.best_score) {
