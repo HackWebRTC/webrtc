@@ -15,6 +15,7 @@
 #include <utility>
 
 #include "absl/algorithm/container.h"
+#include "absl/memory/memory.h"
 #include "api/candidate.h"
 #include "logging/rtc_event_log/ice_logger.h"
 #include "p2p/base/candidate_pair_interface.h"
@@ -148,8 +149,14 @@ P2PTransportChannel::P2PTransportChannel(
   webrtc::BasicRegatheringController::Config regathering_config(
       config_.regather_all_networks_interval_range,
       config_.regather_on_failed_networks_interval_or_default());
-  regathering_controller_.reset(new webrtc::BasicRegatheringController(
-      regathering_config, this, network_thread_));
+  regathering_controller_ =
+      absl::make_unique<webrtc::BasicRegatheringController>(
+          regathering_config, this, network_thread_);
+  RTC_DCHECK(allocator_ != nullptr);
+  // We populate the change in the candidate filter to the session taken by
+  // the transport.
+  allocator_->SignalCandidateFilterChanged.connect(
+      this, &P2PTransportChannel::OnCandidateFilterChanged);
   ice_event_log_.set_event_log(event_log);
 }
 
@@ -997,6 +1004,14 @@ void P2PTransportChannel::OnUnknownAddress(
   // connection in question.
   SortConnectionsAndUpdateState(
       "a new candidate pair created from an unknown remote address");
+}
+
+void P2PTransportChannel::OnCandidateFilterChanged(uint32_t prev_filter,
+                                                   uint32_t cur_filter) {
+  if (prev_filter == cur_filter || allocator_session() == nullptr) {
+    return;
+  }
+  allocator_session()->SetCandidateFilter(cur_filter);
 }
 
 void P2PTransportChannel::OnRoleConflict(PortInterface* port) {
