@@ -38,10 +38,6 @@ void SetMediaEngineDefaults(cricket::MediaEngineDependencies* deps) {
     deps->video_encoder_factory = CreateBuiltinVideoEncoderFactory();
   if (deps->video_decoder_factory == nullptr)
     deps->video_decoder_factory = CreateBuiltinVideoDecoderFactory();
-  if (deps->video_bitrate_allocator_factory == nullptr) {
-    deps->video_bitrate_allocator_factory =
-        CreateBuiltinVideoBitrateAllocatorFactory();
-  }
 }
 
 }  // namespace webrtc

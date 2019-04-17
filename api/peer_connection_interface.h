@@ -1219,6 +1219,8 @@ struct PeerConnectionDependencies final {
   std::unique_ptr<webrtc::AsyncResolverFactory> async_resolver_factory;
   std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator;
   std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier;
+  std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
+      video_bitrate_allocator_factory;
 };
 
 // PeerConnectionFactoryDependencies holds all of the PeerConnectionFactory

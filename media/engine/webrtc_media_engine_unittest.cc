@@ -297,17 +297,6 @@ TEST(WebRtcMediaEngineFactoryTest, CreateWithBuiltinDecoders) {
   EXPECT_TRUE(engine);
 }
 
-TEST(WebRtcMediaEngineFactoryTest, CreateWithVideoBitrateFactory) {
-  std::unique_ptr<MediaEngineInterface> engine(WebRtcMediaEngineFactory::Create(
-      nullptr /* adm */, webrtc::CreateBuiltinAudioEncoderFactory(),
-      webrtc::CreateBuiltinAudioDecoderFactory(),
-      webrtc::CreateBuiltinVideoEncoderFactory(),
-      webrtc::CreateBuiltinVideoDecoderFactory(),
-      webrtc::CreateBuiltinVideoBitrateAllocatorFactory(),
-      nullptr /* audio_mixer */, webrtc::AudioProcessingBuilder().Create()));
-  EXPECT_TRUE(engine);
-}
-
 TEST(WebRtcMediaEngineFactoryTest, Create) {
   MediaEngineDependencies deps;
   webrtc::SetMediaEngineDefaults(&deps);

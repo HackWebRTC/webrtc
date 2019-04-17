@@ -233,12 +233,14 @@ VideoChannel* ChannelManager::CreateVideoChannel(
     bool srtp_required,
     const webrtc::CryptoOptions& crypto_options,
     rtc::UniqueRandomIdGenerator* ssrc_generator,
-    const VideoOptions& options) {
+    const VideoOptions& options,
+    webrtc::VideoBitrateAllocatorFactory* video_bitrate_allocator_factory) {
   if (!worker_thread_->IsCurrent()) {
     return worker_thread_->Invoke<VideoChannel*>(RTC_FROM_HERE, [&] {
-      return CreateVideoChannel(
-          call, media_config, rtp_transport, media_transport, signaling_thread,
-          content_name, srtp_required, crypto_options, ssrc_generator, options);
+      return CreateVideoChannel(call, media_config, rtp_transport,
+                                media_transport, signaling_thread, content_name,
+                                srtp_required, crypto_options, ssrc_generator,
+                                options, video_bitrate_allocator_factory);
     });
   }
 
@@ -250,7 +252,8 @@ VideoChannel* ChannelManager::CreateVideoChannel(
   }
 
   VideoMediaChannel* media_channel = media_engine_->video().CreateMediaChannel(
-      call, media_config, options, crypto_options);
+      call, media_config, options, crypto_options,
+      video_bitrate_allocator_factory);
   if (!media_channel) {
     return nullptr;
   }

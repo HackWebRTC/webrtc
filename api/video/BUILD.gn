@@ -152,6 +152,7 @@ rtc_source_set("video_bitrate_allocator_factory") {
   ]
   deps = [
     ":video_bitrate_allocator",
+    "../../rtc_base:rtc_base_approved",
     "../video_codecs:video_codecs_api",
   ]
 }

@@ -48,8 +48,6 @@ struct MediaEngineDependencies {
 
   std::unique_ptr<webrtc::VideoEncoderFactory> video_encoder_factory;
   std::unique_ptr<webrtc::VideoDecoderFactory> video_decoder_factory;
-  std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
-      video_bitrate_allocator_factory;
 };
 
 std::unique_ptr<MediaEngineInterface> CreateMediaEngine(
@@ -70,17 +68,6 @@ class WebRtcMediaEngineFactory {
       rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory,
       std::unique_ptr<webrtc::VideoEncoderFactory> video_encoder_factory,
       std::unique_ptr<webrtc::VideoDecoderFactory> video_decoder_factory,
-      rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
-      rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing);
-
-  static std::unique_ptr<MediaEngineInterface> Create(
-      rtc::scoped_refptr<webrtc::AudioDeviceModule> adm,
-      rtc::scoped_refptr<webrtc::AudioEncoderFactory> audio_encoder_factory,
-      rtc::scoped_refptr<webrtc::AudioDecoderFactory> audio_decoder_factory,
-      std::unique_ptr<webrtc::VideoEncoderFactory> video_encoder_factory,
-      std::unique_ptr<webrtc::VideoDecoderFactory> video_decoder_factory,
-      std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
-          video_bitrate_allocator_factory,
       rtc::scoped_refptr<webrtc::AudioMixer> audio_mixer,
       rtc::scoped_refptr<webrtc::AudioProcessing> audio_processing);
 };

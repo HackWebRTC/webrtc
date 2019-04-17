@@ -29,6 +29,7 @@
 #include "api/scoped_refptr.h"
 #include "api/test/fake_frame_decryptor.h"
 #include "api/test/fake_frame_encryptor.h"
+#include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/base/codec.h"
 #include "media/base/fake_media_engine.h"
@@ -94,6 +95,8 @@ class RtpSenderReceiverTest
   RtpSenderReceiverTest()
       : network_thread_(rtc::Thread::Current()),
         worker_thread_(rtc::Thread::Current()),
+        video_bitrate_allocator_factory_(
+            webrtc::CreateBuiltinVideoBitrateAllocatorFactory()),
         // Create fake media engine/etc. so we can create channels to use to
         // test RtpSenders/RtpReceivers.
         media_engine_(new cricket::FakeMediaEngine()),
@@ -119,7 +122,7 @@ class RtpSenderReceiverTest
         &fake_call_, cricket::MediaConfig(), rtp_transport_.get(),
         /*media_transport=*/nullptr, rtc::Thread::Current(), cricket::CN_VIDEO,
         srtp_required, webrtc::CryptoOptions(), &ssrc_generator_,
-        cricket::VideoOptions());
+        cricket::VideoOptions(), video_bitrate_allocator_factory_.get());
     voice_channel_->Enable(true);
     video_channel_->Enable(true);
     voice_media_channel_ = media_engine_->GetVoiceChannel(0);
@@ -510,6 +513,8 @@ class RtpSenderReceiverTest
   // the |channel_manager|.
   std::unique_ptr<cricket::DtlsTransportInternal> rtp_dtls_transport_;
   std::unique_ptr<webrtc::RtpTransportInternal> rtp_transport_;
+  std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
+      video_bitrate_allocator_factory_;
   // |media_engine_| is actually owned by |channel_manager_|.
   cricket::FakeMediaEngine* media_engine_;
   cricket::ChannelManager channel_manager_;

@@ -23,6 +23,7 @@
 #include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/crypto/crypto_options.h"
 #include "api/rtp_parameters.h"
+#include "api/video/video_bitrate_allocator_factory.h"
 #include "call/audio_state.h"
 #include "media/base/codec.h"
 #include "media/base/media_channel.h"
@@ -97,7 +98,9 @@ class VideoEngineInterface {
       webrtc::Call* call,
       const MediaConfig& config,
       const VideoOptions& options,
-      const webrtc::CryptoOptions& crypto_options) = 0;
+      const webrtc::CryptoOptions& crypto_options,
+      webrtc::VideoBitrateAllocatorFactory*
+          video_bitrate_allocator_factory) = 0;
 
   virtual std::vector<VideoCodec> codecs() const = 0;
   virtual RtpCapabilities GetCapabilities() const = 0;

@@ -13,6 +13,7 @@
 #include "absl/memory/memory.h"
 #include "api/rtc_error.h"
 #include "api/test/fake_media_transport.h"
+#include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "media/base/fake_media_engine.h"
 #include "media/base/test_utils.h"
 #include "media/engine/fake_webrtc_call.h"
@@ -45,6 +46,8 @@ class ChannelManagerTest : public ::testing::Test {
   ChannelManagerTest()
       : network_(rtc::Thread::CreateWithSocketServer()),
         worker_(rtc::Thread::Create()),
+        video_bitrate_allocator_factory_(
+            webrtc::CreateBuiltinVideoBitrateAllocatorFactory()),
         fme_(new cricket::FakeMediaEngine()),
         fdme_(new cricket::FakeDataEngine()),
         cm_(new cricket::ChannelManager(
@@ -90,7 +93,8 @@ class ChannelManagerTest : public ::testing::Test {
     cricket::VideoChannel* video_channel = cm_->CreateVideoChannel(
         &fake_call_, cricket::MediaConfig(), rtp_transport, media_transport,
         rtc::Thread::Current(), cricket::CN_VIDEO, kDefaultSrtpRequired,
-        webrtc::CryptoOptions(), &ssrc_generator_, VideoOptions());
+        webrtc::CryptoOptions(), &ssrc_generator_, VideoOptions(),
+        video_bitrate_allocator_factory_.get());
     EXPECT_TRUE(video_channel != nullptr);
     cricket::RtpDataChannel* rtp_data_channel = cm_->CreateRtpDataChannel(
         cricket::MediaConfig(), rtp_transport, rtc::Thread::Current(),
@@ -106,6 +110,8 @@ class ChannelManagerTest : public ::testing::Test {
   std::unique_ptr<DtlsTransportInternal> rtp_dtls_transport_;
   std::unique_ptr<rtc::Thread> network_;
   std::unique_ptr<rtc::Thread> worker_;
+  std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
+      video_bitrate_allocator_factory_;
   // |fme_| and |fdme_| are actually owned by |cm_|.
   cricket::FakeMediaEngine* fme_;
   cricket::FakeDataEngine* fdme_;

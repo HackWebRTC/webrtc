@@ -464,12 +464,9 @@ void DefaultUnsignalledSsrcHandler::SetDefaultSink(
 
 WebRtcVideoEngine::WebRtcVideoEngine(
     std::unique_ptr<webrtc::VideoEncoderFactory> video_encoder_factory,
-    std::unique_ptr<webrtc::VideoDecoderFactory> video_decoder_factory,
-    std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
-        video_bitrate_allocator_factory)
+    std::unique_ptr<webrtc::VideoDecoderFactory> video_decoder_factory)
     : decoder_factory_(std::move(video_decoder_factory)),
-      encoder_factory_(std::move(video_encoder_factory)),
-      bitrate_allocator_factory_(std::move(video_bitrate_allocator_factory)) {
+      encoder_factory_(std::move(video_encoder_factory)) {
   RTC_LOG(LS_INFO) << "WebRtcVideoEngine::WebRtcVideoEngine()";
 }
 
@@ -481,11 +478,12 @@ VideoMediaChannel* WebRtcVideoEngine::CreateMediaChannel(
     webrtc::Call* call,
     const MediaConfig& config,
     const VideoOptions& options,
-    const webrtc::CryptoOptions& crypto_options) {
+    const webrtc::CryptoOptions& crypto_options,
+    webrtc::VideoBitrateAllocatorFactory* video_bitrate_allocator_factory) {
   RTC_LOG(LS_INFO) << "CreateMediaChannel. Options: " << options.ToString();
   return new WebRtcVideoChannel(call, config, options, crypto_options,
                                 encoder_factory_.get(), decoder_factory_.get(),
-                                bitrate_allocator_factory_.get());
+                                video_bitrate_allocator_factory);
 }
 std::vector<VideoCodec> WebRtcVideoEngine::codecs() const {
   return AssignPayloadTypesAndDefaultCodecs(encoder_factory_.get());

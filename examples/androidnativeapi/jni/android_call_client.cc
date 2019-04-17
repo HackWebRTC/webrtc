@@ -162,7 +162,6 @@ void AndroidCallClient::CreatePeerConnectionFactory() {
           webrtc::CreateBuiltinAudioDecoderFactory(),
           absl::make_unique<webrtc::InternalEncoderFactory>(),
           absl::make_unique<webrtc::InternalDecoderFactory>(),
-          webrtc::CreateBuiltinVideoBitrateAllocatorFactory(),
           nullptr /* audio_mixer */, webrtc::AudioProcessingBuilder().Create());
   RTC_LOG(LS_INFO) << "Media engine created: " << media_engine.get();
 
