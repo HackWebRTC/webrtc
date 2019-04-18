@@ -385,6 +385,7 @@ rtc_source_set("default_audio_quality_analyzer") {
     "../../../api:libjingle_peerconnection_api",
     "../../../api:stats_observer_interface",
     "../../../api:track_id_stream_label_map",
+    "../../../rtc_base:criticalsection",
     "../../../rtc_base:logging",
     "../../../rtc_base:rtc_numerics",
     "//third_party/abseil-cpp/absl/strings",
