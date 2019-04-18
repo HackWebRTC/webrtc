@@ -253,6 +253,8 @@ ScopedJavaLocalRef<jobject> CreatePeerConnectionFactoryForJava(
     const JavaParamRef<jobject>& jdecoder_factory,
     rtc::scoped_refptr<AudioProcessing> audio_processor,
     std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory,
+    std::unique_ptr<NetworkControllerFactoryInterface>
+        network_controller_factory,
     std::unique_ptr<NetworkStatePredictorFactoryInterface>
         network_state_predictor_factory,
     std::unique_ptr<MediaTransportFactory> media_transport_factory) {
@@ -308,6 +310,8 @@ ScopedJavaLocalRef<jobject> CreatePeerConnectionFactoryForJava(
   dependencies.call_factory = std::move(call_factory);
   dependencies.event_log_factory = std::move(rtc_event_log_factory);
   dependencies.fec_controller_factory = std::move(fec_controller_factory);
+  dependencies.network_controller_factory =
+      std::move(network_controller_factory);
   dependencies.network_state_predictor_factory =
       std::move(network_state_predictor_factory);
   dependencies.media_transport_factory = std::move(media_transport_factory);
@@ -339,6 +343,7 @@ JNI_PeerConnectionFactory_CreatePeerConnectionFactory(
     const JavaParamRef<jobject>& jdecoder_factory,
     jlong native_audio_processor,
     jlong native_fec_controller_factory,
+    jlong native_network_controller_factory,
     jlong native_network_state_predictor_factory,
     jlong native_media_transport_factory) {
   rtc::scoped_refptr<AudioProcessing> audio_processor =
@@ -352,6 +357,8 @@ JNI_PeerConnectionFactory_CreatePeerConnectionFactory(
       audio_processor ? audio_processor : CreateAudioProcessing(),
       TakeOwnershipOfUniquePtr<FecControllerFactoryInterface>(
           native_fec_controller_factory),
+      TakeOwnershipOfUniquePtr<NetworkControllerFactoryInterface>(
+          native_network_controller_factory),
       TakeOwnershipOfUniquePtr<NetworkStatePredictorFactoryInterface>(
           native_network_state_predictor_factory),
       TakeOwnershipOfUniquePtr<MediaTransportFactory>(
