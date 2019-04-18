@@ -36,34 +36,6 @@ extern "C" {
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
-namespace {
-enum class DelaySource {
-  kSystemDelay,    // The delay values come from the OS.
-  kDelayAgnostic,  // The delay values come from the DA-AEC.
-};
-
-constexpr int kMinDelayLogValue = -200;
-constexpr int kMaxDelayLogValue = 200;
-constexpr int kNumDelayLogBuckets = 100;
-
-void MaybeLogDelayAdjustment(int moved_ms, DelaySource source) {
-  if (moved_ms == 0)
-    return;
-  switch (source) {
-    case DelaySource::kSystemDelay:
-      RTC_HISTOGRAM_COUNTS("WebRTC.Audio.AecDelayAdjustmentMsSystemValue",
-                           moved_ms, kMinDelayLogValue, kMaxDelayLogValue,
-                           kNumDelayLogBuckets);
-      return;
-    case DelaySource::kDelayAgnostic:
-      RTC_HISTOGRAM_COUNTS("WebRTC.Audio.AecDelayAdjustmentMsAgnosticValue",
-                           moved_ms, kMinDelayLogValue, kMaxDelayLogValue,
-                           kNumDelayLogBuckets);
-      return;
-  }
-}
-}  // namespace
-
 // Buffer size (samples)
 static const size_t kBufferSizeBlocks = 250;  // 1 second of audio in 16 kHz.
 
@@ -1864,15 +1836,11 @@ void WebRtcAec_ProcessFrames(AecCore* aec,
       // rounding, like -16.
       int move_elements = (aec->knownDelay - knownDelay - 32) / PART_LEN;
       int moved_elements = aec->farend_block_buffer_.AdjustSize(move_elements);
-      MaybeLogDelayAdjustment(moved_elements * (aec->sampFreq == 8000 ? 8 : 4),
-                              DelaySource::kSystemDelay);
       aec->knownDelay -= moved_elements * PART_LEN;
     } else {
       // 2 b) Apply signal based delay correction.
       int move_elements = SignalBasedDelayCorrection(aec);
       int moved_elements = aec->farend_block_buffer_.AdjustSize(move_elements);
-      MaybeLogDelayAdjustment(moved_elements * (aec->sampFreq == 8000 ? 8 : 4),
-                              DelaySource::kDelayAgnostic);
       int far_near_buffer_diff =
           aec->farend_block_buffer_.Size() -
           (aec->nearend_buffer_size + FRAME_LEN) / PART_LEN;
