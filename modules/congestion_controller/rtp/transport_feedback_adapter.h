@@ -63,6 +63,8 @@ class TransportFeedbackAdapter {
       const rtcp::TransportFeedback& feedback,
       Timestamp feedback_time);
 
+  const bool allow_duplicates_;
+
   rtc::CriticalSection lock_;
   SendTimeHistory send_time_history_ RTC_GUARDED_BY(&lock_);
   int64_t current_offset_ms_;

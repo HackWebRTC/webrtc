@@ -55,12 +55,12 @@ void SendTimeHistory::AddUntracked(size_t packet_size, int64_t send_time_ms) {
       std::max(last_untracked_send_time_ms_, send_time_ms);
 }
 
-bool SendTimeHistory::OnSentPacket(uint16_t sequence_number,
-                                   int64_t send_time_ms) {
+SendTimeHistory::Status SendTimeHistory::OnSentPacket(uint16_t sequence_number,
+                                                      int64_t send_time_ms) {
   int64_t unwrapped_seq_num = seq_num_unwrapper_.Unwrap(sequence_number);
   auto it = history_.find(unwrapped_seq_num);
   if (it == history_.end())
-    return false;
+    return Status::kNotAdded;
   bool packet_retransmit = it->second.send_time_ms >= 0;
   it->second.send_time_ms = send_time_ms;
   last_send_time_ms_ = std::max(last_send_time_ms_, send_time_ms);
@@ -74,7 +74,7 @@ bool SendTimeHistory::OnSentPacket(uint16_t sequence_number,
     it->second.unacknowledged_data += pending_untracked_size_;
     pending_untracked_size_ = 0;
   }
-  return true;
+  return packet_retransmit ? Status::kDuplicate : Status::kOk;
 }
 
 absl::optional<PacketFeedback> SendTimeHistory::GetPacket(

@@ -19,6 +19,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "system_wrappers/include/clock.h"
+#include "test/field_trial.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -393,6 +394,53 @@ TEST_F(TransportFeedbackAdapterTest, TimestampDeltas) {
                                  adapter_->GetTransportFeedbackVector());
   }
 }
+
+TEST_F(TransportFeedbackAdapterTest, IgnoreDuplicatePacketSentCalls) {
+  const PacketFeedback packet(100, 200, 0, 1500, kPacingInfo0);
+
+  // Add a packet and then mark it as sent.
+  adapter_->AddPacket(kSsrc, packet.sequence_number, packet.payload_size,
+                      packet.pacing_info,
+                      Timestamp::ms(clock_.TimeInMilliseconds()));
+  absl::optional<SentPacket> sent_packet =
+      adapter_->ProcessSentPacket(rtc::SentPacket(
+          packet.sequence_number, packet.send_time_ms, rtc::PacketInfo()));
+  EXPECT_TRUE(sent_packet.has_value());
+
+  // Call ProcessSentPacket() again with the same sequence number. This packet
+  // has already been marked as sent and the call should be ignored.
+  absl::optional<SentPacket> duplicate_packet =
+      adapter_->ProcessSentPacket(rtc::SentPacket(
+          packet.sequence_number, packet.send_time_ms, rtc::PacketInfo()));
+  EXPECT_FALSE(duplicate_packet.has_value());
+}
+
+TEST_F(TransportFeedbackAdapterTest, AllowDuplicatePacketSentCallsWithTrial) {
+  // Allow duplicates if this field trial kill-switch is enabled.
+  webrtc::test::ScopedFieldTrials field_trial(
+      "WebRTC-TransportFeedbackAdapter-AllowDuplicates/Enabled/");
+  // Re-run setup so the flags goes into effect.
+  SetUp();
+
+  const PacketFeedback packet(100, 200, 0, 1500, kPacingInfo0);
+
+  // Add a packet and then mark it as sent.
+  adapter_->AddPacket(kSsrc, packet.sequence_number, packet.payload_size,
+                      packet.pacing_info,
+                      Timestamp::ms(clock_.TimeInMilliseconds()));
+  absl::optional<SentPacket> sent_packet =
+      adapter_->ProcessSentPacket(rtc::SentPacket(
+          packet.sequence_number, packet.send_time_ms, rtc::PacketInfo()));
+  EXPECT_TRUE(sent_packet.has_value());
+
+  // Call ProcessSentPacket() again with the same sequence number. This packet
+  // should still be allowed due to the field trial/
+  absl::optional<SentPacket> duplicate_packet =
+      adapter_->ProcessSentPacket(rtc::SentPacket(
+          packet.sequence_number, packet.send_time_ms, rtc::PacketInfo()));
+  EXPECT_TRUE(duplicate_packet.has_value());
+}
+
 }  // namespace test
 }  // namespace webrtc_cc
 }  // namespace webrtc
