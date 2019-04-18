@@ -17,6 +17,7 @@
 #include "api/media_stream_interface.h"
 #include "api/peer_connection_interface.h"
 #include "api/scoped_refptr.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/video_quality_analyzer_interface.h"
 #include "api/units/time_delta.h"
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
@@ -102,6 +103,7 @@ PeerConnectionE2EQualityTest::PeerConnectionE2EQualityTest(
     std::unique_ptr<AudioQualityAnalyzerInterface> audio_quality_analyzer,
     std::unique_ptr<VideoQualityAnalyzerInterface> video_quality_analyzer)
     : clock_(Clock::GetRealTimeClock()),
+      task_queue_factory_(CreateDefaultTaskQueueFactory()),
       test_case_name_(std::move(test_case_name)) {
   // Create default video quality analyzer. We will always create an analyzer,
   // even if there are no video streams, because it will be installed into video
@@ -549,12 +551,13 @@ PeerConnectionE2EQualityTest::MaybeAddVideo(TestPeer* peer) {
             writer);
 
     // Setup FrameGenerator into peer connection.
-    std::unique_ptr<test::FrameGeneratorCapturer> capturer =
-        absl::WrapUnique(test::FrameGeneratorCapturer::Create(
-            std::move(frame_generator), video_config.fps, clock_));
+    auto capturer = absl::make_unique<test::FrameGeneratorCapturer>(
+        clock_, std::move(frame_generator), video_config.fps,
+        *task_queue_factory_);
+    capturer->Init();
     rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource> source =
         new rtc::RefCountedObject<FrameGeneratorCapturerVideoTrackSource>(
-            move(capturer));
+            std::move(capturer));
     out.push_back(source);
     RTC_LOG(INFO) << "Adding video with video_config.stream_label="
                   << video_config.stream_label.value();

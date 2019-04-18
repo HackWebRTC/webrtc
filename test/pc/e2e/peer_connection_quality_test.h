@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/task_queue/task_queue_factory.h"
 #include "api/test/audio_quality_analyzer_interface.h"
 #include "api/test/peerconnection_quality_test_fixture.h"
 #include "api/units/time_delta.h"
@@ -219,6 +220,7 @@ class PeerConnectionE2EQualityTest
   Timestamp Now() const;
 
   Clock* const clock_;
+  const std::unique_ptr<TaskQueueFactory> task_queue_factory_;
   std::string test_case_name_;
   std::unique_ptr<VideoQualityAnalyzerInjectionHelper>
       video_quality_analyzer_injection_helper_;
