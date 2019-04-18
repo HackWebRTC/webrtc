@@ -35,7 +35,6 @@ VideoStreamDecoder::~VideoStreamDecoder() {
   // callbacks.
 
   // Unset all the callback pointers that we set in the ctor.
-  video_receiver_->RegisterPacketRequestCallback(nullptr);
   video_receiver_->RegisterReceiveCallback(nullptr);
 }
 
