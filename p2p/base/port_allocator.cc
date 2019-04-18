@@ -290,6 +290,16 @@ void PortAllocator::DiscardCandidatePool() {
   pooled_sessions_.clear();
 }
 
+void PortAllocator::SetCandidateFilter(uint32_t filter) {
+  CheckRunOnValidThreadIfInitialized();
+  if (candidate_filter_ == filter) {
+    return;
+  }
+  uint32_t prev_filter = candidate_filter_;
+  candidate_filter_ = filter;
+  SignalCandidateFilterChanged(prev_filter, filter);
+}
+
 void PortAllocator::GetCandidateStatsFromPooledSessions(
     CandidateStatsList* candidate_stats_list) {
   CheckRunOnValidThreadAndInitialized();

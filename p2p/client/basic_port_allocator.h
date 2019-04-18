@@ -125,6 +125,15 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession,
   rtc::Thread* network_thread() { return network_thread_; }
   rtc::PacketSocketFactory* socket_factory() { return socket_factory_; }
 
+  // If the new filter allows new types of candidates compared to the previous
+  // filter, gathered candidates that were discarded because of not matching the
+  // previous filter will be signaled if they match the new one.
+  //
+  // We do not perform any regathering since the port allocator flags decide
+  // the type of candidates to gather and the candidate filter only controls the
+  // signaling of candidates. As a result, with the candidate filter changed
+  // alone, all newly allowed candidates for signaling should already be
+  // gathered by the respective cricket::Port.
   void SetCandidateFilter(uint32_t filter) override;
   void StartGettingPorts() override;
   void StopGettingPorts() override;
@@ -158,6 +167,14 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession,
  private:
   class PortData {
    public:
+    enum State {
+      STATE_INPROGRESS,  // Still gathering candidates.
+      STATE_COMPLETE,    // All candidates allocated and ready for process.
+      STATE_ERROR,       // Error in gathering candidates.
+      STATE_PRUNED       // Pruned by higher priority ports on the same network
+                         // interface. Only TURN ports may be pruned.
+    };
+
     PortData() {}
     PortData(Port* port, AllocationSequence* seq)
         : port_(port), sequence_(seq) {}
@@ -165,6 +182,7 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession,
     Port* port() const { return port_; }
     AllocationSequence* sequence() const { return sequence_; }
     bool has_pairable_candidate() const { return has_pairable_candidate_; }
+    State state() const { return state_; }
     bool complete() const { return state_ == STATE_COMPLETE; }
     bool error() const { return state_ == STATE_ERROR; }
     bool pruned() const { return state_ == STATE_PRUNED; }
@@ -187,20 +205,12 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession,
       }
       has_pairable_candidate_ = has_pairable_candidate;
     }
-    void set_complete() { state_ = STATE_COMPLETE; }
-    void set_error() {
-      RTC_DCHECK(state_ == STATE_INPROGRESS);
-      state_ = STATE_ERROR;
+    void set_state(State state) {
+      RTC_DCHECK(state != STATE_ERROR || state_ == STATE_INPROGRESS);
+      state_ = state;
     }
 
    private:
-    enum State {
-      STATE_INPROGRESS,  // Still gathering candidates.
-      STATE_COMPLETE,    // All candidates allocated and ready for process.
-      STATE_ERROR,       // Error in gathering candidates.
-      STATE_PRUNED       // Pruned by higher priority ports on the same network
-                         // interface. Only TURN ports may be pruned.
-    };
     Port* port_ = nullptr;
     AllocationSequence* sequence_ = nullptr;
     bool has_pairable_candidate_ = false;
