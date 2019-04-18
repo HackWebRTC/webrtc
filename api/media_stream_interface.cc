@@ -32,8 +32,4 @@ const cricket::AudioOptions AudioSourceInterface::options() const {
   return {};
 }
 
-double MediaSourceInterface::GetLatency() const {
-  return 0.0;
-}
-
 }  // namespace webrtc

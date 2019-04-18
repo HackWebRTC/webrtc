@@ -22,6 +22,7 @@
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
 #include "media/base/media_channel.h"
+#include "pc/jitter_buffer_delay_interface.h"
 #include "pc/remote_audio_source.h"
 #include "pc/rtp_receiver.h"
 #include "rtc_base/ref_counted_object.h"
@@ -122,6 +123,9 @@ class AudioRtpReceiver : public ObserverInterface,
   int attachment_id_ = 0;
   rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor_;
   rtc::scoped_refptr<DtlsTransportInterface> dtls_transport_;
+  // Allows to thread safely change playout delay. Handles caching cases if
+  // |SetJitterBufferMinimumDelay| is called before start.
+  rtc::scoped_refptr<JitterBufferDelayInterface> delay_;
 };
 
 }  // namespace webrtc

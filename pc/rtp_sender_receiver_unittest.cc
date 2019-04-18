@@ -459,41 +459,6 @@ class RtpSenderReceiverTest
     RunSetLastLayerAsInactiveTest(video_rtp_sender_.get());
   }
 
-  void VerifyTrackLatencyBehaviour(cricket::Delayable* media_channel,
-                                   MediaStreamTrackInterface* track,
-                                   MediaSourceInterface* source,
-                                   uint32_t ssrc) {
-    absl::optional<int> delay_ms;  // In milliseconds.
-    double latency_s = 0.5;        // In seconds.
-
-    source->SetLatency(latency_s);
-    delay_ms = media_channel->GetBaseMinimumPlayoutDelayMs(ssrc);
-    EXPECT_DOUBLE_EQ(latency_s, delay_ms.value_or(0) / 1000.0);
-
-    // Disabling the track should take no effect on previously set value.
-    track->set_enabled(false);
-    delay_ms = media_channel->GetBaseMinimumPlayoutDelayMs(ssrc);
-    EXPECT_DOUBLE_EQ(latency_s, delay_ms.value_or(0) / 1000.0);
-
-    // When the track is disabled, we still should be able to set latency.
-    latency_s = 0.3;
-    source->SetLatency(latency_s);
-    delay_ms = media_channel->GetBaseMinimumPlayoutDelayMs(ssrc);
-    EXPECT_DOUBLE_EQ(latency_s, delay_ms.value_or(0) / 1000.0);
-
-    // Enabling the track should take no effect on previously set value.
-    track->set_enabled(true);
-    delay_ms = media_channel->GetBaseMinimumPlayoutDelayMs(ssrc);
-    EXPECT_DOUBLE_EQ(latency_s, delay_ms.value_or(0) / 1000.0);
-
-    // We still should be able to change latency.
-    latency_s = 0.0;
-    source->SetLatency(latency_s);
-    delay_ms = media_channel->GetBaseMinimumPlayoutDelayMs(ssrc);
-    EXPECT_EQ(0, delay_ms.value_or(-1));
-    EXPECT_DOUBLE_EQ(latency_s, delay_ms.value_or(0) / 1000.0);
-  }
-
   // Check that minimum Jitter Buffer delay is propagated to the underlying
   // |media_channel|.
   void VerifyRtpReceiverDelayBehaviour(cricket::Delayable* media_channel,
@@ -687,44 +652,10 @@ TEST_F(RtpSenderReceiverTest, RemoteAudioTrackSetVolume) {
   DestroyAudioRtpReceiver();
 }
 
-TEST_F(RtpSenderReceiverTest, RemoteAudioSourceLatency) {
-  absl::optional<int> delay_ms;  // In milliseconds.
-  rtc::scoped_refptr<RemoteAudioSource> source =
-      new rtc::RefCountedObject<RemoteAudioSource>(rtc::Thread::Current());
-
-  // Set it to value different from default zero.
-  voice_media_channel_->SetBaseMinimumPlayoutDelayMs(kAudioSsrc, 300);
-
-  // Check that calling GetLatency on the source that hasn't been started yet
-  // won't trigger caching and return default value.
-  EXPECT_DOUBLE_EQ(source->GetLatency(), 0);
-
-  // Check that cached latency will be applied on start.
-  source->SetLatency(0.4);
-  EXPECT_DOUBLE_EQ(source->GetLatency(), 0.4);
-  source->Start(voice_media_channel_, kAudioSsrc);
-  delay_ms = voice_media_channel_->GetBaseMinimumPlayoutDelayMs(kAudioSsrc);
-  EXPECT_EQ(400, delay_ms);
-}
-
-TEST_F(RtpSenderReceiverTest, RemoteAudioTrackLatency) {
-  CreateAudioRtpReceiver();
-  VerifyTrackLatencyBehaviour(voice_media_channel_, audio_track_.get(),
-                              audio_track_->GetSource(), kAudioSsrc);
-}
-
-TEST_F(RtpSenderReceiverTest, RemoteVideoTrackLatency) {
-  CreateVideoRtpReceiver();
-  VerifyTrackLatencyBehaviour(video_media_channel_, video_track_.get(),
-                              video_track_->GetSource(), kVideoSsrc);
-}
-
 TEST_F(RtpSenderReceiverTest, AudioRtpReceiverDelay) {
   CreateAudioRtpReceiver();
   VerifyRtpReceiverDelayBehaviour(voice_media_channel_,
                                   audio_rtp_receiver_.get(), kAudioSsrc);
-  VerifyTrackLatencyBehaviour(voice_media_channel_, audio_track_.get(),
-                              audio_track_->GetSource(), kAudioSsrc);
 }
 
 TEST_F(RtpSenderReceiverTest, VideoRtpReceiverDelay) {

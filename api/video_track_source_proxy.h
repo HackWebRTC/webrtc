@@ -32,8 +32,6 @@ PROXY_WORKER_METHOD2(void,
                      rtc::VideoSinkInterface<VideoFrame>*,
                      const rtc::VideoSinkWants&)
 PROXY_WORKER_METHOD1(void, RemoveSink, rtc::VideoSinkInterface<VideoFrame>*)
-PROXY_WORKER_METHOD1(void, SetLatency, double)
-PROXY_WORKER_CONSTMETHOD0(double, GetLatency)
 PROXY_METHOD1(void, RegisterObserver, ObserverInterface*)
 PROXY_METHOD1(void, UnregisterObserver, ObserverInterface*)
 END_PROXY_MAP()

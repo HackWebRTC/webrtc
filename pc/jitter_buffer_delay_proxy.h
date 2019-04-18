@@ -8,25 +8,24 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_PLAYOUT_LATENCY_PROXY_H_
-#define PC_PLAYOUT_LATENCY_PROXY_H_
+#ifndef PC_JITTER_BUFFER_DELAY_PROXY_H_
+#define PC_JITTER_BUFFER_DELAY_PROXY_H_
 
 #include <stdint.h>
 
 #include "api/proxy.h"
 #include "media/base/delayable.h"
-#include "pc/playout_latency_interface.h"
+#include "pc/jitter_buffer_delay_interface.h"
 
 namespace webrtc {
 
-BEGIN_PROXY_MAP(PlayoutLatency)
+BEGIN_PROXY_MAP(JitterBufferDelay)
 PROXY_SIGNALING_THREAD_DESTRUCTOR()
 PROXY_METHOD2(void, OnStart, cricket::Delayable*, uint32_t)
 PROXY_METHOD0(void, OnStop)
-PROXY_WORKER_METHOD1(void, SetLatency, double)
-PROXY_WORKER_CONSTMETHOD0(double, GetLatency)
+PROXY_WORKER_METHOD1(void, Set, absl::optional<double>)
 END_PROXY_MAP()
 
 }  // namespace webrtc
 
-#endif  // PC_PLAYOUT_LATENCY_PROXY_H_
+#endif  // PC_JITTER_BUFFER_DELAY_PROXY_H_

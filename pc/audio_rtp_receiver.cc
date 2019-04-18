@@ -17,6 +17,8 @@
 #include "api/media_stream_proxy.h"
 #include "api/media_stream_track_proxy.h"
 #include "pc/audio_track.h"
+#include "pc/jitter_buffer_delay.h"
+#include "pc/jitter_buffer_delay_proxy.h"
 #include "pc/media_stream.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
@@ -24,10 +26,6 @@
 #include "rtc_base/trace_event.h"
 
 namespace webrtc {
-
-namespace {
-constexpr double kDefaultLatency = 0.0;
-}  // namespace
 
 AudioRtpReceiver::AudioRtpReceiver(rtc::Thread* worker_thread,
                                    std::string receiver_id,
@@ -46,7 +44,11 @@ AudioRtpReceiver::AudioRtpReceiver(
       track_(AudioTrackProxy::Create(rtc::Thread::Current(),
                                      AudioTrack::Create(receiver_id, source_))),
       cached_track_enabled_(track_->enabled()),
-      attachment_id_(GenerateUniqueId()) {
+      attachment_id_(GenerateUniqueId()),
+      delay_(JitterBufferDelayProxy::Create(
+          rtc::Thread::Current(),
+          worker_thread_,
+          new rtc::RefCountedObject<JitterBufferDelay>(worker_thread))) {
   RTC_DCHECK(worker_thread_);
   RTC_DCHECK(track_->GetSource()->remote());
   track_->RegisterObserver(this);
@@ -162,9 +164,11 @@ void AudioRtpReceiver::SetupMediaChannel(uint32_t ssrc) {
   }
   if (ssrc_) {
     source_->Stop(media_channel_, *ssrc_);
+    delay_->OnStop();
   }
   ssrc_ = ssrc;
   source_->Start(media_channel_, *ssrc_);
+  delay_->OnStart(media_channel_, *ssrc_);
   Reconfigure();
 }
 
@@ -238,7 +242,7 @@ void AudioRtpReceiver::SetObserver(RtpReceiverObserverInterface* observer) {
 
 void AudioRtpReceiver::SetJitterBufferMinimumDelay(
     absl::optional<double> delay_seconds) {
-  source_->SetLatency(delay_seconds.value_or(kDefaultLatency));
+  delay_->Set(delay_seconds);
 }
 
 void AudioRtpReceiver::SetMediaChannel(cricket::MediaChannel* media_channel) {

@@ -8,35 +8,33 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_PLAYOUT_LATENCY_H_
-#define PC_PLAYOUT_LATENCY_H_
+#ifndef PC_JITTER_BUFFER_DELAY_H_
+#define PC_JITTER_BUFFER_DELAY_H_
 
 #include <stdint.h>
 
 #include "absl/types/optional.h"
 #include "media/base/delayable.h"
-#include "pc/playout_latency_interface.h"
+#include "pc/jitter_buffer_delay_interface.h"
 #include "rtc_base/thread.h"
 
 namespace webrtc {
 
-// PlayoutLatency converts latency measured in seconds to delay measured in
-// milliseconds for the underlying media channel. It also handles cases when
-// user sets Latency before the start of media_channel by caching its request.
-// Note, this class is not thread safe. Its thread safe version is defined in
-// pc/playout_latency_proxy.h
-class PlayoutLatency : public PlayoutLatencyInterface {
+// JitterBufferDelay converts delay from seconds to milliseconds for the
+// underlying media channel. It also handles cases when user sets delay before
+// the start of media_channel by caching its request. Note, this class is not
+// thread safe. Its thread safe version is defined in
+// pc/jitter_buffer_delay_proxy.h
+class JitterBufferDelay : public JitterBufferDelayInterface {
  public:
   // Must be called on signaling thread.
-  explicit PlayoutLatency(rtc::Thread* worker_thread);
+  explicit JitterBufferDelay(rtc::Thread* worker_thread);
 
   void OnStart(cricket::Delayable* media_channel, uint32_t ssrc) override;
 
   void OnStop() override;
 
-  void SetLatency(double latency) override;
-
-  double GetLatency() const override;
+  void Set(absl::optional<double> delay_seconds) override;
 
  private:
   // Throughout webrtc source, sometimes it is also called as |main_thread_|.
@@ -45,9 +43,9 @@ class PlayoutLatency : public PlayoutLatencyInterface {
   // Media channel and ssrc together uniqely identify audio stream.
   cricket::Delayable* media_channel_ = nullptr;
   absl::optional<uint32_t> ssrc_;
-  absl::optional<double> cached_latency_;
+  absl::optional<double> cached_delay_seconds_;
 };
 
 }  // namespace webrtc
 
-#endif  // PC_PLAYOUT_LATENCY_H_
+#endif  // PC_JITTER_BUFFER_DELAY_H_

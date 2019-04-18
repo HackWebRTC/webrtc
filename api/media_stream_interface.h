@@ -62,13 +62,6 @@ class RTC_EXPORT MediaSourceInterface : public rtc::RefCountInterface,
 
   virtual bool remote() const = 0;
 
-  // Sets the minimum latency of the remote source until audio playout. Actual
-  // observered latency may differ depending on the source. |latency| is in the
-  // range of [0.0, 10.0] seconds.
-  // TODO(kuddai) make pure virtual once not only remote tracks support latency.
-  virtual void SetLatency(double latency) {}
-  virtual double GetLatency() const;
-
  protected:
   ~MediaSourceInterface() override = default;
 };

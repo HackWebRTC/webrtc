@@ -131,10 +131,9 @@ class RtpReceiverInterface : public rtc::RefCountInterface {
   // Sets the jitter buffer minimum delay until media playout. Actual observed
   // delay may differ depending on the congestion control. |delay_seconds| is a
   // positive value including 0.0 measured in seconds. |nullopt| means default
-  // value must be used. TODO(kuddai): remove the default implmenetation once
-  // the subclasses in Chromium implement this.
+  // value must be used.
   virtual void SetJitterBufferMinimumDelay(
-      absl::optional<double> delay_seconds);
+      absl::optional<double> delay_seconds) = 0;
 
   // TODO(zhihuang): Remove the default implementation once the subclasses
   // implement this. Currently, the only relevant subclass is the

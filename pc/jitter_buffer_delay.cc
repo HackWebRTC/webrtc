@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "pc/playout_latency.h"
+#include "pc/jitter_buffer_delay.h"
 
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
@@ -19,60 +19,48 @@
 #include "rtc_base/thread_checker.h"
 
 namespace {
-constexpr int kDefaultLatency = 0;
+constexpr int kDefaultDelay = 0;
 constexpr int kMaximumDelayMs = 10000;
 }  // namespace
 
 namespace webrtc {
 
-PlayoutLatency::PlayoutLatency(rtc::Thread* worker_thread)
+JitterBufferDelay::JitterBufferDelay(rtc::Thread* worker_thread)
     : signaling_thread_(rtc::Thread::Current()), worker_thread_(worker_thread) {
   RTC_DCHECK(worker_thread_);
 }
 
-void PlayoutLatency::OnStart(cricket::Delayable* media_channel, uint32_t ssrc) {
+void JitterBufferDelay::OnStart(cricket::Delayable* media_channel,
+                                uint32_t ssrc) {
   RTC_DCHECK_RUN_ON(signaling_thread_);
 
   media_channel_ = media_channel;
   ssrc_ = ssrc;
 
-  // Trying to apply cached latency for the audio stream.
-  if (cached_latency_) {
-    SetLatency(cached_latency_.value());
+  // Trying to apply cached delay for the audio stream.
+  if (cached_delay_seconds_) {
+    Set(cached_delay_seconds_.value());
   }
 }
 
-void PlayoutLatency::OnStop() {
+void JitterBufferDelay::OnStop() {
   RTC_DCHECK_RUN_ON(signaling_thread_);
-  // Assume that audio stream is no longer present for latency calls.
+  // Assume that audio stream is no longer present.
   media_channel_ = nullptr;
   ssrc_ = absl::nullopt;
 }
 
-void PlayoutLatency::SetLatency(double latency) {
+void JitterBufferDelay::Set(absl::optional<double> delay_seconds) {
   RTC_DCHECK_RUN_ON(worker_thread_);
 
-  int delay_ms = rtc::dchecked_cast<int>(latency * 1000);
+  // TODO(kuddai) propagate absl::optional deeper down as default preference.
+  int delay_ms =
+      rtc::saturated_cast<int>(delay_seconds.value_or(kDefaultDelay) * 1000);
   delay_ms = rtc::SafeClamp(delay_ms, 0, kMaximumDelayMs);
 
-  cached_latency_ = latency;
+  cached_delay_seconds_ = delay_seconds;
   if (media_channel_ && ssrc_) {
     media_channel_->SetBaseMinimumPlayoutDelayMs(ssrc_.value(), delay_ms);
-  }
-}
-
-double PlayoutLatency::GetLatency() const {
-  RTC_DCHECK_RUN_ON(worker_thread_);
-
-  absl::optional<int> delay_ms;
-  if (media_channel_ && ssrc_) {
-    delay_ms = media_channel_->GetBaseMinimumPlayoutDelayMs(ssrc_.value());
-  }
-
-  if (delay_ms) {
-    return delay_ms.value() / 1000.0;
-  } else {
-    return cached_latency_.value_or(kDefaultLatency);
   }
 }
 
