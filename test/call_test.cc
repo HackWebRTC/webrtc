@@ -15,6 +15,7 @@
 #include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video_codecs/video_encoder_config.h"
 #include "call/fake_network_pipe.h"
@@ -30,6 +31,7 @@ namespace test {
 
 CallTest::CallTest()
     : clock_(Clock::GetRealTimeClock()),
+      task_queue_factory_(CreateDefaultTaskQueueFactory()),
       send_event_log_(RtcEventLog::CreateNull()),
       recv_event_log_(RtcEventLog::CreateNull()),
       audio_send_config_(/*send_transport=*/nullptr,
@@ -459,10 +461,15 @@ void CallTest::CreateFrameGeneratorCapturerWithDrift(Clock* clock,
                                                      int width,
                                                      int height) {
   video_sources_.clear();
-  frame_generator_capturer_ = test::FrameGeneratorCapturer::Create(
-      width, height, absl::nullopt, absl::nullopt, framerate * speed, clock);
-  video_sources_.emplace_back(
-      std::unique_ptr<FrameGeneratorCapturer>(frame_generator_capturer_));
+  auto frame_generator_capturer =
+      absl::make_unique<test::FrameGeneratorCapturer>(
+          clock,
+          test::FrameGenerator::CreateSquareGenerator(
+              width, height, absl::nullopt, absl::nullopt),
+          framerate * speed, *task_queue_factory_);
+  frame_generator_capturer_ = frame_generator_capturer.get();
+  frame_generator_capturer->Init();
+  video_sources_.push_back(std::move(frame_generator_capturer));
   ConnectVideoSourcesToStreams();
 }
 
@@ -470,10 +477,15 @@ void CallTest::CreateFrameGeneratorCapturer(int framerate,
                                             int width,
                                             int height) {
   video_sources_.clear();
-  frame_generator_capturer_ = test::FrameGeneratorCapturer::Create(
-      width, height, absl::nullopt, absl::nullopt, framerate, clock_);
-  video_sources_.emplace_back(
-      std::unique_ptr<FrameGeneratorCapturer>(frame_generator_capturer_));
+  auto frame_generator_capturer =
+      absl::make_unique<test::FrameGeneratorCapturer>(
+          clock_,
+          test::FrameGenerator::CreateSquareGenerator(
+              width, height, absl::nullopt, absl::nullopt),
+          framerate, *task_queue_factory_);
+  frame_generator_capturer_ = frame_generator_capturer.get();
+  frame_generator_capturer->Init();
+  video_sources_.push_back(std::move(frame_generator_capturer));
   ConnectVideoSourcesToStreams();
 }
 
