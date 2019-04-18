@@ -239,7 +239,7 @@ VideoReceiveStream::VideoReceiveStream(
     decoder_payload_types.insert(decoder.payload_type);
   }
 
-  video_receiver_.SetRenderDelay(config_.render_delay_ms);
+  timing_->set_render_delay(config_.render_delay_ms);
 
   jitter_estimator_.reset(new VCMJitterEstimator(clock_));
   frame_buffer_.reset(new video_coding::FrameBuffer(
@@ -579,7 +579,7 @@ absl::optional<Syncable::Info> VideoReceiveStream::GetInfo() const {
   if (!info)
     return absl::nullopt;
 
-  info->current_delay_ms = video_receiver_.Delay();
+  info->current_delay_ms = timing_->TargetVideoDelay();
   return info;
 }
 

@@ -354,21 +354,6 @@ int32_t VideoReceiver::IncomingPacket(const uint8_t* incomingPayload,
   return VCM_OK;
 }
 
-// The estimated delay caused by rendering, defaults to
-// kDefaultRenderDelayMs = 10 ms
-int32_t VideoReceiver::SetRenderDelay(uint32_t timeMS) {
-  RTC_DCHECK_RUN_ON(&construction_thread_checker_);
-  RTC_DCHECK(!IsDecoderThreadRunning());
-  _timing->set_render_delay(timeMS);
-  return VCM_OK;
-}
-
-// Current video delay
-int32_t VideoReceiver::Delay() const {
-  RTC_DCHECK_RUN_ON(&module_thread_checker_);
-  return _timing->TargetVideoDelay();
-}
-
 void VideoReceiver::SetNackSettings(size_t max_nack_list_size,
                                     int max_packet_age_to_nack,
                                     int max_incomplete_time_ms) {
