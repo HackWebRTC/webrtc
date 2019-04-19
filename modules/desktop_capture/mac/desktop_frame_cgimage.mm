@@ -24,6 +24,26 @@ std::unique_ptr<DesktopFrameCGImage> DesktopFrameCGImage::CreateForDisplay(
     return nullptr;
   }
 
+  return DesktopFrameCGImage::CreateFromCGImage(cg_image);
+}
+
+// static
+std::unique_ptr<DesktopFrameCGImage> DesktopFrameCGImage::CreateForWindow(CGWindowID window_id) {
+  rtc::ScopedCFTypeRef<CGImageRef> cg_image(
+      CGWindowListCreateImage(CGRectNull,
+                              kCGWindowListOptionIncludingWindow,
+                              window_id,
+                              kCGWindowImageBoundsIgnoreFraming));
+  if (!cg_image) {
+    return nullptr;
+  }
+
+  return DesktopFrameCGImage::CreateFromCGImage(cg_image);
+}
+
+// static
+std::unique_ptr<DesktopFrameCGImage> DesktopFrameCGImage::CreateFromCGImage(
+    rtc::ScopedCFTypeRef<CGImageRef> cg_image) {
   // Verify that the image has 32-bit depth.
   int bits_per_pixel = CGImageGetBitsPerPixel(cg_image.get());
   if (bits_per_pixel / 8 != DesktopFrame::kBytesPerPixel) {
