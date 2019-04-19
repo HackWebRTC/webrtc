@@ -20,6 +20,10 @@ include_rules = [
   "+sdk",
   "+system_wrappers",
   "+third_party/libyuv",
+
+  # This should probably go into //DEPS but at the moment we don't know
+  # yet if this is OK to use in production code.
+  "+absl/container/flat_hash_map.h",
 ]
 
 specific_include_rules = {
