@@ -161,6 +161,17 @@ rtc_source_set("quality_analyzing_video_encoder") {
   ]
 }
 
+# TODO(mbonadei): Remove as soon as -Wundef and -Wextra-semi problems are
+# fixed upstream (CLs are under review).
+config("peerconnection_quality_test_cflags") {
+  if (is_clang) {
+    cflags = [
+      "-Wno-undef",
+      "-Wno-extra-semi",
+    ]
+  }
+}
+
 if (rtc_include_tests) {
   rtc_source_set("video_quality_analyzer_injection_helper") {
     visibility = [ "*" ]
@@ -225,6 +236,10 @@ if (rtc_include_tests) {
   rtc_source_set("peerconnection_quality_test") {
     visibility = [ "*" ]
     testonly = true
+
+    # TODO(mbonadei): Remove as soon as -Wundef and -Wextra-semi problems are
+    # fixed upstream (CLs are under review).
+    configs += [ ":peerconnection_quality_test_cflags" ]
     sources = [
       "peer_connection_quality_test.cc",
       "peer_connection_quality_test.h",
@@ -306,6 +321,10 @@ if (rtc_include_tests) {
 
   rtc_source_set("peer_connection_e2e_smoke_test") {
     testonly = true
+
+    # TODO(mbonadei): Remove as soon as -Wundef and -Wextra-semi problems are
+    # fixed upstream (CLs are under review).
+    configs += [ ":peerconnection_quality_test_cflags" ]
     sources = [
       "peer_connection_e2e_smoke_test.cc",
     ]
@@ -414,6 +433,10 @@ rtc_source_set("example_video_quality_analyzer") {
 
 rtc_source_set("default_video_quality_analyzer") {
   visibility = [ "*" ]
+
+  # TODO(mbonadei): Remove as soon as -Wundef and -Wextra-semi problems are
+  # fixed upstream (CLs are under review).
+  configs += [ ":peerconnection_quality_test_cflags" ]
   testonly = true
   sources = [
     "analyzer/video/default_video_quality_analyzer.cc",
@@ -434,6 +457,7 @@ rtc_source_set("default_video_quality_analyzer") {
     "../../../rtc_base:rtc_event",
     "../../../rtc_base:rtc_numerics",
     "../../../system_wrappers",
+    "//third_party/abseil-cpp/absl/container:flat_hash_map",
     "//third_party/abseil-cpp/absl/memory",
   ]
 }
