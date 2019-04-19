@@ -398,6 +398,8 @@ rtc_static_library("desktop_capture_generic") {
       "linux/x_error_trap.h",
       "linux/x_server_pixel_buffer.cc",
       "linux/x_server_pixel_buffer.h",
+      "linux/x_window_property.cc",
+      "linux/x_window_property.h",
     ]
     configs += [ "//build/config/linux:x11" ]
 

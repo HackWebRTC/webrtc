@@ -849,6 +849,10 @@ void BaseCapturerPipeWire::CaptureFrame() {
     callback_->OnCaptureResult(Result::ERROR_TEMPORARY, nullptr);
     return;
   }
+
+  // TODO(julien.isorce): http://crbug.com/945468. Set the icc profile on the
+  // frame, see ScreenCapturerX11::CaptureFrame.
+
   callback_->OnCaptureResult(Result::SUCCESS, std::move(result));
 }
 

@@ -16,6 +16,7 @@
 #include <algorithm>
 
 #include "modules/desktop_capture/linux/x_error_trap.h"
+#include "modules/desktop_capture/linux/x_window_property.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/logging.h"
@@ -37,53 +38,6 @@ DeferXFree::~DeferXFree() {
   if (data_)
     XFree(data_);
 }
-
-// Convenience wrapper for XGetWindowProperty() results.
-template <class PropertyType>
-class XWindowProperty {
- public:
-  XWindowProperty(Display* display, Window window, Atom property) {
-    const int kBitsPerByte = 8;
-    Atom actual_type;
-    int actual_format;
-    unsigned long bytes_after;  // NOLINT: type required by XGetWindowProperty
-    int status = XGetWindowProperty(
-        display, window, property, 0L, ~0L, False, AnyPropertyType,
-        &actual_type, &actual_format, &size_, &bytes_after, &data_);
-    if (status != Success) {
-      data_ = nullptr;
-      return;
-    }
-    if (sizeof(PropertyType) * kBitsPerByte != actual_format) {
-      size_ = 0;
-      return;
-    }
-
-    is_valid_ = true;
-  }
-
-  ~XWindowProperty() {
-    if (data_)
-      XFree(data_);
-  }
-
-  // True if we got properly value successfully.
-  bool is_valid() const { return is_valid_; }
-
-  // Size and value of the property.
-  size_t size() const { return size_; }
-  const PropertyType* data() const {
-    return reinterpret_cast<PropertyType*>(data_);
-  }
-  PropertyType* data() { return reinterpret_cast<PropertyType*>(data_); }
-
- private:
-  bool is_valid_ = false;
-  unsigned long size_ = 0;  // NOLINT: type required by XGetWindowProperty
-  unsigned char* data_ = nullptr;
-
-  RTC_DISALLOW_COPY_AND_ASSIGN(XWindowProperty);
-};
 
 // Iterates through |window| hierarchy to find first visible window, i.e. one
 // that has WM_STATE property set to NormalState.

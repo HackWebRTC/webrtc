@@ -13,6 +13,9 @@
 #ifndef MODULES_DESKTOP_CAPTURE_LINUX_X_SERVER_PIXEL_BUFFER_H_
 #define MODULES_DESKTOP_CAPTURE_LINUX_X_SERVER_PIXEL_BUFFER_H_
 
+#include <memory>
+#include <vector>
+
 #include <X11/Xutil.h>
 #include <X11/extensions/XShm.h>
 
@@ -22,6 +25,7 @@
 namespace webrtc {
 
 class DesktopFrame;
+class XAtomCache;
 
 // A class to allow the X server's pixel buffer to be accessed as efficiently
 // as possible.
@@ -34,7 +38,7 @@ class XServerPixelBuffer {
 
   // Allocate (or reallocate) the pixel buffer for |window|. Returns false in
   // case of an error (e.g. window doesn't exist).
-  bool Init(Display* display, Window window);
+  bool Init(XAtomCache* cache, Window window);
 
   bool is_initialized() { return window_ != 0; }
 
@@ -75,6 +79,7 @@ class XServerPixelBuffer {
   Pixmap shm_pixmap_ = 0;
   GC shm_gc_ = nullptr;
   bool xshm_get_image_succeeded_ = false;
+  std::vector<uint8_t> icc_profile_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(XServerPixelBuffer);
 };

@@ -68,8 +68,21 @@ std::unique_ptr<DesktopFrameCGImage> DesktopFrameCGImage::CreateFromCGImage(
   DesktopSize size(CGImageGetWidth(cg_image.get()), CGImageGetHeight(cg_image.get()));
   int stride = CGImageGetBytesPerRow(cg_image.get());
 
-  return std::unique_ptr<DesktopFrameCGImage>(
+  std::unique_ptr<DesktopFrameCGImage> frame(
       new DesktopFrameCGImage(size, stride, data, cg_image, cg_data));
+
+  CGColorSpaceRef cg_color_space = CGImageGetColorSpace(cg_image.get());
+  if (cg_color_space) {
+    rtc::ScopedCFTypeRef<CFDataRef> cf_icc_profile(CGColorSpaceCopyICCProfile(cg_color_space));
+    const uint8_t* data_as_byte =
+        reinterpret_cast<const uint8_t*>(CFDataGetBytePtr(cf_icc_profile.get()));
+    const size_t data_size = CFDataGetLength(cf_icc_profile.get());
+    if (data_as_byte && data_size > 0) {
+      frame->set_icc_profile(std::vector<uint8_t>(data_as_byte, data_as_byte + data_size));
+    }
+  }
+
+  return frame;
 }
 
 DesktopFrameCGImage::DesktopFrameCGImage(DesktopSize size,
