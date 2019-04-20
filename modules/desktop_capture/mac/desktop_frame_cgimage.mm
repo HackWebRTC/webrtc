@@ -74,11 +74,13 @@ std::unique_ptr<DesktopFrameCGImage> DesktopFrameCGImage::CreateFromCGImage(
   CGColorSpaceRef cg_color_space = CGImageGetColorSpace(cg_image.get());
   if (cg_color_space) {
     rtc::ScopedCFTypeRef<CFDataRef> cf_icc_profile(CGColorSpaceCopyICCProfile(cg_color_space));
-    const uint8_t* data_as_byte =
-        reinterpret_cast<const uint8_t*>(CFDataGetBytePtr(cf_icc_profile.get()));
-    const size_t data_size = CFDataGetLength(cf_icc_profile.get());
-    if (data_as_byte && data_size > 0) {
-      frame->set_icc_profile(std::vector<uint8_t>(data_as_byte, data_as_byte + data_size));
+    if (cf_icc_profile) {
+      const uint8_t* data_as_byte =
+          reinterpret_cast<const uint8_t*>(CFDataGetBytePtr(cf_icc_profile.get()));
+      const size_t data_size = CFDataGetLength(cf_icc_profile.get());
+      if (data_as_byte && data_size > 0) {
+        frame->set_icc_profile(std::vector<uint8_t>(data_as_byte, data_as_byte + data_size));
+      }
     }
   }
 
