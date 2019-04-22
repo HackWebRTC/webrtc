@@ -126,12 +126,23 @@ if (rtc_include_tests) {
     ]
   }
 
+  rtc_source_set("fake_port_allocator") {
+    testonly = true
+    visibility = [ "*" ]
+    sources = [
+      "base/fake_port_allocator.h",
+    ]
+    deps = [
+      ":rtc_p2p",
+      "../rtc_base",
+    ]
+  }
+
   rtc_source_set("p2p_test_utils") {
     testonly = true
     sources = [
       "base/fake_dtls_transport.h",
       "base/fake_packet_transport.h",
-      "base/fake_port_allocator.h",
       "base/mock_async_resolver.h",
       "base/mock_ice_transport.h",
       "base/test_relay_server.h",
@@ -142,6 +153,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":fake_ice_transport",
+      ":fake_port_allocator",
       ":p2p_server_utils",
       ":rtc_p2p",
       "../api:libjingle_peerconnection_api",
@@ -186,6 +198,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":fake_ice_transport",
+      ":fake_port_allocator",
       ":p2p_server_utils",
       ":p2p_test_utils",
       ":rtc_p2p",
