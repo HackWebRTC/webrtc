@@ -137,7 +137,7 @@ void Aec3ConfigFromJsonString(absl::string_view json_string,
   }
 
   Json::Value section;
-  if (rtc::GetValueFromJsonObject(root, "buffering", &section)) {
+  if (rtc::GetValueFromJsonObject(aec3_root, "buffering", &section)) {
     ReadParam(section, "excess_render_detection_interval_blocks",
               &cfg.buffering.excess_render_detection_interval_blocks);
     ReadParam(section, "max_allowed_excess_render_blocks",
@@ -324,6 +324,13 @@ std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config) {
   rtc::StringBuilder ost;
   ost << "{";
   ost << "\"aec3\": {";
+  ost << "\"buffering\": {";
+  ost << "\"excess_render_detection_interval_blocks\": "
+      << config.buffering.excess_render_detection_interval_blocks << ",";
+  ost << "\"max_allowed_excess_render_blocks\": "
+      << config.buffering.max_allowed_excess_render_blocks;
+  ost << "},";
+
   ost << "\"delay\": {";
   ost << "\"default_delay\": " << config.delay.default_delay << ",";
   ost << "\"down_sampling_factor\": " << config.delay.down_sampling_factor
