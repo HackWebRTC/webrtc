@@ -271,6 +271,8 @@ LibvpxVp8Encoder::LibvpxVp8Encoder(
           "WebRTC-VP8VariableFramerateScreenshare")),
       framerate_controller_(variable_framerate_experiment_.framerate_limit),
       num_steady_state_frames_(0) {
+  // TODO(eladalon/ilnik): These reservations might be wasting memory.
+  // InitEncode() is resizing to the actual size, which might be smaller.
   raw_images_.reserve(kMaxSimulcastStreams);
   encoded_images_.reserve(kMaxSimulcastStreams);
   send_stream_.reserve(kMaxSimulcastStreams);
@@ -289,22 +291,24 @@ int LibvpxVp8Encoder::Release() {
 
   encoded_images_.clear();
 
-  while (!encoders_.empty()) {
-    vpx_codec_ctx_t& encoder = encoders_.back();
-    if (inited_) {
-      if (libvpx_->codec_destroy(&encoder)) {
+  if (inited_) {
+    for (auto it = encoders_.rbegin(); it != encoders_.rend(); ++it) {
+      if (libvpx_->codec_destroy(&*it)) {
         ret_val = WEBRTC_VIDEO_CODEC_MEMORY;
       }
     }
-    encoders_.pop_back();
   }
+  encoders_.clear();
+
   configurations_.clear();
   send_stream_.clear();
   cpu_speed_.clear();
-  while (!raw_images_.empty()) {
-    libvpx_->img_free(&raw_images_.back());
-    raw_images_.pop_back();
+
+  for (auto it = raw_images_.rbegin(); it != raw_images_.rend(); ++it) {
+    libvpx_->img_free(&*it);
   }
+  raw_images_.clear();
+
   frame_buffer_controller_.reset();
   inited_ = false;
   return ret_val;
