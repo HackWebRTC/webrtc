@@ -488,12 +488,15 @@ TEST_F(TestVp9Impl, InterLayerPred) {
     EXPECT_FALSE(codec_specific[0].codecSpecific.VP9.inter_layer_predicted);
     EXPECT_EQ(codec_specific[0].codecSpecific.VP9.non_ref_for_inter_layer_pred,
               inter_layer_pred == InterLayerPredMode::kOff);
+    EXPECT_TRUE(codec_specific[0].codecSpecific.VP9.ss_data_available);
 
     ASSERT_EQ(frames[1].SpatialIndex(), 1);
     ASSERT_FALSE(codec_specific[1].codecSpecific.VP9.inter_pic_predicted);
     EXPECT_EQ(codec_specific[1].codecSpecific.VP9.inter_layer_predicted,
               inter_layer_pred == InterLayerPredMode::kOn ||
                   inter_layer_pred == InterLayerPredMode::kOnKeyPic);
+    EXPECT_EQ(codec_specific[1].codecSpecific.VP9.ss_data_available,
+              inter_layer_pred == InterLayerPredMode::kOff);
     EXPECT_TRUE(
         codec_specific[1].codecSpecific.VP9.non_ref_for_inter_layer_pred);
 
@@ -508,6 +511,7 @@ TEST_F(TestVp9Impl, InterLayerPred) {
     EXPECT_FALSE(codec_specific[0].codecSpecific.VP9.inter_layer_predicted);
     EXPECT_EQ(codec_specific[0].codecSpecific.VP9.non_ref_for_inter_layer_pred,
               inter_layer_pred != InterLayerPredMode::kOn);
+    EXPECT_FALSE(codec_specific[0].codecSpecific.VP9.ss_data_available);
 
     ASSERT_EQ(frames[1].SpatialIndex(), 1);
     ASSERT_TRUE(codec_specific[1].codecSpecific.VP9.inter_pic_predicted);
@@ -515,6 +519,7 @@ TEST_F(TestVp9Impl, InterLayerPred) {
               inter_layer_pred == InterLayerPredMode::kOn);
     EXPECT_TRUE(
         codec_specific[1].codecSpecific.VP9.non_ref_for_inter_layer_pred);
+    EXPECT_FALSE(codec_specific[1].codecSpecific.VP9.ss_data_available);
   }
 }
 
@@ -1008,6 +1013,7 @@ TEST_F(TestVp9Impl, DisableNewLayerInVideoDelaysSsInfoTillTL0) {
             encoder_->Encode(*NextInputFrame(), nullptr));
   ASSERT_TRUE(WaitForEncodedFrames(&encoded_frames, &codec_specific_info));
   EXPECT_EQ(codec_specific_info[0].codecSpecific.VP9.temporal_idx, 1u);
+  EXPECT_FALSE(codec_specific_info[0].codecSpecific.VP9.ss_data_available);
 
   // Next is TL0 frame, which should have delayed SS structure.
   SetWaitForEncodedFramesThreshold(num_spatial_layers - 1);
@@ -1018,9 +1024,8 @@ TEST_F(TestVp9Impl, DisableNewLayerInVideoDelaysSsInfoTillTL0) {
   EXPECT_TRUE(codec_specific_info[0].codecSpecific.VP9.ss_data_available);
   EXPECT_TRUE(codec_specific_info[0]
                   .codecSpecific.VP9.spatial_layer_resolution_present);
-  EXPECT_EQ(
-      codec_specific_info[0].codecSpecific.VP9.width[num_spatial_layers - 1],
-      0u);
+  EXPECT_EQ(codec_specific_info[0].codecSpecific.VP9.num_spatial_layers,
+            num_spatial_layers - 1);
 }
 
 TEST_F(TestVp9Impl,
