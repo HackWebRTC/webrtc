@@ -73,6 +73,7 @@ struct RTC_EXPORT Codec {
 
   // Indicates if this codec is compatible with the specified codec.
   bool Matches(const Codec& codec) const;
+  bool MatchesCapability(const webrtc::RtpCodecCapability& capability) const;
 
   // Find the parameter for |name| and write the value to |out|.
   bool GetParam(const std::string& name, std::string* out) const;

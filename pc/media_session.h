@@ -76,6 +76,7 @@ struct MediaDescriptionOptions {
   // Note: There's no equivalent "RtpReceiverOptions" because only send
   // stream information goes in the local descriptions.
   std::vector<SenderOptions> sender_options;
+  std::vector<webrtc::RtpCodecCapability> codec_preferences;
 
  private:
   // Doesn't DCHECK on |type|.

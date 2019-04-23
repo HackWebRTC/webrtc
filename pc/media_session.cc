@@ -799,7 +799,8 @@ static bool ReferencedCodecsMatch(const std::vector<C>& codecs1,
 template <class C>
 static void NegotiateCodecs(const std::vector<C>& local_codecs,
                             const std::vector<C>& offered_codecs,
-                            std::vector<C>* negotiated_codecs) {
+                            std::vector<C>* negotiated_codecs,
+                            bool keep_offer_order) {
   for (const C& ours : local_codecs) {
     C theirs;
     // Note that we intentionally only find one matching codec for each of our
@@ -823,19 +824,22 @@ static void NegotiateCodecs(const std::vector<C>& local_codecs,
       negotiated_codecs->push_back(std::move(negotiated));
     }
   }
-  // RFC3264: Although the answerer MAY list the formats in their desired
-  // order of preference, it is RECOMMENDED that unless there is a
-  // specific reason, the answerer list formats in the same relative order
-  // they were present in the offer.
-  std::unordered_map<int, int> payload_type_preferences;
-  int preference = static_cast<int>(offered_codecs.size() + 1);
-  for (const C& codec : offered_codecs) {
-    payload_type_preferences[codec.id] = preference--;
+  if (keep_offer_order) {
+    // RFC3264: Although the answerer MAY list the formats in their desired
+    // order of preference, it is RECOMMENDED that unless there is a
+    // specific reason, the answerer list formats in the same relative order
+    // they were present in the offer.
+    // This can be skipped when the transceiver has any codec preferences.
+    std::unordered_map<int, int> payload_type_preferences;
+    int preference = static_cast<int>(offered_codecs.size() + 1);
+    for (const C& codec : offered_codecs) {
+      payload_type_preferences[codec.id] = preference--;
+    }
+    absl::c_sort(*negotiated_codecs, [&payload_type_preferences](const C& a,
+                                                                 const C& b) {
+      return payload_type_preferences[a.id] > payload_type_preferences[b.id];
+    });
   }
-  absl::c_sort(
-      *negotiated_codecs, [&payload_type_preferences](const C& a, const C& b) {
-        return payload_type_preferences[a.id] > payload_type_preferences[b.id];
-      });
 }
 
 // Finds a codec in |codecs2| that matches |codec_to_match|, which is
@@ -952,6 +956,51 @@ static void MergeCodecs(const std::vector<C>& reference_codecs,
       offered_codecs->push_back(rtx_codec);
     }
   }
+}
+
+template <typename Codecs>
+static Codecs MatchCodecPreference(
+    const std::vector<webrtc::RtpCodecCapability>& codec_preferences,
+    const Codecs& codecs) {
+  Codecs filtered_codecs;
+  std::set<std::string> kept_codecs_ids;
+  bool want_rtx = false;
+
+  for (const auto& codec_preference : codec_preferences) {
+    auto found_codec = absl::c_find_if(
+        codecs, [&codec_preference](const typename Codecs::value_type& codec) {
+          webrtc::RtpCodecParameters codec_parameters =
+              codec.ToCodecParameters();
+          return codec_parameters.name == codec_preference.name &&
+                 codec_parameters.kind == codec_preference.kind &&
+                 codec_parameters.num_channels ==
+                     codec_preference.num_channels &&
+                 codec_parameters.clock_rate == codec_preference.clock_rate &&
+                 codec_parameters.parameters == codec_preference.parameters;
+        });
+
+    if (found_codec != codecs.end()) {
+      filtered_codecs.push_back(*found_codec);
+      kept_codecs_ids.insert(std::to_string(found_codec->id));
+    } else if (IsRtxCodec(codec_preference)) {
+      want_rtx = true;
+    }
+  }
+
+  if (want_rtx) {
+    for (const auto& codec : codecs) {
+      if (IsRtxCodec(codec)) {
+        const auto apt =
+            codec.params.find(cricket::kCodecParamAssociatedPayloadType);
+        if (apt != codec.params.end() &&
+            kept_codecs_ids.count(apt->second) > 0) {
+          filtered_codecs.push_back(codec);
+        }
+      }
+    }
+  }
+
+  return filtered_codecs;
 }
 
 static bool FindByUriAndEncryption(const RtpHeaderExtensions& extensions,
@@ -1159,7 +1208,8 @@ static bool CreateMediaContentAnswer(
     bool bundle_enabled,
     MediaContentDescriptionImpl<C>* answer) {
   std::vector<C> negotiated_codecs;
-  NegotiateCodecs(local_codecs, offer->codecs(), &negotiated_codecs);
+  NegotiateCodecs(local_codecs, offer->codecs(), &negotiated_codecs,
+                  media_description_options.codec_preferences.empty());
   answer->AddCodecs(negotiated_codecs);
   answer->set_protocol(offer->protocol());
 
@@ -2009,30 +2059,38 @@ bool MediaSessionDescriptionFactory::AddAudioContentForOffer(
       GetAudioCodecsForOffer(media_description_options.direction);
 
   AudioCodecs filtered_codecs;
-  // Add the codecs from current content if it exists and is not rejected nor
-  // recycled.
-  if (current_content && !current_content->rejected &&
-      current_content->name == media_description_options.mid) {
-    RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_AUDIO));
-    const AudioContentDescription* acd =
-        current_content->media_description()->as_audio();
-    for (const AudioCodec& codec : acd->codecs()) {
-      if (FindMatchingCodec<AudioCodec>(acd->codecs(), audio_codecs, codec,
-                                        nullptr)) {
-        filtered_codecs.push_back(codec);
+
+  if (!media_description_options.codec_preferences.empty()) {
+    // Add the codecs from the current transceiver's codec preferences.
+    // They override any existing codecs from previous negotiations.
+    filtered_codecs = MatchCodecPreference(
+        media_description_options.codec_preferences, supported_audio_codecs);
+  } else {
+    // Add the codecs from current content if it exists and is not rejected nor
+    // recycled.
+    if (current_content && !current_content->rejected &&
+        current_content->name == media_description_options.mid) {
+      RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_AUDIO));
+      const AudioContentDescription* acd =
+          current_content->media_description()->as_audio();
+      for (const AudioCodec& codec : acd->codecs()) {
+        if (FindMatchingCodec<AudioCodec>(acd->codecs(), audio_codecs, codec,
+                                          nullptr)) {
+          filtered_codecs.push_back(codec);
+        }
       }
     }
-  }
-  // Add other supported audio codecs.
-  AudioCodec found_codec;
-  for (const AudioCodec& codec : supported_audio_codecs) {
-    if (FindMatchingCodec<AudioCodec>(supported_audio_codecs, audio_codecs,
-                                      codec, &found_codec) &&
-        !FindMatchingCodec<AudioCodec>(supported_audio_codecs, filtered_codecs,
-                                       codec, nullptr)) {
-      // Use the |found_codec| from |audio_codecs| because it has the correctly
-      // mapped payload type.
-      filtered_codecs.push_back(found_codec);
+    // Add other supported audio codecs.
+    AudioCodec found_codec;
+    for (const AudioCodec& codec : supported_audio_codecs) {
+      if (FindMatchingCodec<AudioCodec>(supported_audio_codecs, audio_codecs,
+                                        codec, &found_codec) &&
+          !FindMatchingCodec<AudioCodec>(supported_audio_codecs,
+                                         filtered_codecs, codec, nullptr)) {
+        // Use the |found_codec| from |audio_codecs| because it has the
+        // correctly mapped payload type.
+        filtered_codecs.push_back(found_codec);
+      }
     }
   }
 
@@ -2088,30 +2146,38 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
                                         &crypto_suites);
 
   VideoCodecs filtered_codecs;
-  // Add the codecs from current content if it exists and is not rejected nor
-  // recycled.
-  if (current_content && !current_content->rejected &&
-      current_content->name == media_description_options.mid) {
-    RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_VIDEO));
-    const VideoContentDescription* vcd =
-        current_content->media_description()->as_video();
-    for (const VideoCodec& codec : vcd->codecs()) {
-      if (FindMatchingCodec<VideoCodec>(vcd->codecs(), video_codecs, codec,
-                                        nullptr)) {
-        filtered_codecs.push_back(codec);
+
+  if (!media_description_options.codec_preferences.empty()) {
+    // Add the codecs from the current transceiver's codec preferences.
+    // They override any existing codecs from previous negotiations.
+    filtered_codecs = MatchCodecPreference(
+        media_description_options.codec_preferences, video_codecs_);
+  } else {
+    // Add the codecs from current content if it exists and is not rejected nor
+    // recycled.
+    if (current_content && !current_content->rejected &&
+        current_content->name == media_description_options.mid) {
+      RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_VIDEO));
+      const VideoContentDescription* vcd =
+          current_content->media_description()->as_video();
+      for (const VideoCodec& codec : vcd->codecs()) {
+        if (FindMatchingCodec<VideoCodec>(vcd->codecs(), video_codecs, codec,
+                                          nullptr)) {
+          filtered_codecs.push_back(codec);
+        }
       }
     }
-  }
-  // Add other supported video codecs.
-  VideoCodec found_codec;
-  for (const VideoCodec& codec : video_codecs_) {
-    if (FindMatchingCodec<VideoCodec>(video_codecs_, video_codecs, codec,
-                                      &found_codec) &&
-        !FindMatchingCodec<VideoCodec>(video_codecs_, filtered_codecs, codec,
-                                       nullptr)) {
-      // Use the |found_codec| from |video_codecs| because it has the correctly
-      // mapped payload type.
-      filtered_codecs.push_back(found_codec);
+    // Add other supported video codecs.
+    VideoCodec found_codec;
+    for (const VideoCodec& codec : video_codecs_) {
+      if (FindMatchingCodec<VideoCodec>(video_codecs_, video_codecs, codec,
+                                        &found_codec) &&
+          !FindMatchingCodec<VideoCodec>(video_codecs_, filtered_codecs, codec,
+                                         nullptr)) {
+        // Use the |found_codec| from |video_codecs| because it has the
+        // correctly mapped payload type.
+        filtered_codecs.push_back(found_codec);
+      }
     }
   }
 
@@ -2254,29 +2320,35 @@ bool MediaSessionDescriptionFactory::AddAudioContentForAnswer(
       GetAudioCodecsForAnswer(offer_rtd, answer_rtd);
 
   AudioCodecs filtered_codecs;
-  // Add the codecs from current content if it exists and is not rejected nor
-  // recycled.
-  if (current_content && !current_content->rejected &&
-      current_content->name == media_description_options.mid) {
-    RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_AUDIO));
-    const AudioContentDescription* acd =
-        current_content->media_description()->as_audio();
-    for (const AudioCodec& codec : acd->codecs()) {
-      if (FindMatchingCodec<AudioCodec>(acd->codecs(), audio_codecs, codec,
-                                        nullptr)) {
-        filtered_codecs.push_back(codec);
+
+  if (!media_description_options.codec_preferences.empty()) {
+    filtered_codecs = MatchCodecPreference(
+        media_description_options.codec_preferences, supported_audio_codecs);
+  } else {
+    // Add the codecs from current content if it exists and is not rejected nor
+    // recycled.
+    if (current_content && !current_content->rejected &&
+        current_content->name == media_description_options.mid) {
+      RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_AUDIO));
+      const AudioContentDescription* acd =
+          current_content->media_description()->as_audio();
+      for (const AudioCodec& codec : acd->codecs()) {
+        if (FindMatchingCodec<AudioCodec>(acd->codecs(), audio_codecs, codec,
+                                          nullptr)) {
+          filtered_codecs.push_back(codec);
+        }
       }
     }
-  }
-  // Add other supported audio codecs.
-  for (const AudioCodec& codec : supported_audio_codecs) {
-    if (FindMatchingCodec<AudioCodec>(supported_audio_codecs, audio_codecs,
-                                      codec, nullptr) &&
-        !FindMatchingCodec<AudioCodec>(supported_audio_codecs, filtered_codecs,
-                                       codec, nullptr)) {
-      // We should use the local codec with local parameters and the codec id
-      // would be correctly mapped in |NegotiateCodecs|.
-      filtered_codecs.push_back(codec);
+    // Add other supported audio codecs.
+    for (const AudioCodec& codec : supported_audio_codecs) {
+      if (FindMatchingCodec<AudioCodec>(supported_audio_codecs, audio_codecs,
+                                        codec, nullptr) &&
+          !FindMatchingCodec<AudioCodec>(supported_audio_codecs,
+                                         filtered_codecs, codec, nullptr)) {
+        // We should use the local codec with local parameters and the codec id
+        // would be correctly mapped in |NegotiateCodecs|.
+        filtered_codecs.push_back(codec);
+      }
     }
   }
 
@@ -2342,29 +2414,35 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
   }
 
   VideoCodecs filtered_codecs;
-  // Add the codecs from current content if it exists and is not rejected nor
-  // recycled.
-  if (current_content && !current_content->rejected &&
-      current_content->name == media_description_options.mid) {
-    RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_VIDEO));
-    const VideoContentDescription* vcd =
-        current_content->media_description()->as_video();
-    for (const VideoCodec& codec : vcd->codecs()) {
-      if (FindMatchingCodec<VideoCodec>(vcd->codecs(), video_codecs, codec,
-                                        nullptr)) {
-        filtered_codecs.push_back(codec);
+
+  if (!media_description_options.codec_preferences.empty()) {
+    filtered_codecs = MatchCodecPreference(
+        media_description_options.codec_preferences, video_codecs_);
+  } else {
+    // Add the codecs from current content if it exists and is not rejected nor
+    // recycled.
+    if (current_content && !current_content->rejected &&
+        current_content->name == media_description_options.mid) {
+      RTC_CHECK(IsMediaContentOfType(current_content, MEDIA_TYPE_VIDEO));
+      const VideoContentDescription* vcd =
+          current_content->media_description()->as_video();
+      for (const VideoCodec& codec : vcd->codecs()) {
+        if (FindMatchingCodec<VideoCodec>(vcd->codecs(), video_codecs, codec,
+                                          nullptr)) {
+          filtered_codecs.push_back(codec);
+        }
       }
     }
-  }
-  // Add other supported video codecs.
-  for (const VideoCodec& codec : video_codecs_) {
-    if (FindMatchingCodec<VideoCodec>(video_codecs_, video_codecs, codec,
-                                      nullptr) &&
-        !FindMatchingCodec<VideoCodec>(video_codecs_, filtered_codecs, codec,
-                                       nullptr)) {
-      // We should use the local codec with local parameters and the codec id
-      // would be correctly mapped in |NegotiateCodecs|.
-      filtered_codecs.push_back(codec);
+    // Add other supported video codecs.
+    for (const VideoCodec& codec : video_codecs_) {
+      if (FindMatchingCodec<VideoCodec>(video_codecs_, video_codecs, codec,
+                                        nullptr) &&
+          !FindMatchingCodec<VideoCodec>(video_codecs_, filtered_codecs, codec,
+                                         nullptr)) {
+        // We should use the local codec with local parameters and the codec id
+        // would be correctly mapped in |NegotiateCodecs|.
+        filtered_codecs.push_back(codec);
+      }
     }
   }
 
@@ -2499,7 +2577,7 @@ void MediaSessionDescriptionFactory::ComputeAudioCodecsIntersectionAndUnion() {
   // expensive than decoding, and prioritizing a codec in the send list probably
   // means it's a codec we can handle efficiently.
   NegotiateCodecs(audio_recv_codecs_, audio_send_codecs_,
-                  &audio_sendrecv_codecs_);
+                  &audio_sendrecv_codecs_, true);
 }
 
 bool IsMediaContent(const ContentInfo* content) {

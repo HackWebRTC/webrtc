@@ -99,6 +99,18 @@ bool Codec::Matches(const Codec& codec) const {
              : (absl::EqualsIgnoreCase(name, codec.name));
 }
 
+bool Codec::MatchesCapability(
+    const webrtc::RtpCodecCapability& codec_capability) const {
+  webrtc::RtpCodecParameters codec_parameters = ToCodecParameters();
+
+  return codec_parameters.name == codec_capability.name &&
+         codec_parameters.kind == codec_capability.kind &&
+         (codec_parameters.name == cricket::kRtxCodecName ||
+          (codec_parameters.num_channels == codec_capability.num_channels &&
+           codec_parameters.clock_rate == codec_capability.clock_rate &&
+           codec_parameters.parameters == codec_capability.parameters));
+}
+
 bool Codec::GetParam(const std::string& name, std::string* out) const {
   CodecParameterMap::const_iterator iter = params.find(name);
   if (iter == params.end())

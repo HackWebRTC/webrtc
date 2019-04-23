@@ -16,6 +16,7 @@
 
 #include "api/rtp_transceiver_interface.h"
 #include "pc/channel_interface.h"
+#include "pc/channel_manager.h"
 #include "pc/rtp_receiver.h"
 #include "pc/rtp_sender.h"
 
@@ -66,7 +67,8 @@ class RtpTransceiver final
   RtpTransceiver(
       rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> sender,
       rtc::scoped_refptr<RtpReceiverProxyWithInternal<RtpReceiverInternal>>
-          receiver);
+          receiver,
+      cricket::ChannelManager* channel_manager);
   ~RtpTransceiver() override;
 
   // Returns the Voice/VideoChannel set for this transceiver. May be null if
@@ -175,7 +177,11 @@ class RtpTransceiver final
   absl::optional<RtpTransceiverDirection> current_direction() const override;
   absl::optional<RtpTransceiverDirection> fired_direction() const override;
   void Stop() override;
-  void SetCodecPreferences(rtc::ArrayView<RtpCodecCapability> codecs) override;
+  RTCError SetCodecPreferences(
+      rtc::ArrayView<RtpCodecCapability> codecs) override;
+  std::vector<RtpCodecCapability> codec_preferences() const override {
+    return codec_preferences_;
+  }
 
  private:
   void OnFirstPacketReceived(cricket::ChannelInterface* channel);
@@ -198,6 +204,8 @@ class RtpTransceiver final
   bool has_ever_been_used_to_send_ = false;
 
   cricket::ChannelInterface* channel_ = nullptr;
+  cricket::ChannelManager* channel_manager_ = nullptr;
+  std::vector<RtpCodecCapability> codec_preferences_;
 };
 
 BEGIN_SIGNALING_PROXY_MAP(RtpTransceiver)
@@ -212,7 +220,10 @@ PROXY_METHOD1(void, SetDirection, RtpTransceiverDirection)
 PROXY_CONSTMETHOD0(absl::optional<RtpTransceiverDirection>, current_direction)
 PROXY_CONSTMETHOD0(absl::optional<RtpTransceiverDirection>, fired_direction)
 PROXY_METHOD0(void, Stop)
-PROXY_METHOD1(void, SetCodecPreferences, rtc::ArrayView<RtpCodecCapability>)
+PROXY_METHOD1(webrtc::RTCError,
+              SetCodecPreferences,
+              rtc::ArrayView<RtpCodecCapability>)
+PROXY_CONSTMETHOD0(std::vector<RtpCodecCapability>, codec_preferences)
 END_PROXY_MAP()
 
 }  // namespace webrtc

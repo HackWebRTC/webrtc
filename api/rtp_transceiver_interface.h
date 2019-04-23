@@ -129,8 +129,9 @@ class RtpTransceiverInterface : public rtc::RefCountInterface {
   // The SetCodecPreferences method overrides the default codec preferences used
   // by WebRTC for this transceiver.
   // https://w3c.github.io/webrtc-pc/#dom-rtcrtptransceiver-setcodecpreferences
-  // TODO(steveanton): Not implemented.
-  virtual void SetCodecPreferences(rtc::ArrayView<RtpCodecCapability> codecs);
+  virtual RTCError SetCodecPreferences(
+      rtc::ArrayView<RtpCodecCapability> codecs);
+  virtual std::vector<RtpCodecCapability> codec_preferences() const;
 
  protected:
   ~RtpTransceiverInterface() override = default;
