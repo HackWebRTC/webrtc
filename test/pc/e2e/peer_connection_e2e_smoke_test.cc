@@ -25,7 +25,13 @@
 namespace webrtc {
 namespace webrtc_pc_e2e {
 
-TEST(PeerConnectionE2EQualityTestSmokeTest, RunWithEmulatedNetwork) {
+// IOS debug builds can be quite slow, disabling to avoid issues with timeouts.
+#if defined(WEBRTC_IOS) && defined(WEBRTC_ARCH_ARM64) && !defined(NDEBUG)
+#define MAYBE_RunWithEmulatedNetwork DISABLED_RunWithEmulatedNetwork
+#else
+#define MAYBE_RunWithEmulatedNetwork RunWithEmulatedNetwork
+#endif
+TEST(PeerConnectionE2EQualityTestSmokeTest, MAYBE_RunWithEmulatedNetwork) {
   using PeerConfigurer = PeerConnectionE2EQualityTestFixture::PeerConfigurer;
   using RunParams = PeerConnectionE2EQualityTestFixture::RunParams;
   using VideoConfig = PeerConnectionE2EQualityTestFixture::VideoConfig;

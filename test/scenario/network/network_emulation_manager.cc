@@ -23,7 +23,6 @@ namespace webrtc {
 namespace test {
 namespace {
 
-constexpr int64_t kPacketProcessingIntervalMs = 1;
 // uint32_t representation of 192.168.0.0 address
 constexpr uint32_t kMinIPv4Address = 0xC0A80000;
 // uint32_t representation of 192.168.255.255 address
@@ -64,10 +63,6 @@ NetworkEmulationManagerImpl::NetworkEmulationManagerImpl(
       task_queue_(time_controller->GetTaskQueueFactory()->CreateTaskQueue(
           "NetworkEmulation",
           TaskQueueFactory::Priority::NORMAL)) {
-  process_task_handle_ = RepeatingTaskHandle::Start(task_queue_.Get(), [this] {
-    ProcessNetworkPackets();
-    return TimeDelta::ms(kPacketProcessingIntervalMs);
-  });
 }
 
 // TODO(srte): Ensure that any pending task that must be run for consistency
@@ -195,8 +190,14 @@ NetworkEmulationManagerImpl::CreateRandomWalkCrossTraffic(
 
   task_queue_.PostTask(CreateResourceOwningTask(
       std::move(traffic),
-      [this](std::unique_ptr<RandomWalkCrossTraffic> traffic) {
+      [this, config](std::unique_ptr<RandomWalkCrossTraffic> traffic) {
+        auto* traffic_ptr = traffic.get();
         random_cross_traffics_.push_back(std::move(traffic));
+        RepeatingTaskHandle::Start(task_queue_.Get(),
+                                   [this, config, traffic_ptr] {
+                                     traffic_ptr->Process(Now());
+                                     return config.min_packet_interval;
+                                   });
       }));
   return out;
 }
@@ -210,8 +211,14 @@ NetworkEmulationManagerImpl::CreatePulsedPeaksCrossTraffic(
   PulsedPeaksCrossTraffic* out = traffic.get();
   task_queue_.PostTask(CreateResourceOwningTask(
       std::move(traffic),
-      [this](std::unique_ptr<PulsedPeaksCrossTraffic> traffic) {
+      [this, config](std::unique_ptr<PulsedPeaksCrossTraffic> traffic) {
+        auto* traffic_ptr = traffic.get();
         pulsed_cross_traffics_.push_back(std::move(traffic));
+        RepeatingTaskHandle::Start(task_queue_.Get(),
+                                   [this, config, traffic_ptr] {
+                                     traffic_ptr->Process(Now());
+                                     return config.min_packet_interval;
+                                   });
       }));
   return out;
 }
@@ -254,16 +261,6 @@ NetworkEmulationManagerImpl::GetNextIPv4Address() {
     }
   }
   return absl::nullopt;
-}
-
-void NetworkEmulationManagerImpl::ProcessNetworkPackets() {
-  Timestamp current_time = Now();
-  for (auto& traffic : random_cross_traffics_) {
-    traffic->Process(current_time);
-  }
-  for (auto& traffic : pulsed_cross_traffics_) {
-    traffic->Process(current_time);
-  }
 }
 
 Timestamp NetworkEmulationManagerImpl::Now() const {

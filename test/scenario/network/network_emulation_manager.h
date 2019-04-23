@@ -67,7 +67,6 @@ class NetworkEmulationManagerImpl : public NetworkEmulationManager {
 
  private:
   absl::optional<rtc::IPAddress> GetNextIPv4Address();
-  void ProcessNetworkPackets();
   Timestamp Now() const;
 
   Clock* const clock_;
