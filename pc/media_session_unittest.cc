@@ -62,7 +62,6 @@ using cricket::MediaSessionOptions;
 using cricket::MediaType;
 using cricket::RidDescription;
 using cricket::RidDirection;
-using cricket::SctpDataContentDescription;
 using cricket::SEC_DISABLED;
 using cricket::SEC_ENABLED;
 using cricket::SEC_REQUIRED;
@@ -1337,16 +1336,15 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswerUsesSctpmap) {
   ASSERT_TRUE(offer.get() != NULL);
   ContentInfo* dc_offer = offer->GetContentByName("data");
   ASSERT_TRUE(dc_offer != NULL);
-  SctpDataContentDescription* dcd_offer =
-      dc_offer->media_description()->as_sctp();
+  DataContentDescription* dcd_offer = dc_offer->media_description()->as_data();
   EXPECT_TRUE(dcd_offer->use_sctpmap());
 
   std::unique_ptr<SessionDescription> answer =
       f2_.CreateAnswer(offer.get(), opts, NULL);
   const ContentInfo* dc_answer = answer->GetContentByName("data");
   ASSERT_TRUE(dc_answer != NULL);
-  const SctpDataContentDescription* dcd_answer =
-      dc_answer->media_description()->as_sctp();
+  const DataContentDescription* dcd_answer =
+      dc_answer->media_description()->as_data();
   EXPECT_TRUE(dcd_answer->use_sctpmap());
 }
 
@@ -1358,16 +1356,15 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswerWithoutSctpmap) {
   ASSERT_TRUE(offer.get() != NULL);
   ContentInfo* dc_offer = offer->GetContentByName("data");
   ASSERT_TRUE(dc_offer != NULL);
-  SctpDataContentDescription* dcd_offer =
-      dc_offer->media_description()->as_sctp();
+  DataContentDescription* dcd_offer = dc_offer->media_description()->as_data();
   dcd_offer->set_use_sctpmap(false);
 
   std::unique_ptr<SessionDescription> answer =
       f2_.CreateAnswer(offer.get(), opts, NULL);
   const ContentInfo* dc_answer = answer->GetContentByName("data");
   ASSERT_TRUE(dc_answer != NULL);
-  const SctpDataContentDescription* dcd_answer =
-      dc_answer->media_description()->as_sctp();
+  const DataContentDescription* dcd_answer =
+      dc_answer->media_description()->as_data();
   EXPECT_FALSE(dcd_answer->use_sctpmap());
 }
 
@@ -1388,9 +1385,7 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   ASSERT_TRUE(offer.get() != nullptr);
   ContentInfo* dc_offer = offer->GetContentByName("data");
   ASSERT_TRUE(dc_offer != nullptr);
-  SctpDataContentDescription* dcd_offer =
-      dc_offer->media_description()->as_sctp();
-  ASSERT_TRUE(dcd_offer);
+  DataContentDescription* dcd_offer = dc_offer->media_description()->as_data();
 
   std::vector<std::string> protos = {"DTLS/SCTP", "UDP/DTLS/SCTP",
                                      "TCP/DTLS/SCTP"};
@@ -1400,8 +1395,8 @@ TEST_F(MediaSessionDescriptionFactoryTest,
         f2_.CreateAnswer(offer.get(), opts, nullptr);
     const ContentInfo* dc_answer = answer->GetContentByName("data");
     ASSERT_TRUE(dc_answer != nullptr);
-    const SctpDataContentDescription* dcd_answer =
-        dc_answer->media_description()->as_sctp();
+    const DataContentDescription* dcd_answer =
+        dc_answer->media_description()->as_data();
     EXPECT_FALSE(dc_answer->rejected);
     EXPECT_EQ(proto, dcd_answer->protocol());
   }
@@ -1485,8 +1480,7 @@ TEST_F(MediaSessionDescriptionFactoryTest,
   ASSERT_TRUE(dc_offer != NULL);
   DataContentDescription* dcd_offer = dc_offer->media_description()->as_data();
   ASSERT_TRUE(dcd_offer != NULL);
-  // Offer must be acceptable as an RTP protocol in order to be set.
-  std::string protocol = "RTP/a weird unknown protocol";
+  std::string protocol = "a weird unknown protocol";
   dcd_offer->set_protocol(protocol);
 
   std::unique_ptr<SessionDescription> answer =

@@ -54,30 +54,29 @@ using cricket::Candidates;
 using cricket::ContentInfo;
 using cricket::CryptoParams;
 using cricket::DataContentDescription;
-using cricket::ICE_CANDIDATE_COMPONENT_RTCP;
 using cricket::ICE_CANDIDATE_COMPONENT_RTP;
-using cricket::kCodecParamAssociatedPayloadType;
-using cricket::kCodecParamMaxAverageBitrate;
+using cricket::ICE_CANDIDATE_COMPONENT_RTCP;
 using cricket::kCodecParamMaxBitrate;
-using cricket::kCodecParamMaxPlaybackRate;
 using cricket::kCodecParamMaxPTime;
 using cricket::kCodecParamMaxQuantization;
 using cricket::kCodecParamMinBitrate;
 using cricket::kCodecParamMinPTime;
 using cricket::kCodecParamPTime;
-using cricket::kCodecParamSctpProtocol;
-using cricket::kCodecParamSctpStreams;
 using cricket::kCodecParamSPropStereo;
 using cricket::kCodecParamStartBitrate;
 using cricket::kCodecParamStereo;
-using cricket::kCodecParamUseDtx;
 using cricket::kCodecParamUseInbandFec;
+using cricket::kCodecParamUseDtx;
+using cricket::kCodecParamSctpProtocol;
+using cricket::kCodecParamSctpStreams;
+using cricket::kCodecParamMaxAverageBitrate;
+using cricket::kCodecParamMaxPlaybackRate;
+using cricket::kCodecParamAssociatedPayloadType;
 using cricket::MediaContentDescription;
-using cricket::MediaProtocolType;
 using cricket::MediaType;
-using cricket::RidDescription;
 using cricket::RtpHeaderExtensions;
-using cricket::SctpDataContentDescription;
+using cricket::MediaProtocolType;
+using cricket::RidDescription;
 using cricket::SimulcastDescription;
 using cricket::SimulcastLayer;
 using cricket::SimulcastLayerList;
@@ -1338,6 +1337,8 @@ void BuildMediaDescription(const ContentInfo* content_info,
   const MediaContentDescription* media_desc = content_info->media_description();
   RTC_DCHECK(media_desc);
 
+  int sctp_port = cricket::kSctpDefaultPort;
+
   // RFC 4566
   // m=<media> <port> <proto> <fmt>
   // fmt is a list of payload type numbers that MAY be used in the session.
@@ -1365,18 +1366,24 @@ void BuildMediaDescription(const ContentInfo* content_info,
       fmt.append(rtc::ToString(codec.id));
     }
   } else if (media_type == cricket::MEDIA_TYPE_DATA) {
+    const DataContentDescription* data_desc = media_desc->as_data();
     if (IsDtlsSctp(media_desc->protocol())) {
-      const cricket::SctpDataContentDescription* data_desc =
-          media_desc->as_sctp();
       fmt.append(" ");
 
       if (data_desc->use_sctpmap()) {
-        fmt.append(rtc::ToString(data_desc->port()));
+        for (const cricket::DataCodec& codec : data_desc->codecs()) {
+          if (absl::EqualsIgnoreCase(codec.name,
+                                     cricket::kGoogleSctpDataCodecName) &&
+              codec.GetParam(cricket::kCodecParamPort, &sctp_port)) {
+            break;
+          }
+        }
+
+        fmt.append(rtc::ToString(sctp_port));
       } else {
         fmt.append(kDefaultSctpmapProtocol);
       }
     } else {
-      const DataContentDescription* data_desc = media_desc->as_data();
       for (const cricket::DataCodec& codec : data_desc->codecs()) {
         fmt.append(" ");
         fmt.append(rtc::ToString(codec.id));
@@ -1516,10 +1523,9 @@ void BuildMediaDescription(const ContentInfo* content_info,
   AddLine(os.str(), message);
 
   if (IsDtlsSctp(media_desc->protocol())) {
-    const cricket::SctpDataContentDescription* data_desc =
-        media_desc->as_sctp();
+    const DataContentDescription* data_desc = media_desc->as_data();
     bool use_sctpmap = data_desc->use_sctpmap();
-    BuildSctpContentAttributes(message, data_desc->port(), use_sctpmap);
+    BuildSctpContentAttributes(message, sctp_port, use_sctpmap);
   } else if (IsRtp(media_desc->protocol())) {
     BuildRtpContentAttributes(media_desc, media_type, msid_signaling, message);
   }
@@ -1826,6 +1832,43 @@ void AddRtcpFbLines(const T& codec, std::string* message) {
     }
     AddLine(os.str(), message);
   }
+}
+
+cricket::DataCodec FindOrMakeSctpDataCodec(DataContentDescription* media_desc) {
+  for (const auto& codec : media_desc->codecs()) {
+    if (absl::EqualsIgnoreCase(codec.name, cricket::kGoogleSctpDataCodecName)) {
+      return codec;
+    }
+  }
+  cricket::DataCodec codec_port(cricket::kGoogleSctpDataCodecPlType,
+                                cricket::kGoogleSctpDataCodecName);
+  return codec_port;
+}
+
+bool AddOrModifySctpDataCodecPort(DataContentDescription* media_desc,
+                                  int sctp_port) {
+  // Add the SCTP Port number as a pseudo-codec "port" parameter
+  auto codec = FindOrMakeSctpDataCodec(media_desc);
+  int dummy;
+  if (codec.GetParam(cricket::kCodecParamPort, &dummy)) {
+    return false;
+  }
+  codec.SetParam(cricket::kCodecParamPort, sctp_port);
+  media_desc->AddOrReplaceCodec(codec);
+  return true;
+}
+
+bool AddOrModifySctpDataMaxMessageSize(DataContentDescription* media_desc,
+                                       int max_message_size) {
+  // Add the SCTP Max Message Size as a pseudo-parameter to the codec
+  auto codec = FindOrMakeSctpDataCodec(media_desc);
+  int dummy;
+  if (codec.GetParam(cricket::kCodecParamMaxMessageSize, &dummy)) {
+    return false;
+  }
+  codec.SetParam(cricket::kCodecParamMaxMessageSize, max_message_size);
+  media_desc->AddOrReplaceCodec(codec);
+  return true;
 }
 
 bool GetMinValue(const std::vector<int>& values, int* value) {
@@ -2705,30 +2748,24 @@ bool ParseMediaDescription(
           payload_types, pos, &content_name, &bundle_only,
           &section_msid_signaling, &transport, candidates, error);
     } else if (HasAttribute(line, kMediaTypeData)) {
-      if (IsDtlsSctp(protocol)) {
-        auto data_desc = absl::make_unique<SctpDataContentDescription>();
+      std::unique_ptr<DataContentDescription> data_desc =
+          ParseContentDescription<DataContentDescription>(
+              message, cricket::MEDIA_TYPE_DATA, mline_index, protocol,
+              payload_types, pos, &content_name, &bundle_only,
+              &section_msid_signaling, &transport, candidates, error);
+
+      if (data_desc && IsDtlsSctp(protocol)) {
         int p;
         if (rtc::FromString(fields[3], &p)) {
-          data_desc->set_port(p);
+          if (!AddOrModifySctpDataCodecPort(data_desc.get(), p)) {
+            return false;
+          }
         } else if (fields[3] == kDefaultSctpmapProtocol) {
           data_desc->set_use_sctpmap(false);
         }
-        if (!ParseContent(message, cricket::MEDIA_TYPE_DATA, mline_index,
-                          protocol, payload_types, pos, &content_name,
-                          &bundle_only, &section_msid_signaling,
-                          data_desc.get(), &transport, candidates, error)) {
-          return false;
-        }
-        content = std::move(data_desc);
-      } else {
-        // RTP
-        std::unique_ptr<DataContentDescription> data_desc =
-            ParseContentDescription<DataContentDescription>(
-                message, cricket::MEDIA_TYPE_DATA, mline_index, protocol,
-                payload_types, pos, &content_name, &bundle_only,
-                &section_msid_signaling, &transport, candidates, error);
-        content = std::move(data_desc);
       }
+
+      content = std::move(data_desc);
     } else {
       RTC_LOG(LS_WARNING) << "Unsupported media type: " << line;
       continue;
@@ -3101,15 +3138,13 @@ bool ParseContent(const std::string& message,
             line, "sctp-port attribute found in non-data media description.",
             error);
       }
-      if (media_desc->as_sctp()->use_sctpmap()) {
-        return ParseFailed(
-            line, "sctp-port attribute can't be used with sctpmap.", error);
-      }
       int sctp_port;
       if (!ParseSctpPort(line, &sctp_port, error)) {
         return false;
       }
-      media_desc->as_sctp()->set_port(sctp_port);
+      if (!AddOrModifySctpDataCodecPort(media_desc->as_data(), sctp_port)) {
+        return false;
+      }
     } else if (IsDtlsSctp(protocol) &&
                HasAttribute(line, kAttributeMaxMessageSize)) {
       if (media_type != cricket::MEDIA_TYPE_DATA) {
@@ -3122,7 +3157,10 @@ bool ParseContent(const std::string& message,
       if (!ParseSctpMaxMessageSize(line, &max_message_size, error)) {
         return false;
       }
-      media_desc->as_sctp()->set_max_message_size(max_message_size);
+      if (!AddOrModifySctpDataMaxMessageSize(media_desc->as_data(),
+                                             max_message_size)) {
+        return false;
+      }
     } else if (IsRtp(protocol)) {
       //
       // RTP specific attrubtes
