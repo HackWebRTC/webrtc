@@ -10,8 +10,8 @@
 
 #include "modules/audio_processing/rms_level.h"
 
-#include <math.h>
 #include <algorithm>
+#include <cmath>
 #include <numeric>
 
 #include "rtc_base/checks.h"
@@ -36,7 +36,7 @@ int ComputeRms(float mean_square) {
   const float mean_square_norm = mean_square / kMaxSquaredLevel;
   RTC_DCHECK_GT(mean_square_norm, kMinLevel);
   // 20log_10(x^0.5) = 10log_10(x)
-  const float rms = 10.f * log10(mean_square_norm);
+  const float rms = 10.f * std::log10(mean_square_norm);
   RTC_DCHECK_LE(rms, 0.f);
   RTC_DCHECK_GT(rms, -RmsLevel::kMinLevelDb);
   // Return the negated value.
