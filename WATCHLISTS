@@ -146,8 +146,7 @@
     'audio_mixer': ['aleloi@webrtc.org',
                     'henrik.lundin@webrtc.org'
     ],
-    'audio_processing': ['aleloi@webrtc.org',
-                         'alessiob@webrtc.org',
+    'audio_processing': ['alessiob@webrtc.org',
                          'aluebs@webrtc.org',
                          'audio-team@agora.io',
                          'henrik.lundin@webrtc.org',
