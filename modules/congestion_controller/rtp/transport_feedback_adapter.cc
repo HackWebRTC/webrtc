@@ -83,18 +83,35 @@ void TransportFeedbackAdapter::AddPacket(uint32_t ssrc,
                                          size_t length,
                                          const PacedPacketInfo& pacing_info,
                                          Timestamp creation_time) {
+  RtpPacketSendInfo packet_info;
+  packet_info.ssrc = ssrc;
+  packet_info.transport_sequence_number = sequence_number;
+  packet_info.length = length;
+  packet_info.pacing_info = pacing_info;
+  AddPacket(packet_info, 0u, creation_time);
+}
+
+void TransportFeedbackAdapter::AddPacket(const RtpPacketSendInfo& packet_info,
+                                         size_t overhead_bytes,
+                                         Timestamp creation_time) {
   {
     rtc::CritScope cs(&lock_);
-    send_time_history_.AddAndRemoveOld(
-        PacketFeedback(creation_time.ms(), sequence_number, length,
-                       local_net_id_, remote_net_id_, pacing_info),
-        creation_time.ms());
+    PacketFeedback packet_feedback(
+        creation_time.ms(), packet_info.transport_sequence_number,
+        packet_info.length + overhead_bytes, local_net_id_, remote_net_id_,
+        packet_info.pacing_info);
+    if (packet_info.has_rtp_sequence_number) {
+      packet_feedback.ssrc = packet_info.ssrc;
+      packet_feedback.rtp_sequence_number = packet_info.rtp_sequence_number;
+    }
+    send_time_history_.AddAndRemoveOld(packet_feedback, creation_time.ms());
   }
 
   {
     rtc::CritScope cs(&observers_lock_);
     for (auto* observer : observers_) {
-      observer->OnPacketAdded(ssrc, sequence_number);
+      observer->OnPacketAdded(packet_info.ssrc,
+                              packet_info.transport_sequence_number);
     }
   }
 }

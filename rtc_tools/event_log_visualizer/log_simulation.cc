@@ -80,8 +80,15 @@ void LogBasedNetworkControllerSimulation::OnPacketSent(
         pending_probes_.pop_front();
       }
     }
-    transport_feedback_.AddPacket(packet.ssrc, packet.transport_seq_no,
-                                  packet.size + packet.overhead, probe_info,
+
+    RtpPacketSendInfo packet_info;
+    packet_info.ssrc = packet.ssrc;
+    packet_info.transport_sequence_number = packet.transport_seq_no;
+    packet_info.rtp_sequence_number = packet.stream_seq_no;
+    packet_info.has_rtp_sequence_number = true;
+    packet_info.length = packet.size;
+    packet_info.pacing_info = probe_info;
+    transport_feedback_.AddPacket(packet_info, packet.overhead,
                                   packet.log_packet_time);
   }
   rtc::SentPacket sent_packet;

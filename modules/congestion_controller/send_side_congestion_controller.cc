@@ -365,17 +365,16 @@ void DEPRECATED_SendSideCongestionController::Process() {
   MaybeTriggerOnNetworkChanged();
 }
 
-void DEPRECATED_SendSideCongestionController::AddPacket(
-    uint32_t ssrc,
-    uint16_t sequence_number,
-    size_t length,
-    const PacedPacketInfo& pacing_info) {
+void DEPRECATED_SendSideCongestionController::OnAddPacket(
+    const RtpPacketSendInfo& packet_info) {
+  size_t overhead_bytes = 0;
   if (send_side_bwe_with_overhead_) {
     rtc::CritScope cs(&bwe_lock_);
-    length += transport_overhead_bytes_per_packet_;
+    overhead_bytes = transport_overhead_bytes_per_packet_;
   }
-  transport_feedback_adapter_.AddPacket(ssrc, sequence_number, length,
-                                        pacing_info);
+  transport_feedback_adapter_.AddPacket(
+      packet_info.ssrc, packet_info.transport_sequence_number,
+      packet_info.length + overhead_bytes, packet_info.pacing_info);
 }
 
 void DEPRECATED_SendSideCongestionController::OnTransportFeedback(

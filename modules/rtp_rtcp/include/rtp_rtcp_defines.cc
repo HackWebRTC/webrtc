@@ -95,11 +95,14 @@ PacketFeedback::PacketFeedback(int64_t creation_time_ms,
       arrival_time_ms(arrival_time_ms),
       send_time_ms(send_time_ms),
       sequence_number(sequence_number),
+      long_sequence_number(0),
       payload_size(payload_size),
       unacknowledged_data(0),
       local_net_id(local_net_id),
       remote_net_id(remote_net_id),
-      pacing_info(pacing_info) {}
+      pacing_info(pacing_info),
+      ssrc(0),
+      rtp_sequence_number(0) {}
 
 PacketFeedback::PacketFeedback(const PacketFeedback&) = default;
 PacketFeedback& PacketFeedback::operator=(const PacketFeedback&) = default;

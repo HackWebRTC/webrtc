@@ -1961,14 +1961,23 @@ std::vector<LoggedPacketInfo> ParsedRtcEventLog::GetPacketInfos(
     logged.overhead = current_overhead;
     if (rtp.header.extension.hasTransportSequenceNumber) {
       logged.log_feedback_time = Timestamp::PlusInfinity();
+
+      RtpPacketSendInfo packet_info;
+      packet_info.ssrc = rtp.header.ssrc;
+      packet_info.transport_sequence_number =
+          rtp.header.extension.transportSequenceNumber;
+      packet_info.rtp_sequence_number = rtp.header.sequenceNumber;
+      packet_info.has_rtp_sequence_number = true;
+      packet_info.length = rtp.total_length;
+      feedback_adapter.AddPacket(packet_info,
+                                 0u,  // Should this be current_overhead?
+                                 Timestamp::ms(rtp.log_time_ms()));
+
       rtc::SentPacket sent_packet;
       sent_packet.send_time_ms = rtp.log_time_ms();
       sent_packet.info.packet_size_bytes = rtp.total_length;
       sent_packet.info.included_in_feedback = true;
       sent_packet.packet_id = rtp.header.extension.transportSequenceNumber;
-      feedback_adapter.AddPacket(rtp.header.ssrc, sent_packet.packet_id,
-                                 rtp.total_length, PacedPacketInfo(),
-                                 Timestamp::ms(rtp.log_time_ms()));
       auto sent_packet_msg = feedback_adapter.ProcessSentPacket(sent_packet);
       RTC_CHECK(sent_packet_msg);
       indices[sent_packet_msg->sequence_number] = packets.size();

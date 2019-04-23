@@ -314,14 +314,11 @@ class TransportFeedbackProxy : public TransportFeedbackObserver {
   }
 
   // Implements TransportFeedbackObserver.
-  void AddPacket(uint32_t ssrc,
-                 uint16_t sequence_number,
-                 size_t length,
-                 const PacedPacketInfo& pacing_info) override {
+  void OnAddPacket(const RtpPacketSendInfo& packet_info) override {
     RTC_DCHECK(pacer_thread_.IsCurrent());
     rtc::CritScope lock(&crit_);
     if (feedback_observer_)
-      feedback_observer_->AddPacket(ssrc, sequence_number, length, pacing_info);
+      feedback_observer_->OnAddPacket(packet_info);
   }
 
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override {

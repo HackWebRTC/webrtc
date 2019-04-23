@@ -1198,14 +1198,19 @@ void RTPSender::AddPacketToTransportFeedback(
     uint16_t packet_id,
     const RtpPacketToSend& packet,
     const PacedPacketInfo& pacing_info) {
-  size_t packet_size = packet.payload_size() + packet.padding_size();
-  if (send_side_bwe_with_overhead_) {
-    packet_size = packet.size();
-  }
-
   if (transport_feedback_observer_) {
-    transport_feedback_observer_->AddPacket(SSRC(), packet_id, packet_size,
-                                            pacing_info);
+    size_t packet_size = packet.payload_size() + packet.padding_size();
+    if (send_side_bwe_with_overhead_) {
+      packet_size = packet.size();
+    }
+
+    RtpPacketSendInfo packet_info;
+    packet_info.ssrc = SSRC();
+    packet_info.transport_sequence_number = packet_id;
+    packet_info.rtp_sequence_number = packet.SequenceNumber();
+    packet_info.length = packet_size;
+    packet_info.pacing_info = pacing_info;
+    transport_feedback_observer_->OnAddPacket(packet_info);
   }
 }
 

@@ -110,10 +110,7 @@ class RtpTransportControllerSend final
                                     int64_t now_ms) override;
 
   // Implements TransportFeedbackObserver interface
-  void AddPacket(uint32_t ssrc,
-                 uint16_t sequence_number,
-                 size_t length,
-                 const PacedPacketInfo& pacing_info) override;
+  void OnAddPacket(const RtpPacketSendInfo& packet_info) override;
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override;
 
  private:

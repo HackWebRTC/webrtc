@@ -408,15 +408,12 @@ void RtpTransportControllerSend::OnReceivedRtcpReceiverReport(
   });
 }
 
-void RtpTransportControllerSend::AddPacket(uint32_t ssrc,
-                                           uint16_t sequence_number,
-                                           size_t length,
-                                           const PacedPacketInfo& pacing_info) {
-  if (send_side_bwe_with_overhead_) {
-    length += transport_overhead_bytes_per_packet_;
-  }
+void RtpTransportControllerSend::OnAddPacket(
+    const RtpPacketSendInfo& packet_info) {
   transport_feedback_adapter_.AddPacket(
-      ssrc, sequence_number, length, pacing_info,
+      packet_info,
+      send_side_bwe_with_overhead_ ? transport_overhead_bytes_per_packet_.load()
+                                   : 0,
       Timestamp::ms(clock_->TimeInMilliseconds()));
 }
 

@@ -43,7 +43,7 @@ class RateLimiter;
 class RtcEventLog;
 class CongestionWindowPushbackController;
 
-// Deprecated, for somewhat similar funtionality GoogCcNetworkController can be
+// Deprecated, for somewhat similar functionality GoogCcNetworkController can be
 // used via GoogCcNetworkControllerFactory.
 class DEPRECATED_SendSideCongestionController
     : public SendSideCongestionControllerInterface {
@@ -107,10 +107,7 @@ class DEPRECATED_SendSideCongestionController
   void Process() override;
 
   // Implements TransportFeedbackObserver.
-  void AddPacket(uint32_t ssrc,
-                 uint16_t sequence_number,
-                 size_t length,
-                 const PacedPacketInfo& pacing_info) override;
+  void OnAddPacket(const RtpPacketSendInfo& packet_info) override;
   void OnTransportFeedback(const rtcp::TransportFeedback& feedback) override;
 
   std::vector<PacketFeedback> GetTransportFeedbackVector() const;
