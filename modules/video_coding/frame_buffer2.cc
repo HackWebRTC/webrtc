@@ -407,14 +407,15 @@ bool FrameBuffer::IsCompleteSuperFrame(const EncodedFrame& frame) {
     RTC_DCHECK_GT(id.spatial_layer, 0);
     --id.spatial_layer;
     FrameMap::iterator prev_frame = frames_.find(id);
-    if (prev_frame == frames_.end())
+    if (prev_frame == frames_.end() || !prev_frame->second.frame)
       return false;
     while (prev_frame->second.frame->inter_layer_predicted) {
       if (prev_frame == frames_.begin())
         return false;
       --prev_frame;
       --id.spatial_layer;
-      if (prev_frame->first.picture_id != id.picture_id ||
+      if (!prev_frame->second.frame ||
+          prev_frame->first.picture_id != id.picture_id ||
           prev_frame->first.spatial_layer != id.spatial_layer) {
         return false;
       }
@@ -426,12 +427,12 @@ bool FrameBuffer::IsCompleteSuperFrame(const EncodedFrame& frame) {
     VideoLayerFrameId id = frame.id;
     ++id.spatial_layer;
     FrameMap::iterator next_frame = frames_.find(id);
-    if (next_frame == frames_.end())
+    if (next_frame == frames_.end() || !next_frame->second.frame)
       return false;
     while (!next_frame->second.frame->is_last_spatial_layer) {
       ++next_frame;
       ++id.spatial_layer;
-      if (next_frame == frames_.end() ||
+      if (next_frame == frames_.end() || !next_frame->second.frame ||
           next_frame->first.picture_id != id.picture_id ||
           next_frame->first.spatial_layer != id.spatial_layer) {
         return false;
