@@ -25,10 +25,7 @@ namespace webrtc {
 
 VCMDecodedFrameCallback::VCMDecodedFrameCallback(VCMTiming* timing,
                                                  Clock* clock)
-    : _clock(clock),
-      _timing(timing),
-      _timestampMap(kDecoderFrameMemoryLength),
-      _lastReceivedPictureID(0) {
+    : _clock(clock), _timing(timing), _timestampMap(kDecoderFrameMemoryLength) {
   ntp_offset_ =
       _clock->CurrentNtpInMilliseconds() - _clock->TimeInMilliseconds();
 }
@@ -145,16 +142,6 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
                                 rtc::kNumMicrosecsPerMillisec);
   decodedImage.set_rotation(frameInfo->rotation);
   _receiveCallback->FrameToRender(decodedImage, qp, frameInfo->content_type);
-}
-
-int32_t VCMDecodedFrameCallback::ReceivedDecodedFrame(
-    const uint64_t pictureId) {
-  _lastReceivedPictureID = pictureId;
-  return 0;
-}
-
-uint64_t VCMDecodedFrameCallback::LastReceivedPictureID() const {
-  return _lastReceivedPictureID;
 }
 
 void VCMDecodedFrameCallback::OnDecoderImplementationName(

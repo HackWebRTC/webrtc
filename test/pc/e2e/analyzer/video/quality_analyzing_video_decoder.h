@@ -84,7 +84,6 @@ class QualityAnalyzingVideoDecoder : public VideoDecoder {
     void Decoded(VideoFrame& decodedImage,
                  absl::optional<int32_t> decode_time_ms,
                  absl::optional<uint8_t> qp) override;
-    int32_t ReceivedDecodedFrame(uint64_t pictureId) override;
 
     int32_t IrrelevantSimulcastStreamDecoded(uint16_t frame_id,
                                              int64_t timestamp_ms);

@@ -29,7 +29,6 @@ class MockDecodedImageCallback : public DecodedImageCallback {
                void(VideoFrame& decodedImage,  // NOLINT
                     absl::optional<int32_t> decode_time_ms,
                     absl::optional<uint8_t> qp));
-  MOCK_METHOD1(ReceivedDecodedFrame, int32_t(const uint64_t pictureId));
 };
 
 class MockVideoDecoder : public VideoDecoder {

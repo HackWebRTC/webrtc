@@ -38,8 +38,6 @@ class RTC_EXPORT DecodedImageCallback {
   virtual void Decoded(VideoFrame& decodedImage,
                        absl::optional<int32_t> decode_time_ms,
                        absl::optional<uint8_t> qp);
-
-  virtual int32_t ReceivedDecodedFrame(const uint64_t pictureId);
 };
 
 class RTC_EXPORT VideoDecoder {

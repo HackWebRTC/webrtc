@@ -48,9 +48,7 @@ class VCMDecodedFrameCallback : public DecodedImageCallback {
   void Decoded(VideoFrame& decodedImage,
                absl::optional<int32_t> decode_time_ms,
                absl::optional<uint8_t> qp) override;
-  int32_t ReceivedDecodedFrame(const uint64_t pictureId) override;
 
-  uint64_t LastReceivedPictureID() const;
   void OnDecoderImplementationName(const char* implementation_name);
 
   void Map(uint32_t timestamp, VCMFrameInformation* frameInfo);
@@ -69,7 +67,6 @@ class VCMDecodedFrameCallback : public DecodedImageCallback {
   VCMTiming* _timing;
   rtc::CriticalSection lock_;
   VCMTimestampMap _timestampMap RTC_GUARDED_BY(lock_);
-  uint64_t _lastReceivedPictureID;
   int64_t ntp_offset_;
 };
 
