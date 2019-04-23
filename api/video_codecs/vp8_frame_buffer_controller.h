@@ -29,15 +29,15 @@ namespace webrtc {
 //
 // This means that in the case of pipelining encoders, it is OK to have a chain
 // of calls such as this:
-// - UpdateLayerConfig(timestampA)
-// - UpdateLayerConfig(timestampB)
+// - NextFrameConfig(timestampA)
+// - NextFrameConfig(timestampB)
 // - PopulateCodecSpecific(timestampA, ...)
-// - UpdateLayerConfig(timestampC)
+// - NextFrameConfig(timestampC)
 // - OnEncodeDone(timestampA, 1234, ...)
-// - UpdateLayerConfig(timestampC)
+// - NextFrameConfig(timestampC)
 // - OnEncodeDone(timestampB, 0, ...)
 // - OnEncodeDone(timestampC, 1234, ...)
-// Note that UpdateLayerConfig() for a new frame can happen before
+// Note that NextFrameConfig() for a new frame can happen before
 // OnEncodeDone() for a previous one, but calls themselves must be both
 // synchronized (e.g. run on a task queue) and in order (per type).
 //
@@ -117,7 +117,7 @@ class Vp8FrameBufferController {
                                          uint32_t rtp_timestamp) = 0;
 
   // Called after the encode step is done. |rtp_timestamp| must match the
-  // parameter use in the UpdateLayerConfig() call.
+  // parameter use in the NextFrameConfig() call.
   // |is_keyframe| must be true iff the encoder decided to encode this frame as
   // a keyframe.
   // If |info| is not null, the encoder may update |info| with codec specific
