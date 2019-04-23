@@ -52,8 +52,10 @@ class VCMEncodedFrame : protected EncodedImage {
     return static_cast<const webrtc::EncodedImage&>(*this);
   }
 
+  using EncodedImage::ColorSpace;
   using EncodedImage::data;
   using EncodedImage::set_size;
+  using EncodedImage::SetColorSpace;
   using EncodedImage::SetSpatialIndex;
   using EncodedImage::SetTimestamp;
   using EncodedImage::size;

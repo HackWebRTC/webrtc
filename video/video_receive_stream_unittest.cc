@@ -14,9 +14,12 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
+#include "absl/memory/memory.h"
 #include "api/task_queue/default_task_queue_factory.h"
+#include "api/test/video/function_video_decoder_factory.h"
 #include "api/video_codecs/video_decoder.h"
 #include "call/rtp_stream_receiver_controller.h"
+#include "common_video/test/utilities.h"
 #include "media/base/fake_video_renderer.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
@@ -24,6 +27,7 @@
 #include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "system_wrappers/include/clock.h"
+#include "test/fake_decoder.h"
 #include "test/field_trial.h"
 #include "test/video_decoder_proxy_factory.h"
 #include "video/call_stats.h"
@@ -62,6 +66,12 @@ class MockVideoDecoder : public VideoDecoder {
 
 class FrameObjectFake : public video_coding::EncodedFrame {
  public:
+  void SetPayloadType(uint8_t payload_type) { _payloadType = payload_type; }
+
+  void SetRotation(const VideoRotation& rotation) { rotation_ = rotation; }
+
+  void SetNtpTime(int64_t ntp_time_ms) { ntp_time_ms_ = ntp_time_ms; }
+
   int64_t ReceivedTime() const override { return 0; }
 
   int64_t RenderTime() const override { return _renderTimeMs; }
@@ -210,6 +220,92 @@ TEST_F(VideoReceiveStreamTest, PlayoutDelayPreservesDefaultMinValue) {
   EXPECT_NE(kPlayoutDelayMs.min_ms, timing_->min_playout_delay());
   EXPECT_EQ(kPlayoutDelayMs.max_ms, timing_->max_playout_delay());
   EXPECT_EQ(default_min_playout_latency, timing_->min_playout_delay());
+}
+
+class VideoReceiveStreamTestWithFakeDecoder : public ::testing::Test {
+ public:
+  VideoReceiveStreamTestWithFakeDecoder()
+      : fake_decoder_factory_(
+            []() { return absl::make_unique<test::FakeDecoder>(); }),
+        process_thread_(ProcessThread::Create("TestThread")),
+        task_queue_factory_(CreateDefaultTaskQueueFactory()),
+        config_(&mock_transport_),
+        call_stats_(Clock::GetRealTimeClock(), process_thread_.get()) {}
+
+  void SetUp() {
+    constexpr int kDefaultNumCpuCores = 2;
+    config_.rtp.remote_ssrc = 1111;
+    config_.rtp.local_ssrc = 2222;
+    config_.renderer = &fake_renderer_;
+    VideoReceiveStream::Decoder fake_decoder;
+    fake_decoder.payload_type = 99;
+    fake_decoder.video_format = SdpVideoFormat("VP8");
+    fake_decoder.decoder_factory = &fake_decoder_factory_;
+    config_.decoders.push_back(fake_decoder);
+    Clock* clock = Clock::GetRealTimeClock();
+    timing_ = new VCMTiming(clock);
+
+    video_receive_stream_.reset(new webrtc::internal::VideoReceiveStream(
+        task_queue_factory_.get(), &rtp_stream_receiver_controller_,
+        kDefaultNumCpuCores, &packet_router_, config_.Copy(),
+        process_thread_.get(), &call_stats_, clock, timing_));
+  }
+
+ protected:
+  test::FunctionVideoDecoderFactory fake_decoder_factory_;
+  std::unique_ptr<ProcessThread> process_thread_;
+  const std::unique_ptr<TaskQueueFactory> task_queue_factory_;
+  VideoReceiveStream::Config config_;
+  CallStats call_stats_;
+  cricket::FakeVideoRenderer fake_renderer_;
+  MockTransport mock_transport_;
+  PacketRouter packet_router_;
+  RtpStreamReceiverController rtp_stream_receiver_controller_;
+  std::unique_ptr<webrtc::internal::VideoReceiveStream> video_receive_stream_;
+  VCMTiming* timing_;
+};
+
+TEST_F(VideoReceiveStreamTestWithFakeDecoder, PassesNtpTime) {
+  const int64_t kNtpTimestamp = 12345;
+  std::unique_ptr<FrameObjectFake> test_frame(new FrameObjectFake());
+  test_frame->SetPayloadType(99);
+  test_frame->id.picture_id = 0;
+  test_frame->SetNtpTime(kNtpTimestamp);
+
+  video_receive_stream_->Start();
+  video_receive_stream_->OnCompleteFrame(std::move(test_frame));
+  EXPECT_TRUE(fake_renderer_.WaitForRenderedFrame(kDefaultTimeOutMs));
+  EXPECT_EQ(kNtpTimestamp, fake_renderer_.ntp_time_ms());
+}
+
+TEST_F(VideoReceiveStreamTestWithFakeDecoder, PassesRotation) {
+  const webrtc::VideoRotation kRotation = webrtc::kVideoRotation_180;
+  std::unique_ptr<FrameObjectFake> test_frame(new FrameObjectFake());
+  test_frame->SetPayloadType(99);
+  test_frame->id.picture_id = 0;
+  test_frame->SetRotation(kRotation);
+
+  video_receive_stream_->Start();
+  video_receive_stream_->OnCompleteFrame(std::move(test_frame));
+  EXPECT_TRUE(fake_renderer_.WaitForRenderedFrame(kDefaultTimeOutMs));
+
+  EXPECT_EQ(kRotation, fake_renderer_.rotation());
+}
+
+TEST_F(VideoReceiveStreamTestWithFakeDecoder, PassesColorSpace) {
+  std::unique_ptr<FrameObjectFake> test_frame(new FrameObjectFake());
+  test_frame->SetPayloadType(99);
+  test_frame->id.picture_id = 0;
+  webrtc::ColorSpace color_space =
+      CreateTestColorSpace(/*with_hdr_metadata=*/true);
+  test_frame->SetColorSpace(color_space);
+
+  video_receive_stream_->Start();
+  video_receive_stream_->OnCompleteFrame(std::move(test_frame));
+  EXPECT_TRUE(fake_renderer_.WaitForRenderedFrame(kDefaultTimeOutMs));
+
+  ASSERT_TRUE(fake_renderer_.color_space().has_value());
+  EXPECT_EQ(color_space, *fake_renderer_.color_space());
 }
 
 }  // namespace webrtc

@@ -125,8 +125,6 @@ int H264DecoderImpl::AVGetBuffer2(
       static_cast<void*>(absl::make_unique<VideoFrame>(
                              VideoFrame::Builder()
                                  .set_video_frame_buffer(frame_buffer)
-                                 .set_rotation(kVideoRotation_0)
-                                 .set_timestamp_us(0)
                                  .build())
                              .release()),
       0);
@@ -285,16 +283,11 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
   RTC_CHECK_EQ(av_frame_->data[kUPlaneIndex], i420_buffer->DataU());
   RTC_CHECK_EQ(av_frame_->data[kVPlaneIndex], i420_buffer->DataV());
 
-  // Pass on color space from input frame if explicitly specified.
-  const ColorSpace& color_space =
-      input_image.ColorSpace() ? *input_image.ColorSpace()
-                               : ExtractH264ColorSpace(av_context_.get());
+  const ColorSpace& color_space = ExtractH264ColorSpace(av_context_.get());
   VideoFrame decoded_frame =
       VideoFrame::Builder()
           .set_video_frame_buffer(input_frame->video_frame_buffer())
-          .set_timestamp_us(input_frame->timestamp_us())
           .set_timestamp_rtp(input_image.Timestamp())
-          .set_rotation(input_frame->rotation())
           .set_color_space(color_space)
           .build();
 
@@ -319,9 +312,7 @@ int32_t H264DecoderImpl::Decode(const EncodedImage& input_image,
     VideoFrame cropped_frame =
         VideoFrame::Builder()
             .set_video_frame_buffer(cropped_buf)
-            .set_timestamp_ms(decoded_frame.render_time_ms())
             .set_timestamp_rtp(decoded_frame.timestamp())
-            .set_rotation(decoded_frame.rotation())
             .set_color_space(color_space)
             .build();
     // TODO(nisse): Timestamp and rotation are all zero here. Change decoder

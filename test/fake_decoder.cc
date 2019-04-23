@@ -45,14 +45,14 @@ int32_t FakeDecoder::Decode(const EncodedImage& input,
     height_ = input._encodedHeight;
   }
 
-  VideoFrame frame =
-      VideoFrame::Builder()
-          .set_video_frame_buffer(I420Buffer::Create(width_, height_))
-          .set_rotation(webrtc::kVideoRotation_0)
-          .set_timestamp_ms(render_time_ms)
-          .build();
+  rtc::scoped_refptr<I420Buffer> buffer = I420Buffer::Create(width_, height_);
+  I420Buffer::SetBlack(buffer);
+  VideoFrame frame = VideoFrame::Builder()
+                         .set_video_frame_buffer(buffer)
+                         .set_rotation(webrtc::kVideoRotation_0)
+                         .set_timestamp_ms(render_time_ms)
+                         .build();
   frame.set_timestamp(input.Timestamp());
-  frame.set_ntp_time_ms(input.ntp_time_ms_);
 
   callback_->Decoded(frame);
 

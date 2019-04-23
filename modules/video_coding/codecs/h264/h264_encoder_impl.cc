@@ -494,15 +494,6 @@ int32_t H264EncoderImpl::Encode(
     encoded_images_[i]._encodedWidth = configurations_[i].width;
     encoded_images_[i]._encodedHeight = configurations_[i].height;
     encoded_images_[i].SetTimestamp(input_frame.timestamp());
-    encoded_images_[i].ntp_time_ms_ = input_frame.ntp_time_ms();
-    encoded_images_[i].capture_time_ms_ = input_frame.render_time_ms();
-    encoded_images_[i].rotation_ = input_frame.rotation();
-    encoded_images_[i].SetColorSpace(input_frame.color_space());
-    encoded_images_[i].content_type_ =
-            (codec_.mode == VideoCodecMode::kScreensharing)
-            ? VideoContentType::SCREENSHARE
-            : VideoContentType::UNSPECIFIED;
-    encoded_images_[i].timing_.flags = VideoSendTiming::kInvalid;
     encoded_images_[i]._frameType = ConvertToVideoFrameType(info.eFrameType);
     encoded_images_[i].SetSpatialIndex(configurations_[i].simulcast_idx);
 

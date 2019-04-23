@@ -11,7 +11,6 @@
 #include "api/video/color_space.h"
 #include "api/video/i420_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "common_video/test/utilities.h"
 #include "media/base/vp9_profile.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/video_coding/codecs/test/video_codec_unittest.h"
@@ -146,50 +145,7 @@ TEST_F(TestVp9Impl, EncodeDecode) {
             color_space.chroma_siting_vertical());
 }
 
-// We only test the encoder here, since the decoded frame rotation is set based
-// on the CVO RTP header extension in VCMDecodedFrameCallback::Decoded.
-// TODO(brandtr): Consider passing through the rotation flag through the decoder
-// in the same way as done in the encoder.
-TEST_F(TestVp9Impl, EncodedRotationEqualsInputRotation) {
-  VideoFrame* input_frame = NextInputFrame();
-  input_frame->set_rotation(kVideoRotation_0);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Encode(*input_frame, nullptr));
-  EncodedImage encoded_frame;
-  CodecSpecificInfo codec_specific_info;
-  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
-  EXPECT_EQ(kVideoRotation_0, encoded_frame.rotation_);
-
-  input_frame = NextInputFrame();
-  input_frame->set_rotation(kVideoRotation_90);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Encode(*input_frame, nullptr));
-  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
-  EXPECT_EQ(kVideoRotation_90, encoded_frame.rotation_);
-}
-
-TEST_F(TestVp9Impl, EncodedColorSpaceEqualsInputColorSpace) {
-  // Video frame without explicit color space information.
-  VideoFrame* input_frame = NextInputFrame();
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Encode(*input_frame, nullptr));
-  EncodedImage encoded_frame;
-  CodecSpecificInfo codec_specific_info;
-  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
-  EXPECT_FALSE(encoded_frame.ColorSpace());
-
-  // Video frame with explicit color space information.
-  ColorSpace color_space = CreateTestColorSpace(/*with_hdr_metadata=*/true);
-  VideoFrame input_frame_w_hdr =
-      VideoFrame::Builder()
-          .set_video_frame_buffer(input_frame->video_frame_buffer())
-          .set_color_space(color_space)
-          .build();
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(input_frame_w_hdr, nullptr));
-  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
-  ASSERT_TRUE(encoded_frame.ColorSpace());
-  EXPECT_EQ(*encoded_frame.ColorSpace(), color_space);
-}
-
-TEST_F(TestVp9Impl, DecodedColorSpaceEqualsEncodedColorSpace) {
+TEST_F(TestVp9Impl, DecodedColorSpaceFromBitstream) {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             encoder_->Encode(*NextInputFrame(), nullptr));
   EncodedImage encoded_frame;
@@ -206,15 +162,6 @@ TEST_F(TestVp9Impl, DecodedColorSpaceEqualsEncodedColorSpace) {
   ASSERT_TRUE(decoded_frame->color_space());
   // No HDR metadata present.
   EXPECT_FALSE(decoded_frame->color_space()->hdr_metadata());
-
-  // Encoded frame with explicit color space information.
-  ColorSpace color_space = CreateTestColorSpace(/*with_hdr_metadata=*/true);
-  encoded_frame.SetColorSpace(color_space);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(encoded_frame, false, 0));
-  ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
-  ASSERT_TRUE(decoded_frame);
-  ASSERT_TRUE(decoded_frame->color_space());
-  EXPECT_EQ(color_space, *decoded_frame->color_space());
 }
 
 TEST_F(TestVp9Impl, DecodedQpEqualsEncodedQp) {
