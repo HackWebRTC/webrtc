@@ -492,11 +492,13 @@ void DefaultVideoQualityAnalyzer::ReportResults() {
     LogFrameCounters(item.first, stream_frame_counters_.at(item.first));
     LogStreamInternalStats(item.first, item.second);
   }
-  RTC_LOG(INFO) << "comparisons_queue_size min="
-                << analyzer_stats_.comparisons_queue_size.GetMin()
-                << "; max=" << analyzer_stats_.comparisons_queue_size.GetMax()
-                << "; 99%="
-                << analyzer_stats_.comparisons_queue_size.GetPercentile(0.99);
+  if (!analyzer_stats_.comparisons_queue_size.IsEmpty()) {
+    RTC_LOG(INFO) << "comparisons_queue_size min="
+                  << analyzer_stats_.comparisons_queue_size.GetMin()
+                  << "; max=" << analyzer_stats_.comparisons_queue_size.GetMax()
+                  << "; 99%="
+                  << analyzer_stats_.comparisons_queue_size.GetPercentile(0.99);
+  }
   RTC_LOG(INFO) << "comparisons_done=" << analyzer_stats_.comparisons_done;
   RTC_LOG(INFO) << "overloaded_comparisons_done="
                 << analyzer_stats_.overloaded_comparisons_done;
