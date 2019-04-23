@@ -16,8 +16,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
-#include "api/task_queue/global_task_queue_factory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/logging.h"
@@ -28,77 +26,6 @@
 
 namespace webrtc {
 namespace test {
-
-FrameGeneratorCapturer* FrameGeneratorCapturer::Create(
-    int width,
-    int height,
-    absl::optional<FrameGenerator::OutputType> type,
-    absl::optional<int> num_squares,
-    int target_fps,
-    Clock* clock) {
-  auto capturer = absl::make_unique<FrameGeneratorCapturer>(
-      clock,
-      FrameGenerator::CreateSquareGenerator(width, height, type, num_squares),
-      target_fps);
-  if (!capturer->Init())
-    return nullptr;
-
-  return capturer.release();
-}
-
-FrameGeneratorCapturer* FrameGeneratorCapturer::CreateFromYuvFile(
-    const std::string& file_name,
-    size_t width,
-    size_t height,
-    int target_fps,
-    Clock* clock) {
-  auto capturer = absl::make_unique<FrameGeneratorCapturer>(
-      clock,
-      FrameGenerator::CreateFromYuvFile(std::vector<std::string>(1, file_name),
-                                        width, height, 1),
-      target_fps);
-  if (!capturer->Init())
-    return nullptr;
-
-  return capturer.release();
-}
-
-FrameGeneratorCapturer* FrameGeneratorCapturer::CreateSlideGenerator(
-    int width,
-    int height,
-    int frame_repeat_count,
-    int target_fps,
-    Clock* clock) {
-  auto capturer = absl::make_unique<FrameGeneratorCapturer>(
-      clock,
-      FrameGenerator::CreateSlideGenerator(width, height, frame_repeat_count),
-      target_fps);
-  if (!capturer->Init())
-    return nullptr;
-
-  return capturer.release();
-}
-
-FrameGeneratorCapturer* FrameGeneratorCapturer::Create(
-    std::unique_ptr<FrameGenerator> frame_generator,
-    int target_fps,
-    Clock* clock) {
-  auto capturer = absl::make_unique<FrameGeneratorCapturer>(
-      clock, std::move(frame_generator), target_fps);
-  if (!capturer->Init())
-    return nullptr;
-
-  return capturer.release();
-}
-
-FrameGeneratorCapturer::FrameGeneratorCapturer(
-    Clock* clock,
-    std::unique_ptr<FrameGenerator> frame_generator,
-    int target_fps)
-    : FrameGeneratorCapturer(clock,
-                             std::move(frame_generator),
-                             target_fps,
-                             GlobalTaskQueueFactory()) {}
 
 FrameGeneratorCapturer::FrameGeneratorCapturer(
     Clock* clock,

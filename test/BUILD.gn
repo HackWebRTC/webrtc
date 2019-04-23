@@ -55,7 +55,6 @@ rtc_source_set("video_test_common") {
     "../api:libjingle_peerconnection_api",
     "../api:scoped_refptr",
     "../api/task_queue",
-    "../api/task_queue:global_task_queue_factory",
     "../api/video:video_frame",
     "../api/video:video_frame_i010",
     "../api/video:video_frame_i420",
