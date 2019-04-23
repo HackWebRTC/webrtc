@@ -17,6 +17,7 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -46,11 +47,10 @@ void ExpectNearAbsolute(rtc::ArrayView<const float> expected,
 template <typename T, typename D = T>
 class BinaryFileReader {
  public:
-  explicit BinaryFileReader(const std::string& file_path, size_t chunk_size = 1)
+  explicit BinaryFileReader(const std::string& file_path, size_t chunk_size = 0)
       : is_(file_path, std::ios::binary | std::ios::ate),
         data_length_(is_.tellg() / sizeof(T)),
         chunk_size_(chunk_size) {
-    RTC_CHECK_LT(0, chunk_size_);
     RTC_CHECK(is_);
     SeekBeginning();
     buf_.resize(chunk_size_);
@@ -69,9 +69,11 @@ class BinaryFileReader {
     }
     return is_.gcount() == sizeof(T);
   }
+  // If |chunk_size| was specified in the ctor, it will check that the size of
+  // |dst| equals |chunk_size|.
   bool ReadChunk(rtc::ArrayView<D> dst) {
-    RTC_DCHECK_EQ(chunk_size_, dst.size());
-    const std::streamsize bytes_to_read = chunk_size_ * sizeof(T);
+    RTC_DCHECK((chunk_size_ == 0) || (chunk_size_ == dst.size()));
+    const std::streamsize bytes_to_read = dst.size() * sizeof(T);
     if (std::is_same<T, D>::value) {
       is_.read(reinterpret_cast<char*>(dst.data()), bytes_to_read);
     } else {
@@ -91,9 +93,26 @@ class BinaryFileReader {
   std::vector<T> buf_;
 };
 
+// Writer for binary files.
+template <typename T>
+class BinaryFileWriter {
+ public:
+  explicit BinaryFileWriter(const std::string& file_path)
+      : os_(file_path, std::ios::binary) {}
+  BinaryFileWriter(const BinaryFileWriter&) = delete;
+  BinaryFileWriter& operator=(const BinaryFileWriter&) = delete;
+  ~BinaryFileWriter() = default;
+  static_assert(std::is_arithmetic<T>::value, "");
+  void WriteChunk(rtc::ArrayView<const T> value) {
+    const std::streamsize bytes_to_write = value.size() * sizeof(T);
+    os_.write(reinterpret_cast<const char*>(value.data()), bytes_to_write);
+  }
+
+ private:
+  std::ofstream os_;
+};
+
 // Factories for resource file readers.
-// Creates a reader for the pitch search test data.
-std::unique_ptr<BinaryFileReader<float>> CreatePitchSearchTestDataReader();
 // The functions below return a pair where the first item is a reader unique
 // pointer and the second the number of chunks that can be read from the file.
 // Creates a reader for the PCM samples that casts from S16 to float and reads
@@ -107,12 +126,6 @@ CreatePitchBuffer24kHzReader();
 // and gain values.
 std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
 CreateLpResidualAndPitchPeriodGainReader();
-// Creates a reader for the FFT coefficients.
-std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
-CreateFftCoeffsReader();
-// Creates a reader for the silence flags and the feature matrix.
-std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
-CreateSilenceFlagsFeatureMatrixReader();
 // Creates a reader for the VAD probabilities.
 std::pair<std::unique_ptr<BinaryFileReader<float>>, const size_t>
 CreateVadProbsReader();
@@ -128,11 +141,11 @@ class PitchTestData {
  public:
   PitchTestData();
   ~PitchTestData();
-  rtc::ArrayView<const float, kBufSize24kHz> GetPitchBufView();
+  rtc::ArrayView<const float, kBufSize24kHz> GetPitchBufView() const;
   rtc::ArrayView<const float, kNumPitchBufSquareEnergies>
-  GetPitchBufSquareEnergiesView();
+  GetPitchBufSquareEnergiesView() const;
   rtc::ArrayView<const float, kNumPitchBufAutoCorrCoeffs>
-  GetPitchBufAutoCorrCoeffsView();
+  GetPitchBufAutoCorrCoeffsView() const;
 
  private:
   std::array<float, kPitchTestDataSize> test_data_;

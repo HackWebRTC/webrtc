@@ -64,12 +64,10 @@ if (rtc_include_tests) {
 
   unittest_resources = [
     "../../../../resources/audio_processing/agc2/rnn_vad/band_energies.dat",
-    "../../../../resources/audio_processing/agc2/rnn_vad/fft.dat",
     "../../../../resources/audio_processing/agc2/rnn_vad/pitch_buf_24k.dat",
     "../../../../resources/audio_processing/agc2/rnn_vad/pitch_search_int.dat",
     "../../../../resources/audio_processing/agc2/rnn_vad/pitch_lp_res.dat",
     "../../../../resources/audio_processing/agc2/rnn_vad/samples.pcm",
-    "../../../../resources/audio_processing/agc2/rnn_vad/sil_features.dat",
     "../../../../resources/audio_processing/agc2/rnn_vad/vad_prob.dat",
   ]
 

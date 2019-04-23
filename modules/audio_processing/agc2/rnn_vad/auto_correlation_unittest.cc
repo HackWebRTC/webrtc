@@ -10,6 +10,7 @@
 
 #include "modules/audio_processing/agc2/rnn_vad/auto_correlation.h"
 
+#include "modules/audio_processing/agc2/rnn_vad/common.h"
 #include "modules/audio_processing/agc2/rnn_vad/pitch_search_internal.h"
 #include "modules/audio_processing/agc2/rnn_vad/test_utils.h"
 #include "test/gtest.h"
@@ -18,6 +19,8 @@ namespace webrtc {
 namespace rnn_vad {
 namespace test {
 
+// Checks that the auto correlation function produces output within tolerance
+// given test input data.
 TEST(RnnVadTest, PitchBufferAutoCorrelationWithinTolerance) {
   PitchTestData test_data;
   std::array<float, kBufSize12kHz> pitch_buf_decimated;
@@ -35,7 +38,7 @@ TEST(RnnVadTest, PitchBufferAutoCorrelationWithinTolerance) {
                      computed_output, 3e-3f);
 }
 
-// Check that the auto correlation function computes the right thing for a
+// Checks that the auto correlation function computes the right thing for a
 // simple use case.
 TEST(RnnVadTest, CheckAutoCorrelationOnConstantPitchBuffer) {
   // Create constant signal with no pitch.
@@ -49,11 +52,12 @@ TEST(RnnVadTest, CheckAutoCorrelationOnConstantPitchBuffer) {
     auto_corr_calculator.ComputeOnPitchBuffer(pitch_buf_decimated,
                                               computed_output);
   }
-  // The expected output is constantly the length of the fixed 'x'
-  // array in ComputePitchAutoCorrelation.
+  // The expected output is a vector filled with the same expected
+  // auto-correlation value. The latter equals the length of a 20 ms frame.
+  constexpr size_t kFrameSize20ms12kHz = kFrameSize20ms24kHz / 2;
   std::array<float, kNumPitchBufAutoCorrCoeffs> expected_output;
   std::fill(expected_output.begin(), expected_output.end(),
-            kBufSize12kHz - kMaxPitch12kHz);
+            static_cast<float>(kFrameSize20ms12kHz));
   ExpectNearAbsolute(expected_output, computed_output, 4e-5f);
 }
 

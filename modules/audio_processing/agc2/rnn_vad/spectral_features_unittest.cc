@@ -67,6 +67,8 @@ constexpr float kInitialFeatureVal = -9999.f;
 
 }  // namespace
 
+// Checks that silence is detected when the input signal is 0 and that the
+// feature vector is written only if the input signal is not tagged as silence.
 TEST(RnnVadTest, SpectralFeaturesWithAndWithoutSilence) {
   // Initialize.
   SpectralFeaturesExtractor sfe;
@@ -108,9 +110,10 @@ TEST(RnnVadTest, SpectralFeaturesWithAndWithoutSilence) {
                            [](float x) { return x == kInitialFeatureVal; }));
 }
 
-// When the input signal does not change, the cepstral coefficients average does
-// not change and the derivatives are zero. Similarly, the cepstral variability
-// score does not change either.
+// Feeds a constant input signal and checks that:
+// - the cepstral coefficients average does not change;
+// - the derivatives are zero;
+// - the cepstral variability score does not change.
 TEST(RnnVadTest, CepstralFeaturesConstantAverageZeroDerivative) {
   // Initialize.
   SpectralFeaturesExtractor sfe;

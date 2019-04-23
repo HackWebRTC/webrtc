@@ -85,14 +85,18 @@ TEST(RnnVadTest, DISABLED_TestOpusScaleWeights) {
   }
 }
 
+// Checks that the computed band-wise auto-correlation is non-negative for a
+// simple input vector of FFT coefficients.
 TEST(RnnVadTest, SpectralCorrelatorValidOutput) {
-  SpectralCorrelator e;
+  // Input: vector of (1, 1j) values.
   Pffft fft(kFrameSize20ms24kHz, Pffft::FftType::kReal);
   auto in = fft.CreateBuffer();
   std::array<float, kOpusBands24kHz> out;
   auto in_view = in->GetView();
   std::fill(in_view.begin(), in_view.end(), 1.f);
   in_view[1] = 0.f;  // Nyquist frequency.
+  // Compute and check output.
+  SpectralCorrelator e;
   e.ComputeAutoCorrelation(in_view, out);
   for (size_t i = 0; i < kOpusBands24kHz; ++i) {
     SCOPED_TRACE(i);
@@ -100,6 +104,8 @@ TEST(RnnVadTest, SpectralCorrelatorValidOutput) {
   }
 }
 
+// Checks that the computed smoothed log magnitude spectrum is within tolerance
+// given hard-coded test input data.
 TEST(RnnVadTest, ComputeSmoothedLogMagnitudeSpectrumWithinTolerance) {
   constexpr std::array<float, kNumBands> input = {
       {86.060539245605f, 275.668334960938f, 43.406528472900f, 6.541896820068f,
@@ -124,7 +130,9 @@ TEST(RnnVadTest, ComputeSmoothedLogMagnitudeSpectrumWithinTolerance) {
   }
 }
 
-TEST(RnnVadTest, ComputeDctBitExactness) {
+// Checks that the computed DCT is within tolerance given hard-coded test input
+// data.
+TEST(RnnVadTest, ComputeDctWithinTolerance) {
   constexpr std::array<float, kNumBands> input = {
       {0.232155621052f,  0.678957760334f, 0.220818966627f,  -0.077363930643f,
        -0.559227049351f, 0.432545185089f, 0.353900641203f,  0.398993015289f,
