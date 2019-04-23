@@ -26,6 +26,7 @@
 #include "media/base/stream_params.h"
 #include "p2p/base/transport_description.h"
 #include "p2p/base/transport_info.h"
+#include "pc/media_protocol_names.h"
 #include "pc/simulcast_description.h"
 #include "rtc_base/socket_address.h"
 
@@ -44,12 +45,6 @@ extern const char kMediaProtocolSavpf[];
 
 extern const char kMediaProtocolDtlsSavpf[];
 
-extern const char kMediaProtocolRtpPrefix[];
-
-extern const char kMediaProtocolSctp[];
-extern const char kMediaProtocolDtlsSctp[];
-extern const char kMediaProtocolUdpDtlsSctp[];
-extern const char kMediaProtocolTcpDtlsSctp[];
 
 // Options to control how session descriptions are generated.
 const int kAutoBandwidth = -1;
@@ -57,6 +52,7 @@ const int kAutoBandwidth = -1;
 class AudioContentDescription;
 class DataContentDescription;
 class VideoContentDescription;
+class SctpDataContentDescription;
 
 // Describes a session description media section. There are subclasses for each
 // media type (audio, video, data) that will have additional information.
@@ -82,6 +78,9 @@ class MediaContentDescription {
   virtual DataContentDescription* as_data() { return nullptr; }
   virtual const DataContentDescription* as_data() const { return nullptr; }
 
+  virtual SctpDataContentDescription* as_sctp() { return nullptr; }
+  virtual const SctpDataContentDescription* as_sctp() const { return nullptr; }
+
   virtual bool has_codecs() const = 0;
 
   virtual MediaContentDescription* Copy() const = 0;
@@ -89,7 +88,9 @@ class MediaContentDescription {
   // |protocol| is the expected media transport protocol, such as RTP/AVPF,
   // RTP/SAVPF or SCTP/DTLS.
   std::string protocol() const { return protocol_; }
-  void set_protocol(const std::string& protocol) { protocol_ = protocol; }
+  virtual void set_protocol(const std::string& protocol) {
+    protocol_ = protocol;
+  }
 
   webrtc::RtpTransceiverDirection direction() const { return direction_; }
   void set_direction(webrtc::RtpTransceiverDirection direction) {
@@ -247,12 +248,17 @@ using ContentDescription = MediaContentDescription;
 template <class C>
 class MediaContentDescriptionImpl : public MediaContentDescription {
  public:
+  void set_protocol(const std::string& protocol) override {
+    RTC_DCHECK(IsRtpProtocol(protocol));
+    protocol_ = protocol;
+  }
+
   typedef C CodecType;
 
   // Codecs should be in preference order (most preferred codec first).
   const std::vector<C>& codecs() const { return codecs_; }
   void set_codecs(const std::vector<C>& codecs) { codecs_ = codecs; }
-  virtual bool has_codecs() const { return !codecs_.empty(); }
+  bool has_codecs() const override { return !codecs_.empty(); }
   bool HasCodec(int id) {
     bool found = false;
     for (typename std::vector<C>::iterator iter = codecs_.begin();
@@ -318,12 +324,37 @@ class DataContentDescription : public MediaContentDescriptionImpl<DataCodec> {
   virtual MediaType type() const { return MEDIA_TYPE_DATA; }
   virtual DataContentDescription* as_data() { return this; }
   virtual const DataContentDescription* as_data() const { return this; }
+};
+
+class SctpDataContentDescription : public MediaContentDescription {
+ public:
+  SctpDataContentDescription() {}
+  SctpDataContentDescription* Copy() const override {
+    return new SctpDataContentDescription(*this);
+  }
+  MediaType type() const override { return MEDIA_TYPE_DATA; }
+  SctpDataContentDescription* as_sctp() override { return this; }
+  const SctpDataContentDescription* as_sctp() const override { return this; }
+  bool has_codecs() const override { return false; }
+  void set_protocol(const std::string& protocol) override {
+    RTC_DCHECK(IsSctpProtocol(protocol));
+    protocol_ = protocol;
+  }
 
   bool use_sctpmap() const { return use_sctpmap_; }
   void set_use_sctpmap(bool enable) { use_sctpmap_ = enable; }
+  int port() const { return port_; }
+  void set_port(int port) { port_ = port; }
+  int max_message_size() const { return max_message_size_; }
+  void set_max_message_size(int max_message_size) {
+    max_message_size_ = max_message_size;
+  }
 
  private:
-  bool use_sctpmap_ = true;
+  bool use_sctpmap_ = true;  // Note: "true" is no longer conformant.
+  // Defaults should be constants imported from SCTP. Quick hack.
+  int port_ = 5000;
+  int max_message_size_ = 256 * 1024;
 };
 
 // Protocol used for encoding media. This is the "top level" protocol that may

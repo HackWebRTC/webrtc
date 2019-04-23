@@ -65,6 +65,7 @@ using cricket::MediaProtocolType;
 using cricket::RELAY_PORT_TYPE;
 using cricket::RidDescription;
 using cricket::RidDirection;
+using cricket::SctpDataContentDescription;
 using cricket::SessionDescription;
 using cricket::SimulcastDescription;
 using cricket::SimulcastLayer;
@@ -1445,8 +1446,15 @@ class WebRtcSdpTest : public ::testing::Test {
 
   void CompareDataContentDescription(const DataContentDescription* dcd1,
                                      const DataContentDescription* dcd2) {
-    EXPECT_EQ(dcd1->use_sctpmap(), dcd2->use_sctpmap());
     CompareMediaContentDescription<DataContentDescription>(dcd1, dcd2);
+  }
+
+  void CompareSctpDataContentDescription(
+      const SctpDataContentDescription* dcd1,
+      const SctpDataContentDescription* dcd2) {
+    EXPECT_EQ(dcd1->use_sctpmap(), dcd2->use_sctpmap());
+    EXPECT_EQ(dcd1->port(), dcd2->port());
+    EXPECT_EQ(dcd1->max_message_size(), dcd2->max_message_size());
   }
 
   void CompareSessionDescription(const SessionDescription& desc1,
@@ -1484,10 +1492,21 @@ class WebRtcSdpTest : public ::testing::Test {
       }
 
       ASSERT_EQ(IsDataContent(&c1), IsDataContent(&c2));
-      if (IsDataContent(&c1)) {
-        const DataContentDescription* dcd1 = c1.media_description()->as_data();
-        const DataContentDescription* dcd2 = c2.media_description()->as_data();
-        CompareDataContentDescription(dcd1, dcd2);
+      if (c1.media_description()->as_sctp()) {
+        ASSERT_TRUE(c2.media_description()->as_sctp());
+        const SctpDataContentDescription* scd1 =
+            c1.media_description()->as_sctp();
+        const SctpDataContentDescription* scd2 =
+            c2.media_description()->as_sctp();
+        CompareSctpDataContentDescription(scd1, scd2);
+      } else {
+        if (IsDataContent(&c1)) {
+          const DataContentDescription* dcd1 =
+              c1.media_description()->as_data();
+          const DataContentDescription* dcd2 =
+              c2.media_description()->as_data();
+          CompareDataContentDescription(dcd1, dcd2);
+        }
       }
 
       CompareSimulcastDescription(
@@ -1760,14 +1779,12 @@ class WebRtcSdpTest : public ::testing::Test {
   }
 
   void AddSctpDataChannel(bool use_sctpmap) {
-    std::unique_ptr<DataContentDescription> data(new DataContentDescription());
-    data_desc_ = data.get();
-    data_desc_->set_use_sctpmap(use_sctpmap);
-    data_desc_->set_protocol(cricket::kMediaProtocolDtlsSctp);
-    DataCodec codec(cricket::kGoogleSctpDataCodecPlType,
-                    cricket::kGoogleSctpDataCodecName);
-    codec.SetParam(cricket::kCodecParamPort, kDefaultSctpPort);
-    data_desc_->AddCodec(codec);
+    std::unique_ptr<SctpDataContentDescription> data(
+        new SctpDataContentDescription());
+    sctp_desc_ = data.get();
+    sctp_desc_->set_use_sctpmap(use_sctpmap);
+    sctp_desc_->set_protocol(cricket::kMediaProtocolDtlsSctp);
+    sctp_desc_->set_port(kDefaultSctpPort);
     desc_.AddContent(kDataContentName, MediaProtocolType::kSctp,
                      data.release());
     desc_.AddTransportInfo(TransportInfo(
@@ -2044,6 +2061,7 @@ class WebRtcSdpTest : public ::testing::Test {
   AudioContentDescription* audio_desc_;
   VideoContentDescription* video_desc_;
   DataContentDescription* data_desc_;
+  SctpDataContentDescription* sctp_desc_;
   Candidates candidates_;
   std::unique_ptr<IceCandidateInterface> jcandidate_;
   JsepSessionDescription jdesc_;
@@ -2215,21 +2233,26 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithSctpDataChannel) {
   EXPECT_EQ(message, expected_sdp);
 }
 
+void MutateJsepSctpPort(JsepSessionDescription* jdesc,
+                        const SessionDescription& desc,
+                        int port) {
+  // Take our pre-built session description and change the SCTP port.
+  cricket::SessionDescription* mutant = desc.Copy();
+  SctpDataContentDescription* dcdesc =
+      mutant->GetContentDescriptionByName(kDataContentName)->as_sctp();
+  dcdesc->set_port(port);
+  // Note: mutant's owned by jdesc now.
+  ASSERT_TRUE(jdesc->Initialize(mutant, kSessionId, kSessionVersion));
+}
+
 TEST_F(WebRtcSdpTest, SerializeWithSctpDataChannelAndNewPort) {
   bool use_sctpmap = true;
   AddSctpDataChannel(use_sctpmap);
   JsepSessionDescription jsep_desc(kDummyType);
   MakeDescriptionWithoutCandidates(&jsep_desc);
-  DataContentDescription* dcdesc =
-      jsep_desc.description()
-          ->GetContentDescriptionByName(kDataContentName)
-          ->as_data();
 
   const int kNewPort = 1234;
-  cricket::DataCodec codec(cricket::kGoogleSctpDataCodecPlType,
-                           cricket::kGoogleSctpDataCodecName);
-  codec.SetParam(cricket::kCodecParamPort, kNewPort);
-  dcdesc->AddOrReplaceCodec(codec);
+  MutateJsepSctpPort(&jsep_desc, desc_, kNewPort);
 
   std::string message = webrtc::SdpSerialize(jsep_desc);
 
@@ -2868,14 +2891,12 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithSctpColonPort) {
 // Helper function to set the max-message-size parameter in the
 // SCTP data codec.
 void MutateJsepSctpMaxMessageSize(const SessionDescription& desc,
-                                  const std::string& new_value,
+                                  int new_value,
                                   JsepSessionDescription* jdesc) {
   cricket::SessionDescription* mutant = desc.Copy();
-  DataContentDescription* dcdesc =
-      mutant->GetContentDescriptionByName(kDataContentName)->as_data();
-  std::vector<cricket::DataCodec> codecs(dcdesc->codecs());
-  codecs[0].SetParam(cricket::kCodecParamMaxMessageSize, new_value);
-  dcdesc->set_codecs(codecs);
+  SctpDataContentDescription* dcdesc =
+      mutant->GetContentDescriptionByName(kDataContentName)->as_sctp();
+  dcdesc->set_max_message_size(new_value);
   jdesc->Initialize(mutant, kSessionId, kSessionVersion);
 }
 
@@ -2887,7 +2908,7 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithMaxMessageSize) {
 
   sdp_with_data.append(kSdpSctpDataChannelStringWithSctpColonPort);
   sdp_with_data.append("a=max-message-size:12345\r\n");
-  MutateJsepSctpMaxMessageSize(desc_, "12345", &jdesc);
+  MutateJsepSctpMaxMessageSize(desc_, 12345, &jdesc);
   JsepSessionDescription jdesc_output(kDummyType);
 
   // Verify with DTLS/SCTP.
@@ -2937,29 +2958,13 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithCorruptedSctpDataChannels) {
   // No crash is a pass.
 }
 
-void MutateJsepSctpPort(JsepSessionDescription* jdesc,
-                        const SessionDescription& desc) {
-  // take our pre-built session description and change the SCTP port.
-  std::unique_ptr<cricket::SessionDescription> mutant = desc.Clone();
-  DataContentDescription* dcdesc =
-      mutant->GetContentDescriptionByName(kDataContentName)->as_data();
-  std::vector<cricket::DataCodec> codecs(dcdesc->codecs());
-  EXPECT_EQ(1U, codecs.size());
-  EXPECT_EQ(cricket::kGoogleSctpDataCodecPlType, codecs[0].id);
-  codecs[0].SetParam(cricket::kCodecParamPort, kUnusualSctpPort);
-  dcdesc->set_codecs(codecs);
-
-  ASSERT_TRUE(
-      jdesc->Initialize(std::move(mutant), kSessionId, kSessionVersion));
-}
-
 TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelAndUnusualPort) {
   bool use_sctpmap = true;
   AddSctpDataChannel(use_sctpmap);
 
   // First setup the expected JsepSessionDescription.
   JsepSessionDescription jdesc(kDummyType);
-  MutateJsepSctpPort(&jdesc, desc_);
+  MutateJsepSctpPort(&jdesc, desc_, kUnusualSctpPort);
 
   // Then get the deserialized JsepSessionDescription.
   std::string sdp_with_data = kSdpString;
@@ -2979,7 +2984,7 @@ TEST_F(WebRtcSdpTest,
   AddSctpDataChannel(use_sctpmap);
 
   JsepSessionDescription jdesc(kDummyType);
-  MutateJsepSctpPort(&jdesc, desc_);
+  MutateJsepSctpPort(&jdesc, desc_, kUnusualSctpPort);
 
   // We need to test the deserialized JsepSessionDescription from
   // kSdpSctpDataChannelStringWithSctpPort for
@@ -3015,7 +3020,7 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsAndBandwidth) {
   bool use_sctpmap = true;
   AddSctpDataChannel(use_sctpmap);
   JsepSessionDescription jdesc(kDummyType);
-  DataContentDescription* dcd = GetFirstDataContentDescription(&desc_);
+  SctpDataContentDescription* dcd = GetFirstSctpDataContentDescription(&desc_);
   dcd->set_bandwidth(100 * 1000);
   ASSERT_TRUE(jdesc.Initialize(desc_.Clone(), kSessionId, kSessionVersion));
 
