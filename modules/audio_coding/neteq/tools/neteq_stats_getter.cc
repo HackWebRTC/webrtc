@@ -57,16 +57,16 @@ void NetEqStatsGetter::AfterGetAudio(int64_t time_now_ms,
     last_stats_query_time_ms_ = time_now_ms;
   }
 
+  const auto voice_concealed_samples =
+      lifetime_stat.concealed_samples - lifetime_stat.silent_concealed_samples;
   if (current_concealment_event_ != lifetime_stat.concealment_events &&
-      voice_concealed_samples_until_last_event_ <
-          lifetime_stat.voice_concealed_samples) {
+      voice_concealed_samples_until_last_event_ < voice_concealed_samples) {
     if (last_event_end_time_ms_ > 0) {
       // Do not account for the first event to avoid start of the call
       // skewing.
       ConcealmentEvent concealment_event;
       uint64_t last_event_voice_concealed_samples =
-          lifetime_stat.voice_concealed_samples -
-          voice_concealed_samples_until_last_event_;
+          voice_concealed_samples - voice_concealed_samples_until_last_event_;
       RTC_CHECK_GT(last_event_voice_concealed_samples, 0);
       concealment_event.duration_ms = last_event_voice_concealed_samples /
                                       (audio_frame.sample_rate_hz_ / 1000);
@@ -74,12 +74,10 @@ void NetEqStatsGetter::AfterGetAudio(int64_t time_now_ms,
       concealment_event.time_from_previous_event_end_ms =
           time_now_ms - last_event_end_time_ms_;
       concealment_events_.emplace_back(concealment_event);
-      voice_concealed_samples_until_last_event_ =
-          lifetime_stat.voice_concealed_samples;
+      voice_concealed_samples_until_last_event_ = voice_concealed_samples;
     }
     last_event_end_time_ms_ = time_now_ms;
-    voice_concealed_samples_until_last_event_ =
-        lifetime_stat.voice_concealed_samples;
+    voice_concealed_samples_until_last_event_ = voice_concealed_samples;
     current_concealment_event_ = lifetime_stat.concealment_events;
   }
 

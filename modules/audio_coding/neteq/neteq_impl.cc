@@ -654,9 +654,13 @@ int NetEqImpl::InsertPacketInternal(const RTPHeader& rtp_header,
   }
 
   // Calculate the number of primary (non-FEC/RED) packets.
-  const int number_of_primary_packets = std::count_if(
+  const size_t number_of_primary_packets = std::count_if(
       parsed_packet_list.begin(), parsed_packet_list.end(),
       [](const Packet& in) { return in.priority.codec_level == 0; });
+  if (number_of_primary_packets < parsed_packet_list.size()) {
+    stats_->SecondaryPacketsReceived(parsed_packet_list.size() -
+                                     number_of_primary_packets);
+  }
 
   // Insert packets in buffer.
   const int ret = packet_buffer_->InsertPacketList(
@@ -763,7 +767,9 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
   expand_uma_logger_.UpdateSampleCounter(lifetime_stats.concealed_samples,
                                          fs_hz_);
   speech_expand_uma_logger_.UpdateSampleCounter(
-      lifetime_stats.voice_concealed_samples, fs_hz_);
+      lifetime_stats.concealed_samples -
+          lifetime_stats.silent_concealed_samples,
+      fs_hz_);
 
   // Check for muted state.
   if (enable_muted_state_ && expand_->Muted() && packet_buffer_->Empty()) {

@@ -71,8 +71,12 @@ struct NetEqLifetimeStatistics {
   uint64_t concealment_events = 0;
   uint64_t jitter_buffer_delay_ms = 0;
   uint64_t jitter_buffer_emitted_count = 0;
+  uint64_t inserted_samples_for_deceleration = 0;
+  uint64_t removed_samples_for_acceleration = 0;
+  uint64_t silent_concealed_samples = 0;
+  uint64_t fec_packets_received = 0;
+  uint64_t fec_packets_discarded = 0;
   // Below stats are not part of the spec.
-  uint64_t voice_concealed_samples = 0;
   uint64_t delayed_packet_outage_samples = 0;
   // This is sum of relative packet arrival delays of received packets so far.
   // Since end-to-end delay of a packet is difficult to measure and is not

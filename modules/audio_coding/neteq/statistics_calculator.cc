@@ -182,8 +182,8 @@ void StatisticsCalculator::ConcealedSamplesCorrection(int num_samples,
     // Store negative correction to subtract from future positive additions.
     // See also the function comment in the header file.
     concealed_samples_correction_ -= num_samples;
-    if (is_voice) {
-      voice_concealed_samples_correction_ -= num_samples;
+    if (!is_voice) {
+      silent_concealed_samples_correction_ -= num_samples;
     }
     return;
   }
@@ -193,22 +193,25 @@ void StatisticsCalculator::ConcealedSamplesCorrection(int num_samples,
   concealed_samples_correction_ -= canceled_out;
   lifetime_stats_.concealed_samples += num_samples - canceled_out;
 
-  if (is_voice) {
-    const size_t voice_canceled_out = std::min(
-        static_cast<size_t>(num_samples), voice_concealed_samples_correction_);
-    voice_concealed_samples_correction_ -= voice_canceled_out;
-    lifetime_stats_.voice_concealed_samples += num_samples - voice_canceled_out;
+  if (!is_voice) {
+    const size_t silent_canceled_out = std::min(
+        static_cast<size_t>(num_samples), silent_concealed_samples_correction_);
+    silent_concealed_samples_correction_ -= silent_canceled_out;
+    lifetime_stats_.silent_concealed_samples +=
+        num_samples - silent_canceled_out;
   }
 }
 
 void StatisticsCalculator::PreemptiveExpandedSamples(size_t num_samples) {
   preemptive_samples_ += num_samples;
   operations_and_state_.preemptive_samples += num_samples;
+  lifetime_stats_.inserted_samples_for_deceleration += num_samples;
 }
 
 void StatisticsCalculator::AcceleratedSamples(size_t num_samples) {
   accelerate_samples_ += num_samples;
   operations_and_state_.accelerate_samples += num_samples;
+  lifetime_stats_.removed_samples_for_acceleration += num_samples;
 }
 
 void StatisticsCalculator::AddZeros(size_t num_samples) {
@@ -221,6 +224,11 @@ void StatisticsCalculator::PacketsDiscarded(size_t num_packets) {
 
 void StatisticsCalculator::SecondaryPacketsDiscarded(size_t num_packets) {
   discarded_secondary_packets_ += num_packets;
+  lifetime_stats_.fec_packets_discarded += num_packets;
+}
+
+void StatisticsCalculator::SecondaryPacketsReceived(size_t num_packets) {
+  lifetime_stats_.fec_packets_received += num_packets;
 }
 
 void StatisticsCalculator::LostSamples(size_t num_samples) {

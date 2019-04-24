@@ -63,8 +63,11 @@ class StatisticsCalculator {
   // Reports that |num_packets| packets were discarded.
   virtual void PacketsDiscarded(size_t num_packets);
 
-  // Reports that |num_packets| packets samples were discarded.
-  virtual void SecondaryPacketsDiscarded(size_t num_samples);
+  // Reports that |num_packets| secondary (FEC) packets were discarded.
+  virtual void SecondaryPacketsDiscarded(size_t num_packets);
+
+  // Reports that |num_packets| secondary (FEC) packets were received.
+  virtual void SecondaryPacketsReceived(size_t num_packets);
 
   // Reports that |num_samples| were lost.
   void LostSamples(size_t num_samples);
@@ -191,7 +194,7 @@ class StatisticsCalculator {
   NetEqLifetimeStatistics lifetime_stats_;
   NetEqOperationsAndState operations_and_state_;
   size_t concealed_samples_correction_ = 0;
-  size_t voice_concealed_samples_correction_ = 0;
+  size_t silent_concealed_samples_correction_ = 0;
   size_t preemptive_samples_;
   size_t accelerate_samples_;
   size_t added_zero_samples_;

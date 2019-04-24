@@ -224,8 +224,10 @@ NetEqTest::SimulationStepResult NetEqTest::RunToNextGetAudio() {
             (out_frame.speech_type_ == AudioFrame::SpeechType::kPLCCNG);
         const bool cng = out_frame.speech_type_ == AudioFrame::SpeechType::kCNG;
         const bool voice_concealed =
-            lifetime_stats.voice_concealed_samples >
-            prev_lifetime_stats_.voice_concealed_samples;
+            (lifetime_stats.concealed_samples -
+             lifetime_stats.silent_concealed_samples) >
+            (prev_lifetime_stats_.concealed_samples -
+             prev_lifetime_stats_.silent_concealed_samples);
         *text_log_ << "GetAudio - wallclock: " << std::setw(5) << time_now_ms
                    << ", delta wc: " << std::setw(4)
                    << (input_->NextEventTime().value_or(time_now_ms) -
