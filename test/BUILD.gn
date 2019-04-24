@@ -656,6 +656,33 @@ rtc_source_set("fake_video_codecs") {
   ]
 }
 
+rtc_source_set("null_transport") {
+  testonly = true
+  sources = [
+    "null_transport.cc",
+    "null_transport.h",
+  ]
+  deps = [
+    "../api:transport_api",
+  ]
+}
+
+rtc_source_set("encoder_settings") {
+  testonly = true
+  sources = [
+    "encoder_settings.cc",
+    "encoder_settings.h",
+  ]
+  deps = [
+    "../api:scoped_refptr",
+    "../api/video_codecs:video_codecs_api",
+    "../call:rtp_interfaces",
+    "../call:video_stream_api",
+    "../rtc_base:checks",
+    "../rtc_base:refcount",
+  ]
+}
+
 rtc_source_set("test_common") {
   testonly = true
   sources = [
@@ -663,15 +690,11 @@ rtc_source_set("test_common") {
     "call_test.h",
     "drifting_clock.cc",
     "drifting_clock.h",
-    "encoder_settings.cc",
-    "encoder_settings.h",
     "fake_videorenderer.h",
     "layer_filtering_transport.cc",
     "layer_filtering_transport.h",
     "mock_transport.cc",
     "mock_transport.h",
-    "null_transport.cc",
-    "null_transport.h",
     "rtp_rtcp_observer.h",
     "video_decoder_proxy_factory.h",
     "video_encoder_proxy_factory.h",
@@ -692,6 +715,7 @@ rtc_source_set("test_common") {
 
   deps = [
     ":direct_transport",
+    ":encoder_settings",
     ":fake_video_codecs",
     ":fileutils",
     ":rtp_test_utils",
@@ -715,7 +739,6 @@ rtc_source_set("test_common") {
     "../call",
     "../call:call_interfaces",
     "../call:fake_network",
-    "../call:rtp_interfaces",
     "../call:rtp_sender",
     "../call:simulated_network",
     "../call:simulated_packet_receiver",
