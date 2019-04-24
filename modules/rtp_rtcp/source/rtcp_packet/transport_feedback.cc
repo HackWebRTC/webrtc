@@ -362,6 +362,18 @@ int64_t TransportFeedback::GetBaseTimeUs() const {
   return static_cast<int64_t>(base_time_ticks_) * kBaseScaleFactor;
 }
 
+int64_t TransportFeedback::GetBaseDeltaUs(int64_t prev_timestamp_us) const {
+  int64_t delta = GetBaseTimeUs() - prev_timestamp_us;
+
+  // Detect and compensate for wrap-arounds in base time.
+  if (std::abs(delta - kTimeWrapPeriodUs) < std::abs(delta)) {
+    delta -= kTimeWrapPeriodUs;  // Wrap backwards.
+  } else if (std::abs(delta + kTimeWrapPeriodUs) < std::abs(delta)) {
+    delta += kTimeWrapPeriodUs;  // Wrap forwards.
+  }
+  return delta;
+}
+
 // De-serialize packet.
 bool TransportFeedback::Parse(const CommonHeader& packet) {
   RTC_DCHECK_EQ(packet.type(), kPacketType);
