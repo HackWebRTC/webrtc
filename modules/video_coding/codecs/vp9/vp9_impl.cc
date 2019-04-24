@@ -1416,14 +1416,20 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
 
   TRACE_COUNTER1("webrtc", "EncodedFrameSize", encoded_image_.size());
   encoded_image_.SetTimestamp(input_image_->timestamp());
-
+  encoded_image_.capture_time_ms_ = input_image_->render_time_ms();
+  encoded_image_.rotation_ = input_image_->rotation();
+  encoded_image_.content_type_ = (codec_.mode == VideoCodecMode::kScreensharing)
+                                     ? VideoContentType::SCREENSHARE
+                                     : VideoContentType::UNSPECIFIED;
   encoded_image_._encodedHeight =
       pkt->data.frame.height[layer_id.spatial_layer_id];
   encoded_image_._encodedWidth =
       pkt->data.frame.width[layer_id.spatial_layer_id];
+  encoded_image_.timing_.flags = VideoSendTiming::kInvalid;
   int qp = -1;
   vpx_codec_control(encoder_, VP8E_GET_LAST_QUANTIZER, &qp);
   encoded_image_.qp_ = qp;
+  encoded_image_.SetColorSpace(input_image_->color_space());
 
   if (full_superframe_drop_) {
     const bool end_of_picture = encoded_image_.SpatialIndex().value_or(0) + 1 ==
@@ -1637,16 +1643,20 @@ int VP9DecoderImpl::Decode(const EncodedImage& input_image,
   vpx_codec_err_t vpx_ret =
       vpx_codec_control(decoder_, VPXD_GET_LAST_QUANTIZER, &qp);
   RTC_DCHECK_EQ(vpx_ret, VPX_CODEC_OK);
-  int ret = ReturnFrame(img, input_image.Timestamp(), qp);
+  int ret = ReturnFrame(img, input_image.Timestamp(), input_image.ntp_time_ms_,
+                        qp, input_image.ColorSpace());
   if (ret != 0) {
     return ret;
   }
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img,
-                                uint32_t timestamp,
-                                int qp) {
+int VP9DecoderImpl::ReturnFrame(
+    const vpx_image_t* img,
+    uint32_t timestamp,
+    int64_t ntp_time_ms,
+    int qp,
+    const webrtc::ColorSpace* explicit_color_space) {
   if (img == nullptr) {
     // Decoder OK and nullptr image => No show frame.
     return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
@@ -1690,9 +1700,16 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img,
 
   auto builder = VideoFrame::Builder()
                      .set_video_frame_buffer(img_wrapped_buffer)
+                     .set_timestamp_ms(0)
                      .set_timestamp_rtp(timestamp)
-                     .set_color_space(ExtractVP9ColorSpace(img->cs, img->range,
-                                                           img->bit_depth));
+                     .set_ntp_time_ms(ntp_time_ms)
+                     .set_rotation(webrtc::kVideoRotation_0);
+  if (explicit_color_space) {
+    builder.set_color_space(*explicit_color_space);
+  } else {
+    builder.set_color_space(
+        ExtractVP9ColorSpace(img->cs, img->range, img->bit_depth));
+  }
 
   VideoFrame decoded_image = builder.build();
 
