@@ -89,6 +89,9 @@ class RtpPacketHistory {
   std::unique_ptr<RtpPacketToSend> GetBestFittingPacket(
       size_t packet_size) const;
 
+  // Cull packets that have been acknowledged as received by the remote end.
+  void CullAcknowledgedPackets(rtc::ArrayView<const uint16_t> sequence_numbers);
+
  private:
   struct StoredPacket {
     StoredPacket();
@@ -133,6 +136,7 @@ class RtpPacketHistory {
 
   // Map from rtp sequence numbers to stored packet.
   std::map<uint16_t, StoredPacket> packet_history_ RTC_GUARDED_BY(lock_);
+  // Map from packet size to sequence number.
   std::map<size_t, uint16_t> packet_size_ RTC_GUARDED_BY(lock_);
 
   // The earliest packet in the history. This might not be the lowest sequence

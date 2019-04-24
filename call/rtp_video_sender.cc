@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "api/array_view.h"
 #include "api/transport/field_trial_based_config.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "modules/pacing/packet_router.h"
@@ -323,18 +324,14 @@ RtpVideoSender::RtpVideoSender(
 
   fec_controller_->SetProtectionCallback(this);
   // Signal congestion controller this object is ready for OnPacket* callbacks.
-  if (fec_controller_->UseLossVectorMask()) {
-    transport_->RegisterPacketFeedbackObserver(this);
-  }
+  transport_->RegisterPacketFeedbackObserver(this);
 }
 
 RtpVideoSender::~RtpVideoSender() {
   for (const RtpStreamSender& stream : rtp_streams_) {
     transport_->packet_router()->RemoveSendRtpModule(stream.rtp_rtcp.get());
   }
-  if (fec_controller_->UseLossVectorMask()) {
-    transport_->DeRegisterPacketFeedbackObserver(this);
-  }
+  transport_->DeRegisterPacketFeedbackObserver(this);
 }
 
 void RtpVideoSender::RegisterProcessThread(
@@ -567,6 +564,7 @@ void RtpVideoSender::DeliverRtcp(const uint8_t* packet, size_t length) {
 
 void RtpVideoSender::ConfigureSsrcs(const RtpConfig& rtp_config) {
   // Configure regular SSRCs.
+  ssrc_to_acknowledged_packets_observers_.clear();
   for (size_t i = 0; i < rtp_config.ssrcs.size(); ++i) {
     uint32_t ssrc = rtp_config.ssrcs[i];
     RtpRtcp* const rtp_rtcp = rtp_streams_[i].rtp_rtcp.get();
@@ -576,6 +574,12 @@ void RtpVideoSender::ConfigureSsrcs(const RtpConfig& rtp_config) {
     auto it = suspended_ssrcs_.find(ssrc);
     if (it != suspended_ssrcs_.end())
       rtp_rtcp->SetRtpState(it->second);
+
+    AcknowledgedPacketsObserver* receive_observer =
+        rtp_rtcp->GetAcknowledgedPacketsObserver();
+    if (receive_observer != nullptr) {
+      ssrc_to_acknowledged_packets_observers_[ssrc] = receive_observer;
+    }
   }
 
   // Set up RTX if available.
@@ -791,15 +795,41 @@ void RtpVideoSender::OnPacketAdded(uint32_t ssrc, uint16_t seq_num) {
 
 void RtpVideoSender::OnPacketFeedbackVector(
     const std::vector<PacketFeedback>& packet_feedback_vector) {
-  rtc::CritScope lock(&crit_);
-  // Lost feedbacks are not considered to be lost packets.
+  const bool use_loss_mask = fec_controller_->UseLossVectorMask();
+
+  std::vector<bool> loss_mask;
+  std::map<uint32_t, std::vector<uint16_t>> acked_packets;
   for (const PacketFeedback& packet : packet_feedback_vector) {
-    auto it = feedback_packet_seq_num_set_.find(packet.sequence_number);
-    if (it != feedback_packet_seq_num_set_.end()) {
-      const bool lost = packet.arrival_time_ms == PacketFeedback::kNotReceived;
-      loss_mask_vector_.push_back(lost);
-      feedback_packet_seq_num_set_.erase(it);
+    if (use_loss_mask) {
+      // Lost feedbacks are not considered to be lost packets.
+      auto it = feedback_packet_seq_num_set_.find(packet.sequence_number);
+      if (it != feedback_packet_seq_num_set_.end()) {
+        const bool lost =
+            packet.arrival_time_ms == PacketFeedback::kNotReceived;
+        loss_mask.push_back(lost);
+        feedback_packet_seq_num_set_.erase(it);
+      }
     }
+    if (packet.ssrc) {
+      if (ssrc_to_acknowledged_packets_observers_.find(*packet.ssrc) !=
+          ssrc_to_acknowledged_packets_observers_.end()) {
+        acked_packets[*packet.ssrc].push_back(packet.rtp_sequence_number);
+      }
+    }
+  }
+
+  if (use_loss_mask) {
+    rtc::CritScope cs(&crit_);
+    loss_mask_vector_.insert(loss_mask_vector_.end(), loss_mask.begin(),
+                             loss_mask.end());
+  }
+  for (const auto& kv : acked_packets) {
+    const uint32_t ssrc = kv.first;
+    rtc::ArrayView<const uint16_t> rtp_sequence_numbers(kv.second);
+    RTC_DCHECK(ssrc_to_acknowledged_packets_observers_.find(ssrc) !=
+               ssrc_to_acknowledged_packets_observers_.end());
+    ssrc_to_acknowledged_packets_observers_[ssrc]->OnPacketsAcknowledged(
+        rtp_sequence_numbers);
   }
 }
 
