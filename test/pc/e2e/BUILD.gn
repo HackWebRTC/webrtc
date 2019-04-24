@@ -312,6 +312,7 @@ if (rtc_include_tests) {
     deps = [
       ":default_audio_quality_analyzer",
       ":default_video_quality_analyzer",
+      ":network_quality_metrics_reporter",
       "../../../api:callfactory_api",
       "../../../api:create_network_emulation_manager",
       "../../../api:create_peerconnection_quality_test_fixture",
@@ -434,5 +435,20 @@ rtc_source_set("default_video_quality_analyzer") {
     "../../../rtc_base:rtc_numerics",
     "../../../system_wrappers",
     "//third_party/abseil-cpp/absl/memory",
+  ]
+}
+
+rtc_source_set("network_quality_metrics_reporter") {
+  visibility = [ "*" ]
+  testonly = true
+  sources = [
+    "network_quality_metrics_reporter.cc",
+    "network_quality_metrics_reporter.h",
+  ]
+  deps = [
+    "../..:perf_test",
+    "../../../api:network_emulation_manager_api",
+    "../../../api:peer_connection_quality_test_fixture_api",
+    "../../../rtc_base:rtc_event",
   ]
 }

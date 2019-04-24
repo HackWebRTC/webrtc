@@ -193,6 +193,20 @@ class PeerConnectionE2EQualityTestFixture {
     double video_encoder_bitrate_multiplier = 1.0;
   };
 
+  // Represent an entity that will report quality metrics after test.
+  class QualityMetricsReporter {
+   public:
+    virtual ~QualityMetricsReporter() = default;
+
+    // Invoked by framework after peer connection factory and peer connection
+    // itself will be created but before offer/answer exchange will be started.
+    virtual void Start(absl::string_view test_case_name) = 0;
+
+    // Invoked by framework after call is ended and peer connection factory and
+    // peer connection are destroyed.
+    virtual void StopAndReportResults() = 0;
+  };
+
   virtual ~PeerConnectionE2EQualityTestFixture() = default;
 
   // Add activity that will be executed on the best effort at least after
@@ -208,6 +222,10 @@ class PeerConnectionE2EQualityTestFixture {
   virtual void ExecuteEvery(TimeDelta initial_delay_since_start,
                             TimeDelta interval,
                             std::function<void(TimeDelta)> func) = 0;
+
+  // Add stats reporter entity to observe the test.
+  virtual void AddQualityMetricsReporter(
+      std::unique_ptr<QualityMetricsReporter> quality_metrics_reporter) = 0;
 
   // Add a new peer to the call and return an object through which caller
   // can configure peer's behavior.
