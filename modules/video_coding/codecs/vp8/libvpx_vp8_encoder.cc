@@ -887,6 +887,21 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
     framerate_controller_.AddFrame(frame.timestamp() / kRtpTicksPerMs);
   }
 
+  vpx_enc_frame_flags_t flags[kMaxSimulcastStreams];
+  Vp8FrameConfig tl_configs[kMaxSimulcastStreams];
+  for (size_t i = 0; i < encoders_.size(); ++i) {
+    tl_configs[i] =
+        frame_buffer_controller_->NextFrameConfig(i, frame.timestamp());
+    if (tl_configs[i].drop_frame) {
+      if (send_key_frame) {
+        continue;
+      }
+      // Drop this frame.
+      return WEBRTC_VIDEO_CODEC_OK;
+    }
+    flags[i] = EncodeFlags(tl_configs[i]);
+  }
+
   rtc::scoped_refptr<I420BufferInterface> input_image =
       frame.video_frame_buffer()->ToI420();
   // Since we are extracting raw pointers from |input_image| to
@@ -923,20 +938,6 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
         raw_images_[i].d_h, libyuv::kFilterBilinear);
   }
 
-  vpx_enc_frame_flags_t flags[kMaxSimulcastStreams];
-  Vp8FrameConfig tl_configs[kMaxSimulcastStreams];
-  for (size_t i = 0; i < encoders_.size(); ++i) {
-    tl_configs[i] =
-        frame_buffer_controller_->NextFrameConfig(i, frame.timestamp());
-    if (tl_configs[i].drop_frame) {
-      if (send_key_frame) {
-        continue;
-      }
-      // Drop this frame.
-      return WEBRTC_VIDEO_CODEC_OK;
-    }
-    flags[i] = EncodeFlags(tl_configs[i]);
-  }
   if (send_key_frame) {
     // Adapt the size of the key frame when in screenshare with 1 temporal
     // layer.
