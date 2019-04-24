@@ -922,6 +922,16 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
   raw_images_[0].stride[VPX_PLANE_U] = input_image->StrideU();
   raw_images_[0].stride[VPX_PLANE_V] = input_image->StrideV();
 
+  struct CleanUpOnExit {
+    explicit CleanUpOnExit(vpx_image_t& raw_image) : raw_image_(raw_image) {}
+    ~CleanUpOnExit() {
+      raw_image_.planes[VPX_PLANE_Y] = nullptr;
+      raw_image_.planes[VPX_PLANE_U] = nullptr;
+      raw_image_.planes[VPX_PLANE_V] = nullptr;
+    }
+    vpx_image_t& raw_image_;
+  } clean_up_on_exit(raw_images_[0]);
+
   for (size_t i = 1; i < encoders_.size(); ++i) {
     // Scale the image down a number of times by downsampling factor
     libyuv::I420Scale(
