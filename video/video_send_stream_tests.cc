@@ -2345,9 +2345,8 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
       return 0;
     }
 
-    int32_t SetRates(uint32_t newBitRate, uint32_t frameRate) override {
+    void SetRates(const RateControlParameters& parameters) override {
       EXPECT_TRUE(IsReadyForEncode());
-      return 0;
     }
 
     void OnVideoStreamsCreated(
