@@ -309,25 +309,7 @@ class TransportFeedbackObserver {
   TransportFeedbackObserver() {}
   virtual ~TransportFeedbackObserver() {}
 
-  // TODO(webrtc:8975): Remove when downstream projects have been updated.
-  virtual void AddPacket(uint32_t ssrc,
-                         uint16_t sequence_number,  // Transport-wide.
-                         size_t length,
-                         const PacedPacketInfo& pacing_info) {
-    RtpPacketSendInfo packet_info;
-    packet_info.ssrc = ssrc;
-    packet_info.transport_sequence_number = sequence_number;
-    packet_info.length = length;
-    packet_info.pacing_info = pacing_info;
-    OnAddPacket(packet_info);
-  }
-
-  virtual void OnAddPacket(const RtpPacketSendInfo& packet_info) {
-    // TODO(webrtc:8975): Remove when downstream projects have been updated.
-    AddPacket(packet_info.ssrc, packet_info.transport_sequence_number,
-              packet_info.length, packet_info.pacing_info);
-  }
-
+  virtual void OnAddPacket(const RtpPacketSendInfo& packet_info) = 0;
   virtual void OnTransportFeedback(const rtcp::TransportFeedback& feedback) = 0;
 };
 

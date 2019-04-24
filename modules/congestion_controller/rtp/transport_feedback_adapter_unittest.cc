@@ -404,8 +404,12 @@ TEST_F(TransportFeedbackAdapterTest, IgnoreDuplicatePacketSentCalls) {
   const PacketFeedback packet(100, 200, 0, 1500, kPacingInfo0);
 
   // Add a packet and then mark it as sent.
-  adapter_->AddPacket(kSsrc, packet.sequence_number, packet.payload_size,
-                      packet.pacing_info,
+  RtpPacketSendInfo packet_info;
+  packet_info.ssrc = kSsrc;
+  packet_info.transport_sequence_number = packet.sequence_number;
+  packet_info.length = packet.payload_size;
+  packet_info.pacing_info = packet.pacing_info;
+  adapter_->AddPacket(packet_info, 0u,
                       Timestamp::ms(clock_.TimeInMilliseconds()));
   absl::optional<SentPacket> sent_packet =
       adapter_->ProcessSentPacket(rtc::SentPacket(
@@ -430,8 +434,12 @@ TEST_F(TransportFeedbackAdapterTest, AllowDuplicatePacketSentCallsWithTrial) {
   const PacketFeedback packet(100, 200, 0, 1500, kPacingInfo0);
 
   // Add a packet and then mark it as sent.
-  adapter_->AddPacket(kSsrc, packet.sequence_number, packet.payload_size,
-                      packet.pacing_info,
+  RtpPacketSendInfo packet_info;
+  packet_info.ssrc = kSsrc;
+  packet_info.transport_sequence_number = packet.sequence_number;
+  packet_info.length = packet.payload_size;
+  packet_info.pacing_info = packet.pacing_info;
+  adapter_->AddPacket(packet_info, 0u,
                       Timestamp::ms(clock_.TimeInMilliseconds()));
   absl::optional<SentPacket> sent_packet =
       adapter_->ProcessSentPacket(rtc::SentPacket(

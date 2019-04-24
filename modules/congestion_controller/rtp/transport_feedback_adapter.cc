@@ -78,19 +78,6 @@ void TransportFeedbackAdapter::DeRegisterPacketFeedbackObserver(
   observers_.erase(it);
 }
 
-void TransportFeedbackAdapter::AddPacket(uint32_t ssrc,
-                                         uint16_t sequence_number,
-                                         size_t length,
-                                         const PacedPacketInfo& pacing_info,
-                                         Timestamp creation_time) {
-  RtpPacketSendInfo packet_info;
-  packet_info.ssrc = ssrc;
-  packet_info.transport_sequence_number = sequence_number;
-  packet_info.length = length;
-  packet_info.pacing_info = pacing_info;
-  AddPacket(packet_info, 0u, creation_time);
-}
-
 void TransportFeedbackAdapter::AddPacket(const RtpPacketSendInfo& packet_info,
                                          size_t overhead_bytes,
                                          Timestamp creation_time) {
