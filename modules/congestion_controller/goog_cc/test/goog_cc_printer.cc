@@ -58,28 +58,14 @@ NetworkControlUpdate GoogCcStatePrinter::GetState(Timestamp at_time) const {
   return controller_->GetNetworkState(at_time);
 }
 
-GoogCcDebugFactory::GoogCcDebugFactory(RtcEventLog* event_log,
-                                       GoogCcStatePrinter* printer)
-    : GoogCcNetworkControllerFactory(event_log), printer_(printer) {}
+GoogCcDebugFactory::GoogCcDebugFactory(GoogCcStatePrinter* printer)
+    : GoogCcNetworkControllerFactory(GoogCcFactoryConfig()),
+      printer_(printer) {}
 
 std::unique_ptr<NetworkControllerInterface> GoogCcDebugFactory::Create(
     NetworkControllerConfig config) {
   RTC_CHECK(controller_ == nullptr);
   auto controller = GoogCcNetworkControllerFactory::Create(config);
-  controller_ = static_cast<GoogCcNetworkController*>(controller.get());
-  printer_->Attach(controller_);
-  return controller;
-}
-
-GoogCcFeedbackDebugFactory::GoogCcFeedbackDebugFactory(
-    RtcEventLog* event_log,
-    GoogCcStatePrinter* printer)
-    : GoogCcFeedbackNetworkControllerFactory(event_log), printer_(printer) {}
-
-std::unique_ptr<NetworkControllerInterface> GoogCcFeedbackDebugFactory::Create(
-    NetworkControllerConfig config) {
-  RTC_CHECK(controller_ == nullptr);
-  auto controller = GoogCcFeedbackNetworkControllerFactory::Create(config);
   controller_ = static_cast<GoogCcNetworkController*>(controller.get());
   printer_->Attach(controller_);
   return controller;

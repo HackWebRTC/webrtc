@@ -148,8 +148,6 @@ TEST_P(BbrScenarioTest, ReceivesVideo) {
   Scenario s("bbr_test_gen/bbr__" + conf_.Name());
   CallClientConfig call_config;
   if (conf_.tuning.use_bbr) {
-    call_config.transport.cc =
-        TransportControllerConfig::CongestionController::kInjected;
     call_config.transport.cc_factory = &bbr_factory;
   }
   call_config.transport.rates.min_rate = DataRate::kbps(30);

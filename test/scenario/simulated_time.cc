@@ -22,6 +22,7 @@
 namespace webrtc {
 namespace test {
 namespace {
+constexpr int kEventLogOutputIntervalMs = 5000;
 struct RawFeedbackReportPacket {
   static constexpr int MAX_FEEDBACKS = 10;
   struct Feedback {
@@ -33,6 +34,20 @@ struct RawFeedbackReportPacket {
   int64_t first_recv_time_ms;
   Feedback feedbacks[MAX_FEEDBACKS - 1];
 };
+
+std::unique_ptr<RtcEventLog> CreateEventLog(
+    TaskQueueFactory* task_queue_factory,
+    LogWriterFactoryInterface* log_writer_factory) {
+  if (!log_writer_factory) {
+    return RtcEventLog::CreateNull();
+  }
+  auto event_log = RtcEventLog::Create(RtcEventLog::EncodingType::NewFormat,
+                                       task_queue_factory);
+  bool success = event_log->StartLogging(log_writer_factory->Create(".rtc.dat"),
+                                         kEventLogOutputIntervalMs);
+  RTC_CHECK(success);
+  return event_log;
+}
 }  // namespace
 
 PacketStream::PacketStream(PacketStreamConfig config) : config_(config) {}
@@ -255,9 +270,9 @@ SimulatedTimeClient::SimulatedTimeClient(
     rtc::IPAddress return_receiver_ip,
     Timestamp at_time)
     : log_writer_factory_(std::move(log_writer_factory)),
-      network_controller_factory_(time_controller,
-                                  log_writer_factory_.get(),
-                                  config.transport),
+      event_log_(CreateEventLog(time_controller->GetTaskQueueFactory(),
+                                log_writer_factory_.get())),
+      network_controller_factory_(log_writer_factory_.get(), config.transport),
       send_link_(send_link),
       return_link_(return_link),
       sender_(send_link.front(), send_receiver_ip),
@@ -270,6 +285,7 @@ SimulatedTimeClient::SimulatedTimeClient(
   initial_config.constraints = current_contraints_;
   initial_config.stream_based_config.max_padding_rate =
       config.transport.rates.max_padding_rate;
+  initial_config.event_log = event_log_.get();
   congestion_controller_ = network_controller_factory_.Create(initial_config);
   for (auto& stream_config : stream_configs)
     packet_streams_.emplace_back(new PacketStream(stream_config));

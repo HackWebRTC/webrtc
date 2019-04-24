@@ -49,11 +49,6 @@ struct TransportControllerConfig {
     DataRate start_rate = DataRate::kbps(300);
     DataRate max_padding_rate = DataRate::Zero();
   } rates;
-  enum CongestionController {
-    kGoogCc,
-    kGoogCcFeedback,
-    kInjected
-  } cc = kGoogCc;
   NetworkControllerFactoryInterface* cc_factory = nullptr;
   TimeDelta state_log_interval = TimeDelta::ms(100);
 };

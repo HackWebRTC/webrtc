@@ -119,8 +119,6 @@ TEST_F(BbrNetworkControllerTest, UpdatesTargetSendRate) {
   BbrNetworkControllerFactory factory;
   Scenario s("bbr_unit/updates_rate", false);
   CallClientConfig config;
-  config.transport.cc =
-      TransportControllerConfig::CongestionController::kInjected;
   config.transport.cc_factory = &factory;
   config.transport.rates.min_rate = DataRate::kbps(10);
   config.transport.rates.max_rate = DataRate::kbps(1500);

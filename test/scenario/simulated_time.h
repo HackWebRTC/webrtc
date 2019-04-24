@@ -148,6 +148,7 @@ class SimulatedTimeClient : EmulatedNetworkReceiverInterface {
  private:
   friend class Scenario;
   std::unique_ptr<LogWriterFactoryInterface> log_writer_factory_;
+  std::unique_ptr<RtcEventLog> event_log_;
   LoggingNetworkControllerFactory network_controller_factory_;
   std::unique_ptr<NetworkControllerInterface> congestion_controller_;
   std::vector<EmulatedNetworkNode*> send_link_;

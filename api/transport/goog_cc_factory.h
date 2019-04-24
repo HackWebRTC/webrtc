@@ -43,9 +43,10 @@ class GoogCcNetworkControllerFactory
   GoogCcFactoryConfig factory_config_;
 };
 
+// Deprecated, use GoogCcFactoryConfig to enable feedback only mode instead.
 // Factory to create packet feedback only GoogCC, this can be used for
 // connections providing packet receive time feedback but no other reports.
-class GoogCcFeedbackNetworkControllerFactory
+class RTC_DEPRECATED GoogCcFeedbackNetworkControllerFactory
     : public GoogCcNetworkControllerFactory {
  public:
   explicit GoogCcFeedbackNetworkControllerFactory(RtcEventLog* event_log);

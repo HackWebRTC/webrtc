@@ -36,8 +36,7 @@ namespace test {
 class LoggingNetworkControllerFactory
     : public NetworkControllerFactoryInterface {
  public:
-  LoggingNetworkControllerFactory(TimeController* time_controller,
-                                  LogWriterFactoryInterface* log_writer_factory,
+  LoggingNetworkControllerFactory(LogWriterFactoryInterface* log_writer_factory,
                                   TransportControllerConfig config);
   RTC_DISALLOW_COPY_AND_ASSIGN(LoggingNetworkControllerFactory);
   ~LoggingNetworkControllerFactory();
@@ -46,11 +45,8 @@ class LoggingNetworkControllerFactory
   TimeDelta GetProcessInterval() const override;
   // TODO(srte): Consider using the Columnprinter interface for this.
   void LogCongestionControllerStats(Timestamp at_time);
-  RtcEventLog* GetEventLog() const;
 
  private:
-  TimeController* time_controller_;
-  std::unique_ptr<RtcEventLog> event_log_;
   std::unique_ptr<NetworkControllerFactoryInterface> owned_cc_factory_;
   NetworkControllerFactoryInterface* cc_factory_ = nullptr;
   std::unique_ptr<ControlStatePrinter> cc_printer_;
@@ -103,6 +99,7 @@ class CallClient : public EmulatedNetworkReceiverInterface {
   TimeController* const time_controller_;
   Clock* clock_;
   const std::unique_ptr<LogWriterFactoryInterface> log_writer_factory_;
+  std::unique_ptr<RtcEventLog> event_log_;
   LoggingNetworkControllerFactory network_controller_factory_;
   CallClientFakeAudio fake_audio_setup_;
   std::unique_ptr<Call> call_;
