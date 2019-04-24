@@ -299,10 +299,14 @@ EncodedFrame* FrameBuffer::GetNextFrame() {
     }
 
     float rtt_mult = protection_mode_ == kProtectionNackFEC ? 0.0 : 1.0;
+    float jitter_est_cap_ms = 300.0;
     if (RttMultExperiment::RttMultEnabled()) {
       rtt_mult = RttMultExperiment::GetRttMultValue();
+      // TODO(mhoro): add RttMultExperiment::GetJitterEstCapValue();
+      jitter_est_cap_ms = 300.0;
     }
-    timing_->SetJitterDelay(jitter_estimator_->GetJitterEstimate(rtt_mult));
+    timing_->SetJitterDelay(
+        jitter_estimator_->GetJitterEstimate(rtt_mult, jitter_est_cap_ms));
     timing_->UpdateCurrentDelay(render_time_ms, now_ms);
   } else {
     if (RttMultExperiment::RttMultEnabled() || add_rtt_to_playout_delay_)
