@@ -272,6 +272,7 @@ if (!build_with_chromium) {
 
   if (rtc_enable_protobuf) {
     proto_library("chart_proto") {
+      visibility = [ "*" ]
       sources = [
         "event_log_visualizer/proto/chart.proto",
         "event_log_visualizer/proto/chart_enums.proto",
