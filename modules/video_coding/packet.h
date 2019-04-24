@@ -39,7 +39,6 @@ class VCMPacket {
             size_t size,
             const RTPHeader& rtp_header,
             const RTPVideoHeader& video_header,
-            VideoFrameType frame_type,
             int64_t ntp_time_ms);
 
   ~VCMPacket();
@@ -64,8 +63,6 @@ class VCMPacket {
   size_t sizeBytes;
   bool markerBit;
   int timesNacked;
-
-  VideoFrameType frameType;
 
   VCMNaluCompleteness completeNALU;  // Default is kNaluIncomplete.
   bool insertStartCode;  // True if a start code should be inserted before this

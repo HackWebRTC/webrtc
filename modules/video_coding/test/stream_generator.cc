@@ -59,7 +59,7 @@ VCMPacket StreamGenerator::GeneratePacket(uint16_t sequence_number,
   VCMPacket packet;
   packet.seqNum = sequence_number;
   packet.timestamp = timestamp;
-  packet.frameType = type;
+  packet.video_header.frame_type = type;
   packet.video_header.is_first_packet_in_frame = first_packet;
   packet.markerBit = marker_bit;
   packet.sizeBytes = size;

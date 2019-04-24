@@ -23,7 +23,7 @@ class TestSessionInfo : public ::testing::Test {
     memset(packet_buffer_, 0, sizeof(packet_buffer_));
     memset(frame_buffer_, 0, sizeof(frame_buffer_));
     session_.Reset();
-    packet_.frameType = VideoFrameType::kVideoFrameDelta;
+    packet_.video_header.frame_type = VideoFrameType::kVideoFrameDelta;
     packet_.sizeBytes = packet_buffer_size();
     packet_.dataPtr = packet_buffer_;
     packet_.seqNum = 0;
@@ -116,7 +116,7 @@ TEST_F(TestSessionInfo, TestSimpleAPIs) {
   packet_.video_header.is_first_packet_in_frame = true;
   packet_.seqNum = 0xFFFE;
   packet_.sizeBytes = packet_buffer_size();
-  packet_.frameType = VideoFrameType::kVideoFrameKey;
+  packet_.video_header.frame_type = VideoFrameType::kVideoFrameKey;
   FillPacket(0);
   EXPECT_EQ(packet_buffer_size(), static_cast<size_t>(session_.InsertPacket(
                                       packet_, frame_buffer_, frame_data)));
@@ -138,7 +138,7 @@ TEST_F(TestSessionInfo, TestSimpleAPIs) {
   packet_.markerBit = true;
   packet_.seqNum = 2;
   packet_.sizeBytes = 0;
-  packet_.frameType = VideoFrameType::kEmptyFrame;
+  packet_.video_header.frame_type = VideoFrameType::kEmptyFrame;
   EXPECT_EQ(0, session_.InsertPacket(packet_, frame_buffer_, frame_data));
   EXPECT_EQ(packet_.seqNum, session_.HighSequenceNumber());
 }
@@ -309,7 +309,7 @@ TEST_F(TestSessionInfo, OutOfBoundsOutOfOrder) {
 TEST_F(TestNalUnits, OnlyReceivedEmptyPacket) {
   packet_.video_header.is_first_packet_in_frame = false;
   packet_.completeNALU = kNaluComplete;
-  packet_.frameType = VideoFrameType::kEmptyFrame;
+  packet_.video_header.frame_type = VideoFrameType::kEmptyFrame;
   packet_.sizeBytes = 0;
   packet_.seqNum = 0;
   packet_.markerBit = false;

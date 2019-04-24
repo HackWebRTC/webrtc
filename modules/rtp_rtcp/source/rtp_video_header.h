@@ -19,6 +19,7 @@
 #include "api/video/video_codec_type.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_frame_marking.h"
+#include "api/video/video_frame_type.h"
 #include "api/video/video_rotation.h"
 #include "api/video/video_timing.h"
 #include "common_types.h"  // NOLINT(build/include)
@@ -53,6 +54,7 @@ struct RTPVideoHeader {
 
   absl::optional<GenericDescriptorInfo> generic;
 
+  VideoFrameType frame_type = VideoFrameType::kEmptyFrame;
   uint16_t width = 0;
   uint16_t height = 0;
   VideoRotation rotation = VideoRotation::kVideoRotation_0;

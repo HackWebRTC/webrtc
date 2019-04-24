@@ -122,7 +122,7 @@ class PictureIdObserver : public test::RtpRtcpObserver {
         break;
     }
 
-    parsed->frame_type = parsed_payload.frame_type;
+    parsed->frame_type = parsed_payload.video_header().frame_type;
     return true;
   }
 

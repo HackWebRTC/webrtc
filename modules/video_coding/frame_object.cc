@@ -38,7 +38,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   RTC_CHECK(first_packet);
 
   // EncodedFrame members
-  frame_type_ = first_packet->frameType;
+  frame_type_ = first_packet->video_header.frame_type;
   codec_type_ = first_packet->codec();
 
   // TODO(philipel): Remove when encoded image is replaced by EncodedFrame.
@@ -48,7 +48,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   _payloadType = first_packet->payloadType;
   SetTimestamp(first_packet->timestamp);
   ntp_time_ms_ = first_packet->ntp_time_ms_;
-  _frameType = first_packet->frameType;
+  _frameType = first_packet->video_header.frame_type;
 
   // Setting frame's playout delays to the same values
   // as of the first packet's.

@@ -426,7 +426,7 @@ bool VCMSessionInfo::HaveLastPacket() const {
 int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
                                  uint8_t* frame_buffer,
                                  const FrameData& frame_data) {
-  if (packet.frameType == VideoFrameType::kEmptyFrame) {
+  if (packet.video_header.frame_type == VideoFrameType::kEmptyFrame) {
     // Update sequence number of an empty packet.
     // Only media packets are inserted into the packet list.
     InformOfEmptyPacket(packet.seqNum);
@@ -451,7 +451,7 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
     return -2;
 
   if (packet.codec() == kVideoCodecH264) {
-    frame_type_ = packet.frameType;
+    frame_type_ = packet.video_header.frame_type;
     if (packet.is_first_packet_in_frame() &&
         (first_packet_seq_num_ == -1 ||
          IsNewerSequenceNumber(first_packet_seq_num_, packet.seqNum))) {
@@ -470,7 +470,7 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
     // Should only be set for one packet per session.
     if (packet.is_first_packet_in_frame() && first_packet_seq_num_ == -1) {
       // The first packet in a frame signals the frame type.
-      frame_type_ = packet.frameType;
+      frame_type_ = packet.video_header.frame_type;
       // Store the sequence number for the first packet.
       first_packet_seq_num_ = static_cast<int>(packet.seqNum);
     } else if (first_packet_seq_num_ != -1 &&
@@ -480,10 +480,10 @@ int VCMSessionInfo::InsertPacket(const VCMPacket& packet,
              "of frame boundaries";
       return -3;
     } else if (frame_type_ == VideoFrameType::kEmptyFrame &&
-               packet.frameType != VideoFrameType::kEmptyFrame) {
+               packet.video_header.frame_type != VideoFrameType::kEmptyFrame) {
       // Update the frame type with the type of the first media packet.
       // TODO(mikhal): Can this trigger?
-      frame_type_ = packet.frameType;
+      frame_type_ = packet.video_header.frame_type;
     }
 
     // Track the marker bit, should only be set for one packet per session.

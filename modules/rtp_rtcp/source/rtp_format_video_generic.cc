@@ -103,7 +103,7 @@ bool RtpDepacketizerGeneric::Parse(ParsedPayload* parsed_payload,
   uint8_t generic_header = *payload_data++;
   --payload_data_length;
 
-  parsed_payload->frame_type =
+  parsed_payload->video_header().frame_type =
       ((generic_header & RtpFormatVideoGeneric::kKeyFrameBit) != 0)
           ? VideoFrameType::kVideoFrameKey
           : VideoFrameType::kVideoFrameDelta;

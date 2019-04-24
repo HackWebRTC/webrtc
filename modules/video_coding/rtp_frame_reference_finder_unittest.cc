@@ -82,8 +82,9 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     VCMPacket packet;
     packet.video_header.codec = kVideoCodecGeneric;
     packet.seqNum = seq_num_start;
-    packet.frameType = keyframe ? VideoFrameType::kVideoFrameKey
-                                : VideoFrameType::kVideoFrameDelta;
+    packet.video_header.frame_type = keyframe
+                                         ? VideoFrameType::kVideoFrameKey
+                                         : VideoFrameType::kVideoFrameDelta;
     ref_packet_buffer_->InsertPacket(&packet);
 
     packet.seqNum = seq_num_end;
@@ -107,8 +108,9 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     packet.seqNum = seq_num_start;
     packet.video_header.is_last_packet_in_frame =
         (seq_num_start == seq_num_end);
-    packet.frameType = keyframe ? VideoFrameType::kVideoFrameKey
-                                : VideoFrameType::kVideoFrameDelta;
+    packet.video_header.frame_type = keyframe
+                                         ? VideoFrameType::kVideoFrameKey
+                                         : VideoFrameType::kVideoFrameDelta;
     auto& vp8_header =
         packet.video_header.video_type_header.emplace<RTPVideoHeaderVP8>();
     vp8_header.pictureId = pid % (1 << 15);
@@ -146,8 +148,9 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     packet.seqNum = seq_num_start;
     packet.video_header.is_last_packet_in_frame =
         (seq_num_start == seq_num_end);
-    packet.frameType = keyframe ? VideoFrameType::kVideoFrameKey
-                                : VideoFrameType::kVideoFrameDelta;
+    packet.video_header.frame_type = keyframe
+                                         ? VideoFrameType::kVideoFrameKey
+                                         : VideoFrameType::kVideoFrameDelta;
     vp9_header.flexible_mode = false;
     vp9_header.picture_id = pid % (1 << 15);
     vp9_header.temporal_idx = tid;
@@ -189,8 +192,9 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     packet.seqNum = seq_num_start;
     packet.video_header.is_last_packet_in_frame =
         (seq_num_start == seq_num_end);
-    packet.frameType = keyframe ? VideoFrameType::kVideoFrameKey
-                                : VideoFrameType::kVideoFrameDelta;
+    packet.video_header.frame_type = keyframe
+                                         ? VideoFrameType::kVideoFrameKey
+                                         : VideoFrameType::kVideoFrameDelta;
     vp9_header.inter_layer_predicted = inter;
     vp9_header.flexible_mode = true;
     vp9_header.picture_id = pid % (1 << 15);

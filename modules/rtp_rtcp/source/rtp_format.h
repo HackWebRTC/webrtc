@@ -70,14 +70,13 @@ class RtpDepacketizer {
     // TODO(bugs.webrtc.org/10397): These are temporary accessors, to enable
     // move of the frame_type member to inside RTPVideoHeader, without breaking
     // downstream code.
-    VideoFrameType FrameType() const { return frame_type; }
-    void SetFrameType(VideoFrameType type) { frame_type = type; }
+    VideoFrameType FrameType() const { return video_header().frame_type; }
+    void SetFrameType(VideoFrameType type) { video_header().frame_type = type; }
 
     RTPVideoHeader video;
 
     const uint8_t* payload;
     size_t payload_length;
-    VideoFrameType frame_type;
   };
 
   static RtpDepacketizer* Create(VideoCodecType type);

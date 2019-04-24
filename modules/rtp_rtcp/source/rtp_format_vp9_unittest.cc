@@ -749,7 +749,7 @@ TEST_F(RtpDepacketizerVp9Test, ParseFirstPacketInKeyFrame) {
 
   RtpDepacketizer::ParsedPayload parsed;
   ASSERT_TRUE(depacketizer_->Parse(&parsed, packet, sizeof(packet)));
-  EXPECT_EQ(VideoFrameType::kVideoFrameKey, parsed.frame_type);
+  EXPECT_EQ(VideoFrameType::kVideoFrameKey, parsed.video_header().frame_type);
   EXPECT_TRUE(parsed.video_header().is_first_packet_in_frame);
 }
 
@@ -759,7 +759,7 @@ TEST_F(RtpDepacketizerVp9Test, ParseLastPacketInDeltaFrame) {
 
   RtpDepacketizer::ParsedPayload parsed;
   ASSERT_TRUE(depacketizer_->Parse(&parsed, packet, sizeof(packet)));
-  EXPECT_EQ(VideoFrameType::kVideoFrameDelta, parsed.frame_type);
+  EXPECT_EQ(VideoFrameType::kVideoFrameDelta, parsed.video_header().frame_type);
   EXPECT_FALSE(parsed.video_header().is_first_packet_in_frame);
 }
 
