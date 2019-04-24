@@ -235,6 +235,18 @@ bool IPIsPrivateNetwork(const IPAddress& ip) {
   return false;
 }
 
+static bool IPIsSharedNetworkV4(const IPAddress& ip) {
+  uint32_t ip_in_host_order = ip.v4AddressAsHostOrderInteger();
+  return (ip_in_host_order >> 22) == ((100 << 2) | 1);
+}
+
+bool IPIsSharedNetwork(const IPAddress& ip) {
+  if (ip.family() == AF_INET) {
+    return IPIsSharedNetworkV4(ip);
+  }
+  return false;
+}
+
 in_addr ExtractMappedAddress(const in6_addr& in6) {
   in_addr ipv4;
   ::memcpy(&ipv4.s_addr, &in6.s6_addr[12], sizeof(ipv4.s_addr));
@@ -319,7 +331,8 @@ bool IPIsLoopback(const IPAddress& ip) {
 }
 
 bool IPIsPrivate(const IPAddress& ip) {
-  return IPIsLinkLocal(ip) || IPIsLoopback(ip) || IPIsPrivateNetwork(ip);
+  return IPIsLinkLocal(ip) || IPIsLoopback(ip) || IPIsPrivateNetwork(ip) ||
+         IPIsSharedNetwork(ip);
 }
 
 bool IPIsUnspec(const IPAddress& ip) {
@@ -407,7 +420,9 @@ int CountIPMaskBits(IPAddress mask) {
       bits = (i * 32);
       break;
     }
-    default: { return 0; }
+    default: {
+      return 0;
+    }
   }
   if (word_to_count == 0) {
     return bits;

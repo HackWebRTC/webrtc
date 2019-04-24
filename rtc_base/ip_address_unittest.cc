@@ -18,6 +18,7 @@ static const unsigned int kIPv4AddrSize = 4;
 static const unsigned int kIPv6AddrSize = 16;
 static const unsigned int kIPv4RFC1918Addr = 0xC0A80701;
 static const unsigned int kIPv4PublicAddr = 0x01020304;
+static const unsigned int kIPv4RFC6598Addr = 0x64410801;
 static const unsigned int kIPv4LinkLocalAddr = 0xA9FE10C1;  // 169.254.16.193
 static const in6_addr kIPv6LinkLocalAddr = {
     {{0xfe, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xbe, 0x30, 0x5b, 0xff,
@@ -41,6 +42,7 @@ static const in6_addr kIPv4MappedPublicAddr = {
 static const std::string kIPv4AnyAddrString = "0.0.0.0";
 static const std::string kIPv4LoopbackAddrString = "127.0.0.1";
 static const std::string kIPv4RFC1918AddrString = "192.168.7.1";
+static const std::string kIPv4RFC6598AddrString = "100.65.8.1";
 static const std::string kIPv4PublicAddrString = "1.2.3.4";
 static const std::string kIPv4PublicAddrAnonymizedString = "1.2.3.x";
 static const std::string kIPv6AnyAddrString = "::";
@@ -179,6 +181,7 @@ TEST(IPAddressTest, TestInAddrCtor) {
   addr = IPAddress(v4addr);
   EXPECT_FALSE(IPIsAny(addr));
   EXPECT_TRUE(IPIsLoopback(addr));
+  EXPECT_FALSE(IPIsSharedNetwork(addr));
   EXPECT_TRUE(IPIsPrivate(addr));
   EXPECT_EQ(kIPv4AddrSize, addr.Size());
   EXPECT_EQ(kIPv4LoopbackAddrString, addr.ToString());
@@ -188,9 +191,20 @@ TEST(IPAddressTest, TestInAddrCtor) {
   addr = IPAddress(v4addr);
   EXPECT_FALSE(IPIsAny(addr));
   EXPECT_FALSE(IPIsLoopback(addr));
+  EXPECT_FALSE(IPIsSharedNetwork(addr));
   EXPECT_TRUE(IPIsPrivate(addr));
   EXPECT_EQ(kIPv4AddrSize, addr.Size());
   EXPECT_EQ(kIPv4RFC1918AddrString, addr.ToString());
+
+  // Test an shared (RFC6598) address.
+  v4addr.s_addr = htonl(kIPv4RFC6598Addr);
+  addr = IPAddress(v4addr);
+  EXPECT_FALSE(IPIsAny(addr));
+  EXPECT_FALSE(IPIsLoopback(addr));
+  EXPECT_TRUE(IPIsPrivate(addr));
+  EXPECT_TRUE(IPIsSharedNetwork(addr));
+  EXPECT_EQ(kIPv4AddrSize, addr.Size());
+  EXPECT_EQ(kIPv4RFC6598AddrString, addr.ToString());
 
   // Test a 'normal' v4 address.
   v4addr.s_addr = htonl(kIPv4PublicAddr);
@@ -215,6 +229,7 @@ TEST(IPAddressTest, TestInAddr6Ctor) {
   addr = IPAddress(in6addr_loopback);
   EXPECT_FALSE(IPIsAny(addr));
   EXPECT_TRUE(IPIsLoopback(addr));
+  EXPECT_FALSE(IPIsSharedNetwork(addr));
   EXPECT_TRUE(IPIsPrivate(addr));
   EXPECT_EQ(kIPv6AddrSize, addr.Size());
   EXPECT_EQ(kIPv6LoopbackAddrString, addr.ToString());
@@ -223,6 +238,7 @@ TEST(IPAddressTest, TestInAddr6Ctor) {
   addr = IPAddress(kIPv6LinkLocalAddr);
   EXPECT_FALSE(IPIsAny(addr));
   EXPECT_FALSE(IPIsLoopback(addr));
+  EXPECT_FALSE(IPIsSharedNetwork(addr));
   EXPECT_TRUE(IPIsPrivate(addr));
   EXPECT_EQ(kIPv6AddrSize, addr.Size());
   EXPECT_EQ(kIPv6LinkLocalAddrString, addr.ToString());
@@ -249,6 +265,7 @@ TEST(IPAddressTest, TestUint32Ctor) {
   addr = IPAddress(INADDR_LOOPBACK);
   EXPECT_FALSE(IPIsAny(addr));
   EXPECT_TRUE(IPIsLoopback(addr));
+  EXPECT_FALSE(IPIsSharedNetwork(addr));
   EXPECT_TRUE(IPIsPrivate(addr));
   EXPECT_EQ(kIPv4AddrSize, addr.Size());
   EXPECT_EQ(kIPv4LoopbackAddrString, addr.ToString());
@@ -257,6 +274,7 @@ TEST(IPAddressTest, TestUint32Ctor) {
   addr = IPAddress(kIPv4RFC1918Addr);
   EXPECT_FALSE(IPIsAny(addr));
   EXPECT_FALSE(IPIsLoopback(addr));
+  EXPECT_FALSE(IPIsSharedNetwork(addr));
   EXPECT_TRUE(IPIsPrivate(addr));
   EXPECT_EQ(kIPv4AddrSize, addr.Size());
   EXPECT_EQ(kIPv4RFC1918AddrString, addr.ToString());
@@ -537,6 +555,7 @@ TEST(IPAddressTest, TestIsPrivate) {
   EXPECT_FALSE(IPIsPrivate(IPAddress(kIPv4MappedPublicAddr)));
 
   EXPECT_TRUE(IPIsPrivate(IPAddress(kIPv4RFC1918Addr)));
+  EXPECT_TRUE(IPIsPrivate(IPAddress(kIPv4RFC6598Addr)));
   EXPECT_TRUE(IPIsPrivate(IPAddress(INADDR_LOOPBACK)));
   EXPECT_TRUE(IPIsPrivate(IPAddress(in6addr_loopback)));
   EXPECT_TRUE(IPIsPrivate(IPAddress(kIPv6LinkLocalAddr)));
@@ -559,6 +578,7 @@ TEST(IPAddressTest, TestIsLoopback) {
   EXPECT_FALSE(IPIsLoopback(IPAddress(INADDR_ANY)));
   EXPECT_FALSE(IPIsLoopback(IPAddress(kIPv4PublicAddr)));
   EXPECT_FALSE(IPIsLoopback(IPAddress(in6addr_any)));
+  EXPECT_FALSE(IPIsLoopback(IPAddress(kIPv4RFC6598Addr)));
   EXPECT_FALSE(IPIsLoopback(IPAddress(kIPv6PublicAddr)));
   EXPECT_FALSE(IPIsLoopback(IPAddress(kIPv4MappedAnyAddr)));
   EXPECT_FALSE(IPIsLoopback(IPAddress(kIPv4MappedPublicAddr)));
@@ -577,6 +597,8 @@ TEST(IPAddressTest, TestIsLinkLocal) {
   // loopback addresses
   EXPECT_FALSE(IPIsLinkLocal(IPAddress(INADDR_LOOPBACK)));
   EXPECT_FALSE(IPIsLinkLocal(IPAddress(in6addr_loopback)));
+  // shared addresses
+  EXPECT_FALSE(IPIsLinkLocal(IPAddress(kIPv4RFC6598Addr)));
   // public addresses
   EXPECT_FALSE(IPIsLinkLocal(IPAddress(kIPv4PublicAddr)));
   EXPECT_FALSE(IPIsLinkLocal(IPAddress(kIPv6PublicAddr)));

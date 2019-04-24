@@ -76,9 +76,9 @@ using cricket::StreamParams;
 using cricket::TransportInfo;
 
 using cricket::LOCAL_PORT_TYPE;
-using cricket::STUN_PORT_TYPE;
-using cricket::RELAY_PORT_TYPE;
 using cricket::PRFLX_PORT_TYPE;
+using cricket::RELAY_PORT_TYPE;
+using cricket::STUN_PORT_TYPE;
 
 namespace webrtc {
 
@@ -3584,6 +3584,12 @@ bool PeerConnection::AddIceCandidate(
     bool result = UseCandidate(ice_candidate);
     if (result) {
       NoteUsageEvent(UsageEvent::REMOTE_CANDIDATE_ADDED);
+      if (ice_candidate->candidate().address().IsUnresolvedIP()) {
+        NoteUsageEvent(UsageEvent::REMOTE_MDNS_CANDIDATE_ADDED);
+      }
+      if (ice_candidate->candidate().address().IsPrivateIP()) {
+        NoteUsageEvent(UsageEvent::REMOTE_PRIVATE_CANDIDATE_ADDED);
+      }
       NoteAddIceCandidateResult(kAddIceCandidateSuccess);
     } else {
       NoteAddIceCandidateResult(kAddIceCandidateFailNotUsable);
@@ -4153,6 +4159,10 @@ void PeerConnection::OnIceCandidate(
   if (candidate->candidate().type() == LOCAL_PORT_TYPE &&
       candidate->candidate().address().IsPrivateIP()) {
     NoteUsageEvent(UsageEvent::PRIVATE_CANDIDATE_COLLECTED);
+  }
+  if (candidate->candidate().type() == LOCAL_PORT_TYPE &&
+      candidate->candidate().address().IsUnresolvedIP()) {
+    NoteUsageEvent(UsageEvent::MDNS_CANDIDATE_COLLECTED);
   }
   Observer()->OnIceCandidate(candidate.get());
 }

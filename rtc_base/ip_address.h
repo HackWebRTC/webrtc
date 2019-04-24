@@ -22,6 +22,7 @@
 #include <ws2tcpip.h>
 #endif
 #include <string.h>
+
 #include <string>
 
 #include "rtc_base/byte_order.h"
@@ -157,8 +158,12 @@ bool IPIsLinkLocal(const IPAddress& ip);
 // Identify a private network address like "192.168.111.222"
 // (see https://en.wikipedia.org/wiki/Private_network )
 bool IPIsPrivateNetwork(const IPAddress& ip);
+// Identify a shared network address like "100.72.16.122"
+// (see RFC6598)
+bool IPIsSharedNetwork(const IPAddress& ip);
 // Identify if an IP is "private", that is a loopback
-// or an address belonging to a link-local or a private network.
+// or an address belonging to a link-local, a private network or a shared
+// network.
 bool IPIsPrivate(const IPAddress& ip);
 bool IPIsUnspec(const IPAddress& ip);
 size_t HashIP(const IPAddress& ip);

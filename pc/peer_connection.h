@@ -73,7 +73,10 @@ class PeerConnection : public PeerConnectionInternal,
     ICE_STATE_CONNECTED = 0x200,
     CLOSE_CALLED = 0x400,
     PRIVATE_CANDIDATE_COLLECTED = 0x800,
-    MAX_VALUE = 0x1000,
+    REMOTE_PRIVATE_CANDIDATE_ADDED = 0x1000,
+    MDNS_CANDIDATE_COLLECTED = 0x2000,
+    REMOTE_MDNS_CANDIDATE_ADDED = 0x4000,
+    MAX_VALUE = 0x8000,
   };
 
   explicit PeerConnection(PeerConnectionFactory* factory,
