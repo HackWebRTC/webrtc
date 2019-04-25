@@ -859,27 +859,27 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
   if (encoded_complete_callback_ == NULL)
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
 
-  bool send_key_frame = false;
+  bool key_frame_requested = false;
   for (size_t i = 0; i < key_frame_request_.size() && i < send_stream_.size();
        ++i) {
     if (key_frame_request_[i] && send_stream_[i]) {
-      send_key_frame = true;
+      key_frame_requested = true;
       break;
     }
   }
-  if (!send_key_frame && frame_types) {
+  if (!key_frame_requested && frame_types) {
     for (size_t i = 0; i < frame_types->size() && i < send_stream_.size();
          ++i) {
       if ((*frame_types)[i] == VideoFrameType::kVideoFrameKey &&
           send_stream_[i]) {
-        send_key_frame = true;
+        key_frame_requested = true;
         break;
       }
     }
   }
 
   if (frame.update_rect().IsEmpty() && num_steady_state_frames_ >= 3 &&
-      !send_key_frame) {
+      !key_frame_requested) {
     if (variable_framerate_experiment_.enabled &&
         framerate_controller_.DropFrame(frame.timestamp() / kRtpTicksPerMs)) {
       return WEBRTC_VIDEO_CODEC_OK;
@@ -887,19 +887,23 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
     framerate_controller_.AddFrame(frame.timestamp() / kRtpTicksPerMs);
   }
 
-  vpx_enc_frame_flags_t flags[kMaxSimulcastStreams];
+  bool send_key_frame = key_frame_requested;
+  bool drop_frame = false;
   Vp8FrameConfig tl_configs[kMaxSimulcastStreams];
   for (size_t i = 0; i < encoders_.size(); ++i) {
     tl_configs[i] =
         frame_buffer_controller_->NextFrameConfig(i, frame.timestamp());
-    if (tl_configs[i].drop_frame) {
-      if (send_key_frame) {
-        continue;
-      }
-      // Drop this frame.
-      return WEBRTC_VIDEO_CODEC_OK;
-    }
-    flags[i] = EncodeFlags(tl_configs[i]);
+    send_key_frame |= tl_configs[i].IntraFrame();
+    drop_frame |= tl_configs[i].drop_frame;
+  }
+
+  if (drop_frame && !send_key_frame) {
+    return WEBRTC_VIDEO_CODEC_OK;
+  }
+
+  vpx_enc_frame_flags_t flags[kMaxSimulcastStreams];
+  for (size_t i = 0; i < encoders_.size(); ++i) {
+    flags[i] = send_key_frame ? VPX_EFLAG_FORCE_KF : EncodeFlags(tl_configs[i]);
   }
 
   rtc::scoped_refptr<I420BufferInterface> input_image =
@@ -958,11 +962,7 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
       libvpx_->codec_control(&(encoders_[0]), VP8E_SET_MAX_INTRA_BITRATE_PCT,
                              forceKeyFrameIntraTh);
     }
-    // Key frame request from caller.
-    // Will update both golden and alt-ref.
-    for (size_t i = 0; i < encoders_.size(); ++i) {
-      flags[i] = VPX_EFLAG_FORCE_KF;
-    }
+
     std::fill(key_frame_request_.begin(), key_frame_request_.end(), false);
   }
 
