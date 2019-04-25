@@ -183,6 +183,9 @@ static void FillInEncoderConfig(vpx_codec_enc_cfg* vpx_config,
   vpx_config->rc_target_bitrate = config.rc_target_bitrate;
   vpx_config->rc_min_quantizer = config.rc_min_quantizer;
   vpx_config->rc_max_quantizer = config.rc_max_quantizer;
+  if (config.error_resilient.has_value()) {
+    vpx_config->g_error_resilient = config.error_resilient.value();
+  }
 }
 
 bool UpdateVpxConfiguration(size_t stream_index,

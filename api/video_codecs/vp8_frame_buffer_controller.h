@@ -71,6 +71,9 @@ struct Vp8EncoderConfig {
   // Clamp QP to min/max. Use 0 to disable clamping.
   uint32_t rc_min_quantizer;
   uint32_t rc_max_quantizer;
+
+  // If has_value(), override error resilience to value().
+  absl::optional<uint32_t> error_resilient;
 };
 
 // This interface defines a way of delegating the logic of buffer management.
