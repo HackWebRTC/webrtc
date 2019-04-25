@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "api/array_view.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/running_statistics.h"
 
@@ -75,6 +76,11 @@ class SamplesStatsCounter {
   // |percentile| has to be in [0; 1]. 0 percentile is the min in the array and
   // 1 percentile is the max in the array.
   double GetPercentile(double percentile);
+  // Returns array view with all samples added into counter. There are no
+  // guarantees of order, so samples can be in different order comparing to in
+  // which they were added into counter. Also return value will be invalidate
+  // after call to any non const method.
+  rtc::ArrayView<const double> GetSamples() const { return samples_; }
 
  private:
   RunningStatistics<double> stats_;
