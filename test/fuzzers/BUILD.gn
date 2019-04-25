@@ -344,7 +344,7 @@ webrtc_fuzzer_test("audio_decoder_multiopus_fuzzer") {
   deps = [
     ":audio_decoder_fuzzer",
     "../../api/audio_codecs/opus:audio_decoder_multiopus",
-    "../../api/audio_codecs/opus:audio_encoder_opus_config",
+    "../../api/audio_codecs/opus:audio_decoder_opus_config",
   ]
 }
 

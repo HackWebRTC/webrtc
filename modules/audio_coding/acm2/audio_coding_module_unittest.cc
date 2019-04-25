@@ -19,6 +19,7 @@
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/audio_codecs/opus/audio_decoder_multi_channel_opus.h"
 #include "api/audio_codecs/opus/audio_decoder_opus.h"
+#include "api/audio_codecs/opus/audio_encoder_multi_channel_opus.h"
 #include "api/audio_codecs/opus/audio_encoder_opus.h"
 #include "modules/audio_coding/acm2/acm_receive_test.h"
 #include "modules/audio_coding/acm2/acm_send_test.h"
@@ -26,8 +27,6 @@
 #include "modules/audio_coding/codecs/g711/audio_decoder_pcm.h"
 #include "modules/audio_coding/codecs/g711/audio_encoder_pcm.h"
 #include "modules/audio_coding/codecs/isac/main/include/audio_encoder_isac.h"
-#include "modules/audio_coding/codecs/opus/audio_decoder_opus.h"
-#include "modules/audio_coding/codecs/opus/audio_encoder_opus.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"
 #include "modules/audio_coding/neteq/tools/audio_checksum.h"
@@ -1516,34 +1515,28 @@ TEST_F(AcmSenderBitExactnessNewApi, MAYBE_OpusFromFormat_stereo_20ms) {
 TEST_F(AcmSenderBitExactnessNewApi, DISABLED_OpusManyChannels) {
   constexpr int kNumChannels = 4;
   constexpr int kOpusPayloadType = 120;
-  constexpr int kBitrateBps = 128000;
 
   // Read a 4 channel file at 48kHz.
   ASSERT_TRUE(SetUpSender(kTestFileQuad48kHz, 48000));
 
-  // TODO(webrtc:8649): change to higher level
-  // AudioEncoderOpus::MakeAudioEncoder once a multistream encoder can be set up
-  // from SDP. - This is now done for the Decoder.
+  const auto sdp_format = SdpAudioFormat("multiopus", 48000, kNumChannels,
+                                         {{"channel_mapping", "0,1,2,3"},
+                                          {"coupled_streams", "2"},
+                                          {"num_streams", "2"}});
+  const auto encoder_config =
+      AudioEncoderMultiChannelOpus::SdpToConfig(sdp_format);
 
-  // The Encoder and Decoder are set up differently (and the test is disabled)
-  // until the changes from
-  // https://webrtc-review.googlesource.com/c/src/+/121764 land.
-  AudioEncoderOpusConfig config = *AudioEncoderOpus::SdpToConfig(
-      SdpAudioFormat("opus", 48000, 2, {{"stereo", "1"}}));
-  config.num_channels = kNumChannels;
-  config.bitrate_bps = kBitrateBps;
+  ASSERT_TRUE(encoder_config.has_value());
 
-  const auto sdp_format = SdpAudioFormat(
-      "multiopus", 48000, kNumChannels,
-      {{"channel_mapping", "0,1,2,3"}, {"coupled_streams", "2"}});
+  ASSERT_NO_FATAL_FAILURE(
+      SetUpTestExternalEncoder(AudioEncoderMultiChannelOpus::MakeAudioEncoder(
+                                   *encoder_config, kOpusPayloadType),
+                               kOpusPayloadType));
+
   const auto decoder_config =
       AudioDecoderMultiChannelOpus::SdpToConfig(sdp_format);
   const auto opus_decoder =
       AudioDecoderMultiChannelOpus::MakeAudioDecoder(*decoder_config);
-
-  ASSERT_NO_FATAL_FAILURE(SetUpTestExternalEncoder(
-      absl::make_unique<AudioEncoderOpusImpl>(config, kOpusPayloadType),
-      kOpusPayloadType));
 
   rtc::scoped_refptr<AudioDecoderFactory> decoder_factory =
       new rtc::RefCountedObject<test::AudioDecoderProxyFactory>(
@@ -1551,16 +1544,16 @@ TEST_F(AcmSenderBitExactnessNewApi, DISABLED_OpusManyChannels) {
 
   // Set up an EXTERNAL DECODER to parse 4 channels.
   Run(AcmReceiverBitExactnessOldApi::PlatformChecksum(  // audio checksum
-          "b70470884d9a8613eff019b0d1c8876e|d0a73d377e0ca1be6b06e989e0ad2c35",
-          "d0a73d377e0ca1be6b06e989e0ad2c35",
-          "b45d2ce5fc4723e9eb41350af9c68f56", "android arm64 audio checksum",
-          "1c9a3c9dacdd4b8fc9ff608227e531f2"),
+          "audio checksum check downstream|8051617907766bec5f4e4a4f7c6d5291",
+          "8051617907766bec5f4e4a4f7c6d5291",
+          "6183752a62dc1368f959eb3a8c93b846", "android arm64 audio checksum",
+          "48bf1f3ca0b72f3c9cdfbe79956122b1"),
       // payload_checksum,
       AcmReceiverBitExactnessOldApi::PlatformChecksum(  // payload checksum
-          "c2e7d40f8269ef754bd86d6be9623fa7|76de0f4992e3937ca60d35bbb0d308d6",
-          "76de0f4992e3937ca60d35bbb0d308d6",
-          "2a310aca965c16c2dfd61a9f9fc0c877", "android arm64 payload checksum",
-          "2294f4b61fb8f174f5196776a0a49be7"),
+          "payload checksum check downstream|b09c52e44b2bdd9a0809e3a5b1623a76",
+          "b09c52e44b2bdd9a0809e3a5b1623a76",
+          "2ea535ef60f7d0c9d89e3002d4c2124f", "android arm64 payload checksum",
+          "e87995a80f50a0a735a230ca8b04a67d"),
       50, test::AcmReceiveTestOldApi::kQuadOutput, decoder_factory);
 }
 
