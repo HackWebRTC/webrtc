@@ -33,7 +33,7 @@ void SetupComponent(int sample_rate_hz,
   Config config;
   config.Set<DelayAgnostic>(new DelayAgnostic(true));
   config.Set<ExtendedFilter>(new ExtendedFilter(true));
-  echo_canceller->SetExtraOptions(config);
+  echo_canceller->SetExtraOptions(true, true, false);
 }
 
 void ProcessOneFrame(int sample_rate_hz,

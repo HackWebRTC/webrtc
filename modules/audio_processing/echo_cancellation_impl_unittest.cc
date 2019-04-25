@@ -31,16 +31,14 @@ TEST(EchoCancellationInternalTest, ExtendedFilter) {
   EXPECT_EQ(0, WebRtcAec_extended_filter_enabled(aec_core));
 
   Config config;
-  config.Set<ExtendedFilter>(new ExtendedFilter(true));
-  echo_canceller.SetExtraOptions(config);
+  echo_canceller.SetExtraOptions(true, false, false);
   EXPECT_EQ(1, WebRtcAec_extended_filter_enabled(aec_core));
 
   // Retains setting after initialization.
   echo_canceller.Initialize(AudioProcessing::kSampleRate16kHz, 2, 2, 2);
   EXPECT_EQ(1, WebRtcAec_extended_filter_enabled(aec_core));
 
-  config.Set<ExtendedFilter>(new ExtendedFilter(false));
-  echo_canceller.SetExtraOptions(config);
+  echo_canceller.SetExtraOptions(false, false, false);
   EXPECT_EQ(0, WebRtcAec_extended_filter_enabled(aec_core));
 
   // Retains setting after initialization.
@@ -63,8 +61,7 @@ TEST(EchoCancellationInternalTest, DelayAgnostic) {
   EXPECT_EQ(0, WebRtcAec_delay_agnostic_enabled(aec_core));
 
   Config config;
-  config.Set<DelayAgnostic>(new DelayAgnostic(true));
-  echo_canceller.SetExtraOptions(config);
+  echo_canceller.SetExtraOptions(false, true, false);
   EXPECT_EQ(1, WebRtcAec_delay_agnostic_enabled(aec_core));
 
   // Retains setting after initialization.
@@ -72,7 +69,7 @@ TEST(EchoCancellationInternalTest, DelayAgnostic) {
   EXPECT_EQ(1, WebRtcAec_delay_agnostic_enabled(aec_core));
 
   config.Set<DelayAgnostic>(new DelayAgnostic(false));
-  echo_canceller.SetExtraOptions(config);
+  echo_canceller.SetExtraOptions(false, false, false);
   EXPECT_EQ(0, WebRtcAec_delay_agnostic_enabled(aec_core));
 
   // Retains setting after initialization.

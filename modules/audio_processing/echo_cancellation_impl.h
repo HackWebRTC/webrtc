@@ -17,10 +17,7 @@
 #include <vector>
 
 #include "api/array_view.h"
-#include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/critical_section.h"
-#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 
@@ -136,7 +133,9 @@ class EchoCancellationImpl {
                   size_t num_reverse_channels_,
                   size_t num_output_channels_,
                   size_t num_proc_channels_);
-  void SetExtraOptions(const webrtc::Config& config);
+  void SetExtraOptions(bool use_extended_filter,
+                       bool use_delay_agnostic,
+                       bool use_refined_adaptive_filter);
   bool is_delay_agnostic_enabled() const;
   bool is_extended_filter_enabled() const;
   std::string GetExperimentsDescription();

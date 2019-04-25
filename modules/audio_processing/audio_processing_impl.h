@@ -246,7 +246,8 @@ class AudioProcessingImpl : public AudioProcessing {
   void InitializeResidualEchoDetector()
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void InitializeLowCutFilter() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
-  void InitializeEchoController() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
+  void InitializeEchoController()
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_, crit_capture_);
   void InitializeGainController2() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializePreAmplifier() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
   void InitializePostProcessor() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_capture_);
@@ -417,6 +418,9 @@ class AudioProcessingImpl : public AudioProcessing {
     int split_rate;
     int stream_delay_ms;
     bool echo_controller_enabled = false;
+    bool use_aec2_extended_filter = false;
+    bool use_aec2_delay_agnostic = false;
+    bool use_aec2_refined_adaptive_filter = false;
   } capture_nonlocked_;
 
   struct ApmRenderState {
