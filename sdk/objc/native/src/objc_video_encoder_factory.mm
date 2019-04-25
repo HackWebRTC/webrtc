@@ -85,8 +85,10 @@ class ObjCVideoEncoder : public VideoEncoder {
                  frameTypes:rtcFrameTypes];
   }
 
-  int32_t SetRates(uint32_t bitrate, uint32_t framerate) override {
-    return [encoder_ setBitrate:bitrate framerate:framerate];
+  void SetRates(const RateControlParameters &parameters) override {
+    const uint32_t bitrate = parameters.bitrate.get_sum_kbps();
+    const uint32_t framerate = static_cast<uint32_t>(parameters.framerate_fps + 0.5);
+    [encoder_ setBitrate:bitrate framerate:framerate];
   }
 
   VideoEncoder::EncoderInfo GetEncoderInfo() const override {

@@ -118,15 +118,3 @@ TEST(ObjCVideoEncoderFactoryTest, ReleaseEncodeReturnsErrorOnFail) {
 
   EXPECT_EQ(encoder->Release(), WEBRTC_VIDEO_CODEC_ERROR);
 }
-
-TEST(ObjCVideoEncoderFactoryTest, SetRatesReturnsOKOnSuccess) {
-  std::unique_ptr<webrtc::VideoEncoder> encoder = GetObjCEncoder(CreateOKEncoderFactory());
-
-  EXPECT_EQ(encoder->SetRates(0, 0), WEBRTC_VIDEO_CODEC_OK);
-}
-
-TEST(ObjCVideoEncoderFactoryTest, SetRatesReturnsErrorOnFail) {
-  std::unique_ptr<webrtc::VideoEncoder> encoder = GetObjCEncoder(CreateErrorEncoderFactory());
-
-  EXPECT_EQ(encoder->SetRates(0, 0), WEBRTC_VIDEO_CODEC_ERROR);
-}
