@@ -38,6 +38,7 @@ namespace webrtc {
 class FieldTrialParameterInterface {
  public:
   virtual ~FieldTrialParameterInterface();
+  std::string key() const { return key_; }
 
  protected:
   // Protected to allow implementations to provide assignment and copy.
@@ -55,9 +56,8 @@ class FieldTrialParameterInterface {
 
   std::vector<FieldTrialParameterInterface*> sub_parameters_;
 
-  std::string key_;
-
  private:
+  std::string key_;
   bool used_ = false;
 };
 
