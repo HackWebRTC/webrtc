@@ -1177,7 +1177,9 @@ bool OpenSSLStreamAdapter::IsAcceptableCipher(const std::string& cipher,
 }
 
 void OpenSSLStreamAdapter::EnableTimeCallbackForTesting() {
+#ifdef OPENSSL_IS_BORINGSSL
   g_use_time_callback_for_testing = true;
+#endif
 }
 
 }  // namespace rtc
