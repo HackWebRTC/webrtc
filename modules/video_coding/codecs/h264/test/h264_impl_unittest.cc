@@ -19,7 +19,6 @@
 #include "api/video_codecs/video_decoder.h"
 #include "api/video_codecs/video_encoder.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "common_video/test/utilities.h"
 #include "media/base/codec.h"
 #include "media/base/media_constants.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
@@ -49,17 +48,9 @@ class TestH264Impl : public VideoCodecUnitTest {
 #ifdef WEBRTC_USE_H264
 #define MAYBE_EncodeDecode EncodeDecode
 #define MAYBE_DecodedQpEqualsEncodedQp DecodedQpEqualsEncodedQp
-#define MAYBE_EncodedColorSpaceEqualsInputColorSpace \
-  EncodedColorSpaceEqualsInputColorSpace
-#define MAYBE_DecodedColorSpaceEqualsEncodedColorSpace \
-  DecodedColorSpaceEqualsEncodedColorSpace
 #else
 #define MAYBE_EncodeDecode DISABLED_EncodeDecode
 #define MAYBE_DecodedQpEqualsEncodedQp DISABLED_DecodedQpEqualsEncodedQp
-#define MAYBE_EncodedColorSpaceEqualsInputColorSpace \
-  DISABLED_EncodedColorSpaceEqualsInputColorSpace
-#define MAYBE_DecodedColorSpaceEqualsEncodedColorSpace \
-  DISABLED_DecodedColorSpaceEqualsEncodedColorSpace
 #endif
 
 TEST_F(TestH264Impl, MAYBE_EncodeDecode) {
@@ -103,47 +94,6 @@ TEST_F(TestH264Impl, MAYBE_DecodedQpEqualsEncodedQp) {
   ASSERT_TRUE(decoded_frame);
   ASSERT_TRUE(decoded_qp);
   EXPECT_EQ(encoded_frame.qp_, *decoded_qp);
-}
-
-TEST_F(TestH264Impl, MAYBE_EncodedColorSpaceEqualsInputColorSpace) {
-  VideoFrame* input_frame = NextInputFrame();
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, encoder_->Encode(*input_frame, nullptr));
-  EncodedImage encoded_frame;
-  CodecSpecificInfo codec_specific_info;
-  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
-  EXPECT_FALSE(encoded_frame.ColorSpace());
-
-  // Video frame with explicit color space information.
-  ColorSpace color_space = CreateTestColorSpace(/*with_hdr_metadata=*/false);
-  VideoFrame input_frame_w_color_space =
-      VideoFrame::Builder()
-          .set_video_frame_buffer(input_frame->video_frame_buffer())
-          .set_color_space(color_space)
-          .build();
-
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(input_frame_w_color_space, nullptr));
-  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
-  ASSERT_TRUE(encoded_frame.ColorSpace());
-  EXPECT_EQ(*encoded_frame.ColorSpace(), color_space);
-}
-
-TEST_F(TestH264Impl, MAYBE_DecodedColorSpaceEqualsEncodedColorSpace) {
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->Encode(*NextInputFrame(), nullptr));
-  EncodedImage encoded_frame;
-  CodecSpecificInfo codec_specific_info;
-  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
-  // Add color space to encoded frame.
-  ColorSpace color_space = CreateTestColorSpace(/*with_hdr_metadata=*/false);
-  encoded_frame.SetColorSpace(color_space);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(encoded_frame, false, 0));
-  std::unique_ptr<VideoFrame> decoded_frame;
-  absl::optional<uint8_t> decoded_qp;
-  ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
-  ASSERT_TRUE(decoded_frame);
-  ASSERT_TRUE(decoded_frame->color_space());
-  EXPECT_EQ(color_space, *decoded_frame->color_space());
 }
 
 }  // namespace webrtc

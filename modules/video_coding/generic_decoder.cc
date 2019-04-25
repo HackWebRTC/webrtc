@@ -74,6 +74,12 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
     frameInfo = _timestampMap.Pop(decodedImage.timestamp());
   }
 
+  decodedImage.set_ntp_time_ms(frameInfo->ntp_time_ms);
+  if (frameInfo->color_space) {
+    decodedImage.set_color_space(*frameInfo->color_space);
+  }
+  decodedImage.set_rotation(frameInfo->rotation);
+
   if (frameInfo == NULL) {
     RTC_LOG(LS_WARNING) << "Too many frames backed up in the decoder, dropping "
                            "this one.";
@@ -140,7 +146,6 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
 
   decodedImage.set_timestamp_us(frameInfo->renderTimeMs *
                                 rtc::kNumMicrosecsPerMillisec);
-  decodedImage.set_rotation(frameInfo->rotation);
   _receiveCallback->FrameToRender(decodedImage, qp, frameInfo->content_type);
 }
 
@@ -199,6 +204,9 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
   _frameInfos[_nextFrameInfoIdx].renderTimeMs = frame.RenderTimeMs();
   _frameInfos[_nextFrameInfoIdx].rotation = frame.rotation();
   _frameInfos[_nextFrameInfoIdx].timing = frame.video_timing();
+  _frameInfos[_nextFrameInfoIdx].ntp_time_ms =
+      frame.EncodedImage().ntp_time_ms_;
+  _frameInfos[_nextFrameInfoIdx].color_space = frame.ColorSpace();
   // Set correctly only for key frames. Thus, use latest key frame
   // content type. If the corresponding key frame was lost, decode will fail
   // and content type will be ignored.

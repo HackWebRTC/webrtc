@@ -19,6 +19,7 @@
 #include "api/video/video_rotation.h"
 #include "api/video/video_sink_interface.h"
 #include "rtc_base/critical_section.h"
+#include "rtc_base/event.h"
 
 namespace cricket {
 
@@ -30,6 +31,7 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
   void OnFrame(const webrtc::VideoFrame& frame) override;
 
   int errors() const { return errors_; }
+
   int width() const {
     rtc::CritScope cs(&crit_);
     return width_;
@@ -38,6 +40,7 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
     rtc::CritScope cs(&crit_);
     return height_;
   }
+
   webrtc::VideoRotation rotation() const {
     rtc::CritScope cs(&crit_);
     return rotation_;
@@ -47,14 +50,28 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
     rtc::CritScope cs(&crit_);
     return timestamp_us_;
   }
+
   int num_rendered_frames() const {
     rtc::CritScope cs(&crit_);
     return num_rendered_frames_;
   }
+
   bool black_frame() const {
     rtc::CritScope cs(&crit_);
     return black_frame_;
   }
+
+  int64_t ntp_time_ms() const {
+    rtc::CritScope cs(&crit_);
+    return ntp_timestamp_ms_;
+  }
+
+  absl::optional<webrtc::ColorSpace> color_space() const {
+    rtc::CritScope cs(&crit_);
+    return color_space_;
+  }
+
+  bool WaitForRenderedFrame(int64_t timeout_ms);
 
  private:
   static bool CheckFrameColorYuv(uint8_t y_min,
@@ -116,8 +133,11 @@ class FakeVideoRenderer : public rtc::VideoSinkInterface<webrtc::VideoFrame> {
   webrtc::VideoRotation rotation_ = webrtc::kVideoRotation_0;
   int64_t timestamp_us_ = 0;
   int num_rendered_frames_ = 0;
+  int64_t ntp_timestamp_ms_ = 0;
   bool black_frame_ = false;
   rtc::CriticalSection crit_;
+  rtc::Event frame_rendered_event_;
+  absl::optional<webrtc::ColorSpace> color_space_;
 };
 
 }  // namespace cricket

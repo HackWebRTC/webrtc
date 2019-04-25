@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "video/frame_encode_timer.h"
+#include "video/frame_encode_metadata_writer.h"
 
 #include <algorithm>
 
@@ -23,29 +23,31 @@ const int kMessagesThrottlingThreshold = 2;
 const int kThrottleRatio = 100000;
 }  // namespace
 
-FrameEncodeTimer::TimingFramesLayerInfo::TimingFramesLayerInfo() = default;
-FrameEncodeTimer::TimingFramesLayerInfo::~TimingFramesLayerInfo() = default;
+FrameEncodeMetadataWriter::TimingFramesLayerInfo::TimingFramesLayerInfo() =
+    default;
+FrameEncodeMetadataWriter::TimingFramesLayerInfo::~TimingFramesLayerInfo() =
+    default;
 
-FrameEncodeTimer::FrameEncodeTimer(EncodedImageCallback* frame_drop_callback)
+FrameEncodeMetadataWriter::FrameEncodeMetadataWriter(
+    EncodedImageCallback* frame_drop_callback)
     : frame_drop_callback_(frame_drop_callback),
       internal_source_(false),
       framerate_fps_(0),
       last_timing_frame_time_ms_(-1),
-      incorrect_capture_time_logged_messages_(0),
       reordered_frames_logged_messages_(0),
       stalled_encoder_logged_messages_(0) {
   codec_settings_.timing_frame_thresholds = {-1, 0};
 }
-FrameEncodeTimer::~FrameEncodeTimer() {}
+FrameEncodeMetadataWriter::~FrameEncodeMetadataWriter() {}
 
-void FrameEncodeTimer::OnEncoderInit(const VideoCodec& codec,
-                                     bool internal_source) {
+void FrameEncodeMetadataWriter::OnEncoderInit(const VideoCodec& codec,
+                                              bool internal_source) {
   rtc::CritScope cs(&lock_);
   codec_settings_ = codec;
   internal_source_ = internal_source;
 }
 
-void FrameEncodeTimer::OnSetRates(
+void FrameEncodeMetadataWriter::OnSetRates(
     const VideoBitrateAllocation& bitrate_allocation,
     uint32_t framerate_fps) {
   rtc::CritScope cs(&lock_);
@@ -60,8 +62,7 @@ void FrameEncodeTimer::OnSetRates(
   }
 }
 
-void FrameEncodeTimer::OnEncodeStarted(uint32_t rtp_timestamp,
-                                       int64_t capture_time_ms) {
+void FrameEncodeMetadataWriter::OnEncodeStarted(const VideoFrame& frame) {
   rtc::CritScope cs(&lock_);
   if (internal_source_) {
     return;
@@ -69,19 +70,24 @@ void FrameEncodeTimer::OnEncodeStarted(uint32_t rtp_timestamp,
 
   const size_t num_spatial_layers = NumSpatialLayers();
   timing_frames_info_.resize(num_spatial_layers);
+  FrameMetadata metadata;
+  metadata.rtp_timestamp = frame.timestamp();
+  metadata.encode_start_time_ms = rtc::TimeMillis();
+  metadata.ntp_time_ms = frame.ntp_time_ms();
+  metadata.timestamp_us = frame.timestamp_us();
+  metadata.rotation = frame.rotation();
+  metadata.color_space = frame.color_space();
   for (size_t si = 0; si < num_spatial_layers; ++si) {
-    RTC_DCHECK(
-        timing_frames_info_[si].encode_start_list.empty() ||
-        rtc::TimeDiff(
-            capture_time_ms,
-            timing_frames_info_[si].encode_start_list.back().capture_time_ms) >=
-            0);
+    RTC_DCHECK(timing_frames_info_[si].frames.empty() ||
+               rtc::TimeDiff(
+                   frame.render_time_ms(),
+                   timing_frames_info_[si].frames.back().timestamp_us / 1000) >=
+                   0);
     // If stream is disabled due to low bandwidth OnEncodeStarted still will be
     // called and have to be ignored.
     if (timing_frames_info_[si].target_bitrate_bytes_per_sec == 0)
       return;
-    if (timing_frames_info_[si].encode_start_list.size() ==
-        kMaxEncodeStartTimeListSize) {
+    if (timing_frames_info_[si].frames.size() == kMaxEncodeStartTimeListSize) {
       ++stalled_encoder_logged_messages_;
       if (stalled_encoder_logged_messages_ <= kMessagesThrottlingThreshold ||
           stalled_encoder_logged_messages_ % kThrottleRatio == 0) {
@@ -95,25 +101,26 @@ void FrameEncodeTimer::OnEncodeStarted(uint32_t rtp_timestamp,
       }
       frame_drop_callback_->OnDroppedFrame(
           EncodedImageCallback::DropReason::kDroppedByEncoder);
-      timing_frames_info_[si].encode_start_list.pop_front();
+      timing_frames_info_[si].frames.pop_front();
     }
-    timing_frames_info_[si].encode_start_list.emplace_back(
-        rtp_timestamp, capture_time_ms, rtc::TimeMillis());
+    timing_frames_info_[si].frames.emplace_back(metadata);
   }
 }
 
-void FrameEncodeTimer::FillTimingInfo(size_t simulcast_svc_idx,
-                                      EncodedImage* encoded_image,
-                                      int64_t encode_done_ms) {
+void FrameEncodeMetadataWriter::FillTimingInfo(size_t simulcast_svc_idx,
+                                               EncodedImage* encoded_image) {
   rtc::CritScope cs(&lock_);
   absl::optional<size_t> outlier_frame_size;
   absl::optional<int64_t> encode_start_ms;
   uint8_t timing_flags = VideoSendTiming::kNotTriggered;
 
+  int64_t encode_done_ms = rtc::TimeMillis();
+
   // Encoders with internal sources do not call OnEncodeStarted
   // |timing_frames_info_| may be not filled here.
   if (!internal_source_) {
-    encode_start_ms = ExtractEncodeStartTime(simulcast_svc_idx, encoded_image);
+    encode_start_ms =
+        ExtractEncodeStartTimeAndFillMetadata(simulcast_svc_idx, encoded_image);
   }
 
   if (timing_frames_info_.size() > simulcast_svc_idx) {
@@ -176,7 +183,7 @@ void FrameEncodeTimer::FillTimingInfo(size_t simulcast_svc_idx,
   }
 }
 
-void FrameEncodeTimer::Reset() {
+void FrameEncodeMetadataWriter::Reset() {
   rtc::CritScope cs(&lock_);
   timing_frames_info_.clear();
   last_timing_frame_time_ms_ = -1;
@@ -184,48 +191,40 @@ void FrameEncodeTimer::Reset() {
   stalled_encoder_logged_messages_ = 0;
 }
 
-absl::optional<int64_t> FrameEncodeTimer::ExtractEncodeStartTime(
+absl::optional<int64_t>
+FrameEncodeMetadataWriter::ExtractEncodeStartTimeAndFillMetadata(
     size_t simulcast_svc_idx,
     EncodedImage* encoded_image) {
   absl::optional<int64_t> result;
   size_t num_simulcast_svc_streams = timing_frames_info_.size();
   if (simulcast_svc_idx < num_simulcast_svc_streams) {
-    auto encode_start_list =
-        &timing_frames_info_[simulcast_svc_idx].encode_start_list;
+    auto metadata_list = &timing_frames_info_[simulcast_svc_idx].frames;
     // Skip frames for which there was OnEncodeStarted but no OnEncodedImage
     // call. These are dropped by encoder internally.
     // Because some hardware encoders don't preserve capture timestamp we
     // use RTP timestamps here.
-    while (!encode_start_list->empty() &&
+    while (!metadata_list->empty() &&
            IsNewerTimestamp(encoded_image->Timestamp(),
-                            encode_start_list->front().rtp_timestamp)) {
+                            metadata_list->front().rtp_timestamp)) {
       frame_drop_callback_->OnDroppedFrame(
           EncodedImageCallback::DropReason::kDroppedByEncoder);
-      encode_start_list->pop_front();
+      metadata_list->pop_front();
     }
-    if (!encode_start_list->empty() &&
-        encode_start_list->front().rtp_timestamp ==
-            encoded_image->Timestamp()) {
-      result.emplace(encode_start_list->front().encode_start_time_ms);
-      if (encoded_image->capture_time_ms_ !=
-          encode_start_list->front().capture_time_ms) {
-        // Force correct capture timestamp.
-        encoded_image->capture_time_ms_ =
-            encode_start_list->front().capture_time_ms;
-        ++incorrect_capture_time_logged_messages_;
-        if (incorrect_capture_time_logged_messages_ <=
-                kMessagesThrottlingThreshold ||
-            incorrect_capture_time_logged_messages_ % kThrottleRatio == 0) {
-          RTC_LOG(LS_WARNING)
-              << "Encoder is not preserving capture timestamps.";
-          if (incorrect_capture_time_logged_messages_ ==
-              kMessagesThrottlingThreshold) {
-            RTC_LOG(LS_WARNING) << "Too many log messages. Further incorrect "
-                                   "timestamps warnings will be throttled.";
-          }
-        }
-      }
-      encode_start_list->pop_front();
+    if (!metadata_list->empty() &&
+        metadata_list->front().rtp_timestamp == encoded_image->Timestamp()) {
+      result.emplace(metadata_list->front().encode_start_time_ms);
+
+      encoded_image->capture_time_ms_ =
+          metadata_list->front().timestamp_us / 1000;
+      encoded_image->ntp_time_ms_ = metadata_list->front().ntp_time_ms;
+      encoded_image->rotation_ = metadata_list->front().rotation;
+      encoded_image->SetColorSpace(metadata_list->front().color_space);
+      encoded_image->content_type_ =
+          (codec_settings_.mode == VideoCodecMode::kScreensharing)
+              ? VideoContentType::SCREENSHARE
+              : VideoContentType::UNSPECIFIED;
+
+      metadata_list->pop_front();
     } else {
       ++reordered_frames_logged_messages_;
       if (reordered_frames_logged_messages_ <= kMessagesThrottlingThreshold ||
@@ -243,7 +242,7 @@ absl::optional<int64_t> FrameEncodeTimer::ExtractEncodeStartTime(
   return result;
 }
 
-size_t FrameEncodeTimer::NumSpatialLayers() const {
+size_t FrameEncodeMetadataWriter::NumSpatialLayers() const {
   size_t num_spatial_layers = codec_settings_.numberOfSimulcastStreams;
   if (codec_settings_.codecType == kVideoCodecVP9) {
     num_spatial_layers = std::max(
