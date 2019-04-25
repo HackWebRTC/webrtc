@@ -12,6 +12,7 @@
 #include "media/engine/encoder_simulcast_proxy.h"
 #include <string>
 
+#include "api/test/mock_video_encoder.h"
 #include "api/test/mock_video_encoder_factory.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "modules/video_coding/include/video_codec_interface.h"
@@ -25,32 +26,6 @@ namespace testing {
 using ::testing::_;
 using ::testing::NiceMock;
 using ::testing::Return;
-
-class MockEncoder : public VideoEncoder {
- public:
-  // TODO(nisse): Valid overrides commented out, because the gmock
-  // methods don't use any override declarations, and we want to avoid
-  // warnings from -Winconsistent-missing-override. See
-  // http://crbug.com/428099.
-  MockEncoder() {}
-  virtual ~MockEncoder() {}
-
-  MOCK_METHOD3(InitEncode,
-               int32_t(const VideoCodec* codec_settings,
-                       int32_t number_of_cores,
-                       size_t max_payload_size));
-
-  MOCK_METHOD1(RegisterEncodeCompleteCallback, int32_t(EncodedImageCallback*));
-
-  MOCK_METHOD0(Release, int32_t());
-
-  MOCK_METHOD2(
-      Encode,
-      int32_t(const VideoFrame& inputImage,
-              const std::vector<VideoFrameType>* frame_types) /* override */);
-
-  MOCK_CONST_METHOD0(GetEncoderInfo, VideoEncoder::EncoderInfo(void));
-};
 
 TEST(EncoderSimulcastProxy, ChoosesCorrectImplementation) {
   const std::string kImplementationName = "Fake";
@@ -84,7 +59,7 @@ TEST(EncoderSimulcastProxy, ChoosesCorrectImplementation) {
                                        56};
   codec_settings.numberOfSimulcastStreams = 3;
 
-  NiceMock<MockEncoder>* mock_encoder = new NiceMock<MockEncoder>();
+  NiceMock<MockVideoEncoder>* mock_encoder = new NiceMock<MockVideoEncoder>();
   NiceMock<MockVideoEncoderFactory> simulcast_factory;
 
   EXPECT_CALL(*mock_encoder, InitEncode(_, _, _))
@@ -105,10 +80,10 @@ TEST(EncoderSimulcastProxy, ChoosesCorrectImplementation) {
   EXPECT_EQ(kImplementationName,
             simulcast_enabled_proxy.GetEncoderInfo().implementation_name);
 
-  NiceMock<MockEncoder>* mock_encoder1 = new NiceMock<MockEncoder>();
-  NiceMock<MockEncoder>* mock_encoder2 = new NiceMock<MockEncoder>();
-  NiceMock<MockEncoder>* mock_encoder3 = new NiceMock<MockEncoder>();
-  NiceMock<MockEncoder>* mock_encoder4 = new NiceMock<MockEncoder>();
+  NiceMock<MockVideoEncoder>* mock_encoder1 = new NiceMock<MockVideoEncoder>();
+  NiceMock<MockVideoEncoder>* mock_encoder2 = new NiceMock<MockVideoEncoder>();
+  NiceMock<MockVideoEncoder>* mock_encoder3 = new NiceMock<MockVideoEncoder>();
+  NiceMock<MockVideoEncoder>* mock_encoder4 = new NiceMock<MockVideoEncoder>();
   NiceMock<MockVideoEncoderFactory> nonsimulcast_factory;
 
   EXPECT_CALL(*mock_encoder1, InitEncode(_, _, _))
@@ -152,7 +127,7 @@ TEST(EncoderSimulcastProxy, ChoosesCorrectImplementation) {
 }
 
 TEST(EncoderSimulcastProxy, ForwardsTrustedSetting) {
-  NiceMock<MockEncoder>* mock_encoder = new NiceMock<MockEncoder>();
+  NiceMock<MockVideoEncoder>* mock_encoder = new NiceMock<MockVideoEncoder>();
   NiceMock<MockVideoEncoderFactory> simulcast_factory;
 
   EXPECT_CALL(*mock_encoder, InitEncode(_, _, _))
@@ -178,7 +153,7 @@ TEST(EncoderSimulcastProxy, ForwardsTrustedSetting) {
 }
 
 TEST(EncoderSimulcastProxy, ForwardsHardwareAccelerated) {
-  NiceMock<MockEncoder>* mock_encoder = new NiceMock<MockEncoder>();
+  NiceMock<MockVideoEncoder>* mock_encoder = new NiceMock<MockVideoEncoder>();
   NiceMock<MockVideoEncoderFactory> simulcast_factory;
 
   EXPECT_CALL(*mock_encoder, InitEncode(_, _, _))
@@ -208,7 +183,7 @@ TEST(EncoderSimulcastProxy, ForwardsHardwareAccelerated) {
 }
 
 TEST(EncoderSimulcastProxy, ForwardsInternalSource) {
-  NiceMock<MockEncoder>* mock_encoder = new NiceMock<MockEncoder>();
+  NiceMock<MockVideoEncoder>* mock_encoder = new NiceMock<MockVideoEncoder>();
   NiceMock<MockVideoEncoderFactory> simulcast_factory;
 
   EXPECT_CALL(*mock_encoder, InitEncode(_, _, _))
