@@ -533,6 +533,8 @@ OveruseFrameDetector::OveruseFrameDetector(
       in_quick_rampup_(false),
       current_rampup_delay_ms_(kStandardRampUpDelayMs) {
   task_checker_.Detach();
+  ParseFieldTrial({&filter_time_constant_},
+                  field_trial::FindFullName("WebRTC-CpuLoadEstimator"));
 }
 
 OveruseFrameDetector::~OveruseFrameDetector() {}
@@ -683,6 +685,11 @@ void OveruseFrameDetector::CheckForOveruse(
 void OveruseFrameDetector::SetOptions(const CpuOveruseOptions& options) {
   RTC_DCHECK_RUN_ON(&task_checker_);
   options_ = options;
+
+  // Time constant config overridable by field trial.
+  if (filter_time_constant_) {
+    options_.filter_time_ms = filter_time_constant_->ms();
+  }
   // Force reset with next frame.
   num_pixels_ = 0;
   usage_ = CreateProcessingUsage(options);

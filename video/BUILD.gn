@@ -205,6 +205,7 @@ rtc_source_set("video_stream_encoder_impl") {
     "../rtc_base:rtc_task_queue",
     "../rtc_base:timeutils",
     "../rtc_base/experiments:alr_experiment",
+    "../rtc_base/experiments:field_trial_parser",
     "../rtc_base/experiments:quality_scaling_experiment",
     "../rtc_base/experiments:rate_control_settings",
     "../rtc_base/synchronization:sequence_checker",
