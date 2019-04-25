@@ -2808,7 +2808,7 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   EXPECT_TRUE(SetupSendStream());
   EXPECT_TRUE(AddRecvStream(kSsrcY));
   EXPECT_CALL(adm_, BuiltInAECIsAvailable())
-      .Times(9)
+      .Times(8)
       .WillRepeatedly(Return(false));
   EXPECT_CALL(adm_, BuiltInAGCIsAvailable())
       .Times(4)
@@ -2855,23 +2855,14 @@ TEST_F(WebRtcVoiceEngineTestFake, SetAudioOptions) {
   SetSendParameters(send_parameters_);
   EXPECT_TRUE(IsEchoCancellationEnabled());
 
-  // Turn on delay agnostic aec and make sure nothing change w.r.t. echo
-  // control.
-  send_parameters_.options.delay_agnostic_aec = true;
-  SetSendParameters(send_parameters_);
-  EXPECT_TRUE(IsEchoCancellationEnabled());
-
   // Turn off echo cancellation and delay agnostic aec.
-  send_parameters_.options.delay_agnostic_aec = false;
-  send_parameters_.options.extended_filter_aec = false;
   send_parameters_.options.echo_cancellation = false;
   SetSendParameters(send_parameters_);
   EXPECT_FALSE(IsEchoCancellationEnabled());
 
-  // Turning delay agnostic aec back on should also turn on echo cancellation.
-  send_parameters_.options.delay_agnostic_aec = true;
+  // Restore AEC to be on to work with the following tests.
+  send_parameters_.options.echo_cancellation = true;
   SetSendParameters(send_parameters_);
-  EXPECT_TRUE(IsEchoCancellationEnabled());
 
   // Turn off AGC
   send_parameters_.options.auto_gain_control = false;

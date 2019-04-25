@@ -118,12 +118,9 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
   bool is_dumping_aec_ = false;
   bool initialized_ = false;
 
-  // Cache received extended_filter_aec, delay_agnostic_aec and experimental_ns
-  // values, and apply them in case they are missing in the audio options.
-  // We need to do this because SetExtraOptions() will revert to defaults for
-  // options which are not provided.
-  absl::optional<bool> extended_filter_aec_;
-  absl::optional<bool> delay_agnostic_aec_;
+  // Cache experimental_ns and apply in case they are missing in the audio
+  // options. We need to do this because SetExtraOptions() will revert to
+  // defaults for options which are not provided.
   absl::optional<bool> experimental_ns_;
   // Jitter buffer settings for new streams.
   size_t audio_jitter_buffer_max_packets_ = 200;

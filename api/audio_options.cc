@@ -56,8 +56,6 @@ void AudioOptions::SetAll(const AudioOptions& change) {
           change.audio_jitter_buffer_enable_rtx_handling);
   SetFrom(&typing_detection, change.typing_detection);
   SetFrom(&experimental_agc, change.experimental_agc);
-  SetFrom(&extended_filter_aec, change.extended_filter_aec);
-  SetFrom(&delay_agnostic_aec, change.delay_agnostic_aec);
   SetFrom(&experimental_ns, change.experimental_ns);
   SetFrom(&residual_echo_detector, change.residual_echo_detector);
   SetFrom(&tx_agc_target_dbov, change.tx_agc_target_dbov);
@@ -87,8 +85,6 @@ bool AudioOptions::operator==(const AudioOptions& o) const {
              o.audio_jitter_buffer_enable_rtx_handling &&
          typing_detection == o.typing_detection &&
          experimental_agc == o.experimental_agc &&
-         extended_filter_aec == o.extended_filter_aec &&
-         delay_agnostic_aec == o.delay_agnostic_aec &&
          experimental_ns == o.experimental_ns &&
          residual_echo_detector == o.residual_echo_detector &&
          tx_agc_target_dbov == o.tx_agc_target_dbov &&
@@ -122,8 +118,6 @@ std::string AudioOptions::ToString() const {
                 audio_jitter_buffer_enable_rtx_handling);
   ToStringIfSet(&result, "typing", typing_detection);
   ToStringIfSet(&result, "experimental_agc", experimental_agc);
-  ToStringIfSet(&result, "extended_filter_aec", extended_filter_aec);
-  ToStringIfSet(&result, "delay_agnostic_aec", delay_agnostic_aec);
   ToStringIfSet(&result, "experimental_ns", experimental_ns);
   ToStringIfSet(&result, "residual_echo_detector", residual_echo_detector);
   ToStringIfSet(&result, "tx_agc_target_dbov", tx_agc_target_dbov);

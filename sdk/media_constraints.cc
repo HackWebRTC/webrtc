@@ -94,9 +94,6 @@ const char MediaConstraints::kValueFalse[] = "false";
 
 // Audio constraints.
 const char MediaConstraints::kGoogEchoCancellation[] = "googEchoCancellation";
-const char MediaConstraints::kExtendedFilterEchoCancellation[] =
-    "googEchoCancellation2";
-const char MediaConstraints::kDAEchoCancellation[] = "googDAEchoCancellation";
 const char MediaConstraints::kAutoGainControl[] = "googAutoGainControl";
 const char MediaConstraints::kExperimentalAutoGainControl[] =
     "googAutoGainControl2";
@@ -195,11 +192,6 @@ void CopyConstraintsIntoAudioOptions(const MediaConstraints* constraints,
   ConstraintToOptional<bool>(constraints,
                              MediaConstraints::kGoogEchoCancellation,
                              &options->echo_cancellation);
-  ConstraintToOptional<bool>(constraints,
-                             MediaConstraints::kExtendedFilterEchoCancellation,
-                             &options->extended_filter_aec);
-  ConstraintToOptional<bool>(constraints, MediaConstraints::kDAEchoCancellation,
-                             &options->delay_agnostic_aec);
   ConstraintToOptional<bool>(constraints, MediaConstraints::kAutoGainControl,
                              &options->auto_gain_control);
   ConstraintToOptional<bool>(constraints,

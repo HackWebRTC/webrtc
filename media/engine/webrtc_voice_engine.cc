@@ -277,8 +277,6 @@ void WebRtcVoiceEngine::Init() {
     options.audio_jitter_buffer_enable_rtx_handling = false;
     options.typing_detection = true;
     options.experimental_agc = false;
-    options.extended_filter_aec = false;
-    options.delay_agnostic_aec = false;
     options.experimental_ns = false;
     options.residual_echo_detector = true;
     bool error = ApplyOptions(options);
@@ -320,32 +318,15 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     // EC may be forced on for a device known to have non-functioning platform
     // AEC.
     options.echo_cancellation = true;
-    options.extended_filter_aec = true;
     RTC_LOG(LS_WARNING)
         << "Force software AEC on iOS. May conflict with platform AEC.";
   } else {
     // On iOS, VPIO provides built-in EC.
     options.echo_cancellation = false;
-    options.extended_filter_aec = false;
     RTC_LOG(LS_INFO) << "Always disable AEC on iOS. Use built-in instead.";
   }
 #elif defined(WEBRTC_ANDROID)
   ec_mode = webrtc::kEcAecm;
-  options.extended_filter_aec = false;
-#endif
-
-  // Delay Agnostic AEC automatically turns on EC if not set except on iOS
-  // where the feature is not supported.
-  bool use_delay_agnostic_aec = false;
-#if !defined(WEBRTC_IOS)
-  if (options.delay_agnostic_aec) {
-    use_delay_agnostic_aec = *options.delay_agnostic_aec;
-    if (use_delay_agnostic_aec) {
-      options.echo_cancellation = true;
-      options.extended_filter_aec = true;
-      ec_mode = webrtc::kEcConference;
-    }
-  }
 #endif
 
 // Set and adjust noise suppressor options.
@@ -397,11 +378,9 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
     // in combination with Open SL ES audio.
     const bool built_in_aec = adm()->BuiltInAECIsAvailable();
     if (built_in_aec) {
-      // Built-in EC exists on this device and use_delay_agnostic_aec is not
-      // overriding it. Enable/Disable it according to the echo_cancellation
-      // audio option.
-      const bool enable_built_in_aec =
-          *options.echo_cancellation && !use_delay_agnostic_aec;
+      // Built-in EC exists on this device. Enable/Disable it according to the
+      // echo_cancellation audio option.
+      const bool enable_built_in_aec = *options.echo_cancellation;
       if (adm()->EnableBuiltInAEC(enable_built_in_aec) == 0 &&
           enable_built_in_aec) {
         // Disable internal software EC if built-in EC is enabled,
@@ -474,25 +453,6 @@ bool WebRtcVoiceEngine::ApplyOptions(const AudioOptions& options_in) {
   }
 
   webrtc::Config config;
-
-  if (options.delay_agnostic_aec)
-    delay_agnostic_aec_ = options.delay_agnostic_aec;
-  if (delay_agnostic_aec_) {
-    RTC_LOG(LS_INFO) << "Delay agnostic aec is enabled? "
-                     << *delay_agnostic_aec_;
-    config.Set<webrtc::DelayAgnostic>(
-        new webrtc::DelayAgnostic(*delay_agnostic_aec_));
-  }
-
-  if (options.extended_filter_aec) {
-    extended_filter_aec_ = options.extended_filter_aec;
-  }
-  if (extended_filter_aec_) {
-    RTC_LOG(LS_INFO) << "Extended filter aec is enabled? "
-                     << *extended_filter_aec_;
-    config.Set<webrtc::ExtendedFilter>(
-        new webrtc::ExtendedFilter(*extended_filter_aec_));
-  }
 
   if (options.experimental_ns) {
     experimental_ns_ = options.experimental_ns;
