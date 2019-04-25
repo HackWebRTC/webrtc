@@ -83,18 +83,16 @@ class DelayBasedBwe {
 
   rtc::RaceChecker network_race_;
   RtcEventLog* const event_log_;
+  const WebRtcKeyValueConfig* const key_value_config_;
+  NetworkStatePredictor* network_state_predictor_;
   std::unique_ptr<InterArrival> inter_arrival_;
   std::unique_ptr<DelayIncreaseDetectorInterface> delay_detector_;
   Timestamp last_seen_packet_;
   bool uma_recorded_;
   AimdRateControl rate_control_;
-  size_t trendline_window_size_;
-  double trendline_smoothing_coeff_;
-  double trendline_threshold_gain_;
   DataRate prev_bitrate_;
   BandwidthUsage prev_state_;
   bool alr_limited_backoff_enabled_;
-  NetworkStatePredictor* network_state_predictor_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(DelayBasedBwe);
 };

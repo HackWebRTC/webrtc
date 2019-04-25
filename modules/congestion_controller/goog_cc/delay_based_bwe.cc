@@ -40,30 +40,6 @@ constexpr double kTimestampToMs =
 // after the API has been changed.
 constexpr uint32_t kFixedSsrc = 0;
 
-// Parameters for linear least squares fit of regression line to noisy data.
-constexpr size_t kDefaultTrendlineWindowSize = 20;
-constexpr double kDefaultTrendlineSmoothingCoeff = 0.9;
-constexpr double kDefaultTrendlineThresholdGain = 4.0;
-
-const char kBweWindowSizeInPacketsExperiment[] =
-    "WebRTC-BweWindowSizeInPackets";
-
-size_t ReadTrendlineFilterWindowSize(
-    const WebRtcKeyValueConfig* key_value_config) {
-  std::string experiment_string =
-      key_value_config->Lookup(kBweWindowSizeInPacketsExperiment);
-  size_t window_size;
-  int parsed_values =
-      sscanf(experiment_string.c_str(), "Enabled-%zu", &window_size);
-  if (parsed_values == 1) {
-    if (window_size > 1)
-      return window_size;
-    RTC_LOG(WARNING) << "Window size must be greater than 1.";
-  }
-  RTC_LOG(LS_WARNING) << "Failed to parse parameters for BweWindowSizeInPackets"
-                         " experiment from field trial string. Using default.";
-  return kDefaultTrendlineWindowSize;
-}
 }  // namespace
 
 DelayBasedBwe::Result::Result()
@@ -86,31 +62,19 @@ DelayBasedBwe::DelayBasedBwe(const WebRtcKeyValueConfig* key_value_config,
                              RtcEventLog* event_log,
                              NetworkStatePredictor* network_state_predictor)
     : event_log_(event_log),
+      key_value_config_(key_value_config),
+      network_state_predictor_(network_state_predictor),
       inter_arrival_(),
-      delay_detector_(),
+      delay_detector_(
+          new TrendlineEstimator(key_value_config_, network_state_predictor_)),
       last_seen_packet_(Timestamp::MinusInfinity()),
       uma_recorded_(false),
       rate_control_(key_value_config, /*send_side=*/true),
-      trendline_window_size_(
-          key_value_config->Lookup(kBweWindowSizeInPacketsExperiment)
-                      .find("Enabled") == 0
-              ? ReadTrendlineFilterWindowSize(key_value_config)
-              : kDefaultTrendlineWindowSize),
-      trendline_smoothing_coeff_(kDefaultTrendlineSmoothingCoeff),
-      trendline_threshold_gain_(kDefaultTrendlineThresholdGain),
       prev_bitrate_(DataRate::Zero()),
       prev_state_(BandwidthUsage::kBwNormal),
       alr_limited_backoff_enabled_(
           key_value_config->Lookup("WebRTC-Bwe-AlrLimitedBackoff")
-              .find("Enabled") == 0),
-      network_state_predictor_(network_state_predictor) {
-  RTC_LOG(LS_INFO)
-      << "Using Trendline filter for delay change estimation with window size "
-      << trendline_window_size_;
-  delay_detector_.reset(new TrendlineEstimator(
-      trendline_window_size_, trendline_smoothing_coeff_,
-      trendline_threshold_gain_, network_state_predictor_));
-}
+              .find("Enabled") == 0) {}
 
 DelayBasedBwe::~DelayBasedBwe() {}
 
@@ -176,9 +140,8 @@ void DelayBasedBwe::IncomingPacketFeedback(
     inter_arrival_.reset(
         new InterArrival((kTimestampGroupLengthMs << kInterArrivalShift) / 1000,
                          kTimestampToMs, true));
-    delay_detector_.reset(new TrendlineEstimator(
-        trendline_window_size_, trendline_smoothing_coeff_,
-        trendline_threshold_gain_, network_state_predictor_));
+    delay_detector_.reset(
+        new TrendlineEstimator(key_value_config_, network_state_predictor_));
   }
   last_seen_packet_ = at_time;
 

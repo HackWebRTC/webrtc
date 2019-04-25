@@ -16,6 +16,7 @@
 #include <utility>
 
 #include "api/network_state_predictor.h"
+#include "api/transport/webrtc_key_value_config.h"
 #include "modules/congestion_controller/goog_cc/delay_increase_detector_interface.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "rtc_base/constructor_magic.h"
@@ -24,6 +25,8 @@ namespace webrtc {
 
 class TrendlineEstimator : public DelayIncreaseDetectorInterface {
  public:
+  TrendlineEstimator(const WebRtcKeyValueConfig* key_value_config,
+                     NetworkStatePredictor* network_state_predictor);
   // |window_size| is the number of points required to compute a trend line.
   // |smoothing_coef| controls how much we smooth out the delay before fitting
   // the trend line. |threshold_gain| is used to scale the trendline slope for
