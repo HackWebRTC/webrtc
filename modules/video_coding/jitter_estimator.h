@@ -26,7 +26,6 @@ class VCMJitterEstimator {
 
   // Resets the estimate to the initial state.
   void Reset();
-  void ResetNackCount();
 
   // Updates the jitter estimate with the new data.
   //
@@ -57,8 +56,6 @@ class VCMJitterEstimator {
   // Input:
   //          - rttMs          : RTT in ms.
   void UpdateRtt(int64_t rttMs);
-
-  void UpdateMaxFrameSize(uint32_t frameSizeBytes);
 
   // A constant describing the delay from the jitter buffer to the delay on the
   // receiving side which is not accounted for by the jitter buffer nor the

@@ -112,10 +112,6 @@ void VCMJitterEstimator::Reset() {
   fps_counter_.Reset();
 }
 
-void VCMJitterEstimator::ResetNackCount() {
-  _nackCount = 0;
-}
-
 // Updates the estimates with the new measurements.
 void VCMJitterEstimator::UpdateEstimate(int64_t frameDelayMS,
                                         uint32_t frameSizeBytes,
@@ -374,12 +370,6 @@ void VCMJitterEstimator::PostProcessEstimate() {
 
 void VCMJitterEstimator::UpdateRtt(int64_t rttMs) {
   _rttFilter.Update(rttMs);
-}
-
-void VCMJitterEstimator::UpdateMaxFrameSize(uint32_t frameSizeBytes) {
-  if (_maxFrameSize < frameSizeBytes) {
-    _maxFrameSize = frameSizeBytes;
-  }
 }
 
 // Returns the current filtered estimate if available,
