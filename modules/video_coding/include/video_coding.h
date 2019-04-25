@@ -127,10 +127,17 @@ class VideoCodingModule : public Module {
   // Input:
   //      - incomingPayload      : Payload of the packet.
   //      - payloadLength        : Length of the payload.
-  //      - rtpInfo              : The parsed header.
+  //      - rtp_header           : The parsed RTP header.
+  //      - video_header         : The relevant extensions and payload header.
   //
   // Return value      : VCM_OK, on success.
   //                     < 0,    on error.
+  virtual int32_t IncomingPacket(const uint8_t* incomingPayload,
+                                 size_t payloadLength,
+                                 const RTPHeader& rtp_header,
+                                 const RTPVideoHeader& video_header) = 0;
+
+  // DEPRECATED
   virtual int32_t IncomingPacket(const uint8_t* incomingPayload,
                                  size_t payloadLength,
                                  const WebRtcRTPHeader& rtpInfo) = 0;

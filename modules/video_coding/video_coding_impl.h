@@ -76,7 +76,8 @@ class VideoReceiver : public Module {
 
   int32_t IncomingPacket(const uint8_t* incomingPayload,
                          size_t payloadLength,
-                         const WebRtcRTPHeader& rtpInfo);
+                         const RTPHeader& rtp_header,
+                         const RTPVideoHeader& video_header);
 
   void SetNackSettings(size_t max_nack_list_size,
                        int max_packet_age_to_nack,

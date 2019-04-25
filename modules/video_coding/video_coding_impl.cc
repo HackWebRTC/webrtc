@@ -93,7 +93,16 @@ class VideoCodingModuleImpl : public VideoCodingModule {
   int32_t IncomingPacket(const uint8_t* incomingPayload,
                          size_t payloadLength,
                          const WebRtcRTPHeader& rtpInfo) override {
-    return receiver_.IncomingPacket(incomingPayload, payloadLength, rtpInfo);
+    return IncomingPacket(incomingPayload, payloadLength, rtpInfo.header,
+                          rtpInfo.video_header());
+  }
+
+  int32_t IncomingPacket(const uint8_t* incomingPayload,
+                         size_t payloadLength,
+                         const RTPHeader& rtp_header,
+                         const RTPVideoHeader& video_header) override {
+    return receiver_.IncomingPacket(incomingPayload, payloadLength, rtp_header,
+                                    video_header);
   }
 
   int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode) override {

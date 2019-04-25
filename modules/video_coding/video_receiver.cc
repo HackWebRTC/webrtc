@@ -323,11 +323,12 @@ int32_t VideoReceiver::RegisterReceiveCodec(const VideoCodec* receiveCodec,
 // Incoming packet from network parsed and ready for decode, non blocking.
 int32_t VideoReceiver::IncomingPacket(const uint8_t* incomingPayload,
                                       size_t payloadLength,
-                                      const WebRtcRTPHeader& rtpInfo) {
+                                      const RTPHeader& rtp_header,
+                                      const RTPVideoHeader& video_header) {
   RTC_DCHECK_RUN_ON(&module_thread_checker_);
-  if (rtpInfo.frameType == VideoFrameType::kVideoFrameKey) {
+  if (video_header.frame_type == VideoFrameType::kVideoFrameKey) {
     TRACE_EVENT1("webrtc", "VCM::PacketKeyFrame", "seqnum",
-                 rtpInfo.header.sequenceNumber);
+                 rtp_header.sequenceNumber);
   }
   if (incomingPayload == nullptr) {
     // The jitter buffer doesn't handle non-zero payload lengths for packets
@@ -335,8 +336,9 @@ int32_t VideoReceiver::IncomingPacket(const uint8_t* incomingPayload,
     // TODO(holmer): We should fix this in the jitter buffer.
     payloadLength = 0;
   }
-  const VCMPacket packet(incomingPayload, payloadLength, rtpInfo.header,
-                         rtpInfo.video_header(), rtpInfo.ntp_time_ms);
+  // Callers don't provide any ntp time.
+  const VCMPacket packet(incomingPayload, payloadLength, rtp_header,
+                         video_header, /*ntp_time_ms=*/0);
   int32_t ret = _receiver.InsertPacket(packet);
 
   // TODO(holmer): Investigate if this somehow should use the key frame
