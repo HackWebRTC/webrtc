@@ -137,11 +137,6 @@ class VideoCodingModule : public Module {
                                  const RTPHeader& rtp_header,
                                  const RTPVideoHeader& video_header) = 0;
 
-  // DEPRECATED
-  virtual int32_t IncomingPacket(const uint8_t* incomingPayload,
-                                 size_t payloadLength,
-                                 const WebRtcRTPHeader& rtpInfo) = 0;
-
   // Robustness APIs
 
   // DEPRECATED.
