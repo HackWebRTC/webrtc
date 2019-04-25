@@ -27,11 +27,8 @@ namespace webrtc {
 #define VCM_OK 0
 #define VCM_GENERAL_ERROR -1
 #define VCM_PARAMETER_ERROR -4
-#define VCM_CODEC_ERROR -6
-#define VCM_UNINITIALIZED -7
 #define VCM_NO_CODEC_REGISTERED -8
 #define VCM_JITTER_BUFFER_ERROR -9
-#define VCM_OLD_PACKET_ERROR -10
 
 enum {
   // Timing frames settings. Timing frames are sent every
@@ -48,15 +45,6 @@ enum VCMVideoProtection {
   kProtectionNack,
   kProtectionFEC,
   kProtectionNackFEC,
-};
-
-enum VCMTemporalDecimation {
-  kBitrateOverUseDecimation,
-};
-
-struct VCMFrameCount {
-  uint32_t numKeyFrames;
-  uint32_t numDeltaFrames;
 };
 
 // Callback class used for passing decoded frames which are ready to be
