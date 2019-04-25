@@ -1207,7 +1207,6 @@ void RTPSender::AddPacketToTransportFeedback(
     RtpPacketSendInfo packet_info;
     packet_info.ssrc = SSRC();
     packet_info.transport_sequence_number = packet_id;
-    packet_info.has_rtp_sequence_number = true;
     packet_info.rtp_sequence_number = packet.SequenceNumber();
     packet_info.length = packet_size;
     packet_info.pacing_info = pacing_info;
@@ -1238,10 +1237,5 @@ int64_t RTPSender::LastTimestampTimeMs() const {
 void RTPSender::SetRtt(int64_t rtt_ms) {
   packet_history_.SetRtt(rtt_ms);
   flexfec_packet_history_.SetRtt(rtt_ms);
-}
-
-void RTPSender::OnPacketsAcknowledged(
-    rtc::ArrayView<const uint16_t> sequence_numbers) {
-  packet_history_.CullAcknowledgedPackets(sequence_numbers);
 }
 }  // namespace webrtc

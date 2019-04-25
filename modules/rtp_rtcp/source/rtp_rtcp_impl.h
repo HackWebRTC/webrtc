@@ -276,7 +276,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
       StreamDataCountersCallback* callback) override;
   StreamDataCountersCallback* GetSendChannelRtpStatisticsCallback()
       const override;
-  AcknowledgedPacketsObserver* GetAcknowledgedPacketsObserver() const override;
 
   void OnReceivedNack(
       const std::vector<uint16_t>& nack_sequence_numbers) override;

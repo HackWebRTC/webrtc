@@ -172,7 +172,7 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   std::map<uint32_t, RtpState> suspended_ssrcs_;
 
   std::unique_ptr<FlexfecSender> flexfec_sender_;
-  const std::unique_ptr<FecController> fec_controller_;
+  std::unique_ptr<FecController> fec_controller_;
   // Rtp modules are assumed to be sorted in simulcast index order.
   const std::vector<webrtc_internal_rtp_video_sender::RtpStreamSender>
       rtp_streams_;
@@ -196,12 +196,6 @@ class RtpVideoSender : public RtpVideoSenderInterface,
 
   std::vector<FrameCounts> frame_counts_ RTC_GUARDED_BY(crit_);
   FrameCountObserver* const frame_count_observer_;
-
-  // Effectively const map from ssrc to AcknowledgedPacketsObserver. This
-  // map is set at construction time and never changed, but it's
-  // non-trivial to make it properly const.
-  std::map<uint32_t, AcknowledgedPacketsObserver*>
-      ssrc_to_acknowledged_packets_observers_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpVideoSender);
 };

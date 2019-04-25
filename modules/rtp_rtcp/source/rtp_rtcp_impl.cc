@@ -867,11 +867,6 @@ ModuleRtpRtcpImpl::GetSendChannelRtpStatisticsCallback() const {
   return rtp_sender_->GetRtpStatisticsCallback();
 }
 
-AcknowledgedPacketsObserver* ModuleRtpRtcpImpl::GetAcknowledgedPacketsObserver()
-    const {
-  return rtp_sender_.get();
-}
-
 void ModuleRtpRtcpImpl::SetVideoBitrateAllocation(
     const VideoBitrateAllocation& bitrate) {
   rtcp_sender_.SetVideoBitrateAllocation(bitrate);
