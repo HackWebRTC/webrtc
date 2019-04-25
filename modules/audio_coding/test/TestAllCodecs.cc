@@ -64,8 +64,7 @@ int32_t TestPack::SendData(AudioFrameType frame_type,
                            uint8_t payload_type,
                            uint32_t timestamp,
                            const uint8_t* payload_data,
-                           size_t payload_size,
-                           const RTPFragmentationHeader* fragmentation) {
+                           size_t payload_size) {
   RTPHeader rtp_header;
   int32_t status;
 

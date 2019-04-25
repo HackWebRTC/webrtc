@@ -316,7 +316,7 @@ void OpusTest::Run(TestPackStereo* channel,
 
         // Send data to the channel. "channel" will handle the loss simulation.
         channel->SendData(AudioFrameType::kAudioFrameSpeech, payload_type_,
-                          rtp_timestamp_, bitstream, bitstream_len_byte, NULL);
+                          rtp_timestamp_, bitstream, bitstream_len_byte);
         if (first_packet) {
           first_packet = false;
           start_time_stamp = rtp_timestamp_;

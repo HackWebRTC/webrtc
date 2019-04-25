@@ -22,8 +22,7 @@ int32_t Channel::SendData(AudioFrameType frameType,
                           uint8_t payloadType,
                           uint32_t timeStamp,
                           const uint8_t* payloadData,
-                          size_t payloadSize,
-                          const RTPFragmentationHeader* fragmentation) {
+                          size_t payloadSize) {
   RTPHeader rtp_header;
   int32_t status;
   size_t payloadDataSize = payloadSize;
@@ -46,46 +45,14 @@ int32_t Channel::SendData(AudioFrameType frameType,
     return 0;
   }
 
-  // Treat fragmentation separately
-  if (fragmentation != NULL) {
-    // If silence for too long, send only new data.
-    if ((fragmentation->fragmentationVectorSize == 2) &&
-        (fragmentation->fragmentationTimeDiff[1] <= 0x3fff)) {
-      // only 0x80 if we have multiple blocks
-      _payloadData[0] = 0x80 + fragmentation->fragmentationPlType[1];
-      size_t REDheader = (fragmentation->fragmentationTimeDiff[1] << 10) +
-                         fragmentation->fragmentationLength[1];
-      _payloadData[1] = uint8_t((REDheader >> 16) & 0x000000FF);
-      _payloadData[2] = uint8_t((REDheader >> 8) & 0x000000FF);
-      _payloadData[3] = uint8_t(REDheader & 0x000000FF);
-
-      _payloadData[4] = fragmentation->fragmentationPlType[0];
-      // copy the RED data
-      memcpy(_payloadData + 5,
-             payloadData + fragmentation->fragmentationOffset[1],
-             fragmentation->fragmentationLength[1]);
-      // copy the normal data
-      memcpy(_payloadData + 5 + fragmentation->fragmentationLength[1],
-             payloadData + fragmentation->fragmentationOffset[0],
-             fragmentation->fragmentationLength[0]);
-      payloadDataSize += 5;
+  memcpy(_payloadData, payloadData, payloadDataSize);
+  if (_isStereo) {
+    if (_leftChannel) {
+      _rtp_header = rtp_header;
+      _leftChannel = false;
     } else {
-      // single block (newest one)
-      memcpy(_payloadData, payloadData + fragmentation->fragmentationOffset[0],
-             fragmentation->fragmentationLength[0]);
-      payloadDataSize = fragmentation->fragmentationLength[0];
-      rtp_header.payloadType = fragmentation->fragmentationPlType[0];
-    }
-  } else {
-    memcpy(_payloadData, payloadData, payloadDataSize);
-    if (_isStereo) {
-      if (_leftChannel) {
-        _rtp_header = rtp_header;
-        _leftChannel = false;
-      } else {
-        rtp_header = _rtp_header;
-        _leftChannel = true;
-      }
+      rtp_header = _rtp_header;
+      _leftChannel = true;
     }
   }
 

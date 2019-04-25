@@ -44,8 +44,23 @@ class AudioPacketizationCallback {
                            uint8_t payload_type,
                            uint32_t timestamp,
                            const uint8_t* payload_data,
+                           size_t payload_len_bytes) {
+    return SendData(frame_type, payload_type, timestamp, payload_data,
+                    payload_len_bytes, nullptr);
+  }
+
+  // TODO(bugs.webrtc.org/6471) Deprecated, delete as soon as downstream
+  // implementations are updated. Then make above method pure virtual, and
+  // delete forward declaration of RTPFragmentationHeader.
+  virtual int32_t SendData(AudioFrameType frame_type,
+                           uint8_t payload_type,
+                           uint32_t timestamp,
+                           const uint8_t* payload_data,
                            size_t payload_len_bytes,
-                           const RTPFragmentationHeader* fragmentation) = 0;
+                           const RTPFragmentationHeader* fragmentation) {
+    return SendData(frame_type, payload_type, timestamp, payload_data,
+                    payload_len_bytes);
+  }
 };
 
 // Callback class used for reporting VAD decision

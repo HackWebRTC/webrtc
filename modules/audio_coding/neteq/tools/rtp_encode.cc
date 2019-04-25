@@ -111,9 +111,7 @@ class Packetizer : public AudioPacketizationCallback {
                    uint8_t payload_type,
                    uint32_t timestamp,
                    const uint8_t* payload_data,
-                   size_t payload_len_bytes,
-                   const RTPFragmentationHeader* fragmentation) override {
-    RTC_CHECK(!fragmentation);
+                   size_t payload_len_bytes) override {
     if (payload_len_bytes == 0) {
       return 0;
     }

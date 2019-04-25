@@ -185,8 +185,7 @@ class ChannelSend : public ChannelSendInterface,
                    uint8_t payloadType,
                    uint32_t timeStamp,
                    const uint8_t* payloadData,
-                   size_t payloadSize,
-                   const RTPFragmentationHeader* fragmentation) override;
+                   size_t payloadSize) override;
 
   void OnUplinkPacketLossRate(float packet_loss_rate);
   bool InputMute() const;
@@ -196,15 +195,13 @@ class ChannelSend : public ChannelSendInterface,
   int32_t SendRtpAudio(AudioFrameType frameType,
                        uint8_t payloadType,
                        uint32_t timeStamp,
-                       rtc::ArrayView<const uint8_t> payload,
-                       const RTPFragmentationHeader* fragmentation)
+                       rtc::ArrayView<const uint8_t> payload)
       RTC_RUN_ON(encoder_queue_);
 
   int32_t SendMediaTransportAudio(AudioFrameType frameType,
                                   uint8_t payloadType,
                                   uint32_t timeStamp,
-                                  rtc::ArrayView<const uint8_t> payload,
-                                  const RTPFragmentationHeader* fragmentation)
+                                  rtc::ArrayView<const uint8_t> payload)
       RTC_RUN_ON(encoder_queue_);
 
   // Return media transport or nullptr if using RTP.
@@ -477,8 +474,7 @@ int32_t ChannelSend::SendData(AudioFrameType frameType,
                               uint8_t payloadType,
                               uint32_t timeStamp,
                               const uint8_t* payloadData,
-                              size_t payloadSize,
-                              const RTPFragmentationHeader* fragmentation) {
+                              size_t payloadSize) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   rtc::ArrayView<const uint8_t> payload(payloadData, payloadSize);
 
@@ -489,19 +485,16 @@ int32_t ChannelSend::SendData(AudioFrameType frameType,
       return 0;
     }
 
-    return SendMediaTransportAudio(frameType, payloadType, timeStamp, payload,
-                                   fragmentation);
+    return SendMediaTransportAudio(frameType, payloadType, timeStamp, payload);
   } else {
-    return SendRtpAudio(frameType, payloadType, timeStamp, payload,
-                        fragmentation);
+    return SendRtpAudio(frameType, payloadType, timeStamp, payload);
   }
 }
 
 int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
                                   uint8_t payloadType,
                                   uint32_t timeStamp,
-                                  rtc::ArrayView<const uint8_t> payload,
-                                  const RTPFragmentationHeader* fragmentation) {
+                                  rtc::ArrayView<const uint8_t> payload) {
   if (_includeAudioLevelIndication) {
     // Store current audio level in the RTP sender.
     // The level will be used in combination with voice-activity state
@@ -572,8 +565,7 @@ int32_t ChannelSend::SendMediaTransportAudio(
     AudioFrameType frameType,
     uint8_t payloadType,
     uint32_t timeStamp,
-    rtc::ArrayView<const uint8_t> payload,
-    const RTPFragmentationHeader* fragmentation) {
+    rtc::ArrayView<const uint8_t> payload) {
   // TODO(nisse): Use null _transportPtr for MediaTransport.
   // RTC_DCHECK(_transportPtr == nullptr);
   uint64_t channel_id;
