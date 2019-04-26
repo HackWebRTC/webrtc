@@ -822,6 +822,9 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
   switch (operation) {
     case kNormal: {
       DoNormal(decoded_buffer_.get(), length, speech_type, play_dtmf);
+      if (length > 0) {
+        stats_->DecodedOutputPlayed();
+      }
       break;
     }
     case kMerge: {

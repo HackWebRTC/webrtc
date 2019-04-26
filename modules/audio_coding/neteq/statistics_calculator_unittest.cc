@@ -128,4 +128,60 @@ TEST(StatisticsCalculator, ReceivedPacket) {
   EXPECT_EQ(2u, stats_output.jitter_buffer_packets_received);
 }
 
+TEST(StatisticsCalculator, InterruptionCounter) {
+  constexpr int fs_khz = 48;
+  constexpr int fs_hz = fs_khz * 1000;
+  StatisticsCalculator stats;
+  stats.DecodedOutputPlayed();
+  stats.EndExpandEvent(fs_hz);
+  auto lts = stats.GetLifetimeStatistics();
+  EXPECT_EQ(0u, lts.interruption_count);
+  EXPECT_EQ(0u, lts.total_interruption_duration_ms);
+
+  // Add an event that is shorter than 150 ms. Should not be logged.
+  stats.ExpandedVoiceSamples(10 * fs_khz, false);   // 10 ms.
+  stats.ExpandedNoiseSamples(139 * fs_khz, false);  // 139 ms.
+  stats.EndExpandEvent(fs_hz);
+  lts = stats.GetLifetimeStatistics();
+  EXPECT_EQ(0u, lts.interruption_count);
+
+  // Add an event that is longer than 150 ms. Should be logged.
+  stats.ExpandedVoiceSamples(140 * fs_khz, false);  // 140 ms.
+  stats.ExpandedNoiseSamples(11 * fs_khz, false);   // 11 ms.
+  stats.EndExpandEvent(fs_hz);
+  lts = stats.GetLifetimeStatistics();
+  EXPECT_EQ(1u, lts.interruption_count);
+  EXPECT_EQ(151u, lts.total_interruption_duration_ms);
+
+  // Add one more long event.
+  stats.ExpandedVoiceSamples(100 * fs_khz, false);   // 100 ms.
+  stats.ExpandedNoiseSamples(5000 * fs_khz, false);  // 5000 ms.
+  stats.EndExpandEvent(fs_hz);
+  lts = stats.GetLifetimeStatistics();
+  EXPECT_EQ(2u, lts.interruption_count);
+  EXPECT_EQ(5100u + 151u, lts.total_interruption_duration_ms);
+}
+
+TEST(StatisticsCalculator, InterruptionCounterDoNotLogBeforeDecoding) {
+  constexpr int fs_khz = 48;
+  constexpr int fs_hz = fs_khz * 1000;
+  StatisticsCalculator stats;
+
+  // Add an event that is longer than 150 ms. Should normally be logged, but we
+  // have not called DecodedOutputPlayed() yet, so it shouldn't this time.
+  stats.ExpandedVoiceSamples(151 * fs_khz, false);  // 151 ms.
+  stats.EndExpandEvent(fs_hz);
+  auto lts = stats.GetLifetimeStatistics();
+  EXPECT_EQ(0u, lts.interruption_count);
+
+  // Call DecodedOutputPlayed(). Logging should happen after this.
+  stats.DecodedOutputPlayed();
+
+  // Add one more long event.
+  stats.ExpandedVoiceSamples(151 * fs_khz, false);  // 151 ms.
+  stats.EndExpandEvent(fs_hz);
+  lts = stats.GetLifetimeStatistics();
+  EXPECT_EQ(1u, lts.interruption_count);
+}
+
 }  // namespace webrtc

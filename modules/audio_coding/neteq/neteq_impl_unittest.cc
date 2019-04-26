@@ -689,6 +689,65 @@ TEST_F(NetEqImplTest, FirstPacketUnknown) {
   }
 }
 
+// This test verifies that audio interruption is not logged for the initial
+// PLC period before the first packet is deocoded.
+// TODO(henrik.lundin) Maybe move this test to neteq_network_stats_unittest.cc.
+TEST_F(NetEqImplTest, NoAudioInterruptionLoggedBeforeFirstDecode) {
+  UseNoMocks();
+  CreateInstance();
+
+  const uint8_t kPayloadType = 17;   // Just an arbitrary number.
+  const uint32_t kReceiveTime = 17;  // Value doesn't matter for this test.
+  const int kSampleRateHz = 8000;
+  const size_t kPayloadLengthSamples =
+      static_cast<size_t>(10 * kSampleRateHz / 1000);  // 10 ms.
+  const size_t kPayloadLengthBytes = kPayloadLengthSamples * 2;
+  uint8_t payload[kPayloadLengthBytes] = {0};
+  RTPHeader rtp_header;
+  rtp_header.payloadType = kPayloadType;
+  rtp_header.sequenceNumber = 0x1234;
+  rtp_header.timestamp = 0x12345678;
+  rtp_header.ssrc = 0x87654321;
+
+  // Register the payload type.
+  EXPECT_TRUE(neteq_->RegisterPayloadType(kPayloadType,
+                                          SdpAudioFormat("l16", 8000, 1)));
+
+  // Pull audio several times. No packets have been inserted yet.
+  const size_t kMaxOutputSize = static_cast<size_t>(10 * kSampleRateHz / 1000);
+  AudioFrame output;
+  bool muted;
+  for (int i = 0; i < 100; ++i) {
+    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
+    ASSERT_LE(output.samples_per_channel_, kMaxOutputSize);
+    EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
+    EXPECT_EQ(1u, output.num_channels_);
+    EXPECT_NE(AudioFrame::kNormalSpeech, output.speech_type_);
+  }
+
+  // Insert 10 packets.
+  for (size_t i = 0; i < 10; ++i) {
+    rtp_header.sequenceNumber++;
+    rtp_header.timestamp += kPayloadLengthSamples;
+    EXPECT_EQ(NetEq::kOK,
+              neteq_->InsertPacket(rtp_header, payload, kReceiveTime));
+    EXPECT_EQ(i + 1, packet_buffer_->NumPacketsInBuffer());
+  }
+
+  // Pull audio repeatedly and make sure we get normal output, that is not PLC.
+  for (size_t i = 0; i < 3; ++i) {
+    EXPECT_EQ(NetEq::kOK, neteq_->GetAudio(&output, &muted));
+    ASSERT_LE(output.samples_per_channel_, kMaxOutputSize);
+    EXPECT_EQ(kMaxOutputSize, output.samples_per_channel_);
+    EXPECT_EQ(1u, output.num_channels_);
+    EXPECT_EQ(AudioFrame::kNormalSpeech, output.speech_type_)
+        << "NetEq did not decode the packets as expected.";
+  }
+
+  auto lifetime_stats = neteq_->GetLifetimeStatistics();
+  EXPECT_EQ(0u, lifetime_stats.interruption_count);
+}
+
 // This test verifies that NetEq can handle comfort noise and enters/quits codec
 // internal CNG mode properly.
 TEST_F(NetEqImplTest, CodecInternalCng) {

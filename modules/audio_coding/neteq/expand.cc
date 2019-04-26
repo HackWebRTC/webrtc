@@ -324,12 +324,14 @@ void Expand::SetParametersForNormalAfterExpand() {
   lag_index_direction_ = 0;
   stop_muting_ = true;  // Do not mute signal any more.
   statistics_->LogDelayedPacketOutageEvent(expand_duration_samples_, fs_hz_);
+  statistics_->EndExpandEvent(fs_hz_);
 }
 
 void Expand::SetParametersForMergeAfterExpand() {
   current_lag_index_ = -1;  /* out of the 3 possible ones */
   lag_index_direction_ = 1; /* make sure we get the "optimal" lag */
   stop_muting_ = true;
+  statistics_->EndExpandEvent(fs_hz_);
 }
 
 bool Expand::Muted() const {
