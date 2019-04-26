@@ -28,6 +28,7 @@
 #include "modules/video_coding/utility/frame_dropper.h"
 #include "modules/video_coding/utility/quality_scaler.h"
 #include "modules/video_coding/video_coding_impl.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/race_checker.h"
@@ -347,6 +348,17 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // screenshare ([1]). 0 means no group specified. Positive values are
   // experiment group numbers incremented by 1.
   const std::array<uint8_t, 2> experiment_groups_;
+
+  // TODO(philipel): Remove this lock and run on |encoder_queue_| instead.
+  rtc::CriticalSection encoded_image_lock_;
+
+  int64_t next_frame_id_ RTC_GUARDED_BY(encoded_image_lock_);
+
+  // This array is used as a map from simulcast id to an encoder's buffer
+  // state. For every buffer of the encoder we keep track of the last frame id
+  // that updated that buffer.
+  std::array<std::array<int64_t, kMaxEncoderBuffers>, kMaxSimulcastStreams>
+      encoder_buffer_state_ RTC_GUARDED_BY(encoded_image_lock_);
 
   // All public methods are proxied to |encoder_queue_|. It must must be
   // destroyed first to make sure no tasks are run that use other members.

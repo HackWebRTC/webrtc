@@ -17,8 +17,19 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
+#include "api/video/video_codec_constants.h"
 
 namespace webrtc {
+
+// Describes how a certain encoder buffer was used when encoding a frame.
+struct CodecBufferUsage {
+  CodecBufferUsage(int id, bool referenced, bool updated)
+      : id(id), referenced(referenced), updated(updated) {}
+
+  int id = 0;
+  bool referenced = false;
+  bool updated = false;
+};
 
 struct GenericFrameInfo {
   enum class DecodeTargetIndication {
@@ -37,10 +48,12 @@ struct GenericFrameInfo {
   GenericFrameInfo(const GenericFrameInfo&);
   ~GenericFrameInfo();
 
+  int64_t frame_id = 0;
   int temporal_id = 0;
   int spatial_id = 0;
   absl::InlinedVector<int, 10> frame_diffs;
   absl::InlinedVector<DecodeTargetIndication, 10> decode_target_indications;
+  absl::InlinedVector<CodecBufferUsage, kMaxEncoderBuffers> encoder_buffers;
 };
 
 class GenericFrameInfo::Builder {

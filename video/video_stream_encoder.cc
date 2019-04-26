@@ -515,12 +515,16 @@ VideoStreamEncoder::VideoStreamEncoder(
       next_frame_types_(1, VideoFrameType::kVideoFrameDelta),
       frame_encoder_timer_(this),
       experiment_groups_(GetExperimentGroups()),
+      next_frame_id_(0),
       encoder_queue_(task_queue_factory->CreateTaskQueue(
           "EncoderQueue",
           TaskQueueFactory::Priority::NORMAL)) {
   RTC_DCHECK(encoder_stats_observer);
   RTC_DCHECK(overuse_detector_);
   RTC_DCHECK_GE(number_of_cores, 1);
+
+  for (auto& state : encoder_buffer_state_)
+    state.fill(std::numeric_limits<int64_t>::max());
 }
 
 VideoStreamEncoder::~VideoStreamEncoder() {
@@ -1450,8 +1454,61 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
   // running in parallel on different threads.
   encoder_stats_observer_->OnSendEncodedImage(image_copy, codec_specific_info);
 
-  EncodedImageCallback::Result result =
-      sink_->OnEncodedImage(image_copy, codec_specific_info, fragmentation);
+  // The simulcast id is signaled in the SpatialIndex. This makes it impossible
+  // to do simulcast for codecs that actually support spatial layers since we
+  // can't distinguish between an actual spatial layer and a simulcast stream.
+  // TODO(bugs.webrtc.org/10520): Signal the simulcast id explicitly.
+  int simulcast_id = 0;
+  if (codec_specific_info &&
+      (codec_specific_info->codecType == kVideoCodecVP8 ||
+       codec_specific_info->codecType == kVideoCodecH264 ||
+       codec_specific_info->codecType == kVideoCodecGeneric)) {
+    simulcast_id = encoded_image.SpatialIndex().value_or(0);
+  }
+
+  std::unique_ptr<CodecSpecificInfo> codec_info_copy;
+  {
+    rtc::CritScope cs(&encoded_image_lock_);
+
+    if (codec_specific_info && codec_specific_info->generic_frame_info) {
+      codec_info_copy =
+          absl::make_unique<CodecSpecificInfo>(*codec_specific_info);
+      GenericFrameInfo& generic_info = *codec_info_copy->generic_frame_info;
+      generic_info.frame_id = next_frame_id_++;
+
+      if (encoder_buffer_state_.size() <= static_cast<size_t>(simulcast_id)) {
+        RTC_LOG(LS_ERROR) << "At most " << encoder_buffer_state_.size()
+                          << " simulcast streams supported.";
+      } else {
+        std::array<int64_t, kMaxEncoderBuffers>& state =
+            encoder_buffer_state_[simulcast_id];
+        for (const CodecBufferUsage& buffer : generic_info.encoder_buffers) {
+          if (state.size() <= static_cast<size_t>(buffer.id)) {
+            RTC_LOG(LS_ERROR)
+                << "At most " << state.size() << " encoder buffers supported.";
+            break;
+          }
+
+          if (buffer.referenced) {
+            int64_t diff = generic_info.frame_id - state[buffer.id];
+            if (diff <= 0) {
+              RTC_LOG(LS_ERROR) << "Invalid frame diff: " << diff << ".";
+            } else if (absl::c_find(generic_info.frame_diffs, diff) ==
+                       generic_info.frame_diffs.end()) {
+              generic_info.frame_diffs.push_back(diff);
+            }
+          }
+
+          if (buffer.updated)
+            state[buffer.id] = generic_info.frame_id;
+        }
+      }
+    }
+  }
+
+  EncodedImageCallback::Result result = sink_->OnEncodedImage(
+      image_copy, codec_info_copy ? codec_info_copy.get() : codec_specific_info,
+      fragmentation);
 
   // We are only interested in propagating the meta-data about the image, not
   // encoded data itself, to the post encode function. Since we cannot be sure

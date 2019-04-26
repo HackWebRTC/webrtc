@@ -305,6 +305,8 @@ void ScreenshareLayers::OnEncodeDone(size_t stream_index,
     vp8_info.layerSync = false;
     generic_frame_info.decode_target_indications =
         GenericFrameInfo::DecodeTargetInfo("S");
+    generic_frame_info.encoder_buffers.emplace_back(
+        0, /*referenced=*/!is_keyframe, /*updated=*/true);
   } else {
     int64_t unwrapped_timestamp = time_wrap_handler_.Unwrap(rtp_timestamp);
     if (dependency_info) {
@@ -340,10 +342,13 @@ void ScreenshareLayers::OnEncodeDone(size_t stream_index,
     // Note that |frame_config| is not derefernced if |is_keyframe|,
     // meaning it's never dereferenced if the optional may be unset.
     for (int i = 0; i < static_cast<int>(Vp8FrameConfig::Buffer::kCount); ++i) {
+      bool references = false;
+      bool updates = is_keyframe;
       if (!is_keyframe && dependency_info->frame_config.References(
                               static_cast<Vp8FrameConfig::Buffer>(i))) {
         RTC_DCHECK_LT(vp8_info.referencedBuffersCount,
                       arraysize(CodecSpecificInfoVP8::referencedBuffers));
+        references = true;
         vp8_info.referencedBuffers[vp8_info.referencedBuffersCount++] = i;
       }
 
@@ -351,8 +356,12 @@ void ScreenshareLayers::OnEncodeDone(size_t stream_index,
                              static_cast<Vp8FrameConfig::Buffer>(i))) {
         RTC_DCHECK_LT(vp8_info.updatedBuffersCount,
                       arraysize(CodecSpecificInfoVP8::updatedBuffers));
+        updates = true;
         vp8_info.updatedBuffers[vp8_info.updatedBuffersCount++] = i;
       }
+
+      if (references || updates)
+        generic_frame_info.encoder_buffers.emplace_back(i, references, updates);
     }
   }
 
