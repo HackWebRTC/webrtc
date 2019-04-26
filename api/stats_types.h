@@ -192,6 +192,7 @@ class StatsReport {
     kStatsValueNameHugeFramesSent,
     kStatsValueNameInitiator,
     kStatsValueNameInterframeDelayMaxMs,  // Max over last 10 seconds.
+    kStatsValueNameInterruptionCount,
     kStatsValueNameIssuerId,
     kStatsValueNameJitterBufferMs,
     kStatsValueNameJitterReceived,
@@ -232,6 +233,7 @@ class StatsReport {
     kStatsValueNameTargetDelayMs,
     kStatsValueNameTargetEncBitrate,
     kStatsValueNameTimingFrameInfo,  // Result of |TimingFrameInfo::ToString|
+    kStatsValueNameTotalInterruptionDurationMs,
     kStatsValueNameTrackId,
     kStatsValueNameTransmitBitrate,
     kStatsValueNameTransportType,

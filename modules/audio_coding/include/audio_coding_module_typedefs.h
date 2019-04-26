@@ -130,6 +130,10 @@ struct NetworkStatistics {
   uint64_t delayedPacketOutageSamples;
   // arrival delay of incoming packets
   uint64_t relativePacketArrivalDelayMs;
+  // number of audio interruptions
+  int32_t interruptionCount;
+  // total duration of audio interruptions
+  int32_t totalInterruptionDurationMs;
 };
 
 }  // namespace webrtc
