@@ -10,6 +10,8 @@
 
 #include "rtc_base/memory/aligned_malloc.h"
 
+#include "rtc_base/checks.h"
+
 #include <stdlib.h>  // for free, malloc
 #include <string.h>  // for memcpy
 
@@ -61,9 +63,7 @@ void* AlignedMalloc(size_t size, size_t alignment) {
   // A pointer to the start of the memory must be stored so that it can be
   // retreived for deletion, ergo the sizeof(uintptr_t).
   void* memory_pointer = malloc(size + sizeof(uintptr_t) + alignment - 1);
-  if (memory_pointer == NULL) {
-    return NULL;
-  }
+  RTC_CHECK(memory_pointer) << "Couldn't allocate memory in AlignedMalloc";
 
   // Aligning after the sizeof(uintptr_t) bytes will leave room for the header
   // in the same memory block.

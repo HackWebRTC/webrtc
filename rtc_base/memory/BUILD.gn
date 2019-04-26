@@ -27,7 +27,9 @@ rtc_source_set("aligned_malloc") {
     "aligned_malloc.cc",
     "aligned_malloc.h",
   ]
-  deps = []
+  deps = [
+    "..:checks",
+  ]
 }
 
 rtc_source_set("fifo_buffer") {
