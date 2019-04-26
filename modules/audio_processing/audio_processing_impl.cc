@@ -187,8 +187,7 @@ bool AudioProcessingImpl::ApmSubmoduleStates::Update(
   changed |= (noise_suppressor_enabled != noise_suppressor_enabled_);
   changed |=
       (adaptive_gain_controller_enabled != adaptive_gain_controller_enabled_);
-  changed |=
-      (gain_controller2_enabled != gain_controller2_enabled_);
+  changed |= (gain_controller2_enabled != gain_controller2_enabled_);
   changed |= (pre_amplifier_enabled_ != pre_amplifier_enabled);
   changed |= (echo_controller_enabled != echo_controller_enabled_);
   changed |= (level_estimator_enabled != level_estimator_enabled_);
@@ -858,6 +857,7 @@ void AudioProcessingImpl::SetRuntimeSetting(RuntimeSetting setting) {
       return;
     case RuntimeSetting::Type::kCapturePreGain:
     case RuntimeSetting::Type::kCaptureCompressionGain:
+    case RuntimeSetting::Type::kCaptureFixedPostGain:
       capture_runtime_settings_enqueuer_.Enqueue(setting);
       return;
   }
@@ -993,6 +993,16 @@ void AudioProcessingImpl::HandleCaptureRuntimeSettings() {
         RTC_DCHECK_EQ(kNoError, error);
         break;
       }
+      case RuntimeSetting::Type::kCaptureFixedPostGain: {
+        if (config_.gain_controller2.enabled) {
+          float value;
+          setting.GetFloat(&value);
+          config_.gain_controller2.fixed_digital.gain_db = value;
+          private_submodules_->gain_controller2->ApplyConfig(
+              config_.gain_controller2);
+        }
+        break;
+      }
       case RuntimeSetting::Type::kCustomRenderProcessingRuntimeSetting:
         RTC_NOTREACHED();
         break;
@@ -1017,6 +1027,7 @@ void AudioProcessingImpl::HandleRenderRuntimeSettings() {
         break;
       case RuntimeSetting::Type::kCapturePreGain:          // fall-through
       case RuntimeSetting::Type::kCaptureCompressionGain:  // fall-through
+      case RuntimeSetting::Type::kCaptureFixedPostGain:    // fall-through
       case RuntimeSetting::Type::kNotSpecified:
         RTC_NOTREACHED();
         break;

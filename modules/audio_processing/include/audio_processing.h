@@ -391,6 +391,7 @@ class AudioProcessing : public rtc::RefCountInterface {
       kNotSpecified,
       kCapturePreGain,
       kCaptureCompressionGain,
+      kCaptureFixedPostGain,
       kCustomRenderProcessingRuntimeSetting
     };
 
@@ -408,6 +409,14 @@ class AudioProcessing : public rtc::RefCountInterface {
       RTC_DCHECK_GE(gain_db, 0);
       RTC_DCHECK_LE(gain_db, 90);
       return {Type::kCaptureCompressionGain, static_cast<float>(gain_db)};
+    }
+
+    // Corresponds to Config::GainController2::fixed_digital::gain_db, but for
+    // runtime configuration.
+    static RuntimeSetting CreateCaptureFixedPostGain(float gain_db) {
+      RTC_DCHECK_GE(gain_db, 0.f);
+      RTC_DCHECK_LE(gain_db, 90.f);
+      return {Type::kCaptureFixedPostGain, gain_db};
     }
 
     static RuntimeSetting CreateCustomRenderSetting(float payload) {

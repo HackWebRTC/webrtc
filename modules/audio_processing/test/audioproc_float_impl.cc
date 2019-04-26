@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/audio_processing/test/audioproc_float_impl.h"
+
 #include <string.h>
 
 #include <iostream>
@@ -20,7 +22,6 @@
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/test/aec_dump_based_simulator.h"
 #include "modules/audio_processing/test/audio_processing_simulator.h"
-#include "modules/audio_processing/test/audioproc_float_impl.h"
 #include "modules/audio_processing/test/wav_based_simulator.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/flags.h"
@@ -149,10 +150,12 @@ WEBRTC_DEFINE_int(agc_limiter,
 WEBRTC_DEFINE_int(agc_compression_gain,
                   kParameterNotSpecifiedValue,
                   "Specify the AGC compression gain (0-90)");
-WEBRTC_DEFINE_float(agc2_enable_adaptive_gain,
+WEBRTC_DEFINE_int(agc2_enable_adaptive_gain,
+                  kParameterNotSpecifiedValue,
+                  "Activate (1) or deactivate(0) the AGC2 adaptive gain");
+WEBRTC_DEFINE_float(agc2_fixed_gain_db,
                     kParameterNotSpecifiedValue,
-                    "Activate (1) or deactivate(0) the AGC2 adaptive gain");
-WEBRTC_DEFINE_float(agc2_fixed_gain_db, 0.f, "AGC2 fixed gain (dB) to apply");
+                    "AGC2 fixed gain (dB) to apply");
 
 std::vector<std::string> GetAgc2AdaptiveLevelEstimatorNames() {
   return {"RMS", "peak"};
@@ -344,7 +347,7 @@ SimulationSettings CreateSettings() {
                         &settings.agc_compression_gain);
   SetSettingIfFlagSet(FLAG_agc2_enable_adaptive_gain,
                       &settings.agc2_use_adaptive_gain);
-  settings.agc2_fixed_gain_db = FLAG_agc2_fixed_gain_db;
+  SetSettingIfSpecified(FLAG_agc2_fixed_gain_db, &settings.agc2_fixed_gain_db);
   settings.agc2_adaptive_level_estimator =
       MapAgc2AdaptiveLevelEstimator(FLAG_agc2_adaptive_level_estimator);
   SetSettingIfSpecified(FLAG_pre_amplifier_gain_factor,
@@ -454,9 +457,8 @@ void PerformBasicParameterSanityChecks(const SimulationSettings& settings) {
       "Error: --agc_compression_gain must be specified between 0 and 90.\n");
 
   ReportConditionalErrorAndExit(
-      settings.use_agc2 && *settings.use_agc2 &&
-          ((settings.agc2_fixed_gain_db) < 0 ||
-           (settings.agc2_fixed_gain_db) > 90),
+      settings.agc2_fixed_gain_db && ((*settings.agc2_fixed_gain_db) < 0 ||
+                                      (*settings.agc2_fixed_gain_db) > 90),
       "Error: --agc2_fixed_gain_db must be specified between 0 and 90.\n");
 
   ReportConditionalErrorAndExit(

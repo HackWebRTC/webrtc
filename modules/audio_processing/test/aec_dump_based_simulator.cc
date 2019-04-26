@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/audio_processing/test/aec_dump_based_simulator.h"
+
 #include <iostream>
 
 #include "absl/memory/memory.h"
 #include "modules/audio_processing/echo_cancellation_impl.h"
 #include "modules/audio_processing/echo_control_mobile_impl.h"
-#include "modules/audio_processing/test/aec_dump_based_simulator.h"
 #include "modules/audio_processing/test/protobuf_utils.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -393,6 +394,19 @@ void AecDumpBasedSimulator::HandleMessage(
       }
     }
 
+    if (settings_.use_agc2) {
+      bool enable = *settings_.use_agc2;
+      apm_config.gain_controller2.enabled = enable;
+      if (settings_.agc2_fixed_gain_db) {
+        apm_config.gain_controller2.fixed_digital.gain_db =
+            *settings_.agc2_fixed_gain_db;
+      }
+      if (settings_.use_verbose_logging) {
+        std::cout << " agc2_enabled: " << (enable ? "true" : "false")
+                  << std::endl;
+      }
+    }
+
     // TODO(peah): Add support for controlling the Experimental AGC from the
     // command line.
     if (msg.has_noise_robust_agc_enabled()) {
@@ -447,10 +461,14 @@ void AecDumpBasedSimulator::HandleMessage(
                               ? *settings_.use_pre_amplifier
                               : msg.pre_amplifier_enabled();
       apm_config.pre_amplifier.enabled = enable;
-      if (settings_.pre_amplifier_gain_factor) {
-        apm_config.pre_amplifier.fixed_gain_factor =
-            *settings_.pre_amplifier_gain_factor;
-      }
+    }
+
+    if (msg.has_pre_amplifier_fixed_gain_factor() ||
+        settings_.pre_amplifier_gain_factor) {
+      const float gain = settings_.pre_amplifier_gain_factor
+                             ? *settings_.pre_amplifier_gain_factor
+                             : msg.pre_amplifier_fixed_gain_factor();
+      apm_config.pre_amplifier.fixed_gain_factor = gain;
     }
 
     if (settings_.use_verbose_logging && msg.has_experiments_description() &&
@@ -550,12 +568,22 @@ void AecDumpBasedSimulator::HandleMessage(
 void AecDumpBasedSimulator::HandleMessage(
     const webrtc::audioproc::RuntimeSetting& msg) {
   RTC_CHECK(ap_.get());
-  // Handle capture pre-gain runtime setting only if not overridden.
-  if ((!settings_.use_pre_amplifier || !(*settings_.use_pre_amplifier)) &&
-      !settings_.pre_amplifier_gain_factor) {
-    ap_->SetRuntimeSetting(
-        AudioProcessing::RuntimeSetting::CreateCapturePreGain(
-            msg.capture_pre_gain()));
+  if (msg.has_capture_pre_gain()) {
+    // Handle capture pre-gain runtime setting only if not overridden.
+    if ((!settings_.use_pre_amplifier || *settings_.use_pre_amplifier) &&
+        !settings_.pre_amplifier_gain_factor) {
+      ap_->SetRuntimeSetting(
+          AudioProcessing::RuntimeSetting::CreateCapturePreGain(
+              msg.capture_pre_gain()));
+    }
+  } else if (msg.has_capture_fixed_post_gain()) {
+    // Handle capture fixed-post-gain runtime setting only if not overridden.
+    if ((!settings_.use_agc2 || *settings_.use_agc2) &&
+        !settings_.agc2_fixed_gain_db) {
+      ap_->SetRuntimeSetting(
+          AudioProcessing::RuntimeSetting::CreateCaptureFixedPostGain(
+              msg.capture_fixed_post_gain()));
+    }
   }
 }
 
