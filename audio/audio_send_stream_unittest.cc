@@ -536,9 +536,6 @@ TEST(AudioSendStreamTest, ReconfigureTransportCcResetsFirst) {
         .Times(1);
   }
 
-  // CallEncoder will be called to re-set overhead.
-  EXPECT_CALL(*helper.channel_send(), CallEncoder(::testing::_)).Times(1);
-
   send_stream->Reconfigure(new_config);
 }
 
