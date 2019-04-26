@@ -111,7 +111,9 @@
                      'audio-team@agora.io',
                      'minyue@webrtc.org',
                      'peah@webrtc.org'],
-    'api': ['kwiberg@webrtc.org'],
+    'audio': ['peah@webrtc.org'],
+    'api': ['kwiberg@webrtc.org',
+            'solenberg@webrtc.org','peah@webrtc.org'],
     'base': ['kwiberg@webrtc.org',
              'benwright@webrtc.org'],
     'call': ['mflodman@webrtc.org',
@@ -140,7 +142,7 @@
               'henrik.lundin@webrtc.org',
               'minyue@webrtc.org'],
     'audio_mixer': ['aleloi@webrtc.org',
-                    'henrik.lundin@webrtc.org'
+                    'henrik.lundin@webrtc.org','peah@webrtc.org'
     ],
     'audio_processing': ['alessiob@webrtc.org',
                          'aluebs@webrtc.org',
