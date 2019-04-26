@@ -13,7 +13,6 @@
 #include <stddef.h>
 
 #include "api/scoped_refptr.h"
-#include "api/task_queue/global_task_queue_factory.h"
 #include "modules/audio_device/audio_device_config.h"  // IWYU pragma: keep
 #include "modules/audio_device/audio_device_generic.h"
 #include "rtc_base/checks.h"
@@ -70,13 +69,6 @@
   }
 
 namespace webrtc {
-
-rtc::scoped_refptr<AudioDeviceModule> AudioDeviceModule::Create(
-    AudioLayer audio_layer) {
-  RTC_LOG(INFO) << __FUNCTION__;
-  return AudioDeviceModule::CreateForTest(audio_layer,
-                                          &GlobalTaskQueueFactory());
-}
 
 rtc::scoped_refptr<AudioDeviceModule> AudioDeviceModule::Create(
     AudioLayer audio_layer,

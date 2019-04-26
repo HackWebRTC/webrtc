@@ -42,9 +42,6 @@ class AudioDeviceModule : public rtc::RefCountInterface {
   };
 
  public:
-  // TODO(bugs.webrtc.org/10284): Remove when unused.
-  RTC_DEPRECATED
-  static rtc::scoped_refptr<AudioDeviceModule> Create(AudioLayer audio_layer);
   // Creates a default ADM for usage in production code.
   static rtc::scoped_refptr<AudioDeviceModule> Create(
       AudioLayer audio_layer,
