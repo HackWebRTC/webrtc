@@ -90,7 +90,6 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
   // easily at any time.
   bool ApplyOptions(const AudioOptions& options);
 
-  void StartAecDump(const std::string& filename);
   int CreateVoEChannel();
 
   webrtc::TaskQueueFactory* const task_queue_factory_;
