@@ -15,6 +15,7 @@
 #include <limits>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "modules/video_coding/frame_object.h"
 #include "modules/video_coding/jitter_estimator.h"
 #include "modules/video_coding/timing.h"
@@ -22,6 +23,7 @@
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/random.h"
 #include "system_wrappers/include/clock.h"
+#include "test/field_trial.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -67,6 +69,20 @@ class VCMTimingFake : public VCMTiming {
     return true;
   }
 
+  int GetCurrentJitter() {
+    int decode_ms;
+    int max_decode_ms;
+    int current_delay_ms;
+    int target_delay_ms;
+    int jitter_buffer_ms;
+    int min_playout_delay_ms;
+    int render_delay_ms;
+    VCMTiming::GetTimings(&decode_ms, &max_decode_ms, &current_delay_ms,
+                          &target_delay_ms, &jitter_buffer_ms,
+                          &min_playout_delay_ms, &render_delay_ms);
+    return jitter_buffer_ms;
+  }
+
  private:
   static constexpr int kDelayMs = 50;
   static constexpr int kDecodeTime = kDelayMs / 2;
@@ -74,24 +90,21 @@ class VCMTimingFake : public VCMTiming {
   mutable int64_t last_ms_ = -1;
 };
 
-class VCMJitterEstimatorMock : public VCMJitterEstimator {
- public:
-  explicit VCMJitterEstimatorMock(Clock* clock) : VCMJitterEstimator(clock) {}
-
-  MOCK_METHOD1(UpdateRtt, void(int64_t rttMs));
-  MOCK_METHOD3(UpdateEstimate,
-               void(int64_t frameDelayMs,
-                    uint32_t frameSizeBytes,
-                    bool incompleteFrame));
-  MOCK_METHOD2(GetJitterEstimate,
-               int(double rttMultiplier, double jitterEstCapMs));
-};
-
 class FrameObjectFake : public EncodedFrame {
  public:
   int64_t ReceivedTime() const override { return 0; }
 
   int64_t RenderTime() const override { return _renderTimeMs; }
+
+  bool delayed_by_retransmission() const override {
+    return delayed_by_retransmission_;
+  }
+  void set_delayed_by_retransmission(bool delayed) {
+    delayed_by_retransmission_ = delayed;
+  }
+
+ private:
+  bool delayed_by_retransmission_ = false;
 };
 
 class VCMReceiveStatisticsCallbackMock : public VCMReceiveStatisticsCallback {
@@ -122,7 +135,8 @@ class TestFrameBuffer2 : public ::testing::Test {
   static constexpr size_t kFrameSize = 10;
 
   TestFrameBuffer2()
-      : clock_(0),
+      : trial_("WebRTC-AddRttToPlayoutDelay/Enabled/"),
+        clock_(0),
         timing_(&clock_),
         jitter_estimator_(&clock_),
         buffer_(new FrameBuffer(&clock_,
@@ -142,18 +156,18 @@ class TestFrameBuffer2 : public ::testing::Test {
   }
 
   template <typename... T>
-  int InsertFrame(uint16_t picture_id,
-                  uint8_t spatial_layer,
-                  int64_t ts_ms,
-                  bool inter_layer_predicted,
-                  bool last_spatial_layer,
-                  T... refs) {
+  std::unique_ptr<FrameObjectFake> CreateFrame(uint16_t picture_id,
+                                               uint8_t spatial_layer,
+                                               int64_t ts_ms,
+                                               bool inter_layer_predicted,
+                                               bool last_spatial_layer,
+                                               T... refs) {
     static_assert(sizeof...(refs) <= kMaxReferences,
                   "To many references specified for EncodedFrame.");
     std::array<uint16_t, sizeof...(refs)> references = {
         {rtc::checked_cast<uint16_t>(refs)...}};
 
-    std::unique_ptr<FrameObjectFake> frame(new FrameObjectFake());
+    auto frame = absl::make_unique<FrameObjectFake>();
     frame->id.picture_id = picture_id;
     frame->id.spatial_layer = spatial_layer;
     frame->SetSpatialIndex(spatial_layer);
@@ -166,7 +180,25 @@ class TestFrameBuffer2 : public ::testing::Test {
     frame->set_size(kFrameSize);
     for (size_t r = 0; r < references.size(); ++r)
       frame->references[r] = references[r];
+    return frame;
+  }
 
+  template <typename... T>
+  int InsertFrame(uint16_t picture_id,
+                  uint8_t spatial_layer,
+                  int64_t ts_ms,
+                  bool inter_layer_predicted,
+                  bool last_spatial_layer,
+                  T... refs) {
+    return buffer_->InsertFrame(CreateFrame(picture_id, spatial_layer, ts_ms,
+                                            inter_layer_predicted,
+                                            last_spatial_layer, refs...));
+  }
+
+  int InsertNackedFrame(uint16_t picture_id, int64_t ts_ms) {
+    std::unique_ptr<FrameObjectFake> frame =
+        CreateFrame(picture_id, 0, ts_ms, false, true);
+    frame->set_delayed_by_retransmission(true);
     return buffer_->InsertFrame(std::move(frame));
   }
 
@@ -230,9 +262,11 @@ class TestFrameBuffer2 : public ::testing::Test {
 
   uint32_t Rand() { return rand_.Rand<uint32_t>(); }
 
+  // The ProtectionMode tests depends on rtt-multiplier experiment.
+  test::ScopedFieldTrials trial_;
   SimulatedClock clock_;
   VCMTimingFake timing_;
-  ::testing::NiceMock<VCMJitterEstimatorMock> jitter_estimator_;
+  VCMJitterEstimator jitter_estimator_;
   std::unique_ptr<FrameBuffer> buffer_;
   std::vector<std::unique_ptr<EncodedFrame>> frames_;
   Random rand_;
@@ -400,18 +434,46 @@ TEST_F(TestFrameBuffer2, InsertLateFrame) {
   CheckNoFrame(2);
 }
 
-TEST_F(TestFrameBuffer2, ProtectionMode) {
+TEST_F(TestFrameBuffer2, ProtectionModeNackFEC) {
   uint16_t pid = Rand();
   uint32_t ts = Rand();
+  constexpr int64_t kRttMs = 200;
+  buffer_->UpdateRtt(kRttMs);
 
-  EXPECT_CALL(jitter_estimator_, GetJitterEstimate(1.0, 300.0));
-  InsertFrame(pid, 0, ts, false, true);
-  ExtractFrame();
-
+  // Jitter estimate unaffected by RTT in this protection mode.
   buffer_->SetProtectionMode(kProtectionNackFEC);
-  EXPECT_CALL(jitter_estimator_, GetJitterEstimate(0.0, 300.0));
-  InsertFrame(pid + 1, 0, ts, false, true);
+  InsertNackedFrame(pid, ts);
+  InsertNackedFrame(pid + 1, ts + 100);
+  InsertNackedFrame(pid + 2, ts + 200);
+  InsertFrame(pid + 3, 0, ts + 300, false, true);
   ExtractFrame();
+  ExtractFrame();
+  ExtractFrame();
+  ExtractFrame();
+  ASSERT_EQ(4u, frames_.size());
+  EXPECT_LT(timing_.GetCurrentJitter(), kRttMs);
+}
+
+TEST_F(TestFrameBuffer2, ProtectionModeNack) {
+  uint16_t pid = Rand();
+  uint32_t ts = Rand();
+  constexpr int64_t kRttMs = 200;
+
+  buffer_->UpdateRtt(kRttMs);
+
+  // Jitter estimate includes RTT (after 3 retransmitted packets)
+  buffer_->SetProtectionMode(kProtectionNack);
+  InsertNackedFrame(pid, ts);
+  InsertNackedFrame(pid + 1, ts + 100);
+  InsertNackedFrame(pid + 2, ts + 200);
+  InsertFrame(pid + 3, 0, ts + 300, false, true);
+  ExtractFrame();
+  ExtractFrame();
+  ExtractFrame();
+  ExtractFrame();
+  ASSERT_EQ(4u, frames_.size());
+
+  EXPECT_GT(timing_.GetCurrentJitter(), kRttMs);
 }
 
 TEST_F(TestFrameBuffer2, NoContinuousFrame) {
