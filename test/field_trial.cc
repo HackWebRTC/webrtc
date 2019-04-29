@@ -20,18 +20,11 @@
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
-namespace {
-bool field_trials_initiated_ = false;
-}  // namespace
-
 namespace test {
+namespace {
 
-void ValidateFieldTrialsStringOrDie(const std::string& trials_string) {
+void InnerValidateFieldTrialsStringOrDie(const std::string& trials_string) {
   static const char kPersistentStringSeparator = '/';
-
-  // Catch an error if this is called more than once.
-  assert(!field_trials_initiated_);
-  field_trials_initiated_ = true;
 
   if (trials_string.empty())
     return;
@@ -61,7 +54,6 @@ void ValidateFieldTrialsStringOrDie(const std::string& trials_string) {
 
     // Successfully parsed all field trials from the string.
     if (next_item == trials_string.length()) {
-      // webrtc::field_trial::InitFieldTrialsFromString(trials_string.c_str());
       return;
     }
   }
@@ -71,20 +63,24 @@ void ValidateFieldTrialsStringOrDie(const std::string& trials_string) {
   // Using abort so it crashes in both debug and release mode.
   abort();
 }
+}  // namespace
+
+void ValidateFieldTrialsStringOrDie(const std::string& trials_string) {
+  static bool field_trials_initiated_ = false;
+  // Catch an error if this is called more than once.
+  assert(!field_trials_initiated_);
+  field_trials_initiated_ = true;
+  InnerValidateFieldTrialsStringOrDie(trials_string);
+}
 
 ScopedFieldTrials::ScopedFieldTrials(const std::string& config)
     : previous_field_trials_(webrtc::field_trial::GetFieldTrialString()) {
-  assert(field_trials_initiated_);
-  field_trials_initiated_ = false;
   current_field_trials_ = config;
-  ValidateFieldTrialsStringOrDie(current_field_trials_);
+  InnerValidateFieldTrialsStringOrDie(current_field_trials_);
   webrtc::field_trial::InitFieldTrialsFromString(current_field_trials_.c_str());
 }
 
 ScopedFieldTrials::~ScopedFieldTrials() {
-  // Should still be initialized, since InitFieldTrials is called from ctor.
-  // That's why we don't restore the flag.
-  assert(field_trials_initiated_);
   webrtc::field_trial::InitFieldTrialsFromString(previous_field_trials_);
 }
 
