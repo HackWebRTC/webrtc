@@ -17,6 +17,8 @@
 #include "absl/types/optional.h"
 #include "api/transport/webrtc_key_value_config.h"
 #include "modules/pacing/interval_budget.h"
+#include "rtc_base/experiments/alr_experiment.h"
+#include "rtc_base/experiments/field_trial_units.h"
 
 namespace webrtc {
 
@@ -45,23 +47,27 @@ class AlrDetector {
   // started or empty result if the sender is currently not application-limited.
   absl::optional<int64_t> GetApplicationLimitedRegionStartTime() const;
 
-  // Sent traffic percentage as a function of network capacity used to determine
-  // application-limited region. ALR region start when bandwidth usage drops
-  // below kAlrStartUsagePercent and ends when it raises above
-  // kAlrEndUsagePercent. NOTE: This is intentionally conservative at the moment
-  // until BW adjustments of application limited region is fine tuned.
-  static constexpr int kDefaultAlrBandwidthUsagePercent = 65;
-  static constexpr int kDefaultAlrStartBudgetLevelPercent = 80;
-  static constexpr int kDefaultAlrStopBudgetLevelPercent = 50;
-
   void UpdateBudgetWithElapsedTime(int64_t delta_time_ms);
   void UpdateBudgetWithBytesSent(size_t bytes_sent);
 
  private:
+  // Sent traffic ratio as a function of network capacity used to determine
+  // application-limited region. ALR region start when bandwidth usage drops
+  // below kAlrStartUsageRatio and ends when it raises above
+  // kAlrEndUsageRatio. NOTE: This is intentionally conservative at the moment
+  // until BW adjustments of application limited region is fine tuned.
+  static constexpr double kDefaultBandwidthUsageRatio = 0.65;
+  static constexpr double kDefaultStartBudgetLevelRatio = 0.80;
+  static constexpr double kDefaultStopBudgetLevelRatio = 0.50;
+
+  AlrDetector(const WebRtcKeyValueConfig* key_value_config,
+              RtcEventLog* event_log,
+              absl::optional<AlrExperimentSettings> experiment_settings);
+
   friend class GoogCcStatePrinter;
-  int bandwidth_usage_percent_;
-  int alr_start_budget_level_percent_;
-  int alr_stop_budget_level_percent_;
+  FieldTrialParameter<double> bandwidth_usage_ratio_;
+  FieldTrialParameter<double> start_budget_level_ratio_;
+  FieldTrialParameter<double> stop_budget_level_ratio_;
 
   absl::optional<int64_t> last_send_time_ms_;
 
