@@ -321,6 +321,10 @@ class RTC_EXPORT RTCMediaStreamTrackStats final : public RTCStats {
   RTCNonStandardStatsMember<uint64_t> jitter_buffer_flushes;
   RTCNonStandardStatsMember<uint64_t> delayed_packet_outage_samples;
   RTCNonStandardStatsMember<double> relative_packet_arrival_delay;
+  // TODO(henrik.lundin): Add description of the interruption metrics at
+  // https://github.com/henbos/webrtc-provisional-stats/issues/17
+  RTCNonStandardStatsMember<uint32_t> interruption_count;
+  RTCNonStandardStatsMember<double> total_interruption_duration;
   // Non-standard video-only members.
   // https://henbos.github.io/webrtc-provisional-stats/#RTCVideoReceiverStats-dict*
   RTCNonStandardStatsMember<uint32_t> freeze_count;

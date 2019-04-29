@@ -654,6 +654,10 @@ class RTCStatsReportVerifier {
           media_stream_track.delayed_packet_outage_samples);
       verifier.TestMemberIsNonNegative<double>(
           media_stream_track.relative_packet_arrival_delay);
+      verifier.TestMemberIsNonNegative<uint32_t>(
+          media_stream_track.interruption_count);
+      verifier.TestMemberIsNonNegative<double>(
+          media_stream_track.total_interruption_duration);
     } else {
       verifier.TestMemberIsUndefined(media_stream_track.jitter_buffer_delay);
       verifier.TestMemberIsUndefined(
@@ -666,6 +670,9 @@ class RTCStatsReportVerifier {
           media_stream_track.delayed_packet_outage_samples);
       verifier.TestMemberIsUndefined(
           media_stream_track.relative_packet_arrival_delay);
+      verifier.TestMemberIsUndefined(media_stream_track.interruption_count);
+      verifier.TestMemberIsUndefined(
+          media_stream_track.total_interruption_duration);
     }
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
