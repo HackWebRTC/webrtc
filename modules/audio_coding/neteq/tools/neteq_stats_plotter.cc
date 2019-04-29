@@ -79,8 +79,9 @@ void NetEqStatsPlotter::SimulationEnded(int64_t simulation_time_ms) {
   const auto lifetime_stats_vector = stats_getter_->lifetime_stats();
   if (!lifetime_stats_vector->empty()) {
     auto lifetime_stats = lifetime_stats_vector->back().second;
-    printf("  num_interruptions: %d\n", lifetime_stats.interruption_count);
-    printf("  sum_interruption_length_ms: %d ms\n",
+    printf("  num_interruptions: %" PRId64 "\n",
+           lifetime_stats.interruption_count);
+    printf("  sum_interruption_length_ms: %" PRId64 " ms\n",
            lifetime_stats.total_interruption_duration_ms);
     printf("  interruption ratio: %f%%\n",
            100.0 * lifetime_stats.total_interruption_duration_ms /

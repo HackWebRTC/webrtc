@@ -745,7 +745,7 @@ TEST_F(NetEqImplTest, NoAudioInterruptionLoggedBeforeFirstDecode) {
   }
 
   auto lifetime_stats = neteq_->GetLifetimeStatistics();
-  EXPECT_EQ(0, lifetime_stats.interruption_count);
+  EXPECT_EQ(0u, lifetime_stats.interruption_count);
 }
 
 // This test verifies that NetEq can handle comfort noise and enters/quits codec

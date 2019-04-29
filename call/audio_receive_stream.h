@@ -79,8 +79,6 @@ class AudioReceiveStream {
     absl::optional<int64_t> last_packet_received_timestamp_ms;
     uint64_t jitter_buffer_flushes = 0;
     double relative_packet_arrival_delay_seconds = 0.0;
-    int32_t interruption_count = 0;
-    int32_t total_interruption_duration_ms = 0;
   };
 
   struct Config {

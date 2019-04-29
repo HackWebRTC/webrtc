@@ -165,9 +165,6 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
       {StatsReport::kStatsValueNamePacketsReceived, info.packets_rcvd},
       {StatsReport::kStatsValueNamePreferredJitterBufferMs,
        info.jitter_buffer_preferred_ms},
-      {StatsReport::kStatsValueNameInterruptionCount, info.interruption_count},
-      {StatsReport::kStatsValueNameTotalInterruptionDurationMs,
-       info.total_interruption_duration_ms},
   };
 
   for (const auto& f : floats)

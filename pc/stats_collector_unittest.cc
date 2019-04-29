@@ -383,14 +383,6 @@ void VerifyVoiceReceiverInfoReport(const StatsReport* report,
   EXPECT_EQ(rtc::ToString(info.decoding_muted_output), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameCodecName,
                        &value_in_report));
-  EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameInterruptionCount,
-                       &value_in_report));
-  EXPECT_EQ(rtc::ToString(info.interruption_count), value_in_report);
-  EXPECT_TRUE(GetValue(report,
-                       StatsReport::kStatsValueNameTotalInterruptionDurationMs,
-                       &value_in_report));
-  EXPECT_EQ(rtc::ToString(info.total_interruption_duration_ms),
-            value_in_report);
 }
 
 void VerifyVoiceSenderInfoReport(const StatsReport* report,

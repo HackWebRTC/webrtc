@@ -90,8 +90,8 @@ struct NetEqLifetimeStatistics {
   // An interruption is a loss-concealment event lasting at least 150 ms. The
   // two stats below count the number os such events and the total duration of
   // these events.
-  int32_t interruption_count = 0;
-  int32_t total_interruption_duration_ms = 0;
+  uint64_t interruption_count = 0;
+  uint64_t total_interruption_duration_ms = 0;
 };
 
 // Metrics that describe the operations performed in NetEq, and the internal

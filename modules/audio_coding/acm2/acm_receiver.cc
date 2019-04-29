@@ -259,9 +259,6 @@ void AcmReceiver::GetNetworkStatistics(NetworkStatistics* acm_stat) {
       neteq_lifetime_stat.delayed_packet_outage_samples;
   acm_stat->relativePacketArrivalDelayMs =
       neteq_lifetime_stat.relative_packet_arrival_delay_ms;
-  acm_stat->interruptionCount = neteq_lifetime_stat.interruption_count;
-  acm_stat->totalInterruptionDurationMs =
-      neteq_lifetime_stat.total_interruption_duration_ms;
 
   NetEqOperationsAndState neteq_operations_and_state =
       neteq_->GetOperationsAndState();

@@ -514,10 +514,6 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   uint64_t delayed_packet_outage_samples = 0;
   // Arrival delay of received audio packets.
   double relative_packet_arrival_delay_seconds = 0.0;
-  // Count and total duration of audio interruptions (loss-concealement periods
-  // longer than 150 ms).
-  int32_t interruption_count = 0;
-  int32_t total_interruption_duration_ms = 0;
 };
 
 struct VideoSenderInfo : public MediaSenderInfo {

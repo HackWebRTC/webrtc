@@ -226,8 +226,6 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   stats.relative_packet_arrival_delay_seconds =
       static_cast<double>(ns.relativePacketArrivalDelayMs) /
       static_cast<double>(rtc::kNumMillisecsPerSec);
-  stats.interruption_count = ns.interruptionCount;
-  stats.total_interruption_duration_ms = ns.totalInterruptionDurationMs;
 
   auto ds = channel_receive_->GetDecodingCallStatistics();
   stats.decoding_calls_to_silence_generator = ds.calls_to_silence_generator;

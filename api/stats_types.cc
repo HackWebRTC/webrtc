@@ -565,8 +565,6 @@ const char* StatsReport::Value::display_name() const {
       return "googInitiator";
     case kStatsValueNameInterframeDelayMaxMs:
       return "googInterframeDelayMax";
-    case kStatsValueNameInterruptionCount:
-      return "googInterruptionCount";
     case kStatsValueNameIssuerId:
       return "googIssuerId";
     case kStatsValueNameJitterReceived:
@@ -649,8 +647,6 @@ const char* StatsReport::Value::display_name() const {
       return "googTrackId";
     case kStatsValueNameTimingFrameInfo:
       return "googTimingFrameInfo";
-    case kStatsValueNameTotalInterruptionDurationMs:
-      return "googTotalInterruptionDurationMs";
     case kStatsValueNameTypingNoiseState:
       return "googTypingNoiseState";
     case kStatsValueNameWritable:
