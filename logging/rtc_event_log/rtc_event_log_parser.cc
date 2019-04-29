@@ -1933,6 +1933,13 @@ std::vector<LoggedPacketInfo> ParsedRtcEventLog::GetPacketInfos(
       current_overhead = overhead_iter->overhead;
       ++overhead_iter;
     }
+    // If we have a large time delta, it can be caused by a gap in logging,
+    // therefore we don't want to match up sequence numbers as we might have had
+    // a wraparound.
+    if (new_log_time - last_log_time > TimeDelta::seconds(30)) {
+      seq_num_unwrapper = SequenceNumberUnwrapper();
+      indices.clear();
+    }
     RTC_DCHECK(new_log_time >= last_log_time);
     last_log_time = new_log_time;
   };
@@ -1963,6 +1970,14 @@ std::vector<LoggedPacketInfo> ParsedRtcEventLog::GetPacketInfos(
       logged.log_feedback_time = Timestamp::PlusInfinity();
       int64_t unwrapped_seq_num =
           seq_num_unwrapper.Unwrap(logged.transport_seq_no);
+      if (indices.find(unwrapped_seq_num) != indices.end()) {
+        auto prev = packets[indices[unwrapped_seq_num]];
+        RTC_LOG(LS_WARNING)
+            << "Repeated sent packet sequence number: " << unwrapped_seq_num
+            << " Packet time:" << prev.log_packet_time.seconds() << "s vs "
+            << logged.log_packet_time.seconds()
+            << "s at:" << rtp.log_time_ms() / 1000;
+      }
       indices[unwrapped_seq_num] = packets.size();
     }
     packets.push_back(logged);
@@ -1990,13 +2005,13 @@ std::vector<LoggedPacketInfo> ParsedRtcEventLog::GetPacketInfos(
         std::vector<LoggedPacketInfo*> packet_feedbacks;
         packet_feedbacks.reserve(feedback.GetAllPackets().size());
         Timestamp receive_timestamp = feedback_base_time;
+        std::vector<int64_t> unknown_seq_nums;
         for (const auto& packet : feedback.GetAllPackets()) {
           int64_t unwrapped_seq_num =
               seq_num_unwrapper.Unwrap(packet.sequence_number());
           auto it = indices.find(unwrapped_seq_num);
           if (it == indices.end()) {
-            RTC_LOG(LS_WARNING) << "Received feedback for unknown packet: "
-                                << unwrapped_seq_num;
+            unknown_seq_nums.push_back(unwrapped_seq_num);
             continue;
           }
           LoggedPacketInfo* sent = &packets[it->second];
@@ -2020,6 +2035,11 @@ std::vector<LoggedPacketInfo> ParsedRtcEventLog::GetPacketInfos(
             }
           }
           packet_feedbacks.push_back(sent);
+        }
+        if (!unknown_seq_nums.empty()) {
+          RTC_LOG(LS_WARNING)
+              << "Received feedback for unknown packets: "
+              << unknown_seq_nums.front() << " - " << unknown_seq_nums.back();
         }
         if (packet_feedbacks.empty())
           return;
