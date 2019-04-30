@@ -547,6 +547,8 @@ void DefaultTemporalLayers::OnEncodeDone(size_t stream_index,
       }
     }
   }
+
+  pending_frames_.erase(pending_frame);
 }
 
 void DefaultTemporalLayers::OnFrameDropped(size_t stream_index,
