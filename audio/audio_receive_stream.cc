@@ -206,15 +206,20 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
 
   // Get jitter buffer and total delay (alg + jitter + playout) stats.
   auto ns = channel_receive_->GetNetworkStatistics();
+  stats.fec_packets_received = ns.fecPacketsReceived;
+  stats.fec_packets_discarded = ns.fecPacketsDiscarded;
   stats.jitter_buffer_ms = ns.currentBufferSize;
   stats.jitter_buffer_preferred_ms = ns.preferredBufferSize;
   stats.total_samples_received = ns.totalSamplesReceived;
   stats.concealed_samples = ns.concealedSamples;
+  stats.silent_concealed_samples = ns.silentConcealedSamples;
   stats.concealment_events = ns.concealmentEvents;
   stats.jitter_buffer_delay_seconds =
       static_cast<double>(ns.jitterBufferDelayMs) /
       static_cast<double>(rtc::kNumMillisecsPerSec);
   stats.jitter_buffer_emitted_count = ns.jitterBufferEmittedCount;
+  stats.inserted_samples_for_deceleration = ns.insertedSamplesForDeceleration;
+  stats.removed_samples_for_acceleration = ns.removedSamplesForAcceleration;
   stats.expand_rate = Q14ToFloat(ns.currentExpandRate);
   stats.speech_expand_rate = Q14ToFloat(ns.currentSpeechExpandRate);
   stats.secondary_decoded_rate = Q14ToFloat(ns.currentSecondaryDecodedRate);

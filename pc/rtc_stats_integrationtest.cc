@@ -649,6 +649,12 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsNonNegative<uint64_t>(
           media_stream_track.concealment_events);
       verifier.TestMemberIsNonNegative<uint64_t>(
+          media_stream_track.inserted_samples_for_deceleration);
+      verifier.TestMemberIsNonNegative<uint64_t>(
+          media_stream_track.removed_samples_for_acceleration);
+      verifier.TestMemberIsNonNegative<uint64_t>(
+          media_stream_track.silent_concealed_samples);
+      verifier.TestMemberIsNonNegative<uint64_t>(
           media_stream_track.jitter_buffer_flushes);
       verifier.TestMemberIsNonNegative<uint64_t>(
           media_stream_track.delayed_packet_outage_samples);
@@ -722,6 +728,13 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsUndefined(inbound_stream.qp_sum);
     }
     verifier.TestMemberIsNonNegative<uint32_t>(inbound_stream.packets_received);
+    if (inbound_stream.media_type.is_defined() &&
+        *inbound_stream.media_type == "audio") {
+      verifier.TestMemberIsNonNegative<uint64_t>(
+          inbound_stream.fec_packets_received);
+      verifier.TestMemberIsNonNegative<uint64_t>(
+          inbound_stream.fec_packets_discarded);
+    }
     verifier.TestMemberIsNonNegative<uint64_t>(inbound_stream.bytes_received);
     // packets_lost is defined as signed, but this should never happen in
     // this test. See RFC 3550.

@@ -315,7 +315,10 @@ class RTC_EXPORT RTCMediaStreamTrackStats final : public RTCStats {
   RTCStatsMember<uint64_t> total_samples_received;
   RTCStatsMember<double> total_samples_duration;
   RTCStatsMember<uint64_t> concealed_samples;
+  RTCStatsMember<uint64_t> silent_concealed_samples;
   RTCStatsMember<uint64_t> concealment_events;
+  RTCStatsMember<uint64_t> inserted_samples_for_deceleration;
+  RTCStatsMember<uint64_t> removed_samples_for_acceleration;
   // Non-standard audio-only member
   // TODO(kuddai): Add description to standard. crbug.com/webrtc/10042
   RTCNonStandardStatsMember<uint64_t> jitter_buffer_flushes;
@@ -399,6 +402,8 @@ class RTC_EXPORT RTCInboundRTPStreamStats final : public RTCRTPStreamStats {
   ~RTCInboundRTPStreamStats() override;
 
   RTCStatsMember<uint32_t> packets_received;
+  RTCStatsMember<uint64_t> fec_packets_received;
+  RTCStatsMember<uint64_t> fec_packets_discarded;
   RTCStatsMember<uint64_t> bytes_received;
   RTCStatsMember<int32_t> packets_lost;  // Signed per RFC 3550
   RTCStatsMember<double> last_packet_received_timestamp;

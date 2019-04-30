@@ -2226,6 +2226,8 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     rinfo.add_ssrc(stats.remote_ssrc);
     rinfo.bytes_rcvd = stats.bytes_rcvd;
     rinfo.packets_rcvd = stats.packets_rcvd;
+    rinfo.fec_packets_received = stats.fec_packets_received;
+    rinfo.fec_packets_discarded = stats.fec_packets_discarded;
     rinfo.packets_lost = stats.packets_lost;
     rinfo.fraction_lost = stats.fraction_lost;
     rinfo.codec_name = stats.codec_name;
@@ -2240,9 +2242,14 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     rinfo.total_samples_received = stats.total_samples_received;
     rinfo.total_output_duration = stats.total_output_duration;
     rinfo.concealed_samples = stats.concealed_samples;
+    rinfo.silent_concealed_samples = stats.silent_concealed_samples;
     rinfo.concealment_events = stats.concealment_events;
     rinfo.jitter_buffer_delay_seconds = stats.jitter_buffer_delay_seconds;
     rinfo.jitter_buffer_emitted_count = stats.jitter_buffer_emitted_count;
+    rinfo.inserted_samples_for_deceleration =
+        stats.inserted_samples_for_deceleration;
+    rinfo.removed_samples_for_acceleration =
+        stats.removed_samples_for_acceleration;
     rinfo.expand_rate = stats.expand_rate;
     rinfo.speech_expand_rate = stats.speech_expand_rate;
     rinfo.secondary_decoded_rate = stats.secondary_decoded_rate;

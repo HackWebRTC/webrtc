@@ -251,6 +251,8 @@ void AcmReceiver::GetNetworkStatistics(NetworkStatistics* acm_stat) {
   NetEqLifetimeStatistics neteq_lifetime_stat = neteq_->GetLifetimeStatistics();
   acm_stat->totalSamplesReceived = neteq_lifetime_stat.total_samples_received;
   acm_stat->concealedSamples = neteq_lifetime_stat.concealed_samples;
+  acm_stat->silentConcealedSamples =
+      neteq_lifetime_stat.silent_concealed_samples;
   acm_stat->concealmentEvents = neteq_lifetime_stat.concealment_events;
   acm_stat->jitterBufferDelayMs = neteq_lifetime_stat.jitter_buffer_delay_ms;
   acm_stat->jitterBufferEmittedCount =
@@ -262,6 +264,12 @@ void AcmReceiver::GetNetworkStatistics(NetworkStatistics* acm_stat) {
   acm_stat->interruptionCount = neteq_lifetime_stat.interruption_count;
   acm_stat->totalInterruptionDurationMs =
       neteq_lifetime_stat.total_interruption_duration_ms;
+  acm_stat->insertedSamplesForDeceleration =
+      neteq_lifetime_stat.inserted_samples_for_deceleration;
+  acm_stat->removedSamplesForAcceleration =
+      neteq_lifetime_stat.removed_samples_for_acceleration;
+  acm_stat->fecPacketsReceived = neteq_lifetime_stat.fec_packets_received;
+  acm_stat->fecPacketsDiscarded = neteq_lifetime_stat.fec_packets_discarded;
 
   NetEqOperationsAndState neteq_operations_and_state =
       neteq_->GetOperationsAndState();

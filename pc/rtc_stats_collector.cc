@@ -250,6 +250,10 @@ void SetInboundRTPStreamStatsFromVoiceReceiverInfo(
             *voice_receiver_info.last_packet_received_timestamp_ms) /
         rtc::kNumMillisecsPerSec;
   }
+  inbound_audio->fec_packets_received =
+      voice_receiver_info.fec_packets_received;
+  inbound_audio->fec_packets_discarded =
+      voice_receiver_info.fec_packets_discarded;
 }
 
 void SetInboundRTPStreamStatsFromVideoReceiverInfo(
@@ -475,6 +479,10 @@ ProduceMediaStreamTrackStatsFromVoiceReceiverInfo(
       voice_receiver_info.jitter_buffer_delay_seconds;
   audio_track_stats->jitter_buffer_emitted_count =
       voice_receiver_info.jitter_buffer_emitted_count;
+  audio_track_stats->inserted_samples_for_deceleration =
+      voice_receiver_info.inserted_samples_for_deceleration;
+  audio_track_stats->removed_samples_for_acceleration =
+      voice_receiver_info.removed_samples_for_acceleration;
   audio_track_stats->total_audio_energy =
       voice_receiver_info.total_output_energy;
   audio_track_stats->total_samples_received =
@@ -482,6 +490,8 @@ ProduceMediaStreamTrackStatsFromVoiceReceiverInfo(
   audio_track_stats->total_samples_duration =
       voice_receiver_info.total_output_duration;
   audio_track_stats->concealed_samples = voice_receiver_info.concealed_samples;
+  audio_track_stats->silent_concealed_samples =
+      voice_receiver_info.silent_concealed_samples;
   audio_track_stats->concealment_events =
       voice_receiver_info.concealment_events;
   audio_track_stats->jitter_buffer_flushes =
@@ -921,7 +931,7 @@ void RTCStatsCollector::ProducePartialResultsOnSignalingThreadImpl(
 void RTCStatsCollector::ProducePartialResultsOnNetworkThread(
     int64_t timestamp_us) {
   RTC_DCHECK(network_thread_->IsCurrent());
-  // Touching |network_report_| on this thread is safe by this method because
+  // Touching |network_report_| on this thread is safe by this method because
   // |network_report_event_| is reset before this method is invoked.
   network_report_ = RTCStatsReport::Create(timestamp_us);
 
