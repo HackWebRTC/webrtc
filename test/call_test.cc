@@ -220,6 +220,7 @@ void CallTest::CreateSenderCall(const Call::Config& config) {
   auto sender_config = config;
   sender_config.network_state_predictor_factory =
       network_state_predictor_factory_.get();
+  sender_config.network_controller_factory = network_controller_factory_.get();
   sender_call_.reset(Call::Create(sender_config));
 }
 
