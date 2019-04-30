@@ -40,7 +40,6 @@ class RtpStreamReceiverInterface;
 class RtpStreamReceiverControllerInterface;
 class RtxReceiveStream;
 class VCMTiming;
-class VCMJitterEstimator;
 
 namespace internal {
 
@@ -181,7 +180,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   std::vector<std::unique_ptr<VideoDecoder>> video_decoders_;
 
   // Members for the new jitter buffer experiment.
-  std::unique_ptr<VCMJitterEstimator> jitter_estimator_;
   std::unique_ptr<video_coding::FrameBuffer> frame_buffer_;
 
   std::unique_ptr<RtpStreamReceiverInterface> media_receiver_;

@@ -18,7 +18,6 @@
 #include "absl/types/optional.h"
 #include "api/video/video_stream_decoder.h"
 #include "modules/video_coding/frame_buffer2.h"
-#include "modules/video_coding/jitter_estimator.h"
 #include "modules/video_coding/timing.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/task_queue.h"
@@ -80,7 +79,6 @@ class VideoStreamDecoderImpl : public VideoStreamDecoderInterface,
   rtc::TaskQueue bookkeeping_queue_;
 
   rtc::PlatformThread decode_thread_;
-  VCMJitterEstimator jitter_estimator_;
   VCMTiming timing_;
   video_coding::FrameBuffer frame_buffer_;
   video_coding::VideoLayerFrameId last_continuous_id_;

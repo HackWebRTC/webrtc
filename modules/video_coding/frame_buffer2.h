@@ -21,6 +21,7 @@
 #include "api/video/encoded_frame.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/inter_frame_delay.h"
+#include "modules/video_coding/jitter_estimator.h"
 #include "modules/video_coding/utility/decoded_frames_history.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"
@@ -45,7 +46,6 @@ class FrameBuffer {
   enum ReturnReason { kFrameFound, kTimeout, kStopped };
 
   FrameBuffer(Clock* clock,
-              VCMJitterEstimator* jitter_estimator,
               VCMTiming* timing,
               VCMReceiveStatisticsCallback* stats_callback);
 
@@ -182,7 +182,7 @@ class FrameBuffer {
   bool keyframe_required_ RTC_GUARDED_BY(crit_);
 
   rtc::Event new_continuous_frame_event_;
-  VCMJitterEstimator* const jitter_estimator_ RTC_GUARDED_BY(crit_);
+  VCMJitterEstimator jitter_estimator_ RTC_GUARDED_BY(crit_);
   VCMTiming* const timing_ RTC_GUARDED_BY(crit_);
   VCMInterFrameDelay inter_frame_delay_ RTC_GUARDED_BY(crit_);
   absl::optional<VideoLayerFrameId> last_continuous_frame_

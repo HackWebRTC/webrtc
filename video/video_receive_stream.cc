@@ -35,7 +35,6 @@
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "modules/video_coding/include/video_error_codes.h"
-#include "modules/video_coding/jitter_estimator.h"
 #include "modules/video_coding/timing.h"
 #include "modules/video_coding/utility/vp8_header_parser.h"
 #include "rtc_base/checks.h"
@@ -241,9 +240,8 @@ VideoReceiveStream::VideoReceiveStream(
 
   timing_->set_render_delay(config_.render_delay_ms);
 
-  jitter_estimator_.reset(new VCMJitterEstimator(clock_));
-  frame_buffer_.reset(new video_coding::FrameBuffer(
-      clock_, jitter_estimator_.get(), timing_.get(), &stats_proxy_));
+  frame_buffer_.reset(
+      new video_coding::FrameBuffer(clock_, timing_.get(), &stats_proxy_));
 
   process_thread_->RegisterModule(&rtp_stream_sync_, RTC_FROM_HERE);
 

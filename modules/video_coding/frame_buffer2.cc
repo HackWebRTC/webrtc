@@ -49,13 +49,12 @@ constexpr int64_t kLogNonDecodedIntervalMs = 5000;
 }  // namespace
 
 FrameBuffer::FrameBuffer(Clock* clock,
-                         VCMJitterEstimator* jitter_estimator,
                          VCMTiming* timing,
                          VCMReceiveStatisticsCallback* stats_callback)
     : decoded_frames_history_(kMaxFramesHistory),
       clock_(clock),
       callback_queue_(nullptr),
-      jitter_estimator_(jitter_estimator),
+      jitter_estimator_(clock),
       timing_(timing),
       inter_frame_delay_(clock_->TimeInMilliseconds()),
       stopped_(false),
@@ -266,7 +265,7 @@ EncodedFrame* FrameBuffer::GetNextFrame() {
   int64_t receive_time_ms = first_frame->ReceivedTime();
   // Gracefully handle bad RTP timestamps and render time issues.
   if (HasBadRenderTiming(*first_frame, now_ms)) {
-    jitter_estimator_->Reset();
+    jitter_estimator_.Reset();
     timing_->Reset();
     render_time_ms = timing_->RenderTimeMs(first_frame->Timestamp(), now_ms);
   }
@@ -295,7 +294,7 @@ EncodedFrame* FrameBuffer::GetNextFrame() {
 
     if (inter_frame_delay_.CalculateDelay(first_frame->Timestamp(),
                                           &frame_delay, receive_time_ms)) {
-      jitter_estimator_->UpdateEstimate(frame_delay, superframe_size);
+      jitter_estimator_.UpdateEstimate(frame_delay, superframe_size);
     }
 
     float rtt_mult = protection_mode_ == kProtectionNackFEC ? 0.0 : 1.0;
@@ -306,11 +305,11 @@ EncodedFrame* FrameBuffer::GetNextFrame() {
       jitter_est_cap_ms = 300.0;
     }
     timing_->SetJitterDelay(
-        jitter_estimator_->GetJitterEstimate(rtt_mult, jitter_est_cap_ms));
+        jitter_estimator_.GetJitterEstimate(rtt_mult, jitter_est_cap_ms));
     timing_->UpdateCurrentDelay(render_time_ms, now_ms);
   } else {
     if (RttMultExperiment::RttMultEnabled() || add_rtt_to_playout_delay_)
-      jitter_estimator_->FrameNacked();
+      jitter_estimator_.FrameNacked();
   }
 
   UpdateJitterDelay();
@@ -378,7 +377,7 @@ void FrameBuffer::Clear() {
 
 void FrameBuffer::UpdateRtt(int64_t rtt_ms) {
   rtc::CritScope lock(&crit_);
-  jitter_estimator_->UpdateRtt(rtt_ms);
+  jitter_estimator_.UpdateRtt(rtt_ms);
 }
 
 bool FrameBuffer::ValidReferences(const EncodedFrame& frame) const {

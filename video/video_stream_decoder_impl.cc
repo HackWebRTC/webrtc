@@ -33,10 +33,8 @@ VideoStreamDecoderImpl::VideoStreamDecoderImpl(
                      this,
                      "video_stream_decoder_decode_thread",
                      rtc::kHighestPriority),
-      jitter_estimator_(Clock::GetRealTimeClock()),
       timing_(Clock::GetRealTimeClock()),
       frame_buffer_(Clock::GetRealTimeClock(),
-                    &jitter_estimator_,
                     &timing_,
                     nullptr),
       next_frame_timestamps_index_(0) {
