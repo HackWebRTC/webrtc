@@ -1166,9 +1166,8 @@ void EventLogAnalyzer::CreateGoogCcSimulationGraph(Plot* plot) {
   TimeSeries probe_results("Logged probe success", LineStyle::kNone,
                            PointStyle::kHighlight);
 
-  RtcEventLogNullImpl null_event_log;
   LogBasedNetworkControllerSimulation simulation(
-      absl::make_unique<GoogCcNetworkControllerFactory>(&null_event_log),
+      absl::make_unique<GoogCcNetworkControllerFactory>(),
       [&](const NetworkControlUpdate& update, Timestamp at_time) {
         if (update.target_rate) {
           target_rates.points.emplace_back(
@@ -1222,13 +1221,14 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
   PacketRouter packet_router;
   PacedSender pacer(&clock, &packet_router, &null_event_log);
   TransportFeedbackAdapter transport_feedback;
-  auto factory = GoogCcNetworkControllerFactory(&null_event_log);
+  auto factory = GoogCcNetworkControllerFactory();
   TimeDelta process_interval = factory.GetProcessInterval();
   // TODO(holmer): Log the call config and use that here instead.
   static const uint32_t kDefaultStartBitrateBps = 300000;
   NetworkControllerConfig cc_config;
   cc_config.constraints.at_time = Timestamp::us(clock.TimeInMicroseconds());
   cc_config.constraints.starting_rate = DataRate::bps(kDefaultStartBitrateBps);
+  cc_config.event_log = &null_event_log;
   auto goog_cc = factory.Create(cc_config);
 
   TimeSeries time_series("Delay-based estimate", LineStyle::kStep,

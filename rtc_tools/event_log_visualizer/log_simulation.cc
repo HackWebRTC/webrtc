@@ -35,6 +35,7 @@ void LogBasedNetworkControllerSimulation::ProcessUntil(Timestamp to_time) {
     config.constraints.at_time = to_time;
     config.constraints.min_data_rate = DataRate::kbps(30);
     config.constraints.starting_rate = DataRate::kbps(300);
+    config.event_log = &null_event_log_;
     controller_ = factory_->Create(config);
   }
   if (last_process_.IsInfinite() ||

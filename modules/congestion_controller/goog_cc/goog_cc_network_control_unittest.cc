@@ -112,7 +112,7 @@ void UpdatesTargetRateBasedOnLinkCapacity(std::string test_name = "") {
 class GoogCcNetworkControllerTest : public ::testing::Test {
  protected:
   GoogCcNetworkControllerTest()
-      : current_time_(Timestamp::ms(123456)), factory_(&event_log_) {}
+      : current_time_(Timestamp::ms(123456)), factory_() {}
   ~GoogCcNetworkControllerTest() override {}
 
   void SetUp() override {
@@ -144,6 +144,7 @@ class GoogCcNetworkControllerTest : public ::testing::Test {
     config.constraints.min_data_rate = DataRate::kbps(min_data_rate_kbps);
     config.constraints.max_data_rate = DataRate::kbps(max_data_rate_kbps);
     config.constraints.starting_rate = DataRate::kbps(starting_bandwidth_kbps);
+    config.event_log = &event_log_;
     return config;
   }
   ProcessInterval DefaultInterval() {

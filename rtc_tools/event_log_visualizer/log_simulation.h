@@ -45,6 +45,7 @@ class LogBasedNetworkControllerSimulation {
   void OnFeedback(const LoggedRtcpPacketTransportFeedback& feedback);
   void OnReceiverReport(const LoggedRtcpPacketReceiverReport& report);
   void OnIceConfig(const LoggedIceCandidatePairConfig& candidate);
+  RtcEventLogNullImpl null_event_log_;
 
   const std::function<void(const NetworkControlUpdate&, Timestamp)>
       update_handler_;
