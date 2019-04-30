@@ -128,13 +128,6 @@ class Runnable {
 
 class RTC_LOCKABLE Thread : public MessageQueue {
  public:
-  // DEPRECATED.
-  // The default constructor should not be used because it hides whether or
-  // not a socket server will be associated with the thread. Most instances
-  // of Thread do actually not need one, so please use either of the Create*
-  // methods to construct an instance of Thread.
-  Thread();
-
   explicit Thread(SocketServer* ss);
   explicit Thread(std::unique_ptr<SocketServer> ss);
   // Constructors meant for subclasses; they should call DoInit themselves and
