@@ -214,11 +214,12 @@ VideoEncoderConfig CreateVideoEncoderConfig(VideoStreamConfig config) {
   encoder_config.video_format =
       SdpVideoFormat(CodecTypeToPayloadString(config.encoder.codec), {});
 
-  size_t num_streams = 1;
+  encoder_config.number_of_streams = 1;
   if (config.encoder.codec == VideoStreamConfig::Encoder::Codec::kVideoCodecVP8)
-    num_streams = static_cast<size_t>(config.encoder.layers.spatial);
-  encoder_config.number_of_streams = num_streams;
-  encoder_config.simulcast_layers = std::vector<VideoStream>(num_streams);
+    encoder_config.number_of_streams =
+        static_cast<size_t>(config.encoder.layers.spatial);
+  encoder_config.simulcast_layers =
+      std::vector<VideoStream>(config.encoder.layers.spatial);
   encoder_config.min_transmit_bitrate_bps = config.stream.pad_to_rate.bps();
 
   std::string cricket_codec = CodecTypeToCodecName(config.encoder.codec);
@@ -442,6 +443,23 @@ void SendVideoStream::UpdateConfig(
     }
     if (prior_config.source.framerate != config_.source.framerate) {
       SetCaptureFramerate(config_.source.framerate);
+    }
+  });
+}
+
+void SendVideoStream::UpdateActiveLayers(std::vector<bool> active_layers) {
+  sender_->task_queue_.PostTask([=] {
+    rtc::CritScope cs(&crit_);
+    if (config_.encoder.codec ==
+        VideoStreamConfig::Encoder::Codec::kVideoCodecVP8) {
+      send_stream_->UpdateActiveSimulcastLayers(active_layers);
+    } else {
+      VideoEncoderConfig encoder_config = CreateVideoEncoderConfig(config_);
+      RTC_CHECK_EQ(encoder_config.simulcast_layers.size(),
+                   active_layers.size());
+      for (size_t i = 0; i < encoder_config.simulcast_layers.size(); ++i)
+        encoder_config.simulcast_layers[i].active = active_layers[i];
+      send_stream_->ReconfigureVideoEncoder(std::move(encoder_config));
     }
   });
 }

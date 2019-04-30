@@ -39,6 +39,7 @@ class SendVideoStream {
   void Start();
   void Stop();
   void UpdateConfig(std::function<void(VideoStreamConfig*)> modifier);
+  void UpdateActiveLayers(std::vector<bool> active_layers);
 
  private:
   friend class Scenario;
