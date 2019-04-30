@@ -10,10 +10,11 @@
 
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/gunit.h"
+#include "rtc_base/null_socket_server.h"
 #include "rtc_base/signal_thread.h"
-#include "rtc_base/socket_server.h"
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
 
@@ -129,7 +130,9 @@ class SignalThreadTest : public ::testing::Test, public sigslot::has_slots<> {
 class OwnerThread : public Thread, public sigslot::has_slots<> {
  public:
   explicit OwnerThread(SignalThreadTest* harness)
-      : harness_(harness), has_run_(false) {}
+      : Thread(absl::make_unique<NullSocketServer>()),
+        harness_(harness),
+        has_run_(false) {}
 
   ~OwnerThread() override { Stop(); }
 
