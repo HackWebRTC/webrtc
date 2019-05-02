@@ -34,6 +34,8 @@ struct VCMFrameInformation {
   VideoRotation rotation;
   VideoContentType content_type;
   EncodedImage::Timing timing;
+  int64_t ntp_time_ms;
+  const ColorSpace* color_space;
 };
 
 class VCMDecodedFrameCallback : public DecodedImageCallback {

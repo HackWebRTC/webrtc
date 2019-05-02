@@ -8,18 +8,25 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "video/frame_encode_metadata_writer.h"
+
 #include <cstddef>
 #include <vector>
 
+#include "api/video/i420_buffer.h"
+#include "api/video/video_frame.h"
 #include "api/video/video_timing.h"
+#include "common_video/test/utilities.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "rtc_base/time_utils.h"
 #include "test/gtest.h"
-#include "video/frame_encode_timer.h"
 
 namespace webrtc {
 namespace test {
 namespace {
+
+const rtc::scoped_refptr<I420Buffer> kFrameBuffer = I420Buffer::Create(4, 4);
+
 inline size_t FrameSize(const size_t& min_frame_size,
                         const size_t& max_frame_size,
                         const int& s,
@@ -65,7 +72,7 @@ std::vector<std::vector<FrameType>> GetTimingFrames(
     const int num_streams,
     const int num_frames) {
   FakeEncodedImageCallback sink;
-  FrameEncodeTimer encode_timer(&sink);
+  FrameEncodeMetadataWriter encode_timer(&sink);
   VideoCodec codec_settings;
   codec_settings.numberOfSimulcastStreams = num_streams;
   codec_settings.timing_frame_thresholds = {delay_ms,
@@ -83,8 +90,12 @@ std::vector<std::vector<FrameType>> GetTimingFrames(
   int64_t current_timestamp = 0;
   for (int i = 0; i < num_frames; ++i) {
     current_timestamp += 1;
-    encode_timer.OnEncodeStarted(static_cast<uint32_t>(current_timestamp * 90),
-                                 current_timestamp);
+    VideoFrame frame = VideoFrame::Builder()
+                           .set_timestamp_rtp(current_timestamp * 90)
+                           .set_timestamp_ms(current_timestamp)
+                           .set_video_frame_buffer(kFrameBuffer)
+                           .build();
+    encode_timer.OnEncodeStarted(frame);
     for (int si = 0; si < num_streams; ++si) {
       // every (5+s)-th frame is dropped on s-th stream by design.
       bool dropped = i % (5 + si) == 0;
@@ -101,7 +112,7 @@ std::vector<std::vector<FrameType>> GetTimingFrames(
         continue;
       }
 
-      encode_timer.FillTimingInfo(si, &image, current_timestamp);
+      encode_timer.FillTimingInfo(si, &image);
 
       if (IsTimingFrame(image)) {
         result[si].push_back(FrameType::kTiming);
@@ -190,7 +201,7 @@ TEST(FrameEncodeTimerTest, NoTimingFrameIfNoEncodeStartTime) {
   image.SetTimestamp(static_cast<uint32_t>(timestamp * 90));
 
   FakeEncodedImageCallback sink;
-  FrameEncodeTimer encode_timer(&sink);
+  FrameEncodeMetadataWriter encode_timer(&sink);
   VideoCodec codec_settings;
   // Make all frames timing frames.
   codec_settings.timing_frame_thresholds.delay_ms = 1;
@@ -200,16 +211,20 @@ TEST(FrameEncodeTimerTest, NoTimingFrameIfNoEncodeStartTime) {
   encode_timer.OnSetRates(bitrate_allocation, 30);
 
   // Verify a single frame works with encode start time set.
-  encode_timer.OnEncodeStarted(static_cast<uint32_t>(timestamp * 90),
-                               timestamp);
-  encode_timer.FillTimingInfo(0, &image, timestamp);
+  VideoFrame frame = VideoFrame::Builder()
+                         .set_timestamp_ms(timestamp)
+                         .set_timestamp_rtp(timestamp * 90)
+                         .set_video_frame_buffer(kFrameBuffer)
+                         .build();
+  encode_timer.OnEncodeStarted(frame);
+  encode_timer.FillTimingInfo(0, &image);
   EXPECT_TRUE(IsTimingFrame(image));
 
   // New frame, now skip OnEncodeStarted. Should not result in timing frame.
   image.capture_time_ms_ = ++timestamp;
   image.SetTimestamp(static_cast<uint32_t>(timestamp * 90));
   image.timing_ = EncodedImage::Timing();
-  encode_timer.FillTimingInfo(0, &image, timestamp);
+  encode_timer.FillTimingInfo(0, &image);
   EXPECT_FALSE(IsTimingFrame(image));
 }
 
@@ -226,7 +241,7 @@ TEST(FrameEncodeTimerTest, AdjustsCaptureTimeForInternalSourceEncoder) {
   image.SetTimestamp(static_cast<uint32_t>(timestamp * 90));
 
   FakeEncodedImageCallback sink;
-  FrameEncodeTimer encode_timer(&sink);
+  FrameEncodeMetadataWriter encode_timer(&sink);
 
   VideoCodec codec_settings;
   // Make all frames timing frames.
@@ -238,7 +253,7 @@ TEST(FrameEncodeTimerTest, AdjustsCaptureTimeForInternalSourceEncoder) {
   encode_timer.OnSetRates(bitrate_allocation, 30);
 
   // Verify a single frame without encode timestamps isn't a timing frame.
-  encode_timer.FillTimingInfo(0, &image, timestamp);
+  encode_timer.FillTimingInfo(0, &image);
   EXPECT_FALSE(IsTimingFrame(image));
 
   // New frame, but this time with encode timestamps set in timing_.
@@ -248,14 +263,14 @@ TEST(FrameEncodeTimerTest, AdjustsCaptureTimeForInternalSourceEncoder) {
   image.timing_ = EncodedImage::Timing();
   image.timing_.encode_start_ms = timestamp + kEncodeStartDelayMs;
   image.timing_.encode_finish_ms = timestamp + kEncodeFinishDelayMs;
-  const int64_t kEncodeDoneTimestamp = 1234567;
-  encode_timer.FillTimingInfo(0, &image, kEncodeDoneTimestamp);
+
+  encode_timer.FillTimingInfo(0, &image);
   EXPECT_TRUE(IsTimingFrame(image));
 
   // Frame is captured kEncodeFinishDelayMs before it's encoded, so restored
   // capture timestamp should be kEncodeFinishDelayMs in the past.
-  EXPECT_EQ(image.capture_time_ms_,
-            kEncodeDoneTimestamp - kEncodeFinishDelayMs);
+  EXPECT_NEAR(image.capture_time_ms_, rtc::TimeMillis() - kEncodeFinishDelayMs,
+              1);
 }
 
 TEST(FrameEncodeTimerTest, NotifiesAboutDroppedFrames) {
@@ -265,7 +280,7 @@ TEST(FrameEncodeTimerTest, NotifiesAboutDroppedFrames) {
   const int64_t kTimestampMs4 = 47721870;
 
   FakeEncodedImageCallback sink;
-  FrameEncodeTimer encode_timer(&sink);
+  FrameEncodeMetadataWriter encode_timer(&sink);
   encode_timer.OnEncoderInit(VideoCodec(), false);
   // Any non-zero bitrate needed to be set before the first frame.
   VideoBitrateAllocation bitrate_allocation;
@@ -273,17 +288,27 @@ TEST(FrameEncodeTimerTest, NotifiesAboutDroppedFrames) {
   encode_timer.OnSetRates(bitrate_allocation, 30);
 
   EncodedImage image;
+  VideoFrame frame = VideoFrame::Builder()
+                         .set_timestamp_rtp(kTimestampMs1 * 90)
+                         .set_timestamp_ms(kTimestampMs1)
+                         .set_video_frame_buffer(kFrameBuffer)
+                         .build();
+
   image.capture_time_ms_ = kTimestampMs1;
   image.SetTimestamp(static_cast<uint32_t>(image.capture_time_ms_ * 90));
-  encode_timer.OnEncodeStarted(image.Timestamp(), image.capture_time_ms_);
+  frame.set_timestamp(image.capture_time_ms_ * 90);
+  frame.set_timestamp_us(image.capture_time_ms_ * 1000);
+  encode_timer.OnEncodeStarted(frame);
 
   EXPECT_EQ(0u, sink.GetNumFramesDropped());
-  encode_timer.FillTimingInfo(0, &image, kTimestampMs1);
+  encode_timer.FillTimingInfo(0, &image);
 
   image.capture_time_ms_ = kTimestampMs2;
   image.SetTimestamp(static_cast<uint32_t>(image.capture_time_ms_ * 90));
   image.timing_ = EncodedImage::Timing();
-  encode_timer.OnEncodeStarted(image.Timestamp(), image.capture_time_ms_);
+  frame.set_timestamp(image.capture_time_ms_ * 90);
+  frame.set_timestamp_us(image.capture_time_ms_ * 1000);
+  encode_timer.OnEncodeStarted(frame);
   // No OnEncodedImageCall for timestamp2. Yet, at this moment it's not known
   // that frame with timestamp2 was dropped.
   EXPECT_EQ(0u, sink.GetNumFramesDropped());
@@ -291,15 +316,19 @@ TEST(FrameEncodeTimerTest, NotifiesAboutDroppedFrames) {
   image.capture_time_ms_ = kTimestampMs3;
   image.SetTimestamp(static_cast<uint32_t>(image.capture_time_ms_ * 90));
   image.timing_ = EncodedImage::Timing();
-  encode_timer.OnEncodeStarted(image.Timestamp(), image.capture_time_ms_);
-  encode_timer.FillTimingInfo(0, &image, kTimestampMs3);
+  frame.set_timestamp(image.capture_time_ms_ * 90);
+  frame.set_timestamp_us(image.capture_time_ms_ * 1000);
+  encode_timer.OnEncodeStarted(frame);
+  encode_timer.FillTimingInfo(0, &image);
   EXPECT_EQ(1u, sink.GetNumFramesDropped());
 
   image.capture_time_ms_ = kTimestampMs4;
   image.SetTimestamp(static_cast<uint32_t>(image.capture_time_ms_ * 90));
   image.timing_ = EncodedImage::Timing();
-  encode_timer.OnEncodeStarted(image.Timestamp(), image.capture_time_ms_);
-  encode_timer.FillTimingInfo(0, &image, kTimestampMs4);
+  frame.set_timestamp(image.capture_time_ms_ * 90);
+  frame.set_timestamp_us(image.capture_time_ms_ * 1000);
+  encode_timer.OnEncodeStarted(frame);
+  encode_timer.FillTimingInfo(0, &image);
   EXPECT_EQ(1u, sink.GetNumFramesDropped());
 }
 
@@ -308,7 +337,7 @@ TEST(FrameEncodeTimerTest, RestoresCaptureTimestamps) {
   const int64_t kTimestampMs = 123456;
   FakeEncodedImageCallback sink;
 
-  FrameEncodeTimer encode_timer(&sink);
+  FrameEncodeMetadataWriter encode_timer(&sink);
   encode_timer.OnEncoderInit(VideoCodec(), false);
   // Any non-zero bitrate needed to be set before the first frame.
   VideoBitrateAllocation bitrate_allocation;
@@ -317,10 +346,92 @@ TEST(FrameEncodeTimerTest, RestoresCaptureTimestamps) {
 
   image.capture_time_ms_ = kTimestampMs;  // Correct timestamp.
   image.SetTimestamp(static_cast<uint32_t>(image.capture_time_ms_ * 90));
-  encode_timer.OnEncodeStarted(image.Timestamp(), image.capture_time_ms_);
+  VideoFrame frame = VideoFrame::Builder()
+                         .set_timestamp_ms(image.capture_time_ms_)
+                         .set_timestamp_rtp(image.capture_time_ms_ * 90)
+                         .set_video_frame_buffer(kFrameBuffer)
+                         .build();
+  encode_timer.OnEncodeStarted(frame);
   image.capture_time_ms_ = 0;  // Incorrect timestamp.
-  encode_timer.FillTimingInfo(0, &image, kTimestampMs);
+  encode_timer.FillTimingInfo(0, &image);
   EXPECT_EQ(kTimestampMs, image.capture_time_ms_);
+}
+
+TEST(FrameEncodeTimerTest, CopiesRotation) {
+  EncodedImage image;
+  const int64_t kTimestampMs = 123456;
+  FakeEncodedImageCallback sink;
+
+  FrameEncodeMetadataWriter encode_timer(&sink);
+  encode_timer.OnEncoderInit(VideoCodec(), false);
+  // Any non-zero bitrate needed to be set before the first frame.
+  VideoBitrateAllocation bitrate_allocation;
+  bitrate_allocation.SetBitrate(0, 0, 500000);
+  encode_timer.OnSetRates(bitrate_allocation, 30);
+
+  image.SetTimestamp(static_cast<uint32_t>(kTimestampMs * 90));
+  VideoFrame frame = VideoFrame::Builder()
+                         .set_timestamp_ms(kTimestampMs)
+                         .set_timestamp_rtp(kTimestampMs * 90)
+                         .set_rotation(kVideoRotation_180)
+                         .set_video_frame_buffer(kFrameBuffer)
+                         .build();
+  encode_timer.OnEncodeStarted(frame);
+  encode_timer.FillTimingInfo(0, &image);
+  EXPECT_EQ(kVideoRotation_180, image.rotation_);
+}
+
+TEST(FrameEncodeTimerTest, SetsContentType) {
+  EncodedImage image;
+  const int64_t kTimestampMs = 123456;
+  FakeEncodedImageCallback sink;
+
+  FrameEncodeMetadataWriter encode_timer(&sink);
+  VideoCodec codec;
+  codec.mode = VideoCodecMode::kScreensharing;
+  encode_timer.OnEncoderInit(codec, false);
+  // Any non-zero bitrate needed to be set before the first frame.
+  VideoBitrateAllocation bitrate_allocation;
+  bitrate_allocation.SetBitrate(0, 0, 500000);
+  encode_timer.OnSetRates(bitrate_allocation, 30);
+
+  image.SetTimestamp(static_cast<uint32_t>(kTimestampMs * 90));
+  VideoFrame frame = VideoFrame::Builder()
+                         .set_timestamp_ms(kTimestampMs)
+                         .set_timestamp_rtp(kTimestampMs * 90)
+                         .set_rotation(kVideoRotation_180)
+                         .set_video_frame_buffer(kFrameBuffer)
+                         .build();
+  encode_timer.OnEncodeStarted(frame);
+  encode_timer.FillTimingInfo(0, &image);
+  EXPECT_EQ(VideoContentType::SCREENSHARE, image.content_type_);
+}
+
+TEST(FrameEncodeTimerTest, CopiesColorSpace) {
+  EncodedImage image;
+  const int64_t kTimestampMs = 123456;
+  FakeEncodedImageCallback sink;
+
+  FrameEncodeMetadataWriter encode_timer(&sink);
+  encode_timer.OnEncoderInit(VideoCodec(), false);
+  // Any non-zero bitrate needed to be set before the first frame.
+  VideoBitrateAllocation bitrate_allocation;
+  bitrate_allocation.SetBitrate(0, 0, 500000);
+  encode_timer.OnSetRates(bitrate_allocation, 30);
+
+  webrtc::ColorSpace color_space =
+      CreateTestColorSpace(/*with_hdr_metadata=*/true);
+  image.SetTimestamp(static_cast<uint32_t>(kTimestampMs * 90));
+  VideoFrame frame = VideoFrame::Builder()
+                         .set_timestamp_ms(kTimestampMs)
+                         .set_timestamp_rtp(kTimestampMs * 90)
+                         .set_color_space(color_space)
+                         .set_video_frame_buffer(kFrameBuffer)
+                         .build();
+  encode_timer.OnEncodeStarted(frame);
+  encode_timer.FillTimingInfo(0, &image);
+  ASSERT_NE(image.ColorSpace(), nullptr);
+  EXPECT_EQ(color_space, *image.ColorSpace());
 }
 
 }  // namespace test

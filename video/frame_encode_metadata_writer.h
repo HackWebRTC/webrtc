@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef VIDEO_FRAME_ENCODE_TIMER_H_
-#define VIDEO_FRAME_ENCODE_TIMER_H_
+#ifndef VIDEO_FRAME_ENCODE_METADATA_WRITER_H_
+#define VIDEO_FRAME_ENCODE_METADATA_WRITER_H_
 
 #include <list>
 #include <vector>
@@ -22,20 +22,18 @@
 
 namespace webrtc {
 
-class FrameEncodeTimer {
+class FrameEncodeMetadataWriter {
  public:
-  explicit FrameEncodeTimer(EncodedImageCallback* frame_drop_callback);
-  ~FrameEncodeTimer();
+  explicit FrameEncodeMetadataWriter(EncodedImageCallback* frame_drop_callback);
+  ~FrameEncodeMetadataWriter();
 
   void OnEncoderInit(const VideoCodec& codec, bool internal_source);
   void OnSetRates(const VideoBitrateAllocation& bitrate_allocation,
                   uint32_t framerate_fps);
 
-  void OnEncodeStarted(uint32_t rtp_timestamp, int64_t capture_time_ms);
+  void OnEncodeStarted(const VideoFrame& frame);
 
-  void FillTimingInfo(size_t simulcast_svc_idx,
-                      EncodedImage* encoded_image,
-                      int64_t encode_done_ms);
+  void FillTimingInfo(size_t simulcast_svc_idx, EncodedImage* encoded_image);
   void Reset();
 
  private:
@@ -43,26 +41,23 @@ class FrameEncodeTimer {
 
   // For non-internal-source encoders, returns encode started time and fixes
   // capture timestamp for the frame, if corrupted by the encoder.
-  absl::optional<int64_t> ExtractEncodeStartTime(size_t simulcast_svc_idx,
-                                                 EncodedImage* encoded_image)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
+  absl::optional<int64_t> ExtractEncodeStartTimeAndFillMetadata(
+      size_t simulcast_svc_idx,
+      EncodedImage* encoded_image) RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
 
-  struct EncodeStartTimeRecord {
-    EncodeStartTimeRecord(uint32_t timestamp,
-                          int64_t capture_time,
-                          int64_t encode_start_time)
-        : rtp_timestamp(timestamp),
-          capture_time_ms(capture_time),
-          encode_start_time_ms(encode_start_time) {}
+  struct FrameMetadata {
     uint32_t rtp_timestamp;
-    int64_t capture_time_ms;
     int64_t encode_start_time_ms;
+    int64_t ntp_time_ms = 0;
+    int64_t timestamp_us = 0;
+    VideoRotation rotation = kVideoRotation_0;
+    absl::optional<ColorSpace> color_space;
   };
   struct TimingFramesLayerInfo {
     TimingFramesLayerInfo();
     ~TimingFramesLayerInfo();
     size_t target_bitrate_bytes_per_sec = 0;
-    std::list<EncodeStartTimeRecord> encode_start_list;
+    std::list<FrameMetadata> frames;
   };
 
   rtc::CriticalSection lock_;
@@ -74,11 +69,10 @@ class FrameEncodeTimer {
   // Separate instance for each simulcast stream or spatial layer.
   std::vector<TimingFramesLayerInfo> timing_frames_info_ RTC_GUARDED_BY(&lock_);
   int64_t last_timing_frame_time_ms_ RTC_GUARDED_BY(&lock_);
-  size_t incorrect_capture_time_logged_messages_ RTC_GUARDED_BY(&lock_);
   size_t reordered_frames_logged_messages_ RTC_GUARDED_BY(&lock_);
   size_t stalled_encoder_logged_messages_ RTC_GUARDED_BY(&lock_);
 };
 
 }  // namespace webrtc
 
-#endif  // VIDEO_FRAME_ENCODE_TIMER_H_
+#endif  // VIDEO_FRAME_ENCODE_METADATA_WRITER_H_

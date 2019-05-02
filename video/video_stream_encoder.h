@@ -36,7 +36,7 @@
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_queue.h"
 #include "video/encoder_bitrate_adjuster.h"
-#include "video/frame_encode_timer.h"
+#include "video/frame_encode_metadata_writer.h"
 #include "video/overuse_frame_detector.h"
 
 namespace webrtc {
@@ -342,7 +342,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // turn this into a simple bool |pending_keyframe_request_|.
   std::vector<VideoFrameType> next_frame_types_ RTC_GUARDED_BY(&encoder_queue_);
 
-  FrameEncodeTimer frame_encoder_timer_;
+  FrameEncodeMetadataWriter frame_encode_metadata_writer_;
 
   // Experiment groups parsed from field trials for realtime video ([0]) and
   // screenshare ([1]). 0 means no group specified. Positive values are
