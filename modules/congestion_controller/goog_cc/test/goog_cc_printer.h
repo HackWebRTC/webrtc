@@ -10,8 +10,9 @@
 #ifndef MODULES_CONGESTION_CONTROLLER_GOOG_CC_TEST_GOOG_CC_PRINTER_H_
 #define MODULES_CONGESTION_CONTROLLER_GOOG_CC_TEST_GOOG_CC_PRINTER_H_
 
-#include <stdio.h>
+#include <deque>
 #include <memory>
+#include <string>
 
 #include "api/transport/goog_cc_factory.h"
 #include "api/transport/network_control.h"
@@ -22,9 +23,19 @@
 #include "modules/congestion_controller/test/controller_printer.h"
 
 namespace webrtc {
+
+class FieldLogger {
+ public:
+  virtual ~FieldLogger() = default;
+  virtual const std::string& name() const = 0;
+  virtual void WriteValue(RtcEventLogOutput* out) = 0;
+};
+
 class GoogCcStatePrinter : public DebugStatePrinter {
  public:
   GoogCcStatePrinter();
+  GoogCcStatePrinter(const GoogCcStatePrinter&) = delete;
+  GoogCcStatePrinter& operator=(const GoogCcStatePrinter&) = delete;
   ~GoogCcStatePrinter() override;
   void Attach(GoogCcNetworkController*);
   bool Attached() const override;
@@ -35,6 +46,10 @@ class GoogCcStatePrinter : public DebugStatePrinter {
   NetworkControlUpdate GetState(Timestamp at_time) const override;
 
  private:
+  const NetworkStateEstimate& GetEst();
+  std::deque<FieldLogger*> CreateLoggers();
+
+  std::deque<std::unique_ptr<FieldLogger>> loggers_;
   GoogCcNetworkController* controller_ = nullptr;
 };
 
@@ -48,7 +63,6 @@ class GoogCcDebugFactory : public GoogCcNetworkControllerFactory {
   GoogCcStatePrinter* printer_;
   GoogCcNetworkController* controller_ = nullptr;
 };
-
 }  // namespace webrtc
 
 #endif  // MODULES_CONGESTION_CONTROLLER_GOOG_CC_TEST_GOOG_CC_PRINTER_H_
