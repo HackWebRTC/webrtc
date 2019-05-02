@@ -122,6 +122,7 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, MAYBE_RunWithEmulatedNetwork) {
   run_params.video_encoder_bitrate_multiplier = 1.1;
   fixture->Run(run_params);
 
+  EXPECT_GE(fixture->GetRealTestDuration(), run_params.run_duration);
   for (auto stream_label : video_analyzer_ptr->GetKnownVideoStreams()) {
     FrameCounters stream_conters =
         video_analyzer_ptr->GetPerStreamCounters().at(stream_label);

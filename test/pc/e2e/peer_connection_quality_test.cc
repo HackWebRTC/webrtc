@@ -369,6 +369,11 @@ void PeerConnectionE2EQualityTest::Run(
       RTC_FROM_HERE,
       rtc::Bind(&PeerConnectionE2EQualityTest::TearDownCallOnSignalingThread,
                 this));
+  Timestamp end_time = Now();
+  {
+    rtc::CritScope crit(&lock_);
+    real_test_duration_ = end_time - start_time_;
+  }
 
   audio_quality_analyzer_->Stop();
   video_quality_analyzer_injection_helper_->Stop();
