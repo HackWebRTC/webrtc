@@ -11,6 +11,7 @@
 #ifndef API_VIDEO_CODECS_VP8_FRAME_BUFFER_CONTROLLER_H_
 #define API_VIDEO_CODECS_VP8_FRAME_BUFFER_CONTROLLER_H_
 
+#include <array>
 #include <memory>
 #include <vector>
 
@@ -46,34 +47,48 @@ namespace webrtc {
 
 struct CodecSpecificInfo;
 
-// TODO(eladalon): This configuration is temporal-layers specific; refactor.
+// Each member represents an override of the VPX configuration if the optional
+// value is set.
 struct Vp8EncoderConfig {
-  static constexpr size_t kMaxPeriodicity = 16;
-  static constexpr size_t kMaxLayers = 5;
+  struct TemporalLayerConfig {
+    bool operator!=(const TemporalLayerConfig& other) const {
+      return ts_number_layers != other.ts_number_layers ||
+             ts_target_bitrate != other.ts_target_bitrate ||
+             ts_rate_decimator != other.ts_rate_decimator ||
+             ts_periodicity != other.ts_periodicity ||
+             ts_layer_id != other.ts_layer_id;
+    }
 
-  // Number of active temporal layers. Set to 0 if not used.
-  uint32_t ts_number_layers;
-  // Arrays of length |ts_number_layers|, indicating (cumulative) target bitrate
-  // and rate decimator (e.g. 4 if every 4th frame is in the given layer) for
-  // each active temporal layer, starting with temporal id 0.
-  uint32_t ts_target_bitrate[kMaxLayers];
-  uint32_t ts_rate_decimator[kMaxLayers];
+    static constexpr size_t kMaxPeriodicity = 16;
+    static constexpr size_t kMaxLayers = 5;
 
-  // The periodicity of the temporal pattern. Set to 0 if not used.
-  uint32_t ts_periodicity;
-  // Array of length |ts_periodicity| indicating the sequence of temporal id's
-  // to assign to incoming frames.
-  uint32_t ts_layer_id[kMaxPeriodicity];
+    // Number of active temporal layers. Set to 0 if not used.
+    uint32_t ts_number_layers;
+
+    // Arrays of length |ts_number_layers|, indicating (cumulative) target
+    // bitrate and rate decimator (e.g. 4 if every 4th frame is in the given
+    // layer) for each active temporal layer, starting with temporal id 0.
+    std::array<uint32_t, kMaxLayers> ts_target_bitrate;
+    std::array<uint32_t, kMaxLayers> ts_rate_decimator;
+
+    // The periodicity of the temporal pattern. Set to 0 if not used.
+    uint32_t ts_periodicity;
+
+    // Array of length |ts_periodicity| indicating the sequence of temporal id's
+    // to assign to incoming frames.
+    std::array<uint32_t, kMaxPeriodicity> ts_layer_id;
+  };
+
+  absl::optional<TemporalLayerConfig> temporal_layer_config;
 
   // Target bitrate, in bps.
-  uint32_t rc_target_bitrate;
+  absl::optional<uint32_t> rc_target_bitrate;
 
-  // Clamp QP to min/max. Use 0 to disable clamping.
-  uint32_t rc_min_quantizer;
-  uint32_t rc_max_quantizer;
+  // Clamp QP to max. Use 0 to disable clamping.
+  absl::optional<uint32_t> rc_max_quantizer;
 
-  // If has_value(), override error resilience to value().
-  absl::optional<uint32_t> error_resilient;
+  // Error resilience mode.
+  absl::optional<uint32_t> g_error_resilient;
 };
 
 // This interface defines a way of delegating the logic of buffer management.
@@ -82,6 +97,10 @@ struct Vp8EncoderConfig {
 class Vp8FrameBufferController {
  public:
   virtual ~Vp8FrameBufferController() = default;
+
+  // Set limits on QP.
+  // The limits are suggestion-only; the controller is allowed to exceed them.
+  virtual void SetQpLimits(size_t stream_index, int min_qp, int max_qp) = 0;
 
   // Number of streamed controlled by |this|.
   virtual size_t StreamCount() const = 0;
@@ -103,12 +122,13 @@ class Vp8FrameBufferController {
                               const std::vector<uint32_t>& bitrates_bps,
                               int framerate_fps) = 0;
 
-  // Called by the encoder before encoding a frame. |cfg| contains the current
-  // configuration. If the encoder wishes any part of that to be changed before
-  // the encode step, |cfg| should be changed and then return true. If false is
-  // returned, the encoder will proceed without updating the configuration.
-  virtual bool UpdateConfiguration(size_t stream_index,
-                                   Vp8EncoderConfig* cfg) = 0;
+  // Called by the encoder before encoding a frame. Returns a set of overrides
+  // the controller wishes to enact in the encoder's configuration.
+  // If a value is not overridden, previous overrides are still in effect.
+  // (It is therefore not possible to go from a specific override to
+  // no-override. Once the controller takes responsibility over a value, it
+  // must maintain responsibility for it.)
+  virtual Vp8EncoderConfig UpdateConfiguration(size_t stream_index) = 0;
 
   // Returns the recommended VP8 encode flags needed.
   // The timestamp may be used as both a time and a unique identifier, and so

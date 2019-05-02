@@ -15,6 +15,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <utility>
@@ -145,58 +146,74 @@ void UpdateRateSettings(vpx_codec_enc_cfg_t* config,
   config->rc_dropframe_thresh = new_settings.rc_dropframe_thresh;
 }
 
-static_assert(Vp8EncoderConfig::kMaxPeriodicity == VPX_TS_MAX_PERIODICITY,
+static_assert(Vp8EncoderConfig::TemporalLayerConfig::kMaxPeriodicity ==
+                  VPX_TS_MAX_PERIODICITY,
               "Vp8EncoderConfig::kMaxPeriodicity must be kept in sync with the "
               "constant in libvpx.");
-static_assert(Vp8EncoderConfig::kMaxLayers == VPX_TS_MAX_LAYERS,
+static_assert(Vp8EncoderConfig::TemporalLayerConfig::kMaxLayers ==
+                  VPX_TS_MAX_LAYERS,
               "Vp8EncoderConfig::kMaxLayers must be kept in sync with the "
               "constant in libvpx.");
 
-static Vp8EncoderConfig GetEncoderConfig(vpx_codec_enc_cfg* vpx_config) {
-  Vp8EncoderConfig config;
-
-  config.ts_number_layers = vpx_config->ts_number_layers;
-  memcpy(config.ts_target_bitrate, vpx_config->ts_target_bitrate,
-         sizeof(unsigned int) * Vp8EncoderConfig::kMaxLayers);
-  memcpy(config.ts_rate_decimator, vpx_config->ts_rate_decimator,
-         sizeof(unsigned int) * Vp8EncoderConfig::kMaxLayers);
-  config.ts_periodicity = vpx_config->ts_periodicity;
-  memcpy(config.ts_layer_id, vpx_config->ts_layer_id,
-         sizeof(unsigned int) * Vp8EncoderConfig::kMaxPeriodicity);
-  config.rc_target_bitrate = vpx_config->rc_target_bitrate;
-  config.rc_min_quantizer = vpx_config->rc_min_quantizer;
-  config.rc_max_quantizer = vpx_config->rc_max_quantizer;
-
-  return config;
-}
-
-static void FillInEncoderConfig(vpx_codec_enc_cfg* vpx_config,
-                                const Vp8EncoderConfig& config) {
-  vpx_config->ts_number_layers = config.ts_number_layers;
-  memcpy(vpx_config->ts_target_bitrate, config.ts_target_bitrate,
-         sizeof(unsigned int) * Vp8EncoderConfig::kMaxLayers);
-  memcpy(vpx_config->ts_rate_decimator, config.ts_rate_decimator,
-         sizeof(unsigned int) * Vp8EncoderConfig::kMaxLayers);
-  vpx_config->ts_periodicity = config.ts_periodicity;
-  memcpy(vpx_config->ts_layer_id, config.ts_layer_id,
-         sizeof(unsigned int) * Vp8EncoderConfig::kMaxPeriodicity);
-  vpx_config->rc_target_bitrate = config.rc_target_bitrate;
-  vpx_config->rc_min_quantizer = config.rc_min_quantizer;
-  vpx_config->rc_max_quantizer = config.rc_max_quantizer;
-  if (config.error_resilient.has_value()) {
-    vpx_config->g_error_resilient = config.error_resilient.value();
+// Allow a newer value to override a current value only if the new value
+// is set.
+template <typename T>
+bool MaybeSetNewValue(const absl::optional<T>& new_value,
+                      absl::optional<T>* base_value) {
+  if (new_value.has_value() && new_value != *base_value) {
+    *base_value = new_value;
+    return true;
+  } else {
+    return false;
   }
 }
 
-bool UpdateVpxConfiguration(size_t stream_index,
-                            Vp8FrameBufferController* frame_buffer_controller,
-                            vpx_codec_enc_cfg_t* cfg) {
-  Vp8EncoderConfig config = GetEncoderConfig(cfg);
-  const bool res =
-      frame_buffer_controller->UpdateConfiguration(stream_index, &config);
-  if (res)
-    FillInEncoderConfig(cfg, config);
-  return res;
+// Adds configuration from |new_config| to |base_config|. Both configs consist
+// of optionals, and only optionals which are set in |new_config| can have
+// an effect. (That is, set values in |base_config| cannot be unset.)
+// Returns |true| iff any changes were made to |base_config|.
+bool MaybeExtendVp8EncoderConfig(const Vp8EncoderConfig& new_config,
+                                 Vp8EncoderConfig* base_config) {
+  bool changes_made = false;
+  changes_made |= MaybeSetNewValue(new_config.temporal_layer_config,
+                                   &base_config->temporal_layer_config);
+  changes_made |= MaybeSetNewValue(new_config.rc_target_bitrate,
+                                   &base_config->rc_target_bitrate);
+  changes_made |= MaybeSetNewValue(new_config.rc_max_quantizer,
+                                   &base_config->rc_max_quantizer);
+  changes_made |= MaybeSetNewValue(new_config.g_error_resilient,
+                                   &base_config->g_error_resilient);
+  return changes_made;
+}
+
+void ApplyVp8EncoderConfigToVpxConfig(const Vp8EncoderConfig& encoder_config,
+                                      vpx_codec_enc_cfg_t* vpx_config) {
+  if (encoder_config.temporal_layer_config.has_value()) {
+    const Vp8EncoderConfig::TemporalLayerConfig& ts_config =
+        encoder_config.temporal_layer_config.value();
+    vpx_config->ts_number_layers = ts_config.ts_number_layers;
+    std::copy(ts_config.ts_target_bitrate.begin(),
+              ts_config.ts_target_bitrate.end(),
+              std::begin(vpx_config->ts_target_bitrate));
+    std::copy(ts_config.ts_rate_decimator.begin(),
+              ts_config.ts_rate_decimator.end(),
+              std::begin(vpx_config->ts_rate_decimator));
+    vpx_config->ts_periodicity = ts_config.ts_periodicity;
+    std::copy(ts_config.ts_layer_id.begin(), ts_config.ts_layer_id.end(),
+              std::begin(vpx_config->ts_layer_id));
+  }
+
+  if (encoder_config.rc_target_bitrate.has_value()) {
+    vpx_config->rc_target_bitrate = encoder_config.rc_target_bitrate.value();
+  }
+
+  if (encoder_config.rc_max_quantizer.has_value()) {
+    vpx_config->rc_max_quantizer = encoder_config.rc_max_quantizer.value();
+  }
+
+  if (encoder_config.g_error_resilient.has_value()) {
+    vpx_config->g_error_resilient = encoder_config.g_error_resilient.value();
+  }
 }
 
 }  // namespace
@@ -282,6 +299,7 @@ LibvpxVp8Encoder::LibvpxVp8Encoder(
   cpu_speed_.assign(kMaxSimulcastStreams, cpu_speed_default_);
   encoders_.reserve(kMaxSimulcastStreams);
   configurations_.reserve(kMaxSimulcastStreams);
+  config_overrides_.reserve(kMaxSimulcastStreams);
   downsampling_factors_.reserve(kMaxSimulcastStreams);
 }
 
@@ -304,6 +322,7 @@ int LibvpxVp8Encoder::Release() {
   encoders_.clear();
 
   configurations_.clear();
+  config_overrides_.clear();
   send_stream_.clear();
   cpu_speed_.clear();
 
@@ -367,8 +386,9 @@ void LibvpxVp8Encoder::SetRates(const RateControlParameters& parameters) {
     }
   }
 
-  size_t stream_idx = encoders_.size() - 1;
-  for (size_t i = 0; i < encoders_.size(); ++i, --stream_idx) {
+  for (size_t i = 0; i < encoders_.size(); ++i) {
+    const size_t stream_idx = encoders_.size() - 1 - i;
+
     unsigned int target_bitrate_kbps =
         parameters.bitrate.GetSpatialLayerSum(stream_idx) / 1000;
 
@@ -383,8 +403,7 @@ void LibvpxVp8Encoder::SetRates(const RateControlParameters& parameters) {
           static_cast<int>(parameters.framerate_fps + 0.5));
     }
 
-    UpdateVpxConfiguration(stream_idx, frame_buffer_controller_.get(),
-                           &configurations_[i]);
+    UpdateVpxConfiguration(stream_idx);
 
     if (rate_control_settings_.Vp8DynamicRateSettings()) {
       // Tweak rate control settings based on available network headroom.
@@ -486,6 +505,7 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   encoded_images_.resize(number_of_streams);
   encoders_.resize(number_of_streams);
   configurations_.resize(number_of_streams);
+  config_overrides_.resize(number_of_streams);
   downsampling_factors_.resize(number_of_streams);
   raw_images_.resize(number_of_streams);
   send_stream_.resize(number_of_streams);
@@ -596,7 +616,7 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
 
   // Note the order we use is different from webm, we have lowest resolution
   // at position 0 and they have highest resolution at position 0.
-  int stream_idx = encoders_.size() - 1;
+  const size_t stream_idx_cfg_0 = encoders_.size() - 1;
   SimulcastRateAllocator init_allocator(codec_);
   VideoBitrateAllocation allocation = init_allocator.GetAllocation(
       inst->startBitrate * 1000, inst->maxFramerate);
@@ -606,18 +626,21 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
     stream_bitrates.push_back(bitrate);
   }
 
-  configurations_[0].rc_target_bitrate = stream_bitrates[stream_idx];
-  if (stream_bitrates[stream_idx] > 0) {
+  configurations_[0].rc_target_bitrate = stream_bitrates[stream_idx_cfg_0];
+  if (stream_bitrates[stream_idx_cfg_0] > 0) {
     frame_buffer_controller_->OnRatesUpdated(
-        stream_idx, allocation.GetTemporalLayerAllocation(stream_idx),
+        stream_idx_cfg_0,
+        allocation.GetTemporalLayerAllocation(stream_idx_cfg_0),
         inst->maxFramerate);
   }
-  UpdateVpxConfiguration(stream_idx, frame_buffer_controller_.get(),
-                         &configurations_[0]);
-  configurations_[0].rc_dropframe_thresh = FrameDropThreshold(stream_idx);
+  frame_buffer_controller_->SetQpLimits(stream_idx_cfg_0,
+                                        configurations_[0].rc_min_quantizer,
+                                        configurations_[0].rc_max_quantizer);
+  UpdateVpxConfiguration(stream_idx_cfg_0);
+  configurations_[0].rc_dropframe_thresh = FrameDropThreshold(stream_idx_cfg_0);
 
-  --stream_idx;
-  for (size_t i = 1; i < encoders_.size(); ++i, --stream_idx) {
+  for (size_t i = 1; i < encoders_.size(); ++i) {
+    const size_t stream_idx = encoders_.size() - 1 - i;
     memcpy(&configurations_[i], &configurations_[0],
            sizeof(configurations_[0]));
 
@@ -643,8 +666,10 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
           stream_idx, allocation.GetTemporalLayerAllocation(stream_idx),
           inst->maxFramerate);
     }
-    UpdateVpxConfiguration(stream_idx, frame_buffer_controller_.get(),
-                           &configurations_[i]);
+    frame_buffer_controller_->SetQpLimits(stream_idx,
+                                          configurations_[i].rc_min_quantizer,
+                                          configurations_[i].rc_max_quantizer);
+    UpdateVpxConfiguration(stream_idx);
   }
 
   return InitAndSetControlSettings();
@@ -852,6 +877,27 @@ size_t LibvpxVp8Encoder::SteadyStateSize(int sid, int tid) {
       0.5);
 }
 
+bool LibvpxVp8Encoder::UpdateVpxConfiguration(size_t stream_index) {
+  RTC_DCHECK(frame_buffer_controller_);
+
+  const size_t config_index = configurations_.size() - 1 - stream_index;
+
+  RTC_DCHECK_LT(config_index, config_overrides_.size());
+  Vp8EncoderConfig* config = &config_overrides_[config_index];
+
+  const Vp8EncoderConfig new_config =
+      frame_buffer_controller_->UpdateConfiguration(stream_index);
+
+  const bool changes_made = MaybeExtendVp8EncoderConfig(new_config, config);
+
+  // Note that overrides must be applied even if they haven't changed.
+  RTC_DCHECK_LT(config_index, configurations_.size());
+  vpx_codec_enc_cfg_t* vpx_config = &configurations_[config_index];
+  ApplyVp8EncoderConfigToVpxConfig(*config, vpx_config);
+
+  return changes_made;
+}
+
 int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
                              const std::vector<VideoFrameType>* frame_types) {
   RTC_DCHECK_EQ(frame.width(), codec_.width);
@@ -973,16 +1019,11 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
   // Note that streams are defined starting from lowest resolution at
   // position 0 to highest resolution at position |encoders_.size() - 1|,
   // whereas |encoder_| is from highest to lowest resolution.
-  size_t stream_idx = encoders_.size() - 1;
-  for (size_t i = 0; i < encoders_.size(); ++i, --stream_idx) {
-    // Allow the layers adapter to temporarily modify the configuration. This
-    // change isn't stored in configurations_ so change will be discarded at
-    // the next update.
-    vpx_codec_enc_cfg_t temp_config;
-    memcpy(&temp_config, &configurations_[i], sizeof(vpx_codec_enc_cfg_t));
-    if (UpdateVpxConfiguration(stream_idx, frame_buffer_controller_.get(),
-                               &temp_config)) {
-      if (libvpx_->codec_enc_config_set(&encoders_[i], &temp_config))
+  for (size_t i = 0; i < encoders_.size(); ++i) {
+    const size_t stream_idx = encoders_.size() - 1 - i;
+
+    if (UpdateVpxConfiguration(stream_idx)) {
+      if (libvpx_->codec_enc_config_set(&encoders_[i], &configurations_[i]))
         return WEBRTC_VIDEO_CODEC_ERROR;
     }
 

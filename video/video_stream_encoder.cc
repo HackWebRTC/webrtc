@@ -734,9 +734,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   }
 
   // Reset (release existing encoder) if one exists and anything except
-  // start bitrate or max framerate has changed. Don't call Release() if
-  // |pending_encoder_creation_| as that means this is a new encoder
-  // that has not yet been initialized.
+  // start bitrate or max framerate has changed.
   const bool reset_required = RequiresEncoderReset(codec, send_codec_);
   send_codec_ = codec;
 
