@@ -36,6 +36,8 @@ class ScreenshareLayers final : public Vp8FrameBufferController {
   explicit ScreenshareLayers(int num_temporal_layers);
   ~ScreenshareLayers() override;
 
+  void SetQpLimits(size_t stream_index, int min_qp, int max_qp) override;
+
   size_t StreamCount() const override;
 
   bool SupportsEncoderFrameDropping(size_t stream_index) const override;
@@ -50,9 +52,7 @@ class ScreenshareLayers final : public Vp8FrameBufferController {
                       const std::vector<uint32_t>& bitrates_bps,
                       int framerate_fps) override;
 
-  // Update the encoder configuration with target bitrates or other parameters.
-  // Returns true iff the configuration was actually modified.
-  bool UpdateConfiguration(size_t stream_index, Vp8EncoderConfig* cfg) override;
+  Vp8EncoderConfig UpdateConfiguration(size_t stream_index) override;
 
   void OnEncodeDone(size_t stream_index,
                     uint32_t rtp_timestamp,
@@ -89,15 +89,18 @@ class ScreenshareLayers final : public Vp8FrameBufferController {
   bool TimeToSync(int64_t timestamp) const;
   uint32_t GetCodecTargetBitrateKbps() const;
 
-  int number_of_temporal_layers_;
+  const int number_of_temporal_layers_;
+
+  // TODO(eladalon/sprang): These should be made into const-int set in the ctor.
+  absl::optional<int> min_qp_;
+  absl::optional<int> max_qp_;
+
   int active_layer_;
   int64_t last_timestamp_;
   int64_t last_sync_timestamp_;
   int64_t last_emitted_tl0_timestamp_;
   int64_t last_frame_time_ms_;
   rtc::TimestampWrapAroundHandler time_wrap_handler_;
-  int min_qp_;
-  int max_qp_;
   uint32_t max_debt_bytes_;
 
   std::map<uint32_t, DependencyInfo> pending_frame_configs_;
@@ -151,6 +154,8 @@ class ScreenshareLayers final : public Vp8FrameBufferController {
     int64_t tl0_target_bitrate_sum_ = 0;
     int64_t tl1_target_bitrate_sum_ = 0;
   } stats_;
+
+  Vp8EncoderConfig encoder_config_;
 
   // Optional utility used to verify reference validity.
   std::unique_ptr<TemporalLayersChecker> checker_;

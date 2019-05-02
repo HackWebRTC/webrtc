@@ -55,8 +55,6 @@ ScreenshareLayers::ScreenshareLayers(int num_temporal_layers)
       last_sync_timestamp_(-1),
       last_emitted_tl0_timestamp_(-1),
       last_frame_time_ms_(-1),
-      min_qp_(-1),
-      max_qp_(-1),
       max_debt_bytes_(0),
       encode_framerate_(1000.0f, 1000.0f),  // 1 second window, second scale.
       bitrate_updated_(false),
@@ -69,6 +67,24 @@ ScreenshareLayers::ScreenshareLayers(int num_temporal_layers)
 
 ScreenshareLayers::~ScreenshareLayers() {
   UpdateHistograms();
+}
+
+void ScreenshareLayers::SetQpLimits(size_t stream_index,
+                                    int min_qp,
+                                    int max_qp) {
+  RTC_DCHECK_LT(stream_index, StreamCount());
+  // 0 < min_qp <= max_qp
+  RTC_DCHECK_LT(0, min_qp);
+  RTC_DCHECK_LE(min_qp, max_qp);
+
+  RTC_DCHECK_EQ(min_qp_.has_value(), max_qp_.has_value());
+  if (!min_qp_.has_value()) {
+    min_qp_ = min_qp;
+    max_qp_ = max_qp;
+  } else {
+    RTC_DCHECK_EQ(min_qp, min_qp_.value());
+    RTC_DCHECK_EQ(max_qp, max_qp_.value());
+  }
 }
 
 size_t ScreenshareLayers::StreamCount() const {
@@ -478,19 +494,12 @@ uint32_t ScreenshareLayers::GetCodecTargetBitrateKbps() const {
   return std::max(layers_[0].target_rate_kbps_, target_bitrate_kbps);
 }
 
-bool ScreenshareLayers::UpdateConfiguration(size_t stream_index,
-                                            Vp8EncoderConfig* cfg) {
+Vp8EncoderConfig ScreenshareLayers::UpdateConfiguration(size_t stream_index) {
   RTC_DCHECK_LT(stream_index, StreamCount());
+  RTC_DCHECK(min_qp_.has_value());
+  RTC_DCHECK(max_qp_.has_value());
 
-  if (min_qp_ == -1 || max_qp_ == -1) {
-    // Store the valid qp range. This must not change during the lifetime of
-    // this class.
-    min_qp_ = cfg->rc_min_quantizer;
-    max_qp_ = cfg->rc_max_quantizer;
-  }
-
-  bool cfg_updated = false;
-  uint32_t target_bitrate_kbps = GetCodecTargetBitrateKbps();
+  const uint32_t target_bitrate_kbps = GetCodecTargetBitrateKbps();
 
   // TODO(sprang): We _really_ need to make an overhaul of this class. :(
   // If we're dropping frames in order to meet a target framerate, adjust the
@@ -503,12 +512,16 @@ bool ScreenshareLayers::UpdateConfiguration(size_t stream_index,
   }
 
   if (bitrate_updated_ ||
-      cfg->rc_target_bitrate != encoder_config_bitrate_kbps) {
-    cfg->rc_target_bitrate = encoder_config_bitrate_kbps;
+      encoder_config_.rc_target_bitrate !=
+          absl::make_optional(encoder_config_bitrate_kbps)) {
+    encoder_config_.rc_target_bitrate = encoder_config_bitrate_kbps;
 
     // Don't reconfigure qp limits during quality boost frames.
     if (active_layer_ == -1 ||
         layers_[active_layer_].state != TemporalLayer::State::kQualityBoost) {
+      const int min_qp = min_qp_.value();
+      const int max_qp = max_qp_.value();
+
       // After a dropped frame, a frame with max qp will be encoded and the
       // quality will then ramp up from there. To boost the speed of recovery,
       // encode the next frame with lower max qp, if there is sufficient
@@ -517,10 +530,8 @@ bool ScreenshareLayers::UpdateConfiguration(size_t stream_index,
       // will propagate to TL1.
       // Currently, reduce max qp by 20% for TL0 and 15% for TL1.
       if (layers_[1].target_rate_kbps_ >= kMinBitrateKbpsForQpBoost) {
-        layers_[0].enhanced_max_qp =
-            min_qp_ + (((max_qp_ - min_qp_) * 80) / 100);
-        layers_[1].enhanced_max_qp =
-            min_qp_ + (((max_qp_ - min_qp_) * 85) / 100);
+        layers_[0].enhanced_max_qp = min_qp + (((max_qp - min_qp) * 80) / 100);
+        layers_[1].enhanced_max_qp = min_qp + (((max_qp - min_qp) * 85) / 100);
       } else {
         layers_[0].enhanced_max_qp = -1;
         layers_[1].enhanced_max_qp = -1;
@@ -538,20 +549,19 @@ bool ScreenshareLayers::UpdateConfiguration(size_t stream_index,
     }
 
     bitrate_updated_ = false;
-    cfg_updated = true;
   }
 
   // Don't try to update boosts state if not active yet.
   if (active_layer_ == -1)
-    return cfg_updated;
+    return encoder_config_;
 
-  if (max_qp_ == -1 || number_of_temporal_layers_ <= 1)
-    return cfg_updated;
+  if (number_of_temporal_layers_ <= 1)
+    return encoder_config_;
 
   // If layer is in the quality boost state (following a dropped frame), update
   // the configuration with the adjusted (lower) qp and set the state back to
   // normal.
-  unsigned int adjusted_max_qp = max_qp_;  // Set the normal max qp.
+  unsigned int adjusted_max_qp = max_qp_.value();  // Set the normal max qp.
   if (layers_[active_layer_].state == TemporalLayer::State::kQualityBoost) {
     if (layers_[active_layer_].enhanced_max_qp != -1) {
       // Bitrate is high enough for quality boost, update max qp.
@@ -560,14 +570,9 @@ bool ScreenshareLayers::UpdateConfiguration(size_t stream_index,
     // Regardless of qp, reset the boost state for the next frame.
     layers_[active_layer_].state = TemporalLayer::State::kNormal;
   }
+  encoder_config_.rc_max_quantizer = adjusted_max_qp;
 
-  if (adjusted_max_qp == cfg->rc_max_quantizer)
-    return cfg_updated;
-
-  cfg->rc_max_quantizer = adjusted_max_qp;
-  cfg_updated = true;
-
-  return cfg_updated;
+  return encoder_config_;
 }
 
 void ScreenshareLayers::TemporalLayer::UpdateDebt(int64_t delta_ms) {

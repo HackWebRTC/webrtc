@@ -23,6 +23,8 @@
 #include "test/gtest.h"
 #include "vpx/vp8cx.h"
 
+// TODO(bugs.webrtc.org/10582): Test the behavior of UpdateConfiguration().
+
 namespace webrtc {
 namespace test {
 namespace {
@@ -119,12 +121,11 @@ TEST_F(TemporalLayersTest, 2Layers) {
   constexpr int kNumLayers = 2;
   DefaultTemporalLayers tl(kNumLayers);
   DefaultTemporalLayersChecker checker(kNumLayers);
-  Vp8EncoderConfig cfg;
   tl.OnRatesUpdated(0,
                     GetTemporalLayerRates(kDefaultBytesPerFrame,
                                           kDefaultFramerate, kNumLayers),
                     kDefaultFramerate);
-  tl.UpdateConfiguration(0, &cfg);
+  tl.UpdateConfiguration(0);
 
   constexpr size_t kPatternSize = 4;
   constexpr size_t kRepetitions = 4;
@@ -162,12 +163,11 @@ TEST_F(TemporalLayersTest, 3Layers) {
   constexpr int kNumLayers = 3;
   DefaultTemporalLayers tl(kNumLayers);
   DefaultTemporalLayersChecker checker(kNumLayers);
-  Vp8EncoderConfig cfg;
   tl.OnRatesUpdated(0,
                     GetTemporalLayerRates(kDefaultBytesPerFrame,
                                           kDefaultFramerate, kNumLayers),
                     kDefaultFramerate);
-  tl.UpdateConfiguration(0, &cfg);
+  tl.UpdateConfiguration(0);
 
   int expected_flags[16] = {
       kTemporalUpdateLast,
@@ -217,12 +217,11 @@ TEST_F(TemporalLayersTest, Alternative3Layers) {
   ScopedFieldTrials field_trial("WebRTC-UseShortVP8TL3Pattern/Enabled/");
   DefaultTemporalLayers tl(kNumLayers);
   DefaultTemporalLayersChecker checker(kNumLayers);
-  Vp8EncoderConfig cfg;
   tl.OnRatesUpdated(0,
                     GetTemporalLayerRates(kDefaultBytesPerFrame,
                                           kDefaultFramerate, kNumLayers),
                     kDefaultFramerate);
-  tl.UpdateConfiguration(0, &cfg);
+  tl.UpdateConfiguration(0);
 
   int expected_flags[8] = {kTemporalUpdateLast,
                            kTemporalUpdateAltrefWithoutDependency,
@@ -260,12 +259,11 @@ TEST_F(TemporalLayersTest, SearchOrder) {
   ScopedFieldTrials field_trial("WebRTC-UseShortVP8TL3Pattern/Enabled/");
   DefaultTemporalLayers tl(kNumLayers);
   DefaultTemporalLayersChecker checker(kNumLayers);
-  Vp8EncoderConfig cfg;
   tl.OnRatesUpdated(0,
                     GetTemporalLayerRates(kDefaultBytesPerFrame,
                                           kDefaultFramerate, kNumLayers),
                     kDefaultFramerate);
-  tl.UpdateConfiguration(0, &cfg);
+  tl.UpdateConfiguration(0);
 
   // Use a repeating pattern of tl 0, 2, 1, 2.
   // Tl 0, 1, 2 update last, golden, altref respectively.
@@ -304,12 +302,11 @@ TEST_F(TemporalLayersTest, SearchOrderWithDrop) {
   ScopedFieldTrials field_trial("WebRTC-UseShortVP8TL3Pattern/Enabled/");
   DefaultTemporalLayers tl(kNumLayers);
   DefaultTemporalLayersChecker checker(kNumLayers);
-  Vp8EncoderConfig cfg;
   tl.OnRatesUpdated(0,
                     GetTemporalLayerRates(kDefaultBytesPerFrame,
                                           kDefaultFramerate, kNumLayers),
                     kDefaultFramerate);
-  tl.UpdateConfiguration(0, &cfg);
+  tl.UpdateConfiguration(0);
 
   // Use a repeating pattern of tl 0, 2, 1, 2.
   // Tl 0, 1, 2 update last, golden, altref respectively.
@@ -344,12 +341,11 @@ TEST_F(TemporalLayersTest, 4Layers) {
   constexpr int kNumLayers = 4;
   DefaultTemporalLayers tl(kNumLayers);
   DefaultTemporalLayersChecker checker(kNumLayers);
-  Vp8EncoderConfig cfg;
   tl.OnRatesUpdated(0,
                     GetTemporalLayerRates(kDefaultBytesPerFrame,
                                           kDefaultFramerate, kNumLayers),
                     kDefaultFramerate);
-  tl.UpdateConfiguration(0, &cfg);
+  tl.UpdateConfiguration(0);
   int expected_flags[16] = {
       kTemporalUpdateLast,
       kTemporalUpdateNoneNoRefGoldenAltRef,
@@ -400,12 +396,11 @@ TEST_F(TemporalLayersTest, DoesNotReferenceDroppedFrames) {
   ScopedFieldTrials field_trial("WebRTC-UseShortVP8TL3Pattern/Enabled/");
   DefaultTemporalLayers tl(kNumLayers);
   DefaultTemporalLayersChecker checker(kNumLayers);
-  Vp8EncoderConfig cfg;
   tl.OnRatesUpdated(0,
                     GetTemporalLayerRates(kDefaultBytesPerFrame,
                                           kDefaultFramerate, kNumLayers),
                     kDefaultFramerate);
-  tl.UpdateConfiguration(0, &cfg);
+  tl.UpdateConfiguration(0);
 
   // Start with a keyframe.
   uint32_t timestamp = 0;
@@ -487,12 +482,11 @@ TEST_F(TemporalLayersTest, DoesNotReferenceUnlessGuaranteedToExist) {
   // Tl 0, 1 updates last, golden respectively. Altref is always last keyframe.
   DefaultTemporalLayers tl(kNumLayers);
   DefaultTemporalLayersChecker checker(kNumLayers);
-  Vp8EncoderConfig cfg;
   tl.OnRatesUpdated(0,
                     GetTemporalLayerRates(kDefaultBytesPerFrame,
                                           kDefaultFramerate, kNumLayers),
                     kDefaultFramerate);
-  tl.UpdateConfiguration(0, &cfg);
+  tl.UpdateConfiguration(0);
 
   // Start with a keyframe.
   uint32_t timestamp = 0;
@@ -557,12 +551,11 @@ TEST_F(TemporalLayersTest, DoesNotReferenceUnlessGuaranteedToExistLongDelay) {
   ScopedFieldTrials field_trial("WebRTC-UseShortVP8TL3Pattern/Enabled/");
   DefaultTemporalLayers tl(kNumLayers);
   DefaultTemporalLayersChecker checker(kNumLayers);
-  Vp8EncoderConfig cfg;
   tl.OnRatesUpdated(0,
                     GetTemporalLayerRates(kDefaultBytesPerFrame,
                                           kDefaultFramerate, kNumLayers),
                     kDefaultFramerate);
-  tl.UpdateConfiguration(0, &cfg);
+  tl.UpdateConfiguration(0);
 
   // Start with a keyframe.
   uint32_t timestamp = 0;
@@ -618,12 +611,11 @@ TEST_F(TemporalLayersTest, KeyFrame) {
   constexpr int kNumLayers = 3;
   DefaultTemporalLayers tl(kNumLayers);
   DefaultTemporalLayersChecker checker(kNumLayers);
-  Vp8EncoderConfig cfg;
   tl.OnRatesUpdated(0,
                     GetTemporalLayerRates(kDefaultBytesPerFrame,
                                           kDefaultFramerate, kNumLayers),
                     kDefaultFramerate);
-  tl.UpdateConfiguration(0, &cfg);
+  tl.UpdateConfiguration(0);
 
   int expected_flags[8] = {
       kTemporalUpdateLastRefAltRef,
@@ -735,11 +727,10 @@ INSTANTIATE_TEST_SUITE_P(DefaultTemporalLayersTest,
 TEST_P(TemporalLayersReferenceTest, ValidFrameConfigs) {
   const int num_layers = GetParam();
   DefaultTemporalLayers tl(num_layers);
-  Vp8EncoderConfig cfg;
   tl.OnRatesUpdated(
       0, GetTemporalLayerRates(kDefaultBytesPerFrame, kDefaultFramerate, 1),
       kDefaultFramerate);
-  tl.UpdateConfiguration(0, &cfg);
+  tl.UpdateConfiguration(0);
 
   // Run through the pattern and store the frame dependencies, plus keep track
   // of the buffer state; which buffers references which temporal layers (if

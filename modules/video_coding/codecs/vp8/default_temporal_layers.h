@@ -34,6 +34,8 @@ class DefaultTemporalLayers final : public Vp8FrameBufferController {
   explicit DefaultTemporalLayers(int number_of_temporal_layers);
   ~DefaultTemporalLayers() override;
 
+  void SetQpLimits(size_t stream_index, int min_qp, int max_qp) override;
+
   size_t StreamCount() const override;
 
   bool SupportsEncoderFrameDropping(size_t stream_index) const override;
@@ -48,7 +50,7 @@ class DefaultTemporalLayers final : public Vp8FrameBufferController {
                       const std::vector<uint32_t>& bitrates_bps,
                       int framerate_fps) override;
 
-  bool UpdateConfiguration(size_t stream_index, Vp8EncoderConfig* cfg) override;
+  Vp8EncoderConfig UpdateConfiguration(size_t stream_index) override;
 
   void OnEncodeDone(size_t stream_index,
                     uint32_t rtp_timestamp,

@@ -15,6 +15,7 @@
 #include <utility>
 #include <vector>
 
+#include "api/video_codecs/vp8_frame_buffer_controller.h"
 #include "api/video_codecs/vp8_frame_config.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "rtc_base/checks.h"
@@ -39,7 +40,7 @@ class MockTemporalLayers : public Vp8FrameBufferController {
  public:
   MOCK_METHOD2(NextFrameConfig, Vp8FrameConfig(size_t, uint32_t));
   MOCK_METHOD3(OnRatesUpdated, void(size_t, const std::vector<uint32_t>&, int));
-  MOCK_METHOD2(UpdateConfiguration, bool(size_t, Vp8EncoderConfig*));
+  MOCK_METHOD1(UpdateConfiguration, Vp8EncoderConfig(size_t));
   MOCK_METHOD6(OnEncodeDone,
                void(size_t, uint32_t, size_t, bool, int, CodecSpecificInfo*));
   MOCK_METHOD4(FrameEncoded, void(size_t, uint32_t, size_t, int));

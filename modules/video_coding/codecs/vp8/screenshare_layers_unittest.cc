@@ -30,7 +30,6 @@
 using ::testing::_;
 using ::testing::ElementsAre;
 using ::testing::NiceMock;
-using ::testing::Return;
 
 namespace webrtc {
 namespace {
@@ -93,7 +92,19 @@ class ScreenshareLayerTest : public ::testing::Test {
     if (tl_config_.drop_frame) {
       return -1;
     }
-    config_updated_ = layers_->UpdateConfiguration(0, &cfg_);
+    const uint32_t prev_rc_target_bitrate = cfg_.rc_target_bitrate.value_or(-1);
+    const uint32_t prev_rc_max_quantizer = cfg_.rc_max_quantizer.value_or(-1);
+
+    cfg_ = layers_->UpdateConfiguration(0);
+
+    config_updated_ =
+        cfg_.temporal_layer_config.has_value() ||
+        (cfg_.rc_target_bitrate.has_value() &&
+         cfg_.rc_target_bitrate.value() != prev_rc_target_bitrate) ||
+        (cfg_.rc_max_quantizer.has_value() &&
+         cfg_.rc_max_quantizer.value() != prev_rc_max_quantizer) ||
+        cfg_.g_error_resilient.has_value();
+
     int flags = LibvpxVp8Encoder::EncodeFlags(tl_config_);
     EXPECT_NE(-1, frame_size_);
     return flags;
@@ -110,13 +121,11 @@ class ScreenshareLayerTest : public ::testing::Test {
   }
 
   Vp8EncoderConfig ConfigureBitrates() {
-    Vp8EncoderConfig vp8_cfg;
-    memset(&vp8_cfg, 0, sizeof(Vp8EncoderConfig));
-    vp8_cfg.rc_min_quantizer = min_qp_;
-    vp8_cfg.rc_max_quantizer = max_qp_;
+    layers_->SetQpLimits(0, min_qp_, max_qp_);
     layers_->OnRatesUpdated(0, kDefault2TlBitratesBps, kFrameRate);
-    EXPECT_TRUE(layers_->UpdateConfiguration(0, &vp8_cfg));
-    frame_size_ = FrameSizeForBitrate(vp8_cfg.rc_target_bitrate);
+    const Vp8EncoderConfig vp8_cfg = layers_->UpdateConfiguration(0);
+    EXPECT_TRUE(vp8_cfg.rc_target_bitrate.has_value());
+    frame_size_ = FrameSizeForBitrate(vp8_cfg.rc_target_bitrate.value());
     return vp8_cfg;
   }
 
@@ -246,7 +255,7 @@ TEST_F(ScreenshareLayerTest, 2LayersSyncAfterTimeout) {
     CodecSpecificInfo info;
 
     tl_config_ = NextFrameConfig(0, timestamp_);
-    config_updated_ = layers_->UpdateConfiguration(0, &cfg_);
+    cfg_ = layers_->UpdateConfiguration(0);
 
     // Simulate TL1 being at least 8 qp steps better.
     if (tl_config_.packetizer_temporal_idx == 0) {
@@ -394,7 +403,7 @@ TEST_F(ScreenshareLayerTest, TargetBitrateCappedByTL0) {
   const std::vector<uint32_t> layer_rates = {kTl0_kbps * 1000,
                                              (kTl1_kbps - kTl0_kbps) * 1000};
   layers_->OnRatesUpdated(0, layer_rates, kFrameRate);
-  EXPECT_TRUE(layers_->UpdateConfiguration(0, &cfg_));
+  cfg_ = layers_->UpdateConfiguration(0);
 
   EXPECT_EQ(static_cast<unsigned int>(
                 ScreenshareLayers::kMaxTL0FpsReduction * kTl0_kbps + 0.5),
@@ -407,7 +416,7 @@ TEST_F(ScreenshareLayerTest, TargetBitrateCappedByTL1) {
   const std::vector<uint32_t> layer_rates = {kTl0_kbps * 1000,
                                              (kTl1_kbps - kTl0_kbps) * 1000};
   layers_->OnRatesUpdated(0, layer_rates, kFrameRate);
-  EXPECT_TRUE(layers_->UpdateConfiguration(0, &cfg_));
+  cfg_ = layers_->UpdateConfiguration(0);
 
   EXPECT_EQ(static_cast<unsigned int>(
                 kTl1_kbps / ScreenshareLayers::kAcceptableTargetOvershoot),
@@ -418,7 +427,7 @@ TEST_F(ScreenshareLayerTest, TargetBitrateBelowTL0) {
   const int kTl0_kbps = 100;
   const std::vector<uint32_t> layer_rates = {kTl0_kbps * 1000};
   layers_->OnRatesUpdated(0, layer_rates, kFrameRate);
-  EXPECT_TRUE(layers_->UpdateConfiguration(0, &cfg_));
+  cfg_ = layers_->UpdateConfiguration(0);
 
   EXPECT_EQ(static_cast<uint32_t>(kTl0_kbps), cfg_.rc_target_bitrate);
 }
@@ -484,7 +493,7 @@ TEST_F(ScreenshareLayerTest, RespectsMaxIntervalBetweenFrames) {
 
   const std::vector<uint32_t> layer_rates = {kLowBitrateKbps * 1000};
   layers_->OnRatesUpdated(0, layer_rates, kFrameRate);
-  layers_->UpdateConfiguration(0, &cfg_);
+  cfg_ = layers_->UpdateConfiguration(0);
 
   EXPECT_EQ(kTl0Flags,
             LibvpxVp8Encoder::EncodeFlags(NextFrameConfig(0, kStartTimestamp)));
@@ -527,7 +536,7 @@ TEST_F(ScreenshareLayerTest, UpdatesHistograms) {
     }
     int flags = LibvpxVp8Encoder::EncodeFlags(tl_config_);
     if (flags != -1)
-      layers_->UpdateConfiguration(0, &cfg_);
+      cfg_ = layers_->UpdateConfiguration(0);
 
     if (timestamp >= kTimestampDelta5Fps * 5 && !overshoot && flags != -1) {
       // Simulate one overshoot.
@@ -592,13 +601,6 @@ TEST_F(ScreenshareLayerTest, UpdatesHistograms) {
                                kDefaultTl1BitrateKbps));
 }
 
-TEST_F(ScreenshareLayerTest, AllowsUpdateConfigBeforeSetRates) {
-  layers_.reset(new ScreenshareLayers(2));
-  // New layer instance, OnRatesUpdated() never called.
-  // UpdateConfiguration() call should not cause crash.
-  layers_->UpdateConfiguration(0, &cfg_);
-}
-
 TEST_F(ScreenshareLayerTest, RespectsConfiguredFramerate) {
   int64_t kTestSpanMs = 2000;
   int64_t kFrameIntervalsMs = 1000 / kFrameRate;
@@ -654,7 +656,7 @@ TEST_F(ScreenshareLayerTest, 2LayersSyncAtOvershootDrop) {
   // Simulate overshoot of this frame.
   layers_->OnEncodeDone(0, timestamp_, 0, false, 0, nullptr);
 
-  config_updated_ = layers_->UpdateConfiguration(0, &cfg_);
+  cfg_ = layers_->UpdateConfiguration(0);
   EXPECT_EQ(kTl1SyncFlags, LibvpxVp8Encoder::EncodeFlags(tl_config_));
 
   CodecSpecificInfo new_info;
@@ -687,7 +689,8 @@ TEST_F(ScreenshareLayerTest, DropOnTooShortFrameInterval) {
 TEST_F(ScreenshareLayerTest, AdjustsBitrateWhenDroppingFrames) {
   const uint32_t kTimestampDelta10Fps = kTimestampDelta5Fps / 2;
   const int kNumFrames = 30;
-  uint32_t default_bitrate = cfg_.rc_target_bitrate;
+  ASSERT_TRUE(cfg_.rc_target_bitrate.has_value());
+  const uint32_t default_bitrate = cfg_.rc_target_bitrate.value();
   layers_->OnRatesUpdated(0, kDefault2TlBitratesBps, 10);
 
   int num_dropped_frames = 0;
@@ -696,7 +699,7 @@ TEST_F(ScreenshareLayerTest, AdjustsBitrateWhenDroppingFrames) {
       ++num_dropped_frames;
     timestamp_ += kTimestampDelta10Fps;
   }
-  layers_->UpdateConfiguration(0, &cfg_);
+  cfg_ = layers_->UpdateConfiguration(0);
 
   EXPECT_EQ(num_dropped_frames, kNumFrames / 2);
   EXPECT_EQ(cfg_.rc_target_bitrate, default_bitrate * 2);
@@ -705,20 +708,20 @@ TEST_F(ScreenshareLayerTest, AdjustsBitrateWhenDroppingFrames) {
 TEST_F(ScreenshareLayerTest, UpdatesConfigurationAfterRateChange) {
   // Set inital rate again, no need to update configuration.
   layers_->OnRatesUpdated(0, kDefault2TlBitratesBps, kFrameRate);
-  EXPECT_FALSE(layers_->UpdateConfiguration(0, &cfg_));
+  cfg_ = layers_->UpdateConfiguration(0);
 
   // Rate changed, now update config.
   std::vector<uint32_t> bitrates = kDefault2TlBitratesBps;
   bitrates[1] -= 100000;
   layers_->OnRatesUpdated(0, bitrates, 5);
-  EXPECT_TRUE(layers_->UpdateConfiguration(0, &cfg_));
+  cfg_ = layers_->UpdateConfiguration(0);
 
   // Changed rate, but then set changed rate again before trying to update
   // configuration, update should still apply.
   bitrates[1] -= 100000;
   layers_->OnRatesUpdated(0, bitrates, 5);
   layers_->OnRatesUpdated(0, bitrates, 5);
-  EXPECT_TRUE(layers_->UpdateConfiguration(0, &cfg_));
+  cfg_ = layers_->UpdateConfiguration(0);
 }
 
 TEST_F(ScreenshareLayerTest, MaxQpRestoredAfterDoubleDrop) {
@@ -744,7 +747,8 @@ TEST_F(ScreenshareLayerTest, MaxQpRestoredAfterDoubleDrop) {
   EXPECT_EQ(kTl1Flags, SkipUntilTlAndSync(1, false));
   EXPECT_TRUE(config_updated_);
   EXPECT_LT(cfg_.rc_max_quantizer, max_qp_);
-  uint32_t adjusted_qp = cfg_.rc_max_quantizer;
+  ASSERT_TRUE(cfg_.rc_max_quantizer.has_value());
+  const uint32_t adjusted_qp = cfg_.rc_max_quantizer.value();
 
   // Simulate overshoot of this frame.
   layers_->OnEncodeDone(0, timestamp_, 0, false, -1, nullptr);
