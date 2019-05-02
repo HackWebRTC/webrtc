@@ -392,7 +392,9 @@ struct LoggedRtcpPacketPli {
 };
 
 struct LoggedRtcpPacketTransportFeedback {
-  LoggedRtcpPacketTransportFeedback() = default;
+  LoggedRtcpPacketTransportFeedback()
+      : transport_feedback(/*include_timestamps=*/true, /*include_lost*/ true) {
+  }
   LoggedRtcpPacketTransportFeedback(
       int64_t timestamp_us,
       const rtcp::TransportFeedback& transport_feedback)

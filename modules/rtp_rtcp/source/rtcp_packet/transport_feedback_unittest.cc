@@ -15,6 +15,7 @@
 #include <utility>
 
 #include "modules/rtp_rtcp/source/byte_io.h"
+#include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
@@ -555,5 +556,51 @@ TEST(RtcpPacketTest, TransportFeedbackMoveConstructor) {
   EXPECT_EQ(moved.Build(), feedback_copy.Build());
 }
 
+TEST(TransportFeedbackTest, ReportsMissingPackets) {
+  const uint16_t kBaseSeqNo = 1000;
+  const int64_t kBaseTimestampUs = 10000;
+  const uint8_t kFeedbackSeqNo = 90;
+  TransportFeedback feedback_builder(/*include_timestamps*/ true);
+  feedback_builder.SetBase(kBaseSeqNo, kBaseTimestampUs);
+  feedback_builder.SetFeedbackSequenceNumber(kFeedbackSeqNo);
+  feedback_builder.AddReceivedPacket(kBaseSeqNo + 0, kBaseTimestampUs);
+  // Packet losses indicated by jump in sequence number.
+  feedback_builder.AddReceivedPacket(kBaseSeqNo + 3, kBaseTimestampUs + 2000);
+  rtc::Buffer coded = feedback_builder.Build();
+
+  rtcp::CommonHeader header;
+  header.Parse(coded.data(), coded.size());
+  TransportFeedback feedback(/*include_timestamps*/ true,
+                             /*include_lost*/ true);
+  feedback.Parse(header);
+  auto packets = feedback.GetAllPackets();
+  EXPECT_TRUE(packets[0].received());
+  EXPECT_FALSE(packets[1].received());
+  EXPECT_FALSE(packets[2].received());
+  EXPECT_TRUE(packets[3].received());
+}
+
+TEST(TransportFeedbackTest, ReportsMissingPacketsWithoutTimestamps) {
+  const uint16_t kBaseSeqNo = 1000;
+  const uint8_t kFeedbackSeqNo = 90;
+  TransportFeedback feedback_builder(/*include_timestamps*/ false);
+  feedback_builder.SetBase(kBaseSeqNo, 10000);
+  feedback_builder.SetFeedbackSequenceNumber(kFeedbackSeqNo);
+  feedback_builder.AddReceivedPacket(kBaseSeqNo + 0, /*timestamp_us*/ 0);
+  // Packet losses indicated by jump in sequence number.
+  feedback_builder.AddReceivedPacket(kBaseSeqNo + 3, /*timestamp_us*/ 0);
+  rtc::Buffer coded = feedback_builder.Build();
+
+  rtcp::CommonHeader header;
+  header.Parse(coded.data(), coded.size());
+  TransportFeedback feedback(/*include_timestamps*/ true,
+                             /*include_lost*/ true);
+  feedback.Parse(header);
+  auto packets = feedback.GetAllPackets();
+  EXPECT_TRUE(packets[0].received());
+  EXPECT_FALSE(packets[1].received());
+  EXPECT_FALSE(packets[2].received());
+  EXPECT_TRUE(packets[3].received());
+}
 }  // namespace
 }  // namespace webrtc
