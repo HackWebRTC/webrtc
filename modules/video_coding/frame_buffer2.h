@@ -65,7 +65,7 @@ class FrameBuffer {
   //  - If the FrameBuffer is stopped then it will return kStopped.
   ReturnReason NextFrame(int64_t max_wait_time_ms,
                          std::unique_ptr<EncodedFrame>* frame_out,
-                         bool keyframe_required = false);
+                         bool keyframe_required);
   void NextFrame(
       int64_t max_wait_time_ms,
       bool keyframe_required,

@@ -251,7 +251,7 @@ class TestFrameBuffer2 : public ::testing::Test {
 
         std::unique_ptr<EncodedFrame> frame;
         FrameBuffer::ReturnReason res =
-            tfb->buffer_->NextFrame(tfb->max_wait_time_, &frame);
+            tfb->buffer_->NextFrame(tfb->max_wait_time_, &frame, false);
         if (res != FrameBuffer::ReturnReason::kStopped)
           tfb->frames_.emplace_back(std::move(frame));
       }

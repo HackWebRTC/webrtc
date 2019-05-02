@@ -153,7 +153,8 @@ FrameBuffer::ReturnReason FrameBuffer::NextFrame(
     // means that the frame buffer was cleared as the thread in this function
     // was waiting to acquire |crit_| in order to return. Wait for the
     // remaining time and then return.
-    return NextFrame(latest_return_time_ms - now_ms, frame_out);
+    return NextFrame(latest_return_time_ms - now_ms, frame_out,
+                     keyframe_required);
   }
   return kTimeout;
 }
