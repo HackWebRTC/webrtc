@@ -82,8 +82,8 @@ void NetEqStatsPlotter::SimulationEnded(int64_t simulation_time_ms) {
     printf("  num_interruptions: %d\n", lifetime_stats.interruption_count);
     printf("  sum_interruption_length_ms: %d ms\n",
            lifetime_stats.total_interruption_duration_ms);
-    printf("  interruption ratio: %f%%\n",
-           100.0 * lifetime_stats.total_interruption_duration_ms /
+    printf("  interruption_ratio: %f\n",
+           static_cast<double>(lifetime_stats.total_interruption_duration_ms) /
                simulation_time_ms);
   }
 }
