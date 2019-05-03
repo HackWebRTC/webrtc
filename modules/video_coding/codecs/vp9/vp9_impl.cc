@@ -912,7 +912,8 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
 
   // Keep reference to buffer until encode completes.
   rtc::scoped_refptr<I420BufferInterface> i420_buffer;
-  rtc::scoped_refptr<I010BufferInterface> i010_buffer;
+  const I010BufferInterface* i010_buffer;
+  rtc::scoped_refptr<const I010BufferInterface> i010_copy;
   switch (profile_) {
     case VP9Profile::kProfile0: {
       i420_buffer = input_image.video_frame_buffer()->ToI420();
@@ -935,8 +936,9 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
           break;
         }
         default: {
-          i010_buffer =
+          i010_copy =
               I010Buffer::Copy(*input_image.video_frame_buffer()->ToI420());
+          i010_buffer = i010_copy.get();
         }
       }
       raw_->planes[VPX_PLANE_Y] = const_cast<uint8_t*>(

@@ -320,9 +320,9 @@ TEST(TestVideoFrame, ShallowCopy) {
   VideoFrame frame2(frame1);
 
   EXPECT_EQ(frame1.video_frame_buffer(), frame2.video_frame_buffer());
-  rtc::scoped_refptr<I420BufferInterface> yuv1 =
+  const webrtc::I420BufferInterface* yuv1 =
       frame1.video_frame_buffer()->GetI420();
-  rtc::scoped_refptr<I420BufferInterface> yuv2 =
+  const webrtc::I420BufferInterface* yuv2 =
       frame2.video_frame_buffer()->GetI420();
   EXPECT_EQ(yuv1->DataY(), yuv2->DataY());
   EXPECT_EQ(yuv1->DataU(), yuv2->DataU());

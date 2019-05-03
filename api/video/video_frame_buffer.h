@@ -71,18 +71,12 @@ class VideoFrameBuffer : public rtc::RefCountInterface {
   // WebrtcVideoFrameAdapter in Chrome - it's I420 buffer backed by a shared
   // memory buffer. Therefore it must have type kNative. Yet, ToI420()
   // doesn't affect binary data at all. Another example is any I420A buffer.
-  // TODO(magjed): Return raw pointers for GetI420 once deprecated interface is
-  // removed.
-  virtual rtc::scoped_refptr<I420BufferInterface> GetI420();
-  virtual rtc::scoped_refptr<const I420BufferInterface> GetI420() const;
+  virtual const I420BufferInterface* GetI420() const;
 
   // These functions should only be called if type() is of the correct type.
   // Calling with a different type will result in a crash.
-  I420ABufferInterface* GetI420A();
   const I420ABufferInterface* GetI420A() const;
-  I444BufferInterface* GetI444();
   const I444BufferInterface* GetI444() const;
-  I010BufferInterface* GetI010();
   const I010BufferInterface* GetI010() const;
 
  protected:
@@ -127,6 +121,7 @@ class I420BufferInterface : public PlanarYuv8Buffer {
   int ChromaHeight() const final;
 
   rtc::scoped_refptr<I420BufferInterface> ToI420() final;
+  const I420BufferInterface* GetI420() const final;
 
  protected:
   ~I420BufferInterface() override {}
