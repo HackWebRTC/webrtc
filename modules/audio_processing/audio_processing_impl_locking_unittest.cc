@@ -310,10 +310,9 @@ class CaptureProcessor {
                    rtc::Event* render_call_event,
                    rtc::Event* capture_call_event,
                    FrameCounters* shared_counters_state,
-                   AudioProcessingImplLockTest* test_framework,
                    TestConfig* test_config,
                    AudioProcessing* apm);
-  bool Process();
+  void Process();
 
  private:
   static const int kMaxCallDifference = 10;
@@ -328,7 +327,6 @@ class CaptureProcessor {
   rtc::Event* const render_call_event_ = nullptr;
   rtc::Event* const capture_call_event_ = nullptr;
   FrameCounters* const frame_counters_ = nullptr;
-  AudioProcessingImplLockTest* const test_ = nullptr;
   const TestConfig* const test_config_ = nullptr;
   AudioProcessing* const apm_ = nullptr;
   AudioFrameData frame_data_;
@@ -340,7 +338,7 @@ class StatsProcessor {
   StatsProcessor(RandomGenerator* rand_gen,
                  TestConfig* test_config,
                  AudioProcessing* apm);
-  bool Process();
+  void Process();
 
  private:
   RandomGenerator* rand_gen_ = nullptr;
@@ -356,10 +354,9 @@ class RenderProcessor {
                   rtc::Event* render_call_event,
                   rtc::Event* capture_call_event,
                   FrameCounters* shared_counters_state,
-                  AudioProcessingImplLockTest* test_framework,
                   TestConfig* test_config,
                   AudioProcessing* apm);
-  bool Process();
+  void Process();
 
  private:
   static const int kMaxCallDifference = 10;
@@ -374,7 +371,6 @@ class RenderProcessor {
   rtc::Event* const render_call_event_ = nullptr;
   rtc::Event* const capture_call_event_ = nullptr;
   FrameCounters* const frame_counters_ = nullptr;
-  AudioProcessingImplLockTest* const test_ = nullptr;
   const TestConfig* const test_config_ = nullptr;
   AudioProcessing* const apm_ = nullptr;
   AudioFrameData frame_data_;
@@ -397,21 +393,30 @@ class AudioProcessingImplLockTest
   void TearDown() override;
 
   // Thread callback for the render thread
-  static bool RenderProcessorThreadFunc(void* context) {
-    return reinterpret_cast<AudioProcessingImplLockTest*>(context)
-        ->render_thread_state_.Process();
+  static void RenderProcessorThreadFunc(void* context) {
+    AudioProcessingImplLockTest* impl =
+        reinterpret_cast<AudioProcessingImplLockTest*>(context);
+    while (!impl->MaybeEndTest()) {
+      impl->render_thread_state_.Process();
+    }
   }
 
   // Thread callback for the capture thread
-  static bool CaptureProcessorThreadFunc(void* context) {
-    return reinterpret_cast<AudioProcessingImplLockTest*>(context)
-        ->capture_thread_state_.Process();
+  static void CaptureProcessorThreadFunc(void* context) {
+    AudioProcessingImplLockTest* impl =
+        reinterpret_cast<AudioProcessingImplLockTest*>(context);
+    while (!impl->MaybeEndTest()) {
+      impl->capture_thread_state_.Process();
+    }
   }
 
   // Thread callback for the stats thread
-  static bool StatsProcessorThreadFunc(void* context) {
-    return reinterpret_cast<AudioProcessingImplLockTest*>(context)
-        ->stats_thread_state_.Process();
+  static void StatsProcessorThreadFunc(void* context) {
+    AudioProcessingImplLockTest* impl =
+        reinterpret_cast<AudioProcessingImplLockTest*>(context);
+    while (!impl->MaybeEndTest()) {
+      impl->stats_thread_state_.Process();
+    }
   }
 
   // Tests whether all the required render and capture side calls have been
@@ -424,11 +429,8 @@ class AudioProcessingImplLockTest
   // Start the threads used in the test.
   void StartThreads() {
     render_thread_.Start();
-    render_thread_.SetPriority(rtc::kRealtimePriority);
     capture_thread_.Start();
-    capture_thread_.SetPriority(rtc::kRealtimePriority);
     stats_thread_.Start();
-    stats_thread_.SetPriority(rtc::kNormalPriority);
   }
 
   // Event handlers for the test.
@@ -487,16 +489,24 @@ void PopulateAudioFrame(AudioFrame* frame,
 }
 
 AudioProcessingImplLockTest::AudioProcessingImplLockTest()
-    : render_thread_(RenderProcessorThreadFunc, this, "render"),
-      capture_thread_(CaptureProcessorThreadFunc, this, "capture"),
-      stats_thread_(StatsProcessorThreadFunc, this, "stats"),
+    : render_thread_(RenderProcessorThreadFunc,
+                     this,
+                     "render",
+                     rtc::kRealtimePriority),
+      capture_thread_(CaptureProcessorThreadFunc,
+                      this,
+                      "capture",
+                      rtc::kRealtimePriority),
+      stats_thread_(StatsProcessorThreadFunc,
+                    this,
+                    "stats",
+                    rtc::kNormalPriority),
       apm_(AudioProcessingBuilder().Create()),
       render_thread_state_(kMaxFrameSize,
                            &rand_gen_,
                            &render_call_event_,
                            &capture_call_event_,
                            &frame_counters_,
-                           this,
                            &test_config_,
                            apm_.get()),
       capture_thread_state_(kMaxFrameSize,
@@ -504,7 +514,6 @@ AudioProcessingImplLockTest::AudioProcessingImplLockTest()
                             &render_call_event_,
                             &capture_call_event_,
                             &frame_counters_,
-                            this,
                             &test_config_,
                             apm_.get()),
       stats_thread_state_(&rand_gen_, &test_config_, apm_.get()) {}
@@ -570,7 +579,7 @@ StatsProcessor::StatsProcessor(RandomGenerator* rand_gen,
 
 // Implements the callback functionality for the statistics
 // collection thread.
-bool StatsProcessor::Process() {
+void StatsProcessor::Process() {
   SleepRandomMs(100, rand_gen_);
 
   AudioProcessing::Config apm_config = apm_->GetConfig();
@@ -590,8 +599,6 @@ bool StatsProcessor::Process() {
   apm_->voice_detection()->is_enabled();
 
   apm_->GetStatistics(/*has_remote_tracks=*/true);
-
-  return true;
 }
 
 const float CaptureProcessor::kCaptureInputFloatLevel = 0.03125f;
@@ -601,27 +608,20 @@ CaptureProcessor::CaptureProcessor(int max_frame_size,
                                    rtc::Event* render_call_event,
                                    rtc::Event* capture_call_event,
                                    FrameCounters* shared_counters_state,
-                                   AudioProcessingImplLockTest* test_framework,
                                    TestConfig* test_config,
                                    AudioProcessing* apm)
     : rand_gen_(rand_gen),
       render_call_event_(render_call_event),
       capture_call_event_(capture_call_event),
       frame_counters_(shared_counters_state),
-      test_(test_framework),
       test_config_(test_config),
       apm_(apm),
       frame_data_(max_frame_size) {}
 
 // Implements the callback functionality for the capture thread.
-bool CaptureProcessor::Process() {
+void CaptureProcessor::Process() {
   // Sleep a random time to simulate thread jitter.
   SleepRandomMs(3, rand_gen_);
-
-  // Check whether the test is done.
-  if (test_->MaybeEndTest()) {
-    return false;
-  }
 
   // Ensure that the number of render and capture calls do not
   // differ too much.
@@ -641,8 +641,6 @@ bool CaptureProcessor::Process() {
   // Flag to the render thread that another capture API call has occurred
   // by triggering this threads call event.
   capture_call_event_->Set();
-
-  return true;
 }
 
 // Prepares a frame with relevant audio data and metadata.
@@ -868,20 +866,18 @@ RenderProcessor::RenderProcessor(int max_frame_size,
                                  rtc::Event* render_call_event,
                                  rtc::Event* capture_call_event,
                                  FrameCounters* shared_counters_state,
-                                 AudioProcessingImplLockTest* test_framework,
                                  TestConfig* test_config,
                                  AudioProcessing* apm)
     : rand_gen_(rand_gen),
       render_call_event_(render_call_event),
       capture_call_event_(capture_call_event),
       frame_counters_(shared_counters_state),
-      test_(test_framework),
       test_config_(test_config),
       apm_(apm),
       frame_data_(max_frame_size) {}
 
 // Implements the callback functionality for the render thread.
-bool RenderProcessor::Process() {
+void RenderProcessor::Process() {
   // Conditional wait to ensure that a capture call has been done
   // before the first render call is performed (implicitly
   // required by the APM API).
@@ -892,11 +888,6 @@ bool RenderProcessor::Process() {
 
   // Sleep a random time to simulate thread jitter.
   SleepRandomMs(3, rand_gen_);
-
-  // Check whether the test is done.
-  if (test_->MaybeEndTest()) {
-    return false;
-  }
 
   // Ensure that the number of render and capture calls do not
   // differ too much.
@@ -916,7 +907,6 @@ bool RenderProcessor::Process() {
   // Flag to the capture thread that another render API call has occurred
   // by triggering this threads call event.
   render_call_event_->Set();
-  return true;
 }
 
 // Prepares the render side frame and the accompanying metadata

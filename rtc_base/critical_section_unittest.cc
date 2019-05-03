@@ -359,11 +359,10 @@ class PerfTestThread {
   }
 
  private:
-  static bool ThreadFunc(void* param) {
+  static void ThreadFunc(void* param) {
     PerfTestThread* me = static_cast<PerfTestThread*>(param);
     for (int i = 0; i < me->repeats_; ++i)
       me->data_->AddToCounter(me->my_id_);
-    return false;
   }
 
   PlatformThread thread_;

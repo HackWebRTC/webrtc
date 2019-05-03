@@ -180,7 +180,7 @@ class VideoAnalyzer : public PacketReceiver,
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   void PollStats();
-  static bool FrameComparisonThread(void* obj);
+  static void FrameComparisonThread(void* obj);
   bool CompareFrames();
   bool PopComparison(FrameComparison* comparison);
   // Increment counter for number of frames received for comparison.
@@ -275,6 +275,7 @@ class VideoAnalyzer : public PacketReceiver,
   std::vector<rtc::PlatformThread*> comparison_thread_pool_;
   rtc::Event comparison_available_event_;
   std::deque<FrameComparison> comparisons_ RTC_GUARDED_BY(comparison_lock_);
+  bool quit_ RTC_GUARDED_BY(comparison_lock_);
   rtc::Event done_;
   test::SingleThreadedTaskQueueForTesting::TaskId stats_polling_task_id_
       RTC_GUARDED_BY(comparison_lock_);

@@ -101,6 +101,7 @@ VideoAnalyzer::VideoAnalyzer(
       avg_psnr_threshold_(avg_psnr_threshold),
       avg_ssim_threshold_(avg_ssim_threshold),
       is_quick_test_enabled_(is_quick_test_enabled),
+      quit_(false),
       done_(true, false),
       clock_(clock),
       start_ms_(clock->TimeInMilliseconds()),
@@ -139,6 +140,10 @@ VideoAnalyzer::VideoAnalyzer(
 }
 
 VideoAnalyzer::~VideoAnalyzer() {
+  {
+    rtc::CritScope crit(&comparison_lock_);
+    quit_ = true;
+  }
   for (rtc::PlatformThread* thread : comparison_thread_pool_) {
     thread->Stop();
     delete thread;
@@ -519,8 +524,10 @@ void VideoAnalyzer::PollStats() {
       [this]() { PollStats(); }, kSendStatsPollingIntervalMs);
 }
 
-bool VideoAnalyzer::FrameComparisonThread(void* obj) {
-  return static_cast<VideoAnalyzer*>(obj)->CompareFrames();
+void VideoAnalyzer::FrameComparisonThread(void* obj) {
+  VideoAnalyzer* analyzer = static_cast<VideoAnalyzer*>(obj);
+  while (analyzer->CompareFrames()) {
+  }
 }
 
 bool VideoAnalyzer::CompareFrames() {
@@ -579,8 +586,8 @@ void VideoAnalyzer::FrameRecorded() {
 
 bool VideoAnalyzer::AllFramesRecorded() {
   rtc::CritScope crit(&comparison_lock_);
-  assert(frames_recorded_ <= frames_to_process_);
-  return frames_recorded_ == frames_to_process_;
+  RTC_DCHECK(frames_recorded_ <= frames_to_process_);
+  return frames_recorded_ == frames_to_process_ || quit_;
 }
 
 bool VideoAnalyzer::FrameProcessed() {

@@ -45,10 +45,9 @@ AudioDeviceLinuxPulse::AudioDeviceLinuxPulse()
       _recIsInitialized(false),
       _playIsInitialized(false),
       _startRec(false),
-      _stopRec(false),
       _startPlay(false),
-      _stopPlay(false),
       update_speaker_volume_at_startup_(false),
+      quit_(false),
       _sndCardPlayDelay(0),
       _sndCardRecDelay(0),
       _writeErrors(0),
@@ -159,17 +158,17 @@ AudioDeviceGeneric::InitStatus AudioDeviceLinuxPulse::Init() {
 #endif
 
   // RECORDING
-  _ptrThreadRec.reset(new rtc::PlatformThread(
-      RecThreadFunc, this, "webrtc_audio_module_rec_thread"));
+  _ptrThreadRec.reset(new rtc::PlatformThread(RecThreadFunc, this,
+                                              "webrtc_audio_module_rec_thread",
+                                              rtc::kRealtimePriority));
 
   _ptrThreadRec->Start();
-  _ptrThreadRec->SetPriority(rtc::kRealtimePriority);
 
   // PLAYOUT
   _ptrThreadPlay.reset(new rtc::PlatformThread(
-      PlayThreadFunc, this, "webrtc_audio_module_play_thread"));
+      PlayThreadFunc, this, "webrtc_audio_module_play_thread",
+      rtc::kRealtimePriority));
   _ptrThreadPlay->Start();
-  _ptrThreadPlay->SetPriority(rtc::kRealtimePriority);
 
   _initialized = true;
 
@@ -181,7 +180,10 @@ int32_t AudioDeviceLinuxPulse::Terminate() {
   if (!_initialized) {
     return 0;
   }
-
+  {
+    rtc::CritScope lock(&_critSect);
+    quit_ = true;
+  }
   _mixerManager.Close();
 
   // RECORDING
@@ -1977,12 +1979,16 @@ int32_t AudioDeviceLinuxPulse::ProcessRecordedData(int8_t* bufferData,
   return 0;
 }
 
-bool AudioDeviceLinuxPulse::PlayThreadFunc(void* pThis) {
-  return (static_cast<AudioDeviceLinuxPulse*>(pThis)->PlayThreadProcess());
+void AudioDeviceLinuxPulse::PlayThreadFunc(void* pThis) {
+  AudioDeviceLinuxPulse* device = static_cast<AudioDeviceLinuxPulse*>(pThis);
+  while (device->PlayThreadProcess()) {
+  }
 }
 
-bool AudioDeviceLinuxPulse::RecThreadFunc(void* pThis) {
-  return (static_cast<AudioDeviceLinuxPulse*>(pThis)->RecThreadProcess());
+void AudioDeviceLinuxPulse::RecThreadFunc(void* pThis) {
+  AudioDeviceLinuxPulse* device = static_cast<AudioDeviceLinuxPulse*>(pThis);
+  while (device->RecThreadProcess()) {
+  }
 }
 
 bool AudioDeviceLinuxPulse::PlayThreadProcess() {
@@ -1991,6 +1997,10 @@ bool AudioDeviceLinuxPulse::PlayThreadProcess() {
   }
 
   rtc::CritScope lock(&_critSect);
+
+  if (quit_) {
+    return false;
+  }
 
   if (_startPlay) {
     RTC_LOG(LS_VERBOSE) << "_startPlay true, performing initial actions";
@@ -2159,7 +2169,9 @@ bool AudioDeviceLinuxPulse::RecThreadProcess() {
   }
 
   rtc::CritScope lock(&_critSect);
-
+  if (quit_) {
+    return false;
+  }
   if (_startRec) {
     RTC_LOG(LS_VERBOSE) << "_startRec true, performing initial actions";
 

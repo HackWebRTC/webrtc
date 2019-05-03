@@ -42,7 +42,7 @@ class ProcessThreadImpl : public ProcessThread {
   void DeRegisterModule(Module* module) override;
 
  protected:
-  static bool Run(void* obj);
+  static void Run(void* obj);
   bool Process();
 
  private:

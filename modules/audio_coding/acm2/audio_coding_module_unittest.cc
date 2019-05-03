@@ -10,6 +10,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <atomic>
 #include <memory>
 #include <vector>
 
@@ -484,9 +485,15 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
 
   AudioCodingModuleMtTestOldApi()
       : AudioCodingModuleTestOldApi(),
-        send_thread_(CbSendThread, this, "send"),
-        insert_packet_thread_(CbInsertPacketThread, this, "insert_packet"),
-        pull_audio_thread_(CbPullAudioThread, this, "pull_audio"),
+        send_thread_(CbSendThread, this, "send", rtc::kRealtimePriority),
+        insert_packet_thread_(CbInsertPacketThread,
+                              this,
+                              "insert_packet",
+                              rtc::kRealtimePriority),
+        pull_audio_thread_(CbPullAudioThread,
+                           this,
+                           "pull_audio",
+                           rtc::kRealtimePriority),
         send_count_(0),
         insert_packet_count_(0),
         pull_audio_count_(0),
@@ -502,16 +509,15 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
   }
 
   void StartThreads() {
+    quit_.store(false);
     send_thread_.Start();
-    send_thread_.SetPriority(rtc::kRealtimePriority);
     insert_packet_thread_.Start();
-    insert_packet_thread_.SetPriority(rtc::kRealtimePriority);
     pull_audio_thread_.Start();
-    pull_audio_thread_.SetPriority(rtc::kRealtimePriority);
   }
 
   void TearDown() {
     AudioCodingModuleTestOldApi::TearDown();
+    quit_.store(true);
     pull_audio_thread_.Stop();
     send_thread_.Stop();
     insert_packet_thread_.Stop();
@@ -532,14 +538,17 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
     return false;
   }
 
-  static bool CbSendThread(void* context) {
-    return reinterpret_cast<AudioCodingModuleMtTestOldApi*>(context)
-        ->CbSendImpl();
+  static void CbSendThread(void* context) {
+    AudioCodingModuleMtTestOldApi* fixture =
+        reinterpret_cast<AudioCodingModuleMtTestOldApi*>(context);
+    while (!fixture->quit_.load()) {
+      fixture->CbSendImpl();
+    }
   }
 
   // The send thread doesn't have to care about the current simulated time,
   // since only the AcmReceiver is using the clock.
-  bool CbSendImpl() {
+  void CbSendImpl() {
     SleepMs(1);
     if (HasFatalFailure()) {
       // End the test early if a fatal failure (ASSERT_*) has occurred.
@@ -550,53 +559,59 @@ class AudioCodingModuleMtTestOldApi : public AudioCodingModuleTestOldApi {
     if (TestDone()) {
       test_complete_.Set();
     }
-    return true;
   }
 
-  static bool CbInsertPacketThread(void* context) {
-    return reinterpret_cast<AudioCodingModuleMtTestOldApi*>(context)
-        ->CbInsertPacketImpl();
+  static void CbInsertPacketThread(void* context) {
+    AudioCodingModuleMtTestOldApi* fixture =
+        reinterpret_cast<AudioCodingModuleMtTestOldApi*>(context);
+    while (!fixture->quit_.load()) {
+      fixture->CbInsertPacketImpl();
+    }
   }
 
-  bool CbInsertPacketImpl() {
+  void CbInsertPacketImpl() {
     SleepMs(1);
     {
       rtc::CritScope lock(&crit_sect_);
       if (clock_->TimeInMilliseconds() < next_insert_packet_time_ms_) {
-        return true;
+        return;
       }
       next_insert_packet_time_ms_ += 10;
     }
     // Now we're not holding the crit sect when calling ACM.
     ++insert_packet_count_;
     InsertPacket();
-    return true;
   }
 
-  static bool CbPullAudioThread(void* context) {
-    return reinterpret_cast<AudioCodingModuleMtTestOldApi*>(context)
-        ->CbPullAudioImpl();
+  static void CbPullAudioThread(void* context) {
+    AudioCodingModuleMtTestOldApi* fixture =
+        reinterpret_cast<AudioCodingModuleMtTestOldApi*>(context);
+    while (!fixture->quit_.load()) {
+      fixture->CbPullAudioImpl();
+    }
   }
 
-  bool CbPullAudioImpl() {
+  void CbPullAudioImpl() {
     SleepMs(1);
     {
       rtc::CritScope lock(&crit_sect_);
       // Don't let the insert thread fall behind.
       if (next_insert_packet_time_ms_ < clock_->TimeInMilliseconds()) {
-        return true;
+        return;
       }
       ++pull_audio_count_;
     }
     // Now we're not holding the crit sect when calling ACM.
     PullAudio();
     fake_clock_->AdvanceTimeMilliseconds(10);
-    return true;
   }
 
   rtc::PlatformThread send_thread_;
   rtc::PlatformThread insert_packet_thread_;
   rtc::PlatformThread pull_audio_thread_;
+  // Used to force worker threads to stop looping.
+  std::atomic<bool> quit_;
+
   rtc::Event test_complete_;
   int send_count_;
   int insert_packet_count_;
@@ -734,10 +749,14 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
 
   AcmReRegisterIsacMtTestOldApi()
       : AudioCodingModuleTestOldApi(),
-        receive_thread_(CbReceiveThread, this, "receive"),
+        receive_thread_(CbReceiveThread,
+                        this,
+                        "receive",
+                        rtc::kRealtimePriority),
         codec_registration_thread_(CbCodecRegistrationThread,
                                    this,
-                                   "codec_registration"),
+                                   "codec_registration",
+                                   rtc::kRealtimePriority),
         codec_registered_(false),
         receive_packet_count_(0),
         next_insert_packet_time_ms_(0),
@@ -768,14 +787,14 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
   }
 
   void StartThreads() {
+    quit_.store(false);
     receive_thread_.Start();
-    receive_thread_.SetPriority(rtc::kRealtimePriority);
     codec_registration_thread_.Start();
-    codec_registration_thread_.SetPriority(rtc::kRealtimePriority);
   }
 
   void TearDown() override {
     AudioCodingModuleTestOldApi::TearDown();
+    quit_.store(true);
     receive_thread_.Stop();
     codec_registration_thread_.Stop();
   }
@@ -784,9 +803,11 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
     return test_complete_.Wait(10 * 60 * 1000);  // 10 minutes' timeout.
   }
 
-  static bool CbReceiveThread(void* context) {
-    return reinterpret_cast<AcmReRegisterIsacMtTestOldApi*>(context)
-        ->CbReceiveImpl();
+  static void CbReceiveThread(void* context) {
+    AcmReRegisterIsacMtTestOldApi* fixture =
+        reinterpret_cast<AcmReRegisterIsacMtTestOldApi*>(context);
+    while (!fixture->quit_.load() && fixture->CbReceiveImpl()) {
+    }
   }
 
   bool CbReceiveImpl() {
@@ -834,12 +855,15 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
     return true;
   }
 
-  static bool CbCodecRegistrationThread(void* context) {
-    return reinterpret_cast<AcmReRegisterIsacMtTestOldApi*>(context)
-        ->CbCodecRegistrationImpl();
+  static void CbCodecRegistrationThread(void* context) {
+    AcmReRegisterIsacMtTestOldApi* fixture =
+        reinterpret_cast<AcmReRegisterIsacMtTestOldApi*>(context);
+    while (!fixture->quit_.load()) {
+      fixture->CbCodecRegistrationImpl();
+    }
   }
 
-  bool CbCodecRegistrationImpl() {
+  void CbCodecRegistrationImpl() {
     SleepMs(1);
     if (HasFatalFailure()) {
       // End the test early if a fatal failure (ASSERT_*) has occurred.
@@ -856,11 +880,13 @@ class AcmReRegisterIsacMtTestOldApi : public AudioCodingModuleTestOldApi {
     if (codec_registered_ && receive_packet_count_ > kNumPackets) {
       test_complete_.Set();
     }
-    return true;
   }
 
   rtc::PlatformThread receive_thread_;
   rtc::PlatformThread codec_registration_thread_;
+  // Used to force worker threads to stop looping.
+  std::atomic<bool> quit_;
+
   rtc::Event test_complete_;
   rtc::CriticalSection crit_sect_;
   bool codec_registered_ RTC_GUARDED_BY(crit_sect_);

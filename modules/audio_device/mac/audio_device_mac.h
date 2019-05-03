@@ -240,8 +240,8 @@ class AudioDeviceMac : public AudioDeviceGeneric {
   OSStatus implInConverterProc(UInt32* numberDataPackets,
                                AudioBufferList* data);
 
-  static bool RunCapture(void*);
-  static bool RunRender(void*);
+  static void RunCapture(void*);
+  static void RunRender(void*);
   bool CaptureWorkerThread();
   bool RenderWorkerThread();
 

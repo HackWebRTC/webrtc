@@ -127,8 +127,8 @@ class FileAudioDevice : public AudioDeviceGeneric {
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 
  private:
-  static bool RecThreadFunc(void*);
-  static bool PlayThreadFunc(void*);
+  static void RecThreadFunc(void*);
+  static void PlayThreadFunc(void*);
   bool RecThreadProcess();
   bool PlayThreadProcess();
 

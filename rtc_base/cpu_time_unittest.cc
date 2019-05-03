@@ -30,7 +30,7 @@ const int kProcessingTimeMillisecs = 300;
 const int kWorkingThreads = 2;
 
 // Consumes approximately kProcessingTimeMillisecs of CPU time in single thread.
-bool WorkingFunction(void* counter_pointer) {
+void WorkingFunction(void* counter_pointer) {
   int64_t* counter = reinterpret_cast<int64_t*>(counter_pointer);
   *counter = 0;
   int64_t stop_cpu_time =
@@ -39,7 +39,6 @@ bool WorkingFunction(void* counter_pointer) {
   while (rtc::GetThreadCpuTimeNanos() < stop_cpu_time) {
     (*counter)++;
   }
-  return false;
 }
 }  // namespace
 

@@ -254,8 +254,8 @@ class AudioDeviceLinuxPulse : public AudioDeviceGeneric {
   void PaLock();
   void PaUnLock();
 
-  static bool RecThreadFunc(void*);
-  static bool PlayThreadFunc(void*);
+  static void RecThreadFunc(void*);
+  static void PlayThreadFunc(void*);
   bool RecThreadProcess();
   bool PlayThreadProcess();
 
@@ -294,10 +294,9 @@ class AudioDeviceLinuxPulse : public AudioDeviceGeneric {
   bool _recIsInitialized;
   bool _playIsInitialized;
   bool _startRec;
-  bool _stopRec;
   bool _startPlay;
-  bool _stopPlay;
   bool update_speaker_volume_at_startup_;
+  bool quit_ RTC_GUARDED_BY(&_critSect);
 
   uint32_t _sndCardPlayDelay;
   uint32_t _sndCardRecDelay;

@@ -1295,11 +1295,10 @@ int32_t AudioDeviceMac::StartRecording() {
   }
 
   RTC_DCHECK(!capture_worker_thread_.get());
-  capture_worker_thread_.reset(
-      new rtc::PlatformThread(RunCapture, this, "CaptureWorkerThread"));
+  capture_worker_thread_.reset(new rtc::PlatformThread(
+      RunCapture, this, "CaptureWorkerThread", rtc::kRealtimePriority));
   RTC_DCHECK(capture_worker_thread_.get());
   capture_worker_thread_->Start();
-  capture_worker_thread_->SetPriority(rtc::kRealtimePriority);
 
   OSStatus err = noErr;
   if (_twoDevices) {
@@ -1431,10 +1430,9 @@ int32_t AudioDeviceMac::StartPlayout() {
   }
 
   RTC_DCHECK(!render_worker_thread_.get());
-  render_worker_thread_.reset(
-      new rtc::PlatformThread(RunRender, this, "RenderWorkerThread"));
+  render_worker_thread_.reset(new rtc::PlatformThread(
+      RunRender, this, "RenderWorkerThread", rtc::kRealtimePriority));
   render_worker_thread_->Start();
-  render_worker_thread_->SetPriority(rtc::kRealtimePriority);
 
   if (_twoDevices || !_recording) {
     OSStatus err = noErr;
@@ -2361,8 +2359,10 @@ OSStatus AudioDeviceMac::implInConverterProc(UInt32* numberDataPackets,
   return 0;
 }
 
-bool AudioDeviceMac::RunRender(void* ptrThis) {
-  return static_cast<AudioDeviceMac*>(ptrThis)->RenderWorkerThread();
+void AudioDeviceMac::RunRender(void* ptrThis) {
+  AudioDeviceMac* device = static_cast<AudioDeviceMac*>(ptrThis);
+  while (device->RenderWorkerThread()) {
+  }
 }
 
 bool AudioDeviceMac::RenderWorkerThread() {
@@ -2430,8 +2430,10 @@ bool AudioDeviceMac::RenderWorkerThread() {
   return true;
 }
 
-bool AudioDeviceMac::RunCapture(void* ptrThis) {
-  return static_cast<AudioDeviceMac*>(ptrThis)->CaptureWorkerThread();
+void AudioDeviceMac::RunCapture(void* ptrThis) {
+  AudioDeviceMac* device = static_cast<AudioDeviceMac*>(ptrThis);
+  while (device->CaptureWorkerThread()) {
+  }
 }
 
 bool AudioDeviceMac::CaptureWorkerThread() {
