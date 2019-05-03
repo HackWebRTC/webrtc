@@ -149,6 +149,9 @@ RTPSender::RTPSender(
       populate_network2_timestamp_(populate_network2_timestamp),
       send_side_bwe_with_overhead_(
           field_trials.Lookup("WebRTC-SendSideBwe-WithOverhead")
+              .find("Enabled") == 0),
+      legacy_packet_history_storage_mode_(
+          field_trials.Lookup("WebRTC-UseRtpPacketHistoryLegacyStorageMode")
               .find("Enabled") == 0) {
   // This random initialization is not intended to be cryptographic strong.
   timestamp_offset_ = random_.Rand<uint32_t>();
@@ -159,9 +162,13 @@ RTPSender::RTPSender(
   // Store FlexFEC packets in the packet history data structure, so they can
   // be found when paced.
   if (flexfec_ssrc_) {
+    RtpPacketHistory::StorageMode storage_mode =
+        legacy_packet_history_storage_mode_
+            ? RtpPacketHistory::StorageMode::kStore
+            : RtpPacketHistory::StorageMode::kStoreAndCull;
+
     flexfec_packet_history_.SetStorePacketsStatus(
-        RtpPacketHistory::StorageMode::kStore,
-        kMinFlexfecPacketsToStoreForPacing);
+        storage_mode, kMinFlexfecPacketsToStoreForPacing);
   }
 }
 
@@ -423,9 +430,14 @@ size_t RTPSender::SendPadData(size_t bytes,
 }
 
 void RTPSender::SetStorePacketsStatus(bool enable, uint16_t number_to_store) {
-  RtpPacketHistory::StorageMode mode =
-      enable ? RtpPacketHistory::StorageMode::kStore
-             : RtpPacketHistory::StorageMode::kDisabled;
+  RtpPacketHistory::StorageMode mode;
+  if (enable) {
+    mode = legacy_packet_history_storage_mode_
+               ? RtpPacketHistory::StorageMode::kStore
+               : RtpPacketHistory::StorageMode::kStoreAndCull;
+  } else {
+    mode = RtpPacketHistory::StorageMode::kDisabled;
+  }
   packet_history_.SetStorePacketsStatus(mode, number_to_store);
 }
 

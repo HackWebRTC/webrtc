@@ -292,6 +292,7 @@ class RTPSender {
   const bool populate_network2_timestamp_;
 
   const bool send_side_bwe_with_overhead_;
+  const bool legacy_packet_history_storage_mode_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RTPSender);
 };
