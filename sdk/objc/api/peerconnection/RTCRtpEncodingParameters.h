@@ -51,6 +51,12 @@ RTC_OBJC_EXPORT
 /** The SSRC being used by this encoding. */
 @property(nonatomic, readonly, nullable) NSNumber *ssrc;
 
+/** The relative bitrate priority. */
+@property(nonatomic, assign) double bitratePriority;
+
+/** The relative DiffServ Code Point priority. */
+@property(nonatomic, assign) double networkPriority;
+
 - (instancetype)init NS_DESIGNATED_INITIALIZER;
 
 @end
