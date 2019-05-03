@@ -1253,8 +1253,6 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
                     !!private_submodules_->echo_control_mobile,
                 1);
 
-  MaybeUpdateHistograms();
-
   AudioBuffer* capture_buffer = capture_.capture_audio.get();  // For brevity.
 
   if (private_submodules_->pre_amplifier) {
@@ -1951,79 +1949,7 @@ void AudioProcessingImpl::InitializePreProcessor() {
   }
 }
 
-void AudioProcessingImpl::MaybeUpdateHistograms() {
-  static const int kMinDiffDelayMs = 60;
-
-  if (private_submodules_->echo_cancellation &&
-      private_submodules_->echo_cancellation->is_enabled()) {
-    // Activate delay_jumps_ counters if we know echo_cancellation is running.
-    // If a stream has echo we know that the echo_cancellation is in process.
-    if (capture_.stream_delay_jumps == -1 &&
-        private_submodules_->echo_cancellation->stream_has_echo()) {
-      capture_.stream_delay_jumps = 0;
-    }
-    if (capture_.aec_system_delay_jumps == -1 &&
-        private_submodules_->echo_cancellation->stream_has_echo()) {
-      capture_.aec_system_delay_jumps = 0;
-    }
-
-    // Detect a jump in platform reported system delay and log the difference.
-    const int diff_stream_delay_ms =
-        capture_nonlocked_.stream_delay_ms - capture_.last_stream_delay_ms;
-    if (diff_stream_delay_ms > kMinDiffDelayMs &&
-        capture_.last_stream_delay_ms != 0) {
-      RTC_HISTOGRAM_COUNTS("WebRTC.Audio.PlatformReportedStreamDelayJump",
-                           diff_stream_delay_ms, kMinDiffDelayMs, 1000, 100);
-      if (capture_.stream_delay_jumps == -1) {
-        capture_.stream_delay_jumps = 0;  // Activate counter if needed.
-      }
-      capture_.stream_delay_jumps++;
-    }
-    capture_.last_stream_delay_ms = capture_nonlocked_.stream_delay_ms;
-
-    // Detect a jump in AEC system delay and log the difference.
-    const int samples_per_ms =
-        rtc::CheckedDivExact(capture_nonlocked_.split_rate, 1000);
-    RTC_DCHECK_LT(0, samples_per_ms);
-    const int aec_system_delay_ms =
-        private_submodules_->echo_cancellation->GetSystemDelayInSamples() /
-        samples_per_ms;
-    const int diff_aec_system_delay_ms =
-        aec_system_delay_ms - capture_.last_aec_system_delay_ms;
-    if (diff_aec_system_delay_ms > kMinDiffDelayMs &&
-        capture_.last_aec_system_delay_ms != 0) {
-      RTC_HISTOGRAM_COUNTS("WebRTC.Audio.AecSystemDelayJump",
-                           diff_aec_system_delay_ms, kMinDiffDelayMs, 1000,
-                           100);
-      if (capture_.aec_system_delay_jumps == -1) {
-        capture_.aec_system_delay_jumps = 0;  // Activate counter if needed.
-      }
-      capture_.aec_system_delay_jumps++;
-    }
-    capture_.last_aec_system_delay_ms = aec_system_delay_ms;
-  }
-}
-
-void AudioProcessingImpl::UpdateHistogramsOnCallEnd() {
-  // Run in a single-threaded manner.
-  rtc::CritScope cs_render(&crit_render_);
-  rtc::CritScope cs_capture(&crit_capture_);
-
-  if (capture_.stream_delay_jumps > -1) {
-    RTC_HISTOGRAM_ENUMERATION(
-        "WebRTC.Audio.NumOfPlatformReportedStreamDelayJumps",
-        capture_.stream_delay_jumps, 51);
-  }
-  capture_.stream_delay_jumps = -1;
-  capture_.last_stream_delay_ms = 0;
-
-  if (capture_.aec_system_delay_jumps > -1) {
-    RTC_HISTOGRAM_ENUMERATION("WebRTC.Audio.NumOfAecSystemDelayJumps",
-                              capture_.aec_system_delay_jumps, 51);
-  }
-  capture_.aec_system_delay_jumps = -1;
-  capture_.last_aec_system_delay_ms = 0;
-}
+void AudioProcessingImpl::UpdateHistogramsOnCallEnd() {}
 
 void AudioProcessingImpl::WriteAecDumpConfigMessage(bool forced) {
   if (!aec_dump_) {
@@ -2160,12 +2086,8 @@ void AudioProcessingImpl::RecordAudioProcessingState() {
 
 AudioProcessingImpl::ApmCaptureState::ApmCaptureState(
     bool transient_suppressor_enabled)
-    : aec_system_delay_jumps(-1),
-      delay_offset_ms(0),
+    : delay_offset_ms(0),
       was_stream_delay_set(false),
-      last_stream_delay_ms(0),
-      last_aec_system_delay_ms(0),
-      stream_delay_jumps(-1),
       output_will_be_muted(false),
       key_pressed(false),
       transient_suppressor_enabled(transient_suppressor_enabled),

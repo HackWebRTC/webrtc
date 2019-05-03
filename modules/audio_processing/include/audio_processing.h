@@ -630,6 +630,8 @@ class AudioProcessing : public rtc::RefCountInterface {
 
   // Use to send UMA histograms at end of a call. Note that all histogram
   // specific member variables are reset.
+  // Deprecated. This method is deprecated and will be removed.
+  // TODO(peah): Remove this method.
   virtual void UpdateHistogramsOnCallEnd() = 0;
 
   // Get audio processing statistics. The |has_remote_tracks| argument should be
