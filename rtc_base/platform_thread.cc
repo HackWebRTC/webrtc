@@ -21,11 +21,7 @@
 
 namespace rtc {
 namespace {
-#if defined(WEBRTC_WIN)
-void CALLBACK RaiseFlag(ULONG_PTR param) {
-  *reinterpret_cast<bool*>(param) = true;
-}
-#else
+#if !defined(WEBRTC_WIN)
 struct ThreadAttributes {
   ThreadAttributes() { pthread_attr_init(&attr); }
   ~ThreadAttributes() { pthread_attr_destroy(&attr); }
@@ -76,8 +72,6 @@ void PlatformThread::Start() {
   RTC_DCHECK(thread_checker_.IsCurrent());
   RTC_DCHECK(!thread_) << "Thread already started?";
 #if defined(WEBRTC_WIN)
-  stop_ = false;
-
   // See bug 2902 for background on STACK_SIZE_PARAM_IS_A_RESERVATION.
   // Set the reserved stack stack size to 1M, which is the default on Windows
   // and Linux.
@@ -116,17 +110,6 @@ void PlatformThread::Stop() {
     return;
 
 #if defined(WEBRTC_WIN)
-  // Set stop_ to |true| on the worker thread.
-  bool queued = QueueAPC(&RaiseFlag, reinterpret_cast<ULONG_PTR>(&stop_));
-  if (!queued) {
-    // Queuing the APC can fail if the thread is being terminated. This should
-    // return ERROR_GEN_FAILURE, though Wine returns ERROR_ACCESS_DENIED, so
-    // allow for either.
-    auto error = ::GetLastError();
-    if (error != ERROR_GEN_FAILURE && error != ERROR_ACCESS_DENIED) {
-      RTC_CHECK(false) << "Failed to QueueUserAPC, error: " << error;
-    }
-  }
   WaitForSingleObject(thread_, INFINITE);
   CloseHandle(thread_);
   thread_ = nullptr;

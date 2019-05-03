@@ -89,7 +89,6 @@ class PlatformThread {
 #if defined(WEBRTC_WIN)
   static DWORD WINAPI StartThread(void* param);
 
-  bool stop_ = false;
   HANDLE thread_ = nullptr;
   DWORD thread_id_ = 0;
 #else
