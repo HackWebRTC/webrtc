@@ -1335,14 +1335,15 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
       return;
     }
 
-    // UpdatedRect is reset to full update if it's not empty, because buffer was
-    // converted, therefore we can't guarantee that pixels outside of UpdateRect
-    // didn't change comparing to the previous frame.
-    VideoFrame::UpdateRect update_rect =
-        out_frame.update_rect().IsEmpty()
-            ? out_frame.update_rect()
-            : VideoFrame::UpdateRect{0, 0, out_frame.width(),
-                                     out_frame.height()};
+    VideoFrame::UpdateRect update_rect = out_frame.update_rect();
+    if (!update_rect.IsEmpty() &&
+        out_frame.video_frame_buffer()->GetI420() == nullptr) {
+      // UpdatedRect is reset to full update if it's not empty, and buffer was
+      // converted, therefore we can't guarantee that pixels outside of
+      // UpdateRect didn't change comparing to the previous frame.
+      update_rect =
+          VideoFrame::UpdateRect{0, 0, out_frame.width(), out_frame.height()};
+    }
 
     out_frame = VideoFrame::Builder()
                     .set_video_frame_buffer(converted_buffer)
