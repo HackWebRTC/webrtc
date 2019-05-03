@@ -120,10 +120,6 @@ EchoCancellationImpl::~EchoCancellationImpl() = default;
 
 void EchoCancellationImpl::ProcessRenderAudio(
     rtc::ArrayView<const float> packed_render_audio) {
-  if (!enabled_) {
-    return;
-  }
-
   RTC_DCHECK(stream_properties_);
   size_t handle_index = 0;
   size_t buffer_index = 0;
@@ -143,10 +139,6 @@ void EchoCancellationImpl::ProcessRenderAudio(
 
 int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio,
                                               int stream_delay_ms) {
-  if (!enabled_) {
-    return AudioProcessing::kNoError;
-  }
-
   const int stream_delay_ms_use =
       enforce_zero_stream_delay_ ? 0 : stream_delay_ms;
 
@@ -198,27 +190,6 @@ int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio,
   return AudioProcessing::kNoError;
 }
 
-int EchoCancellationImpl::Enable(bool enable) {
-  if (enable && !enabled_) {
-    enabled_ = enable;  // Must be set before Initialize() is called.
-
-    // TODO(peah): Simplify once the Enable function has been removed from
-    // the public APM API.
-    RTC_DCHECK(stream_properties_);
-    Initialize(stream_properties_->sample_rate_hz,
-               stream_properties_->num_reverse_channels,
-               stream_properties_->num_output_channels,
-               stream_properties_->num_proc_channels);
-  } else {
-    enabled_ = enable;
-  }
-  return AudioProcessing::kNoError;
-}
-
-bool EchoCancellationImpl::is_enabled() const {
-  return enabled_;
-}
-
 int EchoCancellationImpl::set_suppression_level(SuppressionLevel level) {
   if (MapSetting(level) == -1) {
     return AudioProcessing::kBadParameterError;
@@ -256,7 +227,7 @@ int EchoCancellationImpl::enable_metrics(bool enable) {
 }
 
 bool EchoCancellationImpl::are_metrics_enabled() const {
-  return enabled_ && metrics_enabled_;
+  return metrics_enabled_;
 }
 
 // TODO(ajm): we currently just use the metrics from the first AEC. Think more
@@ -266,7 +237,7 @@ int EchoCancellationImpl::GetMetrics(Metrics* metrics) {
     return AudioProcessing::kNullPointerError;
   }
 
-  if (!enabled_ || !metrics_enabled_) {
+  if (!metrics_enabled_) {
     return AudioProcessing::kNotEnabledError;
   }
 
@@ -313,7 +284,7 @@ int EchoCancellationImpl::enable_delay_logging(bool enable) {
 }
 
 bool EchoCancellationImpl::is_delay_logging_enabled() const {
-  return enabled_ && delay_logging_enabled_;
+  return delay_logging_enabled_;
 }
 
 bool EchoCancellationImpl::is_delay_agnostic_enabled() const {
@@ -321,12 +292,8 @@ bool EchoCancellationImpl::is_delay_agnostic_enabled() const {
 }
 
 std::string EchoCancellationImpl::GetExperimentsDescription() {
-  if (enabled_) {
-    return refined_adaptive_filter_enabled_
-               ? "Legacy AEC;RefinedAdaptiveFilter;"
-               : "Legacy AEC;";
-  }
-  return "";
+  return refined_adaptive_filter_enabled_ ? "Legacy AEC;RefinedAdaptiveFilter;"
+                                          : "Legacy AEC;";
 }
 
 bool EchoCancellationImpl::is_refined_adaptive_filter_enabled() const {
@@ -353,7 +320,7 @@ int EchoCancellationImpl::GetDelayMetrics(int* median,
     return AudioProcessing::kNullPointerError;
   }
 
-  if (!enabled_ || !delay_logging_enabled_) {
+  if (!delay_logging_enabled_) {
     return AudioProcessing::kNotEnabledError;
   }
 
@@ -367,9 +334,6 @@ int EchoCancellationImpl::GetDelayMetrics(int* median,
 }
 
 struct AecCore* EchoCancellationImpl::aec_core() const {
-  if (!enabled_) {
-    return NULL;
-  }
   return WebRtcAec_aec_core(cancellers_[0]->state());
 }
 
@@ -380,10 +344,6 @@ void EchoCancellationImpl::Initialize(int sample_rate_hz,
   stream_properties_.reset(
       new StreamProperties(sample_rate_hz, num_reverse_channels,
                            num_output_channels, num_proc_channels));
-
-  if (!enabled_) {
-    return;
-  }
 
   const size_t num_cancellers_required =
       NumCancellersRequired(stream_properties_->num_output_channels,
@@ -405,7 +365,6 @@ void EchoCancellationImpl::Initialize(int sample_rate_hz,
 }
 
 int EchoCancellationImpl::GetSystemDelayInSamples() const {
-  RTC_DCHECK(enabled_);
   // Report the delay for the first AEC component.
   return WebRtcAec_system_delay(WebRtcAec_aec_core(cancellers_[0]->state()));
 }

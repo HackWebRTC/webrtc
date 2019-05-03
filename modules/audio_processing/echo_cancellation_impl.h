@@ -35,8 +35,6 @@ class EchoCancellationImpl {
   void ProcessRenderAudio(rtc::ArrayView<const float> packed_render_audio);
   int ProcessCaptureAudio(AudioBuffer* audio, int stream_delay_ms);
 
-  int Enable(bool enable);
-  bool is_enabled() const;
 
   // Differences in clock speed on the primary and reverse streams can impact
   // the AEC performance. On the client-side, this could be seen when different
@@ -158,7 +156,6 @@ class EchoCancellationImpl {
   void AllocateRenderQueue();
   int Configure();
 
-  bool enabled_ = false;
   bool drift_compensation_enabled_;
   bool metrics_enabled_;
   SuppressionLevel suppression_level_;

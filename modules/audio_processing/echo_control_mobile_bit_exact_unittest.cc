@@ -29,7 +29,6 @@ void SetupComponent(int sample_rate_hz,
                     EchoControlMobileImpl* echo_control_mobile) {
   echo_control_mobile->Initialize(
       sample_rate_hz > 16000 ? 16000 : sample_rate_hz, 1, 1);
-  echo_control_mobile->Enable(true);
   echo_control_mobile->set_routing_mode(routing_mode);
   echo_control_mobile->enable_comfort_noise(comfort_noise_enabled);
 }

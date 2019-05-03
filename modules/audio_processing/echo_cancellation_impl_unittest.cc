@@ -21,10 +21,6 @@ TEST(EchoCancellationInternalTest, ExtendedFilter) {
   EchoCancellationImpl echo_canceller;
   echo_canceller.Initialize(AudioProcessing::kSampleRate32kHz, 2, 2, 2);
 
-  EXPECT_TRUE(echo_canceller.aec_core() == nullptr);
-
-  echo_canceller.Enable(true);
-
   AecCore* aec_core = echo_canceller.aec_core();
   ASSERT_TRUE(aec_core != NULL);
   // Disabled by default.
@@ -49,11 +45,6 @@ TEST(EchoCancellationInternalTest, ExtendedFilter) {
 TEST(EchoCancellationInternalTest, DelayAgnostic) {
   EchoCancellationImpl echo_canceller;
   echo_canceller.Initialize(AudioProcessing::kSampleRate32kHz, 1, 1, 1);
-
-  EXPECT_TRUE(echo_canceller.aec_core() == NULL);
-
-  EXPECT_EQ(0, echo_canceller.Enable(true));
-  EXPECT_TRUE(echo_canceller.is_enabled());
 
   AecCore* aec_core = echo_canceller.aec_core();
   ASSERT_TRUE(aec_core != NULL);
@@ -97,12 +88,6 @@ TEST(EchoCancellationInternalTest, InterfaceConfiguration) {
   }
 
   EchoCancellationImpl::Metrics metrics;
-  EXPECT_EQ(AudioProcessing::kNotEnabledError,
-            echo_canceller.GetMetrics(&metrics));
-
-  EXPECT_EQ(0, echo_canceller.Enable(true));
-  EXPECT_TRUE(echo_canceller.is_enabled());
-
   EXPECT_EQ(0, echo_canceller.enable_metrics(true));
   EXPECT_TRUE(echo_canceller.are_metrics_enabled());
   EXPECT_EQ(0, echo_canceller.enable_metrics(false));
@@ -113,26 +98,13 @@ TEST(EchoCancellationInternalTest, InterfaceConfiguration) {
   EXPECT_EQ(0, echo_canceller.enable_delay_logging(false));
   EXPECT_FALSE(echo_canceller.is_delay_logging_enabled());
 
-  EXPECT_EQ(0, echo_canceller.Enable(false));
-  EXPECT_FALSE(echo_canceller.is_enabled());
-
   int median = 0;
   int std = 0;
   float poor_fraction = 0;
   EXPECT_EQ(AudioProcessing::kNotEnabledError,
             echo_canceller.GetDelayMetrics(&median, &std, &poor_fraction));
 
-  EXPECT_EQ(0, echo_canceller.Enable(true));
-  EXPECT_TRUE(echo_canceller.is_enabled());
-  EXPECT_EQ(0, echo_canceller.Enable(false));
-  EXPECT_FALSE(echo_canceller.is_enabled());
-
-  EXPECT_EQ(0, echo_canceller.Enable(true));
-  EXPECT_TRUE(echo_canceller.is_enabled());
   EXPECT_TRUE(echo_canceller.aec_core() != NULL);
-  EXPECT_EQ(0, echo_canceller.Enable(false));
-  EXPECT_FALSE(echo_canceller.is_enabled());
-  EXPECT_FALSE(echo_canceller.aec_core() != NULL);
 }
 
 }  // namespace webrtc

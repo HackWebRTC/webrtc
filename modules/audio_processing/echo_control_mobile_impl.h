@@ -30,9 +30,6 @@ class EchoControlMobileImpl {
 
   ~EchoControlMobileImpl();
 
-  int Enable(bool enable);
-  bool is_enabled() const;
-
   // Recommended settings for particular audio routes. In general, the louder
   // the echo is expected to be, the higher this value should be set. The
   // preferred setting may vary from device to device.
@@ -74,8 +71,6 @@ class EchoControlMobileImpl {
   struct StreamProperties;
 
   int Configure();
-
-  bool enabled_ = false;
 
   RoutingMode routing_mode_;
   bool comfort_noise_enabled_;
