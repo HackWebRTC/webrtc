@@ -559,24 +559,13 @@ bool VerifyIceUfragPwdPresent(const SessionDescription* desc) {
 // Get the SCTP port out of a SessionDescription.
 // Return -1 if not found.
 int GetSctpPort(const SessionDescription* session_description) {
-  const cricket::DataContentDescription* data_desc =
-      GetFirstDataContentDescription(session_description);
+  const cricket::SctpDataContentDescription* data_desc =
+      GetFirstSctpDataContentDescription(session_description);
   RTC_DCHECK(data_desc);
   if (!data_desc) {
     return -1;
   }
-  std::string value;
-  cricket::DataCodec match_pattern(cricket::kGoogleSctpDataCodecPlType,
-                                   cricket::kGoogleSctpDataCodecName);
-  for (const cricket::DataCodec& codec : data_desc->codecs()) {
-    if (!codec.Matches(match_pattern)) {
-      continue;
-    }
-    if (codec.GetParam(cricket::kCodecParamPort, &value)) {
-      return rtc::FromString<int>(value);
-    }
-  }
-  return -1;
+  return data_desc->port();
 }
 
 // Returns true if |new_desc| requests an ICE restart (i.e., new ufrag/pwd).
@@ -2423,11 +2412,11 @@ RTCError PeerConnection::ApplyLocalDescription(
   const cricket::ContentInfo* data_content =
       GetFirstDataContent(local_description()->description());
   if (data_content) {
-    const cricket::DataContentDescription* data_desc =
-        data_content->media_description()->as_data();
-    if (absl::StartsWith(data_desc->protocol(),
-                         cricket::kMediaProtocolRtpPrefix)) {
-      UpdateLocalRtpDataChannels(data_desc->streams());
+    const cricket::RtpDataContentDescription* rtp_data_desc =
+        data_content->media_description()->as_rtp_data();
+    // rtp_data_desc will be null if this is an SCTP description.
+    if (rtp_data_desc) {
+      UpdateLocalRtpDataChannels(rtp_data_desc->streams());
     }
   }
 
@@ -2833,8 +2822,8 @@ RTCError PeerConnection::ApplyRemoteDescription(
       GetFirstAudioContentDescription(remote_description()->description());
   const cricket::VideoContentDescription* video_desc =
       GetFirstVideoContentDescription(remote_description()->description());
-  const cricket::DataContentDescription* data_desc =
-      GetFirstDataContentDescription(remote_description()->description());
+  const cricket::RtpDataContentDescription* rtp_data_desc =
+      GetFirstRtpDataContentDescription(remote_description()->description());
 
   // Check if the descriptions include streams, just in case the peer supports
   // MSID, but doesn't indicate so with "a=msid-semantic".
@@ -2887,12 +2876,10 @@ RTCError PeerConnection::ApplyRemoteDescription(
       }
     }
 
-    // Update the DataChannels with the information from the remote peer.
-    if (data_desc) {
-      if (absl::StartsWith(data_desc->protocol(),
-                           cricket::kMediaProtocolRtpPrefix)) {
-        UpdateRemoteRtpDataChannels(GetActiveStreams(data_desc));
-      }
+    // If this is an RTP data transport, update the DataChannels with the
+    // information from the remote peer.
+    if (rtp_data_desc) {
+      UpdateRemoteRtpDataChannels(GetActiveStreams(rtp_data_desc));
     }
 
     // Iterate new_streams and notify the observer about new MediaStreams.
