@@ -175,9 +175,8 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
                       cricket::IceMode ice_mode,
                       cricket::ConnectionRole conn_role,
                       rtc::scoped_refptr<rtc::RTCCertificate> cert) {
-    RTC_CHECK(protocol_type == cricket::MediaProtocolType::kSctp);
-    std::unique_ptr<cricket::SctpDataContentDescription> data(
-        new cricket::SctpDataContentDescription());
+    std::unique_ptr<cricket::DataContentDescription> data(
+        new cricket::DataContentDescription());
     data->set_rtcp_mux(true);
     description->AddContent(mid, protocol_type,
                             /*rejected=*/false, data.release());

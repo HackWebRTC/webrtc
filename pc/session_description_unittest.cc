@@ -9,7 +9,6 @@
  */
 #include "pc/session_description.h"
 
-#include "absl/memory/memory.h"
 #include "test/gtest.h"
 
 namespace cricket {
@@ -122,69 +121,11 @@ TEST(SessionDescriptionTest, AddContentTransfersExtmapAllowMixedSetting) {
             video_desc->extmap_allow_mixed_enum());
 
   // Session level setting overrides media level when new content is added.
-  MediaContentDescription* data_desc = new RtpDataContentDescription;
+  MediaContentDescription* data_desc = new DataContentDescription;
   data_desc->set_extmap_allow_mixed_enum(MediaContentDescription::kMedia);
   session_desc.AddContent("data", MediaProtocolType::kRtp, data_desc);
   EXPECT_EQ(MediaContentDescription::kSession,
             data_desc->extmap_allow_mixed_enum());
-}
-
-TEST(SessionDescriptionTest, DataContentDescriptionCanAddStream) {
-  auto description = absl::make_unique<DataContentDescription>();
-  // Adding a stream without setting protocol first should work.
-  description->AddLegacyStream(1234);
-  EXPECT_EQ(1UL, description->streams().size());
-}
-
-TEST(SessionDescriptionTest, DataContentDescriptionCopyWorks) {
-  auto description = absl::make_unique<RtpDataContentDescription>();
-  auto shim_description = description->as_data();
-  auto shim_copy = shim_description->Copy();
-  delete shim_copy;
-}
-
-TEST(SessionDescriptionTest, DataContentDescriptionCodecsCallableOnNull) {
-  auto shim_description = absl::make_unique<DataContentDescription>();
-  auto codec_list = shim_description->codecs();
-  EXPECT_EQ(0UL, codec_list.size());
-}
-
-TEST(SessionDescriptionTest, DataContentDescriptionSctpConferenceMode) {
-  auto description = absl::make_unique<SctpDataContentDescription>();
-  auto shim_description = description->as_data();
-  EXPECT_FALSE(shim_description->conference_mode());
-  shim_description->set_conference_mode(true);
-  EXPECT_TRUE(shim_description->conference_mode());
-}
-
-TEST(SessionDescriptionTest, DataContentDesriptionInSessionIsUnwrapped) {
-  auto description = absl::make_unique<DataContentDescription>();
-  // Create a DTLS object behind the shim.
-  description->set_protocol(kMediaProtocolUdpDtlsSctp);
-  SessionDescription session;
-  session.AddContent("name", MediaProtocolType::kSctp, description.release());
-  ContentInfo* content = &(session.contents()[0]);
-  ASSERT_TRUE(content);
-  ASSERT_TRUE(content->media_description()->type() == MEDIA_TYPE_DATA);
-  ASSERT_TRUE(content->media_description()->as_sctp());
-}
-
-TEST(SessionDescriptionTest,
-     DataContentDescriptionInfoSurvivesInstantiationAsSctp) {
-  auto description = absl::make_unique<DataContentDescription>();
-  description->set_rtcp_mux(true);
-  description->set_protocol(kMediaProtocolUdpDtlsSctp);
-  EXPECT_TRUE(description->rtcp_mux());
-}
-
-TEST(SessionDescriptionTest,
-     DataContentDescriptionStreamInfoSurvivesInstantiationAsRtp) {
-  auto description = absl::make_unique<DataContentDescription>();
-  StreamParams stream;
-  description->AddLegacyStream(1234);
-  EXPECT_EQ(1UL, description->streams().size());
-  description->set_protocol(kMediaProtocolDtlsSavpf);
-  EXPECT_EQ(1UL, description->streams().size());
 }
 
 }  // namespace cricket

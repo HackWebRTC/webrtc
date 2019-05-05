@@ -334,22 +334,22 @@ bool VideoCodec::ValidateCodecFormat() const {
   return true;
 }
 
-RtpDataCodec::RtpDataCodec(int id, const std::string& name)
+DataCodec::DataCodec(int id, const std::string& name)
     : Codec(id, name, kDataCodecClockrate) {}
 
-RtpDataCodec::RtpDataCodec() : Codec() {
+DataCodec::DataCodec() : Codec() {
   clockrate = kDataCodecClockrate;
 }
 
-RtpDataCodec::RtpDataCodec(const RtpDataCodec& c) = default;
-RtpDataCodec::RtpDataCodec(RtpDataCodec&& c) = default;
-RtpDataCodec& RtpDataCodec::operator=(const RtpDataCodec& c) = default;
-RtpDataCodec& RtpDataCodec::operator=(RtpDataCodec&& c) = default;
+DataCodec::DataCodec(const DataCodec& c) = default;
+DataCodec::DataCodec(DataCodec&& c) = default;
+DataCodec& DataCodec::operator=(const DataCodec& c) = default;
+DataCodec& DataCodec::operator=(DataCodec&& c) = default;
 
-std::string RtpDataCodec::ToString() const {
+std::string DataCodec::ToString() const {
   char buf[256];
   rtc::SimpleStringBuilder sb(buf);
-  sb << "RtpDataCodec[" << id << ":" << name << "]";
+  sb << "DataCodec[" << id << ":" << name << "]";
   return sb.str();
 }
 
