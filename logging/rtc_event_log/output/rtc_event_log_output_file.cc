@@ -9,6 +9,7 @@
  */
 
 #include <limits>
+#include <utility>
 
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
@@ -16,6 +17,17 @@
 #include "rtc_base/logging.h"
 
 namespace webrtc {
+
+namespace {
+
+FileWrapper FileWrapperFromPlatformFile(rtc::PlatformFile platform_file) {
+  if (platform_file == rtc::kInvalidPlatformFileValue)
+    return FileWrapper();
+
+  return FileWrapper(rtc::FdopenPlatformFileForWriting(platform_file));
+}
+
+}  // namespace
 
 // Together with the assumption of no single Write() would ever be called on
 // an input with length greater-than-or-equal-to (max(size_t) / 2), this
@@ -25,45 +37,33 @@ const size_t RtcEventLogOutputFile::kMaxReasonableFileSize =
     std::numeric_limits<size_t>::max() / 2;
 
 RtcEventLogOutputFile::RtcEventLogOutputFile(const std::string& file_name)
-    : RtcEventLogOutputFile(file_name, RtcEventLog::kUnlimitedOutput) {}
+    : RtcEventLogOutputFile(FileWrapper::OpenWriteOnly(file_name),
+                            RtcEventLog::kUnlimitedOutput) {}
 
 RtcEventLogOutputFile::RtcEventLogOutputFile(const std::string& file_name,
                                              size_t max_size_bytes)
 
-    // Unlike plain fopen, CreatePlatformFile takes care of filename utf8 ->
-    // wchar conversion on windows.
-    : RtcEventLogOutputFile(rtc::CreatePlatformFile(file_name),
+    // Unlike plain fopen, FileWrapper takes care of filename utf8 ->
+    // wchar conversion on Windows.
+    : RtcEventLogOutputFile(FileWrapper::OpenWriteOnly(file_name),
                             max_size_bytes) {}
 
-RtcEventLogOutputFile::RtcEventLogOutputFile(rtc::PlatformFile file)
-    : RtcEventLogOutputFile(file, RtcEventLog::kUnlimitedOutput) {}
+RtcEventLogOutputFile::RtcEventLogOutputFile(FILE* file, size_t max_size_bytes)
+    : RtcEventLogOutputFile(FileWrapper(file), max_size_bytes) {}
+
+RtcEventLogOutputFile::RtcEventLogOutputFile(FileWrapper file,
+                                             size_t max_size_bytes)
+    : max_size_bytes_(max_size_bytes), file_(std::move(file)) {
+  RTC_CHECK_LE(max_size_bytes_, kMaxReasonableFileSize);
+  if (!file_.is_open()) {
+    RTC_LOG(LS_ERROR) << "Invalid file. WebRTC event log not started.";
+  }
+}
 
 RtcEventLogOutputFile::RtcEventLogOutputFile(rtc::PlatformFile platform_file,
                                              size_t max_size_bytes)
-    : max_size_bytes_(max_size_bytes) {
-  RTC_CHECK_LE(max_size_bytes_, kMaxReasonableFileSize);
-
-  // Handle errors from the CreatePlatformFile call in above constructor.
-  if (platform_file == rtc::kInvalidPlatformFileValue) {
-    RTC_LOG(LS_ERROR) << "Invalid file. WebRTC event log not started.";
-    return;
-  }
-  file_ = rtc::FdopenPlatformFileForWriting(platform_file);
-  if (!file_) {
-    RTC_LOG(LS_ERROR) << "Can't open file. WebRTC event log not started.";
-    // Even though we failed to open a FILE*, the file is still open
-    // and needs to be closed.
-    if (!rtc::ClosePlatformFile(platform_file)) {
-      RTC_LOG(LS_ERROR) << "Can't close file.";
-    }
-  }
-}
-
-RtcEventLogOutputFile::~RtcEventLogOutputFile() {
-  if (file_) {
-    fclose(file_);
-  }
-}
+    : RtcEventLogOutputFile(FileWrapperFromPlatformFile(platform_file),
+                            max_size_bytes) {}
 
 bool RtcEventLogOutputFile::IsActive() const {
   return IsActiveInternal();
@@ -77,7 +77,7 @@ bool RtcEventLogOutputFile::Write(const std::string& output) {
 
   if (max_size_bytes_ == RtcEventLog::kUnlimitedOutput ||
       written_bytes_ + output.length() <= max_size_bytes_) {
-    if (fwrite(output.c_str(), 1, output.size(), file_) == output.size()) {
+    if (file_.Write(output.c_str(), output.size())) {
       written_bytes_ += output.size();
       return true;
     } else {
@@ -88,14 +88,13 @@ bool RtcEventLogOutputFile::Write(const std::string& output) {
   }
 
   // Failed, for one of above reasons. Close output file.
-  fclose(file_);
-  file_ = nullptr;
+  file_.Close();
   return false;
 }
 
 // Internal non-virtual method.
 bool RtcEventLogOutputFile::IsActiveInternal() const {
-  return file_ != nullptr;
+  return file_.is_open();
 }
 
 }  // namespace webrtc

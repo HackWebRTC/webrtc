@@ -17,6 +17,7 @@
 
 #include "api/rtc_event_log_output.h"
 #include "rtc_base/platform_file.h"  // Can't neatly forward PlatformFile.
+#include "rtc_base/system/file_wrapper.h"
 
 namespace webrtc {
 
@@ -28,17 +29,23 @@ class RtcEventLogOutputFile final : public RtcEventLogOutput {
   explicit RtcEventLogOutputFile(const std::string& file_name);
   RtcEventLogOutputFile(const std::string& file_name, size_t max_size_bytes);
 
-  // Unlimited/limited-size output file (by file handle).
-  explicit RtcEventLogOutputFile(rtc::PlatformFile file);
+  // Limited-size output file (by FILE*). This class takes ownership
+  // of the FILE*, and closes it on destruction.
+  RtcEventLogOutputFile(FILE* file, size_t max_size_bytes);
+
+  // TODO(bugs.webrtc.org/6463): Deprecated, delete together with the
+  // corresponding PeerConnection::StartRtcEventLog override.
   RtcEventLogOutputFile(rtc::PlatformFile file, size_t max_size_bytes);
 
-  ~RtcEventLogOutputFile() override;
+  ~RtcEventLogOutputFile() override = default;
 
   bool IsActive() const override;
 
   bool Write(const std::string& output) override;
 
  private:
+  RtcEventLogOutputFile(FileWrapper file, size_t max_size_bytes);
+
   // IsActive() can be called either from outside or from inside, but we don't
   // want to incur the overhead of a virtual function call if called from inside
   // some other function of this class.
@@ -47,7 +54,7 @@ class RtcEventLogOutputFile final : public RtcEventLogOutput {
   // Maximum size, or zero for no limit.
   const size_t max_size_bytes_;
   size_t written_bytes_{0};
-  FILE* file_{nullptr};
+  FileWrapper file_;
 };
 
 }  // namespace webrtc
