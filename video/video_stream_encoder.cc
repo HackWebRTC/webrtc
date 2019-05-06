@@ -64,29 +64,6 @@ const int64_t kFrameRateAvergingWindowSizeMs = (1000 / 30) * 90;
 
 const size_t kDefaultPayloadSize = 1440;
 
-// Initial limits for BALANCED degradation preference.
-int MinFps(int pixels) {
-  if (pixels <= 320 * 240) {
-    return 7;
-  } else if (pixels <= 480 * 270) {
-    return 10;
-  } else if (pixels <= 640 * 480) {
-    return 15;
-  } else {
-    return std::numeric_limits<int>::max();
-  }
-}
-
-int MaxFps(int pixels) {
-  if (pixels <= 320 * 240) {
-    return 10;
-  } else if (pixels <= 480 * 270) {
-    return 15;
-  } else {
-    return std::numeric_limits<int>::max();
-  }
-}
-
 uint32_t abs_diff(uint32_t a, uint32_t b) {
   return (a < b) ? b - a : a - b;
 }
@@ -1687,7 +1664,7 @@ void VideoStreamEncoder::AdaptDown(AdaptReason reason) {
   switch (degradation_preference_) {
     case DegradationPreference::BALANCED: {
       // Try scale down framerate, if lower.
-      int fps = MinFps(last_frame_info_->pixel_count());
+      int fps = balanced_settings_.MinFps(last_frame_info_->pixel_count());
       if (source_proxy_->RestrictFramerate(fps)) {
         GetAdaptCounter().IncrementFramerate(reason);
         break;
@@ -1763,7 +1740,7 @@ void VideoStreamEncoder::AdaptUp(AdaptReason reason) {
   switch (degradation_preference_) {
     case DegradationPreference::BALANCED: {
       // Try scale up framerate, if higher.
-      int fps = MaxFps(last_frame_info_->pixel_count());
+      int fps = balanced_settings_.MaxFps(last_frame_info_->pixel_count());
       if (source_proxy_->IncreaseFramerate(fps)) {
         GetAdaptCounter().DecrementFramerate(reason, fps);
         // Reset framerate in case of fewer fps steps down than up.

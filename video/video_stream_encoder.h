@@ -30,6 +30,7 @@
 #include "modules/video_coding/video_coding_impl.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
+#include "rtc_base/experiments/balanced_degradation_settings.h"
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/rate_statistics.h"
@@ -280,6 +281,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
       RTC_GUARDED_BY(&encoder_queue_);
   // Set depending on degradation preferences.
   DegradationPreference degradation_preference_ RTC_GUARDED_BY(&encoder_queue_);
+
+  BalancedDegradationSettings balanced_settings_;
 
   struct AdaptationRequest {
     // The pixel count produced by the source at the time of the adaptation.

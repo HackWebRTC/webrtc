@@ -99,6 +99,18 @@ rtc_static_library("normalize_simulcast_size_experiment") {
   ]
 }
 
+rtc_static_library("balanced_degradation_settings") {
+  sources = [
+    "balanced_degradation_settings.cc",
+    "balanced_degradation_settings.h",
+  ]
+  deps = [
+    ":field_trial_parser",
+    "../:rtc_base_approved",
+    "../../system_wrappers:field_trial",
+  ]
+}
+
 rtc_static_library("cpu_speed_experiment") {
   sources = [
     "cpu_speed_experiment.cc",
@@ -169,6 +181,7 @@ if (rtc_include_tests) {
     testonly = true
 
     sources = [
+      "balanced_degradation_settings_unittest.cc",
       "cpu_speed_experiment_unittest.cc",
       "field_trial_list_unittest.cc",
       "field_trial_parser_unittest.cc",
@@ -181,6 +194,7 @@ if (rtc_include_tests) {
       "rtt_mult_experiment_unittest.cc",
     ]
     deps = [
+      ":balanced_degradation_settings",
       ":cpu_speed_experiment",
       ":field_trial_parser",
       ":keyframe_interval_settings_experiment",

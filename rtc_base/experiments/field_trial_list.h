@@ -138,7 +138,7 @@ struct TypedFieldTrialListWrapper : FieldTrialListWrapper {
     sink_(struct_to_write, list_[index]);
   }
 
-  FieldTrialListBase* GetList() { return &list_; }
+  FieldTrialListBase* GetList() override { return &list_; }
 
  private:
   FieldTrialList<T> list_;
