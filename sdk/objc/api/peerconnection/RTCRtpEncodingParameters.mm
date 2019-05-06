@@ -22,7 +22,6 @@
 @synthesize numTemporalLayers = _numTemporalLayers;
 @synthesize scaleResolutionDownBy = _scaleResolutionDownBy;
 @synthesize ssrc = _ssrc;
-@synthesize bitratePriority = _bitratePriority;
 @synthesize networkPriority = _networkPriority;
 
 - (instancetype)init {
@@ -57,7 +56,6 @@
     if (nativeParameters.ssrc) {
       _ssrc = [NSNumber numberWithUnsignedLong:*nativeParameters.ssrc];
     }
-    _bitratePriority = nativeParameters.bitrate_priority;
     _networkPriority = nativeParameters.network_priority;
   }
   return self;
@@ -88,7 +86,6 @@
   if (_ssrc != nil) {
     parameters.ssrc = absl::optional<uint32_t>(_ssrc.unsignedLongValue);
   }
-  parameters.bitrate_priority = _bitratePriority;
   parameters.network_priority = _networkPriority;
   return parameters;
 }
