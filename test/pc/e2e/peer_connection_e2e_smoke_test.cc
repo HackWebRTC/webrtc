@@ -119,6 +119,10 @@ TEST(PeerConnectionE2EQualityTestSmokeTest, MAYBE_RunWithEmulatedNetwork) {
                                                        bob_network));
 
   RunParams run_params(TimeDelta::seconds(7));
+  run_params.video_codec_name = cricket::kVp9CodecName;
+  run_params.video_codec_required_params = {{"profile-id", "0"}};
+  run_params.use_flex_fec = true;
+  run_params.use_ulp_fec = true;
   run_params.video_encoder_bitrate_multiplier = 1.1;
   fixture->Run(run_params);
 

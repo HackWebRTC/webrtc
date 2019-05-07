@@ -10,6 +10,7 @@
 #ifndef API_TEST_PEERCONNECTION_QUALITY_TEST_FIXTURE_H_
 #define API_TEST_PEERCONNECTION_QUALITY_TEST_FIXTURE_H_
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
@@ -30,6 +31,7 @@
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
+#include "media/base/media_constants.h"
 #include "rtc_base/network.h"
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/ssl_certificate.h"
@@ -184,6 +186,21 @@ class PeerConnectionE2EQualityTestFixture {
     // it will be shut downed.
     TimeDelta run_duration;
 
+    // Next two fields are used to specify concrete video codec, that should be
+    // used in the test. Video code will be negotiated in SDP during offer/
+    // answer exchange.
+    // Video codec name. You can find valid names in
+    // media/base/media_constants.h
+    std::string video_codec_name = cricket::kVp8CodecName;
+    // Map of parameters, that have to be specified on SDP codec. Each parameter
+    // is described by key and value. Codec parameters will match the specified
+    // map if and only if for each key from |video_codec_required_params| there
+    // will be a parameter with name equal to this key and parameter value will
+    // be equal to the value from |video_codec_required_params| for this key.
+    // If empty then only name will be used to match the codec.
+    std::map<std::string, std::string> video_codec_required_params;
+    bool use_ulp_fec = false;
+    bool use_flex_fec = false;
     // Specifies how much video encoder target bitrate should be different than
     // target bitrate, provided by WebRTC stack. Must be greater then 0. Can be
     // used to emulate overshooting of video encoders. This multiplier will

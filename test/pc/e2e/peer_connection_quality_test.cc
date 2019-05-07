@@ -22,6 +22,7 @@
 #include "api/units/time_delta.h"
 #include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
+#include "pc/sdp_utils.h"
 #include "pc/test/mock_peer_connection_observers.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/gunit.h"
@@ -29,6 +30,7 @@
 #include "system_wrappers/include/cpu_info.h"
 #include "test/pc/e2e/analyzer/audio/default_audio_quality_analyzer.h"
 #include "test/pc/e2e/analyzer/video/default_video_quality_analyzer.h"
+#include "test/pc/e2e/sdp/sdp_changer.h"
 #include "test/pc/e2e/stats_poller.h"
 #include "test/testsupport/file_utils.h"
 
@@ -318,8 +320,8 @@ void PeerConnectionE2EQualityTest::Run(
   // Setup call.
   signaling_thread->Invoke<void>(
       RTC_FROM_HERE,
-      rtc::Bind(&PeerConnectionE2EQualityTest::SetupCallOnSignalingThread,
-                this));
+      rtc::Bind(&PeerConnectionE2EQualityTest::SetupCallOnSignalingThread, this,
+                run_params));
   {
     rtc::CritScope crit(&lock_);
     start_time_ = Now();
@@ -513,7 +515,8 @@ void PeerConnectionE2EQualityTest::OnTrackCallback(
   output_video_sinks_.push_back(std::move(video_sink));
 }
 
-void PeerConnectionE2EQualityTest::SetupCallOnSignalingThread() {
+void PeerConnectionE2EQualityTest::SetupCallOnSignalingThread(
+    const RunParams& run_params) {
   // We need receive-only transceivers for Bob's media stream, so there will
   // be media section in SDP for that streams in Alice's offer, because it is
   // forbidden to add new media sections in answer in Unified Plan.
@@ -533,6 +536,9 @@ void PeerConnectionE2EQualityTest::SetupCallOnSignalingThread() {
   // Then add media for Alice and Bob
   alice_video_sources_ = MaybeAddMedia(alice_.get());
   bob_video_sources_ = MaybeAddMedia(bob_.get());
+
+  SetPeerCodecPreferences(alice_.get(), run_params);
+  SetPeerCodecPreferences(bob_.get(), run_params);
 
   SetupCall();
 }
@@ -629,6 +635,24 @@ void PeerConnectionE2EQualityTest::MaybeAddAudio(TestPeer* peer) {
   rtc::scoped_refptr<AudioTrackInterface> track =
       peer->pc_factory()->CreateAudioTrack(*audio_config.stream_label, source);
   peer->AddTrack(track, {*audio_config.stream_label});
+}
+
+void PeerConnectionE2EQualityTest::SetPeerCodecPreferences(
+    TestPeer* peer,
+    const RunParams& run_params) {
+  std::vector<RtpCodecCapability> video_capabilities = FilterCodecCapabilities(
+      run_params.video_codec_name, run_params.video_codec_required_params,
+      run_params.use_ulp_fec, run_params.use_flex_fec,
+      peer->pc_factory()
+          ->GetRtpSenderCapabilities(cricket::MediaType::MEDIA_TYPE_VIDEO)
+          .codecs);
+
+  // Set codecs for transceivers
+  for (auto transceiver : peer->pc()->GetTransceivers()) {
+    if (transceiver->media_type() == cricket::MediaType::MEDIA_TYPE_VIDEO) {
+      transceiver->SetCodecPreferences(video_capabilities);
+    }
+  }
 }
 
 void PeerConnectionE2EQualityTest::SetupCall() {

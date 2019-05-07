@@ -249,6 +249,7 @@ if (rtc_include_tests) {
       ":default_audio_quality_analyzer",
       ":default_video_quality_analyzer",
       ":peer_connection_quality_test_params",
+      ":sdp_changer",
       ":single_process_encoded_image_data_injector",
       ":stats_poller",
       ":test_peer",
@@ -265,6 +266,7 @@ if (rtc_include_tests) {
       "../../../logging:rtc_event_log_api",
       "../../../logging:rtc_event_log_impl_output",
       "../../../pc:pc_test_utils",
+      "../../../pc:peerconnection",
       "../../../rtc_base",
       "../../../rtc_base:gunit_helpers",
       "../../../rtc_base:rtc_base_approved",
@@ -474,5 +476,19 @@ rtc_source_set("network_quality_metrics_reporter") {
     "../../../api:network_emulation_manager_api",
     "../../../api:peer_connection_quality_test_fixture_api",
     "../../../rtc_base:rtc_event",
+  ]
+}
+
+rtc_source_set("sdp_changer") {
+  testonly = true
+  sources = [
+    "sdp/sdp_changer.cc",
+    "sdp/sdp_changer.h",
+  ]
+  deps = [
+    "../../../api:libjingle_peerconnection_api",
+    "../../../media:rtc_media_base",
+    "../../../rtc_base:stringutils",
+    "//third_party/abseil-cpp/absl/strings:strings",
   ]
 }
