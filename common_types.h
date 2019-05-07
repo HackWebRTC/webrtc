@@ -16,16 +16,6 @@
 
 namespace webrtc {
 
-// Callback, used to notify an observer whenever new rates have been estimated.
-class BitrateStatisticsObserver {
- public:
-  virtual ~BitrateStatisticsObserver() {}
-
-  virtual void Notify(uint32_t total_bitrate_bps,
-                      uint32_t retransmit_bitrate_bps,
-                      uint32_t ssrc) = 0;
-};
-
 struct FrameCounts {
   FrameCounts() : key_frames(0), delta_frames(0) {}
   int key_frames;
@@ -38,27 +28,6 @@ class FrameCountObserver {
   virtual ~FrameCountObserver() {}
   virtual void FrameCountUpdated(const FrameCounts& frame_counts,
                                  uint32_t ssrc) = 0;
-};
-
-// Callback, used to notify an observer whenever the send-side delay is updated.
-class SendSideDelayObserver {
- public:
-  virtual ~SendSideDelayObserver() {}
-  virtual void SendSideDelayUpdated(int avg_delay_ms,
-                                    int max_delay_ms,
-                                    uint32_t ssrc) = 0;
-};
-
-// Callback, used to notify an observer whenever a packet is sent to the
-// transport.
-// TODO(asapersson): This class will remove the need for SendSideDelayObserver.
-// Remove SendSideDelayObserver once possible.
-class SendPacketObserver {
- public:
-  virtual ~SendPacketObserver() {}
-  virtual void OnSendPacket(uint16_t packet_id,
-                            int64_t capture_time_ms,
-                            uint32_t ssrc) = 0;
 };
 
 // Callback, used to notify an observer when the overhead per packet
