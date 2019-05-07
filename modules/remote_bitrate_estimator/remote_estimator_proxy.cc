@@ -40,7 +40,11 @@ RemoteEstimatorProxy::RemoteEstimatorProxy(
       media_ssrc_(0),
       feedback_packet_count_(0),
       send_interval_ms_(send_config_.default_interval->ms()),
-      send_periodic_feedback_(true) {}
+      send_periodic_feedback_(true) {
+  RTC_LOG(LS_INFO)
+      << "Maximum interval between transport feedback RTCP messages (ms): "
+      << send_config_.max_interval->ms();
+}
 
 RemoteEstimatorProxy::~RemoteEstimatorProxy() {}
 
