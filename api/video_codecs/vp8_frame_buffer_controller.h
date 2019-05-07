@@ -112,7 +112,7 @@ class Vp8FrameBufferController {
   //  2. The frame to be encoded is requested to be a keyframe
   //  3. The encoded detected a large overshoot and decided to drop and then
   //     re-encode the image at a low bitrate. In this case the encoder should
-  //     call OnEncodeDone() once with size = 0 to indicate drop, and then call
+  //     call OnFrameDropped() once to indicate drop, and then call
   //     OnEncodeDone() again when the frame has actually been encoded.
   virtual bool SupportsEncoderFrameDropping(size_t stream_index) const = 0;
 
