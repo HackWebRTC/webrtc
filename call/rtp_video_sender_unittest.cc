@@ -433,6 +433,8 @@ TEST(RtpVideoSenderTest, DoesNotRetrasmitAckedPackets) {
   EXPECT_EQ(
       EncodedImageCallback::Result::OK,
       test.router()->OnEncodedImage(encoded_image, nullptr, nullptr).error);
+  const int64_t send_time_ms = test.clock().TimeInMilliseconds();
+
   test.clock().AdvanceTimeMilliseconds(33);
 
   ASSERT_TRUE(event.Wait(kTimeoutMs));
@@ -473,11 +475,13 @@ TEST(RtpVideoSenderTest, DoesNotRetrasmitAckedPackets) {
                                           transport_sequence_numbers[0]);
   received_packet_feedback.rtp_sequence_number = rtp_sequence_numbers[0];
   received_packet_feedback.ssrc = kSsrc1;
+  received_packet_feedback.send_time_ms = send_time_ms;
 
   PacketFeedback lost_packet_feedback(PacketFeedback::kNotReceived,
                                       transport_sequence_numbers[1]);
   lost_packet_feedback.rtp_sequence_number = rtp_sequence_numbers[1];
   lost_packet_feedback.ssrc = kSsrc1;
+  lost_packet_feedback.send_time_ms = send_time_ms;
   std::vector<PacketFeedback> feedback_vector = {received_packet_feedback,
                                                  lost_packet_feedback};
 

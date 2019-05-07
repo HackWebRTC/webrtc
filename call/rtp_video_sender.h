@@ -146,7 +146,7 @@ class RtpVideoSender : public RtpVideoSenderInterface,
       rtc::ArrayView<const uint16_t> sequence_numbers) const override;
 
   // From PacketFeedbackObserver.
-  void OnPacketAdded(uint32_t ssrc, uint16_t seq_num) override;
+  void OnPacketAdded(uint32_t ssrc, uint16_t seq_num) override {}
   void OnPacketFeedbackVector(
       const std::vector<PacketFeedback>& packet_feedback_vector) override;
 
@@ -191,7 +191,6 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   uint32_t protection_bitrate_bps_;
   uint32_t encoder_target_rate_bps_;
 
-  std::unordered_set<uint16_t> feedback_packet_seq_num_set_;
   std::vector<bool> loss_mask_vector_ RTC_GUARDED_BY(crit_);
 
   std::vector<FrameCounts> frame_counts_ RTC_GUARDED_BY(crit_);

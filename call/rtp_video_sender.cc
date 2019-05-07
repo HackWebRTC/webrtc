@@ -49,10 +49,6 @@ RtpStreamSender::~RtpStreamSender() = default;
 
 namespace {
 static const int kMinSendSidePacketHistorySize = 600;
-// Assume an average video stream has around 3 packets per frame (1 mbps / 30
-// fps / 1400B) A sequence number set with size 5500 will be able to store
-// packet sequence number for at least last 60 seconds.
-static const int kSendSideSeqNumSetMaxSize = 5500;
 // We don't do MTU discovery, so assume that we have the standard ethernet MTU.
 static const size_t kPathMTU = 1500;
 
@@ -780,30 +776,22 @@ int RtpVideoSender::ProtectionRequest(const FecProtectionParams* delta_params,
   return 0;
 }
 
-void RtpVideoSender::OnPacketAdded(uint32_t ssrc, uint16_t seq_num) {
-  const auto ssrcs = rtp_config_.ssrcs;
-  if (std::find(ssrcs.begin(), ssrcs.end(), ssrc) != ssrcs.end()) {
-    feedback_packet_seq_num_set_.insert(seq_num);
-    if (feedback_packet_seq_num_set_.size() > kSendSideSeqNumSetMaxSize) {
-      RTC_LOG(LS_WARNING) << "Feedback packet sequence number set exceed it's "
-                             "max size', will get reset.";
-      feedback_packet_seq_num_set_.clear();
-    }
-  }
-}
-
 void RtpVideoSender::OnPacketFeedbackVector(
     const std::vector<PacketFeedback>& packet_feedback_vector) {
   if (fec_controller_->UseLossVectorMask()) {
     rtc::CritScope cs(&crit_);
     for (const PacketFeedback& packet : packet_feedback_vector) {
-      const bool lost = packet.arrival_time_ms == PacketFeedback::kNotReceived;
-      // Lost feedbacks are not considered to be lost packets.
-      auto it = feedback_packet_seq_num_set_.find(packet.sequence_number);
-      if (it != feedback_packet_seq_num_set_.end()) {
-        loss_mask_vector_.push_back(lost);
-        feedback_packet_seq_num_set_.erase(it);
+      if (packet.send_time_ms == PacketFeedback::kNoSendTime || !packet.ssrc ||
+          std::find(rtp_config_.ssrcs.begin(), rtp_config_.ssrcs.end(),
+                    *packet.ssrc) == rtp_config_.ssrcs.end()) {
+        // If packet send time is missing, the feedback for this packet has
+        // probably already been processed, so ignore it.
+        // If packet does not belong to a registered media ssrc, we are also
+        // not interested in it.
+        continue;
       }
+      loss_mask_vector_.push_back(packet.arrival_time_ms ==
+                                  PacketFeedback::kNotReceived);
     }
   }
 
