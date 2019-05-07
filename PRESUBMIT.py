@@ -498,9 +498,16 @@ def CheckNoStreamUsageIsAdded(input_api, output_api,
       r'// no-presubmit-check TODO\(webrtc:8982\)')
   file_filter = lambda x: (input_api.FilterSourceFile(x)
                            and source_file_filter(x))
+
+  def _IsException(file_path):
+    is_test = any(file_path.endswith(x) for x in ['_test.cc', '_tests.cc',
+                                                  '_unittest.cc',
+                                                  '_unittests.cc'])
+    return file_path.startswith('examples') or is_test
+
   for f in input_api.AffectedSourceFiles(file_filter):
-    # Usage of stringstream is allowed under examples/.
-    if f.LocalPath() == 'PRESUBMIT.py' or f.LocalPath().startswith('examples'):
+    # Usage of stringstream is allowed under examples/ and in tests.
+    if f.LocalPath() == 'PRESUBMIT.py' or _IsException(f.LocalPath()):
       continue
     for line_num, line in f.ChangedContents():
       if ((include_re.search(line) or usage_re.search(line))
