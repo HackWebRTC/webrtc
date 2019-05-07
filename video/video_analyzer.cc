@@ -81,6 +81,10 @@ VideoAnalyzer::VideoAnalyzer(
       selected_stream_(selected_stream),
       selected_sl_(selected_sl),
       selected_tl_(selected_tl),
+      freeze_count_(0),
+      total_freezes_duration_ms_(0),
+      total_frames_duration_ms_(0),
+      sum_squared_frame_durations_(0),
       last_fec_bytes_(0),
       frames_to_process_(duration_frames),
       frames_recorded_(0),
@@ -509,6 +513,10 @@ void VideoAnalyzer::PollStats() {
     if (receive_stats.width > 0 && receive_stats.height > 0) {
       pixels_.AddSample(receive_stats.width * receive_stats.height);
     }
+    freeze_count_ = receive_stats.freeze_count;
+    total_freezes_duration_ms_ = receive_stats.total_freezes_duration_ms;
+    total_frames_duration_ms_ = receive_stats.total_frames_duration_ms;
+    sum_squared_frame_durations_ = receive_stats.sum_squared_frame_durations;
   }
 
   if (audio_receive_stream_ != nullptr) {
@@ -605,10 +613,6 @@ void VideoAnalyzer::PrintResults() {
     frames_left = frames_.size();
   }
   rtc::CritScope crit(&comparison_lock_);
-  // Record the time from the last freeze until the last rendered frame to
-  // ensure we cover the full timespan of the session. Otherwise the metric
-  // would penalize an early freeze followed by no freezes until the end.
-  time_between_freezes_.AddSample(last_render_time_ - last_unfreeze_time_ms_);
   PrintResult("psnr", psnr_, " dB");
   PrintResult("ssim", ssim_, " score");
   PrintResult("sender_time", sender_time_, " ms");
@@ -621,8 +625,52 @@ void VideoAnalyzer::PrintResults() {
   PrintResult("media_bitrate", media_bitrate_bps_, " bps");
   PrintResult("fec_bitrate", fec_bitrate_bps_, " bps");
   PrintResult("send_bandwidth", send_bandwidth_bps_, " bps");
-  PrintResult("time_between_freezes", time_between_freezes_, " ms");
   PrintResult("pixels_per_frame", pixels_, " px");
+
+  // Record the time from the last freeze until the last rendered frame to
+  // ensure we cover the full timespan of the session. Otherwise the metric
+  // would penalize an early freeze followed by no freezes until the end.
+  time_between_freezes_.AddSample(last_render_time_ - last_unfreeze_time_ms_);
+
+  // Freeze metrics.
+  PrintResult("time_between_freezes", time_between_freezes_, " ms");
+
+  const double freeze_count_double = static_cast<double>(freeze_count_);
+  const double total_freezes_duration_ms_double =
+      static_cast<double>(total_freezes_duration_ms_);
+  const double total_frames_duration_ms_double =
+      static_cast<double>(total_frames_duration_ms_);
+
+  if (total_frames_duration_ms_double > 0) {
+    test::PrintResult(
+        "freeze_duration_ratio", "", test_label_.c_str(),
+        total_freezes_duration_ms_double / total_frames_duration_ms_double, "",
+        false);
+    RTC_DCHECK_LE(total_freezes_duration_ms_double,
+                  total_frames_duration_ms_double);
+
+    constexpr double ms_per_minute = 60 * 1000;
+    const double total_frames_duration_min =
+        total_frames_duration_ms_double / ms_per_minute;
+    if (total_frames_duration_min > 0) {
+      test::PrintResult("freeze_count_per_minute", "", test_label_.c_str(),
+                        freeze_count_double / total_frames_duration_min,
+                        "freezes", false);
+    }
+  }
+
+  test::PrintResult("average_freeze_duration", "", test_label_.c_str(),
+                    freeze_count_double > 0
+                        ? total_freezes_duration_ms_double / freeze_count_double
+                        : 0,
+                    "ms", false);
+
+  if (1000 * sum_squared_frame_durations_ > 0) {
+    test::PrintResult(
+        "harmonic_frame_rate", "", test_label_.c_str(),
+        total_frames_duration_ms_double / (1000 * sum_squared_frame_durations_),
+        "", false);
+  }
 
   if (worst_frame_) {
     test::PrintResult("min_psnr", "", test_label_.c_str(), worst_frame_->psnr,

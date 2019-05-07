@@ -230,13 +230,18 @@ class VideoAnalyzer : public PacketReceiver,
   Statistics fec_bitrate_bps_ RTC_GUARDED_BY(comparison_lock_);
   Statistics send_bandwidth_bps_ RTC_GUARDED_BY(comparison_lock_);
   Statistics memory_usage_ RTC_GUARDED_BY(comparison_lock_);
-  Statistics time_between_freezes_ RTC_GUARDED_BY(comparison_lock_);
   Statistics audio_expand_rate_ RTC_GUARDED_BY(comparison_lock_);
   Statistics audio_accelerate_rate_ RTC_GUARDED_BY(comparison_lock_);
   Statistics audio_jitter_buffer_ms_ RTC_GUARDED_BY(comparison_lock_);
   Statistics pixels_ RTC_GUARDED_BY(comparison_lock_);
   // Rendered frame with worst PSNR is saved for further analysis.
   absl::optional<FrameWithPsnr> worst_frame_ RTC_GUARDED_BY(comparison_lock_);
+  // Freeze metrics.
+  Statistics time_between_freezes_ RTC_GUARDED_BY(comparison_lock_);
+  uint32_t freeze_count_ RTC_GUARDED_BY(comparison_lock_);
+  uint32_t total_freezes_duration_ms_ RTC_GUARDED_BY(comparison_lock_);
+  uint32_t total_frames_duration_ms_ RTC_GUARDED_BY(comparison_lock_);
+  double sum_squared_frame_durations_ RTC_GUARDED_BY(comparison_lock_);
 
   size_t last_fec_bytes_;
 
