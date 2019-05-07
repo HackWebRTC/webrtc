@@ -56,15 +56,15 @@ int EncoderSimulcastProxy::RegisterEncodeCompleteCallback(
 }
 
 void EncoderSimulcastProxy::SetRates(const RateControlParameters& parameters) {
-  return encoder_->SetRates(parameters);
+  encoder_->SetRates(parameters);
 }
 
 void EncoderSimulcastProxy::OnPacketLossRateUpdate(float packet_loss_rate) {
-  return encoder_->OnPacketLossRateUpdate(packet_loss_rate);
+  encoder_->OnPacketLossRateUpdate(packet_loss_rate);
 }
 
 void EncoderSimulcastProxy::OnRttUpdate(int64_t rtt_ms) {
-  return encoder_->OnRttUpdate(rtt_ms);
+  encoder_->OnRttUpdate(rtt_ms);
 }
 
 void EncoderSimulcastProxy::OnLossNotification(
