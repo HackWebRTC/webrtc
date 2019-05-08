@@ -636,4 +636,79 @@ TEST_F(RtpPacketHistoryTest, CullWithAcks) {
   EXPECT_FALSE(hist_.GetPacketState(To16u(kStartSeqNum + 2)).has_value());
 }
 
+TEST_F(RtpPacketHistoryTest, SetsPendingTransmissionState) {
+  const int64_t kRttMs = RtpPacketHistory::kMinPacketDurationMs * 2;
+  hist_.SetRtt(kRttMs);
+
+  // Set size to remove old packets as soon as possible.
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 1);
+
+  // Add a packet, without send time, indicating it's in pacer queue.
+  hist_.PutRtpPacket(CreateRtpPacket(kStartSeqNum), kAllowRetransmission,
+                     /* send_time_ms = */ absl::nullopt);
+
+  // Packet is pending transmission.
+  absl::optional<RtpPacketHistory::PacketState> packet_state =
+      hist_.GetPacketState(kStartSeqNum);
+  ASSERT_TRUE(packet_state.has_value());
+  EXPECT_TRUE(packet_state->pending_transmission);
+
+  // Packet sent, state should be back to non-pending.
+  EXPECT_TRUE(hist_.GetPacketAndSetSendTime(kStartSeqNum));
+  packet_state = hist_.GetPacketState(kStartSeqNum);
+  ASSERT_TRUE(packet_state.has_value());
+  EXPECT_FALSE(packet_state->pending_transmission);
+
+  // Time for a retransmission.
+  fake_clock_.AdvanceTimeMilliseconds(kRttMs);
+  EXPECT_TRUE(hist_.SetPendingTransmission(kStartSeqNum));
+  packet_state = hist_.GetPacketState(kStartSeqNum);
+  ASSERT_TRUE(packet_state.has_value());
+  EXPECT_TRUE(packet_state->pending_transmission);
+
+  // Packet sent.
+  EXPECT_TRUE(hist_.GetPacketAndSetSendTime(kStartSeqNum));
+  // Too early for retransmission.
+  ASSERT_FALSE(hist_.GetPacketState(kStartSeqNum).has_value());
+
+  // Retransmission allowed again, it's not in a pending state.
+  fake_clock_.AdvanceTimeMilliseconds(kRttMs);
+  packet_state = hist_.GetPacketState(kStartSeqNum);
+  ASSERT_TRUE(packet_state.has_value());
+  EXPECT_FALSE(packet_state->pending_transmission);
+}
+
+TEST_F(RtpPacketHistoryTest, DontRemovePendingTransmissions) {
+  const int64_t kRttMs = RtpPacketHistory::kMinPacketDurationMs * 2;
+  const int64_t kPacketTimeoutMs =
+      kRttMs * RtpPacketHistory::kMinPacketDurationRtt;
+
+  // Set size to remove old packets as soon as possible.
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 1);
+  hist_.SetRtt(kRttMs);
+
+  // Add a sent packet.
+  hist_.PutRtpPacket(CreateRtpPacket(kStartSeqNum), kAllowRetransmission,
+                     fake_clock_.TimeInMilliseconds());
+
+  // Advance clock to just before packet timeout.
+  fake_clock_.AdvanceTimeMilliseconds(kPacketTimeoutMs - 1);
+  // Mark as enqueued in pacer.
+  EXPECT_TRUE(hist_.SetPendingTransmission(kStartSeqNum));
+
+  // Advance clock to where packet would have timed out. It should still
+  // be there and pending.
+  fake_clock_.AdvanceTimeMilliseconds(1);
+  absl::optional<RtpPacketHistory::PacketState> packet_state =
+      hist_.GetPacketState(kStartSeqNum);
+  ASSERT_TRUE(packet_state.has_value());
+  EXPECT_TRUE(packet_state->pending_transmission);
+
+  // Packet sent. Now it can be removed.
+  EXPECT_TRUE(hist_.GetPacketAndSetSendTime(kStartSeqNum));
+  hist_.SetRtt(kRttMs);  // Force culling of old packets.
+  packet_state = hist_.GetPacketState(kStartSeqNum);
+  ASSERT_FALSE(packet_state.has_value());
+}
+
 }  // namespace webrtc

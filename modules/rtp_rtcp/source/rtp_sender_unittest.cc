@@ -797,23 +797,28 @@ TEST_P(RtpSenderTest, TrafficSmoothingRetransmits) {
   EXPECT_TRUE(rtp_sender_->SendToNetwork(std::move(packet),
                                          kAllowRetransmission,
                                          RtpPacketSender::kNormalPriority));
+  // Immediately process send bucket and send packet.
+  rtp_sender_->TimeToSendPacket(kSsrc, kSeqNum, capture_time_ms, false,
+                                PacedPacketInfo());
+  EXPECT_EQ(1, transport_.packets_sent());
 
-  EXPECT_EQ(0, transport_.packets_sent());
-
-  EXPECT_CALL(mock_paced_sender_, InsertPacket(RtpPacketSender::kNormalPriority,
-                                               kSsrc, kSeqNum, _, _, _));
-
+  // Retransmit packet.
   const int kStoredTimeInMs = 100;
   fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
 
+  EXPECT_CALL(mock_paced_sender_, InsertPacket(RtpPacketSender::kNormalPriority,
+                                               kSsrc, kSeqNum, _, _, _));
+  EXPECT_CALL(mock_rtc_event_log_,
+              LogProxy(SameRtcEventTypeAs(RtcEvent::Type::RtpPacketOutgoing)));
+
   EXPECT_EQ(static_cast<int>(packet_size), rtp_sender_->ReSendPacket(kSeqNum));
-  EXPECT_EQ(0, transport_.packets_sent());
+  EXPECT_EQ(1, transport_.packets_sent());
 
   rtp_sender_->TimeToSendPacket(kSsrc, kSeqNum, capture_time_ms, false,
                                 PacedPacketInfo());
 
   // Process send bucket. Packet should now be sent.
-  EXPECT_EQ(1, transport_.packets_sent());
+  EXPECT_EQ(2, transport_.packets_sent());
   EXPECT_EQ(packet_size, transport_.last_sent_packet().size());
 
   webrtc::RTPHeader rtp_header;

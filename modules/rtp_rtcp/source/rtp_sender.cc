@@ -451,8 +451,8 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
   // don't retransmit too often.
   absl::optional<RtpPacketHistory::PacketState> stored_packet =
       packet_history_.GetPacketState(packet_id);
-  if (!stored_packet) {
-    // Packet not found.
+  if (!stored_packet || stored_packet->pending_transmission) {
+    // Packet not found or already queued for retransmission, ignore.
     return 0;
   }
 
@@ -468,6 +468,12 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
   }
 
   if (paced_sender_) {
+    // Mark packet as being in pacer queue again, to prevent duplicates.
+    if (!packet_history_.SetPendingTransmission(packet_id)) {
+      // Packet has already been removed from history, return early.
+      return 0;
+    }
+
     // Convert from TickTime to Clock since capture_time_ms is based on
     // TickTime.
     int64_t corrected_capture_tims_ms =

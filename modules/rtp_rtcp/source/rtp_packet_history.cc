@@ -118,6 +118,10 @@ void RtpPacketHistory::PutRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
   stored_packet.send_time_ms = send_time_ms;
   stored_packet.storage_type = type;
   stored_packet.times_retransmitted = 0;
+  // No send time indicates packet is not sent immediately, but instead will
+  // be put in the pacer queue and later retrieved via
+  // GetPacketAndSetSendTime().
+  stored_packet.pending_transmission = !send_time_ms.has_value();
 
   if (!start_seqno_) {
     start_seqno_ = rtp_seq_no;
@@ -150,14 +154,17 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetPacketAndSetSendTime(
     ++packet.times_retransmitted;
   }
 
-  // Update send-time and return copy of packet instance.
+  // Update send-time and mark as no long in pacer queue.
   packet.send_time_ms = now_ms;
+  packet.pending_transmission = false;
 
   if (packet.storage_type == StorageType::kDontRetransmit) {
     // Non retransmittable packet, so call must come from paced sender.
     // Remove from history and return actual packet instance.
     return RemovePacket(rtp_it);
   }
+
+  // Return copy of packet instance since it may need to be retransmitted.
   return absl::make_unique<RtpPacketToSend>(*packet.packet);
 }
 
@@ -249,6 +256,21 @@ void RtpPacketHistory::CullAcknowledgedPackets(
   }
 }
 
+bool RtpPacketHistory::SetPendingTransmission(uint16_t sequence_number) {
+  rtc::CritScope cs(&lock_);
+  if (mode_ == StorageMode::kDisabled) {
+    return false;
+  }
+
+  auto rtp_it = packet_history_.find(sequence_number);
+  if (rtp_it == packet_history_.end()) {
+    return false;
+  }
+
+  rtp_it->second.pending_transmission = true;
+  return true;
+}
+
 void RtpPacketHistory::Reset() {
   packet_history_.clear();
   packet_size_.clear();
@@ -270,8 +292,8 @@ void RtpPacketHistory::CullOldPackets(int64_t now_ms) {
     }
 
     const StoredPacket& stored_packet = stored_packet_it->second;
-    if (!stored_packet.send_time_ms) {
-      // Don't remove packets that have not been sent.
+    if (stored_packet_it->second.pending_transmission) {
+      // Don't remove packets in the pacer queue, pending tranmission.
       return;
     }
 
@@ -341,6 +363,7 @@ RtpPacketHistory::PacketState RtpPacketHistory::StoredPacketToPacketState(
   state.ssrc = stored_packet.packet->Ssrc();
   state.packet_size = stored_packet.packet->size();
   state.times_retransmitted = stored_packet.times_retransmitted;
+  state.pending_transmission = stored_packet.pending_transmission;
   return state;
 }
 
