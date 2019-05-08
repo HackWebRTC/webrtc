@@ -5323,6 +5323,28 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
   }
 }
 
+#ifdef HAVE_SCTP
+
+TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
+       EndToEndCallWithBundledSctpDataChannel) {
+  ASSERT_TRUE(CreatePeerConnectionWrappers());
+  ConnectFakeSignaling();
+  caller()->CreateDataChannel();
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+  caller()->SetGeneratedSdpMunger(MakeSpecCompliantSctpOffer);
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  // Ensure that media and data are multiplexed on the same DTLS transport.
+  // This only works on Unified Plan, because transports are not exposed in plan
+  // B.
+  auto sctp_info = caller()->pc()->GetSctpTransport()->Information();
+  EXPECT_EQ(sctp_info.dtls_transport(),
+            caller()->pc()->GetSenders()[0]->dtls_transport());
+}
+
+#endif  // HAVE_SCTP
+
 }  // namespace
 }  // namespace webrtc
 
