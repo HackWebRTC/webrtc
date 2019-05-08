@@ -263,27 +263,27 @@ void VideoQualityObserver::OnStreamInactive() {
   is_paused_ = true;
 }
 
-uint32_t VideoQualityObserver::NumFreezes() {
+uint32_t VideoQualityObserver::NumFreezes() const {
   return freezes_durations_.NumSamples();
 }
 
-uint32_t VideoQualityObserver::NumPauses() {
+uint32_t VideoQualityObserver::NumPauses() const {
   return pauses_durations_.NumSamples();
 }
 
-uint32_t VideoQualityObserver::TotalFreezesDurationMs() {
+uint32_t VideoQualityObserver::TotalFreezesDurationMs() const {
   return freezes_durations_.Sum(kMinRequiredSamples).value_or(0);
 }
 
-uint32_t VideoQualityObserver::TotalPausesDurationMs() {
+uint32_t VideoQualityObserver::TotalPausesDurationMs() const {
   return pauses_durations_.Sum(kMinRequiredSamples).value_or(0);
 }
 
-uint32_t VideoQualityObserver::TotalFramesDurationMs() {
+uint32_t VideoQualityObserver::TotalFramesDurationMs() const {
   return last_frame_rendered_ms_ - first_frame_rendered_ms_;
 }
 
-double VideoQualityObserver::SumSquaredFrameDurationsSec() {
+double VideoQualityObserver::SumSquaredFrameDurationsSec() const {
   return sum_squared_interframe_delays_secs_;
 }
 

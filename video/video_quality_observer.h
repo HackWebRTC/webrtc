@@ -41,12 +41,12 @@ class VideoQualityObserver {
 
   void OnStreamInactive();
 
-  uint32_t NumFreezes();
-  uint32_t NumPauses();
-  uint32_t TotalFreezesDurationMs();
-  uint32_t TotalPausesDurationMs();
-  uint32_t TotalFramesDurationMs();
-  double SumSquaredFrameDurationsSec();
+  uint32_t NumFreezes() const;
+  uint32_t NumPauses() const;
+  uint32_t TotalFreezesDurationMs() const;
+  uint32_t TotalPausesDurationMs() const;
+  uint32_t TotalFramesDurationMs() const;
+  double SumSquaredFrameDurationsSec() const;
 
   static const uint32_t kMinFrameSamplesToDetectFreeze;
   static const uint32_t kMinIncreaseForFreezeMs;

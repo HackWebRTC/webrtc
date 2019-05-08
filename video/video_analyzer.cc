@@ -85,6 +85,8 @@ VideoAnalyzer::VideoAnalyzer(
       total_freezes_duration_ms_(0),
       total_frames_duration_ms_(0),
       sum_squared_frame_durations_(0),
+      decode_frame_rate_(0),
+      render_frame_rate_(0),
       last_fec_bytes_(0),
       frames_to_process_(duration_frames),
       frames_recorded_(0),
@@ -513,6 +515,20 @@ void VideoAnalyzer::PollStats() {
     if (receive_stats.width > 0 && receive_stats.height > 0) {
       pixels_.AddSample(receive_stats.width * receive_stats.height);
     }
+
+    // |frames_decoded| and |frames_rendered| are used because they are more
+    // accurate than |decode_frame_rate| and |render_frame_rate|.
+    // The latter two are calculated on a momentary basis.
+    const double total_frames_duration_sec_double =
+        static_cast<double>(receive_stats.total_frames_duration_ms) / 1000.0;
+    if (total_frames_duration_sec_double > 0) {
+      decode_frame_rate_ = static_cast<double>(receive_stats.frames_decoded) /
+                           total_frames_duration_sec_double;
+      render_frame_rate_ = static_cast<double>(receive_stats.frames_rendered) /
+                           total_frames_duration_sec_double;
+    }
+
+    // Freeze metrics.
     freeze_count_ = receive_stats.freeze_count;
     total_freezes_duration_ms_ = receive_stats.total_freezes_duration_ms;
     total_frames_duration_ms_ = receive_stats.total_frames_duration_ms;
@@ -626,6 +642,11 @@ void VideoAnalyzer::PrintResults() {
   PrintResult("fec_bitrate", fec_bitrate_bps_, " bps");
   PrintResult("send_bandwidth", send_bandwidth_bps_, " bps");
   PrintResult("pixels_per_frame", pixels_, " px");
+
+  test::PrintResult("decode_frame_rate", "", test_label_.c_str(),
+                    decode_frame_rate_, "fps", false);
+  test::PrintResult("render_frame_rate", "", test_label_.c_str(),
+                    render_frame_rate_, "fps", false);
 
   // Record the time from the last freeze until the last rendered frame to
   // ensure we cover the full timespan of the session. Otherwise the metric

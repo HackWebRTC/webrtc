@@ -243,6 +243,9 @@ class VideoAnalyzer : public PacketReceiver,
   uint32_t total_frames_duration_ms_ RTC_GUARDED_BY(comparison_lock_);
   double sum_squared_frame_durations_ RTC_GUARDED_BY(comparison_lock_);
 
+  double decode_frame_rate_ RTC_GUARDED_BY(comparison_lock_);
+  double render_frame_rate_ RTC_GUARDED_BY(comparison_lock_);
+
   size_t last_fec_bytes_;
 
   const int frames_to_process_;
