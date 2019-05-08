@@ -65,6 +65,20 @@ TEST(RateControlSettingsTest, AlrProbing) {
   EXPECT_TRUE(RateControlSettings::ParseFromFieldTrials().UseAlrProbing());
 }
 
+TEST(RateControlSettingsTest, LibvpxVp8QpMax) {
+  EXPECT_FALSE(RateControlSettings::ParseFromFieldTrials().LibvpxVp8QpMax());
+
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-VideoRateControl/vp8_qp_max:50/");
+  EXPECT_EQ(RateControlSettings::ParseFromFieldTrials().LibvpxVp8QpMax(), 50);
+}
+
+TEST(RateControlSettingsTest, DoesNotGetTooLargeLibvpxVp8QpMaxValue) {
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-VideoRateControl/vp8_qp_max:70/");
+  EXPECT_FALSE(RateControlSettings::ParseFromFieldTrials().LibvpxVp8QpMax());
+}
+
 TEST(RateControlSettingsTest, LibvpxTrustedRateController) {
   const RateControlSettings settings_before =
       RateControlSettings::ParseFromFieldTrials();

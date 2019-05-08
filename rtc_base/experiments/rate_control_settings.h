@@ -40,6 +40,7 @@ class RateControlSettings final {
   absl::optional<double> GetPacingFactor() const;
   bool UseAlrProbing() const;
 
+  absl::optional<int> LibvpxVp8QpMax() const;
   bool LibvpxVp8TrustedRateController() const;
   bool Vp8BoostBaseLayerQuality() const;
   bool Vp8DynamicRateSettings() const;
@@ -67,6 +68,7 @@ class RateControlSettings final {
   FieldTrialOptional<int> congestion_window_pushback_;
   FieldTrialOptional<double> pacing_factor_;
   FieldTrialParameter<bool> alr_probing_;
+  FieldTrialOptional<int> vp8_qp_max_;
   FieldTrialParameter<bool> trust_vp8_;
   FieldTrialParameter<bool> trust_vp9_;
   FieldTrialParameter<double> video_hysteresis_;

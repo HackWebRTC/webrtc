@@ -66,6 +66,7 @@ RateControlSettings::RateControlSettings(
       congestion_window_pushback_("MinBitrate"),
       pacing_factor_("pacing_factor"),
       alr_probing_("alr_probing", false),
+      vp8_qp_max_("vp8_qp_max"),
       trust_vp8_(
           "trust_vp8",
           IsEnabled(key_value_config, kVp8TrustedRateControllerFieldTrialName)),
@@ -90,7 +91,7 @@ RateControlSettings::RateControlSettings(
   ParseFieldTrial({&congestion_window_, &congestion_window_pushback_},
                   key_value_config->Lookup("WebRTC-CongestionWindow"));
   ParseFieldTrial(
-      {&pacing_factor_, &alr_probing_, &trust_vp8_, &trust_vp9_,
+      {&pacing_factor_, &alr_probing_, &vp8_qp_max_, &trust_vp8_, &trust_vp9_,
        &video_hysteresis_, &screenshare_hysteresis_, &probe_max_allocation_,
        &bitrate_adjuster_, &adjuster_use_headroom_, &vp8_s0_boost_,
        &vp8_dynamic_rate_, &vp9_dynamic_rate_},
@@ -136,6 +137,14 @@ absl::optional<double> RateControlSettings::GetPacingFactor() const {
 
 bool RateControlSettings::UseAlrProbing() const {
   return alr_probing_.Get();
+}
+
+absl::optional<int> RateControlSettings::LibvpxVp8QpMax() const {
+  if (vp8_qp_max_ && (vp8_qp_max_.Value() < 0 || vp8_qp_max_.Value() > 63)) {
+    RTC_LOG(LS_WARNING) << "Unsupported vp8_qp_max_ value, ignored.";
+    return absl::nullopt;
+  }
+  return vp8_qp_max_.GetOptional();
 }
 
 bool RateControlSettings::LibvpxVp8TrustedRateController() const {
