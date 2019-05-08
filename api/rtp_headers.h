@@ -88,6 +88,8 @@ struct RTPHeaderExtension {
   absl::optional<ColorSpace> color_space;
 };
 
+enum { kRtpCsrcSize = 15 };  // RFC 3550 page 13
+
 struct RTPHeader {
   RTPHeader();
   RTPHeader(const RTPHeader& other);

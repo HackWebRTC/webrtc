@@ -38,9 +38,6 @@ class OverheadObserver {
   virtual void OnOverheadChanged(size_t overhead_bytes_per_packet) = 0;
 };
 
-// RTP
-enum { kRtpCsrcSize = 15 };  // RFC 3550 page 13
-
 // ==================================================================
 // Video specific types
 // ==================================================================
