@@ -67,7 +67,9 @@ BitrateAllocator::BitrateAllocator(Clock* clock, LimitObserver* limit_observer)
       total_requested_max_bitrate_(0),
       bitrate_allocation_strategy_(nullptr),
       transmission_max_bitrate_multiplier_(
-          GetTransmissionMaxBitrateMultiplier()) {
+          GetTransmissionMaxBitrateMultiplier()),
+      ignore_injected_strategy_(
+          field_trial::IsEnabled("WebRTC-IgnoreInjectedAllocationStrategy")) {
   sequenced_checker_.Detach();
 }
 
@@ -315,7 +317,7 @@ BitrateAllocator::ObserverAllocation BitrateAllocator::AllocateBitrates(
   if (bitrate_observer_configs_.empty())
     return ObserverAllocation();
 
-  if (bitrate_allocation_strategy_ != nullptr) {
+  if (!ignore_injected_strategy_ && bitrate_allocation_strategy_ != nullptr) {
     // Note: This intentionally causes slicing, we only copy the fields in
     // ObserverConfig that are inherited from TrackConfig.
     std::vector<rtc::BitrateAllocationStrategy::TrackConfig> track_configs(

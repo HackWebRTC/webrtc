@@ -246,6 +246,7 @@ class BitrateAllocator : public BitrateAllocatorInterface {
   std::unique_ptr<rtc::BitrateAllocationStrategy> bitrate_allocation_strategy_
       RTC_GUARDED_BY(&sequenced_checker_);
   const uint8_t transmission_max_bitrate_multiplier_;
+  const bool ignore_injected_strategy_;
 };
 
 }  // namespace webrtc

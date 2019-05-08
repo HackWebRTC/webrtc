@@ -804,7 +804,9 @@ void AudioSendStream::ConfigureBitrateObserver() {
       MediaStreamAllocationConfig{
           constraints.min.bps<uint32_t>(), constraints.max.bps<uint32_t>(), 0,
           allocation_settings_.DefaultPriorityBitrate().bps(), true,
-          config_.track_id, config_.bitrate_priority});
+          config_.track_id,
+          allocation_settings_.BitratePriority().value_or(
+              config_.bitrate_priority)});
 }
 
 void AudioSendStream::RemoveBitrateObserver() {
