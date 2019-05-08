@@ -110,7 +110,7 @@ class Vp8FrameBufferController {
   // If this return false, the encoder must not drop any frames unless:
   //  1. Requested to do so via Vp8FrameConfig.drop_frame
   //  2. The frame to be encoded is requested to be a keyframe
-  //  3. The encoded detected a large overshoot and decided to drop and then
+  //  3. The encoder detected a large overshoot and decided to drop and then
   //     re-encode the image at a low bitrate. In this case the encoder should
   //     call OnFrameDropped() once to indicate drop, and then call
   //     OnEncodeDone() again when the frame has actually been encoded.
