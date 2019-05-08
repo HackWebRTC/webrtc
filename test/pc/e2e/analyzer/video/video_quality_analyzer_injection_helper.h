@@ -15,7 +15,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/strings/string_view.h"
 #include "api/test/stats_observer_interface.h"
 #include "api/test/video_quality_analyzer_interface.h"
 #include "api/video/video_frame.h"
@@ -69,7 +68,7 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
 
   // Forwards |stats_reports| for Peer Connection |pc_label| to
   // |analyzer_|.
-  void OnStatsReports(absl::string_view pc_label,
+  void OnStatsReports(const std::string& pc_label,
                       const StatsReports& stats_reports) override;
 
   // Stops VideoQualityAnalyzerInterface to populate final data and metrics.

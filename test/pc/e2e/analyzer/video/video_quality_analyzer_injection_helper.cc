@@ -141,7 +141,7 @@ void VideoQualityAnalyzerInjectionHelper::Start(std::string test_case_name,
 }
 
 void VideoQualityAnalyzerInjectionHelper::OnStatsReports(
-    absl::string_view pc_label,
+    const std::string& pc_label,
     const StatsReports& stats_reports) {
   analyzer_->OnStatsReports(pc_label, stats_reports);
 }

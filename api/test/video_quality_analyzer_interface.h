@@ -14,7 +14,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "api/test/stats_observer_interface.h"
 #include "api/video/encoded_image.h"
@@ -99,7 +98,7 @@ class VideoQualityAnalyzerInterface : public StatsObserverInterface {
   virtual void OnDecoderError(uint16_t frame_id, int32_t error_code) {}
   // Will be called everytime new stats reports are available for the
   // Peer Connection identified by |pc_label|.
-  void OnStatsReports(absl::string_view pc_label,
+  void OnStatsReports(const std::string& pc_label,
                       const StatsReports& stats_reports) override {}
 
   // Tells analyzer that analysis complete and it should calculate final

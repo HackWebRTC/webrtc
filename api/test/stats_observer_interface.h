@@ -11,7 +11,8 @@
 #ifndef API_TEST_STATS_OBSERVER_INTERFACE_H_
 #define API_TEST_STATS_OBSERVER_INTERFACE_H_
 
-#include "absl/strings/string_view.h"
+#include <string>
+
 #include "api/stats_types.h"
 
 namespace webrtc {
@@ -24,7 +25,7 @@ class StatsObserverInterface {
 
   // Method called when stats reports are available for the PeerConnection
   // identified by |pc_label|.
-  virtual void OnStatsReports(absl::string_view pc_label,
+  virtual void OnStatsReports(const std::string& pc_label,
                               const StatsReports& reports) = 0;
 };
 

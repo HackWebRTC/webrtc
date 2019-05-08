@@ -19,7 +19,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/container/flat_hash_map.h"
 #include "api/test/video_quality_analyzer_interface.h"
 #include "api/units/timestamp.h"
 #include "api/video/encoded_image.h"
@@ -157,10 +156,10 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
 
   // Will be called everytime new stats reports are available for the
   // Peer Connection identified by |pc_label|.
-  void OnStatsReports(absl::string_view pc_label,
+  void OnStatsReports(const std::string& pc_label,
                       const StatsReports& stats_reports) override;
 
-  absl::flat_hash_map<std::string, VideoBweStats> GetVideoBweStats() const;
+  std::map<std::string, VideoBweStats> GetVideoBweStats() const;
 
  private:
   struct FrameStats {
@@ -287,7 +286,7 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   rtc::CriticalSection video_bwe_stats_lock_;
   // Map between a peer connection label (provided by the framework) and
   // its video BWE stats.
-  absl::flat_hash_map<std::string, VideoBweStats> video_bwe_stats_
+  std::map<std::string, VideoBweStats> video_bwe_stats_
       RTC_GUARDED_BY(video_bwe_stats_lock_);
 
   std::vector<std::unique_ptr<rtc::PlatformThread>> thread_pool_;

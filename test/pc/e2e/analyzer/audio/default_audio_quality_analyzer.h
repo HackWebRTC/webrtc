@@ -14,7 +14,6 @@
 #include <map>
 #include <string>
 
-#include "absl/strings/string_view.h"
 #include "api/stats_types.h"
 #include "api/test/audio_quality_analyzer_interface.h"
 #include "api/test/track_id_stream_label_map.h"
@@ -38,7 +37,7 @@ class DefaultAudioQualityAnalyzer : public AudioQualityAnalyzerInterface {
  public:
   void Start(std::string test_case_name,
              TrackIdStreamLabelMap* analyzer_helper) override;
-  void OnStatsReports(absl::string_view pc_label,
+  void OnStatsReports(const std::string& pc_label,
                       const StatsReports& stats_reports) override;
   void Stop() override;
 

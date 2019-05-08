@@ -355,7 +355,7 @@ AnalyzerStats DefaultVideoQualityAnalyzer::GetAnalyzerStats() const {
 // TODO(bugs.webrtc.org/10430): Migrate to the new GetStats as soon as
 // bugs.webrtc.org/10428 is fixed.
 void DefaultVideoQualityAnalyzer::OnStatsReports(
-    absl::string_view pc_label,
+    const std::string& pc_label,
     const StatsReports& stats_reports) {
   for (const StatsReport* stats_report : stats_reports) {
     // The only stats collected by this analyzer are present in
@@ -399,7 +399,7 @@ void DefaultVideoQualityAnalyzer::OnStatsReports(
   }
 }
 
-absl::flat_hash_map<std::string, VideoBweStats>
+std::map<std::string, VideoBweStats>
 DefaultVideoQualityAnalyzer::GetVideoBweStats() const {
   rtc::CritScope crit(&video_bwe_stats_lock_);
   return video_bwe_stats_;

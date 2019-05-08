@@ -30,7 +30,7 @@ void DefaultAudioQualityAnalyzer::Start(
 }
 
 void DefaultAudioQualityAnalyzer::OnStatsReports(
-    absl::string_view pc_label,
+    const std::string& pc_label,
     const StatsReports& stats_reports) {
   for (const StatsReport* stats_report : stats_reports) {
     // NetEq stats are only present in kStatsReportTypeSsrc reports, so all

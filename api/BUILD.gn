@@ -213,7 +213,6 @@ rtc_source_set("video_quality_analyzer_api") {
     "video:encoded_image",
     "video:video_frame",
     "video_codecs:video_codecs_api",
-    "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -247,7 +246,6 @@ rtc_source_set("stats_observer_interface") {
 
   deps = [
     ":libjingle_peerconnection_api",
-    "//third_party/abseil-cpp/absl/strings",
   ]
 }
 
