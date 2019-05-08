@@ -659,7 +659,7 @@ void VideoAnalyzer::PrintResults() {
     }
   }
 
-  test::PrintResult("average_freeze_duration", "", test_label_.c_str(),
+  test::PrintResult("freeze_duration_average", "", test_label_.c_str(),
                     freeze_count_double > 0
                         ? total_freezes_duration_ms_double / freeze_count_double
                         : 0,
