@@ -246,6 +246,7 @@ if (rtc_include_tests) {
     deps = [
       ":frame_dumping_decoder",
       "../api:fec_controller_api",
+      "../api:rtc_event_log_output_file",
       "../api:test_dependency_factory",
       "../api:video_quality_test_fixture_api",
       "../api/task_queue",
@@ -258,7 +259,6 @@ if (rtc_include_tests) {
       "../common_video",
       "../logging:rtc_event_log_api",
       "../logging:rtc_event_log_impl_base",
-      "../logging:rtc_event_log_impl_output",
       "../media:rtc_audio_video",
       "../media:rtc_encoder_simulcast_proxy",
       "../media:rtc_internal_video_codecs",

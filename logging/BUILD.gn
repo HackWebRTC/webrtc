@@ -21,7 +21,6 @@ group("logging") {
     ":rtc_event_bwe",
     ":rtc_event_log_impl_base",
     ":rtc_event_log_impl_encoder",
-    ":rtc_event_log_impl_output",
     ":rtc_event_pacing",
     ":rtc_event_rtp_rtcp",
     ":rtc_event_video",
@@ -208,7 +207,6 @@ rtc_static_library("rtc_event_log_impl_encoder") {
       ":rtc_event_generic_packet_events",
       ":rtc_event_log2_proto",
       ":rtc_event_log_api",
-      ":rtc_event_log_impl_output",
       ":rtc_event_log_proto",
       ":rtc_event_pacing",
       ":rtc_event_rtp_rtcp",
@@ -228,18 +226,14 @@ rtc_static_library("rtc_event_log_impl_encoder") {
   }
 }
 
+# TODO(bugs.webrtc.org/6463): For backwards compatibility; delete as
+# soon as downstream dependencies are updated.
 rtc_source_set("rtc_event_log_impl_output") {
   sources = [
-    "rtc_event_log/output/rtc_event_log_output_file.cc",
     "rtc_event_log/output/rtc_event_log_output_file.h",
   ]
-
   deps = [
-    ":rtc_event_log_api",
-    "../api:libjingle_logging_api",
-    "../rtc_base:checks",
-    "../rtc_base:rtc_base_approved",
-    "../rtc_base/system:file_wrapper",
+    "../api:rtc_event_log_output_file",
   ]
 }
 
@@ -361,7 +355,6 @@ if (rtc_enable_protobuf) {
         "rtc_event_log/encoder/delta_encoding_unittest.cc",
         "rtc_event_log/encoder/rtc_event_log_encoder_common_unittest.cc",
         "rtc_event_log/encoder/rtc_event_log_encoder_unittest.cc",
-        "rtc_event_log/output/rtc_event_log_output_file_unittest.cc",
         "rtc_event_log/rtc_event_log_unittest.cc",
         "rtc_event_log/rtc_event_log_unittest_helper.cc",
         "rtc_event_log/rtc_event_log_unittest_helper.h",
@@ -376,7 +369,6 @@ if (rtc_enable_protobuf) {
         ":rtc_event_log_api",
         ":rtc_event_log_impl_base",
         ":rtc_event_log_impl_encoder",
-        ":rtc_event_log_impl_output",
         ":rtc_event_log_parser",
         ":rtc_event_log_proto",
         ":rtc_event_pacing",
@@ -385,6 +377,7 @@ if (rtc_enable_protobuf) {
         ":rtc_stream_config",
         "../api:array_view",
         "../api:libjingle_peerconnection_api",
+        "../api:rtc_event_log_output_file",
         "../api:rtp_headers",
         "../api/task_queue:default_task_queue_factory",
         "../call",

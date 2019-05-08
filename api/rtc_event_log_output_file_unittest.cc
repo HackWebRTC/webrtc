@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
+#include "api/rtc_event_log_output_file.h"
 
 #include <fstream>
 #include <iterator>

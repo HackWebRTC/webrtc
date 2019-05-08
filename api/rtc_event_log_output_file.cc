@@ -11,7 +11,7 @@
 #include <limits>
 #include <utility>
 
-#include "logging/rtc_event_log/output/rtc_event_log_output_file.h"
+#include "api/rtc_event_log_output_file.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
