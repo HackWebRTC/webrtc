@@ -79,6 +79,14 @@ void NetEqStatsPlotter::SimulationEnded(int64_t simulation_time_ms) {
   const auto lifetime_stats_vector = stats_getter_->lifetime_stats();
   if (!lifetime_stats_vector->empty()) {
     auto lifetime_stats = lifetime_stats_vector->back().second;
+    printf("  total_samples_received: %" PRIu64 "\n",
+           lifetime_stats.total_samples_received);
+    printf("  concealed_samples: %" PRIu64 "\n",
+           lifetime_stats.concealed_samples);
+    printf("  concealment_events: %" PRIu64 "\n",
+           lifetime_stats.concealment_events);
+    printf("  delayed_packet_outage_samples: %" PRIu64 "\n",
+           lifetime_stats.delayed_packet_outage_samples);
     printf("  num_interruptions: %d\n", lifetime_stats.interruption_count);
     printf("  sum_interruption_length_ms: %d ms\n",
            lifetime_stats.total_interruption_duration_ms);
