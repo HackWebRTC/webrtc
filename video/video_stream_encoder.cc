@@ -490,7 +490,7 @@ VideoStreamEncoder::VideoStreamEncoder(
       input_framerate_(kFrameRateAvergingWindowSizeMs, 1000),
       pending_frame_drops_(0),
       next_frame_types_(1, VideoFrameType::kVideoFrameDelta),
-      frame_encode_metadata_writer_(this),
+      frame_encoder_timer_(this),
       experiment_groups_(GetExperimentGroups()),
       next_frame_id_(0),
       encoder_queue_(task_queue_factory->CreateTaskQueue(
@@ -745,11 +745,10 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     } else {
       encoder_initialized_ = true;
       encoder_->RegisterEncodeCompleteCallback(this);
-      frame_encode_metadata_writer_.OnEncoderInit(send_codec_,
-                                                  HasInternalSource());
+      frame_encoder_timer_.OnEncoderInit(send_codec_, HasInternalSource());
     }
 
-    frame_encode_metadata_writer_.Reset();
+    frame_encoder_timer_.Reset();
     last_encode_info_ms_ = absl::nullopt;
   }
 
@@ -1075,7 +1074,7 @@ void VideoStreamEncoder::SetEncoderRates(
 
   if (settings_changes) {
     encoder_->SetRates(rate_settings);
-    frame_encode_metadata_writer_.OnSetRates(
+    frame_encoder_timer_.OnSetRates(
         rate_settings.bitrate,
         static_cast<uint32_t>(rate_settings.framerate_fps + 0.5));
   }
@@ -1335,7 +1334,8 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   TRACE_EVENT1("webrtc", "VCMGenericEncoder::Encode", "timestamp",
                out_frame.timestamp());
 
-  frame_encode_metadata_writer_.OnEncodeStarted(out_frame);
+  frame_encoder_timer_.OnEncodeStarted(out_frame.timestamp(),
+                                       out_frame.render_time_ms());
 
   const int32_t encode_status = encoder_->Encode(out_frame, &next_frame_types_);
 
@@ -1405,7 +1405,9 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
   const size_t spatial_idx = encoded_image.SpatialIndex().value_or(0);
   EncodedImage image_copy(encoded_image);
 
-  frame_encode_metadata_writer_.FillTimingInfo(spatial_idx, &image_copy);
+  frame_encoder_timer_.FillTimingInfo(
+      spatial_idx, &image_copy,
+      rtc::TimeMicros() / rtc::kNumMicrosecsPerMillisec);
 
   // Piggyback ALR experiment group id and simulcast id into the content type.
   const uint8_t experiment_id =
