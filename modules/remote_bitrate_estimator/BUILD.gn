@@ -40,7 +40,6 @@ rtc_static_library("remote_bitrate_estimator") {
   }
 
   deps = [
-    "../..:webrtc_common",
     "../../api:network_state_predictor_api",
     "../../api:rtp_headers",
     "../../api/transport:field_trial_based_config",
