@@ -28,13 +28,6 @@ Vp8TemporalLayers::Vp8TemporalLayers(
       }));
 }
 
-void Vp8TemporalLayers::SetQpLimits(size_t stream_index,
-                                    int min_qp,
-                                    int max_qp) {
-  RTC_DCHECK_LT(stream_index, controllers_.size());
-  return controllers_[stream_index]->SetQpLimits(0, min_qp, max_qp);
-}
-
 size_t Vp8TemporalLayers::StreamCount() const {
   return controllers_.size();
 }
@@ -54,9 +47,10 @@ void Vp8TemporalLayers::OnRatesUpdated(
                                                     framerate_fps);
 }
 
-Vp8EncoderConfig Vp8TemporalLayers::UpdateConfiguration(size_t stream_index) {
+bool Vp8TemporalLayers::UpdateConfiguration(size_t stream_index,
+                                            Vp8EncoderConfig* cfg) {
   RTC_DCHECK_LT(stream_index, controllers_.size());
-  return controllers_[stream_index]->UpdateConfiguration(0);
+  return controllers_[stream_index]->UpdateConfiguration(0, cfg);
 }
 
 Vp8FrameConfig Vp8TemporalLayers::NextFrameConfig(size_t stream_index,

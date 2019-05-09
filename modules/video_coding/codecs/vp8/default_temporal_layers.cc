@@ -10,6 +10,7 @@
 #include "modules/video_coding/codecs/vp8/default_temporal_layers.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #include <algorithm>
 #include <array>
@@ -250,13 +251,6 @@ DefaultTemporalLayers::DefaultTemporalLayers(int number_of_temporal_layers)
 
 DefaultTemporalLayers::~DefaultTemporalLayers() = default;
 
-void DefaultTemporalLayers::SetQpLimits(size_t stream_index,
-                                        int min_qp,
-                                        int max_qp) {
-  RTC_DCHECK_LT(stream_index, StreamCount());
-  // Ignore.
-}
-
 size_t DefaultTemporalLayers::StreamCount() const {
   return 1;
 }
@@ -284,34 +278,28 @@ void DefaultTemporalLayers::OnRatesUpdated(
   }
 }
 
-Vp8EncoderConfig DefaultTemporalLayers::UpdateConfiguration(
-    size_t stream_index) {
+bool DefaultTemporalLayers::UpdateConfiguration(size_t stream_index,
+                                                Vp8EncoderConfig* cfg) {
   RTC_DCHECK_LT(stream_index, StreamCount());
 
-  Vp8EncoderConfig config;
-
   if (!new_bitrates_bps_) {
-    return config;
+    return false;
   }
-
-  config.temporal_layer_config.emplace();
-  Vp8EncoderConfig::TemporalLayerConfig& ts_config =
-      config.temporal_layer_config.value();
 
   for (size_t i = 0; i < num_layers_; ++i) {
-    ts_config.ts_target_bitrate[i] = (*new_bitrates_bps_)[i] / 1000;
+    cfg->ts_target_bitrate[i] = (*new_bitrates_bps_)[i] / 1000;
     // ..., 4, 2, 1
-    ts_config.ts_rate_decimator[i] = 1 << (num_layers_ - i - 1);
+    cfg->ts_rate_decimator[i] = 1 << (num_layers_ - i - 1);
   }
 
-  ts_config.ts_number_layers = num_layers_;
-  ts_config.ts_periodicity = temporal_ids_.size();
-  std::copy(temporal_ids_.begin(), temporal_ids_.end(),
-            ts_config.ts_layer_id.begin());
+  cfg->ts_number_layers = num_layers_;
+  cfg->ts_periodicity = temporal_ids_.size();
+  memcpy(cfg->ts_layer_id, &temporal_ids_[0],
+         sizeof(unsigned int) * temporal_ids_.size());
 
   new_bitrates_bps_.reset();
 
-  return config;
+  return true;
 }
 
 bool DefaultTemporalLayers::IsSyncFrame(const Vp8FrameConfig& config) const {
