@@ -43,30 +43,4 @@ CryptString::CryptString(const CryptStringImpl& impl) : impl_(impl.Copy()) {}
 
 CryptString::~CryptString() = default;
 
-size_t InsecureCryptStringImpl::GetLength() const {
-  return password_.size();
-}
-
-void InsecureCryptStringImpl::CopyTo(char* dest, bool nullterminate) const {
-  memcpy(dest, password_.data(), password_.size());
-  if (nullterminate)
-    dest[password_.size()] = 0;
-}
-
-std::string InsecureCryptStringImpl::UrlEncode() const {
-  return password_;
-}
-
-CryptStringImpl* InsecureCryptStringImpl::Copy() const {
-  InsecureCryptStringImpl* copy = new InsecureCryptStringImpl;
-  copy->password() = password_;
-  return copy;
-}
-
-void InsecureCryptStringImpl::CopyRawTo(
-    std::vector<unsigned char>* dest) const {
-  dest->resize(password_.size());
-  memcpy(&dest->front(), password_.data(), password_.size());
-}
-
 }  // namespace rtc

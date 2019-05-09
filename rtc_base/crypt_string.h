@@ -65,22 +65,6 @@ class CryptString {
   std::unique_ptr<const CryptStringImpl> impl_;
 };
 
-class InsecureCryptStringImpl : public CryptStringImpl {
- public:
-  std::string& password() { return password_; }
-  const std::string& password() const { return password_; }
-
-  ~InsecureCryptStringImpl() override = default;
-  size_t GetLength() const override;
-  void CopyTo(char* dest, bool nullterminate) const override;
-  std::string UrlEncode() const override;
-  CryptStringImpl* Copy() const override;
-  void CopyRawTo(std::vector<unsigned char>* dest) const override;
-
- private:
-  std::string password_;
-};
-
 }  // namespace rtc
 
 #endif  // RTC_BASE_CRYPT_STRING_H_
