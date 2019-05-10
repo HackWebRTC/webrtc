@@ -492,7 +492,7 @@ struct LoggedVideoSendConfig {
   rtclog::StreamConfig config;
 };
 
-struct LoggedRouteChangeEvent {
+struct InferredRouteChangeEvent {
   int64_t log_time_ms() const { return log_time.ms(); }
   int64_t log_time_us() const { return log_time.us(); }
   uint32_t route_id;
@@ -500,6 +500,8 @@ struct LoggedRouteChangeEvent {
   uint16_t send_overhead;
   uint16_t return_overhead;
 };
+
+using LoggedRouteChangeEvent = InferredRouteChangeEvent;
 
 enum class LoggedMediaType : uint8_t { kUnknown, kAudio, kVideo };
 

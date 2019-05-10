@@ -522,7 +522,7 @@ class ParsedRtcEventLog {
   std::vector<LoggedIceCandidatePairConfig> GetIceCandidates() const;
   std::vector<LoggedIceEvent> GetIceEvents() const;
 
-  std::vector<LoggedRouteChangeEvent> GetRouteChanges() const;
+  std::vector<InferredRouteChangeEvent> GetRouteChanges() const;
 
  private:
   bool ParseStreamInternal(

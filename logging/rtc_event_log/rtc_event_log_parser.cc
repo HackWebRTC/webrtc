@@ -91,7 +91,7 @@ struct OverheadChangeEvent {
   uint16_t overhead;
 };
 std::vector<OverheadChangeEvent> GetOverheadChangingEvents(
-    const std::vector<LoggedRouteChangeEvent>& route_changes,
+    const std::vector<InferredRouteChangeEvent>& route_changes,
     PacketDirection direction) {
   std::vector<OverheadChangeEvent> overheads;
   for (auto& event : route_changes) {
@@ -1881,11 +1881,12 @@ ParsedRtcEventLog::MediaType ParsedRtcEventLog::GetMediaType(
   return MediaType::ANY;
 }
 
-std::vector<LoggedRouteChangeEvent> ParsedRtcEventLog::GetRouteChanges() const {
-  std::vector<LoggedRouteChangeEvent> route_changes;
+std::vector<InferredRouteChangeEvent> ParsedRtcEventLog::GetRouteChanges()
+    const {
+  std::vector<InferredRouteChangeEvent> route_changes;
   for (auto& candidate : ice_candidate_pair_configs()) {
     if (candidate.type == IceCandidatePairConfigType::kSelected) {
-      LoggedRouteChangeEvent route;
+      InferredRouteChangeEvent route;
       route.route_id = candidate.candidate_pair_id;
       route.log_time = Timestamp::ms(candidate.log_time_ms());
 
