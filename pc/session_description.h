@@ -29,6 +29,7 @@
 #include "p2p/base/transport_info.h"
 #include "pc/media_protocol_names.h"
 #include "pc/simulcast_description.h"
+#include "rtc_base/deprecation.h"
 #include "rtc_base/socket_address.h"
 
 namespace cricket {
@@ -598,8 +599,9 @@ class SessionDescription {
   ~SessionDescription();
 
   std::unique_ptr<SessionDescription> Clone() const;
-  // Older API - to be deprecated. Still expects caller to take ownership.
-  SessionDescription* Copy() const;
+  // Older API - deprecated. Still expects caller to take ownership.
+  // Replace with Clone().
+  RTC_DEPRECATED SessionDescription* Copy() const;
 
   struct MediaTransportSetting;
 

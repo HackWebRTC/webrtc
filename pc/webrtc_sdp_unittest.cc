@@ -2239,12 +2239,12 @@ void MutateJsepSctpPort(JsepSessionDescription* jdesc,
                         const SessionDescription& desc,
                         int port) {
   // Take our pre-built session description and change the SCTP port.
-  cricket::SessionDescription* mutant = desc.Copy();
+  std::unique_ptr<cricket::SessionDescription> mutant = desc.Clone();
   SctpDataContentDescription* dcdesc =
       mutant->GetContentDescriptionByName(kDataContentName)->as_sctp();
   dcdesc->set_port(port);
-  // Note: mutant's owned by jdesc now.
-  ASSERT_TRUE(jdesc->Initialize(mutant, kSessionId, kSessionVersion));
+  ASSERT_TRUE(
+      jdesc->Initialize(std::move(mutant), kSessionId, kSessionVersion));
 }
 
 TEST_F(WebRtcSdpTest, SerializeWithSctpDataChannelAndNewPort) {
@@ -2895,11 +2895,11 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithSctpColonPort) {
 void MutateJsepSctpMaxMessageSize(const SessionDescription& desc,
                                   int new_value,
                                   JsepSessionDescription* jdesc) {
-  cricket::SessionDescription* mutant = desc.Copy();
+  std::unique_ptr<cricket::SessionDescription> mutant = desc.Clone();
   SctpDataContentDescription* dcdesc =
       mutant->GetContentDescriptionByName(kDataContentName)->as_sctp();
   dcdesc->set_max_message_size(new_value);
-  jdesc->Initialize(mutant, kSessionId, kSessionVersion);
+  jdesc->Initialize(std::move(mutant), kSessionId, kSessionVersion);
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithMaxMessageSize) {
