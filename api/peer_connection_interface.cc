@@ -182,6 +182,11 @@ bool PeerConnectionInterface::StartRtcEventLog(
   return false;
 }
 
+bool PeerConnectionInterface::StartRtcEventLog(
+    std::unique_ptr<RtcEventLogOutput> output) {
+  return false;
+}
+
 rtc::scoped_refptr<DtlsTransportInterface>
 PeerConnectionInterface::LookupDtlsTransportByMid(const std::string& mid) {
   RTC_NOTREACHED();

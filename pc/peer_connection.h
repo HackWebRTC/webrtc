@@ -211,6 +211,7 @@ class PeerConnection : public PeerConnectionInternal,
                                        int64_t max_size_bytes) override;
   bool StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output,
                         int64_t output_period_ms) override;
+  bool StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output) override;
   void StopRtcEventLog() override;
 
   void Close() override;

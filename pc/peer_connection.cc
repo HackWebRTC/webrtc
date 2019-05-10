@@ -3791,6 +3791,12 @@ bool PeerConnection::StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output,
       RTC_FROM_HERE, Functor{this, std::move(output), output_period_ms});
 }
 
+bool PeerConnection::StartRtcEventLog(
+    std::unique_ptr<RtcEventLogOutput> output) {
+  return StartRtcEventLog(std::move(output),
+                          webrtc::RtcEventLog::kImmediateOutput);
+}
+
 void PeerConnection::StopRtcEventLog() {
   worker_thread()->Invoke<void>(
       RTC_FROM_HERE, rtc::Bind(&PeerConnection::StopRtcEventLog_w, this));
