@@ -21,6 +21,7 @@
 #include "absl/types/optional.h"
 #include "api/rtc_event_log_output.h"
 #include "api/task_queue/queued_task.h"
+#include "api/task_queue/task_queue_base.h"
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_legacy.h"
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_new_format.h"
 #include "rtc_base/checks.h"
@@ -111,10 +112,6 @@ class RtcEventLogImpl final : public RtcEventLog {
 
   void ScheduleOutput() RTC_RUN_ON(task_queue_);
 
-  // Make sure that the event log is "managed" - created/destroyed, as well
-  // as started/stopped - from the same thread/task-queue.
-  SequenceChecker owner_sequence_checker_;
-
   // History containing all past configuration events.
   std::deque<std::unique_ptr<RtcEvent>> config_history_
       RTC_GUARDED_BY(*task_queue_);
@@ -157,8 +154,6 @@ RtcEventLogImpl::RtcEventLogImpl(
 }
 
 RtcEventLogImpl::~RtcEventLogImpl() {
-  RTC_DCHECK_RUN_ON(&owner_sequence_checker_);
-
   // If we're logging to the output, this will stop that. Blocking function.
   StopLogging();
 
@@ -171,8 +166,6 @@ RtcEventLogImpl::~RtcEventLogImpl() {
 
 bool RtcEventLogImpl::StartLogging(std::unique_ptr<RtcEventLogOutput> output,
                                    int64_t output_period_ms) {
-  RTC_DCHECK_RUN_ON(&owner_sequence_checker_);
-
   RTC_DCHECK(output_period_ms == kImmediateOutput || output_period_ms > 0);
 
   if (!output->IsActive()) {
@@ -206,8 +199,6 @@ bool RtcEventLogImpl::StartLogging(std::unique_ptr<RtcEventLogOutput> output,
 }
 
 void RtcEventLogImpl::StopLogging() {
-  RTC_DCHECK_RUN_ON(&owner_sequence_checker_);
-
   RTC_LOG(LS_INFO) << "Stopping WebRTC event log.";
 
   rtc::Event output_stopped;
@@ -222,6 +213,11 @@ void RtcEventLogImpl::StopLogging() {
     StopLoggingInternal();
     output_stopped.Set();
   });
+
+  // By making sure StopLogging() is not executed on a task queue,
+  // we ensure it's not running on a thread that is shared with |task_queue_|,
+  // meaning the following Wait() will not block forever.
+  RTC_DCHECK(TaskQueueBase::Current() == nullptr);
 
   output_stopped.Wait(rtc::Event::kForever);
 
