@@ -26,7 +26,6 @@
 #include "modules/audio_device/audio_device_name.h"
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/string_utils.h"
 
 #pragma comment(lib, "Avrt.lib")
 
