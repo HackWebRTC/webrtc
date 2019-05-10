@@ -398,6 +398,8 @@ class AudioProcessingImpl : public AudioProcessing {
     bool echo_path_gain_change;
     int prev_analog_mic_level;
     float prev_pre_amp_gain;
+    int playout_volume;
+    int prev_playout_volume;
     AudioProcessingStats stats;
   } capture_ RTC_GUARDED_BY(crit_capture_);
 

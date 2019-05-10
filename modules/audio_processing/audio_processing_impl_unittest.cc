@@ -296,6 +296,59 @@ TEST(AudioProcessingImplTest,
   apm->ProcessStream(&frame);
 }
 
+TEST(AudioProcessingImplTest, EchoControllerObservesPlayoutVolumeChange) {
+  // Tests that the echo controller observes an echo path gain change when a
+  // playout volume change is reported.
+  auto echo_control_factory = absl::make_unique<MockEchoControlFactory>();
+  const auto* echo_control_factory_ptr = echo_control_factory.get();
+
+  std::unique_ptr<AudioProcessing> apm(
+      AudioProcessingBuilder()
+          .SetEchoControlFactory(std::move(echo_control_factory))
+          .Create());
+  apm->gain_control()->Enable(false);  // Disable AGC.
+  apm->gain_control()->set_mode(GainControl::Mode::kFixedDigital);
+
+  AudioFrame frame;
+  constexpr int16_t kAudioLevel = 10000;
+  constexpr size_t kSampleRateHz = 48000;
+  constexpr size_t kNumChannels = 2;
+  InitializeAudioFrame(kSampleRateHz, kNumChannels, &frame);
+  FillFixedFrame(kAudioLevel, &frame);
+
+  MockEchoControl* echo_control_mock = echo_control_factory_ptr->GetNext();
+
+  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(NotNull())).Times(1);
+  EXPECT_CALL(*echo_control_mock,
+              ProcessCapture(NotNull(), /*echo_path_change=*/false))
+      .Times(1);
+  apm->ProcessStream(&frame);
+
+  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(NotNull())).Times(1);
+  EXPECT_CALL(*echo_control_mock,
+              ProcessCapture(NotNull(), /*echo_path_change=*/false))
+      .Times(1);
+  apm->SetRuntimeSetting(
+      AudioProcessing::RuntimeSetting::CreatePlayoutVolumeChange(50));
+  apm->ProcessStream(&frame);
+
+  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(NotNull())).Times(1);
+  EXPECT_CALL(*echo_control_mock,
+              ProcessCapture(NotNull(), /*echo_path_change=*/false))
+      .Times(1);
+  apm->SetRuntimeSetting(
+      AudioProcessing::RuntimeSetting::CreatePlayoutVolumeChange(50));
+  apm->ProcessStream(&frame);
+
+  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(NotNull())).Times(1);
+  EXPECT_CALL(*echo_control_mock,
+              ProcessCapture(NotNull(), /*echo_path_change=*/true))
+      .Times(1);
+  apm->SetRuntimeSetting(
+      AudioProcessing::RuntimeSetting::CreatePlayoutVolumeChange(100));
+  apm->ProcessStream(&frame);
+}
+
 TEST(AudioProcessingImplTest, RenderPreProcessorBeforeEchoDetector) {
   // Make sure that signal changes caused by a render pre-processing sub-module
   // take place before any echo detector analysis.

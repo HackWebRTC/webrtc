@@ -584,6 +584,10 @@ void AecDumpBasedSimulator::HandleMessage(
           AudioProcessing::RuntimeSetting::CreateCaptureFixedPostGain(
               msg.capture_fixed_post_gain()));
     }
+  } else if (msg.has_playout_volume_change()) {
+    ap_->SetRuntimeSetting(
+        AudioProcessing::RuntimeSetting::CreatePlayoutVolumeChange(
+            msg.playout_volume_change()));
   }
 }
 
