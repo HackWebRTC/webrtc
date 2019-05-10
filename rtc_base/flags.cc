@@ -16,16 +16,6 @@
 
 #include "rtc_base/checks.h"
 
-#if defined(WEBRTC_WIN)
-// clang-format off
-// clang formating would change include order.
-#include <windows.h>
-#include <shellapi.h> // must come after windows.h
-// clang-format on
-
-#include "rtc_base/string_utils.h"  // For ToUtf8
-#endif
-
 namespace {
 bool FlagEq(const char* arg, const char* flag) {
   // Compare two flags for equality.
@@ -288,36 +278,5 @@ void FlagList::Register(Flag* flag) {
   flag->next_ = list_;
   list_ = flag;
 }
-
-#if defined(WEBRTC_WIN)
-WindowsCommandLineArguments::WindowsCommandLineArguments() {
-  // start by getting the command line.
-  LPCWSTR command_line = ::GetCommandLineW();
-  // now, convert it to a list of wide char strings.
-  LPWSTR* wide_argv = ::CommandLineToArgvW(command_line, &argc_);
-  // now allocate an array big enough to hold that many string pointers.
-  argv_ = new char*[argc_];
-
-  // iterate over the returned wide strings;
-  for (int i = 0; i < argc_; ++i) {
-    std::string s = rtc::ToUtf8(wide_argv[i], wcslen(wide_argv[i]));
-    char* buffer = new char[s.length() + 1];
-    rtc::strcpyn(buffer, s.length() + 1, s.c_str());
-
-    // make sure the argv array has the right string at this point.
-    argv_[i] = buffer;
-  }
-  LocalFree(wide_argv);
-}
-
-WindowsCommandLineArguments::~WindowsCommandLineArguments() {
-  // need to free each string in the array, and then the array.
-  for (int i = 0; i < argc_; i++) {
-    delete[] argv_[i];
-  }
-
-  delete[] argv_;
-}
-#endif  // WEBRTC_WIN
 
 }  // namespace rtc

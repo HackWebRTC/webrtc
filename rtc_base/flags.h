@@ -24,10 +24,6 @@
 
 #include "rtc_base/checks.h"
 
-#if defined(WEBRTC_WIN)
-#include "rtc_base/constructor_magic.h"
-#endif
-
 namespace rtc {
 
 // Internal use only.
@@ -242,29 +238,6 @@ class FlagList {
  private:
   static Flag* list_;
 };
-
-#if defined(WEBRTC_WIN)
-// A helper class to translate Windows command line arguments into UTF8,
-// which then allows us to just pass them to the flags system.
-// This encapsulates all the work of getting the command line and translating
-// it to an array of 8-bit strings; all you have to do is create one of these,
-// and then call argc() and argv().
-class WindowsCommandLineArguments {
- public:
-  WindowsCommandLineArguments();
-  ~WindowsCommandLineArguments();
-
-  int argc() { return argc_; }
-  char** argv() { return argv_; }
-
- private:
-  int argc_;
-  char** argv_;
-
- private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(WindowsCommandLineArguments);
-};
-#endif  // WEBRTC_WIN
 
 }  // namespace rtc
 
