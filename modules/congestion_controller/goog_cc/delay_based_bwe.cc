@@ -178,11 +178,12 @@ DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(
 
   // Currently overusing the bandwidth.
   if (delay_detector_->State() == BandwidthUsage::kBwOverusing) {
-    if (in_alr && alr_limited_backoff_enabled_ &&
-        rate_control_.TimeToReduceFurther(at_time, prev_bitrate_)) {
-      result.updated =
-          UpdateEstimate(at_time, prev_bitrate_, &result.target_bitrate);
-      result.backoff_in_alr = true;
+    if (in_alr && alr_limited_backoff_enabled_) {
+      if (rate_control_.TimeToReduceFurther(at_time, prev_bitrate_)) {
+        result.updated =
+            UpdateEstimate(at_time, prev_bitrate_, &result.target_bitrate);
+        result.backoff_in_alr = true;
+      }
     } else if (acked_bitrate &&
                rate_control_.TimeToReduceFurther(at_time, *acked_bitrate)) {
       result.updated =
