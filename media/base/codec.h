@@ -192,22 +192,18 @@ struct RTC_EXPORT VideoCodec : public Codec {
   void SetDefaultParameters();
 };
 
-struct RtpDataCodec : public Codec {
-  RtpDataCodec(int id, const std::string& name);
-  RtpDataCodec();
-  RtpDataCodec(const RtpDataCodec& c);
-  RtpDataCodec(RtpDataCodec&& c);
-  ~RtpDataCodec() override = default;
+struct DataCodec : public Codec {
+  DataCodec(int id, const std::string& name);
+  DataCodec();
+  DataCodec(const DataCodec& c);
+  DataCodec(DataCodec&& c);
+  ~DataCodec() override = default;
 
-  RtpDataCodec& operator=(const RtpDataCodec& c);
-  RtpDataCodec& operator=(RtpDataCodec&& c);
+  DataCodec& operator=(const DataCodec& c);
+  DataCodec& operator=(DataCodec&& c);
 
   std::string ToString() const;
 };
-
-// For backwards compatibility
-// TODO(bugs.webrtc.org/10597): Remove when no longer needed.
-typedef RtpDataCodec DataCodec;
 
 // Get the codec setting associated with |payload_type|. If there
 // is no codec associated with that payload type it returns nullptr.

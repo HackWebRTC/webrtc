@@ -94,8 +94,8 @@ class VideoTraits : public Traits<cricket::VideoChannel,
 
 class DataTraits : public Traits<cricket::RtpDataChannel,
                                  cricket::FakeDataMediaChannel,
-                                 cricket::RtpDataContentDescription,
-                                 cricket::RtpDataCodec,
+                                 cricket::DataContentDescription,
+                                 cricket::DataCodec,
                                  cricket::DataMediaInfo,
                                  cricket::DataOptions> {};
 
@@ -2308,15 +2308,15 @@ void ChannelTest<DataTraits>::CreateContent(
     int flags,
     const cricket::AudioCodec& audio_codec,
     const cricket::VideoCodec& video_codec,
-    cricket::RtpDataContentDescription* data) {
+    cricket::DataContentDescription* data) {
   data->AddCodec(kGoogleDataCodec);
   data->set_rtcp_mux((flags & RTCP_MUX) != 0);
 }
 
 template <>
 void ChannelTest<DataTraits>::CopyContent(
-    const cricket::RtpDataContentDescription& source,
-    cricket::RtpDataContentDescription* data) {
+    const cricket::DataContentDescription& source,
+    cricket::DataContentDescription* data) {
   *data = source;
 }
 
@@ -2330,7 +2330,7 @@ template <>
 void ChannelTest<DataTraits>::AddLegacyStreamInContent(
     uint32_t ssrc,
     int flags,
-    cricket::RtpDataContentDescription* data) {
+    cricket::DataContentDescription* data) {
   data->AddLegacyStream(ssrc);
 }
 
