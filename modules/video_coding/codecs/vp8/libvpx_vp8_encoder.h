@@ -118,7 +118,7 @@ class LibvpxVp8Encoder : public VideoEncoder {
   std::vector<vpx_image_t> raw_images_;
   std::vector<EncodedImage> encoded_images_;
   std::vector<vpx_codec_ctx_t> encoders_;
-  std::vector<vpx_codec_enc_cfg_t> configurations_;
+  std::vector<vpx_codec_enc_cfg_t> vpx_configs_;
   std::vector<Vp8EncoderConfig> config_overrides_;
   std::vector<vpx_rational_t> downsampling_factors_;
 
