@@ -99,11 +99,12 @@ void PacketRouter::RemoveReceiveRtpModule(
   rtcp_feedback_senders_.erase(it);
 }
 
-bool PacketRouter::TimeToSendPacket(uint32_t ssrc,
-                                    uint16_t sequence_number,
-                                    int64_t capture_timestamp,
-                                    bool retransmission,
-                                    const PacedPacketInfo& pacing_info) {
+RtpPacketSendResult PacketRouter::TimeToSendPacket(
+    uint32_t ssrc,
+    uint16_t sequence_number,
+    int64_t capture_timestamp,
+    bool retransmission,
+    const PacedPacketInfo& pacing_info) {
   rtc::CritScope cs(&modules_crit_);
   for (auto* rtp_module : rtp_send_modules_) {
     if (!rtp_module->SendingMedia()) {
@@ -121,7 +122,7 @@ bool PacketRouter::TimeToSendPacket(uint32_t ssrc,
                                           pacing_info);
     }
   }
-  return true;
+  return RtpPacketSendResult::kPacketNotFound;
 }
 
 size_t PacketRouter::TimeToSendPadding(size_t bytes_to_send,

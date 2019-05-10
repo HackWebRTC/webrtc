@@ -44,11 +44,12 @@ class PacedSender : public Pacer {
     // module again.
     // Called when it's time to send a queued packet.
     // Returns false if packet cannot be sent.
-    virtual bool TimeToSendPacket(uint32_t ssrc,
-                                  uint16_t sequence_number,
-                                  int64_t capture_time_ms,
-                                  bool retransmission,
-                                  const PacedPacketInfo& cluster_info) = 0;
+    virtual RtpPacketSendResult TimeToSendPacket(
+        uint32_t ssrc,
+        uint16_t sequence_number,
+        int64_t capture_time_ms,
+        bool retransmission,
+        const PacedPacketInfo& cluster_info) = 0;
     // Called when it's a good time to send a padding data.
     // Returns the number of bytes sent.
     virtual size_t TimeToSendPadding(size_t bytes,

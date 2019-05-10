@@ -407,11 +407,12 @@ bool ModuleRtpRtcpImpl::OnSendingRtpFrame(uint32_t timestamp,
   return true;
 }
 
-bool ModuleRtpRtcpImpl::TimeToSendPacket(uint32_t ssrc,
-                                         uint16_t sequence_number,
-                                         int64_t capture_time_ms,
-                                         bool retransmission,
-                                         const PacedPacketInfo& pacing_info) {
+RtpPacketSendResult ModuleRtpRtcpImpl::TimeToSendPacket(
+    uint32_t ssrc,
+    uint16_t sequence_number,
+    int64_t capture_time_ms,
+    bool retransmission,
+    const PacedPacketInfo& pacing_info) {
   return rtp_sender_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms,
                                        retransmission, pacing_info);
 }

@@ -103,11 +103,13 @@ class RTPSender : public AcknowledgedPacketsObserver {
   bool IsRtpHeaderExtensionRegistered(RTPExtensionType type) const;
   int32_t DeregisterRtpHeaderExtension(RTPExtensionType type);
 
-  bool TimeToSendPacket(uint32_t ssrc,
-                        uint16_t sequence_number,
-                        int64_t capture_time_ms,
-                        bool retransmission,
-                        const PacedPacketInfo& pacing_info);
+  // Returns an RtpPacketSendResult indicating succes, failure or invalid
+  // status such as on incorrect sequence number.
+  RtpPacketSendResult TimeToSendPacket(uint32_t ssrc,
+                                       uint16_t sequence_number,
+                                       int64_t capture_time_ms,
+                                       bool retransmission,
+                                       const PacedPacketInfo& pacing_info);
   size_t TimeToSendPadding(size_t bytes, const PacedPacketInfo& pacing_info);
 
   // NACK.

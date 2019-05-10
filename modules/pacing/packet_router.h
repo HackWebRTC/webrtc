@@ -52,11 +52,12 @@ class PacketRouter : public PacedSender::PacketSender,
   void RemoveReceiveRtpModule(RtcpFeedbackSenderInterface* rtcp_sender);
 
   // Implements PacedSender::Callback.
-  bool TimeToSendPacket(uint32_t ssrc,
-                        uint16_t sequence_number,
-                        int64_t capture_timestamp,
-                        bool retransmission,
-                        const PacedPacketInfo& packet_info) override;
+  RtpPacketSendResult TimeToSendPacket(
+      uint32_t ssrc,
+      uint16_t sequence_number,
+      int64_t capture_timestamp,
+      bool retransmission,
+      const PacedPacketInfo& packet_info) override;
 
   size_t TimeToSendPadding(size_t bytes,
                            const PacedPacketInfo& packet_info) override;

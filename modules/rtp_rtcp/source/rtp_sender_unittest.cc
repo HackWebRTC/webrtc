@@ -1180,12 +1180,14 @@ TEST_P(RtpSenderTest, SendFlexfecPackets) {
   EXPECT_CALL(mock_rtc_event_log_,
               LogProxy(SameRtcEventTypeAs(RtcEvent::Type::RtpPacketOutgoing)))
       .Times(2);
-  EXPECT_TRUE(rtp_sender_->TimeToSendPacket(kMediaSsrc, kSeqNum,
-                                            fake_clock_.TimeInMilliseconds(),
-                                            false, PacedPacketInfo()));
-  EXPECT_TRUE(rtp_sender_->TimeToSendPacket(kFlexfecSsrc, flexfec_seq_num,
-                                            fake_clock_.TimeInMilliseconds(),
-                                            false, PacedPacketInfo()));
+  EXPECT_EQ(RtpPacketSendResult::kSuccess,
+            rtp_sender_->TimeToSendPacket(kMediaSsrc, kSeqNum,
+                                          fake_clock_.TimeInMilliseconds(),
+                                          false, PacedPacketInfo()));
+  EXPECT_EQ(RtpPacketSendResult::kSuccess,
+            rtp_sender_->TimeToSendPacket(kFlexfecSsrc, flexfec_seq_num,
+                                          fake_clock_.TimeInMilliseconds(),
+                                          false, PacedPacketInfo()));
   ASSERT_EQ(2, transport_.packets_sent());
   const RtpPacketReceived& media_packet = transport_.sent_packets_[0];
   EXPECT_EQ(kMediaPayloadType, media_packet.PayloadType());
@@ -1258,9 +1260,10 @@ TEST_P(RtpSenderTest, NoFlexfecForTimingFrames) {
   EXPECT_CALL(mock_rtc_event_log_,
               LogProxy(SameRtcEventTypeAs(RtcEvent::Type::RtpPacketOutgoing)))
       .Times(1);
-  EXPECT_TRUE(rtp_sender_->TimeToSendPacket(kMediaSsrc, kSeqNum,
-                                            fake_clock_.TimeInMilliseconds(),
-                                            false, PacedPacketInfo()));
+  EXPECT_EQ(RtpPacketSendResult::kSuccess,
+            rtp_sender_->TimeToSendPacket(kMediaSsrc, kSeqNum,
+                                          fake_clock_.TimeInMilliseconds(),
+                                          false, PacedPacketInfo()));
   ASSERT_EQ(1, transport_.packets_sent());
   const RtpPacketReceived& media_packet = transport_.sent_packets_[0];
   EXPECT_EQ(kMediaPayloadType, media_packet.PayloadType());
@@ -1284,12 +1287,14 @@ TEST_P(RtpSenderTest, NoFlexfecForTimingFrames) {
   EXPECT_CALL(mock_rtc_event_log_,
               LogProxy(SameRtcEventTypeAs(RtcEvent::Type::RtpPacketOutgoing)))
       .Times(2);
-  EXPECT_TRUE(rtp_sender_->TimeToSendPacket(kMediaSsrc, kSeqNum + 1,
-                                            fake_clock_.TimeInMilliseconds(),
-                                            false, PacedPacketInfo()));
-  EXPECT_TRUE(rtp_sender_->TimeToSendPacket(kFlexfecSsrc, flexfec_seq_num,
-                                            fake_clock_.TimeInMilliseconds(),
-                                            false, PacedPacketInfo()));
+  EXPECT_EQ(RtpPacketSendResult::kSuccess,
+            rtp_sender_->TimeToSendPacket(kMediaSsrc, kSeqNum + 1,
+                                          fake_clock_.TimeInMilliseconds(),
+                                          false, PacedPacketInfo()));
+  EXPECT_EQ(RtpPacketSendResult::kSuccess,
+            rtp_sender_->TimeToSendPacket(kFlexfecSsrc, flexfec_seq_num,
+                                          fake_clock_.TimeInMilliseconds(),
+                                          false, PacedPacketInfo()));
   ASSERT_EQ(3, transport_.packets_sent());
   const RtpPacketReceived& media_packet2 = transport_.sent_packets_[1];
   EXPECT_EQ(kMediaPayloadType, media_packet2.PayloadType());

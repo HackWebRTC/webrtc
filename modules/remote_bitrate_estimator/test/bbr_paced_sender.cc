@@ -130,9 +130,10 @@ void BbrPacedSender::Process() {
 
 bool BbrPacedSender::TryToSendPacket(Packet* packet) {
   PacedPacketInfo pacing_info;
-  return packet_sender_->TimeToSendPacket(packet->ssrc, packet->sequence_number,
-                                          packet->capture_time_ms,
-                                          packet->retransmission, pacing_info);
+  return packet_sender_->TimeToSendPacket(
+             packet->ssrc, packet->sequence_number, packet->capture_time_ms,
+             packet->retransmission,
+             pacing_info) != RtpPacketSendResult::kTransportUnavailable;
 }
 
 }  // namespace webrtc

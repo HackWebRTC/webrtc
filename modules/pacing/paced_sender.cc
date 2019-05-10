@@ -371,11 +371,14 @@ void PacedSender::Process() {
       break;
 
     critsect_.Leave();
-    bool success = packet_sender_->TimeToSendPacket(
+    RtpPacketSendResult success = packet_sender_->TimeToSendPacket(
         packet->ssrc, packet->sequence_number, packet->capture_time_ms,
         packet->retransmission, pacing_info);
     critsect_.Enter();
-    if (success) {
+    if (success == RtpPacketSendResult::kSuccess ||
+        success == RtpPacketSendResult::kPacketNotFound) {
+      // Packet sent or invalid packet, remove it from queue.
+      // TODO(webrtc:8052): Don't consume media budget on kInvalid.
       bytes_sent += packet->bytes;
       // Send succeeded, remove it from the queue.
       OnPacketSent(packet);
@@ -443,10 +446,6 @@ void PacedSender::OnPacketSent(const RoundRobinPacketQueue::Packet* packet) {
   bool audio_packet = packet->priority == kHighPriority;
   if (!audio_packet || account_for_audio_) {
     // Update media bytes sent.
-    // TODO(eladalon): TimeToSendPacket() can also return |true| in some
-    // situations where nothing actually ended up being sent to the network,
-    // and we probably don't want to update the budget in such cases.
-    // https://bugs.chromium.org/p/webrtc/issues/detail?id=8052
     UpdateBudgetWithBytesSent(packet->bytes);
     last_send_time_us_ = clock_->TimeInMicroseconds();
   }

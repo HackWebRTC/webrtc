@@ -83,11 +83,11 @@ class MockRtpRtcp : public RtpRtcp {
                      int(uint32_t* available_bandwidth));
   MOCK_METHOD4(OnSendingRtpFrame, bool(uint32_t, int64_t, int, bool));
   MOCK_METHOD5(TimeToSendPacket,
-               bool(uint32_t ssrc,
-                    uint16_t sequence_number,
-                    int64_t capture_time_ms,
-                    bool retransmission,
-                    const PacedPacketInfo& pacing_info));
+               RtpPacketSendResult(uint32_t ssrc,
+                                   uint16_t sequence_number,
+                                   int64_t capture_time_ms,
+                                   bool retransmission,
+                                   const PacedPacketInfo& pacing_info));
   MOCK_METHOD2(TimeToSendPadding,
                size_t(size_t bytes, const PacedPacketInfo& pacing_info));
   MOCK_METHOD2(RegisterRtcpObservers,

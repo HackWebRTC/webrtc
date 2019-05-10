@@ -54,11 +54,9 @@ TEST(PacketRouterTest, Sanity_NoModuleRegistered_TimeToSendPacket) {
   constexpr bool retransmission = false;
   const PacedPacketInfo paced_info(1, kProbeMinProbes, kProbeMinBytes);
 
-  // TODO(eladalon): TimeToSendPacket() returning true when nothing was
-  // sent, because no modules were registered, is sub-optimal.
-  // https://bugs.chromium.org/p/webrtc/issues/detail?id=8052
-  EXPECT_TRUE(packet_router.TimeToSendPacket(ssrc, sequence_number, timestamp,
-                                             retransmission, paced_info));
+  EXPECT_EQ(RtpPacketSendResult::kPacketNotFound,
+            packet_router.TimeToSendPacket(ssrc, sequence_number, timestamp,
+                                           retransmission, paced_info));
 }
 
 TEST(PacketRouterTest, Sanity_NoModuleRegistered_TimeToSendPadding) {
@@ -116,11 +114,12 @@ TEST(PacketRouterTest, TimeToSendPacket) {
                          kSsrc1, sequence_number, timestamp, retransmission,
                          Field(&PacedPacketInfo::probe_cluster_id, 1)))
       .Times(1)
-      .WillOnce(Return(true));
+      .WillOnce(Return(RtpPacketSendResult::kSuccess));
   EXPECT_CALL(rtp_2, TimeToSendPacket(_, _, _, _, _)).Times(0);
-  EXPECT_TRUE(packet_router.TimeToSendPacket(
-      kSsrc1, sequence_number, timestamp, retransmission,
-      PacedPacketInfo(1, kProbeMinProbes, kProbeMinBytes)));
+  EXPECT_EQ(RtpPacketSendResult::kSuccess,
+            packet_router.TimeToSendPacket(
+                kSsrc1, sequence_number, timestamp, retransmission,
+                PacedPacketInfo(1, kProbeMinProbes, kProbeMinBytes)));
 
   // Send on the second module by letting rtp_2 be sending, but not rtp_1.
   ++sequence_number;
@@ -135,19 +134,21 @@ TEST(PacketRouterTest, TimeToSendPacket) {
                          kSsrc2, sequence_number, timestamp, retransmission,
                          Field(&PacedPacketInfo::probe_cluster_id, 2)))
       .Times(1)
-      .WillOnce(Return(true));
-  EXPECT_TRUE(packet_router.TimeToSendPacket(
-      kSsrc2, sequence_number, timestamp, retransmission,
-      PacedPacketInfo(2, kProbeMinProbes, kProbeMinBytes)));
+      .WillOnce(Return(RtpPacketSendResult::kSuccess));
+  EXPECT_EQ(RtpPacketSendResult::kSuccess,
+            packet_router.TimeToSendPacket(
+                kSsrc2, sequence_number, timestamp, retransmission,
+                PacedPacketInfo(2, kProbeMinProbes, kProbeMinBytes)));
 
   // No module is sending, hence no packet should be sent.
   EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(false));
   EXPECT_CALL(rtp_1, TimeToSendPacket(_, _, _, _, _)).Times(0);
   EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(false));
   EXPECT_CALL(rtp_2, TimeToSendPacket(_, _, _, _, _)).Times(0);
-  EXPECT_TRUE(packet_router.TimeToSendPacket(
-      kSsrc1, sequence_number, timestamp, retransmission,
-      PacedPacketInfo(1, kProbeMinProbes, kProbeMinBytes)));
+  EXPECT_EQ(RtpPacketSendResult::kPacketNotFound,
+            packet_router.TimeToSendPacket(
+                kSsrc1, sequence_number, timestamp, retransmission,
+                PacedPacketInfo(1, kProbeMinProbes, kProbeMinBytes)));
 
   // Add a packet with incorrect ssrc and test it's dropped in the router.
   EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(true));
@@ -156,9 +157,10 @@ TEST(PacketRouterTest, TimeToSendPacket) {
   EXPECT_CALL(rtp_2, SSRC()).Times(1).WillOnce(Return(kSsrc2));
   EXPECT_CALL(rtp_1, TimeToSendPacket(_, _, _, _, _)).Times(0);
   EXPECT_CALL(rtp_2, TimeToSendPacket(_, _, _, _, _)).Times(0);
-  EXPECT_TRUE(packet_router.TimeToSendPacket(
-      kSsrc1 + kSsrc2, sequence_number, timestamp, retransmission,
-      PacedPacketInfo(1, kProbeMinProbes, kProbeMinBytes)));
+  EXPECT_EQ(RtpPacketSendResult::kPacketNotFound,
+            packet_router.TimeToSendPacket(
+                kSsrc1 + kSsrc2, sequence_number, timestamp, retransmission,
+                PacedPacketInfo(1, kProbeMinProbes, kProbeMinBytes)));
 
   packet_router.RemoveSendRtpModule(&rtp_1);
 
@@ -167,10 +169,11 @@ TEST(PacketRouterTest, TimeToSendPacket) {
   EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(true));
   EXPECT_CALL(rtp_2, SSRC()).Times(1).WillOnce(Return(kSsrc2));
   EXPECT_CALL(rtp_2, TimeToSendPacket(_, _, _, _, _)).Times(0);
-  EXPECT_TRUE(packet_router.TimeToSendPacket(
-      kSsrc1, sequence_number, timestamp, retransmission,
-      PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
-                      kProbeMinBytes)));
+  EXPECT_EQ(RtpPacketSendResult::kPacketNotFound,
+            packet_router.TimeToSendPacket(
+                kSsrc1, sequence_number, timestamp, retransmission,
+                PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
+                                kProbeMinBytes)));
 
   packet_router.RemoveSendRtpModule(&rtp_2);
 }
@@ -357,10 +360,11 @@ TEST(PacketRouterTest, SenderOnlyFunctionsRespectSendingMedia) {
 
   // Verify that TimeToSendPacket does not end up in a receiver.
   EXPECT_CALL(rtp, TimeToSendPacket(_, _, _, _, _)).Times(0);
-  EXPECT_TRUE(packet_router.TimeToSendPacket(
-      kSsrc, 1, 1, false,
-      PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
-                      kProbeMinBytes)));
+  EXPECT_EQ(RtpPacketSendResult::kPacketNotFound,
+            packet_router.TimeToSendPacket(
+                kSsrc, 1, 1, false,
+                PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
+                                kProbeMinBytes)));
   // Verify that TimeToSendPadding does not end up in a receiver.
   EXPECT_CALL(rtp, TimeToSendPadding(_, _)).Times(0);
   EXPECT_EQ(0u, packet_router.TimeToSendPadding(
