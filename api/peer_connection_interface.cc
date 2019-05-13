@@ -171,11 +171,6 @@ PeerConnectionInterface::peer_connection_state() {
   return PeerConnectionInterface::PeerConnectionState::kFailed;
 }
 
-bool PeerConnectionInterface::StartRtcEventLog(rtc::PlatformFile file,
-                                               int64_t max_size_bytes) {
-  return false;
-}
-
 bool PeerConnectionInterface::StartRtcEventLog(
     std::unique_ptr<RtcEventLogOutput> output,
     int64_t output_period_ms) {

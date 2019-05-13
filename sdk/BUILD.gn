@@ -907,6 +907,7 @@ if (is_ios || is_mac) {
         ":videotoolbox_objc",
         "../api:create_peerconnection_factory",
         "../api:libjingle_peerconnection_api",
+        "../api:rtc_event_log_output_file",
         "../api:rtc_stats_api",
         "../api:scoped_refptr",
         "../api/audio_codecs:audio_codecs_api",

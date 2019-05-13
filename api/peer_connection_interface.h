@@ -1076,14 +1076,6 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
 
   virtual IceGatheringState ice_gathering_state() = 0;
 
-  // Starts RtcEventLog using existing file. Takes ownership of |file| and
-  // passes it on to Call, which will take the ownership. If the
-  // operation fails the file will be closed.
-  // The logging will stop when |max_size_bytes| is reached or when the
-  // StopRtcEventLog function is called.
-  // TODO(eladalon): Deprecate and remove this.
-  virtual bool StartRtcEventLog(rtc::PlatformFile file, int64_t max_size_bytes);
-
   // Start RtcEventLog using an existing output-sink. Takes ownership of
   // |output| and passes it on to Call, which will take the ownership. If the
   // operation fails the output will be closed and deallocated. The event log

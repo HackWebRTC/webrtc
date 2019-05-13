@@ -209,11 +209,6 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
     return IceGatheringState::kIceGatheringNew;
   }
 
-  bool StartRtcEventLog(rtc::PlatformFile file,
-                        int64_t max_size_bytes) override {
-    return false;
-  }
-
   bool StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output,
                         int64_t output_period_ms) override {
     return false;

@@ -777,6 +777,7 @@ if (is_android) {
       ":native_api_stacktrace",
       "..:media_constraints",
       "../../api:libjingle_peerconnection_api",
+      "../../api:rtc_event_log_output_file",
       "../../api/video_codecs:video_codecs_api",
       "../../logging:rtc_event_log_api",
       "../../logging:rtc_event_log_impl_base",

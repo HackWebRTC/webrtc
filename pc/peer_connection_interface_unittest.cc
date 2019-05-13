@@ -3445,30 +3445,6 @@ TEST_P(PeerConnectionInterfaceTest, CurrentAndPendingDescriptions) {
 
 // Tests that it won't crash when calling StartRtcEventLog or StopRtcEventLog
 // after the PeerConnection is closed.
-// This version tests the StartRtcEventLog version that receives a file.
-TEST_P(PeerConnectionInterfaceTest,
-       StartAndStopLoggingToFileAfterPeerConnectionClosed) {
-  CreatePeerConnection();
-  // The RtcEventLog will be reset when the PeerConnection is closed.
-  pc_->Close();
-
-  auto test_info = ::testing::UnitTest::GetInstance()->current_test_info();
-  std::string filename = webrtc::test::OutputPath() +
-                         test_info->test_case_name() + test_info->name();
-  rtc::PlatformFile file = rtc::CreatePlatformFile(filename);
-
-  constexpr int64_t max_size_bytes = 1024;
-
-  EXPECT_FALSE(pc_->StartRtcEventLog(file, max_size_bytes));
-  pc_->StopRtcEventLog();
-
-  // Cleanup.
-  rtc::ClosePlatformFile(file);
-  rtc::RemoveFile(filename);
-}
-
-// Tests that it won't crash when calling StartRtcEventLog or StopRtcEventLog
-// after the PeerConnection is closed.
 // This version tests the StartRtcEventLog version that receives an object
 // of type |RtcEventLogOutput|.
 TEST_P(PeerConnectionInterfaceTest,

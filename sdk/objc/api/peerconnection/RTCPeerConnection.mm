@@ -30,7 +30,9 @@
 
 #include "api/jsep_ice_candidate.h"
 #include "api/media_transport_interface.h"
+#include "api/rtc_event_log_output_file.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/numerics/safe_conversions.h"
 
 NSString * const kRTCPeerConnectionErrorDomain =
     @"org.webrtc.RTCPeerConnection";
@@ -540,8 +542,12 @@ void PeerConnectionDelegateAdapter::OnRemoveTrack(
     RTCLogError(@"Error opening file: %@. Error: %d", filePath, errno);
     return NO;
   }
-  _hasStartedRtcEventLog =
-      _peerConnection->StartRtcEventLog(fd, maxSizeInBytes);
+  // TODO(eladalon): It would be better to not allow negative values into PC.
+  const size_t max_size = (maxSizeInBytes < 0) ? webrtc::RtcEventLog::kUnlimitedOutput :
+                                                 rtc::saturated_cast<size_t>(maxSizeInBytes);
+
+  _hasStartedRtcEventLog = _peerConnection->StartRtcEventLog(
+      absl::make_unique<webrtc::RtcEventLogOutputFile>(fd, max_size));
   return _hasStartedRtcEventLog;
 }
 

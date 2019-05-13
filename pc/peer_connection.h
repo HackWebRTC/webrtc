@@ -209,8 +209,6 @@ class PeerConnection : public PeerConnectionInternal,
 
   rtc::scoped_refptr<SctpTransportInterface> GetSctpTransport() const override;
 
-  RTC_DEPRECATED bool StartRtcEventLog(rtc::PlatformFile file,
-                                       int64_t max_size_bytes) override;
   bool StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output,
                         int64_t output_period_ms) override;
   bool StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output) override;

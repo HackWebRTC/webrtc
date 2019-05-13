@@ -54,7 +54,6 @@
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/string_encode.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/trace_event.h"
@@ -3756,21 +3755,6 @@ PeerConnection::GetFirstAudioTransceiver() const {
   return nullptr;
 }
 
-bool PeerConnection::StartRtcEventLog(rtc::PlatformFile file,
-                                      int64_t max_size_bytes) {
-  // TODO(eladalon): It would be better to not allow negative values into PC.
-  const size_t max_size = (max_size_bytes < 0)
-                              ? RtcEventLog::kUnlimitedOutput
-                              : rtc::saturated_cast<size_t>(max_size_bytes);
-  int64_t output_period_ms = webrtc::RtcEventLog::kImmediateOutput;
-  if (field_trial::IsEnabled("WebRTC-RtcEventLogNewFormat")) {
-    output_period_ms = 5000;
-  }
-  return StartRtcEventLog(
-      absl::make_unique<RtcEventLogOutputFile>(file, max_size),
-      output_period_ms);
-}
-
 bool PeerConnection::StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output,
                                       int64_t output_period_ms) {
   // TODO(eladalon): In C++14, this can be done with a lambda.
@@ -3788,8 +3772,11 @@ bool PeerConnection::StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output,
 
 bool PeerConnection::StartRtcEventLog(
     std::unique_ptr<RtcEventLogOutput> output) {
-  return StartRtcEventLog(std::move(output),
-                          webrtc::RtcEventLog::kImmediateOutput);
+  int64_t output_period_ms = webrtc::RtcEventLog::kImmediateOutput;
+  if (field_trial::IsEnabled("WebRTC-RtcEventLogNewFormat")) {
+    output_period_ms = 5000;
+  }
+  return StartRtcEventLog(std::move(output), output_period_ms);
 }
 
 void PeerConnection::StopRtcEventLog() {

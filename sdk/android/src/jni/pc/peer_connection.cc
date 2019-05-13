@@ -34,11 +34,13 @@
 
 #include "absl/memory/memory.h"
 #include "api/peer_connection_interface.h"
+#include "api/rtc_event_log_output_file.h"
 #include "api/rtp_receiver_interface.h"
 #include "api/rtp_sender_interface.h"
 #include "api/rtp_transceiver_interface.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "sdk/android/generated_peerconnection_jni/jni/PeerConnection_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
@@ -741,8 +743,12 @@ static jboolean JNI_PeerConnection_StartRtcEventLog(
     const JavaParamRef<jobject>& j_pc,
     int file_descriptor,
     int max_size_bytes) {
-  return ExtractNativePC(jni, j_pc)->StartRtcEventLog(file_descriptor,
-                                                      max_size_bytes);
+  // TODO(eladalon): It would be better to not allow negative values into PC.
+  const size_t max_size = (max_size_bytes < 0)
+                              ? RtcEventLog::kUnlimitedOutput
+                              : rtc::saturated_cast<size_t>(max_size_bytes);
+  return ExtractNativePC(jni, j_pc)->StartRtcEventLog(
+      absl::make_unique<RtcEventLogOutputFile>(file_descriptor, max_size));
 }
 
 static void JNI_PeerConnection_StopRtcEventLog(
