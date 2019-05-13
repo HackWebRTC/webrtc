@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "media/base/codec.h"
 #include "media/base/media_channel.h"
 #include "media/base/media_constants.h"
 #include "media/base/media_engine.h"
@@ -25,8 +26,6 @@ class DataRateLimiter;
 }
 
 namespace cricket {
-
-struct DataCodec;
 
 class RtpDataEngine : public DataEngineInterface {
  public:
