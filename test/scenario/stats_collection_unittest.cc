@@ -30,14 +30,12 @@ void CreateAnalyzedStream(Scenario* s,
                       {s->CreateSimulationNode(NetworkSimulationConfig())});
   auto* video = s->CreateVideoStream(route->forward(), config);
   auto* audio = s->CreateAudioStream(route->forward(), AudioStreamConfig());
-  if (collectors) {
-    s->Every(TimeDelta::seconds(1), [=] {
-      collectors->call.AddStats(caller->GetStats());
-      collectors->audio_receive.AddStats(audio->receive()->GetStats());
-      collectors->video_send.AddStats(video->send()->GetStats(), s->Now());
-      collectors->video_receive.AddStats(video->receive()->GetStats());
-    });
-  }
+  s->Every(TimeDelta::seconds(1), [=] {
+    collectors->call.AddStats(caller->GetStats());
+    collectors->audio_receive.AddStats(audio->receive()->GetStats());
+    collectors->video_send.AddStats(video->send()->GetStats(), s->Now());
+    collectors->video_receive.AddStats(video->receive()->GetStats());
+  });
 }
 }  // namespace
 
@@ -82,5 +80,19 @@ TEST(ScenarioAnalyzerTest, PsnrIsLowWhenNetworkIsBad) {
   EXPECT_NEAR(stats.audio_receive.stats().jitter_buffer.Mean().ms(), 45, 20);
 }
 
+TEST(ScenarioAnalyzerTest, CountsCapturedButNotRendered) {
+  VideoQualityAnalyzer analyzer;
+  CallStatsCollectors stats;
+  {
+    Scenario s;
+    NetworkSimulationConfig long_delays;
+    long_delays.delay = TimeDelta::seconds(5);
+    CreateAnalyzedStream(&s, long_delays, &analyzer, &stats);
+    // Enough time to send frames but not enough to deliver.
+    s.RunFor(TimeDelta::ms(100));
+  }
+  EXPECT_GE(analyzer.stats().capture.count, 1);
+  EXPECT_EQ(analyzer.stats().render.count, 0);
+}
 }  // namespace test
 }  // namespace webrtc

@@ -105,9 +105,9 @@ void VideoFrameMatcher::HandleMatch(VideoFrameMatcher::CapturedFrame captured,
   frame_pair.layer_id = layer_id;
   frame_pair.captured = captured.frame;
   frame_pair.capture_id = captured.id;
+  frame_pair.capture_time = captured.capture_time;
   if (captured.best_decode) {
     frame_pair.decode_id = captured.best_decode->id;
-    frame_pair.capture_time = captured.capture_time;
     frame_pair.decoded = captured.best_decode->frame;
     frame_pair.render_time = captured.best_decode->render_time;
     frame_pair.repeated = captured.best_decode->repeat_count++;
