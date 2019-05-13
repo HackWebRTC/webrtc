@@ -45,15 +45,10 @@ void DefaultAudioQualityAnalyzer::OnStatsReports(
     if (strcmp(media_type->static_string_val(), kStatsAudioMediaType) != 0) {
       continue;
     }
-    const webrtc::StatsReport::Value* bytes_received = stats_report->FindValue(
-        StatsReport::StatsValueName::kStatsValueNameBytesReceived);
-    if (bytes_received == nullptr || bytes_received->int64_val() == 0) {
-      // Discarding stats in the following situations:
-      // - When bytes_received is not present, because NetEq stats are only
-      //   available in recv-side SSRC.
-      // - When bytes_received is present but its value is 0. This means
-      //   that media is not yet flowing so there is no need to keep this
-      //   stats report into account (since all its fields would be 0).
+    if (stats_report->FindValue(
+            webrtc::StatsReport::kStatsValueNameBytesSent)) {
+      // If kStatsValueNameBytesSent is present, it means it's a send stream,
+      // but we need audio metrics for receive stream, so skip it.
       continue;
     }
 
