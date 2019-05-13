@@ -103,8 +103,8 @@ class RTPSender : public AcknowledgedPacketsObserver {
   bool IsRtpHeaderExtensionRegistered(RTPExtensionType type) const;
   int32_t DeregisterRtpHeaderExtension(RTPExtensionType type);
 
-  // Returns an RtpPacketSendResult indicating succes, failure or invalid
-  // status such as on incorrect sequence number.
+  // Returns an RtpPacketSendResult indicating success, network unavailable,
+  // or packet not found.
   RtpPacketSendResult TimeToSendPacket(uint32_t ssrc,
                                        uint16_t sequence_number,
                                        int64_t capture_time_ms,
