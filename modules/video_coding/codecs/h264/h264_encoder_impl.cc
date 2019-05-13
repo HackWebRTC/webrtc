@@ -409,11 +409,13 @@ int32_t H264EncoderImpl::Encode(
       break;
     }
   }
+
   if (!send_key_frame && frame_types) {
-    for (size_t i = 0; i < frame_types->size() && i < configurations_.size();
-         ++i) {
-      if ((*frame_types)[i] == VideoFrameType::kVideoFrameKey &&
-          configurations_[i].sending) {
+    for (size_t i = 0; i < configurations_.size(); ++i) {
+      const size_t simulcast_idx =
+          static_cast<size_t>(configurations_[i].simulcast_idx);
+      if (configurations_[i].sending && simulcast_idx < frame_types->size() &&
+          (*frame_types)[simulcast_idx] == VideoFrameType::kVideoFrameKey) {
         send_key_frame = true;
         break;
       }

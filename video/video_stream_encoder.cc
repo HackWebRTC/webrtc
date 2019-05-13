@@ -1358,7 +1358,11 @@ void VideoStreamEncoder::SendKeyFrame() {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   TRACE_EVENT0("webrtc", "OnKeyFrameRequest");
   RTC_DCHECK(!next_frame_types_.empty());
-  next_frame_types_[0] = VideoFrameType::kVideoFrameKey;
+
+  // TODO(webrtc:10615): Map keyframe request to spatial layer.
+  std::fill(next_frame_types_.begin(), next_frame_types_.end(),
+            VideoFrameType::kVideoFrameKey);
+
   if (HasInternalSource()) {
     // Try to request the frame if we have an external encoder with
     // internal source since AddVideoFrame never will be called.
@@ -1377,7 +1381,8 @@ void VideoStreamEncoder::SendKeyFrame() {
                              .build(),
                          &next_frame_types_) == WEBRTC_VIDEO_CODEC_OK) {
       // Try to remove just-performed keyframe request, if stream still exists.
-      next_frame_types_[0] = VideoFrameType::kVideoFrameDelta;
+      std::fill(next_frame_types_.begin(), next_frame_types_.end(),
+                VideoFrameType::kVideoFrameDelta);
     }
   }
 }

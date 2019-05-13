@@ -3752,10 +3752,13 @@ TEST_F(VideoStreamEncoderTest, SetsFrameTypesSimulcast) {
   video_stream_encoder_->SendKeyFrame();
   video_source_.IncomingCapturedFrame(CreateFrame(3, nullptr));
   WaitForEncodedFrame(3);
+
+  // TODO(webrtc:10615): Map keyframe request to spatial layer. Currently
+  // keyframe request on any layer triggers keyframe on all layers.
   EXPECT_THAT(fake_encoder_.LastFrameTypes(),
               ::testing::ElementsAreArray({VideoFrameType::kVideoFrameKey,
-                                           VideoFrameType::kVideoFrameDelta,
-                                           VideoFrameType::kVideoFrameDelta}));
+                                           VideoFrameType::kVideoFrameKey,
+                                           VideoFrameType::kVideoFrameKey}));
 
   video_stream_encoder_->Stop();
 }
