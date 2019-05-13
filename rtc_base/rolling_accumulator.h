@@ -17,6 +17,7 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/numerics/running_statistics.h"
 
 namespace rtc {
 
@@ -28,19 +29,18 @@ template <typename T>
 class RollingAccumulator {
  public:
   explicit RollingAccumulator(size_t max_count) : samples_(max_count) {
+    RTC_DCHECK(max_count > 0);
     Reset();
   }
   ~RollingAccumulator() {}
 
   size_t max_count() const { return samples_.size(); }
 
-  size_t count() const { return count_; }
+  size_t count() const { return static_cast<size_t>(stats_.Size()); }
 
   void Reset() {
-    count_ = 0U;
+    stats_ = webrtc::RunningStatistics<T>();
     next_index_ = 0U;
-    sum_ = 0.0;
-    sum_2_ = 0.0;
     max_ = T();
     max_stale_ = false;
     min_ = T();
@@ -48,52 +48,40 @@ class RollingAccumulator {
   }
 
   void AddSample(T sample) {
-    if (count_ == max_count()) {
+    if (count() == max_count()) {
       // Remove oldest sample.
       T sample_to_remove = samples_[next_index_];
-      sum_ -= sample_to_remove;
-      sum_2_ -= static_cast<double>(sample_to_remove) * sample_to_remove;
+      stats_.RemoveSample(sample_to_remove);
       if (sample_to_remove >= max_) {
         max_stale_ = true;
       }
       if (sample_to_remove <= min_) {
         min_stale_ = true;
       }
-    } else {
-      // Increase count of samples.
-      ++count_;
     }
     // Add new sample.
     samples_[next_index_] = sample;
-    sum_ += sample;
-    sum_2_ += static_cast<double>(sample) * sample;
-    if (count_ == 1 || sample >= max_) {
+    if (count() == 0 || sample >= max_) {
       max_ = sample;
       max_stale_ = false;
     }
-    if (count_ == 1 || sample <= min_) {
+    if (count() == 0 || sample <= min_) {
       min_ = sample;
       min_stale_ = false;
     }
+    stats_.AddSample(sample);
     // Update next_index_.
     next_index_ = (next_index_ + 1) % max_count();
   }
 
-  T ComputeSum() const { return static_cast<T>(sum_); }
-
-  double ComputeMean() const {
-    if (count_ == 0) {
-      return 0.0;
-    }
-    return sum_ / count_;
-  }
+  double ComputeMean() const { return stats_.GetMean().value_or(0); }
 
   T ComputeMax() const {
     if (max_stale_) {
-      RTC_DCHECK(count_ > 0)
-          << "It shouldn't be possible for max_stale_ && count_ == 0";
+      RTC_DCHECK(count() > 0)
+          << "It shouldn't be possible for max_stale_ && count() == 0";
       max_ = samples_[next_index_];
-      for (size_t i = 1u; i < count_; i++) {
+      for (size_t i = 1u; i < count(); i++) {
         max_ = std::max(max_, samples_[(next_index_ + i) % max_count()]);
       }
       max_stale_ = false;
@@ -103,10 +91,10 @@ class RollingAccumulator {
 
   T ComputeMin() const {
     if (min_stale_) {
-      RTC_DCHECK(count_ > 0)
-          << "It shouldn't be possible for min_stale_ && count_ == 0";
+      RTC_DCHECK(count() > 0)
+          << "It shouldn't be possible for min_stale_ && count() == 0";
       min_ = samples_[next_index_];
-      for (size_t i = 1u; i < count_; i++) {
+      for (size_t i = 1u; i < count(); i++) {
         min_ = std::min(min_, samples_[(next_index_ + i) % max_count()]);
       }
       min_stale_ = false;
@@ -118,14 +106,14 @@ class RollingAccumulator {
   // Weights nth sample with weight (learning_rate)^n. Learning_rate should be
   // between (0.0, 1.0], otherwise the non-weighted mean is returned.
   double ComputeWeightedMean(double learning_rate) const {
-    if (count_ < 1 || learning_rate <= 0.0 || learning_rate >= 1.0) {
+    if (count() < 1 || learning_rate <= 0.0 || learning_rate >= 1.0) {
       return ComputeMean();
     }
     double weighted_mean = 0.0;
     double current_weight = 1.0;
     double weight_sum = 0.0;
     const size_t max_size = max_count();
-    for (size_t i = 0; i < count_; ++i) {
+    for (size_t i = 0; i < count(); ++i) {
       current_weight *= learning_rate;
       weight_sum += current_weight;
       // Add max_size to prevent underflow.
@@ -137,22 +125,11 @@ class RollingAccumulator {
 
   // Compute estimated variance.  Estimation is more accurate
   // as the number of samples grows.
-  double ComputeVariance() const {
-    if (count_ == 0) {
-      return 0.0;
-    }
-    // Var = E[x^2] - (E[x])^2
-    double count_inv = 1.0 / count_;
-    double mean_2 = sum_2_ * count_inv;
-    double mean = sum_ * count_inv;
-    return mean_2 - (mean * mean);
-  }
+  double ComputeVariance() const { return stats_.GetVariance().value_or(0); }
 
  private:
-  size_t count_;
+  webrtc::RunningStatistics<T> stats_;
   size_t next_index_;
-  double sum_;    // Sum(x) - double to avoid overflow
-  double sum_2_;  // Sum(x*x) - double to avoid overflow
   mutable T max_;
   mutable bool max_stale_;
   mutable T min_;

@@ -56,7 +56,7 @@ constexpr int SIZE_FOR_MERGE = 5;
 
 }  // namespace
 
-TEST(RunningStatisticsTest, FullSimpleTest) {
+TEST(RunningStatistics, FullSimpleTest) {
   auto stats = CreateStatsFilledWithIntsFrom1ToN(100);
 
   EXPECT_DOUBLE_EQ(*stats.GetMin(), 1.0);
@@ -76,7 +76,49 @@ TEST(RunningStatistics, VarianceAndDeviation) {
   EXPECT_DOUBLE_EQ(*stats.GetStandardDeviation(), sqrt(4.5));
 }
 
-TEST(RunningStatisticsTest, VarianceFromUniformDistribution) {
+TEST(RunningStatistics, RemoveSample) {
+  // We check that adding then removing sample is no-op,
+  // or so (due to loss of precision).
+  RunningStatistics<int> stats;
+  stats.AddSample(2);
+  stats.AddSample(2);
+  stats.AddSample(-1);
+  stats.AddSample(5);
+
+  constexpr int iterations = 1e5;
+  for (int i = 0; i < iterations; ++i) {
+    stats.AddSample(i);
+    stats.RemoveSample(i);
+
+    EXPECT_NEAR(*stats.GetMean(), 2.0, 1e-8);
+    EXPECT_NEAR(*stats.GetVariance(), 4.5, 1e-3);
+    EXPECT_NEAR(*stats.GetStandardDeviation(), sqrt(4.5), 1e-4);
+  }
+}
+
+TEST(RunningStatistics, RemoveSamplesSequence) {
+  // We check that adding then removing a sequence of samples is no-op,
+  // or so (due to loss of precision).
+  RunningStatistics<int> stats;
+  stats.AddSample(2);
+  stats.AddSample(2);
+  stats.AddSample(-1);
+  stats.AddSample(5);
+
+  constexpr int iterations = 1e4;
+  for (int i = 0; i < iterations; ++i) {
+    stats.AddSample(i);
+  }
+  for (int i = 0; i < iterations; ++i) {
+    stats.RemoveSample(i);
+  }
+
+  EXPECT_NEAR(*stats.GetMean(), 2.0, 1e-7);
+  EXPECT_NEAR(*stats.GetVariance(), 4.5, 1e-3);
+  EXPECT_NEAR(*stats.GetStandardDeviation(), sqrt(4.5), 1e-4);
+}
+
+TEST(RunningStatistics, VarianceFromUniformDistribution) {
   // Check variance converge to 1/12 for [0;1) uniform distribution.
   // Acts as a sanity check for NumericStabilityForVariance test.
   auto stats = CreateStatsFromUniformDistribution(1e6, 0, 1);
@@ -84,7 +126,7 @@ TEST(RunningStatisticsTest, VarianceFromUniformDistribution) {
   EXPECT_NEAR(*stats.GetVariance(), 1. / 12, 1e-3);
 }
 
-TEST(RunningStatisticsTest, NumericStabilityForVariance) {
+TEST(RunningStatistics, NumericStabilityForVariance) {
   // Same test as VarianceFromUniformDistribution,
   // except the range is shifted to [1e9;1e9+1).
   // Variance should also converge to 1/12.
@@ -94,6 +136,26 @@ TEST(RunningStatisticsTest, NumericStabilityForVariance) {
   auto stats = CreateStatsFromUniformDistribution(1e6, 1e9, 1e9 + 1);
 
   EXPECT_NEAR(*stats.GetVariance(), 1. / 12, 1e-3);
+}
+
+TEST(RunningStatistics, MinRemainsUnchangedAfterRemove) {
+  // We don't want to recompute min (that's RollingAccumulator's role),
+  // check we get the overall min.
+  RunningStatistics<int> stats;
+  stats.AddSample(1);
+  stats.AddSample(2);
+  stats.RemoveSample(1);
+  EXPECT_EQ(stats.GetMin(), 1);
+}
+
+TEST(RunningStatistics, MaxRemainsUnchangedAfterRemove) {
+  // We don't want to recompute max (that's RollingAccumulator's role),
+  // check we get the overall max.
+  RunningStatistics<int> stats;
+  stats.AddSample(1);
+  stats.AddSample(2);
+  stats.RemoveSample(2);
+  EXPECT_EQ(stats.GetMax(), 2);
 }
 
 TEST_P(RunningStatisticsTest, MergeStatistics) {

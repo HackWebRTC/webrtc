@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <random>
+
 #include "rtc_base/rolling_accumulator.h"
 
 #include "test/gtest.h"
@@ -18,6 +20,18 @@ namespace {
 
 const double kLearningRate = 0.5;
 
+// Add |n| samples drawn from uniform distribution in [a;b].
+void FillStatsFromUniformDistribution(RollingAccumulator<double>& stats,
+                                      int n,
+                                      double a,
+                                      double b) {
+  std::mt19937 gen{std::random_device()()};
+  std::uniform_real_distribution<> dis(a, b);
+
+  for (int i = 1; i <= n; i++) {
+    stats.AddSample(dis(gen));
+  }
+}
 }  // namespace
 
 TEST(RollingAccumulatorTest, ZeroSamples) {
@@ -37,7 +51,6 @@ TEST(RollingAccumulatorTest, SomeSamples) {
   }
 
   EXPECT_EQ(4U, accum.count());
-  EXPECT_EQ(6, accum.ComputeSum());
   EXPECT_DOUBLE_EQ(1.5, accum.ComputeMean());
   EXPECT_NEAR(2.26666, accum.ComputeWeightedMean(kLearningRate), 0.01);
   EXPECT_DOUBLE_EQ(1.25, accum.ComputeVariance());
@@ -52,7 +65,6 @@ TEST(RollingAccumulatorTest, RollingSamples) {
   }
 
   EXPECT_EQ(10U, accum.count());
-  EXPECT_EQ(65, accum.ComputeSum());
   EXPECT_DOUBLE_EQ(6.5, accum.ComputeMean());
   EXPECT_NEAR(10.0, accum.ComputeWeightedMean(kLearningRate), 0.01);
   EXPECT_NEAR(9.0, accum.ComputeVariance(), 1.0);
@@ -79,7 +91,6 @@ TEST(RollingAccumulatorTest, ResetSamples) {
   }
 
   EXPECT_EQ(5U, accum.count());
-  EXPECT_EQ(10, accum.ComputeSum());
   EXPECT_DOUBLE_EQ(2.0, accum.ComputeMean());
   EXPECT_EQ(0, accum.ComputeMin());
   EXPECT_EQ(4, accum.ComputeMax());
@@ -92,7 +103,6 @@ TEST(RollingAccumulatorTest, RollingSamplesDouble) {
   }
 
   EXPECT_EQ(10u, accum.count());
-  EXPECT_DOUBLE_EQ(875.0, accum.ComputeSum());
   EXPECT_DOUBLE_EQ(87.5, accum.ComputeMean());
   EXPECT_NEAR(105.049, accum.ComputeWeightedMean(kLearningRate), 0.1);
   EXPECT_NEAR(229.166667, accum.ComputeVariance(), 25);
@@ -116,4 +126,25 @@ TEST(RollingAccumulatorTest, ComputeWeightedMeanCornerCases) {
   EXPECT_NEAR(6.0, accum.ComputeWeightedMean(kLearningRate), 0.1);
 }
 
+TEST(RollingAccumulatorTest, VarianceFromUniformDistribution) {
+  // Check variance converge to 1/12 for [0;1) uniform distribution.
+  // Acts as a sanity check for NumericStabilityForVariance test.
+  RollingAccumulator<double> stats(/*max_count=*/0.5e6);
+  FillStatsFromUniformDistribution(stats, 1e6, 0, 1);
+
+  EXPECT_NEAR(stats.ComputeVariance(), 1. / 12, 1e-3);
+}
+
+TEST(RollingAccumulatorTest, NumericStabilityForVariance) {
+  // Same test as VarianceFromUniformDistribution,
+  // except the range is shifted to [1e9;1e9+1).
+  // Variance should also converge to 1/12.
+  // NB: Although we lose precision for the samples themselves, the fractional
+  //     part still enjoys 22 bits of mantissa and errors should even out,
+  //     so that couldn't explain a mismatch.
+  RollingAccumulator<double> stats(/*max_count=*/0.5e6);
+  FillStatsFromUniformDistribution(stats, 1e6, 1e9, 1e9 + 1);
+
+  EXPECT_NEAR(stats.ComputeVariance(), 1. / 12, 1e-3);
+}
 }  // namespace rtc
