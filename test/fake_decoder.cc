@@ -12,6 +12,7 @@
 
 #include <string.h>
 
+#include "absl/memory/memory.h"
 #include "api/scoped_refptr.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame.h"
@@ -19,6 +20,7 @@
 #include "api/video/video_rotation.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/task_queue.h"
 #include "rtc_base/time_utils.h"
 
 namespace webrtc {
@@ -29,8 +31,14 @@ const int kDefaultWidth = 320;
 const int kDefaultHeight = 180;
 }  // namespace
 
-FakeDecoder::FakeDecoder()
-    : callback_(NULL), width_(kDefaultWidth), height_(kDefaultHeight) {}
+FakeDecoder::FakeDecoder() : FakeDecoder(nullptr) {}
+
+FakeDecoder::FakeDecoder(TaskQueueFactory* task_queue_factory)
+    : callback_(nullptr),
+      width_(kDefaultWidth),
+      height_(kDefaultHeight),
+      task_queue_factory_(task_queue_factory),
+      decode_delay_ms_(0) {}
 
 int32_t FakeDecoder::InitDecode(const VideoCodec* config,
                                 int32_t number_of_cores) {
@@ -45,18 +53,38 @@ int32_t FakeDecoder::Decode(const EncodedImage& input,
     height_ = input._encodedHeight;
   }
 
-  VideoFrame frame =
-      VideoFrame::Builder()
-          .set_video_frame_buffer(I420Buffer::Create(width_, height_))
-          .set_rotation(webrtc::kVideoRotation_0)
-          .set_timestamp_ms(render_time_ms)
-          .build();
+  rtc::scoped_refptr<I420Buffer> buffer = I420Buffer::Create(width_, height_);
+  I420Buffer::SetBlack(buffer);
+  VideoFrame frame = VideoFrame::Builder()
+                         .set_video_frame_buffer(buffer)
+                         .set_rotation(webrtc::kVideoRotation_0)
+                         .set_timestamp_ms(render_time_ms)
+                         .build();
   frame.set_timestamp(input.Timestamp());
   frame.set_ntp_time_ms(input.ntp_time_ms_);
 
-  callback_->Decoded(frame);
+  if (decode_delay_ms_ == 0 || !task_queue_) {
+    callback_->Decoded(frame);
+  } else {
+    task_queue_->PostDelayedTask(
+        [frame, this]() {
+          VideoFrame copy = frame;
+          callback_->Decoded(copy);
+        },
+        decode_delay_ms_);
+  }
 
   return WEBRTC_VIDEO_CODEC_OK;
+}
+
+void FakeDecoder::SetDelayedDecoding(int decode_delay_ms) {
+  RTC_CHECK(task_queue_factory_);
+  if (!task_queue_) {
+    task_queue_ =
+        absl::make_unique<rtc::TaskQueue>(task_queue_factory_->CreateTaskQueue(
+            "fake_decoder", TaskQueueFactory::Priority::NORMAL));
+  }
+  decode_delay_ms_ = decode_delay_ms;
 }
 
 int32_t FakeDecoder::RegisterDecodeCompleteCallback(

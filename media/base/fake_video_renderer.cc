@@ -28,6 +28,13 @@ void FakeVideoRenderer::OnFrame(const webrtc::VideoFrame& frame) {
   height_ = frame.height();
   rotation_ = frame.rotation();
   timestamp_us_ = frame.timestamp_us();
+  ntp_timestamp_ms_ = frame.ntp_time_ms();
+  color_space_ = frame.color_space();
+  frame_rendered_event_.Set();
+}
+
+bool FakeVideoRenderer::WaitForRenderedFrame(int64_t timeout_ms) {
+  return frame_rendered_event_.Wait(timeout_ms);
 }
 
 }  // namespace cricket

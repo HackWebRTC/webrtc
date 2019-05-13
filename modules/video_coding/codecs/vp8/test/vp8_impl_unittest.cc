@@ -227,49 +227,8 @@ TEST_F(TestVp8Impl, OnEncodedImageReportsInfo) {
   EncodeAndWaitForFrame(*input_frame, &encoded_frame, &codec_specific_info);
 
   EXPECT_EQ(kInitialTimestampRtp, encoded_frame.Timestamp());
-  EXPECT_EQ(kInitialTimestampMs, encoded_frame.capture_time_ms_);
   EXPECT_EQ(kWidth, static_cast<int>(encoded_frame._encodedWidth));
   EXPECT_EQ(kHeight, static_cast<int>(encoded_frame._encodedHeight));
-}
-
-// We only test the encoder here, since the decoded frame rotation is set based
-// on the CVO RTP header extension in VCMDecodedFrameCallback::Decoded.
-// TODO(brandtr): Consider passing through the rotation flag through the decoder
-// in the same way as done in the encoder.
-TEST_F(TestVp8Impl, EncodedRotationEqualsInputRotation) {
-  VideoFrame* input_frame = NextInputFrame();
-  input_frame->set_rotation(kVideoRotation_0);
-
-  EncodedImage encoded_frame;
-  CodecSpecificInfo codec_specific_info;
-  EncodeAndWaitForFrame(*input_frame, &encoded_frame, &codec_specific_info);
-  EXPECT_EQ(kVideoRotation_0, encoded_frame.rotation_);
-
-  input_frame->set_rotation(kVideoRotation_90);
-  EncodeAndWaitForFrame(*input_frame, &encoded_frame, &codec_specific_info);
-  EXPECT_EQ(kVideoRotation_90, encoded_frame.rotation_);
-}
-
-TEST_F(TestVp8Impl, EncodedColorSpaceEqualsInputColorSpace) {
-  // Video frame without explicit color space information.
-  VideoFrame* input_frame = NextInputFrame();
-  EncodedImage encoded_frame;
-  CodecSpecificInfo codec_specific_info;
-  EncodeAndWaitForFrame(*input_frame, &encoded_frame, &codec_specific_info);
-  EXPECT_FALSE(encoded_frame.ColorSpace());
-
-  // Video frame with explicit color space information.
-  ColorSpace color_space = CreateTestColorSpace(/*with_hdr_metadata=*/false);
-  VideoFrame input_frame_w_color_space =
-      VideoFrame::Builder()
-          .set_video_frame_buffer(input_frame->video_frame_buffer())
-          .set_color_space(color_space)
-          .build();
-
-  EncodeAndWaitForFrame(input_frame_w_color_space, &encoded_frame,
-                        &codec_specific_info);
-  ASSERT_TRUE(encoded_frame.ColorSpace());
-  EXPECT_EQ(*encoded_frame.ColorSpace(), color_space);
 }
 
 TEST_F(TestVp8Impl, DecodedQpEqualsEncodedQp) {
@@ -288,24 +247,6 @@ TEST_F(TestVp8Impl, DecodedQpEqualsEncodedQp) {
   ASSERT_TRUE(decoded_qp);
   EXPECT_GT(I420PSNR(input_frame, decoded_frame.get()), 36);
   EXPECT_EQ(encoded_frame.qp_, *decoded_qp);
-}
-
-TEST_F(TestVp8Impl, DecodedColorSpaceEqualsEncodedColorSpace) {
-  VideoFrame* input_frame = NextInputFrame();
-  EncodedImage encoded_frame;
-  CodecSpecificInfo codec_specific_info;
-  EncodeAndWaitForFrame(*input_frame, &encoded_frame, &codec_specific_info);
-
-  // Encoded frame with explicit color space information.
-  ColorSpace color_space = CreateTestColorSpace(/*with_hdr_metadata=*/false);
-  encoded_frame.SetColorSpace(color_space);
-  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK, decoder_->Decode(encoded_frame, false, -1));
-  std::unique_ptr<VideoFrame> decoded_frame;
-  absl::optional<uint8_t> decoded_qp;
-  ASSERT_TRUE(WaitForDecodedFrame(&decoded_frame, &decoded_qp));
-  ASSERT_TRUE(decoded_frame);
-  ASSERT_TRUE(decoded_frame->color_space());
-  EXPECT_EQ(color_space, *decoded_frame->color_space());
 }
 
 TEST_F(TestVp8Impl, ChecksSimulcastSettings) {
@@ -402,7 +343,6 @@ TEST_F(TestVp8Impl, MAYBE_AlignedStrideEncodeDecode) {
   // Compute PSNR on all planes (faster than SSIM).
   EXPECT_GT(I420PSNR(input_frame, decoded_frame.get()), 36);
   EXPECT_EQ(kInitialTimestampRtp, decoded_frame->timestamp());
-  EXPECT_EQ(kTestNtpTimeMs, decoded_frame->ntp_time_ms());
 }
 
 #if defined(WEBRTC_ANDROID)
