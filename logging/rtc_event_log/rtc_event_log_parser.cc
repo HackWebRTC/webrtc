@@ -1129,6 +1129,7 @@ bool ParsedRtcEventLog::ParseStream(
   first_timestamp_ = std::numeric_limits<int64_t>::max();
   last_timestamp_ = std::numeric_limits<int64_t>::min();
   StoreFirstAndLastTimestamp(alr_state_events());
+  StoreFirstAndLastTimestamp(route_change_events());
   for (const auto& audio_stream : audio_playout_events()) {
     // Audio playout events are grouped by SSRC.
     StoreFirstAndLastTimestamp(audio_stream.second);
@@ -2146,7 +2147,7 @@ void ParsedRtcEventLog::StoreParsedNewFormatEvent(
           stream.audio_network_adaptations_size() +
           stream.probe_clusters_size() + stream.probe_success_size() +
           stream.probe_failure_size() + stream.alr_states_size() +
-          stream.ice_candidate_configs_size() +
+          stream.route_changes_size() + stream.ice_candidate_configs_size() +
           stream.ice_candidate_events_size() +
           stream.audio_recv_stream_configs_size() +
           stream.audio_send_stream_configs_size() +
@@ -2189,6 +2190,8 @@ void ParsedRtcEventLog::StoreParsedNewFormatEvent(
     StoreBweProbeFailureEvent(stream.probe_failure(0));
   } else if (stream.alr_states_size() == 1) {
     StoreAlrStateEvent(stream.alr_states(0));
+  } else if (stream.route_changes_size() == 1) {
+    StoreRouteChangeEvent(stream.route_changes(0));
   } else if (stream.ice_candidate_configs_size() == 1) {
     StoreIceCandidatePairConfig(stream.ice_candidate_configs(0));
   } else if (stream.ice_candidate_events_size() == 1) {
@@ -2220,6 +2223,20 @@ void ParsedRtcEventLog::StoreAlrStateEvent(const rtclog2::AlrState& proto) {
   alr_event.in_alr = proto.in_alr();
 
   alr_state_events_.push_back(alr_event);
+  // TODO(terelius): Should we delta encode this event type?
+}
+
+void ParsedRtcEventLog::StoreRouteChangeEvent(
+    const rtclog2::RouteChange& proto) {
+  RTC_CHECK(proto.has_timestamp_ms());
+  RTC_CHECK(proto.has_connected());
+  RTC_CHECK(proto.has_overhead());
+  LoggedRouteChangeEvent route_event;
+  route_event.timestamp_ms = proto.timestamp_ms();
+  route_event.connected = proto.connected();
+  route_event.overhead = proto.overhead();
+
+  route_change_events_.push_back(route_event);
   // TODO(terelius): Should we delta encode this event type?
 }
 

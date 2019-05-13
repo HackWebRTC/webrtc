@@ -31,6 +31,7 @@ class RtcEvent {
   // is kept separate.
   enum class Type {
     AlrStateEvent,
+    RouteChangeEvent,
     AudioNetworkAdaptation,
     AudioPlayout,
     AudioReceiveStreamConfig,

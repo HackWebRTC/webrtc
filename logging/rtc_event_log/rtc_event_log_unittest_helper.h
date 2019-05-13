@@ -32,6 +32,7 @@
 #include "logging/rtc_event_log/events/rtc_event_probe_cluster_created.h"
 #include "logging/rtc_event_log/events/rtc_event_probe_result_failure.h"
 #include "logging/rtc_event_log/events/rtc_event_probe_result_success.h"
+#include "logging/rtc_event_log/events/rtc_event_route_change.h"
 #include "logging/rtc_event_log/events/rtc_event_rtcp_packet_incoming.h"
 #include "logging/rtc_event_log/events/rtc_event_rtcp_packet_outgoing.h"
 #include "logging/rtc_event_log/events/rtc_event_rtp_packet_incoming.h"
@@ -62,23 +63,23 @@ class EventGenerator {
   explicit EventGenerator(uint64_t seed) : prng_(seed) {}
 
   std::unique_ptr<RtcEventAlrState> NewAlrState();
-  std::unique_ptr<RtcEventAudioPlayout> NewAudioPlayout(uint32_t ssrc);
   std::unique_ptr<RtcEventAudioNetworkAdaptation> NewAudioNetworkAdaptation();
+  std::unique_ptr<RtcEventAudioPlayout> NewAudioPlayout(uint32_t ssrc);
   std::unique_ptr<RtcEventBweUpdateDelayBased> NewBweUpdateDelayBased();
   std::unique_ptr<RtcEventBweUpdateLossBased> NewBweUpdateLossBased();
   std::unique_ptr<RtcEventDtlsTransportState> NewDtlsTransportState();
   std::unique_ptr<RtcEventDtlsWritableState> NewDtlsWritableState();
+  std::unique_ptr<RtcEventGenericAckReceived> NewGenericAckReceived();
+  std::unique_ptr<RtcEventGenericPacketReceived> NewGenericPacketReceived();
+  std::unique_ptr<RtcEventGenericPacketSent> NewGenericPacketSent();
+  std::unique_ptr<RtcEventIceCandidatePair> NewIceCandidatePair();
+  std::unique_ptr<RtcEventIceCandidatePairConfig> NewIceCandidatePairConfig();
   std::unique_ptr<RtcEventProbeClusterCreated> NewProbeClusterCreated();
   std::unique_ptr<RtcEventProbeResultFailure> NewProbeResultFailure();
   std::unique_ptr<RtcEventProbeResultSuccess> NewProbeResultSuccess();
-  std::unique_ptr<RtcEventIceCandidatePairConfig> NewIceCandidatePairConfig();
-  std::unique_ptr<RtcEventIceCandidatePair> NewIceCandidatePair();
+  std::unique_ptr<RtcEventRouteChange> NewRouteChange();
   std::unique_ptr<RtcEventRtcpPacketIncoming> NewRtcpPacketIncoming();
   std::unique_ptr<RtcEventRtcpPacketOutgoing> NewRtcpPacketOutgoing();
-
-  std::unique_ptr<RtcEventGenericPacketSent> NewGenericPacketSent();
-  std::unique_ptr<RtcEventGenericPacketReceived> NewGenericPacketReceived();
-  std::unique_ptr<RtcEventGenericAckReceived> NewGenericAckReceived();
 
   rtcp::SenderReport NewSenderReport();
   rtcp::ReceiverReport NewReceiverReport();
@@ -192,6 +193,10 @@ class EventVerifier {
   void VerifyLoggedIceCandidatePairEvent(
       const RtcEventIceCandidatePair& original_event,
       const LoggedIceCandidatePairEvent& logged_event) const;
+
+  void VerifyLoggedRouteChangeEvent(
+      const RtcEventRouteChange& original_event,
+      const LoggedRouteChangeEvent& logged_event) const;
 
   void VerifyLoggedRtpPacketIncoming(
       const RtcEventRtpPacketIncoming& original_event,

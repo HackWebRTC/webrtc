@@ -63,6 +63,7 @@ struct EventCounts {
   size_t video_send_streams = 0;
   size_t video_recv_streams = 0;
   size_t alr_states = 0;
+  size_t route_changes = 0;
   size_t audio_playouts = 0;
   size_t ana_configs = 0;
   size_t bwe_loss_events = 0;
@@ -83,13 +84,13 @@ struct EventCounts {
   size_t generic_acks_received = 0;
 
   size_t total_nonconfig_events() const {
-    return alr_states + audio_playouts + ana_configs + bwe_loss_events +
-           bwe_delay_events + dtls_transport_states + dtls_writable_states +
-           probe_creations + probe_successes + probe_failures + ice_configs +
-           ice_events + incoming_rtp_packets + outgoing_rtp_packets +
-           incoming_rtcp_packets + outgoing_rtcp_packets +
-           generic_packets_sent + generic_packets_received +
-           generic_acks_received;
+    return alr_states + route_changes + audio_playouts + ana_configs +
+           bwe_loss_events + bwe_delay_events + dtls_transport_states +
+           dtls_writable_states + probe_creations + probe_successes +
+           probe_failures + ice_configs + ice_events + incoming_rtp_packets +
+           outgoing_rtp_packets + incoming_rtcp_packets +
+           outgoing_rtcp_packets + generic_packets_sent +
+           generic_packets_received + generic_acks_received;
   }
 
   size_t total_config_events() const {
@@ -159,29 +160,30 @@ class RtcEventLogSession
       audio_playout_map_;  // Groups audio by SSRC.
   std::vector<std::unique_ptr<RtcEventAudioNetworkAdaptation>>
       ana_configs_list_;
-  std::vector<std::unique_ptr<RtcEventBweUpdateLossBased>> bwe_loss_list_;
   std::vector<std::unique_ptr<RtcEventBweUpdateDelayBased>> bwe_delay_list_;
+  std::vector<std::unique_ptr<RtcEventBweUpdateLossBased>> bwe_loss_list_;
   std::vector<std::unique_ptr<RtcEventDtlsTransportState>>
       dtls_transport_state_list_;
   std::vector<std::unique_ptr<RtcEventDtlsWritableState>>
       dtls_writable_state_list_;
+  std::vector<std::unique_ptr<RtcEventGenericAckReceived>>
+      generic_acks_received_;
+  std::vector<std::unique_ptr<RtcEventGenericPacketReceived>>
+      generic_packets_received_;
+  std::vector<std::unique_ptr<RtcEventGenericPacketSent>> generic_packets_sent_;
+  std::vector<std::unique_ptr<RtcEventIceCandidatePair>> ice_event_list_;
+  std::vector<std::unique_ptr<RtcEventIceCandidatePairConfig>> ice_config_list_;
   std::vector<std::unique_ptr<RtcEventProbeClusterCreated>>
       probe_creation_list_;
-  std::vector<std::unique_ptr<RtcEventProbeResultSuccess>> probe_success_list_;
   std::vector<std::unique_ptr<RtcEventProbeResultFailure>> probe_failure_list_;
-  std::vector<std::unique_ptr<RtcEventIceCandidatePairConfig>> ice_config_list_;
-  std::vector<std::unique_ptr<RtcEventIceCandidatePair>> ice_event_list_;
+  std::vector<std::unique_ptr<RtcEventProbeResultSuccess>> probe_success_list_;
+  std::vector<std::unique_ptr<RtcEventRouteChange>> route_change_list_;
+  std::vector<std::unique_ptr<RtcEventRtcpPacketIncoming>> incoming_rtcp_list_;
+  std::vector<std::unique_ptr<RtcEventRtcpPacketOutgoing>> outgoing_rtcp_list_;
   std::map<uint32_t, std::vector<std::unique_ptr<RtcEventRtpPacketIncoming>>>
       incoming_rtp_map_;  // Groups incoming RTP by SSRC.
   std::map<uint32_t, std::vector<std::unique_ptr<RtcEventRtpPacketOutgoing>>>
       outgoing_rtp_map_;  // Groups outgoing RTP by SSRC.
-  std::vector<std::unique_ptr<RtcEventRtcpPacketIncoming>> incoming_rtcp_list_;
-  std::vector<std::unique_ptr<RtcEventRtcpPacketOutgoing>> outgoing_rtcp_list_;
-  std::vector<std::unique_ptr<RtcEventGenericPacketSent>> generic_packets_sent_;
-  std::vector<std::unique_ptr<RtcEventGenericPacketReceived>>
-      generic_packets_received_;
-  std::vector<std::unique_ptr<RtcEventGenericAckReceived>>
-      generic_acks_received_;
 
   int64_t start_time_us_;
   int64_t utc_start_time_us_;
@@ -348,6 +350,15 @@ void RtcEventLogSession::WriteLog(EventCounts count,
       continue;
     }
     selection -= count.alr_states;
+
+    if (selection < count.route_changes) {
+      auto event = gen_.NewRouteChange();
+      event_log->Log(event->Copy());
+      route_change_list_.push_back(std::move(event));
+      count.route_changes--;
+      continue;
+    }
+    selection -= count.route_changes;
 
     if (selection < count.audio_playouts) {
       size_t stream = prng_.Rand(incoming_extensions_.size() - 1);
@@ -552,6 +563,12 @@ void RtcEventLogSession::ReadAndVerifyLog() {
     verifier_.VerifyLoggedAlrStateEvent(*alr_state_list_[i],
                                         parsed_alr_state_events[i]);
   }
+  auto& parsed_route_change_events = parsed_log.route_change_events();
+  ASSERT_EQ(parsed_route_change_events.size(), route_change_list_.size());
+  for (size_t i = 0; i < parsed_route_change_events.size(); i++) {
+    verifier_.VerifyLoggedRouteChangeEvent(*route_change_list_[i],
+                                           parsed_route_change_events[i]);
+  }
 
   const auto& parsed_audio_playout_map = parsed_log.audio_playout_events();
   ASSERT_EQ(parsed_audio_playout_map.size(), audio_playout_map_.size());
@@ -751,6 +768,7 @@ TEST_P(RtcEventLogSession, StartLoggingFromBeginning) {
   count.incoming_rtcp_packets = 20;
   count.outgoing_rtcp_packets = 20;
   if (IsNewFormat()) {
+    count.route_changes = 4;
     count.generic_packets_sent = 100;
     count.generic_packets_received = 100;
     count.generic_acks_received = 20;
@@ -783,6 +801,7 @@ TEST_P(RtcEventLogSession, StartLoggingInTheMiddle) {
   count.incoming_rtcp_packets = 50;
   count.outgoing_rtcp_packets = 50;
   if (IsNewFormat()) {
+    count.route_changes = 10;
     count.generic_packets_sent = 500;
     count.generic_packets_received = 500;
     count.generic_acks_received = 50;

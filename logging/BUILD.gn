@@ -105,6 +105,8 @@ rtc_source_set("rtc_event_bwe") {
     "rtc_event_log/events/rtc_event_probe_result_failure.h",
     "rtc_event_log/events/rtc_event_probe_result_success.cc",
     "rtc_event_log/events/rtc_event_probe_result_success.h",
+    "rtc_event_log/events/rtc_event_route_change.cc",
+    "rtc_event_log/events/rtc_event_route_change.h",
   ]
 
   deps = [

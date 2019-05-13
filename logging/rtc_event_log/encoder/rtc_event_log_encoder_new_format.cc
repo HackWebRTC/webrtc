@@ -32,6 +32,7 @@
 #include "logging/rtc_event_log/events/rtc_event_probe_cluster_created.h"
 #include "logging/rtc_event_log/events/rtc_event_probe_result_failure.h"
 #include "logging/rtc_event_log/events/rtc_event_probe_result_success.h"
+#include "logging/rtc_event_log/events/rtc_event_route_change.h"
 #include "logging/rtc_event_log/events/rtc_event_rtcp_packet_incoming.h"
 #include "logging/rtc_event_log/events/rtc_event_rtcp_packet_outgoing.h"
 #include "logging/rtc_event_log/events/rtc_event_rtp_packet_incoming.h"
@@ -675,10 +676,16 @@ std::string RtcEventLogEncoderNewFormat::EncodeBatch(
     std::vector<const RtcEventBweUpdateLossBased*> bwe_loss_based_updates;
     std::vector<const RtcEventDtlsTransportState*> dtls_transport_states;
     std::vector<const RtcEventDtlsWritableState*> dtls_writable_states;
+    std::vector<const RtcEventGenericAckReceived*> generic_acks_received;
+    std::vector<const RtcEventGenericPacketReceived*> generic_packets_received;
+    std::vector<const RtcEventGenericPacketSent*> generic_packets_sent;
+    std::vector<const RtcEventIceCandidatePair*> ice_candidate_events;
+    std::vector<const RtcEventIceCandidatePairConfig*> ice_candidate_configs;
     std::vector<const RtcEventProbeClusterCreated*>
         probe_cluster_created_events;
     std::vector<const RtcEventProbeResultFailure*> probe_result_failure_events;
     std::vector<const RtcEventProbeResultSuccess*> probe_result_success_events;
+    std::vector<const RtcEventRouteChange*> route_change_events;
     std::vector<const RtcEventRtcpPacketIncoming*> incoming_rtcp_packets;
     std::vector<const RtcEventRtcpPacketOutgoing*> outgoing_rtcp_packets;
     std::map<uint32_t /* SSRC */, std::vector<const RtcEventRtpPacketIncoming*>>
@@ -688,11 +695,6 @@ std::string RtcEventLogEncoderNewFormat::EncodeBatch(
     std::vector<const RtcEventVideoReceiveStreamConfig*>
         video_recv_stream_configs;
     std::vector<const RtcEventVideoSendStreamConfig*> video_send_stream_configs;
-    std::vector<const RtcEventIceCandidatePairConfig*> ice_candidate_configs;
-    std::vector<const RtcEventIceCandidatePair*> ice_candidate_events;
-    std::vector<const RtcEventGenericPacketReceived*> generic_packets_received;
-    std::vector<const RtcEventGenericPacketSent*> generic_packets_sent;
-    std::vector<const RtcEventGenericAckReceived*> generic_acks_received;
 
     for (auto it = begin; it != end; ++it) {
       switch ((*it)->GetType()) {
@@ -769,6 +771,12 @@ std::string RtcEventLogEncoderNewFormat::EncodeBatch(
           auto* rtc_event =
               static_cast<const RtcEventProbeResultSuccess* const>(it->get());
           probe_result_success_events.push_back(rtc_event);
+          break;
+        }
+        case RtcEvent::Type::RouteChangeEvent: {
+          auto* rtc_event =
+              static_cast<const RtcEventRouteChange* const>(it->get());
+          route_change_events.push_back(rtc_event);
           break;
         }
         case RtcEvent::Type::RtcpPacketIncoming: {
@@ -856,20 +864,21 @@ std::string RtcEventLogEncoderNewFormat::EncodeBatch(
     EncodeBweUpdateLossBased(bwe_loss_based_updates, &event_stream);
     EncodeDtlsTransportState(dtls_transport_states, &event_stream);
     EncodeDtlsWritableState(dtls_writable_states, &event_stream);
+    EncodeGenericAcksReceived(generic_acks_received, &event_stream);
+    EncodeGenericPacketsReceived(generic_packets_received, &event_stream);
+    EncodeGenericPacketsSent(generic_packets_sent, &event_stream);
+    EncodeIceCandidatePairConfig(ice_candidate_configs, &event_stream);
+    EncodeIceCandidatePairEvent(ice_candidate_events, &event_stream);
     EncodeProbeClusterCreated(probe_cluster_created_events, &event_stream);
     EncodeProbeResultFailure(probe_result_failure_events, &event_stream);
     EncodeProbeResultSuccess(probe_result_success_events, &event_stream);
+    EncodeRouteChange(route_change_events, &event_stream);
     EncodeRtcpPacketIncoming(incoming_rtcp_packets, &event_stream);
     EncodeRtcpPacketOutgoing(outgoing_rtcp_packets, &event_stream);
     EncodeRtpPacketIncoming(incoming_rtp_packets, &event_stream);
     EncodeRtpPacketOutgoing(outgoing_rtp_packets, &event_stream);
     EncodeVideoRecvStreamConfig(video_recv_stream_configs, &event_stream);
     EncodeVideoSendStreamConfig(video_send_stream_configs, &event_stream);
-    EncodeIceCandidatePairConfig(ice_candidate_configs, &event_stream);
-    EncodeIceCandidatePairEvent(ice_candidate_events, &event_stream);
-    EncodeGenericPacketsReceived(generic_packets_received, &event_stream);
-    EncodeGenericPacketsSent(generic_packets_sent, &event_stream);
-    EncodeGenericAcksReceived(generic_acks_received, &event_stream);
   }  // Deallocate the temporary vectors.
 
   return event_stream.SerializeAsString();
@@ -1297,6 +1306,18 @@ void RtcEventLogEncoderNewFormat::EncodeProbeResultSuccess(
     proto_batch->set_timestamp_ms(base_event->timestamp_ms());
     proto_batch->set_id(base_event->id());
     proto_batch->set_bitrate_bps(base_event->bitrate_bps());
+  }
+  // TODO(terelius): Should we delta-compress this event type?
+}
+
+void RtcEventLogEncoderNewFormat::EncodeRouteChange(
+    rtc::ArrayView<const RtcEventRouteChange*> batch,
+    rtclog2::EventStream* event_stream) {
+  for (const RtcEventRouteChange* base_event : batch) {
+    rtclog2::RouteChange* proto_batch = event_stream->add_route_changes();
+    proto_batch->set_timestamp_ms(base_event->timestamp_ms());
+    proto_batch->set_connected(base_event->connected());
+    proto_batch->set_overhead(base_event->overhead());
   }
   // TODO(terelius): Should we delta-compress this event type?
 }

@@ -218,6 +218,27 @@ TEST_P(RtcEventLogEncoderTest, RtcEventAlrState) {
   }
 }
 
+TEST_P(RtcEventLogEncoderTest, RtcEventRouteChange) {
+  if (!new_encoding_) {
+    return;
+  }
+  std::vector<std::unique_ptr<RtcEventRouteChange>> events(event_count_);
+  for (size_t i = 0; i < event_count_; ++i) {
+    events[i] = (i == 0 || !force_repeated_fields_) ? gen_.NewRouteChange()
+                                                    : events[0]->Copy();
+    history_.push_back(events[i]->Copy());
+  }
+
+  std::string encoded = encoder_->EncodeBatch(history_.begin(), history_.end());
+  ASSERT_TRUE(parsed_log_.ParseString(encoded));
+  const auto& route_change_events = parsed_log_.route_change_events();
+
+  ASSERT_EQ(route_change_events.size(), event_count_);
+  for (size_t i = 0; i < event_count_; ++i) {
+    verifier_.VerifyLoggedRouteChangeEvent(*events[i], route_change_events[i]);
+  }
+}
+
 TEST_P(RtcEventLogEncoderTest, RtcEventAudioNetworkAdaptationBitrate) {
   std::vector<std::unique_ptr<RtcEventAudioNetworkAdaptation>> events(
       event_count_);

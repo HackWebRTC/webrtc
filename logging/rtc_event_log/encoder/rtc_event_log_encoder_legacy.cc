@@ -362,6 +362,7 @@ std::string RtcEventLogEncoderLegacy::Encode(const RtcEvent& event) {
           static_cast<const RtcEventVideoSendStreamConfig&>(event);
       return EncodeVideoSendStreamConfig(rtc_event);
     }
+    case RtcEvent::Type::RouteChangeEvent:
     case RtcEvent::Type::GenericPacketReceived:
     case RtcEvent::Type::GenericPacketSent:
     case RtcEvent::Type::GenericAckReceived:

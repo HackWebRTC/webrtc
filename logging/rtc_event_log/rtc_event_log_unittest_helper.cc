@@ -350,6 +350,11 @@ rtcp::LossNotification EventGenerator::NewLossNotification() {
   return loss_notification;
 }
 
+std::unique_ptr<RtcEventRouteChange> EventGenerator::NewRouteChange() {
+  return absl::make_unique<RtcEventRouteChange>(prng_.Rand<bool>(),
+                                                prng_.Rand(0, 128));
+}
+
 std::unique_ptr<RtcEventRtcpPacketIncoming>
 EventGenerator::NewRtcpPacketIncoming() {
   enum class SupportedRtcpTypes {
@@ -917,6 +922,14 @@ void VerifyLoggedRtpHeader(const RtpPacket& original_header,
     EXPECT_EQ(ConvertCVOByteToVideoRotation(rotation),
               logged_header.extension.videoRotation);
   }
+}
+
+void EventVerifier::VerifyLoggedRouteChangeEvent(
+    const RtcEventRouteChange& original_event,
+    const LoggedRouteChangeEvent& logged_event) const {
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
+  EXPECT_EQ(original_event.connected(), logged_event.connected);
+  EXPECT_EQ(original_event.overhead(), logged_event.overhead);
 }
 
 void EventVerifier::VerifyLoggedRtpPacketIncoming(
