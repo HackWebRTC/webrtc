@@ -118,22 +118,6 @@ VideoEncoder::RateControlParameters::RateControlParameters(
 
 VideoEncoder::RateControlParameters::~RateControlParameters() = default;
 
-int32_t VideoEncoder::SetRates(uint32_t bitrate, uint32_t framerate) {
-  RTC_NOTREACHED() << "SetRate(uint32_t, uint32_t) is deprecated.";
-  return -1;
-}
-
-int32_t VideoEncoder::SetRateAllocation(
-    const VideoBitrateAllocation& allocation,
-    uint32_t framerate) {
-  return SetRates(allocation.get_sum_kbps(), framerate);
-}
-
-void VideoEncoder::SetRates(const RateControlParameters& parameters) {
-  SetRateAllocation(parameters.bitrate,
-                    static_cast<uint32_t>(parameters.framerate_fps + 0.5));
-}
-
 void VideoEncoder::OnPacketLossRateUpdate(float packet_loss_rate) {}
 
 void VideoEncoder::OnRttUpdate(int64_t rtt_ms) {}

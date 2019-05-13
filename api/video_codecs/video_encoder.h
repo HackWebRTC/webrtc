@@ -289,26 +289,10 @@ class RTC_EXPORT VideoEncoder {
   virtual int32_t Encode(const VideoFrame& frame,
                          const std::vector<VideoFrameType>* frame_types) = 0;
 
-  // DEPRECATED! Instead use the one below:
-  // void SetRateAllocation(const VideoBitrateAllocation&, DataRate, uint32)
-  // For now has a default implementation that call RTC_NOTREACHED().
-  // TODO(bugs.webrtc.org/10481): Remove this once all usage is gone.
-  virtual int32_t SetRates(uint32_t bitrate, uint32_t framerate);
-
-  // DEPRECATED! Instead, use void SetRates(const RateControlParameters&);
-  // For now has a default implementation that calls
-  // int32_t SetRates(uin32_t, uint32_t) with |allocation.get_sum_kbps()| and
-  // |framerate| as arguments. This will be removed.
-  // TODO(bugs.webrtc.org/10481): Remove this once all usage is gone.
-  virtual int32_t SetRateAllocation(const VideoBitrateAllocation& allocation,
-                                    uint32_t framerate);
-
   // Sets rate control parameters: bitrate, framerate, etc. These settings are
   // instantaneous (i.e. not moving averages) and should apply from now until
   // the next call to SetRates().
-  // Default implementation will call SetRateAllocation() with appropriate
-  // members of |parameters| as parameters.
-  virtual void SetRates(const RateControlParameters& parameters);
+  virtual void SetRates(const RateControlParameters& parameters) = 0;
 
   // Inform the encoder when the packet loss rate changes.
   //
