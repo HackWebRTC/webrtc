@@ -7,7 +7,7 @@ vars = {
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
   'webrtc_git': 'https://webrtc.googlesource.com',
-  'chromium_revision': 'a1c6ffe854ce69a66bf0f7496a38b554652c03b6',
+  'chromium_revision': '9500673d8238a9c3f8e53e5ebdfe821cfc5057fc',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -24,7 +24,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling catapult
   # and whatever else without interference from each other.
-  'catapult_revision': 'e33ee3bd7c70f3145532a3e859ec2bf3ff7da89d',
+  'catapult_revision': '95764ff31ecd6d9eb804ebe364c0d38f125bfd9b',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling libFuzzer
   # and whatever else without interference from each other.
@@ -86,7 +86,7 @@ deps = {
   # TODO(kjellander): Move this to be Android-only once the libevent dependency
   # in base/third_party/libevent is solved.
   'src/base':
-    Var('chromium_git') + '/chromium/src/base' + '@' + 'c99c84bf420f9c08249d04a80164a26e5ececd1e',
+    Var('chromium_git') + '/chromium/src/base' + '@' + 'f337b799b181c8b4dc533c4dad35b9d30a0765b3',
   'src/build':
     Var('chromium_git') + '/chromium/src/build' + '@' + 'ebde73c9783e63dd9af3929738e0506e37a4acea',
   'src/buildtools':
@@ -98,13 +98,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + 'e8d17daf9bd6074aa45158084fd2383121446316',
+    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + '8f337d96b494bc0d33833accdde85bfee62aa90b',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + '19410047602022fcb90a7f9d4b34c99eaa4d7d82',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + 'ba56fcd1b4ba05eb0426d1a1b076646f71533ba3',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + '7d4f7b7044c2b4e725b86f70354e88040e9e7599',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'fc67e8b58823437d975fce99810485f61aaa97e4',
 
   'src/buildtools/linux64': {
     'packages': [
@@ -199,7 +199,7 @@ deps = {
   'src/third_party/colorama/src':
     Var('chromium_git') + '/external/colorama.git' + '@' + '799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
   'src/third_party/depot_tools':
-    Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '417f2332fcf4aaebee260e98046d850833bf0487',
+    Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + '6a9b00e433cff68ea348a22a9f46483fe9f1c197',
   'src/third_party/errorprone/lib': {
       'url': Var('chromium_git') + '/chromium/third_party/errorprone.git' + '@' + '980d49e839aa4984015efed34b0134d4b2c9b6d7',
       'condition': 'checkout_android',
@@ -230,7 +230,7 @@ deps = {
   'src/third_party/googletest/src':
     Var('chromium_git') + '/external/github.com/google/googletest.git' + '@' + '3f5b5b8f8493a03fa25f1e4a7eae7678514a431d',
   'src/third_party/icu': {
-    'url': Var('chromium_git') + '/chromium/deps/icu.git' + '@' + '3a162e7afb4abf0668c3a01cf111ddcf223d2ec8',
+    'url': Var('chromium_git') + '/chromium/deps/icu.git' + '@' + 'e3d32ff805c917e6a8a6ed1c6e1acb1f2e83c544',
   },
   'src/third_party/jsr-305/src': {
     'url': Var('chromium_git') + '/external/jsr-305.git' + '@' + '642c508235471f7220af6d5df2d3210e3bfc0919',
@@ -312,7 +312,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '720b70524a4424b15fc57e82263568c8ba0496ad',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + 'cbc88ed274038244755e814adec2e1d933e0151e',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '3a60b148b1f1468355b9a1f4ccf7d16b260fdbc2',
   'src/tools/swarming_client':
     Var('chromium_git') + '/infra/luci/client-py.git' + '@' +  Var('swarming_revision'),
 
