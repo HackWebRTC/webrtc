@@ -41,6 +41,7 @@
 #include "rtc_base/ref_counted_object.h"
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/thread.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 #ifdef WEBRTC_ANDROID
 #include "pc/test/android_test_initializer.h"
@@ -53,6 +54,8 @@ namespace webrtc {
 
 using RTCConfiguration = PeerConnectionInterface::RTCConfiguration;
 using RTCOfferAnswerOptions = PeerConnectionInterface::RTCOfferAnswerOptions;
+using ::testing::HasSubstr;
+using ::testing::Not;
 using ::testing::Values;
 
 namespace {
@@ -409,6 +412,32 @@ TEST_P(PeerConnectionDataChannelTest, MediaTransportWithoutSdesFails) {
   auto caller = CreatePeerConnectionWithDataChannel(config);
 
   EXPECT_EQ(nullptr, caller);
+}
+
+TEST_P(PeerConnectionDataChannelTest, ModernSdpSyntaxByDefault) {
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  auto caller = CreatePeerConnectionWithDataChannel();
+  auto offer = caller->CreateOffer(options);
+  EXPECT_FALSE(cricket::GetFirstSctpDataContentDescription(offer->description())
+                   ->use_sctpmap());
+  std::string sdp;
+  offer->ToString(&sdp);
+  RTC_LOG(LS_ERROR) << sdp;
+  EXPECT_THAT(sdp, HasSubstr(" UDP/DTLS/SCTP webrtc-datachannel"));
+  EXPECT_THAT(sdp, Not(HasSubstr("a=sctpmap:")));
+}
+
+TEST_P(PeerConnectionDataChannelTest, ObsoleteSdpSyntaxIfSet) {
+  PeerConnectionInterface::RTCOfferAnswerOptions options;
+  options.use_obsolete_sctp_sdp = true;
+  auto caller = CreatePeerConnectionWithDataChannel();
+  auto offer = caller->CreateOffer(options);
+  EXPECT_TRUE(cricket::GetFirstSctpDataContentDescription(offer->description())
+                  ->use_sctpmap());
+  std::string sdp;
+  offer->ToString(&sdp);
+  EXPECT_THAT(sdp, Not(HasSubstr(" UDP/DTLS/SCTP webrtc-datachannel")));
+  EXPECT_THAT(sdp, HasSubstr("a=sctpmap:"));
 }
 
 INSTANTIATE_TEST_SUITE_P(PeerConnectionDataChannelTest,

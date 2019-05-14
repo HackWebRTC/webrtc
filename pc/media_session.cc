@@ -2237,7 +2237,7 @@ bool MediaSessionDescriptionFactory::AddSctpDataContentForOffer(
   // generate SSRCs rather than SIDs.
   data->set_protocol(secure_transport ? kMediaProtocolUdpDtlsSctp
                                       : kMediaProtocolSctp);
-
+  data->set_use_sctpmap(session_options.use_obsolete_sctp_sdp);
   if (!CreateContentOffer(media_description_options, session_options,
                           sdes_policy, GetCryptos(current_content),
                           crypto_suites, RtpHeaderExtensions(), ssrc_generator_,

@@ -664,6 +664,10 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     // This will apply to all video tracks with a Plan B SDP offer/answer.
     int num_simulcast_layers = 1;
 
+    // If true: Use SDP format from draft-ietf-mmusic-scdp-sdp-03
+    // If false: Use SDP format from draft-ietf-mmusic-sdp-sdp-26 or later
+    bool use_obsolete_sctp_sdp = false;
+
     RTCOfferAnswerOptions() = default;
 
     RTCOfferAnswerOptions(int offer_to_receive_video,

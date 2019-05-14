@@ -118,6 +118,11 @@ struct MediaSessionOptions {
   // supported transports.
   absl::optional<cricket::SessionDescription::MediaTransportSetting>
       media_transport_settings;
+  // Use the draft-ietf-mmusic-sctp-sdp-03 obsolete syntax for SCTP
+  // datachannels.
+  // Default is true for backwards compatibility with clients that use
+  // this internal interface.
+  bool use_obsolete_sctp_sdp = true;
 };
 
 // Creates media session descriptions according to the supplied codecs and
