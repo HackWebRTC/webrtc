@@ -2235,10 +2235,7 @@ bool MediaSessionDescriptionFactory::AddSctpDataContentForOffer(
   // before we call CreateMediaContentOffer.  Otherwise,
   // CreateMediaContentOffer won't know this is SCTP and will
   // generate SSRCs rather than SIDs.
-  // TODO(deadbeef): Offer kMediaProtocolUdpDtlsSctp (or TcpDtlsSctp), once
-  // it's safe to do so. Older versions of webrtc would reject these
-  // protocols; see https://bugs.chromium.org/p/webrtc/issues/detail?id=7706.
-  data->set_protocol(secure_transport ? kMediaProtocolDtlsSctp
+  data->set_protocol(secure_transport ? kMediaProtocolUdpDtlsSctp
                                       : kMediaProtocolSctp);
 
   if (!CreateContentOffer(media_description_options, session_options,

@@ -278,7 +278,7 @@ static const char kSdpRtpDataChannelString[] =
 
 // draft-ietf-mmusic-sctp-sdp-03
 static const char kSdpSctpDataChannelString[] =
-    "m=application 9 DTLS/SCTP 5000\r\n"
+    "m=application 9 UDP/DTLS/SCTP 5000\r\n"
     "c=IN IP4 0.0.0.0\r\n"
     "a=ice-ufrag:ufrag_data\r\n"
     "a=ice-pwd:pwd_data\r\n"
@@ -289,7 +289,7 @@ static const char kSdpSctpDataChannelString[] =
 // Note - this is invalid per draft-ietf-mmusic-sctp-sdp-26,
 // since the separator after "sctp-port" needs to be a colon.
 static const char kSdpSctpDataChannelStringWithSctpPort[] =
-    "m=application 9 DTLS/SCTP webrtc-datachannel\r\n"
+    "m=application 9 UDP/DTLS/SCTP webrtc-datachannel\r\n"
     "a=sctp-port 5000\r\n"
     "c=IN IP4 0.0.0.0\r\n"
     "a=ice-ufrag:ufrag_data\r\n"
@@ -298,7 +298,7 @@ static const char kSdpSctpDataChannelStringWithSctpPort[] =
 
 // draft-ietf-mmusic-sctp-sdp-26
 static const char kSdpSctpDataChannelStringWithSctpColonPort[] =
-    "m=application 9 DTLS/SCTP webrtc-datachannel\r\n"
+    "m=application 9 UDP/DTLS/SCTP webrtc-datachannel\r\n"
     "a=sctp-port:5000\r\n"
     "c=IN IP4 0.0.0.0\r\n"
     "a=ice-ufrag:ufrag_data\r\n"
@@ -306,7 +306,7 @@ static const char kSdpSctpDataChannelStringWithSctpColonPort[] =
     "a=mid:data_content_name\r\n";
 
 static const char kSdpSctpDataChannelWithCandidatesString[] =
-    "m=application 2345 DTLS/SCTP 5000\r\n"
+    "m=application 2345 UDP/DTLS/SCTP 5000\r\n"
     "c=IN IP4 74.125.127.126\r\n"
     "a=candidate:a0+B/1 1 udp 2130706432 192.168.1.5 1234 typ host "
     "generation 2\r\n"
@@ -1784,7 +1784,7 @@ class WebRtcSdpTest : public ::testing::Test {
         new SctpDataContentDescription());
     sctp_desc_ = data.get();
     sctp_desc_->set_use_sctpmap(use_sctpmap);
-    sctp_desc_->set_protocol(cricket::kMediaProtocolDtlsSctp);
+    sctp_desc_->set_protocol(cricket::kMediaProtocolUdpDtlsSctp);
     sctp_desc_->set_port(kDefaultSctpPort);
     desc_.AddContent(kDataContentName, MediaProtocolType::kSctp,
                      data.release());
@@ -2819,18 +2819,18 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannels) {
   sdp_with_data.append(kSdpSctpDataChannelString);
   JsepSessionDescription jdesc_output(kDummyType);
 
-  // Verify with DTLS/SCTP (already in kSdpSctpDataChannelString).
+  // Verify with UDP/DTLS/SCTP (already in kSdpSctpDataChannelString).
   EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
 
-  // Verify with UDP/DTLS/SCTP.
-  sdp_with_data.replace(sdp_with_data.find(kDtlsSctp), strlen(kDtlsSctp),
-                        kUdpDtlsSctp);
+  // Verify with DTLS/SCTP.
+  sdp_with_data.replace(sdp_with_data.find(kUdpDtlsSctp), strlen(kUdpDtlsSctp),
+                        kDtlsSctp);
   EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
 
   // Verify with TCP/DTLS/SCTP.
-  sdp_with_data.replace(sdp_with_data.find(kUdpDtlsSctp), strlen(kUdpDtlsSctp),
+  sdp_with_data.replace(sdp_with_data.find(kDtlsSctp), strlen(kDtlsSctp),
                         kTcpDtlsSctp);
   EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
@@ -2846,19 +2846,6 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithSctpPort) {
   sdp_with_data.append(kSdpSctpDataChannelStringWithSctpPort);
   JsepSessionDescription jdesc_output(kDummyType);
 
-  // Verify with DTLS/SCTP (already in kSdpSctpDataChannelStringWithSctpPort).
-  EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
-  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
-
-  // Verify with UDP/DTLS/SCTP.
-  sdp_with_data.replace(sdp_with_data.find(kDtlsSctp), strlen(kDtlsSctp),
-                        kUdpDtlsSctp);
-  EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
-  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
-
-  // Verify with TCP/DTLS/SCTP.
-  sdp_with_data.replace(sdp_with_data.find(kUdpDtlsSctp), strlen(kUdpDtlsSctp),
-                        kTcpDtlsSctp);
   EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
 }
@@ -2873,19 +2860,6 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithSctpColonPort) {
   sdp_with_data.append(kSdpSctpDataChannelStringWithSctpColonPort);
   JsepSessionDescription jdesc_output(kDummyType);
 
-  // Verify with DTLS/SCTP.
-  EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
-  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
-
-  // Verify with UDP/DTLS/SCTP.
-  sdp_with_data.replace(sdp_with_data.find(kDtlsSctp), strlen(kDtlsSctp),
-                        kUdpDtlsSctp);
-  EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
-  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
-
-  // Verify with TCP/DTLS/SCTP.
-  sdp_with_data.replace(sdp_with_data.find(kUdpDtlsSctp), strlen(kUdpDtlsSctp),
-                        kTcpDtlsSctp);
   EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
 }
@@ -2913,19 +2887,6 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithMaxMessageSize) {
   MutateJsepSctpMaxMessageSize(desc_, 12345, &jdesc);
   JsepSessionDescription jdesc_output(kDummyType);
 
-  // Verify with DTLS/SCTP.
-  EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
-  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
-
-  // Verify with UDP/DTLS/SCTP.
-  sdp_with_data.replace(sdp_with_data.find(kDtlsSctp), strlen(kDtlsSctp),
-                        kUdpDtlsSctp);
-  EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
-  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
-
-  // Verify with TCP/DTLS/SCTP.
-  sdp_with_data.replace(sdp_with_data.find(kUdpDtlsSctp), strlen(kUdpDtlsSctp),
-                        kTcpDtlsSctp);
   EXPECT_TRUE(SdpDeserialize(sdp_with_data, &jdesc_output));
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
 }
@@ -4527,4 +4488,30 @@ TEST_F(WebRtcSdpTest, SerializeMediaTransportSettingsTestCopy) {
   ASSERT_EQ(1u, copy->MediaTransportSettings().size());
   EXPECT_EQ("name", copy->MediaTransportSettings()[0].transport_name);
   EXPECT_EQ("setting", copy->MediaTransportSettings()[0].transport_setting);
+}
+
+TEST_F(WebRtcSdpTest, SerializeWithDefaultSctpProtocol) {
+  AddSctpDataChannel(false);  // Don't use sctpmap
+  JsepSessionDescription jsep_desc(kDummyType);
+  MakeDescriptionWithoutCandidates(&jsep_desc);
+  std::string message = webrtc::SdpSerialize(jsep_desc);
+  EXPECT_NE(std::string::npos,
+            message.find(cricket::kMediaProtocolUdpDtlsSctp));
+}
+
+TEST_F(WebRtcSdpTest, DeserializeWithAllSctpProtocols) {
+  AddSctpDataChannel(false);
+  std::string protocols[] = {cricket::kMediaProtocolDtlsSctp,
+                             cricket::kMediaProtocolUdpDtlsSctp,
+                             cricket::kMediaProtocolTcpDtlsSctp};
+  for (const auto& protocol : protocols) {
+    sctp_desc_->set_protocol(protocol);
+    JsepSessionDescription jsep_desc(kDummyType);
+    MakeDescriptionWithoutCandidates(&jsep_desc);
+    std::string message = webrtc::SdpSerialize(jsep_desc);
+    EXPECT_NE(std::string::npos, message.find(protocol));
+    JsepSessionDescription jsep_output(kDummyType);
+    SdpParseError error;
+    EXPECT_TRUE(webrtc::SdpDeserialize(message, &jsep_output, &error));
+  }
 }

@@ -915,6 +915,26 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateSctpDataOffer) {
   std::unique_ptr<SessionDescription> offer = f1_.CreateOffer(opts, NULL);
   EXPECT_TRUE(offer.get() != NULL);
   EXPECT_TRUE(offer->GetContentByName("data") != NULL);
+  auto dcd = GetFirstSctpDataContentDescription(offer.get());
+  ASSERT_TRUE(dcd);
+  // Since this transport is insecure, the protocol should be "SCTP".
+  EXPECT_EQ(cricket::kMediaProtocolSctp, dcd->protocol());
+}
+
+// Create an SCTP data offer with bundle without error.
+TEST_F(MediaSessionDescriptionFactoryTest, TestCreateSecureSctpDataOffer) {
+  MediaSessionOptions opts;
+  opts.bundle_enabled = true;
+  AddDataSection(cricket::DCT_SCTP, RtpTransceiverDirection::kSendRecv, &opts);
+  f1_.set_secure(SEC_ENABLED);
+  tdf1_.set_secure(SEC_ENABLED);
+  std::unique_ptr<SessionDescription> offer = f1_.CreateOffer(opts, NULL);
+  EXPECT_TRUE(offer.get() != NULL);
+  EXPECT_TRUE(offer->GetContentByName("data") != NULL);
+  auto dcd = GetFirstSctpDataContentDescription(offer.get());
+  ASSERT_TRUE(dcd);
+  // The protocol should now be "UDP/DTLS/SCTP"
+  EXPECT_EQ(cricket::kMediaProtocolUdpDtlsSctp, dcd->protocol());
 }
 
 // Test creating an sctp data channel from an already generated offer.
