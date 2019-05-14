@@ -106,8 +106,6 @@ RTPSender::RTPSender(
     bool extmap_allow_mixed,
     const WebRtcKeyValueConfig& field_trials)
     : clock_(clock),
-      // TODO(holmer): Remove this conversion?
-      clock_delta_ms_(clock_->TimeInMilliseconds() - rtc::TimeMillis()),
       random_(clock_->TimeInMicroseconds()),
       audio_configured_(audio),
       flexfec_ssrc_(flexfec_ssrc),
@@ -474,13 +472,9 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
       return 0;
     }
 
-    // Convert from TickTime to Clock since capture_time_ms is based on
-    // TickTime.
-    int64_t corrected_capture_tims_ms =
-        stored_packet->capture_time_ms + clock_delta_ms_;
     paced_sender_->InsertPacket(
         RtpPacketSender::kNormalPriority, stored_packet->ssrc,
-        stored_packet->rtp_sequence_number, corrected_capture_tims_ms,
+        stored_packet->rtp_sequence_number, stored_packet->capture_time_ms,
         stored_packet->packet_size, true);
 
     return packet_size;
@@ -690,9 +684,7 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
   uint32_t ssrc = packet->Ssrc();
   if (paced_sender_) {
     uint16_t seq_no = packet->SequenceNumber();
-    // Correct offset between implementations of millisecond time stamps in
-    // TickTime and Clock.
-    int64_t corrected_time_ms = packet->capture_time_ms() + clock_delta_ms_;
+    int64_t capture_time_ms = packet->capture_time_ms();
     size_t packet_size =
         send_side_bwe_with_overhead_ ? packet->size() : packet->payload_size();
     if (ssrc == FlexfecSsrc()) {
@@ -704,7 +696,7 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
       packet_history_.PutRtpPacket(std::move(packet), storage, absl::nullopt);
     }
 
-    paced_sender_->InsertPacket(priority, ssrc, seq_no, corrected_time_ms,
+    paced_sender_->InsertPacket(priority, ssrc, seq_no, capture_time_ms,
                                 packet_size, false);
     return true;
   }
