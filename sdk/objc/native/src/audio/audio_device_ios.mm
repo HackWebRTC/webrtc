@@ -518,6 +518,7 @@ void AudioDeviceIOS::HandleInterruptionEnd() {
           "Updating audio unit state.",
          is_interrupted_);
   is_interrupted_ = false;
+  if (!audio_unit_) return;
   if (webrtc::field_trial::IsEnabled("WebRTC-Audio-iOS-Holding")) {
     // Work around an issue where audio does not restart properly after an interruption
     // by restarting the audio unit when the interruption ends.
