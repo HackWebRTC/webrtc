@@ -104,7 +104,6 @@ class NetEqImplTest : public ::testing::Test {
           config_.enable_rtx_handling, delay_peak_detector_, tick_timer_,
           deps.stats.get(), absl::make_unique<Histogram>(50, 32745)));
       mock_delay_manager_ = mock.get();
-      EXPECT_CALL(*mock_delay_manager_, set_streaming_mode(false)).Times(1);
       deps.delay_manager = std::move(mock);
     }
     delay_manager_ = deps.delay_manager.get();

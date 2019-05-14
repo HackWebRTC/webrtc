@@ -31,10 +31,6 @@
 namespace {
 
 constexpr int kLimitProbability = 1020054733;           // 19/20 in Q30.
-constexpr int kLimitProbabilityStreaming = 1073204953;  // 1999/2000 in Q30.
-constexpr int kMaxStreamingPeakPeriodMs = 600000;       // 10 minutes in ms.
-constexpr int kCumulativeSumDrift = 2;  // Drift term for cumulative sum
-                                        // |iat_cumulative_sum_|.
 constexpr int kMinBaseMinimumDelayMs = 0;
 constexpr int kMaxBaseMinimumDelayMs = 10000;
 constexpr int kIatFactor = 32745;  // 0.9993 in Q15.
@@ -129,13 +125,10 @@ DelayManager::DelayManager(size_t max_packets_in_buffer,
       base_target_level_(4),                   // In Q0 domain.
       target_level_(base_target_level_ << 8),  // In Q8 domain.
       packet_len_ms_(0),
-      streaming_mode_(false),
       last_seq_no_(0),
       last_timestamp_(0),
       minimum_delay_ms_(0),
       maximum_delay_ms_(0),
-      iat_cumulative_sum_(0),
-      max_iat_cumulative_sum_(0),
       peak_detector_(*peak_detector),
       last_pack_cng_or_dtmf_(1),
       frame_length_change_experiment_(
@@ -212,9 +205,6 @@ int DelayManager::Update(uint16_t sequence_number,
   bool reordered = false;
   if (packet_len_ms > 0) {
     // Cannot update statistics unless |packet_len_ms| is valid.
-    if (streaming_mode_) {
-      UpdateCumulativeSums(packet_len_ms, sequence_number);
-    }
 
     // Inter-arrival time (IAT) in integer "packet times" (rounding down). This
     // is the value added to the inter-arrival time histogram.
@@ -265,9 +255,6 @@ int DelayManager::Update(uint16_t sequence_number,
     }
     // Calculate new |target_level_| based on updated statistics.
     target_level_ = CalculateTargetLevel(iat_packets, reordered);
-    if (streaming_mode_) {
-      target_level_ = std::max(target_level_, max_iat_cumulative_sum_);
-    }
 
     LimitTargetLevel();
   }  // End if (packet_len_ms > 0).
@@ -305,32 +292,6 @@ int DelayManager::CalculateRelativePacketArrivalDelay() const {
   return relative_delay;
 }
 
-void DelayManager::UpdateCumulativeSums(int packet_len_ms,
-                                        uint16_t sequence_number) {
-  // Calculate IAT in Q8, including fractions of a packet (i.e., more
-  // accurate than |iat_packets|.
-  int iat_packets_q8 =
-      (packet_iat_stopwatch_->ElapsedMs() << 8) / packet_len_ms;
-  // Calculate cumulative sum IAT with sequence number compensation. The sum
-  // is zero if there is no clock-drift.
-  iat_cumulative_sum_ +=
-      (iat_packets_q8 -
-       (static_cast<int>(sequence_number - last_seq_no_) << 8));
-  // Subtract drift term.
-  iat_cumulative_sum_ -= kCumulativeSumDrift;
-  // Ensure not negative.
-  iat_cumulative_sum_ = std::max(iat_cumulative_sum_, 0);
-  if (iat_cumulative_sum_ > max_iat_cumulative_sum_) {
-    // Found a new maximum.
-    max_iat_cumulative_sum_ = iat_cumulative_sum_;
-    max_iat_stopwatch_ = tick_timer_->GetNewStopwatch();
-  }
-  if (max_iat_stopwatch_->ElapsedMs() > kMaxStreamingPeakPeriodMs) {
-    // Too long since the last maximum was observed; decrease max value.
-    max_iat_cumulative_sum_ -= kCumulativeSumDrift;
-  }
-}
-
 // Enforces upper and lower limits for |target_level_|. The upper limit is
 // chosen to be minimum of i) 75% of |max_packets_in_buffer_|, to leave some
 // headroom for natural fluctuations around the target, and ii) equivalent of
@@ -363,9 +324,6 @@ void DelayManager::LimitTargetLevel() {
 
 int DelayManager::CalculateTargetLevel(int iat_packets, bool reordered) {
   int limit_probability = histogram_quantile_;
-  if (streaming_mode_) {
-    limit_probability = kLimitProbabilityStreaming;
-  }
 
   int bucket_index = histogram_->Quantile(limit_probability);
   int target_level;
@@ -415,15 +373,11 @@ int DelayManager::SetPacketAudioLength(int length_ms) {
 
 void DelayManager::Reset() {
   packet_len_ms_ = 0;  // Packet size unknown.
-  streaming_mode_ = false;
   peak_detector_.Reset();
   histogram_->Reset();
   base_target_level_ = 4;
   target_level_ = base_target_level_ << 8;
   packet_iat_stopwatch_ = tick_timer_->GetNewStopwatch();
-  max_iat_stopwatch_ = tick_timer_->GetNewStopwatch();
-  iat_cumulative_sum_ = 0;
-  max_iat_cumulative_sum_ = 0;
   last_pack_cng_or_dtmf_ = 1;
 }
 
@@ -537,9 +491,6 @@ int DelayManager::GetBaseMinimumDelay() const {
 
 int DelayManager::base_target_level() const {
   return base_target_level_;
-}
-void DelayManager::set_streaming_mode(bool value) {
-  streaming_mode_ = value;
 }
 int DelayManager::last_pack_cng_or_dtmf() const {
   return last_pack_cng_or_dtmf_;
