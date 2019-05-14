@@ -50,7 +50,7 @@ class FilterAnalyzer {
   float Gain() const { return gain_; }
 
   // Returns the number of blocks for the current used filter.
-  float FilterLengthBlocks() const { return filter_length_blocks_; }
+  int FilterLengthBlocks() const { return filter_length_blocks_; }
 
   // Returns the preprocessed filter.
   rtc::ArrayView<const float> GetAdjustedFilter() const { return h_highpass_; }

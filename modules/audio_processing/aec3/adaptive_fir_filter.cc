@@ -298,8 +298,7 @@ void ApplyFilter_NEON(const RenderBuffer& render_buffer,
                       rtc::ArrayView<const FftData> H,
                       FftData* S) {
   RTC_DCHECK_GE(H.size(), H.size() - 1);
-  S->re.fill(0.f);
-  S->im.fill(0.f);
+  S->Clear();
 
   rtc::ArrayView<const FftData> render_buffer_data =
       render_buffer.GetFftBuffer();
