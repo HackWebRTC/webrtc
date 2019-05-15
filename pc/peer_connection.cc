@@ -556,18 +556,6 @@ bool VerifyIceUfragPwdPresent(const SessionDescription* desc) {
   return true;
 }
 
-// Get the SCTP port out of a SessionDescription.
-// Return -1 if not found.
-int GetSctpPort(const SessionDescription* session_description) {
-  const cricket::SctpDataContentDescription* data_desc =
-      GetFirstSctpDataContentDescription(session_description);
-  RTC_DCHECK(data_desc);
-  if (!data_desc) {
-    return -1;
-  }
-  return data_desc->port();
-}
-
 // Returns true if |new_desc| requests an ICE restart (i.e., new ufrag/pwd).
 bool CheckForRemoteIceRestart(const SessionDescriptionInterface* old_desc,
                               const SessionDescriptionInterface* new_desc,
@@ -5663,17 +5651,24 @@ RTCError PeerConnection::PushdownMediaDescription(
 
   // Need complete offer/answer with an SCTP m= section before starting SCTP,
   // according to https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-19
-  if (sctp_transport_ && local_description() && remote_description() &&
-      cricket::GetFirstDataContent(local_description()->description()) &&
-      cricket::GetFirstDataContent(remote_description()->description())) {
-    bool success = network_thread()->Invoke<bool>(
-        RTC_FROM_HERE,
-        rtc::Bind(&PeerConnection::PushdownSctpParameters_n, this, source,
-                  GetSctpPort(local_description()->description()),
-                  GetSctpPort(remote_description()->description())));
-    if (!success) {
-      LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
-                           "Failed to push down SCTP parameters.");
+  if (sctp_transport_ && local_description() && remote_description()) {
+    auto local_sctp_description = cricket::GetFirstSctpDataContentDescription(
+        local_description()->description());
+    auto remote_sctp_description = cricket::GetFirstSctpDataContentDescription(
+        remote_description()->description());
+    if (local_sctp_description && remote_sctp_description) {
+      int max_message_size =
+          std::min(local_sctp_description->max_message_size(),
+                   remote_sctp_description->max_message_size());
+      bool success = network_thread()->Invoke<bool>(
+          RTC_FROM_HERE,
+          rtc::Bind(&PeerConnection::PushdownSctpParameters_n, this, source,
+                    local_sctp_description->port(),
+                    remote_sctp_description->port(), max_message_size));
+      if (!success) {
+        LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
+                             "Failed to push down SCTP parameters.");
+      }
     }
   }
 
@@ -5682,11 +5677,13 @@ RTCError PeerConnection::PushdownMediaDescription(
 
 bool PeerConnection::PushdownSctpParameters_n(cricket::ContentSource source,
                                               int local_sctp_port,
-                                              int remote_sctp_port) {
+                                              int remote_sctp_port,
+                                              int max_message_size) {
   RTC_DCHECK_RUN_ON(network_thread());
   // Apply the SCTP port (which is hidden inside a DataCodec structure...)
   // When we support "max-message-size", that would also be pushed down here.
-  return cricket_sctp_transport()->Start(local_sctp_port, remote_sctp_port);
+  return cricket_sctp_transport()->Start(local_sctp_port, remote_sctp_port,
+                                         max_message_size);
 }
 
 RTCError PeerConnection::PushdownTransportDescription(

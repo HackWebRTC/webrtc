@@ -2891,6 +2891,34 @@ TEST_F(WebRtcSdpTest, DeserializeSdpWithSctpDataChannelsWithMaxMessageSize) {
   EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
 }
 
+TEST_F(WebRtcSdpTest, SerializeSdpWithSctpDataChannelWithMaxMessageSize) {
+  bool use_sctpmap = false;
+  AddSctpDataChannel(use_sctpmap);
+  JsepSessionDescription jdesc(kDummyType);
+  MutateJsepSctpMaxMessageSize(desc_, 12345, &jdesc);
+  std::string message = webrtc::SdpSerialize(jdesc);
+  EXPECT_NE(std::string::npos,
+            message.find("\r\na=max-message-size:12345\r\n"));
+  JsepSessionDescription jdesc_output(kDummyType);
+  EXPECT_TRUE(SdpDeserialize(message, &jdesc_output));
+  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
+}
+
+TEST_F(WebRtcSdpTest,
+       SerializeSdpWithSctpDataChannelWithDefaultMaxMessageSize) {
+  // https://tools.ietf.org/html/draft-ietf-mmusic-sctp-sdp-26#section-6
+  // The default max message size is 64K.
+  bool use_sctpmap = false;
+  AddSctpDataChannel(use_sctpmap);
+  JsepSessionDescription jdesc(kDummyType);
+  MutateJsepSctpMaxMessageSize(desc_, 65536, &jdesc);
+  std::string message = webrtc::SdpSerialize(jdesc);
+  EXPECT_EQ(std::string::npos, message.find("\r\na=max-message-size:"));
+  JsepSessionDescription jdesc_output(kDummyType);
+  EXPECT_TRUE(SdpDeserialize(message, &jdesc_output));
+  EXPECT_TRUE(CompareSessionDescription(jdesc, jdesc_output));
+}
+
 // Test to check the behaviour if sctp-port is specified
 // on the m= line and in a=sctp-port.
 TEST_F(WebRtcSdpTest, DeserializeSdpWithMultiSctpPort) {

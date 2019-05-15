@@ -46,9 +46,6 @@ namespace {
 // take off 80 bytes for DTLS/TURN/TCP/IP overhead.
 static constexpr size_t kSctpMtu = 1200;
 
-// The size of the SCTP association send buffer. 256kB, the usrsctp default.
-static constexpr int kSendBufferSize = 256 * 1024;
-
 // Set the initial value of the static SCTP Data Engines reference count.
 int g_usrsctp_usage_count = 0;
 rtc::GlobalLockPod g_usrsctp_lock_;
@@ -185,7 +182,7 @@ class SctpTransport::UsrSctpWrapper {
     // This is harmless, but we should find out when the library default
     // changes.
     int send_size = usrsctp_sysctl_get_sctp_sendspace();
-    if (send_size != kSendBufferSize) {
+    if (send_size != kSctpSendBufferSize) {
       RTC_LOG(LS_ERROR) << "Got different send size than expected: "
                         << send_size;
     }
@@ -327,7 +324,7 @@ class SctpTransport::UsrSctpWrapper {
       // callback. Larger messages (originating from other implementations) will
       // still be delivered in chunks.
       if (!(flags & MSG_EOR) &&
-          (transport->partial_message_.size() < kSendBufferSize)) {
+          (transport->partial_message_.size() < kSctpSendBufferSize)) {
         return 1;
       }
 
@@ -410,7 +407,9 @@ void SctpTransport::SetDtlsTransport(rtc::PacketTransportInternal* transport) {
   }
 }
 
-bool SctpTransport::Start(int local_sctp_port, int remote_sctp_port) {
+bool SctpTransport::Start(int local_sctp_port,
+                          int remote_sctp_port,
+                          int max_message_size) {
   RTC_DCHECK_RUN_ON(network_thread_);
   if (local_sctp_port == -1) {
     local_sctp_port = kSctpDefaultPort;
@@ -418,6 +417,20 @@ bool SctpTransport::Start(int local_sctp_port, int remote_sctp_port) {
   if (remote_sctp_port == -1) {
     remote_sctp_port = kSctpDefaultPort;
   }
+  if (max_message_size > kSctpSendBufferSize) {
+    RTC_LOG(LS_ERROR) << "Max message size of " << max_message_size
+                      << " is larger than send bufffer size "
+                      << kSctpSendBufferSize;
+    return false;
+  }
+  if (max_message_size < 1) {
+    RTC_LOG(LS_ERROR) << "Max message size of " << max_message_size
+                      << " is too small";
+    return false;
+  }
+  // We allow changing max_message_size with a second Start() call,
+  // but not changing the port numbers.
+  max_message_size_ = max_message_size;
   if (started_) {
     if (local_sctp_port != local_port_ || remote_sctp_port != remote_port_) {
       RTC_LOG(LS_ERROR)
@@ -537,6 +550,11 @@ bool SctpTransport::SendData(const SendDataParams& params,
     }
   }
 
+  if (payload.size() > static_cast<size_t>(max_message_size_)) {
+    RTC_LOG(LS_ERROR) << "Attempting to send message of size " << payload.size()
+                      << " which is larger than limit " << max_message_size_;
+    return false;
+  }
   // We don't fragment.
   send_res = usrsctp_sendv(
       sock_, payload.data(), static_cast<size_t>(payload.size()), NULL, 0, &spa,
@@ -657,9 +675,9 @@ bool SctpTransport::OpenSctpSocket() {
 
   UsrSctpWrapper::IncrementUsrSctpUsageCount();
 
-  // If kSendBufferSize isn't reflective of reality, we log an error, but we
-  // still have to do something reasonable here.  Look up what the buffer's
-  // real size is and set our threshold to something reasonable.
+  // If kSctpSendBufferSize isn't reflective of reality, we log an error, but we
+  // still have to do something reasonable here.  Look up what the buffer's real
+  // size is and set our threshold to something reasonable.
   static const int kSendThreshold = usrsctp_sysctl_get_sctp_sendspace() / 2;
 
   sock_ = usrsctp_socket(

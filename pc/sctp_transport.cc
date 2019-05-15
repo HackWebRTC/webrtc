@@ -105,8 +105,14 @@ void SctpTransport::UpdateInformation(SctpTransportState state) {
     must_send_update = (state != info_.state());
     // TODO(https://bugs.webrtc.org/10358): Update max message size and
     // max channels from internal SCTP transport when available.
-    info_ = SctpTransportInformation(
-        state, dtls_transport_, info_.MaxMessageSize(), info_.MaxChannels());
+    if (internal_sctp_transport_) {
+      info_ = SctpTransportInformation(
+          state, dtls_transport_, internal_sctp_transport_->max_message_size(),
+          info_.MaxChannels());
+    } else {
+      info_ = SctpTransportInformation(
+          state, dtls_transport_, info_.MaxMessageSize(), info_.MaxChannels());
+    }
     if (observer_ && must_send_update) {
       info_copy = info_;
     }

@@ -21,9 +21,10 @@
 class FakeSctpTransport : public cricket::SctpTransportInternal {
  public:
   void SetDtlsTransport(rtc::PacketTransportInternal* transport) override {}
-  bool Start(int local_port, int remote_port) override {
+  bool Start(int local_port, int remote_port, int max_message_size) override {
     local_port_.emplace(local_port);
     remote_port_.emplace(remote_port);
+    max_message_size_ = max_message_size;
     return true;
   }
   bool OpenStream(int sid) override { return true; }
@@ -36,12 +37,14 @@ class FakeSctpTransport : public cricket::SctpTransportInternal {
   bool ReadyToSendData() override { return true; }
   void set_debug_name_for_testing(const char* debug_name) override {}
 
+  int max_message_size() const { return max_message_size_; }
   int local_port() const { return *local_port_; }
   int remote_port() const { return *remote_port_; }
 
  private:
   absl::optional<int> local_port_;
   absl::optional<int> remote_port_;
+  int max_message_size_;
 };
 
 class FakeSctpTransportFactory : public cricket::SctpTransportInternalFactory {

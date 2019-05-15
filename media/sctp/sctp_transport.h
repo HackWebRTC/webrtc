@@ -72,13 +72,14 @@ class SctpTransport : public SctpTransportInternal,
 
   // SctpTransportInternal overrides (see sctptransportinternal.h for comments).
   void SetDtlsTransport(rtc::PacketTransportInternal* transport) override;
-  bool Start(int local_port, int remote_port) override;
+  bool Start(int local_port, int remote_port, int max_message_size) override;
   bool OpenStream(int sid) override;
   bool ResetStream(int sid) override;
   bool SendData(const SendDataParams& params,
                 const rtc::CopyOnWriteBuffer& payload,
                 SendDataResult* result = nullptr) override;
   bool ReadyToSendData() override;
+  int max_message_size() const override { return max_message_size_; }
   void set_debug_name_for_testing(const char* debug_name) override {
     debug_name_ = debug_name;
   }
@@ -151,6 +152,7 @@ class SctpTransport : public SctpTransportInternal,
   bool was_ever_writable_ = false;
   int local_port_ = kSctpDefaultPort;
   int remote_port_ = kSctpDefaultPort;
+  int max_message_size_ = kSctpSendBufferSize;
   struct socket* sock_ = nullptr;  // The socket created by usrsctp_socket(...).
 
   // Has Start been called? Don't create SCTP socket until it has.

@@ -28,6 +28,10 @@
 
 namespace cricket {
 
+// Constants that are important to API users
+// The size of the SCTP association send buffer. 256kB, the usrsctp default.
+constexpr int kSctpSendBufferSize = 256 * 1024;
+
 // The number of outgoing streams that we'll negotiate. Since stream IDs (SIDs)
 // are 0-based, the highest usable SID is 1023.
 //
@@ -67,13 +71,16 @@ class SctpTransportInternal {
   // listener and connector must be using the same port. They are not related
   // to the ports at the IP level. If set to -1, we default to
   // kSctpDefaultPort.
+  // |max_message_size_| sets the max message size on the connection.
+  // It must be smaller than or equal to kSctpSendBufferSize.
+  // It can be changed by a secons Start() call.
   //
-  // TODO(deadbeef): Add remote max message size as parameter to Start, once we
-  // start supporting it.
   // TODO(deadbeef): Support calling Start with different local/remote ports
   // and create a new association? Not clear if this is something we need to
   // support though. See: https://github.com/w3c/webrtc-pc/issues/979
-  virtual bool Start(int local_sctp_port, int remote_sctp_port) = 0;
+  virtual bool Start(int local_sctp_port,
+                     int remote_sctp_port,
+                     int max_message_size) = 0;
 
   // NOTE: Initially there was a "Stop" method here, but it was never used, so
   // it was removed.
@@ -105,6 +112,8 @@ class SctpTransportInternal {
   // ICE channels may be unwritable while ReadyToSendData is true, because data
   // can still be queued in usrsctp.
   virtual bool ReadyToSendData() = 0;
+  // Returns the current max message size, set with Start().
+  virtual int max_message_size() const = 0;
 
   sigslot::signal0<> SignalReadyToSendData;
   // ReceiveDataParams includes SID, seq num, timestamp, etc. CopyOnWriteBuffer

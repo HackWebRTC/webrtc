@@ -32,7 +32,9 @@ namespace {
 class FakeCricketSctpTransport : public cricket::SctpTransportInternal {
  public:
   void SetDtlsTransport(rtc::PacketTransportInternal* transport) override {}
-  bool Start(int local_port, int remote_port) override { return true; }
+  bool Start(int local_port, int remote_port, int max_message_size) override {
+    return true;
+  }
   bool OpenStream(int sid) override { return true; }
   bool ResetStream(int sid) override { return true; }
   bool SendData(const cricket::SendDataParams& params,
@@ -42,6 +44,7 @@ class FakeCricketSctpTransport : public cricket::SctpTransportInternal {
   }
   bool ReadyToSendData() override { return true; }
   void set_debug_name_for_testing(const char* debug_name) override {}
+  int max_message_size() const override { return 0; }
   // Methods exposed for testing
   void SendSignalReadyToSendData() { SignalReadyToSendData(); }
 

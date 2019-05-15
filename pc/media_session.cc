@@ -25,6 +25,7 @@
 #include "api/crypto_params.h"
 #include "media/base/h264_profile_level_id.h"
 #include "media/base/media_constants.h"
+#include "media/sctp/sctp_transport_internal.h"
 #include "p2p/base/p2p_constants.h"
 #include "pc/channel_manager.h"
 #include "pc/media_protocol_names.h"
@@ -2238,6 +2239,8 @@ bool MediaSessionDescriptionFactory::AddSctpDataContentForOffer(
   data->set_protocol(secure_transport ? kMediaProtocolUdpDtlsSctp
                                       : kMediaProtocolSctp);
   data->set_use_sctpmap(session_options.use_obsolete_sctp_sdp);
+  data->set_max_message_size(kSctpSendBufferSize);
+
   if (!CreateContentOffer(media_description_options, session_options,
                           sdes_policy, GetCryptos(current_content),
                           crypto_suites, RtpHeaderExtensions(), ssrc_generator_,
@@ -2579,6 +2582,10 @@ bool MediaSessionDescriptionFactory::AddDataContentForAnswer(
         offer_content->media_description()->as_sctp();
     // Respond with the offerer's proto, whatever it is.
     data_answer->as_sctp()->set_protocol(offer_data_description->protocol());
+    // Respond with our max message size or the remote max messsage size,
+    // whichever is smaller.
+    data_answer->as_sctp()->set_max_message_size(std::min(
+        offer_data_description->max_message_size(), kSctpSendBufferSize));
     if (!CreateMediaContentAnswer(
             offer_data_description, media_description_options, session_options,
             sdes_policy, GetCryptos(current_content), RtpHeaderExtensions(),

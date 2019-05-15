@@ -172,6 +172,7 @@ static const char kAttributeInactive[] = "inactive";
 // a=sctp-port, a=max-message-size
 static const char kAttributeSctpPort[] = "sctp-port";
 static const char kAttributeMaxMessageSize[] = "max-message-size";
+static const int kDefaultSctpMaxMessageSize = 65536;
 // draft-ietf-mmusic-sdp-simulcast-13
 // a=simulcast
 static const char kAttributeSimulcast[] = "simulcast";
@@ -272,9 +273,6 @@ static void BuildMediaDescription(const ContentInfo* content_info,
                                   const std::vector<Candidate>& candidates,
                                   int msid_signaling,
                                   std::string* message);
-static void BuildSctpContentAttributes(std::string* message,
-                                       int sctp_port,
-                                       bool use_sctpmap);
 static void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
                                       const cricket::MediaType media_type,
                                       int msid_signaling,
@@ -1323,6 +1321,33 @@ bool ParseExtmap(const std::string& line,
   return true;
 }
 
+static void BuildSctpContentAttributes(
+    std::string* message,
+    const cricket::SctpDataContentDescription* data_desc) {
+  rtc::StringBuilder os;
+  if (data_desc->use_sctpmap()) {
+    // draft-ietf-mmusic-sctp-sdp-04
+    // a=sctpmap:sctpmap-number  protocol  [streams]
+    rtc::StringBuilder os;
+    InitAttrLine(kAttributeSctpmap, &os);
+    os << kSdpDelimiterColon << data_desc->port() << kSdpDelimiterSpace
+       << kDefaultSctpmapProtocol << kSdpDelimiterSpace
+       << cricket::kMaxSctpStreams;
+    AddLine(os.str(), message);
+  } else {
+    // draft-ietf-mmusic-sctp-sdp-23
+    // a=sctp-port:<port>
+    InitAttrLine(kAttributeSctpPort, &os);
+    os << kSdpDelimiterColon << data_desc->port();
+    AddLine(os.str(), message);
+    if (data_desc->max_message_size() != kDefaultSctpMaxMessageSize) {
+      InitAttrLine(kAttributeMaxMessageSize, &os);
+      os << kSdpDelimiterColon << data_desc->max_message_size();
+      AddLine(os.str(), message);
+    }
+  }
+}
+
 void BuildMediaDescription(const ContentInfo* content_info,
                            const TransportInfo* transport_info,
                            const cricket::MediaType media_type,
@@ -1518,32 +1543,10 @@ void BuildMediaDescription(const ContentInfo* content_info,
   if (cricket::IsDtlsSctp(media_desc->protocol())) {
     const cricket::SctpDataContentDescription* data_desc =
         media_desc->as_sctp();
-    bool use_sctpmap = data_desc->use_sctpmap();
-    BuildSctpContentAttributes(message, data_desc->port(), use_sctpmap);
+    BuildSctpContentAttributes(message, data_desc);
   } else if (cricket::IsRtpProtocol(media_desc->protocol())) {
     BuildRtpContentAttributes(media_desc, media_type, msid_signaling, message);
   }
-}
-
-void BuildSctpContentAttributes(std::string* message,
-                                int sctp_port,
-                                bool use_sctpmap) {
-  rtc::StringBuilder os;
-  if (use_sctpmap) {
-    // draft-ietf-mmusic-sctp-sdp-04
-    // a=sctpmap:sctpmap-number  protocol  [streams]
-    InitAttrLine(kAttributeSctpmap, &os);
-    os << kSdpDelimiterColon << sctp_port << kSdpDelimiterSpace
-       << kDefaultSctpmapProtocol << kSdpDelimiterSpace
-       << cricket::kMaxSctpStreams;
-  } else {
-    // draft-ietf-mmusic-sctp-sdp-23
-    // a=sctp-port:<port>
-    InitAttrLine(kAttributeSctpPort, &os);
-    os << kSdpDelimiterColon << sctp_port;
-    // TODO(zstein): emit max-message-size here
-  }
-  AddLine(os.str(), message);
 }
 
 void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
@@ -2706,6 +2709,9 @@ bool ParseMediaDescription(
         // m=application <port> UDP/DTLS/SCTP webrtc-datachannel
         // use_sctpmap should be false.
         auto data_desc = absl::make_unique<SctpDataContentDescription>();
+        // Default max message size is 64K
+        // according to draft-ietf-mmusic-sctp-sdp-26
+        data_desc->set_max_message_size(kDefaultSctpMaxMessageSize);
         int p;
         if (rtc::FromString(fields[3], &p)) {
           data_desc->set_port(p);

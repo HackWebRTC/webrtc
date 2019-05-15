@@ -498,7 +498,8 @@ class SctpDataContentDescription : public MediaContentDescription {
   bool use_sctpmap_ = true;  // Note: "true" is no longer conformant.
   // Defaults should be constants imported from SCTP. Quick hack.
   int port_ = 5000;
-  int max_message_size_ = 256 * 1024;
+  // draft-ietf-mmusic-sdp-sctp-23: Max message size default is 64K
+  int max_message_size_ = 64 * 1024;
   std::unique_ptr<DataContentDescription> shim_;
 };
 
