@@ -13,6 +13,7 @@
 
 #include "absl/memory/memory.h"
 #include "api/test/simulated_network.h"
+#include "api/units/time_delta.h"
 #include "call/simulated_network.h"
 #include "rtc_base/event.h"
 #include "rtc_base/gunit.h"
@@ -252,7 +253,7 @@ TEST(NetworkEmulationManagerTest, Run) {
   ASSERT_EQ_WAIT(received_stats_count.load(), 2, kStatsWaitTimeoutMs);
 }
 
-TEST(NetworkEmulationManagerTest, ThoughputStats) {
+TEST(NetworkEmulationManagerTest, ThroughputStats) {
   NetworkEmulationManagerImpl network_manager;
 
   EmulatedNetworkNode* alice_node = network_manager.CreateEmulatedNode(
@@ -297,8 +298,6 @@ TEST(NetworkEmulationManagerTest, ThoughputStats) {
     s2->Send(data.data(), data.size());
     wait.Wait(100);
   }
-  EXPECT_EQ(r1.ReceivedCount(), 11);
-  EXPECT_EQ(r2.ReceivedCount(), 11);
 
   delete s1;
   delete s2;
@@ -307,11 +306,14 @@ TEST(NetworkEmulationManagerTest, ThoughputStats) {
   nt1->GetStats([&](EmulatedNetworkStats st) {
     EXPECT_EQ(st.packets_sent, 11l);
     EXPECT_EQ(st.bytes_sent.bytes(), single_packet_size * 11l);
-    EXPECT_NEAR(st.AverageSendRate().bps(), DataRate::bytes_per_sec(1000).bps(),
-                1000);
+    EXPECT_GE(st.last_packet_sent_time - st.first_packet_sent_time,
+              TimeDelta::seconds(1));
+    EXPECT_GT(st.AverageSendRate().bps(), 0);
     received_stats_count++;
   });
   ASSERT_EQ_WAIT(received_stats_count.load(), 1, kStatsWaitTimeoutMs);
+  EXPECT_EQ(r1.ReceivedCount(), 11);
+  EXPECT_EQ(r2.ReceivedCount(), 11);
 }
 
 // Testing that packets are delivered via all routes using a routing scheme as
