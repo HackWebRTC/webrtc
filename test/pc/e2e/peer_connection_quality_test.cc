@@ -461,6 +461,37 @@ void PeerConnectionE2EQualityTest::ValidateParams(const RunParams& run_params,
           << VideoConfigSourcePresenceToString(video_config);
       RTC_CHECK(!(video_config.screen_share_config && video_config.generator))
           << VideoConfigSourcePresenceToString(video_config);
+
+      if (video_config.screen_share_config) {
+        if (video_config.screen_share_config->slides_yuv_file_names.empty()) {
+          if (video_config.screen_share_config->scrolling_params) {
+            // If we have scrolling params, then its |source_width| and
+            // |source_heigh| will be used as width and height of video input,
+            // so we have to validate it against width and height of default
+            // input.
+            RTC_CHECK_EQ(video_config.screen_share_config->scrolling_params
+                             ->source_width,
+                         kDefaultSlidesWidth);
+            RTC_CHECK_EQ(video_config.screen_share_config->scrolling_params
+                             ->source_height,
+                         kDefaultSlidesHeight);
+          } else {
+            RTC_CHECK_EQ(video_config.width, kDefaultSlidesWidth);
+            RTC_CHECK_EQ(video_config.height, kDefaultSlidesHeight);
+          }
+        }
+        if (video_config.screen_share_config->scrolling_params) {
+          RTC_CHECK_LE(
+              video_config.screen_share_config->scrolling_params->duration,
+              video_config.screen_share_config->slide_change_interval);
+          RTC_CHECK_GE(
+              video_config.screen_share_config->scrolling_params->source_width,
+              video_config.width);
+          RTC_CHECK_GE(
+              video_config.screen_share_config->scrolling_params->source_height,
+              video_config.height);
+        }
+      }
     }
     if (p->audio_config) {
       bool inserted =
@@ -616,13 +647,53 @@ PeerConnectionE2EQualityTest::CreateFrameGenerator(
         video_config.width, video_config.height, /*frame_repeat_count=*/1);
   }
   if (video_config.screen_share_config) {
-    // TODO(titovartem) implement screen share support
-    // (http://bugs.webrtc.org/10138)
-    RTC_NOTREACHED() << "Screen share is not implemented";
-    return nullptr;
+    return CreateScreenShareFrameGenerator(video_config);
   }
   RTC_NOTREACHED() << "Unsupported video_config input source";
   return nullptr;
+}
+
+std::unique_ptr<test::FrameGenerator>
+PeerConnectionE2EQualityTest::CreateScreenShareFrameGenerator(
+    const VideoConfig& video_config) {
+  RTC_CHECK(video_config.screen_share_config);
+  if (video_config.screen_share_config->generate_slides) {
+    return test::FrameGenerator::CreateSlideGenerator(
+        video_config.width, video_config.height,
+        video_config.screen_share_config->slide_change_interval.seconds() *
+            video_config.fps);
+  }
+  std::vector<std::string> slides =
+      video_config.screen_share_config->slides_yuv_file_names;
+  if (slides.empty()) {
+    // If slides is empty we need to add default slides as source. In such case
+    // video width and height is validated to be equal to kDefaultSlidesWidth
+    // and kDefaultSlidesHeight.
+    slides.push_back(test::ResourcePath("web_screenshot_1850_1110", "yuv"));
+    slides.push_back(test::ResourcePath("presentation_1850_1110", "yuv"));
+    slides.push_back(test::ResourcePath("photo_1850_1110", "yuv"));
+    slides.push_back(test::ResourcePath("difficult_photo_1850_1110", "yuv"));
+  }
+  if (!video_config.screen_share_config->scrolling_params) {
+    // Cycle image every slide_change_interval seconds.
+    return test::FrameGenerator::CreateFromYuvFile(
+        slides, video_config.width, video_config.height,
+        video_config.screen_share_config->slide_change_interval.seconds() *
+            video_config.fps);
+  }
+
+  // |pause_duration| is nonnegative. It is validated in ValidateParams(...).
+  TimeDelta pause_duration =
+      video_config.screen_share_config->slide_change_interval -
+      video_config.screen_share_config->scrolling_params->duration;
+
+  return test::FrameGenerator::CreateScrollingInputFromYuvFiles(
+      clock_, slides,
+      video_config.screen_share_config->scrolling_params->source_width,
+      video_config.screen_share_config->scrolling_params->source_height,
+      video_config.width, video_config.height,
+      video_config.screen_share_config->scrolling_params->duration.ms(),
+      pause_duration.ms());
 }
 
 void PeerConnectionE2EQualityTest::MaybeAddAudio(TestPeer* peer) {

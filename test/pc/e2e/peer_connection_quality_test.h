@@ -219,6 +219,8 @@ class PeerConnectionE2EQualityTest
   MaybeAddVideo(TestPeer* peer);
   std::unique_ptr<test::FrameGenerator> CreateFrameGenerator(
       const VideoConfig& video_config);
+  std::unique_ptr<test::FrameGenerator> CreateScreenShareFrameGenerator(
+      const VideoConfig& video_config);
   void MaybeAddAudio(TestPeer* peer);
   void SetPeerCodecPreferences(TestPeer* peer, const RunParams& run_params);
   void SetupCall();

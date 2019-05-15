@@ -13,6 +13,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/memory/memory.h"
@@ -40,19 +41,72 @@
 namespace webrtc {
 namespace webrtc_pc_e2e {
 
+constexpr size_t kDefaultSlidesWidth = 1850;
+constexpr size_t kDefaultSlidesHeight = 1110;
+
 // API is in development. Can be changed/removed without notice.
 class PeerConnectionE2EQualityTestFixture {
  public:
+  // Contains parameters for screen share scrolling.
+  //
+  // If scrolling is enabled, then it will be done by putting sliding window
+  // on source video and moving this window from top left corner to the
+  // bottom right corner of the picture.
+  //
+  // In such case source dimensions must be greater or equal to the sliding
+  // window dimensions. So |source_width| and |source_height| are the dimensions
+  // of the source frame, while |VideoConfig::width| and |VideoConfig::height|
+  // are the dimensions of the sliding window.
+  //
+  // Because |source_width| and |source_height| are dimensions of the source
+  // frame, they have to be width and height of videos from
+  // |ScreenShareConfig::slides_yuv_file_names|.
+  //
+  // Because scrolling have to be done on single slide it also requires, that
+  // |duration| must be less or equal to
+  // |ScreenShareConfig::slide_change_interval|.
+  struct ScrollingParams {
+    ScrollingParams(TimeDelta duration,
+                    size_t source_width,
+                    size_t source_height)
+        : duration(duration),
+          source_width(source_width),
+          source_height(source_height) {
+      RTC_CHECK_GT(duration.ms(), 0);
+    }
+
+    // Duration of scrolling.
+    TimeDelta duration;
+    // Width of source slides video.
+    size_t source_width;
+    // Height of source slides video.
+    size_t source_height;
+  };
+
   // Contains screen share video stream properties.
   struct ScreenShareConfig {
-    // If true, slides will be generated programmatically.
-    bool generate_slides;
+    explicit ScreenShareConfig(TimeDelta slide_change_interval)
+        : slide_change_interval(slide_change_interval) {
+      RTC_CHECK_GT(slide_change_interval.ms(), 0);
+    }
+
     // Shows how long one slide should be presented on the screen during
     // slide generation.
     TimeDelta slide_change_interval;
-    // If equal to 0, no scrolling will be applied.
-    TimeDelta scroll_duration;
-    // If empty, default set of slides will be used.
+    // If true, slides will be generated programmatically. No scrolling params
+    // will be applied in such case.
+    bool generate_slides = false;
+    // If present scrolling will be applied. Please read extra requirement on
+    // |slides_yuv_file_names| for scrolling.
+    absl::optional<ScrollingParams> scrolling_params;
+    // Contains list of yuv files with slides.
+    //
+    // If empty, default set of slides will be used. In such case
+    // |VideoConfig::width| must be equal to |kDefaultSlidesWidth| and
+    // |VideoConfig::height| must be equal to |kDefaultSlidesHeight| or if
+    // |scrolling_params| are specified, then |ScrollingParams::source_width|
+    // must be equal to |kDefaultSlidesWidth| and
+    // |ScrollingParams::source_height| must be equal to |kDefaultSlidesHeight|.
     std::vector<std::string> slides_yuv_file_names;
   };
 
@@ -63,7 +117,9 @@ class PeerConnectionE2EQualityTestFixture {
     VideoConfig(size_t width, size_t height, int32_t fps)
         : width(width), height(height), fps(fps) {}
 
+    // Video stream width.
     const size_t width;
+    // Video stream height.
     const size_t height;
     const int32_t fps;
     // Have to be unique among all specified configs for all peers in the call.
