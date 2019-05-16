@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/include/rtcp_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_nack_stats.h"
@@ -94,6 +95,11 @@ class RTCPReceiver {
 
   // Get statistics.
   int32_t StatisticsReceived(std::vector<RTCPReportBlock>* receiveBlocks) const;
+  // A snapshot of Report Blocks with additional data of interest to statistics.
+  // Within this list, the sender-source SSRC pair is unique and per-pair the
+  // ReportBlockData represents the latest Report Block that was received for
+  // that pair.
+  std::vector<ReportBlockData> GetLatestReportBlockData() const;
 
   // Returns true if we haven't received an RTCP RR for several RTCP
   // intervals, but only triggers true once.
@@ -114,17 +120,17 @@ class RTCPReceiver {
 
   void RegisterRtcpStatisticsCallback(RtcpStatisticsCallback* callback);
   RtcpStatisticsCallback* GetRtcpStatisticsCallback();
+  void SetReportBlockDataObserver(ReportBlockDataObserver* observer);
 
  private:
   struct PacketInformation;
   struct TmmbrInformation;
   struct RrtrInformation;
-  struct ReportBlockWithRtt;
   struct LastFirStatus;
   // RTCP report blocks mapped by remote SSRC.
-  using ReportBlockInfoMap = std::map<uint32_t, ReportBlockWithRtt>;
+  using ReportBlockDataMap = std::map<uint32_t, ReportBlockData>;
   // RTCP report blocks map mapped by source SSRC.
-  using ReportBlockMap = std::map<uint32_t, ReportBlockInfoMap>;
+  using ReportBlockMap = std::map<uint32_t, ReportBlockDataMap>;
 
   bool ParseCompoundPacket(const uint8_t* packet_begin,
                            const uint8_t* packet_end,
@@ -262,6 +268,11 @@ class RTCPReceiver {
   int64_t last_increased_sequence_number_ms_;
 
   RtcpStatisticsCallback* stats_callback_ RTC_GUARDED_BY(feedbacks_lock_);
+  // TODO(hbos): Remove RtcpStatisticsCallback in favor of
+  // ReportBlockDataObserver; the ReportBlockData contains a superset of the
+  // RtcpStatistics data.
+  ReportBlockDataObserver* report_block_data_observer_
+      RTC_GUARDED_BY(feedbacks_lock_);
 
   RtcpPacketTypeCounterObserver* const packet_type_counter_observer_;
   RtcpPacketTypeCounter packet_type_counter_;

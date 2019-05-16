@@ -11,6 +11,7 @@ import("../../webrtc.gni")
 rtc_source_set("rtp_rtcp_format") {
   visibility = [ "*" ]
   public = [
+    "include/report_block_data.h",
     "include/rtcp_statistics.h",
     "include/rtp_cvo.h",
     "include/rtp_header_extension_map.h",
@@ -50,6 +51,7 @@ rtc_source_set("rtp_rtcp_format") {
     "source/rtp_packet_to_send.h",
   ]
   sources = [
+    "include/report_block_data.cc",
     "include/rtp_rtcp_defines.cc",
     "source/rtcp_packet.cc",
     "source/rtcp_packet/app.cc",
@@ -446,6 +448,7 @@ if (rtc_include_tests) {
       "../../api:scoped_refptr",
       "../../api:transport_api",
       "../../api/transport:field_trial_based_config",
+      "../../api/units:timestamp",
       "../../api/video:video_bitrate_allocation",
       "../../api/video:video_bitrate_allocator",
       "../../api/video:video_codec_constants",
