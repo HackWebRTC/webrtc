@@ -877,10 +877,6 @@ class PeerConnection : public PeerConnectionInternal,
   // down to all of the channels.
   RTCError PushdownMediaDescription(SdpType type, cricket::ContentSource source)
       RTC_RUN_ON(signaling_thread());
-  bool PushdownSctpParameters_n(cricket::ContentSource source,
-                                int local_sctp_port,
-                                int remote_sctp_port,
-                                int max_message_size);
 
   RTCError PushdownTransportDescription(cricket::ContentSource source,
                                         SdpType type);

@@ -36,9 +36,16 @@ class SctpTransport : public SctpTransportInterface,
   void RegisterObserver(SctpTransportObserverInterface* observer) override;
   void UnregisterObserver() override;
 
+  // Internal functions
   void Clear();
   void SetDtlsTransport(rtc::scoped_refptr<DtlsTransport>);
+  // Initialize the cricket::SctpTransport. This can be called from
+  // the signaling thread.
+  void Start(int local_port, int remote_port, int max_message_size);
 
+  // TODO(https://bugs.webrtc.org/10629): Move functions that need
+  // internal() to be functions on the webrtc::SctpTransport interface,
+  // and make the internal() function private.
   cricket::SctpTransportInternal* internal() {
     rtc::CritScope scope(&lock_);
     return internal_sctp_transport_.get();
@@ -58,7 +65,9 @@ class SctpTransport : public SctpTransportInterface,
   void OnInternalClosingProcedureStartedRemotely(int sid);
   void OnInternalClosingProcedureComplete(int sid);
 
-  const rtc::Thread* owner_thread_;
+  // Note - owner_thread never changes, but can't be const if we do
+  // Invoke() on it.
+  rtc::Thread* owner_thread_;
   rtc::CriticalSection lock_;
   // Variables accessible off-thread, guarded by lock_
   SctpTransportInformation info_ RTC_GUARDED_BY(lock_);

@@ -96,6 +96,27 @@ void SctpTransport::SetDtlsTransport(
   UpdateInformation(next_state);
 }
 
+void SctpTransport::Start(int local_port,
+                          int remote_port,
+                          int max_message_size) {
+  {
+    rtc::CritScope scope(&lock_);
+    // Record max message size on calling thread.
+    info_ = SctpTransportInformation(info_.state(), info_.dtls_transport(),
+                                     max_message_size, info_.MaxChannels());
+  }
+  if (owner_thread_->IsCurrent()) {
+    if (!internal()->Start(local_port, remote_port, max_message_size)) {
+      RTC_LOG(LS_ERROR) << "Failed to push down SCTP parameters, closing.";
+      UpdateInformation(SctpTransportState::kClosed);
+    }
+  } else {
+    owner_thread_->Invoke<void>(
+        RTC_FROM_HERE, rtc::Bind(&SctpTransport::Start, this, local_port,
+                                 remote_port, max_message_size));
+  }
+}
+
 void SctpTransport::UpdateInformation(SctpTransportState state) {
   RTC_DCHECK_RUN_ON(owner_thread_);
   bool must_send_update;
@@ -103,12 +124,11 @@ void SctpTransport::UpdateInformation(SctpTransportState state) {
   {
     rtc::CritScope scope(&lock_);
     must_send_update = (state != info_.state());
-    // TODO(https://bugs.webrtc.org/10358): Update max message size and
-    // max channels from internal SCTP transport when available.
+    // TODO(https://bugs.webrtc.org/10358): Update max channels from internal
+    // SCTP transport when available.
     if (internal_sctp_transport_) {
       info_ = SctpTransportInformation(
-          state, dtls_transport_, internal_sctp_transport_->max_message_size(),
-          info_.MaxChannels());
+          state, dtls_transport_, info_.MaxMessageSize(), info_.MaxChannels());
     } else {
       info_ = SctpTransportInformation(
           state, dtls_transport_, info_.MaxMessageSize(), info_.MaxChannels());

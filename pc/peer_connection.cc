@@ -5657,33 +5657,22 @@ RTCError PeerConnection::PushdownMediaDescription(
     auto remote_sctp_description = cricket::GetFirstSctpDataContentDescription(
         remote_description()->description());
     if (local_sctp_description && remote_sctp_description) {
-      int max_message_size =
-          std::min(local_sctp_description->max_message_size(),
-                   remote_sctp_description->max_message_size());
-      bool success = network_thread()->Invoke<bool>(
-          RTC_FROM_HERE,
-          rtc::Bind(&PeerConnection::PushdownSctpParameters_n, this, source,
-                    local_sctp_description->port(),
-                    remote_sctp_description->port(), max_message_size));
-      if (!success) {
-        LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
-                             "Failed to push down SCTP parameters.");
+      int max_message_size;
+      // A remote max message size of zero means "any size supported".
+      // We configure the connection with our own max message size.
+      if (remote_sctp_description->max_message_size() == 0) {
+        max_message_size = local_sctp_description->max_message_size();
+      } else {
+        max_message_size =
+            std::min(local_sctp_description->max_message_size(),
+                     remote_sctp_description->max_message_size());
       }
+      sctp_transport_->Start(local_sctp_description->port(),
+                             remote_sctp_description->port(), max_message_size);
     }
   }
 
   return RTCError::OK();
-}
-
-bool PeerConnection::PushdownSctpParameters_n(cricket::ContentSource source,
-                                              int local_sctp_port,
-                                              int remote_sctp_port,
-                                              int max_message_size) {
-  RTC_DCHECK_RUN_ON(network_thread());
-  // Apply the SCTP port (which is hidden inside a DataCodec structure...)
-  // When we support "max-message-size", that would also be pushed down here.
-  return cricket_sctp_transport()->Start(local_sctp_port, remote_sctp_port,
-                                         max_message_size);
 }
 
 RTCError PeerConnection::PushdownTransportDescription(

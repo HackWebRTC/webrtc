@@ -2584,8 +2584,15 @@ bool MediaSessionDescriptionFactory::AddDataContentForAnswer(
     data_answer->as_sctp()->set_protocol(offer_data_description->protocol());
     // Respond with our max message size or the remote max messsage size,
     // whichever is smaller.
-    data_answer->as_sctp()->set_max_message_size(std::min(
-        offer_data_description->max_message_size(), kSctpSendBufferSize));
+    // 0 is treated specially - it means "I can accept any size". Since
+    // we do not implement infinite size messages, reply with
+    // kSctpSendBufferSize.
+    if (offer_data_description->max_message_size() == 0) {
+      data_answer->as_sctp()->set_max_message_size(kSctpSendBufferSize);
+    } else {
+      data_answer->as_sctp()->set_max_message_size(std::min(
+          offer_data_description->max_message_size(), kSctpSendBufferSize));
+    }
     if (!CreateMediaContentAnswer(
             offer_data_description, media_description_options, session_options,
             sdes_policy, GetCryptos(current_content), RtpHeaderExtensions(),

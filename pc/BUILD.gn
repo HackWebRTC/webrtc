@@ -295,6 +295,7 @@ if (rtc_include_tests) {
       "../call:rtp_interfaces",
       "../call:rtp_receiver",
       "../logging:rtc_event_log_api",
+      "../media:rtc_data",
       "../media:rtc_media_base",
       "../media:rtc_media_tests_utils",
       "../modules/rtp_rtcp:rtp_rtcp_format",
