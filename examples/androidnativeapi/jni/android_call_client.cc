@@ -13,16 +13,14 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/peer_connection_interface.h"
-#include "api/video/builtin_video_bitrate_allocator_factory.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "examples/androidnativeapi/generated_jni/jni/CallClient_jni.h"
 #include "logging/rtc_event_log/rtc_event_log_factory.h"
 #include "media/engine/internal_decoder_factory.h"
 #include "media/engine/internal_encoder_factory.h"
 #include "media/engine/webrtc_media_engine.h"
-#include "modules/audio_processing/include/audio_processing.h"
+#include "media/engine/webrtc_media_engine_defaults.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/native_api/video/wrapper.h"
 
@@ -156,19 +154,26 @@ void AndroidCallClient::CreatePeerConnectionFactory() {
   signaling_thread_->SetName("signaling_thread", nullptr);
   RTC_CHECK(signaling_thread_->Start()) << "Failed to start thread";
 
-  std::unique_ptr<cricket::MediaEngineInterface> media_engine =
-      cricket::WebRtcMediaEngineFactory::Create(
-          nullptr /* adm */, webrtc::CreateBuiltinAudioEncoderFactory(),
-          webrtc::CreateBuiltinAudioDecoderFactory(),
-          absl::make_unique<webrtc::InternalEncoderFactory>(),
-          absl::make_unique<webrtc::InternalDecoderFactory>(),
-          nullptr /* audio_mixer */, webrtc::AudioProcessingBuilder().Create());
-  RTC_LOG(LS_INFO) << "Media engine created: " << media_engine.get();
+  webrtc::PeerConnectionFactoryDependencies pcf_deps;
+  pcf_deps.network_thread = network_thread_.get();
+  pcf_deps.worker_thread = worker_thread_.get();
+  pcf_deps.signaling_thread = signaling_thread_.get();
+  pcf_deps.task_queue_factory = webrtc::CreateDefaultTaskQueueFactory();
+  pcf_deps.call_factory = webrtc::CreateCallFactory();
+  pcf_deps.event_log_factory = absl::make_unique<webrtc::RtcEventLogFactory>(
+      pcf_deps.task_queue_factory.get());
 
-  pcf_ = CreateModularPeerConnectionFactory(
-      network_thread_.get(), worker_thread_.get(), signaling_thread_.get(),
-      std::move(media_engine), webrtc::CreateCallFactory(),
-      webrtc::CreateRtcEventLogFactory());
+  cricket::MediaEngineDependencies media_deps;
+  media_deps.task_queue_factory = pcf_deps.task_queue_factory.get();
+  media_deps.video_encoder_factory =
+      absl::make_unique<webrtc::InternalEncoderFactory>();
+  media_deps.video_decoder_factory =
+      absl::make_unique<webrtc::InternalDecoderFactory>();
+  webrtc::SetMediaEngineDefaults(&media_deps);
+  pcf_deps.media_engine = cricket::CreateMediaEngine(std::move(media_deps));
+  RTC_LOG(LS_INFO) << "Media engine created: " << pcf_deps.media_engine.get();
+
+  pcf_ = CreateModularPeerConnectionFactory(std::move(pcf_deps));
   RTC_LOG(LS_INFO) << "PeerConnectionFactory created: " << pcf_;
 }
 

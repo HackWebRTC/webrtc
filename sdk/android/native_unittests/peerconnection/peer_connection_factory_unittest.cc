@@ -10,14 +10,13 @@
 #include "sdk/android/native_api/peerconnection/peer_connection_factory.h"
 
 #include "absl/memory/memory.h"
-#include "api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "logging/rtc_event_log/rtc_event_log_factory.h"
 #include "media/base/media_engine.h"
 #include "media/engine/internal_decoder_factory.h"
 #include "media/engine/internal_encoder_factory.h"
 #include "media/engine/webrtc_media_engine.h"
-#include "modules/audio_processing/include/audio_processing.h"
+#include "media/engine/webrtc_media_engine_defaults.h"
 #include "rtc_base/logging.h"
 #include "sdk/android/generated_native_unittests_jni/jni/PeerConnectionFactoryInitializationHelper_jni.h"
 #include "sdk/android/native_api/audio_device_module/audio_device_android.h"
@@ -42,20 +41,29 @@ rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> CreateTestPCF(
   // webrtc/rtc_base/ are convoluted, we simply wrap here to avoid having to
   // think about ramifications of auto-wrapping there.
   rtc::ThreadManager::Instance()->WrapCurrentThread();
-  auto adm = CreateJavaAudioDeviceModule(jni, GetAppContextForTest(jni).obj());
 
-  std::unique_ptr<cricket::MediaEngineInterface> media_engine =
-      cricket::WebRtcMediaEngineFactory::Create(
-          adm, webrtc::CreateBuiltinAudioEncoderFactory(),
-          webrtc::CreateBuiltinAudioDecoderFactory(),
-          absl::make_unique<webrtc::InternalEncoderFactory>(),
-          absl::make_unique<webrtc::InternalDecoderFactory>(),
-          nullptr /* audio_mixer */, webrtc::AudioProcessingBuilder().Create());
-  RTC_LOG(LS_INFO) << "Media engine created: " << media_engine.get();
+  PeerConnectionFactoryDependencies pcf_deps;
+  pcf_deps.network_thread = network_thread;
+  pcf_deps.worker_thread = worker_thread;
+  pcf_deps.signaling_thread = signaling_thread;
+  pcf_deps.task_queue_factory = CreateDefaultTaskQueueFactory();
+  pcf_deps.call_factory = CreateCallFactory();
+  pcf_deps.event_log_factory =
+      absl::make_unique<RtcEventLogFactory>(pcf_deps.task_queue_factory.get());
 
-  auto factory = CreateModularPeerConnectionFactory(
-      network_thread, worker_thread, signaling_thread, std::move(media_engine),
-      webrtc::CreateCallFactory(), webrtc::CreateRtcEventLogFactory());
+  cricket::MediaEngineDependencies media_deps;
+  media_deps.task_queue_factory = pcf_deps.task_queue_factory.get();
+  media_deps.adm =
+      CreateJavaAudioDeviceModule(jni, GetAppContextForTest(jni).obj());
+  media_deps.video_encoder_factory =
+      absl::make_unique<webrtc::InternalEncoderFactory>();
+  media_deps.video_decoder_factory =
+      absl::make_unique<webrtc::InternalDecoderFactory>();
+  SetMediaEngineDefaults(&media_deps);
+  pcf_deps.media_engine = cricket::CreateMediaEngine(std::move(media_deps));
+  RTC_LOG(LS_INFO) << "Media engine created: " << pcf_deps.media_engine.get();
+
+  auto factory = CreateModularPeerConnectionFactory(std::move(pcf_deps));
   RTC_LOG(LS_INFO) << "PeerConnectionFactory created: " << factory;
   RTC_CHECK(factory) << "Failed to create the peer connection factory; "
                      << "WebRTC/libjingle init likely failed on this device";
