@@ -328,13 +328,13 @@ int32_t AudioCodingModuleImpl::Encode(const InputData& input_data) {
 
   // Scale the timestamp to the codec's RTP timestamp rate.
   uint32_t rtp_timestamp =
-      first_frame_ ? input_data.input_timestamp
-                   : last_rtp_timestamp_ +
-                         rtc::CheckedDivExact(
-                             input_data.input_timestamp - last_timestamp_,
-                             static_cast<uint32_t>(rtc::CheckedDivExact(
-                                 encoder_stack_->SampleRateHz(),
-                                 encoder_stack_->RtpTimestampRateHz())));
+      first_frame_
+          ? input_data.input_timestamp
+          : last_rtp_timestamp_ +
+                rtc::dchecked_cast<uint32_t>(rtc::CheckedDivExact(
+                    int64_t{input_data.input_timestamp - last_timestamp_} *
+                        encoder_stack_->RtpTimestampRateHz(),
+                    int64_t{encoder_stack_->SampleRateHz()}));
   last_timestamp_ = input_data.input_timestamp;
   last_rtp_timestamp_ = rtp_timestamp;
   first_frame_ = false;
