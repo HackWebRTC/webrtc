@@ -124,6 +124,7 @@ RTPSender::RTPSender(
       send_delays_(),
       max_delay_it_(send_delays_.end()),
       sum_delays_ms_(0),
+      total_packet_send_delay_ms_(0),
       rtp_stats_callback_(nullptr),
       total_bitrate_sent_(kBitrateStatisticsWindowMs,
                           RateStatistics::kBpsScale),
@@ -774,6 +775,7 @@ void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
   uint32_t ssrc;
   int avg_delay_ms = 0;
   int max_delay_ms = 0;
+  uint64_t total_packet_send_delay_ms = 0;
   {
     rtc::CritScope lock(&send_critsect_);
     if (!ssrc_)
@@ -831,6 +833,8 @@ void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
       max_delay_it_ = it;
     }
     sum_delays_ms_ += new_send_delay;
+    total_packet_send_delay_ms_ += new_send_delay;
+    total_packet_send_delay_ms = total_packet_send_delay_ms_;
 
     size_t num_delays = send_delays_.size();
     RTC_DCHECK(max_delay_it_ != send_delays_.end());
@@ -842,8 +846,8 @@ void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
     avg_delay_ms =
         rtc::dchecked_cast<int>((sum_delays_ms_ + num_delays / 2) / num_delays);
   }
-  send_side_delay_observer_->SendSideDelayUpdated(avg_delay_ms, max_delay_ms,
-                                                  ssrc);
+  send_side_delay_observer_->SendSideDelayUpdated(
+      avg_delay_ms, max_delay_ms, total_packet_send_delay_ms, ssrc);
 }
 
 void RTPSender::UpdateOnSendPacket(int packet_id,

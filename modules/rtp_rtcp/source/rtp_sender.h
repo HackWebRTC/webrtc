@@ -255,7 +255,10 @@ class RTPSender : public AcknowledgedPacketsObserver {
   rtc::CriticalSection statistics_crit_;
   SendDelayMap send_delays_ RTC_GUARDED_BY(statistics_crit_);
   SendDelayMap::const_iterator max_delay_it_ RTC_GUARDED_BY(statistics_crit_);
+  // The sum of delays over a kSendSideDelayWindowMs sliding window.
   int64_t sum_delays_ms_ RTC_GUARDED_BY(statistics_crit_);
+  // The sum of delays of all packets sent.
+  uint64_t total_packet_send_delay_ms_ RTC_GUARDED_BY(statistics_crit_);
   StreamDataCounters rtp_stats_ RTC_GUARDED_BY(statistics_crit_);
   StreamDataCounters rtx_rtp_stats_ RTC_GUARDED_BY(statistics_crit_);
   StreamDataCountersCallback* rtp_stats_callback_

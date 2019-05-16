@@ -675,6 +675,7 @@ WEBRTC_RTCSTATS_IMPL(
     &target_bitrate,
     &frames_encoded,
     &total_encode_time,
+    &total_packet_send_delay,
     &content_type)
 // clang-format on
 
@@ -692,6 +693,7 @@ RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(std::string&& id,
       target_bitrate("targetBitrate"),
       frames_encoded("framesEncoded"),
       total_encode_time("totalEncodeTime"),
+      total_packet_send_delay("totalPacketSendDelay"),
       content_type("contentType") {}
 
 RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
@@ -704,6 +706,7 @@ RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
       target_bitrate(other.target_bitrate),
       frames_encoded(other.frames_encoded),
       total_encode_time(other.total_encode_time),
+      total_packet_send_delay(other.total_packet_send_delay),
       content_type(other.content_type) {}
 
 RTCOutboundRTPStreamStats::~RTCOutboundRTPStreamStats() {}

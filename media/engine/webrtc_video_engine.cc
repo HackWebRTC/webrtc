@@ -2262,6 +2262,7 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
 
   info.send_frame_width = 0;
   info.send_frame_height = 0;
+  info.total_packet_send_delay_ms = 0;
   for (std::map<uint32_t, webrtc::VideoSendStream::StreamStats>::iterator it =
            stats.substreams.begin();
        it != stats.substreams.end(); ++it) {
@@ -2273,6 +2274,7 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
                        stream_stats.rtp_stats.transmitted.header_bytes +
                        stream_stats.rtp_stats.transmitted.padding_bytes;
     info.packets_sent += stream_stats.rtp_stats.transmitted.packets;
+    info.total_packet_send_delay_ms += stream_stats.total_packet_send_delay_ms;
     // TODO(https://crbug.com/webrtc/10555): RTX retransmissions should show up
     // in separate outbound-rtp stream objects.
     if (!stream_stats.is_rtx && !stream_stats.is_flexfec) {

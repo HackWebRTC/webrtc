@@ -347,6 +347,9 @@ void SetOutboundRTPStreamStatsFromVideoSenderInfo(
   outbound_video->total_encode_time =
       static_cast<double>(video_sender_info.total_encode_time_ms) /
       rtc::kNumMillisecsPerSec;
+  outbound_video->total_packet_send_delay =
+      static_cast<double>(video_sender_info.total_packet_send_delay_ms) /
+      rtc::kNumMillisecsPerSec;
   // TODO(https://crbug.com/webrtc/10529): When info's |content_info| is
   // optional, support the "unspecified" value.
   if (video_sender_info.content_type == VideoContentType::SCREENSHARE)
