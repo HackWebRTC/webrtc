@@ -27,29 +27,18 @@ void PredictionError(const Aec3Fft& fft,
                      const FftData& S,
                      rtc::ArrayView<const float> y,
                      std::array<float, kBlockSize>* e,
-                     std::array<float, kBlockSize>* s,
-                     bool* saturation) {
+                     std::array<float, kBlockSize>* s) {
   std::array<float, kFftLength> tmp;
   fft.Ifft(S, &tmp);
   constexpr float kScale = 1.0f / kFftLengthBy2;
   std::transform(y.begin(), y.end(), tmp.begin() + kFftLengthBy2, e->begin(),
                  [&](float a, float b) { return a - b * kScale; });
 
-  *saturation = false;
-
   if (s) {
     for (size_t k = 0; k < s->size(); ++k) {
       (*s)[k] = kScale * tmp[k + kFftLengthBy2];
     }
-    auto result = std::minmax_element(s->begin(), s->end());
-    *saturation = *result.first <= -32768 || *result.first >= 32767;
   }
-  if (!(*saturation)) {
-    auto result = std::minmax_element(e->begin(), e->end());
-    *saturation = *result.first <= -32768 || *result.first >= 32767;
-  }
-
-  *saturation = false;
 }
 
 void ScaleFilterOutput(rtc::ArrayView<const float> y,
@@ -141,12 +130,10 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
 
   // Form the outputs of the main and shadow filters.
   main_filter_.Filter(render_buffer, &S);
-  bool main_saturation = false;
-  PredictionError(fft_, S, y, &e_main, &output->s_main, &main_saturation);
+  PredictionError(fft_, S, y, &e_main, &output->s_main);
 
   shadow_filter_.Filter(render_buffer, &S);
-  bool shadow_saturation = false;
-  PredictionError(fft_, S, y, &e_shadow, &output->s_shadow, &shadow_saturation);
+  PredictionError(fft_, S, y, &e_shadow, &output->s_shadow);
 
   // Compute the signal powers in the subtractor output.
   output->ComputeMetrics(y);
@@ -192,7 +179,7 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   // Update the main filter.
   if (!main_filter_adjusted) {
     G_main_.Compute(X2_main, render_signal_analyzer, *output, main_filter_,
-                    aec_state.SaturatedCapture() || main_saturation, &G);
+                    aec_state.SaturatedCapture(), &G);
   } else {
     G.re.fill(0.f);
     G.im.fill(0.f);
@@ -207,13 +194,13 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   if (poor_shadow_filter_counter_ < 5) {
     G_shadow_.Compute(X2_shadow, render_signal_analyzer, E_shadow,
                       shadow_filter_.SizePartitions(),
-                      aec_state.SaturatedCapture() || shadow_saturation, &G);
+                      aec_state.SaturatedCapture(), &G);
   } else {
     poor_shadow_filter_counter_ = 0;
     shadow_filter_.SetFilter(main_filter_.GetFilter());
     G_shadow_.Compute(X2_shadow, render_signal_analyzer, E_main,
                       shadow_filter_.SizePartitions(),
-                      aec_state.SaturatedCapture() || main_saturation, &G);
+                      aec_state.SaturatedCapture(), &G);
   }
 
   shadow_filter_.Adapt(render_buffer, G);
