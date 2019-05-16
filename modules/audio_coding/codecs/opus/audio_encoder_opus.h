@@ -88,6 +88,7 @@ class AudioEncoderOpusImpl final : public AudioEncoder {
 
   int SampleRateHz() const override;
   size_t NumChannels() const override;
+  int RtpTimestampRateHz() const override;
   size_t Num10MsFramesInNextPacket() const override;
   size_t Max10MsFramesInAPacket() const override;
   int GetTargetBitrate() const override;

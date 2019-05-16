@@ -51,6 +51,7 @@ constexpr int kOpusBitrateWbBps = 20000;
 constexpr int kOpusBitrateFbBps = 32000;
 
 constexpr int kSampleRateHz = 48000;
+constexpr int kRtpTimestampRateHz = 48000;
 constexpr int kDefaultMaxPlaybackRate = 48000;
 
 // These two lists must be sorted from low to high
@@ -276,8 +277,10 @@ float AudioEncoderOpusImpl::NewPacketLossRateOptimizer::OptimizePacketLossRate(
 
 void AudioEncoderOpusImpl::AppendSupportedEncoders(
     std::vector<AudioCodecSpec>* specs) {
-  const SdpAudioFormat fmt = {
-      "opus", 48000, 2, {{"minptime", "10"}, {"useinbandfec", "1"}}};
+  const SdpAudioFormat fmt = {"opus",
+                              kRtpTimestampRateHz,
+                              2,
+                              {{"minptime", "10"}, {"useinbandfec", "1"}}};
   const AudioCodecInfo info = QueryAudioEncoder(*SdpToConfig(fmt));
   specs->push_back({fmt, info});
 }
@@ -285,7 +288,8 @@ void AudioEncoderOpusImpl::AppendSupportedEncoders(
 AudioCodecInfo AudioEncoderOpusImpl::QueryAudioEncoder(
     const AudioEncoderOpusConfig& config) {
   RTC_DCHECK(config.IsOk());
-  AudioCodecInfo info(48000, config.num_channels, *config.bitrate_bps,
+  AudioCodecInfo info(kRtpTimestampRateHz, config.num_channels,
+                      *config.bitrate_bps,
                       AudioEncoderOpusConfig::kMinBitrateBps,
                       AudioEncoderOpusConfig::kMaxBitrateBps);
   info.allow_comfort_noise = false;
@@ -303,12 +307,12 @@ std::unique_ptr<AudioEncoder> AudioEncoderOpusImpl::MakeAudioEncoder(
 absl::optional<AudioCodecInfo> AudioEncoderOpusImpl::QueryAudioEncoder(
     const SdpAudioFormat& format) {
   if (absl::EqualsIgnoreCase(format.name, GetPayloadName()) &&
-      format.clockrate_hz == 48000 && format.num_channels == 2) {
+      format.clockrate_hz == kRtpTimestampRateHz && format.num_channels == 2) {
     const size_t num_channels = GetChannelCount(format);
     const int bitrate =
         CalculateBitrate(GetMaxPlaybackRate(format), num_channels,
                          GetFormatParameter(format, "maxaveragebitrate"));
-    AudioCodecInfo info(48000, num_channels, bitrate,
+    AudioCodecInfo info(kRtpTimestampRateHz, num_channels, bitrate,
                         AudioEncoderOpusConfig::kMinBitrateBps,
                         AudioEncoderOpusConfig::kMaxBitrateBps);
     info.allow_comfort_noise = false;
@@ -322,7 +326,7 @@ absl::optional<AudioCodecInfo> AudioEncoderOpusImpl::QueryAudioEncoder(
 absl::optional<AudioEncoderOpusConfig> AudioEncoderOpusImpl::SdpToConfig(
     const SdpAudioFormat& format) {
   if (!absl::EqualsIgnoreCase(format.name, "opus") ||
-      format.clockrate_hz != 48000 || format.num_channels != 2) {
+      format.clockrate_hz != kRtpTimestampRateHz || format.num_channels != 2) {
     return absl::nullopt;
   }
 
@@ -480,6 +484,10 @@ int AudioEncoderOpusImpl::SampleRateHz() const {
 
 size_t AudioEncoderOpusImpl::NumChannels() const {
   return config_.num_channels;
+}
+
+int AudioEncoderOpusImpl::RtpTimestampRateHz() const {
+  return kRtpTimestampRateHz;
 }
 
 size_t AudioEncoderOpusImpl::Num10MsFramesInNextPacket() const {
