@@ -25,6 +25,7 @@
 #include "pc/peer_connection_factory.h"
 #include "pc/peer_connection_internal.h"
 #include "pc/rtc_stats_collector.h"
+#include "pc/rtp_sender.h"
 #include "pc/rtp_transceiver.h"
 #include "pc/sctp_transport.h"
 #include "pc/stats_collector.h"
@@ -57,6 +58,7 @@ class PeerConnection : public PeerConnectionInternal,
                        public DataChannelProviderInterface,
                        public DataChannelSink,
                        public JsepTransportController::Observer,
+                       public RtpSenderBase::SetStreamIDsObserver,
                        public rtc::MessageHandler,
                        public sigslot::has_slots<> {
  public:
@@ -1054,6 +1056,9 @@ class PeerConnection : public PeerConnectionInternal,
                           RtpTransportInternal* rtp_transport,
                           rtc::scoped_refptr<DtlsTransport> dtls_transport,
                           MediaTransportInterface* media_transport) override;
+
+  // RtpSenderBase::SetStreamIDsObserver override.
+  void OnSetStreamIDs() override;
 
   // Returns the observer. Will crash on CHECK if the observer is removed.
   PeerConnectionObserver* Observer() const RTC_RUN_ON(signaling_thread());
