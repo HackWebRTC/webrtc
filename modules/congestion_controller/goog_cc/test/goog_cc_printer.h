@@ -20,7 +20,7 @@
 #include "api/units/timestamp.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/congestion_controller/goog_cc/goog_cc_network_control.h"
-#include "modules/congestion_controller/test/controller_printer.h"
+#include "test/logging/log_writer.h"
 
 namespace webrtc {
 
@@ -31,37 +31,44 @@ class FieldLogger {
   virtual void WriteValue(RtcEventLogOutput* out) = 0;
 };
 
-class GoogCcStatePrinter : public DebugStatePrinter {
+class GoogCcStatePrinter {
  public:
   GoogCcStatePrinter();
   GoogCcStatePrinter(const GoogCcStatePrinter&) = delete;
   GoogCcStatePrinter& operator=(const GoogCcStatePrinter&) = delete;
-  ~GoogCcStatePrinter() override;
-  void Attach(GoogCcNetworkController*);
-  bool Attached() const override;
+  ~GoogCcStatePrinter();
 
-  void PrintHeaders(RtcEventLogOutput* out) override;
-  void PrintValues(RtcEventLogOutput* out) override;
-
-  NetworkControlUpdate GetState(Timestamp at_time) const override;
+  void PrintHeaders(RtcEventLogOutput* log);
+  void PrintState(RtcEventLogOutput* log,
+                  GoogCcNetworkController* controller,
+                  Timestamp at_time);
 
  private:
-  const NetworkStateEstimate& GetEst();
   std::deque<FieldLogger*> CreateLoggers();
-
   std::deque<std::unique_ptr<FieldLogger>> loggers_;
+
   GoogCcNetworkController* controller_ = nullptr;
+  TargetTransferRate target_;
+  PacerConfig pacing_;
+  DataSize congestion_window_ = DataSize::PlusInfinity();
+  NetworkStateEstimate est_;
 };
 
 class GoogCcDebugFactory : public GoogCcNetworkControllerFactory {
  public:
-  explicit GoogCcDebugFactory(GoogCcStatePrinter* printer);
+  GoogCcDebugFactory();
+  explicit GoogCcDebugFactory(GoogCcFactoryConfig config);
   std::unique_ptr<NetworkControllerInterface> Create(
       NetworkControllerConfig config) override;
 
+  void PrintState(const Timestamp at_time);
+
+  void AttachWriter(std::unique_ptr<RtcEventLogOutput> log_writer);
+
  private:
-  GoogCcStatePrinter* printer_;
+  GoogCcStatePrinter printer_;
   GoogCcNetworkController* controller_ = nullptr;
+  std::unique_ptr<RtcEventLogOutput> log_writer_;
 };
 }  // namespace webrtc
 

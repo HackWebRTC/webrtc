@@ -13,7 +13,6 @@
 
 #include "absl/memory/memory.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
-#include "modules/congestion_controller/goog_cc/test/goog_cc_printer.h"
 
 namespace webrtc {
 namespace test {
@@ -96,18 +95,11 @@ LoggingNetworkControllerFactory::LoggingNetworkControllerFactory(
           << "Can't log controller state for injected network controllers";
   } else {
     if (log_writer_factory) {
-      auto goog_printer = absl::make_unique<GoogCcStatePrinter>();
-      owned_cc_factory_.reset(new GoogCcDebugFactory(goog_printer.get()));
-      cc_factory_ = owned_cc_factory_.get();
-      cc_printer_.reset(
-          new ControlStatePrinter(log_writer_factory->Create(".cc_state.txt"),
-                                  std::move(goog_printer)));
-      cc_printer_->PrintHeaders();
-    } else {
-      owned_cc_factory_.reset(
-          new GoogCcNetworkControllerFactory(GoogCcFactoryConfig()));
-      cc_factory_ = owned_cc_factory_.get();
+      goog_cc_factory_.AttachWriter(
+          log_writer_factory->Create(".cc_state.txt"));
+      print_cc_state_ = true;
     }
+    cc_factory_ = &goog_cc_factory_;
   }
 }
 
@@ -116,8 +108,8 @@ LoggingNetworkControllerFactory::~LoggingNetworkControllerFactory() {
 
 void LoggingNetworkControllerFactory::LogCongestionControllerStats(
     Timestamp at_time) {
-  if (cc_printer_)
-    cc_printer_->PrintState(at_time);
+  if (print_cc_state_)
+    goog_cc_factory_.PrintState(at_time);
 }
 
 std::unique_ptr<NetworkControllerInterface>

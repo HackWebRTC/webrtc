@@ -81,23 +81,6 @@ rtc_static_library("transport_feedback") {
 }
 
 if (rtc_include_tests) {
-  rtc_source_set("test_controller_printer") {
-    testonly = true
-    sources = [
-      "test/controller_printer.cc",
-      "test/controller_printer.h",
-    ]
-    deps = [
-      "../../api/transport:network_control",
-      "../../api/units:data_rate",
-      "../../api/units:data_size",
-      "../../api/units:time_delta",
-      "../../api/units:timestamp",
-      "../../rtc_base:checks",
-      "../../test/logging:log_writer",
-      "//third_party/abseil-cpp/absl/types:optional",
-    ]
-  }
   rtc_source_set("congestion_controller_unittests") {
     testonly = true
 

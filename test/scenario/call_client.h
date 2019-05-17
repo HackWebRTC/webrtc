@@ -19,7 +19,7 @@
 #include "call/call.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/audio_device/include/test_audio_device.h"
-#include "modules/congestion_controller/test/controller_printer.h"
+#include "modules/congestion_controller/goog_cc/test/goog_cc_printer.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/task_queue_for_test.h"
@@ -47,9 +47,9 @@ class LoggingNetworkControllerFactory
   void LogCongestionControllerStats(Timestamp at_time);
 
  private:
-  std::unique_ptr<NetworkControllerFactoryInterface> owned_cc_factory_;
+  GoogCcDebugFactory goog_cc_factory_;
   NetworkControllerFactoryInterface* cc_factory_ = nullptr;
-  std::unique_ptr<ControlStatePrinter> cc_printer_;
+  bool print_cc_state_ = false;
 };
 
 struct CallClientFakeAudio {

@@ -204,12 +204,12 @@ if (rtc_include_tests) {
       ":delay_based_bwe",
       ":estimators",
       ":goog_cc",
-      "..:test_controller_printer",
       "../../../api/transport:goog_cc",
       "../../../api/transport:network_control",
       "../../../api/units:timestamp",
       "../../../logging:rtc_event_log_api",
       "../../../rtc_base:checks",
+      "../../../test/logging:log_writer",
       "../../remote_bitrate_estimator",
       "//third_party/abseil-cpp/absl/types:optional",
     ]

@@ -114,7 +114,6 @@ if (rtc_include_tests) {
       "../../modules/audio_device:mock_audio_device",
       "../../modules/audio_mixer:audio_mixer_impl",
       "../../modules/audio_processing",
-      "../../modules/congestion_controller:test_controller_printer",
       "../../modules/congestion_controller/goog_cc:test_goog_cc_printer",
       "../../modules/rtp_rtcp",
       "../../modules/rtp_rtcp:mock_rtp_rtcp",
