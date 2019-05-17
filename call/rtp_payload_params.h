@@ -22,7 +22,6 @@
 
 namespace webrtc {
 
-class RTPFragmentationHeader;
 class RtpRtcp;
 
 // State for setting picture id and tl0 pic idx, for VP8 and VP9

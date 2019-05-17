@@ -24,8 +24,6 @@
 
 namespace webrtc {
 
-class RTPFragmentationHeader;  // forward declaration
-
 // Note: If any pointers are added to this struct, it must be fitted
 // with a copy-constructor. See below.
 // Hack alert - the code assumes that thisstruct is memset when constructed.

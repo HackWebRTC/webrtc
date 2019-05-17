@@ -44,18 +44,13 @@ class RTC_EXPORT RTPFragmentationHeader {
 
   size_t Offset(size_t index) const { return fragmentationOffset[index]; }
   size_t Length(size_t index) const { return fragmentationLength[index]; }
-  uint16_t TimeDiff(size_t index) const { return fragmentationTimeDiff[index]; }
-  int PayloadType(size_t index) const { return fragmentationPlType[index]; }
 
   // TODO(danilchap): Move all members to private section,
-  // simplify by replacing 4 raw arrays with single std::vector<Fragment>
+  // simplify by replacing raw arrays with single std::vector<Fragment>
   uint16_t fragmentationVectorSize;  // Number of fragmentations
   size_t* fragmentationOffset;       // Offset of pointer to data for each
                                      // fragmentation
   size_t* fragmentationLength;       // Data size for each fragmentation
-  uint16_t* fragmentationTimeDiff;   // Timestamp difference relative "now" for
-                                     // each fragmentation
-  uint8_t* fragmentationPlType;      // Payload type of each fragmentation
 };
 
 // Interface used by the CallStats class to distribute call statistics.

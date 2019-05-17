@@ -1044,8 +1044,6 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
         header.VerifyAndAllocateFragmentationHeader(1);
         header.fragmentationOffset[0] = 0;
         header.fragmentationLength[0] = image->size();
-        header.fragmentationPlType[0] = 0;
-        header.fragmentationTimeDiff[0] = 0;
         if (codec_type == kVideoCodecVP8) {
           int qp;
           if (vp8::GetQp(payload, payload_size, &qp)) {
@@ -1081,8 +1079,6 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
         for (size_t i = 0; i < nalu_idxs.size(); i++) {
           header.fragmentationOffset[i] = nalu_idxs[i].payload_start_offset;
           header.fragmentationLength[i] = nalu_idxs[i].payload_size;
-          header.fragmentationPlType[i] = 0;
-          header.fragmentationTimeDiff[i] = 0;
         }
       }
 

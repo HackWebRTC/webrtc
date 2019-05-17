@@ -1452,8 +1452,6 @@ void VP9EncoderImpl::DeliverBufferedFrame(bool end_of_picture) {
     frag_info.VerifyAndAllocateFragmentationHeader(1);
     frag_info.fragmentationOffset[part_idx] = 0;
     frag_info.fragmentationLength[part_idx] = encoded_image_.size();
-    frag_info.fragmentationPlType[part_idx] = 0;
-    frag_info.fragmentationTimeDiff[part_idx] = 0;
 
     encoded_complete_callback_->OnEncodedImage(encoded_image_, &codec_specific_,
                                                &frag_info);
