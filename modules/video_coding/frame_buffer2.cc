@@ -737,6 +737,9 @@ EncodedFrame* FrameBuffer::CombineAndDeleteFrames(
   }
   first_frame->VerifyAndAllocate(total_length);
 
+  first_frame->SetSpatialLayerFrameSize(first_frame->id.spatial_layer,
+                                        first_frame->size());
+
   // Spatial index of combined frame is set equal to spatial index of its top
   // spatial layer.
   first_frame->SetSpatialIndex(last_frame->id.spatial_layer);
@@ -751,6 +754,8 @@ EncodedFrame* FrameBuffer::CombineAndDeleteFrames(
   uint8_t* buffer = first_frame->data() + first_frame->size();
   for (size_t i = 1; i < frames.size(); ++i) {
     EncodedFrame* next_frame = frames[i];
+    first_frame->SetSpatialLayerFrameSize(next_frame->id.spatial_layer,
+                                          next_frame->size());
     memcpy(buffer, next_frame->data(), next_frame->size());
     buffer += next_frame->size();
     delete next_frame;

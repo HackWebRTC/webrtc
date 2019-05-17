@@ -39,4 +39,26 @@ void EncodedImage::SetEncodeTime(int64_t encode_start_ms,
   timing_.encode_start_ms = encode_start_ms;
   timing_.encode_finish_ms = encode_finish_ms;
 }
+
+absl::optional<size_t> EncodedImage::SpatialLayerFrameSize(
+    int spatial_index) const {
+  RTC_DCHECK_GE(spatial_index, 0);
+  RTC_DCHECK_LE(spatial_index, spatial_index_.value_or(0));
+
+  auto it = spatial_layer_frame_size_bytes_.find(spatial_index);
+  if (it == spatial_layer_frame_size_bytes_.end()) {
+    return absl::nullopt;
+  }
+
+  return it->second;
+}
+
+void EncodedImage::SetSpatialLayerFrameSize(int spatial_index,
+                                            size_t size_bytes) {
+  RTC_DCHECK_GE(spatial_index, 0);
+  RTC_DCHECK_LE(spatial_index, spatial_index_.value_or(0));
+  RTC_DCHECK_GE(size_bytes, 0);
+  spatial_layer_frame_size_bytes_[spatial_index] = size_bytes;
+}
+
 }  // namespace webrtc

@@ -12,6 +12,7 @@
 #define API_VIDEO_ENCODED_IMAGE_H_
 
 #include <stdint.h>
+#include <map>
 
 #include "absl/types/optional.h"
 #include "api/video/color_space.h"
@@ -62,6 +63,11 @@ class RTC_EXPORT EncodedImage {
     RTC_DCHECK_LT(spatial_index.value_or(0), kMaxSpatialLayers);
     spatial_index_ = spatial_index;
   }
+
+  // These methods can be used to set/get size of subframe with spatial index
+  // |spatial_index| on encoded frames that consist of multiple spatial layers.
+  absl::optional<size_t> SpatialLayerFrameSize(int spatial_index) const;
+  void SetSpatialLayerFrameSize(int spatial_index, size_t size_bytes);
 
   const webrtc::ColorSpace* ColorSpace() const {
     return color_space_ ? &*color_space_ : nullptr;
@@ -144,6 +150,7 @@ class RTC_EXPORT EncodedImage {
   size_t capacity_;
   uint32_t timestamp_rtp_ = 0;
   absl::optional<int> spatial_index_;
+  std::map<int, size_t> spatial_layer_frame_size_bytes_;
   absl::optional<webrtc::ColorSpace> color_space_;
 };
 

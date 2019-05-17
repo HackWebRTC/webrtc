@@ -57,8 +57,11 @@ class VCMEncodedFrame : protected EncodedImage {
   using EncodedImage::set_size;
   using EncodedImage::SetColorSpace;
   using EncodedImage::SetSpatialIndex;
+  using EncodedImage::SetSpatialLayerFrameSize;
   using EncodedImage::SetTimestamp;
   using EncodedImage::size;
+  using EncodedImage::SpatialIndex;
+  using EncodedImage::SpatialLayerFrameSize;
   using EncodedImage::Timestamp;
 
   /**
