@@ -15,10 +15,11 @@
 // enable different media transport implementations, including QUIC-based
 // media transport.
 
-#include "api/media_transport_interface.h"
-
 #include <cstdint>
 #include <utility>
+
+#include "api/datagram_transport_interface.h"
+#include "api/media_transport_interface.h"
 
 namespace webrtc {
 
@@ -46,6 +47,13 @@ MediaTransportFactory::CreateMediaTransport(
     rtc::Thread* network_thread,
     const MediaTransportSettings& settings) {
   return std::unique_ptr<MediaTransportInterface>(nullptr);
+}
+
+RTCErrorOr<std::unique_ptr<DatagramTransportInterface>>
+MediaTransportFactory::CreateDatagramTransport(
+    rtc::Thread* network_thread,
+    const MediaTransportSettings& settings) {
+  return std::unique_ptr<DatagramTransportInterface>(nullptr);
 }
 
 std::string MediaTransportFactory::GetTransportName() const {

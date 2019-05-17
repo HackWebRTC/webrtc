@@ -39,6 +39,7 @@ class Thread;
 
 namespace webrtc {
 
+class DatagramTransportInterface;
 class RtcEventLog;
 
 class AudioPacketReceivedObserver {
@@ -381,6 +382,17 @@ class MediaTransportFactory {
   virtual RTCErrorOr<std::unique_ptr<webrtc::MediaTransportInterface>>
   CreateMediaTransport(rtc::Thread* network_thread,
                        const MediaTransportSettings& settings);
+
+  // Creates a new Datagram Transport in a disconnected state. If the datagram
+  // transport for the caller is created, one can then call
+  // DatagramTransportInterface::GetTransportParametersOffer on that new
+  // instance.
+  //
+  // TODO(sukhanov): Consider separating media and datagram transport factories.
+  // TODO(sukhanov): Move factory to a separate .h file.
+  virtual RTCErrorOr<std::unique_ptr<DatagramTransportInterface>>
+  CreateDatagramTransport(rtc::Thread* network_thread,
+                          const MediaTransportSettings& settings);
 
   // Gets a transport name which is supported by the implementation.
   // Different factories should return different transport names, and at runtime
