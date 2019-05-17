@@ -325,6 +325,30 @@ if (rtc_include_tests) {
     ]
   }
 
+  rtc_source_set("video_pc_full_stack_tests") {
+    testonly = true
+
+    sources = [
+      "pc_full_stack_tests.cc",
+    ]
+    deps = [
+      "../api:create_network_emulation_manager",
+      "../api:create_peerconnection_quality_test_fixture",
+      "../api:network_emulation_manager_api",
+      "../api:peer_connection_quality_test_fixture_api",
+      "../api:simulated_network_api",
+      "../call:simulated_network",
+      "../media:rtc_vp9_profile",
+      "../modules/video_coding:webrtc_vp9",
+      "../system_wrappers:field_trial",
+      "../test:field_trial",
+      "../test:fileutils",
+      "../test:test_support",
+      "../test/pc/e2e:network_quality_metrics_reporter",
+      "//third_party/abseil-cpp/absl/memory",
+    ]
+  }
+
   rtc_static_library("video_loopback_lib") {
     testonly = true
     sources = [

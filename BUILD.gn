@@ -607,6 +607,7 @@ if (rtc_include_tests) {
       "pc:peerconnection_perf_tests",
       "test:test_main",
       "video:video_full_stack_tests",
+      "video:video_pc_full_stack_tests",
     ]
 
     data = webrtc_perf_tests_resources
