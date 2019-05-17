@@ -85,6 +85,30 @@ rtc_static_library("goog_cc") {
 }
 
 if (rtc_include_tests) {
+  rtc_source_set("test_feedback_generator_interface") {
+    testonly = true
+    sources = [
+      "test/feedback_generator_interface.h",
+    ]
+    deps = [
+      ":network_control",
+      "..:simulated_network_api",
+    ]
+  }
+  rtc_source_set("test_feedback_generator") {
+    testonly = true
+    sources = [
+      "test/create_feedback_generator.cc",
+      "test/create_feedback_generator.h",
+    ]
+    visibility = [ "*" ]
+    deps = [
+      ":network_control",
+      ":test_feedback_generator_interface",
+      "../../test/scenario/network:feedback_generator",
+      "//third_party/abseil-cpp/absl/memory",
+    ]
+  }
   rtc_source_set("network_control_test") {
     testonly = true
     sources = [
