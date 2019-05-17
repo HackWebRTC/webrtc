@@ -1071,7 +1071,6 @@ rtc_source_set("rtc_base_tests_utils") {
     "server_socket_adapters.cc",
     "server_socket_adapters.h",
     "sigslot_tester.h",
-    "sigslottester.h.pump",
     "socket_stream.cc",
     "socket_stream.h",
     "test_base64.h",
