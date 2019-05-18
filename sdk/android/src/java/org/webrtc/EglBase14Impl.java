@@ -30,7 +30,7 @@ import org.webrtc.EglBase;
 @SuppressWarnings("ReferenceEquality") // We want to compare to EGL14 constants.
 @TargetApi(18)
 class EglBase14Impl implements EglBase14 {
-  private static final String TAG = "EglBase14";
+  private static final String TAG = "EglBase14Impl";
   private static final int EGLExt_SDK_VERSION = Build.VERSION_CODES.JELLY_BEAN_MR2;
   private static final int CURRENT_SDK_VERSION = Build.VERSION.SDK_INT;
   private EGLContext eglContext;
@@ -73,7 +73,9 @@ class EglBase14Impl implements EglBase14 {
   public EglBase14Impl(EGLContext sharedContext, int[] configAttributes) {
     eglDisplay = getEglDisplay();
     eglConfig = getEglConfig(eglDisplay, configAttributes);
-    eglContext = createEglContext(sharedContext, eglDisplay, eglConfig);
+    final int openGlesVersion = EglBase.getOpenGlesVersionFromConfig(configAttributes);
+    Logging.d(TAG, "Using OpenGL ES version " + openGlesVersion);
+    eglContext = createEglContext(sharedContext, eglDisplay, eglConfig, openGlesVersion);
   }
 
   // Create EGLSurface from the Android Surface.
@@ -262,12 +264,12 @@ class EglBase14Impl implements EglBase14 {
   }
 
   // Return an EGLConfig, or die trying.
-  private static EGLContext createEglContext(
-      @Nullable EGLContext sharedContext, EGLDisplay eglDisplay, EGLConfig eglConfig) {
+  private static EGLContext createEglContext(@Nullable EGLContext sharedContext,
+      EGLDisplay eglDisplay, EGLConfig eglConfig, int openGlesVersion) {
     if (sharedContext != null && sharedContext == EGL14.EGL_NO_CONTEXT) {
       throw new RuntimeException("Invalid sharedContext");
     }
-    int[] contextAttributes = {EGL14.EGL_CONTEXT_CLIENT_VERSION, 2, EGL14.EGL_NONE};
+    int[] contextAttributes = {EGL14.EGL_CONTEXT_CLIENT_VERSION, openGlesVersion, EGL14.EGL_NONE};
     EGLContext rootContext = sharedContext == null ? EGL14.EGL_NO_CONTEXT : sharedContext;
     final EGLContext eglContext;
     synchronized (EglBase.lock) {
