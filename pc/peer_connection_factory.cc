@@ -43,52 +43,6 @@ namespace webrtc {
 
 rtc::scoped_refptr<PeerConnectionFactoryInterface>
 CreateModularPeerConnectionFactory(
-    rtc::Thread* network_thread,
-    rtc::Thread* worker_thread,
-    rtc::Thread* signaling_thread,
-    std::unique_ptr<cricket::MediaEngineInterface> media_engine,
-    std::unique_ptr<CallFactoryInterface> call_factory,
-    std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory) {
-  PeerConnectionFactoryDependencies dependencies;
-  dependencies.network_thread = network_thread;
-  dependencies.worker_thread = worker_thread;
-  dependencies.signaling_thread = signaling_thread;
-  dependencies.media_engine = std::move(media_engine);
-  dependencies.call_factory = std::move(call_factory);
-  dependencies.event_log_factory = std::move(event_log_factory);
-  return CreateModularPeerConnectionFactory(std::move(dependencies));
-}
-
-rtc::scoped_refptr<PeerConnectionFactoryInterface>
-CreateModularPeerConnectionFactory(
-    rtc::Thread* network_thread,
-    rtc::Thread* worker_thread,
-    rtc::Thread* signaling_thread,
-    std::unique_ptr<cricket::MediaEngineInterface> media_engine,
-    std::unique_ptr<CallFactoryInterface> call_factory,
-    std::unique_ptr<RtcEventLogFactoryInterface> event_log_factory,
-    std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory,
-    std::unique_ptr<NetworkStatePredictorFactoryInterface>
-        network_state_predictor_factory,
-    std::unique_ptr<NetworkControllerFactoryInterface>
-        network_controller_factory) {
-  PeerConnectionFactoryDependencies dependencies;
-  dependencies.network_thread = network_thread;
-  dependencies.worker_thread = worker_thread;
-  dependencies.signaling_thread = signaling_thread;
-  dependencies.media_engine = std::move(media_engine);
-  dependencies.call_factory = std::move(call_factory);
-  dependencies.event_log_factory = std::move(event_log_factory);
-  dependencies.fec_controller_factory = std::move(fec_controller_factory);
-  dependencies.network_state_predictor_factory =
-      std::move(network_state_predictor_factory);
-  dependencies.network_controller_factory =
-      std::move(network_controller_factory);
-  return CreateModularPeerConnectionFactory(std::move(dependencies));
-}
-
-rtc::scoped_refptr<PeerConnectionFactoryInterface>
-CreateModularPeerConnectionFactory(
     PeerConnectionFactoryDependencies dependencies) {
   rtc::scoped_refptr<PeerConnectionFactory> pc_factory(
       new rtc::RefCountedObject<PeerConnectionFactory>(
