@@ -51,6 +51,7 @@
 #include <string>
 #include <utility>
 
+#include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/deprecation.h"
@@ -248,13 +249,12 @@ inline Val<LogArgType::kLogMetadataErr, LogMetadataErr> MakeVal(
 }
 
 // The enum class types are not implicitly convertible to arithmetic types.
-template <
-    typename T,
-    typename std::enable_if<std::is_enum<T>::value &&
-                            !std::is_arithmetic<T>::value>::type* = nullptr>
-inline decltype(MakeVal(std::declval<typename std::underlying_type<T>::type>()))
-MakeVal(T x) {
-  return {static_cast<typename std::underlying_type<T>::type>(x)};
+template <typename T,
+          absl::enable_if_t<std::is_enum<T>::value &&
+                            !std::is_arithmetic<T>::value>* = nullptr>
+inline decltype(MakeVal(std::declval<absl::underlying_type_t<T>>())) MakeVal(
+    T x) {
+  return {static_cast<absl::underlying_type_t<T>>(x)};
 }
 
 #ifdef WEBRTC_ANDROID
@@ -264,14 +264,10 @@ inline Val<LogArgType::kLogMetadataTag, LogMetadataTag> MakeVal(
 }
 #endif
 
-template <typename T, typename = void>
+template <typename T, class = void>
 struct has_to_log_string : std::false_type {};
 template <typename T>
-struct has_to_log_string<
-    T,
-    typename std::enable_if<
-        std::is_same<std::string,
-                     decltype(ToLogString(std::declval<T>()))>::value>::type>
+struct has_to_log_string<T, decltype(ToLogString(std::declval<T>()))>
     : std::true_type {};
 
 // Handle arbitrary types other than the above by falling back to stringstream.
@@ -279,26 +275,22 @@ struct has_to_log_string<
 // it anymore. No in-tree caller does, but some external callers still do.
 template <
     typename T,
-    typename T1 = typename std::decay<T>::type,
-    typename std::enable_if<
-        std::is_class<T1>::value && !std::is_same<T1, std::string>::value &&
-        !std::is_same<T1, LogMetadata>::value &&
-        !has_to_log_string<T1>::value &&
+    typename T1 = absl::decay_t<T>,
+    absl::enable_if_t<std::is_class<T1>::value &&
+                      !std::is_same<T1, std::string>::value &&
+                      !std::is_same<T1, LogMetadata>::value &&
+                      !has_to_log_string<T1>::value &&
 #ifdef WEBRTC_ANDROID
-        !std::is_same<T1, LogMetadataTag>::value &&
+                      !std::is_same<T1, LogMetadataTag>::value &&
 #endif
-        !std::is_same<T1, LogMetadataErr>::value>::type* = nullptr>
+                      !std::is_same<T1, LogMetadataErr>::value>* = nullptr>
 ToStringVal MakeVal(const T& x) {
   std::ostringstream os;  // no-presubmit-check TODO(webrtc:8982)
   os << x;
   return {os.str()};
 }
 
-template <
-    typename T,
-    typename T1 = typename std::decay<T>::type,
-    typename std::enable_if<std::is_class<T1>::value &&
-                            has_to_log_string<T1>::value>::type* = nullptr>
+template <typename T, absl::enable_if_t<has_to_log_string<T>::value>* = nullptr>
 ToStringVal MakeVal(const T& x) {
   return {ToLogString(x)};
 }
@@ -314,21 +306,19 @@ template <>
 class LogStreamer<> final {
  public:
   template <typename U,
-            typename std::enable_if<std::is_arithmetic<U>::value ||
-                                    std::is_enum<U>::value>::type* = nullptr>
-  RTC_FORCE_INLINE LogStreamer<decltype(MakeVal(std::declval<U>()))> operator<<(
-      U arg) const {
-    return LogStreamer<decltype(MakeVal(std::declval<U>()))>(MakeVal(arg),
-                                                             this);
+            typename V = decltype(MakeVal(std::declval<U>())),
+            absl::enable_if_t<std::is_arithmetic<U>::value ||
+                              std::is_enum<U>::value>* = nullptr>
+  RTC_FORCE_INLINE LogStreamer<V> operator<<(U arg) const {
+    return LogStreamer<V>(MakeVal(arg), this);
   }
 
   template <typename U,
-            typename std::enable_if<!std::is_arithmetic<U>::value &&
-                                    !std::is_enum<U>::value>::type* = nullptr>
-  RTC_FORCE_INLINE LogStreamer<decltype(MakeVal(std::declval<U>()))> operator<<(
-      const U& arg) const {
-    return LogStreamer<decltype(MakeVal(std::declval<U>()))>(MakeVal(arg),
-                                                             this);
+            typename V = decltype(MakeVal(std::declval<U>())),
+            absl::enable_if_t<!std::is_arithmetic<U>::value &&
+                              !std::is_enum<U>::value>* = nullptr>
+  RTC_FORCE_INLINE LogStreamer<V> operator<<(const U& arg) const {
+    return LogStreamer<V>(MakeVal(arg), this);
   }
 
   template <typename... Us>
@@ -347,21 +337,19 @@ class LogStreamer<T, Ts...> final {
       : arg_(arg), prior_(prior) {}
 
   template <typename U,
-            typename std::enable_if<std::is_arithmetic<U>::value ||
-                                    std::is_enum<U>::value>::type* = nullptr>
-  RTC_FORCE_INLINE LogStreamer<decltype(MakeVal(std::declval<U>())), T, Ts...>
-  operator<<(U arg) const {
-    return LogStreamer<decltype(MakeVal(std::declval<U>())), T, Ts...>(
-        MakeVal(arg), this);
+            typename V = decltype(MakeVal(std::declval<U>())),
+            absl::enable_if_t<std::is_arithmetic<U>::value ||
+                              std::is_enum<U>::value>* = nullptr>
+  RTC_FORCE_INLINE LogStreamer<V, T, Ts...> operator<<(U arg) const {
+    return LogStreamer<V, T, Ts...>(MakeVal(arg), this);
   }
 
   template <typename U,
-            typename std::enable_if<!std::is_arithmetic<U>::value &&
-                                    !std::is_enum<U>::value>::type* = nullptr>
-  RTC_FORCE_INLINE LogStreamer<decltype(MakeVal(std::declval<U>())), T, Ts...>
-  operator<<(const U& arg) const {
-    return LogStreamer<decltype(MakeVal(std::declval<U>())), T, Ts...>(
-        MakeVal(arg), this);
+            typename V = decltype(MakeVal(std::declval<U>())),
+            absl::enable_if_t<!std::is_arithmetic<U>::value &&
+                              !std::is_enum<U>::value>* = nullptr>
+  RTC_FORCE_INLINE LogStreamer<V, T, Ts...> operator<<(const U& arg) const {
+    return LogStreamer<V, T, Ts...>(MakeVal(arg), this);
   }
 
   template <typename... Us>
