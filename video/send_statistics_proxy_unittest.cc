@@ -17,6 +17,8 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "api/units/timestamp.h"
+#include "rtc_base/fake_clock.h"
 #include "system_wrappers/include/metrics.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
@@ -364,6 +366,56 @@ TEST_F(SendStatisticsProxyTest, OnSendEncodedImageWithoutQpQpSumWontExist) {
   EXPECT_EQ(absl::nullopt, statistics_proxy_->GetStats().qp_sum);
   statistics_proxy_->OnSendEncodedImage(encoded_image, &codec_info);
   EXPECT_EQ(absl::nullopt, statistics_proxy_->GetStats().qp_sum);
+}
+
+TEST_F(SendStatisticsProxyTest, TotalEncodedBytesTargetFirstFrame) {
+  const uint32_t kTargetBytesPerSecond = 100000;
+  statistics_proxy_->OnSetEncoderTargetRate(kTargetBytesPerSecond * 8);
+  EXPECT_EQ(0u, statistics_proxy_->GetStats().total_encoded_bytes_target);
+
+  EncodedImage encoded_image;
+  statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+  // On the first frame we don't know the frame rate yet, calculation yields
+  // zero. Our estimate assumes at least 1 FPS, so we expect the frame size to
+  // increment by a full |kTargetBytesPerSecond|.
+  EXPECT_EQ(kTargetBytesPerSecond,
+            statistics_proxy_->GetStats().total_encoded_bytes_target);
+}
+
+TEST_F(SendStatisticsProxyTest,
+       TotalEncodedBytesTargetIncrementsBasedOnFrameRate) {
+  const uint32_t kTargetBytesPerSecond = 100000;
+  const int kInterframeDelayMs = 100;
+
+  // SendStatisticsProxy uses a RateTracker internally. SendStatisticsProxy uses
+  // |fake_clock_| for testing, but the RateTracker relies on a global clock.
+  // This test relies on rtc::ScopedFakeClock to synchronize these two clocks.
+  // TODO(https://crbug.com/webrtc/10640): When the RateTracker uses a Clock
+  // this test can stop relying on rtc::ScopedFakeClock.
+  rtc::ScopedFakeClock fake_global_clock;
+  fake_global_clock.SetTime(Timestamp::ms(fake_clock_.TimeInMilliseconds()));
+
+  statistics_proxy_->OnSetEncoderTargetRate(kTargetBytesPerSecond * 8);
+  EncodedImage encoded_image;
+
+  // First frame
+  statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+  uint64_t first_total_encoded_bytes_target =
+      statistics_proxy_->GetStats().total_encoded_bytes_target;
+  // Second frame
+  fake_clock_.AdvanceTimeMilliseconds(kInterframeDelayMs);
+  fake_global_clock.SetTime(Timestamp::ms(fake_clock_.TimeInMilliseconds()));
+  encoded_image.SetTimestamp(encoded_image.Timestamp() +
+                             90 * kInterframeDelayMs);
+  statistics_proxy_->OnSendEncodedImage(encoded_image, nullptr);
+
+  auto stats = statistics_proxy_->GetStats();
+  // By the time the second frame arrives, one frame has previously arrived
+  // during a |kInterframeDelayMs| interval. The estimated encode frame rate at
+  // the second frame's arrival should be 10 FPS.
+  uint64_t delta_encoded_bytes_target =
+      stats.total_encoded_bytes_target - first_total_encoded_bytes_target;
+  EXPECT_EQ(kTargetBytesPerSecond / 10, delta_encoded_bytes_target);
 }
 
 TEST_F(SendStatisticsProxyTest, GetCpuAdaptationStats) {

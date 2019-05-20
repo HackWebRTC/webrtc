@@ -896,6 +896,18 @@ void SendStatisticsProxy::OnSendEncodedImage(
 
   rtc::CritScope lock(&crit_);
   ++stats_.frames_encoded;
+  // The current encode frame rate is based on previously encoded frames.
+  double encode_frame_rate = encoded_frame_rate_tracker_.ComputeRate();
+  // We assume that less than 1 FPS is not a trustworthy estimate - perhaps we
+  // just started encoding for the first time or after a pause. Assuming frame
+  // rate is at least 1 FPS is conservative to avoid too large increments.
+  if (encode_frame_rate < 1.0)
+    encode_frame_rate = 1.0;
+  double target_frame_size_bytes =
+      stats_.target_media_bitrate_bps / (8.0 * encode_frame_rate);
+  // |stats_.target_media_bitrate_bps| is set in
+  // SendStatisticsProxy::OnSetEncoderTargetRate.
+  stats_.total_encoded_bytes_target += round(target_frame_size_bytes);
   if (codec_info) {
     UpdateEncoderFallbackStats(
         codec_info, encoded_image._encodedWidth * encoded_image._encodedHeight,

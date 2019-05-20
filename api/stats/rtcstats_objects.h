@@ -458,6 +458,7 @@ class RTC_EXPORT RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
   RTCStatsMember<double> target_bitrate;
   RTCStatsMember<uint32_t> frames_encoded;
   RTCStatsMember<double> total_encode_time;
+  RTCStatsMember<uint64_t> total_encoded_bytes_target;
   // TODO(https://crbug.com/webrtc/10635): This is only implemented for video;
   // implement it for audio as well.
   RTCStatsMember<double> total_packet_send_delay;

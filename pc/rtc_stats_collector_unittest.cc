@@ -1849,6 +1849,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   video_media_info.senders[0].codec_payload_type = 42;
   video_media_info.senders[0].frames_encoded = 8;
   video_media_info.senders[0].total_encode_time_ms = 9000;
+  video_media_info.senders[0].total_encoded_bytes_target = 1234;
   video_media_info.senders[0].total_packet_send_delay_ms = 10000;
   video_media_info.senders[0].qp_sum = absl::nullopt;
   video_media_info.senders[0].content_type = VideoContentType::UNSPECIFIED;
@@ -1891,6 +1892,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   expected_video.retransmitted_bytes_sent = 60;
   expected_video.frames_encoded = 8;
   expected_video.total_encode_time = 9.0;
+  expected_video.total_encoded_bytes_target = 1234;
   expected_video.total_packet_send_delay = 10.0;
   // |expected_video.content_type| should be undefined.
   // |expected_video.qp_sum| should be undefined.

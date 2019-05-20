@@ -347,6 +347,8 @@ void SetOutboundRTPStreamStatsFromVideoSenderInfo(
   outbound_video->total_encode_time =
       static_cast<double>(video_sender_info.total_encode_time_ms) /
       rtc::kNumMillisecsPerSec;
+  outbound_video->total_encoded_bytes_target =
+      video_sender_info.total_encoded_bytes_target;
   outbound_video->total_packet_send_delay =
       static_cast<double>(video_sender_info.total_packet_send_delay_ms) /
       rtc::kNumMillisecsPerSec;

@@ -548,6 +548,7 @@ if (rtc_include_tests) {
       "../api/task_queue:default_task_queue_factory",
       "../api/test/video:function_video_factory",
       "../api/units:data_rate",
+      "../api/units:timestamp",
       "../api/video:builtin_video_bitrate_allocator_factory",
       "../api/video:encoded_image",
       "../api/video:video_bitrate_allocation",

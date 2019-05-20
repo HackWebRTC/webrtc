@@ -2261,6 +2261,7 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
   info.encode_usage_percent = stats.encode_usage_percent;
   info.frames_encoded = stats.frames_encoded;
   info.total_encode_time_ms = stats.total_encode_time_ms;
+  info.total_encoded_bytes_target = stats.total_encoded_bytes_target;
   info.qp_sum = stats.qp_sum;
 
   info.nominal_bitrate = stats.media_bitrate_bps;
