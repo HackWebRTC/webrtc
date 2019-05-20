@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <algorithm>
 #include <cmath>
+#include <utility>
 
 #include "api/units/timestamp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -88,7 +89,8 @@ void TransportFeedbackAdapter::AddPacket(const RtpPacketSendInfo& packet_info,
       packet_feedback.ssrc = packet_info.ssrc;
       packet_feedback.rtp_sequence_number = packet_info.rtp_sequence_number;
     }
-    send_time_history_.AddAndRemoveOld(packet_feedback, creation_time.ms());
+    send_time_history_.RemoveOld(creation_time.ms());
+    send_time_history_.AddNewPacket(std::move(packet_feedback));
   }
 
   {

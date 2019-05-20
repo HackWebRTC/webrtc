@@ -29,6 +29,8 @@ class SendTimeHistory {
   ~SendTimeHistory();
 
   // Cleanup old entries, then add new packet info with provided parameters.
+  void RemoveOld(int64_t at_time_ms);
+  void AddNewPacket(PacketFeedback packet);
   void AddAndRemoveOld(const PacketFeedback& packet, int64_t at_time_ms);
 
   void AddUntracked(size_t packet_size, int64_t send_time_ms);
