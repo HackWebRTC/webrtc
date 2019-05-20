@@ -16,7 +16,6 @@
 #include "api/video/video_frame_type.h"
 #include "common_video/h264/h264_common.h"
 #include "media/base/media_constants.h"
-#include "modules/pacing/packet_router.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor_extension.h"
@@ -138,8 +137,8 @@ class RtpVideoStreamReceiverTest : public ::testing::Test {
     rtp_receive_statistics_ =
         absl::WrapUnique(ReceiveStatistics::Create(Clock::GetRealTimeClock()));
     rtp_video_stream_receiver_ = absl::make_unique<RtpVideoStreamReceiver>(
-        Clock::GetRealTimeClock(), &mock_transport_, nullptr, &packet_router_,
-        &config_, rtp_receive_statistics_.get(), nullptr, process_thread_.get(),
+        Clock::GetRealTimeClock(), &mock_transport_, nullptr, nullptr, &config_,
+        rtp_receive_statistics_.get(), nullptr, process_thread_.get(),
         &mock_nack_sender_, &mock_key_frame_request_sender_,
         &mock_on_complete_frame_callback_, nullptr);
   }
@@ -203,7 +202,6 @@ class RtpVideoStreamReceiverTest : public ::testing::Test {
   MockKeyFrameRequestSender mock_key_frame_request_sender_;
   MockTransport mock_transport_;
   MockOnCompleteFrameCallback mock_on_complete_frame_callback_;
-  PacketRouter packet_router_;
   std::unique_ptr<ProcessThread> process_thread_;
   std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
   std::unique_ptr<RtpVideoStreamReceiver> rtp_video_stream_receiver_;

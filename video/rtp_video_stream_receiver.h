@@ -67,6 +67,9 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
       Clock* clock,
       Transport* transport,
       RtcpRttStats* rtt_stats,
+      // The packet router is optional; if provided, the RtpRtcp module for this
+      // stream is registered as a candidate for sending REMB and transport
+      // feedback.
       PacketRouter* packet_router,
       const VideoReceiveStream::Config* config,
       ReceiveStatistics* rtp_receive_statistics,
