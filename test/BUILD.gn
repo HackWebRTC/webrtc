@@ -643,7 +643,6 @@ rtc_source_set("fake_video_codecs") {
     "../modules/video_coding:codec_globals_headers",
     "../modules/video_coding:video_codec_interface",
     "../modules/video_coding:video_coding_utility",
-    "../modules/video_coding:webrtc_h264",
     "../modules/video_coding:webrtc_vp8",
     "../modules/video_coding:webrtc_vp9",
     "../rtc_base:checks",
