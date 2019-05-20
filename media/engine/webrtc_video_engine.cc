@@ -29,6 +29,7 @@
 #include "media/engine/webrtc_media_engine.h"
 #include "media/engine/webrtc_voice_engine.h"
 #include "rtc_base/copy_on_write_buffer.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/time_utils.h"
@@ -387,15 +388,18 @@ WebRtcVideoChannel::WebRtcVideoSendStream::ConfigureVideoEncoderSettings(
     // Ensure frame dropping is always enabled.
     RTC_DCHECK(vp9_settings.frameDroppingOn);
     if (!is_screencast) {
-      const std::string group =
-          webrtc::field_trial::FindFullName("WebRTC-Vp9InterLayerPred");
-      int mode;
-      if (!group.empty() && sscanf(group.c_str(), "%d", &mode) == 1 &&
-          (mode == static_cast<int>(webrtc::InterLayerPredMode::kOn) ||
-           mode == static_cast<int>(webrtc::InterLayerPredMode::kOnKeyPic) ||
-           mode == static_cast<int>(webrtc::InterLayerPredMode::kOff))) {
-        vp9_settings.interLayerPred =
-            static_cast<webrtc::InterLayerPredMode>(mode);
+      webrtc::FieldTrialFlag interlayer_pred_experiment_enabled =
+          webrtc::FieldTrialFlag("Enabled");
+      webrtc::FieldTrialEnum<webrtc::InterLayerPredMode> inter_layer_pred_mode(
+          "inter_layer_pred_mode", webrtc::InterLayerPredMode::kOnKeyPic,
+          {{"off", webrtc::InterLayerPredMode::kOff},
+           {"on", webrtc::InterLayerPredMode::kOn},
+           {"onkeypic", webrtc::InterLayerPredMode::kOnKeyPic}});
+      webrtc::ParseFieldTrial(
+          {&interlayer_pred_experiment_enabled, &inter_layer_pred_mode},
+          webrtc::field_trial::FindFullName("WebRTC-Vp9InterLayerPred"));
+      if (interlayer_pred_experiment_enabled) {
+        vp9_settings.interLayerPred = inter_layer_pred_mode;
       } else {
         // Limit inter-layer prediction to key pictures by default.
         vp9_settings.interLayerPred = webrtc::InterLayerPredMode::kOnKeyPic;

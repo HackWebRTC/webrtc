@@ -3215,7 +3215,7 @@ class Vp9SettingsTestWithFieldTrial
       : Vp9SettingsTest(::testing::get<0>(GetParam())),
         num_spatial_layers_(::testing::get<1>(GetParam())),
         num_temporal_layers_(::testing::get<2>(GetParam())),
-        inter_layer_pred_(::testing::get<3>(GetParam())) {}
+        inter_layer_pred_mode_(::testing::get<3>(GetParam())) {}
 
   void VerifySettings(int num_spatial_layers,
                       int num_temporal_layers,
@@ -3236,18 +3236,19 @@ class Vp9SettingsTestWithFieldTrial
     ASSERT_TRUE(stream->GetVp9Settings(&vp9_settings)) << "No VP9 config set.";
     EXPECT_EQ(num_spatial_layers, vp9_settings.numberOfSpatialLayers);
     EXPECT_EQ(num_temporal_layers, vp9_settings.numberOfTemporalLayers);
-    EXPECT_EQ(inter_layer_pred_, vp9_settings.interLayerPred);
+    EXPECT_EQ(inter_layer_pred_mode_, vp9_settings.interLayerPred);
 
     EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, nullptr, nullptr));
   }
 
   const uint8_t num_spatial_layers_;
   const uint8_t num_temporal_layers_;
-  const webrtc::InterLayerPredMode inter_layer_pred_;
+  const webrtc::InterLayerPredMode inter_layer_pred_mode_;
 };
 
 TEST_P(Vp9SettingsTestWithFieldTrial, VerifyCodecSettings) {
-  VerifySettings(num_spatial_layers_, num_temporal_layers_, inter_layer_pred_);
+  VerifySettings(num_spatial_layers_, num_temporal_layers_,
+                 inter_layer_pred_mode_);
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -3263,18 +3264,29 @@ INSTANTIATE_TEST_SUITE_P(
                         2,
                         3,
                         webrtc::InterLayerPredMode::kOnKeyPic),
-        std::make_tuple("WebRTC-Vp9InterLayerPred/0/",
+        std::make_tuple("WebRTC-Vp9InterLayerPred/Default/",
                         1,
                         1,
-                        webrtc::InterLayerPredMode::kOff),
-        std::make_tuple("WebRTC-Vp9InterLayerPred/1/",
+                        webrtc::InterLayerPredMode::kOnKeyPic),
+        std::make_tuple("WebRTC-Vp9InterLayerPred/Disabled/",
                         1,
                         1,
-                        webrtc::InterLayerPredMode::kOn),
-        std::make_tuple("WebRTC-Vp9InterLayerPred/2/",
-                        1,
-                        1,
-                        webrtc::InterLayerPredMode::kOnKeyPic)));
+                        webrtc::InterLayerPredMode::kOnKeyPic),
+        std::make_tuple(
+            "WebRTC-Vp9InterLayerPred/Enabled,inter_layer_pred_mode:off/",
+            1,
+            1,
+            webrtc::InterLayerPredMode::kOff),
+        std::make_tuple(
+            "WebRTC-Vp9InterLayerPred/Enabled,inter_layer_pred_mode:on/",
+            1,
+            1,
+            webrtc::InterLayerPredMode::kOn),
+        std::make_tuple(
+            "WebRTC-Vp9InterLayerPred/Enabled,inter_layer_pred_mode:onkeypic/",
+            1,
+            1,
+            webrtc::InterLayerPredMode::kOnKeyPic)));
 
 TEST_F(WebRtcVideoChannelTest, VerifyMinBitrate) {
   std::vector<webrtc::VideoStream> streams = AddSendStream()->GetVideoStreams();
