@@ -615,6 +615,16 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     // |enable_rtp_data_channel| is invalid.
     bool use_media_transport_for_data_channels = false;
 
+    // If MediaTransportFactory is provided in PeerConnectionFactory, this flag
+    // informs PeerConnection that it should use the DatagramTransportInterface
+    // for packets instead DTLS. It's invalid to set it to |true| if the
+    // MediaTransportFactory wasn't provided.
+    //
+    // TODO(sukhanov): Once we have a working mechanism for negotiating media
+    // transport through SDP, we replace media transport flags in
+    // RTCConfiguration with field trials.
+    bool use_datagram_transport = false;
+
     // Defines advanced optional cryptographic settings related to SRTP and
     // frame encryption for native WebRTC. Setting this will overwrite any
     // settings set in PeerConnectionFactory (which is deprecated).
