@@ -1632,14 +1632,14 @@ PeerConnection::CreateSender(
                (track->kind() == MediaStreamTrackInterface::kAudioKind));
     sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
         signaling_thread(),
-        AudioRtpSender::Create(worker_thread(), id, stats_.get()));
+        AudioRtpSender::Create(worker_thread(), id, stats_.get(), this));
     NoteUsageEvent(UsageEvent::AUDIO_ADDED);
   } else {
     RTC_DCHECK_EQ(media_type, cricket::MEDIA_TYPE_VIDEO);
     RTC_DCHECK(!track ||
                (track->kind() == MediaStreamTrackInterface::kVideoKind));
     sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
-        signaling_thread(), VideoRtpSender::Create(worker_thread(), id));
+        signaling_thread(), VideoRtpSender::Create(worker_thread(), id, this));
     NoteUsageEvent(UsageEvent::VIDEO_ADDED);
   }
   bool set_track_succeeded = sender->SetTrack(track);
@@ -1722,14 +1722,14 @@ rtc::scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
   rtc::scoped_refptr<RtpSenderProxyWithInternal<RtpSenderInternal>> new_sender;
   if (kind == MediaStreamTrackInterface::kAudioKind) {
     auto audio_sender = AudioRtpSender::Create(
-        worker_thread(), rtc::CreateRandomUuid(), stats_.get());
+        worker_thread(), rtc::CreateRandomUuid(), stats_.get(), this);
     audio_sender->SetMediaChannel(voice_media_channel());
     new_sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
         signaling_thread(), audio_sender);
     GetAudioTransceiver()->internal()->AddSender(new_sender);
   } else if (kind == MediaStreamTrackInterface::kVideoKind) {
     auto video_sender =
-        VideoRtpSender::Create(worker_thread(), rtc::CreateRandomUuid());
+        VideoRtpSender::Create(worker_thread(), rtc::CreateRandomUuid(), this);
     video_sender->SetMediaChannel(video_media_channel());
     new_sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
         signaling_thread(), video_sender);
@@ -7128,6 +7128,12 @@ bool PeerConnection::OnTransportChanged(
   }
 
   return ret;
+}
+
+void PeerConnection::OnSetStreams() {
+  RTC_DCHECK_RUN_ON(signaling_thread());
+  if (IsUnifiedPlan())
+    UpdateNegotiationNeeded();
 }
 
 PeerConnectionObserver* PeerConnection::Observer() const {

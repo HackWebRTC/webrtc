@@ -47,6 +47,7 @@ class MockRtpSenderInternal : public RtpSenderInternal {
   MOCK_METHOD1(SetMediaChannel, void(cricket::MediaChannel*));
   MOCK_METHOD1(SetSsrc, void(uint32_t));
   MOCK_METHOD1(set_stream_ids, void(const std::vector<std::string>&));
+  MOCK_METHOD1(SetStreams, void(const std::vector<std::string>&));
   MOCK_METHOD1(set_init_send_encodings,
                void(const std::vector<RtpEncodingParameters>&));
   MOCK_METHOD0(Stop, void());

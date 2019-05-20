@@ -74,6 +74,12 @@ class RtpSenderInternal : public RtpSenderInterface {
 // Shared implementation for RtpSenderInternal interface.
 class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
  public:
+  class SetStreamsObserver {
+   public:
+    virtual ~SetStreamsObserver() = default;
+    virtual void OnSetStreams() = 0;
+  };
+
   // Sets the underlying MediaEngine channel associated with this RtpSender.
   // A VoiceMediaChannel should be used for audio RtpSenders and
   // a VideoMediaChannel should be used for video RtpSenders.
@@ -104,6 +110,7 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   void set_stream_ids(const std::vector<std::string>& stream_ids) override {
     stream_ids_ = stream_ids;
   }
+  void SetStreams(const std::vector<std::string>& stream_ids) override;
 
   std::string id() const override { return id_; }
 
@@ -143,7 +150,12 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   RTCError DisableEncodingLayers(const std::vector<std::string>& rid) override;
 
  protected:
-  RtpSenderBase(rtc::Thread* worker_thread, const std::string& id);
+  // If |set_streams_observer| is not null, it is invoked when SetStreams()
+  // is called. |set_streams_observer| is not owned by this object. If not
+  // null, it must be valid at least until this sender becomes stopped.
+  RtpSenderBase(rtc::Thread* worker_thread,
+                const std::string& id,
+                SetStreamsObserver* set_streams_observer);
   // TODO(nisse): Since SSRC == 0 is technically valid, figure out
   // some other way to test if we have a valid SSRC.
   bool can_send_track() const { return track_ && ssrc_; }
@@ -183,6 +195,8 @@ class RtpSenderBase : public RtpSenderInternal, public ObserverInterface {
   // const method.
   mutable absl::optional<std::string> last_transaction_id_;
   std::vector<std::string> disabled_rids_;
+
+  SetStreamsObserver* set_streams_observer_ = nullptr;
 };
 
 // LocalAudioSinkAdapter receives data callback as a sink to the local
@@ -215,9 +229,14 @@ class AudioRtpSender : public DtmfProviderInterface, public RtpSenderBase {
   // The sender is initialized with no track to send and no associated streams.
   // StatsCollector provided so that Add/RemoveLocalAudioTrack can be called
   // at the appropriate times.
-  static rtc::scoped_refptr<AudioRtpSender> Create(rtc::Thread* worker_thread,
-                                                   const std::string& id,
-                                                   StatsCollector* stats);
+  // If |set_streams_observer| is not null, it is invoked when SetStreams()
+  // is called. |set_streams_observer| is not owned by this object. If not
+  // null, it must be valid at least until this sender becomes stopped.
+  static rtc::scoped_refptr<AudioRtpSender> Create(
+      rtc::Thread* worker_thread,
+      const std::string& id,
+      StatsCollector* stats,
+      SetStreamsObserver* set_streams_observer);
   virtual ~AudioRtpSender();
 
   // DtmfSenderProvider implementation.
@@ -240,7 +259,8 @@ class AudioRtpSender : public DtmfProviderInterface, public RtpSenderBase {
  protected:
   AudioRtpSender(rtc::Thread* worker_thread,
                  const std::string& id,
-                 StatsCollector* stats);
+                 StatsCollector* stats,
+                 SetStreamsObserver* set_streams_observer);
 
   void SetSend() override;
   void ClearSend() override;
@@ -274,8 +294,13 @@ class VideoRtpSender : public RtpSenderBase {
  public:
   // Construct an RtpSender for video with the given sender ID.
   // The sender is initialized with no track to send and no associated streams.
-  static rtc::scoped_refptr<VideoRtpSender> Create(rtc::Thread* worker_thread,
-                                                   const std::string& id);
+  // If |set_streams_observer| is not null, it is invoked when SetStreams()
+  // is called. |set_streams_observer| is not owned by this object. If not
+  // null, it must be valid at least until this sender becomes stopped.
+  static rtc::scoped_refptr<VideoRtpSender> Create(
+      rtc::Thread* worker_thread,
+      const std::string& id,
+      SetStreamsObserver* set_streams_observer);
   virtual ~VideoRtpSender();
 
   // ObserverInterface implementation
@@ -291,7 +316,9 @@ class VideoRtpSender : public RtpSenderBase {
   rtc::scoped_refptr<DtmfSenderInterface> GetDtmfSender() const override;
 
  protected:
-  VideoRtpSender(rtc::Thread* worker_thread, const std::string& id);
+  VideoRtpSender(rtc::Thread* worker_thread,
+                 const std::string& id,
+                 SetStreamsObserver* set_streams_observer);
 
   void SetSend() override;
   void ClearSend() override;

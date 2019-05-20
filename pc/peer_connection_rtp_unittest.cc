@@ -491,15 +491,8 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan, ChangeMsidWhileReceiving) {
   ASSERT_TRUE(callee->CreateAnswerAndSetAsLocal());
 
   // Change the stream ID in the offer.
-  // TODO(https://crbug.com/webrtc/10129): When RtpSenderInterface::SetStreams
-  // is supported, this can use that instead of munging the SDP.
-  auto offer = caller->CreateOffer();
-  auto contents = offer->description()->contents();
-  ASSERT_EQ(1u, contents.size());
-  auto& stream_params = contents[0].media_description()->mutable_streams();
-  ASSERT_EQ(1u, stream_params.size());
-  stream_params[0].set_stream_ids({"stream2"});
-  ASSERT_TRUE(callee->SetRemoteDescription(std::move(offer)));
+  caller->pc()->GetSenders()[0]->SetStreams({"stream2"});
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
   ASSERT_EQ(1u, transceiver->receiver()->streams().size());
   EXPECT_EQ("stream2", transceiver->receiver()->streams()[0]->id());
 }
@@ -1797,12 +1790,7 @@ TEST_P(PeerConnectionRtpTest, CreateTwoSendersWithSameTrack) {
 
 // This test exercises the code path that fires a NegotiationNeeded
 // notification when the stream IDs of the local description differ from
-// the ones in the transceiver. Since SetStreams() is not yet available
-// on RtpSenderInterface, adding a track is used to trigger the check for
-// the NegotiationNeeded notification.
-// TODO(https://crbug.com/webrtc/10129): Replace this test with a test that
-// checks that calling SetStreams() on a sender fires the notification once
-// the method becomes available in RtpSenderInterface.
+// the ones in the transceiver.
 TEST_F(PeerConnectionRtpTestUnifiedPlan,
        ChangeAssociatedStreamsTriggersRenegotiation) {
   auto caller = CreatePeerConnection();
@@ -1817,18 +1805,15 @@ TEST_F(PeerConnectionRtpTestUnifiedPlan,
   ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
   caller->observer()->clear_negotiation_needed();
 
-  SessionDescriptionInterface* cld = const_cast<SessionDescriptionInterface*>(
-      caller->pc()->current_local_description());
-  ASSERT_EQ(cld->description()->contents().size(), 1u);
-
-  cricket::SessionDescription* description = cld->description();
-  cricket::ContentInfo& content_info = description->contents()[0];
-  ASSERT_EQ(content_info.media_description()->mutable_streams().size(), 1u);
-  content_info.media_description()->mutable_streams()[0].set_stream_ids(
-      {"stream3", "stream4", "stream5"});
-
-  ASSERT_TRUE(caller->AddTrack(caller->CreateAudioTrack("a2")));
+  transceiver->sender()->SetStreams({"stream3", "stream4", "stream5"});
   EXPECT_TRUE(caller->observer()->negotiation_needed());
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+  auto callee_streams = callee->pc()->GetReceivers()[0]->streams();
+  ASSERT_EQ(3u, callee_streams.size());
+  EXPECT_EQ("stream3", callee_streams[0]->id());
+  EXPECT_EQ("stream4", callee_streams[1]->id());
+  EXPECT_EQ("stream5", callee_streams[2]->id());
 }
 
 INSTANTIATE_TEST_SUITE_P(PeerConnectionRtpTest,
