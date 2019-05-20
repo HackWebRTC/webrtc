@@ -16,7 +16,6 @@
 #include "api/audio_options.h"
 #include "api/media_stream_interface.h"
 #include "media/base/media_engine.h"
-#include "pc/peer_connection.h"
 #include "pc/stats_collector.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
@@ -119,12 +118,8 @@ bool UnimplementedRtpParameterHasValue(const RtpParameters& parameters) {
   return false;
 }
 
-RtpSenderBase::RtpSenderBase(rtc::Thread* worker_thread,
-                             const std::string& id,
-                             SetStreamIDsObserver* set_stream_ids_observer)
-    : worker_thread_(worker_thread),
-      id_(id),
-      set_stream_ids_observer_(set_stream_ids_observer) {
+RtpSenderBase::RtpSenderBase(rtc::Thread* worker_thread, const std::string& id)
+    : worker_thread_(worker_thread), id_(id) {
   RTC_DCHECK(worker_thread);
   init_parameters_.encodings.emplace_back();
 }
@@ -218,12 +213,6 @@ RTCError RtpSenderBase::SetParameters(const RtpParameters& parameters) {
   RTCError result = SetParametersInternal(parameters);
   last_transaction_id_.reset();
   return result;
-}
-
-void RtpSenderBase::SetStreamIDs(const std::vector<std::string>& stream_ids) {
-  stream_ids_ = stream_ids;
-  if (set_stream_ids_observer_)
-    set_stream_ids_observer_->OnSetStreamIDs();
 }
 
 bool RtpSenderBase::SetTrack(MediaStreamTrackInterface* track) {
@@ -328,7 +317,6 @@ void RtpSenderBase::Stop() {
     RemoveTrackFromStats();
   }
   media_channel_ = nullptr;
-  set_stream_ids_observer_ = nullptr;
   stopped_ = true;
 }
 
@@ -407,18 +395,15 @@ void LocalAudioSinkAdapter::SetSink(cricket::AudioSource::Sink* sink) {
 rtc::scoped_refptr<AudioRtpSender> AudioRtpSender::Create(
     rtc::Thread* worker_thread,
     const std::string& id,
-    StatsCollector* stats,
-    SetStreamIDsObserver* set_stream_ids_observer) {
+    StatsCollector* stats) {
   return rtc::scoped_refptr<AudioRtpSender>(
-      new rtc::RefCountedObject<AudioRtpSender>(worker_thread, id, stats,
-                                                set_stream_ids_observer));
+      new rtc::RefCountedObject<AudioRtpSender>(worker_thread, id, stats));
 }
 
 AudioRtpSender::AudioRtpSender(rtc::Thread* worker_thread,
                                const std::string& id,
-                               StatsCollector* stats,
-                               SetStreamIDsObserver* set_stream_ids_observer)
-    : RtpSenderBase(worker_thread, id, set_stream_ids_observer),
+                               StatsCollector* stats)
+    : RtpSenderBase(worker_thread, id),
       stats_(stats),
       dtmf_sender_proxy_(DtmfSenderProxy::Create(
           rtc::Thread::Current(),
@@ -554,17 +539,14 @@ void AudioRtpSender::ClearSend() {
 
 rtc::scoped_refptr<VideoRtpSender> VideoRtpSender::Create(
     rtc::Thread* worker_thread,
-    const std::string& id,
-    SetStreamIDsObserver* set_stream_ids_observer) {
+    const std::string& id) {
   return rtc::scoped_refptr<VideoRtpSender>(
-      new rtc::RefCountedObject<VideoRtpSender>(worker_thread, id,
-                                                set_stream_ids_observer));
+      new rtc::RefCountedObject<VideoRtpSender>(worker_thread, id));
 }
 
 VideoRtpSender::VideoRtpSender(rtc::Thread* worker_thread,
-                               const std::string& id,
-                               SetStreamIDsObserver* set_stream_ids_observer)
-    : RtpSenderBase(worker_thread, id, set_stream_ids_observer) {}
+                               const std::string& id)
+    : RtpSenderBase(worker_thread, id) {}
 
 VideoRtpSender::~VideoRtpSender() {
   Stop();
