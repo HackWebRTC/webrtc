@@ -279,7 +279,7 @@ TEST_P(PCGenericDescriptorTest, ForemanCif35kbpsWithoutPacketLoss) {
   BuiltInNetworkBehaviorConfig config;
   config.link_capacity_kbps = 35;
   auto fixture = CreateTestFixture(
-      GetTestName("foreman_cif_30kbps_net_delay_0_0_plr_0"),
+      GetTestName("pc_foreman_cif_30kbps_net_delay_0_0_plr_0"),
       CreateTwoNetworkLinks(network_emulation_manager.get(), config),
       [](PeerConfigurer* alice) {
         VideoConfig video(352, 288, 10);
@@ -305,7 +305,8 @@ TEST_P(PCGenericDescriptorTest,
   BuiltInNetworkBehaviorConfig config;
   config.link_capacity_kbps = 35;
   auto fixture = CreateTestFixture(
-      GetTestName("foreman_cif_30kbps_net_delay_0_0_plr_0_trusted_rate_ctrl"),
+      GetTestName(
+          "pc_foreman_cif_30kbps_net_delay_0_0_plr_0_trusted_rate_ctrl"),
       CreateTwoNetworkLinks(network_emulation_manager.get(), config),
       [](PeerConfigurer* alice) {
         VideoConfig video(352, 288, 10);
@@ -545,7 +546,7 @@ TEST(PCFullStackTest, ForemanCif35kbpsWithoutPacketlossH264) {
   BuiltInNetworkBehaviorConfig config;
   config.link_capacity_kbps = 35;
   auto fixture = CreateTestFixture(
-      "foreman_cif_30kbps_net_delay_0_0_plr_0_H264",
+      "pc_foreman_cif_30kbps_net_delay_0_0_plr_0_H264",
       CreateTwoNetworkLinks(network_emulation_manager.get(), config),
       [](PeerConfigurer* alice) {
         VideoConfig video(352, 288, 10);
@@ -642,7 +643,7 @@ TEST(PCFullStackTest, DISABLED_ForemanCifPlr5H264Ulpfec) {
   config.loss_percent = 5;
   config.queue_delay_ms = 50;
   auto fixture = CreateTestFixture(
-      "foreman_cif_delay_50_0_plr_5_H264_ulpfec",
+      "pc_foreman_cif_delay_50_0_plr_5_H264_ulpfec",
       CreateTwoNetworkLinks(network_emulation_manager.get(), config),
       [](PeerConfigurer* alice) {
         VideoConfig video(352, 288, 30);
