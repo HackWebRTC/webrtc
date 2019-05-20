@@ -15,10 +15,6 @@ if (is_android) {
   import("//build/config/android/rules.gni")
 }
 
-config("rtc_base_chromium_config") {
-  defines = [ "NO_MAIN_THREAD_WRAPPING" ]
-}
-
 config("rtc_base_all_dependent_config") {
   if (is_ios) {
     libs = [
@@ -903,7 +899,6 @@ rtc_static_library("rtc_base") {
 
   if (build_with_chromium) {
     include_dirs = [ "../../boringssl/src/include" ]
-    public_configs += [ ":rtc_base_chromium_config" ]
   } else {
     sources += [
       "callback.h",

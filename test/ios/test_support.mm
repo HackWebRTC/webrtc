@@ -10,6 +10,7 @@
 
 #import <UIKit/UIKit.h>
 
+#include "rtc_base/thread.h"
 #include "test/ios/coverage_util_ios.h"
 #include "test/ios/test_support.h"
 #include "test/testsupport/perf_test.h"
@@ -72,6 +73,8 @@ static bool g_save_chartjson_result;
 
 - (void)runTests {
   rtc::test::ConfigureCoverageReportPath();
+
+  rtc::AutoThread main_thread;
 
   int exitStatus = g_test_suite();
 

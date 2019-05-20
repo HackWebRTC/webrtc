@@ -181,6 +181,7 @@ if (is_ios) {
     ]
     deps = [
       ":perf_test",
+      "../rtc_base",
       "../sdk:helpers_objc",
     ]
     configs += [ ":test_support_objc_config" ]
