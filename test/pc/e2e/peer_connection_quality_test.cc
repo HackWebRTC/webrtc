@@ -52,6 +52,8 @@ constexpr int kMaxVideoAnalyzerThreads = 8;
 constexpr TimeDelta kStatsUpdateInterval = TimeDelta::Seconds<1>();
 constexpr TimeDelta kStatsPollingStopTimeout = TimeDelta::Seconds<1>();
 
+constexpr TimeDelta kAliveMessageLogInterval = TimeDelta::Seconds<30>();
+
 std::string VideoConfigSourcePresenceToString(const VideoConfig& video_config) {
   char buf[1024];
   rtc::SimpleStringBuilder builder(buf);
@@ -317,6 +319,14 @@ void PeerConnectionE2EQualityTest::Run(
                                  webrtc::RtcEventLog::kImmediateOutput);
   }
 
+  // Setup alive logging. It is done to prevent test infra to think that test is
+  // dead.
+  RepeatingTaskHandle::DelayedStart(task_queue_->Get(),
+                                    kAliveMessageLogInterval, []() {
+                                      std::printf("Test is still running...\n");
+                                      return kAliveMessageLogInterval;
+                                    });
+
   // Setup call.
   signaling_thread->Invoke<void>(
       RTC_FROM_HERE,
@@ -362,10 +372,15 @@ void PeerConnectionE2EQualityTest::Run(
   // inside.
   alice_->DetachAecDump();
   bob_->DetachAecDump();
-  // Destroy |task_queue_|. It is done to stop all running tasks and prevent
-  // their access to any call related objects after these objects will be
-  // destroyed during call tear down.
-  task_queue_.reset();
+  // Stop all client started tasks on task queue to prevent their access to any
+  // call related objects after these objects will be destroyed during call tear
+  // down.
+  task_queue_->SendTask([this]() {
+    rtc::CritScope crit(&lock_);
+    for (auto& handle : repeating_task_handles_) {
+      handle.Stop();
+    }
+  });
   // Tear down the call.
   signaling_thread->Invoke<void>(
       RTC_FROM_HERE,
@@ -382,6 +397,9 @@ void PeerConnectionE2EQualityTest::Run(
   for (auto& reporter : quality_metrics_reporters_) {
     reporter->StopAndReportResults();
   }
+
+  // Reset |task_queue_| after test to cleanup.
+  task_queue_.reset();
 
   // Ensuring that TestPeers have been destroyed in order to correctly close
   // Audio dumps.
