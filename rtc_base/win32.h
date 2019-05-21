@@ -46,9 +46,6 @@ namespace rtc {
 const char* win32_inet_ntop(int af, const void* src, char* dst, socklen_t size);
 int win32_inet_pton(int af, const char* src, void* dst);
 
-// Convert a Utf8 path representation to a non-length-limited Unicode pathname.
-bool Utf8ToWindowsFilename(const std::string& utf8, std::wstring* filename);
-
 enum WindowsMajorVersions {
   kWindows2000 = 5,
   kWindowsVista = 6,
@@ -80,15 +77,6 @@ inline bool IsWindows10OrLater() {
   return (GetOsVersion(&major, nullptr, nullptr) && (major >= kWindows10));
 }
 
-// Determine the current integrity level of the process.
-bool GetCurrentProcessIntegrityLevel(int* level);
-
-inline bool IsCurrentProcessLowIntegrity() {
-  int level;
-  return (GetCurrentProcessIntegrityLevel(&level) &&
-          level < SECURITY_MANDATORY_MEDIUM_RID);
-}
-
 #else
 
 // When targetting WinUWP the OS must be Windows 10 (or greater) as lesser
@@ -106,12 +94,6 @@ inline bool IsWindows8OrLater() {
 }
 
 inline bool IsWindows10OrLater() {
-  return true;
-}
-
-inline bool IsCurrentProcessLowIntegrity() {
-  // For WinUWP sandboxed store assume this is NOT a low integrity level run
-  // as application privileges can be requested in manifest as appropriate.
   return true;
 }
 

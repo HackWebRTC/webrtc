@@ -310,66 +310,6 @@ int inet_pton_v6(const char* src, void* dst) {
   return 1;
 }
 
-bool Utf8ToWindowsFilename(const std::string& utf8, std::wstring* filename) {
-  // TODO: Integrate into fileutils.h
-  // TODO: Handle wide and non-wide cases via TCHAR?
-  // TODO: Skip \\?\ processing if the length is not > MAX_PATH?
-  // TODO: Write unittests
-
-  // Convert to Utf16
-  int wlen =
-      ::MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(),
-                            static_cast<int>(utf8.length() + 1), nullptr, 0);
-  if (0 == wlen) {
-    return false;
-  }
-  wchar_t* wfilename = STACK_ARRAY(wchar_t, wlen);
-  if (0 == ::MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(),
-                                 static_cast<int>(utf8.length() + 1), wfilename,
-                                 wlen)) {
-    return false;
-  }
-  // Replace forward slashes with backslashes
-  std::replace(wfilename, wfilename + wlen, L'/', L'\\');
-#if defined(WINUWP)
-  // WinUWP sandboxed store applications require the paths to remain as
-  // relative paths.
-  filename->assign(wfilename);
-#else
-  // Convert to complete filename
-  DWORD full_len = ::GetFullPathNameW(wfilename, 0, nullptr, nullptr);
-  if (0 == full_len) {
-    return false;
-  }
-  wchar_t* filepart = nullptr;
-  wchar_t* full_filename = STACK_ARRAY(wchar_t, full_len + 6);
-  wchar_t* start = full_filename + 6;
-  if (0 == ::GetFullPathNameW(wfilename, full_len, start, &filepart)) {
-    return false;
-  }
-  // Add long-path prefix
-  const wchar_t kLongPathPrefix[] = L"\\\\?\\UNC";
-  if ((start[0] != L'\\') || (start[1] != L'\\')) {
-    // Non-unc path:     <pathname>
-    //      Becomes: \\?\<pathname>
-    start -= 4;
-    RTC_DCHECK(start >= full_filename);
-    memcpy(start, kLongPathPrefix, 4 * sizeof(wchar_t));
-  } else if (start[2] != L'?') {
-    // Unc path:       \\<server>\<pathname>
-    //  Becomes: \\?\UNC\<server>\<pathname>
-    start -= 6;
-    RTC_DCHECK(start >= full_filename);
-    memcpy(start, kLongPathPrefix, 7 * sizeof(wchar_t));
-  } else {
-    // Already in long-path form.
-  }
-  filename->assign(start);
-#endif  // defined(WINUWP)
-
-  return true;
-}
-
 // Windows UWP applications cannot obtain versioning information from
 // the sandbox with intention (as behehaviour based on OS versioning rather
 // than feature discovery / compilation flags is discoraged and Windows
@@ -390,27 +330,6 @@ bool GetOsVersion(int* major, int* minor, int* build) {
     return true;
   }
   return false;
-}
-
-bool GetCurrentProcessIntegrityLevel(int* level) {
-  bool ret = false;
-  HANDLE process = ::GetCurrentProcess(), token;
-  if (OpenProcessToken(process, TOKEN_QUERY | TOKEN_QUERY_SOURCE, &token)) {
-    DWORD size;
-    if (!GetTokenInformation(token, TokenIntegrityLevel, nullptr, 0, &size) &&
-        GetLastError() == ERROR_INSUFFICIENT_BUFFER) {
-      char* buf = STACK_ARRAY(char, size);
-      TOKEN_MANDATORY_LABEL* til =
-          reinterpret_cast<TOKEN_MANDATORY_LABEL*>(buf);
-      if (GetTokenInformation(token, TokenIntegrityLevel, til, size, &size)) {
-        DWORD count = *GetSidSubAuthorityCount(til->Label.Sid);
-        *level = *GetSidSubAuthority(til->Label.Sid, count - 1);
-        ret = true;
-      }
-    }
-    CloseHandle(token);
-  }
-  return ret;
 }
 
 #endif  // !defined(WINUWP)
