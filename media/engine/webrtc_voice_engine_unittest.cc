@@ -14,6 +14,7 @@
 #include "absl/strings/match.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/media_transport_config.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
 #include "api/task_queue/default_task_queue_factory.h"
@@ -3031,7 +3032,7 @@ TEST_F(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
   channel.reset(static_cast<cricket::WebRtcVoiceMediaChannel*>(
       engine_->CreateMediaChannel(&call_, config, cricket::AudioOptions(),
                                   webrtc::CryptoOptions())));
-  channel->SetInterface(&network_interface, /*media_transport=*/nullptr);
+  channel->SetInterface(&network_interface, webrtc::MediaTransportConfig());
   // Default value when DSCP is disabled should be DSCP_DEFAULT.
   EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface.dscp());
 
@@ -3039,7 +3040,7 @@ TEST_F(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
   channel.reset(static_cast<cricket::WebRtcVoiceMediaChannel*>(
       engine_->CreateMediaChannel(&call_, config, cricket::AudioOptions(),
                                   webrtc::CryptoOptions())));
-  channel->SetInterface(&network_interface, /*media_transport=*/nullptr);
+  channel->SetInterface(&network_interface, webrtc::MediaTransportConfig());
   EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface.dscp());
 
   // Create a send stream to configure
@@ -3072,11 +3073,11 @@ TEST_F(WebRtcVoiceEngineTestFake, TestSetDscpOptions) {
   channel.reset(static_cast<cricket::WebRtcVoiceMediaChannel*>(
       engine_->CreateMediaChannel(&call_, config, cricket::AudioOptions(),
                                   webrtc::CryptoOptions())));
-  channel->SetInterface(&network_interface, /*media_transport=*/nullptr);
+  channel->SetInterface(&network_interface, webrtc::MediaTransportConfig());
   // Default value when DSCP is disabled should be DSCP_DEFAULT.
   EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface.dscp());
 
-  channel->SetInterface(nullptr, nullptr);
+  channel->SetInterface(nullptr, webrtc::MediaTransportConfig());
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, SetOutputVolume) {

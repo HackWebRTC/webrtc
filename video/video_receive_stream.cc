@@ -244,10 +244,9 @@ VideoReceiveStream::VideoReceiveStream(
       new video_coding::FrameBuffer(clock_, timing_.get(), &stats_proxy_));
 
   process_thread_->RegisterModule(&rtp_stream_sync_, RTC_FROM_HERE);
-
-  if (config_.media_transport) {
-    config_.media_transport->SetReceiveVideoSink(this);
-    config_.media_transport->AddRttObserver(this);
+  if (config_.media_transport()) {
+    config_.media_transport()->SetReceiveVideoSink(this);
+    config_.media_transport()->AddRttObserver(this);
   } else {
     // Register with RtpStreamReceiverController.
     media_receiver_ = receiver_controller->CreateReceiver(
@@ -288,9 +287,9 @@ VideoReceiveStream::~VideoReceiveStream() {
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
   RTC_LOG(LS_INFO) << "~VideoReceiveStream: " << config_.ToString();
   Stop();
-  if (config_.media_transport) {
-    config_.media_transport->SetReceiveVideoSink(nullptr);
-    config_.media_transport->RemoveRttObserver(this);
+  if (config_.media_transport()) {
+    config_.media_transport()->SetReceiveVideoSink(nullptr);
+    config_.media_transport()->RemoveRttObserver(this);
   }
   process_thread_->DeRegisterModule(&rtp_stream_sync_);
 }
@@ -512,8 +511,8 @@ void VideoReceiveStream::SendNack(
 }
 
 void VideoReceiveStream::RequestKeyFrame() {
-  if (config_.media_transport) {
-    config_.media_transport->RequestKeyFrame(config_.rtp.remote_ssrc);
+  if (config_.media_transport()) {
+    config_.media_transport()->RequestKeyFrame(config_.rtp.remote_ssrc);
   } else {
     rtp_video_stream_receiver_.RequestKeyFrame();
   }

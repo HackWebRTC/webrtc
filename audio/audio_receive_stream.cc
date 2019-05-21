@@ -56,7 +56,7 @@ std::string AudioReceiveStream::Config::ToString() const {
   ss << "{rtp: " << rtp.ToString();
   ss << ", rtcp_send_transport: "
      << (rtcp_send_transport ? "(Transport)" : "null");
-  ss << ", media_transport: " << (media_transport ? "(Transport)" : "null");
+  ss << ", media_transport_config: " << media_transport_config.DebugString();
   if (!sync_group.empty()) {
     ss << ", sync_group: " << sync_group;
   }
@@ -77,7 +77,7 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
       static_cast<internal::AudioState*>(audio_state);
   return voe::CreateChannelReceive(
       clock, module_process_thread, internal_audio_state->audio_device_module(),
-      config.media_transport, config.rtcp_send_transport, event_log,
+      config.media_transport_config, config.rtcp_send_transport, event_log,
       config.rtp.remote_ssrc, config.jitter_buffer_max_packets,
       config.jitter_buffer_fast_accelerate, config.jitter_buffer_min_delay_ms,
       config.jitter_buffer_enable_rtx_handling, config.decoder_factory,
@@ -122,7 +122,7 @@ AudioReceiveStream::AudioReceiveStream(
 
   module_process_thread_checker_.Detach();
 
-  if (!config.media_transport) {
+  if (!config.media_transport_config.media_transport) {
     RTC_DCHECK(receiver_controller);
     RTC_DCHECK(packet_router);
     // Configure bandwidth estimation.
@@ -140,7 +140,7 @@ AudioReceiveStream::~AudioReceiveStream() {
   RTC_LOG(LS_INFO) << "~AudioReceiveStream: " << config_.rtp.remote_ssrc;
   Stop();
   channel_receive_->SetAssociatedSendChannel(nullptr);
-  if (!config_.media_transport) {
+  if (!config_.media_transport_config.media_transport) {
     channel_receive_->ResetReceiverCongestionControlObjects();
   }
 }

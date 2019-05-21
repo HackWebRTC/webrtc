@@ -158,7 +158,7 @@ VoiceChannel* ChannelManager::CreateVoiceChannel(
     webrtc::Call* call,
     const cricket::MediaConfig& media_config,
     webrtc::RtpTransportInternal* rtp_transport,
-    webrtc::MediaTransportInterface* media_transport,
+    const webrtc::MediaTransportConfig& media_transport_config,
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     bool srtp_required,
@@ -167,9 +167,10 @@ VoiceChannel* ChannelManager::CreateVoiceChannel(
     const AudioOptions& options) {
   if (!worker_thread_->IsCurrent()) {
     return worker_thread_->Invoke<VoiceChannel*>(RTC_FROM_HERE, [&] {
-      return CreateVoiceChannel(
-          call, media_config, rtp_transport, media_transport, signaling_thread,
-          content_name, srtp_required, crypto_options, ssrc_generator, options);
+      return CreateVoiceChannel(call, media_config, rtp_transport,
+                                media_transport_config, signaling_thread,
+                                content_name, srtp_required, crypto_options,
+                                ssrc_generator, options);
     });
   }
 
@@ -191,7 +192,7 @@ VoiceChannel* ChannelManager::CreateVoiceChannel(
       absl::WrapUnique(media_channel), content_name, srtp_required,
       crypto_options, ssrc_generator);
 
-  voice_channel->Init_w(rtp_transport, media_transport);
+  voice_channel->Init_w(rtp_transport, media_transport_config);
 
   VoiceChannel* voice_channel_ptr = voice_channel.get();
   voice_channels_.push_back(std::move(voice_channel));
@@ -227,7 +228,7 @@ VideoChannel* ChannelManager::CreateVideoChannel(
     webrtc::Call* call,
     const cricket::MediaConfig& media_config,
     webrtc::RtpTransportInternal* rtp_transport,
-    webrtc::MediaTransportInterface* media_transport,
+    const webrtc::MediaTransportConfig& media_transport_config,
     rtc::Thread* signaling_thread,
     const std::string& content_name,
     bool srtp_required,
@@ -237,10 +238,10 @@ VideoChannel* ChannelManager::CreateVideoChannel(
     webrtc::VideoBitrateAllocatorFactory* video_bitrate_allocator_factory) {
   if (!worker_thread_->IsCurrent()) {
     return worker_thread_->Invoke<VideoChannel*>(RTC_FROM_HERE, [&] {
-      return CreateVideoChannel(call, media_config, rtp_transport,
-                                media_transport, signaling_thread, content_name,
-                                srtp_required, crypto_options, ssrc_generator,
-                                options, video_bitrate_allocator_factory);
+      return CreateVideoChannel(
+          call, media_config, rtp_transport, media_transport_config,
+          signaling_thread, content_name, srtp_required, crypto_options,
+          ssrc_generator, options, video_bitrate_allocator_factory);
     });
   }
 
@@ -263,7 +264,7 @@ VideoChannel* ChannelManager::CreateVideoChannel(
       absl::WrapUnique(media_channel), content_name, srtp_required,
       crypto_options, ssrc_generator);
 
-  video_channel->Init_w(rtp_transport, media_transport);
+  video_channel->Init_w(rtp_transport, media_transport_config);
 
   VideoChannel* video_channel_ptr = video_channel.get();
   video_channels_.push_back(std::move(video_channel));
@@ -323,7 +324,9 @@ RtpDataChannel* ChannelManager::CreateRtpDataChannel(
       worker_thread_, network_thread_, signaling_thread,
       absl::WrapUnique(media_channel), content_name, srtp_required,
       crypto_options, ssrc_generator);
-  data_channel->Init_w(rtp_transport);
+
+  // Media Transports are not supported with Rtp Data Channel.
+  data_channel->Init_w(rtp_transport, webrtc::MediaTransportConfig());
 
   RtpDataChannel* data_channel_ptr = data_channel.get();
   data_channels_.push_back(std::move(data_channel));

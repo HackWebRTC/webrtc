@@ -13,6 +13,7 @@
 #include "api/audio_codecs/audio_encoder_factory_template.h"
 #include "api/audio_codecs/opus/audio_decoder_opus.h"
 #include "api/audio_codecs/opus/audio_encoder_opus.h"
+#include "api/media_transport_config.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/loopback_media_transport.h"
 #include "api/test/mock_audio_mixer.h"
@@ -100,7 +101,8 @@ TEST(AudioWithMediaTransport, DeliversAudio) {
   // TODO(nisse): Update AudioReceiveStream to not require rtcp_send_transport
   // when a MediaTransport is provided.
   receive_config.rtcp_send_transport = &rtcp_send_transport;
-  receive_config.media_transport = transport_pair.first();
+  receive_config.media_transport_config.media_transport =
+      transport_pair.first();
   receive_config.decoder_map.emplace(kPayloadTypeOpus, audio_format);
   receive_config.decoder_factory =
       CreateAudioDecoderFactory<AudioDecoderOpus>();
@@ -116,7 +118,8 @@ TEST(AudioWithMediaTransport, DeliversAudio) {
 
   // TODO(nisse): Update AudioSendStream to not require send_transport when a
   // MediaTransport is provided.
-  AudioSendStream::Config send_config(&send_transport, transport_pair.second());
+  AudioSendStream::Config send_config(
+      &send_transport, webrtc::MediaTransportConfig(transport_pair.second()));
   send_config.send_codec_spec =
       AudioSendStream::Config::SendCodecSpec(kPayloadTypeOpus, audio_format);
   send_config.encoder_factory = CreateAudioEncoderFactory<AudioEncoderOpus>();

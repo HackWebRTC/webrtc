@@ -708,7 +708,8 @@ webrtc::AudioSendStream* Call::CreateAudioSendStream(
   TRACE_EVENT0("webrtc", "Call::CreateAudioSendStream");
   RTC_DCHECK_RUN_ON(&configuration_sequence_checker_);
 
-  RTC_DCHECK(media_transport() == config.media_transport);
+  RTC_DCHECK_EQ(media_transport(),
+                config.media_transport_config.media_transport);
 
   RegisterRateObserver();
 

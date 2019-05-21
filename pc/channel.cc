@@ -8,17 +8,21 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "pc/channel.h"
+
 #include <iterator>
 #include <utility>
-
-#include "pc/channel.h"
 
 #include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "api/call/audio_sink.h"
+#include "api/media_transport_config.h"
 #include "media/base/media_constants.h"
 #include "media/base/rtp_utils.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
+#include "p2p/base/packet_transport_internal.h"
+#include "pc/channel_manager.h"
+#include "pc/rtp_media_utils.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/byte_order.h"
 #include "rtc_base/checks.h"
@@ -28,9 +32,6 @@
 #include "rtc_base/network_route.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/trace_event.h"
-#include "p2p/base/packet_transport_internal.h"
-#include "pc/channel_manager.h"
-#include "pc/rtp_media_utils.h"
 
 namespace cricket {
 using rtc::Bind;
@@ -148,8 +149,8 @@ BaseChannel::~BaseChannel() {
   TRACE_EVENT0("webrtc", "BaseChannel::~BaseChannel");
   RTC_DCHECK_RUN_ON(worker_thread_);
 
-  if (media_transport_) {
-    media_transport_->RemoveNetworkChangeCallback(this);
+  if (media_transport_config_.media_transport) {
+    media_transport_config_.media_transport->RemoveNetworkChangeCallback(this);
   }
 
   // Eats any outstanding messages or packets.
@@ -174,7 +175,7 @@ bool BaseChannel::ConnectToRtpTransport() {
 
   // If media transport is used, it's responsible for providing network
   // route changed callbacks.
-  if (!media_transport_) {
+  if (!media_transport_config_.media_transport) {
     rtp_transport_->SignalNetworkRouteChanged.connect(
         this, &BaseChannel::OnNetworkRouteChanged);
   }
@@ -197,29 +198,30 @@ void BaseChannel::DisconnectFromRtpTransport() {
   rtp_transport_->SignalSentPacket.disconnect(this);
 }
 
-void BaseChannel::Init_w(webrtc::RtpTransportInternal* rtp_transport,
-                         webrtc::MediaTransportInterface* media_transport) {
+void BaseChannel::Init_w(
+    webrtc::RtpTransportInternal* rtp_transport,
+    const webrtc::MediaTransportConfig& media_transport_config) {
   RTC_DCHECK_RUN_ON(worker_thread_);
-  media_transport_ = media_transport;
+  media_transport_config_ = media_transport_config;
 
   network_thread_->Invoke<void>(
       RTC_FROM_HERE, [this, rtp_transport] { SetRtpTransport(rtp_transport); });
 
   // Both RTP and RTCP channels should be set, we can call SetInterface on
   // the media channel and it can set network options.
-  media_channel_->SetInterface(this, media_transport);
+  media_channel_->SetInterface(this, media_transport_config);
 
-  RTC_LOG(LS_INFO) << "BaseChannel::Init_w, media_transport="
-                   << (media_transport_ != nullptr);
-  if (media_transport_) {
-    media_transport_->AddNetworkChangeCallback(this);
+  RTC_LOG(LS_INFO) << "BaseChannel::Init_w, media_transport_config="
+                   << media_transport_config.DebugString();
+  if (media_transport_config_.media_transport) {
+    media_transport_config_.media_transport->AddNetworkChangeCallback(this);
   }
 }
 
 void BaseChannel::Deinit() {
   RTC_DCHECK(worker_thread_->IsCurrent());
   media_channel_->SetInterface(/*iface=*/nullptr,
-                               /*media_transport=*/nullptr);
+                               webrtc::MediaTransportConfig());
   // Packets arrive on the network thread, processing packets calls virtual
   // functions, so need to stop this process in Deinit that is called in
   // derived classes destructor.
@@ -836,11 +838,13 @@ void BaseChannel::OnNetworkRouteChanged(
   OnNetworkRouteChanged(absl::make_optional(network_route));
 }
 
-void VoiceChannel::Init_w(webrtc::RtpTransportInternal* rtp_transport,
-                          webrtc::MediaTransportInterface* media_transport) {
-  BaseChannel::Init_w(rtp_transport, media_transport);
-  if (BaseChannel::media_transport()) {
-    this->media_transport()->SetFirstAudioPacketReceivedObserver(this);
+void VoiceChannel::Init_w(
+    webrtc::RtpTransportInternal* rtp_transport,
+    const webrtc::MediaTransportConfig& media_transport_config) {
+  BaseChannel::Init_w(rtp_transport, media_transport_config);
+  if (media_transport_config.media_transport) {
+    media_transport_config.media_transport->SetFirstAudioPacketReceivedObserver(
+        this);
   }
 }
 
@@ -1125,9 +1129,10 @@ RtpDataChannel::~RtpDataChannel() {
   Deinit();
 }
 
-void RtpDataChannel::Init_w(webrtc::RtpTransportInternal* rtp_transport,
-                            webrtc::MediaTransportInterface* media_transport) {
-  BaseChannel::Init_w(rtp_transport, /*media_transport=*/nullptr);
+void RtpDataChannel::Init_w(
+    webrtc::RtpTransportInternal* rtp_transport,
+    const webrtc::MediaTransportConfig& media_transport_config) {
+  BaseChannel::Init_w(rtp_transport, media_transport_config);
   media_channel()->SignalDataReceived.connect(this,
                                               &RtpDataChannel::OnDataReceived);
   media_channel()->SignalReadyToSend.connect(

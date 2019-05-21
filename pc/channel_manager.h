@@ -12,13 +12,14 @@
 #define PC_CHANNEL_MANAGER_H_
 
 #include <stdint.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "api/audio_options.h"
 #include "api/crypto/crypto_options.h"
-#include "api/media_transport_interface.h"
+#include "api/media_transport_config.h"
 #include "call/call.h"
 #include "media/base/codec.h"
 #include "media/base/media_channel.h"
@@ -95,7 +96,7 @@ class ChannelManager final {
       webrtc::Call* call,
       const cricket::MediaConfig& media_config,
       webrtc::RtpTransportInternal* rtp_transport,
-      webrtc::MediaTransportInterface* media_transport,
+      const webrtc::MediaTransportConfig& media_transport_config,
       rtc::Thread* signaling_thread,
       const std::string& content_name,
       bool srtp_required,
@@ -112,7 +113,7 @@ class ChannelManager final {
       webrtc::Call* call,
       const cricket::MediaConfig& media_config,
       webrtc::RtpTransportInternal* rtp_transport,
-      webrtc::MediaTransportInterface* media_transport,
+      const webrtc::MediaTransportConfig& media_transport_config,
       rtc::Thread* signaling_thread,
       const std::string& content_name,
       bool srtp_required,

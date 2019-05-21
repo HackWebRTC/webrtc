@@ -108,6 +108,8 @@ rtc_static_library("libjingle_peerconnection_api") {
     "media_stream_interface.h",
     "media_stream_proxy.h",
     "media_stream_track_proxy.h",
+    "media_transport_config.cc",
+    "media_transport_config.h",
     "media_transport_interface.cc",
     "media_transport_interface.h",
     "media_types.cc",

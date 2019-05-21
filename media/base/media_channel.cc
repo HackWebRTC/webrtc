@@ -24,10 +24,10 @@ MediaChannel::~MediaChannel() {}
 
 void MediaChannel::SetInterface(
     NetworkInterface* iface,
-    webrtc::MediaTransportInterface* media_transport) {
+    const webrtc::MediaTransportConfig& media_transport_config) {
   rtc::CritScope cs(&network_interface_crit_);
   network_interface_ = iface;
-  media_transport_ = media_transport;
+  media_transport_config_ = media_transport_config;
   UpdateDscp();
 }
 

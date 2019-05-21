@@ -21,6 +21,7 @@
 #include "api/call/transport.h"
 #include "api/crypto/frame_encryptor_interface.h"
 #include "api/function_view.h"
+#include "api/media_transport_config.h"
 #include "audio/audio_state.h"
 #include "audio/channel_send.h"
 #include "audio/conversion.h"
@@ -104,7 +105,7 @@ AudioSendStream::AudioSendStream(
                       voe::CreateChannelSend(clock,
                                              task_queue_factory,
                                              module_process_thread,
-                                             config.media_transport,
+                                             config.media_transport_config,
                                              /*overhead_observer=*/this,
                                              config.send_transport,
                                              rtcp_rtt_stats,
@@ -127,8 +128,7 @@ AudioSendStream::AudioSendStream(
     std::unique_ptr<voe::ChannelSendInterface> channel_send)
     : clock_(clock),
       worker_queue_(rtp_transport->GetWorkerQueue()),
-      config_(Config(/*send_transport=*/nullptr,
-                     /*media_transport=*/nullptr)),
+      config_(Config(/*send_transport=*/nullptr, MediaTransportConfig())),
       audio_state_(audio_state),
       channel_send_(std::move(channel_send)),
       event_log_(event_log),
@@ -151,15 +151,15 @@ AudioSendStream::AudioSendStream(
   // time being, we can have either. When media transport is injected, there
   // should be no rtp_transport, and below check should be strengthened to XOR
   // (either rtp_transport or media_transport but not both).
-  RTC_DCHECK(rtp_transport || config.media_transport);
-  if (config.media_transport) {
+  RTC_DCHECK(rtp_transport || config.media_transport_config.media_transport);
+  if (config.media_transport_config.media_transport) {
     // TODO(sukhanov): Currently media transport audio overhead is considered
     // constant, we will not get overhead_observer calls when using
     // media_transport. In the future when we introduce RTP media transport we
     // should make audio overhead interface consistent and work for both RTP and
     // non-RTP implementations.
     audio_overhead_per_packet_bytes_ =
-        config.media_transport->GetAudioPacketOverhead();
+        config.media_transport_config.media_transport->GetAudioPacketOverhead();
   }
   rtp_rtcp_module_ = channel_send_->GetRtpRtcp();
   RTC_DCHECK(rtp_rtcp_module_);

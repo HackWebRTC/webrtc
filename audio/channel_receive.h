@@ -22,6 +22,7 @@
 #include "api/call/audio_sink.h"
 #include "api/call/transport.h"
 #include "api/crypto/crypto_options.h"
+#include "api/media_transport_config.h"
 #include "api/media_transport_interface.h"
 #include "api/rtp_receiver_interface.h"
 #include "call/rtp_packet_sink_interface.h"
@@ -143,7 +144,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
     Clock* clock,
     ProcessThread* module_process_thread,
     AudioDeviceModule* audio_device_module,
-    MediaTransportInterface* media_transport,
+    const MediaTransportConfig& media_transport_config,
     Transport* rtcp_send_transport,
     RtcEventLog* rtc_event_log,
     uint32_t remote_ssrc,

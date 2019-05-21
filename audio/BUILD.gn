@@ -123,6 +123,7 @@ if (rtc_include_tests) {
     deps = [
       ":audio",
       ":audio_end_to_end_test",
+      "../api:libjingle_peerconnection_api",
       "../api:loopback_media_transport",
       "../api:mock_audio_mixer",
       "../api:mock_frame_decryptor",

@@ -220,7 +220,8 @@ TEST(AudioReceiveStreamTest, ConfigToString) {
       "{rtp: {remote_ssrc: 1234, local_ssrc: 5678, transport_cc: off, nack: "
       "{rtp_history_ms: 0}, extensions: [{uri: "
       "urn:ietf:params:rtp-hdrext:ssrc-audio-level, id: 3}]}, "
-      "rtcp_send_transport: null, media_transport: null}",
+      "rtcp_send_transport: null, media_transport_config: {media_transport: "
+      "null}}",
       config.ToString());
 }
 

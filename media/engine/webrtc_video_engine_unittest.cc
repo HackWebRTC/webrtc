@@ -16,6 +16,7 @@
 #include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
+#include "api/media_transport_config.h"
 #include "api/rtp_parameters.h"
 #include "api/test/fake_media_transport.h"
 #include "api/test/mock_video_bitrate_allocator.h"
@@ -1292,7 +1293,7 @@ class WebRtcVideoChannelBaseTest : public ::testing::Test {
     channel_->OnReadyToSend(true);
     EXPECT_TRUE(channel_.get() != NULL);
     network_interface_.SetDestination(channel_.get());
-    channel_->SetInterface(&network_interface_, /*media_transport=*/nullptr);
+    channel_->SetInterface(&network_interface_, webrtc::MediaTransportConfig());
     cricket::VideoRecvParameters parameters;
     parameters.codecs = engine_.codecs();
     channel_->SetRecvParameters(parameters);
@@ -4017,7 +4018,8 @@ TEST_F(WebRtcVideoChannelTest,
   webrtc::FakeMediaTransport fake_media_transport(settings);
   std::unique_ptr<cricket::FakeNetworkInterface> network_interface(
       new cricket::FakeNetworkInterface);
-  channel_->SetInterface(network_interface.get(), &fake_media_transport);
+  channel_->SetInterface(network_interface.get(),
+                         webrtc::MediaTransportConfig(&fake_media_transport));
 
   send_parameters_.codecs[0].params[kCodecParamMinBitrate] = "100";
   send_parameters_.codecs[0].params[kCodecParamStartBitrate] = "200";
@@ -4624,7 +4626,8 @@ TEST_F(WebRtcVideoChannelTest, TestSetDscpOptions) {
       static_cast<cricket::WebRtcVideoChannel*>(engine_.CreateMediaChannel(
           call_.get(), config, VideoOptions(), webrtc::CryptoOptions(),
           video_bitrate_allocator_factory_.get())));
-  channel->SetInterface(network_interface.get(), /*media_transport=*/nullptr);
+  channel->SetInterface(network_interface.get(),
+                        webrtc::MediaTransportConfig());
   // Default value when DSCP is disabled should be DSCP_DEFAULT.
   EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface->dscp());
 
@@ -4635,7 +4638,8 @@ TEST_F(WebRtcVideoChannelTest, TestSetDscpOptions) {
       static_cast<cricket::WebRtcVideoChannel*>(engine_.CreateMediaChannel(
           call_.get(), config, VideoOptions(), webrtc::CryptoOptions(),
           video_bitrate_allocator_factory_.get())));
-  channel->SetInterface(network_interface.get(), /*media_transport=*/nullptr);
+  channel->SetInterface(network_interface.get(),
+                        webrtc::MediaTransportConfig());
   EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface->dscp());
 
   // Create a send stream to configure
@@ -4669,7 +4673,8 @@ TEST_F(WebRtcVideoChannelTest, TestSetDscpOptions) {
       static_cast<cricket::WebRtcVideoChannel*>(engine_.CreateMediaChannel(
           call_.get(), config, VideoOptions(), webrtc::CryptoOptions(),
           video_bitrate_allocator_factory_.get())));
-  channel->SetInterface(network_interface.get(), /*media_transport=*/nullptr);
+  channel->SetInterface(network_interface.get(),
+                        webrtc::MediaTransportConfig());
   EXPECT_EQ(rtc::DSCP_DEFAULT, network_interface->dscp());
 }
 

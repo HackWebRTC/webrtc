@@ -70,7 +70,7 @@ SendAudioStream::SendAudioStream(
     Transport* send_transport)
     : sender_(sender), config_(config) {
   AudioSendStream::Config send_config(send_transport,
-                                      /*media_transport=*/nullptr);
+                                      webrtc::MediaTransportConfig());
   ssrc_ = sender->GetNextAudioSsrc();
   send_config.rtp.ssrc = ssrc_;
   SdpAudioFormat::Parameters sdp_params;

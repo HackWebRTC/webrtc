@@ -22,7 +22,7 @@
 #include "api/audio_options.h"
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/crypto/frame_encryptor_interface.h"
-#include "api/media_transport_interface.h"
+#include "api/media_transport_config.h"
 #include "api/rtc_error.h"
 #include "api/rtp_parameters.h"
 #include "api/rtp_receiver_interface.h"
@@ -193,8 +193,9 @@ class MediaChannel : public sigslot::has_slots<> {
   // TODO(sukhanov): Currently media transport can co-exist with RTP/RTCP, but
   // in the future we will refactor code to send all frames with media
   // transport.
-  virtual void SetInterface(NetworkInterface* iface,
-                            webrtc::MediaTransportInterface* media_transport);
+  virtual void SetInterface(
+      NetworkInterface* iface,
+      const webrtc::MediaTransportConfig& media_transport_config);
   // Called when a RTP packet is received.
   virtual void OnPacketReceived(rtc::CopyOnWriteBuffer packet,
                                 int64_t packet_time_us) = 0;
@@ -261,8 +262,12 @@ class MediaChannel : public sigslot::has_slots<> {
     return network_interface_->SetOption(type, opt, option);
   }
 
+  const webrtc::MediaTransportConfig& media_transport_config() const {
+    return media_transport_config_;
+  }
+
   webrtc::MediaTransportInterface* media_transport() {
-    return media_transport_;
+    return media_transport_config_.media_transport;
   }
 
   // Corresponds to the SDP attribute extmap-allow-mixed, see RFC8285.
@@ -331,7 +336,7 @@ class MediaChannel : public sigslot::has_slots<> {
       nullptr;
   rtc::DiffServCodePoint preferred_dscp_
       RTC_GUARDED_BY(network_interface_crit_) = rtc::DSCP_DEFAULT;
-  webrtc::MediaTransportInterface* media_transport_ = nullptr;
+  webrtc::MediaTransportConfig media_transport_config_;
   bool extmap_allow_mixed_ = false;
 };
 
