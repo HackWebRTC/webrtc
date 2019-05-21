@@ -167,6 +167,12 @@ void DelayBasedBwe::IncomingPacketFeedback(
                           packet_feedback.arrival_time_ms, calculated_deltas);
 }
 
+DataRate DelayBasedBwe::TriggerOveruse(Timestamp at_time,
+                                       absl::optional<DataRate> link_capacity) {
+  RateControlInput input(BandwidthUsage::kBwOverusing, link_capacity);
+  return rate_control_.Update(&input, at_time);
+}
+
 DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(
     absl::optional<DataRate> acked_bitrate,
     absl::optional<DataRate> probe_bitrate,

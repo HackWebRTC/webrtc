@@ -64,6 +64,9 @@ class DelayBasedBwe {
   TimeDelta GetExpectedBwePeriod() const;
   void SetAlrLimitedBackoffExperiment(bool enabled);
 
+  DataRate TriggerOveruse(Timestamp at_time,
+                          absl::optional<DataRate> link_capacity);
+
  private:
   friend class GoogCcStatePrinter;
   void IncomingPacketFeedback(const PacketFeedback& packet_feedback,
