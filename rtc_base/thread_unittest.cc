@@ -267,18 +267,15 @@ TEST(ThreadTest, Names) {
 
 TEST(ThreadTest, Wrap) {
   Thread* current_thread = Thread::Current();
-  ThreadManager::Instance()->SetCurrentThread(nullptr);
-
-  {
-    CustomThread cthread;
-    EXPECT_TRUE(cthread.WrapCurrent());
-    EXPECT_EQ(&cthread, Thread::Current());
-    EXPECT_TRUE(cthread.RunningForTest());
-    EXPECT_FALSE(cthread.IsOwned());
-    cthread.UnwrapCurrent();
-    EXPECT_FALSE(cthread.RunningForTest());
-  }
-  ThreadManager::Instance()->SetCurrentThread(current_thread);
+  current_thread->UnwrapCurrent();
+  CustomThread* cthread = new CustomThread();
+  EXPECT_TRUE(cthread->WrapCurrent());
+  EXPECT_TRUE(cthread->RunningForTest());
+  EXPECT_FALSE(cthread->IsOwned());
+  cthread->UnwrapCurrent();
+  EXPECT_FALSE(cthread->RunningForTest());
+  delete cthread;
+  current_thread->WrapCurrent();
 }
 
 TEST(ThreadTest, Invoke) {
