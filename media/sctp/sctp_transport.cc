@@ -1047,7 +1047,12 @@ void SctpTransport::OnNotificationAssocChange(const sctp_assoc_change& change) {
   RTC_DCHECK_RUN_ON(network_thread_);
   switch (change.sac_state) {
     case SCTP_COMM_UP:
-      RTC_LOG(LS_VERBOSE) << "Association change SCTP_COMM_UP";
+      RTC_LOG(LS_VERBOSE) << "Association change SCTP_COMM_UP, stream # is "
+                          << change.sac_outbound_streams << " outbound, "
+                          << change.sac_inbound_streams << " inbound.";
+      max_outbound_streams_ = change.sac_outbound_streams;
+      max_inbound_streams_ = change.sac_inbound_streams;
+      SignalAssociationChangeCommunicationUp();
       break;
     case SCTP_COMM_LOST:
       RTC_LOG(LS_INFO) << "Association change SCTP_COMM_LOST";

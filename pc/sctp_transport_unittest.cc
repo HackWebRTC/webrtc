@@ -21,6 +21,7 @@
 #include "test/gtest.h"
 
 constexpr int kDefaultTimeout = 1000;  // milliseconds
+constexpr int kTestMaxSctpStreams = 1234;
 
 using cricket::FakeDtlsTransport;
 using ::testing::ElementsAre;
@@ -45,8 +46,18 @@ class FakeCricketSctpTransport : public cricket::SctpTransportInternal {
   bool ReadyToSendData() override { return true; }
   void set_debug_name_for_testing(const char* debug_name) override {}
   int max_message_size() const override { return 0; }
+  absl::optional<int> max_outbound_streams() const override {
+    return max_outbound_streams_;
+  }
+  absl::optional<int> max_inbound_streams() const override {
+    return max_inbound_streams_;
+  }
   // Methods exposed for testing
   void SendSignalReadyToSendData() { SignalReadyToSendData(); }
+
+  void SendSignalAssociationChangeCommunicationUp() {
+    SignalAssociationChangeCommunicationUp();
+  }
 
   void SendSignalClosingProcedureStartedRemotely() {
     SignalClosingProcedureStartedRemotely(1);
@@ -55,13 +66,24 @@ class FakeCricketSctpTransport : public cricket::SctpTransportInternal {
   void SendSignalClosingProcedureComplete() {
     SignalClosingProcedureComplete(1);
   }
+  void set_max_outbound_streams(int streams) {
+    max_outbound_streams_ = streams;
+  }
+  void set_max_inbound_streams(int streams) { max_inbound_streams_ = streams; }
+
+ private:
+  absl::optional<int> max_outbound_streams_;
+  absl::optional<int> max_inbound_streams_;
 };
 
 }  // namespace
 
 class TestSctpTransportObserver : public SctpTransportObserverInterface {
  public:
+  TestSctpTransportObserver() : info_(SctpTransportState::kNew) {}
+
   void OnStateChange(SctpTransportInformation info) override {
+    info_ = info;
     states_.push_back(info.state());
   }
 
@@ -75,8 +97,11 @@ class TestSctpTransportObserver : public SctpTransportObserverInterface {
 
   const std::vector<SctpTransportState>& States() { return states_; }
 
+  const SctpTransportInformation LastReceivedInformation() { return info_; }
+
  private:
   std::vector<SctpTransportState> states_;
+  SctpTransportInformation info_;
 };
 
 class SctpTransportTest : public ::testing::Test {
@@ -102,6 +127,11 @@ class SctpTransportTest : public ::testing::Test {
 
   void CompleteSctpHandshake() {
     CricketSctpTransport()->SendSignalReadyToSendData();
+    // The computed MaxChannels shall be the minimum of the outgoing
+    // and incoming # of streams.
+    CricketSctpTransport()->set_max_outbound_streams(kTestMaxSctpStreams);
+    CricketSctpTransport()->set_max_inbound_streams(kTestMaxSctpStreams + 1);
+    CricketSctpTransport()->SendSignalAssociationChangeCommunicationUp();
   }
 
   FakeCricketSctpTransport* CricketSctpTransport() {
@@ -147,6 +177,22 @@ TEST_F(SctpTransportTest, CloseWhenClearing) {
   transport()->Clear();
   ASSERT_EQ_WAIT(SctpTransportState::kClosed, observer_.State(),
                  kDefaultTimeout);
+}
+
+TEST_F(SctpTransportTest, MaxChannelsSignalled) {
+  CreateTransport();
+  transport()->RegisterObserver(observer());
+  AddDtlsTransport();
+  EXPECT_FALSE(transport()->Information().MaxChannels());
+  EXPECT_FALSE(observer_.LastReceivedInformation().MaxChannels());
+  CompleteSctpHandshake();
+  ASSERT_EQ_WAIT(SctpTransportState::kConnected, observer_.State(),
+                 kDefaultTimeout);
+  EXPECT_TRUE(transport()->Information().MaxChannels());
+  EXPECT_EQ(kTestMaxSctpStreams, *(transport()->Information().MaxChannels()));
+  EXPECT_TRUE(observer_.LastReceivedInformation().MaxChannels());
+  EXPECT_EQ(kTestMaxSctpStreams,
+            *(observer_.LastReceivedInformation().MaxChannels()));
 }
 
 }  // namespace webrtc

@@ -62,6 +62,7 @@ class SctpTransport : public SctpTransportInterface,
  private:
   void UpdateInformation(SctpTransportState state);
   void OnInternalReadyToSendData();
+  void OnAssociationChangeCommunicationUp();
   void OnInternalClosingProcedureStartedRemotely(int sid);
   void OnInternalClosingProcedureComplete(int sid);
 
