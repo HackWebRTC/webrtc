@@ -179,10 +179,12 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
         (clock_->TimeInMilliseconds() - *first_decoded_frame_time_ms_);
     if (elapsed_ms >=
         metrics::kMinRunTimeInSeconds * rtc::kNumMillisecsPerSec) {
-      RTC_HISTOGRAM_COUNTS_100(
-          "WebRTC.Video.DecodedFramesPerSecond",
-          static_cast<int>((stats_.frames_decoded * 1000.0f / elapsed_ms) +
-                           0.5f));
+      int decoded_fps = static_cast<int>(
+          (stats_.frames_decoded * 1000.0f / elapsed_ms) + 0.5f);
+      RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.DecodedFramesPerSecond",
+                               decoded_fps);
+      log_stream << "WebRTC.Video.DecodedFramesPerSecond " << decoded_fps
+                 << '\n';
 
       const uint32_t frames_rendered = stats_.frames_rendered;
       if (frames_rendered > 0) {
@@ -202,8 +204,10 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
   const int kMinRequiredSamples = 200;
   int samples = static_cast<int>(render_fps_tracker_.TotalSampleCount());
   if (samples >= kMinRequiredSamples) {
+    int rendered_fps = round(render_fps_tracker_.ComputeTotalRate());
     RTC_HISTOGRAM_COUNTS_100("WebRTC.Video.RenderFramesPerSecond",
-                             round(render_fps_tracker_.ComputeTotalRate()));
+                             rendered_fps);
+    log_stream << "WebRTC.Video.RenderFramesPerSecond " << rendered_fps << '\n';
     RTC_HISTOGRAM_COUNTS_100000(
         "WebRTC.Video.RenderSqrtPixelsPerSecond",
         round(render_pixel_tracker_.ComputeTotalRate()));
