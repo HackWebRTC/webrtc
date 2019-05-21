@@ -32,8 +32,10 @@ class ContributingSources {
   ContributingSources();
   ~ContributingSources();
 
-  void Update(int64_t now_ms, rtc::ArrayView<const uint32_t> csrcs,
-              absl::optional<uint8_t> audio_level);
+  void Update(int64_t now_ms,
+              rtc::ArrayView<const uint32_t> csrcs,
+              absl::optional<uint8_t> audio_level,
+              uint32_t rtp_timestamp);
 
   // Returns contributing sources seen the last 10 s.
   std::vector<RtpSource> GetSources(int64_t now_ms) const;
@@ -41,10 +43,13 @@ class ContributingSources {
  private:
   struct Entry {
     Entry();
-    Entry(int64_t timestamp_ms, absl::optional<uint8_t> audio_level);
+    Entry(int64_t timestamp_ms,
+          absl::optional<uint8_t> audio_level,
+          uint32_t rtp_timestamp);
 
     int64_t last_seen_ms;
     absl::optional<uint8_t> audio_level;
+    uint32_t rtp_timestamp;
   };
 
   void DeleteOldEntries(int64_t now_ms);

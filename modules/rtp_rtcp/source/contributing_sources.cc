@@ -26,8 +26,9 @@ ContributingSources::~ContributingSources() = default;
 
 void ContributingSources::Update(int64_t now_ms,
                                  rtc::ArrayView<const uint32_t> csrcs,
-                                 absl::optional<uint8_t> audio_level) {
-  Entry entry = { now_ms, audio_level };
+                                 absl::optional<uint8_t> audio_level,
+                                 uint32_t rtp_timestamp) {
+  Entry entry = {now_ms, audio_level, rtp_timestamp};
   for (uint32_t csrc : csrcs) {
     active_csrcs_[csrc] = entry;
   }
@@ -47,14 +48,9 @@ std::vector<RtpSource> ContributingSources::GetSources(int64_t now_ms) const {
   std::vector<RtpSource> sources;
   for (auto& record : active_csrcs_) {
     if (record.second.last_seen_ms >= now_ms - kHistoryMs) {
-      if (record.second.audio_level.has_value()) {
-        sources.emplace_back(record.second.last_seen_ms, record.first,
-                             RtpSourceType::CSRC,
-                             *record.second.audio_level);
-      } else {
-        sources.emplace_back(record.second.last_seen_ms, record.first,
-                             RtpSourceType::CSRC);
-      }
+      sources.emplace_back(record.second.last_seen_ms, record.first,
+                           RtpSourceType::CSRC, record.second.audio_level,
+                           record.second.rtp_timestamp);
     }
   }
 
@@ -76,7 +72,10 @@ void ContributingSources::DeleteOldEntries(int64_t now_ms) {
 
 ContributingSources::Entry::Entry() = default;
 ContributingSources::Entry::Entry(int64_t timestamp_ms,
-                                  absl::optional<uint8_t> audio_level_arg)
-    : last_seen_ms(timestamp_ms), audio_level(audio_level_arg) {}
+                                  absl::optional<uint8_t> audio_level_arg,
+                                  uint32_t rtp_timestamp)
+    : last_seen_ms(timestamp_ms),
+      audio_level(audio_level_arg),
+      rtp_timestamp(rtp_timestamp) {}
 
 }  // namespace webrtc

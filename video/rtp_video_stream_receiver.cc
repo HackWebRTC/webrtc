@@ -326,7 +326,8 @@ void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
 
       std::vector<uint32_t> csrcs = packet.Csrcs();
       contributing_sources_.Update(now_ms, csrcs,
-                                   /* audio level */ absl::nullopt);
+                                   /* audio level */ absl::nullopt,
+                                   packet.Timestamp());
     }
     // Periodically log the RTP header of incoming packets.
     if (now_ms - last_packet_log_ms_ > kPacketLogIntervalMs) {
@@ -781,8 +782,11 @@ std::vector<webrtc::RtpSource> RtpVideoStreamReceiver::GetSources() const {
     sources = contributing_sources_.GetSources(now_ms);
     if (last_received_rtp_system_time_ms_ >=
         now_ms - ContributingSources::kHistoryMs) {
+      RTC_DCHECK(last_received_rtp_timestamp_.has_value());
       sources.emplace_back(*last_received_rtp_system_time_ms_,
-                           config_.rtp.remote_ssrc, RtpSourceType::SSRC);
+                           config_.rtp.remote_ssrc, RtpSourceType::SSRC,
+                           /* audio_level */ absl::nullopt,
+                           *last_received_rtp_timestamp_);
     }
   }
   return sources;

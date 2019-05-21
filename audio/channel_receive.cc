@@ -564,9 +564,10 @@ std::vector<webrtc::RtpSource> ChannelReceive::GetSources() const {
     sources = contributing_sources_.GetSources(now_ms);
     if (last_received_rtp_system_time_ms_ >=
         now_ms - ContributingSources::kHistoryMs) {
+      RTC_DCHECK(last_received_rtp_timestamp_.has_value());
       sources.emplace_back(*last_received_rtp_system_time_ms_, remote_ssrc_,
-                           RtpSourceType::SSRC);
-      sources.back().set_audio_level(last_received_rtp_audio_level_);
+                           RtpSourceType::SSRC, last_received_rtp_audio_level_,
+                           *last_received_rtp_timestamp_);
     }
   }
   return sources;
@@ -599,7 +600,8 @@ void ChannelReceive::OnRtpPacket(const RtpPacketReceived& packet) {
     std::vector<uint32_t> csrcs = packet.Csrcs();
     contributing_sources_.Update(
         now_ms, csrcs,
-        has_audio_level ? absl::optional<uint8_t>(audio_level) : absl::nullopt);
+        has_audio_level ? absl::optional<uint8_t>(audio_level) : absl::nullopt,
+        packet.Timestamp());
   }
 
   // Store playout timestamp for the received RTP packet

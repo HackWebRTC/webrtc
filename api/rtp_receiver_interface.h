@@ -24,6 +24,7 @@
 #include "api/proxy.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
+#include "rtc_base/deprecation.h"
 #include "rtc_base/ref_count.h"
 
 namespace webrtc {
@@ -36,13 +37,23 @@ enum class RtpSourceType {
 class RtpSource {
  public:
   RtpSource() = delete;
-  RtpSource(int64_t timestamp_ms,
-            uint32_t source_id,
-            RtpSourceType source_type);
+
   RtpSource(int64_t timestamp_ms,
             uint32_t source_id,
             RtpSourceType source_type,
-            uint8_t audio_level);
+            absl::optional<uint8_t> audio_level,
+            uint32_t rtp_timestamp);
+
+  // DEPRECATED: Will be removed after 2019-07-31.
+  RTC_DEPRECATED RtpSource(int64_t timestamp_ms,
+                           uint32_t source_id,
+                           RtpSourceType source_type);
+  // DEPRECATED: Will be removed after 2019-07-31.
+  RTC_DEPRECATED RtpSource(int64_t timestamp_ms,
+                           uint32_t source_id,
+                           RtpSourceType source_type,
+                           uint8_t audio_level);
+
   RtpSource(const RtpSource&);
   RtpSource& operator=(const RtpSource&);
   ~RtpSource();
@@ -64,9 +75,12 @@ class RtpSource {
     audio_level_ = level;
   }
 
+  uint32_t rtp_timestamp() const { return rtp_timestamp_; }
+
   bool operator==(const RtpSource& o) const {
     return timestamp_ms_ == o.timestamp_ms() && source_id_ == o.source_id() &&
-           source_type_ == o.source_type() && audio_level_ == o.audio_level_;
+           source_type_ == o.source_type() && audio_level_ == o.audio_level_ &&
+           rtp_timestamp_ == o.rtp_timestamp();
   }
 
  private:
@@ -74,6 +88,7 @@ class RtpSource {
   uint32_t source_id_;
   RtpSourceType source_type_;
   absl::optional<uint8_t> audio_level_;
+  uint32_t rtp_timestamp_;
 };
 
 class RtpReceiverObserverInterface {
