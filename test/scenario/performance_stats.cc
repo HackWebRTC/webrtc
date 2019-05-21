@@ -90,6 +90,10 @@ void SampleStats<TimeDelta>::AddSamples(const SampleStats<TimeDelta>& other) {
   stats_.AddSamples(other.stats_);
 }
 
+bool SampleStats<TimeDelta>::IsEmpty() {
+  return stats_.IsEmpty();
+}
+
 TimeDelta SampleStats<TimeDelta>::Max() {
   return TimeDelta::seconds(stats_.Max());
 }
@@ -128,6 +132,10 @@ void SampleStats<DataRate>::AddSampleBps(double rate_bps) {
 
 void SampleStats<DataRate>::AddSamples(const SampleStats<DataRate>& other) {
   stats_.AddSamples(other.stats_);
+}
+
+bool SampleStats<DataRate>::IsEmpty() {
+  return stats_.IsEmpty();
 }
 
 DataRate SampleStats<DataRate>::Max() {

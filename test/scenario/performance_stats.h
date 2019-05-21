@@ -56,6 +56,7 @@ class SampleStats<TimeDelta> {
   void AddSample(TimeDelta delta);
   void AddSampleMs(double delta_ms);
   void AddSamples(const SampleStats<TimeDelta>& other);
+  bool IsEmpty();
   TimeDelta Max();
   TimeDelta Mean();
   TimeDelta Median();
@@ -74,6 +75,7 @@ class SampleStats<DataRate> {
   void AddSample(DataRate rate);
   void AddSampleBps(double rate_bps);
   void AddSamples(const SampleStats<DataRate>& other);
+  bool IsEmpty();
   DataRate Max();
   DataRate Mean();
   DataRate Median();
