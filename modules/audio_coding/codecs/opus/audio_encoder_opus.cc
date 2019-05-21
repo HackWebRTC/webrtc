@@ -760,7 +760,8 @@ bool AudioEncoderOpusImpl::RecreateEncoderInstance(
                       config.application ==
                               AudioEncoderOpusConfig::ApplicationMode::kVoip
                           ? 0
-                          : 1));
+                          : 1,
+                      48000));
   const int bitrate = GetBitrateBps(config);
   RTC_CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, bitrate));
   RTC_LOG(LS_INFO) << "Set Opus bitrate to " << bitrate << " bps.";

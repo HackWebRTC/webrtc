@@ -577,7 +577,8 @@ TEST(AudioEncoderOpusTest, ConfigBandwidthAdaptation) {
                    config.application ==
                            AudioEncoderOpusConfig::ApplicationMode::kVoip
                        ? 0
-                       : 1));
+                       : 1,
+                   48000));
 
   // Bitrate below minmum wideband. Expect narrowband.
   config.bitrate_bps = absl::optional<int>(7999);

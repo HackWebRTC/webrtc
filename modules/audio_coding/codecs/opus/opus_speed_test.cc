@@ -46,7 +46,7 @@ void OpusSpeedTest::SetUp() {
   // If channels_ == 1, use Opus VOIP mode, otherwise, audio mode.
   int app = channels_ == 1 ? 0 : 1;
   /* Create encoder memory. */
-  EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_encoder_, channels_, app));
+  EXPECT_EQ(0, WebRtcOpus_EncoderCreate(&opus_encoder_, channels_, app, 48000));
   EXPECT_EQ(0, WebRtcOpus_DecoderCreate(&opus_decoder_, channels_));
   /* Set bitrate. */
   EXPECT_EQ(0, WebRtcOpus_SetBitRate(opus_encoder_, bit_rate_));

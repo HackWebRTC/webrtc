@@ -111,7 +111,7 @@ NetEqOpusQualityTest::NetEqOpusQualityTest()
 
 void NetEqOpusQualityTest::SetUp() {
   // Create encoder memory.
-  WebRtcOpus_EncoderCreate(&opus_encoder_, channels_, application_);
+  WebRtcOpus_EncoderCreate(&opus_encoder_, channels_, application_, 48000);
   ASSERT_TRUE(opus_encoder_);
 
   // Create repacketizer.

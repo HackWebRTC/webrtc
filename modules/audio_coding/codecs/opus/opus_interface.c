@@ -39,7 +39,8 @@ enum {
 
 int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst,
                                  size_t channels,
-                                 int32_t application) {
+                                 int32_t application,
+                                 int sample_rate_hz) {
   int opus_app;
   if (!inst)
     return -1;
@@ -59,7 +60,7 @@ int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst,
   RTC_DCHECK(state);
 
   int error;
-  state->encoder = opus_encoder_create(48000, (int)channels, opus_app,
+  state->encoder = opus_encoder_create(sample_rate_hz, (int)channels, opus_app,
                                        &error);
 
   if (error != OPUS_OK || (!state->encoder &&

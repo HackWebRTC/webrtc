@@ -35,6 +35,7 @@ typedef struct WebRtcOpusDecInst OpusDecInst;
  *                                 Favor speech intelligibility.
  *                             1 - Audio applications.
  *                                 Favor faithfulness to the original input.
+ *      - sample_rate_hz     : sample rate of input audio
  *
  * Output:
  *      - inst               : a pointer to Encoder context that is created
@@ -45,7 +46,8 @@ typedef struct WebRtcOpusDecInst OpusDecInst;
  */
 int16_t WebRtcOpus_EncoderCreate(OpusEncInst** inst,
                                  size_t channels,
-                                 int32_t application);
+                                 int32_t application,
+                                 int sample_rate_hz);
 
 /****************************************************************************
  * WebRtcOpus_MultistreamEncoderCreate(...)
