@@ -221,6 +221,14 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
     }
     return true;
   }
+  if (payload_size == 0 || payload_data == NULL) {
+    if (frame_type == AudioFrameType::kEmptyFrame) {
+      // we don't send empty audio RTP packets
+      // no error since we use it to drive DTMF when we use VAD
+      return true;
+    }
+    return false;
+  }
 
   std::unique_ptr<RtpPacketToSend> packet = rtp_sender_->AllocatePacket();
   packet->SetMarker(MarkerBit(frame_type, payload_type));

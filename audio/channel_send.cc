@@ -495,15 +495,6 @@ int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
                                   uint8_t payloadType,
                                   uint32_t timeStamp,
                                   rtc::ArrayView<const uint8_t> payload) {
-  if (payload.empty()) {
-    if (frameType == AudioFrameType::kEmptyFrame) {
-      // we don't send empty audio RTP packets
-      // no error since we use it to drive DTMF when we use VAD
-      return 0;
-    }
-    return -1;
-  }
-
   if (_includeAudioLevelIndication) {
     // Store current audio level in the RTP sender.
     // The level will be used in combination with voice-activity state
