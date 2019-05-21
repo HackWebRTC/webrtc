@@ -19,7 +19,9 @@
 #include <stdlib.h>
 #include <memory>
 #include <string>
+#include <vector>
 
+#include "api/function_view.h"
 #include "common_audio/wav_file.h"
 #include "modules/audio_processing/test/protobuf_utils.h"
 #include "modules/audio_processing/test/test_utils.h"
@@ -103,6 +105,108 @@ bool WritingCallOrderFile() {
   return FLAG_full;
 }
 
+bool WritingRuntimeSettingFiles() {
+  return FLAG_full;
+}
+
+// Exports RuntimeSetting AEC dump events to Audacity-readable files.
+// This class is not RAII compliant.
+class RuntimeSettingWriter {
+ public:
+  RuntimeSettingWriter(
+      std::string name,
+      rtc::FunctionView<bool(const Event)> is_exporter_for,
+      rtc::FunctionView<std::string(const Event)> get_timeline_label)
+      : setting_name_(std::move(name)),
+        is_exporter_for_(is_exporter_for),
+        get_timeline_label_(get_timeline_label) {}
+  ~RuntimeSettingWriter() { Flush(); }
+
+  bool IsExporterFor(const Event& event) const {
+    return is_exporter_for_(event);
+  }
+
+  // Writes to file the payload of |event| using |frame_count| to calculate
+  // timestamp.
+  void WriteEvent(const Event& event, int frame_count) {
+    RTC_DCHECK(is_exporter_for_(event));
+    if (file_ == nullptr) {
+      rtc::StringBuilder file_name;
+      file_name << setting_name_ << frame_offset_ << ".txt";
+      file_ = OpenFile(file_name.str(), "wb");
+    }
+
+    // Time in the current WAV file, in seconds.
+    double time = (frame_count - frame_offset_) / 100.0;
+    std::string label = get_timeline_label_(event);
+    // In Audacity, all annotations are encoded as intervals.
+    fprintf(file_, "%.6f\t%.6f\t%s \n", time, time, label.c_str());
+  }
+
+  // Handles an AEC dump initialization event, occurring at frame
+  // |frame_offset|.
+  void HandleInitEvent(int frame_offset) {
+    Flush();
+    frame_offset_ = frame_offset;
+  }
+
+ private:
+  void Flush() {
+    if (file_ != nullptr) {
+      fclose(file_);
+      file_ = nullptr;
+    }
+  }
+
+  FILE* file_ = nullptr;
+  int frame_offset_ = 0;
+  const std::string setting_name_;
+  const rtc::FunctionView<bool(Event)> is_exporter_for_;
+  const rtc::FunctionView<std::string(Event)> get_timeline_label_;
+};
+
+// Returns RuntimeSetting exporters for runtime setting types defined in
+// debug.proto.
+std::vector<RuntimeSettingWriter> RuntimeSettingWriters() {
+  return {
+      RuntimeSettingWriter(
+          "CapturePreGain",
+          [](const Event& event) -> bool {
+            return event.runtime_setting().has_capture_pre_gain();
+          },
+          [](const Event& event) -> std::string {
+            return std::to_string(event.runtime_setting().capture_pre_gain());
+          }),
+      RuntimeSettingWriter(
+          "CustomRenderProcessingRuntimeSetting",
+          [](const Event& event) -> bool {
+            return event.runtime_setting()
+                .has_custom_render_processing_setting();
+          },
+          [](const Event& event) -> std::string {
+            return std::to_string(
+                event.runtime_setting().custom_render_processing_setting());
+          }),
+      RuntimeSettingWriter(
+          "CaptureFixedPostGain",
+          [](const Event& event) -> bool {
+            return event.runtime_setting().has_capture_fixed_post_gain();
+          },
+          [](const Event& event) -> std::string {
+            return std::to_string(
+                event.runtime_setting().capture_fixed_post_gain());
+          }),
+      RuntimeSettingWriter(
+          "PlayoutVolumeChange",
+          [](const Event& event) -> bool {
+            return event.runtime_setting().has_playout_volume_change();
+          },
+          [](const Event& event) -> std::string {
+            return std::to_string(
+                event.runtime_setting().playout_volume_change());
+          })};
+}
+
 }  // namespace
 
 int do_main(int argc, char* argv[]) {
@@ -145,6 +249,9 @@ int do_main(int argc, char* argv[]) {
                                   ? OpenFile(callorder_raw_name.str(), "wb")
                                   : nullptr;
   FILE* settings_file = OpenFile(FLAG_settings_file, "wb");
+
+  std::vector<RuntimeSettingWriter> runtime_setting_writers =
+      RuntimeSettingWriters();
 
   while (ReadMessageFromFile(debug_file, &event_msg)) {
     if (event_msg.type() == Event::REVERSE_STREAM) {
@@ -385,6 +492,20 @@ int do_main(int argc, char* argv[]) {
           rtc::StringBuilder callorder_name;
           callorder_name << FLAG_callorder_file << frame_count << ".char";
           callorder_char_file = OpenFile(callorder_name.str(), "wb");
+        }
+
+        if (WritingRuntimeSettingFiles()) {
+          for (RuntimeSettingWriter& writer : runtime_setting_writers) {
+            writer.HandleInitEvent(frame_count);
+          }
+        }
+      }
+    } else if (event_msg.type() == Event::RUNTIME_SETTING) {
+      if (WritingRuntimeSettingFiles()) {
+        for (RuntimeSettingWriter& writer : runtime_setting_writers) {
+          if (writer.IsExporterFor(event_msg)) {
+            writer.WriteEvent(event_msg, frame_count);
+          }
         }
       }
     }

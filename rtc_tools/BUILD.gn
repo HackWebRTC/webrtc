@@ -473,6 +473,7 @@ if (rtc_include_tests) {
       ]
 
       deps = [
+        "../api:function_view",
         "../common_audio",
         "../modules/audio_processing",
         "../modules/audio_processing:audioproc_debug_proto",
