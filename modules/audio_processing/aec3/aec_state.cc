@@ -63,8 +63,6 @@ AecState::AecState(const EchoCanceller3Config& config)
       delay_state_(config_),
       transparent_state_(config_),
       filter_quality_state_(config_),
-      legacy_filter_quality_state_(config_),
-      legacy_saturation_detector_(config_),
       erl_estimator_(2 * kNumBlocksPerSecond),
       erle_estimator_(2 * kNumBlocksPerSecond, config_),
       filter_analyzer_(config_),
@@ -83,7 +81,6 @@ void AecState::HandleEchoPathChange(
     blocks_with_active_render_ = 0;
     initial_state_.Reset();
     transparent_state_.Reset();
-    legacy_saturation_detector_.Reset();
     erle_estimator_.Reset(true);
     erl_estimator_.Reset();
     filter_quality_state_.Reset();
@@ -409,78 +406,6 @@ void AecState::FilteringQualityAnalyzer::Update(
   usable_linear_estimate_ = usable_linear_estimate_ && !transparent_mode;
 }
 
-AecState::LegacyFilteringQualityAnalyzer::LegacyFilteringQualityAnalyzer(
-    const EchoCanceller3Config& config)
-    : conservative_initial_phase_(config.filter.conservative_initial_phase),
-      required_blocks_for_convergence_(
-          kNumBlocksPerSecond * (conservative_initial_phase_ ? 1.5f : 0.8f)),
-      linear_and_stable_echo_path_(
-          config.echo_removal_control.linear_and_stable_echo_path),
-      non_converged_sequence_size_(kBlocksSinceConvergencedFilterInit) {}
-
-void AecState::LegacyFilteringQualityAnalyzer::Reset() {
-  usable_linear_estimate_ = false;
-  strong_not_saturated_render_blocks_ = 0;
-  if (linear_and_stable_echo_path_) {
-    recent_convergence_during_activity_ = false;
-  }
-  diverged_sequence_size_ = 0;
-  // TODO(peah): Change to ensure proper triggering of usable filter.
-  non_converged_sequence_size_ = 10000;
-  recent_convergence_ = true;
-}
-
-void AecState::LegacyFilteringQualityAnalyzer::Update(
-    bool saturated_echo,
-    bool active_render,
-    bool saturated_capture,
-    bool transparent_mode,
-    const absl::optional<DelayEstimate>& external_delay,
-    bool converged_filter,
-    bool diverged_filter) {
-  diverged_sequence_size_ = diverged_filter ? diverged_sequence_size_ + 1 : 0;
-  if (diverged_sequence_size_ >= 60) {
-    // TODO(peah): Change these lines to ensure proper triggering of usable
-    // filter.
-    non_converged_sequence_size_ = 10000;
-    recent_convergence_ = true;
-  }
-
-  if (converged_filter) {
-    non_converged_sequence_size_ = 0;
-    recent_convergence_ = true;
-    active_non_converged_sequence_size_ = 0;
-    recent_convergence_during_activity_ = true;
-  } else {
-    if (++non_converged_sequence_size_ >= 60 * kNumBlocksPerSecond) {
-      recent_convergence_ = false;
-    }
-
-    if (active_render &&
-        ++active_non_converged_sequence_size_ > 60 * kNumBlocksPerSecond) {
-      recent_convergence_during_activity_ = false;
-    }
-  }
-
-  strong_not_saturated_render_blocks_ +=
-      active_render && !saturated_capture ? 1 : 0;
-  const bool filter_has_had_time_to_converge =
-      strong_not_saturated_render_blocks_ > required_blocks_for_convergence_;
-
-  usable_linear_estimate_ = filter_has_had_time_to_converge && external_delay;
-
-  if (!conservative_initial_phase_ && recent_convergence_during_activity_) {
-    usable_linear_estimate_ = true;
-  }
-
-  if (!linear_and_stable_echo_path_ && !recent_convergence_) {
-    usable_linear_estimate_ = false;
-  }
-
-  if (saturated_echo || transparent_mode) {
-    usable_linear_estimate_ = false;
-  }
-}
 
 void AecState::SaturationDetector::Update(
     rtc::ArrayView<const float> x,
@@ -503,41 +428,6 @@ void AecState::SaturationDetector::Update(
     float peak_echo_amplitude = max_sample * echo_path_gain * kMargin;
     saturated_echo_ = saturated_echo_ && peak_echo_amplitude > 32000;
   }
-}
-
-AecState::LegacySaturationDetector::LegacySaturationDetector(
-    const EchoCanceller3Config& config)
-    : echo_can_saturate_(config.ep_strength.echo_can_saturate),
-      not_saturated_sequence_size_(1000) {}
-
-void AecState::LegacySaturationDetector::Reset() {
-  not_saturated_sequence_size_ = 0;
-}
-
-void AecState::LegacySaturationDetector::Update(rtc::ArrayView<const float> x,
-                                                bool saturated_capture,
-                                                float echo_path_gain) {
-  if (!echo_can_saturate_) {
-    saturated_echo_ = false;
-    return;
-  }
-
-  RTC_DCHECK_LT(0, x.size());
-  if (saturated_capture) {
-    const float max_sample = fabs(*std::max_element(
-        x.begin(), x.end(), [](float a, float b) { return a * a < b * b; }));
-
-    // Set flag for potential presence of saturated echo
-    const float kMargin = 10.f;
-    float peak_echo_amplitude = max_sample * echo_path_gain * kMargin;
-    if (peak_echo_amplitude > 32000) {
-      not_saturated_sequence_size_ = 0;
-      saturated_echo_ = true;
-      return;
-    }
-  }
-
-  saturated_echo_ = ++not_saturated_sequence_size_ < 5;
 }
 
 }  // namespace webrtc
