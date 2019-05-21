@@ -83,9 +83,9 @@ if (rtc_include_tests) {
       ":sequence_checker",
       "..:checks",
       "..:rtc_base_approved",
-      "..:rtc_base_tests_main",
       "..:task_queue_for_test",
       "../../api:function_view",
+      "../../test:test_main",
       "../../test:test_support",
       "//third_party/abseil-cpp/absl/memory",
     ]

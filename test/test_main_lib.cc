@@ -17,6 +17,8 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/flags.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/ssl_adapter.h"
+#include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/thread.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
@@ -119,6 +121,10 @@ class TestMainImpl : public TestMain {
 #if defined(WEBRTC_WIN)
     winsock_init_ = absl::make_unique<rtc::WinsockInitializer>();
 #endif
+
+    // Initialize SSL which are used by several tests.
+    rtc::InitializeSSL();
+    rtc::SSLStreamAdapter::EnableTimeCallbackForTesting();
 
     // Ensure that main thread gets wrapped as an rtc::Thread.
     // TODO(bugs.webrt.org/9714): It might be better to avoid wrapping the main

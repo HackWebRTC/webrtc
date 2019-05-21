@@ -61,8 +61,8 @@ if (rtc_include_tests) {
       "../rtc_base:checks",
       "../rtc_base:gunit_helpers",
       "../rtc_base:rtc_base_approved",
-      "../rtc_base:rtc_base_tests_main",
       "../rtc_base:rtc_json",
+      "../test:test_main",
       "../test:test_support",
     ]
 

@@ -484,7 +484,6 @@ if (rtc_include_tests) {
       "p2p:libstunprober_unittests",
       "p2p:rtc_p2p_unittests",
       "rtc_base:rtc_base_approved_unittests",
-      "rtc_base:rtc_base_tests_main",
       "rtc_base:rtc_base_unittests",
       "rtc_base:rtc_json_unittests",
       "rtc_base:rtc_numerics_unittests",
@@ -495,6 +494,7 @@ if (rtc_include_tests) {
       "rtc_base/synchronization:sequence_checker_unittests",
       "rtc_base/task_utils:to_queued_task_unittests",
       "sdk:sdk_tests",
+      "test:test_main",
       "test/scenario/network:network_emulation_unittests",
     ]
 

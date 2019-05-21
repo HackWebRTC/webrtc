@@ -1129,27 +1129,6 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("rtc_base_tests_main") {
-    testonly = true
-    sources = [
-      "unittest_main.cc",
-    ]
-    deps = [
-      ":gunit_helpers",
-      ":rtc_base",
-      ":rtc_base_approved",
-      ":rtc_base_tests_utils",
-      "../system_wrappers:field_trial",
-      "../system_wrappers:metrics",
-      "../test:field_trial",
-      "../test:test_support",
-    ]
-
-    public_deps = [
-      "//testing/gtest",
-    ]
-  }
-
   rtc_source_set("rtc_base_nonparallel_tests") {
     testonly = true
 
@@ -1166,11 +1145,11 @@ if (rtc_include_tests) {
       ":checks",
       ":gunit_helpers",
       ":rtc_base",
-      ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
       ":testclient",
       "../system_wrappers",
       "../test:fileutils",
+      "../test:test_main",
       "../test:test_support",
       "third_party/sigslot",
       "//testing/gtest",
@@ -1235,7 +1214,6 @@ if (rtc_include_tests) {
       ":rate_limiter",
       ":rtc_base",
       ":rtc_base_approved",
-      ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
       ":rtc_task_queue",
       ":safe_compare",
@@ -1248,6 +1226,7 @@ if (rtc_include_tests) {
       "../api/units:time_delta",
       "../system_wrappers",
       "../test:fileutils",
+      "../test:test_main",
       "../test:test_support",
       "memory:unittests",
       "third_party/base64",
@@ -1265,10 +1244,10 @@ if (rtc_include_tests) {
     deps = [
       ":gunit_helpers",
       ":rtc_base_approved",
-      ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
       ":rtc_task_queue",
       ":task_queue_for_test",
+      "../test:test_main",
       "../test:test_support",
       "//third_party/abseil-cpp/absl/memory",
     ]
@@ -1283,11 +1262,11 @@ if (rtc_include_tests) {
     deps = [
       ":gunit_helpers",
       ":rtc_base_approved",
-      ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
       ":rtc_event",
       ":task_queue_for_test",
       ":weak_ptr",
+      "../test:test_main",
       "../test:test_support",
       "//third_party/abseil-cpp/absl/memory",
     ]
@@ -1307,8 +1286,8 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":rtc_base_approved",
-      ":rtc_base_tests_main",
       ":rtc_numerics",
+      "../test:test_main",
       "../test:test_support",
       "//third_party/abseil-cpp/absl/algorithm:container",
     ]
@@ -1322,9 +1301,9 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":gunit_helpers",
-      ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
       ":rtc_json",
+      "../test:test_main",
       "../test:test_support",
     ]
   }
@@ -1374,18 +1353,19 @@ if (rtc_include_tests) {
     deps = [
       ":checks",
       ":gunit_helpers",
-      ":rtc_base_tests_main",
       ":rtc_base_tests_utils",
       ":stringutils",
       ":testclient",
       "../api:array_view",
       "../test:fileutils",
+      "../test:test_main",
       "../test:test_support",
       "memory:fifo_buffer",
       "synchronization:synchronization_unittests",
       "third_party/sigslot",
       "//third_party/abseil-cpp/absl/algorithm:container",
       "//third_party/abseil-cpp/absl/memory",
+      "//third_party/abseil-cpp/absl/strings",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
     public_deps = [
