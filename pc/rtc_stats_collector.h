@@ -182,6 +182,10 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   // Produces |RTCMediaStreamTrackStats|.
   void ProduceMediaStreamTrackStats_s(int64_t timestamp_us,
                                       RTCStatsReport* report) const;
+  // Produces RTCMediaSourceStats, including RTCAudioSourceStats and
+  // RTCVideoSourceStats.
+  void ProduceMediaSourceStats_s(int64_t timestamp_us,
+                                 RTCStatsReport* report) const;
   // Produces |RTCPeerConnectionStats|.
   void ProducePeerConnectionStats_s(int64_t timestamp_us,
                                     RTCStatsReport* report) const;

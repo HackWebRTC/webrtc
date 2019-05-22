@@ -317,8 +317,8 @@ class RTCStatsVerifier {
     EXPECT_TRUE(valid_reference)
         << stats_->type() << "." << member.name()
         << " is not a reference to an "
-        << "existing dictionary of type " << expected_type << " ("
-        << member.ValueToString() << ").";
+        << "existing dictionary of type " << expected_type << " (value: "
+        << (member.is_defined() ? member.ValueToString() : "null") << ").";
     MarkMemberTested(member, valid_reference);
   }
 
@@ -394,6 +394,18 @@ class RTCStatsReportVerifier {
       } else if (stats.type() == RTCOutboundRTPStreamStats::kType) {
         verify_successful &= VerifyRTCOutboundRTPStreamStats(
             stats.cast_to<RTCOutboundRTPStreamStats>());
+      } else if (stats.type() == RTCAudioSourceStats::kType) {
+        // RTCAudioSourceStats::kType and RTCVideoSourceStats::kType both have
+        // the value "media-source", but they are distinguishable with pointer
+        // equality (==). In JavaScript they would be distinguished with |kind|.
+        verify_successful &=
+            VerifyRTCAudioSourceStats(stats.cast_to<RTCAudioSourceStats>());
+      } else if (stats.type() == RTCVideoSourceStats::kType) {
+        // RTCAudioSourceStats::kType and RTCVideoSourceStats::kType both have
+        // the value "media-source", but they are distinguishable with pointer
+        // equality (==). In JavaScript they would be distinguished with |kind|.
+        verify_successful &=
+            VerifyRTCVideoSourceStats(stats.cast_to<RTCVideoSourceStats>());
       } else if (stats.type() == RTCTransportStats::kType) {
         verify_successful &=
             VerifyRTCTransportStats(stats.cast_to<RTCTransportStats>());
@@ -542,6 +554,15 @@ class RTCStatsReportVerifier {
     verifier.TestMemberIsDefined(media_stream_track.kind);
     // Video or audio media stream track?
     if (*media_stream_track.kind == RTCMediaStreamTrackKind::kVideo) {
+      // The type of the referenced media source depends on kind.
+      if (media_stream_track.remote_source.is_defined() &&
+          !*media_stream_track.remote_source) {
+        verifier.TestMemberIsIDReference(media_stream_track.media_source_id,
+                                         RTCVideoSourceStats::kType);
+      } else {
+        // Remote tracks don't have media source stats.
+        verifier.TestMemberIsUndefined(media_stream_track.media_source_id);
+      }
       // Video-only members
       verifier.TestMemberIsNonNegative<uint32_t>(
           media_stream_track.frame_width);
@@ -600,6 +621,15 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsUndefined(media_stream_track.total_samples_duration);
     } else {
       RTC_DCHECK_EQ(*media_stream_track.kind, RTCMediaStreamTrackKind::kAudio);
+      // The type of the referenced media source depends on kind.
+      if (media_stream_track.remote_source.is_defined() &&
+          !*media_stream_track.remote_source) {
+        verifier.TestMemberIsIDReference(media_stream_track.media_source_id,
+                                         RTCAudioSourceStats::kType);
+      } else {
+        // Remote tracks don't have media source stats.
+        verifier.TestMemberIsUndefined(media_stream_track.media_source_id);
+      }
       // Video-only members should be undefined
       verifier.TestMemberIsUndefined(media_stream_track.frame_width);
       verifier.TestMemberIsUndefined(media_stream_track.frame_height);
@@ -777,8 +807,12 @@ class RTCStatsReportVerifier {
     VerifyRTCRTPStreamStats(outbound_stream, &verifier);
     if (outbound_stream.media_type.is_defined() &&
         *outbound_stream.media_type == "video") {
+      verifier.TestMemberIsIDReference(outbound_stream.media_source_id,
+                                       RTCVideoSourceStats::kType);
       verifier.TestMemberIsNonNegative<uint64_t>(outbound_stream.qp_sum);
     } else {
+      verifier.TestMemberIsIDReference(outbound_stream.media_source_id,
+                                       RTCAudioSourceStats::kType);
       verifier.TestMemberIsUndefined(outbound_stream.qp_sum);
     }
     verifier.TestMemberIsNonNegative<uint32_t>(outbound_stream.packets_sent);
@@ -809,6 +843,40 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsUndefined(outbound_stream.total_packet_send_delay);
       verifier.TestMemberIsUndefined(outbound_stream.content_type);
     }
+    return verifier.ExpectAllMembersSuccessfullyTested();
+  }
+
+  void VerifyRTCMediaSourceStats(const RTCMediaSourceStats& media_source,
+                                 RTCStatsVerifier* verifier) {
+    verifier->TestMemberIsDefined(media_source.track_identifier);
+    verifier->TestMemberIsDefined(media_source.kind);
+    if (media_source.kind.is_defined()) {
+      EXPECT_TRUE((*media_source.kind == "audio" &&
+                   media_source.type() == RTCAudioSourceStats::kType) ||
+                  (*media_source.kind == "video" &&
+                   media_source.type() == RTCVideoSourceStats::kType));
+    }
+  }
+
+  bool VerifyRTCAudioSourceStats(const RTCAudioSourceStats& audio_source) {
+    RTCStatsVerifier verifier(report_, &audio_source);
+    VerifyRTCMediaSourceStats(audio_source, &verifier);
+    return verifier.ExpectAllMembersSuccessfullyTested();
+  }
+
+  bool VerifyRTCVideoSourceStats(const RTCVideoSourceStats& video_source) {
+    RTCStatsVerifier verifier(report_, &video_source);
+    VerifyRTCMediaSourceStats(video_source, &verifier);
+    // TODO(hbos): This integration test uses fakes that doesn't support
+    // VideoTrackSourceInterface::Stats. When this is fixed we should
+    // TestMemberIsNonNegative<uint32_t>() for |width| and |height| instead to
+    // reflect real code.
+    verifier.TestMemberIsUndefined(video_source.width);
+    verifier.TestMemberIsUndefined(video_source.height);
+    // TODO(hbos): When |frames| is implemented test that this member should be
+    // expected to be non-negative.
+    verifier.TestMemberIsUndefined(video_source.frames);
+    verifier.TestMemberIsNonNegative<uint32_t>(video_source.frames_per_second);
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
 

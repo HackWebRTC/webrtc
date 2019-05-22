@@ -94,7 +94,8 @@ std::vector<const std::string*> GetStatsReferencedIds(const RTCStats& stats) {
     const auto& stream = static_cast<const RTCMediaStreamStats&>(stats);
     AddIdsIfDefined(stream.track_ids, &neighbor_ids);
   } else if (type == RTCMediaStreamTrackStats::kType) {
-    // RTCMediaStreamTrackStats does not have any neighbor references.
+    const auto& track = static_cast<const RTCMediaStreamTrackStats&>(stats);
+    AddIdIfDefined(track.media_source_id, &neighbor_ids);
   } else if (type == RTCPeerConnectionStats::kType) {
     // RTCPeerConnectionStats does not have any neighbor references.
   } else if (type == RTCInboundRTPStreamStats::kType ||
@@ -104,6 +105,14 @@ std::vector<const std::string*> GetStatsReferencedIds(const RTCStats& stats) {
     AddIdIfDefined(rtp.track_id, &neighbor_ids);
     AddIdIfDefined(rtp.transport_id, &neighbor_ids);
     AddIdIfDefined(rtp.codec_id, &neighbor_ids);
+    if (type == RTCOutboundRTPStreamStats::kType) {
+      const auto& outbound_rtp =
+          static_cast<const RTCOutboundRTPStreamStats&>(stats);
+      AddIdIfDefined(outbound_rtp.media_source_id, &neighbor_ids);
+    }
+  } else if (type == RTCAudioSourceStats::kType ||
+             type == RTCVideoSourceStats::kType) {
+    // RTC[Audio/Video]SourceStats does not have any neighbor references.
   } else if (type == RTCTransportStats::kType) {
     // RTCTransportStats does not have any neighbor references.
     const auto& transport = static_cast<const RTCTransportStats&>(stats);
