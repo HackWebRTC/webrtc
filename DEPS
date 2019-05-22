@@ -7,7 +7,7 @@ vars = {
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
   'webrtc_git': 'https://webrtc.googlesource.com',
-  'chromium_revision': '1216f271d5c85bb9200d152fadf941b39b5aae75',
+  'chromium_revision': '15b783dc7ce6059a1c925700405794b77cec46da',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -88,7 +88,7 @@ deps = {
   'src/base':
     Var('chromium_git') + '/chromium/src/base' + '@' + '39c41ceaa91cb243a0c622e0f271f9b479c9e67d',
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + '7682abdc796fc198e544716f1111a625f76bd150',
+    Var('chromium_git') + '/chromium/src/build' + '@' + '19cf69413398dee18132420ed1307fe060e7189e',
   'src/buildtools':
     Var('chromium_git') + '/chromium/src/buildtools' + '@' + '9ea486bd0649b7459c041ff74c6d17b5c3f96eda',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
@@ -98,13 +98,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + '82325d0b90e05fb4882f373aa98691494566472b',
+    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + 'f152a7a2dce85cc55a15d42fdebe2729cfe17c3c',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + '6726c4afbfcb47ee2be8ae6a6185cc06f3a5862f',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + '1bf0d81894879394d7b48670a286593762e54367',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'e810a0fe6f3f5b0e520fe8a0e12c9a0e335d5ce9',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + '46d9f87561718987abc07b0c9bf1dac7ca2a6b41',
 
   'src/buildtools/linux64': {
     'packages': [
@@ -199,7 +199,7 @@ deps = {
   'src/third_party/colorama/src':
     Var('chromium_git') + '/external/colorama.git' + '@' + '799604a1041e9b3bc5d2789ecbd7e8db2e18e6b8',
   'src/third_party/depot_tools':
-    Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + 'aca5b6aca87dd7872c457ae6589902876556c854',
+    Var('chromium_git') + '/chromium/tools/depot_tools.git' + '@' + 'c7e440c0091d166e956476b21b51b630ff750d1b',
   'src/third_party/errorprone/lib': {
       'url': Var('chromium_git') + '/chromium/third_party/errorprone.git' + '@' + '980d49e839aa4984015efed34b0134d4b2c9b6d7',
       'condition': 'checkout_android',
@@ -312,7 +312,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '720b70524a4424b15fc57e82263568c8ba0496ad',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + 'b1d01fcba77ab3d761f055f4c18c02268a6e6f29',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + 'fce3fb070095cb4d694ac81842589accf8f2c90b',
   'src/tools/swarming_client':
     Var('chromium_git') + '/infra/luci/client-py.git' + '@' +  Var('swarming_revision'),
 
