@@ -43,6 +43,7 @@ class RtcEventLogImpl final : public RtcEventLog {
   bool StartLogging(std::unique_ptr<RtcEventLogOutput> output,
                     int64_t output_period_ms) override;
   void StopLogging() override;
+  void StopLogging(std::function<void()> callback) override;
 
   void Log(std::unique_ptr<RtcEvent> event) override;
 
@@ -79,6 +80,9 @@ class RtcEventLogImpl final : public RtcEventLog {
   absl::optional<int64_t> output_period_ms_ RTC_GUARDED_BY(*task_queue_);
   int64_t last_output_ms_ RTC_GUARDED_BY(*task_queue_);
   bool output_scheduled_ RTC_GUARDED_BY(*task_queue_);
+
+  SequenceChecker logging_state_checker_;
+  bool logging_state_started_ RTC_GUARDED_BY(logging_state_checker_);
 
   // Since we are posting tasks bound to |this|,  it is critical that the event
   // log and its members outlive |task_queue_|. Keep the |task_queue_|

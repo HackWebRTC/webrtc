@@ -10,6 +10,7 @@
 #include <atomic>
 
 #include "test/gtest.h"
+#include "test/logging/memory_log_writer.h"
 #include "test/scenario/scenario.h"
 #include "test/scenario/stats_collection.h"
 
@@ -130,6 +131,18 @@ TEST(ScenarioTest, SimTimeFakeing) {
   Scenario s("scenario/encode_sim", false);
   SetupVideoCall(s, nullptr);
   s.RunFor(TimeDelta::seconds(10));
+}
+
+TEST(ScenarioTest, WritesToRtcEventLog) {
+  MemoryLogStorage storage;
+  {
+    Scenario s(storage.CreateFactory(), false);
+    SetupVideoCall(s, nullptr);
+    s.RunFor(TimeDelta::seconds(1));
+  }
+  auto logs = storage.logs();
+  // We expect that a rtc event log has been created and that it has some data.
+  EXPECT_GE(storage.logs().at("alice.rtc.dat").size(), 1u);
 }
 
 }  // namespace test

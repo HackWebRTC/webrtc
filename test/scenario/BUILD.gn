@@ -173,6 +173,7 @@ if (rtc_include_tests) {
       "../../system_wrappers:field_trial",
       "../../test:field_trial",
       "../../test:test_support",
+      "../logging:log_writer",
       "//testing/gmock",
       "//third_party/abseil-cpp/absl/memory",
     ]

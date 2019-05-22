@@ -150,6 +150,9 @@ CallClient::~CallClient() {
   SendTask([&] {
     call_.reset();
     fake_audio_setup_ = {};
+    rtc::Event done;
+    event_log_->StopLogging([&done] { done.Set(); });
+    done.Wait(rtc::Event::kForever);
     event_log_.reset();
   });
 }

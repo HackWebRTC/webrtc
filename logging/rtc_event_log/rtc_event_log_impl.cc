@@ -82,6 +82,7 @@ RtcEventLogImpl::RtcEventLogImpl(RtcEventLog::EncodingType encoding_type,
       num_config_events_written_(0),
       last_output_ms_(rtc::TimeMillis()),
       output_scheduled_(false),
+      logging_state_started_(false),
       task_queue_(
           absl::make_unique<rtc::TaskQueue>(task_queue_factory->CreateTaskQueue(
               "rtc_event_log",
@@ -89,7 +90,8 @@ RtcEventLogImpl::RtcEventLogImpl(RtcEventLog::EncodingType encoding_type,
 
 RtcEventLogImpl::~RtcEventLogImpl() {
   // If we're logging to the output, this will stop that. Blocking function.
-  StopLogging();
+  if (logging_state_started_)
+    StopLogging();
 
   // We want to block on any executing task by invoking ~TaskQueue() before
   // we set unique_ptr's internal pointer to null.
@@ -125,6 +127,9 @@ bool RtcEventLogImpl::StartLogging(std::unique_ptr<RtcEventLogOutput> output,
     LogEventsFromMemoryToOutput();
   };
 
+  RTC_DCHECK_RUN_ON(&logging_state_checker_);
+  logging_state_started_ = true;
+
   task_queue_->PostTask(
       absl::make_unique<ResourceOwningTask<RtcEventLogOutput>>(
           std::move(output), start));
@@ -136,17 +141,7 @@ void RtcEventLogImpl::StopLogging() {
   RTC_LOG(LS_INFO) << "Stopping WebRTC event log.";
 
   rtc::Event output_stopped;
-
-  // Binding to |this| is safe because |this| outlives the |task_queue_|.
-  task_queue_->PostTask([this, &output_stopped]() {
-    RTC_DCHECK_RUN_ON(task_queue_.get());
-    if (event_output_) {
-      RTC_DCHECK(event_output_->IsActive());
-      LogEventsFromMemoryToOutput();
-    }
-    StopLoggingInternal();
-    output_stopped.Set();
-  });
+  StopLogging([&output_stopped]() { output_stopped.Set(); });
 
   // By making sure StopLogging() is not executed on a task queue,
   // we ensure it's not running on a thread that is shared with |task_queue_|,
@@ -156,6 +151,20 @@ void RtcEventLogImpl::StopLogging() {
   output_stopped.Wait(rtc::Event::kForever);
 
   RTC_LOG(LS_INFO) << "WebRTC event log successfully stopped.";
+}
+
+void RtcEventLogImpl::StopLogging(std::function<void()> callback) {
+  RTC_DCHECK_RUN_ON(&logging_state_checker_);
+  logging_state_started_ = false;
+  task_queue_->PostTask([this, callback] {
+    RTC_DCHECK_RUN_ON(task_queue_.get());
+    if (event_output_) {
+      RTC_DCHECK(event_output_->IsActive());
+      LogEventsFromMemoryToOutput();
+    }
+    StopLoggingInternal();
+    callback();
+  });
 }
 
 void RtcEventLogImpl::Log(std::unique_ptr<RtcEvent> event) {
