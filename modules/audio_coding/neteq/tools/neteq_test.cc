@@ -252,7 +252,10 @@ NetEqTest::SimulationStepResult NetEqTest::RunToNextGetAudio() {
         }
       }
       prev_lifetime_stats_ = lifetime_stats;
-      result.is_simulation_finished = input_->ended();
+      const bool no_more_packets_to_decode =
+          !input_->NextPacketTime() && !operations_state.next_packet_available;
+      result.is_simulation_finished =
+          no_more_packets_to_decode || input_->ended();
       prev_ops_state_ = operations_state;
       return result;
     }
