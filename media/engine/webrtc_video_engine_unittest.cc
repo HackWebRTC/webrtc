@@ -10,6 +10,7 @@
 
 #include <map>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -213,8 +214,12 @@ namespace cricket {
 class WebRtcVideoEngineTest : public ::testing::Test {
  public:
   WebRtcVideoEngineTest() : WebRtcVideoEngineTest("") {}
-  explicit WebRtcVideoEngineTest(const char* field_trials)
-      : override_field_trials_(field_trials),
+  explicit WebRtcVideoEngineTest(const std::string& field_trials)
+      : override_field_trials_(
+            field_trials.empty()
+                ? nullptr
+                : absl::make_unique<webrtc::test::ScopedFieldTrials>(
+                      field_trials)),
         call_(webrtc::Call::Create(webrtc::Call::Config(&event_log_))),
         encoder_factory_(new cricket::FakeWebRtcVideoEncoderFactory),
         decoder_factory_(new cricket::FakeWebRtcVideoDecoderFactory),
@@ -251,7 +256,7 @@ class WebRtcVideoEngineTest : public ::testing::Test {
   // Has to be the first one, so it is initialized before the call or there is a
   // race condition in the clock access.
   rtc::ScopedFakeClock fake_clock_;
-  webrtc::test::ScopedFieldTrials override_field_trials_;
+  std::unique_ptr<webrtc::test::ScopedFieldTrials> override_field_trials_;
   webrtc::RtcEventLogNullImpl event_log_;
   // Used in WebRtcVideoEngineVoiceTest, but defined here so it's properly
   // initialized when the constructor is called.
@@ -866,7 +871,8 @@ TEST_F(WebRtcVideoEngineTest,
 }
 
 TEST_F(WebRtcVideoEngineTest, SimulcastEnabledForH264BehindFieldTrial) {
-  webrtc::test::ScopedFieldTrials override_field_trials_(
+  RTC_DCHECK(!override_field_trials_);
+  override_field_trials_ = absl::make_unique<webrtc::test::ScopedFieldTrials>(
       "WebRTC-H264Simulcast/Enabled/");
   encoder_factory_->AddSupportedVideoCodecType("H264");
 
@@ -911,7 +917,8 @@ TEST_F(WebRtcVideoEngineTest,
   EXPECT_THAT(engine_.codecs(), Not(Contains(flexfec)));
 
   // FlexFEC is active with field trial.
-  webrtc::test::ScopedFieldTrials override_field_trials_(
+  RTC_DCHECK(!override_field_trials_);
+  override_field_trials_ = absl::make_unique<webrtc::test::ScopedFieldTrials>(
       "WebRTC-FlexFEC-03-Advertised/Enabled/");
   EXPECT_THAT(engine_.codecs(), Contains(flexfec));
 }
@@ -3296,7 +3303,8 @@ TEST_F(WebRtcVideoChannelTest, VerifyMinBitrate) {
 }
 
 TEST_F(WebRtcVideoChannelTest, VerifyMinBitrateWithForcedFallbackFieldTrial) {
-  webrtc::test::ScopedFieldTrials override_field_trials_(
+  RTC_DCHECK(!override_field_trials_);
+  override_field_trials_ = absl::make_unique<webrtc::test::ScopedFieldTrials>(
       "WebRTC-VP8-Forced-Fallback-Encoder-v2/Enabled-1,2,34567/");
   std::vector<webrtc::VideoStream> streams = AddSendStream()->GetVideoStreams();
   ASSERT_EQ(1u, streams.size());
@@ -3305,7 +3313,8 @@ TEST_F(WebRtcVideoChannelTest, VerifyMinBitrateWithForcedFallbackFieldTrial) {
 
 TEST_F(WebRtcVideoChannelTest,
        BalancedDegradationPreferenceNotSupportedWithoutFieldtrial) {
-  webrtc::test::ScopedFieldTrials override_field_trials_(
+  RTC_DCHECK(!override_field_trials_);
+  override_field_trials_ = absl::make_unique<webrtc::test::ScopedFieldTrials>(
       "WebRTC-Video-BalancedDegradation/Disabled/");
   const bool kResolutionScalingEnabled = true;
   const bool kFpsScalingEnabled = false;
@@ -3314,7 +3323,8 @@ TEST_F(WebRtcVideoChannelTest,
 
 TEST_F(WebRtcVideoChannelTest,
        BalancedDegradationPreferenceSupportedBehindFieldtrial) {
-  webrtc::test::ScopedFieldTrials override_field_trials_(
+  RTC_DCHECK(!override_field_trials_);
+  override_field_trials_ = absl::make_unique<webrtc::test::ScopedFieldTrials>(
       "WebRTC-Video-BalancedDegradation/Enabled/");
   const bool kResolutionScalingEnabled = true;
   const bool kFpsScalingEnabled = true;
