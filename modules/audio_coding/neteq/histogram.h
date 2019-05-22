@@ -15,12 +15,16 @@
 
 #include <vector>
 
+#include "absl/types/optional.h"
+
 namespace webrtc {
 
 class Histogram {
  public:
   // Creates histogram with capacity |num_buckets| and |forget_factor| in Q15.
-  Histogram(size_t num_buckets, int forget_factor);
+  Histogram(size_t num_buckets,
+            int forget_factor,
+            absl::optional<double> start_forget_weight = absl::nullopt);
 
   virtual ~Histogram();
 
@@ -43,17 +47,24 @@ class Histogram {
   // Returns the probability for each bucket in Q30.
   std::vector<int> buckets() const { return buckets_; }
 
-  int forget_factor() const { return base_forget_factor_; }
-
   // Made public for testing.
   static std::vector<int> ScaleBuckets(const std::vector<int>& buckets,
                                        int old_bucket_width,
                                        int new_bucket_width);
 
+  // Accessors only intended for testing purposes.
+  int base_forget_factor_for_testing() const { return base_forget_factor_; }
+  int forget_factor_for_testing() const { return forget_factor_; }
+  absl::optional<double> start_forget_weight_for_testing() const {
+    return start_forget_weight_;
+  }
+
  private:
   std::vector<int> buckets_;
   int forget_factor_;  // Q15
   const int base_forget_factor_;
+  int add_count_;
+  const absl::optional<double> start_forget_weight_;
 };
 
 }  // namespace webrtc

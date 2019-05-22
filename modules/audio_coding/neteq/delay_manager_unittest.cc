@@ -643,7 +643,10 @@ TEST_F(DelayManagerTest, DelayHistogramFieldTrial) {
     EXPECT_EQ(DelayManager::HistogramMode::RELATIVE_ARRIVAL_DELAY,
               dm_->histogram_mode());
     EXPECT_EQ(1030792151, dm_->histogram_quantile());  // 0.96 in Q30.
-    EXPECT_EQ(32702, dm_->histogram_forget_factor());  // 0.998 in Q15.
+    EXPECT_EQ(
+        32702,
+        dm_->histogram()->base_forget_factor_for_testing());  // 0.998 in Q15.
+    EXPECT_FALSE(dm_->histogram()->start_forget_weight_for_testing());
   }
   {
     test::ScopedFieldTrials field_trial(
@@ -652,7 +655,10 @@ TEST_F(DelayManagerTest, DelayHistogramFieldTrial) {
     EXPECT_EQ(DelayManager::HistogramMode::RELATIVE_ARRIVAL_DELAY,
               dm_->histogram_mode());
     EXPECT_EQ(1046898278, dm_->histogram_quantile());  // 0.975 in Q30.
-    EXPECT_EQ(32702, dm_->histogram_forget_factor());  // 0.998 in Q15.
+    EXPECT_EQ(
+        32702,
+        dm_->histogram()->base_forget_factor_for_testing());  // 0.998 in Q15.
+    EXPECT_FALSE(dm_->histogram()->start_forget_weight_for_testing());
   }
   {
     // NetEqDelayHistogram should take precedence over
@@ -664,7 +670,10 @@ TEST_F(DelayManagerTest, DelayHistogramFieldTrial) {
     EXPECT_EQ(DelayManager::HistogramMode::RELATIVE_ARRIVAL_DELAY,
               dm_->histogram_mode());
     EXPECT_EQ(1030792151, dm_->histogram_quantile());  // 0.96 in Q30.
-    EXPECT_EQ(32702, dm_->histogram_forget_factor());  // 0.998 in Q15.
+    EXPECT_EQ(
+        32702,
+        dm_->histogram()->base_forget_factor_for_testing());  // 0.998 in Q15.
+    EXPECT_FALSE(dm_->histogram()->start_forget_weight_for_testing());
   }
   {
     // Invalid parameters.
@@ -675,7 +684,10 @@ TEST_F(DelayManagerTest, DelayHistogramFieldTrial) {
               dm_->histogram_mode());
     EXPECT_EQ(kDefaultHistogramQuantile,
               dm_->histogram_quantile());                      // 0.95 in Q30.
-    EXPECT_EQ(kForgetFactor, dm_->histogram_forget_factor());  // 0.9993 in Q15.
+    EXPECT_EQ(
+        kForgetFactor,
+        dm_->histogram()->base_forget_factor_for_testing());  // 0.9993 in Q15.
+    EXPECT_FALSE(dm_->histogram()->start_forget_weight_for_testing());
   }
   {
     test::ScopedFieldTrials field_trial(
@@ -685,7 +697,30 @@ TEST_F(DelayManagerTest, DelayHistogramFieldTrial) {
               dm_->histogram_mode());
     EXPECT_EQ(kDefaultHistogramQuantile,
               dm_->histogram_quantile());                      // 0.95 in Q30.
-    EXPECT_EQ(kForgetFactor, dm_->histogram_forget_factor());  // 0.9993 in Q15.
+    EXPECT_EQ(
+        kForgetFactor,
+        dm_->histogram()->base_forget_factor_for_testing());  // 0.9993 in Q15.
+    EXPECT_FALSE(dm_->histogram()->start_forget_weight_for_testing());
+  }
+
+  // Test parameter for new call start adaptation.
+  {
+    test::ScopedFieldTrials field_trial(
+        "WebRTC-Audio-NetEqDelayHistogram/Enabled-96-0.998-1/");
+    RecreateDelayManager();
+    EXPECT_EQ(dm_->histogram()->start_forget_weight_for_testing().value(), 1.0);
+  }
+  {
+    test::ScopedFieldTrials field_trial(
+        "WebRTC-Audio-NetEqDelayHistogram/Enabled-96-0.998-1.5/");
+    RecreateDelayManager();
+    EXPECT_EQ(dm_->histogram()->start_forget_weight_for_testing().value(), 1.5);
+  }
+  {
+    test::ScopedFieldTrials field_trial(
+        "WebRTC-Audio-NetEqDelayHistogram/Enabled-96-0.998-0.5/");
+    RecreateDelayManager();
+    EXPECT_FALSE(dm_->histogram()->start_forget_weight_for_testing());
   }
 }
 

@@ -168,4 +168,15 @@ TEST(HistogramTest, OverflowTest) {
   EXPECT_EQ(scaled_buckets, expected_result);
 }
 
+TEST(HistogramTest, ReachSteadyStateForgetFactor) {
+  static constexpr int kSteadyStateForgetFactor = (1 << 15) * 0.9993;
+  Histogram histogram(100, kSteadyStateForgetFactor, 1.0);
+  histogram.Reset();
+  int n = (1 << 15) / ((1 << 15) - kSteadyStateForgetFactor);
+  for (int i = 0; i < n; ++i) {
+    histogram.Add(0);
+  }
+  EXPECT_EQ(histogram.forget_factor_for_testing(), kSteadyStateForgetFactor);
+}
+
 }  // namespace webrtc

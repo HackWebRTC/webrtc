@@ -72,6 +72,7 @@ absl::optional<int> GetForcedLimitProbability() {
 struct DelayHistogramConfig {
   int quantile = 1020054733;  // 0.95 in Q30.
   int forget_factor = 32745;  // 0.9993 in Q15.
+  absl::optional<double> start_forget_weight;
 };
 
 absl::optional<DelayHistogramConfig> GetDelayHistogramConfig() {
@@ -85,16 +86,22 @@ absl::optional<DelayHistogramConfig> GetDelayHistogramConfig() {
     DelayHistogramConfig config;
     double percentile = -1.0;
     double forget_factor = -1.0;
-    if (sscanf(field_trial_string.c_str(), "Enabled-%lf-%lf", &percentile,
-               &forget_factor) == 2 &&
+    double start_forget_weight = -1.0;
+    if (sscanf(field_trial_string.c_str(), "Enabled-%lf-%lf-%lf", &percentile,
+               &forget_factor, &start_forget_weight) >= 2 &&
         percentile >= 0.0 && percentile <= 100.0 && forget_factor >= 0.0 &&
         forget_factor <= 1.0) {
       config.quantile = PercentileToQuantile(percentile);
       config.forget_factor = (1 << 15) * forget_factor;
+      if (start_forget_weight >= 1) {
+        config.start_forget_weight = start_forget_weight;
+      }
     }
     RTC_LOG(LS_INFO) << "Delay histogram config:"
                      << " quantile=" << config.quantile
-                     << " forget_factor=" << config.forget_factor;
+                     << " forget_factor=" << config.forget_factor
+                     << " start_forget_weight="
+                     << config.start_forget_weight.value_or(0);
     return absl::make_optional(config);
   }
   return absl::nullopt;
@@ -182,8 +189,8 @@ std::unique_ptr<DelayManager> DelayManager::Create(
   if (delay_histogram_config) {
     DelayHistogramConfig config = delay_histogram_config.value();
     quantile = config.quantile;
-    histogram =
-        absl::make_unique<Histogram>(kDelayBuckets, config.forget_factor);
+    histogram = absl::make_unique<Histogram>(
+        kDelayBuckets, config.forget_factor, config.start_forget_weight);
     mode = RELATIVE_ARRIVAL_DELAY;
   } else {
     quantile = GetForcedLimitProbability().value_or(kLimitProbability);
