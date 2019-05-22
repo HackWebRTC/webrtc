@@ -582,8 +582,7 @@ void VCMJitterBuffer::FindAndInsertContinuousFramesWithState(
 uint32_t VCMJitterBuffer::EstimatedJitterMs() {
   rtc::CritScope cs(&crit_sect_);
   const double rtt_mult = 1.0f;
-  const double jitter_est_cap_ms = 300.0f;
-  return jitter_estimate_.GetJitterEstimate(rtt_mult, jitter_est_cap_ms);
+  return jitter_estimate_.GetJitterEstimate(rtt_mult);
 }
 
 void VCMJitterBuffer::SetNackSettings(size_t max_nack_list_size,

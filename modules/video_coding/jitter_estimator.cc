@@ -374,8 +374,7 @@ void VCMJitterEstimator::UpdateRtt(int64_t rttMs) {
 
 // Returns the current filtered estimate if available,
 // otherwise tries to calculate an estimate.
-int VCMJitterEstimator::GetJitterEstimate(double rttMultiplier,
-                                          double jitterEstCapMs) {
+int VCMJitterEstimator::GetJitterEstimate(double rttMultiplier) {
   double jitterMS = CalculateEstimate() + OPERATING_SYSTEM_JITTER;
   uint64_t now = clock_->TimeInMicroseconds();
 
@@ -384,10 +383,8 @@ int VCMJitterEstimator::GetJitterEstimate(double rttMultiplier,
 
   if (_filterJitterEstimate > jitterMS)
     jitterMS = _filterJitterEstimate;
-  if (_nackCount >= _nackLimit) {
+  if (_nackCount >= _nackLimit)
     jitterMS += _rttFilter.RttMs() * rttMultiplier;
-    jitterMS = std::min(jitterMS, jitterEstCapMs);
-  }
 
   static const double kJitterScaleLowThreshold = 5.0;
   static const double kJitterScaleHighThreshold = 10.0;
