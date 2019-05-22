@@ -11,23 +11,8 @@
 #ifndef LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_FACTORY_INTERFACE_H_
 #define LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_FACTORY_INTERFACE_H_
 
-#include <memory>
-
-#include "logging/rtc_event_log/rtc_event_log.h"
-
-namespace webrtc {
-
-// This interface exists to allow webrtc to be optionally built without
-// RtcEventLog support. A PeerConnectionFactory is constructed with an
-// RtcEventLogFactoryInterface, which may or may not be null.
-class RtcEventLogFactoryInterface {
- public:
-  virtual ~RtcEventLogFactoryInterface() {}
-
-  virtual std::unique_ptr<RtcEventLog> CreateRtcEventLog(
-      RtcEventLog::EncodingType encoding_type) = 0;
-};
-
-}  // namespace webrtc
+// TODO(bugs.webrtc.org/10206): For backwards compatibility; Delete as soon as
+// dependencies are updated.
+#include "api/rtc_event_log/rtc_event_log_factory_interface.h"
 
 #endif  // LOGGING_RTC_EVENT_LOG_RTC_EVENT_LOG_FACTORY_INTERFACE_H_

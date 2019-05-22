@@ -12,6 +12,8 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "api/rtc_event_log/rtc_event_log.h"
+#include "api/rtc_event_log/rtc_event_log_factory.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
 
 namespace webrtc {
@@ -74,10 +76,10 @@ std::unique_ptr<RtcEventLog> CreateEventLog(
     TaskQueueFactory* task_queue_factory,
     LogWriterFactoryInterface* log_writer_factory) {
   if (!log_writer_factory) {
-    return RtcEventLog::CreateNull();
+    return absl::make_unique<RtcEventLogNull>();
   }
-  auto event_log = RtcEventLog::Create(RtcEventLog::EncodingType::NewFormat,
-                                       task_queue_factory);
+  auto event_log = RtcEventLogFactory(task_queue_factory)
+                       .CreateRtcEventLog(RtcEventLog::EncodingType::NewFormat);
   bool success = event_log->StartLogging(log_writer_factory->Create(".rtc.dat"),
                                          kEventLogOutputIntervalMs);
   RTC_CHECK(success);

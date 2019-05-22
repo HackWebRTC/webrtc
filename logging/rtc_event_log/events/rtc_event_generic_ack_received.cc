@@ -13,6 +13,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "rtc_base/time_utils.h"
 
 namespace webrtc {
 

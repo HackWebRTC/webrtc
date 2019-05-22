@@ -8,19 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "logging/rtc_event_log/rtc_event_log.h"
-
-#include "absl/memory/memory.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 
 namespace webrtc {
 
-std::unique_ptr<RtcEventLog> RtcEventLog::CreateNull() {
-  return absl::make_unique<RtcEventLogNullImpl>();
-}
-
-bool RtcEventLogNullImpl::StartLogging(
-    std::unique_ptr<RtcEventLogOutput> output,
-    int64_t output_period_ms) {
+bool RtcEventLogNull::StartLogging(
+    std::unique_ptr<RtcEventLogOutput> /*output*/,
+    int64_t /*output_period_ms*/) {
   return false;
 }
 

@@ -31,7 +31,6 @@ rtc_source_set("rtc_event_log_api") {
   sources = [
     "rtc_event_log/encoder/rtc_event_log_encoder.h",
     "rtc_event_log/events/rtc_event.h",
-    "rtc_event_log/rtc_event_log.cc",
     "rtc_event_log/rtc_event_log.h",
     "rtc_event_log/rtc_event_log_factory_interface.h",
   ]
@@ -39,6 +38,7 @@ rtc_source_set("rtc_event_log_api") {
   deps = [
     "../api:libjingle_logging_api",
     "../api:scoped_refptr",
+    "../api/rtc_event_log",
     "../api/task_queue",
     "../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/memory",
@@ -129,7 +129,9 @@ rtc_source_set("rtc_event_generic_packet_events") {
   ]
   deps = [
     ":rtc_event_log_api",
+    "../rtc_base:timeutils",
     "//third_party/abseil-cpp/absl/memory",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
@@ -239,37 +241,46 @@ rtc_source_set("rtc_event_log_impl_output") {
   ]
 }
 
+if (rtc_enable_protobuf) {
+  rtc_source_set("rtc_event_log_impl") {
+    visibility = [ "../api/rtc_event_log:rtc_event_log_factory" ]
+    sources = [
+      "rtc_event_log/rtc_event_log_impl.cc",
+      "rtc_event_log/rtc_event_log_impl.h",
+    ]
+    deps = [
+      ":ice_log",
+      ":rtc_event_log_api",
+      ":rtc_event_log_impl_encoder",
+      "../api:libjingle_logging_api",
+      "../api/rtc_event_log",
+      "../api/task_queue",
+      "../rtc_base:checks",
+      "../rtc_base:rtc_base_approved",
+      "../rtc_base:rtc_task_queue",
+      "../rtc_base:safe_minmax",
+      "../rtc_base/synchronization:sequence_checker",
+      "//third_party/abseil-cpp/absl/memory",
+      "//third_party/abseil-cpp/absl/types:optional",
+    ]
+  }
+}
+
 rtc_static_library("rtc_event_log_impl_base") {
-  # TODO(terelius): Should this really be visible? Currently used to instantiate
-  # the default event log factory.
+  # TODO(bugs.webrtc.org/10206): Remove this target when all users switch to
+  # using target api/rtc_event_log:rtc_event_log_factory directly.
   visibility = [ "*" ]
   sources = [
     "rtc_event_log/rtc_event_log_factory.cc",
     "rtc_event_log/rtc_event_log_factory.h",
-    "rtc_event_log/rtc_event_log_impl.cc",
   ]
-
-  defines = []
 
   deps = [
-    ":ice_log",
-    ":rtc_event_log_api",
-    "../api:libjingle_logging_api",
-    "../api/task_queue",
+    "../api/rtc_event_log",
+    "../api/rtc_event_log:rtc_event_log_factory",
     "../api/task_queue:global_task_queue_factory",
-    "../rtc_base:checks",
-    "../rtc_base:rtc_base_approved",
-    "../rtc_base:rtc_task_queue",
-    "../rtc_base:safe_minmax",
-    "../rtc_base/synchronization:sequence_checker",
     "//third_party/abseil-cpp/absl/memory",
-    "//third_party/abseil-cpp/absl/types:optional",
   ]
-
-  if (rtc_enable_protobuf) {
-    defines += [ "ENABLE_RTC_EVENT_LOG" ]
-    deps += [ ":rtc_event_log_impl_encoder" ]
-  }
 }
 
 rtc_source_set("fake_rtc_event_log") {

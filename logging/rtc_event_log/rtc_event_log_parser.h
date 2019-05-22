@@ -39,6 +39,8 @@ RTC_POP_IGNORING_WUNDEF()
 
 namespace webrtc {
 
+enum PacketDirection { kIncomingPacket = 0, kOutgoingPacket };
+
 template <typename T>
 class PacketView;
 

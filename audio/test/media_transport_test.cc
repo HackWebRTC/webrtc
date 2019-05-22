@@ -75,7 +75,7 @@ TEST(AudioWithMediaTransport, DeliversAudio) {
   MediaTransportPair transport_pair(transport_thread.get());
   NiceMock<MockTransport> rtcp_send_transport;
   NiceMock<MockTransport> send_transport;
-  std::unique_ptr<RtcEventLog> null_event_log = RtcEventLog::CreateNull();
+  RtcEventLogNull null_event_log;
   NiceMock<MockBitrateAllocator> bitrate_allocator;
 
   rtc::scoped_refptr<TestAudioDeviceModule> audio_device =
@@ -114,7 +114,7 @@ TEST(AudioWithMediaTransport, DeliversAudio) {
       Clock::GetRealTimeClock(),
       /*receiver_controller=*/nullptr,
       /*packet_router=*/nullptr, receive_process_thread.get(), receive_config,
-      audio_state, null_event_log.get());
+      audio_state, &null_event_log);
 
   // TODO(nisse): Update AudioSendStream to not require send_transport when a
   // MediaTransport is provided.
@@ -128,13 +128,13 @@ TEST(AudioWithMediaTransport, DeliversAudio) {
   std::unique_ptr<TaskQueueFactory> task_queue_factory =
       CreateDefaultTaskQueueFactory();
   RtpTransportControllerSend rtp_transport(
-      Clock::GetRealTimeClock(), null_event_log.get(), nullptr, nullptr,
+      Clock::GetRealTimeClock(), &null_event_log, nullptr, nullptr,
       BitrateConstraints(), ProcessThread::Create("Pacer"),
       task_queue_factory.get());
   webrtc::internal::AudioSendStream send_stream(
       Clock::GetRealTimeClock(), send_config, audio_state,
       task_queue_factory.get(), send_process_thread.get(), &rtp_transport,
-      &bitrate_allocator, null_event_log.get(),
+      &bitrate_allocator, &null_event_log,
       /*rtcp_rtt_stats=*/nullptr, absl::optional<RtpState>());
 
   audio_device->Init();  // Starts thread.

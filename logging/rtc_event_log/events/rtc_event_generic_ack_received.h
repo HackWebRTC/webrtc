@@ -16,6 +16,8 @@
 #include <memory>
 #include <vector>
 
+#include "absl/types/optional.h"
+
 namespace webrtc {
 
 struct AckedPacket {

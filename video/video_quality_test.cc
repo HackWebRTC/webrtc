@@ -1222,8 +1222,8 @@ void VideoQualityTest::RunWithAnalyzer(const Params& params) {
                                       RtcEventLog::kImmediateOutput);
     RTC_DCHECK(event_log_started);
   } else {
-    send_event_log_ = RtcEventLog::CreateNull();
-    recv_event_log_ = RtcEventLog::CreateNull();
+    send_event_log_ = absl::make_unique<RtcEventLogNull>();
+    recv_event_log_ = absl::make_unique<RtcEventLogNull>();
   }
 
   task_queue_.SendTask([this, &params, &send_transport, &recv_transport]() {
@@ -1443,8 +1443,8 @@ void VideoQualityTest::RunWithRenderers(const Params& params) {
                                       /*output_period_ms=*/5000);
     RTC_DCHECK(event_log_started);
   } else {
-    send_event_log_ = RtcEventLog::CreateNull();
-    recv_event_log_ = RtcEventLog::CreateNull();
+    send_event_log_ = absl::make_unique<RtcEventLogNull>();
+    recv_event_log_ = absl::make_unique<RtcEventLogNull>();
   }
 
   task_queue_.SendTask([&]() {

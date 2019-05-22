@@ -85,6 +85,7 @@
 #include "api/media_transport_interface.h"
 #include "api/network_state_predictor.h"
 #include "api/rtc_error.h"
+#include "api/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "api/rtc_event_log_output.h"
 #include "api/rtp_receiver_interface.h"
 #include "api/rtp_sender_interface.h"
@@ -96,7 +97,6 @@
 #include "api/transport/bitrate_settings.h"
 #include "api/transport/network_control.h"
 #include "api/turn_customizer.h"
-#include "logging/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "media/base/media_config.h"
 // TODO(bugs.webrtc.org/7447): We plan to provide a way to let applications
 // inject a PacketSocketFactory and/or NetworkManager, and not expose

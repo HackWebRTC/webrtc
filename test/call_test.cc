@@ -32,8 +32,8 @@ namespace test {
 CallTest::CallTest()
     : clock_(Clock::GetRealTimeClock()),
       task_queue_factory_(CreateDefaultTaskQueueFactory()),
-      send_event_log_(RtcEventLog::CreateNull()),
-      recv_event_log_(RtcEventLog::CreateNull()),
+      send_event_log_(absl::make_unique<RtcEventLogNull>()),
+      recv_event_log_(absl::make_unique<RtcEventLogNull>()),
       audio_send_config_(/*send_transport=*/nullptr, MediaTransportConfig()),
       audio_send_stream_(nullptr),
       frame_generator_capturer_(nullptr),
