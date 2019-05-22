@@ -18,7 +18,7 @@
 
 #include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/fake_mdns_responder.h"
+#include "rtc_base/mdns_responder_interface.h"
 #include "rtc_base/message_handler.h"
 #include "rtc_base/network.h"
 #include "rtc_base/socket_address.h"
@@ -82,13 +82,6 @@ class FakeNetworkManager : public NetworkManagerBase, public MessageHandler {
   // MessageHandler interface.
   void OnMessage(Message* msg) override { DoUpdateNetworks(); }
 
-  void CreateMdnsResponder(rtc::Thread* network_thread) {
-    if (mdns_responder_ == nullptr) {
-      mdns_responder_ =
-          absl::make_unique<webrtc::FakeMdnsResponder>(network_thread);
-    }
-  }
-
   using NetworkManagerBase::set_enumeration_permission;
   using NetworkManagerBase::set_default_local_addresses;
 
@@ -97,8 +90,9 @@ class FakeNetworkManager : public NetworkManagerBase, public MessageHandler {
     return mdns_responder_.get();
   }
 
-  webrtc::FakeMdnsResponder* GetMdnsResponderForTesting() const {
-    return mdns_responder_.get();
+  void set_mdns_responder(
+      std::unique_ptr<webrtc::MdnsResponderInterface> mdns_responder) {
+    mdns_responder_ = std::move(mdns_responder);
   }
 
  private:
@@ -134,7 +128,7 @@ class FakeNetworkManager : public NetworkManagerBase, public MessageHandler {
   int start_count_ = 0;
   bool sent_first_update_ = false;
 
-  std::unique_ptr<webrtc::FakeMdnsResponder> mdns_responder_;
+  std::unique_ptr<webrtc::MdnsResponderInterface> mdns_responder_;
 };
 
 }  // namespace rtc

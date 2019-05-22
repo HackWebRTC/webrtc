@@ -196,7 +196,7 @@ UDPPort::UDPPort(rtc::Thread* thread,
            username,
            password),
       requests_(thread),
-      socket_(NULL),
+      socket_(nullptr),
       error_(0),
       ready_(false),
       stun_keepalive_delay_(STUN_KEEPALIVE_INTERVAL),
@@ -208,7 +208,7 @@ UDPPort::UDPPort(rtc::Thread* thread,
 bool UDPPort::Init() {
   stun_keepalive_lifetime_ = GetStunKeepaliveLifetime();
   if (!SharedSocket()) {
-    RTC_DCHECK(socket_ == NULL);
+    RTC_DCHECK(socket_ == nullptr);
     socket_ = socket_factory()->CreateUdpSocket(
         rtc::SocketAddress(Network()->GetBestIP(), 0), min_port(), max_port());
     if (!socket_) {
@@ -250,17 +250,35 @@ void UDPPort::MaybePrepareStunCandidate() {
 Connection* UDPPort::CreateConnection(const Candidate& address,
                                       CandidateOrigin origin) {
   if (!SupportsProtocol(address.protocol())) {
-    return NULL;
+    return nullptr;
   }
 
   if (!IsCompatibleAddress(address.address())) {
-    return NULL;
+    return nullptr;
   }
 
-  if (SharedSocket() && Candidates()[0].type() != LOCAL_PORT_TYPE) {
+  // In addition to DCHECK-ing the non-emptiness of local candidates, we also
+  // skip this Port with null if there are latent bugs to violate it; otherwise
+  // it would lead to a crash when accessing the local candidate of the
+  // connection that would be created below.
+  if (Candidates().empty()) {
     RTC_NOTREACHED();
-    return NULL;
+    return nullptr;
   }
+  // When the socket is shared, the srflx candidate is gathered by the UDPPort.
+  // The assumption here is that
+  //  1) if the IP concealment with mDNS is not enabled, the gathering of the
+  //     host candidate of this port (which is synchronous),
+  //  2) or otherwise if enabled, the start of name registration of the host
+  //     candidate (as the start of asynchronous gathering)
+  // is always before the gathering of a srflx candidate (and any prflx
+  // candidate).
+  //
+  // See also the definition of MdnsNameRegistrationStatus::kNotStarted in
+  // port.h.
+  RTC_DCHECK(!SharedSocket() || Candidates()[0].type() == LOCAL_PORT_TYPE ||
+             mdns_name_registration_status() !=
+                 MdnsNameRegistrationStatus::kNotStarted);
 
   Connection* conn = new ProxyConnection(this, 0, address);
   AddOrReplaceConnection(conn);
@@ -418,7 +436,7 @@ void UDPPort::ResolveStunAddress(const rtc::SocketAddress& stun_addr) {
 }
 
 void UDPPort::OnResolveResult(const rtc::SocketAddress& input, int error) {
-  RTC_DCHECK(resolver_.get() != NULL);
+  RTC_DCHECK(resolver_.get() != nullptr);
 
   rtc::SocketAddress resolved;
   if (error != 0 || !resolver_->GetResolvedAddress(

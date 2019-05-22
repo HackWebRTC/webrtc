@@ -33,6 +33,7 @@
 #include "pc/test/mock_peer_connection_observers.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/fake_mdns_responder.h"
 #include "rtc_base/fake_network.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/ref_counted_object.h"
@@ -245,7 +246,8 @@ class PeerConnectionUsageHistogramTest : public ::testing::Test {
     webrtc::PeerConnectionDependencies deps(nullptr /* observer_in */);
 
     auto fake_network = NewFakeNetwork();
-    fake_network->CreateMdnsResponder(rtc::Thread::Current());
+    fake_network->set_mdns_responder(
+        absl::make_unique<webrtc::FakeMdnsResponder>(rtc::Thread::Current()));
     fake_network->AddInterface(NextLocalAddress());
 
     std::unique_ptr<cricket::BasicPortAllocator> port_allocator(
