@@ -511,13 +511,6 @@ int32_t ModuleRtpRtcpImpl::SendRTCP(RTCPPacketType packet_type) {
   return rtcp_sender_.SendRTCP(GetFeedbackState(), packet_type);
 }
 
-// Force a send of an RTCP packet.
-// Normal SR and RR are triggered via the process function.
-int32_t ModuleRtpRtcpImpl::SendCompoundRTCP(
-    const std::set<RTCPPacketType>& packet_types) {
-  return rtcp_sender_.SendCompoundRTCP(GetFeedbackState(), packet_types);
-}
-
 int32_t ModuleRtpRtcpImpl::SetRTCPApplicationSpecificData(
     const uint8_t sub_type,
     const uint32_t name,

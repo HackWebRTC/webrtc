@@ -386,27 +386,6 @@ TEST_F(RtpRtcpImplTest, RtcpPacketTypeCounter_Nack) {
   EXPECT_GT(sender_.RtcpReceived().first_packet_time_ms, -1);
 }
 
-TEST_F(RtpRtcpImplTest, RtcpPacketTypeCounter_FirAndPli) {
-  EXPECT_EQ(0U, sender_.RtcpReceived().fir_packets);
-  EXPECT_EQ(0U, receiver_.RtcpSent().fir_packets);
-  // Receive module sends a FIR.
-  EXPECT_EQ(0, receiver_.impl_->SendRTCP(kRtcpFir));
-  EXPECT_EQ(1U, receiver_.RtcpSent().fir_packets);
-  // Send module receives the FIR.
-  EXPECT_EQ(1U, sender_.RtcpReceived().fir_packets);
-
-  // Receive module sends a FIR and PLI.
-  std::set<RTCPPacketType> packet_types;
-  packet_types.insert(kRtcpFir);
-  packet_types.insert(kRtcpPli);
-  EXPECT_EQ(0, receiver_.impl_->SendCompoundRTCP(packet_types));
-  EXPECT_EQ(2U, receiver_.RtcpSent().fir_packets);
-  EXPECT_EQ(1U, receiver_.RtcpSent().pli_packets);
-  // Send module receives the FIR and PLI.
-  EXPECT_EQ(2U, sender_.RtcpReceived().fir_packets);
-  EXPECT_EQ(1U, sender_.RtcpReceived().pli_packets);
-}
-
 TEST_F(RtpRtcpImplTest, AddStreamDataCounters) {
   StreamDataCounters rtp;
   const int64_t kStartTimeMs = 1;

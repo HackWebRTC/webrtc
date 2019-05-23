@@ -331,12 +331,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   // Returns -1 on failure else 0.
   virtual int32_t SendRTCP(RTCPPacketType rtcp_packet_type) = 0;
 
-  // Forces a send of a RTCP packet with more than one packet type.
-  // periodic SR and RR are triggered via the process function
-  // Returns -1 on failure else 0.
-  virtual int32_t SendCompoundRTCP(
-      const std::set<RTCPPacketType>& rtcp_packet_types) = 0;
-
   // Returns statistics of the amount of data sent.
   // Returns -1 on failure else 0.
   virtual int32_t DataCountersRTP(size_t* bytes_sent,
