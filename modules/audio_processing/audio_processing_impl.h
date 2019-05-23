@@ -221,14 +221,7 @@ class AudioProcessingImpl : public AudioProcessing {
   // that the capture thread blocks the render thread.
   // The struct is modified in a single-threaded manner by holding both the
   // render and capture locks.
-  int MaybeInitialize(const ProcessingConfig& config, bool force_initialization)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
-
   int MaybeInitializeRender(const ProcessingConfig& processing_config)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
-
-  int MaybeInitializeCapture(const ProcessingConfig& processing_config,
-                             bool force_initialization)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_render_);
 
   // Method for updating the state keeping track of the active submodules.
