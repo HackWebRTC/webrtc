@@ -12,10 +12,10 @@
 
 #include <string.h>
 
-#include <DXGI.h>
-#include <DXGIFormat.h>
-#include <Windows.h>
+#include <dxgi.h>
+#include <dxgiformat.h>
 #include <unknwn.h>
+#include <windows.h>
 
 #include <algorithm>
 
