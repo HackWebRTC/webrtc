@@ -304,25 +304,6 @@ std::unique_ptr<AudioEncoder> AudioEncoderOpusImpl::MakeAudioEncoder(
   return absl::make_unique<AudioEncoderOpusImpl>(config, payload_type);
 }
 
-absl::optional<AudioCodecInfo> AudioEncoderOpusImpl::QueryAudioEncoder(
-    const SdpAudioFormat& format) {
-  if (absl::EqualsIgnoreCase(format.name, GetPayloadName()) &&
-      format.clockrate_hz == kRtpTimestampRateHz && format.num_channels == 2) {
-    const size_t num_channels = GetChannelCount(format);
-    const int bitrate =
-        CalculateBitrate(GetMaxPlaybackRate(format), num_channels,
-                         GetFormatParameter(format, "maxaveragebitrate"));
-    AudioCodecInfo info(kRtpTimestampRateHz, num_channels, bitrate,
-                        AudioEncoderOpusConfig::kMinBitrateBps,
-                        AudioEncoderOpusConfig::kMaxBitrateBps);
-    info.allow_comfort_noise = false;
-    info.supports_network_adaption = true;
-
-    return info;
-  }
-  return absl::nullopt;
-}
-
 absl::optional<AudioEncoderOpusConfig> AudioEncoderOpusImpl::SdpToConfig(
     const SdpAudioFormat& format) {
   if (!absl::EqualsIgnoreCase(format.name, "opus") ||
