@@ -278,7 +278,8 @@ TEST_F(RtpVideoStreamReceiverTest, CacheColorSpaceFromLastPacketOfKeyframe) {
   codec.plType = kPayloadType;
   codec.codecType = kVideoCodecVP9;
   std::map<std::string, std::string> codec_params;
-  rtp_video_stream_receiver_->AddReceiveCodec(codec, codec_params);
+  rtp_video_stream_receiver_->AddReceiveCodec(codec, codec_params,
+                                              /*raw_payload=*/false);
 
   // Generate key frame packets.
   received_packet_generator.SetPayload(kKeyFramePayload,
@@ -345,7 +346,7 @@ TEST_F(RtpVideoStreamReceiverTest, NoInfiniteRecursionOnEncapsulatedRedPacket) {
   const uint8_t kRedPayloadType = 125;
   VideoCodec codec;
   codec.plType = kRedPayloadType;
-  rtp_video_stream_receiver_->AddReceiveCodec(codec, {});
+  rtp_video_stream_receiver_->AddReceiveCodec(codec, {}, /*raw_payload=*/false);
   const std::vector<uint8_t> data({
       0x80,              // RTP version.
       kRedPayloadType,   // Payload type.
@@ -469,7 +470,8 @@ TEST_P(RtpVideoStreamReceiverTestH264, OutOfBandFmtpSpsPps) {
   // .
   codec_params.insert(
       {cricket::kH264FmtpSpropParameterSets, "Z0IACpZTBYmI,aMljiA=="});
-  rtp_video_stream_receiver_->AddReceiveCodec(codec, codec_params);
+  rtp_video_stream_receiver_->AddReceiveCodec(codec, codec_params,
+                                              /*raw_payload=*/false);
   const uint8_t binary_sps[] = {0x67, 0x42, 0x00, 0x0a, 0x96,
                                 0x53, 0x05, 0x89, 0x88};
   mock_on_complete_frame_callback_.AppendExpectedBitstream(
@@ -683,7 +685,7 @@ TEST_P(RtpVideoStreamReceiverGenericDescriptorTest,
 
   VideoCodec codec;
   codec.plType = kPayloadType;
-  rtp_video_stream_receiver_->AddReceiveCodec(codec, {});
+  rtp_video_stream_receiver_->AddReceiveCodec(codec, {}, /*raw_payload=*/false);
   rtp_video_stream_receiver_->StartReceive();
 
   RtpHeaderExtensionMap extension_map;
@@ -731,7 +733,7 @@ TEST_P(RtpVideoStreamReceiverGenericDescriptorTest,
 
   VideoCodec codec;
   codec.plType = kPayloadType;
-  rtp_video_stream_receiver_->AddReceiveCodec(codec, {});
+  rtp_video_stream_receiver_->AddReceiveCodec(codec, {}, /*raw_payload=*/false);
   rtp_video_stream_receiver_->StartReceive();
 
   RtpHeaderExtensionMap extension_map;
@@ -792,7 +794,7 @@ TEST_F(RtpVideoStreamReceiverGenericDescriptorTest,
 
   VideoCodec codec;
   codec.plType = kPayloadType;
-  rtp_video_stream_receiver_->AddReceiveCodec(codec, {});
+  rtp_video_stream_receiver_->AddReceiveCodec(codec, {}, /*raw_payload=*/false);
   rtp_video_stream_receiver_->StartReceive();
 
   RtpHeaderExtensionMap extension_map;
@@ -821,6 +823,41 @@ TEST_F(RtpVideoStreamReceiverGenericDescriptorTest,
 
   EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame).Times(0);
 
+  rtp_video_stream_receiver_->OnRtpPacket(rtp_packet);
+}
+
+TEST_P(RtpVideoStreamReceiverGenericDescriptorTest,
+       ParseGenericDescriptorRawPayload) {
+  const int version = GetParam();
+
+  const std::vector<uint8_t> data = {0, 1, 2, 3, 4};
+  const int kPayloadType = 123;
+
+  VideoCodec codec;
+  codec.plType = kPayloadType;
+  rtp_video_stream_receiver_->AddReceiveCodec(codec, {}, /*raw_payload=*/true);
+  rtp_video_stream_receiver_->StartReceive();
+
+  RtpHeaderExtensionMap extension_map;
+  RegisterRtpGenericFrameDescriptorExtension(&extension_map, version);
+  RtpPacketReceived rtp_packet(&extension_map);
+
+  RtpGenericFrameDescriptor generic_descriptor;
+  generic_descriptor.SetFirstPacketInSubFrame(true);
+  generic_descriptor.SetLastPacketInSubFrame(true);
+  ASSERT_TRUE(SetExtensionRtpGenericFrameDescriptorExtension(
+      generic_descriptor, &rtp_packet, version));
+
+  uint8_t* payload = rtp_packet.SetPayloadSize(data.size());
+  memcpy(payload, data.data(), data.size());
+  mock_on_complete_frame_callback_.AppendExpectedBitstream(data.data(),
+                                                           data.size());
+
+  rtp_packet.SetMarker(true);
+  rtp_packet.SetPayloadType(kPayloadType);
+  rtp_packet.SetSequenceNumber(1);
+
+  EXPECT_CALL(mock_on_complete_frame_callback_, DoOnCompleteFrame);
   rtp_video_stream_receiver_->OnRtpPacket(rtp_packet);
 }
 

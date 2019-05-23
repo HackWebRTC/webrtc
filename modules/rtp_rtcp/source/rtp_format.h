@@ -15,6 +15,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
@@ -32,8 +33,10 @@ class RtpPacketizer {
     // Reduction len for packet that is first & last at the same time.
     int single_packet_reduction_len = 0;
   };
+
+  // If type is not set, returns a raw packetizer.
   static std::unique_ptr<RtpPacketizer> Create(
-      VideoCodecType type,
+      absl::optional<VideoCodecType> type,
       rtc::ArrayView<const uint8_t> payload,
       PayloadSizeLimits limits,
       // Codec-specific details.
@@ -79,7 +82,8 @@ class RtpDepacketizer {
     size_t payload_length;
   };
 
-  static RtpDepacketizer* Create(VideoCodecType type);
+  // If type is not set, returns a raw depacketizer.
+  static RtpDepacketizer* Create(absl::optional<VideoCodecType> type);
 
   virtual ~RtpDepacketizer() {}
 

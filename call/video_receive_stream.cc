@@ -125,6 +125,11 @@ std::string VideoReceiveStream::Config::Rtp::ToString() const {
     ss << kv.first << " (pt) -> " << kv.second << " (apt), ";
   }
   ss << '}';
+  ss << ", raw_payload_types: {";
+  for (const auto& pt : raw_payload_types) {
+    ss << pt << ", ";
+  }
+  ss << '}';
   ss << ", extensions: [";
   for (size_t i = 0; i < extensions.size(); ++i) {
     ss << extensions[i].ToString();

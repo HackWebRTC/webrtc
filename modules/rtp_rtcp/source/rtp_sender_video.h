@@ -71,7 +71,9 @@ class RTPSenderVideo {
                  const RTPVideoHeader* video_header,
                  int64_t expected_retransmission_time_ms);
 
-  void RegisterPayloadType(int8_t payload_type, absl::string_view payload_name);
+  void RegisterPayloadType(int8_t payload_type,
+                           absl::string_view payload_name,
+                           bool raw_payload);
 
   // Set RED and ULPFEC payload types. A payload type of -1 means that the
   // corresponding feature is turned off. Note that we DO NOT support enabling
@@ -162,7 +164,7 @@ class RTPSenderVideo {
   // Maps payload type to codec type, for packetization.
   // TODO(nisse): Set on construction, to avoid lock.
   rtc::CriticalSection payload_type_crit_;
-  std::map<int8_t, VideoCodecType> payload_type_map_
+  std::map<int8_t, absl::optional<VideoCodecType>> payload_type_map_
       RTC_GUARDED_BY(payload_type_crit_);
 
   // Should never be held when calling out of this class.

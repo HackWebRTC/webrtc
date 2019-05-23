@@ -367,8 +367,11 @@ void VideoReceiveStream::Start() {
     video_receiver_.RegisterExternalDecoder(video_decoders_.back().get(),
                                             decoder.payload_type);
     VideoCodec codec = CreateDecoderVideoCodec(decoder);
-    rtp_video_stream_receiver_.AddReceiveCodec(codec,
-                                               decoder.video_format.parameters);
+
+    const bool raw_payload =
+        config_.rtp.raw_payload_types.count(codec.plType) > 0;
+    rtp_video_stream_receiver_.AddReceiveCodec(
+        codec, decoder.video_format.parameters, raw_payload);
     RTC_CHECK_EQ(VCM_OK, video_receiver_.RegisterReceiveCodec(
                              &codec, num_cpu_cores_, false));
   }

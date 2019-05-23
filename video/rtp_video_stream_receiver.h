@@ -82,7 +82,8 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   ~RtpVideoStreamReceiver() override;
 
   void AddReceiveCodec(const VideoCodec& video_codec,
-                       const std::map<std::string, std::string>& codec_params);
+                       const std::map<std::string, std::string>& codec_params,
+                       bool raw_payload);
 
   void StartReceive();
   void StopReceive();
@@ -214,7 +215,9 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
       RTC_GUARDED_BY(last_seq_num_cs_);
   video_coding::H264SpsPpsTracker tracker_;
 
-  std::map<uint8_t, VideoCodecType> pt_codec_type_;
+  // Maps payload type to codec type, for packetization.
+  std::map<uint8_t, absl::optional<VideoCodecType>> payload_type_map_;
+
   // TODO(johan): Remove pt_codec_params_ once
   // https://bugs.chromium.org/p/webrtc/issues/detail?id=6883 is resolved.
   // Maps a payload type to a map of out-of-band supplied codec parameters.

@@ -76,6 +76,7 @@ std::string RtpConfig::ToString() const {
   ss << ", ulpfec: " << ulpfec.ToString();
   ss << ", payload_name: " << payload_name;
   ss << ", payload_type: " << payload_type;
+  ss << ", raw_payload: " << (raw_payload ? "true" : "false");
 
   ss << ", flexfec: {payload_type: " << flexfec.payload_type;
   ss << ", ssrc: " << flexfec.ssrc;

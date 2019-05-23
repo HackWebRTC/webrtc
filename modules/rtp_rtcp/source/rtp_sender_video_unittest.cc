@@ -163,7 +163,8 @@ class RtpSenderVideoTest : public ::testing::TestWithParam<bool> {
     rtp_sender_.SetTimestampOffset(0);
     rtp_sender_.SetSSRC(kSsrc);
 
-    rtp_sender_video_.RegisterPayloadType(kPayload, "generic");
+    rtp_sender_video_.RegisterPayloadType(kPayload, "generic",
+                                          /*raw_payload=*/false);
   }
 
   void PopulateGenericFrameDescriptor(int version);
@@ -618,7 +619,7 @@ void RtpSenderVideoTest::
   vp8.keyIdx = 2;
   RTPVideoHeader::GenericDescriptorInfo& generic = hdr.generic.emplace();
   generic.frame_id = kFrameId;
-  rtp_sender_video_.RegisterPayloadType(kPayload, "vp8");
+  rtp_sender_video_.RegisterPayloadType(kPayload, "vp8", /*raw_payload=*/false);
   rtp_sender_video_.SendVideo(VideoFrameType::kVideoFrameDelta, kPayload,
                               kTimestamp, 0, kFrame, sizeof(kFrame), nullptr,
                               &hdr, kDefaultExpectedRetransmissionTimeMs);
