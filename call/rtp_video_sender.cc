@@ -188,19 +188,13 @@ std::unique_ptr<FlexfecSender> MaybeCreateFlexfecSender(
       RTPSender::FecExtensionSizes(), rtp_state, clock);
 }
 
-uint32_t CalculateOverheadRateBps(int packets_per_second,
-                                  size_t overhead_bytes_per_packet,
-                                  uint32_t max_overhead_bps) {
-  uint32_t overhead_bps =
-      static_cast<uint32_t>(8 * overhead_bytes_per_packet * packets_per_second);
-  return std::min(overhead_bps, max_overhead_bps);
-}
-
-int CalculatePacketRate(uint32_t bitrate_bps, size_t packet_size_bytes) {
-  size_t packet_size_bits = 8 * packet_size_bytes;
-  // Ceil for int value of bitrate_bps / packet_size_bits.
-  return static_cast<int>((bitrate_bps + packet_size_bits - 1) /
-                          packet_size_bits);
+DataRate CalculateMinOverheadRate(DataRate bitrate,
+                                  DataSize overhead_per_packet,
+                                  DataSize max_packet_size) {
+  TimeDelta packet_interval = max_packet_size / bitrate;
+  int packets_per_second =
+      rtc::dchecked_cast<int>(std::ceil(1 / packet_interval.seconds<double>()));
+  return packets_per_second * overhead_per_packet / TimeDelta::Seconds<1>();
 }
 }  // namespace
 
@@ -686,16 +680,17 @@ void RtpVideoSender::OnBitrateUpdated(uint32_t bitrate_bps,
                                       int framerate) {
   // Substract overhead from bitrate.
   rtc::CritScope lock(&crit_);
+  DataSize packet_overhead = DataSize::bytes(
+      overhead_bytes_per_packet_ + transport_overhead_bytes_per_packet_);
+  DataSize max_total_packet_size = DataSize::bytes(
+      rtp_config_.max_packet_size + transport_overhead_bytes_per_packet_);
   uint32_t payload_bitrate_bps = bitrate_bps;
   if (send_side_bwe_with_overhead_) {
-    uint32_t overhead_bps = CalculateOverheadRateBps(
-        CalculatePacketRate(
-            bitrate_bps,
-            rtp_config_.max_packet_size + transport_overhead_bytes_per_packet_),
-        overhead_bytes_per_packet_ + transport_overhead_bytes_per_packet_,
-        bitrate_bps);
-    RTC_DCHECK_LE(overhead_bps, bitrate_bps);
-    payload_bitrate_bps = bitrate_bps - overhead_bps;
+    DataRate overhead_rate = CalculateMinOverheadRate(
+        DataRate::bps(bitrate_bps), packet_overhead, max_total_packet_size);
+    // TODO(srte): We probably should not accept 0 payload bitrate here.
+    payload_bitrate_bps =
+        rtc::saturated_cast<uint32_t>(bitrate_bps - overhead_rate.bps());
   }
 
   // Get the encoder target rate. It is the estimated network rate -
@@ -716,18 +711,16 @@ void RtpVideoSender::OnBitrateUpdated(uint32_t bitrate_bps,
 
   loss_mask_vector_.clear();
 
-  uint32_t encoder_overhead_rate_bps =
-      send_side_bwe_with_overhead_
-          ? CalculateOverheadRateBps(
-                CalculatePacketRate(encoder_target_rate_bps_,
-                                    rtp_config_.max_packet_size +
-                                        transport_overhead_bytes_per_packet_ -
-                                        overhead_bytes_per_packet_),
-                overhead_bytes_per_packet_ +
-                    transport_overhead_bytes_per_packet_,
-                bitrate_bps - encoder_target_rate_bps_)
-          : 0;
-
+  uint32_t encoder_overhead_rate_bps = 0;
+  if (send_side_bwe_with_overhead_) {
+    // TODO(srte): The packet size should probably match the one used above.
+    DataRate encoder_overhead_rate = CalculateMinOverheadRate(
+        DataRate::bps(encoder_target_rate_bps_), packet_overhead,
+        max_total_packet_size - DataSize::bytes(overhead_bytes_per_packet_));
+    encoder_overhead_rate_bps =
+        std::min(encoder_overhead_rate.bps<uint32_t>(),
+                 bitrate_bps - encoder_target_rate_bps_);
+  }
   // When the field trial "WebRTC-SendSideBwe-WithOverhead" is enabled
   // protection_bitrate includes overhead.
   const uint32_t media_rate = encoder_target_rate_bps_ +
