@@ -34,6 +34,8 @@ class AudioAllocationSettings {
   // configured.
   bool ShouldSendTransportSequenceNumber(
       int transport_seq_num_extension_header_id) const;
+  // Returns true if audio should request ALR probing from network controller.
+  bool RequestAlrProbing() const;
   // Returns true if audio should be added to rate allocation when the audio
   // stream is started.
   // |min_bitrate_bps| the configured min bitrate, set to -1 if unset.
@@ -80,6 +82,7 @@ class AudioAllocationSettings {
   FieldTrialFlag audio_send_side_bwe_;
   FieldTrialFlag allocate_audio_without_feedback_;
   FieldTrialFlag force_no_audio_feedback_;
+  FieldTrialFlag disable_audio_alr_request_;
   FieldTrialFlag send_side_bwe_with_overhead_;
   int min_overhead_bps_ = 0;
   // Field Trial configured bitrates to use as overrides over default/user

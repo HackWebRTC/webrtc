@@ -284,7 +284,11 @@ void AudioSendStream::ConfigureStream(
       // send side congestion control, wich depends on feedback packets which
       // requires transport sequence numbers to be enabled.
       if (stream->rtp_transport_) {
-        stream->rtp_transport_->EnablePeriodicAlrProbing(true);
+        // Optionally request ALR probing but do not override any existing
+        // request from other streams.
+        if (stream->allocation_settings_.RequestAlrProbing()) {
+          stream->rtp_transport_->EnablePeriodicAlrProbing(true);
+        }
         bandwidth_observer = stream->rtp_transport_->GetBandwidthObserver();
       }
     }

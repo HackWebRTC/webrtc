@@ -17,10 +17,11 @@ namespace {
 constexpr int kOverheadPerPacket = 20 + 8 + 10 + 12;
 }  // namespace
 AudioAllocationSettings::AudioAllocationSettings()
-    : audio_send_side_bwe_("Enabled"),
-      allocate_audio_without_feedback_("Enabled"),
-      force_no_audio_feedback_("Enabled"),
-      send_side_bwe_with_overhead_("Enabled"),
+    : audio_send_side_bwe_(/*Flag key*/ "Enabled"),
+      allocate_audio_without_feedback_(/*Flag key*/ "Enabled"),
+      force_no_audio_feedback_(/*Flag key*/ "Enabled"),
+      disable_audio_alr_request_(/*Flag key*/ "Disabled"),
+      send_side_bwe_with_overhead_(/*Flag key*/ "Enabled"),
       min_bitrate_("min"),
       max_bitrate_("max"),
       priority_bitrate_("prio_rate", DataRate::Zero()),
@@ -31,6 +32,8 @@ AudioAllocationSettings::AudioAllocationSettings()
                   field_trial::FindFullName("WebRTC-Audio-ABWENoTWCC"));
   ParseFieldTrial({&force_no_audio_feedback_},
                   field_trial::FindFullName("WebRTC-Audio-ForceNoTWCC"));
+  ParseFieldTrial({&disable_audio_alr_request_},
+                  field_trial::FindFullName("WebRTC-Audio-AlrProbing"));
 
   ParseFieldTrial({&send_side_bwe_with_overhead_},
                   field_trial::FindFullName("WebRTC-SendSideBwe-WithOverhead"));
@@ -66,6 +69,10 @@ bool AudioAllocationSettings::ShouldSendTransportSequenceNumber(
     return false;
   return audio_send_side_bwe_ && !allocate_audio_without_feedback_ &&
          transport_seq_num_extension_header_id != 0;
+}
+
+bool AudioAllocationSettings::RequestAlrProbing() const {
+  return !disable_audio_alr_request_;
 }
 
 bool AudioAllocationSettings::IncludeAudioInAllocationOnStart(
