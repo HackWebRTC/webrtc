@@ -207,7 +207,7 @@ bool JsepSessionDescription::Initialize(
 
 bool JsepSessionDescription::AddCandidate(
     const IceCandidateInterface* candidate) {
-  if (!candidate || candidate->sdp_mline_index() < 0)
+  if (!candidate)
     return false;
   size_t mediasection_index = 0;
   if (!GetMediasectionIndex(candidate, &mediasection_index)) {
@@ -291,7 +291,18 @@ bool JsepSessionDescription::GetMediasectionIndex(
   if (!candidate || !index) {
     return false;
   }
-  *index = static_cast<size_t>(candidate->sdp_mline_index());
+
+  // If the candidate has no valid mline index or sdp_mid, it is impossible
+  // to find a match.
+  if (candidate->sdp_mid().empty() &&
+      (candidate->sdp_mline_index() < 0 ||
+       static_cast<size_t>(candidate->sdp_mline_index()) >=
+           description_->contents().size())) {
+    return false;
+  }
+
+  if (candidate->sdp_mline_index() >= 0)
+    *index = static_cast<size_t>(candidate->sdp_mline_index());
   if (description_ && !candidate->sdp_mid().empty()) {
     bool found = false;
     // Try to match the sdp_mid with content name.

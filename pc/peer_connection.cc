@@ -6172,21 +6172,18 @@ bool PeerConnection::UseCandidatesInSessionDescription(
 }
 
 bool PeerConnection::UseCandidate(const IceCandidateInterface* candidate) {
-  size_t mediacontent_index = static_cast<size_t>(candidate->sdp_mline_index());
-  size_t remote_content_size =
-      remote_description()->description()->contents().size();
-  if (mediacontent_index >= remote_content_size) {
-    RTC_LOG(LS_ERROR) << "UseCandidate: Invalid candidate media index.";
+  RTCErrorOr<const cricket::ContentInfo*> result =
+      FindContentInfo(remote_description(), candidate);
+  if (!result.ok()) {
+    RTC_LOG(LS_ERROR) << "UseCandidate: Invalid candidate. "
+                      << result.error().message();
     return false;
   }
-
-  cricket::ContentInfo content =
-      remote_description()->description()->contents()[mediacontent_index];
   std::vector<cricket::Candidate> candidates;
   candidates.push_back(candidate->candidate());
   // Invoking BaseSession method to handle remote candidates.
-  RTCError error =
-      transport_controller_->AddRemoteCandidates(content.name, candidates);
+  RTCError error = transport_controller_->AddRemoteCandidates(
+      result.value()->name, candidates);
   if (error.ok()) {
     // Candidates successfully submitted for checking.
     if (ice_connection_state_ == PeerConnectionInterface::kIceConnectionNew ||
@@ -6207,6 +6204,42 @@ bool PeerConnection::UseCandidate(const IceCandidateInterface* candidate) {
     RTC_LOG(LS_WARNING) << error.message();
   }
   return true;
+}
+
+RTCErrorOr<const cricket::ContentInfo*> PeerConnection::FindContentInfo(
+    const SessionDescriptionInterface* description,
+    const IceCandidateInterface* candidate) {
+  if (candidate->sdp_mline_index() >= 0) {
+    size_t mediacontent_index =
+        static_cast<size_t>(candidate->sdp_mline_index());
+    size_t content_size = description->description()->contents().size();
+    if (mediacontent_index < content_size) {
+      return &description->description()->contents()[mediacontent_index];
+    } else {
+      return RTCError(RTCErrorType::INVALID_RANGE,
+                      "Media line index (" +
+                          rtc::ToString(candidate->sdp_mline_index()) +
+                          ") out of range (number of mlines: " +
+                          rtc::ToString(content_size) + ").");
+    }
+  } else if (!candidate->sdp_mid().empty()) {
+    auto& contents = description->description()->contents();
+    auto it = absl::c_find_if(
+        contents, [candidate](const cricket::ContentInfo& content_info) {
+          return content_info.mid() == candidate->sdp_mid();
+        });
+    if (it == contents.end()) {
+      return RTCError(
+          RTCErrorType::INVALID_PARAMETER,
+          "Mid " + candidate->sdp_mid() +
+              " specified but no media section with that mid found.");
+    } else {
+      return &*it;
+    }
+  }
+
+  return RTCError(RTCErrorType::INVALID_PARAMETER,
+                  "Neither sdp_mline_index nor sdp_mid specified.");
 }
 
 void PeerConnection::RemoveUnusedChannels(const SessionDescription* desc) {
@@ -6838,26 +6871,18 @@ bool PeerConnection::ReadyToUseRemoteCandidate(
     return false;
   }
 
-  size_t mediacontent_index = static_cast<size_t>(candidate->sdp_mline_index());
-  size_t remote_content_size =
-      current_remote_desc->description()->contents().size();
-  if (mediacontent_index >= remote_content_size) {
-    RTC_LOG(LS_ERROR)
-        << "ReadyToUseRemoteCandidate: Invalid candidate media index "
-        << mediacontent_index;
+  RTCErrorOr<const cricket::ContentInfo*> result =
+      FindContentInfo(current_remote_desc, candidate);
+  if (!result.ok()) {
+    RTC_LOG(LS_ERROR) << "ReadyToUseRemoteCandidate: Invalid candidate. "
+                      << result.error().message();
 
     *valid = false;
     return false;
   }
 
-  cricket::ContentInfo content =
-      current_remote_desc->description()->contents()[mediacontent_index];
-
-  const std::string transport_name = GetTransportName(content.name);
-  if (transport_name.empty()) {
-    return false;
-  }
-  return true;
+  std::string transport_name = GetTransportName(result.value()->name);
+  return !transport_name.empty();
 }
 
 bool PeerConnection::SrtpRequired() const {

@@ -911,6 +911,9 @@ class PeerConnection : public PeerConnectionInternal,
   // Uses |candidate| in this session.
   bool UseCandidate(const IceCandidateInterface* candidate)
       RTC_RUN_ON(signaling_thread());
+  RTCErrorOr<const cricket::ContentInfo*> FindContentInfo(
+      const SessionDescriptionInterface* description,
+      const IceCandidateInterface* candidate) RTC_RUN_ON(signaling_thread());
   // Deletes the corresponding channel of contents that don't exist in |desc|.
   // |desc| can be null. This means that all channels are deleted.
   void RemoveUnusedChannels(const cricket::SessionDescription* desc)
