@@ -66,7 +66,7 @@ WEBRTC_DEFINE_string(
 
 #endif
 
-WEBRTC_DEFINE_bool(logs, false, "print logs to stderr");
+WEBRTC_DEFINE_bool(logs, true, "print logs to stderr");
 WEBRTC_DEFINE_bool(verbose, false, "verbose logs to stderr");
 
 WEBRTC_DEFINE_string(
