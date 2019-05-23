@@ -17,26 +17,19 @@ namespace {
 constexpr int kOverheadPerPacket = 20 + 8 + 10 + 12;
 }  // namespace
 AudioAllocationSettings::AudioAllocationSettings()
-    : audio_send_side_bwe_(/*Flag key*/ "Enabled"),
-      allocate_audio_without_feedback_(/*Flag key*/ "Enabled"),
-      force_no_audio_feedback_(/*Flag key*/ "Enabled"),
-      disable_audio_alr_request_(/*Flag key*/ "Disabled"),
-      send_side_bwe_with_overhead_(/*Flag key*/ "Enabled"),
+    : audio_send_side_bwe_(field_trial::IsEnabled("WebRTC-Audio-SendSideBwe")),
+      allocate_audio_without_feedback_(
+          field_trial::IsEnabled("WebRTC-Audio-ABWENoTWCC")),
+      force_no_audio_feedback_(
+          field_trial::IsEnabled("WebRTC-Audio-ForceNoTWCC")),
+      enable_audio_alr_probing_(
+          !field_trial::IsDisabled("WebRTC-Audio-AlrProbing")),
+      send_side_bwe_with_overhead_(
+          field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")),
       min_bitrate_("min"),
       max_bitrate_("max"),
       priority_bitrate_("prio_rate", DataRate::Zero()),
       bitrate_priority_("rate_prio") {
-  ParseFieldTrial({&audio_send_side_bwe_},
-                  field_trial::FindFullName("WebRTC-Audio-SendSideBwe"));
-  ParseFieldTrial({&allocate_audio_without_feedback_},
-                  field_trial::FindFullName("WebRTC-Audio-ABWENoTWCC"));
-  ParseFieldTrial({&force_no_audio_feedback_},
-                  field_trial::FindFullName("WebRTC-Audio-ForceNoTWCC"));
-  ParseFieldTrial({&disable_audio_alr_request_},
-                  field_trial::FindFullName("WebRTC-Audio-AlrProbing"));
-
-  ParseFieldTrial({&send_side_bwe_with_overhead_},
-                  field_trial::FindFullName("WebRTC-SendSideBwe-WithOverhead"));
   ParseFieldTrial(
       {&min_bitrate_, &max_bitrate_, &priority_bitrate_, &bitrate_priority_},
       field_trial::FindFullName("WebRTC-Audio-Allocation"));
@@ -72,7 +65,7 @@ bool AudioAllocationSettings::ShouldSendTransportSequenceNumber(
 }
 
 bool AudioAllocationSettings::RequestAlrProbing() const {
-  return !disable_audio_alr_request_;
+  return enable_audio_alr_probing_;
 }
 
 bool AudioAllocationSettings::IncludeAudioInAllocationOnStart(

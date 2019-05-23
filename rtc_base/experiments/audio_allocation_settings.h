@@ -79,11 +79,11 @@ class AudioAllocationSettings {
   absl::optional<double> BitratePriority() const;
 
  private:
-  FieldTrialFlag audio_send_side_bwe_;
-  FieldTrialFlag allocate_audio_without_feedback_;
-  FieldTrialFlag force_no_audio_feedback_;
-  FieldTrialFlag disable_audio_alr_request_;
-  FieldTrialFlag send_side_bwe_with_overhead_;
+  const bool audio_send_side_bwe_;
+  const bool allocate_audio_without_feedback_;
+  const bool force_no_audio_feedback_;
+  const bool enable_audio_alr_probing_;
+  const bool send_side_bwe_with_overhead_;
   int min_overhead_bps_ = 0;
   // Field Trial configured bitrates to use as overrides over default/user
   // configured bitrate range when audio bitrate allocation is enabled.
