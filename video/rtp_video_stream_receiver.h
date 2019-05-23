@@ -58,6 +58,7 @@ class UlpfecReceiver;
 class RtpVideoStreamReceiver : public LossNotificationSender,
                                public RecoveredPacketReceiver,
                                public RtpPacketSinkInterface,
+                               public KeyFrameRequestSender,
                                public video_coding::OnAssembledFrameCallback,
                                public video_coding::OnCompleteFrameCallback,
                                public OnDecryptedFrameCallback,
@@ -76,9 +77,25 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
       ReceiveStatisticsProxy* receive_stats_proxy,
       ProcessThread* process_thread,
       NackSender* nack_sender,
-      KeyFrameRequestSender* keyframe_request_sender,
       video_coding::OnCompleteFrameCallback* complete_frame_callback,
       rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor);
+
+  // Constructor with injected RtpRtcp. Intended for tests only!
+  RtpVideoStreamReceiver(
+      Clock* clock,
+      std::unique_ptr<RtpRtcp> rtp_rtcp,
+      // The packet router is optional; if provided, the RtpRtcp module for this
+      // stream is registered as a candidate for sending REMB and transport
+      // feedback.
+      PacketRouter* packet_router,
+      const VideoReceiveStream::Config* config,
+      ReceiveStatistics* rtp_receive_statistics,
+      ReceiveStatisticsProxy* receive_stats_proxy,
+      ProcessThread* process_thread,
+      NackSender* nack_sender,
+      video_coding::OnCompleteFrameCallback* complete_frame_callback,
+      rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor);
+
   ~RtpVideoStreamReceiver() override;
 
   void AddReceiveCodec(const VideoCodec& video_codec,
@@ -119,7 +136,7 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   void OnRecoveredPacket(const uint8_t* packet, size_t packet_length) override;
 
   // Send an RTCP keyframe request.
-  void RequestKeyFrame();
+  void RequestKeyFrame() override;
 
   // Implements LossNotificationSender.
   void SendLossNotification(uint16_t last_decoded_seq_num,
@@ -205,7 +222,6 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
 
   // Members for the new jitter buffer experiment.
   video_coding::OnCompleteFrameCallback* complete_frame_callback_;
-  KeyFrameRequestSender* const keyframe_request_sender_;
   std::unique_ptr<NackModule> nack_module_;
   std::unique_ptr<LossNotificationController> loss_notification_controller_;
   rtc::scoped_refptr<video_coding::PacketBuffer> packet_buffer_;

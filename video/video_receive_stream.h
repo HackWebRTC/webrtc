@@ -46,7 +46,6 @@ namespace internal {
 class VideoReceiveStream : public webrtc::VideoReceiveStream,
                            public rtc::VideoSinkInterface<VideoFrame>,
                            public NackSender,
-                           public KeyFrameRequestSender,
                            public video_coding::OnCompleteFrameCallback,
                            public Syncable,
                            public CallStatsObserver,
@@ -103,9 +102,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   // Implements NackSender.
   void SendNack(const std::vector<uint16_t>& sequence_numbers) override;
 
-  // Implements KeyFrameRequestSender.
-  void RequestKeyFrame() override;
-
   // Implements video_coding::OnCompleteFrameCallback.
   void OnCompleteFrame(
       std::unique_ptr<video_coding::EncodedFrame> frame) override;
@@ -141,6 +137,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   void UpdatePlayoutDelays() const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(playout_delay_lock_);
+  void RequestKeyFrame();
 
   SequenceChecker worker_sequence_checker_;
   SequenceChecker module_process_sequence_checker_;

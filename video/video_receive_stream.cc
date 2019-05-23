@@ -205,7 +205,6 @@ VideoReceiveStream::VideoReceiveStream(
                                  &stats_proxy_,
                                  process_thread_,
                                  this,  // NackSender
-                                 this,  // KeyFrameRequestSender
                                  this,  // OnCompleteFrameCallback
                                  config_.frame_decryptor),
       rtp_stream_sync_(this),
