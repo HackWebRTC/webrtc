@@ -13,28 +13,33 @@
 #include <string>
 #include <utility>
 
+#include "absl/types/optional.h"
+
 namespace webrtc {
 
 class MediaTransportInterface;
 
-// MediaTransportConfig contains meida transport (if provided) and passed from
-// PeerConnection to call obeject and media layers that require access to media
-// transport. In the future we can add other transport (for example, datagram
-// transport) and related configuration.
+// Media transport config is made available to both transport and audio / video
+// layers, but access to individual interfaces should not be open without
+// necessity.
 struct MediaTransportConfig {
   // Default constructor for no-media transport scenarios.
   MediaTransportConfig() = default;
 
-  // TODO(sukhanov): Consider adding RtpTransport* to MediaTransportConfig,
-  // because it's almost always passes along with media_transport.
-  // Does not own media_transport.
-  explicit MediaTransportConfig(MediaTransportInterface* media_transport)
-      : media_transport(media_transport) {}
+  // Constructor for media transport scenarios.
+  // Note that |media_transport| may not be nullptr.
+  explicit MediaTransportConfig(MediaTransportInterface* media_transport);
+
+  // Constructor for datagram transport scenarios.
+  explicit MediaTransportConfig(size_t rtp_max_packet_size);
 
   std::string DebugString() const;
 
   // If provided, all media is sent through media_transport.
   MediaTransportInterface* media_transport = nullptr;
+
+  // If provided, limits RTP packet size (excludes ICE, IP or network overhead).
+  absl::optional<size_t> rtp_max_packet_size;
 };
 
 }  // namespace webrtc

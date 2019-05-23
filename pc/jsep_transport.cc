@@ -116,6 +116,7 @@ JsepTransport::JsepTransport(
               : nullptr),
       media_transport_(std::move(media_transport)) {
   RTC_DCHECK(rtp_dtls_transport_);
+  RTC_DCHECK(!datagram_transport() || !media_transport_);
   // Verify the "only one out of these three can be set" invariant.
   if (unencrypted_rtp_transport_) {
     RTC_DCHECK(!sdes_transport);
@@ -135,12 +136,13 @@ JsepTransport::JsepTransport(
 }
 
 JsepTransport::~JsepTransport() {
+  // Disconnect media transport state callbacks and  make sure we delete media
+  // transports before ICE.
   if (media_transport_) {
     media_transport_->SetMediaTransportStateCallback(nullptr);
-
-    // Make sure we delete media transport before ICE.
     media_transport_.reset();
   }
+
   // Clear all DtlsTransports. There may be pointers to these from
   // other places, so we can't assume they'll be deleted by the destructor.
   rtp_dtls_transport_->Clear();
@@ -717,5 +719,4 @@ void JsepTransport::OnStateChanged(webrtc::MediaTransportState state) {
   }
   SignalMediaTransportStateChanged();
 }
-
 }  // namespace cricket

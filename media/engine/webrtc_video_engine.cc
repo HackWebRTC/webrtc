@@ -18,6 +18,7 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/strings/match.h"
+#include "api/datagram_transport_interface.h"
 #include "api/video/video_codec_constants.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_decoder_factory.h"
@@ -1100,6 +1101,13 @@ bool WebRtcVideoChannel::AddSendStream(const StreamParams& sp) {
   config.crypto_options = crypto_options_;
   config.rtp.extmap_allow_mixed = ExtmapAllowMixed();
   config.rtcp_report_interval_ms = video_config_.rtcp_report_interval_ms;
+
+  // If sending through Datagram Transport, limit packet size to maximum
+  // packet size supported by datagram_transport.
+  if (media_transport_config().rtp_max_packet_size) {
+    config.rtp.max_packet_size =
+        media_transport_config().rtp_max_packet_size.value();
+  }
 
   WebRtcVideoSendStream* stream = new WebRtcVideoSendStream(
       call_, sp, std::move(config), default_send_options_,

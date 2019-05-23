@@ -10,11 +10,30 @@
 
 #include "api/media_transport_config.h"
 
+#include "rtc_base/checks.h"
+#include "rtc_base/string_utils.h"
+#include "rtc_base/strings/string_builder.h"
+
 namespace webrtc {
 
-std::string MediaTransportConfig::DebugString() const {
-  return (media_transport != nullptr ? "{media_transport: (Transport)}"
-                                     : "{media_transport: null}");
+MediaTransportConfig::MediaTransportConfig(
+    MediaTransportInterface* media_transport)
+    : media_transport(media_transport) {
+  RTC_DCHECK(media_transport != nullptr);
+}
+
+MediaTransportConfig::MediaTransportConfig(size_t rtp_max_packet_size)
+    : rtp_max_packet_size(rtp_max_packet_size) {
+  RTC_DCHECK_GT(rtp_max_packet_size, 0);
+}
+
+std::string MediaTransportConfig::DebugString()
+    const {  // TODO(sukhanov): Add rtp_max_packet_size (requires fixing
+             // audio_send/receive_stream_unittest.cc).
+  rtc::StringBuilder result;
+  result << "{media_transport: "
+         << (media_transport != nullptr ? "(Transport)" : "null") << "}";
+  return result.Release();
 }
 
 }  // namespace webrtc

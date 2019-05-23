@@ -764,6 +764,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     bool active_reset_srtp_params;
     bool use_media_transport;
     bool use_media_transport_for_data_channels;
+    bool use_datagram_transport;
     absl::optional<CryptoOptions> crypto_options;
     bool offer_extmap_allow_mixed;
   };
@@ -822,6 +823,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          use_media_transport == o.use_media_transport &&
          use_media_transport_for_data_channels ==
              o.use_media_transport_for_data_channels &&
+         use_datagram_transport == o.use_datagram_transport &&
          crypto_options == o.crypto_options &&
          offer_extmap_allow_mixed == o.offer_extmap_allow_mixed;
 }
@@ -1021,7 +1023,8 @@ bool PeerConnection::Initialize(
 #endif
   config.active_reset_srtp_params = configuration.active_reset_srtp_params;
 
-  if (configuration.use_media_transport ||
+  if (configuration.use_datagram_transport ||
+      configuration.use_media_transport ||
       configuration.use_media_transport_for_data_channels) {
     if (!factory_->media_transport_factory()) {
       RTC_DCHECK(false)
@@ -1051,6 +1054,7 @@ bool PeerConnection::Initialize(
     config.use_media_transport_for_media = configuration.use_media_transport;
     config.use_media_transport_for_data_channels =
         configuration.use_media_transport_for_data_channels;
+    config.use_datagram_transport = configuration.use_datagram_transport;
     config.media_transport_factory = factory_->media_transport_factory();
   }
 
@@ -3412,8 +3416,23 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
     return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
   }
 
+  if (local_description() && configuration.use_datagram_transport !=
+                                 configuration_.use_datagram_transport) {
+    RTC_LOG(LS_ERROR) << "Can't change use_datagram_transport "
+                         "after calling SetLocalDescription.";
+    return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
+  }
+
+  if (remote_description() && configuration.use_datagram_transport !=
+                                  configuration_.use_datagram_transport) {
+    RTC_LOG(LS_ERROR) << "Can't change use_datagram_transport "
+                         "after calling SetRemoteDescription.";
+    return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
+  }
+
   if (configuration.use_media_transport_for_data_channels ||
-      configuration.use_media_transport) {
+      configuration.use_media_transport ||
+      configuration.use_datagram_transport) {
     RTC_CHECK(configuration.bundle_policy == kBundlePolicyMaxBundle)
         << "Media transport requires MaxBundle policy.";
   }
@@ -3506,7 +3525,8 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
   transport_controller_->SetIceConfig(ParseIceConfig(modified_config));
   transport_controller_->SetMediaTransportSettings(
       modified_config.use_media_transport,
-      modified_config.use_media_transport_for_data_channels);
+      modified_config.use_media_transport_for_data_channels,
+      modified_config.use_datagram_transport);
 
   if (configuration_.active_reset_srtp_params !=
       modified_config.active_reset_srtp_params) {
@@ -6317,15 +6337,13 @@ RTCError PeerConnection::CreateChannels(const SessionDescription& desc) {
 cricket::VoiceChannel* PeerConnection::CreateVoiceChannel(
     const std::string& mid) {
   RtpTransportInternal* rtp_transport = GetRtpTransport(mid);
-  MediaTransportInterface* media_transport = nullptr;
-  if (configuration_.use_media_transport) {
-    media_transport = GetMediaTransport(mid);
-  }
+  MediaTransportConfig media_transport_config =
+      transport_controller_->GetMediaTransportConfig(mid);
 
   cricket::VoiceChannel* voice_channel = channel_manager()->CreateVoiceChannel(
       call_ptr_, configuration_.media_config, rtp_transport,
-      MediaTransportConfig(media_transport), signaling_thread(), mid,
-      SrtpRequired(), GetCryptoOptions(), &ssrc_generator_, audio_options_);
+      media_transport_config, signaling_thread(), mid, SrtpRequired(),
+      GetCryptoOptions(), &ssrc_generator_, audio_options_);
   if (!voice_channel) {
     return nullptr;
   }
@@ -6342,15 +6360,13 @@ cricket::VoiceChannel* PeerConnection::CreateVoiceChannel(
 cricket::VideoChannel* PeerConnection::CreateVideoChannel(
     const std::string& mid) {
   RtpTransportInternal* rtp_transport = GetRtpTransport(mid);
-  MediaTransportInterface* media_transport = nullptr;
-  if (configuration_.use_media_transport) {
-    media_transport = GetMediaTransport(mid);
-  }
+  MediaTransportConfig media_transport_config =
+      transport_controller_->GetMediaTransportConfig(mid);
 
   cricket::VideoChannel* video_channel = channel_manager()->CreateVideoChannel(
       call_ptr_, configuration_.media_config, rtp_transport,
-      MediaTransportConfig(media_transport), signaling_thread(), mid,
-      SrtpRequired(), GetCryptoOptions(), &ssrc_generator_, video_options_,
+      media_transport_config, signaling_thread(), mid, SrtpRequired(),
+      GetCryptoOptions(), &ssrc_generator_, video_options_,
       video_bitrate_allocator_factory_.get());
   if (!video_channel) {
     return nullptr;
@@ -6529,7 +6545,8 @@ void PeerConnection::OnSctpClosingProcedureComplete_n(int sid) {
 
 bool PeerConnection::SetupMediaTransportForDataChannels_n(
     const std::string& mid) {
-  media_transport_ = transport_controller_->GetMediaTransport(mid);
+  media_transport_ =
+      transport_controller_->GetMediaTransportForDataChannel(mid);
   if (!media_transport_) {
     RTC_LOG(LS_ERROR)
         << "Media transport is not available for data channels, mid=" << mid;
@@ -6886,8 +6903,9 @@ bool PeerConnection::ReadyToUseRemoteCandidate(
 }
 
 bool PeerConnection::SrtpRequired() const {
-  return dtls_enabled_ ||
-         webrtc_session_desc_factory_->SdesPolicy() == cricket::SEC_REQUIRED;
+  return !configuration_.use_datagram_transport &&
+         (dtls_enabled_ ||
+          webrtc_session_desc_factory_->SdesPolicy() == cricket::SEC_REQUIRED);
 }
 
 void PeerConnection::OnTransportControllerGatheringState(

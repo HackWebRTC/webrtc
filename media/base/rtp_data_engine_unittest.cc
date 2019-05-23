@@ -74,8 +74,7 @@ class RtpDataMediaChannelTest : public ::testing::Test {
     cricket::MediaConfig config;
     cricket::RtpDataMediaChannel* channel =
         static_cast<cricket::RtpDataMediaChannel*>(dme->CreateChannel(config));
-    channel->SetInterface(iface_.get(), webrtc::MediaTransportConfig(
-                                            /*media_transport=*/nullptr));
+    channel->SetInterface(iface_.get(), webrtc::MediaTransportConfig());
     channel->SignalDataReceived.connect(receiver_.get(),
                                         &FakeDataReceiver::OnDataReceived);
     return channel;

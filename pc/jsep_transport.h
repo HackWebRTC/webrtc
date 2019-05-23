@@ -217,6 +217,12 @@ class JsepTransport : public sigslot::has_slots<>,
     return media_transport_.get();
   }
 
+  // Returns datagram transport, if available.
+  webrtc::DatagramTransportInterface* datagram_transport() const {
+    rtc::CritScope scope(&accessor_lock_);
+    return rtp_dtls_transport_->internal()->datagram_transport();
+  }
+
   // Returns the latest media transport state.
   webrtc::MediaTransportState media_transport_state() const {
     rtc::CritScope scope(&accessor_lock_);
@@ -331,6 +337,10 @@ class JsepTransport : public sigslot::has_slots<>,
       RTC_GUARDED_BY(accessor_lock_);
 
   // If |media_transport_| is provided, this variable represents the state of
+  // media transport.
+  //
+  // NOTE: datagram transport state is handled by DatagramDtlsAdaptor, because
+  // DatagramDtlsAdaptor owns DatagramTransport. This state only represents
   // media transport.
   webrtc::MediaTransportState media_transport_state_
       RTC_GUARDED_BY(accessor_lock_) = webrtc::MediaTransportState::kPending;

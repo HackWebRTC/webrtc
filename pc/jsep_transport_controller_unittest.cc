@@ -442,7 +442,7 @@ TEST_F(JsepTransportControllerTest,
                   .ok());
 
   FakeMediaTransport* media_transport = static_cast<FakeMediaTransport*>(
-      transport_controller_->GetMediaTransport(kAudioMid1));
+      transport_controller_->GetMediaTransportForDataChannel(kAudioMid1));
 
   ASSERT_NE(nullptr, media_transport);
 
@@ -451,7 +451,8 @@ TEST_F(JsepTransportControllerTest,
   EXPECT_TRUE(media_transport->pre_shared_key().has_value());
 
   // Return nullptr for non-existing mids.
-  EXPECT_EQ(nullptr, transport_controller_->GetMediaTransport(kVideoMid2));
+  EXPECT_EQ(nullptr,
+            transport_controller_->GetMediaTransportForDataChannel(kVideoMid2));
 
   EXPECT_EQ(cricket::ICE_CANDIDATE_COMPONENT_RTP,
             transport_controller_->GetDtlsTransport(kAudioMid1)->component())
@@ -563,8 +564,6 @@ TEST_F(JsepTransportControllerTest, GetMediaTransportInCallee) {
   EXPECT_EQ(absl::nullopt, media_transport->settings().pre_shared_key);
   EXPECT_TRUE(media_transport->is_connected());
 
-  EXPECT_EQ("fake-remote-settings",
-            media_transport->remote_transport_parameters());
   // Return nullptr for non-existing mids.
   EXPECT_EQ(nullptr, transport_controller_->GetMediaTransport(kVideoMid2));
 

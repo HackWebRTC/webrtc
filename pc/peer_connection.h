@@ -1079,22 +1079,6 @@ class PeerConnection : public PeerConnectionInternal,
     return rtp_transport;
   }
 
-  // Returns media transport, if PeerConnection was created with configuration
-  // to use media transport. Otherwise returns nullptr.
-  MediaTransportInterface* GetMediaTransport(const std::string& mid)
-      RTC_RUN_ON(signaling_thread()) {
-    auto media_transport = transport_controller_->GetMediaTransport(mid);
-    RTC_DCHECK((configuration_.use_media_transport ||
-                configuration_.use_media_transport_for_data_channels) ==
-               (media_transport != nullptr))
-        << "configuration_.use_media_transport="
-        << configuration_.use_media_transport
-        << ", configuration_.use_media_transport_for_data_channels="
-        << configuration_.use_media_transport_for_data_channels
-        << ", (media_transport != nullptr)=" << (media_transport != nullptr);
-    return media_transport;
-  }
-
   void UpdateNegotiationNeeded();
   bool CheckIfNegotiationIsNeeded();
 
