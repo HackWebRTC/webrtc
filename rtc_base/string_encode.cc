@@ -22,13 +22,16 @@ namespace rtc {
 // String Encoding Utilities
 /////////////////////////////////////////////////////////////////////////////
 
-static const char HEX[] = "0123456789abcdef";
+namespace {
+const char HEX[] = "0123456789abcdef";
 
+// Convert an unsigned value from 0 to 15 to the hex character equivalent...
 char hex_encode(unsigned char val) {
   RTC_DCHECK_LT(val, 16);
   return (val < 16) ? HEX[val] : '!';
 }
 
+// ...and vice-versa.
 bool hex_decode(char ch, unsigned char* val) {
   if ((ch >= '0') && (ch <= '9')) {
     *val = ch - '0';
@@ -42,13 +45,9 @@ bool hex_decode(char ch, unsigned char* val) {
   return true;
 }
 
-size_t hex_encode(char* buffer,
-                  size_t buflen,
-                  const char* csource,
-                  size_t srclen) {
-  return hex_encode_with_delimiter(buffer, buflen, csource, srclen, 0);
-}
-
+// hex_encode, but separate each byte representation with a delimiter.
+// |delimiter| == 0 means no delimiter
+// If the buffer is too short, we return 0
 size_t hex_encode_with_delimiter(char* buffer,
                                  size_t buflen,
                                  const char* csource,
@@ -83,6 +82,8 @@ size_t hex_encode_with_delimiter(char* buffer,
   buffer[bufpos] = '\0';
   return bufpos;
 }
+
+}  // namespace
 
 std::string hex_encode(const std::string& str) {
   return hex_encode(str.c_str(), str.size());

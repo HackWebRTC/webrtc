@@ -26,27 +26,6 @@ namespace rtc {
 // String Encoding Utilities
 //////////////////////////////////////////////////////////////////////
 
-// Convert an unsigned value from 0 to 15 to the hex character equivalent...
-char hex_encode(unsigned char val);
-// ...and vice-versa.
-bool hex_decode(char ch, unsigned char* val);
-
-// hex_encode shows the hex representation of binary data in ascii.
-size_t hex_encode(char* buffer,
-                  size_t buflen,
-                  const char* source,
-                  size_t srclen);
-
-// hex_encode, but separate each byte representation with a delimiter.
-// |delimiter| == 0 means no delimiter
-// If the buffer is too short, we return 0
-size_t hex_encode_with_delimiter(char* buffer,
-                                 size_t buflen,
-                                 const char* source,
-                                 size_t srclen,
-                                 char delimiter);
-
-// Helper functions for hex_encode.
 std::string hex_encode(const std::string& str);
 std::string hex_encode(const char* source, size_t srclen);
 std::string hex_encode_with_delimiter(const char* source,
