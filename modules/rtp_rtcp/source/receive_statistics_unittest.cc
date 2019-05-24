@@ -383,7 +383,7 @@ TEST_F(ReceiveStatisticsTest, LossComputationWithSequenceNumberWrapping) {
 
 TEST_F(ReceiveStatisticsTest, StreamRestartDoesntCountAsLoss) {
   RtcpStatistics statistics;
-  receive_statistics_->SetMaxReorderingThreshold(200);
+  receive_statistics_->SetMaxReorderingThreshold(kSsrc1, 200);
 
   packet1_.SetSequenceNumber(0);
   receive_statistics_->OnRtpPacket(packet1_);
@@ -407,7 +407,7 @@ TEST_F(ReceiveStatisticsTest, StreamRestartDoesntCountAsLoss) {
 
 TEST_F(ReceiveStatisticsTest, CountsLossAfterStreamRestart) {
   RtcpStatistics statistics;
-  receive_statistics_->SetMaxReorderingThreshold(200);
+  receive_statistics_->SetMaxReorderingThreshold(kSsrc1, 200);
 
   packet1_.SetSequenceNumber(0);
   receive_statistics_->OnRtpPacket(packet1_);
@@ -428,7 +428,7 @@ TEST_F(ReceiveStatisticsTest, CountsLossAfterStreamRestart) {
 
 TEST_F(ReceiveStatisticsTest, StreamCanRestartAtSequenceNumberWrapAround) {
   RtcpStatistics statistics;
-  receive_statistics_->SetMaxReorderingThreshold(200);
+  receive_statistics_->SetMaxReorderingThreshold(kSsrc1, 200);
 
   packet1_.SetSequenceNumber(0xffff - 401);
   receive_statistics_->OnRtpPacket(packet1_);
@@ -449,7 +449,7 @@ TEST_F(ReceiveStatisticsTest, StreamCanRestartAtSequenceNumberWrapAround) {
 
 TEST_F(ReceiveStatisticsTest, StreamRestartNeedsTwoConsecutivePackets) {
   RtcpStatistics statistics;
-  receive_statistics_->SetMaxReorderingThreshold(200);
+  receive_statistics_->SetMaxReorderingThreshold(kSsrc1, 200);
 
   packet1_.SetSequenceNumber(400);
   receive_statistics_->OnRtpPacket(packet1_);
@@ -494,7 +494,7 @@ TEST_F(ReceiveStatisticsTest, WrapsAroundExtendedHighestSequenceNumber) {
   EXPECT_EQ(0x10001u, statistics.extended_highest_sequence_number);
 
   // Receive a couple packets then wrap around again.
-  receive_statistics_->SetMaxReorderingThreshold(200);
+  receive_statistics_->SetMaxReorderingThreshold(kSsrc1, 200);
   for (int i = 10; i < 0xffff; i += 150) {
     packet1_.SetSequenceNumber(i);
     receive_statistics_->OnRtpPacket(packet1_);

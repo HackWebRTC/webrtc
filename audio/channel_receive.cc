@@ -794,11 +794,12 @@ void ChannelReceive::SetNACKStatus(bool enable, int max_packets) {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
   // None of these functions can fail.
   if (enable) {
-    rtp_receive_statistics_->SetMaxReorderingThreshold(max_packets);
+    rtp_receive_statistics_->SetMaxReorderingThreshold(remote_ssrc_,
+                                                       max_packets);
     audio_coding_->EnableNack(max_packets);
   } else {
     rtp_receive_statistics_->SetMaxReorderingThreshold(
-        kDefaultMaxReorderingThreshold);
+        remote_ssrc_, kDefaultMaxReorderingThreshold);
     audio_coding_->DisableNack();
   }
 }

@@ -30,7 +30,6 @@ class StreamStatisticianImpl : public StreamStatistician,
  public:
   StreamStatisticianImpl(uint32_t ssrc,
                          Clock* clock,
-                         bool enable_retransmit_detection,
                          int max_reordering_threshold,
                          RtcpStatisticsCallback* rtcp_callback,
                          StreamDataCountersCallback* rtp_callback);
@@ -125,11 +124,16 @@ class ReceiveStatisticsImpl : public ReceiveStatistics {
 
   // Implements ReceiveStatistics.
   void FecPacketReceived(const RtpPacketReceived& packet) override;
-  StreamStatistician* GetStatistician(uint32_t ssrc) const override;
+  // Note: More specific return type for use in the implementation.
+  StreamStatisticianImpl* GetStatistician(uint32_t ssrc) const override;
   void SetMaxReorderingThreshold(int max_reordering_threshold) override;
+  void SetMaxReorderingThreshold(uint32_t ssrc,
+                                 int max_reordering_threshold) override;
   void EnableRetransmitDetection(uint32_t ssrc, bool enable) override;
 
  private:
+  StreamStatisticianImpl* GetOrCreateStatistician(uint32_t ssrc);
+
   Clock* const clock_;
   rtc::CriticalSection receive_statistics_lock_;
   uint32_t last_returned_ssrc_;

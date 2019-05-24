@@ -33,7 +33,6 @@ StreamStatistician::~StreamStatistician() {}
 StreamStatisticianImpl::StreamStatisticianImpl(
     uint32_t ssrc,
     Clock* clock,
-    bool enable_retransmit_detection,
     int max_reordering_threshold,
     RtcpStatisticsCallback* rtcp_callback,
     StreamDataCountersCallback* rtp_callback)
@@ -42,7 +41,7 @@ StreamStatisticianImpl::StreamStatisticianImpl(
       incoming_bitrate_(kStatisticsProcessIntervalMs,
                         RateStatistics::kBpsScale),
       max_reordering_threshold_(max_reordering_threshold),
-      enable_retransmit_detection_(enable_retransmit_detection),
+      enable_retransmit_detection_(false),
       jitter_q4_(0),
       cumulative_loss_(0),
       last_receive_time_ms_(0),
@@ -368,46 +367,40 @@ ReceiveStatisticsImpl::~ReceiveStatisticsImpl() {
 }
 
 void ReceiveStatisticsImpl::OnRtpPacket(const RtpPacketReceived& packet) {
-  StreamStatisticianImpl* impl;
-  {
-    rtc::CritScope cs(&receive_statistics_lock_);
-    auto it = statisticians_.find(packet.Ssrc());
-    if (it != statisticians_.end()) {
-      impl = it->second;
-    } else {
-      impl = new StreamStatisticianImpl(
-          packet.Ssrc(), clock_, /* enable_retransmit_detection = */ false,
-          max_reordering_threshold_, rtcp_stats_callback_, rtp_stats_callback_);
-      statisticians_[packet.Ssrc()] = impl;
-    }
-  }
   // StreamStatisticianImpl instance is created once and only destroyed when
   // this whole ReceiveStatisticsImpl is destroyed. StreamStatisticianImpl has
   // it's own locking so don't hold receive_statistics_lock_ (potential
   // deadlock).
-  impl->OnRtpPacket(packet);
+  GetOrCreateStatistician(packet.Ssrc())->OnRtpPacket(packet);
 }
 
 void ReceiveStatisticsImpl::FecPacketReceived(const RtpPacketReceived& packet) {
-  StreamStatisticianImpl* impl;
-  {
-    rtc::CritScope cs(&receive_statistics_lock_);
-    auto it = statisticians_.find(packet.Ssrc());
-    // Ignore FEC if it is the first packet.
-    if (it == statisticians_.end())
-      return;
-    impl = it->second;
+  StreamStatisticianImpl* impl = GetStatistician(packet.Ssrc());
+  // Ignore FEC if it is the first packet.
+  if (impl) {
+    impl->FecPacketReceived(packet);
   }
-  impl->FecPacketReceived(packet);
 }
 
-StreamStatistician* ReceiveStatisticsImpl::GetStatistician(
+StreamStatisticianImpl* ReceiveStatisticsImpl::GetStatistician(
     uint32_t ssrc) const {
   rtc::CritScope cs(&receive_statistics_lock_);
-  auto it = statisticians_.find(ssrc);
+  const auto& it = statisticians_.find(ssrc);
   if (it == statisticians_.end())
     return NULL;
   return it->second;
+}
+
+StreamStatisticianImpl* ReceiveStatisticsImpl::GetOrCreateStatistician(
+    uint32_t ssrc) {
+  rtc::CritScope cs(&receive_statistics_lock_);
+  StreamStatisticianImpl*& impl = statisticians_[ssrc];
+  if (impl == nullptr) {  // new element
+    impl =
+        new StreamStatisticianImpl(ssrc, clock_, max_reordering_threshold_,
+                                   rtcp_stats_callback_, rtp_stats_callback_);
+  }
+  return impl;
 }
 
 void ReceiveStatisticsImpl::SetMaxReorderingThreshold(
@@ -423,21 +416,16 @@ void ReceiveStatisticsImpl::SetMaxReorderingThreshold(
   }
 }
 
+void ReceiveStatisticsImpl::SetMaxReorderingThreshold(
+    uint32_t ssrc,
+    int max_reordering_threshold) {
+  GetOrCreateStatistician(ssrc)->SetMaxReorderingThreshold(
+      max_reordering_threshold);
+}
+
 void ReceiveStatisticsImpl::EnableRetransmitDetection(uint32_t ssrc,
                                                       bool enable) {
-  StreamStatisticianImpl* impl;
-  {
-    rtc::CritScope cs(&receive_statistics_lock_);
-    StreamStatisticianImpl*& impl_ref = statisticians_[ssrc];
-    if (impl_ref == nullptr) {  // new element
-      impl_ref = new StreamStatisticianImpl(
-          ssrc, clock_, enable, max_reordering_threshold_, rtcp_stats_callback_,
-          rtp_stats_callback_);
-      return;
-    }
-    impl = impl_ref;
-  }
-  impl->EnableRetransmitDetection(enable);
+  GetOrCreateStatistician(ssrc)->EnableRetransmitDetection(enable);
 }
 
 std::vector<rtcp::ReportBlock> ReceiveStatisticsImpl::RtcpReportBlocks(

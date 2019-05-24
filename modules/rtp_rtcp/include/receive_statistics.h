@@ -71,8 +71,14 @@ class ReceiveStatistics : public ReceiveStatisticsProvider,
   // Returns a pointer to the statistician of an ssrc.
   virtual StreamStatistician* GetStatistician(uint32_t ssrc) const = 0;
 
-  // Sets the max reordering threshold in number of packets.
+  // TODO(bugs.webrtc.org/10669): Deprecated, delete as soon as downstream
+  // projects are updated. This method sets the max reordering threshold of all
+  // current and future streams.
   virtual void SetMaxReorderingThreshold(int max_reordering_threshold) = 0;
+
+  // Sets the max reordering threshold in number of packets.
+  virtual void SetMaxReorderingThreshold(uint32_t ssrc,
+                                         int max_reordering_threshold) = 0;
   // Detect retransmissions, enabling updates of the retransmitted counters. The
   // default is false.
   virtual void EnableRetransmitDetection(uint32_t ssrc, bool enable) = 0;
