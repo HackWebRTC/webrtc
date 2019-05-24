@@ -274,6 +274,12 @@ rtc_static_library("webrtc_h264") {
   visibility = [ "*" ]
   sources = [
     "codecs/h264/h264.cc",
+    "codecs/h264/h264_color_space.cc",
+    "codecs/h264/h264_color_space.h",
+    "codecs/h264/h264_decoder_impl.cc",
+    "codecs/h264/h264_decoder_impl.h",
+    "codecs/h264/h264_encoder_impl.cc",
+    "codecs/h264/h264_encoder_impl.h",
     "codecs/h264/include/h264.h",
   ]
 
@@ -285,6 +291,7 @@ rtc_static_library("webrtc_h264") {
     "../../api/video:video_frame_i010",
     "../../api/video:video_frame_i420",
     "../../api/video_codecs:video_codecs_api",
+    "../../common_video",
     "../../media:rtc_h264_profile_id",
     "../../media:rtc_media_base",
     "../../rtc_base",
@@ -299,21 +306,10 @@ rtc_static_library("webrtc_h264") {
   ]
 
   if (rtc_use_h264) {
-    assert(!(is_win && !is_clang), "See: bugs.webrtc.org/9213#c13.")
-    sources += [
-      "codecs/h264/h264_color_space.cc",
-      "codecs/h264/h264_color_space.h",
-      "codecs/h264/h264_decoder_impl.cc",
-      "codecs/h264/h264_decoder_impl.h",
-      "codecs/h264/h264_encoder_impl.cc",
-      "codecs/h264/h264_encoder_impl.h",
-    ]
     deps += [
-      "../../common_video",
       "//third_party/ffmpeg",
       "//third_party/openh264:encoder",
     ]
-
     if (!build_with_mozilla) {
       deps += [ "../../media:rtc_media_base" ]
     }
