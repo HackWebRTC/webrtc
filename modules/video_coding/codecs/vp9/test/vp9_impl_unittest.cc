@@ -1344,4 +1344,31 @@ TEST_F(TestVp9ImplProfile2, EncodeDecode) {
             31);
 }
 
+TEST_F(TestVp9Impl, EncodeWithDynamicRate) {
+  // Configured dynamic rate field trial and re-create the encoder.
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-VideoRateControl/vp9_dynamic_rate:true/");
+  SetUp();
+
+  // Set 300kbps target with 100% headroom.
+  VideoEncoder::RateControlParameters params;
+  params.bandwidth_allocation = DataRate::bps(300000);
+  params.bitrate.SetBitrate(0, 0, params.bandwidth_allocation.bps());
+  params.framerate_fps = 30.0;
+
+  encoder_->SetRates(params);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*NextInputFrame(), nullptr));
+  EncodedImage encoded_frame;
+  CodecSpecificInfo codec_specific_info;
+  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
+
+  // Set no headroom and encode again.
+  params.bandwidth_allocation = DataRate::Zero();
+  encoder_->SetRates(params);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*NextInputFrame(), nullptr));
+  ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
+}
+
 }  // namespace webrtc
