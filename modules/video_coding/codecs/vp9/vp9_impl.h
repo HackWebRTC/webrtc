@@ -113,7 +113,6 @@ class VP9EncoderImpl : public VP9Encoder {
   GofInfoVP9 gof_;  // Contains each frame's temporal information for
                     // non-flexible mode.
   bool force_key_frame_;
-  bool different_framerates_used_;
   size_t pics_since_key_;
   uint8_t num_temporal_layers_;
   uint8_t num_spatial_layers_;         // Number of configured SLs
