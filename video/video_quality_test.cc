@@ -843,7 +843,7 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
             params_.ss[video_idx].num_spatial_layers);
         vp9_settings.interLayerPred = params_.ss[video_idx].inter_layer_pred;
         // High FPS vp9 screenshare requires flexible mode.
-        if (params_.ss[video_idx].num_spatial_layers > 1) {
+        if (params_.video[video_idx].fps > 5) {
           vp9_settings.flexibleMode = true;
         }
         video_encoder_configs_[video_idx].encoder_specific_settings =
