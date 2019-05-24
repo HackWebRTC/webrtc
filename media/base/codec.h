@@ -220,6 +220,7 @@ const Codec* FindCodecById(const std::vector<Codec>& codecs, int payload_type) {
   return nullptr;
 }
 
+bool HasLntf(const Codec& codec);
 bool HasNack(const Codec& codec);
 bool HasRemb(const Codec& codec);
 bool HasRrtr(const Codec& codec);

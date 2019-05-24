@@ -400,7 +400,8 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
 
     void SetLocalSsrc(uint32_t local_ssrc);
     // TODO(deadbeef): Move these feedback parameters into the recv parameters.
-    void SetFeedbackParameters(bool nack_enabled,
+    void SetFeedbackParameters(bool lntf_enabled,
+                               bool nack_enabled,
                                bool remb_enabled,
                                bool transport_cc_enabled,
                                webrtc::RtcpMode rtcp_mode);

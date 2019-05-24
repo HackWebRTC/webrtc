@@ -195,8 +195,9 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock,
       last_rotation_(kVideoRotation_0),
       transmit_color_space_next_frame_(false),
       playout_delay_oracle_(playout_delay_oracle),
-      // TODO(eladalon): Choose whether to instantiate rtp_sequence_number_map_
-      // according to the negotiation of the RTCP message.
+      // TODO(bugs.webrtc.org/10662): Choose whether to instantiate
+      // |rtp_sequence_number_map_| according to the negotiation of the
+      // LNTF (loss notification) rtcp-fb message.
       rtp_sequence_number_map_(
           field_trials.Lookup("WebRTC-RtcpLossNotification").find("Enabled") !=
                   std::string::npos

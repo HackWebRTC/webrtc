@@ -1993,6 +1993,7 @@ class WebRtcSdpTest : public ::testing::Test {
     std::string sdp_video =
         "m=video 3457 RTP/SAVPF 101\r\n"
         "a=rtpmap:101 VP8/90000\r\n"
+        "a=rtcp-fb:101 goog-lntf\r\n"
         "a=rtcp-fb:101 nack\r\n"
         "a=rtcp-fb:101 nack pli\r\n"
         "a=rtcp-fb:101 goog-remb\r\n";
@@ -2022,6 +2023,8 @@ class WebRtcSdpTest : public ::testing::Test {
     EXPECT_STREQ(webrtc::JsepSessionDescription::kDefaultVideoCodecName,
                  vp8.name.c_str());
     EXPECT_EQ(101, vp8.id);
+    EXPECT_TRUE(vp8.HasFeedbackParam(cricket::FeedbackParam(
+        cricket::kRtcpFbParamLntf, cricket::kParamValueEmpty)));
     EXPECT_TRUE(vp8.HasFeedbackParam(cricket::FeedbackParam(
         cricket::kRtcpFbParamNack, cricket::kParamValueEmpty)));
     EXPECT_TRUE(vp8.HasFeedbackParam(cricket::FeedbackParam(

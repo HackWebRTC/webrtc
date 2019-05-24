@@ -31,6 +31,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   vp8_config.rtp.transport_cc = true;
   vp8_config.rtp.remb = true;
   vp8_config.rtp.nack.rtp_history_ms = 1000;
+  vp8_config.rtp.lntf.enabled = true;
 
   std::vector<VideoReceiveStream::Config> replay_configs;
   replay_configs.push_back(std::move(vp8_config));

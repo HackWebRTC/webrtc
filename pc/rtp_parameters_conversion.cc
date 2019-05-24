@@ -39,6 +39,13 @@ RTCErrorOr<cricket::FeedbackParam> ToCricketFeedbackParam(
       }
       return cricket::FeedbackParam(cricket::kRtcpFbParamCcm,
                                     cricket::kRtcpFbCcmParamFir);
+    case RtcpFeedbackType::LNTF:
+      if (feedback.message_type) {
+        LOG_AND_RETURN_ERROR(
+            RTCErrorType::INVALID_PARAMETER,
+            "Didn't expect message type in LNTF RtcpFeedback.");
+      }
+      return cricket::FeedbackParam(cricket::kRtcpFbParamLntf);
     case RtcpFeedbackType::NACK:
       if (!feedback.message_type) {
         LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_PARAMETER,
@@ -250,6 +257,14 @@ absl::optional<RtcpFeedback> ToRtcpFeedback(
       return RtcpFeedback(RtcpFeedbackType::CCM, RtcpFeedbackMessageType::FIR);
     } else {
       RTC_LOG(LS_WARNING) << "Unsupported parameter for CCM RTCP feedback: "
+                          << cricket_feedback.param();
+      return absl::nullopt;
+    }
+  } else if (cricket_feedback.id() == cricket::kRtcpFbParamLntf) {
+    if (cricket_feedback.param().empty()) {
+      return RtcpFeedback(RtcpFeedbackType::LNTF);
+    } else {
+      RTC_LOG(LS_WARNING) << "Unsupported parameter for LNTF RTCP feedback: "
                           << cricket_feedback.param();
       return absl::nullopt;
     }

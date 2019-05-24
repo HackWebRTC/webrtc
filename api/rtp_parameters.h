@@ -50,6 +50,7 @@ enum class FecMechanism {
 // Used in RtcpFeedback struct.
 enum class RtcpFeedbackType {
   CCM,
+  LNTF,  // "goog-lntf"
   NACK,
   REMB,  // "goog-remb"
   TRANSPORT_CC,

@@ -22,14 +22,21 @@ TEST(RtpParametersConversionTest, ToCricketFeedbackParam) {
   auto result = ToCricketFeedbackParam(
       {RtcpFeedbackType::CCM, RtcpFeedbackMessageType::FIR});
   EXPECT_EQ(cricket::FeedbackParam("ccm", "fir"), result.value());
+
+  result = ToCricketFeedbackParam(RtcpFeedback(RtcpFeedbackType::LNTF));
+  EXPECT_EQ(cricket::FeedbackParam("goog-lntf"), result.value());
+
   result = ToCricketFeedbackParam(
       {RtcpFeedbackType::NACK, RtcpFeedbackMessageType::GENERIC_NACK});
   EXPECT_EQ(cricket::FeedbackParam("nack"), result.value());
+
   result = ToCricketFeedbackParam(
       {RtcpFeedbackType::NACK, RtcpFeedbackMessageType::PLI});
   EXPECT_EQ(cricket::FeedbackParam("nack", "pli"), result.value());
+
   result = ToCricketFeedbackParam(RtcpFeedback(RtcpFeedbackType::REMB));
   EXPECT_EQ(cricket::FeedbackParam("goog-remb"), result.value());
+
   result = ToCricketFeedbackParam(RtcpFeedback(RtcpFeedbackType::TRANSPORT_CC));
   EXPECT_EQ(cricket::FeedbackParam("transport-cc"), result.value());
 }
@@ -38,19 +45,29 @@ TEST(RtpParametersConversionTest, ToCricketFeedbackParamErrors) {
   // CCM with missing or invalid message type.
   auto result = ToCricketFeedbackParam(RtcpFeedback(RtcpFeedbackType::CCM));
   EXPECT_EQ(RTCErrorType::INVALID_PARAMETER, result.error().type());
+
   result = ToCricketFeedbackParam(
       {RtcpFeedbackType::CCM, RtcpFeedbackMessageType::PLI});
   EXPECT_EQ(RTCErrorType::INVALID_PARAMETER, result.error().type());
+
+  // LNTF with message type (should be left empty).
+  result = ToCricketFeedbackParam(
+      {RtcpFeedbackType::LNTF, RtcpFeedbackMessageType::GENERIC_NACK});
+  EXPECT_EQ(RTCErrorType::INVALID_PARAMETER, result.error().type());
+
   // NACK with missing or invalid message type.
   result = ToCricketFeedbackParam(RtcpFeedback(RtcpFeedbackType::NACK));
   EXPECT_EQ(RTCErrorType::INVALID_PARAMETER, result.error().type());
+
   result = ToCricketFeedbackParam(
       {RtcpFeedbackType::NACK, RtcpFeedbackMessageType::FIR});
   EXPECT_EQ(RTCErrorType::INVALID_PARAMETER, result.error().type());
+
   // REMB with message type (should be left empty).
   result = ToCricketFeedbackParam(
       {RtcpFeedbackType::REMB, RtcpFeedbackMessageType::GENERIC_NACK});
   EXPECT_EQ(RTCErrorType::INVALID_PARAMETER, result.error().type());
+
   // TRANSPORT_CC with message type (should be left empty).
   result = ToCricketFeedbackParam(
       {RtcpFeedbackType::TRANSPORT_CC, RtcpFeedbackMessageType::FIR});
@@ -88,6 +105,7 @@ TEST(RtpParametersConversionTest, ToVideoCodec) {
   codec.clock_rate.emplace(90000);
   codec.parameters["foo"] = "bar";
   codec.parameters["PING"] = "PONG";
+  codec.rtcp_feedback.emplace_back(RtcpFeedbackType::LNTF);
   codec.rtcp_feedback.emplace_back(RtcpFeedbackType::TRANSPORT_CC);
   codec.rtcp_feedback.emplace_back(RtcpFeedbackType::NACK,
                                    RtcpFeedbackMessageType::PLI);
@@ -100,7 +118,9 @@ TEST(RtpParametersConversionTest, ToVideoCodec) {
   ASSERT_EQ(2u, result.value().params.size());
   EXPECT_EQ("bar", result.value().params["foo"]);
   EXPECT_EQ("PONG", result.value().params["PING"]);
-  EXPECT_EQ(2u, result.value().feedback_params.params().size());
+  EXPECT_EQ(3u, result.value().feedback_params.params().size());
+  EXPECT_TRUE(
+      result.value().feedback_params.Has(cricket::FeedbackParam("goog-lntf")));
   EXPECT_TRUE(result.value().feedback_params.Has(
       cricket::FeedbackParam("transport-cc")));
   EXPECT_TRUE(result.value().feedback_params.Has(
@@ -382,15 +402,22 @@ TEST(RtpParametersConversionTest, ToRtcpFeedback) {
   absl::optional<RtcpFeedback> result = ToRtcpFeedback({"ccm", "fir"});
   EXPECT_EQ(RtcpFeedback(RtcpFeedbackType::CCM, RtcpFeedbackMessageType::FIR),
             *result);
+
+  result = ToRtcpFeedback(cricket::FeedbackParam("goog-lntf"));
+  EXPECT_EQ(RtcpFeedback(RtcpFeedbackType::LNTF), *result);
+
   result = ToRtcpFeedback(cricket::FeedbackParam("nack"));
   EXPECT_EQ(RtcpFeedback(RtcpFeedbackType::NACK,
                          RtcpFeedbackMessageType::GENERIC_NACK),
             *result);
+
   result = ToRtcpFeedback({"nack", "pli"});
   EXPECT_EQ(RtcpFeedback(RtcpFeedbackType::NACK, RtcpFeedbackMessageType::PLI),
             *result);
+
   result = ToRtcpFeedback(cricket::FeedbackParam("goog-remb"));
   EXPECT_EQ(RtcpFeedback(RtcpFeedbackType::REMB), *result);
+
   result = ToRtcpFeedback(cricket::FeedbackParam("transport-cc"));
   EXPECT_EQ(RtcpFeedback(RtcpFeedbackType::TRANSPORT_CC), *result);
 }
@@ -399,17 +426,26 @@ TEST(RtpParametersConversionTest, ToRtcpFeedbackErrors) {
   // CCM with missing or invalid message type.
   absl::optional<RtcpFeedback> result = ToRtcpFeedback({"ccm", "pli"});
   EXPECT_FALSE(result);
+
   result = ToRtcpFeedback(cricket::FeedbackParam("ccm"));
   EXPECT_FALSE(result);
+
+  // LNTF with message type (should be left empty).
+  result = ToRtcpFeedback({"goog-lntf", "pli"});
+  EXPECT_FALSE(result);
+
   // NACK with missing or invalid message type.
   result = ToRtcpFeedback({"nack", "fir"});
   EXPECT_FALSE(result);
+
   // REMB with message type (should be left empty).
   result = ToRtcpFeedback({"goog-remb", "pli"});
   EXPECT_FALSE(result);
+
   // TRANSPORT_CC with message type (should be left empty).
   result = ToRtcpFeedback({"transport-cc", "fir"});
   EXPECT_FALSE(result);
+
   // Unknown message type.
   result = ToRtcpFeedback(cricket::FeedbackParam("foo"));
   EXPECT_FALSE(result);
@@ -445,6 +481,7 @@ TEST(RtpParametersConversionTest, ToVideoRtpCodecCapability) {
   cricket_codec.params["foo"] = "bar";
   cricket_codec.params["ANOTHER"] = "param";
   cricket_codec.feedback_params.Add(cricket::FeedbackParam("transport-cc"));
+  cricket_codec.feedback_params.Add(cricket::FeedbackParam("goog-lntf"));
   cricket_codec.feedback_params.Add({"nack", "pli"});
   RtpCodecCapability codec = ToRtpCodecCapability(cricket_codec);
 
@@ -455,11 +492,12 @@ TEST(RtpParametersConversionTest, ToVideoRtpCodecCapability) {
   ASSERT_EQ(2u, codec.parameters.size());
   EXPECT_EQ("bar", codec.parameters["foo"]);
   EXPECT_EQ("param", codec.parameters["ANOTHER"]);
-  EXPECT_EQ(2u, codec.rtcp_feedback.size());
+  EXPECT_EQ(3u, codec.rtcp_feedback.size());
   EXPECT_EQ(RtcpFeedback(RtcpFeedbackType::TRANSPORT_CC),
             codec.rtcp_feedback[0]);
+  EXPECT_EQ(RtcpFeedback(RtcpFeedbackType::LNTF), codec.rtcp_feedback[1]);
   EXPECT_EQ(RtcpFeedback(RtcpFeedbackType::NACK, RtcpFeedbackMessageType::PLI),
-            codec.rtcp_feedback[1]);
+            codec.rtcp_feedback[2]);
 }
 
 TEST(RtpParametersConversionTest, ToRtpEncodingsWithEmptyStreamParamsVec) {
@@ -519,6 +557,7 @@ TEST(RtpParametersConversionTest, ToVideoRtpCodecParameters) {
   cricket_codec.params["foo"] = "bar";
   cricket_codec.params["ANOTHER"] = "param";
   cricket_codec.feedback_params.Add(cricket::FeedbackParam("transport-cc"));
+  cricket_codec.feedback_params.Add(cricket::FeedbackParam("goog-lntf"));
   cricket_codec.feedback_params.Add({"nack", "pli"});
   RtpCodecParameters codec = ToRtpCodecParameters(cricket_codec);
 
@@ -529,11 +568,12 @@ TEST(RtpParametersConversionTest, ToVideoRtpCodecParameters) {
   ASSERT_EQ(2u, codec.parameters.size());
   EXPECT_EQ("bar", codec.parameters["foo"]);
   EXPECT_EQ("param", codec.parameters["ANOTHER"]);
-  EXPECT_EQ(2u, codec.rtcp_feedback.size());
+  EXPECT_EQ(3u, codec.rtcp_feedback.size());
   EXPECT_EQ(RtcpFeedback(RtcpFeedbackType::TRANSPORT_CC),
             codec.rtcp_feedback[0]);
+  EXPECT_EQ(RtcpFeedback(RtcpFeedbackType::LNTF), codec.rtcp_feedback[1]);
   EXPECT_EQ(RtcpFeedback(RtcpFeedbackType::NACK, RtcpFeedbackMessageType::PLI),
-            codec.rtcp_feedback[1]);
+            codec.rtcp_feedback[2]);
 }
 
 // An unknown feedback param should just be ignored.

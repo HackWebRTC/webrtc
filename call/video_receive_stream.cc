@@ -116,6 +116,7 @@ std::string VideoReceiveStream::Config::Rtp::ToString() const {
   ss << '}';
   ss << ", remb: " << (remb ? "on" : "off");
   ss << ", transport_cc: " << (transport_cc ? "on" : "off");
+  ss << ", lntf: {enabled: " << (lntf.enabled ? "true" : "false") << '}';
   ss << ", nack: {rtp_history_ms: " << nack.rtp_history_ms << '}';
   ss << ", ulpfec_payload_type: " << ulpfec_payload_type;
   ss << ", red_type: " << red_payload_type;

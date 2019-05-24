@@ -158,7 +158,8 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
 
   process_thread_->RegisterModule(rtp_rtcp_.get(), RTC_FROM_HERE);
 
-  if (webrtc::field_trial::IsEnabled("WebRTC-RtcpLossNotification")) {
+  // TODO(bugs.webrtc.org/10662): NACK and LNTF shouldn't be mutually exclusive.
+  if (config_.rtp.lntf.enabled) {
     loss_notification_controller_ =
         absl::make_unique<LossNotificationController>(this, this);
   } else if (config_.rtp.nack.rtp_history_ms != 0) {
@@ -395,6 +396,7 @@ void RtpVideoStreamReceiver::SendLossNotification(
     uint16_t last_decoded_seq_num,
     uint16_t last_received_seq_num,
     bool decodability_flag) {
+  RTC_DCHECK(config_.rtp.lntf.enabled);
   rtp_rtcp_->SendLossNotification(last_decoded_seq_num, last_received_seq_num,
                                   decodability_flag);
 }

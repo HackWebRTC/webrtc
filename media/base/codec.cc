@@ -353,6 +353,11 @@ std::string RtpDataCodec::ToString() const {
   return sb.str();
 }
 
+bool HasLntf(const Codec& codec) {
+  return codec.HasFeedbackParam(
+      FeedbackParam(kRtcpFbParamLntf, kParamValueEmpty));
+}
+
 bool HasNack(const Codec& codec) {
   return codec.HasFeedbackParam(
       FeedbackParam(kRtcpFbParamNack, kParamValueEmpty));
