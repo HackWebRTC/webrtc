@@ -50,7 +50,6 @@ constexpr int kOpusBitrateNbBps = 12000;
 constexpr int kOpusBitrateWbBps = 20000;
 constexpr int kOpusBitrateFbBps = 32000;
 
-constexpr int kSampleRateHz = 48000;
 constexpr int kRtpTimestampRateHz = 48000;
 constexpr int kDefaultMaxPlaybackRate = 48000;
 
@@ -288,7 +287,7 @@ void AudioEncoderOpusImpl::AppendSupportedEncoders(
 AudioCodecInfo AudioEncoderOpusImpl::QueryAudioEncoder(
     const AudioEncoderOpusConfig& config) {
   RTC_DCHECK(config.IsOk());
-  AudioCodecInfo info(kRtpTimestampRateHz, config.num_channels,
+  AudioCodecInfo info(config.sample_rate_hz, config.num_channels,
                       *config.bitrate_bps,
                       AudioEncoderOpusConfig::kMinBitrateBps,
                       AudioEncoderOpusConfig::kMaxBitrateBps);
@@ -460,7 +459,7 @@ AudioEncoderOpusImpl::~AudioEncoderOpusImpl() {
 }
 
 int AudioEncoderOpusImpl::SampleRateHz() const {
-  return kSampleRateHz;
+  return config_.sample_rate_hz;
 }
 
 size_t AudioEncoderOpusImpl::NumChannels() const {
@@ -711,7 +710,8 @@ size_t AudioEncoderOpusImpl::Num10msFramesPerPacket() const {
 }
 
 size_t AudioEncoderOpusImpl::SamplesPer10msFrame() const {
-  return rtc::CheckedDivExact(kSampleRateHz, 100) * config_.num_channels;
+  return rtc::CheckedDivExact(config_.sample_rate_hz, 100) *
+         config_.num_channels;
 }
 
 size_t AudioEncoderOpusImpl::SufficientOutputBufferSize() const {
@@ -742,7 +742,7 @@ bool AudioEncoderOpusImpl::RecreateEncoderInstance(
                               AudioEncoderOpusConfig::ApplicationMode::kVoip
                           ? 0
                           : 1,
-                      48000));
+                      config.sample_rate_hz));
   const int bitrate = GetBitrateBps(config);
   RTC_CHECK_EQ(0, WebRtcOpus_SetBitRate(inst_, bitrate));
   RTC_LOG(LS_INFO) << "Set Opus bitrate to " << bitrate << " bps.";
