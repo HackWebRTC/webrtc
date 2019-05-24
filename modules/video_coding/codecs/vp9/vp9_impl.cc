@@ -711,18 +711,35 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
         RTC_NOTREACHED();
     }
 
-    // Configure encoder to drop entire superframe whenever it needs to drop
-    // a layer. This mode is prefered over per-layer dropping which causes
-    // quality flickering and is not compatible with RTP non-flexible mode.
-    vpx_svc_frame_drop_t svc_drop_frame;
-    memset(&svc_drop_frame, 0, sizeof(svc_drop_frame));
-    svc_drop_frame.framedrop_mode =
-        full_superframe_drop_ ? FULL_SUPERFRAME_DROP : CONSTRAINED_LAYER_DROP;
-    svc_drop_frame.max_consec_drop = std::numeric_limits<int>::max();
-    for (size_t i = 0; i < num_spatial_layers_; ++i) {
-      svc_drop_frame.framedrop_thresh[i] = config_->rc_dropframe_thresh;
+    memset(&svc_drop_frame_, 0, sizeof(svc_drop_frame_));
+    dropping_only_base_layer_ = inter_layer_pred_ == InterLayerPredMode::kOn &&
+                                codec_.mode == VideoCodecMode::kScreensharing &&
+                                num_spatial_layers_ > 1;
+    if (dropping_only_base_layer_) {
+      // Screenshare dropping mode: only the base spatial layer
+      // can be dropped and it doesn't affect other spatial layers.
+      // This mode is preferable because base layer has low bitrate targets
+      // and more likely to drop frames. It shouldn't reduce framerate on other
+      // layers.
+      svc_drop_frame_.framedrop_mode = LAYER_DROP;
+      svc_drop_frame_.max_consec_drop = 5;
+      svc_drop_frame_.framedrop_thresh[0] = config_->rc_dropframe_thresh;
+      for (size_t i = 1; i < num_spatial_layers_; ++i) {
+        svc_drop_frame_.framedrop_thresh[i] = 0;
+      }
+    } else {
+      // Configure encoder to drop entire superframe whenever it needs to drop
+      // a layer. This mode is preferred over per-layer dropping which causes
+      // quality flickering and is not compatible with RTP non-flexible mode.
+      svc_drop_frame_.framedrop_mode =
+          full_superframe_drop_ ? FULL_SUPERFRAME_DROP : CONSTRAINED_LAYER_DROP;
+      svc_drop_frame_.max_consec_drop = std::numeric_limits<int>::max();
+      for (size_t i = 0; i < num_spatial_layers_; ++i) {
+        svc_drop_frame_.framedrop_thresh[i] = config_->rc_dropframe_thresh;
+      }
     }
-    vpx_codec_control(encoder_, VP9E_SET_SVC_FRAME_DROP_LAYER, &svc_drop_frame);
+    vpx_codec_control(encoder_, VP9E_SET_SVC_FRAME_DROP_LAYER,
+                      &svc_drop_frame_);
   }
 
   // Register callback for getting each spatial layer.
@@ -888,7 +905,20 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
       if (less_layers_requested || more_layers_requested) {
         ss_info_needed_ = true;
       }
+      if (more_layers_requested && !force_key_frame_) {
+        // Prohibit drop of all layers for the next frame, so newly enabled
+        // layer would have a valid spatial reference.
+        for (size_t i = 0; i < num_spatial_layers_; ++i) {
+          svc_drop_frame_.framedrop_thresh[i] = 0;
+        }
+      }
     }
+  }
+
+  if (num_spatial_layers_ > 1) {
+    // Update frame dropping settings as they may change on per-frame basis.
+    vpx_codec_control(encoder_, VP9E_SET_SVC_FRAME_DROP_LAYER,
+                      &svc_drop_frame_);
   }
 
   if (vpx_codec_enc_config_set(encoder_, config_)) {
@@ -1442,6 +1472,16 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
 
 void VP9EncoderImpl::DeliverBufferedFrame(bool end_of_picture) {
   if (encoded_image_.size() > 0) {
+    if (num_spatial_layers_ > 1) {
+      // Restore frame dropping settings, as dropping may be temporary forbidden
+      // due to dynamically enabled layers.
+      svc_drop_frame_.framedrop_thresh[0] = config_->rc_dropframe_thresh;
+      for (size_t i = 1; i < num_spatial_layers_; ++i) {
+        svc_drop_frame_.framedrop_thresh[i] =
+            dropping_only_base_layer_ ? 0 : config_->rc_dropframe_thresh;
+      }
+    }
+
     codec_specific_.codecSpecific.VP9.end_of_picture = end_of_picture;
 
     // No data partitioning in VP9, so 1 partition only.
