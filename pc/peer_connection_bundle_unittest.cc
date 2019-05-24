@@ -83,14 +83,8 @@ class PeerConnectionWrapperForBundleTest : public PeerConnectionWrapper {
     return false;
   }
 
-  rtc::PacketTransportInternal* voice_rtp_transport() {
-    return (voice_channel() ? voice_channel()->rtp_packet_transport()
-                            : nullptr);
-  }
-
-  rtc::PacketTransportInternal* voice_rtcp_transport() {
-    return (voice_channel() ? voice_channel()->rtcp_packet_transport()
-                            : nullptr);
+  RtpTransportInternal* voice_rtp_transport() {
+    return (voice_channel() ? voice_channel()->rtp_transport() : nullptr);
   }
 
   cricket::VoiceChannel* voice_channel() {
@@ -104,14 +98,8 @@ class PeerConnectionWrapperForBundleTest : public PeerConnectionWrapper {
     return nullptr;
   }
 
-  rtc::PacketTransportInternal* video_rtp_transport() {
-    return (video_channel() ? video_channel()->rtp_packet_transport()
-                            : nullptr);
-  }
-
-  rtc::PacketTransportInternal* video_rtcp_transport() {
-    return (video_channel() ? video_channel()->rtcp_packet_transport()
-                            : nullptr);
+  RtpTransportInternal* video_rtp_transport() {
+    return (video_channel() ? video_channel()->rtp_transport() : nullptr);
   }
 
   cricket::VideoChannel* video_channel() {
@@ -552,14 +540,14 @@ TEST_P(PeerConnectionBundleTest, NeverCreateRtcpTransportWithRtcpMuxRequired) {
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
 
-  EXPECT_FALSE(caller->voice_rtcp_transport());
-  EXPECT_FALSE(caller->video_rtcp_transport());
+  EXPECT_FALSE(caller->voice_rtp_transport()->rtcp_mux_enabled());
+  EXPECT_FALSE(caller->video_rtp_transport()->rtcp_mux_enabled());
 
   ASSERT_TRUE(
       caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal()));
 
-  EXPECT_FALSE(caller->voice_rtcp_transport());
-  EXPECT_FALSE(caller->video_rtcp_transport());
+  EXPECT_TRUE(caller->voice_rtp_transport()->rtcp_mux_enabled());
+  EXPECT_TRUE(caller->video_rtp_transport()->rtcp_mux_enabled());
 }
 
 // When negotiating RTCP multiplexing, the PeerConnection makes RTCP transports
@@ -573,14 +561,14 @@ TEST_P(PeerConnectionBundleTest,
 
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
 
-  EXPECT_TRUE(caller->voice_rtcp_transport());
-  EXPECT_TRUE(caller->video_rtcp_transport());
+  EXPECT_FALSE(caller->voice_rtp_transport()->rtcp_mux_enabled());
+  EXPECT_FALSE(caller->video_rtp_transport()->rtcp_mux_enabled());
 
   ASSERT_TRUE(
       caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal()));
 
-  EXPECT_FALSE(caller->voice_rtcp_transport());
-  EXPECT_FALSE(caller->video_rtcp_transport());
+  EXPECT_TRUE(caller->voice_rtp_transport()->rtcp_mux_enabled());
+  EXPECT_TRUE(caller->video_rtp_transport()->rtcp_mux_enabled());
 }
 
 TEST_P(PeerConnectionBundleTest, FailToSetDescriptionWithBundleAndNoRtcpMux) {

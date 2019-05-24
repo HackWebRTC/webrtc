@@ -39,15 +39,20 @@ class RtpTransport : public RtpTransportInternal {
   bool rtcp_mux_enabled() const override { return rtcp_mux_enabled_; }
   void SetRtcpMuxEnabled(bool enable) override;
 
-  rtc::PacketTransportInternal* rtp_packet_transport() const override {
+  const std::string& transport_name() const override;
+
+  int SetRtpOption(rtc::Socket::Option opt, int value) override;
+  int SetRtcpOption(rtc::Socket::Option opt, int value) override;
+
+  rtc::PacketTransportInternal* rtp_packet_transport() const {
     return rtp_packet_transport_;
   }
-  void SetRtpPacketTransport(rtc::PacketTransportInternal* rtp) override;
+  void SetRtpPacketTransport(rtc::PacketTransportInternal* rtp);
 
-  rtc::PacketTransportInternal* rtcp_packet_transport() const override {
+  rtc::PacketTransportInternal* rtcp_packet_transport() const {
     return rtcp_packet_transport_;
   }
-  void SetRtcpPacketTransport(rtc::PacketTransportInternal* rtcp) override;
+  void SetRtcpPacketTransport(rtc::PacketTransportInternal* rtcp);
 
   bool IsReadyToSend() const override { return ready_to_send_; }
 

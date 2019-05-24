@@ -193,8 +193,7 @@ TEST_F(ChannelManagerTest, CreateDestroyChannels) {
 TEST_F(ChannelManagerTest, CreateDestroyChannelsWithMediaTransport) {
   EXPECT_TRUE(cm_->Init());
   auto rtp_transport = CreateDtlsSrtpTransport();
-  auto media_transport =
-      CreateMediaTransport(rtp_transport->rtcp_packet_transport());
+  auto media_transport = CreateMediaTransport(rtp_dtls_transport_.get());
   TestCreateDestroyChannels(
       rtp_transport.get(), webrtc::MediaTransportConfig(media_transport.get()));
 }

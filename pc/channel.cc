@@ -254,8 +254,7 @@ bool BaseChannel::SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport) {
 
   rtp_transport_ = rtp_transport;
   if (rtp_transport_) {
-    RTC_DCHECK(rtp_transport_->rtp_packet_transport());
-    transport_name_ = rtp_transport_->rtp_packet_transport()->transport_name();
+    transport_name_ = rtp_transport_->transport_name();
 
     if (!ConnectToRtpTransport()) {
       RTC_LOG(LS_ERROR) << "Failed to connect to the new RtpTransport.";
@@ -266,13 +265,11 @@ bool BaseChannel::SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport) {
 
     // Set the cached socket options.
     for (const auto& pair : socket_options_) {
-      rtp_transport_->rtp_packet_transport()->SetOption(pair.first,
-                                                        pair.second);
+      rtp_transport_->SetRtpOption(pair.first, pair.second);
     }
-    if (rtp_transport_->rtcp_packet_transport()) {
+    if (!rtp_transport_->rtcp_mux_enabled()) {
       for (const auto& pair : rtcp_socket_options_) {
-        rtp_transport_->rtp_packet_transport()->SetOption(pair.first,
-                                                          pair.second);
+        rtp_transport_->SetRtcpOption(pair.first, pair.second);
       }
     }
   }
@@ -348,20 +345,17 @@ int BaseChannel::SetOption_n(SocketType type,
                              int value) {
   RTC_DCHECK(network_thread_->IsCurrent());
   RTC_DCHECK(rtp_transport_);
-  rtc::PacketTransportInternal* transport = nullptr;
   switch (type) {
     case ST_RTP:
-      transport = rtp_transport_->rtp_packet_transport();
       socket_options_.push_back(
           std::pair<rtc::Socket::Option, int>(opt, value));
-      break;
+      return rtp_transport_->SetRtpOption(opt, value);
     case ST_RTCP:
-      transport = rtp_transport_->rtcp_packet_transport();
       rtcp_socket_options_.push_back(
           std::pair<rtc::Socket::Option, int>(opt, value));
-      break;
+      return rtp_transport_->SetRtcpOption(opt, value);
   }
-  return transport ? transport->SetOption(opt, value) : -1;
+  return -1;
 }
 
 void BaseChannel::OnWritableState(bool writable) {

@@ -120,6 +120,8 @@ class BaseChannel : public ChannelInterface,
   // internally. It would replace the |SetTransports| and its variants.
   bool SetRtpTransport(webrtc::RtpTransportInternal* rtp_transport) override;
 
+  webrtc::RtpTransportInternal* rtp_transport() const { return rtp_transport_; }
+
   // Channel control
   bool SetLocalContent(const MediaContentDescription* content,
                        webrtc::SdpType type,
@@ -153,20 +155,6 @@ class BaseChannel : public ChannelInterface,
   // be destroyed.
   // Fired on the network thread.
   sigslot::signal1<const std::string&> SignalRtcpMuxFullyActive;
-
-  rtc::PacketTransportInternal* rtp_packet_transport() {
-    if (rtp_transport_) {
-      return rtp_transport_->rtp_packet_transport();
-    }
-    return nullptr;
-  }
-
-  rtc::PacketTransportInternal* rtcp_packet_transport() {
-    if (rtp_transport_) {
-      return rtp_transport_->rtcp_packet_transport();
-    }
-    return nullptr;
-  }
 
   // Returns media transport, can be null if media transport is not available.
   webrtc::MediaTransportInterface* media_transport() {

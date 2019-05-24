@@ -31,6 +31,21 @@ void RtpTransport::SetRtcpMuxEnabled(bool enable) {
   MaybeSignalReadyToSend();
 }
 
+const std::string& RtpTransport::transport_name() const {
+  return rtp_packet_transport_->transport_name();
+}
+
+int RtpTransport::SetRtpOption(rtc::Socket::Option opt, int value) {
+  return rtp_packet_transport_->SetOption(opt, value);
+}
+
+int RtpTransport::SetRtcpOption(rtc::Socket::Option opt, int value) {
+  if (rtcp_packet_transport_) {
+    return rtcp_packet_transport_->SetOption(opt, value);
+  }
+  return -1;
+}
+
 void RtpTransport::SetRtpPacketTransport(
     rtc::PacketTransportInternal* new_packet_transport) {
   if (new_packet_transport == rtp_packet_transport_) {

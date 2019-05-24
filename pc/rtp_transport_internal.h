@@ -37,16 +37,13 @@ class RtpTransportInternal : public sigslot::has_slots<> {
 
   virtual void SetRtcpMuxEnabled(bool enable) = 0;
 
-  // TODO(zstein): Remove PacketTransport setters. Clients should pass these
-  // in to constructors instead and construct a new RtpTransportInternal instead
-  // of updating them.
+  virtual const std::string& transport_name() const = 0;
+
+  // Sets socket options on the underlying RTP or RTCP transports.
+  virtual int SetRtpOption(rtc::Socket::Option opt, int value) = 0;
+  virtual int SetRtcpOption(rtc::Socket::Option opt, int value) = 0;
+
   virtual bool rtcp_mux_enabled() const = 0;
-
-  virtual rtc::PacketTransportInternal* rtp_packet_transport() const = 0;
-  virtual void SetRtpPacketTransport(rtc::PacketTransportInternal* rtp) = 0;
-
-  virtual rtc::PacketTransportInternal* rtcp_packet_transport() const = 0;
-  virtual void SetRtcpPacketTransport(rtc::PacketTransportInternal* rtcp) = 0;
 
   virtual bool IsReadyToSend() const = 0;
 

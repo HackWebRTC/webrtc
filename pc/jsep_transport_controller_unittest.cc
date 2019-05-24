@@ -1662,7 +1662,6 @@ TEST_F(JsepTransportControllerTest, MultipleMediaSectionsOfSameTypeWithBundle) {
   // Verify the DtlsTransport for the SCTP data channel is reset correctly.
   auto it2 = changed_dtls_transport_by_mid_.find(kDataMid1);
   ASSERT_TRUE(it2 != changed_dtls_transport_by_mid_.end());
-  EXPECT_EQ(transport1->rtp_packet_transport(), it2->second);
 }
 
 // Tests that only a subset of all the m= sections are bundled.
