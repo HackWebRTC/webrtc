@@ -21,30 +21,14 @@
 #include <wchar.h>
 #include <windows.h>
 
-#define alloca _alloca
 #endif  // WEBRTC_WIN
 
 #if defined(WEBRTC_POSIX)
-#ifdef BSD
 #include <stdlib.h>
-#else  // BSD
-#include <alloca.h>
-#endif  // !BSD
 #include <strings.h>
 #endif  // WEBRTC_POSIX
 
 #include <string>
-
-///////////////////////////////////////////////////////////////////////////////
-// Generic string/memory utilities
-///////////////////////////////////////////////////////////////////////////////
-
-#define STACK_ARRAY(TYPE, LEN) \
-  static_cast<TYPE*>(::alloca((LEN) * sizeof(TYPE)))
-
-///////////////////////////////////////////////////////////////////////////////
-// Traits simplifies porting string functions to be CTYPE-agnostic
-///////////////////////////////////////////////////////////////////////////////
 
 namespace rtc {
 
@@ -65,9 +49,10 @@ size_t strcpyn(char* buffer,
 inline std::wstring ToUtf16(const char* utf8, size_t len) {
   int len16 = ::MultiByteToWideChar(CP_UTF8, 0, utf8, static_cast<int>(len),
                                     nullptr, 0);
-  wchar_t* ws = STACK_ARRAY(wchar_t, len16);
-  ::MultiByteToWideChar(CP_UTF8, 0, utf8, static_cast<int>(len), ws, len16);
-  return std::wstring(ws, len16);
+  std::wstring ws(len16, 0);
+  ::MultiByteToWideChar(CP_UTF8, 0, utf8, static_cast<int>(len), &*ws.begin(),
+                        len16);
+  return ws;
 }
 
 inline std::wstring ToUtf16(const std::string& str) {
@@ -77,10 +62,10 @@ inline std::wstring ToUtf16(const std::string& str) {
 inline std::string ToUtf8(const wchar_t* wide, size_t len) {
   int len8 = ::WideCharToMultiByte(CP_UTF8, 0, wide, static_cast<int>(len),
                                    nullptr, 0, nullptr, nullptr);
-  char* ns = STACK_ARRAY(char, len8);
-  ::WideCharToMultiByte(CP_UTF8, 0, wide, static_cast<int>(len), ns, len8,
-                        nullptr, nullptr);
-  return std::string(ns, len8);
+  std::string ns(len8, 0);
+  ::WideCharToMultiByte(CP_UTF8, 0, wide, static_cast<int>(len), &*ns.begin(),
+                        len8, nullptr, nullptr);
+  return ns;
 }
 
 inline std::string ToUtf8(const wchar_t* wide) {

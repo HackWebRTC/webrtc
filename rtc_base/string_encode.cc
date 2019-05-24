@@ -14,7 +14,6 @@
 
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/string_utils.h"
 
 namespace rtc {
 
@@ -45,25 +44,22 @@ bool hex_decode(char ch, unsigned char* val) {
   return true;
 }
 
-// hex_encode, but separate each byte representation with a delimiter.
-// |delimiter| == 0 means no delimiter
-// If the buffer is too short, we return 0
-size_t hex_encode_with_delimiter(char* buffer,
-                                 size_t buflen,
-                                 const char* csource,
-                                 size_t srclen,
-                                 char delimiter) {
-  RTC_DCHECK(buffer);  // TODO(kwiberg): estimate output size
-  if (buflen == 0)
-    return 0;
+size_t hex_encode_output_length(size_t srclen, char delimiter) {
+  return delimiter && srclen > 0 ? (srclen * 3 - 1) : (srclen * 2);
+}
+
+// hex_encode shows the hex representation of binary data in ascii, with
+// |delimiter| between bytes, or none if |delimiter| == 0.
+void hex_encode_with_delimiter(char* buffer,
+                               const char* csource,
+                               size_t srclen,
+                               char delimiter) {
+  RTC_DCHECK(buffer);
 
   // Init and check bounds.
   const unsigned char* bsource =
       reinterpret_cast<const unsigned char*>(csource);
   size_t srcpos = 0, bufpos = 0;
-  size_t needed = delimiter ? (srclen * 3) : (srclen * 2 + 1);
-  if (buflen < needed)
-    return 0;
 
   while (srcpos < srclen) {
     unsigned char ch = bsource[srcpos++];
@@ -77,10 +73,6 @@ size_t hex_encode_with_delimiter(char* buffer,
       ++bufpos;
     }
   }
-
-  // Null terminate.
-  buffer[bufpos] = '\0';
-  return bufpos;
 }
 
 }  // namespace
@@ -96,12 +88,11 @@ std::string hex_encode(const char* source, size_t srclen) {
 std::string hex_encode_with_delimiter(const char* source,
                                       size_t srclen,
                                       char delimiter) {
-  const size_t kBufferSize = srclen * 3;
-  char* buffer = STACK_ARRAY(char, kBufferSize);
-  size_t length =
-      hex_encode_with_delimiter(buffer, kBufferSize, source, srclen, delimiter);
-  RTC_DCHECK(srclen == 0 || length > 0);
-  return std::string(buffer, length);
+  std::string s(hex_encode_output_length(srclen, delimiter), 0);
+  // TODO(nisse): When we can use C++17, switch the below hack with begin to
+  // just s.data().
+  hex_encode_with_delimiter(&*s.begin(), source, srclen, delimiter);
+  return s;
 }
 
 size_t hex_decode(char* cbuffer,
