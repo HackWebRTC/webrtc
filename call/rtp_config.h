@@ -31,7 +31,7 @@ struct RtpPayloadState {
 struct LntfConfig {
   std::string ToString() const;
 
-  bool enabled{false};  // TODO(bugs.webrtc.org/10662): Consume this flag.
+  bool enabled{false};
 };
 
 // Settings for NACK, see RFC 4585 for details.

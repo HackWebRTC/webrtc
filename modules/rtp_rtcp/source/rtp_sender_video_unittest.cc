@@ -104,6 +104,7 @@ class TestRtpSenderVideo : public RTPSenderVideo {
                        &playout_delay_oracle_,
                        nullptr,
                        false,
+                       false,
                        field_trials) {}
   ~TestRtpSenderVideo() override {}
 

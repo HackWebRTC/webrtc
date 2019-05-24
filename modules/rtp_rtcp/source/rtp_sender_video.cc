@@ -187,6 +187,7 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock,
                                PlayoutDelayOracle* playout_delay_oracle,
                                FrameEncryptorInterface* frame_encryptor,
                                bool require_frame_encryption,
+                               bool need_rtp_packet_infos,
                                const WebRtcKeyValueConfig& field_trials)
     : rtp_sender_(rtp_sender),
       clock_(clock),
@@ -195,15 +196,10 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock,
       last_rotation_(kVideoRotation_0),
       transmit_color_space_next_frame_(false),
       playout_delay_oracle_(playout_delay_oracle),
-      // TODO(bugs.webrtc.org/10662): Choose whether to instantiate
-      // |rtp_sequence_number_map_| according to the negotiation of the
-      // LNTF (loss notification) rtcp-fb message.
-      rtp_sequence_number_map_(
-          field_trials.Lookup("WebRTC-RtcpLossNotification").find("Enabled") !=
-                  std::string::npos
-              ? absl::make_unique<RtpSequenceNumberMap>(
-                    kRtpSequenceNumberMapMaxEntries)
-              : nullptr),
+      rtp_sequence_number_map_(need_rtp_packet_infos
+                                   ? absl::make_unique<RtpSequenceNumberMap>(
+                                         kRtpSequenceNumberMapMaxEntries)
+                                   : nullptr),
       red_payload_type_(-1),
       ulpfec_payload_type_(-1),
       flexfec_sender_(flexfec_sender),

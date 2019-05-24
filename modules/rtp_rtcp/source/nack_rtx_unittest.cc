@@ -138,7 +138,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     rtp_rtcp_module_ = RtpRtcp::Create(configuration);
     rtp_sender_video_ = absl::make_unique<RTPSenderVideo>(
         &fake_clock, rtp_rtcp_module_->RtpSender(), nullptr,
-        &playout_delay_oracle_, nullptr, false, FieldTrialBasedConfig());
+        &playout_delay_oracle_, nullptr, false, false, FieldTrialBasedConfig());
     rtp_rtcp_module_->SetSSRC(kTestSsrc);
     rtp_rtcp_module_->SetRTCPStatus(RtcpMode::kCompound);
     rtp_rtcp_module_->SetStorePacketsStatus(true, 600);

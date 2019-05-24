@@ -187,7 +187,7 @@ class RtpRtcpImplTest : public ::testing::Test {
 
     sender_video_ = absl::make_unique<RTPSenderVideo>(
         &clock_, sender_.impl_->RtpSender(), nullptr, &playout_delay_oracle_,
-        nullptr, false, FieldTrialBasedConfig());
+        nullptr, false, false, FieldTrialBasedConfig());
 
     memset(&codec_, 0, sizeof(VideoCodec));
     codec_.plType = 100;

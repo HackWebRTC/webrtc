@@ -58,6 +58,7 @@ class RTPSenderVideo {
                  PlayoutDelayOracle* playout_delay_oracle,
                  FrameEncryptorInterface* frame_encryptor,
                  bool require_frame_encryption,
+                 bool need_rtp_packet_infos,
                  const WebRtcKeyValueConfig& field_trials);
   virtual ~RTPSenderVideo();
 
