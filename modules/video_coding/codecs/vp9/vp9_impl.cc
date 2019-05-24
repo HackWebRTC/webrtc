@@ -316,8 +316,7 @@ bool VP9EncoderImpl::SetSvcRates(
       }
 
       framerate_controller_[sl_idx].SetTargetRate(
-          std::min(static_cast<float>(codec_.maxFramerate),
-                   codec_.spatialLayers[sl_idx].maxFramerate));
+          codec_.spatialLayers[sl_idx].maxFramerate);
     }
   } else {
     float rate_ratio[VPX_MAX_LAYERS] = {0};
@@ -535,24 +534,18 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
 
   inter_layer_pred_ = inst->VP9().interLayerPred;
 
-  different_framerates_used_ = false;
-  for (size_t sl_idx = 1; sl_idx < num_spatial_layers_; ++sl_idx) {
-    if (std::abs(codec_.spatialLayers[sl_idx].maxFramerate -
-                 codec_.spatialLayers[0].maxFramerate) > 1e-9) {
-      different_framerates_used_ = true;
-    }
-  }
-
-  if (different_framerates_used_ && !is_flexible_mode_) {
-    RTC_LOG(LS_ERROR) << "Flexible mode required for different framerates on "
-                         "different spatial layers";
+  if (num_spatial_layers_ > 1 &&
+      codec_.mode == VideoCodecMode::kScreensharing && !is_flexible_mode_) {
+    RTC_LOG(LS_ERROR) << "Flexible mode is required for screenshare with "
+                         "several spatial layers";
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
   // External reference control is required for different frame rate on spatial
   // layers because libvpx generates rtp incompatible references in this case.
   external_ref_control_ = field_trial::IsEnabled("WebRTC-Vp9ExternalRefCtrl") ||
-                          different_framerates_used_ ||
+                          (num_spatial_layers_ > 1 &&
+                           codec_.mode == VideoCodecMode::kScreensharing) ||
                           inter_layer_pred_ == InterLayerPredMode::kOn;
 
   if (num_temporal_layers_ == 1) {
@@ -589,7 +582,8 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
 
   if (external_ref_control_) {
     config_->temporal_layering_mode = VP9E_TEMPORAL_LAYERING_MODE_BYPASS;
-    if (num_temporal_layers_ > 1 && different_framerates_used_) {
+    if (num_temporal_layers_ > 1 && num_spatial_layers_ > 1 &&
+        codec_.mode == VideoCodecMode::kScreensharing) {
       // External reference control for several temporal layers with different
       // frame rates on spatial layers is not implemented yet.
       return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
@@ -966,7 +960,8 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
     if (VideoCodecMode::kScreensharing == codec_.mode) {
       for (uint8_t sl_idx = 0; sl_idx < num_active_spatial_layers_; ++sl_idx) {
         ref_config.duration[sl_idx] = static_cast<int64_t>(
-            90000 / framerate_controller_[sl_idx].GetTargetRate());
+            90000 / (std::min(static_cast<float>(codec_.maxFramerate),
+                              framerate_controller_[sl_idx].GetTargetRate())));
       }
     }
 
@@ -985,8 +980,9 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   RTC_DCHECK_GE(framerate_controller_.size(), num_active_spatial_layers_);
   float target_framerate_fps =
       (codec_.mode == VideoCodecMode::kScreensharing)
-          ? framerate_controller_[num_active_spatial_layers_ - 1]
-                .GetTargetRate()
+          ? std::min(static_cast<float>(codec_.maxFramerate),
+                     framerate_controller_[num_active_spatial_layers_ - 1]
+                         .GetTargetRate())
           : codec_.maxFramerate;
   uint32_t duration = static_cast<uint32_t>(90000 / target_framerate_fps);
   const vpx_codec_err_t rv = vpx_codec_encode(encoder_, raw_, timestamp_,
@@ -1201,6 +1197,8 @@ void VP9EncoderImpl::FillReferenceIndices(const vpx_codec_cx_pkt& pkt,
         // It is safe to ignore this requirement if inter-layer prediction is
         // enabled for all frames when all base frames are relayed to receiver.
         RTC_DCHECK_EQ(ref_buf.spatial_layer_id, layer_id.spatial_layer_id);
+      } else {
+        RTC_DCHECK_LE(ref_buf.spatial_layer_id, layer_id.spatial_layer_id);
       }
       RTC_DCHECK_LE(ref_buf.temporal_layer_id, layer_id.temporal_layer_id);
 
@@ -1320,7 +1318,7 @@ vpx_svc_ref_frame_config_t VP9EncoderImpl::SetReferences(
       const bool same_spatial_layer =
           ref_buf_[buf_idx].spatial_layer_id == sl_idx;
       bool correct_pid = false;
-      if (different_framerates_used_) {
+      if (is_flexible_mode_) {
         correct_pid = pid_diff < kMaxAllowedPidDIff;
       } else {
         // Below code assumes single temporal referecence.
@@ -1519,7 +1517,8 @@ size_t VP9EncoderImpl::SteadyStateSize(int sid, int tid) {
   const size_t bitrate_bps = current_bitrate_allocation_.GetBitrate(
       sid, tid == kNoTemporalIdx ? 0 : tid);
   const float fps = (codec_.mode == VideoCodecMode::kScreensharing)
-                        ? framerate_controller_[sid].GetTargetRate()
+                        ? std::min(static_cast<float>(codec_.maxFramerate),
+                                   framerate_controller_[sid].GetTargetRate())
                         : codec_.maxFramerate;
   return static_cast<size_t>(
       bitrate_bps / (8 * fps) *
