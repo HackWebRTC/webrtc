@@ -164,26 +164,6 @@ bool RtpTransport::UnregisterRtpDemuxerSink(RtpPacketSinkInterface* sink) {
   return true;
 }
 
-RTCError RtpTransport::SetParameters(const RtpTransportParameters& parameters) {
-  if (parameters_.rtcp.mux && !parameters.rtcp.mux) {
-    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_STATE,
-                         "Disabling RTCP muxing is not allowed.");
-  }
-
-  RtpTransportParameters new_parameters = parameters;
-
-  if (new_parameters.rtcp.cname.empty()) {
-    new_parameters.rtcp.cname = parameters_.rtcp.cname;
-  }
-
-  parameters_ = new_parameters;
-  return RTCError::OK();
-}
-
-RtpTransportParameters RtpTransport::GetParameters() const {
-  return parameters_;
-}
-
 void RtpTransport::DemuxPacket(rtc::CopyOnWriteBuffer packet,
                                int64_t packet_time_us) {
   webrtc::RtpPacketReceived parsed_packet(&header_extension_map_);

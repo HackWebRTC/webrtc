@@ -13,7 +13,6 @@
 
 #include <string>
 
-#include "api/ortc/packet_transport_interface.h"
 #include "p2p/base/packet_transport_internal.h"
 #include "rtc_base/async_invoker.h"
 #include "rtc_base/copy_on_write_buffer.h"

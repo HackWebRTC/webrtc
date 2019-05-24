@@ -31,27 +31,6 @@ constexpr uint16_t kRemoteNetId = 2;
 constexpr int kLastPacketId = 100;
 constexpr int kTransportOverheadPerPacket = 28;  // Ipv4(20) + UDP(8).
 
-TEST(RtpTransportTest, SetRtcpParametersCantDisableRtcpMux) {
-  RtpTransport transport(kMuxDisabled);
-  RtpTransportParameters params;
-  transport.SetParameters(params);
-  params.rtcp.mux = false;
-  EXPECT_FALSE(transport.SetParameters(params).ok());
-}
-
-TEST(RtpTransportTest, SetRtcpParametersEmptyCnameUsesExisting) {
-  static const char kName[] = "name";
-  RtpTransport transport(kMuxDisabled);
-  RtpTransportParameters params_with_name;
-  params_with_name.rtcp.cname = kName;
-  transport.SetParameters(params_with_name);
-  EXPECT_EQ(transport.GetParameters().rtcp.cname, kName);
-
-  RtpTransportParameters params_without_name;
-  transport.SetParameters(params_without_name);
-  EXPECT_EQ(transport.GetParameters().rtcp.cname, kName);
-}
-
 class SignalObserver : public sigslot::has_slots<> {
  public:
   explicit SignalObserver(RtpTransport* transport) {

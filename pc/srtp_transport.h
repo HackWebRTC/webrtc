@@ -40,8 +40,8 @@ class SrtpTransport : public RtpTransport {
   virtual ~SrtpTransport() = default;
 
   // SrtpTransportInterface specific implementation.
-  RTCError SetSrtpSendKey(const cricket::CryptoParams& params) override;
-  RTCError SetSrtpReceiveKey(const cricket::CryptoParams& params) override;
+  virtual RTCError SetSrtpSendKey(const cricket::CryptoParams& params);
+  virtual RTCError SetSrtpReceiveKey(const cricket::CryptoParams& params);
 
   bool SendRtpPacket(rtc::CopyOnWriteBuffer* packet,
                      const rtc::PacketOptions& options,

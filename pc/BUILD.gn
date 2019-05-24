@@ -77,7 +77,6 @@ rtc_static_library("rtc_pc_base") {
     "../api:audio_options_api",
     "../api:call_api",
     "../api:libjingle_peerconnection_api",
-    "../api:ortc_api",
     "../api:rtp_headers",
     "../api:scoped_refptr",
     "../api/video:builtin_video_bitrate_allocator_factory",

@@ -15,8 +15,6 @@
 #include <vector>
 
 #include "absl/types/optional.h"
-// This is included for PacketOptions.
-#include "api/ortc/packet_transport_interface.h"
 #include "p2p/base/port.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/network_route.h"
@@ -28,9 +26,7 @@ namespace rtc {
 struct PacketOptions;
 struct SentPacket;
 
-class RTC_EXPORT PacketTransportInternal
-    : public virtual webrtc::PacketTransportInterface,
-      public sigslot::has_slots<> {
+class RTC_EXPORT PacketTransportInternal : public sigslot::has_slots<> {
  public:
   virtual const std::string& transport_name() const = 0;
 
@@ -102,8 +98,6 @@ class RTC_EXPORT PacketTransportInternal
  protected:
   PacketTransportInternal();
   ~PacketTransportInternal() override;
-
-  PacketTransportInternal* GetInternal() override;
 };
 
 }  // namespace rtc

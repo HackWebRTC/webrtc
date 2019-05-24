@@ -49,17 +49,6 @@ class RtpTransport : public RtpTransportInternal {
   }
   void SetRtcpPacketTransport(rtc::PacketTransportInternal* rtcp) override;
 
-  PacketTransportInterface* GetRtpPacketTransport() const override {
-    return rtp_packet_transport_;
-  }
-  PacketTransportInterface* GetRtcpPacketTransport() const override {
-    return rtcp_packet_transport_;
-  }
-
-  // TODO(zstein): Use these RtcpParameters for configuration elsewhere.
-  RTCError SetParameters(const RtpTransportParameters& parameters) override;
-  RtpTransportParameters GetParameters() const override;
-
   bool IsReadyToSend() const override { return ready_to_send_; }
 
   bool IsWritable(bool rtcp) const override;
@@ -119,18 +108,6 @@ class RtpTransport : public RtpTransportInternal {
 
   bool IsTransportWritable();
 
-  // SRTP specific methods.
-  // TODO(zhihuang): Improve the inheritance model so that the RtpTransport
-  // doesn't need to implement SRTP specfic methods.
-  RTCError SetSrtpSendKey(const cricket::CryptoParams& params) override {
-    RTC_NOTREACHED();
-    return RTCError::OK();
-  }
-  RTCError SetSrtpReceiveKey(const cricket::CryptoParams& params) override {
-    RTC_NOTREACHED();
-    return RTCError::OK();
-  }
-
   bool rtcp_mux_enabled_;
 
   rtc::PacketTransportInternal* rtp_packet_transport_ = nullptr;
@@ -140,7 +117,6 @@ class RtpTransport : public RtpTransportInternal {
   bool rtp_ready_to_send_ = false;
   bool rtcp_ready_to_send_ = false;
 
-  RtpTransportParameters parameters_;
   RtpDemuxer rtp_demuxer_;
 
   // Used for identifying the MID for RtpDemuxer.

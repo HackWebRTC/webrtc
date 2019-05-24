@@ -13,7 +13,6 @@
 
 #include <string>
 
-#include "api/ortc/srtp_transport_interface.h"
 #include "call/rtp_demuxer.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "pc/session_description.h"
@@ -32,9 +31,10 @@ namespace webrtc {
 // it is not accessible to API consumers but is accessible to internal classes
 // in order to send and receive RTP and RTCP packets belonging to a single RTP
 // session. Additional convenience and configuration methods are also provided.
-class RtpTransportInternal : public SrtpTransportInterface,
-                             public sigslot::has_slots<> {
+class RtpTransportInternal : public sigslot::has_slots<> {
  public:
+  virtual ~RtpTransportInternal() = default;
+
   virtual void SetRtcpMuxEnabled(bool enable) = 0;
 
   // TODO(zstein): Remove PacketTransport setters. Clients should pass these
