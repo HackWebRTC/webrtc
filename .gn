@@ -32,7 +32,6 @@ check_targets = [
   "//logging/*",
   "//media/*",
   "//modules/*",
-  "//ortc/*",
   "//p2p/*",
   "//pc/*",
   "//rtc_base/*",
