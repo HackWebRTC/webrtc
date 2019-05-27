@@ -376,5 +376,10 @@ NetworkControlUpdate PccNetworkController::OnStreamsConfig(StreamsConfig msg) {
   return NetworkControlUpdate();
 }
 
+NetworkControlUpdate PccNetworkController::OnReceivedPacket(
+    ReceivedPacket msg) {
+  return NetworkControlUpdate();
+}
+
 }  // namespace pcc
 }  // namespace webrtc

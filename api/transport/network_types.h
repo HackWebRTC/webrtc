@@ -101,6 +101,11 @@ struct SentPacket {
   DataSize data_in_flight = DataSize::Zero();
 };
 
+struct ReceivedPacket {
+  Timestamp receive_time = Timestamp::PlusInfinity();
+  DataSize size = DataSize::Zero();
+};
+
 // Transport level feedback
 
 struct RemoteBitrateReport {

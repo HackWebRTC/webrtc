@@ -96,6 +96,7 @@ class RtpTransportControllerSend final
   int64_t GetFirstPacketTimeMs() const override;
   void EnablePeriodicAlrProbing(bool enable) override;
   void OnSentPacket(const rtc::SentPacket& sent_packet) override;
+  void OnReceivedPacket(const RtpPacketReceived& received_packet) override;
 
   void SetSdpBitrateParameters(const BitrateConstraints& constraints) override;
   void SetClientBitratePreferences(const BitrateSettings& preferences) override;

@@ -1498,6 +1498,8 @@ void Call::NotifyBweOfReceivedPacket(const RtpPacketReceived& packet,
   RTPHeader header;
   packet.GetHeader(&header);
 
+  transport_send_ptr_->OnReceivedPacket(packet);
+
   if (!use_send_side_bwe && header.extension.hasTransportSequenceNumber) {
     // Inconsistent configuration of send side BWE. Do nothing.
     // TODO(nisse): Without this check, we may produce RTCP feedback
