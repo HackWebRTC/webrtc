@@ -190,6 +190,8 @@ class RTCStatsCollector : public virtual rtc::RefCountInterface,
   void ProducePeerConnectionStats_s(int64_t timestamp_us,
                                     RTCStatsReport* report) const;
   // Produces |RTCInboundRTPStreamStats| and |RTCOutboundRTPStreamStats|.
+  // This has to be invoked after codecs and transport stats have been created
+  // because some metrics are calculated through lookup of other metrics.
   void ProduceRTPStreamStats_n(
       int64_t timestamp_us,
       const std::vector<RtpTransceiverStatsInfo>& transceiver_stats_infos,

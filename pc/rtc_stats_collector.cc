@@ -92,6 +92,18 @@ std::string RTCOutboundRTPStreamStatsIDFromSSRC(bool audio, uint32_t ssrc) {
   return sb.str();
 }
 
+std::string RTCRemoteInboundRtpStreamStatsIdFromSsrcs(
+    cricket::MediaType media_type,
+    uint32_t sender_ssrc,
+    uint32_t source_ssrc) {
+  char buf[1024];
+  rtc::SimpleStringBuilder sb(buf);
+  sb << "RTCRemoteInboundRtp"
+     << (media_type == cricket::MEDIA_TYPE_AUDIO ? "Audio" : "Video")
+     << "Stream_" << sender_ssrc << "_" << source_ssrc;
+  return sb.str();
+}
+
 std::string RTCMediaSourceStatsIDFromKindAndAttachment(
     cricket::MediaType media_type,
     int attachment_id) {
@@ -367,6 +379,71 @@ void SetOutboundRTPStreamStatsFromVideoSenderInfo(
   // optional, support the "unspecified" value.
   if (video_sender_info.content_type == VideoContentType::SCREENSHARE)
     outbound_video->content_type = RTCContentType::kScreenshare;
+}
+
+std::unique_ptr<RTCRemoteInboundRtpStreamStats>
+ProduceRemoteInboundRtpStreamStatsFromReportBlockData(
+    const ReportBlockData& report_block_data,
+    cricket::MediaType media_type,
+    const RTCStatsReport& report) {
+  const auto& report_block = report_block_data.report_block();
+  // RTCStats' timestamp generally refers to when the metric was sampled, but
+  // for "remote-[outbound/inbound]-rtp" it refers to the local time when the
+  // Report Block was received.
+  auto remote_inbound = absl::make_unique<RTCRemoteInboundRtpStreamStats>(
+      RTCRemoteInboundRtpStreamStatsIdFromSsrcs(
+          media_type, report_block.sender_ssrc, report_block.source_ssrc),
+      /*timestamp=*/report_block_data.report_block_timestamp_utc_us());
+  remote_inbound->ssrc = report_block.sender_ssrc;
+  remote_inbound->kind =
+      media_type == cricket::MEDIA_TYPE_AUDIO ? "audio" : "video";
+  remote_inbound->packets_lost = report_block.packets_lost;
+  remote_inbound->round_trip_time =
+      static_cast<double>(report_block_data.last_rtt_ms()) /
+      rtc::kNumMillisecsPerSec;
+
+  std::string local_id = RTCOutboundRTPStreamStatsIDFromSSRC(
+      media_type == cricket::MEDIA_TYPE_AUDIO, report_block.source_ssrc);
+  const auto* local_id_stat = report.Get(local_id);
+  if (local_id_stat) {
+    remote_inbound->local_id = local_id;
+    const auto& outbound_rtp =
+        local_id_stat->cast_to<RTCOutboundRTPStreamStats>();
+    // The RTP/RTCP transport is obtained from the
+    // RTCOutboundRtpStreamStats's transport.
+    const auto* transport_from_id = outbound_rtp.transport_id.is_defined()
+                                        ? report.Get(*outbound_rtp.transport_id)
+                                        : nullptr;
+    if (transport_from_id) {
+      const auto& transport = transport_from_id->cast_to<RTCTransportStats>();
+      // If RTP and RTCP are not multiplexed, there is a separate RTCP
+      // transport paired with the RTP transport, otherwise the same
+      // transport is used for RTCP and RTP.
+      remote_inbound->transport_id =
+          transport.rtcp_transport_stats_id.is_defined()
+              ? *transport.rtcp_transport_stats_id
+              : *outbound_rtp.transport_id;
+    }
+    // We're assuming the same codec is used on both ends. However if the
+    // codec is switched out on the fly we may have received a Report Block
+    // based on the previous codec and there is no way to tell which point in
+    // time the codec changed for the remote end.
+    const auto* codec_from_id = outbound_rtp.codec_id.is_defined()
+                                    ? report.Get(*outbound_rtp.codec_id)
+                                    : nullptr;
+    if (codec_from_id) {
+      remote_inbound->codec_id = *outbound_rtp.codec_id;
+      const auto& codec = codec_from_id->cast_to<RTCCodecStats>();
+      if (codec.clock_rate.is_defined()) {
+        // The Report Block jitter is expressed in RTP timestamp units
+        // (https://tools.ietf.org/html/rfc3550#section-6.4.1). To convert this
+        // to seconds we divide by the codec's clock rate.
+        remote_inbound->jitter =
+            static_cast<double>(report_block.jitter) / *codec.clock_rate;
+      }
+    }
+  }
+  return remote_inbound;
 }
 
 void ProduceCertificateStatsFromSSLCertificateStats(
@@ -984,10 +1061,10 @@ void RTCStatsCollector::ProducePartialResultsOnNetworkThreadImpl(
   ProduceCodecStats_n(timestamp_us, transceiver_stats_infos_, partial_report);
   ProduceIceCandidateAndPairStats_n(timestamp_us, transport_stats_by_name,
                                     call_stats_, partial_report);
-  ProduceRTPStreamStats_n(timestamp_us, transceiver_stats_infos_,
-                          partial_report);
   ProduceTransportStats_n(timestamp_us, transport_stats_by_name,
                           transport_cert_stats, partial_report);
+  ProduceRTPStreamStats_n(timestamp_us, transceiver_stats_infos_,
+                          partial_report);
 }
 
 void RTCStatsCollector::MergeNetworkReport_s() {
@@ -1427,6 +1504,18 @@ void RTCStatsCollector::ProduceAudioRTPStreamStats_n(
     outbound_audio->transport_id = transport_id;
     report->AddStats(std::move(outbound_audio));
   }
+  // Remote-inbound
+  // These are Report Block-based, information sent from the remote endpoint,
+  // providing metrics about our Outbound streams. We take advantage of the fact
+  // that RTCOutboundRtpStreamStats, RTCCodecStats and RTCTransport have already
+  // been added to the report.
+  for (const cricket::VoiceSenderInfo& voice_sender_info :
+       track_media_info_map.voice_media_info()->senders) {
+    for (const auto& report_block_data : voice_sender_info.report_block_datas) {
+      report->AddStats(ProduceRemoteInboundRtpStreamStatsFromReportBlockData(
+          report_block_data, cricket::MEDIA_TYPE_AUDIO, *report));
+    }
+  }
 }
 
 void RTCStatsCollector::ProduceVideoRTPStreamStats_n(
@@ -1487,6 +1576,18 @@ void RTCStatsCollector::ProduceVideoRTPStreamStats_n(
     }
     outbound_video->transport_id = transport_id;
     report->AddStats(std::move(outbound_video));
+  }
+  // Remote-inbound
+  // These are Report Block-based, information sent from the remote endpoint,
+  // providing metrics about our Outbound streams. We take advantage of the fact
+  // that RTCOutboundRtpStreamStats, RTCCodecStats and RTCTransport have already
+  // been added to the report.
+  for (const cricket::VideoSenderInfo& video_sender_info :
+       track_media_info_map.video_media_info()->senders) {
+    for (const auto& report_block_data : video_sender_info.report_block_datas) {
+      report->AddStats(ProduceRemoteInboundRtpStreamStatsFromReportBlockData(
+          report_block_data, cricket::MEDIA_TYPE_VIDEO, *report));
+    }
   }
 }
 

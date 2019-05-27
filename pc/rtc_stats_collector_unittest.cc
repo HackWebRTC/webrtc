@@ -8,6 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <ctype.h>
+
+#include <algorithm>
 #include <initializer_list>
 #include <memory>
 #include <ostream>
@@ -21,6 +24,8 @@
 #include "api/stats/rtc_stats_report.h"
 #include "api/stats/rtcstats_objects.h"
 #include "api/units/time_delta.h"
+#include "modules/rtp_rtcp/include/report_block_data.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "p2p/base/p2p_constants.h"
 #include "p2p/base/port.h"
 #include "pc/media_stream.h"
@@ -86,6 +91,10 @@ void PrintTo(const RTCInboundRTPStreamStats& stats, ::std::ostream* os) {
 }
 
 void PrintTo(const RTCOutboundRTPStreamStats& stats, ::std::ostream* os) {
+  *os << stats.ToJson();
+}
+
+void PrintTo(const RTCRemoteInboundRtpStreamStats& stats, ::std::ostream* os) {
   *os << stats.ToJson();
 }
 
@@ -2341,6 +2350,252 @@ TEST_F(RTCStatsCollectorTest,
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
   EXPECT_FALSE(report->Get("RTCAudioSource_42"));
 }
+
+// Parameterized tests on cricket::MediaType (audio or video).
+class RTCStatsCollectorTestWithParamKind
+    : public RTCStatsCollectorTest,
+      public ::testing::WithParamInterface<cricket::MediaType> {
+ public:
+  RTCStatsCollectorTestWithParamKind() : media_type_(GetParam()) {
+    RTC_DCHECK(media_type_ == cricket::MEDIA_TYPE_AUDIO ||
+               media_type_ == cricket::MEDIA_TYPE_VIDEO);
+  }
+
+  std::string MediaTypeUpperCase() const {
+    switch (media_type_) {
+      case cricket::MEDIA_TYPE_AUDIO:
+        return "Audio";
+      case cricket::MEDIA_TYPE_VIDEO:
+        return "Video";
+      case cricket::MEDIA_TYPE_DATA:
+        RTC_NOTREACHED();
+        return "";
+    }
+  }
+
+  std::string MediaTypeLowerCase() const {
+    std::string str = MediaTypeUpperCase();
+    std::transform(str.begin(), str.end(), str.begin(), ::tolower);
+    return str;
+  }
+
+  // Adds a sender and channel of the appropriate kind, creating a sender info
+  // with the report block's |source_ssrc| and report block data.
+  void AddSenderInfoAndMediaChannel(std::string transport_name,
+                                    ReportBlockData report_block_data,
+                                    absl::optional<RtpCodecParameters> codec) {
+    switch (media_type_) {
+      case cricket::MEDIA_TYPE_AUDIO: {
+        cricket::VoiceMediaInfo voice_media_info;
+        voice_media_info.senders.push_back(cricket::VoiceSenderInfo());
+        voice_media_info.senders[0].local_stats.push_back(
+            cricket::SsrcSenderInfo());
+        voice_media_info.senders[0].local_stats[0].ssrc =
+            report_block_data.report_block().source_ssrc;
+        if (codec.has_value()) {
+          voice_media_info.senders[0].codec_payload_type = codec->payload_type;
+          voice_media_info.send_codecs.insert(
+              std::make_pair(codec->payload_type, *codec));
+        }
+        voice_media_info.senders[0].report_block_datas.push_back(
+            report_block_data);
+        auto* voice_media_channel = pc_->AddVoiceChannel("mid", transport_name);
+        voice_media_channel->SetStats(voice_media_info);
+        return;
+      }
+      case cricket::MEDIA_TYPE_VIDEO: {
+        cricket::VideoMediaInfo video_media_info;
+        video_media_info.senders.push_back(cricket::VideoSenderInfo());
+        video_media_info.senders[0].local_stats.push_back(
+            cricket::SsrcSenderInfo());
+        video_media_info.senders[0].local_stats[0].ssrc =
+            report_block_data.report_block().source_ssrc;
+        if (codec.has_value()) {
+          video_media_info.senders[0].codec_payload_type = codec->payload_type;
+          video_media_info.send_codecs.insert(
+              std::make_pair(codec->payload_type, *codec));
+        }
+        video_media_info.senders[0].report_block_datas.push_back(
+            report_block_data);
+        auto* video_media_channel = pc_->AddVideoChannel("mid", transport_name);
+        video_media_channel->SetStats(video_media_info);
+        return;
+      }
+      case cricket::MEDIA_TYPE_DATA:
+        RTC_NOTREACHED();
+    }
+  }
+
+ protected:
+  cricket::MediaType media_type_;
+};
+
+// Verifies RTCRemoteInboundRtpStreamStats members that don't require
+// RTCCodecStats (codecId, jitter) and without setting up an RTCP transport.
+TEST_P(RTCStatsCollectorTestWithParamKind,
+       RTCRemoteInboundRtpStreamStatsCollectedFromReportBlock) {
+  const int64_t kReportBlockTimestampUtcUs = 123456789;
+  const int64_t kRoundTripTimeMs = 13000;
+  const double kRoundTripTimeSeconds = 13.0;
+
+  // The report block's timestamp cannot be from the future, set the fake clock
+  // to match.
+  fake_clock_.SetTime(Timestamp::us(kReportBlockTimestampUtcUs));
+
+  RTCPReportBlock report_block;
+  // The remote-inbound-rtp SSRC, "SSRC of sender of this report".
+  report_block.sender_ssrc = 8;
+  // The outbound-rtp SSRC, "SSRC of the RTP packet sender".
+  report_block.source_ssrc = 12;
+  report_block.packets_lost = 7;
+  ReportBlockData report_block_data;
+  report_block_data.SetReportBlock(report_block, kReportBlockTimestampUtcUs);
+  report_block_data.AddRoundTripTimeSample(1234);
+  // Only the last sample should be exposed as the
+  // |RTCRemoteInboundRtpStreamStats::round_trip_time|.
+  report_block_data.AddRoundTripTimeSample(kRoundTripTimeMs);
+
+  AddSenderInfoAndMediaChannel("TransportName", report_block_data,
+                               absl::nullopt);
+
+  rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
+
+  RTCRemoteInboundRtpStreamStats expected_remote_inbound_rtp(
+      "RTCRemoteInboundRtp" + MediaTypeUpperCase() + "Stream_8_12",
+      kReportBlockTimestampUtcUs);
+  expected_remote_inbound_rtp.ssrc = 8;
+  expected_remote_inbound_rtp.kind = MediaTypeLowerCase();
+  expected_remote_inbound_rtp.transport_id =
+      "RTCTransport_TransportName_1";  // 1 for RTP (we have no RTCP transport)
+  expected_remote_inbound_rtp.packets_lost = 7;
+  expected_remote_inbound_rtp.local_id =
+      "RTCOutboundRTP" + MediaTypeUpperCase() + "Stream_12";
+  expected_remote_inbound_rtp.round_trip_time = kRoundTripTimeSeconds;
+  // This test does not set up RTCCodecStats, so |codec_id| and |jitter| are
+  // expected to be missing. These are tested separately.
+
+  ASSERT_TRUE(report->Get(expected_remote_inbound_rtp.id()));
+  EXPECT_EQ(report->Get(expected_remote_inbound_rtp.id())
+                ->cast_to<RTCRemoteInboundRtpStreamStats>(),
+            expected_remote_inbound_rtp);
+  EXPECT_TRUE(report->Get(*expected_remote_inbound_rtp.transport_id));
+  EXPECT_TRUE(report->Get(*expected_remote_inbound_rtp.local_id));
+}
+
+TEST_P(RTCStatsCollectorTestWithParamKind,
+       RTCRemoteInboundRtpStreamStatsWithTimestampFromReportBlock) {
+  const int64_t kReportBlockTimestampUtcUs = 123456789;
+  fake_clock_.SetTime(Timestamp::us(kReportBlockTimestampUtcUs));
+
+  RTCPReportBlock report_block;
+  // The remote-inbound-rtp SSRC, "SSRC of sender of this report".
+  report_block.sender_ssrc = 8;
+  // The outbound-rtp SSRC, "SSRC of the RTP packet sender".
+  report_block.source_ssrc = 12;
+  ReportBlockData report_block_data;
+  report_block_data.SetReportBlock(report_block, kReportBlockTimestampUtcUs);
+
+  AddSenderInfoAndMediaChannel("TransportName", report_block_data,
+                               absl::nullopt);
+
+  // Advance time, it should be OK to have fresher reports than report blocks.
+  fake_clock_.AdvanceTime(TimeDelta::us(1234));
+
+  rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
+
+  std::string remote_inbound_rtp_id =
+      "RTCRemoteInboundRtp" + MediaTypeUpperCase() + "Stream_8_12";
+  ASSERT_TRUE(report->Get(remote_inbound_rtp_id));
+  auto& remote_inbound_rtp = report->Get(remote_inbound_rtp_id)
+                                 ->cast_to<RTCRemoteInboundRtpStreamStats>();
+
+  // Even though the report time is different, the remote-inbound-rtp timestamp
+  // is of the time that the report block was received.
+  EXPECT_EQ(kReportBlockTimestampUtcUs + 1234, report->timestamp_us());
+  EXPECT_EQ(kReportBlockTimestampUtcUs, remote_inbound_rtp.timestamp_us());
+}
+
+TEST_P(RTCStatsCollectorTestWithParamKind,
+       RTCRemoteInboundRtpStreamStatsWithCodecBasedMembers) {
+  const int64_t kReportBlockTimestampUtcUs = 123456789;
+  fake_clock_.SetTime(Timestamp::us(kReportBlockTimestampUtcUs));
+
+  RTCPReportBlock report_block;
+  // The remote-inbound-rtp SSRC, "SSRC of sender of this report".
+  report_block.sender_ssrc = 8;
+  // The outbound-rtp SSRC, "SSRC of the RTP packet sender".
+  report_block.source_ssrc = 12;
+  report_block.jitter = 5000;
+  ReportBlockData report_block_data;
+  report_block_data.SetReportBlock(report_block, kReportBlockTimestampUtcUs);
+
+  RtpCodecParameters codec;
+  codec.payload_type = 3;
+  codec.kind = media_type_;
+  codec.clock_rate = 1000;
+
+  AddSenderInfoAndMediaChannel("TransportName", report_block_data, codec);
+
+  rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
+
+  std::string remote_inbound_rtp_id =
+      "RTCRemoteInboundRtp" + MediaTypeUpperCase() + "Stream_8_12";
+  ASSERT_TRUE(report->Get(remote_inbound_rtp_id));
+  auto& remote_inbound_rtp = report->Get(remote_inbound_rtp_id)
+                                 ->cast_to<RTCRemoteInboundRtpStreamStats>();
+
+  EXPECT_TRUE(remote_inbound_rtp.codec_id.is_defined());
+  EXPECT_TRUE(report->Get(*remote_inbound_rtp.codec_id));
+
+  EXPECT_TRUE(remote_inbound_rtp.jitter.is_defined());
+  // The jitter (in seconds) is the report block's jitter divided by the codec's
+  // clock rate.
+  EXPECT_EQ(5.0, *remote_inbound_rtp.jitter);
+}
+
+TEST_P(RTCStatsCollectorTestWithParamKind,
+       RTCRemoteInboundRtpStreamStatsWithRtcpTransport) {
+  const int64_t kReportBlockTimestampUtcUs = 123456789;
+  fake_clock_.SetTime(Timestamp::us(kReportBlockTimestampUtcUs));
+
+  RTCPReportBlock report_block;
+  // The remote-inbound-rtp SSRC, "SSRC of sender of this report".
+  report_block.sender_ssrc = 8;
+  // The outbound-rtp SSRC, "SSRC of the RTP packet sender".
+  report_block.source_ssrc = 12;
+  ReportBlockData report_block_data;
+  report_block_data.SetReportBlock(report_block, kReportBlockTimestampUtcUs);
+
+  cricket::TransportChannelStats rtp_transport_channel_stats;
+  rtp_transport_channel_stats.component = cricket::ICE_CANDIDATE_COMPONENT_RTP;
+  rtp_transport_channel_stats.dtls_state = cricket::DTLS_TRANSPORT_NEW;
+  cricket::TransportChannelStats rtcp_transport_channel_stats;
+  rtcp_transport_channel_stats.component =
+      cricket::ICE_CANDIDATE_COMPONENT_RTCP;
+  rtcp_transport_channel_stats.dtls_state = cricket::DTLS_TRANSPORT_NEW;
+  pc_->SetTransportStats("TransportName", {rtp_transport_channel_stats,
+                                           rtcp_transport_channel_stats});
+  AddSenderInfoAndMediaChannel("TransportName", report_block_data,
+                               absl::nullopt);
+
+  rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
+
+  std::string remote_inbound_rtp_id =
+      "RTCRemoteInboundRtp" + MediaTypeUpperCase() + "Stream_8_12";
+  ASSERT_TRUE(report->Get(remote_inbound_rtp_id));
+  auto& remote_inbound_rtp = report->Get(remote_inbound_rtp_id)
+                                 ->cast_to<RTCRemoteInboundRtpStreamStats>();
+
+  EXPECT_TRUE(remote_inbound_rtp.transport_id.is_defined());
+  EXPECT_EQ("RTCTransport_TransportName_2",  // 2 for RTCP
+            *remote_inbound_rtp.transport_id);
+  EXPECT_TRUE(report->Get(*remote_inbound_rtp.transport_id));
+}
+
+INSTANTIATE_TEST_SUITE_P(,
+                         RTCStatsCollectorTestWithParamKind,
+                         ::testing::Values(cricket::MEDIA_TYPE_AUDIO,    // "/0"
+                                           cricket::MEDIA_TYPE_VIDEO));  // "/1"
 
 TEST_F(RTCStatsCollectorTest,
        RTCVideoSourceStatsNotCollectedForSenderWithoutTrack) {

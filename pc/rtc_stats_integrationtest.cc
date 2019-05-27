@@ -394,6 +394,9 @@ class RTCStatsReportVerifier {
       } else if (stats.type() == RTCOutboundRTPStreamStats::kType) {
         verify_successful &= VerifyRTCOutboundRTPStreamStats(
             stats.cast_to<RTCOutboundRTPStreamStats>());
+      } else if (stats.type() == RTCRemoteInboundRtpStreamStats::kType) {
+        verify_successful &= VerifyRTCRemoteInboundRtpStreamStats(
+            stats.cast_to<RTCRemoteInboundRtpStreamStats>());
       } else if (stats.type() == RTCAudioSourceStats::kType) {
         // RTCAudioSourceStats::kType and RTCVideoSourceStats::kType both have
         // the value "media-source", but they are distinguishable with pointer
@@ -843,6 +846,26 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsUndefined(outbound_stream.total_packet_send_delay);
       verifier.TestMemberIsUndefined(outbound_stream.content_type);
     }
+    return verifier.ExpectAllMembersSuccessfullyTested();
+  }
+
+  bool VerifyRTCRemoteInboundRtpStreamStats(
+      const RTCRemoteInboundRtpStreamStats& remote_inbound_stream) {
+    RTCStatsVerifier verifier(report_, &remote_inbound_stream);
+    verifier.TestMemberIsDefined(remote_inbound_stream.ssrc);
+    verifier.TestMemberIsDefined(remote_inbound_stream.kind);
+    verifier.TestMemberIsIDReference(remote_inbound_stream.transport_id,
+                                     RTCTransportStats::kType);
+    verifier.TestMemberIsIDReference(remote_inbound_stream.codec_id,
+                                     RTCCodecStats::kType);
+    verifier.TestMemberIsDefined(remote_inbound_stream.packets_lost);
+    // Note that the existance of RTCCodecStats is needed for |codec_id| and
+    // |jitter| to be present.
+    verifier.TestMemberIsNonNegative<double>(remote_inbound_stream.jitter);
+    verifier.TestMemberIsIDReference(remote_inbound_stream.local_id,
+                                     RTCOutboundRTPStreamStats::kType);
+    verifier.TestMemberIsNonNegative<double>(
+        remote_inbound_stream.round_trip_time);
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
 
