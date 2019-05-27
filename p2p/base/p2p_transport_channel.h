@@ -44,6 +44,7 @@
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
+#include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
 class RtcEventLog;
@@ -137,16 +138,31 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
 
   // TODO(honghaiz): Remove this method once the reference of it in
   // Chromoting is removed.
-  const Connection* best_connection() const { return selected_connection_; }
+  const Connection* best_connection() const {
+    RTC_DCHECK_RUN_ON(network_thread_);
+    return selected_connection_;
+  }
 
-  void set_incoming_only(bool value) { incoming_only_ = value; }
+  void set_incoming_only(bool value) {
+    RTC_DCHECK_RUN_ON(network_thread_);
+    incoming_only_ = value;
+  }
 
   // Note: These are only for testing purpose.
   // |ports_| and |pruned_ports| should not be changed from outside.
-  const std::vector<PortInterface*>& ports() { return ports_; }
-  const std::vector<PortInterface*>& pruned_ports() { return pruned_ports_; }
+  const std::vector<PortInterface*>& ports() {
+    RTC_DCHECK_RUN_ON(network_thread_);
+    return ports_;
+  }
+  const std::vector<PortInterface*>& pruned_ports() {
+    RTC_DCHECK_RUN_ON(network_thread_);
+    return pruned_ports_;
+  }
 
-  IceMode remote_ice_mode() const { return remote_ice_mode_; }
+  IceMode remote_ice_mode() const {
+    RTC_DCHECK_RUN_ON(network_thread_);
+    return remote_ice_mode_;
+  }
 
   void PruneAllPorts();
   int check_receiving_interval() const;
@@ -164,6 +180,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
 
   // Public for unit tests.
   PortAllocatorSession* allocator_session() const {
+    RTC_DCHECK_RUN_ON(network_thread_);
     if (allocator_sessions_.empty()) {
       return nullptr;
     }
@@ -172,10 +189,12 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
 
   // Public for unit tests.
   const std::vector<RemoteCandidate>& remote_candidates() const {
+    RTC_DCHECK_RUN_ON(network_thread_);
     return remote_candidates_;
   }
 
   std::string ToString() const {
+    RTC_DCHECK_RUN_ON(network_thread_);
     const std::string RECEIVING_ABBREV[2] = {"_", "R"};
     const std::string WRITABLE_ABBREV[2] = {"_", "W"};
     rtc::StringBuilder ss;
@@ -187,18 +206,23 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
  private:
   rtc::Thread* thread() const { return network_thread_; }
 
-  bool IsGettingPorts() { return allocator_session()->IsGettingPorts(); }
+  bool IsGettingPorts() {
+    RTC_DCHECK_RUN_ON(network_thread_);
+    return allocator_session()->IsGettingPorts();
+  }
 
   // A transport channel is weak if the current best connection is either
   // not receiving or not writable, or if there is no best connection at all.
   bool weak() const;
 
   int weak_ping_interval() const {
+    RTC_DCHECK_RUN_ON(network_thread_);
     return std::max(config_.ice_check_interval_weak_connectivity_or_default(),
                     config_.ice_check_min_interval_or_default());
   }
 
   int strong_ping_interval() const {
+    RTC_DCHECK_RUN_ON(network_thread_);
     return std::max(config_.ice_check_interval_strong_connectivity_or_default(),
                     config_.ice_check_min_interval_or_default());
   }
@@ -350,6 +374,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   // Returns the latest remote ICE parameters or nullptr if there are no remote
   // ICE parameters yet.
   IceParameters* remote_ice() {
+    RTC_DCHECK_RUN_ON(network_thread_);
     return remote_ice_parameters_.empty() ? nullptr
                                           : &remote_ice_parameters_.back();
   }
@@ -360,6 +385,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   // Returns the index of the latest remote ICE parameters, or 0 if no remote
   // ICE parameters have been received.
   uint32_t remote_ice_generation() {
+    RTC_DCHECK_RUN_ON(network_thread_);
     return remote_ice_parameters_.empty()
                ? 0
                : static_cast<uint32_t>(remote_ice_parameters_.size() - 1);
@@ -376,66 +402,77 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   // Sets the receiving state, signaling if necessary.
   void SetReceiving(bool receiving);
 
-  std::string transport_name_;
-  int component_;
-  PortAllocator* allocator_;
-  webrtc::AsyncResolverFactory* async_resolver_factory_;
+  std::string transport_name_ RTC_GUARDED_BY(network_thread_);
+  int component_ RTC_GUARDED_BY(network_thread_);
+  PortAllocator* allocator_ RTC_GUARDED_BY(network_thread_);
+  webrtc::AsyncResolverFactory* async_resolver_factory_
+      RTC_GUARDED_BY(network_thread_);
   rtc::Thread* network_thread_;
-  bool incoming_only_;
-  int error_;
-  std::vector<std::unique_ptr<PortAllocatorSession>> allocator_sessions_;
+  bool incoming_only_ RTC_GUARDED_BY(network_thread_);
+  int error_ RTC_GUARDED_BY(network_thread_);
+  std::vector<std::unique_ptr<PortAllocatorSession>> allocator_sessions_
+      RTC_GUARDED_BY(network_thread_);
   // |ports_| contains ports that are used to form new connections when
   // new remote candidates are added.
-  std::vector<PortInterface*> ports_;
+  std::vector<PortInterface*> ports_ RTC_GUARDED_BY(network_thread_);
   // |pruned_ports_| contains ports that have been removed from |ports_| and
   // are not being used to form new connections, but that aren't yet destroyed.
   // They may have existing connections, and they still fire signals such as
   // SignalUnknownAddress.
-  std::vector<PortInterface*> pruned_ports_;
+  std::vector<PortInterface*> pruned_ports_ RTC_GUARDED_BY(network_thread_);
 
   // |connections_| is a sorted list with the first one always be the
   // |selected_connection_| when it's not nullptr. The combination of
   // |pinged_connections_| and |unpinged_connections_| has the same
   // connections as |connections_|. These 2 sets maintain whether a
   // connection should be pinged next or not.
-  std::vector<Connection*> connections_;
-  std::set<Connection*> pinged_connections_;
-  std::set<Connection*> unpinged_connections_;
+  std::vector<Connection*> connections_ RTC_GUARDED_BY(network_thread_);
+  std::set<Connection*> pinged_connections_ RTC_GUARDED_BY(network_thread_);
+  std::set<Connection*> unpinged_connections_ RTC_GUARDED_BY(network_thread_);
 
-  Connection* selected_connection_ = nullptr;
+  Connection* selected_connection_ RTC_GUARDED_BY(network_thread_) = nullptr;
 
-  std::vector<RemoteCandidate> remote_candidates_;
-  bool sort_dirty_;  // indicates whether another sort is needed right now
-  bool had_connection_ = false;  // if connections_ has ever been nonempty
+  std::vector<RemoteCandidate> remote_candidates_
+      RTC_GUARDED_BY(network_thread_);
+  bool sort_dirty_ RTC_GUARDED_BY(
+      network_thread_);  // indicates whether another sort is needed right now
+  bool had_connection_ RTC_GUARDED_BY(network_thread_) =
+      false;  // if connections_ has ever been nonempty
   typedef std::map<rtc::Socket::Option, int> OptionMap;
-  OptionMap options_;
-  IceParameters ice_parameters_;
-  std::vector<IceParameters> remote_ice_parameters_;
-  IceMode remote_ice_mode_;
-  IceRole ice_role_;
-  uint64_t tiebreaker_;
-  IceGatheringState gathering_state_;
-  std::unique_ptr<webrtc::BasicRegatheringController> regathering_controller_;
-  int64_t last_ping_sent_ms_ = 0;
-  int weak_ping_interval_ = WEAK_PING_INTERVAL;
+  OptionMap options_ RTC_GUARDED_BY(network_thread_);
+  IceParameters ice_parameters_ RTC_GUARDED_BY(network_thread_);
+  std::vector<IceParameters> remote_ice_parameters_
+      RTC_GUARDED_BY(network_thread_);
+  IceMode remote_ice_mode_ RTC_GUARDED_BY(network_thread_);
+  IceRole ice_role_ RTC_GUARDED_BY(network_thread_);
+  uint64_t tiebreaker_ RTC_GUARDED_BY(network_thread_);
+  IceGatheringState gathering_state_ RTC_GUARDED_BY(network_thread_);
+  std::unique_ptr<webrtc::BasicRegatheringController> regathering_controller_
+      RTC_GUARDED_BY(network_thread_);
+  int64_t last_ping_sent_ms_ RTC_GUARDED_BY(network_thread_) = 0;
+  int weak_ping_interval_ RTC_GUARDED_BY(network_thread_) = WEAK_PING_INTERVAL;
   // TODO(jonasolsson): Remove state_ and rename standardized_state_ once state_
   // is no longer used to compute the ICE connection state.
-  IceTransportState state_ = IceTransportState::STATE_INIT;
-  webrtc::IceTransportState standardized_state_ =
-      webrtc::IceTransportState::kNew;
-  IceConfig config_;
-  int last_sent_packet_id_ = -1;  // -1 indicates no packet was sent before.
-  bool started_pinging_ = false;
+  IceTransportState state_ RTC_GUARDED_BY(network_thread_) =
+      IceTransportState::STATE_INIT;
+  webrtc::IceTransportState standardized_state_
+      RTC_GUARDED_BY(network_thread_) = webrtc::IceTransportState::kNew;
+  IceConfig config_ RTC_GUARDED_BY(network_thread_);
+  int last_sent_packet_id_ RTC_GUARDED_BY(network_thread_) =
+      -1;  // -1 indicates no packet was sent before.
+  bool started_pinging_ RTC_GUARDED_BY(network_thread_) = false;
   // The value put in the "nomination" attribute for the next nominated
   // connection. A zero-value indicates the connection will not be nominated.
-  uint32_t nomination_ = 0;
-  bool receiving_ = false;
-  bool writable_ = false;
-  bool has_been_writable_ = false;  // if writable_ has ever been true
+  uint32_t nomination_ RTC_GUARDED_BY(network_thread_) = 0;
+  bool receiving_ RTC_GUARDED_BY(network_thread_) = false;
+  bool writable_ RTC_GUARDED_BY(network_thread_) = false;
+  bool has_been_writable_ RTC_GUARDED_BY(network_thread_) =
+      false;  // if writable_ has ever been true
 
-  rtc::AsyncInvoker invoker_;
-  absl::optional<rtc::NetworkRoute> network_route_;
-  webrtc::IceEventLog ice_event_log_;
+  rtc::AsyncInvoker invoker_ RTC_GUARDED_BY(network_thread_);
+  absl::optional<rtc::NetworkRoute> network_route_
+      RTC_GUARDED_BY(network_thread_);
+  webrtc::IceEventLog ice_event_log_ RTC_GUARDED_BY(network_thread_);
 
   struct CandidateAndResolver final {
     CandidateAndResolver(const Candidate& candidate,
@@ -444,7 +481,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
     Candidate candidate_;
     rtc::AsyncResolverInterface* resolver_;
   };
-  std::vector<CandidateAndResolver> resolvers_;
+  std::vector<CandidateAndResolver> resolvers_ RTC_GUARDED_BY(network_thread_);
   void FinishAddingRemoteCandidate(const Candidate& new_remote_candidate);
   void OnCandidateResolved(rtc::AsyncResolverInterface* resolver);
   void AddRemoteCandidateWithResolver(Candidate candidate,
