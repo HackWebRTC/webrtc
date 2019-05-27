@@ -41,6 +41,9 @@ BitrateProberConfig::BitrateProberConfig(
   ParseFieldTrial({&min_probe_packets_sent, &min_probe_delta,
                    &min_probe_duration, &max_probe_delay},
                   key_value_config->Lookup("WebRTC-Bwe-ProbingConfiguration"));
+  ParseFieldTrial({&min_probe_packets_sent, &min_probe_delta,
+                   &min_probe_duration, &max_probe_delay},
+                  key_value_config->Lookup("WebRTC-Bwe-ProbingBehavior"));
 }
 
 BitrateProber::~BitrateProber() {

@@ -13,8 +13,8 @@
 #include <algorithm>
 #include <initializer_list>
 #include <string>
-#include "absl/memory/memory.h"
 
+#include "absl/memory/memory.h"
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -110,6 +110,19 @@ ProbeControllerConfig::ProbeControllerConfig(
        &alr_probing_interval, &alr_probe_scale, &first_allocation_probe_scale,
        &second_allocation_probe_scale, &allocation_allow_further_probing},
       key_value_config->Lookup("WebRTC-Bwe-ProbingConfiguration"));
+
+  // Specialized keys overriding subsets of WebRTC-Bwe-ProbingConfiguration
+  ParseFieldTrial(
+      {&first_exponential_probe_scale, &second_exponential_probe_scale},
+      key_value_config->Lookup("WebRTC-Bwe-InitialProbing"));
+  ParseFieldTrial({&further_exponential_probe_scale, &further_probe_threshold},
+                  key_value_config->Lookup("WebRTC-Bwe-ExponentialProbing"));
+  ParseFieldTrial({&alr_probing_interval, &alr_probe_scale},
+                  key_value_config->Lookup("WebRTC-Bwe-AlrProbing"));
+  ParseFieldTrial(
+      {&first_allocation_probe_scale, &second_allocation_probe_scale,
+       &allocation_allow_further_probing},
+      key_value_config->Lookup("WebRTC-Bwe-AllocationProbing"));
 }
 
 ProbeControllerConfig::ProbeControllerConfig(const ProbeControllerConfig&) =
