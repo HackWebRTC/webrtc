@@ -28,6 +28,7 @@
 #include "rtc_base/gunit.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "system_wrappers/include/cpu_info.h"
+#include "system_wrappers/include/field_trial.h"
 #include "test/pc/e2e/analyzer/audio/default_audio_quality_analyzer.h"
 #include "test/pc/e2e/analyzer/video/default_video_quality_analyzer.h"
 #include "test/pc/e2e/sdp/sdp_changer.h"
@@ -53,6 +54,10 @@ constexpr TimeDelta kStatsUpdateInterval = TimeDelta::Seconds<1>();
 constexpr TimeDelta kStatsPollingStopTimeout = TimeDelta::Seconds<1>();
 
 constexpr TimeDelta kAliveMessageLogInterval = TimeDelta::Seconds<30>();
+
+// Field trials to enable Flex FEC advertising and receiving.
+constexpr char kFlexFecEnabledFieldTrials[] =
+    "WebRTC-FlexFEC-03-Advertised/Enabled/WebRTC-FlexFEC-03/Enabled/";
 
 std::string VideoConfigSourcePresenceToString(const VideoConfig& video_config) {
   char buf[1024];
@@ -231,6 +236,7 @@ void PeerConnectionE2EQualityTest::Run(
 
   SetDefaultValuesForMissingParams({alice_params.get(), bob_params.get()});
   ValidateParams(run_params, {alice_params.get(), bob_params.get()});
+  SetupRequiredFieldTrials(run_params);
 
   // Print test summary
   RTC_LOG(INFO)
@@ -531,6 +537,18 @@ void PeerConnectionE2EQualityTest::ValidateParams(const RunParams& run_params,
   }
 
   RTC_CHECK_GT(media_streams_count, 0) << "No media in the call.";
+}
+
+void PeerConnectionE2EQualityTest::SetupRequiredFieldTrials(
+    const RunParams& run_params) {
+  std::string field_trials = "";
+  if (run_params.use_flex_fec) {
+    field_trials += kFlexFecEnabledFieldTrials;
+  }
+  if (!field_trials.empty()) {
+    override_field_trials_ = absl::make_unique<test::ScopedFieldTrials>(
+        field_trial::GetFieldTrialString() + field_trials);
+  }
 }
 
 void PeerConnectionE2EQualityTest::OnTrackCallback(
