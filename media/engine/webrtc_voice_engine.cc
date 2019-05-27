@@ -2215,6 +2215,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     sinfo.typing_noise_detected = (send_ ? stats.typing_noise_detected : false);
     sinfo.ana_statistics = stats.ana_statistics;
     sinfo.apm_statistics = stats.apm_statistics;
+    sinfo.report_block_datas = std::move(stats.report_block_datas);
     info->senders.push_back(sinfo);
   }
 

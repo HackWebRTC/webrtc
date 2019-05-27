@@ -434,6 +434,8 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
   stats.apm_statistics =
       audio_state_->audio_processing()->GetStatistics(has_remote_tracks);
 
+  stats.report_block_datas = std::move(call_stats.report_block_datas);
+
   return stats;
 }
 

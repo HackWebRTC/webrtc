@@ -200,6 +200,11 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   // Get received RTCP report, report block.
   int32_t RemoteRTCPStat(
       std::vector<RTCPReportBlock>* receive_blocks) const override;
+  // A snapshot of the most recent Report Block with additional data of
+  // interest to statistics. Used to implement RTCRemoteInboundRtpStreamStats.
+  // Within this list, the ReportBlockData::RTCPReportBlock::source_ssrc(),
+  // which is the SSRC of the corresponding outbound RTP stream, is unique.
+  std::vector<ReportBlockData> GetLatestReportBlockData() const override;
 
   // (REMB) Receiver Estimated Max Bitrate.
   void SetRemb(int64_t bitrate_bps, std::vector<uint32_t> ssrcs) override;

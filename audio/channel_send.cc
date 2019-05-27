@@ -1079,6 +1079,7 @@ CallSendStatistics ChannelSend::GetRTCPStatistics() const {
   stats.packetsSent =
       rtp_stats.transmitted.packets + rtx_stats.transmitted.packets;
   stats.retransmitted_packets_sent = rtp_stats.retransmitted.packets;
+  stats.report_block_datas = _rtpRtcpModule->GetLatestReportBlockData();
 
   return stats;
 }

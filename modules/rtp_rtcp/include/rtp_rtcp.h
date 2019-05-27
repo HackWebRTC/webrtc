@@ -350,8 +350,15 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
 
   // Returns received RTCP report block.
   // Returns -1 on failure else 0.
+  // TODO(https://crbug.com/webrtc/10678): Remove this in favor of
+  // GetLatestReportBlockData().
   virtual int32_t RemoteRTCPStat(
       std::vector<RTCPReportBlock>* receive_blocks) const = 0;
+  // A snapshot of Report Blocks with additional data of interest to statistics.
+  // Within this list, the sender-source SSRC pair is unique and per-pair the
+  // ReportBlockData represents the latest Report Block that was received for
+  // that pair.
+  virtual std::vector<ReportBlockData> GetLatestReportBlockData() const = 0;
 
   // (APP) Sets application specific data.
   // Returns -1 on failure else 0.
