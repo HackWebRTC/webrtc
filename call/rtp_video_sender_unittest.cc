@@ -59,6 +59,7 @@ RtpSenderObservers CreateObservers(
     RtcpRttStats* rtcp_rtt_stats,
     RtcpIntraFrameObserver* intra_frame_callback,
     RtcpStatisticsCallback* rtcp_stats,
+    ReportBlockDataObserver* report_block_data_observer,
     StreamDataCountersCallback* rtp_stats,
     BitrateStatisticsObserver* bitrate_observer,
     FrameCountObserver* frame_count_observer,
@@ -70,6 +71,7 @@ RtpSenderObservers CreateObservers(
   observers.intra_frame_callback = intra_frame_callback;
   observers.rtcp_loss_notification_observer = nullptr;
   observers.rtcp_stats = rtcp_stats;
+  observers.report_block_data_observer = report_block_data_observer;
   observers.rtp_stats = rtp_stats;
   observers.bitrate_observer = bitrate_observer;
   observers.frame_count_observer = frame_count_observer;
@@ -135,8 +137,9 @@ class RtpVideoSenderTestFixture {
         &clock_, suspended_ssrcs, suspended_payload_states, config_.rtp,
         config_.rtcp_report_interval_ms, &transport_,
         CreateObservers(&call_stats_, &encoder_feedback_, &stats_proxy_,
-                        &stats_proxy_, &stats_proxy_, frame_count_observer,
-                        &stats_proxy_, &stats_proxy_, &send_delay_stats_),
+                        &stats_proxy_, &stats_proxy_, &stats_proxy_,
+                        frame_count_observer, &stats_proxy_, &stats_proxy_,
+                        &send_delay_stats_),
         &transport_controller_, &event_log_, &retransmission_rate_limiter_,
         absl::make_unique<FecControllerDefault>(&clock_), nullptr,
         CryptoOptions{});

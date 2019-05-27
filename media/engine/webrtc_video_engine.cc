@@ -2314,6 +2314,10 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
     info.firs_rcvd += stream_stats.rtcp_packet_type_counts.fir_packets;
     info.nacks_rcvd += stream_stats.rtcp_packet_type_counts.nack_packets;
     info.plis_rcvd += stream_stats.rtcp_packet_type_counts.pli_packets;
+    if (stream_stats.report_block_data.has_value() && !stream_stats.is_rtx &&
+        !stream_stats.is_flexfec) {
+      info.report_block_datas.push_back(stream_stats.report_block_data.value());
+    }
   }
 
   if (!stats.substreams.empty()) {

@@ -306,6 +306,8 @@ RtpVideoSender::RtpVideoSender(
     // Simulcast has one module for each layer. Set the CNAME on all modules.
     stream.rtp_rtcp->SetCNAME(rtp_config_.c_name.c_str());
     stream.rtp_rtcp->RegisterRtcpStatisticsCallback(observers.rtcp_stats);
+    stream.rtp_rtcp->SetReportBlockDataObserver(
+        observers.report_block_data_observer);
     stream.rtp_rtcp->RegisterSendChannelRtpStatisticsCallback(
         observers.rtp_stats);
     stream.rtp_rtcp->SetMaxRtpPacketSize(rtp_config_.max_packet_size);

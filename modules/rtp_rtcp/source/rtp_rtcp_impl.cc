@@ -721,6 +721,11 @@ RtcpStatisticsCallback* ModuleRtpRtcpImpl::GetRtcpStatisticsCallback() {
   return rtcp_receiver_.GetRtcpStatisticsCallback();
 }
 
+void ModuleRtpRtcpImpl::SetReportBlockDataObserver(
+    ReportBlockDataObserver* observer) {
+  return rtcp_receiver_.SetReportBlockDataObserver(observer);
+}
+
 bool ModuleRtpRtcpImpl::SendFeedbackPacket(
     const rtcp::TransportFeedback& packet) {
   return rtcp_sender_.SendFeedbackPacket(packet);

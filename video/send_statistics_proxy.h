@@ -18,6 +18,7 @@
 
 #include "api/video/video_stream_encoder_observer.h"
 #include "call/video_send_stream.h"
+#include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "rtc_base/critical_section.h"
@@ -32,6 +33,7 @@ namespace webrtc {
 
 class SendStatisticsProxy : public VideoStreamEncoderObserver,
                             public RtcpStatisticsCallback,
+                            public ReportBlockDataObserver,
                             public RtcpPacketTypeCounterObserver,
                             public StreamDataCountersCallback,
                             public BitrateStatisticsObserver,
@@ -93,6 +95,8 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
   void StatisticsUpdated(const RtcpStatistics& statistics,
                          uint32_t ssrc) override;
   void CNameChanged(const char* cname, uint32_t ssrc) override;
+  // From ReportBlockDataObserver.
+  void OnReportBlockDataUpdated(ReportBlockData report_block_data) override;
   // From RtcpPacketTypeCounterObserver.
   void RtcpPacketTypesCounterUpdated(
       uint32_t ssrc,

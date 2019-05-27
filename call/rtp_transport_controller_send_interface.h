@@ -25,6 +25,7 @@
 #include "api/transport/bitrate_settings.h"
 #include "call/rtp_config.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
+#include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/include/rtcp_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
@@ -56,6 +57,7 @@ struct RtpSenderObservers {
   RtcpIntraFrameObserver* intra_frame_callback;
   RtcpLossNotificationObserver* rtcp_loss_notification_observer;
   RtcpStatisticsCallback* rtcp_stats;
+  ReportBlockDataObserver* report_block_data_observer;
   StreamDataCountersCallback* rtp_stats;
   BitrateStatisticsObserver* bitrate_observer;
   FrameCountObserver* frame_count_observer;

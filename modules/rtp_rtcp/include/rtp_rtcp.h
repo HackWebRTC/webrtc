@@ -24,6 +24,7 @@
 #include "modules/include/module.h"
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/receive_statistics.h"
+#include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "rtc_base/constructor_magic.h"
@@ -397,9 +398,19 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   virtual bool StorePackets() const = 0;
 
   // Called on receipt of RTCP report block from remote side.
+  // TODO(https://crbug.com/webrtc/10678): Remove RtcpStatisticsCallback in
+  // favor of ReportBlockDataObserver.
+  // TODO(https://crbug.com/webrtc/10679): Consider whether we want to use only
+  // getters or only callbacks. If we decide on getters, the
+  // ReportBlockDataObserver should also be removed in favor of
+  // GetLatestReportBlockData().
   virtual void RegisterRtcpStatisticsCallback(
       RtcpStatisticsCallback* callback) = 0;
   virtual RtcpStatisticsCallback* GetRtcpStatisticsCallback() = 0;
+  // TODO(https://crbug.com/webrtc/10680): When callbacks are registered at
+  // construction, remove this setter.
+  virtual void SetReportBlockDataObserver(
+      ReportBlockDataObserver* observer) = 0;
   // BWE feedback packets.
   bool SendFeedbackPacket(const rtcp::TransportFeedback& packet) override = 0;
 

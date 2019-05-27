@@ -151,6 +151,7 @@ RtpSenderObservers CreateObservers(CallStats* call_stats,
   observers.intra_frame_callback = encoder_feedback;
   observers.rtcp_loss_notification_observer = encoder_feedback;
   observers.rtcp_stats = stats_proxy;
+  observers.report_block_data_observer = stats_proxy;
   observers.rtp_stats = stats_proxy;
   observers.bitrate_observer = stats_proxy;
   observers.frame_count_observer = stats_proxy;

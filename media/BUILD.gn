@@ -85,6 +85,7 @@ rtc_static_library("rtc_media_base") {
     "../call:call_interfaces",
     "../common_video",
     "../modules/audio_processing:audio_processing_statistics",
+    "../modules/rtp_rtcp:rtp_rtcp_format",
     "../rtc_base",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",

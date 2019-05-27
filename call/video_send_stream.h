@@ -28,6 +28,7 @@
 #include "api/video/video_stream_encoder_settings.h"
 #include "api/video_codecs/video_encoder_config.h"
 #include "call/rtp_config.h"
+#include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/include/rtcp_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
@@ -57,6 +58,9 @@ class VideoSendStream {
     StreamDataCounters rtp_stats;
     RtcpPacketTypeCounter rtcp_packet_type_counts;
     RtcpStatistics rtcp_stats;
+    // A snapshot of the most recent Report Block with additional data of
+    // interest to statistics. Used to implement RTCRemoteInboundRtpStreamStats.
+    absl::optional<ReportBlockData> report_block_data;
   };
 
   struct Stats {
