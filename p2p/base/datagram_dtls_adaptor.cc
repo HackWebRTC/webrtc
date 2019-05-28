@@ -58,6 +58,17 @@ DatagramDtlsAdaptor::DatagramDtlsAdaptor(
 }
 
 void DatagramDtlsAdaptor::ConnectToIceTransport() {
+  ice_transport_->SignalWritableState.connect(
+      this, &DatagramDtlsAdaptor::OnWritableState);
+  ice_transport_->SignalReadyToSend.connect(
+      this, &DatagramDtlsAdaptor::OnReadyToSend);
+  ice_transport_->SignalReceivingState.connect(
+      this, &DatagramDtlsAdaptor::OnReceivingState);
+
+  // Datagram transport does not propagate network route change.
+  ice_transport_->SignalNetworkRouteChanged.connect(
+      this, &DatagramDtlsAdaptor::OnNetworkRouteChanged);
+
   if (kBypassDatagramDtlsTestOnly) {
     // In bypass mode we have to subscribe to ICE read and sent events.
     // Test only case to use ICE directly instead of data transport.
@@ -66,21 +77,10 @@ void DatagramDtlsAdaptor::ConnectToIceTransport() {
 
     ice_transport_->SignalSentPacket.connect(
         this, &DatagramDtlsAdaptor::OnSentPacket);
-
-    ice_transport_->SignalWritableState.connect(
-        this, &DatagramDtlsAdaptor::OnWritableState);
-    ice_transport_->SignalReadyToSend.connect(
-        this, &DatagramDtlsAdaptor::OnReadyToSend);
-    ice_transport_->SignalReceivingState.connect(
-        this, &DatagramDtlsAdaptor::OnReceivingState);
   } else {
     // Subscribe to Data Transport read packets.
     datagram_transport_->SetDatagramSink(this);
     datagram_transport_->SetTransportStateCallback(this);
-
-    // Datagram transport does not propagate network route change.
-    ice_transport_->SignalNetworkRouteChanged.connect(
-        this, &DatagramDtlsAdaptor::OnNetworkRouteChanged);
   }
 }
 
