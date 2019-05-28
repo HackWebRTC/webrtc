@@ -74,7 +74,7 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   void ClampConstraints();
   void MaybeTriggerOnNetworkChanged(NetworkControlUpdate* update,
                                     Timestamp at_time);
-  void UpdateCongestionWindowSize();
+  void UpdateCongestionWindowSize(TimeDelta time_since_last_packet);
   PacerConfig GetPacingRates(Timestamp at_time) const;
   const FieldTrialBasedConfig trial_based_config_;
 
@@ -123,7 +123,6 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   uint8_t last_estimated_fraction_loss_ = 0;
   int64_t last_estimated_rtt_ms_ = 0;
   Timestamp last_packet_received_time_ = Timestamp::MinusInfinity();
-  TimeDelta time_since_last_received_packet_ = TimeDelta::Zero();
 
   double pacing_factor_;
   DataRate min_total_allocated_bitrate_;

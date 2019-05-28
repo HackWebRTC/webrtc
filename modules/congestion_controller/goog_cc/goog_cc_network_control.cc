@@ -224,14 +224,10 @@ NetworkControlUpdate GoogCcNetworkController::OnProcessInterval(
   update.probe_cluster_configs.insert(update.probe_cluster_configs.end(),
                                       probes.begin(), probes.end());
 
-  time_since_last_received_packet_ =
-      !last_packet_received_time_.IsMinusInfinity() &&
-              use_downlink_delay_for_congestion_window_
-          ? msg.at_time - last_packet_received_time_
-          : TimeDelta::Zero();
   if (rate_control_settings_.UseCongestionWindow() &&
-      (time_since_last_received_packet_ > TimeDelta::Zero())) {
-    UpdateCongestionWindowSize();
+      use_downlink_delay_for_congestion_window_ &&
+      last_packet_received_time_.IsFinite() && !feedback_max_rtts_.empty()) {
+    UpdateCongestionWindowSize(msg.at_time - last_packet_received_time_);
   }
   MaybeTriggerOnNetworkChanged(&update, msg.at_time);
   return update;
@@ -405,18 +401,21 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportLossReport(
   return NetworkControlUpdate();
 }
 
-void GoogCcNetworkController::UpdateCongestionWindowSize() {
-  if (feedback_max_rtts_.empty())
-    return;
-  int64_t min_feedback_max_rtt_ms =
-      *std::min_element(feedback_max_rtts_.begin(), feedback_max_rtts_.end());
+void GoogCcNetworkController::UpdateCongestionWindowSize(
+    TimeDelta time_since_last_packet) {
+  TimeDelta min_feedback_max_rtt = TimeDelta::ms(
+      *std::min_element(feedback_max_rtts_.begin(), feedback_max_rtts_.end()));
 
   const DataSize kMinCwnd = DataSize::bytes(2 * 1500);
   TimeDelta time_window =
+      min_feedback_max_rtt +
       TimeDelta::ms(
-          min_feedback_max_rtt_ms +
-          rate_control_settings_.GetCongestionWindowAdditionalTimeMs()) +
-      time_since_last_received_packet_;
+          rate_control_settings_.GetCongestionWindowAdditionalTimeMs());
+
+  if (use_downlink_delay_for_congestion_window_) {
+    time_window += time_since_last_packet;
+  }
+
   DataSize data_window = last_raw_target_rate_ * time_window;
   if (current_data_window_) {
     data_window =
@@ -577,7 +576,7 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
   // we don't try to limit the outstanding packets.
   if (rate_control_settings_.UseCongestionWindow() &&
       max_feedback_rtt.IsFinite()) {
-    UpdateCongestionWindowSize();
+    UpdateCongestionWindowSize(/*time_since_last_packet*/ TimeDelta::Zero());
   }
   if (congestion_window_pushback_controller_ && current_data_window_) {
     congestion_window_pushback_controller_->SetDataWindow(
