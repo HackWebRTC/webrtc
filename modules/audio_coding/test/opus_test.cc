@@ -77,8 +77,8 @@ void OpusTest::Perform() {
   ASSERT_GT(WebRtcOpus_EncoderCreate(&opus_stereo_encoder_, 2, 1, 48000), -1);
 
   // Create Opus decoders for mono and stereo for stand-alone testing of Opus.
-  ASSERT_GT(WebRtcOpus_DecoderCreate(&opus_mono_decoder_, 1), -1);
-  ASSERT_GT(WebRtcOpus_DecoderCreate(&opus_stereo_decoder_, 2), -1);
+  ASSERT_GT(WebRtcOpus_DecoderCreate(&opus_mono_decoder_, 1, 48000), -1);
+  ASSERT_GT(WebRtcOpus_DecoderCreate(&opus_stereo_decoder_, 2, 48000), -1);
   WebRtcOpus_DecoderInit(opus_mono_decoder_);
   WebRtcOpus_DecoderInit(opus_stereo_decoder_);
 

@@ -328,7 +328,9 @@ int16_t WebRtcOpus_SetBandwidth(OpusEncInst* inst, int32_t bandwidth);
  */
 int16_t WebRtcOpus_SetForceChannels(OpusEncInst* inst, size_t num_channels);
 
-int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst, size_t channels);
+int16_t WebRtcOpus_DecoderCreate(OpusDecInst** inst,
+                                 size_t channels,
+                                 int sample_rate_hz);
 
 /****************************************************************************
  * WebRtcOpus_MultistreamDecoderCreate(...)
@@ -488,13 +490,15 @@ int WebRtcOpus_PlcDuration(OpusDecInst* inst);
  * Input:
  *        - payload              : Encoded data pointer
  *        - payload_length_bytes : Bytes of encoded data
+ *        - sample_rate_hz       : Sample rate of output audio
  *
  * Return value                  : >0 - The duration of the FEC data in the
  *                                 packet in samples per channel.
  *                                  0 - No FEC data in the packet.
  */
 int WebRtcOpus_FecDurationEst(const uint8_t* payload,
-                              size_t payload_length_bytes);
+                              size_t payload_length_bytes,
+                              int sample_rate_hz);
 
 /****************************************************************************
  * WebRtcOpus_PacketHasFec(...)

@@ -67,9 +67,11 @@ void CreateSingleOrMultiStreamEncoder(WebRtcOpusEncInst** opus_encoder,
 
 void CreateSingleOrMultiStreamDecoder(WebRtcOpusDecInst** opus_decoder,
                                       int channels,
-                                      bool use_multistream) {
+                                      bool use_multistream,
+                                      int decoder_sample_rate_hz) {
   EXPECT_TRUE(channels == 1 || channels == 2 || use_multistream);
   if (use_multistream) {
+    EXPECT_EQ(decoder_sample_rate_hz, 48000);
     if (channels == 1) {
       EXPECT_EQ(0, WebRtcOpus_MultistreamDecoderCreate(
                        opus_decoder, channels, kMonoTotalStreams,
@@ -86,8 +88,14 @@ void CreateSingleOrMultiStreamDecoder(WebRtcOpusDecInst** opus_decoder,
       EXPECT_TRUE(false) << channels;
     }
   } else {
-    EXPECT_EQ(0, WebRtcOpus_DecoderCreate(opus_decoder, channels));
+    EXPECT_EQ(0, WebRtcOpus_DecoderCreate(opus_decoder, channels,
+                                          decoder_sample_rate_hz));
   }
+}
+
+int SamplesPerChannel(int sample_rate_hz, int duration_ms) {
+  const int samples_per_ms = rtc::CheckedDivExact(sample_rate_hz, 1000);
+  return samples_per_ms * duration_ms;
 }
 
 }  // namespace
@@ -99,16 +107,11 @@ using ::testing::Combine;
 
 // Maximum number of bytes in output bitstream.
 const size_t kMaxBytes = 2000;
-// Sample rate of Opus.
-const size_t kOpusDecodeRateKhz = 48;
-// Number of samples-per-channel in a 20 ms frame, sampled at 48 kHz.
-const size_t kOpus20msFrameDecodeSamples = kOpusDecodeRateKhz * 20;
-// Number of samples-per-channel in a 10 ms frame, sampled at 48 kHz.
-const size_t kOpus10msFrameDecodeSamples = kOpusDecodeRateKhz * 10;
 
-class OpusTest : public TestWithParam<::testing::tuple<int, int, bool, int>> {
+class OpusTest
+    : public TestWithParam<::testing::tuple<size_t, int, bool, int, int>> {
  protected:
-  OpusTest();
+  OpusTest() = default;
 
   void TestDtxEffect(bool dtx, int block_length_ms);
 
@@ -135,26 +138,35 @@ class OpusTest : public TestWithParam<::testing::tuple<int, int, bool, int>> {
                          size_t channels,
                          uint16_t bound) const;
 
-  WebRtcOpusEncInst* opus_encoder_;
-  WebRtcOpusDecInst* opus_decoder_;
-
+  WebRtcOpusEncInst* opus_encoder_ = nullptr;
+  WebRtcOpusDecInst* opus_decoder_ = nullptr;
   AudioLoop speech_data_;
   uint8_t bitstream_[kMaxBytes];
-  size_t encoded_bytes_;
-  const size_t channels_;
-  const int application_;
-  const bool use_multistream_;
-  const int encoder_sample_rate_hz_;
+  size_t encoded_bytes_ = 0;
+  const size_t channels_{std::get<0>(GetParam())};
+  const int application_{std::get<1>(GetParam())};
+  const bool use_multistream_{std::get<2>(GetParam())};
+  const int encoder_sample_rate_hz_{std::get<3>(GetParam())};
+  const int decoder_sample_rate_hz_{std::get<4>(GetParam())};
 };
 
-OpusTest::OpusTest()
-    : opus_encoder_(NULL),
-      opus_decoder_(NULL),
-      encoded_bytes_(0),
-      channels_(static_cast<size_t>(::testing::get<0>(GetParam()))),
-      application_(::testing::get<1>(GetParam())),
-      use_multistream_(::testing::get<2>(GetParam())),
-      encoder_sample_rate_hz_(::testing::get<3>(GetParam())) {}
+// Singlestream: Try all combinations.
+INSTANTIATE_TEST_SUITE_P(Singlestream,
+                         OpusTest,
+                         testing::Combine(testing::Values(1, 2),
+                                          testing::Values(0, 1),
+                                          testing::Values(false),
+                                          testing::Values(16000, 48000),
+                                          testing::Values(16000, 48000)));
+
+// Multistream: Some representative cases (only 48 kHz for now).
+INSTANTIATE_TEST_SUITE_P(
+    Multistream,
+    OpusTest,
+    testing::Values(std::make_tuple(1, 0, true, 48000, 48000),
+                    std::make_tuple(2, 1, true, 48000, 48000),
+                    std::make_tuple(4, 0, true, 48000, 48000),
+                    std::make_tuple(4, 1, true, 48000, 48000)));
 
 void OpusTest::PrepareSpeechData(int block_length_ms, int loop_length_ms) {
   std::map<int, std::string> channel_to_basename = {
@@ -220,12 +232,14 @@ void OpusTest::TestDtxEffect(bool dtx, int block_length_ms) {
   PrepareSpeechData(block_length_ms, 2000);
   const size_t input_samples =
       rtc::CheckedDivExact(encoder_sample_rate_hz_, 1000) * block_length_ms;
-  const size_t output_samples = kOpusDecodeRateKhz * block_length_ms;
+  const size_t output_samples =
+      rtc::CheckedDivExact(decoder_sample_rate_hz_, 1000) * block_length_ms;
 
   // Create encoder memory.
   CreateSingleOrMultiStreamEncoder(&opus_encoder_, channels_, application_,
                                    use_multistream_, encoder_sample_rate_hz_);
-  CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_);
+  CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_,
+                                   decoder_sample_rate_hz_);
 
   // Set bitrate.
   EXPECT_EQ(
@@ -385,7 +399,8 @@ void OpusTest::TestDtxEffect(bool dtx, int block_length_ms) {
 // Test if CBR does what we expect.
 void OpusTest::TestCbrEffect(bool cbr, int block_length_ms) {
   PrepareSpeechData(block_length_ms, 2000);
-  const size_t output_samples = kOpusDecodeRateKhz * block_length_ms;
+  const size_t output_samples =
+      rtc::CheckedDivExact(decoder_sample_rate_hz_, 1000) * block_length_ms;
 
   int32_t max_pkt_size_diff = 0;
   int32_t prev_pkt_size = 0;
@@ -393,7 +408,8 @@ void OpusTest::TestCbrEffect(bool cbr, int block_length_ms) {
   // Create encoder memory.
   CreateSingleOrMultiStreamEncoder(&opus_encoder_, channels_, application_,
                                    use_multistream_, encoder_sample_rate_hz_);
-  CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_);
+  CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_,
+                                   decoder_sample_rate_hz_);
 
   // Set bitrate.
   EXPECT_EQ(
@@ -443,9 +459,11 @@ TEST(OpusTest, OpusCreateFail) {
   // Invalid sample rate.
   EXPECT_EQ(-1, WebRtcOpus_EncoderCreate(&opus_encoder, 1, 0, 12345));
 
-  EXPECT_EQ(-1, WebRtcOpus_DecoderCreate(NULL, 1));
+  EXPECT_EQ(-1, WebRtcOpus_DecoderCreate(NULL, 1, 48000));
   // Invalid channel number.
-  EXPECT_EQ(-1, WebRtcOpus_DecoderCreate(&opus_decoder, 257));
+  EXPECT_EQ(-1, WebRtcOpus_DecoderCreate(&opus_decoder, 257, 48000));
+  // Invalid sample rate.
+  EXPECT_EQ(-1, WebRtcOpus_DecoderCreate(&opus_decoder, 1, 12345));
 }
 
 // Test failing Free.
@@ -459,7 +477,8 @@ TEST(OpusTest, OpusFreeFail) {
 TEST_P(OpusTest, OpusCreateFree) {
   CreateSingleOrMultiStreamEncoder(&opus_encoder_, channels_, application_,
                                    use_multistream_, encoder_sample_rate_hz_);
-  CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_);
+  CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_,
+                                   decoder_sample_rate_hz_);
   EXPECT_TRUE(opus_encoder_ != NULL);
   EXPECT_TRUE(opus_decoder_ != NULL);
   // Free encoder and decoder memory.
@@ -478,7 +497,8 @@ TEST_P(OpusTest, OpusEncodeDecode) {
   // Create encoder memory.
   CreateSingleOrMultiStreamEncoder(&opus_encoder_, channels_, application_,
                                    use_multistream_, encoder_sample_rate_hz_);
-  CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_);
+  CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_,
+                                   decoder_sample_rate_hz_);
 
   // Set bitrate.
   EXPECT_EQ(
@@ -495,12 +515,13 @@ TEST_P(OpusTest, OpusEncodeDecode) {
 
   // Encode & decode.
   int16_t audio_type;
+  const int decode_samples_per_channel =
+      SamplesPerChannel(decoder_sample_rate_hz_, /*ms=*/20);
   int16_t* output_data_decode =
-      new int16_t[kOpus20msFrameDecodeSamples * channels_];
-  EXPECT_EQ(kOpus20msFrameDecodeSamples,
-            static_cast<size_t>(
-                EncodeDecode(opus_encoder_, speech_data_.GetNextBlock(),
-                             opus_decoder_, output_data_decode, &audio_type)));
+      new int16_t[decode_samples_per_channel * channels_];
+  EXPECT_EQ(decode_samples_per_channel,
+            EncodeDecode(opus_encoder_, speech_data_.GetNextBlock(),
+                         opus_decoder_, output_data_decode, &audio_type));
 
   // Free memory.
   delete[] output_data_decode;
@@ -549,8 +570,10 @@ TEST_P(OpusTest, OpusSetBandwidth) {
   PrepareSpeechData(20, 20);
 
   int16_t audio_type;
+  const int decode_samples_per_channel =
+      SamplesPerChannel(decoder_sample_rate_hz_, /*ms=*/20);
   std::unique_ptr<int16_t[]> output_data_decode(
-      new int16_t[kOpus20msFrameDecodeSamples * channels_]());
+      new int16_t[decode_samples_per_channel * channels_]());
 
   // Test without creating encoder memory.
   EXPECT_EQ(-1,
@@ -560,7 +583,8 @@ TEST_P(OpusTest, OpusSetBandwidth) {
   // Create encoder memory, try with different bandwidths.
   CreateSingleOrMultiStreamEncoder(&opus_encoder_, channels_, application_,
                                    use_multistream_, encoder_sample_rate_hz_);
-  CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_);
+  CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_,
+                                   decoder_sample_rate_hz_);
 
   EXPECT_EQ(-1, WebRtcOpus_SetBandwidth(opus_encoder_,
                                         OPUS_BANDWIDTH_NARROWBAND - 1));
@@ -618,23 +642,24 @@ TEST_P(OpusTest, OpusDecodeInit) {
   // Create encoder memory.
   CreateSingleOrMultiStreamEncoder(&opus_encoder_, channels_, application_,
                                    use_multistream_, encoder_sample_rate_hz_);
-  CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_);
+  CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_,
+                                   decoder_sample_rate_hz_);
 
   // Encode & decode.
   int16_t audio_type;
+  const int decode_samples_per_channel =
+      SamplesPerChannel(decoder_sample_rate_hz_, /*ms=*/20);
   int16_t* output_data_decode =
-      new int16_t[kOpus20msFrameDecodeSamples * channels_];
-  EXPECT_EQ(kOpus20msFrameDecodeSamples,
-            static_cast<size_t>(
-                EncodeDecode(opus_encoder_, speech_data_.GetNextBlock(),
-                             opus_decoder_, output_data_decode, &audio_type)));
+      new int16_t[decode_samples_per_channel * channels_];
+  EXPECT_EQ(decode_samples_per_channel,
+            EncodeDecode(opus_encoder_, speech_data_.GetNextBlock(),
+                         opus_decoder_, output_data_decode, &audio_type));
 
   WebRtcOpus_DecoderInit(opus_decoder_);
 
-  EXPECT_EQ(kOpus20msFrameDecodeSamples,
-            static_cast<size_t>(
-                WebRtcOpus_Decode(opus_decoder_, bitstream_, encoded_bytes_,
-                                  output_data_decode, &audio_type)));
+  EXPECT_EQ(decode_samples_per_channel,
+            WebRtcOpus_Decode(opus_decoder_, bitstream_, encoded_bytes_,
+                              output_data_decode, &audio_type));
 
   // Free memory.
   delete[] output_data_decode;
@@ -762,7 +787,8 @@ TEST_P(OpusTest, OpusDecodePlc) {
   // Create encoder memory.
   CreateSingleOrMultiStreamEncoder(&opus_encoder_, channels_, application_,
                                    use_multistream_, encoder_sample_rate_hz_);
-  CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_);
+  CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_,
+                                   decoder_sample_rate_hz_);
 
   // Set bitrate.
   EXPECT_EQ(
@@ -773,18 +799,18 @@ TEST_P(OpusTest, OpusDecodePlc) {
 
   // Encode & decode.
   int16_t audio_type;
+  const int decode_samples_per_channel =
+      SamplesPerChannel(decoder_sample_rate_hz_, /*ms=*/20);
   int16_t* output_data_decode =
-      new int16_t[kOpus20msFrameDecodeSamples * channels_];
-  EXPECT_EQ(kOpus20msFrameDecodeSamples,
-            static_cast<size_t>(
-                EncodeDecode(opus_encoder_, speech_data_.GetNextBlock(),
-                             opus_decoder_, output_data_decode, &audio_type)));
+      new int16_t[decode_samples_per_channel * channels_];
+  EXPECT_EQ(decode_samples_per_channel,
+            EncodeDecode(opus_encoder_, speech_data_.GetNextBlock(),
+                         opus_decoder_, output_data_decode, &audio_type));
 
   // Call decoder PLC.
-  int16_t* plc_buffer = new int16_t[kOpus20msFrameDecodeSamples * channels_];
-  EXPECT_EQ(
-      kOpus20msFrameDecodeSamples,
-      static_cast<size_t>(WebRtcOpus_DecodePlc(opus_decoder_, plc_buffer, 1)));
+  int16_t* plc_buffer = new int16_t[decode_samples_per_channel * channels_];
+  EXPECT_EQ(decode_samples_per_channel,
+            WebRtcOpus_DecodePlc(opus_decoder_, plc_buffer, 1));
 
   // Free memory.
   delete[] plc_buffer;
@@ -800,7 +826,8 @@ TEST_P(OpusTest, OpusDurationEstimation) {
   // Create.
   CreateSingleOrMultiStreamEncoder(&opus_encoder_, channels_, application_,
                                    use_multistream_, encoder_sample_rate_hz_);
-  CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_);
+  CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_,
+                                   decoder_sample_rate_hz_);
 
   // 10 ms. We use only first 10 ms of a 20 ms block.
   auto speech_block = speech_data_.GetNextBlock();
@@ -809,10 +836,9 @@ TEST_P(OpusTest, OpusDurationEstimation) {
       rtc::CheckedDivExact(speech_block.size(), 2 * channels_), kMaxBytes,
       bitstream_);
   EXPECT_GE(encoded_bytes_int, 0);
-  EXPECT_EQ(
-      kOpus10msFrameDecodeSamples,
-      static_cast<size_t>(WebRtcOpus_DurationEst(
-          opus_decoder_, bitstream_, static_cast<size_t>(encoded_bytes_int))));
+  EXPECT_EQ(SamplesPerChannel(decoder_sample_rate_hz_, /*ms=*/10),
+            WebRtcOpus_DurationEst(opus_decoder_, bitstream_,
+                                   static_cast<size_t>(encoded_bytes_int)));
 
   // 20 ms
   speech_block = speech_data_.GetNextBlock();
@@ -821,10 +847,9 @@ TEST_P(OpusTest, OpusDurationEstimation) {
                         rtc::CheckedDivExact(speech_block.size(), channels_),
                         kMaxBytes, bitstream_);
   EXPECT_GE(encoded_bytes_int, 0);
-  EXPECT_EQ(
-      kOpus20msFrameDecodeSamples,
-      static_cast<size_t>(WebRtcOpus_DurationEst(
-          opus_decoder_, bitstream_, static_cast<size_t>(encoded_bytes_int))));
+  EXPECT_EQ(SamplesPerChannel(decoder_sample_rate_hz_, /*ms=*/20),
+            WebRtcOpus_DurationEst(opus_decoder_, bitstream_,
+                                   static_cast<size_t>(encoded_bytes_int)));
 
   // Free memory.
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_encoder_));
@@ -846,7 +871,8 @@ TEST_P(OpusTest, OpusDecodeRepacketized) {
   CreateSingleOrMultiStreamEncoder(&opus_encoder_, channels_, application_,
                                    use_multistream_, encoder_sample_rate_hz_);
   ASSERT_NE(nullptr, opus_encoder_);
-  CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_);
+  CreateSingleOrMultiStreamDecoder(&opus_decoder_, channels_, use_multistream_,
+                                   decoder_sample_rate_hz_);
   ASSERT_NE(nullptr, opus_decoder_);
 
   // Set bitrate.
@@ -858,8 +884,10 @@ TEST_P(OpusTest, OpusDecodeRepacketized) {
 
   // Encode & decode.
   int16_t audio_type;
+  const int decode_samples_per_channel =
+      SamplesPerChannel(decoder_sample_rate_hz_, /*ms=*/20);
   std::unique_ptr<int16_t[]> output_data_decode(
-      new int16_t[kPackets * kOpus20msFrameDecodeSamples * channels_]);
+      new int16_t[kPackets * decode_samples_per_channel * channels_]);
   OpusRepacketizer* rp = opus_repacketizer_create();
 
   size_t num_packets = 0;
@@ -887,11 +915,11 @@ TEST_P(OpusTest, OpusDecodeRepacketized) {
 
   encoded_bytes_ = opus_repacketizer_out(rp, bitstream_, kMaxBytes);
 
-  EXPECT_EQ(kOpus20msFrameDecodeSamples * kPackets,
+  EXPECT_EQ(decode_samples_per_channel * kPackets,
             static_cast<size_t>(WebRtcOpus_DurationEst(
                 opus_decoder_, bitstream_, encoded_bytes_)));
 
-  EXPECT_EQ(kOpus20msFrameDecodeSamples * kPackets,
+  EXPECT_EQ(decode_samples_per_channel * kPackets,
             static_cast<size_t>(
                 WebRtcOpus_Decode(opus_decoder_, bitstream_, encoded_bytes_,
                                   output_data_decode.get(), &audio_type)));
@@ -901,22 +929,5 @@ TEST_P(OpusTest, OpusDecodeRepacketized) {
   EXPECT_EQ(0, WebRtcOpus_EncoderFree(opus_encoder_));
   EXPECT_EQ(0, WebRtcOpus_DecoderFree(opus_decoder_));
 }
-
-INSTANTIATE_TEST_SUITE_P(VariousMode,
-                         OpusTest,
-                         ::testing::ValuesIn({
-                             std::make_tuple(1, 0, false, 16000),
-                             std::make_tuple(1, 1, false, 16000),
-                             std::make_tuple(2, 0, false, 16000),
-                             std::make_tuple(2, 1, false, 16000),
-                             std::make_tuple(1, 0, false, 48000),
-                             std::make_tuple(1, 1, false, 48000),
-                             std::make_tuple(2, 0, false, 48000),
-                             std::make_tuple(2, 1, false, 48000),
-                             std::make_tuple(1, 0, true, 48000),
-                             std::make_tuple(2, 1, true, 48000),
-                             std::make_tuple(4, 0, true, 48000),
-                             std::make_tuple(4, 1, true, 48000),
-                         }));
 
 }  // namespace webrtc

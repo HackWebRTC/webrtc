@@ -157,7 +157,7 @@ int AudioDecoderMultiChannelOpusImpl::PacketDurationRedundant(
     return PacketDuration(encoded, encoded_len);
   }
 
-  return WebRtcOpus_FecDurationEst(encoded, encoded_len);
+  return WebRtcOpus_FecDurationEst(encoded, encoded_len, 48000);
 }
 
 bool AudioDecoderMultiChannelOpusImpl::PacketHasFec(const uint8_t* encoded,
