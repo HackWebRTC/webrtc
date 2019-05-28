@@ -129,6 +129,9 @@ TEST(SessionDescriptionTest, AddContentTransfersExtmapAllowMixedSetting) {
             data_desc->extmap_allow_mixed_enum());
 }
 
+// The tests for DataContentDescription will be deleted soon.
+// TODO(bugs.webrtc.org/10597): Declare this class obsolete and remove it
+
 TEST(SessionDescriptionTest, DataContentDescriptionCanAddStream) {
   auto description = absl::make_unique<DataContentDescription>();
   // Adding a stream without setting protocol first should work.
@@ -138,7 +141,7 @@ TEST(SessionDescriptionTest, DataContentDescriptionCanAddStream) {
 
 TEST(SessionDescriptionTest, DataContentDescriptionCopyWorks) {
   auto description = absl::make_unique<RtpDataContentDescription>();
-  auto shim_description = description->as_data();
+  auto shim_description = description->deprecated_as_data();
   auto shim_copy = shim_description->Copy();
   delete shim_copy;
 }
@@ -151,7 +154,7 @@ TEST(SessionDescriptionTest, DataContentDescriptionCodecsCallableOnNull) {
 
 TEST(SessionDescriptionTest, DataContentDescriptionSctpConferenceMode) {
   auto description = absl::make_unique<SctpDataContentDescription>();
-  auto shim_description = description->as_data();
+  auto shim_description = description->deprecated_as_data();
   EXPECT_FALSE(shim_description->conference_mode());
   shim_description->set_conference_mode(true);
   EXPECT_TRUE(shim_description->conference_mode());

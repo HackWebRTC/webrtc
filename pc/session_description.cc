@@ -190,13 +190,13 @@ void SessionDescription::AddContent(ContentInfo* content) {
   if (description->as_rtp_data()) {
     if (description->as_rtp_data() != description) {
       content->set_media_description(
-          description->as_data()->Unshim(&should_delete));
+          description->deprecated_as_data()->Unshim(&should_delete));
     }
   }
   if (description->as_sctp()) {
     if (description->as_sctp() != description) {
       content->set_media_description(
-          description->as_data()->Unshim(&should_delete));
+          description->deprecated_as_data()->Unshim(&should_delete));
     }
   }
   if (should_delete) {
@@ -292,26 +292,34 @@ const ContentGroup* SessionDescription::GetGroupByName(
 }
 
 // DataContentDescription shim creation
-DataContentDescription* RtpDataContentDescription::as_data() {
+DataContentDescription* RtpDataContentDescription::deprecated_as_data() {
   if (!shim_) {
     shim_.reset(new DataContentDescription(this));
   }
   return shim_.get();
+}
+
+DataContentDescription* RtpDataContentDescription::as_data() {
+  return deprecated_as_data();
 }
 
 const DataContentDescription* RtpDataContentDescription::as_data() const {
   return const_cast<RtpDataContentDescription*>(this)->as_data();
 }
 
-DataContentDescription* SctpDataContentDescription::as_data() {
+DataContentDescription* SctpDataContentDescription::deprecated_as_data() {
   if (!shim_) {
     shim_.reset(new DataContentDescription(this));
   }
   return shim_.get();
 }
 
+DataContentDescription* SctpDataContentDescription::as_data() {
+  return deprecated_as_data();
+}
+
 const DataContentDescription* SctpDataContentDescription::as_data() const {
-  return const_cast<SctpDataContentDescription*>(this)->as_data();
+  return const_cast<SctpDataContentDescription*>(this)->deprecated_as_data();
 }
 
 DataContentDescription::DataContentDescription() {

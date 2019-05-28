@@ -79,8 +79,11 @@ class MediaContentDescription {
   // Backwards compatible shim: Return a shim object that allows
   // callers to ignore the distinction between RtpDataContentDescription
   // and SctpDataContentDescription objects.
-  virtual DataContentDescription* as_data() { return nullptr; }
-  virtual const DataContentDescription* as_data() const { return nullptr; }
+  RTC_DEPRECATED virtual DataContentDescription* as_data() { return nullptr; }
+  RTC_DEPRECATED virtual const DataContentDescription* as_data() const {
+    return nullptr;
+  }
+  virtual DataContentDescription* deprecated_as_data() { return nullptr; }
 
   virtual RtpDataContentDescription* as_rtp_data() { return nullptr; }
   virtual const RtpDataContentDescription* as_rtp_data() const {
@@ -344,8 +347,11 @@ class DataContentDescription : public MediaContentDescriptionImpl<DataCodec> {
  public:
   DataContentDescription();
   MediaType type() const override { return MEDIA_TYPE_DATA; }
-  DataContentDescription* as_data() override { return this; }
-  const DataContentDescription* as_data() const override { return this; }
+  RTC_DEPRECATED DataContentDescription* as_data() override { return this; }
+  RTC_DEPRECATED const DataContentDescription* as_data() const override {
+    return this;
+  }
+  DataContentDescription* deprecated_as_data() override { return this; }
 
   // Override all methods defined in MediaContentDescription.
   bool has_codecs() const override;
@@ -453,8 +459,9 @@ class RtpDataContentDescription
   RtpDataContentDescription* as_rtp_data() override { return this; }
   const RtpDataContentDescription* as_rtp_data() const override { return this; }
   // Shim support
-  DataContentDescription* as_data() override;
-  const DataContentDescription* as_data() const override;
+  RTC_DEPRECATED DataContentDescription* as_data() override;
+  RTC_DEPRECATED const DataContentDescription* as_data() const override;
+  DataContentDescription* deprecated_as_data() override;
 
  private:
   std::unique_ptr<DataContentDescription> shim_;
@@ -476,8 +483,9 @@ class SctpDataContentDescription : public MediaContentDescription {
   SctpDataContentDescription* as_sctp() override { return this; }
   const SctpDataContentDescription* as_sctp() const override { return this; }
   // Shim support
-  DataContentDescription* as_data() override;
-  const DataContentDescription* as_data() const override;
+  RTC_DEPRECATED DataContentDescription* as_data() override;
+  RTC_DEPRECATED const DataContentDescription* as_data() const override;
+  DataContentDescription* deprecated_as_data() override;
 
   bool has_codecs() const override { return false; }
   void set_protocol(const std::string& protocol) override {

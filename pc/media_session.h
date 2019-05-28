@@ -363,7 +363,7 @@ const RtpDataContentDescription* GetFirstRtpDataContentDescription(
 const SctpDataContentDescription* GetFirstSctpDataContentDescription(
     const SessionDescription* sdesc);
 // Returns shim. Deprecated - ask for the right protocol instead.
-const DataContentDescription* GetFirstDataContentDescription(
+RTC_DEPRECATED const DataContentDescription* GetFirstDataContentDescription(
     const SessionDescription* sdesc);
 // Non-const versions of the above functions.
 // Useful when modifying an existing description.
@@ -384,7 +384,7 @@ RtpDataContentDescription* GetFirstRtpDataContentDescription(
     SessionDescription* sdesc);
 SctpDataContentDescription* GetFirstSctpDataContentDescription(
     SessionDescription* sdesc);
-DataContentDescription* GetFirstDataContentDescription(
+RTC_DEPRECATED DataContentDescription* GetFirstDataContentDescription(
     SessionDescription* sdesc);
 
 // Helper functions to return crypto suites used for SDES.
