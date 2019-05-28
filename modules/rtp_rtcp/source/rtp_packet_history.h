@@ -13,6 +13,7 @@
 
 #include <map>
 #include <memory>
+#include <set>
 #include <vector>
 
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -90,6 +91,12 @@ class RtpPacketHistory {
   std::unique_ptr<RtpPacketToSend> GetBestFittingPacket(
       size_t packet_size) const;
 
+  // Get the packet (if any) from the history, that is deemed most likely to
+  // the remote side. This is calculated from heuristics such as packet age
+  // and times retransmitted. Updated the send time of the packet, so is not
+  // a const method.
+  std::unique_ptr<RtpPacketToSend> GetPayloadPaddingPacket();
+
   // Cull packets that have been acknowledged as received by the remote end.
   void CullAcknowledgedPackets(rtc::ArrayView<const uint16_t> sequence_numbers);
 
@@ -99,27 +106,48 @@ class RtpPacketHistory {
   bool SetPendingTransmission(uint16_t sequence_number);
 
  private:
-  struct StoredPacket {
-    StoredPacket();
+  struct MoreUseful;
+  class StoredPacket;
+  using PacketPrioritySet = std::set<StoredPacket*, MoreUseful>;
+
+  class StoredPacket {
+   public:
+    StoredPacket(std::unique_ptr<RtpPacketToSend> packet,
+                 StorageType storage_type,
+                 absl::optional<int64_t> send_time_ms,
+                 uint64_t insert_order);
     StoredPacket(StoredPacket&&);
     StoredPacket& operator=(StoredPacket&&);
     ~StoredPacket();
 
+    StorageType storage_type() const { return storage_type_; }
+    uint64_t insert_order() const { return insert_order_; }
+    size_t times_retransmitted() const { return times_retransmitted_; }
+    void IncrementTimesRetransmitted(PacketPrioritySet* priority_set);
+
     // The time of last transmission, including retransmissions.
-    absl::optional<int64_t> send_time_ms;
-
-    // Number of times RE-transmitted, ie excluding the first transmission.
-    size_t times_retransmitted = 0;
-
-    // Storing a packet with |storage_type| = kDontRetransmit indicates this is
-    // only used as temporary storage until sent by the pacer sender.
-    StorageType storage_type = kDontRetransmit;
+    absl::optional<int64_t> send_time_ms_;
 
     // The actual packet.
-    std::unique_ptr<RtpPacketToSend> packet;
+    std::unique_ptr<RtpPacketToSend> packet_;
 
     // True if the packet is currently in the pacer queue pending transmission.
-    bool pending_transmission = false;
+    bool pending_transmission_;
+
+   private:
+    // Storing a packet with |storage_type| = kDontRetransmit indicates this is
+    // only used as temporary storage until sent by the pacer sender.
+    StorageType storage_type_;
+
+    // Unique number per StoredPacket, incremented by one for each added
+    // packet. Used to sort on insert order.
+    uint64_t insert_order_;
+
+    // Number of times RE-transmitted, ie excluding the first transmission.
+    size_t times_retransmitted_;
+  };
+  struct MoreUseful {
+    bool operator()(StoredPacket* lhs, StoredPacket* rhs) const;
   };
 
   using StoredPacketIterator = std::map<uint16_t, StoredPacket>::iterator;
@@ -147,6 +175,12 @@ class RtpPacketHistory {
   std::map<uint16_t, StoredPacket> packet_history_ RTC_GUARDED_BY(lock_);
   // Map from packet size to sequence number.
   std::map<size_t, uint16_t> packet_size_ RTC_GUARDED_BY(lock_);
+
+  // Total number of packets with StorageType::kAllowsRetransmission inserted.
+  uint64_t retransmittable_packets_inserted_ RTC_GUARDED_BY(lock_);
+  // Retransmittable objects from |packet_history_| ordered by
+  // "most likely to be useful", used in GetPayloadPaddingPacket().
+  PacketPrioritySet padding_priority_ RTC_GUARDED_BY(lock_);
 
   // The earliest packet in the history. This might not be the lowest sequence
   // number, in case there is a wraparound.

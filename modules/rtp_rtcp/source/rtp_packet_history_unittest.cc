@@ -711,4 +711,59 @@ TEST_F(RtpPacketHistoryTest, DontRemovePendingTransmissions) {
   ASSERT_FALSE(packet_state.has_value());
 }
 
+TEST_F(RtpPacketHistoryTest, PrioritizedPayloadPadding) {
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 1);
+
+  // Add two sent packets, one millisecond apart.
+  hist_.PutRtpPacket(CreateRtpPacket(kStartSeqNum), kAllowRetransmission,
+                     fake_clock_.TimeInMilliseconds());
+  fake_clock_.AdvanceTimeMilliseconds(1);
+
+  hist_.PutRtpPacket(CreateRtpPacket(kStartSeqNum + 1), kAllowRetransmission,
+                     fake_clock_.TimeInMilliseconds());
+  fake_clock_.AdvanceTimeMilliseconds(1);
+
+  // Latest packet given equal retransmission count.
+  EXPECT_EQ(hist_.GetPayloadPaddingPacket()->SequenceNumber(),
+            kStartSeqNum + 1);
+
+  // Older packet has lower retransmission count.
+  EXPECT_EQ(hist_.GetPayloadPaddingPacket()->SequenceNumber(), kStartSeqNum);
+
+  // Equal retransmission count again, use newest packet.
+  EXPECT_EQ(hist_.GetPayloadPaddingPacket()->SequenceNumber(),
+            kStartSeqNum + 1);
+
+  // Older packet has lower retransmission count.
+  EXPECT_EQ(hist_.GetPayloadPaddingPacket()->SequenceNumber(), kStartSeqNum);
+
+  // Remove newest packet.
+  hist_.CullAcknowledgedPackets(std::vector<uint16_t>{kStartSeqNum + 1});
+
+  // Only older packet left.
+  EXPECT_EQ(hist_.GetPayloadPaddingPacket()->SequenceNumber(), kStartSeqNum);
+
+  hist_.CullAcknowledgedPackets(std::vector<uint16_t>{kStartSeqNum});
+
+  EXPECT_EQ(hist_.GetPayloadPaddingPacket(), nullptr);
+}
+
+TEST_F(RtpPacketHistoryTest, NoPendingPacketAsPadding) {
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 1);
+
+  hist_.PutRtpPacket(CreateRtpPacket(kStartSeqNum), kAllowRetransmission,
+                     fake_clock_.TimeInMilliseconds());
+  fake_clock_.AdvanceTimeMilliseconds(1);
+
+  EXPECT_EQ(hist_.GetPayloadPaddingPacket()->SequenceNumber(), kStartSeqNum);
+
+  // If packet is pending retransmission, don't try to use it as padding.
+  hist_.SetPendingTransmission(kStartSeqNum);
+  EXPECT_EQ(nullptr, hist_.GetPayloadPaddingPacket());
+
+  // Market it as no longer pending, should be usable as padding again.
+  hist_.GetPacketAndSetSendTime(kStartSeqNum);
+  EXPECT_EQ(hist_.GetPayloadPaddingPacket()->SequenceNumber(), kStartSeqNum);
+}
+
 }  // namespace webrtc

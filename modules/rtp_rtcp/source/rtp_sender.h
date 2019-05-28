@@ -301,6 +301,12 @@ class RTPSender : public AcknowledgedPacketsObserver {
   const bool send_side_bwe_with_overhead_;
   const bool legacy_packet_history_storage_mode_;
 
+  // Set by field trial "WebRTC-PayloadPadding-UseMostUsefulPacket". If set
+  // to "Enabled" this field will be true and
+  // packet_history_.GetPayloadPaddingPacket() will be called instead of
+  // packet_history_.GetBestFittingPacket() in TrySendRedundantPayloads().
+  const bool payload_padding_prefer_useful_packets_;
+
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RTPSender);
 };
 
