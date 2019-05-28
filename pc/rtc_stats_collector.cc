@@ -675,6 +675,10 @@ ProduceMediaStreamTrackStatsFromVideoReceiverInfo(
     video_track_stats->frame_height = static_cast<uint32_t>(
         video_receiver_info.frame_height);
   }
+  video_track_stats->jitter_buffer_delay =
+      video_receiver_info.jitter_buffer_delay_seconds;
+  video_track_stats->jitter_buffer_emitted_count =
+      video_receiver_info.jitter_buffer_emitted_count;
   video_track_stats->frames_received = video_receiver_info.frames_received;
   // TODO(hbos): When we support receiving simulcast, this should be the total
   // number of frames correctly decoded, independent of which SSRC it was

@@ -1647,6 +1647,8 @@ TEST_F(RTCStatsCollectorTest,
   video_receiver_info_ssrc3.local_stats[0].ssrc = 3;
   video_receiver_info_ssrc3.frame_width = 6789;
   video_receiver_info_ssrc3.frame_height = 9876;
+  video_receiver_info_ssrc3.jitter_buffer_delay_seconds = 2.5;
+  video_receiver_info_ssrc3.jitter_buffer_emitted_count = 25;
   video_receiver_info_ssrc3.frames_received = 1000;
   video_receiver_info_ssrc3.frames_decoded = 995;
   video_receiver_info_ssrc3.frames_rendered = 990;
@@ -1694,6 +1696,8 @@ TEST_F(RTCStatsCollectorTest,
   expected_remote_video_track_ssrc3.detached = false;
   expected_remote_video_track_ssrc3.frame_width = 6789;
   expected_remote_video_track_ssrc3.frame_height = 9876;
+  expected_remote_video_track_ssrc3.jitter_buffer_delay = 2.5;
+  expected_remote_video_track_ssrc3.jitter_buffer_emitted_count = 25;
   expected_remote_video_track_ssrc3.frames_received = 1000;
   expected_remote_video_track_ssrc3.frames_decoded = 995;
   expected_remote_video_track_ssrc3.frames_dropped = 1000 - 990;

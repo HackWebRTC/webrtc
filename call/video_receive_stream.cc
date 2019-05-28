@@ -53,6 +53,8 @@ std::string VideoReceiveStream::Stats::ToString(int64_t time_ms) const {
   ss << "cur_delay_ms: " << current_delay_ms << ", ";
   ss << "targ_delay_ms: " << target_delay_ms << ", ";
   ss << "jb_delay_ms: " << jitter_buffer_ms << ", ";
+  ss << "jb_cumulative_delay_seconds: " << jitter_buffer_delay_seconds << ", ";
+  ss << "jb_emitted_count: " << jitter_buffer_emitted_count << ", ";
   ss << "min_playout_delay_ms: " << min_playout_delay_ms << ", ";
   ss << "sync_offset_ms: " << sync_offset_ms << ", ";
   ss << "cum_loss: " << rtcp_stats.packets_lost << ", ";

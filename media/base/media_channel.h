@@ -617,6 +617,12 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   int max_decode_ms = 0;
   // Jitter (network-related) latency.
   int jitter_buffer_ms = 0;
+  // Jitter (network-related) latency (cumulative).
+  // https://w3c.github.io/webrtc-stats/#dom-rtcvideoreceiverstats-jitterbufferdelay
+  double jitter_buffer_delay_seconds = 0;
+  // Number of observations for cumulative jitter latency.
+  // https://w3c.github.io/webrtc-stats/#dom-rtcvideoreceiverstats-jitterbufferemittedcount
+  uint64_t jitter_buffer_emitted_count = 0;
   // Requested minimum playout latency.
   int min_playout_delay_ms = 0;
   // Requested latency to account for rendering delay.

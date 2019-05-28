@@ -596,6 +596,10 @@ VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
       video_quality_observer_->SumSquaredFrameDurationsSec();
   stats_.content_type = last_content_type_;
   stats_.timing_frame_info = timing_frame_info_counter_.Max(now_ms);
+  stats_.jitter_buffer_delay_seconds =
+      static_cast<double>(current_delay_counter_.Sum(1).value_or(0)) /
+      rtc::kNumMillisecsPerSec;
+  stats_.jitter_buffer_emitted_count = current_delay_counter_.NumSamples();
   return stats_;
 }
 

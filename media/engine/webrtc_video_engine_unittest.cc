@@ -5000,6 +5000,8 @@ TEST_F(WebRtcVideoChannelTest, GetStatsTranslatesDecodeStatsCorrectly) {
   stats.current_delay_ms = 4;
   stats.target_delay_ms = 5;
   stats.jitter_buffer_ms = 6;
+  stats.jitter_buffer_delay_seconds = 60;
+  stats.jitter_buffer_emitted_count = 6;
   stats.min_playout_delay_ms = 7;
   stats.render_delay_ms = 8;
   stats.width = 9;
@@ -5020,6 +5022,10 @@ TEST_F(WebRtcVideoChannelTest, GetStatsTranslatesDecodeStatsCorrectly) {
   EXPECT_EQ(stats.current_delay_ms, info.receivers[0].current_delay_ms);
   EXPECT_EQ(stats.target_delay_ms, info.receivers[0].target_delay_ms);
   EXPECT_EQ(stats.jitter_buffer_ms, info.receivers[0].jitter_buffer_ms);
+  EXPECT_EQ(stats.jitter_buffer_delay_seconds,
+            info.receivers[0].jitter_buffer_delay_seconds);
+  EXPECT_EQ(stats.jitter_buffer_emitted_count,
+            info.receivers[0].jitter_buffer_emitted_count);
   EXPECT_EQ(stats.min_playout_delay_ms, info.receivers[0].min_playout_delay_ms);
   EXPECT_EQ(stats.render_delay_ms, info.receivers[0].render_delay_ms);
   EXPECT_EQ(stats.width, info.receivers[0].frame_width);
