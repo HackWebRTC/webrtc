@@ -209,7 +209,7 @@ TEST(SpsVuiRewriterTest, ParseOutgoingBitstreamOptimalVui) {
   nalu_lengths[1] = sizeof(kIdr1);
   buffer.AppendData(kIdr1);
 
-  rtc::Buffer modified_buffer;
+  rtc::CopyOnWriteBuffer modified_buffer;
   size_t modified_nalu_offsets[kNumNalus];
   size_t modified_nalu_lengths[kNumNalus];
 
@@ -273,7 +273,7 @@ TEST(SpsVuiRewriterTest, ParseOutgoingBitstreamNoVui) {
   expected_nalu_lengths[2] = sizeof(kIdr2);
   expected_buffer.AppendData(kIdr2);
 
-  rtc::Buffer modified_buffer;
+  rtc::CopyOnWriteBuffer modified_buffer;
   size_t modified_nalu_offsets[kNumNalus];
   size_t modified_nalu_lengths[kNumNalus];
 

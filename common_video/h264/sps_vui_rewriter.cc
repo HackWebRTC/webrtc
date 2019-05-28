@@ -202,7 +202,7 @@ void SpsVuiRewriter::ParseOutgoingBitstreamAndRewriteSps(
     size_t num_nalus,
     const size_t* nalu_offsets,
     const size_t* nalu_lengths,
-    rtc::Buffer* output_buffer,
+    rtc::CopyOnWriteBuffer* output_buffer,
     size_t* output_nalu_offsets,
     size_t* output_nalu_lengths) {
   // Allocate some extra space for potentially adding a missing VUI.

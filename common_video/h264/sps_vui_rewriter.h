@@ -18,6 +18,7 @@
 #include "absl/types/optional.h"
 #include "common_video/h264/sps_parser.h"
 #include "rtc_base/buffer.h"
+#include "rtc_base/copy_on_write_buffer.h"
 
 namespace webrtc {
 
@@ -60,7 +61,7 @@ class SpsVuiRewriter : private SpsParser {
       size_t num_nalus,
       const size_t* nalu_offsets,
       const size_t* nalu_lengths,
-      rtc::Buffer* output_buffer,
+      rtc::CopyOnWriteBuffer* output_buffer,
       size_t* output_nalu_offsets,
       size_t* output_nalu_lengths);
 

@@ -12,12 +12,14 @@
 #define VIDEO_FRAME_ENCODE_METADATA_WRITER_H_
 
 #include <list>
+#include <memory>
 #include <vector>
 
 #include "absl/types/optional.h"
 #include "api/video/encoded_image.h"
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
+#include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/critical_section.h"
 
 namespace webrtc {
@@ -34,6 +36,12 @@ class FrameEncodeMetadataWriter {
   void OnEncodeStarted(const VideoFrame& frame);
 
   void FillTimingInfo(size_t simulcast_svc_idx, EncodedImage* encoded_image);
+
+  std::unique_ptr<RTPFragmentationHeader> UpdateBitstream(
+      const CodecSpecificInfo* codec_specific_info,
+      const RTPFragmentationHeader* fragmentation,
+      EncodedImage* encoded_image);
+
   void Reset();
 
  private:

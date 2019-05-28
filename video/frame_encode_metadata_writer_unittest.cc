@@ -16,9 +16,11 @@
 #include "api/video/i420_buffer.h"
 #include "api/video/video_frame.h"
 #include "api/video/video_timing.h"
+#include "common_video/h264/h264_common.h"
 #include "common_video/test/utilities.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "rtc_base/time_utils.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -125,7 +127,7 @@ std::vector<std::vector<FrameType>> GetTimingFrames(
 }
 }  // namespace
 
-TEST(FrameEncodeTimerTest, MarksTimingFramesPeriodicallyTogether) {
+TEST(FrameEncodeMetadataWriterTest, MarksTimingFramesPeriodicallyTogether) {
   const int64_t kDelayMs = 29;
   const size_t kMinFrameSize = 10;
   const size_t kMaxFrameSize = 20;
@@ -169,7 +171,7 @@ TEST(FrameEncodeTimerTest, MarksTimingFramesPeriodicallyTogether) {
   }
 }
 
-TEST(FrameEncodeTimerTest, MarksOutliers) {
+TEST(FrameEncodeMetadataWriterTest, MarksOutliers) {
   const int64_t kDelayMs = 29;
   const size_t kMinFrameSize = 2495;
   const size_t kMaxFrameSize = 2505;
@@ -191,7 +193,7 @@ TEST(FrameEncodeTimerTest, MarksOutliers) {
   }
 }
 
-TEST(FrameEncodeTimerTest, NoTimingFrameIfNoEncodeStartTime) {
+TEST(FrameEncodeMetadataWriterTest, NoTimingFrameIfNoEncodeStartTime) {
   int64_t timestamp = 1;
   constexpr size_t kFrameSize = 500;
   EncodedImage image;
@@ -228,7 +230,8 @@ TEST(FrameEncodeTimerTest, NoTimingFrameIfNoEncodeStartTime) {
   EXPECT_FALSE(IsTimingFrame(image));
 }
 
-TEST(FrameEncodeTimerTest, AdjustsCaptureTimeForInternalSourceEncoder) {
+TEST(FrameEncodeMetadataWriterTest,
+     AdjustsCaptureTimeForInternalSourceEncoder) {
   const int64_t kEncodeStartDelayMs = 2;
   const int64_t kEncodeFinishDelayMs = 10;
   constexpr size_t kFrameSize = 500;
@@ -273,7 +276,7 @@ TEST(FrameEncodeTimerTest, AdjustsCaptureTimeForInternalSourceEncoder) {
               1);
 }
 
-TEST(FrameEncodeTimerTest, NotifiesAboutDroppedFrames) {
+TEST(FrameEncodeMetadataWriterTest, NotifiesAboutDroppedFrames) {
   const int64_t kTimestampMs1 = 47721840;
   const int64_t kTimestampMs2 = 47721850;
   const int64_t kTimestampMs3 = 47721860;
@@ -332,7 +335,7 @@ TEST(FrameEncodeTimerTest, NotifiesAboutDroppedFrames) {
   EXPECT_EQ(1u, sink.GetNumFramesDropped());
 }
 
-TEST(FrameEncodeTimerTest, RestoresCaptureTimestamps) {
+TEST(FrameEncodeMetadataWriterTest, RestoresCaptureTimestamps) {
   EncodedImage image;
   const int64_t kTimestampMs = 123456;
   FakeEncodedImageCallback sink;
@@ -357,7 +360,7 @@ TEST(FrameEncodeTimerTest, RestoresCaptureTimestamps) {
   EXPECT_EQ(kTimestampMs, image.capture_time_ms_);
 }
 
-TEST(FrameEncodeTimerTest, CopiesRotation) {
+TEST(FrameEncodeMetadataWriterTest, CopiesRotation) {
   EncodedImage image;
   const int64_t kTimestampMs = 123456;
   FakeEncodedImageCallback sink;
@@ -381,7 +384,7 @@ TEST(FrameEncodeTimerTest, CopiesRotation) {
   EXPECT_EQ(kVideoRotation_180, image.rotation_);
 }
 
-TEST(FrameEncodeTimerTest, SetsContentType) {
+TEST(FrameEncodeMetadataWriterTest, SetsContentType) {
   EncodedImage image;
   const int64_t kTimestampMs = 123456;
   FakeEncodedImageCallback sink;
@@ -407,7 +410,7 @@ TEST(FrameEncodeTimerTest, SetsContentType) {
   EXPECT_EQ(VideoContentType::SCREENSHARE, image.content_type_);
 }
 
-TEST(FrameEncodeTimerTest, CopiesColorSpace) {
+TEST(FrameEncodeMetadataWriterTest, CopiesColorSpace) {
   EncodedImage image;
   const int64_t kTimestampMs = 123456;
   FakeEncodedImageCallback sink;
@@ -432,6 +435,87 @@ TEST(FrameEncodeTimerTest, CopiesColorSpace) {
   encode_timer.FillTimingInfo(0, &image);
   ASSERT_NE(image.ColorSpace(), nullptr);
   EXPECT_EQ(color_space, *image.ColorSpace());
+}
+
+TEST(FrameEncodeMetadataWriterTest, DoesNotRewriteBitstreamWithoutCodecInfo) {
+  uint8_t buffer[] = {1, 2, 3};
+  EncodedImage image(buffer, sizeof(buffer), sizeof(buffer));
+  const RTPFragmentationHeader fragmentation;
+
+  FakeEncodedImageCallback sink;
+  FrameEncodeMetadataWriter encode_metadata_writer(&sink);
+  EXPECT_EQ(
+      encode_metadata_writer.UpdateBitstream(nullptr, &fragmentation, &image),
+      nullptr);
+  EXPECT_EQ(image.data(), buffer);
+  EXPECT_EQ(image.size(), sizeof(buffer));
+}
+
+TEST(FrameEncodeMetadataWriterTest, DoesNotRewriteVp8Bitstream) {
+  uint8_t buffer[] = {1, 2, 3};
+  EncodedImage image(buffer, sizeof(buffer), sizeof(buffer));
+  CodecSpecificInfo codec_specific_info;
+  codec_specific_info.codecType = kVideoCodecVP8;
+  const RTPFragmentationHeader fragmentation;
+
+  FakeEncodedImageCallback sink;
+  FrameEncodeMetadataWriter encode_metadata_writer(&sink);
+  EXPECT_EQ(encode_metadata_writer.UpdateBitstream(&codec_specific_info,
+                                                   &fragmentation, &image),
+            nullptr);
+  EXPECT_EQ(image.data(), buffer);
+  EXPECT_EQ(image.size(), sizeof(buffer));
+}
+
+TEST(FrameEncodeMetadataWriterTest,
+     DoesNotRewriteH264BitstreamWithoutFragmentation) {
+  uint8_t buffer[] = {1, 2, 3};
+  EncodedImage image(buffer, sizeof(buffer), sizeof(buffer));
+  CodecSpecificInfo codec_specific_info;
+  codec_specific_info.codecType = kVideoCodecH264;
+
+  FakeEncodedImageCallback sink;
+  FrameEncodeMetadataWriter encode_metadata_writer(&sink);
+  EXPECT_EQ(encode_metadata_writer.UpdateBitstream(&codec_specific_info,
+                                                   nullptr, &image),
+            nullptr);
+  EXPECT_EQ(image.data(), buffer);
+  EXPECT_EQ(image.size(), sizeof(buffer));
+}
+
+TEST(FrameEncodeMetadataWriterTest, RewritesH264BitstreamWithNonOptimalSps) {
+  uint8_t original_sps[] = {0,    0,    0,    1,    H264::NaluType::kSps,
+                            0x00, 0x00, 0x03, 0x03, 0xF4,
+                            0x05, 0x03, 0xC7, 0xC0};
+  const uint8_t kRewrittenSps[] = {0,    0,    0,    1,    H264::NaluType::kSps,
+                                   0x00, 0x00, 0x03, 0x03, 0xF4,
+                                   0x05, 0x03, 0xC7, 0xE0, 0x1B,
+                                   0x41, 0x10, 0x8D, 0x00};
+
+  EncodedImage image(original_sps, sizeof(original_sps), sizeof(original_sps));
+  image._frameType = VideoFrameType::kVideoFrameKey;
+
+  CodecSpecificInfo codec_specific_info;
+  codec_specific_info.codecType = kVideoCodecH264;
+
+  RTPFragmentationHeader fragmentation;
+  fragmentation.VerifyAndAllocateFragmentationHeader(1);
+  fragmentation.fragmentationOffset[0] = 4;
+  fragmentation.fragmentationLength[0] = sizeof(original_sps) - 4;
+
+  FakeEncodedImageCallback sink;
+  FrameEncodeMetadataWriter encode_metadata_writer(&sink);
+  std::unique_ptr<RTPFragmentationHeader> modified_fragmentation =
+      encode_metadata_writer.UpdateBitstream(&codec_specific_info,
+                                             &fragmentation, &image);
+
+  ASSERT_NE(modified_fragmentation, nullptr);
+  EXPECT_THAT(std::vector<uint8_t>(image.data(), image.data() + image.size()),
+              testing::ElementsAreArray(kRewrittenSps));
+  ASSERT_THAT(modified_fragmentation->fragmentationVectorSize, 1U);
+  EXPECT_EQ(modified_fragmentation->fragmentationOffset[0], 4U);
+  EXPECT_EQ(modified_fragmentation->fragmentationLength[0],
+            sizeof(kRewrittenSps) - 4);
 }
 
 }  // namespace test

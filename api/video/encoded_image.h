@@ -93,6 +93,12 @@ class RTC_EXPORT EncodedImage {
     buffer_ = nullptr;
   }
 
+  void SetEncodedData(const rtc::CopyOnWriteBuffer& encoded_data) {
+    encoded_data_ = encoded_data;
+    size_ = encoded_data.size();
+    buffer_ = nullptr;
+  }
+
   uint8_t* data() { return buffer_ ? buffer_ : encoded_data_.data(); }
   const uint8_t* data() const {
     return buffer_ ? buffer_ : encoded_data_.cdata();

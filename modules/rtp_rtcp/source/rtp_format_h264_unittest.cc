@@ -497,86 +497,12 @@ TEST(RtpPacketizerH264Test, RejectsOverlongDataInPacketizationMode0) {
   EXPECT_THAT(packets, IsEmpty());
 }
 
-const uint8_t kStartSequence[] = {0x00, 0x00, 0x00, 0x01};
 const uint8_t kOriginalSps[] = {kSps, 0x00, 0x00, 0x03, 0x03,
                                 0xF4, 0x05, 0x03, 0xC7, 0xC0};
 const uint8_t kRewrittenSps[] = {kSps, 0x00, 0x00, 0x03, 0x03, 0xF4, 0x05, 0x03,
                                  0xC7, 0xE0, 0x1B, 0x41, 0x10, 0x8D, 0x00};
 const uint8_t kIdrOne[] = {kIdr, 0xFF, 0x00, 0x00, 0x04};
 const uint8_t kIdrTwo[] = {kIdr, 0xFF, 0x00, 0x11};
-
-class RtpPacketizerH264TestSpsRewriting : public ::testing::Test {
- public:
-  void SetUp() override {
-    fragmentation_header_.VerifyAndAllocateFragmentationHeader(3);
-    fragmentation_header_.fragmentationVectorSize = 3;
-    in_buffer_.AppendData(kStartSequence);
-
-    fragmentation_header_.fragmentationOffset[0] = in_buffer_.size();
-    fragmentation_header_.fragmentationLength[0] = sizeof(kOriginalSps);
-    in_buffer_.AppendData(kOriginalSps);
-
-    fragmentation_header_.fragmentationOffset[1] = in_buffer_.size();
-    fragmentation_header_.fragmentationLength[1] = sizeof(kIdrOne);
-    in_buffer_.AppendData(kIdrOne);
-
-    fragmentation_header_.fragmentationOffset[2] = in_buffer_.size();
-    fragmentation_header_.fragmentationLength[2] = sizeof(kIdrTwo);
-    in_buffer_.AppendData(kIdrTwo);
-  }
-
- protected:
-  rtc::Buffer in_buffer_;
-  RTPFragmentationHeader fragmentation_header_;
-};
-
-TEST_F(RtpPacketizerH264TestSpsRewriting, FuASps) {
-  const size_t kHeaderOverhead = kFuAHeaderSize + 1;
-
-  // Set size to fragment SPS into two FU-A packets.
-  RtpPacketizer::PayloadSizeLimits limits;
-  limits.max_payload_len = sizeof(kOriginalSps) - 2 + kHeaderOverhead;
-  RtpPacketizerH264 packetizer(in_buffer_, limits,
-                               H264PacketizationMode::NonInterleaved,
-                               fragmentation_header_);
-  std::vector<RtpPacketToSend> packets = FetchAllPackets(&packetizer);
-
-  size_t offset = H264::kNaluTypeSize;
-  size_t length = packets[0].payload_size() - kFuAHeaderSize;
-  EXPECT_THAT(packets[0].payload().subview(kFuAHeaderSize),
-              ElementsAreArray(&kRewrittenSps[offset], length));
-  offset += length;
-
-  length = packets[1].payload_size() - kFuAHeaderSize;
-  EXPECT_THAT(packets[1].payload().subview(kFuAHeaderSize),
-              ElementsAreArray(&kRewrittenSps[offset], length));
-  offset += length;
-
-  EXPECT_EQ(offset, sizeof(kRewrittenSps));
-}
-
-TEST_F(RtpPacketizerH264TestSpsRewriting, StapASps) {
-  const size_t kHeaderOverhead = kFuAHeaderSize + 1;
-  const size_t kExpectedTotalSize = H264::kNaluTypeSize +  // Stap-A type.
-                                    sizeof(kRewrittenSps) + sizeof(kIdrOne) +
-                                    sizeof(kIdrTwo) + (kLengthFieldLength * 3);
-
-  // Set size to include SPS and the rest of the packets in a Stap-A package.
-  RtpPacketizer::PayloadSizeLimits limits;
-  limits.max_payload_len = kExpectedTotalSize + kHeaderOverhead;
-
-  RtpPacketizerH264 packetizer(in_buffer_, limits,
-                               H264PacketizationMode::NonInterleaved,
-                               fragmentation_header_);
-  std::vector<RtpPacketToSend> packets = FetchAllPackets(&packetizer);
-
-  ASSERT_THAT(packets, SizeIs(1));
-  EXPECT_EQ(packets[0].payload_size(), kExpectedTotalSize);
-  EXPECT_THAT(
-      packets[0].payload().subview(H264::kNaluTypeSize + kLengthFieldLength,
-                                   sizeof(kRewrittenSps)),
-      ElementsAreArray(kRewrittenSps));
-}
 
 struct H264ParsedPayload : public RtpDepacketizer::ParsedPayload {
   RTPVideoHeaderH264& h264() {

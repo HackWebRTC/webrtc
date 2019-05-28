@@ -1412,6 +1412,10 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
 
   frame_encode_metadata_writer_.FillTimingInfo(spatial_idx, &image_copy);
 
+  std::unique_ptr<RTPFragmentationHeader> fragmentation_copy =
+      frame_encode_metadata_writer_.UpdateBitstream(codec_specific_info,
+                                                    fragmentation, &image_copy);
+
   // Piggyback ALR experiment group id and simulcast id into the content type.
   const uint8_t experiment_id =
       experiment_groups_[videocontenttypehelpers::IsScreenshare(
@@ -1487,7 +1491,7 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
 
   EncodedImageCallback::Result result = sink_->OnEncodedImage(
       image_copy, codec_info_copy ? codec_info_copy.get() : codec_specific_info,
-      fragmentation);
+      fragmentation_copy ? fragmentation_copy.get() : fragmentation);
 
   // We are only interested in propagating the meta-data about the image, not
   // encoded data itself, to the post encode function. Since we cannot be sure

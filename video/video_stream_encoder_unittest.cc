@@ -15,12 +15,14 @@
 #include <memory>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "api/video_codecs/vp8_temporal_layers_factory.h"
+#include "common_video/h264/h264_common.h"
 #include "media/base/video_adapter.h"
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
@@ -57,6 +59,11 @@ const uint32_t kLowTargetBitrateBps = kTargetBitrateBps / 10;
 const int kMaxInitialFramedrop = 4;
 const int kDefaultFramerate = 30;
 const int64_t kFrameIntervalMs = rtc::kNumMillisecsPerSec / kDefaultFramerate;
+
+uint8_t optimal_sps[] = {0,    0,    0,    1,    H264::NaluType::kSps,
+                         0x00, 0x00, 0x03, 0x03, 0xF4,
+                         0x05, 0x03, 0xC7, 0xE0, 0x1B,
+                         0x41, 0x10, 0x8D, 0x00};
 
 class TestBuffer : public webrtc::I420Buffer {
  public:
@@ -658,6 +665,14 @@ class VideoStreamEncoderTest : public ::testing::Test {
       encoded_image_callback_->OnEncodedImage(image, nullptr, nullptr);
     }
 
+    void InjectEncodedImage(const EncodedImage& image,
+                            const CodecSpecificInfo* codec_specific_info,
+                            const RTPFragmentationHeader* fragmentation) {
+      rtc::CritScope lock(&local_crit_sect_);
+      encoded_image_callback_->OnEncodedImage(image, codec_specific_info,
+                                              fragmentation);
+    }
+
     void ExpectNullFrame() {
       rtc::CritScope lock(&local_crit_sect_);
       expect_null_frame_ = true;
@@ -855,6 +870,16 @@ class VideoStreamEncoderTest : public ::testing::Test {
       return last_capture_time_ms_;
     }
 
+    std::vector<uint8_t> GetLastEncodedImageData() {
+      rtc::CritScope lock(&crit_);
+      return std::move(last_encoded_image_data_);
+    }
+
+    RTPFragmentationHeader GetLastFragmentation() {
+      rtc::CritScope lock(&crit_);
+      return std::move(last_fragmentation_);
+    }
+
    private:
     Result OnEncodedImage(
         const EncodedImage& encoded_image,
@@ -862,6 +887,11 @@ class VideoStreamEncoderTest : public ::testing::Test {
         const RTPFragmentationHeader* fragmentation) override {
       rtc::CritScope lock(&crit_);
       EXPECT_TRUE(expect_frames_);
+      last_encoded_image_data_ = std::vector<uint8_t>(
+          encoded_image.data(), encoded_image.data() + encoded_image.size());
+      if (fragmentation) {
+        last_fragmentation_.CopyFrom(*fragmentation);
+      }
       uint32_t timestamp = encoded_image.Timestamp();
       if (last_timestamp_ != timestamp) {
         num_received_layers_ = 1;
@@ -890,6 +920,8 @@ class VideoStreamEncoderTest : public ::testing::Test {
     rtc::CriticalSection crit_;
     TestEncoder* test_encoder_;
     rtc::Event encoded_frame_event_;
+    std::vector<uint8_t> last_encoded_image_data_;
+    RTPFragmentationHeader last_fragmentation_;
     uint32_t last_timestamp_ = 0;
     int64_t last_capture_time_ms_ = 0;
     uint32_t last_height_ = 0;
@@ -3826,4 +3858,67 @@ TEST_F(VideoStreamEncoderTest, AdjustsTimestampInternalSource) {
 
   video_stream_encoder_->Stop();
 }
+
+TEST_F(VideoStreamEncoderTest, DoesNotRewriteH264BitstreamWithOptimalSps) {
+  // Configure internal source factory and setup test again.
+  encoder_factory_.SetHasInternalSource(true);
+  ResetEncoder("H264", 1, 1, 1, false);
+
+  EncodedImage image(optimal_sps, sizeof(optimal_sps), sizeof(optimal_sps));
+  image._frameType = VideoFrameType::kVideoFrameKey;
+
+  CodecSpecificInfo codec_specific_info;
+  codec_specific_info.codecType = kVideoCodecH264;
+
+  RTPFragmentationHeader fragmentation;
+  fragmentation.VerifyAndAllocateFragmentationHeader(1);
+  fragmentation.fragmentationOffset[0] = 4;
+  fragmentation.fragmentationLength[0] = sizeof(optimal_sps) - 4;
+
+  fake_encoder_.InjectEncodedImage(image, &codec_specific_info, &fragmentation);
+  EXPECT_TRUE(sink_.WaitForFrame(kDefaultTimeoutMs));
+
+  EXPECT_THAT(sink_.GetLastEncodedImageData(),
+              testing::ElementsAreArray(optimal_sps));
+  RTPFragmentationHeader last_fragmentation = sink_.GetLastFragmentation();
+  ASSERT_THAT(last_fragmentation.fragmentationVectorSize, 1U);
+  EXPECT_EQ(last_fragmentation.fragmentationOffset[0], 4U);
+  EXPECT_EQ(last_fragmentation.fragmentationLength[0], sizeof(optimal_sps) - 4);
+
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, RewritesH264BitstreamWithNonOptimalSps) {
+  uint8_t original_sps[] = {0,    0,    0,    1,    H264::NaluType::kSps,
+                            0x00, 0x00, 0x03, 0x03, 0xF4,
+                            0x05, 0x03, 0xC7, 0xC0};
+
+  // Configure internal source factory and setup test again.
+  encoder_factory_.SetHasInternalSource(true);
+  ResetEncoder("H264", 1, 1, 1, false);
+
+  EncodedImage image(original_sps, sizeof(original_sps), sizeof(original_sps));
+  image._frameType = VideoFrameType::kVideoFrameKey;
+
+  CodecSpecificInfo codec_specific_info;
+  codec_specific_info.codecType = kVideoCodecH264;
+
+  RTPFragmentationHeader fragmentation;
+  fragmentation.VerifyAndAllocateFragmentationHeader(1);
+  fragmentation.fragmentationOffset[0] = 4;
+  fragmentation.fragmentationLength[0] = sizeof(original_sps) - 4;
+
+  fake_encoder_.InjectEncodedImage(image, &codec_specific_info, &fragmentation);
+  EXPECT_TRUE(sink_.WaitForFrame(kDefaultTimeoutMs));
+
+  EXPECT_THAT(sink_.GetLastEncodedImageData(),
+              testing::ElementsAreArray(optimal_sps));
+  RTPFragmentationHeader last_fragmentation = sink_.GetLastFragmentation();
+  ASSERT_THAT(last_fragmentation.fragmentationVectorSize, 1U);
+  EXPECT_EQ(last_fragmentation.fragmentationOffset[0], 4U);
+  EXPECT_EQ(last_fragmentation.fragmentationLength[0], sizeof(optimal_sps) - 4);
+
+  video_stream_encoder_->Stop();
+}
+
 }  // namespace webrtc
