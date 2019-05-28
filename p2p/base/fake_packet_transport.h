@@ -11,6 +11,7 @@
 #ifndef P2P_BASE_FAKE_PACKET_TRANSPORT_H_
 #define P2P_BASE_FAKE_PACKET_TRANSPORT_H_
 
+#include <map>
 #include <string>
 
 #include "p2p/base/packet_transport_internal.h"
@@ -81,9 +82,23 @@ class FakePacketTransport : public PacketTransportInternal {
     SignalSentPacket(this, sent_packet);
     return static_cast<int>(len);
   }
-  int SetOption(Socket::Option opt, int value) override { return true; }
-  bool GetOption(Socket::Option opt, int* value) override { return true; }
-  int GetError() override { return 0; }
+
+  int SetOption(Socket::Option opt, int value) override {
+    options_[opt] = value;
+    return 0;
+  }
+
+  bool GetOption(Socket::Option opt, int* value) override {
+    auto it = options_.find(opt);
+    if (it == options_.end()) {
+      return false;
+    }
+    *value = it->second;
+    return true;
+  }
+
+  int GetError() override { return error_; }
+  void SetError(int error) { error_ = error; }
 
   const CopyOnWriteBuffer* last_sent_packet() { return &last_sent_packet_; }
 
@@ -92,6 +107,7 @@ class FakePacketTransport : public PacketTransportInternal {
   }
   void SetNetworkRoute(absl::optional<NetworkRoute> network_route) {
     network_route_ = network_route;
+    SignalNetworkRouteChanged(network_route);
   }
 
  private:
@@ -130,6 +146,9 @@ class FakePacketTransport : public PacketTransportInternal {
   int async_delay_ms_ = 0;
   bool writable_ = false;
   bool receiving_ = false;
+
+  std::map<Socket::Option, int> options_;
+  int error_ = 0;
 
   absl::optional<NetworkRoute> network_route_;
 };
