@@ -224,7 +224,8 @@ bool RTPSenderAudio::SendAudio(AudioFrameType frame_type,
   if (payload_size == 0 || payload_data == NULL) {
     if (frame_type == AudioFrameType::kEmptyFrame) {
       // we don't send empty audio RTP packets
-      // no error since we use it to drive DTMF when we use VAD
+      // no error since we use it to either drive DTMF when we use VAD, or
+      // enter DTX.
       return true;
     }
     return false;

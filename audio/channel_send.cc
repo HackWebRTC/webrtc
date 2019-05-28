@@ -507,7 +507,11 @@ int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
   // E2EE Custom Audio Frame Encryption (This is optional).
   // Keep this buffer around for the lifetime of the send call.
   rtc::Buffer encrypted_audio_payload;
-  if (frame_encryptor_ != nullptr) {
+  // We don't invoke encryptor if payload is empty, which means we are to send
+  // DTMF, or the encoder entered DTX.
+  // TODO(minyue): see whether DTMF packets should be encrypted or not. In
+  // current implementation, they are not.
+  if (frame_encryptor_ != nullptr && !payload.empty()) {
     // TODO(benwright@webrtc.org) - Allocate enough to always encrypt inline.
     // Allocate a buffer to hold the maximum possible encrypted payload.
     size_t max_ciphertext_size = frame_encryptor_->GetMaxCiphertextByteSize(
