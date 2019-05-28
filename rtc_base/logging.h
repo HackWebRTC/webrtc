@@ -58,10 +58,6 @@
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/system/inline.h"
 
-#if defined(WEBRTC_MAC) && !defined(WEBRTC_IOS)
-#include "rtc_base/logging_mac.h"
-#endif  // WEBRTC_MAC
-
 #if !defined(NDEBUG) || defined(DLOG_ALWAYS_ON)
 #define RTC_DLOG_IS_ON 1
 #else
@@ -97,12 +93,10 @@ enum LogErrorContext {
   ERRCTX_NONE,
   ERRCTX_ERRNO,     // System-local errno
   ERRCTX_HRESULT,   // Windows HRESULT
-  ERRCTX_OSSTATUS,  // MacOS OSStatus
 
   // Abbreviations for LOG_E macro
   ERRCTX_EN = ERRCTX_ERRNO,     // LOG_E(sev, EN, x)
   ERRCTX_HR = ERRCTX_HRESULT,   // LOG_E(sev, HR, x)
-  ERRCTX_OS = ERRCTX_OSSTATUS,  // LOG_E(sev, OS, x)
 };
 
 // Virtual sink interface that can receive log messages.
