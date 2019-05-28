@@ -53,6 +53,12 @@ const char* const RTCNetworkType::kWimax = "wimax";
 const char* const RTCNetworkType::kVpn = "vpn";
 const char* const RTCNetworkType::kUnknown = "unknown";
 
+// https://w3c.github.io/webrtc-stats/#dom-rtcqualitylimitationreason
+const char* const RTCQualityLimitationReason::kNone = "none";
+const char* const RTCQualityLimitationReason::kCpu = "cpu";
+const char* const RTCQualityLimitationReason::kBandwidth = "bandwidth";
+const char* const RTCQualityLimitationReason::kOther = "other";
+
 // https://webrtc.org/experiments/rtp-hdrext/video-content-type/
 const char* const RTCContentType::kUnspecified = "unspecified";
 const char* const RTCContentType::kScreenshare = "screenshare";
@@ -681,6 +687,7 @@ WEBRTC_RTCSTATS_IMPL(
     &total_encode_time,
     &total_encoded_bytes_target,
     &total_packet_send_delay,
+    &quality_limitation_reason,
     &content_type)
 // clang-format on
 
@@ -701,6 +708,7 @@ RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(std::string&& id,
       total_encode_time("totalEncodeTime"),
       total_encoded_bytes_target("totalEncodedBytesTarget"),
       total_packet_send_delay("totalPacketSendDelay"),
+      quality_limitation_reason("qualityLimitationReason"),
       content_type("contentType") {}
 
 RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
@@ -716,6 +724,7 @@ RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
       total_encode_time(other.total_encode_time),
       total_encoded_bytes_target(other.total_encoded_bytes_target),
       total_packet_send_delay(other.total_packet_send_delay),
+      quality_limitation_reason(other.quality_limitation_reason),
       content_type(other.content_type) {}
 
 RTCOutboundRTPStreamStats::~RTCOutboundRTPStreamStats() {}

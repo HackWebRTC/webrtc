@@ -31,6 +31,7 @@
 #include "api/video/video_source_interface.h"
 #include "api/video/video_timing.h"
 #include "api/video_codecs/video_encoder_config.h"
+#include "common_video/include/quality_limitation_reason.h"
 #include "media/base/codec.h"
 #include "media/base/delayable.h"
 #include "media/base/media_config.h"
@@ -552,6 +553,12 @@ struct VideoSenderInfo : public MediaSenderInfo {
   int nominal_bitrate = 0;
   int adapt_reason = 0;
   int adapt_changes = 0;
+  // https://w3c.github.io/webrtc-stats/#dom-rtcoutboundrtpstreamstats-qualitylimitationreason
+  webrtc::QualityLimitationReason quality_limitation_reason =
+      webrtc::QualityLimitationReason::kNone;
+  // https://w3c.github.io/webrtc-stats/#dom-rtcoutboundrtpstreamstats-qualitylimitationdurations
+  std::map<webrtc::QualityLimitationReason, int64_t>
+      quality_limitation_durations_ms;
   int avg_encode_ms = 0;
   int encode_usage_percent = 0;
   uint32_t frames_encoded = 0;

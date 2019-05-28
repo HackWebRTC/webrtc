@@ -26,6 +26,7 @@
 #include "rtc_base/rate_tracker.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/clock.h"
+#include "video/quality_limitation_reason_tracker.h"
 #include "video/report_block_stats.h"
 #include "video/stats_counter.h"
 
@@ -244,6 +245,8 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
   rtc::ExpFilter encode_time_ RTC_GUARDED_BY(crit_);
   int quality_downscales_ RTC_GUARDED_BY(crit_);
   int cpu_downscales_ RTC_GUARDED_BY(crit_);
+  QualityLimitationReasonTracker quality_limitation_reason_tracker_
+      RTC_GUARDED_BY(crit_);
   rtc::RateTracker media_byte_rate_tracker_ RTC_GUARDED_BY(crit_);
   rtc::RateTracker encoded_frame_rate_tracker_ RTC_GUARDED_BY(crit_);
 

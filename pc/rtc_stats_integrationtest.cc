@@ -834,6 +834,7 @@ class RTCStatsReportVerifier {
           outbound_stream.total_encoded_bytes_target);
       verifier.TestMemberIsNonNegative<double>(
           outbound_stream.total_packet_send_delay);
+      verifier.TestMemberIsDefined(outbound_stream.quality_limitation_reason);
       // The integration test is not set up to test screen share; don't require
       // this to be present.
       verifier.MarkMemberTested(outbound_stream.content_type, true);
@@ -844,6 +845,7 @@ class RTCStatsReportVerifier {
           outbound_stream.total_encoded_bytes_target);
       // TODO(https://crbug.com/webrtc/10635): Implement for audio as well.
       verifier.TestMemberIsUndefined(outbound_stream.total_packet_send_delay);
+      verifier.TestMemberIsUndefined(outbound_stream.quality_limitation_reason);
       verifier.TestMemberIsUndefined(outbound_stream.content_type);
     }
     return verifier.ExpectAllMembersSuccessfullyTested();

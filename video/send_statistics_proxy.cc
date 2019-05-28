@@ -137,6 +137,7 @@ SendStatisticsProxy::SendStatisticsProxy(
       encode_time_(kEncodeTimeWeigthFactor),
       quality_downscales_(-1),
       cpu_downscales_(-1),
+      quality_limitation_reason_tracker_(clock_),
       media_byte_rate_tracker_(kBucketSizeMs, kBucketCount),
       encoded_frame_rate_tracker_(kBucketSizeMs, kBucketCount),
       uma_container_(
@@ -729,6 +730,8 @@ VideoSendStream::Stats SendStatisticsProxy::GetStats() {
           : VideoContentType::SCREENSHARE;
   stats_.encode_frame_rate = round(encoded_frame_rate_tracker_.ComputeRate());
   stats_.media_bitrate_bps = media_byte_rate_tracker_.ComputeRate() * 8;
+  stats_.quality_limitation_durations_ms =
+      quality_limitation_reason_tracker_.DurationsMs();
   return stats_;
 }
 
@@ -1062,6 +1065,26 @@ void SendStatisticsProxy::OnAdaptationChanged(
       ++stats_.number_of_quality_adapt_changes;
       break;
   }
+
+  bool is_cpu_limited = cpu_counts.num_resolution_reductions > 0 ||
+                        cpu_counts.num_framerate_reductions > 0;
+  bool is_bandwidth_limited = quality_counts.num_resolution_reductions > 0 ||
+                              quality_counts.num_framerate_reductions > 0;
+  if (is_bandwidth_limited) {
+    // We may be both CPU limited and bandwidth limited at the same time but
+    // there is no way to express this in standardized stats. Heuristically,
+    // bandwidth is more likely to be a limiting factor than CPU, and more
+    // likely to vary over time, so only when we aren't bandwidth limited do we
+    // want to know about our CPU being the bottleneck.
+    quality_limitation_reason_tracker_.SetReason(
+        QualityLimitationReason::kBandwidth);
+  } else if (is_cpu_limited) {
+    quality_limitation_reason_tracker_.SetReason(QualityLimitationReason::kCpu);
+  } else {
+    quality_limitation_reason_tracker_.SetReason(
+        QualityLimitationReason::kNone);
+  }
+
   UpdateAdaptationStats(cpu_counts, quality_counts);
 }
 
@@ -1075,6 +1098,10 @@ void SendStatisticsProxy::UpdateAdaptationStats(
   stats_.cpu_limited_framerate = cpu_counts.num_framerate_reductions > 0;
   stats_.bw_limited_resolution = quality_counts.num_resolution_reductions > 0;
   stats_.bw_limited_framerate = quality_counts.num_framerate_reductions > 0;
+  stats_.quality_limitation_reason =
+      quality_limitation_reason_tracker_.current_reason();
+  // |stats_.quality_limitation_durations_ms| depends on the current time
+  // when it is polled; it is updated in SendStatisticsProxy::GetStats().
 }
 
 // TODO(asapersson): Include fps changes.

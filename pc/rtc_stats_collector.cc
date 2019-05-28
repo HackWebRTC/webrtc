@@ -199,6 +199,20 @@ const char* NetworkAdapterTypeToStatsType(rtc::AdapterType type) {
   return nullptr;
 }
 
+const char* QualityLimitationReasonToRTCQualityLimitationReason(
+    QualityLimitationReason reason) {
+  switch (reason) {
+    case QualityLimitationReason::kNone:
+      return RTCQualityLimitationReason::kNone;
+    case QualityLimitationReason::kCpu:
+      return RTCQualityLimitationReason::kCpu;
+    case QualityLimitationReason::kBandwidth:
+      return RTCQualityLimitationReason::kBandwidth;
+    case QualityLimitationReason::kOther:
+      return RTCQualityLimitationReason::kOther;
+  }
+}
+
 double DoubleAudioLevelFromIntAudioLevel(int audio_level) {
   RTC_DCHECK_GE(audio_level, 0);
   RTC_DCHECK_LE(audio_level, 32767);
@@ -375,6 +389,9 @@ void SetOutboundRTPStreamStatsFromVideoSenderInfo(
   outbound_video->total_packet_send_delay =
       static_cast<double>(video_sender_info.total_packet_send_delay_ms) /
       rtc::kNumMillisecsPerSec;
+  outbound_video->quality_limitation_reason =
+      QualityLimitationReasonToRTCQualityLimitationReason(
+          video_sender_info.quality_limitation_reason);
   // TODO(https://crbug.com/webrtc/10529): When info's |content_info| is
   // optional, support the "unspecified" value.
   if (video_sender_info.content_type == VideoContentType::SCREENSHARE)

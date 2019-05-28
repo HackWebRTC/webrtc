@@ -28,6 +28,7 @@
 #include "api/video/video_stream_encoder_settings.h"
 #include "api/video_codecs/video_encoder_config.h"
 #include "call/rtp_config.h"
+#include "common_video/include/quality_limitation_reason.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/include/rtcp_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -92,6 +93,11 @@ class VideoSendStream {
     bool cpu_limited_resolution = false;
     bool bw_limited_framerate = false;
     bool cpu_limited_framerate = false;
+    // https://w3c.github.io/webrtc-stats/#dom-rtcoutboundrtpstreamstats-qualitylimitationreason
+    QualityLimitationReason quality_limitation_reason =
+        QualityLimitationReason::kNone;
+    // https://w3c.github.io/webrtc-stats/#dom-rtcoutboundrtpstreamstats-qualitylimitationdurations
+    std::map<QualityLimitationReason, int64_t> quality_limitation_durations_ms;
     // Total number of times resolution as been requested to be changed due to
     // CPU/quality adaptation.
     int number_of_cpu_adapt_changes = 0;

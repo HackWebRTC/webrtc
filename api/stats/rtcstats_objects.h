@@ -74,6 +74,14 @@ struct RTCNetworkType {
   static const char* const kUnknown;
 };
 
+// https://w3c.github.io/webrtc-stats/#dom-rtcqualitylimitationreason
+struct RTCQualityLimitationReason {
+  static const char* const kNone;
+  static const char* const kCpu;
+  static const char* const kBandwidth;
+  static const char* const kOther;
+};
+
 // https://webrtc.org/experiments/rtp-hdrext/video-content-type/
 struct RTCContentType {
   static const char* const kUnspecified;
@@ -464,6 +472,11 @@ class RTC_EXPORT RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
   // TODO(https://crbug.com/webrtc/10635): This is only implemented for video;
   // implement it for audio as well.
   RTCStatsMember<double> total_packet_send_delay;
+  // Enum type RTCQualityLimitationReason
+  // TODO(https://crbug.com/webrtc/10686): Also expose
+  // qualityLimitationDurations. Requires RTCStatsMember support for
+  // "record<DOMString, double>", see https://crbug.com/webrtc/10685.
+  RTCStatsMember<std::string> quality_limitation_reason;
   // https://henbos.github.io/webrtc-provisional-stats/#dom-rtcoutboundrtpstreamstats-contenttype
   RTCStatsMember<std::string> content_type;
 };
