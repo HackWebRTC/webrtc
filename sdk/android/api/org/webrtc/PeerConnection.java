@@ -98,6 +98,10 @@ public class PeerConnection {
     /** Triggered when the IceConnectionState changes. */
     @CalledByNative("Observer") void onIceConnectionChange(IceConnectionState newState);
 
+    /* Triggered when the standard-compliant state transition of IceConnectionState happens. */
+    @CalledByNative("Observer")
+    default void onStandardizedIceConnectionChange(IceConnectionState newState) {}
+
     /** Triggered when the PeerConnectionState changes. */
     @CalledByNative("Observer")
     default void onConnectionChange(PeerConnectionState newState) {}

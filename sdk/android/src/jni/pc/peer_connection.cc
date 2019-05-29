@@ -298,6 +298,14 @@ void PeerConnectionObserverJni::OnIceConnectionChange(
       Java_IceConnectionState_fromNativeIndex(env, new_state));
 }
 
+void PeerConnectionObserverJni::OnStandardizedIceConnectionChange(
+    PeerConnectionInterface::IceConnectionState new_state) {
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  Java_Observer_onStandardizedIceConnectionChange(
+      env, j_observer_global_,
+      Java_IceConnectionState_fromNativeIndex(env, new_state));
+}
+
 void PeerConnectionObserverJni::OnConnectionChange(
     PeerConnectionInterface::PeerConnectionState new_state) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();

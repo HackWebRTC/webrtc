@@ -39,6 +39,9 @@ class PeerConnectionDelegateAdapter : public PeerConnectionObserver {
 
   void OnIceConnectionChange(PeerConnectionInterface::IceConnectionState new_state) override;
 
+  void OnStandardizedIceConnectionChange(
+      PeerConnectionInterface::IceConnectionState new_state) override;
+
   void OnConnectionChange(PeerConnectionInterface::PeerConnectionState new_state) override;
 
   void OnIceGatheringChange(PeerConnectionInterface::IceGatheringState new_state) override;

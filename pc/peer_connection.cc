@@ -4125,10 +4125,17 @@ void PeerConnection::SetIceConnectionState(IceConnectionState new_state) {
 
 void PeerConnection::SetStandardizedIceConnectionState(
     PeerConnectionInterface::IceConnectionState new_state) {
-  if (standardized_ice_connection_state_ == new_state)
+  if (standardized_ice_connection_state_ == new_state) {
     return;
-  if (IsClosed())
+  }
+
+  if (IsClosed()) {
     return;
+  }
+
+  RTC_LOG(LS_INFO) << "Changing standardized IceConnectionState "
+                   << standardized_ice_connection_state_ << " => " << new_state;
+
   standardized_ice_connection_state_ = new_state;
   Observer()->OnStandardizedIceConnectionChange(new_state);
 }
