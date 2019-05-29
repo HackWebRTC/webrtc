@@ -77,25 +77,11 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
       ReceiveStatisticsProxy* receive_stats_proxy,
       ProcessThread* process_thread,
       NackSender* nack_sender,
+      // The KeyFrameRequestSender is optional; if not provided, key frame
+      // requests are sent via the internal RtpRtcp module.
+      KeyFrameRequestSender* keyframe_request_sender,
       video_coding::OnCompleteFrameCallback* complete_frame_callback,
       rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor);
-
-  // Constructor with injected RtpRtcp. Intended for tests only!
-  RtpVideoStreamReceiver(
-      Clock* clock,
-      std::unique_ptr<RtpRtcp> rtp_rtcp,
-      // The packet router is optional; if provided, the RtpRtcp module for this
-      // stream is registered as a candidate for sending REMB and transport
-      // feedback.
-      PacketRouter* packet_router,
-      const VideoReceiveStream::Config* config,
-      ReceiveStatistics* rtp_receive_statistics,
-      ReceiveStatisticsProxy* receive_stats_proxy,
-      ProcessThread* process_thread,
-      NackSender* nack_sender,
-      video_coding::OnCompleteFrameCallback* complete_frame_callback,
-      rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor);
-
   ~RtpVideoStreamReceiver() override;
 
   void AddReceiveCodec(const VideoCodec& video_codec,
@@ -222,6 +208,7 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
 
   // Members for the new jitter buffer experiment.
   video_coding::OnCompleteFrameCallback* complete_frame_callback_;
+  KeyFrameRequestSender* const keyframe_request_sender_;
   std::unique_ptr<NackModule> nack_module_;
   std::unique_ptr<LossNotificationController> loss_notification_controller_;
   rtc::scoped_refptr<video_coding::PacketBuffer> packet_buffer_;

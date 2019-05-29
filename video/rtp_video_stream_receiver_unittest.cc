@@ -16,7 +16,6 @@
 #include "api/video/video_frame_type.h"
 #include "common_video/h264/h264_common.h"
 #include "media/base/media_constants.h"
-#include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor_extension.h"
@@ -140,7 +139,8 @@ class RtpVideoStreamReceiverTest : public ::testing::Test {
     rtp_video_stream_receiver_ = absl::make_unique<RtpVideoStreamReceiver>(
         Clock::GetRealTimeClock(), &mock_transport_, nullptr, nullptr, &config_,
         rtp_receive_statistics_.get(), nullptr, process_thread_.get(),
-        &mock_nack_sender_, &mock_on_complete_frame_callback_, nullptr);
+        &mock_nack_sender_, &mock_key_frame_request_sender_,
+        &mock_on_complete_frame_callback_, nullptr);
   }
 
   RTPVideoHeader GetDefaultH264VideoHeader() {
@@ -199,6 +199,7 @@ class RtpVideoStreamReceiverTest : public ::testing::Test {
   const webrtc::test::ScopedFieldTrials override_field_trials_;
   VideoReceiveStream::Config config_;
   MockNackSender mock_nack_sender_;
+  MockKeyFrameRequestSender mock_key_frame_request_sender_;
   MockTransport mock_transport_;
   MockOnCompleteFrameCallback mock_on_complete_frame_callback_;
   std::unique_ptr<ProcessThread> process_thread_;
@@ -542,15 +543,6 @@ TEST_F(RtpVideoStreamReceiverTest, PaddingInMediaStream) {
 }
 
 TEST_F(RtpVideoStreamReceiverTest, RequestKeyframeIfFirstFrameIsDelta) {
-  // Keep raw pointer, but pass ownership to RtpVideoStreamReceiver. Object
-  // stays alive for the duration of this test.
-  auto* mock_rtp_rtcp = new ::testing::NiceMock<MockRtpRtcp>;
-
-  rtp_video_stream_receiver_ = absl::make_unique<RtpVideoStreamReceiver>(
-      Clock::GetRealTimeClock(), absl::WrapUnique(mock_rtp_rtcp), nullptr,
-      &config_, rtp_receive_statistics_.get(), nullptr, process_thread_.get(),
-      &mock_nack_sender_, &mock_on_complete_frame_callback_, nullptr);
-
   RTPHeader rtp_header;
   RTPVideoHeader video_header;
   const std::vector<uint8_t> data({1, 2, 3, 4});
@@ -559,7 +551,7 @@ TEST_F(RtpVideoStreamReceiverTest, RequestKeyframeIfFirstFrameIsDelta) {
   video_header.is_last_packet_in_frame = true;
   video_header.codec = kVideoCodecGeneric;
   video_header.frame_type = VideoFrameType::kVideoFrameDelta;
-  EXPECT_CALL(*mock_rtp_rtcp, RequestKeyFrame());
+  EXPECT_CALL(mock_key_frame_request_sender_, RequestKeyFrame());
   rtp_video_stream_receiver_->OnReceivedPayloadData(
       data.data(), data.size(), rtp_header, video_header, absl::nullopt, false);
 }

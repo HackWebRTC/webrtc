@@ -85,32 +85,7 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
     ReceiveStatisticsProxy* receive_stats_proxy,
     ProcessThread* process_thread,
     NackSender* nack_sender,
-    video_coding::OnCompleteFrameCallback* complete_frame_callback,
-    rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor)
-    : RtpVideoStreamReceiver(clock,
-                             CreateRtpRtcpModule(clock,
-                                                 rtp_receive_statistics,
-                                                 transport,
-                                                 rtt_stats,
-                                                 receive_stats_proxy),
-                             packet_router,
-                             config,
-                             rtp_receive_statistics,
-                             receive_stats_proxy,
-                             process_thread,
-                             nack_sender,
-                             complete_frame_callback,
-                             frame_decryptor) {}
-
-RtpVideoStreamReceiver::RtpVideoStreamReceiver(
-    Clock* clock,
-    std::unique_ptr<RtpRtcp> rtp_rtcp,
-    PacketRouter* packet_router,
-    const VideoReceiveStream::Config* config,
-    ReceiveStatistics* rtp_receive_statistics,
-    ReceiveStatisticsProxy* receive_stats_proxy,
-    ProcessThread* process_thread,
-    NackSender* nack_sender,
+    KeyFrameRequestSender* keyframe_request_sender,
     video_coding::OnCompleteFrameCallback* complete_frame_callback,
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor)
     : clock_(clock),
@@ -123,8 +98,13 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
       ulpfec_receiver_(UlpfecReceiver::Create(config->rtp.remote_ssrc, this)),
       receiving_(false),
       last_packet_log_ms_(-1),
-      rtp_rtcp_(std::move(rtp_rtcp)),
+      rtp_rtcp_(CreateRtpRtcpModule(clock,
+                                    rtp_receive_statistics_,
+                                    transport,
+                                    rtt_stats,
+                                    receive_stats_proxy)),
       complete_frame_callback_(complete_frame_callback),
+      keyframe_request_sender_(keyframe_request_sender),
       has_received_frame_(false),
       frames_decryptable_(false) {
   constexpr bool remb_candidate = true;
@@ -400,7 +380,11 @@ void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
 }
 
 void RtpVideoStreamReceiver::RequestKeyFrame() {
-  rtp_rtcp_->RequestKeyFrame();
+  if (keyframe_request_sender_) {
+    keyframe_request_sender_->RequestKeyFrame();
+  } else {
+    rtp_rtcp_->RequestKeyFrame();
+  }
 }
 
 void RtpVideoStreamReceiver::SendLossNotification(

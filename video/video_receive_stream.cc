@@ -204,8 +204,9 @@ VideoReceiveStream::VideoReceiveStream(
                                  rtp_receive_statistics_.get(),
                                  &stats_proxy_,
                                  process_thread_,
-                                 this,  // NackSender
-                                 this,  // OnCompleteFrameCallback
+                                 this,     // NackSender
+                                 nullptr,  // Use default KeyFrameRequestSender
+                                 this,     // OnCompleteFrameCallback
                                  config_.frame_decryptor),
       rtp_stream_sync_(this),
       max_wait_for_keyframe_ms_(KeyframeIntervalSettings::ParseFromFieldTrials()
