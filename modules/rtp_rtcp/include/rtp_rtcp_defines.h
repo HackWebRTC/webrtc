@@ -315,17 +315,6 @@ class TransportFeedbackObserver {
   virtual void OnTransportFeedback(const rtcp::TransportFeedback& feedback) = 0;
 };
 
-class AcknowledgedPacketsObserver {
- public:
-  AcknowledgedPacketsObserver() = default;
-  virtual ~AcknowledgedPacketsObserver() = default;
-
-  // Indicates RTP sequence numbers for packets that have been acknowledged as
-  // received by the remote end.
-  virtual void OnPacketsAcknowledged(
-      rtc::ArrayView<const uint16_t> sequence_numbers) = 0;
-};
-
 // Interface for PacketRouter to send rtcp feedback on behalf of
 // congestion controller.
 // TODO(bugs.webrtc.org/8239): Remove and use RtcpTransceiver directly

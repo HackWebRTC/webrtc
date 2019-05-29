@@ -27,6 +27,7 @@
 #include "call/rtp_video_sender_interface.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
+#include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "modules/rtp_rtcp/source/rtp_sender_video.h"
 #include "modules/rtp_rtcp/source/rtp_sequence_number_map.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
@@ -161,6 +162,7 @@ class RtpVideoSender : public RtpVideoSenderInterface,
 
   const bool send_side_bwe_with_overhead_;
   const bool account_for_packetization_overhead_;
+  const bool use_early_loss_detection_;
 
   // TODO(holmer): Remove crit_ once RtpVideoSender runs on the
   // transport task queue.
@@ -196,11 +198,10 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   std::vector<FrameCounts> frame_counts_ RTC_GUARDED_BY(crit_);
   FrameCountObserver* const frame_count_observer_;
 
-  // Effectively const map from ssrc to AcknowledgedPacketsObserver. This
-  // map is set at construction time and never changed, but it's
+  // Effectively const map from ssrc to RTPSender, for all media ssrcs.
+  // This map is set at construction time and never changed, but it's
   // non-trivial to make it properly const.
-  std::map<uint32_t, AcknowledgedPacketsObserver*>
-      ssrc_to_acknowledged_packets_observers_;
+  std::map<uint32_t, RTPSender*> ssrc_to_rtp_sender_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(RtpVideoSender);
 };

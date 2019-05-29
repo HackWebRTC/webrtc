@@ -49,6 +49,7 @@ const int16_t kInitialPictureId2 = 44;
 const int16_t kInitialTl0PicIdx1 = 99;
 const int16_t kInitialTl0PicIdx2 = 199;
 const int64_t kRetransmitWindowSizeMs = 500;
+const int kTransportsSequenceExtensionId = 7;
 
 class MockRtcpIntraFrameObserver : public RtcpIntraFrameObserver {
  public:
@@ -100,6 +101,8 @@ VideoSendStream::Config CreateVideoSendStreamConfig(
   config.rtp.payload_type = payload_type;
   config.rtp.rtx.payload_type = payload_type + 1;
   config.rtp.nack.rtp_history_ms = 1000;
+  config.rtp.extensions.emplace_back(RtpExtension::kTransportSequenceNumberUri,
+                                     kTransportsSequenceExtensionId);
   return config;
 }
 
@@ -391,7 +394,7 @@ TEST(RtpVideoSenderTest, FrameCountCallbacks) {
 }
 
 // Integration test verifying that ack of packet via TransportFeedback means
-// that the packet is removed from RtpPacketHistory and won't be retranmistted
+// that the packet is removed from RtpPacketHistory and won't be retransmitted
 // again.
 TEST(RtpVideoSenderTest, DoesNotRetrasmitAckedPackets) {
   const int64_t kTimeoutMs = 500;
@@ -511,6 +514,121 @@ TEST(RtpVideoSenderTest, DoesNotRetrasmitAckedPackets) {
         return true;
       });
   test.router()->DeliverRtcp(nack_buffer.data(), nack_buffer.size());
+  ASSERT_TRUE(event.Wait(kTimeoutMs));
+}
+
+// Integration test verifying that retransmissions are sent for packets which
+// can be detected as lost early, using transport wide feedback.
+TEST(RtpVideoSenderTest, EarlyRetransmits) {
+  const int64_t kTimeoutMs = 500;
+
+  RtpVideoSenderTestFixture test({kSsrc1, kSsrc2}, {kRtxSsrc1, kRtxSsrc2},
+                                 kPayloadType, {});
+  test.router()->SetActive(true);
+
+  constexpr uint8_t kPayload = 'a';
+  EncodedImage encoded_image;
+  encoded_image.SetTimestamp(1);
+  encoded_image.capture_time_ms_ = 2;
+  encoded_image._frameType = VideoFrameType::kVideoFrameKey;
+  encoded_image.Allocate(1);
+  encoded_image.data()[0] = kPayload;
+  encoded_image.set_size(1);
+  encoded_image.SetSpatialIndex(0);
+
+  CodecSpecificInfo codec_specific;
+  codec_specific.codecType = VideoCodecType::kVideoCodecGeneric;
+
+  // Send two tiny images, mapping to single RTP packets. Capture sequence
+  // numbers.
+  rtc::Event event;
+  uint16_t frame1_rtp_sequence_number = 0;
+  uint16_t frame1_transport_sequence_number = 0;
+  EXPECT_CALL(test.transport(), SendRtp)
+      .WillOnce([&event, &frame1_rtp_sequence_number,
+                 &frame1_transport_sequence_number](
+                    const uint8_t* packet, size_t length,
+                    const PacketOptions& options) {
+        RtpPacket rtp_packet;
+        EXPECT_TRUE(rtp_packet.Parse(packet, length));
+        frame1_rtp_sequence_number = rtp_packet.SequenceNumber();
+        frame1_transport_sequence_number = options.packet_id;
+        EXPECT_EQ(rtp_packet.Ssrc(), kSsrc1);
+        event.Set();
+        return true;
+      });
+  EXPECT_EQ(test.router()
+                ->OnEncodedImage(encoded_image, &codec_specific, nullptr)
+                .error,
+            EncodedImageCallback::Result::OK);
+  const int64_t send_time_ms = test.clock().TimeInMilliseconds();
+
+  test.clock().AdvanceTimeMilliseconds(33);
+  ASSERT_TRUE(event.Wait(kTimeoutMs));
+
+  uint16_t frame2_rtp_sequence_number = 0;
+  uint16_t frame2_transport_sequence_number = 0;
+  encoded_image.SetSpatialIndex(1);
+  EXPECT_CALL(test.transport(), SendRtp)
+      .WillOnce([&event, &frame2_rtp_sequence_number,
+                 &frame2_transport_sequence_number](
+                    const uint8_t* packet, size_t length,
+                    const PacketOptions& options) {
+        RtpPacket rtp_packet;
+        EXPECT_TRUE(rtp_packet.Parse(packet, length));
+        frame2_rtp_sequence_number = rtp_packet.SequenceNumber();
+        frame2_transport_sequence_number = options.packet_id;
+        EXPECT_EQ(rtp_packet.Ssrc(), kSsrc2);
+        event.Set();
+        return true;
+      });
+  EXPECT_EQ(test.router()
+                ->OnEncodedImage(encoded_image, &codec_specific, nullptr)
+                .error,
+            EncodedImageCallback::Result::OK);
+  test.clock().AdvanceTimeMilliseconds(33);
+  ASSERT_TRUE(event.Wait(kTimeoutMs));
+
+  EXPECT_NE(frame1_transport_sequence_number, frame2_transport_sequence_number);
+
+  // Inject a transport feedback where the packet for the first frame is lost,
+  // expect a retransmission for it.
+  EXPECT_CALL(test.transport(), SendRtp)
+      .WillOnce([&event, &frame1_rtp_sequence_number](
+                    const uint8_t* packet, size_t length,
+                    const PacketOptions& options) {
+        RtpPacket rtp_packet;
+        EXPECT_TRUE(rtp_packet.Parse(packet, length));
+        EXPECT_EQ(rtp_packet.Ssrc(), kRtxSsrc2);
+
+        // Retransmitted sequence number from the RTX header should match
+        // the lost packet.
+        rtc::ArrayView<const uint8_t> payload = rtp_packet.payload();
+        EXPECT_EQ(ByteReader<uint16_t>::ReadBigEndian(payload.data()),
+                  frame1_rtp_sequence_number);
+        event.Set();
+        return true;
+      });
+
+  PacketFeedback first_packet_feedback(PacketFeedback::kNotReceived,
+                                       frame1_transport_sequence_number);
+  first_packet_feedback.rtp_sequence_number = frame1_rtp_sequence_number;
+  first_packet_feedback.ssrc = kSsrc1;
+  first_packet_feedback.send_time_ms = send_time_ms;
+
+  PacketFeedback second_packet_feedback(test.clock().TimeInMilliseconds(),
+                                        frame2_transport_sequence_number);
+  first_packet_feedback.rtp_sequence_number = frame2_rtp_sequence_number;
+  first_packet_feedback.ssrc = kSsrc2;
+  first_packet_feedback.send_time_ms = send_time_ms + 33;
+
+  std::vector<PacketFeedback> feedback_vector = {first_packet_feedback,
+                                                 second_packet_feedback};
+
+  test.router()->OnPacketFeedbackVector(feedback_vector);
+
+  // Wait for pacer to run and send the RTX packet.
+  test.clock().AdvanceTimeMilliseconds(33);
   ASSERT_TRUE(event.Wait(kTimeoutMs));
 }
 }  // namespace webrtc

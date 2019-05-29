@@ -42,7 +42,7 @@ class RateLimiter;
 class RtcEventLog;
 class RtpPacketToSend;
 
-class RTPSender : public AcknowledgedPacketsObserver {
+class RTPSender {
  public:
   RTPSender(bool audio,
             Clock* clock,
@@ -175,8 +175,7 @@ class RTPSender : public AcknowledgedPacketsObserver {
 
   void SetRtt(int64_t rtt_ms);
 
-  void OnPacketsAcknowledged(
-      rtc::ArrayView<const uint16_t> sequence_numbers) override;
+  void OnPacketsAcknowledged(rtc::ArrayView<const uint16_t> sequence_numbers);
 
  private:
   // Maps capture time in milliseconds to send-side delay in milliseconds.
