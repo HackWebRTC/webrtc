@@ -60,7 +60,10 @@ WEBRTC_DEFINE_string(out_filename,
                      DefaultOutFilename().c_str(),
                      "Name of output audio file.");
 
-WEBRTC_DEFINE_int(runtime_ms, 10000, "Simulated runtime (milliseconds).");
+WEBRTC_DEFINE_int(
+    runtime_ms,
+    10000,
+    "Simulated runtime (milliseconds). -1 will consume the complete file.");
 
 WEBRTC_DEFINE_int(packet_loss_rate, 10, "Percentile of packet loss.");
 
@@ -152,7 +155,8 @@ NetEqQualityTest::NetEqQualityTest(
       max_payload_bytes_(0),
       in_file_(new ResampleInputAudioFile(FLAG_in_filename,
                                           FLAG_input_sample_rate,
-                                          in_sampling_khz * 1000)),
+                                          in_sampling_khz * 1000,
+                                          FLAG_runtime_ms > 0)),
       rtp_generator_(
           new RtpGenerator(in_sampling_khz_, 0, 0, decodable_time_ms_)),
       total_payload_size_bytes_(0) {
@@ -169,9 +173,6 @@ NetEqQualityTest::NetEqQualityTest(
 
   RTC_CHECK(ValidateFilename(FLAG_out_filename, true))
       << "Invalid output filename.";
-
-  RTC_CHECK_GT(FLAG_runtime_ms, 0)
-      << "Invalid runtime, should be greater than 0.";
 
   RTC_CHECK(FLAG_packet_loss_rate >= 0 && FLAG_packet_loss_rate <= 100)
       << "Invalid packet loss percentile, should be between 0 and 100.";
@@ -406,12 +407,18 @@ int NetEqQualityTest::DecodeBlock() {
 
 void NetEqQualityTest::Simulate() {
   int audio_size_samples;
+  bool end_of_input = false;
+  int runtime_ms = FLAG_runtime_ms >= 0 ? FLAG_runtime_ms : INT_MAX;
 
-  while (decoded_time_ms_ < FLAG_runtime_ms) {
+  while (!end_of_input && decoded_time_ms_ < runtime_ms) {
     // Preload the buffer if needed.
     while (decodable_time_ms_ - FLAG_preload_packets * block_duration_ms_ <
            decoded_time_ms_) {
-      ASSERT_TRUE(in_file_->Read(in_size_samples_ * channels_, &in_data_[0]));
+      if (!in_file_->Read(in_size_samples_ * channels_, &in_data_[0])) {
+        end_of_input = true;
+        ASSERT_FALSE(end_of_input && FLAG_runtime_ms < 0);
+        break;
+      }
       payload_.Clear();
       payload_size_bytes_ = EncodeBlock(&in_data_[0], in_size_samples_,
                                         &payload_, max_payload_bytes_);
