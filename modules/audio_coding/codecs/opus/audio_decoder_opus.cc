@@ -20,10 +20,13 @@
 
 namespace webrtc {
 
-AudioDecoderOpusImpl::AudioDecoderOpusImpl(size_t num_channels)
-    : channels_(num_channels) {
+AudioDecoderOpusImpl::AudioDecoderOpusImpl(size_t num_channels,
+                                           int sample_rate_hz)
+    : channels_{num_channels}, sample_rate_hz_{sample_rate_hz} {
   RTC_DCHECK(num_channels == 1 || num_channels == 2);
-  const int error = WebRtcOpus_DecoderCreate(&dec_state_, channels_, 48000);
+  RTC_DCHECK(sample_rate_hz == 16000 || sample_rate_hz == 48000);
+  const int error =
+      WebRtcOpus_DecoderCreate(&dec_state_, channels_, sample_rate_hz_);
   RTC_DCHECK(error == 0);
   WebRtcOpus_DecoderInit(dec_state_);
 }
@@ -57,7 +60,7 @@ int AudioDecoderOpusImpl::DecodeInternal(const uint8_t* encoded,
                                          int sample_rate_hz,
                                          int16_t* decoded,
                                          SpeechType* speech_type) {
-  RTC_DCHECK_EQ(sample_rate_hz, 48000);
+  RTC_DCHECK_EQ(sample_rate_hz, sample_rate_hz_);
   int16_t temp_type = 1;  // Default is speech.
   int ret =
       WebRtcOpus_Decode(dec_state_, encoded, encoded_len, decoded, &temp_type);
@@ -78,7 +81,7 @@ int AudioDecoderOpusImpl::DecodeRedundantInternal(const uint8_t* encoded,
                           speech_type);
   }
 
-  RTC_DCHECK_EQ(sample_rate_hz, 48000);
+  RTC_DCHECK_EQ(sample_rate_hz, sample_rate_hz_);
   int16_t temp_type = 1;  // Default is speech.
   int ret = WebRtcOpus_DecodeFec(dec_state_, encoded, encoded_len, decoded,
                                  &temp_type);
@@ -104,7 +107,7 @@ int AudioDecoderOpusImpl::PacketDurationRedundant(const uint8_t* encoded,
     return PacketDuration(encoded, encoded_len);
   }
 
-  return WebRtcOpus_FecDurationEst(encoded, encoded_len, 48000);
+  return WebRtcOpus_FecDurationEst(encoded, encoded_len, sample_rate_hz_);
 }
 
 bool AudioDecoderOpusImpl::PacketHasFec(const uint8_t* encoded,
@@ -115,7 +118,7 @@ bool AudioDecoderOpusImpl::PacketHasFec(const uint8_t* encoded,
 }
 
 int AudioDecoderOpusImpl::SampleRateHz() const {
-  return 48000;
+  return sample_rate_hz_;
 }
 
 size_t AudioDecoderOpusImpl::Channels() const {
