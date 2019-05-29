@@ -101,6 +101,7 @@ struct TestPeerComponents {
         CreatePCDependencies(std::move(components->pc_dependencies), observer);
     peer_connection = peer_connection_factory->CreatePeerConnection(
         params.rtc_configuration, std::move(pc_deps));
+    peer_connection->SetBitrate(params.bitrate_params);
   }
 
   std::unique_ptr<TestAudioDeviceModule::Capturer> CreateAudioCapturer(

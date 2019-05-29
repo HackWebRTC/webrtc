@@ -134,6 +134,11 @@ class PeerConfigurerImpl final
     params_->rtc_configuration = std::move(configuration);
     return this;
   }
+  PeerConfigurer* SetBitrateParameters(
+      PeerConnectionInterface::BitrateParameters bitrate_params) override {
+    params_->bitrate_params = bitrate_params;
+    return this;
+  }
 
  protected:
   friend class PeerConnectionE2EQualityTest;

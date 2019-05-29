@@ -230,6 +230,10 @@ class PeerConnectionE2EQualityTestFixture {
     virtual PeerConfigurer* SetAecDumpPath(std::string path) = 0;
     virtual PeerConfigurer* SetRTCConfiguration(
         PeerConnectionInterface::RTCConfiguration configuration) = 0;
+    // Set bitrate parameters on PeerConnection. This constraints will be
+    // applied to all summed RTP streams for this peer.
+    virtual PeerConfigurer* SetBitrateParameters(
+        PeerConnectionInterface::BitrateParameters bitrate_params) = 0;
   };
 
   // Contains parameters, that describe how long framework should run quality

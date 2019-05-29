@@ -273,11 +273,10 @@ TEST_P(PCGenericDescriptorTest, ForemanCifWithoutPacketLoss) {
   fixture->Run(std::move(run_params));
 }
 
-TEST_P(PCGenericDescriptorTest, ForemanCif35kbpsWithoutPacketLoss) {
+TEST_P(PCGenericDescriptorTest, ForemanCif30kbpsWithoutPacketLoss) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
-  config.link_capacity_kbps = 35;
   auto fixture = CreateTestFixture(
       GetTestName("pc_foreman_cif_30kbps_net_delay_0_0_plr_0"),
       CreateTwoNetworkLinks(network_emulation_manager.get(), config),
@@ -286,6 +285,12 @@ TEST_P(PCGenericDescriptorTest, ForemanCif35kbpsWithoutPacketLoss) {
         video.input_file_name = ClipNameToClipPath("foreman_cif");
         video.stream_label = "alice-video";
         alice->AddVideoConfig(std::move(video));
+
+        PeerConnectionInterface::BitrateParameters bitrate_params;
+        bitrate_params.min_bitrate_bps = 30000;
+        bitrate_params.current_bitrate_bps = 30000;
+        bitrate_params.max_bitrate_bps = 30000;
+        alice->SetBitrateParameters(bitrate_params);
       },
       [](PeerConfigurer* bob) {});
   RunParams run_params(TimeDelta::seconds(kTestDurationSec));
@@ -297,13 +302,12 @@ TEST_P(PCGenericDescriptorTest, ForemanCif35kbpsWithoutPacketLoss) {
 
 // TODO(webrtc:9722): Remove when experiment is cleaned up.
 TEST_P(PCGenericDescriptorTest,
-       ForemanCif35kbpsWithoutPacketLossTrustedRateControl) {
+       ForemanCif30kbpsWithoutPacketLossTrustedRateControl) {
   test::ScopedFieldTrials override_field_trials(
       AppendFieldTrials(kVp8TrustedRateControllerFieldTrial));
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
-  config.link_capacity_kbps = 35;
   auto fixture = CreateTestFixture(
       GetTestName(
           "pc_foreman_cif_30kbps_net_delay_0_0_plr_0_trusted_rate_ctrl"),
@@ -313,6 +317,12 @@ TEST_P(PCGenericDescriptorTest,
         video.input_file_name = ClipNameToClipPath("foreman_cif");
         video.stream_label = "alice-video";
         alice->AddVideoConfig(std::move(video));
+
+        PeerConnectionInterface::BitrateParameters bitrate_params;
+        bitrate_params.min_bitrate_bps = 30000;
+        bitrate_params.current_bitrate_bps = 30000;
+        bitrate_params.max_bitrate_bps = 30000;
+        alice->SetBitrateParameters(bitrate_params);
       },
       [](PeerConfigurer* bob) {});
   RunParams run_params(TimeDelta::seconds(kTestDurationSec));
@@ -540,11 +550,10 @@ TEST(PCFullStackTest, ForemanCifWithoutPacketlossH264) {
   fixture->Run(std::move(run_params));
 }
 
-TEST(PCFullStackTest, ForemanCif35kbpsWithoutPacketlossH264) {
+TEST(PCFullStackTest, ForemanCif30kbpsWithoutPacketlossH264) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
-  config.link_capacity_kbps = 35;
   auto fixture = CreateTestFixture(
       "pc_foreman_cif_30kbps_net_delay_0_0_plr_0_H264",
       CreateTwoNetworkLinks(network_emulation_manager.get(), config),
@@ -553,6 +562,12 @@ TEST(PCFullStackTest, ForemanCif35kbpsWithoutPacketlossH264) {
         video.input_file_name = ClipNameToClipPath("foreman_cif");
         video.stream_label = "alice-video";
         alice->AddVideoConfig(std::move(video));
+
+        PeerConnectionInterface::BitrateParameters bitrate_params;
+        bitrate_params.min_bitrate_bps = 30000;
+        bitrate_params.current_bitrate_bps = 30000;
+        bitrate_params.max_bitrate_bps = 30000;
+        alice->SetBitrateParameters(bitrate_params);
       },
       [](PeerConfigurer* bob) {});
   RunParams run_params(TimeDelta::seconds(kTestDurationSec));

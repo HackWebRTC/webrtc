@@ -109,6 +109,7 @@ struct Params {
   absl::optional<std::string> aec_dump_path;
 
   PeerConnectionInterface::RTCConfiguration rtc_configuration;
+  PeerConnectionInterface::BitrateParameters bitrate_params;
 };
 
 }  // namespace webrtc_pc_e2e
