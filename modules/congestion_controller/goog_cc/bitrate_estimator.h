@@ -29,7 +29,7 @@ class BitrateEstimator {
  public:
   explicit BitrateEstimator(const WebRtcKeyValueConfig* key_value_config);
   virtual ~BitrateEstimator();
-  virtual void Update(int64_t now_ms, int bytes);
+  virtual void Update(int64_t now_ms, int bytes, bool in_alr);
 
   virtual absl::optional<uint32_t> bitrate_bps() const;
   absl::optional<uint32_t> PeekBps() const;
@@ -42,6 +42,7 @@ class BitrateEstimator {
   FieldTrialConstrained<int> initial_window_ms_;
   FieldTrialConstrained<int> noninitial_window_ms_;
   FieldTrialParameter<double> uncertainty_scale_;
+  FieldTrialParameter<double> uncertainty_scale_in_alr_;
   FieldTrialParameter<DataRate> uncertainty_symmetry_cap_;
   FieldTrialParameter<DataRate> estimate_floor_;
   int64_t current_window_ms_;

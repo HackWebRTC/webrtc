@@ -38,7 +38,7 @@ AcknowledgedBitrateEstimator::~AcknowledgedBitrateEstimator() {}
 AcknowledgedBitrateEstimator::AcknowledgedBitrateEstimator(
     const WebRtcKeyValueConfig* key_value_config,
     std::unique_ptr<BitrateEstimator> bitrate_estimator)
-    : bitrate_estimator_(std::move(bitrate_estimator)) {}
+    : in_alr_(false), bitrate_estimator_(std::move(bitrate_estimator)) {}
 
 void AcknowledgedBitrateEstimator::IncomingPacketFeedbackVector(
     const std::vector<PacketFeedback>& packet_feedback_vector) {
@@ -50,7 +50,8 @@ void AcknowledgedBitrateEstimator::IncomingPacketFeedbackVector(
       MaybeExpectFastRateChange(packet.send_time_ms);
       int acknowledged_estimate = rtc::dchecked_cast<int>(packet.payload_size);
       acknowledged_estimate += packet.unacknowledged_data;
-      bitrate_estimator_->Update(packet.arrival_time_ms, acknowledged_estimate);
+      bitrate_estimator_->Update(packet.arrival_time_ms, acknowledged_estimate,
+                                 in_alr_);
     }
   }
 }
@@ -78,6 +79,10 @@ absl::optional<DataRate> AcknowledgedBitrateEstimator::PeekRate() const {
 void AcknowledgedBitrateEstimator::SetAlrEndedTimeMs(
     int64_t alr_ended_time_ms) {
   alr_ended_time_ms_.emplace(alr_ended_time_ms);
+}
+
+void AcknowledgedBitrateEstimator::SetAlr(bool in_alr) {
+  in_alr_ = in_alr;
 }
 
 void AcknowledgedBitrateEstimator::MaybeExpectFastRateChange(

@@ -36,7 +36,7 @@ constexpr size_t kPayloadSize = 10;
 class MockBitrateEstimator : public BitrateEstimator {
  public:
   using BitrateEstimator::BitrateEstimator;
-  MOCK_METHOD2(Update, void(int64_t now_ms, int bytes));
+  MOCK_METHOD3(Update, void(int64_t now_ms, int bytes, bool in_alr));
   MOCK_CONST_METHOD0(bitrate_bps, absl::optional<uint32_t>());
   MOCK_METHOD0(ExpectFastRateChange, void());
 };
@@ -77,25 +77,25 @@ TEST(TestAcknowledgedBitrateEstimator, DontAddPacketsWhichAreNotInSendHistory) {
   std::vector<PacketFeedback> packet_feedback_vector;
   packet_feedback_vector.push_back(
       PacketFeedback(kFirstArrivalTimeMs, kSequenceNumber));
-  EXPECT_CALL(*states.mock_bitrate_estimator, Update(_, _)).Times(0);
+  EXPECT_CALL(*states.mock_bitrate_estimator, Update(_, _, _)).Times(0);
   states.acknowledged_bitrate_estimator->IncomingPacketFeedbackVector(
       packet_feedback_vector);
 }
 
-TEST(TestAcknowledgedBitrateEstimator, UpdateBandwith) {
+TEST(TestAcknowledgedBitrateEstimator, UpdateBandwidth) {
   auto states = CreateTestStates();
   auto packet_feedback_vector = CreateFeedbackVector();
   {
     InSequence dummy;
-    EXPECT_CALL(
-        *states.mock_bitrate_estimator,
-        Update(packet_feedback_vector[0].arrival_time_ms,
-               static_cast<int>(packet_feedback_vector[0].payload_size)))
+    EXPECT_CALL(*states.mock_bitrate_estimator,
+                Update(packet_feedback_vector[0].arrival_time_ms,
+                       static_cast<int>(packet_feedback_vector[0].payload_size),
+                       /*in_alr*/ false))
         .Times(1);
-    EXPECT_CALL(
-        *states.mock_bitrate_estimator,
-        Update(packet_feedback_vector[1].arrival_time_ms,
-               static_cast<int>(packet_feedback_vector[1].payload_size)))
+    EXPECT_CALL(*states.mock_bitrate_estimator,
+                Update(packet_feedback_vector[1].arrival_time_ms,
+                       static_cast<int>(packet_feedback_vector[1].payload_size),
+                       /*in_alr*/ false))
         .Times(1);
   }
   states.acknowledged_bitrate_estimator->IncomingPacketFeedbackVector(
@@ -107,17 +107,17 @@ TEST(TestAcknowledgedBitrateEstimator, ExpectFastRateChangeWhenLeftAlr) {
   auto packet_feedback_vector = CreateFeedbackVector();
   {
     InSequence dummy;
-    EXPECT_CALL(
-        *states.mock_bitrate_estimator,
-        Update(packet_feedback_vector[0].arrival_time_ms,
-               static_cast<int>(packet_feedback_vector[0].payload_size)))
+    EXPECT_CALL(*states.mock_bitrate_estimator,
+                Update(packet_feedback_vector[0].arrival_time_ms,
+                       static_cast<int>(packet_feedback_vector[0].payload_size),
+                       /*in_alr*/ false))
         .Times(1);
     EXPECT_CALL(*states.mock_bitrate_estimator, ExpectFastRateChange())
         .Times(1);
-    EXPECT_CALL(
-        *states.mock_bitrate_estimator,
-        Update(packet_feedback_vector[1].arrival_time_ms,
-               static_cast<int>(packet_feedback_vector[1].payload_size)))
+    EXPECT_CALL(*states.mock_bitrate_estimator,
+                Update(packet_feedback_vector[1].arrival_time_ms,
+                       static_cast<int>(packet_feedback_vector[1].payload_size),
+                       /*in_alr*/ false))
         .Times(1);
   }
   states.acknowledged_bitrate_estimator->SetAlrEndedTimeMs(kFirstArrivalTimeMs +

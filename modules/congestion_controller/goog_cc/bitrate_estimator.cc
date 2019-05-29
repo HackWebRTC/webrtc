@@ -42,6 +42,7 @@ BitrateEstimator::BitrateEstimator(const WebRtcKeyValueConfig* key_value_config)
                             kMinRateWindowMs,
                             kMaxRateWindowMs),
       uncertainty_scale_("scale", 10.0),
+      uncertainty_scale_in_alr_("scale_alr", 10.0),
       uncertainty_symmetry_cap_("symmetry_cap", DataRate::Zero()),
       estimate_floor_("floor", DataRate::Zero()),
       current_window_ms_(0),
@@ -49,15 +50,15 @@ BitrateEstimator::BitrateEstimator(const WebRtcKeyValueConfig* key_value_config)
       bitrate_estimate_kbps_(-1.0f),
       bitrate_estimate_var_(50.0f) {
   // E.g WebRTC-BweThroughputWindowConfig/initial_window_ms:350,window_ms:250/
-  ParseFieldTrial(
-      {&initial_window_ms_, &noninitial_window_ms_, &uncertainty_scale_,
-       &uncertainty_symmetry_cap_, &estimate_floor_},
-      key_value_config->Lookup(kBweThroughputWindowConfig));
+  ParseFieldTrial({&initial_window_ms_, &noninitial_window_ms_,
+                   &uncertainty_scale_, &uncertainty_scale_in_alr_,
+                   &uncertainty_symmetry_cap_, &estimate_floor_},
+                  key_value_config->Lookup(kBweThroughputWindowConfig));
 }
 
 BitrateEstimator::~BitrateEstimator() = default;
 
-void BitrateEstimator::Update(int64_t now_ms, int bytes) {
+void BitrateEstimator::Update(int64_t now_ms, int bytes, bool in_alr) {
   int rate_window_ms = noninitial_window_ms_.Get();
   // We use a larger window at the beginning to get a more stable sample that
   // we can use to initialize the estimate.
@@ -75,9 +76,13 @@ void BitrateEstimator::Update(int64_t now_ms, int bytes) {
   // current estimate. With low values of uncertainty_symmetry_cap_ we add more
   // uncertainty to increases than to decreases. For higher values we approach
   // symmetry.
+  float scale = uncertainty_scale_;
+  if (in_alr && bitrate_sample_kbps < bitrate_estimate_kbps_) {
+    // Optionally use higher uncertainty for samples obtained during ALR.
+    scale = uncertainty_scale_in_alr_;
+  }
   float sample_uncertainty =
-      uncertainty_scale_ *
-      std::abs(bitrate_estimate_kbps_ - bitrate_sample_kbps) /
+      scale * std::abs(bitrate_estimate_kbps_ - bitrate_sample_kbps) /
       (bitrate_estimate_kbps_ +
        std::min(bitrate_sample_kbps,
                 uncertainty_symmetry_cap_.Get().kbps<float>()));
