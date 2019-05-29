@@ -11,6 +11,7 @@
 #include <string.h>
 #include <algorithm>
 
+#include "p2p/base/connection.h"
 #include "p2p/base/relay_port.h"
 #include "p2p/base/stun.h"
 #include "p2p/base/stun_request.h"

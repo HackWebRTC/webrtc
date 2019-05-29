@@ -16,6 +16,7 @@
 #include <string>
 
 #include "absl/memory/memory.h"
+#include "p2p/base/connection.h"
 #include "p2p/base/port.h"
 #include "rtc_base/async_packet_socket.h"
 

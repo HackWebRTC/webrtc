@@ -13,6 +13,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "p2p/base/connection.h"
 #include "p2p/base/fake_port_allocator.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/mock_async_resolver.h"

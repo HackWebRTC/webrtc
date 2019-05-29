@@ -18,6 +18,7 @@
 #include "absl/types/optional.h"
 #include "api/candidate.h"
 #include "api/transport/enums.h"
+#include "p2p/base/connection.h"
 #include "p2p/base/packet_transport_internal.h"
 #include "p2p/base/port.h"
 #include "p2p/base/transport_description.h"

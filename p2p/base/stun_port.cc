@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "p2p/base/connection.h"
 #include "p2p/base/p2p_constants.h"
 #include "p2p/base/port_allocator.h"
 #include "p2p/base/stun.h"

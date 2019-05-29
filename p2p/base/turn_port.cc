@@ -17,6 +17,7 @@
 #include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
+#include "p2p/base/connection.h"
 #include "p2p/base/stun.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/byte_order.h"
