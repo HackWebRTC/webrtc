@@ -13,13 +13,12 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <functional>
 #include <memory>
 
-#include "absl/memory/memory.h"
 #include "api/rtc_event_log/rtc_event.h"
 #include "api/rtc_event_log_output.h"
 #include "api/task_queue/task_queue_factory.h"
-#include "rtc_base/deprecation.h"
 
 namespace webrtc {
 
@@ -31,17 +30,6 @@ class RtcEventLog {
   // TODO(eladalon):  Get rid of the legacy encoding and this enum once all
   // clients have migrated to the new format.
   enum class EncodingType { Legacy, NewFormat };
-
-  // Factory method to create an RtcEventLog object.
-  // Create RtcEventLog with an RtcEventLogFactory instead.
-  RTC_DEPRECATED
-  static std::unique_ptr<RtcEventLog> Create(
-      EncodingType encoding_type,
-      TaskQueueFactory* task_queue_factory);
-
-  // Create an RtcEventLog object that does nothing.
-  RTC_DEPRECATED
-  static std::unique_ptr<RtcEventLog> CreateNull();
 
   virtual ~RtcEventLog() = default;
 
@@ -75,10 +63,6 @@ class RtcEventLogNull final : public RtcEventLog {
   void StopLogging() override {}
   void Log(std::unique_ptr<RtcEvent> event) override {}
 };
-
-inline std::unique_ptr<RtcEventLog> RtcEventLog::CreateNull() {
-  return absl::make_unique<RtcEventLogNull>();
-}
 
 }  // namespace webrtc
 

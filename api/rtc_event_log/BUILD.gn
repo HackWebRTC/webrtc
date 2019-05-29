@@ -21,10 +21,8 @@ rtc_source_set("rtc_event_log") {
   deps = [
     "..:libjingle_logging_api",
     "../../rtc_base:checks",
-    "../../rtc_base:deprecation",
     "../../rtc_base:timeutils",
     "../task_queue",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 

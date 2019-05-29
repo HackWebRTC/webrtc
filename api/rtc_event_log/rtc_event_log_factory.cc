@@ -35,10 +35,4 @@ std::unique_ptr<RtcEventLog> RtcEventLogFactory::CreateRtcEventLog(
 #endif
 }
 
-std::unique_ptr<RtcEventLog> RtcEventLog::Create(
-    RtcEventLog::EncodingType encoding_type,
-    TaskQueueFactory* task_queue_factory) {
-  return RtcEventLogFactory(task_queue_factory)
-      .CreateRtcEventLog(encoding_type);
-}
 }  // namespace webrtc
