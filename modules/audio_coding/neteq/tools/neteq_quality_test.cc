@@ -86,7 +86,7 @@ WEBRTC_DEFINE_int(
 WEBRTC_DEFINE_float(drift_factor, 0.0, "Time drift factor.");
 
 WEBRTC_DEFINE_int(preload_packets,
-                  0,
+                  1,
                   "Preload the buffer with this many packets.");
 
 WEBRTC_DEFINE_string(
