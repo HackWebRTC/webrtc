@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <cmath>
 
-#include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_coding/neteq/tools/neteq_quality_test.h"
 #include "modules/audio_coding/neteq/tools/output_audio_file.h"
 #include "modules/audio_coding/neteq/tools/output_wav_file.h"
@@ -132,10 +131,12 @@ static double ProbTrans00Solver(int units,
   return x;
 }
 
-NetEqQualityTest::NetEqQualityTest(int block_duration_ms,
-                                   int in_sampling_khz,
-                                   int out_sampling_khz,
-                                   const SdpAudioFormat& format)
+NetEqQualityTest::NetEqQualityTest(
+    int block_duration_ms,
+    int in_sampling_khz,
+    int out_sampling_khz,
+    const SdpAudioFormat& format,
+    const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory)
     : audio_format_(format),
       channels_(static_cast<size_t>(FLAG_channels)),
       decoded_time_ms_(0),
@@ -206,8 +207,7 @@ NetEqQualityTest::NetEqQualityTest(int block_duration_ms,
 
   NetEq::Config config;
   config.sample_rate_hz = out_sampling_khz_ * 1000;
-  neteq_.reset(
-      NetEq::Create(config, webrtc::CreateBuiltinAudioDecoderFactory()));
+  neteq_.reset(NetEq::Create(config, decoder_factory));
   max_payload_bytes_ = in_size_samples_ * channels_ * sizeof(int16_t);
   in_data_.reset(new int16_t[in_size_samples_ * channels_]);
 }
