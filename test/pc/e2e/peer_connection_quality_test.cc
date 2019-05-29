@@ -646,13 +646,17 @@ PeerConnectionE2EQualityTest::MaybeAddVideo(TestPeer* peer) {
     capturer->Init();
     rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource> source =
         new rtc::RefCountedObject<FrameGeneratorCapturerVideoTrackSource>(
-            std::move(capturer));
+            std::move(capturer),
+            /*is_screencast=*/video_config.screen_share_config.has_value());
     out.push_back(source);
     RTC_LOG(INFO) << "Adding video with video_config.stream_label="
                   << video_config.stream_label.value();
     rtc::scoped_refptr<VideoTrackInterface> track =
         peer->pc_factory()->CreateVideoTrack(video_config.stream_label.value(),
                                              source);
+    if (video_config.screen_share_config) {
+      track->set_content_hint(VideoTrackInterface::ContentHint::kText);
+    }
     peer->AddTrack(track, {video_config.stream_label.value()});
   }
   return out;

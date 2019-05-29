@@ -40,12 +40,12 @@ class FrameGeneratorCapturerVideoTrackSource : public VideoTrackSource {
     int num_squares_generated = 50;
   };
 
-  explicit FrameGeneratorCapturerVideoTrackSource(Clock* clock)
-      : FrameGeneratorCapturerVideoTrackSource(Config(), clock) {}
-
-  FrameGeneratorCapturerVideoTrackSource(Config config, Clock* clock)
+  FrameGeneratorCapturerVideoTrackSource(Config config,
+                                         Clock* clock,
+                                         bool is_screencast)
       : VideoTrackSource(false /* remote */),
-        task_queue_factory_(CreateDefaultTaskQueueFactory()) {
+        task_queue_factory_(CreateDefaultTaskQueueFactory()),
+        is_screencast_(is_screencast) {
     video_capturer_ = absl::make_unique<test::FrameGeneratorCapturer>(
         clock,
         test::FrameGenerator::CreateSquareGenerator(
@@ -55,10 +55,12 @@ class FrameGeneratorCapturerVideoTrackSource : public VideoTrackSource {
     video_capturer_->Init();
   }
 
-  explicit FrameGeneratorCapturerVideoTrackSource(
-      std::unique_ptr<test::FrameGeneratorCapturer> video_capturer)
+  FrameGeneratorCapturerVideoTrackSource(
+      std::unique_ptr<test::FrameGeneratorCapturer> video_capturer,
+      bool is_screencast)
       : VideoTrackSource(false /* remote */),
-        video_capturer_(std::move(video_capturer)) {}
+        video_capturer_(std::move(video_capturer)),
+        is_screencast_(is_screencast) {}
 
   ~FrameGeneratorCapturerVideoTrackSource() = default;
 
@@ -70,6 +72,8 @@ class FrameGeneratorCapturerVideoTrackSource : public VideoTrackSource {
     SetState(kMuted);
   }
 
+  bool is_screencast() const override { return is_screencast_; }
+
  protected:
   rtc::VideoSourceInterface<VideoFrame>* source() override {
     return video_capturer_.get();
@@ -78,6 +82,7 @@ class FrameGeneratorCapturerVideoTrackSource : public VideoTrackSource {
  private:
   const std::unique_ptr<TaskQueueFactory> task_queue_factory_;
   std::unique_ptr<test::FrameGeneratorCapturer> video_capturer_;
+  const bool is_screencast_;
 };
 
 }  // namespace webrtc
