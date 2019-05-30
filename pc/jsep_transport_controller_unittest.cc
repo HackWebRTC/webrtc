@@ -69,11 +69,10 @@ class FakeTransportFactory : public cricket::TransportFactoryInterface {
   }
 
   std::unique_ptr<cricket::DtlsTransportInternal> CreateDtlsTransport(
-      std::unique_ptr<cricket::IceTransportInternal> ice,
+      cricket::IceTransportInternal* ice,
       const webrtc::CryptoOptions& crypto_options) override {
-    std::unique_ptr<cricket::FakeIceTransport> fake_ice(
-        static_cast<cricket::FakeIceTransport*>(ice.release()));
-    return absl::make_unique<FakeDtlsTransport>(std::move(fake_ice));
+    return absl::make_unique<FakeDtlsTransport>(
+        static_cast<cricket::FakeIceTransport*>(ice));
   }
 };
 

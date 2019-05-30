@@ -118,13 +118,12 @@ void StreamInterfaceChannel::Close() {
   state_ = rtc::SS_CLOSED;
 }
 
-DtlsTransport::DtlsTransport(
-    std::unique_ptr<IceTransportInternal> ice_transport,
-    const webrtc::CryptoOptions& crypto_options,
-    webrtc::RtcEventLog* event_log)
+DtlsTransport::DtlsTransport(IceTransportInternal* ice_transport,
+                             const webrtc::CryptoOptions& crypto_options,
+                             webrtc::RtcEventLog* event_log)
     : transport_name_(ice_transport->transport_name()),
       component_(ice_transport->component()),
-      ice_transport_(std::move(ice_transport)),
+      ice_transport_(ice_transport),
       downward_(NULL),
       srtp_ciphers_(crypto_options.GetSupportedDtlsSrtpCryptoSuites()),
       ssl_max_version_(rtc::SSL_PROTOCOL_DTLS_12),
@@ -328,8 +327,7 @@ bool DtlsTransport::ExportKeyingMaterial(const std::string& label,
 
 bool DtlsTransport::SetupDtls() {
   RTC_DCHECK(dtls_role_);
-  StreamInterfaceChannel* downward =
-      new StreamInterfaceChannel(ice_transport_.get());
+  StreamInterfaceChannel* downward = new StreamInterfaceChannel(ice_transport_);
 
   dtls_.reset(rtc::SSLStreamAdapter::Create(downward));
   if (!dtls_) {
@@ -425,7 +423,7 @@ int DtlsTransport::SendPacket(const char* data,
 }
 
 IceTransportInternal* DtlsTransport::ice_transport() {
-  return ice_transport_.get();
+  return ice_transport_;
 }
 
 bool DtlsTransport::IsDtlsConnected() {
@@ -482,7 +480,7 @@ void DtlsTransport::ConnectToIceTransport() {
 //       impl again
 void DtlsTransport::OnWritableState(rtc::PacketTransportInternal* transport) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  RTC_DCHECK(transport == ice_transport_.get());
+  RTC_DCHECK(transport == ice_transport_);
   RTC_LOG(LS_VERBOSE) << ToString()
                       << ": ice_transport writable state changed to "
                       << ice_transport_->writable();
@@ -514,7 +512,7 @@ void DtlsTransport::OnWritableState(rtc::PacketTransportInternal* transport) {
 
 void DtlsTransport::OnReceivingState(rtc::PacketTransportInternal* transport) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  RTC_DCHECK(transport == ice_transport_.get());
+  RTC_DCHECK(transport == ice_transport_);
   RTC_LOG(LS_VERBOSE) << ToString()
                       << ": ice_transport "
                          "receiving state changed to "
@@ -531,7 +529,7 @@ void DtlsTransport::OnReadPacket(rtc::PacketTransportInternal* transport,
                                  const int64_t& packet_time_us,
                                  int flags) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  RTC_DCHECK(transport == ice_transport_.get());
+  RTC_DCHECK(transport == ice_transport_);
   RTC_DCHECK(flags == 0);
 
   if (!dtls_active_) {

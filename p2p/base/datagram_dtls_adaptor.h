@@ -43,7 +43,7 @@ class DatagramDtlsAdaptor : public DtlsTransportInternal,
   // has a virtual getter crypto_options(). Consider removing getter and
   // removing crypto_options from DatagramDtlsAdaptor.
   DatagramDtlsAdaptor(
-      std::unique_ptr<IceTransportInternal> ice_transport,
+      IceTransportInternal* ice_transport,
       std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport,
       const webrtc::CryptoOptions& crypto_options,
       webrtc::RtcEventLog* event_log);
@@ -130,7 +130,7 @@ class DatagramDtlsAdaptor : public DtlsTransportInternal,
 
   rtc::ThreadChecker thread_checker_;
   webrtc::CryptoOptions crypto_options_;
-  std::unique_ptr<IceTransportInternal> ice_transport_;
+  IceTransportInternal* ice_transport_;
 
   std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport_;
 

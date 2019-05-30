@@ -93,6 +93,8 @@ JsepTransportDescription& JsepTransportDescription::operator=(
 JsepTransport::JsepTransport(
     const std::string& mid,
     const rtc::scoped_refptr<rtc::RTCCertificate>& local_certificate,
+    std::unique_ptr<cricket::IceTransportInternal> ice_transport,
+    std::unique_ptr<cricket::IceTransportInternal> rtcp_ice_transport,
     std::unique_ptr<webrtc::RtpTransport> unencrypted_rtp_transport,
     std::unique_ptr<webrtc::SrtpTransport> sdes_transport,
     std::unique_ptr<webrtc::DtlsSrtpTransport> dtls_srtp_transport,
@@ -102,6 +104,8 @@ JsepTransport::JsepTransport(
     : network_thread_(rtc::Thread::Current()),
       mid_(mid),
       local_certificate_(local_certificate),
+      ice_transport_(std::move(ice_transport)),
+      rtcp_ice_transport_(std::move(rtcp_ice_transport)),
       unencrypted_rtp_transport_(std::move(unencrypted_rtp_transport)),
       sdes_transport_(std::move(sdes_transport)),
       dtls_srtp_transport_(std::move(dtls_srtp_transport)),
@@ -115,7 +119,12 @@ JsepTransport::JsepTransport(
                     std::move(rtcp_dtls_transport))
               : nullptr),
       media_transport_(std::move(media_transport)) {
+  RTC_DCHECK(ice_transport_);
   RTC_DCHECK(rtp_dtls_transport_);
+  // |rtcp_ice_transport_| must be present iff |rtcp_dtls_transport_| is
+  // present.
+  RTC_DCHECK_EQ((rtcp_ice_transport_ != nullptr),
+                (rtcp_dtls_transport_ != nullptr));
   RTC_DCHECK(!datagram_transport() || !media_transport_);
   // Verify the "only one out of these three can be set" invariant.
   if (unencrypted_rtp_transport_) {

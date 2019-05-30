@@ -86,6 +86,8 @@ class JsepTransport : public sigslot::has_slots<>,
   JsepTransport(
       const std::string& mid,
       const rtc::scoped_refptr<rtc::RTCCertificate>& local_certificate,
+      std::unique_ptr<cricket::IceTransportInternal> ice_transport,
+      std::unique_ptr<cricket::IceTransportInternal> rtcp_ice_transport,
       std::unique_ptr<webrtc::RtpTransport> unencrypted_rtp_transport,
       std::unique_ptr<webrtc::SrtpTransport> sdes_transport,
       std::unique_ptr<webrtc::DtlsSrtpTransport> dtls_srtp_transport,
@@ -309,6 +311,11 @@ class JsepTransport : public sigslot::has_slots<>,
       RTC_GUARDED_BY(network_thread_);
   std::unique_ptr<JsepTransportDescription> remote_description_
       RTC_GUARDED_BY(network_thread_);
+
+  // Ice transport which may be used by any of upper-layer transports (below).
+  // Owned by JsepTransport and guaranteed to outlive the transports below.
+  const std::unique_ptr<cricket::IceTransportInternal> ice_transport_;
+  const std::unique_ptr<cricket::IceTransportInternal> rtcp_ice_transport_;
 
   // To avoid downcasting and make it type safe, keep three unique pointers for
   // different SRTP mode and only one of these is non-nullptr.

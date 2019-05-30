@@ -32,10 +32,10 @@
 namespace cricket {
 
 NoOpDtlsTransport::NoOpDtlsTransport(
-    std::unique_ptr<IceTransportInternal> ice_transport,
+    IceTransportInternal* ice_transport,
     const webrtc::CryptoOptions& crypto_options)
     : crypto_options_(webrtc::CryptoOptions::NoGcm()),
-      ice_transport_(std::move(ice_transport)) {
+      ice_transport_(ice_transport) {
   RTC_DCHECK(ice_transport_);
   ice_transport_->SignalWritableState.connect(
       this, &NoOpDtlsTransport::OnWritableState);
@@ -102,7 +102,7 @@ bool NoOpDtlsTransport::SetSslMaxProtocolVersion(
   return true;
 }
 IceTransportInternal* NoOpDtlsTransport::ice_transport() {
-  return ice_transport_.get();
+  return ice_transport_;
 }
 
 void NoOpDtlsTransport::OnReadyToSend(rtc::PacketTransportInternal* transport) {

@@ -33,7 +33,7 @@ class TransportFactoryInterface {
       int component) = 0;
 
   virtual std::unique_ptr<DtlsTransportInternal> CreateDtlsTransport(
-      std::unique_ptr<IceTransportInternal> ice,
+      IceTransportInternal* ice,
       const webrtc::CryptoOptions& crypto_options) = 0;
 };
 

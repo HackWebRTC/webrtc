@@ -71,15 +71,15 @@ class JsepTransport2Test : public ::testing::Test, public sigslot::has_slots<> {
                                                       SrtpMode srtp_mode) {
     auto ice = absl::make_unique<FakeIceTransport>(kTransportName,
                                                    ICE_CANDIDATE_COMPONENT_RTP);
-    auto rtp_dtls_transport =
-        absl::make_unique<FakeDtlsTransport>(std::move(ice));
+    auto rtp_dtls_transport = absl::make_unique<FakeDtlsTransport>(ice.get());
 
+    std::unique_ptr<FakeIceTransport> rtcp_ice;
     std::unique_ptr<FakeDtlsTransport> rtcp_dtls_transport;
     if (!rtcp_mux_enabled) {
-      ice = absl::make_unique<FakeIceTransport>(kTransportName,
-                                                ICE_CANDIDATE_COMPONENT_RTCP);
+      rtcp_ice = absl::make_unique<FakeIceTransport>(
+          kTransportName, ICE_CANDIDATE_COMPONENT_RTCP);
       rtcp_dtls_transport =
-          absl::make_unique<FakeDtlsTransport>(std::move(ice));
+          absl::make_unique<FakeDtlsTransport>(rtcp_ice.get());
     }
 
     std::unique_ptr<webrtc::RtpTransport> unencrypted_rtp_transport;
@@ -105,10 +105,11 @@ class JsepTransport2Test : public ::testing::Test, public sigslot::has_slots<> {
     // more logic that require unit tests. Note that creation of media_transport
     // is covered in jseptransportcontroller_unittest.
     auto jsep_transport = absl::make_unique<JsepTransport>(
-        kTransportName, /*local_certificate=*/nullptr,
-        std::move(unencrypted_rtp_transport), std::move(sdes_transport),
-        std::move(dtls_srtp_transport), std::move(rtp_dtls_transport),
-        std::move(rtcp_dtls_transport), /*media_transport=*/nullptr);
+        kTransportName, /*local_certificate=*/nullptr, std::move(ice),
+        std::move(rtcp_ice), std::move(unencrypted_rtp_transport),
+        std::move(sdes_transport), std::move(dtls_srtp_transport),
+        std::move(rtp_dtls_transport), std::move(rtcp_dtls_transport),
+        /*media_transport=*/nullptr);
 
     signal_rtcp_mux_active_received_ = false;
     jsep_transport->SignalRtcpMuxActive.connect(

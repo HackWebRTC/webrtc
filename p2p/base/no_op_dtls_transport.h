@@ -54,7 +54,7 @@ constexpr int kNoOpDtlsTransportComponent = -1;
 // unprotect RTCP packet".
 class NoOpDtlsTransport : public DtlsTransportInternal {
  public:
-  NoOpDtlsTransport(std::unique_ptr<IceTransportInternal> ice_transport,
+  NoOpDtlsTransport(IceTransportInternal* ice_transport,
                     const webrtc::CryptoOptions& crypto_options);
 
   ~NoOpDtlsTransport() override;
@@ -102,7 +102,7 @@ class NoOpDtlsTransport : public DtlsTransportInternal {
   rtc::ThreadChecker thread_checker_;
 
   webrtc::CryptoOptions crypto_options_;
-  std::unique_ptr<IceTransportInternal> ice_transport_;
+  IceTransportInternal* ice_transport_;
   bool is_writable_ = false;
 };
 

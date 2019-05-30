@@ -44,12 +44,12 @@ constexpr bool kBypassDatagramDtlsTestOnly = false;
 namespace cricket {
 
 DatagramDtlsAdaptor::DatagramDtlsAdaptor(
-    std::unique_ptr<IceTransportInternal> ice_transport,
+    IceTransportInternal* ice_transport,
     std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport,
     const webrtc::CryptoOptions& crypto_options,
     webrtc::RtcEventLog* event_log)
     : crypto_options_(crypto_options),
-      ice_transport_(std::move(ice_transport)),
+      ice_transport_(ice_transport),
       datagram_transport_(std::move(datagram_transport)),
       event_log_(event_log) {
   RTC_DCHECK(ice_transport_);
@@ -91,7 +91,6 @@ DatagramDtlsAdaptor::~DatagramDtlsAdaptor() {
 
   // Make sure datagram transport is destroyed before ICE.
   datagram_transport_.reset();
-  ice_transport_.reset();
 }
 
 const webrtc::CryptoOptions& DatagramDtlsAdaptor::crypto_options() const {
@@ -127,7 +126,7 @@ void DatagramDtlsAdaptor::OnReadPacket(rtc::PacketTransportInternal* transport,
   RTC_DCHECK(kBypassDatagramDtlsTestOnly);
 
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  RTC_DCHECK_EQ(transport, ice_transport_.get());
+  RTC_DCHECK_EQ(transport, ice_transport_);
   RTC_DCHECK(flags == 0);
 
   PropagateReadPacket(
@@ -245,7 +244,7 @@ bool DatagramDtlsAdaptor::SetSslMaxProtocolVersion(
 }
 
 IceTransportInternal* DatagramDtlsAdaptor::ice_transport() {
-  return ice_transport_.get();
+  return ice_transport_;
 }
 
 webrtc::DatagramTransportInterface* DatagramDtlsAdaptor::datagram_transport() {
@@ -264,7 +263,7 @@ void DatagramDtlsAdaptor::OnReadyToSend(
 void DatagramDtlsAdaptor::OnWritableState(
     rtc::PacketTransportInternal* transport) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  RTC_DCHECK(transport == ice_transport_.get());
+  RTC_DCHECK(transport == ice_transport_);
   RTC_LOG(LS_VERBOSE) << ": ice_transport writable state changed to "
                       << ice_transport_->writable();
 
@@ -352,7 +351,7 @@ void DatagramDtlsAdaptor::OnNetworkRouteChanged(
 void DatagramDtlsAdaptor::OnReceivingState(
     rtc::PacketTransportInternal* transport) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-  RTC_DCHECK(transport == ice_transport_.get());
+  RTC_DCHECK(transport == ice_transport_);
   RTC_LOG(LS_VERBOSE) << "ice_transport receiving state changed to "
                       << ice_transport_->receiving();
 
