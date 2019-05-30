@@ -1580,6 +1580,11 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
     return expectations_correct;
   }
 
+  void ClosePeerConnections() {
+    caller()->pc()->Close();
+    callee()->pc()->Close();
+  }
+
   void TestNegotiatedCipherSuite(
       const PeerConnectionFactory::Options& caller_options,
       const PeerConnectionFactory::Options& callee_options,
@@ -3207,8 +3212,7 @@ TEST_P(PeerConnectionIntegrationTest,
   // Closing the PeerConnections destroys the ports before the ScopedFakeClock.
   // If this is not done a DCHECK can be hit in ports.cc, because a large
   // negative number is calculated for the rtt due to the global clock changing.
-  caller()->pc()->Close();
-  callee()->pc()->Close();
+  ClosePeerConnections();
 }
 
 // This test sets up a call between two parties with audio, video and but only
@@ -4498,8 +4502,7 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndConnectionTimeWithTurnTurnPair) {
   // Closing the PeerConnections destroys the ports before the ScopedFakeClock.
   // If this is not done a DCHECK can be hit in ports.cc, because a large
   // negative number is calculated for the rtt due to the global clock changing.
-  caller()->pc()->Close();
-  callee()->pc()->Close();
+  ClosePeerConnections();
 }
 
 // Verify that a TurnCustomizer passed in through RTCConfiguration
@@ -5020,8 +5023,7 @@ TEST_P(PeerConnectionIntegrationTest, ClosingConnectionStopsPacketFlow) {
   media_expectations.CalleeExpectsSomeAudioAndVideo();
   ASSERT_TRUE(ExpectNewFrames(media_expectations));
   // Close PeerConnections.
-  caller()->pc()->Close();
-  callee()->pc()->Close();
+  ClosePeerConnections();
   // Pump messages for a second, and ensure no new packets end up sent.
   uint32_t sent_packets_a = virtual_socket_server()->sent_packets();
   WAIT(false, 1000);
@@ -5147,6 +5149,9 @@ TEST_P(PeerConnectionIntegrationTest, RegatherAfterChangingIceTransportType) {
   callee()->pc()->SetConfiguration(callee_config);
   EXPECT_EQ_WAIT(cricket::LOCAL_PORT_TYPE,
                  callee()->last_candidate_gathered().type(), kDefaultTimeout);
+
+  // PeerConnections must be closed before ScopedFieldTrials goes out of scope.
+  ClosePeerConnections();
 }
 
 INSTANTIATE_TEST_SUITE_P(PeerConnectionIntegrationTest,
