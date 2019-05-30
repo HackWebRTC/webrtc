@@ -158,6 +158,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     "transport/media:audio_interfaces",
     "transport/media:video_interfaces",
     "units:data_rate",
+    "units:timestamp",
     "video:encoded_image",
     "video:video_frame",
     "//third_party/abseil-cpp/absl/algorithm:container",

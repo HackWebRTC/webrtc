@@ -22,6 +22,7 @@
 #include "api/media_transport_interface.h"
 #include "api/rtc_error.h"
 #include "api/units/data_rate.h"
+#include "api/units/timestamp.h"
 
 namespace rtc {
 class PacketTransportInternal;
@@ -31,11 +32,14 @@ namespace webrtc {
 
 typedef int64_t DatagramId;
 
-// TODO(mellem): Add receive timestamp.
 struct DatagramAck {
   // |datagram_id| is same as passed in
   // DatagramTransportInterface::SendDatagram.
   DatagramId datagram_id;
+
+  // The timestamp at which the remote peer received the identified datagram,
+  // according to that peer's clock.
+  Timestamp receive_timestamp;
 };
 
 // All sink methods are called on network thread.
