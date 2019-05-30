@@ -609,10 +609,10 @@ webrtc::AudioState* WebRtcVoiceEngine::audio_state() {
   return audio_state_.get();
 }
 
-AudioCodecs WebRtcVoiceEngine::CollectCodecs(
+std::vector<AudioCodec> WebRtcVoiceEngine::CollectCodecs(
     const std::vector<webrtc::AudioCodecSpec>& specs) const {
   PayloadTypeMapper mapper;
-  AudioCodecs out;
+  std::vector<AudioCodec> out;
 
   // Only generate CN payload types for these clockrates:
   std::map<int, bool, std::greater<int>> generate_cn = {
@@ -622,7 +622,7 @@ AudioCodecs WebRtcVoiceEngine::CollectCodecs(
       {8000, false}, {16000, false}, {32000, false}, {48000, false}};
 
   auto map_format = [&mapper](const webrtc::SdpAudioFormat& format,
-                              AudioCodecs* out) {
+                              std::vector<AudioCodec>* out) {
     absl::optional<AudioCodec> opt_codec = mapper.ToAudioCodec(format);
     if (opt_codec) {
       if (out) {
