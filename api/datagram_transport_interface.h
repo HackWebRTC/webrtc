@@ -39,7 +39,7 @@ struct DatagramAck {
 
   // The timestamp at which the remote peer received the identified datagram,
   // according to that peer's clock.
-  Timestamp receive_timestamp;
+  Timestamp receive_timestamp = Timestamp::MinusInfinity();
 };
 
 // All sink methods are called on network thread.
@@ -58,6 +58,9 @@ class DatagramSinkInterface {
   // Called when datagram is ACKed.
   // TODO(sukhanov): Make pure virtual.
   virtual void OnDatagramAcked(const DatagramAck& datagram_ack) {}
+
+  // Called when a datagram is lost.
+  virtual void OnDatagramLost(DatagramId datagram_id) {}
 };
 
 // Datagram transport allows to send and receive unreliable packets (datagrams)
