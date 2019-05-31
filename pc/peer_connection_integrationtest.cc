@@ -5086,8 +5086,6 @@ TEST_P(PeerConnectionIntegrationTest,
 }
 
 TEST_P(PeerConnectionIntegrationTest, RegatherAfterChangingIceTransportType) {
-  webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-GatherOnCandidateFilterChanged/Enabled/");
   static const rtc::SocketAddress turn_server_internal_address{"88.88.88.0",
                                                                3478};
   static const rtc::SocketAddress turn_server_external_address{"88.88.88.1", 0};
@@ -5103,11 +5101,13 @@ TEST_P(PeerConnectionIntegrationTest, RegatherAfterChangingIceTransportType) {
   caller_config.servers.push_back(ice_server);
   caller_config.type = webrtc::PeerConnectionInterface::kRelay;
   caller_config.continual_gathering_policy = PeerConnection::GATHER_CONTINUALLY;
+  caller_config.surface_ice_candidates_on_ice_transport_type_changed = true;
 
   PeerConnectionInterface::RTCConfiguration callee_config;
   callee_config.servers.push_back(ice_server);
   callee_config.type = webrtc::PeerConnectionInterface::kRelay;
   callee_config.continual_gathering_policy = PeerConnection::GATHER_CONTINUALLY;
+  callee_config.surface_ice_candidates_on_ice_transport_type_changed = true;
 
   ASSERT_TRUE(
       CreatePeerConnectionWrappersWithConfig(caller_config, callee_config));

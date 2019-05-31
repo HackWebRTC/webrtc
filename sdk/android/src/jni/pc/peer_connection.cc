@@ -186,6 +186,9 @@ void JavaToNativeRTCConfiguration(
   rtc_config->presume_writable_when_fully_relayed =
       Java_RTCConfiguration_getPresumeWritableWhenFullyRelayed(jni,
                                                                j_rtc_config);
+  rtc_config->surface_ice_candidates_on_ice_transport_type_changed =
+      Java_RTCConfiguration_getSurfaceIceCandidatesOnIceTransportTypeChanged(
+          jni, j_rtc_config);
   ScopedJavaLocalRef<jobject> j_ice_check_interval_strong_connectivity =
       Java_RTCConfiguration_getIceCheckIntervalStrongConnectivity(jni,
                                                                   j_rtc_config);

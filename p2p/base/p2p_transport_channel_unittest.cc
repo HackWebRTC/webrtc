@@ -4950,8 +4950,6 @@ TEST_F(P2PTransportChannelTest,
 // removed and are still usable for necessary route switching.
 TEST_F(P2PTransportChannelTest,
        SurfaceHostCandidateOnCandidateFilterChangeFromRelayToAll) {
-  webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-GatherOnCandidateFilterChanged/Enabled/");
   rtc::ScopedFakeClock clock;
 
   ConfigureEndpoints(
@@ -4962,9 +4960,11 @@ TEST_F(P2PTransportChannelTest,
   auto* ep2 = GetEndpoint(1);
   ep1->allocator_->SetCandidateFilter(CF_RELAY);
   ep2->allocator_->SetCandidateFilter(CF_RELAY);
-  IceConfig continual_gathering_config =
-      CreateIceConfig(1000, GATHER_CONTINUALLY);
-  CreateChannels(continual_gathering_config, continual_gathering_config);
+  // Enable continual gathering and also resurfacing gathered candidates upon
+  // the candidate filter changed in the ICE configuration.
+  IceConfig ice_config = CreateIceConfig(1000, GATHER_CONTINUALLY);
+  ice_config.surface_ice_candidates_on_ice_transport_type_changed = true;
+  CreateChannels(ice_config, ice_config);
   ASSERT_TRUE_SIMULATED_WAIT(ep1_ch1()->selected_connection() != nullptr,
                              kDefaultTimeout, clock);
   ASSERT_TRUE_SIMULATED_WAIT(ep2_ch1()->selected_connection() != nullptr,
@@ -5014,8 +5014,6 @@ TEST_F(P2PTransportChannelTest,
 // changing the candidate filter.
 TEST_F(P2PTransportChannelTest,
        SurfaceSrflxCandidateOnCandidateFilterChangeFromRelayToNoHost) {
-  webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-GatherOnCandidateFilterChanged/Enabled/");
   rtc::ScopedFakeClock clock;
   // We need an actual NAT so that the host candidate is not equivalent to the
   // srflx candidate; otherwise, the host candidate would still surface even
@@ -5032,9 +5030,11 @@ TEST_F(P2PTransportChannelTest,
   auto* ep2 = GetEndpoint(1);
   ep1->allocator_->SetCandidateFilter(CF_RELAY);
   ep2->allocator_->SetCandidateFilter(CF_RELAY);
-  IceConfig continual_gathering_config =
-      CreateIceConfig(1000, GATHER_CONTINUALLY);
-  CreateChannels(continual_gathering_config, continual_gathering_config);
+  // Enable continual gathering and also resurfacing gathered candidates upon
+  // the candidate filter changed in the ICE configuration.
+  IceConfig ice_config = CreateIceConfig(1000, GATHER_CONTINUALLY);
+  ice_config.surface_ice_candidates_on_ice_transport_type_changed = true;
+  CreateChannels(ice_config, ice_config);
   ASSERT_TRUE_SIMULATED_WAIT(ep1_ch1()->selected_connection() != nullptr,
                              kDefaultTimeout, clock);
   ASSERT_TRUE_SIMULATED_WAIT(ep2_ch1()->selected_connection() != nullptr,
@@ -5075,13 +5075,49 @@ TEST_F(P2PTransportChannelTest,
             ep1_ch1()->selected_connection()->remote_candidate().type());
 }
 
+// This is the complement to
+// SurfaceHostCandidateOnCandidateFilterChangeFromRelayToAll, and instead of
+// gathering continually we only gather once, which makes the config
+// |surface_ice_candidates_on_ice_transport_type_changed| ineffective after the
+// gathering stopped.
+TEST_F(P2PTransportChannelTest,
+       CannotSurfaceTheNewlyAllowedOnFilterChangeIfNotGatheringContinually) {
+  rtc::ScopedFakeClock clock;
+
+  ConfigureEndpoints(
+      OPEN, OPEN,
+      kDefaultPortAllocatorFlags | PORTALLOCATOR_ENABLE_SHARED_SOCKET,
+      kDefaultPortAllocatorFlags | PORTALLOCATOR_ENABLE_SHARED_SOCKET);
+  auto* ep1 = GetEndpoint(0);
+  auto* ep2 = GetEndpoint(1);
+  ep1->allocator_->SetCandidateFilter(CF_RELAY);
+  ep2->allocator_->SetCandidateFilter(CF_RELAY);
+  // Only gather once.
+  IceConfig ice_config = CreateIceConfig(1000, GATHER_ONCE);
+  ice_config.surface_ice_candidates_on_ice_transport_type_changed = true;
+  CreateChannels(ice_config, ice_config);
+  ASSERT_TRUE_SIMULATED_WAIT(ep1_ch1()->selected_connection() != nullptr,
+                             kDefaultTimeout, clock);
+  ASSERT_TRUE_SIMULATED_WAIT(ep2_ch1()->selected_connection() != nullptr,
+                             kDefaultTimeout, clock);
+  // Loosen the candidate filter at ep1.
+  ep1->allocator_->SetCandidateFilter(CF_ALL);
+  // Wait for a period for any potential surfacing of new candidates.
+  SIMULATED_WAIT(false, kDefaultTimeout, clock);
+  EXPECT_EQ(RELAY_PORT_TYPE,
+            ep1_ch1()->selected_connection()->local_candidate().type());
+
+  // Loosen the candidate filter at ep2.
+  ep2->allocator_->SetCandidateFilter(CF_ALL);
+  EXPECT_EQ(RELAY_PORT_TYPE,
+            ep2_ch1()->selected_connection()->local_candidate().type());
+}
+
 // Test that when the candidate filter is updated to be more restrictive,
 // candidates that 1) have already been gathered and signaled 2) but no longer
 // match the filter, are not removed.
 TEST_F(P2PTransportChannelTest,
        RestrictingCandidateFilterDoesNotRemoveRegatheredCandidates) {
-  webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-GatherOnCandidateFilterChanged/Enabled/");
   rtc::ScopedFakeClock clock;
 
   ConfigureEndpoints(
@@ -5092,14 +5128,16 @@ TEST_F(P2PTransportChannelTest,
   auto* ep2 = GetEndpoint(1);
   ep1->allocator_->SetCandidateFilter(CF_ALL);
   ep2->allocator_->SetCandidateFilter(CF_ALL);
-  IceConfig continual_gathering_config =
-      CreateIceConfig(1000, GATHER_CONTINUALLY);
+  // Enable continual gathering and also resurfacing gathered candidates upon
+  // the candidate filter changed in the ICE configuration.
+  IceConfig ice_config = CreateIceConfig(1000, GATHER_CONTINUALLY);
+  ice_config.surface_ice_candidates_on_ice_transport_type_changed = true;
   // Pause candidates so we can gather all types of candidates. See
   // P2PTransportChannel::OnConnectionStateChange, where we would stop the
   // gathering when we have a strongly connected candidate pair.
   PauseCandidates(0);
   PauseCandidates(1);
-  CreateChannels(continual_gathering_config, continual_gathering_config);
+  CreateChannels(ice_config, ice_config);
 
   // We have gathered host, srflx and relay candidates.
   EXPECT_TRUE_SIMULATED_WAIT(ep1->saved_candidates_.size() == 3u,

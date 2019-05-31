@@ -506,6 +506,17 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
     // re-determining was removed in ICEbis (ICE v2).
     bool redetermine_role_on_ice_restart = true;
 
+    // This flag is only effective when |continual_gathering_policy| is
+    // GATHER_CONTINUALLY.
+    //
+    // If true, after the ICE transport type is changed such that new types of
+    // ICE candidates are allowed by the new transport type, e.g. from
+    // IceTransportsType::kRelay to IceTransportsType::kAll, candidates that
+    // have been gathered by the ICE transport but not matching the previous
+    // transport type and as a result not observed by PeerConnectionObserver,
+    // will be surfaced to the observer.
+    bool surface_ice_candidates_on_ice_transport_type_changed = false;
+
     // The following fields define intervals in milliseconds at which ICE
     // connectivity checks are sent.
     //

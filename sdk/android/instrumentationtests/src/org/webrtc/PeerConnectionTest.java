@@ -45,9 +45,11 @@ import org.chromium.base.test.util.DisabledTest;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.webrtc.Logging;
 import org.webrtc.Metrics.HistogramInfo;
 import org.webrtc.PeerConnection.IceConnectionState;
 import org.webrtc.PeerConnection.IceGatheringState;
+import org.webrtc.PeerConnection.IceTransportsType;
 import org.webrtc.PeerConnection.PeerConnectionState;
 import org.webrtc.PeerConnection.SignalingState;
 import org.webrtc.PeerConnection.TlsCertPolicy;
@@ -59,7 +61,9 @@ import org.webrtc.RtpTransceiver.RtpTransceiverInit;
 /** End-to-end tests for PeerConnection.java. */
 @RunWith(BaseJUnit4ClassRunner.class)
 public class PeerConnectionTest {
-  private static final int TIMEOUT_SECONDS = 20;
+  private static final String TAG = "PeerConnectionTest";
+  private static final int DEFAULT_TIMEOUT_SECONDS = 20;
+  private static final int SHORT_TIMEOUT_SECONDS = 5;
   private @Nullable TreeSet<String> threadsBeforeTest;
 
   @Before
@@ -124,6 +128,7 @@ public class PeerConnectionTest {
     // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
     @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void onIceCandidate(IceCandidate candidate) {
+      Logging.d(TAG, "onIceCandidate: " + candidate.toString());
       --expectedIceCandidates;
 
       // We don't assert expectedIceCandidates >= 0 because it's hard to know
@@ -201,7 +206,7 @@ public class PeerConnectionTest {
       }
 
       if (expectedIceConnectionChanges.isEmpty()) {
-        System.out.println(name + "Got an unexpected ICE connection change " + newState);
+        Logging.d(TAG, name + "Got an unexpected ICE connection change " + newState);
         return;
       }
 
@@ -217,8 +222,7 @@ public class PeerConnectionTest {
       }
 
       if (expectedIceConnectionChanges.isEmpty()) {
-        System.out.println(
-            name + "Got an unexpected standardized ICE connection change " + newState);
+        Logging.d(TAG, name + "Got an unexpected standardized ICE connection change " + newState);
         return;
       }
 
@@ -236,7 +240,7 @@ public class PeerConnectionTest {
     @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void onConnectionChange(PeerConnectionState newState) {
       if (expectedConnectionChanges.isEmpty()) {
-        System.out.println(name + " got an unexpected DTLS connection change " + newState);
+        Logging.d(TAG, name + " got an unexpected DTLS connection change " + newState);
         return;
       }
 
@@ -247,7 +251,7 @@ public class PeerConnectionTest {
     // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
     @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void onIceConnectionReceivingChange(boolean receiving) {
-      System.out.println(name + " got an ICE connection receiving change " + receiving);
+      Logging.d(TAG, name + " got an ICE connection receiving change " + receiving);
     }
 
     // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
@@ -267,7 +271,7 @@ public class PeerConnectionTest {
         return;
       }
       if (expectedIceGatheringChanges.isEmpty()) {
-        System.out.println(name + "Got an unexpected ICE gathering change " + newState);
+        Logging.d(TAG, name + "Got an unexpected ICE gathering change " + newState);
       }
       assertEquals(expectedIceGatheringChanges.remove(), newState);
     }
@@ -530,12 +534,14 @@ public class PeerConnectionTest {
       TreeSet<String> stillWaitingForExpectations = unsatisfiedExpectations();
       while (!stillWaitingForExpectations.isEmpty()) {
         if (!stillWaitingForExpectations.equals(prev)) {
-          System.out.println(name + " still waiting at\n    " + (new Throwable()).getStackTrace()[1]
-              + "\n    for: " + Arrays.toString(stillWaitingForExpectations.toArray()));
+          Logging.d(TAG,
+              name + " still waiting at\n    " + (new Throwable()).getStackTrace()[1]
+                  + "\n    for: " + Arrays.toString(stillWaitingForExpectations.toArray()));
         }
         if (endTime < System.currentTimeMillis()) {
-          System.out.println(name + " timed out waiting for: "
-              + Arrays.toString(stillWaitingForExpectations.toArray()));
+          Logging.d(TAG,
+              name + " timed out waiting for: "
+                  + Arrays.toString(stillWaitingForExpectations.toArray()));
           return false;
         }
         try {
@@ -547,8 +553,8 @@ public class PeerConnectionTest {
         stillWaitingForExpectations = unsatisfiedExpectations();
       }
       if (prev == null) {
-        System.out.println(
-            name + " didn't need to wait at\n    " + (new Throwable()).getStackTrace()[1]);
+        Logging.d(
+            TAG, name + " didn't need to wait at\n    " + (new Throwable()).getStackTrace()[1]);
       }
       return true;
     }
@@ -1062,8 +1068,8 @@ public class PeerConnectionTest {
       offeringPC.addIceCandidate(candidate);
     }
 
-    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
-    assertTrue(answeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
+    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
+    assertTrue(answeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
 
     assertEquals(PeerConnection.SignalingState.STABLE, offeringPC.signalingState());
     assertEquals(PeerConnection.SignalingState.STABLE, answeringPC.signalingState());
@@ -1119,7 +1125,7 @@ public class PeerConnectionTest {
     DataChannel.Buffer buffer =
         new DataChannel.Buffer(ByteBuffer.wrap("hello!".getBytes(Charset.forName("UTF-8"))), false);
     assertTrue(offeringExpectations.dataChannel.send(buffer));
-    assertTrue(answeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
+    assertTrue(answeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
 
     // Construct this binary message two different ways to ensure no
     // shortcuts are taken.
@@ -1131,7 +1137,7 @@ public class PeerConnectionTest {
     offeringExpectations.expectMessage(expectedBinaryMessage, true);
     assertTrue(answeringExpectations.dataChannel.send(
         new DataChannel.Buffer(ByteBuffer.wrap(new byte[] {1, 2, 3, 4, 5}), true)));
-    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
+    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
 
     offeringExpectations.expectStateChange(DataChannel.State.CLOSING);
     answeringExpectations.expectStateChange(DataChannel.State.CLOSING);
@@ -1139,8 +1145,8 @@ public class PeerConnectionTest {
     answeringExpectations.expectStateChange(DataChannel.State.CLOSED);
     answeringExpectations.dataChannel.close();
     offeringExpectations.dataChannel.close();
-    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
-    assertTrue(answeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
+    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
+    assertTrue(answeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
 
     // Test SetBitrate.
     assertTrue(offeringPC.setBitrate(100000, 5000000, 500000000));
@@ -1279,8 +1285,8 @@ public class PeerConnectionTest {
       offeringPC.addIceCandidate(candidate);
     }
 
-    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
-    assertTrue(answeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
+    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
+    assertTrue(answeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
 
     assertEquals(PeerConnection.SignalingState.STABLE, offeringPC.signalingState());
     assertEquals(PeerConnection.SignalingState.STABLE, answeringPC.signalingState());
@@ -1291,7 +1297,7 @@ public class PeerConnectionTest {
     DataChannel.Buffer buffer =
         new DataChannel.Buffer(ByteBuffer.wrap("hello!".getBytes(Charset.forName("UTF-8"))), false);
     assertTrue(offeringExpectations.dataChannel.send(buffer));
-    assertTrue(answeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
+    assertTrue(answeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
 
     // Construct this binary message two different ways to ensure no
     // shortcuts are taken.
@@ -1303,7 +1309,7 @@ public class PeerConnectionTest {
     offeringExpectations.expectMessage(expectedBinaryMessage, true);
     assertTrue(answeringExpectations.dataChannel.send(
         new DataChannel.Buffer(ByteBuffer.wrap(new byte[] {1, 2, 3, 4, 5}), true)));
-    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
+    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
 
     offeringExpectations.expectStateChange(DataChannel.State.CLOSING);
     answeringExpectations.expectStateChange(DataChannel.State.CLOSING);
@@ -1311,8 +1317,8 @@ public class PeerConnectionTest {
     answeringExpectations.expectStateChange(DataChannel.State.CLOSED);
     answeringExpectations.dataChannel.close();
     offeringExpectations.dataChannel.close();
-    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
-    assertTrue(answeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
+    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
+    assertTrue(answeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
 
     // Free the Java-land objects and collect them.
     shutdownPC(offeringPC, offeringExpectations);
@@ -1321,6 +1327,72 @@ public class PeerConnectionTest {
     answeringPC = null;
     factory.dispose();
     System.gc();
+  }
+
+  // Tests that ICE candidates that are not allowed by an ICE transport type, thus not being
+  // signaled to the gathering PeerConnection, can be surfaced via configuration if allowed by the
+  // new ICE transport type, when RTCConfiguration.surfaceIceCandidatesOnIceTransportTypeChanged is
+  // true.
+  @Test
+  @SmallTest
+  public void testSurfaceIceCandidatesWhenIceTransportTypeChanged() throws Exception {
+    // For this test, we only need one PeerConnection to observe the behavior of gathering, and we
+    // create only the offering PC below.
+    //
+    // Allow loopback interfaces too since our Android devices often don't
+    // have those.
+    PeerConnectionFactory.Options options = new PeerConnectionFactory.Options();
+    options.networkIgnoreMask = 0;
+    PeerConnectionFactory factory =
+        PeerConnectionFactory.builder().setOptions(options).createPeerConnectionFactory();
+
+    PeerConnection.RTCConfiguration rtcConfig =
+        new PeerConnection.RTCConfiguration(Arrays.asList());
+    // NONE would prevent any candidate being signaled to the PC.
+    rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.NONE;
+    // We must have the continual gathering enabled to allow the surfacing of candidates on the ICE
+    // transport type change.
+    rtcConfig.continualGatheringPolicy = PeerConnection.ContinualGatheringPolicy.GATHER_CONTINUALLY;
+    rtcConfig.surfaceIceCandidatesOnIceTransportTypeChanged = true;
+
+    ObserverExpectations offeringExpectations = new ObserverExpectations("PCTest:offerer");
+    PeerConnection offeringPC = factory.createPeerConnection(rtcConfig, offeringExpectations);
+    assertNotNull(offeringPC);
+
+    // Create a data channel and set local description to kick off the ICE candidate gathering.
+    offeringExpectations.expectRenegotiationNeeded();
+    DataChannel offeringDC = offeringPC.createDataChannel("offeringDC", new DataChannel.Init());
+    assertEquals("offeringDC", offeringDC.label());
+
+    offeringExpectations.setDataChannel(offeringDC);
+    SdpObserverLatch sdpLatch = new SdpObserverLatch();
+    offeringPC.createOffer(sdpLatch, new MediaConstraints());
+    assertTrue(sdpLatch.await());
+    SessionDescription offerSdp = sdpLatch.getSdp();
+    assertEquals(offerSdp.type, SessionDescription.Type.OFFER);
+    assertFalse(offerSdp.description.isEmpty());
+
+    sdpLatch = new SdpObserverLatch();
+    offeringExpectations.expectSignalingChange(SignalingState.HAVE_LOCAL_OFFER);
+    offeringPC.setLocalDescription(sdpLatch, offerSdp);
+    assertTrue(sdpLatch.await());
+    assertNull(sdpLatch.getSdp());
+
+    assertEquals(offeringPC.getLocalDescription().type, offerSdp.type);
+
+    // Wait until we satisfy all expectations in the setup.
+    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
+
+    // Add the expectation of gathering at least one candidate, which should however fail because of
+    // the transport type NONE.
+    offeringExpectations.expectIceCandidates(1);
+    assertFalse(offeringExpectations.waitForAllExpectationsToBeSatisfied(SHORT_TIMEOUT_SECONDS));
+
+    // Change the transport type and we should be able to meet the expectation of gathering this
+    // time.
+    rtcConfig.iceTransportsType = PeerConnection.IceTransportsType.ALL;
+    offeringPC.setConfiguration(rtcConfig);
+    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
   }
 
   @Test
@@ -1464,8 +1536,8 @@ public class PeerConnectionTest {
     offeringExpectations.expectFramesDelivered(1);
     answeringExpectations.expectFramesDelivered(1);
 
-    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
-    assertTrue(answeringExpectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
+    assertTrue(offeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
+    assertTrue(answeringExpectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
 
     assertEquals(PeerConnection.SignalingState.STABLE, offeringPC.signalingState());
     assertEquals(PeerConnection.SignalingState.STABLE, answeringPC.signalingState());
@@ -1820,36 +1892,36 @@ public class PeerConnectionTest {
     // Call getStats (old implementation) before shutting down PC.
     expectations.expectOldStatsCallback();
     assertTrue(pc.getStats(expectations, null /* track */));
-    assertTrue(expectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
+    assertTrue(expectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
 
     // Call the new getStats implementation as well.
     expectations.expectNewStatsCallback();
     pc.getStats(expectations);
-    assertTrue(expectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
+    assertTrue(expectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
 
     expectations.expectIceConnectionChange(IceConnectionState.CLOSED);
     expectations.expectStandardizedIceConnectionChange(IceConnectionState.CLOSED);
     expectations.expectConnectionChange(PeerConnectionState.CLOSED);
     expectations.expectSignalingChange(SignalingState.CLOSED);
     pc.close();
-    assertTrue(expectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
+    assertTrue(expectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
 
     // Call getStats (old implementation) after calling close(). Should still
     // work.
     expectations.expectOldStatsCallback();
     assertTrue(pc.getStats(expectations, null /* track */));
-    assertTrue(expectations.waitForAllExpectationsToBeSatisfied(TIMEOUT_SECONDS));
+    assertTrue(expectations.waitForAllExpectationsToBeSatisfied(DEFAULT_TIMEOUT_SECONDS));
 
-    System.out.println("FYI stats: ");
+    Logging.d(TAG, "FYI stats: ");
     int reportIndex = -1;
     for (StatsReport[] reports : expectations.takeStatsReports()) {
-      System.out.println(" Report #" + (++reportIndex));
+      Logging.d(TAG, " Report #" + (++reportIndex));
       for (int i = 0; i < reports.length; ++i) {
-        System.out.println("  " + reports[i].toString());
+        Logging.d(TAG, "  " + reports[i].toString());
       }
     }
     assertEquals(1, reportIndex);
-    System.out.println("End stats.");
+    Logging.d(TAG, "End stats.");
 
     pc.dispose();
   }

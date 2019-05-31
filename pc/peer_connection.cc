@@ -749,6 +749,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     bool presume_writable_when_fully_relayed;
     bool enable_ice_renomination;
     bool redetermine_role_on_ice_restart;
+    bool surface_ice_candidates_on_ice_transport_type_changed;
     absl::optional<int> ice_check_interval_strong_connectivity;
     absl::optional<int> ice_check_interval_weak_connectivity;
     absl::optional<int> ice_check_min_interval;
@@ -804,6 +805,8 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
              o.presume_writable_when_fully_relayed &&
          enable_ice_renomination == o.enable_ice_renomination &&
          redetermine_role_on_ice_restart == o.redetermine_role_on_ice_restart &&
+         surface_ice_candidates_on_ice_transport_type_changed ==
+             o.surface_ice_candidates_on_ice_transport_type_changed &&
          ice_check_interval_strong_connectivity ==
              o.ice_check_interval_strong_connectivity &&
          ice_check_interval_weak_connectivity ==
@@ -5749,6 +5752,8 @@ cricket::IceConfig PeerConnection::ParseIceConfig(
   ice_config.continual_gathering_policy = gathering_policy;
   ice_config.presume_writable_when_fully_relayed =
       config.presume_writable_when_fully_relayed;
+  ice_config.surface_ice_candidates_on_ice_transport_type_changed =
+      config.surface_ice_candidates_on_ice_transport_type_changed;
   ice_config.ice_check_interval_strong_connectivity =
       config.ice_check_interval_strong_connectivity;
   ice_config.ice_check_interval_weak_connectivity =

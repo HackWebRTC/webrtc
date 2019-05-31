@@ -557,6 +557,15 @@ void P2PTransportChannel::SetIceConfig(const IceConfig& config) {
     }
   }
 
+  config_.surface_ice_candidates_on_ice_transport_type_changed =
+      config.surface_ice_candidates_on_ice_transport_type_changed;
+  if (config_.surface_ice_candidates_on_ice_transport_type_changed &&
+      config_.continual_gathering_policy != GATHER_CONTINUALLY) {
+    RTC_LOG(LS_WARNING)
+        << "surface_ice_candidates_on_ice_transport_type_changed is "
+           "ineffective since we do not gather continually.";
+  }
+
   if (config_.regather_on_failed_networks_interval !=
       config.regather_on_failed_networks_interval) {
     config_.regather_on_failed_networks_interval =
@@ -1030,10 +1039,11 @@ void P2PTransportChannel::OnUnknownAddress(
 
 void P2PTransportChannel::OnCandidateFilterChanged(uint32_t prev_filter,
                                                    uint32_t cur_filter) {
+  RTC_DCHECK_RUN_ON(network_thread_);
   if (prev_filter == cur_filter || allocator_session() == nullptr) {
     return;
   }
-  if (webrtc::field_trial::IsEnabled("WebRTC-GatherOnCandidateFilterChanged")) {
+  if (config_.surface_ice_candidates_on_ice_transport_type_changed) {
     allocator_session()->SetCandidateFilter(cur_filter);
   }
 }

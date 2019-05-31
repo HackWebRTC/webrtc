@@ -91,6 +91,13 @@ struct IceConfig {
   // candidate pairs will succeed, even before a binding response is received.
   bool presume_writable_when_fully_relayed = false;
 
+  // If true, after the ICE transport type (as the candidate filter used by the
+  // port allocator) is changed such that new types of ICE candidates are
+  // allowed by the new filter, e.g. from CF_RELAY to CF_ALL, candidates that
+  // have been gathered by the ICE transport but filtered out and not signaled
+  // to the upper layers, will be surfaced.
+  bool surface_ice_candidates_on_ice_transport_type_changed = false;
+
   // Interval to check on all networks and to perform ICE regathering on any
   // active network having no connection on it.
   absl::optional<int> regather_on_failed_networks_interval;

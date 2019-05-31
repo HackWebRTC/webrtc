@@ -450,6 +450,7 @@ public class PeerConnection {
     public int iceCandidatePoolSize;
     public boolean pruneTurnPorts;
     public boolean presumeWritableWhenFullyRelayed;
+    public boolean surfaceIceCandidatesOnIceTransportTypeChanged;
     // The following fields define intervals in milliseconds at which ICE
     // connectivity checks are sent.
     //
@@ -552,6 +553,7 @@ public class PeerConnection {
       iceCandidatePoolSize = 0;
       pruneTurnPorts = false;
       presumeWritableWhenFullyRelayed = false;
+      surfaceIceCandidatesOnIceTransportTypeChanged = false;
       iceCheckIntervalStrongConnectivityMs = null;
       iceCheckIntervalWeakConnectivityMs = null;
       iceCheckMinInterval = null;
@@ -656,6 +658,11 @@ public class PeerConnection {
     @CalledByNative("RTCConfiguration")
     boolean getPresumeWritableWhenFullyRelayed() {
       return presumeWritableWhenFullyRelayed;
+    }
+
+    @CalledByNative("RTCConfiguration")
+    boolean getSurfaceIceCandidatesOnIceTransportTypeChanged() {
+      return surfaceIceCandidatesOnIceTransportTypeChanged;
     }
 
     @Nullable
