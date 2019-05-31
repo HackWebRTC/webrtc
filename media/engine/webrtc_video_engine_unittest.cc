@@ -1000,7 +1000,9 @@ TEST_F(WebRtcVideoEngineTest, RegisterH264DecoderIfSupported) {
   // For now we add a FakeWebRtcVideoEncoderFactory to add H264 to supported
   // codecs.
   encoder_factory_->AddSupportedVideoCodecType("H264");
-  decoder_factory_->AddSupportedVideoCodecType(webrtc::SdpVideoFormat("H264"));
+  webrtc::SdpVideoFormat supported_h264("H264");
+  supported_h264.parameters[kH264FmtpPacketizationMode] = "1";
+  decoder_factory_->AddSupportedVideoCodecType(supported_h264);
   std::vector<cricket::VideoCodec> codecs;
   codecs.push_back(GetEngineCodec("H264"));
 
