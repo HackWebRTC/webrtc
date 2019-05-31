@@ -91,7 +91,6 @@
       'Win32 Builder (Clang)': 'win_clang_pure_release_bot_x86',
       'Win64 Debug (Clang)': 'win_clang_debug_bot_x64',
       'Win64 Release (Clang)': 'win_clang_release_bot_x64',
-      'Win32 ASan': 'win_asan_clang_release_bot_x86',
       'Win64 ASan': 'win_asan_clang_release_bot_x64',
       'Win64 UWP': 'win_uwp_release_bot_x64',
       'Win (more configs)': {
@@ -340,10 +339,6 @@
     ],
     'win_msvc_release_bot_x64': [
       'no_clang', 'release_bot', 'x64', 'no_lld',
-    ],
-    'win_asan_clang_release_bot_x86': [
-      'asan', 'clang',  'full_symbols', 'openh264', 'release_bot', 'x86',
-      'win_fastlink',
     ],
     'win_asan_clang_release_bot_x64': [
       'asan', 'clang',  'full_symbols', 'openh264', 'release_bot', 'x64',
