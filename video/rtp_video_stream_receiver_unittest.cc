@@ -56,6 +56,9 @@ class MockTransport : public Transport {
 class MockNackSender : public NackSender {
  public:
   MOCK_METHOD1(SendNack, void(const std::vector<uint16_t>& sequence_numbers));
+  MOCK_METHOD2(SendNack,
+               void(const std::vector<uint16_t>& sequence_numbers,
+                    bool buffering_allowed));
 };
 
 class MockKeyFrameRequestSender : public KeyFrameRequestSender {

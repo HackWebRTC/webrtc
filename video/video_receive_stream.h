@@ -101,6 +101,10 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
 
   // Implements NackSender.
   void SendNack(const std::vector<uint16_t>& sequence_numbers) override;
+  // For this particular override of the interface,
+  // only (buffering_allowed == true) is acceptable.
+  void SendNack(const std::vector<uint16_t>& sequence_numbers,
+                bool buffering_allowed) override;
 
   // Implements video_coding::OnCompleteFrameCallback.
   void OnCompleteFrame(

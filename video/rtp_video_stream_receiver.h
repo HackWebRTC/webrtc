@@ -177,6 +177,68 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   std::vector<webrtc::RtpSource> GetSources() const;
 
  private:
+  // Used for buffering RTCP feedback messages and sending them all together.
+  // Note:
+  // 1. Key frame requests and NACKs are mutually exclusive, with the
+  //    former taking precedence over the latter.
+  // 2. Loss notifications are orthogonal to either. (That is, may be sent
+  //    alongside either.)
+  class RtcpFeedbackBuffer : public KeyFrameRequestSender,
+                             public NackSender,
+                             public LossNotificationSender {
+   public:
+    RtcpFeedbackBuffer(KeyFrameRequestSender* key_frame_request_sender,
+                       NackSender* nack_sender,
+                       LossNotificationSender* loss_notification_sender);
+
+    ~RtcpFeedbackBuffer() override = default;
+
+    // KeyFrameRequestSender implementation.
+    void RequestKeyFrame() override;
+
+    // NackSender implementation.
+    void SendNack(const std::vector<uint16_t>& sequence_numbers) override;
+    void SendNack(const std::vector<uint16_t>& sequence_numbers,
+                  bool buffering_allowed) override;
+
+    // LossNotificationSender implementation.
+    void SendLossNotification(uint16_t last_decoded_seq_num,
+                              uint16_t last_received_seq_num,
+                              bool decodability_flag) override;
+
+    // Send all RTCP feedback messages buffered thus far.
+    void SendBufferedRtcpFeedback();
+
+   private:
+    KeyFrameRequestSender* const key_frame_request_sender_;
+    NackSender* const nack_sender_;
+    LossNotificationSender* const loss_notification_sender_;
+
+    // NACKs are accessible from two threads due to nack_module_ being a module.
+    rtc::CriticalSection cs_;
+
+    // Key-frame-request-related state.
+    bool request_key_frame_ RTC_GUARDED_BY(cs_);
+
+    // NACK-related state.
+    std::vector<uint16_t> nack_sequence_numbers_ RTC_GUARDED_BY(cs_);
+
+    // LNTF-related state.
+    struct LossNotificationState {
+      LossNotificationState(uint16_t last_decoded_seq_num,
+                            uint16_t last_received_seq_num,
+                            bool decodability_flag)
+          : last_decoded_seq_num(last_decoded_seq_num),
+            last_received_seq_num(last_received_seq_num),
+            decodability_flag(decodability_flag) {}
+
+      uint16_t last_decoded_seq_num;
+      uint16_t last_received_seq_num;
+      bool decodability_flag;
+    };
+    absl::optional<LossNotificationState> lntf_state_ RTC_GUARDED_BY(cs_);
+  };
+
   // Entry point doing non-stats work for a received packet. Called
   // for the same packet both before and after RED decapsulation.
   void ReceivePacket(const RtpPacketReceived& packet);
@@ -206,11 +268,13 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
 
   const std::unique_ptr<RtpRtcp> rtp_rtcp_;
 
-  // Members for the new jitter buffer experiment.
   video_coding::OnCompleteFrameCallback* complete_frame_callback_;
   KeyFrameRequestSender* const keyframe_request_sender_;
+
+  RtcpFeedbackBuffer rtcp_feedback_buffer_;
   std::unique_ptr<NackModule> nack_module_;
   std::unique_ptr<LossNotificationController> loss_notification_controller_;
+
   rtc::scoped_refptr<video_coding::PacketBuffer> packet_buffer_;
   std::unique_ptr<video_coding::RtpFrameReferenceFinder> reference_finder_;
   rtc::CriticalSection last_seq_num_cs_;

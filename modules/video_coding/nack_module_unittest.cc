@@ -28,6 +28,11 @@ class TestNackModule : public ::testing::Test,
         keyframes_requested_(0) {}
 
   void SendNack(const std::vector<uint16_t>& sequence_numbers) override {
+    RTC_NOTREACHED();
+  }
+
+  void SendNack(const std::vector<uint16_t>& sequence_numbers,
+                bool buffering_allowed) override {
     sent_nacks_.insert(sent_nacks_.end(), sequence_numbers.begin(),
                        sequence_numbers.end());
   }
@@ -303,6 +308,11 @@ class TestNackModuleWithFieldTrial : public ::testing::Test,
         keyframes_requested_(0) {}
 
   void SendNack(const std::vector<uint16_t>& sequence_numbers) override {
+    RTC_NOTREACHED();
+  }
+
+  void SendNack(const std::vector<uint16_t>& sequence_numbers,
+                bool buffering_allowed) override {
     sent_nacks_.insert(sent_nacks_.end(), sequence_numbers.begin(),
                        sequence_numbers.end());
   }

@@ -75,6 +75,83 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
 
 static const int kPacketLogIntervalMs = 10000;
 
+RtpVideoStreamReceiver::RtcpFeedbackBuffer::RtcpFeedbackBuffer(
+    KeyFrameRequestSender* key_frame_request_sender,
+    NackSender* nack_sender,
+    LossNotificationSender* loss_notification_sender)
+    : key_frame_request_sender_(key_frame_request_sender),
+      nack_sender_(nack_sender),
+      loss_notification_sender_(loss_notification_sender),
+      request_key_frame_(false) {
+  RTC_DCHECK(key_frame_request_sender_);
+  RTC_DCHECK(nack_sender_);
+  RTC_DCHECK(loss_notification_sender_);
+}
+
+void RtpVideoStreamReceiver::RtcpFeedbackBuffer::RequestKeyFrame() {
+  rtc::CritScope lock(&cs_);
+  request_key_frame_ = true;
+}
+
+void RtpVideoStreamReceiver::RtcpFeedbackBuffer::SendNack(
+    const std::vector<uint16_t>& sequence_numbers) {
+  RTC_NOTREACHED();
+}
+
+void RtpVideoStreamReceiver::RtcpFeedbackBuffer::SendNack(
+    const std::vector<uint16_t>& sequence_numbers,
+    bool buffering_allowed) {
+  RTC_DCHECK(!sequence_numbers.empty());
+  rtc::CritScope lock(&cs_);
+  nack_sequence_numbers_.insert(nack_sequence_numbers_.end(),
+                                sequence_numbers.cbegin(),
+                                sequence_numbers.cend());
+  if (!buffering_allowed) {
+    // Note that while *buffering* is not allowed, *batching* is, meaning that
+    // previously buffered messages may be sent along with the current message.
+    SendBufferedRtcpFeedback();
+  }
+}
+
+void RtpVideoStreamReceiver::RtcpFeedbackBuffer::SendLossNotification(
+    uint16_t last_decoded_seq_num,
+    uint16_t last_received_seq_num,
+    bool decodability_flag) {
+  rtc::CritScope lock(&cs_);
+  RTC_DCHECK(lntf_state_)
+      << "SendLossNotification() called twice in a row with no call to "
+         "SendBufferedRtcpFeedback() in between.";
+  lntf_state_ = absl::make_optional<LossNotificationState>(
+      last_decoded_seq_num, last_received_seq_num, decodability_flag);
+}
+
+// TODO(bugs.webrtc.org/10336): Make SendBufferedRtcpFeedback() actually
+// set everything, then send it all together.
+void RtpVideoStreamReceiver::RtcpFeedbackBuffer::SendBufferedRtcpFeedback() {
+  bool request_key_frame = false;
+  std::vector<uint16_t> nack_sequence_numbers;
+  absl::optional<LossNotificationState> lntf_state;
+
+  {
+    rtc::CritScope lock(&cs_);
+    std::swap(request_key_frame, request_key_frame_);
+    std::swap(nack_sequence_numbers, nack_sequence_numbers_);
+    std::swap(lntf_state, lntf_state_);
+  }
+
+  if (request_key_frame) {
+    key_frame_request_sender_->RequestKeyFrame();
+  } else if (!nack_sequence_numbers.empty()) {
+    nack_sender_->SendNack(nack_sequence_numbers, true);
+  }
+
+  if (lntf_state) {
+    loss_notification_sender_->SendLossNotification(
+        lntf_state->last_decoded_seq_num, lntf_state->last_received_seq_num,
+        lntf_state->decodability_flag);
+  }
+}
+
 RtpVideoStreamReceiver::RtpVideoStreamReceiver(
     Clock* clock,
     Transport* transport,
@@ -105,6 +182,9 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
                                     receive_stats_proxy)),
       complete_frame_callback_(complete_frame_callback),
       keyframe_request_sender_(keyframe_request_sender),
+      // TODO(bugs.webrtc.org/10336): Let |rtcp_feedback_buffer_| communicate
+      // directly with |rtp_rtcp_|.
+      rtcp_feedback_buffer_(this, nack_sender, this),
       has_received_frame_(false),
       frames_decryptable_(false) {
   constexpr bool remb_candidate = true;
@@ -148,11 +228,13 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
 
   if (config_.rtp.lntf.enabled) {
     loss_notification_controller_ =
-        absl::make_unique<LossNotificationController>(this, this);
+        absl::make_unique<LossNotificationController>(&rtcp_feedback_buffer_,
+                                                      &rtcp_feedback_buffer_);
   }
 
   if (config_.rtp.nack.rtp_history_ms != 0) {
-    nack_module_ = absl::make_unique<NackModule>(clock_, nack_sender, this);
+    nack_module_ = absl::make_unique<NackModule>(clock_, &rtcp_feedback_buffer_,
+                                                 &rtcp_feedback_buffer_);
     process_thread_->RegisterModule(nack_module_.get(), RTC_FROM_HERE);
   }
 
@@ -269,6 +351,7 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
 
   if (packet.sizeBytes == 0) {
     NotifyReceiverOfEmptyPacket(packet.seqNum);
+    rtcp_feedback_buffer_.SendBufferedRtcpFeedback();
     return 0;
   }
 
@@ -283,7 +366,8 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
 
     switch (tracker_.CopyAndFixBitstream(&packet)) {
       case video_coding::H264SpsPpsTracker::kRequestKeyframe:
-        RequestKeyFrame();
+        rtcp_feedback_buffer_.RequestKeyFrame();
+        rtcp_feedback_buffer_.SendBufferedRtcpFeedback();
         RTC_FALLTHROUGH();
       case video_coding::H264SpsPpsTracker::kDrop:
         return 0;
@@ -297,6 +381,7 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
     packet.dataPtr = data;
   }
 
+  rtcp_feedback_buffer_.SendBufferedRtcpFeedback();
   packet_buffer_->InsertPacket(&packet);
   return 0;
 }
@@ -380,6 +465,9 @@ void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
 }
 
 void RtpVideoStreamReceiver::RequestKeyFrame() {
+  // TODO(bugs.webrtc.org/10336): Allow the sender to ignore key frame requests
+  // issued by anything other than the LossNotificationController if it (the
+  // sender) is relying on LNTF alone.
   if (keyframe_request_sender_) {
     keyframe_request_sender_->RequestKeyFrame();
   } else {
@@ -428,14 +516,18 @@ void RtpVideoStreamReceiver::OnAssembledFrame(
         descriptor->FrameDependenciesDiffs());
   }
 
-  // Request a key frame as soon as possible.
+  // If frames arrive before a key frame, they would not be decodable.
+  // In that case, request a key frame ASAP.
   if (!has_received_frame_) {
-    has_received_frame_ = true;
     if (frame->FrameType() != VideoFrameType::kVideoFrameKey) {
-      // TODO(bugs.webrtc.org/10336): Allow the sender to ignore these messages
-      // if it is relying on LNTF alone.
-      RequestKeyFrame();
+      // |loss_notification_controller_|, if present, would have already
+      // requested a key frame when the first packet for the non-key frame
+      // had arrived, so no need to replicate the request.
+      if (!loss_notification_controller_) {
+        RequestKeyFrame();
+      }
     }
+    has_received_frame_ = true;
   }
 
   if (buffered_frame_decryptor_ == nullptr) {
