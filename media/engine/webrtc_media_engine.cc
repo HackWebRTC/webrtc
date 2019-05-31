@@ -15,9 +15,6 @@
 #include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "api/task_queue/global_task_queue_factory.h"
-#include "api/video/builtin_video_bitrate_allocator_factory.h"
-#include "api/video_codecs/video_decoder_factory.h"
-#include "api/video_codecs/video_encoder_factory.h"
 #include "media/engine/webrtc_voice_engine.h"
 #include "system_wrappers/include/field_trial.h"
 

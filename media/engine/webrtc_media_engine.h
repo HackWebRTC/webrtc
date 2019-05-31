@@ -15,19 +15,18 @@
 #include <string>
 #include <vector>
 
+#include "api/audio/audio_mixer.h"
+#include "api/audio_codecs/audio_decoder_factory.h"
+#include "api/audio_codecs/audio_encoder_factory.h"
+#include "api/bitrate_constraints.h"
+#include "api/rtp_parameters.h"
 #include "api/task_queue/task_queue_factory.h"
-#include "call/call.h"
+#include "api/video_codecs/video_decoder_factory.h"
+#include "api/video_codecs/video_encoder_factory.h"
+#include "media/base/codec.h"
 #include "media/base/media_engine.h"
 #include "modules/audio_device/include/audio_device.h"
-
-namespace webrtc {
-class AudioDecoderFactory;
-class AudioMixer;
-class AudioProcessing;
-class VideoDecoderFactory;
-class VideoEncoderFactory;
-class VideoBitrateAllocatorFactory;
-}  // namespace webrtc
+#include "modules/audio_processing/include/audio_processing.h"
 
 namespace cricket {
 
