@@ -12,16 +12,14 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
-#include "api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/call/call_factory_interface.h"
 #include "api/peer_connection_interface.h"
+#include "api/rtc_event_log/rtc_event_log_factory.h"
 #include "api/scoped_refptr.h"
-#include "api/video_codecs/builtin_video_decoder_factory.h"
-#include "api/video_codecs/builtin_video_encoder_factory.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "call/simulated_network.h"
-#include "logging/rtc_event_log/rtc_event_log_factory.h"
 #include "media/engine/webrtc_media_engine.h"
+#include "media/engine/webrtc_media_engine_defaults.h"
 #include "modules/audio_device/include/test_audio_device.h"
 #include "p2p/client/basic_port_allocator.h"
 #include "pc/peer_connection_wrapper.h"
@@ -56,20 +54,22 @@ rtc::scoped_refptr<PeerConnectionFactoryInterface> CreatePeerConnectionFactory(
     rtc::Thread* signaling_thread,
     rtc::Thread* network_thread) {
   PeerConnectionFactoryDependencies pcf_deps;
-  pcf_deps.call_factory = webrtc::CreateCallFactory();
-  pcf_deps.event_log_factory = webrtc::CreateRtcEventLogFactory();
+  pcf_deps.task_queue_factory = CreateDefaultTaskQueueFactory();
+  pcf_deps.call_factory = CreateCallFactory();
+  pcf_deps.event_log_factory =
+      absl::make_unique<RtcEventLogFactory>(pcf_deps.task_queue_factory.get());
   pcf_deps.network_thread = network_thread;
   pcf_deps.signaling_thread = signaling_thread;
-  pcf_deps.media_engine = cricket::WebRtcMediaEngineFactory::Create(
-      TestAudioDeviceModule::CreateTestAudioDeviceModule(
-          TestAudioDeviceModule::CreatePulsedNoiseCapturer(kMaxAptitude,
-                                                           kSamplingFrequency),
-          TestAudioDeviceModule::CreateDiscardRenderer(kSamplingFrequency)),
-      webrtc::CreateBuiltinAudioEncoderFactory(),
-      webrtc::CreateBuiltinAudioDecoderFactory(),
-      webrtc::CreateBuiltinVideoEncoderFactory(),
-      webrtc::CreateBuiltinVideoDecoderFactory(), /*audio_mixer=*/nullptr,
-      webrtc::AudioProcessingBuilder().Create());
+  cricket::MediaEngineDependencies media_deps;
+  media_deps.task_queue_factory = pcf_deps.task_queue_factory.get();
+  media_deps.adm = TestAudioDeviceModule::Create(
+      media_deps.task_queue_factory,
+      TestAudioDeviceModule::CreatePulsedNoiseCapturer(kMaxAptitude,
+                                                       kSamplingFrequency),
+      TestAudioDeviceModule::CreateDiscardRenderer(kSamplingFrequency),
+      /*speed=*/1.f);
+  SetMediaEngineDefaults(&media_deps);
+  pcf_deps.media_engine = cricket::CreateMediaEngine(std::move(media_deps));
   return CreateModularPeerConnectionFactory(std::move(pcf_deps));
 }
 
