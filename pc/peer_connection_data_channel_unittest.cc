@@ -414,7 +414,7 @@ TEST_P(PeerConnectionDataChannelTest, MediaTransportWithoutSdesFails) {
   EXPECT_EQ(nullptr, caller);
 }
 
-TEST_P(PeerConnectionDataChannelTest, ModernSdpSyntaxByDefault) {
+TEST_P(PeerConnectionDataChannelTest, DISABLED_ModernSdpSyntaxByDefault) {
   PeerConnectionInterface::RTCOfferAnswerOptions options;
   auto caller = CreatePeerConnectionWithDataChannel();
   auto offer = caller->CreateOffer(options);
