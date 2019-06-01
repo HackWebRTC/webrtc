@@ -222,7 +222,9 @@ class UDPPort : public Port {
       const rtc::SocketAddress& stun_server_addr,
       const rtc::SocketAddress& stun_reflected_addr);
   void OnStunBindingOrResolveRequestFailed(
-      const rtc::SocketAddress& stun_server_addr);
+      const rtc::SocketAddress& stun_server_addr,
+      int error_code,
+      const std::string& reason);
 
   // Sends STUN requests to the server.
   void OnSendPacket(const void* data, size_t size, StunRequest* req);

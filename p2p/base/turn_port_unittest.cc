@@ -66,6 +66,7 @@ static const SocketAddress kTurnIPv6IntAddr(
 static const SocketAddress kTurnUdpIPv6IntAddr(
     "2400:4030:1:2c00:be30:abcd:efab:cdef",
     cricket::TURN_SERVER_PORT);
+static const SocketAddress kTurnInvalidAddr("www.google.invalid", 3478);
 
 static const char kCandidateFoundation[] = "foundation";
 static const char kIceUfrag1[] = "TESTICEUFRAG0001";
@@ -176,6 +177,10 @@ class TurnPortTest : public ::testing::Test,
 
   void OnTurnPortComplete(Port* port) { turn_ready_ = true; }
   void OnTurnPortError(Port* port) { turn_error_ = true; }
+  void OnCandidateError(Port* port,
+                        const cricket::IceCandidateErrorEvent& event) {
+    error_event_ = event;
+  }
   void OnTurnUnknownAddress(PortInterface* port,
                             const SocketAddress& addr,
                             ProtocolType proto,
@@ -316,6 +321,8 @@ class TurnPortTest : public ::testing::Test,
     turn_port_->SignalPortComplete.connect(this,
                                            &TurnPortTest::OnTurnPortComplete);
     turn_port_->SignalPortError.connect(this, &TurnPortTest::OnTurnPortError);
+    turn_port_->SignalCandidateError.connect(this,
+                                             &TurnPortTest::OnCandidateError);
     turn_port_->SignalUnknownAddress.connect(
         this, &TurnPortTest::OnTurnUnknownAddress);
     turn_port_->SignalCreatePermissionResult.connect(
@@ -755,6 +762,7 @@ class TurnPortTest : public ::testing::Test,
   std::vector<rtc::Buffer> udp_packets_;
   rtc::PacketOptions options;
   std::unique_ptr<webrtc::TurnCustomizer> turn_customizer_;
+  cricket::IceCandidateErrorEvent error_event_;
 };
 
 TEST_F(TurnPortTest, TestTurnPortType) {
@@ -800,6 +808,17 @@ TEST_F(TurnPortTest, TestTurnAllocate) {
   EXPECT_EQ(kTurnUdpExtAddr.ipaddr(),
             turn_port_->Candidates()[0].address().ipaddr());
   EXPECT_NE(0, turn_port_->Candidates()[0].address().port());
+}
+
+// Test bad credentials.
+TEST_F(TurnPortTest, TestTurnBadCredentials) {
+  CreateTurnPort(kTurnUsername, "bad", kTurnUdpProtoAddr);
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_SIMULATED_WAIT(turn_error_, kSimulatedRtt * 3, fake_clock_);
+  ASSERT_EQ(0U, turn_port_->Candidates().size());
+  EXPECT_EQ_SIMULATED_WAIT(error_event_.error_code, STUN_ERROR_UNAUTHORIZED,
+                           kSimulatedRtt * 3, fake_clock_);
+  EXPECT_EQ(error_event_.error_text, "Unauthorized");
 }
 
 // Testing a normal UDP allocation using TCP connection.
@@ -861,6 +880,15 @@ TEST_F(TurnPortTest,
   // Shouldn't take more than 1 RTT to realize the bound address isn't the one
   // expected.
   EXPECT_TRUE_SIMULATED_WAIT(turn_error_, kSimulatedRtt, fake_clock_);
+  EXPECT_EQ_SIMULATED_WAIT(error_event_.error_code, STUN_ERROR_GLOBAL_FAILURE,
+                           kSimulatedRtt, fake_clock_);
+  ASSERT_NE(error_event_.error_text.find("."), std::string::npos);
+  ASSERT_NE(
+      error_event_.host_candidate.find(kLocalAddr2.HostAsSensitiveURIString()),
+      std::string::npos);
+  std::string server_url =
+      "turn:" + kTurnTcpIntAddr.ToString() + "?transport=tcp";
+  ASSERT_EQ(error_event_.url, server_url);
 }
 
 // A caveat for the above logic: if the socket ends up bound to one of the IPs
@@ -921,14 +949,18 @@ TEST_F(TurnPortTest, TCPPortNotDiscardedIfBoundToTemporaryIP) {
 TEST_F(TurnPortTest, TestTurnTcpOnAddressResolveFailure) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TCP);
   CreateTurnPort(kTurnUsername, kTurnPassword,
-                 ProtocolAddress(rtc::SocketAddress("www.google.invalid", 3478),
-                                 PROTO_TCP));
+                 ProtocolAddress(kTurnInvalidAddr, PROTO_TCP));
   turn_port_->PrepareAddress();
   EXPECT_TRUE_WAIT(turn_error_, kResolverTimeout);
   // As VSS doesn't provide a DNS resolution, name resolve will fail. TurnPort
   // will proceed in creating a TCP socket which will fail as there is no
   // server on the above domain and error will be set to SOCKET_ERROR.
   EXPECT_EQ(SOCKET_ERROR, turn_port_->error());
+  EXPECT_EQ_SIMULATED_WAIT(error_event_.error_code, SERVER_NOT_REACHABLE_ERROR,
+                           kSimulatedRtt, fake_clock_);
+  std::string server_url =
+      "turn:" + kTurnInvalidAddr.ToString() + "?transport=tcp";
+  ASSERT_EQ(error_event_.url, server_url);
 }
 
 // Testing turn port will attempt to create TLS socket on address resolution
@@ -936,8 +968,7 @@ TEST_F(TurnPortTest, TestTurnTcpOnAddressResolveFailure) {
 TEST_F(TurnPortTest, TestTurnTlsOnAddressResolveFailure) {
   turn_server_.AddInternalSocket(kTurnTcpIntAddr, PROTO_TLS);
   CreateTurnPort(kTurnUsername, kTurnPassword,
-                 ProtocolAddress(rtc::SocketAddress("www.google.invalid", 3478),
-                                 PROTO_TLS));
+                 ProtocolAddress(kTurnInvalidAddr, PROTO_TLS));
   turn_port_->PrepareAddress();
   EXPECT_TRUE_WAIT(turn_error_, kResolverTimeout);
   EXPECT_EQ(SOCKET_ERROR, turn_port_->error());
@@ -947,8 +978,7 @@ TEST_F(TurnPortTest, TestTurnTlsOnAddressResolveFailure) {
 // and return allocate failure.
 TEST_F(TurnPortTest, TestTurnUdpOnAddressResolveFailure) {
   CreateTurnPort(kTurnUsername, kTurnPassword,
-                 ProtocolAddress(rtc::SocketAddress("www.google.invalid", 3478),
-                                 PROTO_UDP));
+                 ProtocolAddress(kTurnInvalidAddr, PROTO_UDP));
   turn_port_->PrepareAddress();
   EXPECT_TRUE_WAIT(turn_error_, kResolverTimeout);
   // Error from turn port will not be socket error.
