@@ -565,6 +565,9 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   const cricket::Candidate& last_candidate_gathered() const {
     return last_candidate_gathered_;
   }
+  const cricket::IceCandidateErrorEvent& error_event() const {
+    return error_event_;
+  }
 
   // Sets the mDNS responder for the owned fake network manager and keeps a
   // reference to the responder.
@@ -958,6 +961,13 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
     SendIceMessage(candidate->sdp_mid(), candidate->sdp_mline_index(), ice_sdp);
     last_candidate_gathered_ = candidate->candidate();
   }
+  void OnIceCandidateError(const std::string& host_candidate,
+                           const std::string& url,
+                           int error_code,
+                           const std::string& error_text) override {
+    error_event_ = cricket::IceCandidateErrorEvent(host_candidate, url,
+                                                   error_code, error_text);
+  }
   void OnDataChannel(
       rtc::scoped_refptr<DataChannelInterface> data_channel) override {
     RTC_LOG(LS_INFO) << debug_name_ << ": OnDataChannel";
@@ -990,6 +1000,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
   int signaling_delay_ms_ = 0;
   bool signal_ice_candidates_ = true;
   cricket::Candidate last_candidate_gathered_;
+  cricket::IceCandidateErrorEvent error_event_;
 
   // Store references to the video sources we've created, so that we can stop
   // them, if required.
@@ -5152,6 +5163,46 @@ TEST_P(PeerConnectionIntegrationTest, RegatherAfterChangingIceTransportType) {
 
   // PeerConnections must be closed before ScopedFieldTrials goes out of scope.
   ClosePeerConnections();
+}
+
+TEST_P(PeerConnectionIntegrationTest, OnIceCandidateError) {
+  webrtc::test::ScopedFieldTrials field_trials(
+      "WebRTC-GatherOnCandidateFilterChanged/Enabled/");
+  static const rtc::SocketAddress turn_server_internal_address{"88.88.88.0",
+                                                               3478};
+  static const rtc::SocketAddress turn_server_external_address{"88.88.88.1", 0};
+
+  CreateTurnServer(turn_server_internal_address, turn_server_external_address);
+
+  webrtc::PeerConnectionInterface::IceServer ice_server;
+  ice_server.urls.push_back("turn:88.88.88.0:3478");
+  ice_server.username = "test";
+  ice_server.password = "123";
+
+  PeerConnectionInterface::RTCConfiguration caller_config;
+  caller_config.servers.push_back(ice_server);
+  caller_config.type = webrtc::PeerConnectionInterface::kRelay;
+  caller_config.continual_gathering_policy = PeerConnection::GATHER_CONTINUALLY;
+
+  PeerConnectionInterface::RTCConfiguration callee_config;
+  callee_config.servers.push_back(ice_server);
+  callee_config.type = webrtc::PeerConnectionInterface::kRelay;
+  callee_config.continual_gathering_policy = PeerConnection::GATHER_CONTINUALLY;
+
+  ASSERT_TRUE(
+      CreatePeerConnectionWrappersWithConfig(caller_config, callee_config));
+
+  // Do normal offer/answer and wait for ICE to complete.
+  ConnectFakeSignaling();
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  EXPECT_EQ_WAIT(401, caller()->error_event().error_code, kDefaultTimeout);
+  EXPECT_EQ("Unauthorized", caller()->error_event().error_text);
+  EXPECT_EQ("turn:88.88.88.0:3478?transport=udp", caller()->error_event().url);
+  EXPECT_NE(std::string::npos,
+            caller()->error_event().host_candidate.find(":"));
 }
 
 INSTANTIATE_TEST_SUITE_P(PeerConnectionIntegrationTest,

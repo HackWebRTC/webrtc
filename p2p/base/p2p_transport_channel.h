@@ -307,6 +307,8 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
                      const std::vector<PortInterface*>& ports);
   void OnCandidatesReady(PortAllocatorSession* session,
                          const std::vector<Candidate>& candidates);
+  void OnCandidateError(PortAllocatorSession* session,
+                        const IceCandidateErrorEvent& event);
   void OnCandidatesRemoved(PortAllocatorSession* session,
                            const std::vector<Candidate>& candidates);
   void OnCandidatesAllocationDone(PortAllocatorSession* session);

@@ -79,7 +79,10 @@ class StunBindingRequest : public StunRequest {
                         << " reason=" << attr->reason();
     }
 
-    port_->OnStunBindingOrResolveRequestFailed(server_addr_);
+    port_->OnStunBindingOrResolveRequestFailed(
+        server_addr_, attr ? attr->number() : STUN_ERROR_GLOBAL_FAILURE,
+        attr ? attr->reason()
+             : "STUN binding response with no error code attribute.");
 
     int64_t now = rtc::TimeMillis();
     if (WithinLifetime(now) &&
@@ -93,8 +96,9 @@ class StunBindingRequest : public StunRequest {
     RTC_LOG(LS_ERROR) << "Binding request timed out from "
                       << port_->GetLocalAddress().ToSensitiveString() << " ("
                       << port_->Network()->name() << ")";
-
-    port_->OnStunBindingOrResolveRequestFailed(server_addr_);
+    port_->OnStunBindingOrResolveRequestFailed(
+        server_addr_, SERVER_NOT_REACHABLE_ERROR,
+        "STUN allocate request timed out.");
   }
 
  private:
@@ -104,6 +108,7 @@ class StunBindingRequest : public StunRequest {
     int lifetime = port_->stun_keepalive_lifetime();
     return lifetime < 0 || rtc::TimeDiff(now, start_time_) <= lifetime;
   }
+
   UDPPort* port_;
   const rtc::SocketAddress server_addr_;
 
@@ -445,7 +450,8 @@ void UDPPort::OnResolveResult(const rtc::SocketAddress& input, int error) {
     RTC_LOG(LS_WARNING) << ToString()
                         << ": StunPort: stun host lookup received error "
                         << error;
-    OnStunBindingOrResolveRequestFailed(input);
+    OnStunBindingOrResolveRequestFailed(input, SERVER_NOT_REACHABLE_ERROR,
+                                        "STUN host lookup received error.");
     return;
   }
 
@@ -469,8 +475,10 @@ void UDPPort::SendStunBindingRequest(const rtc::SocketAddress& stun_addr) {
     } else {
       // Since we can't send stun messages to the server, we should mark this
       // port ready.
-      RTC_LOG(LS_WARNING) << "STUN server address is incompatible.";
-      OnStunBindingOrResolveRequestFailed(stun_addr);
+      const char* reason = "STUN server address is incompatible.";
+      RTC_LOG(LS_WARNING) << reason;
+      OnStunBindingOrResolveRequestFailed(stun_addr, SERVER_NOT_REACHABLE_ERROR,
+                                          reason);
     }
   }
 }
@@ -530,7 +538,14 @@ void UDPPort::OnStunBindingRequestSucceeded(
 }
 
 void UDPPort::OnStunBindingOrResolveRequestFailed(
-    const rtc::SocketAddress& stun_server_addr) {
+    const rtc::SocketAddress& stun_server_addr,
+    int error_code,
+    const std::string& reason) {
+  rtc::StringBuilder url;
+  url << "stun:" << stun_server_addr.ToString();
+  SignalCandidateError(
+      this, IceCandidateErrorEvent(GetLocalAddress().ToSensitiveString(),
+                                   url.str(), error_code, reason));
   if (bind_request_failed_servers_.find(stun_server_addr) !=
       bind_request_failed_servers_.end()) {
     return;

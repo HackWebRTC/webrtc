@@ -15,6 +15,7 @@
 #include <memory>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/types/optional.h"
@@ -130,6 +131,23 @@ struct ProtocolAddress {
   bool operator!=(const ProtocolAddress& o) const { return !(*this == o); }
 };
 
+struct IceCandidateErrorEvent {
+  IceCandidateErrorEvent() = default;
+  IceCandidateErrorEvent(std::string host_candidate,
+                         std::string url,
+                         int error_code,
+                         std::string error_text)
+      : host_candidate(std::move(host_candidate)),
+        url(std::move(url)),
+        error_code(error_code),
+        error_text(std::move(error_text)) {}
+
+  std::string host_candidate;
+  std::string url;
+  int error_code = 0;
+  std::string error_text;
+};
+
 typedef std::set<rtc::SocketAddress> ServerAddresses;
 
 // Represents a local communication mechanism that can be used to create
@@ -227,9 +245,10 @@ class Port : public PortInterface,
   // Fired when candidates are discovered by the port. When all candidates
   // are discovered that belong to port SignalAddressReady is fired.
   sigslot::signal2<Port*, const Candidate&> SignalCandidateReady;
-
   // Provides all of the above information in one handy object.
   const std::vector<Candidate>& Candidates() const override;
+  // Fired when candidate discovery failed using certain server.
+  sigslot::signal2<Port*, const IceCandidateErrorEvent&> SignalCandidateError;
 
   // SignalPortComplete is sent when port completes the task of candidates
   // allocation.

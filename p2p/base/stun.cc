@@ -61,6 +61,7 @@ const char STUN_ERROR_REASON_SERVER_ERROR[] = "Server Error";
 const char TURN_MAGIC_COOKIE_VALUE[] = {'\x72', '\xC6', '\x4B', '\xC6'};
 const char EMPTY_TRANSACTION_ID[] = "0000000000000000";
 const uint32_t STUN_FINGERPRINT_XOR_VALUE = 0x5354554E;
+const int SERVER_NOT_REACHABLE_ERROR = 701;
 
 // StunMessage
 
