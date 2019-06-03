@@ -78,6 +78,24 @@ rtc_source_set("rtp_headers") {
   ]
 }
 
+rtc_source_set("rtp_packet_info") {
+  visibility = [ "*" ]
+  sources = [
+    "rtp_packet_info.cc",
+    "rtp_packet_info.h",
+    "rtp_packet_infos.h",
+  ]
+  deps = [
+    ":array_view",
+    ":refcountedbase",
+    ":rtp_headers",
+    ":scoped_refptr",
+    "..:webrtc_common",
+    "../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
 rtc_static_library("libjingle_peerconnection_api") {
   visibility = [ "*" ]
   cflags = []
@@ -148,6 +166,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     ":libjingle_logging_api",
     ":network_state_predictor_api",
     ":rtc_stats_api",
+    ":rtp_packet_info",
     ":scoped_refptr",
     "audio:audio_mixer_api",
     "audio_codecs:audio_codecs_api",
@@ -811,6 +830,8 @@ if (rtc_include_tests) {
       "function_view_unittest.cc",
       "rtc_error_unittest.cc",
       "rtc_event_log_output_file_unittest.cc",
+      "rtp_packet_info_unittest.cc",
+      "rtp_packet_infos_unittest.cc",
       "rtp_parameters_unittest.cc",
       "test/loopback_media_transport_unittest.cc",
     ]
@@ -821,6 +842,7 @@ if (rtc_include_tests) {
       ":libjingle_peerconnection_api",
       ":loopback_media_transport",
       ":rtc_event_log_output_file",
+      ":rtp_packet_info",
       "../rtc_base:checks",
       "../rtc_base:gunit_helpers",
       "../rtc_base:rtc_base_approved",
