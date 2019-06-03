@@ -18,17 +18,6 @@
 
 namespace webrtc {
 
-namespace {
-
-FileWrapper FileWrapperFromPlatformFile(rtc::PlatformFile platform_file) {
-  if (platform_file == rtc::kInvalidPlatformFileValue)
-    return FileWrapper();
-
-  return FileWrapper(rtc::FdopenPlatformFileForWriting(platform_file));
-}
-
-}  // namespace
-
 // Together with the assumption of no single Write() would ever be called on
 // an input with length greater-than-or-equal-to (max(size_t) / 2), this
 // guarantees no overflow of the check for remaining file capacity in Write().
@@ -59,11 +48,6 @@ RtcEventLogOutputFile::RtcEventLogOutputFile(FileWrapper file,
     RTC_LOG(LS_ERROR) << "Invalid file. WebRTC event log not started.";
   }
 }
-
-RtcEventLogOutputFile::RtcEventLogOutputFile(rtc::PlatformFile platform_file,
-                                             size_t max_size_bytes)
-    : RtcEventLogOutputFile(FileWrapperFromPlatformFile(platform_file),
-                            max_size_bytes) {}
 
 bool RtcEventLogOutputFile::IsActive() const {
   return IsActiveInternal();

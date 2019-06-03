@@ -451,6 +451,12 @@ static const char kDtlsSdesFallbackSdp[] =
     "inline:NzB4d1BINUAvLEw6UzF3WSJ+PSdFcGdUJShpX1Zj|2^20|1:32 "
     "dummy_session_params\r\n";
 
+class RtcEventLogOutputNull final : public RtcEventLogOutput {
+ public:
+  bool IsActive() const override { return true; }
+  bool Write(const std::string& output) override { return true; }
+};
+
 using ::cricket::StreamParams;
 using ::testing::Exactly;
 using ::testing::Values;
@@ -3453,11 +3459,9 @@ TEST_P(PeerConnectionInterfaceTest,
   // The RtcEventLog will be reset when the PeerConnection is closed.
   pc_->Close();
 
-  rtc::PlatformFile file = 0;
-  int64_t max_size_bytes = 1024;
-  EXPECT_FALSE(pc_->StartRtcEventLog(
-      absl::make_unique<webrtc::RtcEventLogOutputFile>(file, max_size_bytes),
-      webrtc::RtcEventLog::kImmediateOutput));
+  EXPECT_FALSE(
+      pc_->StartRtcEventLog(absl::make_unique<webrtc::RtcEventLogOutputNull>(),
+                            webrtc::RtcEventLog::kImmediateOutput));
   pc_->StopRtcEventLog();
 }
 

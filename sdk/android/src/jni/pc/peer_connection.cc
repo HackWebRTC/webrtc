@@ -750,8 +750,13 @@ static jboolean JNI_PeerConnection_StartRtcEventLog(
   const size_t max_size = (max_size_bytes < 0)
                               ? RtcEventLog::kUnlimitedOutput
                               : rtc::saturated_cast<size_t>(max_size_bytes);
+  FILE* f = fdopen(file_descriptor, "wb");
+  if (!f) {
+    close(file_descriptor);
+    return false;
+  }
   return ExtractNativePC(jni, j_pc)->StartRtcEventLog(
-      absl::make_unique<RtcEventLogOutputFile>(file_descriptor, max_size));
+      absl::make_unique<RtcEventLogOutputFile>(f, max_size));
 }
 
 static void JNI_PeerConnection_StopRtcEventLog(

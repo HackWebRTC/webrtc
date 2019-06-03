@@ -16,7 +16,6 @@
 #include <string>
 
 #include "api/rtc_event_log_output.h"
-#include "rtc_base/platform_file.h"  // Can't neatly forward PlatformFile.
 #include "rtc_base/system/file_wrapper.h"
 
 namespace webrtc {
@@ -32,10 +31,6 @@ class RtcEventLogOutputFile final : public RtcEventLogOutput {
   // Limited-size output file (by FILE*). This class takes ownership
   // of the FILE*, and closes it on destruction.
   RtcEventLogOutputFile(FILE* file, size_t max_size_bytes);
-
-  // TODO(bugs.webrtc.org/6463): Deprecated, delete together with the
-  // corresponding PeerConnection::StartRtcEventLog override.
-  RtcEventLogOutputFile(rtc::PlatformFile file, size_t max_size_bytes);
 
   ~RtcEventLogOutputFile() override = default;
 

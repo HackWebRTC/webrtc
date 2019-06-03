@@ -536,9 +536,8 @@ void PeerConnectionDelegateAdapter::OnRemoveTrack(
     RTCLogError(@"Event logging already started.");
     return NO;
   }
-  int fd = open(filePath.UTF8String, O_WRONLY | O_CREAT | O_TRUNC,
-                S_IRUSR | S_IWUSR);
-  if (fd < 0) {
+  FILE *f = fopen(filePath.UTF8String, "wb");
+  if (!f) {
     RTCLogError(@"Error opening file: %@. Error: %d", filePath, errno);
     return NO;
   }
@@ -547,7 +546,7 @@ void PeerConnectionDelegateAdapter::OnRemoveTrack(
                                                  rtc::saturated_cast<size_t>(maxSizeInBytes);
 
   _hasStartedRtcEventLog = _peerConnection->StartRtcEventLog(
-      absl::make_unique<webrtc::RtcEventLogOutputFile>(fd, max_size));
+      absl::make_unique<webrtc::RtcEventLogOutputFile>(f, max_size));
   return _hasStartedRtcEventLog;
 }
 
