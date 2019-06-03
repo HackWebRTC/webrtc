@@ -198,13 +198,6 @@ bool JsepSessionDescription::Initialize(
   return true;
 }
 
-bool JsepSessionDescription::Initialize(
-    cricket::SessionDescription* description,
-    const std::string& session_id,
-    const std::string& session_version) {
-  return Initialize(absl::WrapUnique(description), session_id, session_version);
-}
-
 bool JsepSessionDescription::AddCandidate(
     const IceCandidateInterface* candidate) {
   if (!candidate)

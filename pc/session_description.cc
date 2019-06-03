@@ -99,10 +99,6 @@ std::unique_ptr<SessionDescription> SessionDescription::Clone() const {
   return absl::WrapUnique(new SessionDescription(*this));
 }
 
-SessionDescription* SessionDescription::Copy() const {
-  return Clone().release();
-}
-
 const ContentInfo* SessionDescription::GetContentByName(
     const std::string& name) const {
   return FindContentInfoByName(contents_, name);
