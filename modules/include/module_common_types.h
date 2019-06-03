@@ -100,7 +100,8 @@ class LossNotificationSender {
 
   virtual void SendLossNotification(uint16_t last_decoded_seq_num,
                                     uint16_t last_received_seq_num,
-                                    bool decodability_flag) = 0;
+                                    bool decodability_flag,
+                                    bool buffering_allowed) = 0;
 };
 
 }  // namespace webrtc

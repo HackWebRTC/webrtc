@@ -127,7 +127,8 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   // Implements LossNotificationSender.
   void SendLossNotification(uint16_t last_decoded_seq_num,
                             uint16_t last_received_seq_num,
-                            bool decodability_flag) override;
+                            bool decodability_flag,
+                            bool buffering_allowed) override;
 
   bool IsUlpfecEnabled() const;
   bool IsRetransmissionsEnabled() const;
@@ -204,7 +205,8 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
     // LossNotificationSender implementation.
     void SendLossNotification(uint16_t last_decoded_seq_num,
                               uint16_t last_received_seq_num,
-                              bool decodability_flag) override;
+                              bool decodability_flag,
+                              bool buffering_allowed) override;
 
     // Send all RTCP feedback messages buffered thus far.
     void SendBufferedRtcpFeedback();

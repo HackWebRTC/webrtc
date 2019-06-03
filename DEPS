@@ -1633,6 +1633,7 @@ include_rules = [
   "+absl/algorithm/container.h",
   "+absl/base/attributes.h",
   "+absl/base/config.h",
+  "+absl/base/macros.h",
   "+absl/container/inlined_vector.h",
   "+absl/memory/memory.h",
   "+absl/meta/type_traits.h",

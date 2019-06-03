@@ -95,7 +95,9 @@ class LossNotificationControllerBaseTest : public ::testing::Test,
   // LossNotificationSender implementation.
   void SendLossNotification(uint16_t last_decoded_seq_num,
                             uint16_t last_received_seq_num,
-                            bool decodability_flag) override {
+                            bool decodability_flag,
+                            bool buffering_allowed) override {
+    EXPECT_TRUE(buffering_allowed);  // (Flag useful elsewhere.)
     EXPECT_FALSE(LastKeyFrameRequest());
     EXPECT_FALSE(LastLossNotification());
     last_loss_notification_.emplace(last_decoded_seq_num, last_received_seq_num,

@@ -117,7 +117,8 @@ class RTCPSender {
   int32_t SendLossNotification(const FeedbackState& feedback_state,
                                uint16_t last_decoded_seq_num,
                                uint16_t last_received_seq_num,
-                               bool decodability_flag);
+                               bool decodability_flag,
+                               bool buffering_allowed);
 
   void SetRemb(int64_t bitrate_bps, std::vector<uint32_t> ssrcs);
 

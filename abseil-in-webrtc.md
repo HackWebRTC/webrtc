@@ -22,8 +22,9 @@ adds the first use.
   `absl::is_trivially_destructible` from `absl/meta/type_traits.h`.
 * `absl::variant` and related stuff from `absl/types/variant.h`.
 * The functions in `absl/algorithm/algorithm.h` and
-  `absl/algorithm/container.h`
-* The macros in `absl/base/attributes.h` and `absl/base/config.h`
+  `absl/algorithm/container.h`.
+* The macros in `absl/base/attributes.h`, `absl/base/config.h` and
+  `absl/base/macros.h`.
 
 ## **Disallowed**
 

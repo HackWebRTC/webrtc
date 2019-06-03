@@ -105,6 +105,7 @@ class RtcpPacketParser {
     return &transport_feedback_;
   }
   uint32_t sender_ssrc() const { return sender_ssrc_; }
+  size_t processed_rtcp_packets() const { return processed_rtcp_packets_; }
 
  private:
   PacketCounter<rtcp::App> app_;
@@ -124,6 +125,7 @@ class RtcpPacketParser {
   PacketCounter<rtcp::Tmmbr> tmmbr_;
   PacketCounter<rtcp::TransportFeedback> transport_feedback_;
   uint32_t sender_ssrc_ = 0;
+  size_t processed_rtcp_packets_ = 0;
 };
 
 }  // namespace test

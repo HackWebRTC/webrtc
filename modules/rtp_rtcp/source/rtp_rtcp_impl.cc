@@ -754,10 +754,11 @@ int32_t ModuleRtpRtcpImpl::RequestKeyFrame() {
 
 int32_t ModuleRtpRtcpImpl::SendLossNotification(uint16_t last_decoded_seq_num,
                                                 uint16_t last_received_seq_num,
-                                                bool decodability_flag) {
+                                                bool decodability_flag,
+                                                bool buffering_allowed) {
   return rtcp_sender_.SendLossNotification(
       GetFeedbackState(), last_decoded_seq_num, last_received_seq_num,
-      decodability_flag);
+      decodability_flag, buffering_allowed);
 }
 
 void ModuleRtpRtcpImpl::SetRemoteSSRC(const uint32_t ssrc) {

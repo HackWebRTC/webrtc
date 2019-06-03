@@ -181,7 +181,7 @@ void LossNotificationController::HandleLoss(uint16_t last_received_seq_num,
                        last_decodable_non_discardable_->first_seq_num));
     loss_notification_sender_->SendLossNotification(
         last_decodable_non_discardable_->first_seq_num, last_received_seq_num,
-        decodability_flag);
+        decodability_flag, /*buffering_allowed=*/true);
   } else {
     key_frame_request_sender_->RequestKeyFrame();
   }

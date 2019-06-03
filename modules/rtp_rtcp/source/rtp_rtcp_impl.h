@@ -263,7 +263,8 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   int32_t SendLossNotification(uint16_t last_decoded_seq_num,
                                uint16_t last_received_seq_num,
-                               bool decodability_flag) override;
+                               bool decodability_flag,
+                               bool buffering_allowed) override;
 
   bool LastReceivedNTP(uint32_t* NTPsecs,
                        uint32_t* NTPfrac,
