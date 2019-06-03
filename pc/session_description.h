@@ -16,6 +16,7 @@
 #include <iosfwd>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/memory/memory.h"
@@ -96,6 +97,9 @@ class MediaContentDescription {
   virtual bool has_codecs() const = 0;
 
   virtual MediaContentDescription* Copy() const = 0;
+  virtual std::unique_ptr<MediaContentDescription> Clone() const {
+    return absl::WrapUnique(Copy());
+  }
 
   // |protocol| is the expected media transport protocol, such as RTP/AVPF,
   // RTP/SAVPF or SCTP/DTLS.
@@ -526,22 +530,29 @@ constexpr MediaProtocolType NS_JINGLE_DRAFT_SCTP = MediaProtocolType::kSctp;
 
 // Represents a session description section. Most information about the section
 // is stored in the description, which is a subclass of MediaContentDescription.
-struct ContentInfo {
-  friend class SessionDescription;
-
+// Owns the description.
+class ContentInfo {
+ public:
   explicit ContentInfo(MediaProtocolType type) : type(type) {}
+  ~ContentInfo();
+  // Copy
+  ContentInfo(const ContentInfo& o);
+  ContentInfo& operator=(const ContentInfo& o);
+  ContentInfo(ContentInfo&& o) = default;
+  ContentInfo& operator=(ContentInfo&& o) = default;
 
   // Alias for |name|.
   std::string mid() const { return name; }
   void set_mid(const std::string& mid) { this->name = mid; }
 
   // Alias for |description|.
-  MediaContentDescription* media_description() { return description; }
-  const MediaContentDescription* media_description() const {
-    return description;
-  }
-  void set_media_description(MediaContentDescription* desc) {
-    description = desc;
+  MediaContentDescription* media_description();
+  const MediaContentDescription* media_description() const;
+
+  void set_media_description(std::unique_ptr<MediaContentDescription> desc) {
+    description_ = std::move(desc);
+    // For backwards compatibility only.
+    description = description_.get();
   }
 
   // TODO(bugs.webrtc.org/8620): Rename this to mid.
@@ -549,8 +560,13 @@ struct ContentInfo {
   MediaProtocolType type;
   bool rejected = false;
   bool bundle_only = false;
-  // TODO(bugs.webrtc.org/8620): Switch to the getter and setter, and make this
-  // private.
+
+ private:
+  friend class SessionDescription;
+  std::unique_ptr<MediaContentDescription> description_;
+
+ public:
+  // Kept for backwards compatibility only.
   MediaContentDescription* description = nullptr;
 };
 
@@ -629,17 +645,40 @@ class SessionDescription {
   // Adds a content to this description. Takes ownership of ContentDescription*.
   void AddContent(const std::string& name,
                   MediaProtocolType type,
-                  MediaContentDescription* description);
+                  std::unique_ptr<MediaContentDescription> description);
   void AddContent(const std::string& name,
                   MediaProtocolType type,
                   bool rejected,
-                  MediaContentDescription* description);
+                  std::unique_ptr<MediaContentDescription> description);
   void AddContent(const std::string& name,
                   MediaProtocolType type,
                   bool rejected,
                   bool bundle_only,
-                  MediaContentDescription* description);
-  void AddContent(ContentInfo* content);
+                  std::unique_ptr<MediaContentDescription> description);
+  void AddContent(ContentInfo&& content);
+  RTC_DEPRECATED void AddContent(const std::string& name,
+                                 MediaProtocolType type,
+                                 MediaContentDescription* description) {
+    AddContent(name, type, absl::WrapUnique(description));
+  }
+  RTC_DEPRECATED void AddContent(const std::string& name,
+                                 MediaProtocolType type,
+                                 bool rejected,
+                                 MediaContentDescription* description) {
+    AddContent(name, type, rejected, absl::WrapUnique(description));
+  }
+  RTC_DEPRECATED void AddContent(const std::string& name,
+                                 MediaProtocolType type,
+                                 bool rejected,
+                                 bool bundle_only,
+                                 MediaContentDescription* description) {
+    AddContent(name, type, rejected, bundle_only,
+               absl::WrapUnique(description));
+  }
+
+  RTC_DEPRECATED void AddContent(ContentInfo* content) {
+    AddContent(std::move(*content));
+  }
 
   bool RemoveContentByName(const std::string& name);
 

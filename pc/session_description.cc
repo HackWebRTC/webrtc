@@ -91,21 +91,12 @@ SessionDescription::SessionDescription() = default;
 SessionDescription::SessionDescription(const SessionDescription&) = default;
 
 SessionDescription::~SessionDescription() {
-  for (ContentInfos::iterator content = contents_.begin();
-       content != contents_.end(); ++content) {
-    delete content->description;
-  }
 }
 
 std::unique_ptr<SessionDescription> SessionDescription::Clone() const {
-  // Copy the non-special portions using the private copy constructor.
-  auto copy = absl::WrapUnique(new SessionDescription(*this));
-  // Copy all ContentDescriptions.
-  for (ContentInfos::iterator content = copy->contents_.begin();
-       content != copy->contents().end(); ++content) {
-    content->description = content->description->Copy();
-  }
-  return copy;
+  // Copy using the private copy constructor.
+  // This will clone the descriptions using ContentInfo's copy constructor.
+  return absl::WrapUnique(new SessionDescription(*this));
 }
 
 SessionDescription* SessionDescription::Copy() const {
@@ -150,71 +141,79 @@ const ContentInfo* SessionDescription::FirstContent() const {
   return (contents_.empty()) ? NULL : &(*contents_.begin());
 }
 
-void SessionDescription::AddContent(const std::string& name,
-                                    MediaProtocolType type,
-                                    MediaContentDescription* description) {
+void SessionDescription::AddContent(
+    const std::string& name,
+    MediaProtocolType type,
+    std::unique_ptr<MediaContentDescription> description) {
   ContentInfo content(type);
   content.name = name;
-  content.description = description;
-  AddContent(&content);
+  content.set_media_description(std::move(description));
+  AddContent(std::move(content));
 }
 
-void SessionDescription::AddContent(const std::string& name,
-                                    MediaProtocolType type,
-                                    bool rejected,
-                                    MediaContentDescription* description) {
+void SessionDescription::AddContent(
+    const std::string& name,
+    MediaProtocolType type,
+    bool rejected,
+    std::unique_ptr<MediaContentDescription> description) {
   ContentInfo content(type);
   content.name = name;
   content.rejected = rejected;
-  content.description = description;
-  AddContent(&content);
+  content.set_media_description(std::move(description));
+  AddContent(std::move(content));
 }
 
-void SessionDescription::AddContent(const std::string& name,
-                                    MediaProtocolType type,
-                                    bool rejected,
-                                    bool bundle_only,
-                                    MediaContentDescription* description) {
+void SessionDescription::AddContent(
+    const std::string& name,
+    MediaProtocolType type,
+    bool rejected,
+    bool bundle_only,
+    std::unique_ptr<MediaContentDescription> description) {
   ContentInfo content(type);
   content.name = name;
   content.rejected = rejected;
   content.bundle_only = bundle_only;
-  content.description = description;
-  AddContent(&content);
+  content.set_media_description(std::move(description));
+  AddContent(std::move(content));
 }
 
-void SessionDescription::AddContent(ContentInfo* content) {
+void SessionDescription::AddContent(ContentInfo&& content) {
   // Unwrap the as_data shim layer before using.
-  auto* description = content->media_description();
+  auto* description = content.media_description();
   bool should_delete = false;
   if (description->as_rtp_data()) {
     if (description->as_rtp_data() != description) {
-      content->set_media_description(
-          description->deprecated_as_data()->Unshim(&should_delete));
+      auto* media_description =
+          description->deprecated_as_data()->Unshim(&should_delete);
+      // If should_delete was false, the media description passed to
+      // AddContent is referenced from elsewhere, and double deletion
+      // is going to result. Don't allow this.
+      RTC_CHECK(should_delete)
+          << "Non-owned shim description passed to AddContent";
+      // Setting the media description will delete the old description.
+      content.set_media_description(absl::WrapUnique(media_description));
     }
-  }
-  if (description->as_sctp()) {
+  } else if (description->as_sctp()) {
     if (description->as_sctp() != description) {
-      content->set_media_description(
-          description->deprecated_as_data()->Unshim(&should_delete));
+      auto* media_description =
+          description->deprecated_as_data()->Unshim(&should_delete);
+      RTC_CHECK(should_delete)
+          << "Non-owned shim description passed to AddContent";
+      content.set_media_description(absl::WrapUnique(media_description));
     }
-  }
-  if (should_delete) {
-    delete description;
   }
   if (extmap_allow_mixed()) {
     // Mixed support on session level overrides setting on media level.
-    content->description->set_extmap_allow_mixed_enum(
+    content.media_description()->set_extmap_allow_mixed_enum(
         MediaContentDescription::kSession);
   }
-  contents_.push_back(std::move(*content));
+  contents_.push_back(std::move(content));
 }
 
 bool SessionDescription::RemoveContentByName(const std::string& name) {
   for (ContentInfos::iterator content = contents_.begin();
        content != contents_.end(); ++content) {
     if (content->name == name) {
-      delete content->description;
       contents_.erase(content);
       return true;
     }
@@ -699,6 +698,57 @@ void DataContentDescription::AddCodecs(const std::vector<DataCodec>& codecs) {
     EnsureIsRtp();
     real_description_->as_rtp_data()->AddCodecs(codecs);
   }
+}
+
+ContentInfo::~ContentInfo() {
+  if (description_ && description_.get() != description) {
+    // If description_ is null, we assume that a move operator
+    // has been applied.
+    RTC_LOG(LS_ERROR) << "ContentInfo::description has been updated by "
+                      << "assignment. This usage is deprecated.";
+    description_.reset(description);  // ensure that it is destroyed.
+  }
+}
+
+// Copy operator.
+ContentInfo::ContentInfo(const ContentInfo& o)
+    : name(o.name),
+      type(o.type),
+      rejected(o.rejected),
+      bundle_only(o.bundle_only),
+      description_(o.description_->Clone()),
+      description(description_.get()) {}
+
+ContentInfo& ContentInfo::operator=(const ContentInfo& o) {
+  name = o.name;
+  type = o.type;
+  rejected = o.rejected;
+  bundle_only = o.bundle_only;
+  description_ = o.description_->Clone();
+  description = description_.get();
+  return *this;
+}
+
+const MediaContentDescription* ContentInfo::media_description() const {
+  if (description_.get() != description) {
+    // Someone's updated |description|, or used a move operator
+    // on the record.
+    RTC_LOG(LS_ERROR) << "ContentInfo::description has been updated by "
+                      << "assignment. This usage is deprecated.";
+    const_cast<ContentInfo*>(this)->description_.reset(description);
+  }
+  return description_.get();
+}
+
+MediaContentDescription* ContentInfo::media_description() {
+  if (description_.get() != description) {
+    // Someone's updated |description|, or used a move operator
+    // on the record.
+    RTC_LOG(LS_ERROR) << "ContentInfo::description has been updated by "
+                      << "assignment. This usage is deprecated.";
+    description_.reset(description);
+  }
+  return description_.get();
 }
 
 }  // namespace cricket

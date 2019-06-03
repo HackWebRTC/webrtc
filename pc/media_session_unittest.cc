@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <memory>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "absl/algorithm/container.h"
@@ -3268,14 +3269,22 @@ TEST(MediaSessionDescription, CopySessionDescription) {
   SessionDescription source;
   cricket::ContentGroup group(cricket::CN_AUDIO);
   source.AddGroup(group);
-  AudioContentDescription* acd(new AudioContentDescription());
+  std::unique_ptr<AudioContentDescription> acd =
+      absl::make_unique<AudioContentDescription>();
   acd->set_codecs(MAKE_VECTOR(kAudioCodecs1));
   acd->AddLegacyStream(1);
-  source.AddContent(cricket::CN_AUDIO, MediaProtocolType::kRtp, acd);
-  VideoContentDescription* vcd(new VideoContentDescription());
+  std::unique_ptr<AudioContentDescription> acd_passed =
+      absl::WrapUnique(acd->Copy());
+  source.AddContent(cricket::CN_AUDIO, MediaProtocolType::kRtp,
+                    std::move(acd_passed));
+  std::unique_ptr<VideoContentDescription> vcd =
+      absl::make_unique<VideoContentDescription>();
   vcd->set_codecs(MAKE_VECTOR(kVideoCodecs1));
   vcd->AddLegacyStream(2);
-  source.AddContent(cricket::CN_VIDEO, MediaProtocolType::kRtp, vcd);
+  std::unique_ptr<VideoContentDescription> vcd_passed =
+      absl::WrapUnique(vcd->Copy());
+  source.AddContent(cricket::CN_VIDEO, MediaProtocolType::kRtp,
+                    std::move(vcd_passed));
 
   std::unique_ptr<SessionDescription> copy = source.Clone();
   ASSERT_TRUE(copy.get() != NULL);
@@ -4184,7 +4193,7 @@ TEST_P(MediaProtocolTest, TestAudioVideoAcceptance) {
   std::unique_ptr<SessionDescription> offer = f1_.CreateOffer(opts, nullptr);
   ASSERT_TRUE(offer.get() != nullptr);
   // Set the protocol for all the contents.
-  for (auto content : offer.get()->contents()) {
+  for (auto& content : offer.get()->contents()) {
     content.media_description()->set_protocol(GetParam());
   }
   std::unique_ptr<SessionDescription> answer =

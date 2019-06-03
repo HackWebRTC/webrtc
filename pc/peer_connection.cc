@@ -652,11 +652,11 @@ void ReportSimulcastApiVersion(const char* name,
   bool has_legacy = false;
   bool has_spec_compliant = false;
   for (const ContentInfo& content : session.contents()) {
-    if (!content.description) {
+    if (!content.media_description()) {
       continue;
     }
-    has_spec_compliant |= content.description->HasSimulcast();
-    for (const StreamParams& sp : content.description->streams()) {
+    has_spec_compliant |= content.media_description()->HasSimulcast();
+    for (const StreamParams& sp : content.media_description()->streams()) {
       has_legacy |= sp.has_ssrc_group(cricket::kSimSsrcGroupSemantics);
     }
   }
@@ -2435,12 +2435,13 @@ static absl::string_view GetDefaultMidForPlanB(cricket::MediaType media_type) {
 void PeerConnection::FillInMissingRemoteMids(
     cricket::SessionDescription* new_remote_description) {
   RTC_DCHECK(new_remote_description);
+  const cricket::ContentInfos no_infos;
   const cricket::ContentInfos& local_contents =
       (local_description() ? local_description()->description()->contents()
-                           : cricket::ContentInfos());
+                           : no_infos);
   const cricket::ContentInfos& remote_contents =
       (remote_description() ? remote_description()->description()->contents()
-                            : cricket::ContentInfos());
+                            : no_infos);
   for (size_t i = 0; i < new_remote_description->contents().size(); ++i) {
     cricket::ContentInfo& content = new_remote_description->contents()[i];
     if (!content.name.empty()) {
@@ -4469,12 +4470,13 @@ void PeerConnection::GetOptionsForUnifiedPlanOffer(
   // Rules for generating an offer are dictated by JSEP sections 5.2.1 (Initial
   // Offers) and 5.2.2 (Subsequent Offers).
   RTC_DCHECK_EQ(session_options->media_description_options.size(), 0);
+  const ContentInfos no_infos;
   const ContentInfos& local_contents =
       (local_description() ? local_description()->description()->contents()
-                           : ContentInfos());
+                           : no_infos);
   const ContentInfos& remote_contents =
       (remote_description() ? remote_description()->description()->contents()
-                            : ContentInfos());
+                            : no_infos);
   // The mline indices that can be recycled. New transceivers should reuse these
   // slots first.
   std::queue<size_t> recycleable_mline_indices;
@@ -6725,7 +6727,7 @@ RTCError PeerConnection::ValidateSessionDescription(
     // same type. With Unified Plan, there can only be at most one track per
     // media section.
     for (const ContentInfo& content : sdesc->description()->contents()) {
-      const MediaContentDescription& desc = *content.description;
+      const MediaContentDescription& desc = *content.media_description();
       if ((desc.type() == cricket::MEDIA_TYPE_AUDIO ||
            desc.type() == cricket::MEDIA_TYPE_VIDEO) &&
           desc.streams().size() > 1u) {

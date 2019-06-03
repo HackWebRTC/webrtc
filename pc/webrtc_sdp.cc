@@ -2798,7 +2798,7 @@ bool ParseMediaDescription(
     desc->AddContent(content_name,
                      cricket::IsDtlsSctp(protocol) ? MediaProtocolType::kSctp
                                                    : MediaProtocolType::kRtp,
-                     content_rejected, bundle_only, content.release());
+                     content_rejected, bundle_only, std::move(content));
     // Create TransportInfo with the media level "ice-pwd" and "ice-ufrag".
     desc->AddTransportInfo(TransportInfo(content_name, transport));
   }

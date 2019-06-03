@@ -1018,7 +1018,8 @@ class WebRtcSdpTest : public ::testing::Test {
     audio_desc_->AddStream(audio_stream);
     rtc::SocketAddress audio_addr("74.125.127.126", 2345);
     audio_desc_->set_connection_address(audio_addr);
-    desc_.AddContent(kAudioContentName, MediaProtocolType::kRtp, audio_desc_);
+    desc_.AddContent(kAudioContentName, MediaProtocolType::kRtp,
+                     absl::WrapUnique(audio_desc_));
 
     // VideoContentDescription
     video_desc_ = CreateVideoContentDescription();
@@ -1033,7 +1034,8 @@ class WebRtcSdpTest : public ::testing::Test {
     video_desc_->AddStream(video_stream);
     rtc::SocketAddress video_addr("74.125.224.39", 3457);
     video_desc_->set_connection_address(video_addr);
-    desc_.AddContent(kVideoContentName, MediaProtocolType::kRtp, video_desc_);
+    desc_.AddContent(kVideoContentName, MediaProtocolType::kRtp,
+                     absl::WrapUnique(video_desc_));
 
     // TransportInfo
     desc_.AddTransportInfo(TransportInfo(
@@ -1214,8 +1216,10 @@ class WebRtcSdpTest : public ::testing::Test {
 
     desc_.RemoveContentByName(kAudioContentName);
     desc_.RemoveContentByName(kVideoContentName);
-    desc_.AddContent(kAudioContentName, MediaProtocolType::kRtp, audio_desc_);
-    desc_.AddContent(kVideoContentName, MediaProtocolType::kRtp, video_desc_);
+    desc_.AddContent(kAudioContentName, MediaProtocolType::kRtp,
+                     absl::WrapUnique(audio_desc_));
+    desc_.AddContent(kVideoContentName, MediaProtocolType::kRtp,
+                     absl::WrapUnique(video_desc_));
 
     ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                   jdesc_.session_version()));
@@ -1234,7 +1238,8 @@ class WebRtcSdpTest : public ::testing::Test {
       audio_track_2.ssrcs.push_back(kAudioTrack2Ssrc);
     }
     audio_desc_2->AddStream(audio_track_2);
-    desc_.AddContent(kAudioContentName2, MediaProtocolType::kRtp, audio_desc_2);
+    desc_.AddContent(kAudioContentName2, MediaProtocolType::kRtp,
+                     absl::WrapUnique(audio_desc_2));
     desc_.AddTransportInfo(TransportInfo(
         kAudioContentName2, TransportDescription(kUfragVoice2, kPwdVoice2)));
     // Video track 2, in stream 2.
@@ -1247,7 +1252,8 @@ class WebRtcSdpTest : public ::testing::Test {
       video_track_2.ssrcs.push_back(kVideoTrack2Ssrc);
     }
     video_desc_2->AddStream(video_track_2);
-    desc_.AddContent(kVideoContentName2, MediaProtocolType::kRtp, video_desc_2);
+    desc_.AddContent(kVideoContentName2, MediaProtocolType::kRtp,
+                     absl::WrapUnique(video_desc_2));
     desc_.AddTransportInfo(TransportInfo(
         kVideoContentName2, TransportDescription(kUfragVideo2, kPwdVideo2)));
 
@@ -1261,7 +1267,8 @@ class WebRtcSdpTest : public ::testing::Test {
       video_track_3.ssrcs.push_back(kVideoTrack3Ssrc);
     }
     video_desc_3->AddStream(video_track_3);
-    desc_.AddContent(kVideoContentName3, MediaProtocolType::kRtp, video_desc_3);
+    desc_.AddContent(kVideoContentName3, MediaProtocolType::kRtp,
+                     absl::WrapUnique(video_desc_3));
     desc_.AddTransportInfo(TransportInfo(
         kVideoContentName3, TransportDescription(kUfragVideo3, kPwdVideo3)));
     desc_.set_msid_signaling(cricket::kMsidSignalingMediaSection);
@@ -1305,7 +1312,8 @@ class WebRtcSdpTest : public ::testing::Test {
     audio_track_2.set_stream_ids({kStreamId1, kStreamId2});
     audio_track_2.ssrcs.push_back(kAudioTrack2Ssrc);
     audio_desc_2->AddStream(audio_track_2);
-    desc_.AddContent(kAudioContentName2, MediaProtocolType::kRtp, audio_desc_2);
+    desc_.AddContent(kAudioContentName2, MediaProtocolType::kRtp,
+                     absl::WrapUnique(audio_desc_2));
     desc_.AddTransportInfo(TransportInfo(
         kAudioContentName2, TransportDescription(kUfragVoice2, kPwdVoice2)));
 
@@ -1317,7 +1325,8 @@ class WebRtcSdpTest : public ::testing::Test {
     audio_track_3.set_stream_ids({});
     audio_track_3.ssrcs.push_back(kAudioTrack3Ssrc);
     audio_desc_3->AddStream(audio_track_3);
-    desc_.AddContent(kAudioContentName3, MediaProtocolType::kRtp, audio_desc_3);
+    desc_.AddContent(kAudioContentName3, MediaProtocolType::kRtp,
+                     absl::WrapUnique(audio_desc_3));
     desc_.AddTransportInfo(TransportInfo(
         kAudioContentName3, TransportDescription(kUfragVoice3, kPwdVoice3)));
     desc_.set_msid_signaling(msid_signaling);
@@ -1339,7 +1348,8 @@ class WebRtcSdpTest : public ::testing::Test {
     audio_track.id = kAudioTrackId1;
     audio_track.set_stream_ids({kStreamId1});
     audio_desc->AddStream(audio_track);
-    desc_.AddContent(kAudioContentName, MediaProtocolType::kRtp, audio_desc);
+    desc_.AddContent(kAudioContentName, MediaProtocolType::kRtp,
+                     absl::WrapUnique(audio_desc));
 
     // Enable signaling a=msid lines.
     desc_.set_msid_signaling(cricket::kMsidSignalingMediaSection);
@@ -1363,7 +1373,7 @@ class WebRtcSdpTest : public ::testing::Test {
   template <class MCD>
   void CompareMediaContentDescription(const MCD* cd1, const MCD* cd2) {
     // type
-    EXPECT_EQ(cd1->type(), cd1->type());
+    EXPECT_EQ(cd1->type(), cd2->type());
 
     // content direction
     EXPECT_EQ(cd1->direction(), cd2->direction());
@@ -1685,8 +1695,10 @@ class WebRtcSdpTest : public ::testing::Test {
         RtpExtension(kExtmapUri, kExtmapId, encrypted));
     desc_.RemoveContentByName(kAudioContentName);
     desc_.RemoveContentByName(kVideoContentName);
-    desc_.AddContent(kAudioContentName, MediaProtocolType::kRtp, audio_desc_);
-    desc_.AddContent(kVideoContentName, MediaProtocolType::kRtp, video_desc_);
+    desc_.AddContent(kAudioContentName, MediaProtocolType::kRtp,
+                     absl::WrapUnique(audio_desc_));
+    desc_.AddContent(kVideoContentName, MediaProtocolType::kRtp,
+                     absl::WrapUnique(video_desc_));
   }
 
   void RemoveCryptos() {
@@ -1697,7 +1709,8 @@ class WebRtcSdpTest : public ::testing::Test {
   // Removes everything in StreamParams from the session description that is
   // used for a=ssrc lines.
   void RemoveSsrcSignalingFromStreamParams() {
-    for (cricket::ContentInfo content_info : jdesc_.description()->contents()) {
+    for (cricket::ContentInfo& content_info :
+         jdesc_.description()->contents()) {
       // With Unified Plan there should be one StreamParams per m= section.
       StreamParams& stream =
           content_info.media_description()->mutable_streams()[0];
@@ -1761,9 +1774,9 @@ class WebRtcSdpTest : public ::testing::Test {
     desc_.RemoveContentByName(kAudioContentName);
     desc_.RemoveContentByName(kVideoContentName);
     desc_.AddContent(kAudioContentName, MediaProtocolType::kRtp, audio_rejected,
-                     audio_desc_);
+                     absl::WrapUnique(audio_desc_));
     desc_.AddContent(kVideoContentName, MediaProtocolType::kRtp, video_rejected,
-                     video_desc_);
+                     absl::WrapUnique(video_desc_));
     SetIceUfragPwd(kAudioContentName, audio_rejected ? "" : kUfragVoice,
                    audio_rejected ? "" : kPwdVoice);
     SetIceUfragPwd(kVideoContentName, video_rejected ? "" : kUfragVideo,
@@ -1787,7 +1800,7 @@ class WebRtcSdpTest : public ::testing::Test {
     sctp_desc_->set_protocol(cricket::kMediaProtocolUdpDtlsSctp);
     sctp_desc_->set_port(kDefaultSctpPort);
     desc_.AddContent(kDataContentName, MediaProtocolType::kSctp,
-                     data.release());
+                     std::move(data));
     desc_.AddTransportInfo(TransportInfo(
         kDataContentName, TransportDescription(kUfragData, kPwdData)));
   }
@@ -1808,7 +1821,8 @@ class WebRtcSdpTest : public ::testing::Test {
         CryptoParams(1, "AES_CM_128_HMAC_SHA1_80",
                      "inline:FvLcvU2P3ZWmQxgPAgcDu7Zl9vftYElFOjEzhWs5", ""));
     data_desc_->set_protocol(cricket::kMediaProtocolSavpf);
-    desc_.AddContent(kDataContentName, MediaProtocolType::kRtp, data.release());
+    desc_.AddContent(kDataContentName, MediaProtocolType::kRtp,
+                     std::move(data));
     desc_.AddTransportInfo(TransportInfo(
         kDataContentName, TransportDescription(kUfragData, kPwdData)));
   }
@@ -1841,9 +1855,9 @@ class WebRtcSdpTest : public ::testing::Test {
     desc_.RemoveContentByName(kAudioContentName);
     desc_.RemoveContentByName(kVideoContentName);
     desc_.AddContent(kAudioContentName, MediaProtocolType::kRtp, audio_rejected,
-                     audio_desc_);
+                     absl::WrapUnique(audio_desc_));
     desc_.AddContent(kVideoContentName, MediaProtocolType::kRtp, video_rejected,
-                     video_desc_);
+                     absl::WrapUnique(video_desc_));
     SetIceUfragPwd(kAudioContentName, audio_rejected ? "" : kUfragVoice,
                    audio_rejected ? "" : kPwdVoice);
     SetIceUfragPwd(kVideoContentName, video_rejected ? "" : kUfragVideo,

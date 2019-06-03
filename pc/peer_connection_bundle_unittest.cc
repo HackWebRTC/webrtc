@@ -687,11 +687,13 @@ TEST_P(PeerConnectionBundleTest,
   ASSERT_GE(offer->description()->contents().size(), 2U);
   offer->description()
       ->contents()[0]
-      .description->mutable_streams()[0]
+      .media_description()
+      ->mutable_streams()[0]
       .ssrcs[0] = 1111222;
   offer->description()
       ->contents()[1]
-      .description->mutable_streams()[0]
+      .media_description()
+      ->mutable_streams()[0]
       .ssrcs[0] = 1111222;
   EXPECT_TRUE(
       caller->SetLocalDescription(CloneSessionDescription(offer.get())));

@@ -876,13 +876,12 @@ void JsepTransportController::RemoveTransportForMid(const std::string& mid) {
 
 cricket::JsepTransportDescription
 JsepTransportController::CreateJsepTransportDescription(
-    cricket::ContentInfo content_info,
-    cricket::TransportInfo transport_info,
+    const cricket::ContentInfo& content_info,
+    const cricket::TransportInfo& transport_info,
     const std::vector<int>& encrypted_extension_ids,
     int rtp_abs_sendtime_extn_id) {
   const cricket::MediaContentDescription* content_desc =
-      static_cast<const cricket::MediaContentDescription*>(
-          content_info.description);
+      content_info.media_description();
   RTC_DCHECK(content_desc);
   bool rtcp_mux_enabled = content_info.type == cricket::MediaProtocolType::kSctp
                               ? true
@@ -916,8 +915,7 @@ bool JsepTransportController::ShouldUpdateBundleGroup(
 std::vector<int> JsepTransportController::GetEncryptedHeaderExtensionIds(
     const cricket::ContentInfo& content_info) {
   const cricket::MediaContentDescription* content_desc =
-      static_cast<const cricket::MediaContentDescription*>(
-          content_info.description);
+      content_info.media_description();
 
   if (!config_.crypto_options.srtp.enable_encrypted_rtp_header_extensions) {
     return std::vector<int>();
@@ -964,8 +962,7 @@ int JsepTransportController::GetRtpAbsSendTimeHeaderExtensionId(
   }
 
   const cricket::MediaContentDescription* content_desc =
-      static_cast<const cricket::MediaContentDescription*>(
-          content_info.description);
+      content_info.media_description();
 
   const webrtc::RtpExtension* send_time_extension =
       webrtc::RtpExtension::FindHeaderExtensionByUri(
@@ -1145,8 +1142,7 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
   }
 
   const cricket::MediaContentDescription* content_desc =
-      static_cast<const cricket::MediaContentDescription*>(
-          content_info.description);
+      content_info.media_description();
   if (certificate_ && !content_desc->cryptos().empty()) {
     return RTCError(RTCErrorType::INVALID_PARAMETER,
                     "SDES and DTLS-SRTP cannot be enabled at the same time.");

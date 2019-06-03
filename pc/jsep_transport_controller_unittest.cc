@@ -146,7 +146,7 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
     // Set RTCP-mux to be true because the default policy is "mux required".
     audio->set_rtcp_mux(true);
     description->AddContent(mid, cricket::MediaProtocolType::kRtp,
-                            /*rejected=*/false, audio.release());
+                            /*rejected=*/false, std::move(audio));
     AddTransportInfo(description, mid, ufrag, pwd, ice_mode, conn_role, cert);
   }
 
@@ -162,7 +162,7 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
     // Set RTCP-mux to be true because the default policy is "mux required".
     video->set_rtcp_mux(true);
     description->AddContent(mid, cricket::MediaProtocolType::kRtp,
-                            /*rejected=*/false, video.release());
+                            /*rejected=*/false, std::move(video));
     AddTransportInfo(description, mid, ufrag, pwd, ice_mode, conn_role, cert);
   }
 
@@ -179,7 +179,7 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
         new cricket::SctpDataContentDescription());
     data->set_rtcp_mux(true);
     description->AddContent(mid, protocol_type,
-                            /*rejected=*/false, data.release());
+                            /*rejected=*/false, std::move(data));
     AddTransportInfo(description, mid, ufrag, pwd, ice_mode, conn_role, cert);
   }
 

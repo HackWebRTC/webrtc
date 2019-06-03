@@ -261,8 +261,8 @@ class JsepTransportController : public sigslot::has_slots<> {
   void RemoveTransportForMid(const std::string& mid);
 
   cricket::JsepTransportDescription CreateJsepTransportDescription(
-      cricket::ContentInfo content_info,
-      cricket::TransportInfo transport_info,
+      const cricket::ContentInfo& content_info,
+      const cricket::TransportInfo& transport_info,
       const std::vector<int>& encrypted_extension_ids,
       int rtp_abs_sendtime_extn_id);
 
