@@ -93,7 +93,6 @@ class KeyFrameRequestSender {
 };
 
 // Interface used by LossNotificationController to communicate to RtpRtcp.
-// TODO(bugs.webrtc.org/10336): Hook up to RtpRtcp.
 class LossNotificationSender {
  public:
   virtual ~LossNotificationSender() {}

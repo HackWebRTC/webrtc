@@ -336,9 +336,6 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
       RTC_LOG(LS_WARNING)
           << "LossNotificationController does not support reordering.";
     } else {
-      // TODO(bugs.webrtc.org/10336): Coordinate with |nack_module_| to make
-      // sure that only a single RTCP packet is produced if both a LNTF as
-      // well as a NACK (or key frame request) should be issued.
       loss_notification_controller_->OnReceivedPacket(packet);
     }
   }
