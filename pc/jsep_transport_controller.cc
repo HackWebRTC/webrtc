@@ -475,7 +475,7 @@ JsepTransportController::CreateIceTransport(const std::string transport_name,
 std::unique_ptr<cricket::DtlsTransportInternal>
 JsepTransportController::CreateDtlsTransport(
     cricket::IceTransportInternal* ice,
-    std::unique_ptr<DatagramTransportInterface> datagram_transport) {
+    DatagramTransportInterface* datagram_transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
 
   std::unique_ptr<cricket::DtlsTransportInternal> dtls;
@@ -485,8 +485,7 @@ JsepTransportController::CreateDtlsTransport(
 
     // Create DTLS wrapper around DatagramTransportInterface.
     dtls = absl::make_unique<cricket::DatagramDtlsAdaptor>(
-        ice, std::move(datagram_transport), config_.crypto_options,
-        config_.event_log);
+        ice, datagram_transport, config_.crypto_options, config_.event_log);
   } else if (config_.media_transport_factory &&
              config_.use_media_transport_for_media &&
              config_.use_media_transport_for_data_channels) {
@@ -1166,7 +1165,7 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
   }
 
   std::unique_ptr<cricket::DtlsTransportInternal> rtp_dtls_transport =
-      CreateDtlsTransport(ice.get(), std::move(datagram_transport));
+      CreateDtlsTransport(ice.get(), datagram_transport.get());
 
   std::unique_ptr<cricket::DtlsTransportInternal> rtcp_dtls_transport;
   std::unique_ptr<RtpTransport> unencrypted_rtp_transport;
@@ -1217,7 +1216,8 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
           content_info.name, certificate_, std::move(ice), std::move(rtcp_ice),
           std::move(unencrypted_rtp_transport), std::move(sdes_transport),
           std::move(dtls_srtp_transport), std::move(rtp_dtls_transport),
-          std::move(rtcp_dtls_transport), std::move(media_transport));
+          std::move(rtcp_dtls_transport), std::move(media_transport),
+          std::move(datagram_transport));
 
   jsep_transport->SignalRtcpMuxActive.connect(
       this, &JsepTransportController::UpdateAggregateStates_n);

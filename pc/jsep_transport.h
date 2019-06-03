@@ -18,6 +18,7 @@
 
 #include "absl/types/optional.h"
 #include "api/candidate.h"
+#include "api/datagram_transport_interface.h"
 #include "api/jsep.h"
 #include "api/media_transport_interface.h"
 #include "p2p/base/dtls_transport.h"
@@ -93,7 +94,8 @@ class JsepTransport : public sigslot::has_slots<>,
       std::unique_ptr<webrtc::DtlsSrtpTransport> dtls_srtp_transport,
       std::unique_ptr<DtlsTransportInternal> rtp_dtls_transport,
       std::unique_ptr<DtlsTransportInternal> rtcp_dtls_transport,
-      std::unique_ptr<webrtc::MediaTransportInterface> media_transport);
+      std::unique_ptr<webrtc::MediaTransportInterface> media_transport,
+      std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport);
 
   ~JsepTransport() override;
 
@@ -222,7 +224,7 @@ class JsepTransport : public sigslot::has_slots<>,
   // Returns datagram transport, if available.
   webrtc::DatagramTransportInterface* datagram_transport() const {
     rtc::CritScope scope(&accessor_lock_);
-    return rtp_dtls_transport_->internal()->datagram_transport();
+    return datagram_transport_.get();
   }
 
   // Returns the latest media transport state.
@@ -341,6 +343,10 @@ class JsepTransport : public sigslot::has_slots<>,
 
   // Optional media transport (experimental).
   std::unique_ptr<webrtc::MediaTransportInterface> media_transport_
+      RTC_GUARDED_BY(accessor_lock_);
+
+  // Optional datagram transport (experimental).
+  std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport_
       RTC_GUARDED_BY(accessor_lock_);
 
   // If |media_transport_| is provided, this variable represents the state of

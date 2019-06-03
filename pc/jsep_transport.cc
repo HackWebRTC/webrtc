@@ -100,7 +100,8 @@ JsepTransport::JsepTransport(
     std::unique_ptr<webrtc::DtlsSrtpTransport> dtls_srtp_transport,
     std::unique_ptr<DtlsTransportInternal> rtp_dtls_transport,
     std::unique_ptr<DtlsTransportInternal> rtcp_dtls_transport,
-    std::unique_ptr<webrtc::MediaTransportInterface> media_transport)
+    std::unique_ptr<webrtc::MediaTransportInterface> media_transport,
+    std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport)
     : network_thread_(rtc::Thread::Current()),
       mid_(mid),
       local_certificate_(local_certificate),
@@ -118,14 +119,15 @@ JsepTransport::JsepTransport(
               ? new rtc::RefCountedObject<webrtc::DtlsTransport>(
                     std::move(rtcp_dtls_transport))
               : nullptr),
-      media_transport_(std::move(media_transport)) {
+      media_transport_(std::move(media_transport)),
+      datagram_transport_(std::move(datagram_transport)) {
   RTC_DCHECK(ice_transport_);
   RTC_DCHECK(rtp_dtls_transport_);
   // |rtcp_ice_transport_| must be present iff |rtcp_dtls_transport_| is
   // present.
   RTC_DCHECK_EQ((rtcp_ice_transport_ != nullptr),
                 (rtcp_dtls_transport_ != nullptr));
-  RTC_DCHECK(!datagram_transport() || !media_transport_);
+  RTC_DCHECK(!datagram_transport_ || !media_transport_);
   // Verify the "only one out of these three can be set" invariant.
   if (unencrypted_rtp_transport_) {
     RTC_DCHECK(!sdes_transport);
@@ -146,7 +148,7 @@ JsepTransport::JsepTransport(
 
 JsepTransport::~JsepTransport() {
   // Disconnect media transport state callbacks and  make sure we delete media
-  // transports before ICE.
+  // transport before ICE.
   if (media_transport_) {
     media_transport_->SetMediaTransportStateCallback(nullptr);
     media_transport_.reset();
@@ -158,6 +160,11 @@ JsepTransport::~JsepTransport() {
   if (rtcp_dtls_transport_) {
     rtcp_dtls_transport_->Clear();
   }
+
+  // Delete datagram transport before ICE, but after DTLS transport.
+  datagram_transport_.reset();
+
+  // ICE will be the last transport to be deleted.
 }
 
 webrtc::RTCError JsepTransport::SetLocalJsepTransportDescription(

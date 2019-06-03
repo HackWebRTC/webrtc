@@ -45,12 +45,12 @@ namespace cricket {
 
 DatagramDtlsAdaptor::DatagramDtlsAdaptor(
     IceTransportInternal* ice_transport,
-    std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport,
+    webrtc::DatagramTransportInterface* datagram_transport,
     const webrtc::CryptoOptions& crypto_options,
     webrtc::RtcEventLog* event_log)
     : crypto_options_(crypto_options),
       ice_transport_(ice_transport),
-      datagram_transport_(std::move(datagram_transport)),
+      datagram_transport_(datagram_transport),
       event_log_(event_log) {
   RTC_DCHECK(ice_transport_);
   RTC_DCHECK(datagram_transport_);
@@ -88,9 +88,6 @@ DatagramDtlsAdaptor::~DatagramDtlsAdaptor() {
   // Unsubscribe from Datagram Transport dinks.
   datagram_transport_->SetDatagramSink(nullptr);
   datagram_transport_->SetTransportStateCallback(nullptr);
-
-  // Make sure datagram transport is destroyed before ICE.
-  datagram_transport_.reset();
 }
 
 const webrtc::CryptoOptions& DatagramDtlsAdaptor::crypto_options() const {
@@ -245,10 +242,6 @@ bool DatagramDtlsAdaptor::SetSslMaxProtocolVersion(
 
 IceTransportInternal* DatagramDtlsAdaptor::ice_transport() {
   return ice_transport_;
-}
-
-webrtc::DatagramTransportInterface* DatagramDtlsAdaptor::datagram_transport() {
-  return datagram_transport_.get();
 }
 
 // Similar implementaton as in p2p/base/dtls_transport.cc.

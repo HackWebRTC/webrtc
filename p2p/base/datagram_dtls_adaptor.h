@@ -42,11 +42,10 @@ class DatagramDtlsAdaptor : public DtlsTransportInternal,
   // TODO(sukhanov): Taking crypto options, because DtlsTransportInternal
   // has a virtual getter crypto_options(). Consider removing getter and
   // removing crypto_options from DatagramDtlsAdaptor.
-  DatagramDtlsAdaptor(
-      IceTransportInternal* ice_transport,
-      std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport,
-      const webrtc::CryptoOptions& crypto_options,
-      webrtc::RtcEventLog* event_log);
+  DatagramDtlsAdaptor(IceTransportInternal* ice_transport,
+                      webrtc::DatagramTransportInterface* datagram_transport,
+                      const webrtc::CryptoOptions& crypto_options,
+                      webrtc::RtcEventLog* event_log);
 
   ~DatagramDtlsAdaptor() override;
 
@@ -89,7 +88,6 @@ class DatagramDtlsAdaptor : public DtlsTransportInternal,
                             size_t digest_len) override;
   bool SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version) override;
   IceTransportInternal* ice_transport() override;
-  webrtc::DatagramTransportInterface* datagram_transport() override;
 
   const std::string& transport_name() const override;
   bool writable() const override;
@@ -132,7 +130,7 @@ class DatagramDtlsAdaptor : public DtlsTransportInternal,
   webrtc::CryptoOptions crypto_options_;
   IceTransportInternal* ice_transport_;
 
-  std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport_;
+  webrtc::DatagramTransportInterface* datagram_transport_;
 
   // Current ICE writable state. Must be modified by calling set_ice_writable(),
   // which propagates change notifications.
