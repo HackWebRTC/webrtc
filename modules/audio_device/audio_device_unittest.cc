@@ -1042,6 +1042,8 @@ TEST_P(AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
   // (mainly on Windows) do not support mono.
   EXPECT_EQ(0, audio_device()->SetStereoPlayout(true));
   EXPECT_EQ(0, audio_device()->SetStereoRecording(true));
+  // Mute speakers to prevent howling.
+  EXPECT_EQ(0, audio_device()->SetSpeakerVolume(0));
   StartPlayout();
   StartRecording();
   event()->Wait(static_cast<int>(
