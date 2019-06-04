@@ -717,11 +717,13 @@ int32_t ModuleRtpRtcpImpl::SetKeyFrameRequestMethod(
 int32_t ModuleRtpRtcpImpl::RequestKeyFrame() {
   switch (key_frame_req_method_) {
     case kKeyFrameReqPliRtcp:
-      return SendRTCP(kRtcpPli);
+      SendPictureLossIndication();
+      break;
     case kKeyFrameReqFirRtcp:
-      return SendRTCP(kRtcpFir);
+      SendFullIntraRequest();
+      break;
   }
-  return -1;
+  return 0;
 }
 
 int32_t ModuleRtpRtcpImpl::SendLossNotification(uint16_t last_decoded_seq_num,

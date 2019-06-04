@@ -209,7 +209,6 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
   rtp_rtcp_->SetRTCPStatus(config_.rtp.rtcp_mode);
   rtp_rtcp_->SetSSRC(config_.rtp.local_ssrc);
   rtp_rtcp_->SetRemoteSSRC(config_.rtp.remote_ssrc);
-  rtp_rtcp_->SetKeyFrameRequestMethod(kKeyFrameReqPliRtcp);
 
   static const int kMaxPacketAgeToNack = 450;
   const int max_reordering_threshold = (config_.rtp.nack.rtp_history_ms > 0)
@@ -478,7 +477,7 @@ void RtpVideoStreamReceiver::RequestKeyFrame() {
   if (keyframe_request_sender_) {
     keyframe_request_sender_->RequestKeyFrame();
   } else {
-    rtp_rtcp_->RequestKeyFrame();
+    rtp_rtcp_->SendPictureLossIndication();
   }
 }
 
