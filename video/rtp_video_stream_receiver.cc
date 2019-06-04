@@ -120,7 +120,7 @@ void RtpVideoStreamReceiver::RtcpFeedbackBuffer::SendLossNotification(
     bool buffering_allowed) {
   RTC_DCHECK(buffering_allowed);
   rtc::CritScope lock(&cs_);
-  RTC_DCHECK(lntf_state_)
+  RTC_DCHECK(!lntf_state_)
       << "SendLossNotification() called twice in a row with no call to "
          "SendBufferedRtcpFeedback() in between.";
   lntf_state_ = absl::make_optional<LossNotificationState>(
