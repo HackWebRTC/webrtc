@@ -337,12 +337,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
       StreamDataCounters* rtp_counters,
       StreamDataCounters* rtx_counters) const = 0;
 
-  // Returns packet loss statistics for the RTP stream.
-  virtual void GetRtpPacketLossStats(
-      bool outgoing,
-      uint32_t ssrc,
-      struct RtpPacketLossStats* loss_stats) const = 0;
-
   // Returns received RTCP report block.
   // Returns -1 on failure else 0.
   // TODO(https://crbug.com/webrtc/10678): Remove this in favor of

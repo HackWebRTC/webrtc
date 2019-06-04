@@ -26,7 +26,6 @@
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"  // RTCPPacketType
-#include "modules/rtp_rtcp/source/packet_loss_stats.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
 #include "modules/rtp_rtcp/source/rtcp_receiver.h"
 #include "modules/rtp_rtcp/source/rtcp_sender.h"
@@ -192,11 +191,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
       StreamDataCounters* rtp_counters,
       StreamDataCounters* rtx_counters) const override;
 
-  void GetRtpPacketLossStats(
-      bool outgoing,
-      uint32_t ssrc,
-      struct RtpPacketLossStats* loss_stats) const override;
-
   // Get received RTCP report, report block.
   int32_t RemoteRTCPStat(
       std::vector<RTCPReportBlock>* receive_blocks) const override;
@@ -340,9 +334,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   RtcpAckObserver* const ack_observer_;
 
   RtcpRttStats* const rtt_stats_;
-
-  PacketLossStats send_loss_stats_;
-  PacketLossStats receive_loss_stats_;
 
   // The processed RTT from RtcpRttStats.
   rtc::CriticalSection critical_section_rtt_;

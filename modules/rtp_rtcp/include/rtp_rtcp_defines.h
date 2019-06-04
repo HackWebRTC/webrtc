@@ -346,19 +346,6 @@ class RtcpRttStats {
   virtual ~RtcpRttStats() {}
 };
 
-// Statistics about packet loss for a single directional connection. All values
-// are totals since the connection initiated.
-struct RtpPacketLossStats {
-  // The number of packets lost in events where no adjacent packets were also
-  // lost.
-  uint64_t single_packet_loss_count;
-  // The number of events in which more than one adjacent packet was lost.
-  uint64_t multiple_packet_loss_event_count;
-  // The number of packets lost in events where more than one adjacent packet
-  // was lost.
-  uint64_t multiple_packet_loss_packet_count;
-};
-
 class RtpPacketSender {
  public:
   RtpPacketSender() {}
