@@ -18,9 +18,6 @@
 #include "absl/strings/string_view.h"
 #include "api/array_view.h"
 #include "rtc_base/string_encode.h"
-// TODO(nisse): Delete, as as soon as downstream applications are updated to not
-// rely in this indirect include.
-#include "rtc_base/string_utils.h"
 
 namespace rtc {
 
