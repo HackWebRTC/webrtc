@@ -839,6 +839,15 @@ class VideoStreamEncoderTest : public ::testing::Test {
       EXPECT_EQ(expected_width, width);
     }
 
+    void CheckLastFrameRotationMatches(VideoRotation expected_rotation) {
+      VideoRotation rotation;
+      {
+        rtc::CritScope lock(&crit_);
+        rotation = last_rotation_;
+      }
+      EXPECT_EQ(expected_rotation, rotation);
+    }
+
     void ExpectDroppedFrame() { EXPECT_FALSE(encoded_frame_event_.Wait(100)); }
 
     bool WaitForFrame(int64_t timeout_ms) {
@@ -902,6 +911,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
       last_capture_time_ms_ = encoded_image.capture_time_ms_;
       last_width_ = encoded_image._encodedWidth;
       last_height_ = encoded_image._encodedHeight;
+      last_rotation_ = encoded_image.rotation_;
       if (num_received_layers_ == num_expected_layers_) {
         encoded_frame_event_.Set();
       }
@@ -926,6 +936,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
     int64_t last_capture_time_ms_ = 0;
     uint32_t last_height_ = 0;
     uint32_t last_width_ = 0;
+    VideoRotation last_rotation_ = kVideoRotation_0;
     size_t num_expected_layers_ = 1;
     size_t num_received_layers_ = 0;
     bool expect_frames_ = true;
@@ -3917,6 +3928,45 @@ TEST_F(VideoStreamEncoderTest, RewritesH264BitstreamWithNonOptimalSps) {
   ASSERT_THAT(last_fragmentation.fragmentationVectorSize, 1U);
   EXPECT_EQ(last_fragmentation.fragmentationOffset[0], 4U);
   EXPECT_EQ(last_fragmentation.fragmentationLength[0], sizeof(optimal_sps) - 4);
+
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, CopiesVideoFrameMetadataAfterDownscale) {
+  const int kFrameWidth = 1280;
+  const int kFrameHeight = 720;
+  const int kTargetBitrateBps = 300000;  // To low for HD resolution.
+
+  video_stream_encoder_->OnBitrateUpdated(
+      DataRate::bps(kTargetBitrateBps), DataRate::bps(kTargetBitrateBps), 0, 0);
+  video_stream_encoder_->WaitUntilTaskQueueIsIdle();
+
+  // Insert a first video frame. It should be dropped because of downscale in
+  // resolution.
+  int64_t timestamp_ms = fake_clock_.TimeNanos() / rtc::kNumNanosecsPerMillisec;
+  VideoFrame frame = CreateFrame(timestamp_ms, kFrameWidth, kFrameHeight);
+  frame.set_rotation(kVideoRotation_270);
+  video_source_.IncomingCapturedFrame(frame);
+
+  ExpectDroppedFrame();
+
+  // Second frame is downscaled.
+  timestamp_ms = fake_clock_.TimeNanos() / rtc::kNumNanosecsPerMillisec;
+  frame = CreateFrame(timestamp_ms, kFrameWidth / 2, kFrameHeight / 2);
+  frame.set_rotation(kVideoRotation_90);
+  video_source_.IncomingCapturedFrame(frame);
+
+  WaitForEncodedFrame(timestamp_ms);
+  sink_.CheckLastFrameRotationMatches(kVideoRotation_90);
+
+  // Insert another frame, also downscaled.
+  timestamp_ms = fake_clock_.TimeNanos() / rtc::kNumNanosecsPerMillisec;
+  frame = CreateFrame(timestamp_ms, kFrameWidth / 2, kFrameHeight / 2);
+  frame.set_rotation(kVideoRotation_180);
+  video_source_.IncomingCapturedFrame(frame);
+
+  WaitForEncodedFrame(timestamp_ms);
+  sink_.CheckLastFrameRotationMatches(kVideoRotation_180);
 
   video_stream_encoder_->Stop();
 }

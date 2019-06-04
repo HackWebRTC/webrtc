@@ -217,7 +217,9 @@ FrameEncodeMetadataWriter::UpdateBitstream(
 
 void FrameEncodeMetadataWriter::Reset() {
   rtc::CritScope cs(&lock_);
-  timing_frames_info_.clear();
+  for (auto& info : timing_frames_info_) {
+    info.frames.clear();
+  }
   last_timing_frame_time_ms_ = -1;
   reordered_frames_logged_messages_ = 0;
   stalled_encoder_logged_messages_ = 0;
@@ -242,20 +244,20 @@ FrameEncodeMetadataWriter::ExtractEncodeStartTimeAndFillMetadata(
           EncodedImageCallback::DropReason::kDroppedByEncoder);
       metadata_list->pop_front();
     }
+
+    encoded_image->content_type_ =
+        (codec_settings_.mode == VideoCodecMode::kScreensharing)
+            ? VideoContentType::SCREENSHARE
+            : VideoContentType::UNSPECIFIED;
+
     if (!metadata_list->empty() &&
         metadata_list->front().rtp_timestamp == encoded_image->Timestamp()) {
       result.emplace(metadata_list->front().encode_start_time_ms);
-
       encoded_image->capture_time_ms_ =
           metadata_list->front().timestamp_us / 1000;
       encoded_image->ntp_time_ms_ = metadata_list->front().ntp_time_ms;
       encoded_image->rotation_ = metadata_list->front().rotation;
       encoded_image->SetColorSpace(metadata_list->front().color_space);
-      encoded_image->content_type_ =
-          (codec_settings_.mode == VideoCodecMode::kScreensharing)
-              ? VideoContentType::SCREENSHARE
-              : VideoContentType::UNSPECIFIED;
-
       metadata_list->pop_front();
     } else {
       ++reordered_frames_logged_messages_;
