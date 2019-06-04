@@ -39,6 +39,9 @@ class VideoStreamDecoderImpl : public VideoStreamDecoderInterface,
 
   void OnFrame(std::unique_ptr<video_coding::EncodedFrame> frame) override;
 
+  void SetMinPlayoutDelay(TimeDelta min_delay) override;
+  void SetMaxPlayoutDelay(TimeDelta max_delay) override;
+
  private:
   enum DecodeResult {
     kOk,

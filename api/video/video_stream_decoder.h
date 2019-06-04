@@ -15,6 +15,7 @@
 #include <memory>
 #include <utility>
 
+#include "api/units/time_delta.h"
 #include "api/video/encoded_frame.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/sdp_video_format.h"
@@ -44,6 +45,9 @@ class VideoStreamDecoderInterface {
   virtual ~VideoStreamDecoderInterface() = default;
 
   virtual void OnFrame(std::unique_ptr<video_coding::EncodedFrame> frame) = 0;
+
+  virtual void SetMinPlayoutDelay(TimeDelta min_delay) = 0;
+  virtual void SetMaxPlayoutDelay(TimeDelta max_delay) = 0;
 };
 
 }  // namespace webrtc
