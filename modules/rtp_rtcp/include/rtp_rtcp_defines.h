@@ -43,8 +43,6 @@ const int kBogusRtpRateForAudioRtcp = 8000;
 // Minimum RTP header size in bytes.
 const uint8_t kRtpHeaderSize = 12;
 
-enum ProtectionType { kUnprotectedPacket, kProtectedPacket };
-
 enum StorageType { kDontRetransmit, kAllowRetransmission };
 
 bool IsLegalMidName(absl::string_view name);
