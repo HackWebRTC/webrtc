@@ -134,6 +134,9 @@ const char MediaConstraints::kScreencastMinBitrate[] =
 // TODO(ronghuawu): Remove once cpu overuse detection is stable.
 const char MediaConstraints::kCpuOveruseDetection[] = "googCpuOveruseDetection";
 
+const char MediaConstraints::kRawPacketizationForVideoEnabled[] =
+    "googRawPacketizationForVideoEnabled";
+
 const char MediaConstraints::kNumSimulcastLayers[] = "googNumSimulcastLayers";
 
 // Set |value| to the value associated with the first appearance of |key|, or
@@ -260,6 +263,12 @@ bool CopyConstraintsIntoOfferAnswerOptions(
   if (FindConstraint(constraints, MediaConstraints::kIceRestart, &value,
                      &mandatory_constraints_satisfied)) {
     offer_answer_options->ice_restart = value;
+  }
+
+  if (FindConstraint(constraints,
+                     MediaConstraints::kRawPacketizationForVideoEnabled, &value,
+                     &mandatory_constraints_satisfied)) {
+    offer_answer_options->raw_packetization_for_video = value;
   }
 
   int layers;

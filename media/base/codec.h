@@ -16,6 +16,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "api/rtp_parameters.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "media/base/media_constants.h"
@@ -144,6 +145,8 @@ struct AudioCodec : public Codec {
 };
 
 struct RTC_EXPORT VideoCodec : public Codec {
+  absl::optional<std::string> packetization;
+
   // Creates a codec with the given parameters.
   VideoCodec(int id, const std::string& name);
   // Creates a codec with the given name and empty id.
@@ -170,6 +173,11 @@ struct RTC_EXPORT VideoCodec : public Codec {
   bool operator==(const VideoCodec& c) const;
 
   bool operator!=(const VideoCodec& c) const { return !(*this == c); }
+
+  // Return packetization which both |local_codec| and |remote_codec| support.
+  static absl::optional<std::string> IntersectPacketization(
+      const VideoCodec& local_codec,
+      const VideoCodec& remote_codec);
 
   static VideoCodec CreateRtxCodec(int rtx_payload_type,
                                    int associated_payload_type);

@@ -1021,6 +1021,26 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
 
   VideoRecvParameters recv_params = last_recv_params_;
   RtpParametersFromMediaDescription(video, rtp_header_extensions, &recv_params);
+
+  VideoSendParameters send_params = last_send_params_;
+  bool needs_send_params_update = false;
+  if (type == SdpType::kAnswer || type == SdpType::kPrAnswer) {
+    for (auto& send_codec : send_params.codecs) {
+      auto* recv_codec = FindMatchingCodec(recv_params.codecs, send_codec);
+      if (recv_codec) {
+        if (!recv_codec->packetization && send_codec.packetization) {
+          send_codec.packetization.reset();
+          needs_send_params_update = true;
+        } else if (recv_codec->packetization != send_codec.packetization) {
+          SafeSetError(
+              "Failed to set local answer due to invalid codec packetization.",
+              error_desc);
+          return false;
+        }
+      }
+    }
+  }
+
   if (!media_channel()->SetRecvParameters(recv_params)) {
     SafeSetError("Failed to set local video description recv parameters.",
                  error_desc);
@@ -1036,6 +1056,14 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
   }
 
   last_recv_params_ = recv_params;
+
+  if (needs_send_params_update) {
+    if (!media_channel()->SetSendParameters(send_params)) {
+      SafeSetError("Failed to set send parameters.", error_desc);
+      return false;
+    }
+    last_send_params_ = send_params;
+  }
 
   // TODO(pthatcher): Move local streams into VideoSendParameters, and
   // only give it to the media channel once we have a remote
@@ -1077,14 +1105,39 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
   }
   send_params.mid = content_name();
 
-  bool parameters_applied = media_channel()->SetSendParameters(send_params);
+  VideoRecvParameters recv_params = last_recv_params_;
+  bool needs_recv_params_update = false;
+  if (type == SdpType::kAnswer || type == SdpType::kPrAnswer) {
+    for (auto& recv_codec : recv_params.codecs) {
+      auto* send_codec = FindMatchingCodec(send_params.codecs, recv_codec);
+      if (send_codec) {
+        if (!send_codec->packetization && recv_codec.packetization) {
+          recv_codec.packetization.reset();
+          needs_recv_params_update = true;
+        } else if (send_codec->packetization != recv_codec.packetization) {
+          SafeSetError(
+              "Failed to set remote answer due to invalid codec packetization.",
+              error_desc);
+          return false;
+        }
+      }
+    }
+  }
 
-  if (!parameters_applied) {
+  if (!media_channel()->SetSendParameters(send_params)) {
     SafeSetError("Failed to set remote video description send parameters.",
                  error_desc);
     return false;
   }
   last_send_params_ = send_params;
+
+  if (needs_recv_params_update) {
+    if (!media_channel()->SetRecvParameters(recv_params)) {
+      SafeSetError("Failed to set recv parameters.", error_desc);
+      return false;
+    }
+    last_recv_params_ = recv_params;
+  }
 
   // TODO(pthatcher): Move remote streams into VideoRecvParameters,
   // and only give it to the media channel once we have a local

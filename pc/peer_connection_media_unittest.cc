@@ -15,6 +15,7 @@
 #include <tuple>
 
 #include "absl/algorithm/container.h"
+#include "absl/types/optional.h"
 #include "api/call/call_factory_interface.h"
 #include "api/test/fake_media_transport.h"
 #include "logging/rtc_event_log/rtc_event_log_factory.h"
@@ -514,6 +515,106 @@ TEST_P(PeerConnectionMediaTest,
       cricket::GetFirstVideoContent(answer->description());
   ASSERT_TRUE(video_content);
   EXPECT_FALSE(video_content->rejected);
+}
+
+// Test that raw packetization is not set in the offer by default.
+TEST_P(PeerConnectionMediaTest, RawPacketizationNotSetInOffer) {
+  std::vector<cricket::VideoCodec> fake_codecs;
+  fake_codecs.push_back(cricket::VideoCodec(111, cricket::kVp8CodecName));
+  fake_codecs.push_back(cricket::VideoCodec(112, cricket::kRtxCodecName));
+  fake_codecs.back().params[cricket::kCodecParamAssociatedPayloadType] = "111";
+  fake_codecs.push_back(cricket::VideoCodec(113, cricket::kVp9CodecName));
+  fake_codecs.push_back(cricket::VideoCodec(114, cricket::kH264CodecName));
+  fake_codecs.push_back(cricket::VideoCodec(115, "HEVC"));
+  auto caller_fake_engine = absl::make_unique<FakeMediaEngine>();
+  caller_fake_engine->SetVideoCodecs(fake_codecs);
+
+  auto caller = CreatePeerConnectionWithVideo(std::move(caller_fake_engine));
+  auto offer = caller->CreateOfferAndSetAsLocal();
+  auto* offer_description =
+      cricket::GetFirstVideoContentDescription(offer->description());
+  for (const auto& codec : offer_description->codecs()) {
+    EXPECT_EQ(codec.packetization, absl::nullopt);
+  }
+}
+
+// Test that raw packetization is set in the offer and answer for all
+// video payload when raw_packetization_for_video is true.
+TEST_P(PeerConnectionMediaTest, RawPacketizationSetInOfferAndAnswer) {
+  std::vector<cricket::VideoCodec> fake_codecs;
+  fake_codecs.push_back(cricket::VideoCodec(111, cricket::kVp8CodecName));
+  fake_codecs.push_back(cricket::VideoCodec(112, cricket::kRtxCodecName));
+  fake_codecs.back().params[cricket::kCodecParamAssociatedPayloadType] = "111";
+  fake_codecs.push_back(cricket::VideoCodec(113, cricket::kVp9CodecName));
+  fake_codecs.push_back(cricket::VideoCodec(114, cricket::kH264CodecName));
+  fake_codecs.push_back(cricket::VideoCodec(115, "HEVC"));
+  auto caller_fake_engine = absl::make_unique<FakeMediaEngine>();
+  caller_fake_engine->SetVideoCodecs(fake_codecs);
+  auto callee_fake_engine = absl::make_unique<FakeMediaEngine>();
+  callee_fake_engine->SetVideoCodecs(fake_codecs);
+
+  RTCOfferAnswerOptions options;
+  options.raw_packetization_for_video = true;
+
+  auto caller = CreatePeerConnectionWithVideo(std::move(caller_fake_engine));
+  auto offer = caller->CreateOfferAndSetAsLocal(options);
+  auto* offer_description =
+      cricket::GetFirstVideoContentDescription(offer->description());
+  for (const auto& codec : offer_description->codecs()) {
+    if (codec.GetCodecType() == cricket::VideoCodec::CODEC_VIDEO) {
+      EXPECT_EQ(codec.packetization, cricket::kPacketizationParamRaw);
+    }
+  }
+
+  auto callee = CreatePeerConnectionWithVideo(std::move(callee_fake_engine));
+  ASSERT_TRUE(callee->SetRemoteDescription(std::move(offer)));
+  auto answer = callee->CreateAnswerAndSetAsLocal(options);
+  auto* answer_description =
+      cricket::GetFirstVideoContentDescription(answer->description());
+  for (const auto& codec : answer_description->codecs()) {
+    if (codec.GetCodecType() == cricket::VideoCodec::CODEC_VIDEO) {
+      EXPECT_EQ(codec.packetization, cricket::kPacketizationParamRaw);
+    }
+  }
+
+  ASSERT_TRUE(caller->SetRemoteDescription(std::move(answer)));
+}
+
+// Test that raw packetization is not set in the answer when
+// raw_packetization_for_video is true if it was not set in the offer.
+TEST_P(PeerConnectionMediaTest,
+       RawPacketizationNotSetInAnswerWhenNotSetInOffer) {
+  std::vector<cricket::VideoCodec> fake_codecs;
+  fake_codecs.push_back(cricket::VideoCodec(111, cricket::kVp8CodecName));
+  fake_codecs.push_back(cricket::VideoCodec(112, cricket::kRtxCodecName));
+  fake_codecs.back().params[cricket::kCodecParamAssociatedPayloadType] = "111";
+  fake_codecs.push_back(cricket::VideoCodec(113, cricket::kVp9CodecName));
+  fake_codecs.push_back(cricket::VideoCodec(114, cricket::kH264CodecName));
+  fake_codecs.push_back(cricket::VideoCodec(115, "HEVC"));
+  auto caller_fake_engine = absl::make_unique<FakeMediaEngine>();
+  caller_fake_engine->SetVideoCodecs(fake_codecs);
+  auto callee_fake_engine = absl::make_unique<FakeMediaEngine>();
+  callee_fake_engine->SetVideoCodecs(fake_codecs);
+
+  RTCOfferAnswerOptions caller_options;
+  caller_options.raw_packetization_for_video = false;
+  RTCOfferAnswerOptions callee_options;
+  callee_options.raw_packetization_for_video = true;
+
+  auto caller = CreatePeerConnectionWithVideo(std::move(caller_fake_engine));
+  auto offer = caller->CreateOfferAndSetAsLocal(caller_options);
+
+  auto callee = CreatePeerConnectionWithVideo(std::move(callee_fake_engine));
+  ASSERT_TRUE(callee->SetRemoteDescription(std::move(offer)));
+  auto answer = callee->CreateAnswerAndSetAsLocal(callee_options);
+
+  auto* answer_description =
+      cricket::GetFirstVideoContentDescription(answer->description());
+  for (const auto& codec : answer_description->codecs()) {
+    EXPECT_EQ(codec.packetization, absl::nullopt);
+  }
+
+  ASSERT_TRUE(caller->SetRemoteDescription(std::move(answer)));
 }
 
 class PeerConnectionMediaOfferDirectionTest

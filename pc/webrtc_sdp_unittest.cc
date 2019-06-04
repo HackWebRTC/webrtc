@@ -3418,6 +3418,54 @@ TEST_F(WebRtcSdpTest, DeserializeVideoFmtpWithSpace) {
   EXPECT_EQ(found->second, "40");
 }
 
+TEST_F(WebRtcSdpTest, DeserializePacketizationAttributeWithIllegalValue) {
+  JsepSessionDescription jdesc_output(kDummyType);
+
+  const char kSdpWithPacketizationString[] =
+      "v=0\r\n"
+      "o=- 18446744069414584320 18446462598732840960 IN IP4 127.0.0.1\r\n"
+      "s=-\r\n"
+      "t=0 0\r\n"
+      "m=audio 9 RTP/SAVPF 111\r\n"
+      "a=rtpmap:111 opus/48000/2\r\n"
+      "a=packetization:111 unknownpacketizationattributeforaudio\r\n"
+      "m=video 3457 RTP/SAVPF 120 121 122\r\n"
+      "a=rtpmap:120 VP8/90000\r\n"
+      "a=packetization:120 raw\r\n"
+      "a=rtpmap:121 VP9/90000\r\n"
+      "a=rtpmap:122 H264/90000\r\n"
+      "a=packetization:122 unknownpacketizationattributevalue\r\n";
+
+  SdpParseError error;
+  EXPECT_TRUE(webrtc::SdpDeserialize(kSdpWithPacketizationString, &jdesc_output,
+                                     &error));
+
+  AudioContentDescription* acd =
+      GetFirstAudioContentDescription(jdesc_output.description());
+  ASSERT_TRUE(acd);
+  ASSERT_THAT(acd->codecs(), testing::SizeIs(1));
+  cricket::AudioCodec opus = acd->codecs()[0];
+  EXPECT_EQ(opus.name, "opus");
+  EXPECT_EQ(opus.id, 111);
+
+  const VideoContentDescription* vcd =
+      GetFirstVideoContentDescription(jdesc_output.description());
+  ASSERT_TRUE(vcd);
+  ASSERT_THAT(vcd->codecs(), testing::SizeIs(3));
+  cricket::VideoCodec vp8 = vcd->codecs()[0];
+  EXPECT_EQ(vp8.name, "VP8");
+  EXPECT_EQ(vp8.id, 120);
+  EXPECT_EQ(vp8.packetization, "raw");
+  cricket::VideoCodec vp9 = vcd->codecs()[1];
+  EXPECT_EQ(vp9.name, "VP9");
+  EXPECT_EQ(vp9.id, 121);
+  EXPECT_EQ(vp9.packetization, absl::nullopt);
+  cricket::VideoCodec h264 = vcd->codecs()[2];
+  EXPECT_EQ(h264.name, "H264");
+  EXPECT_EQ(h264.id, 122);
+  EXPECT_EQ(h264.packetization, absl::nullopt);
+}
+
 TEST_F(WebRtcSdpTest, SerializeAudioFmtpWithUnknownParameter) {
   AudioContentDescription* acd = GetFirstAudioContentDescription(&desc_);
 
@@ -3484,6 +3532,22 @@ TEST_F(WebRtcSdpTest, SerializeVideoFmtp) {
   InjectAfter("a=rtpmap:120 VP8/90000\r\n",
               "a=fmtp:120 x-google-min-bitrate=10\r\n", &sdp_with_fmtp);
   EXPECT_EQ(sdp_with_fmtp, message);
+}
+
+TEST_F(WebRtcSdpTest, SerializeVideoPacketizationAttribute) {
+  VideoContentDescription* vcd = GetFirstVideoContentDescription(&desc_);
+
+  cricket::VideoCodecs codecs = vcd->codecs();
+  codecs[0].packetization = "raw";
+  vcd->set_codecs(codecs);
+
+  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
+                                jdesc_.session_version()));
+  std::string message = webrtc::SdpSerialize(jdesc_);
+  std::string sdp_with_packetization = kSdpFullString;
+  InjectAfter("a=rtpmap:120 VP8/90000\r\n", "a=packetization:120 raw\r\n",
+              &sdp_with_packetization);
+  EXPECT_EQ(sdp_with_packetization, message);
 }
 
 TEST_F(WebRtcSdpTest, DeserializeAndSerializeSdpWithIceLite) {

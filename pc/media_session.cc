@@ -787,6 +787,19 @@ static bool ReferencedCodecsMatch(const std::vector<C>& codecs1,
 }
 
 template <class C>
+static void NegotiatePacketization(const C& local_codec,
+                                   const C& remote_codec,
+                                   C* negotiated_codec) {}
+
+template <>
+void NegotiatePacketization(const VideoCodec& local_codec,
+                            const VideoCodec& remote_codec,
+                            VideoCodec* negotiated_codec) {
+  negotiated_codec->packetization =
+      VideoCodec::IntersectPacketization(local_codec, remote_codec);
+}
+
+template <class C>
 static void NegotiateCodecs(const std::vector<C>& local_codecs,
                             const std::vector<C>& offered_codecs,
                             std::vector<C>* negotiated_codecs,
@@ -797,6 +810,7 @@ static void NegotiateCodecs(const std::vector<C>& local_codecs,
     // local codecs, in case the remote offer contains duplicate codecs.
     if (FindMatchingCodec(local_codecs, offered_codecs, ours, &theirs)) {
       C negotiated = ours;
+      NegotiatePacketization(ours, theirs, &negotiated);
       negotiated.IntersectFeedbackParams(theirs);
       if (IsRtxCodec(negotiated)) {
         const auto apt_it =
@@ -2187,6 +2201,14 @@ bool MediaSessionDescriptionFactory::AddVideoContentForOffer(
     }
   }
 
+  if (session_options.raw_packetization_for_video) {
+    for (VideoCodec& codec : filtered_codecs) {
+      if (codec.GetCodecType() == VideoCodec::CODEC_VIDEO) {
+        codec.packetization = kPacketizationParamRaw;
+      }
+    }
+  }
+
   if (!CreateMediaContentOffer(media_description_options, session_options,
                                filtered_codecs, sdes_policy,
                                GetCryptos(current_content), crypto_suites,
@@ -2500,6 +2522,14 @@ bool MediaSessionDescriptionFactory::AddVideoContentForAnswer(
         // We should use the local codec with local parameters and the codec id
         // would be correctly mapped in |NegotiateCodecs|.
         filtered_codecs.push_back(codec);
+      }
+    }
+  }
+
+  if (session_options.raw_packetization_for_video) {
+    for (VideoCodec& codec : filtered_codecs) {
+      if (codec.GetCodecType() == VideoCodec::CODEC_VIDEO) {
+        codec.packetization = kPacketizationParamRaw;
       }
     }
   }

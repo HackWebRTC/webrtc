@@ -37,6 +37,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/rtc_certificate.h"
 #include "rtc_base/ssl_identity.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 
 using cricket::DtlsTransportInternal;
@@ -2119,6 +2120,152 @@ TEST_F(VideoChannelSingleThreadTest, SocketOptionsMergedOnSetTransport) {
 
 TEST_F(VideoChannelSingleThreadTest, UpdateLocalStreamsWithSimulcast) {
   Base::TestUpdateLocalStreamsWithSimulcast();
+}
+
+TEST_F(VideoChannelSingleThreadTest, TestSetLocalOfferWithPacketization) {
+  const cricket::VideoCodec kVp8Codec(97, "VP8");
+  cricket::VideoCodec vp9_codec(98, "VP9");
+  vp9_codec.packetization = cricket::kPacketizationParamRaw;
+  cricket::VideoContentDescription video;
+  video.set_codecs({kVp8Codec, vp9_codec});
+
+  CreateChannels(0, 0);
+
+  EXPECT_TRUE(channel1_->SetLocalContent(&video, SdpType::kOffer, NULL));
+  EXPECT_THAT(media_channel1_->send_codecs(), testing::IsEmpty());
+  ASSERT_THAT(media_channel1_->recv_codecs(), testing::SizeIs(2));
+  EXPECT_TRUE(media_channel1_->recv_codecs()[0].Matches(kVp8Codec));
+  EXPECT_EQ(media_channel1_->recv_codecs()[0].packetization, absl::nullopt);
+  EXPECT_TRUE(media_channel1_->recv_codecs()[1].Matches(vp9_codec));
+  EXPECT_EQ(media_channel1_->recv_codecs()[1].packetization,
+            cricket::kPacketizationParamRaw);
+}
+
+TEST_F(VideoChannelSingleThreadTest, TestSetRemoteOfferWithPacketization) {
+  const cricket::VideoCodec kVp8Codec(97, "VP8");
+  cricket::VideoCodec vp9_codec(98, "VP9");
+  vp9_codec.packetization = cricket::kPacketizationParamRaw;
+  cricket::VideoContentDescription video;
+  video.set_codecs({kVp8Codec, vp9_codec});
+
+  CreateChannels(0, 0);
+
+  EXPECT_TRUE(channel1_->SetRemoteContent(&video, SdpType::kOffer, NULL));
+  EXPECT_THAT(media_channel1_->recv_codecs(), testing::IsEmpty());
+  ASSERT_THAT(media_channel1_->send_codecs(), testing::SizeIs(2));
+  EXPECT_TRUE(media_channel1_->send_codecs()[0].Matches(kVp8Codec));
+  EXPECT_EQ(media_channel1_->send_codecs()[0].packetization, absl::nullopt);
+  EXPECT_TRUE(media_channel1_->send_codecs()[1].Matches(vp9_codec));
+  EXPECT_EQ(media_channel1_->send_codecs()[1].packetization,
+            cricket::kPacketizationParamRaw);
+}
+
+TEST_F(VideoChannelSingleThreadTest, TestSetAnswerWithPacketization) {
+  const cricket::VideoCodec kVp8Codec(97, "VP8");
+  cricket::VideoCodec vp9_codec(98, "VP9");
+  vp9_codec.packetization = cricket::kPacketizationParamRaw;
+  cricket::VideoContentDescription video;
+  video.set_codecs({kVp8Codec, vp9_codec});
+
+  CreateChannels(0, 0);
+
+  EXPECT_TRUE(channel1_->SetLocalContent(&video, SdpType::kOffer, NULL));
+  EXPECT_TRUE(channel1_->SetRemoteContent(&video, SdpType::kAnswer, NULL));
+  ASSERT_THAT(media_channel1_->recv_codecs(), testing::SizeIs(2));
+  EXPECT_TRUE(media_channel1_->recv_codecs()[0].Matches(kVp8Codec));
+  EXPECT_EQ(media_channel1_->recv_codecs()[0].packetization, absl::nullopt);
+  EXPECT_TRUE(media_channel1_->recv_codecs()[1].Matches(vp9_codec));
+  EXPECT_EQ(media_channel1_->recv_codecs()[1].packetization,
+            cricket::kPacketizationParamRaw);
+  EXPECT_THAT(media_channel1_->send_codecs(), testing::SizeIs(2));
+  EXPECT_TRUE(media_channel1_->send_codecs()[0].Matches(kVp8Codec));
+  EXPECT_EQ(media_channel1_->send_codecs()[0].packetization, absl::nullopt);
+  EXPECT_TRUE(media_channel1_->send_codecs()[1].Matches(vp9_codec));
+  EXPECT_EQ(media_channel1_->send_codecs()[1].packetization,
+            cricket::kPacketizationParamRaw);
+}
+
+TEST_F(VideoChannelSingleThreadTest, TestSetLocalAnswerWithoutPacketization) {
+  const cricket::VideoCodec kLocalCodec(98, "VP8");
+  cricket::VideoCodec remote_codec(99, "VP8");
+  remote_codec.packetization = cricket::kPacketizationParamRaw;
+  cricket::VideoContentDescription local_video;
+  local_video.set_codecs({kLocalCodec});
+  cricket::VideoContentDescription remote_video;
+  remote_video.set_codecs({remote_codec});
+
+  CreateChannels(0, 0);
+
+  EXPECT_TRUE(
+      channel1_->SetRemoteContent(&remote_video, SdpType::kOffer, NULL));
+  EXPECT_TRUE(channel1_->SetLocalContent(&local_video, SdpType::kAnswer, NULL));
+  ASSERT_THAT(media_channel1_->recv_codecs(), testing::SizeIs(1));
+  EXPECT_EQ(media_channel1_->recv_codecs()[0].packetization, absl::nullopt);
+  ASSERT_THAT(media_channel1_->send_codecs(), testing::SizeIs(1));
+  EXPECT_EQ(media_channel1_->send_codecs()[0].packetization, absl::nullopt);
+}
+
+TEST_F(VideoChannelSingleThreadTest, TestSetRemoteAnswerWithoutPacketization) {
+  cricket::VideoCodec local_codec(98, "VP8");
+  local_codec.packetization = cricket::kPacketizationParamRaw;
+  const cricket::VideoCodec kRemoteCodec(99, "VP8");
+  cricket::VideoContentDescription local_video;
+  local_video.set_codecs({local_codec});
+  cricket::VideoContentDescription remote_video;
+  remote_video.set_codecs({kRemoteCodec});
+
+  CreateChannels(0, 0);
+
+  EXPECT_TRUE(channel1_->SetLocalContent(&local_video, SdpType::kOffer, NULL));
+  EXPECT_TRUE(
+      channel1_->SetRemoteContent(&remote_video, SdpType::kAnswer, NULL));
+  ASSERT_THAT(media_channel1_->recv_codecs(), testing::SizeIs(1));
+  EXPECT_EQ(media_channel1_->recv_codecs()[0].packetization, absl::nullopt);
+  ASSERT_THAT(media_channel1_->send_codecs(), testing::SizeIs(1));
+  EXPECT_EQ(media_channel1_->send_codecs()[0].packetization, absl::nullopt);
+}
+
+TEST_F(VideoChannelSingleThreadTest,
+       TestSetRemoteAnswerWithInvalidPacketization) {
+  cricket::VideoCodec local_codec(98, "VP8");
+  local_codec.packetization = cricket::kPacketizationParamRaw;
+  cricket::VideoCodec remote_codec(99, "VP8");
+  remote_codec.packetization = "unknownpacketizationattributevalue";
+  cricket::VideoContentDescription local_video;
+  local_video.set_codecs({local_codec});
+  cricket::VideoContentDescription remote_video;
+  remote_video.set_codecs({remote_codec});
+
+  CreateChannels(0, 0);
+
+  EXPECT_TRUE(channel1_->SetLocalContent(&local_video, SdpType::kOffer, NULL));
+  EXPECT_FALSE(
+      channel1_->SetRemoteContent(&remote_video, SdpType::kAnswer, NULL));
+  ASSERT_THAT(media_channel1_->recv_codecs(), testing::SizeIs(1));
+  EXPECT_EQ(media_channel1_->recv_codecs()[0].packetization,
+            cricket::kPacketizationParamRaw);
+  EXPECT_THAT(media_channel1_->send_codecs(), testing::IsEmpty());
+}
+
+TEST_F(VideoChannelSingleThreadTest,
+       TestSetLocalAnswerWithInvalidPacketization) {
+  cricket::VideoCodec local_codec(98, "VP8");
+  local_codec.packetization = cricket::kPacketizationParamRaw;
+  const cricket::VideoCodec kRemoteCodec(99, "VP8");
+  cricket::VideoContentDescription local_video;
+  local_video.set_codecs({local_codec});
+  cricket::VideoContentDescription remote_video;
+  remote_video.set_codecs({kRemoteCodec});
+
+  CreateChannels(0, 0);
+
+  EXPECT_TRUE(
+      channel1_->SetRemoteContent(&remote_video, SdpType::kOffer, NULL));
+  EXPECT_FALSE(
+      channel1_->SetLocalContent(&local_video, SdpType::kAnswer, NULL));
+  EXPECT_THAT(media_channel1_->recv_codecs(), testing::IsEmpty());
+  ASSERT_THAT(media_channel1_->send_codecs(), testing::SizeIs(1));
+  EXPECT_EQ(media_channel1_->send_codecs()[0].packetization, absl::nullopt);
 }
 
 // VideoChannelDoubleThreadTest

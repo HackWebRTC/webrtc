@@ -106,6 +106,7 @@ struct MediaSessionOptions {
   bool rtcp_mux_enabled = true;
   bool bundle_enabled = false;
   bool offer_extmap_allow_mixed = false;
+  bool raw_packetization_for_video = false;
   std::string rtcp_cname = kDefaultRtcpCname;
   webrtc::CryptoOptions crypto_options;
   // List of media description options in the same order that the media

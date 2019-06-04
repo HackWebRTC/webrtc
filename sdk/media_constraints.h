@@ -102,6 +102,10 @@ class MediaConstraints {
   static const char kScreencastMinBitrate[];   // googScreencastMinBitrate
   static const char kCpuOveruseDetection[];    // googCpuOveruseDetection
 
+  // Constraint to enable negotiating raw RTP packetization using attribute
+  // "a=packetization:<payload_type> raw" in the SDP for all video payload.
+  static const char kRawPacketizationForVideoEnabled[];
+
   // Specifies number of simulcast layers for all video tracks
   // with a Plan B offer/answer
   // (see RTCOfferAnswerOptions::num_simulcast_layers).

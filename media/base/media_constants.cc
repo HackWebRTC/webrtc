@@ -77,6 +77,8 @@ const int kPreferredSPropStereo = 0;
 const int kPreferredStereo = 0;
 const int kPreferredUseInbandFec = 0;
 
+const char kPacketizationParamRaw[] = "raw";
+
 const char kRtcpFbParamLntf[] = "goog-lntf";
 const char kRtcpFbParamNack[] = "nack";
 const char kRtcpFbNackParamPli[] = "pli";

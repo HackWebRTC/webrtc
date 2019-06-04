@@ -858,6 +858,8 @@ void ExtractSharedMediaSessionOptions(
     cricket::MediaSessionOptions* session_options) {
   session_options->vad_enabled = rtc_options.voice_activity_detection;
   session_options->bundle_enabled = rtc_options.use_rtp_mux;
+  session_options->raw_packetization_for_video =
+      rtc_options.raw_packetization_for_video;
 }
 
 PeerConnection::PeerConnection(PeerConnectionFactory* factory,

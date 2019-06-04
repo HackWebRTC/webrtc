@@ -180,6 +180,7 @@ static const char kAttributeSimulcast[] = "simulcast";
 // draft-ietf-mmusic-rid-15
 // a=rid
 static const char kAttributeRid[] = "rid";
+static const char kAttributePacketization[] = "packetization";
 
 // Experimental flags
 static const char kAttributeXGoogleFlag[] = "x-google-flag";
@@ -344,6 +345,10 @@ static bool ParseFmtpParam(const std::string& line,
                            std::string* parameter,
                            std::string* value,
                            SdpParseError* error);
+static bool ParsePacketizationAttribute(const std::string& line,
+                                        const cricket::MediaType media_type,
+                                        MediaContentDescription* media_desc,
+                                        SdpParseError* error);
 static bool ParseRtcpFbAttribute(const std::string& line,
                                  const cricket::MediaType media_type,
                                  MediaContentDescription* media_desc,
@@ -1744,6 +1749,14 @@ void WriteFmtpHeader(int payload_type, rtc::StringBuilder* os) {
   *os << kSdpDelimiterColon << payload_type;
 }
 
+void WritePacketizationHeader(int payload_type, rtc::StringBuilder* os) {
+  // packetization header: a=packetization:|payload_type| <packetization_format>
+  // Add a=packetization
+  InitAttrLine(kAttributePacketization, os);
+  // Add :|payload_type|
+  *os << kSdpDelimiterColon << payload_type;
+}
+
 void WriteRtcpFbHeader(int payload_type, rtc::StringBuilder* os) {
   // rtcp-fb header: a=rtcp-fb:|payload_type|
   // <parameters>/<ccm <ccm_parameters>>
@@ -1820,6 +1833,17 @@ void AddFmtpLine(const T& codec, std::string* message) {
 }
 
 template <class T>
+void AddPacketizationLine(const T& codec, std::string* message) {
+  if (!codec.packetization) {
+    return;
+  }
+  rtc::StringBuilder os;
+  WritePacketizationHeader(codec.id, &os);
+  os << " " << *codec.packetization;
+  AddLine(os.str(), message);
+}
+
+template <class T>
 void AddRtcpFbLines(const T& codec, std::string* message) {
   for (const cricket::FeedbackParam& param : codec.feedback_params.params()) {
     rtc::StringBuilder os;
@@ -1871,6 +1895,7 @@ void BuildRtpMap(const MediaContentDescription* media_desc,
            << cricket::kVideoCodecClockrate;
         AddLine(os.str(), message);
       }
+      AddPacketizationLine(codec, message);
       AddRtcpFbLines(codec, message);
       AddFmtpLine(codec, message);
     }
@@ -2910,6 +2935,24 @@ void UpdateCodec(MediaContentDescription* content_desc,
   AddOrReplaceCodec<T, U>(content_desc, new_codec);
 }
 
+// Adds or updates existing video codec corresponding to |payload_type|
+// according to |packetization|.
+void UpdateVideoCodecPacketization(VideoContentDescription* video_desc,
+                                   int payload_type,
+                                   const std::string& packetization) {
+  if (packetization != cricket::kPacketizationParamRaw) {
+    // Ignore unsupported packetization attribute.
+    return;
+  }
+
+  // Codec might already have been populated (from rtpmap).
+  cricket::VideoCodec codec =
+      GetCodecWithPayloadType(video_desc->codecs(), payload_type);
+  codec.packetization = packetization;
+  AddOrReplaceCodec<VideoContentDescription, cricket::VideoCodec>(video_desc,
+                                                                  codec);
+}
+
 template <class T>
 bool PopWildcardCodec(std::vector<T>* codecs, T* wildcard_codec) {
   for (auto iter = codecs->begin(); iter != codecs->end(); ++iter) {
@@ -3164,6 +3207,10 @@ bool ParseContent(const std::string& message,
         }
       } else if (HasAttribute(line, kCodecParamMaxPTime)) {
         if (!GetValue(line, kCodecParamMaxPTime, &maxptime_as_string, error)) {
+          return false;
+        }
+      } else if (HasAttribute(line, kAttributePacketization)) {
+        if (!ParsePacketizationAttribute(line, media_type, media_desc, error)) {
           return false;
         }
       } else if (HasAttribute(line, kAttributeRtcpFb)) {
@@ -3679,6 +3726,34 @@ bool ParseFmtpAttributes(const std::string& line,
     UpdateCodec<VideoContentDescription, cricket::VideoCodec>(
         media_desc, payload_type, codec_params);
   }
+  return true;
+}
+
+bool ParsePacketizationAttribute(const std::string& line,
+                                 const cricket::MediaType media_type,
+                                 MediaContentDescription* media_desc,
+                                 SdpParseError* error) {
+  if (media_type != cricket::MEDIA_TYPE_VIDEO) {
+    return true;
+  }
+  std::vector<std::string> packetization_fields;
+  rtc::split(line.c_str(), kSdpDelimiterSpaceChar, &packetization_fields);
+  if (packetization_fields.size() < 2) {
+    return ParseFailedGetValue(line, kAttributePacketization, error);
+  }
+  std::string payload_type_string;
+  if (!GetValue(packetization_fields[0], kAttributePacketization,
+                &payload_type_string, error)) {
+    return false;
+  }
+  int payload_type;
+  if (!GetPayloadTypeFromString(line, payload_type_string, &payload_type,
+                                error)) {
+    return false;
+  }
+  std::string packetization = packetization_fields[1];
+  UpdateVideoCodecPacketization(media_desc->as_video(), payload_type,
+                                packetization);
   return true;
 }
 
