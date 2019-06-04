@@ -133,7 +133,7 @@ class StunPortTestBase : public ::testing::Test, public sigslot::has_slots<> {
   }
 
  protected:
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     // Ensure the RNG is inited.
     rtc::InitRandom(NULL, 0);
   }

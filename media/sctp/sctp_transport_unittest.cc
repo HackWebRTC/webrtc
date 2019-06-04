@@ -120,7 +120,7 @@ class SctpTransportTest : public ::testing::Test, public sigslot::has_slots<> {
  protected:
   // usrsctp uses the NSS random number generator on non-Android platforms,
   // so we need to initialize SSL.
-  static void SetUpTestCase() {}
+  static void SetUpTestSuite() {}
 
   void SetupConnectedTransportsWithTwoStreams() {
     SetupConnectedTransportsWithTwoStreams(kTransport1Port, kTransport2Port);

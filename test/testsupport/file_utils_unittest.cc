@@ -73,7 +73,7 @@ class FileUtilsTest : public ::testing::Test {
   FileUtilsTest() {}
   ~FileUtilsTest() override {}
   // Runs before the first test
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     original_working_dir_ = webrtc::test::WorkingDir();
   }
   void SetUp() override { ASSERT_EQ(chdir(original_working_dir_.c_str()), 0); }

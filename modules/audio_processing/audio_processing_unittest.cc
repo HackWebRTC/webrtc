@@ -345,12 +345,9 @@ class ApmTest : public ::testing::Test {
   virtual void SetUp();
   virtual void TearDown();
 
-  static void SetUpTestCase() {
-  }
+  static void SetUpTestSuite() {}
 
-  static void TearDownTestCase() {
-    ClearTempFiles();
-  }
+  static void TearDownTestSuite() { ClearTempFiles(); }
 
   // Used to select between int and float interface tests.
   enum Format {
@@ -1932,7 +1929,7 @@ class AudioProcessingTest
 
   virtual ~AudioProcessingTest() {}
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     // Create all needed output reference files.
     const int kNativeRates[] = {8000, 16000, 32000, 48000};
     const size_t kNumChannels[] = {1, 2};
@@ -1953,9 +1950,7 @@ class AudioProcessingTest
     ClearTempOutFiles();
   }
 
-  static void TearDownTestCase() {
-    ClearTempFiles();
-  }
+  static void TearDownTestSuite() { ClearTempFiles(); }
 
   // Runs a process pass on files with the given parameters and dumps the output
   // to a file specified with |output_file_prefix|. Both forward and reverse
