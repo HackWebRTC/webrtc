@@ -15,6 +15,8 @@
 
 namespace webrtc {
 
+// Configuration of a VP8 frame - which buffers are to be referenced
+// by it, which buffers should be updated, etc.
 struct Vp8FrameConfig {
   enum BufferFlags : int {
     kNone = 0,
@@ -85,6 +87,9 @@ struct Vp8FrameConfig {
   // searched last.
   Vp8BufferReference first_reference;
   Vp8BufferReference second_reference;
+
+  // Whether this frame is eligible for retransmission.
+  bool retransmission_allowed;
 
  private:
   Vp8FrameConfig(BufferFlags last,

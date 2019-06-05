@@ -941,12 +941,16 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
 
   bool send_key_frame = key_frame_requested;
   bool drop_frame = false;
+  bool retransmission_allowed = true;
   Vp8FrameConfig tl_configs[kMaxSimulcastStreams];
   for (size_t i = 0; i < encoders_.size(); ++i) {
     tl_configs[i] =
         frame_buffer_controller_->NextFrameConfig(i, frame.timestamp());
     send_key_frame |= tl_configs[i].IntraFrame();
     drop_frame |= tl_configs[i].drop_frame;
+    RTC_DCHECK(i == 0 ||
+               retransmission_allowed == tl_configs[i].retransmission_allowed);
+    retransmission_allowed = tl_configs[i].retransmission_allowed;
   }
 
   if (drop_frame && !send_key_frame) {
@@ -1065,7 +1069,7 @@ int LibvpxVp8Encoder::Encode(const VideoFrame& frame,
     if (error)
       return WEBRTC_VIDEO_CODEC_ERROR;
     // Examines frame timestamps only.
-    error = GetEncodedPartitions(frame);
+    error = GetEncodedPartitions(frame, retransmission_allowed);
   }
   // TODO(sprang): Shouldn't we use the frame timestamp instead?
   timestamp_ += duration;
@@ -1091,7 +1095,8 @@ void LibvpxVp8Encoder::PopulateCodecSpecific(CodecSpecificInfo* codec_specific,
       (pkt.data.frame.flags & VPX_FRAME_IS_KEY) != 0, qp, codec_specific);
 }
 
-int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image) {
+int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image,
+                                           bool retransmission_allowed) {
   int stream_idx = static_cast<int>(encoders_.size()) - 1;
   int result = WEBRTC_VIDEO_CODEC_OK;
   for (size_t encoder_idx = 0; encoder_idx < encoders_.size();
@@ -1139,6 +1144,8 @@ int LibvpxVp8Encoder::GetEncodedPartitions(const VideoFrame& input_image) {
             : VideoContentType::UNSPECIFIED;
     encoded_images_[encoder_idx].timing_.flags = VideoSendTiming::kInvalid;
     encoded_images_[encoder_idx].SetColorSpace(input_image.color_space());
+    encoded_images_[encoder_idx].SetRetransmissionAllowed(
+        retransmission_allowed);
 
     if (send_stream_[stream_idx]) {
       if (encoded_images_[encoder_idx].size() > 0) {

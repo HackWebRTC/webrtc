@@ -424,15 +424,16 @@ absl::optional<uint32_t> RTPSenderVideo::FlexfecSsrc() const {
   return absl::nullopt;
 }
 
-bool RTPSenderVideo::SendVideo(VideoFrameType frame_type,
-                               int8_t payload_type,
-                               uint32_t rtp_timestamp,
-                               int64_t capture_time_ms,
-                               const uint8_t* payload_data,
-                               size_t payload_size,
-                               const RTPFragmentationHeader* fragmentation,
-                               const RTPVideoHeader* video_header,
-                               int64_t expected_retransmission_time_ms) {
+bool RTPSenderVideo::SendVideo(
+    VideoFrameType frame_type,
+    int8_t payload_type,
+    uint32_t rtp_timestamp,
+    int64_t capture_time_ms,
+    const uint8_t* payload_data,
+    size_t payload_size,
+    const RTPFragmentationHeader* fragmentation,
+    const RTPVideoHeader* video_header,
+    absl::optional<int64_t> expected_retransmission_time_ms) {
   TRACE_EVENT_ASYNC_STEP1("webrtc", "Video", capture_time_ms, "Send", "type",
                           FrameTypeToString(frame_type));
 
@@ -624,8 +625,14 @@ bool RTPSenderVideo::SendVideo(VideoFrameType frame_type,
       *packetize_video_header, frame_type, fragmentation);
 
   const uint8_t temporal_id = GetTemporalId(*video_header);
-  StorageType storage = GetStorageType(temporal_id, retransmission_settings,
-                                       expected_retransmission_time_ms);
+  // TODO(bugs.webrtc.org/10714): retransmission_settings_ should generally be
+  // replaced by expected_retransmission_time_ms.has_value(). For now, though,
+  // only VP8 with an injected frame buffer controller actually controls it.
+  const StorageType storage =
+      expected_retransmission_time_ms.has_value()
+          ? GetStorageType(temporal_id, retransmission_settings,
+                           expected_retransmission_time_ms.value())
+          : StorageType::kDontRetransmit;
   const size_t num_packets = packetizer->NumPackets();
 
   size_t unpacketized_payload_size;

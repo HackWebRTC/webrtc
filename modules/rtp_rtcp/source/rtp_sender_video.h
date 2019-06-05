@@ -62,6 +62,7 @@ class RTPSenderVideo {
                  const WebRtcKeyValueConfig& field_trials);
   virtual ~RTPSenderVideo();
 
+  // expected_retransmission_time_ms.has_value() -> retransmission allowed.
   bool SendVideo(VideoFrameType frame_type,
                  int8_t payload_type,
                  uint32_t capture_timestamp,
@@ -70,7 +71,7 @@ class RTPSenderVideo {
                  size_t payload_size,
                  const RTPFragmentationHeader* fragmentation,
                  const RTPVideoHeader* video_header,
-                 int64_t expected_retransmission_time_ms);
+                 absl::optional<int64_t> expected_retransmission_time_ms);
 
   void RegisterPayloadType(int8_t payload_type,
                            absl::string_view payload_name,

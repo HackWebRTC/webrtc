@@ -42,7 +42,8 @@ Vp8FrameConfig::Vp8FrameConfig(BufferFlags last,
       layer_sync(false),
       freeze_entropy(freeze_entropy),
       first_reference(Vp8BufferReference::kNone),
-      second_reference(Vp8BufferReference::kNone) {}
+      second_reference(Vp8BufferReference::kNone),
+      retransmission_allowed(true) {}
 
 bool Vp8FrameConfig::References(Buffer buffer) const {
   switch (buffer) {

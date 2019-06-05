@@ -421,8 +421,12 @@ EncodedImageCallback::Result RtpVideoSender::OnEncodedImage(
     // The payload router could be active but this module isn't sending.
     return Result(Result::ERROR_SEND_FAILED);
   }
-  int64_t expected_retransmission_time_ms =
-      rtp_streams_[stream_index].rtp_rtcp->ExpectedRetransmissionTimeMs();
+
+  absl::optional<int64_t> expected_retransmission_time_ms;
+  if (encoded_image.RetransmissionAllowed()) {
+    expected_retransmission_time_ms =
+        rtp_streams_[stream_index].rtp_rtcp->ExpectedRetransmissionTimeMs();
+  }
 
   bool send_result = rtp_streams_[stream_index].sender_video->SendVideo(
       encoded_image._frameType, rtp_config_.payload_type, rtp_timestamp,

@@ -76,6 +76,11 @@ class RTC_EXPORT EncodedImage {
     color_space_ = color_space;
   }
 
+  bool RetransmissionAllowed() const { return retransmission_allowed_; }
+  void SetRetransmissionAllowed(bool retransmission_allowed) {
+    retransmission_allowed_ = retransmission_allowed;
+  }
+
   size_t size() const { return size_; }
   void set_size(size_t new_size) {
     RTC_DCHECK_LE(new_size, capacity());
@@ -158,6 +163,7 @@ class RTC_EXPORT EncodedImage {
   absl::optional<int> spatial_index_;
   std::map<int, size_t> spatial_layer_frame_size_bytes_;
   absl::optional<webrtc::ColorSpace> color_space_;
+  bool retransmission_allowed_ = true;
 };
 
 }  // namespace webrtc
