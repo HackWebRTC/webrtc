@@ -126,15 +126,10 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     // Write a counter to the image to make each frame unique.
     WriteCounter(encoded.data() + frame_info.layers[i].size - 4, counter);
     encoded.SetTimestamp(input_image.timestamp());
-    encoded.capture_time_ms_ = input_image.render_time_ms();
     encoded._frameType = frame_info.keyframe ? VideoFrameType::kVideoFrameKey
                                              : VideoFrameType::kVideoFrameDelta;
     encoded._encodedWidth = simulcast_streams[i].width;
     encoded._encodedHeight = simulcast_streams[i].height;
-    encoded.rotation_ = input_image.rotation();
-    encoded.content_type_ = (mode == VideoCodecMode::kScreensharing)
-                                ? VideoContentType::SCREENSHARE
-                                : VideoContentType::UNSPECIFIED;
     encoded.SetSpatialIndex(i);
     CodecSpecificInfo codec_specific;
     std::unique_ptr<RTPFragmentationHeader> fragmentation =
