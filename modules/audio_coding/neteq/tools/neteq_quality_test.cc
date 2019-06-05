@@ -421,7 +421,7 @@ void NetEqQualityTest::Simulate() {
            decoded_time_ms_) {
       if (!in_file_->Read(in_size_samples_ * channels_, &in_data_[0])) {
         end_of_input = true;
-        ASSERT_FALSE(end_of_input && FLAG_runtime_ms < 0);
+        ASSERT_TRUE(end_of_input && FLAG_runtime_ms < 0);
         break;
       }
       payload_.Clear();
