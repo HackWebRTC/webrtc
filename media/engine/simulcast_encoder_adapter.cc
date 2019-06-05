@@ -420,12 +420,11 @@ int SimulcastEncoderAdapter::Encode(
 
       // UpdateRect is not propagated to lower simulcast layers currently.
       // TODO(ilnik): Consider scaling UpdateRect together with the buffer.
-      VideoFrame frame = VideoFrame::Builder()
-                             .set_video_frame_buffer(dst_buffer)
-                             .set_timestamp_rtp(input_image.timestamp())
-                             .set_rotation(webrtc::kVideoRotation_0)
-                             .set_timestamp_ms(input_image.render_time_ms())
-                             .build();
+      VideoFrame frame(input_image);
+      frame.set_video_frame_buffer(dst_buffer);
+      frame.set_rotation(webrtc::kVideoRotation_0);
+      frame.set_update_rect(
+          VideoFrame::UpdateRect{0, 0, frame.width(), frame.height()});
       int ret =
           streaminfos_[stream_idx].encoder->Encode(frame, &stream_frame_types);
       if (ret != WEBRTC_VIDEO_CODEC_OK) {

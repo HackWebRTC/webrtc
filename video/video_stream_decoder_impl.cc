@@ -280,15 +280,9 @@ void VideoStreamDecoderImpl::Decoded(VideoFrame& decoded_image,
     timing_.StopDecodeTimer(0, *casted_decode_time_ms, decode_stop_time_ms,
                             frame_timestamps->render_time_us / 1000);
 
-    callbacks_->OnDecodedFrame(
-        VideoFrame::Builder()
-            .set_video_frame_buffer(decoded_image.video_frame_buffer())
-            .set_rotation(decoded_image.rotation())
-            .set_timestamp_us(frame_timestamps->render_time_us)
-            .set_timestamp_rtp(decoded_image.timestamp())
-            .set_id(decoded_image.id())
-            .build(),
-        casted_decode_time_ms, casted_qp);
+    VideoFrame copy = decoded_image;
+    copy.set_timestamp_us(frame_timestamps->render_time_us);
+    callbacks_->OnDecodedFrame(copy, casted_decode_time_ms, casted_qp);
   });
 }
 

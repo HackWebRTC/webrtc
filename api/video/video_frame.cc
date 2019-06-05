@@ -196,6 +196,12 @@ rtc::scoped_refptr<VideoFrameBuffer> VideoFrame::video_frame_buffer() const {
   return video_frame_buffer_;
 }
 
+void VideoFrame::set_video_frame_buffer(
+    const rtc::scoped_refptr<VideoFrameBuffer>& buffer) {
+  RTC_CHECK(buffer);
+  video_frame_buffer_ = buffer;
+}
+
 int64_t VideoFrame::render_time_ms() const {
   return timestamp_us() / rtc::kNumMicrosecsPerMillisec;
 }

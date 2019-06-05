@@ -160,6 +160,9 @@ class RTC_EXPORT VideoFrame {
   // initialized VideoFrame.
   rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer() const;
 
+  void set_video_frame_buffer(
+      const rtc::scoped_refptr<VideoFrameBuffer>& buffer);
+
   // TODO(nisse): Deprecated.
   // Return true if the frame is stored in a texture.
   bool is_texture() const {

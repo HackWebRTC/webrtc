@@ -1240,14 +1240,8 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
             VideoFrame::UpdateRect{0, 0, cropped_width, cropped_height};
       }
     }
-    out_frame = VideoFrame::Builder()
-                    .set_video_frame_buffer(cropped_buffer)
-                    .set_timestamp_rtp(video_frame.timestamp())
-                    .set_timestamp_ms(video_frame.render_time_ms())
-                    .set_rotation(video_frame.rotation())
-                    .set_id(video_frame.id())
-                    .set_update_rect(update_rect)
-                    .build();
+    out_frame.set_video_frame_buffer(cropped_buffer);
+    out_frame.set_update_rect(update_rect);
     out_frame.set_ntp_time_ms(video_frame.ntp_time_ms());
     // Since accumulated_update_rect_ is constructed before cropping,
     // we can't trust it. If any changes were pending, we invalidate whole
@@ -1322,14 +1316,8 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
           VideoFrame::UpdateRect{0, 0, out_frame.width(), out_frame.height()};
     }
 
-    out_frame = VideoFrame::Builder()
-                    .set_video_frame_buffer(converted_buffer)
-                    .set_timestamp_rtp(out_frame.timestamp())
-                    .set_timestamp_ms(out_frame.render_time_ms())
-                    .set_rotation(out_frame.rotation())
-                    .set_id(out_frame.id())
-                    .set_update_rect(update_rect)
-                    .build();
+    out_frame.set_video_frame_buffer(converted_buffer);
+    out_frame.set_update_rect(update_rect);
   }
 
   TRACE_EVENT1("webrtc", "VCMGenericEncoder::Encode", "timestamp",
