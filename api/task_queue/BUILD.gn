@@ -37,6 +37,7 @@ rtc_source_set("task_queue_test") {
   ]
   deps = [
     ":task_queue",
+    "../../rtc_base:refcount",
     "../../rtc_base:rtc_event",
     "../../rtc_base:timeutils",
     "../../rtc_base/task_utils:to_queued_task",
