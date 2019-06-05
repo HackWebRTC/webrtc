@@ -10,7 +10,6 @@
 
 #include "modules/audio_device/include/audio_device_data_observer.h"
 
-#include "api/task_queue/global_task_queue_factory.h"
 #include "modules/audio_device/include/audio_device_defines.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ref_counted_object.h"
@@ -280,13 +279,6 @@ class ADMWrapper : public AudioDeviceModule, public AudioTransport {
 };
 
 }  // namespace
-
-rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceWithDataObserver(
-    const AudioDeviceModule::AudioLayer audio_layer,
-    AudioDeviceDataObserver* observer) {
-  return CreateAudioDeviceWithDataObserver(audio_layer,
-                                           &GlobalTaskQueueFactory(), observer);
-}
 
 rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceWithDataObserver(
     AudioDeviceModule::AudioLayer audio_layer,
