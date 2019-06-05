@@ -162,6 +162,7 @@ uint32_t FecControllerDefault::UpdateFecRates(
   // Source coding rate: total rate - protection overhead.
   return estimated_bitrate_bps * (1.0 - protection_overhead_rate);
 }
+
 void FecControllerDefault::SetProtectionMethod(bool enable_fec,
                                                bool enable_nack) {
   media_optimization::VCMProtectionMethodEnum method(media_optimization::kNone);
@@ -175,6 +176,7 @@ void FecControllerDefault::SetProtectionMethod(bool enable_fec,
   CritScope lock(&crit_sect_);
   loss_prot_logic_->SetMethod(method);
 }
+
 void FecControllerDefault::UpdateWithEncodedData(
     const size_t encoded_image_length,
     const VideoFrameType encoded_image_frametype) {
