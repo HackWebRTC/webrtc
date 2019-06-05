@@ -5160,14 +5160,9 @@ TEST_P(PeerConnectionIntegrationTest, RegatherAfterChangingIceTransportType) {
   callee()->pc()->SetConfiguration(callee_config);
   EXPECT_EQ_WAIT(cricket::LOCAL_PORT_TYPE,
                  callee()->last_candidate_gathered().type(), kDefaultTimeout);
-
-  // PeerConnections must be closed before ScopedFieldTrials goes out of scope.
-  ClosePeerConnections();
 }
 
 TEST_P(PeerConnectionIntegrationTest, OnIceCandidateError) {
-  webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-GatherOnCandidateFilterChanged/Enabled/");
   static const rtc::SocketAddress turn_server_internal_address{"88.88.88.0",
                                                                3478};
   static const rtc::SocketAddress turn_server_external_address{"88.88.88.1", 0};
