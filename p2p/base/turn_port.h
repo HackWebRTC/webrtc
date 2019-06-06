@@ -310,7 +310,7 @@ class TurnPort : public Port {
   void OnStunAddress(const rtc::SocketAddress& address);
   void OnAllocateSuccess(const rtc::SocketAddress& address,
                          const rtc::SocketAddress& stun_address);
-  void OnAllocateError(int error_code, const std::string& reason);
+  void OnAllocateError();
   void OnAllocateRequestTimeout();
 
   void HandleDataIndication(const char* data,
@@ -349,7 +349,7 @@ class TurnPort : public Port {
   bool FailAndPruneConnection(const rtc::SocketAddress& address);
 
   // Reconstruct the URL of the server which the candidate is gathered from.
-  std::string ReconstructedServerUrl(bool use_hostname);
+  std::string ReconstructedServerUrl();
 
   void TurnCustomizerMaybeModifyOutgoingStunMessage(StunMessage* message);
   bool TurnCustomizerAllowChannelData(const void* data,

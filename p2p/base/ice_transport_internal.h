@@ -270,9 +270,6 @@ class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
   sigslot::signal2<IceTransportInternal*, const Candidate&>
       SignalCandidateGathered;
 
-  sigslot::signal2<IceTransportInternal*, const IceCandidateErrorEvent&>
-      SignalCandidateError;
-
   sigslot::signal2<IceTransportInternal*, const Candidates&>
       SignalCandidatesRemoved;
 

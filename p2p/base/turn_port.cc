@@ -326,8 +326,7 @@ void TurnPort::PrepareAddress() {
   if (credentials_.username.empty() || credentials_.password.empty()) {
     RTC_LOG(LS_ERROR) << "Allocation can't be started without setting the"
                          " TURN server credentials for the user.";
-    OnAllocateError(STUN_ERROR_UNAUTHORIZED,
-                    "Missing TURN server credentials.");
+    OnAllocateError();
     return;
   }
 
@@ -344,8 +343,7 @@ void TurnPort::PrepareAddress() {
       RTC_LOG(LS_ERROR) << "IP address family does not match. server: "
                         << server_address_.address.family()
                         << " local: " << Network()->GetBestIP().family();
-      OnAllocateError(STUN_ERROR_GLOBAL_FAILURE,
-                      "IP address family does not match.");
+      OnAllocateError();
       return;
     }
 
@@ -357,8 +355,7 @@ void TurnPort::PrepareAddress() {
                      << server_address_.address.ToSensitiveString();
     if (!CreateTurnClientSocket()) {
       RTC_LOG(LS_ERROR) << "Failed to create TURN client socket";
-      OnAllocateError(STUN_ERROR_GLOBAL_FAILURE,
-                      "Failed to create TURN client socket.");
+      OnAllocateError();
       return;
     }
     if (server_address_.proto == PROTO_UDP) {
@@ -476,9 +473,7 @@ void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
                           << socket_address.ipaddr().ToString()
                           << ", rather than an address associated with network:"
                           << Network()->ToString() << ". Discarding TURN port.";
-      OnAllocateError(
-          STUN_ERROR_GLOBAL_FAILURE,
-          "Address not associated with the desired network interface.");
+      OnAllocateError();
       return;
     }
   }
@@ -506,8 +501,7 @@ void TurnPort::OnAllocateMismatch() {
     RTC_LOG(LS_WARNING) << ToString() << ": Giving up on the port after "
                         << allocate_mismatch_retries_
                         << " retries for STUN_ERROR_ALLOCATION_MISMATCH";
-    OnAllocateError(STUN_ERROR_ALLOCATION_MISMATCH,
-                    "Maximum retries reached for allocation mismatch.");
+    OnAllocateError();
     return;
   }
 
@@ -792,8 +786,7 @@ void TurnPort::OnResolveResult(rtc::AsyncResolverInterface* resolver) {
   if (resolver_->GetError() != 0 && (server_address_.proto == PROTO_TCP ||
                                      server_address_.proto == PROTO_TLS)) {
     if (!CreateTurnClientSocket()) {
-      OnAllocateError(SERVER_NOT_REACHABLE_ERROR,
-                      "TURN host lookup received error.");
+      OnAllocateError();
     }
     return;
   }
@@ -807,8 +800,7 @@ void TurnPort::OnResolveResult(rtc::AsyncResolverInterface* resolver) {
     RTC_LOG(LS_WARNING) << ToString() << ": TURN host lookup received error "
                         << resolver_->GetError();
     error_ = resolver_->GetError();
-    OnAllocateError(SERVER_NOT_REACHABLE_ERROR,
-                    "TURN host lookup received error.");
+    OnAllocateError();
     return;
   }
   // Signal needs both resolved and unresolved address. After signal is sent
@@ -855,20 +847,14 @@ void TurnPort::OnAllocateSuccess(const rtc::SocketAddress& address,
              ProtoToString(server_address_.proto),  // The first hop protocol.
              "",  // TCP canddiate type, empty for turn candidates.
              RELAY_PORT_TYPE, GetRelayPreference(server_address_.proto),
-             server_priority_, ReconstructedServerUrl(false /* use_hostname */),
-             true);
+             server_priority_, ReconstructedServerUrl(), true);
 }
 
-void TurnPort::OnAllocateError(int error_code, const std::string& reason) {
+void TurnPort::OnAllocateError() {
   // We will send SignalPortError asynchronously as this can be sent during
   // port initialization. This way it will not be blocking other port
   // creation.
   thread()->Post(RTC_FROM_HERE, this, MSG_ALLOCATE_ERROR);
-  SignalCandidateError(
-      this,
-      IceCandidateErrorEvent(GetLocalAddress().ToSensitiveString(),
-                             ReconstructedServerUrl(true /* use_hostname */),
-                             error_code, reason));
 }
 
 void TurnPort::OnRefreshError() {
@@ -901,7 +887,7 @@ void TurnPort::Release() {
 
 void TurnPort::Close() {
   if (!ready()) {
-    OnAllocateError(SERVER_NOT_REACHABLE_ERROR, "");
+    OnAllocateError();
   }
   request_manager_.Clear();
   // Stop the port from creating new connections.
@@ -955,8 +941,7 @@ void TurnPort::OnMessage(rtc::Message* message) {
 }
 
 void TurnPort::OnAllocateRequestTimeout() {
-  OnAllocateError(SERVER_NOT_REACHABLE_ERROR,
-                  "TURN allocate request timed out.");
+  OnAllocateError();
 }
 
 void TurnPort::HandleDataIndication(const char* data,
@@ -1264,7 +1249,7 @@ bool TurnPort::SetEntryChannelId(const rtc::SocketAddress& address,
   return true;
 }
 
-std::string TurnPort::ReconstructedServerUrl(bool use_hostname) {
+std::string TurnPort::ReconstructedServerUrl() {
   // draft-petithuguenin-behave-turn-uris-01
   // turnURI       = scheme ":" turn-host [ ":" turn-port ]
   //                 [ "?transport=" transport ]
@@ -1287,10 +1272,8 @@ std::string TurnPort::ReconstructedServerUrl(bool use_hostname) {
       break;
   }
   rtc::StringBuilder url;
-  url << scheme << ":"
-      << (use_hostname ? server_address_.address.hostname()
-                       : server_address_.address.ipaddr().ToString())
-      << ":" << server_address_.address.port() << "?transport=" << transport;
+  url << scheme << ":" << server_address_.address.ipaddr().ToString() << ":"
+      << server_address_.address.port() << "?transport=" << transport;
   return url.Release();
 }
 
@@ -1405,8 +1388,7 @@ void TurnAllocateRequest::OnErrorResponse(StunMessage* response) {
                           << ": Received TURN allocate error response, id="
                           << rtc::hex_encode(id()) << ", code=" << error_code
                           << ", rtt=" << Elapsed();
-      const StunErrorCodeAttribute* attr = response->GetErrorCode();
-      port_->OnAllocateError(error_code, attr ? attr->reason() : "");
+      port_->OnAllocateError();
   }
 }
 
@@ -1422,8 +1404,7 @@ void TurnAllocateRequest::OnAuthChallenge(StunMessage* response, int code) {
     RTC_LOG(LS_WARNING) << port_->ToString()
                         << ": Failed to authenticate with the server "
                            "after challenge.";
-    const StunErrorCodeAttribute* attr = response->GetErrorCode();
-    port_->OnAllocateError(STUN_ERROR_UNAUTHORIZED, attr ? attr->reason() : "");
+    port_->OnAllocateError();
     return;
   }
 
@@ -1456,7 +1437,7 @@ void TurnAllocateRequest::OnTryAlternate(StunMessage* response, int code) {
   // According to RFC 5389 section 11, there are use cases where
   // authentication of response is not possible, we're not validating
   // message integrity.
-  const StunErrorCodeAttribute* error_code_attr = response->GetErrorCode();
+
   // Get the alternate server address attribute value.
   const StunAddressAttribute* alternate_server_attr =
       response->GetAddress(STUN_ATTR_ALTERNATE_SERVER);
@@ -1464,13 +1445,11 @@ void TurnAllocateRequest::OnTryAlternate(StunMessage* response, int code) {
     RTC_LOG(LS_WARNING) << port_->ToString()
                         << ": Missing STUN_ATTR_ALTERNATE_SERVER "
                            "attribute in try alternate error response";
-    port_->OnAllocateError(STUN_ERROR_TRY_ALTERNATE,
-                           error_code_attr ? error_code_attr->reason() : "");
+    port_->OnAllocateError();
     return;
   }
   if (!port_->SetAlternateServer(alternate_server_attr->GetAddress())) {
-    port_->OnAllocateError(STUN_ERROR_TRY_ALTERNATE,
-                           error_code_attr ? error_code_attr->reason() : "");
+    port_->OnAllocateError();
     return;
   }
 
