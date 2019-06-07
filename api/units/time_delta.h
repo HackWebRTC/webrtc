@@ -22,6 +22,7 @@
 #include "rtc_base/units/unit_base.h"
 
 namespace webrtc {
+
 // TimeDelta represents the difference between two timestamps. Commonly this can
 // be a duration. However since two Timestamps are not guaranteed to have the
 // same epoch (they might come from different computers, making exact

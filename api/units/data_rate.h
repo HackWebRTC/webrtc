@@ -20,21 +20,12 @@
 #include <type_traits>
 
 #include "api/units/data_size.h"
+#include "api/units/frequency.h"
 #include "api/units/time_delta.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/units/unit_base.h"
 
 namespace webrtc {
-namespace data_rate_impl {
-inline int64_t Microbits(const DataSize& size) {
-  constexpr int64_t kMaxBeforeConversion =
-      std::numeric_limits<int64_t>::max() / 8000000;
-  RTC_DCHECK_LE(size.bytes(), kMaxBeforeConversion)
-      << "size is too large to be expressed in microbytes";
-  return size.bytes() * 8000000;
-}
-}  // namespace data_rate_impl
-
 // DataRate is a class that represents a given data rate. This can be used to
 // represent bandwidth, encoding bitrate, etc. The internal storage is bits per
 // second (bps).
@@ -92,6 +83,24 @@ class DataRate final : public rtc_units_impl::RelativeUnit<DataRate> {
   static constexpr bool one_sided = true;
 };
 
+namespace data_rate_impl {
+inline int64_t Microbits(const DataSize& size) {
+  constexpr int64_t kMaxBeforeConversion =
+      std::numeric_limits<int64_t>::max() / 8000000;
+  RTC_DCHECK_LE(size.bytes(), kMaxBeforeConversion)
+      << "size is too large to be expressed in microbits";
+  return size.bytes() * 8000000;
+}
+
+inline int64_t MillibytePerSec(const DataRate& size) {
+  constexpr int64_t kMaxBeforeConversion =
+      std::numeric_limits<int64_t>::max() / (1000 / 8);
+  RTC_DCHECK_LE(size.bps(), kMaxBeforeConversion)
+      << "rate is too large to be expressed in microbytes per second";
+  return size.bps() * (1000 / 8);
+}
+}  // namespace data_rate_impl
+
 inline DataRate operator/(const DataSize size, const TimeDelta duration) {
   return DataRate::bps(data_rate_impl::Microbits(size) / duration.us());
 }
@@ -104,6 +113,28 @@ inline DataSize operator*(const DataRate rate, const TimeDelta duration) {
 }
 inline DataSize operator*(const TimeDelta duration, const DataRate rate) {
   return rate * duration;
+}
+
+inline DataSize operator/(const DataRate rate, const Frequency frequency) {
+  int64_t millihertz = frequency.millihertz<int64_t>();
+  // Note that the value is truncated here reather than rounded, potentially
+  // introducing an error of .5 bytes if rounding were expected.
+  return DataSize::bytes(data_rate_impl::MillibytePerSec(rate) / millihertz);
+}
+inline Frequency operator/(const DataRate rate, const DataSize size) {
+  return Frequency::millihertz(data_rate_impl::MillibytePerSec(rate) /
+                               size.bytes());
+}
+inline DataRate operator*(const DataSize size, const Frequency frequency) {
+  int64_t millihertz = frequency.millihertz<int64_t>();
+  int64_t kMaxBeforeConversion =
+      std::numeric_limits<int64_t>::max() / 8 / millihertz;
+  RTC_DCHECK_LE(size.bytes(), kMaxBeforeConversion);
+  int64_t millibits_per_second = size.bytes() * 8 * millihertz;
+  return DataRate::bps((millibits_per_second + 500) / 1000);
+}
+inline DataRate operator*(const Frequency frequency, const DataSize size) {
+  return size * frequency;
 }
 
 std::string ToString(DataRate value);
