@@ -317,7 +317,6 @@ class JsepTransport : public sigslot::has_slots<>,
     } else if (unencrypted_rtp_transport_) {
       return unencrypted_rtp_transport_.get();
     } else {
-      RTC_DCHECK(media_transport_);
       return nullptr;
     }
   }
