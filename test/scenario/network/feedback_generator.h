@@ -22,42 +22,10 @@
 
 namespace webrtc {
 
-template <typename FakePacketType>
-class FakePacketRoute : public EmulatedNetworkReceiverInterface {
- public:
-  FakePacketRoute(EmulatedRoute* route,
-                  std::function<void(FakePacketType, Timestamp)> action)
-      : route_(route),
-        action_(std::move(action)),
-        send_addr_(route_->from->GetPeerLocalAddress(), 0),
-        recv_addr_(route_->to->GetPeerLocalAddress(),
-                   *route_->to->BindReceiver(0, this)) {}
-
-  void SendPacket(EmulatedEndpoint* from, size_t size, FakePacketType packet) {
-    RTC_CHECK_GE(size, sizeof(int));
-    sent_.emplace(next_packet_id_, packet);
-    rtc::CopyOnWriteBuffer buf(size);
-    reinterpret_cast<int*>(buf.data())[0] = next_packet_id_++;
-    from->SendPacket(send_addr_, recv_addr_, buf);
-  }
-
-  void OnPacketReceived(EmulatedIpPacket packet) override {
-    int packet_id = reinterpret_cast<int*>(packet.data.data())[0];
-    action_(std::move(sent_[packet_id]), packet.arrival_time);
-    sent_.erase(packet_id);
-  }
-
- private:
-  EmulatedRoute* const route_;
-  const std::function<void(FakePacketType, Timestamp)> action_;
-  const rtc::SocketAddress send_addr_;
-  const rtc::SocketAddress recv_addr_;
-
-  int next_packet_id_ = 0;
-  std::map<int, FakePacketType> sent_;
-};
-
-class FeedbackGeneratorImpl : public FeedbackGenerator {
+class FeedbackGeneratorImpl
+    : public FeedbackGenerator,
+      public TwoWayFakeTrafficRoute<SentPacket, TransportPacketsFeedback>::
+          TrafficHandlerInterface {
  public:
   explicit FeedbackGeneratorImpl(Config config);
   Timestamp Now() override;
@@ -70,21 +38,17 @@ class FeedbackGeneratorImpl : public FeedbackGenerator {
 
   void SetSendLinkCapacity(DataRate capacity) override;
 
+  void OnRequest(SentPacket packet, Timestamp arrival_time) override;
+  void OnResponse(TransportPacketsFeedback packet,
+                  Timestamp arrival_time) override;
+
  private:
-  void OnPacketReceived(SentPacket packet, Timestamp arrival_time);
   Config conf_;
   GlobalSimulatedTimeController time_controller_;
   ::webrtc::test::NetworkEmulationManagerImpl net_;
   SimulatedNetwork* const send_link_;
   SimulatedNetwork* const ret_link_;
-  EmulatedEndpoint* const send_ep_;
-  EmulatedEndpoint* const ret_ep_;
-  EmulatedRoute* const send_route_;
-  EmulatedRoute* const ret_route_;
-  const rtc::SocketAddress send_addr_;
-  const rtc::SocketAddress ret_addr_;
-  FakePacketRoute<SentPacket> received_packet_handler_;
-  FakePacketRoute<TransportPacketsFeedback> received_feedback_handler_;
+  TwoWayFakeTrafficRoute<SentPacket, TransportPacketsFeedback> route_;
 
   TransportPacketsFeedback builder_;
   std::vector<TransportPacketsFeedback> feedback_;

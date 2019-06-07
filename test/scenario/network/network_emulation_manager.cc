@@ -145,6 +145,13 @@ EmulatedRoute* NetworkEmulationManagerImpl::CreateRoute(
   return out;
 }
 
+EmulatedRoute* NetworkEmulationManagerImpl::CreateRoute(
+    const std::vector<EmulatedNetworkNode*>& via_nodes) {
+  EmulatedEndpoint* from = CreateEndpoint(EmulatedEndpointConfig());
+  EmulatedEndpoint* to = CreateEndpoint(EmulatedEndpointConfig());
+  return CreateRoute(from, via_nodes, to);
+}
+
 void NetworkEmulationManagerImpl::ClearRoute(EmulatedRoute* route) {
   RTC_CHECK(route->active) << "Route already cleared";
   task_queue_.SendTask([route]() {
@@ -221,6 +228,24 @@ NetworkEmulationManagerImpl::CreatePulsedPeaksCrossTraffic(
                                    });
       }));
   return out;
+}
+
+void NetworkEmulationManagerImpl::StartFakeTcpCrossTraffic(
+    EmulatedRoute* send_route,
+    EmulatedRoute* ret_route,
+    FakeTcpConfig config) {
+  task_queue_.PostTask([=]() {
+    auto traffic =
+        absl::make_unique<FakeTcpCrossTraffic>(config, send_route, ret_route);
+    auto* traffic_ptr = traffic.get();
+    tcp_cross_traffics_.push_back(std::move(traffic));
+    TimeDelta process_interval = config.process_interval;
+    RepeatingTaskHandle::Start(task_queue_.Get(),
+                               [this, process_interval, traffic_ptr] {
+                                 traffic_ptr->Process(Now());
+                                 return process_interval;
+                               });
+  });
 }
 
 EmulatedNetworkManagerInterface*

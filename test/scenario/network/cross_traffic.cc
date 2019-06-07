@@ -114,5 +114,70 @@ ColumnPrinter PulsedPeaksCrossTraffic::StatsPrinter() {
       32);
 }
 
+FakeTcpCrossTraffic::FakeTcpCrossTraffic(FakeTcpConfig config,
+                                         EmulatedRoute* send_route,
+                                         EmulatedRoute* ret_route)
+    : conf_(config), route_(this, send_route, ret_route) {}
+
+void FakeTcpCrossTraffic::Process(Timestamp at_time) {
+  SendPackets(at_time);
+}
+
+void FakeTcpCrossTraffic::OnRequest(int sequence_number, Timestamp at_time) {
+  const size_t kAckPacketSize = 20;
+  route_.SendResponse(kAckPacketSize, sequence_number);
+}
+
+void FakeTcpCrossTraffic::OnResponse(int sequence_number, Timestamp at_time) {
+  ack_received_ = true;
+  auto it = in_flight_.find(sequence_number);
+  if (it != in_flight_.end()) {
+    last_rtt_ = at_time - in_flight_.at(sequence_number);
+    in_flight_.erase(sequence_number);
+  }
+  if (sequence_number - last_acked_seq_num_ > 1) {
+    HandleLoss(at_time);
+  } else if (cwnd_ <= ssthresh_) {
+    cwnd_ += 1;
+  } else {
+    cwnd_ += 1.0f / cwnd_;
+  }
+  last_acked_seq_num_ = std::max(sequence_number, last_acked_seq_num_);
+  SendPackets(at_time);
+}
+
+void FakeTcpCrossTraffic::HandleLoss(Timestamp at_time) {
+  if (at_time - last_reduction_time_ < last_rtt_)
+    return;
+  last_reduction_time_ = at_time;
+  ssthresh_ = std::max(static_cast<int>(in_flight_.size() / 2), 2);
+  cwnd_ = ssthresh_;
+}
+
+void FakeTcpCrossTraffic::SendPackets(Timestamp at_time) {
+  int cwnd = std::ceil(cwnd_);
+  int packets_to_send = std::max(cwnd - static_cast<int>(in_flight_.size()), 0);
+  bool timeouts = false;
+  for (auto it = in_flight_.begin(); it != in_flight_.end();) {
+    if (it->second < at_time - conf_.packet_timeout) {
+      it = in_flight_.erase(it);
+      timeouts = true;
+    } else {
+      ++it;
+    }
+  }
+  if (timeouts)
+    HandleLoss(at_time);
+  for (int i = 0; i < packets_to_send; ++i) {
+    if ((total_sent_ + conf_.packet_size) > conf_.send_limit) {
+      break;
+    }
+    in_flight_.insert({next_sequence_number_, at_time});
+    route_.SendRequest(conf_.packet_size.bytes<size_t>(),
+                       next_sequence_number_++);
+    total_sent_ += conf_.packet_size;
+  }
+}
+
 }  // namespace test
 }  // namespace webrtc

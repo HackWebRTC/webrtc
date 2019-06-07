@@ -51,6 +51,10 @@ class NetworkEmulationManagerImpl : public NetworkEmulationManager {
   EmulatedRoute* CreateRoute(EmulatedEndpoint* from,
                              const std::vector<EmulatedNetworkNode*>& via_nodes,
                              EmulatedEndpoint* to) override;
+
+  EmulatedRoute* CreateRoute(
+      const std::vector<EmulatedNetworkNode*>& via_nodes);
+
   void ClearRoute(EmulatedRoute* route) override;
 
   TrafficRoute* CreateTrafficRoute(
@@ -61,6 +65,9 @@ class NetworkEmulationManagerImpl : public NetworkEmulationManager {
   PulsedPeaksCrossTraffic* CreatePulsedPeaksCrossTraffic(
       TrafficRoute* traffic_route,
       PulsedPeaksConfig config);
+  void StartFakeTcpCrossTraffic(EmulatedRoute* send_route,
+                                EmulatedRoute* ret_route,
+                                FakeTcpConfig config);
 
   EmulatedNetworkManagerInterface* CreateEmulatedNetworkManagerInterface(
       const std::vector<EmulatedEndpoint*>& endpoints) override;
@@ -84,6 +91,7 @@ class NetworkEmulationManagerImpl : public NetworkEmulationManager {
   std::vector<std::unique_ptr<TrafficRoute>> traffic_routes_;
   std::vector<std::unique_ptr<RandomWalkCrossTraffic>> random_cross_traffics_;
   std::vector<std::unique_ptr<PulsedPeaksCrossTraffic>> pulsed_cross_traffics_;
+  std::vector<std::unique_ptr<FakeTcpCrossTraffic>> tcp_cross_traffics_;
   std::vector<std::unique_ptr<EndpointsContainer>> endpoints_containers_;
   std::vector<std::unique_ptr<EmulatedNetworkManager>> network_managers_;
 

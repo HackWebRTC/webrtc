@@ -90,6 +90,43 @@ class PulsedPeaksCrossTraffic {
   bool sending_ RTC_GUARDED_BY(sequence_checker_) = false;
 };
 
+struct FakeTcpConfig {
+  DataSize packet_size = DataSize::bytes(1200);
+  DataSize send_limit = DataSize::PlusInfinity();
+  int packet_window;
+  TimeDelta process_interval = TimeDelta::ms(200);
+  TimeDelta packet_timeout = TimeDelta::seconds(1);
+};
+
+class FakeTcpCrossTraffic
+    : public TwoWayFakeTrafficRoute<int, int>::TrafficHandlerInterface {
+ public:
+  FakeTcpCrossTraffic(FakeTcpConfig config,
+                      EmulatedRoute* send_route,
+                      EmulatedRoute* ret_route);
+  void Process(Timestamp at_time);
+  void OnRequest(int sequence_number, Timestamp at_time) override;
+  void OnResponse(int sequence_number, Timestamp at_time) override;
+
+  void HandleLoss(Timestamp at_time);
+
+  void SendPackets(Timestamp at_time);
+
+ private:
+  const FakeTcpConfig conf_;
+  TwoWayFakeTrafficRoute<int, int> route_;
+
+  std::map<int, Timestamp> in_flight_;
+  double cwnd_ = 10;
+  double ssthresh_ = INFINITY;
+  bool ack_received_ = false;
+  int last_acked_seq_num_ = 0;
+  int next_sequence_number_ = 0;
+  Timestamp last_reduction_time_ = Timestamp::MinusInfinity();
+  TimeDelta last_rtt_ = TimeDelta::Zero();
+  DataSize total_sent_ = DataSize::Zero();
+};
+
 }  // namespace test
 }  // namespace webrtc
 

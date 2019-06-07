@@ -233,10 +233,9 @@ class EmulatedRoute {
   EmulatedEndpoint* to;
   bool active;
 };
-
 class EndpointsContainer {
  public:
-  EndpointsContainer(const std::vector<EmulatedEndpoint*>& endpoints);
+  explicit EndpointsContainer(const std::vector<EmulatedEndpoint*>& endpoints);
 
   EmulatedEndpoint* LookupByLocalAddress(const rtc::IPAddress& local_ip) const;
   bool HasEndpoint(EmulatedEndpoint* endpoint) const;
@@ -249,6 +248,73 @@ class EndpointsContainer {
   const std::vector<EmulatedEndpoint*> endpoints_;
 };
 
+template <typename FakePacketType>
+class FakePacketRoute : public EmulatedNetworkReceiverInterface {
+ public:
+  FakePacketRoute(EmulatedRoute* route,
+                  std::function<void(FakePacketType, Timestamp)> action)
+      : route_(route),
+        action_(std::move(action)),
+        send_addr_(route_->from->GetPeerLocalAddress(), 0),
+        recv_addr_(route_->to->GetPeerLocalAddress(),
+                   *route_->to->BindReceiver(0, this)) {}
+
+  void SendPacket(size_t size, FakePacketType packet) {
+    RTC_CHECK_GE(size, sizeof(int));
+    sent_.emplace(next_packet_id_, packet);
+    rtc::CopyOnWriteBuffer buf(size);
+    reinterpret_cast<int*>(buf.data())[0] = next_packet_id_++;
+    route_->from->SendPacket(send_addr_, recv_addr_, buf);
+  }
+
+  void OnPacketReceived(EmulatedIpPacket packet) override {
+    int packet_id = reinterpret_cast<int*>(packet.data.data())[0];
+    action_(std::move(sent_[packet_id]), packet.arrival_time);
+    sent_.erase(packet_id);
+  }
+
+ private:
+  EmulatedRoute* const route_;
+  const std::function<void(FakePacketType, Timestamp)> action_;
+  const rtc::SocketAddress send_addr_;
+  const rtc::SocketAddress recv_addr_;
+  int next_packet_id_ = 0;
+  std::map<int, FakePacketType> sent_;
+};
+
+template <typename RequestPacketType, typename ResponsePacketType>
+class TwoWayFakeTrafficRoute {
+ public:
+  class TrafficHandlerInterface {
+   public:
+    virtual void OnRequest(RequestPacketType, Timestamp) = 0;
+    virtual void OnResponse(ResponsePacketType, Timestamp) = 0;
+    virtual ~TrafficHandlerInterface() = default;
+  };
+  TwoWayFakeTrafficRoute(TrafficHandlerInterface* handler,
+                         EmulatedRoute* send_route,
+                         EmulatedRoute* ret_route)
+      : handler_(handler),
+        request_handler_{send_route,
+                         [&](RequestPacketType packet, Timestamp arrival_time) {
+                           handler_->OnRequest(std::move(packet), arrival_time);
+                         }},
+        response_handler_{
+            ret_route, [&](ResponsePacketType packet, Timestamp arrival_time) {
+              handler_->OnResponse(std::move(packet), arrival_time);
+            }} {}
+  void SendRequest(size_t size, RequestPacketType packet) {
+    request_handler_.SendPacket(size, std::move(packet));
+  }
+  void SendResponse(size_t size, ResponsePacketType packet) {
+    response_handler_.SendPacket(size, std::move(packet));
+  }
+
+ private:
+  TrafficHandlerInterface* handler_;
+  FakePacketRoute<RequestPacketType> request_handler_;
+  FakePacketRoute<ResponsePacketType> response_handler_;
+};
 }  // namespace webrtc
 
 #endif  // TEST_SCENARIO_NETWORK_NETWORK_EMULATION_H_

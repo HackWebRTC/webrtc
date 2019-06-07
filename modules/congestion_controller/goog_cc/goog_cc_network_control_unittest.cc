@@ -685,5 +685,29 @@ TEST_F(GoogCcNetworkControllerTest, NoRttBackoffCollapseWhenVideoStops) {
   EXPECT_GT(client->send_bandwidth().kbps(), 1000);
 }
 
+TEST_F(GoogCcNetworkControllerTest, IsFairToTCP) {
+  Scenario s("googcc_unit/tcp_fairness");
+  NetworkSimulationConfig net_conf;
+  net_conf.bandwidth = DataRate::kbps(1000);
+  net_conf.delay = TimeDelta::ms(50);
+  auto* client = s.CreateClient("send", [&](CallClientConfig* c) {
+    c->transport.rates.start_rate = DataRate::kbps(1000);
+  });
+  auto send_net = {s.CreateSimulationNode(net_conf)};
+  auto ret_net = {s.CreateSimulationNode(net_conf)};
+  auto* route = s.CreateRoutes(
+      client, send_net, s.CreateClient("return", CallClientConfig()), ret_net);
+  s.CreateVideoStream(route->forward(), VideoStreamConfig());
+  s.net()->StartFakeTcpCrossTraffic(s.net()->CreateRoute(send_net),
+                                    s.net()->CreateRoute(ret_net),
+                                    FakeTcpConfig());
+  s.RunFor(TimeDelta::seconds(10));
+
+  // Currently only testing for the upper limit as we in practice back out
+  // quite a lot in this scenario. If this behavior is fixed, we should add a
+  // lower bound to ensure it stays fixed.
+  EXPECT_LT(client->send_bandwidth().kbps(), 750);
+}
+
 }  // namespace test
 }  // namespace webrtc

@@ -21,29 +21,11 @@ FeedbackGeneratorImpl::FeedbackGeneratorImpl(
       net_{&time_controller_},
       send_link_{new SimulatedNetwork(conf_.send_link)},
       ret_link_{new SimulatedNetwork(conf_.return_link)},
-      send_ep_{net_.CreateEndpoint(EmulatedEndpointConfig())},
-      ret_ep_{net_.CreateEndpoint(EmulatedEndpointConfig())},
-      send_route_{net_.CreateRoute(
-          send_ep_,
-          {net_.CreateEmulatedNode(absl::WrapUnique(send_link_))},
-          ret_ep_)},
-      ret_route_{net_.CreateRoute(
-          ret_ep_,
-          {net_.CreateEmulatedNode(absl::WrapUnique(ret_link_))},
-          send_ep_)},
-      send_addr_{rtc::SocketAddress(send_ep_->GetPeerLocalAddress(), 0)},
-      ret_addr_{rtc::SocketAddress(ret_ep_->GetPeerLocalAddress(), 0)},
-      received_packet_handler_{send_route_,
-                               [&](SentPacket packet, Timestamp arrival_time) {
-                                 OnPacketReceived(std::move(packet),
-                                                  arrival_time);
-                               }},
-      received_feedback_handler_{
-          ret_route_,
-          [&](TransportPacketsFeedback packet, Timestamp arrival_time) {
-            packet.feedback_time = arrival_time;
-            feedback_.push_back(packet);
-          }} {}
+      route_(this,
+             net_.CreateRoute(
+                 {net_.CreateEmulatedNode(absl::WrapUnique(send_link_))}),
+             net_.CreateRoute(
+                 {net_.CreateEmulatedNode(absl::WrapUnique(ret_link_))})) {}
 
 Timestamp FeedbackGeneratorImpl::Now() {
   return Timestamp::ms(time_controller_.GetClock()->TimeInMilliseconds());
@@ -57,7 +39,7 @@ void FeedbackGeneratorImpl::SendPacket(size_t size) {
   SentPacket sent;
   sent.send_time = Now();
   sent.size = DataSize::bytes(size);
-  received_packet_handler_.SendPacket(send_ep_, size, sent);
+  route_.SendRequest(size, sent);
 }
 
 std::vector<TransportPacketsFeedback> FeedbackGeneratorImpl::PopFeedback() {
@@ -82,18 +64,23 @@ void FeedbackGeneratorImpl::SetSendLinkCapacity(DataRate capacity) {
   send_link_->SetConfig(conf_.send_link);
 }
 
-void FeedbackGeneratorImpl::OnPacketReceived(SentPacket packet,
-                                             Timestamp arrival_time) {
+void FeedbackGeneratorImpl::OnRequest(SentPacket packet,
+                                      Timestamp arrival_time) {
   PacketResult result;
   result.sent_packet = packet;
   result.receive_time = arrival_time;
   builder_.packet_feedbacks.push_back(result);
   Timestamp first_recv = builder_.packet_feedbacks.front().receive_time;
   if (Now() - first_recv > conf_.feedback_interval) {
-    received_feedback_handler_.SendPacket(
-        ret_ep_, conf_.feedback_packet_size.bytes<size_t>(), builder_);
+    route_.SendResponse(conf_.feedback_packet_size.bytes<size_t>(), builder_);
     builder_ = {};
   }
+}
+
+void FeedbackGeneratorImpl::OnResponse(TransportPacketsFeedback packet,
+                                       Timestamp arrival_time) {
+  packet.feedback_time = arrival_time;
+  feedback_.push_back(packet);
 }
 
 }  // namespace webrtc
