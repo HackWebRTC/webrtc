@@ -2415,51 +2415,6 @@ TEST_P(JsepTransportControllerDatagramTest, RenegotiationCannotRemoveDatagram) {
             fake_params);
 }
 
-TEST_P(JsepTransportControllerDatagramTest,
-       RenegotiationKeepsDatagramTransport) {
-  cricket::OpaqueTransportParameters fake_params = CreateTransportParameters();
-  if (IsOfferer()) {
-    EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
-              fake_params);
-    EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
-              fake_params);
-  }
-
-  auto offer = CreateSessionDescriptionForDatagramTransport(fake_params);
-  EXPECT_TRUE(SetDescription(SdpType::kOffer, offer.get()).ok());
-
-  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
-            fake_params);
-  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
-            fake_params);
-
-  auto answer = CreateSessionDescriptionForDatagramTransport(fake_params);
-  EXPECT_TRUE(SetDescription(SdpType::kAnswer, answer.get()).ok());
-
-  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
-            fake_params);
-  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
-            fake_params);
-
-  // Attempting to remove a datagram transport on a re-offer does not cause an
-  // error, but also does not remove the datagram transport.
-  auto reoffer = CreateSessionDescriptionForDatagramTransport(fake_params);
-  EXPECT_TRUE(SetDescription(SdpType::kOffer, reoffer.get()).ok());
-
-  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
-            fake_params);
-  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
-            fake_params);
-
-  auto reanswer = CreateSessionDescriptionForDatagramTransport(fake_params);
-  EXPECT_TRUE(SetDescription(SdpType::kAnswer, reanswer.get()).ok());
-
-  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
-            fake_params);
-  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
-            fake_params);
-}
-
 INSTANTIATE_TEST_SUITE_P(
     JsepTransportControllerDatagramTests,
     JsepTransportControllerDatagramTest,
