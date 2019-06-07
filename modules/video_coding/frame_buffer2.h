@@ -195,6 +195,9 @@ class FrameBuffer {
 
   const bool add_rtt_to_playout_delay_;
 
+  // rtt_mult experiment settings.
+  const absl::optional<RttMultExperiment::Settings> rtt_mult_settings_;
+
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(FrameBuffer);
 };
 

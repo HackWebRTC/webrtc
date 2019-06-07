@@ -131,6 +131,7 @@ rtc_static_library("rtt_mult_experiment") {
   deps = [
     "../:rtc_base_approved",
     "../../system_wrappers:field_trial",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 

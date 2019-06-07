@@ -62,7 +62,8 @@ FrameBuffer::FrameBuffer(Clock* clock,
       stats_callback_(stats_callback),
       last_log_non_decoded_ms_(-kLogNonDecodedIntervalMs),
       add_rtt_to_playout_delay_(
-          webrtc::field_trial::IsEnabled("WebRTC-AddRttToPlayoutDelay")) {}
+          webrtc::field_trial::IsEnabled("WebRTC-AddRttToPlayoutDelay")),
+      rtt_mult_settings_(RttMultExperiment::GetRttMultValue()) {}
 
 FrameBuffer::~FrameBuffer() {}
 
@@ -299,11 +300,10 @@ EncodedFrame* FrameBuffer::GetNextFrame() {
     }
 
     float rtt_mult = protection_mode_ == kProtectionNackFEC ? 0.0 : 1.0;
-    absl::optional<double> rtt_mult_add_cap_ms = absl::nullopt;
-    if (RttMultExperiment::RttMultEnabled()) {
-      rtt_mult = RttMultExperiment::GetRttMultValue();
-      // TODO(mhoro): add RttMultExperiment::GetJitterEstCapValue();
-      rtt_mult_add_cap_ms = 200.0;
+    absl::optional<float> rtt_mult_add_cap_ms = absl::nullopt;
+    if (rtt_mult_settings_.has_value()) {
+      rtt_mult = rtt_mult_settings_->rtt_mult_setting;
+      rtt_mult_add_cap_ms = rtt_mult_settings_->rtt_mult_add_cap_ms;
     }
     timing_->SetJitterDelay(
         jitter_estimator_.GetJitterEstimate(rtt_mult, rtt_mult_add_cap_ms));
