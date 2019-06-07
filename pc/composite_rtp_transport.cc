@@ -73,8 +73,6 @@ void CompositeRtpTransport::RemoveTransport(RtpTransportInternal* transport) {
 
   auto it = absl::c_find(transports_, transport);
   if (it == transports_.end()) {
-    RTC_NOTREACHED() << "Callers should not remove transports they did not "
-                        "include in the composite";
     return;
   }
 
