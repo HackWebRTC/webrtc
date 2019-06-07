@@ -68,25 +68,6 @@ void CompositeRtpTransport::SetSendTransport(
   }
 }
 
-void CompositeRtpTransport::RemoveTransport(RtpTransportInternal* transport) {
-  RTC_DCHECK(transport != send_transport_) << "Cannot remove send transport";
-
-  auto it = absl::c_find(transports_, transport);
-  if (it == transports_.end()) {
-    RTC_NOTREACHED() << "Callers should not remove transports they did not "
-                        "include in the composite";
-    return;
-  }
-
-  transport->SignalNetworkRouteChanged.disconnect(this);
-  transport->SignalRtcpPacketReceived.disconnect(this);
-  for (auto sink : rtp_demuxer_sinks_) {
-    transport->UnregisterRtpDemuxerSink(sink);
-  }
-
-  transports_.erase(it);
-}
-
 const std::string& CompositeRtpTransport::transport_name() const {
   return transports_.front()->transport_name();
 }
@@ -164,7 +145,6 @@ bool CompositeRtpTransport::RegisterRtpDemuxerSink(
   for (RtpTransportInternal* transport : transports_) {
     transport->RegisterRtpDemuxerSink(criteria, sink);
   }
-  rtp_demuxer_sinks_.insert(sink);
   return true;
 }
 
@@ -173,7 +153,6 @@ bool CompositeRtpTransport::UnregisterRtpDemuxerSink(
   for (RtpTransportInternal* transport : transports_) {
     transport->UnregisterRtpDemuxerSink(sink);
   }
-  rtp_demuxer_sinks_.erase(sink);
   return true;
 }
 

@@ -120,24 +120,10 @@ class DatagramTransportInterface {
   // that the binary blob goes through). This should only be called for the
   // caller's perspective.
   //
-  // TODO(mellem): Delete.
+  // TODO(sukhanov): Make pure virtual.
   virtual absl::optional<std::string> GetTransportParametersOffer() const {
     return absl::nullopt;
   }
-
-  // Retrieves transport parameters for this datagram transport.  May be called
-  // on either client- or server-perspective transports.
-  //
-  // For servers, the parameters represent what kind of connections and data the
-  // server is prepared to accept.  This is generally a superset of acceptable
-  // parameters.
-  //
-  // For clients, the parameters echo the server configuration used to create
-  // the client, possibly removing any fields or parameters which the client
-  // does not understand.
-  //
-  // TODO(mellem): Make pure virtual.
-  virtual std::string GetTransportParameters() const { return ""; }
 };
 
 }  // namespace webrtc

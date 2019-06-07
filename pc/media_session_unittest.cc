@@ -519,8 +519,6 @@ class MediaSessionDescriptionFactoryTest : public ::testing::Test {
       EXPECT_EQ(
           media_desc_options_it->transport_options.enable_ice_renomination,
           GetIceRenomination(ti_audio));
-      EXPECT_EQ(media_desc_options_it->transport_options.opaque_parameters,
-                ti_audio->description.opaque_parameters);
 
     } else {
       EXPECT_TRUE(ti_audio == NULL);
@@ -528,14 +526,10 @@ class MediaSessionDescriptionFactoryTest : public ::testing::Test {
     const TransportInfo* ti_video = desc->GetTransportInfoByName("video");
     if (options.has_video()) {
       EXPECT_TRUE(ti_video != NULL);
-      auto media_desc_options_it =
-          FindFirstMediaDescriptionByMid("video", options);
       if (options.bundle_enabled) {
         EXPECT_EQ(ti_audio->description.ice_ufrag,
                   ti_video->description.ice_ufrag);
         EXPECT_EQ(ti_audio->description.ice_pwd, ti_video->description.ice_pwd);
-        EXPECT_EQ(ti_audio->description.opaque_parameters,
-                  ti_video->description.opaque_parameters);
       } else {
         if (has_current_desc) {
           EXPECT_EQ(current_video_ufrag, ti_video->description.ice_ufrag);
@@ -546,9 +540,9 @@ class MediaSessionDescriptionFactoryTest : public ::testing::Test {
           EXPECT_EQ(static_cast<size_t>(cricket::ICE_PWD_LENGTH),
                     ti_video->description.ice_pwd.size());
         }
-        EXPECT_EQ(media_desc_options_it->transport_options.opaque_parameters,
-                  ti_video->description.opaque_parameters);
       }
+      auto media_desc_options_it =
+          FindFirstMediaDescriptionByMid("video", options);
       EXPECT_EQ(
           media_desc_options_it->transport_options.enable_ice_renomination,
           GetIceRenomination(ti_video));
@@ -580,7 +574,7 @@ class MediaSessionDescriptionFactoryTest : public ::testing::Test {
           GetIceRenomination(ti_data));
 
     } else {
-      EXPECT_TRUE(ti_data == NULL);
+      EXPECT_TRUE(ti_video == NULL);
     }
   }
 
@@ -3437,46 +3431,6 @@ TEST_F(MediaSessionDescriptionFactoryTest,
                  &options);
   options.bundle_enabled = true;
   TestTransportInfo(false, options, true);
-}
-
-TEST_F(MediaSessionDescriptionFactoryTest,
-       TestTransportInfoOfferBundlesTransportOptions) {
-  MediaSessionOptions options;
-  AddAudioVideoSections(RtpTransceiverDirection::kRecvOnly, &options);
-
-  cricket::OpaqueTransportParameters audio_params;
-  audio_params.protocol = "audio-transport";
-  audio_params.parameters = "audio-params";
-  FindFirstMediaDescriptionByMid("audio", &options)
-      ->transport_options.opaque_parameters = audio_params;
-
-  cricket::OpaqueTransportParameters video_params;
-  video_params.protocol = "video-transport";
-  video_params.parameters = "video-params";
-  FindFirstMediaDescriptionByMid("video", &options)
-      ->transport_options.opaque_parameters = video_params;
-
-  TestTransportInfo(/*offer=*/true, options, /*has_current_desc=*/false);
-}
-
-TEST_F(MediaSessionDescriptionFactoryTest,
-       TestTransportInfoAnswerBundlesTransportOptions) {
-  MediaSessionOptions options;
-  AddAudioVideoSections(RtpTransceiverDirection::kRecvOnly, &options);
-
-  cricket::OpaqueTransportParameters audio_params;
-  audio_params.protocol = "audio-transport";
-  audio_params.parameters = "audio-params";
-  FindFirstMediaDescriptionByMid("audio", &options)
-      ->transport_options.opaque_parameters = audio_params;
-
-  cricket::OpaqueTransportParameters video_params;
-  video_params.protocol = "video-transport";
-  video_params.parameters = "video-params";
-  FindFirstMediaDescriptionByMid("video", &options)
-      ->transport_options.opaque_parameters = video_params;
-
-  TestTransportInfo(/*offer=*/false, options, /*has_current_desc=*/false);
 }
 
 // Create an offer with bundle enabled and verify the crypto parameters are

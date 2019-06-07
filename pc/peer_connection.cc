@@ -4314,20 +4314,11 @@ void PeerConnection::GetOptionsForOffer(
   session_options->offer_extmap_allow_mixed =
       configuration_.offer_extmap_allow_mixed;
 
-  if (configuration_.use_media_transport ||
-      configuration_.use_media_transport_for_data_channels) {
+  if (configuration_.enable_dtls_srtp &&
+      !configuration_.enable_dtls_srtp.value()) {
     session_options->media_transport_settings =
         transport_controller_->GenerateOrGetLastMediaTransportOffer();
   }
-
-  // If datagram transport is in use, add opaque transport parameters.
-  if (configuration_.use_datagram_transport) {
-    for (auto& options : session_options->media_description_options) {
-      options.transport_options.opaque_parameters =
-          transport_controller_->GetTransportParameters(options.mid);
-    }
-  }
-
   // Allow fallback for using obsolete SCTP syntax.
   // Note that the default in |session_options| is true, while
   // the default in |options| is false.
@@ -4625,14 +4616,6 @@ void PeerConnection::GetOptionsForAnswer(
           RTC_FROM_HERE,
           rtc::Bind(&cricket::PortAllocator::GetPooledIceCredentials,
                     port_allocator_.get()));
-
-  // If datagram transport is in use, add opaque transport parameters.
-  if (configuration_.use_datagram_transport) {
-    for (auto& options : session_options->media_description_options) {
-      options.transport_options.opaque_parameters =
-          transport_controller_->GetTransportParameters(options.mid);
-    }
-  }
 }
 
 void PeerConnection::GetOptionsForPlanBAnswer(

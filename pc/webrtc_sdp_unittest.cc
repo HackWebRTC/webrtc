@@ -1577,8 +1577,6 @@ class WebRtcSdpTest : public ::testing::Test {
       }
       EXPECT_EQ(transport1.description.transport_options,
                 transport2.description.transport_options);
-      EXPECT_EQ(transport1.description.opaque_parameters,
-                transport2.description.opaque_parameters);
     }
 
     // global attributes
@@ -1670,15 +1668,6 @@ class WebRtcSdpTest : public ::testing::Test {
     transport_info.description.ice_ufrag = ice_ufrag;
     transport_info.description.ice_pwd = ice_pwd;
     desc_.AddTransportInfo(transport_info);
-  }
-
-  void AddOpaqueTransportParameters(const std::string& content_name,
-                                    cricket::OpaqueTransportParameters params) {
-    ASSERT_TRUE(desc_.GetTransportInfoByName(content_name) != NULL);
-    cricket::TransportInfo info = *(desc_.GetTransportInfoByName(content_name));
-    desc_.RemoveTransportInfoByName(content_name);
-    info.description.opaque_parameters = params;
-    desc_.AddTransportInfo(info);
   }
 
   void AddFingerprint() {
@@ -2214,25 +2203,6 @@ TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithIceOptions) {
   EXPECT_EQ(sdp_with_ice_options, message);
 }
 
-TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithOpaqueTransportParams) {
-  cricket::OpaqueTransportParameters params;
-  params.protocol = "foo";
-  params.parameters = "test64";
-  AddOpaqueTransportParameters(kAudioContentName, params);
-  AddOpaqueTransportParameters(kVideoContentName, params);
-
-  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
-                                jdesc_.session_version()));
-  std::string message = webrtc::SdpSerialize(jdesc_);
-
-  std::string sdp_with_transport_parameters = kSdpFullString;
-  InjectAfter(kAttributeIcePwdVoice, "a=x-opaque:foo:dGVzdDY0\r\n",
-              &sdp_with_transport_parameters);
-  InjectAfter(kAttributeIcePwdVideo, "a=x-opaque:foo:dGVzdDY0\r\n",
-              &sdp_with_transport_parameters);
-  EXPECT_EQ(message, sdp_with_transport_parameters);
-}
-
 TEST_F(WebRtcSdpTest, SerializeSessionDescriptionWithRecvOnlyContent) {
   EXPECT_TRUE(TestSerializeDirection(RtpTransceiverDirection::kRecvOnly));
 }
@@ -2619,30 +2589,6 @@ TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithIceOptions) {
   ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
                                 jdesc_.session_version()));
   EXPECT_TRUE(CompareSessionDescription(jdesc_, jdesc_with_ice_options));
-}
-
-TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithOpaqueTransportParams) {
-  std::string sdp_with_transport_parameters = kSdpFullString;
-  InjectAfter(kAttributeIcePwdVoice, "a=x-opaque:foo:dGVzdDY0\r\n",
-              &sdp_with_transport_parameters);
-  InjectAfter(kAttributeIcePwdVideo, "a=x-opaque:foo:dGVzdDY0\r\n",
-              &sdp_with_transport_parameters);
-
-  JsepSessionDescription jdesc_with_transport_parameters(kDummyType);
-  EXPECT_TRUE(SdpDeserialize(sdp_with_transport_parameters,
-                             &jdesc_with_transport_parameters));
-
-  cricket::OpaqueTransportParameters params;
-  params.protocol = "foo";
-  params.parameters = "test64";
-
-  AddOpaqueTransportParameters(kAudioContentName, params);
-  AddOpaqueTransportParameters(kVideoContentName, params);
-
-  ASSERT_TRUE(jdesc_.Initialize(desc_.Clone(), jdesc_.session_id(),
-                                jdesc_.session_version()));
-  EXPECT_TRUE(
-      CompareSessionDescription(jdesc_, jdesc_with_transport_parameters));
 }
 
 TEST_F(WebRtcSdpTest, DeserializeSessionDescriptionWithUfragPwd) {

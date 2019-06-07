@@ -24,7 +24,6 @@
 #include "p2p/base/dtls_transport.h"
 #include "p2p/base/p2p_constants.h"
 #include "p2p/base/transport_info.h"
-#include "pc/composite_rtp_transport.h"
 #include "pc/dtls_srtp_transport.h"
 #include "pc/dtls_transport.h"
 #include "pc/rtcp_mux_filter.h"
@@ -93,10 +92,8 @@ class JsepTransport : public sigslot::has_slots<>,
       std::unique_ptr<webrtc::RtpTransport> unencrypted_rtp_transport,
       std::unique_ptr<webrtc::SrtpTransport> sdes_transport,
       std::unique_ptr<webrtc::DtlsSrtpTransport> dtls_srtp_transport,
-      std::unique_ptr<webrtc::RtpTransport> datagram_rtp_transport,
       std::unique_ptr<DtlsTransportInternal> rtp_dtls_transport,
       std::unique_ptr<DtlsTransportInternal> rtcp_dtls_transport,
-      std::unique_ptr<DtlsTransportInternal> datagram_dtls_transport,
       std::unique_ptr<webrtc::MediaTransportInterface> media_transport,
       std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport);
 
@@ -149,8 +146,6 @@ class JsepTransport : public sigslot::has_slots<>,
   // negotiated yet.
   absl::optional<rtc::SSLRole> GetDtlsRole() const;
 
-  absl::optional<OpaqueTransportParameters> GetTransportParameters() const;
-
   // TODO(deadbeef): Make this const. See comment in transportcontroller.h.
   bool GetStats(TransportStats* stats);
 
@@ -165,13 +160,15 @@ class JsepTransport : public sigslot::has_slots<>,
   }
 
   webrtc::RtpTransportInternal* rtp_transport() const {
-    rtc::CritScope scope(&accessor_lock_);
-    if (composite_rtp_transport_) {
-      return composite_rtp_transport_.get();
-    } else if (datagram_rtp_transport_) {
-      return datagram_rtp_transport_.get();
+    // This method is called from the signaling thread, which means
+    // that a race is possible, making safety analysis complex.
+    // After fixing, this method should be marked "network thread only".
+    if (dtls_srtp_transport_) {
+      return dtls_srtp_transport_.get();
+    } else if (sdes_transport_) {
+      return sdes_transport_.get();
     } else {
-      return default_rtp_transport();
+      return unencrypted_rtp_transport_.get();
     }
   }
 
@@ -302,26 +299,6 @@ class JsepTransport : public sigslot::has_slots<>,
   // Invoked whenever the state of the media transport changes.
   void OnStateChanged(webrtc::MediaTransportState state) override;
 
-  // Deactivates, signals removal, and deletes |composite_rtp_transport_| if the
-  // current state of negotiation is sufficient to determine which rtp_transport
-  // to use.
-  void NegotiateRtpTransport(webrtc::SdpType type) RTC_RUN_ON(network_thread_);
-
-  // Returns the default (non-datagram) rtp transport, if any.
-  webrtc::RtpTransportInternal* default_rtp_transport() const
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(accessor_lock_) {
-    if (dtls_srtp_transport_) {
-      return dtls_srtp_transport_.get();
-    } else if (sdes_transport_) {
-      return sdes_transport_.get();
-    } else if (unencrypted_rtp_transport_) {
-      return unencrypted_rtp_transport_.get();
-    } else {
-      RTC_DCHECK(media_transport_);
-      return nullptr;
-    }
-  }
-
   // Owning thread, for safety checks
   const rtc::Thread* const network_thread_;
   // Critical scope for fields accessed off-thread
@@ -344,27 +321,15 @@ class JsepTransport : public sigslot::has_slots<>,
 
   // To avoid downcasting and make it type safe, keep three unique pointers for
   // different SRTP mode and only one of these is non-nullptr.
-  std::unique_ptr<webrtc::RtpTransport> unencrypted_rtp_transport_
-      RTC_GUARDED_BY(accessor_lock_);
-  std::unique_ptr<webrtc::SrtpTransport> sdes_transport_
-      RTC_GUARDED_BY(accessor_lock_);
-  std::unique_ptr<webrtc::DtlsSrtpTransport> dtls_srtp_transport_
-      RTC_GUARDED_BY(accessor_lock_);
-  std::unique_ptr<webrtc::RtpTransport> datagram_rtp_transport_
-      RTC_GUARDED_BY(accessor_lock_);
-
-  // If multiple RTP transports are in use, |composite_rtp_transport_| will be
-  // passed to callers.  This is only valid for offer-only, receive-only
-  // scenarios, as it is not possible for the composite to correctly choose
-  // which transport to use for sending.
-  std::unique_ptr<webrtc::CompositeRtpTransport> composite_rtp_transport_
-      RTC_GUARDED_BY(accessor_lock_);
+  // Since these are const, the variables don't need locks;
+  // accessing the objects depends on the objects' thread safety contract.
+  const std::unique_ptr<webrtc::RtpTransport> unencrypted_rtp_transport_;
+  const std::unique_ptr<webrtc::SrtpTransport> sdes_transport_;
+  const std::unique_ptr<webrtc::DtlsSrtpTransport> dtls_srtp_transport_;
 
   rtc::scoped_refptr<webrtc::DtlsTransport> rtp_dtls_transport_
       RTC_GUARDED_BY(accessor_lock_);
   rtc::scoped_refptr<webrtc::DtlsTransport> rtcp_dtls_transport_
-      RTC_GUARDED_BY(accessor_lock_);
-  rtc::scoped_refptr<webrtc::DtlsTransport> datagram_dtls_transport_
       RTC_GUARDED_BY(accessor_lock_);
 
   SrtpFilter sdes_negotiator_ RTC_GUARDED_BY(network_thread_);

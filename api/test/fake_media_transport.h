@@ -19,7 +19,6 @@
 #include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
 #include "api/media_transport_interface.h"
-#include "api/test/fake_datagram_transport.h"
 
 namespace webrtc {
 
@@ -147,8 +146,6 @@ class FakeMediaTransport : public MediaTransportInterface {
 };
 
 // Fake media transport factory creates fake media transport.
-// Also creates fake datagram transport, since both media and datagram
-// transports are created by |MediaTransportFactory|.
 class FakeMediaTransportFactory : public MediaTransportFactory {
  public:
   explicit FakeMediaTransportFactory(
@@ -175,13 +172,6 @@ class FakeMediaTransportFactory : public MediaTransportFactory {
         absl::make_unique<FakeMediaTransport>(
             settings, transport_offer_, settings.remote_transport_parameters);
     return std::move(media_transport);
-  }
-
-  RTCErrorOr<std::unique_ptr<DatagramTransportInterface>>
-  CreateDatagramTransport(rtc::Thread* network_thread,
-                          const MediaTransportSettings& settings) override {
-    return std::unique_ptr<DatagramTransportInterface>(
-        new FakeDatagramTransport(settings, transport_offer_.value_or("")));
   }
 
  private:
