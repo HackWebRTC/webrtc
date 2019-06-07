@@ -950,17 +950,6 @@ rtc_static_library("rtc_base") {
     deps += [ "system:cocoa_threading" ]
   }
 
-  if (rtc_use_x11) {
-    libs += [
-      "dl",
-      "rt",
-      "Xext",
-      "X11",
-      "Xcomposite",
-      "Xrender",
-    ]
-  }
-
   if (is_linux) {
     libs += [
       "dl",
