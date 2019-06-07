@@ -2115,4 +2115,358 @@ TEST_F(JsepTransportControllerTest, ChangeTaggedMediaSectionMaxBundle) {
           .ok());
 }
 
+constexpr char kFakeTransportParameters[] = "fake-params";
+
+// Test fixture that provides common setup and helpers for tests related to the
+// datagram transport.
+class JsepTransportControllerDatagramTest
+    : public JsepTransportControllerTest,
+      public testing::WithParamInterface<bool> {
+ public:
+  JsepTransportControllerDatagramTest()
+      : JsepTransportControllerTest(),
+        fake_media_transport_factory_(kFakeTransportParameters) {
+    JsepTransportController::Config config;
+    config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+    config.bundle_policy = PeerConnectionInterface::kBundlePolicyMaxBundle;
+    config.media_transport_factory = &fake_media_transport_factory_;
+    config.use_datagram_transport = true;
+    CreateJsepTransportController(config);
+  }
+
+  // Whether the JsepTransportController under test acts as the offerer or
+  // answerer in this test.
+  bool IsOfferer() { return GetParam(); }
+
+  // Sets a description as local or remote based on type and current
+  // perspective.
+  RTCError SetDescription(SdpType type,
+                          const cricket::SessionDescription* description) {
+    if (IsOfferer() == (type == SdpType::kOffer)) {
+      return transport_controller_->SetLocalDescription(type, description);
+    } else {
+      return transport_controller_->SetRemoteDescription(type, description);
+    }
+  }
+
+  // Creates a session description with the settings necessary for datagram
+  // transport (bundle + crypto) and the given |transport_params|.
+  std::unique_ptr<cricket::SessionDescription>
+  CreateSessionDescriptionForDatagramTransport(
+      absl::optional<cricket::OpaqueTransportParameters> transport_params) {
+    auto description = CreateSessionDescriptionWithBundleGroup();
+    AddCryptoSettings(description.get());
+
+    for (auto& info : description->transport_infos()) {
+      info.description.opaque_parameters = transport_params;
+    }
+    return description;
+  }
+
+  // Creates transport parameters with |protocol| and |parameters|
+  // matching what |fake_media_transport_factory_| provides.
+  cricket::OpaqueTransportParameters CreateTransportParameters() {
+    cricket::OpaqueTransportParameters params;
+    params.protocol = fake_media_transport_factory_.GetTransportName();
+    params.parameters = "fake-params";
+    return params;
+  }
+
+ protected:
+  FakeMediaTransportFactory fake_media_transport_factory_;
+};
+
+TEST_P(JsepTransportControllerDatagramTest, InitDatagramTransport) {
+  cricket::OpaqueTransportParameters fake_params = CreateTransportParameters();
+  if (IsOfferer()) {
+    // Getting transport parameters is allowed before setting a description.
+    // This is necessary so that the offerer can include these params.
+    EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+              fake_params);
+    EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+              fake_params);
+  }
+
+  // Setting a description activates the datagram transport without changing
+  // transport parameters.
+  auto description = CreateSessionDescriptionForDatagramTransport(fake_params);
+  EXPECT_TRUE(SetDescription(SdpType::kOffer, description.get()).ok());
+
+  // After setting an offer with transport parameters, those parameters are
+  // reflected by the controller.
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            fake_params);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            fake_params);
+}
+
+TEST_P(JsepTransportControllerDatagramTest,
+       OfferMissingDatagramTransportParams) {
+  if (IsOfferer()) {
+    // This test doesn't make sense from the offerer's perspective, as the offer
+    // must contain datagram transport params if the offerer supports it.
+    return;
+  }
+
+  auto description =
+      CreateSessionDescriptionForDatagramTransport(absl::nullopt);
+  EXPECT_TRUE(SetDescription(SdpType::kOffer, description.get()).ok());
+
+  // The offer didn't contain any datagram transport parameters, so the answer
+  // won't either.
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            absl::nullopt);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            absl::nullopt);
+}
+
+TEST_P(JsepTransportControllerDatagramTest, OfferHasWrongTransportName) {
+  if (IsOfferer()) {
+    // This test doesn't make sense from the offerer's perspective, as the
+    // offerer cannot offer itself the wrong transport.
+    return;
+  }
+
+  cricket::OpaqueTransportParameters fake_params = CreateTransportParameters();
+  fake_params.protocol = "wrong-name";
+
+  auto description = CreateSessionDescriptionForDatagramTransport(fake_params);
+  EXPECT_TRUE(SetDescription(SdpType::kOffer, description.get()).ok());
+
+  // The offerer and answerer support different datagram transports, so the
+  // answerer rejects the offered parameters.
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            absl::nullopt);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            absl::nullopt);
+}
+
+TEST_P(JsepTransportControllerDatagramTest, AnswerRejectsDatagram) {
+  cricket::OpaqueTransportParameters fake_params = CreateTransportParameters();
+  if (IsOfferer()) {
+    EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+              fake_params);
+    EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+              fake_params);
+  }
+
+  auto offer = CreateSessionDescriptionForDatagramTransport(fake_params);
+  EXPECT_TRUE(SetDescription(SdpType::kOffer, offer.get()).ok());
+
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            fake_params);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            fake_params);
+
+  auto answer = CreateSessionDescriptionForDatagramTransport(absl::nullopt);
+  EXPECT_TRUE(SetDescription(SdpType::kAnswer, answer.get()).ok());
+
+  // The answer rejected datagram transport, so its parameters are empty.
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            absl::nullopt);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            absl::nullopt);
+}
+
+TEST_P(JsepTransportControllerDatagramTest, AnswerAcceptsDatagram) {
+  cricket::OpaqueTransportParameters fake_params = CreateTransportParameters();
+  if (IsOfferer()) {
+    EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+              fake_params);
+    EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+              fake_params);
+  }
+
+  auto offer = CreateSessionDescriptionForDatagramTransport(fake_params);
+  EXPECT_TRUE(SetDescription(SdpType::kOffer, offer.get()).ok());
+
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            fake_params);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            fake_params);
+
+  auto answer = CreateSessionDescriptionForDatagramTransport(fake_params);
+  EXPECT_TRUE(SetDescription(SdpType::kAnswer, answer.get()).ok());
+
+  // The answer accepted datagram transport, so it is present.
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            fake_params);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            fake_params);
+}
+
+TEST_P(JsepTransportControllerDatagramTest, PrAnswerRejectsDatagram) {
+  cricket::OpaqueTransportParameters fake_params = CreateTransportParameters();
+  if (IsOfferer()) {
+    EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+              fake_params);
+    EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+              fake_params);
+  }
+
+  auto offer = CreateSessionDescriptionForDatagramTransport(fake_params);
+  EXPECT_TRUE(SetDescription(SdpType::kOffer, offer.get()).ok());
+
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            fake_params);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            fake_params);
+
+  auto answer = CreateSessionDescriptionForDatagramTransport(absl::nullopt);
+  EXPECT_TRUE(SetDescription(SdpType::kPrAnswer, answer.get()).ok());
+
+  // The answer rejected datagram transport, but it's provisional, so the
+  // transport is kept around for now.
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            fake_params);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            fake_params);
+}
+
+TEST_P(JsepTransportControllerDatagramTest, PrAnswerAcceptsDatagram) {
+  cricket::OpaqueTransportParameters fake_params = CreateTransportParameters();
+  if (IsOfferer()) {
+    EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+              fake_params);
+    EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+              fake_params);
+  }
+
+  auto offer = CreateSessionDescriptionForDatagramTransport(fake_params);
+  EXPECT_TRUE(SetDescription(SdpType::kOffer, offer.get()).ok());
+
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            fake_params);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            fake_params);
+
+  auto answer = CreateSessionDescriptionForDatagramTransport(fake_params);
+  EXPECT_TRUE(SetDescription(SdpType::kPrAnswer, answer.get()).ok());
+
+  // The answer provisionally accepted datagram transport, so it's kept.
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            fake_params);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            fake_params);
+}
+
+TEST_P(JsepTransportControllerDatagramTest, RenegotiationCannotAddDatagram) {
+  auto offer = CreateSessionDescriptionForDatagramTransport(absl::nullopt);
+  EXPECT_TRUE(SetDescription(SdpType::kOffer, offer.get()).ok());
+
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            absl::nullopt);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            absl::nullopt);
+
+  auto answer = CreateSessionDescriptionForDatagramTransport(absl::nullopt);
+  EXPECT_TRUE(SetDescription(SdpType::kAnswer, answer.get()).ok());
+
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            absl::nullopt);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            absl::nullopt);
+
+  // Attempting to add a datagram transport on a re-offer does not cause an
+  // error, but also does not add a datagram transport.
+  auto reoffer =
+      CreateSessionDescriptionForDatagramTransport(CreateTransportParameters());
+  EXPECT_TRUE(SetDescription(SdpType::kOffer, reoffer.get()).ok());
+
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            absl::nullopt);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            absl::nullopt);
+}
+
+TEST_P(JsepTransportControllerDatagramTest, RenegotiationCannotRemoveDatagram) {
+  cricket::OpaqueTransportParameters fake_params = CreateTransportParameters();
+  if (IsOfferer()) {
+    EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+              fake_params);
+    EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+              fake_params);
+  }
+
+  auto offer = CreateSessionDescriptionForDatagramTransport(fake_params);
+  EXPECT_TRUE(SetDescription(SdpType::kOffer, offer.get()).ok());
+
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            fake_params);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            fake_params);
+
+  auto answer = CreateSessionDescriptionForDatagramTransport(fake_params);
+  EXPECT_TRUE(SetDescription(SdpType::kAnswer, answer.get()).ok());
+
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            fake_params);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            fake_params);
+
+  // Attempting to remove a datagram transport on a re-offer does not cause an
+  // error, but also does not remove the datagram transport.
+  auto reoffer = CreateSessionDescriptionForDatagramTransport(absl::nullopt);
+  EXPECT_TRUE(SetDescription(SdpType::kOffer, reoffer.get()).ok());
+
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            fake_params);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            fake_params);
+}
+
+TEST_P(JsepTransportControllerDatagramTest,
+       RenegotiationKeepsDatagramTransport) {
+  cricket::OpaqueTransportParameters fake_params = CreateTransportParameters();
+  if (IsOfferer()) {
+    EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+              fake_params);
+    EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+              fake_params);
+  }
+
+  auto offer = CreateSessionDescriptionForDatagramTransport(fake_params);
+  EXPECT_TRUE(SetDescription(SdpType::kOffer, offer.get()).ok());
+
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            fake_params);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            fake_params);
+
+  auto answer = CreateSessionDescriptionForDatagramTransport(fake_params);
+  EXPECT_TRUE(SetDescription(SdpType::kAnswer, answer.get()).ok());
+
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            fake_params);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            fake_params);
+
+  // Attempting to remove a datagram transport on a re-offer does not cause an
+  // error, but also does not remove the datagram transport.
+  auto reoffer = CreateSessionDescriptionForDatagramTransport(fake_params);
+  EXPECT_TRUE(SetDescription(SdpType::kOffer, reoffer.get()).ok());
+
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            fake_params);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            fake_params);
+
+  auto reanswer = CreateSessionDescriptionForDatagramTransport(fake_params);
+  EXPECT_TRUE(SetDescription(SdpType::kAnswer, reanswer.get()).ok());
+
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kAudioMid1),
+            fake_params);
+  EXPECT_EQ(transport_controller_->GetTransportParameters(kVideoMid1),
+            fake_params);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    JsepTransportControllerDatagramTests,
+    JsepTransportControllerDatagramTest,
+    testing::Values(true, false),
+    // The parameter value is the local perspective (offerer or answerer).
+    [](const testing::TestParamInfo<bool>& info) {
+      return info.param ? "Offerer" : "Answerer";
+    });
+
 }  // namespace webrtc

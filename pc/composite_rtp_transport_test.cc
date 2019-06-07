@@ -243,6 +243,19 @@ TEST_F(CompositeRtpTransportTest, NetworkRouteChange) {
   EXPECT_EQ(8, last_network_route_->local_network_id);
 }
 
+TEST_F(CompositeRtpTransportTest, RemoveTransport) {
+  SetupRtpTransports(/*rtcp_mux=*/true);
+
+  composite_->RemoveTransport(transport_1_.get());
+
+  // Check that signals are disconnected.
+  rtc::NetworkRoute route;
+  route.local_network_id = 7;
+  packet_transport_1_->SetNetworkRoute(route);
+
+  EXPECT_EQ(0, network_route_count_);
+}
+
 TEST_F(CompositeRtpTransportTest, SendRtcpBeforeSendTransportSet) {
   SetupRtpTransports(/*rtcp_mux=*/true);
 

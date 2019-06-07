@@ -12,6 +12,7 @@
 #define PC_COMPOSITE_RTP_TRANSPORT_H_
 
 #include <memory>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -45,6 +46,12 @@ class CompositeRtpTransport : public RtpTransportInternal {
   // |IsReadyToSend|, |IsWritable|, and the associated signals will reflect the
   // state of |send_tranpsort|.
   void SetSendTransport(RtpTransportInternal* send_transport);
+
+  // Removes |transport| from the composite.  No-op if |transport| is null or
+  // not found in the composite.  Removing a transport disconnects all signals
+  // and RTP demux sinks from that transport.  The send transport may not be
+  // removed.
+  void RemoveTransport(RtpTransportInternal* transport);
 
   // All transports within a composite must have the same name.
   const std::string& transport_name() const override;
@@ -101,6 +108,10 @@ class CompositeRtpTransport : public RtpTransportInternal {
 
   std::vector<RtpTransportInternal*> transports_;
   RtpTransportInternal* send_transport_ = nullptr;
+
+  // Record of registered RTP demuxer sinks.  Used to unregister sinks when a
+  // transport is removed.
+  std::set<RtpPacketSinkInterface*> rtp_demuxer_sinks_;
 };
 
 }  // namespace webrtc
