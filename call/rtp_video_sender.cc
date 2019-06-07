@@ -189,13 +189,19 @@ std::unique_ptr<FlexfecSender> MaybeCreateFlexfecSender(
       RTPSender::FecExtensionSizes(), rtp_state, clock);
 }
 
-DataRate CalculateOverheadRate(DataRate data_rate,
-                               DataSize packet_size,
-                               DataSize overhead_per_packet) {
-  Frequency packet_rate = data_rate / packet_size;
-  // TOSO(srte): We should not need to round to nearest whole packet per second
-  // rate here.
-  return packet_rate.RoundUpTo(Frequency::hertz(1)) * overhead_per_packet;
+uint32_t CalculateOverheadRateBps(int packets_per_second,
+                                  size_t overhead_bytes_per_packet,
+                                  uint32_t max_overhead_bps) {
+  uint32_t overhead_bps =
+      static_cast<uint32_t>(8 * overhead_bytes_per_packet * packets_per_second);
+  return std::min(overhead_bps, max_overhead_bps);
+}
+
+int CalculatePacketRate(uint32_t bitrate_bps, size_t packet_size_bytes) {
+  size_t packet_size_bits = 8 * packet_size_bytes;
+  // Ceil for int value of bitrate_bps / packet_size_bits.
+  return static_cast<int>((bitrate_bps + packet_size_bits - 1) /
+                          packet_size_bits);
 }
 }  // namespace
 
@@ -688,17 +694,16 @@ void RtpVideoSender::OnBitrateUpdated(uint32_t bitrate_bps,
                                       int framerate) {
   // Substract overhead from bitrate.
   rtc::CritScope lock(&crit_);
-  DataSize packet_overhead = DataSize::bytes(
-      overhead_bytes_per_packet_ + transport_overhead_bytes_per_packet_);
-  DataSize max_total_packet_size = DataSize::bytes(
-      rtp_config_.max_packet_size + transport_overhead_bytes_per_packet_);
   uint32_t payload_bitrate_bps = bitrate_bps;
   if (send_side_bwe_with_overhead_) {
-    DataRate overhead_rate = CalculateOverheadRate(
-        DataRate::bps(bitrate_bps), max_total_packet_size, packet_overhead);
-    // TODO(srte): We probably should not accept 0 payload bitrate here.
-    payload_bitrate_bps =
-        rtc::saturated_cast<uint32_t>(bitrate_bps - overhead_rate.bps());
+    uint32_t overhead_bps = CalculateOverheadRateBps(
+        CalculatePacketRate(
+            bitrate_bps,
+            rtp_config_.max_packet_size + transport_overhead_bytes_per_packet_),
+        overhead_bytes_per_packet_ + transport_overhead_bytes_per_packet_,
+        bitrate_bps);
+    RTC_DCHECK_LE(overhead_bps, bitrate_bps);
+    payload_bitrate_bps = bitrate_bps - overhead_bps;
   }
 
   // Get the encoder target rate. It is the estimated network rate -
@@ -719,20 +724,18 @@ void RtpVideoSender::OnBitrateUpdated(uint32_t bitrate_bps,
 
   loss_mask_vector_.clear();
 
-  uint32_t encoder_overhead_rate_bps = 0;
-  if (send_side_bwe_with_overhead_) {
-    // TODO(srte): The packet size should probably be the same as in the
-    // CalculateOverheadRate call above (just max_total_packet_size), it doesn't
-    // make sense to use different packet rates for different overhead
-    // calculations.
-    DataRate encoder_overhead_rate = CalculateOverheadRate(
-        DataRate::bps(encoder_target_rate_bps_),
-        max_total_packet_size - DataSize::bytes(overhead_bytes_per_packet_),
-        packet_overhead);
-    encoder_overhead_rate_bps =
-        std::min(encoder_overhead_rate.bps<uint32_t>(),
-                 bitrate_bps - encoder_target_rate_bps_);
-  }
+  uint32_t encoder_overhead_rate_bps =
+      send_side_bwe_with_overhead_
+          ? CalculateOverheadRateBps(
+                CalculatePacketRate(encoder_target_rate_bps_,
+                                    rtp_config_.max_packet_size +
+                                        transport_overhead_bytes_per_packet_ -
+                                        overhead_bytes_per_packet_),
+                overhead_bytes_per_packet_ +
+                    transport_overhead_bytes_per_packet_,
+                bitrate_bps - encoder_target_rate_bps_)
+          : 0;
+
   // When the field trial "WebRTC-SendSideBwe-WithOverhead" is enabled
   // protection_bitrate includes overhead.
   const uint32_t media_rate = encoder_target_rate_bps_ +
