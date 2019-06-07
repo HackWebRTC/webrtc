@@ -726,7 +726,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
         // Simulate setting up temporal layers, in order to validate the life
         // cycle of these objects.
         Vp8TemporalLayersFactory factory;
-        frame_buffer_controller_ = factory.Create(*config);
+        frame_buffer_controller_ = factory.Create(*config, settings);
       }
       if (force_init_encode_failed_) {
         initialized_ = EncoderState::kInitializationFailed;

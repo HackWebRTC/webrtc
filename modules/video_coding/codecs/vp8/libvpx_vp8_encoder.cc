@@ -486,10 +486,11 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
 
   RTC_DCHECK(!frame_buffer_controller_);
   if (frame_buffer_controller_factory_) {
-    frame_buffer_controller_ = frame_buffer_controller_factory_->Create(*inst);
+    frame_buffer_controller_ =
+        frame_buffer_controller_factory_->Create(*inst, settings);
   } else {
     Vp8TemporalLayersFactory factory;
-    frame_buffer_controller_ = factory.Create(*inst);
+    frame_buffer_controller_ = factory.Create(*inst, settings);
   }
   RTC_DCHECK(frame_buffer_controller_);
 
