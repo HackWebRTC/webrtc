@@ -24,6 +24,7 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
+using cricket::OpaqueTransportParameters;
 using cricket::TransportDescription;
 using cricket::TransportDescriptionFactory;
 using cricket::TransportOptions;
@@ -205,6 +206,97 @@ TEST_F(TransportDescriptionFactoryTest, TestOfferDtlsReofferDtls) {
   std::unique_ptr<TransportDescription> desc =
       f1_.CreateOffer(TransportOptions(), old_desc.get(), &ice_credentials_);
   CheckDesc(desc.get(), "", old_desc->ice_ufrag, old_desc->ice_pwd, digest_alg);
+}
+
+TEST_F(TransportDescriptionFactoryTest, TestOfferOpaqueTransportParameters) {
+  OpaqueTransportParameters params;
+  params.protocol = "fake";
+  params.parameters = "foobar";
+
+  TransportOptions options;
+  options.opaque_parameters = params;
+
+  std::unique_ptr<TransportDescription> desc =
+      f1_.CreateOffer(options, NULL, &ice_credentials_);
+
+  CheckDesc(desc.get(), "", "", "", "");
+  EXPECT_EQ(desc->opaque_parameters, params);
+}
+
+TEST_F(TransportDescriptionFactoryTest, TestAnswerOpaqueTransportParameters) {
+  OpaqueTransportParameters params;
+  params.protocol = "fake";
+  params.parameters = "foobar";
+
+  TransportOptions options;
+  options.opaque_parameters = params;
+
+  std::unique_ptr<TransportDescription> offer =
+      f1_.CreateOffer(options, NULL, &ice_credentials_);
+  std::unique_ptr<TransportDescription> answer =
+      f2_.CreateAnswer(offer.get(), options, true, NULL, &ice_credentials_);
+
+  CheckDesc(answer.get(), "", "", "", "");
+  EXPECT_EQ(answer->opaque_parameters, params);
+}
+
+TEST_F(TransportDescriptionFactoryTest, TestAnswerNoOpaqueTransportParameters) {
+  OpaqueTransportParameters params;
+  params.protocol = "fake";
+  params.parameters = "foobar";
+
+  TransportOptions options;
+  options.opaque_parameters = params;
+
+  std::unique_ptr<TransportDescription> offer =
+      f1_.CreateOffer(options, NULL, &ice_credentials_);
+  std::unique_ptr<TransportDescription> answer = f2_.CreateAnswer(
+      offer.get(), TransportOptions(), true, NULL, &ice_credentials_);
+
+  CheckDesc(answer.get(), "", "", "", "");
+  EXPECT_EQ(answer->opaque_parameters, absl::nullopt);
+}
+
+TEST_F(TransportDescriptionFactoryTest,
+       TestAnswerDifferentOpaqueTransportParameters) {
+  OpaqueTransportParameters offer_params;
+  offer_params.protocol = "fake";
+  offer_params.parameters = "foobar";
+
+  TransportOptions options;
+  options.opaque_parameters = offer_params;
+
+  std::unique_ptr<TransportDescription> offer =
+      f1_.CreateOffer(options, NULL, &ice_credentials_);
+
+  OpaqueTransportParameters answer_params;
+  answer_params.protocol = "fake";
+  answer_params.parameters = "baz";
+
+  options.opaque_parameters = answer_params;
+  std::unique_ptr<TransportDescription> answer =
+      f2_.CreateAnswer(offer.get(), options, true, NULL, &ice_credentials_);
+
+  CheckDesc(answer.get(), "", "", "", "");
+  EXPECT_EQ(answer->opaque_parameters, absl::nullopt);
+}
+
+TEST_F(TransportDescriptionFactoryTest,
+       TestAnswerNoOpaqueTransportParametersInOffer) {
+  std::unique_ptr<TransportDescription> offer =
+      f1_.CreateOffer(TransportOptions(), NULL, &ice_credentials_);
+
+  OpaqueTransportParameters params;
+  params.protocol = "fake";
+  params.parameters = "foobar";
+
+  TransportOptions options;
+  options.opaque_parameters = params;
+  std::unique_ptr<TransportDescription> answer =
+      f2_.CreateAnswer(offer.get(), options, true, NULL, &ice_credentials_);
+
+  CheckDesc(answer.get(), "", "", "", "");
+  EXPECT_EQ(answer->opaque_parameters, absl::nullopt);
 }
 
 TEST_F(TransportDescriptionFactoryTest, TestAnswerDefault) {

@@ -79,7 +79,8 @@ TransportDescription::TransportDescription(const TransportDescription& from)
       ice_pwd(from.ice_pwd),
       ice_mode(from.ice_mode),
       connection_role(from.connection_role),
-      identity_fingerprint(CopyFingerprint(from.identity_fingerprint.get())) {}
+      identity_fingerprint(CopyFingerprint(from.identity_fingerprint.get())),
+      opaque_parameters(from.opaque_parameters) {}
 
 TransportDescription::~TransportDescription() = default;
 
@@ -96,6 +97,7 @@ TransportDescription& TransportDescription::operator=(
   connection_role = from.connection_role;
 
   identity_fingerprint.reset(CopyFingerprint(from.identity_fingerprint.get()));
+  opaque_parameters = from.opaque_parameters;
   return *this;
 }
 

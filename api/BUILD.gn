@@ -794,6 +794,7 @@ if (rtc_include_tests) {
     testonly = true
 
     sources = [
+      "test/fake_datagram_transport.h",
       "test/fake_media_transport.h",
     ]
 

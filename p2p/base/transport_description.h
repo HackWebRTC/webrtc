@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/types/optional.h"
 #include "p2p/base/p2p_constants.h"
 #include "rtc_base/ssl_fingerprint.h"
 
@@ -87,6 +88,28 @@ constexpr auto* ICE_OPTION_RENOMINATION = "renomination";
 bool StringToConnectionRole(const std::string& role_str, ConnectionRole* role);
 bool ConnectionRoleToString(const ConnectionRole& role, std::string* role_str);
 
+// Parameters for an opaque transport protocol which may be plugged into WebRTC.
+struct OpaqueTransportParameters {
+  // Protocol used by this opaque transport.  Two endpoints that support the
+  // same protocol are expected to be able to understand the contents of each
+  // others' |parameters| fields.  If those parameters are compatible, the
+  // endpoints are expected to use this transport protocol.
+  std::string protocol;
+
+  // Opaque parameters for this transport.  These parameters are serialized in a
+  // manner determined by the |protocol|.  They can be parsed and understood by
+  // the plugin that supports |protocol|.
+  std::string parameters;
+
+  bool operator==(const OpaqueTransportParameters& other) const {
+    return protocol == other.protocol && parameters == other.parameters;
+  }
+
+  bool operator!=(const OpaqueTransportParameters& other) const {
+    return !(*this == other);
+  }
+};
+
 struct TransportDescription {
   TransportDescription();
   TransportDescription(const std::vector<std::string>& transport_options,
@@ -133,6 +156,7 @@ struct TransportDescription {
   ConnectionRole connection_role;
 
   std::unique_ptr<rtc::SSLFingerprint> identity_fingerprint;
+  absl::optional<OpaqueTransportParameters> opaque_parameters;
 };
 
 }  // namespace cricket
