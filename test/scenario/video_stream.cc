@@ -88,12 +88,16 @@ InterLayerPredMode ToInterLayerPredMode(
 }
 std::vector<RtpExtension> GetVideoRtpExtensions(
     const VideoStreamConfig config) {
-  return {RtpExtension(RtpExtension::kTransportSequenceNumberUri,
-                       kTransportSequenceNumberExtensionId),
-          RtpExtension(RtpExtension::kVideoContentTypeUri,
-                       kVideoContentTypeExtensionId),
-          RtpExtension(RtpExtension::kVideoRotationUri,
-                       kVideoRotationRtpExtensionId)};
+  std::vector<RtpExtension> res = {
+      RtpExtension(RtpExtension::kVideoContentTypeUri,
+                   kVideoContentTypeExtensionId),
+      RtpExtension(RtpExtension::kVideoRotationUri,
+                   kVideoRotationRtpExtensionId)};
+  if (config.stream.packet_feedback) {
+    res.push_back(RtpExtension(RtpExtension::kTransportSequenceNumberUri,
+                               kTransportSequenceNumberExtensionId));
+  }
+  return res;
 }
 
 std::string TransformFilePath(std::string path) {
@@ -311,6 +315,7 @@ VideoReceiveStream::Config CreateVideoReceiveStreamConfig(
   recv.rtp.transport_cc = config.stream.packet_feedback;
   recv.rtp.local_ssrc = local_ssrc;
   recv.rtp.extensions = GetVideoRtpExtensions(config);
+
   RTC_DCHECK(!config.stream.use_rtx ||
              config.stream.nack_history_time > TimeDelta::Zero());
   recv.rtp.nack.rtp_history_ms = config.stream.nack_history_time.ms();
