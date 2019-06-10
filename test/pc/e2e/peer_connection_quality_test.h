@@ -47,6 +47,12 @@ class PeerConfigurerImpl final
                                                             network_manager)),
         params_(absl::make_unique<Params>()) {}
 
+  PeerConfigurer* SetTaskQueueFactory(
+      std::unique_ptr<TaskQueueFactory> task_queue_factory) override {
+    components_->pcf_dependencies->task_queue_factory =
+        std::move(task_queue_factory);
+    return this;
+  }
   PeerConfigurer* SetCallFactory(
       std::unique_ptr<CallFactoryInterface> call_factory) override {
     components_->pcf_dependencies->call_factory = std::move(call_factory);

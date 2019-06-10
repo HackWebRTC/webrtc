@@ -13,13 +13,14 @@
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
-#include "api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/rtc_event_log/rtc_event_log_factory.h"
 #include "api/scoped_refptr.h"
+#include "api/task_queue/default_task_queue_factory.h"
+#include "api/task_queue/task_queue_factory.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
-#include "logging/rtc_event_log/rtc_event_log_factory.h"
 #include "media/engine/webrtc_media_engine.h"
+#include "media/engine/webrtc_media_engine_defaults.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_processing/aec_dump/aec_dump_factory.h"
 #include "modules/audio_processing/include/audio_processing.h"
@@ -43,12 +44,17 @@ void SetMandatoryEntities(InjectableComponents* components) {
   RTC_DCHECK(components->pc_dependencies);
 
   // Setup required peer connection factory dependencies.
+  if (components->pcf_dependencies->task_queue_factory == nullptr) {
+    components->pcf_dependencies->task_queue_factory =
+        CreateDefaultTaskQueueFactory();
+  }
   if (components->pcf_dependencies->call_factory == nullptr) {
     components->pcf_dependencies->call_factory = webrtc::CreateCallFactory();
   }
   if (components->pcf_dependencies->event_log_factory == nullptr) {
     components->pcf_dependencies->event_log_factory =
-        webrtc::CreateRtcEventLogFactory();
+        absl::make_unique<RtcEventLogFactory>(
+            components->pcf_dependencies->task_queue_factory.get());
   }
 }
 
@@ -120,6 +126,7 @@ struct TestPeerComponents {
   }
 
   rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModule(
+      TaskQueueFactory* task_queue_factory,
       absl::optional<AudioConfig> audio_config,
       absl::optional<std::string> audio_output_file_name) {
     std::unique_ptr<TestAudioDeviceModule::Capturer> capturer;
@@ -148,8 +155,9 @@ struct TestPeerComponents {
           TestAudioDeviceModule::CreateDiscardRenderer(kSamplingFrequencyInHz);
     }
 
-    return TestAudioDeviceModule::CreateTestAudioDeviceModule(
-        std::move(capturer), std::move(renderer), /*speed=*/1.f);
+    return TestAudioDeviceModule::Create(task_queue_factory,
+                                         std::move(capturer),
+                                         std::move(renderer), /*speed=*/1.f);
   }
 
   std::unique_ptr<VideoEncoderFactory> CreateVideoEncoderFactory(
@@ -190,23 +198,20 @@ struct TestPeerComponents {
       double bitrate_multiplier,
       std::map<std::string, absl::optional<int>> stream_required_spatial_index,
       VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
-      absl::optional<std::string> audio_output_file_name,
-      rtc::TaskQueue* task_queue) {
-    rtc::scoped_refptr<AudioDeviceModule> adm = CreateAudioDeviceModule(
-        std::move(audio_config), std::move(audio_output_file_name));
-
-    std::unique_ptr<VideoEncoderFactory> video_encoder_factory =
-        CreateVideoEncoderFactory(pcf_dependencies, video_analyzer_helper,
-                                  bitrate_multiplier,
-                                  std::move(stream_required_spatial_index));
-    std::unique_ptr<VideoDecoderFactory> video_decoder_factory =
+      absl::optional<std::string> audio_output_file_name) {
+    cricket::MediaEngineDependencies media_deps;
+    media_deps.task_queue_factory = pcf_dependencies->task_queue_factory.get();
+    media_deps.adm = CreateAudioDeviceModule(media_deps.task_queue_factory,
+                                             std::move(audio_config),
+                                             std::move(audio_output_file_name));
+    media_deps.audio_processing = audio_processing;
+    media_deps.video_encoder_factory = CreateVideoEncoderFactory(
+        pcf_dependencies, video_analyzer_helper, bitrate_multiplier,
+        std::move(stream_required_spatial_index));
+    media_deps.video_decoder_factory =
         CreateVideoDecoderFactory(pcf_dependencies, video_analyzer_helper);
-
-    return cricket::WebRtcMediaEngineFactory::Create(
-        adm, webrtc::CreateBuiltinAudioEncoderFactory(),
-        webrtc::CreateBuiltinAudioDecoderFactory(),
-        std::move(video_encoder_factory), std::move(video_decoder_factory),
-        /*audio_mixer=*/nullptr, audio_processing);
+    webrtc::SetMediaEngineDefaults(&media_deps);
+    return cricket::CreateMediaEngine(std::move(media_deps));
   }
 
   // Creates PeerConnectionFactoryDependencies objects, providing entities
@@ -229,10 +234,12 @@ struct TestPeerComponents {
     pcf_deps.media_engine = CreateMediaEngine(
         pcf_dependencies.get(), std::move(audio_config), bitrate_multiplier,
         std::move(stream_required_spatial_index), video_analyzer_helper,
-        std::move(audio_output_file_name), task_queue);
+        std::move(audio_output_file_name));
 
     pcf_deps.call_factory = std::move(pcf_dependencies->call_factory);
     pcf_deps.event_log_factory = std::move(pcf_dependencies->event_log_factory);
+    pcf_deps.task_queue_factory =
+        std::move(pcf_dependencies->task_queue_factory);
 
     if (pcf_dependencies->fec_controller_factory != nullptr) {
       pcf_deps.fec_controller_factory =

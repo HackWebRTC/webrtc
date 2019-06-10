@@ -23,6 +23,7 @@
 #include "api/function_view.h"
 #include "api/media_transport_interface.h"
 #include "api/peer_connection_interface.h"
+#include "api/task_queue/task_queue_factory.h"
 #include "api/test/audio_quality_analyzer_interface.h"
 #include "api/test/simulated_network.h"
 #include "api/test/video_quality_analyzer_interface.h"
@@ -185,9 +186,11 @@ class PeerConnectionE2EQualityTestFixture {
    public:
     virtual ~PeerConfigurer() = default;
 
-    // The parameters of the following 7 methods will be passed to the
+    // The parameters of the following 8 methods will be passed to the
     // PeerConnectionFactoryInterface implementation that will be created for
     // this peer.
+    virtual PeerConfigurer* SetTaskQueueFactory(
+        std::unique_ptr<TaskQueueFactory> task_queue_factory) = 0;
     virtual PeerConfigurer* SetCallFactory(
         std::unique_ptr<CallFactoryInterface> call_factory) = 0;
     virtual PeerConfigurer* SetEventLogFactory(
