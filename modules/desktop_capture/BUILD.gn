@@ -366,7 +366,7 @@ rtc_static_library("desktop_capture_generic") {
     ]
   }
 
-  if (rtc_use_x11_extensions || rtc_use_pipewire) {
+  if (rtc_use_x11 || rtc_use_pipewire) {
     sources += [
       "mouse_cursor_monitor_linux.cc",
       "screen_capturer_linux.cc",
@@ -378,7 +378,7 @@ rtc_static_library("desktop_capture_generic") {
     }
   }
 
-  if (rtc_use_x11_extensions) {
+  if (rtc_use_x11) {
     sources += [
       "linux/mouse_cursor_monitor_x11.cc",
       "linux/mouse_cursor_monitor_x11.h",
@@ -401,14 +401,7 @@ rtc_static_library("desktop_capture_generic") {
       "linux/x_window_property.cc",
       "linux/x_window_property.h",
     ]
-    libs = [
-      "X11",
-      "Xcomposite",
-      "Xdamage",
-      "Xext",
-      "Xfixes",
-      "Xrender",
-    ]
+    configs += [ "//build/config/linux:x11" ]
 
     if (build_with_mozilla) {
       sources += [
@@ -421,7 +414,7 @@ rtc_static_library("desktop_capture_generic") {
     }
   }
 
-  if (!is_win && !is_mac && !rtc_use_x11_extensions && !rtc_use_pipewire) {
+  if (!is_win && !is_mac && !rtc_use_x11 && !rtc_use_pipewire) {
     sources += [
       "mouse_cursor_monitor_null.cc",
       "screen_capturer_null.cc",
