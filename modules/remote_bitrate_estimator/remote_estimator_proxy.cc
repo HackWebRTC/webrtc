@@ -107,7 +107,8 @@ void RemoteEstimatorProxy::OnBitrateChanged(int bitrate_bps) {
   rtc::CritScope cs(&lock_);
   send_interval_ms_ = static_cast<int>(
       0.5 + kTwccReportSize * 8.0 * 1000.0 /
-                rtc::SafeClamp(0.05 * bitrate_bps, kMinTwccRate, kMaxTwccRate));
+                rtc::SafeClamp(send_config_.bandwidth_fraction * bitrate_bps,
+                               kMinTwccRate, kMaxTwccRate));
 }
 
 void RemoteEstimatorProxy::SetSendPeriodicFeedback(
