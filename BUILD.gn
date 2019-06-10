@@ -427,7 +427,10 @@ if (!build_with_chromium) {
     }
 
     if (build_with_mozilla) {
-      deps += [ "api/video:video_frame" ]
+      deps += [
+        "api/video:video_frame",
+        "api/video:video_rtp_headers",
+      ]
     } else {
       deps += [
         "api",

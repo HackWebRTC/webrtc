@@ -8,6 +8,32 @@
 
 import("../../webrtc.gni")
 
+# Part of a change to break the dependency between "api:rtp_headers" and
+# "api/video:video_frame". This build rule is currently just an empty
+# placeholder to help us fix downstream projects before moving the source files
+# from "api/video:video_frame".
+rtc_source_set("video_rtp_headers") {
+  visibility = [ "*" ]
+  sources = [
+    # "color_space.cc",
+    # "color_space.h",
+    # "hdr_metadata.cc",
+    # "hdr_metadata.h",
+    # "video_content_type.cc",
+    # "video_content_type.h",
+    # "video_frame_marking.h",
+    # "video_rotation.h",
+    # "video_timing.cc",
+    # "video_timing.h",
+  ]
+
+  deps = [
+    "..:array_view",
+    "../../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
 rtc_source_set("video_frame") {
   visibility = [ "*" ]
   sources = [
@@ -32,6 +58,7 @@ rtc_source_set("video_frame") {
   ]
 
   deps = [
+    ":video_rtp_headers",
     "..:array_view",
     "..:scoped_refptr",
     "../../rtc_base:checks",
@@ -56,6 +83,7 @@ rtc_source_set("video_frame_i420") {
   ]
   deps = [
     ":video_frame",
+    ":video_rtp_headers",
     "..:scoped_refptr",
     "../../rtc_base",
     "../../rtc_base:checks",
@@ -74,6 +102,7 @@ rtc_source_set("video_frame_i010") {
   deps = [
     ":video_frame",
     ":video_frame_i420",
+    ":video_rtp_headers",
     "..:scoped_refptr",
     "../../rtc_base",
     "../../rtc_base:checks",
@@ -91,6 +120,8 @@ rtc_source_set("encoded_image") {
     ":video_codec_constants",
     ":video_frame",
     ":video_frame_type",
+    ":video_rtp_headers",
+    "..:rtp_packet_info",
     "../..:webrtc_common",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
