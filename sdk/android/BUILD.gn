@@ -710,6 +710,7 @@ if (is_android) {
       "../../rtc_base:checks",
       "../../rtc_base:rtc_task_queue",
       "../../rtc_base/task_utils:to_queued_task",
+      "//third_party/abseil-cpp/absl/types:optional",
       "//third_party/libyuv",
     ]
   }

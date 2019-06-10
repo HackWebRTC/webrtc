@@ -20,6 +20,7 @@
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_bitrate_allocation.h"
+#include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "api/video_codecs/vp8_temporal_layers_factory.h"
 #include "common_video/h264/h264_common.h"
@@ -719,8 +720,13 @@ class VideoStreamEncoderTest : public ::testing::Test {
     int32_t InitEncode(const VideoCodec* config,
                        int32_t number_of_cores,
                        size_t max_payload_size) override {
-      int res =
-          FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
+      RTC_NOTREACHED();
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
+
+    int32_t InitEncode(const VideoCodec* config,
+                       const Settings& settings) override {
+      int res = FakeEncoder::InitEncode(config, settings);
       rtc::CritScope lock(&local_crit_sect_);
       EXPECT_EQ(initialized_, EncoderState::kUninitialized);
       if (config->codecType == kVideoCodecVP8) {

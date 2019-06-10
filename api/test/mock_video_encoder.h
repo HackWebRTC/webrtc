@@ -37,6 +37,10 @@ class MockVideoEncoder : public VideoEncoder {
                int32_t(const VideoCodec* codecSettings,
                        int32_t numberOfCores,
                        size_t maxPayloadSize));
+  MOCK_METHOD2(InitEncode,
+               int32_t(const VideoCodec* codecSettings,
+                       const VideoEncoder::Settings& settings));
+
   MOCK_METHOD2(Encode,
                int32_t(const VideoFrame& inputImage,
                        const std::vector<VideoFrameType>* frame_types));

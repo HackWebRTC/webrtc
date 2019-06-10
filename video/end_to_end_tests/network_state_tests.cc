@@ -10,6 +10,7 @@
 
 #include "absl/memory/memory.h"
 #include "api/test/simulated_network.h"
+#include "api/video_codecs/video_encoder.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
 #include "system_wrappers/include/sleep.h"
@@ -358,6 +359,12 @@ TEST_F(NetworkStateEndToEndTest, NewVideoSendStreamsRespectVideoNetworkDown) {
     int32_t InitEncode(const VideoCodec* config,
                        int32_t number_of_cores,
                        size_t max_payload_size) override {
+      RTC_NOTREACHED();
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
+
+    int32_t InitEncode(const VideoCodec* config,
+                       const Settings& settings) override {
       EXPECT_GT(config->startBitrate, 0u);
       return 0;
     }

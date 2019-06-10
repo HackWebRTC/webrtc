@@ -18,6 +18,7 @@
 #include "absl/memory/memory.h"
 #include "api/video/encoded_image.h"
 #include "api/video_codecs/sdp_video_format.h"
+#include "api/video_codecs/video_encoder.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_coding_defines.h"
@@ -45,6 +46,9 @@ const int kMinBitrates[kNumberOfSimulcastStreams] = {50, 150, 600};
 const int kTargetBitrates[kNumberOfSimulcastStreams] = {100, 450, 1000};
 const int kDefaultTemporalLayerProfile[3] = {3, 3, 3};
 const int kNoTemporalLayerProfile[3] = {0, 0, 0};
+
+const VideoEncoder::Capabilities kCapabilities(false);
+const VideoEncoder::Settings kSettings(kCapabilities, 1, 1200);
 
 template <typename T>
 void SetExpectedValues3(T value0, T value1, T value2, T* expected_values) {
@@ -271,7 +275,7 @@ void SimulcastTestFixtureImpl::SetUpCodec(const int* temporal_layer_profile) {
   decoder_->RegisterDecodeCompleteCallback(&decoder_callback_);
   DefaultSettings(&settings_, temporal_layer_profile, codec_type_);
   SetUpRateAllocator();
-  EXPECT_EQ(0, encoder_->InitEncode(&settings_, 1, 1200));
+  EXPECT_EQ(0, encoder_->InitEncode(&settings_, kSettings));
   EXPECT_EQ(0, decoder_->InitDecode(&settings_, 1));
   input_buffer_ = I420Buffer::Create(kDefaultWidth, kDefaultHeight);
   input_buffer_->InitializeData();
@@ -323,7 +327,7 @@ void SimulcastTestFixtureImpl::UpdateActiveStreams(
   // allocator has support for updating active streams without a
   // reinitialization, we can just call that here instead.
   SetUpRateAllocator();
-  EXPECT_EQ(0, encoder_->InitEncode(&settings_, 1, 1200));
+  EXPECT_EQ(0, encoder_->InitEncode(&settings_, kSettings));
 }
 
 void SimulcastTestFixtureImpl::ExpectStreams(
@@ -617,7 +621,7 @@ void SimulcastTestFixtureImpl::SwitchingToOneStream(int width, int height) {
   settings_.simulcastStream[settings_.numberOfSimulcastStreams - 1].height =
       settings_.height;
   SetUpRateAllocator();
-  EXPECT_EQ(0, encoder_->InitEncode(&settings_, 1, 1200));
+  EXPECT_EQ(0, encoder_->InitEncode(&settings_, kSettings));
 
   // Encode one frame and verify.
   SetRates(kMaxBitrates[0] + kMaxBitrates[1], 30);
@@ -640,7 +644,7 @@ void SimulcastTestFixtureImpl::SwitchingToOneStream(int width, int height) {
   // Start at the lowest bitrate for enabling base stream.
   settings_.startBitrate = kMinBitrates[0];
   SetUpRateAllocator();
-  EXPECT_EQ(0, encoder_->InitEncode(&settings_, 1, 1200));
+  EXPECT_EQ(0, encoder_->InitEncode(&settings_, kSettings));
   SetRates(settings_.startBitrate, 30);
   ExpectStreams(VideoFrameType::kVideoFrameKey, 1);
   // Resize |input_frame_| to the new resolution.

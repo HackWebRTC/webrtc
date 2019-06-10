@@ -22,6 +22,7 @@
 #include "api/video/video_codec_constants.h"
 #include "api/video/video_frame_buffer.h"
 #include "api/video/video_rotation.h"
+#include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
@@ -170,9 +171,17 @@ int SimulcastEncoderAdapter::Release() {
 int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
                                         int number_of_cores,
                                         size_t max_payload_size) {
+  RTC_NOTREACHED();
+  return WEBRTC_VIDEO_CODEC_ERROR;
+}
+
+// TODO(eladalon): s/inst/codec_settings/g.
+int SimulcastEncoderAdapter::InitEncode(
+    const VideoCodec* inst,
+    const VideoEncoder::Settings& settings) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
 
-  if (number_of_cores < 1) {
+  if (settings.number_of_cores < 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
 
@@ -256,7 +265,7 @@ int SimulcastEncoderAdapter::InitEncode(const VideoCodec* inst,
           codec_.codecType == webrtc::kVideoCodecVP8 ? "VP8" : "H264"));
     }
 
-    ret = encoder->InitEncode(&stream_codec, number_of_cores, max_payload_size);
+    ret = encoder->InitEncode(&stream_codec, settings);
     if (ret < 0) {
       // Explicitly destroy the current encoder; because we haven't registered a
       // StreamInfo for it yet, Release won't do anything about it.

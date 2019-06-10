@@ -21,6 +21,10 @@
 namespace webrtc {
 namespace test {
 
+namespace {
+const VideoEncoder::Capabilities kCapabilities(false);
+}
+
 // An encoder factory with a single underlying VideoEncoder object,
 // intended for test purposes. Each call to CreateVideoEncoder returns
 // a proxy for the same encoder, typically an instance of FakeEncoder.
@@ -68,7 +72,12 @@ class VideoEncoderProxyFactory final : public VideoEncoderFactory {
     int32_t InitEncode(const VideoCodec* config,
                        int32_t number_of_cores,
                        size_t max_payload_size) override {
-      return encoder_->InitEncode(config, number_of_cores, max_payload_size);
+      RTC_NOTREACHED();
+      return WEBRTC_VIDEO_CODEC_ERROR;
+    }
+    int32_t InitEncode(const VideoCodec* config,
+                       const Settings& settings) override {
+      return encoder_->InitEncode(config, settings);
     }
     int32_t RegisterEncodeCompleteCallback(
         EncodedImageCallback* callback) override {

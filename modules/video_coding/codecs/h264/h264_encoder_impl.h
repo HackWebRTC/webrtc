@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "api/video/i420_buffer.h"
+#include "api/video_codecs/video_encoder.h"
 #include "common_video/h264/h264_bitstream_parser.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "modules/video_coding/utility/quality_scaler.h"
@@ -66,6 +67,8 @@ class H264EncoderImpl : public H264Encoder {
   int32_t InitEncode(const VideoCodec* codec_settings,
                      int32_t number_of_cores,
                      size_t max_payload_size) override;
+  int32_t InitEncode(const VideoCodec* codec_settings,
+                     const VideoEncoder::Settings& settings) override;
   int32_t Release() override;
 
   int32_t RegisterEncodeCompleteCallback(

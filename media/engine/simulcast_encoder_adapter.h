@@ -20,6 +20,7 @@
 
 #include "absl/types/optional.h"
 #include "api/video_codecs/sdp_video_format.h"
+#include "api/video_codecs/video_encoder.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/synchronization/sequence_checker.h"
@@ -42,9 +43,11 @@ class RTC_EXPORT SimulcastEncoderAdapter : public VideoEncoder {
 
   // Implements VideoEncoder.
   int Release() override;
-  int InitEncode(const VideoCodec* inst,
+  int InitEncode(const VideoCodec* codec_settings,
                  int number_of_cores,
                  size_t max_payload_size) override;
+  int InitEncode(const VideoCodec* codec_settings,
+                 const VideoEncoder::Settings& settings) override;
   int Encode(const VideoFrame& input_image,
              const std::vector<VideoFrameType>* frame_types) override;
   int RegisterEncodeCompleteCallback(EncodedImageCallback* callback) override;
