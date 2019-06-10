@@ -316,12 +316,9 @@ int NetEqImpl::FilteredCurrentDelayMs() const {
       (buffer_level_filter_->filtered_current_level() *
        decoder_frame_length_) >>
       8;
-  // Sum up the filtered packet buffer level with the future length of the sync
-  // buffer, and divide the sum by the sample rate.
-  const size_t delay_samples =
-      packet_buffer_samples + sync_buffer_->FutureLength();
   // The division below will truncate. The return value is in ms.
-  return static_cast<int>(delay_samples) / rtc::CheckedDivExact(fs_hz_, 1000);
+  return static_cast<int>(packet_buffer_samples) /
+         rtc::CheckedDivExact(fs_hz_, 1000);
 }
 
 int NetEqImpl::NetworkStatistics(NetEqNetworkStatistics* stats) {
