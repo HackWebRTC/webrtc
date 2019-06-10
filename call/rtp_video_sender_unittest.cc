@@ -631,4 +631,23 @@ TEST(RtpVideoSenderTest, EarlyRetransmits) {
   test.clock().AdvanceTimeMilliseconds(33);
   ASSERT_TRUE(event.Wait(kTimeoutMs));
 }
+
+TEST(RtpVideoSenderTest, CanSetZeroBitrateWithOverhead) {
+  test::ScopedFieldTrials trials("WebRTC-SendSideBwe-WithOverhead/Enabled/");
+  RtpVideoSenderTestFixture test({kSsrc1}, {kRtxSsrc1}, kPayloadType, {});
+
+  test.router()->OnBitrateUpdated(/*bitrate_bps*/ 0,
+                                  /*fraction_loss*/ 0,
+                                  /*rtt*/ 0,
+                                  /*framerate*/ 0);
+}
+
+TEST(RtpVideoSenderTest, CanSetZeroBitrateWithoutOverhead) {
+  RtpVideoSenderTestFixture test({kSsrc1}, {kRtxSsrc1}, kPayloadType, {});
+
+  test.router()->OnBitrateUpdated(/*bitrate_bps*/ 0,
+                                  /*fraction_loss*/ 0,
+                                  /*rtt*/ 0,
+                                  /*framerate*/ 0);
+}
 }  // namespace webrtc

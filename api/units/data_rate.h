@@ -126,11 +126,11 @@ inline Frequency operator/(const DataRate rate, const DataSize size) {
                                size.bytes());
 }
 inline DataRate operator*(const DataSize size, const Frequency frequency) {
-  int64_t millihertz = frequency.millihertz<int64_t>();
-  int64_t kMaxBeforeConversion =
-      std::numeric_limits<int64_t>::max() / 8 / millihertz;
-  RTC_DCHECK_LE(size.bytes(), kMaxBeforeConversion);
-  int64_t millibits_per_second = size.bytes() * 8 * millihertz;
+  RTC_DCHECK(frequency.IsZero() ||
+             size.bytes() <= std::numeric_limits<int64_t>::max() / 8 /
+                                 frequency.millihertz<int64_t>());
+  int64_t millibits_per_second =
+      size.bytes() * 8 * frequency.millihertz<int64_t>();
   return DataRate::bps((millibits_per_second + 500) / 1000);
 }
 inline DataRate operator*(const Frequency frequency, const DataSize size) {
