@@ -44,7 +44,8 @@ class FileWrapper final {
 
   FileWrapper() = default;
 
-  // Takes over ownership of |file|, closing it on destruction.
+  // Takes over ownership of |file|, closing it on destruction. Calling with
+  // null |file| is allowed, and results in a FileWrapper with is_open() false.
   explicit FileWrapper(FILE* file) : file_(file) {}
   ~FileWrapper() { Close(); }
 

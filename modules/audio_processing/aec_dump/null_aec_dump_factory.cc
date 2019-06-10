@@ -13,6 +13,12 @@
 
 namespace webrtc {
 
+std::unique_ptr<AecDump> AecDumpFactory::Create(webrtc::FileWrapper&& file,
+                                                int64_t max_log_size_bytes,
+                                                rtc::TaskQueue* worker_queue) {
+  return nullptr;
+}
+
 std::unique_ptr<AecDump> AecDumpFactory::Create(rtc::PlatformFile file,
                                                 int64_t max_log_size_bytes,
                                                 rtc::TaskQueue* worker_queue) {
