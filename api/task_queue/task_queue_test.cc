@@ -225,14 +225,14 @@ TEST_P(TaskQueueTest, PostALot) {
   }));
 
   // Before destroying the task queue wait until all child tasks are posted.
-  EXPECT_TRUE(posting_done.Wait(1000));
+  posting_done.Wait(rtc::Event::kForever);
   // Destroy the task queue.
   task_queue = nullptr;
 
   // Expect all tasks are destroyed eventually. In some task queue
   // implementations that might happen on a different thread after task queue is
   // destroyed.
-  EXPECT_TRUE(all_destroyed.Wait(1000));
+  EXPECT_TRUE(all_destroyed.Wait(60000));
   EXPECT_LE(tasks_executed, kTaskCount);
 }
 
