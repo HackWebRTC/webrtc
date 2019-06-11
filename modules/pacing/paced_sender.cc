@@ -15,7 +15,6 @@
 
 #include "absl/memory/memory.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
-#include "modules/congestion_controller/goog_cc/alr_detector.h"
 #include "modules/pacing/bitrate_prober.h"
 #include "modules/pacing/interval_budget.h"
 #include "modules/utility/include/process_thread.h"
@@ -58,7 +57,6 @@ PacedSender::PacedSender(Clock* clock,
       fallback_field_trials_(
           !field_trials ? absl::make_unique<FieldTrialBasedConfig>() : nullptr),
       field_trials_(field_trials ? field_trials : fallback_field_trials_.get()),
-      alr_detector_(),
       drain_large_queues_(
           !IsDisabled(*field_trials_, "WebRTC-Pacer-DrainQueue")),
       send_padding_if_silent_(
@@ -71,16 +69,12 @@ PacedSender::PacedSender(Clock* clock,
       padding_budget_(0),
       prober_(*field_trials_),
       probing_send_failure_(false),
-      estimated_bitrate_bps_(0),
-      min_send_bitrate_kbps_(0u),
-      max_padding_bitrate_kbps_(0u),
       pacing_bitrate_kbps_(0),
       time_last_process_us_(clock->TimeInMicroseconds()),
       last_send_time_us_(clock->TimeInMicroseconds()),
       first_sent_packet_ms_(-1),
       packets_(clock->TimeInMicroseconds()),
       packet_counter_(0),
-      pacing_factor_(kDefaultPaceMultiplier),
       queue_time_limit(kMaxQueueLengthMs),
       account_for_audio_(false) {
   if (!drain_large_queues_) {
@@ -164,33 +158,6 @@ void PacedSender::SetProbingEnabled(bool enabled) {
   prober_.SetEnabled(enabled);
 }
 
-void PacedSender::SetEstimatedBitrate(uint32_t bitrate_bps) {
-  if (bitrate_bps == 0)
-    RTC_LOG(LS_ERROR) << "PacedSender is not designed to handle 0 bitrate.";
-  rtc::CritScope cs(&critsect_);
-  estimated_bitrate_bps_ = bitrate_bps;
-  padding_budget_.set_target_rate_kbps(
-      std::min(estimated_bitrate_bps_ / 1000, max_padding_bitrate_kbps_));
-  pacing_bitrate_kbps_ =
-      std::max(min_send_bitrate_kbps_, estimated_bitrate_bps_ / 1000) *
-      pacing_factor_;
-  if (!alr_detector_)
-    alr_detector_ = absl::make_unique<AlrDetector>(field_trials_);
-  alr_detector_->SetEstimatedBitrate(bitrate_bps);
-}
-
-void PacedSender::SetSendBitrateLimits(int min_send_bitrate_bps,
-                                       int padding_bitrate) {
-  rtc::CritScope cs(&critsect_);
-  min_send_bitrate_kbps_ = min_send_bitrate_bps / 1000;
-  pacing_bitrate_kbps_ =
-      std::max(min_send_bitrate_kbps_, estimated_bitrate_bps_ / 1000) *
-      pacing_factor_;
-  max_padding_bitrate_kbps_ = padding_bitrate / 1000;
-  padding_budget_.set_target_rate_kbps(
-      std::min(estimated_bitrate_bps_ / 1000, max_padding_bitrate_kbps_));
-}
-
 void PacedSender::SetPacingRates(uint32_t pacing_rate_bps,
                                  uint32_t padding_rate_bps) {
   rtc::CritScope cs(&critsect_);
@@ -234,13 +201,6 @@ int64_t PacedSender::ExpectedQueueTimeMs() const {
   RTC_DCHECK_GT(pacing_bitrate_kbps_, 0);
   return static_cast<int64_t>(packets_.SizeInBytes() * 8 /
                               pacing_bitrate_kbps_);
-}
-
-absl::optional<int64_t> PacedSender::GetApplicationLimitedRegionStartTime() {
-  rtc::CritScope cs(&critsect_);
-  if (!alr_detector_)
-    alr_detector_ = absl::make_unique<AlrDetector>(field_trials_);
-  return alr_detector_->GetApplicationLimitedRegionStartTime();
 }
 
 size_t PacedSender::QueueSizePackets() const {
@@ -323,8 +283,6 @@ void PacedSender::Process() {
     size_t bytes_sent = packet_sender_->TimeToSendPadding(1, PacedPacketInfo());
     critsect_.Enter();
     OnPaddingSent(bytes_sent);
-    if (alr_detector_)
-      alr_detector_->OnBytesSent(bytes_sent, now_us / 1000);
   }
 
   if (paused_)
@@ -413,8 +371,6 @@ void PacedSender::Process() {
     if (!probing_send_failure_)
       prober_.ProbeSent(TimeMilliseconds(), bytes_sent);
   }
-  if (alr_detector_)
-    alr_detector_->OnBytesSent(bytes_sent, now_us / 1000);
 }
 
 void PacedSender::ProcessThreadAttached(ProcessThread* process_thread) {
@@ -470,14 +426,6 @@ void PacedSender::UpdateBudgetWithBytesSent(size_t bytes_sent) {
   outstanding_bytes_ += bytes_sent;
   media_budget_.UseBudget(bytes_sent);
   padding_budget_.UseBudget(bytes_sent);
-}
-
-void PacedSender::SetPacingFactor(float pacing_factor) {
-  rtc::CritScope cs(&critsect_);
-  pacing_factor_ = pacing_factor;
-  // Make sure new padding factor is applied immediately, otherwise we need to
-  // wait for the send bitrate estimate to be updated before this takes effect.
-  SetEstimatedBitrate(estimated_bitrate_bps_);
 }
 
 void PacedSender::SetQueueTimeLimit(int limit_ms) {

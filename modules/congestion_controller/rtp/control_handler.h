@@ -25,7 +25,7 @@ namespace webrtc {
 // This is used to observe the network controller state and route calls to
 // the proper handler. It also keeps cached values for safe asynchronous use.
 // This makes sure that things running on the worker queue can't access state
-// in SendSideCongestionController, which would risk causing data race on
+// in RtpTransportControllerSend, which would risk causing data race on
 // destruction unless members are properly ordered.
 class CongestionControlHandler {
  public:

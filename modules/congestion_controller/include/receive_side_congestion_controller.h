@@ -15,6 +15,7 @@
 #include <vector>
 
 #include "api/transport/field_trial_based_config.h"
+#include "modules/include/module.h"
 #include "modules/remote_bitrate_estimator/remote_estimator_proxy.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"

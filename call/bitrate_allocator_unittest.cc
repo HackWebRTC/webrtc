@@ -13,7 +13,7 @@
 #include <vector>
 
 #include "call/bitrate_allocator.h"
-#include "modules/bitrate_controller/include/bitrate_controller.h"
+#include "system_wrappers/include/clock.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 

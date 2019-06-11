@@ -24,20 +24,15 @@ rtc_source_set("control_handler") {
   ]
 
   deps = [
-    "../:congestion_controller",
     "../../../api/transport:network_control",
     "../../../api/units:data_rate",
     "../../../api/units:data_size",
     "../../../api/units:time_delta",
     "../../../rtc_base:checks",
-    "../../../rtc_base:rate_limiter",
     "../../../rtc_base:safe_minmax",
     "../../../rtc_base/synchronization:sequence_checker",
-    "../../../system_wrappers",
     "../../../system_wrappers:field_trial",
     "../../pacing",
-    "../../remote_bitrate_estimator",
-    "../../rtp_rtcp:rtp_rtcp_format",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -82,7 +77,6 @@ if (rtc_include_tests) {
     deps = [
       ":transport_feedback",
       "../:congestion_controller",
-      "../:mock_congestion_controller",
       "../../../api/transport:network_control",
       "../../../logging:mocks",
       "../../../rtc_base",

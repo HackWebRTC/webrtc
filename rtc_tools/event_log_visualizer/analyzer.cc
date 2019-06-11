@@ -1271,7 +1271,7 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
   // and piping the output to plot_dynamics.py can be used as a hack to get the
   // internal state of various BWE components. In this case, it is important
   // we don't instantiate the AcknowledgedBitrateEstimator both here and in
-  // SendSideCongestionController since that would lead to duplicate outputs.
+  // GoogCcNetworkController since that would lead to duplicate outputs.
   AcknowledgedBitrateEstimator acknowledged_bitrate_estimator(
       &field_trial_config_,
       absl::make_unique<BitrateEstimator>(&field_trial_config_));

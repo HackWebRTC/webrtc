@@ -18,7 +18,6 @@
 
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
-#include "modules/bitrate_controller/include/bitrate_controller.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"

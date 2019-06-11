@@ -123,8 +123,7 @@ class RtpTransportControllerSendInterface {
   // settings.
   // |min_send_bitrate_bps| is the total minimum send bitrate required by all
   // sending streams.  This is the minimum bitrate the PacedSender will use.
-  // Note that SendSideCongestionController::OnNetworkChanged can still be
-  // called with a lower bitrate estimate. |max_padding_bitrate_bps| is the max
+  // |max_padding_bitrate_bps| is the max
   // bitrate the send streams request for padding. This can be higher than the
   // current network estimate and tells the PacedSender how much it should max
   // pad unless there is real packets to send.
