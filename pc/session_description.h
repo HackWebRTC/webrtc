@@ -54,7 +54,6 @@ const int kAutoBandwidth = -1;
 
 class AudioContentDescription;
 class VideoContentDescription;
-class DataContentDescription;
 class RtpDataContentDescription;
 class SctpDataContentDescription;
 
@@ -76,15 +75,6 @@ class MediaContentDescription {
   // nullptr if the cast fails.
   virtual VideoContentDescription* as_video() { return nullptr; }
   virtual const VideoContentDescription* as_video() const { return nullptr; }
-
-  // Backwards compatible shim: Return a shim object that allows
-  // callers to ignore the distinction between RtpDataContentDescription
-  // and SctpDataContentDescription objects.
-  RTC_DEPRECATED virtual DataContentDescription* as_data() { return nullptr; }
-  RTC_DEPRECATED virtual const DataContentDescription* as_data() const {
-    return nullptr;
-  }
-  virtual DataContentDescription* deprecated_as_data() { return nullptr; }
 
   virtual RtpDataContentDescription* as_rtp_data() { return nullptr; }
   virtual const RtpDataContentDescription* as_rtp_data() const {
@@ -340,135 +330,16 @@ class VideoContentDescription : public MediaContentDescriptionImpl<VideoCodec> {
   virtual const VideoContentDescription* as_video() const { return this; }
 };
 
-// The DataContentDescription is a shim over the RtpDataContentDescription
-// and SctpDataContentDescription classes that is used for external callers
-// into this internal API.
-// It is a templated derivation of MediaContentDescriptionImpl because
-// that's what the external caller expects it to be.
-// TODO(bugs.webrtc.org/10597): Declare this class obsolete and remove it
-// once external callers have been updated.
-class DataContentDescription : public MediaContentDescriptionImpl<DataCodec> {
- public:
-  DataContentDescription();
-  MediaType type() const override { return MEDIA_TYPE_DATA; }
-  RTC_DEPRECATED DataContentDescription* as_data() override { return this; }
-  RTC_DEPRECATED const DataContentDescription* as_data() const override {
-    return this;
-  }
-  DataContentDescription* deprecated_as_data() override { return this; }
-
-  // Override all methods defined in MediaContentDescription.
-  bool has_codecs() const override;
-  DataContentDescription* Copy() const override {
-    return new DataContentDescription(this);
-  }
-  std::string protocol() const override;
-  void set_protocol(const std::string& protocol) override;
-  webrtc::RtpTransceiverDirection direction() const override;
-  void set_direction(webrtc::RtpTransceiverDirection direction) override;
-  bool rtcp_mux() const override;
-  void set_rtcp_mux(bool mux) override;
-  bool rtcp_reduced_size() const override;
-  void set_rtcp_reduced_size(bool) override;
-  int bandwidth() const override;
-  void set_bandwidth(int bandwidth) override;
-  const std::vector<CryptoParams>& cryptos() const override;
-  void AddCrypto(const CryptoParams& params) override;
-  void set_cryptos(const std::vector<CryptoParams>& cryptos) override;
-  const RtpHeaderExtensions& rtp_header_extensions() const override;
-  void set_rtp_header_extensions(
-      const RtpHeaderExtensions& extensions) override;
-  void AddRtpHeaderExtension(const webrtc::RtpExtension& ext) override;
-  void AddRtpHeaderExtension(const cricket::RtpHeaderExtension& ext) override;
-  void ClearRtpHeaderExtensions() override;
-  bool rtp_header_extensions_set() const override;
-  const StreamParamsVec& streams() const override;
-  StreamParamsVec& mutable_streams() override;
-  void AddStream(const StreamParams& stream) override;
-  void SetCnameIfEmpty(const std::string& cname) override;
-  uint32_t first_ssrc() const override;
-  bool has_ssrcs() const override;
-  void set_conference_mode(bool enable) override;
-  bool conference_mode() const override;
-  void set_connection_address(const rtc::SocketAddress& address) override;
-  const rtc::SocketAddress& connection_address() const override;
-  void set_extmap_allow_mixed_enum(ExtmapAllowMixed) override;
-  ExtmapAllowMixed extmap_allow_mixed_enum() const override;
-  bool HasSimulcast() const override;
-  SimulcastDescription& simulcast_description() override;
-  const SimulcastDescription& simulcast_description() const override;
-  void set_simulcast_description(
-      const SimulcastDescription& simulcast) override;
-
-  // Override all methods defined in MediaContentDescriptionImpl.
-  const std::vector<CodecType>& codecs() const override;
-  void set_codecs(const std::vector<CodecType>& codecs) override;
-  bool HasCodec(int id) override;
-  void AddCodec(const CodecType& codec) override;
-  void AddOrReplaceCodec(const CodecType& codec) override;
-  void AddCodecs(const std::vector<CodecType>& codec) override;
-
- private:
-  typedef MediaContentDescriptionImpl<DataCodec> Super;
-  // Friend classes are allowed to create proxies for themselves.
-  friend class RtpDataContentDescription;  // for constructors
-  friend class SctpDataContentDescription;
-  friend class SessionDescription;  // for Unshim()
-  // Copy constructor. A copy results in an object that owns its
-  // real description, which is a copy of the original description
-  // (whether that was owned or not).
-  explicit DataContentDescription(const DataContentDescription* o);
-
-  explicit DataContentDescription(RtpDataContentDescription*);
-  explicit DataContentDescription(SctpDataContentDescription*);
-
-  // Exposed for internal use - new clients should not use this class.
-  RtpDataContentDescription* as_rtp_data() override;
-  SctpDataContentDescription* as_sctp() override;
-
-  // Create a shimmed object, owned by the shim.
-  void CreateShimTarget(bool is_sctp);
-
-  // Return the shimmed object, passing ownership if owned, and set
-  // |should_delete| to true if it was the owner. If |should_delete|
-  // is true on return, the caller should immediately delete the
-  // DataContentDescription object.
-  MediaContentDescription* Unshim(bool* should_delete);
-
-  // Returns whether SCTP is in use. False when it's not decided.
-  bool IsSctp() const;
-  // Check function for use when caller obviously assumes RTP.
-  void EnsureIsRtp();
-
-  MediaContentDescription* real_description_ = nullptr;
-  std::unique_ptr<MediaContentDescription> owned_description_;
-};
-
 class RtpDataContentDescription
     : public MediaContentDescriptionImpl<RtpDataCodec> {
  public:
   RtpDataContentDescription() {}
-  RtpDataContentDescription(const RtpDataContentDescription& o)
-      : MediaContentDescriptionImpl<RtpDataCodec>(o), shim_(nullptr) {}
-  RtpDataContentDescription& operator=(const RtpDataContentDescription& o) {
-    this->MediaContentDescriptionImpl<RtpDataCodec>::operator=(o);
-    // Do not copy the shim.
-    return *this;
-  }
-
   RtpDataContentDescription* Copy() const override {
     return new RtpDataContentDescription(*this);
   }
   MediaType type() const override { return MEDIA_TYPE_DATA; }
   RtpDataContentDescription* as_rtp_data() override { return this; }
   const RtpDataContentDescription* as_rtp_data() const override { return this; }
-  // Shim support
-  RTC_DEPRECATED DataContentDescription* as_data() override;
-  RTC_DEPRECATED const DataContentDescription* as_data() const override;
-  DataContentDescription* deprecated_as_data() override;
-
- private:
-  std::unique_ptr<DataContentDescription> shim_;
 };
 
 class SctpDataContentDescription : public MediaContentDescription {
@@ -478,18 +349,13 @@ class SctpDataContentDescription : public MediaContentDescription {
       : MediaContentDescription(o),
         use_sctpmap_(o.use_sctpmap_),
         port_(o.port_),
-        max_message_size_(o.max_message_size_),
-        shim_(nullptr) {}
+        max_message_size_(o.max_message_size_) {}
   SctpDataContentDescription* Copy() const override {
     return new SctpDataContentDescription(*this);
   }
   MediaType type() const override { return MEDIA_TYPE_DATA; }
   SctpDataContentDescription* as_sctp() override { return this; }
   const SctpDataContentDescription* as_sctp() const override { return this; }
-  // Shim support
-  RTC_DEPRECATED DataContentDescription* as_data() override;
-  RTC_DEPRECATED const DataContentDescription* as_data() const override;
-  DataContentDescription* deprecated_as_data() override;
 
   bool has_codecs() const override { return false; }
   void set_protocol(const std::string& protocol) override {
@@ -512,7 +378,6 @@ class SctpDataContentDescription : public MediaContentDescription {
   int port_ = 5000;
   // draft-ietf-mmusic-sdp-sctp-23: Max message size default is 64K
   int max_message_size_ = 64 * 1024;
-  std::unique_ptr<DataContentDescription> shim_;
 };
 
 // Protocol used for encoding media. This is the "top level" protocol that may

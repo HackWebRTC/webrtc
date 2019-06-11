@@ -54,7 +54,6 @@ using cricket::Candidate;
 using cricket::Candidates;
 using cricket::ContentInfo;
 using cricket::CryptoParams;
-using cricket::DataContentDescription;
 using cricket::ICE_CANDIDATE_COMPONENT_RTCP;
 using cricket::ICE_CANDIDATE_COMPONENT_RTP;
 using cricket::kCodecParamAssociatedPayloadType;

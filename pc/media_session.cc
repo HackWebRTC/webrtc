@@ -2802,15 +2802,6 @@ const SctpDataContentDescription* GetFirstSctpDataContentDescription(
   return desc ? desc->as_sctp() : nullptr;
 }
 
-// Returns a shim representing either an SctpDataContentDescription
-// or an RtpDataContentDescription, as appropriate.
-// TODO(bugs.webrtc.org/10597): Remove together with shim.
-const DataContentDescription* GetFirstDataContentDescription(
-    const SessionDescription* sdesc) {
-  auto desc = GetFirstMediaContentDescription(sdesc, MEDIA_TYPE_DATA);
-  return desc ? desc->as_data() : nullptr;
-}
-
 //
 // Non-const versions of the above functions.
 //
@@ -2887,13 +2878,6 @@ SctpDataContentDescription* GetFirstSctpDataContentDescription(
     SessionDescription* sdesc) {
   auto desc = GetFirstMediaContentDescription(sdesc, MEDIA_TYPE_DATA);
   return desc ? desc->as_sctp() : nullptr;
-}
-
-// Returns shim
-DataContentDescription* GetFirstDataContentDescription(
-    SessionDescription* sdesc) {
-  auto desc = GetFirstMediaContentDescription(sdesc, MEDIA_TYPE_DATA);
-  return desc ? desc->as_data() : nullptr;
 }
 
 }  // namespace cricket

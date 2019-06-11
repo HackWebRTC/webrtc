@@ -1356,8 +1356,8 @@ TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswerGcm) {
   EXPECT_EQ(cricket::kMediaProtocolSavpf, dcd->protocol());
 }
 
-// The use_sctpmap flag should be set in a DataContentDescription by default.
-// The answer's use_sctpmap flag should match the offer's.
+// The use_sctpmap flag should be set in an Sctp DataContentDescription by
+// default. The answer's use_sctpmap flag should match the offer's.
 TEST_F(MediaSessionDescriptionFactoryTest, TestCreateDataAnswerUsesSctpmap) {
   MediaSessionOptions opts;
   AddDataSection(cricket::DCT_SCTP, RtpTransceiverDirection::kSendRecv, &opts);
