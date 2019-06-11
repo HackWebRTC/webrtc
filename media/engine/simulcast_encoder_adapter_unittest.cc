@@ -192,7 +192,7 @@ class MockVideoEncoder : public VideoEncoder {
   // warnings from -Winconsistent-missing-override. See
   // http://crbug.com/428099.
   int32_t InitEncode(const VideoCodec* codecSettings,
-                     const VideoEncoder::Settings& settings) /* override */ {
+                     const VideoEncoder::Settings& settings) override {
     codec_ = *codecSettings;
     return init_encode_return_value_;
   }
@@ -203,12 +203,12 @@ class MockVideoEncoder : public VideoEncoder {
               const std::vector<VideoFrameType>* frame_types) /* override */);
 
   int32_t RegisterEncodeCompleteCallback(
-      EncodedImageCallback* callback) /* override */ {
+      EncodedImageCallback* callback) override {
     callback_ = callback;
     return 0;
   }
 
-  MOCK_METHOD0(Release, int32_t());
+  MOCK_METHOD0(Release, int32_t() /* override */);
 
   void SetRates(const RateControlParameters& parameters) {
     last_set_rates_ = parameters;
