@@ -98,11 +98,6 @@ class VideoCodingModuleImpl : public VideoCodingModule {
                                     video_header);
   }
 
-  int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode) override {
-    RTC_CHECK_EQ(robustnessMode, kHardNack);
-    return VCM_OK;
-  }
-
   void SetNackSettings(size_t max_nack_list_size,
                        int max_packet_age_to_nack,
                        int max_incomplete_time_ms) override {

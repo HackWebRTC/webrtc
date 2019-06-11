@@ -137,24 +137,6 @@ class VideoCodingModule : public Module {
                                  const RTPHeader& rtp_header,
                                  const RTPVideoHeader& video_header) = 0;
 
-  // Robustness APIs
-
-  // DEPRECATED.
-  // Set the receiver robustness mode. The mode decides how the receiver
-  // responds to losses in the stream. The type of counter-measure is selected
-  // through the robustnessMode parameter. The errorMode parameter decides if it
-  // is allowed to display frames corrupted by losses. Note that not all
-  // combinations of the two parameters are feasible. An error will be
-  // returned for invalid combinations.
-  // Input:
-  //      - robustnessMode : selected robustness mode.
-  //      - errorMode      : selected error mode.
-  //
-  // Return value      : VCM_OK, on success;
-  //                     < 0, on error.
-  enum ReceiverRobustness { kNone, kHardNack };
-  virtual int SetReceiverRobustnessMode(ReceiverRobustness robustnessMode) = 0;
-
   // Sets the maximum number of sequence numbers that we are allowed to NACK
   // and the oldest sequence number that we will consider to NACK. If a
   // sequence number older than |max_packet_age_to_nack| is missing
