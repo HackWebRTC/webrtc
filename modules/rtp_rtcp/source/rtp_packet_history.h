@@ -16,6 +16,7 @@
 #include <set>
 #include <vector>
 
+#include "api/function_view.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"
@@ -81,6 +82,25 @@ class RtpPacketHistory {
   // Returns nullptr if packet is not found or was (re)sent too recently.
   std::unique_ptr<RtpPacketToSend> GetPacketAndSetSendTime(
       uint16_t sequence_number);
+
+  // Gets stored RTP packet corresponding to the input |sequence number|.
+  // Returns nullptr if packet is not found or was (re)sent too recently.
+  // If a packet copy is returned, it will be marked as pending transmission but
+  // does not update send time, that must be done by MarkPacketAsSent().
+  std::unique_ptr<RtpPacketToSend> GetPacketAndMarkAsPending(
+      uint16_t sequence_number);
+
+  // In addition to getting packet and marking as sent, this method takes an
+  // encapsulator function that takes a reference to the packet and outputs a
+  // copy that may be wrapped in a container, eg RTX.
+  std::unique_ptr<RtpPacketToSend> GetPacketAndMarkAsPending(
+      uint16_t sequence_number,
+      rtc::FunctionView<std::unique_ptr<RtpPacketToSend>(
+          const RtpPacketToSend&)> encapsulate);
+
+  // Updates the send time for the given packet and increments the transmission
+  // counter. Marks the packet as no longer being in the pacer queue.
+  void MarkPacketAsSent(uint16_t sequence_number);
 
   // Similar to GetPacketAndSetSendTime(), but only returns a snapshot of the
   // current state for packet, and never updates internal state.

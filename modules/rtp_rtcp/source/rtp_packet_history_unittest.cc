@@ -13,6 +13,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "system_wrappers/include/clock.h"
@@ -676,6 +677,61 @@ TEST_F(RtpPacketHistoryTest, SetsPendingTransmissionState) {
   packet_state = hist_.GetPacketState(kStartSeqNum);
   ASSERT_TRUE(packet_state.has_value());
   EXPECT_FALSE(packet_state->pending_transmission);
+}
+
+TEST_F(RtpPacketHistoryTest, GetPacketAndSetSent) {
+  const int64_t kRttMs = RtpPacketHistory::kMinPacketDurationMs * 2;
+  hist_.SetRtt(kRttMs);
+
+  // Set size to remove old packets as soon as possible.
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 1);
+
+  // Add a sent packet to the history.
+  hist_.PutRtpPacket(CreateRtpPacket(kStartSeqNum), kAllowRetransmission,
+                     fake_clock_.TimeInMicroseconds());
+
+  // Retransmission request, first retransmission is allowed immediately.
+  EXPECT_TRUE(hist_.GetPacketAndMarkAsPending(kStartSeqNum));
+
+  // Packet not yet sent, new retransmission not allowed.
+  fake_clock_.AdvanceTimeMilliseconds(kRttMs);
+  EXPECT_FALSE(hist_.GetPacketAndMarkAsPending(kStartSeqNum));
+
+  // Mark as sent, but too early for retransmission.
+  hist_.MarkPacketAsSent(kStartSeqNum);
+  EXPECT_FALSE(hist_.GetPacketAndMarkAsPending(kStartSeqNum));
+
+  // Enough time has passed, retransmission is allowed again.
+  fake_clock_.AdvanceTimeMilliseconds(kRttMs);
+  EXPECT_TRUE(hist_.GetPacketAndMarkAsPending(kStartSeqNum));
+}
+
+TEST_F(RtpPacketHistoryTest, GetPacketWithEncapsulation) {
+  const uint32_t kSsrc = 92384762;
+  const int64_t kRttMs = RtpPacketHistory::kMinPacketDurationMs * 2;
+  hist_.SetRtt(kRttMs);
+
+  // Set size to remove old packets as soon as possible.
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 1);
+
+  // Add a sent packet to the history, with a set SSRC.
+  std::unique_ptr<RtpPacketToSend> packet = CreateRtpPacket(kStartSeqNum);
+  packet->SetSsrc(kSsrc);
+  hist_.PutRtpPacket(std::move(packet), kAllowRetransmission,
+                     fake_clock_.TimeInMicroseconds());
+
+  // Retransmission request, simulate an RTX-like encapsulation, were the packet
+  // is sent on a different SSRC.
+  std::unique_ptr<RtpPacketToSend> retransmit_packet =
+      hist_.GetPacketAndMarkAsPending(
+          kStartSeqNum, [](const RtpPacketToSend& packet) {
+            auto encapsulated_packet =
+                absl::make_unique<RtpPacketToSend>(packet);
+            encapsulated_packet->SetSsrc(packet.Ssrc() + 1);
+            return encapsulated_packet;
+          });
+  ASSERT_TRUE(retransmit_packet);
+  EXPECT_EQ(retransmit_packet->Ssrc(), kSsrc + 1);
 }
 
 TEST_F(RtpPacketHistoryTest, DontRemovePendingTransmissions) {

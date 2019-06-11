@@ -206,6 +206,7 @@ rtc_static_library("rtp_rtcp") {
     "..:module_fec_api",
     "../..:webrtc_common",
     "../../api:array_view",
+    "../../api:function_view",
     "../../api:libjingle_peerconnection_api",
     "../../api:rtp_headers",
     "../../api:scoped_refptr",
