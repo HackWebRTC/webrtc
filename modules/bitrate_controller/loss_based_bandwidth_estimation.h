@@ -60,7 +60,11 @@ class LossBasedBandwidthEstimation {
   DataRate GetEstimate() const { return loss_based_bitrate_; }
 
  private:
+  friend class GoogCcStatePrinter;
   void Reset(DataRate bitrate);
+  double loss_increase_threshold() const;
+  double loss_decrease_threshold() const;
+  DataRate decreased_bitrate() const;
 
   LossBasedControlConfig config_;
   double average_loss_;

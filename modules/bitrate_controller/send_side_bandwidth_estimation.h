@@ -114,6 +114,8 @@ class SendSideBandwidthEstimation {
   void IncomingPacketFeedbackVector(const TransportPacketsFeedback& report);
 
  private:
+  friend class GoogCcStatePrinter;
+
   enum UmaState { kNoUpdate, kFirstDone, kDone };
 
   bool IsInStartPhase(Timestamp at_time) const;
