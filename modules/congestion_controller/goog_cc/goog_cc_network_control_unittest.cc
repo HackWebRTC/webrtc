@@ -484,29 +484,35 @@ TEST_F(GoogCcNetworkControllerTest,
 }
 
 TEST_F(GoogCcNetworkControllerTest, LossBasedEstimatorCapsRateAtModerateLoss) {
-  auto factory = CreateFeedbackOnlyFactory();
   ScopedFieldTrials trial("WebRTC-Bwe-LossBasedControl/Enabled/");
   Scenario s("googcc_unit/moderate_loss_channel", false);
-  SimulatedTimeClientConfig config;
-  config.transport.cc_factory = &factory;
+  CallClientConfig config;
   config.transport.rates.min_rate = DataRate::kbps(10);
   config.transport.rates.max_rate = DataRate::kbps(5000);
-  config.transport.rates.start_rate = DataRate::kbps(300);
-  auto send_net = s.CreateSimulationNode([](NetworkSimulationConfig* c) {
-    c->bandwidth = DataRate::kbps(5000);
-    c->delay = TimeDelta::ms(100);
-    c->loss_rate = 0.03;
-  });
-  auto ret_net = s.CreateSimulationNode(
-      [](NetworkSimulationConfig* c) { c->delay = TimeDelta::ms(100); });
-  SimulatedTimeClient* client = s.CreateSimulatedTimeClient(
-      "send", config, {PacketStreamConfig()}, {send_net}, {ret_net});
+  config.transport.rates.start_rate = DataRate::kbps(1000);
 
-  s.RunFor(TimeDelta::seconds(60));
-  // Without LossBasedControl trial, bitrate reaches above 4 mbps.
-  // Using LossBasedControl the bitrate should not go above 3 mbps for a 2% loss
-  // rate.
-  EXPECT_LT(client->target_rate_kbps(), 3000);
+  NetworkSimulationConfig network;
+  network.bandwidth = DataRate::kbps(2000);
+  network.delay = TimeDelta::ms(100);
+  // 3% loss rate is in the moderate loss rate region at 2000 kbps, limiting the
+  // bitrate increase.
+  network.loss_rate = 0.03;
+  auto send_net = s.CreateMutableSimulationNode(network);
+  auto* client = s.CreateClient("send", std::move(config));
+  auto* route = s.CreateRoutes(client, {send_net->node()},
+                               s.CreateClient("return", CallClientConfig()),
+                               {s.CreateSimulationNode(network)});
+  s.CreateVideoStream(route->forward(), VideoStreamConfig());
+  // Allow the controller to stabilize at the lower bitrate.
+  s.RunFor(TimeDelta::seconds(1));
+  // This increase in capacity would cause the target bitrate to increase to
+  // over 4000 kbps without LossBasedControl.
+  send_net->UpdateConfig(
+      [](NetworkSimulationConfig* c) { c->bandwidth = DataRate::kbps(5000); });
+  s.RunFor(TimeDelta::seconds(20));
+  // Using LossBasedControl, the bitrate will not increase over 2500 kbps since
+  // we have detected moderate loss.
+  EXPECT_LT(client->target_rate().kbps(), 2500);
 }
 
 TEST_F(GoogCcNetworkControllerTest, MaintainsLowRateInSafeResetTrial) {
