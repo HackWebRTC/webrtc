@@ -21,6 +21,7 @@
 #include "api/rtc_event_log_output_file.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
+#include "api/video_codecs/video_encoder.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
 #include "media/engine/adm_helpers.h"
@@ -66,6 +67,8 @@ constexpr uint32_t kThumbnailSendSsrcStart = 0xE0000;
 constexpr uint32_t kThumbnailRtxSsrcStart = 0xF0000;
 
 constexpr int kDefaultMaxQp = cricket::WebRtcVideoChannel::kDefaultQpMax;
+
+const VideoEncoder::Capabilities kCapabilities(false);
 
 std::pair<uint32_t, uint32_t> GetMinMaxBitratesBps(const VideoCodec& codec,
                                                    size_t spatial_idx) {
@@ -132,11 +135,9 @@ class QualityTestVideoEncoder : public VideoEncoder,
 
   // Implement VideoEncoder
   int32_t InitEncode(const VideoCodec* codec_settings,
-                     int32_t number_of_cores,
-                     size_t max_payload_size) override {
+                     const Settings& settings) override {
     codec_settings_ = *codec_settings;
-    return encoder_->InitEncode(codec_settings, number_of_cores,
-                                max_payload_size);
+    return encoder_->InitEncode(codec_settings, settings);
   }
 
   int32_t RegisterEncodeCompleteCallback(

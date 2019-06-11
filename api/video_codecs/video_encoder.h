@@ -86,6 +86,7 @@ class RTC_EXPORT VideoEncoder {
     int low;
     int high;
   };
+
   // Quality scaling is enabled if thresholds are provided.
   struct ScalingSettings {
    private:
@@ -237,6 +238,27 @@ class RTC_EXPORT VideoEncoder {
     absl::optional<bool> last_received_decodable;
   };
 
+  // Negotiated capabilities which the VideoEncoder may expect the other
+  // side to use.
+  struct Capabilities {
+    explicit Capabilities(bool loss_notification)
+        : loss_notification(loss_notification) {}
+    bool loss_notification;
+  };
+
+  struct Settings {
+    Settings(const Capabilities& capabilities,
+             int number_of_cores,
+             size_t max_payload_size)
+        : capabilities(capabilities),
+          number_of_cores(number_of_cores),
+          max_payload_size(max_payload_size) {}
+
+    Capabilities capabilities;
+    int number_of_cores;
+    size_t max_payload_size;
+  };
+
   static VideoCodecVP8 GetDefaultVp8Settings();
   static VideoCodecVP9 GetDefaultVp9Settings();
   static VideoCodecH264 GetDefaultH264Settings();
@@ -247,6 +269,8 @@ class RTC_EXPORT VideoEncoder {
   //
   // Input:
   //          - codec_settings    : Codec settings
+  //          - settings          : Settings affecting the encoding itself.
+  // Input for deprecated version:
   //          - number_of_cores   : Number of cores available for the encoder
   //          - max_payload_size  : The maximum size each payload is allowed
   //                                to have. Usually MTU - overhead.
@@ -257,9 +281,15 @@ class RTC_EXPORT VideoEncoder {
   //                                  WEBRTC_VIDEO_CODEC_ERR_SIZE
   //                                  WEBRTC_VIDEO_CODEC_MEMORY
   //                                  WEBRTC_VIDEO_CODEC_ERROR
-  virtual int32_t InitEncode(const VideoCodec* codec_settings,
-                             int32_t number_of_cores,
-                             size_t max_payload_size) = 0;
+  // TODO(bugs.webrtc.org/10720): After updating downstream projects and posting
+  // an announcement to discuss-webrtc, remove the three-parameters variant
+  // and make the two-parameters variant pure-virtual.
+  /* RTC_DEPRECATED */ virtual int32_t InitEncode(
+      const VideoCodec* codec_settings,
+      int32_t number_of_cores,
+      size_t max_payload_size);
+  virtual int InitEncode(const VideoCodec* codec_settings,
+                         const VideoEncoder::Settings& settings);
 
   // Register an encode complete callback object.
   //

@@ -37,8 +37,7 @@ class FakeVP8Encoder : public FakeEncoder {
   virtual ~FakeVP8Encoder() = default;
 
   int32_t InitEncode(const VideoCodec* config,
-                     int32_t number_of_cores,
-                     size_t max_payload_size) override;
+                     const Settings& settings) override;
 
   int32_t Release() override;
 

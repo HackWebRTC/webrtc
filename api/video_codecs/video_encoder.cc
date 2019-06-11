@@ -118,6 +118,29 @@ VideoEncoder::RateControlParameters::RateControlParameters(
 
 VideoEncoder::RateControlParameters::~RateControlParameters() = default;
 
+int32_t VideoEncoder::InitEncode(const VideoCodec* codec_settings,
+                                 int32_t number_of_cores,
+                                 size_t max_payload_size) {
+  const VideoEncoder::Capabilities capabilities(/* loss_notification= */ false);
+  const VideoEncoder::Settings settings(capabilities, number_of_cores,
+                                        max_payload_size);
+  // In theory, this and the other version of InitEncode() could end up calling
+  // each other in a loop until we get a stack overflow.
+  // In practice, any subclass of VideoEncoder would overload at least one
+  // of these, and we have a TODO in the header file to make this pure virtual.
+  return InitEncode(codec_settings, settings);
+}
+
+int VideoEncoder::InitEncode(const VideoCodec* codec_settings,
+                             const VideoEncoder::Settings& settings) {
+  // In theory, this and the other version of InitEncode() could end up calling
+  // each other in a loop until we get a stack overflow.
+  // In practice, any subclass of VideoEncoder would overload at least one
+  // of these, and we have a TODO in the header file to make this pure virtual.
+  return InitEncode(codec_settings, settings.number_of_cores,
+                    settings.max_payload_size);
+}
+
 void VideoEncoder::OnPacketLossRateUpdate(float packet_loss_rate) {}
 
 void VideoEncoder::OnRttUpdate(int64_t rtt_ms) {}

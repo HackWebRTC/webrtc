@@ -38,8 +38,7 @@ ConfigurableFrameSizeEncoder::~ConfigurableFrameSizeEncoder() {}
 
 int32_t ConfigurableFrameSizeEncoder::InitEncode(
     const VideoCodec* codec_settings,
-    int32_t number_of_cores,
-    size_t max_payload_size) {
+    const Settings& settings) {
   return WEBRTC_VIDEO_CODEC_OK;
 }
 

@@ -12,12 +12,15 @@
 #define API_VIDEO_VIDEO_STREAM_ENCODER_SETTINGS_H_
 
 #include "api/video/video_bitrate_allocator_factory.h"
+#include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
 
 namespace webrtc {
 
 struct VideoStreamEncoderSettings {
-  VideoStreamEncoderSettings() = default;
+  explicit VideoStreamEncoderSettings(
+      const VideoEncoder::Capabilities& capabilities)
+      : capabilities(capabilities) {}
 
   // Enables the new method to estimate the cpu load from encoding, used for
   // cpu adaptation.
@@ -28,6 +31,10 @@ struct VideoStreamEncoderSettings {
 
   // Ownership stays with WebrtcVideoEngine (delegated from PeerConnection).
   VideoBitrateAllocatorFactory* bitrate_allocator_factory = nullptr;
+
+  // Negotiated capabilities which the VideoEncoder may expect the other
+  // side to use.
+  VideoEncoder::Capabilities capabilities;
 };
 
 }  // namespace webrtc

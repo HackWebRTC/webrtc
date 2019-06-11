@@ -28,6 +28,7 @@ namespace webrtc {
 namespace test {
 
 namespace {
+const VideoEncoder::Capabilities kCapabilities(false);
 
 int32_t InitEncoder(VideoCodecType codec_type, VideoEncoder* encoder) {
   VideoCodec codec;
@@ -36,8 +37,9 @@ int32_t InitEncoder(VideoCodecType codec_type, VideoEncoder* encoder) {
   codec.height = 480;
   codec.maxFramerate = 30;
   RTC_CHECK(encoder);
-  return encoder->InitEncode(&codec, 1 /* number_of_cores */,
-                             1200 /* max_payload_size */);
+  return encoder->InitEncode(
+      &codec, VideoEncoder::Settings(kCapabilities, 1 /* number_of_cores */,
+                                     1200 /* max_payload_size */));
 }
 
 int32_t InitDecoder(VideoCodecType codec_type, VideoDecoder* decoder) {

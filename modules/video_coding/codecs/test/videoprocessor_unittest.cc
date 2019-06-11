@@ -66,7 +66,7 @@ class VideoProcessorTest : public ::testing::Test {
   }
 
   void ExpectInit() {
-    EXPECT_CALL(encoder_mock_, InitEncode(_, _, _)).Times(1);
+    EXPECT_CALL(encoder_mock_, InitEncode(_, _)).Times(1);
     EXPECT_CALL(encoder_mock_, RegisterEncodeCompleteCallback(_)).Times(1);
     EXPECT_CALL(*decoder_mock_, InitDecode(_, _)).Times(1);
     EXPECT_CALL(*decoder_mock_, RegisterDecodeCompleteCallback(_)).Times(1);

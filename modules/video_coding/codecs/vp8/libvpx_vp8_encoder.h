@@ -46,8 +46,7 @@ class LibvpxVp8Encoder : public VideoEncoder {
   int Release() override;
 
   int InitEncode(const VideoCodec* codec_settings,
-                 int number_of_cores,
-                 size_t max_payload_size) override;
+                 const VideoEncoder::Settings& settings) override;
 
   int Encode(const VideoFrame& input_image,
              const std::vector<VideoFrameType>* frame_types) override;

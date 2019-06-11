@@ -18,6 +18,7 @@
 #include "api/test/simulated_network.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video/video_bitrate_allocation.h"
+#include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_config.h"
 #include "call/call.h"
 #include "call/fake_network_pipe.h"
@@ -749,8 +750,7 @@ TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
               CreateBuiltinVideoBitrateAllocatorFactory()) {}
 
     int32_t InitEncode(const VideoCodec* config,
-                       int32_t number_of_cores,
-                       size_t max_payload_size) override {
+                       const VideoEncoder::Settings& settings) override {
       ++encoder_inits_;
       if (encoder_inits_ == 1) {
         // First time initialization. Frame size is known.
@@ -771,7 +771,7 @@ TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
             << "Encoder reconfigured with bitrate too far away from last set.";
         observation_complete_.Set();
       }
-      return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
+      return FakeEncoder::InitEncode(config, settings);
     }
 
     void SetRates(const RateControlParameters& parameters) override {

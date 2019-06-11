@@ -41,12 +41,11 @@ class ObjCVideoEncoder : public VideoEncoder {
   ObjCVideoEncoder(id<RTCVideoEncoder> encoder)
       : encoder_(encoder), implementation_name_([encoder implementationName].stdString) {}
 
-  int32_t InitEncode(const VideoCodec *codec_settings,
-                     int32_t number_of_cores,
-                     size_t max_payload_size) override {
+  int32_t InitEncode(const VideoCodec *codec_settings, const Settings &encoder_settings) override {
     RTCVideoEncoderSettings *settings =
         [[RTCVideoEncoderSettings alloc] initWithNativeVideoCodec:codec_settings];
-    return [encoder_ startEncodeWithSettings:settings numberOfCores:number_of_cores];
+    return [encoder_ startEncodeWithSettings:settings
+                               numberOfCores:encoder_settings.number_of_cores];
   }
 
   int32_t RegisterEncodeCompleteCallback(EncodedImageCallback *callback) override {

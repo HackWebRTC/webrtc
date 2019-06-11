@@ -97,8 +97,7 @@ class MediaCodecVideoEncoder : public VideoEncoder {
 
   // VideoEncoder implementation.
   int32_t InitEncode(const VideoCodec* codec_settings,
-                     int32_t /* number_of_cores */,
-                     size_t /* max_payload_size */) override;
+                     const Settings& settings) override;
   int32_t Encode(const VideoFrame& input_image,
                  const std::vector<VideoFrameType>* frame_types) override;
   int32_t RegisterEncodeCompleteCallback(
@@ -304,8 +303,7 @@ MediaCodecVideoEncoder::MediaCodecVideoEncoder(JNIEnv* jni,
 }
 
 int32_t MediaCodecVideoEncoder::InitEncode(const VideoCodec* codec_settings,
-                                           int32_t /* number_of_cores */,
-                                           size_t /* max_payload_size */) {
+                                           const Settings& settings) {
   RTC_DCHECK_RUN_ON(&encoder_queue_checker_);
   if (codec_settings == NULL) {
     ALOGE << "NULL VideoCodec instance";

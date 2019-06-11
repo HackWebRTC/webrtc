@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "api/video/i420_buffer.h"
+#include "api/video_codecs/video_encoder.h"
 #include "common_video/h264/h264_bitstream_parser.h"
 #include "modules/video_coding/codecs/h264/include/h264.h"
 #include "modules/video_coding/utility/quality_scaler.h"
@@ -56,7 +57,7 @@ class H264EncoderImpl : public H264Encoder {
   explicit H264EncoderImpl(const cricket::VideoCodec& codec);
   ~H264EncoderImpl() override;
 
-  // |max_payload_size| is ignored.
+  // |settings.max_payload_size| is ignored.
   // The following members of |codec_settings| are used. The rest are ignored.
   // - codecType (must be kVideoCodecH264)
   // - targetBitrate
@@ -64,8 +65,7 @@ class H264EncoderImpl : public H264Encoder {
   // - width
   // - height
   int32_t InitEncode(const VideoCodec* codec_settings,
-                     int32_t number_of_cores,
-                     size_t max_payload_size) override;
+                     const VideoEncoder::Settings& settings) override;
   int32_t Release() override;
 
   int32_t RegisterEncodeCompleteCallback(
