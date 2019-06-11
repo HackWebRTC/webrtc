@@ -492,10 +492,10 @@ void CallTest::CreateFrameGeneratorCapturer(int framerate,
 void CallTest::CreateFakeAudioDevices(
     std::unique_ptr<TestAudioDeviceModule::Capturer> capturer,
     std::unique_ptr<TestAudioDeviceModule::Renderer> renderer) {
-  fake_send_audio_device_ = TestAudioDeviceModule::CreateTestAudioDeviceModule(
-      std::move(capturer), nullptr, 1.f);
-  fake_recv_audio_device_ = TestAudioDeviceModule::CreateTestAudioDeviceModule(
-      nullptr, std::move(renderer), 1.f);
+  fake_send_audio_device_ = TestAudioDeviceModule::Create(
+      task_queue_factory_.get(), std::move(capturer), nullptr, 1.f);
+  fake_recv_audio_device_ = TestAudioDeviceModule::Create(
+      task_queue_factory_.get(), nullptr, std::move(renderer), 1.f);
 }
 
 void CallTest::CreateVideoStreams() {
