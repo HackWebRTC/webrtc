@@ -11,10 +11,6 @@ import("../../webrtc.gni")
 rtc_static_library("bitrate_controller") {
   visibility = [ "*" ]
   sources = [
-    "bitrate_controller.cc",
-    "bitrate_controller_impl.cc",
-    "bitrate_controller_impl.h",
-    "include/bitrate_controller.h",
     "loss_based_bandwidth_estimation.cc",
     "loss_based_bandwidth_estimation.h",
     "send_side_bandwidth_estimation.cc",
@@ -28,7 +24,6 @@ rtc_static_library("bitrate_controller") {
   }
 
   deps = [
-    "..:module_api",
     "../../api/transport:network_control",
     "../../api/units:data_rate",
     "../../api/units:time_delta",
@@ -36,14 +31,10 @@ rtc_static_library("bitrate_controller") {
     "../../logging:rtc_event_bwe",
     "../../logging:rtc_event_log_api",
     "../../rtc_base:checks",
-    "../../rtc_base:deprecation",
-    "../../rtc_base:rtc_base_approved",
+    "../../rtc_base:logging",
     "../../rtc_base/experiments:field_trial_parser",
-    "../../system_wrappers",
     "../../system_wrappers:field_trial",
     "../../system_wrappers:metrics",
-    "../congestion_controller/goog_cc:delay_based_bwe",
-    "../pacing",
     "../remote_bitrate_estimator",
     "../rtp_rtcp",
     "../rtp_rtcp:rtp_rtcp_format",
@@ -57,7 +48,6 @@ if (rtc_include_tests) {
     testonly = true
 
     sources = [
-      "bitrate_controller_unittest.cc",
       "send_side_bandwidth_estimation_unittest.cc",
     ]
     deps = [
@@ -65,14 +55,7 @@ if (rtc_include_tests) {
       "../../logging:mocks",
       "../../logging:rtc_event_bwe",
       "../../logging:rtc_event_log_api",
-      "../../system_wrappers",
-      "../../test:field_trial",
       "../../test:test_support",
-      "../congestion_controller/goog_cc:delay_based_bwe",
-      "../pacing",
-      "../pacing:mock_paced_sender",
-      "../remote_bitrate_estimator",
-      "../rtp_rtcp:rtp_rtcp_format",
     ]
   }
 }

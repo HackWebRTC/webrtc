@@ -75,7 +75,6 @@ LEGACY_API_DIRS = (
   'common_audio/include',
   'modules/audio_coding/include',
   'modules/audio_processing/include',
-  'modules/bitrate_controller/include',
   'modules/congestion_controller/include',
   'modules/include',
   'modules/remote_bitrate_estimator/include',
