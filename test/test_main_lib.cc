@@ -112,7 +112,6 @@ class TestMainImpl : public TestMain {
     // downstream implementation has been eliminated.
     (void)webrtc::test::JoinFilename("horrible", "hack");
 
-    webrtc::test::ValidateFieldTrialsStringOrDie(FLAG_force_fieldtrials);
     // InitFieldTrialsFromString stores the char*, so the char array must
     // outlive the application.
     webrtc::field_trial::InitFieldTrialsFromString(FLAG_force_fieldtrials);

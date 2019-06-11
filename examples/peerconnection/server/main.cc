@@ -15,6 +15,7 @@
 #include <sys/select.h>
 #endif
 #include <time.h>
+
 #include <string>
 #include <vector>
 
@@ -76,7 +77,6 @@ int main(int argc, char* argv[]) {
     return 0;
   }
 
-  webrtc::test::ValidateFieldTrialsStringOrDie(FLAG_force_fieldtrials);
   // InitFieldTrialsFromString stores the char*, so the char array must outlive
   // the application.
   webrtc::field_trial::InitFieldTrialsFromString(FLAG_force_fieldtrials);

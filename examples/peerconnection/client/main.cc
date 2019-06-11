@@ -89,7 +89,6 @@ int PASCAL wWinMain(HINSTANCE instance,
     return 0;
   }
 
-  webrtc::test::ValidateFieldTrialsStringOrDie(FLAG_force_fieldtrials);
   // InitFieldTrialsFromString stores the char*, so the char array must outlive
   // the application.
   webrtc::field_trial::InitFieldTrialsFromString(FLAG_force_fieldtrials);

@@ -10,6 +10,7 @@
 #include "video/video_loopback.h"
 
 #include <stdio.h>
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -401,8 +402,6 @@ int RunLoopbackTest(int argc, char* argv[]) {
 
   rtc::LogMessage::SetLogToStderr(webrtc::flags::FLAG_logs);
 
-  webrtc::test::ValidateFieldTrialsStringOrDie(
-      webrtc::flags::FLAG_force_fieldtrials);
   // InitFieldTrialsFromString stores the char*, so the char array must outlive
   // the application.
   webrtc::field_trial::InitFieldTrialsFromString(

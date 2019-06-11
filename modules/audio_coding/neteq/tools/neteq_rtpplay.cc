@@ -326,7 +326,6 @@ int main(int argc, char* argv[]) {
   RTC_CHECK(ValidateExtensionId(FLAG_video_content_type));
   RTC_CHECK(ValidateExtensionId(FLAG_video_timing));
 
-  webrtc::test::ValidateFieldTrialsStringOrDie(FLAG_force_fieldtrials);
   webrtc::field_trial::InitFieldTrialsFromString(FLAG_force_fieldtrials);
   webrtc::test::NetEqTestFactory::Config config;
   config.pcmu = FLAG_pcmu;

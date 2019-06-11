@@ -16,21 +16,8 @@
 
 namespace webrtc {
 namespace test {
-
-// Parses enabled field trials from a string config, such as the one passed
-// to chrome's argument --force-fieldtrials and initializes webrtc::field_trial
-// with such a config.
-//  E.g.:
-//    "WebRTC-experimentFoo/Enabled/WebRTC-experimentBar/Enabled100kbps/"
-//    Assigns the process to group "Enabled" on WebRTCExperimentFoo trial
-//    and to group "Enabled100kbps" on WebRTCExperimentBar.
-//
-//  E.g. invalid config:
-//    "WebRTC-experiment1/Enabled"  (note missing / separator at the end).
-//
-// Note: This method crashes with an error message if an invalid config is
-// passed to it. That can be used to find out if a binary is parsing the flags.
-void ValidateFieldTrialsStringOrDie(const std::string& config);
+// TODO(jonasolsson): remove once all internal usages are gone.
+void ValidateFieldTrialsStringOrDie(const std::string&);
 
 // This class is used to override field-trial configs within specific tests.
 // After this class goes out of scope previous field trials will be restored.

@@ -93,14 +93,17 @@ rtc_source_set("field_trial") {
   if (rtc_exclude_field_trial_default) {
     defines = [ "WEBRTC_EXCLUDE_FIELD_TRIAL_DEFAULT" ]
   }
+  deps = [
+    "../rtc_base:checks",
+    "../rtc_base:logging",
+    "//third_party/abseil-cpp/absl/strings",
+  ]
   if (build_with_chromium) {
     # When WebRTC is built as part of Chromium it should exclude the default
     # implementation of field_trial unless it is building for NACL or
     # Chromecast.
     if (!is_nacl && !is_chromecast) {
-      deps = [
-        "../../webrtc_overrides:field_trial",
-      ]
+      deps += [ "../../webrtc_overrides:field_trial" ]
     }
   }
 }
@@ -168,6 +171,7 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "source/clock_unittest.cc",
+      "source/field_trial_unittest.cc",
       "source/metrics_default_unittest.cc",
       "source/metrics_unittest.cc",
       "source/ntp_time_unittest.cc",
@@ -175,6 +179,7 @@ if (rtc_include_tests) {
     ]
 
     deps = [
+      ":field_trial",
       ":metrics",
       ":system_wrappers",
       "../rtc_base:checks",
@@ -182,6 +187,7 @@ if (rtc_include_tests) {
       "../test:test_main",
       "../test:test_support",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/strings",
     ]
 
     if (is_android) {
