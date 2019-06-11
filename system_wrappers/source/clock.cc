@@ -32,6 +32,7 @@
 namespace webrtc {
 
 class RealTimeClock : public Clock {
+  Timestamp CurrentTime() override { return Timestamp::us(rtc::TimeMicros()); }
   // Return a timestamp in milliseconds relative to some arbitrary source; the
   // source is fixed for this clock.
   int64_t TimeInMilliseconds() override { return rtc::TimeMillis(); }
@@ -236,18 +237,16 @@ Clock* Clock::GetRealTimeClock() {
 }
 
 SimulatedClock::SimulatedClock(int64_t initial_time_us)
-    : time_us_(initial_time_us), lock_(RWLockWrapper::CreateRWLock()) {}
+    : SimulatedClock(Timestamp::us(initial_time_us)) {}
+
+SimulatedClock::SimulatedClock(Timestamp initial_time)
+    : time_(initial_time), lock_(RWLockWrapper::CreateRWLock()) {}
 
 SimulatedClock::~SimulatedClock() {}
 
-int64_t SimulatedClock::TimeInMilliseconds() {
+Timestamp SimulatedClock::CurrentTime() {
   ReadLockScoped synchronize(*lock_);
-  return (time_us_ + 500) / 1000;
-}
-
-int64_t SimulatedClock::TimeInMicroseconds() {
-  ReadLockScoped synchronize(*lock_);
-  return time_us_;
+  return time_;
 }
 
 NtpTime SimulatedClock::CurrentNtpTime() {
@@ -263,12 +262,16 @@ int64_t SimulatedClock::CurrentNtpInMilliseconds() {
 }
 
 void SimulatedClock::AdvanceTimeMilliseconds(int64_t milliseconds) {
-  AdvanceTimeMicroseconds(1000 * milliseconds);
+  AdvanceTime(TimeDelta::ms(milliseconds));
 }
 
 void SimulatedClock::AdvanceTimeMicroseconds(int64_t microseconds) {
+  AdvanceTime(TimeDelta::us(microseconds));
+}
+
+void SimulatedClock::AdvanceTime(TimeDelta delta) {
   WriteLockScoped synchronize(*lock_);
-  time_us_ += microseconds;
+  time_ += delta;
 }
 
 }  // namespace webrtc

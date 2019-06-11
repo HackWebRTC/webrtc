@@ -18,25 +18,19 @@ const float DriftingClock::kNoDrift = 1.0f;
 const float DriftingClock::kHalfSpeed = 0.5f;
 
 DriftingClock::DriftingClock(Clock* clock, float speed)
-    : clock_(clock),
-      drift_(speed - 1.0f),
-      start_time_(clock_->TimeInMicroseconds()) {
+    : clock_(clock), drift_(speed - 1.0f), start_time_(clock_->CurrentTime()) {
   RTC_CHECK(clock);
   RTC_CHECK_GT(speed, 0.0f);
 }
 
-float DriftingClock::Drift() const {
-  int64_t now = clock_->TimeInMicroseconds();
+TimeDelta DriftingClock::Drift() const {
+  auto now = clock_->CurrentTime();
   RTC_DCHECK_GE(now, start_time_);
   return (now - start_time_) * drift_;
 }
 
-int64_t DriftingClock::TimeInMilliseconds() {
-  return clock_->TimeInMilliseconds() + Drift() / 1000.;
-}
-
-int64_t DriftingClock::TimeInMicroseconds() {
-  return clock_->TimeInMicroseconds() + Drift();
+Timestamp DriftingClock::CurrentTime() {
+  return clock_->CurrentTime() + Drift() / 1000.;
 }
 
 NtpTime DriftingClock::CurrentNtpTime() {
@@ -45,12 +39,12 @@ NtpTime DriftingClock::CurrentNtpTime() {
 
   NtpTime ntp = clock_->CurrentNtpTime();
   uint64_t total_fractions = static_cast<uint64_t>(ntp);
-  total_fractions += Drift() * kNtpFracPerMicroSecond;
+  total_fractions += Drift().us() * kNtpFracPerMicroSecond;
   return NtpTime(total_fractions);
 }
 
 int64_t DriftingClock::CurrentNtpInMilliseconds() {
-  return clock_->CurrentNtpInMilliseconds() + Drift() / 1000.;
+  return clock_->CurrentNtpInMilliseconds() + Drift().ms();
 }
 }  // namespace test
 }  // namespace webrtc

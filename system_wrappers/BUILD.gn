@@ -32,6 +32,7 @@ rtc_static_library("system_wrappers") {
   deps = [
     ":cpu_features_api",
     "../api:array_view",
+    "../api/units:timestamp",
     "../modules:module_api_public",
     "../rtc_base:checks",
     "../rtc_base/synchronization:rw_lock_wrapper",
