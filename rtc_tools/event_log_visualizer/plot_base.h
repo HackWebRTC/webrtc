@@ -138,7 +138,12 @@ class Plot {
                          float top_margin = 0);
 
   // Sets the title of the plot.
-  void SetTitle(std::string title);
+  void SetTitle(const std::string& title);
+
+  // Sets an unique ID for the plot. The ID is similar to the title except that
+  // the title might change in future releases whereas the ID should be stable
+  // over time.
+  void SetId(const std::string& id);
 
   // Add a new TimeSeries to the plot.
   void AppendTimeSeries(TimeSeries&& time_series);
@@ -158,6 +163,7 @@ class Plot {
   float yaxis_max_;
   std::string yaxis_label_;
   std::string title_;
+  std::string id_;
   std::vector<TimeSeries> series_list_;
   std::vector<IntervalSeries> interval_list_;
 };

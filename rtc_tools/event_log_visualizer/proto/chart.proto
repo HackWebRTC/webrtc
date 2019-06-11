@@ -22,6 +22,7 @@ message Chart {
   float yaxis_max = 6;
   string yaxis_label = 7;
   string title = 8;
+  string id = 9;
 }
 
 message ChartCollection {

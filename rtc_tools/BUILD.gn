@@ -360,6 +360,7 @@ if (rtc_include_tests) {
         "../test:field_trial",
         "../test:fileutils",
         "../test:test_support",
+        "//third_party/abseil-cpp/absl/algorithm:container",
       ]
     }
   }
