@@ -33,6 +33,34 @@
 namespace webrtc {
 
 namespace test {
+// Helper class to capture network controller state.
+class NetworkControleUpdateCache : public NetworkControllerInterface {
+ public:
+  explicit NetworkControleUpdateCache(
+      std::unique_ptr<NetworkControllerInterface> controller);
+
+  NetworkControlUpdate OnNetworkAvailability(NetworkAvailability msg) override;
+  NetworkControlUpdate OnNetworkRouteChange(NetworkRouteChange msg) override;
+  NetworkControlUpdate OnProcessInterval(ProcessInterval msg) override;
+  NetworkControlUpdate OnRemoteBitrateReport(RemoteBitrateReport msg) override;
+  NetworkControlUpdate OnRoundTripTimeUpdate(RoundTripTimeUpdate msg) override;
+  NetworkControlUpdate OnSentPacket(SentPacket msg) override;
+  NetworkControlUpdate OnReceivedPacket(ReceivedPacket msg) override;
+  NetworkControlUpdate OnStreamsConfig(StreamsConfig msg) override;
+  NetworkControlUpdate OnTargetRateConstraints(
+      TargetRateConstraints msg) override;
+  NetworkControlUpdate OnTransportLossReport(TransportLossReport msg) override;
+  NetworkControlUpdate OnTransportPacketsFeedback(
+      TransportPacketsFeedback msg) override;
+
+  NetworkControlUpdate update_state() const;
+
+ private:
+  NetworkControlUpdate Update(NetworkControlUpdate update);
+  const std::unique_ptr<NetworkControllerInterface> controller_;
+  NetworkControlUpdate update_state_;
+};
+
 class LoggingNetworkControllerFactory
     : public NetworkControllerFactoryInterface {
  public:
@@ -46,10 +74,13 @@ class LoggingNetworkControllerFactory
   // TODO(srte): Consider using the Columnprinter interface for this.
   void LogCongestionControllerStats(Timestamp at_time);
 
+  NetworkControlUpdate GetUpdate() const;
+
  private:
   GoogCcDebugFactory goog_cc_factory_;
   NetworkControllerFactoryInterface* cc_factory_ = nullptr;
   bool print_cc_state_ = false;
+  NetworkControleUpdateCache* last_controller_ = nullptr;
 };
 
 struct CallClientFakeAudio {
@@ -73,6 +104,9 @@ class CallClient : public EmulatedNetworkReceiverInterface {
   DataRate send_bandwidth() {
     return DataRate::bps(GetStats().send_bandwidth_bps);
   }
+  DataRate target_rate() const;
+  DataRate link_capacity() const;
+  DataRate padding_rate() const;
 
   void OnPacketReceived(EmulatedIpPacket packet) override;
   std::unique_ptr<RtcEventLogOutput> GetLogWriter(std::string name);
