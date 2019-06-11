@@ -37,6 +37,7 @@
 #include "pc/video_track.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/system/file_wrapper.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
@@ -208,10 +209,20 @@ PeerConnectionFactory::CreateAudioSource(const cricket::AudioOptions& options) {
   return source;
 }
 
+bool PeerConnectionFactory::StartAecDump(FILE* file, int64_t max_size_bytes) {
+  RTC_DCHECK(signaling_thread_->IsCurrent());
+  return channel_manager_->StartAecDump(FileWrapper(file), max_size_bytes);
+}
+
 bool PeerConnectionFactory::StartAecDump(rtc::PlatformFile file,
                                          int64_t max_size_bytes) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  return channel_manager_->StartAecDump(file, max_size_bytes);
+  FILE* f = rtc::FdopenPlatformFileForWriting(file);
+  if (!f) {
+    rtc::ClosePlatformFile(file);
+    return false;
+  }
+  return StartAecDump(f, max_size_bytes);
 }
 
 void PeerConnectionFactory::StopAecDump() {

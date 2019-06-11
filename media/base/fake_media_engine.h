@@ -526,7 +526,7 @@ class FakeVoiceEngine : public VoiceEngineInterface {
   void SetRecvCodecs(const std::vector<AudioCodec>& codecs);
   void SetSendCodecs(const std::vector<AudioCodec>& codecs);
   int GetInputLevel();
-  bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) override;
+  bool StartAecDump(webrtc::FileWrapper file, int64_t max_size_bytes) override;
   void StopAecDump() override;
   bool StartRtcEventLog(rtc::PlatformFile file, int64_t max_size_bytes);
   void StopRtcEventLog();

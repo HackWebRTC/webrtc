@@ -78,7 +78,7 @@ class WebRtcVoiceEngine final : public VoiceEngineInterface {
   // specified. When the maximum file size is reached, logging is stopped and
   // the file is closed. If max_size_bytes is set to <= 0, no limit will be
   // used.
-  bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) override;
+  bool StartAecDump(webrtc::FileWrapper file, int64_t max_size_bytes) override;
 
   // Stops AEC dump.
   void StopAecDump() override;

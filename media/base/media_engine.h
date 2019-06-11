@@ -28,7 +28,7 @@
 #include "media/base/codec.h"
 #include "media/base/media_channel.h"
 #include "media/base/video_common.h"
-#include "rtc_base/platform_file.h"
+#include "rtc_base/system/file_wrapper.h"
 
 namespace webrtc {
 class AudioDeviceModule;
@@ -80,7 +80,8 @@ class VoiceEngineInterface {
   // Starts AEC dump using existing file, a maximum file size in bytes can be
   // specified. Logging is stopped just before the size limit is exceeded.
   // If max_size_bytes is set to a value <= 0, no limit will be used.
-  virtual bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) = 0;
+  virtual bool StartAecDump(webrtc::FileWrapper file,
+                            int64_t max_size_bytes) = 0;
 
   // Stops recording AEC dump.
   virtual void StopAecDump() = 0;

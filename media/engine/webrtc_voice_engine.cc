@@ -574,11 +574,11 @@ void WebRtcVoiceEngine::UnregisterChannel(WebRtcVoiceMediaChannel* channel) {
   channels_.erase(it);
 }
 
-bool WebRtcVoiceEngine::StartAecDump(rtc::PlatformFile file,
+bool WebRtcVoiceEngine::StartAecDump(webrtc::FileWrapper file,
                                      int64_t max_size_bytes) {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
   auto aec_dump = webrtc::AecDumpFactory::Create(
-      file, max_size_bytes, low_priority_worker_queue_.get());
+      std::move(file), max_size_bytes, low_priority_worker_queue_.get());
   if (!aec_dump) {
     return false;
   }

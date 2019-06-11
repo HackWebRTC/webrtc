@@ -28,7 +28,7 @@
 #include "pc/channel.h"
 #include "pc/rtp_transport_internal.h"
 #include "pc/session_description.h"
-#include "rtc_base/platform_file.h"
+#include "rtc_base/system/file_wrapper.h"
 #include "rtc_base/thread.h"
 
 namespace cricket {
@@ -153,7 +153,7 @@ class ChannelManager final {
   // Starts AEC dump using existing file, with a specified maximum file size in
   // bytes. When the limit is reached, logging will stop and the file will be
   // closed. If max_size_bytes is set to <= 0, no limit will be used.
-  bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes);
+  bool StartAecDump(webrtc::FileWrapper file, int64_t max_size_bytes);
 
   // Stops recording AEC dump.
   void StopAecDump();

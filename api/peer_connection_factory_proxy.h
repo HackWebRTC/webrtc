@@ -56,6 +56,7 @@ PROXY_METHOD2(rtc::scoped_refptr<AudioTrackInterface>,
               CreateAudioTrack,
               const std::string&,
               AudioSourceInterface*)
+PROXY_METHOD2(bool, StartAecDump, FILE*, int64_t)
 PROXY_METHOD2(bool, StartAecDump, rtc::PlatformFile, int64_t)
 PROXY_METHOD0(void, StopAecDump)
 END_PROXY_MAP()

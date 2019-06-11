@@ -95,6 +95,7 @@ rtc_static_library("rtc_media_base") {
     "../rtc_base:sanitizer",
     "../rtc_base:stringutils",
     "../rtc_base/synchronization:sequence_checker",
+    "../rtc_base/system:file_wrapper",
     "../rtc_base/system:rtc_export",
     "../rtc_base/third_party/sigslot",
     "//third_party/abseil-cpp/absl/algorithm:container",

@@ -542,7 +542,7 @@ void FakeVoiceEngine::SetSendCodecs(const std::vector<AudioCodec>& codecs) {
 int FakeVoiceEngine::GetInputLevel() {
   return 0;
 }
-bool FakeVoiceEngine::StartAecDump(rtc::PlatformFile file,
+bool FakeVoiceEngine::StartAecDump(webrtc::FileWrapper file,
                                    int64_t max_size_bytes) {
   return false;
 }

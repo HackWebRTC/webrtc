@@ -67,6 +67,8 @@
 #ifndef API_PEER_CONNECTION_INTERFACE_H_
 #define API_PEER_CONNECTION_INTERFACE_H_
 
+#include <stdio.h>
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -1405,6 +1407,12 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   // reached, logging is stopped automatically. If max_size_bytes is set to a
   // value <= 0, no limit will be used, and logging will continue until the
   // StopAecDump function is called.
+  // TODO(webrtc:6463): Delete default implementation when downstream mocks
+  // classes are updated.
+  virtual bool StartAecDump(FILE* file, int64_t max_size_bytes) {
+    return false;
+  }
+  // TODO(webrtc:6463): Deprecated; PlatformFile will soon be deleted.
   virtual bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) = 0;
 
   // Stops logging the AEC dump.
