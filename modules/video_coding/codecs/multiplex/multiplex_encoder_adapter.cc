@@ -13,7 +13,6 @@
 #include <cstring>
 
 #include "api/video/encoded_image.h"
-#include "api/video_codecs/video_encoder.h"
 #include "common_video/include/video_frame_buffer.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/include/module_common_types.h"
@@ -64,13 +63,6 @@ MultiplexEncoderAdapter::~MultiplexEncoderAdapter() {
 int MultiplexEncoderAdapter::InitEncode(const VideoCodec* inst,
                                         int number_of_cores,
                                         size_t max_payload_size) {
-  RTC_NOTREACHED();
-  return WEBRTC_VIDEO_CODEC_ERROR;
-}
-
-int MultiplexEncoderAdapter::InitEncode(
-    const VideoCodec* inst,
-    const VideoEncoder::Settings& settings) {
   const size_t buffer_size =
       CalcBufferSize(VideoType::kI420, inst->width, inst->height);
   multiplex_dummy_planes_.resize(buffer_size);
@@ -79,23 +71,23 @@ int MultiplexEncoderAdapter::InitEncode(
             0x80);
 
   RTC_DCHECK_EQ(kVideoCodecMultiplex, inst->codecType);
-  VideoCodec video_codec = *inst;
-  video_codec.codecType = PayloadStringToCodecType(associated_format_.name);
+  VideoCodec settings = *inst;
+  settings.codecType = PayloadStringToCodecType(associated_format_.name);
 
   // Take over the key frame interval at adapter level, because we have to
   // sync the key frames for both sub-encoders.
-  switch (video_codec.codecType) {
+  switch (settings.codecType) {
     case kVideoCodecVP8:
-      key_frame_interval_ = video_codec.VP8()->keyFrameInterval;
-      video_codec.VP8()->keyFrameInterval = 0;
+      key_frame_interval_ = settings.VP8()->keyFrameInterval;
+      settings.VP8()->keyFrameInterval = 0;
       break;
     case kVideoCodecVP9:
-      key_frame_interval_ = video_codec.VP9()->keyFrameInterval;
-      video_codec.VP9()->keyFrameInterval = 0;
+      key_frame_interval_ = settings.VP9()->keyFrameInterval;
+      settings.VP9()->keyFrameInterval = 0;
       break;
     case kVideoCodecH264:
-      key_frame_interval_ = video_codec.H264()->keyFrameInterval;
-      video_codec.H264()->keyFrameInterval = 0;
+      key_frame_interval_ = settings.H264()->keyFrameInterval;
+      settings.H264()->keyFrameInterval = 0;
       break;
     default:
       break;
@@ -109,7 +101,8 @@ int MultiplexEncoderAdapter::InitEncode(
   for (size_t i = 0; i < kAlphaCodecStreams; ++i) {
     std::unique_ptr<VideoEncoder> encoder =
         factory_->CreateVideoEncoder(associated_format_);
-    const int rv = encoder->InitEncode(&video_codec, settings);
+    const int rv =
+        encoder->InitEncode(&settings, number_of_cores, max_payload_size);
     if (rv) {
       RTC_LOG(LS_ERROR) << "Failed to create multiplex codec index " << i;
       return rv;

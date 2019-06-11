@@ -1895,9 +1895,7 @@ void WebRtcVideoChannel::WebRtcVideoSendStream::SetCodec(
     }
   }
 
-  const bool has_lntf = HasLntf(codec_settings.codec);
-  parameters_.config.rtp.lntf.enabled = has_lntf;
-  parameters_.config.encoder_settings.capabilities.loss_notification = has_lntf;
+  parameters_.config.rtp.lntf.enabled = HasLntf(codec_settings.codec);
 
   parameters_.config.rtp.nack.rtp_history_ms =
       HasNack(codec_settings.codec) ? kNackHistoryMs : 0;

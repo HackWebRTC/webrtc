@@ -17,7 +17,6 @@
 #include "api/test/simulated_network.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_bitrate_allocation.h"
-#include "api/video_codecs/video_encoder.h"
 #include "call/call.h"
 #include "call/fake_network_pipe.h"
 #include "call/rtp_transport_controller_send.h"
@@ -1979,18 +1978,12 @@ TEST_F(VideoSendStreamTest,
     int32_t InitEncode(const VideoCodec* config,
                        int32_t number_of_cores,
                        size_t max_payload_size) override {
-      RTC_NOTREACHED();
-      return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-
-    int32_t InitEncode(const VideoCodec* config,
-                       const Settings& settings) override {
       rtc::CritScope lock(&crit_);
       last_initialized_frame_width_ = config->width;
       last_initialized_frame_height_ = config->height;
       ++number_of_initializations_;
       init_encode_called_.Set();
-      return FakeEncoder::InitEncode(config, settings);
+      return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
     }
 
     int32_t Encode(const VideoFrame& input_image,
@@ -2045,16 +2038,10 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
     int32_t InitEncode(const VideoCodec* config,
                        int32_t number_of_cores,
                        size_t max_payload_size) override {
-      RTC_NOTREACHED();
-      return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-
-    int32_t InitEncode(const VideoCodec* config,
-                       const Settings& settings) override {
       rtc::CritScope lock(&crit_);
       start_bitrate_kbps_ = config->startBitrate;
       start_bitrate_changed_.Set();
-      return FakeEncoder::InitEncode(config, settings);
+      return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
     }
 
     void SetRates(const RateControlParameters& parameters) override {
@@ -2125,15 +2112,9 @@ class StartStopBitrateObserver : public test::FakeEncoder {
   int32_t InitEncode(const VideoCodec* config,
                      int32_t number_of_cores,
                      size_t max_payload_size) override {
-    RTC_NOTREACHED();
-    return WEBRTC_VIDEO_CODEC_ERROR;
-  }
-
-  int32_t InitEncode(const VideoCodec* config,
-                     const Settings& settings) override {
     rtc::CritScope lock(&crit_);
     encoder_init_.Set();
-    return FakeEncoder::InitEncode(config, settings);
+    return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
   }
 
   void SetRates(const RateControlParameters& parameters) override {
@@ -2330,12 +2311,6 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
     int32_t InitEncode(const VideoCodec* codecSettings,
                        int32_t numberOfCores,
                        size_t maxPayloadSize) override {
-      RTC_NOTREACHED();
-      return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-
-    int32_t InitEncode(const VideoCodec* codecSettings,
-                       const Settings& settings) override {
       rtc::CritScope lock(&crit_);
       EXPECT_FALSE(initialized_);
       initialized_ = true;
@@ -2453,12 +2428,6 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
     int32_t InitEncode(const VideoCodec* config,
                        int32_t number_of_cores,
                        size_t max_payload_size) override {
-      RTC_NOTREACHED();
-      return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-
-    int32_t InitEncode(const VideoCodec* config,
-                       const Settings& settings) override {
       if (num_initializations_ == 0) {
         // Verify default values.
         EXPECT_EQ(kFirstMaxBitrateBps / 1000, config->maxBitrate);
@@ -2468,7 +2437,7 @@ TEST_F(VideoSendStreamTest, EncoderSetupPropagatesCommonEncoderConfigValues) {
       }
       ++num_initializations_;
       init_encode_event_.Set();
-      return FakeEncoder::InitEncode(config, settings);
+      return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
     }
 
     void PerformTest() override {
@@ -2538,17 +2507,11 @@ class VideoCodecConfigObserver : public test::SendTest,
   int32_t InitEncode(const VideoCodec* config,
                      int32_t number_of_cores,
                      size_t max_payload_size) override {
-    RTC_NOTREACHED();
-    return WEBRTC_VIDEO_CODEC_ERROR;
-  }
-
-  int32_t InitEncode(const VideoCodec* config,
-                     const Settings& settings) override {
     EXPECT_EQ(video_codec_type_, config->codecType);
     VerifyCodecSpecifics(*config);
     ++num_initializations_;
     init_encode_event_.Set();
-    return FakeEncoder::InitEncode(config, settings);
+    return FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
   }
 
   void InitCodecSpecifics();
@@ -2792,20 +2755,14 @@ TEST_F(VideoSendStreamTest, TranslatesTwoLayerScreencastToTargetBitrate) {
     int32_t InitEncode(const VideoCodec* config,
                        int32_t number_of_cores,
                        size_t max_payload_size) override {
-      RTC_NOTREACHED();
-      return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-
-    int32_t InitEncode(const VideoCodec* config,
-                       const Settings& settings) override {
       EXPECT_EQ(config->numberOfSimulcastStreams, 1);
       EXPECT_EQ(static_cast<unsigned int>(kScreencastMaxTargetBitrateDeltaKbps),
                 config->simulcastStream[0].maxBitrate -
                     config->simulcastStream[0].targetBitrate);
       observation_complete_.Set();
-      return test::FakeEncoder::InitEncode(config, settings);
+      return test::FakeEncoder::InitEncode(config, number_of_cores,
+                                           max_payload_size);
     }
-
     void ModifyVideoConfigs(
         VideoSendStream::Config* send_config,
         std::vector<VideoReceiveStream::Config>* receive_configs,
@@ -2863,12 +2820,6 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
     int32_t InitEncode(const VideoCodec* codecSettings,
                        int32_t numberOfCores,
                        size_t maxPayloadSize) override {
-      RTC_NOTREACHED();
-      return WEBRTC_VIDEO_CODEC_ERROR;
-    }
-
-    int32_t InitEncode(const VideoCodec* codecSettings,
-                       const Settings& settings) override {
       EXPECT_GE(codecSettings->startBitrate, codecSettings->minBitrate);
       EXPECT_LE(codecSettings->startBitrate, codecSettings->maxBitrate);
       if (num_initializations_ == 0) {
@@ -2896,7 +2847,8 @@ TEST_F(VideoSendStreamTest, ReconfigureBitratesSetsEncoderBitratesCorrectly) {
       ++num_initializations_;
       init_encode_event_.Set();
 
-      return FakeEncoder::InitEncode(codecSettings, settings);
+      return FakeEncoder::InitEncode(codecSettings, numberOfCores,
+                                     maxPayloadSize);
     }
 
     void SetRates(const RateControlParameters& parameters) override {

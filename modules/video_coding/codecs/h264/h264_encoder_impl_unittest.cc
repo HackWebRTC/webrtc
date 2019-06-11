@@ -11,7 +11,6 @@
 
 #include "modules/video_coding/codecs/h264/h264_encoder_impl.h"
 
-#include "api/video_codecs/video_encoder.h"
 #include "test/gtest.h"
 
 namespace webrtc {
@@ -20,11 +19,6 @@ namespace {
 
 const int kMaxPayloadSize = 1024;
 const int kNumCores = 1;
-
-const VideoEncoder::Capabilities kCapabilities(false);
-const VideoEncoder::Settings kSettings(kCapabilities,
-                                       kNumCores,
-                                       kMaxPayloadSize);
 
 void SetDefaultSettings(VideoCodec* codec_settings) {
   codec_settings->codecType = kVideoCodecH264;
@@ -43,7 +37,7 @@ TEST(H264EncoderImplTest, CanInitializeWithDefaultParameters) {
   VideoCodec codec_settings;
   SetDefaultSettings(&codec_settings);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder.InitEncode(&codec_settings, kSettings));
+            encoder.InitEncode(&codec_settings, kNumCores, kMaxPayloadSize));
   EXPECT_EQ(H264PacketizationMode::NonInterleaved,
             encoder.PacketizationModeForTesting());
 }
@@ -55,7 +49,7 @@ TEST(H264EncoderImplTest, CanInitializeWithNonInterleavedModeExplicitly) {
   VideoCodec codec_settings;
   SetDefaultSettings(&codec_settings);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder.InitEncode(&codec_settings, kSettings));
+            encoder.InitEncode(&codec_settings, kNumCores, kMaxPayloadSize));
   EXPECT_EQ(H264PacketizationMode::NonInterleaved,
             encoder.PacketizationModeForTesting());
 }
@@ -67,7 +61,7 @@ TEST(H264EncoderImplTest, CanInitializeWithSingleNalUnitModeExplicitly) {
   VideoCodec codec_settings;
   SetDefaultSettings(&codec_settings);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder.InitEncode(&codec_settings, kSettings));
+            encoder.InitEncode(&codec_settings, kNumCores, kMaxPayloadSize));
   EXPECT_EQ(H264PacketizationMode::SingleNalUnit,
             encoder.PacketizationModeForTesting());
 }
@@ -79,7 +73,7 @@ TEST(H264EncoderImplTest, CanInitializeWithRemovedParameter) {
   VideoCodec codec_settings;
   SetDefaultSettings(&codec_settings);
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder.InitEncode(&codec_settings, kSettings));
+            encoder.InitEncode(&codec_settings, kNumCores, kMaxPayloadSize));
   EXPECT_EQ(H264PacketizationMode::SingleNalUnit,
             encoder.PacketizationModeForTesting());
 }

@@ -42,11 +42,9 @@ class RTC_EXPORT EncoderSimulcastProxy : public VideoEncoder {
 
   // Implements VideoEncoder.
   int Release() override;
-  int InitEncode(const VideoCodec* codec_settings,
+  int InitEncode(const VideoCodec* inst,
                  int number_of_cores,
                  size_t max_payload_size) override;
-  int InitEncode(const VideoCodec* codec_settings,
-                 const VideoEncoder::Settings& settings) override;
   int Encode(const VideoFrame& input_image,
              const std::vector<VideoFrameType>* frame_types) override;
   int RegisterEncodeCompleteCallback(EncodedImageCallback* callback) override;

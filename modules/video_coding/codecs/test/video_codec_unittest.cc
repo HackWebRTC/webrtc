@@ -10,7 +10,6 @@
 
 #include <utility>
 
-#include "api/video_codecs/video_encoder.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/video_coding/codecs/test/video_codec_unittest.h"
 #include "modules/video_coding/include/video_error_codes.h"
@@ -26,9 +25,6 @@ static const int kHeight = 144;       // Height of the input image.
 static const int kMaxFramerate = 30;  // Arbitrary value.
 
 namespace webrtc {
-namespace {
-const VideoEncoder::Capabilities kCapabilities(false);
-}
 
 EncodedImageCallback::Result
 VideoCodecUnitTest::FakeEncodeCompleteCallback::OnEncodedImage(
@@ -82,10 +78,8 @@ void VideoCodecUnitTest::SetUp() {
   decoder_->RegisterDecodeCompleteCallback(&decode_complete_callback_);
 
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
-            encoder_->InitEncode(
-                &codec_settings_,
-                VideoEncoder::Settings(kCapabilities, 1 /* number of cores */,
-                                       0 /* max payload size (unused) */)));
+            encoder_->InitEncode(&codec_settings_, 1 /* number of cores */,
+                                 0 /* max payload size (unused) */));
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             decoder_->InitDecode(&codec_settings_, 1 /* number of cores */));
 }

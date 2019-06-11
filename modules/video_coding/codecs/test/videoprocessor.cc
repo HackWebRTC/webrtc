@@ -24,7 +24,6 @@
 #include "api/video/video_frame_buffer.h"
 #include "api/video/video_rotation.h"
 #include "api/video_codecs/video_codec.h"
-#include "api/video_codecs/video_encoder.h"
 #include "common_video/h264/h264_common.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -45,8 +44,6 @@ using FrameStatistics = VideoCodecTestStats::FrameStatistics;
 namespace {
 const int kMsToRtpTimestamp = kVideoPayloadTypeFrequency / 1000;
 const int kMaxBufferedInputFrames = 20;
-
-const VideoEncoder::Capabilities kCapabilities(false);
 
 size_t GetMaxNaluSizeBytes(const EncodedImage& encoded_frame,
                            const VideoCodecTestFixture::Config& config) {
@@ -210,11 +207,9 @@ VideoProcessor::VideoProcessor(webrtc::VideoEncoder* encoder,
                WEBRTC_VIDEO_CODEC_OK);
 
   // Initialize codecs so that they are ready to receive frames.
-  RTC_CHECK_EQ(encoder_->InitEncode(
-                   &config_.codec_settings,
-                   VideoEncoder::Settings(
-                       kCapabilities, static_cast<int>(config_.NumberOfCores()),
-                       config_.max_payload_size_bytes)),
+  RTC_CHECK_EQ(encoder_->InitEncode(&config_.codec_settings,
+                                    static_cast<int>(config_.NumberOfCores()),
+                                    config_.max_payload_size_bytes),
                WEBRTC_VIDEO_CODEC_OK);
 
   for (size_t i = 0; i < num_simulcast_or_spatial_layers_; ++i) {

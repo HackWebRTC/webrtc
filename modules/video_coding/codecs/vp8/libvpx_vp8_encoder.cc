@@ -450,17 +450,9 @@ void LibvpxVp8Encoder::SetStreamState(bool send_stream, int stream_idx) {
   send_stream_[stream_idx] = send_stream;
 }
 
-int LibvpxVp8Encoder::InitEncode(const VideoCodec* codec_settings,
-                                 int number_of_cores,
-                                 size_t max_payload_size) {
-  RTC_NOTREACHED();
-  return WEBRTC_VIDEO_CODEC_ERROR;
-}
-
-// TODO(eladalon): s/inst/codec_settings/g.
-// TODO(bugs.webrtc.org/10720): Pass |capabilities| to frame buffer controller.
 int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
-                                 const VideoEncoder::Settings& settings) {
+                                 int number_of_cores,
+                                 size_t /*maxPayloadSize */) {
   if (inst == NULL) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
@@ -474,7 +466,7 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   if (inst->width < 1 || inst->height < 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-  if (settings.number_of_cores < 1) {
+  if (number_of_cores < 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   if (inst->VP8().automaticResizeOn && inst->numberOfSimulcastStreams > 1) {
@@ -500,7 +492,7 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   }
   RTC_DCHECK(frame_buffer_controller_);
 
-  number_of_cores_ = settings.number_of_cores;
+  number_of_cores_ = number_of_cores;
   timestamp_ = 0;
   codec_ = *inst;
 
@@ -619,7 +611,7 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
   // Determine number of threads based on the image size and #cores.
   // TODO(fbarchard): Consider number of Simulcast layers.
   vpx_configs_[0].g_threads = NumberOfThreads(
-      vpx_configs_[0].g_w, vpx_configs_[0].g_h, settings.number_of_cores);
+      vpx_configs_[0].g_w, vpx_configs_[0].g_h, number_of_cores);
 
   // Creating a wrapper to the image - setting image data to NULL.
   // Actual pointer will be set in encode. Setting align to 1, as it

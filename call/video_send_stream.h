@@ -126,9 +126,9 @@ class VideoSendStream {
 
     std::string ToString() const;
 
-    RtpConfig rtp;
-
     VideoStreamEncoderSettings encoder_settings;
+
+    RtpConfig rtp;
 
     // Time interval between RTCP report for video
     int rtcp_report_interval_ms = 1000;

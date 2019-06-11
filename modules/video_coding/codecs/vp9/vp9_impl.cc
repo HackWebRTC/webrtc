@@ -401,16 +401,9 @@ void VP9EncoderImpl::SetRates(const RateControlParameters& parameters) {
   return;
 }
 
-int VP9EncoderImpl::InitEncode(const VideoCodec* codec_settings,
-                               int number_of_cores,
-                               size_t max_payload_size) {
-  RTC_NOTREACHED();
-  return WEBRTC_VIDEO_CODEC_ERROR;
-}
-
-// TODO(eladalon): s/inst/codec_settings/g.
 int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
-                               const Settings& settings) {
+                               int number_of_cores,
+                               size_t /*max_payload_size*/) {
   if (inst == nullptr) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
@@ -424,7 +417,7 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   if (inst->width < 1 || inst->height < 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
-  if (settings.number_of_cores < 1) {
+  if (number_of_cores < 1) {
     return WEBRTC_VIDEO_CODEC_ERR_PARAMETER;
   }
   if (inst->VP9().numberOfTemporalLayers > 3) {
@@ -533,7 +526,7 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
   config_->rc_resize_allowed = inst->VP9().automaticResizeOn ? 1 : 0;
   // Determine number of threads based on the image size and #cores.
   config_->g_threads =
-      NumberOfThreads(config_->g_w, config_->g_h, settings.number_of_cores);
+      NumberOfThreads(config_->g_w, config_->g_h, number_of_cores);
 
   cpu_speed_ = GetCpuSpeed(config_->g_w, config_->g_h);
 

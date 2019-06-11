@@ -16,7 +16,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/types/optional.h"
 #include "api/task_queue/task_queue_base.h"
 #include "api/video_codecs/video_encoder.h"
 #include "common_video/h264/h264_bitstream_parser.h"
@@ -36,8 +35,6 @@ class VideoEncoderWrapper : public VideoEncoder {
   int32_t InitEncode(const VideoCodec* codec_settings,
                      int32_t number_of_cores,
                      size_t max_payload_size) override;
-  int32_t InitEncode(const VideoCodec* codec_settings,
-                     const Settings& settings) override;
 
   int32_t RegisterEncodeCompleteCallback(
       EncodedImageCallback* callback) override;
@@ -98,7 +95,6 @@ class VideoEncoderWrapper : public VideoEncoder {
   EncodedImageCallback* callback_;
   bool initialized_;
   int num_resets_;
-  absl::optional<VideoEncoder::Capabilities> capabilities_;
   int number_of_cores_;
   VideoCodec codec_settings_;
   EncoderInfo encoder_info_;

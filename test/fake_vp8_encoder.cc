@@ -13,7 +13,6 @@
 #include <algorithm>
 
 #include "absl/types/optional.h"
-#include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "api/video_codecs/vp8_temporal_layers_factory.h"
 #include "modules/video_coding/codecs/interface/common_constants.h"
@@ -52,14 +51,9 @@ FakeVP8Encoder::FakeVP8Encoder(Clock* clock) : FakeEncoder(clock) {
 int32_t FakeVP8Encoder::InitEncode(const VideoCodec* config,
                                    int32_t number_of_cores,
                                    size_t max_payload_size) {
-  RTC_NOTREACHED();
-  return WEBRTC_VIDEO_CODEC_ERROR;
-}
-
-int32_t FakeVP8Encoder::InitEncode(const VideoCodec* config,
-                                   const Settings& settings) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
-  auto result = FakeEncoder::InitEncode(config, settings);
+  auto result =
+      FakeEncoder::InitEncode(config, number_of_cores, max_payload_size);
   if (result != WEBRTC_VIDEO_CODEC_OK) {
     return result;
   }

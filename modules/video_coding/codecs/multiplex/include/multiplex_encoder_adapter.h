@@ -42,8 +42,6 @@ class MultiplexEncoderAdapter : public VideoEncoder {
   int InitEncode(const VideoCodec* inst,
                  int number_of_cores,
                  size_t max_payload_size) override;
-  int InitEncode(const VideoCodec* inst,
-                 const VideoEncoder::Settings& settings) override;
   int Encode(const VideoFrame& input_image,
              const std::vector<VideoFrameType>* frame_types) override;
   int RegisterEncodeCompleteCallback(EncodedImageCallback* callback) override;

@@ -21,7 +21,6 @@
 
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 
-#include "api/video_codecs/video_encoder.h"
 #include "media/base/vp9_profile.h"
 #include "modules/video_coding/codecs/vp9/vp9_frame_buffer_pool.h"
 #include "modules/video_coding/utility/framerate_controller.h"
@@ -43,8 +42,6 @@ class VP9EncoderImpl : public VP9Encoder {
   int InitEncode(const VideoCodec* codec_settings,
                  int number_of_cores,
                  size_t max_payload_size) override;
-  int InitEncode(const VideoCodec* codec_settings,
-                 const Settings& settings) override;
 
   int Encode(const VideoFrame& input_image,
              const std::vector<VideoFrameType>* frame_types) override;

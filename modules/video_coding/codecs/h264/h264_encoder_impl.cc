@@ -193,12 +193,6 @@ H264EncoderImpl::~H264EncoderImpl() {
 int32_t H264EncoderImpl::InitEncode(const VideoCodec* inst,
                                     int32_t number_of_cores,
                                     size_t max_payload_size) {
-  RTC_NOTREACHED();
-  return WEBRTC_VIDEO_CODEC_ERROR;
-}
-
-int32_t H264EncoderImpl::InitEncode(const VideoCodec* inst,
-                                    const VideoEncoder::Settings& settings) {
   ReportInit();
   if (!inst || inst->codecType != kVideoCodecH264) {
     ReportError();
@@ -232,8 +226,8 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* inst,
   pictures_.resize(number_of_streams);
   configurations_.resize(number_of_streams);
 
-  number_of_cores_ = settings.number_of_cores;
-  max_payload_size_ = settings.max_payload_size;
+  number_of_cores_ = number_of_cores;
+  max_payload_size_ = max_payload_size;
   codec_ = *inst;
 
   // Code expects simulcastStream resolutions to be correct, make sure they are

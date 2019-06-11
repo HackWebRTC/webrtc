@@ -70,12 +70,6 @@ void FakeEncoder::SetMaxBitrate(int max_kbps) {
 int32_t FakeEncoder::InitEncode(const VideoCodec* config,
                                 int32_t number_of_cores,
                                 size_t max_payload_size) {
-  RTC_NOTREACHED();
-  return WEBRTC_VIDEO_CODEC_ERROR;
-}
-
-int32_t FakeEncoder::InitEncode(const VideoCodec* config,
-                                const Settings& settings) {
   rtc::CritScope cs(&crit_sect_);
   config_ = *config;
   current_rate_settings_.bitrate.SetBitrate(0, 0, config_.startBitrate * 1000);
@@ -372,12 +366,6 @@ MultithreadedFakeH264Encoder::MultithreadedFakeH264Encoder(
 int32_t MultithreadedFakeH264Encoder::InitEncode(const VideoCodec* config,
                                                  int32_t number_of_cores,
                                                  size_t max_payload_size) {
-  RTC_NOTREACHED();
-  return WEBRTC_VIDEO_CODEC_ERROR;
-}
-
-int32_t MultithreadedFakeH264Encoder::InitEncode(const VideoCodec* config,
-                                                 const Settings& settings) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
 
   queue1_ = task_queue_factory_->CreateTaskQueue(
@@ -385,7 +373,7 @@ int32_t MultithreadedFakeH264Encoder::InitEncode(const VideoCodec* config,
   queue2_ = task_queue_factory_->CreateTaskQueue(
       "Queue 2", TaskQueueFactory::Priority::NORMAL);
 
-  return FakeH264Encoder::InitEncode(config, settings);
+  return FakeH264Encoder::InitEncode(config, number_of_cores, max_payload_size);
 }
 
 class MultithreadedFakeH264Encoder::EncodeTask : public QueuedTask {

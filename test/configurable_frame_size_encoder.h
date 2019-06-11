@@ -35,8 +35,6 @@ class ConfigurableFrameSizeEncoder : public VideoEncoder {
   int32_t InitEncode(const VideoCodec* codec_settings,
                      int32_t number_of_cores,
                      size_t max_payload_size) override;
-  int32_t InitEncode(const VideoCodec* codec_settings,
-                     const Settings& settings) override;
 
   int32_t Encode(const VideoFrame& input_image,
                  const std::vector<VideoFrameType>* frame_types) override;

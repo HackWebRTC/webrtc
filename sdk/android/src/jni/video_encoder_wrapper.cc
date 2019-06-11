@@ -41,17 +41,10 @@ VideoEncoderWrapper::~VideoEncoderWrapper() = default;
 int32_t VideoEncoderWrapper::InitEncode(const VideoCodec* codec_settings,
                                         int32_t number_of_cores,
                                         size_t max_payload_size) {
-  RTC_NOTREACHED();
-  return WEBRTC_VIDEO_CODEC_ERROR;
-}
-
-int VideoEncoderWrapper::InitEncode(const VideoCodec* codec_settings,
-                                    const Settings& settings) {
   JNIEnv* jni = AttachCurrentThreadIfNeeded();
 
+  number_of_cores_ = number_of_cores;
   codec_settings_ = *codec_settings;
-  capabilities_ = settings.capabilities;
-  number_of_cores_ = settings.number_of_cores;
   num_resets_ = 0;
   {
     rtc::CritScope lock(&encoder_queue_crit_);
@@ -76,16 +69,12 @@ int32_t VideoEncoderWrapper::InitEncodeInternal(JNIEnv* jni) {
       automatic_resize_on = true;
   }
 
-  RTC_DCHECK(capabilities_);
-  ScopedJavaLocalRef<jobject> capabilities =
-      Java_Capabilities_Constructor(jni, capabilities_->loss_notification);
-
   ScopedJavaLocalRef<jobject> settings = Java_Settings_Constructor(
       jni, number_of_cores_, codec_settings_.width, codec_settings_.height,
       static_cast<int>(codec_settings_.startBitrate),
       static_cast<int>(codec_settings_.maxFramerate),
       static_cast<int>(codec_settings_.numberOfSimulcastStreams),
-      automatic_resize_on, capabilities);
+      automatic_resize_on);
 
   ScopedJavaLocalRef<jobject> callback =
       Java_VideoEncoderWrapper_createEncoderCallback(jni,

@@ -15,7 +15,6 @@
 
 #include "absl/memory/memory.h"
 #include "api/video/video_codec_type.h"
-#include "api/video_codecs/video_encoder.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/logging.h"
@@ -73,13 +72,6 @@ int32_t QualityAnalyzingVideoEncoder::InitEncode(
     const VideoCodec* codec_settings,
     int32_t number_of_cores,
     size_t max_payload_size) {
-  RTC_NOTREACHED();
-  return WEBRTC_VIDEO_CODEC_ERROR;
-}
-
-int32_t QualityAnalyzingVideoEncoder::InitEncode(
-    const VideoCodec* codec_settings,
-    const Settings& settings) {
   rtc::CritScope crit(&lock_);
   codec_settings_ = *codec_settings;
   mode_ = SimulcastMode::kNormal;
@@ -104,7 +96,8 @@ int32_t QualityAnalyzingVideoEncoder::InitEncode(
   if (codec_settings->numberOfSimulcastStreams > 1) {
     mode_ = SimulcastMode::kSimulcast;
   }
-  return delegate_->InitEncode(codec_settings, settings);
+  return delegate_->InitEncode(codec_settings, number_of_cores,
+                               max_payload_size);
 }
 
 int32_t QualityAnalyzingVideoEncoder::RegisterEncodeCompleteCallback(
