@@ -98,10 +98,6 @@ enum RTCPPacketType : uint32_t {
   kRtcpXrTargetBitrate = 0x200000
 };
 
-enum KeyFrameRequestMethod { kKeyFrameReqPliRtcp, kKeyFrameReqFirRtcp };
-
-enum RtpRtcpPacketType { kPacketRtp = 0 };
-
 enum RtxMode {
   kRtxOff = 0x0,
   kRtxRetransmitted = 0x1,     // Only send retransmissions over RTX.

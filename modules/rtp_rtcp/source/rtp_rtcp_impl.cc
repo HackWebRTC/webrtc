@@ -90,7 +90,6 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       packet_overhead_(28),  // IPV4 UDP.
       nack_last_time_sent_full_ms_(0),
       nack_last_seq_number_sent_(0),
-      key_frame_req_method_(kKeyFrameReqPliRtcp),
       remote_bitrate_(configuration.remote_bitrate_estimator),
       ack_observer_(configuration.ack_observer),
       rtt_stats_(configuration.rtt_stats),
@@ -706,24 +705,6 @@ void ModuleRtpRtcpImpl::SetReportBlockDataObserver(
 bool ModuleRtpRtcpImpl::SendFeedbackPacket(
     const rtcp::TransportFeedback& packet) {
   return rtcp_sender_.SendFeedbackPacket(packet);
-}
-
-int32_t ModuleRtpRtcpImpl::SetKeyFrameRequestMethod(
-    const KeyFrameRequestMethod method) {
-  key_frame_req_method_ = method;
-  return 0;
-}
-
-int32_t ModuleRtpRtcpImpl::RequestKeyFrame() {
-  switch (key_frame_req_method_) {
-    case kKeyFrameReqPliRtcp:
-      SendPictureLossIndication();
-      break;
-    case kKeyFrameReqFirRtcp:
-      SendFullIntraRequest();
-      break;
-  }
-  return 0;
 }
 
 int32_t ModuleRtpRtcpImpl::SendLossNotification(uint16_t last_decoded_seq_num,

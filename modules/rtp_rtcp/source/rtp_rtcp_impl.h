@@ -248,13 +248,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   bool RtcpXrRrtrStatus() const override;
 
   // Video part.
-
-  // Set method for requesting a new key frame.
-  int32_t SetKeyFrameRequestMethod(KeyFrameRequestMethod method) override;
-
-  // Send a request for a keyframe.
-  int32_t RequestKeyFrame() override;
-
   int32_t SendLossNotification(uint16_t last_decoded_seq_num,
                                uint16_t last_received_seq_num,
                                bool decodability_flag,
@@ -326,8 +319,6 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
   // Send side
   int64_t nack_last_time_sent_full_ms_;
   uint16_t nack_last_seq_number_sent_;
-
-  KeyFrameRequestMethod key_frame_req_method_;
 
   RemoteBitrateEstimator* const remote_bitrate_;
 

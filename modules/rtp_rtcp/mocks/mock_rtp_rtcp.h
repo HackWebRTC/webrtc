@@ -147,8 +147,6 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_METHOD1(SetReportBlockDataObserver, void(ReportBlockDataObserver*));
   MOCK_METHOD1(SendFeedbackPacket, bool(const rtcp::TransportFeedback& packet));
   MOCK_METHOD1(SetTargetSendBitrate, void(uint32_t bitrate_bps));
-  MOCK_METHOD1(SetKeyFrameRequestMethod, int32_t(KeyFrameRequestMethod method));
-  MOCK_METHOD0(RequestKeyFrame, int32_t());
   MOCK_METHOD4(SendLossNotification,
                int32_t(uint16_t last_decoded_seq_num,
                        uint16_t last_received_seq_num,
