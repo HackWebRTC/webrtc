@@ -18,6 +18,7 @@
 
 #include "absl/memory/memory.h"
 #include "api/array_view.h"
+#include "api/task_queue/global_task_queue_factory.h"
 #include "common_audio/wav_file.h"
 #include "modules/audio_device/include/audio_device_default.h"
 #include "modules/audio_device/include/test_audio_device.h"
@@ -471,6 +472,15 @@ class DiscardRenderer final : public TestAudioDeviceModule::Renderer {
 
 size_t TestAudioDeviceModule::SamplesPerFrame(int sampling_frequency_in_hz) {
   return rtc::CheckedDivExact(sampling_frequency_in_hz, kFramesPerSecond);
+}
+
+rtc::scoped_refptr<TestAudioDeviceModule>
+TestAudioDeviceModule::CreateTestAudioDeviceModule(
+    std::unique_ptr<Capturer> capturer,
+    std::unique_ptr<Renderer> renderer,
+    float speed) {
+  return Create(&GlobalTaskQueueFactory(), std::move(capturer),
+                std::move(renderer), speed);
 }
 
 rtc::scoped_refptr<TestAudioDeviceModule> TestAudioDeviceModule::Create(

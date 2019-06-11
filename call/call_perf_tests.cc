@@ -185,8 +185,7 @@ void CallPerfTest::TestAudioVideoSync(FecMode fec,
   task_queue_.SendTask([&]() {
     metrics::Reset();
     rtc::scoped_refptr<TestAudioDeviceModule> fake_audio_device =
-        TestAudioDeviceModule::Create(
-            task_queue_factory_.get(),
+        TestAudioDeviceModule::CreateTestAudioDeviceModule(
             TestAudioDeviceModule::CreatePulsedNoiseCapturer(256, 48000),
             TestAudioDeviceModule::CreateDiscardRenderer(48000),
             audio_rtp_speed);
