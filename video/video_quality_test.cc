@@ -268,11 +268,11 @@ std::unique_ptr<VideoDecoder> VideoQualityTest::CreateVideoDecoder(
   std::unique_ptr<VideoDecoder> decoder;
   if (format.name == "multiplex") {
     decoder = absl::make_unique<MultiplexDecoderAdapter>(
-        &internal_decoder_factory_, SdpVideoFormat(cricket::kVp9CodecName));
+        decoder_factory_.get(), SdpVideoFormat(cricket::kVp9CodecName));
   } else if (format.name == "FakeCodec") {
     decoder = webrtc::FakeVideoDecoderFactory::CreateVideoDecoder();
   } else {
-    decoder = internal_decoder_factory_.CreateVideoDecoder(format);
+    decoder = decoder_factory_->CreateVideoDecoder(format);
   }
   if (!params_.logging.encoded_frame_base_path.empty()) {
     rtc::StringBuilder str;
@@ -290,15 +290,15 @@ std::unique_ptr<VideoEncoder> VideoQualityTest::CreateVideoEncoder(
     VideoAnalyzer* analyzer) {
   std::unique_ptr<VideoEncoder> encoder;
   if (format.name == "VP8") {
-    encoder = absl::make_unique<EncoderSimulcastProxy>(
-        &internal_encoder_factory_, format);
+    encoder = absl::make_unique<EncoderSimulcastProxy>(encoder_factory_.get(),
+                                                       format);
   } else if (format.name == "multiplex") {
     encoder = absl::make_unique<MultiplexEncoderAdapter>(
-        &internal_encoder_factory_, SdpVideoFormat(cricket::kVp9CodecName));
+        encoder_factory_.get(), SdpVideoFormat(cricket::kVp9CodecName));
   } else if (format.name == "FakeCodec") {
     encoder = webrtc::FakeVideoEncoderFactory::CreateVideoEncoder();
   } else {
-    encoder = internal_encoder_factory_.CreateVideoEncoder(format);
+    encoder = encoder_factory_->CreateVideoEncoder(format);
   }
 
   std::vector<FileWrapper> encoded_frame_dump_files;
@@ -364,6 +364,16 @@ VideoQualityTest::VideoQualityTest(
       num_video_streams_(0) {
   if (injection_components_ == nullptr) {
     injection_components_ = absl::make_unique<InjectionComponents>();
+  }
+  if (injection_components_->video_decoder_factory != nullptr) {
+    decoder_factory_ = std::move(injection_components_->video_decoder_factory);
+  } else {
+    decoder_factory_ = absl::make_unique<InternalDecoderFactory>();
+  }
+  if (injection_components_->video_encoder_factory != nullptr) {
+    encoder_factory_ = std::move(injection_components_->video_encoder_factory);
+  } else {
+    encoder_factory_ = absl::make_unique<InternalEncoderFactory>();
   }
 
   payload_type_map_ = test::CallTest::payload_type_map_;

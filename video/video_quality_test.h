@@ -106,12 +106,12 @@ class VideoQualityTest :
   RtcEventLogFactory rtc_event_log_factory_;
 
   test::FunctionVideoDecoderFactory video_decoder_factory_;
-  InternalDecoderFactory internal_decoder_factory_;
+  std::unique_ptr<VideoDecoderFactory> decoder_factory_;
   test::FunctionVideoEncoderFactory video_encoder_factory_;
   test::FunctionVideoEncoderFactory video_encoder_factory_with_analyzer_;
   std::unique_ptr<VideoBitrateAllocatorFactory>
       video_bitrate_allocator_factory_;
-  InternalEncoderFactory internal_encoder_factory_;
+  std::unique_ptr<VideoEncoderFactory> encoder_factory_;
   std::vector<VideoSendStream::Config> thumbnail_send_configs_;
   std::vector<VideoEncoderConfig> thumbnail_encoder_configs_;
   std::vector<VideoSendStream*> thumbnail_send_streams_;

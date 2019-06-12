@@ -22,7 +22,9 @@
 #include "api/network_state_predictor.h"
 #include "api/test/simulated_network.h"
 #include "api/transport/network_control.h"
+#include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_config.h"
+#include "api/video_codecs/video_encoder_factory.h"
 
 namespace webrtc {
 
@@ -122,6 +124,8 @@ class VideoQualityTestFixtureInterface {
     std::unique_ptr<NetworkBehaviorInterface> receiver_network;
 
     std::unique_ptr<FecControllerFactoryInterface> fec_controller_factory;
+    std::unique_ptr<VideoEncoderFactory> video_encoder_factory;
+    std::unique_ptr<VideoDecoderFactory> video_decoder_factory;
     std::unique_ptr<NetworkStatePredictorFactoryInterface>
         network_state_predictor_factory;
     std::unique_ptr<NetworkControllerFactoryInterface>
