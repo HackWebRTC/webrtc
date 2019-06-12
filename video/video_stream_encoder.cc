@@ -665,9 +665,6 @@ void VideoStreamEncoder::ReconfigureEncoder() {
     RTC_LOG(LS_ERROR) << "Failed to create encoder configuration.";
   }
 
-  rate_allocator_ =
-      settings_.bitrate_allocator_factory->CreateVideoBitrateAllocator(codec);
-
   // Set min_bitrate_bps, max_bitrate_bps, and max padding bit rate for VP9.
   if (encoder_config_.codec_type == kVideoCodecVP9) {
     // Lower max bitrate to the level codec actually can produce.
@@ -710,6 +707,9 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   if (codec.startBitrate > codec.maxBitrate) {
     codec.startBitrate = codec.maxBitrate;
   }
+
+  rate_allocator_ =
+      settings_.bitrate_allocator_factory->CreateVideoBitrateAllocator(codec);
 
   // Reset (release existing encoder) if one exists and anything except
   // start bitrate or max framerate has changed.
