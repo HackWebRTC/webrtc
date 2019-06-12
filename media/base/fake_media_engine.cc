@@ -547,11 +547,6 @@ bool FakeVoiceEngine::StartAecDump(webrtc::FileWrapper file,
   return false;
 }
 void FakeVoiceEngine::StopAecDump() {}
-bool FakeVoiceEngine::StartRtcEventLog(rtc::PlatformFile file,
-                                       int64_t max_size_bytes) {
-  return false;
-}
-void FakeVoiceEngine::StopRtcEventLog() {}
 
 FakeVideoEngine::FakeVideoEngine()
     : capture_(false), fail_create_channel_(false) {

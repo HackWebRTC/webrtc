@@ -528,8 +528,6 @@ class FakeVoiceEngine : public VoiceEngineInterface {
   int GetInputLevel();
   bool StartAecDump(webrtc::FileWrapper file, int64_t max_size_bytes) override;
   void StopAecDump() override;
-  bool StartRtcEventLog(rtc::PlatformFile file, int64_t max_size_bytes);
-  void StopRtcEventLog();
 
  private:
   std::vector<FakeVoiceMediaChannel*> channels_;
