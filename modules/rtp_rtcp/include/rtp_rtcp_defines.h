@@ -340,21 +340,21 @@ class RtcpRttStats {
   virtual ~RtcpRttStats() {}
 };
 
+// This class will be deprecated and replaced with RtpPacketPacer.
 class RtpPacketSender {
  public:
   RtpPacketSender() {}
   virtual ~RtpPacketSender() {}
 
+  // These are part of the legacy PacedSender interface and will be removed.
   enum Priority {
     kHighPriority = 0,    // Pass through; will be sent immediately.
     kNormalPriority = 2,  // Put in back of the line.
     kLowPriority = 3,     // Put in back of the low priority line.
   };
-  // Low priority packets are mixed with the normal priority packets
-  // while we are paused.
 
-  // Returns true if we send the packet now, else it will add the packet
-  // information to the queue and call TimeToSendPacket when it's time to send.
+  // Adds the packet information to the queue and call TimeToSendPacket when
+  // it's time to send.
   virtual void InsertPacket(Priority priority,
                             uint32_t ssrc,
                             uint16_t sequence_number,
@@ -367,7 +367,7 @@ class RtpPacketSender {
   // the pacer budget calculation. The audio traffic still will be injected
   // at high priority.
   // TODO(alexnarest): Make it pure virtual after rtp_sender_unittest will be
-  // updated to support it
+  // updated to support it.
   virtual void SetAccountForAudioPackets(bool account_for_audio) {}
 };
 

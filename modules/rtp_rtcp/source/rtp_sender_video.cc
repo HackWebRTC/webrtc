@@ -307,7 +307,7 @@ void RTPSenderVideo::SendVideoPacketAsRedMaybeWithUlpfec(
         new RtpPacketToSend(*media_packet));
     RTC_CHECK(rtp_packet->Parse(fec_packet->data(), fec_packet->length()));
     rtp_packet->set_capture_time_ms(media_packet->capture_time_ms());
-    rtp_packet->set_is_fec(true);
+    rtp_packet->set_packet_type(RtpPacketToSend::Type::kForwardErrorCorrection);
     uint16_t fec_sequence_number = rtp_packet->SequenceNumber();
     if (LogAndSendToNetwork(std::move(rtp_packet), kDontRetransmit,
                             RtpPacketSender::kLowPriority)) {

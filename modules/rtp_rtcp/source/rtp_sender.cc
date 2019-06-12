@@ -661,8 +661,9 @@ void RTPSender::UpdateRtpStats(const RtpPacketToSend& packet,
   if (counters->first_packet_time_ms == -1)
     counters->first_packet_time_ms = now_ms;
 
-  if (packet.is_fec())
+  if (packet.packet_type() == RtpPacketToSend::Type::kForwardErrorCorrection) {
     counters->fec.AddPacket(packet);
+  }
 
   if (is_retransmit) {
     counters->retransmitted.AddPacket(packet);
