@@ -89,6 +89,9 @@ struct Vp8EncoderConfig {
 
   // Error resilience mode.
   absl::optional<uint32_t> g_error_resilient;
+
+  // If set to true, all previous configuration overrides should be reset.
+  bool reset_previous_configuration_overrides = false;
 };
 
 // This interface defines a way of delegating the logic of buffer management.
@@ -125,9 +128,8 @@ class Vp8FrameBufferController {
   // Called by the encoder before encoding a frame. Returns a set of overrides
   // the controller wishes to enact in the encoder's configuration.
   // If a value is not overridden, previous overrides are still in effect.
-  // (It is therefore not possible to go from a specific override to
-  // no-override. Once the controller takes responsibility over a value, it
-  // must maintain responsibility for it.)
+  // However, if |Vp8EncoderConfig::reset_previous_configuration_overrides|
+  // is set to |true|, all previous overrides are reset.
   virtual Vp8EncoderConfig UpdateConfiguration(size_t stream_index) = 0;
 
   // Returns the recommended VP8 encode flags needed.

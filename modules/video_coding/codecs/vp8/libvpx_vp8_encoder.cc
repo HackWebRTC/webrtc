@@ -893,6 +893,11 @@ bool LibvpxVp8Encoder::UpdateVpxConfiguration(size_t stream_index) {
   const Vp8EncoderConfig new_config =
       frame_buffer_controller_->UpdateConfiguration(stream_index);
 
+  if (new_config.reset_previous_configuration_overrides) {
+    *config = new_config;
+    return true;
+  }
+
   const bool changes_made = MaybeExtendVp8EncoderConfig(new_config, config);
 
   // Note that overrides must be applied even if they haven't changed.
