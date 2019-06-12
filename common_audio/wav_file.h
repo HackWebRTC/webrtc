@@ -11,8 +11,6 @@
 #ifndef COMMON_AUDIO_WAV_FILE_H_
 #define COMMON_AUDIO_WAV_FILE_H_
 
-#ifdef __cplusplus
-
 #include <stdint.h>
 #include <cstddef>
 #include <string>
@@ -102,25 +100,5 @@ class WavReader final : public WavFile {
 };
 
 }  // namespace webrtc
-
-extern "C" {
-#endif  // __cplusplus
-
-// C wrappers for the WavWriter class.
-typedef struct rtc_WavWriter rtc_WavWriter;
-rtc_WavWriter* rtc_WavOpen(const char* filename,
-                           int sample_rate,
-                           size_t num_channels);
-void rtc_WavClose(rtc_WavWriter* wf);
-void rtc_WavWriteSamples(rtc_WavWriter* wf,
-                         const float* samples,
-                         size_t num_samples);
-int rtc_WavSampleRate(const rtc_WavWriter* wf);
-size_t rtc_WavNumChannels(const rtc_WavWriter* wf);
-size_t rtc_WavNumSamples(const rtc_WavWriter* wf);
-
-#ifdef __cplusplus
-}  // extern "C"
-#endif
 
 #endif  // COMMON_AUDIO_WAV_FILE_H_

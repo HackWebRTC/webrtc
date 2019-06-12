@@ -103,53 +103,6 @@ TEST(WavWriterTest, MAYBE_CPP) {
   }
 }
 
-// Write a tiny WAV file with the C interface and verify the result.
-TEST(WavWriterTest, C) {
-  const std::string outfile = test::OutputPath() + "wavtest2.wav";
-  rtc_WavWriter* w = rtc_WavOpen(outfile.c_str(), 11904, 2);
-  EXPECT_EQ(11904, rtc_WavSampleRate(w));
-  EXPECT_EQ(2u, rtc_WavNumChannels(w));
-  EXPECT_EQ(0u, rtc_WavNumSamples(w));
-  static const size_t kNumSamples = 4;
-  rtc_WavWriteSamples(w, &kSamples[0], 2);
-  EXPECT_EQ(2u, rtc_WavNumSamples(w));
-  rtc_WavWriteSamples(w, &kSamples[2], kNumSamples - 2);
-  EXPECT_EQ(kNumSamples, rtc_WavNumSamples(w));
-  rtc_WavClose(w);
-  static const uint8_t kExpectedContents[] = {
-      // clang-format off
-      // clang formatting doesn't respect inline comments.
-    'R', 'I', 'F', 'F',
-    44, 0, 0, 0,  // size of whole file - 8: 8 + 44 - 8
-    'W', 'A', 'V', 'E',
-    'f', 'm', 't', ' ',
-    16, 0, 0, 0,  // size of fmt block - 8: 24 - 8
-    1, 0,  // format: PCM (1)
-    2, 0,  // channels: 2
-    0x80, 0x2e, 0, 0,  // sample rate: 11904
-    0, 0xba, 0, 0,  // byte rate: 2 * 2 * 11904
-    4, 0,  // block align: NumChannels * BytesPerSample
-    16, 0,  // bits per sample: 2 * 8
-    'd', 'a', 't', 'a',
-    8, 0, 0, 0,  // size of payload: 8
-    0, 0,  // first sample: 0.0
-    10, 0,  // second sample: 10.0
-    0xff, 0x7f,  // third sample: 4e4 (saturated)
-    0, 0x80,  // fourth sample: -1e9 (saturated)
-      // clang-format on
-  };
-  static const size_t kContentSize =
-      kWavHeaderSize + kNumSamples * sizeof(int16_t);
-  static_assert(sizeof(kExpectedContents) == kContentSize, "content size");
-  EXPECT_EQ(kContentSize, test::GetFileSize(outfile));
-  FILE* f = fopen(outfile.c_str(), "rb");
-  ASSERT_TRUE(f);
-  uint8_t contents[kContentSize];
-  ASSERT_EQ(1u, fread(contents, kContentSize, 1, f));
-  EXPECT_EQ(0, fclose(f));
-  EXPECT_EQ(0, memcmp(kExpectedContents, contents, kContentSize));
-}
-
 // Write a larger WAV file. You can listen to this file to sanity-check it.
 TEST(WavWriterTest, LargeFile) {
   std::string outfile = test::OutputPath() + "wavtest3.wav";

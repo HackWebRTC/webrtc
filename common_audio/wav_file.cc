@@ -216,32 +216,3 @@ void WavWriter::Close() {
 }
 
 }  // namespace webrtc
-
-rtc_WavWriter* rtc_WavOpen(const char* filename,
-                           int sample_rate,
-                           size_t num_channels) {
-  return reinterpret_cast<rtc_WavWriter*>(
-      new webrtc::WavWriter(filename, sample_rate, num_channels));
-}
-
-void rtc_WavClose(rtc_WavWriter* wf) {
-  delete reinterpret_cast<webrtc::WavWriter*>(wf);
-}
-
-void rtc_WavWriteSamples(rtc_WavWriter* wf,
-                         const float* samples,
-                         size_t num_samples) {
-  reinterpret_cast<webrtc::WavWriter*>(wf)->WriteSamples(samples, num_samples);
-}
-
-int rtc_WavSampleRate(const rtc_WavWriter* wf) {
-  return reinterpret_cast<const webrtc::WavWriter*>(wf)->sample_rate();
-}
-
-size_t rtc_WavNumChannels(const rtc_WavWriter* wf) {
-  return reinterpret_cast<const webrtc::WavWriter*>(wf)->num_channels();
-}
-
-size_t rtc_WavNumSamples(const rtc_WavWriter* wf) {
-  return reinterpret_cast<const webrtc::WavWriter*>(wf)->num_samples();
-}
