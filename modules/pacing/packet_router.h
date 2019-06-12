@@ -17,7 +17,6 @@
 #include <vector>
 
 #include "api/transport/network_types.h"
-#include "modules/pacing/paced_sender.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/constructor_magic.h"
@@ -31,13 +30,12 @@ namespace rtcp {
 class TransportFeedback;
 }  // namespace rtcp
 
-// PacketRouter keeps track of rtp send modules to support the pacer.
+// PacketRouter keeps track of RTP send modules to support the pacer.
 // In addition, it handles feedback messages, which are sent on a send
 // module if possible (sender report), otherwise on receive module
 // (receiver report). For the latter case, we also keep track of the
 // receive modules.
-class PacketRouter : public PacedSender::PacketSender,
-                     public TransportSequenceNumberAllocator,
+class PacketRouter : public TransportSequenceNumberAllocator,
                      public RemoteBitrateObserver,
                      public TransportFeedbackSenderInterface {
  public:
@@ -51,16 +49,15 @@ class PacketRouter : public PacedSender::PacketSender,
                            bool remb_candidate);
   void RemoveReceiveRtpModule(RtcpFeedbackSenderInterface* rtcp_sender);
 
-  // Implements PacedSender::Callback.
-  RtpPacketSendResult TimeToSendPacket(
+  virtual RtpPacketSendResult TimeToSendPacket(
       uint32_t ssrc,
       uint16_t sequence_number,
       int64_t capture_timestamp,
       bool retransmission,
-      const PacedPacketInfo& packet_info) override;
+      const PacedPacketInfo& packet_info);
 
-  size_t TimeToSendPadding(size_t bytes,
-                           const PacedPacketInfo& packet_info) override;
+  virtual size_t TimeToSendPadding(size_t bytes,
+                                   const PacedPacketInfo& packet_info);
 
   void SetTransportWideSequenceNumber(uint16_t sequence_number);
   uint16_t AllocateSequenceNumber() override;

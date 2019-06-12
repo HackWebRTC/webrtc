@@ -13,6 +13,7 @@
 #include <string>
 
 #include "modules/pacing/paced_sender.h"
+#include "modules/pacing/packet_router.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"
 #include "test/field_trial.h"
@@ -40,7 +41,7 @@ namespace test {
 
 static const int kTargetBitrateBps = 800000;
 
-class MockPacedSenderCallback : public PacedSender::PacketSender {
+class MockPacedSenderCallback : public PacketRouter {
  public:
   MOCK_METHOD5(TimeToSendPacket,
                RtpPacketSendResult(uint32_t ssrc,
@@ -52,7 +53,7 @@ class MockPacedSenderCallback : public PacedSender::PacketSender {
                size_t(size_t bytes, const PacedPacketInfo& pacing_info));
 };
 
-class PacedSenderPadding : public PacedSender::PacketSender {
+class PacedSenderPadding : public PacketRouter {
  public:
   PacedSenderPadding() : padding_sent_(0) {}
 
@@ -79,7 +80,7 @@ class PacedSenderPadding : public PacedSender::PacketSender {
   size_t padding_sent_;
 };
 
-class PacedSenderProbing : public PacedSender::PacketSender {
+class PacedSenderProbing : public PacketRouter {
  public:
   PacedSenderProbing() : packets_sent_(0), padding_sent_(0) {}
 

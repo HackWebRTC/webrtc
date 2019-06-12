@@ -49,11 +49,11 @@ const int64_t PacedSender::kMaxQueueLengthMs = 2000;
 const float PacedSender::kDefaultPaceMultiplier = 2.5f;
 
 PacedSender::PacedSender(Clock* clock,
-                         PacketSender* packet_sender,
+                         PacketRouter* packet_router,
                          RtcEventLog* event_log,
                          const WebRtcKeyValueConfig* field_trials)
     : clock_(clock),
-      packet_sender_(packet_sender),
+      packet_router_(packet_router),
       fallback_field_trials_(
           !field_trials ? absl::make_unique<FieldTrialBasedConfig>() : nullptr),
       field_trials_(field_trials ? field_trials : fallback_field_trials_.get()),
@@ -280,7 +280,7 @@ void PacedSender::Process() {
   int64_t elapsed_time_ms = UpdateTimeAndGetElapsedMs(now_us);
   if (ShouldSendKeepalive(now_us)) {
     critsect_.Leave();
-    size_t bytes_sent = packet_sender_->TimeToSendPadding(1, PacedPacketInfo());
+    size_t bytes_sent = packet_router_->TimeToSendPadding(1, PacedPacketInfo());
     critsect_.Enter();
     OnPaddingSent(bytes_sent);
   }
@@ -329,7 +329,7 @@ void PacedSender::Process() {
       break;
 
     critsect_.Leave();
-    RtpPacketSendResult success = packet_sender_->TimeToSendPacket(
+    RtpPacketSendResult success = packet_router_->TimeToSendPacket(
         packet->ssrc, packet->sequence_number, packet->capture_time_ms,
         packet->retransmission, pacing_info);
     critsect_.Enter();
@@ -359,7 +359,7 @@ void PacedSender::Process() {
       if (padding_needed > 0) {
         critsect_.Leave();
         size_t padding_sent =
-            packet_sender_->TimeToSendPadding(padding_needed, pacing_info);
+            packet_router_->TimeToSendPadding(padding_needed, pacing_info);
         critsect_.Enter();
         bytes_sent += padding_sent;
         OnPaddingSent(padding_sent);
