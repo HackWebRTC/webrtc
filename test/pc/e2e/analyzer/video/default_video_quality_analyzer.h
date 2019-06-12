@@ -263,6 +263,7 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
 
   rtc::CriticalSection lock_;
   State state_ RTC_GUARDED_BY(lock_) = State::kNew;
+  Timestamp start_time_ RTC_GUARDED_BY(lock_) = Timestamp::MinusInfinity();
   // Frames that were captured by all streams and still aren't rendered by any
   // stream or deemed dropped.
   std::map<uint16_t, VideoFrame> captured_frames_in_flight_

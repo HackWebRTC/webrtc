@@ -81,7 +81,10 @@ void DefaultVideoQualityAnalyzer::Start(std::string test_case_name,
   }
   {
     rtc::CritScope crit(&lock_);
+    RTC_CHECK(start_time_.IsMinusInfinity());
+
     state_ = State::kActive;
+    start_time_ = Now();
   }
 }
 
@@ -90,6 +93,13 @@ uint16_t DefaultVideoQualityAnalyzer::OnFrameCaptured(
     const webrtc::VideoFrame& frame) {
   // |next_frame_id| is atomic, so we needn't lock here.
   uint16_t frame_id = next_frame_id_++;
+  Timestamp start_time = Timestamp::MinusInfinity();
+  {
+    rtc::CritScope crit(&lock_);
+    // Create a local copy of start_time_ to access it under |comparison_lock_|
+    // without holding a |lock_|
+    start_time = start_time_;
+  }
   {
     // Ensure stats for this stream exists.
     rtc::CritScope crit(&comparison_lock_);
@@ -98,7 +108,7 @@ uint16_t DefaultVideoQualityAnalyzer::OnFrameCaptured(
       // Assume that the first freeze was before first stream frame captured.
       // This way time before the first freeze would be counted as time between
       // freezes.
-      stream_last_freeze_end_time_.insert({stream_label, Now()});
+      stream_last_freeze_end_time_.insert({stream_label, start_time});
     }
   }
   {
@@ -298,10 +308,12 @@ void DefaultVideoQualityAnalyzer::Stop() {
     rtc::CritScope crit1(&lock_);
     rtc::CritScope crit2(&comparison_lock_);
     for (auto& item : stream_stats_) {
-      if (item.second.freeze_time_ms.IsEmpty()) {
-        continue;
-      }
       const StreamState& state = stream_states_[item.first];
+      // If there are no freezes in the call we have to report
+      // time_between_freezes_ms as call duration and in such case
+      // |stream_last_freeze_end_time_| for this stream will be |start_time_|.
+      // If there is freeze, then we need add time from last rendered frame
+      // to last freeze end as time between freezes.
       if (state.last_rendered_frame_time) {
         item.second.time_between_freezes_ms.AddSample(
             (state.last_rendered_frame_time.value() -
