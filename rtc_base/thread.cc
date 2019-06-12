@@ -567,8 +567,11 @@ bool Thread::IsRunning() {
 
 AutoThread::AutoThread()
     : Thread(SocketServer::CreateDefault(), /*do_init=*/false) {
-  DoInit();
   if (!ThreadManager::Instance()->CurrentThread()) {
+    // DoInit registers with MessageQueueManager. Do that only if we intend to
+    // be rtc::Thread::Current(), otherwise ProcessAllMessageQueuesInternal will
+    // post a message to a queue that no running thread is serving.
+    DoInit();
     ThreadManager::Instance()->SetCurrentThread(this);
   }
 }
