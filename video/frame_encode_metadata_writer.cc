@@ -207,7 +207,8 @@ FrameEncodeMetadataWriter::UpdateBitstream(
   SpsVuiRewriter::ParseOutgoingBitstreamAndRewriteSps(
       buffer, fragmentation->fragmentationVectorSize,
       fragmentation->fragmentationOffset, fragmentation->fragmentationLength,
-      &modified_buffer, modified_fragmentation->fragmentationOffset,
+      encoded_image->ColorSpace(), &modified_buffer,
+      modified_fragmentation->fragmentationOffset,
       modified_fragmentation->fragmentationLength);
 
   encoded_image->SetEncodedData(modified_buffer);

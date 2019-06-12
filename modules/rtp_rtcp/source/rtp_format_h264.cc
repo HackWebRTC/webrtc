@@ -458,7 +458,7 @@ bool RtpDepacketizerH264::ProcessStapAOrSingleNalu(
 
         SpsVuiRewriter::ParseResult result = SpsVuiRewriter::ParseAndRewriteSps(
             &payload_data[start_offset], end_offset - start_offset, &sps,
-            output_buffer.get(), SpsVuiRewriter::Direction::kIncoming);
+            nullptr, output_buffer.get(), SpsVuiRewriter::Direction::kIncoming);
 
         if (result == SpsVuiRewriter::ParseResult::kVuiRewritten) {
           if (modified_buffer_) {
