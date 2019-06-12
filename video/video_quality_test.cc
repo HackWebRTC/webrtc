@@ -1355,7 +1355,8 @@ void VideoQualityTest::InitializeAudioDevice(Call::Config* send_call_config,
     audio_device = CreateAudioDevice();
   } else {
     // By default, create a test ADM which fakes audio.
-    audio_device = TestAudioDeviceModule::CreateTestAudioDeviceModule(
+    audio_device = TestAudioDeviceModule::Create(
+        task_queue_factory_.get(),
         TestAudioDeviceModule::CreatePulsedNoiseCapturer(32000, 48000),
         TestAudioDeviceModule::CreateDiscardRenderer(48000), 1.f);
   }

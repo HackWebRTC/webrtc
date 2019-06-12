@@ -72,6 +72,8 @@ class TestRenderer : public TestAudioDeviceModule::Renderer {
 TEST(AudioWithMediaTransport, DeliversAudio) {
   std::unique_ptr<rtc::Thread> transport_thread = rtc::Thread::Create();
   transport_thread->Start();
+  std::unique_ptr<TaskQueueFactory> task_queue_factory =
+      CreateDefaultTaskQueueFactory();
   MediaTransportPair transport_pair(transport_thread.get());
   NiceMock<MockTransport> rtcp_send_transport;
   NiceMock<MockTransport> send_transport;
@@ -79,7 +81,8 @@ TEST(AudioWithMediaTransport, DeliversAudio) {
   NiceMock<MockBitrateAllocator> bitrate_allocator;
 
   rtc::scoped_refptr<TestAudioDeviceModule> audio_device =
-      TestAudioDeviceModule::CreateTestAudioDeviceModule(
+      TestAudioDeviceModule::Create(
+          task_queue_factory.get(),
           TestAudioDeviceModule::CreatePulsedNoiseCapturer(
               /* max_amplitude= */ 10000, kSamplingFrequency, kNumChannels),
           absl::make_unique<TestRenderer>(kSamplingFrequency, kNumChannels,
@@ -125,8 +128,6 @@ TEST(AudioWithMediaTransport, DeliversAudio) {
   send_config.encoder_factory = CreateAudioEncoderFactory<AudioEncoderOpus>();
   std::unique_ptr<ProcessThread> send_process_thread =
       ProcessThread::Create("audio send thread");
-  std::unique_ptr<TaskQueueFactory> task_queue_factory =
-      CreateDefaultTaskQueueFactory();
   RtpTransportControllerSend rtp_transport(
       Clock::GetRealTimeClock(), &null_event_log, nullptr, nullptr,
       BitrateConstraints(), ProcessThread::Create("Pacer"),
