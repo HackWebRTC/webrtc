@@ -26,7 +26,6 @@
 #include "test/scenario/network/network_emulation_manager.h"
 #include "test/scenario/network_node.h"
 #include "test/scenario/scenario_config.h"
-#include "test/scenario/simulated_time.h"
 #include "test/scenario/video_stream.h"
 #include "test/time_controller/time_controller.h"
 
@@ -82,13 +81,6 @@ class Scenario {
   void ChangeRoute(std::pair<CallClient*, CallClient*> clients,
                    std::vector<EmulatedNetworkNode*> over_nodes,
                    DataSize overhead);
-
-  SimulatedTimeClient* CreateSimulatedTimeClient(
-      std::string name,
-      SimulatedTimeClientConfig config,
-      std::vector<PacketStreamConfig> stream_configs,
-      std::vector<EmulatedNetworkNode*> send_link,
-      std::vector<EmulatedNetworkNode*> return_link);
 
   VideoStreamPair* CreateVideoStream(
       std::pair<CallClient*, CallClient*> clients,
@@ -171,7 +163,6 @@ class Scenario {
   std::vector<std::unique_ptr<CallClientPair>> client_pairs_;
   std::vector<std::unique_ptr<VideoStreamPair>> video_streams_;
   std::vector<std::unique_ptr<AudioStreamPair>> audio_streams_;
-  std::vector<std::unique_ptr<SimulatedTimeClient>> simulated_time_clients_;
   std::vector<std::unique_ptr<SimulationNode>> simulation_nodes_;
   std::vector<std::unique_ptr<StatesPrinter>> printers_;
 

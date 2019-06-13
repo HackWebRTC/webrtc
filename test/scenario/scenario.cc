@@ -166,34 +166,6 @@ void Scenario::ChangeRoute(std::pair<CallClient*, CallClient*> clients,
   clients.first->transport_->Connect(over_nodes.front(), route_ip, overhead);
 }
 
-SimulatedTimeClient* Scenario::CreateSimulatedTimeClient(
-    std::string name,
-    SimulatedTimeClientConfig config,
-    std::vector<PacketStreamConfig> stream_configs,
-    std::vector<EmulatedNetworkNode*> send_link,
-    std::vector<EmulatedNetworkNode*> return_link) {
-  rtc::IPAddress send_ip(next_route_id_++);
-  rtc::IPAddress return_ip(next_route_id_++);
-  SimulatedTimeClient* client = new SimulatedTimeClient(
-      time_controller_.get(), GetLogWriterFactory(name), config, stream_configs,
-      send_link, return_link, send_ip, return_ip, Now());
-  if (log_writer_factory_ && !name.empty() &&
-      config.transport.state_log_interval.IsFinite()) {
-    Every(config.transport.state_log_interval, [this, client]() {
-      client->network_controller_factory_.LogCongestionControllerStats(Now());
-    });
-  }
-  if (client->GetNetworkControllerProcessInterval().IsFinite()) {
-    Every(client->GetNetworkControllerProcessInterval(),
-          [this, client] { client->CongestionProcess(Now()); });
-  } else {
-    task_queue_.PostTask([this, client] { client->CongestionProcess(Now()); });
-  }
-  Every(TimeDelta::ms(5), [this, client] { client->PacerProcess(Now()); });
-  simulated_time_clients_.emplace_back(client);
-  return client;
-}
-
 EmulatedNetworkNode* Scenario::CreateSimulationNode(
     std::function<void(NetworkSimulationConfig*)> config_modifier) {
   NetworkSimulationConfig config;

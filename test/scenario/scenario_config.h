@@ -47,7 +47,6 @@ struct TransportControllerConfig {
     DataRate min_rate = DataRate::kbps(30);
     DataRate max_rate = DataRate::kbps(3000);
     DataRate start_rate = DataRate::kbps(300);
-    DataRate max_padding_rate = DataRate::Zero();
   } rates;
   NetworkControllerFactoryInterface* cc_factory = nullptr;
   TimeDelta state_log_interval = TimeDelta::ms(100);
@@ -55,13 +54,6 @@ struct TransportControllerConfig {
 
 struct CallClientConfig {
   TransportControllerConfig transport;
-};
-
-struct SimulatedTimeClientConfig {
-  TransportControllerConfig transport;
-  struct Feedback {
-    TimeDelta interval = TimeDelta::ms(100);
-  } feedback;
 };
 
 struct PacketStreamConfig {

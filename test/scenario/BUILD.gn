@@ -65,8 +65,6 @@ if (rtc_include_tests) {
       "scenario.h",
       "scenario_config.cc",
       "scenario_config.h",
-      "simulated_time.cc",
-      "simulated_time.h",
       "stats_collection.cc",
       "stats_collection.h",
       "video_frame_matcher.cc",
