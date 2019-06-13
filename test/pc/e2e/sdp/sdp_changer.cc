@@ -34,7 +34,7 @@ std::string CodecRequiredParamsToString(
 
 }  // namespace
 
-std::vector<RtpCodecCapability> FilterCodecCapabilities(
+std::vector<RtpCodecCapability> FilterVideoCodecCapabilities(
     absl::string_view codec_name,
     const std::map<std::string, std::string>& codec_required_params,
     bool use_rtx,

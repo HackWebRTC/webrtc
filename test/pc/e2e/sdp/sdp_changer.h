@@ -39,7 +39,7 @@ namespace webrtc_pc_e2e {
 // and |codec_required_params|, then all of them will be added to the output
 // vector and they will be added in the same order, as they were in
 // |supported_codecs|.
-std::vector<RtpCodecCapability> FilterCodecCapabilities(
+std::vector<RtpCodecCapability> FilterVideoCodecCapabilities(
     absl::string_view codec_name,
     const std::map<std::string, std::string>& codec_required_params,
     bool use_rtx,
