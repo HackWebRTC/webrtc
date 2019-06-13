@@ -181,8 +181,7 @@ int main(int argc, char* argv[]) {
   std::map<std::string, std::vector<std::string>> flag_aliases = {
       {"default",
        {"incoming_delay", "incoming_loss_rate", "incoming_bitrate",
-        "outgoing_bitrate,"
-        "incoming_stream_bitrate",
+        "outgoing_bitrate", "incoming_stream_bitrate",
         "outgoing_stream_bitrate", "network_delay_feedback",
         "fraction_loss_feedback"}},
       {"sendside_bwe",
@@ -191,34 +190,21 @@ int main(int argc, char* argv[]) {
         "fraction_loss_feedback"}},
       {"receiveside_bwe",
        {"incoming_packet_sizes", "incoming_delay", "incoming_loss_rate",
-        "incoming_"
-        "bitrate",
-        "incoming_stream_bitrate", "simulated_receiveside_bwe"}},
+        "incoming_bitrate", "incoming_stream_bitrate",
+        "simulated_receiveside_bwe"}},
       {"rtcp_details",
        {"incoming_rtcp_fraction_lost", "outgoing_rtcp_fraction_lost",
-        "incoming_rtcp_"
-        "cumulative_lost",
-        "outgoing_rtcp_cumulative_lost",
-        "incoming_rtcp_highest_"
-        "seq_number",
-        "outgoing_rtcp_highest_seq_number",
-        "incoming_rtcp_delay_since_"
-        "last_sr",
+        "incoming_rtcp_cumulative_lost", "outgoing_rtcp_cumulative_lost",
+        "incoming_rtcp_highest_seq_number", "outgoing_rtcp_highest_seq_number",
+        "incoming_rtcp_delay_since_last_sr",
         "outgoing_rtcp_delay_since_last_sr"}},
       {"simulated_neteq_stats",
        {"simulated_neteq_jitter_buffer_delay",
-        "simulated_neteq_preferred_buffer_"
-        "size",
-        "simulated_neteq_"
-        "concealment_events",
-        "simulated_neteq_packet_loss_rate",
-        "simulated_neteq_"
-        "preemptive_rate",
-        "simulated_neteq_"
-        "accelerate_rate",
-        "simulated_neteq_speech_expand_rate",
-        "simulated_neteq_"
-        "expand_rate"}}};
+        "simulated_neteq_preferred_buffer_size",
+        "simulated_neteq_concealment_events",
+        "simulated_neteq_packet_loss_rate", "simulated_neteq_preemptive_rate",
+        "simulated_neteq_accelerate_rate", "simulated_neteq_speech_expand_rate",
+        "simulated_neteq_expand_rate"}}};
 
   std::vector<std::string> plot_flags = StrSplit(FLAG_plot, ",");
 
@@ -539,6 +525,7 @@ int main(int argc, char* argv[]) {
       std::cerr << "simulated_neteq_jitter_buffer_delay" << std::endl;
       std::cerr << "List of plot aliases (for use with the --plot flag):"
                 << std::endl;
+      std::cerr << "  all = every registered plot" << std::endl;
       for (const auto& alias : flag_aliases) {
         std::cerr << "  " << alias.first << " = ";
         for (const auto& replacement : alias.second) {
