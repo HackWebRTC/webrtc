@@ -15,6 +15,7 @@
 #include "absl/memory/memory.h"
 #include "test/pc/e2e/analyzer/video/quality_analyzing_video_decoder.h"
 #include "test/pc/e2e/analyzer/video/quality_analyzing_video_encoder.h"
+#include "test/pc/e2e/analyzer/video/simulcast_dummy_buffer_helper.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
@@ -71,6 +72,10 @@ class AnalyzingVideoSink : public rtc::VideoSinkInterface<VideoFrame> {
   ~AnalyzingVideoSink() override = default;
 
   void OnFrame(const VideoFrame& frame) override {
+    if (IsDummyFrameBuffer(frame.video_frame_buffer()->ToI420())) {
+      // This is dummy frame, so we  don't need to process it further.
+      return;
+    }
     analyzer_->OnFrameRendered(frame);
     if (video_writer_) {
       bool result = video_writer_->WriteFrame(frame);

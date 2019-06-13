@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "api/jsep.h"
 #include "api/media_stream_interface.h"
 #include "api/peer_connection_interface.h"
 #include "api/rtc_event_log_output_file.h"
@@ -31,7 +32,6 @@
 #include "system_wrappers/include/field_trial.h"
 #include "test/pc/e2e/analyzer/audio/default_audio_quality_analyzer.h"
 #include "test/pc/e2e/analyzer/video/default_video_quality_analyzer.h"
-#include "test/pc/e2e/sdp/sdp_changer.h"
 #include "test/pc/e2e/stats_poller.h"
 #include "test/testsupport/file_utils.h"
 
@@ -460,7 +460,8 @@ void PeerConnectionE2EQualityTest::ValidateParams(const RunParams& run_params,
   std::set<std::string> audio_labels;
   int media_streams_count = 0;
 
-  for (Params* p : params) {
+  for (size_t i = 0; i < params.size(); ++i) {
+    Params* p = params[i];
     if (p->audio_config) {
       media_streams_count++;
     }
@@ -515,6 +516,13 @@ void PeerConnectionE2EQualityTest::ValidateParams(const RunParams& run_params,
               video_config.screen_share_config->scrolling_params->source_height,
               video_config.height);
         }
+      }
+      if (video_config.simulcast_config) {
+        // We support simulcast only for Vp8 for now.
+        // RTC_CHECK_EQ(run_params.video_codec_name, cricket::kVp8CodecName);
+        // Also we support simulcast only from caller.
+        RTC_CHECK_EQ(i, 0)
+            << "Only simulcast stream from first peer is supported";
       }
     }
     if (p->audio_config) {
@@ -589,16 +597,37 @@ void PeerConnectionE2EQualityTest::SetupCallOnSignalingThread(
   // forbidden to add new media sections in answer in Unified Plan.
   RtpTransceiverInit receive_only_transceiver_init;
   receive_only_transceiver_init.direction = RtpTransceiverDirection::kRecvOnly;
+  int alice_transceivers_counter = 0;
   if (bob_->params()->audio_config) {
     // Setup receive audio transceiver if Bob has audio to send. If we'll need
     // multiple audio streams, then we need transceiver for each Bob's audio
     // stream.
     alice_->AddTransceiver(cricket::MediaType::MEDIA_TYPE_AUDIO,
                            receive_only_transceiver_init);
+    alice_transceivers_counter++;
+  }
+
+  for (auto& video_config : alice_->params()->video_configs) {
+    if (video_config.simulcast_config) {
+      RtpTransceiverInit transceiver_params;
+      transceiver_params.direction = RtpTransceiverDirection::kSendOnly;
+      for (int i = 0;
+           i < video_config.simulcast_config->simulcast_streams_count; ++i) {
+        RtpEncodingParameters enc_params;
+        // We need to be sure, that all rids will be unique with all mids.
+        enc_params.rid = std::to_string(alice_transceivers_counter) + "000" +
+                         std::to_string(i);
+        transceiver_params.send_encodings.push_back(enc_params);
+      }
+      alice_->AddTransceiver(cricket::MediaType::MEDIA_TYPE_VIDEO,
+                             transceiver_params);
+      alice_transceivers_counter++;
+    }
   }
   for (size_t i = 0; i < bob_->params()->video_configs.size(); ++i) {
     alice_->AddTransceiver(cricket::MediaType::MEDIA_TYPE_VIDEO,
                            receive_only_transceiver_init);
+    alice_transceivers_counter++;
   }
   // Then add media for Alice and Bob
   alice_video_sources_ = MaybeAddMedia(alice_.get());
@@ -751,36 +780,113 @@ void PeerConnectionE2EQualityTest::MaybeAddAudio(TestPeer* peer) {
 void PeerConnectionE2EQualityTest::SetPeerCodecPreferences(
     TestPeer* peer,
     const RunParams& run_params) {
-  std::vector<RtpCodecCapability> video_capabilities = FilterCodecCapabilities(
-      run_params.video_codec_name, run_params.video_codec_required_params,
-      run_params.use_ulp_fec, run_params.use_flex_fec,
-      peer->pc_factory()
-          ->GetRtpSenderCapabilities(cricket::MediaType::MEDIA_TYPE_VIDEO)
-          .codecs);
+  std::vector<RtpCodecCapability> with_rtx_video_capabilities =
+      FilterCodecCapabilities(
+          run_params.video_codec_name, run_params.video_codec_required_params,
+          true, run_params.use_ulp_fec, run_params.use_flex_fec,
+          peer->pc_factory()
+              ->GetRtpSenderCapabilities(cricket::MediaType::MEDIA_TYPE_VIDEO)
+              .codecs);
+  std::vector<RtpCodecCapability> without_rtx_video_capabilities =
+      FilterCodecCapabilities(
+          run_params.video_codec_name, run_params.video_codec_required_params,
+          false, run_params.use_ulp_fec, run_params.use_flex_fec,
+          peer->pc_factory()
+              ->GetRtpSenderCapabilities(cricket::MediaType::MEDIA_TYPE_VIDEO)
+              .codecs);
 
   // Set codecs for transceivers
   for (auto transceiver : peer->pc()->GetTransceivers()) {
     if (transceiver->media_type() == cricket::MediaType::MEDIA_TYPE_VIDEO) {
-      transceiver->SetCodecPreferences(video_capabilities);
+      if (transceiver->sender()->init_send_encodings().size() > 1) {
+        // If transceiver's sender has more then 1 send encodings, it means it
+        // has multiple simulcast streams, so we need disable RTX on it.
+        transceiver->SetCodecPreferences(without_rtx_video_capabilities);
+      } else {
+        transceiver->SetCodecPreferences(with_rtx_video_capabilities);
+      }
     }
   }
 }
 
 void PeerConnectionE2EQualityTest::SetupCall() {
+  SignalingInterceptor signaling_interceptor;
   // Connect peers.
-  ASSERT_TRUE(alice_->ExchangeOfferAnswerWith(bob_.get()));
+  ExchangeOfferAnswer(&signaling_interceptor);
   // Do the SDP negotiation, and also exchange ice candidates.
   ASSERT_EQ_WAIT(alice_->signaling_state(), PeerConnectionInterface::kStable,
                  kDefaultTimeoutMs);
   ASSERT_TRUE_WAIT(alice_->IsIceGatheringDone(), kDefaultTimeoutMs);
   ASSERT_TRUE_WAIT(bob_->IsIceGatheringDone(), kDefaultTimeoutMs);
 
-  // Connect an ICE candidate pairs.
-  ASSERT_TRUE(bob_->AddIceCandidates(alice_->observer()->GetAllCandidates()));
-  ASSERT_TRUE(alice_->AddIceCandidates(bob_->observer()->GetAllCandidates()));
+  ExchangeIceCandidates(&signaling_interceptor);
   // This means that ICE and DTLS are connected.
   ASSERT_TRUE_WAIT(bob_->IsIceConnected(), kDefaultTimeoutMs);
   ASSERT_TRUE_WAIT(alice_->IsIceConnected(), kDefaultTimeoutMs);
+}
+
+void PeerConnectionE2EQualityTest::ExchangeOfferAnswer(
+    SignalingInterceptor* signaling_interceptor) {
+  std::string log_output;
+
+  auto offer = alice_->CreateOffer();
+  RTC_CHECK(offer);
+  offer->ToString(&log_output);
+  RTC_LOG(INFO) << "Original offer: " << log_output;
+  LocalAndRemoteSdp patch_result =
+      signaling_interceptor->PatchOffer(std::move(offer));
+  patch_result.local_sdp->ToString(&log_output);
+  RTC_LOG(INFO) << "Offer to set as local description: " << log_output;
+  patch_result.remote_sdp->ToString(&log_output);
+  RTC_LOG(INFO) << "Offer to set as remote description: " << log_output;
+
+  bool set_local_offer =
+      alice_->SetLocalDescription(std::move(patch_result.local_sdp));
+  RTC_CHECK(set_local_offer);
+  bool set_remote_offer =
+      bob_->SetRemoteDescription(std::move(patch_result.remote_sdp));
+  RTC_CHECK(set_remote_offer);
+  auto answer = bob_->CreateAnswer();
+  RTC_CHECK(answer);
+  answer->ToString(&log_output);
+  RTC_LOG(INFO) << "Original answer: " << log_output;
+  patch_result = signaling_interceptor->PatchAnswer(std::move(answer));
+  patch_result.local_sdp->ToString(&log_output);
+  RTC_LOG(INFO) << "Answer to set as local description: " << log_output;
+  patch_result.remote_sdp->ToString(&log_output);
+  RTC_LOG(INFO) << "Answer to set as remote description: " << log_output;
+
+  bool set_local_answer =
+      bob_->SetLocalDescription(std::move(patch_result.local_sdp));
+  RTC_CHECK(set_local_answer);
+  bool set_remote_answer =
+      alice_->SetRemoteDescription(std::move(patch_result.remote_sdp));
+  RTC_CHECK(set_remote_answer);
+}
+
+void PeerConnectionE2EQualityTest::ExchangeIceCandidates(
+    SignalingInterceptor* signaling_interceptor) {
+  // Connect an ICE candidate pairs.
+  std::vector<std::unique_ptr<IceCandidateInterface>> alice_candidates =
+      signaling_interceptor->PatchOffererIceCandidates(
+          alice_->observer()->GetAllCandidates());
+  for (auto& candidate : alice_candidates) {
+    std::string candidate_str;
+    RTC_CHECK(candidate->ToString(&candidate_str));
+    RTC_LOG(INFO) << "Alice ICE candidate(mid= " << candidate->sdp_mid()
+                  << "): " << candidate_str;
+  }
+  ASSERT_TRUE(bob_->AddIceCandidates(std::move(alice_candidates)));
+  std::vector<std::unique_ptr<IceCandidateInterface>> bob_candidates =
+      signaling_interceptor->PatchAnswererIceCandidates(
+          bob_->observer()->GetAllCandidates());
+  for (auto& candidate : bob_candidates) {
+    std::string candidate_str;
+    RTC_CHECK(candidate->ToString(&candidate_str));
+    RTC_LOG(INFO) << "Bob ICE candidate(mid= " << candidate->sdp_mid()
+                  << "): " << candidate_str;
+  }
+  ASSERT_TRUE(alice_->AddIceCandidates(std::move(bob_candidates)));
 }
 
 void PeerConnectionE2EQualityTest::StartVideo(
@@ -821,6 +927,7 @@ test::VideoFrameWriter* PeerConnectionE2EQualityTest::MaybeCreateVideoWriter(
   if (!file_name) {
     return nullptr;
   }
+  // TODO(titovartem) create only one file writer for simulcast video track.
   auto video_writer = absl::make_unique<test::VideoFrameWriter>(
       file_name.value(), config.width, config.height, config.fps);
   test::VideoFrameWriter* out = video_writer.get();

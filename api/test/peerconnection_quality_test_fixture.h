@@ -113,6 +113,31 @@ class PeerConnectionE2EQualityTestFixture {
 
   enum VideoGeneratorType { kDefault, kI420A, kI010 };
 
+  struct VideoSimulcastConfig {
+    VideoSimulcastConfig(int simulcast_streams_count, int target_spatial_index)
+        : simulcast_streams_count(simulcast_streams_count),
+          target_spatial_index(target_spatial_index) {
+      RTC_CHECK_GT(simulcast_streams_count, 1);
+      RTC_CHECK_GE(target_spatial_index, 0);
+      RTC_CHECK_LT(target_spatial_index, simulcast_streams_count);
+    }
+
+    // Specified amount of simulcast streams/SVC layers, depending on which
+    // encoder is used.
+    int simulcast_streams_count;
+    // Specifies spatial index of the video stream to analyze.
+    // There are 2 cases:
+    // 1. simulcast encoder is used:
+    //    in such case |target_spatial_index| will specify the index of
+    //    simulcast stream, that should be analyzed. Other streams will be
+    //    dropped.
+    // 2. SVC encoder is used:
+    //    in such case |target_spatial_index| will specify the top interesting
+    //    spatial layer and all layers below, including target one will be
+    //    processed. All layers above target one will be dropped.
+    int target_spatial_index;
+  };
+
   // Contains properties of single video stream.
   struct VideoConfig {
     VideoConfig(size_t width, size_t height, int32_t fps)
@@ -136,19 +161,13 @@ class PeerConnectionE2EQualityTestFixture {
     absl::optional<std::string> input_file_name;
     // If specified screen share video stream will be created as input.
     absl::optional<ScreenShareConfig> screen_share_config;
-    // Specifies spatial index of the video stream to analyze.
-    // There are 3 cases:
-    // 1. |target_spatial_index| omitted: in such case it will be assumed that
-    //    video stream has not spatial layers and simulcast streams.
-    // 2. |target_spatial_index| presented and simulcast encoder is used:
-    //    in such case |target_spatial_index| will specify the index of
-    //    simulcast stream, that should be analyzed. Other streams will be
-    //    dropped.
-    // 3. |target_spatial_index| presented and SVP encoder is used:
-    //    in such case |target_spatial_index| will specify the top interesting
-    //    spatial layer and all layers bellow, including target one will be
-    //    processed. All layers above target one will be dropped.
-    absl::optional<int> target_spatial_index;
+    // If presented video will be transfered in simulcast/SVC mode depending on
+    // which encoder is used.
+    //
+    // Simulcast is supported only from 1st added peer and for now only for
+    // Vp8 encoder. Also RTX doesn't supported with simulcast and will
+    // automatically disabled for tracks with simulcast.
+    absl::optional<VideoSimulcastConfig> simulcast_config;
     // If specified the input stream will be also copied to specified file.
     // It is actually one of the test's output file, which contains copy of what
     // was captured during the test for this video stream on sender side.

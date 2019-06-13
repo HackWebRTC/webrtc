@@ -32,6 +32,7 @@
 #include "test/pc/e2e/analyzer/video/video_quality_analyzer_injection_helper.h"
 #include "test/pc/e2e/analyzer_helper.h"
 #include "test/pc/e2e/peer_connection_quality_test_params.h"
+#include "test/pc/e2e/sdp/sdp_changer.h"
 #include "test/pc/e2e/test_peer.h"
 #include "test/testsupport/video_frame_writer.h"
 
@@ -239,6 +240,8 @@ class PeerConnectionE2EQualityTest
   void MaybeAddAudio(TestPeer* peer);
   void SetPeerCodecPreferences(TestPeer* peer, const RunParams& run_params);
   void SetupCall();
+  void ExchangeOfferAnswer(SignalingInterceptor* signaling_interceptor);
+  void ExchangeIceCandidates(SignalingInterceptor* signaling_interceptor);
   void StartVideo(
       const std::vector<
           rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>& sources);

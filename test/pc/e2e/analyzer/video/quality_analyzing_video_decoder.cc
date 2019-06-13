@@ -19,15 +19,10 @@
 #include "api/video/i420_buffer.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/logging.h"
+#include "test/pc/e2e/analyzer/video/simulcast_dummy_buffer_helper.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
-namespace {
-
-constexpr size_t kIrrelatedSimulcastStreamFrameWidth = 320;
-constexpr size_t kIrrelatedSimulcastStreamFrameHeight = 480;
-
-}  // namespace
 
 QualityAnalyzingVideoDecoder::QualityAnalyzingVideoDecoder(
     int id,
@@ -178,33 +173,26 @@ void QualityAnalyzingVideoDecoder::DecoderCallback::Decoded(
 int32_t
 QualityAnalyzingVideoDecoder::DecoderCallback::IrrelevantSimulcastStreamDecoded(
     uint16_t frame_id,
-    int64_t timestamp_ms) {
-  webrtc::VideoFrame black_frame =
+    uint32_t timestamp_ms) {
+  webrtc::VideoFrame dummy_frame =
       webrtc::VideoFrame::Builder()
-          .set_video_frame_buffer(
-              GetBlackFrameBuffer(kIrrelatedSimulcastStreamFrameWidth,
-                                  kIrrelatedSimulcastStreamFrameHeight))
-          .set_timestamp_ms(timestamp_ms)
+          .set_video_frame_buffer(GetDummyFrameBuffer())
+          .set_timestamp_rtp(timestamp_ms)
           .set_id(frame_id)
           .build();
   rtc::CritScope crit(&callback_lock_);
   RTC_DCHECK(delegate_callback_);
-  return delegate_callback_->Decoded(black_frame);
+  delegate_callback_->Decoded(dummy_frame, absl::nullopt, absl::nullopt);
+  return WEBRTC_VIDEO_CODEC_OK;
 }
 
 rtc::scoped_refptr<webrtc::VideoFrameBuffer>
-QualityAnalyzingVideoDecoder::DecoderCallback::GetBlackFrameBuffer(int width,
-                                                                   int height) {
-  if (!black_frame_buffer_ || black_frame_buffer_->width() != width ||
-      black_frame_buffer_->height() != height) {
-    // Use i420 buffer here as default one and supported by all codecs.
-    rtc::scoped_refptr<webrtc::I420Buffer> buffer =
-        webrtc::I420Buffer::Create(width, height);
-    webrtc::I420Buffer::SetBlack(buffer.get());
-    black_frame_buffer_ = buffer;
+QualityAnalyzingVideoDecoder::DecoderCallback::GetDummyFrameBuffer() {
+  if (!dummy_frame_buffer_) {
+    dummy_frame_buffer_ = CreateDummyFrameBuffer();
   }
 
-  return black_frame_buffer_;
+  return dummy_frame_buffer_;
 }
 
 void QualityAnalyzingVideoDecoder::OnFrameDecoded(

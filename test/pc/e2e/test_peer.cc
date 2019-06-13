@@ -77,10 +77,14 @@ struct TestPeerComponents {
     for (auto& video_config : params.video_configs) {
       // Stream label should be set by fixture implementation here.
       RTC_DCHECK(video_config.stream_label);
-      bool res = stream_required_spatial_index
-                     .insert({*video_config.stream_label,
-                              video_config.target_spatial_index})
-                     .second;
+      bool res =
+          stream_required_spatial_index
+              .insert({*video_config.stream_label,
+                       video_config.simulcast_config
+                           ? absl::optional<int>(video_config.simulcast_config
+                                                     ->target_spatial_index)
+                           : absl::nullopt})
+              .second;
       RTC_DCHECK(res) << "Duplicate video_config.stream_label="
                       << *video_config.stream_label;
     }
@@ -314,16 +318,18 @@ std::unique_ptr<TestPeer> TestPeer::CreateTestPeer(
 }
 
 bool TestPeer::AddIceCandidates(
-    rtc::ArrayView<const IceCandidateInterface* const> candidates) {
+    std::vector<std::unique_ptr<IceCandidateInterface>> candidates) {
   bool success = true;
-  for (const auto* candidate : candidates) {
-    if (!pc()->AddIceCandidate(candidate)) {
+  for (auto& candidate : candidates) {
+    if (!pc()->AddIceCandidate(candidate.get())) {
       std::string candidate_str;
       bool res = candidate->ToString(&candidate_str);
       RTC_CHECK(res);
       RTC_LOG(LS_ERROR) << "Failed to add ICE candidate, candidate_str="
                         << candidate_str;
       success = false;
+    } else {
+      remote_ice_candidates_.push_back(std::move(candidate));
     }
   }
   return success;

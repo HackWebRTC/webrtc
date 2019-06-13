@@ -13,9 +13,9 @@
 
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "absl/memory/memory.h"
-#include "api/array_view.h"
 #include "api/test/peerconnection_quality_test_fixture.h"
 #include "media/base/media_engine.h"
 #include "modules/audio_device/include/test_audio_device.h"
@@ -63,7 +63,7 @@ class TestPeer final : public PeerConnectionWrapper {
 
   // Adds provided |candidates| to the owned peer connection.
   bool AddIceCandidates(
-      rtc::ArrayView<const IceCandidateInterface* const> candidates);
+      std::vector<std::unique_ptr<IceCandidateInterface>> candidates);
 
  private:
   TestPeer(rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory,
@@ -74,6 +74,8 @@ class TestPeer final : public PeerConnectionWrapper {
 
   std::unique_ptr<Params> params_;
   rtc::scoped_refptr<AudioProcessing> audio_processing_;
+
+  std::vector<std::unique_ptr<IceCandidateInterface>> remote_ice_candidates_;
 };
 
 }  // namespace webrtc_pc_e2e

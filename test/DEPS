@@ -57,5 +57,9 @@ specific_include_rules = {
   ],
   ".*peer_connection_quality_test\.(h|cc)": [
     "+pc",
+  ],
+  ".*sdp_changer\.(h|cc)": [
+    "+pc",
+    "+p2p",
   ]
 }

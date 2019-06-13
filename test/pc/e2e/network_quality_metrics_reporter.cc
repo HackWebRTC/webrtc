@@ -62,8 +62,10 @@ void NetworkQualityMetricsReporter::ReportStats(
   ReportResult("bytes_sent", network_label, stats.bytes_sent.bytes(),
                "sizeInBytes");
   ReportResult("packets_sent", network_label, stats.packets_sent, "unitless");
-  ReportResult("average_send_rate", network_label,
-               stats.AverageSendRate().bytes_per_sec(), "bytesPerSecond");
+  ReportResult(
+      "average_send_rate", network_label,
+      stats.packets_sent >= 2 ? stats.AverageSendRate().bytes_per_sec() : 0,
+      "bytesPerSecond");
   ReportResult("bytes_dropped", network_label, stats.bytes_dropped.bytes(),
                "sizeInBytes");
   ReportResult("packets_dropped", network_label, stats.packets_dropped,
@@ -73,7 +75,10 @@ void NetworkQualityMetricsReporter::ReportStats(
   ReportResult("packets_received", network_label, stats.packets_received,
                "unitless");
   ReportResult("average_receive_rate", network_label,
-               stats.AverageReceiveRate().bytes_per_sec(), "bytesPerSecond");
+               stats.packets_received >= 2
+                   ? stats.AverageReceiveRate().bytes_per_sec()
+                   : 0,
+               "bytesPerSecond");
   ReportResult("sent_packets_loss", network_label, packet_loss, "unitless");
 }
 

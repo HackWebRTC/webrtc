@@ -86,16 +86,14 @@ class QualityAnalyzingVideoDecoder : public VideoDecoder {
                  absl::optional<uint8_t> qp) override;
 
     int32_t IrrelevantSimulcastStreamDecoded(uint16_t frame_id,
-                                             int64_t timestamp_ms);
+                                             uint32_t timestamp_ms);
 
    private:
-    rtc::scoped_refptr<webrtc::VideoFrameBuffer> GetBlackFrameBuffer(
-        int width,
-        int height);
+    rtc::scoped_refptr<webrtc::VideoFrameBuffer> GetDummyFrameBuffer();
 
     QualityAnalyzingVideoDecoder* const decoder_;
 
-    rtc::scoped_refptr<webrtc::VideoFrameBuffer> black_frame_buffer_;
+    rtc::scoped_refptr<webrtc::VideoFrameBuffer> dummy_frame_buffer_;
 
     rtc::CriticalSection callback_lock_;
     DecodedImageCallback* delegate_callback_ RTC_GUARDED_BY(callback_lock_);

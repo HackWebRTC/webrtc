@@ -118,6 +118,19 @@ rtc_source_set("id_generator") {
   deps = []
 }
 
+rtc_source_set("simulcast_dummy_buffer_helper") {
+  visibility = [ "*" ]
+  testonly = true
+  sources = [
+    "analyzer/video/simulcast_dummy_buffer_helper.cc",
+    "analyzer/video/simulcast_dummy_buffer_helper.h",
+  ]
+  deps = [
+    "../../../api/video:video_frame",
+    "../../../api/video:video_frame_i420",
+  ]
+}
+
 rtc_source_set("quality_analyzing_video_decoder") {
   visibility = [ "*" ]
   testonly = true
@@ -128,6 +141,7 @@ rtc_source_set("quality_analyzing_video_decoder") {
   deps = [
     ":encoded_image_data_injector_api",
     ":id_generator",
+    ":simulcast_dummy_buffer_helper",
     "../../../api:video_quality_analyzer_api",
     "../../../api/video:encoded_image",
     "../../../api/video:video_frame",
@@ -177,6 +191,7 @@ if (rtc_include_tests) {
       ":id_generator",
       ":quality_analyzing_video_decoder",
       ":quality_analyzing_video_encoder",
+      ":simulcast_dummy_buffer_helper",
       "../../../api:stats_observer_interface",
       "../../../api:video_quality_analyzer_api",
       "../../../api/video:video_frame",
@@ -198,7 +213,6 @@ if (rtc_include_tests) {
     deps = [
       ":peer_connection_quality_test_params",
       ":video_quality_analyzer_injection_helper",
-      "../../../api:array_view",
       "../../../api:peer_connection_quality_test_fixture_api",
       "../../../api:scoped_refptr",
       "../../../api/rtc_event_log:rtc_event_log_factory",
@@ -472,9 +486,15 @@ rtc_source_set("sdp_changer") {
     "sdp/sdp_changer.h",
   ]
   deps = [
+    "../../../api:array_view",
     "../../../api:libjingle_peerconnection_api",
     "../../../media:rtc_media_base",
+    "../../../p2p:rtc_p2p",
+    "../../../pc:peerconnection",
+    "../../../pc:rtc_pc_base",
     "../../../rtc_base:stringutils",
+    "//third_party/abseil-cpp/absl/memory:memory",
     "//third_party/abseil-cpp/absl/strings:strings",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
