@@ -383,9 +383,12 @@ VideoQualityTest::VideoQualityTest(
              payload_type_map_.end());
   RTC_DCHECK(payload_type_map_.find(kPayloadTypeVP9) ==
              payload_type_map_.end());
+  RTC_DCHECK(payload_type_map_.find(kPayloadTypeGeneric) ==
+             payload_type_map_.end());
   payload_type_map_[kPayloadTypeH264] = webrtc::MediaType::VIDEO;
   payload_type_map_[kPayloadTypeVP8] = webrtc::MediaType::VIDEO;
   payload_type_map_[kPayloadTypeVP9] = webrtc::MediaType::VIDEO;
+  payload_type_map_[kPayloadTypeGeneric] = webrtc::MediaType::VIDEO;
 
   fec_controller_factory_ =
       std::move(injection_components_->fec_controller_factory);
@@ -716,6 +719,7 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
   size_t num_video_substreams = params_.ss[0].streams.size();
   RTC_CHECK(num_video_streams_ > 0);
   video_encoder_configs_.resize(num_video_streams_);
+  std::string generic_codec_name;
   for (size_t video_idx = 0; video_idx < num_video_streams_; ++video_idx) {
     video_send_configs_.push_back(VideoSendStream::Config(send_transport));
     video_encoder_configs_.push_back(VideoEncoderConfig());
@@ -737,8 +741,13 @@ void VideoQualityTest::SetupVideo(Transport* send_transport,
     } else if (params_.video[video_idx].codec == "FakeCodec") {
       payload_type = kFakeVideoSendPayloadType;
     } else {
-      RTC_NOTREACHED() << "Codec not supported!";
-      return;
+      RTC_CHECK(generic_codec_name.empty() ||
+                generic_codec_name == params_.video[video_idx].codec)
+          << "Supplying multiple generic codecs is unsupported.";
+      RTC_LOG(LS_INFO) << "Treating codec " << params_.video[video_idx].codec
+                       << " as generic.";
+      payload_type = kPayloadTypeGeneric;
+      generic_codec_name = params_.video[video_idx].codec;
     }
     video_send_configs_[video_idx].encoder_settings.encoder_factory =
         (video_idx == 0) ? &video_encoder_factory_with_analyzer_
