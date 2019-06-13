@@ -65,7 +65,7 @@ class MockRtpTransportControllerSend
   MOCK_METHOD1(SetSdpBitrateParameters, void(const BitrateConstraints&));
   MOCK_METHOD1(SetClientBitratePreferences, void(const BitrateSettings&));
   MOCK_METHOD1(OnTransportOverheadChanged, void(size_t));
-  MOCK_METHOD1(OnReceivedPacket, void(const RtpPacketReceived&));
+  MOCK_METHOD1(OnReceivedPacket, void(const ReceivedPacket&));
 };
 }  // namespace webrtc
 #endif  // CALL_TEST_MOCK_RTP_TRANSPORT_CONTROLLER_SEND_H_

@@ -327,10 +327,7 @@ void RtpTransportControllerSend::OnSentPacket(
 }
 
 void RtpTransportControllerSend::OnReceivedPacket(
-    const RtpPacketReceived& received_packet) {
-  ReceivedPacket packet_msg;
-  packet_msg.size = DataSize::bytes(received_packet.payload_size());
-  packet_msg.receive_time = Timestamp::ms(received_packet.arrival_time_ms());
+    const ReceivedPacket& packet_msg) {
   task_queue_.PostTask([this, packet_msg]() {
     RTC_DCHECK_RUN_ON(&task_queue_);
     if (controller_)

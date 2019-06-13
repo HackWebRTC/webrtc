@@ -1497,7 +1497,10 @@ void Call::NotifyBweOfReceivedPacket(const RtpPacketReceived& packet,
   RTPHeader header;
   packet.GetHeader(&header);
 
-  transport_send_ptr_->OnReceivedPacket(packet);
+  ReceivedPacket packet_msg;
+  packet_msg.size = DataSize::bytes(packet.payload_size());
+  packet_msg.receive_time = Timestamp::ms(packet.arrival_time_ms());
+  transport_send_ptr_->OnReceivedPacket(packet_msg);
 
   if (!use_send_side_bwe && header.extension.hasTransportSequenceNumber) {
     // Inconsistent configuration of send side BWE. Do nothing.
