@@ -156,6 +156,7 @@ struct VideoStreamConfig {
     Stream();
     Stream(const Stream&);
     ~Stream();
+    bool abs_send_time = false;
     bool packet_feedback = true;
     bool use_rtx = true;
     DataRate pad_to_rate = DataRate::Zero();
@@ -208,6 +209,7 @@ struct AudioStreamConfig {
     Stream();
     Stream(const Stream&);
     ~Stream();
+    bool abs_send_time = false;
     bool in_bandwidth_estimation = false;
   } stream;
   struct Rendering {

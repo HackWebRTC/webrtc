@@ -29,6 +29,7 @@ namespace test {
 namespace {
 enum : int {  // The first valid value is 1.
   kTransportSequenceNumberExtensionId = 1,
+  kAbsSendTimeExtensionId,
   kVideoContentTypeExtensionId,
   kVideoRotationRtpExtensionId,
 };
@@ -96,6 +97,10 @@ std::vector<RtpExtension> GetVideoRtpExtensions(
   if (config.stream.packet_feedback) {
     res.push_back(RtpExtension(RtpExtension::kTransportSequenceNumberUri,
                                kTransportSequenceNumberExtensionId));
+  }
+  if (config.stream.abs_send_time) {
+    res.push_back(
+        RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeExtensionId));
   }
   return res;
 }
