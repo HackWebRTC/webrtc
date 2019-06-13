@@ -38,7 +38,7 @@ TEST(RtpPacketInfoTest, Ssrc) {
   rhs = RtpPacketInfo();
   EXPECT_NE(rhs.ssrc(), value);
 
-  rhs = RtpPacketInfo(value, {}, {}, {}, {}, {});
+  rhs = RtpPacketInfo(value, {}, {}, {}, {});
   EXPECT_EQ(rhs.ssrc(), value);
 }
 
@@ -65,35 +65,8 @@ TEST(RtpPacketInfoTest, Csrcs) {
   rhs = RtpPacketInfo();
   EXPECT_NE(rhs.csrcs(), value);
 
-  rhs = RtpPacketInfo({}, value, {}, {}, {}, {});
+  rhs = RtpPacketInfo({}, value, {}, {}, {});
   EXPECT_EQ(rhs.csrcs(), value);
-}
-
-TEST(RtpPacketInfoTest, SequenceNumber) {
-  const uint16_t value = 20238;
-
-  RtpPacketInfo lhs;
-  RtpPacketInfo rhs;
-
-  EXPECT_TRUE(lhs == rhs);
-  EXPECT_FALSE(lhs != rhs);
-
-  rhs.set_sequence_number(value);
-  EXPECT_EQ(rhs.sequence_number(), value);
-
-  EXPECT_FALSE(lhs == rhs);
-  EXPECT_TRUE(lhs != rhs);
-
-  lhs = rhs;
-
-  EXPECT_TRUE(lhs == rhs);
-  EXPECT_FALSE(lhs != rhs);
-
-  rhs = RtpPacketInfo();
-  EXPECT_NE(rhs.sequence_number(), value);
-
-  rhs = RtpPacketInfo({}, {}, value, {}, {}, {});
-  EXPECT_EQ(rhs.sequence_number(), value);
 }
 
 TEST(RtpPacketInfoTest, RtpTimestamp) {
@@ -119,7 +92,7 @@ TEST(RtpPacketInfoTest, RtpTimestamp) {
   rhs = RtpPacketInfo();
   EXPECT_NE(rhs.rtp_timestamp(), value);
 
-  rhs = RtpPacketInfo({}, {}, {}, value, {}, {});
+  rhs = RtpPacketInfo({}, {}, value, {}, {});
   EXPECT_EQ(rhs.rtp_timestamp(), value);
 }
 
@@ -146,7 +119,7 @@ TEST(RtpPacketInfoTest, AudioLevel) {
   rhs = RtpPacketInfo();
   EXPECT_NE(rhs.audio_level(), value);
 
-  rhs = RtpPacketInfo({}, {}, {}, {}, value, {});
+  rhs = RtpPacketInfo({}, {}, {}, value, {});
   EXPECT_EQ(rhs.audio_level(), value);
 }
 
@@ -173,7 +146,7 @@ TEST(RtpPacketInfoTest, ReceiveTimeMs) {
   rhs = RtpPacketInfo();
   EXPECT_NE(rhs.receive_time_ms(), value);
 
-  rhs = RtpPacketInfo({}, {}, {}, {}, {}, value);
+  rhs = RtpPacketInfo({}, {}, {}, {}, value);
   EXPECT_EQ(rhs.receive_time_ms(), value);
 }
 

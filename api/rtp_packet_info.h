@@ -20,14 +20,17 @@
 
 namespace webrtc {
 
-// Structure to hold information about a received |RtpPacket|.
+//
+// Structure to hold information about a received |RtpPacket|. It is primarily
+// used to carry per-packet information from when a packet is received until
+// the information is passed to |SourceTracker|.
+//
 class RtpPacketInfo {
  public:
   RtpPacketInfo();
 
   RtpPacketInfo(uint32_t ssrc,
                 std::vector<uint32_t> csrcs,
-                uint16_t sequence_number,
                 uint32_t rtp_timestamp,
                 absl::optional<uint8_t> audio_level,
                 int64_t receive_time_ms);
@@ -45,9 +48,6 @@ class RtpPacketInfo {
   const std::vector<uint32_t>& csrcs() const { return csrcs_; }
   void set_csrcs(std::vector<uint32_t> value) { csrcs_ = std::move(value); }
 
-  uint16_t sequence_number() const { return sequence_number_; }
-  void set_sequence_number(uint16_t value) { sequence_number_ = value; }
-
   uint32_t rtp_timestamp() const { return rtp_timestamp_; }
   void set_rtp_timestamp(uint32_t value) { rtp_timestamp_ = value; }
 
@@ -62,7 +62,6 @@ class RtpPacketInfo {
   // https://tools.ietf.org/html/rfc3550#section-5.1
   uint32_t ssrc_;
   std::vector<uint32_t> csrcs_;
-  uint16_t sequence_number_;
   uint32_t rtp_timestamp_;
 
   // Fields from the Audio Level header extension:
