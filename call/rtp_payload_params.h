@@ -53,6 +53,15 @@ class RtpPayloadParams final {
                     bool is_keyframe,
                     RTPVideoHeader* rtp_video_header);
 
+  void H264ToGeneric(const CodecSpecificInfoH264& h264_info,
+                     int64_t shared_frame_id,
+                     bool is_keyframe,
+                     RTPVideoHeader* rtp_video_header);
+
+  void GenericToGeneric(int64_t shared_frame_id,
+                        bool is_keyframe,
+                        RTPVideoHeader* rtp_video_header);
+
   // TODO(bugs.webrtc.org/10242): Delete SetDependenciesVp8Deprecated() and move
   // the logic in SetDependenciesVp8New() into Vp8ToGeneric() once all hardware
   // wrappers have been updated.
