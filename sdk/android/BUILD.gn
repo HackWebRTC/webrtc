@@ -14,7 +14,6 @@ if (is_android) {
   group("android") {
     if (!build_with_chromium && is_android) {
       public_deps = [
-        ":libjingle_peerconnection_datachannelonly_so",
         ":libjingle_peerconnection_jni",
         ":libjingle_peerconnection_so",
         ":libwebrtc",
@@ -118,7 +117,6 @@ if (is_android) {
       ":default_video_codec_factory_jni",
       ":java_audio_device_module_jni",
       ":legacy_hwcodecs_jni",
-      ":media_jni",
       ":peerconnection_jni",
       ":video_jni",
       "../../api:create_peerconnection_factory",
@@ -153,31 +151,6 @@ if (is_android) {
       ":libjingle_peerconnection_metrics_default_jni",
       "../../pc:libjingle_peerconnection",
       "../../rtc_base",
-    ]
-    output_extension = "so"
-  }
-
-  # The modular build targets can be used to build WebRTC with different
-  # functionalities. The users can choose either the real implemenation or the
-  # null implementation of the audio/video modules based on their requirments.
-  rtc_shared_library("libjingle_peerconnection_datachannelonly_so") {
-    sources = [
-      "src/jni/jni_onload.cc",
-    ]
-
-    suppressed_configs += [ "//build/config/android:hide_all_but_jni_onload" ]
-    configs += [ "//build/config/android:hide_all_but_jni" ]
-
-    deps = [
-      ":base_jni",
-      ":libjingle_peerconnection_metrics_default_jni",
-      ":null_audio_jni",
-      ":null_media_jni",
-      ":null_video_jni",
-      ":peerconnection_jni",
-      "../../pc:peerconnection",
-      "../../rtc_base",
-      "../../rtc_base:rtc_base_approved",
     ]
     output_extension = "so"
   }
@@ -567,7 +540,6 @@ if (is_android) {
       "src/jni/jni_helpers.h",
       "src/jni/pc/audio.h",
       "src/jni/pc/logging.cc",
-      "src/jni/pc/media.h",
       "src/jni/pc/video.h",
     ]
 
@@ -778,14 +750,18 @@ if (is_android) {
       ":native_api_jni",
       ":native_api_stacktrace",
       "..:media_constraints",
+      "../../api:callfactory_api",
       "../../api:libjingle_peerconnection_api",
       "../../api:rtc_event_log_output_file",
       "../../api/video_codecs:video_codecs_api",
+      "../../call:call_interfaces",
       "../../logging:rtc_event_log_api",
       "../../logging:rtc_event_log_impl_base",
+      "../../media:rtc_audio_video",
       "../../media:rtc_data",
       "../../media:rtc_media_base",
       "../../modules/audio_device",
+      "../../modules/audio_processing:api",
       "../../modules/utility",
       "../../pc:peerconnection",
       "../../rtc_base",
@@ -1026,56 +1002,6 @@ if (is_android) {
     deps = [
       ":base_java",
       "//rtc_base:base_java",
-    ]
-  }
-
-  rtc_static_library("null_audio_jni") {
-    sources = [
-      "src/jni/pc/null_audio.cc",
-    ]
-
-    deps = [
-      ":base_jni",
-    ]
-  }
-
-  rtc_static_library("null_video_jni") {
-    sources = [
-      "src/jni/pc/null_video.cc",
-    ]
-
-    deps = [
-      ":base_jni",
-      "../../api/video_codecs:video_codecs_api",
-    ]
-  }
-
-  rtc_static_library("null_media_jni") {
-    sources = [
-      "src/jni/pc/null_media.cc",
-    ]
-
-    deps = [
-      ":base_jni",
-    ]
-  }
-
-  rtc_static_library("media_jni") {
-    sources = [
-      "src/jni/pc/media.cc",
-    ]
-
-    deps = [
-      ":base_jni",
-      "../../api:callfactory_api",
-      "../../api/video_codecs:video_codecs_api",
-      "../../call:call_interfaces",
-      "../../logging:rtc_event_log_api",
-      "../../logging:rtc_event_log_impl_base",
-      "../../media:rtc_audio_video",
-      "../../modules/audio_device",
-      "../../modules/audio_processing",
-      "../../modules/audio_processing:api",
     ]
   }
 
@@ -1544,7 +1470,6 @@ if (is_android) {
       ":audio_jni",
       ":base_jni",
       ":generated_native_unittests_jni",
-      ":media_jni",
       ":native_api_audio_device_module",
       ":native_api_base",
       ":native_api_codecs",

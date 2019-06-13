@@ -21,7 +21,13 @@
 #include "modules/utility/include/jvm_android.h"
 // We don't depend on the audio processing module implementation.
 // The user may pass in a nullptr.
-#include "modules/audio_processing/include/audio_processing.h"  // nogncheck
+#include "api/call/call_factory_interface.h"
+#include "api/video_codecs/video_decoder_factory.h"
+#include "api/video_codecs/video_encoder_factory.h"
+#include "logging/rtc_event_log/rtc_event_log_factory.h"
+#include "media/engine/webrtc_media_engine.h"
+#include "modules/audio_device/include/audio_device.h"
+#include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/event_tracer.h"
 #include "rtc_base/system/thread_registry.h"
 #include "rtc_base/thread.h"
@@ -33,7 +39,6 @@
 #include "sdk/android/src/jni/pc/android_network_monitor.h"
 #include "sdk/android/src/jni/pc/audio.h"
 #include "sdk/android/src/jni/pc/ice_candidate.h"
-#include "sdk/android/src/jni/pc/media.h"
 #include "sdk/android/src/jni/pc/owned_factory_and_threads.h"
 #include "sdk/android/src/jni/pc/peer_connection.h"
 #include "sdk/android/src/jni/pc/ssl_certificate_verifier_wrapper.h"
@@ -291,17 +296,19 @@ ScopedJavaLocalRef<jobject> CreatePeerConnectionFactoryForJava(
   }
 
   rtc::scoped_refptr<AudioMixer> audio_mixer = nullptr;
-  std::unique_ptr<CallFactoryInterface> call_factory(CreateCallFactory());
-  std::unique_ptr<RtcEventLogFactoryInterface> rtc_event_log_factory(
-      CreateRtcEventLogFactory());
+  std::unique_ptr<CallFactoryInterface> call_factory =
+      webrtc::CreateCallFactory();
+  std::unique_ptr<RtcEventLogFactoryInterface> rtc_event_log_factory =
+      webrtc::CreateRtcEventLogFactory();
 
-  std::unique_ptr<cricket::MediaEngineInterface> media_engine(CreateMediaEngine(
-      audio_device_module, audio_encoder_factory, audio_decoder_factory,
-      std::unique_ptr<VideoEncoderFactory>(
-          CreateVideoEncoderFactory(jni, jencoder_factory)),
-      std::unique_ptr<VideoDecoderFactory>(
-          CreateVideoDecoderFactory(jni, jdecoder_factory)),
-      audio_mixer, audio_processor));
+  std::unique_ptr<cricket::MediaEngineInterface> media_engine =
+      cricket::WebRtcMediaEngineFactory::Create(
+          audio_device_module, audio_encoder_factory, audio_decoder_factory,
+          std::unique_ptr<VideoEncoderFactory>(
+              CreateVideoEncoderFactory(jni, jencoder_factory)),
+          std::unique_ptr<VideoDecoderFactory>(
+              CreateVideoDecoderFactory(jni, jdecoder_factory)),
+          audio_mixer, audio_processor);
   PeerConnectionFactoryDependencies dependencies;
   dependencies.network_thread = network_thread.get();
   dependencies.worker_thread = worker_thread.get();
