@@ -49,5 +49,40 @@ ScopedJavaLocalRef<jobjectArray> NativeToJavaFrameTypeArray(
       &NativeToJavaFrameType);
 }
 
+EncodedImage JavaToNativeEncodedImage(JNIEnv* env,
+                                      const JavaRef<jobject>& j_encoded_image) {
+  const JavaRef<jobject>& j_buffer =
+      Java_EncodedImage_getBuffer(env, j_encoded_image);
+  const uint8_t* buffer =
+      static_cast<uint8_t*>(env->GetDirectBufferAddress(j_buffer.obj()));
+  const size_t buffer_size = env->GetDirectBufferCapacity(j_buffer.obj());
+
+  EncodedImage frame;
+  frame.Allocate(buffer_size);
+  frame.set_size(buffer_size);
+  memcpy(frame.data(), buffer, buffer_size);
+  frame._encodedWidth = Java_EncodedImage_getEncodedWidth(env, j_encoded_image);
+  frame._encodedHeight =
+      Java_EncodedImage_getEncodedHeight(env, j_encoded_image);
+  frame.rotation_ =
+      (VideoRotation)Java_EncodedImage_getRotation(env, j_encoded_image);
+  frame._completeFrame =
+      Java_EncodedImage_getCompleteFrame(env, j_encoded_image);
+
+  frame.qp_ = JavaToNativeOptionalInt(
+                  env, Java_EncodedImage_getQp(env, j_encoded_image))
+                  .value_or(-1);
+
+  frame._frameType =
+      (VideoFrameType)Java_EncodedImage_getFrameType(env, j_encoded_image);
+  return frame;
+}
+
+int64_t GetJavaEncodedImageCaptureTimeNs(
+    JNIEnv* env,
+    const JavaRef<jobject>& j_encoded_image) {
+  return Java_EncodedImage_getCaptureTimeNs(env, j_encoded_image);
+}
+
 }  // namespace jni
 }  // namespace webrtc

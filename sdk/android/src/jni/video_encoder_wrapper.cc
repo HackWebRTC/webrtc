@@ -214,38 +214,18 @@ VideoEncoderWrapper::GetScalingSettingsInternal(JNIEnv* jni) const {
   }
 }
 
-void VideoEncoderWrapper::OnEncodedFrame(JNIEnv* jni,
-                                         const JavaRef<jobject>& j_caller,
-                                         const JavaRef<jobject>& j_buffer,
-                                         jint encoded_width,
-                                         jint encoded_height,
-                                         jlong capture_time_ns,
-                                         jint frame_type,
-                                         jint rotation,
-                                         jboolean complete_frame,
-                                         const JavaRef<jobject>& j_qp) {
-  const uint8_t* buffer =
-      static_cast<uint8_t*>(jni->GetDirectBufferAddress(j_buffer.obj()));
-  const size_t buffer_size = jni->GetDirectBufferCapacity(j_buffer.obj());
-
-  EncodedImage frame;
-  frame.Allocate(buffer_size);
-  frame.set_size(buffer_size);
-  memcpy(frame.data(), buffer, buffer_size);
-  frame._encodedWidth = encoded_width;
-  frame._encodedHeight = encoded_height;
-  frame.rotation_ = (VideoRotation)rotation;
-  frame._completeFrame = complete_frame;
-
-  const absl::optional<int> qp = JavaToNativeOptionalInt(jni, j_qp);
-
-  frame._frameType = (VideoFrameType)frame_type;
+void VideoEncoderWrapper::OnEncodedFrame(
+    JNIEnv* jni,
+    const JavaRef<jobject>& j_caller,
+    const JavaRef<jobject>& j_encoded_image) {
+  EncodedImage frame = JavaToNativeEncodedImage(jni, j_encoded_image);
+  int64_t capture_time_ns =
+      GetJavaEncodedImageCaptureTimeNs(jni, j_encoded_image);
 
   {
     rtc::CritScope lock(&encoder_queue_crit_);
     if (encoder_queue_ != nullptr) {
-      encoder_queue_->PostTask(ToQueuedTask([this, frame, qp,
-                                             capture_time_ns]() {
+      encoder_queue_->PostTask(ToQueuedTask([this, frame, capture_time_ns]() {
         // Encoded frames are delivered in the order received, but some of them
         // may be dropped, so remove records of frames older than the current
         // one.
@@ -284,7 +264,9 @@ void VideoEncoderWrapper::OnEncodedFrame(JNIEnv* jni,
             capture_time_ns / rtc::kNumNanosecsPerMillisec;
 
         RTPFragmentationHeader header = ParseFragmentationHeader(frame);
-        frame_copy.qp_ = qp ? *qp : ParseQp(frame);
+        if (frame_copy.qp_ < 0)
+          frame_copy.qp_ = ParseQp(frame);
+
         CodecSpecificInfo info(ParseCodecSpecificInfo(frame));
 
         callback_->OnEncodedImage(frame_copy, &info, &header);
