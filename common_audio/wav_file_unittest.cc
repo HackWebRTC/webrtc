@@ -151,7 +151,7 @@ TEST(WavWriterTest, MAYBE_CPPFileDescriptor) {
   const std::string outfile = test::OutputPath() + "wavtest1.wav";
   static constexpr size_t kNumSamples = 3;
   {
-    WavWriter w(rtc::CreatePlatformFile(outfile), 14099, 1);
+    WavWriter w(FileWrapper::OpenWriteOnly(outfile), 14099, 1);
     EXPECT_EQ(14099, w.sample_rate());
     EXPECT_EQ(1u, w.num_channels());
     EXPECT_EQ(0u, w.num_samples());

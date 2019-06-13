@@ -17,6 +17,7 @@
 
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/platform_file.h"
+#include "rtc_base/system/file_wrapper.h"
 
 namespace webrtc {
 
@@ -38,7 +39,7 @@ class WavWriter final : public WavFile {
   WavWriter(const std::string& filename, int sample_rate, size_t num_channels);
 
   // Open a new WAV file for writing.
-  WavWriter(rtc::PlatformFile file, int sample_rate, size_t num_channels);
+  WavWriter(FileWrapper file, int sample_rate, size_t num_channels);
 
   // Close the WAV file, after writing its header.
   ~WavWriter() override;
@@ -58,7 +59,7 @@ class WavWriter final : public WavFile {
   const int sample_rate_;
   const size_t num_channels_;
   size_t num_samples_;  // Total number of samples written to file.
-  FILE* file_handle_;   // Output file, owned by this class
+  FileWrapper file_;    // Output file, owned by this class
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WavWriter);
 };
