@@ -125,9 +125,9 @@ class PeerConnectionE2EQualityTestSmokeTest : public ::testing::Test {
 
 // IOS debug builds can be quite slow, disabling to avoid issues with timeouts.
 #if defined(WEBRTC_IOS) && defined(WEBRTC_ARCH_ARM64) && !defined(NDEBUG)
-#define MAYBE_RunWithEmulatedNetwork DISABLED_RunWithEmulatedNetwork
+#define MAYBE_Smoke DISABLED_Smoke
 #else
-#define MAYBE_RunWithEmulatedNetwork RunWithEmulatedNetwork
+#define MAYBE_Smoke Smoke
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
   RunParams run_params(TimeDelta::seconds(7));
@@ -174,9 +174,9 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
 
 // IOS debug builds can be quite slow, disabling to avoid issues with timeouts.
 #if defined(WEBRTC_IOS) && defined(WEBRTC_ARCH_ARM64) && !defined(NDEBUG)
-#define MAYBE_RunWithEmulatedNetwork DISABLED_RunWithEmulatedNetwork
+#define MAYBE_Simulcast DISABLED_Simulcast
 #else
-#define MAYBE_RunWithEmulatedNetwork RunWithEmulatedNetwork
+#define MAYBE_Simulcast Simulcast
 #endif
 TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Simulcast) {
   RunParams run_params(TimeDelta::seconds(7));
