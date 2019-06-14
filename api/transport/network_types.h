@@ -102,6 +102,7 @@ struct SentPacket {
 };
 
 struct ReceivedPacket {
+  Timestamp send_time = Timestamp::MinusInfinity();
   Timestamp receive_time = Timestamp::PlusInfinity();
   DataSize size = DataSize::Zero();
 };

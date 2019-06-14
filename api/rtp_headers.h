@@ -17,6 +17,7 @@
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
+#include "api/units/timestamp.h"
 #include "api/video/color_space.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_frame_marking.h"
@@ -41,6 +42,15 @@ struct RTPHeaderExtension {
   RTPHeaderExtension();
   RTPHeaderExtension(const RTPHeaderExtension& other);
   RTPHeaderExtension& operator=(const RTPHeaderExtension& other);
+
+  static constexpr int kAbsSendTimeFraction = 18;
+
+  Timestamp GetAbsoluteSendTimestamp() const {
+    RTC_DCHECK(hasAbsoluteSendTime);
+    RTC_DCHECK(absoluteSendTime < (1ul << 24));
+    return Timestamp::us((absoluteSendTime * 1000000L) /
+                         (1 << kAbsSendTimeFraction));
+  }
 
   bool hasTransmissionTimeOffset;
   int32_t transmissionTimeOffset;

@@ -36,9 +36,9 @@ absl::optional<DataRate> OptionalRateFromOptionalBps(
 
 enum {
   kTimestampGroupLengthMs = 5,
-  kAbsSendTimeFraction = 18,
   kAbsSendTimeInterArrivalUpshift = 8,
-  kInterArrivalShift = kAbsSendTimeFraction + kAbsSendTimeInterArrivalUpshift,
+  kInterArrivalShift = RTPHeaderExtension::kAbsSendTimeFraction +
+                       kAbsSendTimeInterArrivalUpshift,
   kInitialProbingIntervalMs = 2000,
   kMinClusterSize = 4,
   kMaxProbePackets = 15,
@@ -61,9 +61,10 @@ std::vector<K> Keys(const std::map<K, V>& map) {
 
 uint32_t ConvertMsTo24Bits(int64_t time_ms) {
   uint32_t time_24_bits =
-      static_cast<uint32_t>(
-          ((static_cast<uint64_t>(time_ms) << kAbsSendTimeFraction) + 500) /
-          1000) &
+      static_cast<uint32_t>(((static_cast<uint64_t>(time_ms)
+                              << RTPHeaderExtension::kAbsSendTimeFraction) +
+                             500) /
+                            1000) &
       0x00FFFFFF;
   return time_24_bits;
 }
