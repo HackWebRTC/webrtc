@@ -28,10 +28,6 @@ class ReportBlockStats {
   ReportBlockStats();
   ~ReportBlockStats();
 
-  // Updates stats and stores report blocks.
-  // Returns an aggregate of the |report_blocks|.
-  RTCPReportBlock AggregateAndStore(const ReportBlockVector& report_blocks);
-
   // Updates stats and stores report block.
   void Store(const RtcpStatistics& rtcp_stats,
              uint32_t remote_ssrc,

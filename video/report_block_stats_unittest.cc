@@ -77,54 +77,6 @@ class ReportBlockStatsTest : public ::testing::Test {
   std::vector<RTCPReportBlock> ssrc12block2_;
 };
 
-TEST_F(ReportBlockStatsTest, AggregateAndStore_NoSsrc) {
-  ReportBlockStats stats;
-  std::vector<RTCPReportBlock> empty;
-  RTCPReportBlock aggregated = stats.AggregateAndStore(empty);
-  EXPECT_EQ(0U, aggregated.fraction_lost);
-  EXPECT_EQ(0, aggregated.packets_lost);
-  EXPECT_EQ(0U, aggregated.jitter);
-  EXPECT_EQ(0U, aggregated.extended_highest_sequence_number);
-}
-
-TEST_F(ReportBlockStatsTest, AggregateAndStore_OneSsrc) {
-  ReportBlockStats stats;
-  RTCPReportBlock aggregated = stats.AggregateAndStore(ssrc1block1_);
-  // One ssrc, no aggregation done.
-  EXPECT_EQ(123U, aggregated.fraction_lost);
-  EXPECT_EQ(10, aggregated.packets_lost);
-  EXPECT_EQ(777U, aggregated.jitter);
-  EXPECT_EQ(24000U, aggregated.extended_highest_sequence_number);
-
-  aggregated = stats.AggregateAndStore(ssrc1block2_);
-  EXPECT_EQ(0U, aggregated.fraction_lost);
-  EXPECT_EQ(15, aggregated.packets_lost);
-  EXPECT_EQ(222U, aggregated.jitter);
-  EXPECT_EQ(24100U, aggregated.extended_highest_sequence_number);
-
-  // fl: 100 * (15-10) / (24100-24000) = 5%
-  EXPECT_EQ(5, stats.FractionLostInPercent());
-}
-
-TEST_F(ReportBlockStatsTest, AggregateAndStore_TwoSsrcs) {
-  ReportBlockStats stats;
-  RTCPReportBlock aggregated = stats.AggregateAndStore(ssrc12block1_);
-  EXPECT_EQ(0U, aggregated.fraction_lost);
-  EXPECT_EQ(10 + 111, aggregated.packets_lost);
-  EXPECT_EQ((777U + 555U) / 2, aggregated.jitter);
-  EXPECT_EQ(0U, aggregated.extended_highest_sequence_number);
-
-  aggregated = stats.AggregateAndStore(ssrc12block2_);
-  // fl: 255 * ((15-10) + (136-111)) / ((24100-24000) + (8800-8500)) = 19
-  EXPECT_EQ(19U, aggregated.fraction_lost);
-  EXPECT_EQ(15 + 136, aggregated.packets_lost);
-  EXPECT_EQ((222U + 888U) / 2, aggregated.jitter);
-  EXPECT_EQ(0U, aggregated.extended_highest_sequence_number);
-
-  // fl: 100 * ((15-10) + (136-111)) / ((24100-24000) + (8800-8500)) = 7%
-  EXPECT_EQ(7, stats.FractionLostInPercent());
-}
-
 TEST_F(ReportBlockStatsTest, StoreAndGetFractionLost) {
   const uint32_t kRemoteSsrc = 1;
   ReportBlockStats stats;

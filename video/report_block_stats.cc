@@ -48,34 +48,6 @@ void ReportBlockStats::Store(const RtcpStatistics& rtcp_stats,
                              &num_lost_sequence_numbers);
 }
 
-RTCPReportBlock ReportBlockStats::AggregateAndStore(
-    const ReportBlockVector& report_blocks) {
-  RTCPReportBlock aggregate;
-  if (report_blocks.empty()) {
-    return aggregate;
-  }
-  uint32_t num_sequence_numbers = 0;
-  uint32_t num_lost_sequence_numbers = 0;
-  ReportBlockVector::const_iterator report_block = report_blocks.begin();
-  for (; report_block != report_blocks.end(); ++report_block) {
-    aggregate.packets_lost += report_block->packets_lost;
-    aggregate.jitter += report_block->jitter;
-    StoreAndAddPacketIncrement(*report_block, &num_sequence_numbers,
-                               &num_lost_sequence_numbers);
-  }
-
-  if (report_blocks.size() == 1) {
-    // No aggregation needed.
-    return report_blocks[0];
-  }
-  // Fraction lost since previous report block.
-  aggregate.fraction_lost =
-      FractionLost(num_lost_sequence_numbers, num_sequence_numbers);
-  aggregate.jitter = static_cast<uint32_t>(
-      (aggregate.jitter + report_blocks.size() / 2) / report_blocks.size());
-  return aggregate;
-}
-
 void ReportBlockStats::StoreAndAddPacketIncrement(
     const RTCPReportBlock& report_block,
     uint32_t* num_sequence_numbers,
