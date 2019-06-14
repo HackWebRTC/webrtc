@@ -44,12 +44,6 @@ void SendTimeHistory::AddNewPacket(PacketFeedback packet) {
   }
 }
 
-void SendTimeHistory::AddAndRemoveOld(const PacketFeedback& packet,
-                                      int64_t at_time_ms) {
-  RemoveOld(at_time_ms);
-  AddNewPacket(packet);
-}
-
 void SendTimeHistory::AddUntracked(size_t packet_size, int64_t send_time_ms) {
   if (send_time_ms < last_send_time_ms_) {
     RTC_LOG(LS_WARNING) << "ignoring untracked data for out of order packet.";
