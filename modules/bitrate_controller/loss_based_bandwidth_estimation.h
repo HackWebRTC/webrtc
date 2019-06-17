@@ -13,10 +13,10 @@
 
 #include <vector>
 
+#include "api/transport/network_types.h"
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 
 namespace webrtc {
