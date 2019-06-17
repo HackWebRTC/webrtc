@@ -47,4 +47,9 @@ std::unique_ptr<Vp8FrameBufferController> Vp8TemporalLayersFactory::Create(
   return absl::make_unique<Vp8TemporalLayers>(std::move(controllers));
 }
 
+std::unique_ptr<Vp8FrameBufferControllerFactory>
+Vp8TemporalLayersFactory::Clone() const {
+  return absl::make_unique<Vp8TemporalLayersFactory>();
+}
+
 }  // namespace webrtc
