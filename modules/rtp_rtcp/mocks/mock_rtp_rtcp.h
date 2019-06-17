@@ -11,6 +11,7 @@
 #ifndef MODULES_RTP_RTCP_MOCKS_MOCK_RTP_RTCP_H_
 #define MODULES_RTP_RTCP_MOCKS_MOCK_RTP_RTCP_H_
 
+#include <memory>
 #include <set>
 #include <string>
 #include <utility>
@@ -22,6 +23,7 @@
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
+#include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "rtc_base/checks.h"
 #include "test/gmock.h"
 
@@ -88,6 +90,9 @@ class MockRtpRtcp : public RtpRtcp {
                                    int64_t capture_time_ms,
                                    bool retransmission,
                                    const PacedPacketInfo& pacing_info));
+  MOCK_METHOD2(TrySendPacket,
+               bool(RtpPacketToSend* packet,
+                    const PacedPacketInfo& pacing_info));
   MOCK_METHOD2(TimeToSendPadding,
                size_t(size_t bytes, const PacedPacketInfo& pacing_info));
   MOCK_METHOD2(RegisterRtcpObservers,

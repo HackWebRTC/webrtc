@@ -571,6 +571,119 @@ RtpPacketSendResult RTPSender::TimeToSendPacket(
              : RtpPacketSendResult::kTransportUnavailable;
 }
 
+// Called from pacer when we can send the packet.
+bool RTPSender::TrySendPacket(RtpPacketToSend* packet,
+                              const PacedPacketInfo& pacing_info) {
+  RTC_DCHECK(packet);
+
+  const uint32_t packet_ssrc = packet->Ssrc();
+  const auto packet_type = packet->packet_type();
+  RTC_DCHECK(packet_type.has_value());
+
+  PacketOptions options;
+  bool is_media = false;
+  bool is_rtx = false;
+  {
+    rtc::CritScope lock(&send_critsect_);
+    if (!sending_media_) {
+      return false;
+    }
+
+    switch (*packet_type) {
+      case RtpPacketToSend::Type::kAudio:
+      case RtpPacketToSend::Type::kVideo:
+        if (packet_ssrc != ssrc_) {
+          return false;
+        }
+        is_media = true;
+        break;
+      case RtpPacketToSend::Type::kRetransmission:
+      case RtpPacketToSend::Type::kPadding:
+        // Both padding and retransmission must be on either the media or the
+        // RTX stream.
+        if (packet_ssrc == ssrc_rtx_) {
+          is_rtx = true;
+        } else if (packet_ssrc != ssrc_) {
+          return false;
+        }
+        break;
+      case RtpPacketToSend::Type::kForwardErrorCorrection:
+        // FlexFEC is on separate SSRC, ULPFEC uses media SSRC.
+        if (packet_ssrc != ssrc_ && packet_ssrc != flexfec_ssrc_) {
+          return false;
+        }
+        break;
+    }
+
+    options.included_in_allocation = force_part_of_allocation_;
+  }
+
+  // Bug webrtc:7859. While FEC is invoked from rtp_sender_video, and not after
+  // the pacer, these modifications of the header below are happening after the
+  // FEC protection packets are calculated. This will corrupt recovered packets
+  // at the same place. It's not an issue for extensions, which are present in
+  // all the packets (their content just may be incorrect on recovered packets).
+  // In case of VideoTimingExtension, since it's present not in every packet,
+  // data after rtp header may be corrupted if these packets are protected by
+  // the FEC.
+  int64_t now_ms = clock_->TimeInMilliseconds();
+  int64_t diff_ms = now_ms - packet->capture_time_ms();
+  packet->SetExtension<TransmissionOffset>(kTimestampTicksPerMs * diff_ms);
+  packet->SetExtension<AbsoluteSendTime>(AbsoluteSendTime::MsTo24Bits(now_ms));
+
+  if (packet->HasExtension<VideoTimingExtension>()) {
+    if (populate_network2_timestamp_) {
+      packet->set_network2_time_ms(now_ms);
+    } else {
+      packet->set_pacer_exit_time_ms(now_ms);
+    }
+  }
+
+  // Downstream code actually uses this flag to distinguish between media and
+  // everything else.
+  options.is_retransmit = !is_media;
+  if (auto packet_id = packet->GetExtension<TransportSequenceNumber>()) {
+    options.packet_id = *packet_id;
+    options.included_in_feedback = true;
+    options.included_in_allocation = true;
+    AddPacketToTransportFeedback(*packet_id, *packet, pacing_info);
+  }
+
+  options.application_data.assign(packet->application_data().begin(),
+                                  packet->application_data().end());
+
+  if (packet->packet_type() != RtpPacketToSend::Type::kPadding &&
+      packet->packet_type() != RtpPacketToSend::Type::kRetransmission) {
+    UpdateDelayStatistics(packet->capture_time_ms(), now_ms, packet_ssrc);
+    UpdateOnSendPacket(options.packet_id, packet->capture_time_ms(),
+                       packet_ssrc);
+  }
+
+  const bool send_success = SendPacketToNetwork(*packet, options, pacing_info);
+
+  // Put packet in retransmission history or update pending status even if
+  // actual sending fails.
+  if (is_media && packet->allow_retransmission()) {
+    packet_history_.PutRtpPacket(absl::make_unique<RtpPacketToSend>(*packet),
+                                 StorageType::kAllowRetransmission, now_ms);
+  } else if (packet->retransmitted_sequence_number()) {
+    packet_history_.MarkPacketAsSent(*packet->retransmitted_sequence_number());
+  }
+
+  if (send_success) {
+    UpdateRtpStats(*packet, is_rtx,
+                   packet_type == RtpPacketToSend::Type::kRetransmission);
+
+    rtc::CritScope lock(&send_critsect_);
+    media_has_been_sent_ = true;
+  }
+
+  // Return true even if transport failed (will be handled by retransmissions
+  // instead in that case), so that PacketRouter does not have to iterate over
+  // all other RTP modules and fail to send there too.
+  return true;
+}
+
 bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
                                      bool send_over_rtx,
                                      bool is_retransmit,
@@ -632,7 +745,7 @@ bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
                                   packet_to_send->application_data().end());
 
   if (!is_retransmit && !send_over_rtx) {
-    UpdateDelayStatistics(packet->capture_time_ms(), now_ms);
+    UpdateDelayStatistics(packet->capture_time_ms(), now_ms, packet->Ssrc());
     UpdateOnSendPacket(options.packet_id, packet->capture_time_ms(),
                        packet->Ssrc());
   }
@@ -744,7 +857,7 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
   options.application_data.assign(packet->application_data().begin(),
                                   packet->application_data().end());
 
-  UpdateDelayStatistics(packet->capture_time_ms(), now_ms);
+  UpdateDelayStatistics(packet->capture_time_ms(), now_ms, packet->Ssrc());
   UpdateOnSendPacket(options.packet_id, packet->capture_time_ms(),
                      packet->Ssrc());
 
@@ -777,20 +890,15 @@ void RTPSender::RecomputeMaxSendDelay() {
   }
 }
 
-void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms) {
+void RTPSender::UpdateDelayStatistics(int64_t capture_time_ms,
+                                      int64_t now_ms,
+                                      uint32_t ssrc) {
   if (!send_side_delay_observer_ || capture_time_ms <= 0)
     return;
 
-  uint32_t ssrc;
   int avg_delay_ms = 0;
   int max_delay_ms = 0;
   uint64_t total_packet_send_delay_ms = 0;
-  {
-    rtc::CritScope lock(&send_critsect_);
-    if (!ssrc_)
-      return;
-    ssrc = *ssrc_;
-  }
   {
     rtc::CritScope cs(&statistics_crit_);
     // Compute the max and average of the recent capture-to-send delays.

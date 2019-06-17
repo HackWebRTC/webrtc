@@ -110,6 +110,8 @@ class RTPSender {
                                        int64_t capture_time_ms,
                                        bool retransmission,
                                        const PacedPacketInfo& pacing_info);
+  bool TrySendPacket(RtpPacketToSend* packet,
+                     const PacedPacketInfo& pacing_info);
   size_t TimeToSendPadding(size_t bytes, const PacedPacketInfo& pacing_info);
 
   // NACK.
@@ -204,7 +206,9 @@ class RTPSender {
                            const PacedPacketInfo& pacing_info);
 
   void RecomputeMaxSendDelay() RTC_EXCLUSIVE_LOCKS_REQUIRED(statistics_crit_);
-  void UpdateDelayStatistics(int64_t capture_time_ms, int64_t now_ms);
+  void UpdateDelayStatistics(int64_t capture_time_ms,
+                             int64_t now_ms,
+                             uint32_t ssrc);
   void UpdateOnSendPacket(int packet_id,
                           int64_t capture_time_ms,
                           uint32_t ssrc);

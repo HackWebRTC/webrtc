@@ -268,6 +268,12 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
       bool retransmission,
       const PacedPacketInfo& pacing_info) = 0;
 
+  // Try to send the provided packet. Returns true iff packet matches any of
+  // the SSRCs for this module (media/rtx/fec etc) and was forwarded to the
+  // transport.
+  virtual bool TrySendPacket(RtpPacketToSend* packet,
+                             const PacedPacketInfo& pacing_info) = 0;
+
   virtual size_t TimeToSendPadding(size_t bytes,
                                    const PacedPacketInfo& pacing_info) = 0;
 

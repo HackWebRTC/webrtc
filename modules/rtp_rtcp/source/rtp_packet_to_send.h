@@ -50,6 +50,21 @@ class RtpPacketToSend : public RtpPacket {
   void set_packet_type(Type type) { packet_type_ = type; }
   absl::optional<Type> packet_type() const { return packet_type_; }
 
+  // If this is a retransmission, indicates the sequence number of the original
+  // media packet that this packet represents. If RTX is used this will likely
+  // be different from SequenceNumber().
+  void set_retransmitted_sequence_number(uint16_t sequence_number) {
+    retransmitted_sequence_number_ = sequence_number;
+  }
+  absl::optional<uint16_t> retransmitted_sequence_number() {
+    return retransmitted_sequence_number_;
+  }
+
+  void set_allow_retransmission(bool allow_retransmission) {
+    allow_retransmission_ = allow_retransmission;
+  }
+  bool allow_retransmission() { return allow_retransmission_; }
+
   // Additional data bound to the RTP packet for use in application code,
   // outside of WebRTC.
   rtc::ArrayView<const uint8_t> application_data() const {
@@ -87,6 +102,8 @@ class RtpPacketToSend : public RtpPacket {
  private:
   int64_t capture_time_ms_ = 0;
   absl::optional<Type> packet_type_;
+  bool allow_retransmission_ = false;
+  absl::optional<uint16_t> retransmitted_sequence_number_;
   std::vector<uint8_t> application_data_;
 };
 
