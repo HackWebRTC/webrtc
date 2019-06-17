@@ -8,23 +8,19 @@
 
 import("../../webrtc.gni")
 
-# Part of a change to break the dependency between "api:rtp_headers" and
-# "api/video:video_frame". This build rule is currently just an empty
-# placeholder to help us fix downstream projects before moving the source files
-# from "api/video:video_frame".
 rtc_source_set("video_rtp_headers") {
   visibility = [ "*" ]
   sources = [
-    # "color_space.cc",
-    # "color_space.h",
-    # "hdr_metadata.cc",
-    # "hdr_metadata.h",
-    # "video_content_type.cc",
-    # "video_content_type.h",
-    # "video_frame_marking.h",
-    # "video_rotation.h",
-    # "video_timing.cc",
-    # "video_timing.h",
+    "color_space.cc",
+    "color_space.h",
+    "hdr_metadata.cc",
+    "hdr_metadata.h",
+    "video_content_type.cc",
+    "video_content_type.h",
+    "video_frame_marking.h",
+    "video_rotation.h",
+    "video_timing.cc",
+    "video_timing.h",
   ]
 
   deps = [
@@ -37,29 +33,20 @@ rtc_source_set("video_rtp_headers") {
 rtc_source_set("video_frame") {
   visibility = [ "*" ]
   sources = [
-    "color_space.cc",
-    "color_space.h",
-    "hdr_metadata.cc",
-    "hdr_metadata.h",
     "video_codec_type.h",
-    "video_content_type.cc",
-    "video_content_type.h",
     "video_frame.cc",
     "video_frame.h",
     "video_frame_buffer.cc",
     "video_frame_buffer.h",
-    "video_frame_marking.h",
-    "video_rotation.h",
     "video_sink_interface.h",
     "video_source_interface.cc",
     "video_source_interface.h",
-    "video_timing.cc",
-    "video_timing.h",
   ]
 
   deps = [
     ":video_rtp_headers",
     "..:array_view",
+    "..:rtp_packet_info",
     "..:scoped_refptr",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",
