@@ -10,8 +10,9 @@
 
 #include "api/transport/network_types.h"
 
-namespace webrtc {
+#include <algorithm>
 
+namespace webrtc {
 // TODO(srte): Revert to using default after removing union member.
 StreamsConfig::StreamsConfig() {}
 StreamsConfig::StreamsConfig(const StreamsConfig&) = default;
@@ -59,6 +60,28 @@ std::vector<PacketResult> TransportPacketsFeedback::LostWithSendInfo() const {
 std::vector<PacketResult> TransportPacketsFeedback::PacketsWithFeedback()
     const {
   return packet_feedbacks;
+}
+
+std::vector<PacketResult> TransportPacketsFeedback::SortedByReceiveTime()
+    const {
+  class PacketResultComparator {
+   public:
+    inline bool operator()(const PacketResult& lhs, const PacketResult& rhs) {
+      if (lhs.receive_time != rhs.receive_time)
+        return lhs.receive_time < rhs.receive_time;
+      if (lhs.sent_packet.send_time != rhs.sent_packet.send_time)
+        return lhs.sent_packet.send_time < rhs.sent_packet.send_time;
+      return lhs.sent_packet.sequence_number < rhs.sent_packet.sequence_number;
+    }
+  };
+  std::vector<PacketResult> res;
+  for (const PacketResult& fb : packet_feedbacks) {
+    if (fb.receive_time.IsFinite()) {
+      res.push_back(fb);
+    }
+  }
+  std::sort(res.begin(), res.end(), PacketResultComparator());
+  return res;
 }
 
 NetworkControlUpdate::NetworkControlUpdate() = default;

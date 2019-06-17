@@ -156,6 +156,7 @@ struct TransportPacketsFeedback {
   std::vector<PacketResult> ReceivedWithSendInfo() const;
   std::vector<PacketResult> LostWithSendInfo() const;
   std::vector<PacketResult> PacketsWithFeedback() const;
+  std::vector<PacketResult> SortedByReceiveTime() const;
 };
 
 // Network estimation
