@@ -847,12 +847,10 @@ if (is_android) {
 
       # WebRTC supports API level 16 while Chromium only supports 19.
       # (the manifest defines minimum supported SDK version)
-      if (defined(invoker.android_manifest_for_lint)) {
-        # Custom manifest defined by the target, use that one.
-        android_manifest_for_lint = invoker.android_manifest_for_lint
+      if (defined(invoker.min_sdk_version)) {
+        min_sdk_version = invoker.min_sdk_version
       } else {
-        # Default manifest for WebRTC.
-        android_manifest_for_lint = "//sdk/android/AndroidManifest.xml"
+        min_sdk_version = 16
       }
 
       # TODO(crbug.com/824679): Find out why this fails in Chromium
