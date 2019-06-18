@@ -93,6 +93,8 @@ class RtpPacketHistory {
   // In addition to getting packet and marking as sent, this method takes an
   // encapsulator function that takes a reference to the packet and outputs a
   // copy that may be wrapped in a container, eg RTX.
+  // If the the encapsulator returns nullptr, the retransmit is aborted and the
+  // packet will not be marked as pending.
   std::unique_ptr<RtpPacketToSend> GetPacketAndMarkAsPending(
       uint16_t sequence_number,
       rtc::FunctionView<std::unique_ptr<RtpPacketToSend>(

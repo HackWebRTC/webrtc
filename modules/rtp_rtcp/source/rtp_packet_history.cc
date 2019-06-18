@@ -241,10 +241,14 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetPacketAndMarkAsPending(
     return nullptr;
   }
 
-  packet.pending_transmission_ = true;
-
   // Copy and/or encapsulate packet.
-  return encapsulate(*packet.packet_);
+  std::unique_ptr<RtpPacketToSend> encapsulated_packet =
+      encapsulate(*packet.packet_);
+  if (encapsulated_packet) {
+    packet.pending_transmission_ = true;
+  }
+
+  return encapsulated_packet;
 }
 
 void RtpPacketHistory::MarkPacketAsSent(uint16_t sequence_number) {
