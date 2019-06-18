@@ -34,8 +34,8 @@ class IntervalBudget {
 
  private:
   int target_rate_kbps_;
-  int max_bytes_in_budget_;
-  int bytes_remaining_;
+  int64_t max_bytes_in_budget_;
+  int64_t bytes_remaining_;
   bool can_build_up_underuse_;
 };
 
