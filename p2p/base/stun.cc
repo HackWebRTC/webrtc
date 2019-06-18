@@ -465,6 +465,8 @@ StunAttributeValueType StunMessage::GetAttributeValueType(int type) const {
       return STUN_VALUE_BYTE_STRING;
     case STUN_ATTR_RETRANSMIT_COUNT:
       return STUN_VALUE_UINT32;
+    case STUN_ATTR_LAST_ICE_CHECK_RECEIVED:
+      return STUN_VALUE_BYTE_STRING;
     default:
       return STUN_VALUE_UNKNOWN;
   }

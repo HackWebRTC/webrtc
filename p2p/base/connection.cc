@@ -152,6 +152,9 @@ void ConnectionRequest::Prepare(StunMessage* request) {
   std::string username;
   connection_->port()->CreateStunUsername(
       connection_->remote_candidate().username(), &username);
+  // Note that the order of attributes does not impact the parsing on the
+  // receiver side. The attribute is retrieved then by iterating and matching
+  // over all parsed attributes. See StunMessage::GetAttribute.
   request->AddAttribute(
       absl::make_unique<StunByteStringAttribute>(STUN_ATTR_USERNAME, username));
 
@@ -166,6 +169,13 @@ void ConnectionRequest::Prepare(StunMessage* request) {
   network_info = (network_info << 16) | connection_->port()->network_cost();
   request->AddAttribute(absl::make_unique<StunUInt32Attribute>(
       STUN_ATTR_NETWORK_INFO, network_info));
+
+  if (webrtc::field_trial::IsEnabled("WebRTC-PiggybackCheckAcknowledgement") &&
+      connection_->last_ping_id_received()) {
+    request->AddAttribute(absl::make_unique<StunByteStringAttribute>(
+        STUN_ATTR_LAST_ICE_CHECK_RECEIVED,
+        connection_->last_ping_id_received().value()));
+  }
 
   // Adding ICE_CONTROLLED or ICE_CONTROLLING attribute based on the role.
   if (connection_->port()->GetIceRole() == ICEROLE_CONTROLLING) {
@@ -455,7 +465,7 @@ void Connection::OnReadPacket(const char* data,
       // request. In this case |last_ping_received_| will be updated but no
       // response will be sent.
       case STUN_BINDING_INDICATION:
-        ReceivedPing();
+        ReceivedPing(msg->transaction_id());
         break;
 
       default:
@@ -467,7 +477,7 @@ void Connection::OnReadPacket(const char* data,
 
 void Connection::HandleBindingRequest(IceMessage* msg) {
   // This connection should now be receiving.
-  ReceivedPing();
+  ReceivedPing(msg->transaction_id());
   if (webrtc::field_trial::IsEnabled("WebRTC-ExtraICEPing") &&
       last_ping_response_received_ == 0) {
     if (local_candidate().type() == RELAY_PORT_TYPE ||
@@ -549,6 +559,10 @@ void Connection::HandleBindingRequest(IceMessage* msg) {
       // state change to force a re-sort in P2PTransportChannel.
       SignalStateChange(this);
     }
+  }
+
+  if (webrtc::field_trial::IsEnabled("WebRTC-PiggybackCheckAcknowledgement")) {
+    HandlePiggybackCheckAcknowledgementIfAny(msg);
   }
 }
 
@@ -678,24 +692,40 @@ void Connection::Ping(int64_t now) {
   num_pings_sent_++;
 }
 
-void Connection::ReceivedPing() {
+void Connection::ReceivedPing(const absl::optional<std::string>& request_id) {
   last_ping_received_ = rtc::TimeMillis();
+  last_ping_id_received_ = request_id;
   UpdateReceiving(last_ping_received_);
 }
 
-void Connection::ReceivedPingResponse(int rtt, const std::string& request_id) {
+void Connection::HandlePiggybackCheckAcknowledgementIfAny(StunMessage* msg) {
+  RTC_DCHECK(msg->type() == STUN_BINDING_REQUEST);
+  const StunByteStringAttribute* last_ice_check_received_attr =
+      msg->GetByteString(STUN_ATTR_LAST_ICE_CHECK_RECEIVED);
+  if (last_ice_check_received_attr) {
+    const std::string request_id = last_ice_check_received_attr->GetString();
+    auto iter = absl::c_find_if(
+        pings_since_last_response_,
+        [&request_id](const SentPing& ping) { return ping.id == request_id; });
+    if (iter != pings_since_last_response_.end()) {
+      const int64_t rtt = rtc::TimeMillis() - iter->sent_time;
+      ReceivedPingResponse(rtt, request_id, iter->nomination);
+    }
+  }
+}
+
+void Connection::ReceivedPingResponse(
+    int rtt,
+    const std::string& request_id,
+    const absl::optional<uint32_t>& nomination) {
   RTC_DCHECK_GE(rtt, 0);
   // We've already validated that this is a STUN binding response with
   // the correct local and remote username for this connection.
   // So if we're not already, become writable. We may be bringing a pruned
   // connection back to life, but if we don't really want it, we can always
   // prune it again.
-  auto iter = absl::c_find_if(
-      pings_since_last_response_,
-      [request_id](const SentPing& ping) { return ping.id == request_id; });
-  if (iter != pings_since_last_response_.end() &&
-      iter->nomination > acked_nomination_) {
-    acked_nomination_ = iter->nomination;
+  if (nomination && nomination.value() > acked_nomination_) {
+    acked_nomination_ = nomination.value();
   }
 
   total_round_trip_time_ms_ += rtt;
@@ -864,7 +894,15 @@ void Connection::OnConnectionRequestResponse(ConnectionRequest* request,
                       ", rtt="
                    << rtt << ", pings_since_last_response=" << pings;
   }
-  ReceivedPingResponse(rtt, request->id());
+  absl::optional<uint32_t> nomination;
+  const std::string request_id = request->id();
+  auto iter = absl::c_find_if(
+      pings_since_last_response_,
+      [&request_id](const SentPing& ping) { return ping.id == request_id; });
+  if (iter != pings_since_last_response_.end()) {
+    nomination.emplace(iter->nomination);
+  }
+  ReceivedPingResponse(rtt, request_id, nomination);
 
   stats_.recv_ping_responses++;
   LogCandidatePairEvent(
