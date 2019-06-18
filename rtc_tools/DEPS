@@ -17,5 +17,8 @@ include_rules = [
   "+system_wrappers",
   "+p2p",
   "+third_party/libyuv",
+
+  # Abseil flags are allowed in tests and tools.
+  "+absl/flags",
 ]
 
