@@ -14,11 +14,13 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <list>
+#include <memory>
 #include <vector>
 
 #include "api/transport/network_types.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/thread_annotations.h"
@@ -30,7 +32,7 @@ namespace rtcp {
 class TransportFeedback;
 }  // namespace rtcp
 
-// PacketRouter keeps track of RTP send modules to support the pacer.
+// PacketRouter keeps track of rtp send modules to support the pacer.
 // In addition, it handles feedback messages, which are sent on a send
 // module if possible (sender report), otherwise on receive module
 // (receiver report). For the latter case, we also keep track of the
@@ -55,6 +57,9 @@ class PacketRouter : public TransportSequenceNumberAllocator,
       int64_t capture_timestamp,
       bool retransmission,
       const PacedPacketInfo& packet_info);
+
+  virtual void SendPacket(std::unique_ptr<RtpPacketToSend> packet,
+                          const PacedPacketInfo& cluster_info);
 
   virtual size_t TimeToSendPadding(size_t bytes,
                                    const PacedPacketInfo& packet_info);

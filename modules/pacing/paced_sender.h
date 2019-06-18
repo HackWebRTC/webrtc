@@ -25,7 +25,9 @@
 #include "modules/pacing/interval_budget.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/pacing/round_robin_packet_queue.h"
+#include "modules/rtp_rtcp/include/rtp_packet_pacer.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/experiments/field_trial_parser.h"
@@ -35,7 +37,7 @@ namespace webrtc {
 class Clock;
 class RtcEventLog;
 
-class PacedSender : public Module, public RtpPacketSender {
+class PacedSender : public Module, public RtpPacketPacer {
  public:
   static constexpr int64_t kNoCongestionWindow = -1;
 
@@ -77,14 +79,18 @@ class PacedSender : public Module, public RtpPacketSender {
   // Sets the pacing rates. Must be called once before packets can be sent.
   void SetPacingRates(uint32_t pacing_rate_bps, uint32_t padding_rate_bps);
 
-  // Returns true if we send the packet now, else it will add the packet
-  // information to the queue and call TimeToSendPacket when it's time to send.
+  // Adds the packet information to the queue and calls TimeToSendPacket
+  // when it's time to send.
   void InsertPacket(RtpPacketSender::Priority priority,
                     uint32_t ssrc,
                     uint16_t sequence_number,
                     int64_t capture_time_ms,
                     size_t bytes,
                     bool retransmission) override;
+
+  // Adds the packet to the queue and calls PacketRouter::SendPacket() when
+  // it's time to send.
+  void EnqueuePacket(std::unique_ptr<RtpPacketToSend> packet) override;
 
   // Currently audio traffic is not accounted by pacer and passed through.
   // With the introduction of audio BWE audio traffic will be accounted for
@@ -129,10 +135,10 @@ class PacedSender : public Module, public RtpPacketSender {
   void UpdateBudgetWithBytesSent(size_t bytes)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
-  const RoundRobinPacketQueue::Packet* GetPendingPacket(
+  RoundRobinPacketQueue::QueuedPacket* GetPendingPacket(
       const PacedPacketInfo& pacing_info)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  void OnPacketSent(const RoundRobinPacketQueue::Packet* packet)
+  void OnPacketSent(RoundRobinPacketQueue::QueuedPacket* packet)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   void OnPaddingSent(size_t padding_sent)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);

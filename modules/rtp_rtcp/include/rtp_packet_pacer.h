@@ -23,10 +23,10 @@ namespace webrtc {
 // TODO(bugs.webrtc.org/10633): Add things missing to this interface so that we
 // can use multiple different pacer implementations, and stop inheriting from
 // RtpPacketSender.
-class RtpPacketPacer : RtpPacketSender {
+class RtpPacketPacer : public RtpPacketSender {
  public:
   RtpPacketPacer() = default;
-  ~RtpPacketPacer() override;
+  ~RtpPacketPacer() override = default;
 
   // Insert packet into queue, for eventual transmission. Based on the type of
   // the packet, it will prioritized and scheduled relative to other packets and

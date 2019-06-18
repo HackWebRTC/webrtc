@@ -13,6 +13,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <limits>
+#include <utility>
 
 #include "absl/types/optional.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
@@ -20,6 +21,7 @@
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/logging.h"
 #include "rtc_base/time_utils.h"
 
 namespace webrtc {
@@ -123,6 +125,29 @@ RtpPacketSendResult PacketRouter::TimeToSendPacket(
     }
   }
   return RtpPacketSendResult::kPacketNotFound;
+}
+
+void PacketRouter::SendPacket(std::unique_ptr<RtpPacketToSend> packet,
+                              const PacedPacketInfo& cluster_info) {
+  rtc::CritScope cs(&modules_crit_);
+  for (auto* rtp_module : rtp_send_modules_) {
+    if (rtp_module->TrySendPacket(packet.get(), cluster_info)) {
+      const bool can_send_padding =
+          (rtp_module->RtxSendStatus() & kRtxRedundantPayloads) &&
+          rtp_module->HasBweExtensions();
+      if (can_send_padding) {
+        // This is now the last module to send media, and has the desired
+        // properties needed for payload based padding. Cache it for later use.
+        last_send_module_ = rtp_module;
+      }
+      return;
+    }
+  }
+
+  RTC_LOG(LS_WARNING) << "Failed to send packet, matching RTP module not found "
+                         "or transport error. SSRC = "
+                      << packet->Ssrc() << ", sequence number "
+                      << packet->SequenceNumber();
 }
 
 size_t PacketRouter::TimeToSendPadding(size_t bytes_to_send,

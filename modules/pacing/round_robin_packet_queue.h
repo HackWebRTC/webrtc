@@ -15,11 +15,13 @@
 #include <stdint.h>
 #include <list>
 #include <map>
+#include <memory>
 #include <queue>
 #include <set>
 
 #include "absl/types/optional.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
@@ -29,36 +31,80 @@ class RoundRobinPacketQueue {
   explicit RoundRobinPacketQueue(int64_t start_time_us);
   ~RoundRobinPacketQueue();
 
-  struct Packet {
-    Packet(RtpPacketSender::Priority priority,
-           uint32_t ssrc,
-           uint16_t seq_number,
-           int64_t capture_time_ms,
-           int64_t enqueue_time_ms,
-           size_t length_in_bytes,
-           bool retransmission,
-           uint64_t enqueue_order);
-    Packet(const Packet& other);
-    virtual ~Packet();
-    bool operator<(const Packet& other) const;
+  struct QueuedPacket {
+   public:
+    QueuedPacket(
+        int priority,
+        RtpPacketToSend::Type type,
+        uint32_t ssrc,
+        uint16_t seq_number,
+        int64_t capture_time_ms,
+        int64_t enqueue_time_ms,
+        size_t length_in_bytes,
+        bool retransmission,
+        uint64_t enqueue_order,
+        std::multiset<int64_t>::iterator enqueue_time_it,
+        absl::optional<std::list<std::unique_ptr<RtpPacketToSend>>::iterator>
+            packet_it);
+    QueuedPacket(const QueuedPacket& rhs);
+    ~QueuedPacket();
 
-    RtpPacketSender::Priority priority;
-    uint32_t ssrc;
-    uint16_t sequence_number;
-    int64_t capture_time_ms;  // Absolute time of frame capture.
-    int64_t enqueue_time_ms;  // Absolute time of pacer queue entry.
-    int64_t sum_paused_ms;
-    size_t bytes;
-    bool retransmission;
-    uint64_t enqueue_order;
-    std::list<Packet>::iterator this_it;
-    std::multiset<int64_t>::iterator enqueue_time_it;
+    bool operator<(const QueuedPacket& other) const;
+
+    int priority() const { return priority_; }
+    RtpPacketToSend::Type type() const { return type_; }
+    uint32_t ssrc() const { return ssrc_; }
+    uint16_t sequence_number() const { return sequence_number_; }
+    int64_t capture_time_ms() const { return capture_time_ms_; }
+    int64_t enqueue_time_ms() const { return enqueue_time_ms_; }
+    size_t size_in_bytes() const { return bytes_; }
+    bool is_retransmission() const { return retransmission_; }
+    uint64_t enqueue_order() const { return enqueue_order_; }
+    std::unique_ptr<RtpPacketToSend> ReleasePacket();
+
+    // For internal use.
+    absl::optional<std::list<std::unique_ptr<RtpPacketToSend>>::iterator>
+    PacketIterator() const {
+      return packet_it_;
+    }
+    std::multiset<int64_t>::iterator EnqueueTimeIterator() const {
+      return enqueue_time_it_;
+    }
+    void SubtractPauseTimeMs(int64_t pause_time_sum_ms);
+
+   private:
+    RtpPacketToSend::Type type_;
+    int priority_;
+    uint32_t ssrc_;
+    uint16_t sequence_number_;
+    int64_t capture_time_ms_;  // Absolute time of frame capture.
+    int64_t enqueue_time_ms_;  // Absolute time of pacer queue entry.
+    size_t bytes_;
+    bool retransmission_;
+    uint64_t enqueue_order_;
+    std::multiset<int64_t>::iterator enqueue_time_it_;
+    // Iterator into |rtp_packets_| where the memory for RtpPacket is owned,
+    // if applicable.
+    absl::optional<std::list<std::unique_ptr<RtpPacketToSend>>::iterator>
+        packet_it_;
   };
 
-  void Push(const Packet& packet);
-  const Packet& BeginPop();
-  void CancelPop(const Packet& packet);
-  void FinalizePop(const Packet& packet);
+  void Push(int priority,
+            RtpPacketToSend::Type type,
+            uint32_t ssrc,
+            uint16_t seq_number,
+            int64_t capture_time_ms,
+            int64_t enqueue_time_ms,
+            size_t length_in_bytes,
+            bool retransmission,
+            uint64_t enqueue_order);
+  void Push(int priority,
+            int64_t enqueue_time_ms,
+            uint64_t enqueue_order,
+            std::unique_ptr<RtpPacketToSend> packet);
+  QueuedPacket* BeginPop();
+  void CancelPop();
+  void FinalizePop();
 
   bool Empty() const;
   size_t SizeInPackets() const;
@@ -71,7 +117,7 @@ class RoundRobinPacketQueue {
 
  private:
   struct StreamPrioKey {
-    StreamPrioKey(RtpPacketSender::Priority priority, int64_t bytes)
+    StreamPrioKey(int priority, int64_t bytes)
         : priority(priority), bytes(bytes) {}
 
     bool operator<(const StreamPrioKey& other) const {
@@ -80,7 +126,7 @@ class RoundRobinPacketQueue {
       return bytes < other.bytes;
     }
 
-    const RtpPacketSender::Priority priority;
+    const int priority;
     const size_t bytes;
   };
 
@@ -92,7 +138,7 @@ class RoundRobinPacketQueue {
 
     size_t bytes;
     uint32_t ssrc;
-    std::priority_queue<Packet> packet_queue;
+    std::priority_queue<QueuedPacket> packet_queue;
 
     // Whenever a packet is inserted for this stream we check if |priority_it|
     // points to an element in |stream_priorities_|, and if it does it means
@@ -104,13 +150,15 @@ class RoundRobinPacketQueue {
 
   static constexpr size_t kMaxLeadingBytes = 1400;
 
+  void Push(QueuedPacket packet);
+
   Stream* GetHighestPriorityStream();
 
   // Just used to verify correctness.
   bool IsSsrcScheduled(uint32_t ssrc) const;
 
   int64_t time_last_updated_ms_;
-  absl::optional<Packet> pop_packet_;
+  absl::optional<QueuedPacket> pop_packet_;
   absl::optional<Stream*> pop_stream_;
 
   bool paused_ = false;
@@ -132,6 +180,12 @@ class RoundRobinPacketQueue {
   // The enqueue time of every packet currently in the queue. Used to figure out
   // the age of the oldest packet in the queue.
   std::multiset<int64_t> enqueue_times_;
+
+  // List of RTP packets to be sent, not necessarily in the order they will be
+  // sent. PacketInfo.packet_it will point to an entry in this list, or the
+  // end iterator of this list if queue does not have direct ownership of the
+  // packet.
+  std::list<std::unique_ptr<RtpPacketToSend>> rtp_packets_;
 };
 }  // namespace webrtc
 

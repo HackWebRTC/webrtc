@@ -12,6 +12,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "modules/pacing/paced_sender.h"
 #include "modules/pacing/packet_router.h"
 #include "system_wrappers/include/clock.h"
@@ -22,6 +23,8 @@
 
 using ::testing::_;
 using ::testing::Field;
+using ::testing::Pointee;
+using ::testing::Property;
 using ::testing::Return;
 
 namespace {
@@ -34,6 +37,11 @@ constexpr unsigned kSecondClusterBps = 1800000;
 constexpr int kBitrateProbingError = 150000;
 
 const float kPaceMultiplier = 2.5f;
+
+constexpr uint32_t kAudioSsrc = 12345;
+constexpr uint32_t kVideoSsrc = 234565;
+constexpr uint32_t kVideoRtxSsrc = 34567;
+constexpr uint32_t kFlexFecSsrc = 45678;
 }  // namespace
 
 namespace webrtc {
@@ -49,6 +57,9 @@ class MockPacedSenderCallback : public PacketRouter {
                                    int64_t capture_time_ms,
                                    bool retransmission,
                                    const PacedPacketInfo& pacing_info));
+  MOCK_METHOD2(SendPacket,
+               void(std::unique_ptr<RtpPacketToSend> packet,
+                    const PacedPacketInfo& pacing_info));
   MOCK_METHOD2(TimeToSendPadding,
                size_t(size_t bytes, const PacedPacketInfo& pacing_info));
 };
@@ -139,6 +150,30 @@ class PacedSenderTest : public ::testing::TestWithParam<std::string> {
         .Times(1)
         .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
   }
+
+  std::unique_ptr<RtpPacketToSend> BuildRtpPacket(RtpPacketToSend::Type type) {
+    auto packet = absl::make_unique<RtpPacketToSend>(nullptr);
+    packet->set_packet_type(type);
+    switch (type) {
+      case RtpPacketToSend::Type::kAudio:
+        packet->SetSsrc(kAudioSsrc);
+        break;
+      case RtpPacketToSend::Type::kVideo:
+        packet->SetSsrc(kVideoSsrc);
+        break;
+      case RtpPacketToSend::Type::kRetransmission:
+      case RtpPacketToSend::Type::kPadding:
+        packet->SetSsrc(kVideoRtxSsrc);
+        break;
+      case RtpPacketToSend::Type::kForwardErrorCorrection:
+        packet->SetSsrc(kFlexFecSsrc);
+        break;
+    }
+
+    packet->SetPayloadSize(234);
+    return packet;
+  }
+
   SimulatedClock clock_;
   MockPacedSenderCallback callback_;
   std::unique_ptr<PacedSender> send_bucket_;
@@ -1290,6 +1325,39 @@ TEST_F(PacedSenderTest, AvoidBusyLoopOnSendFailure) {
   clock_.AdvanceTimeMilliseconds(1);
   send_bucket_->Process();
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
+}
+
+TEST_F(PacedSenderTest, OwnedPacketPrioritizedOnType) {
+  // Insert a packet of each type, from low to high priority. Since priority
+  // is weighted higher than insert order, these should come out of the pacer
+  // in backwards order.
+  for (RtpPacketToSend::Type type :
+       {RtpPacketToSend::Type::kPadding,
+        RtpPacketToSend::Type::kForwardErrorCorrection,
+        RtpPacketToSend::Type::kVideo, RtpPacketToSend::Type::kRetransmission,
+        RtpPacketToSend::Type::kAudio}) {
+    send_bucket_->EnqueuePacket(BuildRtpPacket(type));
+  }
+
+  ::testing::InSequence seq;
+  EXPECT_CALL(
+      callback_,
+      SendPacket(Pointee(Property(&RtpPacketToSend::Ssrc, kAudioSsrc)), _));
+  EXPECT_CALL(
+      callback_,
+      SendPacket(Pointee(Property(&RtpPacketToSend::Ssrc, kVideoRtxSsrc)), _));
+  EXPECT_CALL(
+      callback_,
+      SendPacket(Pointee(Property(&RtpPacketToSend::Ssrc, kVideoSsrc)), _));
+  EXPECT_CALL(
+      callback_,
+      SendPacket(Pointee(Property(&RtpPacketToSend::Ssrc, kFlexFecSsrc)), _));
+  EXPECT_CALL(
+      callback_,
+      SendPacket(Pointee(Property(&RtpPacketToSend::Ssrc, kVideoRtxSsrc)), _));
+
+  clock_.AdvanceTimeMilliseconds(200);
+  send_bucket_->Process();
 }
 
 // TODO(philipel): Move to PacketQueue2 unittests.

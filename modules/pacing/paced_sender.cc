@@ -44,6 +44,27 @@ bool IsEnabled(const WebRtcKeyValueConfig& field_trials,
   return field_trials.Lookup(key).find("Enabled") == 0;
 }
 
+int GetPriorityForType(RtpPacketToSend::Type type) {
+  switch (type) {
+    case RtpPacketToSend::Type::kAudio:
+      // Audio is always prioritized over other packet types.
+      return 0;
+    case RtpPacketToSend::Type::kRetransmission:
+      // Send retransmissions before new media.
+      return 1;
+    case RtpPacketToSend::Type::kVideo:
+      // Video has "normal" priority, in the old speak.
+      return 2;
+    case RtpPacketToSend::Type::kForwardErrorCorrection:
+      // Redundancy is OK to drop, but the content is hopefully not useless.
+      return 3;
+    case RtpPacketToSend::Type::kPadding:
+      // Packets that are in themselves likely useless, only sent to keep the
+      // BWE high.
+      return 4;
+  }
+}
+
 }  // namespace
 const int64_t PacedSender::kMaxQueueLengthMs = 2000;
 const float PacedSender::kDefaultPaceMultiplier = 2.5f;
@@ -186,9 +207,37 @@ void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
   if (capture_time_ms < 0)
     capture_time_ms = now_ms;
 
-  packets_.Push(RoundRobinPacketQueue::Packet(
-      priority, ssrc, sequence_number, capture_time_ms, now_ms, bytes,
-      retransmission, packet_counter_++));
+  RtpPacketToSend::Type type;
+  switch (priority) {
+    case RtpPacketPacer::kHighPriority:
+      type = RtpPacketToSend::Type::kAudio;
+      break;
+    case RtpPacketPacer::kNormalPriority:
+      type = RtpPacketToSend::Type::kRetransmission;
+      break;
+    default:
+      type = RtpPacketToSend::Type::kVideo;
+  }
+  packets_.Push(GetPriorityForType(type), type, ssrc, sequence_number,
+                capture_time_ms, now_ms, bytes, retransmission,
+                packet_counter_++);
+}
+
+void PacedSender::EnqueuePacket(std::unique_ptr<RtpPacketToSend> packet) {
+  rtc::CritScope cs(&critsect_);
+  RTC_DCHECK(pacing_bitrate_kbps_ > 0)
+      << "SetPacingRate must be called before InsertPacket.";
+
+  int64_t now_ms = TimeMilliseconds();
+  prober_.OnIncomingPacket(packet->payload_size());
+
+  if (packet->capture_time_ms() < 0) {
+    packet->set_capture_time_ms(now_ms);
+  }
+
+  RTC_CHECK(packet->packet_type());
+  int priority = GetPriorityForType(*packet->packet_type());
+  packets_.Push(priority, now_ms, packet_counter_++, std::move(packet));
 }
 
 void PacedSender::SetAccountForAudioPackets(bool account_for_audio) {
@@ -324,27 +373,43 @@ void PacedSender::Process() {
   // The paused state is checked in the loop since it leaves the critical
   // section allowing the paused state to be changed from other code.
   while (!packets_.Empty() && !paused_) {
-    const auto* packet = GetPendingPacket(pacing_info);
+    auto* packet = GetPendingPacket(pacing_info);
     if (packet == nullptr)
       break;
 
+    std::unique_ptr<RtpPacketToSend> rtp_packet = packet->ReleasePacket();
+    const bool owned_rtp_packet = rtp_packet != nullptr;
+
     critsect_.Leave();
-    RtpPacketSendResult success = packet_router_->TimeToSendPacket(
-        packet->ssrc, packet->sequence_number, packet->capture_time_ms,
-        packet->retransmission, pacing_info);
+
+    RtpPacketSendResult success;
+    if (rtp_packet != nullptr) {
+      packet_router_->SendPacket(std::move(rtp_packet), pacing_info);
+      success = RtpPacketSendResult::kSuccess;
+    } else {
+      success = packet_router_->TimeToSendPacket(
+          packet->ssrc(), packet->sequence_number(), packet->capture_time_ms(),
+          packet->is_retransmission(), pacing_info);
+    }
+
     critsect_.Enter();
     if (success == RtpPacketSendResult::kSuccess ||
         success == RtpPacketSendResult::kPacketNotFound) {
       // Packet sent or invalid packet, remove it from queue.
       // TODO(webrtc:8052): Don't consume media budget on kInvalid.
-      bytes_sent += packet->bytes;
+      bytes_sent += packet->size_in_bytes();
       // Send succeeded, remove it from the queue.
       OnPacketSent(packet);
       if (is_probing && bytes_sent > recommended_probe_size)
         break;
+    } else if (owned_rtp_packet) {
+      // Send failed, but we can't put it back in the queue, remove it without
+      // consuming budget.
+      packets_.FinalizePop();
+      break;
     } else {
       // Send failed, put it back into the queue.
-      packets_.CancelPop(*packet);
+      packets_.CancelPop();
       break;
     }
   }
@@ -379,34 +444,34 @@ void PacedSender::ProcessThreadAttached(ProcessThread* process_thread) {
   process_thread_ = process_thread;
 }
 
-const RoundRobinPacketQueue::Packet* PacedSender::GetPendingPacket(
+RoundRobinPacketQueue::QueuedPacket* PacedSender::GetPendingPacket(
     const PacedPacketInfo& pacing_info) {
   // Since we need to release the lock in order to send, we first pop the
   // element from the priority queue but keep it in storage, so that we can
   // reinsert it if send fails.
-  const RoundRobinPacketQueue::Packet* packet = &packets_.BeginPop();
-  bool audio_packet = packet->priority == kHighPriority;
+  RoundRobinPacketQueue::QueuedPacket* packet = packets_.BeginPop();
+  bool audio_packet = packet->type() == RtpPacketToSend::Type::kAudio;
   bool apply_pacing = !audio_packet || pace_audio_;
   if (apply_pacing && (Congested() || (media_budget_.bytes_remaining() == 0 &&
                                        pacing_info.probe_cluster_id ==
                                            PacedPacketInfo::kNotAProbe))) {
-    packets_.CancelPop(*packet);
+    packets_.CancelPop();
     return nullptr;
   }
   return packet;
 }
 
-void PacedSender::OnPacketSent(const RoundRobinPacketQueue::Packet* packet) {
+void PacedSender::OnPacketSent(RoundRobinPacketQueue::QueuedPacket* packet) {
   if (first_sent_packet_ms_ == -1)
     first_sent_packet_ms_ = TimeMilliseconds();
-  bool audio_packet = packet->priority == kHighPriority;
+  bool audio_packet = packet->type() == RtpPacketToSend::Type::kAudio;
   if (!audio_packet || account_for_audio_) {
     // Update media bytes sent.
-    UpdateBudgetWithBytesSent(packet->bytes);
+    UpdateBudgetWithBytesSent(packet->size_in_bytes());
     last_send_time_us_ = clock_->TimeInMicroseconds();
   }
   // Send succeeded, remove it from the queue.
-  packets_.FinalizePop(*packet);
+  packets_.FinalizePop();
 }
 
 void PacedSender::OnPaddingSent(size_t bytes_sent) {
