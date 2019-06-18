@@ -1413,7 +1413,9 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
     return false;
   }
   // TODO(webrtc:6463): Deprecated; PlatformFile will soon be deleted.
-  virtual bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) = 0;
+  virtual bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) {
+    return false;
+  }
 
   // Stops logging the AEC dump.
   virtual void StopAecDump() = 0;
