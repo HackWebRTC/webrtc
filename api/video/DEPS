@@ -6,9 +6,8 @@ specific_include_rules = {
     "+modules/video_coding/encoded_frame.h",
   ],
 
-  # Used for a private member variable.
-  "encoded_image\.h": [
-    "+rtc_base/copy_on_write_buffer.h",
+  "encoded_image\.h" : [
+    "+rtc_base/ref_count.h",
   ],
 
   "i010_buffer\.h": [

@@ -117,8 +117,8 @@ int32_t FakeEncoder::Encode(const VideoFrame& input_image,
     }
 
     EncodedImage encoded;
-    encoded.Allocate(frame_info.layers[i].size);
-    encoded.set_size(frame_info.layers[i].size);
+    encoded.SetEncodedData(
+        EncodedImageBuffer::Create(frame_info.layers[i].size));
 
     // Fill the buffer with arbitrary data. Write someting to make Asan happy.
     memset(encoded.data(), 9, frame_info.layers[i].size);

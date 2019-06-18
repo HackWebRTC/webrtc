@@ -458,10 +458,6 @@ int VP9EncoderImpl::InitEncode(const VideoCodec* inst,
 
   is_svc_ = (num_spatial_layers_ > 1 || num_temporal_layers_ > 1);
 
-  // Allocate memory for encoded image
-  size_t frame_capacity =
-      CalcBufferSize(VideoType::kI420, codec_.width, codec_.height);
-  encoded_image_.Allocate(frame_capacity);
   encoded_image_._completeFrame = true;
   // Populate encoder configuration with default values.
   if (vpx_codec_enc_config_default(vpx_codec_vp9_cx(), config_, 0)) {
@@ -1417,11 +1413,10 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
     DeliverBufferedFrame(end_of_picture);
   }
 
-  if (pkt->data.frame.sz > encoded_image_.capacity()) {
-    encoded_image_.Allocate(pkt->data.frame.sz);
-  }
-  memcpy(encoded_image_.data(), pkt->data.frame.buf, pkt->data.frame.sz);
-  encoded_image_.set_size(pkt->data.frame.sz);
+  // TODO(nisse): Introduce some buffer cache or buffer pool, to reduce
+  // allocations and/or copy operations.
+  encoded_image_.SetEncodedData(EncodedImageBuffer::Create(
+      static_cast<const uint8_t*>(pkt->data.frame.buf), pkt->data.frame.sz));
 
   const bool is_key_frame =
       (pkt->data.frame.flags & VPX_FRAME_IS_KEY) ? true : false;

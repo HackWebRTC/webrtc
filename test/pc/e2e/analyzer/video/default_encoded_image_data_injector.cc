@@ -42,8 +42,8 @@ EncodedImage DefaultEncodedImageDataInjector::InjectData(
     const EncodedImage& source,
     int /*coding_entity_id*/) {
   EncodedImage out = source;
-  out.Allocate(source.size() + kEncodedImageBufferExpansion);
-  out.set_size(source.size() + kEncodedImageBufferExpansion);
+  out.SetEncodedData(
+      EncodedImageBuffer::Create(source.size() + kEncodedImageBufferExpansion));
   memcpy(out.data(), source.data(), source.size());
   size_t insertion_pos = source.size();
   out.data()[insertion_pos] = id & 0x00ff;
@@ -64,7 +64,7 @@ EncodedImageExtractionResult DefaultEncodedImageDataInjector::ExtractData(
     const EncodedImage& source,
     int /*coding_entity_id*/) {
   EncodedImage out = source;
-  out.Allocate(source.size());
+  out.SetEncodedData(EncodedImageBuffer::Create(source.size()));
 
   size_t source_pos = source.size() - 1;
   absl::optional<uint16_t> id = absl::nullopt;

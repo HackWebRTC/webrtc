@@ -115,23 +115,8 @@ static void RtpFragmentize(EncodedImage* encoded_image,
       required_capacity += layerInfo.pNalLengthInByte[nal];
     }
   }
-  if (encoded_image->capacity() < required_capacity) {
-    // Increase buffer size. Allocate enough to hold an unencoded image, this
-    // should be more than enough to hold any encoded data of future frames of
-    // the same size (avoiding possible future reallocation due to variations in
-    // required size).
-    size_t new_capacity = CalcBufferSize(VideoType::kI420, frame_buffer.width(),
-                                         frame_buffer.height());
-    if (new_capacity < required_capacity) {
-      // Encoded data > unencoded data. Allocate required bytes.
-      RTC_LOG(LS_WARNING)
-          << "Encoding produced more bytes than the original image "
-          << "data! Original bytes: " << new_capacity
-          << ", encoded bytes: " << required_capacity << ".";
-      new_capacity = required_capacity;
-    }
-    encoded_image->Allocate(new_capacity);
-  }
+  // TODO(nisse): Use a cache or buffer pool to avoid allocation?
+  encoded_image->SetEncodedData(EncodedImageBuffer::Create(required_capacity));
 
   // Iterate layers and NAL units, note each NAL unit as a fragment and copy
   // the data to |encoded_image->_buffer|.
@@ -300,7 +285,7 @@ int32_t H264EncoderImpl::InitEncode(const VideoCodec* inst,
     const size_t new_capacity =
         CalcBufferSize(VideoType::kI420, codec_.simulcastStream[idx].width,
                        codec_.simulcastStream[idx].height);
-    encoded_images_[i].Allocate(new_capacity);
+    encoded_images_[i].SetEncodedData(EncodedImageBuffer::Create(new_capacity));
     encoded_images_[i]._completeFrame = true;
     encoded_images_[i]._encodedWidth = codec_.simulcastStream[idx].width;
     encoded_images_[i]._encodedHeight = codec_.simulcastStream[idx].height;

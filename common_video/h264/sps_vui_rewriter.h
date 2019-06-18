@@ -19,7 +19,6 @@
 #include "api/video/color_space.h"
 #include "common_video/h264/sps_parser.h"
 #include "rtc_base/buffer.h"
-#include "rtc_base/copy_on_write_buffer.h"
 
 namespace webrtc {
 
@@ -62,7 +61,7 @@ class SpsVuiRewriter : private SpsParser {
       const size_t* nalu_offsets,
       const size_t* nalu_lengths,
       const ColorSpace* color_space,
-      rtc::CopyOnWriteBuffer* output_buffer,
+      rtc::Buffer* output_buffer,
       size_t* output_nalu_offsets,
       size_t* output_nalu_lengths);
 

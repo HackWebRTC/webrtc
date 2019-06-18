@@ -162,9 +162,9 @@ void VCMEncodedFrame::CopyCodecSpecific(const RTPVideoHeader* header) {
 void VCMEncodedFrame::VerifyAndAllocate(size_t minimumSize) {
   size_t old_capacity = capacity();
   if (minimumSize > old_capacity) {
-    // TODO(nisse): EncodedImage::Allocate is implemented as
-    // std::vector::resize, which means that old contents is kept. Find out if
-    // any code depends on that behavior.
+    // TODO(nisse): EncodedImage::Allocate is implemented as a realloc
+    // operation, and is deprecated. Refactor to use EncodedImageBuffer::Realloc
+    // instead.
     Allocate(minimumSize);
   }
 }

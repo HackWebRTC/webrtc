@@ -568,7 +568,7 @@ const webrtc::EncodedImage* VideoProcessor::BuildAndStoreSuperframe(
   const size_t payload_size_bytes = base_image.size() + encoded_image.size();
 
   EncodedImage copied_image = encoded_image;
-  copied_image.Allocate(payload_size_bytes);
+  copied_image.SetEncodedData(EncodedImageBuffer::Create(payload_size_bytes));
   if (base_image.size()) {
     RTC_CHECK(base_image.data());
     memcpy(copied_image.data(), base_image.data(), base_image.size());

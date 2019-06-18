@@ -989,8 +989,11 @@ bool MediaCodecVideoEncoder::DeliverPendingOutputs(JNIEnv* jni) {
     EncodedImageCallback::Result callback_result(
         EncodedImageCallback::Result::OK);
     if (callback_) {
-      std::unique_ptr<EncodedImage> image(
-          new EncodedImage(payload, payload_size, payload_size));
+      auto image = absl::make_unique<EncodedImage>();
+      // The corresponding (and deprecated) java classes are not prepared for
+      // late calls to releaseOutputBuffer, so to keep things simple, make a
+      // copy here, and call releaseOutputBuffer before returning.
+      image->SetEncodedData(EncodedImageBuffer::Create(payload, payload_size));
       image->_encodedWidth = width_;
       image->_encodedHeight = height_;
       image->SetTimestamp(output_timestamp_);

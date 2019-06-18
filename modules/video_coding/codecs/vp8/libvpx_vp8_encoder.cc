@@ -533,7 +533,8 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
     // allocate memory for encoded image
     size_t frame_capacity =
         CalcBufferSize(VideoType::kI420, codec_.width, codec_.height);
-    encoded_images_[i].Allocate(frame_capacity);
+    encoded_images_[i].SetEncodedData(
+        EncodedImageBuffer::Create(frame_capacity));
     encoded_images_[i]._completeFrame = true;
   }
   // populate encoder configuration with default values

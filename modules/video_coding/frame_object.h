@@ -45,8 +45,6 @@ class RtpFrameObject : public EncodedFrame {
   absl::optional<FrameMarking> GetFrameMarking() const;
 
  private:
-  void AllocateBitstreamBuffer(size_t frame_size);
-
   rtc::scoped_refptr<PacketBuffer> packet_buffer_;
   VideoFrameType frame_type_;
   VideoCodecType codec_type_;

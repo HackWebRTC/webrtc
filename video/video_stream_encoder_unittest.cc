@@ -3936,7 +3936,8 @@ TEST_F(VideoStreamEncoderTest, AdjustsTimestampInternalSource) {
 
   int64_t timestamp = 1;
   EncodedImage image;
-  image.Allocate(kTargetBitrateBps / kDefaultFramerate / 8);
+  image.SetEncodedData(
+      EncodedImageBuffer::Create(kTargetBitrateBps / kDefaultFramerate / 8));
   image.capture_time_ms_ = ++timestamp;
   image.SetTimestamp(static_cast<uint32_t>(timestamp * 90));
   const int64_t kEncodeFinishDelayMs = 10;

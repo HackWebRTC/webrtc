@@ -14,15 +14,17 @@
 
 #include "rtc_base/numerics/safe_conversions.h"
 
-// A simple wrapper around rtc::CopyOnWriteBuffer to make it usable with
-// associated objects.
-@interface RTCWrappedCOWBuffer : NSObject
-@property(nonatomic) rtc::CopyOnWriteBuffer buffer;
-- (instancetype)initWithCOWBuffer:(rtc::CopyOnWriteBuffer)buffer;
+// A simple wrapper around webrtc::EncodedImageBufferInterface to make it usable with associated
+// objects.
+@interface RTCWrappedEncodedImageBuffer : NSObject
+@property(nonatomic) rtc::scoped_refptr<webrtc::EncodedImageBufferInterface> buffer;
+- (instancetype)initWithEncodedImageBuffer:
+    (rtc::scoped_refptr<webrtc::EncodedImageBufferInterface>)buffer;
 @end
-@implementation RTCWrappedCOWBuffer
+@implementation RTCWrappedEncodedImageBuffer
 @synthesize buffer = _buffer;
-- (instancetype)initWithCOWBuffer:(rtc::CopyOnWriteBuffer)buffer {
+- (instancetype)initWithEncodedImageBuffer:
+    (rtc::scoped_refptr<webrtc::EncodedImageBufferInterface>)buffer {
   self = [super init];
   if (self) {
     _buffer = buffer;
@@ -33,16 +35,18 @@
 
 @implementation RTCEncodedImage (Private)
 
-- (rtc::CopyOnWriteBuffer)encodedData {
-  RTCWrappedCOWBuffer *wrappedBuffer = objc_getAssociatedObject(self, @selector(encodedData));
+- (rtc::scoped_refptr<webrtc::EncodedImageBufferInterface>)encodedData {
+  RTCWrappedEncodedImageBuffer *wrappedBuffer =
+      objc_getAssociatedObject(self, @selector(encodedData));
   return wrappedBuffer.buffer;
 }
 
-- (void)setEncodedData:(rtc::CopyOnWriteBuffer)buffer {
-  return objc_setAssociatedObject(self,
-                                  @selector(encodedData),
-                                  [[RTCWrappedCOWBuffer alloc] initWithCOWBuffer:buffer],
-                                  OBJC_ASSOCIATION_RETAIN_NONATOMIC);
+- (void)setEncodedData:(rtc::scoped_refptr<webrtc::EncodedImageBufferInterface>)buffer {
+  return objc_setAssociatedObject(
+      self,
+      @selector(encodedData),
+      [[RTCWrappedEncodedImageBuffer alloc] initWithEncodedImageBuffer:buffer],
+      OBJC_ASSOCIATION_RETAIN_NONATOMIC);
 }
 
 - (instancetype)initWithNativeEncodedImage:(const webrtc::EncodedImage &)encodedImage {

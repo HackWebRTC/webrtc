@@ -215,7 +215,7 @@ void SpsVuiRewriter::ParseOutgoingBitstreamAndRewriteSps(
     const size_t* nalu_offsets,
     const size_t* nalu_lengths,
     const webrtc::ColorSpace* color_space,
-    rtc::CopyOnWriteBuffer* output_buffer,
+    rtc::Buffer* output_buffer,
     size_t* output_nalu_offsets,
     size_t* output_nalu_lengths) {
   // Allocate some extra space for potentially adding a missing VUI.

@@ -189,8 +189,8 @@ EncodedImage MultiplexEncodedImagePacker::PackAndRelease(
     frame_headers.push_back(frame_header);
   }
 
-  combined_image.Allocate(bitstream_offset);
-  combined_image.set_size(bitstream_offset);
+  auto buffer = EncodedImageBuffer::Create(bitstream_offset);
+  combined_image.SetEncodedData(buffer);
 
   // header
   header_offset = PackHeader(combined_image.data(), header);
@@ -199,8 +199,8 @@ EncodedImage MultiplexEncodedImagePacker::PackAndRelease(
 
   // Frame Header
   for (size_t i = 0; i < images.size(); i++) {
-    int relative_offset = PackFrameHeader(combined_image.data() + header_offset,
-                                          frame_headers[i]);
+    int relative_offset =
+        PackFrameHeader(buffer->data() + header_offset, frame_headers[i]);
     RTC_DCHECK_EQ(relative_offset, kMultiplexImageComponentHeaderSize);
 
     header_offset = frame_headers[i].next_component_header_offset;
@@ -213,16 +213,15 @@ EncodedImage MultiplexEncodedImagePacker::PackAndRelease(
 
   // Augmenting Data
   if (multiplex_image.augmenting_data_size != 0) {
-    memcpy(combined_image.data() + header.augmenting_data_offset,
+    memcpy(buffer->data() + header.augmenting_data_offset,
            multiplex_image.augmenting_data.get(),
            multiplex_image.augmenting_data_size);
   }
 
   // Bitstreams
   for (size_t i = 0; i < images.size(); i++) {
-    PackBitstream(combined_image.data() + frame_headers[i].bitstream_offset,
+    PackBitstream(buffer->data() + frame_headers[i].bitstream_offset,
                   images[i]);
-    delete[] images[i].encoded_image.buffer();
   }
 
   return combined_image;
@@ -263,11 +262,9 @@ MultiplexImage MultiplexEncodedImagePacker::Unpack(
     EncodedImage encoded_image = combined_image;
     encoded_image.SetTimestamp(combined_image.Timestamp());
     encoded_image._frameType = frame_headers[i].frame_type;
-    encoded_image.Allocate(frame_headers[i].bitstream_length);
-    encoded_image.set_size(frame_headers[i].bitstream_length);
-    memcpy(encoded_image.data(),
-           combined_image.data() + frame_headers[i].bitstream_offset,
-           frame_headers[i].bitstream_length);
+    encoded_image.SetEncodedData(EncodedImageBuffer::Create(
+        combined_image.data() + frame_headers[i].bitstream_offset,
+        frame_headers[i].bitstream_length));
 
     image_component.encoded_image = encoded_image;
 

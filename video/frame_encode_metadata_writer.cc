@@ -11,19 +11,36 @@
 #include "video/frame_encode_metadata_writer.h"
 
 #include <algorithm>
+#include <utility>
 
 #include "absl/memory/memory.h"
 #include "common_video/h264/sps_vui_rewriter.h"
 #include "modules/include/module_common_types_public.h"
 #include "modules/video_coding/include/video_coding_defines.h"
-#include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/ref_counted_object.h"
 #include "rtc_base/time_utils.h"
 
 namespace webrtc {
 namespace {
 const int kMessagesThrottlingThreshold = 2;
 const int kThrottleRatio = 100000;
+
+class EncodedImageBufferWrapper : public EncodedImageBufferInterface {
+ public:
+  explicit EncodedImageBufferWrapper(rtc::Buffer&& buffer)
+      : buffer_(std::move(buffer)) {}
+
+  const uint8_t* data() const override { return buffer_.data(); }
+  uint8_t* data() override { return buffer_.data(); }
+  size_t size() const override { return buffer_.size(); }
+
+  void Realloc(size_t t) override { RTC_NOTREACHED(); }
+
+ private:
+  rtc::Buffer buffer_;
+};
+
 }  // namespace
 
 FrameEncodeMetadataWriter::TimingFramesLayerInfo::TimingFramesLayerInfo() =
@@ -197,7 +214,7 @@ FrameEncodeMetadataWriter::UpdateBitstream(
     return nullptr;
   }
 
-  rtc::CopyOnWriteBuffer modified_buffer;
+  rtc::Buffer modified_buffer;
   std::unique_ptr<RTPFragmentationHeader> modified_fragmentation =
       absl::make_unique<RTPFragmentationHeader>();
   modified_fragmentation->CopyFrom(*fragmentation);
@@ -211,7 +228,9 @@ FrameEncodeMetadataWriter::UpdateBitstream(
       modified_fragmentation->fragmentationOffset,
       modified_fragmentation->fragmentationLength);
 
-  encoded_image->SetEncodedData(modified_buffer);
+  encoded_image->SetEncodedData(
+      new rtc::RefCountedObject<EncodedImageBufferWrapper>(
+          std::move(modified_buffer)));
 
   return modified_fragmentation;
 }

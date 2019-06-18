@@ -10,9 +10,51 @@
 
 #include "api/video/encoded_image.h"
 
+#include <stdlib.h>
 #include <string.h>
 
+#include "rtc_base/ref_counted_object.h"
+
 namespace webrtc {
+
+EncodedImageBuffer::EncodedImageBuffer(size_t size) : size_(size) {
+  buffer_ = static_cast<uint8_t*>(malloc(size));
+}
+
+EncodedImageBuffer::EncodedImageBuffer(const uint8_t* data, size_t size)
+    : EncodedImageBuffer(size) {
+  memcpy(buffer_, data, size);
+}
+
+EncodedImageBuffer::~EncodedImageBuffer() {
+  free(buffer_);
+}
+
+// static
+rtc::scoped_refptr<EncodedImageBuffer> EncodedImageBuffer::Create(size_t size) {
+  return new rtc::RefCountedObject<EncodedImageBuffer>(size);
+}
+// static
+rtc::scoped_refptr<EncodedImageBuffer> EncodedImageBuffer::Create(
+    const uint8_t* data,
+    size_t size) {
+  return new rtc::RefCountedObject<EncodedImageBuffer>(data, size);
+}
+
+const uint8_t* EncodedImageBuffer::data() const {
+  return buffer_;
+}
+uint8_t* EncodedImageBuffer::data() {
+  return buffer_;
+}
+size_t EncodedImageBuffer::size() const {
+  return size_;
+}
+
+void EncodedImageBuffer::Realloc(size_t size) {
+  buffer_ = static_cast<uint8_t*>(realloc(buffer_, size));
+  size_ = size;
+}
 
 EncodedImage::EncodedImage() : EncodedImage(nullptr, 0, 0) {}
 
@@ -29,9 +71,18 @@ EncodedImage& EncodedImage::operator=(const EncodedImage&) = default;
 
 void EncodedImage::Retain() {
   if (buffer_) {
-    encoded_data_.SetData(buffer_, size_);
+    encoded_data_ = EncodedImageBuffer::Create(buffer_, size_);
     buffer_ = nullptr;
   }
+}
+
+void EncodedImage::Allocate(size_t capacity) {
+  if (encoded_data_) {
+    encoded_data_->Realloc(capacity);
+  } else {
+    encoded_data_ = EncodedImageBuffer::Create(capacity);
+  }
+  buffer_ = nullptr;
 }
 
 void EncodedImage::SetEncodeTime(int64_t encode_start_ms,
