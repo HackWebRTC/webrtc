@@ -540,7 +540,10 @@ ReceiveVideoStream::ReceiveVideoStream(CallClient* receiver,
       flexfec.protected_media_ssrcs = send_stream->rtx_ssrcs_;
       flexfec.local_ssrc = recv_config.rtp.local_ssrc;
       receiver_->ssrc_media_types_[flexfec.remote_ssrc] = MediaType::VIDEO;
-      flecfec_stream_ = receiver_->call_->CreateFlexfecReceiveStream(flexfec);
+
+      receiver_->SendTask([this, &flexfec] {
+        flecfec_stream_ = receiver_->call_->CreateFlexfecReceiveStream(flexfec);
+      });
     }
     receiver_->ssrc_media_types_[recv_config.rtp.remote_ssrc] =
         MediaType::VIDEO;

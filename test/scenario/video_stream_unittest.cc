@@ -21,8 +21,7 @@ using Codec = VideoStreamConfig::Encoder::Codec;
 using CodecImpl = VideoStreamConfig::Encoder::Implementation;
 }  // namespace
 
-// TODO(srte): Enable this after resolving flakiness issues.
-TEST(VideoStreamTest, DISABLED_ReceivesFramesFromFileBasedStreams) {
+TEST(VideoStreamTest, ReceivesFramesFromFileBasedStreams) {
   TimeDelta kRunTime = TimeDelta::ms(500);
   std::vector<int> kFrameRates = {15, 30};
   std::deque<std::atomic<int>> frame_counts(2);
@@ -68,7 +67,6 @@ TEST(VideoStreamTest, DISABLED_ReceivesFramesFromFileBasedStreams) {
   EXPECT_GE(frame_counts[1], expected_counts[1]);
 }
 
-// TODO(srte): Enable this after resolving flakiness issues.
 TEST(VideoStreamTest, RecievesVp8SimulcastFrames) {
   TimeDelta kRunTime = TimeDelta::ms(500);
   int kFrameRate = 30;
@@ -114,6 +112,39 @@ TEST(VideoStreamTest, RecievesVp8SimulcastFrames) {
   EXPECT_GE(frame_counts[0], kExpectedCount);
   EXPECT_GE(frame_counts[1], kExpectedCount);
   EXPECT_GE(frame_counts[2], kExpectedCount);
+}
+
+TEST(VideoStreamTest, SendsFecWithUlpFec) {
+  Scenario s;
+  auto route =
+      s.CreateRoutes(s.CreateClient("caller", CallClientConfig()),
+                     {s.CreateSimulationNode([](NetworkSimulationConfig* c) {
+                       c->loss_rate = 0.1;
+                     })},
+                     s.CreateClient("callee", CallClientConfig()),
+                     {s.CreateSimulationNode(NetworkSimulationConfig())});
+  auto video = s.CreateVideoStream(route->forward(), [&](VideoStreamConfig* c) {
+    c->stream.use_ulpfec = true;
+  });
+  s.RunFor(TimeDelta::seconds(5));
+  VideoSendStream::Stats video_stats = video->send()->GetStats();
+  EXPECT_GT(video_stats.substreams.begin()->second.rtp_stats.fec.packets, 0u);
+}
+TEST(VideoStreamTest, SendsFecWithFlexFec) {
+  Scenario s;
+  auto route =
+      s.CreateRoutes(s.CreateClient("caller", CallClientConfig()),
+                     {s.CreateSimulationNode([](NetworkSimulationConfig* c) {
+                       c->loss_rate = 0.1;
+                     })},
+                     s.CreateClient("callee", CallClientConfig()),
+                     {s.CreateSimulationNode(NetworkSimulationConfig())});
+  auto video = s.CreateVideoStream(route->forward(), [&](VideoStreamConfig* c) {
+    c->stream.use_flexfec = true;
+  });
+  s.RunFor(TimeDelta::seconds(5));
+  VideoSendStream::Stats video_stats = video->send()->GetStats();
+  EXPECT_GT(video_stats.substreams.begin()->second.rtp_stats.fec.packets, 0u);
 }
 }  // namespace test
 }  // namespace webrtc
