@@ -119,8 +119,6 @@ if (rtc_include_tests) {
   }
 
   modules_unittests_resources = [
-    "../resources/att-downlink.rx",
-    "../resources/att-uplink.rx",
     "../resources/audio_coding/neteq_opus.rtp",
     "../resources/audio_coding/neteq_opus_dtx.rtp",
     "../resources/audio_coding/neteq_universal_new.rtp",
@@ -210,15 +208,6 @@ if (rtc_include_tests) {
     "../resources/short_mixed_mono_48.pcm",
     "../resources/short_mixed_stereo_48.dat",
     "../resources/short_mixed_stereo_48.pcm",
-    "../resources/sprint-downlink.rx",
-    "../resources/sprint-uplink.rx",
-    "../resources/synthetic-trace.rx",
-    "../resources/tmobile-downlink.rx",
-    "../resources/tmobile-uplink.rx",
-    "../resources/verizon3g-downlink.rx",
-    "../resources/verizon3g-uplink.rx",
-    "../resources/verizon4g-downlink.rx",
-    "../resources/verizon4g-uplink.rx",
     "../resources/voice_engine/audio_tiny48.wav",
   ]
   if (is_ios) {
