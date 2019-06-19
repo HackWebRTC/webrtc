@@ -86,7 +86,7 @@ void FakeNetworkSocketServer::WakeUp() {
 }
 
 Timestamp FakeNetworkSocketServer::Now() const {
-  return Timestamp::us(clock_->TimeInMicroseconds());
+  return clock_->CurrentTime();
 }
 
 }  // namespace test

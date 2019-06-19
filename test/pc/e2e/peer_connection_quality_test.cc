@@ -946,7 +946,7 @@ test::VideoFrameWriter* PeerConnectionE2EQualityTest::MaybeCreateVideoWriter(
 }
 
 Timestamp PeerConnectionE2EQualityTest::Now() const {
-  return Timestamp::us(clock_->TimeInMicroseconds());
+  return clock_->CurrentTime();
 }
 
 PeerConnectionE2EQualityTest::ScheduledActivity::ScheduledActivity(

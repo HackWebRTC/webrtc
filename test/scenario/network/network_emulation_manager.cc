@@ -289,7 +289,7 @@ NetworkEmulationManagerImpl::GetNextIPv4Address() {
 }
 
 Timestamp NetworkEmulationManagerImpl::Now() const {
-  return Timestamp::us(clock_->TimeInMicroseconds());
+  return clock_->CurrentTime();
 }
 
 }  // namespace test

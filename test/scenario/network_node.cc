@@ -98,7 +98,7 @@ bool NetworkNodeTransport::SendRtp(const uint8_t* packet,
 
 bool NetworkNodeTransport::SendRtcp(const uint8_t* packet, size_t length) {
   rtc::CopyOnWriteBuffer buffer(packet, length);
-  Timestamp send_time = Timestamp::ms(sender_clock_->TimeInMilliseconds());
+  Timestamp send_time = sender_clock_->CurrentTime();
   rtc::CritScope crit(&crit_sect_);
   buffer.SetSize(length + packet_overhead_.bytes());
   if (!send_net_)

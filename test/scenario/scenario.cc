@@ -292,7 +292,7 @@ void Scenario::RunUntil(TimeDelta target_time_since_start,
 }
 
 void Scenario::Start() {
-  start_time_ = Timestamp::us(clock_->TimeInMicroseconds());
+  start_time_ = clock_->CurrentTime();
   for (auto& stream_pair : video_streams_)
     stream_pair->receive()->Start();
   for (auto& stream_pair : audio_streams_)
@@ -324,7 +324,7 @@ void Scenario::Stop() {
 }
 
 Timestamp Scenario::Now() {
-  return Timestamp::us(clock_->TimeInMicroseconds());
+  return clock_->CurrentTime();
 }
 
 TimeDelta Scenario::TimeSinceStart() {

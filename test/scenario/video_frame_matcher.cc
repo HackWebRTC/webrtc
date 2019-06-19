@@ -135,7 +135,7 @@ ForwardingCapturedFrameTap::~ForwardingCapturedFrameTap() {}
 
 void ForwardingCapturedFrameTap::OnFrame(const VideoFrame& frame) {
   RTC_CHECK(sink_);
-  matcher_->OnCapturedFrame(frame, Timestamp::ms(clock_->TimeInMilliseconds()));
+  matcher_->OnCapturedFrame(frame, clock_->CurrentTime());
   sink_->OnFrame(frame);
 }
 void ForwardingCapturedFrameTap::OnDiscardedFrame() {

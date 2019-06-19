@@ -54,13 +54,13 @@ void LinkEmulation::HandlePacketReceived(EmulatedIpPacket packet) {
       network_behavior_->NextDeliveryTimeUs();
   if (!next_time_us)
     return;
-  Timestamp current_time = Timestamp::us(clock_->TimeInMicroseconds());
+  Timestamp current_time = clock_->CurrentTime();
   process_task_ = RepeatingTaskHandle::DelayedStart(
       task_queue_->Get(),
       std::max(TimeDelta::Zero(), Timestamp::us(*next_time_us) - current_time),
       [this]() {
         RTC_DCHECK_RUN_ON(task_queue_);
-        Timestamp current_time = Timestamp::us(clock_->TimeInMicroseconds());
+        Timestamp current_time = clock_->CurrentTime();
         Process(current_time);
         absl::optional<int64_t> next_time_us =
             network_behavior_->NextDeliveryTimeUs();
@@ -207,8 +207,8 @@ void EmulatedEndpoint::SendPacket(const rtc::SocketAddress& from,
     EmulatedIpPacket packet;
   };
   task_queue_->PostTask(Closure{
-      this, EmulatedIpPacket(from, to, std::move(packet),
-                             Timestamp::us(clock_->TimeInMicroseconds()))});
+      this,
+      EmulatedIpPacket(from, to, std::move(packet), clock_->CurrentTime())});
 }
 
 absl::optional<uint16_t> EmulatedEndpoint::BindReceiver(
@@ -310,7 +310,7 @@ EmulatedNetworkStats EmulatedEndpoint::stats() {
 
 void EmulatedEndpoint::UpdateSendStats(const EmulatedIpPacket& packet) {
   RTC_DCHECK_RUN_ON(task_queue_);
-  Timestamp current_time = Timestamp::us(clock_->TimeInMicroseconds());
+  Timestamp current_time = clock_->CurrentTime();
   if (stats_.first_packet_sent_time.IsInfinite()) {
     stats_.first_packet_sent_time = current_time;
     stats_.first_sent_packet_size = DataSize::bytes(packet.size());
@@ -322,7 +322,7 @@ void EmulatedEndpoint::UpdateSendStats(const EmulatedIpPacket& packet) {
 
 void EmulatedEndpoint::UpdateReceiveStats(const EmulatedIpPacket& packet) {
   RTC_DCHECK_RUN_ON(task_queue_);
-  Timestamp current_time = Timestamp::us(clock_->TimeInMicroseconds());
+  Timestamp current_time = clock_->CurrentTime();
   if (stats_.first_packet_received_time.IsInfinite()) {
     stats_.first_packet_received_time = current_time;
     stats_.first_received_packet_size = DataSize::bytes(packet.size());

@@ -60,9 +60,8 @@ void UpdateRateControl(const AimdRateControlStates& states,
   states.aimd_rate_control->Update(&input, Timestamp::ms(now_ms));
 }
 void SetEstimate(const AimdRateControlStates& states, int bitrate_bps) {
-  states.aimd_rate_control->SetEstimate(
-      DataRate::bps(bitrate_bps),
-      Timestamp::ms(states.simulated_clock->TimeInMilliseconds()));
+  states.aimd_rate_control->SetEstimate(DataRate::bps(bitrate_bps),
+                                        states.simulated_clock->CurrentTime());
 }
 
 }  // namespace

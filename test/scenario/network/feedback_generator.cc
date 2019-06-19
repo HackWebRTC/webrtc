@@ -28,7 +28,7 @@ FeedbackGeneratorImpl::FeedbackGeneratorImpl(
                  {net_.CreateEmulatedNode(absl::WrapUnique(ret_link_))})) {}
 
 Timestamp FeedbackGeneratorImpl::Now() {
-  return Timestamp::ms(time_controller_.GetClock()->TimeInMilliseconds());
+  return time_controller_.GetClock()->CurrentTime();
 }
 
 void FeedbackGeneratorImpl::Sleep(TimeDelta duration) {

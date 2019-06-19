@@ -640,7 +640,7 @@ std::string DefaultVideoQualityAnalyzer::GetTestCaseName(
 }
 
 Timestamp DefaultVideoQualityAnalyzer::Now() {
-  return Timestamp::us(clock_->TimeInMicroseconds());
+  return clock_->CurrentTime();
 }
 
 DefaultVideoQualityAnalyzer::FrameStats::FrameStats(std::string stream_label,
