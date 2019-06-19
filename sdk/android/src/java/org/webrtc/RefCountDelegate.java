@@ -29,19 +29,12 @@ class RefCountDelegate implements RefCounted {
 
   @Override
   public void retain() {
-    int updated_count = refCount.incrementAndGet();
-    if (updated_count < 2) {
-      throw new IllegalStateException("retain() called on an object with refcount < 1");
-    }
+    refCount.incrementAndGet();
   }
 
   @Override
   public void release() {
-    int updated_count = refCount.decrementAndGet();
-    if (updated_count < 0) {
-      throw new IllegalStateException("release() called on an object with refcount < 1");
-    }
-    if (updated_count == 0 && releaseCallback != null) {
+    if (refCount.decrementAndGet() == 0 && releaseCallback != null) {
       releaseCallback.run();
     }
   }
