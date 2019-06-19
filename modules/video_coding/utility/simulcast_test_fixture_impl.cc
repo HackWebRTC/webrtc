@@ -78,6 +78,7 @@ class SimulcastTestFixtureImpl::TestEncodedImageCallback
                         const CodecSpecificInfo* codec_specific_info,
                         const RTPFragmentationHeader* fragmentation) override {
     bool is_vp8 = (codec_specific_info->codecType == kVideoCodecVP8);
+    bool is_h264 = (codec_specific_info->codecType == kVideoCodecH264);
     // Only store the base layer.
     if (encoded_image.SpatialIndex().value_or(0) == 0) {
       if (encoded_image._frameType == VideoFrameType::kVideoFrameKey) {
@@ -102,6 +103,11 @@ class SimulcastTestFixtureImpl::TestEncodedImageCallback
           codec_specific_info->codecSpecific.VP8.layerSync;
       temporal_layer_[encoded_image.SpatialIndex().value_or(0)] =
           codec_specific_info->codecSpecific.VP8.temporalIdx;
+    } else if (is_h264) {
+      layer_sync_[encoded_image.SpatialIndex().value_or(0)] =
+          codec_specific_info->codecSpecific.H264.base_layer_sync;
+      temporal_layer_[encoded_image.SpatialIndex().value_or(0)] =
+          codec_specific_info->codecSpecific.H264.temporal_idx;
     }
     return Result(Result::OK, encoded_image.Timestamp());
   }
@@ -263,8 +269,8 @@ SimulcastTestFixtureImpl::SimulcastTestFixtureImpl(
     : codec_type_(PayloadStringToCodecType(video_format.name)) {
   encoder_ = encoder_factory->CreateVideoEncoder(video_format);
   decoder_ = decoder_factory->CreateVideoDecoder(video_format);
-  SetUpCodec(codec_type_ == kVideoCodecVP8 ? kDefaultTemporalLayerProfile
-    : kNoTemporalLayerProfile);
+  SetUpCodec((codec_type_ == kVideoCodecVP8 || codec_type_ == kVideoCodecH264)
+      ? kDefaultTemporalLayerProfile : kNoTemporalLayerProfile);
 }
 
 SimulcastTestFixtureImpl::~SimulcastTestFixtureImpl() {
@@ -677,7 +683,7 @@ void SimulcastTestFixtureImpl::TestSwitchingToOneSmallStream() {
 // 3-3-3 pattern: 3 temporal layers for all spatial streams, so same
 // temporal_layer id and layer_sync is expected for all streams.
 void SimulcastTestFixtureImpl::TestSpatioTemporalLayers333PatternEncoder() {
-  EXPECT_EQ(codec_type_, kVideoCodecVP8);
+  bool is_h264 = codec_type_ == kVideoCodecH264;
   TestEncodedImageCallback encoder_callback;
   encoder_->RegisterEncodeCompleteCallback(&encoder_callback);
   SetRates(kMaxBitrates[2], 30);  // To get all three streams.
@@ -688,7 +694,7 @@ void SimulcastTestFixtureImpl::TestSpatioTemporalLayers333PatternEncoder() {
   // First frame: #0.
   EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL));
   SetExpectedValues3<int>(0, 0, 0, expected_temporal_idx);
-  SetExpectedValues3<bool>(true, true, true, expected_layer_sync);
+  SetExpectedValues3<bool>(!is_h264, !is_h264, !is_h264, expected_layer_sync);
   VerifyTemporalIdxAndSyncForAllSpatialLayers(
       &encoder_callback, expected_temporal_idx, expected_layer_sync, 3);
 
@@ -728,7 +734,7 @@ void SimulcastTestFixtureImpl::TestSpatioTemporalLayers333PatternEncoder() {
   input_frame_->set_timestamp(input_frame_->timestamp() + 3000);
   EXPECT_EQ(0, encoder_->Encode(*input_frame_, NULL));
   SetExpectedValues3<int>(2, 2, 2, expected_temporal_idx);
-  SetExpectedValues3<bool>(false, false, false, expected_layer_sync);
+  SetExpectedValues3<bool>(is_h264, is_h264, is_h264, expected_layer_sync);
   VerifyTemporalIdxAndSyncForAllSpatialLayers(
       &encoder_callback, expected_temporal_idx, expected_layer_sync, 3);
 }

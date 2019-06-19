@@ -49,6 +49,7 @@ class H264EncoderImpl : public H264Encoder {
     uint32_t max_bps = 0;
     bool frame_dropping_on = false;
     int key_frame_interval = 0;
+    int num_temporal_layers = 1;
 
     void SetStreamState(bool send_stream);
   };
@@ -107,8 +108,7 @@ class H264EncoderImpl : public H264Encoder {
   bool has_reported_init_;
   bool has_reported_error_;
 
-  int num_temporal_layers_;
-  uint8_t tl0sync_limit_;
+  std::vector<uint8_t> tl0sync_limit_;
 };
 
 }  // namespace webrtc

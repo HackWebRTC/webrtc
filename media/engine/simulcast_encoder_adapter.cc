@@ -585,6 +585,9 @@ void SimulcastEncoderAdapter::PopulateStreamCodec(
       // Turn off denoising for all streams but the highest resolution.
       stream_codec->VP8()->denoisingOn = false;
     }
+  } else if (inst.codecType == webrtc::kVideoCodecH264) {
+    stream_codec->H264()->numberOfTemporalLayers =
+        inst.simulcastStream[stream_index].numberOfTemporalLayers;
   }
   // TODO(ronghuawu): what to do with targetBitrate.
 
