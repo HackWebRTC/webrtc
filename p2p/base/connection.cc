@@ -170,7 +170,8 @@ void ConnectionRequest::Prepare(StunMessage* request) {
   request->AddAttribute(absl::make_unique<StunUInt32Attribute>(
       STUN_ATTR_NETWORK_INFO, network_info));
 
-  if (webrtc::field_trial::IsEnabled("WebRTC-PiggybackCheckAcknowledgement") &&
+  if (webrtc::field_trial::IsEnabled(
+          "WebRTC-PiggybackIceCheckAcknowledgement") &&
       connection_->last_ping_id_received()) {
     request->AddAttribute(absl::make_unique<StunByteStringAttribute>(
         STUN_ATTR_LAST_ICE_CHECK_RECEIVED,
@@ -561,7 +562,8 @@ void Connection::HandleBindingRequest(IceMessage* msg) {
     }
   }
 
-  if (webrtc::field_trial::IsEnabled("WebRTC-PiggybackCheckAcknowledgement")) {
+  if (webrtc::field_trial::IsEnabled(
+          "WebRTC-PiggybackIceCheckAcknowledgement")) {
     HandlePiggybackCheckAcknowledgementIfAny(msg);
   }
 }
@@ -708,6 +710,10 @@ void Connection::HandlePiggybackCheckAcknowledgementIfAny(StunMessage* msg) {
         pings_since_last_response_,
         [&request_id](const SentPing& ping) { return ping.id == request_id; });
     if (iter != pings_since_last_response_.end()) {
+      rtc::LoggingSeverity sev = !writable() ? rtc::LS_INFO : rtc::LS_VERBOSE;
+      RTC_LOG_V(sev) << ToString()
+                     << ": Received piggyback STUN ping response, id="
+                     << rtc::hex_encode(request_id);
       const int64_t rtt = rtc::TimeMillis() - iter->sent_time;
       ReceivedPingResponse(rtt, request_id, iter->nomination);
     }

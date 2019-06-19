@@ -2261,7 +2261,7 @@ TEST_F(P2PTransportChannelTest,
 TEST_F(P2PTransportChannelTest,
        CanConnectWithPiggybackCheckAcknowledgementWhenCheckResponseBlocked) {
   webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-PiggybackCheckAcknowledgement/Enabled/");
+      "WebRTC-PiggybackIceCheckAcknowledgement/Enabled/");
   rtc::ScopedFakeClock clock;
   ConfigureEndpoints(OPEN, OPEN, kOnlyLocalPorts, kOnlyLocalPorts);
   IceConfig ep1_config;
