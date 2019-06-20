@@ -134,6 +134,11 @@ int64_t QualityScaler::GetSamplingPeriodMs() const {
   return sampling_period_ms_ * initial_scale_factor_;
 }
 
+void QualityScaler::SetQpThresholds(VideoEncoder::QpThresholds thresholds) {
+  RTC_DCHECK_RUN_ON(&task_checker_);
+  thresholds_ = thresholds;
+}
+
 void QualityScaler::ReportDroppedFrameByMediaOpt() {
   RTC_DCHECK_RUN_ON(&task_checker_);
   framedrop_percent_media_opt_.AddSample(100);

@@ -282,7 +282,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // Set depending on degradation preferences.
   DegradationPreference degradation_preference_ RTC_GUARDED_BY(&encoder_queue_);
 
-  BalancedDegradationSettings balanced_settings_;
+  const BalancedDegradationSettings balanced_settings_;
 
   struct AdaptationRequest {
     // The pixel count produced by the source at the time of the adaptation.

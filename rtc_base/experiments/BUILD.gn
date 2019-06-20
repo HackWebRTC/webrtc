@@ -107,7 +107,9 @@ rtc_static_library("balanced_degradation_settings") {
   deps = [
     ":field_trial_parser",
     "../:rtc_base_approved",
+    "../../api/video_codecs:video_codecs_api",
     "../../system_wrappers:field_trial",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
