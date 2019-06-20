@@ -516,32 +516,35 @@ int32_t ChannelSend::SendRtpAudio(AudioFrameType frameType,
   // DTMF, or the encoder entered DTX.
   // TODO(minyue): see whether DTMF packets should be encrypted or not. In
   // current implementation, they are not.
-  if (frame_encryptor_ != nullptr && !payload.empty()) {
-    // TODO(benwright@webrtc.org) - Allocate enough to always encrypt inline.
-    // Allocate a buffer to hold the maximum possible encrypted payload.
-    size_t max_ciphertext_size = frame_encryptor_->GetMaxCiphertextByteSize(
-        cricket::MEDIA_TYPE_AUDIO, payload.size());
-    encrypted_audio_payload.SetSize(max_ciphertext_size);
+  if (!payload.empty()) {
+    if (frame_encryptor_ != nullptr) {
+      // TODO(benwright@webrtc.org) - Allocate enough to always encrypt inline.
+      // Allocate a buffer to hold the maximum possible encrypted payload.
+      size_t max_ciphertext_size = frame_encryptor_->GetMaxCiphertextByteSize(
+          cricket::MEDIA_TYPE_AUDIO, payload.size());
+      encrypted_audio_payload.SetSize(max_ciphertext_size);
 
-    // Encrypt the audio payload into the buffer.
-    size_t bytes_written = 0;
-    int encrypt_status = frame_encryptor_->Encrypt(
-        cricket::MEDIA_TYPE_AUDIO, _rtpRtcpModule->SSRC(),
-        /*additional_data=*/nullptr, payload, encrypted_audio_payload,
-        &bytes_written);
-    if (encrypt_status != 0) {
-      RTC_DLOG(LS_ERROR) << "Channel::SendData() failed encrypt audio payload: "
-                         << encrypt_status;
+      // Encrypt the audio payload into the buffer.
+      size_t bytes_written = 0;
+      int encrypt_status = frame_encryptor_->Encrypt(
+          cricket::MEDIA_TYPE_AUDIO, _rtpRtcpModule->SSRC(),
+          /*additional_data=*/nullptr, payload, encrypted_audio_payload,
+          &bytes_written);
+      if (encrypt_status != 0) {
+        RTC_DLOG(LS_ERROR)
+            << "Channel::SendData() failed encrypt audio payload: "
+            << encrypt_status;
+        return -1;
+      }
+      // Resize the buffer to the exact number of bytes actually used.
+      encrypted_audio_payload.SetSize(bytes_written);
+      // Rewrite the payloadData and size to the new encrypted payload.
+      payload = encrypted_audio_payload;
+    } else if (crypto_options_.sframe.require_frame_encryption) {
+      RTC_DLOG(LS_ERROR) << "Channel::SendData() failed sending audio payload: "
+                         << "A frame encryptor is required but one is not set.";
       return -1;
     }
-    // Resize the buffer to the exact number of bytes actually used.
-    encrypted_audio_payload.SetSize(bytes_written);
-    // Rewrite the payloadData and size to the new encrypted payload.
-    payload = encrypted_audio_payload;
-  } else if (crypto_options_.sframe.require_frame_encryption) {
-    RTC_DLOG(LS_ERROR) << "Channel::SendData() failed sending audio payload: "
-                       << "A frame encryptor is required but one is not set.";
-    return -1;
   }
 
   // Push data from ACM to RTP/RTCP-module to deliver audio frame for
