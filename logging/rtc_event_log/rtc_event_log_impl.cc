@@ -76,9 +76,7 @@ std::unique_ptr<RtcEventLogEncoder> CreateEncoder(
 
 RtcEventLogImpl::RtcEventLogImpl(RtcEventLog::EncodingType encoding_type,
                                  TaskQueueFactory* task_queue_factory)
-    : max_size_bytes_(std::numeric_limits<decltype(max_size_bytes_)>::max()),
-      written_bytes_(0),
-      event_encoder_(CreateEncoder(encoding_type)),
+    : event_encoder_(CreateEncoder(encoding_type)),
       num_config_events_written_(0),
       last_output_ms_(rtc::TimeMillis()),
       output_scheduled_(false),
@@ -278,8 +276,6 @@ void RtcEventLogImpl::WriteConfigsAndHistoryToOutput(
 }
 
 void RtcEventLogImpl::StopOutput() {
-  max_size_bytes_ = std::numeric_limits<decltype(max_size_bytes_)>::max();
-  written_bytes_ = 0;
   event_output_.reset();
 }
 
@@ -301,7 +297,6 @@ void RtcEventLogImpl::WriteToOutput(const std::string& output_string) {
     StopOutput();  // Clean-up.
     return;
   }
-  written_bytes_ += output_string.size();
 }
 
 }  // namespace webrtc

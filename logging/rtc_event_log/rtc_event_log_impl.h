@@ -69,8 +69,6 @@ class RtcEventLogImpl final : public RtcEventLog {
   // History containing the most recent (non-configuration) events (~10s).
   std::deque<std::unique_ptr<RtcEvent>> history_ RTC_GUARDED_BY(*task_queue_);
 
-  size_t max_size_bytes_ RTC_GUARDED_BY(*task_queue_);
-  size_t written_bytes_ RTC_GUARDED_BY(*task_queue_);
 
   std::unique_ptr<RtcEventLogEncoder> event_encoder_
       RTC_GUARDED_BY(*task_queue_);
