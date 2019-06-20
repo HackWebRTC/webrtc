@@ -58,14 +58,13 @@ BitrateEstimator::BitrateEstimator(const WebRtcKeyValueConfig* key_value_config)
 
 BitrateEstimator::~BitrateEstimator() = default;
 
-void BitrateEstimator::Update(Timestamp at_time, DataSize amount, bool in_alr) {
+void BitrateEstimator::Update(int64_t now_ms, int bytes, bool in_alr) {
   int rate_window_ms = noninitial_window_ms_.Get();
   // We use a larger window at the beginning to get a more stable sample that
   // we can use to initialize the estimate.
   if (bitrate_estimate_kbps_ < 0.f)
     rate_window_ms = initial_window_ms_.Get();
-  float bitrate_sample_kbps =
-      UpdateWindow(at_time.ms(), amount.bytes(), rate_window_ms);
+  float bitrate_sample_kbps = UpdateWindow(now_ms, bytes, rate_window_ms);
   if (bitrate_sample_kbps < 0.0f)
     return;
   if (bitrate_estimate_kbps_ < 0.0f) {
@@ -101,7 +100,7 @@ void BitrateEstimator::Update(Timestamp at_time, DataSize amount, bool in_alr) {
       std::max(bitrate_estimate_kbps_, estimate_floor_.Get().kbps<float>());
   bitrate_estimate_var_ = sample_var * pred_bitrate_estimate_var /
                           (sample_var + pred_bitrate_estimate_var);
-  BWE_TEST_LOGGING_PLOT(1, "acknowledged_bitrate", at_time.ms(),
+  BWE_TEST_LOGGING_PLOT(1, "acknowledged_bitrate", now_ms,
                         bitrate_estimate_kbps_ * 1000);
 }
 
@@ -133,15 +132,15 @@ float BitrateEstimator::UpdateWindow(int64_t now_ms,
   return bitrate_sample;
 }
 
-absl::optional<DataRate> BitrateEstimator::bitrate() const {
+absl::optional<uint32_t> BitrateEstimator::bitrate_bps() const {
   if (bitrate_estimate_kbps_ < 0.f)
     return absl::nullopt;
-  return DataRate::kbps(bitrate_estimate_kbps_);
+  return bitrate_estimate_kbps_ * 1000;
 }
 
-absl::optional<DataRate> BitrateEstimator::PeekRate() const {
+absl::optional<uint32_t> BitrateEstimator::PeekBps() const {
   if (current_window_ms_ > 0)
-    return DataSize::bytes(sum_) / TimeDelta::ms(current_window_ms_);
+    return sum_ * 8000 / current_window_ms_;
   return absl::nullopt;
 }
 

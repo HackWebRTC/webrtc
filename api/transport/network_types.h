@@ -131,11 +131,6 @@ struct TransportLossReport {
 // Packet level feedback
 
 struct PacketResult {
-  class ReceiveTimeOrder {
-   public:
-    bool operator()(const PacketResult& lhs, const PacketResult& rhs);
-  };
-
   PacketResult();
   PacketResult(const PacketResult&);
   ~PacketResult();

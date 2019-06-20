@@ -71,6 +71,14 @@ namespace {
 
 const int kNumMicrosecsPerSec = 1000000;
 
+void SortPacketFeedbackVector(std::vector<PacketFeedback>* vec) {
+  auto pred = [](const PacketFeedback& packet_feedback) {
+    return packet_feedback.arrival_time_ms == PacketFeedback::kNotReceived;
+  };
+  vec->erase(std::remove_if(vec->begin(), vec->end(), pred), vec->end());
+  std::sort(vec->begin(), vec->end(), PacketFeedbackComparator());
+}
+
 std::string SsrcToString(uint32_t ssrc) {
   rtc::StringBuilder ss;
   ss << "SSRC " << ssrc;
@@ -1308,16 +1316,16 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
       absl::optional<uint32_t> bitrate_bps;
       if (feedback_msg) {
         observer.Update(goog_cc->OnTransportPacketsFeedback(*feedback_msg));
-        std::vector<PacketResult> feedback =
-            feedback_msg->SortedByReceiveTime();
+        std::vector<PacketFeedback> feedback =
+            transport_feedback.GetTransportFeedbackVector();
+        SortPacketFeedbackVector(&feedback);
         if (!feedback.empty()) {
 #if !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
           acknowledged_bitrate_estimator.IncomingPacketFeedbackVector(feedback);
 #endif  // !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
-          for (const PacketResult& packet : feedback)
-            acked_bitrate.Update(packet.sent_packet.size.bytes(),
-                                 packet.receive_time.ms());
-          bitrate_bps = acked_bitrate.Rate(feedback.back().receive_time.ms());
+          for (const PacketFeedback& packet : feedback)
+            acked_bitrate.Update(packet.payload_size, packet.arrival_time_ms);
+          bitrate_bps = acked_bitrate.Rate(feedback.back().arrival_time_ms);
         }
       }
 
@@ -1325,9 +1333,7 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
       float y = bitrate_bps.value_or(0) / 1000;
       acked_time_series.points.emplace_back(x, y);
 #if !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
-      y = acknowledged_bitrate_estimator.bitrate()
-              .value_or(DataRate::Zero())
-              .kbps();
+      y = acknowledged_bitrate_estimator.bitrate_bps().value_or(0) / 1000;
       acked_estimate_time_series.points.emplace_back(x, y);
 #endif  // !(BWE_TEST_LOGGING_COMPILE_TIME_ENABLE)
       ++rtcp_iterator;

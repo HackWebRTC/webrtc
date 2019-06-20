@@ -31,15 +31,6 @@ PacketResult::PacketResult() = default;
 PacketResult::PacketResult(const PacketResult& other) = default;
 PacketResult::~PacketResult() = default;
 
-bool PacketResult::ReceiveTimeOrder::operator()(const PacketResult& lhs,
-                                                const PacketResult& rhs) {
-  if (lhs.receive_time != rhs.receive_time)
-    return lhs.receive_time < rhs.receive_time;
-  if (lhs.sent_packet.send_time != rhs.sent_packet.send_time)
-    return lhs.sent_packet.send_time < rhs.sent_packet.send_time;
-  return lhs.sent_packet.sequence_number < rhs.sent_packet.sequence_number;
-}
-
 TransportPacketsFeedback::TransportPacketsFeedback() = default;
 TransportPacketsFeedback::TransportPacketsFeedback(
     const TransportPacketsFeedback& other) = default;
@@ -73,13 +64,23 @@ std::vector<PacketResult> TransportPacketsFeedback::PacketsWithFeedback()
 
 std::vector<PacketResult> TransportPacketsFeedback::SortedByReceiveTime()
     const {
+  class PacketResultComparator {
+   public:
+    inline bool operator()(const PacketResult& lhs, const PacketResult& rhs) {
+      if (lhs.receive_time != rhs.receive_time)
+        return lhs.receive_time < rhs.receive_time;
+      if (lhs.sent_packet.send_time != rhs.sent_packet.send_time)
+        return lhs.sent_packet.send_time < rhs.sent_packet.send_time;
+      return lhs.sent_packet.sequence_number < rhs.sent_packet.sequence_number;
+    }
+  };
   std::vector<PacketResult> res;
   for (const PacketResult& fb : packet_feedbacks) {
     if (fb.receive_time.IsFinite()) {
       res.push_back(fb);
     }
   }
-  std::sort(res.begin(), res.end(), PacketResult::ReceiveTimeOrder());
+  std::sort(res.begin(), res.end(), PacketResultComparator());
   return res;
 }
 

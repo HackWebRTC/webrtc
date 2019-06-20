@@ -15,12 +15,13 @@
 #include <vector>
 
 #include "absl/types/optional.h"
-#include "api/transport/network_types.h"
 #include "api/transport/webrtc_key_value_config.h"
 #include "api/units/data_rate.h"
 #include "modules/congestion_controller/goog_cc/bitrate_estimator.h"
 
 namespace webrtc {
+
+struct PacketFeedback;
 
 class AcknowledgedBitrateEstimator {
  public:
@@ -33,14 +34,17 @@ class AcknowledgedBitrateEstimator {
   ~AcknowledgedBitrateEstimator();
 
   void IncomingPacketFeedbackVector(
-      const std::vector<PacketResult>& packet_feedback_vector);
+      const std::vector<PacketFeedback>& packet_feedback_vector);
+  absl::optional<uint32_t> bitrate_bps() const;
+  absl::optional<uint32_t> PeekBps() const;
   absl::optional<DataRate> bitrate() const;
   absl::optional<DataRate> PeekRate() const;
   void SetAlr(bool in_alr);
-  void SetAlrEndedTime(Timestamp alr_ended_time);
+  void SetAlrEndedTimeMs(int64_t alr_ended_time_ms);
 
  private:
-  absl::optional<Timestamp> alr_ended_time_;
+  void MaybeExpectFastRateChange(int64_t packet_arrival_time_ms);
+  absl::optional<int64_t> alr_ended_time_ms_;
   bool in_alr_;
   std::unique_ptr<BitrateEstimator> bitrate_estimator_;
 };
