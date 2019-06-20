@@ -97,6 +97,7 @@ void FrameEncodeMetadataWriter::OnEncodeStarted(const VideoFrame& frame) {
   metadata.timestamp_us = frame.timestamp_us();
   metadata.rotation = frame.rotation();
   metadata.color_space = frame.color_space();
+  metadata.packet_infos = frame.packet_infos();
   for (size_t si = 0; si < num_spatial_layers; ++si) {
     RTC_DCHECK(timing_frames_info_[si].frames.empty() ||
                rtc::TimeDiff(
@@ -278,6 +279,7 @@ FrameEncodeMetadataWriter::ExtractEncodeStartTimeAndFillMetadata(
       encoded_image->ntp_time_ms_ = metadata_list->front().ntp_time_ms;
       encoded_image->rotation_ = metadata_list->front().rotation;
       encoded_image->SetColorSpace(metadata_list->front().color_space);
+      encoded_image->SetPacketInfos(metadata_list->front().packet_infos);
       metadata_list->pop_front();
     } else {
       ++reordered_frames_logged_messages_;

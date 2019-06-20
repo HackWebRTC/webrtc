@@ -11,6 +11,7 @@
 #include "modules/video_coding/frame_object.h"
 
 #include <string.h>
+#include <utility>
 
 #include "api/video/encoded_image.h"
 #include "api/video/video_timing.h"
@@ -28,7 +29,8 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
                                size_t frame_size,
                                int times_nacked,
                                int64_t first_packet_received_time,
-                               int64_t last_packet_received_time)
+                               int64_t last_packet_received_time,
+                               RtpPacketInfos packet_infos)
     : packet_buffer_(packet_buffer),
       first_seq_num_(first_seq_num),
       last_seq_num_(last_seq_num),
@@ -63,6 +65,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
 
   // EncodedFrame members
   SetTimestamp(first_packet->timestamp);
+  SetPacketInfos(std::move(packet_infos));
 
   VCMPacket* last_packet = packet_buffer_->GetPacket(last_seq_num);
   RTC_CHECK(last_packet);

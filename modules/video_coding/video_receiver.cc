@@ -338,7 +338,8 @@ int32_t VideoReceiver::IncomingPacket(const uint8_t* incomingPayload,
   }
   // Callers don't provide any ntp time.
   const VCMPacket packet(incomingPayload, payloadLength, rtp_header,
-                         video_header, /*ntp_time_ms=*/0);
+                         video_header, /*ntp_time_ms=*/0,
+                         clock_->TimeInMilliseconds());
   int32_t ret = _receiver.InsertPacket(packet);
 
   // TODO(holmer): Investigate if this somehow should use the key frame

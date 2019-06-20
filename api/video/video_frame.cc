@@ -11,6 +11,7 @@
 #include "api/video/video_frame.h"
 
 #include <algorithm>
+#include <utility>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/time_utils.h"
@@ -66,7 +67,8 @@ VideoFrame::Builder::~Builder() = default;
 VideoFrame VideoFrame::Builder::build() {
   RTC_CHECK(video_frame_buffer_ != nullptr);
   return VideoFrame(id_, video_frame_buffer_, timestamp_us_, timestamp_rtp_,
-                    ntp_time_ms_, rotation_, color_space_, update_rect_);
+                    ntp_time_ms_, rotation_, color_space_, update_rect_,
+                    packet_infos_);
 }
 
 VideoFrame::Builder& VideoFrame::Builder::set_video_frame_buffer(
@@ -127,6 +129,12 @@ VideoFrame::Builder& VideoFrame::Builder::set_update_rect(
   return *this;
 }
 
+VideoFrame::Builder& VideoFrame::Builder::set_packet_infos(
+    RtpPacketInfos packet_infos) {
+  packet_infos_ = std::move(packet_infos);
+  return *this;
+}
+
 VideoFrame::VideoFrame(const rtc::scoped_refptr<VideoFrameBuffer>& buffer,
                        webrtc::VideoRotation rotation,
                        int64_t timestamp_us)
@@ -157,7 +165,8 @@ VideoFrame::VideoFrame(uint16_t id,
                        int64_t ntp_time_ms,
                        VideoRotation rotation,
                        const absl::optional<ColorSpace>& color_space,
-                       const absl::optional<UpdateRect>& update_rect)
+                       const absl::optional<UpdateRect>& update_rect,
+                       RtpPacketInfos packet_infos)
     : id_(id),
       video_frame_buffer_(buffer),
       timestamp_rtp_(timestamp_rtp),
@@ -166,7 +175,8 @@ VideoFrame::VideoFrame(uint16_t id,
       rotation_(rotation),
       color_space_(color_space),
       update_rect_(update_rect.value_or(UpdateRect{
-          0, 0, video_frame_buffer_->width(), video_frame_buffer_->height()})) {
+          0, 0, video_frame_buffer_->width(), video_frame_buffer_->height()})),
+      packet_infos_(std::move(packet_infos)) {
   RTC_DCHECK_GE(update_rect_.offset_x, 0);
   RTC_DCHECK_GE(update_rect_.offset_y, 0);
   RTC_DCHECK_LE(update_rect_.offset_x + update_rect_.width, width());

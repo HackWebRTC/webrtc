@@ -286,8 +286,9 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
       size_t frame_size = 0;
       int max_nack_count = -1;
       uint16_t start_seq_num = seq_num;
-      int64_t min_recv_time = data_buffer_[index].receive_time_ms;
-      int64_t max_recv_time = data_buffer_[index].receive_time_ms;
+      int64_t min_recv_time = data_buffer_[index].packet_info.receive_time_ms();
+      int64_t max_recv_time = data_buffer_[index].packet_info.receive_time_ms();
+      RtpPacketInfos::vector_type packet_infos;
 
       // Find the start index by searching backward until the packet with
       // the |frame_begin| flag is set.
@@ -310,9 +311,16 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
         sequence_buffer_[start_index].frame_created = true;
 
         min_recv_time =
-            std::min(min_recv_time, data_buffer_[start_index].receive_time_ms);
+            std::min(min_recv_time,
+                     data_buffer_[start_index].packet_info.receive_time_ms());
         max_recv_time =
-            std::max(max_recv_time, data_buffer_[start_index].receive_time_ms);
+            std::max(max_recv_time,
+                     data_buffer_[start_index].packet_info.receive_time_ms());
+
+        // Should use |push_front()| since the loop traverses backwards. But
+        // it's too inefficient to do so on a vector so we'll instead fix the
+        // order afterwards.
+        packet_infos.push_back(data_buffer_[start_index].packet_info);
 
         if (!is_h264 && sequence_buffer_[start_index].frame_begin)
           break;
@@ -358,6 +366,9 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
 
         --start_seq_num;
       }
+
+      // Fix the order since the packet-finding loop traverses backwards.
+      std::reverse(packet_infos.begin(), packet_infos.end());
 
       if (is_h264) {
         // Warn if this is an unsafe frame.
@@ -406,7 +417,8 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
 
       found_frames.emplace_back(
           new RtpFrameObject(this, start_seq_num, seq_num, frame_size,
-                             max_nack_count, min_recv_time, max_recv_time));
+                             max_nack_count, min_recv_time, max_recv_time,
+                             RtpPacketInfos(std::move(packet_infos))));
     }
     ++seq_num;
   }

@@ -36,6 +36,7 @@
 
 using ::testing::_;
 using ::testing::Invoke;
+using ::testing::SizeIs;
 using ::testing::Values;
 
 namespace webrtc {
@@ -721,6 +722,7 @@ TEST_P(RtpVideoStreamReceiverGenericDescriptorTest,
         EXPECT_EQ(frame->references[0], frame->id.picture_id - 90);
         EXPECT_EQ(frame->references[1], frame->id.picture_id - 80);
         EXPECT_EQ(frame->id.spatial_layer, kSpatialIndex);
+        EXPECT_THAT(frame->PacketInfos(), SizeIs(1));
       }));
 
   rtp_video_stream_receiver_->OnRtpPacket(rtp_packet);
@@ -785,6 +787,7 @@ TEST_P(RtpVideoStreamReceiverGenericDescriptorTest,
         EXPECT_EQ(frame->id.spatial_layer, kSpatialIndex);
         EXPECT_EQ(frame->EncodedImage()._encodedWidth, 480u);
         EXPECT_EQ(frame->EncodedImage()._encodedHeight, 360u);
+        EXPECT_THAT(frame->PacketInfos(), SizeIs(2));
       }));
 
   rtp_video_stream_receiver_->OnRtpPacket(second_packet);

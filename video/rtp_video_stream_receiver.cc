@@ -327,7 +327,8 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
     const absl::optional<RtpGenericFrameDescriptor>& generic_descriptor,
     bool is_recovered) {
   VCMPacket packet(payload_data, payload_size, rtp_header, video_header,
-                   ntp_estimator_.Estimate(rtp_header.timestamp));
+                   ntp_estimator_.Estimate(rtp_header.timestamp),
+                   clock_->TimeInMilliseconds());
   packet.generic_descriptor = generic_descriptor;
 
   if (loss_notification_controller_) {
@@ -350,7 +351,6 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
   } else {
     packet.timesNacked = -1;
   }
-  packet.receive_time_ms = clock_->TimeInMilliseconds();
 
   if (packet.sizeBytes == 0) {
     NotifyReceiverOfEmptyPacket(packet.seqNum);

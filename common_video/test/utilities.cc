@@ -9,6 +9,8 @@
  */
 #include "common_video/test/utilities.h"
 
+#include <utility>
+
 namespace webrtc {
 
 HdrMetadata CreateTestHdrMetadata() {
@@ -37,6 +39,10 @@ ColorSpace CreateTestColorSpace(bool with_hdr_metadata) {
       ColorSpace::ChromaSiting::kCollocated,
       ColorSpace::ChromaSiting::kCollocated,
       with_hdr_metadata ? &hdr_metadata : nullptr);
+}
+
+RtpPacketInfos CreatePacketInfos(size_t count) {
+  return RtpPacketInfos(RtpPacketInfos::vector_type(count));
 }
 
 }  // namespace webrtc

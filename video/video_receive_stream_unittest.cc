@@ -309,4 +309,18 @@ TEST_F(VideoReceiveStreamTestWithFakeDecoder, PassesColorSpace) {
   EXPECT_EQ(color_space, *fake_renderer_.color_space());
 }
 
+TEST_F(VideoReceiveStreamTestWithFakeDecoder, PassesPacketInfos) {
+  auto test_frame = absl::make_unique<FrameObjectFake>();
+  test_frame->SetPayloadType(99);
+  test_frame->id.picture_id = 0;
+  RtpPacketInfos packet_infos = CreatePacketInfos(3);
+  test_frame->SetPacketInfos(packet_infos);
+
+  video_receive_stream_->Start();
+  video_receive_stream_->OnCompleteFrame(std::move(test_frame));
+  EXPECT_TRUE(fake_renderer_.WaitForRenderedFrame(kDefaultTimeOutMs));
+
+  EXPECT_EQ(fake_renderer_.packet_infos().size(), 3U);
+}
+
 }  // namespace webrtc

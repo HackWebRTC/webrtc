@@ -262,6 +262,7 @@ void MultiplexDecoderAdapter::MergeAlphaImages(
                                 .set_timestamp_us(0)
                                 .set_rotation(decoded_image->rotation())
                                 .set_id(decoded_image->id())
+                                .set_packet_infos(decoded_image->packet_infos())
                                 .build();
   decoded_complete_callback_->Decoded(merged_image, decode_time_ms, qp);
 }

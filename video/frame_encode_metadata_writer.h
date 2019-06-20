@@ -60,6 +60,7 @@ class FrameEncodeMetadataWriter {
     int64_t timestamp_us = 0;
     VideoRotation rotation = kVideoRotation_0;
     absl::optional<ColorSpace> color_space;
+    RtpPacketInfos packet_infos;
   };
   struct TimingFramesLayerInfo {
     TimingFramesLayerInfo();

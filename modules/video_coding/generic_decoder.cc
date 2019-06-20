@@ -84,6 +84,7 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
   if (frameInfo->color_space) {
     decodedImage.set_color_space(frameInfo->color_space);
   }
+  decodedImage.set_packet_infos(frameInfo->packet_infos);
   decodedImage.set_rotation(frameInfo->rotation);
 
   const int64_t now_ms = _clock->TimeInMilliseconds();
@@ -211,6 +212,7 @@ int32_t VCMGenericDecoder::Decode(const VCMEncodedFrame& frame, int64_t nowMs) {
   } else {
     _frameInfos[_nextFrameInfoIdx].color_space = absl::nullopt;
   }
+  _frameInfos[_nextFrameInfoIdx].packet_infos = frame.PacketInfos();
 
   // Set correctly only for key frames. Thus, use latest key frame
   // content type. If the corresponding key frame was lost, decode will fail

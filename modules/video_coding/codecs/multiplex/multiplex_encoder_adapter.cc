@@ -205,6 +205,7 @@ int MultiplexEncoderAdapter::Encode(
                                .set_timestamp_ms(input_image.render_time_ms())
                                .set_rotation(input_image.rotation())
                                .set_id(input_image.id())
+                               .set_packet_infos(input_image.packet_infos())
                                .build();
   rv = encoders_[kAXXStream]->Encode(alpha_image, &adjusted_frame_types);
   return rv;

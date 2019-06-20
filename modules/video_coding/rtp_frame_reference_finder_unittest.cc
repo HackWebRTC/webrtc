@@ -92,7 +92,7 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     ref_packet_buffer_->InsertPacket(&packet);
 
     std::unique_ptr<RtpFrameObject> frame(new RtpFrameObject(
-        ref_packet_buffer_, seq_num_start, seq_num_end, 0, 0, 0, 0));
+        ref_packet_buffer_, seq_num_start, seq_num_end, 0, 0, 0, 0, {}));
     reference_finder_->ManageFrame(std::move(frame));
   }
 
@@ -126,7 +126,7 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     }
 
     std::unique_ptr<RtpFrameObject> frame(new RtpFrameObject(
-        ref_packet_buffer_, seq_num_start, seq_num_end, 0, 0, 0, 0));
+        ref_packet_buffer_, seq_num_start, seq_num_end, 0, 0, 0, 0, {}));
     reference_finder_->ManageFrame(std::move(frame));
   }
 
@@ -172,7 +172,7 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     }
 
     std::unique_ptr<RtpFrameObject> frame(new RtpFrameObject(
-        ref_packet_buffer_, seq_num_start, seq_num_end, 0, 0, 0, 0));
+        ref_packet_buffer_, seq_num_start, seq_num_end, 0, 0, 0, 0, {}));
     reference_finder_->ManageFrame(std::move(frame));
   }
 
@@ -213,7 +213,7 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     }
 
     std::unique_ptr<RtpFrameObject> frame(new RtpFrameObject(
-        ref_packet_buffer_, seq_num_start, seq_num_end, 0, 0, 0, 0));
+        ref_packet_buffer_, seq_num_start, seq_num_end, 0, 0, 0, 0, {}));
     reference_finder_->ManageFrame(std::move(frame));
   }
 
@@ -243,7 +243,7 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     }
 
     std::unique_ptr<RtpFrameObject> frame(new RtpFrameObject(
-        ref_packet_buffer_, seq_num_start, seq_num_end, 0, 0, 0, 0));
+        ref_packet_buffer_, seq_num_start, seq_num_end, 0, 0, 0, 0, {}));
     reference_finder_->ManageFrame(std::move(frame));
   }
 

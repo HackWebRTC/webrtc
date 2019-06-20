@@ -25,8 +25,7 @@ VCMPacket::VCMPacket()
       timesNacked(-1),
       completeNALU(kNaluUnset),
       insertStartCode(false),
-      video_header(),
-      receive_time_ms(0) {
+      video_header() {
   video_header.playout_delay = {-1, -1};
 }
 
@@ -34,7 +33,8 @@ VCMPacket::VCMPacket(const uint8_t* ptr,
                      size_t size,
                      const RTPHeader& rtp_header,
                      const RTPVideoHeader& videoHeader,
-                     int64_t ntp_time_ms)
+                     int64_t ntp_time_ms,
+                     int64_t receive_time_ms)
     : payloadType(rtp_header.payloadType),
       timestamp(rtp_header.timestamp),
       ntp_time_ms_(ntp_time_ms),
@@ -46,7 +46,8 @@ VCMPacket::VCMPacket(const uint8_t* ptr,
       completeNALU(kNaluIncomplete),
       insertStartCode(videoHeader.codec == kVideoCodecH264 &&
                       videoHeader.is_first_packet_in_frame),
-      video_header(videoHeader) {
+      video_header(videoHeader),
+      packet_info(rtp_header, receive_time_ms) {
   if (is_first_packet_in_frame() && markerBit) {
     completeNALU = kNaluComplete;
   } else if (is_first_packet_in_frame()) {

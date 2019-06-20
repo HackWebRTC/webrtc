@@ -36,6 +36,7 @@ struct VCMFrameInformation {
   EncodedImage::Timing timing;
   int64_t ntp_time_ms;
   absl::optional<ColorSpace> color_space;
+  RtpPacketInfos packet_infos;
 };
 
 class VCMDecodedFrameCallback : public DecodedImageCallback {

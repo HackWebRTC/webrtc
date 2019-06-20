@@ -122,5 +122,31 @@ TEST_F(GenericDecoderTest, PassesColorSpaceForDelayedDecoders) {
   EXPECT_EQ(*decoded_color_space, color_space);
 }
 
+TEST_F(GenericDecoderTest, PassesPacketInfos) {
+  RtpPacketInfos packet_infos = CreatePacketInfos(3);
+  VCMEncodedFrame encoded_frame;
+  encoded_frame.SetPacketInfos(packet_infos);
+  generic_decoder_.Decode(encoded_frame, clock_.TimeInMilliseconds());
+  absl::optional<VideoFrame> decoded_frame = user_callback_.WaitForFrame(10);
+  ASSERT_TRUE(decoded_frame.has_value());
+  EXPECT_EQ(decoded_frame->packet_infos().size(), 3U);
+}
+
+TEST_F(GenericDecoderTest, PassesPacketInfosForDelayedDecoders) {
+  RtpPacketInfos packet_infos = CreatePacketInfos(3);
+  decoder_.SetDelayedDecoding(100);
+
+  {
+    // Ensure the original frame is destroyed before the decoding is completed.
+    VCMEncodedFrame encoded_frame;
+    encoded_frame.SetPacketInfos(packet_infos);
+    generic_decoder_.Decode(encoded_frame, clock_.TimeInMilliseconds());
+  }
+
+  absl::optional<VideoFrame> decoded_frame = user_callback_.WaitForFrame(200);
+  ASSERT_TRUE(decoded_frame.has_value());
+  EXPECT_EQ(decoded_frame->packet_infos().size(), 3U);
+}
+
 }  // namespace video_coding
 }  // namespace webrtc
