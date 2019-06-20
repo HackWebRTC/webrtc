@@ -276,17 +276,6 @@ struct PacketFeedback {
   uint16_t rtp_sequence_number;
 };
 
-class PacketFeedbackComparator {
- public:
-  inline bool operator()(const PacketFeedback& lhs, const PacketFeedback& rhs) {
-    if (lhs.arrival_time_ms != rhs.arrival_time_ms)
-      return lhs.arrival_time_ms < rhs.arrival_time_ms;
-    if (lhs.send_time_ms != rhs.send_time_ms)
-      return lhs.send_time_ms < rhs.send_time_ms;
-    return lhs.sequence_number < rhs.sequence_number;
-  }
-};
-
 struct RtpPacketSendInfo {
  public:
   RtpPacketSendInfo() = default;
