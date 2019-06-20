@@ -203,6 +203,7 @@ class MediaSessionDescriptionFactory {
       RtpDataCodecs* rtp_data_codecs) const;
   void GetRtpHdrExtsToOffer(
       const std::vector<const ContentInfo*>& current_active_contents,
+      bool extmap_allow_mixed,
       RtpHeaderExtensions* audio_extensions,
       RtpHeaderExtensions* video_extensions) const;
   bool AddTransportOffer(const std::string& content_name,

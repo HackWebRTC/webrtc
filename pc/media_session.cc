@@ -31,6 +31,7 @@
 #include "pc/media_protocol_names.h"
 #include "pc/rtp_media_utils.h"
 #include "pc/srtp_filter.h"
+#include "pc/used_ids.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/logging.h"
@@ -280,94 +281,6 @@ void FilterDataCodecs(std::vector<DataCodec>* codecs, bool sctp) {
                                }),
                 codecs->end());
 }
-
-template <typename IdStruct>
-class UsedIds {
- public:
-  UsedIds(int min_allowed_id, int max_allowed_id)
-      : min_allowed_id_(min_allowed_id),
-        max_allowed_id_(max_allowed_id),
-        next_id_(max_allowed_id) {}
-
-  // Loops through all Id in |ids| and changes its id if it is
-  // already in use by another IdStruct. Call this methods with all Id
-  // in a session description to make sure no duplicate ids exists.
-  // Note that typename Id must be a type of IdStruct.
-  template <typename Id>
-  void FindAndSetIdUsed(std::vector<Id>* ids) {
-    for (const Id& id : *ids) {
-      FindAndSetIdUsed(&id);
-    }
-  }
-
-  // Finds and sets an unused id if the |idstruct| id is already in use.
-  void FindAndSetIdUsed(IdStruct* idstruct) {
-    const int original_id = idstruct->id;
-    int new_id = idstruct->id;
-
-    if (original_id > max_allowed_id_ || original_id < min_allowed_id_) {
-      // If the original id is not in range - this is an id that can't be
-      // dynamically changed.
-      return;
-    }
-
-    if (IsIdUsed(original_id)) {
-      new_id = FindUnusedId();
-      RTC_LOG(LS_WARNING) << "Duplicate id found. Reassigning from "
-                          << original_id << " to " << new_id;
-      idstruct->id = new_id;
-    }
-    SetIdUsed(new_id);
-  }
-
- private:
-  // Returns the first unused id in reverse order.
-  // This hopefully reduce the risk of more collisions. We want to change the
-  // default ids as little as possible.
-  int FindUnusedId() {
-    while (IsIdUsed(next_id_) && next_id_ >= min_allowed_id_) {
-      --next_id_;
-    }
-    RTC_DCHECK(next_id_ >= min_allowed_id_);
-    return next_id_;
-  }
-
-  bool IsIdUsed(int new_id) { return id_set_.find(new_id) != id_set_.end(); }
-
-  void SetIdUsed(int new_id) { id_set_.insert(new_id); }
-
-  const int min_allowed_id_;
-  const int max_allowed_id_;
-  int next_id_;
-  std::set<int> id_set_;
-};
-
-// Helper class used for finding duplicate RTP payload types among audio, video
-// and data codecs. When bundle is used the payload types may not collide.
-class UsedPayloadTypes : public UsedIds<Codec> {
- public:
-  UsedPayloadTypes()
-      : UsedIds<Codec>(kDynamicPayloadTypeMin, kDynamicPayloadTypeMax) {}
-
- private:
-  static const int kDynamicPayloadTypeMin = 96;
-  static const int kDynamicPayloadTypeMax = 127;
-};
-
-// Helper class used for finding duplicate RTP Header extension ids among
-// audio and video extensions. Only applies to one-byte header extensions at the
-// moment. ids > 14 will always be reported as available.
-// TODO(kron): This class needs to be refactored when we start to send two-byte
-// header extensions.
-class UsedRtpHeaderExtensionIds : public UsedIds<webrtc::RtpExtension> {
- public:
-  UsedRtpHeaderExtensionIds()
-      : UsedIds<webrtc::RtpExtension>(
-            webrtc::RtpExtension::kMinId,
-            webrtc::RtpExtension::kOneByteHeaderExtensionMaxId) {}
-
- private:
-};
 
 static StreamParams CreateStreamParamsForNewSenderWithSsrcs(
     const SenderOptions& sender,
@@ -1512,8 +1425,9 @@ std::unique_ptr<SessionDescription> MediaSessionDescriptionFactory::CreateOffer(
 
   RtpHeaderExtensions audio_rtp_extensions;
   RtpHeaderExtensions video_rtp_extensions;
-  GetRtpHdrExtsToOffer(current_active_contents, &audio_rtp_extensions,
-                       &video_rtp_extensions);
+  GetRtpHdrExtsToOffer(current_active_contents,
+                       session_options.offer_extmap_allow_mixed,
+                       &audio_rtp_extensions, &video_rtp_extensions);
 
   auto offer = absl::make_unique<SessionDescription>();
 
@@ -1958,11 +1872,19 @@ void MediaSessionDescriptionFactory::GetCodecsForAnswer(
 
 void MediaSessionDescriptionFactory::GetRtpHdrExtsToOffer(
     const std::vector<const ContentInfo*>& current_active_contents,
+    bool extmap_allow_mixed,
     RtpHeaderExtensions* offer_audio_extensions,
     RtpHeaderExtensions* offer_video_extensions) const {
   // All header extensions allocated from the same range to avoid potential
   // issues when using BUNDLE.
-  UsedRtpHeaderExtensionIds used_ids;
+
+  // Strictly speaking the SDP attribute extmap_allow_mixed signals that the
+  // receiver supports an RTP stream where one- and two-byte RTP header
+  // extensions are mixed. For backwards compatibility reasons it's used in
+  // WebRTC to signal that two-byte RTP header extensions are supported.
+  UsedRtpHeaderExtensionIds used_ids(
+      extmap_allow_mixed ? UsedRtpHeaderExtensionIds::IdDomain::kTwoByteAllowed
+                         : UsedRtpHeaderExtensionIds::IdDomain::kOneByteOnly);
   RtpHeaderExtensions all_regular_extensions;
   RtpHeaderExtensions all_encrypted_extensions;
 

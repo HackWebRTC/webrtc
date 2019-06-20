@@ -71,6 +71,7 @@ rtc_static_library("rtc_pc_base") {
     "srtp_transport.h",
     "transport_stats.cc",
     "transport_stats.h",
+    "used_ids.h",
   ]
 
   deps = [
@@ -276,6 +277,7 @@ if (rtc_include_tests) {
       "srtp_transport_unittest.cc",
       "test/rtp_transport_test_util.h",
       "test/srtp_test_util.h",
+      "used_ids_unittest.cc",
     ]
 
     include_dirs = [ "//third_party/libsrtp/srtp" ]
