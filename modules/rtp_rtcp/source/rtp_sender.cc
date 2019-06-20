@@ -47,6 +47,9 @@ constexpr int kBitrateStatisticsWindowMs = 1000;
 
 constexpr size_t kMinFlexfecPacketsToStoreForPacing = 50;
 
+// Min size needed to get payload padding from packet history.
+constexpr int kMinPayloadPaddingBytes = 50;
+
 template <typename Extension>
 constexpr RtpExtensionSize CreateExtensionSize() {
   return {Extension::kId, Extension::kValueSizeBytes};
@@ -154,7 +157,7 @@ RTPSender::RTPSender(
               .find("Enabled") == 0),
       payload_padding_prefer_useful_packets_(
           field_trials.Lookup("WebRTC-PayloadPadding-UseMostUsefulPacket")
-              .find("Enabled") == 0) {
+              .find("Disabled") != 0) {
   // This random initialization is not intended to be cryptographic strong.
   timestamp_offset_ = random_.Rand<uint32_t>();
   // Random start, 16 bits. Can't be 0.
@@ -290,7 +293,7 @@ size_t RTPSender::TrySendRedundantPayloads(size_t bytes_to_send,
   }
 
   int bytes_left = static_cast<int>(bytes_to_send);
-  while (bytes_left > 0) {
+  while (bytes_left >= kMinPayloadPaddingBytes) {
     std::unique_ptr<RtpPacketToSend> packet;
     if (payload_padding_prefer_useful_packets_) {
       packet = packet_history_.GetPayloadPaddingPacket();
