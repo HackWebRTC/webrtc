@@ -52,7 +52,6 @@ rtc_static_library("goog_cc") {
     "../../../system_wrappers",
     "../../bitrate_controller",
     "../../remote_bitrate_estimator",
-    "../../rtp_rtcp:rtp_rtcp_format",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -123,8 +122,10 @@ rtc_source_set("estimators") {
 
   deps = [
     "../../../api:network_state_predictor_api",
+    "../../../api/transport:network_control",
     "../../../api/transport:webrtc_key_value_config",
     "../../../api/units:data_rate",
+    "../../../api/units:timestamp",
     "../../../logging:rtc_event_bwe",
     "../../../logging:rtc_event_log_api",
     "../../../rtc_base:checks",
@@ -135,7 +136,6 @@ rtc_source_set("estimators") {
     "../../../rtc_base:safe_minmax",
     "../../../rtc_base/experiments:field_trial_parser",
     "../../remote_bitrate_estimator",
-    "../../rtp_rtcp:rtp_rtcp_format",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -152,6 +152,7 @@ rtc_source_set("delay_based_bwe") {
     ":estimators",
     "../../../api:network_state_predictor_api",
     "../../../api/transport:network_control",
+    "../../../api/transport:network_control",
     "../../../api/transport:webrtc_key_value_config",
     "../../../logging:rtc_event_bwe",
     "../../../logging:rtc_event_log_api",
@@ -161,7 +162,6 @@ rtc_source_set("delay_based_bwe") {
     "../../../system_wrappers:metrics",
     "../../pacing",
     "../../remote_bitrate_estimator",
-    "../../rtp_rtcp:rtp_rtcp_format",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -256,8 +256,6 @@ if (rtc_include_tests) {
       "../../../test:test_support",
       "../../../test/scenario",
       "../../pacing",
-      "../../remote_bitrate_estimator",
-      "../../rtp_rtcp:rtp_rtcp_format",
       "//testing/gmock",
       "//third_party/abseil-cpp/absl/memory",
     ]

@@ -27,7 +27,6 @@
 #include "modules/congestion_controller/goog_cc/probe_controller.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 
@@ -42,25 +41,6 @@ constexpr TimeDelta kLossUpdateInterval = TimeDelta::Millis<1000>();
 // Increasing this factor will result in lower delays in cases of bitrate
 // overshoots from the encoder.
 const float kDefaultPaceMultiplier = 2.5f;
-
-std::vector<PacketFeedback> ReceivedPacketsFeedbackAsRtp(
-    const TransportPacketsFeedback report) {
-  std::vector<PacketFeedback> packet_feedback_vector;
-  for (auto& fb : report.PacketsWithFeedback()) {
-    if (fb.receive_time.IsFinite()) {
-      PacketFeedback pf(fb.receive_time.ms(), 0);
-      pf.creation_time_ms = report.feedback_time.ms();
-      pf.payload_size = fb.sent_packet.size.bytes();
-      pf.pacing_info = fb.sent_packet.pacing_info;
-      pf.send_time_ms = fb.sent_packet.send_time.ms();
-      pf.unacknowledged_data = fb.sent_packet.prior_unacked_data.bytes();
-      packet_feedback_vector.push_back(pf);
-    }
-  }
-  std::sort(packet_feedback_vector.begin(), packet_feedback_vector.end(),
-            PacketFeedbackComparator());
-  return packet_feedback_vector;
-}
 
 int64_t GetBpsOrDefault(const absl::optional<DataRate>& rate,
                         int64_t fallback_bps) {
@@ -503,24 +483,21 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
       lost_packets_since_last_loss_update_ = 0;
     }
   }
-
-  std::vector<PacketFeedback> received_feedback_vector =
-      ReceivedPacketsFeedbackAsRtp(report);
-
   absl::optional<int64_t> alr_start_time =
       alr_detector_->GetApplicationLimitedRegionStartTime();
 
   if (previously_in_alr_ && !alr_start_time.has_value()) {
     int64_t now_ms = report.feedback_time.ms();
-    acknowledged_bitrate_estimator_->SetAlrEndedTimeMs(now_ms);
+    acknowledged_bitrate_estimator_->SetAlrEndedTime(report.feedback_time);
     probe_controller_->SetAlrEndedTimeMs(now_ms);
   }
   previously_in_alr_ = alr_start_time.has_value();
   acknowledged_bitrate_estimator_->IncomingPacketFeedbackVector(
-      received_feedback_vector);
+      report.SortedByReceiveTime());
   auto acknowledged_bitrate = acknowledged_bitrate_estimator_->bitrate();
-  for (const auto& feedback : received_feedback_vector) {
-    if (feedback.pacing_info.probe_cluster_id != PacedPacketInfo::kNotAProbe) {
+  for (const auto& feedback : report.SortedByReceiveTime()) {
+    if (feedback.sent_packet.pacing_info.probe_cluster_id !=
+        PacedPacketInfo::kNotAProbe) {
       probe_bitrate_estimator_->HandleProbeAndEstimateBitrate(feedback);
     }
   }
@@ -545,8 +522,8 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
       network_estimator_ ? network_estimator_->GetCurrentEstimate()
                          : absl::nullopt;
   result = delay_based_bwe_->IncomingPacketFeedbackVector(
-      received_feedback_vector, acknowledged_bitrate, probe_bitrate,
-      network_estimate, alr_start_time.has_value(), report.feedback_time);
+      report, acknowledged_bitrate, probe_bitrate, network_estimate,
+      alr_start_time.has_value());
 
   if (result.updated) {
     if (result.probe) {

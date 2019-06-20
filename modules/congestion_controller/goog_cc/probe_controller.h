@@ -26,8 +26,6 @@
 
 namespace webrtc {
 
-class Clock;
-
 struct ProbeControllerConfig {
   explicit ProbeControllerConfig(const WebRtcKeyValueConfig* key_value_config);
   ProbeControllerConfig(const ProbeControllerConfig&);
