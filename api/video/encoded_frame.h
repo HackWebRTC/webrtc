@@ -57,6 +57,7 @@ class EncodedFrame : public webrtc::VCMEncodedFrame {
   static const uint8_t kMaxFrameReferences = 5;
 
   EncodedFrame() = default;
+  EncodedFrame(const EncodedFrame&) = default;
   virtual ~EncodedFrame() {}
 
   // When this frame was received.

@@ -23,7 +23,7 @@ namespace webrtc {
 class VCMEncodedFrame : protected EncodedImage {
  public:
   VCMEncodedFrame();
-  VCMEncodedFrame(const VCMEncodedFrame&) = delete;
+  VCMEncodedFrame(const VCMEncodedFrame&);
 
   ~VCMEncodedFrame();
   /**

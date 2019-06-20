@@ -30,6 +30,8 @@ VCMEncodedFrame::VCMEncodedFrame()
   _codecSpecificInfo.codecType = kVideoCodecGeneric;
 }
 
+VCMEncodedFrame::VCMEncodedFrame(const VCMEncodedFrame&) = default;
+
 VCMEncodedFrame::~VCMEncodedFrame() {
   Reset();
 }
