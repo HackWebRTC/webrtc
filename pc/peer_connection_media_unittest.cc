@@ -17,8 +17,9 @@
 #include "absl/algorithm/container.h"
 #include "absl/types/optional.h"
 #include "api/call/call_factory_interface.h"
+#include "api/rtc_event_log/rtc_event_log_factory.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/fake_media_transport.h"
-#include "logging/rtc_event_log/rtc_event_log_factory.h"
 #include "media/base/fake_media_engine.h"
 #include "p2p/base/fake_port_allocator.h"
 #include "pc/media_session.h"
@@ -96,9 +97,12 @@ class PeerConnectionMediaBaseTest : public ::testing::Test {
     factory_dependencies.network_thread = rtc::Thread::Current();
     factory_dependencies.worker_thread = rtc::Thread::Current();
     factory_dependencies.signaling_thread = rtc::Thread::Current();
+    factory_dependencies.task_queue_factory = CreateDefaultTaskQueueFactory();
     factory_dependencies.media_engine = std::move(media_engine);
     factory_dependencies.call_factory = CreateCallFactory();
-    factory_dependencies.event_log_factory = CreateRtcEventLogFactory();
+    factory_dependencies.event_log_factory =
+        absl::make_unique<RtcEventLogFactory>(
+            factory_dependencies.task_queue_factory.get());
     factory_dependencies.media_transport_factory =
         absl::make_unique<FakeMediaTransportFactory>();
 
