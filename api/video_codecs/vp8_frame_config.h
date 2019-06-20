@@ -18,6 +18,13 @@ namespace webrtc {
 // Configuration of a VP8 frame - which buffers are to be referenced
 // by it, which buffers should be updated, etc.
 struct Vp8FrameConfig {
+  static Vp8FrameConfig GetIntraFrameConfig() {
+    Vp8FrameConfig frame_config = Vp8FrameConfig(
+        BufferFlags::kUpdate, BufferFlags::kUpdate, BufferFlags::kUpdate);
+    frame_config.packetizer_temporal_idx = 0;
+    return frame_config;
+  }
+
   enum BufferFlags : int {
     kNone = 0,
     kReference = 1,
