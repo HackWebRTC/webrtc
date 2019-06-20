@@ -24,40 +24,16 @@ constexpr int kNumProbesCluster1 = 8;
 const PacedPacketInfo kPacingInfo0(0, kNumProbesCluster0, 2000);
 const PacedPacketInfo kPacingInfo1(1, kNumProbesCluster1, 4000);
 constexpr float kTargetUtilizationFraction = 0.95f;
-constexpr Timestamp kDummyTimestamp = Timestamp::Seconds<1000>();
 }  // namespace
-
-TEST_F(DelayBasedBweTest, NoCrashEmptyFeedback) {
-  std::vector<PacketFeedback> packet_feedback_vector;
-  bitrate_estimator_->IncomingPacketFeedbackVector(
-      packet_feedback_vector, /*acked_bitrate*/ absl::nullopt,
-      /*probe_bitrate*/ absl::nullopt, /*network_estimate*/ absl::nullopt,
-      /*in_alr*/ false, kDummyTimestamp);
-}
-
-TEST_F(DelayBasedBweTest, NoCrashOnlyLostFeedback) {
-  std::vector<PacketFeedback> packet_feedback_vector;
-  packet_feedback_vector.push_back(PacketFeedback(PacketFeedback::kNotReceived,
-                                                  PacketFeedback::kNoSendTime,
-                                                  0, 1500, PacedPacketInfo()));
-  packet_feedback_vector.push_back(PacketFeedback(PacketFeedback::kNotReceived,
-                                                  PacketFeedback::kNoSendTime,
-                                                  1, 1500, PacedPacketInfo()));
-  bitrate_estimator_->IncomingPacketFeedbackVector(
-      packet_feedback_vector, /*acked_bitrate*/ absl::nullopt,
-      /*probe_bitrate*/ absl::nullopt, /*network_estimate*/ absl::nullopt,
-      /*in_alr*/ false, kDummyTimestamp);
-}
 
 TEST_F(DelayBasedBweTest, ProbeDetection) {
   int64_t now_ms = clock_.TimeInMilliseconds();
-  uint16_t seq_num = 0;
 
   // First burst sent at 8 * 1000 / 10 = 800 kbps.
   for (int i = 0; i < kNumProbesCluster0; ++i) {
     clock_.AdvanceTimeMilliseconds(10);
     now_ms = clock_.TimeInMilliseconds();
-    IncomingFeedback(now_ms, now_ms, seq_num++, 1000, kPacingInfo0);
+    IncomingFeedback(now_ms, now_ms, 1000, kPacingInfo0);
   }
   EXPECT_TRUE(bitrate_observer_.updated());
 
@@ -65,7 +41,7 @@ TEST_F(DelayBasedBweTest, ProbeDetection) {
   for (int i = 0; i < kNumProbesCluster1; ++i) {
     clock_.AdvanceTimeMilliseconds(5);
     now_ms = clock_.TimeInMilliseconds();
-    IncomingFeedback(now_ms, now_ms, seq_num++, 1000, kPacingInfo1);
+    IncomingFeedback(now_ms, now_ms, 1000, kPacingInfo1);
   }
 
   EXPECT_TRUE(bitrate_observer_.updated());
@@ -74,16 +50,15 @@ TEST_F(DelayBasedBweTest, ProbeDetection) {
 
 TEST_F(DelayBasedBweTest, ProbeDetectionNonPacedPackets) {
   int64_t now_ms = clock_.TimeInMilliseconds();
-  uint16_t seq_num = 0;
   // First burst sent at 8 * 1000 / 10 = 800 kbps, but with every other packet
   // not being paced which could mess things up.
   for (int i = 0; i < kNumProbesCluster0; ++i) {
     clock_.AdvanceTimeMilliseconds(5);
     now_ms = clock_.TimeInMilliseconds();
-    IncomingFeedback(now_ms, now_ms, seq_num++, 1000, kPacingInfo0);
+    IncomingFeedback(now_ms, now_ms, 1000, kPacingInfo0);
     // Non-paced packet, arriving 5 ms after.
     clock_.AdvanceTimeMilliseconds(5);
-    IncomingFeedback(now_ms, now_ms, seq_num++, 100, PacedPacketInfo());
+    IncomingFeedback(now_ms, now_ms, 100, PacedPacketInfo());
   }
 
   EXPECT_TRUE(bitrate_observer_.updated());
@@ -92,7 +67,6 @@ TEST_F(DelayBasedBweTest, ProbeDetectionNonPacedPackets) {
 
 TEST_F(DelayBasedBweTest, ProbeDetectionFasterArrival) {
   int64_t now_ms = clock_.TimeInMilliseconds();
-  uint16_t seq_num = 0;
   // First burst sent at 8 * 1000 / 10 = 800 kbps.
   // Arriving at 8 * 1000 / 5 = 1600 kbps.
   int64_t send_time_ms = 0;
@@ -100,7 +74,7 @@ TEST_F(DelayBasedBweTest, ProbeDetectionFasterArrival) {
     clock_.AdvanceTimeMilliseconds(1);
     send_time_ms += 10;
     now_ms = clock_.TimeInMilliseconds();
-    IncomingFeedback(now_ms, send_time_ms, seq_num++, 1000, kPacingInfo0);
+    IncomingFeedback(now_ms, send_time_ms, 1000, kPacingInfo0);
   }
 
   EXPECT_FALSE(bitrate_observer_.updated());
@@ -108,7 +82,6 @@ TEST_F(DelayBasedBweTest, ProbeDetectionFasterArrival) {
 
 TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrival) {
   int64_t now_ms = clock_.TimeInMilliseconds();
-  uint16_t seq_num = 0;
   // First burst sent at 8 * 1000 / 5 = 1600 kbps.
   // Arriving at 8 * 1000 / 7 = 1142 kbps.
   // Since the receive rate is significantly below the send rate, we expect to
@@ -118,7 +91,7 @@ TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrival) {
     clock_.AdvanceTimeMilliseconds(7);
     send_time_ms += 5;
     now_ms = clock_.TimeInMilliseconds();
-    IncomingFeedback(now_ms, send_time_ms, seq_num++, 1000, kPacingInfo1);
+    IncomingFeedback(now_ms, send_time_ms, 1000, kPacingInfo1);
   }
 
   EXPECT_TRUE(bitrate_observer_.updated());
@@ -128,7 +101,6 @@ TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrival) {
 
 TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrivalHighBitrate) {
   int64_t now_ms = clock_.TimeInMilliseconds();
-  uint16_t seq_num = 0;
   // Burst sent at 8 * 1000 / 1 = 8000 kbps.
   // Arriving at 8 * 1000 / 2 = 4000 kbps.
   // Since the receive rate is significantly below the send rate, we expect to
@@ -138,7 +110,7 @@ TEST_F(DelayBasedBweTest, ProbeDetectionSlowerArrivalHighBitrate) {
     clock_.AdvanceTimeMilliseconds(2);
     send_time_ms += 1;
     now_ms = clock_.TimeInMilliseconds();
-    IncomingFeedback(now_ms, send_time_ms, seq_num++, 1000, kPacingInfo1);
+    IncomingFeedback(now_ms, send_time_ms, 1000, kPacingInfo1);
   }
 
   EXPECT_TRUE(bitrate_observer_.updated());
@@ -163,7 +135,7 @@ TEST_F(DelayBasedBweTest, RateIncreaseReordering) {
   RateIncreaseReorderingTestHelper(730000);
 }
 TEST_F(DelayBasedBweTest, RateIncreaseRtpTimestamps) {
-  RateIncreaseRtpTimestampsTestHelper(627);
+  RateIncreaseRtpTimestampsTestHelper(622);
 }
 
 TEST_F(DelayBasedBweTest, CapacityDropOneStream) {
@@ -222,7 +194,7 @@ TEST_F(DelayBasedBweTest, TestInitialOveruse) {
     // The purpose of this test is to ensure that we back down even if we don't
     // have any acknowledged bitrate estimate yet. Hence, if the test works
     // as expected, we should not have a measured bitrate yet.
-    EXPECT_FALSE(acknowledged_bitrate_estimator_->bitrate_bps().has_value());
+    EXPECT_FALSE(acknowledged_bitrate_estimator_->bitrate().has_value());
     if (overuse) {
       EXPECT_TRUE(bitrate_observer_.updated());
       EXPECT_NEAR(bitrate_observer_.latest_bitrate(), kStartBitrate.bps() / 2,
@@ -270,7 +242,7 @@ TEST_F(DelayBasedBweTestWithBackoffTimeoutExperiment, TestInitialOveruse) {
     // The purpose of this test is to ensure that we back down even if we don't
     // have any acknowledged bitrate estimate yet. Hence, if the test works
     // as expected, we should not have a measured bitrate yet.
-    EXPECT_FALSE(acknowledged_bitrate_estimator_->bitrate_bps().has_value());
+    EXPECT_FALSE(acknowledged_bitrate_estimator_->bitrate().has_value());
     if (overuse) {
       EXPECT_TRUE(bitrate_observer_.updated());
       EXPECT_NEAR(bitrate_observer_.latest_bitrate(), kStartBitrate.bps() / 2,

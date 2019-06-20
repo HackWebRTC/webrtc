@@ -708,6 +708,30 @@ TEST_F(GoogCcNetworkControllerTest, NoRttBackoffCollapseWhenVideoStops) {
   EXPECT_GT(client->send_bandwidth().kbps(), 1000);
 }
 
+TEST_F(GoogCcNetworkControllerTest, NoCrashOnVeryLateFeedback) {
+  Scenario s;
+  auto ret_net = s.CreateMutableSimulationNode(NetworkSimulationConfig());
+  auto* route = s.CreateRoutes(
+      s.CreateClient("send", CallClientConfig()),
+      {s.CreateSimulationNode(NetworkSimulationConfig())},
+      s.CreateClient("return", CallClientConfig()), {ret_net->node()});
+  auto* video = s.CreateVideoStream(route->forward(), VideoStreamConfig());
+  s.RunFor(TimeDelta::seconds(5));
+  // Delay feedback by several minutes. This will cause removal of the send time
+  // history for the packets as long as kSendTimeHistoryWindow is configured for
+  // a shorter time span.
+  ret_net->PauseTransmissionUntil(s.Now() + TimeDelta::seconds(300));
+  // Stopping video stream while waiting to save test execution time.
+  video->send()->Stop();
+  s.RunFor(TimeDelta::seconds(299));
+  // Starting to cause addition of new packet to history, which cause old
+  // packets to be removed.
+  video->send()->Start();
+  // Runs until the lost packets are received. We expect that this will run
+  // without causing any runtime failures.
+  s.RunFor(TimeDelta::seconds(2));
+}
+
 TEST_F(GoogCcNetworkControllerTest, IsFairToTCP) {
   Scenario s("googcc_unit/tcp_fairness");
   NetworkSimulationConfig net_conf;

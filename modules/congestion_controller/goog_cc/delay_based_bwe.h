@@ -25,7 +25,6 @@
 #include "modules/remote_bitrate_estimator/aimd_rate_control.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "modules/remote_bitrate_estimator/inter_arrival.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"  // For PacketFeedback
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/race_checker.h"
 
@@ -51,12 +50,11 @@ class DelayBasedBwe {
   virtual ~DelayBasedBwe();
 
   Result IncomingPacketFeedbackVector(
-      const std::vector<PacketFeedback>& packet_feedback_vector,
+      const TransportPacketsFeedback& msg,
       absl::optional<DataRate> acked_bitrate,
       absl::optional<DataRate> probe_bitrate,
       absl::optional<NetworkStateEstimate> network_estimate,
-      bool in_alr,
-      Timestamp at_time);
+      bool in_alr);
   void OnRttUpdate(TimeDelta avg_rtt);
   bool LatestEstimate(std::vector<uint32_t>* ssrcs, DataRate* bitrate) const;
   void SetStartBitrate(DataRate start_bitrate);
@@ -69,7 +67,7 @@ class DelayBasedBwe {
 
  private:
   friend class GoogCcStatePrinter;
-  void IncomingPacketFeedback(const PacketFeedback& packet_feedback,
+  void IncomingPacketFeedback(const PacketResult& packet_feedback,
                               Timestamp at_time);
   Result MaybeUpdateEstimate(
       absl::optional<DataRate> acked_bitrate,
