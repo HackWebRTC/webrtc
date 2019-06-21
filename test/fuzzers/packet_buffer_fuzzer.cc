@@ -32,23 +32,27 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   test::FuzzDataHelper helper(rtc::ArrayView<const uint8_t>(data, size));
 
   while (helper.BytesLeft()) {
-    // The RTPVideoHeader is a complex type, so overwriting it with random data
-    // will put it in an invalid state. Therefore we save/restore it.
+    // Complex types (e.g. non-POD-like types) can't be bit-wise fuzzed with
+    // random data or it will put them in an invalid state. We therefore backup
+    // their byte-patterns before the fuzzing and restore them after.
     uint8_t video_header_backup[sizeof(packet.video_header)];
     memcpy(&video_header_backup, &packet.video_header,
            sizeof(packet.video_header));
-
     uint8_t generic_descriptor_backup[sizeof(packet.generic_descriptor)];
     memcpy(&generic_descriptor_backup, &packet.generic_descriptor,
            sizeof(packet.generic_descriptor));
+    uint8_t packet_info_backup[sizeof(packet.packet_info)];
+    memcpy(&packet_info_backup, &packet.packet_info,
+           sizeof(packet.packet_info));
 
     helper.CopyTo(&packet);
 
     memcpy(&packet.video_header, &video_header_backup,
            sizeof(packet.video_header));
-
     memcpy(&packet.generic_descriptor, &generic_descriptor_backup,
            sizeof(packet.generic_descriptor));
+    memcpy(&packet.packet_info, &packet_info_backup,
+           sizeof(packet.packet_info));
 
     // The packet buffer owns the payload of the packet.
     uint8_t payload_size;
