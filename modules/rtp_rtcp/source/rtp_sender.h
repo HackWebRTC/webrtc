@@ -24,6 +24,7 @@
 #include "api/transport/webrtc_key_value_config.h"
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
+#include "modules/rtp_rtcp/include/rtp_packet_pacer.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
@@ -47,7 +48,7 @@ class RTPSender {
   RTPSender(bool audio,
             Clock* clock,
             Transport* transport,
-            RtpPacketSender* paced_sender,
+            RtpPacketPacer* paced_sender,
             absl::optional<uint32_t> flexfec_ssrc,
             TransportSequenceNumberAllocator* sequence_number_allocator,
             TransportFeedbackObserver* transport_feedback_callback,
@@ -238,7 +239,7 @@ class RTPSender {
 
   const absl::optional<uint32_t> flexfec_ssrc_;
 
-  RtpPacketSender* const paced_sender_;
+  RtpPacketPacer* const paced_sender_;
   TransportSequenceNumberAllocator* const transport_sequence_number_allocator_;
   TransportFeedbackObserver* const transport_feedback_observer_;
   rtc::CriticalSection send_critsect_;

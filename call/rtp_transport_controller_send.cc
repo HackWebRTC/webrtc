@@ -161,7 +161,7 @@ RtpTransportControllerSend::transport_feedback_observer() {
   return this;
 }
 
-RtpPacketSender* RtpTransportControllerSend::packet_sender() {
+RtpPacketPacer* RtpTransportControllerSend::packet_sender() {
   return &pacer_;
 }
 

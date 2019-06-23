@@ -259,7 +259,7 @@ class ChannelSend : public ChannelSendInterface,
       nullptr;
   const std::unique_ptr<TransportFeedbackProxy> feedback_observer_proxy_;
   const std::unique_ptr<TransportSequenceNumberProxy> seq_num_allocator_proxy_;
-  const std::unique_ptr<RtpPacketSenderProxy> rtp_packet_sender_proxy_;
+  const std::unique_ptr<RtpPacketSenderProxy> rtp_packet_pacer_proxy_;
   const std::unique_ptr<RateLimiter> retransmission_rate_limiter_;
 
   rtc::ThreadChecker construction_thread_;
@@ -364,14 +364,19 @@ class TransportSequenceNumberProxy : public TransportSequenceNumberAllocator {
   TransportSequenceNumberAllocator* seq_num_allocator_ RTC_GUARDED_BY(&crit_);
 };
 
-class RtpPacketSenderProxy : public RtpPacketSender {
+class RtpPacketSenderProxy : public RtpPacketPacer {
  public:
-  RtpPacketSenderProxy() : rtp_packet_sender_(nullptr) {}
+  RtpPacketSenderProxy() : rtp_packet_pacer_(nullptr) {}
 
-  void SetPacketSender(RtpPacketSender* rtp_packet_sender) {
+  void SetPacketPacer(RtpPacketPacer* rtp_packet_pacer) {
     RTC_DCHECK(thread_checker_.IsCurrent());
     rtc::CritScope lock(&crit_);
-    rtp_packet_sender_ = rtp_packet_sender;
+    rtp_packet_pacer_ = rtp_packet_pacer;
+  }
+
+  void EnqueuePacket(std::unique_ptr<RtpPacketToSend> packet) override {
+    rtc::CritScope lock(&crit_);
+    rtp_packet_pacer_->EnqueuePacket(std::move(packet));
   }
 
   // Implements RtpPacketSender.
@@ -382,9 +387,9 @@ class RtpPacketSenderProxy : public RtpPacketSender {
                     size_t bytes,
                     bool retransmission) override {
     rtc::CritScope lock(&crit_);
-    if (rtp_packet_sender_) {
-      rtp_packet_sender_->InsertPacket(priority, ssrc, sequence_number,
-                                       capture_time_ms, bytes, retransmission);
+    if (rtp_packet_pacer_) {
+      rtp_packet_pacer_->InsertPacket(priority, ssrc, sequence_number,
+                                      capture_time_ms, bytes, retransmission);
     }
   }
 
@@ -395,7 +400,7 @@ class RtpPacketSenderProxy : public RtpPacketSender {
  private:
   rtc::ThreadChecker thread_checker_;
   rtc::CriticalSection crit_;
-  RtpPacketSender* rtp_packet_sender_ RTC_GUARDED_BY(&crit_);
+  RtpPacketPacer* rtp_packet_pacer_ RTC_GUARDED_BY(&crit_);
 };
 
 class VoERtcpObserver : public RtcpBandwidthObserver {
@@ -643,7 +648,7 @@ ChannelSend::ChannelSend(Clock* clock,
       rtcp_observer_(new VoERtcpObserver(this)),
       feedback_observer_proxy_(new TransportFeedbackProxy()),
       seq_num_allocator_proxy_(new TransportSequenceNumberProxy()),
-      rtp_packet_sender_proxy_(new RtpPacketSenderProxy()),
+      rtp_packet_pacer_proxy_(new RtpPacketSenderProxy()),
       retransmission_rate_limiter_(
           new RateLimiter(clock, kMaxRetransmissionWindowMs)),
       use_twcc_plr_for_ana_(
@@ -676,7 +681,7 @@ ChannelSend::ChannelSend(Clock* clock,
   configuration.clock = Clock::GetRealTimeClock();
   configuration.outgoing_transport = rtp_transport;
 
-  configuration.paced_sender = rtp_packet_sender_proxy_.get();
+  configuration.paced_sender = rtp_packet_pacer_proxy_.get();
   configuration.transport_sequence_number_allocator =
       seq_num_allocator_proxy_.get();
 
@@ -993,12 +998,12 @@ void ChannelSend::RegisterSenderCongestionControlObjects(
     RtpTransportControllerSendInterface* transport,
     RtcpBandwidthObserver* bandwidth_observer) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  RtpPacketSender* rtp_packet_sender = transport->packet_sender();
+  RtpPacketPacer* rtp_packet_pacer = transport->packet_sender();
   TransportFeedbackObserver* transport_feedback_observer =
       transport->transport_feedback_observer();
   PacketRouter* packet_router = transport->packet_router();
 
-  RTC_DCHECK(rtp_packet_sender);
+  RTC_DCHECK(rtp_packet_pacer);
   RTC_DCHECK(transport_feedback_observer);
   RTC_DCHECK(packet_router);
   RTC_DCHECK(!packet_router_);
@@ -1006,7 +1011,7 @@ void ChannelSend::RegisterSenderCongestionControlObjects(
   feedback_observer_proxy_->SetTransportFeedbackObserver(
       transport_feedback_observer);
   seq_num_allocator_proxy_->SetSequenceNumberAllocator(packet_router);
-  rtp_packet_sender_proxy_->SetPacketSender(rtp_packet_sender);
+  rtp_packet_pacer_proxy_->SetPacketPacer(rtp_packet_pacer);
   _rtpRtcpModule->SetStorePacketsStatus(true, 600);
   constexpr bool remb_candidate = false;
   packet_router->AddSendRtpModule(_rtpRtcpModule.get(), remb_candidate);
@@ -1022,7 +1027,7 @@ void ChannelSend::ResetSenderCongestionControlObjects() {
   seq_num_allocator_proxy_->SetSequenceNumberAllocator(nullptr);
   packet_router_->RemoveSendRtpModule(_rtpRtcpModule.get());
   packet_router_ = nullptr;
-  rtp_packet_sender_proxy_->SetPacketSender(nullptr);
+  rtp_packet_pacer_proxy_->SetPacketPacer(nullptr);
 }
 
 void ChannelSend::SetRTCP_CNAME(absl::string_view c_name) {

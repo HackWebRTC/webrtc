@@ -20,6 +20,7 @@
 #include "modules/rtp_rtcp/include/rtp_cvo.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
+#include "modules/rtp_rtcp/include/rtp_packet_pacer.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "modules/rtp_rtcp/source/rtp_format_video_generic.h"
@@ -140,10 +141,12 @@ MATCHER_P(SameRtcEventTypeAs, value, "") {
 
 }  // namespace
 
-class MockRtpPacketSender : public RtpPacketSender {
+class MockRtpPacketPacer : public RtpPacketPacer {
  public:
-  MockRtpPacketSender() {}
-  virtual ~MockRtpPacketSender() {}
+  MockRtpPacketPacer() {}
+  virtual ~MockRtpPacketPacer() {}
+
+  MOCK_METHOD1(EnqueuePacket, void(std::unique_ptr<RtpPacketToSend>));
 
   MOCK_METHOD6(InsertPacket,
                void(Priority priority,
@@ -212,7 +215,7 @@ class RtpSenderTest : public ::testing::TestWithParam<bool> {
 
   SimulatedClock fake_clock_;
   NiceMock<MockRtcEventLog> mock_rtc_event_log_;
-  MockRtpPacketSender mock_paced_sender_;
+  MockRtpPacketPacer mock_paced_sender_;
   StrictMock<MockTransportSequenceNumberAllocator> seq_num_allocator_;
   StrictMock<MockSendPacketObserver> send_packet_observer_;
   StrictMock<MockTransportFeedbackObserver> feedback_observer_;
