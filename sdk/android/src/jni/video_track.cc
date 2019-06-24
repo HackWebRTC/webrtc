@@ -11,7 +11,7 @@
 #include <jni.h>
 
 #include "api/media_stream_interface.h"
-#include "sdk/android/generated_video_jni/jni/VideoTrack_jni.h"
+#include "sdk/android/generated_video_jni/VideoTrack_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/video_sink.h"
 

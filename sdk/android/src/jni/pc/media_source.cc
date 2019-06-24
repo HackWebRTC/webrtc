@@ -9,7 +9,7 @@
  */
 
 #include "api/media_stream_interface.h"
-#include "sdk/android/generated_peerconnection_jni/jni/MediaSource_jni.h"
+#include "sdk/android/generated_peerconnection_jni/MediaSource_jni.h"
 
 namespace webrtc {
 namespace jni {

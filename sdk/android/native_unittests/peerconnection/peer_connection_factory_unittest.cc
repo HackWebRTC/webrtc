@@ -18,7 +18,7 @@
 #include "media/engine/webrtc_media_engine.h"
 #include "media/engine/webrtc_media_engine_defaults.h"
 #include "rtc_base/logging.h"
-#include "sdk/android/generated_native_unittests_jni/jni/PeerConnectionFactoryInitializationHelper_jni.h"
+#include "sdk/android/generated_native_unittests_jni/PeerConnectionFactoryInitializationHelper_jni.h"
 #include "sdk/android/native_api/audio_device_module/audio_device_android.h"
 #include "sdk/android/native_api/jni/jvm.h"
 #include "sdk/android/native_unittests/application_context_provider.h"

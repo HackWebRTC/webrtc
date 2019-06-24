@@ -32,7 +32,7 @@
 #include "rtc_base/event_tracer.h"
 #include "rtc_base/system/thread_registry.h"
 #include "rtc_base/thread.h"
-#include "sdk/android/generated_peerconnection_jni/jni/PeerConnectionFactory_jni.h"
+#include "sdk/android/generated_peerconnection_jni/PeerConnectionFactory_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/native_api/stacktrace/stacktrace.h"
 #include "sdk/android/src/jni/jni_helpers.h"

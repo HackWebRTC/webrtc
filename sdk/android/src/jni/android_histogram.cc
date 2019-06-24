@@ -11,7 +11,7 @@
 #include <map>
 #include <memory>
 
-#include "sdk/android/generated_base_jni/jni/Histogram_jni.h"
+#include "sdk/android/generated_base_jni/Histogram_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "system_wrappers/include/metrics.h"

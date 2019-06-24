@@ -10,7 +10,7 @@
 
 #include "sdk/android/src/jni/video_codec_status.h"
 
-#include "sdk/android/generated_video_jni/jni/VideoCodecStatus_jni.h"
+#include "sdk/android/generated_video_jni/VideoCodecStatus_jni.h"
 
 namespace webrtc {
 namespace jni {

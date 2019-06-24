@@ -9,7 +9,7 @@
  */
 #include "sdk/android/src/jni/logging/log_sink.h"
 
-#include "sdk/android/generated_logging_jni/jni/JNILogging_jni.h"
+#include "sdk/android/generated_logging_jni/JNILogging_jni.h"
 
 namespace webrtc {
 namespace jni {

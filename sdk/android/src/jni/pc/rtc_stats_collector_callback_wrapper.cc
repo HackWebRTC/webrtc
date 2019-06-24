@@ -14,10 +14,10 @@
 #include <vector>
 
 #include "rtc_base/string_encode.h"
-#include "sdk/android/generated_external_classes_jni/jni/BigInteger_jni.h"
-#include "sdk/android/generated_peerconnection_jni/jni/RTCStatsCollectorCallback_jni.h"
-#include "sdk/android/generated_peerconnection_jni/jni/RTCStatsReport_jni.h"
-#include "sdk/android/generated_peerconnection_jni/jni/RTCStats_jni.h"
+#include "sdk/android/generated_external_classes_jni/BigInteger_jni.h"
+#include "sdk/android/generated_peerconnection_jni/RTCStatsCollectorCallback_jni.h"
+#include "sdk/android/generated_peerconnection_jni/RTCStatsReport_jni.h"
+#include "sdk/android/generated_peerconnection_jni/RTCStats_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 
 namespace webrtc {

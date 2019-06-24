@@ -14,7 +14,7 @@
 #include "rtc_base/ref_count.h"
 #include "rtc_base/rtc_certificate.h"
 #include "rtc_base/rtc_certificate_generator.h"
-#include "sdk/android/generated_peerconnection_jni/jni/RtcCertificatePem_jni.h"
+#include "sdk/android/generated_peerconnection_jni/RtcCertificatePem_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 

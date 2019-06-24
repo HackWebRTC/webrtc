@@ -10,7 +10,7 @@
 
 #include "sdk/android/src/jni/pc/rtp_parameters.h"
 
-#include "sdk/android/generated_peerconnection_jni/jni/RtpParameters_jni.h"
+#include "sdk/android/generated_peerconnection_jni/RtpParameters_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/pc/media_stream_track.h"

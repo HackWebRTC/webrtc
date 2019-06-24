@@ -10,7 +10,7 @@
 
 #include "sdk/android/native_api/codecs/wrapper.h"
 #include "media/base/media_constants.h"
-#include "sdk/android/generated_native_unittests_jni/jni/CodecsWrapperTestHelper_jni.h"
+#include "sdk/android/generated_native_unittests_jni/CodecsWrapperTestHelper_jni.h"
 #include "test/gtest.h"
 
 namespace webrtc {

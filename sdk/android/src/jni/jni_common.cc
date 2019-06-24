@@ -9,7 +9,7 @@
  */
 
 #include "rtc_base/ref_count.h"
-#include "sdk/android/generated_base_jni/jni/JniCommon_jni.h"
+#include "sdk/android/generated_base_jni/JniCommon_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {

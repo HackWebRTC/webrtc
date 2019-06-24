@@ -13,17 +13,17 @@
 #include <string>
 #include <utility>
 
-#include "sdk/android/generated_external_classes_jni/jni/ArrayList_jni.h"
-#include "sdk/android/generated_external_classes_jni/jni/Boolean_jni.h"
-#include "sdk/android/generated_external_classes_jni/jni/Double_jni.h"
-#include "sdk/android/generated_external_classes_jni/jni/Enum_jni.h"
-#include "sdk/android/generated_external_classes_jni/jni/Integer_jni.h"
-#include "sdk/android/generated_external_classes_jni/jni/Iterable_jni.h"
-#include "sdk/android/generated_external_classes_jni/jni/Iterator_jni.h"
-#include "sdk/android/generated_external_classes_jni/jni/LinkedHashMap_jni.h"
-#include "sdk/android/generated_external_classes_jni/jni/Long_jni.h"
-#include "sdk/android/generated_external_classes_jni/jni/Map_jni.h"
-#include "sdk/android/generated_native_api_jni/jni/JniHelper_jni.h"
+#include "sdk/android/generated_external_classes_jni/ArrayList_jni.h"
+#include "sdk/android/generated_external_classes_jni/Boolean_jni.h"
+#include "sdk/android/generated_external_classes_jni/Double_jni.h"
+#include "sdk/android/generated_external_classes_jni/Enum_jni.h"
+#include "sdk/android/generated_external_classes_jni/Integer_jni.h"
+#include "sdk/android/generated_external_classes_jni/Iterable_jni.h"
+#include "sdk/android/generated_external_classes_jni/Iterator_jni.h"
+#include "sdk/android/generated_external_classes_jni/LinkedHashMap_jni.h"
+#include "sdk/android/generated_external_classes_jni/Long_jni.h"
+#include "sdk/android/generated_external_classes_jni/Map_jni.h"
+#include "sdk/android/generated_native_api_jni/JniHelper_jni.h"
 
 namespace webrtc {
 

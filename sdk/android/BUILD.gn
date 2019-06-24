@@ -1181,7 +1181,6 @@ if (is_android) {
       "java/util/ArrayList.class",
       "java/lang/Enum.class",
     ]
-    jni_package = ""
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
 
@@ -1189,7 +1188,6 @@ if (is_android) {
     sources = [
       "api/org/webrtc/Metrics.java",
     ]
-    jni_package = ""
     namespace = "webrtc::jni"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
@@ -1203,7 +1201,6 @@ if (is_android) {
       "src/java/org/webrtc/Histogram.java",
       "src/java/org/webrtc/JniCommon.java",
     ]
-    jni_package = ""
     namespace = "webrtc::jni"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
@@ -1236,7 +1233,6 @@ if (is_android) {
       "src/java/org/webrtc/VideoEncoderWrapper.java",
       "src/java/org/webrtc/WrappedNativeI420Buffer.java",
     ]
-    jni_package = ""
     namespace = "webrtc::jni"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
@@ -1247,7 +1243,6 @@ if (is_android) {
       "api/org/webrtc/LibvpxVp8Encoder.java",
     ]
 
-    jni_package = ""
     namespace = "webrtc::jni"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
@@ -1258,7 +1253,6 @@ if (is_android) {
       "api/org/webrtc/LibvpxVp9Encoder.java",
     ]
 
-    jni_package = ""
     namespace = "webrtc::jni"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
@@ -1292,7 +1286,6 @@ if (is_android) {
       "api/org/webrtc/StatsReport.java",
       "api/org/webrtc/TurnCustomizer.java",
     ]
-    jni_package = ""
     namespace = "webrtc::jni"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
@@ -1301,7 +1294,6 @@ if (is_android) {
     sources = [
       "api/org/webrtc/audio/JavaAudioDeviceModule.java",
     ]
-    jni_package = ""
     namespace = "webrtc::jni"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
@@ -1311,7 +1303,6 @@ if (is_android) {
       "api/org/webrtc/BuiltinAudioDecoderFactoryFactory.java",
       "api/org/webrtc/BuiltinAudioEncoderFactoryFactory.java",
     ]
-    jni_package = ""
     namespace = "webrtc::jni"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
@@ -1323,7 +1314,6 @@ if (is_android) {
       "src/java/org/webrtc/JniHelper.java",
       "src/java/org/webrtc/WebRtcClassLoader.java",
     ]
-    jni_package = ""
     namespace = "webrtc::jni"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
@@ -1334,7 +1324,6 @@ if (is_android) {
     sources = [
       "src/java/org/webrtc/JNILogging.java",
     ]
-    jni_package = ""
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
 
@@ -1342,7 +1331,6 @@ if (is_android) {
     sources = [
       "src/java/org/webrtc/audio/WebRtcAudioManager.java",
     ]
-    jni_package = ""
     namespace = "webrtc::jni"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
@@ -1352,7 +1340,6 @@ if (is_android) {
       "src/java/org/webrtc/audio/WebRtcAudioRecord.java",
       "src/java/org/webrtc/audio/WebRtcAudioTrack.java",
     ]
-    jni_package = ""
     namespace = "webrtc::jni"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
@@ -1547,7 +1534,6 @@ if (is_android) {
       "native_unittests/org/webrtc/JavaVideoSourceTestHelper.java",
       "native_unittests/org/webrtc/PeerConnectionFactoryInitializationHelper.java",
     ]
-    jni_package = ""
     namespace = "webrtc::jni"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }

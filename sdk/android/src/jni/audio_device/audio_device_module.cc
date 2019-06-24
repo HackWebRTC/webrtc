@@ -19,7 +19,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/ref_counted_object.h"
 #include "rtc_base/thread_checker.h"
-#include "sdk/android/generated_audio_device_module_base_jni/jni/WebRtcAudioManager_jni.h"
+#include "sdk/android/generated_audio_device_module_base_jni/WebRtcAudioManager_jni.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {

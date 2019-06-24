@@ -11,7 +11,7 @@
 #include <memory>
 #include <vector>
 
-#include "sdk/android/generated_native_unittests_jni/jni/JavaTypesTestHelper_jni.h"
+#include "sdk/android/generated_native_unittests_jni/JavaTypesTestHelper_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "test/gtest.h"
 

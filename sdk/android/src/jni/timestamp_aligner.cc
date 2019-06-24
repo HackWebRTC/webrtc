@@ -12,7 +12,7 @@
 
 #include "rtc_base/time_utils.h"
 #include "rtc_base/timestamp_aligner.h"
-#include "sdk/android/generated_video_jni/jni/TimestampAligner_jni.h"
+#include "sdk/android/generated_video_jni/TimestampAligner_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {

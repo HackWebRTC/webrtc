@@ -10,7 +10,7 @@
 
 #include "sdk/android/src/jni/pc/crypto_options.h"
 
-#include "sdk/android/generated_peerconnection_jni/jni/CryptoOptions_jni.h"
+#include "sdk/android/generated_peerconnection_jni/CryptoOptions_jni.h"
 
 namespace webrtc {
 namespace jni {

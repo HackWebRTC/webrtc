@@ -16,7 +16,7 @@
 
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "rtc_base/checks.h"
-#include "sdk/android/generated_video_jni/jni/NV21Buffer_jni.h"
+#include "sdk/android/generated_video_jni/NV21Buffer_jni.h"
 
 namespace webrtc {
 namespace jni {

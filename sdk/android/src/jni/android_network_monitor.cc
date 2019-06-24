@@ -21,8 +21,8 @@
 #include "rtc_base/ip_address.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
-#include "sdk/android/generated_base_jni/jni/NetworkMonitorAutoDetect_jni.h"
-#include "sdk/android/generated_base_jni/jni/NetworkMonitor_jni.h"
+#include "sdk/android/generated_base_jni/NetworkMonitorAutoDetect_jni.h"
+#include "sdk/android/generated_base_jni/NetworkMonitor_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 

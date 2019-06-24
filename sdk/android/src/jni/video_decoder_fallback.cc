@@ -11,7 +11,7 @@
 #include <jni.h>
 
 #include "api/video_codecs/video_decoder_software_fallback_wrapper.h"
-#include "sdk/android/generated_video_jni/jni/VideoDecoderFallback_jni.h"
+#include "sdk/android/generated_video_jni/VideoDecoderFallback_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/video_decoder_wrapper.h"
 

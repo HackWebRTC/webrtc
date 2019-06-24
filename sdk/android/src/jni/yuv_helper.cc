@@ -10,7 +10,7 @@
 
 #include <jni.h>
 
-#include "sdk/android/generated_video_jni/jni/YuvHelper_jni.h"
+#include "sdk/android/generated_video_jni/YuvHelper_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "third_party/libyuv/include/libyuv/convert.h"
 #include "third_party/libyuv/include/libyuv/planar_functions.h"

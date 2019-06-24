@@ -9,7 +9,7 @@
  */
 
 #include "api/media_stream_interface.h"
-#include "sdk/android/generated_peerconnection_jni/jni/AudioTrack_jni.h"
+#include "sdk/android/generated_peerconnection_jni/AudioTrack_jni.h"
 
 namespace webrtc {
 namespace jni {

@@ -15,7 +15,7 @@
 #include "third_party/libyuv/include/libyuv/scale.h"
 
 #include "rtc_base/checks.h"
-#include "sdk/android/generated_video_jni/jni/NV12Buffer_jni.h"
+#include "sdk/android/generated_video_jni/NV12Buffer_jni.h"
 
 namespace webrtc {
 namespace jni {

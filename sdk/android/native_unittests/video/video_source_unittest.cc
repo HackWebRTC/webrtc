@@ -11,7 +11,7 @@
 #include <vector>
 
 #include "api/video/video_sink_interface.h"
-#include "sdk/android/generated_native_unittests_jni/jni/JavaVideoSourceTestHelper_jni.h"
+#include "sdk/android/generated_native_unittests_jni/JavaVideoSourceTestHelper_jni.h"
 #include "sdk/android/native_api/video/video_source.h"
 #include "test/gtest.h"
 

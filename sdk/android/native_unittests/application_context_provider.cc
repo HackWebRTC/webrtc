@@ -9,7 +9,7 @@
  */
 #include "sdk/android/native_unittests/application_context_provider.h"
 
-#include "sdk/android/generated_native_unittests_jni/jni/ApplicationContextProvider_jni.h"
+#include "sdk/android/generated_native_unittests_jni/ApplicationContextProvider_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 
 namespace webrtc {

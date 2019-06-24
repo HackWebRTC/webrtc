@@ -15,7 +15,7 @@
 #include "absl/memory/memory.h"
 #include "api/peer_connection_interface.h"
 #include "api/task_queue/default_task_queue_factory.h"
-#include "examples/androidnativeapi/generated_jni/jni/CallClient_jni.h"
+#include "examples/androidnativeapi/generated_jni/CallClient_jni.h"
 #include "logging/rtc_event_log/rtc_event_log_factory.h"
 #include "media/engine/internal_decoder_factory.h"
 #include "media/engine/internal_encoder_factory.h"

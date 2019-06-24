@@ -19,7 +19,7 @@
 #include "rtc_base/keep_ref_until_done.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/time_utils.h"
-#include "sdk/android/generated_video_jni/jni/VideoFrame_jni.h"
+#include "sdk/android/generated_video_jni/VideoFrame_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 #include "sdk/android/src/jni/wrapped_native_i420_buffer.h"
 

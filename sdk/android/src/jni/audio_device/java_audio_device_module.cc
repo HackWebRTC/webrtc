@@ -9,7 +9,7 @@
  */
 
 #include "absl/memory/memory.h"
-#include "sdk/android/generated_java_audio_jni/jni/JavaAudioDeviceModule_jni.h"
+#include "sdk/android/generated_java_audio_jni/JavaAudioDeviceModule_jni.h"
 #include "sdk/android/src/jni/audio_device/audio_record_jni.h"
 #include "sdk/android/src/jni/audio_device/audio_track_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"

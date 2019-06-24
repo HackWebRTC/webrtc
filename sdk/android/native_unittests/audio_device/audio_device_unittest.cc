@@ -19,7 +19,7 @@
 #include "rtc_base/event.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/time_utils.h"
-#include "sdk/android/generated_native_unittests_jni/jni/BuildInfo_jni.h"
+#include "sdk/android/generated_native_unittests_jni/BuildInfo_jni.h"
 #include "sdk/android/native_api/audio_device_module/audio_device_android.h"
 #include "sdk/android/native_unittests/application_context_provider.h"
 #include "sdk/android/src/jni/audio_device/audio_common.h"

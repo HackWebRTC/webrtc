@@ -11,7 +11,7 @@
 #include "sdk/android/src/jni/pc/media_stream.h"
 
 #include "absl/memory/memory.h"
-#include "sdk/android/generated_peerconnection_jni/jni/MediaStream_jni.h"
+#include "sdk/android/generated_peerconnection_jni/MediaStream_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
 

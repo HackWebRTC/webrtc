@@ -10,7 +10,7 @@
 
 #include "sdk/android/src/jni/android_video_track_source.h"
 
-#include "sdk/android/generated_video_jni/jni/NativeAndroidVideoTrackSource_jni.h"
+#include "sdk/android/generated_video_jni/NativeAndroidVideoTrackSource_jni.h"
 
 #include <utility>
 

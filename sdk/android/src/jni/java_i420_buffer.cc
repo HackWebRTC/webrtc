@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "sdk/android/generated_video_jni/jni/JavaI420Buffer_jni.h"
+#include "sdk/android/generated_video_jni/JavaI420Buffer_jni.h"
 #include "third_party/libyuv/include/libyuv/scale.h"
 
 namespace webrtc {
