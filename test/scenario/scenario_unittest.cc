@@ -104,7 +104,7 @@ TEST(ScenarioTest, MAYBE_SimTimeEncoding) {
   }
   // Regression tests based on previous runs.
   EXPECT_EQ(analyzer.stats().lost_count, 0);
-  EXPECT_NEAR(analyzer.stats().psnr.Mean(), 38, 2);
+  EXPECT_NEAR(analyzer.stats().psnr_with_freeze.Mean(), 38, 2);
 }
 
 // TODO(bugs.webrtc.org/10515): Remove this when performance has been improved.
@@ -124,7 +124,7 @@ TEST(ScenarioTest, MAYBE_RealTimeEncoding) {
   }
   // Regression tests based on previous runs.
   EXPECT_LT(analyzer.stats().lost_count, 2);
-  EXPECT_NEAR(analyzer.stats().psnr.Mean(), 38, 10);
+  EXPECT_NEAR(analyzer.stats().psnr_with_freeze.Mean(), 38, 10);
 }
 
 TEST(ScenarioTest, SimTimeFakeing) {

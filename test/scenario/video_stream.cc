@@ -525,7 +525,8 @@ ReceiveVideoStream::ReceiveVideoStream(CallClient* receiver,
   for (size_t i = 0; i < num_streams; ++i) {
     rtc::VideoSinkInterface<VideoFrame>* renderer = &fake_renderer_;
     if (matcher->Active()) {
-      render_taps_.emplace_back(absl::make_unique<DecodedFrameTap>(matcher, i));
+      render_taps_.emplace_back(
+          absl::make_unique<DecodedFrameTap>(receiver_->clock_, matcher, i));
       renderer = render_taps_.back().get();
     }
     auto recv_config = CreateVideoReceiveStreamConfig(

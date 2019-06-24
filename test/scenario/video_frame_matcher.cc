@@ -25,7 +25,8 @@ constexpr int kThumbHeight = 96;
 VideoFrameMatcher::VideoFrameMatcher(
     std::vector<std::function<void(const VideoFramePair&)> >
         frame_pair_handlers)
-    : frame_pair_handlers_(frame_pair_handlers), task_queue_("VideoAnalyzer") {}
+    : frame_pair_handlers_(std::move(frame_pair_handlers)),
+      task_queue_("VideoAnalyzer") {}
 
 VideoFrameMatcher::~VideoFrameMatcher() {
   task_queue_.SendTask([this] { Finalize(); });
@@ -58,14 +59,15 @@ void VideoFrameMatcher::OnCapturedFrame(const VideoFrame& frame,
 }
 
 void VideoFrameMatcher::OnDecodedFrame(const VideoFrame& frame,
+                                       int layer_id,
                                        Timestamp render_time,
-                                       int layer_id) {
+                                       Timestamp at_time) {
   rtc::scoped_refptr<DecodedFrame> decoded(new DecodedFrame{});
+  decoded->decoded_time = at_time;
   decoded->render_time = render_time;
   decoded->frame = frame.video_frame_buffer();
   decoded->thumb = ScaleVideoFrameBuffer(*frame.video_frame_buffer()->ToI420(),
                                          kThumbWidth, kThumbHeight);
-  decoded->render_time = render_time;
 
   task_queue_.PostTask([this, decoded, layer_id] {
     auto& layer = layers_[layer_id];
@@ -109,6 +111,7 @@ void VideoFrameMatcher::HandleMatch(VideoFrameMatcher::CapturedFrame captured,
   if (captured.best_decode) {
     frame_pair.decode_id = captured.best_decode->id;
     frame_pair.decoded = captured.best_decode->frame;
+    frame_pair.decoded_time = captured.best_decode->decoded_time;
     frame_pair.render_time = captured.best_decode->render_time;
     frame_pair.repeated = captured.best_decode->repeat_count++;
   }
@@ -130,8 +133,6 @@ ForwardingCapturedFrameTap::ForwardingCapturedFrameTap(
     VideoFrameMatcher* matcher,
     rtc::VideoSourceInterface<VideoFrame>* source)
     : clock_(clock), matcher_(matcher), source_(source) {}
-
-ForwardingCapturedFrameTap::~ForwardingCapturedFrameTap() {}
 
 void ForwardingCapturedFrameTap::OnFrame(const VideoFrame& frame) {
   RTC_CHECK(sink_);
@@ -156,14 +157,17 @@ void ForwardingCapturedFrameTap::RemoveSink(
   sink_ = nullptr;
 }
 
-DecodedFrameTap::DecodedFrameTap(VideoFrameMatcher* matcher, int layer_id)
-    : matcher_(matcher), layer_id_(layer_id) {
+DecodedFrameTap::DecodedFrameTap(Clock* clock,
+                                 VideoFrameMatcher* matcher,
+                                 int layer_id)
+    : clock_(clock), matcher_(matcher), layer_id_(layer_id) {
   matcher_->RegisterLayer(layer_id_);
 }
 
 void DecodedFrameTap::OnFrame(const VideoFrame& frame) {
-  matcher_->OnDecodedFrame(frame, Timestamp::ms(frame.render_time_ms()),
-                           layer_id_);
+  matcher_->OnDecodedFrame(frame, layer_id_,
+                           Timestamp::ms(frame.render_time_ms()),
+                           clock_->CurrentTime());
 }
 
 }  // namespace test

@@ -78,6 +78,10 @@ double SampleStats<double>::StandardDeviation() {
   return sqrt(Variance());
 }
 
+int SampleStats<double>::Count() {
+  return static_cast<int>(GetSamples().size());
+}
+
 void SampleStats<TimeDelta>::AddSample(TimeDelta delta) {
   RTC_DCHECK(delta.IsFinite());
   stats_.AddSample(delta.seconds<double>());
@@ -120,6 +124,10 @@ TimeDelta SampleStats<TimeDelta>::Variance() {
 
 TimeDelta SampleStats<TimeDelta>::StandardDeviation() {
   return TimeDelta::seconds(stats_.StandardDeviation());
+}
+
+int SampleStats<TimeDelta>::Count() {
+  return stats_.Count();
 }
 
 void SampleStats<DataRate>::AddSample(DataRate sample) {
@@ -166,6 +174,10 @@ DataRate SampleStats<DataRate>::StandardDeviation() {
   return DataRate::bps(stats_.StandardDeviation());
 }
 
+int SampleStats<DataRate>::Count() {
+  return stats_.Count();
+}
+
 void VideoFramesStats::AddFrameInfo(const VideoFrameBuffer& frame,
                                     Timestamp at_time) {
   ++count;
@@ -187,8 +199,10 @@ void VideoQualityStats::AddStats(const VideoQualityStats& other) {
   render.AddStats(other.render);
   lost_count += other.lost_count;
   freeze_count += other.freeze_count;
+  capture_to_decoded_delay.AddSamples(other.capture_to_decoded_delay);
   end_to_end_delay.AddSamples(other.end_to_end_delay);
   psnr.AddSamples(other.psnr);
+  psnr_with_freeze.AddSamples(other.psnr_with_freeze);
   skipped_between_rendered.AddSamples(other.skipped_between_rendered);
   freeze_duration.AddSamples(other.freeze_duration);
   time_between_freezes.AddSamples(other.time_between_freezes);
