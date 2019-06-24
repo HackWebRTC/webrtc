@@ -87,6 +87,42 @@ constexpr RtpExtensionSize kVideoExtensionSizes[] = {
      RtpGenericFrameDescriptorExtension01::kMaxSizeBytes},
 };
 
+// TODO(bugs.webrtc.org/10633): Remove when downstream code stops using
+// priority. At the time of writing, the priority can be directly mapped to a
+// packet type. This is only for a transition period.
+RtpPacketToSend::Type PacketPriorityToType(RtpPacketSender::Priority priority) {
+  switch (priority) {
+    case RtpPacketSender::Priority::kLowPriority:
+      return RtpPacketToSend::Type::kVideo;
+    case RtpPacketSender::Priority::kNormalPriority:
+      return RtpPacketToSend::Type::kRetransmission;
+    case RtpPacketSender::Priority::kHighPriority:
+      return RtpPacketToSend::Type::kAudio;
+    default:
+      RTC_NOTREACHED() << "Unexpected priority: " << priority;
+      return RtpPacketToSend::Type::kVideo;
+  }
+}
+
+// TODO(bugs.webrtc.org/10633): Remove when packets are always owned by pacer.
+RtpPacketSender::Priority PacketTypeToPriority(RtpPacketToSend::Type type) {
+  switch (type) {
+    case RtpPacketToSend::Type::kAudio:
+      return RtpPacketSender::Priority::kHighPriority;
+    case RtpPacketToSend::Type::kVideo:
+      return RtpPacketSender::Priority::kLowPriority;
+    case RtpPacketToSend::Type::kRetransmission:
+      return RtpPacketSender::Priority::kNormalPriority;
+    case RtpPacketToSend::Type::kForwardErrorCorrection:
+      return RtpPacketSender::Priority::kLowPriority;
+      break;
+    case RtpPacketToSend::Type::kPadding:
+      RTC_NOTREACHED() << "Unexpected type for legacy path: kPadding";
+      break;
+  }
+  return RtpPacketSender::Priority::kLowPriority;
+}
+
 }  // namespace
 
 RTPSender::RTPSender(
@@ -802,8 +838,7 @@ size_t RTPSender::TimeToSendPadding(size_t bytes,
 }
 
 bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
-                              StorageType storage,
-                              RtpPacketSender::Priority priority) {
+                              StorageType storage) {
   RTC_DCHECK(packet);
   int64_t now_ms = clock_->TimeInMilliseconds();
 
@@ -813,6 +848,8 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
     int64_t capture_time_ms = packet->capture_time_ms();
     size_t packet_size =
         send_side_bwe_with_overhead_ ? packet->size() : packet->payload_size();
+    auto packet_type = packet->packet_type();
+    RTC_DCHECK(packet_type.has_value());
     if (ssrc == FlexfecSsrc()) {
       // Store FlexFEC packets in the history here, so they can be found
       // when the pacer calls TimeToSendPacket.
@@ -822,8 +859,8 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
       packet_history_.PutRtpPacket(std::move(packet), storage, absl::nullopt);
     }
 
-    paced_sender_->InsertPacket(priority, ssrc, seq_no, capture_time_ms,
-                                packet_size, false);
+    paced_sender_->InsertPacket(PacketTypeToPriority(*packet_type), ssrc,
+                                seq_no, capture_time_ms, packet_size, false);
     return true;
   }
 
@@ -882,6 +919,13 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
   }
 
   return sent;
+}
+
+bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
+                              StorageType storage,
+                              RtpPacketSender::Priority priority) {
+  packet->set_packet_type(PacketPriorityToType(priority));
+  return SendToNetwork(std::move(packet), storage);
 }
 
 void RTPSender::RecomputeMaxSendDelay() {

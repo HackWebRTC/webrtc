@@ -64,8 +64,7 @@ class RTPSenderAudio {
 
  private:
   bool LogAndSendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
-                           StorageType storage,
-                           RtpPacketSender::Priority priority);
+                           StorageType storage);
 
   Clock* const clock_ = nullptr;
   RTPSender* const rtp_sender_ = nullptr;

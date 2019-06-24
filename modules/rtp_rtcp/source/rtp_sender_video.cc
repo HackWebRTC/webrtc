@@ -251,8 +251,8 @@ void RTPSenderVideo::SendVideoPacket(std::unique_ptr<RtpPacketToSend> packet,
   // Remember some values about the packet before sending it away.
   size_t packet_size = packet->size();
   uint16_t seq_num = packet->SequenceNumber();
-  if (!LogAndSendToNetwork(std::move(packet), storage,
-                           RtpPacketSender::kLowPriority)) {
+  packet->set_packet_type(RtpPacketToSend::Type::kVideo);
+  if (!LogAndSendToNetwork(std::move(packet), storage)) {
     RTC_LOG(LS_WARNING) << "Failed to send video packet " << seq_num;
     return;
   }
@@ -293,8 +293,8 @@ void RTPSenderVideo::SendVideoPacketAsRedMaybeWithUlpfec(
   }
   // Send |red_packet| instead of |packet| for allocated sequence number.
   size_t red_packet_size = red_packet->size();
-  if (LogAndSendToNetwork(std::move(red_packet), media_packet_storage,
-                          RtpPacketSender::kLowPriority)) {
+  red_packet->set_packet_type(RtpPacketToSend::Type::kVideo);
+  if (LogAndSendToNetwork(std::move(red_packet), media_packet_storage)) {
     rtc::CritScope cs(&stats_crit_);
     video_bitrate_.Update(red_packet_size, clock_->TimeInMilliseconds());
   } else {
@@ -309,8 +309,7 @@ void RTPSenderVideo::SendVideoPacketAsRedMaybeWithUlpfec(
     rtp_packet->set_capture_time_ms(media_packet->capture_time_ms());
     rtp_packet->set_packet_type(RtpPacketToSend::Type::kForwardErrorCorrection);
     uint16_t fec_sequence_number = rtp_packet->SequenceNumber();
-    if (LogAndSendToNetwork(std::move(rtp_packet), kDontRetransmit,
-                            RtpPacketSender::kLowPriority)) {
+    if (LogAndSendToNetwork(std::move(rtp_packet), kDontRetransmit)) {
       rtc::CritScope cs(&stats_crit_);
       fec_bitrate_.Update(fec_packet->length(), clock_->TimeInMilliseconds());
     } else {
@@ -337,8 +336,9 @@ void RTPSenderVideo::SendVideoPacketWithFlexfec(
     for (auto& fec_packet : fec_packets) {
       size_t packet_length = fec_packet->size();
       uint16_t seq_num = fec_packet->SequenceNumber();
-      if (LogAndSendToNetwork(std::move(fec_packet), kDontRetransmit,
-                              RtpPacketSender::kLowPriority)) {
+      fec_packet->set_packet_type(
+          RtpPacketToSend::Type::kForwardErrorCorrection);
+      if (LogAndSendToNetwork(std::move(fec_packet), kDontRetransmit)) {
         rtc::CritScope cs(&stats_crit_);
         fec_bitrate_.Update(packet_length, clock_->TimeInMilliseconds());
       } else {
@@ -350,8 +350,7 @@ void RTPSenderVideo::SendVideoPacketWithFlexfec(
 
 bool RTPSenderVideo::LogAndSendToNetwork(
     std::unique_ptr<RtpPacketToSend> packet,
-    StorageType storage,
-    RtpPacketSender::Priority priority) {
+    StorageType storage) {
 #if BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
   int64_t now_ms = clock_->TimeInMilliseconds();
   BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoTotBitrate_kbps", now_ms,
@@ -363,7 +362,7 @@ bool RTPSenderVideo::LogAndSendToNetwork(
                                   rtp_sender_->NackOverheadRate() / 1000,
                                   packet->Ssrc());
 #endif
-  return rtp_sender_->SendToNetwork(std::move(packet), storage, priority);
+  return rtp_sender_->SendToNetwork(std::move(packet), storage);
 }
 
 void RTPSenderVideo::SetUlpfecConfig(int red_payload_type,

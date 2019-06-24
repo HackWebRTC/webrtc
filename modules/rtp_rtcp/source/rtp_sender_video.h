@@ -143,8 +143,7 @@ class RTPSenderVideo {
                                   bool protect_media_packet);
 
   bool LogAndSendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
-                           StorageType storage,
-                           RtpPacketSender::Priority priority);
+                           StorageType storage);
 
   bool red_enabled() const RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_) {
     return red_payload_type_ >= 0;

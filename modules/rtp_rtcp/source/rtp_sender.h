@@ -159,6 +159,10 @@ class RTPSender {
 
   // Sends packet to |transport_| or to the pacer, depending on configuration.
   bool SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
+                     StorageType storage);
+
+  // Fallback that infers PacketType from Priority.
+  bool SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
                      StorageType storage,
                      RtpPacketSender::Priority priority);
 
