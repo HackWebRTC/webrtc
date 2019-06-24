@@ -458,16 +458,16 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
       webrtc::test::ResourcePath("audio_coding/neteq_universal_new", "rtp");
 
   const std::string output_checksum =
-      PlatformChecksum("9652cee1d6771a9cbfda821ae1bbdb41b0dd4dee",
-                       "54a7e32f163663c0af35bf70bf45cefc24ad62ef", "not used",
-                       "9652cee1d6771a9cbfda821ae1bbdb41b0dd4dee",
-                       "79496b0a1ef0a3824f3ee04789748a461bed643f");
+      PlatformChecksum("415cc2366810676aad27a92b7a9068e79b7e4093",
+                       "52411c46e946e1d50fa777bbfb4686e7161f9cc7", "not used",
+                       "415cc2366810676aad27a92b7a9068e79b7e4093",
+                       "3e02f268f3b4f3acfcc1c397214ea13d09c212fd");
 
   const std::string network_stats_checksum =
-      PlatformChecksum("c59b1f9f282b6d8733cdff975e3c150ca4a47d51",
-                       "bca95e565996a4ffd6e2ac15736e08843bdca93b", "not used",
-                       "c59b1f9f282b6d8733cdff975e3c150ca4a47d51",
-                       "c59b1f9f282b6d8733cdff975e3c150ca4a47d51");
+      PlatformChecksum("6c8726e8699cc61535e65ef9406d339954a05cf8",
+                       "b9f2c862328ddb8d3ec9e79f61cc1d937ee56df6", "not used",
+                       "6c8726e8699cc61535e65ef9406d339954a05cf8",
+                       "6c8726e8699cc61535e65ef9406d339954a05cf8");
 
   DecodeAndCompare(input_rtp_file, output_checksum, network_stats_checksum,
                    FLAG_gen_ref);
@@ -486,17 +486,17 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
   // Checksum depends on libopus being compiled with or without SSE.
   const std::string maybe_sse =
       "14a63b3c7b925c82296be4bafc71bec85f2915c2|"
-      "2c05677daa968d6c68b92adf4affb7cd9bb4d363";
+      "8884ffe98700454875a88d1c3ea9b55e829a2016";
   const std::string output_checksum = PlatformChecksum(
-      maybe_sse, "b7b7ed802b0e18ee416973bf3b9ae98599b0181d",
-      "5876e52dda90d5ca433c3726555b907b97c86374", maybe_sse, maybe_sse);
+      maybe_sse, "1f76c884d16812704dec85f2b98db697108d2d9b",
+      "f888efef2d0710f202f19ba167ed509609146929", maybe_sse, maybe_sse);
 
   const std::string network_stats_checksum =
-      PlatformChecksum("adb3272498e436d1c019cbfd71610e9510c54497",
-                       "fa935a91abc7291db47428a2d7c5361b98713a92",
-                       "42106aa5267300f709f63737707ef07afd9dac61",
-                       "adb3272498e436d1c019cbfd71610e9510c54497",
-                       "adb3272498e436d1c019cbfd71610e9510c54497");
+      PlatformChecksum("bb8d91f71873df562224fe0dc5822b5dfb030090",
+                       "9f858290a675c4ceabf575feb6a59bef76d62eaf",
+                       "12963c965d9d102ebbc1f619508e2960a1f7dbee",
+                       "bb8d91f71873df562224fe0dc5822b5dfb030090",
+                       "bb8d91f71873df562224fe0dc5822b5dfb030090");
 
   DecodeAndCompare(input_rtp_file, output_checksum, network_stats_checksum,
                    FLAG_gen_ref);
@@ -796,7 +796,7 @@ TEST_F(NetEqDecodingTest, LongCngWithNegativeClockDriftNetworkFreeze) {
   const double kDriftFactor = 1000.0 / (1000.0 + 25.0);
   const double kNetworkFreezeTimeMs = 5000.0;
   const bool kGetAudioDuringFreezeRecovery = false;
-  const int kDelayToleranceMs = 50;
+  const int kDelayToleranceMs = 60;
   const int kMaxTimeToSpeechMs = 200;
   LongCngWithClockDrift(kDriftFactor, kNetworkFreezeTimeMs,
                         kGetAudioDuringFreezeRecovery, kDelayToleranceMs,

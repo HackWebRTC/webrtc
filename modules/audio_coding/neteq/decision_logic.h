@@ -134,9 +134,7 @@ class DecisionLogic final {
 
   // Returns the operation to do given that the expected packet is not
   // available, but a packet further into the future is at hand.
-  Operations FuturePacketAvailable(const SyncBuffer& sync_buffer,
-                                   const Expand& expand,
-                                   size_t decoder_frame_length,
+  Operations FuturePacketAvailable(size_t decoder_frame_length,
                                    Modes prev_mode,
                                    uint32_t target_timestamp,
                                    uint32_t available_timestamp,
