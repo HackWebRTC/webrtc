@@ -214,17 +214,6 @@ bool PeerConnectionFactory::StartAecDump(FILE* file, int64_t max_size_bytes) {
   return channel_manager_->StartAecDump(FileWrapper(file), max_size_bytes);
 }
 
-bool PeerConnectionFactory::StartAecDump(rtc::PlatformFile file,
-                                         int64_t max_size_bytes) {
-  RTC_DCHECK(signaling_thread_->IsCurrent());
-  FILE* f = rtc::FdopenPlatformFileForWriting(file);
-  if (!f) {
-    rtc::ClosePlatformFile(file);
-    return false;
-  }
-  return StartAecDump(f, max_size_bytes);
-}
-
 void PeerConnectionFactory::StopAecDump() {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   channel_manager_->StopAecDump();

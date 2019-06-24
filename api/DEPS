@@ -122,7 +122,6 @@ specific_include_rules = {
     "+p2p/base/port_allocator.h",
     "+rtc_base/bitrate_allocation_strategy.h",
     "+rtc_base/network.h",
-    "+rtc_base/platform_file.h",
     "+rtc_base/rtc_certificate.h",
     "+rtc_base/rtc_certificate_generator.h",
     "+rtc_base/socket_address.h",
@@ -148,8 +147,6 @@ specific_include_rules = {
     "+rtc_base/logging.h",
   ],
   "rtc_event_log_output_file.h": [
-    # TODO(bugs.webrtc.org/6463): Delete this dependency.
-    "+rtc_base/platform_file.h",
     # For private member and constructor.
     "+rtc_base/system/file_wrapper.h",
   ],

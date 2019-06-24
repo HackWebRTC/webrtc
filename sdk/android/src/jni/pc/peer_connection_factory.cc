@@ -420,10 +420,16 @@ jlong JNI_PeerConnectionFactory_CreateAudioTrack(
 static jboolean JNI_PeerConnectionFactory_StartAecDump(
     JNIEnv* jni,
     jlong native_factory,
-    jint file,
+    jint file_descriptor,
     jint filesize_limit_bytes) {
+  FILE* f = fdopen(file_descriptor, "wb");
+  if (!f) {
+    close(file_descriptor);
+    return false;
+  }
+
   return PeerConnectionFactoryFromJava(native_factory)
-      ->StartAecDump(file, filesize_limit_bytes);
+      ->StartAecDump(f, filesize_limit_bytes);
 }
 
 static void JNI_PeerConnectionFactory_StopAecDump(JNIEnv* jni,

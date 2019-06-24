@@ -310,12 +310,12 @@
     RTCLogError(@"Aec dump already started.");
     return NO;
   }
-  int fd = open(filePath.UTF8String, O_WRONLY | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-  if (fd < 0) {
-    RTCLogError(@"Error opening file: %@. Error: %d", filePath, errno);
+  FILE *f = fopen(filePath.UTF8String, "wb");
+  if (!f) {
+    RTCLogError(@"Error opening file: %@. Error: %s", filePath, strerror(errno));
     return NO;
   }
-  _hasStartedAecDump = _nativeFactory->StartAecDump(fd, maxSizeInBytes);
+  _hasStartedAecDump = _nativeFactory->StartAecDump(f, maxSizeInBytes);
   return _hasStartedAecDump;
 }
 

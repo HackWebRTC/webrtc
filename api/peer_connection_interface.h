@@ -108,7 +108,6 @@
 // TODO(nisse): The interface for bitrate allocation strategy belongs in api/.
 #include "rtc_base/bitrate_allocation_strategy.h"
 #include "rtc_base/network.h"
-#include "rtc_base/platform_file.h"
 #include "rtc_base/rtc_certificate.h"
 #include "rtc_base/rtc_certificate_generator.h"
 #include "rtc_base/socket_address.h"
@@ -1410,10 +1409,6 @@ class PeerConnectionFactoryInterface : public rtc::RefCountInterface {
   // TODO(webrtc:6463): Delete default implementation when downstream mocks
   // classes are updated.
   virtual bool StartAecDump(FILE* file, int64_t max_size_bytes) {
-    return false;
-  }
-  // TODO(webrtc:6463): Deprecated; PlatformFile will soon be deleted.
-  virtual bool StartAecDump(rtc::PlatformFile file, int64_t max_size_bytes) {
     return false;
   }
 
