@@ -92,15 +92,14 @@ std::string RTCOutboundRTPStreamStatsIDFromSSRC(bool audio, uint32_t ssrc) {
   return sb.str();
 }
 
-std::string RTCRemoteInboundRtpStreamStatsIdFromSsrcs(
+std::string RTCRemoteInboundRtpStreamStatsIdFromSourceSsrc(
     cricket::MediaType media_type,
-    uint32_t sender_ssrc,
     uint32_t source_ssrc) {
   char buf[1024];
   rtc::SimpleStringBuilder sb(buf);
   sb << "RTCRemoteInboundRtp"
      << (media_type == cricket::MEDIA_TYPE_AUDIO ? "Audio" : "Video")
-     << "Stream_" << sender_ssrc << "_" << source_ssrc;
+     << "Stream_" << source_ssrc;
   return sb.str();
 }
 
@@ -408,10 +407,10 @@ ProduceRemoteInboundRtpStreamStatsFromReportBlockData(
   // for "remote-[outbound/inbound]-rtp" it refers to the local time when the
   // Report Block was received.
   auto remote_inbound = absl::make_unique<RTCRemoteInboundRtpStreamStats>(
-      RTCRemoteInboundRtpStreamStatsIdFromSsrcs(
-          media_type, report_block.sender_ssrc, report_block.source_ssrc),
+      RTCRemoteInboundRtpStreamStatsIdFromSourceSsrc(media_type,
+                                                     report_block.source_ssrc),
       /*timestamp=*/report_block_data.report_block_timestamp_utc_us());
-  remote_inbound->ssrc = report_block.sender_ssrc;
+  remote_inbound->ssrc = report_block.source_ssrc;
   remote_inbound->kind =
       media_type == cricket::MEDIA_TYPE_AUDIO ? "audio" : "video";
   remote_inbound->packets_lost = report_block.packets_lost;

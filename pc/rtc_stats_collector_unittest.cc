@@ -2450,9 +2450,8 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
   fake_clock_.SetTime(Timestamp::us(kReportBlockTimestampUtcUs));
 
   RTCPReportBlock report_block;
-  // The remote-inbound-rtp SSRC, "SSRC of sender of this report".
-  report_block.sender_ssrc = 8;
-  // The outbound-rtp SSRC, "SSRC of the RTP packet sender".
+  // The remote-inbound-rtp SSRC and the outbound-rtp SSRC is the same as the
+  // |source_ssrc|, "SSRC of the RTP packet sender".
   report_block.source_ssrc = 12;
   report_block.packets_lost = 7;
   ReportBlockData report_block_data;
@@ -2468,9 +2467,9 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
   RTCRemoteInboundRtpStreamStats expected_remote_inbound_rtp(
-      "RTCRemoteInboundRtp" + MediaTypeUpperCase() + "Stream_8_12",
+      "RTCRemoteInboundRtp" + MediaTypeUpperCase() + "Stream_12",
       kReportBlockTimestampUtcUs);
-  expected_remote_inbound_rtp.ssrc = 8;
+  expected_remote_inbound_rtp.ssrc = 12;
   expected_remote_inbound_rtp.kind = MediaTypeLowerCase();
   expected_remote_inbound_rtp.transport_id =
       "RTCTransport_TransportName_1";  // 1 for RTP (we have no RTCP transport)
@@ -2495,9 +2494,8 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
   fake_clock_.SetTime(Timestamp::us(kReportBlockTimestampUtcUs));
 
   RTCPReportBlock report_block;
-  // The remote-inbound-rtp SSRC, "SSRC of sender of this report".
-  report_block.sender_ssrc = 8;
-  // The outbound-rtp SSRC, "SSRC of the RTP packet sender".
+  // The remote-inbound-rtp SSRC and the outbound-rtp SSRC is the same as the
+  // |source_ssrc|, "SSRC of the RTP packet sender".
   report_block.source_ssrc = 12;
   ReportBlockData report_block_data;
   report_block_data.SetReportBlock(report_block, kReportBlockTimestampUtcUs);
@@ -2511,7 +2509,7 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
   std::string remote_inbound_rtp_id =
-      "RTCRemoteInboundRtp" + MediaTypeUpperCase() + "Stream_8_12";
+      "RTCRemoteInboundRtp" + MediaTypeUpperCase() + "Stream_12";
   ASSERT_TRUE(report->Get(remote_inbound_rtp_id));
   auto& remote_inbound_rtp = report->Get(remote_inbound_rtp_id)
                                  ->cast_to<RTCRemoteInboundRtpStreamStats>();
@@ -2528,9 +2526,8 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
   fake_clock_.SetTime(Timestamp::us(kReportBlockTimestampUtcUs));
 
   RTCPReportBlock report_block;
-  // The remote-inbound-rtp SSRC, "SSRC of sender of this report".
-  report_block.sender_ssrc = 8;
-  // The outbound-rtp SSRC, "SSRC of the RTP packet sender".
+  // The remote-inbound-rtp SSRC and the outbound-rtp SSRC is the same as the
+  // |source_ssrc|, "SSRC of the RTP packet sender".
   report_block.source_ssrc = 12;
   report_block.jitter = 5000;
   ReportBlockData report_block_data;
@@ -2546,7 +2543,7 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
   std::string remote_inbound_rtp_id =
-      "RTCRemoteInboundRtp" + MediaTypeUpperCase() + "Stream_8_12";
+      "RTCRemoteInboundRtp" + MediaTypeUpperCase() + "Stream_12";
   ASSERT_TRUE(report->Get(remote_inbound_rtp_id));
   auto& remote_inbound_rtp = report->Get(remote_inbound_rtp_id)
                                  ->cast_to<RTCRemoteInboundRtpStreamStats>();
@@ -2566,9 +2563,8 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
   fake_clock_.SetTime(Timestamp::us(kReportBlockTimestampUtcUs));
 
   RTCPReportBlock report_block;
-  // The remote-inbound-rtp SSRC, "SSRC of sender of this report".
-  report_block.sender_ssrc = 8;
-  // The outbound-rtp SSRC, "SSRC of the RTP packet sender".
+  // The remote-inbound-rtp SSRC and the outbound-rtp SSRC is the same as the
+  // |source_ssrc|, "SSRC of the RTP packet sender".
   report_block.source_ssrc = 12;
   ReportBlockData report_block_data;
   report_block_data.SetReportBlock(report_block, kReportBlockTimestampUtcUs);
@@ -2588,7 +2584,7 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
   rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
 
   std::string remote_inbound_rtp_id =
-      "RTCRemoteInboundRtp" + MediaTypeUpperCase() + "Stream_8_12";
+      "RTCRemoteInboundRtp" + MediaTypeUpperCase() + "Stream_12";
   ASSERT_TRUE(report->Get(remote_inbound_rtp_id));
   auto& remote_inbound_rtp = report->Get(remote_inbound_rtp_id)
                                  ->cast_to<RTCRemoteInboundRtpStreamStats>();
