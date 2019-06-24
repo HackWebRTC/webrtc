@@ -50,7 +50,6 @@ class RtpPacketReceived;
 class RtpRtcp;
 
 struct CallReceiveStatistics {
-  unsigned short fractionLost;  // NOLINT
   unsigned int cumulativeLost;
   unsigned int extendedMax;
   unsigned int jitterSamples;

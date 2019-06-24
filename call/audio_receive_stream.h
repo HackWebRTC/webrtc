@@ -41,7 +41,6 @@ class AudioReceiveStream {
     uint64_t fec_packets_received = 0;
     uint64_t fec_packets_discarded = 0;
     uint32_t packets_lost = 0;
-    float fraction_lost = 0.0f;
     std::string codec_name;
     absl::optional<int> codec_payload_type;
     uint32_t ext_seqnum = 0;

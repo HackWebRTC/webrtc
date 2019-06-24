@@ -2723,8 +2723,6 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
                     stats.rtp_stats.transmitted.padding_bytes;
   info.packets_rcvd = stats.rtp_stats.transmitted.packets;
   info.packets_lost = stats.rtcp_stats.packets_lost;
-  info.fraction_lost =
-      static_cast<float>(stats.rtcp_stats.fraction_lost) / (1 << 8);
 
   info.framerate_rcvd = stats.network_frame_rate;
   info.framerate_decoded = stats.decode_frame_rate;

@@ -1728,7 +1728,6 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
   voice_media_info.receivers[0].bytes_rcvd = 3;
   voice_media_info.receivers[0].codec_payload_type = 42;
   voice_media_info.receivers[0].jitter_ms = 4500;
-  voice_media_info.receivers[0].fraction_lost = 5.5f;
   voice_media_info.receivers[0].last_packet_received_timestamp_ms =
       absl::nullopt;
 
@@ -1766,7 +1765,6 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Audio) {
   expected_audio.packets_lost = -1;
   // |expected_audio.last_packet_received_timestamp| should be undefined.
   expected_audio.jitter = 4.5;
-  expected_audio.fraction_lost = 5.5;
   ASSERT_TRUE(report->Get(expected_audio.id()));
   EXPECT_EQ(
       report->Get(expected_audio.id())->cast_to<RTCInboundRTPStreamStats>(),
@@ -1798,7 +1796,6 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   video_media_info.receivers[0].packets_rcvd = 2;
   video_media_info.receivers[0].packets_lost = 42;
   video_media_info.receivers[0].bytes_rcvd = 3;
-  video_media_info.receivers[0].fraction_lost = 4.5f;
   video_media_info.receivers[0].codec_payload_type = 42;
   video_media_info.receivers[0].firs_sent = 5;
   video_media_info.receivers[0].plis_sent = 6;
@@ -1839,7 +1836,6 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   expected_video.packets_received = 2;
   expected_video.bytes_received = 3;
   expected_video.packets_lost = 42;
-  expected_video.fraction_lost = 4.5;
   expected_video.frames_decoded = 8;
   // |expected_video.qp_sum| should be undefined.
   // |expected_video.last_packet_received_timestamp| should be undefined.

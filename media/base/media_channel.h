@@ -450,6 +450,8 @@ struct MediaReceiverInfo {
   int64_t bytes_rcvd = 0;
   int packets_rcvd = 0;
   int packets_lost = 0;
+  // TODO(bugs.webrtc.org/10679): Unused, delete as soon as downstream code is
+  // updated.
   float fraction_lost = 0.0f;
   // The timestamp at which the last packet was received, i.e. the time of the
   // local clock when it was received - not the RTP timestamp of that packet.

@@ -645,7 +645,6 @@ class WebRtcVoiceEngineTestFake : public ::testing::Test {
     stats.bytes_rcvd = 456;
     stats.packets_rcvd = 768;
     stats.packets_lost = 101;
-    stats.fraction_lost = 23.45f;
     stats.codec_name = "codec_name_recv";
     stats.codec_payload_type = 42;
     stats.ext_seqnum = 678;
@@ -688,7 +687,6 @@ class WebRtcVoiceEngineTestFake : public ::testing::Test {
               stats.packets_rcvd);
     EXPECT_EQ(rtc::checked_cast<unsigned int>(info.packets_lost),
               stats.packets_lost);
-    EXPECT_EQ(info.fraction_lost, stats.fraction_lost);
     EXPECT_EQ(info.codec_name, stats.codec_name);
     EXPECT_EQ(info.codec_payload_type, stats.codec_payload_type);
     EXPECT_EQ(rtc::checked_cast<unsigned int>(info.ext_seqnum),

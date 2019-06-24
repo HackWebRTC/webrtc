@@ -756,7 +756,6 @@ CallReceiveStatistics ChannelReceive::GetRTCPStatistics() const {
                                 _rtpRtcpModule->RTCP() == RtcpMode::kOff);
   }
 
-  stats.fractionLost = statistics.fraction_lost;
   stats.cumulativeLost = statistics.packets_lost;
   stats.extendedMax = statistics.extended_highest_sequence_number;
   stats.jitterSamples = statistics.jitter;

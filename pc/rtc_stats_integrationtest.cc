@@ -789,7 +789,7 @@ class RTCStatsReportVerifier {
     } else {
       verifier.TestMemberIsNonNegative<double>(inbound_stream.jitter);
     }
-    verifier.TestMemberIsNonNegative<double>(inbound_stream.fraction_lost);
+
     verifier.TestMemberIsUndefined(inbound_stream.round_trip_time);
     verifier.TestMemberIsUndefined(inbound_stream.packets_discarded);
     verifier.TestMemberIsUndefined(inbound_stream.packets_repaired);

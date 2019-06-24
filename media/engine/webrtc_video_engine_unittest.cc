@@ -1610,7 +1610,6 @@ TEST_F(WebRtcVideoChannelBaseTest, GetStats) {
   EXPECT_EQ(DefaultCodec().id, *info.receivers[0].codec_payload_type);
   EXPECT_EQ(NumRtpBytes(), info.receivers[0].bytes_rcvd);
   EXPECT_EQ(NumRtpPackets(), info.receivers[0].packets_rcvd);
-  EXPECT_EQ(0.0, info.receivers[0].fraction_lost);
   EXPECT_EQ(0, info.receivers[0].packets_lost);
   // TODO(asapersson): Not set for webrtc. Handle missing stats.
   // EXPECT_EQ(0, info.receivers[0].packets_concealed);
@@ -5117,8 +5116,6 @@ TEST_F(WebRtcVideoChannelTest, GetStatsTranslatesReceivePacketStatsCorrectly) {
   EXPECT_EQ(stats.rtp_stats.transmitted.packets,
             rtc::checked_cast<unsigned int>(info.receivers[0].packets_rcvd));
   EXPECT_EQ(stats.rtcp_stats.packets_lost, info.receivers[0].packets_lost);
-  EXPECT_EQ(rtc::checked_cast<float>(stats.rtcp_stats.fraction_lost) / (1 << 8),
-            info.receivers[0].fraction_lost);
 }
 
 TEST_F(WebRtcVideoChannelTest, TranslatesCallStatsCorrectly) {
