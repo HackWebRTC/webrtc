@@ -15,7 +15,6 @@ group("rtc_tools") {
   testonly = true
 
   deps = [
-    ":command_line_parser",
     ":frame_analyzer",
     ":video_file_reader",
     ":video_quality_analysis",
@@ -47,17 +46,6 @@ group("rtc_tools") {
       ]
     }
   }
-}
-
-rtc_static_library("command_line_parser") {
-  sources = [
-    "simple_command_line_parser.cc",
-    "simple_command_line_parser.h",
-  ]
-  deps = [
-    "../rtc_base:gtest_prod",
-    "../rtc_base:rtc_base_approved",
-  ]
 }
 
 rtc_static_library("video_file_reader") {
@@ -419,13 +407,11 @@ if (rtc_include_tests) {
       "frame_analyzer/video_temporal_aligner_unittest.cc",
       "frame_editing/frame_editing_unittest.cc",
       "sanitizers_unittest.cc",
-      "simple_command_line_parser_unittest.cc",
       "video_file_reader_unittest.cc",
       "video_file_writer_unittest.cc",
     ]
 
     deps = [
-      ":command_line_parser",
       ":video_file_reader",
       ":video_file_writer",
       ":video_quality_analysis",
