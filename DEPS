@@ -7,7 +7,7 @@ vars = {
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
   'webrtc_git': 'https://webrtc.googlesource.com',
-  'chromium_revision': 'd6c73f302957d64ace0b275217d52781581c8de1',
+  'chromium_revision': 'c049034cc7d50f3358f29e74e9d25631979d89c1',
   'boringssl_git': 'https://boringssl.googlesource.com',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling swarming_client
@@ -24,7 +24,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling catapult
   # and whatever else without interference from each other.
-  'catapult_revision': 'ab176bd6b58cc828cafb73a86dac354947bbf998',
+  'catapult_revision': '304e5101f38227ea858688612e7bef77a9a35aae',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling libFuzzer
   # and whatever else without interference from each other.
@@ -44,7 +44,7 @@ vars = {
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling GN CIPD package version
   # and whatever else without interference from each other.
-  'gn_version': 'git_revision:8c7f49102234f4f4b9349dcb258554675475e596',
+  'gn_version': 'git_revision:972ed755f8e6d31cae9ba15fcd08136ae1a7886f',
   # Three lines of non-changing comments so that
   # the commit queue can handle CLs rolling android_sdk_build-tools_version
   # and whatever else without interference from each other.
@@ -88,9 +88,9 @@ deps = {
   'src/base':
     Var('chromium_git') + '/chromium/src/base' + '@' + '735950ee7eb6ee23667835078cad7554a1432e66',
   'src/build':
-    Var('chromium_git') + '/chromium/src/build' + '@' + '7993bd19840827859f17decf088e531d1068fa82',
+    Var('chromium_git') + '/chromium/src/build' + '@' + 'a703fac545319a7aefe3341aa014799c921a96ca',
   'src/buildtools':
-    Var('chromium_git') + '/chromium/src/buildtools' + '@' + '8c2657f8849a3253f387b14bbc095a6214ce05a2',
+    Var('chromium_git') + '/chromium/src/buildtools' + '@' + '80b545b427d95ac8996a887fa32ba1d64919792d',
   # Gradle 4.3-rc4. Used for testing Android Studio project generation for WebRTC.
   'src/examples/androidtests/third_party/gradle': {
     'url': Var('chromium_git') + '/external/github.com/gradle/gradle.git' + '@' +
@@ -98,13 +98,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + '0dbe3e06d992929ab57d399a74f47ee7c607b05b',
+    'url': Var('chromium_git') + '/chromium/src/ios' + '@' + '11fdd4a29d101253a15b932c02325e8298c2143d',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    Var('chromium_git') + '/chromium/src/testing' + '@' + 'bacb300265c22894efbff34121b2acf5ae7934ae',
+    Var('chromium_git') + '/chromium/src/testing' + '@' + 'c0b90eb408b2ab8bcd40579a525c61fe1918d242',
   'src/third_party':
-    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'f287ff68f055ca98067651b5bfcc7c54f2d0d91d',
+    Var('chromium_git') + '/chromium/src/third_party' + '@' + 'caeb94df803f08e7d5b470beb3459df1f6542b58',
 
   'src/buildtools/linux64': {
     'packages': [
@@ -166,7 +166,7 @@ deps = {
       'packages': [
           {
               'package': 'chromium/third_party/android_build_tools/aapt2',
-              'version': 'j6U3mv7-KG3PSDtVvTwycWzjwvFR1_sSdA540AYxpucC',
+              'version': 'version:3.6.0-alpha03-5516695-cr0',
           },
       ],
       'condition': 'checkout_android',
@@ -312,7 +312,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     Var('chromium_git') + '/chromium/deps/yasm/patched-yasm.git' + '@' + '720b70524a4424b15fc57e82263568c8ba0496ad',
   'src/tools':
-    Var('chromium_git') + '/chromium/src/tools' + '@' + 'a0f754d2064f0b7d8fc8619d4748471440340d31',
+    Var('chromium_git') + '/chromium/src/tools' + '@' + '87ce84be27f403f5fd3407812fc0dcd70a57f6a4',
   'src/tools/swarming_client':
     Var('chromium_git') + '/infra/luci/client-py.git' + '@' +  Var('swarming_revision'),
 
