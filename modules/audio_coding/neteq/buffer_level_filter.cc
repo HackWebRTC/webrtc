@@ -22,31 +22,52 @@ BufferLevelFilter::BufferLevelFilter() {
 }
 
 void BufferLevelFilter::Reset() {
-  filtered_current_level_ = 0.0;
-  level_factor_ = 0.988;
+  filtered_current_level_ = 0;
+  level_factor_ = 253;
 }
 
-void BufferLevelFilter::Update(size_t buffer_size_samples,
-                               int time_stretched_samples) {
-  filtered_current_level_ = level_factor_ * filtered_current_level_ +
-                            (1 - level_factor_) * buffer_size_samples;
-
-  // Account for time-scale operations (accelerate and pre-emptive expand) and
-  // make sure that the filtered value remains non-negative.
+void BufferLevelFilter::Update(size_t buffer_size_packets,
+                               int time_stretched_samples,
+                               size_t packet_len_samples) {
+  // Filter:
+  // |filtered_current_level_| = |level_factor_| * |filtered_current_level_| +
+  //                            (1 - |level_factor_|) * |buffer_size_packets|
+  // |level_factor_| and |filtered_current_level_| are in Q8.
+  // |buffer_size_packets| is in Q0.
   filtered_current_level_ =
-      std::max(0.0, filtered_current_level_ - time_stretched_samples);
+      ((level_factor_ * filtered_current_level_) >> 8) +
+      ((256 - level_factor_) * rtc::dchecked_cast<int>(buffer_size_packets));
+
+  // Account for time-scale operations (accelerate and pre-emptive expand).
+  if (time_stretched_samples && packet_len_samples > 0) {
+    // Time-scaling has been performed since last filter update. Subtract the
+    // value of |time_stretched_samples| from |filtered_current_level_| after
+    // converting |time_stretched_samples| from samples to packets in Q8.
+    // Make sure that the filtered value remains non-negative.
+
+    int64_t time_stretched_packets =
+        (int64_t{time_stretched_samples} * (1 << 8)) /
+        rtc::dchecked_cast<int64_t>(packet_len_samples);
+
+    filtered_current_level_ = rtc::saturated_cast<int>(
+        std::max<int64_t>(0, filtered_current_level_ - time_stretched_packets));
+  }
 }
 
-void BufferLevelFilter::SetTargetBufferLevel(int target_buffer_level_packets) {
-  if (target_buffer_level_packets <= 1) {
-    level_factor_ = 0.980;
-  } else if (target_buffer_level_packets <= 3) {
-    level_factor_ = 0.984;
-  } else if (target_buffer_level_packets <= 7) {
-    level_factor_ = 0.988;
+void BufferLevelFilter::SetTargetBufferLevel(int target_buffer_level) {
+  if (target_buffer_level <= 1) {
+    level_factor_ = 251;
+  } else if (target_buffer_level <= 3) {
+    level_factor_ = 252;
+  } else if (target_buffer_level <= 7) {
+    level_factor_ = 253;
   } else {
-    level_factor_ = 0.992;
+    level_factor_ = 254;
   }
+}
+
+int BufferLevelFilter::filtered_current_level() const {
+  return filtered_current_level_;
 }
 
 }  // namespace webrtc
