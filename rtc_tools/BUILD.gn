@@ -273,13 +273,15 @@ if (!build_with_chromium) {
   }
 
   rtc_executable("frame_editor") {
+    testonly = true
     sources = [
       "frame_editing/frame_editing.cc",
     ]
 
     deps = [
-      ":command_line_parser",
       ":frame_editing_lib",
+      "//third_party/abseil-cpp/absl/flags:flag",
+      "//third_party/abseil-cpp/absl/flags:parse",
     ]
   }
 
