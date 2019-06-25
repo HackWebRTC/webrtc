@@ -169,7 +169,6 @@ if (!build_with_chromium) {
     ]
 
     deps = [
-      ":command_line_parser",
       "../api:libjingle_peerconnection_api",
       "../api:transport_api",
       "../api/video:builtin_video_bitrate_allocator_factory",
@@ -195,6 +194,8 @@ if (!build_with_chromium) {
       "../test:fileutils",
       "../test:rtp_test_utils",
       "../test:video_test_common",
+      "//third_party/abseil-cpp/absl/flags:flag",
+      "//third_party/abseil-cpp/absl/flags:parse",
       "//third_party/abseil-cpp/absl/strings",
     ]
   }

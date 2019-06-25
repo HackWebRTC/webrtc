@@ -11,29 +11,28 @@
 #include <stdlib.h>
 #include <string>
 
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 #include "rtc_tools/rtp_generator/rtp_generator.h"
-#include "rtc_tools/simple_command_line_parser.h"
+
+ABSL_FLAG(std::string, input_config, "", "JSON file with config");
+ABSL_FLAG(std::string, output_rtpdump, "", "Where to store the rtpdump");
 
 int main(int argc, char* argv[]) {
-  const std::string usage =
-      "Generates custom configured rtpdumps for the purpose of testing.\n"
-      "Example Usage:\n"
-      "./rtp_generator --input_config=sender_config.json\n"
-      "                --output_rtpdump=my.rtpdump\n";
+  absl::ParseCommandLine(argc, argv);
 
-  webrtc::test::CommandLineParser cmd_parser;
-  cmd_parser.Init(argc, argv);
-  cmd_parser.SetUsageMessage(usage);
-  cmd_parser.SetFlag("input_config", "");
-  cmd_parser.SetFlag("output_rtpdump", "");
-  cmd_parser.ProcessFlags();
+  // TODO(bugs.webrtc.org/10616): Add program usage message when Abseil
+  // flags supports it.
+  // const std::string usage =
+  //    "Generates custom configured rtpdumps for the purpose of testing.\n"
+  //    "Example Usage:\n"
+  //    "./rtp_generator --input_config=sender_config.json\n"
+  //    "                --output_rtpdump=my.rtpdump\n";
 
-  const std::string config_path = cmd_parser.GetFlag("input_config");
-  const std::string rtp_dump_path = cmd_parser.GetFlag("output_rtpdump");
+  const std::string config_path = absl::GetFlag(FLAGS_input_config);
+  const std::string rtp_dump_path = absl::GetFlag(FLAGS_output_rtpdump);
 
-  if (cmd_parser.GetFlag("help") == "true" || rtp_dump_path.empty() ||
-      config_path.empty()) {
-    cmd_parser.PrintUsageMessage();
+  if (rtp_dump_path.empty() || config_path.empty()) {
     return EXIT_FAILURE;
   }
 
