@@ -54,8 +54,8 @@ BOOL CALLBACK WindowsEnumerationHandler(HWND hwnd, LPARAM param) {
   const size_t kClassLength = 256;
   WCHAR class_name[kClassLength];
   const int class_name_length = GetClassNameW(hwnd, class_name, kClassLength);
-  RTC_DCHECK(class_name_length)
-      << "Error retrieving the application's class name";
+  if (class_name_length < 1)
+    return TRUE;
 
   // Skip Program Manager window and the Start button. This is the same logic
   // that's used in Win32WindowPicker in libjingle. Consider filtering other

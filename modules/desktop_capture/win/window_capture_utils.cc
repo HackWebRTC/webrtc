@@ -186,9 +186,8 @@ bool WindowCaptureHelperWin::IsWindowChromeNotification(HWND hwnd) {
   const size_t kClassLength = 256;
   WCHAR class_name[kClassLength];
   const int class_name_length = GetClassNameW(hwnd, class_name, kClassLength);
-  RTC_DCHECK(class_name_length)
-      << "Error retrieving the application's class name";
-  if (wcsncmp(class_name, kChromeWindowClassPrefix,
+  if (class_name_length < 1 ||
+      wcsncmp(class_name, kChromeWindowClassPrefix,
               wcsnlen_s(kChromeWindowClassPrefix, kClassLength)) != 0) {
     return false;
   }
