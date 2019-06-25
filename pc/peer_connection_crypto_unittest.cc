@@ -720,7 +720,8 @@ TEST_P(PeerConnectionCryptoTest, SessionErrorIfFingerprintInvalid) {
   ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
 
   // Create an invalid answer with the other certificate's fingerprint.
-  auto invalid_answer = callee->CreateAnswer();
+  auto valid_answer = callee->CreateAnswer();
+  auto invalid_answer = CloneSessionDescription(valid_answer.get());
   auto* audio_content =
       cricket::GetFirstAudioContent(invalid_answer->description());
   ASSERT_TRUE(audio_content);
@@ -741,7 +742,7 @@ TEST_P(PeerConnectionCryptoTest, SessionErrorIfFingerprintInvalid) {
   ASSERT_FALSE(callee->SetRemoteDescription(caller->CreateOffer(), &error));
   EXPECT_PRED_FORMAT2(AssertStringContains, error,
                       "Session error code: ERROR_CONTENT.");
-  ASSERT_FALSE(callee->SetLocalDescription(callee->CreateAnswer(), &error));
+  ASSERT_FALSE(callee->SetLocalDescription(std::move(valid_answer), &error));
   EXPECT_PRED_FORMAT2(AssertStringContains, error,
                       "Session error code: ERROR_CONTENT.");
 }

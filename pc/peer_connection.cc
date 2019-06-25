@@ -1973,6 +1973,17 @@ void PeerConnection::CreateOffer(CreateSessionDescriptionObserver* observer,
     return;
   }
 
+  // If a session error has occurred the PeerConnection is in a possibly
+  // inconsistent state so fail right away.
+  if (session_error() != SessionError::kNone) {
+    std::string error_message = GetSessionErrorMsg();
+    RTC_LOG(LS_ERROR) << "CreateOffer: " << error_message;
+    PostCreateSessionDescriptionFailure(
+        observer,
+        RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error_message)));
+    return;
+  }
+
   if (!ValidateOfferAnswerOptions(options)) {
     std::string error = "CreateOffer called with invalid options.";
     RTC_LOG(LS_ERROR) << error;
@@ -2076,6 +2087,17 @@ void PeerConnection::CreateAnswer(CreateSessionDescriptionObserver* observer,
   TRACE_EVENT0("webrtc", "PeerConnection::CreateAnswer");
   if (!observer) {
     RTC_LOG(LS_ERROR) << "CreateAnswer - observer is NULL.";
+    return;
+  }
+
+  // If a session error has occurred the PeerConnection is in a possibly
+  // inconsistent state so fail right away.
+  if (session_error() != SessionError::kNone) {
+    std::string error_message = GetSessionErrorMsg();
+    RTC_LOG(LS_ERROR) << "CreateAnswer: " << error_message;
+    PostCreateSessionDescriptionFailure(
+        observer,
+        RTCError(RTCErrorType::INTERNAL_ERROR, std::move(error_message)));
     return;
   }
 
