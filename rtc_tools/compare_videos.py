@@ -45,18 +45,6 @@ def _ParseArgs():
                     help='Path to VMAF model.')
   parser.add_option('--vmaf_phone_model', action='store_true',
                     help='Whether to use phone model in VMAF.')
-  parser.add_option('--barcode_decoder', type='string',
-                    help=('DEPRECATED'))
-  parser.add_option('--ffmpeg_path', type='string',
-                    help=('DEPRECATED'))
-  parser.add_option('--zxing_path', type='string',
-                    help=('DEPRECATED'))
-  parser.add_option('--stats_file_ref', type='string', default='stats_ref.txt',
-                    help=('DEPRECATED'))
-  parser.add_option('--stats_file_test', type='string',
-                    help=('DEPRECATED'))
-  parser.add_option('--stats_file', type='string',
-                    help=('DEPRECATED'))
   parser.add_option('--yuv_frame_width', type='int', default=640,
                     help='Width of the YUV file\'s frames. Default: %default')
   parser.add_option('--yuv_frame_height', type='int', default=480,
