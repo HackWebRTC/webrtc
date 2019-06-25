@@ -101,8 +101,6 @@ def _RunFrameAnalyzer(options, yuv_directory=None):
     '--label=%s' % options.label,
     '--reference_file=%s' % options.ref_video,
     '--test_file=%s' % options.test_video,
-    '--stats_file_ref=%s' % options.stats_file_ref,
-    '--stats_file_test=%s' % options.stats_file_test,
     '--width=%d' % options.yuv_frame_width,
     '--height=%d' % options.yuv_frame_height,
   ]
