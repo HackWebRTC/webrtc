@@ -200,17 +200,19 @@ if (!build_with_chromium) {
   }
 
   rtc_executable("psnr_ssim_analyzer") {
+    testonly = true
     sources = [
       "psnr_ssim_analyzer/psnr_ssim_analyzer.cc",
     ]
 
     deps = [
-      ":command_line_parser",
       ":video_file_reader",
       ":video_quality_analysis",
       "../api:scoped_refptr",
       "../api/video:video_frame",
       "../api/video:video_rtp_headers",
+      "//third_party/abseil-cpp/absl/flags:flag",
+      "//third_party/abseil-cpp/absl/flags:parse",
     ]
   }
 
