@@ -60,6 +60,8 @@
 #include "test/gmock.h"
 
 using ::testing::Field;
+using ::testing::IsEmpty;
+using ::testing::SizeIs;
 using webrtc::BitrateConstraints;
 using webrtc::RtpExtension;
 
@@ -7514,137 +7516,44 @@ TEST_F(WebRtcVideoChannelSimulcastTest,
                           false);
 }
 
-class WebRtcVideoFakeClock {
- public:
-  WebRtcVideoFakeClock() {
-    fake_clock_.AdvanceTime(webrtc::TimeDelta::ms(1));  // avoid time=0
-  }
-  rtc::ScopedFakeClock fake_clock_;
-};
+TEST_F(WebRtcVideoChannelBaseTest, GetSources) {
+  EXPECT_THAT(channel_->GetSources(kSsrc), IsEmpty());
 
-// The fake clock needs to be initialized before the call, and not
-// destroyed until after all threads spawned by the test have been stopped.
-// This mixin ensures that.
-class WebRtcVideoChannelTestWithClock : public WebRtcVideoFakeClock,
-                                        public WebRtcVideoChannelBaseTest {};
-
-TEST_F(WebRtcVideoChannelTestWithClock, GetSources) {
-  uint8_t data1[] = {0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
-                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-
-  EXPECT_EQ(0u, channel_->GetSources(kSsrc).size());
-
-  rtc::CopyOnWriteBuffer packet1(data1, sizeof(data1));
-  rtc::SetBE32(packet1.data() + 8, kSsrc);
-  channel_->SetSink(kDefaultReceiveSsrc, NULL);
+  EXPECT_TRUE(channel_->SetSink(kDefaultReceiveSsrc, &renderer_));
   EXPECT_TRUE(SetDefaultCodec());
   EXPECT_TRUE(SetSend(true));
-  EXPECT_EQ(0, renderer_.num_rendered_frames());
-  channel_->OnPacketReceived(packet1, /*packet_time_us=*/-1);
+  EXPECT_EQ(renderer_.num_rendered_frames(), 0);
 
-  std::vector<webrtc::RtpSource> sources = channel_->GetSources(kSsrc);
-  EXPECT_EQ(1u, sources.size());
-  EXPECT_EQ(webrtc::RtpSourceType::SSRC, sources[0].source_type());
-  int64_t timestamp1 = sources[0].timestamp_ms();
+  // Send and receive one frame.
+  SendFrame();
+  EXPECT_FRAME_WAIT(1, kVideoWidth, kVideoHeight, kTimeout);
 
-  // a new packet.
-  int64_t timeDeltaMs = 1;
-  fake_clock_.AdvanceTime(webrtc::TimeDelta::ms(timeDeltaMs));
-  channel_->OnPacketReceived(packet1, /*packet_time_us=*/-1);
-  int64_t timestamp2 = channel_->GetSources(kSsrc)[0].timestamp_ms();
-  EXPECT_EQ(timestamp2, timestamp1 + timeDeltaMs);
+  EXPECT_THAT(channel_->GetSources(kSsrc - 1), IsEmpty());
+  EXPECT_THAT(channel_->GetSources(kSsrc), SizeIs(1));
+  EXPECT_THAT(channel_->GetSources(kSsrc + 1), IsEmpty());
 
-  // It only keeps 10s of history.
-  fake_clock_.AdvanceTime(webrtc::TimeDelta::seconds(10));
-  fake_clock_.AdvanceTime(webrtc::TimeDelta::ms(1));
-  EXPECT_EQ(0u, channel_->GetSources(kSsrc).size());
-}
+  webrtc::RtpSource source = channel_->GetSources(kSsrc)[0];
+  EXPECT_EQ(source.source_id(), kSsrc);
+  EXPECT_EQ(source.source_type(), webrtc::RtpSourceType::SSRC);
+  int64_t rtp_timestamp_1 = source.rtp_timestamp();
+  int64_t timestamp_ms_1 = source.timestamp_ms();
 
-TEST_F(WebRtcVideoChannelTestWithClock, GetContributingSources) {
-  uint8_t data1[] = {0x81, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+  // Send and receive another frame.
+  SendFrame();
+  EXPECT_FRAME_WAIT(2, kVideoWidth, kVideoHeight, kTimeout);
 
-  uint32_t kCsrc = 4321u;
-  EXPECT_EQ(0u, channel_->GetSources(kSsrc).size());
-  EXPECT_EQ(0u, channel_->GetSources(kCsrc).size());
+  EXPECT_THAT(channel_->GetSources(kSsrc - 1), IsEmpty());
+  EXPECT_THAT(channel_->GetSources(kSsrc), SizeIs(1));
+  EXPECT_THAT(channel_->GetSources(kSsrc + 1), IsEmpty());
 
-  rtc::CopyOnWriteBuffer packet1(data1, sizeof(data1));
-  rtc::SetBE32(packet1.data() + 8, kSsrc);
-  rtc::SetBE32(packet1.data() + 12, kCsrc);
-  channel_->SetSink(kDefaultReceiveSsrc, NULL);
-  EXPECT_TRUE(SetDefaultCodec());
-  EXPECT_TRUE(SetSend(true));
-  EXPECT_EQ(0, renderer_.num_rendered_frames());
-  channel_->OnPacketReceived(packet1, /*packet_time_us=*/-1);
+  source = channel_->GetSources(kSsrc)[0];
+  EXPECT_EQ(source.source_id(), kSsrc);
+  EXPECT_EQ(source.source_type(), webrtc::RtpSourceType::SSRC);
+  int64_t rtp_timestamp_2 = source.rtp_timestamp();
+  int64_t timestamp_ms_2 = source.timestamp_ms();
 
-  {
-    ASSERT_EQ(2u, channel_->GetSources(kSsrc).size());
-    EXPECT_EQ(0u, channel_->GetSources(kCsrc).size());
-    std::vector<webrtc::RtpSource> sources = channel_->GetSources(kSsrc);
-    EXPECT_EQ(sources[0].timestamp_ms(), sources[1].timestamp_ms());
-    // 1 SSRC and 1 CSRC.
-    EXPECT_EQ(1, absl::c_count_if(sources, [](const webrtc::RtpSource& source) {
-                return source.source_type() == webrtc::RtpSourceType::SSRC;
-              }));
-    EXPECT_EQ(1, absl::c_count_if(sources, [](const webrtc::RtpSource& source) {
-                return source.source_type() == webrtc::RtpSourceType::CSRC;
-              }));
-  }
-  int64_t timestamp1 = channel_->GetSources(kSsrc)[0].timestamp_ms();
-
-  // a new packet with only ssrc (i.e no csrc).
-  uint8_t data2[] = {0x80, 0x00, 0x00, 0x00, 0x00, 0x00,
-                     0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-  rtc::CopyOnWriteBuffer packet2(data2, sizeof(data2));
-  rtc::SetBE32(packet2.data() + 8, kSsrc);
-
-  int64_t timeDeltaMs = 1;
-  fake_clock_.AdvanceTime(webrtc::TimeDelta::ms(timeDeltaMs));
-  channel_->OnPacketReceived(packet2, /*packet_time_us=*/-1);
-
-  {
-    ASSERT_EQ(2u, channel_->GetSources(kSsrc).size());
-    EXPECT_EQ(0u, channel_->GetSources(kCsrc).size());
-    std::vector<webrtc::RtpSource> sources = channel_->GetSources(kSsrc);
-    EXPECT_NE(sources[0].timestamp_ms(), sources[1].timestamp_ms());
-    // 1 SSRC and 1 CSRC.
-    EXPECT_EQ(1, absl::c_count_if(sources, [](const webrtc::RtpSource& source) {
-                return source.source_type() == webrtc::RtpSourceType::SSRC;
-              }));
-    EXPECT_EQ(1, absl::c_count_if(sources, [](const webrtc::RtpSource& source) {
-                return source.source_type() == webrtc::RtpSourceType::CSRC;
-              }));
-    auto ssrcSource =
-        absl::c_find_if(sources, [](const webrtc::RtpSource& source) {
-          return source.source_type() == webrtc::RtpSourceType::SSRC;
-        });
-    auto csrcSource =
-        absl::c_find_if(sources, [](const webrtc::RtpSource& source) {
-          return source.source_type() == webrtc::RtpSourceType::CSRC;
-        });
-
-    EXPECT_EQ(ssrcSource->timestamp_ms(), timestamp1 + timeDeltaMs);
-    EXPECT_EQ(csrcSource->timestamp_ms(), timestamp1);
-  }
-
-  // It only keeps 10s of history.
-  fake_clock_.AdvanceTime(webrtc::TimeDelta::seconds(10));
-
-  {
-    ASSERT_EQ(1u, channel_->GetSources(kSsrc).size());
-    EXPECT_EQ(0u, channel_->GetSources(kCsrc).size());
-    std::vector<webrtc::RtpSource> sources = channel_->GetSources(kSsrc);
-    EXPECT_EQ(1, absl::c_count_if(sources, [](const webrtc::RtpSource& source) {
-                return source.source_type() == webrtc::RtpSourceType::SSRC;
-              }));
-    EXPECT_EQ(0, absl::c_count_if(sources, [](const webrtc::RtpSource& source) {
-                return source.source_type() == webrtc::RtpSourceType::CSRC;
-              }));
-  }
-
-  fake_clock_.AdvanceTime(webrtc::TimeDelta::ms(1));
-  EXPECT_EQ(0u, channel_->GetSources(kSsrc).size());
-  EXPECT_EQ(0u, channel_->GetSources(kCsrc).size());
+  EXPECT_GT(rtp_timestamp_2, rtp_timestamp_1);
+  EXPECT_GT(timestamp_ms_2, timestamp_ms_1);
 }
 
 TEST_F(WebRtcVideoChannelTest, SetsRidsOnSendStream) {

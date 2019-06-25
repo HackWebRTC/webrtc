@@ -175,8 +175,6 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   void AddSecondarySink(RtpPacketSinkInterface* sink);
   void RemoveSecondarySink(const RtpPacketSinkInterface* sink);
 
-  std::vector<webrtc::RtpSource> GetSources() const;
-
  private:
   // Used for buffering RTCP feedback messages and sending them all together.
   // Note:
@@ -298,14 +296,13 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
   std::vector<RtpPacketSinkInterface*> secondary_sinks_
       RTC_GUARDED_BY(worker_task_checker_);
 
-  // Info for GetSources and GetSyncInfo is updated on network or worker thread,
-  // queried on the worker thread.
-  rtc::CriticalSection rtp_sources_lock_;
-  ContributingSources contributing_sources_ RTC_GUARDED_BY(&rtp_sources_lock_);
+  // Info for GetSyncInfo is updated on network or worker thread, and queried on
+  // the worker thread.
+  rtc::CriticalSection sync_info_lock_;
   absl::optional<uint32_t> last_received_rtp_timestamp_
-      RTC_GUARDED_BY(rtp_sources_lock_);
+      RTC_GUARDED_BY(sync_info_lock_);
   absl::optional<int64_t> last_received_rtp_system_time_ms_
-      RTC_GUARDED_BY(rtp_sources_lock_);
+      RTC_GUARDED_BY(sync_info_lock_);
 
   // Used to validate the buffered frame decryptor is always run on the correct
   // thread.

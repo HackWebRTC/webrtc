@@ -307,7 +307,7 @@ absl::optional<Syncable::Info> RtpVideoStreamReceiver::GetSyncInfo() const {
     return absl::nullopt;
   }
   {
-    rtc::CritScope lock(&rtp_sources_lock_);
+    rtc::CritScope lock(&sync_info_lock_);
     if (!last_received_rtp_timestamp_ || !last_received_rtp_system_time_ms_) {
       return absl::nullopt;
     }
@@ -423,14 +423,9 @@ void RtpVideoStreamReceiver::OnRtpPacket(const RtpPacketReceived& packet) {
     // TODO(nisse): Exclude out-of-order packets?
     int64_t now_ms = clock_->TimeInMilliseconds();
     {
-      rtc::CritScope cs(&rtp_sources_lock_);
+      rtc::CritScope cs(&sync_info_lock_);
       last_received_rtp_timestamp_ = packet.Timestamp();
       last_received_rtp_system_time_ms_ = now_ms;
-
-      std::vector<uint32_t> csrcs = packet.Csrcs();
-      contributing_sources_.Update(now_ms, csrcs,
-                                   /* audio level */ absl::nullopt,
-                                   packet.Timestamp());
     }
     // Periodically log the RTP header of incoming packets.
     if (now_ms - last_packet_log_ms_ > kPacketLogIntervalMs) {
@@ -892,24 +887,6 @@ void RtpVideoStreamReceiver::InsertSpsPpsIntoTracker(uint8_t payload_type) {
 
   tracker_.InsertSpsPpsNalus(sprop_decoder.sps_nalu(),
                              sprop_decoder.pps_nalu());
-}
-
-std::vector<webrtc::RtpSource> RtpVideoStreamReceiver::GetSources() const {
-  int64_t now_ms = rtc::TimeMillis();
-  std::vector<RtpSource> sources;
-  {
-    rtc::CritScope cs(&rtp_sources_lock_);
-    sources = contributing_sources_.GetSources(now_ms);
-    if (last_received_rtp_system_time_ms_ >=
-        now_ms - ContributingSources::kHistoryMs) {
-      RTC_DCHECK(last_received_rtp_timestamp_.has_value());
-      sources.emplace_back(*last_received_rtp_system_time_ms_,
-                           config_.rtp.remote_ssrc, RtpSourceType::SSRC,
-                           /* audio_level */ absl::nullopt,
-                           *last_received_rtp_timestamp_);
-    }
-  }
-  return sources;
 }
 
 }  // namespace webrtc
