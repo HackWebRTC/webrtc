@@ -102,31 +102,6 @@ class RTC_SCOPED_LOCKABLE CritScope {
   RTC_DISALLOW_COPY_AND_ASSIGN(CritScope);
 };
 
-// Tries to lock a critical section on construction via
-// CriticalSection::TryEnter, and unlocks on destruction if the
-// lock was taken. Never blocks.
-//
-// IMPORTANT: Unlike CritScope, the lock may not be owned by this thread in
-// subsequent code. Users *must* check locked() to determine if the
-// lock was taken. If you're not calling locked(), you're doing it wrong!
-class TryCritScope {
- public:
-  explicit TryCritScope(const CriticalSection* cs);
-  ~TryCritScope();
-#if defined(WEBRTC_WIN)
-  _Check_return_ bool locked() const;
-#elif defined(WEBRTC_POSIX)
-  bool locked() const __attribute__((__warn_unused_result__));
-#else  // !defined(WEBRTC_WIN) && !defined(WEBRTC_POSIX)
-#error Unsupported platform.
-#endif
- private:
-  const CriticalSection* const cs_;
-  const bool locked_;
-  mutable bool lock_was_called_;  // Only used by RTC_DCHECKs.
-  RTC_DISALLOW_COPY_AND_ASSIGN(TryCritScope);
-};
-
 // A POD lock used to protect global variables. Do NOT use for other purposes.
 // No custom constructor or private data member should be added.
 class RTC_LOCKABLE GlobalLockPod {

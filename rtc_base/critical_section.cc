@@ -210,23 +210,6 @@ CritScope::~CritScope() {
   cs_->Leave();
 }
 
-TryCritScope::TryCritScope(const CriticalSection* cs)
-    : cs_(cs), locked_(cs->TryEnter()) {
-  CS_DEBUG_CODE(lock_was_called_ = false);
-  RTC_UNUSED(lock_was_called_);
-}
-
-TryCritScope::~TryCritScope() {
-  CS_DEBUG_CODE(RTC_DCHECK(lock_was_called_));
-  if (locked_)
-    cs_->Leave();
-}
-
-bool TryCritScope::locked() const {
-  CS_DEBUG_CODE(lock_was_called_ = true);
-  return locked_;
-}
-
 void GlobalLockPod::Lock() {
 #if !defined(WEBRTC_WIN) && (!defined(WEBRTC_MAC) || USE_NATIVE_MUTEX_ON_MAC)
   const struct timespec ts_null = {0};
