@@ -11,6 +11,8 @@
 package org.webrtc;
 
 import android.support.annotation.Nullable;
+import java.util.Collections;
+import java.util.List;
 import org.webrtc.EncodedImage;
 
 /**
@@ -181,6 +183,59 @@ public interface VideoEncoder {
     }
   }
 
+  /**
+   * Bitrate thresholds for resolution.
+   */
+  public class ResolutionBitrateThresholds {
+    /**
+     * Maximum size of video frame, in pixels, the bitrate thresholds are intended for.
+     */
+    public final int frameSizePixels;
+
+    /**
+     * Recommended minimum bitrate to start encoding.
+     */
+    public final int minStartBitrateBps;
+
+    /**
+     * Recommended minimum bitrate.
+     */
+    public final int minBitrateBps;
+
+    /**
+     * Recommended maximum bitrate.
+     */
+    public final int maxBitrateBps;
+
+    public ResolutionBitrateThresholds(
+        int frameSizePixels, int minStartBitrateBps, int minBitrateBps, int maxBitrateBps) {
+      this.frameSizePixels = frameSizePixels;
+      this.minStartBitrateBps = minStartBitrateBps;
+      this.minBitrateBps = minBitrateBps;
+      this.maxBitrateBps = maxBitrateBps;
+    }
+
+    @CalledByNative("ResolutionBitrateThresholds")
+    public int getFrameSizePixels() {
+      return frameSizePixels;
+    }
+
+    @CalledByNative("ResolutionBitrateThresholds")
+    public int getMinStartBitrateBps() {
+      return minStartBitrateBps;
+    }
+
+    @CalledByNative("ResolutionBitrateThresholds")
+    public int getMinBitrateBps() {
+      return minBitrateBps;
+    }
+
+    @CalledByNative("ResolutionBitrateThresholds")
+    public int getMaxBitrateBps() {
+      return maxBitrateBps;
+    }
+  }
+
   public interface Callback {
     /**
      * Call to return an encoded frame. It is safe to assume the byte buffer held by |frame| is not
@@ -239,6 +294,14 @@ public interface VideoEncoder {
 
   /** Any encoder that wants to use WebRTC provided quality scaler must implement this method. */
   @CalledByNative ScalingSettings getScalingSettings();
+
+  /** Returns the list of resolution bitrate thresholds. */
+  @CalledByNative
+  default ResolutionBitrateThresholds[] getResolutionBitrateThresholds() {
+    // TODO(ssilkin): Update downstream projects and remove default implementation.
+    ResolutionBitrateThresholds thresholds[] = {};
+    return thresholds;
+  }
 
   /**
    * Should return a descriptive name for the implementation. Gets called once and cached. May be

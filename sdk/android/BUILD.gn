@@ -1507,6 +1507,7 @@ if (is_android) {
       "native_unittests/org/webrtc/ApplicationContextProvider.java",
       "native_unittests/org/webrtc/BuildInfo.java",
       "native_unittests/org/webrtc/CodecsWrapperTestHelper.java",
+      "native_unittests/org/webrtc/FakeVideoEncoder.java",
       "native_unittests/org/webrtc/JavaTypesTestHelper.java",
       "native_unittests/org/webrtc/JavaVideoSourceTestHelper.java",
       "native_unittests/org/webrtc/PeerConnectionFactoryInitializationHelper.java",

@@ -35,6 +35,11 @@ VideoEncoderWrapper::VideoEncoderWrapper(JNIEnv* jni,
     : encoder_(jni, j_encoder), int_array_class_(GetClass(jni, "[I")) {
   initialized_ = false;
   num_resets_ = 0;
+
+  // Get bitrate thresholds in the constructor. This is a static property of the
+  // encoder and is expected to be available before it is initialized.
+  encoder_info_.resolution_bitrate_thresholds =
+      GetResolutionBitrateThresholds(jni);
 }
 VideoEncoderWrapper::~VideoEncoderWrapper() = default;
 
@@ -212,6 +217,38 @@ VideoEncoderWrapper::GetScalingSettingsInternal(JNIEnv* jni) const {
     default:
       return ScalingSettings::kOff;
   }
+}
+
+std::vector<VideoEncoder::ResolutionBitrateThresholds>
+VideoEncoderWrapper::GetResolutionBitrateThresholds(JNIEnv* jni) const {
+  std::vector<VideoEncoder::ResolutionBitrateThresholds>
+      resolution_bitrate_thresholds;
+
+  ScopedJavaLocalRef<jobjectArray> j_thresholds_array =
+      Java_VideoEncoder_getResolutionBitrateThresholds(jni, encoder_);
+
+  const jsize num_thresholds = jni->GetArrayLength(j_thresholds_array.obj());
+  for (int i = 0; i < num_thresholds; ++i) {
+    ScopedJavaLocalRef<jobject> j_thresholds = ScopedJavaLocalRef<jobject>(
+        jni, jni->GetObjectArrayElement(j_thresholds_array.obj(), i));
+
+    jint frame_size_pixels =
+        Java_ResolutionBitrateThresholds_getFrameSizePixels(jni, j_thresholds);
+    jint min_start_bitrate_bps =
+        Java_ResolutionBitrateThresholds_getMinStartBitrateBps(jni,
+                                                               j_thresholds);
+    jint min_bitrate_bps =
+        Java_ResolutionBitrateThresholds_getMinBitrateBps(jni, j_thresholds);
+    jint max_bitrate_bps =
+        Java_ResolutionBitrateThresholds_getMaxBitrateBps(jni, j_thresholds);
+
+    resolution_bitrate_thresholds.push_back(
+        VideoEncoder::ResolutionBitrateThresholds(
+            frame_size_pixels, min_start_bitrate_bps, min_bitrate_bps,
+            max_bitrate_bps));
+  }
+
+  return resolution_bitrate_thresholds;
 }
 
 void VideoEncoderWrapper::OnEncodedFrame(

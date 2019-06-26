@@ -79,6 +79,9 @@ class VideoEncoderWrapper : public VideoEncoder {
 
   ScalingSettings GetScalingSettingsInternal(JNIEnv* jni) const;
 
+  std::vector<ResolutionBitrateThresholds> GetResolutionBitrateThresholds(
+      JNIEnv* jni) const;
+
   const ScopedJavaGlobalRef<jobject> encoder_;
   const ScopedJavaGlobalRef<jclass> int_array_class_;
 
