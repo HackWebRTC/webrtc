@@ -591,6 +591,7 @@ class UlpfecObserver : public test::EndToEndTest {
       send_config->rtp.extensions.push_back(
           RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeExtensionId));
     }
+    (*receive_configs)[0].rtp.extensions = send_config->rtp.extensions;
     encoder_config->codec_type = PayloadStringToCodecType(payload_name_);
     (*receive_configs)[0].rtp.red_payload_type =
         send_config->rtp.ulpfec.red_payload_type;
@@ -787,6 +788,7 @@ class FlexfecObserver : public test::EndToEndTest {
     } else {
       send_config->rtp.extensions.clear();
     }
+    (*receive_configs)[0].rtp.extensions = send_config->rtp.extensions;
     encoder_config->codec_type = PayloadStringToCodecType(payload_name_);
   }
 
@@ -2033,8 +2035,7 @@ TEST_F(VideoSendStreamTest, CanReconfigureToUseStartBitrateAbovePreviousMax) {
   class StartBitrateObserver : public test::FakeEncoder {
    public:
     StartBitrateObserver()
-        : FakeEncoder(Clock::GetRealTimeClock()),
-          start_bitrate_kbps_(0) {}
+        : FakeEncoder(Clock::GetRealTimeClock()), start_bitrate_kbps_(0) {}
     int32_t InitEncode(const VideoCodec* config,
                        const Settings& settings) override {
       rtc::CritScope lock(&crit_);

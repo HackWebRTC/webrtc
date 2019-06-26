@@ -156,6 +156,51 @@ void RtpPacket::SetSsrc(uint32_t ssrc) {
   ByteWriter<uint32_t>::WriteBigEndian(WriteAt(8), ssrc);
 }
 
+void RtpPacket::CopyAndZeroMutableExtensions(
+    rtc::ArrayView<uint8_t> buffer) const {
+  RTC_CHECK_GE(buffer.size(), buffer_.size());
+  memcpy(buffer.data(), buffer_.cdata(), buffer_.size());
+  for (const ExtensionInfo& extension : extension_entries_) {
+    switch (extensions_.GetType(extension.id)) {
+      case RTPExtensionType::kRtpExtensionNone: {
+        RTC_LOG(LS_WARNING) << "Unidentified extension in the packet.";
+        break;
+      }
+      case RTPExtensionType::kRtpExtensionVideoTiming: {
+        // Nullify 3 last entries: packetization delay and 2 network timestamps.
+        // Each of them is 2 bytes.
+        memset(buffer.data() + extension.offset +
+                   VideoSendTiming::kPacerExitDeltaOffset,
+               0, 6);
+        break;
+      }
+      case RTPExtensionType::kRtpExtensionTransportSequenceNumber:
+      case RTPExtensionType::kRtpExtensionTransportSequenceNumber02:
+      case RTPExtensionType::kRtpExtensionTransmissionTimeOffset:
+      case RTPExtensionType::kRtpExtensionAbsoluteSendTime: {
+        // Nullify whole extension, as it's filled in the pacer.
+        memset(buffer.data() + extension.offset, 0, extension.length);
+        break;
+      }
+      case RTPExtensionType::kRtpExtensionAudioLevel:
+      case RTPExtensionType::kRtpExtensionColorSpace:
+      case RTPExtensionType::kRtpExtensionFrameMarking:
+      case RTPExtensionType::kRtpExtensionGenericFrameDescriptor00:
+      case RTPExtensionType::kRtpExtensionGenericFrameDescriptor01:
+      case RTPExtensionType::kRtpExtensionMid:
+      case RTPExtensionType::kRtpExtensionNumberOfExtensions:
+      case RTPExtensionType::kRtpExtensionPlayoutDelay:
+      case RTPExtensionType::kRtpExtensionRepairedRtpStreamId:
+      case RTPExtensionType::kRtpExtensionRtpStreamId:
+      case RTPExtensionType::kRtpExtensionVideoContentType:
+      case RTPExtensionType::kRtpExtensionVideoRotation: {
+        // Non-mutable extension. Don't change it.
+        break;
+      }
+    }
+  }
+}
+
 void RtpPacket::SetCsrcs(rtc::ArrayView<const uint32_t> csrcs) {
   RTC_DCHECK_EQ(extensions_size_, 0);
   RTC_DCHECK_EQ(payload_size_, 0);

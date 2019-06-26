@@ -49,8 +49,9 @@ class UlpfecReceiverTest : public ::testing::Test {
  protected:
   UlpfecReceiverTest()
       : fec_(ForwardErrorCorrection::CreateUlpfec(kMediaSsrc)),
-        receiver_fec_(
-            UlpfecReceiver::Create(kMediaSsrc, &recovered_packet_receiver_)),
+        receiver_fec_(UlpfecReceiver::Create(kMediaSsrc,
+                                             &recovered_packet_receiver_,
+                                             {})),
         packet_generator_(kMediaSsrc) {}
 
   // Generates |num_fec_packets| FEC packets, given |media_packets|.
@@ -180,7 +181,7 @@ void UlpfecReceiverTest::SurvivesMaliciousPacket(const uint8_t* data,
 
   NullRecoveredPacketReceiver null_callback;
   std::unique_ptr<UlpfecReceiver> receiver_fec(
-      UlpfecReceiver::Create(kMediaSsrc, &null_callback));
+      UlpfecReceiver::Create(kMediaSsrc, &null_callback, {}));
 
   receiver_fec->AddReceivedRedPacket(header, data, length, ulpfec_payload_type);
 }

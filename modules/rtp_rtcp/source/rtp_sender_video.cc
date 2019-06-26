@@ -692,12 +692,12 @@ bool RTPSenderVideo::SendVideo(
     // Put packetization finish timestamp into extension.
     if (packet->HasExtension<VideoTimingExtension>()) {
       packet->set_packetization_finish_time_ms(clock_->TimeInMilliseconds());
-      // TODO(ilnik): Due to webrtc:7859, packets with timing extensions are not
-      // protected by FEC. It reduces FEC efficiency a bit. When FEC is moved
-      // below the pacer, it can be re-enabled for these packets.
-      // NOTE: Any RTP stream processor in the network, modifying 'network'
-      // timestamps in the timing frames extension have to be an end-point for
-      // FEC, otherwise recovered by FEC packets will be corrupted.
+      // TODO(webrtc:10750): wait a couple of months and remove the statement
+      // below. For now we can't use packets with VideoTimingFrame extensions in
+      // Fec because the extension is modified after FEC is calculated by pacer
+      // and network. This may cause corruptions in video payload and header.
+      // The fix in receive code is implemented, but until all the receivers
+      // are updated, senders can't send potentially breaking packets.
       protect_packet = false;
     }
 

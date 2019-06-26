@@ -14,21 +14,28 @@
 #include <memory>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "api/scoped_refptr.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
+#include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/time_utils.h"
 
 namespace webrtc {
 
-UlpfecReceiver* UlpfecReceiver::Create(uint32_t ssrc,
-                                       RecoveredPacketReceiver* callback) {
-  return new UlpfecReceiverImpl(ssrc, callback);
+std::unique_ptr<UlpfecReceiver> UlpfecReceiver::Create(
+    uint32_t ssrc,
+    RecoveredPacketReceiver* callback,
+    rtc::ArrayView<const RtpExtension> extensions) {
+  return absl::make_unique<UlpfecReceiverImpl>(ssrc, callback, extensions);
 }
 
-UlpfecReceiverImpl::UlpfecReceiverImpl(uint32_t ssrc,
-                                       RecoveredPacketReceiver* callback)
+UlpfecReceiverImpl::UlpfecReceiverImpl(
+    uint32_t ssrc,
+    RecoveredPacketReceiver* callback,
+    rtc::ArrayView<const RtpExtension> extensions)
     : ssrc_(ssrc),
+      extensions_(extensions),
       recovered_packet_callback_(callback),
       fec_(ForwardErrorCorrection::CreateUlpfec(ssrc_)) {}
 
@@ -243,6 +250,13 @@ int32_t UlpfecReceiverImpl::ProcessReceivedFec() {
       recovered_packet_callback_->OnRecoveredPacket(packet->data,
                                                     packet->length);
       crit_sect_.Enter();
+      RtpPacketReceived rtp_packet;
+      // TODO(ilnik): move extension nullifying out of RtpPacket, so there's no
+      // need to create one here, and avoid two memcpy calls below.
+      rtp_packet.Parse(packet->data, packet->length);  // Does memcopy.
+      rtp_packet.IdentifyExtensions(extensions_);
+      rtp_packet.CopyAndZeroMutableExtensions(  // Does memcopy.
+          rtc::MakeArrayView(packet->data, packet->length));
     }
     fec_->DecodeFec(*received_packet, &recovered_packets_);
   }

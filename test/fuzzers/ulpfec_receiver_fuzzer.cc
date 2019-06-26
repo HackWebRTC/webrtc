@@ -36,7 +36,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
 
   DummyCallback callback;
   std::unique_ptr<UlpfecReceiver> receiver(
-      UlpfecReceiver::Create(ulpfec_ssrc, &callback));
+      UlpfecReceiver::Create(ulpfec_ssrc, &callback, {}));
 
   std::unique_ptr<uint8_t[]> packet;
   size_t packet_length;

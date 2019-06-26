@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "api/rtp_headers.h"
+#include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/include/ulpfec_receiver.h"
 #include "modules/rtp_rtcp/source/forward_error_correction.h"
@@ -26,7 +27,9 @@ namespace webrtc {
 
 class UlpfecReceiverImpl : public UlpfecReceiver {
  public:
-  explicit UlpfecReceiverImpl(uint32_t ssrc, RecoveredPacketReceiver* callback);
+  explicit UlpfecReceiverImpl(uint32_t ssrc,
+                              RecoveredPacketReceiver* callback,
+                              rtc::ArrayView<const RtpExtension> extensions);
   ~UlpfecReceiverImpl() override;
 
   int32_t AddReceivedRedPacket(const RTPHeader& rtp_header,
@@ -40,6 +43,7 @@ class UlpfecReceiverImpl : public UlpfecReceiver {
 
  private:
   const uint32_t ssrc_;
+  const RtpHeaderExtensionMap extensions_;
 
   rtc::CriticalSection crit_sect_;
   RecoveredPacketReceiver* recovered_packet_callback_;
