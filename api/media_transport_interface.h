@@ -17,7 +17,6 @@
 #ifndef API_MEDIA_TRANSPORT_INTERFACE_H_
 #define API_MEDIA_TRANSPORT_INTERFACE_H_
 
-#include <api/transport/network_control.h>
 #include <memory>
 #include <string>
 #include <utility>
@@ -27,6 +26,7 @@
 #include "api/rtc_error.h"
 #include "api/transport/media/audio_transport.h"
 #include "api/transport/media/video_transport.h"
+#include "api/transport/network_control.h"
 #include "api/units/data_rate.h"
 #include "common_types.h"  // NOLINT(build/include)
 #include "rtc_base/copy_on_write_buffer.h"
