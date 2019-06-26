@@ -15,6 +15,7 @@
 #include <stdint.h>
 #include <list>
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "api/transport/network_types.h"
@@ -86,6 +87,9 @@ class PacketRouter : public TransportSequenceNumberAllocator,
   bool SendTransportFeedback(rtcp::TransportFeedback* packet) override;
 
  private:
+  RtpRtcp* FindRtpModule(uint32_t ssrc)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
+
   void AddRembModuleCandidate(RtcpFeedbackSenderInterface* candidate_module,
                               bool media_sender)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
@@ -98,6 +102,9 @@ class PacketRouter : public TransportSequenceNumberAllocator,
   rtc::CriticalSection modules_crit_;
   // Rtp and Rtcp modules of the rtp senders.
   std::list<RtpRtcp*> rtp_send_modules_ RTC_GUARDED_BY(modules_crit_);
+  // Ssrc to RtpRtcp module cache.
+  std::unordered_map<uint32_t, RtpRtcp*> rtp_module_cache_map_
+      RTC_GUARDED_BY(modules_crit_);
   // The last module used to send media.
   RtpRtcp* last_send_module_ RTC_GUARDED_BY(modules_crit_);
   // Rtcp modules of the rtp receivers.

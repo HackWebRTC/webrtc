@@ -67,6 +67,7 @@ void PacketRouter::AddSendRtpModule(RtpRtcp* rtp_module, bool remb_candidate) {
 
 void PacketRouter::RemoveSendRtpModule(RtpRtcp* rtp_module) {
   rtc::CritScope cs(&modules_crit_);
+  rtp_module_cache_map_.clear();
   MaybeRemoveRembModuleCandidate(rtp_module, /* media_sender = */ true);
   auto it =
       std::find(rtp_send_modules_.begin(), rtp_send_modules_.end(), rtp_module);
@@ -108,23 +109,38 @@ RtpPacketSendResult PacketRouter::TimeToSendPacket(
     bool retransmission,
     const PacedPacketInfo& pacing_info) {
   rtc::CritScope cs(&modules_crit_);
-  for (auto* rtp_module : rtp_send_modules_) {
-    if (!rtp_module->SendingMedia()) {
-      continue;
+  RtpRtcp* rtp_module = FindRtpModule(ssrc);
+  if (rtp_module == nullptr || !rtp_module->SendingMedia()) {
+    return RtpPacketSendResult::kPacketNotFound;
+  }
+
+  if ((rtp_module->RtxSendStatus() & kRtxRedundantPayloads) &&
+      rtp_module->HasBweExtensions()) {
+    // This is now the last module to send media, and has the desired
+    // properties needed for payload based padding. Cache it for later use.
+    last_send_module_ = rtp_module;
+  }
+  return rtp_module->TimeToSendPacket(ssrc, sequence_number, capture_timestamp,
+                                      retransmission, pacing_info);
+}
+
+RtpRtcp* PacketRouter::FindRtpModule(uint32_t ssrc) {
+  auto it = rtp_module_cache_map_.find(ssrc);
+  if (it != rtp_module_cache_map_.end()) {
+    if (ssrc == it->second->SSRC() || ssrc == it->second->FlexfecSsrc()) {
+      return it->second;
     }
+    // This entry is stale due to a changed ssrc - remove it.
+    rtp_module_cache_map_.erase(it);
+  }
+  // Slow path - find and cache matching module
+  for (RtpRtcp* rtp_module : rtp_send_modules_) {
     if (ssrc == rtp_module->SSRC() || ssrc == rtp_module->FlexfecSsrc()) {
-      if ((rtp_module->RtxSendStatus() & kRtxRedundantPayloads) &&
-          rtp_module->HasBweExtensions()) {
-        // This is now the last module to send media, and has the desired
-        // properties needed for payload based padding. Cache it for later use.
-        last_send_module_ = rtp_module;
-      }
-      return rtp_module->TimeToSendPacket(ssrc, sequence_number,
-                                          capture_timestamp, retransmission,
-                                          pacing_info);
+      rtp_module_cache_map_[ssrc] = rtp_module;
+      return rtp_module;
     }
   }
-  return RtpPacketSendResult::kPacketNotFound;
+  return nullptr;
 }
 
 void PacketRouter::SendPacket(std::unique_ptr<RtpPacketToSend> packet,

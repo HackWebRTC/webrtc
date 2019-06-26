@@ -108,14 +108,14 @@ TEST(PacketRouterTest, TimeToSendPacket) {
   bool retransmission = false;
 
   // Send on the first module by letting rtp_1 be sending with correct ssrc.
-  EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(true));
-  EXPECT_CALL(rtp_1, SSRC()).Times(1).WillOnce(Return(kSsrc1));
+  ON_CALL(rtp_1, SendingMedia).WillByDefault(Return(true));
+  ON_CALL(rtp_1, SSRC).WillByDefault(Return(kSsrc1));
   EXPECT_CALL(rtp_1, TimeToSendPacket(
                          kSsrc1, sequence_number, timestamp, retransmission,
                          Field(&PacedPacketInfo::probe_cluster_id, 1)))
       .Times(1)
       .WillOnce(Return(RtpPacketSendResult::kSuccess));
-  EXPECT_CALL(rtp_2, TimeToSendPacket(_, _, _, _, _)).Times(0);
+  EXPECT_CALL(rtp_2, TimeToSendPacket).Times(0);
   EXPECT_EQ(RtpPacketSendResult::kSuccess,
             packet_router.TimeToSendPacket(
                 kSsrc1, sequence_number, timestamp, retransmission,
@@ -126,10 +126,10 @@ TEST(PacketRouterTest, TimeToSendPacket) {
   timestamp += 30;
   retransmission = true;
   const uint16_t kSsrc2 = 4567;
-  EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(false));
-  EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(true));
-  EXPECT_CALL(rtp_2, SSRC()).Times(1).WillOnce(Return(kSsrc2));
-  EXPECT_CALL(rtp_1, TimeToSendPacket(_, _, _, _, _)).Times(0);
+  ON_CALL(rtp_1, SendingMedia).WillByDefault(Return(false));
+  ON_CALL(rtp_2, SendingMedia).WillByDefault(Return(true));
+  ON_CALL(rtp_2, SSRC).WillByDefault(Return(kSsrc2));
+  EXPECT_CALL(rtp_1, TimeToSendPacket).Times(0);
   EXPECT_CALL(rtp_2, TimeToSendPacket(
                          kSsrc2, sequence_number, timestamp, retransmission,
                          Field(&PacedPacketInfo::probe_cluster_id, 2)))
@@ -141,22 +141,22 @@ TEST(PacketRouterTest, TimeToSendPacket) {
                 PacedPacketInfo(2, kProbeMinProbes, kProbeMinBytes)));
 
   // No module is sending, hence no packet should be sent.
-  EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(false));
-  EXPECT_CALL(rtp_1, TimeToSendPacket(_, _, _, _, _)).Times(0);
-  EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(false));
-  EXPECT_CALL(rtp_2, TimeToSendPacket(_, _, _, _, _)).Times(0);
+  ON_CALL(rtp_1, SendingMedia).WillByDefault(Return(false));
+  ON_CALL(rtp_2, SendingMedia).WillByDefault(Return(false));
+  EXPECT_CALL(rtp_1, TimeToSendPacket).Times(0);
+  EXPECT_CALL(rtp_2, TimeToSendPacket).Times(0);
   EXPECT_EQ(RtpPacketSendResult::kPacketNotFound,
             packet_router.TimeToSendPacket(
                 kSsrc1, sequence_number, timestamp, retransmission,
                 PacedPacketInfo(1, kProbeMinProbes, kProbeMinBytes)));
 
   // Add a packet with incorrect ssrc and test it's dropped in the router.
-  EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(true));
-  EXPECT_CALL(rtp_1, SSRC()).Times(1).WillOnce(Return(kSsrc1));
-  EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(true));
-  EXPECT_CALL(rtp_2, SSRC()).Times(1).WillOnce(Return(kSsrc2));
-  EXPECT_CALL(rtp_1, TimeToSendPacket(_, _, _, _, _)).Times(0);
-  EXPECT_CALL(rtp_2, TimeToSendPacket(_, _, _, _, _)).Times(0);
+  ON_CALL(rtp_1, SendingMedia).WillByDefault(Return(true));
+  ON_CALL(rtp_1, SSRC).WillByDefault(Return(kSsrc1));
+  ON_CALL(rtp_2, SendingMedia).WillByDefault(Return(true));
+  ON_CALL(rtp_2, SSRC).WillByDefault(Return(kSsrc2));
+  EXPECT_CALL(rtp_1, TimeToSendPacket).Times(0);
+  EXPECT_CALL(rtp_2, TimeToSendPacket).Times(0);
   EXPECT_EQ(RtpPacketSendResult::kPacketNotFound,
             packet_router.TimeToSendPacket(
                 kSsrc1 + kSsrc2, sequence_number, timestamp, retransmission,
@@ -166,9 +166,9 @@ TEST(PacketRouterTest, TimeToSendPacket) {
 
   // rtp_1 has been removed, try sending a packet on that ssrc and make sure
   // it is dropped as expected by not expecting any calls to rtp_1.
-  EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(true));
-  EXPECT_CALL(rtp_2, SSRC()).Times(1).WillOnce(Return(kSsrc2));
-  EXPECT_CALL(rtp_2, TimeToSendPacket(_, _, _, _, _)).Times(0);
+  ON_CALL(rtp_2, SendingMedia).WillByDefault(Return(true));
+  ON_CALL(rtp_2, SSRC).WillByDefault(Return(kSsrc2));
+  EXPECT_CALL(rtp_2, TimeToSendPacket).Times(0);
   EXPECT_EQ(RtpPacketSendResult::kPacketNotFound,
             packet_router.TimeToSendPacket(
                 kSsrc1, sequence_number, timestamp, retransmission,
