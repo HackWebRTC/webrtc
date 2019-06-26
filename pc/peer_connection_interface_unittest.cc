@@ -2465,9 +2465,22 @@ TEST_P(PeerConnectionInterfaceTest, SetConfigurationChangesIceCheckInterval) {
   config = pc_->GetConfiguration();
   config.ice_check_min_interval = 100;
   EXPECT_TRUE(pc_->SetConfiguration(config));
-  PeerConnectionInterface::RTCConfiguration new_config =
-      pc_->GetConfiguration();
-  EXPECT_EQ(new_config.ice_check_min_interval, 100);
+  config = pc_->GetConfiguration();
+  EXPECT_EQ(config.ice_check_min_interval, 100);
+}
+
+TEST_P(PeerConnectionInterfaceTest,
+       SetConfigurationChangesSurfaceIceCandidatesOnIceTransportTypeChanged) {
+  PeerConnectionInterface::RTCConfiguration config;
+  config.surface_ice_candidates_on_ice_transport_type_changed = false;
+  CreatePeerConnection(config);
+  config = pc_->GetConfiguration();
+  EXPECT_FALSE(config.surface_ice_candidates_on_ice_transport_type_changed);
+
+  config.surface_ice_candidates_on_ice_transport_type_changed = true;
+  EXPECT_TRUE(pc_->SetConfiguration(config));
+  config = pc_->GetConfiguration();
+  EXPECT_TRUE(config.surface_ice_candidates_on_ice_transport_type_changed);
 }
 
 // Test that when SetConfiguration changes both the pool size and other

@@ -3476,6 +3476,8 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
   modified_config.ice_candidate_pool_size =
       configuration.ice_candidate_pool_size;
   modified_config.prune_turn_ports = configuration.prune_turn_ports;
+  modified_config.surface_ice_candidates_on_ice_transport_type_changed =
+      configuration.surface_ice_candidates_on_ice_transport_type_changed;
   modified_config.ice_check_min_interval = configuration.ice_check_min_interval;
   modified_config.ice_check_interval_strong_connectivity =
       configuration.ice_check_interval_strong_connectivity;
