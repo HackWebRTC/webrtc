@@ -200,6 +200,31 @@ size_t PacketRouter::TimeToSendPadding(size_t bytes_to_send,
   return total_bytes_sent;
 }
 
+void PacketRouter::GeneratePadding(size_t target_size_bytes) {
+  rtc::CritScope cs(&modules_crit_);
+  // First try on the last rtp module to have sent media. This increases the
+  // the chance that any payload based padding will be useful as it will be
+  // somewhat distributed over modules according the packet rate, even if it
+  // will be more skewed towards the highest bitrate stream. At the very least
+  // this prevents sending payload padding on a disabled stream where it's
+  // guaranteed not to be useful.
+  if (last_send_module_ != nullptr) {
+    RTC_DCHECK(std::find(rtp_send_modules_.begin(), rtp_send_modules_.end(),
+                         last_send_module_) != rtp_send_modules_.end());
+    RTC_DCHECK(last_send_module_->HasBweExtensions());
+    last_send_module_->GeneratePadding(target_size_bytes);
+    return;
+  }
+
+  // Rtp modules are ordered by which stream can most benefit from padding.
+  for (RtpRtcp* rtp_module : rtp_send_modules_) {
+    if (rtp_module->SendingMedia() && rtp_module->HasBweExtensions()) {
+      rtp_module->GeneratePadding(target_size_bytes);
+      return;
+    }
+  }
+}
+
 void PacketRouter::SetTransportWideSequenceNumber(uint16_t sequence_number) {
   rtc::AtomicOps::ReleaseStore(&transport_seq_, sequence_number);
 }

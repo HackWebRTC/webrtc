@@ -119,6 +119,14 @@ class RtpPacketHistory {
   // a const method.
   std::unique_ptr<RtpPacketToSend> GetPayloadPaddingPacket();
 
+  // Same as GetPayloadPaddingPacket(void), but adds an encapsulation
+  // that can be used for instance to encapsulate the packet in an RTX
+  // container, or to abort getting the packet if the function returns
+  // nullptr.
+  std::unique_ptr<RtpPacketToSend> GetPayloadPaddingPacket(
+      rtc::FunctionView<std::unique_ptr<RtpPacketToSend>(
+          const RtpPacketToSend&)> encapsulate);
+
   // Cull packets that have been acknowledged as received by the remote end.
   void CullAcknowledgedPackets(rtc::ArrayView<const uint16_t> sequence_numbers);
 

@@ -839,4 +839,27 @@ TEST_F(RtpPacketHistoryTest, NoPendingPacketAsPadding) {
   EXPECT_EQ(hist_.GetPayloadPaddingPacket()->SequenceNumber(), kStartSeqNum);
 }
 
+TEST_F(RtpPacketHistoryTest, PayloadPaddingWithEncapsulation) {
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 1);
+
+  hist_.PutRtpPacket(CreateRtpPacket(kStartSeqNum), kAllowRetransmission,
+                     fake_clock_.TimeInMilliseconds());
+  fake_clock_.AdvanceTimeMilliseconds(1);
+
+  // Aborted padding.
+  EXPECT_EQ(nullptr,
+            hist_.GetPayloadPaddingPacket(
+                [](const RtpPacketToSend& packet) { return nullptr; }));
+
+  // Get copy of packet, but with sequence number modified.
+  auto padding_packet =
+      hist_.GetPayloadPaddingPacket([&](const RtpPacketToSend& packet) {
+        auto encapsulated_packet = absl::make_unique<RtpPacketToSend>(packet);
+        encapsulated_packet->SetSequenceNumber(kStartSeqNum + 1);
+        return encapsulated_packet;
+      });
+  ASSERT_TRUE(padding_packet);
+  EXPECT_EQ(padding_packet->SequenceNumber(), kStartSeqNum + 1);
+}
+
 }  // namespace webrtc

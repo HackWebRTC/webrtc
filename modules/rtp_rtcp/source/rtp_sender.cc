@@ -354,16 +354,15 @@ size_t RTPSender::SendPadData(size_t bytes,
 
   if (audio_configured_) {
     // Allow smaller padding packets for audio.
-    padding_bytes_in_packet = rtc::SafeClamp<size_t>(
-        bytes, kMinAudioPaddingLength,
-        rtc::SafeMin(max_payload_size, kMaxPaddingLength));
+    padding_bytes_in_packet =
+        rtc::SafeClamp(bytes, kMinAudioPaddingLength,
+                       rtc::SafeMin(max_payload_size, kMaxPaddingLength));
   } else {
     // Always send full padding packets. This is accounted for by the
     // RtpPacketSender, which will make sure we don't send too much padding even
     // if a single packet is larger than requested.
     // We do this to avoid frequently sending small packets on higher bitrates.
-    padding_bytes_in_packet =
-        rtc::SafeMin<size_t>(max_payload_size, kMaxPaddingLength);
+    padding_bytes_in_packet = rtc::SafeMin(max_payload_size, kMaxPaddingLength);
   }
   size_t bytes_sent = 0;
   while (bytes_sent < bytes) {
@@ -835,6 +834,108 @@ size_t RTPSender::TimeToSendPadding(size_t bytes,
   if (bytes_sent < bytes)
     bytes_sent += SendPadData(bytes - bytes_sent, pacing_info);
   return bytes_sent;
+}
+
+void RTPSender::GeneratePadding(size_t target_size_bytes) {
+  // This method does not actually send packets, it just generates
+  // them and puts them in the pacer queue. Since this should incur
+  // low overhead, keep the lock for the scope of the method in order
+  // to make the code more readable.
+  rtc::CritScope lock(&send_critsect_);
+  if (!sending_media_)
+    return;
+
+  size_t bytes_left = target_size_bytes;
+  if ((rtx_ & kRtxRedundantPayloads) != 0) {
+    while (bytes_left >= 0) {
+      std::unique_ptr<RtpPacketToSend> packet =
+          packet_history_.GetPayloadPaddingPacket(
+              [&](const RtpPacketToSend& packet)
+                  -> std::unique_ptr<RtpPacketToSend> {
+                if (packet.payload_size() + kRtxHeaderSize > bytes_left) {
+                  return nullptr;
+                }
+                return BuildRtxPacket(packet);
+              });
+      if (!packet) {
+        break;
+      }
+
+      bytes_left -= std::min(bytes_left, packet->payload_size());
+      packet->set_packet_type(RtpPacketToSend::Type::kPadding);
+      paced_sender_->EnqueuePacket(std::move(packet));
+    }
+  }
+
+  size_t padding_bytes_in_packet;
+  const size_t max_payload_size = max_packet_size_ - RtpHeaderLength();
+  if (audio_configured_) {
+    // Allow smaller padding packets for audio.
+    padding_bytes_in_packet = rtc::SafeClamp<size_t>(
+        bytes_left, kMinAudioPaddingLength,
+        rtc::SafeMin(max_payload_size, kMaxPaddingLength));
+  } else {
+    // Always send full padding packets. This is accounted for by the
+    // RtpPacketSender, which will make sure we don't send too much padding even
+    // if a single packet is larger than requested.
+    // We do this to avoid frequently sending small packets on higher bitrates.
+    padding_bytes_in_packet = rtc::SafeMin(max_payload_size, kMaxPaddingLength);
+  }
+
+  while (bytes_left > 0) {
+    auto padding_packet =
+        absl::make_unique<RtpPacketToSend>(&rtp_header_extension_map_);
+    padding_packet->set_packet_type(RtpPacketToSend::Type::kPadding);
+    padding_packet->SetMarker(false);
+    padding_packet->SetTimestamp(last_rtp_timestamp_);
+    padding_packet->set_capture_time_ms(capture_time_ms_);
+    if (rtx_ == kRtxOff) {
+      if (last_payload_type_ == -1) {
+        break;
+      }
+      // Without RTX we can't send padding in the middle of frames.
+      // For audio marker bits doesn't mark the end of a frame and frames
+      // are usually a single packet, so for now we don't apply this rule
+      // for audio.
+      if (!audio_configured_ && !last_packet_marker_bit_) {
+        break;
+      }
+
+      RTC_DCHECK(ssrc_);
+      padding_packet->SetSsrc(*ssrc_);
+      padding_packet->SetPayloadType(last_payload_type_);
+      padding_packet->SetSequenceNumber(sequence_number_++);
+    } else {
+      // Without abs-send-time or transport sequence number a media packet
+      // must be sent before padding so that the timestamps used for
+      // estimation are correct.
+      if (!media_has_been_sent_ &&
+          !(rtp_header_extension_map_.IsRegistered(AbsoluteSendTime::kId) ||
+            rtp_header_extension_map_.IsRegistered(
+                TransportSequenceNumber::kId))) {
+        break;
+      }
+      // Only change the timestamp of padding packets sent over RTX.
+      // Padding only packets over RTP has to be sent as part of a media
+      // frame (and therefore the same timestamp).
+      int64_t now_ms = clock_->TimeInMilliseconds();
+      if (last_timestamp_time_ms_ > 0) {
+        padding_packet->SetTimestamp(padding_packet->Timestamp() +
+                                     (now_ms - last_timestamp_time_ms_) *
+                                         kTimestampTicksPerMs);
+        padding_packet->set_capture_time_ms(padding_packet->capture_time_ms() +
+                                            (now_ms - last_timestamp_time_ms_));
+      }
+      RTC_DCHECK(ssrc_rtx_);
+      padding_packet->SetSsrc(*ssrc_rtx_);
+      padding_packet->SetSequenceNumber(sequence_number_rtx_++);
+      padding_packet->SetPayloadType(rtx_payload_type_map_.begin()->second);
+    }
+
+    padding_packet->SetPadding(padding_bytes_in_packet);
+    bytes_left -= std::min(bytes_left, padding_bytes_in_packet);
+    paced_sender_->EnqueuePacket(std::move(padding_packet));
+  }
 }
 
 bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,

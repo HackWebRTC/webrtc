@@ -114,6 +114,7 @@ class RTPSender {
   bool TrySendPacket(RtpPacketToSend* packet,
                      const PacedPacketInfo& pacing_info);
   size_t TimeToSendPadding(size_t bytes, const PacedPacketInfo& pacing_info);
+  void GeneratePadding(size_t target_size_bytes);
 
   // NACK.
   void OnReceivedNack(const std::vector<uint16_t>& nack_sequence_numbers,

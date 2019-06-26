@@ -98,7 +98,7 @@ void RoundRobinPacketQueue::Push(int priority,
   uint32_t ssrc = packet->Ssrc();
   uint16_t sequence_number = packet->SequenceNumber();
   int64_t capture_time_ms = packet->capture_time_ms();
-  size_t size_bytes = packet->payload_size();
+  size_t size_bytes = packet->payload_size() + packet->padding_size();
   auto type = packet->packet_type();
   RTC_DCHECK(type.has_value());
 

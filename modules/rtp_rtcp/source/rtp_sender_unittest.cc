@@ -78,8 +78,11 @@ using ::testing::DoAll;
 using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
 using ::testing::Field;
+using ::testing::Gt;
 using ::testing::Invoke;
 using ::testing::NiceMock;
+using ::testing::Pointee;
+using ::testing::Property;
 using ::testing::Return;
 using ::testing::SaveArg;
 using ::testing::SizeIs;
@@ -2083,6 +2086,79 @@ TEST_P(RtpSenderTest, TrySendPacketUpdatesStats) {
   EXPECT_EQ(rtp_stats.transmitted.packets, 2u);
   EXPECT_EQ(rtp_stats.fec.packets, 1u);
   EXPECT_EQ(rtx_stats.retransmitted.packets, 1u);
+}
+
+TEST_P(RtpSenderTest, GeneratePaddingResendsOldPacketsWithRtx) {
+  rtp_sender_->SetRtxStatus(kRtxRetransmitted | kRtxRedundantPayloads);
+  rtp_sender_->SetRtxPayloadType(kRtxPayload, kPayload);
+  rtp_sender_->SetStorePacketsStatus(true, 1);
+
+  const size_t kPayloadPacketSize = 1234;
+  std::unique_ptr<RtpPacketToSend> packet =
+      BuildRtpPacket(kPayload, true, 0, fake_clock_.TimeInMilliseconds());
+  packet->set_allow_retransmission(true);
+  packet->SetPayloadSize(kPayloadPacketSize);
+  packet->set_packet_type(RtpPacketToSend::Type::kVideo);
+
+  // Send a dummy video packet so it ends up in the packet history.
+  EXPECT_TRUE(rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo()));
+
+  // Generated padding has large enough budget that the video packet should be
+  // retransmitted as padding.
+  EXPECT_CALL(mock_paced_sender_,
+              EnqueuePacket(AllOf(
+                  Pointee(Property(&RtpPacketToSend::packet_type,
+                                   RtpPacketToSend::Type::kPadding)),
+                  Pointee(Property(&RtpPacketToSend::Ssrc, kRtxSsrc)),
+                  Pointee(Property(&RtpPacketToSend::payload_size,
+                                   kPayloadPacketSize + kRtxHeaderSize)))))
+      .Times(1);
+  rtp_sender_->GeneratePadding(kPayloadPacketSize + kRtxHeaderSize);
+
+  // Not enough budged for payload padding, use plain padding instead.
+  EXPECT_CALL(mock_paced_sender_,
+              EnqueuePacket(AllOf(
+                  Pointee(Property(&RtpPacketToSend::packet_type,
+                                   RtpPacketToSend::Type::kPadding)),
+                  Pointee(Property(&RtpPacketToSend::Ssrc, kRtxSsrc)),
+                  Pointee(Property(&RtpPacketToSend::payload_size, 0)),
+                  Pointee(Property(&RtpPacketToSend::padding_size, Gt(0u))))))
+      .Times((kPayloadPacketSize + kMaxPaddingSize - 1) / kMaxPaddingSize);
+  rtp_sender_->GeneratePadding(kPayloadPacketSize + kRtxHeaderSize - 1);
+}
+
+TEST_P(RtpSenderTest, GeneratePaddingCreatesPurePaddingWithoutRtx) {
+  rtp_sender_->SetStorePacketsStatus(true, 1);
+
+  const size_t kPayloadPacketSize = 1234;
+  // Send a dummy video packet so it ends up in the packet history. Since we
+  // are not using RTX, it should never be used as padding.
+  std::unique_ptr<RtpPacketToSend> packet =
+      BuildRtpPacket(kPayload, true, 0, fake_clock_.TimeInMilliseconds());
+  packet->set_allow_retransmission(true);
+  packet->SetPayloadSize(kPayloadPacketSize);
+  packet->set_packet_type(RtpPacketToSend::Type::kVideo);
+  EXPECT_TRUE(rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo()));
+
+  // Payload padding not available without RTX, only generate plain padding on
+  // the media SSRC.
+  // Number of padding packets is the requested padding size divided by max
+  // padding packet size, rounded up. Pure padding packets are always of the
+  // maximum size.
+  const size_t kPaddingBytesRequested = kPayloadPacketSize + kRtxHeaderSize;
+  const size_t kExpectedNumPaddingPackets =
+      (kPaddingBytesRequested + kMaxPaddingSize - 1) / kMaxPaddingSize;
+  size_t padding_bytes_sent = 0;
+  EXPECT_CALL(mock_paced_sender_, EnqueuePacket)
+      .WillRepeatedly([&](std::unique_ptr<RtpPacketToSend> packet) {
+        EXPECT_EQ(packet->packet_type(), RtpPacketToSend::Type::kPadding);
+        EXPECT_EQ(packet->Ssrc(), kSsrc);
+        EXPECT_EQ(packet->payload_size(), 0u);
+        EXPECT_GT(packet->padding_size(), 0u);
+        padding_bytes_sent += packet->padding_size();
+      });
+  rtp_sender_->GeneratePadding(kPaddingBytesRequested);
+  EXPECT_EQ(padding_bytes_sent, kExpectedNumPaddingPackets * kMaxPaddingSize);
 }
 
 INSTANTIATE_TEST_SUITE_P(WithAndWithoutOverhead,

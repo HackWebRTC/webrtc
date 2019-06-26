@@ -272,6 +272,38 @@ TEST(PacketRouterTest, TimeToSendPadding) {
   packet_router.RemoveSendRtpModule(&rtp_2);
 }
 
+TEST(PacketRouterTest, GeneratePaddingPicksCorrectModule) {
+  PacketRouter packet_router;
+
+  // Two RTP modules. The first (prioritized due to rtx) isn't sending media so
+  // should not be called.
+  const uint16_t kSsrc1 = 1234;
+  const uint16_t kSsrc2 = 4567;
+
+  NiceMock<MockRtpRtcp> rtp_1;
+  ON_CALL(rtp_1, RtxSendStatus()).WillByDefault(Return(kRtxRedundantPayloads));
+  ON_CALL(rtp_1, SSRC()).WillByDefault(Return(kSsrc1));
+  ON_CALL(rtp_1, SendingMedia()).WillByDefault(Return(false));
+  ON_CALL(rtp_1, HasBweExtensions()).WillByDefault(Return(false));
+
+  NiceMock<MockRtpRtcp> rtp_2;
+  ON_CALL(rtp_2, RtxSendStatus()).WillByDefault(Return(kRtxOff));
+  ON_CALL(rtp_2, SSRC()).WillByDefault(Return(kSsrc2));
+  ON_CALL(rtp_2, SendingMedia()).WillByDefault(Return(true));
+  ON_CALL(rtp_2, HasBweExtensions()).WillByDefault(Return(true));
+
+  packet_router.AddSendRtpModule(&rtp_1, false);
+  packet_router.AddSendRtpModule(&rtp_2, false);
+
+  const size_t kPaddingSize = 123;
+  EXPECT_CALL(rtp_1, GeneratePadding(_)).Times(0);
+  EXPECT_CALL(rtp_2, GeneratePadding(kPaddingSize)).Times(1);
+  packet_router.GeneratePadding(kPaddingSize);
+
+  packet_router.RemoveSendRtpModule(&rtp_1);
+  packet_router.RemoveSendRtpModule(&rtp_2);
+}
+
 TEST(PacketRouterTest, PadsOnLastActiveMediaStream) {
   PacketRouter packet_router;
 

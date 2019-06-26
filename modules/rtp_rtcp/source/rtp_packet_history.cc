@@ -346,6 +346,15 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetBestFittingPacket(
 }
 
 std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetPayloadPaddingPacket() {
+  // Default implementation always just returns a copy of the packet.
+  return GetPayloadPaddingPacket([](const RtpPacketToSend& packet) {
+    return absl::make_unique<RtpPacketToSend>(packet);
+  });
+}
+
+std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetPayloadPaddingPacket(
+    rtc::FunctionView<std::unique_ptr<RtpPacketToSend>(const RtpPacketToSend&)>
+        encapsulate) {
   rtc::CritScope cs(&lock_);
   if (mode_ == StorageMode::kDisabled || padding_priority_.empty()) {
     return nullptr;
@@ -362,11 +371,15 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetPayloadPaddingPacket() {
     return nullptr;
   }
 
+  auto padding_packet = encapsulate(*best_packet->packet_);
+  if (!padding_packet) {
+    return nullptr;
+  }
+
   best_packet->send_time_ms_ = clock_->TimeInMilliseconds();
   best_packet->IncrementTimesRetransmitted(&padding_priority_);
 
-  // Return a copy of the packet.
-  return absl::make_unique<RtpPacketToSend>(*best_packet->packet_);
+  return padding_packet;
 }
 
 void RtpPacketHistory::CullAcknowledgedPackets(
