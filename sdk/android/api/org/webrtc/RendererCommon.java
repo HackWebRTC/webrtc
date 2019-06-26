@@ -233,7 +233,7 @@ public class RendererCommon {
    * Calculate display size based on minimum fraction of the video that must remain visible,
    * video aspect ratio, and maximum display size.
    */
-  private static Point getDisplaySize(
+  public static Point getDisplaySize(
       float minVisibleFraction, float videoAspectRatio, int maxDisplayWidth, int maxDisplayHeight) {
     // If there is no constraint on the amount of cropping, fill the allowed display area.
     if (minVisibleFraction == 0 || videoAspectRatio == 0) {
