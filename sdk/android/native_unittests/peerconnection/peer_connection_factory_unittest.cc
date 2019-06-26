@@ -10,8 +10,8 @@
 #include "sdk/android/native_api/peerconnection/peer_connection_factory.h"
 
 #include "absl/memory/memory.h"
+#include "api/rtc_event_log/rtc_event_log_factory.h"
 #include "api/task_queue/default_task_queue_factory.h"
-#include "logging/rtc_event_log/rtc_event_log_factory.h"
 #include "media/base/media_engine.h"
 #include "media/engine/internal_decoder_factory.h"
 #include "media/engine/internal_encoder_factory.h"

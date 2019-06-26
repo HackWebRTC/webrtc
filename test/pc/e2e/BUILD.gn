@@ -350,7 +350,6 @@ if (rtc_include_tests) {
       "../../../api/video_codecs:builtin_video_decoder_factory",
       "../../../api/video_codecs:builtin_video_encoder_factory",
       "../../../call:simulated_network",
-      "../../../logging:rtc_event_log_impl_base",
       "../../../media:rtc_audio_video",
       "../../../modules/audio_device:audio_device_impl",
       "../../../p2p:rtc_p2p",

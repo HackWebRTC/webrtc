@@ -13,11 +13,11 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
+#include "api/rtc_event_log/rtc_event_log_factory.h"
 #include "api/rtc_event_log_output_file.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "call/fake_network_pipe.h"
-#include "logging/rtc_event_log/rtc_event_log_factory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/flags.h"
 #include "rtc_base/logging.h"

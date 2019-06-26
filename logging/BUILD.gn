@@ -19,7 +19,6 @@ group("logging") {
   deps = [
     ":rtc_event_audio",
     ":rtc_event_bwe",
-    ":rtc_event_log_impl_base",
     ":rtc_event_log_impl_encoder",
     ":rtc_event_pacing",
     ":rtc_event_rtp_rtcp",
@@ -266,23 +265,6 @@ if (rtc_enable_protobuf) {
   }
 }
 
-rtc_static_library("rtc_event_log_impl_base") {
-  # TODO(bugs.webrtc.org/10206): Remove this target when all users switch to
-  # using target api/rtc_event_log:rtc_event_log_factory directly.
-  visibility = [ "*" ]
-  sources = [
-    "rtc_event_log/rtc_event_log_factory.cc",
-    "rtc_event_log/rtc_event_log_factory.h",
-  ]
-
-  deps = [
-    "../api/rtc_event_log",
-    "../api/rtc_event_log:rtc_event_log_factory",
-    "../api/task_queue:global_task_queue_factory",
-    "//third_party/abseil-cpp/absl/memory",
-  ]
-}
-
 rtc_source_set("fake_rtc_event_log") {
   testonly = true
   sources = [
@@ -380,7 +362,6 @@ if (rtc_enable_protobuf) {
         ":rtc_event_generic_packet_events",
         ":rtc_event_log2_proto",
         ":rtc_event_log_api",
-        ":rtc_event_log_impl_base",
         ":rtc_event_log_impl_encoder",
         ":rtc_event_log_parser",
         ":rtc_event_log_proto",
@@ -392,6 +373,7 @@ if (rtc_enable_protobuf) {
         "../api:libjingle_peerconnection_api",
         "../api:rtc_event_log_output_file",
         "../api:rtp_headers",
+        "../api/rtc_event_log:rtc_event_log_factory",
         "../api/task_queue:default_task_queue_factory",
         "../call",
         "../call:call_interfaces",
