@@ -175,11 +175,11 @@ def CheckNativeApiHeaderChanges(input_api, output_api):
       if path == 'api':
         # Special case: Subdirectories included.
         if dn == 'api' or dn.startswith('api/'):
-          files.append(f)
+          files.append(f.LocalPath())
       else:
         # Normal case: Subdirectories not included.
         if dn == path:
-          files.append(f)
+          files.append(f.LocalPath())
 
   if files:
     return [output_api.PresubmitNotifyResult(API_CHANGE_MSG, files)]
