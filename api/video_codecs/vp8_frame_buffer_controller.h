@@ -177,23 +177,12 @@ class Vp8FrameBufferControllerFactory {
   virtual ~Vp8FrameBufferControllerFactory() = default;
 
   // Clones oneself. (Avoids Vp8FrameBufferControllerFactoryFactory.)
-  // TODO(bugs.webrtc.org/10720): Update downstream and make pure-virtual.
-  virtual std::unique_ptr<Vp8FrameBufferControllerFactory> Clone() const {
-    return nullptr;
-  }
+  virtual std::unique_ptr<Vp8FrameBufferControllerFactory> Clone() const = 0;
 
-  // TODO(bugs.webrtc.org/10720): Update downstream and remove.
-  virtual std::unique_ptr<Vp8FrameBufferController> Create(
-      const VideoCodec& codec) {
-    return nullptr;
-  }
-
-  // TODO(bugs.webrtc.org/10720): Update downstream and make pure-virtual.
+  // Create a Vp8FrameBufferController instance.
   virtual std::unique_ptr<Vp8FrameBufferController> Create(
       const VideoCodec& codec,
-      const VideoEncoder::Settings& settings) {
-    return nullptr;
-  }
+      const VideoEncoder::Settings& settings) = 0;
 };
 
 }  // namespace webrtc
