@@ -74,7 +74,8 @@ class StunServerTest : public ::testing::Test {
 
 TEST_F(StunServerTest, TestGood) {
   StunMessage req;
-  std::string transaction_id = "0123456789ab";
+  // kStunLegacyTransactionIdLength = 16 for legacy RFC 3489 request
+  std::string transaction_id = "0123456789abcdef";
   req.SetType(STUN_BINDING_REQUEST);
   req.SetTransactionID(transaction_id);
   Send(req);
@@ -89,11 +90,50 @@ TEST_F(StunServerTest, TestGood) {
   EXPECT_TRUE(mapped_addr != NULL);
   EXPECT_EQ(1, mapped_addr->family());
   EXPECT_EQ(client_addr.port(), mapped_addr->port());
-  if (mapped_addr->ipaddr() != client_addr.ipaddr()) {
-    RTC_LOG(LS_WARNING) << "Warning: mapped IP ("
-                        << mapped_addr->ipaddr().ToString() << ") != local IP ("
-                        << client_addr.ipaddr().ToString() << ")";
-  }
+
+  delete msg;
+}
+
+TEST_F(StunServerTest, TestGoodXorMappedAddr) {
+  StunMessage req;
+  // kStunTransactionIdLength = 12 for RFC 5389 request
+  // StunMessage::Write will automatically insert magic cookie (0x2112A442)
+  std::string transaction_id = "0123456789ab";
+  req.SetType(STUN_BINDING_REQUEST);
+  req.SetTransactionID(transaction_id);
+  Send(req);
+
+  StunMessage* msg = Receive();
+  ASSERT_TRUE(msg != NULL);
+  EXPECT_EQ(STUN_BINDING_RESPONSE, msg->type());
+  EXPECT_EQ(req.transaction_id(), msg->transaction_id());
+
+  const StunAddressAttribute* mapped_addr =
+      msg->GetAddress(STUN_ATTR_XOR_MAPPED_ADDRESS);
+  EXPECT_TRUE(mapped_addr != NULL);
+  EXPECT_EQ(1, mapped_addr->family());
+  EXPECT_EQ(client_addr.port(), mapped_addr->port());
+
+  delete msg;
+}
+
+// Send legacy RFC 3489 request, should not get xor mapped addr
+TEST_F(StunServerTest, TestNoXorMappedAddr) {
+  StunMessage req;
+  // kStunLegacyTransactionIdLength = 16 for legacy RFC 3489 request
+  std::string transaction_id = "0123456789abcdef";
+  req.SetType(STUN_BINDING_REQUEST);
+  req.SetTransactionID(transaction_id);
+  Send(req);
+
+  StunMessage* msg = Receive();
+  ASSERT_TRUE(msg != NULL);
+  EXPECT_EQ(STUN_BINDING_RESPONSE, msg->type());
+  EXPECT_EQ(req.transaction_id(), msg->transaction_id());
+
+  const StunAddressAttribute* mapped_addr =
+      msg->GetAddress(STUN_ATTR_XOR_MAPPED_ADDRESS);
+  EXPECT_TRUE(mapped_addr == NULL);
 
   delete msg;
 }

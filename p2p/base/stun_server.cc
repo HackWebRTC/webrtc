@@ -54,7 +54,7 @@ void StunServer::OnPacket(rtc::AsyncPacketSocket* socket,
 void StunServer::OnBindingRequest(StunMessage* msg,
                                   const rtc::SocketAddress& remote_addr) {
   StunMessage response;
-  GetStunBindReqponse(msg, remote_addr, &response);
+  GetStunBindResponse(msg, remote_addr, &response);
   SendResponse(response, remote_addr);
 }
 
@@ -83,7 +83,7 @@ void StunServer::SendResponse(const StunMessage& msg,
     RTC_LOG_ERR(LS_ERROR) << "sendto";
 }
 
-void StunServer::GetStunBindReqponse(StunMessage* request,
+void StunServer::GetStunBindResponse(StunMessage* request,
                                      const rtc::SocketAddress& remote_addr,
                                      StunMessage* response) const {
   response->SetType(STUN_BINDING_RESPONSE);
@@ -91,7 +91,7 @@ void StunServer::GetStunBindReqponse(StunMessage* request,
 
   // Tell the user the address that we received their request from.
   std::unique_ptr<StunAddressAttribute> mapped_addr;
-  if (!request->IsLegacy()) {
+  if (request->IsLegacy()) {
     mapped_addr = StunAttribute::CreateAddress(STUN_ATTR_MAPPED_ADDRESS);
   } else {
     mapped_addr = StunAttribute::CreateXorAddress(STUN_ATTR_XOR_MAPPED_ADDRESS);
