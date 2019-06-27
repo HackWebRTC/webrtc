@@ -503,6 +503,11 @@ NetworkControlUpdate BbrNetworkController::OnReceivedPacket(
   return NetworkControlUpdate();
 }
 
+NetworkControlUpdate BbrNetworkController::OnNetworkStateEstimate(
+    NetworkStateEstimate msg) {
+  return NetworkControlUpdate();
+}
+
 TimeDelta BbrNetworkController::GetMinRtt() const {
   return !min_rtt_.IsZero() ? min_rtt_
                             : TimeDelta::us(rtt_stats_.initial_rtt_us());

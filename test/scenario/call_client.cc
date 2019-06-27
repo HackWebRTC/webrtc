@@ -132,6 +132,11 @@ NetworkControlUpdate NetworkControleUpdateCache::OnTransportPacketsFeedback(
     TransportPacketsFeedback msg) {
   return Update(controller_->OnTransportPacketsFeedback(msg));
 }
+NetworkControlUpdate NetworkControleUpdateCache::OnNetworkStateEstimate(
+    NetworkStateEstimate msg) {
+  return Update(controller_->OnNetworkStateEstimate(msg));
+}
+
 NetworkControlUpdate NetworkControleUpdateCache::update_state() const {
   return update_state_;
 }

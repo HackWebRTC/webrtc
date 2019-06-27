@@ -253,10 +253,9 @@ NetworkControlUpdate GoogCcNetworkController::OnSentPacket(
   }
   bandwidth_estimation_->OnSentPacket(sent_packet);
   bool network_changed = false;
-  if (network_estimator_ && overuse_predictor_.Enabled()) {
+  if (overuse_predictor_.Enabled()) {
     overuse_predictor_.OnSentPacket(sent_packet);
-    auto estimate = network_estimator_->GetCurrentEstimate();
-    if (estimate && overuse_predictor_.PredictOveruse(*estimate)) {
+    if (estimate_ && overuse_predictor_.PredictOveruse(*estimate_)) {
       DataRate new_target = delay_based_bwe_->TriggerOveruse(
           sent_packet.send_time, acknowledged_bitrate_estimator_->bitrate());
       bandwidth_estimation_->UpdateDelayBasedEstimate(sent_packet.send_time,
@@ -510,19 +509,18 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
                                              report.feedback_time);
   bandwidth_estimation_->IncomingPacketFeedbackVector(report);
 
-  if (network_estimator_)
+  if (network_estimator_) {
     network_estimator_->OnTransportPacketsFeedback(report);
+    estimate_ = network_estimator_->GetCurrentEstimate();
+  }
 
   NetworkControlUpdate update;
   bool recovered_from_overuse = false;
   bool backoff_in_alr = false;
 
   DelayBasedBwe::Result result;
-  absl::optional<NetworkStateEstimate> network_estimate =
-      network_estimator_ ? network_estimator_->GetCurrentEstimate()
-                         : absl::nullopt;
   result = delay_based_bwe_->IncomingPacketFeedbackVector(
-      report, acknowledged_bitrate, probe_bitrate, network_estimate,
+      report, acknowledged_bitrate, probe_bitrate, estimate_,
       alr_start_time.has_value());
 
   if (result.updated) {
@@ -566,6 +564,12 @@ NetworkControlUpdate GoogCcNetworkController::OnTransportPacketsFeedback(
   }
 
   return update;
+}
+
+NetworkControlUpdate GoogCcNetworkController::OnNetworkStateEstimate(
+    NetworkStateEstimate msg) {
+  estimate_ = msg;
+  return NetworkControlUpdate();
 }
 
 NetworkControlUpdate GoogCcNetworkController::GetNetworkState(

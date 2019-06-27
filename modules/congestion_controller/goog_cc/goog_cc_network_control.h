@@ -64,6 +64,8 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   NetworkControlUpdate OnTransportLossReport(TransportLossReport msg) override;
   NetworkControlUpdate OnTransportPacketsFeedback(
       TransportPacketsFeedback msg) override;
+  NetworkControlUpdate OnNetworkStateEstimate(
+      NetworkStateEstimate msg) override;
 
   NetworkControlUpdate GetNetworkState(Timestamp at_time) const;
 
@@ -109,6 +111,8 @@ class GoogCcNetworkController : public NetworkControllerInterface {
   absl::optional<DataRate> starting_rate_;
 
   bool first_packet_sent_ = false;
+
+  absl::optional<NetworkStateEstimate> estimate_;
 
   Timestamp next_loss_update_ = Timestamp::MinusInfinity();
   int lost_packets_since_last_loss_update_ = 0;

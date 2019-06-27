@@ -381,5 +381,10 @@ NetworkControlUpdate PccNetworkController::OnReceivedPacket(
   return NetworkControlUpdate();
 }
 
+NetworkControlUpdate PccNetworkController::OnNetworkStateEstimate(
+    NetworkStateEstimate msg) {
+  return NetworkControlUpdate();
+}
+
 }  // namespace pcc
 }  // namespace webrtc
