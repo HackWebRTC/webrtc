@@ -10,6 +10,7 @@
 
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 
+#include "modules/rtp_rtcp/source/rtp_dependency_descriptor_extension.h"
 #include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor_extension.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "rtc_base/arraysize.h"
@@ -45,6 +46,7 @@ constexpr ExtensionInfo kExtensions[] = {
     CreateExtensionInfo<RtpMid>(),
     CreateExtensionInfo<RtpGenericFrameDescriptorExtension00>(),
     CreateExtensionInfo<RtpGenericFrameDescriptorExtension01>(),
+    CreateExtensionInfo<RtpDependencyDescriptorExtension>(),
     CreateExtensionInfo<ColorSpaceExtension>(),
 };
 

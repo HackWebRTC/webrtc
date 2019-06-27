@@ -523,6 +523,7 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
         }
         case kRtpExtensionGenericFrameDescriptor00:
         case kRtpExtensionGenericFrameDescriptor01:
+        case kRtpExtensionGenericFrameDescriptor02:
           RTC_LOG(WARNING)
               << "RtpGenericFrameDescriptor unsupported by rtp header parser.";
           break;
