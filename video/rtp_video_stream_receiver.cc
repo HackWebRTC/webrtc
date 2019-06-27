@@ -94,11 +94,6 @@ void RtpVideoStreamReceiver::RtcpFeedbackBuffer::RequestKeyFrame() {
 }
 
 void RtpVideoStreamReceiver::RtcpFeedbackBuffer::SendNack(
-    const std::vector<uint16_t>& sequence_numbers) {
-  RTC_NOTREACHED();
-}
-
-void RtpVideoStreamReceiver::RtcpFeedbackBuffer::SendNack(
     const std::vector<uint16_t>& sequence_numbers,
     bool buffering_allowed) {
   RTC_DCHECK(!sequence_numbers.empty());

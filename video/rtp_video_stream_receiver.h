@@ -196,7 +196,6 @@ class RtpVideoStreamReceiver : public LossNotificationSender,
     void RequestKeyFrame() override;
 
     // NackSender implementation.
-    void SendNack(const std::vector<uint16_t>& sequence_numbers) override;
     void SendNack(const std::vector<uint16_t>& sequence_numbers,
                   bool buffering_allowed) override;
 

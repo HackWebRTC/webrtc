@@ -27,10 +27,6 @@ class TestNackModule : public ::testing::Test,
         nack_module_(clock_.get(), this, this),
         keyframes_requested_(0) {}
 
-  void SendNack(const std::vector<uint16_t>& sequence_numbers) override {
-    RTC_NOTREACHED();
-  }
-
   void SendNack(const std::vector<uint16_t>& sequence_numbers,
                 bool buffering_allowed) override {
     sent_nacks_.insert(sent_nacks_.end(), sequence_numbers.begin(),
@@ -306,10 +302,6 @@ class TestNackModuleWithFieldTrial : public ::testing::Test,
         clock_(new SimulatedClock(0)),
         nack_module_(clock_.get(), this, this),
         keyframes_requested_(0) {}
-
-  void SendNack(const std::vector<uint16_t>& sequence_numbers) override {
-    RTC_NOTREACHED();
-  }
 
   void SendNack(const std::vector<uint16_t>& sequence_numbers,
                 bool buffering_allowed) override {
