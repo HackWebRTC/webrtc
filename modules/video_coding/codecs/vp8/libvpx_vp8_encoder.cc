@@ -1198,6 +1198,10 @@ VideoEncoder::EncoderInfo LibvpxVp8Encoder::GetEncoderInfo() const {
                               ? VideoEncoder::ScalingSettings(
                                     kLowVp8QpThreshold, kHighVp8QpThreshold)
                               : VideoEncoder::ScalingSettings::kOff;
+  if (rate_control_settings_.LibvpxVp8MinPixels()) {
+    info.scaling_settings.min_pixels_per_frame =
+        rate_control_settings_.LibvpxVp8MinPixels().value();
+  }
   // |encoder_idx| is libvpx index where 0 is highest resolution.
   // |si| is simulcast index, where 0 is lowest resolution.
   for (size_t si = 0, encoder_idx = encoders_.size() - 1; si < encoders_.size();
