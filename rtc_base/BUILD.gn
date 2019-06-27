@@ -600,7 +600,15 @@ rtc_static_library("rtc_numerics") {
   ]
 }
 
+# TODO(bugs.webrtc.org/10770): Update jsoncpp API usage and remove this.
+config("rtc_json_temporary_suppressions") {
+  if (!is_win || is_clang) {
+    cflags_cc = [ "-Wno-deprecated-declarations" ]
+  }
+}
+
 rtc_source_set("rtc_json") {
+  public_configs = [ ":rtc_json_temporary_suppressions" ]
   defines = []
   sources = [
     "strings/json.cc",
