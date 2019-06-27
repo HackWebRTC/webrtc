@@ -1801,6 +1801,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   video_media_info.receivers[0].plis_sent = 6;
   video_media_info.receivers[0].nacks_sent = 7;
   video_media_info.receivers[0].frames_decoded = 8;
+  video_media_info.receivers[0].key_frames_decoded = 3;
   video_media_info.receivers[0].qp_sum = absl::nullopt;
   video_media_info.receivers[0].last_packet_received_timestamp_ms =
       absl::nullopt;
@@ -1837,6 +1838,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCInboundRTPStreamStats_Video) {
   expected_video.bytes_received = 3;
   expected_video.packets_lost = 42;
   expected_video.frames_decoded = 8;
+  expected_video.key_frames_decoded = 3;
   // |expected_video.qp_sum| should be undefined.
   // |expected_video.last_packet_received_timestamp| should be undefined.
   // |expected_video.content_type| should be undefined.
@@ -1938,6 +1940,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   video_media_info.senders[0].retransmitted_bytes_sent = 60;
   video_media_info.senders[0].codec_payload_type = 42;
   video_media_info.senders[0].frames_encoded = 8;
+  video_media_info.senders[0].key_frames_encoded = 3;
   video_media_info.senders[0].total_encode_time_ms = 9000;
   video_media_info.senders[0].total_encoded_bytes_target = 1234;
   video_media_info.senders[0].total_packet_send_delay_ms = 10000;
@@ -1985,6 +1988,7 @@ TEST_F(RTCStatsCollectorTest, CollectRTCOutboundRTPStreamStats_Video) {
   expected_video.bytes_sent = 6;
   expected_video.retransmitted_bytes_sent = 60;
   expected_video.frames_encoded = 8;
+  expected_video.key_frames_encoded = 3;
   expected_video.total_encode_time = 9.0;
   expected_video.total_encoded_bytes_target = 1234;
   expected_video.total_packet_send_delay = 10.0;

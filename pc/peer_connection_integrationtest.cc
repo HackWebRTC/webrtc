@@ -2708,6 +2708,12 @@ TEST_P(PeerConnectionIntegrationTest, NewGetStatsManyAudioAndManyVideoStreams) {
   for (const auto& stat : outbound_stream_stats) {
     ASSERT_TRUE(stat->bytes_sent.is_defined());
     EXPECT_LT(0u, *stat->bytes_sent);
+    if (*stat->kind == "video") {
+      ASSERT_TRUE(stat->key_frames_encoded.is_defined());
+      EXPECT_GT(*stat->key_frames_encoded, 0u);
+      ASSERT_TRUE(stat->frames_encoded.is_defined());
+      EXPECT_GE(*stat->frames_encoded, *stat->key_frames_encoded);
+    }
     ASSERT_TRUE(stat->track_id.is_defined());
     const auto* track_stat =
         caller_report->GetAs<webrtc::RTCMediaStreamTrackStats>(*stat->track_id);
@@ -2726,6 +2732,12 @@ TEST_P(PeerConnectionIntegrationTest, NewGetStatsManyAudioAndManyVideoStreams) {
   for (const auto& stat : inbound_stream_stats) {
     ASSERT_TRUE(stat->bytes_received.is_defined());
     EXPECT_LT(0u, *stat->bytes_received);
+    if (*stat->kind == "video") {
+      ASSERT_TRUE(stat->key_frames_decoded.is_defined());
+      EXPECT_GT(*stat->key_frames_decoded, 0u);
+      ASSERT_TRUE(stat->frames_decoded.is_defined());
+      EXPECT_GE(*stat->frames_decoded, *stat->key_frames_decoded);
+    }
     ASSERT_TRUE(stat->track_id.is_defined());
     const auto* track_stat =
         callee_report->GetAs<webrtc::RTCMediaStreamTrackStats>(*stat->track_id);

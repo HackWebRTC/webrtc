@@ -4938,6 +4938,21 @@ TEST_F(WebRtcVideoChannelTest, GetStatsReportsFramesEncoded) {
   EXPECT_EQ(stats.frames_encoded, info.senders[0].frames_encoded);
 }
 
+TEST_F(WebRtcVideoChannelTest, GetStatsReportsKeyFramesEncoded) {
+  FakeVideoSendStream* stream = AddSendStream();
+  webrtc::VideoSendStream::Stats stats;
+  stats.substreams[123].frame_counts.key_frames = 10;
+  stats.substreams[456].frame_counts.key_frames = 87;
+  stream->SetStats(stats);
+
+  cricket::VideoMediaInfo info;
+  ASSERT_TRUE(channel_->GetStats(&info));
+  // TODO(bugs.webrtc.org/9547): Populate individual outbound-rtp stats objects
+  // for each simulcast stream, instead of accumulating all keyframes encoded
+  // over all simulcast streams in the same outbound-rtp stats object.
+  EXPECT_EQ(97u, info.senders[0].key_frames_encoded);
+}
+
 TEST_F(WebRtcVideoChannelTest, GetStatsReportsQpSum) {
   FakeVideoSendStream* stream = AddSendStream();
   webrtc::VideoSendStream::Stats stats;
@@ -5095,6 +5110,8 @@ TEST_F(WebRtcVideoChannelTest, GetStatsTranslatesDecodeStatsCorrectly) {
             info.receivers[0].frames_received);
   EXPECT_EQ(stats.frames_rendered, info.receivers[0].frames_rendered);
   EXPECT_EQ(stats.frames_decoded, info.receivers[0].frames_decoded);
+  EXPECT_EQ(rtc::checked_cast<unsigned int>(stats.frame_counts.key_frames),
+            info.receivers[0].key_frames_decoded);
   EXPECT_EQ(stats.qp_sum, info.receivers[0].qp_sum);
 }
 

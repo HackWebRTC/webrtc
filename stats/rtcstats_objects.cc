@@ -614,6 +614,7 @@ WEBRTC_RTCSTATS_IMPL(
     &gap_loss_rate,
     &gap_discard_rate,
     &frames_decoded,
+    &key_frames_decoded,
     &content_type)
 // clang-format on
 
@@ -643,6 +644,7 @@ RTCInboundRTPStreamStats::RTCInboundRTPStreamStats(std::string&& id,
       gap_loss_rate("gapLossRate"),
       gap_discard_rate("gapDiscardRate"),
       frames_decoded("framesDecoded"),
+      key_frames_decoded("keyFramesDecoded"),
       content_type("contentType") {}
 
 RTCInboundRTPStreamStats::RTCInboundRTPStreamStats(
@@ -667,6 +669,7 @@ RTCInboundRTPStreamStats::RTCInboundRTPStreamStats(
       gap_loss_rate(other.gap_loss_rate),
       gap_discard_rate(other.gap_discard_rate),
       frames_decoded(other.frames_decoded),
+      key_frames_decoded(other.key_frames_decoded),
       content_type(other.content_type) {}
 
 RTCInboundRTPStreamStats::~RTCInboundRTPStreamStats() {}
@@ -681,6 +684,7 @@ WEBRTC_RTCSTATS_IMPL(
     &retransmitted_bytes_sent,
     &target_bitrate,
     &frames_encoded,
+    &key_frames_encoded,
     &total_encode_time,
     &total_encoded_bytes_target,
     &total_packet_send_delay,
@@ -702,6 +706,7 @@ RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(std::string&& id,
       retransmitted_bytes_sent("retransmittedBytesSent"),
       target_bitrate("targetBitrate"),
       frames_encoded("framesEncoded"),
+      key_frames_encoded("keyFramesEncoded"),
       total_encode_time("totalEncodeTime"),
       total_encoded_bytes_target("totalEncodedBytesTarget"),
       total_packet_send_delay("totalPacketSendDelay"),
@@ -718,6 +723,7 @@ RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
       retransmitted_bytes_sent(other.retransmitted_bytes_sent),
       target_bitrate(other.target_bitrate),
       frames_encoded(other.frames_encoded),
+      key_frames_encoded(other.key_frames_encoded),
       total_encode_time(other.total_encode_time),
       total_encoded_bytes_target(other.total_encoded_bytes_target),
       total_packet_send_delay(other.total_packet_send_delay),

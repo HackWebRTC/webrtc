@@ -442,6 +442,7 @@ class RTC_EXPORT RTCInboundRTPStreamStats final : public RTCRTPStreamStats {
   // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7065
   RTCStatsMember<double> gap_discard_rate;
   RTCStatsMember<uint32_t> frames_decoded;
+  RTCStatsMember<uint32_t> key_frames_decoded;
   // https://henbos.github.io/webrtc-provisional-stats/#dom-rtcinboundrtpstreamstats-contenttype
   RTCStatsMember<std::string> content_type;
 };
@@ -466,6 +467,7 @@ class RTC_EXPORT RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
   // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7066
   RTCStatsMember<double> target_bitrate;
   RTCStatsMember<uint32_t> frames_encoded;
+  RTCStatsMember<uint32_t> key_frames_encoded;
   RTCStatsMember<double> total_encode_time;
   RTCStatsMember<uint64_t> total_encoded_bytes_target;
   // TODO(https://crbug.com/webrtc/10635): This is only implemented for video;

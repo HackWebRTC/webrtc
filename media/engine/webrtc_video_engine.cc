@@ -2280,6 +2280,13 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
   info.avg_encode_ms = stats.avg_encode_time_ms;
   info.encode_usage_percent = stats.encode_usage_percent;
   info.frames_encoded = stats.frames_encoded;
+  // TODO(bugs.webrtc.org/9547): Populate individual outbound-rtp stats objects
+  // for each simulcast stream, instead of accumulating all keyframes encoded
+  // over all simulcast streams in the same outbound-rtp stats object.
+  info.key_frames_encoded = 0;
+  for (const auto& kv : stats.substreams) {
+    info.key_frames_encoded += kv.second.frame_counts.key_frames;
+  }
   info.total_encode_time_ms = stats.total_encode_time_ms;
   info.total_encoded_bytes_target = stats.total_encoded_bytes_target;
   info.qp_sum = stats.qp_sum;
@@ -2747,6 +2754,7 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
   info.frames_received =
       stats.frame_counts.key_frames + stats.frame_counts.delta_frames;
   info.frames_decoded = stats.frames_decoded;
+  info.key_frames_decoded = stats.frame_counts.key_frames;
   info.frames_rendered = stats.frames_rendered;
   info.qp_sum = stats.qp_sum;
   info.last_packet_received_timestamp_ms =
