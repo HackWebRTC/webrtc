@@ -227,18 +227,32 @@ struct ProcessInterval {
 
 // Under development, subject to change without notice.
 struct NetworkStateEstimate {
-  Timestamp last_feed_time = Timestamp::MinusInfinity();
+  double confidence = NAN;
+  // The time the estimate was received/calculated.
+  Timestamp update_time = Timestamp::MinusInfinity();
+  Timestamp last_receive_time = Timestamp::MinusInfinity();
   Timestamp last_send_time = Timestamp::MinusInfinity();
-  TimeDelta time_delta = TimeDelta::MinusInfinity();
+
+  // Total estimated link capacity.
   DataRate link_capacity = DataRate::MinusInfinity();
-  DataRate link_capacity_std_dev = DataRate::MinusInfinity();
-  DataRate link_capacity_min = DataRate::MinusInfinity();
-  double cross_traffic_ratio = NAN;
+  // Lower bound of link capacity estimate.
+  DataRate link_capacity_lower = DataRate::MinusInfinity();
+  // Expected available capacity for sending data after cross traffic is taken
+  // into consideration.
+  DataRate available_capacity = DataRate::MinusInfinity();
+
   TimeDelta pre_link_buffer_delay = TimeDelta::MinusInfinity();
   TimeDelta post_link_buffer_delay = TimeDelta::MinusInfinity();
   TimeDelta propagation_delay = TimeDelta::MinusInfinity();
+
+  // Only for debugging
+  TimeDelta time_delta = TimeDelta::MinusInfinity();
+  Timestamp last_feed_time = Timestamp::MinusInfinity();
   double cross_delay_rate = NAN;
   double spike_delay_rate = NAN;
+  DataRate link_capacity_std_dev = DataRate::MinusInfinity();
+  DataRate link_capacity_min = DataRate::MinusInfinity();
+  double cross_traffic_ratio = NAN;
 };
 }  // namespace webrtc
 
