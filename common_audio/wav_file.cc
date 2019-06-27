@@ -39,7 +39,6 @@ class ReadableWavFile : public ReadableWav {
   size_t Read(void* buf, size_t num_bytes) override {
     return fread(buf, 1, num_bytes, file_);
   }
-  bool Eof() const override { return feof(file_) != 0; }
   bool SeekForward(uint32_t num_bytes) override {
     return fseek(file_, num_bytes, SEEK_CUR) == 0;
   }
