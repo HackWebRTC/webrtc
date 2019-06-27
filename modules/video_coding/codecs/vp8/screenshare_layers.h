@@ -81,8 +81,7 @@ class ScreenshareLayers final : public Vp8FrameBufferController {
               GenericFrameInfo::DecodeTargetInfo(indication_symbols)),
           frame_config(frame_config) {}
 
-    absl::InlinedVector<GenericFrameInfo::DecodeTargetIndication, 10>
-        decode_target_indications;
+    absl::InlinedVector<DecodeTargetIndication, 10> decode_target_indications;
     Vp8FrameConfig frame_config;
   };
 
@@ -140,7 +139,7 @@ class ScreenshareLayers final : public Vp8FrameBufferController {
   } layers_[kMaxNumTemporalLayers];
 
   void UpdateHistograms();
-  TemplateStructure GetTemplateStructure(int num_layers) const;
+  FrameDependencyStructure GetTemplateStructure(int num_layers) const;
 
   // Data for histogram statistics.
   struct Stats {

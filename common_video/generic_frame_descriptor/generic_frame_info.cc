@@ -15,7 +15,7 @@
 
 namespace webrtc {
 
-absl::InlinedVector<GenericFrameInfo::DecodeTargetIndication, 10>
+absl::InlinedVector<DecodeTargetIndication, 10>
 GenericFrameInfo::DecodeTargetInfo(absl::string_view indication_symbols) {
   absl::InlinedVector<DecodeTargetIndication, 10> decode_targets;
   for (char symbol : indication_symbols) {
@@ -67,10 +67,4 @@ GenericFrameInfo::Builder& GenericFrameInfo::Builder::Fdiffs(
   return *this;
 }
 
-TemplateStructure::TemplateStructure() = default;
-TemplateStructure::TemplateStructure(const TemplateStructure&) = default;
-TemplateStructure::TemplateStructure(TemplateStructure&&) = default;
-TemplateStructure& TemplateStructure::operator=(const TemplateStructure&) =
-    default;
-TemplateStructure::~TemplateStructure() = default;
 }  // namespace webrtc

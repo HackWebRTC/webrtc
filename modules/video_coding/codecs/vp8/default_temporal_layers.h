@@ -77,8 +77,7 @@ class DefaultTemporalLayers final : public Vp8FrameBufferController {
               GenericFrameInfo::DecodeTargetInfo(indication_symbols)),
           frame_config(frame_config) {}
 
-    absl::InlinedVector<GenericFrameInfo::DecodeTargetIndication, 10>
-        decode_target_indications;
+    absl::InlinedVector<DecodeTargetIndication, 10> decode_target_indications;
     Vp8FrameConfig frame_config;
   };
 
@@ -93,7 +92,7 @@ class DefaultTemporalLayers final : public Vp8FrameBufferController {
   const std::vector<DependencyInfo> temporal_pattern_;
   // Set of buffers that are never updated except by keyframes.
   std::set<Vp8FrameConfig::Vp8BufferReference> kf_buffers_;
-  TemplateStructure GetTemplateStructure(int num_layers) const;
+  FrameDependencyStructure GetTemplateStructure(int num_layers) const;
 
   uint8_t pattern_idx_;
   // Updated cumulative bitrates, per temporal layer.

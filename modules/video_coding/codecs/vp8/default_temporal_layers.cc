@@ -585,12 +585,12 @@ void DefaultTemporalLayers::OnRttUpdate(int64_t rtt_ms) {}
 void DefaultTemporalLayers::OnLossNotification(
     const VideoEncoder::LossNotification& loss_notification) {}
 
-TemplateStructure DefaultTemporalLayers::GetTemplateStructure(
+FrameDependencyStructure DefaultTemporalLayers::GetTemplateStructure(
     int num_layers) const {
   RTC_CHECK_LT(num_layers, 5);
   RTC_CHECK_GT(num_layers, 0);
 
-  TemplateStructure template_structure;
+  FrameDependencyStructure template_structure;
   template_structure.num_decode_targets = num_layers;
 
   using Builder = GenericFrameInfo::Builder;

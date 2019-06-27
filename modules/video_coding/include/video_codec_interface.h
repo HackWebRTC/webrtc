@@ -107,7 +107,7 @@ struct RTC_EXPORT CodecSpecificInfo {
   VideoCodecType codecType;
   CodecSpecificInfoUnion codecSpecific;
   absl::optional<GenericFrameInfo> generic_frame_info;
-  absl::optional<TemplateStructure> template_structure;
+  absl::optional<FrameDependencyStructure> template_structure;
 };
 
 }  // namespace webrtc
