@@ -19,7 +19,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
 #include "rtc_base/ignore_wundef.h"
-#include "rtc_base/platform_file.h"
 #include "rtc_base/system/file_wrapper.h"
 
 // Files generated at build-time by the protobuf compiler.

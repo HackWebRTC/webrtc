@@ -15,7 +15,6 @@
 #include <string>
 
 #include "modules/rtp_rtcp/source/byte_io.h"
-#include "rtc_base/platform_file.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 
@@ -33,7 +32,7 @@ class IvfFileWriterTest : public ::testing::Test {
     file_name_ =
         webrtc::test::TempFilename(webrtc::test::OutputPath(), "test_file");
   }
-  void TearDown() override { rtc::RemoveFile(file_name_); }
+  void TearDown() override { webrtc::test::RemoveFile(file_name_); }
 
   bool WriteDummyTestFrames(VideoCodecType codec_type,
                             int width,

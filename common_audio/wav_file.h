@@ -70,9 +70,6 @@ class WavReader final : public WavFile {
   // Opens an existing WAV file for reading.
   explicit WavReader(const std::string& filename);
 
-  // Opens an existing WAV file for reading.
-  explicit WavReader(rtc::PlatformFile file);
-
   // Close the WAV file.
   ~WavReader() override;
 
@@ -89,6 +86,9 @@ class WavReader final : public WavFile {
   size_t num_samples() const override;
 
  private:
+  // Opens an existing WAV file for reading.
+  explicit WavReader(rtc::PlatformFile file);
+
   void Close();
   int sample_rate_;
   size_t num_channels_;

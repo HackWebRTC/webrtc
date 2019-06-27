@@ -20,7 +20,6 @@
 #include "modules/audio_processing/aec_dump/write_to_file_task.h"
 #include "modules/audio_processing/include/aec_dump.h"
 #include "rtc_base/ignore_wundef.h"
-#include "rtc_base/platform_file.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/system/file_wrapper.h"
 #include "rtc_base/task_queue.h"

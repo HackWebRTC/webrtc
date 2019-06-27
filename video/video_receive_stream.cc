@@ -41,7 +41,6 @@
 #include "rtc_base/experiments/keyframe_interval_settings.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/platform_file.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/system/thread_registry.h"
 #include "rtc_base/time_utils.h"
