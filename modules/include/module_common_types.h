@@ -20,7 +20,6 @@
 #include "modules/include/module_common_types_public.h"
 #include "modules/include/module_fec_types.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
-#include "rtc_base/deprecation.h"  // TODO(bugs.webrtc.org/10336): Remove.
 #include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
@@ -67,11 +66,6 @@ class CallStatsObserver {
 // Interface used by NackModule and JitterBuffer.
 class NackSender {
  public:
-  // // TODO(bugs.webrtc.org/10336): Update downstream and remove this method.
-  // Make the one remaining version of SendNack() pure virtual again.
-  RTC_DEPRECATED virtual void SendNack(
-      const std::vector<uint16_t>& sequence_numbers) {}
-
   // If |buffering_allowed|, other feedback messages (e.g. key frame requests)
   // may be added to the same outgoing feedback message. In that case, it's up
   // to the user of the interface to ensure that when all buffer-able messages
