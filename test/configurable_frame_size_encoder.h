@@ -32,6 +32,9 @@ class ConfigurableFrameSizeEncoder : public VideoEncoder {
   explicit ConfigurableFrameSizeEncoder(size_t max_frame_size);
   ~ConfigurableFrameSizeEncoder() override;
 
+  void SetFecControllerOverride(
+      FecControllerOverride* fec_controller_override) override;
+
   int32_t InitEncode(const VideoCodec* codec_settings,
                      const Settings& settings) override;
 

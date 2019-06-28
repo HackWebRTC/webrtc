@@ -62,6 +62,8 @@ class QualityAnalyzingVideoEncoder : public VideoEncoder,
   ~QualityAnalyzingVideoEncoder() override;
 
   // Methods of VideoEncoder interface.
+  void SetFecControllerOverride(
+      FecControllerOverride* fec_controller_override) override;
   int32_t InitEncode(const VideoCodec* codec_settings,
                      const Settings& settings) override;
   int32_t RegisterEncodeCompleteCallback(

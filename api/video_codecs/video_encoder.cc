@@ -118,6 +118,9 @@ VideoEncoder::RateControlParameters::RateControlParameters(
 
 VideoEncoder::RateControlParameters::~RateControlParameters() = default;
 
+void VideoEncoder::SetFecControllerOverride(
+    FecControllerOverride* fec_controller_override) {}
+
 int32_t VideoEncoder::InitEncode(const VideoCodec* codec_settings,
                                  int32_t number_of_cores,
                                  size_t max_payload_size) {

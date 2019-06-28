@@ -137,6 +137,11 @@ FakeWebRtcVideoEncoder::~FakeWebRtcVideoEncoder() {
   }
 }
 
+void FakeWebRtcVideoEncoder::SetFecControllerOverride(
+    webrtc::FecControllerOverride* fec_controller_override) {
+  // Ignored.
+}
+
 int32_t FakeWebRtcVideoEncoder::InitEncode(
     const webrtc::VideoCodec* codecSettings,
     const VideoEncoder::Settings& settings) {

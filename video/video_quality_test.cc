@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/fec_controller_override.h"
 #include "api/media_transport_config.h"
 #include "api/rtc_event_log_output_file.h"
 #include "api/task_queue/default_task_queue_factory.h"
@@ -134,6 +135,11 @@ class QualityTestVideoEncoder : public VideoEncoder,
   }
 
   // Implement VideoEncoder
+  void SetFecControllerOverride(
+      FecControllerOverride* fec_controller_override) {
+    // Ignored.
+  }
+
   int32_t InitEncode(const VideoCodec* codec_settings,
                      const Settings& settings) override {
     codec_settings_ = *codec_settings;

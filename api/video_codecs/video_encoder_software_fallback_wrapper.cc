@@ -18,6 +18,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
+#include "api/fec_controller_override.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_codec.h"
@@ -79,6 +80,9 @@ class VideoEncoderSoftwareFallbackWrapper final : public VideoEncoder {
       std::unique_ptr<webrtc::VideoEncoder> hw_encoder);
   ~VideoEncoderSoftwareFallbackWrapper() override;
 
+  void SetFecControllerOverride(
+      FecControllerOverride* fec_controller_override) override;
+
   int32_t InitEncode(const VideoCodec* codec_settings,
                      const VideoEncoder::Settings& settings) override;
 
@@ -88,6 +92,8 @@ class VideoEncoderSoftwareFallbackWrapper final : public VideoEncoder {
   int32_t Release() override;
   int32_t Encode(const VideoFrame& frame,
                  const std::vector<VideoFrameType>* frame_types) override;
+  // TOD(eladalon): Add OnPacketLossRateUpdate, OnRttUpdate and
+  // OnLossNotification.
   void SetRates(const RateControlParameters& parameters) override;
   EncoderInfo GetEncoderInfo() const override;
 
@@ -149,6 +155,7 @@ VideoEncoderSoftwareFallbackWrapper::VideoEncoderSoftwareFallbackWrapper(
       fallback_encoder_(std::move(sw_encoder)),
       callback_(nullptr),
       forced_fallback_possible_(EnableForcedFallback()) {
+  RTC_DCHECK(fallback_encoder_);
   if (forced_fallback_possible_) {
     GetForcedFallbackParamsFromFieldTrialGroup(
         &forced_fallback_.min_pixels_, &forced_fallback_.max_pixels_,
@@ -182,6 +189,15 @@ bool VideoEncoderSoftwareFallbackWrapper::InitFallbackEncoder() {
   // Set calls for rates and channel parameters in the meantime.
   encoder_->Release();
   return true;
+}
+
+void VideoEncoderSoftwareFallbackWrapper::SetFecControllerOverride(
+    FecControllerOverride* fec_controller_override) {
+  // It is important that only one of those would ever interact with the
+  // |fec_controller_override| at a given time. This is the responsibility
+  // of |this| to maintain.
+  encoder_->SetFecControllerOverride(fec_controller_override);
+  fallback_encoder_->SetFecControllerOverride(fec_controller_override);
 }
 
 int32_t VideoEncoderSoftwareFallbackWrapper::InitEncode(

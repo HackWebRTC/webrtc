@@ -187,6 +187,9 @@ class MockVideoEncoder : public VideoEncoder {
         scaling_settings_(VideoEncoder::ScalingSettings::kOff),
         callback_(nullptr) {}
 
+  MOCK_METHOD1(SetFecControllerOverride,
+               void(FecControllerOverride* fec_controller_override));
+
   // TODO(nisse): Valid overrides commented out, because the gmock
   // methods don't use any override declarations, and we want to avoid
   // warnings from -Winconsistent-missing-override. See

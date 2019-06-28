@@ -145,6 +145,11 @@ SimulcastEncoderAdapter::~SimulcastEncoderAdapter() {
   DestroyStoredEncoders();
 }
 
+void SimulcastEncoderAdapter::SetFecControllerOverride(
+    FecControllerOverride* fec_controller_override) {
+  // Ignored.
+}
+
 int SimulcastEncoderAdapter::Release() {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
 

@@ -2307,6 +2307,11 @@ TEST_F(VideoSendStreamTest, EncoderIsProperlyInitializedAndDestroyed) {
     }
 
    private:
+    void SetFecControllerOverride(
+        FecControllerOverride* fec_controller_override) override {
+      // Ignored.
+    }
+
     int32_t InitEncode(const VideoCodec* codecSettings,
                        const Settings& settings) override {
       rtc::CritScope lock(&crit_);

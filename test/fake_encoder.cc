@@ -60,6 +60,11 @@ FakeEncoder::FakeEncoder(Clock* clock)
   }
 }
 
+void FakeEncoder::SetFecControllerOverride(
+    FecControllerOverride* fec_controller_override) {
+  // Ignored.
+}
+
 void FakeEncoder::SetMaxBitrate(int max_kbps) {
   RTC_DCHECK_GE(max_kbps, -1);  // max_kbps == -1 disables it.
   rtc::CritScope cs(&crit_sect_);

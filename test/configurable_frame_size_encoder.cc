@@ -36,6 +36,11 @@ ConfigurableFrameSizeEncoder::ConfigurableFrameSizeEncoder(
 
 ConfigurableFrameSizeEncoder::~ConfigurableFrameSizeEncoder() {}
 
+void ConfigurableFrameSizeEncoder::SetFecControllerOverride(
+    FecControllerOverride* fec_controller_override) {
+  // Ignored.
+}
+
 int32_t ConfigurableFrameSizeEncoder::InitEncode(
     const VideoCodec* codec_settings,
     const Settings& settings) {

@@ -247,6 +247,7 @@ VideoSendStreamImpl::VideoSendStreamImpl(
           CreateFrameEncryptionConfig(config_))),
       weak_ptr_factory_(this),
       media_transport_(media_transport) {
+  video_stream_encoder->SetFecControllerOverride(rtp_video_sender_);
   RTC_DCHECK_RUN_ON(worker_queue_);
   RTC_LOG(LS_INFO) << "VideoSendStreamInternal: " << config_->ToString();
   weak_ptr_ = weak_ptr_factory_.GetWeakPtr();

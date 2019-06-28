@@ -487,6 +487,7 @@ VideoStreamEncoder::VideoStreamEncoder(
       pending_frame_post_time_us_(0),
       accumulated_update_rect_{0, 0, 0, 0},
       bitrate_observer_(nullptr),
+      fec_controller_override_(nullptr),
       force_disable_frame_dropper_(false),
       input_framerate_(kFrameRateAvergingWindowSizeMs, 1000),
       pending_frame_drops_(0),
@@ -534,6 +535,18 @@ void VideoStreamEncoder::SetBitrateAllocationObserver(
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     RTC_DCHECK(!bitrate_observer_);
     bitrate_observer_ = bitrate_observer;
+  });
+}
+
+void VideoStreamEncoder::SetFecControllerOverride(
+    FecControllerOverride* fec_controller_override) {
+  encoder_queue_.PostTask([this, fec_controller_override] {
+    RTC_DCHECK_RUN_ON(&encoder_queue_);
+    RTC_DCHECK(!fec_controller_override_);
+    fec_controller_override_ = fec_controller_override;
+    if (encoder_) {
+      encoder_->SetFecControllerOverride(fec_controller_override_);
+    }
   });
 }
 
@@ -729,6 +742,9 @@ void VideoStreamEncoder::ReconfigureEncoder() {
       // TODO(nisse): What to do if creating the encoder fails? Crash,
       // or just discard incoming frames?
       RTC_CHECK(encoder_);
+
+      encoder_->SetFecControllerOverride(fec_controller_override_);
+
       codec_info_ = settings_.encoder_factory->QueryVideoEncoder(
           encoder_config_.video_format);
     }

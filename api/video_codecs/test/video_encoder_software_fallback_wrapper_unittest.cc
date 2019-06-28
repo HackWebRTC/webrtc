@@ -16,6 +16,7 @@
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
+#include "api/fec_controller_override.h"
 #include "api/scoped_refptr.h"
 #include "api/test/mock_video_encoder.h"
 #include "api/video/encoded_image.h"
@@ -91,6 +92,11 @@ class VideoEncoderSoftwareFallbackWrapperTest : public ::testing::Test {
 
   class CountingFakeEncoder : public VideoEncoder {
    public:
+    void SetFecControllerOverride(
+        FecControllerOverride* fec_controller_override) override {
+      // Ignored.
+    }
+
     int32_t InitEncode(const VideoCodec* codec_settings,
                        const VideoEncoder::Settings& settings) override {
       ++init_encode_count_;

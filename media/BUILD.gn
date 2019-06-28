@@ -159,6 +159,7 @@ rtc_static_library("rtc_simulcast_encoder_adapter") {
     "engine/simulcast_encoder_adapter.h",
   ]
   deps = [
+    "../api:fec_controller_api",
     "../api:scoped_refptr",
     "../api/video:video_codec_constants",
     "../api/video:video_frame",
@@ -421,6 +422,7 @@ if (rtc_include_tests) {
       ":rtc_media_base",
       ":rtc_simulcast_encoder_adapter",
       "../api:call_api",
+      "../api:fec_controller_api",
       "../api:libjingle_peerconnection_api",
       "../api:scoped_refptr",
       "../api/video:encoded_image",

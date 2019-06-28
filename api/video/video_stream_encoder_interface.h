@@ -13,6 +13,7 @@
 
 #include <vector>
 
+#include "api/fec_controller_override.h"
 #include "api/rtp_parameters.h"  // For DegradationPreference.
 #include "api/units/data_rate.h"
 #include "api/video/video_bitrate_allocator.h"
@@ -96,6 +97,13 @@ class VideoStreamEncoderInterface : public rtc::VideoSinkInterface<VideoFrame> {
   // and spatial layers.
   virtual void SetBitrateAllocationObserver(
       VideoBitrateAllocationObserver* bitrate_observer) = 0;
+
+  // Set a FecControllerOverride, through which the encoder may override
+  // decisions made by FecController.
+  // TODO(bugs.webrtc.org/10769): Update downstream projects and then make this
+  // pure-virtual.
+  virtual void SetFecControllerOverride(
+      FecControllerOverride* fec_controller_override) {}
 
   // Creates and configures an encoder with the given |config|. The
   // |max_data_payload_length| is used to support single NAL unit

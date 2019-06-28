@@ -74,6 +74,9 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   void SetBitrateAllocationObserver(
       VideoBitrateAllocationObserver* bitrate_observer) override;
 
+  void SetFecControllerOverride(
+      FecControllerOverride* fec_controller_override) override;
+
   void ConfigureEncoder(VideoEncoderConfig config,
                         size_t max_data_payload_length) override;
 
@@ -316,6 +319,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
       RTC_GUARDED_BY(&encoder_queue_);
 
   VideoBitrateAllocationObserver* bitrate_observer_
+      RTC_GUARDED_BY(&encoder_queue_);
+  FecControllerOverride* fec_controller_override_
       RTC_GUARDED_BY(&encoder_queue_);
   absl::optional<int64_t> last_parameters_update_ms_
       RTC_GUARDED_BY(&encoder_queue_);

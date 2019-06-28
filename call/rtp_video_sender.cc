@@ -782,6 +782,10 @@ int RtpVideoSender::ProtectionRequest(const FecProtectionParams* delta_params,
   return 0;
 }
 
+void RtpVideoSender::SetFecAllowed(bool fec_allowed) {
+  // TODO(bugs.webrtc.og/10769): Handle this message.
+}
+
 void RtpVideoSender::OnPacketFeedbackVector(
     const std::vector<PacketFeedback>& packet_feedback_vector) {
   if (fec_controller_->UseLossVectorMask()) {

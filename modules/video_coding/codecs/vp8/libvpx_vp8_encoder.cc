@@ -450,8 +450,13 @@ void LibvpxVp8Encoder::SetStreamState(bool send_stream, int stream_idx) {
   send_stream_[stream_idx] = send_stream;
 }
 
+void LibvpxVp8Encoder::SetFecControllerOverride(
+    FecControllerOverride* fec_controller_override) {
+  RTC_DCHECK(fec_controller_override);
+  // TODO(bugs.webrtc.og/10769): Pass on to the frame buffer controller.
+}
+
 // TODO(eladalon): s/inst/codec_settings/g.
-// TODO(bugs.webrtc.org/10720): Pass |capabilities| to frame buffer controller.
 int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
                                  const VideoEncoder::Settings& settings) {
   if (inst == NULL) {

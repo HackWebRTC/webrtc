@@ -65,22 +65,32 @@ class VideoEncoderProxyFactory final : public VideoEncoderFactory {
     explicit EncoderProxy(VideoEncoder* encoder) : encoder_(encoder) {}
 
    private:
+    void SetFecControllerOverride(
+        FecControllerOverride* fec_controller_override) override {
+      encoder_->SetFecControllerOverride(fec_controller_override);
+    }
+
     int32_t Encode(const VideoFrame& input_image,
                    const std::vector<VideoFrameType>* frame_types) override {
       return encoder_->Encode(input_image, frame_types);
     }
+
     int32_t InitEncode(const VideoCodec* config,
                        const Settings& settings) override {
       return encoder_->InitEncode(config, settings);
     }
+
     int32_t RegisterEncodeCompleteCallback(
         EncodedImageCallback* callback) override {
       return encoder_->RegisterEncodeCompleteCallback(callback);
     }
+
     int32_t Release() override { return encoder_->Release(); }
+
     void SetRates(const RateControlParameters& parameters) override {
       encoder_->SetRates(parameters);
     }
+
     VideoEncoder::EncoderInfo GetEncoderInfo() const override {
       return encoder_->GetEncoderInfo();
     }

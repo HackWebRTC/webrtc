@@ -15,6 +15,7 @@
 #include <memory>
 #include <vector>
 
+#include "api/fec_controller_override.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
@@ -39,6 +40,8 @@ class MultiplexEncoderAdapter : public VideoEncoder {
   virtual ~MultiplexEncoderAdapter();
 
   // Implements VideoEncoder
+  void SetFecControllerOverride(
+      FecControllerOverride* fec_controller_override) override;
   int InitEncode(const VideoCodec* inst,
                  const VideoEncoder::Settings& settings) override;
   int Encode(const VideoFrame& input_image,
@@ -46,6 +49,8 @@ class MultiplexEncoderAdapter : public VideoEncoder {
   int RegisterEncodeCompleteCallback(EncodedImageCallback* callback) override;
   void SetRates(const RateControlParameters& parameters) override;
   int Release() override;
+  // TOD(eladalon): Add OnPacketLossRateUpdate, OnRttUpdate and
+  // OnLossNotification.
   EncoderInfo GetEncoderInfo() const override;
 
   EncodedImageCallback::Result OnEncodedImage(

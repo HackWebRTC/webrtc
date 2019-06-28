@@ -15,6 +15,7 @@
 #include <string>
 #include <vector>
 
+#include "api/fec_controller_override.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_frame.h"
 #include "api/video_codecs/video_encoder.h"
@@ -44,6 +45,9 @@ class LibvpxVp8Encoder : public VideoEncoder {
   ~LibvpxVp8Encoder() override;
 
   int Release() override;
+
+  void SetFecControllerOverride(
+      FecControllerOverride* fec_controller_override) override;
 
   int InitEncode(const VideoCodec* codec_settings,
                  const VideoEncoder::Settings& settings) override;

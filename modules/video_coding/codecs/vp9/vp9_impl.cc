@@ -251,6 +251,11 @@ VP9EncoderImpl::~VP9EncoderImpl() {
   Release();
 }
 
+void VP9EncoderImpl::SetFecControllerOverride(
+    FecControllerOverride* fec_controller_override) {
+  // Ignored.
+}
+
 int VP9EncoderImpl::Release() {
   int ret_val = WEBRTC_VIDEO_CODEC_OK;
 

@@ -32,6 +32,8 @@ class MockVideoEncoder : public VideoEncoder {
  public:
   MockVideoEncoder();
   ~MockVideoEncoder();
+  MOCK_METHOD1(SetFecControllerOverride,
+               void(FecControllerOverride* fec_controller_override));
   MOCK_CONST_METHOD2(Version, int32_t(int8_t* version, int32_t length));
   MOCK_METHOD3(InitEncode,
                int32_t(const VideoCodec* codecSettings,

@@ -21,6 +21,7 @@
 
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
 
+#include "api/fec_controller_override.h"
 #include "api/video_codecs/video_encoder.h"
 #include "media/base/vp9_profile.h"
 #include "modules/video_coding/codecs/vp9/vp9_frame_buffer_pool.h"
@@ -36,7 +37,10 @@ class VP9EncoderImpl : public VP9Encoder {
  public:
   explicit VP9EncoderImpl(const cricket::VideoCodec& codec);
 
-  virtual ~VP9EncoderImpl();
+  ~VP9EncoderImpl() override;
+
+  void SetFecControllerOverride(
+      FecControllerOverride* fec_controller_override) override;
 
   int Release() override;
 

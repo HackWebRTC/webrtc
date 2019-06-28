@@ -73,6 +73,8 @@ class MockRtpVideoSender : public RtpVideoSenderInterface {
                      std::vector<RtpSequenceNumberMap::Info>(
                          uint32_t ssrc,
                          rtc::ArrayView<const uint16_t> sequence_numbers));
+
+  MOCK_METHOD1(SetFecAllowed, void(bool fec_allowed));
 };
 
 BitrateAllocationUpdate CreateAllocation(int bitrate_bps) {
@@ -101,8 +103,7 @@ class VideoSendStreamImplTest : public ::testing::Test {
 
     EXPECT_CALL(transport_controller_, packet_router())
         .WillRepeatedly(Return(&packet_router_));
-    EXPECT_CALL(transport_controller_,
-                CreateRtpVideoSender(_, _, _, _, _, _, _, _, _))
+    EXPECT_CALL(transport_controller_, CreateRtpVideoSender)
         .WillRepeatedly(Return(&rtp_video_sender_));
     EXPECT_CALL(rtp_video_sender_, SetActive(_))
         .WillRepeatedly(::testing::Invoke(

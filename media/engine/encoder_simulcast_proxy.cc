@@ -31,6 +31,11 @@ int EncoderSimulcastProxy::Release() {
   return encoder_->Release();
 }
 
+void EncoderSimulcastProxy::SetFecControllerOverride(
+    FecControllerOverride* fec_controller_override) {
+  encoder_->SetFecControllerOverride(fec_controller_override);
+}
+
 // TODO(eladalon): s/inst/codec_settings/g.
 int EncoderSimulcastProxy::InitEncode(const VideoCodec* inst,
                                       const VideoEncoder::Settings& settings) {

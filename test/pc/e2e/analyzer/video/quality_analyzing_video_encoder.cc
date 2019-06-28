@@ -69,6 +69,11 @@ QualityAnalyzingVideoEncoder::QualityAnalyzingVideoEncoder(
       delegate_callback_(nullptr) {}
 QualityAnalyzingVideoEncoder::~QualityAnalyzingVideoEncoder() = default;
 
+void QualityAnalyzingVideoEncoder::SetFecControllerOverride(
+    FecControllerOverride* fec_controller_override) {
+  // Ignored.
+}
+
 int32_t QualityAnalyzingVideoEncoder::InitEncode(
     const VideoCodec* codec_settings,
     const Settings& settings) {

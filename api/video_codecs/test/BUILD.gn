@@ -21,6 +21,7 @@ if (rtc_include_tests) {
       "..:builtin_video_encoder_factory",
       "..:rtc_software_fallback_wrappers",
       "..:video_codecs_api",
+      "../..:fec_controller_api",
       "../..:mock_video_encoder",
       "../../../api:scoped_refptr",
       "../../../modules:module_api",

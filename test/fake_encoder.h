@@ -16,6 +16,7 @@
 #include <memory>
 #include <vector>
 
+#include "api/fec_controller_override.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_bitrate_allocation.h"
@@ -39,6 +40,9 @@ class FakeEncoder : public VideoEncoder {
 
   // Sets max bitrate. Not thread-safe, call before registering the encoder.
   void SetMaxBitrate(int max_kbps);
+
+  void SetFecControllerOverride(
+      FecControllerOverride* fec_controller_override) override;
 
   int32_t InitEncode(const VideoCodec* config,
                      const Settings& settings) override;

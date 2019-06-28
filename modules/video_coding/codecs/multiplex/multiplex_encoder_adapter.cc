@@ -61,6 +61,11 @@ MultiplexEncoderAdapter::~MultiplexEncoderAdapter() {
   Release();
 }
 
+void MultiplexEncoderAdapter::SetFecControllerOverride(
+    FecControllerOverride* fec_controller_override) {
+  // Ignored.
+}
+
 int MultiplexEncoderAdapter::InitEncode(
     const VideoCodec* inst,
     const VideoEncoder::Settings& settings) {

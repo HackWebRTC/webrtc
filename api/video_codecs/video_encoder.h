@@ -18,6 +18,7 @@
 
 #include "absl/container/inlined_vector.h"
 #include "absl/types/optional.h"
+#include "api/fec_controller_override.h"
 #include "api/units/data_rate.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_bitrate_allocation.h"
@@ -287,6 +288,12 @@ class RTC_EXPORT VideoEncoder {
   static VideoCodecH264 GetDefaultH264Settings();
 
   virtual ~VideoEncoder() {}
+
+  // Set a FecControllerOverride, through which the encoder may override
+  // decisions made by FecController.
+  // TODO(bugs.webrtc.org/10769): Update downstream, then make pure-virtual.
+  virtual void SetFecControllerOverride(
+      FecControllerOverride* fec_controller_override);
 
   // Initialize the encoder with the information from the codecSettings
   //

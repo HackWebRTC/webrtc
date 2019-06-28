@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "api/fec_controller_override.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_frame.h"
@@ -83,6 +84,8 @@ class FakeWebRtcVideoEncoder : public webrtc::VideoEncoder {
   explicit FakeWebRtcVideoEncoder(FakeWebRtcVideoEncoderFactory* factory);
   ~FakeWebRtcVideoEncoder();
 
+  void SetFecControllerOverride(
+      webrtc::FecControllerOverride* fec_controller_override) override;
   int32_t InitEncode(const webrtc::VideoCodec* codecSettings,
                      const VideoEncoder::Settings& settings) override;
   int32_t Encode(
