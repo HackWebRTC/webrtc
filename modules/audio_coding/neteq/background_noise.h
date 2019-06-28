@@ -37,7 +37,8 @@ class BackgroundNoise {
 
   // Updates the parameter estimates based on the signal currently in the
   // |sync_buffer|, and on the latest decision in |vad| if it is running.
-  void Update(const AudioMultiVector& sync_buffer, const PostDecodeVad& vad);
+  // Returns true if the filter parameters are updated.
+  bool Update(const AudioMultiVector& sync_buffer, const PostDecodeVad& vad);
 
   // Generates background noise given a random vector and writes the output to
   // |buffer|.

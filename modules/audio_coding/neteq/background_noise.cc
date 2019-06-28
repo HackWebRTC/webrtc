@@ -45,12 +45,13 @@ void BackgroundNoise::Reset() {
   }
 }
 
-void BackgroundNoise::Update(const AudioMultiVector& input,
+bool BackgroundNoise::Update(const AudioMultiVector& input,
                              const PostDecodeVad& vad) {
+  bool filter_params_saved = false;
   if (vad.running() && vad.active_speech()) {
     // Do not update the background noise parameters if we know that the signal
     // is active speech.
-    return;
+    return filter_params_saved;
   }
 
   int32_t auto_correlation[kMaxLpcOrder + 1];
@@ -62,6 +63,7 @@ void BackgroundNoise::Update(const AudioMultiVector& input,
     ChannelParameters& parameters = channel_parameters_[channel_ix];
     int16_t temp_signal_array[kVecLen + kMaxLpcOrder] = {0};
     int16_t* temp_signal = &temp_signal_array[kMaxLpcOrder];
+    RTC_DCHECK_GE(input.Size(), kVecLen);
     input[channel_ix].CopyTo(kVecLen, input.Size() - kVecLen, temp_signal);
     int32_t sample_energy =
         CalculateAutoCorrelation(temp_signal, kVecLen, auto_correlation);
@@ -70,26 +72,26 @@ void BackgroundNoise::Update(const AudioMultiVector& input,
          sample_energy < parameters.energy_update_threshold) ||
         (vad.running() && !vad.active_speech())) {
       // Generate LPC coefficients.
-      if (auto_correlation[0] > 0) {
-        // Regardless of whether the filter is actually updated or not,
-        // update energy threshold levels, since we have in fact observed
-        // a low energy signal.
-        if (sample_energy < parameters.energy_update_threshold) {
-          // Never go under 1.0 in average sample energy.
-          parameters.energy_update_threshold = std::max(sample_energy, 1);
-          parameters.low_energy_update_threshold = 0;
-        }
-
-        // Only update BGN if filter is stable, i.e., if return value from
-        // Levinson-Durbin function is 1.
-        if (WebRtcSpl_LevinsonDurbin(auto_correlation, lpc_coefficients,
-                                     reflection_coefficients,
-                                     kMaxLpcOrder) != 1) {
-          return;
-        }
-      } else {
+      if (auto_correlation[0] <= 0) {
         // Center value in auto-correlation is not positive. Do not update.
-        return;
+        return filter_params_saved;
+      }
+
+      // Regardless of whether the filter is actually updated or not,
+      // update energy threshold levels, since we have in fact observed
+      // a low energy signal.
+      if (sample_energy < parameters.energy_update_threshold) {
+        // Never go under 1.0 in average sample energy.
+        parameters.energy_update_threshold = std::max(sample_energy, 1);
+        parameters.low_energy_update_threshold = 0;
+      }
+
+      // Only update BGN if filter is stable, i.e., if return value from
+      // Levinson-Durbin function is 1.
+      if (WebRtcSpl_LevinsonDurbin(auto_correlation, lpc_coefficients,
+                                   reflection_coefficients,
+                                   kMaxLpcOrder) != 1) {
+        return filter_params_saved;
       }
 
       // Generate the CNG gain factor by looking at the energy of the residual.
@@ -113,6 +115,7 @@ void BackgroundNoise::Update(const AudioMultiVector& input,
         SaveParameters(channel_ix, lpc_coefficients,
                        temp_signal + kVecLen - kMaxLpcOrder, sample_energy,
                        residual_energy);
+        filter_params_saved = true;
       }
     } else {
       // Will only happen if post-decode VAD is disabled and |sample_energy| is
@@ -121,7 +124,7 @@ void BackgroundNoise::Update(const AudioMultiVector& input,
       IncrementEnergyThreshold(channel_ix, sample_energy);
     }
   }
-  return;
+  return filter_params_saved;
 }
 
 void BackgroundNoise::GenerateBackgroundNoise(
