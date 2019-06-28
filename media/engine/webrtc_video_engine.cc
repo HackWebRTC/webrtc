@@ -20,6 +20,7 @@
 #include "absl/strings/match.h"
 #include "api/datagram_transport_interface.h"
 #include "api/video/video_codec_constants.h"
+#include "api/video/video_codec_type.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder.h"
@@ -294,7 +295,11 @@ absl::optional<size_t> GetVp9TemporalLayersFromFieldTrial() {
 const char kForcedFallbackFieldTrial[] =
     "WebRTC-VP8-Forced-Fallback-Encoder-v2";
 
-absl::optional<int> GetFallbackMinBpsFromFieldTrial() {
+absl::optional<int> GetFallbackMinBpsFromFieldTrial(
+    webrtc::VideoCodecType type) {
+  if (type != webrtc::kVideoCodecVP8)
+    return absl::nullopt;
+
   if (!webrtc::field_trial::IsEnabled(kForcedFallbackFieldTrial))
     return absl::nullopt;
 
@@ -317,8 +322,8 @@ absl::optional<int> GetFallbackMinBpsFromFieldTrial() {
   return min_bps;
 }
 
-int GetMinVideoBitrateBps() {
-  return GetFallbackMinBpsFromFieldTrial().value_or(kMinVideoBitrateBps);
+int GetMinVideoBitrateBps(webrtc::VideoCodecType type) {
+  return GetFallbackMinBpsFromFieldTrial(type).value_or(kMinVideoBitrateBps);
 }
 }  // namespace
 
@@ -3041,7 +3046,7 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
           : GetMaxDefaultVideoBitrateKbps(width, height, is_screenshare_) *
                 1000;
 
-  int min_bitrate_bps = GetMinVideoBitrateBps();
+  int min_bitrate_bps = GetMinVideoBitrateBps(encoder_config.codec_type);
   if (encoder_config.simulcast_layers[0].min_bitrate_bps > 0) {
     // Use set min bitrate.
     min_bitrate_bps = encoder_config.simulcast_layers[0].min_bitrate_bps;
