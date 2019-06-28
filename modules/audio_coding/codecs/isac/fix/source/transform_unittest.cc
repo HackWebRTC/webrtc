@@ -138,8 +138,6 @@ static const int16_t time2spec_out_expected_2[kSamples] = {
 
 class TransformTest : public ::testing::Test {
  protected:
-  TransformTest() { WebRtcSpl_Init(); }
-
   // Pass a function pointer to the Tester function.
   void Time2SpecTester(Time2Spec Time2SpecFunction) {
     // WebRtcIsacfix_Time2Spec functions hard coded the buffer lengths. It's a

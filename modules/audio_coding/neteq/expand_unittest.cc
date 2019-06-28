@@ -83,7 +83,6 @@ class ExpandTest : public ::testing::Test {
                 &statistics_,
                 test_sample_rate_hz_,
                 num_channels_) {
-    WebRtcSpl_Init();
     input_file_.set_output_rate_hz(test_sample_rate_hz_);
   }
 

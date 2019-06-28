@@ -133,7 +133,6 @@ NetEqImpl::NetEqImpl(const NetEq::Config& config,
   last_output_sample_rate_hz_ = fs;
   output_size_samples_ = static_cast<size_t>(kOutputSizeMs * 8 * fs_mult_);
   decoder_frame_length_ = 3 * output_size_samples_;
-  WebRtcSpl_Init();
   if (create_components) {
     SetSampleRateAndChannels(fs, 1);  // Default is 1 channel.
   }

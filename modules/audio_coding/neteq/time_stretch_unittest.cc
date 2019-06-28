@@ -65,7 +65,6 @@ class TimeStretchTest : public ::testing::Test {
         block_size_(30 * sample_rate_hz_ / 1000),  // 30 ms
         audio_(new int16_t[block_size_]),
         background_noise_(kNumChannels) {
-    WebRtcSpl_Init();
   }
 
   const int16_t* Next30Ms() {
