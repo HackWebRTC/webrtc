@@ -534,6 +534,25 @@ void SimulcastEncoderAdapter::SetRates(
   }
 }
 
+void SimulcastEncoderAdapter::OnPacketLossRateUpdate(float packet_loss_rate) {
+  for (StreamInfo& info : streaminfos_) {
+    info.encoder->OnPacketLossRateUpdate(packet_loss_rate);
+  }
+}
+
+void SimulcastEncoderAdapter::OnRttUpdate(int64_t rtt_ms) {
+  for (StreamInfo& info : streaminfos_) {
+    info.encoder->OnRttUpdate(rtt_ms);
+  }
+}
+
+void SimulcastEncoderAdapter::OnLossNotification(
+    const LossNotification& loss_notification) {
+  for (StreamInfo& info : streaminfos_) {
+    info.encoder->OnLossNotification(loss_notification);
+  }
+}
+
 // TODO(brandtr): Add task checker to this member function, when all encoder
 // callbacks are coming in on the encoder queue.
 EncodedImageCallback::Result SimulcastEncoderAdapter::OnEncodedImage(

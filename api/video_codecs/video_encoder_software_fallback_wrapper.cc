@@ -90,11 +90,18 @@ class VideoEncoderSoftwareFallbackWrapper final : public VideoEncoder {
       EncodedImageCallback* callback) override;
 
   int32_t Release() override;
+
   int32_t Encode(const VideoFrame& frame,
                  const std::vector<VideoFrameType>* frame_types) override;
-  // TOD(eladalon): Add OnPacketLossRateUpdate, OnRttUpdate and
-  // OnLossNotification.
+
+  void OnPacketLossRateUpdate(float packet_loss_rate) override;
+
+  void OnRttUpdate(int64_t rtt_ms) override;
+
+  void OnLossNotification(const LossNotification& loss_notification) override;
+
   void SetRates(const RateControlParameters& parameters) override;
+
   EncoderInfo GetEncoderInfo() const override;
 
  private:
@@ -276,6 +283,26 @@ void VideoEncoderSoftwareFallbackWrapper::SetRates(
   encoder_->SetRates(parameters);
   if (use_fallback_encoder_)
     fallback_encoder_->SetRates(parameters);
+}
+
+void VideoEncoderSoftwareFallbackWrapper::OnPacketLossRateUpdate(
+    float packet_loss_rate) {
+  VideoEncoder* encoder =
+      use_fallback_encoder_ ? fallback_encoder_.get() : encoder_.get();
+  encoder->OnPacketLossRateUpdate(packet_loss_rate);
+}
+
+void VideoEncoderSoftwareFallbackWrapper::OnRttUpdate(int64_t rtt_ms) {
+  VideoEncoder* encoder =
+      use_fallback_encoder_ ? fallback_encoder_.get() : encoder_.get();
+  encoder->OnRttUpdate(rtt_ms);
+}
+
+void VideoEncoderSoftwareFallbackWrapper::OnLossNotification(
+    const LossNotification& loss_notification) {
+  VideoEncoder* encoder =
+      use_fallback_encoder_ ? fallback_encoder_.get() : encoder_.get();
+  encoder->OnLossNotification(loss_notification);
 }
 
 VideoEncoder::EncoderInfo VideoEncoderSoftwareFallbackWrapper::GetEncoderInfo()

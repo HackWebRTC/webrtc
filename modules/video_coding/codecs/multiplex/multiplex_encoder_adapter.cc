@@ -239,6 +239,25 @@ void MultiplexEncoderAdapter::SetRates(
   }
 }
 
+void MultiplexEncoderAdapter::OnPacketLossRateUpdate(float packet_loss_rate) {
+  for (auto& encoder : encoders_) {
+    encoder->OnPacketLossRateUpdate(packet_loss_rate);
+  }
+}
+
+void MultiplexEncoderAdapter::OnRttUpdate(int64_t rtt_ms) {
+  for (auto& encoder : encoders_) {
+    encoder->OnRttUpdate(rtt_ms);
+  }
+}
+
+void MultiplexEncoderAdapter::OnLossNotification(
+    const LossNotification& loss_notification) {
+  for (auto& encoder : encoders_) {
+    encoder->OnLossNotification(loss_notification);
+  }
+}
+
 int MultiplexEncoderAdapter::Release() {
   for (auto& encoder : encoders_) {
     const int rv = encoder->Release();
