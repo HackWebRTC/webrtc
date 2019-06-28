@@ -87,6 +87,11 @@ void ScreenshareLayers::SetQpLimits(size_t stream_index,
   }
 }
 
+void ScreenshareLayers::SetFecControllerOverride(
+    FecControllerOverride* fec_controller_override) {
+  // Ignore.
+}
+
 size_t ScreenshareLayers::StreamCount() const {
   return 1;
 }

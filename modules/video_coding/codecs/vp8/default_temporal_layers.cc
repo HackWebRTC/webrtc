@@ -257,6 +257,11 @@ void DefaultTemporalLayers::SetQpLimits(size_t stream_index,
   // Ignore.
 }
 
+void DefaultTemporalLayers::SetFecControllerOverride(
+    FecControllerOverride* fec_controller_override) {
+  // Ignore.
+}
+
 size_t DefaultTemporalLayers::StreamCount() const {
   return 1;
 }

@@ -416,6 +416,7 @@ rtc_static_library("webrtc_vp8_temporal_layers") {
     ":video_coding_utility",
     "..:module_api",
     "../..:webrtc_common",
+    "../../api:fec_controller_api",
     "../../api/video_codecs:video_codecs_api",
     "../../rtc_base:checks",
     "../../rtc_base:rtc_base_approved",

@@ -35,6 +35,11 @@ void Vp8TemporalLayers::SetQpLimits(size_t stream_index,
   return controllers_[stream_index]->SetQpLimits(0, min_qp, max_qp);
 }
 
+void Vp8TemporalLayers::SetFecControllerOverride(
+    FecControllerOverride* fec_controller_override) {
+  // Ignore.
+}
+
 size_t Vp8TemporalLayers::StreamCount() const {
   return controllers_.size();
 }

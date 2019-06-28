@@ -16,6 +16,7 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/fec_controller_override.h"
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/vp8_frame_config.h"
@@ -104,6 +105,13 @@ class Vp8FrameBufferController {
   // Set limits on QP.
   // The limits are suggestion-only; the controller is allowed to exceed them.
   virtual void SetQpLimits(size_t stream_index, int min_qp, int max_qp) = 0;
+
+  // Set a FecControllerOverride, through which the bandwidth allocation
+  // decisions made by FecController may be overridden.
+  // TODO(bugs.webrtc.org/10769): Update downstream projects, then make
+  // this pure-virtual.
+  virtual void SetFecControllerOverride(
+      FecControllerOverride* fec_controller_override) {}
 
   // Number of streamed controlled by |this|.
   virtual size_t StreamCount() const = 0;
