@@ -225,6 +225,7 @@ RtpVideoSender::RtpVideoSender(
       flexfec_sender_(
           MaybeCreateFlexfecSender(clock, rtp_config, suspended_ssrcs_)),
       fec_controller_(std::move(fec_controller)),
+      fec_allowed_(true),
       rtp_streams_(
           CreateRtpStreamSenders(clock,
                                  rtp_config,
@@ -705,6 +706,12 @@ void RtpVideoSender::OnBitrateUpdated(uint32_t bitrate_bps,
   // protection overhead.
   encoder_target_rate_bps_ = fec_controller_->UpdateFecRates(
       payload_bitrate_bps, framerate, fraction_loss, loss_mask_vector_, rtt);
+  if (!fec_allowed_) {
+    encoder_target_rate_bps_ = payload_bitrate_bps;
+    // fec_controller_->UpdateFecRates() was still called so as to allow
+    // |fec_controller_| to update whatever internal state it might have,
+    // since |fec_allowed_| may be toggled back on at any moment.
+  }
 
   uint32_t packetization_rate_bps = 0;
   if (account_for_packetization_overhead_) {
@@ -783,7 +790,8 @@ int RtpVideoSender::ProtectionRequest(const FecProtectionParams* delta_params,
 }
 
 void RtpVideoSender::SetFecAllowed(bool fec_allowed) {
-  // TODO(bugs.webrtc.og/10769): Handle this message.
+  rtc::CritScope cs(&crit_);
+  fec_allowed_ = fec_allowed;
 }
 
 void RtpVideoSender::OnPacketFeedbackVector(

@@ -178,7 +178,10 @@ class RtpVideoSender : public RtpVideoSenderInterface,
   std::map<uint32_t, RtpState> suspended_ssrcs_;
 
   std::unique_ptr<FlexfecSender> flexfec_sender_;
+
   const std::unique_ptr<FecController> fec_controller_;
+  bool fec_allowed_ RTC_GUARDED_BY(crit_);
+
   // Rtp modules are assumed to be sorted in simulcast index order.
   const std::vector<webrtc_internal_rtp_video_sender::RtpStreamSender>
       rtp_streams_;
