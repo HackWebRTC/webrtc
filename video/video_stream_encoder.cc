@@ -754,6 +754,11 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   if (pending_encoder_creation_ || reset_required) {
     ReleaseEncoder();
     if (pending_encoder_creation_) {
+      // Destroy existing encoder instance before creating a new one. Otherwise
+      // attempt to create another instance will fail if encoder factory
+      // supports only single encoder instance.
+      encoder_.reset();
+
       encoder_ = settings_.encoder_factory->CreateVideoEncoder(
           encoder_config_.video_format);
       // TODO(nisse): What to do if creating the encoder fails? Crash,
