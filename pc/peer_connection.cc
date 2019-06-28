@@ -107,6 +107,10 @@ const char kDtlsSrtpSetupFailureRtcp[] =
 
 namespace {
 
+// Field trials.
+// Controls datagram transport support.
+const char kDatagramTransportFieldTrial[] = "WebRTC-DatagramTransport";
+
 // UMA metric names.
 const char kSimulcastVersionApplyLocalDescription[] =
     "WebRTC.PeerConnection.Simulcast.ApplyLocalDescription";
@@ -764,7 +768,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     bool active_reset_srtp_params;
     bool use_media_transport;
     bool use_media_transport_for_data_channels;
-    bool use_datagram_transport;
+    absl::optional<bool> use_datagram_transport;
     absl::optional<CryptoOptions> crypto_options;
     bool offer_extmap_allow_mixed;
   };
@@ -868,6 +872,8 @@ PeerConnection::PeerConnection(PeerConnectionFactory* factory,
     : factory_(factory),
       event_log_(std::move(event_log)),
       event_log_ptr_(event_log_.get()),
+      datagram_transport_config_(
+          field_trial::FindFullName(kDatagramTransportFieldTrial)),
       rtcp_cname_(GenerateRtcpCname()),
       local_streams_(StreamCollection::Create()),
       remote_streams_(StreamCollection::Create()),
@@ -1027,8 +1033,10 @@ bool PeerConnection::Initialize(
 #endif
   config.active_reset_srtp_params = configuration.active_reset_srtp_params;
 
-  if (configuration.use_datagram_transport ||
-      configuration.use_media_transport ||
+  use_datagram_transport_ = datagram_transport_config_.enabled &&
+                            configuration_.use_datagram_transport.value_or(
+                                datagram_transport_config_.default_value);
+  if (use_datagram_transport_ || configuration.use_media_transport ||
       configuration.use_media_transport_for_data_channels) {
     if (!factory_->media_transport_factory()) {
       RTC_DCHECK(false)
@@ -1058,7 +1066,7 @@ bool PeerConnection::Initialize(
     config.use_media_transport_for_media = configuration.use_media_transport;
     config.use_media_transport_for_data_channels =
         configuration.use_media_transport_for_data_channels;
-    config.use_datagram_transport = configuration.use_datagram_transport;
+    config.use_datagram_transport = use_datagram_transport_;
     config.media_transport_factory = factory_->media_transport_factory();
   }
 
@@ -3461,7 +3469,8 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
 
   if (configuration.use_media_transport_for_data_channels ||
       configuration.use_media_transport ||
-      configuration.use_datagram_transport) {
+      (configuration.use_datagram_transport &&
+       *configuration.use_datagram_transport)) {
     RTC_CHECK(configuration.bundle_policy == kBundlePolicyMaxBundle)
         << "Media transport requires MaxBundle policy.";
   }
@@ -3496,6 +3505,7 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
   modified_config.use_media_transport = configuration.use_media_transport;
   modified_config.use_media_transport_for_data_channels =
       configuration.use_media_transport_for_data_channels;
+  modified_config.use_datagram_transport = configuration.use_datagram_transport;
   if (configuration != modified_config) {
     RTC_LOG(LS_ERROR) << "Modifying the configuration in an unsupported way.";
     return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
@@ -3554,10 +3564,14 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
   }
 
   transport_controller_->SetIceConfig(ParseIceConfig(modified_config));
+
+  use_datagram_transport_ = datagram_transport_config_.enabled &&
+                            modified_config.use_datagram_transport.value_or(
+                                datagram_transport_config_.default_value);
   transport_controller_->SetMediaTransportSettings(
       modified_config.use_media_transport,
       modified_config.use_media_transport_for_data_channels,
-      modified_config.use_datagram_transport);
+      use_datagram_transport_);
 
   if (configuration_.active_reset_srtp_params !=
       modified_config.active_reset_srtp_params) {
@@ -4345,7 +4359,7 @@ void PeerConnection::GetOptionsForOffer(
   }
 
   // If datagram transport is in use, add opaque transport parameters.
-  if (configuration_.use_datagram_transport) {
+  if (use_datagram_transport_) {
     for (auto& options : session_options->media_description_options) {
       options.transport_options.opaque_parameters =
           transport_controller_->GetTransportParameters(options.mid);
@@ -4651,7 +4665,7 @@ void PeerConnection::GetOptionsForAnswer(
                     port_allocator_.get()));
 
   // If datagram transport is in use, add opaque transport parameters.
-  if (configuration_.use_datagram_transport) {
+  if (use_datagram_transport_) {
     for (auto& options : session_options->media_description_options) {
       options.transport_options.opaque_parameters =
           transport_controller_->GetTransportParameters(options.mid);
@@ -6965,7 +6979,7 @@ bool PeerConnection::ReadyToUseRemoteCandidate(
 }
 
 bool PeerConnection::SrtpRequired() const {
-  return !configuration_.use_datagram_transport &&
+  return !use_datagram_transport_ &&
          (dtls_enabled_ ||
           webrtc_session_desc_factory_->SdesPolicy() == cricket::SEC_REQUIRED);
 }

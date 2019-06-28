@@ -309,6 +309,28 @@ class PeerConnection : public PeerConnectionInternal,
     uint32_t first_ssrc;
   };
 
+  // Field-trial based configuration for datagram transport.
+  struct DatagramTransportConfig {
+    explicit DatagramTransportConfig(const std::string& field_trial)
+        : enabled("enabled", true), default_value("default_value", false) {
+      ParseFieldTrial({&enabled, &default_value}, field_trial);
+    }
+
+    // Whether datagram transport support is enabled at all.  Defaults to true,
+    // allowing datagram transport to be used if (a) the application provides a
+    // factory for it and (b) the configuration specifies its use.  This flag
+    // provides a kill-switch to force-disable datagram transport across all
+    // applications, without code changes.
+    FieldTrialFlag enabled;
+
+    // Whether the datagram transport is enabled or disabled by default.
+    // Defaults to false, meaning that applications must configure use of
+    // datagram transport through RTCConfiguration.  If set to true,
+    // applications will use the datagram transport by default (but may still
+    // explicitly configure themselves not to use it through RTCConfiguration).
+    FieldTrialFlag default_value;
+  };
+
   // Implements MessageHandler.
   void OnMessage(rtc::Message* msg) override;
 
@@ -1121,6 +1143,12 @@ class PeerConnection : public PeerConnectionInternal,
       kIceGatheringNew;
   PeerConnectionInterface::RTCConfiguration configuration_
       RTC_GUARDED_BY(signaling_thread());
+
+  // Field-trial based configuration for datagram transport.
+  const DatagramTransportConfig datagram_transport_config_;
+
+  // Final, resolved value for whether datagram transport is in use.
+  bool use_datagram_transport_ RTC_GUARDED_BY(signaling_thread()) = false;
 
   // Cache configuration_.use_media_transport so that we can access it from
   // other threads.
