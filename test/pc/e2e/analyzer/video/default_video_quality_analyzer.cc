@@ -609,6 +609,7 @@ void DefaultVideoQualityAnalyzer::ReportResults(
   ReportResult("encode_time", test_case_name, stats.encode_time_ms, "ms");
   ReportResult("time_between_freezes", test_case_name,
                stats.time_between_freezes_ms, "ms");
+  ReportResult("freeze_time_ms", test_case_name, stats.freeze_time_ms, "ms");
   ReportResult("pixels_per_frame", test_case_name,
                stats.resolution_of_rendered_frame, "unitless");
   test::PrintResult("min_psnr", "", test_case_name,
