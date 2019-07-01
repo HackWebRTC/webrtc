@@ -615,7 +615,6 @@ void ReceiveStatisticsProxy::OnDecoderImplementationName(
 }
 
 void ReceiveStatisticsProxy::OnFrameBufferTimingsUpdated(
-    int decode_ms,
     int max_decode_ms,
     int current_delay_ms,
     int target_delay_ms,
@@ -623,14 +622,12 @@ void ReceiveStatisticsProxy::OnFrameBufferTimingsUpdated(
     int min_playout_delay_ms,
     int render_delay_ms) {
   rtc::CritScope lock(&crit_);
-  stats_.decode_ms = decode_ms;
   stats_.max_decode_ms = max_decode_ms;
   stats_.current_delay_ms = current_delay_ms;
   stats_.target_delay_ms = target_delay_ms;
   stats_.jitter_buffer_ms = jitter_buffer_ms;
   stats_.min_playout_delay_ms = min_playout_delay_ms;
   stats_.render_delay_ms = render_delay_ms;
-  decode_time_counter_.Add(decode_ms);
   jitter_buffer_delay_counter_.Add(jitter_buffer_ms);
   target_delay_counter_.Add(target_delay_ms);
   current_delay_counter_.Add(current_delay_ms);
@@ -723,6 +720,7 @@ void ReceiveStatisticsProxy::DataCountersUpdated(
 
 void ReceiveStatisticsProxy::OnDecodedFrame(const VideoFrame& frame,
                                             absl::optional<uint8_t> qp,
+                                            int32_t decode_time_ms,
                                             VideoContentType content_type) {
   rtc::CritScope lock(&crit_);
 
@@ -745,7 +743,6 @@ void ReceiveStatisticsProxy::OnDecodedFrame(const VideoFrame& frame,
       if (stats_.frames_decoded != 1) {
         RTC_LOG(LS_WARNING)
             << "Frames decoded was not 1 when first qp value was received.";
-        stats_.frames_decoded = 1;
       }
       stats_.qp_sum = 0;
     }
@@ -754,8 +751,10 @@ void ReceiveStatisticsProxy::OnDecodedFrame(const VideoFrame& frame,
   } else if (stats_.qp_sum) {
     RTC_LOG(LS_WARNING)
         << "QP sum was already set and no QP was given for a frame.";
-    stats_.qp_sum = absl::nullopt;
   }
+  decode_time_counter_.Add(decode_time_ms);
+  stats_.decode_ms = decode_time_ms;
+  stats_.total_decode_time_ms += decode_time_ms;
   last_content_type_ = content_type;
   decode_fps_estimator_.Update(1, now_ms);
   if (last_decoded_frame_time_ms_) {

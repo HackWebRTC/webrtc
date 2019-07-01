@@ -85,6 +85,8 @@ class VideoReceiveStream {
     int render_delay_ms = 10;
     int64_t interframe_delay_max_ms = -1;
     uint32_t frames_decoded = 0;
+    // https://w3c.github.io/webrtc-stats/#dom-rtcinboundrtpstreamstats-totaldecodetime
+    uint64_t total_decode_time_ms = 0;
     int64_t first_frame_received_to_decoded_ms = -1;
     absl::optional<uint64_t> qp_sum;
 

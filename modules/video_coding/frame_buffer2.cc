@@ -699,19 +699,18 @@ void FrameBuffer::UpdateJitterDelay() {
   if (!stats_callback_)
     return;
 
-  int decode_ms;
   int max_decode_ms;
   int current_delay_ms;
   int target_delay_ms;
   int jitter_buffer_ms;
   int min_playout_delay_ms;
   int render_delay_ms;
-  if (timing_->GetTimings(&decode_ms, &max_decode_ms, &current_delay_ms,
-                          &target_delay_ms, &jitter_buffer_ms,
-                          &min_playout_delay_ms, &render_delay_ms)) {
+  if (timing_->GetTimings(&max_decode_ms, &current_delay_ms, &target_delay_ms,
+                          &jitter_buffer_ms, &min_playout_delay_ms,
+                          &render_delay_ms)) {
     stats_callback_->OnFrameBufferTimingsUpdated(
-        decode_ms, max_decode_ms, current_delay_ms, target_delay_ms,
-        jitter_buffer_ms, min_playout_delay_ms, render_delay_ms);
+        max_decode_ms, current_delay_ms, target_delay_ms, jitter_buffer_ms,
+        min_playout_delay_ms, render_delay_ms);
   }
 }
 

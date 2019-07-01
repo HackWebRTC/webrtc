@@ -30,6 +30,7 @@ class ReceiveCallback : public VCMReceiveCallback {
  public:
   int32_t FrameToRender(VideoFrame& videoFrame,  // NOLINT
                         absl::optional<uint8_t> qp,
+                        int32_t decode_time_ms,
                         VideoContentType content_type) override {
     {
       rtc::CritScope cs(&lock_);

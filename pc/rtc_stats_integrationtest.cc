@@ -805,12 +805,15 @@ class RTCStatsReportVerifier {
         *inbound_stream.media_type == "video") {
       verifier.TestMemberIsDefined(inbound_stream.frames_decoded);
       verifier.TestMemberIsDefined(inbound_stream.key_frames_decoded);
+      verifier.TestMemberIsNonNegative<double>(
+          inbound_stream.total_decode_time);
       // The integration test is not set up to test screen share; don't require
       // this to be present.
       verifier.MarkMemberTested(inbound_stream.content_type, true);
     } else {
       verifier.TestMemberIsUndefined(inbound_stream.frames_decoded);
       verifier.TestMemberIsUndefined(inbound_stream.key_frames_decoded);
+      verifier.TestMemberIsUndefined(inbound_stream.total_decode_time);
       verifier.TestMemberIsUndefined(inbound_stream.content_type);
     }
     return verifier.ExpectAllMembersSuccessfullyTested();

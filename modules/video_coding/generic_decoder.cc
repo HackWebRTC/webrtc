@@ -91,8 +91,7 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
   if (!decode_time_ms) {
     decode_time_ms = now_ms - frameInfo->decodeStartTimeMs;
   }
-  _timing->StopDecodeTimer(decodedImage.timestamp(), *decode_time_ms, now_ms,
-                           frameInfo->renderTimeMs);
+  _timing->StopDecodeTimer(*decode_time_ms, now_ms);
 
   // Report timing information.
   TimingFrameInfo timing_frame_info;
@@ -147,7 +146,8 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
 
   decodedImage.set_timestamp_us(frameInfo->renderTimeMs *
                                 rtc::kNumMicrosecsPerMillisec);
-  _receiveCallback->FrameToRender(decodedImage, qp, frameInfo->content_type);
+  _receiveCallback->FrameToRender(decodedImage, qp, *decode_time_ms,
+                                  frameInfo->content_type);
 }
 
 void VCMDecodedFrameCallback::OnDecoderImplementationName(

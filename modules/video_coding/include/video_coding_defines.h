@@ -51,9 +51,21 @@ enum VCMVideoProtection {
 // rendered.
 class VCMReceiveCallback {
  public:
+  // TODO(kron): Remove once downstream projects are updated.
   virtual int32_t FrameToRender(VideoFrame& videoFrame,  // NOLINT
                                 absl::optional<uint8_t> qp,
-                                VideoContentType content_type) = 0;
+                                VideoContentType content_type) {
+    // Cannot be pure virtual since this should be removed from derived
+    // classes.
+    return FrameToRender(videoFrame, qp, 0, content_type);
+  }
+
+  virtual int32_t FrameToRender(VideoFrame& videoFrame,  // NOLINT
+                                absl::optional<uint8_t> qp,
+                                int32_t decode_time_ms,
+                                VideoContentType content_type) {
+    return FrameToRender(videoFrame, qp, content_type);
+  }
 
   // Called when the current receive codec changes.
   virtual void OnIncomingPayloadType(int payload_type);
@@ -71,8 +83,7 @@ class VCMReceiveStatisticsCallback {
                                size_t size_bytes,
                                VideoContentType content_type) = 0;
 
-  virtual void OnFrameBufferTimingsUpdated(int decode_ms,
-                                           int max_decode_ms,
+  virtual void OnFrameBufferTimingsUpdated(int max_decode_ms,
                                            int current_delay_ms,
                                            int target_delay_ms,
                                            int jitter_buffer_ms,

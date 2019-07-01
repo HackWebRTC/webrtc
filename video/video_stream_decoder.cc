@@ -44,8 +44,10 @@ VideoStreamDecoder::~VideoStreamDecoder() {
 // Release. Acquiring the same lock in the path of decode callback can deadlock.
 int32_t VideoStreamDecoder::FrameToRender(VideoFrame& video_frame,
                                           absl::optional<uint8_t> qp,
+                                          int32_t decode_time_ms,
                                           VideoContentType content_type) {
-  receive_stats_callback_->OnDecodedFrame(video_frame, qp, content_type);
+  receive_stats_callback_->OnDecodedFrame(video_frame, qp, decode_time_ms,
+                                          content_type);
   incoming_video_stream_->OnFrame(video_frame);
   return 0;
 }

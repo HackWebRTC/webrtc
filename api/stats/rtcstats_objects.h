@@ -443,6 +443,7 @@ class RTC_EXPORT RTCInboundRTPStreamStats final : public RTCRTPStreamStats {
   RTCStatsMember<double> gap_discard_rate;
   RTCStatsMember<uint32_t> frames_decoded;
   RTCStatsMember<uint32_t> key_frames_decoded;
+  RTCStatsMember<double> total_decode_time;
   // https://henbos.github.io/webrtc-provisional-stats/#dom-rtcinboundrtpstreamstats-contenttype
   RTCStatsMember<std::string> content_type;
 };

@@ -277,8 +277,7 @@ void VideoStreamDecoderImpl::Decoded(VideoFrame& decoded_image,
     absl::optional<int> casted_decode_time_ms(decode_time_ms.value_or(
         decode_stop_time_ms - frame_timestamps->decode_start_time_ms));
 
-    timing_.StopDecodeTimer(0, *casted_decode_time_ms, decode_stop_time_ms,
-                            frame_timestamps->render_time_us / 1000);
+    timing_.StopDecodeTimer(*casted_decode_time_ms, decode_stop_time_ms);
 
     VideoFrame copy = decoded_image;
     copy.set_timestamp_us(frame_timestamps->render_time_us);

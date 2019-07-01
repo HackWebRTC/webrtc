@@ -59,8 +59,7 @@ class VCMTimingFake : public VCMTiming {
     return render_time_ms - now_ms - kDecodeTime;
   }
 
-  bool GetTimings(int* decode_ms,
-                  int* max_decode_ms,
+  bool GetTimings(int* max_decode_ms,
                   int* current_delay_ms,
                   int* target_delay_ms,
                   int* jitter_buffer_ms,
@@ -70,16 +69,15 @@ class VCMTimingFake : public VCMTiming {
   }
 
   int GetCurrentJitter() {
-    int decode_ms;
     int max_decode_ms;
     int current_delay_ms;
     int target_delay_ms;
     int jitter_buffer_ms;
     int min_playout_delay_ms;
     int render_delay_ms;
-    VCMTiming::GetTimings(&decode_ms, &max_decode_ms, &current_delay_ms,
-                          &target_delay_ms, &jitter_buffer_ms,
-                          &min_playout_delay_ms, &render_delay_ms);
+    VCMTiming::GetTimings(&max_decode_ms, &current_delay_ms, &target_delay_ms,
+                          &jitter_buffer_ms, &min_playout_delay_ms,
+                          &render_delay_ms);
     return jitter_buffer_ms;
   }
 
@@ -115,9 +113,8 @@ class VCMReceiveStatisticsCallbackMock : public VCMReceiveStatisticsCallback {
                     VideoContentType content_type));
   MOCK_METHOD1(OnDiscardedPacketsUpdated, void(int discarded_packets));
   MOCK_METHOD1(OnFrameCountsUpdated, void(const FrameCounts& frame_counts));
-  MOCK_METHOD7(OnFrameBufferTimingsUpdated,
-               void(int decode_ms,
-                    int max_decode_ms,
+  MOCK_METHOD6(OnFrameBufferTimingsUpdated,
+               void(int max_decode_ms,
                     int current_delay_ms,
                     int target_delay_ms,
                     int jitter_buffer_ms,
@@ -548,8 +545,7 @@ TEST_F(TestFrameBuffer2, StatsCallback) {
 
   EXPECT_CALL(stats_callback_,
               OnCompleteFrame(true, kFrameSize, VideoContentType::UNSPECIFIED));
-  EXPECT_CALL(stats_callback_,
-              OnFrameBufferTimingsUpdated(_, _, _, _, _, _, _));
+  EXPECT_CALL(stats_callback_, OnFrameBufferTimingsUpdated(_, _, _, _, _, _));
 
   {
     std::unique_ptr<FrameObjectFake> frame(new FrameObjectFake());
