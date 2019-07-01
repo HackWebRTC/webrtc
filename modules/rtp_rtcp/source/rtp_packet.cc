@@ -183,6 +183,7 @@ void RtpPacket::CopyAndZeroMutableExtensions(
         break;
       }
       case RTPExtensionType::kRtpExtensionAudioLevel:
+      case RTPExtensionType::kRtpExtensionAbsoluteCaptureTime:
       case RTPExtensionType::kRtpExtensionColorSpace:
       case RTPExtensionType::kRtpExtensionFrameMarking:
       case RTPExtensionType::kRtpExtensionGenericFrameDescriptor00:

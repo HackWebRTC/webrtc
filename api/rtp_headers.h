@@ -38,6 +38,46 @@ struct FeedbackRequest {
   int sequence_count;
 };
 
+// The Absolute Capture Time extension is used to stamp RTP packets with a NTP
+// timestamp showing when the first audio or video frame in a packet was
+// originally captured. The intent of this extension is to provide a way to
+// accomplish audio-to-video synchronization when RTCP-terminating intermediate
+// systems (e.g. mixers) are involved. See:
+// http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time
+struct AbsoluteCaptureTime {
+  // Absolute capture timestamp is the NTP timestamp of when the first frame in
+  // a packet was originally captured. This timestamp MUST be based on the same
+  // clock as the clock used to generate NTP timestamps for RTCP sender reports
+  // on the capture system.
+  //
+  // It’s not always possible to do an NTP clock readout at the exact moment of
+  // when a media frame is captured. A capture system MAY postpone the readout
+  // until a more convenient time. A capture system SHOULD have known delays
+  // (e.g. from hardware buffers) subtracted from the readout to make the final
+  // timestamp as close to the actual capture time as possible.
+  //
+  // This field is encoded as a 64-bit unsigned fixed-point number with the high
+  // 32 bits for the timestamp in seconds and low 32 bits for the fractional
+  // part. This is also known as the UQ32.32 format and is what the RTP
+  // specification defines as the canonical format to represent NTP timestamps.
+  uint64_t absolute_capture_timestamp;
+
+  // Estimated capture clock offset is the sender’s estimate of the offset
+  // between its own NTP clock and the capture system’s NTP clock. The sender is
+  // here defined as the system that owns the NTP clock used to generate the NTP
+  // timestamps for the RTCP sender reports on this stream. The sender system is
+  // typically either the capture system or a mixer.
+  //
+  // This field is encoded as a 64-bit two’s complement signed fixed-point
+  // number with the high 32 bits for the seconds and low 32 bits for the
+  // fractional part. It’s intended to make it easy for a receiver, that knows
+  // how to estimate the sender system’s NTP clock, to also estimate the capture
+  // system’s NTP clock:
+  //
+  //   Capture NTP Clock = Sender NTP Clock + Capture Clock Offset
+  absl::optional<int64_t> estimated_capture_clock_offset;
+};
+
 struct RTPHeaderExtension {
   RTPHeaderExtension();
   RTPHeaderExtension(const RTPHeaderExtension& other);
@@ -56,6 +96,7 @@ struct RTPHeaderExtension {
   int32_t transmissionTimeOffset;
   bool hasAbsoluteSendTime;
   uint32_t absoluteSendTime;
+  absl::optional<AbsoluteCaptureTime> absolute_capture_time;
   bool hasTransportSequenceNumber;
   uint16_t transportSequenceNumber;
   absl::optional<FeedbackRequest> feedback_request;

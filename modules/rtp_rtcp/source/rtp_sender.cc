@@ -72,6 +72,7 @@ constexpr RtpExtensionSize kFecOrPaddingExtensionSizes[] = {
 // Size info for header extensions that might be used in video packets.
 constexpr RtpExtensionSize kVideoExtensionSizes[] = {
     CreateExtensionSize<AbsoluteSendTime>(),
+    CreateExtensionSize<AbsoluteCaptureTimeExtension>(),
     CreateExtensionSize<TransmissionOffset>(),
     CreateExtensionSize<TransportSequenceNumber>(),
     CreateExtensionSize<PlayoutDelayLimits>(),

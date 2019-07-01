@@ -42,6 +42,23 @@ class AbsoluteSendTime {
   }
 };
 
+class AbsoluteCaptureTimeExtension {
+ public:
+  using value_type = AbsoluteCaptureTime;
+  static constexpr RTPExtensionType kId = kRtpExtensionAbsoluteCaptureTime;
+  static constexpr uint8_t kValueSizeBytes = 16;
+  static constexpr uint8_t kValueSizeBytesWithoutEstimatedCaptureClockOffset =
+      8;
+  static constexpr const char kUri[] =
+      "http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time";
+
+  static bool Parse(rtc::ArrayView<const uint8_t> data,
+                    AbsoluteCaptureTime* extension);
+  static size_t ValueSize(const AbsoluteCaptureTime& extension);
+  static bool Write(rtc::ArrayView<uint8_t> data,
+                    const AbsoluteCaptureTime& extension);
+};
+
 class AudioLevel {
  public:
   static constexpr RTPExtensionType kId = kRtpExtensionAudioLevel;

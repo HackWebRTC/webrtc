@@ -400,6 +400,17 @@ void RtpHeaderParser::ParseOneByteExtensionHeader(
           header->extension.hasAbsoluteSendTime = true;
           break;
         }
+        case kRtpExtensionAbsoluteCaptureTime: {
+          AbsoluteCaptureTime extension;
+          if (!AbsoluteCaptureTimeExtension::Parse(
+                  rtc::MakeArrayView(ptr, len + 1), &extension)) {
+            RTC_LOG(LS_WARNING)
+                << "Incorrect absolute capture time len: " << len;
+            return;
+          }
+          header->extension.absolute_capture_time = extension;
+          break;
+        }
         case kRtpExtensionVideoRotation: {
           if (len != 0) {
             RTC_LOG(LS_WARNING)

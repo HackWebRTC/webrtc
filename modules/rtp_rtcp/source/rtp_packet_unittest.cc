@@ -827,6 +827,65 @@ TEST(RtpPacketTest, CreateAndParseColorSpaceExtensionWithoutHdrMetadata) {
   TestCreateAndParseColorSpaceExtension(/*with_hdr_metadata=*/false);
 }
 
+TEST(RtpPacketTest, CreateAndParseAbsoluteCaptureTime) {
+  // Create a packet with absolute capture time extension populated.
+  RtpPacketToSend::ExtensionManager extensions;
+  constexpr int kExtensionId = 1;
+  extensions.Register<AbsoluteCaptureTimeExtension>(kExtensionId);
+  RtpPacketToSend send_packet(&extensions);
+  send_packet.SetPayloadType(kPayloadType);
+  send_packet.SetSequenceNumber(kSeqNum);
+  send_packet.SetTimestamp(kTimestamp);
+  send_packet.SetSsrc(kSsrc);
+
+  constexpr AbsoluteCaptureTime kAbsoluteCaptureTime{
+      /*absolute_capture_timestamp=*/9876543210123456789ULL,
+      /*estimated_capture_clock_offset=*/-1234567890987654321LL};
+  send_packet.SetExtension<AbsoluteCaptureTimeExtension>(kAbsoluteCaptureTime);
+
+  // Serialize the packet and then parse it again.
+  RtpPacketReceived receive_packet(&extensions);
+  EXPECT_TRUE(receive_packet.Parse(send_packet.Buffer()));
+
+  AbsoluteCaptureTime received_absolute_capture_time;
+  EXPECT_TRUE(receive_packet.GetExtension<AbsoluteCaptureTimeExtension>(
+      &received_absolute_capture_time));
+  EXPECT_EQ(kAbsoluteCaptureTime.absolute_capture_timestamp,
+            received_absolute_capture_time.absolute_capture_timestamp);
+  EXPECT_EQ(kAbsoluteCaptureTime.estimated_capture_clock_offset,
+            received_absolute_capture_time.estimated_capture_clock_offset);
+}
+
+TEST(RtpPacketTest,
+     CreateAndParseAbsoluteCaptureTimeWithoutEstimatedCaptureClockOffset) {
+  // Create a packet with absolute capture time extension populated.
+  RtpPacketToSend::ExtensionManager extensions;
+  constexpr int kExtensionId = 1;
+  extensions.Register<AbsoluteCaptureTimeExtension>(kExtensionId);
+  RtpPacketToSend send_packet(&extensions);
+  send_packet.SetPayloadType(kPayloadType);
+  send_packet.SetSequenceNumber(kSeqNum);
+  send_packet.SetTimestamp(kTimestamp);
+  send_packet.SetSsrc(kSsrc);
+
+  constexpr AbsoluteCaptureTime kAbsoluteCaptureTime{
+      /*absolute_capture_timestamp=*/9876543210123456789ULL,
+      /*estimated_capture_clock_offset=*/absl::nullopt};
+  send_packet.SetExtension<AbsoluteCaptureTimeExtension>(kAbsoluteCaptureTime);
+
+  // Serialize the packet and then parse it again.
+  RtpPacketReceived receive_packet(&extensions);
+  EXPECT_TRUE(receive_packet.Parse(send_packet.Buffer()));
+
+  AbsoluteCaptureTime received_absolute_capture_time;
+  EXPECT_TRUE(receive_packet.GetExtension<AbsoluteCaptureTimeExtension>(
+      &received_absolute_capture_time));
+  EXPECT_EQ(kAbsoluteCaptureTime.absolute_capture_timestamp,
+            received_absolute_capture_time.absolute_capture_timestamp);
+  EXPECT_EQ(kAbsoluteCaptureTime.estimated_capture_clock_offset,
+            received_absolute_capture_time.estimated_capture_clock_offset);
+}
+
 TEST(RtpPacketTest, CreateAndParseTransportSequenceNumber) {
   // Create a packet with transport sequence number extension populated.
   RtpPacketToSend::ExtensionManager extensions;

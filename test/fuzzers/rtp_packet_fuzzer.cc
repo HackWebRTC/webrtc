@@ -79,6 +79,11 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
         uint32_t sendtime;
         packet.GetExtension<AbsoluteSendTime>(&sendtime);
         break;
+      case kRtpExtensionAbsoluteCaptureTime: {
+        AbsoluteCaptureTime extension;
+        packet.GetExtension<AbsoluteCaptureTimeExtension>(&extension);
+        break;
+      }
       case kRtpExtensionVideoRotation:
         uint8_t rotation;
         packet.GetExtension<VideoOrientation>(&rotation);

@@ -267,6 +267,10 @@ struct RtpExtension {
   // http://www.webrtc.org/experiments/rtp-hdrext/abs-send-time
   static const char kAbsSendTimeUri[];
 
+  // Header extension for absolute capture time, see url for details:
+  // http://www.webrtc.org/experiments/rtp-hdrext/abs-capture-time
+  static const char kAbsoluteCaptureTimeUri[];
+
   // Header extension for coordination of video orientation, see url for
   // details:
   // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/ts_126114v120700p.pdf
