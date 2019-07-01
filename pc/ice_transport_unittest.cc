@@ -40,7 +40,9 @@ TEST_F(IceTransportTest, CreateNonSelfDeletingTransport) {
 TEST_F(IceTransportTest, CreateSelfDeletingTransport) {
   std::unique_ptr<cricket::FakePortAllocator> port_allocator(
       absl::make_unique<cricket::FakePortAllocator>(nullptr, nullptr));
-  auto ice_transport = CreateIceTransport(port_allocator.get());
+  IceTransportInit init;
+  init.set_port_allocator(port_allocator.get());
+  auto ice_transport = CreateIceTransport(std::move(init));
   EXPECT_NE(nullptr, ice_transport->internal());
 }
 
