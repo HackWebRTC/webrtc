@@ -39,6 +39,7 @@ void AudioFrame::ResetWithoutMuting() {
   speech_type_ = kUndefined;
   vad_activity_ = kVadUnknown;
   profile_timestamp_ms_ = 0;
+  packet_infos_ = RtpPacketInfos();
 }
 
 void AudioFrame::UpdateFrame(uint32_t timestamp,
@@ -72,6 +73,7 @@ void AudioFrame::CopyFrom(const AudioFrame& src) {
   timestamp_ = src.timestamp_;
   elapsed_time_ms_ = src.elapsed_time_ms_;
   ntp_time_ms_ = src.ntp_time_ms_;
+  packet_infos_ = src.packet_infos_;
   muted_ = src.muted();
   samples_per_channel_ = src.samples_per_channel_;
   sample_rate_hz_ = src.sample_rate_hz_;

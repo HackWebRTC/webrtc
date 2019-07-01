@@ -36,6 +36,7 @@
 #include "rtc_base/string_encode.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/system/arch.h"
+#include "system_wrappers/include/clock.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
@@ -288,11 +289,11 @@ class NetEqDecodingTest : public ::testing::Test {
 
   void DuplicateCng();
 
+  SimulatedClock clock_;
   NetEq* neteq_;
   NetEq::Config config_;
   std::unique_ptr<test::RtpFileSource> rtp_source_;
   std::unique_ptr<test::Packet> packet_;
-  unsigned int sim_clock_;
   AudioFrame out_frame_;
   int output_sample_rate_;
   int algorithmic_delay_ms_;
@@ -306,16 +307,16 @@ const size_t NetEqDecodingTest::kBlockSize32kHz;
 const int NetEqDecodingTest::kInitSampleRateHz;
 
 NetEqDecodingTest::NetEqDecodingTest()
-    : neteq_(NULL),
+    : clock_(0),
+      neteq_(NULL),
       config_(),
-      sim_clock_(0),
       output_sample_rate_(kInitSampleRateHz),
       algorithmic_delay_ms_(0) {
   config_.sample_rate_hz = kInitSampleRateHz;
 }
 
 void NetEqDecodingTest::SetUp() {
-  neteq_ = NetEq::Create(config_, CreateBuiltinAudioDecoderFactory());
+  neteq_ = NetEq::Create(config_, &clock_, CreateBuiltinAudioDecoderFactory());
   NetEqNetworkStatistics stat;
   ASSERT_EQ(0, neteq_->NetworkStatistics(&stat));
   algorithmic_delay_ms_ = stat.current_buffer_size_ms;
@@ -333,7 +334,7 @@ void NetEqDecodingTest::OpenInputFile(const std::string& rtp_file) {
 
 void NetEqDecodingTest::Process() {
   // Check if time to receive.
-  while (packet_ && sim_clock_ >= packet_->time_ms()) {
+  while (packet_ && clock_.TimeInMilliseconds() >= packet_->time_ms()) {
     if (packet_->payload_length_bytes() > 0) {
 #ifndef WEBRTC_CODEC_ISAC
       // Ignore payload type 104 (iSAC-swb) if ISAC is not supported.
@@ -363,7 +364,7 @@ void NetEqDecodingTest::Process() {
   EXPECT_EQ(output_sample_rate_, neteq_->last_output_sample_rate_hz());
 
   // Increase time.
-  sim_clock_ += kTimeStepMs;
+  clock_.AdvanceTimeMilliseconds(kTimeStepMs);
 }
 
 void NetEqDecodingTest::DecodeAndCompare(
@@ -394,7 +395,7 @@ void NetEqDecodingTest::DecodeAndCompare(
         output.AddResult(out_frame_.data(), out_frame_.samples_per_channel_));
 
     // Query the network statistics API once per second
-    if (sim_clock_ % 1000 == 0) {
+    if (clock_.TimeInMilliseconds() % 1000 == 0) {
       // Process NetworkStatistics.
       NetEqNetworkStatistics current_network_stats;
       ASSERT_EQ(0, neteq_->NetworkStatistics(&current_network_stats));
@@ -1435,7 +1436,8 @@ class NetEqDecodingTestTwoInstances : public NetEqDecodingTest {
   }
 
   void CreateSecondInstance() {
-    neteq2_.reset(NetEq::Create(config2_, CreateBuiltinAudioDecoderFactory()));
+    neteq2_.reset(
+        NetEq::Create(config2_, &clock_, CreateBuiltinAudioDecoderFactory()));
     ASSERT_TRUE(neteq2_);
     LoadDecoders(neteq2_.get());
   }

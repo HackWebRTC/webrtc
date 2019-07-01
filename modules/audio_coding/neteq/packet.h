@@ -16,6 +16,7 @@
 #include <memory>
 
 #include "api/audio_codecs/audio_decoder.h"
+#include "api/rtp_packet_info.h"
 #include "modules/audio_coding/neteq/tick_timer.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
@@ -72,6 +73,7 @@ struct Packet {
   // Datagram excluding RTP header and header extension.
   rtc::Buffer payload;
   Priority priority;
+  RtpPacketInfo packet_info;
   std::unique_ptr<TickTimer::Stopwatch> waiting_time;
   std::unique_ptr<AudioDecoder::EncodedAudioFrame> frame;
 
