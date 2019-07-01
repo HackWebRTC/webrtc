@@ -77,7 +77,7 @@ std::vector<RtpCodecCapability> FilterVideoCodecCapabilities(
       output_codecs.push_back(codec);
     } else if ((codec.name == cricket::kRedCodecName ||
                 codec.name == cricket::kUlpfecCodecName) &&
-               use_flexfec) {
+               use_ulpfec) {
       // Red and ulpfec should be enabled or disabled together.
       output_codecs.push_back(codec);
     }
