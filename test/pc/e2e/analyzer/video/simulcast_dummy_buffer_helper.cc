@@ -32,11 +32,11 @@ rtc::scoped_refptr<webrtc::VideoFrameBuffer> CreateDummyFrameBuffer() {
 
 bool IsDummyFrameBuffer(
     rtc::scoped_refptr<webrtc::VideoFrameBuffer> video_frame_buffer) {
-  rtc::scoped_refptr<webrtc::I420BufferInterface> buffer =
-      video_frame_buffer->ToI420();
-  if (buffer->width() != 2 || buffer->height() != 2) {
+  if (video_frame_buffer->width() != 2 || video_frame_buffer->height() != 2) {
     return false;
   }
+  rtc::scoped_refptr<webrtc::I420BufferInterface> buffer =
+      video_frame_buffer->ToI420();
   if (memcmp(buffer->DataY(), kIrrelatedSimulcastStreamFrameData, 2) != 0) {
     return false;
   }
