@@ -135,8 +135,6 @@ class ChannelReceiveInterface : public RtpPacketSinkInterface {
   // Used for obtaining RTT for a receive-only channel.
   virtual void SetAssociatedSendChannel(
       const ChannelSendInterface* channel) = 0;
-
-  virtual std::vector<RtpSource> GetSources() const = 0;
 };
 
 std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(

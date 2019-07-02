@@ -30,7 +30,6 @@
 #include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "modules/rtp_rtcp/include/remote_ntp_time_estimator.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp.h"
-#include "modules/rtp_rtcp/source/contributing_sources.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
@@ -155,8 +154,6 @@ class ChannelReceive : public ChannelReceiveInterface,
   // Used for obtaining RTT for a receive-only channel.
   void SetAssociatedSendChannel(const ChannelSendInterface* channel) override;
 
-  std::vector<RtpSource> GetSources() const override;
-
   // TODO(sukhanov): Return const pointer. It requires making media transport
   // getters like GetLatestTargetTransferRate to be also const.
   MediaTransportInterface* media_transport() const {
@@ -213,16 +210,13 @@ class ChannelReceive : public ChannelReceiveInterface,
   std::unique_ptr<RtpRtcp> _rtpRtcpModule;
   const uint32_t remote_ssrc_;
 
-  // Info for GetSources and GetSyncInfo is updated on network or worker thread,
-  // queried on the worker thread.
-  rtc::CriticalSection rtp_sources_lock_;
-  ContributingSources contributing_sources_ RTC_GUARDED_BY(&rtp_sources_lock_);
+  // Info for GetSyncInfo is updated on network or worker thread, and queried on
+  // the worker thread.
+  rtc::CriticalSection sync_info_lock_;
   absl::optional<uint32_t> last_received_rtp_timestamp_
-      RTC_GUARDED_BY(&rtp_sources_lock_);
+      RTC_GUARDED_BY(&sync_info_lock_);
   absl::optional<int64_t> last_received_rtp_system_time_ms_
-      RTC_GUARDED_BY(&rtp_sources_lock_);
-  absl::optional<uint8_t> last_received_rtp_audio_level_
-      RTC_GUARDED_BY(&rtp_sources_lock_);
+      RTC_GUARDED_BY(&sync_info_lock_);
 
   std::unique_ptr<AudioCodingModule> audio_coding_;
   AudioSinkInterface* audio_sink_ = nullptr;
@@ -555,24 +549,6 @@ absl::optional<std::pair<int, SdpAudioFormat>>
   return audio_coding_->ReceiveCodec();
 }
 
-std::vector<webrtc::RtpSource> ChannelReceive::GetSources() const {
-  RTC_DCHECK(worker_thread_checker_.IsCurrent());
-  int64_t now_ms = rtc::TimeMillis();
-  std::vector<RtpSource> sources;
-  {
-    rtc::CritScope cs(&rtp_sources_lock_);
-    sources = contributing_sources_.GetSources(now_ms);
-    if (last_received_rtp_system_time_ms_ >=
-        now_ms - ContributingSources::kHistoryMs) {
-      RTC_DCHECK(last_received_rtp_timestamp_.has_value());
-      sources.emplace_back(*last_received_rtp_system_time_ms_, remote_ssrc_,
-                           RtpSourceType::SSRC, last_received_rtp_audio_level_,
-                           *last_received_rtp_timestamp_);
-    }
-  }
-  return sources;
-}
-
 void ChannelReceive::SetReceiveCodecs(
     const std::map<int, SdpAudioFormat>& codecs) {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
@@ -586,22 +562,11 @@ void ChannelReceive::SetReceiveCodecs(
 // May be called on either worker thread or network thread.
 void ChannelReceive::OnRtpPacket(const RtpPacketReceived& packet) {
   int64_t now_ms = rtc::TimeMillis();
-  uint8_t audio_level;
-  bool voice_activity;
-  bool has_audio_level =
-      packet.GetExtension<::webrtc::AudioLevel>(&voice_activity, &audio_level);
 
   {
-    rtc::CritScope cs(&rtp_sources_lock_);
+    rtc::CritScope cs(&sync_info_lock_);
     last_received_rtp_timestamp_ = packet.Timestamp();
     last_received_rtp_system_time_ms_ = now_ms;
-    if (has_audio_level)
-      last_received_rtp_audio_level_ = audio_level;
-    std::vector<uint32_t> csrcs = packet.Csrcs();
-    contributing_sources_.Update(
-        now_ms, csrcs,
-        has_audio_level ? absl::optional<uint8_t>(audio_level) : absl::nullopt,
-        packet.Timestamp());
   }
 
   // Store playout timestamp for the received RTP packet
@@ -875,7 +840,7 @@ absl::optional<Syncable::Info> ChannelReceive::GetSyncInfo() const {
     return absl::nullopt;
   }
   {
-    rtc::CritScope cs(&rtp_sources_lock_);
+    rtc::CritScope cs(&sync_info_lock_);
     if (!last_received_rtp_timestamp_ || !last_received_rtp_system_time_ms_) {
       return absl::nullopt;
     }
