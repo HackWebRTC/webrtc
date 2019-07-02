@@ -355,6 +355,54 @@ TEST(PCFullStackTest, ForemanCifLink150kbpsWithoutPacketLoss) {
   fixture->Run(std::move(run_params));
 }
 
+TEST(PCFullStackTest, ForemanCifLink130kbps100msDelay1PercentPacketLossUlpfec) {
+  std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
+      CreateNetworkEmulationManager();
+  BuiltInNetworkBehaviorConfig config;
+  config.link_capacity_kbps = 130;
+  config.queue_delay_ms = 100;
+  config.loss_percent = 1;
+  auto fixture = CreateTestFixture(
+      "pc_foreman_cif_link_130kbps_delay100ms_loss1_ulpfec",
+      CreateTwoNetworkLinks(network_emulation_manager.get(), config),
+      [](PeerConfigurer* alice) {
+        VideoConfig video(352, 288, 30);
+        video.input_file_name = ClipNameToClipPath("foreman_cif");
+        video.stream_label = "alice-video";
+        alice->AddVideoConfig(std::move(video));
+      },
+      [](PeerConfigurer* bob) {});
+  RunParams run_params(TimeDelta::seconds(kTestDurationSec));
+  run_params.video_codec_name = cricket::kVp8CodecName;
+  run_params.use_flex_fec = false;
+  run_params.use_ulp_fec = true;
+  fixture->Run(std::move(run_params));
+}
+
+TEST(PCFullStackTest, ForemanCifLink50kbps100msDelay1PercentPacketLossUlpfec) {
+  std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
+      CreateNetworkEmulationManager();
+  BuiltInNetworkBehaviorConfig config;
+  config.link_capacity_kbps = 50;
+  config.queue_delay_ms = 100;
+  config.loss_percent = 1;
+  auto fixture = CreateTestFixture(
+      "pc_foreman_cif_link_50kbps_delay100ms_loss1_ulpfec",
+      CreateTwoNetworkLinks(network_emulation_manager.get(), config),
+      [](PeerConfigurer* alice) {
+        VideoConfig video(352, 288, 30);
+        video.input_file_name = ClipNameToClipPath("foreman_cif");
+        video.stream_label = "alice-video";
+        alice->AddVideoConfig(std::move(video));
+      },
+      [](PeerConfigurer* bob) {});
+  RunParams run_params(TimeDelta::seconds(kTestDurationSec));
+  run_params.video_codec_name = cricket::kVp8CodecName;
+  run_params.use_flex_fec = false;
+  run_params.use_ulp_fec = true;
+  fixture->Run(std::move(run_params));
+}
+
 // Restricted network and encoder overproducing by 30%.
 TEST(PCFullStackTest, ForemanCifLink150kbpsBadRateController) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
