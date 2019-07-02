@@ -18,6 +18,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "api/array_view.h"
+#include "api/transport/field_trial_based_config.h"
 #include "logging/rtc_event_log/events/rtc_event_rtp_packet_outgoing.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/rtp_rtcp/include/rtp_cvo.h"
@@ -123,42 +124,41 @@ RtpPacketSender::Priority PacketTypeToPriority(RtpPacketToSend::Type type) {
   return RtpPacketSender::Priority::kLowPriority;
 }
 
+bool IsEnabled(absl::string_view name,
+               const WebRtcKeyValueConfig* field_trials) {
+  FieldTrialBasedConfig default_trials;
+  auto& trials = field_trials ? *field_trials : default_trials;
+  return trials.Lookup(name).find("Enabled") == 0;
+}
+
+bool IsDisabled(absl::string_view name,
+                const WebRtcKeyValueConfig* field_trials) {
+  FieldTrialBasedConfig default_trials;
+  auto& trials = field_trials ? *field_trials : default_trials;
+  return trials.Lookup(name).find("Disabled") == 0;
+}
+
 }  // namespace
 
-RTPSender::RTPSender(
-    bool audio,
-    Clock* clock,
-    Transport* transport,
-    RtpPacketPacer* paced_sender,
-    absl::optional<uint32_t> flexfec_ssrc,
-    TransportSequenceNumberAllocator* sequence_number_allocator,
-    TransportFeedbackObserver* transport_feedback_observer,
-    BitrateStatisticsObserver* bitrate_callback,
-    SendSideDelayObserver* send_side_delay_observer,
-    RtcEventLog* event_log,
-    SendPacketObserver* send_packet_observer,
-    RateLimiter* retransmission_rate_limiter,
-    OverheadObserver* overhead_observer,
-    bool populate_network2_timestamp,
-    FrameEncryptorInterface* frame_encryptor,
-    bool require_frame_encryption,
-    bool extmap_allow_mixed,
-    const WebRtcKeyValueConfig& field_trials)
-    : clock_(clock),
+RTPSender::RTPSender(const RtpRtcp::Configuration& config)
+    : clock_(config.clock),
       random_(clock_->TimeInMicroseconds()),
-      audio_configured_(audio),
-      flexfec_ssrc_(flexfec_ssrc),
-      paced_sender_(paced_sender),
-      transport_sequence_number_allocator_(sequence_number_allocator),
-      transport_feedback_observer_(transport_feedback_observer),
-      transport_(transport),
+      audio_configured_(config.audio),
+      flexfec_ssrc_(config.flexfec_sender
+                        ? absl::make_optional(config.flexfec_sender->ssrc())
+                        : absl::nullopt),
+      paced_sender_(config.paced_sender),
+      transport_sequence_number_allocator_(
+          config.transport_sequence_number_allocator),
+      transport_feedback_observer_(config.transport_feedback_callback),
+      transport_(config.outgoing_transport),
       sending_media_(true),  // Default to sending media.
       force_part_of_allocation_(false),
       max_packet_size_(IP_PACKET_SIZE - 28),  // Default is IP-v4/UDP.
       last_payload_type_(-1),
-      rtp_header_extension_map_(extmap_allow_mixed),
-      packet_history_(clock),
-      flexfec_packet_history_(clock),
+      rtp_header_extension_map_(config.extmap_allow_mixed),
+      packet_history_(clock_),
+      flexfec_packet_history_(clock_),
       // Statistics
       send_delays_(),
       max_delay_it_(send_delays_.end()),
@@ -168,12 +168,13 @@ RTPSender::RTPSender(
       total_bitrate_sent_(kBitrateStatisticsWindowMs,
                           RateStatistics::kBpsScale),
       nack_bitrate_sent_(kBitrateStatisticsWindowMs, RateStatistics::kBpsScale),
-      send_side_delay_observer_(send_side_delay_observer),
-      event_log_(event_log),
-      send_packet_observer_(send_packet_observer),
-      bitrate_callback_(bitrate_callback),
+      send_side_delay_observer_(config.send_side_delay_observer),
+      event_log_(config.event_log),
+      send_packet_observer_(config.send_packet_observer),
+      bitrate_callback_(config.send_bitrate_observer),
       // RTP variables
       sequence_number_forced_(false),
+      ssrc_(config.media_send_ssrc),
       last_rtp_timestamp_(0),
       capture_time_ms_(0),
       last_timestamp_time_ms_(0),
@@ -181,19 +182,19 @@ RTPSender::RTPSender(
       last_packet_marker_bit_(false),
       csrcs_(),
       rtx_(kRtxOff),
+      ssrc_rtx_(config.rtx_send_ssrc),
       rtp_overhead_bytes_per_packet_(0),
-      retransmission_rate_limiter_(retransmission_rate_limiter),
-      overhead_observer_(overhead_observer),
-      populate_network2_timestamp_(populate_network2_timestamp),
+      retransmission_rate_limiter_(config.retransmission_rate_limiter),
+      overhead_observer_(config.overhead_observer),
+      populate_network2_timestamp_(config.populate_network2_timestamp),
       send_side_bwe_with_overhead_(
-          field_trials.Lookup("WebRTC-SendSideBwe-WithOverhead")
-              .find("Enabled") == 0),
+          IsEnabled("WebRTC-SendSideBwe-WithOverhead", config.field_trials)),
       legacy_packet_history_storage_mode_(
-          field_trials.Lookup("WebRTC-UseRtpPacketHistoryLegacyStorageMode")
-              .find("Enabled") == 0),
+          IsEnabled("WebRTC-UseRtpPacketHistoryLegacyStorageMode",
+                    config.field_trials)),
       payload_padding_prefer_useful_packets_(
-          field_trials.Lookup("WebRTC-PayloadPadding-UseMostUsefulPacket")
-              .find("Disabled") != 0) {
+          !IsDisabled("WebRTC-PayloadPadding-UseMostUsefulPacket",
+                      config.field_trials)) {
   // This random initialization is not intended to be cryptographic strong.
   timestamp_offset_ = random_.Rand<uint32_t>();
   // Random start, 16 bits. Can't be 0.
