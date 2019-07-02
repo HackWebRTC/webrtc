@@ -2567,7 +2567,8 @@ static void RemoveInvalidRidsFromSimulcast(
   // Add any rid that is not in the valid list to the remove set.
   for (const SimulcastLayer& send_layer : all_send_layers) {
     if (absl::c_none_of(valid_rids, [&send_layer](const RidDescription& rid) {
-          return send_layer.rid == rid.rid;
+          return send_layer.rid == rid.rid &&
+                 rid.direction == cricket::RidDirection::kSend;
         })) {
       to_remove.insert(send_layer.rid);
     }
@@ -2575,10 +2576,11 @@ static void RemoveInvalidRidsFromSimulcast(
 
   // Add any rid that is not in the valid list to the remove set.
   for (const SimulcastLayer& receive_layer : all_receive_layers) {
-    if (absl::c_none_of(valid_rids,
-                        [&receive_layer](const RidDescription& rid) {
-                          return receive_layer.rid == rid.rid;
-                        })) {
+    if (absl::c_none_of(
+            valid_rids, [&receive_layer](const RidDescription& rid) {
+              return receive_layer.rid == rid.rid &&
+                     rid.direction == cricket::RidDirection::kReceive;
+            })) {
       to_remove.insert(receive_layer.rid);
     }
   }

@@ -4496,6 +4496,61 @@ TEST_F(WebRtcSdpTest, TestDeserializeIgnoresDuplicateRidLines) {
   CompareRidDescriptionIds(rids, {"1", "3"});
 }
 
+TEST_F(WebRtcSdpTest, TestDeserializeRidSendDirection) {
+  std::string sdp = kUnifiedPlanSdpFullStringNoSsrc;
+  sdp += "a=rid:1 recv\r\n";
+  sdp += "a=rid:2 recv\r\n";
+  sdp += "a=simulcast:send 1;2\r\n";
+  JsepSessionDescription output(kDummyType);
+  SdpParseError error;
+  EXPECT_TRUE(webrtc::SdpDeserialize(sdp, &output, &error));
+  const cricket::ContentInfos& contents = output.description()->contents();
+  const cricket::MediaContentDescription* media =
+      contents.back().media_description();
+  EXPECT_FALSE(media->HasSimulcast());
+}
+
+TEST_F(WebRtcSdpTest, TestDeserializeRidRecvDirection) {
+  std::string sdp = kUnifiedPlanSdpFullStringNoSsrc;
+  sdp += "a=rid:1 send\r\n";
+  sdp += "a=rid:2 send\r\n";
+  sdp += "a=simulcast:recv 1;2\r\n";
+  JsepSessionDescription output(kDummyType);
+  SdpParseError error;
+  EXPECT_TRUE(webrtc::SdpDeserialize(sdp, &output, &error));
+  const cricket::ContentInfos& contents = output.description()->contents();
+  const cricket::MediaContentDescription* media =
+      contents.back().media_description();
+  EXPECT_FALSE(media->HasSimulcast());
+}
+
+TEST_F(WebRtcSdpTest, TestDeserializeIgnoresWrongRidDirectionLines) {
+  std::string sdp = kUnifiedPlanSdpFullStringNoSsrc;
+  sdp += "a=rid:1 send\r\n";
+  sdp += "a=rid:2 send\r\n";
+  sdp += "a=rid:3 send\r\n";
+  sdp += "a=rid:4 recv\r\n";
+  sdp += "a=rid:5 recv\r\n";
+  sdp += "a=rid:6 recv\r\n";
+  sdp += "a=simulcast:send 1;5;3 recv 4;2;6\r\n";
+  JsepSessionDescription output(kDummyType);
+  SdpParseError error;
+  EXPECT_TRUE(webrtc::SdpDeserialize(sdp, &output, &error));
+  const cricket::ContentInfos& contents = output.description()->contents();
+  const cricket::MediaContentDescription* media =
+      contents.back().media_description();
+  EXPECT_TRUE(media->HasSimulcast());
+  const SimulcastDescription& simulcast = media->simulcast_description();
+  EXPECT_EQ(2ul, simulcast.send_layers().size());
+  EXPECT_EQ(2ul, simulcast.receive_layers().size());
+  EXPECT_EQ(2ul, simulcast.send_layers().GetAllLayers().size());
+  EXPECT_EQ(2ul, simulcast.receive_layers().GetAllLayers().size());
+
+  EXPECT_FALSE(media->streams().empty());
+  const std::vector<RidDescription>& rids = media->streams()[0].rids();
+  CompareRidDescriptionIds(rids, {"1", "3"});
+}
+
 // Simulcast serialization integration test.
 // This test will serialize and deserialize the description and compare.
 // More detailed tests for parsing simulcast can be found in
