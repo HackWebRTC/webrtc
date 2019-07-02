@@ -1034,7 +1034,7 @@ bool PeerConnection::Initialize(
   config.active_reset_srtp_params = configuration.active_reset_srtp_params;
 
   use_datagram_transport_ = datagram_transport_config_.enabled &&
-                            configuration_.use_datagram_transport.value_or(
+                            configuration.use_datagram_transport.value_or(
                                 datagram_transport_config_.default_value);
   if (use_datagram_transport_ || configuration.use_media_transport ||
       configuration.use_media_transport_for_data_channels) {
