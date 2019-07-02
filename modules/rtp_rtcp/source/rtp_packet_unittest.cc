@@ -952,4 +952,25 @@ TEST(RtpPacketTest,
             kFeedbackRequest->sequence_count);
 }
 
+TEST(RtpPacketTest, IsExtensionReserved) {
+  // Register two extensions.
+  RtpPacketToSend::ExtensionManager extensions;
+  extensions.Register(kRtpExtensionTransmissionTimeOffset,
+                      kTransmissionOffsetExtensionId);
+  extensions.Register(kRtpExtensionAudioLevel, kAudioLevelExtensionId);
+
+  RtpPacketReceived packet(&extensions);
+
+  // Reserve slot for only one of them.
+  EXPECT_TRUE(packet.ReserveExtension<TransmissionOffset>());
+  // Non-registered extension cannot be reserved.
+  EXPECT_FALSE(packet.ReserveExtension<VideoContentTypeExtension>());
+
+  // Only the extension that is both registered and reserved matches
+  // IsExtensionReserved().
+  EXPECT_FALSE(packet.IsExtensionReserved<VideoContentTypeExtension>());
+  EXPECT_FALSE(packet.IsExtensionReserved<AudioLevel>());
+  EXPECT_TRUE(packet.IsExtensionReserved<TransmissionOffset>());
+}
+
 }  // namespace webrtc

@@ -617,4 +617,13 @@ bool RtpPacket::HasExtension(ExtensionType type) const {
   return !FindExtension(type).empty();
 }
 
+bool RtpPacket::IsExtensionReserved(ExtensionType type) const {
+  uint8_t id = extensions_.GetId(type);
+  if (id == ExtensionManager::kInvalidId) {
+    // Extension not registered.
+    return false;
+  }
+  return FindExtensionInfo(id) != nullptr;
+}
+
 }  // namespace webrtc
