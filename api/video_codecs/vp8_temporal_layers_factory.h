@@ -23,11 +23,6 @@ class Vp8TemporalLayersFactory : public Vp8FrameBufferControllerFactory {
 
   std::unique_ptr<Vp8FrameBufferControllerFactory> Clone() const override;
 
-  // TODO(bugs.webrtc.org/10769): Update downstream projects, then remove.
-  std::unique_ptr<Vp8FrameBufferController> Create(
-      const VideoCodec& codec,
-      const VideoEncoder::Settings& settings) override;
-
   std::unique_ptr<Vp8FrameBufferController> Create(
       const VideoCodec& codec,
       const VideoEncoder::Settings& settings,

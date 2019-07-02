@@ -25,12 +25,6 @@ namespace webrtc {
 
 std::unique_ptr<Vp8FrameBufferController> Vp8TemporalLayersFactory::Create(
     const VideoCodec& codec,
-    const VideoEncoder::Settings& settings) {
-  return Create(codec, settings, nullptr);
-}
-
-std::unique_ptr<Vp8FrameBufferController> Vp8TemporalLayersFactory::Create(
-    const VideoCodec& codec,
     const VideoEncoder::Settings& settings,
     FecControllerOverride* fec_controller_override) {
   std::vector<std::unique_ptr<Vp8FrameBufferController>> controllers;
