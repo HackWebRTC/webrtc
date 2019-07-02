@@ -141,6 +141,8 @@ class LibvpxVp8Encoder : public VideoEncoder {
       std::string group_name);
   FramerateController framerate_controller_;
   int num_steady_state_frames_;
+
+  FecControllerOverride* fec_controller_override_;
 };
 
 }  // namespace webrtc

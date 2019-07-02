@@ -58,7 +58,8 @@ int32_t FakeVP8Encoder::InitEncode(const VideoCodec* config,
   }
 
   Vp8TemporalLayersFactory factory;
-  frame_buffer_controller_ = factory.Create(*config, settings);
+  frame_buffer_controller_ =
+      factory.Create(*config, settings, &fec_controller_override_);
 
   return WEBRTC_VIDEO_CODEC_OK;
 }

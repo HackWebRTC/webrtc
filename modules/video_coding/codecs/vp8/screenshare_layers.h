@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "api/fec_controller_override.h"
 #include "api/video_codecs/vp8_frame_config.h"
 #include "api/video_codecs/vp8_temporal_layers.h"
 #include "modules/video_coding/codecs/vp8/include/temporal_layers_checker.h"
@@ -38,9 +37,6 @@ class ScreenshareLayers final : public Vp8FrameBufferController {
   ~ScreenshareLayers() override;
 
   void SetQpLimits(size_t stream_index, int min_qp, int max_qp) override;
-
-  void SetFecControllerOverride(
-      FecControllerOverride* fec_controller_override) override;
 
   size_t StreamCount() const override;
 

@@ -290,7 +290,8 @@ LibvpxVp8Encoder::LibvpxVp8Encoder(
       variable_framerate_experiment_(ParseVariableFramerateConfig(
           "WebRTC-VP8VariableFramerateScreenshare")),
       framerate_controller_(variable_framerate_experiment_.framerate_limit),
-      num_steady_state_frames_(0) {
+      num_steady_state_frames_(0),
+      fec_controller_override_(nullptr) {
   // TODO(eladalon/ilnik): These reservations might be wasting memory.
   // InitEncode() is resizing to the actual size, which might be smaller.
   raw_images_.reserve(kMaxSimulcastStreams);
@@ -452,8 +453,11 @@ void LibvpxVp8Encoder::SetStreamState(bool send_stream, int stream_idx) {
 
 void LibvpxVp8Encoder::SetFecControllerOverride(
     FecControllerOverride* fec_controller_override) {
-  RTC_DCHECK(fec_controller_override);
-  // TODO(bugs.webrtc.og/10769): Pass on to the frame buffer controller.
+  // TODO(bugs.webrtc.org/10769): Update downstream and remove ability to
+  // pass nullptr.
+  // RTC_DCHECK(fec_controller_override);
+  RTC_DCHECK(!fec_controller_override_);
+  fec_controller_override_ = fec_controller_override;
 }
 
 // TODO(eladalon): s/inst/codec_settings/g.
@@ -491,11 +495,12 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
 
   RTC_DCHECK(!frame_buffer_controller_);
   if (frame_buffer_controller_factory_) {
-    frame_buffer_controller_ =
-        frame_buffer_controller_factory_->Create(*inst, settings);
+    frame_buffer_controller_ = frame_buffer_controller_factory_->Create(
+        *inst, settings, fec_controller_override_);
   } else {
     Vp8TemporalLayersFactory factory;
-    frame_buffer_controller_ = factory.Create(*inst, settings);
+    frame_buffer_controller_ =
+        factory.Create(*inst, settings, fec_controller_override_);
   }
   RTC_DCHECK(frame_buffer_controller_);
 

@@ -106,13 +106,6 @@ class Vp8FrameBufferController {
   // The limits are suggestion-only; the controller is allowed to exceed them.
   virtual void SetQpLimits(size_t stream_index, int min_qp, int max_qp) = 0;
 
-  // Set a FecControllerOverride, through which the bandwidth allocation
-  // decisions made by FecController may be overridden.
-  // TODO(bugs.webrtc.org/10769): Update downstream projects, then make
-  // this pure-virtual.
-  virtual void SetFecControllerOverride(
-      FecControllerOverride* fec_controller_override) {}
-
   // Number of streamed controlled by |this|.
   virtual size_t StreamCount() const = 0;
 
@@ -188,9 +181,24 @@ class Vp8FrameBufferControllerFactory {
   virtual std::unique_ptr<Vp8FrameBufferControllerFactory> Clone() const = 0;
 
   // Create a Vp8FrameBufferController instance.
+  // TODO(bugs.webrtc.org/10769): Update downstream projects, then remove
+  // version without |fec_controller_override| and make the other version
+  // pure-virtual.
+  // (In theory, if neither version is overridden, stack overflow would occur.
+  // In practice, all subclasses override at least one version, and following
+  // the update of downstream projects, only one pure-virtual version will
+  // remain.)
   virtual std::unique_ptr<Vp8FrameBufferController> Create(
       const VideoCodec& codec,
-      const VideoEncoder::Settings& settings) = 0;
+      const VideoEncoder::Settings& settings) {
+    return Create(codec, settings, nullptr);
+  }
+  virtual std::unique_ptr<Vp8FrameBufferController> Create(
+      const VideoCodec& codec,
+      const VideoEncoder::Settings& settings,
+      FecControllerOverride* fec_controller_override) {
+    return Create(codec, settings);
+  }
 };
 
 }  // namespace webrtc

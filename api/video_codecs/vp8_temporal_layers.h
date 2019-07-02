@@ -32,14 +32,12 @@ enum class Vp8TemporalLayersType { kFixedPattern, kBitrateDynamic };
 // realize a temporal layer structure.
 class Vp8TemporalLayers final : public Vp8FrameBufferController {
  public:
-  explicit Vp8TemporalLayers(
-      std::vector<std::unique_ptr<Vp8FrameBufferController>>&& controllers);
+  Vp8TemporalLayers(
+      std::vector<std::unique_ptr<Vp8FrameBufferController>>&& controllers,
+      FecControllerOverride* fec_controller_override);
   ~Vp8TemporalLayers() override = default;
 
   void SetQpLimits(size_t stream_index, int min_qp, int max_qp) override;
-
-  void SetFecControllerOverride(
-      FecControllerOverride* fec_controller_override) override;
 
   size_t StreamCount() const override;
 

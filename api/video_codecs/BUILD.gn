@@ -120,6 +120,7 @@ rtc_static_library("vp8_temporal_layers_factory") {
 
   deps = [
     ":video_codecs_api",
+    "../:fec_controller_api",
     "../../modules/video_coding:video_coding_utility",
     "../../modules/video_coding:webrtc_vp8_temporal_layers",
     "../../rtc_base:checks",

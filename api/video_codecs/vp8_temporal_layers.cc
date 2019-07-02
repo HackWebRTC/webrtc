@@ -18,7 +18,8 @@
 namespace webrtc {
 
 Vp8TemporalLayers::Vp8TemporalLayers(
-    std::vector<std::unique_ptr<Vp8FrameBufferController>>&& controllers)
+    std::vector<std::unique_ptr<Vp8FrameBufferController>>&& controllers,
+    FecControllerOverride* fec_controller_override)
     : controllers_(std::move(controllers)) {
   RTC_DCHECK(!controllers_.empty());
   RTC_DCHECK(absl::c_none_of(
@@ -26,6 +27,9 @@ Vp8TemporalLayers::Vp8TemporalLayers(
       [](const std::unique_ptr<Vp8FrameBufferController>& controller) {
         return controller.get() == nullptr;
       }));
+  if (fec_controller_override) {
+    fec_controller_override->SetFecAllowed(true);
+  }
 }
 
 void Vp8TemporalLayers::SetQpLimits(size_t stream_index,
@@ -33,11 +37,6 @@ void Vp8TemporalLayers::SetQpLimits(size_t stream_index,
                                     int max_qp) {
   RTC_DCHECK_LT(stream_index, controllers_.size());
   return controllers_[stream_index]->SetQpLimits(0, min_qp, max_qp);
-}
-
-void Vp8TemporalLayers::SetFecControllerOverride(
-    FecControllerOverride* fec_controller_override) {
-  // Ignore.
 }
 
 size_t Vp8TemporalLayers::StreamCount() const {

@@ -17,6 +17,7 @@
 
 #include "absl/memory/memory.h"
 #include "api/task_queue/default_task_queue_factory.h"
+#include "api/test/mock_fec_controller_override.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_bitrate_allocation.h"
@@ -801,7 +802,8 @@ class VideoStreamEncoderTest : public ::testing::Test {
         // Simulate setting up temporal layers, in order to validate the life
         // cycle of these objects.
         Vp8TemporalLayersFactory factory;
-        frame_buffer_controller_ = factory.Create(*config, settings);
+        frame_buffer_controller_ =
+            factory.Create(*config, settings, &fec_controller_override_);
       }
       if (force_init_encode_failed_) {
         initialized_ = EncoderState::kInitializationFailed;
@@ -869,6 +871,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
     bool expect_null_frame_ = false;
     EncodedImageCallback* encoded_image_callback_
         RTC_GUARDED_BY(local_crit_sect_) = nullptr;
+    MockFecControllerOverride fec_controller_override_;
   };
 
   class TestSink : public VideoStreamEncoder::EncoderSink {
