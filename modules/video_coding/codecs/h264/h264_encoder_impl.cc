@@ -337,18 +337,11 @@ void H264EncoderImpl::SetRates(const RateControlParameters& parameters) {
 
   if (parameters.bitrate.get_sum_bps() == 0) {
     // Encoder paused, turn off all encoding.
-    for (size_t i = 0; i < configurations_.size(); ++i)
+    for (size_t i = 0; i < configurations_.size(); ++i) {
       configurations_[i].SetStreamState(false);
+    }
     return;
   }
-
-  // At this point, bitrate allocation should already match codec settings.
-  if (codec_.maxBitrate > 0)
-    RTC_DCHECK_LE(parameters.bitrate.get_sum_kbps(), codec_.maxBitrate);
-  RTC_DCHECK_GE(parameters.bitrate.get_sum_kbps(), codec_.minBitrate);
-  if (codec_.numberOfSimulcastStreams > 0)
-    RTC_DCHECK_GE(parameters.bitrate.get_sum_kbps(),
-                  codec_.simulcastStream[0].minBitrate);
 
   codec_.maxFramerate = static_cast<uint32_t>(parameters.framerate_fps);
 

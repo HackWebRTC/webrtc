@@ -99,36 +99,42 @@ CpuOveruseOptions GetCpuOveruseOptions(
   return options;
 }
 
-bool RequiresEncoderReset(const VideoCodec& previous_send_codec,
-                          const VideoCodec& new_send_codec) {
-  // Does not check startBitrate or maxFramerate.
-  if (new_send_codec.codecType != previous_send_codec.codecType ||
-      new_send_codec.width != previous_send_codec.width ||
-      new_send_codec.height != previous_send_codec.height ||
-      new_send_codec.maxBitrate != previous_send_codec.maxBitrate ||
-      new_send_codec.minBitrate != previous_send_codec.minBitrate ||
-      new_send_codec.qpMax != previous_send_codec.qpMax ||
+bool RequiresEncoderReset(const VideoCodec& prev_send_codec,
+                          const VideoCodec& new_send_codec,
+                          bool was_encode_called_since_last_initialization) {
+  // Does not check max/minBitrate or maxFramerate.
+  if (new_send_codec.codecType != prev_send_codec.codecType ||
+      new_send_codec.width != prev_send_codec.width ||
+      new_send_codec.height != prev_send_codec.height ||
+      new_send_codec.qpMax != prev_send_codec.qpMax ||
       new_send_codec.numberOfSimulcastStreams !=
-          previous_send_codec.numberOfSimulcastStreams ||
-      new_send_codec.mode != previous_send_codec.mode) {
+          prev_send_codec.numberOfSimulcastStreams ||
+      new_send_codec.mode != prev_send_codec.mode) {
+    return true;
+  }
+
+  if (!was_encode_called_since_last_initialization &&
+      (new_send_codec.startBitrate != prev_send_codec.startBitrate)) {
+    // If start bitrate has changed reconfigure encoder only if encoding had not
+    // yet started.
     return true;
   }
 
   switch (new_send_codec.codecType) {
     case kVideoCodecVP8:
-      if (new_send_codec.VP8() != previous_send_codec.VP8()) {
+      if (new_send_codec.VP8() != prev_send_codec.VP8()) {
         return true;
       }
       break;
 
     case kVideoCodecVP9:
-      if (new_send_codec.VP9() != previous_send_codec.VP9()) {
+      if (new_send_codec.VP9() != prev_send_codec.VP9()) {
         return true;
       }
       break;
 
     case kVideoCodecH264:
-      if (new_send_codec.H264() != previous_send_codec.H264()) {
+      if (new_send_codec.H264() != prev_send_codec.H264()) {
         return true;
       }
       break;
@@ -138,9 +144,18 @@ bool RequiresEncoderReset(const VideoCodec& previous_send_codec,
   }
 
   for (unsigned char i = 0; i < new_send_codec.numberOfSimulcastStreams; ++i) {
-    if (new_send_codec.simulcastStream[i] !=
-        previous_send_codec.simulcastStream[i])
+    if (new_send_codec.simulcastStream[i].width !=
+            prev_send_codec.simulcastStream[i].width ||
+        new_send_codec.simulcastStream[i].height !=
+            prev_send_codec.simulcastStream[i].height ||
+        new_send_codec.simulcastStream[i].numberOfTemporalLayers !=
+            prev_send_codec.simulcastStream[i].numberOfTemporalLayers ||
+        new_send_codec.simulcastStream[i].qpMax !=
+            prev_send_codec.simulcastStream[i].qpMax ||
+        new_send_codec.simulcastStream[i].active !=
+            prev_send_codec.simulcastStream[i].active) {
       return true;
+    }
   }
   return false;
 }
@@ -475,6 +490,7 @@ VideoStreamEncoder::VideoStreamEncoder(
       encoder_start_bitrate_bps_(0),
       max_data_payload_length_(0),
       encoder_paused_and_dropped_frame_(false),
+      was_encode_called_since_last_initialization_(false),
       clock_(clock),
       degradation_preference_(DegradationPreference::DISABLED),
       posted_frames_waiting_for_encode_(0),
@@ -726,7 +742,8 @@ void VideoStreamEncoder::ReconfigureEncoder() {
 
   // Reset (release existing encoder) if one exists and anything except
   // start bitrate or max framerate has changed.
-  const bool reset_required = RequiresEncoderReset(codec, send_codec_);
+  const bool reset_required = RequiresEncoderReset(
+      codec, send_codec_, was_encode_called_since_last_initialization_);
   send_codec_ = codec;
 
   // Keep the same encoder, as long as the video_format is unchanged.
@@ -771,6 +788,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
 
     frame_encode_metadata_writer_.Reset();
     last_encode_info_ms_ = absl::nullopt;
+    was_encode_called_since_last_initialization_ = false;
   }
 
   if (success) {
@@ -1361,6 +1379,7 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
   frame_encode_metadata_writer_.OnEncodeStarted(out_frame);
 
   const int32_t encode_status = encoder_->Encode(out_frame, &next_frame_types_);
+  was_encode_called_since_last_initialization_ = true;
 
   if (encode_status < 0) {
     RTC_LOG(LS_ERROR) << "Failed to encode frame. Error code: "

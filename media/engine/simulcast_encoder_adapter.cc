@@ -464,35 +464,6 @@ void SimulcastEncoderAdapter::SetRates(
     return;
   }
 
-  if (codec_.maxBitrate > 0 &&
-      parameters.bitrate.get_sum_kbps() > codec_.maxBitrate) {
-    RTC_LOG(LS_WARNING) << "Total bitrate " << parameters.bitrate.get_sum_kbps()
-                        << " exceeds max bitrate: " << codec_.maxBitrate;
-    return;
-  }
-
-  if (parameters.bitrate.get_sum_bps() > 0) {
-    // Make sure the bitrate fits the configured min bitrates. 0 is a special
-    // value that means paused, though, so leave it alone.
-    if (parameters.bitrate.get_sum_kbps() < codec_.minBitrate) {
-      RTC_LOG(LS_WARNING) << "Total bitrate "
-                          << parameters.bitrate.get_sum_kbps()
-                          << " is lower than minimum bitrate: "
-                          << codec_.minBitrate;
-      return;
-    }
-
-    if (codec_.numberOfSimulcastStreams > 0 &&
-        parameters.bitrate.get_sum_kbps() <
-            codec_.simulcastStream[0].minBitrate) {
-      RTC_LOG(LS_WARNING) << "Total bitrate "
-                          << parameters.bitrate.get_sum_kbps()
-                          << " is lower than minimum bitrate of base layer: "
-                          << codec_.simulcastStream[0].minBitrate;
-      return;
-    }
-  }
-
   codec_.maxFramerate = static_cast<uint32_t>(parameters.framerate_fps + 0.5);
 
   for (size_t stream_idx = 0; stream_idx < streaminfos_.size(); ++stream_idx) {

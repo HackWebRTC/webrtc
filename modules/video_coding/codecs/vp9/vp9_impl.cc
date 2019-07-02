@@ -391,19 +391,9 @@ void VP9EncoderImpl::SetRates(const RateControlParameters& parameters) {
                         << parameters.framerate_fps;
     return;
   }
-  // Update bit rate
-  if (codec_.maxBitrate > 0 &&
-      parameters.bitrate.get_sum_kbps() > codec_.maxBitrate) {
-    RTC_LOG(LS_WARNING) << "Target bitrate exceeds maximum: "
-                        << parameters.bitrate.get_sum_kbps() << " vs "
-                        << codec_.maxBitrate;
-    return;
-  }
 
   codec_.maxFramerate = static_cast<uint32_t>(parameters.framerate_fps + 0.5);
   requested_rate_settings_ = parameters;
-
-  return;
 }
 
 // TODO(eladalon): s/inst/codec_settings/g.

@@ -265,6 +265,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // Set when configuration must create a new encoder object, e.g.,
   // because of a codec change.
   bool pending_encoder_creation_ RTC_GUARDED_BY(&encoder_queue_);
+
   absl::optional<VideoFrameInfo> last_frame_info_
       RTC_GUARDED_BY(&encoder_queue_);
   int crop_width_ RTC_GUARDED_BY(&encoder_queue_);
@@ -274,6 +275,12 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   absl::optional<EncoderRateSettings> last_encoder_rate_settings_
       RTC_GUARDED_BY(&encoder_queue_);
   bool encoder_paused_and_dropped_frame_ RTC_GUARDED_BY(&encoder_queue_);
+
+  // Set to true if at least one frame was sent to encoder since last encoder
+  // initialization.
+  bool was_encode_called_since_last_initialization_
+      RTC_GUARDED_BY(&encoder_queue_);
+
   Clock* const clock_;
   // Counters used for deciding if the video resolution or framerate is
   // currently restricted, and if so, why, on a per degradation preference

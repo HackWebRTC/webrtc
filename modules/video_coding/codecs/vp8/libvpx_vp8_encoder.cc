@@ -362,14 +362,6 @@ void LibvpxVp8Encoder::SetRates(const RateControlParameters& parameters) {
     return;
   }
 
-  // At this point, bitrate allocation should already match codec settings.
-  if (codec_.maxBitrate > 0)
-    RTC_DCHECK_LE(parameters.bitrate.get_sum_kbps(), codec_.maxBitrate);
-  RTC_DCHECK_GE(parameters.bitrate.get_sum_kbps(), codec_.minBitrate);
-  if (codec_.numberOfSimulcastStreams > 0)
-    RTC_DCHECK_GE(parameters.bitrate.get_sum_kbps(),
-                  codec_.simulcastStream[0].minBitrate);
-
   codec_.maxFramerate = static_cast<uint32_t>(parameters.framerate_fps + 0.5);
 
   if (encoders_.size() > 1) {
