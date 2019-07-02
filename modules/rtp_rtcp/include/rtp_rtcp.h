@@ -28,6 +28,7 @@
 #include "modules/rtp_rtcp/include/rtp_packet_pacer.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
+#include "modules/rtp_rtcp/source/rtp_sender.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/deprecation.h"
 
@@ -40,7 +41,6 @@ class RateLimiter;
 class ReceiveStatisticsProvider;
 class RemoteBitrateEstimator;
 class RtcEventLog;
-class RTPSender;
 class Transport;
 class VideoBitrateAllocationObserver;
 
@@ -52,7 +52,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
  public:
   struct Configuration {
     Configuration();
-    Configuration(Configuration&& rhs);
 
     // True for a audio version of the RTP/RTCP module object false will create
     // a video version.
@@ -120,11 +119,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
     // If set, field trials are read from |field_trials|, otherwise
     // defaults to  webrtc::FieldTrialBasedConfig.
     const WebRtcKeyValueConfig* field_trials = nullptr;
-
-    // SSRCs for sending media and retransmission, respectively.
-    // FlexFec SSRC is fetched from |flexfec_sender|.
-    absl::optional<uint32_t> media_send_ssrc;
-    absl::optional<uint32_t> rtx_send_ssrc;
 
    private:
     RTC_DISALLOW_COPY_AND_ASSIGN(Configuration);
@@ -199,7 +193,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   uint32_t SSRC() const override = 0;
 
   // Sets SSRC, default is a random number.
-  // TODO(bugs.webrtc.org/10774): Remove.
   virtual void SetSSRC(uint32_t ssrc) = 0;
 
   // Sets the value for sending in the RID (and Repaired) RTP header extension.
@@ -227,7 +220,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
 
   // Sets the SSRC to use when sending RTX packets. This doesn't enable RTX,
   // only the SSRC is set.
-  // TODO(bugs.webrtc.org/10774): Remove.
   virtual void SetRtxSsrc(uint32_t ssrc) = 0;
 
   // Sets the payload type to use when sending RTX packets. Note that this

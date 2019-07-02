@@ -40,7 +40,6 @@ constexpr int32_t kDefaultAudioReportInterval = 5000;
 }  // namespace
 
 RtpRtcp::Configuration::Configuration() = default;
-RtpRtcp::Configuration::Configuration(Configuration&& rhs) = default;
 
 std::unique_ptr<RtpRtcp> RtpRtcp::Create(const Configuration& configuration) {
   RTC_DCHECK(configuration.clock);
@@ -95,8 +94,27 @@ ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
       ack_observer_(configuration.ack_observer),
       rtt_stats_(configuration.rtt_stats),
       rtt_ms_(0) {
+  FieldTrialBasedConfig default_trials;
   if (!configuration.receiver_only) {
-    rtp_sender_.reset(new RTPSender(configuration));
+    rtp_sender_.reset(new RTPSender(
+        configuration.audio, configuration.clock,
+        configuration.outgoing_transport, configuration.paced_sender,
+        configuration.flexfec_sender
+            ? absl::make_optional(configuration.flexfec_sender->ssrc())
+            : absl::nullopt,
+        configuration.transport_sequence_number_allocator,
+        configuration.transport_feedback_callback,
+        configuration.send_bitrate_observer,
+        configuration.send_side_delay_observer, configuration.event_log,
+        configuration.send_packet_observer,
+        configuration.retransmission_rate_limiter,
+        configuration.overhead_observer,
+        configuration.populate_network2_timestamp,
+        configuration.frame_encryptor, configuration.require_frame_encryption,
+        configuration.extmap_allow_mixed,
+        configuration.field_trials ? *configuration.field_trials
+                                   : default_trials));
+
     // Make sure rtcp sender use same timestamp offset as rtp sender.
     rtcp_sender_.SetTimestampOffset(rtp_sender_->TimestampOffset());
   }

@@ -64,15 +64,26 @@ class RtpSenderAudioTest : public ::testing::Test {
  public:
   RtpSenderAudioTest()
       : fake_clock_(kStartTime),
-        rtp_sender_([&] {
-          RtpRtcp::Configuration config;
-          config.audio = true;
-          config.clock = &fake_clock_;
-          config.outgoing_transport = &transport_;
-          config.media_send_ssrc = kSsrc;
-          return config;
-        }()),
+        rtp_sender_(true,
+                    &fake_clock_,
+                    &transport_,
+                    nullptr,
+                    absl::nullopt,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    false,
+                    nullptr,
+                    false,
+                    false,
+                    FieldTrialBasedConfig()),
         rtp_sender_audio_(&fake_clock_, &rtp_sender_) {
+    rtp_sender_.SetSSRC(kSsrc);
     rtp_sender_.SetSequenceNumber(kSeqNum);
   }
 

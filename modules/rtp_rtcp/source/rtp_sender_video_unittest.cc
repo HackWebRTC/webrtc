@@ -140,18 +140,29 @@ class RtpSenderVideoTest : public ::testing::TestWithParam<bool> {
       : field_trials_(GetParam()),
         fake_clock_(kStartTime),
         retransmission_rate_limiter_(&fake_clock_, 1000),
-        rtp_sender_([&] {
-          RtpRtcp::Configuration config;
-          config.clock = &fake_clock_;
-          config.outgoing_transport = &transport_;
-          config.retransmission_rate_limiter = &retransmission_rate_limiter_;
-          config.field_trials = &field_trials_;
-          config.media_send_ssrc = kSsrc;
-          return config;
-        }()),
+        // TODO(pbos): Set up to use pacer.
+        rtp_sender_(false,
+                    &fake_clock_,
+                    &transport_,
+                    nullptr,
+                    absl::nullopt,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    nullptr,
+                    &retransmission_rate_limiter_,
+                    nullptr,
+                    false,
+                    nullptr,
+                    false,
+                    false,
+                    field_trials_),
         rtp_sender_video_(&fake_clock_, &rtp_sender_, nullptr, field_trials_) {
     rtp_sender_.SetSequenceNumber(kSeqNum);
     rtp_sender_.SetTimestampOffset(0);
+    rtp_sender_.SetSSRC(kSsrc);
 
     rtp_sender_video_.RegisterPayloadType(kPayload, "generic",
                                           /*raw_payload=*/false);
