@@ -167,16 +167,16 @@ TEST_P(PCGenericDescriptorTest, ForemanCifPlr5Vp9) {
   fixture->Run(std::move(run_params));
 }
 
-TEST(PCFullStackTest, GeneratorWithoutPacketLossVp9Profile2) {
-  bool profile_2_is_supported = false;
-  for (const auto& codec : SupportedVP9Codecs()) {
-    if (ParseSdpForVP9Profile(codec.parameters)
-            .value_or(VP9Profile::kProfile0) == VP9Profile::kProfile2) {
-      profile_2_is_supported = true;
-    }
-  }
-  if (!profile_2_is_supported)
-    return;
+// VP9 2nd profile isn't supported on android arm and arm 64.
+#if defined(WEBRTC_ANDROID) && \
+    (defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM))
+#define MAYBE_GeneratorWithoutPacketLossVp9Profile2 \
+  DISABLED_GeneratorWithoutPacketLossVp9Profile2
+#else
+#define MAYBE_GeneratorWithoutPacketLossVp9Profile2 \
+  GeneratorWithoutPacketLossVp9Profile2
+#endif
+TEST(PCFullStackTest, MAYBE_GeneratorWithoutPacketLossVp9Profile2) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   auto fixture = CreateTestFixture(
