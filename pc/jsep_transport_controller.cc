@@ -1677,7 +1677,9 @@ JsepTransportController::GenerateOrGetLastMediaTransportOffer() {
     webrtc::MediaTransportSettings settings;
     settings.is_caller = true;
     settings.pre_shared_key = rtc::CreateRandomString(32);
-    settings.event_log = config_.event_log;
+    if (config_.use_media_transport_for_media) {
+      settings.event_log = config_.event_log;
+    }
     auto media_transport_or_error =
         config_.media_transport_factory->CreateMediaTransport(network_thread_,
                                                               settings);
