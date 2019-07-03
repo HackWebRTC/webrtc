@@ -56,13 +56,6 @@ class FakeAudioSource : public AudioMixer::Source {
                AudioFrameInfo(int sample_rate_hz, AudioFrame* audio_frame));
 };
 
-std::vector<int16_t> Create10msSilentTestData(int sample_rate_hz,
-                                              size_t num_channels) {
-  const int samples_per_channel = sample_rate_hz / 100;
-  std::vector<int16_t> audio_data(samples_per_channel * num_channels, 0);
-  return audio_data;
-}
-
 std::vector<int16_t> Create10msTestData(int sample_rate_hz,
                                         size_t num_channels) {
   const int samples_per_channel = sample_rate_hz / 100;
@@ -221,43 +214,6 @@ TEST(AudioStateTest, EnableChannelSwap) {
   EXPECT_EQ(667u, new_mic_level);
 
   audio_state->RemoveSendingStream(&stream);
-}
-
-TEST(AudioStateTest, InputLevelStats) {
-  constexpr int kSampleRate = 16000;
-  constexpr size_t kNumChannels = 1;
-
-  ConfigHelper helper;
-  rtc::scoped_refptr<internal::AudioState> audio_state(
-      new rtc::RefCountedObject<internal::AudioState>(helper.config()));
-
-  // Push a silent buffer -> Level stats should be zeros except for duration.
-  {
-    auto audio_data = Create10msSilentTestData(kSampleRate, kNumChannels);
-    uint32_t new_mic_level = 667;
-    audio_state->audio_transport()->RecordedDataIsAvailable(
-        &audio_data[0], kSampleRate / 100, kNumChannels * 2, kNumChannels,
-        kSampleRate, 0, 0, 0, false, new_mic_level);
-    auto stats = audio_state->GetAudioInputStats();
-    EXPECT_EQ(0, stats.audio_level);
-    EXPECT_THAT(stats.total_energy, ::testing::DoubleEq(0.0));
-    EXPECT_THAT(stats.total_duration, ::testing::DoubleEq(0.01));
-  }
-
-  // Push 10 non-silent buffers -> Level stats should be non-zero.
-  {
-    auto audio_data = Create10msTestData(kSampleRate, kNumChannels);
-    uint32_t new_mic_level = 667;
-    for (int i = 0; i < 10; ++i) {
-      audio_state->audio_transport()->RecordedDataIsAvailable(
-          &audio_data[0], kSampleRate / 100, kNumChannels * 2, kNumChannels,
-          kSampleRate, 0, 0, 0, false, new_mic_level);
-    }
-    auto stats = audio_state->GetAudioInputStats();
-    EXPECT_EQ(32767, stats.audio_level);
-    EXPECT_THAT(stats.total_energy, ::testing::DoubleEq(0.01));
-    EXPECT_THAT(stats.total_duration, ::testing::DoubleEq(0.11));
-  }
 }
 
 TEST(AudioStateTest,

@@ -468,6 +468,7 @@ struct VoiceSenderInfo : public MediaSenderInfo {
   ~VoiceSenderInfo();
   int ext_seqnum = 0;
   int jitter_ms = 0;
+  // Current audio level, expressed linearly [0,32767].
   int audio_level = 0;
   // See description of "totalAudioEnergy" in the WebRTC stats spec:
   // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalaudioenergy

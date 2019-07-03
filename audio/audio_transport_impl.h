@@ -15,7 +15,6 @@
 
 #include "api/audio/audio_mixer.h"
 #include "api/scoped_refptr.h"
-#include "audio/audio_level.h"
 #include "common_audio/resampler/include/push_resampler.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
@@ -66,7 +65,6 @@ class AudioTransportImpl : public AudioTransport {
                             size_t send_num_channels);
   void SetStereoChannelSwapping(bool enable);
   bool typing_noise_detected() const;
-  const voe::AudioLevel& audio_level() const { return audio_level_; }
 
  private:
   // Shared.
@@ -80,7 +78,6 @@ class AudioTransportImpl : public AudioTransport {
   bool typing_noise_detected_ RTC_GUARDED_BY(capture_lock_) = false;
   bool swap_stereo_channels_ RTC_GUARDED_BY(capture_lock_) = false;
   PushResampler<int16_t> capture_resampler_;
-  voe::AudioLevel audio_level_;
   TypingDetection typing_detection_;
 
   // Render side.

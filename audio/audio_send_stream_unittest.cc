@@ -23,6 +23,7 @@
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "modules/audio_device/include/mock_audio_device.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
+#include "modules/audio_mixer/sine_wave_generator.h"
 #include "modules/audio_processing/include/audio_processing_statistics.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
 #include "modules/rtp_rtcp/mocks/mock_rtcp_bandwidth_observer.h"
@@ -40,12 +41,15 @@ namespace test {
 namespace {
 
 using ::testing::_;
+using ::testing::AnyNumber;
 using ::testing::Eq;
 using ::testing::Field;
 using ::testing::Invoke;
 using ::testing::Ne;
 using ::testing::Return;
 using ::testing::StrEq;
+
+static const float kTolerance = 0.0001f;
 
 const uint32_t kSsrc = 1234;
 const char* kCName = "foo_name";
@@ -317,6 +321,24 @@ struct ConfigHelper {
   TaskQueueForTest worker_queue_;
   std::unique_ptr<AudioEncoder> audio_encoder_;
 };
+
+// The audio level ranges linearly [0,32767].
+std::unique_ptr<AudioFrame> CreateAudioFrame1kHzSineWave(int16_t audio_level,
+                                                         int duration_ms,
+                                                         int sample_rate_hz,
+                                                         size_t num_channels) {
+  size_t samples_per_channel = sample_rate_hz / (1000 / duration_ms);
+  std::vector<int16_t> audio_data(samples_per_channel * num_channels, 0);
+  std::unique_ptr<AudioFrame> audio_frame = absl::make_unique<AudioFrame>();
+  audio_frame->UpdateFrame(0 /* RTP timestamp */, &audio_data[0],
+                           samples_per_channel, sample_rate_hz,
+                           AudioFrame::SpeechType::kNormalSpeech,
+                           AudioFrame::VADActivity::kVadUnknown, num_channels);
+  SineWaveGenerator wave_generator(1000.0, audio_level);
+  wave_generator.GenerateNextFrame(audio_frame.get());
+  return audio_frame;
+}
+
 }  // namespace
 
 TEST(AudioSendStreamTest, ConfigToString) {
@@ -413,6 +435,46 @@ TEST(AudioSendStreamTest, GetStats) {
   EXPECT_EQ(kResidualEchoLikelihoodMax,
             stats.apm_statistics.residual_echo_likelihood_recent_max);
   EXPECT_FALSE(stats.typing_noise_detected);
+}
+
+TEST(AudioSendStreamTest, GetStatsAudioLevel) {
+  ConfigHelper helper(false, true);
+  auto send_stream = helper.CreateAudioSendStream();
+  helper.SetupMockForGetStats();
+  EXPECT_CALL(*helper.channel_send(), ProcessAndEncodeAudioForMock(_))
+      .Times(AnyNumber());
+
+  constexpr int kSampleRateHz = 48000;
+  constexpr size_t kNumChannels = 1;
+
+  constexpr int16_t kSilentAudioLevel = 0;
+  constexpr int16_t kMaxAudioLevel = 32767;  // Audio level is [0,32767].
+  constexpr int kAudioFrameDurationMs = 10;
+
+  // Process 10 audio frames (100 ms) of silence. After this, on the next
+  // (11-th) frame, the audio level will be updated with the maximum audio level
+  // of the first 11 frames. See AudioLevel.
+  for (size_t i = 0; i < 10; ++i) {
+    send_stream->SendAudioData(CreateAudioFrame1kHzSineWave(
+        kSilentAudioLevel, kAudioFrameDurationMs, kSampleRateHz, kNumChannels));
+  }
+  AudioSendStream::Stats stats = send_stream->GetStats();
+  EXPECT_EQ(kSilentAudioLevel, stats.audio_level);
+  EXPECT_NEAR(0.0f, stats.total_input_energy, kTolerance);
+  EXPECT_NEAR(0.1f, stats.total_input_duration, kTolerance);  // 100 ms = 0.1 s
+
+  // Process 10 audio frames (100 ms) of maximum audio level.
+  // Note that AudioLevel updates the audio level every 11th frame, processing
+  // 10 frames above was needed to see a non-zero audio level here.
+  for (size_t i = 0; i < 10; ++i) {
+    send_stream->SendAudioData(CreateAudioFrame1kHzSineWave(
+        kMaxAudioLevel, kAudioFrameDurationMs, kSampleRateHz, kNumChannels));
+  }
+  stats = send_stream->GetStats();
+  EXPECT_EQ(kMaxAudioLevel, stats.audio_level);
+  // Energy increases by energy*duration, where energy is audio level in [0,1].
+  EXPECT_NEAR(0.1f, stats.total_input_energy, kTolerance);    // 0.1 s of max
+  EXPECT_NEAR(0.2f, stats.total_input_duration, kTolerance);  // 200 ms = 0.2 s
 }
 
 TEST(AudioSendStreamTest, SendCodecAppliesAudioNetworkAdaptor) {

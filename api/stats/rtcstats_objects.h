@@ -317,12 +317,12 @@ class RTC_EXPORT RTCMediaStreamTrackStats final : public RTCStats {
   // TODO(hbos): Not collected by |RTCStatsCollector|. crbug.com/659137
   RTCStatsMember<uint32_t> full_frames_lost;
   // Audio-only members
-  RTCStatsMember<double> audio_level;
-  RTCStatsMember<double> total_audio_energy;
+  RTCStatsMember<double> audio_level;         // Receive-only
+  RTCStatsMember<double> total_audio_energy;  // Receive-only
   RTCStatsMember<double> echo_return_loss;
   RTCStatsMember<double> echo_return_loss_enhancement;
   RTCStatsMember<uint64_t> total_samples_received;
-  RTCStatsMember<double> total_samples_duration;
+  RTCStatsMember<double> total_samples_duration;  // Receive-only
   RTCStatsMember<uint64_t> concealed_samples;
   RTCStatsMember<uint64_t> silent_concealed_samples;
   RTCStatsMember<uint64_t> concealment_events;
@@ -548,6 +548,10 @@ class RTC_EXPORT RTCAudioSourceStats final : public RTCMediaSourceStats {
   RTCAudioSourceStats(std::string&& id, int64_t timestamp_us);
   RTCAudioSourceStats(const RTCAudioSourceStats& other);
   ~RTCAudioSourceStats() override;
+
+  RTCStatsMember<double> audio_level;
+  RTCStatsMember<double> total_audio_energy;
+  RTCStatsMember<double> total_samples_duration;
 };
 
 // https://w3c.github.io/webrtc-stats/#dom-rtcvideosourcestats

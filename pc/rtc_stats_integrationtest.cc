@@ -647,8 +647,13 @@ class RTCStatsReportVerifier {
             media_stream_track.jitter_buffer_delay);
         verifier.TestMemberIsNonNegative<uint64_t>(
             media_stream_track.jitter_buffer_emitted_count);
-        verifier.TestMemberIsNonNegative<uint64_t>(
+        verifier.TestMemberIsPositive<double>(media_stream_track.audio_level);
+        verifier.TestMemberIsPositive<double>(
+            media_stream_track.total_audio_energy);
+        verifier.TestMemberIsPositive<uint64_t>(
             media_stream_track.total_samples_received);
+        verifier.TestMemberIsPositive<double>(
+            media_stream_track.total_samples_duration);
         verifier.TestMemberIsNonNegative<uint64_t>(
             media_stream_track.concealed_samples);
         verifier.TestMemberIsNonNegative<uint64_t>(
@@ -676,8 +681,12 @@ class RTCStatsReportVerifier {
         verifier.TestMemberIsUndefined(media_stream_track.jitter_buffer_delay);
         verifier.TestMemberIsUndefined(
             media_stream_track.jitter_buffer_emitted_count);
+        verifier.TestMemberIsUndefined(media_stream_track.audio_level);
+        verifier.TestMemberIsUndefined(media_stream_track.total_audio_energy);
         verifier.TestMemberIsUndefined(
             media_stream_track.total_samples_received);
+        verifier.TestMemberIsUndefined(
+            media_stream_track.total_samples_duration);
         verifier.TestMemberIsUndefined(media_stream_track.concealed_samples);
         verifier.TestMemberIsUndefined(media_stream_track.concealment_events);
         verifier.TestMemberIsUndefined(
@@ -710,11 +719,6 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsUndefined(
           media_stream_track.sum_squared_frame_durations);
       // Audio-only members
-      verifier.TestMemberIsNonNegative<double>(media_stream_track.audio_level);
-      verifier.TestMemberIsNonNegative<double>(
-          media_stream_track.total_audio_energy);
-      verifier.TestMemberIsNonNegative<double>(
-          media_stream_track.total_samples_duration);
       // TODO(hbos): |echo_return_loss| and |echo_return_loss_enhancement| are
       // flaky on msan bot (sometimes defined, sometimes undefined). Should the
       // test run until available or is there a way to have it always be
@@ -903,6 +907,9 @@ class RTCStatsReportVerifier {
   bool VerifyRTCAudioSourceStats(const RTCAudioSourceStats& audio_source) {
     RTCStatsVerifier verifier(report_, &audio_source);
     VerifyRTCMediaSourceStats(audio_source, &verifier);
+    verifier.TestMemberIsPositive<double>(audio_source.audio_level);
+    verifier.TestMemberIsPositive<double>(audio_source.total_audio_energy);
+    verifier.TestMemberIsPositive<double>(audio_source.total_samples_duration);
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
 

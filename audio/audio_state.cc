@@ -151,18 +151,6 @@ void AudioState::SetRecording(bool enabled) {
   }
 }
 
-AudioState::Stats AudioState::GetAudioInputStats() const {
-  RTC_DCHECK(thread_checker_.IsCurrent());
-  const voe::AudioLevel& audio_level = audio_transport_.audio_level();
-  Stats result;
-  result.audio_level = audio_level.LevelFullRange();
-  RTC_DCHECK_LE(0, result.audio_level);
-  RTC_DCHECK_GE(32767, result.audio_level);
-  result.total_energy = audio_level.TotalEnergy();
-  result.total_duration = audio_level.TotalDuration();
-  return result;
-}
-
 void AudioState::SetStereoChannelSwapping(bool enable) {
   RTC_DCHECK(thread_checker_.IsCurrent());
   audio_transport_.SetStereoChannelSwapping(enable);

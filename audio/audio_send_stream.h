@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "audio/audio_level.h"
 #include "audio/channel_send.h"
 #include "audio/transport_feedback_packet_loss_tracker.h"
 #include "call/audio_send_stream.h"
@@ -160,6 +161,10 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   int encoder_sample_rate_hz_ = 0;
   size_t encoder_num_channels_ = 0;
   bool sending_ = false;
+  rtc::CriticalSection audio_level_lock_;
+  // Keeps track of audio level, total audio energy and total samples duration.
+  // https://w3c.github.io/webrtc-stats/#dom-rtcaudiohandlerstats-totalaudioenergy
+  webrtc::voe::AudioLevel audio_level_;
 
   BitrateAllocatorInterface* const bitrate_allocator_
       RTC_GUARDED_BY(worker_queue_);

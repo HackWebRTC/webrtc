@@ -142,10 +142,6 @@ int32_t AudioTransportImpl::RecordedDataIsAvailable(
     }
   }
 
-  // Measure audio level of speech after all processing.
-  double sample_duration = static_cast<double>(number_of_frames) / sample_rate;
-  audio_level_.ComputeLevel(*audio_frame, sample_duration);
-
   // Copy frame and push to each sending stream. The copy is required since an
   // encoding task will be posted internally to each stream.
   {

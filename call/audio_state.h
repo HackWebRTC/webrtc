@@ -39,15 +39,6 @@ class AudioState : public rtc::RefCountInterface {
     rtc::scoped_refptr<webrtc::AudioDeviceModule> audio_device_module;
   };
 
-  struct Stats {
-    // Audio peak level (max(abs())), linearly on the interval [0,32767].
-    int32_t audio_level = -1;
-    // See:
-    // https://w3c.github.io/webrtc-stats/#dom-rtcmediastreamtrackstats-totalaudioenergy
-    double total_energy = 0.0f;
-    double total_duration = 0.0f;
-  };
-
   virtual AudioProcessing* audio_processing() = 0;
   virtual AudioTransport* audio_transport() = 0;
 
@@ -62,7 +53,6 @@ class AudioState : public rtc::RefCountInterface {
   // packets will be encoded or transmitted.
   virtual void SetRecording(bool enabled) = 0;
 
-  virtual Stats GetAudioInputStats() const = 0;
   virtual void SetStereoChannelSwapping(bool enable) = 0;
 
   static rtc::scoped_refptr<AudioState> Create(

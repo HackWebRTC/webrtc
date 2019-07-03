@@ -1438,9 +1438,6 @@ TEST_F(RTCStatsCollectorTest,
   cricket::VoiceSenderInfo voice_sender_info_ssrc1;
   voice_sender_info_ssrc1.local_stats.push_back(cricket::SsrcSenderInfo());
   voice_sender_info_ssrc1.local_stats[0].ssrc = 1;
-  voice_sender_info_ssrc1.audio_level = 32767;
-  voice_sender_info_ssrc1.total_input_energy = 0.25;
-  voice_sender_info_ssrc1.total_input_duration = 0.5;
   voice_sender_info_ssrc1.apm_statistics.echo_return_loss = 42.0;
   voice_sender_info_ssrc1.apm_statistics.echo_return_loss_enhancement = 52.0;
 
@@ -1471,9 +1468,6 @@ TEST_F(RTCStatsCollectorTest,
   expected_local_audio_track_ssrc1.remote_source = false;
   expected_local_audio_track_ssrc1.ended = true;
   expected_local_audio_track_ssrc1.detached = false;
-  expected_local_audio_track_ssrc1.audio_level = 1.0;
-  expected_local_audio_track_ssrc1.total_audio_energy = 0.25;
-  expected_local_audio_track_ssrc1.total_samples_duration = 0.5;
   expected_local_audio_track_ssrc1.echo_return_loss = 42.0;
   expected_local_audio_track_ssrc1.echo_return_loss_enhancement = 52.0;
   ASSERT_TRUE(report->Get(expected_local_audio_track_ssrc1.id()))
@@ -2219,6 +2213,9 @@ TEST_F(RTCStatsCollectorTest, RTCAudioSourceStatsCollectedForSenderWithTrack) {
   voice_media_info.senders.push_back(cricket::VoiceSenderInfo());
   voice_media_info.senders[0].local_stats.push_back(cricket::SsrcSenderInfo());
   voice_media_info.senders[0].local_stats[0].ssrc = kSsrc;
+  voice_media_info.senders[0].audio_level = 32767;  // [0,32767]
+  voice_media_info.senders[0].total_input_energy = 2.0;
+  voice_media_info.senders[0].total_input_duration = 3.0;
   auto* voice_media_channel = pc_->AddVoiceChannel("AudioMid", "TransportName");
   voice_media_channel->SetStats(voice_media_info);
   stats_->SetupLocalTrackAndSender(cricket::MEDIA_TYPE_AUDIO,
@@ -2231,6 +2228,9 @@ TEST_F(RTCStatsCollectorTest, RTCAudioSourceStatsCollectedForSenderWithTrack) {
                                      report->timestamp_us());
   expected_audio.track_identifier = "LocalAudioTrackID";
   expected_audio.kind = "audio";
+  expected_audio.audio_level = 1.0;  // [0,1]
+  expected_audio.total_audio_energy = 2.0;
+  expected_audio.total_samples_duration = 3.0;
 
   ASSERT_TRUE(report->Get(expected_audio.id()));
   EXPECT_EQ(report->Get(expected_audio.id())->cast_to<RTCAudioSourceStats>(),

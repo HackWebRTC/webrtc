@@ -483,7 +483,7 @@ ChannelReceive::ChannelReceive(
       jitter_buffer_enable_rtx_handling;
   audio_coding_.reset(AudioCodingModule::Create(acm_config));
 
-  _outputAudioLevel.Clear();
+  _outputAudioLevel.ResetLevelFullRange();
 
   rtp_receive_statistics_->EnableRetransmitDetection(remote_ssrc_, true);
   RtpRtcp::Configuration configuration;
@@ -546,7 +546,7 @@ void ChannelReceive::StopPlayout() {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
   rtc::CritScope lock(&playing_lock_);
   playing_ = false;
-  _outputAudioLevel.Clear();
+  _outputAudioLevel.ResetLevelFullRange();
 }
 
 absl::optional<std::pair<int, SdpAudioFormat>>
