@@ -35,7 +35,7 @@ TEST(JavaCodecsWrapperTest, JavaToNativeVideoCodecInfo) {
   EXPECT_EQ(cricket::kH264ProfileLevelConstrainedBaseline, it->second);
 }
 
-TEST(JavaCodecsWrapperTest, JavaToNativeResolutionBitrateThresholds) {
+TEST(JavaCodecsWrapperTest, JavaToNativeResolutionBitrateLimits) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   ScopedJavaLocalRef<jobject> j_fake_encoder =
       jni::Java_CodecsWrapperTestHelper_createFakeVideoEncoder(env);
@@ -43,15 +43,14 @@ TEST(JavaCodecsWrapperTest, JavaToNativeResolutionBitrateThresholds) {
   auto encoder = jni::JavaToNativeVideoEncoder(env, j_fake_encoder);
   ASSERT_TRUE(encoder);
 
-  // Check that the resolution bitrate thresholds are correctly passed from Java
-  // to native.
-  const std::vector<VideoEncoder::ResolutionBitrateThresholds> thresholds =
-      encoder->GetEncoderInfo().resolution_bitrate_thresholds;
-  ASSERT_EQ(thresholds.size(), 1u);
-  EXPECT_EQ(thresholds[0].frame_size_pixels, 640 * 360);
-  EXPECT_EQ(thresholds[0].min_start_bitrate_bps, 300000);
-  EXPECT_EQ(thresholds[0].min_bitrate_bps, 200000);
-  EXPECT_EQ(thresholds[0].max_bitrate_bps, 1000000);
+  // Check that the bitrate limits correctly passed from Java to native.
+  const std::vector<VideoEncoder::ResolutionBitrateLimits> bitrate_limits =
+      encoder->GetEncoderInfo().resolution_bitrate_limits;
+  ASSERT_EQ(bitrate_limits.size(), 1u);
+  EXPECT_EQ(bitrate_limits[0].frame_size_pixels, 640 * 360);
+  EXPECT_EQ(bitrate_limits[0].min_start_bitrate_bps, 300000);
+  EXPECT_EQ(bitrate_limits[0].min_bitrate_bps, 200000);
+  EXPECT_EQ(bitrate_limits[0].max_bitrate_bps, 1000000);
 }
 }  // namespace
 }  // namespace test

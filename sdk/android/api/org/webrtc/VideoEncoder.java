@@ -184,11 +184,11 @@ public interface VideoEncoder {
   }
 
   /**
-   * Bitrate thresholds for resolution.
+   * Bitrate limits for resolution.
    */
-  public class ResolutionBitrateThresholds {
+  public class ResolutionBitrateLimits {
     /**
-     * Maximum size of video frame, in pixels, the bitrate thresholds are intended for.
+     * Maximum size of video frame, in pixels, the bitrate limits are intended for.
      */
     public final int frameSizePixels;
 
@@ -207,7 +207,7 @@ public interface VideoEncoder {
      */
     public final int maxBitrateBps;
 
-    public ResolutionBitrateThresholds(
+    public ResolutionBitrateLimits(
         int frameSizePixels, int minStartBitrateBps, int minBitrateBps, int maxBitrateBps) {
       this.frameSizePixels = frameSizePixels;
       this.minStartBitrateBps = minStartBitrateBps;
@@ -215,22 +215,22 @@ public interface VideoEncoder {
       this.maxBitrateBps = maxBitrateBps;
     }
 
-    @CalledByNative("ResolutionBitrateThresholds")
+    @CalledByNative("ResolutionBitrateLimits")
     public int getFrameSizePixels() {
       return frameSizePixels;
     }
 
-    @CalledByNative("ResolutionBitrateThresholds")
+    @CalledByNative("ResolutionBitrateLimits")
     public int getMinStartBitrateBps() {
       return minStartBitrateBps;
     }
 
-    @CalledByNative("ResolutionBitrateThresholds")
+    @CalledByNative("ResolutionBitrateLimits")
     public int getMinBitrateBps() {
       return minBitrateBps;
     }
 
-    @CalledByNative("ResolutionBitrateThresholds")
+    @CalledByNative("ResolutionBitrateLimits")
     public int getMaxBitrateBps() {
       return maxBitrateBps;
     }
@@ -295,12 +295,12 @@ public interface VideoEncoder {
   /** Any encoder that wants to use WebRTC provided quality scaler must implement this method. */
   @CalledByNative ScalingSettings getScalingSettings();
 
-  /** Returns the list of resolution bitrate thresholds. */
+  /** Returns the list of bitrate limits. */
   @CalledByNative
-  default ResolutionBitrateThresholds[] getResolutionBitrateThresholds() {
+  default ResolutionBitrateLimits[] getResolutionBitrateLimits() {
     // TODO(ssilkin): Update downstream projects and remove default implementation.
-    ResolutionBitrateThresholds thresholds[] = {};
-    return thresholds;
+    ResolutionBitrateLimits bitrate_limits[] = {};
+    return bitrate_limits;
   }
 
   /**

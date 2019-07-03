@@ -41,14 +41,14 @@ class FakeVideoEncoder implements VideoEncoder {
   }
 
   @Override
-  public ResolutionBitrateThresholds[] getResolutionBitrateThresholds() {
-    ResolutionBitrateThresholds resolution_bitrate_thresholds[] = {
-        new ResolutionBitrateThresholds(/* frameSizePixels = */ 640 * 360,
+  public ResolutionBitrateLimits[] getResolutionBitrateLimits() {
+    ResolutionBitrateLimits resolution_bitrate_limits[] = {
+        new ResolutionBitrateLimits(/* frameSizePixels = */ 640 * 360,
             /* minStartBitrateBps = */ 300000,
             /* minBitrateBps = */ 200000,
             /* maxBitrateBps = */ 1000000)};
 
-    return resolution_bitrate_thresholds;
+    return resolution_bitrate_limits;
   }
 
   @Override
