@@ -88,6 +88,17 @@ class SamplesStatsCounter {
   bool sorted_ = false;
 };
 
+// Multiply all sample values on |value| and return new SamplesStatsCounter
+// with resulted samples. Doesn't change origin SamplesStatsCounter.
+SamplesStatsCounter operator*(const SamplesStatsCounter& counter, double value);
+inline SamplesStatsCounter operator*(double value,
+                                     const SamplesStatsCounter& counter) {
+  return counter * value;
+}
+// Divide all sample values on |value| and return new SamplesStatsCounter with
+// resulted samples. Doesn't change origin SamplesStatsCounter.
+SamplesStatsCounter operator/(const SamplesStatsCounter& counter, double value);
+
 }  // namespace webrtc
 
 #endif  // RTC_BASE_NUMERICS_SAMPLES_STATS_COUNTER_H_

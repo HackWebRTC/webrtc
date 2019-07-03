@@ -54,7 +54,7 @@ constexpr int SIZE_FOR_MERGE = 10;
 
 }  // namespace
 
-TEST(SamplesStatsCounter, FullSimpleTest) {
+TEST(SamplesStatsCounterTest, FullSimpleTest) {
   SamplesStatsCounter stats = CreateStatsFilledWithIntsFrom1ToN(100);
 
   EXPECT_TRUE(!stats.IsEmpty());
@@ -68,7 +68,7 @@ TEST(SamplesStatsCounter, FullSimpleTest) {
   }
 }
 
-TEST(SamplesStatsCounter, VarianceAndDeviation) {
+TEST(SamplesStatsCounterTest, VarianceAndDeviation) {
   SamplesStatsCounter stats;
   stats.AddSample(2);
   stats.AddSample(2);
@@ -80,13 +80,13 @@ TEST(SamplesStatsCounter, VarianceAndDeviation) {
   EXPECT_DOUBLE_EQ(stats.GetStandardDeviation(), sqrt(4.5));
 }
 
-TEST(SamplesStatsCounter, FractionPercentile) {
+TEST(SamplesStatsCounterTest, FractionPercentile) {
   SamplesStatsCounter stats = CreateStatsFilledWithIntsFrom1ToN(5);
 
   EXPECT_DOUBLE_EQ(stats.GetPercentile(0.5), 3);
 }
 
-TEST(SamplesStatsCounter, TestBorderValues) {
+TEST(SamplesStatsCounterTest, TestBorderValues) {
   SamplesStatsCounter stats = CreateStatsFilledWithIntsFrom1ToN(5);
 
   EXPECT_GE(stats.GetPercentile(0.01), 1);
@@ -94,7 +94,7 @@ TEST(SamplesStatsCounter, TestBorderValues) {
   EXPECT_DOUBLE_EQ(stats.GetPercentile(1.0), 5);
 }
 
-TEST(SamplesStatsCounter, VarianceFromUniformDistribution) {
+TEST(SamplesStatsCounterTest, VarianceFromUniformDistribution) {
   // Check variance converge to 1/12 for [0;1) uniform distribution.
   // Acts as a sanity check for NumericStabilityForVariance test.
   SamplesStatsCounter stats = CreateStatsFromUniformDistribution(1e6, 0, 1);
@@ -102,7 +102,7 @@ TEST(SamplesStatsCounter, VarianceFromUniformDistribution) {
   EXPECT_NEAR(stats.GetVariance(), 1. / 12, 1e-3);
 }
 
-TEST(SamplesStatsCounter, NumericStabilityForVariance) {
+TEST(SamplesStatsCounterTest, NumericStabilityForVariance) {
   // Same test as VarianceFromUniformDistribution,
   // except the range is shifted to [1e9;1e9+1).
   // Variance should also converge to 1/12.
@@ -142,6 +142,75 @@ TEST_P(SamplesStatsCounterTest, AddSamples) {
   EXPECT_DOUBLE_EQ(stats0.GetPercentile(0.1), 0.9);
   EXPECT_DOUBLE_EQ(stats0.GetPercentile(0.5), 4.5);
   EXPECT_DOUBLE_EQ(stats0.GetPercentile(0.9), 8.1);
+}
+
+TEST(SamplesStatsCounterTest, MultiplyRight) {
+  SamplesStatsCounter stats = CreateStatsFilledWithIntsFrom1ToN(10);
+
+  EXPECT_TRUE(!stats.IsEmpty());
+  EXPECT_DOUBLE_EQ(stats.GetMin(), 1.0);
+  EXPECT_DOUBLE_EQ(stats.GetMax(), 10.0);
+  EXPECT_DOUBLE_EQ(stats.GetAverage(), 5.5);
+
+  SamplesStatsCounter multiplied_stats = stats * 10;
+  EXPECT_TRUE(!multiplied_stats.IsEmpty());
+  EXPECT_DOUBLE_EQ(multiplied_stats.GetMin(), 10.0);
+  EXPECT_DOUBLE_EQ(multiplied_stats.GetMax(), 100.0);
+  EXPECT_DOUBLE_EQ(multiplied_stats.GetAverage(), 55.0);
+  EXPECT_EQ(multiplied_stats.GetSamples().size(), stats.GetSamples().size());
+
+  // Check that origin stats were not modified.
+  EXPECT_TRUE(!stats.IsEmpty());
+  EXPECT_DOUBLE_EQ(stats.GetMin(), 1.0);
+  EXPECT_DOUBLE_EQ(stats.GetMax(), 10.0);
+  EXPECT_DOUBLE_EQ(stats.GetAverage(), 5.5);
+}
+
+TEST(SamplesStatsCounterTest, MultiplyLeft) {
+  SamplesStatsCounter stats = CreateStatsFilledWithIntsFrom1ToN(10);
+
+  EXPECT_TRUE(!stats.IsEmpty());
+  EXPECT_DOUBLE_EQ(stats.GetMin(), 1.0);
+  EXPECT_DOUBLE_EQ(stats.GetMax(), 10.0);
+  EXPECT_DOUBLE_EQ(stats.GetAverage(), 5.5);
+
+  SamplesStatsCounter multiplied_stats = 10 * stats;
+  EXPECT_TRUE(!multiplied_stats.IsEmpty());
+  EXPECT_DOUBLE_EQ(multiplied_stats.GetMin(), 10.0);
+  EXPECT_DOUBLE_EQ(multiplied_stats.GetMax(), 100.0);
+  EXPECT_DOUBLE_EQ(multiplied_stats.GetAverage(), 55.0);
+  EXPECT_EQ(multiplied_stats.GetSamples().size(), stats.GetSamples().size());
+
+  // Check that origin stats were not modified.
+  EXPECT_TRUE(!stats.IsEmpty());
+  EXPECT_DOUBLE_EQ(stats.GetMin(), 1.0);
+  EXPECT_DOUBLE_EQ(stats.GetMax(), 10.0);
+  EXPECT_DOUBLE_EQ(stats.GetAverage(), 5.5);
+}
+
+TEST(SamplesStatsCounterTest, Divide) {
+  SamplesStatsCounter stats;
+  for (int i = 1; i <= 10; i++) {
+    stats.AddSample(i * 10);
+  }
+
+  EXPECT_TRUE(!stats.IsEmpty());
+  EXPECT_DOUBLE_EQ(stats.GetMin(), 10.0);
+  EXPECT_DOUBLE_EQ(stats.GetMax(), 100.0);
+  EXPECT_DOUBLE_EQ(stats.GetAverage(), 55.0);
+
+  SamplesStatsCounter divided_stats = stats / 10;
+  EXPECT_TRUE(!divided_stats.IsEmpty());
+  EXPECT_DOUBLE_EQ(divided_stats.GetMin(), 1.0);
+  EXPECT_DOUBLE_EQ(divided_stats.GetMax(), 10.0);
+  EXPECT_DOUBLE_EQ(divided_stats.GetAverage(), 5.5);
+  EXPECT_EQ(divided_stats.GetSamples().size(), stats.GetSamples().size());
+
+  // Check that origin stats were not modified.
+  EXPECT_TRUE(!stats.IsEmpty());
+  EXPECT_DOUBLE_EQ(stats.GetMin(), 10.0);
+  EXPECT_DOUBLE_EQ(stats.GetMax(), 100.0);
+  EXPECT_DOUBLE_EQ(stats.GetAverage(), 55.0);
 }
 
 INSTANTIATE_TEST_SUITE_P(SamplesStatsCounterTests,
