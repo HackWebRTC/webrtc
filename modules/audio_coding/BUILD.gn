@@ -1029,6 +1029,7 @@ rtc_static_library("neteq") {
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:safe_minmax",
     "../../rtc_base:sanitizer",
+    "../../rtc_base/experiments:field_trial_parser",
     "../../rtc_base/system:fallthrough",
     "../../system_wrappers",
     "../../system_wrappers:field_trial",
