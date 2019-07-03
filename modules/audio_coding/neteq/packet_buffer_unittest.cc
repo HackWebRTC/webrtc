@@ -11,6 +11,7 @@
 // Unit tests for PacketBuffer class.
 
 #include "modules/audio_coding/neteq/packet_buffer.h"
+#include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_coding/neteq/mock/mock_decoder_database.h"
 #include "modules/audio_coding/neteq/mock/mock_statistics_calculator.h"
@@ -25,7 +26,17 @@ using ::testing::_;
 using ::testing::InSequence;
 using ::testing::MockFunction;
 
-namespace webrtc {
+namespace {
+class MockEncodedAudioFrame : public webrtc::AudioDecoder::EncodedAudioFrame {
+ public:
+  MOCK_CONST_METHOD0(Duration, size_t());
+
+  MOCK_CONST_METHOD0(IsDtxPacket, bool());
+
+  MOCK_CONST_METHOD1(
+      Decode,
+      absl::optional<DecodeResult>(rtc::ArrayView<int16_t> decoded));
+};
 
 // Helper class to generate packets. Packets must be deleted by the user.
 class PacketGenerator {
@@ -33,7 +44,9 @@ class PacketGenerator {
   PacketGenerator(uint16_t seq_no, uint32_t ts, uint8_t pt, int frame_size);
   virtual ~PacketGenerator() {}
   void Reset(uint16_t seq_no, uint32_t ts, uint8_t pt, int frame_size);
-  Packet NextPacket(int payload_size_bytes);
+  webrtc::Packet NextPacket(
+      int payload_size_bytes,
+      std::unique_ptr<webrtc::AudioDecoder::EncodedAudioFrame> audio_frame);
 
   uint16_t seq_no_;
   uint32_t ts_;
@@ -54,14 +67,17 @@ void PacketGenerator::Reset(uint16_t seq_no, uint32_t ts, uint8_t pt,
   frame_size_ = frame_size;
 }
 
-Packet PacketGenerator::NextPacket(int payload_size_bytes) {
-  Packet packet;
+webrtc::Packet PacketGenerator::NextPacket(
+    int payload_size_bytes,
+    std::unique_ptr<webrtc::AudioDecoder::EncodedAudioFrame> audio_frame) {
+  webrtc::Packet packet;
   packet.sequence_number = seq_no_;
   packet.timestamp = ts_;
   packet.payload_type = pt_;
   packet.payload.SetSize(payload_size_bytes);
   ++seq_no_;
   ts_ += frame_size_;
+  packet.frame = std::move(audio_frame);
   return packet;
 }
 
@@ -75,6 +91,10 @@ struct PacketsToInsert {
   // before extraction.
   int extract_order;
 };
+
+}  // namespace
+
+namespace webrtc {
 
 // Start of test definitions.
 
@@ -92,7 +112,7 @@ TEST(PacketBuffer, InsertPacket) {
   StrictMock<MockStatisticsCalculator> mock_stats;
 
   const int payload_len = 100;
-  const Packet packet = gen.NextPacket(payload_len);
+  const Packet packet = gen.NextPacket(payload_len, nullptr);
   EXPECT_EQ(0, buffer.InsertPacket(packet.Clone(), &mock_stats));
   uint32_t next_ts;
   EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&next_ts));
@@ -116,8 +136,9 @@ TEST(PacketBuffer, FlushBuffer) {
 
   // Insert 10 small packets; should be ok.
   for (int i = 0; i < 10; ++i) {
-    EXPECT_EQ(PacketBuffer::kOK,
-              buffer.InsertPacket(gen.NextPacket(payload_len), &mock_stats));
+    EXPECT_EQ(
+        PacketBuffer::kOK,
+        buffer.InsertPacket(gen.NextPacket(payload_len, nullptr), &mock_stats));
   }
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
   EXPECT_FALSE(buffer.Empty());
@@ -139,15 +160,16 @@ TEST(PacketBuffer, OverfillBuffer) {
   const int payload_len = 10;
   int i;
   for (i = 0; i < 10; ++i) {
-    EXPECT_EQ(PacketBuffer::kOK,
-              buffer.InsertPacket(gen.NextPacket(payload_len), &mock_stats));
+    EXPECT_EQ(
+        PacketBuffer::kOK,
+        buffer.InsertPacket(gen.NextPacket(payload_len, nullptr), &mock_stats));
   }
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
   uint32_t next_ts;
   EXPECT_EQ(PacketBuffer::kOK, buffer.NextTimestamp(&next_ts));
   EXPECT_EQ(0u, next_ts);  // Expect first inserted packet to be first in line.
 
-  const Packet packet = gen.NextPacket(payload_len);
+  const Packet packet = gen.NextPacket(payload_len, nullptr);
   // Insert 11th packet; should flush the buffer and insert it after flushing.
   EXPECT_EQ(PacketBuffer::kFlushed,
             buffer.InsertPacket(packet.Clone(), &mock_stats));
@@ -170,7 +192,7 @@ TEST(PacketBuffer, InsertPacketList) {
 
   // Insert 10 small packets.
   for (int i = 0; i < 10; ++i) {
-    list.push_back(gen.NextPacket(payload_len));
+    list.push_back(gen.NextPacket(payload_len, nullptr));
   }
 
   MockDecoderDatabase decoder_database;
@@ -209,11 +231,11 @@ TEST(PacketBuffer, InsertPacketListChangePayloadType) {
 
   // Insert 10 small packets.
   for (int i = 0; i < 10; ++i) {
-    list.push_back(gen.NextPacket(payload_len));
+    list.push_back(gen.NextPacket(payload_len, nullptr));
   }
   // Insert 11th packet of another payload type (not CNG).
   {
-    Packet packet = gen.NextPacket(payload_len);
+    Packet packet = gen.NextPacket(payload_len, nullptr);
     packet.payload_type = 1;
     list.push_back(std::move(packet));
   }
@@ -292,7 +314,7 @@ TEST(PacketBuffer, ExtractOrderRedundancy) {
               packet_facts[i].timestamp,
               packet_facts[i].payload_type,
               kFrameSize);
-    Packet packet = gen.NextPacket(kPayloadLength);
+    Packet packet = gen.NextPacket(kPayloadLength, nullptr);
     packet.priority.codec_level = packet_facts[i].primary ? 0 : 1;
     if (packet_facts[i].extract_order < 0) {
       if (packet.priority.codec_level > 0) {
@@ -333,7 +355,7 @@ TEST(PacketBuffer, DiscardPackets) {
   constexpr int kTotalPackets = 10;
   // Insert 10 small packets.
   for (int i = 0; i < kTotalPackets; ++i) {
-    buffer.InsertPacket(gen.NextPacket(payload_len), &mock_stats);
+    buffer.InsertPacket(gen.NextPacket(payload_len, nullptr), &mock_stats);
   }
   EXPECT_EQ(10u, buffer.NumPacketsInBuffer());
 
@@ -397,7 +419,7 @@ TEST(PacketBuffer, Reordering) {
   // a (rather strange) reordering.
   PacketList list;
   for (int i = 0; i < 10; ++i) {
-    Packet packet = gen.NextPacket(payload_len);
+    Packet packet = gen.NextPacket(payload_len, nullptr);
     if (i % 2) {
       list.push_front(std::move(packet));
     } else {
@@ -459,7 +481,7 @@ TEST(PacketBuffer, CngFirstThenSpeechWithNewSampleRate) {
   // Insert first packet, which is narrow-band CNG.
   PacketGenerator gen(0, 0, kCngPt, 10);
   PacketList list;
-  list.push_back(gen.NextPacket(kPayloadLen));
+  list.push_back(gen.NextPacket(kPayloadLen, nullptr));
   absl::optional<uint8_t> current_pt;
   absl::optional<uint8_t> current_cng_pt;
 
@@ -477,7 +499,7 @@ TEST(PacketBuffer, CngFirstThenSpeechWithNewSampleRate) {
 
   // Insert second packet, which is wide-band speech.
   {
-    Packet packet = gen.NextPacket(kPayloadLen);
+    Packet packet = gen.NextPacket(kPayloadLen, nullptr);
     packet.payload_type = kSpeechPt;
     list.push_back(std::move(packet));
   }
@@ -509,7 +531,7 @@ TEST(PacketBuffer, Failures) {
 
   PacketBuffer* buffer = new PacketBuffer(100, &tick_timer);  // 100 packets.
   {
-    Packet packet = gen.NextPacket(payload_len);
+    Packet packet = gen.NextPacket(payload_len, nullptr);
     packet.payload.Clear();
     EXPECT_EQ(PacketBuffer::kInvalidPacket,
               buffer->InsertPacket(std::move(packet), &mock_stats));
@@ -528,8 +550,9 @@ TEST(PacketBuffer, Failures) {
   buffer->DiscardAllOldPackets(0, &mock_stats);
 
   // Insert one packet to make the buffer non-empty.
-  EXPECT_EQ(PacketBuffer::kOK,
-            buffer->InsertPacket(gen.NextPacket(payload_len), &mock_stats));
+  EXPECT_EQ(
+      PacketBuffer::kOK,
+      buffer->InsertPacket(gen.NextPacket(payload_len, nullptr), &mock_stats));
   EXPECT_EQ(PacketBuffer::kInvalidPointer, buffer->NextTimestamp(NULL));
   EXPECT_EQ(PacketBuffer::kInvalidPointer,
             buffer->NextHigherTimestamp(0, NULL));
@@ -540,13 +563,13 @@ TEST(PacketBuffer, Failures) {
   // discarded.
   buffer = new PacketBuffer(100, &tick_timer);  // 100 packets.
   PacketList list;
-  list.push_back(gen.NextPacket(payload_len));  // Valid packet.
+  list.push_back(gen.NextPacket(payload_len, nullptr));  // Valid packet.
   {
-    Packet packet = gen.NextPacket(payload_len);
+    Packet packet = gen.NextPacket(payload_len, nullptr);
     packet.payload.Clear();  // Invalid.
     list.push_back(std::move(packet));
   }
-  list.push_back(gen.NextPacket(payload_len));  // Valid packet.
+  list.push_back(gen.NextPacket(payload_len, nullptr));  // Valid packet.
   MockDecoderDatabase decoder_database;
   auto factory = CreateBuiltinAudioDecoderFactory();
   const DecoderDatabase::DecoderInfo info(SdpAudioFormat("pcmu", 8000, 1),
@@ -568,8 +591,8 @@ TEST(PacketBuffer, Failures) {
 // The function should return true if the first packet "goes before" the second.
 TEST(PacketBuffer, ComparePackets) {
   PacketGenerator gen(0, 0, 0, 10);
-  Packet a(gen.NextPacket(10));  // SN = 0, TS = 0.
-  Packet b(gen.NextPacket(10));  // SN = 1, TS = 10.
+  Packet a(gen.NextPacket(10, nullptr));  // SN = 0, TS = 0.
+  Packet b(gen.NextPacket(10, nullptr));  // SN = 1, TS = 10.
   EXPECT_FALSE(a == b);
   EXPECT_TRUE(a != b);
   EXPECT_TRUE(a < b);
@@ -624,8 +647,8 @@ TEST(PacketBuffer, ComparePackets) {
   EXPECT_FALSE(a <= b);
   EXPECT_TRUE(a >= b);
 
-  Packet c(gen.NextPacket(0));  // SN = 2, TS = 20.
-  Packet d(gen.NextPacket(0));  // SN = 3, TS = 20.
+  Packet c(gen.NextPacket(0, nullptr));  // SN = 2, TS = 20.
+  Packet d(gen.NextPacket(0, nullptr));  // SN = 3, TS = 20.
   c.timestamp = b.timestamp;
   d.timestamp = b.timestamp;
   c.sequence_number = b.sequence_number;
@@ -671,6 +694,52 @@ TEST(PacketBuffer, ComparePackets) {
   EXPECT_TRUE(d > b);
   EXPECT_FALSE(d <= b);
   EXPECT_TRUE(d >= b);
+}
+
+TEST(PacketBuffer, GetSpanSamples) {
+  constexpr size_t kFrameSizeSamples = 10;
+  constexpr int kPayloadSizeBytes = 1;  // Does not matter to this test;
+  constexpr uint32_t kStartTimeStamp = 0xFFFFFFFE;  // Close to wrap around.
+  constexpr int kSampleRateHz = 48000;
+  constexpr bool KCountDtxWaitingTime = false;
+  TickTimer tick_timer;
+  PacketBuffer buffer(3, &tick_timer);
+  PacketGenerator gen(0, kStartTimeStamp, 0, kFrameSizeSamples);
+  StrictMock<MockStatisticsCalculator> mock_stats;
+
+  Packet packet_1 = gen.NextPacket(kPayloadSizeBytes, nullptr);
+
+  std::unique_ptr<MockEncodedAudioFrame> mock_audio_frame =
+      absl::make_unique<MockEncodedAudioFrame>();
+  EXPECT_CALL(*mock_audio_frame, Duration())
+      .WillRepeatedly(Return(kFrameSizeSamples));
+  Packet packet_2 =
+      gen.NextPacket(kPayloadSizeBytes, std::move(mock_audio_frame));
+
+  RTC_DCHECK_GT(packet_1.timestamp,
+                packet_2.timestamp);  // Tmestamp wrapped around.
+
+  EXPECT_EQ(PacketBuffer::kOK,
+            buffer.InsertPacket(std::move(packet_1), &mock_stats));
+
+  constexpr size_t kLastDecodedSizeSamples = 2;
+  // packet_1 has no access to duration, and relies last decoded duration as
+  // input.
+  EXPECT_EQ(kLastDecodedSizeSamples,
+            buffer.GetSpanSamples(kLastDecodedSizeSamples, kSampleRateHz,
+                                  KCountDtxWaitingTime));
+
+  EXPECT_EQ(PacketBuffer::kOK,
+            buffer.InsertPacket(std::move(packet_2), &mock_stats));
+
+  EXPECT_EQ(kFrameSizeSamples * 2,
+            buffer.GetSpanSamples(0, kSampleRateHz, KCountDtxWaitingTime));
+
+  // packet_2 has access to duration, and ignores last decoded duration as
+  // input.
+  EXPECT_EQ(kFrameSizeSamples * 2,
+            buffer.GetSpanSamples(kLastDecodedSizeSamples, kSampleRateHz,
+                                  KCountDtxWaitingTime));
 }
 
 namespace {
@@ -735,4 +804,5 @@ TEST(PacketBuffer, IsObsoleteTimestamp) {
   TestIsObsoleteTimestamp(0x80000001);  // 2^31 + 1.
   TestIsObsoleteTimestamp(0x7FFFFFFF);  // 2^31 - 1.
 }
+
 }  // namespace webrtc
