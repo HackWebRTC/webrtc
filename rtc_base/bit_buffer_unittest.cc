@@ -14,9 +14,12 @@
 
 #include "rtc_base/arraysize.h"
 #include "rtc_base/byte_buffer.h"
+#include "test/gmock.h"
 #include "test/gtest.h"
 
 namespace rtc {
+
+using ::testing::ElementsAre;
 
 TEST(BitBufferTest, ConsumeBits) {
   const uint8_t bytes[64] = {0};
@@ -176,6 +179,79 @@ TEST(BitBufferTest, SetOffsetValues) {
   EXPECT_DEATH(buffer.GetCurrentOffset(&byte_offset, nullptr), "");
 #endif
 #endif
+}
+
+TEST(BitBufferTest, ReadNonSymmetricSameNumberOfBitsWhenNumValuesPowerOf2) {
+  const uint8_t bytes[2] = {0xf3, 0xa0};
+  BitBuffer reader(bytes, 2);
+
+  uint32_t values[4];
+  ASSERT_EQ(reader.RemainingBitCount(), 16u);
+  EXPECT_TRUE(reader.ReadNonSymmetric(&values[0], /*num_values=*/1 << 4));
+  EXPECT_TRUE(reader.ReadNonSymmetric(&values[1], /*num_values=*/1 << 4));
+  EXPECT_TRUE(reader.ReadNonSymmetric(&values[2], /*num_values=*/1 << 4));
+  EXPECT_TRUE(reader.ReadNonSymmetric(&values[3], /*num_values=*/1 << 4));
+  ASSERT_EQ(reader.RemainingBitCount(), 0u);
+
+  EXPECT_THAT(values, ElementsAre(0xf, 0x3, 0xa, 0x0));
+}
+
+TEST(BitBufferWriterTest,
+     WriteNonSymmetricSameNumberOfBitsWhenNumValuesPowerOf2) {
+  uint8_t bytes[2] = {};
+  BitBufferWriter writer(bytes, 2);
+
+  ASSERT_EQ(writer.RemainingBitCount(), 16u);
+  EXPECT_TRUE(writer.WriteNonSymmetric(0xf, /*num_values=*/1 << 4));
+  ASSERT_EQ(writer.RemainingBitCount(), 12u);
+  EXPECT_TRUE(writer.WriteNonSymmetric(0x3, /*num_values=*/1 << 4));
+  ASSERT_EQ(writer.RemainingBitCount(), 8u);
+  EXPECT_TRUE(writer.WriteNonSymmetric(0xa, /*num_values=*/1 << 4));
+  ASSERT_EQ(writer.RemainingBitCount(), 4u);
+  EXPECT_TRUE(writer.WriteNonSymmetric(0x0, /*num_values=*/1 << 4));
+  ASSERT_EQ(writer.RemainingBitCount(), 0u);
+
+  EXPECT_THAT(bytes, ElementsAre(0xf3, 0xa0));
+}
+
+TEST(BitBufferWriterTest, NonSymmetricReadsMatchesWrites) {
+  uint8_t bytes[2] = {};
+  BitBufferWriter writer(bytes, 2);
+
+  EXPECT_EQ(BitBufferWriter::SizeNonSymmetricBits(/*val=*/1, /*num_values=*/6),
+            2u);
+  EXPECT_EQ(BitBufferWriter::SizeNonSymmetricBits(/*val=*/2, /*num_values=*/6),
+            3u);
+  // Values [0, 1] can fit into two bit.
+  ASSERT_EQ(writer.RemainingBitCount(), 16u);
+  EXPECT_TRUE(writer.WriteNonSymmetric(/*val=*/0, /*num_values=*/6));
+  ASSERT_EQ(writer.RemainingBitCount(), 14u);
+  EXPECT_TRUE(writer.WriteNonSymmetric(/*val=*/1, /*num_values=*/6));
+  ASSERT_EQ(writer.RemainingBitCount(), 12u);
+  // Values [2, 5] require 3 bits.
+  EXPECT_TRUE(writer.WriteNonSymmetric(/*val=*/2, /*num_values=*/6));
+  ASSERT_EQ(writer.RemainingBitCount(), 9u);
+  EXPECT_TRUE(writer.WriteNonSymmetric(/*val=*/3, /*num_values=*/6));
+  ASSERT_EQ(writer.RemainingBitCount(), 6u);
+  EXPECT_TRUE(writer.WriteNonSymmetric(/*val=*/4, /*num_values=*/6));
+  ASSERT_EQ(writer.RemainingBitCount(), 3u);
+  EXPECT_TRUE(writer.WriteNonSymmetric(/*val=*/5, /*num_values=*/6));
+  ASSERT_EQ(writer.RemainingBitCount(), 0u);
+
+  // Bit values are
+  // 00.01.100.101.110.111 = 00011001|01110111 = 0x19|77
+  EXPECT_THAT(bytes, ElementsAre(0x19, 0x77));
+
+  rtc::BitBuffer reader(bytes, 2);
+  uint32_t values[6];
+  EXPECT_TRUE(reader.ReadNonSymmetric(&values[0], /*num_values=*/6));
+  EXPECT_TRUE(reader.ReadNonSymmetric(&values[1], /*num_values=*/6));
+  EXPECT_TRUE(reader.ReadNonSymmetric(&values[2], /*num_values=*/6));
+  EXPECT_TRUE(reader.ReadNonSymmetric(&values[3], /*num_values=*/6));
+  EXPECT_TRUE(reader.ReadNonSymmetric(&values[4], /*num_values=*/6));
+  EXPECT_TRUE(reader.ReadNonSymmetric(&values[5], /*num_values=*/6));
+
+  EXPECT_THAT(values, ElementsAre(0, 1, 2, 3, 4, 5));
 }
 
 uint64_t GolombEncoded(uint32_t val) {

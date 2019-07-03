@@ -159,6 +159,29 @@ bool BitBuffer::ConsumeBits(size_t bit_count) {
   return true;
 }
 
+bool BitBuffer::ReadNonSymmetric(uint32_t* val, uint32_t num_values) {
+  RTC_DCHECK_GT(num_values, 0);
+  RTC_DCHECK_LE(num_values, uint32_t{1} << 31);
+  size_t count_bits = CountBits(num_values);
+  uint32_t num_min_bits_values = (uint32_t{1} << count_bits) - num_values;
+
+  if (!ReadBits(val, count_bits - 1)) {
+    return false;
+  }
+
+  if (*val < num_min_bits_values) {
+    return true;
+  }
+
+  uint32_t extra_bit;
+  if (!ReadBits(&extra_bit, /*bit_count=*/1)) {
+    return false;
+  }
+
+  *val = (*val << 1) + extra_bit - num_min_bits_values;
+  return true;
+}
+
 bool BitBuffer::ReadExponentialGolomb(uint32_t* val) {
   if (!val) {
     return false;
@@ -280,6 +303,27 @@ bool BitBufferWriter::WriteBits(uint64_t val, size_t bit_count) {
 
   // All done! Consume the bits we've written.
   return ConsumeBits(total_bits);
+}
+
+bool BitBufferWriter::WriteNonSymmetric(uint32_t val, uint32_t num_values) {
+  RTC_DCHECK_LT(val, num_values);
+  RTC_DCHECK_LE(num_values, uint32_t{1} << 31);
+  size_t count_bits = CountBits(num_values);
+  uint32_t num_min_bits_values = (uint32_t{1} << count_bits) - num_values;
+
+  return val < num_min_bits_values
+             ? WriteBits(val, count_bits - 1)
+             : WriteBits(val + num_min_bits_values, count_bits);
+}
+
+size_t BitBufferWriter::SizeNonSymmetricBits(uint32_t val,
+                                             uint32_t num_values) {
+  RTC_DCHECK_LT(val, num_values);
+  RTC_DCHECK_LE(num_values, uint32_t{1} << 31);
+  size_t count_bits = CountBits(num_values);
+  uint32_t num_min_bits_values = (uint32_t{1} << count_bits) - num_values;
+
+  return val < num_min_bits_values ? (count_bits - 1) : count_bits;
 }
 
 bool BitBufferWriter::WriteExponentialGolomb(uint32_t val) {
