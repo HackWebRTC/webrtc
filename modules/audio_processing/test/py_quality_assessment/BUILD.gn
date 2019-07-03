@@ -122,16 +122,20 @@ rtc_executable("fake_polqa") {
 }
 
 rtc_executable("vad") {
+  testonly = true
   sources = [
     "quality_assessment/vad.cc",
   ]
   deps = [
     "../../../../common_audio",
     "../../../../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/flags:flag",
+    "//third_party/abseil-cpp/absl/flags:parse",
   ]
 }
 
 rtc_executable("apm_vad") {
+  testonly = true
   sources = [
     "quality_assessment/apm_vad.cc",
   ]
@@ -140,10 +144,13 @@ rtc_executable("apm_vad") {
     "../../../../common_audio",
     "../../../../rtc_base:rtc_base_approved",
     "../../vad",
+    "//third_party/abseil-cpp/absl/flags:flag",
+    "//third_party/abseil-cpp/absl/flags:parse",
   ]
 }
 
 rtc_executable("sound_level") {
+  testonly = true
   sources = [
     "quality_assessment/sound_level.cc",
   ]
@@ -151,6 +158,8 @@ rtc_executable("sound_level") {
     "../..",
     "../../../../common_audio",
     "../../../../rtc_base:rtc_base_approved",
+    "//third_party/abseil-cpp/absl/flags:flag",
+    "//third_party/abseil-cpp/absl/flags:parse",
   ]
 }
 
