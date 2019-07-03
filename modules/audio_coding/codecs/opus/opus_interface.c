@@ -653,48 +653,24 @@ int WebRtcOpus_FecDurationEst(const uint8_t* payload,
   return samples;
 }
 
+// This method is based on Definition of the Opus Audio Codec
+// (https://tools.ietf.org/html/rfc6716). Basically, this method is based on
+// parsing the LP layer of an Opus packet, particularly the LBRR flag.
 int WebRtcOpus_PacketHasFec(const uint8_t* payload,
                             size_t payload_length_bytes) {
-  int frames, channels, payload_length_ms;
-  int n;
-  opus_int16 frame_sizes[48];
-  const unsigned char *frame_data[48];
-
   if (payload == NULL || payload_length_bytes == 0)
     return 0;
 
-  /* In CELT_ONLY mode, packets should not have FEC. */
+  // In CELT_ONLY mode, packets should not have FEC.
   if (payload[0] & 0x80)
     return 0;
 
-  // For computing the payload length in ms, the sample rate is not important
-  // since it cancels out. We use 48 kHz, but any valid sample rate would work.
-  payload_length_ms = opus_packet_get_samples_per_frame(payload, 48000) / 48;
-  if (10 > payload_length_ms)
-    payload_length_ms = 10;
+  // Max number of frames in an Opus packet is 48.
+  opus_int16 frame_sizes[48];
+  const unsigned char *frame_data[48];
 
-  channels = opus_packet_get_nb_channels(payload);
-
-  switch (payload_length_ms) {
-    case 10:
-    case 20: {
-      frames = 1;
-      break;
-    }
-    case 40: {
-      frames = 2;
-      break;
-    }
-    case 60: {
-      frames = 3;
-      break;
-    }
-    default: {
-      return 0; // It is actually even an invalid packet.
-    }
-  }
-
-  /* The following is to parse the LBRR flags. */
+  // Parse packet to get the frames. But we only care about the first frame,
+  // since we can only decode the FEC from the first one.
   if (opus_packet_parse(payload, (opus_int32)payload_length_bytes, NULL,
                         frame_data, frame_sizes, NULL) < 0) {
     return 0;
@@ -704,8 +680,44 @@ int WebRtcOpus_PacketHasFec(const uint8_t* payload,
     return 0;
   }
 
-  for (n = 0; n < channels; n++) {
-    if (frame_data[0][0] & (0x80 >> ((n + 1) * (frames + 1) - 1)))
+  // For computing the payload length in ms, the sample rate is not important
+  // since it cancels out. We use 48 kHz, but any valid sample rate would work.
+  int payload_length_ms =
+      opus_packet_get_samples_per_frame(payload, 48000) / 48;
+  if (payload_length_ms < 10)
+    payload_length_ms = 10;
+
+  int silk_frames;
+  switch (payload_length_ms) {
+    case 10:
+    case 20:
+      silk_frames = 1;
+      break;
+    case 40:
+      silk_frames = 2;
+      break;
+    case 60:
+      silk_frames = 3;
+      break;
+    default:
+      return 0; // It is actually even an invalid packet.
+  }
+
+  const int channels = opus_packet_get_nb_channels(payload);
+  RTC_DCHECK(channels == 1 || channels == 2);
+
+  // A frame starts with the LP layer. The LP layer begins with two to eight
+  // header bits.These consist of one VAD bit per SILK frame (up to 3),
+  // followed by a single flag indicating the presence of LBRR frames.
+  // For a stereo packet, these first flags correspond to the mid channel, and
+  // a second set of flags is included for the side channel. Because these are
+  // the first symbols decoded by the range coder and because they are coded
+  // as binary values with uniform probability, they can be extracted directly
+  // from the most significant bits of the first byte of compressed data.
+  for (int n = 0; n < channels; n++) {
+    // The LBRR bit for channel 1 is on the (|silk_frames| + 1)-th bit, and
+    // that of channel 2 is on the |(|silk_frames| + 1) * 2 + 1|-th bit.
+    if (frame_data[0][0] & (0x80 >> ((n + 1) * (silk_frames + 1) - 1)))
       return 1;
   }
 
