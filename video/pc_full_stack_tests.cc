@@ -168,8 +168,9 @@ TEST_P(PCGenericDescriptorTest, ForemanCifPlr5Vp9) {
 }
 
 // VP9 2nd profile isn't supported on android arm and arm 64.
-#if defined(WEBRTC_ANDROID) && \
-    (defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM))
+#if (defined(WEBRTC_ANDROID) &&                                   \
+     (defined(WEBRTC_ARCH_ARM64) || defined(WEBRTC_ARCH_ARM))) || \
+    (defined(WEBRTC_IOS) && defined(WEBRTC_ARCH_ARM64))
 #define MAYBE_GeneratorWithoutPacketLossVp9Profile2 \
   DISABLED_GeneratorWithoutPacketLossVp9Profile2
 #else
