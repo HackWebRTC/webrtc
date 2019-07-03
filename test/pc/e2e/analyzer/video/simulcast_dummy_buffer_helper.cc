@@ -10,6 +10,8 @@
 
 #include "test/pc/e2e/analyzer/video/simulcast_dummy_buffer_helper.h"
 
+#include <cstring>
+
 namespace webrtc {
 namespace webrtc_pc_e2e {
 namespace {
