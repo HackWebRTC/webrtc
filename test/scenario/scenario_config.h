@@ -148,7 +148,6 @@ struct VideoStreamConfig {
       } prediction = Prediction::kFull;
     } layers;
 
-    using DegradationPreference = DegradationPreference;
     DegradationPreference degradation_preference =
         DegradationPreference::MAINTAIN_FRAMERATE;
   } encoder;
