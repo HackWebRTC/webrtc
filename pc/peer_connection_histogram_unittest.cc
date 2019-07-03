@@ -22,6 +22,7 @@
 #include "api/peer_connection_proxy.h"
 #include "api/rtc_error.h"
 #include "api/scoped_refptr.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "media/base/fake_media_engine.h"
 #include "p2p/base/mock_async_resolver.h"
 #include "p2p/base/port_allocator.h"
@@ -74,6 +75,7 @@ class PeerConnectionFactoryForUsageHistogramTest
           dependencies.network_thread = rtc::Thread::Current();
           dependencies.worker_thread = rtc::Thread::Current();
           dependencies.signaling_thread = rtc::Thread::Current();
+          dependencies.task_queue_factory = CreateDefaultTaskQueueFactory();
           dependencies.media_engine =
               absl::make_unique<cricket::FakeMediaEngine>();
           dependencies.call_factory = CreateCallFactory();

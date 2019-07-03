@@ -18,7 +18,6 @@
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
-#include "api/task_queue/global_task_queue_factory.h"
 #include "api/transport/network_control.h"
 #include "audio/audio_receive_stream.h"
 #include "audio/audio_send_stream.h"
@@ -430,18 +429,14 @@ Call* Call::Create(const Call::Config& config,
                    Clock* clock,
                    std::unique_ptr<ProcessThread> call_thread,
                    std::unique_ptr<ProcessThread> pacer_thread) {
-  // TODO(bugs.webrtc.org/10284): DCHECK task_queue_factory dependency is
-  // always provided in the config.
-  TaskQueueFactory* task_queue_factory = config.task_queue_factory
-                                             ? config.task_queue_factory
-                                             : &GlobalTaskQueueFactory();
+  RTC_DCHECK(config.task_queue_factory);
   return new internal::Call(
       clock, config,
       absl::make_unique<RtpTransportControllerSend>(
           clock, config.event_log, config.network_state_predictor_factory,
           config.network_controller_factory, config.bitrate_config,
-          std::move(pacer_thread), task_queue_factory),
-      std::move(call_thread), task_queue_factory);
+          std::move(pacer_thread), config.task_queue_factory),
+      std::move(call_thread), config.task_queue_factory);
 }
 
 // This method here to avoid subclasses has to implement this method.

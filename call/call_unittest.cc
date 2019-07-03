@@ -15,6 +15,7 @@
 
 #include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/fake_media_transport.h"
 #include "api/test/mock_audio_mixer.h"
 #include "audio/audio_receive_stream.h"
@@ -35,6 +36,7 @@ namespace {
 
 struct CallHelper {
   CallHelper() {
+    task_queue_factory_ = webrtc::CreateDefaultTaskQueueFactory();
     webrtc::AudioState::Config audio_state_config;
     audio_state_config.audio_mixer =
         new rtc::RefCountedObject<webrtc::test::MockAudioMixer>();
@@ -44,6 +46,7 @@ struct CallHelper {
         new rtc::RefCountedObject<webrtc::test::MockAudioDeviceModule>();
     webrtc::Call::Config config(&event_log_);
     config.audio_state = webrtc::AudioState::Create(audio_state_config);
+    config.task_queue_factory = task_queue_factory_.get();
     call_.reset(webrtc::Call::Create(config));
   }
 
@@ -51,6 +54,7 @@ struct CallHelper {
 
  private:
   webrtc::RtcEventLogNullImpl event_log_;
+  std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory_;
   std::unique_ptr<webrtc::Call> call_;
 };
 }  // namespace

@@ -47,7 +47,7 @@ struct CallConfig {
   // FecController to use for this call.
   FecControllerFactoryInterface* fec_controller_factory = nullptr;
 
-  // Task Queue Factory to be used in this call.
+  // Task Queue Factory to be used in this call. Required.
   TaskQueueFactory* task_queue_factory = nullptr;
 
   // NetworkStatePredictor to use for this call.

@@ -11,6 +11,7 @@
 #include <memory>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
@@ -3457,8 +3458,9 @@ TEST(WebRtcVoiceEngineTest, StartupShutdown) {
       webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr, apm);
   engine.Init();
   webrtc::RtcEventLogNullImpl event_log;
-  std::unique_ptr<webrtc::Call> call(
-      webrtc::Call::Create(webrtc::Call::Config(&event_log)));
+  webrtc::Call::Config call_config(&event_log);
+  call_config.task_queue_factory = task_queue_factory.get();
+  auto call = absl::WrapUnique(webrtc::Call::Create(call_config));
   cricket::VoiceMediaChannel* channel = engine.CreateMediaChannel(
       call.get(), cricket::MediaConfig(), cricket::AudioOptions(),
       webrtc::CryptoOptions());
@@ -3484,8 +3486,9 @@ TEST(WebRtcVoiceEngineTest, StartupShutdownWithExternalADM) {
         webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr, apm);
     engine.Init();
     webrtc::RtcEventLogNullImpl event_log;
-    std::unique_ptr<webrtc::Call> call(
-        webrtc::Call::Create(webrtc::Call::Config(&event_log)));
+    webrtc::Call::Config call_config(&event_log);
+    call_config.task_queue_factory = task_queue_factory.get();
+    auto call = absl::WrapUnique(webrtc::Call::Create(call_config));
     cricket::VoiceMediaChannel* channel = engine.CreateMediaChannel(
         call.get(), cricket::MediaConfig(), cricket::AudioOptions(),
         webrtc::CryptoOptions());
@@ -3557,8 +3560,9 @@ TEST(WebRtcVoiceEngineTest, Has32Channels) {
       webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr, apm);
   engine.Init();
   webrtc::RtcEventLogNullImpl event_log;
-  std::unique_ptr<webrtc::Call> call(
-      webrtc::Call::Create(webrtc::Call::Config(&event_log)));
+  webrtc::Call::Config call_config(&event_log);
+  call_config.task_queue_factory = task_queue_factory.get();
+  auto call = absl::WrapUnique(webrtc::Call::Create(call_config));
 
   cricket::VoiceMediaChannel* channels[32];
   size_t num_channels = 0;
@@ -3599,8 +3603,9 @@ TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
       webrtc::CreateBuiltinAudioDecoderFactory(), nullptr, apm);
   engine.Init();
   webrtc::RtcEventLogNullImpl event_log;
-  std::unique_ptr<webrtc::Call> call(
-      webrtc::Call::Create(webrtc::Call::Config(&event_log)));
+  webrtc::Call::Config call_config(&event_log);
+  call_config.task_queue_factory = task_queue_factory.get();
+  auto call = absl::WrapUnique(webrtc::Call::Create(call_config));
   cricket::WebRtcVoiceMediaChannel channel(&engine, cricket::MediaConfig(),
                                            cricket::AudioOptions(),
                                            webrtc::CryptoOptions(), call.get());

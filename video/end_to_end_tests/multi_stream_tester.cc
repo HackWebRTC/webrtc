@@ -48,6 +48,7 @@ void MultiStreamTester::RunTest() {
   webrtc::RtcEventLogNullImpl event_log;
   auto task_queue_factory = CreateDefaultTaskQueueFactory();
   Call::Config config(&event_log);
+  config.task_queue_factory = task_queue_factory.get();
   std::unique_ptr<Call> sender_call;
   std::unique_ptr<Call> receiver_call;
   std::unique_ptr<test::DirectTransport> sender_transport;

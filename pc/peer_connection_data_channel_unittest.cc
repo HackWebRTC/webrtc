@@ -22,6 +22,7 @@
 #include "api/peer_connection_interface.h"
 #include "api/peer_connection_proxy.h"
 #include "api/scoped_refptr.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/fake_media_transport.h"
 #include "media/base/codec.h"
 #include "media/base/fake_media_engine.h"
@@ -71,6 +72,7 @@ PeerConnectionFactoryDependencies CreatePeerConnectionFactoryDependencies(
   deps.network_thread = network_thread;
   deps.worker_thread = worker_thread;
   deps.signaling_thread = signaling_thread;
+  deps.task_queue_factory = CreateDefaultTaskQueueFactory();
   deps.media_engine = std::move(media_engine);
   deps.call_factory = std::move(call_factory);
   deps.media_transport_factory = std::move(media_transport_factory);

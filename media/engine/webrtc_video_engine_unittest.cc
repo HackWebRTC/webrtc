@@ -19,6 +19,7 @@
 #include "absl/strings/match.h"
 #include "api/media_transport_config.h"
 #include "api/rtp_parameters.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/fake_media_transport.h"
 #include "api/test/mock_video_bitrate_allocator.h"
 #include "api/test/mock_video_bitrate_allocator_factory.h"
@@ -226,7 +227,12 @@ class WebRtcVideoEngineTest : public ::testing::Test {
                 ? nullptr
                 : absl::make_unique<webrtc::test::ScopedFieldTrials>(
                       field_trials)),
-        call_(webrtc::Call::Create(webrtc::Call::Config(&event_log_))),
+        task_queue_factory_(webrtc::CreateDefaultTaskQueueFactory()),
+        call_(webrtc::Call::Create([&] {
+          webrtc::Call::Config call_config(&event_log_);
+          call_config.task_queue_factory = task_queue_factory_.get();
+          return call_config;
+        }())),
         encoder_factory_(new cricket::FakeWebRtcVideoEncoderFactory),
         decoder_factory_(new cricket::FakeWebRtcVideoDecoderFactory),
         video_bitrate_allocator_factory_(
@@ -264,6 +270,7 @@ class WebRtcVideoEngineTest : public ::testing::Test {
   rtc::ScopedFakeClock fake_clock_;
   std::unique_ptr<webrtc::test::ScopedFieldTrials> override_field_trials_;
   webrtc::RtcEventLogNullImpl event_log_;
+  std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory_;
   // Used in WebRtcVideoEngineVoiceTest, but defined here so it's properly
   // initialized when the constructor is called.
   std::unique_ptr<webrtc::Call> call_;
@@ -1137,8 +1144,10 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, Vp8) {
 
   // Create a call.
   webrtc::RtcEventLogNullImpl event_log;
-  std::unique_ptr<webrtc::Call> call(
-      webrtc::Call::Create(webrtc::Call::Config(&event_log)));
+  auto task_queue_factory = webrtc::CreateDefaultTaskQueueFactory();
+  webrtc::Call::Config call_config(&event_log);
+  call_config.task_queue_factory = task_queue_factory.get();
+  const auto call = absl::WrapUnique(webrtc::Call::Create(call_config));
 
   // Create send channel.
   const int send_ssrc = 123;
@@ -1205,8 +1214,10 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, NullDecoder) {
 
   // Create a call.
   webrtc::RtcEventLogNullImpl event_log;
-  std::unique_ptr<webrtc::Call> call(
-      webrtc::Call::Create(webrtc::Call::Config(&event_log)));
+  auto task_queue_factory = webrtc::CreateDefaultTaskQueueFactory();
+  webrtc::Call::Config call_config(&event_log);
+  call_config.task_queue_factory = task_queue_factory.get();
+  const auto call = absl::WrapUnique(webrtc::Call::Create(call_config));
 
   // Create recv channel.
   const int recv_ssrc = 321;
@@ -1286,7 +1297,8 @@ TEST_F(WebRtcVideoEngineTest, DISABLED_RecreatesEncoderOnContentTypeChange) {
 class WebRtcVideoChannelBaseTest : public ::testing::Test {
  protected:
   WebRtcVideoChannelBaseTest()
-      : video_bitrate_allocator_factory_(
+      : task_queue_factory_(webrtc::CreateDefaultTaskQueueFactory()),
+        video_bitrate_allocator_factory_(
             webrtc::CreateBuiltinVideoBitrateAllocatorFactory()),
         engine_(webrtc::CreateBuiltinVideoEncoderFactory(),
                 webrtc::CreateBuiltinVideoDecoderFactory()) {}
@@ -1294,7 +1306,9 @@ class WebRtcVideoChannelBaseTest : public ::testing::Test {
   virtual void SetUp() {
     // One testcase calls SetUp in a loop, only create call_ once.
     if (!call_) {
-      call_.reset(webrtc::Call::Create(webrtc::Call::Config(&event_log_)));
+      webrtc::Call::Config call_config(&event_log_);
+      call_config.task_queue_factory = task_queue_factory_.get();
+      call_.reset(webrtc::Call::Create(call_config));
     }
     cricket::MediaConfig media_config;
     // Disabling cpu overuse detection actually disables quality scaling too; it
@@ -1475,6 +1489,7 @@ class WebRtcVideoChannelBaseTest : public ::testing::Test {
   }
 
   webrtc::RtcEventLogNullImpl event_log_;
+  std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory_;
   std::unique_ptr<webrtc::Call> call_;
   std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
       video_bitrate_allocator_factory_;
