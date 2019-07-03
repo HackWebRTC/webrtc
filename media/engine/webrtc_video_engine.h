@@ -261,8 +261,6 @@ class WebRtcVideoChannel : public VideoMediaChannel,
                                 ChangedRecvParameters* changed_params) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(thread_checker_);
 
-  void SetMaxSendBandwidth(int bps);
-
   void ConfigureReceiverRtp(
       webrtc::VideoReceiveStream::Config* config,
       webrtc::FlexfecReceiveStream::Config* flexfec_config,
