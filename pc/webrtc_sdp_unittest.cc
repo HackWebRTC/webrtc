@@ -4567,12 +4567,20 @@ TEST_F(WebRtcSdpTest, SerializeSimulcast_ComplexSerialization) {
   send_rids.push_back(RidDescription("3", RidDirection::kSend));
   send_rids.push_back(RidDescription("4", RidDirection::kSend));
   send_stream.set_rids(send_rids);
+  std::vector<RidDescription> receive_rids;
+  receive_rids.push_back(RidDescription("5", RidDirection::kReceive));
+  receive_rids.push_back(RidDescription("6", RidDirection::kReceive));
+  receive_rids.push_back(RidDescription("7", RidDirection::kReceive));
+  media->set_receive_rids(receive_rids);
 
   SimulcastDescription& simulcast = media->simulcast_description();
   simulcast.send_layers().AddLayerWithAlternatives(
       {SimulcastLayer("2", false), SimulcastLayer("1", true)});
   simulcast.send_layers().AddLayerWithAlternatives(
       {SimulcastLayer("4", false), SimulcastLayer("3", false)});
+  simulcast.receive_layers().AddLayer({SimulcastLayer("5", false)});
+  simulcast.receive_layers().AddLayer({SimulcastLayer("6", false)});
+  simulcast.receive_layers().AddLayer({SimulcastLayer("7", false)});
 
   TestSerialize(jdesc_);
 }

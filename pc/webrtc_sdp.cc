@@ -1748,6 +1748,13 @@ void BuildRtpContentAttributes(const MediaContentDescription* media_desc,
     }
   }
 
+  for (const RidDescription& rid_description : media_desc->receive_rids()) {
+    InitAttrLine(kAttributeRid, &os);
+    os << kSdpDelimiterColon
+       << serializer.SerializeRidDescription(rid_description);
+    AddLine(os.str(), message);
+  }
+
   // Simulcast (a=simulcast)
   // https://tools.ietf.org/html/draft-ietf-mmusic-sdp-simulcast-13#section-5.1
   if (media_desc->HasSimulcast()) {
@@ -3362,6 +3369,7 @@ bool ParseContent(const std::string& message,
   // Rids that do not appear in simulcast attribute will be removed.
   // If it is not specified, we assume that all rids are for send layers.
   std::vector<RidDescription> send_rids;
+  std::vector<RidDescription> receive_rids;
   if (!simulcast.empty()) {
     // Verify that the rids in simulcast match rids in sdp.
     RemoveInvalidRidsFromSimulcast(rids, &simulcast);
@@ -3378,10 +3386,18 @@ bool ParseContent(const std::string& message,
       send_rids.push_back(iter->second);
     }
 
+    for (const auto& layer : simulcast.receive_layers().GetAllLayers()) {
+      auto iter = rid_map.find(layer.rid);
+      RTC_DCHECK(iter != rid_map.end());
+      receive_rids.push_back(iter->second);
+    }
+
     media_desc->set_simulcast_description(simulcast);
   } else {
     send_rids = rids;
   }
+
+  media_desc->set_receive_rids(receive_rids);
 
   // Create tracks from the |ssrc_infos|.
   // If the stream_id/track_id for all SSRCS are identical, one StreamParams

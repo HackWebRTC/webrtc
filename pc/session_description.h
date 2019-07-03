@@ -235,6 +235,12 @@ class MediaContentDescription {
       const SimulcastDescription& simulcast) {
     simulcast_ = simulcast;
   }
+  virtual const std::vector<RidDescription>& receive_rids() const {
+    return receive_rids_;
+  }
+  virtual void set_receive_rids(const std::vector<RidDescription>& rids) {
+    receive_rids_ = rids;
+  }
 
  protected:
   bool rtcp_mux_ = false;
@@ -255,6 +261,7 @@ class MediaContentDescription {
   ExtmapAllowMixed extmap_allow_mixed_enum_ = kNo;
 
   SimulcastDescription simulcast_;
+  std::vector<RidDescription> receive_rids_;
 };
 
 // TODO(bugs.webrtc.org/8620): Remove this alias once downstream projects have
