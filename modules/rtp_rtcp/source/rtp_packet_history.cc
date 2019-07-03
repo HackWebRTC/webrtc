@@ -67,9 +67,19 @@ void RtpPacketHistory::StoredPacket::IncrementTimesRetransmitted(
   // it before updating |times_retransmitted_| since that is used in sorting,
   // and then add it back.
   const bool in_priority_set = priority_set->erase(this) > 0;
+  RTC_DCHECK_EQ(in_priority_set,
+                storage_type_ == StorageType::kAllowRetransmission)
+      << "ERROR: All retransmittable packets should be in priority set.";
   ++times_retransmitted_;
   if (in_priority_set) {
-    priority_set->insert(this);
+    auto it = priority_set->insert(this);
+    RTC_DCHECK(it.second)
+        << "ERROR: Priority set already contains matching packet! In set: "
+           "insert order = "
+        << (*it.first)->insert_order_
+        << ", times retransmitted = " << (*it.first)->times_retransmitted_
+        << ". Trying to add: insert order = " << insert_order_
+        << ", times retransmitted = " << times_retransmitted_;
   }
 }
 
@@ -138,7 +148,7 @@ void RtpPacketHistory::PutRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
                                type != StorageType::kDontRetransmit
                                    ? retransmittable_packets_inserted_++
                                    : 0));
-  RTC_DCHECK(it.second);
+  RTC_DCHECK(it.second) << "Failed to insert packet in history.";
   StoredPacket& stored_packet = it.first->second;
   if (stored_packet.packet_) {
     // It is an error if this happen. But it can happen if the sequence numbers
@@ -161,7 +171,8 @@ void RtpPacketHistory::PutRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
   // Store the sequence number of the last send packet with this size.
   if (type != StorageType::kDontRetransmit) {
     packet_size_[stored_packet.packet_->size()] = rtp_seq_no;
-    padding_priority_.insert(&stored_packet);
+    auto it = padding_priority_.insert(&stored_packet);
+    RTC_DCHECK(it.second) << "Failed to insert packet into prio set.";
   }
 }
 
@@ -469,7 +480,14 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::RemovePacket(
 
   // Erase from padding priority set, if eligible.
   if (packet_it->second.storage_type() != StorageType::kDontRetransmit) {
-    RTC_CHECK_EQ(padding_priority_.erase(&packet_it->second), 1);
+    size_t num_erased = padding_priority_.erase(&packet_it->second);
+    RTC_DCHECK_EQ(num_erased, 1)
+        << "Failed to remove one packet from prio set, got " << num_erased;
+    if (num_erased != 1) {
+      RTC_LOG(LS_ERROR) << "RtpPacketHistory in inconsistent state, resetting.";
+      Reset();
+      return nullptr;
+    }
   }
 
   // Erase the packet from the map, and capture iterator to the next one.
