@@ -130,11 +130,9 @@ class RTC_EXPORT VideoFrame {
   uint32_t transport_frame_id() const { return timestamp(); }
 
   // Set capture ntp time in milliseconds.
-  // TODO(nisse): Deprecated. Migrate all users to timestamp_us().
   void set_ntp_time_ms(int64_t ntp_time_ms) { ntp_time_ms_ = ntp_time_ms; }
 
   // Get capture ntp time in milliseconds.
-  // TODO(nisse): Deprecated. Migrate all users to timestamp_us().
   int64_t ntp_time_ms() const { return ntp_time_ms_; }
 
   // Naming convention for Coordination of Video Orientation. Please see
