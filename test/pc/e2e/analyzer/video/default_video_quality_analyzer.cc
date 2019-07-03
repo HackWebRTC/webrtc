@@ -26,6 +26,7 @@ namespace {
 constexpr int kMaxActiveComparisons = 10;
 constexpr int kFreezeThresholdMs = 150;
 constexpr int kMicrosPerSecond = 1000000;
+constexpr int kBitsInByte = 8;
 
 void LogFrameCounters(const std::string& name, const FrameCounters& counters) {
   RTC_LOG(INFO) << "[" << name << "] Captured    : " << counters.captured;
@@ -579,15 +580,20 @@ void DefaultVideoQualityAnalyzer::ReportVideoBweResults(
     const std::string& test_case_name,
     const VideoBweStats& video_bwe_stats) {
   ReportResult("available_send_bandwidth", test_case_name,
-               video_bwe_stats.available_send_bandwidth, "bytesPerSecond");
+               video_bwe_stats.available_send_bandwidth / kBitsInByte,
+               "bytesPerSecond");
   ReportResult("transmission_bitrate", test_case_name,
-               video_bwe_stats.transmission_bitrate, "bytesPerSecond");
+               video_bwe_stats.transmission_bitrate / kBitsInByte,
+               "bytesPerSecond");
   ReportResult("retransmission_bitrate", test_case_name,
-               video_bwe_stats.retransmission_bitrate, "bytesPerSecond");
+               video_bwe_stats.retransmission_bitrate / kBitsInByte,
+               "bytesPerSecond");
   ReportResult("actual_encode_bitrate", test_case_name,
-               video_bwe_stats.actual_encode_bitrate, "bytesPerSecond");
+               video_bwe_stats.actual_encode_bitrate / kBitsInByte,
+               "bytesPerSecond");
   ReportResult("target_encode_bitrate", test_case_name,
-               video_bwe_stats.target_encode_bitrate, "bytesPerSecond");
+               video_bwe_stats.target_encode_bitrate / kBitsInByte,
+               "bytesPerSecond");
 }
 
 void DefaultVideoQualityAnalyzer::ReportResults(
