@@ -281,6 +281,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   bool was_encode_called_since_last_initialization_
       RTC_GUARDED_BY(&encoder_queue_);
 
+  bool encoder_failed_ RTC_GUARDED_BY(&encoder_queue_);
   Clock* const clock_;
   // Counters used for deciding if the video resolution or framerate is
   // currently restricted, and if so, why, on a per degradation preference

@@ -9,6 +9,7 @@
  */
 
 #include "api/video_codecs/sdp_video_format.h"
+#include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
 
@@ -24,6 +25,16 @@ SdpVideoFormat& SdpVideoFormat::operator=(const SdpVideoFormat&) = default;
 SdpVideoFormat& SdpVideoFormat::operator=(SdpVideoFormat&&) = default;
 
 SdpVideoFormat::~SdpVideoFormat() = default;
+
+std::string SdpVideoFormat::ToString() const {
+  rtc::StringBuilder builder;
+  builder << "Codec name: " << name << ", parameters: {";
+  for (const auto& kv : parameters)
+    builder << " " << kv.first << "=" << kv.second;
+  builder << " }";
+
+  return builder.str();
+}
 
 bool operator==(const SdpVideoFormat& a, const SdpVideoFormat& b) {
   return a.name == b.name && a.parameters == b.parameters;

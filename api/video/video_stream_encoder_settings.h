@@ -17,6 +17,12 @@
 
 namespace webrtc {
 
+class EncoderFailureCallback {
+ public:
+  virtual ~EncoderFailureCallback() {}
+  virtual void OnEncoderFailure() = 0;
+};
+
 struct VideoStreamEncoderSettings {
   explicit VideoStreamEncoderSettings(
       const VideoEncoder::Capabilities& capabilities)
@@ -28,6 +34,9 @@ struct VideoStreamEncoderSettings {
 
   // Ownership stays with WebrtcVideoEngine (delegated from PeerConnection).
   VideoEncoderFactory* encoder_factory = nullptr;
+
+  // Notifies the WebRtcVideoChannel that the currently used encoder is broken.
+  EncoderFailureCallback* encoder_failure_callback = nullptr;
 
   // Ownership stays with WebrtcVideoEngine (delegated from PeerConnection).
   VideoBitrateAllocatorFactory* bitrate_allocator_factory = nullptr;

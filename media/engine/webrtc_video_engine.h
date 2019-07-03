@@ -106,7 +106,9 @@ class WebRtcVideoEngine : public VideoEngineInterface {
       bitrate_allocator_factory_;
 };
 
-class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
+class WebRtcVideoChannel : public VideoMediaChannel,
+                           public webrtc::Transport,
+                           public webrtc::EncoderFailureCallback {
  public:
   WebRtcVideoChannel(
       webrtc::Call* call,
@@ -205,6 +207,9 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   // This method does nothing unless unknown_ssrc_packet_buffer_ is configured.
   void BackfillBufferedPackets(rtc::ArrayView<const uint32_t> ssrcs);
 
+  // Implements webrtc::EncoderFailureCallback.
+  void OnEncoderFailure() override;
+
  private:
   class WebRtcVideoReceiveStream;
   struct VideoCodecSettings {
@@ -228,7 +233,8 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
 
   struct ChangedSendParameters {
     // These optionals are unset if not changed.
-    absl::optional<VideoCodecSettings> codec;
+    absl::optional<VideoCodecSettings> send_codec;
+    absl::optional<std::vector<VideoCodecSettings>> negotiated_codecs;
     absl::optional<std::vector<webrtc::RtpExtension>> rtp_header_extensions;
     absl::optional<std::string> mid;
     absl::optional<bool> extmap_allow_mixed;
@@ -250,6 +256,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   bool GetChangedSendParameters(const VideoSendParameters& params,
                                 ChangedSendParameters* changed_params) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(thread_checker_);
+  bool ApplyChangedParams(const ChangedSendParameters& changed_params);
   bool GetChangedRecvParameters(const VideoRecvParameters& params,
                                 ChangedRecvParameters* changed_params) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(thread_checker_);
@@ -474,10 +481,8 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
 
   static std::vector<VideoCodecSettings> MapCodecs(
       const std::vector<VideoCodec>& codecs);
-  // Select what video codec will be used for sending, i.e. what codec is used
-  // for local encoding, based on supported remote codecs. The first remote
-  // codec that is supported locally will be selected.
-  absl::optional<VideoCodecSettings> SelectSendVideoCodec(
+  // Get all codecs that are compatible with the receiver.
+  std::vector<VideoCodecSettings> SelectSendVideoCodecs(
       const std::vector<VideoCodecSettings>& remote_mapped_codecs) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(thread_checker_);
 
@@ -495,6 +500,7 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   void FillSendAndReceiveCodecStats(VideoMediaInfo* video_media_info)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(thread_checker_);
 
+  rtc::Thread* worker_thread_;
   rtc::ThreadChecker thread_checker_;
 
   uint32_t rtcp_receiver_report_ssrc_ RTC_GUARDED_BY(thread_checker_);
@@ -521,6 +527,9 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
 
   absl::optional<VideoCodecSettings> send_codec_
       RTC_GUARDED_BY(thread_checker_);
+  std::vector<VideoCodecSettings> negotiated_codecs_
+      RTC_GUARDED_BY(thread_checker_);
+
   absl::optional<std::vector<webrtc::RtpExtension>> send_rtp_extensions_
       RTC_GUARDED_BY(thread_checker_);
 
@@ -556,6 +565,10 @@ class WebRtcVideoChannel : public VideoMediaChannel, public webrtc::Transport {
   // Buffer for unhandled packets.
   std::unique_ptr<UnhandledPacketsBuffer> unknown_ssrc_packet_buffer_
       RTC_GUARDED_BY(thread_checker_);
+
+  // In order for the |invoker_| to protect other members from being destructed
+  // as they are used in asynchronous tasks it has to be destructed first.
+  rtc::AsyncInvoker invoker_;
 };
 
 class EncoderStreamFactory
