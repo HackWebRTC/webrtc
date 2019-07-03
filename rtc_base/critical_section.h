@@ -40,14 +40,6 @@
 #include <dispatch/dispatch.h>
 #endif
 
-#define CS_DEBUG_CHECKS RTC_DCHECK_IS_ON
-
-#if CS_DEBUG_CHECKS
-#define CS_DEBUG_CODE(x) x
-#else  // !CS_DEBUG_CHECKS
-#define CS_DEBUG_CODE(x)
-#endif  // !CS_DEBUG_CHECKS
-
 namespace rtc {
 
 // Locking methods (Enter, TryEnter, Leave)are const to permit protecting

@@ -19,6 +19,12 @@
 
 // TODO(tommi): Split this file up to per-platform implementation files.
 
+#if RTC_DCHECK_IS_ON
+#define RTC_CS_DEBUG_CODE(x) x
+#else  // !RTC_DCHECK_IS_ON
+#define RTC_CS_DEBUG_CODE(x)
+#endif  // !RTC_DCHECK_IS_ON
+
 namespace rtc {
 
 CriticalSection::CriticalSection() {
@@ -41,8 +47,8 @@ CriticalSection::CriticalSection() {
   pthread_mutex_init(&mutex_, &mutex_attribute);
   pthread_mutexattr_destroy(&mutex_attribute);
 #endif
-  CS_DEBUG_CODE(thread_ = 0);
-  CS_DEBUG_CODE(recursion_count_ = 0);
+  RTC_CS_DEBUG_CODE(thread_ = 0);
+  RTC_CS_DEBUG_CODE(recursion_count_ = 0);
   RTC_UNUSED(thread_);
   RTC_UNUSED(recursion_count_);
 #else
@@ -109,7 +115,7 @@ void CriticalSection::Enter() const RTC_EXCLUSIVE_LOCK_FUNCTION() {
   pthread_mutex_lock(&mutex_);
 #endif
 
-#if CS_DEBUG_CHECKS
+#if RTC_DCHECK_IS_ON
   if (!recursion_count_) {
     RTC_DCHECK(!thread_);
     thread_ = CurrentThreadRef();
@@ -141,7 +147,7 @@ bool CriticalSection::TryEnter() const RTC_EXCLUSIVE_TRYLOCK_FUNCTION(true) {
   if (pthread_mutex_trylock(&mutex_) != 0)
     return false;
 #endif
-#if CS_DEBUG_CHECKS
+#if RTC_DCHECK_IS_ON
   if (!recursion_count_) {
     RTC_DCHECK(!thread_);
     thread_ = CurrentThreadRef();
@@ -161,7 +167,7 @@ void CriticalSection::Leave() const RTC_UNLOCK_FUNCTION() {
 #if defined(WEBRTC_WIN)
   LeaveCriticalSection(&crit_);
 #elif defined(WEBRTC_POSIX)
-#if CS_DEBUG_CHECKS
+#if RTC_DCHECK_IS_ON
   --recursion_count_;
   RTC_DCHECK(recursion_count_ >= 0);
   if (!recursion_count_)
@@ -193,11 +199,11 @@ bool CriticalSection::CurrentThreadIsOwner() const {
   return crit_.OwningThread ==
          reinterpret_cast<HANDLE>(static_cast<size_t>(GetCurrentThreadId()));
 #elif defined(WEBRTC_POSIX)
-#if CS_DEBUG_CHECKS
+#if RTC_DCHECK_IS_ON
   return IsThreadRefEqual(thread_, CurrentThreadRef());
 #else
   return true;
-#endif  // CS_DEBUG_CHECKS
+#endif  // RTC_DCHECK_IS_ON
 #else
 #error Unsupported platform.
 #endif
