@@ -31,10 +31,7 @@ group("rtc_tools") {
   }
 
   if (rtc_include_tests) {
-    deps += [
-      ":activity_metric",
-      ":tools_unittests",
-    ]
+    deps += [ ":tools_unittests" ]
     if (rtc_enable_protobuf) {
       if (!build_with_chromium) {
         deps += [ ":event_log_visualizer" ]
@@ -360,23 +357,6 @@ if (rtc_include_tests) {
         "//third_party/abseil-cpp/absl/algorithm:container",
       ]
     }
-  }
-
-  rtc_executable("activity_metric") {
-    testonly = true
-    sources = [
-      "agc/activity_metric.cc",
-    ]
-
-    deps = [
-      "../api/audio:audio_frame_api",
-      "../modules/audio_processing/agc:level_estimation",
-      "../modules/audio_processing/vad",
-      "../rtc_base:rtc_base_approved",
-      "../rtc_base:safe_minmax",
-      "../test:test_support",
-      "//testing/gtest",
-    ]
   }
 
   tools_unittests_resources = [
