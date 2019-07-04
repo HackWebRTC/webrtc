@@ -464,6 +464,8 @@ if (rtc_include_tests) {
         "../modules/audio_processing:audioproc_test_utils",
         "../rtc_base:protobuf_utils",
         "../rtc_base:rtc_base_approved",
+        "//third_party/abseil-cpp/absl/flags:flag",
+        "//third_party/abseil-cpp/absl/flags:parse",
       ]
     }  # unpack_aecdump
   }

@@ -21,6 +21,8 @@
 #include <string>
 #include <vector>
 
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 #include "api/function_view.h"
 #include "common_audio/wav_file.h"
 #include "modules/audio_processing/test/protobuf_utils.h"
@@ -32,38 +34,53 @@
 
 RTC_PUSH_IGNORING_WUNDEF()
 #include "modules/audio_processing/debug.pb.h"
-
 RTC_POP_IGNORING_WUNDEF()
 
-// TODO(andrew): unpack more of the data.
-WEBRTC_DEFINE_string(input_file, "input", "The name of the input stream file.");
-WEBRTC_DEFINE_string(output_file,
-                     "ref_out",
-                     "The name of the reference output stream file.");
-WEBRTC_DEFINE_string(reverse_file,
-                     "reverse",
-                     "The name of the reverse input stream file.");
-WEBRTC_DEFINE_string(delay_file, "delay.int32", "The name of the delay file.");
-WEBRTC_DEFINE_string(drift_file, "drift.int32", "The name of the drift file.");
-WEBRTC_DEFINE_string(level_file, "level.int32", "The name of the level file.");
-WEBRTC_DEFINE_string(keypress_file,
-                     "keypress.bool",
-                     "The name of the keypress file.");
-WEBRTC_DEFINE_string(callorder_file,
-                     "callorder",
-                     "The name of the render/capture call order file.");
-WEBRTC_DEFINE_string(settings_file,
-                     "settings.txt",
-                     "The name of the settings file.");
-WEBRTC_DEFINE_bool(full,
-                   false,
-                   "Unpack the full set of files (normally not needed).");
-WEBRTC_DEFINE_bool(raw, false, "Write raw data instead of a WAV file.");
-WEBRTC_DEFINE_bool(
-    text,
-    false,
-    "Write non-audio files as text files instead of binary files.");
-WEBRTC_DEFINE_bool(help, false, "Print this message.");
+ABSL_FLAG(std::string,
+          input_file,
+          "input",
+          "The name of the input stream file.");
+ABSL_FLAG(std::string,
+          output_file,
+          "ref_out",
+          "The name of the reference output stream file.");
+ABSL_FLAG(std::string,
+          reverse_file,
+          "reverse",
+          "The name of the reverse input stream file.");
+ABSL_FLAG(std::string,
+          delay_file,
+          "delay.int32",
+          "The name of the delay file.");
+ABSL_FLAG(std::string,
+          drift_file,
+          "drift.int32",
+          "The name of the drift file.");
+ABSL_FLAG(std::string,
+          level_file,
+          "level.int32",
+          "The name of the level file.");
+ABSL_FLAG(std::string,
+          keypress_file,
+          "keypress.bool",
+          "The name of the keypress file.");
+ABSL_FLAG(std::string,
+          callorder_file,
+          "callorder",
+          "The name of the render/capture call order file.");
+ABSL_FLAG(std::string,
+          settings_file,
+          "settings.txt",
+          "The name of the settings file.");
+ABSL_FLAG(bool,
+          full,
+          false,
+          "Unpack the full set of files (normally not needed).");
+ABSL_FLAG(bool, raw, false, "Write raw data instead of a WAV file.");
+ABSL_FLAG(bool,
+          text,
+          false,
+          "Write non-audio files as text files instead of binary files.");
 
 #define PRINT_CONFIG(field_name)                                         \
   if (msg.has_##field_name()) {                                          \
@@ -102,11 +119,11 @@ void WriteCallOrderData(const bool render_call,
 }
 
 bool WritingCallOrderFile() {
-  return FLAG_full;
+  return absl::GetFlag(FLAGS_full);
 }
 
 bool WritingRuntimeSettingFiles() {
-  return FLAG_full;
+  return absl::GetFlag(FLAGS_full);
 }
 
 // Exports RuntimeSetting AEC dump events to Audacity-readable files.
@@ -210,23 +227,19 @@ std::vector<RuntimeSettingWriter> RuntimeSettingWriters() {
 }  // namespace
 
 int do_main(int argc, char* argv[]) {
-  std::string program_name = argv[0];
+  std::vector<char*> args = absl::ParseCommandLine(argc, argv);
+  std::string program_name = args[0];
   std::string usage =
       "Commandline tool to unpack audioproc debug files.\n"
       "Example usage:\n" +
       program_name + " debug_dump.pb\n";
 
-  if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true) || FLAG_help ||
-      argc < 2) {
+  if (args.size() < 2) {
     printf("%s", usage.c_str());
-    if (FLAG_help) {
-      rtc::FlagList::Print(nullptr, false);
-      return 0;
-    }
     return 1;
   }
 
-  FILE* debug_file = OpenFile(argv[1], "rb");
+  FILE* debug_file = OpenFile(args[1], "rb");
 
   Event event_msg;
   int frame_count = 0;
@@ -244,11 +257,11 @@ int do_main(int argc, char* argv[]) {
   std::unique_ptr<RawFile> output_raw_file;
 
   rtc::StringBuilder callorder_raw_name;
-  callorder_raw_name << FLAG_callorder_file << ".char";
+  callorder_raw_name << absl::GetFlag(FLAGS_callorder_file) << ".char";
   FILE* callorder_char_file = WritingCallOrderFile()
                                   ? OpenFile(callorder_raw_name.str(), "wb")
                                   : nullptr;
-  FILE* settings_file = OpenFile(FLAG_settings_file, "wb");
+  FILE* settings_file = OpenFile(absl::GetFlag(FLAGS_settings_file), "wb");
 
   std::vector<RuntimeSettingWriter> runtime_setting_writers =
       RuntimeSettingWriters();
@@ -262,9 +275,9 @@ int do_main(int argc, char* argv[]) {
 
       const ReverseStream msg = event_msg.reverse_stream();
       if (msg.has_data()) {
-        if (FLAG_raw && !reverse_raw_file) {
+        if (absl::GetFlag(FLAGS_raw) && !reverse_raw_file) {
           reverse_raw_file.reset(
-              new RawFile(std::string(FLAG_reverse_file) + ".pcm"));
+              new RawFile(absl::GetFlag(FLAGS_reverse_file) + ".pcm"));
         }
         // TODO(aluebs): Replace "num_reverse_channels *
         // reverse_samples_per_channel" with "msg.data().size() /
@@ -274,9 +287,9 @@ int do_main(int argc, char* argv[]) {
                      num_reverse_channels * reverse_samples_per_channel,
                      reverse_wav_file.get(), reverse_raw_file.get());
       } else if (msg.channel_size() > 0) {
-        if (FLAG_raw && !reverse_raw_file) {
+        if (absl::GetFlag(FLAGS_raw) && !reverse_raw_file) {
           reverse_raw_file.reset(
-              new RawFile(std::string(FLAG_reverse_file) + ".float"));
+              new RawFile(absl::GetFlag(FLAGS_reverse_file) + ".float"));
         }
         std::unique_ptr<const float* []> data(
             new const float*[num_reverse_channels]);
@@ -287,10 +300,10 @@ int do_main(int argc, char* argv[]) {
                        num_reverse_channels, reverse_wav_file.get(),
                        reverse_raw_file.get());
       }
-      if (FLAG_full) {
+      if (absl::GetFlag(FLAGS_full)) {
         if (WritingCallOrderFile()) {
           WriteCallOrderData(true /* render_call */, callorder_char_file,
-                             FLAG_callorder_file);
+                             absl::GetFlag(FLAGS_callorder_file));
         }
       }
     } else if (event_msg.type() == Event::STREAM) {
@@ -302,17 +315,17 @@ int do_main(int argc, char* argv[]) {
 
       const Stream msg = event_msg.stream();
       if (msg.has_input_data()) {
-        if (FLAG_raw && !input_raw_file) {
+        if (absl::GetFlag(FLAGS_raw) && !input_raw_file) {
           input_raw_file.reset(
-              new RawFile(std::string(FLAG_input_file) + ".pcm"));
+              new RawFile(absl::GetFlag(FLAGS_input_file) + ".pcm"));
         }
         WriteIntData(reinterpret_cast<const int16_t*>(msg.input_data().data()),
                      num_input_channels * input_samples_per_channel,
                      input_wav_file.get(), input_raw_file.get());
       } else if (msg.input_channel_size() > 0) {
-        if (FLAG_raw && !input_raw_file) {
+        if (absl::GetFlag(FLAGS_raw) && !input_raw_file) {
           input_raw_file.reset(
-              new RawFile(std::string(FLAG_input_file) + ".float"));
+              new RawFile(absl::GetFlag(FLAGS_input_file) + ".float"));
         }
         std::unique_ptr<const float* []> data(
             new const float*[num_input_channels]);
@@ -325,17 +338,17 @@ int do_main(int argc, char* argv[]) {
       }
 
       if (msg.has_output_data()) {
-        if (FLAG_raw && !output_raw_file) {
+        if (absl::GetFlag(FLAGS_raw) && !output_raw_file) {
           output_raw_file.reset(
-              new RawFile(std::string(FLAG_output_file) + ".pcm"));
+              new RawFile(absl::GetFlag(FLAGS_output_file) + ".pcm"));
         }
         WriteIntData(reinterpret_cast<const int16_t*>(msg.output_data().data()),
                      num_output_channels * output_samples_per_channel,
                      output_wav_file.get(), output_raw_file.get());
       } else if (msg.output_channel_size() > 0) {
-        if (FLAG_raw && !output_raw_file) {
+        if (absl::GetFlag(FLAGS_raw) && !output_raw_file) {
           output_raw_file.reset(
-              new RawFile(std::string(FLAG_output_file) + ".float"));
+              new RawFile(absl::GetFlag(FLAGS_output_file) + ".float"));
         }
         std::unique_ptr<const float* []> data(
             new const float*[num_output_channels]);
@@ -348,49 +361,56 @@ int do_main(int argc, char* argv[]) {
                        output_raw_file.get());
       }
 
-      if (FLAG_full) {
+      if (absl::GetFlag(FLAGS_full)) {
         if (WritingCallOrderFile()) {
           WriteCallOrderData(false /* render_call */, callorder_char_file,
-                             FLAG_callorder_file);
+                             absl::GetFlag(FLAGS_callorder_file));
         }
         if (msg.has_delay()) {
-          static FILE* delay_file = OpenFile(FLAG_delay_file, "wb");
+          static FILE* delay_file =
+              OpenFile(absl::GetFlag(FLAGS_delay_file), "wb");
           int32_t delay = msg.delay();
-          if (FLAG_text) {
+          if (absl::GetFlag(FLAGS_text)) {
             fprintf(delay_file, "%d\n", delay);
           } else {
-            WriteData(&delay, sizeof(delay), delay_file, FLAG_delay_file);
+            WriteData(&delay, sizeof(delay), delay_file,
+                      absl::GetFlag(FLAGS_delay_file));
           }
         }
 
         if (msg.has_drift()) {
-          static FILE* drift_file = OpenFile(FLAG_drift_file, "wb");
+          static FILE* drift_file =
+              OpenFile(absl::GetFlag(FLAGS_drift_file), "wb");
           int32_t drift = msg.drift();
-          if (FLAG_text) {
+          if (absl::GetFlag(FLAGS_text)) {
             fprintf(drift_file, "%d\n", drift);
           } else {
-            WriteData(&drift, sizeof(drift), drift_file, FLAG_drift_file);
+            WriteData(&drift, sizeof(drift), drift_file,
+                      absl::GetFlag(FLAGS_drift_file));
           }
         }
 
         if (msg.has_level()) {
-          static FILE* level_file = OpenFile(FLAG_level_file, "wb");
+          static FILE* level_file =
+              OpenFile(absl::GetFlag(FLAGS_level_file), "wb");
           int32_t level = msg.level();
-          if (FLAG_text) {
+          if (absl::GetFlag(FLAGS_text)) {
             fprintf(level_file, "%d\n", level);
           } else {
-            WriteData(&level, sizeof(level), level_file, FLAG_level_file);
+            WriteData(&level, sizeof(level), level_file,
+                      absl::GetFlag(FLAGS_level_file));
           }
         }
 
         if (msg.has_keypress()) {
-          static FILE* keypress_file = OpenFile(FLAG_keypress_file, "wb");
+          static FILE* keypress_file =
+              OpenFile(absl::GetFlag(FLAGS_keypress_file), "wb");
           bool keypress = msg.keypress();
-          if (FLAG_text) {
+          if (absl::GetFlag(FLAGS_text)) {
             fprintf(keypress_file, "%d\n", keypress);
           } else {
             WriteData(&keypress, sizeof(keypress), keypress_file,
-                      FLAG_keypress_file);
+                      absl::GetFlag(FLAGS_keypress_file));
           }
         }
       }
@@ -472,25 +492,28 @@ int do_main(int argc, char* argv[]) {
       output_samples_per_channel =
           static_cast<size_t>(output_sample_rate / 100);
 
-      if (!FLAG_raw) {
+      if (!absl::GetFlag(FLAGS_raw)) {
         // The WAV files need to be reset every time, because they cant change
         // their sample rate or number of channels.
         rtc::StringBuilder reverse_name;
-        reverse_name << FLAG_reverse_file << frame_count << ".wav";
+        reverse_name << absl::GetFlag(FLAGS_reverse_file) << frame_count
+                     << ".wav";
         reverse_wav_file.reset(new WavWriter(
             reverse_name.str(), reverse_sample_rate, num_reverse_channels));
         rtc::StringBuilder input_name;
-        input_name << FLAG_input_file << frame_count << ".wav";
+        input_name << absl::GetFlag(FLAGS_input_file) << frame_count << ".wav";
         input_wav_file.reset(new WavWriter(input_name.str(), input_sample_rate,
                                            num_input_channels));
         rtc::StringBuilder output_name;
-        output_name << FLAG_output_file << frame_count << ".wav";
+        output_name << absl::GetFlag(FLAGS_output_file) << frame_count
+                    << ".wav";
         output_wav_file.reset(new WavWriter(
             output_name.str(), output_sample_rate, num_output_channels));
 
         if (WritingCallOrderFile()) {
           rtc::StringBuilder callorder_name;
-          callorder_name << FLAG_callorder_file << frame_count << ".char";
+          callorder_name << absl::GetFlag(FLAGS_callorder_file) << frame_count
+                         << ".char";
           callorder_char_file = OpenFile(callorder_name.str(), "wb");
         }
 
