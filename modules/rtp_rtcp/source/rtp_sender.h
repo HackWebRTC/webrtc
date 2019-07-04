@@ -25,6 +25,7 @@
 #include "modules/rtp_rtcp/include/flexfec_sender.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_packet_pacer.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_history.h"
 #include "modules/rtp_rtcp/source/rtp_rtcp_config.h"
@@ -45,6 +46,9 @@ class RtpPacketToSend;
 
 class RTPSender {
  public:
+  explicit RTPSender(const RtpRtcp::Configuration& config);
+
+  // TODO(bugs.webrtc.org/10774): Remove once downstream projects are fixed.
   RTPSender(bool audio,
             Clock* clock,
             Transport* transport,
@@ -83,6 +87,7 @@ class RTPSender {
   uint32_t TimestampOffset() const;
   void SetTimestampOffset(uint32_t timestamp);
 
+  // TODO(bugs.webrtc.org/10774): Remove.
   void SetSSRC(uint32_t ssrc);
 
   void SetRid(const std::string& rid);
@@ -129,8 +134,9 @@ class RTPSender {
   // RTX.
   void SetRtxStatus(int mode);
   int RtxStatus() const;
-
   uint32_t RtxSsrc() const;
+
+  // TODO(bugs.webrtc.org/10774): Remove.
   void SetRtxSsrc(uint32_t ssrc);
 
   void SetRtxPayloadType(int payload_type, int associated_payload_type);
