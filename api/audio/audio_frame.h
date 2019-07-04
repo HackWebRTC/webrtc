@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "api/audio/channel_layout.h"
 #include "api/rtp_packet_infos.h"
 #include "rtc_base/constructor_magic.h"
 
@@ -96,6 +97,12 @@ class AudioFrame {
   // Frame is muted by default.
   bool muted() const;
 
+  size_t max_16bit_samples() const { return kMaxDataSizeSamples; }
+  size_t samples_per_channel() const { return samples_per_channel_; }
+  size_t num_channels() const { return num_channels_; }
+  ChannelLayout channel_layout() const { return channel_layout_; }
+  int sample_rate_hz() const { return sample_rate_hz_; }
+
   // RTP timestamp of the first sample in the AudioFrame.
   uint32_t timestamp_ = 0;
   // Time since the first frame in milliseconds.
@@ -107,6 +114,7 @@ class AudioFrame {
   size_t samples_per_channel_ = 0;
   int sample_rate_hz_ = 0;
   size_t num_channels_ = 0;
+  ChannelLayout channel_layout_ = CHANNEL_LAYOUT_NONE;
   SpeechType speech_type_ = kUndefined;
   VADActivity vad_activity_ = kVadUnknown;
   // Monotonically increasing timestamp intended for profiling of audio frames.
@@ -133,7 +141,7 @@ class AudioFrame {
   RtpPacketInfos packet_infos_;
 
  private:
-  // A permamently zeroed out buffer to represent muted frames. This is a
+  // A permanently zeroed out buffer to represent muted frames. This is a
   // header-only class, so the only way to avoid creating a separate empty
   // buffer per translation unit is to wrap a static in an inline function.
   static const int16_t* empty_data();

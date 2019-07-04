@@ -18,6 +18,10 @@ rtc_static_library("audio_frame_operations") {
   sources = [
     "audio_frame_operations.cc",
     "audio_frame_operations.h",
+    "channel_mixer.cc",
+    "channel_mixer.h",
+    "channel_mixing_matrix.cc",
+    "channel_mixing_matrix.h",
   ]
 
   deps = [
@@ -34,9 +38,12 @@ if (rtc_include_tests) {
     testonly = true
     sources = [
       "audio_frame_operations_unittest.cc",
+      "channel_mixer_unittest.cc",
+      "channel_mixing_matrix_unittest.cc",
     ]
     deps = [
       ":audio_frame_operations",
+      "../../api/audio:audio_frame_api",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../test:test_support",

@@ -13,6 +13,8 @@ rtc_source_set("audio_frame_api") {
   sources = [
     "audio_frame.cc",
     "audio_frame.h",
+    "channel_layout.cc",
+    "channel_layout.h",
   ]
 
   deps = [
