@@ -119,6 +119,51 @@ class TestVp8Impl : public VideoCodecUnitTest {
   }
 };
 
+TEST_F(TestVp8Impl, ErrorResilienceDisabledForNoTemporalLayers) {
+  codec_settings_.simulcastStream[0].numberOfTemporalLayers = 1;
+
+  auto* const vpx = new NiceMock<MockLibvpxVp8Interface>();
+  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)));
+  EXPECT_CALL(*vpx,
+              codec_enc_init(
+                  _, _, Field(&vpx_codec_enc_cfg_t::g_error_resilient, 0), _));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder.InitEncode(&codec_settings_, kSettings));
+}
+
+TEST_F(TestVp8Impl, DefaultErrorResilienceEnabledForTemporalLayers) {
+  codec_settings_.simulcastStream[0].numberOfTemporalLayers = 2;
+  codec_settings_.VP8()->numberOfTemporalLayers = 2;
+
+  auto* const vpx = new NiceMock<MockLibvpxVp8Interface>();
+  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)));
+  EXPECT_CALL(*vpx,
+              codec_enc_init(_, _,
+                             Field(&vpx_codec_enc_cfg_t::g_error_resilient,
+                                   VPX_ERROR_RESILIENT_DEFAULT),
+                             _));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder.InitEncode(&codec_settings_, kSettings));
+}
+
+TEST_F(TestVp8Impl,
+       PartitionErrorResilienceEnabledForTemporalLayersWithFieldTrial) {
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-VP8-ForcePartitionResilience/Enabled/");
+  codec_settings_.simulcastStream[0].numberOfTemporalLayers = 2;
+  codec_settings_.VP8()->numberOfTemporalLayers = 2;
+
+  auto* const vpx = new NiceMock<MockLibvpxVp8Interface>();
+  LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)));
+  EXPECT_CALL(*vpx,
+              codec_enc_init(_, _,
+                             Field(&vpx_codec_enc_cfg_t::g_error_resilient,
+                                   VPX_ERROR_RESILIENT_PARTITIONS),
+                             _));
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder.InitEncode(&codec_settings_, kSettings));
+}
+
 TEST_F(TestVp8Impl, SetRates) {
   auto* const vpx = new NiceMock<MockLibvpxVp8Interface>();
   LibvpxVp8Encoder encoder((std::unique_ptr<LibvpxInterface>(vpx)));

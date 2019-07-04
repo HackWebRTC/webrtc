@@ -51,6 +51,9 @@ const char kVP8IosMaxNumberOfThreadFieldTrial[] =
 const char kVP8IosMaxNumberOfThreadFieldTrialParameter[] = "max_thread";
 #endif
 
+const char kVp8ForcePartitionResilience[] =
+    "WebRTC-VP8-ForcePartitionResilience";
+
 // QP is obtained from VP8-bitstream for HW, so the QP corresponds to the
 // bitstream range of [0, 127] and not the user-level range of [0,63].
 constexpr int kLowVp8QpThreshold = 29;
@@ -554,6 +557,17 @@ int LibvpxVp8Encoder::InitEncode(const VideoCodec* inst,
       (SimulcastUtility::NumberOfTemporalLayers(*inst, 0) > 1)
           ? VPX_ERROR_RESILIENT_DEFAULT
           : 0;
+
+  // Override the error resilience mode if this is not simulcast, but we are
+  // using temporal layers.
+  if (field_trial::IsEnabled(kVp8ForcePartitionResilience) &&
+      (number_of_streams == 1) &&
+      (SimulcastUtility::NumberOfTemporalLayers(*inst, 0) > 1)) {
+    RTC_LOG(LS_INFO) << "Overriding g_error_resilient from "
+                     << vpx_configs_[0].g_error_resilient << " to "
+                     << VPX_ERROR_RESILIENT_PARTITIONS;
+    vpx_configs_[0].g_error_resilient = VPX_ERROR_RESILIENT_PARTITIONS;
+  }
 
   // rate control settings
   vpx_configs_[0].rc_dropframe_thresh = FrameDropThreshold(0);
