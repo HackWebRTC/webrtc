@@ -113,9 +113,7 @@ AudioReceiveStream::AudioReceiveStream(
     const rtc::scoped_refptr<webrtc::AudioState>& audio_state,
     webrtc::RtcEventLog* event_log,
     std::unique_ptr<voe::ChannelReceiveInterface> channel_receive)
-    : audio_state_(audio_state),
-      channel_receive_(std::move(channel_receive)),
-      source_tracker_(clock) {
+    : audio_state_(audio_state), channel_receive_(std::move(channel_receive)) {
   RTC_LOG(LS_INFO) << "AudioReceiveStream: " << config.rtp.remote_ssrc;
   RTC_DCHECK(config.decoder_factory);
   RTC_DCHECK(config.rtcp_send_transport);
@@ -269,18 +267,13 @@ int AudioReceiveStream::GetBaseMinimumPlayoutDelayMs() const {
 
 std::vector<RtpSource> AudioReceiveStream::GetSources() const {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  return source_tracker_.GetSources();
+  return channel_receive_->GetSources();
 }
 
 AudioMixer::Source::AudioFrameInfo AudioReceiveStream::GetAudioFrameWithInfo(
     int sample_rate_hz,
     AudioFrame* audio_frame) {
-  AudioMixer::Source::AudioFrameInfo audio_frame_info =
-      channel_receive_->GetAudioFrameWithInfo(sample_rate_hz, audio_frame);
-  if (audio_frame_info != AudioMixer::Source::AudioFrameInfo::kError) {
-    source_tracker_.OnFrameDelivered(audio_frame->packet_infos_);
-  }
-  return audio_frame_info;
+  return channel_receive_->GetAudioFrameWithInfo(sample_rate_hz, audio_frame);
 }
 
 int AudioReceiveStream::Ssrc() const {
