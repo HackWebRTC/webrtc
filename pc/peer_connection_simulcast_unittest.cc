@@ -406,8 +406,8 @@ TEST_F(PeerConnectionSimulcastTests, SimulcastRejectedRemovesExtraLayers) {
 TEST_F(PeerConnectionSimulcastTests, RejectedSimulcastLayersAreDeactivated) {
   auto local = CreatePeerConnectionWrapper();
   auto remote = CreatePeerConnectionWrapper();
-  auto layers = CreateLayers({"1", "2", "3", "4"}, true);
-  auto expected_layers = CreateLayers({"2", "3", "4"}, true);
+  auto layers = CreateLayers({"1", "2", "3"}, true);
+  auto expected_layers = CreateLayers({"2", "3"}, true);
   auto transceiver = AddTransceiver(local.get(), layers);
   auto offer = local->CreateOfferAndSetAsLocal();
   {
