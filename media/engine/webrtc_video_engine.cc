@@ -3011,9 +3011,8 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
         absl::EqualsIgnoreCase(codec_name_, kVp8CodecName)
         || absl::EqualsIgnoreCase(codec_name_, kH264CodecName);
     layers = GetSimulcastConfig(encoder_config.number_of_streams, width, height,
-                                0 /*not used*/, encoder_config.bitrate_priority,
-                                max_qp_, 0 /*not_used*/, is_screenshare_,
-                                temporal_layers_supported);
+                                encoder_config.bitrate_priority, max_qp_,
+                                is_screenshare_, temporal_layers_supported);
     // The maximum |max_framerate| is currently used for video.
     const int max_framerate = GetMaxFramerate(encoder_config, layers.size());
     // Update the active simulcast layers and configured bitrates.

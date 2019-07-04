@@ -49,9 +49,6 @@ static const char* kSimulcastScreenshareFieldTrialName =
 struct SimulcastFormat {
   int width;
   int height;
-  // The maximum number of simulcast layers can be used for
-  // resolutions at |widthxheigh|.
-  size_t max_layers;
   // The maximum bitrate for encoding stream at |widthxheight|, when we are
   // not sending the next higher spatial stream.
   int max_bitrate_kbps;
@@ -68,13 +65,13 @@ struct SimulcastFormat {
 // Important!! Keep this table from high resolution to low resolution.
 // clang-format off
 const SimulcastFormat kSimulcastFormats[] = {
-  {1920, 1080, 3, 5000, 4000, 800},
-  {1280, 720, 3,  2500, 2500, 600},
-  {960, 540, 3, 900, 900, 450},
-  {640, 360, 2, 700, 500, 150},
-  {480, 270, 2, 450, 350, 150},
-  {320, 180, 1, 200, 150, 30},
-  {0, 0, 1, 200, 150, 30}
+  {1920, 1080, 5000, 4000, 800},
+  {1280, 720, 2500, 2500, 600},
+  {960, 540, 900, 900, 450},
+  {640, 360, 700, 500, 150},
+  {480, 270, 450, 350, 150},
+  {320, 180, 200, 150, 30},
+  {0, 0, 200, 150, 30}
 };
 // clang-format on
 
@@ -126,21 +123,6 @@ int FindSimulcastFormatIndex(int width, int height) {
   return -1;
 }
 
-int FindSimulcastFormatIndex(int width, int height, size_t max_layers) {
-  RTC_DCHECK_GE(width, 0);
-  RTC_DCHECK_GE(height, 0);
-  RTC_DCHECK_GT(max_layers, 0);
-  for (uint32_t i = 0; i < arraysize(kSimulcastFormats); ++i) {
-    if (width * height >=
-            kSimulcastFormats[i].width * kSimulcastFormats[i].height &&
-        max_layers == kSimulcastFormats[i].max_layers) {
-      return i;
-    }
-  }
-  RTC_NOTREACHED();
-  return -1;
-}
-
 // Simulcast stream width and height must both be dividable by
 // |2 ^ (simulcast_layers - 1)|.
 int NormalizeSimulcastSize(int size, size_t simulcast_layers) {
@@ -152,11 +134,6 @@ int NormalizeSimulcastSize(int size, size_t simulcast_layers) {
     base2_exponent = *experimental_base2_exponent;
   }
   return ((size >> base2_exponent) << base2_exponent);
-}
-
-size_t FindSimulcastMaxLayers(int width, int height) {
-  int index = FindSimulcastFormatIndex(width, height);
-  return kSimulcastFormats[index].max_layers;
 }
 
 int FindSimulcastMaxBitrateBps(int width, int height) {
@@ -172,14 +149,6 @@ int FindSimulcastTargetBitrateBps(int width, int height) {
 int FindSimulcastMinBitrateBps(int width, int height) {
   const int format_index = FindSimulcastFormatIndex(width, height);
   return kSimulcastFormats[format_index].min_bitrate_kbps * 1000;
-}
-
-void SlotSimulcastMaxResolution(size_t max_layers, int* width, int* height) {
-  int index = FindSimulcastFormatIndex(*width, *height, max_layers);
-  *width = kSimulcastFormats[index].width;
-  *height = kSimulcastFormats[index].height;
-  RTC_LOG(LS_INFO) << "SlotSimulcastMaxResolution to width:" << *width
-                   << " height:" << *height;
 }
 
 void BoostMaxSimulcastLayer(int max_bitrate_bps,
@@ -210,10 +179,8 @@ std::vector<webrtc::VideoStream> GetSimulcastConfig(
     size_t max_layers,
     int width,
     int height,
-    int /*max_bitrate_bps*/,
     double bitrate_priority,
     int max_qp,
-    int /*max_framerate*/,
     bool is_screenshare,
     bool temporal_layers_supported) {
   if (is_screenshare) {
@@ -227,39 +194,21 @@ std::vector<webrtc::VideoStream> GetSimulcastConfig(
 }
 
 std::vector<webrtc::VideoStream> GetNormalSimulcastLayers(
-    size_t max_layers,
+    size_t layer_count,
     int width,
     int height,
     double bitrate_priority,
     int max_qp,
     bool temporal_layers_supported) {
-  // TODO(bugs.webrtc.org/8785): Currently if the resolution isn't large enough
-  // (defined in kSimulcastFormats) we scale down the number of simulcast
-  // layers. Consider changing this so that the application can have more
-  // control over exactly how many simulcast layers are used.
-  size_t num_simulcast_layers = FindSimulcastMaxLayers(width, height);
-  if (webrtc::field_trial::IsEnabled("WebRTC-SimulcastMaxLayers")) {
-    num_simulcast_layers = max_layers;
-  }
-  if (num_simulcast_layers > max_layers) {
-    // TODO(bugs.webrtc.org/8486): This scales down the resolution if the
-    // number of simulcast layers created by the application isn't sufficient
-    // (defined in kSimulcastFormats). For example if the input frame's
-    // resolution is HD, but there are only 2 simulcast layers, the
-    // resolution gets scaled down to VGA. Consider taking this logic out to
-    // allow the application more control over the resolutions.
-    SlotSimulcastMaxResolution(max_layers, &width, &height);
-    num_simulcast_layers = max_layers;
-  }
-  std::vector<webrtc::VideoStream> layers(num_simulcast_layers);
+  std::vector<webrtc::VideoStream> layers(layer_count);
 
   // Format width and height has to be divisible by |2 ^ num_simulcast_layers -
   // 1|.
-  width = NormalizeSimulcastSize(width, num_simulcast_layers);
-  height = NormalizeSimulcastSize(height, num_simulcast_layers);
+  width = NormalizeSimulcastSize(width, layer_count);
+  height = NormalizeSimulcastSize(height, layer_count);
   // Add simulcast streams, from highest resolution (|s| = num_simulcast_layers
   // -1) to lowest resolution at |s| = 0.
-  for (size_t s = num_simulcast_layers - 1;; --s) {
+  for (size_t s = layer_count - 1;; --s) {
     layers[s].width = width;
     layers[s].height = height;
     // TODO(pbos): Fill actual temporal-layer bitrate thresholds.

@@ -7426,9 +7426,8 @@ class WebRtcVideoChannelSimulcastTest : public ::testing::Test {
     std::vector<webrtc::VideoStream> expected_streams;
     if (conference_mode) {
       expected_streams = GetSimulcastConfig(
-          num_configured_streams, capture_width, capture_height, 0,
-          webrtc::kDefaultBitratePriority, kDefaultQpMax,
-          kDefaultVideoMaxFramerate, screenshare, true);
+          num_configured_streams, capture_width, capture_height,
+          webrtc::kDefaultBitratePriority, kDefaultQpMax, screenshare, true);
       if (screenshare) {
         for (const webrtc::VideoStream& stream : expected_streams) {
           // Never scale screen content.
