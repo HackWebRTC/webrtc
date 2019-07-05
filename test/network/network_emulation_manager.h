@@ -44,6 +44,8 @@ class NetworkEmulationManagerImpl : public NetworkEmulationManager {
   ~NetworkEmulationManagerImpl();
 
   EmulatedNetworkNode* CreateEmulatedNode(
+      BuiltInNetworkBehaviorConfig config) override;
+  EmulatedNetworkNode* CreateEmulatedNode(
       std::unique_ptr<NetworkBehaviorInterface> network_behavior) override;
 
   EmulatedEndpoint* CreateEndpoint(EmulatedEndpointConfig config) override;

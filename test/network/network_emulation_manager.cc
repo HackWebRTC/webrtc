@@ -16,6 +16,7 @@
 #include "absl/memory/memory.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
+#include "call/simulated_network.h"
 #include "rtc_base/fake_network.h"
 #include "test/time_controller/real_time_controller.h"
 
@@ -68,6 +69,11 @@ NetworkEmulationManagerImpl::NetworkEmulationManagerImpl(
 // (such as stats collection tasks) are not cancelled when the task queue is
 // destroyed.
 NetworkEmulationManagerImpl::~NetworkEmulationManagerImpl() = default;
+
+EmulatedNetworkNode* NetworkEmulationManagerImpl::CreateEmulatedNode(
+    BuiltInNetworkBehaviorConfig config) {
+  return CreateEmulatedNode(absl::make_unique<SimulatedNetwork>(config));
+}
 
 EmulatedNetworkNode* NetworkEmulationManagerImpl::CreateEmulatedNode(
     std::unique_ptr<NetworkBehaviorInterface> network_behavior) {

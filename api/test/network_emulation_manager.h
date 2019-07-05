@@ -111,6 +111,8 @@ class NetworkEmulationManager {
   // Creates an emulated network node, which represents single network in
   // the emulated network layer.
   virtual EmulatedNetworkNode* CreateEmulatedNode(
+      BuiltInNetworkBehaviorConfig config) = 0;
+  virtual EmulatedNetworkNode* CreateEmulatedNode(
       std::unique_ptr<NetworkBehaviorInterface> network_behavior) = 0;
 
   // Creates an emulated endpoint, which represents single network interface on
