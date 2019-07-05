@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "test/scenario/network/traffic_route.h"
+#include "test/network/traffic_route.h"
 
 #include <utility>
 

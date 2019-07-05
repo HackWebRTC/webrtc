@@ -8,9 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_SCENARIO_NETWORK_CROSS_TRAFFIC_H_
-#define TEST_SCENARIO_NETWORK_CROSS_TRAFFIC_H_
+#ifndef TEST_NETWORK_CROSS_TRAFFIC_H_
+#define TEST_NETWORK_CROSS_TRAFFIC_H_
 
+#include <algorithm>
+#include <map>
 #include <memory>
 
 #include "api/units/data_rate.h"
@@ -19,8 +21,8 @@
 #include "api/units/timestamp.h"
 #include "rtc_base/random.h"
 #include "rtc_base/synchronization/sequence_checker.h"
+#include "test/network/traffic_route.h"
 #include "test/scenario/column_printer.h"
-#include "test/scenario/network/traffic_route.h"
 
 namespace webrtc {
 namespace test {
@@ -130,4 +132,4 @@ class FakeTcpCrossTraffic
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // TEST_SCENARIO_NETWORK_CROSS_TRAFFIC_H_
+#endif  // TEST_NETWORK_CROSS_TRAFFIC_H_

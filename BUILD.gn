@@ -497,7 +497,7 @@ if (rtc_include_tests) {
       "rtc_base/task_utils:to_queued_task_unittests",
       "sdk:sdk_tests",
       "test:test_main",
-      "test/scenario/network:network_emulation_unittests",
+      "test/network:network_emulation_unittests",
     ]
 
     if (rtc_enable_protobuf) {

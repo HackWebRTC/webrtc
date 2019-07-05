@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "test/scenario/network/feedback_generator.h"
+#include "test/network/feedback_generator.h"
 
 #include "absl/memory/memory.h"
 #include "rtc_base/checks.h"

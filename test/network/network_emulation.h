@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_SCENARIO_NETWORK_NETWORK_EMULATION_H_
-#define TEST_SCENARIO_NETWORK_NETWORK_EMULATION_H_
+#ifndef TEST_NETWORK_NETWORK_EMULATION_H_
+#define TEST_NETWORK_NETWORK_EMULATION_H_
 
 #include <cstdint>
+#include <deque>
 #include <map>
 #include <memory>
 #include <string>
@@ -317,4 +318,4 @@ class TwoWayFakeTrafficRoute {
 };
 }  // namespace webrtc
 
-#endif  // TEST_SCENARIO_NETWORK_NETWORK_EMULATION_H_
+#endif  // TEST_NETWORK_NETWORK_EMULATION_H_

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_SCENARIO_NETWORK_EMULATED_NETWORK_MANAGER_H_
-#define TEST_SCENARIO_NETWORK_EMULATED_NETWORK_MANAGER_H_
+#ifndef TEST_NETWORK_EMULATED_NETWORK_MANAGER_H_
+#define TEST_NETWORK_EMULATED_NETWORK_MANAGER_H_
 
 #include <memory>
 #include <vector>
@@ -21,8 +21,8 @@
 #include "rtc_base/socket_server.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/thread_checker.h"
-#include "test/scenario/network/fake_network_socket_server.h"
-#include "test/scenario/network/network_emulation.h"
+#include "test/network/fake_network_socket_server.h"
+#include "test/network/network_emulation.h"
 
 namespace webrtc {
 namespace test {
@@ -66,4 +66,4 @@ class EmulatedNetworkManager : public rtc::NetworkManagerBase,
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // TEST_SCENARIO_NETWORK_EMULATED_NETWORK_MANAGER_H_
+#endif  // TEST_NETWORK_EMULATED_NETWORK_MANAGER_H_

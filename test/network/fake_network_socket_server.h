@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_SCENARIO_NETWORK_FAKE_NETWORK_SOCKET_SERVER_H_
-#define TEST_SCENARIO_NETWORK_FAKE_NETWORK_SOCKET_SERVER_H_
+#ifndef TEST_NETWORK_FAKE_NETWORK_SOCKET_SERVER_H_
+#define TEST_NETWORK_FAKE_NETWORK_SOCKET_SERVER_H_
 
 #include <set>
 #include <vector>
@@ -24,7 +24,7 @@
 #include "rtc_base/socket_server.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "system_wrappers/include/clock.h"
-#include "test/scenario/network/fake_network_socket.h"
+#include "test/network/fake_network_socket.h"
 
 namespace webrtc {
 namespace test {
@@ -68,4 +68,4 @@ class FakeNetworkSocketServer : public rtc::SocketServer,
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // TEST_SCENARIO_NETWORK_FAKE_NETWORK_SOCKET_SERVER_H_
+#endif  // TEST_NETWORK_FAKE_NETWORK_SOCKET_SERVER_H_

@@ -20,7 +20,7 @@
 #include "rtc_base/logging.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "test/scenario/network/cross_traffic.h"
+#include "test/network/cross_traffic.h"
 
 namespace webrtc {
 namespace test {

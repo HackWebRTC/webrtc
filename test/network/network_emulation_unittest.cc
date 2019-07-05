@@ -10,6 +10,7 @@
 
 #include <atomic>
 #include <memory>
+#include <set>
 
 #include "absl/memory/memory.h"
 #include "api/test/simulated_network.h"
@@ -21,8 +22,8 @@
 #include "system_wrappers/include/sleep.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "test/scenario/network/network_emulation.h"
-#include "test/scenario/network/network_emulation_manager.h"
+#include "test/network/network_emulation.h"
+#include "test/network/network_emulation_manager.h"
 
 namespace webrtc {
 namespace test {

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "test/scenario/network/fake_network_socket.h"
+#include "test/network/fake_network_socket.h"
 
 #include <algorithm>
 #include <string>

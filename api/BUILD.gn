@@ -345,7 +345,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":network_emulation_manager_api",
-      "../test/scenario/network:emulated_network",
+      "../test/network:emulated_network",
       "//third_party/abseil-cpp/absl/memory",
     ]
   }

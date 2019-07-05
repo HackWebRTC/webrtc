@@ -23,8 +23,8 @@
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/task_queue.h"
+#include "test/network/network_emulation.h"
 #include "test/scenario/column_printer.h"
-#include "test/scenario/network/network_emulation.h"
 #include "test/scenario/scenario_config.h"
 
 namespace webrtc {

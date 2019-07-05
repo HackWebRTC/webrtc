@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_SCENARIO_NETWORK_FAKE_NETWORK_SOCKET_H_
-#define TEST_SCENARIO_NETWORK_FAKE_NETWORK_SOCKET_H_
+#ifndef TEST_NETWORK_FAKE_NETWORK_SOCKET_H_
+#define TEST_NETWORK_FAKE_NETWORK_SOCKET_H_
 
 #include <deque>
 #include <map>
@@ -19,7 +19,7 @@
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/socket_address.h"
-#include "test/scenario/network/network_emulation.h"
+#include "test/network/network_emulation.h"
 
 namespace webrtc {
 namespace test {
@@ -102,4 +102,4 @@ class FakeNetworkSocket : public rtc::AsyncSocket,
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // TEST_SCENARIO_NETWORK_FAKE_NETWORK_SOCKET_H_
+#endif  // TEST_NETWORK_FAKE_NETWORK_SOCKET_H_

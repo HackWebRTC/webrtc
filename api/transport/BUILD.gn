@@ -105,7 +105,7 @@ if (rtc_include_tests) {
     deps = [
       ":network_control",
       ":test_feedback_generator_interface",
-      "../../test/scenario/network:feedback_generator",
+      "../../test/network:feedback_generator",
       "//third_party/abseil-cpp/absl/memory",
     ]
   }

@@ -12,7 +12,7 @@
 #include "api/test/create_network_emulation_manager.h"
 
 #include "absl/memory/memory.h"
-#include "test/scenario/network/network_emulation_manager.h"
+#include "test/network/network_emulation_manager.h"
 
 namespace webrtc {
 

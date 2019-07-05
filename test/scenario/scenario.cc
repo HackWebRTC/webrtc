@@ -17,7 +17,7 @@
 #include "rtc_base/flags.h"
 #include "rtc_base/socket_address.h"
 #include "test/logging/file_log_writer.h"
-#include "test/scenario/network/network_emulation.h"
+#include "test/network/network_emulation.h"
 #include "test/testsupport/file_utils.h"
 #include "test/time_controller/real_time_controller.h"
 #include "test/time_controller/simulated_time_controller.h"

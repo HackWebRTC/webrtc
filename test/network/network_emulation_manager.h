@@ -8,10 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_SCENARIO_NETWORK_NETWORK_EMULATION_MANAGER_H_
-#define TEST_SCENARIO_NETWORK_NETWORK_EMULATION_MANAGER_H_
+#ifndef TEST_NETWORK_NETWORK_EMULATION_MANAGER_H_
+#define TEST_NETWORK_NETWORK_EMULATION_MANAGER_H_
 
+#include <map>
 #include <memory>
+#include <set>
 #include <utility>
 #include <vector>
 
@@ -25,11 +27,11 @@
 #include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread.h"
 #include "system_wrappers/include/clock.h"
-#include "test/scenario/network/cross_traffic.h"
-#include "test/scenario/network/emulated_network_manager.h"
-#include "test/scenario/network/fake_network_socket_server.h"
-#include "test/scenario/network/network_emulation.h"
-#include "test/scenario/network/traffic_route.h"
+#include "test/network/cross_traffic.h"
+#include "test/network/emulated_network_manager.h"
+#include "test/network/fake_network_socket_server.h"
+#include "test/network/network_emulation.h"
+#include "test/network/traffic_route.h"
 #include "test/time_controller/time_controller.h"
 
 namespace webrtc {
@@ -106,4 +108,4 @@ class NetworkEmulationManagerImpl : public NetworkEmulationManager {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // TEST_SCENARIO_NETWORK_NETWORK_EMULATION_MANAGER_H_
+#endif  // TEST_NETWORK_NETWORK_EMULATION_MANAGER_H_

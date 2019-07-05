@@ -8,8 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "test/scenario/network/network_emulation.h"
+#include "test/network/network_emulation.h"
 
+#include <algorithm>
 #include <limits>
 #include <memory>
 
@@ -24,10 +25,7 @@ EmulatedIpPacket::EmulatedIpPacket(const rtc::SocketAddress& from,
                                    const rtc::SocketAddress& to,
                                    rtc::CopyOnWriteBuffer data,
                                    Timestamp arrival_time)
-    : from(from),
-      to(to),
-      data(data),
-      arrival_time(arrival_time) {}
+    : from(from), to(to), data(data), arrival_time(arrival_time) {}
 
 void LinkEmulation::OnPacketReceived(EmulatedIpPacket packet) {
   struct Closure {

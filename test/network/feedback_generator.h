@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef TEST_SCENARIO_NETWORK_FEEDBACK_GENERATOR_H_
-#define TEST_SCENARIO_NETWORK_FEEDBACK_GENERATOR_H_
+#ifndef TEST_NETWORK_FEEDBACK_GENERATOR_H_
+#define TEST_NETWORK_FEEDBACK_GENERATOR_H_
 
 #include <map>
 #include <utility>
@@ -16,8 +16,8 @@
 
 #include "api/transport/test/feedback_generator_interface.h"
 #include "call/simulated_network.h"
-#include "test/scenario/network/network_emulation.h"
-#include "test/scenario/network/network_emulation_manager.h"
+#include "test/network/network_emulation.h"
+#include "test/network/network_emulation_manager.h"
 #include "test/time_controller/simulated_time_controller.h"
 
 namespace webrtc {
@@ -54,4 +54,4 @@ class FeedbackGeneratorImpl
   std::vector<TransportPacketsFeedback> feedback_;
 };
 }  // namespace webrtc
-#endif  // TEST_SCENARIO_NETWORK_FEEDBACK_GENERATOR_H_
+#endif  // TEST_NETWORK_FEEDBACK_GENERATOR_H_

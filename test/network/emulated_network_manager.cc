@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "test/scenario/network/emulated_network_manager.h"
+#include "test/network/emulated_network_manager.h"
 
 #include <memory>
 #include <utility>

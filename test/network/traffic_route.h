@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef TEST_SCENARIO_NETWORK_TRAFFIC_ROUTE_H_
-#define TEST_SCENARIO_NETWORK_TRAFFIC_ROUTE_H_
+#ifndef TEST_NETWORK_TRAFFIC_ROUTE_H_
+#define TEST_NETWORK_TRAFFIC_ROUTE_H_
 
 #include <memory>
 #include <vector>
 
 #include "rtc_base/copy_on_write_buffer.h"
 #include "system_wrappers/include/clock.h"
-#include "test/scenario/network/network_emulation.h"
+#include "test/network/network_emulation.h"
 
 namespace webrtc {
 namespace test {
@@ -52,4 +52,4 @@ class TrafficRoute {
 }  // namespace test
 }  // namespace webrtc
 
-#endif  // TEST_SCENARIO_NETWORK_TRAFFIC_ROUTE_H_
+#endif  // TEST_NETWORK_TRAFFIC_ROUTE_H_
