@@ -37,6 +37,12 @@ public class EglRenderer implements VideoSink {
 
   public interface FrameListener { void onFrame(Bitmap frame); }
 
+  /** Callback for clients to be notified about errors encountered during rendering. */
+  public static interface ErrorCallback {
+    /** Called if GLES20.GL_OUT_OF_MEMORY is encountered during rendering. */
+    void onGlOutOfMemory();
+  }
+
   private static class FrameListenerAndParams {
     public final FrameListener listener;
     public final float scale;
@@ -111,6 +117,8 @@ public class EglRenderer implements VideoSink {
   @Nullable private Handler renderThreadHandler;
 
   private final ArrayList<FrameListenerAndParams> frameListeners = new ArrayList<>();
+
+  private volatile ErrorCallback errorCallback;
 
   // Variables for fps reduction.
   private final Object fpsReductionLock = new Object();
@@ -485,6 +493,11 @@ public class EglRenderer implements VideoSink {
     ThreadUtils.awaitUninterruptibly(latch);
   }
 
+  /** Can be set in order to be notified about errors encountered during rendering. */
+  public void setErrorCallback(ErrorCallback errorCallback) {
+    this.errorCallback = errorCallback;
+  }
+
   // VideoSink interface.
   @Override
   public void onFrame(VideoFrame frame) {
@@ -642,29 +655,44 @@ public class EglRenderer implements VideoSink {
     drawMatrix.preScale(scaleX, scaleY);
     drawMatrix.preTranslate(-0.5f, -0.5f);
 
-    if (shouldRenderFrame) {
-      GLES20.glClearColor(0 /* red */, 0 /* green */, 0 /* blue */, 0 /* alpha */);
-      GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
-      frameDrawer.drawFrame(frame, drawer, drawMatrix, 0 /* viewportX */, 0 /* viewportY */,
-          eglBase.surfaceWidth(), eglBase.surfaceHeight());
+    try {
+      if (shouldRenderFrame) {
+        GLES20.glClearColor(0 /* red */, 0 /* green */, 0 /* blue */, 0 /* alpha */);
+        GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
+        frameDrawer.drawFrame(frame, drawer, drawMatrix, 0 /* viewportX */, 0 /* viewportY */,
+            eglBase.surfaceWidth(), eglBase.surfaceHeight());
 
-      final long swapBuffersStartTimeNs = System.nanoTime();
-      if (usePresentationTimeStamp) {
-        eglBase.swapBuffers(frame.getTimestampNs());
-      } else {
-        eglBase.swapBuffers();
+        final long swapBuffersStartTimeNs = System.nanoTime();
+        if (usePresentationTimeStamp) {
+          eglBase.swapBuffers(frame.getTimestampNs());
+        } else {
+          eglBase.swapBuffers();
+        }
+
+        final long currentTimeNs = System.nanoTime();
+        synchronized (statisticsLock) {
+          ++framesRendered;
+          renderTimeNs += (currentTimeNs - startTimeNs);
+          renderSwapBufferTimeNs += (currentTimeNs - swapBuffersStartTimeNs);
+        }
       }
 
-      final long currentTimeNs = System.nanoTime();
-      synchronized (statisticsLock) {
-        ++framesRendered;
-        renderTimeNs += (currentTimeNs - startTimeNs);
-        renderSwapBufferTimeNs += (currentTimeNs - swapBuffersStartTimeNs);
+      notifyCallbacks(frame, shouldRenderFrame);
+    } catch (GlUtil.GlOutOfMemoryException e) {
+      logE("Error while drawing frame", e);
+      final ErrorCallback errorCallback = this.errorCallback;
+      if (errorCallback != null) {
+        errorCallback.onGlOutOfMemory();
       }
+      // Attempt to free up some resources.
+      drawer.release();
+      frameDrawer.release();
+      bitmapTextureFramebuffer.release();
+      // Continue here on purpose and retry again for next frame. In worst case, this is a continous
+      // problem and no more frames will be drawn.
+    } finally {
+      frame.release();
     }
-
-    notifyCallbacks(frame, shouldRenderFrame);
-    frame.release();
   }
 
   private void notifyCallbacks(VideoFrame frame, boolean wasRendered) {
@@ -741,6 +769,10 @@ public class EglRenderer implements VideoSink {
           + averageTimeAsString(renderSwapBufferTimeNs, framesRendered) + ".");
       resetStatistics(currentTimeNs);
     }
+  }
+
+  private void logE(String string, Throwable e) {
+    Logging.e(TAG, name + string, e);
   }
 
   private void logD(String string) {
