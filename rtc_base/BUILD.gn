@@ -80,8 +80,6 @@ rtc_source_set("rtc_base_approved") {
     "copy_on_write_buffer.h",
     "event_tracer.cc",
     "event_tracer.h",
-    "flags.cc",
-    "flags.h",
     "function_view.h",
     "ignore_wundef.h",
     "location.cc",
