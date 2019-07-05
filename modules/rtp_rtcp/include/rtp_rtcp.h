@@ -287,7 +287,8 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   virtual size_t TimeToSendPadding(size_t bytes,
                                    const PacedPacketInfo& pacing_info) = 0;
 
-  virtual void GeneratePadding(size_t target_size_bytes) = 0;
+  virtual std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
+      size_t target_size_bytes) = 0;
 
   // Called on generation of new statistics after an RTP send.
   virtual void RegisterSendChannelRtpStatisticsCallback(

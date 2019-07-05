@@ -95,7 +95,9 @@ class MockRtpRtcp : public RtpRtcp {
                     const PacedPacketInfo& pacing_info));
   MOCK_METHOD2(TimeToSendPadding,
                size_t(size_t bytes, const PacedPacketInfo& pacing_info));
-  MOCK_METHOD1(GeneratePadding, void(size_t target_size_bytes));
+  MOCK_METHOD1(
+      GeneratePadding,
+      std::vector<std::unique_ptr<RtpPacketToSend>>(size_t target_size_bytes));
   MOCK_METHOD2(RegisterRtcpObservers,
                void(RtcpIntraFrameObserver* intra_frame_callback,
                     RtcpBandwidthObserver* bandwidth_callback));

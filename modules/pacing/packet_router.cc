@@ -146,6 +146,12 @@ RtpRtcp* PacketRouter::FindRtpModule(uint32_t ssrc) {
 void PacketRouter::SendPacket(std::unique_ptr<RtpPacketToSend> packet,
                               const PacedPacketInfo& cluster_info) {
   rtc::CritScope cs(&modules_crit_);
+  // With the new pacer code path, transport sequence numbers are only set here,
+  // on the pacer thread. Therefore we don't need atomics/synchronization.
+  if (packet->IsExtensionReserved<TransportSequenceNumber>() &&
+      packet->SetExtension<TransportSequenceNumber>(transport_seq_)) {
+    ++transport_seq_;
+  }
   for (auto* rtp_module : rtp_send_modules_) {
     if (rtp_module->TrySendPacket(packet.get(), cluster_info)) {
       const bool can_send_padding =
@@ -200,7 +206,8 @@ size_t PacketRouter::TimeToSendPadding(size_t bytes_to_send,
   return total_bytes_sent;
 }
 
-void PacketRouter::GeneratePadding(size_t target_size_bytes) {
+std::vector<std::unique_ptr<RtpPacketToSend>> PacketRouter::GeneratePadding(
+    size_t target_size_bytes) {
   rtc::CritScope cs(&modules_crit_);
   // First try on the last rtp module to have sent media. This increases the
   // the chance that any payload based padding will be useful as it will be
@@ -212,17 +219,17 @@ void PacketRouter::GeneratePadding(size_t target_size_bytes) {
     RTC_DCHECK(std::find(rtp_send_modules_.begin(), rtp_send_modules_.end(),
                          last_send_module_) != rtp_send_modules_.end());
     RTC_DCHECK(last_send_module_->HasBweExtensions());
-    last_send_module_->GeneratePadding(target_size_bytes);
-    return;
+    return last_send_module_->GeneratePadding(target_size_bytes);
   }
 
   // Rtp modules are ordered by which stream can most benefit from padding.
   for (RtpRtcp* rtp_module : rtp_send_modules_) {
     if (rtp_module->SendingMedia() && rtp_module->HasBweExtensions()) {
-      rtp_module->GeneratePadding(target_size_bytes);
-      return;
+      return rtp_module->GeneratePadding(target_size_bytes);
     }
   }
+
+  return {};
 }
 
 void PacketRouter::SetTransportWideSequenceNumber(uint16_t sequence_number) {

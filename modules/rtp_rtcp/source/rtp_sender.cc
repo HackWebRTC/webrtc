@@ -195,6 +195,9 @@ RTPSender::RTPSender(const RtpRtcp::Configuration& config)
                     config.field_trials)),
       payload_padding_prefer_useful_packets_(
           !IsDisabled("WebRTC-PayloadPadding-UseMostUsefulPacket",
+                      config.field_trials)),
+      pacer_legacy_packet_referencing_(
+          !IsDisabled("WebRTC-Pacer-LegacyPacketReferencing",
                       config.field_trials)) {
   // This random initialization is not intended to be cryptographic strong.
   timestamp_offset_ = random_.Rand<uint32_t>();
@@ -283,6 +286,9 @@ RTPSender::RTPSender(
               .find("Enabled") == 0),
       payload_padding_prefer_useful_packets_(
           field_trials.Lookup("WebRTC-PayloadPadding-UseMostUsefulPacket")
+              .find("Disabled") != 0),
+      pacer_legacy_packet_referencing_(
+          field_trials.Lookup("WebRTC-Pacer-LegacyPacketReferencing")
               .find("Disabled") != 0) {
   // This random initialization is not intended to be cryptographic strong.
   timestamp_offset_ = random_.Rand<uint32_t>();
@@ -592,29 +598,65 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
   }
 
   const int32_t packet_size = static_cast<int32_t>(stored_packet->packet_size);
-
-  // Skip retransmission rate check if not configured.
-  if (retransmission_rate_limiter_) {
-    // Check if we're overusing retransmission bitrate.
-    // TODO(sprang): Add histograms for nack success or failure reasons.
-    if (!retransmission_rate_limiter_->TryUseRate(packet_size)) {
-      return -1;
-    }
-  }
+  const bool rtx = (RtxStatus() & kRtxRetransmitted) > 0;
 
   if (paced_sender_) {
-    // Mark packet as being in pacer queue again, to prevent duplicates.
-    if (!packet_history_.SetPendingTransmission(packet_id)) {
-      // Packet has already been removed from history, return early.
-      return 0;
+    if (pacer_legacy_packet_referencing_) {
+      // Check if we're overusing retransmission bitrate.
+      // TODO(sprang): Add histograms for nack success or failure reasons.
+      if (retransmission_rate_limiter_ &&
+          !retransmission_rate_limiter_->TryUseRate(packet_size)) {
+        return -1;
+      }
+
+      // Mark packet as being in pacer queue again, to prevent duplicates.
+      if (!packet_history_.SetPendingTransmission(packet_id)) {
+        // Packet has already been removed from history, return early.
+        return 0;
+      }
+
+      paced_sender_->InsertPacket(
+          RtpPacketSender::kNormalPriority, stored_packet->ssrc,
+          stored_packet->rtp_sequence_number, stored_packet->capture_time_ms,
+          stored_packet->packet_size, true);
+    } else {
+      std::unique_ptr<RtpPacketToSend> packet =
+          packet_history_.GetPacketAndMarkAsPending(
+              packet_id, [&](const RtpPacketToSend& stored_packet) {
+                // Check if we're overusing retransmission bitrate.
+                // TODO(sprang): Add histograms for nack success or failure
+                // reasons.
+                std::unique_ptr<RtpPacketToSend> retransmit_packet;
+                if (retransmission_rate_limiter_ &&
+                    !retransmission_rate_limiter_->TryUseRate(packet_size)) {
+                  return retransmit_packet;
+                }
+                if (rtx) {
+                  retransmit_packet = BuildRtxPacket(stored_packet);
+                } else {
+                  retransmit_packet =
+                      absl::make_unique<RtpPacketToSend>(stored_packet);
+                }
+                retransmit_packet->set_retransmitted_sequence_number(
+                    stored_packet.SequenceNumber());
+                return retransmit_packet;
+              });
+      if (!packet) {
+        return -1;
+      }
+      packet->set_packet_type(RtpPacketToSend::Type::kRetransmission);
+      paced_sender_->EnqueuePacket(std::move(packet));
     }
 
-    paced_sender_->InsertPacket(
-        RtpPacketSender::kNormalPriority, stored_packet->ssrc,
-        stored_packet->rtp_sequence_number, stored_packet->capture_time_ms,
-        stored_packet->packet_size, true);
-
     return packet_size;
+  }
+
+  // TODO(sprang): Replace this whole code-path with a pass-through pacer.
+  // Check if we're overusing retransmission bitrate.
+  // TODO(sprang): Add histograms for nack success or failure reasons.
+  if (retransmission_rate_limiter_ &&
+      !retransmission_rate_limiter_->TryUseRate(packet_size)) {
+    return -1;
   }
 
   std::unique_ptr<RtpPacketToSend> packet =
@@ -624,7 +666,6 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
     return 0;
   }
 
-  const bool rtx = (RtxStatus() & kRtxRetransmitted) > 0;
   if (!PrepareAndSendPacket(std::move(packet), rtx, true, PacedPacketInfo()))
     return -1;
 
@@ -926,15 +967,18 @@ size_t RTPSender::TimeToSendPadding(size_t bytes,
   return bytes_sent;
 }
 
-void RTPSender::GeneratePadding(size_t target_size_bytes) {
+std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
+    size_t target_size_bytes) {
   // This method does not actually send packets, it just generates
   // them and puts them in the pacer queue. Since this should incur
   // low overhead, keep the lock for the scope of the method in order
   // to make the code more readable.
   rtc::CritScope lock(&send_critsect_);
-  if (!sending_media_)
-    return;
+  if (!sending_media_) {
+    return {};
+  }
 
+  std::vector<std::unique_ptr<RtpPacketToSend>> padding_packets;
   size_t bytes_left = target_size_bytes;
   if ((rtx_ & kRtxRedundantPayloads) != 0) {
     while (bytes_left >= 0) {
@@ -953,7 +997,7 @@ void RTPSender::GeneratePadding(size_t target_size_bytes) {
 
       bytes_left -= std::min(bytes_left, packet->payload_size());
       packet->set_packet_type(RtpPacketToSend::Type::kPadding);
-      paced_sender_->EnqueuePacket(std::move(packet));
+      padding_packets.push_back(std::move(packet));
     }
   }
 
@@ -1022,10 +1066,15 @@ void RTPSender::GeneratePadding(size_t target_size_bytes) {
       padding_packet->SetPayloadType(rtx_payload_type_map_.begin()->second);
     }
 
+    if (rtp_header_extension_map_.IsRegistered(TransportSequenceNumber::kId)) {
+      padding_packet->ReserveExtension<TransportSequenceNumber>();
+    }
     padding_packet->SetPadding(padding_bytes_in_packet);
     bytes_left -= std::min(bytes_left, padding_bytes_in_packet);
-    paced_sender_->EnqueuePacket(std::move(padding_packet));
+    padding_packets.push_back(std::move(padding_packet));
   }
+
+  return padding_packets;
 }
 
 bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
@@ -1040,18 +1089,28 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
     size_t packet_size =
         send_side_bwe_with_overhead_ ? packet->size() : packet->payload_size();
     auto packet_type = packet->packet_type();
-    RTC_DCHECK(packet_type.has_value());
-    if (ssrc == FlexfecSsrc()) {
-      // Store FlexFEC packets in the history here, so they can be found
-      // when the pacer calls TimeToSendPacket.
-      flexfec_packet_history_.PutRtpPacket(std::move(packet), storage,
-                                           absl::nullopt);
+    RTC_CHECK(packet_type) << "Packet type must be set before sending.";
+
+    if (pacer_legacy_packet_referencing_) {
+      // If |pacer_reference_packets_| then pacer needs to find the packet in
+      // the history when it is time to send, so move packet there.
+      if (ssrc == FlexfecSsrc()) {
+        // Store FlexFEC packets in a separate history since they are on a
+        // separate SSRC.
+        flexfec_packet_history_.PutRtpPacket(std::move(packet), storage,
+                                             absl::nullopt);
+      } else {
+        packet_history_.PutRtpPacket(std::move(packet), storage, absl::nullopt);
+      }
+
+      paced_sender_->InsertPacket(PacketTypeToPriority(*packet_type), ssrc,
+                                  seq_no, capture_time_ms, packet_size, false);
     } else {
-      packet_history_.PutRtpPacket(std::move(packet), storage, absl::nullopt);
+      packet->set_allow_retransmission(storage ==
+                                       StorageType::kAllowRetransmission);
+      paced_sender_->EnqueuePacket(std::move(packet));
     }
 
-    paced_sender_->InsertPacket(PacketTypeToPriority(*packet_type), ssrc,
-                                seq_no, capture_time_ms, packet_size, false);
     return true;
   }
 

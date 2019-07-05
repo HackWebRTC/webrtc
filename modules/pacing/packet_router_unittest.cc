@@ -10,9 +10,12 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <utility>
 
+#include "absl/memory/memory.h"
 #include "api/units/time_delta.h"
 #include "modules/pacing/packet_router.h"
+#include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "rtc_base/checks.h"
@@ -36,6 +39,7 @@ using ::testing::Field;
 using ::testing::Gt;
 using ::testing::Le;
 using ::testing::NiceMock;
+using ::testing::Property;
 using ::testing::Return;
 using ::testing::ReturnPointee;
 using ::testing::SaveArg;
@@ -296,9 +300,15 @@ TEST(PacketRouterTest, GeneratePaddingPicksCorrectModule) {
   packet_router.AddSendRtpModule(&rtp_2, false);
 
   const size_t kPaddingSize = 123;
+  const size_t kExpectedPaddingPackets = 1;
   EXPECT_CALL(rtp_1, GeneratePadding(_)).Times(0);
-  EXPECT_CALL(rtp_2, GeneratePadding(kPaddingSize)).Times(1);
-  packet_router.GeneratePadding(kPaddingSize);
+  EXPECT_CALL(rtp_2, GeneratePadding(kPaddingSize))
+      .WillOnce([&](size_t padding_size) {
+        return std::vector<std::unique_ptr<RtpPacketToSend>>(
+            kExpectedPaddingPackets);
+      });
+  auto generated_padding = packet_router.GeneratePadding(kPaddingSize);
+  EXPECT_EQ(generated_padding.size(), kExpectedPaddingPackets);
 
   packet_router.RemoveSendRtpModule(&rtp_1);
   packet_router.RemoveSendRtpModule(&rtp_2);
@@ -936,6 +946,88 @@ TEST(PacketRouterRembTest, ReceiveModuleTakesOverWhenLastSendModuleRemoved) {
 
   // Test tear-down
   packet_router.RemoveReceiveRtpModule(&receive_module);
+}
+
+TEST(PacketRouterTest, SendPacketWithoutTransportSequenceNumbers) {
+  PacketRouter packet_router;
+  NiceMock<MockRtpRtcp> rtp_1;
+  packet_router.AddSendRtpModule(&rtp_1, false);
+
+  const uint16_t kSsrc1 = 1234;
+  ON_CALL(rtp_1, SendingMedia).WillByDefault(Return(true));
+  ON_CALL(rtp_1, SSRC).WillByDefault(Return(kSsrc1));
+
+  // Send a packet without TransportSequenceNumber extension registered,
+  // packets sent should not have the extension set.
+  RtpHeaderExtensionMap extension_manager;
+  auto packet = absl::make_unique<RtpPacketToSend>(&extension_manager);
+  packet->SetSsrc(kSsrc1);
+  EXPECT_CALL(
+      rtp_1,
+      TrySendPacket(
+          Property(&RtpPacketToSend::HasExtension<TransportSequenceNumber>,
+                   false),
+          _))
+      .WillOnce(Return(true));
+  packet_router.SendPacket(std::move(packet), PacedPacketInfo());
+
+  packet_router.RemoveSendRtpModule(&rtp_1);
+}
+
+TEST(PacketRouterTest, SendPacketAssignsTransportSequenceNumbers) {
+  PacketRouter packet_router;
+  NiceMock<MockRtpRtcp> rtp_1;
+  NiceMock<MockRtpRtcp> rtp_2;
+
+  packet_router.AddSendRtpModule(&rtp_1, false);
+  packet_router.AddSendRtpModule(&rtp_2, false);
+
+  const uint16_t kSsrc1 = 1234;
+  const uint16_t kSsrc2 = 2345;
+
+  ON_CALL(rtp_1, SendingMedia).WillByDefault(Return(true));
+  ON_CALL(rtp_1, SSRC).WillByDefault(Return(kSsrc1));
+  ON_CALL(rtp_2, SendingMedia).WillByDefault(Return(true));
+  ON_CALL(rtp_2, SSRC).WillByDefault(Return(kSsrc2));
+
+  RtpHeaderExtensionMap extension_manager;
+  const int kTransportSequenceNumberExtensionId = 1;
+  extension_manager.Register(kRtpExtensionTransportSequenceNumber,
+                             kTransportSequenceNumberExtensionId);
+
+  uint16_t transport_sequence_number = 0;
+
+  auto packet = absl::make_unique<RtpPacketToSend>(&extension_manager);
+  EXPECT_TRUE(packet->ReserveExtension<TransportSequenceNumber>());
+  packet->SetSsrc(kSsrc1);
+  EXPECT_CALL(
+      rtp_1,
+      TrySendPacket(
+          Property(&RtpPacketToSend::GetExtension<TransportSequenceNumber>,
+                   transport_sequence_number),
+          _))
+      .WillOnce(Return(true));
+  packet_router.SendPacket(std::move(packet), PacedPacketInfo());
+
+  ++transport_sequence_number;
+  packet = absl::make_unique<RtpPacketToSend>(&extension_manager);
+  EXPECT_TRUE(packet->ReserveExtension<TransportSequenceNumber>());
+  packet->SetSsrc(kSsrc2);
+
+  // There will be a failed attempt to send on kSsrc1 before trying
+  // the correct RTP module.
+  EXPECT_CALL(rtp_1, TrySendPacket).WillOnce(Return(false));
+  EXPECT_CALL(
+      rtp_2,
+      TrySendPacket(
+          Property(&RtpPacketToSend::GetExtension<TransportSequenceNumber>,
+                   transport_sequence_number),
+          _))
+      .WillOnce(Return(true));
+  packet_router.SendPacket(std::move(packet), PacedPacketInfo());
+
+  packet_router.RemoveSendRtpModule(&rtp_1);
+  packet_router.RemoveSendRtpModule(&rtp_2);
 }
 
 }  // namespace webrtc
