@@ -177,18 +177,27 @@ if (rtc_include_tests) {
 
       sources = [
         "test/low_bandwidth_audio_test.cc",
+        "test/pc_low_bandwidth_audio_test.cc",
       ]
 
       deps = [
         ":audio_end_to_end_test",
+        "../api:create_network_emulation_manager",
+        "../api:create_peerconnection_quality_test_fixture",
+        "../api:network_emulation_manager_api",
+        "../api:peer_connection_quality_test_fixture_api",
         "../api:simulated_network_api",
+        "../call:simulated_network",
         "../common_audio",
         "../rtc_base:rtc_base_approved",
         "../system_wrappers",
         "../test:fileutils",
         "../test:test_common",
         "../test:test_main",
+        "../test:test_support",
+        "../test/pc/e2e:network_quality_metrics_reporter",
         "//testing/gtest",
+        "//third_party/abseil-cpp/absl/memory:memory",
       ]
       if (is_android) {
         deps += [ "//testing/android/native_test:native_test_native_code" ]
