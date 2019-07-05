@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_PROCESSING_AEC3_ECHO_CANCELLER3_H_
 
 #include <stddef.h>
+
 #include <memory>
 #include <vector>
 

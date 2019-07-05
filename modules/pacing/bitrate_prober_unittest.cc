@@ -9,6 +9,7 @@
  */
 
 #include "modules/pacing/bitrate_prober.h"
+
 #include "test/gtest.h"
 
 namespace webrtc {

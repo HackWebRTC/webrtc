@@ -13,7 +13,6 @@
 #include "absl/memory/memory.h"
 #include "api/audio/audio_frame.h"
 #include "api/audio_codecs/audio_decoder.h"
-
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/audio_coding/neteq/tools/rtp_generator.h"
 #include "rtc_base/ref_counted_object.h"
@@ -25,8 +24,8 @@ namespace webrtc {
 namespace test {
 
 using ::testing::_;
-using ::testing::SetArgPointee;
 using ::testing::Return;
+using ::testing::SetArgPointee;
 
 class MockAudioDecoder final : public AudioDecoder {
  public:

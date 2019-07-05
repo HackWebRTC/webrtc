@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_PROCESSING_ECHO_CANCELLATION_IMPL_H_
 
 #include <stddef.h>
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -34,7 +35,6 @@ class EchoCancellationImpl {
 
   void ProcessRenderAudio(rtc::ArrayView<const float> packed_render_audio);
   int ProcessCaptureAudio(AudioBuffer* audio, int stream_delay_ms);
-
 
   // Differences in clock speed on the primary and reverse streams can impact
   // the AEC performance. On the client-side, this could be seen when different

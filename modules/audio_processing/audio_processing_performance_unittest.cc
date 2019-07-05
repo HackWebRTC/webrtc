@@ -7,8 +7,6 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "modules/audio_processing/audio_processing_impl.h"
-
 #include <math.h>
 
 #include <algorithm>
@@ -16,6 +14,7 @@
 #include <vector>
 
 #include "api/array_view.h"
+#include "modules/audio_processing/audio_processing_impl.h"
 #include "modules/audio_processing/test/test_utils.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/event.h"

@@ -12,6 +12,7 @@
 #define MEDIA_BASE_VIDEO_ADAPTER_H_
 
 #include <stdint.h>
+
 #include <utility>
 
 #include "absl/types/optional.h"

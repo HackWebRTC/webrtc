@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_CODING_NETEQ_TOOLS_CONSTANT_PCM_PACKET_SOURCE_H_
 
 #include <stdio.h>
+
 #include <string>
 
 #include "modules/audio_coding/neteq/tools/packet_source.h"

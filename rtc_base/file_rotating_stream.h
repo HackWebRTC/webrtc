@@ -12,6 +12,7 @@
 #define RTC_BASE_FILE_ROTATING_STREAM_H_
 
 #include <stddef.h>
+
 #include <memory>
 #include <string>
 #include <vector>

@@ -15,6 +15,7 @@
 #define PC_STATS_COLLECTOR_H_
 
 #include <stdint.h>
+
 #include <map>
 #include <memory>
 #include <string>

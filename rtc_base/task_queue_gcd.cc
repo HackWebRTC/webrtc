@@ -14,9 +14,8 @@
 
 #include "rtc_base/task_queue_gcd.h"
 
-#include <string.h>
-
 #include <dispatch/dispatch.h>
+#include <string.h>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"

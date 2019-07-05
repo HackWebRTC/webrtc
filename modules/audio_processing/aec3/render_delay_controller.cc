@@ -7,7 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "modules/audio_processing/aec3/render_delay_controller.h"
+
 #include <stddef.h>
+
 #include <algorithm>
 #include <memory>
 
@@ -18,7 +21,6 @@
 #include "modules/audio_processing/aec3/delay_estimate.h"
 #include "modules/audio_processing/aec3/downsampled_render_buffer.h"
 #include "modules/audio_processing/aec3/echo_path_delay_estimator.h"
-#include "modules/audio_processing/aec3/render_delay_controller.h"
 #include "modules/audio_processing/aec3/render_delay_controller_metrics.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomic_ops.h"

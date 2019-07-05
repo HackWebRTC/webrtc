@@ -9,6 +9,7 @@
  */
 
 #include "api/video_codecs/sdp_video_format.h"
+
 #include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {

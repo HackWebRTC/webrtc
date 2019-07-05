@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "video/video_send_stream_impl.h"
+
 #include <string>
 
 #include "absl/memory/memory.h"
@@ -27,7 +29,6 @@
 #include "test/gtest.h"
 #include "test/mock_transport.h"
 #include "video/test/mock_video_stream_encoder.h"
-#include "video/video_send_stream_impl.h"
 
 namespace webrtc {
 namespace internal {
@@ -340,20 +341,20 @@ TEST_F(VideoSendStreamImplTest,
     config_.rtp.ssrcs.emplace_back(2);
 
     EXPECT_CALL(bitrate_allocator_, AddObserver(vss_impl.get(), _))
-        .WillRepeatedly(Invoke([&](BitrateAllocatorObserver*,
-                                   MediaStreamAllocationConfig config) {
-          EXPECT_EQ(config.min_bitrate_bps,
-                    static_cast<uint32_t>(low_stream.min_bitrate_bps));
-          EXPECT_EQ(config.max_bitrate_bps,
-                    static_cast<uint32_t>(low_stream.max_bitrate_bps +
-                                          high_stream.max_bitrate_bps));
-          if (config.pad_up_bitrate_bps != 0) {
-            EXPECT_EQ(
-                config.pad_up_bitrate_bps,
-                static_cast<uint32_t>(low_stream.target_bitrate_bps +
-                                      1.25 * high_stream.min_bitrate_bps));
-          }
-        }));
+        .WillRepeatedly(Invoke(
+            [&](BitrateAllocatorObserver*, MediaStreamAllocationConfig config) {
+              EXPECT_EQ(config.min_bitrate_bps,
+                        static_cast<uint32_t>(low_stream.min_bitrate_bps));
+              EXPECT_EQ(config.max_bitrate_bps,
+                        static_cast<uint32_t>(low_stream.max_bitrate_bps +
+                                              high_stream.max_bitrate_bps));
+              if (config.pad_up_bitrate_bps != 0) {
+                EXPECT_EQ(
+                    config.pad_up_bitrate_bps,
+                    static_cast<uint32_t>(low_stream.target_bitrate_bps +
+                                          1.25 * high_stream.min_bitrate_bps));
+              }
+            }));
 
     static_cast<VideoStreamEncoderInterface::EncoderSink*>(vss_impl.get())
         ->OnEncoderConfigurationChanged(

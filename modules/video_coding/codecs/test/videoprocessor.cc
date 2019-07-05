@@ -11,6 +11,7 @@
 #include "modules/video_coding/codecs/test/videoprocessor.h"
 
 #include <string.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <limits>

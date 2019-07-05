@@ -12,6 +12,7 @@
 
 #include <math.h>
 #include <stddef.h>
+
 #include <algorithm>
 #include <numeric>
 
@@ -264,9 +265,9 @@ void SuppressionGain::LowerBandGain(
   std::array<float, kFftLengthBy2Plus1> max_gain;
   GetMaxGain(max_gain);
 
-    GainToNoAudibleEcho(nearend, weighted_residual_echo, comfort_noise,
-                        min_gain, max_gain, gain);
-    AdjustForExternalFilters(gain);
+  GainToNoAudibleEcho(nearend, weighted_residual_echo, comfort_noise, min_gain,
+                      max_gain, gain);
+  AdjustForExternalFilters(gain);
 
   // Adjust the gain for frequencies which have not yet converged.
   AdjustNonConvergedFrequencies(gain);

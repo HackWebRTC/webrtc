@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_CODING_AUDIO_NETWORK_ADAPTOR_AUDIO_NETWORK_ADAPTOR_IMPL_H_
 
 #include <stdio.h>
+
 #include <memory>
 
 #include "absl/types/optional.h"

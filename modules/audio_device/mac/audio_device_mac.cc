@@ -9,6 +9,12 @@
  */
 
 #include "modules/audio_device/mac/audio_device_mac.h"
+
+#include <ApplicationServices/ApplicationServices.h>
+#include <libkern/OSAtomic.h>  // OSAtomicCompareAndSwap()
+#include <mach/mach.h>         // mach_task_self()
+#include <sys/sysctl.h>        // sysctlbyname()
+
 #include "absl/memory/memory.h"
 #include "modules/audio_device/audio_device_config.h"
 #include "modules/third_party/portaudio/pa_ringbuffer.h"
@@ -16,11 +22,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/system/arch.h"
-
-#include <ApplicationServices/ApplicationServices.h>
-#include <libkern/OSAtomic.h>  // OSAtomicCompareAndSwap()
-#include <mach/mach.h>         // mach_task_self()
-#include <sys/sysctl.h>        // sysctlbyname()
 
 namespace webrtc {
 
@@ -197,7 +198,6 @@ AudioDeviceMac::~AudioDeviceMac() {
   if (kernErr != KERN_SUCCESS) {
     RTC_LOG(LS_ERROR) << "semaphore_destroy() error: " << kernErr;
   }
-
 }
 
 // ============================================================================

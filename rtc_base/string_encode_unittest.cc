@@ -11,6 +11,7 @@
 #include "rtc_base/string_encode.h"
 
 #include <string.h>
+
 #include <sstream>  // no-presubmit-check TODO(webrtc:8982)
 
 #include "test/gtest.h"

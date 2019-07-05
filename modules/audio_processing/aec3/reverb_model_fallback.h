@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_PROCESSING_AEC3_REVERB_MODEL_FALLBACK_H_
 
 #include <stddef.h>
+
 #include <array>
 #include <vector>
 

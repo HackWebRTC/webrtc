@@ -1492,7 +1492,9 @@ int AudioProcessingImpl::AnalyzeReverseStream(const float* const* data,
   TRACE_EVENT0("webrtc", "AudioProcessing::AnalyzeReverseStream_ChannelLayout");
   rtc::CritScope cs(&crit_render_);
   const StreamConfig reverse_config = {
-      sample_rate_hz, ChannelsFromLayout(layout), LayoutHasKeyboard(layout),
+      sample_rate_hz,
+      ChannelsFromLayout(layout),
+      LayoutHasKeyboard(layout),
   };
   if (samples_per_channel != reverse_config.num_frames()) {
     return kBadDataLengthError;

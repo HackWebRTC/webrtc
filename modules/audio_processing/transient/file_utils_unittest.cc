@@ -11,6 +11,7 @@
 #include "modules/audio_processing/transient/file_utils.h"
 
 #include <string.h>
+
 #include <memory>
 #include <string>
 #include <vector>

@@ -75,26 +75,21 @@ void RtcpTransceiver::RemoveMediaReceiverRtcpObserver(
 void RtcpTransceiver::SetReadyToSend(bool ready) {
   RTC_CHECK(rtcp_transceiver_);
   RtcpTransceiverImpl* ptr = rtcp_transceiver_.get();
-  task_queue_->PostTask([ptr, ready] {
-      ptr->SetReadyToSend(ready);
-  });
+  task_queue_->PostTask([ptr, ready] { ptr->SetReadyToSend(ready); });
 }
 
 void RtcpTransceiver::ReceivePacket(rtc::CopyOnWriteBuffer packet) {
   RTC_CHECK(rtcp_transceiver_);
   RtcpTransceiverImpl* ptr = rtcp_transceiver_.get();
   int64_t now_us = rtc::TimeMicros();
-  task_queue_->PostTask([ptr, packet, now_us] {
-      ptr->ReceivePacket(packet, now_us);
-  });
+  task_queue_->PostTask(
+      [ptr, packet, now_us] { ptr->ReceivePacket(packet, now_us); });
 }
 
 void RtcpTransceiver::SendCompoundPacket() {
   RTC_CHECK(rtcp_transceiver_);
   RtcpTransceiverImpl* ptr = rtcp_transceiver_.get();
-  task_queue_->PostTask([ptr] {
-      ptr->SendCompoundPacket();
-  });
+  task_queue_->PostTask([ptr] { ptr->SendCompoundPacket(); });
 }
 
 void RtcpTransceiver::SetRemb(int64_t bitrate_bps,
@@ -102,9 +97,7 @@ void RtcpTransceiver::SetRemb(int64_t bitrate_bps,
   RTC_CHECK(rtcp_transceiver_);
   // TODO(danilchap): Replace with lambda with move capture when available.
   struct SetRembClosure {
-    void operator()() {
-        ptr->SetRemb(bitrate_bps, std::move(ssrcs));
-    }
+    void operator()() { ptr->SetRemb(bitrate_bps, std::move(ssrcs)); }
 
     RtcpTransceiverImpl* ptr;
     int64_t bitrate_bps;
@@ -117,9 +110,7 @@ void RtcpTransceiver::SetRemb(int64_t bitrate_bps,
 void RtcpTransceiver::UnsetRemb() {
   RTC_CHECK(rtcp_transceiver_);
   RtcpTransceiverImpl* ptr = rtcp_transceiver_.get();
-  task_queue_->PostTask([ptr] {
-      ptr->UnsetRemb();
-  });
+  task_queue_->PostTask([ptr] { ptr->UnsetRemb(); });
 }
 
 uint32_t RtcpTransceiver::SSRC() const {
@@ -130,9 +121,7 @@ bool RtcpTransceiver::SendFeedbackPacket(
     const rtcp::TransportFeedback& packet) {
   RTC_CHECK(rtcp_transceiver_);
   struct Closure {
-    void operator()() {
-        ptr->SendRawPacket(raw_packet);
-    }
+    void operator()() { ptr->SendRawPacket(raw_packet); }
     RtcpTransceiverImpl* ptr;
     rtc::Buffer raw_packet;
   };
@@ -145,9 +134,7 @@ void RtcpTransceiver::SendNack(uint32_t ssrc,
   RTC_CHECK(rtcp_transceiver_);
   // TODO(danilchap): Replace with lambda with move capture when available.
   struct Closure {
-    void operator()() {
-        ptr->SendNack(ssrc, std::move(sequence_numbers));
-    }
+    void operator()() { ptr->SendNack(ssrc, std::move(sequence_numbers)); }
 
     RtcpTransceiverImpl* ptr;
     uint32_t ssrc;
@@ -167,9 +154,7 @@ void RtcpTransceiver::SendFullIntraRequest(std::vector<uint32_t> ssrcs) {
   RTC_CHECK(rtcp_transceiver_);
   // TODO(danilchap): Replace with lambda with move capture when available.
   struct Closure {
-    void operator()() {
-        ptr->SendFullIntraRequest(ssrcs);
-    }
+    void operator()() { ptr->SendFullIntraRequest(ssrcs); }
 
     RtcpTransceiverImpl* ptr;
     std::vector<uint32_t> ssrcs;

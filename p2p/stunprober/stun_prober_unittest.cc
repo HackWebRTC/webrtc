@@ -8,20 +8,22 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "p2p/stunprober/stun_prober.h"
+
 #include <stdint.h>
+
 #include <memory>
 
 #include "p2p/base/basic_packet_socket_factory.h"
 #include "p2p/base/test_stun_server.h"
-#include "p2p/stunprober/stun_prober.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/ip_address.h"
 #include "rtc_base/ssl_adapter.h"
 #include "rtc_base/virtual_socket_server.h"
 #include "test/gtest.h"
 
-using stunprober::StunProber;
 using stunprober::AsyncCallback;
+using stunprober::StunProber;
 
 namespace stunprober {
 

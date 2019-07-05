@@ -13,6 +13,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <algorithm>
 #include <numeric>
 #include <string>
@@ -30,7 +31,7 @@
 
 namespace {
 
-constexpr int kLimitProbability = 1020054733;           // 19/20 in Q30.
+constexpr int kLimitProbability = 1020054733;  // 19/20 in Q30.
 constexpr int kMinBaseMinimumDelayMs = 0;
 constexpr int kMaxBaseMinimumDelayMs = 10000;
 constexpr int kIatFactor = 32745;  // 0.9993 in Q15.

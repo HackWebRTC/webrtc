@@ -8,7 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "p2p/base/port.h"
+
 #include <string.h>
+
 #include <cstdint>
 #include <list>
 #include <memory>
@@ -23,7 +26,6 @@
 #include "p2p/base/basic_packet_socket_factory.h"
 #include "p2p/base/p2p_constants.h"
 #include "p2p/base/packet_socket_factory.h"
-#include "p2p/base/port.h"
 #include "p2p/base/port_allocator.h"
 #include "p2p/base/port_interface.h"
 #include "p2p/base/relay_port.h"
@@ -69,11 +71,11 @@
 using rtc::AsyncPacketSocket;
 using rtc::ByteBufferReader;
 using rtc::ByteBufferWriter;
-using rtc::NATType;
-using rtc::NAT_OPEN_CONE;
 using rtc::NAT_ADDR_RESTRICTED;
+using rtc::NAT_OPEN_CONE;
 using rtc::NAT_PORT_RESTRICTED;
 using rtc::NAT_SYMMETRIC;
+using rtc::NATType;
 using rtc::PacketSocketFactory;
 using rtc::Socket;
 using rtc::SocketAddress;

@@ -7,6 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "modules/audio_device/include/test_audio_device.h"
+
 #include <algorithm>
 #include <cstdint>
 #include <cstdlib>
@@ -20,7 +22,6 @@
 #include "api/array_view.h"
 #include "common_audio/wav_file.h"
 #include "modules/audio_device/include/audio_device_default.h"
-#include "modules/audio_device/include/test_audio_device.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/critical_section.h"

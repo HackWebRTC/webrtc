@@ -27,7 +27,6 @@
 #include "modules/video_coding/utility/framerate_controller.h"
 #include "rtc_base/experiments/cpu_speed_experiment.h"
 #include "rtc_base/experiments/rate_control_settings.h"
-
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_encoder.h"
 

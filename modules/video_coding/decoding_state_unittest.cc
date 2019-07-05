@@ -9,6 +9,7 @@
  */
 
 #include "modules/video_coding/decoding_state.h"
+
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "modules/video_coding/codecs/interface/common_constants.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_globals.h"

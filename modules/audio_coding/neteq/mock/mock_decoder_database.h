@@ -14,7 +14,6 @@
 #include <string>
 
 #include "modules/audio_coding/neteq/decoder_database.h"
-
 #include "test/gmock.h"
 
 namespace webrtc {

@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_base/task_utils/repeating_task.h"
+
 #include <atomic>
 #include <chrono>  // Not allowed in production per Chromium style guide.
 #include <memory>
@@ -16,7 +18,6 @@
 #include "absl/memory/memory.h"
 #include "rtc_base/event.h"
 #include "rtc_base/task_queue_for_test.h"
-#include "rtc_base/task_utils/repeating_task.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 

@@ -12,6 +12,7 @@
 #define API_VIDEO_ENCODED_IMAGE_H_
 
 #include <stdint.h>
+
 #include <map>
 #include <utility>
 
@@ -95,9 +96,7 @@ class RTC_EXPORT EncodedImage {
 
   void SetEncodeTime(int64_t encode_start_ms, int64_t encode_finish_ms);
 
-  absl::optional<int> SpatialIndex() const {
-    return spatial_index_;
-  }
+  absl::optional<int> SpatialIndex() const { return spatial_index_; }
   void SetSpatialIndex(absl::optional<int> spatial_index) {
     RTC_DCHECK_GE(spatial_index.value_or(0), 0);
     RTC_DCHECK_LT(spatial_index.value_or(0), kMaxSpatialLayers);
@@ -208,7 +207,7 @@ class RTC_EXPORT EncodedImage {
   // TODO(bugs.webrtc.org/9378): We're transitioning to always owning the
   // encoded data.
   rtc::scoped_refptr<EncodedImageBufferInterface> encoded_data_;
-  size_t size_;      // Size of encoded frame data.
+  size_t size_;  // Size of encoded frame data.
   // Non-null when used with an un-owned buffer.
   uint8_t* buffer_;
   // Allocated size of _buffer; relevant only if it's non-null.

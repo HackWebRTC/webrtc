@@ -11,6 +11,7 @@
 #include "logging/rtc_event_log/encoder/rtc_event_log_encoder_legacy.h"
 
 #include <string.h>
+
 #include <vector>
 
 #include "absl/types/optional.h"
@@ -53,7 +54,6 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/ignore_wundef.h"
 #include "rtc_base/logging.h"
-
 
 // *.pb.h files are generated at build-time by the protobuf compiler.
 RTC_PUSH_IGNORING_WUNDEF()

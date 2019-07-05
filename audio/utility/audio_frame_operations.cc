@@ -11,6 +11,7 @@
 #include "audio/utility/audio_frame_operations.h"
 
 #include <string.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <utility>

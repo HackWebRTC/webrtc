@@ -8,8 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "media/engine/simulcast.h"
+
 #include <stdint.h>
 #include <stdio.h>
+
 #include <algorithm>
 #include <string>
 
@@ -17,7 +20,6 @@
 #include "api/video/video_codec_constants.h"
 #include "media/base/media_constants.h"
 #include "media/engine/constants.h"
-#include "media/engine/simulcast.h"
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"

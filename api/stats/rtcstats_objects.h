@@ -12,6 +12,7 @@
 #define API_STATS_RTCSTATS_OBJECTS_H_
 
 #include <stdint.h>
+
 #include <memory>
 #include <string>
 #include <vector>
@@ -376,7 +377,7 @@ class RTC_EXPORT RTCRTPStreamStats : public RTCStats {
   RTCStatsMember<std::string> associate_stats_id;
   // TODO(hbos): Remote case not supported by |RTCStatsCollector|.
   // crbug.com/657855, 657856
-  RTCStatsMember<bool> is_remote;  // = false
+  RTCStatsMember<bool> is_remote;          // = false
   RTCStatsMember<std::string> media_type;  // renamed to kind.
   RTCStatsMember<std::string> kind;
   RTCStatsMember<std::string> track_id;

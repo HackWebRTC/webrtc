@@ -11,6 +11,7 @@
 #include "modules/audio_processing/transient/transient_suppressor.h"
 
 #include <string.h>
+
 #include <cmath>
 #include <complex>
 #include <deque>
@@ -351,8 +352,7 @@ void TransientSuppressor::UpdateBuffers(float* data) {
 // If a restoration takes place, the |magnitudes_| are updated to the new value.
 void TransientSuppressor::HardRestoration(float* spectral_mean) {
   const float detector_result =
-      1.f -
-      std::pow(1.f - detector_smoothed_, using_reference_ ? 200.f : 50.f);
+      1.f - std::pow(1.f - detector_smoothed_, using_reference_ ? 200.f : 50.f);
   // To restore, we get the peaks in the spectrum. If higher than the previous
   // spectral mean we adjust them.
   for (size_t i = 0; i < complex_analysis_length_; ++i) {

@@ -28,10 +28,9 @@ namespace test {
 
 class SimulcastTestFixtureImpl final : public SimulcastTestFixture {
  public:
-  SimulcastTestFixtureImpl(
-      std::unique_ptr<VideoEncoderFactory> encoder_factory,
-      std::unique_ptr<VideoDecoderFactory> decoder_factory,
-      SdpVideoFormat video_format);
+  SimulcastTestFixtureImpl(std::unique_ptr<VideoEncoderFactory> encoder_factory,
+                           std::unique_ptr<VideoDecoderFactory> decoder_factory,
+                           SdpVideoFormat video_format);
   ~SimulcastTestFixtureImpl() final;
 
   // Implements SimulcastTestFixture.

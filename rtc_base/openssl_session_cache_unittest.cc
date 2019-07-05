@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_base/openssl_session_cache.h"
+
 #include <openssl/ssl.h>
 #include <stdlib.h>
 
@@ -16,7 +18,6 @@
 
 #include "rtc_base/gunit.h"
 #include "rtc_base/openssl.h"
-#include "rtc_base/openssl_session_cache.h"
 
 namespace rtc {
 

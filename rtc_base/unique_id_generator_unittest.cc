@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_base/unique_id_generator.h"
+
 #include <string>
 #include <vector>
 
@@ -15,7 +17,6 @@
 #include "api/array_view.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/helpers.h"
-#include "rtc_base/unique_id_generator.h"
 #include "test/gmock.h"
 
 using ::testing::IsEmpty;

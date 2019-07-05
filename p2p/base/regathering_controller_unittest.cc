@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "p2p/base/regathering_controller.h"
+
 #include <map>
 #include <memory>
 #include <string>
@@ -18,7 +20,6 @@
 #include "p2p/base/mock_ice_transport.h"
 #include "p2p/base/p2p_constants.h"
 #include "p2p/base/port.h"
-#include "p2p/base/regathering_controller.h"
 #include "p2p/base/stun_server.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/ref_counted_object.h"

@@ -11,10 +11,11 @@
 // MSVC++ requires this to be set before any other includes to get M_PI.
 #define _USE_MATH_DEFINES
 
+#include "common_audio/wav_file.h"
+
 #include <cmath>
 #include <limits>
 
-#include "common_audio/wav_file.h"
 #include "common_audio/wav_header.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"

@@ -47,6 +47,7 @@
 #define MEDIA_BASE_STREAM_PARAMS_H_
 
 #include <stddef.h>
+
 #include <cstdint>
 #include <string>
 #include <vector>

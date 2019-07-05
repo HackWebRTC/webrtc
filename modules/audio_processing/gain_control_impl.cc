@@ -301,7 +301,6 @@ int GainControlImpl::set_analog_level_limits(int minimum, int maximum) {
   size_t num_proc_channels_local = 0u;
   int sample_rate_hz_local = 0;
   {
-
     minimum_capture_level_ = minimum;
     maximum_capture_level_ = maximum;
 

@@ -11,6 +11,7 @@
 #include "modules/remote_bitrate_estimator/aimd_rate_control.h"
 
 #include <inttypes.h>
+
 #include <algorithm>
 #include <cassert>
 #include <cmath>
@@ -106,7 +107,7 @@ AimdRateControl::AimdRateControl(const WebRtcKeyValueConfig* key_value_config,
   ParseFieldTrial(
       {&capacity_deviation_ratio_threshold_, &cross_traffic_factor_,
        &capacity_limit_deviation_factor_},
-       key_value_config->Lookup("WebRTC-Bwe-AimdRateControl-NetworkState"));
+      key_value_config->Lookup("WebRTC-Bwe-AimdRateControl-NetworkState"));
 }
 
 AimdRateControl::~AimdRateControl() {}

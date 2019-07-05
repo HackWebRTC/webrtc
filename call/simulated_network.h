@@ -11,6 +11,7 @@
 #define CALL_SIMULATED_NETWORK_H_
 
 #include <stdint.h>
+
 #include <deque>
 #include <queue>
 #include <vector>

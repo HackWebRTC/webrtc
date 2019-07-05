@@ -14,13 +14,14 @@
 // MSVC++ requires this to be set before any other includes to get M_PI.
 #define _USE_MATH_DEFINES
 
+#include "common_audio/resampler/sinc_resampler.h"
+
 #include <math.h>
 
 #include <algorithm>
 #include <memory>
 #include <tuple>
 
-#include "common_audio/resampler/sinc_resampler.h"
 #include "common_audio/resampler/sinusoidal_linear_chirp_source.h"
 #include "rtc_base/stringize_macros.h"
 #include "rtc_base/system/arch.h"

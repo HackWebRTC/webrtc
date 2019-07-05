@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/function_view.h"
+
 #include <memory>
 #include <utility>
 
-#include "api/function_view.h"
 #include "test/gtest.h"
 
 namespace rtc {

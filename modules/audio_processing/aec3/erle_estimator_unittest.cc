@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/audio_processing/aec3/erle_estimator.h"
+
 #include <cmath>
 
 #include "api/array_view.h"
-#include "modules/audio_processing/aec3/erle_estimator.h"
 #include "modules/audio_processing/aec3/render_delay_buffer.h"
 #include "modules/audio_processing/aec3/vector_buffer.h"
 #include "rtc_base/random.h"

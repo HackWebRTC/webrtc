@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "common_audio/audio_converter.h"
+
 #include <algorithm>
 #include <cmath>
 #include <memory>
 #include <vector>
 
-#include "common_audio/audio_converter.h"
 #include "common_audio/channel_buffer.h"
 #include "common_audio/resampler/push_sinc_resampler.h"
 #include "rtc_base/arraysize.h"

@@ -12,6 +12,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+
 #include <string>
 
 #include "absl/types/optional.h"
@@ -201,9 +202,9 @@ Operations DecisionLogic::GetDecision(const SyncBuffer& sync_buffer,
       decoder_frame_length, sample_rate_, estimate_dtx_delay_);
   if ((prev_mode == kModeExpand || prev_mode == kModeCodecPlc) &&
       expand.MuteFactor(0) < 16384 / 2 &&
-      current_span < static_cast<size_t>(delay_manager_->TargetLevel() *
-                                         packet_length_samples_ *
-                                         kPostponeDecodingLevel / 100)>> 8 &&
+      current_span<static_cast<size_t>(delay_manager_->TargetLevel() *
+                                       packet_length_samples_ *
+                                       kPostponeDecodingLevel / 100)>> 8 &&
       !packet_buffer_.ContainsDtxOrCngPacket(decoder_database_)) {
     return kExpand;
   }

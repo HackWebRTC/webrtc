@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_MIXER_AUDIO_MIXER_IMPL_H_
 
 #include <stddef.h>
+
 #include <memory>
 #include <vector>
 

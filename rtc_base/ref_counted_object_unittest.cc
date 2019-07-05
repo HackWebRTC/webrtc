@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_base/ref_counted_object.h"
+
 #include <memory>
 #include <string>
 #include <utility>
 
 #include "api/scoped_refptr.h"
 #include "rtc_base/ref_count.h"
-#include "rtc_base/ref_counted_object.h"
 #include "test/gtest.h"
 
 namespace rtc {

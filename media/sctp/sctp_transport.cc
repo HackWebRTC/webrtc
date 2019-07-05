@@ -18,8 +18,6 @@ enum PreservedErrno {
 };
 }  // namespace
 
-#include "media/sctp/sctp_transport.h"
-
 #include <stdarg.h>
 #include <stdio.h>
 
@@ -29,6 +27,7 @@ enum PreservedErrno {
 #include "media/base/codec.h"
 #include "media/base/media_constants.h"
 #include "media/base/stream_params.h"
+#include "media/sctp/sctp_transport.h"
 #include "p2p/base/dtls_transport_internal.h"  // For PF_NORMAL
 #include "rtc_base/arraysize.h"
 #include "rtc_base/copy_on_write_buffer.h"

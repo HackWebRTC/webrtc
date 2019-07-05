@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "pc/video_track.h"
+
 #include <memory>
 
 #include "media/base/fake_frame_source.h"
 #include "media/base/video_common.h"
 #include "pc/test/fake_video_track_renderer.h"
 #include "pc/test/fake_video_track_source.h"
-#include "pc/video_track.h"
 #include "pc/video_track_source.h"
 #include "rtc_base/ref_counted_object.h"
 #include "test/gtest.h"

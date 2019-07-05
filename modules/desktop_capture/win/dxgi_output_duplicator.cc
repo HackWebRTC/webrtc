@@ -10,10 +10,9 @@
 
 #include "modules/desktop_capture/win/dxgi_output_duplicator.h"
 
-#include <string.h>
-
 #include <dxgi.h>
 #include <dxgiformat.h>
+#include <string.h>
 #include <unknwn.h>
 #include <windows.h>
 

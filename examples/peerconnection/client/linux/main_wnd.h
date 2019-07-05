@@ -12,6 +12,7 @@
 #define EXAMPLES_PEERCONNECTION_CLIENT_LINUX_MAIN_WND_H_
 
 #include <stdint.h>
+
 #include <memory>
 #include <string>
 

@@ -10,10 +10,10 @@
 
 #include "rtc_base/memory/aligned_malloc.h"
 
-#include "rtc_base/checks.h"
-
 #include <stdlib.h>  // for free, malloc
 #include <string.h>  // for memcpy
+
+#include "rtc_base/checks.h"
 
 #ifdef _WIN32
 #include <windows.h>

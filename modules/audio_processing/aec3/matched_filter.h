@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_PROCESSING_AEC3_MATCHED_FILTER_H_
 
 #include <stddef.h>
+
 #include <vector>
 
 #include "api/array_view.h"
@@ -65,7 +66,6 @@ void MatchedFilterCore(size_t x_start_index,
                        float* error_sum);
 
 }  // namespace aec3
-
 
 // Produces recursively updated cross-correlation estimates for several signal
 // shifts where the intra-shift spacing is uniform.

@@ -11,6 +11,7 @@
 #define CALL_RECEIVE_TIME_CALCULATOR_H_
 
 #include <stdint.h>
+
 #include <memory>
 
 #include "api/units/time_delta.h"

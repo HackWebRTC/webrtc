@@ -7,11 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "rtc_base/random.h"
-
 #include "modules/congestion_controller/bbr/bbr_factory.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/experiments/field_trial_units.h"
+#include "rtc_base/random.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 #include "test/scenario/scenario.h"
@@ -21,10 +20,10 @@ namespace test {
 namespace {
 constexpr int64_t kRunTimeMs = 60000;
 
-using ::testing::Values;
 using ::testing::Combine;
-using ::testing::tuple;
 using ::testing::make_tuple;
+using ::testing::tuple;
+using ::testing::Values;
 
 using Codec = VideoStreamConfig::Encoder::Codec;
 using CodecImpl = VideoStreamConfig::Encoder::Implementation;
@@ -66,7 +65,9 @@ struct CallTestConfig {
     void Parse(std::string config_str) {
       ParseFieldTrial(
           {
-              &use_bbr, &bbr_no_target_rate, &bbr_initial_window,
+              &use_bbr,
+              &bbr_no_target_rate,
+              &bbr_initial_window,
               &bbr_encoder_gain,
           },
           config_str);

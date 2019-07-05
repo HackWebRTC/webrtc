@@ -12,9 +12,9 @@
 #define RTC_BASE_OPENSSL_CERTIFICATE_H_
 
 #include <openssl/ossl_typ.h>
-
 #include <stddef.h>
 #include <stdint.h>
+
 #include <string>
 
 #include "rtc_base/buffer.h"

@@ -42,8 +42,8 @@ using RTCConfiguration = PeerConnectionInterface::RTCConfiguration;
 using RTCOfferAnswerOptions = PeerConnectionInterface::RTCOfferAnswerOptions;
 using ::testing::Bool;
 using ::testing::Combine;
-using ::testing::Values;
 using ::testing::ElementsAre;
+using ::testing::Values;
 
 class PeerConnectionWrapperForMediaTest : public PeerConnectionWrapper {
  public:
@@ -337,9 +337,9 @@ TEST_F(PeerConnectionMediaTestPlanB, SimulcastOffer) {
   RTCOfferAnswerOptions options;
   options.num_simulcast_layers = 3;
   auto offer = caller->CreateOffer(options);
-  auto* description = cricket::GetFirstMediaContent(
-      offer->description(),
-      cricket::MEDIA_TYPE_VIDEO)->media_description();
+  auto* description = cricket::GetFirstMediaContent(offer->description(),
+                                                    cricket::MEDIA_TYPE_VIDEO)
+                          ->media_description();
   ASSERT_EQ(1u, description->streams().size());
   ASSERT_TRUE(description->streams()[0].get_ssrc_group("SIM"));
   EXPECT_EQ(3u, description->streams()[0].get_ssrc_group("SIM")->ssrcs.size());
@@ -364,9 +364,9 @@ TEST_F(PeerConnectionMediaTestPlanB, SimulcastAnswer) {
   RTCOfferAnswerOptions options;
   options.num_simulcast_layers = 3;
   auto answer = callee->CreateAnswer(options);
-  auto* description = cricket::GetFirstMediaContent(
-      answer->description(),
-      cricket::MEDIA_TYPE_VIDEO)->media_description();
+  auto* description = cricket::GetFirstMediaContent(answer->description(),
+                                                    cricket::MEDIA_TYPE_VIDEO)
+                          ->media_description();
   ASSERT_EQ(1u, description->streams().size());
   ASSERT_TRUE(description->streams()[0].get_ssrc_group("SIM"));
   EXPECT_EQ(3u, description->streams()[0].get_ssrc_group("SIM")->ssrcs.size());

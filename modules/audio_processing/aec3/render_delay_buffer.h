@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_PROCESSING_AEC3_RENDER_DELAY_BUFFER_H_
 
 #include <stddef.h>
+
 #include <vector>
 
 #include "api/audio/echo_canceller3_config.h"

@@ -12,6 +12,7 @@
 #define RTC_BASE_SWAP_QUEUE_H_
 
 #include <stddef.h>
+
 #include <atomic>
 #include <utility>
 #include <vector>

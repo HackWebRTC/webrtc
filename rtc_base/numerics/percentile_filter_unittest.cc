@@ -8,7 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_base/numerics/percentile_filter.h"
+
 #include <stdlib.h>
+
 #include <array>
 #include <climits>
 #include <cstdint>
@@ -16,7 +19,6 @@
 
 #include "absl/algorithm/container.h"
 #include "rtc_base/constructor_magic.h"
-#include "rtc_base/numerics/percentile_filter.h"
 #include "test/gtest.h"
 
 namespace webrtc {

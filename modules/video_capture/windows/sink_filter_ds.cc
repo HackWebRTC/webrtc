@@ -10,16 +10,16 @@
 
 #include "modules/video_capture/windows/sink_filter_ds.h"
 
+#include <dvdmedia.h>  // VIDEOINFOHEADER2
+#include <initguid.h>
+
+#include <algorithm>
+
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/string_utils.h"
-
-#include <dvdmedia.h>  // VIDEOINFOHEADER2
-#include <initguid.h>
-
-#include <algorithm>
 
 DEFINE_GUID(CLSID_SINKFILTER,
             0x88cdbbdc,

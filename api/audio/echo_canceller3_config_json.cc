@@ -10,6 +10,7 @@
 #include "api/audio/echo_canceller3_config_json.h"
 
 #include <stddef.h>
+
 #include <string>
 #include <vector>
 

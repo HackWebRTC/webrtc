@@ -101,9 +101,9 @@ int SamplesPerChannel(int sample_rate_hz, int duration_ms) {
 }  // namespace
 
 using test::AudioLoop;
+using ::testing::Combine;
 using ::testing::TestWithParam;
 using ::testing::Values;
-using ::testing::Combine;
 
 // Maximum number of bytes in output bitstream.
 const size_t kMaxBytes = 2000;

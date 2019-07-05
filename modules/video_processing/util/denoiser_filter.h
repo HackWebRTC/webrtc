@@ -12,6 +12,7 @@
 #define MODULES_VIDEO_PROCESSING_UTIL_DENOISER_FILTER_H_
 
 #include <stdint.h>
+
 #include <memory>
 
 namespace webrtc {

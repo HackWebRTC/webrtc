@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "p2p/base/mdns_message.h"
+
 #include <map>
 #include <set>
 #include <string>
 
-#include "p2p/base/mdns_message.h"
 #include "rtc_base/byte_buffer.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/ip_address.h"

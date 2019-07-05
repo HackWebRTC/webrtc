@@ -9,6 +9,7 @@
  */
 
 #include <stdio.h>
+
 #include <string>
 
 #include "api/scoped_refptr.h"

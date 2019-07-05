@@ -12,11 +12,10 @@
 #include "call/call.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
+#include "modules/rtp_rtcp/source/byte_io.h"
 #include "test/call_test.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
-
-#include "modules/rtp_rtcp/source/byte_io.h"
 #include "test/rtcp_packet_parser.h"
 #include "video/end_to_end_tests/multi_stream_tester.h"
 

@@ -16,7 +16,6 @@
 #include <limits>
 
 #include "absl/types/optional.h"
-
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/math_utils.h"
 

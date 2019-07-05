@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "pc/jsep_transport.h"
+
 #include <memory>
 #include <tuple>
 #include <utility>
@@ -16,7 +18,6 @@
 #include "media/base/fake_rtp.h"
 #include "p2p/base/fake_dtls_transport.h"
 #include "p2p/base/fake_ice_transport.h"
-#include "pc/jsep_transport.h"
 #include "rtc_base/gunit.h"
 
 namespace cricket {

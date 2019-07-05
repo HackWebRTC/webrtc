@@ -11,6 +11,7 @@
 #include "modules/audio_processing/agc2/rnn_vad/pitch_search_internal.h"
 
 #include <stdlib.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstddef>

@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "p2p/base/ice_credentials_iterator.h"
+
 #include <vector>
 
-#include "p2p/base/ice_credentials_iterator.h"
 #include "test/gtest.h"
 
-using cricket::IceParameters;
 using cricket::IceCredentialsIterator;
+using cricket::IceParameters;
 
 TEST(IceCredentialsIteratorTest, GetEmpty) {
   std::vector<IceParameters> empty;

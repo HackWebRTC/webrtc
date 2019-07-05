@@ -185,7 +185,7 @@ void MultiCodecReceiveTest::ConfigureDecoders(
       decoder.decoder_factory = config.decoder_factory;
 
       video_receive_configs_[0].decoders.push_back(decoder);
-  }
+    }
 }
 
 void MultiCodecReceiveTest::ConfigureEncoder(const CodecConfig& config) {

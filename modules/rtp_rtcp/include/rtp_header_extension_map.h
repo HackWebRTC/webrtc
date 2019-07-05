@@ -12,6 +12,7 @@
 #define MODULES_RTP_RTCP_INCLUDE_RTP_HEADER_EXTENSION_MAP_H_
 
 #include <stdint.h>
+
 #include <string>
 
 #include "api/array_view.h"

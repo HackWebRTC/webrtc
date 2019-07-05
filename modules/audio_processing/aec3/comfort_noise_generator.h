@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_PROCESSING_AEC3_COMFORT_NOISE_GENERATOR_H_
 
 #include <stdint.h>
+
 #include <array>
 #include <memory>
 

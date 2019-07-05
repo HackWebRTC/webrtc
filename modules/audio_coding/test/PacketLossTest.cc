@@ -147,7 +147,7 @@ void PacketLossTest::Perform() {
   rtpFile.WriteHeader();
   SenderWithFEC sender;
   sender.Setup(acm.get(), &rtpFile, in_file_name_, 120, send_format,
-                 expected_loss_rate_);
+               expected_loss_rate_);
   sender.Run();
   sender.Teardown();
   rtpFile.Close();
@@ -156,7 +156,7 @@ void PacketLossTest::Perform() {
   rtpFile.ReadHeader();
   ReceiverWithPacketLoss receiver;
   receiver.Setup(acm.get(), &rtpFile, "packetLoss_out", channels_, 15,
-                   actual_loss_rate_, burst_length_);
+                 actual_loss_rate_, burst_length_);
   receiver.Run();
   receiver.Teardown();
   rtpFile.Close();

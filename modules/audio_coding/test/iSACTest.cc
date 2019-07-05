@@ -34,8 +34,8 @@ namespace {
 
 constexpr int kISAC16kPayloadType = 103;
 constexpr int kISAC32kPayloadType = 104;
-const SdpAudioFormat kISAC16kFormat = { "ISAC", 16000, 1 };
-const SdpAudioFormat kISAC32kFormat = { "ISAC", 32000, 1 };
+const SdpAudioFormat kISAC16kFormat = {"ISAC", 16000, 1};
+const SdpAudioFormat kISAC32kFormat = {"ISAC", 32000, 1};
 
 AudioEncoderIsacFloat::Config TweakConfig(
     AudioEncoderIsacFloat::Config config,
@@ -107,9 +107,9 @@ void ISACTest::ACMTestTimer::CurrentTimeHMS(char* currTime) {
 }
 
 void ISACTest::ACMTestTimer::CurrentTime(unsigned long& h,
-                               unsigned char& m,
-                               unsigned char& s,
-                               unsigned short& ms) {
+                                         unsigned char& m,
+                                         unsigned char& s,
+                                         unsigned short& ms) {
   h = _hour;
   m = _min;
   s = _sec;
@@ -146,9 +146,9 @@ ISACTest::~ISACTest() {}
 
 void ISACTest::Setup() {
   // Register both iSAC-wb & iSAC-swb in both sides as receiver codecs.
-  std::map<int, SdpAudioFormat> receive_codecs =
-      {{kISAC16kPayloadType, kISAC16kFormat},
-       {kISAC32kPayloadType, kISAC32kFormat}};
+  std::map<int, SdpAudioFormat> receive_codecs = {
+      {kISAC16kPayloadType, kISAC16kFormat},
+      {kISAC32kPayloadType, kISAC32kFormat}};
   _acmA->SetReceiveCodecs(receive_codecs);
   _acmB->SetReceiveCodecs(receive_codecs);
 
@@ -165,14 +165,12 @@ void ISACTest::Setup() {
   file_name_swb_ =
       webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
 
-  _acmB->SetEncoder(
-      AudioEncoderIsacFloat::MakeAudioEncoder(
-          *AudioEncoderIsacFloat::SdpToConfig(kISAC16kFormat),
-          kISAC16kPayloadType));
-  _acmA->SetEncoder(
-      AudioEncoderIsacFloat::MakeAudioEncoder(
-          *AudioEncoderIsacFloat::SdpToConfig(kISAC32kFormat),
-          kISAC32kPayloadType));
+  _acmB->SetEncoder(AudioEncoderIsacFloat::MakeAudioEncoder(
+      *AudioEncoderIsacFloat::SdpToConfig(kISAC16kFormat),
+      kISAC16kPayloadType));
+  _acmA->SetEncoder(AudioEncoderIsacFloat::MakeAudioEncoder(
+      *AudioEncoderIsacFloat::SdpToConfig(kISAC32kFormat),
+      kISAC32kPayloadType));
 
   _inFileA.Open(file_name_swb_, 32000, "rb");
   // Set test length to 500 ms (50 blocks of 10 ms each).
@@ -254,16 +252,14 @@ void ISACTest::EncodeDecode(int testNr,
   _outFileB.Open(file_name_out, 32000, "wb");
 
   // Side A is sending super-wideband, and side B is sending wideband.
-  _acmA->SetEncoder(
-      AudioEncoderIsacFloat::MakeAudioEncoder(
-          TweakConfig(*AudioEncoderIsacFloat::SdpToConfig(kISAC32kFormat),
-                      swbISACConfig),
-          kISAC32kPayloadType));
-  _acmB->SetEncoder(
-      AudioEncoderIsacFloat::MakeAudioEncoder(
-          TweakConfig(*AudioEncoderIsacFloat::SdpToConfig(kISAC16kFormat),
-                      wbISACConfig),
-          kISAC16kPayloadType));
+  _acmA->SetEncoder(AudioEncoderIsacFloat::MakeAudioEncoder(
+      TweakConfig(*AudioEncoderIsacFloat::SdpToConfig(kISAC32kFormat),
+                  swbISACConfig),
+      kISAC32kPayloadType));
+  _acmB->SetEncoder(AudioEncoderIsacFloat::MakeAudioEncoder(
+      TweakConfig(*AudioEncoderIsacFloat::SdpToConfig(kISAC16kFormat),
+                  wbISACConfig),
+      kISAC16kPayloadType));
 
   bool adaptiveMode = false;
   if ((swbISACConfig.currentRateBitPerSec == -1) ||
@@ -309,14 +305,12 @@ void ISACTest::SwitchingSamplingRate(int testNr, int maxSampRateChange) {
 
   // Start with side A sending super-wideband and side B seding wideband.
   // Toggle sending wideband/super-wideband in this test.
-  _acmA->SetEncoder(
-      AudioEncoderIsacFloat::MakeAudioEncoder(
-          *AudioEncoderIsacFloat::SdpToConfig(kISAC32kFormat),
-          kISAC32kPayloadType));
-  _acmB->SetEncoder(
-      AudioEncoderIsacFloat::MakeAudioEncoder(
-          *AudioEncoderIsacFloat::SdpToConfig(kISAC16kFormat),
-          kISAC16kPayloadType));
+  _acmA->SetEncoder(AudioEncoderIsacFloat::MakeAudioEncoder(
+      *AudioEncoderIsacFloat::SdpToConfig(kISAC32kFormat),
+      kISAC32kPayloadType));
+  _acmB->SetEncoder(AudioEncoderIsacFloat::MakeAudioEncoder(
+      *AudioEncoderIsacFloat::SdpToConfig(kISAC16kFormat),
+      kISAC16kPayloadType));
 
   int numSendCodecChanged = 0;
   _myTimer.Reset();
@@ -330,18 +324,16 @@ void ISACTest::SwitchingSamplingRate(int testNr, int maxSampRateChange) {
         // Switch side A to send super-wideband.
         _inFileA.Close();
         _inFileA.Open(file_name_swb_, 32000, "rb");
-        _acmA->SetEncoder(
-            AudioEncoderIsacFloat::MakeAudioEncoder(
-                *AudioEncoderIsacFloat::SdpToConfig(kISAC32kFormat),
-                kISAC32kPayloadType));
+        _acmA->SetEncoder(AudioEncoderIsacFloat::MakeAudioEncoder(
+            *AudioEncoderIsacFloat::SdpToConfig(kISAC32kFormat),
+            kISAC32kPayloadType));
       } else {
         // Switch side A to send wideband.
         _inFileA.Close();
         _inFileA.Open(file_name_swb_, 32000, "rb");
-        _acmA->SetEncoder(
-            AudioEncoderIsacFloat::MakeAudioEncoder(
-                *AudioEncoderIsacFloat::SdpToConfig(kISAC16kFormat),
-                kISAC16kPayloadType));
+        _acmA->SetEncoder(AudioEncoderIsacFloat::MakeAudioEncoder(
+            *AudioEncoderIsacFloat::SdpToConfig(kISAC16kFormat),
+            kISAC16kPayloadType));
       }
       numSendCodecChanged++;
     }
@@ -351,18 +343,16 @@ void ISACTest::SwitchingSamplingRate(int testNr, int maxSampRateChange) {
         // Switch side B to send super-wideband.
         _inFileB.Close();
         _inFileB.Open(file_name_swb_, 32000, "rb");
-        _acmB->SetEncoder(
-            AudioEncoderIsacFloat::MakeAudioEncoder(
-                *AudioEncoderIsacFloat::SdpToConfig(kISAC32kFormat),
-                kISAC32kPayloadType));
+        _acmB->SetEncoder(AudioEncoderIsacFloat::MakeAudioEncoder(
+            *AudioEncoderIsacFloat::SdpToConfig(kISAC32kFormat),
+            kISAC32kPayloadType));
       } else {
         // Switch side B to send wideband.
         _inFileB.Close();
         _inFileB.Open(file_name_swb_, 32000, "rb");
-        _acmB->SetEncoder(
-            AudioEncoderIsacFloat::MakeAudioEncoder(
-                *AudioEncoderIsacFloat::SdpToConfig(kISAC16kFormat),
-                kISAC16kPayloadType));
+        _acmB->SetEncoder(AudioEncoderIsacFloat::MakeAudioEncoder(
+            *AudioEncoderIsacFloat::SdpToConfig(kISAC16kFormat),
+            kISAC16kPayloadType));
       }
       numSendCodecChanged++;
     }

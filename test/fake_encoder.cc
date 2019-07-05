@@ -11,6 +11,7 @@
 #include "test/fake_encoder.h"
 
 #include <string.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <memory>

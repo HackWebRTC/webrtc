@@ -25,8 +25,8 @@
 #include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
 
-using stunprober::StunProber;
 using stunprober::AsyncCallback;
+using stunprober::StunProber;
 
 WEBRTC_DEFINE_bool(help, false, "Prints this message");
 WEBRTC_DEFINE_int(interval,

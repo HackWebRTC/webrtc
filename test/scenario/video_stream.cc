@@ -361,23 +361,23 @@ SendVideoStream::SendVideoStream(CallClient* sender,
   using Codec = VideoStreamConfig::Encoder::Codec;
   switch (config.encoder.implementation) {
     case Encoder::Implementation::kFake:
-        encoder_factory_ =
-            absl::make_unique<FunctionVideoEncoderFactory>([this]() {
-              rtc::CritScope cs(&crit_);
-              std::unique_ptr<FakeEncoder> encoder;
-              if (config_.encoder.codec == Codec::kVideoCodecVP8) {
-                encoder =
-                    absl::make_unique<test::FakeVP8Encoder>(sender_->clock_);
-              } else if (config_.encoder.codec == Codec::kVideoCodecGeneric) {
-                encoder = absl::make_unique<test::FakeEncoder>(sender_->clock_);
-              } else {
-                RTC_NOTREACHED();
-              }
-              fake_encoders_.push_back(encoder.get());
-              if (config_.encoder.fake.max_rate.IsFinite())
-                encoder->SetMaxBitrate(config_.encoder.fake.max_rate.kbps());
-              return encoder;
-            });
+      encoder_factory_ =
+          absl::make_unique<FunctionVideoEncoderFactory>([this]() {
+            rtc::CritScope cs(&crit_);
+            std::unique_ptr<FakeEncoder> encoder;
+            if (config_.encoder.codec == Codec::kVideoCodecVP8) {
+              encoder =
+                  absl::make_unique<test::FakeVP8Encoder>(sender_->clock_);
+            } else if (config_.encoder.codec == Codec::kVideoCodecGeneric) {
+              encoder = absl::make_unique<test::FakeEncoder>(sender_->clock_);
+            } else {
+              RTC_NOTREACHED();
+            }
+            fake_encoders_.push_back(encoder.get());
+            if (config_.encoder.fake.max_rate.IsFinite())
+              encoder->SetMaxBitrate(config_.encoder.fake.max_rate.kbps());
+            return encoder;
+          });
       break;
     case VideoStreamConfig::Encoder::Implementation::kSoftware:
       encoder_factory_.reset(new InternalEncoderFactory());

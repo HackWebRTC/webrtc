@@ -12,9 +12,8 @@
 
 #include <utility>
 
-#include "rtc_base/checks.h"
-
 #include "api/stats/rtc_stats.h"
+#include "rtc_base/checks.h"
 
 namespace webrtc {
 

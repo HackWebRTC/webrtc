@@ -8,13 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_tools/video_file_writer.h"
+
 #include <stdint.h>
+
 #include <cstdio>
 #include <string>
 
 #include "api/video/video_frame_buffer.h"
 #include "rtc_tools/video_file_reader.h"
-#include "rtc_tools/video_file_writer.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 

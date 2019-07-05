@@ -7,9 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "modules/audio_coding/codecs/isac/main/include/isac.h"
+
 #include <string>
 
-#include "modules/audio_coding/codecs/isac/main/include/isac.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 

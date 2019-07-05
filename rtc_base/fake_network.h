@@ -82,8 +82,8 @@ class FakeNetworkManager : public NetworkManagerBase, public MessageHandler {
   // MessageHandler interface.
   void OnMessage(Message* msg) override { DoUpdateNetworks(); }
 
-  using NetworkManagerBase::set_enumeration_permission;
   using NetworkManagerBase::set_default_local_addresses;
+  using NetworkManagerBase::set_enumeration_permission;
 
   // rtc::NetworkManager override.
   webrtc::MdnsResponderInterface* GetMdnsResponder() const override {

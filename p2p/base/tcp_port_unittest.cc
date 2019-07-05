@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "p2p/base/tcp_port.h"
+
 #include <list>
 #include <memory>
 #include <vector>
 
 #include "p2p/base/basic_packet_socket_factory.h"
 #include "p2p/base/p2p_constants.h"
-#include "p2p/base/tcp_port.h"
 #include "p2p/base/transport_description.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/helpers.h"
@@ -25,12 +26,12 @@
 #include "rtc_base/virtual_socket_server.h"
 #include "test/gtest.h"
 
-using rtc::SocketAddress;
 using cricket::Connection;
+using cricket::ICE_PWD_LENGTH;
+using cricket::ICE_UFRAG_LENGTH;
 using cricket::Port;
 using cricket::TCPPort;
-using cricket::ICE_UFRAG_LENGTH;
-using cricket::ICE_PWD_LENGTH;
+using rtc::SocketAddress;
 
 static int kTimeout = 1000;
 static const SocketAddress kLocalAddr("11.11.11.11", 0);

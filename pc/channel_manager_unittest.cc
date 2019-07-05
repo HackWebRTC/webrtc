@@ -36,11 +36,14 @@ const bool kDefaultSrtpRequired = true;
 namespace cricket {
 
 static const AudioCodec kAudioCodecs[] = {
-    AudioCodec(97, "voice", 1, 2, 3), AudioCodec(111, "OPUS", 48000, 32000, 2),
+    AudioCodec(97, "voice", 1, 2, 3),
+    AudioCodec(111, "OPUS", 48000, 32000, 2),
 };
 
 static const VideoCodec kVideoCodecs[] = {
-    VideoCodec(99, "H264"), VideoCodec(100, "VP8"), VideoCodec(96, "rtx"),
+    VideoCodec(99, "H264"),
+    VideoCodec(100, "VP8"),
+    VideoCodec(96, "rtx"),
 };
 
 class ChannelManagerTest : public ::testing::Test {

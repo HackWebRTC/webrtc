@@ -8,7 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "pc/srtp_transport.h"
+
 #include <string.h>
+
 #include <set>
 #include <vector>
 
@@ -17,7 +20,6 @@
 #include "media/base/fake_rtp.h"
 #include "p2p/base/dtls_transport_internal.h"
 #include "p2p/base/fake_packet_transport.h"
-#include "pc/srtp_transport.h"
 #include "pc/test/rtp_transport_test_util.h"
 #include "pc/test/srtp_test_util.h"
 #include "rtc_base/async_packet_socket.h"

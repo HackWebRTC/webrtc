@@ -11,6 +11,7 @@
 #include "rtc_tools/event_log_visualizer/plot_protobuf.h"
 
 #include <stddef.h>
+
 #include <iostream>
 #include <memory>
 #include <vector>

@@ -8,7 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "call/call.h"
+
 #include <string.h>
+
 #include <algorithm>
 #include <map>
 #include <memory>
@@ -23,7 +26,6 @@
 #include "audio/audio_send_stream.h"
 #include "audio/audio_state.h"
 #include "call/bitrate_allocator.h"
-#include "call/call.h"
 #include "call/flexfec_receive_stream_impl.h"
 #include "call/receive_time_calculator.h"
 #include "call/rtp_stream_receiver_controller.h"

@@ -11,6 +11,7 @@
 #include "modules/audio_processing/test/bitexactness_tools.h"
 
 #include <math.h>
+
 #include <algorithm>
 #include <string>
 #include <vector>

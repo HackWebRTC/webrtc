@@ -8,10 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "call/rtp_rtcp_demuxer_helper.h"
+
 #include <string.h>
+
 #include <cstdio>
 
-#include "call/rtp_rtcp_demuxer_helper.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/bye.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/extended_jitter_report.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/extended_reports.h"

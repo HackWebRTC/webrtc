@@ -12,6 +12,7 @@
 #define MODULES_VIDEO_CODING_CODECS_VP8_LIBVPX_INTERFACE_H_
 
 #include <stdint.h>
+
 #include <memory>
 
 #include "vpx/vp8cx.h"

@@ -12,6 +12,7 @@
 #define MODULES_CONGESTION_CONTROLLER_PCC_BITRATE_CONTROLLER_H_
 
 #include <stdint.h>
+
 #include <memory>
 #include <vector>
 

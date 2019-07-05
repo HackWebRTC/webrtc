@@ -12,6 +12,7 @@
 #define RTC_BASE_ROLLING_ACCUMULATOR_H_
 
 #include <stddef.h>
+
 #include <algorithm>
 #include <vector>
 

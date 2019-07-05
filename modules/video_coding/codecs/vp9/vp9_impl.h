@@ -19,14 +19,12 @@
 #include <string>
 #include <vector>
 
-#include "modules/video_coding/codecs/vp9/include/vp9.h"
-
 #include "api/fec_controller_override.h"
 #include "api/video_codecs/video_encoder.h"
 #include "media/base/vp9_profile.h"
+#include "modules/video_coding/codecs/vp9/include/vp9.h"
 #include "modules/video_coding/codecs/vp9/vp9_frame_buffer_pool.h"
 #include "modules/video_coding/utility/framerate_controller.h"
-
 #include "vpx/vp8cx.h"
 #include "vpx/vpx_decoder.h"
 #include "vpx/vpx_encoder.h"

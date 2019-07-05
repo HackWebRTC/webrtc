@@ -10,6 +10,7 @@
 #include "api/video/i420_buffer.h"
 
 #include <string.h>
+
 #include <algorithm>
 #include <utility>
 

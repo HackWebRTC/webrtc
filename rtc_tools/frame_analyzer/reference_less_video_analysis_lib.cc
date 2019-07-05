@@ -7,12 +7,14 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "rtc_tools/frame_analyzer/reference_less_video_analysis_lib.h"
+
 #include <stdio.h>
+
 #include <numeric>
 #include <vector>
 
 #include "api/video/video_frame_buffer.h"
-#include "rtc_tools/frame_analyzer/reference_less_video_analysis_lib.h"
 #include "rtc_tools/frame_analyzer/video_quality_analysis.h"
 
 #define STATS_LINE_LENGTH 28

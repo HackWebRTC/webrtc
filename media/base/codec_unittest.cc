@@ -19,10 +19,10 @@ using cricket::AudioCodec;
 using cricket::Codec;
 using cricket::DataCodec;
 using cricket::FeedbackParam;
-using cricket::VideoCodec;
 using cricket::kCodecParamAssociatedPayloadType;
 using cricket::kCodecParamMaxBitrate;
 using cricket::kCodecParamMinBitrate;
+using cricket::VideoCodec;
 
 class TestCodec : public Codec {
  public:

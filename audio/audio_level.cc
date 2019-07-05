@@ -17,8 +17,7 @@ namespace webrtc {
 namespace voe {
 
 AudioLevel::AudioLevel()
-    : abs_max_(0), count_(0), current_level_full_range_(0) {
-}
+    : abs_max_(0), count_(0), current_level_full_range_(0) {}
 
 AudioLevel::~AudioLevel() {}
 

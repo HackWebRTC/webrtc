@@ -9,6 +9,7 @@
  */
 
 #include "system_wrappers/include/metrics.h"
+
 #include "test/gmock.h"
 #include "test/gtest.h"
 

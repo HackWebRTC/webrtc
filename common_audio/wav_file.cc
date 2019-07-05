@@ -11,6 +11,7 @@
 #include "common_audio/wav_file.h"
 
 #include <errno.h>
+
 #include <algorithm>
 #include <cstdio>
 #include <type_traits>

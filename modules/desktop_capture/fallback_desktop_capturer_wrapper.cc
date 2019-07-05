@@ -11,6 +11,7 @@
 #include "modules/desktop_capture/fallback_desktop_capturer_wrapper.h"
 
 #include <stddef.h>
+
 #include <utility>
 
 #include "rtc_base/checks.h"

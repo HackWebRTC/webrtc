@@ -20,11 +20,11 @@
 namespace webrtc {
 namespace {
 
-using ::testing::ElementsAre;
-using ::testing::Le;
-using ::testing::Gt;
 using ::testing::Each;
+using ::testing::ElementsAre;
+using ::testing::Gt;
 using ::testing::IsEmpty;
+using ::testing::Le;
 using ::testing::Not;
 using ::testing::SizeIs;
 

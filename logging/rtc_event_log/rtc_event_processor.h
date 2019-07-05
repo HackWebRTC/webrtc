@@ -12,6 +12,7 @@
 #define LOGGING_RTC_EVENT_LOG_RTC_EVENT_PROCESSOR_H_
 
 #include <stdint.h>
+
 #include <algorithm>
 #include <memory>
 #include <utility>

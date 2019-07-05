@@ -11,6 +11,7 @@
 #ifndef API_TRANSPORT_NETWORK_CONTROL_H_
 #define API_TRANSPORT_NETWORK_CONTROL_H_
 #include <stdint.h>
+
 #include <memory>
 
 #include "api/transport/network_types.h"

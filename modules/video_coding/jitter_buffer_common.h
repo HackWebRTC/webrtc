@@ -42,9 +42,9 @@ enum VCMFrameBufferEnum {
   kTimeStampError = -2,
   kSizeError = -1,
   kNoError = 0,
-  kIncomplete = 1,        // Frame incomplete.
-  kCompleteSession = 3,   // at least one layer in the frame complete.
-  kDuplicatePacket = 5    // We're receiving a duplicate packet.
+  kIncomplete = 1,       // Frame incomplete.
+  kCompleteSession = 3,  // at least one layer in the frame complete.
+  kDuplicatePacket = 5   // We're receiving a duplicate packet.
 };
 
 enum VCMFrameBufferStateEnum {

@@ -34,9 +34,7 @@ VideoStreamDecoderImpl::VideoStreamDecoderImpl(
                      "video_stream_decoder_decode_thread",
                      rtc::kHighestPriority),
       timing_(Clock::GetRealTimeClock()),
-      frame_buffer_(Clock::GetRealTimeClock(),
-                    &timing_,
-                    nullptr),
+      frame_buffer_(Clock::GetRealTimeClock(), &timing_, nullptr),
       next_frame_timestamps_index_(0) {
   frame_timestamps_.fill({-1, -1, -1});
   decode_thread_.Start();
@@ -215,7 +213,7 @@ VideoStreamDecoderImpl::DecodeResult VideoStreamDecoderImpl::DecodeNextFrame(
         });
 
     int32_t decode_result = decoder->Decode(frame->EncodedImage(),
-                                            false,    // missing_frame
+                                            false,  // missing_frame
                                             frame->RenderTimeMs());
 
     return decode_result == WEBRTC_VIDEO_CODEC_OK ? kOk : kDecodeFailure;

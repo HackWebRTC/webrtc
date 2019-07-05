@@ -12,6 +12,7 @@
 #define RTC_BASE_RTC_CERTIFICATE_H_
 
 #include <stdint.h>
+
 #include <memory>
 #include <string>
 

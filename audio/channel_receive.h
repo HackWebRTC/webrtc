@@ -85,8 +85,8 @@ class ChannelReceiveInterface : public RtpPacketSinkInterface {
   virtual void StopPlayout() = 0;
 
   // Payload type and format of last received RTP packet, if any.
-  virtual absl::optional<std::pair<int, SdpAudioFormat>>
-      GetReceiveCodec() const = 0;
+  virtual absl::optional<std::pair<int, SdpAudioFormat>> GetReceiveCodec()
+      const = 0;
 
   virtual void ReceivedRTCPPacket(const uint8_t* data, size_t length) = 0;
 

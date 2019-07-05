@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_CODING_NETEQ_BACKGROUND_NOISE_H_
 
 #include <string.h>  // size_t
+
 #include <memory>
 
 #include "api/array_view.h"

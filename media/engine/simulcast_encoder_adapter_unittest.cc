@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "media/engine/simulcast_encoder_adapter.h"
+
 #include <array>
 #include <memory>
 #include <vector>
@@ -23,7 +25,6 @@
 #include "common_video/include/video_frame_buffer.h"
 #include "media/base/media_constants.h"
 #include "media/engine/internal_encoder_factory.h"
-#include "media/engine/simulcast_encoder_adapter.h"
 #include "modules/video_coding/codecs/vp8/include/vp8.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/utility/simulcast_test_fixture_impl.h"

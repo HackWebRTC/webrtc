@@ -11,6 +11,7 @@
 #define TEST_LOGGING_LOG_WRITER_H_
 
 #include <stdarg.h>
+
 #include <memory>
 #include <string>
 #include <utility>

@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/rtc_event_log_output_file.h"
+
 #include <limits>
 #include <utility>
 
 #include "api/rtc_event_log/rtc_event_log.h"
-#include "api/rtc_event_log_output_file.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 

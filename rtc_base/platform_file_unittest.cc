@@ -9,6 +9,7 @@
  */
 
 #include "rtc_base/platform_file.h"
+
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 

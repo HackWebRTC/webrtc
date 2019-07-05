@@ -8,7 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "call/rtp_payload_params.h"
+
 #include <string.h>
+
 #include <map>
 #include <set>
 
@@ -17,7 +20,6 @@
 #include "absl/types/variant.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_rotation.h"
-#include "call/rtp_payload_params.h"
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/codecs/interface/common_constants.h"
 #include "modules/video_coding/codecs/vp8/include/vp8_globals.h"
@@ -152,7 +154,7 @@ TEST(RtpPayloadParamsTest, InfoMappedToRtpVideoHeader_H264) {
 
   EncodedImage encoded_image;
   CodecSpecificInfo codec_info;
-  CodecSpecificInfoH264 *h264info = &codec_info.codecSpecific.H264;
+  CodecSpecificInfoH264* h264info = &codec_info.codecSpecific.H264;
   codec_info.codecType = kVideoCodecH264;
   h264info->packetization_mode = H264PacketizationMode::SingleNalUnit;
   h264info->temporal_idx = kNoTemporalIdx;

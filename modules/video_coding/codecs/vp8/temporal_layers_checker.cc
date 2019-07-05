@@ -9,6 +9,7 @@
  */
 
 #include "modules/video_coding/codecs/vp8/include/temporal_layers_checker.h"
+
 #include "absl/memory/memory.h"
 #include "modules/video_coding/codecs/interface/common_constants.h"
 #include "modules/video_coding/codecs/vp8/default_temporal_layers.h"

@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "third_party/libyuv/include/libyuv.h"
+
 #include <math.h>
 #include <string.h>
 
@@ -21,7 +23,6 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
-#include "third_party/libyuv/include/libyuv.h"
 
 namespace webrtc {
 

@@ -33,8 +33,8 @@
 
 namespace webrtc {
 
-class VideoQualityTest :
-    public test::CallTest, public VideoQualityTestFixtureInterface {
+class VideoQualityTest : public test::CallTest,
+                         public VideoQualityTestFixtureInterface {
  public:
   explicit VideoQualityTest(
       std::unique_ptr<InjectionComponents> injection_components);

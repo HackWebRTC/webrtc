@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_PROCESSING_AEC3_CASCADED_BIQUAD_FILTER_H_
 
 #include <stddef.h>
+
 #include <complex>
 #include <vector>
 

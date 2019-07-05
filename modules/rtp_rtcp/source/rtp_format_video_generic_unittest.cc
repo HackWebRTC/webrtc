@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/rtp_rtcp/source/rtp_format_video_generic.h"
+
 #include <algorithm>
 #include <limits>
 #include <memory>
@@ -17,7 +19,6 @@
 #include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
-#include "modules/rtp_rtcp/source/rtp_format_video_generic.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -25,11 +26,11 @@
 namespace webrtc {
 namespace {
 
+using ::testing::Contains;
 using ::testing::Each;
 using ::testing::ElementsAreArray;
 using ::testing::Le;
 using ::testing::SizeIs;
-using ::testing::Contains;
 
 constexpr RtpPacketizer::PayloadSizeLimits kNoSizeLimits;
 

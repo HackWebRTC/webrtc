@@ -25,6 +25,7 @@
 #endif
 
 #include <stdio.h>
+
 #include <utility>
 
 #include "rtc_base/checks.h"
@@ -345,7 +346,7 @@ void* Thread::PreRun(void* pv) {
 #else
   return nullptr;
 #endif
-}
+}  // namespace rtc
 
 void Thread::Run() {
   ProcessMessages(kForever);

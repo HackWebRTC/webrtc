@@ -12,6 +12,7 @@
 
 #include <assert.h>
 #include <math.h>
+
 #include <algorithm>
 
 #include "modules/video_coding/fec_rate_table.h"

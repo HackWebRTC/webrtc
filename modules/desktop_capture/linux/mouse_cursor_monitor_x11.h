@@ -12,6 +12,7 @@
 #define MODULES_DESKTOP_CAPTURE_LINUX_MOUSE_CURSOR_MONITOR_X11_H_
 
 #include <X11/X.h>
+
 #include <memory>
 
 #include "api/scoped_refptr.h"

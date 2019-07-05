@@ -7,15 +7,17 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "rtc_base/stream.h"
+
 #include <errno.h>
 #include <string.h>
+
 #include <algorithm>
 #include <string>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
 #include "rtc_base/message_queue.h"
-#include "rtc_base/stream.h"
 #include "rtc_base/thread.h"
 
 namespace rtc {
@@ -129,6 +131,5 @@ void StreamAdapterInterface::OnEvent(StreamInterface* stream,
                                      int err) {
   SignalEvent(this, events, err);
 }
-
 
 }  // namespace rtc

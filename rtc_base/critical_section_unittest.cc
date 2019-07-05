@@ -8,8 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_base/critical_section.h"
+
 #include <stddef.h>
 #include <stdint.h>
+
 #include <memory>
 #include <set>
 #include <utility>
@@ -18,7 +21,6 @@
 #include "rtc_base/arraysize.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "rtc_base/location.h"
 #include "rtc_base/message_handler.h"

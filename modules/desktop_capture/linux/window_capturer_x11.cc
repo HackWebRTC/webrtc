@@ -14,6 +14,7 @@
 #include <X11/extensions/Xcomposite.h>
 #include <X11/extensions/composite.h>
 #include <string.h>
+
 #include <memory>
 #include <string>
 #include <utility>

@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/utility/source/process_thread_impl.h"
+
 #include <memory>
 #include <utility>
 
 #include "api/task_queue/queued_task.h"
 #include "modules/include/module.h"
-#include "modules/utility/source/process_thread_impl.h"
 #include "rtc_base/location.h"
 #include "rtc_base/time_utils.h"
 #include "test/gmock.h"

@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "audio/remix_resample.h"
+
 #include <cmath>
 
-#include "audio/remix_resample.h"
 #include "common_audio/resampler/include/push_resampler.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"

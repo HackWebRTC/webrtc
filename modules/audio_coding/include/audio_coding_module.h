@@ -225,8 +225,8 @@ class AudioCodingModule {
   //    the last received payload.
   //    An empty Optional if no payload has yet been received.
   //
-  virtual absl::optional<std::pair<int, SdpAudioFormat>>
-      ReceiveCodec() const = 0;
+  virtual absl::optional<std::pair<int, SdpAudioFormat>> ReceiveCodec()
+      const = 0;
 
   ///////////////////////////////////////////////////////////////////////////
   // int32_t IncomingPacket()

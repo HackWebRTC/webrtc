@@ -11,6 +11,7 @@
 #include "modules/video_coding/utility/ivf_file_writer.h"
 
 #include <string.h>
+
 #include <memory>
 #include <string>
 

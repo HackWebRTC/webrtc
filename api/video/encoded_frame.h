@@ -11,10 +11,10 @@
 #ifndef API_VIDEO_ENCODED_FRAME_H_
 #define API_VIDEO_ENCODED_FRAME_H_
 
-#include "modules/video_coding/encoded_frame.h"
-
 #include <stddef.h>
 #include <stdint.h>
+
+#include "modules/video_coding/encoded_frame.h"
 
 namespace webrtc {
 namespace video_coding {

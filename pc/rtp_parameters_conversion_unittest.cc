@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "pc/rtp_parameters_conversion.h"
+
 #include <algorithm>
 
-#include "pc/rtp_parameters_conversion.h"
 #include "rtc_base/gunit.h"
 #include "test/gmock.h"
 

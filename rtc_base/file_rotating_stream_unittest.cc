@@ -8,12 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_base/file_rotating_stream.h"
+
 #include <string.h>
+
 #include <cstdint>
 #include <memory>
 
 #include "rtc_base/arraysize.h"
-#include "rtc_base/file_rotating_stream.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 

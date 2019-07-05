@@ -12,6 +12,7 @@
 #define COMMON_VIDEO_INCLUDE_I420_BUFFER_POOL_H_
 
 #include <stddef.h>
+
 #include <list>
 
 #include "api/scoped_refptr.h"

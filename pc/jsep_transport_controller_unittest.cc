@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "pc/jsep_transport_controller.h"
+
 #include <map>
 #include <memory>
 
@@ -20,14 +22,13 @@
 #include "p2p/base/no_op_dtls_transport.h"
 #include "p2p/base/transport_factory_interface.h"
 #include "p2p/base/transport_info.h"
-#include "pc/jsep_transport_controller.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
 
-using cricket::FakeDtlsTransport;
 using cricket::Candidate;
 using cricket::Candidates;
+using cricket::FakeDtlsTransport;
 using webrtc::SdpType;
 
 static const int kTimeout = 100;

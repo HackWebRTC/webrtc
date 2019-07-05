@@ -164,7 +164,8 @@ RTC_NORETURN void FatalLog(const char* file,
 }  // namespace rtc
 
 // Function to call from the C version of the RTC_CHECK and RTC_DCHECK macros.
-RTC_NORETURN void rtc_FatalMessage(const char* file, int line,
+RTC_NORETURN void rtc_FatalMessage(const char* file,
+                                   int line,
                                    const char* msg) {
   static constexpr rtc::webrtc_checks_impl::CheckArgType t[] = {
       rtc::webrtc_checks_impl::CheckArgType::kEnd};

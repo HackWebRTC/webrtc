@@ -36,17 +36,14 @@ class ObjCCallClient {
    public:
     explicit PCObserver(ObjCCallClient* client);
 
-    void OnSignalingChange(
-        webrtc::PeerConnectionInterface::SignalingState new_state) override;
-    void OnDataChannel(
-        rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) override;
+    void OnSignalingChange(webrtc::PeerConnectionInterface::SignalingState new_state) override;
+    void OnDataChannel(rtc::scoped_refptr<webrtc::DataChannelInterface> data_channel) override;
     void OnRenegotiationNeeded() override;
     void OnIceConnectionChange(
         webrtc::PeerConnectionInterface::IceConnectionState new_state) override;
     void OnIceGatheringChange(
         webrtc::PeerConnectionInterface::IceGatheringState new_state) override;
-    void OnIceCandidate(
-        const webrtc::IceCandidateInterface* candidate) override;
+    void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override;
 
    private:
     const ObjCCallClient* client_;
@@ -62,12 +59,10 @@ class ObjCCallClient {
 
   const std::unique_ptr<PCObserver> pc_observer_;
 
-  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pcf_
-      RTC_GUARDED_BY(thread_checker_);
+  rtc::scoped_refptr<webrtc::PeerConnectionFactoryInterface> pcf_ RTC_GUARDED_BY(thread_checker_);
   std::unique_ptr<rtc::Thread> network_thread_ RTC_GUARDED_BY(thread_checker_);
   std::unique_ptr<rtc::Thread> worker_thread_ RTC_GUARDED_BY(thread_checker_);
-  std::unique_ptr<rtc::Thread> signaling_thread_
-      RTC_GUARDED_BY(thread_checker_);
+  std::unique_ptr<rtc::Thread> signaling_thread_ RTC_GUARDED_BY(thread_checker_);
 
   std::unique_ptr<rtc::VideoSinkInterface<webrtc::VideoFrame>> remote_sink_
       RTC_GUARDED_BY(thread_checker_);
@@ -75,8 +70,7 @@ class ObjCCallClient {
       RTC_GUARDED_BY(thread_checker_);
 
   rtc::CriticalSection pc_mutex_;
-  rtc::scoped_refptr<webrtc::PeerConnectionInterface> pc_
-      RTC_GUARDED_BY(pc_mutex_);
+  rtc::scoped_refptr<webrtc::PeerConnectionInterface> pc_ RTC_GUARDED_BY(pc_mutex_);
 };
 
 }  // namespace webrtc_examples

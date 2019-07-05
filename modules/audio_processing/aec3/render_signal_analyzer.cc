@@ -11,6 +11,7 @@
 #include "modules/audio_processing/aec3/render_signal_analyzer.h"
 
 #include <math.h>
+
 #include <algorithm>
 #include <utility>
 #include <vector>

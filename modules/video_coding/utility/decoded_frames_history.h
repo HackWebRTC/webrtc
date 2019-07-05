@@ -12,6 +12,7 @@
 #define MODULES_VIDEO_CODING_UTILITY_DECODED_FRAMES_HISTORY_H_
 
 #include <stdint.h>
+
 #include <bitset>
 #include <vector>
 

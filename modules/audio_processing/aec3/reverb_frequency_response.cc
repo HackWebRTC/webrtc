@@ -11,6 +11,7 @@
 #include "modules/audio_processing/aec3/reverb_frequency_response.h"
 
 #include <stddef.h>
+
 #include <algorithm>
 #include <array>
 #include <numeric>
@@ -59,7 +60,6 @@ void ReverbFrequencyResponse::Update(
     int filter_delay_blocks,
     const absl::optional<float>& linear_filter_quality,
     bool stationary_block) {
-
   if (stationary_block || !linear_filter_quality) {
     return;
   }

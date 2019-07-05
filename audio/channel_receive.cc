@@ -549,8 +549,8 @@ void ChannelReceive::StopPlayout() {
   _outputAudioLevel.ResetLevelFullRange();
 }
 
-absl::optional<std::pair<int, SdpAudioFormat>>
-    ChannelReceive::GetReceiveCodec() const {
+absl::optional<std::pair<int, SdpAudioFormat>> ChannelReceive::GetReceiveCodec()
+    const {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
   return audio_coding_->ReceiveCodec();
 }

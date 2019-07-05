@@ -12,6 +12,7 @@
 #define RTC_BASE_PLATFORM_FILE_H_
 
 #include <stdio.h>
+
 #include <string>
 
 #if defined(WEBRTC_WIN)

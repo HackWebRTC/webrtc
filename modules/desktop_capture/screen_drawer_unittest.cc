@@ -11,6 +11,7 @@
 #include "modules/desktop_capture/screen_drawer.h"
 
 #include <stdint.h>
+
 #include <atomic>
 
 #include "absl/memory/memory.h"

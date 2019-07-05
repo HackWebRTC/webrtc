@@ -10,6 +10,8 @@
 
 // Borrowed from Chromium's src/base/threading/thread_checker_unittest.cc.
 
+#include "rtc_base/thread_checker.h"
+
 #include <memory>
 #include <utility>
 
@@ -19,7 +21,6 @@
 #include "rtc_base/socket_server.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/thread.h"
-#include "rtc_base/thread_checker.h"
 #include "test/gtest.h"
 
 // Duplicated from base/threading/thread_checker.h so that we can be

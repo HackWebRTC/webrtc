@@ -12,6 +12,7 @@
 #define RTC_BASE_OPENSSL_UTILITY_H_
 
 #include <openssl/ossl_typ.h>
+
 #include <string>
 
 namespace rtc {

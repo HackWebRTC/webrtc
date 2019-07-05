@@ -8,12 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "media/base/rtp_utils.h"
+
 #include <string.h>
+
 #include <cstdint>
 #include <vector>
 
 #include "media/base/fake_rtp.h"
-#include "media/base/rtp_utils.h"
 #include "rtc_base/async_packet_socket.h"
 #include "test/gtest.h"
 

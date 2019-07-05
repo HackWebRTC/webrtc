@@ -11,6 +11,7 @@
 #include "modules/audio_coding/neteq/tools/rtc_event_log_source.h"
 
 #include <string.h>
+
 #include <iostream>
 #include <limits>
 #include <set>

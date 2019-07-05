@@ -53,7 +53,7 @@ std::unique_ptr<TimeController> CreateTimeController(bool real_time) {
         kSimulatedStartTime);
   }
 }
-}
+}  // namespace
 
 Scenario::Scenario()
     : Scenario(std::unique_ptr<LogWriterFactoryInterface>(),
@@ -86,12 +86,12 @@ Scenario::~Scenario() {
 }
 
 ColumnPrinter Scenario::TimePrinter() {
-  return ColumnPrinter::Lambda("time",
-                               [this](rtc::SimpleStringBuilder& sb) {
-                                 sb.AppendFormat("%.3lf",
-                                                 Now().seconds<double>());
-                               },
-                               32);
+  return ColumnPrinter::Lambda(
+      "time",
+      [this](rtc::SimpleStringBuilder& sb) {
+        sb.AppendFormat("%.3lf", Now().seconds<double>());
+      },
+      32);
 }
 
 StatesPrinter* Scenario::CreatePrinter(std::string name,

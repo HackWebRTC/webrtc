@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_CODING_ACM2_ACM_RECEIVER_H_
 
 #include <stdint.h>
+
 #include <map>
 #include <memory>
 #include <string>

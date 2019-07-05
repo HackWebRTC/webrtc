@@ -314,14 +314,13 @@ TEST_F(AcmReceiverTestOldApi, MAYBE_LastAudioCodec) {
                                                 {1, {"PCMA", 8000, 1}},
                                                 {2, {"ISAC", 32000, 1}},
                                                 {3, {"L16", 32000, 1}}};
-  const std::map<int, int> cng_payload_types = {{8000, 100},
-                                                {16000, 101},
-                                                {32000, 102}};
+  const std::map<int, int> cng_payload_types = {
+      {8000, 100}, {16000, 101}, {32000, 102}};
   {
     std::map<int, SdpAudioFormat> receive_codecs = codecs;
     for (const auto& cng_type : cng_payload_types) {
-      receive_codecs.emplace(
-          std::make_pair(cng_type.second, SdpAudioFormat("CN", cng_type.first, 1)));
+      receive_codecs.emplace(std::make_pair(
+          cng_type.second, SdpAudioFormat("CN", cng_type.first, 1)));
     }
     receiver_->SetCodecs(receive_codecs);
   }
@@ -333,7 +332,7 @@ TEST_F(AcmReceiverTestOldApi, MAYBE_LastAudioCodec) {
   packet_sent_ = false;
   InsertOnePacketOfSilence(
       SetEncoder(0, codecs.at(0), cng_payload_types));  // Enough to test
-                                                     // with one codec.
+                                                        // with one codec.
   ASSERT_TRUE(packet_sent_);
   EXPECT_EQ(AudioFrameType::kAudioFrameCN, last_frame_type_);
 

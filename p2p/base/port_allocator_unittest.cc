@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "p2p/base/port_allocator.h"
+
 #include <memory>
 
 #include "p2p/base/fake_port_allocator.h"
-#include "p2p/base/port_allocator.h"
 #include "rtc_base/thread.h"
 #include "rtc_base/virtual_socket_server.h"
 #include "test/gtest.h"

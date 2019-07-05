@@ -7,10 +7,11 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "modules/remote_bitrate_estimator/aimd_rate_control.h"
+
 #include <memory>
 
 #include "api/transport/field_trial_based_config.h"
-#include "modules/remote_bitrate_estimator/aimd_rate_control.h"
 #include "system_wrappers/include/clock.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"

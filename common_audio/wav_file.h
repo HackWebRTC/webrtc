@@ -12,6 +12,7 @@
 #define COMMON_AUDIO_WAV_FILE_H_
 
 #include <stdint.h>
+
 #include <cstddef>
 #include <string>
 
@@ -94,7 +95,7 @@ class WavReader final : public WavFile {
   size_t num_channels_;
   size_t num_samples_;  // Total number of samples in the file.
   size_t num_samples_remaining_;
-  FILE* file_handle_;  // Input file, owned by this class.
+  FILE* file_handle_;      // Input file, owned by this class.
   fpos_t data_start_pos_;  // Position in the file immediately after WAV header.
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WavReader);

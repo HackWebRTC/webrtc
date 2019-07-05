@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/audio_codecs/builtin_audio_encoder_factory.h"
+
 #include <limits>
 #include <memory>
 #include <vector>
 
-#include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "test/gmock.h"
 #include "test/gtest.h"

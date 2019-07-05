@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <string>
+#include "modules/video_coding/jitter_buffer.h"
 
 #include <list>
 #include <memory>
+#include <string>
 #include <vector>
 
 #include "absl/memory/memory.h"
 #include "common_video/h264/h264_common.h"
 #include "modules/video_coding/frame_buffer.h"
-#include "modules/video_coding/jitter_buffer.h"
 #include "modules/video_coding/media_opt_util.h"
 #include "modules/video_coding/packet.h"
 #include "modules/video_coding/test/stream_generator.h"
@@ -224,9 +224,7 @@ class TestRunningJitterBuffer : public ::testing::Test {
 class TestJitterBufferNack : public TestRunningJitterBuffer {
  protected:
   TestJitterBufferNack() {}
-  virtual void SetUp() {
-    TestRunningJitterBuffer::SetUp();
-  }
+  virtual void SetUp() { TestRunningJitterBuffer::SetUp(); }
 
   virtual void TearDown() { TestRunningJitterBuffer::TearDown(); }
 };

@@ -14,6 +14,7 @@
 #if defined(WEBRTC_INCLUDE_INTERNAL_AUDIO_DEVICE)
 
 #include <stdint.h>
+
 #include <memory>
 
 #include "api/task_queue/task_queue_factory.h"

@@ -12,6 +12,7 @@
 #define SYSTEM_WRAPPERS_INCLUDE_CLOCK_H_
 
 #include <stdint.h>
+
 #include <memory>
 
 #include "api/units/timestamp.h"

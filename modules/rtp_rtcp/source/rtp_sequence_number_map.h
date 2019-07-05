@@ -13,7 +13,6 @@
 
 #include <cstddef>
 #include <cstdint>
-
 #include <deque>
 
 #include "absl/types/optional.h"

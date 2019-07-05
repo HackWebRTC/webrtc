@@ -13,6 +13,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+
 #include <memory>
 
 #include "logging/rtc_event_log/events/rtc_event_alr_state.h"

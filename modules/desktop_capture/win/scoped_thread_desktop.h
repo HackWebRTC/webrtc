@@ -11,9 +11,9 @@
 #ifndef MODULES_DESKTOP_CAPTURE_WIN_SCOPED_THREAD_DESKTOP_H_
 #define MODULES_DESKTOP_CAPTURE_WIN_SCOPED_THREAD_DESKTOP_H_
 
-#include <memory>
-
 #include <windows.h>
+
+#include <memory>
 
 #include "rtc_base/constructor_magic.h"
 

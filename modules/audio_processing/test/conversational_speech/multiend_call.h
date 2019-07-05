@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_PROCESSING_TEST_CONVERSATIONAL_SPEECH_MULTIEND_CALL_H_
 
 #include <stddef.h>
+
 #include <map>
 #include <memory>
 #include <set>

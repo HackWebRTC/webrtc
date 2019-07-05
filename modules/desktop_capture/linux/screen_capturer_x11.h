@@ -15,6 +15,7 @@
 #include <X11/Xlib.h>
 #include <X11/extensions/Xdamage.h>
 #include <X11/extensions/Xfixes.h>
+
 #include <memory>
 
 #include "modules/desktop_capture/desktop_capture_options.h"

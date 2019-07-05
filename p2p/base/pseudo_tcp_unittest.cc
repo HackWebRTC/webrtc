@@ -8,13 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "p2p/base/pseudo_tcp.h"
+
 #include <string.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <string>
 #include <vector>
 
-#include "p2p/base/pseudo_tcp.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/helpers.h"
 #include "rtc_base/location.h"

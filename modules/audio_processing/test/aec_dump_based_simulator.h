@@ -15,7 +15,6 @@
 #include <string>
 
 #include "modules/audio_processing/test/audio_processing_simulator.h"
-
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/ignore_wundef.h"
 

@@ -60,8 +60,8 @@ const int kPortTimeoutDelay = cricket::STUN_TOTAL_TIMEOUT + 5000;
 
 namespace cricket {
 
-using webrtc::RTCErrorType;
 using webrtc::RTCError;
+using webrtc::RTCErrorType;
 
 // TODO(ronghuawu): Use "local", "srflx", "prflx" and "relay". But this requires
 // the signaling part be updated correspondingly as well.

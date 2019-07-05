@@ -11,9 +11,9 @@
 #ifndef MODULES_AUDIO_DEVICE_ANDROID_AUDIO_RECORD_JNI_H_
 #define MODULES_AUDIO_DEVICE_ANDROID_AUDIO_RECORD_JNI_H_
 
-#include <memory>
-
 #include <jni.h>
+
+#include <memory>
 
 #include "modules/audio_device/android/audio_manager.h"
 #include "modules/audio_device/audio_device_generic.h"

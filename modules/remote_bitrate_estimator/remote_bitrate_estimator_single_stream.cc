@@ -11,6 +11,7 @@
 #include "modules/remote_bitrate_estimator/remote_bitrate_estimator_single_stream.h"
 
 #include <assert.h>
+
 #include <cstdint>
 #include <utility>
 

@@ -20,6 +20,7 @@
 #include <direct.h>
 #include <tchar.h>
 #include <windows.h>
+
 #include <algorithm>
 #include <codecvt>
 #include <locale>
@@ -42,6 +43,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <memory>
 #include <type_traits>
 #include <utility>

@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/pacing/paced_sender.h"
+
 #include <list>
 #include <memory>
 #include <string>
 
 #include "absl/memory/memory.h"
-#include "modules/pacing/paced_sender.h"
 #include "modules/pacing/packet_router.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"

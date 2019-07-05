@@ -45,8 +45,9 @@ bool IsUdp(cricket::Connection* conn) {
   return conn->local_candidate().relay_protocol() == cricket::UDP_PROTOCOL_NAME;
 }
 
-cricket::PortInterface::CandidateOrigin GetOrigin(cricket::PortInterface* port,
-                                         cricket::PortInterface* origin_port) {
+cricket::PortInterface::CandidateOrigin GetOrigin(
+    cricket::PortInterface* port,
+    cricket::PortInterface* origin_port) {
   if (!origin_port)
     return cricket::PortInterface::ORIGIN_MESSAGE;
   else if (port == origin_port)
@@ -98,8 +99,8 @@ uint32_t GetWeakPingIntervalInFieldTrial() {
 
 namespace cricket {
 
-using webrtc::RTCErrorType;
 using webrtc::RTCError;
+using webrtc::RTCErrorType;
 
 bool IceCredentialsChanged(const std::string& old_ufrag,
                            const std::string& old_pwd,
@@ -207,10 +208,10 @@ void P2PTransportChannel::AddConnection(Connection* connection) {
   connection->set_unwritable_timeout(config_.ice_unwritable_timeout);
   connection->set_unwritable_min_checks(config_.ice_unwritable_min_checks);
   connection->set_inactive_timeout(config_.ice_inactive_timeout);
-  connection->SignalReadPacket.connect(
-      this, &P2PTransportChannel::OnReadPacket);
-  connection->SignalReadyToSend.connect(
-      this, &P2PTransportChannel::OnReadyToSend);
+  connection->SignalReadPacket.connect(this,
+                                       &P2PTransportChannel::OnReadPacket);
+  connection->SignalReadyToSend.connect(this,
+                                        &P2PTransportChannel::OnReadyToSend);
   connection->SignalStateChange.connect(
       this, &P2PTransportChannel::OnConnectionStateChange);
   connection->SignalDestroyed.connect(
@@ -371,8 +372,8 @@ IceGatheringState P2PTransportChannel::gathering_state() const {
 
 absl::optional<int> P2PTransportChannel::GetRttEstimate() {
   RTC_DCHECK_RUN_ON(network_thread_);
-  if (selected_connection_ != nullptr
-      && selected_connection_->rtt_samples() > 0) {
+  if (selected_connection_ != nullptr &&
+      selected_connection_->rtt_samples() > 0) {
     return selected_connection_->rtt();
   } else {
     return absl::nullopt;
@@ -769,8 +770,8 @@ void P2PTransportChannel::MaybeStartGathering() {
   if (ice_parameters_.ufrag.empty() || ice_parameters_.pwd.empty()) {
     RTC_LOG(LS_ERROR)
         << "Cannot gather candidates because ICE parameters are empty"
-           " ufrag: " << ice_parameters_.ufrag
-        << " pwd: " << ice_parameters_.pwd;
+           " ufrag: "
+        << ice_parameters_.ufrag << " pwd: " << ice_parameters_.pwd;
     return;
   }
   // Start gathering if we never started before, or if an ICE restart occurred.
@@ -825,13 +826,12 @@ void P2PTransportChannel::MaybeStartGathering() {
 }
 
 // A new port is available, attempt to make connections for it
-void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
+void P2PTransportChannel::OnPortReady(PortAllocatorSession* session,
                                       PortInterface* port) {
   RTC_DCHECK_RUN_ON(network_thread_);
 
   // Set in-effect options on the new port
-  for (OptionMap::const_iterator it = options_.begin();
-       it != options_.end();
+  for (OptionMap::const_iterator it = options_.begin(); it != options_.end();
        ++it) {
     int val = port->SetOption(it->first, it->second);
     if (val < 0) {
@@ -849,12 +849,11 @@ void P2PTransportChannel::OnPortReady(PortAllocatorSession *session,
   port->SetIceRole(ice_role_);
   port->SetIceTiebreaker(tiebreaker_);
   ports_.push_back(port);
-  port->SignalUnknownAddress.connect(
-      this, &P2PTransportChannel::OnUnknownAddress);
+  port->SignalUnknownAddress.connect(this,
+                                     &P2PTransportChannel::OnUnknownAddress);
   port->SignalDestroyed.connect(this, &P2PTransportChannel::OnPortDestroyed);
 
-  port->SignalRoleConflict.connect(
-      this, &P2PTransportChannel::OnRoleConflict);
+  port->SignalRoleConflict.connect(this, &P2PTransportChannel::OnRoleConflict);
   port->SignalSentPacket.connect(this, &P2PTransportChannel::OnSentPacket);
 
   // Attempt to create a connection from this new port to all of the remote
@@ -904,11 +903,12 @@ void P2PTransportChannel::OnCandidatesAllocationDone(
 }
 
 // Handle stun packets
-void P2PTransportChannel::OnUnknownAddress(
-    PortInterface* port,
-    const rtc::SocketAddress& address, ProtocolType proto,
-    IceMessage* stun_msg, const std::string &remote_username,
-    bool port_muxed) {
+void P2PTransportChannel::OnUnknownAddress(PortInterface* port,
+                                           const rtc::SocketAddress& address,
+                                           ProtocolType proto,
+                                           IceMessage* stun_msg,
+                                           const std::string& remote_username,
+                                           bool port_muxed) {
   RTC_DCHECK_RUN_ON(network_thread_);
 
   // Port has received a valid stun packet from an address that no Connection
@@ -1011,12 +1011,12 @@ void P2PTransportChannel::OnUnknownAddress(
   if (port->GetConnection(remote_candidate.address())) {
     if (port_muxed) {
       RTC_LOG(LS_INFO) << "Connection already exists for peer reflexive "
-                          "candidate: " << remote_candidate.ToString();
+                          "candidate: "
+                       << remote_candidate.ToString();
       return;
     } else {
       RTC_NOTREACHED();
-      port->SendBindingErrorResponse(stun_msg, address,
-                                     STUN_ERROR_SERVER_ERROR,
+      port->SendBindingErrorResponse(stun_msg, address, STUN_ERROR_SERVER_ERROR,
                                      STUN_ERROR_REASON_SERVER_ERROR);
       return;
     }
@@ -1281,7 +1281,7 @@ bool P2PTransportChannel::CreateConnections(const Candidate& remote_candidate,
   // to make sure that the origin port is included, even if it was pruned,
   // since that may be the only port that can create this connection.
   bool created = false;
-  std::vector<PortInterface *>::reverse_iterator it;
+  std::vector<PortInterface*>::reverse_iterator it;
   for (it = ports_.rbegin(); it != ports_.rend(); ++it) {
     if (CreateConnection(*it, remote_candidate, origin_port)) {
       if (*it == origin_port)
@@ -1313,9 +1313,8 @@ bool P2PTransportChannel::CreateConnection(PortInterface* port,
   // found or it is found but the existing remote candidate has an older
   // generation, then we can create a new connection for this address.
   Connection* connection = port->GetConnection(remote_candidate.address());
-  if (connection == nullptr ||
-      connection->remote_candidate().generation() <
-          remote_candidate.generation()) {
+  if (connection == nullptr || connection->remote_candidate().generation() <
+                                   remote_candidate.generation()) {
     // Don't create a connection if this is a candidate we received in a
     // message and we are not allowed to make outgoing connections.
     PortInterface::CandidateOrigin origin = GetOrigin(port, origin_port);
@@ -1384,7 +1383,8 @@ bool P2PTransportChannel::IsDuplicateRemoteCandidate(
 
 // Maintain our remote candidate list, adding this new remote one.
 void P2PTransportChannel::RememberRemoteCandidate(
-    const Candidate& remote_candidate, PortInterface* origin_port) {
+    const Candidate& remote_candidate,
+    PortInterface* origin_port) {
   RTC_DCHECK_RUN_ON(network_thread_);
   // Remove any candidates whose generation is older than this one.  The
   // presence of a new generation indicates that the old ones are not useful.
@@ -1451,7 +1451,8 @@ int P2PTransportChannel::GetError() {
 }
 
 // Send data to the other side, using our selected connection.
-int P2PTransportChannel::SendPacket(const char *data, size_t len,
+int P2PTransportChannel::SendPacket(const char* data,
+                                    size_t len,
                                     const rtc::PacketOptions& options,
                                     int flags) {
   RTC_DCHECK_RUN_ON(network_thread_);
@@ -1511,7 +1512,7 @@ rtc::DiffServCodePoint P2PTransportChannel::DefaultDscpValue() const {
   if (it == options_.end()) {
     return rtc::DSCP_NO_CHANGE;
   }
-  return static_cast<rtc::DiffServCodePoint> (it->second);
+  return static_cast<rtc::DiffServCodePoint>(it->second);
 }
 
 // Monitor connection states.
@@ -1694,10 +1695,10 @@ int P2PTransportChannel::CompareConnectionCandidates(
   // want to use the new candidates and purge the old candidates as they come
   // in, so use the fact that the old ports get pruned immediately to rank the
   // candidates with an active port/remote candidate higher.
-  bool a_pruned = IsPortPruned(a->port()) ||
-      IsRemoteCandidatePruned(a->remote_candidate());
-  bool b_pruned = IsPortPruned(b->port()) ||
-      IsRemoteCandidatePruned(b->remote_candidate());
+  bool a_pruned =
+      IsPortPruned(a->port()) || IsRemoteCandidatePruned(a->remote_candidate());
+  bool b_pruned =
+      IsPortPruned(b->port()) || IsRemoteCandidatePruned(b->remote_candidate());
   if (!a_pruned && b_pruned) {
     return a_is_better;
   }
@@ -1931,12 +1932,10 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn) {
     ++nomination_;
     selected_connection_->set_selected(true);
     if (old_selected_connection) {
-      RTC_LOG(LS_INFO) << ToString()
-                       << ": Previous selected connection: "
+      RTC_LOG(LS_INFO) << ToString() << ": Previous selected connection: "
                        << old_selected_connection->ToString();
     }
-    RTC_LOG(LS_INFO) << ToString()
-                     << ": New selected connection: "
+    RTC_LOG(LS_INFO) << ToString() << ": New selected connection: "
                      << selected_connection_->ToString();
     SignalRouteChange(this, selected_connection_->remote_candidate());
     // This is a temporary, but safe fix to webrtc issue 5705.
@@ -1961,8 +1960,7 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn) {
             selected_connection_->local_candidate().address().family()) +
         GetProtocolOverhead(selected_connection_->local_candidate().protocol());
   } else {
-    RTC_LOG(LS_INFO) << ToString()
-                     << ": No selected connection";
+    RTC_LOG(LS_INFO) << ToString() << ": No selected connection";
   }
 
   SignalNetworkRouteChanged(network_route_);
@@ -1998,8 +1996,7 @@ void P2PTransportChannel::UpdateState() {
       ComputeIceTransportState();
 
   if (state_ != state) {
-    RTC_LOG(LS_INFO) << ToString()
-                     << ": Transport channel state changed from "
+    RTC_LOG(LS_INFO) << ToString() << ": Transport channel state changed from "
                      << static_cast<int>(state_) << " to "
                      << static_cast<int>(state);
     // Check that the requested transition is allowed. Note that
@@ -2609,8 +2606,7 @@ void P2PTransportChannel::SetWritable(bool writable) {
   if (writable_ == writable) {
     return;
   }
-  RTC_LOG(LS_VERBOSE) << ToString()
-                      << ": Changed writable_ to " << writable;
+  RTC_LOG(LS_VERBOSE) << ToString() << ": Changed writable_ to " << writable;
   writable_ = writable;
   if (writable_) {
     has_been_writable_ = true;

@@ -15,11 +15,12 @@
 // enable different media transport implementations, including QUIC-based
 // media transport.
 
+#include "api/media_transport_interface.h"
+
 #include <cstdint>
 #include <utility>
 
 #include "api/datagram_transport_interface.h"
-#include "api/media_transport_interface.h"
 
 namespace webrtc {
 
@@ -29,7 +30,6 @@ MediaTransportSettings::MediaTransportSettings(const MediaTransportSettings&) =
 MediaTransportSettings& MediaTransportSettings::operator=(
     const MediaTransportSettings&) = default;
 MediaTransportSettings::~MediaTransportSettings() = default;
-
 
 SendDataParams::SendDataParams() = default;
 SendDataParams::SendDataParams(const SendDataParams&) = default;

@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "audio/audio_receive_stream.h"
+
 #include <map>
 #include <string>
 #include <utility>
@@ -15,7 +17,6 @@
 
 #include "api/test/mock_audio_mixer.h"
 #include "api/test/mock_frame_decryptor.h"
-#include "audio/audio_receive_stream.h"
 #include "audio/conversion.h"
 #include "audio/mock_voe_channel_proxy.h"
 #include "call/rtp_stream_receiver_controller.h"

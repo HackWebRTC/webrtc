@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "test/network/network_emulation.h"
+
 #include <atomic>
 #include <memory>
 #include <set>
@@ -22,7 +24,6 @@
 #include "system_wrappers/include/sleep.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "test/network/network_emulation.h"
 #include "test/network/network_emulation_manager.h"
 
 namespace webrtc {

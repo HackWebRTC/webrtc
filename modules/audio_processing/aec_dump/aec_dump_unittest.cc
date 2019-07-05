@@ -11,7 +11,6 @@
 #include <utility>
 
 #include "modules/audio_processing/aec_dump/aec_dump_factory.h"
-
 #include "rtc_base/task_queue_for_test.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"

@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "test/network/cross_traffic.h"
+
 #include <atomic>
 #include <memory>
 #include <utility>
@@ -20,7 +22,6 @@
 #include "rtc_base/logging.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "test/network/cross_traffic.h"
 
 namespace webrtc {
 namespace test {

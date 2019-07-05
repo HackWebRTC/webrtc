@@ -8,17 +8,18 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/audio_coding/audio_network_adaptor/fec_controller_plr_based.h"
+
 #include <utility>
 
 #include "common_audio/mocks/mock_smoothing_filter.h"
-#include "modules/audio_coding/audio_network_adaptor/fec_controller_plr_based.h"
 #include "test/gtest.h"
 
 namespace webrtc {
 
+using ::testing::_;
 using ::testing::NiceMock;
 using ::testing::Return;
-using ::testing::_;
 
 namespace {
 

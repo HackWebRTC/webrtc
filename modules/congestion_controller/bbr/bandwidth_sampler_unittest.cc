@@ -9,9 +9,10 @@
  */
 // Based on the Quic implementation in Chromium.
 
+#include "modules/congestion_controller/bbr/bandwidth_sampler.h"
+
 #include <stddef.h>
 
-#include "modules/congestion_controller/bbr/bandwidth_sampler.h"
 #include "test/gtest.h"
 
 namespace webrtc {

@@ -9,6 +9,7 @@
  */
 
 #include "modules/audio_coding/codecs/isac/fix/source/lpc_masking_model.h"
+
 #include "system_wrappers/include/cpu_features_wrapper.h"
 #include "test/gtest.h"
 

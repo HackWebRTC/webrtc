@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_base/openssl_adapter.h"
+
 #include <sstream>
 #include <string>
 #include <vector>
@@ -15,7 +17,6 @@
 #include "absl/memory/memory.h"
 #include "rtc_base/async_socket.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/openssl_adapter.h"
 #include "test/gmock.h"
 
 namespace rtc {

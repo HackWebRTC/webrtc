@@ -12,6 +12,7 @@
 #define RTC_BASE_NUMERICS_PERCENTILE_FILTER_H_
 
 #include <stdint.h>
+
 #include <iterator>
 #include <set>
 

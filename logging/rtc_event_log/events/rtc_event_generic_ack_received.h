@@ -11,12 +11,11 @@
 #ifndef LOGGING_RTC_EVENT_LOG_EVENTS_RTC_EVENT_GENERIC_ACK_RECEIVED_H_
 #define LOGGING_RTC_EVENT_LOG_EVENTS_RTC_EVENT_GENERIC_ACK_RECEIVED_H_
 
-#include "logging/rtc_event_log/events/rtc_event.h"
-
 #include <memory>
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "logging/rtc_event_log/events/rtc_event.h"
 
 namespace webrtc {
 

@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_CODING_NETEQ_AUDIO_VECTOR_H_
 
 #include <string.h>
+
 #include <cstdint>
 #include <memory>
 

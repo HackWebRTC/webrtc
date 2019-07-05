@@ -12,6 +12,7 @@
 #define RTC_BASE_BITRATE_ALLOCATION_STRATEGY_H_
 
 #include <stdint.h>
+
 #include <string>
 #include <vector>
 

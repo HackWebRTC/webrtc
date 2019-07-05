@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/audio_device/include/test_audio_device.h"
+
 #include <algorithm>
 #include <array>
 
 #include "api/array_view.h"
 #include "common_audio/wav_file.h"
 #include "common_audio/wav_header.h"
-#include "modules/audio_device/include/test_audio_device.h"
 #include "rtc_base/logging.h"
 #include "test/gmock.h"
 #include "test/gtest.h"

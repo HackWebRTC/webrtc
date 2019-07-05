@@ -12,6 +12,7 @@
 #define RTC_BASE_BUFFER_QUEUE_H_
 
 #include <stddef.h>
+
 #include <deque>
 #include <vector>
 

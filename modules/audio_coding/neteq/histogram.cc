@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/audio_coding/neteq/histogram.h"
+
 #include <algorithm>
 #include <cstdlib>
 #include <numeric>
 
 #include "absl/types/optional.h"
-#include "modules/audio_coding/neteq/histogram.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"
 

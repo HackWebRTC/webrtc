@@ -8,9 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_base/socket.h"
+
 #include <errno.h>
 #include <stdint.h>
 #include <string.h>
+
 #include <memory>
 
 #include "absl/memory/memory.h"
@@ -25,7 +28,6 @@
 #include "rtc_base/message_handler.h"
 #include "rtc_base/message_queue.h"
 #include "rtc_base/net_helpers.h"
-#include "rtc_base/socket.h"
 #include "rtc_base/socket_address.h"
 #include "rtc_base/socket_server.h"
 #include "rtc_base/socket_unittest.h"

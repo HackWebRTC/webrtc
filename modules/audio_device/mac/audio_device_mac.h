@@ -11,6 +11,10 @@
 #ifndef AUDIO_DEVICE_AUDIO_DEVICE_MAC_H_
 #define AUDIO_DEVICE_AUDIO_DEVICE_MAC_H_
 
+#include <AudioToolbox/AudioConverter.h>
+#include <CoreAudio/CoreAudio.h>
+#include <mach/semaphore.h>
+
 #include <memory>
 
 #include "modules/audio_device/audio_device_generic.h"
@@ -19,10 +23,6 @@
 #include "rtc_base/event.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/thread_annotations.h"
-
-#include <AudioToolbox/AudioConverter.h>
-#include <CoreAudio/CoreAudio.h>
-#include <mach/semaphore.h>
 
 struct PaUtilRingBuffer;
 

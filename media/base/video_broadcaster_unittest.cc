@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "media/base/video_broadcaster.h"
+
 #include <limits>
 
 #include "absl/types/optional.h"
@@ -15,12 +17,11 @@
 #include "api/video/video_frame.h"
 #include "api/video/video_rotation.h"
 #include "media/base/fake_video_renderer.h"
-#include "media/base/video_broadcaster.h"
 #include "test/gtest.h"
 
+using cricket::FakeVideoRenderer;
 using rtc::VideoBroadcaster;
 using rtc::VideoSinkWants;
-using cricket::FakeVideoRenderer;
 
 TEST(VideoBroadcasterTest, frame_wanted) {
   VideoBroadcaster broadcaster;

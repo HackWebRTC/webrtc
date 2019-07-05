@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_base/timestamp_aligner.h"
+
 #include <cstdlib>
 #include <limits>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/time_utils.h"
-#include "rtc_base/timestamp_aligner.h"
 
 namespace rtc {
 

@@ -7,6 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "modules/audio_processing/include/audio_processing.h"
+
 #include <math.h>
 #include <stdio.h>
 
@@ -23,7 +25,6 @@
 #include "modules/audio_processing/aec_dump/aec_dump_factory.h"
 #include "modules/audio_processing/audio_processing_impl.h"
 #include "modules/audio_processing/common.h"
-#include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
 #include "modules/audio_processing/test/protobuf_utils.h"
 #include "modules/audio_processing/test/test_utils.h"
@@ -78,16 +79,11 @@ const int kProcessSampleRates[] = {8000, 16000, 32000, 48000};
 enum StreamDirection { kForward = 0, kReverse };
 
 void ConvertToFloat(const int16_t* int_data, ChannelBuffer<float>* cb) {
-  ChannelBuffer<int16_t> cb_int(cb->num_frames(),
-                                cb->num_channels());
-  Deinterleave(int_data,
-               cb->num_frames(),
-               cb->num_channels(),
+  ChannelBuffer<int16_t> cb_int(cb->num_frames(), cb->num_channels());
+  Deinterleave(int_data, cb->num_frames(), cb->num_channels(),
                cb_int.channels());
   for (size_t i = 0; i < cb->num_channels(); ++i) {
-    S16ToFloat(cb_int.channels()[i],
-               cb->num_frames(),
-               cb->channels()[i]);
+    S16ToFloat(cb_int.channels()[i], cb->num_frames(), cb->channels()[i]);
   }
 }
 
@@ -110,13 +106,15 @@ size_t TotalChannelsFromLayout(AudioProcessing::ChannelLayout layout) {
   return 0;
 }
 
-void MixStereoToMono(const float* stereo, float* mono,
+void MixStereoToMono(const float* stereo,
+                     float* mono,
                      size_t samples_per_channel) {
   for (size_t i = 0; i < samples_per_channel; ++i)
     mono[i] = (stereo[i * 2] + stereo[i * 2 + 1]) / 2;
 }
 
-void MixStereoToMono(const int16_t* stereo, int16_t* mono,
+void MixStereoToMono(const int16_t* stereo,
+                     int16_t* mono,
                      size_t samples_per_channel) {
   for (size_t i = 0; i < samples_per_channel; ++i)
     mono[i] = (stereo[i * 2] + stereo[i * 2 + 1]) >> 1;
@@ -206,7 +204,7 @@ void EnableAllAPComponents(AudioProcessing* ap) {
 // These functions are only used by ApmTest.Process.
 template <class T>
 T AbsValue(T a) {
-  return a > 0 ? a: -a;
+  return a > 0 ? a : -a;
 }
 
 int16_t MaxAudioFrame(const AudioFrame& frame) {
@@ -232,7 +230,7 @@ void OpenFileAndWriteMessage(const std::string& filename,
 
   ASSERT_EQ(1u, fwrite(&size, sizeof(size), 1, file));
   ASSERT_EQ(static_cast<size_t>(size),
-      fwrite(array.get(), sizeof(array[0]), size, file));
+            fwrite(array.get(), sizeof(array[0]), size, file));
   fclose(file);
 }
 
@@ -317,7 +315,9 @@ void OpenFileAndReadMessage(const std::string& filename, MessageLite* msg) {
 //
 // |int_data| and |float_data| are just temporary space that must be
 // sufficiently large to hold the 10 ms chunk.
-bool ReadChunk(FILE* file, int16_t* int_data, float* float_data,
+bool ReadChunk(FILE* file,
+               int16_t* int_data,
+               float* float_data,
                ChannelBuffer<float>* cb) {
   // The files always contain stereo audio.
   size_t frame_size = cb->num_frames() * 2;
@@ -332,8 +332,7 @@ bool ReadChunk(FILE* file, int16_t* int_data, float* float_data,
   if (cb->num_channels() == 1) {
     MixStereoToMono(float_data, cb->channels()[0], cb->num_frames());
   } else {
-    Deinterleave(float_data, cb->num_frames(), 2,
-                 cb->channels());
+    Deinterleave(float_data, cb->num_frames(), 2, cb->channels());
   }
 
   return true;
@@ -350,10 +349,7 @@ class ApmTest : public ::testing::Test {
   static void TearDownTestSuite() { ClearTempFiles(); }
 
   // Used to select between int and float interface tests.
-  enum Format {
-    kIntFormat,
-    kFloatFormat
-  };
+  enum Format { kIntFormat, kFloatFormat };
 
   void Init(int sample_rate_hz,
             int output_sample_rate_hz,
@@ -367,11 +363,14 @@ class ApmTest : public ::testing::Test {
   bool ReadFrame(FILE* file, AudioFrame* frame);
   bool ReadFrame(FILE* file, AudioFrame* frame, ChannelBuffer<float>* cb);
   void ReadFrameWithRewind(FILE* file, AudioFrame* frame);
-  void ReadFrameWithRewind(FILE* file, AudioFrame* frame,
+  void ReadFrameWithRewind(FILE* file,
+                           AudioFrame* frame,
                            ChannelBuffer<float>* cb);
   void ProcessWithDefaultStreamParameters(AudioFrame* frame);
-  void ProcessDelayVerificationTest(int delay_ms, int system_delay_ms,
-                                    int delay_min, int delay_max);
+  void ProcessDelayVerificationTest(int delay_ms,
+                                    int system_delay_ms,
+                                    int delay_min,
+                                    int delay_max);
   void TestChangingChannelsInt16Interface(
       size_t num_channels,
       AudioProcessing::Error expected_return);
@@ -408,11 +407,11 @@ class ApmTest : public ::testing::Test {
 ApmTest::ApmTest()
     : output_path_(test::OutputPath()),
 #if defined(WEBRTC_AUDIOPROC_FIXED_PROFILE)
-      ref_filename_(test::ResourcePath("audio_processing/output_data_fixed",
-                                       "pb")),
+      ref_filename_(
+          test::ResourcePath("audio_processing/output_data_fixed", "pb")),
 #elif defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
-      ref_filename_(test::ResourcePath("audio_processing/output_data_float",
-                                       "pb")),
+      ref_filename_(
+          test::ResourcePath("audio_processing/output_data_float", "pb")),
 #endif
       frame_(NULL),
       revframe_(NULL),
@@ -491,16 +490,14 @@ void ApmTest::Init(int sample_rate_hz,
   }
   std::string filename = ResourceFilePath("far", sample_rate_hz);
   far_file_ = fopen(filename.c_str(), "rb");
-  ASSERT_TRUE(far_file_ != NULL) << "Could not open file " <<
-      filename << "\n";
+  ASSERT_TRUE(far_file_ != NULL) << "Could not open file " << filename << "\n";
 
   if (near_file_) {
     ASSERT_EQ(0, fclose(near_file_));
   }
   filename = ResourceFilePath("near", sample_rate_hz);
   near_file_ = fopen(filename.c_str(), "rb");
-  ASSERT_TRUE(near_file_ != NULL) << "Could not open file " <<
-        filename << "\n";
+  ASSERT_TRUE(near_file_ != NULL) << "Could not open file " << filename << "\n";
 
   if (open_output_file) {
     if (out_file_) {
@@ -511,8 +508,8 @@ void ApmTest::Init(int sample_rate_hz,
         reverse_sample_rate_hz, num_input_channels, num_output_channels,
         num_reverse_channels, num_reverse_channels, kForward);
     out_file_ = fopen(filename.c_str(), "wb");
-    ASSERT_TRUE(out_file_ != NULL) << "Could not open file " <<
-          filename << "\n";
+    ASSERT_TRUE(out_file_ != NULL)
+        << "Could not open file " << filename << "\n";
   }
 }
 
@@ -520,14 +517,13 @@ void ApmTest::EnableAllComponents() {
   EnableAllAPComponents(apm_.get());
 }
 
-bool ApmTest::ReadFrame(FILE* file, AudioFrame* frame,
+bool ApmTest::ReadFrame(FILE* file,
+                        AudioFrame* frame,
                         ChannelBuffer<float>* cb) {
   // The files always contain stereo audio.
   size_t frame_size = frame->samples_per_channel_ * 2;
-  size_t read_count = fread(frame->mutable_data(),
-                            sizeof(int16_t),
-                            frame_size,
-                            file);
+  size_t read_count =
+      fread(frame->mutable_data(), sizeof(int16_t), frame_size, file);
   if (read_count != frame_size) {
     // Check that the file really ended.
     EXPECT_NE(0, feof(file));
@@ -551,7 +547,8 @@ bool ApmTest::ReadFrame(FILE* file, AudioFrame* frame) {
 
 // If the end of the file has been reached, rewind it and attempt to read the
 // frame again.
-void ApmTest::ReadFrameWithRewind(FILE* file, AudioFrame* frame,
+void ApmTest::ReadFrameWithRewind(FILE* file,
+                                  AudioFrame* frame,
                                   ChannelBuffer<float>* cb) {
   if (!ReadFrame(near_file_, frame_, cb)) {
     rewind(near_file_);
@@ -565,8 +562,7 @@ void ApmTest::ReadFrameWithRewind(FILE* file, AudioFrame* frame) {
 
 void ApmTest::ProcessWithDefaultStreamParameters(AudioFrame* frame) {
   EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(0));
-  EXPECT_EQ(apm_->kNoError,
-      apm_->gain_control()->set_stream_analog_level(127));
+  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->set_stream_analog_level(127));
   EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame));
 }
 
@@ -574,13 +570,11 @@ int ApmTest::ProcessStreamChooser(Format format) {
   if (format == kIntFormat) {
     return apm_->ProcessStream(frame_);
   }
-  return apm_->ProcessStream(float_cb_->channels(),
-                             frame_->samples_per_channel_,
-                             frame_->sample_rate_hz_,
-                             LayoutFromChannels(frame_->num_channels_),
-                             output_sample_rate_hz_,
-                             LayoutFromChannels(num_output_channels_),
-                             float_cb_->channels());
+  return apm_->ProcessStream(
+      float_cb_->channels(), frame_->samples_per_channel_,
+      frame_->sample_rate_hz_, LayoutFromChannels(frame_->num_channels_),
+      output_sample_rate_hz_, LayoutFromChannels(num_output_channels_),
+      float_cb_->channels());
 }
 
 int ApmTest::AnalyzeReverseStreamChooser(Format format) {
@@ -588,14 +582,14 @@ int ApmTest::AnalyzeReverseStreamChooser(Format format) {
     return apm_->ProcessReverseStream(revframe_);
   }
   return apm_->AnalyzeReverseStream(
-      revfloat_cb_->channels(),
-      revframe_->samples_per_channel_,
-      revframe_->sample_rate_hz_,
-      LayoutFromChannels(revframe_->num_channels_));
+      revfloat_cb_->channels(), revframe_->samples_per_channel_,
+      revframe_->sample_rate_hz_, LayoutFromChannels(revframe_->num_channels_));
 }
 
-void ApmTest::ProcessDelayVerificationTest(int delay_ms, int system_delay_ms,
-                                           int delay_min, int delay_max) {
+void ApmTest::ProcessDelayVerificationTest(int delay_ms,
+                                           int system_delay_ms,
+                                           int delay_min,
+                                           int delay_max) {
   // The |revframe_| and |frame_| should include the proper frame information,
   // hence can be used for extracting information.
   AudioFrame tmp_frame;
@@ -687,15 +681,12 @@ void ApmTest::StreamParametersTest(Format format) {
 
   // -- Missing AGC level --
   EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
-  EXPECT_EQ(apm_->kStreamParameterNotSetError,
-            ProcessStreamChooser(format));
+  EXPECT_EQ(apm_->kStreamParameterNotSetError, ProcessStreamChooser(format));
 
   // Resets after successful ProcessStream().
-  EXPECT_EQ(apm_->kNoError,
-            apm_->gain_control()->set_stream_analog_level(127));
+  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->set_stream_analog_level(127));
   EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(format));
-  EXPECT_EQ(apm_->kStreamParameterNotSetError,
-            ProcessStreamChooser(format));
+  EXPECT_EQ(apm_->kStreamParameterNotSetError, ProcessStreamChooser(format));
 
   // Other stream parameters set correctly.
   AudioProcessing::Config apm_config = apm_->GetConfig();
@@ -703,8 +694,7 @@ void ApmTest::StreamParametersTest(Format format) {
   apm_config.echo_canceller.mobile_mode = false;
   apm_->ApplyConfig(apm_config);
   EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
-  EXPECT_EQ(apm_->kStreamParameterNotSetError,
-            ProcessStreamChooser(format));
+  EXPECT_EQ(apm_->kStreamParameterNotSetError, ProcessStreamChooser(format));
   EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(false));
 
   // -- Missing delay --
@@ -718,20 +708,17 @@ void ApmTest::StreamParametersTest(Format format) {
 
   // Other stream parameters set correctly.
   EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(true));
-  EXPECT_EQ(apm_->kNoError,
-            apm_->gain_control()->set_stream_analog_level(127));
+  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->set_stream_analog_level(127));
   EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(format));
   EXPECT_EQ(apm_->kNoError, apm_->gain_control()->Enable(false));
 
   // -- No stream parameters --
-  EXPECT_EQ(apm_->kNoError,
-            AnalyzeReverseStreamChooser(format));
+  EXPECT_EQ(apm_->kNoError, AnalyzeReverseStreamChooser(format));
   EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(format));
 
   // -- All there --
   EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(100));
-  EXPECT_EQ(apm_->kNoError,
-            apm_->gain_control()->set_stream_analog_level(127));
+  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->set_stream_analog_level(127));
   EXPECT_EQ(apm_->kNoError, ProcessStreamChooser(format));
 }
 
@@ -856,40 +843,34 @@ TEST_F(ApmTest, SampleRatesInt) {
 TEST_F(ApmTest, GainControl) {
   // Testing gain modes
   EXPECT_EQ(apm_->kNoError,
-      apm_->gain_control()->set_mode(
-      apm_->gain_control()->mode()));
+            apm_->gain_control()->set_mode(apm_->gain_control()->mode()));
 
-  GainControl::Mode mode[] = {
-    GainControl::kAdaptiveAnalog,
-    GainControl::kAdaptiveDigital,
-    GainControl::kFixedDigital
-  };
+  GainControl::Mode mode[] = {GainControl::kAdaptiveAnalog,
+                              GainControl::kAdaptiveDigital,
+                              GainControl::kFixedDigital};
   for (size_t i = 0; i < arraysize(mode); i++) {
-    EXPECT_EQ(apm_->kNoError,
-        apm_->gain_control()->set_mode(mode[i]));
+    EXPECT_EQ(apm_->kNoError, apm_->gain_control()->set_mode(mode[i]));
     EXPECT_EQ(mode[i], apm_->gain_control()->mode());
   }
   // Testing target levels
-  EXPECT_EQ(apm_->kNoError,
-      apm_->gain_control()->set_target_level_dbfs(
-      apm_->gain_control()->target_level_dbfs()));
+  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->set_target_level_dbfs(
+                                apm_->gain_control()->target_level_dbfs()));
 
   int level_dbfs[] = {0, 6, 31};
   for (size_t i = 0; i < arraysize(level_dbfs); i++) {
     EXPECT_EQ(apm_->kNoError,
-        apm_->gain_control()->set_target_level_dbfs(level_dbfs[i]));
+              apm_->gain_control()->set_target_level_dbfs(level_dbfs[i]));
     EXPECT_EQ(level_dbfs[i], apm_->gain_control()->target_level_dbfs());
   }
 
   // Testing compression gains
-  EXPECT_EQ(apm_->kNoError,
-      apm_->gain_control()->set_compression_gain_db(
-      apm_->gain_control()->compression_gain_db()));
+  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->set_compression_gain_db(
+                                apm_->gain_control()->compression_gain_db()));
 
   int gain_db[] = {0, 10, 90};
   for (size_t i = 0; i < arraysize(gain_db); i++) {
     EXPECT_EQ(apm_->kNoError,
-        apm_->gain_control()->set_compression_gain_db(gain_db[i]));
+              apm_->gain_control()->set_compression_gain_db(gain_db[i]));
     ProcessStreamChooser(kFloatFormat);
     EXPECT_EQ(gain_db[i], apm_->gain_control()->compression_gain_db());
   }
@@ -901,22 +882,21 @@ TEST_F(ApmTest, GainControl) {
   EXPECT_TRUE(apm_->gain_control()->is_limiter_enabled());
 
   // Testing level limits
-  EXPECT_EQ(apm_->kNoError,
-      apm_->gain_control()->set_analog_level_limits(
-      apm_->gain_control()->analog_level_minimum(),
-      apm_->gain_control()->analog_level_maximum()));
+  EXPECT_EQ(apm_->kNoError, apm_->gain_control()->set_analog_level_limits(
+                                apm_->gain_control()->analog_level_minimum(),
+                                apm_->gain_control()->analog_level_maximum()));
 
   int min_level[] = {0, 255, 1024};
   for (size_t i = 0; i < arraysize(min_level); i++) {
-    EXPECT_EQ(apm_->kNoError,
-        apm_->gain_control()->set_analog_level_limits(min_level[i], 1024));
+    EXPECT_EQ(apm_->kNoError, apm_->gain_control()->set_analog_level_limits(
+                                  min_level[i], 1024));
     EXPECT_EQ(min_level[i], apm_->gain_control()->analog_level_minimum());
   }
 
   int max_level[] = {0, 1024, 65535};
   for (size_t i = 0; i < arraysize(min_level); i++) {
     EXPECT_EQ(apm_->kNoError,
-        apm_->gain_control()->set_analog_level_limits(0, max_level[i]));
+              apm_->gain_control()->set_analog_level_limits(0, max_level[i]));
     EXPECT_EQ(max_level[i], apm_->gain_control()->analog_level_maximum());
   }
 
@@ -981,7 +961,7 @@ void ApmTest::RunQuantizedVolumeDoesNotGetStuckTest(int sample_rate) {
 
     // Always pass in the same volume.
     EXPECT_EQ(apm_->kNoError,
-        apm_->gain_control()->set_stream_analog_level(100));
+              apm_->gain_control()->set_stream_analog_level(100));
     EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
     out_analog_level = apm_->gain_control()->stream_analog_level();
   }
@@ -1011,7 +991,7 @@ void ApmTest::RunManualVolumeChangeIsPossibleTest(int sample_rate) {
     ScaleFrame(frame_, 0.25);
 
     EXPECT_EQ(apm_->kNoError,
-        apm_->gain_control()->set_stream_analog_level(out_analog_level));
+              apm_->gain_control()->set_stream_analog_level(out_analog_level));
     EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
     out_analog_level = apm_->gain_control()->stream_analog_level();
   }
@@ -1027,7 +1007,7 @@ void ApmTest::RunManualVolumeChangeIsPossibleTest(int sample_rate) {
     ScaleFrame(frame_, 0.25);
 
     EXPECT_EQ(apm_->kNoError,
-        apm_->gain_control()->set_stream_analog_level(out_analog_level));
+              apm_->gain_control()->set_stream_analog_level(out_analog_level));
     EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
     out_analog_level = apm_->gain_control()->stream_analog_level();
     // Check that AGC respected the manually adjusted volume.
@@ -1046,14 +1026,10 @@ TEST_F(ApmTest, ManualVolumeChangeIsPossible) {
 TEST_F(ApmTest, NoiseSuppression) {
   // Test valid suppression levels.
   NoiseSuppression::Level level[] = {
-    NoiseSuppression::kLow,
-    NoiseSuppression::kModerate,
-    NoiseSuppression::kHigh,
-    NoiseSuppression::kVeryHigh
-  };
+      NoiseSuppression::kLow, NoiseSuppression::kModerate,
+      NoiseSuppression::kHigh, NoiseSuppression::kVeryHigh};
   for (size_t i = 0; i < arraysize(level); i++) {
-    EXPECT_EQ(apm_->kNoError,
-        apm_->noise_suppression()->set_level(level[i]));
+    EXPECT_EQ(apm_->kNoError, apm_->noise_suppression()->set_level(level[i]));
     EXPECT_EQ(level[i], apm_->noise_suppression()->level());
   }
 
@@ -1149,11 +1125,8 @@ TEST_F(ApmTest, VoiceDetection) {
 
   // Test valid likelihoods
   VoiceDetection::Likelihood likelihood[] = {
-      VoiceDetection::kVeryLowLikelihood,
-      VoiceDetection::kLowLikelihood,
-      VoiceDetection::kModerateLikelihood,
-      VoiceDetection::kHighLikelihood
-  };
+      VoiceDetection::kVeryLowLikelihood, VoiceDetection::kLowLikelihood,
+      VoiceDetection::kModerateLikelihood, VoiceDetection::kHighLikelihood};
   for (size_t i = 0; i < arraysize(likelihood); i++) {
     EXPECT_EQ(apm_->kNoError,
               apm_->voice_detection()->set_likelihood(likelihood[i]));
@@ -1182,10 +1155,7 @@ TEST_F(ApmTest, VoiceDetection) {
   // Test that AudioFrame activity is maintained when VAD is disabled.
   EXPECT_EQ(apm_->kNoError, apm_->voice_detection()->Enable(false));
   AudioFrame::VADActivity activity[] = {
-      AudioFrame::kVadActive,
-      AudioFrame::kVadPassive,
-      AudioFrame::kVadUnknown
-  };
+      AudioFrame::kVadActive, AudioFrame::kVadPassive, AudioFrame::kVadUnknown};
   for (size_t i = 0; i < arraysize(activity); i++) {
     frame_->vad_activity_ = activity[i];
     EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
@@ -1232,18 +1202,16 @@ TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabledFloat) {
   // Test that ProcessStream copies input to output even with no processing.
   const size_t kSamples = 80;
   const int sample_rate = 8000;
-  const float src[kSamples] = {
-    -1.0f, 0.0f, 1.0f
-  };
+  const float src[kSamples] = {-1.0f, 0.0f, 1.0f};
   float dest[kSamples] = {};
 
   auto src_channels = &src[0];
   auto dest_channels = &dest[0];
 
   apm_.reset(AudioProcessingBuilder().Create());
-  EXPECT_NOERR(apm_->ProcessStream(
-      &src_channels, kSamples, sample_rate, LayoutFromChannels(1),
-      sample_rate, LayoutFromChannels(1), &dest_channels));
+  EXPECT_NOERR(apm_->ProcessStream(&src_channels, kSamples, sample_rate,
+                                   LayoutFromChannels(1), sample_rate,
+                                   LayoutFromChannels(1), &dest_channels));
 
   for (size_t i = 0; i < kSamples; ++i) {
     EXPECT_EQ(src[i], dest[i]);
@@ -1267,13 +1235,8 @@ TEST_F(ApmTest, IdenticalInputChannelsResultInIdenticalOutputChannels) {
   EnableAllComponents();
 
   for (size_t i = 0; i < arraysize(kProcessSampleRates); i++) {
-    Init(kProcessSampleRates[i],
-         kProcessSampleRates[i],
-         kProcessSampleRates[i],
-         2,
-         2,
-         2,
-         false);
+    Init(kProcessSampleRates[i], kProcessSampleRates[i], kProcessSampleRates[i],
+         2, 2, 2, false);
     int analog_level = 127;
     ASSERT_EQ(0, feof(far_file_));
     ASSERT_EQ(0, feof(near_file_));
@@ -1289,7 +1252,7 @@ TEST_F(ApmTest, IdenticalInputChannelsResultInIdenticalOutputChannels) {
 
       ASSERT_EQ(kNoErr, apm_->set_stream_delay_ms(0));
       ASSERT_EQ(kNoErr,
-          apm_->gain_control()->set_stream_analog_level(analog_level));
+                apm_->gain_control()->set_stream_analog_level(analog_level));
       ASSERT_EQ(kNoErr, apm_->ProcessStream(frame_));
       analog_level = apm_->gain_control()->stream_analog_level();
 
@@ -1393,13 +1356,9 @@ void ApmTest::ProcessDebugDump(const std::string& in_filename,
         output_sample_rate = msg.output_sample_rate();
       }
 
-      Init(msg.sample_rate(),
-           output_sample_rate,
-           reverse_sample_rate,
-           msg.num_input_channels(),
-           msg.num_output_channels(),
-           msg.num_reverse_channels(),
-           false);
+      Init(msg.sample_rate(), output_sample_rate, reverse_sample_rate,
+           msg.num_input_channels(), msg.num_output_channels(),
+           msg.num_reverse_channels(), false);
       if (first_init) {
         // AttachAecDump() writes an additional init message. Don't start
         // recording until after the first init to avoid the extra message.
@@ -1417,9 +1376,8 @@ void ApmTest::ProcessDebugDump(const std::string& in_filename,
         ASSERT_EQ(revframe_->num_channels_,
                   static_cast<size_t>(msg.channel_size()));
         for (int i = 0; i < msg.channel_size(); ++i) {
-           memcpy(revfloat_cb_->channels()[i],
-                  msg.channel(i).data(),
-                  msg.channel(i).size());
+          memcpy(revfloat_cb_->channels()[i], msg.channel(i).data(),
+                 msg.channel(i).size());
         }
       } else {
         memcpy(revframe_->mutable_data(), msg.data().data(), msg.data().size());
@@ -1447,9 +1405,8 @@ void ApmTest::ProcessDebugDump(const std::string& in_filename,
         ASSERT_EQ(frame_->num_channels_,
                   static_cast<size_t>(msg.input_channel_size()));
         for (int i = 0; i < msg.input_channel_size(); ++i) {
-           memcpy(float_cb_->channels()[i],
-                  msg.input_channel(i).data(),
-                  msg.input_channel(i).size());
+          memcpy(float_cb_->channels()[i], msg.input_channel(i).data(),
+                 msg.input_channel(i).size());
         }
       } else {
         memcpy(frame_->mutable_data(), msg.input_data().data(),
@@ -1656,13 +1613,10 @@ TEST_F(ApmTest, Process) {
 
     EnableAllComponents();
 
-    Init(test->sample_rate(),
-         test->sample_rate(),
-         test->sample_rate(),
+    Init(test->sample_rate(), test->sample_rate(), test->sample_rate(),
          static_cast<size_t>(test->num_input_channels()),
          static_cast<size_t>(test->num_output_channels()),
-         static_cast<size_t>(test->num_reverse_channels()),
-         true);
+         static_cast<size_t>(test->num_reverse_channels()), true);
 
     int frame_count = 0;
     int has_voice_count = 0;
@@ -1673,7 +1627,7 @@ TEST_F(ApmTest, Process) {
     float ns_speech_prob_average = 0.0f;
     float rms_dbfs_average = 0.0f;
 #if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
-  int stats_index = 0;
+    int stats_index = 0;
 #endif
 
     while (ReadFrame(far_file_, revframe_) && ReadFrame(near_file_, frame_)) {
@@ -1683,7 +1637,7 @@ TEST_F(ApmTest, Process) {
 
       EXPECT_EQ(apm_->kNoError, apm_->set_stream_delay_ms(0));
       EXPECT_EQ(apm_->kNoError,
-          apm_->gain_control()->set_stream_analog_level(analog_level));
+                apm_->gain_control()->set_stream_analog_level(analog_level));
 
       EXPECT_EQ(apm_->kNoError, apm_->ProcessStream(frame_));
 
@@ -1711,10 +1665,8 @@ TEST_F(ApmTest, Process) {
       rms_dbfs_average += *stats.output_rms_dbfs;
 
       size_t frame_size = frame_->samples_per_channel_ * frame_->num_channels_;
-      size_t write_count = fwrite(frame_->data(),
-                                  sizeof(int16_t),
-                                  frame_size,
-                                  out_file_);
+      size_t write_count =
+          fwrite(frame_->data(), sizeof(int16_t), frame_size, out_file_);
       ASSERT_EQ(frame_size, write_count);
 
       // Reset in case of downmixing.
@@ -1787,8 +1739,7 @@ TEST_F(ApmTest, Process) {
       const int kMaxOutputAverageNear = kIntNear;
 #endif
       EXPECT_NEAR(test->has_voice_count(),
-                  has_voice_count - kHasVoiceCountOffset,
-                  kHasVoiceCountNear);
+                  has_voice_count - kHasVoiceCountOffset, kHasVoiceCountNear);
       EXPECT_NEAR(test->is_saturated_count(), is_saturated_count, kIntNear);
 
       EXPECT_NEAR(test->analog_level_average(), analog_level_average, kIntNear);
@@ -1797,8 +1748,7 @@ TEST_F(ApmTest, Process) {
                   kMaxOutputAverageNear);
 #if defined(WEBRTC_AUDIOPROC_FLOAT_PROFILE)
       const double kFloatNear = 0.0005;
-      EXPECT_NEAR(test->ns_speech_probability_average(),
-                  ns_speech_prob_average,
+      EXPECT_NEAR(test->ns_speech_probability_average(), ns_speech_prob_average,
                   kFloatNear);
       EXPECT_NEAR(test->rms_dbfs_average(), rms_dbfs_average, kFloatNear);
 #endif
@@ -1832,9 +1782,9 @@ TEST_F(ApmTest, NoErrorsWithKeyboardChannel) {
     AudioProcessing::ChannelLayout out_layout;
   };
   ChannelFormat cf[] = {
-    {AudioProcessing::kMonoAndKeyboard, AudioProcessing::kMono},
-    {AudioProcessing::kStereoAndKeyboard, AudioProcessing::kMono},
-    {AudioProcessing::kStereoAndKeyboard, AudioProcessing::kStereo},
+      {AudioProcessing::kMonoAndKeyboard, AudioProcessing::kMono},
+      {AudioProcessing::kStereoAndKeyboard, AudioProcessing::kMono},
+      {AudioProcessing::kStereoAndKeyboard, AudioProcessing::kStereo},
   };
 
   std::unique_ptr<AudioProcessing> ap(AudioProcessingBuilder().Create());
@@ -1850,14 +1800,9 @@ TEST_F(ApmTest, NoErrorsWithKeyboardChannel) {
 
     // Run over a few chunks.
     for (int j = 0; j < 10; ++j) {
-      EXPECT_NOERR(ap->ProcessStream(
-          in_cb.channels(),
-          in_cb.num_frames(),
-          in_rate,
-          cf[i].in_layout,
-          out_rate,
-          cf[i].out_layout,
-          out_cb.channels()));
+      EXPECT_NOERR(ap->ProcessStream(in_cb.channels(), in_cb.num_frames(),
+                                     in_rate, cf[i].in_layout, out_rate,
+                                     cf[i].out_layout, out_cb.channels()));
     }
   }
 }
@@ -1978,20 +1923,20 @@ class AudioProcessingTest
     FILE* far_file =
         fopen(ResourceFilePath("far", reverse_input_rate).c_str(), "rb");
     FILE* near_file = fopen(ResourceFilePath("near", input_rate).c_str(), "rb");
-    FILE* out_file =
-        fopen(OutputFilePath(output_file_prefix, input_rate, output_rate,
-                             reverse_input_rate, reverse_output_rate,
-                             num_input_channels, num_output_channels,
-                             num_reverse_input_channels,
-                             num_reverse_output_channels, kForward).c_str(),
-              "wb");
-    FILE* rev_out_file =
-        fopen(OutputFilePath(output_file_prefix, input_rate, output_rate,
-                             reverse_input_rate, reverse_output_rate,
-                             num_input_channels, num_output_channels,
-                             num_reverse_input_channels,
-                             num_reverse_output_channels, kReverse).c_str(),
-              "wb");
+    FILE* out_file = fopen(
+        OutputFilePath(
+            output_file_prefix, input_rate, output_rate, reverse_input_rate,
+            reverse_output_rate, num_input_channels, num_output_channels,
+            num_reverse_input_channels, num_reverse_output_channels, kForward)
+            .c_str(),
+        "wb");
+    FILE* rev_out_file = fopen(
+        OutputFilePath(
+            output_file_prefix, input_rate, output_rate, reverse_input_rate,
+            reverse_output_rate, num_input_channels, num_output_channels,
+            num_reverse_input_channels, num_reverse_output_channels, kReverse)
+            .c_str(),
+        "wb");
     ASSERT_TRUE(far_file != NULL);
     ASSERT_TRUE(near_file != NULL);
     ASSERT_TRUE(out_file != NULL);
@@ -2024,22 +1969,17 @@ class AudioProcessingTest
       EXPECT_NOERR(ap->gain_control()->set_stream_analog_level(analog_level));
 
       EXPECT_NOERR(ap->ProcessStream(
-          fwd_cb.channels(),
-          fwd_cb.num_frames(),
-          input_rate,
-          LayoutFromChannels(num_input_channels),
-          output_rate,
-          LayoutFromChannels(num_output_channels),
-          out_cb.channels()));
+          fwd_cb.channels(), fwd_cb.num_frames(), input_rate,
+          LayoutFromChannels(num_input_channels), output_rate,
+          LayoutFromChannels(num_output_channels), out_cb.channels()));
 
       // Dump forward output to file.
       Interleave(out_cb.channels(), out_cb.num_frames(), out_cb.num_channels(),
                  float_data.get());
       size_t out_length = out_cb.num_channels() * out_cb.num_frames();
 
-      ASSERT_EQ(out_length,
-                fwrite(float_data.get(), sizeof(float_data[0]),
-                       out_length, out_file));
+      ASSERT_EQ(out_length, fwrite(float_data.get(), sizeof(float_data[0]),
+                                   out_length, out_file));
 
       // Dump reverse output to file.
       Interleave(rev_out_cb.channels(), rev_out_cb.num_frames(),
@@ -2047,9 +1987,8 @@ class AudioProcessingTest
       size_t rev_out_length =
           rev_out_cb.num_channels() * rev_out_cb.num_frames();
 
-      ASSERT_EQ(rev_out_length,
-                fwrite(float_data.get(), sizeof(float_data[0]), rev_out_length,
-                       rev_out_file));
+      ASSERT_EQ(rev_out_length, fwrite(float_data.get(), sizeof(float_data[0]),
+                                       rev_out_length, rev_out_file));
 
       analog_level = ap->gain_control()->stream_analog_level();
     }
@@ -2076,12 +2015,8 @@ TEST_P(AudioProcessingTest, Formats) {
     int num_reverse_output;
   };
   ChannelFormat cf[] = {
-      {1, 1, 1, 1},
-      {1, 1, 2, 1},
-      {2, 1, 1, 1},
-      {2, 1, 2, 1},
-      {2, 2, 1, 1},
-      {2, 2, 2, 2},
+      {1, 1, 1, 1}, {1, 1, 2, 1}, {2, 1, 1, 1},
+      {2, 1, 2, 1}, {2, 2, 1, 1}, {2, 2, 2, 2},
   };
 
   for (size_t i = 0; i < arraysize(cf); ++i) {
@@ -2122,15 +2057,17 @@ TEST_P(AudioProcessingTest, Formats) {
           OutputFilePath("out", input_rate_, output_rate_, reverse_input_rate_,
                          reverse_output_rate_, cf[i].num_input,
                          cf[i].num_output, cf[i].num_reverse_input,
-                         cf[i].num_reverse_output, file_direction).c_str(),
+                         cf[i].num_reverse_output, file_direction)
+              .c_str(),
           "rb");
       // The reference files always have matching input and output channels.
-      FILE* ref_file = fopen(
-          OutputFilePath("ref", ref_rate, ref_rate, ref_rate, ref_rate,
-                         cf[i].num_output, cf[i].num_output,
-                         cf[i].num_reverse_output, cf[i].num_reverse_output,
-                         file_direction).c_str(),
-          "rb");
+      FILE* ref_file =
+          fopen(OutputFilePath("ref", ref_rate, ref_rate, ref_rate, ref_rate,
+                               cf[i].num_output, cf[i].num_output,
+                               cf[i].num_reverse_output,
+                               cf[i].num_reverse_output, file_direction)
+                    .c_str(),
+                "rb");
       ASSERT_TRUE(out_file != NULL);
       ASSERT_TRUE(ref_file != NULL);
 

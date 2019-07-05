@@ -16,7 +16,6 @@
 
 #include "absl/types/optional.h"
 #include "rtc_base/constructor_magic.h"
-
 #include "rtc_base/ignore_wundef.h"
 
 #ifdef WEBRTC_NETWORK_TESTER_PROTO

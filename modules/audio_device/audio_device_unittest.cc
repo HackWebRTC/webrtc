@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/audio_device/include/audio_device.h"
+
 #include <algorithm>
 #include <cstring>
 #include <memory>
@@ -20,7 +22,6 @@
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "modules/audio_device/audio_device_impl.h"
-#include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_device/include/mock_audio_transport.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/critical_section.h"
@@ -43,9 +44,9 @@ using ::testing::_;
 using ::testing::AtLeast;
 using ::testing::Ge;
 using ::testing::Invoke;
+using ::testing::Mock;
 using ::testing::NiceMock;
 using ::testing::NotNull;
-using ::testing::Mock;
 
 namespace webrtc {
 namespace {

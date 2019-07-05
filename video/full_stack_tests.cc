@@ -290,9 +290,8 @@ TEST(FullStackTest, ForemanCifLink150kbpsWithoutPacketLoss) {
       30000, 500000, 2000000, false,
       "VP8", 1,      0,       0,
       false, false,  true,    ClipNameToClipPath("foreman_cif")};
-  foreman_cif.analyzer = {"foreman_cif_link_150kbps_net_delay_0_0_plr_0",
-                          0.0, 0.0,
-                          kFullStackTestDurationSecs};
+  foreman_cif.analyzer = {"foreman_cif_link_150kbps_net_delay_0_0_plr_0", 0.0,
+                          0.0, kFullStackTestDurationSecs};
   foreman_cif.config->link_capacity_kbps = 150;
   fixture->RunWithAnalyzer(foreman_cif);
 }
@@ -1243,18 +1242,17 @@ TEST(FullStackTest, MAYBE_SimulcastFullHdOveruse) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging simulcast;
   simulcast.call.send_side_bwe = true;
-  simulcast.video[0] = {true,    1920,    1080,  30,    800000,
-                        2500000, 2500000, false, "VP8", 3,
-                        2,       400000,  false, false, false, "Generator"};
+  simulcast.video[0] = {true,    1920,  1080,  30,         800000, 2500000,
+                        2500000, false, "VP8", 3,          2,      400000,
+                        false,   false, false, "Generator"};
   simulcast.analyzer = {"simulcast_HD_high", 0.0, 0.0,
                         kFullStackTestDurationSecs};
   simulcast.config->loss_percent = 0;
   simulcast.config->queue_delay_ms = 100;
   std::vector<VideoStream> streams = {
-    VideoQualityTest::DefaultVideoStream(simulcast, 0),
-    VideoQualityTest::DefaultVideoStream(simulcast, 0),
-    VideoQualityTest::DefaultVideoStream(simulcast, 0)
-  };
+      VideoQualityTest::DefaultVideoStream(simulcast, 0),
+      VideoQualityTest::DefaultVideoStream(simulcast, 0),
+      VideoQualityTest::DefaultVideoStream(simulcast, 0)};
   simulcast.ss[0] = {
       streams, 2, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
       true};
@@ -1550,10 +1548,9 @@ TEST_P(DualStreamsTest, Conference_Restricted) {
 
   // Screenshare Settings.
   dual_streams.screenshare[first_stream] = {true, false, 10};
-  dual_streams.video[first_stream] = {true,    1850,    1110,  5,     800000,
-                                      2500000, 2500000, false, "VP8", 3,
-                                      2,       400000,  false, false, false,
-                                      ""};
+  dual_streams.video[first_stream] = {true,    1850,  1110,  5, 800000, 2500000,
+                                      2500000, false, "VP8", 3, 2,      400000,
+                                      false,   false, false, ""};
   // Video settings.
   dual_streams.video[1 - first_stream] = {
       true,   1280,

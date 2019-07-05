@@ -8,11 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/utility/include/jvm_android.h"
+
 #include <android/log.h>
 
 #include <memory>
-
-#include "modules/utility/include/jvm_android.h"
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"

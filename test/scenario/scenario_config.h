@@ -11,6 +11,7 @@
 #define TEST_SCENARIO_SCENARIO_CONFIG_H_
 
 #include <stddef.h>
+
 #include <string>
 
 #include "absl/types/optional.h"

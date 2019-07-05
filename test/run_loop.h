@@ -16,7 +16,7 @@ namespace webrtc {
 namespace test {
 
 // Blocks until the user presses enter.
-void PressEnterToContinue(SingleThreadedTaskQueueForTesting &task_queue);
+void PressEnterToContinue(SingleThreadedTaskQueueForTesting& task_queue);
 
 }  // namespace test
 }  // namespace webrtc

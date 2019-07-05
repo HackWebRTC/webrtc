@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_CODING_CODECS_OPUS_AUDIO_DECODER_MULTI_CHANNEL_OPUS_IMPL_H_
 
 #include <stddef.h>
+
 #include <memory>
 #include <vector>
 

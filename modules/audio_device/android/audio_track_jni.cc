@@ -9,10 +9,10 @@
  */
 
 #include "modules/audio_device/android/audio_track_jni.h"
-#include "modules/audio_device/android/audio_manager.h"
 
 #include <utility>
 
+#include "modules/audio_device/android/audio_manager.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/format_macros.h"

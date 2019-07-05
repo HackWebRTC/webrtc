@@ -8,13 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "p2p/base/async_stun_tcp_socket.h"
+
 #include <stdint.h>
 #include <string.h>
+
 #include <list>
 #include <memory>
 #include <string>
 
-#include "p2p/base/async_stun_tcp_socket.h"
 #include "rtc_base/async_socket.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"

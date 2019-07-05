@@ -8,13 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/audio_device/audio_device_buffer.h"
+
 #include <string.h>
+
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 
 #include "common_audio/signal_processing/include/signal_processing_library.h"
-#include "modules/audio_device/audio_device_buffer.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"

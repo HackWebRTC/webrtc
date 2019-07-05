@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "media/base/fake_rtp.h"
+
 #include <stdint.h>
 #include <string.h>
 
 #include "absl/algorithm/container.h"
-#include "media/base/fake_rtp.h"
 #include "rtc_base/checks.h"
 #include "test/gtest.h"
 

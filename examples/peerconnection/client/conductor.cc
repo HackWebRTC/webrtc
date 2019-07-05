@@ -12,6 +12,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+
 #include <memory>
 #include <utility>
 #include <vector>
@@ -84,8 +85,8 @@ class CapturerTrackSource : public webrtc::VideoTrackSource {
       capturer = absl::WrapUnique(
           webrtc::test::VcmCapturer::Create(kWidth, kHeight, kFps, i));
       if (capturer) {
-        return new
-            rtc::RefCountedObject<CapturerTrackSource>(std::move(capturer));
+        return new rtc::RefCountedObject<CapturerTrackSource>(
+            std::move(capturer));
       }
     }
 

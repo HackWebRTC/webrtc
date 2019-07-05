@@ -12,6 +12,7 @@
 #define RTC_BASE_TASK_QUEUE_H_
 
 #include <stdint.h>
+
 #include <memory>
 #include <utility>
 

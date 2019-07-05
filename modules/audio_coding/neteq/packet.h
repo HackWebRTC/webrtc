@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_CODING_NETEQ_PACKET_H_
 
 #include <stdint.h>
+
 #include <list>
 #include <memory>
 

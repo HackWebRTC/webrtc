@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_base/signal_thread.h"
+
 #include <memory>
 
 #include "absl/memory/memory.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/null_socket_server.h"
-#include "rtc_base/signal_thread.h"
 #include "rtc_base/thread.h"
 #include "test/gtest.h"
 

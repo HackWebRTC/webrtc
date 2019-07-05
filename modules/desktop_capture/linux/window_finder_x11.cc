@@ -11,6 +11,7 @@
 #include "modules/desktop_capture/linux/window_finder_x11.h"
 
 #include <X11/X.h>
+
 #include <memory>
 
 #include "absl/memory/memory.h"

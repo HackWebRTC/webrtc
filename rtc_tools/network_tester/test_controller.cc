@@ -123,7 +123,9 @@ void TestController::OnReadPacket(rtc::AsyncPacketSocket* socket,
       remote_test_done_ = true;
       break;
     }
-    default: { RTC_NOTREACHED(); }
+    default: {
+      RTC_NOTREACHED();
+    }
   }
 }
 

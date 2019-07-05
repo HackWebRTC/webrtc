@@ -11,6 +11,7 @@
 #include "modules/desktop_capture/desktop_frame.h"
 
 #include <string.h>
+
 #include <utility>
 
 #include "absl/memory/memory.h"

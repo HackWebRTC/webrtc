@@ -8,15 +8,17 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/remote_bitrate_estimator/overuse_detector.h"
+
 #include <stdio.h>
 #include <string.h>
+
 #include <algorithm>
 #include <cstdlib>
 #include <memory>
 
 #include "api/transport/field_trial_based_config.h"
 #include "modules/remote_bitrate_estimator/inter_arrival.h"
-#include "modules/remote_bitrate_estimator/overuse_detector.h"
 #include "modules/remote_bitrate_estimator/overuse_estimator.h"
 #include "rtc_base/random.h"
 #include "test/field_trial.h"

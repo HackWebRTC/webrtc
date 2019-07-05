@@ -12,6 +12,7 @@
 #define API_VIDEO_VIDEO_STREAM_ENCODER_CREATE_H_
 
 #include <stdint.h>
+
 #include <memory>
 
 #include "api/task_queue/task_queue_factory.h"

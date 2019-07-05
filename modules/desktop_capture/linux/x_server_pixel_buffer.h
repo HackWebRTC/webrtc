@@ -13,11 +13,11 @@
 #ifndef MODULES_DESKTOP_CAPTURE_LINUX_X_SERVER_PIXEL_BUFFER_H_
 #define MODULES_DESKTOP_CAPTURE_LINUX_X_SERVER_PIXEL_BUFFER_H_
 
-#include <memory>
-#include <vector>
-
 #include <X11/Xutil.h>
 #include <X11/extensions/XShm.h>
+
+#include <memory>
+#include <vector>
 
 #include "modules/desktop_capture/desktop_geometry.h"
 #include "rtc_base/constructor_magic.h"

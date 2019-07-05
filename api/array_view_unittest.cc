@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/array_view.h"
+
 #include <algorithm>
 #include <array>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "api/array_view.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/gunit.h"

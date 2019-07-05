@@ -8,12 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "video/video_receive_stream.h"
+
 #include <algorithm>
 #include <utility>
 #include <vector>
-
-#include "test/gmock.h"
-#include "test/gtest.h"
 
 #include "absl/memory/memory.h"
 #include "api/task_queue/default_task_queue_factory.h"
@@ -30,9 +29,10 @@
 #include "system_wrappers/include/clock.h"
 #include "test/fake_decoder.h"
 #include "test/field_trial.h"
+#include "test/gmock.h"
+#include "test/gtest.h"
 #include "test/video_decoder_proxy_factory.h"
 #include "video/call_stats.h"
-#include "video/video_receive_stream.h"
 
 namespace webrtc {
 namespace {

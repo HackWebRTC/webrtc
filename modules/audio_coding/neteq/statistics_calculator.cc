@@ -12,6 +12,7 @@
 
 #include <assert.h>
 #include <string.h>  // memset
+
 #include <algorithm>
 
 #include "modules/audio_coding/neteq/delay_manager.h"

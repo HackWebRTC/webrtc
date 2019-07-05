@@ -12,6 +12,7 @@
 #define CALL_VIDEO_SEND_STREAM_H_
 
 #include <stdint.h>
+
 #include <map>
 #include <string>
 #include <vector>

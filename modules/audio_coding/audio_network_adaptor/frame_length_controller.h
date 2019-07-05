@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_CODING_AUDIO_NETWORK_ADAPTOR_FRAME_LENGTH_CONTROLLER_H_
 
 #include <stddef.h>
+
 #include <map>
 #include <set>
 

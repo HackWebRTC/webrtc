@@ -9,14 +9,15 @@
  */
 
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "modules/rtp_rtcp/source/rtp_packet.h"
 
 #include <ctype.h>
 #include <string.h>
+
 #include <type_traits>
 
 #include "absl/algorithm/container.h"
 #include "api/array_view.h"
+#include "modules/rtp_rtcp/source/rtp_packet.h"
 
 namespace webrtc {
 

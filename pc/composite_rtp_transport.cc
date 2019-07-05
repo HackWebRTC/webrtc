@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "pc/composite_rtp_transport.h"
+
 #include <string>
 #include <utility>
-
-#include "pc/composite_rtp_transport.h"
 
 #include "absl/memory/memory.h"
 #include "p2p/base/packet_transport_internal.h"

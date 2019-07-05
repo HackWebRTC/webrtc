@@ -10,6 +10,7 @@
  */
 
 #include "media/engine/encoder_simulcast_proxy.h"
+
 #include <string>
 
 #include "api/test/mock_video_encoder.h"

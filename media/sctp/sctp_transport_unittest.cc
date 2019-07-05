@@ -8,14 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "media/sctp/sctp_transport.h"
+
 #include <stdio.h>
 #include <string.h>
+
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "absl/algorithm/container.h"
-#include "media/sctp/sctp_transport.h"
 #include "p2p/base/fake_dtls_transport.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/gunit.h"

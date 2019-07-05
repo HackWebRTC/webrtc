@@ -12,6 +12,7 @@
 #include "common_video/h264/sps_vui_rewriter.h"
 
 #include <string.h>
+
 #include <cstdint>
 #include <vector>
 

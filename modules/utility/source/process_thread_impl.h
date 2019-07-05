@@ -12,6 +12,7 @@
 #define MODULES_UTILITY_SOURCE_PROCESS_THREAD_IMPL_H_
 
 #include <stdint.h>
+
 #include <list>
 #include <memory>
 #include <queue>

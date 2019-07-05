@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_CODING_ACM2_ACM_RECEIVE_TEST_H_
 
 #include <stddef.h>  // for size_t
+
 #include <memory>
 #include <string>
 

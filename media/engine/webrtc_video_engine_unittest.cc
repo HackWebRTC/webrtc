@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "media/engine/webrtc_video_engine.h"
+
 #include <map>
 #include <memory>
 #include <string>
@@ -48,7 +50,6 @@
 #include "media/engine/fake_webrtc_call.h"
 #include "media/engine/fake_webrtc_video_engine.h"
 #include "media/engine/simulcast.h"
-#include "media/engine/webrtc_video_engine.h"
 #include "media/engine/webrtc_voice_engine.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "rtc_base/arraysize.h"
@@ -540,9 +541,9 @@ TEST_F(WebRtcVideoEngineTest, UseFactoryForVp8WhenSupported) {
 // TODO(deadbeef): This test should be updated if/when we start
 // adding RTX codecs for unrecognized codec names.
 TEST_F(WebRtcVideoEngineTest, RtxCodecAddedForH264Codec) {
-  using webrtc::H264::ProfileLevelIdToString;
-  using webrtc::H264::ProfileLevelId;
   using webrtc::H264::kLevel1;
+  using webrtc::H264::ProfileLevelId;
+  using webrtc::H264::ProfileLevelIdToString;
   webrtc::SdpVideoFormat h264_constrained_baseline("H264");
   h264_constrained_baseline.parameters[kH264FmtpProfileLevelId] =
       *ProfileLevelIdToString(
@@ -1898,10 +1899,10 @@ TEST_F(WebRtcVideoChannelBaseTest, SimulateConference) {
 
 // Tests that we can add and remove capturers and frames are sent out properly
 TEST_F(WebRtcVideoChannelBaseTest, DISABLED_AddRemoveCapturer) {
-  using cricket::VideoCodec;
-  using cricket::VideoOptions;
-  using cricket::VideoFormat;
   using cricket::FOURCC_I420;
+  using cricket::VideoCodec;
+  using cricket::VideoFormat;
+  using cricket::VideoOptions;
 
   VideoCodec codec = DefaultCodec();
   const int time_between_send_ms = VideoFormat::FpsToInterval(kFramerate);

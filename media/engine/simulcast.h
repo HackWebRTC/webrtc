@@ -12,6 +12,7 @@
 #define MEDIA_ENGINE_SIMULCAST_H_
 
 #include <stddef.h>
+
 #include <vector>
 
 #include "api/video_codecs/video_encoder_config.h"

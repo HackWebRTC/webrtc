@@ -12,6 +12,7 @@
 #define MODULES_DESKTOP_CAPTURE_DESKTOP_REGION_H_
 
 #include <stdint.h>
+
 #include <map>
 #include <vector>
 

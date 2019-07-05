@@ -9,6 +9,7 @@
  */
 
 #include "video/encoder_overshoot_detector.h"
+
 #include "api/units/data_rate.h"
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/time_utils.h"

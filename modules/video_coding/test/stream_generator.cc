@@ -11,6 +11,7 @@
 #include "modules/video_coding/test/stream_generator.h"
 
 #include <string.h>
+
 #include <list>
 
 #include "modules/include/module_common_types.h"

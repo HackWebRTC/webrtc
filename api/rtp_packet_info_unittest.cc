@@ -9,7 +9,6 @@
  */
 
 #include "api/rtp_packet_infos.h"
-
 #include "test/gmock.h"
 #include "test/gtest.h"
 

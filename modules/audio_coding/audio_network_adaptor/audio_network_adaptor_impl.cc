@@ -11,6 +11,7 @@
 #include "modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
 
 #include <stdint.h>
+
 #include <utility>
 #include <vector>
 

@@ -35,10 +35,10 @@ namespace webrtc {
 
 using cricket::MediaContentDescription;
 using RTCConfiguration = PeerConnectionInterface::RTCConfiguration;
-using ::testing::Values;
 using ::testing::Combine;
 using ::testing::ElementsAre;
 using ::testing::UnorderedElementsAre;
+using ::testing::Values;
 
 class PeerConnectionFactoryForJsepTest : public PeerConnectionFactory {
  public:

@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/video_capture/video_capture.h"
+
 #include <stdio.h>
 
 #include <map>
@@ -20,7 +22,6 @@
 #include "api/video/video_frame.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/utility/include/process_thread.h"
-#include "modules/video_capture/video_capture.h"
 #include "modules/video_capture/video_capture_factory.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/time_utils.h"

@@ -11,6 +11,7 @@
 // Unit tests for DecisionLogic class and derived classes.
 
 #include "modules/audio_coding/neteq/decision_logic.h"
+
 #include "modules/audio_coding/neteq/buffer_level_filter.h"
 #include "modules/audio_coding/neteq/decoder_database.h"
 #include "modules/audio_coding/neteq/delay_manager.h"

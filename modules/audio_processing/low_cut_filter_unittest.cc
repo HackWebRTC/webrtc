@@ -7,11 +7,12 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "modules/audio_processing/low_cut_filter.h"
+
 #include <vector>
 
 #include "api/array_view.h"
 #include "modules/audio_processing/audio_buffer.h"
-#include "modules/audio_processing/low_cut_filter.h"
 #include "modules/audio_processing/test/audio_buffer_tools.h"
 #include "modules/audio_processing/test/bitexactness_tools.h"
 #include "test/gtest.h"

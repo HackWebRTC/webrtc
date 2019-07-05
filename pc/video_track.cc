@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "pc/video_track.h"
+
 #include <string>
 #include <vector>
 
 #include "api/notifier.h"
-#include "pc/video_track.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
 #include "rtc_base/ref_counted_object.h"

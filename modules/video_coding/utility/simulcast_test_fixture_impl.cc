@@ -270,7 +270,8 @@ SimulcastTestFixtureImpl::SimulcastTestFixtureImpl(
   encoder_ = encoder_factory->CreateVideoEncoder(video_format);
   decoder_ = decoder_factory->CreateVideoDecoder(video_format);
   SetUpCodec((codec_type_ == kVideoCodecVP8 || codec_type_ == kVideoCodecH264)
-      ? kDefaultTemporalLayerProfile : kNoTemporalLayerProfile);
+                 ? kDefaultTemporalLayerProfile
+                 : kNoTemporalLayerProfile);
 }
 
 SimulcastTestFixtureImpl::~SimulcastTestFixtureImpl() {

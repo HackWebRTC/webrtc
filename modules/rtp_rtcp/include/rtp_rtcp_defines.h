@@ -12,6 +12,7 @@
 #define MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_DEFINES_H_
 
 #include <stddef.h>
+
 #include <list>
 #include <vector>
 
@@ -445,7 +446,7 @@ struct StreamDataCounters {
            fec.payload_bytes;
   }
 
-  int64_t first_packet_time_ms;    // Time when first packet is sent/received.
+  int64_t first_packet_time_ms;  // Time when first packet is sent/received.
   // The timestamp at which the last packet was received, i.e. the time of the
   // local clock when it was received - not the RTP timestamp of that packet.
   // https://w3c.github.io/webrtc-stats/#dom-rtcinboundrtpstreamstats-lastpacketreceivedtimestamp

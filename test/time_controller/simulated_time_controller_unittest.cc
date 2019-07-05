@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "test/time_controller/simulated_time_controller.h"
+
 #include <atomic>
 #include <memory>
 
@@ -16,7 +18,6 @@
 #include "rtc_base/task_utils/repeating_task.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "test/time_controller/simulated_time_controller.h"
 
 // NOTE: Since these tests rely on real time behavior, they will be flaky
 // if run on heavily loaded systems.

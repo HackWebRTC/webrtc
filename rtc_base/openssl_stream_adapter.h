@@ -12,9 +12,9 @@
 #define RTC_BASE_OPENSSL_STREAM_ADAPTER_H_
 
 #include <openssl/ossl_typ.h>
-
 #include <stddef.h>
 #include <stdint.h>
+
 #include <memory>
 #include <string>
 #include <vector>

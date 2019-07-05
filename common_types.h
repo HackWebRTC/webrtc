@@ -12,6 +12,7 @@
 #define COMMON_TYPES_H_
 
 #include <stddef.h>  // For size_t
+
 #include <cstdint>
 
 namespace webrtc {

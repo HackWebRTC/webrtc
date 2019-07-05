@@ -11,6 +11,7 @@
 #include "test/configurable_frame_size_encoder.h"
 
 #include <string.h>
+
 #include <cstdint>
 #include <type_traits>
 #include <utility>

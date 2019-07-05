@@ -11,6 +11,7 @@
 #include "test/vcm_capturer.h"
 
 #include <stdint.h>
+
 #include <memory>
 
 #include "modules/video_capture/video_capture_factory.h"

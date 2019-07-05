@@ -19,6 +19,7 @@
 #include <unistd.h>
 // v4l includes
 #include <linux/videodev2.h>
+
 #include <vector>
 
 #include "modules/video_capture/video_capture.h"

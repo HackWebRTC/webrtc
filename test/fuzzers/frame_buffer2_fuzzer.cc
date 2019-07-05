@@ -9,7 +9,6 @@
  */
 
 #include "modules/video_coding/frame_buffer2.h"
-
 #include "modules/video_coding/timing.h"
 #include "system_wrappers/include/clock.h"
 

@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/pacing/packet_router.h"
+
 #include <cstddef>
 #include <cstdint>
 #include <utility>
 
 #include "absl/memory/memory.h"
 #include "api/units/time_delta.h"
-#include "modules/pacing/packet_router.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"

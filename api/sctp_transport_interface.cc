@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <utility>
-
 #include "api/sctp_transport_interface.h"
+
+#include <utility>
 
 namespace webrtc {
 

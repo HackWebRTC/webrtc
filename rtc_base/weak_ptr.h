@@ -12,7 +12,6 @@
 #define RTC_BASE_WEAK_PTR_H_
 
 #include <memory>
-
 #include <utility>
 
 #include "api/scoped_refptr.h"

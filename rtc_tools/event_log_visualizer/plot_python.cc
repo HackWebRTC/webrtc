@@ -11,6 +11,7 @@
 #include "rtc_tools/event_log_visualizer/plot_python.h"
 
 #include <stdio.h>
+
 #include <memory>
 #include <string>
 #include <vector>

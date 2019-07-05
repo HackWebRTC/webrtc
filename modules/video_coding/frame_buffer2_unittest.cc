@@ -135,9 +135,7 @@ class TestFrameBuffer2 : public ::testing::Test {
       : trial_("WebRTC-AddRttToPlayoutDelay/Enabled/"),
         clock_(0),
         timing_(&clock_),
-        buffer_(new FrameBuffer(&clock_,
-                                &timing_,
-                                &stats_callback_)),
+        buffer_(new FrameBuffer(&clock_, &timing_, &stats_callback_)),
         rand_(0x34678213),
         tear_down_(false),
         extract_thread_(&ExtractLoop, this, "Extract Thread") {}

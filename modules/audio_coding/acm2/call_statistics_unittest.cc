@@ -9,6 +9,7 @@
  */
 
 #include "modules/audio_coding/acm2/call_statistics.h"
+
 #include "test/gtest.h"
 
 namespace webrtc {

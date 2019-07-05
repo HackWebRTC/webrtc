@@ -12,6 +12,7 @@
 #define RTC_TOOLS_FRAME_ANALYZER_VIDEO_QUALITY_ANALYSIS_H_
 
 #include <stdio.h>
+
 #include <string>
 #include <vector>
 

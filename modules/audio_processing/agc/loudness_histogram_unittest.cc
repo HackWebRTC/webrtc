@@ -13,6 +13,7 @@
 #include "modules/audio_processing/agc/loudness_histogram.h"
 
 #include <stdio.h>
+
 #include <algorithm>
 #include <cmath>
 #include <memory>

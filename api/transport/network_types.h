@@ -11,6 +11,7 @@
 #ifndef API_TRANSPORT_NETWORK_TYPES_H_
 #define API_TRANSPORT_NETWORK_TYPES_H_
 #include <stdint.h>
+
 #include <vector>
 
 #include "absl/types/optional.h"

@@ -12,6 +12,7 @@
 #define API_VIDEO_I420_BUFFER_H_
 
 #include <stdint.h>
+
 #include <memory>
 
 #include "api/scoped_refptr.h"

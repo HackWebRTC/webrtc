@@ -14,8 +14,7 @@
 
 namespace webrtc {
 
-VideoTrackSource::VideoTrackSource(
-    bool remote)
+VideoTrackSource::VideoTrackSource(bool remote)
     : state_(kInitializing), remote_(remote) {
   worker_thread_checker_.Detach();
 }

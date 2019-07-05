@@ -12,6 +12,7 @@
 #define VIDEO_VIDEO_QUALITY_OBSERVER_H_
 
 #include <stdint.h>
+
 #include <set>
 #include <vector>
 

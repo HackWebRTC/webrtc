@@ -13,6 +13,7 @@
 
 #include <assert.h>
 #include <stdio.h>
+
 #include <string>
 
 #include "modules/audio_coding/neteq/tools/audio_sink.h"

@@ -12,9 +12,8 @@
 #define MODULES_DESKTOP_CAPTURE_LINUX_SHARED_X_DISPLAY_H_
 
 #include <map>
-#include <vector>
-
 #include <string>
+#include <vector>
 
 #include "api/ref_counted_base.h"
 #include "api/scoped_refptr.h"

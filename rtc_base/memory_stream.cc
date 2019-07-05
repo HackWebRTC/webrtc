@@ -8,12 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_base/memory_stream.h"
+
 #include <errno.h>
 #include <string.h>
+
 #include <algorithm>
 
 #include "rtc_base/checks.h"
-#include "rtc_base/memory_stream.h"
 
 namespace rtc {
 

@@ -12,6 +12,7 @@
 #define API_AUDIO_OPTIONS_H_
 
 #include <stdint.h>
+
 #include <string>
 
 #include "absl/types/optional.h"

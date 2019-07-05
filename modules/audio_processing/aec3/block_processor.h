@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_PROCESSING_AEC3_BLOCK_PROCESSOR_H_
 
 #include <stddef.h>
+
 #include <memory>
 #include <vector>
 

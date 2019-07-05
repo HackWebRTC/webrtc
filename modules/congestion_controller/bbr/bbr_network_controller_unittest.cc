@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/congestion_controller/bbr/bbr_network_controller.h"
+
 #include <algorithm>
 #include <memory>
 
 #include "modules/congestion_controller/bbr/bbr_factory.h"
-#include "modules/congestion_controller/bbr/bbr_network_controller.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 #include "test/scenario/scenario.h"

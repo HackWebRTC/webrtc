@@ -11,14 +11,13 @@
 #ifndef MODULES_RTP_RTCP_SOURCE_RECEIVE_STATISTICS_IMPL_H_
 #define MODULES_RTP_RTCP_SOURCE_RECEIVE_STATISTICS_IMPL_H_
 
-#include "modules/rtp_rtcp/include/receive_statistics.h"
-
 #include <algorithm>
 #include <map>
 #include <vector>
 
 #include "absl/types/optional.h"
 #include "modules/include/module_common_types_public.h"
+#include "modules/rtp_rtcp/include/receive_statistics.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/rate_statistics.h"
 #include "rtc_base/thread_annotations.h"

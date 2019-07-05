@@ -11,6 +11,7 @@
 #include "modules/audio_coding/include/audio_coding_module.h"
 
 #include <assert.h>
+
 #include <algorithm>
 #include <cstdint>
 
@@ -654,7 +655,7 @@ void AudioCodingModuleImpl::SetReceiveCodecs(
 }
 
 absl::optional<std::pair<int, SdpAudioFormat>>
-    AudioCodingModuleImpl::ReceiveCodec() const {
+AudioCodingModuleImpl::ReceiveCodec() const {
   rtc::CritScope lock(&acm_crit_sect_);
   return receiver_.LastDecoder();
 }

@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 #include "api/units/frequency.h"
+
 #include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {

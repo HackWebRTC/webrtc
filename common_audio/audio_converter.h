@@ -12,6 +12,7 @@
 #define COMMON_AUDIO_AUDIO_CONVERTER_H_
 
 #include <stddef.h>
+
 #include <memory>
 
 #include "rtc_base/constructor_magic.h"

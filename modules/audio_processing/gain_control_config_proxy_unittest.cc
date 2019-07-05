@@ -9,6 +9,7 @@
  */
 
 #include "modules/audio_processing/gain_control_config_proxy.h"
+
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
 #include "rtc_base/critical_section.h"

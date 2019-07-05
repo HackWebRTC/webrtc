@@ -61,8 +61,8 @@ TestRedFec::~TestRedFec() {
 }
 
 void TestRedFec::Perform() {
-  const std::string file_name = webrtc::test::ResourcePath(
-      "audio_coding/testfile32kHz", "pcm");
+  const std::string file_name =
+      webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm");
   _inFileA.Open(file_name, 32000, "rb");
 
   ASSERT_EQ(0, _acmA->InitializeReceiver());
@@ -183,9 +183,8 @@ void TestRedFec::RegisterSendCodec(
       config.payload_type = cn_payload_type;
       config.vad_mode = vad_mode.value();
       encoder = CreateComfortNoiseEncoder(std::move(config));
-      receive_codecs.emplace(
-          std::make_pair(cn_payload_type,
-                         SdpAudioFormat("CN", codec_format.clockrate_hz, 1)));
+      receive_codecs.emplace(std::make_pair(
+          cn_payload_type, SdpAudioFormat("CN", codec_format.clockrate_hz, 1)));
     }
     if (use_red) {
       AudioEncoderCopyRed::Config config;

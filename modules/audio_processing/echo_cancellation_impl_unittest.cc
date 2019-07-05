@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/audio_processing/echo_cancellation_impl.h"
+
 #include <memory>
 
 #include "modules/audio_processing/aec/aec_core.h"
-#include "modules/audio_processing/echo_cancellation_impl.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/critical_section.h"
 #include "test/gtest.h"

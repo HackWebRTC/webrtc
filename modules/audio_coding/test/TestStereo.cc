@@ -104,8 +104,7 @@ TestStereo::TestStereo()
       test_cntr_(0),
       pack_size_samp_(0),
       pack_size_bytes_(0),
-      counter_(0) {
-}
+      counter_(0) {}
 
 TestStereo::~TestStereo() {
   if (channel_a2b_ != NULL) {

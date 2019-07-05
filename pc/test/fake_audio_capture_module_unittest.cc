@@ -11,6 +11,7 @@
 #include "pc/test/fake_audio_capture_module.h"
 
 #include <string.h>
+
 #include <algorithm>
 
 #include "api/scoped_refptr.h"

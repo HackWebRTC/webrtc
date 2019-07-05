@@ -71,7 +71,8 @@ std::string RTCMediaStreamTrackStatsIDFromDirectionAndAttachment(
 }
 
 std::string RTCTransportStatsIDFromTransportChannel(
-    const std::string& transport_name, int channel_component) {
+    const std::string& transport_name,
+    int channel_component) {
   char buf[1024];
   rtc::SimpleStringBuilder sb(buf);
   sb << "RTCTransport_" << transport_name << "_" << channel_component;
@@ -265,17 +266,16 @@ void SetInboundRTPStreamStatsFromVoiceReceiverInfo(
     const std::string& mid,
     const cricket::VoiceReceiverInfo& voice_receiver_info,
     RTCInboundRTPStreamStats* inbound_audio) {
-  SetInboundRTPStreamStatsFromMediaReceiverInfo(
-      voice_receiver_info, inbound_audio);
+  SetInboundRTPStreamStatsFromMediaReceiverInfo(voice_receiver_info,
+                                                inbound_audio);
   inbound_audio->media_type = "audio";
   inbound_audio->kind = "audio";
   if (voice_receiver_info.codec_payload_type) {
     inbound_audio->codec_id = RTCCodecStatsIDFromMidDirectionAndPayload(
         mid, true, *voice_receiver_info.codec_payload_type);
   }
-  inbound_audio->jitter =
-      static_cast<double>(voice_receiver_info.jitter_ms) /
-          rtc::kNumMillisecsPerSec;
+  inbound_audio->jitter = static_cast<double>(voice_receiver_info.jitter_ms) /
+                          rtc::kNumMillisecsPerSec;
   // |fir_count|, |pli_count| and |sli_count| are only valid for video and are
   // purposefully left undefined for audio.
   if (voice_receiver_info.last_packet_received_timestamp_ms) {
@@ -294,8 +294,8 @@ void SetInboundRTPStreamStatsFromVideoReceiverInfo(
     const std::string& mid,
     const cricket::VideoReceiverInfo& video_receiver_info,
     RTCInboundRTPStreamStats* inbound_video) {
-  SetInboundRTPStreamStatsFromMediaReceiverInfo(
-      video_receiver_info, inbound_video);
+  SetInboundRTPStreamStatsFromMediaReceiverInfo(video_receiver_info,
+                                                inbound_video);
   inbound_video->media_type = "video";
   inbound_video->kind = "video";
   if (video_receiver_info.codec_payload_type) {
@@ -349,8 +349,8 @@ void SetOutboundRTPStreamStatsFromVoiceSenderInfo(
     const std::string& mid,
     const cricket::VoiceSenderInfo& voice_sender_info,
     RTCOutboundRTPStreamStats* outbound_audio) {
-  SetOutboundRTPStreamStatsFromMediaSenderInfo(
-      voice_sender_info, outbound_audio);
+  SetOutboundRTPStreamStatsFromMediaSenderInfo(voice_sender_info,
+                                               outbound_audio);
   outbound_audio->media_type = "audio";
   outbound_audio->kind = "audio";
   if (voice_sender_info.codec_payload_type) {
@@ -365,8 +365,8 @@ void SetOutboundRTPStreamStatsFromVideoSenderInfo(
     const std::string& mid,
     const cricket::VideoSenderInfo& video_sender_info,
     RTCOutboundRTPStreamStats* outbound_video) {
-  SetOutboundRTPStreamStatsFromMediaSenderInfo(
-      video_sender_info, outbound_video);
+  SetOutboundRTPStreamStatsFromMediaSenderInfo(video_sender_info,
+                                               outbound_video);
   outbound_video->media_type = "video";
   outbound_video->kind = "video";
   if (video_sender_info.codec_payload_type) {
@@ -466,7 +466,8 @@ ProduceRemoteInboundRtpStreamStatsFromReportBlockData(
 }
 
 void ProduceCertificateStatsFromSSLCertificateStats(
-    int64_t timestamp_us, const rtc::SSLCertificateStats& certificate_stats,
+    int64_t timestamp_us,
+    const rtc::SSLCertificateStats& certificate_stats,
     RTCStatsReport* report) {
   RTCCertificateStats* prev_certificate_stats = nullptr;
   for (const rtc::SSLCertificateStats* s = &certificate_stats; s;
@@ -480,8 +481,8 @@ void ProduceCertificateStatsFromSSLCertificateStats(
       RTC_DCHECK_EQ(s, &certificate_stats);
       break;
     }
-    RTCCertificateStats* certificate_stats = new RTCCertificateStats(
-        certificate_stats_id, timestamp_us);
+    RTCCertificateStats* certificate_stats =
+        new RTCCertificateStats(certificate_stats_id, timestamp_us);
     certificate_stats->fingerprint = s->fingerprint;
     certificate_stats->fingerprint_algorithm = s->fingerprint_algorithm;
     certificate_stats->base64_certificate = s->base64_certificate;
@@ -492,9 +493,11 @@ void ProduceCertificateStatsFromSSLCertificateStats(
   }
 }
 
-const std::string& ProduceIceCandidateStats(
-    int64_t timestamp_us, const cricket::Candidate& candidate, bool is_local,
-    const std::string& transport_id, RTCStatsReport* report) {
+const std::string& ProduceIceCandidateStats(int64_t timestamp_us,
+                                            const cricket::Candidate& candidate,
+                                            bool is_local,
+                                            const std::string& transport_id,
+                                            RTCStatsReport* report) {
   const std::string& id = "RTCIceCandidate_" + candidate.id();
   const RTCStats* stats = report->Get(id);
   if (!stats) {
@@ -521,8 +524,8 @@ const std::string& ProduceIceCandidateStats(
     candidate_stats->ip = candidate.address().ipaddr().ToString();
     candidate_stats->port = static_cast<int32_t>(candidate.address().port());
     candidate_stats->protocol = candidate.protocol();
-    candidate_stats->candidate_type = CandidateTypeToRTCIceCandidateType(
-        candidate.type());
+    candidate_stats->candidate_type =
+        CandidateTypeToRTCIceCandidateType(candidate.type());
     candidate_stats->priority = static_cast<int32_t>(candidate.priority());
 
     stats = candidate_stats.get();
@@ -580,8 +583,8 @@ ProduceMediaStreamTrackStatsFromVoiceReceiverInfo(
   audio_track_stats->remote_source = true;
   audio_track_stats->detached = false;
   if (voice_receiver_info.audio_level >= 0) {
-    audio_track_stats->audio_level = DoubleAudioLevelFromIntAudioLevel(
-        voice_receiver_info.audio_level);
+    audio_track_stats->audio_level =
+        DoubleAudioLevelFromIntAudioLevel(voice_receiver_info.audio_level);
   }
   audio_track_stats->jitter_buffer_delay =
       voice_receiver_info.jitter_buffer_delay_seconds;
@@ -636,10 +639,10 @@ ProduceMediaStreamTrackStatsFromVideoSenderInfo(
                                                  attachment_id);
   video_track_stats->remote_source = false;
   video_track_stats->detached = false;
-  video_track_stats->frame_width = static_cast<uint32_t>(
-      video_sender_info.send_frame_width);
-  video_track_stats->frame_height = static_cast<uint32_t>(
-      video_sender_info.send_frame_height);
+  video_track_stats->frame_width =
+      static_cast<uint32_t>(video_sender_info.send_frame_width);
+  video_track_stats->frame_height =
+      static_cast<uint32_t>(video_sender_info.send_frame_height);
   // TODO(hbos): Will reduce this by frames dropped due to congestion control
   // when available. https://crbug.com/659137
   video_track_stats->frames_sent = video_sender_info.frames_encoded;
@@ -665,10 +668,10 @@ ProduceMediaStreamTrackStatsFromVideoReceiverInfo(
   video_track_stats->detached = false;
   if (video_receiver_info.frame_width > 0 &&
       video_receiver_info.frame_height > 0) {
-    video_track_stats->frame_width = static_cast<uint32_t>(
-        video_receiver_info.frame_width);
-    video_track_stats->frame_height = static_cast<uint32_t>(
-        video_receiver_info.frame_height);
+    video_track_stats->frame_width =
+        static_cast<uint32_t>(video_receiver_info.frame_width);
+    video_track_stats->frame_height =
+        static_cast<uint32_t>(video_receiver_info.frame_height);
   }
   video_track_stats->jitter_buffer_delay =
       video_receiver_info.jitter_buffer_delay_seconds;
@@ -682,8 +685,8 @@ ProduceMediaStreamTrackStatsFromVideoReceiverInfo(
   video_track_stats->frames_decoded = video_receiver_info.frames_decoded;
   RTC_DCHECK_GE(video_receiver_info.frames_received,
                 video_receiver_info.frames_rendered);
-  video_track_stats->frames_dropped = video_receiver_info.frames_received -
-                                      video_receiver_info.frames_rendered;
+  video_track_stats->frames_dropped =
+      video_receiver_info.frames_received - video_receiver_info.frames_rendered;
   video_track_stats->freeze_count = video_receiver_info.freeze_count;
   video_track_stats->pause_count = video_receiver_info.pause_count;
   video_track_stats->total_freezes_duration =
@@ -1214,7 +1217,8 @@ void RTCStatsCollector::ProduceCodecStats_n(
 }
 
 void RTCStatsCollector::ProduceDataChannelStats_s(
-    int64_t timestamp_us, RTCStatsReport* report) const {
+    int64_t timestamp_us,
+    RTCStatsReport* report) const {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   for (const rtc::scoped_refptr<DataChannel>& data_channel :
        pc_->sctp_data_channels()) {
@@ -1457,10 +1461,11 @@ void RTCStatsCollector::ProduceMediaSourceStats_s(
 }
 
 void RTCStatsCollector::ProducePeerConnectionStats_s(
-    int64_t timestamp_us, RTCStatsReport* report) const {
+    int64_t timestamp_us,
+    RTCStatsReport* report) const {
   RTC_DCHECK(signaling_thread_->IsCurrent());
   std::unique_ptr<RTCPeerConnectionStats> stats(
-    new RTCPeerConnectionStats("RTCPeerConnection", timestamp_us));
+      new RTCPeerConnectionStats("RTCPeerConnection", timestamp_us));
   stats->data_channels_opened = internal_record_.data_channels_opened;
   stats->data_channels_closed = internal_record_.data_channels_closed;
   report->AddStats(std::move(stats));
@@ -1645,8 +1650,7 @@ void RTCStatsCollector::ProduceTransportStats_n(
     std::string rtcp_transport_stats_id;
     for (const cricket::TransportChannelStats& channel_stats :
          transport_stats.channel_stats) {
-      if (channel_stats.component ==
-          cricket::ICE_CANDIDATE_COMPONENT_RTCP) {
+      if (channel_stats.component == cricket::ICE_CANDIDATE_COMPONENT_RTCP) {
         rtcp_transport_stats_id = RTCTransportStatsIDFromTransportChannel(
             transport_name, channel_stats.component);
         break;
@@ -1678,8 +1682,8 @@ void RTCStatsCollector::ProduceTransportStats_n(
                                 timestamp_us));
       transport_stats->bytes_sent = 0;
       transport_stats->bytes_received = 0;
-      transport_stats->dtls_state = DtlsTransportStateToRTCDtlsTransportState(
-          channel_stats.dtls_state);
+      transport_stats->dtls_state =
+          DtlsTransportStateToRTCDtlsTransportState(channel_stats.dtls_state);
       for (const cricket::ConnectionInfo& info :
            channel_stats.connection_infos) {
         *transport_stats->bytes_sent += info.sent_total_bytes;
@@ -1855,8 +1859,9 @@ void RTCStatsCollector::OnDataChannelCreated(DataChannel* channel) {
 
 void RTCStatsCollector::OnDataChannelOpened(DataChannel* channel) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
-  bool result = internal_record_.opened_data_channels.insert(
-      reinterpret_cast<uintptr_t>(channel)).second;
+  bool result = internal_record_.opened_data_channels
+                    .insert(reinterpret_cast<uintptr_t>(channel))
+                    .second;
   ++internal_record_.data_channels_opened;
   RTC_DCHECK(result);
 }

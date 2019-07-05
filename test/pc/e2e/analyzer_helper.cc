@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <utility>
-
 #include "test/pc/e2e/analyzer_helper.h"
+
+#include <utility>
 
 namespace webrtc {
 namespace webrtc_pc_e2e {

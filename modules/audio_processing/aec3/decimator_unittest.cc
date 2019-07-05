@@ -11,6 +11,7 @@
 #include "modules/audio_processing/aec3/decimator.h"
 
 #include <math.h>
+
 #include <algorithm>
 #include <array>
 #include <cmath>

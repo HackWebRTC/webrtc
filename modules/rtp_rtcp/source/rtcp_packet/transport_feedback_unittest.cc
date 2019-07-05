@@ -22,8 +22,8 @@
 namespace webrtc {
 namespace {
 
-using ::testing::ElementsAreArray;
 using rtcp::TransportFeedback;
+using ::testing::ElementsAreArray;
 
 static const int kHeaderSize = 20;
 static const int kStatusChunkSize = 2;

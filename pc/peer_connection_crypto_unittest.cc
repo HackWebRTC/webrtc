@@ -30,8 +30,8 @@ namespace webrtc {
 
 using RTCConfiguration = PeerConnectionInterface::RTCConfiguration;
 using RTCOfferAnswerOptions = PeerConnectionInterface::RTCOfferAnswerOptions;
-using ::testing::Values;
 using ::testing::Combine;
+using ::testing::Values;
 
 constexpr int kGenerateCertTimeout = 1000;
 

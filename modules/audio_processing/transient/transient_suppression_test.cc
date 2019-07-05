@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/transient/transient_suppressor.h"
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,6 +17,7 @@
 
 #include "common_audio/include/audio_util.h"
 #include "modules/audio_processing/agc/agc.h"
+#include "modules/audio_processing/transient/transient_suppressor.h"
 #include "rtc_base/flags.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"

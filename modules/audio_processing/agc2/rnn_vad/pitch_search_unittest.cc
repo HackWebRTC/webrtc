@@ -9,12 +9,12 @@
  */
 
 #include "modules/audio_processing/agc2/rnn_vad/pitch_search.h"
-#include "modules/audio_processing/agc2/rnn_vad/pitch_info.h"
-#include "modules/audio_processing/agc2/rnn_vad/pitch_search_internal.h"
 
 #include <algorithm>
 #include <vector>
 
+#include "modules/audio_processing/agc2/rnn_vad/pitch_info.h"
+#include "modules/audio_processing/agc2/rnn_vad/pitch_search_internal.h"
 #include "modules/audio_processing/agc2/rnn_vad/test_utils.h"
 // TODO(bugs.webrtc.org/8948): Add when the issue is fixed.
 // #include "test/fpe_observer.h"

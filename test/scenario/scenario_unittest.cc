@@ -7,11 +7,12 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "test/scenario/scenario.h"
+
 #include <atomic>
 
 #include "test/gtest.h"
 #include "test/logging/memory_log_writer.h"
-#include "test/scenario/scenario.h"
 #include "test/scenario/stats_collection.h"
 
 namespace webrtc {

@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/audio_processing/residual_echo_detector.h"
+
 #include <vector>
 
-#include "modules/audio_processing/residual_echo_detector.h"
 #include "rtc_base/ref_counted_object.h"
 #include "test/gtest.h"
 

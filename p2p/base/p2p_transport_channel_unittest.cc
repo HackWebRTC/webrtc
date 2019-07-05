@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "p2p/base/p2p_transport_channel.h"
+
 #include <list>
 #include <memory>
 #include <utility>
@@ -17,7 +19,6 @@
 #include "p2p/base/fake_port_allocator.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/mock_async_resolver.h"
-#include "p2p/base/p2p_transport_channel.h"
 #include "p2p/base/packet_transport_internal.h"
 #include "p2p/base/test_relay_server.h"
 #include "p2p/base/test_stun_server.h"

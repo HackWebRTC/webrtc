@@ -11,6 +11,7 @@
 #include "modules/audio_processing/aec3/suppression_filter.h"
 
 #include <math.h>
+
 #include <algorithm>
 #include <cmath>
 #include <numeric>

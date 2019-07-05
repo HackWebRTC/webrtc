@@ -33,9 +33,9 @@ namespace webrtc {
 #if WEBRTC_ENABLE_PROTOBUF
 namespace {
 
+using audio_network_adaptor::debug_dump::EncoderRuntimeConfig;
 using audio_network_adaptor::debug_dump::Event;
 using audio_network_adaptor::debug_dump::NetworkMetrics;
-using audio_network_adaptor::debug_dump::EncoderRuntimeConfig;
 
 void DumpEventToFile(const Event& event, FileWrapper* dump_file) {
   RTC_CHECK(dump_file->is_open());

@@ -81,9 +81,7 @@ class UDPPort : public Port {
     return socket_->GetLocalAddress();
   }
 
-  const ServerAddresses& server_addresses() const {
-    return server_addresses_;
-  }
+  const ServerAddresses& server_addresses() const { return server_addresses_; }
   void set_server_addresses(const ServerAddresses& addresses) {
     server_addresses_ = addresses;
   }
@@ -108,9 +106,7 @@ class UDPPort : public Port {
   void GetStunStats(absl::optional<StunStats>* stats) override;
 
   void set_stun_keepalive_delay(const absl::optional<int>& delay);
-  int stun_keepalive_delay() const {
-    return stun_keepalive_delay_;
-  }
+  int stun_keepalive_delay() const { return stun_keepalive_delay_; }
 
   // Visible for testing.
   int stun_keepalive_lifetime() const { return stun_keepalive_lifetime_; }
@@ -201,8 +197,8 @@ class UDPPort : public Port {
     sigslot::signal2<const rtc::SocketAddress&, int> SignalDone;
 
    private:
-    typedef std::map<rtc::SocketAddress,
-                     rtc::AsyncResolverInterface*> ResolverMap;
+    typedef std::map<rtc::SocketAddress, rtc::AsyncResolverInterface*>
+        ResolverMap;
 
     void OnResolveResult(rtc::AsyncResolverInterface* resolver);
 

@@ -11,6 +11,7 @@
 #include "modules/audio_mixer/gain_change_calculator.h"
 
 #include <math.h>
+
 #include <cstdlib>
 #include <vector>
 

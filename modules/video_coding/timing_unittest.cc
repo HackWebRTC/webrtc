@@ -9,6 +9,7 @@
  */
 
 #include "modules/video_coding/timing.h"
+
 #include "system_wrappers/include/clock.h"
 #include "test/gtest.h"
 

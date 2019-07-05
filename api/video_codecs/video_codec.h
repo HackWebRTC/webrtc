@@ -13,6 +13,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+
 #include <string>
 
 #include "api/video/video_bitrate_allocation.h"
@@ -107,9 +108,9 @@ class RTC_EXPORT VideoCodec {
   uint16_t width;
   uint16_t height;
 
-  unsigned int startBitrate;   // kilobits/sec.
-  unsigned int maxBitrate;     // kilobits/sec.
-  unsigned int minBitrate;     // kilobits/sec.
+  unsigned int startBitrate;  // kilobits/sec.
+  unsigned int maxBitrate;    // kilobits/sec.
+  unsigned int minBitrate;    // kilobits/sec.
 
   uint32_t maxFramerate;
 

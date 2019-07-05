@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/test/loopback_media_transport.h"
+
 #include <algorithm>
 #include <memory>
 #include <vector>
 
-#include "api/test/loopback_media_transport.h"
 #include "test/gmock.h"
 
 namespace webrtc {

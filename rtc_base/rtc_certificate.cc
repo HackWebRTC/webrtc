@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <memory>
-
 #include "rtc_base/rtc_certificate.h"
+
+#include <memory>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/ref_counted_object.h"

@@ -10,6 +10,7 @@
 
 #include <stdint.h>
 #include <string.h>
+
 #include <algorithm>
 #include <memory>
 #include <set>
@@ -978,8 +979,10 @@ TEST_F(RTCStatsIntegrationTest, GetStatsWithSenderSelector) {
       // TODO(hbos): Include RTC[Audio/Video]ReceiverStats when implemented.
       // TODO(hbos): Include RTCRemoteOutboundRtpStreamStats when implemented.
       // TODO(hbos): Include RTCRtpContributingSourceStats when implemented.
-      RTCInboundRTPStreamStats::kType, RTCPeerConnectionStats::kType,
-      RTCMediaStreamStats::kType, RTCDataChannelStats::kType,
+      RTCInboundRTPStreamStats::kType,
+      RTCPeerConnectionStats::kType,
+      RTCMediaStreamStats::kType,
+      RTCDataChannelStats::kType,
   };
   RTCStatsReportVerifier(report.get()).VerifyReport(allowed_missing_stats);
   EXPECT_TRUE(report->size());
@@ -995,8 +998,10 @@ TEST_F(RTCStatsIntegrationTest, GetStatsWithReceiverSelector) {
       // TODO(hbos): Include RTC[Audio/Video]SenderStats when implemented.
       // TODO(hbos): Include RTCRemoteInboundRtpStreamStats when implemented.
       // TODO(hbos): Include RTCRtpContributingSourceStats when implemented.
-      RTCOutboundRTPStreamStats::kType, RTCPeerConnectionStats::kType,
-      RTCMediaStreamStats::kType, RTCDataChannelStats::kType,
+      RTCOutboundRTPStreamStats::kType,
+      RTCPeerConnectionStats::kType,
+      RTCMediaStreamStats::kType,
+      RTCDataChannelStats::kType,
   };
   RTCStatsReportVerifier(report.get()).VerifyReport(allowed_missing_stats);
   EXPECT_TRUE(report->size());

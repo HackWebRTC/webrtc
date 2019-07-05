@@ -11,13 +11,10 @@
 #include "rtc_base/openssl_adapter.h"
 
 #include <errno.h>
-
 #include <openssl/bio.h>
 #include <openssl/err.h>
 #include <openssl/rand.h>
 #include <openssl/x509.h>
-#include "rtc_base/openssl.h"
-
 #include <string.h>
 #include <time.h>
 
@@ -26,6 +23,7 @@
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "rtc_base/openssl.h"
 #include "rtc_base/openssl_certificate.h"
 #include "rtc_base/openssl_utility.h"
 #include "rtc_base/string_encode.h"

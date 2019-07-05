@@ -11,6 +11,7 @@
 #define TEST_ENCODER_SETTINGS_H_
 
 #include <stddef.h>
+
 #include <string>
 #include <vector>
 

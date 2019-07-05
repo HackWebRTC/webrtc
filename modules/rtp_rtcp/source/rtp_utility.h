@@ -12,6 +12,7 @@
 #define MODULES_RTP_RTCP_SOURCE_RTP_UTILITY_H_
 
 #include <stdint.h>
+
 #include <algorithm>
 
 #include "absl/strings/string_view.h"

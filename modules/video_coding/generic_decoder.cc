@@ -11,6 +11,7 @@
 #include "modules/video_coding/generic_decoder.h"
 
 #include <stddef.h>
+
 #include <algorithm>
 
 #include "api/video/video_timing.h"
@@ -118,7 +119,6 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
                     frameInfo->timing.network2_timestamp_ms}) +
           1;
     }
-
 
     timing_frame_info.capture_time_ms = capture_time_ms - sender_delta_ms;
     timing_frame_info.encode_start_ms =

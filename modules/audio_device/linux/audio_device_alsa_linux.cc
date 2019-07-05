@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/audio_device/linux/audio_device_alsa_linux.h"
+
 #include <assert.h>
 
 #include "modules/audio_device/audio_device_config.h"
-#include "modules/audio_device/linux/audio_device_alsa_linux.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/system/arch.h"
 #include "system_wrappers/include/sleep.h"

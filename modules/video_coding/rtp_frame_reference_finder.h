@@ -141,8 +141,7 @@ class RtpFrameReferenceFinder {
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Update "last-picture-id-with-padding" sequence number for H264.
-  void UpdateLastPictureIdWithPaddingH264()
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+  void UpdateLastPictureIdWithPaddingH264() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Update H264 layer info state used to determine frame references.
   void UpdateLayerInfoH264(RtpFrameObject* frame,
@@ -153,8 +152,7 @@ class RtpFrameReferenceFinder {
   // Update H264 state for decodeable frames.
   void UpdateDataH264(RtpFrameObject* frame,
                       int64_t unwrapped_tl0,
-                      uint8_t temporal_idx)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
+                      uint8_t temporal_idx) RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // For every group of pictures, hold two sequence numbers. The first being
   // the sequence number of the last packet of the last completed frame, and
@@ -181,8 +179,8 @@ class RtpFrameReferenceFinder {
 
   // Sequence numbers of frames earlier than the last received frame that
   // have not yet been fully received.
-  std::set<uint16_t, DescendingSeqNumComp<uint16_t>>
-      not_yet_received_seq_num_ RTC_GUARDED_BY(crit_);
+  std::set<uint16_t, DescendingSeqNumComp<uint16_t>> not_yet_received_seq_num_
+      RTC_GUARDED_BY(crit_);
 
   // Frames that have been fully received but didn't have all the information
   // needed to determine their references.

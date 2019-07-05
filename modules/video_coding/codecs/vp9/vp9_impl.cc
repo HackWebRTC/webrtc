@@ -17,11 +17,6 @@
 #include <limits>
 #include <vector>
 
-#include "vpx/vp8cx.h"
-#include "vpx/vp8dx.h"
-#include "vpx/vpx_decoder.h"
-#include "vpx/vpx_encoder.h"
-
 #include "absl/memory/memory.h"
 #include "api/video/color_space.h"
 #include "api/video/i010_buffer.h"
@@ -36,6 +31,10 @@
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/field_trial.h"
+#include "vpx/vp8cx.h"
+#include "vpx/vp8dx.h"
+#include "vpx/vpx_decoder.h"
+#include "vpx/vpx_encoder.h"
 
 namespace webrtc {
 

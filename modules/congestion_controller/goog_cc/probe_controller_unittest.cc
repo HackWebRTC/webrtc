@@ -7,6 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "modules/congestion_controller/goog_cc/probe_controller.h"
+
 #include <memory>
 
 #include "api/transport/field_trial_based_config.h"
@@ -14,7 +16,6 @@
 #include "api/units/data_rate.h"
 #include "api/units/timestamp.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
-#include "modules/congestion_controller/goog_cc/probe_controller.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/clock.h"
 #include "test/field_trial.h"

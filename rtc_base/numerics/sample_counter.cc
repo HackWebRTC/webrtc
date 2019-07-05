@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_base/numerics/sample_counter.h"
+
 #include <limits>
 
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"
-#include "rtc_base/numerics/sample_counter.h"
 
 namespace rtc {
 

@@ -9,6 +9,7 @@
  */
 
 #include "test/scenario/stats_collection.h"
+
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "rtc_base/memory_usage.h"
 

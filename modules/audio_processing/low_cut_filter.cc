@@ -11,6 +11,7 @@
 #include "modules/audio_processing/low_cut_filter.h"
 
 #include <stdint.h>
+
 #include <cstring>
 
 #include "common_audio/signal_processing/include/signal_processing_library.h"

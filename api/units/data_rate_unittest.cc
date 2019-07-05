@@ -9,6 +9,7 @@
  */
 
 #include "api/units/data_rate.h"
+
 #include "rtc_base/logging.h"
 #include "test/gtest.h"
 

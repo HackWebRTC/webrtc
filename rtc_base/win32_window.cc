@@ -9,6 +9,7 @@
  */
 
 #include "rtc_base/win32_window.h"
+
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 

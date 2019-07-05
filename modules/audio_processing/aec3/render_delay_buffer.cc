@@ -8,7 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/audio_processing/aec3/render_delay_buffer.h"
+
 #include <string.h>
+
 #include <algorithm>
 #include <memory>
 #include <numeric>
@@ -25,7 +28,6 @@
 #include "modules/audio_processing/aec3/fft_data.h"
 #include "modules/audio_processing/aec3/matrix_buffer.h"
 #include "modules/audio_processing/aec3/render_buffer.h"
-#include "modules/audio_processing/aec3/render_delay_buffer.h"
 #include "modules/audio_processing/aec3/vector_buffer.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomic_ops.h"

@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/audio_codecs/opus/audio_encoder_opus.h"
+
 #include <array>
 #include <memory>
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "api/audio_codecs/opus/audio_encoder_opus.h"
 #include "common_audio/mocks/mock_smoothing_filter.h"
 #include "modules/audio_coding/audio_network_adaptor/mock/mock_audio_network_adaptor.h"
 #include "modules/audio_coding/codecs/opus/audio_encoder_opus.h"

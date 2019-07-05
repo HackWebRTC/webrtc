@@ -8,13 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/audio_processing_impl.h"
-
 #include <algorithm>
 #include <memory>
 #include <vector>
 
 #include "api/array_view.h"
+#include "modules/audio_processing/audio_processing_impl.h"
 #include "modules/audio_processing/test/test_utils.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"

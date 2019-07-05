@@ -8,7 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "test/layer_filtering_transport.h"
+
 #include <string.h>
+
 #include <algorithm>
 #include <memory>
 #include <utility>
@@ -22,7 +25,6 @@
 #include "modules/video_coding/codecs/vp8/include/vp8_globals.h"
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
 #include "rtc_base/checks.h"
-#include "test/layer_filtering_transport.h"
 
 namespace webrtc {
 namespace test {

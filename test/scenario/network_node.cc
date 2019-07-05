@@ -64,7 +64,6 @@ ColumnPrinter SimulationNode::ConfigPrinter() const {
       });
 }
 
-
 NetworkNodeTransport::NetworkNodeTransport(Clock* sender_clock,
                                            Call* sender_call)
     : sender_clock_(sender_clock), sender_call_(sender_call) {}

@@ -11,6 +11,7 @@
 #include "rtc_tools/frame_analyzer/video_color_aligner.h"
 
 #include <stddef.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstdint>

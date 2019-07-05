@@ -15,6 +15,7 @@
 #include <X11/extensions/xfixeswire.h>
 #include <stddef.h>
 #include <stdint.h>
+
 #include <algorithm>
 #include <memory>
 

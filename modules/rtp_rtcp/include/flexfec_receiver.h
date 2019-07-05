@@ -12,6 +12,7 @@
 #define MODULES_RTP_RTCP_INCLUDE_FLEXFEC_RECEIVER_H_
 
 #include <stdint.h>
+
 #include <memory>
 
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"

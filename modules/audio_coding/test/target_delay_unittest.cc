@@ -33,8 +33,8 @@ class TargetDelayTest : public ::testing::Test {
 
     ASSERT_EQ(0, acm_->InitializeReceiver());
     constexpr int pltype = 108;
-    std::map<int, SdpAudioFormat> receive_codecs =
-        {{pltype, {"L16", kSampleRateHz, 1}}};
+    std::map<int, SdpAudioFormat> receive_codecs = {
+        {pltype, {"L16", kSampleRateHz, 1}}};
     acm_->SetReceiveCodecs(receive_codecs);
 
     rtp_header_.payloadType = pltype;

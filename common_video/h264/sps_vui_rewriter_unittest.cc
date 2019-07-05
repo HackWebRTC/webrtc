@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "common_video/h264/sps_vui_rewriter.h"
+
 #include <cstdint>
 #include <vector>
 
 #include "api/video/color_space.h"
 #include "common_video/h264/h264_common.h"
-#include "common_video/h264/sps_vui_rewriter.h"
 #include "rtc_base/bit_buffer.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/logging.h"

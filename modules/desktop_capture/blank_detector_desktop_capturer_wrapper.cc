@@ -11,6 +11,7 @@
 #include "modules/desktop_capture/blank_detector_desktop_capturer_wrapper.h"
 
 #include <stdint.h>
+
 #include <utility>
 
 #include "modules/desktop_capture/desktop_geometry.h"

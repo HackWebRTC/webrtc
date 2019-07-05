@@ -12,6 +12,7 @@
 #define RTC_BASE_ASYNC_TCP_SOCKET_H_
 
 #include <stddef.h>
+
 #include <memory>
 
 #include "rtc_base/async_packet_socket.h"

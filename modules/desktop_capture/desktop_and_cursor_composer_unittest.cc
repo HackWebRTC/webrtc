@@ -8,12 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/desktop_capture/desktop_and_cursor_composer.h"
+
 #include <stdint.h>
 #include <string.h>
+
 #include <memory>
 #include <utility>
 
-#include "modules/desktop_capture/desktop_and_cursor_composer.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/desktop_frame.h"
 #include "modules/desktop_capture/mouse_cursor.h"
@@ -33,13 +35,19 @@ const int kCursorHeight = 10;
 const int kTestCursorSize = 3;
 const uint32_t kTestCursorData[kTestCursorSize][kTestCursorSize] = {
     {
-        0xffffffff, 0x99990000, 0xaa222222,
+        0xffffffff,
+        0x99990000,
+        0xaa222222,
     },
     {
-        0x88008800, 0xaa0000aa, 0xaa333333,
+        0x88008800,
+        0xaa0000aa,
+        0xaa333333,
     },
     {
-        0x00000000, 0xaa0000aa, 0xaa333333,
+        0x00000000,
+        0xaa0000aa,
+        0xaa333333,
     },
 };
 

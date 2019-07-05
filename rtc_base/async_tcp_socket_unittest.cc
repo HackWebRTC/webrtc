@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_base/async_tcp_socket.h"
+
 #include <memory>
 #include <string>
 
-#include "rtc_base/async_tcp_socket.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/virtual_socket_server.h"
 

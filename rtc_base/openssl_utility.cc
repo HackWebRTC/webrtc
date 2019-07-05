@@ -17,13 +17,12 @@
 #include <openssl/err.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
-#include "rtc_base/openssl.h"
-
 #include <stddef.h>
 
 #include "rtc_base/arraysize.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "rtc_base/openssl.h"
 #include "rtc_base/openssl_certificate.h"
 #ifndef WEBRTC_EXCLUDE_BUILT_IN_SSL_ROOT_CERTS
 #include "rtc_base/ssl_roots.h"

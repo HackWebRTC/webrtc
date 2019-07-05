@@ -9,6 +9,7 @@
  */
 
 #include "modules/video_coding/codecs/vp8/libvpx_interface.h"
+
 #include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 

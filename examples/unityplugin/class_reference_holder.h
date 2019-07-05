@@ -17,6 +17,7 @@
 #define EXAMPLES_UNITYPLUGIN_CLASS_REFERENCE_HOLDER_H_
 
 #include <jni.h>
+
 #include <map>
 #include <string>
 #include <vector>

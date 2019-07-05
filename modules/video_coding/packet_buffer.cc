@@ -11,6 +11,7 @@
 #include "modules/video_coding/packet_buffer.h"
 
 #include <string.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <utility>
@@ -399,9 +400,9 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
         // in the packet sequence numbers up until this point.
         const uint8_t h264tid =
             data_buffer_[start_index].video_header.frame_marking.temporal_id;
-        if (h264tid == kNoTemporalIdx && !is_h264_keyframe
-            && missing_packets_.upper_bound(start_seq_num)
-            != missing_packets_.begin()) {
+        if (h264tid == kNoTemporalIdx && !is_h264_keyframe &&
+            missing_packets_.upper_bound(start_seq_num) !=
+                missing_packets_.begin()) {
           uint16_t stop_index = (index + 1) % size_;
           while (start_index != stop_index) {
             sequence_buffer_[start_index].frame_created = false;

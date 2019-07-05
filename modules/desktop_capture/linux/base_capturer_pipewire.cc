@@ -12,7 +12,6 @@
 
 #include <gio/gunixfdlist.h>
 #include <glib-object.h>
-
 #include <spa/param/format-utils.h>
 #include <spa/param/props.h>
 #include <spa/param/video/raw-utils.h>

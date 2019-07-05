@@ -9,6 +9,7 @@
  */
 
 #include "modules/audio_processing/aec3/filter_analyzer.h"
+
 #include <math.h>
 
 #include <algorithm>

@@ -12,6 +12,7 @@
 #define RTC_BASE_NUMERICS_MOVING_MEDIAN_FILTER_H_
 
 #include <stddef.h>
+
 #include <list>
 
 #include "rtc_base/checks.h"

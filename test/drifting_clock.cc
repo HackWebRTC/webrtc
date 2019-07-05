@@ -9,6 +9,7 @@
  */
 
 #include "test/drifting_clock.h"
+
 #include "rtc_base/checks.h"
 
 namespace webrtc {

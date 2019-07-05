@@ -12,6 +12,7 @@
 #define RTC_BASE_MAC_UTILS_H_
 
 #include <CoreFoundation/CoreFoundation.h>
+
 #include <string>
 
 namespace rtc {

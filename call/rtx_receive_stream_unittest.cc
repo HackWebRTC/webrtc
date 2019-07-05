@@ -9,6 +9,7 @@
  */
 
 #include "call/rtx_receive_stream.h"
+
 #include "call/test/mock_rtp_packet_sink_interface.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
@@ -30,27 +31,49 @@ constexpr uint32_t kMediaSSRC = 0x3333333;
 constexpr uint16_t kMediaSeqno = 0x5657;
 
 constexpr uint8_t kRtxPacket[] = {
-    0x80,                    // Version 2.
-    98,                      // Payload type.
-    0x12, 0x34,              // Seqno.
-    0x11, 0x11, 0x11, 0x11,  // Timestamp.
-    0x22, 0x22, 0x22, 0x22,  // SSRC.
+    0x80,  // Version 2.
+    98,    // Payload type.
+    0x12,
+    0x34,  // Seqno.
+    0x11,
+    0x11,
+    0x11,
+    0x11,  // Timestamp.
+    0x22,
+    0x22,
+    0x22,
+    0x22,  // SSRC.
     // RTX header.
-    0x56, 0x57,  // Orig seqno.
+    0x56,
+    0x57,  // Orig seqno.
     // Payload.
     0xee,
 };
 
 constexpr uint8_t kRtxPacketWithCVO[] = {
-    0x90,                    // Version 2, X set.
-    98,                      // Payload type.
-    0x12, 0x34,              // Seqno.
-    0x11, 0x11, 0x11, 0x11,  // Timestamp.
-    0x22, 0x22, 0x22, 0x22,  // SSRC.
-    0xbe, 0xde, 0x00, 0x01,  // Extension header.
-    0x30, 0x01, 0x00, 0x00,  // 90 degree rotation.
+    0x90,  // Version 2, X set.
+    98,    // Payload type.
+    0x12,
+    0x34,  // Seqno.
+    0x11,
+    0x11,
+    0x11,
+    0x11,  // Timestamp.
+    0x22,
+    0x22,
+    0x22,
+    0x22,  // SSRC.
+    0xbe,
+    0xde,
+    0x00,
+    0x01,  // Extension header.
+    0x30,
+    0x01,
+    0x00,
+    0x00,  // 90 degree rotation.
     // RTX header.
-    0x56, 0x57,  // Orig seqno.
+    0x56,
+    0x57,  // Orig seqno.
     // Payload.
     0xee,
 };

@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_CODING_TEST_PACKETLOSSTEST_H_
 
 #include <string>
+
 #include "modules/audio_coding/test/EncodeDecodeTest.h"
 
 namespace webrtc {

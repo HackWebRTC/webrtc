@@ -13,6 +13,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+
 #include <queue>
 
 #include "api/transport/field_trial_based_config.h"

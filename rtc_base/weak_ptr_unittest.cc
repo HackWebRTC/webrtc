@@ -8,13 +8,14 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_base/weak_ptr.h"
+
 #include <memory>
 #include <string>
 
 #include "absl/memory/memory.h"
 #include "rtc_base/event.h"
 #include "rtc_base/task_queue_for_test.h"
-#include "rtc_base/weak_ptr.h"
 #include "test/gtest.h"
 
 namespace rtc {

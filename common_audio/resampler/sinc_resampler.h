@@ -15,6 +15,7 @@
 #define COMMON_AUDIO_RESAMPLER_SINC_RESAMPLER_H_
 
 #include <stddef.h>
+
 #include <memory>
 
 #include "rtc_base/constructor_magic.h"

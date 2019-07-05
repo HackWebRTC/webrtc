@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/video_coding/codecs/vp9/svc_config.h"
+
 #include <cstddef>
 #include <vector>
 
 #include "modules/video_coding/codecs/vp9/include/vp9_globals.h"
-#include "modules/video_coding/codecs/vp9/svc_config.h"
 #include "test/gtest.h"
 
 namespace webrtc {

@@ -74,7 +74,8 @@ void FuzzAudioProcessing(test::FuzzDataHelper* fuzz_data,
   std::array<float, 480> float_frame1;
   std::array<float, 480> float_frame2;
   std::array<float* const, 2> float_frame_ptrs = {
-      &float_frame1[0], &float_frame2[0],
+      &float_frame1[0],
+      &float_frame2[0],
   };
   float* const* ptr_to_float_frames = &float_frame_ptrs[0];
 

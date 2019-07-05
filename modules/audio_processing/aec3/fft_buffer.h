@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_PROCESSING_AEC3_FFT_BUFFER_H_
 
 #include <stddef.h>
+
 #include <vector>
 
 #include "modules/audio_processing/aec3/fft_data.h"

@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/audio_device/android/audio_manager.h"
+
 #include <SLES/OpenSLES_Android.h>
 
-#include "modules/audio_device/android/audio_manager.h"
 #include "modules/audio_device/android/build_info.h"
 #include "modules/audio_device/android/ensure_initialized.h"
 #include "rtc_base/arraysize.h"

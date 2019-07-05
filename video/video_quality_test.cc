@@ -10,6 +10,7 @@
 #include "video/video_quality_test.h"
 
 #include <stdio.h>
+
 #include <algorithm>
 #include <deque>
 #include <map>

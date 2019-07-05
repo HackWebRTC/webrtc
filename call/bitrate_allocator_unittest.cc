@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "call/bitrate_allocator.h"
+
 #include <algorithm>
 #include <memory>
 #include <vector>
 
-#include "call/bitrate_allocator.h"
 #include "system_wrappers/include/clock.h"
 #include "test/gmock.h"
 #include "test/gtest.h"

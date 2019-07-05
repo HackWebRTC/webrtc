@@ -11,7 +11,6 @@
 #include <memory>
 
 #include "modules/audio_coding/codecs/pcm16b/audio_encoder_pcm16b.h"
-
 #include "modules/audio_coding/neteq/tools/neteq_quality_test.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/flags.h"

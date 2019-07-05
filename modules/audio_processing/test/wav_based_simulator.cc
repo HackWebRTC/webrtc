@@ -11,6 +11,7 @@
 #include "modules/audio_processing/test/wav_based_simulator.h"
 
 #include <stdio.h>
+
 #include <iostream>
 
 #include "modules/audio_processing/test/test_utils.h"

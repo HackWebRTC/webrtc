@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "test/gtest.h"
-
 #include "rtc_base/fake_clock.h"
+
+#include "test/gtest.h"
 
 namespace rtc {
 TEST(ScopedFakeClockTest, OverridesGlobalClock) {

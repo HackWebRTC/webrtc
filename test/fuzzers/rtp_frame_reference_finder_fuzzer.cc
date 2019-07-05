@@ -8,12 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/video_coding/rtp_frame_reference_finder.h"
-
 #include "absl/memory/memory.h"
 #include "api/rtp_packet_infos.h"
 #include "modules/video_coding/frame_object.h"
 #include "modules/video_coding/packet_buffer.h"
+#include "modules/video_coding/rtp_frame_reference_finder.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {

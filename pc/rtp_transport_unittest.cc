@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "pc/rtp_transport.h"
+
 #include <cstdint>
 #include <set>
 #include <string>
@@ -16,7 +18,6 @@
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
 #include "p2p/base/fake_packet_transport.h"
-#include "pc/rtp_transport.h"
 #include "pc/test/rtp_transport_test_util.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"

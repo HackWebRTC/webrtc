@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/audio_mixer/audio_mixer_impl.h"
+
 #include <string.h>
 
 #include <limits>
@@ -17,7 +19,6 @@
 
 #include "absl/memory/memory.h"
 #include "api/audio/audio_mixer.h"
-#include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/audio_mixer/default_output_rate_calculator.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"

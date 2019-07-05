@@ -9,15 +9,17 @@
  */
 
 #include "test/testsupport/perf_test.h"
-#include "rtc_base/checks.h"
-#include "rtc_base/critical_section.h"
 
 #include <stdio.h>
+
 #include <cmath>
 #include <fstream>
 #include <map>
 #include <sstream>
 #include <vector>
+
+#include "rtc_base/checks.h"
+#include "rtc_base/critical_section.h"
 
 namespace {
 

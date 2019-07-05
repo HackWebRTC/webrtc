@@ -8,13 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_tools/frame_editing/frame_editing_lib.h"
+
 #include <stdio.h>
+
 #include <cstdint>
 #include <memory>
 #include <string>
 
 #include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "rtc_tools/frame_editing/frame_editing_lib.h"
 
 namespace webrtc {
 

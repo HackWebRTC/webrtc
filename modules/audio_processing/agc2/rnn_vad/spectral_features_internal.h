@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_PROCESSING_AGC2_RNN_VAD_SPECTRAL_FEATURES_INTERNAL_H_
 
 #include <stddef.h>
+
 #include <array>
 #include <vector>
 

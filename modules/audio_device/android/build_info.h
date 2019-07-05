@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_DEVICE_ANDROID_BUILD_INFO_H_
 
 #include <jni.h>
+
 #include <memory>
 #include <string>
 

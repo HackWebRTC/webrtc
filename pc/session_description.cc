@@ -90,8 +90,7 @@ bool ContentGroup::RemoveContentName(const std::string& content_name) {
 SessionDescription::SessionDescription() = default;
 SessionDescription::SessionDescription(const SessionDescription&) = default;
 
-SessionDescription::~SessionDescription() {
-}
+SessionDescription::~SessionDescription() {}
 
 std::unique_ptr<SessionDescription> SessionDescription::Clone() const {
   // Copy using the private copy constructor.

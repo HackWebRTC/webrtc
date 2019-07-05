@@ -13,6 +13,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+
 #include <vector>
 
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"

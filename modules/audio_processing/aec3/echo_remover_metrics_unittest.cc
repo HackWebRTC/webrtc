@@ -11,6 +11,7 @@
 #include "modules/audio_processing/aec3/echo_remover_metrics.h"
 
 #include <math.h>
+
 #include <cmath>
 
 #include "modules/audio_processing/aec3/aec3_fft.h"

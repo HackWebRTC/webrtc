@@ -91,12 +91,12 @@ enum LoggingSeverity {
 // LogErrorContext assists in interpreting the meaning of an error value.
 enum LogErrorContext {
   ERRCTX_NONE,
-  ERRCTX_ERRNO,     // System-local errno
-  ERRCTX_HRESULT,   // Windows HRESULT
+  ERRCTX_ERRNO,    // System-local errno
+  ERRCTX_HRESULT,  // Windows HRESULT
 
   // Abbreviations for LOG_E macro
-  ERRCTX_EN = ERRCTX_ERRNO,     // LOG_E(sev, EN, x)
-  ERRCTX_HR = ERRCTX_HRESULT,   // LOG_E(sev, HR, x)
+  ERRCTX_EN = ERRCTX_ERRNO,    // LOG_E(sev, EN, x)
+  ERRCTX_HR = ERRCTX_HRESULT,  // LOG_E(sev, HR, x)
 };
 
 // Virtual sink interface that can receive log messages.
@@ -541,12 +541,12 @@ inline bool LogCheckLevel(LoggingSeverity sev) {
   return (LogMessage::GetMinLogSeverity() <= sev);
 }
 
-#define RTC_LOG_E(sev, ctx, err)                                    \
-    rtc::webrtc_logging_impl::LogCall() &                           \
-        rtc::webrtc_logging_impl::LogStreamer<>()                   \
-            << rtc::webrtc_logging_impl::LogMetadataErr {           \
-      {__FILE__, __LINE__, rtc::sev}, rtc::ERRCTX_##ctx, (err)      \
-    }
+#define RTC_LOG_E(sev, ctx, err)                             \
+  rtc::webrtc_logging_impl::LogCall() &                      \
+      rtc::webrtc_logging_impl::LogStreamer<>()              \
+          << rtc::webrtc_logging_impl::LogMetadataErr {      \
+    {__FILE__, __LINE__, rtc::sev}, rtc::ERRCTX_##ctx, (err) \
+  }
 
 #define RTC_LOG_T(sev) RTC_LOG(sev) << this << ": "
 
@@ -578,12 +578,12 @@ inline const char* AdaptString(const std::string& str) {
 }
 }  // namespace webrtc_logging_impl
 
-#define RTC_LOG_TAG(sev, tag)                                                \
-    rtc::webrtc_logging_impl::LogCall() &                                    \
-        rtc::webrtc_logging_impl::LogStreamer<>()                            \
-            << rtc::webrtc_logging_impl::LogMetadataTag {                    \
-      sev, rtc::webrtc_logging_impl::AdaptString(tag)                        \
-    }
+#define RTC_LOG_TAG(sev, tag)                           \
+  rtc::webrtc_logging_impl::LogCall() &                 \
+      rtc::webrtc_logging_impl::LogStreamer<>()         \
+          << rtc::webrtc_logging_impl::LogMetadataTag { \
+    sev, rtc::webrtc_logging_impl::AdaptString(tag)     \
+  }
 
 #else
 

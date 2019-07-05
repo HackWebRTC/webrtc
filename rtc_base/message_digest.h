@@ -12,6 +12,7 @@
 #define RTC_BASE_MESSAGE_DIGEST_H_
 
 #include <stddef.h>
+
 #include <string>
 
 namespace rtc {

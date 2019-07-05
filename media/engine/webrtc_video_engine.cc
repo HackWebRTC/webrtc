@@ -11,6 +11,7 @@
 #include "media/engine/webrtc_video_engine.h"
 
 #include <stdio.h>
+
 #include <algorithm>
 #include <set>
 #include <string>
@@ -819,23 +820,23 @@ bool WebRtcVideoChannel::ApplyChangedParams(
     }
   }
 
-    for (auto& kv : send_streams_) {
-      kv.second->SetSendParameters(changed_params);
+  for (auto& kv : send_streams_) {
+    kv.second->SetSendParameters(changed_params);
+  }
+  if (changed_params.send_codec || changed_params.rtcp_mode) {
+    // Update receive feedback parameters from new codec or RTCP mode.
+    RTC_LOG(LS_INFO)
+        << "SetFeedbackOptions on all the receive streams because the send "
+           "codec or RTCP mode has changed.";
+    for (auto& kv : receive_streams_) {
+      RTC_DCHECK(kv.second != nullptr);
+      kv.second->SetFeedbackParameters(
+          HasLntf(send_codec_->codec), HasNack(send_codec_->codec),
+          HasRemb(send_codec_->codec), HasTransportCc(send_codec_->codec),
+          send_params_.rtcp.reduced_size ? webrtc::RtcpMode::kReducedSize
+                                         : webrtc::RtcpMode::kCompound);
     }
-    if (changed_params.send_codec || changed_params.rtcp_mode) {
-      // Update receive feedback parameters from new codec or RTCP mode.
-      RTC_LOG(LS_INFO)
-          << "SetFeedbackOptions on all the receive streams because the send "
-             "codec or RTCP mode has changed.";
-      for (auto& kv : receive_streams_) {
-        RTC_DCHECK(kv.second != nullptr);
-        kv.second->SetFeedbackParameters(
-            HasLntf(send_codec_->codec), HasNack(send_codec_->codec),
-            HasRemb(send_codec_->codec), HasTransportCc(send_codec_->codec),
-            send_params_.rtcp.reduced_size ? webrtc::RtcpMode::kReducedSize
-                                           : webrtc::RtcpMode::kCompound);
-      }
-    }
+  }
   return true;
 }
 
@@ -1082,9 +1083,9 @@ bool WebRtcVideoChannel::SetSend(bool send) {
     RTC_DLOG(LS_ERROR) << "SetSend(true) called before setting codec.";
     return false;
   }
-    for (const auto& kv : send_streams_) {
-      kv.second->SetSend(send);
-    }
+  for (const auto& kv : send_streams_) {
+    kv.second->SetSend(send);
+  }
   sending_ = send;
   return true;
 }
@@ -1202,30 +1203,30 @@ bool WebRtcVideoChannel::RemoveSendStream(uint32_t ssrc) {
   RTC_LOG(LS_INFO) << "RemoveSendStream: " << ssrc;
 
   WebRtcVideoSendStream* removed_stream;
-    std::map<uint32_t, WebRtcVideoSendStream*>::iterator it =
-        send_streams_.find(ssrc);
-    if (it == send_streams_.end()) {
-      return false;
+  std::map<uint32_t, WebRtcVideoSendStream*>::iterator it =
+      send_streams_.find(ssrc);
+  if (it == send_streams_.end()) {
+    return false;
+  }
+
+  for (uint32_t old_ssrc : it->second->GetSsrcs())
+    send_ssrcs_.erase(old_ssrc);
+
+  removed_stream = it->second;
+  send_streams_.erase(it);
+
+  // Switch receiver report SSRCs, the one in use is no longer valid.
+  if (rtcp_receiver_report_ssrc_ == ssrc) {
+    rtcp_receiver_report_ssrc_ = send_streams_.empty()
+                                     ? kDefaultRtcpReceiverReportSsrc
+                                     : send_streams_.begin()->first;
+    RTC_LOG(LS_INFO) << "SetLocalSsrc on all the receive streams because the "
+                        "previous local SSRC was removed.";
+
+    for (auto& kv : receive_streams_) {
+      kv.second->SetLocalSsrc(rtcp_receiver_report_ssrc_);
     }
-
-    for (uint32_t old_ssrc : it->second->GetSsrcs())
-      send_ssrcs_.erase(old_ssrc);
-
-    removed_stream = it->second;
-    send_streams_.erase(it);
-
-    // Switch receiver report SSRCs, the one in use is no longer valid.
-    if (rtcp_receiver_report_ssrc_ == ssrc) {
-      rtcp_receiver_report_ssrc_ = send_streams_.empty()
-                                       ? kDefaultRtcpReceiverReportSsrc
-                                       : send_streams_.begin()->first;
-      RTC_LOG(LS_INFO) << "SetLocalSsrc on all the receive streams because the "
-                          "previous local SSRC was removed.";
-
-      for (auto& kv : receive_streams_) {
-        kv.second->SetLocalSsrc(rtcp_receiver_report_ssrc_);
-      }
-    }
+  }
 
   delete removed_stream;
 
@@ -3008,8 +3009,8 @@ std::vector<webrtc::VideoStream> EncoderStreamFactory::CreateEncoderStreams(
         absl::EqualsIgnoreCase(codec_name_, kH264CodecName)) &&
        is_screenshare_ && screenshare_config_explicitly_enabled_)) {
     const bool temporal_layers_supported =
-        absl::EqualsIgnoreCase(codec_name_, kVp8CodecName)
-        || absl::EqualsIgnoreCase(codec_name_, kH264CodecName);
+        absl::EqualsIgnoreCase(codec_name_, kVp8CodecName) ||
+        absl::EqualsIgnoreCase(codec_name_, kH264CodecName);
     layers = GetSimulcastConfig(encoder_config.number_of_streams, width, height,
                                 encoder_config.bitrate_priority, max_qp_,
                                 is_screenshare_, temporal_layers_supported);

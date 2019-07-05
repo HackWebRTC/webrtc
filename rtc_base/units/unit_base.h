@@ -11,6 +11,7 @@
 #define RTC_BASE_UNITS_UNIT_BASE_H_
 
 #include <stdint.h>
+
 #include <algorithm>
 #include <cmath>
 #include <limits>

@@ -11,6 +11,7 @@
 #include "modules/audio_processing/audio_buffer.h"
 
 #include <string.h>
+
 #include <cstdint>
 
 #include "common_audio/channel_buffer.h"

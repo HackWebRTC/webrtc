@@ -12,6 +12,7 @@
 #define RTC_BASE_THREAD_H_
 
 #include <stdint.h>
+
 #include <list>
 #include <memory>
 #include <string>
@@ -359,8 +360,8 @@ class RTC_LOCKABLE Thread : public MessageQueue {
   std::list<_SendMessage> sendlist_;
   std::string name_;
 
-// TODO(tommi): Add thread checks for proper use of control methods.
-// Ideally we should be able to just use PlatformThread.
+  // TODO(tommi): Add thread checks for proper use of control methods.
+  // Ideally we should be able to just use PlatformThread.
 
 #if defined(WEBRTC_POSIX)
   pthread_t thread_ = 0;

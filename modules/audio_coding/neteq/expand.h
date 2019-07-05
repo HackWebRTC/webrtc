@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_CODING_NETEQ_EXPAND_H_
 
 #include <assert.h>
+
 #include <memory>
 
 #include "modules/audio_coding/neteq/audio_vector.h"

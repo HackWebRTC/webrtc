@@ -13,6 +13,7 @@
 #include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <string.h>
+
 #include <algorithm>
 
 #include "modules/desktop_capture/linux/x_error_trap.h"

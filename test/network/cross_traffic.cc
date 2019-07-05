@@ -11,6 +11,7 @@
 #include "test/network/cross_traffic.h"
 
 #include <math.h>
+
 #include <utility>
 
 #include "absl/memory/memory.h"

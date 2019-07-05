@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "call/degraded_call.h"
+
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "call/degraded_call.h"
 #include "rtc_base/location.h"
 
 namespace webrtc {

@@ -11,6 +11,7 @@
 #include "modules/audio_mixer/audio_mixer_impl.h"
 
 #include <stdint.h>
+
 #include <algorithm>
 #include <iterator>
 #include <type_traits>

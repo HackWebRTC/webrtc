@@ -8,9 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "pc/rtp_media_utils.h"
+
 #include <tuple>
 
-#include "pc/rtp_media_utils.h"
 #include "test/gtest.h"
 
 namespace webrtc {

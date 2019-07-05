@@ -8,7 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "pc/stats_collector.h"
+
 #include <stdio.h>
+
 #include <memory>
 
 #include "absl/algorithm/container.h"
@@ -24,7 +27,6 @@
 #include "pc/data_channel.h"
 #include "pc/media_stream.h"
 #include "pc/media_stream_track.h"
-#include "pc/stats_collector.h"
 #include "pc/test/fake_peer_connection_for_stats.h"
 #include "pc/test/fake_video_track_source.h"
 #include "pc/test/mock_rtp_receiver_internal.h"

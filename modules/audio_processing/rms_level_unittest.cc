@@ -9,12 +9,13 @@
  */
 // MSVC++ requires this to be set before any other includes to get M_PI.
 #define _USE_MATH_DEFINES
+#include "modules/audio_processing/rms_level.h"
+
 #include <cmath>
 #include <memory>
 #include <vector>
 
 #include "api/array_view.h"
-#include "modules/audio_processing/rms_level.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"
 #include "test/gtest.h"

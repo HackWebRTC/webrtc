@@ -8,10 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/video_coding/nack_module.h"
+
 #include <algorithm>
 #include <limits>
-
-#include "modules/video_coding/nack_module.h"
 
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/checks.h"

@@ -9,6 +9,7 @@
  */
 
 #include <stdint.h>
+
 #include <memory>
 
 #include "absl/types/optional.h"

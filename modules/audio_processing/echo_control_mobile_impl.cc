@@ -11,6 +11,7 @@
 #include "modules/audio_processing/echo_control_mobile_impl.h"
 
 #include <string.h>
+
 #include <cstdint>
 
 #include "modules/audio_processing/aecm/echo_control_mobile.h"
@@ -198,7 +199,7 @@ int EchoControlMobileImpl::set_routing_mode(RoutingMode mode) {
   if (MapSetting(mode) == -1) {
     return AudioProcessing::kBadParameterError;
   }
-    routing_mode_ = mode;
+  routing_mode_ = mode;
   return Configure();
 }
 
@@ -207,7 +208,7 @@ EchoControlMobileImpl::RoutingMode EchoControlMobileImpl::routing_mode() const {
 }
 
 int EchoControlMobileImpl::enable_comfort_noise(bool enable) {
-    comfort_noise_enabled_ = enable;
+  comfort_noise_enabled_ = enable;
   return Configure();
 }
 

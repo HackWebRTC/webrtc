@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "media/engine/webrtc_voice_engine.h"
+
 #include <memory>
 #include <utility>
 
@@ -26,7 +28,6 @@
 #include "media/base/fake_rtp.h"
 #include "media/base/media_constants.h"
 #include "media/engine/fake_webrtc_call.h"
-#include "media/engine/webrtc_voice_engine.h"
 #include "modules/audio_device/include/mock_audio_device.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
 #include "rtc_base/arraysize.h"

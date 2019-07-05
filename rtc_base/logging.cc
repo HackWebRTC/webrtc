@@ -30,6 +30,7 @@ static const int kMaxLogLineSize = 1024 - 60;
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
+
 #include <algorithm>
 #include <cstdarg>
 #include <vector>

@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_PROCESSING_VOICE_DETECTION_IMPL_H_
 
 #include <stddef.h>
+
 #include <memory>
 
 #include "modules/audio_processing/include/audio_processing.h"

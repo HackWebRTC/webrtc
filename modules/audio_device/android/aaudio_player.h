@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_DEVICE_ANDROID_AAUDIO_PLAYER_H_
 
 #include <aaudio/AAudio.h>
+
 #include <memory>
 
 #include "modules/audio_device/android/aaudio_wrapper.h"

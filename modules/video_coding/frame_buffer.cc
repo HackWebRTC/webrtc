@@ -77,10 +77,9 @@ bool VCMFrameBuffer::IsSessionComplete() const {
 }
 
 // Insert packet
-VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(
-    const VCMPacket& packet,
-    int64_t timeInMs,
-    const FrameData& frame_data) {
+VCMFrameBufferEnum VCMFrameBuffer::InsertPacket(const VCMPacket& packet,
+                                                int64_t timeInMs,
+                                                const FrameData& frame_data) {
   TRACE_EVENT0("webrtc", "VCMFrameBuffer::InsertPacket");
   assert(!(NULL == packet.dataPtr && packet.sizeBytes > 0));
   if (packet.dataPtr != NULL) {

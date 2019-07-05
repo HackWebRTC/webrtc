@@ -12,6 +12,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+
 #include <memory>
 
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
@@ -23,14 +24,10 @@
 
 namespace webrtc {
 
-TestPacketization::TestPacketization(RTPStream *rtpStream, uint16_t frequency)
-    : _rtpStream(rtpStream),
-      _frequency(frequency),
-      _seqNo(0) {
-}
+TestPacketization::TestPacketization(RTPStream* rtpStream, uint16_t frequency)
+    : _rtpStream(rtpStream), _frequency(frequency), _seqNo(0) {}
 
-TestPacketization::~TestPacketization() {
-}
+TestPacketization::~TestPacketization() {}
 
 int32_t TestPacketization::SendData(const AudioFrameType /* frameType */,
                                     const uint8_t payloadType,
@@ -43,15 +40,14 @@ int32_t TestPacketization::SendData(const AudioFrameType /* frameType */,
 }
 
 Sender::Sender()
-    : _acm(NULL),
-      _pcmFile(),
-      _audioFrame(),
-      _packetization(NULL) {
-}
+    : _acm(NULL), _pcmFile(), _audioFrame(), _packetization(NULL) {}
 
-void Sender::Setup(AudioCodingModule *acm, RTPStream *rtpStream,
-                   std::string in_file_name, int in_sample_rate,
-                   int payload_type, SdpAudioFormat format) {
+void Sender::Setup(AudioCodingModule* acm,
+                   RTPStream* rtpStream,
+                   std::string in_file_name,
+                   int in_sample_rate,
+                   int payload_type,
+                   SdpAudioFormat format) {
   // Open input file
   const std::string file_name = webrtc::test::ResourcePath(in_file_name, "pcm");
   _pcmFile.Open(file_name, in_sample_rate, "rb");
@@ -96,11 +92,13 @@ void Sender::Run() {
 
 Receiver::Receiver()
     : _playoutLengthSmpls(WEBRTC_10MS_PCM_AUDIO),
-      _payloadSizeBytes(MAX_INCOMING_PAYLOAD) {
-}
+      _payloadSizeBytes(MAX_INCOMING_PAYLOAD) {}
 
-void Receiver::Setup(AudioCodingModule *acm, RTPStream *rtpStream,
-                     std::string out_file_name, size_t channels, int file_num) {
+void Receiver::Setup(AudioCodingModule* acm,
+                     RTPStream* rtpStream,
+                     std::string out_file_name,
+                     size_t channels,
+                     int file_num) {
   EXPECT_EQ(0, acm->InitializeReceiver());
 
   if (channels == 1) {
@@ -187,14 +185,14 @@ bool Receiver::PlayoutData() {
     return false;
   }
   EXPECT_EQ(0, ok);
-  if (ok < 0){
+  if (ok < 0) {
     return false;
   }
   if (_playoutLengthSmpls == 0) {
     return false;
   }
-  _pcmFile.Write10MsData(audioFrame.data(),
-      audioFrame.samples_per_channel_ * audioFrame.num_channels_);
+  _pcmFile.Write10MsData(audioFrame.data(), audioFrame.samples_per_channel_ *
+                                                audioFrame.num_channels_);
   return true;
 }
 
@@ -225,17 +223,15 @@ void Receiver::Run() {
 EncodeDecodeTest::EncodeDecodeTest() = default;
 
 void EncodeDecodeTest::Perform() {
-  const std::map<int, SdpAudioFormat> send_codecs = {{103, {"ISAC", 16000, 1}},
-                                                     {104, {"ISAC", 32000, 1}},
-                                                     {107, {"L16", 8000, 1}},
-                                                     {108, {"L16", 16000, 1}},
-                                                     {109, {"L16", 32000, 1}},
-                                                     {0, {"PCMU", 8000, 1}},
-                                                     {8, {"PCMA", 8000, 1}},
+  const std::map<int, SdpAudioFormat> send_codecs = {
+      {103, {"ISAC", 16000, 1}}, {104, {"ISAC", 32000, 1}},
+      {107, {"L16", 8000, 1}},   {108, {"L16", 16000, 1}},
+      {109, {"L16", 32000, 1}},  {0, {"PCMU", 8000, 1}},
+      {8, {"PCMA", 8000, 1}},
 #ifdef WEBRTC_CODEC_ILBC
-                                                     {102, {"ILBC", 8000, 1}},
+      {102, {"ILBC", 8000, 1}},
 #endif
-                                                     {9, {"G722", 8000, 1}}};
+      {9, {"G722", 8000, 1}}};
   int file_num = 0;
   for (const auto& send_codec : send_codecs) {
     RTPFile rtpFile;

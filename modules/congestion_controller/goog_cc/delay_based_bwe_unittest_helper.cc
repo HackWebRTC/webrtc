@@ -27,8 +27,7 @@ constexpr int kInitialProbingPackets = 5;
 
 namespace test {
 
-void TestBitrateObserver::OnReceiveBitrateChanged(
-    uint32_t bitrate) {
+void TestBitrateObserver::OnReceiveBitrateChanged(uint32_t bitrate) {
   latest_bitrate_ = bitrate;
   updated_ = true;
 }

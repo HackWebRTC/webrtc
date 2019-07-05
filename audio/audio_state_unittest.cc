@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "audio/audio_state.h"
+
 #include <memory>
 #include <vector>
 
-#include "audio/audio_state.h"
 #include "call/test/mock_audio_send_stream.h"
 #include "modules/audio_device/include/mock_audio_device.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"

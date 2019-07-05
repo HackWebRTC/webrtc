@@ -11,6 +11,7 @@
 #include "modules/audio_coding/test/Channel.h"
 
 #include <assert.h>
+
 #include <iostream>
 
 #include "rtc_base/format_macros.h"

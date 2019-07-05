@@ -12,6 +12,7 @@
 #define API_VIDEO_CODECS_VIDEO_ENCODER_CONFIG_H_
 
 #include <stddef.h>
+
 #include <string>
 #include <vector>
 

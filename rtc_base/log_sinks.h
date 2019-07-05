@@ -12,6 +12,7 @@
 #define RTC_BASE_LOG_SINKS_H_
 
 #include <stddef.h>
+
 #include <memory>
 #include <string>
 

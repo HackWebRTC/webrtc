@@ -11,6 +11,7 @@
 #include <X11/X.h>
 #include <X11/Xlib.h>
 #include <string.h>
+
 #include <memory>
 
 #include "absl/memory/memory.h"

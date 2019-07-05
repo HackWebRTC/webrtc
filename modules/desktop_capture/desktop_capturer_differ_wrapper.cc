@@ -12,6 +12,7 @@
 
 #include <stdint.h>
 #include <string.h>
+
 #include <utility>
 
 #include "modules/desktop_capture/desktop_geometry.h"

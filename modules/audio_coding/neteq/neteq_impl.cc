@@ -11,6 +11,7 @@
 #include "modules/audio_coding/neteq/neteq_impl.h"
 
 #include <assert.h>
+
 #include <algorithm>
 #include <cstdint>
 #include <cstring>

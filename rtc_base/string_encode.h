@@ -12,6 +12,7 @@
 #define RTC_BASE_STRING_ENCODE_H_
 
 #include <stddef.h>
+
 #include <string>
 #include <type_traits>
 #include <vector>

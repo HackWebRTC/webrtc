@@ -12,6 +12,7 @@
 
 #include <ctype.h>
 #include <string.h>
+
 #include <string>
 
 #include "rtc_base/checks.h"
@@ -150,8 +151,8 @@ int DtmfSender::inter_tone_gap() const {
 
 void DtmfSender::QueueInsertDtmf(const rtc::Location& posted_from,
                                  uint32_t delay_ms) {
-  dtmf_driver_.AsyncInvokeDelayed<void>(posted_from, signaling_thread_,
-                                        [this] { DoInsertDtmf(); }, delay_ms);
+  dtmf_driver_.AsyncInvokeDelayed<void>(
+      posted_from, signaling_thread_, [this] { DoInsertDtmf(); }, delay_ms);
 }
 
 void DtmfSender::DoInsertDtmf() {

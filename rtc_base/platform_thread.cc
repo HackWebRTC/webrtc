@@ -15,6 +15,7 @@
 #endif
 #include <stdint.h>
 #include <time.h>
+
 #include <algorithm>
 
 #include "rtc_base/checks.h"
@@ -29,7 +30,7 @@ struct ThreadAttributes {
   pthread_attr_t attr;
 };
 #endif  // defined(WEBRTC_WIN)
-}
+}  // namespace
 
 PlatformThread::PlatformThread(ThreadRunFunction func,
                                void* obj,

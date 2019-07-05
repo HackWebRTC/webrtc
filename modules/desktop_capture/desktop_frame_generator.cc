@@ -12,6 +12,7 @@
 
 #include <stdint.h>
 #include <string.h>
+
 #include <memory>
 
 #include "modules/desktop_capture/rgba_color.h"

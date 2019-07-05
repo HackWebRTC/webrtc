@@ -8,12 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/video_capture/device_info_impl.h"
+
 #include <assert.h>
 #include <stdlib.h>
 
 #include "absl/strings/match.h"
 #include "absl/strings/string_view.h"
-#include "modules/video_capture/device_info_impl.h"
 #include "rtc_base/logging.h"
 
 #ifndef abs
@@ -157,7 +158,7 @@ int32_t DeviceInfoImpl::GetBestMatchedCapability(
                          currentbestDiffFrameRate))  // Current frame rate is
                                                      // lower than requested.
                                                      // This is better.
-                ) {
+            ) {
               if ((currentbestDiffFrameRate ==
                    diffFrameRate)  // Same frame rate as previous  or frame rate
                                    // allready good enough

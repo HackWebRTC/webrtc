@@ -8,9 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/peer_connection_interface.h"
+
 #include <limits.h>
 #include <stdint.h>
 #include <string.h>
+
 #include <memory>
 #include <string>
 #include <utility>
@@ -31,7 +34,6 @@
 #include "api/jsep_session_description.h"
 #include "api/media_stream_interface.h"
 #include "api/media_types.h"
-#include "api/peer_connection_interface.h"
 #include "api/rtc_error.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/rtc_event_log/rtc_event_log_factory.h"

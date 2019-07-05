@@ -9,15 +9,16 @@
  */
 
 #include "modules/audio_coding/neteq/timestamp_scaler.h"
+
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_coding/neteq/mock/mock_decoder_database.h"
 #include "modules/audio_coding/neteq/packet.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
 
+using ::testing::_;
 using ::testing::Return;
 using ::testing::ReturnNull;
-using ::testing::_;
 
 namespace webrtc {
 

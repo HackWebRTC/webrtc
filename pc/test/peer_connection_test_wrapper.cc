@@ -8,7 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "pc/test/peer_connection_test_wrapper.h"
+
 #include <stddef.h>
+
 #include <string>
 #include <utility>
 #include <vector>
@@ -29,7 +32,6 @@
 #include "pc/test/fake_periodic_video_track_source.h"
 #include "pc/test/fake_rtc_certificate_generator.h"
 #include "pc/test/mock_peer_connection_observers.h"
-#include "pc/test/peer_connection_test_wrapper.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ref_counted_object.h"

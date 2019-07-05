@@ -11,6 +11,7 @@
 #include "modules/desktop_capture/mac/full_screen_chrome_window_detector.h"
 
 #include <libproc.h>
+
 #include <string>
 
 #include "modules/desktop_capture/mac/window_list_utils.h"

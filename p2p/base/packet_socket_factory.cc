@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <string>
-
 #include "p2p/base/packet_socket_factory.h"
+
+#include <string>
 
 namespace rtc {
 

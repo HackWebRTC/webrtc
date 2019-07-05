@@ -8,11 +8,13 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "rtc_base/helpers.h"
+
 #include <string.h>
+
 #include <string>
 
 #include "rtc_base/buffer.h"
-#include "rtc_base/helpers.h"
 #include "test/gtest.h"
 
 namespace rtc {

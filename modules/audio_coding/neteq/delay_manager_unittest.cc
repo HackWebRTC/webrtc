@@ -39,8 +39,8 @@ constexpr int kMaxIat = 64;
 constexpr int kForgetFactor = 32745;
 }  // namespace
 
-using ::testing::Return;
 using ::testing::_;
+using ::testing::Return;
 
 class DelayManagerTest : public ::testing::Test {
  protected:
@@ -683,7 +683,7 @@ TEST_F(DelayManagerTest, DelayHistogramFieldTrial) {
     EXPECT_EQ(DelayManager::HistogramMode::RELATIVE_ARRIVAL_DELAY,
               dm_->histogram_mode());
     EXPECT_EQ(kDefaultHistogramQuantile,
-              dm_->histogram_quantile());                      // 0.95 in Q30.
+              dm_->histogram_quantile());  // 0.95 in Q30.
     EXPECT_EQ(
         kForgetFactor,
         dm_->histogram()->base_forget_factor_for_testing());  // 0.9993 in Q15.
@@ -696,7 +696,7 @@ TEST_F(DelayManagerTest, DelayHistogramFieldTrial) {
     EXPECT_EQ(DelayManager::HistogramMode::INTER_ARRIVAL_TIME,
               dm_->histogram_mode());
     EXPECT_EQ(kDefaultHistogramQuantile,
-              dm_->histogram_quantile());                      // 0.95 in Q30.
+              dm_->histogram_quantile());  // 0.95 in Q30.
     EXPECT_EQ(
         kForgetFactor,
         dm_->histogram()->base_forget_factor_for_testing());  // 0.9993 in Q15.

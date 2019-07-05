@@ -11,6 +11,7 @@
 #include "common_audio/smoothing_filter.h"
 
 #include <math.h>
+
 #include <cmath>
 
 #include "rtc_base/checks.h"

@@ -8,7 +8,10 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "pc/peer_connection_factory.h"
+
 #include <stddef.h>
+
 #include <memory>
 #include <string>
 #include <utility>
@@ -33,7 +36,6 @@
 #include "p2p/base/fake_port_allocator.h"
 #include "p2p/base/port.h"
 #include "p2p/base/port_interface.h"
-#include "pc/peer_connection_factory.h"
 #include "pc/test/fake_audio_capture_module.h"
 #include "pc/test/fake_video_track_source.h"
 #include "rtc_base/socket_address.h"
@@ -51,8 +53,8 @@ using webrtc::MediaStreamInterface;
 using webrtc::PeerConnectionFactoryInterface;
 using webrtc::PeerConnectionInterface;
 using webrtc::PeerConnectionObserver;
-using webrtc::VideoTrackSourceInterface;
 using webrtc::VideoTrackInterface;
+using webrtc::VideoTrackSourceInterface;
 
 namespace {
 

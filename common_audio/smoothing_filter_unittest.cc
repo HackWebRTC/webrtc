@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "common_audio/smoothing_filter.h"
+
 #include <cmath>
 #include <memory>
 
-#include "common_audio/smoothing_filter.h"
 #include "rtc_base/fake_clock.h"
 #include "test/gtest.h"
 

@@ -14,6 +14,7 @@
 #define MODULES_BITRATE_CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_
 
 #include <stdint.h>
+
 #include <deque>
 #include <utility>
 #include <vector>

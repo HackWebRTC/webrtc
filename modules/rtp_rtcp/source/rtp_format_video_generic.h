@@ -11,6 +11,7 @@
 #define MODULES_RTP_RTCP_SOURCE_RTP_FORMAT_VIDEO_GENERIC_H_
 
 #include <stdint.h>
+
 #include <vector>
 
 #include "api/array_view.h"

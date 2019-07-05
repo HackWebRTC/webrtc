@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "video/overuse_frame_detector.h"
+
 #include <memory>
 
 #include "absl/memory/memory.h"
@@ -20,12 +22,11 @@
 #include "rtc_base/task_queue_for_test.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
-#include "video/overuse_frame_detector.h"
 
 namespace webrtc {
 
-using ::testing::InvokeWithoutArgs;
 using ::testing::_;
+using ::testing::InvokeWithoutArgs;
 
 namespace {
 const int kWidth = 640;
@@ -636,7 +637,8 @@ TEST_F(OveruseFrameDetectorTest, NoOveruseForSimulcast) {
 
   constexpr int kNumFrames = 500;
   constexpr int kEncodeTimesUs[] = {
-      10 * rtc::kNumMicrosecsPerMillisec, 8 * rtc::kNumMicrosecsPerMillisec,
+      10 * rtc::kNumMicrosecsPerMillisec,
+      8 * rtc::kNumMicrosecsPerMillisec,
       12 * rtc::kNumMicrosecsPerMillisec,
   };
   constexpr int kIntervalUs = 30 * rtc::kNumMicrosecsPerMillisec;
@@ -981,7 +983,7 @@ TEST_F(OveruseFrameDetectorTest2, ToleratesOutOfOrderFrames) {
   // three encoded frames, and the last of those isn't finished until after the
   // first encoded frame corresponding to the next input frame.
   const int kEncodeTimeUs = 30 * rtc::kNumMicrosecsPerMillisec;
-  const int kCaptureTimesMs[] = { 33, 33, 66, 33 };
+  const int kCaptureTimesMs[] = {33, 33, 66, 33};
 
   for (int capture_time_ms : kCaptureTimesMs) {
     overuse_detector_->FrameSent(
@@ -998,7 +1000,8 @@ TEST_F(OveruseFrameDetectorTest2, NoOveruseForSimulcast) {
 
   constexpr int kNumFrames = 500;
   constexpr int kEncodeTimesUs[] = {
-      10 * rtc::kNumMicrosecsPerMillisec, 8 * rtc::kNumMicrosecsPerMillisec,
+      10 * rtc::kNumMicrosecsPerMillisec,
+      8 * rtc::kNumMicrosecsPerMillisec,
       12 * rtc::kNumMicrosecsPerMillisec,
   };
   constexpr int kIntervalUs = 30 * rtc::kNumMicrosecsPerMillisec;

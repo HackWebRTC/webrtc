@@ -7,14 +7,15 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
+#include "call/simulated_network.h"
+
+#include <algorithm>
 #include <map>
 #include <set>
 #include <vector>
 
-#include <algorithm>
 #include "absl/algorithm/container.h"
 #include "api/units/data_rate.h"
-#include "call/simulated_network.h"
 #include "test/gtest.h"
 
 namespace webrtc {

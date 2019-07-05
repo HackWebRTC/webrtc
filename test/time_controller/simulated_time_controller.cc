@@ -312,7 +312,6 @@ std::unique_ptr<ProcessThread> SimulatedTimeControllerImpl::CreateProcessThread(
   return process_thread;
 }
 
-
 void SimulatedTimeControllerImpl::YieldExecution() {
   if (rtc::CurrentThreadId() == thread_id_) {
     TaskQueueBase* yielding_from = TaskQueueBase::Current();

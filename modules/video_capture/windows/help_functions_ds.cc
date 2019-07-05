@@ -12,11 +12,10 @@
                        // that DEFINE_GUID() entries will be defined in this
                        // object file.
 
-#include "modules/video_capture/windows/help_functions_ds.h"
-
-#include "rtc_base/logging.h"
-
 #include <cguid.h>
+
+#include "modules/video_capture/windows/help_functions_ds.h"
+#include "rtc_base/logging.h"
 
 namespace webrtc {
 namespace videocapturemodule {

@@ -8,9 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include <random>
-
 #include "rtc_base/rolling_accumulator.h"
+
+#include <random>
 
 #include "test/gtest.h"
 

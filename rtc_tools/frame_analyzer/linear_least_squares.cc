@@ -11,6 +11,7 @@
 #include "rtc_tools/frame_analyzer/linear_least_squares.h"
 
 #include <math.h>
+
 #include <cstdint>
 #include <cstdlib>
 #include <functional>

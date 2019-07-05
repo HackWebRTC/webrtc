@@ -35,7 +35,7 @@ bool RepeatingTaskBase::Run() {
   // destruct this object.
   if (next_run_time_.IsPlusInfinity())
     return true;
-  
+
   RTC_DCHECK(delay.IsFinite());
   TimeDelta lost_time = Timestamp::us(rtc::TimeMicros()) - next_run_time_;
   next_run_time_ += delay;

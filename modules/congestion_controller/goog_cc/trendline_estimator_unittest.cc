@@ -9,6 +9,7 @@
  */
 
 #include "modules/congestion_controller/goog_cc/trendline_estimator.h"
+
 #include "rtc_base/random.h"
 #include "test/gtest.h"
 
@@ -22,8 +23,8 @@ constexpr int64_t kAvgTimeBetweenPackets = 10;
 constexpr size_t kPacketCount = 2 * kWindowSize + 1;
 class TrendlineEstimatorForTest : public TrendlineEstimator {
  public:
-  using TrendlineEstimator::TrendlineEstimator;
   using TrendlineEstimator::modified_trend;
+  using TrendlineEstimator::TrendlineEstimator;
 };
 void TestEstimator(double slope, double jitter_stddev, double tolerance) {
   TrendlineEstimatorForTest estimator(kWindowSize, kSmoothing, kGain, nullptr);

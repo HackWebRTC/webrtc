@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "pc/srtp_filter.h"
+
 #include <string.h>
 
 #include "api/crypto_params.h"
-#include "pc/srtp_filter.h"
 #include "rtc_base/ssl_stream_adapter.h"
 #include "test/gtest.h"
 

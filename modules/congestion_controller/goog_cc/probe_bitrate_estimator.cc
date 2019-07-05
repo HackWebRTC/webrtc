@@ -54,7 +54,6 @@ constexpr TimeDelta kMaxProbeInterval = TimeDelta::Seconds<1>();
 
 }  // namespace
 
-
 ProbeBitrateEstimator::ProbeBitrateEstimator(RtcEventLog* event_log)
     : event_log_(event_log) {}
 

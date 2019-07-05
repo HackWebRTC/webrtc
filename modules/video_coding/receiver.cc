@@ -11,6 +11,7 @@
 #include "modules/video_coding/receiver.h"
 
 #include <assert.h>
+
 #include <cstdint>
 #include <cstdlib>
 #include <utility>

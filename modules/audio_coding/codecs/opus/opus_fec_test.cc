@@ -15,9 +15,9 @@
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 
+using std::get;
 using std::string;
 using std::tuple;
-using std::get;
 using ::testing::TestWithParam;
 
 namespace webrtc {

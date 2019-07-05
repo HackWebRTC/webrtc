@@ -11,6 +11,7 @@
 #include "modules/audio_coding/neteq/decoder_database.h"
 
 #include <stddef.h>
+
 #include <cstdint>
 #include <list>
 #include <type_traits>

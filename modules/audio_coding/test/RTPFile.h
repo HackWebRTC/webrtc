@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_CODING_TEST_RTPFILE_H_
 
 #include <stdio.h>
+
 #include <queue>
 
 #include "modules/audio_coding/include/audio_coding_module.h"

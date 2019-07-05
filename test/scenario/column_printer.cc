@@ -22,9 +22,9 @@ ColumnPrinter::ColumnPrinter(
     : headers_(headers), printer_(printer), max_length_(max_length) {}
 
 ColumnPrinter ColumnPrinter::Fixed(const char* headers, std::string fields) {
-  return ColumnPrinter(headers,
-                       [fields](rtc::SimpleStringBuilder& sb) { sb << fields; },
-                       fields.size());
+  return ColumnPrinter(
+      headers, [fields](rtc::SimpleStringBuilder& sb) { sb << fields; },
+      fields.size());
 }
 
 ColumnPrinter ColumnPrinter::Lambda(

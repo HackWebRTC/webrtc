@@ -12,6 +12,7 @@
 #define RTC_BASE_COPY_ON_WRITE_BUFFER_H_
 
 #include <stdint.h>
+
 #include <algorithm>
 #include <cstring>
 #include <string>

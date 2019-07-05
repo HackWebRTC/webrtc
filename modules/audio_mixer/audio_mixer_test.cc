@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "api/audio/audio_mixer.h"
+
 #include <cstring>
 #include <iostream>
 #include <vector>
 
-#include "api/audio/audio_mixer.h"
 #include "common_audio/wav_file.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/audio_mixer/default_output_rate_calculator.h"

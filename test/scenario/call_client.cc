@@ -85,7 +85,7 @@ std::unique_ptr<RtcEventLog> CreateEventLog(
   RTC_CHECK(success);
   return event_log;
 }
-}
+}  // namespace
 NetworkControleUpdateCache::NetworkControleUpdateCache(
     std::unique_ptr<NetworkControllerInterface> controller)
     : controller_(std::move(controller)) {}
@@ -171,8 +171,7 @@ LoggingNetworkControllerFactory::LoggingNetworkControllerFactory(
   }
 }
 
-LoggingNetworkControllerFactory::~LoggingNetworkControllerFactory() {
-}
+LoggingNetworkControllerFactory::~LoggingNetworkControllerFactory() {}
 
 void LoggingNetworkControllerFactory::LogCongestionControllerStats(
     Timestamp at_time) {

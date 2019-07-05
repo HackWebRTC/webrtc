@@ -16,6 +16,7 @@
 #include <X11/extensions/damagewire.h>
 #include <stdint.h>
 #include <string.h>
+
 #include <memory>
 #include <utility>
 

@@ -12,6 +12,7 @@
 #define VIDEO_FRAME_DUMPING_DECODER_H_
 
 #include <stdint.h>
+
 #include <memory>
 
 #include "api/video/encoded_image.h"

@@ -8,10 +8,11 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
+
 #include <algorithm>
 
 #include "modules/video_coding/codecs/vp9/svc_config.h"
-#include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
 #include "rtc_base/checks.h"
 #include "test/gtest.h"
 

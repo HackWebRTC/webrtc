@@ -732,8 +732,8 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameH264(
     return kHandOff;
   }
 
-  auto layer_info_it = layer_info_.find(
-      tid == 0 ? unwrapped_tl0 - 1 : unwrapped_tl0);
+  auto layer_info_it =
+      layer_info_.find(tid == 0 ? unwrapped_tl0 - 1 : unwrapped_tl0);
 
   // Stash if we have no base layer frame yet.
   if (layer_info_it == layer_info_.end())
@@ -741,8 +741,9 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameH264(
 
   // Base layer frame. Copy layer info from previous base layer frame.
   if (tid == 0) {
-    layer_info_it = layer_info_.insert(
-        std::make_pair(unwrapped_tl0, layer_info_it->second)).first;
+    layer_info_it =
+        layer_info_.insert(std::make_pair(unwrapped_tl0, layer_info_it->second))
+            .first;
     frame->num_references = 1;
     frame->references[0] = layer_info_it->second[0];
     UpdateDataH264(frame, unwrapped_tl0, tid);
@@ -852,8 +853,8 @@ void RtpFrameReferenceFinder::UpdateDataH264(RtpFrameObject* frame,
 
   // Remove any current packets from |not_yet_received_seq_num_|.
   uint16_t last_seq_num_padded = seq_num_it->second.second;
-  for (uint16_t n = frame->first_seq_num();
-       AheadOrAt(last_seq_num_padded, n); ++n) {
+  for (uint16_t n = frame->first_seq_num(); AheadOrAt(last_seq_num_padded, n);
+       ++n) {
     not_yet_received_seq_num_.erase(n);
   }
 }

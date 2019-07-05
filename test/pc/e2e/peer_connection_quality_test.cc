@@ -220,8 +220,7 @@ void PeerConnectionE2EQualityTest::AddPeer(
   configurer(peer_configurations_.back().get());
 }
 
-void PeerConnectionE2EQualityTest::Run(
-    RunParams run_params) {
+void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   RTC_CHECK_EQ(peer_configurations_.size(), 2)
       << "Only peer to peer calls are allowed, please add 2 peers";
 
