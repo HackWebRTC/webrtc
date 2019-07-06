@@ -61,16 +61,7 @@ RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
 }
 
 ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
-    : rtcp_sender_(configuration.audio,
-                   configuration.clock,
-                   configuration.receive_statistics,
-                   configuration.rtcp_packet_type_counter_observer,
-                   configuration.event_log,
-                   configuration.outgoing_transport,
-                   configuration.rtcp_report_interval_ms > 0
-                       ? configuration.rtcp_report_interval_ms
-                       : (configuration.audio ? kDefaultAudioReportInterval
-                                              : kDefaultVideoReportInterval)),
+    : rtcp_sender_(configuration),
       rtcp_receiver_(configuration.clock,
                      configuration.receiver_only,
                      configuration.rtcp_packet_type_counter_observer,

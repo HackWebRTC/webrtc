@@ -914,9 +914,11 @@ void VideoSendStreamTest::TestNackRetransmission(
             non_padding_sequence_numbers_.end() - kNackedPacketsAtOnceCount,
             non_padding_sequence_numbers_.end());
 
-        RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(), nullptr,
-                               nullptr, nullptr, transport_adapter_.get(),
-                               kRtcpIntervalMs);
+        RtpRtcp::Configuration config;
+        config.clock = Clock::GetRealTimeClock();
+        config.outgoing_transport = transport_adapter_.get();
+        config.rtcp_report_interval_ms = kRtcpIntervalMs;
+        RTCPSender rtcp_sender(config);
 
         rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
         rtcp_sender.SetRemoteSSRC(kVideoSendSsrcs[0]);
@@ -1127,9 +1129,12 @@ void VideoSendStreamTest::TestPacketFragmentationSize(VideoFormat format,
             kVideoSendSsrcs[0], header.sequenceNumber,
             packets_lost_,  // Cumulative lost.
             loss_ratio);    // Loss percent.
-        RTCPSender rtcp_sender(false, Clock::GetRealTimeClock(),
-                               &lossy_receive_stats, nullptr, nullptr,
-                               transport_adapter_.get(), kRtcpIntervalMs);
+        RtpRtcp::Configuration config;
+        config.clock = Clock::GetRealTimeClock();
+        config.receive_statistics = &lossy_receive_stats;
+        config.outgoing_transport = transport_adapter_.get();
+        config.rtcp_report_interval_ms = kRtcpIntervalMs;
+        RTCPSender rtcp_sender(config);
 
         rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
         rtcp_sender.SetRemoteSSRC(kVideoSendSsrcs[0]);
@@ -1375,8 +1380,12 @@ TEST_F(VideoSendStreamTest, SuspendBelowMinBitrate) {
         RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_) {
       FakeReceiveStatistics receive_stats(kVideoSendSsrcs[0],
                                           last_sequence_number_, rtp_count_, 0);
-      RTCPSender rtcp_sender(false, clock_, &receive_stats, nullptr, nullptr,
-                             transport_adapter_.get(), kRtcpIntervalMs);
+      RtpRtcp::Configuration config;
+      config.clock = clock_;
+      config.receive_statistics = &receive_stats;
+      config.outgoing_transport = transport_adapter_.get();
+      config.rtcp_report_interval_ms = kRtcpIntervalMs;
+      RTCPSender rtcp_sender(config);
 
       rtcp_sender.SetRTCPStatus(RtcpMode::kReducedSize);
       rtcp_sender.SetRemoteSSRC(kVideoSendSsrcs[0]);
