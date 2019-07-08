@@ -10,6 +10,9 @@
 
 #include "modules/desktop_capture/win/window_capture_utils.h"
 
+// Just for the DWMWINDOWATTRIBUTE enums (DWMWA_CLOAKED).
+#include <dwmapi.h>
+
 #include "modules/desktop_capture/win/scoped_gdi_object.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -137,15 +140,15 @@ bool IsWindowMaximized(HWND window, bool* result) {
 }
 
 // WindowCaptureHelperWin implementation.
-WindowCaptureHelperWin::WindowCaptureHelperWin()
-    : dwmapi_library_(nullptr),
-      func_(nullptr),
-      virtual_desktop_manager_(nullptr) {
+WindowCaptureHelperWin::WindowCaptureHelperWin() {
   // Try to load dwmapi.dll dynamically since it is not available on XP.
   dwmapi_library_ = LoadLibraryW(L"dwmapi.dll");
   if (dwmapi_library_) {
     func_ = reinterpret_cast<DwmIsCompositionEnabledFunc>(
         GetProcAddress(dwmapi_library_, "DwmIsCompositionEnabled"));
+    dwm_get_window_attribute_func_ =
+        reinterpret_cast<DwmGetWindowAttributeFunc>(
+            GetProcAddress(dwmapi_library_, "DwmGetWindowAttribute"));
   }
 
   if (rtc::IsWindows10OrLater()) {
@@ -268,7 +271,25 @@ bool WindowCaptureHelperWin::IsWindowOnCurrentDesktop(HWND hwnd) {
 
 bool WindowCaptureHelperWin::IsWindowVisibleOnCurrentDesktop(HWND hwnd) {
   return !::IsIconic(hwnd) && ::IsWindowVisible(hwnd) &&
-         IsWindowOnCurrentDesktop(hwnd);
+         IsWindowOnCurrentDesktop(hwnd) && !IsWindowCloaked(hwnd);
+}
+
+// A cloaked window is composited but not visible to the user.
+// Example: Cortana or the Action Center when collapsed.
+bool WindowCaptureHelperWin::IsWindowCloaked(HWND hwnd) {
+  if (!dwm_get_window_attribute_func_) {
+    // Does not apply.
+    return false;
+  }
+
+  int res = 0;
+  if (dwm_get_window_attribute_func_(hwnd, DWMWA_CLOAKED, &res, sizeof(res)) !=
+      S_OK) {
+    // Cannot tell so assume not cloacked for backward compatibility.
+    return false;
+  }
+
+  return res != 0;
 }
 
 }  // namespace webrtc
