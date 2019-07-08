@@ -100,7 +100,7 @@ void PrintTestInfo() {
 
 }  // namespace
 
-TEST(PCLowBandwidthAudioTest, GoodNetworkHighBitrate) {
+TEST(PCLowBandwidthAudioTest, PCGoodNetworkHighBitrate) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   auto fixture = CreateTestFixture(
@@ -120,7 +120,7 @@ TEST(PCLowBandwidthAudioTest, GoodNetworkHighBitrate) {
   PrintTestInfo();
 }
 
-TEST(PCLowBandwidthAudioTest, Mobile2GNetwork) {
+TEST(PCLowBandwidthAudioTest, PCMobile2GNetwork) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
