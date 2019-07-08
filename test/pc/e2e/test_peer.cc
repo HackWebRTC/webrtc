@@ -32,8 +32,13 @@ namespace webrtc {
 namespace webrtc_pc_e2e {
 namespace {
 
+using RemotePeerAudioConfig =
+    ::webrtc::webrtc_pc_e2e::TestPeer::RemotePeerAudioConfig;
+using AudioConfig =
+    ::webrtc::webrtc_pc_e2e::PeerConnectionE2EQualityTestFixture::AudioConfig;
+
 constexpr int16_t kGeneratedAudioMaxAmplitude = 32000;
-constexpr int kSamplingFrequencyInHz = 48000;
+constexpr int kDefaultSamplingFrequencyInHz = 48000;
 
 // Sets mandatory entities in injectable components like |pcf_dependencies|
 // and |pc_dependencies| if they are omitted. Also setup required
@@ -59,7 +64,6 @@ void SetMandatoryEntities(InjectableComponents* components) {
 }
 
 struct TestPeerComponents {
-  using AudioConfig = PeerConnectionE2EQualityTestFixture::AudioConfig;
 
   rtc::scoped_refptr<PeerConnectionFactoryInterface> peer_connection_factory;
   rtc::scoped_refptr<PeerConnectionInterface> peer_connection;
@@ -70,7 +74,7 @@ struct TestPeerComponents {
                      MockPeerConnectionObserver* observer,
                      VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
                      rtc::Thread* signaling_thread,
-                     absl::optional<std::string> audio_output_file_name,
+                     absl::optional<RemotePeerAudioConfig> remote_audio_config,
                      double bitrate_multiplier,
                      rtc::TaskQueue* task_queue) {
     std::map<std::string, absl::optional<int>> stream_required_spatial_index;
@@ -102,7 +106,7 @@ struct TestPeerComponents {
         std::move(components->pcf_dependencies), params.audio_config,
         bitrate_multiplier, std::move(stream_required_spatial_index),
         video_analyzer_helper, components->network_thread, signaling_thread,
-        std::move(audio_output_file_name), task_queue);
+        std::move(remote_audio_config), task_queue);
     peer_connection_factory =
         CreateModularPeerConnectionFactory(std::move(pcf_deps));
 
@@ -118,7 +122,7 @@ struct TestPeerComponents {
       AudioConfig audio_config) {
     if (audio_config.mode == AudioConfig::Mode::kGenerated) {
       return TestAudioDeviceModule::CreatePulsedNoiseCapturer(
-          kGeneratedAudioMaxAmplitude, kSamplingFrequencyInHz);
+          kGeneratedAudioMaxAmplitude, audio_config.sampling_frequency_in_hz);
     }
     if (audio_config.mode == AudioConfig::Mode::kFile) {
       RTC_DCHECK(audio_config.input_file_name);
@@ -132,7 +136,7 @@ struct TestPeerComponents {
   rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModule(
       TaskQueueFactory* task_queue_factory,
       absl::optional<AudioConfig> audio_config,
-      absl::optional<std::string> audio_output_file_name) {
+      absl::optional<RemotePeerAudioConfig> remote_audio_config) {
     std::unique_ptr<TestAudioDeviceModule::Capturer> capturer;
     if (audio_config) {
       capturer = CreateAudioCapturer(audio_config.value());
@@ -141,7 +145,7 @@ struct TestPeerComponents {
       // In such case use generated capturer. Despite of we provided audio here,
       // in test media setup audio stream won't be added into peer connection.
       capturer = TestAudioDeviceModule::CreatePulsedNoiseCapturer(
-          kGeneratedAudioMaxAmplitude, kSamplingFrequencyInHz);
+          kGeneratedAudioMaxAmplitude, kDefaultSamplingFrequencyInHz);
     }
     RTC_DCHECK(capturer);
 
@@ -151,12 +155,13 @@ struct TestPeerComponents {
     }
 
     std::unique_ptr<TestAudioDeviceModule::Renderer> renderer;
-    if (audio_output_file_name) {
+    if (remote_audio_config && remote_audio_config->output_file_name) {
       renderer = TestAudioDeviceModule::CreateBoundedWavFileWriter(
-          audio_output_file_name.value(), kSamplingFrequencyInHz);
+          remote_audio_config->output_file_name.value(),
+          remote_audio_config->sampling_frequency_in_hz);
     } else {
-      renderer =
-          TestAudioDeviceModule::CreateDiscardRenderer(kSamplingFrequencyInHz);
+      renderer = TestAudioDeviceModule::CreateDiscardRenderer(
+          kDefaultSamplingFrequencyInHz);
     }
 
     return TestAudioDeviceModule::Create(task_queue_factory,
@@ -202,12 +207,12 @@ struct TestPeerComponents {
       double bitrate_multiplier,
       std::map<std::string, absl::optional<int>> stream_required_spatial_index,
       VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
-      absl::optional<std::string> audio_output_file_name) {
+      absl::optional<RemotePeerAudioConfig> remote_audio_config) {
     cricket::MediaEngineDependencies media_deps;
     media_deps.task_queue_factory = pcf_dependencies->task_queue_factory.get();
     media_deps.adm = CreateAudioDeviceModule(media_deps.task_queue_factory,
                                              std::move(audio_config),
-                                             std::move(audio_output_file_name));
+                                             std::move(remote_audio_config));
     media_deps.audio_processing = audio_processing;
     media_deps.video_encoder_factory = CreateVideoEncoderFactory(
         pcf_dependencies, video_analyzer_helper, bitrate_multiplier,
@@ -230,7 +235,7 @@ struct TestPeerComponents {
       VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
       rtc::Thread* network_thread,
       rtc::Thread* signaling_thread,
-      absl::optional<std::string> audio_output_file_name,
+      absl::optional<RemotePeerAudioConfig> remote_audio_config,
       rtc::TaskQueue* task_queue) {
     PeerConnectionFactoryDependencies pcf_deps;
     pcf_deps.network_thread = network_thread;
@@ -238,7 +243,7 @@ struct TestPeerComponents {
     pcf_deps.media_engine = CreateMediaEngine(
         pcf_dependencies.get(), std::move(audio_config), bitrate_multiplier,
         std::move(stream_required_spatial_index), video_analyzer_helper,
-        std::move(audio_output_file_name));
+        std::move(remote_audio_config));
 
     pcf_deps.call_factory = std::move(pcf_dependencies->call_factory);
     pcf_deps.event_log_factory = std::move(pcf_dependencies->event_log_factory);
@@ -293,13 +298,21 @@ struct TestPeerComponents {
 
 }  // namespace
 
+absl::optional<RemotePeerAudioConfig> TestPeer::CreateRemoteAudioConfig(
+    absl::optional<AudioConfig> config) {
+  if (!config) {
+    return absl::nullopt;
+  }
+  return RemotePeerAudioConfig(config.value());
+}
+
 std::unique_ptr<TestPeer> TestPeer::CreateTestPeer(
     std::unique_ptr<InjectableComponents> components,
     std::unique_ptr<Params> params,
     std::unique_ptr<MockPeerConnectionObserver> observer,
     VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
     rtc::Thread* signaling_thread,
-    absl::optional<std::string> audio_output_file_name,
+    absl::optional<RemotePeerAudioConfig> remote_audio_config,
     double bitrate_multiplier,
     rtc::TaskQueue* task_queue) {
   RTC_DCHECK(components);
@@ -309,7 +322,7 @@ std::unique_ptr<TestPeer> TestPeer::CreateTestPeer(
 
   TestPeerComponents tpc(std::move(components), *params, observer.get(),
                          video_analyzer_helper, signaling_thread,
-                         std::move(audio_output_file_name), bitrate_multiplier,
+                         std::move(remote_audio_config), bitrate_multiplier,
                          task_queue);
 
   return absl::WrapUnique(new TestPeer(

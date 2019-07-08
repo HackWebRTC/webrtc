@@ -257,13 +257,10 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   // Audio streams are intercepted in AudioDeviceModule, so if it is required to
   // catch output of Alice's stream, Alice's output_dump_file_name should be
   // passed to Bob's TestPeer setup as audio output file name.
-  absl::optional<std::string> alice_audio_output_dump_file_name =
-      bob_params->audio_config ? bob_params->audio_config->output_dump_file_name
-                               : absl::nullopt;
-  absl::optional<std::string> bob_audio_output_dump_file_name =
-      alice_params->audio_config
-          ? alice_params->audio_config->output_dump_file_name
-          : absl::nullopt;
+  absl::optional<TestPeer::RemotePeerAudioConfig> alice_remote_audio_config =
+      TestPeer::CreateRemoteAudioConfig(bob_params->audio_config);
+  absl::optional<TestPeer::RemotePeerAudioConfig> bob_remote_audio_config =
+      TestPeer::CreateRemoteAudioConfig(alice_params->audio_config);
   // Copy Alice and Bob video configs to correctly pass them into lambdas.
   std::vector<VideoConfig> alice_video_configs = alice_params->video_configs;
   std::vector<VideoConfig> bob_video_configs = bob_params->video_configs;
@@ -277,8 +274,8 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
           },
           [this]() { StartVideo(alice_video_sources_); }),
       video_quality_analyzer_injection_helper_.get(), signaling_thread.get(),
-      alice_audio_output_dump_file_name,
-      run_params.video_encoder_bitrate_multiplier, task_queue_.get());
+      alice_remote_audio_config, run_params.video_encoder_bitrate_multiplier,
+      task_queue_.get());
   bob_ = TestPeer::CreateTestPeer(
       std::move(bob_components), std::move(bob_params),
       absl::make_unique<FixturePeerConnectionObserver>(
@@ -288,8 +285,8 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
           },
           [this]() { StartVideo(bob_video_sources_); }),
       video_quality_analyzer_injection_helper_.get(), signaling_thread.get(),
-      bob_audio_output_dump_file_name,
-      run_params.video_encoder_bitrate_multiplier, task_queue_.get());
+      bob_remote_audio_config, run_params.video_encoder_bitrate_multiplier,
+      task_queue_.get());
 
   int num_cores = CpuInfo::DetectNumberOfCores();
   RTC_DCHECK_GE(num_cores, 1);

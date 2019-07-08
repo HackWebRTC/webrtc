@@ -196,8 +196,11 @@ class PeerConnectionE2EQualityTestFixture {
     absl::optional<std::string> input_dump_file_name;
     // If specified the output stream will be copied to specified file.
     absl::optional<std::string> output_dump_file_name;
+
     // Audio options to use.
     cricket::AudioOptions audio_options;
+    // Sampling frequency of input audio data (from file or generated).
+    int sampling_frequency_in_hz = 48000;
   };
 
   // This class is used to fully configure one peer inside the call.

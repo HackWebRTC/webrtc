@@ -37,6 +37,18 @@ class TestPeer final : public PeerConnectionWrapper {
   using VideoConfig = PeerConnectionE2EQualityTestFixture::VideoConfig;
   using AudioConfig = PeerConnectionE2EQualityTestFixture::AudioConfig;
 
+  struct RemotePeerAudioConfig {
+    RemotePeerAudioConfig(AudioConfig config)
+        : sampling_frequency_in_hz(config.sampling_frequency_in_hz),
+          output_file_name(config.output_dump_file_name) {}
+
+    int sampling_frequency_in_hz;
+    absl::optional<std::string> output_file_name;
+  };
+
+  static absl::optional<RemotePeerAudioConfig> CreateRemoteAudioConfig(
+      absl::optional<AudioConfig> config);
+
   // Setups all components, that should be provided to WebRTC
   // PeerConnectionFactory and PeerConnection creation methods,
   // also will setup dependencies, that are required for media analyzers
@@ -54,7 +66,7 @@ class TestPeer final : public PeerConnectionWrapper {
       std::unique_ptr<MockPeerConnectionObserver> observer,
       VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
       rtc::Thread* signaling_thread,
-      absl::optional<std::string> audio_output_file_name,
+      absl::optional<RemotePeerAudioConfig> remote_audio_config,
       double bitrate_multiplier,
       rtc::TaskQueue* task_queue);
 

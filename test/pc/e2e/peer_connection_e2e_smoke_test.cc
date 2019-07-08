@@ -148,6 +148,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
         audio.mode = AudioConfig::Mode::kFile;
         audio.input_file_name =
             test::ResourcePath("pc_quality_smoke_test_alice_source", "wav");
+        audio.sampling_frequency_in_hz = 48000;
         alice->SetAudioConfig(std::move(audio));
       },
       [](PeerConfigurer* bob) {
