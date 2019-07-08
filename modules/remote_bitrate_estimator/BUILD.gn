@@ -75,6 +75,22 @@ if (!build_with_chromium) {
       "../../rtc_base:rtc_base_approved",
       "../../test:rtp_test_utils",
       "../rtp_rtcp",
+      "//third_party/abseil-cpp/absl/flags:flag",
+      "//third_party/abseil-cpp/absl/flags:parse",
+    ]
+  }
+
+  rtc_executable("rtp_to_text") {
+    testonly = true
+    sources = [
+      "tools/rtp_to_text.cc",
+    ]
+    deps = [
+      ":bwe_rtp",
+      "../../modules/rtp_rtcp",
+      "../../rtc_base:macromagic",
+      "../../rtc_base:stringutils",
+      "../../test:rtp_test_utils",
     ]
   }
 }
