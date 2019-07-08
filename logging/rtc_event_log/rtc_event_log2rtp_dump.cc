@@ -16,6 +16,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/array_view.h"
@@ -27,40 +29,43 @@
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "modules/rtp_rtcp/source/rtp_packet.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/flags.h"
 #include "test/rtp_file_reader.h"
 #include "test/rtp_file_writer.h"
+
+ABSL_FLAG(
+    bool,
+    audio,
+    true,
+    "Use --noaudio to exclude audio packets from the converted RTPdump file.");
+ABSL_FLAG(
+    bool,
+    video,
+    true,
+    "Use --novideo to exclude video packets from the converted RTPdump file.");
+ABSL_FLAG(
+    bool,
+    data,
+    true,
+    "Use --nodata to exclude data packets from the converted RTPdump file.");
+ABSL_FLAG(
+    bool,
+    rtp,
+    true,
+    "Use --nortp to exclude RTP packets from the converted RTPdump file.");
+ABSL_FLAG(
+    bool,
+    rtcp,
+    true,
+    "Use --nortcp to exclude RTCP packets from the converted RTPdump file.");
+ABSL_FLAG(std::string,
+          ssrc,
+          "",
+          "Store only packets with this SSRC (decimal or hex, the latter "
+          "starting with 0x).");
 
 namespace {
 
 using MediaType = webrtc::ParsedRtcEventLog::MediaType;
-
-WEBRTC_DEFINE_bool(
-    audio,
-    true,
-    "Use --noaudio to exclude audio packets from the converted RTPdump file.");
-WEBRTC_DEFINE_bool(
-    video,
-    true,
-    "Use --novideo to exclude video packets from the converted RTPdump file.");
-WEBRTC_DEFINE_bool(
-    data,
-    true,
-    "Use --nodata to exclude data packets from the converted RTPdump file.");
-WEBRTC_DEFINE_bool(
-    rtp,
-    true,
-    "Use --nortp to exclude RTP packets from the converted RTPdump file.");
-WEBRTC_DEFINE_bool(
-    rtcp,
-    true,
-    "Use --nortcp to exclude RTCP packets from the converted RTPdump file.");
-WEBRTC_DEFINE_string(
-    ssrc,
-    "",
-    "Store only packets with this SSRC (decimal or hex, the latter "
-    "starting with 0x).");
-WEBRTC_DEFINE_bool(help, false, "Prints this message.");
 
 // Parses the input string for a valid SSRC. If a valid SSRC is found, it is
 // written to the output variable |ssrc|, and true is returned. Otherwise,
@@ -87,11 +92,11 @@ absl::optional<uint32_t> ParseSsrc(std::string str) {
 bool ShouldSkipStream(MediaType media_type,
                       uint32_t ssrc,
                       absl::optional<uint32_t> ssrc_filter) {
-  if (!FLAG_audio && media_type == MediaType::AUDIO)
+  if (!absl::GetFlag(FLAGS_audio) && media_type == MediaType::AUDIO)
     return true;
-  if (!FLAG_video && media_type == MediaType::VIDEO)
+  if (!absl::GetFlag(FLAGS_video) && media_type == MediaType::VIDEO)
     return true;
-  if (!FLAG_data && media_type == MediaType::DATA)
+  if (!absl::GetFlag(FLAGS_data) && media_type == MediaType::DATA)
     return true;
   if (ssrc_filter.has_value() && ssrc != *ssrc_filter)
     return true;
@@ -158,7 +163,10 @@ void ConvertRtpPacket(
 
 // This utility will convert a stored event log to the rtpdump format.
 int main(int argc, char* argv[]) {
-  std::string program_name = argv[0];
+  // TODO(bugs.webrtc.org/10616): Add program usage message when Abseil
+  // flags supports it.
+  std::vector<char*> args = absl::ParseCommandLine(argc, argv);
+  std::string program_name = args[0];
   std::string usage =
       "Tool for converting an RtcEventLog file to an RTP dump file.\n"
       "Run " +
@@ -166,22 +174,17 @@ int main(int argc, char* argv[]) {
       " --help for usage.\n"
       "Example usage:\n" +
       program_name + " input.rel output.rtp\n";
-  if (rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true) || FLAG_help ||
-      argc != 3) {
+  if (args.size() != 3) {
     std::cout << usage;
-    if (FLAG_help) {
-      rtc::FlagList::Print(nullptr, false);
-      return 0;
-    }
     return 1;
   }
 
-  std::string input_file = argv[1];
-  std::string output_file = argv[2];
+  std::string input_file = args[1];
+  std::string output_file = args[2];
 
   absl::optional<uint32_t> ssrc_filter;
-  if (strlen(FLAG_ssrc) > 0) {
-    ssrc_filter = ParseSsrc(FLAG_ssrc);
+  if (!absl::GetFlag(FLAGS_ssrc).empty()) {
+    ssrc_filter = ParseSsrc(absl::GetFlag(FLAGS_ssrc));
     RTC_CHECK(ssrc_filter.has_value()) << "Failed to read SSRC filter flag.";
   }
 

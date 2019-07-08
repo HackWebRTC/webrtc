@@ -74,7 +74,7 @@ if (!build_with_chromium) {
       if (rtc_enable_protobuf) {
         deps += [
           "audio:low_bandwidth_audio_test",
-          "logging:rtc_event_log2rtp_dump",
+          "logging:rtc_event_log_rtp_dump",
         ]
       }
     }

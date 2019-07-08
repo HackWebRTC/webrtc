@@ -392,7 +392,7 @@ if (rtc_enable_protobuf) {
       ]
     }
 
-    rtc_test("rtc_event_log2rtp_dump") {
+    rtc_executable("rtc_event_log_rtp_dump") {
       testonly = true
       sources = [
         "rtc_event_log/rtc_event_log2rtp_dump.cc",
@@ -409,6 +409,8 @@ if (rtc_enable_protobuf) {
         "../rtc_base:protobuf_utils",
         "../rtc_base:rtc_base_approved",
         "../test:rtp_test_utils",
+        "//third_party/abseil-cpp/absl/flags:flag",
+        "//third_party/abseil-cpp/absl/flags:parse",
         "//third_party/abseil-cpp/absl/memory",
         "//third_party/abseil-cpp/absl/types:optional",
       ]
