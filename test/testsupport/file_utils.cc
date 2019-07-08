@@ -48,9 +48,7 @@
 
 #if defined(WEBRTC_IOS)
 #include "test/testsupport/ios_file_utils.h"
-#endif
-
-#if defined(WEBRTC_MAC)
+#elif defined(WEBRTC_MAC)
 #include "test/testsupport/mac_file_utils.h"
 #endif
 

@@ -302,7 +302,9 @@ rtc_source_set("file_audio_generator") {
 
 rtc_source_set("audio_processing_c") {
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
-  sources = []
+  sources = [
+    "ns/windows_private.h",
+  ]
 
   if (rtc_prefer_fixed_point) {
     sources += [
@@ -324,7 +326,6 @@ rtc_source_set("audio_processing_c") {
       "ns/noise_suppression.h",
       "ns/ns_core.c",
       "ns/ns_core.h",
-      "ns/windows_private.h",
     ]
   }
 
