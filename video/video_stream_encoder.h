@@ -335,6 +335,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   absl::optional<int64_t> last_encode_info_ms_ RTC_GUARDED_BY(&encoder_queue_);
 
   VideoEncoder::EncoderInfo encoder_info_ RTC_GUARDED_BY(&encoder_queue_);
+  absl::optional<VideoEncoder::ResolutionBitrateLimits> encoder_bitrate_limits_
+      RTC_GUARDED_BY(&encoder_queue_);
   VideoEncoderFactory::CodecInfo codec_info_ RTC_GUARDED_BY(&encoder_queue_);
   VideoCodec send_codec_ RTC_GUARDED_BY(&encoder_queue_);
 

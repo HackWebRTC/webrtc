@@ -36,7 +36,17 @@ std::vector<VideoStream> CreateVideoStreams(
              DefaultVideoStreamFactory::kMaxNumberOfStreams);
 
   std::vector<VideoStream> stream_settings(encoder_config.number_of_streams);
-  int bitrate_left_bps = encoder_config.max_bitrate_bps;
+
+  int bitrate_left_bps = 0;
+  if (encoder_config.max_bitrate_bps > 0) {
+    bitrate_left_bps = encoder_config.max_bitrate_bps;
+  } else {
+    for (size_t stream_num = 0; stream_num < encoder_config.number_of_streams;
+         ++stream_num) {
+      bitrate_left_bps +=
+          DefaultVideoStreamFactory::kMaxBitratePerStream[stream_num];
+    }
+  }
 
   for (size_t i = 0; i < encoder_config.number_of_streams; ++i) {
     stream_settings[i].width =
