@@ -13,13 +13,7 @@
 #include <memory>
 #include <utility>
 
-#include "api/audio_codecs/builtin_audio_decoder_factory.h"
-#include "api/audio_codecs/builtin_audio_encoder_factory.h"
-#include "api/video/builtin_video_bitrate_allocator_factory.h"
-#include "api/video_codecs/builtin_video_decoder_factory.h"
-#include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "media/engine/webrtc_media_engine_defaults.h"
-#include "modules/audio_processing/include/audio_processing.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 
@@ -288,17 +282,7 @@ TEST(WebRtcMediaEngineTest, FilterRtpExtensions_RemoveRedundantBwe_3) {
   EXPECT_EQ(RtpExtension::kTimestampOffsetUri, filtered[0].uri);
 }
 
-TEST(WebRtcMediaEngineFactoryTest, CreateWithBuiltinDecoders) {
-  std::unique_ptr<MediaEngineInterface> engine(WebRtcMediaEngineFactory::Create(
-      nullptr /* adm */, webrtc::CreateBuiltinAudioEncoderFactory(),
-      webrtc::CreateBuiltinAudioDecoderFactory(),
-      webrtc::CreateBuiltinVideoEncoderFactory(),
-      webrtc::CreateBuiltinVideoDecoderFactory(), nullptr /* audio_mixer */,
-      webrtc::AudioProcessingBuilder().Create()));
-  EXPECT_TRUE(engine);
-}
-
-TEST(WebRtcMediaEngineFactoryTest, Create) {
+TEST(WebRtcMediaEngineTest, Create) {
   MediaEngineDependencies deps;
   webrtc::SetMediaEngineDefaults(&deps);
 
