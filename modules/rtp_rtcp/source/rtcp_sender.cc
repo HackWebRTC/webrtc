@@ -48,8 +48,6 @@ namespace {
 const uint32_t kRtcpAnyExtendedReports = kRtcpXrReceiverReferenceTime |
                                          kRtcpXrDlrrReportBlock |
                                          kRtcpXrTargetBitrate;
-constexpr int32_t kDefaultVideoReportInterval = 1000;
-constexpr int32_t kDefaultAudioReportInterval = 5000;
 }  // namespace
 
 RTCPSender::FeedbackState::FeedbackState()
@@ -114,25 +112,29 @@ class RTCPSender::RtcpContext {
   const int64_t now_us_;
 };
 
-RTCPSender::RTCPSender(const RtpRtcp::Configuration& config)
-    : audio_(config.audio),
-      clock_(config.clock),
+RTCPSender::RTCPSender(
+    bool audio,
+    Clock* clock,
+    ReceiveStatisticsProvider* receive_statistics,
+    RtcpPacketTypeCounterObserver* packet_type_counter_observer,
+    RtcEventLog* event_log,
+    Transport* outgoing_transport,
+    int report_interval_ms)
+    : audio_(audio),
+      clock_(clock),
       random_(clock_->TimeInMicroseconds()),
       method_(RtcpMode::kOff),
-      event_log_(config.event_log),
-      transport_(config.outgoing_transport),
-      report_interval_ms_(config.rtcp_report_interval_ms > 0
-                              ? config.rtcp_report_interval_ms
-                              : (config.audio ? kDefaultAudioReportInterval
-                                              : kDefaultVideoReportInterval)),
+      event_log_(event_log),
+      transport_(outgoing_transport),
+      report_interval_ms_(report_interval_ms),
       sending_(false),
       next_time_to_send_rtcp_(0),
       timestamp_offset_(0),
       last_rtp_timestamp_(0),
       last_frame_capture_time_ms_(-1),
-      ssrc_(config.media_send_ssrc.value_or(0)),
+      ssrc_(0),
       remote_ssrc_(0),
-      receive_statistics_(config.receive_statistics),
+      receive_statistics_(receive_statistics),
 
       sequence_number_fir_(0),
 
@@ -148,7 +150,7 @@ RTCPSender::RTCPSender(const RtpRtcp::Configuration& config)
       app_length_(0),
 
       xr_send_receiver_reference_time_enabled_(false),
-      packet_type_counter_observer_(config.rtcp_packet_type_counter_observer),
+      packet_type_counter_observer_(packet_type_counter_observer),
       send_video_bitrate_allocation_(false),
       last_payload_type_(-1) {
   RTC_DCHECK(transport_ != nullptr);
@@ -305,7 +307,7 @@ uint32_t RTCPSender::SSRC() const {
 void RTCPSender::SetSSRC(uint32_t ssrc) {
   rtc::CritScope lock(&critical_section_rtcp_sender_);
 
-  if (ssrc != ssrc_) {
+  if (ssrc_ != 0) {
     // not first SetSSRC, probably due to a collision
     // schedule a new RTCP report
     // make sure that we send a RTP packet
