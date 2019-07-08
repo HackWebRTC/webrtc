@@ -34,9 +34,9 @@
 #endif
 
 // See notes in the 'Performance' unit test for the effects of this flag.
-#define USE_NATIVE_MUTEX_ON_MAC 1
+#define RTC_USE_NATIVE_MUTEX_ON_MAC 1
 
-#if defined(WEBRTC_MAC) && !USE_NATIVE_MUTEX_ON_MAC
+#if defined(WEBRTC_MAC) && !RTC_USE_NATIVE_MUTEX_ON_MAC
 #include <dispatch/dispatch.h>
 #endif
 
@@ -61,7 +61,7 @@ class RTC_LOCKABLE CriticalSection {
 #if defined(WEBRTC_WIN)
   mutable CRITICAL_SECTION crit_;
 #elif defined(WEBRTC_POSIX)
-#if defined(WEBRTC_MAC) && !USE_NATIVE_MUTEX_ON_MAC
+#if defined(WEBRTC_MAC) && !RTC_USE_NATIVE_MUTEX_ON_MAC
   // Number of times the lock has been locked + number of threads waiting.
   // TODO(tommi): We could use this number and subtract the recursion count
   // to find places where we have multiple threads contending on the same lock.
