@@ -153,7 +153,6 @@ rtc_static_library("video_coding") {
     "..:module_api_public",
     "../../api:fec_controller_api",
     "../../api:rtp_headers",
-    "../../api/task_queue:global_task_queue_factory",
     "../../api/units:data_rate",
     "../../api/video:builtin_video_bitrate_allocator_factory",
     "../../api/video:encoded_frame",

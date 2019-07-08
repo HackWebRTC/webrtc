@@ -232,7 +232,6 @@ if (is_ios || is_mac) {
 
         deps = [
           ":audio_device",
-          "../api/task_queue:global_task_queue_factory",
           "../modules/audio_device:audio_device_api",
           "../modules/audio_device:audio_device_generic",
           "../rtc_base:checks",
