@@ -23,48 +23,51 @@ class BalancedDegradationSettings {
   BalancedDegradationSettings();
   ~BalancedDegradationSettings();
 
-  struct QpThreshold {
-    QpThreshold() {}
-    QpThreshold(int low, int high) : low(low), high(high) {}
+  struct CodecTypeSpecific {
+    CodecTypeSpecific() {}
+    CodecTypeSpecific(int qp_low, int qp_high, int fps)
+        : qp_low(qp_low), qp_high(qp_high), fps(fps) {}
 
-    bool operator==(const QpThreshold& o) const {
-      return low == o.low && high == o.high;
+    bool operator==(const CodecTypeSpecific& o) const {
+      return qp_low == o.qp_low && qp_high == o.qp_high && fps == o.fps;
     }
 
-    absl::optional<int> GetLow() const;
-    absl::optional<int> GetHigh() const;
-    int low = 0;
-    int high = 0;
+    absl::optional<int> GetQpLow() const;
+    absl::optional<int> GetQpHigh() const;
+    absl::optional<int> GetFps() const;
+    int qp_low = 0;
+    int qp_high = 0;
+    int fps = 0;
   };
 
   struct Config {
     Config();
     Config(int pixels,
            int fps,
-           QpThreshold vp8,
-           QpThreshold vp9,
-           QpThreshold h264,
-           QpThreshold generic);
+           CodecTypeSpecific vp8,
+           CodecTypeSpecific vp9,
+           CodecTypeSpecific h264,
+           CodecTypeSpecific generic);
 
     bool operator==(const Config& o) const {
       return pixels == o.pixels && fps == o.fps && vp8 == o.vp8 &&
              vp9 == o.vp9 && h264 == o.h264 && generic == o.generic;
     }
 
-    int pixels = 0;   // The video frame size.
-    int fps = 0;      // The framerate and thresholds to be used if the frame
-    QpThreshold vp8;  // size is less than or equal to |pixels|.
-    QpThreshold vp9;
-    QpThreshold h264;
-    QpThreshold generic;
+    int pixels = 0;         // The video frame size.
+    int fps = 0;            // The framerate and thresholds to be used if the
+    CodecTypeSpecific vp8;  // frame size is less than or equal to |pixels|.
+    CodecTypeSpecific vp9;
+    CodecTypeSpecific h264;
+    CodecTypeSpecific generic;
   };
 
   // Returns configurations from field trial on success (default on failure).
   std::vector<Config> GetConfigs() const;
 
   // Gets the min/max framerate from |configs_| based on |pixels|.
-  int MinFps(int pixels) const;
-  int MaxFps(int pixels) const;
+  int MinFps(VideoCodecType type, int pixels) const;
+  int MaxFps(VideoCodecType type, int pixels) const;
 
   // Gets QpThresholds for the codec |type| based on |pixels|.
   absl::optional<VideoEncoder::QpThresholds> GetQpThresholds(
@@ -72,6 +75,8 @@ class BalancedDegradationSettings {
       int pixels) const;
 
  private:
+  absl::optional<Config> GetMinFpsConfig(int pixels) const;
+  absl::optional<Config> GetMaxFpsConfig(int pixels) const;
   Config GetConfig(int pixels) const;
 
   std::vector<Config> configs_;

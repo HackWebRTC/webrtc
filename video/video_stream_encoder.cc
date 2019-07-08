@@ -1741,7 +1741,8 @@ void VideoStreamEncoder::AdaptDown(AdaptReason reason) {
   switch (degradation_preference_) {
     case DegradationPreference::BALANCED: {
       // Try scale down framerate, if lower.
-      int fps = balanced_settings_.MinFps(last_frame_info_->pixel_count());
+      int fps = balanced_settings_.MinFps(encoder_config_.codec_type,
+                                          last_frame_info_->pixel_count());
       if (source_proxy_->RestrictFramerate(fps)) {
         GetAdaptCounter().IncrementFramerate(reason);
         break;
@@ -1817,7 +1818,8 @@ void VideoStreamEncoder::AdaptUp(AdaptReason reason) {
   switch (degradation_preference_) {
     case DegradationPreference::BALANCED: {
       // Try scale up framerate, if higher.
-      int fps = balanced_settings_.MaxFps(last_frame_info_->pixel_count());
+      int fps = balanced_settings_.MaxFps(encoder_config_.codec_type,
+                                          last_frame_info_->pixel_count());
       if (source_proxy_->IncreaseFramerate(fps)) {
         GetAdaptCounter().DecrementFramerate(reason, fps);
         // Reset framerate in case of fewer fps steps down than up.
