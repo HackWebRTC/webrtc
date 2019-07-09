@@ -1031,4 +1031,91 @@ TEST(RtpPacketTest, IsExtensionReserved) {
   EXPECT_TRUE(packet.IsExtensionReserved<TransmissionOffset>());
 }
 
+// Tests that RtpPacket::RemoveExtension can successfully remove extensions.
+TEST(RtpPacketTest, RemoveMultipleExtensions) {
+  RtpPacketToSend::ExtensionManager extensions;
+  extensions.Register(kRtpExtensionTransmissionTimeOffset,
+                      kTransmissionOffsetExtensionId);
+  extensions.Register(kRtpExtensionAudioLevel, kAudioLevelExtensionId);
+  RtpPacketToSend packet(&extensions);
+  packet.SetPayloadType(kPayloadType);
+  packet.SetSequenceNumber(kSeqNum);
+  packet.SetTimestamp(kTimestamp);
+  packet.SetSsrc(kSsrc);
+  packet.SetExtension<TransmissionOffset>(kTimeOffset);
+  packet.SetExtension<AudioLevel>(kVoiceActive, kAudioLevel);
+
+  EXPECT_THAT(kPacketWithTOAndAL,
+              ElementsAreArray(packet.data(), packet.size()));
+
+  // Remove one of two extensions.
+  EXPECT_TRUE(packet.RemoveExtension(kRtpExtensionAudioLevel));
+
+  EXPECT_THAT(kPacketWithTO, ElementsAreArray(packet.data(), packet.size()));
+
+  // Remove remaining extension.
+  EXPECT_TRUE(packet.RemoveExtension(kRtpExtensionTransmissionTimeOffset));
+
+  EXPECT_THAT(kMinimumPacket, ElementsAreArray(packet.data(), packet.size()));
+}
+
+// Tests that RtpPacket::RemoveExtension can successfully remove extension when
+// other extensions are present but not registered.
+TEST(RtpPacketTest, RemoveExtensionPreservesOtherUnregisteredExtensions) {
+  RtpPacketToSend::ExtensionManager extensions;
+  extensions.Register(kRtpExtensionTransmissionTimeOffset,
+                      kTransmissionOffsetExtensionId);
+  extensions.Register(kRtpExtensionAudioLevel, kAudioLevelExtensionId);
+  RtpPacketToSend packet(&extensions);
+  packet.SetPayloadType(kPayloadType);
+  packet.SetSequenceNumber(kSeqNum);
+  packet.SetTimestamp(kTimestamp);
+  packet.SetSsrc(kSsrc);
+  packet.SetExtension<TransmissionOffset>(kTimeOffset);
+  packet.SetExtension<AudioLevel>(kVoiceActive, kAudioLevel);
+
+  EXPECT_THAT(kPacketWithTOAndAL,
+              ElementsAreArray(packet.data(), packet.size()));
+
+  // "Unregister" kRtpExtensionTransmissionTimeOffset.
+  RtpPacketToSend::ExtensionManager extensions1;
+  extensions1.Register(kRtpExtensionAudioLevel, kAudioLevelExtensionId);
+  packet.IdentifyExtensions(extensions1);
+
+  // Make sure we can not delete extension which is set but not registered.
+  EXPECT_FALSE(packet.RemoveExtension(kRtpExtensionTransmissionTimeOffset));
+
+  // Remove registered extension.
+  EXPECT_TRUE(packet.RemoveExtension(kRtpExtensionAudioLevel));
+
+  EXPECT_THAT(kPacketWithTO, ElementsAreArray(packet.data(), packet.size()));
+}
+
+// Tests that RtpPacket::RemoveExtension fails if extension is not present or
+// not registered and does not modify packet.
+TEST(RtpPacketTest, RemoveExtensionFailure) {
+  RtpPacketToSend::ExtensionManager extensions;
+  extensions.Register(kRtpExtensionTransmissionTimeOffset,
+                      kTransmissionOffsetExtensionId);
+  extensions.Register(kRtpExtensionAudioLevel, kAudioLevelExtensionId);
+  RtpPacketToSend packet(&extensions);
+  packet.SetPayloadType(kPayloadType);
+  packet.SetSequenceNumber(kSeqNum);
+  packet.SetTimestamp(kTimestamp);
+  packet.SetSsrc(kSsrc);
+  packet.SetExtension<TransmissionOffset>(kTimeOffset);
+
+  EXPECT_THAT(kPacketWithTO, ElementsAreArray(packet.data(), packet.size()));
+
+  // Try to remove extension, which was registered, but not set.
+  EXPECT_FALSE(packet.RemoveExtension(kRtpExtensionAudioLevel));
+
+  EXPECT_THAT(kPacketWithTO, ElementsAreArray(packet.data(), packet.size()));
+
+  // Try to remove extension, which was not registered.
+  EXPECT_FALSE(packet.RemoveExtension(kRtpExtensionPlayoutDelay));
+
+  EXPECT_THAT(kPacketWithTO, ElementsAreArray(packet.data(), packet.size()));
+}
+
 }  // namespace webrtc
