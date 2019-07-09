@@ -1118,7 +1118,7 @@ void ChannelSend::ProcessAndEncodeAudio(
 
 void ChannelSend::ProcessAndEncodeAudioOnTaskQueue(AudioFrame* audio_input) {
   RTC_DCHECK_GT(audio_input->samples_per_channel_, 0);
-  RTC_DCHECK_LE(audio_input->num_channels_, 2);
+  RTC_DCHECK_LE(audio_input->num_channels_, 8);
 
   // Measure time between when the audio frame is added to the task queue and
   // when the task is actually executed. Goal is to keep track of unwanted
