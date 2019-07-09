@@ -154,7 +154,6 @@ class VideoSendStreamImplTest : public ::testing::Test {
 
 TEST_F(VideoSendStreamImplTest, RegistersAsBitrateObserverOnStart) {
   test_queue_.SendTask([this] {
-    config_.track_id = "test";
     const bool kSuspend = false;
     config_.suspend_below_min_bitrate = kSuspend;
     auto vss_impl = CreateVideoSendStreamImpl(
@@ -167,7 +166,6 @@ TEST_F(VideoSendStreamImplTest, RegistersAsBitrateObserverOnStart) {
               EXPECT_EQ(config.max_bitrate_bps, kDefaultInitialBitrateBps);
               EXPECT_EQ(config.pad_up_bitrate_bps, 0u);
               EXPECT_EQ(config.enforce_min_bitrate, !kSuspend);
-              EXPECT_EQ(config.track_id, "test");
               EXPECT_EQ(config.bitrate_priority, kDefaultBitratePriority);
             }));
     vss_impl->Start();
@@ -178,7 +176,6 @@ TEST_F(VideoSendStreamImplTest, RegistersAsBitrateObserverOnStart) {
 
 TEST_F(VideoSendStreamImplTest, UpdatesObserverOnConfigurationChange) {
   test_queue_.SendTask([this] {
-    config_.track_id = "test";
     const bool kSuspend = false;
     config_.suspend_below_min_bitrate = kSuspend;
     config_.rtp.extensions.emplace_back(
@@ -241,7 +238,6 @@ TEST_F(VideoSendStreamImplTest, UpdatesObserverOnConfigurationChange) {
 
 TEST_F(VideoSendStreamImplTest, UpdatesObserverOnConfigurationChangeWithAlr) {
   test_queue_.SendTask([this] {
-    config_.track_id = "test";
     const bool kSuspend = false;
     config_.suspend_below_min_bitrate = kSuspend;
     config_.rtp.extensions.emplace_back(
@@ -630,7 +626,6 @@ TEST_F(VideoSendStreamImplTest, ForwardsVideoBitrateAllocationAfterTimeout) {
 
 TEST_F(VideoSendStreamImplTest, CallsVideoStreamEncoderOnBitrateUpdate) {
   test_queue_.SendTask([this] {
-    config_.track_id = "test";
     const bool kSuspend = false;
     config_.suspend_below_min_bitrate = kSuspend;
     config_.rtp.extensions.emplace_back(
@@ -758,8 +753,6 @@ TEST_F(VideoSendStreamImplTest, DisablesPaddingOnPausedEncoder) {
     EXPECT_CALL(rtp_video_sender_, OnEncodedImage(_, _, _))
         .WillRepeatedly(Return(
             EncodedImageCallback::Result(EncodedImageCallback::Result::OK)));
-
-    config_.track_id = "test";
     const bool kSuspend = false;
     config_.suspend_below_min_bitrate = kSuspend;
     config_.rtp.extensions.emplace_back(

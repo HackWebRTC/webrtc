@@ -17,7 +17,6 @@
 #import "RTCMediaConstraints+Private.h"
 #import "RTCMediaStream+Private.h"
 #import "RTCMediaStreamTrack+Private.h"
-#import "RTCPeerConnection+Native.h"
 #import "RTCPeerConnectionFactory+Private.h"
 #import "RTCRtpReceiver+Private.h"
 #import "RTCRtpSender+Private.h"
@@ -520,11 +519,6 @@ void PeerConnectionDelegateAdapter::OnRemoveTrack(
     params.max_bitrate_bps = absl::optional<int>(maxBitrateBps.intValue);
   }
   return _peerConnection->SetBitrate(params).ok();
-}
-
-- (void)setBitrateAllocationStrategy:
-        (std::unique_ptr<rtc::BitrateAllocationStrategy>)bitrateAllocationStrategy {
-  _peerConnection->SetBitrateAllocationStrategy(std::move(bitrateAllocationStrategy));
 }
 
 - (BOOL)startRtcEventLogWithFilePath:(NSString *)filePath

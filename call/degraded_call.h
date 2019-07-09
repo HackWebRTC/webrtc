@@ -35,7 +35,6 @@
 #include "call/video_send_stream.h"
 #include "modules/include/module.h"
 #include "modules/utility/include/process_thread.h"
-#include "rtc_base/bitrate_allocation_strategy.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/network/sent_packet.h"
 #include "system_wrappers/include/clock.h"
@@ -106,10 +105,6 @@ class DegradedCall : public Call, private Transport, private PacketReceiver {
   RtpTransportControllerSendInterface* GetTransportControllerSend() override;
 
   Stats GetStats() const override;
-
-  void SetBitrateAllocationStrategy(
-      std::unique_ptr<rtc::BitrateAllocationStrategy>
-          bitrate_allocation_strategy) override;
 
   void SignalChannelNetworkState(MediaType media, NetworkState state) override;
   void OnAudioTransportOverheadChanged(

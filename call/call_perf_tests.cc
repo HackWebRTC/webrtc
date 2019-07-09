@@ -28,7 +28,6 @@
 #include "modules/audio_device/include/test_audio_device.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
-#include "rtc_base/bitrate_allocation_strategy.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/thread_annotations.h"
 #include "system_wrappers/include/metrics.h"
@@ -81,8 +80,7 @@ class CallPerfTest : public test::CallTest {
                           int threshold_ms,
                           int start_time_ms,
                           int run_time_ms);
-  void TestMinAudioVideoBitrate(bool use_bitrate_allocation_strategy,
-                                int test_bitrate_from,
+  void TestMinAudioVideoBitrate(int test_bitrate_from,
                                 int test_bitrate_to,
                                 int test_bitrate_step,
                                 int min_bwe,
@@ -842,22 +840,17 @@ TEST_F(CallPerfTest, MAYBE_KeepsHighBitrateWhenReconfiguringSender) {
 // considered supported if Rtt does not go above 400ms with the network
 // contrained to the test bitrate.
 //
-// |use_bitrate_allocation_strategy| use AudioPriorityBitrateAllocationStrategy
 // |test_bitrate_from test_bitrate_to| bitrate constraint range
 // |test_bitrate_step| bitrate constraint update step during the test
 // |min_bwe max_bwe| BWE range
 // |start_bwe| initial BWE
-void CallPerfTest::TestMinAudioVideoBitrate(
-    bool use_bitrate_allocation_strategy,
-    int test_bitrate_from,
-    int test_bitrate_to,
-    int test_bitrate_step,
-    int min_bwe,
-    int start_bwe,
-    int max_bwe) {
+void CallPerfTest::TestMinAudioVideoBitrate(int test_bitrate_from,
+                                            int test_bitrate_to,
+                                            int test_bitrate_step,
+                                            int min_bwe,
+                                            int start_bwe,
+                                            int max_bwe) {
   static const std::string kAudioTrackId = "audio_track_0";
-  static constexpr uint32_t kSufficientAudioBitrateBps = 16000;
-  static constexpr int kOpusMinBitrateBps = 6000;
   static constexpr int kOpusBitrateFbBps = 32000;
   static constexpr int kBitrateStabilizationMs = 10000;
   static constexpr int kBitrateMeasurements = 10;
@@ -867,18 +860,13 @@ void CallPerfTest::TestMinAudioVideoBitrate(
 
   class MinVideoAndAudioBitrateTester : public test::EndToEndTest {
    public:
-    MinVideoAndAudioBitrateTester(bool use_bitrate_allocation_strategy,
-                                  int test_bitrate_from,
+    MinVideoAndAudioBitrateTester(int test_bitrate_from,
                                   int test_bitrate_to,
                                   int test_bitrate_step,
                                   int min_bwe,
                                   int start_bwe,
                                   int max_bwe)
         : EndToEndTest(),
-          allocation_strategy_(new rtc::AudioPriorityBitrateAllocationStrategy(
-              kAudioTrackId,
-              kSufficientAudioBitrateBps)),
-          use_bitrate_allocation_strategy_(use_bitrate_allocation_strategy),
           test_bitrate_from_(test_bitrate_from),
           test_bitrate_to_(test_bitrate_to),
           test_bitrate_step_(test_bitrate_step),
@@ -953,11 +941,8 @@ void CallPerfTest::TestMinAudioVideoBitrate(
       }
       EXPECT_GT(last_passed_test_bitrate, -1)
           << "Minimum supported bitrate out of the test scope";
-      webrtc::test::PrintResult(
-          "min_test_bitrate_",
-          use_bitrate_allocation_strategy_ ? "with_allocation_strategy"
-                                           : "no_allocation_strategy",
-          "min_bitrate", last_passed_test_bitrate, "kbps", false);
+      webrtc::test::PrintResult("min_test_bitrate_", "", "min_bitrate",
+                                last_passed_test_bitrate, "kbps", false);
     }
 
     void OnCallsCreated(Call* sender_call, Call* receiver_call) override {
@@ -968,10 +953,6 @@ void CallPerfTest::TestMinAudioVideoBitrate(
       bitrate_config.max_bitrate_bps = max_bwe_;
       sender_call->GetTransportControllerSend()->SetSdpBitrateParameters(
           bitrate_config);
-      if (use_bitrate_allocation_strategy_) {
-        sender_call->SetBitrateAllocationStrategy(
-            std::move(allocation_strategy_));
-      }
     }
 
     size_t GetNumVideoStreams() const override { return 1; }
@@ -981,19 +962,11 @@ void CallPerfTest::TestMinAudioVideoBitrate(
     void ModifyAudioConfigs(
         AudioSendStream::Config* send_config,
         std::vector<AudioReceiveStream::Config>* receive_configs) override {
-      if (use_bitrate_allocation_strategy_) {
-        send_config->track_id = kAudioTrackId;
-        send_config->min_bitrate_bps = kOpusMinBitrateBps;
-        send_config->max_bitrate_bps = kOpusBitrateFbBps;
-      } else {
-        send_config->send_codec_spec->target_bitrate_bps =
-            absl::optional<int>(kOpusBitrateFbBps);
-      }
+      send_config->send_codec_spec->target_bitrate_bps =
+          absl::optional<int>(kOpusBitrateFbBps);
     }
 
    private:
-    std::unique_ptr<rtc::BitrateAllocationStrategy> allocation_strategy_;
-    const bool use_bitrate_allocation_strategy_;
     const int test_bitrate_from_;
     const int test_bitrate_to_;
     const int test_bitrate_step_;
@@ -1003,8 +976,8 @@ void CallPerfTest::TestMinAudioVideoBitrate(
     SimulatedNetwork* send_simulated_network_;
     SimulatedNetwork* receive_simulated_network_;
     Call* sender_call_;
-  } test(use_bitrate_allocation_strategy, test_bitrate_from, test_bitrate_to,
-         test_bitrate_step, min_bwe, start_bwe, max_bwe);
+  } test(test_bitrate_from, test_bitrate_to, test_bitrate_step, min_bwe,
+         start_bwe, max_bwe);
 
   RunBaseTest(&test);
 }
@@ -1016,10 +989,7 @@ void CallPerfTest::TestMinAudioVideoBitrate(
 #define MAYBE_MinVideoAndAudioBitrate MinVideoAndAudioBitrate
 #endif
 TEST_F(CallPerfTest, MAYBE_MinVideoAndAudioBitrate) {
-  TestMinAudioVideoBitrate(false, 110, 40, -10, 10000, 70000, 200000);
-}
-TEST_F(CallPerfTest, MinVideoAndAudioBitrateWStrategy) {
-  TestMinAudioVideoBitrate(true, 110, 40, -10, 10000, 70000, 200000);
+  TestMinAudioVideoBitrate(110, 40, -10, 10000, 70000, 200000);
 }
 
 }  // namespace webrtc

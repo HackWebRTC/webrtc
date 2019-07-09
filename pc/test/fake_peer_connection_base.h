@@ -186,10 +186,6 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
     return RTCError(RTCErrorType::UNSUPPORTED_OPERATION, "Not implemented");
   }
 
-  void SetBitrateAllocationStrategy(
-      std::unique_ptr<rtc::BitrateAllocationStrategy>
-          bitrate_allocation_strategy) override {}
-
   void SetAudioPlayout(bool playout) override {}
 
   void SetAudioRecording(bool recording) override {}

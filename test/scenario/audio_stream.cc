@@ -10,7 +10,6 @@
 #include "test/scenario/audio_stream.h"
 
 #include "absl/memory/memory.h"
-#include "rtc_base/bitrate_allocation_strategy.h"
 #include "test/call_test.h"
 
 #if WEBRTC_ENABLE_PROTOBUF
@@ -130,10 +129,6 @@ SendAudioStream::SendAudioStream(
 
   if (config.encoder.priority_rate) {
     send_config.track_id = sender->GetNextPriorityId();
-    sender_->call_->SetBitrateAllocationStrategy(
-        absl::make_unique<rtc::AudioPriorityBitrateAllocationStrategy>(
-            send_config.track_id,
-            config.encoder.priority_rate->bps<uint32_t>()));
   }
   sender_->SendTask([&] {
     send_stream_ = sender_->call_->CreateAudioSendStream(send_config);
