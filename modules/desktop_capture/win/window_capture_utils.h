@@ -61,9 +61,9 @@ bool IsWindowMaximized(HWND window, bool* result);
 
 typedef HRESULT(WINAPI* DwmIsCompositionEnabledFunc)(BOOL* enabled);
 typedef HRESULT(WINAPI* DwmGetWindowAttributeFunc)(HWND hwnd,
-                                                   DWORD dwAttribute,
-                                                   PVOID pvAttribute,
-                                                   DWORD cbAttribute);
+                                                   DWORD flag,
+                                                   PVOID result_ptr,
+                                                   DWORD result_size);
 class WindowCaptureHelperWin {
  public:
   WindowCaptureHelperWin();
@@ -85,8 +85,7 @@ class WindowCaptureHelperWin {
   DwmGetWindowAttributeFunc dwm_get_window_attribute_func_ = nullptr;
 
   // Only used on Win10+.
-  Microsoft::WRL::ComPtr<IVirtualDesktopManager> virtual_desktop_manager_ =
-      nullptr;
+  Microsoft::WRL::ComPtr<IVirtualDesktopManager> virtual_desktop_manager_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(WindowCaptureHelperWin);
 };
