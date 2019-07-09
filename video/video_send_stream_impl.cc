@@ -511,7 +511,6 @@ MediaStreamAllocationConfig VideoSendStreamImpl::GetAllocationConfig() const {
       static_cast<uint32_t>(disable_padding_ ? 0 : max_padding_bitrate_),
       /* priority_bitrate */ 0,
       !config_->suspend_below_min_bitrate,
-      config_->track_id,
       encoder_bitrate_priority_};
 }
 

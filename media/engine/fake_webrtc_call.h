@@ -347,10 +347,6 @@ class FakeCall final : public webrtc::Call, public webrtc::PacketReceiver {
 
   webrtc::Call::Stats GetStats() const override;
 
-  void SetBitrateAllocationStrategy(
-      std::unique_ptr<rtc::BitrateAllocationStrategy>
-          bitrate_allocation_strategy) override;
-
   void SignalChannelNetworkState(webrtc::MediaType media,
                                  webrtc::NetworkState state) override;
   void OnAudioTransportOverheadChanged(
