@@ -23,7 +23,6 @@ import re
 import shutil
 import subprocess
 import sys
-import tempfile
 
 
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -207,20 +206,7 @@ def _AddChart(charts, metric, test_name, value, units):
   }
 
 
-def _AddRunPerfResults(charts, run_perf_results_file):
-  with open(run_perf_results_file, 'rb') as f:
-    per_run_perf_results = json.load(f)
-  if 'charts' not in per_run_perf_results:
-    return
-  for metric, cases in per_run_perf_results['charts'].items():
-    chart = charts.setdefault(metric, {})
-    for case_name, case_value in cases.items():
-      if case_name in chart:
-        logging.error('Overriding results for %s/%s', metric, case_name)
-      chart[case_name] = case_value
-
-
-Analyzer = collections.namedtuple('Analyzer', ['name', 'func', 'executable',
+Analyzer = collections.namedtuple('Analyzer', ['func', 'executable',
                                                'sample_rate_hz'])
 
 
@@ -242,55 +228,47 @@ def main():
   else:
     test_command = [os.path.join(args.build_dir, 'low_bandwidth_audio_test')]
 
-  analyzers = [Analyzer('pesq', _RunPesq, pesq_path, 16000)]
+  analyzers = [Analyzer(_RunPesq, pesq_path, 16000)]
   # Check if POLQA can run at all, or skip the 48 kHz tests entirely.
   example_path = os.path.join(SRC_DIR, 'resources',
                               'voice_engine', 'audio_tiny48.wav')
   if polqa_path and _RunPolqa(polqa_path, example_path, example_path):
-    analyzers.append(Analyzer('polqa', _RunPolqa, polqa_path, 48000))
+    analyzers.append(Analyzer(_RunPolqa, polqa_path, 48000))
 
   charts = {}
 
   for analyzer in analyzers:
-    f, cur_perf_results = tempfile.mkstemp(prefix='audio_perf', suffix=".json")
+    # Start the test executable that produces audio files.
+    test_process = subprocess.Popen(
+        _LogCommand(test_command + ['--sample_rate_hz=%d' %
+                                    analyzer.sample_rate_hz]),
+        stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     try:
-      # Start the test executable that produces audio files.
-      test_process = subprocess.Popen(
-          _LogCommand(test_command + [
-              '--sample_rate_hz=%d' % analyzer.sample_rate_hz,
-              '--test_case_prefix=%s' % analyzer.name,
-              '--isolated_script_test_perf_output=%s' % cur_perf_results,
-            ]),
-          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-      try:
-        lines = iter(test_process.stdout.readline, '')
-        for result in ExtractTestRuns(lines, echo=True):
-          (android_device, test_name, reference_file, degraded_file) = result
+      lines = iter(test_process.stdout.readline, '')
+      for result in ExtractTestRuns(lines, echo=True):
+        (android_device, test_name, reference_file, degraded_file) = result
 
-          adb_prefix = (args.adb_path,)
-          if android_device:
-            adb_prefix += ('-s', android_device)
+        adb_prefix = (args.adb_path,)
+        if android_device:
+          adb_prefix += ('-s', android_device)
 
-          reference_file = _GetFile(reference_file, out_dir,
-                                    android=args.android, adb_prefix=adb_prefix)
-          degraded_file = _GetFile(degraded_file, out_dir, move=True,
-                                   android=args.android, adb_prefix=adb_prefix)
+        reference_file = _GetFile(reference_file, out_dir,
+                                  android=args.android, adb_prefix=adb_prefix)
+        degraded_file = _GetFile(degraded_file, out_dir, move=True,
+                                 android=args.android, adb_prefix=adb_prefix)
 
-          analyzer_results = analyzer.func(analyzer.executable,
-                                           reference_file, degraded_file)
-          for metric, (value, units) in analyzer_results.items():
-            # Output a result for the perf dashboard.
-            print 'RESULT %s: %s= %s %s' % (metric, test_name, value, units)
-            _AddChart(charts, metric, test_name, value, units)
+        analyzer_results = analyzer.func(analyzer.executable,
+                                         reference_file, degraded_file)
+        for metric, (value, units) in analyzer_results.items():
+          # Output a result for the perf dashboard.
+          print 'RESULT %s: %s= %s %s' % (metric, test_name, value, units)
+          _AddChart(charts, metric, test_name, value, units)
 
-          if args.remove:
-            os.remove(reference_file)
-            os.remove(degraded_file)
-      finally:
-        test_process.terminate()
-      _AddRunPerfResults(charts, cur_perf_results)
+        if args.remove:
+          os.remove(reference_file)
+          os.remove(degraded_file)
     finally:
-      os.remove(cur_perf_results)
+      test_process.terminate()
 
   if args.isolated_script_test_perf_output:
     with open(args.isolated_script_test_perf_output, 'w') as f:
