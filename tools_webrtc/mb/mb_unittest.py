@@ -453,9 +453,11 @@ class UnitTest(unittest.TestCase):
     self.assertEqual(files, [
         '../../.vpython',
         '../../testing/test_env.py',
+        '../../tools_webrtc/flags_compatibility.py',
         'base_unittests',
     ])
     self.assertEqual(command, [
+        '../../tools_webrtc/flags_compatibility.py',
         '../../testing/test_env.py',
         './base_unittests',
         '--asan=0',
