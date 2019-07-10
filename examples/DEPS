@@ -10,7 +10,4 @@ include_rules = [
   "+sdk/objc",
   "+system_wrappers/include",
   "+third_party/libyuv",
-
-  # Abseil flags are allowed in tests and tools.
-  "+absl/flags",
 ]
