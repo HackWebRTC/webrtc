@@ -609,7 +609,8 @@ if (rtc_include_tests) {
       "video:video_pc_full_stack_tests",
     ]
 
-    data = webrtc_perf_tests_resources
+    data =
+        webrtc_perf_tests_resources + [ "tools_webrtc/flags_compatibility.py" ]
     if (is_android) {
       deps += [ "//testing/android/native_test:native_test_native_code" ]
       shard_timeout = 4500
