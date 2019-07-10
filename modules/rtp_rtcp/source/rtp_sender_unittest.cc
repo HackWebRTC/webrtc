@@ -2549,6 +2549,9 @@ TEST_P(RtpSenderTest, TrySendPacketUpdatesStats) {
 }
 
 TEST_P(RtpSenderTest, GeneratePaddingResendsOldPacketsWithRtx) {
+  // Min requested size in order to use RTX payload.
+  const size_t kMinPaddingSize = 50;
+
   rtp_sender_->SetRtxStatus(kRtxRetransmitted | kRtxRedundantPayloads);
   rtp_sender_->SetRtxPayloadType(kRtxPayload, kPayload);
   rtp_sender_->SetStorePacketsStatus(true, 1);
@@ -2566,7 +2569,7 @@ TEST_P(RtpSenderTest, GeneratePaddingResendsOldPacketsWithRtx) {
   // Generated padding has large enough budget that the video packet should be
   // retransmitted as padding.
   std::vector<std::unique_ptr<RtpPacketToSend>> generated_packets =
-      rtp_sender_->GeneratePadding(kPayloadPacketSize + kRtxHeaderSize);
+      rtp_sender_->GeneratePadding(kMinPaddingSize);
   ASSERT_EQ(generated_packets.size(), 1u);
   auto& padding_packet = generated_packets.front();
   EXPECT_EQ(padding_packet->packet_type(), RtpPacketToSend::Type::kPadding);
@@ -2575,13 +2578,11 @@ TEST_P(RtpSenderTest, GeneratePaddingResendsOldPacketsWithRtx) {
             kPayloadPacketSize + kRtxHeaderSize);
 
   // Not enough budged for payload padding, use plain padding instead.
-  const size_t kPaddingBytesRequested = kPayloadPacketSize + kRtxHeaderSize - 1;
-  const size_t kExpectedNumPaddingPackets =
-      (kPaddingBytesRequested + kMaxPaddingSize - 1) / kMaxPaddingSize;
+  const size_t kPaddingBytesRequested = kMinPaddingSize - 1;
 
   size_t padding_bytes_generated = 0;
   generated_packets = rtp_sender_->GeneratePadding(kPaddingBytesRequested);
-  EXPECT_EQ(generated_packets.size(), kExpectedNumPaddingPackets);
+  EXPECT_EQ(generated_packets.size(), 1u);
   for (auto& packet : generated_packets) {
     EXPECT_EQ(packet->packet_type(), RtpPacketToSend::Type::kPadding);
     EXPECT_EQ(packet->Ssrc(), kRtxSsrc);
@@ -2590,8 +2591,7 @@ TEST_P(RtpSenderTest, GeneratePaddingResendsOldPacketsWithRtx) {
     padding_bytes_generated += packet->padding_size();
   }
 
-  EXPECT_EQ(padding_bytes_generated,
-            kExpectedNumPaddingPackets * kMaxPaddingSize);
+  EXPECT_EQ(padding_bytes_generated, kMaxPaddingSize);
 }
 
 TEST_P(RtpSenderTest, GeneratePaddingCreatesPurePaddingWithoutRtx) {

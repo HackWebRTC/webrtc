@@ -1007,14 +1007,11 @@ std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
   std::vector<std::unique_ptr<RtpPacketToSend>> padding_packets;
   size_t bytes_left = target_size_bytes;
   if ((rtx_ & kRtxRedundantPayloads) != 0) {
-    while (bytes_left >= 0) {
+    while (bytes_left >= kMinPayloadPaddingBytes) {
       std::unique_ptr<RtpPacketToSend> packet =
           packet_history_.GetPayloadPaddingPacket(
               [&](const RtpPacketToSend& packet)
                   -> std::unique_ptr<RtpPacketToSend> {
-                if (packet.payload_size() + kRtxHeaderSize > bytes_left) {
-                  return nullptr;
-                }
                 return BuildRtxPacket(packet);
               });
       if (!packet) {
