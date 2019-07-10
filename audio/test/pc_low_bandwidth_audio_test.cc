@@ -22,6 +22,8 @@
 #include "test/testsupport/perf_test.h"
 
 WEBRTC_DECLARE_string(test_case_prefix);
+WEBRTC_DECLARE_int(sample_rate_hz);
+WEBRTC_DECLARE_bool(quick);
 
 namespace webrtc {
 namespace test {
@@ -34,7 +36,8 @@ using AudioConfig =
 
 namespace {
 
-constexpr int kTestDurationSec = 45;
+constexpr int kTestDurationSec = 6;
+constexpr int kQuickTestDurationSec = 1;
 
 std::string GetMetricTestCaseName() {
   const ::testing::TestInfo* const test_info =
@@ -46,18 +49,11 @@ std::string GetMetricTestCaseName() {
   return std::string(FLAG_test_case_prefix) + "_" + test_info->name();
 }
 
-EmulatedNetworkNode* CreateEmulatedNodeWithConfig(
-    NetworkEmulationManager* emulation,
-    const BuiltInNetworkBehaviorConfig& config) {
-  return emulation->CreateEmulatedNode(
-      absl::make_unique<SimulatedNetwork>(config));
-}
-
 std::pair<EmulatedNetworkManagerInterface*, EmulatedNetworkManagerInterface*>
 CreateTwoNetworkLinks(NetworkEmulationManager* emulation,
                       const BuiltInNetworkBehaviorConfig& config) {
-  auto* alice_node = CreateEmulatedNodeWithConfig(emulation, config);
-  auto* bob_node = CreateEmulatedNodeWithConfig(emulation, config);
+  auto* alice_node = emulation->CreateEmulatedNode(config);
+  auto* bob_node = emulation->CreateEmulatedNode(config);
 
   auto* alice_endpoint = emulation->CreateEndpoint(EmulatedEndpointConfig());
   auto* bob_endpoint = emulation->CreateEndpoint(EmulatedEndpointConfig());
@@ -90,19 +86,25 @@ CreateTestFixture(const std::string& test_case_name,
   return fixture;
 }
 
+std::string FileSampleRateSuffix() {
+  return std::to_string(FLAG_sample_rate_hz / 1000);
+}
+
 std::string AudioInputFile() {
-  return test::ResourcePath("voice_engine/audio_tiny48", "wav");
+  return test::ResourcePath("voice_engine/audio_tiny" + FileSampleRateSuffix(),
+                            "wav");
 }
 
 std::string AudioOutputFile() {
   const ::testing::TestInfo* const test_info =
       ::testing::UnitTest::GetInstance()->current_test_info();
   return webrtc::test::OutputPath() + "PCLowBandwidth_" + test_info->name() +
-         "_48.wav";
+         "_" + FileSampleRateSuffix() + ".wav";
 }
 
 std::string PerfResultsOutputFile() {
-  return webrtc::test::OutputPath() + "PCLowBandwidth_perf_48.json";
+  return webrtc::test::OutputPath() + "PCLowBandwidth_perf_" +
+         FileSampleRateSuffix() + ".json";
 }
 
 void LogTestResults() {
@@ -133,10 +135,12 @@ TEST(PCLowBandwidthAudioTest, PCGoodNetworkHighBitrate) {
         audio.mode = AudioConfig::Mode::kFile;
         audio.input_file_name = AudioInputFile();
         audio.output_dump_file_name = AudioOutputFile();
+        audio.sampling_frequency_in_hz = FLAG_sample_rate_hz;
         alice->SetAudioConfig(std::move(audio));
       },
       [](PeerConfigurer* bob) {});
-  fixture->Run(RunParams(TimeDelta::seconds(kTestDurationSec)));
+  fixture->Run(RunParams(TimeDelta::seconds(FLAG_quick ? kQuickTestDurationSec
+                                                       : kTestDurationSec)));
   LogTestResults();
 }
 
@@ -156,11 +160,12 @@ TEST(PCLowBandwidthAudioTest, PCMobile2GNetwork) {
         audio.mode = AudioConfig::Mode::kFile;
         audio.input_file_name = AudioInputFile();
         audio.output_dump_file_name = AudioOutputFile();
+        audio.sampling_frequency_in_hz = FLAG_sample_rate_hz;
         alice->SetAudioConfig(std::move(audio));
       },
       [](PeerConfigurer* bob) {});
-  RunParams run_params(TimeDelta::seconds(kTestDurationSec));
-  fixture->Run(RunParams(TimeDelta::seconds(kTestDurationSec)));
+  fixture->Run(RunParams(TimeDelta::seconds(FLAG_quick ? kQuickTestDurationSec
+                                                       : kTestDurationSec)));
   LogTestResults();
 }
 
