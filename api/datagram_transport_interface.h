@@ -98,6 +98,9 @@ class DatagramTransportInterface {
   // Datagrams larger than GetLargestDatagramSize() will fail and return error.
   //
   // Datagrams are sent in FIFO order.
+  //
+  // |datagram_id| is only used in ACK/LOST notifications in
+  // DatagramSinkInterface and does not need to be unique.
   virtual RTCError SendDatagram(rtc::ArrayView<const uint8_t> data,
                                 DatagramId datagram_id) = 0;
 

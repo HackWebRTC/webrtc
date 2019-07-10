@@ -11,12 +11,15 @@
 #ifndef PC_DATAGRAM_DTLS_ADAPTOR_H_
 #define PC_DATAGRAM_DTLS_ADAPTOR_H_
 
+#include <map>
 #include <memory>
 #include <string>
 #include <vector>
 
 #include "api/crypto/crypto_options.h"
 #include "api/datagram_transport_interface.h"
+#include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
+#include "modules/rtp_rtcp/source/rtp_header_extensions.h"
 #include "p2p/base/dtls_transport_internal.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/packet_transport_internal.h"
@@ -42,10 +45,12 @@ class DatagramDtlsAdaptor : public DtlsTransportInternal,
   // TODO(sukhanov): Taking crypto options, because DtlsTransportInternal
   // has a virtual getter crypto_options(). Consider removing getter and
   // removing crypto_options from DatagramDtlsAdaptor.
-  DatagramDtlsAdaptor(IceTransportInternal* ice_transport,
-                      webrtc::DatagramTransportInterface* datagram_transport,
-                      const webrtc::CryptoOptions& crypto_options,
-                      webrtc::RtcEventLog* event_log);
+  DatagramDtlsAdaptor(
+      const std::vector<webrtc::RtpExtension>& rtp_header_extensions,
+      IceTransportInternal* ice_transport,
+      webrtc::DatagramTransportInterface* datagram_transport,
+      const webrtc::CryptoOptions& crypto_options,
+      webrtc::RtcEventLog* event_log);
 
   ~DatagramDtlsAdaptor() override;
 
@@ -59,6 +64,10 @@ class DatagramDtlsAdaptor : public DtlsTransportInternal,
   void OnDatagramReceived(rtc::ArrayView<const uint8_t> data) override;
 
   void OnDatagramSent(webrtc::DatagramId datagram_id) override;
+
+  void OnDatagramAcked(const webrtc::DatagramAck& ack) override;
+
+  void OnDatagramLost(webrtc::DatagramId datagram_id) override;
 
   void OnStateChanged(webrtc::MediaTransportState state) override;
 
@@ -94,6 +103,37 @@ class DatagramDtlsAdaptor : public DtlsTransportInternal,
   bool receiving() const override;
 
  private:
+  // Stored for each sent RTP packet.
+  struct SentPacketInfo {
+    SentPacketInfo(uint32_t ssrc,
+                   absl::optional<uint16_t> transport_sequence_number,
+                   int64_t packet_id)
+        : ssrc(ssrc),
+          transport_sequence_number(transport_sequence_number),
+          packet_id(packet_id) {}
+
+    SentPacketInfo() = default;
+
+    uint32_t ssrc = 0;
+
+    // Transport sequence number (if it was provided in outgoing RTP packet).
+    // It is used to re-create RTCP feedback packets from datagram ACKs.
+    absl::optional<uint16_t> transport_sequence_number = 0;
+
+    // Packet id from rtc::PacketOptions. It is required to propagage sent
+    // notification up the stack (SignalSentPacket).
+    int64_t packet_id = 0;
+  };
+
+  // Finds SentPacketInfo for given |datagram_id| and removes map entry.
+  // Returns false if entry was not found.
+  bool GetAndRemoveSentPacketInfo(webrtc::DatagramId datagram_id,
+                                  SentPacketInfo* sent_packet_info);
+
+  // Sends datagram to datagram_transport.
+  int SendDatagram(rtc::ArrayView<const uint8_t> data,
+                   webrtc::DatagramId datagram_id);
+
   void set_receiving(bool receiving);
   void set_writable(bool writable);
   void set_dtls_state(DtlsTransportState state);
@@ -145,6 +185,22 @@ class DatagramDtlsAdaptor : public DtlsTransportInternal,
   DtlsTransportState dtls_state_ = DTLS_TRANSPORT_NEW;
 
   webrtc::RtcEventLog* const event_log_;
+
+  // Extension map for parsing transport sequence numbers.
+  webrtc::RtpHeaderExtensionMap rtp_header_extension_map_;
+
+  // Keeps information about sent RTP packet until they are Acked or Lost.
+  std::map<webrtc::DatagramId, SentPacketInfo> sent_rtp_packet_map_;
+
+  // Current datagram_id, incremented after each sent RTP packets.
+  // Datagram id is passed to datagram transport when we send datagram and we
+  // get it back in notifications about Sent, Acked and Lost datagrams.
+  int64_t current_datagram_id_ = 0;
+
+  // TODO(sukhanov): Previous nonzero timestamp is required for workaround for
+  // zero timestamps received, which sometimes are received from datagram
+  // transport. Investigate if we can eliminate zero timestamps.
+  int64_t previous_nonzero_timestamp_us_ = 0;
 };
 
 }  // namespace cricket

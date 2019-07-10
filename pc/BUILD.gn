@@ -97,6 +97,7 @@ rtc_static_library("rtc_pc_base") {
     "../media:rtc_h264_profile_id",
     "../media:rtc_media_base",
     "../media:rtc_media_config",
+    "../modules/rtp_rtcp:rtp_rtcp",
     "../modules/rtp_rtcp:rtp_rtcp_format",
     "../p2p:rtc_p2p",
     "../rtc_base",

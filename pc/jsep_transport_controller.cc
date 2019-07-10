@@ -474,6 +474,7 @@ JsepTransportController::CreateIceTransport(const std::string transport_name,
 
 std::unique_ptr<cricket::DtlsTransportInternal>
 JsepTransportController::CreateDtlsTransport(
+    const cricket::ContentInfo& content_info,
     cricket::IceTransportInternal* ice,
     DatagramTransportInterface* datagram_transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
@@ -485,7 +486,8 @@ JsepTransportController::CreateDtlsTransport(
 
     // Create DTLS wrapper around DatagramTransportInterface.
     dtls = absl::make_unique<cricket::DatagramDtlsAdaptor>(
-        ice, datagram_transport, config_.crypto_options, config_.event_log);
+        content_info.media_description()->rtp_header_extensions(), ice,
+        datagram_transport, config_.crypto_options, config_.event_log);
   } else if (config_.media_transport_factory &&
              config_.use_media_transport_for_media &&
              config_.use_media_transport_for_data_channels) {
@@ -1164,11 +1166,11 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
   if (datagram_transport) {
     datagram_transport->Connect(ice.get());
     datagram_dtls_transport =
-        CreateDtlsTransport(ice.get(), datagram_transport.get());
+        CreateDtlsTransport(content_info, ice.get(), datagram_transport.get());
   }
 
   std::unique_ptr<cricket::DtlsTransportInternal> rtp_dtls_transport =
-      CreateDtlsTransport(ice.get(), nullptr);
+      CreateDtlsTransport(content_info, ice.get(), nullptr);
 
   std::unique_ptr<cricket::DtlsTransportInternal> rtcp_dtls_transport;
   std::unique_ptr<RtpTransport> unencrypted_rtp_transport;
@@ -1183,7 +1185,7 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
     RTC_DCHECK(media_transport == nullptr);
     RTC_DCHECK(datagram_transport == nullptr);
     rtcp_ice = CreateIceTransport(content_info.name, /*rtcp=*/true);
-    rtcp_dtls_transport = CreateDtlsTransport(rtcp_ice.get(),
+    rtcp_dtls_transport = CreateDtlsTransport(content_info, rtcp_ice.get(),
                                               /*datagram_transport=*/nullptr);
   }
 

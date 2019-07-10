@@ -355,6 +355,7 @@ class JsepTransportController : public sigslot::has_slots<> {
       bool local);
 
   std::unique_ptr<cricket::DtlsTransportInternal> CreateDtlsTransport(
+      const cricket::ContentInfo& content_info,
       cricket::IceTransportInternal* ice,
       DatagramTransportInterface* datagram_transport);
   std::unique_ptr<cricket::IceTransportInternal> CreateIceTransport(
