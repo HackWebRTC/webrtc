@@ -38,6 +38,7 @@ rtc_source_set("callfactory_api") {
 if (!build_with_chromium) {
   rtc_static_library("create_peerconnection_factory") {
     visibility = [ "*" ]
+    allow_poison = [ "default_task_queue" ]
     sources = [
       "create_peerconnection_factory.cc",
       "create_peerconnection_factory.h",

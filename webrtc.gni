@@ -368,6 +368,9 @@ all_poison_types = [
 
   # Software video codecs (VP8 and VP9 through libvpx).
   "software_video_codecs",
+
+  # Default task queue implementation.
+  "default_task_queue",
 ]
 
 absl_include_config = "//third_party/abseil-cpp:absl_include_config"
