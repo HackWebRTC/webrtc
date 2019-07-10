@@ -55,6 +55,8 @@ constexpr TimeDelta kStatsPollingStopTimeout = TimeDelta::Seconds<1>();
 
 constexpr TimeDelta kAliveMessageLogInterval = TimeDelta::Seconds<30>();
 
+constexpr int kQuickTestModeRunDurationMs = 100;
+
 // Field trials to enable Flex FEC advertising and receiving.
 constexpr char kFlexFecEnabledFieldTrials[] =
     "WebRTC-FlexFEC-03-Advertised/Enabled/WebRTC-FlexFEC-03/Enabled/";
@@ -358,7 +360,12 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   });
 
   rtc::Event done;
-  done.Wait(run_params.run_duration.ms());
+  bool is_quick_test_enabled = field_trial::IsEnabled("WebRTC-QuickPerfTest");
+  if (is_quick_test_enabled) {
+    done.Wait(kQuickTestModeRunDurationMs);
+  } else {
+    done.Wait(run_params.run_duration.ms());
+  }
 
   rtc::Event stats_polling_stopped;
   task_queue_->PostTask([&stats_polling_stopped, this]() {
