@@ -148,7 +148,6 @@ int UlpfecGenerator::AddRtpPacketAndGenerateFec(
         new ForwardErrorCorrection::Packet());
     RTC_DCHECK_GE(data_buffer.size(), rtp_header_length);
     packet->data = data_buffer;
-    packet->length = packet->data.size();
     media_packets_.push_back(std::move(packet));
     // Keep track of the RTP header length, so we can copy the RTP header
     // from |packet| to newly generated ULPFEC+RED packets.
@@ -226,13 +225,13 @@ std::vector<std::unique_ptr<RedPacket>> UlpfecGenerator::GetUlpfecPacketsAsRed(
     RTC_DCHECK_GT(last_media_packet_rtp_header_length_, 0);
     std::unique_ptr<RedPacket> red_packet(
         new RedPacket(last_media_packet_rtp_header_length_ +
-                      kRedForFecHeaderLength + fec_packet->length));
+                      kRedForFecHeaderLength + fec_packet->data.size()));
     red_packet->CreateHeader(last_media_packet->data.data(),
                              last_media_packet_rtp_header_length_,
                              red_payload_type, ulpfec_payload_type);
     red_packet->SetSeqNum(seq_num++);
     red_packet->ClearMarkerBit();
-    red_packet->AssignPayload(fec_packet->data.data(), fec_packet->length);
+    red_packet->AssignPayload(fec_packet->data.data(), fec_packet->data.size());
     red_packets.push_back(std::move(red_packet));
   }
 

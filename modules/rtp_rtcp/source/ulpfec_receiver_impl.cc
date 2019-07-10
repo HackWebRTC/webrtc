@@ -133,7 +133,6 @@ int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
     received_packet->pkt->data.SetData(
         incoming_rtp_packet + header.headerLength + red_header_length,
         payload_data_length - red_header_length);
-    received_packet->pkt->length = payload_data_length - red_header_length;
     received_packet->ssrc =
         ByteReader<uint32_t>::ReadBigEndian(&incoming_rtp_packet[8]);
 
@@ -152,11 +151,9 @@ int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
              incoming_rtp_packet + header.headerLength + red_header_length,
              payload_data_length - red_header_length);
     }
-    received_packet->pkt->length =
-        header.headerLength + payload_data_length - red_header_length;
   }
 
-  if (received_packet->pkt->length == 0) {
+  if (received_packet->pkt->data.size() == 0) {
     return 0;
   }
 
@@ -185,7 +182,7 @@ int32_t UlpfecReceiverImpl::ProcessReceivedFec() {
       ForwardErrorCorrection::Packet* packet = received_packet->pkt;
       crit_sect_.Leave();
       recovered_packet_callback_->OnRecoveredPacket(packet->data.data(),
-                                                    packet->length);
+                                                    packet->data.size());
       crit_sect_.Enter();
       // Create a packet with the buffer to modify it.
       RtpPacketReceived rtp_packet;
@@ -213,7 +210,7 @@ int32_t UlpfecReceiverImpl::ProcessReceivedFec() {
     recovered_packet->returned = true;
     crit_sect_.Leave();
     recovered_packet_callback_->OnRecoveredPacket(packet->data.data(),
-                                                  packet->length);
+                                                  packet->data.size());
     crit_sect_.Enter();
   }
 

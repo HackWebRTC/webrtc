@@ -113,7 +113,6 @@ FlexfecReceiver::AddReceivedPacket(const RtpPacketReceived& packet) {
     // of initializing COW buffer with ArrayView.
     auto payload = packet.payload();
     received_packet->pkt->data.SetData(payload.data(), payload.size());
-    received_packet->pkt->length = payload.size();
   } else {
     // This is a media packet, or a FlexFEC packet belonging to some
     // other FlexFEC stream.
@@ -129,7 +128,6 @@ FlexfecReceiver::AddReceivedPacket(const RtpPacketReceived& packet) {
     RtpPacketReceived packet_copy(packet);
     packet_copy.ZeroMutableExtensions();
     received_packet->pkt->data = packet_copy.Buffer();
-    received_packet->pkt->length = received_packet->pkt->data.size();
   }
 
   ++packet_counter_.num_packets;
@@ -165,7 +163,8 @@ void FlexfecReceiver::ProcessReceivedPacket(
     recovered_packet->returned = true;
     RTC_CHECK_GT(recovered_packet->pkt->data.size(), 0);
     recovered_packet_receiver_->OnRecoveredPacket(
-        recovered_packet->pkt->data.cdata(), recovered_packet->pkt->length);
+        recovered_packet->pkt->data.cdata(),
+        recovered_packet->pkt->data.size());
     // Periodically log the incoming packets.
     int64_t now_ms = clock_->TimeInMilliseconds();
     if (now_ms - last_recovered_packet_ms_ > kPacketLogIntervalMs) {

@@ -53,8 +53,8 @@ ForwardErrorCorrection::PacketList MediaPacketGenerator::ConstructMediaPackets(
   for (int i = 0; i < num_media_packets; ++i) {
     std::unique_ptr<ForwardErrorCorrection::Packet> media_packet(
         new ForwardErrorCorrection::Packet());
-    media_packet->length = random_->Rand(min_packet_size_, max_packet_size_);
-    media_packet->data.SetSize(media_packet->length);
+    media_packet->data.SetSize(
+        random_->Rand(min_packet_size_, max_packet_size_));
 
     // Generate random values for the first 2 bytes
     media_packet->data[0] = random_->Rand<uint8_t>();
@@ -80,7 +80,7 @@ ForwardErrorCorrection::PacketList MediaPacketGenerator::ConstructMediaPackets(
     webrtc::ByteWriter<uint32_t>::WriteBigEndian(&media_packet->data[8], ssrc_);
 
     // Generate random values for payload.
-    for (size_t j = 12; j < media_packet->length; ++j)
+    for (size_t j = 12; j < media_packet->data.size(); ++j)
       media_packet->data[j] = random_->Rand<uint8_t>();
     seq_num++;
     media_packets.push_back(std::move(media_packet));
@@ -124,8 +124,7 @@ std::unique_ptr<AugmentedPacket> AugmentedPacketGenerator::NextPacket(
   packet->data.SetSize(length + kRtpHeaderSize);
   for (size_t i = 0; i < length; ++i)
     packet->data[i + kRtpHeaderSize] = offset + i;
-  packet->length = length + kRtpHeaderSize;
-  packet->data.SetSize(packet->length);
+  packet->data.SetSize(length + kRtpHeaderSize);
   packet->header.headerLength = kRtpHeaderSize;
   packet->header.markerBit = (num_packets_ == 1);
   packet->header.payloadType = kVp8PayloadType;
@@ -158,7 +157,7 @@ FlexfecPacketGenerator::FlexfecPacketGenerator(uint32_t media_ssrc,
 
 std::unique_ptr<AugmentedPacket> FlexfecPacketGenerator::BuildFlexfecPacket(
     const ForwardErrorCorrection::Packet& packet) {
-  RTC_DCHECK_LE(packet.length,
+  RTC_DCHECK_LE(packet.data.size(),
                 static_cast<size_t>(IP_PACKET_SIZE - kRtpHeaderSize));
 
   RTPHeader header;
@@ -170,11 +169,10 @@ std::unique_ptr<AugmentedPacket> FlexfecPacketGenerator::BuildFlexfecPacket(
 
   std::unique_ptr<AugmentedPacket> packet_with_rtp_header(
       new AugmentedPacket());
-  packet_with_rtp_header->data.SetSize(kRtpHeaderSize + packet.length);
+  packet_with_rtp_header->data.SetSize(kRtpHeaderSize + packet.data.size());
   WriteRtpHeader(header, packet_with_rtp_header->data.data());
   memcpy(packet_with_rtp_header->data.data() + kRtpHeaderSize,
-         packet.data.cdata(), packet.length);
-  packet_with_rtp_header->length = kRtpHeaderSize + packet.length;
+         packet.data.cdata(), packet.data.size());
 
   return packet_with_rtp_header;
 }
@@ -188,13 +186,13 @@ std::unique_ptr<AugmentedPacket> UlpfecPacketGenerator::BuildMediaRedPacket(
 
   const size_t kHeaderLength = packet.header.headerLength;
   red_packet->header = packet.header;
-  red_packet->length = packet.length + 1;  // 1 byte RED header.
-  red_packet->data.SetSize(packet.length + 1);
+  red_packet->data.SetSize(packet.data.size() + 1);
   // Copy RTP header.
   memcpy(red_packet->data.data(), packet.data.cdata(), kHeaderLength);
   SetRedHeader(red_packet->data[1] & 0x7f, kHeaderLength, red_packet.get());
   memcpy(red_packet->data.data() + kHeaderLength + 1,
-         packet.data.cdata() + kHeaderLength, packet.length - kHeaderLength);
+         packet.data.cdata() + kHeaderLength,
+         packet.data.size() - kHeaderLength);
 
   return red_packet;
 }
@@ -204,15 +202,14 @@ std::unique_ptr<AugmentedPacket> UlpfecPacketGenerator::BuildUlpfecRedPacket(
   // Create a fake media packet to get a correct header. 1 byte RED header.
   ++num_packets_;
   std::unique_ptr<AugmentedPacket> red_packet =
-      NextPacket(0, packet.length + 1);
+      NextPacket(0, packet.data.size() + 1);
 
   red_packet->data[1] &= ~0x80;  // Clear marker bit.
   const size_t kHeaderLength = red_packet->header.headerLength;
-  red_packet->data.SetSize(kHeaderLength + 1 + packet.length);
+  red_packet->data.SetSize(kHeaderLength + 1 + packet.data.size());
   SetRedHeader(kFecPayloadType, kHeaderLength, red_packet.get());
   memcpy(red_packet->data.data() + kHeaderLength + 1, packet.data.cdata(),
-         packet.length);
-  red_packet->length = kHeaderLength + 1 + packet.length;
+         packet.data.size());
 
   return red_packet;
 }
