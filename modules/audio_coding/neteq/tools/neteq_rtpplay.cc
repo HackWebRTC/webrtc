@@ -336,8 +336,12 @@ int main(int argc, char* argv[]) {
   RTC_CHECK(ValidateExtensionId(absl::GetFlag(FLAGS_video_content_type)));
   RTC_CHECK(ValidateExtensionId(absl::GetFlag(FLAGS_video_timing)));
 
-  webrtc::field_trial::InitFieldTrialsFromString(
-      absl::GetFlag(FLAGS_force_fieldtrials).c_str());
+  // Make force_fieldtrials persistent string during entire program live as
+  // absl::GetFlag creates temporary string and c_str() will point to
+  // deallocated string.
+  const std::string force_fieldtrials = absl::GetFlag(FLAGS_force_fieldtrials);
+  webrtc::field_trial::InitFieldTrialsFromString(force_fieldtrials.c_str());
+
   webrtc::test::NetEqTestFactory::Config config;
   config.pcmu = absl::GetFlag(FLAGS_pcmu);
   config.pcma = absl::GetFlag(FLAGS_pcma);
