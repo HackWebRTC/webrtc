@@ -19,6 +19,9 @@
 #include "test/gtest.h"
 #include "test/pc/e2e/network_quality_metrics_reporter.h"
 #include "test/testsupport/file_utils.h"
+#include "test/testsupport/perf_test.h"
+
+WEBRTC_DECLARE_string(test_case_prefix);
 
 namespace webrtc {
 namespace test {
@@ -32,6 +35,16 @@ using AudioConfig =
 namespace {
 
 constexpr int kTestDurationSec = 45;
+
+std::string GetMetricTestCaseName() {
+  const ::testing::TestInfo* const test_info =
+      ::testing::UnitTest::GetInstance()->current_test_info();
+  std::string test_case_prefix(FLAG_test_case_prefix);
+  if (test_case_prefix.empty()) {
+    return test_info->name();
+  }
+  return std::string(FLAG_test_case_prefix) + "_" + test_info->name();
+}
 
 EmulatedNetworkNode* CreateEmulatedNodeWithConfig(
     NetworkEmulationManager* emulation,
@@ -84,18 +97,25 @@ std::string AudioInputFile() {
 std::string AudioOutputFile() {
   const ::testing::TestInfo* const test_info =
       ::testing::UnitTest::GetInstance()->current_test_info();
-  return webrtc::test::OutputPath() + "LowBandwidth_" + test_info->name() +
+  return webrtc::test::OutputPath() + "PCLowBandwidth_" + test_info->name() +
          "_48.wav";
 }
 
-void PrintTestInfo() {
+std::string PerfResultsOutputFile() {
+  return webrtc::test::OutputPath() + "PCLowBandwidth_perf_48.json";
+}
+
+void LogTestResults() {
+  std::string perf_results_output_file = PerfResultsOutputFile();
+  webrtc::test::WritePerfResults(perf_results_output_file);
+
   const ::testing::TestInfo* const test_info =
       ::testing::UnitTest::GetInstance()->current_test_info();
 
   // Output information about the input and output audio files so that further
   // processing can be done by an external process.
-  printf("TEST %s %s %s\n", test_info->name(), AudioInputFile().c_str(),
-         AudioOutputFile().c_str());
+  printf("TEST %s %s %s %s\n", test_info->name(), AudioInputFile().c_str(),
+         AudioOutputFile().c_str(), perf_results_output_file.c_str());
 }
 
 }  // namespace
@@ -104,7 +124,7 @@ TEST(PCLowBandwidthAudioTest, PCGoodNetworkHighBitrate) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   auto fixture = CreateTestFixture(
-      "pc_good_network",
+      GetMetricTestCaseName(),
       CreateTwoNetworkLinks(network_emulation_manager.get(),
                             BuiltInNetworkBehaviorConfig()),
       [](PeerConfigurer* alice) {
@@ -117,7 +137,7 @@ TEST(PCLowBandwidthAudioTest, PCGoodNetworkHighBitrate) {
       },
       [](PeerConfigurer* bob) {});
   fixture->Run(RunParams(TimeDelta::seconds(kTestDurationSec)));
-  PrintTestInfo();
+  LogTestResults();
 }
 
 TEST(PCLowBandwidthAudioTest, PCMobile2GNetwork) {
@@ -128,7 +148,7 @@ TEST(PCLowBandwidthAudioTest, PCMobile2GNetwork) {
   config.queue_length_packets = 1500;
   config.queue_delay_ms = 400;
   auto fixture = CreateTestFixture(
-      "pc_mobile_2g_network",
+      GetMetricTestCaseName(),
       CreateTwoNetworkLinks(network_emulation_manager.get(), config),
       [](PeerConfigurer* alice) {
         AudioConfig audio;
@@ -141,7 +161,7 @@ TEST(PCLowBandwidthAudioTest, PCMobile2GNetwork) {
       [](PeerConfigurer* bob) {});
   RunParams run_params(TimeDelta::seconds(kTestDurationSec));
   fixture->Run(RunParams(TimeDelta::seconds(kTestDurationSec)));
-  PrintTestInfo();
+  LogTestResults();
 }
 
 }  // namespace test

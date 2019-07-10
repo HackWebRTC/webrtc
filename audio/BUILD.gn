@@ -177,6 +177,7 @@ if (rtc_include_tests) {
 
       sources = [
         "test/low_bandwidth_audio_test.cc",
+        "test/low_bandwidth_audio_test_flags.cc",
         "test/pc_low_bandwidth_audio_test.cc",
       ]
 
@@ -192,6 +193,7 @@ if (rtc_include_tests) {
         "../rtc_base:rtc_base_approved",
         "../system_wrappers",
         "../test:fileutils",
+        "../test:perf_test",
         "../test:test_common",
         "../test:test_main",
         "../test:test_support",
