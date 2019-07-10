@@ -125,7 +125,7 @@ bool FlexfecHeaderReader::ReadFecHeader(
     RTC_LOG(LS_WARNING) << "Discarding truncated FlexFEC packet.";
     return false;
   }
-  uint8_t* const packet_mask = fec_packet->pkt->data + kPacketMaskOffset;
+  uint8_t* const packet_mask = fec_packet->pkt->data.data() + kPacketMaskOffset;
   bool k_bit0 = (packet_mask[0] & 0x80) != 0;
   uint16_t mask_part0 = ByteReader<uint16_t>::ReadBigEndian(&packet_mask[0]);
   // Shift away K-bit 0, implicitly clearing the last bit.
@@ -260,7 +260,8 @@ void FlexfecHeaderWriter::FinalizeFecHeader(
   //
   // We treat the mask parts as unsigned integers with host order endianness
   // in order to simplify the bit shifting between bytes.
-  uint8_t* const written_packet_mask = fec_packet->data + kPacketMaskOffset;
+  uint8_t* const written_packet_mask =
+      fec_packet->data.data() + kPacketMaskOffset;
   if (packet_mask_size == kUlpfecPacketMaskSizeLBitSet) {
     // The packet mask is 48 bits long.
     uint16_t tmp_mask_part0 =
