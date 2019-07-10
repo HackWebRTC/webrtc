@@ -13,6 +13,8 @@
 #include <algorithm>
 #include <utility>
 
+#include "absl/memory/memory.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
 #include "api/video_codecs/video_encoder.h"
@@ -159,8 +161,9 @@ RtpGenerator::RtpGenerator(const RtpGeneratorOptions& options)
       video_decoder_factory_(CreateBuiltinVideoDecoderFactory()),
       video_bitrate_allocator_factory_(
           CreateBuiltinVideoBitrateAllocatorFactory()),
-      event_log_(webrtc::RtcEventLog::CreateNull()),
-      call_(Call::Create(CallConfig(event_log_.get()))) {
+      event_log_(absl::make_unique<RtcEventLogNull>()),
+      call_(Call::Create(CallConfig(event_log_.get()))),
+      task_queue_(CreateDefaultTaskQueueFactory()) {
   constexpr int kMinBitrateBps = 30000;    // 30 Kbps
   constexpr int kMaxBitrateBps = 2500000;  // 2.5 Mbps
 
@@ -219,10 +222,13 @@ RtpGenerator::RtpGenerator(const RtpGeneratorOptions& options)
             /*screenshare enabled*/ false);
 
     // Setup the fake video stream for this.
-    std::unique_ptr<test::FrameGeneratorCapturer> frame_generator(
-        test::FrameGeneratorCapturer::Create(
-            send_config.video_width, send_config.video_height, absl::nullopt,
-            absl::nullopt, send_config.video_fps, Clock::GetRealTimeClock()));
+    std::unique_ptr<test::FrameGeneratorCapturer> frame_generator =
+        absl::make_unique<test::FrameGeneratorCapturer>(
+            Clock::GetRealTimeClock(),
+            test::FrameGenerator::CreateSquareGenerator(
+                send_config.video_width, send_config.video_height,
+                absl::nullopt, absl::nullopt),
+            send_config.video_fps, *task_queue_);
     frame_generator->Init();
 
     VideoSendStream* video_send_stream = call_->CreateVideoSendStream(
