@@ -3123,14 +3123,14 @@ TEST_F(WebRtcVideoChannelTest, VerifyVp8SpecificSettings) {
   EXPECT_FALSE(vp8_settings.automaticResizeOn);
   EXPECT_TRUE(vp8_settings.frameDroppingOn);
 
-  // In screen-share mode, denoising is forced off and simulcast disabled.
+  // In screen-share mode, denoising is forced off.
   VideoOptions options;
   options.is_screencast = true;
   EXPECT_TRUE(channel_->SetVideoSend(last_ssrc_, &options, &frame_forwarder));
 
   stream = SetDenoisingOption(last_ssrc_, &frame_forwarder, false);
 
-  EXPECT_EQ(1u, stream->GetVideoStreams().size());
+  EXPECT_EQ(3u, stream->GetVideoStreams().size());
   ASSERT_TRUE(stream->GetVp8Settings(&vp8_settings)) << "No VP8 config set.";
   EXPECT_FALSE(vp8_settings.denoisingOn);
   // Resizing and frame dropping always off for screen sharing.
@@ -7425,11 +7425,12 @@ class WebRtcVideoChannelSimulcastTest : public ::testing::Test {
     EXPECT_LE(expected_num_streams, stream->GetConfig().rtp.ssrcs.size());
 
     std::vector<webrtc::VideoStream> expected_streams;
-    if (conference_mode) {
+    if (num_configured_streams > 1 || conference_mode) {
       expected_streams = GetSimulcastConfig(
           num_configured_streams, capture_width, capture_height,
-          webrtc::kDefaultBitratePriority, kDefaultQpMax, screenshare, true);
-      if (screenshare) {
+          webrtc::kDefaultBitratePriority, kDefaultQpMax,
+          screenshare && conference_mode, true);
+      if (screenshare && conference_mode) {
         for (const webrtc::VideoStream& stream : expected_streams) {
           // Never scale screen content.
           EXPECT_EQ(stream.width, rtc::checked_cast<size_t>(capture_width));
@@ -7475,7 +7476,7 @@ class WebRtcVideoChannelSimulcastTest : public ::testing::Test {
       EXPECT_GT(video_streams[i].max_qp, 0);
       EXPECT_EQ(expected_streams[i].max_qp, video_streams[i].max_qp);
 
-      EXPECT_EQ(conference_mode,
+      EXPECT_EQ(num_configured_streams > 1 || conference_mode,
                 expected_streams[i].num_temporal_layers.has_value());
 
       if (conference_mode) {
@@ -7551,16 +7552,8 @@ TEST_F(WebRtcVideoChannelSimulcastTest, SetSendCodecsWithOddSizeInSimulcast) {
 }
 
 TEST_F(WebRtcVideoChannelSimulcastTest, SetSendCodecsForScreenshare) {
-  VerifySimulcastSettings(cricket::VideoCodec("VP8"), 1280, 720, 3, 1, true,
+  VerifySimulcastSettings(cricket::VideoCodec("VP8"), 1280, 720, 3, 3, true,
                           false);
-}
-
-TEST_F(WebRtcVideoChannelSimulcastTest,
-       SetSendCodecsForConferenceModeScreenshare) {
-  webrtc::test::ScopedFieldTrials field_trials(
-      "WebRTC-SimulcastScreenshare/Disabled/");
-  VerifySimulcastSettings(cricket::VideoCodec("VP8"), 1280, 720, 3, 1, true,
-                          true);
 }
 
 TEST_F(WebRtcVideoChannelSimulcastTest, SetSendCodecsForSimulcastScreenshare) {
@@ -7568,9 +7561,8 @@ TEST_F(WebRtcVideoChannelSimulcastTest, SetSendCodecsForSimulcastScreenshare) {
                           true);
 }
 
-TEST_F(WebRtcVideoChannelSimulcastTest,
-       NoSimulcastScreenshareWithoutConference) {
-  VerifySimulcastSettings(cricket::VideoCodec("VP8"), 1280, 720, 3, 1, true,
+TEST_F(WebRtcVideoChannelSimulcastTest, SimulcastScreenshareWithoutConference) {
+  VerifySimulcastSettings(cricket::VideoCodec("VP8"), 1280, 720, 3, 3, true,
                           false);
 }
 

@@ -833,19 +833,12 @@ TEST(FullStackTest, ScreenshareSlidesVP8_2TL) {
   fixture->RunWithAnalyzer(screenshare);
 }
 
-#if !defined(WEBRTC_MAC)
-// All the tests using this constant are disabled on Mac.
-const char kScreenshareSimulcastExperiment[] =
-    "WebRTC-SimulcastScreenshare/Enabled/";
+#if !defined(WEBRTC_MAC) && !defined(WEBRTC_WIN)
 // TODO(bugs.webrtc.org/9840): Investigate why is this test flaky on Win/Mac.
-#if !defined(WEBRTC_WIN)
 const char kScreenshareSimulcastVariableFramerateExperiment[] =
-    "WebRTC-SimulcastScreenshare/Enabled/"
     "WebRTC-VP8VariableFramerateScreenshare/"
     "Enabled,min_fps:5.0,min_qp:15,undershoot:30/";
 TEST(FullStackTest, ScreenshareSlidesVP8_2TL_Simulcast) {
-  test::ScopedFieldTrials field_trial(
-      AppendFieldTrials(kScreenshareSimulcastExperiment));
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging screenshare;
   screenshare.call.send_side_bwe = true;
@@ -904,8 +897,6 @@ TEST(FullStackTest, ScreenshareSlidesVP8_2TL_Simulcast_Variable_Framerate) {
 }
 
 TEST(FullStackTest, ScreenshareSlidesVP8_2TL_Simulcast_low) {
-  test::ScopedFieldTrials field_trial(
-      AppendFieldTrials(kScreenshareSimulcastExperiment));
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging screenshare;
   screenshare.call.send_side_bwe = true;
@@ -933,8 +924,7 @@ TEST(FullStackTest, ScreenshareSlidesVP8_2TL_Simulcast_low) {
   fixture->RunWithAnalyzer(screenshare);
 }
 
-#endif  // !defined(WEBRTC_WIN)
-#endif  // !defined(WEBRTC_MAC)
+#endif  // !defined(WEBRTC_MAC) && !defined(WEBRTC_WIN)
 
 TEST(FullStackTest, ScreenshareSlidesVP8_2TL_Scroll) {
   auto fixture = CreateVideoQualityTestFixture();
@@ -1480,8 +1470,6 @@ class DualStreamsTest : public ::testing::TestWithParam<int> {};
 #if !defined(WEBRTC_ANDROID) && !defined(WEBRTC_IOS) && !defined(WEBRTC_MAC)
 TEST_P(DualStreamsTest,
        ModeratelyRestricted_SlidesVp8_2TL_Simulcast_Video_Simulcast_High) {
-  test::ScopedFieldTrials field_trial(
-      AppendFieldTrials(std::string(kScreenshareSimulcastExperiment)));
   const int first_stream = GetParam();
   ParamsWithLogging dual_streams;
 

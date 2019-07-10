@@ -575,7 +575,7 @@ class EncoderStreamFactory
   EncoderStreamFactory(std::string codec_name,
                        int max_qp,
                        bool is_screenshare,
-                       bool screenshare_config_explicitly_enabled);
+                       bool conference_mode);
 
  private:
   std::vector<webrtc::VideoStream> CreateEncoderStreams(
@@ -587,8 +587,8 @@ class EncoderStreamFactory
   const int max_qp_;
   const bool is_screenshare_;
   // Allows a screenshare specific configuration, which enables temporal
-  // layering and allows simulcast.
-  const bool screenshare_config_explicitly_enabled_;
+  // layering and various settings.
+  const bool conference_mode_;
 };
 
 }  // namespace cricket

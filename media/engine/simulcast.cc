@@ -43,8 +43,6 @@ constexpr int kScreenshareDefaultTl1BitrateKbps = 1000;
 // screen content.
 constexpr int kScreenshareHighStreamMinBitrateBps = 600000;
 constexpr int kScreenshareHighStreamMaxBitrateBps = 1250000;
-static const char* kSimulcastScreenshareFieldTrialName =
-    "WebRTC-SimulcastScreenshare";
 
 }  // namespace
 
@@ -183,12 +181,12 @@ std::vector<webrtc::VideoStream> GetSimulcastConfig(
     int height,
     double bitrate_priority,
     int max_qp,
-    bool is_screenshare,
+    bool is_screenshare_with_conference_mode,
     bool temporal_layers_supported) {
-  if (is_screenshare) {
+  RTC_DCHECK(max_layers > 1 || is_screenshare_with_conference_mode);
+  if (is_screenshare_with_conference_mode) {
     return GetScreenshareLayers(max_layers, width, height, bitrate_priority,
-                                max_qp, ScreenshareSimulcastFieldTrialEnabled(),
-                                temporal_layers_supported);
+                                max_qp, temporal_layers_supported);
   } else {
     return GetNormalSimulcastLayers(max_layers, width, height, bitrate_priority,
                                     max_qp, temporal_layers_supported);
@@ -270,10 +268,8 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
     int height,
     double bitrate_priority,
     int max_qp,
-    bool screenshare_simulcast_enabled,
     bool temporal_layers_supported) {
-  auto max_screenshare_layers =
-      screenshare_simulcast_enabled ? kMaxScreenshareSimulcastLayers : 1;
+  auto max_screenshare_layers = kMaxScreenshareSimulcastLayers;
   size_t num_simulcast_layers =
       std::min<int>(max_layers, max_screenshare_layers);
 
@@ -345,10 +341,6 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
   // just set it for the first simulcast layer.
   layers[0].bitrate_priority = bitrate_priority;
   return layers;
-}
-
-bool ScreenshareSimulcastFieldTrialEnabled() {
-  return !webrtc::field_trial::IsDisabled(kSimulcastScreenshareFieldTrialName);
 }
 
 }  // namespace cricket
