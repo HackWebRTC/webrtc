@@ -43,6 +43,7 @@ std::string VideoCodecTestStats::FrameStatistics::ToString() const {
   ss << " decode_time_us " << decode_time_us;
   ss << " rtp_timestamp " << rtp_timestamp;
   ss << " target_bitrate_kbps " << target_bitrate_kbps;
+  ss << " target_framerate_fps " << target_framerate_fps;
   return ss.Release();
 }
 

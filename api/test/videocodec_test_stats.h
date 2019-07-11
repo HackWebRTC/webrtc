@@ -42,6 +42,7 @@ class VideoCodecTestStats {
     bool encoding_successful = false;
     size_t encode_time_us = 0;
     size_t target_bitrate_kbps = 0;
+    double target_framerate_fps = 0.0;
     size_t length_bytes = 0;
     VideoFrameType frame_type = VideoFrameType::kVideoFrameDelta;
 

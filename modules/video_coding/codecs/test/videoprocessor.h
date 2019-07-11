@@ -76,7 +76,7 @@ class VideoProcessor {
   void ProcessFrame();
 
   // Updates the encoder with target rates. Must be called at least once.
-  void SetRates(size_t bitrate_kbps, size_t framerate_fps);
+  void SetRates(size_t bitrate_kbps, double framerate_fps);
 
  private:
   class VideoProcessorEncodeCompleteCallback
@@ -194,7 +194,7 @@ class VideoProcessor {
   VideoDecoderList* const decoders_;
   const std::unique_ptr<VideoBitrateAllocator> bitrate_allocator_;
   VideoBitrateAllocation bitrate_allocation_ RTC_GUARDED_BY(sequence_checker_);
-  uint32_t framerate_fps_ RTC_GUARDED_BY(sequence_checker_);
+  double framerate_fps_ RTC_GUARDED_BY(sequence_checker_);
 
   // Adapters for the codec callbacks.
   VideoProcessorEncodeCompleteCallback encode_callback_;

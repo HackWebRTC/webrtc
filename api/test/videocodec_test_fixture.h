@@ -25,7 +25,7 @@ namespace test {
 // Rates for the encoder and the frame number when to apply profile.
 struct RateProfile {
   size_t target_kbps;
-  size_t input_fps;
+  double input_fps;
   size_t frame_num;
 };
 

@@ -256,7 +256,8 @@ void VideoProcessor::ProcessFrame() {
       input_frame_reader_->ReadFrame();
   RTC_CHECK(buffer) << "Tried to read too many frames from the file.";
   const size_t timestamp =
-      last_inputed_timestamp_ + kVideoPayloadTypeFrequency / framerate_fps_;
+      last_inputed_timestamp_ +
+      static_cast<size_t>(kVideoPayloadTypeFrequency / framerate_fps_);
   VideoFrame input_frame =
       VideoFrame::Builder()
           .set_video_frame_buffer(buffer)
@@ -301,13 +302,13 @@ void VideoProcessor::ProcessFrame() {
   }
 }
 
-void VideoProcessor::SetRates(size_t bitrate_kbps, size_t framerate_fps) {
+void VideoProcessor::SetRates(size_t bitrate_kbps, double framerate_fps) {
   RTC_DCHECK_RUN_ON(&sequence_checker_);
-  framerate_fps_ = static_cast<uint32_t>(framerate_fps);
+  framerate_fps_ = framerate_fps;
   bitrate_allocation_ = bitrate_allocator_->GetAllocation(
       static_cast<uint32_t>(bitrate_kbps * 1000), framerate_fps_);
-  encoder_->SetRates(VideoEncoder::RateControlParameters(
-      bitrate_allocation_, static_cast<double>(framerate_fps_)));
+  encoder_->SetRates(
+      VideoEncoder::RateControlParameters(bitrate_allocation_, framerate_fps_));
 }
 
 int32_t VideoProcessor::VideoProcessorDecodeCompleteCallback::Decoded(
@@ -381,6 +382,7 @@ void VideoProcessor::FrameEncoded(
       frame_stat->encode_start_ns, encode_stop_ns - post_encode_time_ns_);
   frame_stat->target_bitrate_kbps =
       bitrate_allocation_.GetTemporalLayerSum(spatial_idx, temporal_idx) / 1000;
+  frame_stat->target_framerate_fps = framerate_fps_;
   frame_stat->length_bytes = encoded_image.size();
   frame_stat->frame_type = encoded_image._frameType;
   frame_stat->temporal_idx = temporal_idx;
