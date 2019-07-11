@@ -581,7 +581,7 @@ std::vector<WebRtcVideoChannel::VideoCodecSettings>
 WebRtcVideoChannel::SelectSendVideoCodecs(
     const std::vector<VideoCodecSettings>& remote_mapped_codecs) const {
   std::vector<webrtc::SdpVideoFormat> sdp_formats =
-      encoder_factory_->GetSupportedFormats();
+      encoder_factory_->GetImplementations();
 
   // The returned vector holds the VideoCodecSettings in term of preference.
   // They are orderd by receive codec preference first and local implementation

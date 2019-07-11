@@ -35,11 +35,14 @@ class VideoEncoderFactoryWrapper : public VideoEncoderFactory {
   // Returns a list of supported codecs in order of preference.
   std::vector<SdpVideoFormat> GetSupportedFormats() const override;
 
+  std::vector<SdpVideoFormat> GetImplementations() const override;
+
   CodecInfo QueryVideoEncoder(const SdpVideoFormat& format) const override;
 
  private:
   const ScopedJavaGlobalRef<jobject> encoder_factory_;
   std::vector<SdpVideoFormat> supported_formats_;
+  std::vector<SdpVideoFormat> implementations_;
 };
 
 }  // namespace jni

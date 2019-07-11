@@ -29,6 +29,10 @@ VideoEncoderFactoryWrapper::VideoEncoderFactoryWrapper(
       Java_VideoEncoderFactory_getSupportedCodecs(jni, encoder_factory);
   supported_formats_ = JavaToNativeVector<SdpVideoFormat>(
       jni, j_supported_codecs, &VideoCodecInfoToSdpVideoFormat);
+  const ScopedJavaLocalRef<jobjectArray> j_implementations =
+      Java_VideoEncoderFactory_getImplementations(jni, encoder_factory);
+  implementations_ = JavaToNativeVector<SdpVideoFormat>(
+      jni, j_implementations, &VideoCodecInfoToSdpVideoFormat);
 }
 VideoEncoderFactoryWrapper::~VideoEncoderFactoryWrapper() = default;
 
@@ -47,6 +51,11 @@ std::unique_ptr<VideoEncoder> VideoEncoderFactoryWrapper::CreateVideoEncoder(
 std::vector<SdpVideoFormat> VideoEncoderFactoryWrapper::GetSupportedFormats()
     const {
   return supported_formats_;
+}
+
+std::vector<SdpVideoFormat> VideoEncoderFactoryWrapper::GetImplementations()
+    const {
+  return implementations_;
 }
 
 VideoEncoderFactory::CodecInfo VideoEncoderFactoryWrapper::QueryVideoEncoder(
