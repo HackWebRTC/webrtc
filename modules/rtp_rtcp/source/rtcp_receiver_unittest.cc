@@ -132,20 +132,28 @@ class RtcpReceiverTest : public ::testing::Test {
  protected:
   RtcpReceiverTest()
       : system_clock_(1335900000),
-        rtcp_receiver_(&system_clock_,
-                       false,
-                       &packet_type_counter_observer_,
-                       &bandwidth_observer_,
-                       &intra_frame_observer_,
-                       &rtcp_loss_notification_observer_,
-                       &transport_feedback_observer_,
-                       &bitrate_allocation_observer_,
-                       kRtcpIntervalMs,
-                       &rtp_rtcp_impl_) {}
+        rtcp_receiver_(
+            [&] {
+              RtpRtcp::Configuration config;
+              config.clock = &system_clock_;
+              config.receiver_only = false;
+              config.rtcp_packet_type_counter_observer =
+                  &packet_type_counter_observer_;
+              config.bandwidth_callback = &bandwidth_observer_;
+              config.intra_frame_callback = &intra_frame_observer_;
+              config.rtcp_loss_notification_observer =
+                  &rtcp_loss_notification_observer_;
+              config.transport_feedback_callback =
+                  &transport_feedback_observer_;
+              config.bitrate_allocation_observer =
+                  &bitrate_allocation_observer_;
+              config.rtcp_report_interval_ms = kRtcpIntervalMs;
+              config.media_send_ssrc = kReceiverMainSsrc;
+              config.rtx_send_ssrc = kReceiverExtraSsrc;
+              return config;
+            }(),
+            &rtp_rtcp_impl_) {}
   void SetUp() {
-    std::set<uint32_t> ssrcs = {kReceiverMainSsrc, kReceiverExtraSsrc};
-    rtcp_receiver_.SetSsrcs(kReceiverMainSsrc, ssrcs);
-
     rtcp_receiver_.SetRemoteSSRC(kSenderSsrc);
   }
 
