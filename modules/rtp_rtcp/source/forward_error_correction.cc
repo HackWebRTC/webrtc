@@ -33,7 +33,7 @@ namespace {
 constexpr size_t kTransportOverhead = 28;
 }  // namespace
 
-ForwardErrorCorrection::Packet::Packet() : data(0), ref_count_(0) {}
+ForwardErrorCorrection::Packet::Packet() : length(0), data(), ref_count_(0) {}
 ForwardErrorCorrection::Packet::~Packet() = default;
 
 int32_t ForwardErrorCorrection::Packet::AddRef() {
@@ -128,16 +128,16 @@ int ForwardErrorCorrection::EncodeFec(const PacketList& media_packets,
   // Error check the media packets.
   for (const auto& media_packet : media_packets) {
     RTC_DCHECK(media_packet);
-    if (media_packet->data.size() < kRtpHeaderSize) {
-      RTC_LOG(LS_WARNING) << "Media packet " << media_packet->data.size()
+    if (media_packet->length < kRtpHeaderSize) {
+      RTC_LOG(LS_WARNING) << "Media packet " << media_packet->length
                           << " bytes "
                           << "is smaller than RTP header.";
       return -1;
     }
     // Ensure the FEC packets will fit in a typical MTU.
-    if (media_packet->data.size() + MaxPacketOverhead() + kTransportOverhead >
+    if (media_packet->length + MaxPacketOverhead() + kTransportOverhead >
         IP_PACKET_SIZE) {
-      RTC_LOG(LS_WARNING) << "Media packet " << media_packet->data.size()
+      RTC_LOG(LS_WARNING) << "Media packet " << media_packet->length
                           << " bytes "
                           << "with overhead is larger than " << IP_PACKET_SIZE
                           << " bytes.";
@@ -153,6 +153,7 @@ int ForwardErrorCorrection::EncodeFec(const PacketList& media_packets,
     generated_fec_packets_[i].data.EnsureCapacity(IP_PACKET_SIZE);
     memset(generated_fec_packets_[i].data.data(), 0, IP_PACKET_SIZE);
     // Use this as a marker for untouched packets.
+    generated_fec_packets_[i].length = 0;
     generated_fec_packets_[i].data.SetSize(0);
     fec_packets->push_back(&generated_fec_packets_[i]);
   }
@@ -218,16 +219,16 @@ void ForwardErrorCorrection::GenerateFecPayloads(
       Packet* const media_packet = media_packets_it->get();
       // Should |media_packet| be protected by |fec_packet|?
       if (packet_masks_[pkt_mask_idx] & (1 << (7 - media_pkt_idx))) {
-        size_t media_payload_length =
-            media_packet->data.size() - kRtpHeaderSize;
+        size_t media_payload_length = media_packet->length - kRtpHeaderSize;
 
-        bool first_protected_packet = (fec_packet->data.size() == 0);
+        bool first_protected_packet = (fec_packet->length == 0);
         size_t fec_packet_length = fec_header_size + media_payload_length;
-        if (fec_packet_length > fec_packet->data.size()) {
+        if (fec_packet_length > fec_packet->length) {
           // Recall that XORing with zero (which the FEC packets are prefilled
           // with) is the identity operator, thus all prior XORs are
           // still correct even though we expand the packet length here.
-          fec_packet->data.SetSize(fec_packet_length);
+          fec_packet->length = fec_packet_length;
+          fec_packet->data.SetSize(fec_packet->length);
         }
         if (first_protected_packet) {
           // Write P, X, CC, M, and PT recovery fields.
@@ -260,7 +261,7 @@ void ForwardErrorCorrection::GenerateFecPayloads(
       pkt_mask_idx += media_pkt_idx / 8;
       media_pkt_idx %= 8;
     }
-    RTC_DCHECK_GT(fec_packet->data.size(), 0)
+    RTC_DCHECK_GT(fec_packet->length, 0)
         << "Packet mask is wrong or poorly designed.";
   }
 }
@@ -377,6 +378,7 @@ void ForwardErrorCorrection::InsertMediaPacket(
   recovered_packet->ssrc = received_packet.ssrc;
   recovered_packet->seq_num = received_packet.seq_num;
   recovered_packet->pkt = received_packet.pkt;
+  recovered_packet->pkt->length = received_packet.pkt->length;
   // TODO(holmer): Consider replacing this with a binary search for the right
   // position, and then just insert the new packet. Would get rid of the sort.
   RecoveredPacket* recovered_packet_ptr = recovered_packet.get();
@@ -536,7 +538,7 @@ bool ForwardErrorCorrection::StartPacketRecovery(
     const ReceivedFecPacket& fec_packet,
     RecoveredPacket* recovered_packet) {
   // Sanity check packet length.
-  if (fec_packet.pkt->data.size() < fec_packet.fec_header_size) {
+  if (fec_packet.pkt->length < fec_packet.fec_header_size) {
     RTC_LOG(LS_WARNING)
         << "The FEC packet is truncated: it does not contain enough room "
         << "for its own header.";
@@ -583,6 +585,7 @@ bool ForwardErrorCorrection::FinishPacketRecovery(
                         << "typical IP packet, and is thus dropped.";
     return false;
   }
+  recovered_packet->pkt->length = new_size;
   recovered_packet->pkt->data.SetSize(new_size);
   // Set the SN field.
   ByteWriter<uint16_t>::WriteBigEndian(&recovered_packet->pkt->data[2],
@@ -602,7 +605,7 @@ void ForwardErrorCorrection::XorHeaders(const Packet& src, Packet* dst) {
   // XOR the length recovery field.
   uint8_t src_payload_length_network_order[2];
   ByteWriter<uint16_t>::WriteBigEndian(src_payload_length_network_order,
-                                       src.data.size() - kRtpHeaderSize);
+                                       src.length - kRtpHeaderSize);
   dst->data[2] ^= src_payload_length_network_order[0];
   dst->data[3] ^= src_payload_length_network_order[1];
 
@@ -639,7 +642,7 @@ bool ForwardErrorCorrection::RecoverPacket(const ReceivedFecPacket& fec_packet,
     } else {
       XorHeaders(*protected_packet->pkt, recovered_packet->pkt);
       XorPayloads(*protected_packet->pkt,
-                  protected_packet->pkt->data.size() - kRtpHeaderSize,
+                  protected_packet->pkt->length - kRtpHeaderSize,
                   kRtpHeaderSize, recovered_packet->pkt);
     }
   }

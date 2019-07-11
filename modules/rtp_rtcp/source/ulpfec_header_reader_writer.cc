@@ -123,8 +123,8 @@ void UlpfecHeaderWriter::FinalizeFecHeader(
   // Protection length is set to entire packet. (This is not
   // required in general.)
   const size_t fec_header_size = FecHeaderSize(packet_mask_size);
-  ByteWriter<uint16_t>::WriteBigEndian(
-      &fec_packet->data[10], fec_packet->data.size() - fec_header_size);
+  ByteWriter<uint16_t>::WriteBigEndian(&fec_packet->data[10],
+                                       fec_packet->length - fec_header_size);
   // Copy the packet mask.
   memcpy(&fec_packet->data[12], packet_mask, packet_mask_size);
 }
