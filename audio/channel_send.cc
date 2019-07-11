@@ -97,7 +97,8 @@ class ChannelSend : public ChannelSendInterface,
               FrameEncryptorInterface* frame_encryptor,
               const webrtc::CryptoOptions& crypto_options,
               bool extmap_allow_mixed,
-              int rtcp_report_interval_ms);
+              int rtcp_report_interval_ms,
+              uint32_t ssrc);
 
   ~ChannelSend() override;
 
@@ -640,7 +641,8 @@ ChannelSend::ChannelSend(Clock* clock,
                          FrameEncryptorInterface* frame_encryptor,
                          const webrtc::CryptoOptions& crypto_options,
                          bool extmap_allow_mixed,
-                         int rtcp_report_interval_ms)
+                         int rtcp_report_interval_ms,
+                         uint32_t ssrc)
     : event_log_(rtc_event_log),
       _timeStamp(0),  // This is just an offset, RTP module will add it's own
                       // random offset
@@ -694,6 +696,8 @@ ChannelSend::ChannelSend(Clock* clock,
       retransmission_rate_limiter_.get();
   configuration.extmap_allow_mixed = extmap_allow_mixed;
   configuration.rtcp_report_interval_ms = rtcp_report_interval_ms;
+
+  configuration.media_send_ssrc = ssrc;
 
   _rtpRtcpModule = RtpRtcp::Create(configuration);
   _rtpRtcpModule->SetSendingMediaStatus(false);
@@ -1256,12 +1260,13 @@ std::unique_ptr<ChannelSendInterface> CreateChannelSend(
     FrameEncryptorInterface* frame_encryptor,
     const webrtc::CryptoOptions& crypto_options,
     bool extmap_allow_mixed,
-    int rtcp_report_interval_ms) {
+    int rtcp_report_interval_ms,
+    uint32_t ssrc) {
   return absl::make_unique<ChannelSend>(
       clock, task_queue_factory, module_process_thread, media_transport_config,
       overhead_observer, rtp_transport, rtcp_rtt_stats, rtc_event_log,
       frame_encryptor, crypto_options, extmap_allow_mixed,
-      rtcp_report_interval_ms);
+      rtcp_report_interval_ms, ssrc);
 }
 
 }  // namespace voe

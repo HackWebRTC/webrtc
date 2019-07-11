@@ -140,7 +140,8 @@ std::unique_ptr<ChannelSendInterface> CreateChannelSend(
     FrameEncryptorInterface* frame_encryptor,
     const webrtc::CryptoOptions& crypto_options,
     bool extmap_allow_mixed,
-    int rtcp_report_interval_ms);
+    int rtcp_report_interval_ms,
+    uint32_t ssrc);
 
 }  // namespace voe
 }  // namespace webrtc
