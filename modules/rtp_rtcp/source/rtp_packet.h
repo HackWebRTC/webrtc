@@ -89,9 +89,9 @@ class RtpPacket {
   void SetTimestamp(uint32_t timestamp);
   void SetSsrc(uint32_t ssrc);
 
-  // Fills with zeroes mutable extensions,
+  // Copies the buffer with zero-ed mutable extensions,
   // which are modified after FEC protection is generated.
-  void ZeroMutableExtensions();
+  void CopyAndZeroMutableExtensions(rtc::ArrayView<uint8_t> buffer) const;
 
   // Removes extension of given |type|, returns false is extension was not
   // registered in packet's extension map or not present in the packet. Only

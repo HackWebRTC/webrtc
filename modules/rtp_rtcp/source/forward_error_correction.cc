@@ -150,11 +150,9 @@ int ForwardErrorCorrection::EncodeFec(const PacketList& media_packets,
     return 0;
   }
   for (int i = 0; i < num_fec_packets; ++i) {
-    generated_fec_packets_[i].data.EnsureCapacity(IP_PACKET_SIZE);
-    memset(generated_fec_packets_[i].data.data(), 0, IP_PACKET_SIZE);
+    memset(generated_fec_packets_[i].data, 0, IP_PACKET_SIZE);
     // Use this as a marker for untouched packets.
     generated_fec_packets_[i].length = 0;
-    generated_fec_packets_[i].data.SetSize(0);
     fec_packets->push_back(&generated_fec_packets_[i]);
   }
 
@@ -179,9 +177,9 @@ int ForwardErrorCorrection::EncodeFec(const PacketList& media_packets,
   GenerateFecPayloads(media_packets, num_fec_packets);
   // TODO(brandtr): Generalize this when multistream protection support is
   // added.
-  const uint32_t media_ssrc = ParseSsrc(media_packets.front()->data.data());
+  const uint32_t media_ssrc = ParseSsrc(media_packets.front()->data);
   const uint16_t seq_num_base =
-      ParseSequenceNumber(media_packets.front()->data.data());
+      ParseSequenceNumber(media_packets.front()->data);
   FinalizeFecHeaders(num_fec_packets, media_ssrc, seq_num_base);
 
   return 0;
@@ -213,8 +211,7 @@ void ForwardErrorCorrection::GenerateFecPayloads(
 
     size_t media_pkt_idx = 0;
     auto media_packets_it = media_packets.cbegin();
-    uint16_t prev_seq_num =
-        ParseSequenceNumber((*media_packets_it)->data.data());
+    uint16_t prev_seq_num = ParseSequenceNumber((*media_packets_it)->data);
     while (media_packets_it != media_packets.end()) {
       Packet* const media_packet = media_packets_it->get();
       // Should |media_packet| be protected by |fec_packet|?
@@ -228,7 +225,6 @@ void ForwardErrorCorrection::GenerateFecPayloads(
           // with) is the identity operator, thus all prior XORs are
           // still correct even though we expand the packet length here.
           fec_packet->length = fec_packet_length;
-          fec_packet->data.SetSize(fec_packet->length);
         }
         if (first_protected_packet) {
           // Write P, X, CC, M, and PT recovery fields.
@@ -241,10 +237,8 @@ void ForwardErrorCorrection::GenerateFecPayloads(
           // Write timestamp recovery field.
           memcpy(&fec_packet->data[4], &media_packet->data[4], 4);
           // Write payload.
-          if (media_payload_length > 0) {
-            memcpy(&fec_packet->data[fec_header_size],
-                   &media_packet->data[kRtpHeaderSize], media_payload_length);
-          }
+          memcpy(&fec_packet->data[fec_header_size],
+                 &media_packet->data[kRtpHeaderSize], media_payload_length);
         } else {
           XorHeaders(*media_packet, fec_packet);
           XorPayloads(*media_packet, media_payload_length, fec_header_size,
@@ -253,8 +247,7 @@ void ForwardErrorCorrection::GenerateFecPayloads(
       }
       media_packets_it++;
       if (media_packets_it != media_packets.end()) {
-        uint16_t seq_num =
-            ParseSequenceNumber((*media_packets_it)->data.data());
+        uint16_t seq_num = ParseSequenceNumber((*media_packets_it)->data);
         media_pkt_idx += static_cast<uint16_t>(seq_num - prev_seq_num);
         prev_seq_num = seq_num;
       }
@@ -273,10 +266,8 @@ int ForwardErrorCorrection::InsertZerosInPacketMasks(
   if (num_media_packets <= 1) {
     return num_media_packets;
   }
-  uint16_t last_seq_num =
-      ParseSequenceNumber(media_packets.back()->data.data());
-  uint16_t first_seq_num =
-      ParseSequenceNumber(media_packets.front()->data.data());
+  uint16_t last_seq_num = ParseSequenceNumber(media_packets.back()->data);
+  uint16_t first_seq_num = ParseSequenceNumber(media_packets.front()->data);
   size_t total_missing_seq_nums =
       static_cast<uint16_t>(last_seq_num - first_seq_num) - num_media_packets +
       1;
@@ -309,7 +300,7 @@ int ForwardErrorCorrection::InsertZerosInPacketMasks(
       // We can only cover up to 48 packets.
       break;
     }
-    uint16_t seq_num = ParseSequenceNumber((*media_packets_it)->data.data());
+    uint16_t seq_num = ParseSequenceNumber((*media_packets_it)->data);
     const int num_zeros_to_insert =
         static_cast<uint16_t>(seq_num - prev_seq_num - 1);
     if (num_zeros_to_insert > 0) {
@@ -544,29 +535,25 @@ bool ForwardErrorCorrection::StartPacketRecovery(
         << "for its own header.";
     return false;
   }
-  if (fec_packet.protection_length >
-      std::min(size_t{IP_PACKET_SIZE - kRtpHeaderSize},
-               IP_PACKET_SIZE - fec_packet.fec_header_size)) {
-    RTC_LOG(LS_WARNING) << "Incorrect protection length, dropping FEC packet.";
-    return false;
-  }
   // Initialize recovered packet data.
   recovered_packet->pkt = new Packet();
-  recovered_packet->pkt->data.SetSize(fec_packet.protection_length +
-                                      kRtpHeaderSize);
+  memset(recovered_packet->pkt->data, 0, IP_PACKET_SIZE);
   recovered_packet->returned = false;
   recovered_packet->was_recovered = true;
   // Copy bytes corresponding to minimum RTP header size.
   // Note that the sequence number and SSRC fields will be overwritten
   // at the end of packet recovery.
-  memcpy(recovered_packet->pkt->data.data(), fec_packet.pkt->data.cdata(),
-         kRtpHeaderSize);
+  memcpy(&recovered_packet->pkt->data, fec_packet.pkt->data, kRtpHeaderSize);
   // Copy remaining FEC payload.
-  if (fec_packet.protection_length > 0) {
-    memcpy(recovered_packet->pkt->data.data() + kRtpHeaderSize,
-           fec_packet.pkt->data.cdata() + fec_packet.fec_header_size,
-           fec_packet.protection_length);
+  if (fec_packet.protection_length >
+      std::min(sizeof(recovered_packet->pkt->data) - kRtpHeaderSize,
+               sizeof(fec_packet.pkt->data) - fec_packet.fec_header_size)) {
+    RTC_LOG(LS_WARNING) << "Incorrect protection length, dropping FEC packet.";
+    return false;
   }
+  memcpy(&recovered_packet->pkt->data[kRtpHeaderSize],
+         &fec_packet.pkt->data[fec_packet.fec_header_size],
+         fec_packet.protection_length);
   return true;
 }
 
@@ -577,16 +564,15 @@ bool ForwardErrorCorrection::FinishPacketRecovery(
   recovered_packet->pkt->data[0] |= 0x80;  // Set the 1st bit.
   recovered_packet->pkt->data[0] &= 0xbf;  // Clear the 2nd bit.
   // Recover the packet length, from temporary location.
-  const size_t new_size =
+  recovered_packet->pkt->length =
       ByteReader<uint16_t>::ReadBigEndian(&recovered_packet->pkt->data[2]) +
       kRtpHeaderSize;
-  if (new_size > size_t{IP_PACKET_SIZE - kRtpHeaderSize}) {
+  if (recovered_packet->pkt->length >
+      sizeof(recovered_packet->pkt->data) - kRtpHeaderSize) {
     RTC_LOG(LS_WARNING) << "The recovered packet had a length larger than a "
                         << "typical IP packet, and is thus dropped.";
     return false;
   }
-  recovered_packet->pkt->length = new_size;
-  recovered_packet->pkt->data.SetSize(new_size);
   // Set the SN field.
   ByteWriter<uint16_t>::WriteBigEndian(&recovered_packet->pkt->data[2],
                                        recovered_packet->seq_num);
@@ -623,8 +609,8 @@ void ForwardErrorCorrection::XorPayloads(const Packet& src,
                                          size_t dst_offset,
                                          Packet* dst) {
   // XOR the payload.
-  RTC_DCHECK_LE(kRtpHeaderSize + payload_length, src.data.size());
-  RTC_DCHECK_LE(dst_offset + payload_length, dst->data.size());
+  RTC_DCHECK_LE(kRtpHeaderSize + payload_length, sizeof(src.data));
+  RTC_DCHECK_LE(dst_offset + payload_length, sizeof(dst->data));
   for (size_t i = 0; i < payload_length; ++i) {
     dst->data[dst_offset + i] ^= src.data[kRtpHeaderSize + i];
   }
@@ -641,8 +627,7 @@ bool ForwardErrorCorrection::RecoverPacket(const ReceivedFecPacket& fec_packet,
       recovered_packet->seq_num = protected_packet->seq_num;
     } else {
       XorHeaders(*protected_packet->pkt, recovered_packet->pkt);
-      XorPayloads(*protected_packet->pkt,
-                  protected_packet->pkt->length - kRtpHeaderSize,
+      XorPayloads(*protected_packet->pkt, protected_packet->pkt->length,
                   kRtpHeaderSize, recovered_packet->pkt);
     }
   }

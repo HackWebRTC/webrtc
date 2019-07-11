@@ -70,7 +70,8 @@ void ReceivePackets(
           new ForwardErrorCorrection::ReceivedPacket());
       *duplicate_packet = *received_packet;
       duplicate_packet->pkt = new ForwardErrorCorrection::Packet();
-      duplicate_packet->pkt->data = received_packet->pkt->data;
+      memcpy(duplicate_packet->pkt->data, received_packet->pkt->data,
+             received_packet->pkt->length);
       duplicate_packet->pkt->length = received_packet->pkt->length;
 
       to_decode_list->push_back(std::move(duplicate_packet));
@@ -253,7 +254,6 @@ void RunTest(bool use_flexfec) {
                   IP_PACKET_SIZE - 12 - 28 - fec->MaxPacketOverhead());
               media_packet->length =
                   random.Rand(kMinPacketSize, kMaxPacketSize);
-              media_packet->data.SetSize(media_packet->length);
 
               // Generate random values for the first 2 bytes.
               media_packet->data[0] = random.Rand<uint8_t>();
@@ -312,7 +312,8 @@ void RunTest(bool use_flexfec) {
                         new ForwardErrorCorrection::ReceivedPacket());
                 received_packet->pkt = new ForwardErrorCorrection::Packet();
                 received_packet->pkt->length = media_packet->length;
-                received_packet->pkt->data = media_packet->data;
+                memcpy(received_packet->pkt->data, media_packet->data,
+                       media_packet->length);
                 received_packet->ssrc = media_ssrc;
                 received_packet->seq_num =
                     ByteReader<uint16_t>::ReadBigEndian(&media_packet->data[2]);
@@ -333,7 +334,8 @@ void RunTest(bool use_flexfec) {
                         new ForwardErrorCorrection::ReceivedPacket());
                 received_packet->pkt = new ForwardErrorCorrection::Packet();
                 received_packet->pkt->length = fec_packet->length;
-                received_packet->pkt->data = fec_packet->data;
+                memcpy(received_packet->pkt->data, fec_packet->data,
+                       fec_packet->length);
                 received_packet->seq_num = fec_seq_num_offset + seq_num;
                 received_packet->is_fec = true;
                 received_packet->ssrc = fec_ssrc;
@@ -424,9 +426,8 @@ void RunTest(bool use_flexfec) {
                 ASSERT_EQ(recovered_packet->pkt->length, media_packet->length)
                     << "Recovered packet length not identical to original "
                     << "media packet";
-                ASSERT_EQ(
-                    0, memcmp(recovered_packet->pkt->data.cdata(),
-                              media_packet->data.cdata(), media_packet->length))
+                ASSERT_EQ(0, memcmp(recovered_packet->pkt->data,
+                                    media_packet->data, media_packet->length))
                     << "Recovered packet payload not identical to original "
                     << "media packet";
                 recovered_packet_list.pop_front();

@@ -39,7 +39,7 @@ constexpr uint32_t kMediaSsrc = 8353;
 
 RtpPacketReceived ParsePacket(const Packet& packet) {
   RtpPacketReceived parsed_packet;
-  EXPECT_TRUE(parsed_packet.Parse(packet.data));
+  EXPECT_TRUE(parsed_packet.Parse(packet.data, packet.length));
   return parsed_packet;
 }
 
@@ -241,8 +241,8 @@ TEST_F(FlexfecReceiverTest, RecoversFromSingleMediaLoss) {
   media_it++;
   EXPECT_CALL(recovered_packet_receiver_,
               OnRecoveredPacket(_, (*media_it)->length))
-      .With(Args<0, 1>(
-          ElementsAreArray((*media_it)->data.cdata(), (*media_it)->length)));
+      .With(
+          Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)));
   receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 }
 
@@ -263,8 +263,8 @@ TEST_F(FlexfecReceiverTest, RecoversFromDoubleMediaLoss) {
   auto media_it = media_packets.begin();
   EXPECT_CALL(recovered_packet_receiver_,
               OnRecoveredPacket(_, (*media_it)->length))
-      .With(Args<0, 1>(
-          ElementsAreArray((*media_it)->data.cdata(), (*media_it)->length)));
+      .With(
+          Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)));
   receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 
   // Receive second FEC packet and recover second lost media packet.
@@ -273,8 +273,8 @@ TEST_F(FlexfecReceiverTest, RecoversFromDoubleMediaLoss) {
   media_it++;
   EXPECT_CALL(recovered_packet_receiver_,
               OnRecoveredPacket(_, (*media_it)->length))
-      .With(Args<0, 1>(
-          ElementsAreArray((*media_it)->data.cdata(), (*media_it)->length)));
+      .With(
+          Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)));
   receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 }
 
@@ -312,8 +312,8 @@ TEST_F(FlexfecReceiverTest, DoesNotCallbackTwice) {
   media_it++;
   EXPECT_CALL(recovered_packet_receiver_,
               OnRecoveredPacket(_, (*media_it)->length))
-      .With(Args<0, 1>(
-          ElementsAreArray((*media_it)->data.cdata(), (*media_it)->length)));
+      .With(
+          Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)));
   receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 
   // Receive the FEC packet again, but do not call back.
@@ -366,7 +366,7 @@ TEST_F(FlexfecReceiverTest, RecoversFrom50PercentLoss) {
     EXPECT_CALL(recovered_packet_receiver_,
                 OnRecoveredPacket(_, (*media_it)->length))
         .With(Args<0, 1>(
-            ElementsAreArray((*media_it)->data.cdata(), (*media_it)->length)));
+            ElementsAreArray((*media_it)->data, (*media_it)->length)));
     receiver_.OnRtpPacket(ParsePacket(*fec_packet_with_rtp_header));
     ++media_it;
   }
@@ -405,8 +405,8 @@ TEST_F(FlexfecReceiverTest, DelayedFecPacketDoesHelp) {
   media_it = media_packets.begin();
   EXPECT_CALL(recovered_packet_receiver_,
               OnRecoveredPacket(_, (*media_it)->length))
-      .With(Args<0, 1>(
-          ElementsAreArray((*media_it)->data.cdata(), (*media_it)->length)));
+      .With(
+          Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)));
   receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 }
 
@@ -534,12 +534,12 @@ TEST_F(FlexfecReceiverTest, RecoversWithMediaPacketsOutOfOrder) {
   // Expect to recover lost media packets.
   EXPECT_CALL(recovered_packet_receiver_,
               OnRecoveredPacket(_, (*media_packet1)->length))
-      .With(Args<0, 1>(ElementsAreArray((*media_packet1)->data.cdata(),
-                                        (*media_packet1)->length)));
+      .With(Args<0, 1>(
+          ElementsAreArray((*media_packet1)->data, (*media_packet1)->length)));
   EXPECT_CALL(recovered_packet_receiver_,
               OnRecoveredPacket(_, (*media_packet4)->length))
-      .With(Args<0, 1>(ElementsAreArray((*media_packet4)->data.cdata(),
-                                        (*media_packet4)->length)));
+      .With(Args<0, 1>(
+          ElementsAreArray((*media_packet4)->data, (*media_packet4)->length)));
 
   // Add FEC packets.
   auto fec_it = fec_packets.begin();
@@ -636,8 +636,8 @@ TEST_F(FlexfecReceiverTest, CalculatesNumberOfPackets) {
   media_it++;
   EXPECT_CALL(recovered_packet_receiver_,
               OnRecoveredPacket(_, (*media_it)->length))
-      .With(Args<0, 1>(
-          ElementsAreArray((*media_it)->data.cdata(), (*media_it)->length)));
+      .With(
+          Args<0, 1>(ElementsAreArray((*media_it)->data, (*media_it)->length)));
   receiver_.OnRtpPacket(ParsePacket(*packet_with_rtp_header));
 
   // Check stats calculations.

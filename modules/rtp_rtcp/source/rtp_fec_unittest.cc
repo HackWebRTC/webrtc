@@ -121,7 +121,7 @@ void RtpFecTest<ForwardErrorCorrectionType>::ReceivedPackets(
           new ForwardErrorCorrection::ReceivedPacket());
       received_packet->pkt = new ForwardErrorCorrection::Packet();
       received_packet->pkt->length = packet->length;
-      received_packet->pkt->data = packet->data;
+      memcpy(received_packet->pkt->data, packet->data, packet->length);
       received_packet->is_fec = is_fec;
       if (!is_fec) {
         received_packet->ssrc = kMediaSsrc;
@@ -158,8 +158,7 @@ bool RtpFecTest<ForwardErrorCorrectionType>::IsRecoveryComplete() {
         if (media_packet->length != recovered_packet->pkt->length) {
           return false;
         }
-        if (memcmp(media_packet->data.cdata(),
-                   recovered_packet->pkt->data.cdata(),
+        if (memcmp(media_packet->data, recovered_packet->pkt->data,
                    media_packet->length) != 0) {
           return false;
         }
