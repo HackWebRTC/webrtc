@@ -13,12 +13,12 @@
 
 #include "absl/memory/memory.h"
 #include "api/audio/echo_canceller3_factory.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "modules/audio_processing/aec_dump/aec_dump_factory.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/task_queue.h"
-#include "rtc_base/task_queue_stdlib.h"
 #include "system_wrappers/include/field_trial.h"
 #include "test/fuzzers/audio_processing_fuzzer_helper.h"
 #include "test/fuzzers/fuzz_data_helper.h"
@@ -151,14 +151,8 @@ std::unique_ptr<AudioProcessing> CreateApm(test::FuzzDataHelper* fuzz_data,
 }
 
 TaskQueueFactory* GetTaskQueueFactory() {
-  // Chromium hijacked DefaultTaskQueueFactory with own implementation, but
-  // unable to use it without base::test::ScopedTaskEnvironment. Actual used
-  // task queue implementation shouldn't matter for the purpose of this fuzzer,
-  // so use stdlib implementation: that one is multiplatform.
-  // When bugs.webrtc.org/10284 is resolved and chromium stops hijacking
-  // DefaultTaskQueueFactory, Stdlib can be replaced with default one.
   static TaskQueueFactory* const factory =
-      CreateTaskQueueStdlibFactory().release();
+      CreateDefaultTaskQueueFactory().release();
   return factory;
 }
 
