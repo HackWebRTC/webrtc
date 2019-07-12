@@ -816,6 +816,30 @@ TEST_P(AudioDeviceTest, InitStopInitRecording) {
   StopRecording();
 }
 
+// Verify that additional attempts to initialize or start recording while
+// already being active works. Additional calls should just be ignored.
+TEST_P(AudioDeviceTest, StartInitRecording) {
+  SKIP_TEST_IF_NOT(requirements_satisfied());
+  StartRecording();
+  // An additional attempt to initialize at this stage should be ignored.
+  EXPECT_EQ(0, audio_device()->InitRecording());
+  // Same for additional request to start recording while already active.
+  EXPECT_EQ(0, audio_device()->StartRecording());
+  StopRecording();
+}
+
+// Verify that additional attempts to initialize or start playou while
+// already being active works. Additional calls should just be ignored.
+TEST_P(AudioDeviceTest, StartInitPlayout) {
+  SKIP_TEST_IF_NOT(requirements_satisfied());
+  StartPlayout();
+  // An additional attempt to initialize at this stage should be ignored.
+  EXPECT_EQ(0, audio_device()->InitPlayout());
+  // Same for additional request to start playout while already active.
+  EXPECT_EQ(0, audio_device()->StartPlayout());
+  StopPlayout();
+}
+
 // Tests Init/Stop/Init recording while playout is active.
 TEST_P(AudioDeviceTest, InitStopInitRecordingWhilePlaying) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
