@@ -23,7 +23,6 @@
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/audio_coding/neteq/tools/audio_sink.h"
 #include "modules/audio_coding/neteq/tools/neteq_input.h"
-#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 namespace test {
@@ -107,7 +106,6 @@ class NetEqTest : public NetEqSimulator {
 
  private:
   void RegisterDecoders(const DecoderMap& codecs);
-  SimulatedClock clock_;
   absl::optional<Action> next_action_;
   absl::optional<int> last_packet_time_ms_;
   std::unique_ptr<NetEq> neteq_;

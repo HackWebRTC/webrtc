@@ -35,9 +35,7 @@ namespace acm2 {
 
 AcmReceiver::AcmReceiver(const AudioCodingModule::Config& config)
     : last_audio_buffer_(new int16_t[AudioFrame::kMaxDataSizeSamples]),
-      neteq_(NetEq::Create(config.neteq_config,
-                           config.clock,
-                           config.decoder_factory)),
+      neteq_(NetEq::Create(config.neteq_config, config.decoder_factory)),
       clock_(config.clock),
       resampled_last_output_frame_(true) {
   RTC_DCHECK(clock_);

@@ -14,7 +14,6 @@
 #include <iostream>
 
 #include "modules/rtp_rtcp/source/byte_io.h"
-#include "system_wrappers/include/clock.h"
 
 namespace webrtc {
 namespace test {
@@ -58,8 +57,7 @@ NetEqTest::NetEqTest(const NetEq::Config& config,
                      std::unique_ptr<NetEqInput> input,
                      std::unique_ptr<AudioSink> output,
                      Callbacks callbacks)
-    : clock_(0),
-      neteq_(NetEq::Create(config, &clock_, decoder_factory)),
+    : neteq_(NetEq::Create(config, decoder_factory)),
       input_(std::move(input)),
       output_(std::move(output)),
       callbacks_(callbacks),
@@ -94,7 +92,6 @@ NetEqTest::SimulationStepResult NetEqTest::RunToNextGetAudio() {
   while (!input_->ended()) {
     // Advance time to next event.
     RTC_DCHECK(input_->NextEventTime());
-    clock_.AdvanceTimeMilliseconds(*input_->NextEventTime() - time_now_ms);
     time_now_ms = *input_->NextEventTime();
     // Check if it is time to insert packet.
     if (input_->NextPacketTime() && time_now_ms >= *input_->NextPacketTime()) {

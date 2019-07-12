@@ -18,7 +18,6 @@
 #include "modules/audio_coding/neteq/tools/output_wav_file.h"
 #include "modules/audio_coding/neteq/tools/resample_input_audio_file.h"
 #include "rtc_base/checks.h"
-#include "system_wrappers/include/clock.h"
 #include "test/testsupport/file_utils.h"
 
 namespace webrtc {
@@ -216,8 +215,7 @@ NetEqQualityTest::NetEqQualityTest(
 
   NetEq::Config config;
   config.sample_rate_hz = out_sampling_khz_ * 1000;
-  neteq_.reset(
-      NetEq::Create(config, Clock::GetRealTimeClock(), decoder_factory));
+  neteq_.reset(NetEq::Create(config, decoder_factory));
   max_payload_bytes_ = in_size_samples_ * channels_ * sizeof(int16_t);
   in_data_.reset(new int16_t[in_size_samples_ * channels_]);
 }
