@@ -19,7 +19,6 @@
 
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/include/rtcp_statistics.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_nack_stats.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/dlrr.h"
@@ -52,7 +51,16 @@ class RTCPReceiver {
     virtual ~ModuleRtpRtcp() = default;
   };
 
-  RTCPReceiver(const RtpRtcp::Configuration& config, ModuleRtpRtcp* owner);
+  RTCPReceiver(Clock* clock,
+               bool receiver_only,
+               RtcpPacketTypeCounterObserver* packet_type_counter_observer,
+               RtcpBandwidthObserver* rtcp_bandwidth_observer,
+               RtcpIntraFrameObserver* rtcp_intra_frame_observer,
+               RtcpLossNotificationObserver* rtcp_loss_notification_observer,
+               TransportFeedbackObserver* transport_feedback_observer,
+               VideoBitrateAllocationObserver* bitrate_allocation_observer,
+               int report_interval_ms,
+               ModuleRtpRtcp* owner);
   virtual ~RTCPReceiver();
 
   void IncomingPacket(const uint8_t* packet, size_t packet_size);

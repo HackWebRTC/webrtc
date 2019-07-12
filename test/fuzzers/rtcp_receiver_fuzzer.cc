@@ -7,7 +7,6 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "modules/rtp_rtcp/include/rtp_rtcp.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/tmmb_item.h"
 #include "modules/rtp_rtcp/source/rtcp_receiver.h"
 #include "rtc_base/checks.h"
@@ -40,11 +39,8 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   NullModuleRtpRtcp rtp_rtcp_module;
   SimulatedClock clock(1234);
 
-  RtpRtcp::Configuration config;
-  config.clock = &clock;
-  config.rtcp_report_interval_ms = kRtcpIntervalMs;
-
-  RTCPReceiver receiver(config, &rtp_rtcp_module);
+  RTCPReceiver receiver(&clock, false, nullptr, nullptr, nullptr, nullptr,
+                        nullptr, nullptr, kRtcpIntervalMs, &rtp_rtcp_module);
 
   receiver.IncomingPacket(data, size);
 }

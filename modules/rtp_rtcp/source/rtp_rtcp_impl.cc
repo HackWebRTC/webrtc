@@ -36,6 +36,8 @@ const int64_t kRtpRtcpMaxIdleTimeProcessMs = 5;
 const int64_t kRtpRtcpRttProcessTimeMs = 1000;
 const int64_t kRtpRtcpBitrateProcessTimeMs = 10;
 const int64_t kDefaultExpectedRetransmissionTimeMs = 125;
+constexpr int32_t kDefaultVideoReportInterval = 1000;
+constexpr int32_t kDefaultAudioReportInterval = 5000;
 }  // namespace
 
 RtpRtcp::Configuration::Configuration() = default;
@@ -60,7 +62,19 @@ RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
 
 ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
     : rtcp_sender_(configuration),
-      rtcp_receiver_(configuration, this),
+      rtcp_receiver_(configuration.clock,
+                     configuration.receiver_only,
+                     configuration.rtcp_packet_type_counter_observer,
+                     configuration.bandwidth_callback,
+                     configuration.intra_frame_callback,
+                     configuration.rtcp_loss_notification_observer,
+                     configuration.transport_feedback_callback,
+                     configuration.bitrate_allocation_observer,
+                     configuration.rtcp_report_interval_ms > 0
+                         ? configuration.rtcp_report_interval_ms
+                         : (configuration.audio ? kDefaultAudioReportInterval
+                                                : kDefaultVideoReportInterval),
+                     this),
       clock_(configuration.clock),
       last_bitrate_process_time_(clock_->TimeInMilliseconds()),
       last_rtt_process_time_(clock_->TimeInMilliseconds()),
