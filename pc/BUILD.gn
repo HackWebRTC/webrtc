@@ -108,6 +108,7 @@ rtc_static_library("rtc_pc_base") {
     "../rtc_base/system:file_wrapper",
     "../rtc_base/third_party/base64",
     "../rtc_base/third_party/sigslot",
+    "../system_wrappers:field_trial",
     "../system_wrappers:metrics",
     "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/memory",

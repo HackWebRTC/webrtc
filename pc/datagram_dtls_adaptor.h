@@ -103,22 +103,28 @@ class DatagramDtlsAdaptor : public DtlsTransportInternal,
   bool receiving() const override;
 
  private:
-  // Stored for each sent RTP packet.
+  // RTP/RTCP packet info stored for each sent packet.
   struct SentPacketInfo {
-    SentPacketInfo(uint32_t ssrc,
-                   absl::optional<uint16_t> transport_sequence_number,
-                   int64_t packet_id)
+    // RTP packet info with ssrc and transport sequence number.
+    SentPacketInfo(int64_t packet_id,
+                   uint32_t ssrc,
+                   uint16_t transport_sequence_number)
         : ssrc(ssrc),
           transport_sequence_number(transport_sequence_number),
           packet_id(packet_id) {}
 
+    // Packet info without SSRC and transport sequence number used for RTCP
+    // packets, RTP packets when transport sequence number is not provided or
+    // when feedback translation is disabled.
+    explicit SentPacketInfo(int64_t packet_id) : packet_id(packet_id) {}
+
     SentPacketInfo() = default;
 
-    uint32_t ssrc = 0;
+    absl::optional<uint32_t> ssrc;
 
     // Transport sequence number (if it was provided in outgoing RTP packet).
     // It is used to re-create RTCP feedback packets from datagram ACKs.
-    absl::optional<uint16_t> transport_sequence_number = 0;
+    absl::optional<uint16_t> transport_sequence_number;
 
     // Packet id from rtc::PacketOptions. It is required to propagage sent
     // notification up the stack (SignalSentPacket).
@@ -201,6 +207,11 @@ class DatagramDtlsAdaptor : public DtlsTransportInternal,
   // zero timestamps received, which sometimes are received from datagram
   // transport. Investigate if we can eliminate zero timestamps.
   int64_t previous_nonzero_timestamp_us_ = 0;
+
+  // Disable datagram to RTCP feedback translation and enable RTCP feedback
+  // loop (note that having both RTCP and datagram feedback loops is
+  // inefficient, but can be useful in tests and experiments).
+  const bool disable_datagram_to_rtcp_feeback_translation_;
 };
 
 }  // namespace cricket

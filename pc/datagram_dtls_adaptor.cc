@@ -36,6 +36,7 @@
 #include "rtc_base/ssl_stream_adapter.h"
 #include "rtc_base/stream.h"
 #include "rtc_base/thread.h"
+#include "system_wrappers/include/field_trial.h"
 
 #ifdef BYPASS_DATAGRAM_DTLS_TEST_ONLY
 // Send unencrypted packets directly to ICE, bypassing datagtram
@@ -47,10 +48,18 @@ constexpr bool kBypassDatagramDtlsTestOnly = false;
 
 namespace cricket {
 
-// For RTCP packets we are not storing SentPacketInfo and not interested in
-// Acks, so we will use special datagram id for RTCP packets to filter out
-// datagram notifications coming from RTCP packets.
-constexpr webrtc::DatagramId kRtcpDatagramId = -1;
+namespace {
+
+// Field trials.
+// Disable datagram to RTCP feedback translation and enable RTCP feedback loop
+// on top of datagram feedback loop. Note that two
+// feedback loops add unneccesary overhead, so it's preferable to use feedback
+// loop provided by datagram transport and convert datagram ACKs to RTCP ACKs,
+// but enabling RTCP feedback loop may be useful in tests and experiments.
+const char kDisableDatagramToRtcpFeebackTranslationFieldTrial[] =
+    "WebRTC-kDisableDatagramToRtcpFeebackTranslation";
+
+}  // namespace
 
 // Maximum packet size of RTCP feedback packet for allocation. We re-create RTCP
 // feedback packets when we get ACK notifications from datagram transport. Our
@@ -66,7 +75,10 @@ DatagramDtlsAdaptor::DatagramDtlsAdaptor(
     : crypto_options_(crypto_options),
       ice_transport_(ice_transport),
       datagram_transport_(datagram_transport),
-      event_log_(event_log) {
+      event_log_(event_log),
+      disable_datagram_to_rtcp_feeback_translation_(
+          webrtc::field_trial::IsEnabled(
+              kDisableDatagramToRtcpFeebackTranslationFieldTrial)) {
   // Save extension map for parsing RTP packets (we only need transport
   // sequence numbers).
   const webrtc::RtpExtension* transport_sequence_number_extension =
@@ -132,17 +144,25 @@ int DatagramDtlsAdaptor::SendPacket(const char* data,
     return ice_transport_->SendPacket(data, len, options);
   }
 
+  // Assign and increment datagram_id.
+  const webrtc::DatagramId datagram_id = current_datagram_id_++;
+
   rtc::ArrayView<const uint8_t> original_data(
       reinterpret_cast<const uint8_t*>(data), len);
-  // RTCP packets are sent as is and they do not require datagram_id.
-  if (webrtc::RtpHeaderParser::IsRtcp(original_data.data(),
-                                      original_data.size())) {
-    return SendDatagram(original_data, /*datagram_id=*/kRtcpDatagramId);
-  }
 
-  // Assign and increment datagram_id.
-  webrtc::DatagramId datagram_id = current_datagram_id_;
-  current_datagram_id_++;
+  // Send as is (without extracting transport sequence number) for
+  //    - All RTCP packets, because they do not have transport sequence number.
+  //    - RTP packets if we are not doing datagram => RTCP feedback translation.
+  if (disable_datagram_to_rtcp_feeback_translation_ ||
+      webrtc::RtpHeaderParser::IsRtcp(original_data.data(),
+                                      original_data.size())) {
+    // Even if we are not extracting transport sequence number we need to
+    // propagate "Sent" notification for both RTP and RTCP packets. For this
+    // reason we need save options.packet_id in packet map.
+    sent_rtp_packet_map_[datagram_id] = SentPacketInfo(options.packet_id);
+
+    return SendDatagram(original_data, datagram_id);
+  }
 
   // Parse RTP packet.
   webrtc::RtpPacket rtp_packet(&rtp_header_extension_map_);
@@ -157,9 +177,7 @@ int DatagramDtlsAdaptor::SendPacket(const char* data,
   if (!rtp_packet.GetExtension<webrtc::TransportSequenceNumber>(
           &transport_senquence_number)) {
     // Save packet info without transport sequence number.
-    sent_rtp_packet_map_[datagram_id] = SentPacketInfo(
-        rtp_packet.Ssrc(),
-        /*transport_sequence_number=*/absl::nullopt, options.packet_id);
+    sent_rtp_packet_map_[datagram_id] = SentPacketInfo(options.packet_id);
 
     RTC_LOG(LS_VERBOSE)
         << "Sending rtp packet without transport sequence number, packet="
@@ -168,9 +186,10 @@ int DatagramDtlsAdaptor::SendPacket(const char* data,
     return SendDatagram(original_data, datagram_id);
   }
 
-  // Save packet info with sequence number.
+  // Save packet info with sequence number and ssrc so we could reconstruct
+  // RTCP feedback packet when we receive datagram ACK.
   sent_rtp_packet_map_[datagram_id] = SentPacketInfo(
-      rtp_packet.Ssrc(), transport_senquence_number, options.packet_id);
+      options.packet_id, rtp_packet.Ssrc(), transport_senquence_number);
 
   // Since datagram transport provides feedback and timestamps, we do not need
   // to send transport sequence number, so we remove it from RTP packet. Later
@@ -231,11 +250,6 @@ void DatagramDtlsAdaptor::OnDatagramReceived(
 void DatagramDtlsAdaptor::OnDatagramSent(webrtc::DatagramId datagram_id) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
 
-  // Sent notifications are not needed for RTCP packets.
-  if (datagram_id == kRtcpDatagramId) {
-    return;
-  }
-
   // Find packet_id and propagate OnPacketSent notification.
   const auto& it = sent_rtp_packet_map_.find(datagram_id);
   if (it == sent_rtp_packet_map_.end()) {
@@ -255,7 +269,6 @@ void DatagramDtlsAdaptor::OnDatagramSent(webrtc::DatagramId datagram_id) {
 bool DatagramDtlsAdaptor::GetAndRemoveSentPacketInfo(
     webrtc::DatagramId datagram_id,
     SentPacketInfo* sent_packet_info) {
-  RTC_DCHECK_NE(datagram_id, kRtcpDatagramId);
   RTC_CHECK(sent_packet_info != nullptr);
 
   const auto& it = sent_rtp_packet_map_.find(datagram_id);
@@ -271,12 +284,6 @@ bool DatagramDtlsAdaptor::GetAndRemoveSentPacketInfo(
 void DatagramDtlsAdaptor::OnDatagramAcked(const webrtc::DatagramAck& ack) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
 
-  // ACK notifications are not needed for RTCP packets and RTCP packets are not
-  // stored in SentPacketInfo map.
-  if (ack.datagram_id == kRtcpDatagramId) {
-    return;
-  }
-
   SentPacketInfo sent_packet_info;
   if (!GetAndRemoveSentPacketInfo(ack.datagram_id, &sent_packet_info)) {
     // TODO(sukhanov): If OnDatagramAck() can come after OnDatagramLost(),
@@ -288,10 +295,13 @@ void DatagramDtlsAdaptor::OnDatagramAcked(const webrtc::DatagramAck& ack) {
     return;
   }
 
-  RTC_LOG(LS_VERBOSE) << "Datagram acked, datagram_id=" << ack.datagram_id
-                      << ", transport_sequence_number="
+  RTC_LOG(LS_VERBOSE) << "Datagram acked, ack.datagram_id=" << ack.datagram_id
+                      << ", sent_packet_info.packet_id="
+                      << sent_packet_info.packet_id
+                      << ", sent_packet_info.transport_sequence_number="
                       << sent_packet_info.transport_sequence_number.value_or(-1)
-                      << ", ssrc=" << sent_packet_info.ssrc
+                      << ", sent_packet_info.ssrc="
+                      << sent_packet_info.ssrc.value_or(-1)
                       << ", receive_timestamp_ms="
                       << ack.receive_timestamp.ms();
 
@@ -313,9 +323,13 @@ void DatagramDtlsAdaptor::OnDatagramAcked(const webrtc::DatagramAck& ack) {
     previous_nonzero_timestamp_us_ = receive_timestamp_us;
   }
 
+  // Ssrc must be provided in packet info if transport sequence number is set,
+  // which is guaranteed by SentPacketInfo constructor.
+  RTC_CHECK(sent_packet_info.ssrc);
+
   // Recreate RTCP feedback packet.
   webrtc::rtcp::TransportFeedback feedback_packet;
-  feedback_packet.SetMediaSsrc(sent_packet_info.ssrc);
+  feedback_packet.SetMediaSsrc(*sent_packet_info.ssrc);
 
   const uint16_t transport_sequence_number =
       sent_packet_info.transport_sequence_number.value();
@@ -342,11 +356,6 @@ void DatagramDtlsAdaptor::OnDatagramAcked(const webrtc::DatagramAck& ack) {
 
 void DatagramDtlsAdaptor::OnDatagramLost(webrtc::DatagramId datagram_id) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
-
-  // RTCP packets are not stored in SentPacketInfo map.
-  if (datagram_id == kRtcpDatagramId) {
-    return;
-  }
 
   RTC_LOG(LS_INFO) << "Datagram lost, datagram_id=" << datagram_id;
 
