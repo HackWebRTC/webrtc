@@ -1816,6 +1816,31 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndCallWithSdes) {
                                           webrtc::kEnumCounterKeyProtocolDtls));
 }
 
+// Basic end-to-end test specifying the |enable_encrypted_rtp_header_extensions|
+// option to offer encrypted versions of all header extensions alongside the
+// unencrypted versions.
+TEST_P(PeerConnectionIntegrationTest,
+       EndToEndCallWithEncryptedRtpHeaderExtensions) {
+  CryptoOptions crypto_options;
+  crypto_options.srtp.enable_encrypted_rtp_header_extensions = true;
+  PeerConnectionInterface::RTCConfiguration config;
+  config.crypto_options = crypto_options;
+  // Note: This allows offering >14 RTP header extensions.
+  config.offer_extmap_allow_mixed = true;
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(config, config));
+  ConnectFakeSignaling();
+
+  // Do normal offer/answer and wait for some frames to be received in each
+  // direction.
+  caller()->AddAudioVideoTracks();
+  callee()->AddAudioVideoTracks();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE_WAIT(SignalingStateStable(), kDefaultTimeout);
+  MediaExpectations media_expectations;
+  media_expectations.ExpectBidirectionalAudioAndVideo();
+  ASSERT_TRUE(ExpectNewFrames(media_expectations));
+}
+
 // Tests that the GetRemoteAudioSSLCertificate method returns the remote DTLS
 // certificate once the DTLS handshake has finished.
 TEST_P(PeerConnectionIntegrationTest,
