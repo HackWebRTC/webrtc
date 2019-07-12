@@ -607,7 +607,7 @@ config("rtc_json_suppressions") {
       # -Wno-deprecated-declarations.
       "-Wno-deprecated-declarations",
 
-      # TODO(bungs.webrtc.org/10814): Remove -Wno-undef as soon as it get
+      # TODO(bugs.webrtc.org/10814): Remove -Wno-undef as soon as it get
       # removed upstream.
       "-Wno-undef",
     ]
