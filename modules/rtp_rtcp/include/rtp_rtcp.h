@@ -175,7 +175,13 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
 
   virtual int32_t DeregisterSendRtpHeaderExtension(RTPExtensionType type) = 0;
 
-  virtual bool HasBweExtensions() const = 0;
+  // Returns true if RTP module is send media, and any of the extensions
+  // required for bandwidth estimation is registered.
+  virtual bool SupportsPadding() const = 0;
+  // Same as SupportsPadding(), but additionally requires that
+  // SetRtxSendStatus() has been called with the kRtxRedundantPayloads option
+  // enabled.
+  virtual bool SupportsRtxPayloadPadding() const = 0;
 
   // Returns start timestamp.
   virtual uint32_t StartTimestamp() const = 0;

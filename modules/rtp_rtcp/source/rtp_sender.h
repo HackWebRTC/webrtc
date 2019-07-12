@@ -118,6 +118,8 @@ class RTPSender {
                                        const PacedPacketInfo& pacing_info);
   bool TrySendPacket(RtpPacketToSend* packet,
                      const PacedPacketInfo& pacing_info);
+  bool SupportsPadding() const;
+  bool SupportsRtxPayloadPadding() const;
   size_t TimeToSendPadding(size_t bytes, const PacedPacketInfo& pacing_info);
   std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
       size_t target_size_bytes);
@@ -309,6 +311,7 @@ class RTPSender {
   // Mapping rtx_payload_type_map_[associated] = rtx.
   std::map<int8_t, int8_t> rtx_payload_type_map_ RTC_GUARDED_BY(send_critsect_);
   size_t rtp_overhead_bytes_per_packet_ RTC_GUARDED_BY(send_critsect_);
+  bool supports_bwe_extension_ RTC_GUARDED_BY(send_critsect_);
 
   RateLimiter* const retransmission_rate_limiter_;
   OverheadObserver* overhead_observer_;
