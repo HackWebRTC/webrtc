@@ -595,15 +595,22 @@ rtc_static_library("rtc_numerics") {
   ]
 }
 
-# TODO(bugs.webrtc.org/10770): Update jsoncpp API usage and remove this.
-config("rtc_json_temporary_suppressions") {
+config("rtc_json_suppressions") {
   if (!is_win || is_clang) {
-    cflags_cc = [ "-Wno-deprecated-declarations" ]
+    cflags_cc = [
+      # TODO(bugs.webrtc.org/10770): Update jsoncpp API usage and remove
+      # -Wno-deprecated-declarations.
+      "-Wno-deprecated-declarations",
+
+      # TODO(bungs.webrtc.org/10814): Remove -Wno-undef as soon as it get
+      # removed upstream.
+      "-Wno-undef",
+    ]
   }
 }
 
 rtc_source_set("rtc_json") {
-  public_configs = [ ":rtc_json_temporary_suppressions" ]
+  public_configs = [ ":rtc_json_suppressions" ]
   defines = []
   sources = [
     "strings/json.cc",
