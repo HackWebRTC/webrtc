@@ -617,13 +617,14 @@ void RtpVideoSender::ConfigureSsrcs() {
 }
 
 void RtpVideoSender::ConfigureRids() {
-  RTC_DCHECK(rtp_config_.rids.empty() ||
-             rtp_config_.rids.size() == rtp_config_.ssrcs.size());
-  RTC_DCHECK(rtp_config_.rids.empty() ||
-             rtp_config_.rids.size() == rtp_streams_.size());
-  for (size_t i = 0; i < rtp_config_.rids.size(); ++i) {
-    const std::string& rid = rtp_config_.rids[i];
-    rtp_streams_[i].rtp_rtcp->SetRid(rid);
+  if (rtp_config_.rids.empty())
+    return;
+
+  // Some streams could have been disabled, but the rids are still there.
+  // This will occur when simulcast has been disabled for a codec (e.g. VP9)
+  RTC_DCHECK(rtp_config_.rids.size() >= rtp_streams_.size());
+  for (size_t i = 0; i < rtp_streams_.size(); ++i) {
+    rtp_streams_[i].rtp_rtcp->SetRid(rtp_config_.rids[i]);
   }
 }
 
