@@ -4259,31 +4259,6 @@ TEST_F(WebRtcSdpTest, SerializeAndDeserializeWithConnectionAddress) {
             video_desc->connection_address().ToString());
 }
 
-// Test that a media description that contains a hostname connection address can
-// be correctly serialized.
-TEST_F(WebRtcSdpTest, SerializeAndDeserializeWithHostnameConnectionAddress) {
-  JsepSessionDescription expected_jsep(kDummyType);
-  cricket::Candidate c;
-  const rtc::SocketAddress hostname_addr("example.local", 1234);
-  audio_desc_->set_connection_address(hostname_addr);
-  video_desc_->set_connection_address(hostname_addr);
-  ASSERT_TRUE(
-      expected_jsep.Initialize(desc_.Clone(), kSessionId, kSessionVersion));
-  // Serialization.
-  std::string message = webrtc::SdpSerialize(expected_jsep);
-  // Deserialization.
-  JsepSessionDescription jdesc(kDummyType);
-  ASSERT_TRUE(SdpDeserialize(message, &jdesc));
-  auto audio_desc = jdesc.description()
-                        ->GetContentByName(kAudioContentName)
-                        ->media_description();
-  auto video_desc = jdesc.description()
-                        ->GetContentByName(kVideoContentName)
-                        ->media_description();
-  EXPECT_EQ(hostname_addr, audio_desc->connection_address());
-  EXPECT_EQ(hostname_addr, video_desc->connection_address());
-}
-
 // RFC4566 says "If a session has no meaningful name, the value "s= " SHOULD be
 // used (i.e., a single space as the session name)." So we should accept that.
 TEST_F(WebRtcSdpTest, DeserializeEmptySessionName) {
