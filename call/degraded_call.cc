@@ -196,6 +196,12 @@ Call::Stats DegradedCall::GetStats() const {
   return call_->GetStats();
 }
 
+void DegradedCall::SetBitrateAllocationStrategy(
+    std::unique_ptr<rtc::BitrateAllocationStrategy>
+        bitrate_allocation_strategy) {
+  call_->SetBitrateAllocationStrategy(std::move(bitrate_allocation_strategy));
+}
+
 void DegradedCall::SignalChannelNetworkState(MediaType media,
                                              NetworkState state) {
   call_->SignalChannelNetworkState(media, state);

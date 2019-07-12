@@ -105,6 +105,8 @@
 // PortAllocator in the PeerConnection api.
 #include "media/base/media_engine.h"  // nogncheck
 #include "p2p/base/port_allocator.h"  // nogncheck
+// TODO(nisse): The interface for bitrate allocation strategy belongs in api/.
+#include "rtc_base/bitrate_allocation_strategy.h"
 #include "rtc_base/network.h"
 #include "rtc_base/rtc_certificate.h"
 #include "rtc_base/rtc_certificate_generator.h"
@@ -1033,6 +1035,14 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
   // implementations require subclasses to implement one or the other
   // of the methods.
   virtual RTCError SetBitrate(const BitrateParameters& bitrate_parameters);
+
+  // Sets current strategy. If not set default WebRTC allocator will be used.
+  // May be changed during an active session. The strategy
+  // ownership is passed with std::unique_ptr
+  // TODO(alexnarest): Make this pure virtual when tests will be updated
+  virtual void SetBitrateAllocationStrategy(
+      std::unique_ptr<rtc::BitrateAllocationStrategy>
+          bitrate_allocation_strategy) {}
 
   // Enable/disable playout of received audio streams. Enabled by default. Note
   // that even if playout is enabled, streams will only be played out if the

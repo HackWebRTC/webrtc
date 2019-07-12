@@ -64,8 +64,11 @@ BitrateAllocator::BitrateAllocator(Clock* clock, LimitObserver* limit_observer)
       total_requested_padding_bitrate_(0),
       total_requested_min_bitrate_(0),
       total_requested_max_bitrate_(0),
+      bitrate_allocation_strategy_(nullptr),
       transmission_max_bitrate_multiplier_(
-          GetTransmissionMaxBitrateMultiplier()) {
+          GetTransmissionMaxBitrateMultiplier()),
+      ignore_injected_strategy_(
+          field_trial::IsEnabled("WebRTC-IgnoreInjectedAllocationStrategy")) {
   sequenced_checker_.Detach();
 }
 
@@ -172,10 +175,10 @@ void BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
     it->enforce_min_bitrate = config.enforce_min_bitrate;
     it->bitrate_priority = config.bitrate_priority;
   } else {
-    bitrate_observer_configs_.push_back(
-        ObserverConfig(observer, config.min_bitrate_bps, config.max_bitrate_bps,
-                       config.pad_up_bitrate_bps, config.priority_bitrate_bps,
-                       config.enforce_min_bitrate, config.bitrate_priority));
+    bitrate_observer_configs_.push_back(ObserverConfig(
+        observer, config.min_bitrate_bps, config.max_bitrate_bps,
+        config.pad_up_bitrate_bps, config.priority_bitrate_bps,
+        config.enforce_min_bitrate, config.track_id, config.bitrate_priority));
   }
 
   if (last_target_bps_ > 0) {
@@ -280,6 +283,13 @@ int BitrateAllocator::GetStartBitrate(
   }
 }
 
+void BitrateAllocator::SetBitrateAllocationStrategy(
+    std::unique_ptr<rtc::BitrateAllocationStrategy>
+        bitrate_allocation_strategy) {
+  RTC_DCHECK_RUN_ON(&sequenced_checker_);
+  bitrate_allocation_strategy_ = std::move(bitrate_allocation_strategy);
+}
+
 BitrateAllocator::ObserverConfigs::const_iterator
 BitrateAllocator::FindObserverConfig(
     const BitrateAllocatorObserver* observer) const {
@@ -305,6 +315,25 @@ BitrateAllocator::ObserverAllocation BitrateAllocator::AllocateBitrates(
     uint32_t bitrate) const {
   if (bitrate_observer_configs_.empty())
     return ObserverAllocation();
+
+  if (!ignore_injected_strategy_ && bitrate_allocation_strategy_ != nullptr) {
+    // Note: This intentionally causes slicing, we only copy the fields in
+    // ObserverConfig that are inherited from TrackConfig.
+    std::vector<rtc::BitrateAllocationStrategy::TrackConfig> track_configs(
+        bitrate_observer_configs_.begin(), bitrate_observer_configs_.end());
+
+    std::vector<uint32_t> track_allocations =
+        bitrate_allocation_strategy_->AllocateBitrates(
+            bitrate, std::move(track_configs));
+    // The strategy should return allocation for all tracks.
+    RTC_CHECK(track_allocations.size() == bitrate_observer_configs_.size());
+    ObserverAllocation allocation;
+    auto track_allocations_it = track_allocations.begin();
+    for (const auto& observer_config : bitrate_observer_configs_) {
+      allocation[observer_config.observer] = *track_allocations_it++;
+    }
+    return allocation;
+  }
 
   if (bitrate == 0)
     return ZeroRateAllocation();

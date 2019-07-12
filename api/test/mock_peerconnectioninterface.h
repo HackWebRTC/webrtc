@@ -117,6 +117,8 @@ class MockPeerConnectionInterface
                bool(const std::vector<cricket::Candidate>&));
   MOCK_METHOD1(SetBitrate, RTCError(const BitrateSettings&));
   MOCK_METHOD1(SetBitrate, RTCError(const BitrateParameters&));
+  MOCK_METHOD1(SetBitrateAllocationStrategy,
+               void(std::unique_ptr<rtc::BitrateAllocationStrategy>));
   MOCK_METHOD1(SetAudioPlayout, void(bool));
   MOCK_METHOD1(SetAudioRecording, void(bool));
   MOCK_METHOD0(signaling_state, SignalingState());

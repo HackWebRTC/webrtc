@@ -215,6 +215,10 @@ class Call final : public webrtc::Call,
   // Implements RecoveredPacketReceiver.
   void OnRecoveredPacket(const uint8_t* packet, size_t length) override;
 
+  void SetBitrateAllocationStrategy(
+      std::unique_ptr<rtc::BitrateAllocationStrategy>
+          bitrate_allocation_strategy) override;
+
   void SignalChannelNetworkState(MediaType media, NetworkState state) override;
 
   void OnAudioTransportOverheadChanged(
@@ -1074,6 +1078,24 @@ Call::Stats Call::GetStats() const {
     stats.max_padding_bitrate_bps = configured_max_padding_bitrate_bps_;
   }
   return stats;
+}
+
+void Call::SetBitrateAllocationStrategy(
+    std::unique_ptr<rtc::BitrateAllocationStrategy>
+        bitrate_allocation_strategy) {
+  // TODO(srte): This function should be moved to RtpTransportControllerSend
+  // when BitrateAllocator is moved there.
+  struct Functor {
+    void operator()() {
+      bitrate_allocator_->SetBitrateAllocationStrategy(
+          std::move(bitrate_allocation_strategy_));
+    }
+    BitrateAllocator* bitrate_allocator_;
+    std::unique_ptr<rtc::BitrateAllocationStrategy>
+        bitrate_allocation_strategy_;
+  };
+  transport_send_ptr_->GetWorkerQueue()->PostTask(Functor{
+      bitrate_allocator_.get(), std::move(bitrate_allocation_strategy)});
 }
 
 void Call::SignalChannelNetworkState(MediaType media, NetworkState state) {
