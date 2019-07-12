@@ -162,6 +162,7 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
     config.rtcp_packet_type_counter_observer = this;
     config.rtt_stats = &rtt_stats_;
     config.rtcp_report_interval_ms = rtcp_report_interval_ms_;
+    config.media_send_ssrc = kSenderSsrc;
 
     impl_.reset(new ModuleRtpRtcpImpl(config));
     impl_->SetRTCPStatus(RtcpMode::kCompound);
