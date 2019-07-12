@@ -203,13 +203,15 @@ TEST(PacketRouterTest, TimeToSendPadding) {
   // ordered by priority (based on rtx mode).
   const size_t requested_padding_bytes = 1000;
   const size_t sent_padding_bytes = 890;
-  EXPECT_CALL(rtp_2, SupportsPadding).Times(1).WillOnce(Return(true));
+  EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(true));
+  EXPECT_CALL(rtp_2, HasBweExtensions()).Times(1).WillOnce(Return(true));
   EXPECT_CALL(rtp_2,
               TimeToSendPadding(requested_padding_bytes,
                                 Field(&PacedPacketInfo::probe_cluster_id, 111)))
       .Times(1)
       .WillOnce(Return(sent_padding_bytes));
-  EXPECT_CALL(rtp_1, SupportsPadding).WillOnce(Return(true));
+  EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(true));
+  EXPECT_CALL(rtp_1, HasBweExtensions()).Times(1).WillOnce(Return(true));
   EXPECT_CALL(rtp_1,
               TimeToSendPadding(requested_padding_bytes - sent_padding_bytes,
                                 Field(&PacedPacketInfo::probe_cluster_id, 111)))
@@ -222,9 +224,10 @@ TEST(PacketRouterTest, TimeToSendPadding) {
 
   // Let only the lower priority module be sending and verify the padding
   // request is routed there.
-  EXPECT_CALL(rtp_2, SupportsPadding).WillOnce(Return(false));
+  EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(false));
   EXPECT_CALL(rtp_2, TimeToSendPadding(requested_padding_bytes, _)).Times(0);
-  EXPECT_CALL(rtp_1, SupportsPadding).WillOnce(Return(true));
+  EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(true));
+  EXPECT_CALL(rtp_1, HasBweExtensions()).Times(1).WillOnce(Return(true));
   EXPECT_CALL(rtp_1, TimeToSendPadding(_, _))
       .Times(1)
       .WillOnce(Return(sent_padding_bytes));
@@ -235,20 +238,36 @@ TEST(PacketRouterTest, TimeToSendPadding) {
                                 kProbeMinBytes)));
 
   // No sending module at all.
-  EXPECT_CALL(rtp_1, SupportsPadding).WillOnce(Return(false));
+  EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(false));
   EXPECT_CALL(rtp_1, TimeToSendPadding(requested_padding_bytes, _)).Times(0);
-  EXPECT_CALL(rtp_2, SupportsPadding).WillOnce(Return(false));
+  EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(false));
   EXPECT_CALL(rtp_2, TimeToSendPadding(_, _)).Times(0);
   EXPECT_EQ(0u, packet_router.TimeToSendPadding(
                     requested_padding_bytes,
                     PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
                                     kProbeMinBytes)));
 
+  // Only one module has BWE extensions.
+  EXPECT_CALL(rtp_1, SendingMedia()).Times(1).WillOnce(Return(true));
+  EXPECT_CALL(rtp_1, HasBweExtensions()).Times(1).WillOnce(Return(false));
+  EXPECT_CALL(rtp_1, TimeToSendPadding(requested_padding_bytes, _)).Times(0);
+  EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(true));
+  EXPECT_CALL(rtp_2, HasBweExtensions()).Times(1).WillOnce(Return(true));
+  EXPECT_CALL(rtp_2, TimeToSendPadding(requested_padding_bytes, _))
+      .Times(1)
+      .WillOnce(Return(sent_padding_bytes));
+  EXPECT_EQ(sent_padding_bytes,
+            packet_router.TimeToSendPadding(
+                requested_padding_bytes,
+                PacedPacketInfo(PacedPacketInfo::kNotAProbe, kProbeMinBytes,
+                                kProbeMinBytes)));
+
   packet_router.RemoveSendRtpModule(&rtp_1);
 
   // rtp_1 has been removed, try sending padding and make sure rtp_1 isn't asked
   // to send by not expecting any calls. Instead verify rtp_2 is called.
-  EXPECT_CALL(rtp_2, SupportsPadding).WillOnce(Return(true));
+  EXPECT_CALL(rtp_2, SendingMedia()).Times(1).WillOnce(Return(true));
+  EXPECT_CALL(rtp_2, HasBweExtensions()).Times(1).WillOnce(Return(true));
   EXPECT_CALL(rtp_2, TimeToSendPadding(requested_padding_bytes, _)).Times(1);
   EXPECT_EQ(0u, packet_router.TimeToSendPadding(
                     requested_padding_bytes,
@@ -269,12 +288,14 @@ TEST(PacketRouterTest, GeneratePaddingPicksCorrectModule) {
   NiceMock<MockRtpRtcp> rtp_1;
   ON_CALL(rtp_1, RtxSendStatus()).WillByDefault(Return(kRtxRedundantPayloads));
   ON_CALL(rtp_1, SSRC()).WillByDefault(Return(kSsrc1));
-  ON_CALL(rtp_1, SupportsPadding).WillByDefault(Return(false));
+  ON_CALL(rtp_1, SendingMedia()).WillByDefault(Return(false));
+  ON_CALL(rtp_1, HasBweExtensions()).WillByDefault(Return(false));
 
   NiceMock<MockRtpRtcp> rtp_2;
   ON_CALL(rtp_2, RtxSendStatus()).WillByDefault(Return(kRtxOff));
   ON_CALL(rtp_2, SSRC()).WillByDefault(Return(kSsrc2));
-  ON_CALL(rtp_2, SupportsPadding).WillByDefault(Return(true));
+  ON_CALL(rtp_2, SendingMedia()).WillByDefault(Return(true));
+  ON_CALL(rtp_2, HasBweExtensions()).WillByDefault(Return(true));
 
   packet_router.AddSendRtpModule(&rtp_1, false);
   packet_router.AddSendRtpModule(&rtp_2, false);
@@ -307,24 +328,21 @@ TEST(PacketRouterTest, PadsOnLastActiveMediaStream) {
       .WillRepeatedly(Return(kRtxRedundantPayloads));
   EXPECT_CALL(rtp_1, SSRC()).WillRepeatedly(Return(kSsrc1));
   EXPECT_CALL(rtp_1, SendingMedia()).WillRepeatedly(Return(true));
-  EXPECT_CALL(rtp_1, SupportsPadding).WillRepeatedly(Return(true));
-  EXPECT_CALL(rtp_1, SupportsRtxPayloadPadding).WillRepeatedly(Return(true));
+  EXPECT_CALL(rtp_1, HasBweExtensions()).WillRepeatedly(Return(true));
 
   NiceMock<MockRtpRtcp> rtp_2;
   EXPECT_CALL(rtp_2, RtxSendStatus())
       .WillRepeatedly(Return(kRtxRedundantPayloads));
   EXPECT_CALL(rtp_2, SSRC()).WillRepeatedly(Return(kSsrc2));
   EXPECT_CALL(rtp_2, SendingMedia()).WillRepeatedly(Return(true));
-  EXPECT_CALL(rtp_2, SupportsPadding).WillRepeatedly(Return(true));
-  EXPECT_CALL(rtp_2, SupportsRtxPayloadPadding).WillRepeatedly(Return(true));
+  EXPECT_CALL(rtp_2, HasBweExtensions()).WillRepeatedly(Return(true));
 
   // Third module is sending media, but does not support rtx.
   NiceMock<MockRtpRtcp> rtp_3;
   EXPECT_CALL(rtp_3, RtxSendStatus()).WillRepeatedly(Return(kRtxOff));
   EXPECT_CALL(rtp_3, SSRC()).WillRepeatedly(Return(kSsrc3));
   EXPECT_CALL(rtp_3, SendingMedia()).WillRepeatedly(Return(true));
-  EXPECT_CALL(rtp_3, SupportsPadding).WillRepeatedly(Return(true));
-  EXPECT_CALL(rtp_3, SupportsRtxPayloadPadding).WillRepeatedly(Return(true));
+  EXPECT_CALL(rtp_3, HasBweExtensions()).WillRepeatedly(Return(true));
 
   packet_router.AddSendRtpModule(&rtp_1, false);
   packet_router.AddSendRtpModule(&rtp_2, false);

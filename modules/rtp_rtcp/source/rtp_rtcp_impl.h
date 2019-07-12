@@ -76,8 +76,7 @@ class ModuleRtpRtcpImpl : public RtpRtcp, public RTCPReceiver::ModuleRtpRtcp {
 
   int32_t DeregisterSendRtpHeaderExtension(RTPExtensionType type) override;
 
-  bool SupportsPadding() const override;
-  bool SupportsRtxPayloadPadding() const override;
+  bool HasBweExtensions() const override;
 
   // Get start timestamp.
   uint32_t StartTimestamp() const override;

@@ -395,14 +395,6 @@ bool ModuleRtpRtcpImpl::TrySendPacket(RtpPacketToSend* packet,
   return rtp_sender_->TrySendPacket(packet, pacing_info);
 }
 
-bool ModuleRtpRtcpImpl::SupportsPadding() const {
-  return rtp_sender_->SupportsPadding();
-}
-
-bool ModuleRtpRtcpImpl::SupportsRtxPayloadPadding() const {
-  return rtp_sender_->SupportsRtxPayloadPadding();
-}
-
 size_t ModuleRtpRtcpImpl::TimeToSendPadding(
     size_t bytes,
     const PacedPacketInfo& pacing_info) {
@@ -588,6 +580,15 @@ bool ModuleRtpRtcpImpl::RegisterRtpHeaderExtension(const std::string& uri,
 int32_t ModuleRtpRtcpImpl::DeregisterSendRtpHeaderExtension(
     const RTPExtensionType type) {
   return rtp_sender_->DeregisterRtpHeaderExtension(type);
+}
+
+bool ModuleRtpRtcpImpl::HasBweExtensions() const {
+  return rtp_sender_->IsRtpHeaderExtensionRegistered(
+             kRtpExtensionTransportSequenceNumber) ||
+         rtp_sender_->IsRtpHeaderExtensionRegistered(
+             kRtpExtensionAbsoluteSendTime) ||
+         rtp_sender_->IsRtpHeaderExtensionRegistered(
+             kRtpExtensionTransmissionTimeOffset);
 }
 
 // (TMMBR) Temporary Max Media Bit Rate.

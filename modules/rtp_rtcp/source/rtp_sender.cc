@@ -139,13 +139,6 @@ bool IsDisabled(absl::string_view name,
   return trials.Lookup(name).find("Disabled") == 0;
 }
 
-bool HasBweExtension(const RtpHeaderExtensionMap& extensions_map) {
-  return extensions_map.IsRegistered(kRtpExtensionTransportSequenceNumber) ||
-         extensions_map.IsRegistered(kRtpExtensionTransportSequenceNumber02) ||
-         extensions_map.IsRegistered(kRtpExtensionAbsoluteSendTime) ||
-         extensions_map.IsRegistered(kRtpExtensionTransmissionTimeOffset);
-}
-
 }  // namespace
 
 RTPSender::RTPSender(const RtpRtcp::Configuration& config)
@@ -192,7 +185,6 @@ RTPSender::RTPSender(const RtpRtcp::Configuration& config)
       rtx_(kRtxOff),
       ssrc_rtx_(config.rtx_send_ssrc),
       rtp_overhead_bytes_per_packet_(0),
-      supports_bwe_extension_(false),
       retransmission_rate_limiter_(config.retransmission_rate_limiter),
       overhead_observer_(config.overhead_observer),
       populate_network2_timestamp_(config.populate_network2_timestamp),
@@ -283,7 +275,6 @@ RTPSender::RTPSender(
       csrcs_(),
       rtx_(kRtxOff),
       rtp_overhead_bytes_per_packet_(0),
-      supports_bwe_extension_(false),
       retransmission_rate_limiter_(retransmission_rate_limiter),
       overhead_observer_(overhead_observer),
       populate_network2_timestamp_(populate_network2_timestamp),
@@ -360,16 +351,12 @@ void RTPSender::SetExtmapAllowMixed(bool extmap_allow_mixed) {
 int32_t RTPSender::RegisterRtpHeaderExtension(RTPExtensionType type,
                                               uint8_t id) {
   rtc::CritScope lock(&send_critsect_);
-  bool registered = rtp_header_extension_map_.RegisterByType(id, type);
-  supports_bwe_extension_ = HasBweExtension(rtp_header_extension_map_);
-  return registered ? 0 : -1;
+  return rtp_header_extension_map_.RegisterByType(id, type) ? 0 : -1;
 }
 
 bool RTPSender::RegisterRtpHeaderExtension(const std::string& uri, int id) {
   rtc::CritScope lock(&send_critsect_);
-  bool registered = rtp_header_extension_map_.RegisterByUri(id, uri);
-  supports_bwe_extension_ = HasBweExtension(rtp_header_extension_map_);
-  return registered;
+  return rtp_header_extension_map_.RegisterByUri(id, uri);
 }
 
 bool RTPSender::IsRtpHeaderExtensionRegistered(RTPExtensionType type) const {
@@ -379,9 +366,7 @@ bool RTPSender::IsRtpHeaderExtensionRegistered(RTPExtensionType type) const {
 
 int32_t RTPSender::DeregisterRtpHeaderExtension(RTPExtensionType type) {
   rtc::CritScope lock(&send_critsect_);
-  int32_t deregistered = rtp_header_extension_map_.Deregister(type);
-  supports_bwe_extension_ = HasBweExtension(rtp_header_extension_map_);
-  return deregistered;
+  return rtp_header_extension_map_.Deregister(type);
 }
 
 void RTPSender::SetMaxRtpPacketSize(size_t max_packet_size) {
@@ -866,17 +851,6 @@ bool RTPSender::TrySendPacket(RtpPacketToSend* packet,
   // instead in that case), so that PacketRouter does not have to iterate over
   // all other RTP modules and fail to send there too.
   return true;
-}
-
-bool RTPSender::SupportsPadding() const {
-  rtc::CritScope lock(&send_critsect_);
-  return sending_media_ && supports_bwe_extension_;
-}
-
-bool RTPSender::SupportsRtxPayloadPadding() const {
-  rtc::CritScope lock(&send_critsect_);
-  return sending_media_ && supports_bwe_extension_ &&
-         (rtx_ & kRtxRedundantPayloads);
 }
 
 bool RTPSender::PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,

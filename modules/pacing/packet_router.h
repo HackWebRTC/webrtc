@@ -102,10 +102,6 @@ class PacketRouter : public TransportSequenceNumberAllocator,
       bool media_sender) RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
   void UnsetActiveRembModule() RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
   void DetermineActiveRembModule() RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
-  bool TrySendPacket(RtpPacketToSend* packet,
-                     const PacedPacketInfo& cluster_info,
-                     RtpRtcp* rtp_module)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(modules_crit_);
 
   rtc::CriticalSection modules_crit_;
   // Rtp and Rtcp modules of the rtp senders.
