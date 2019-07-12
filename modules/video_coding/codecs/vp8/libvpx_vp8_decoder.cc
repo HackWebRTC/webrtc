@@ -267,7 +267,7 @@ int LibvpxVp8Decoder::Decode(const EncodedImage& input_image,
   vpx_codec_err_t vpx_ret =
       vpx_codec_control(decoder_, VPXD_GET_LAST_QUANTIZER, &qp);
   RTC_DCHECK_EQ(vpx_ret, VPX_CODEC_OK);
-  ret = ReturnFrame(img, input_image.Timestamp(), qp);
+  ret = ReturnFrame(img, input_image.Timestamp(), qp, input_image.ColorSpace());
   if (ret != 0) {
     // Reset to avoid requesting key frames too often.
     if (ret < 0 && propagation_cnt_ > 0)
@@ -283,9 +283,11 @@ int LibvpxVp8Decoder::Decode(const EncodedImage& input_image,
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int LibvpxVp8Decoder::ReturnFrame(const vpx_image_t* img,
-                                  uint32_t timestamp,
-                                  int qp) {
+int LibvpxVp8Decoder::ReturnFrame(
+    const vpx_image_t* img,
+    uint32_t timestamp,
+    int qp,
+    const webrtc::ColorSpace* explicit_color_space) {
   if (img == NULL) {
     // Decoder OK and NULL image => No show frame
     return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
@@ -320,6 +322,7 @@ int LibvpxVp8Decoder::ReturnFrame(const vpx_image_t* img,
   VideoFrame decoded_image = VideoFrame::Builder()
                                  .set_video_frame_buffer(buffer)
                                  .set_timestamp_rtp(timestamp)
+                                 .set_color_space(explicit_color_space)
                                  .build();
   decode_complete_callback_->Decoded(decoded_image, absl::nullopt, qp);
 

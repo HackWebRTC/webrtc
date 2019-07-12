@@ -89,40 +89,6 @@ class GenericDecoderTest : public ::testing::Test {
   ReceiveCallback user_callback_;
 };
 
-TEST_F(GenericDecoderTest, PassesColorSpace) {
-  webrtc::ColorSpace color_space =
-      CreateTestColorSpace(/*with_hdr_metadata=*/true);
-  VCMEncodedFrame encoded_frame;
-  encoded_frame.SetColorSpace(color_space);
-  generic_decoder_.Decode(encoded_frame, clock_.TimeInMilliseconds());
-  absl::optional<VideoFrame> decoded_frame = user_callback_.WaitForFrame(10);
-  ASSERT_TRUE(decoded_frame.has_value());
-  absl::optional<webrtc::ColorSpace> decoded_color_space =
-      decoded_frame->color_space();
-  ASSERT_TRUE(decoded_color_space.has_value());
-  EXPECT_EQ(*decoded_color_space, color_space);
-}
-
-TEST_F(GenericDecoderTest, PassesColorSpaceForDelayedDecoders) {
-  webrtc::ColorSpace color_space =
-      CreateTestColorSpace(/*with_hdr_metadata=*/true);
-  decoder_.SetDelayedDecoding(100);
-
-  {
-    // Ensure the original frame is destroyed before the decoding is completed.
-    VCMEncodedFrame encoded_frame;
-    encoded_frame.SetColorSpace(color_space);
-    generic_decoder_.Decode(encoded_frame, clock_.TimeInMilliseconds());
-  }
-
-  absl::optional<VideoFrame> decoded_frame = user_callback_.WaitForFrame(200);
-  ASSERT_TRUE(decoded_frame.has_value());
-  absl::optional<webrtc::ColorSpace> decoded_color_space =
-      decoded_frame->color_space();
-  ASSERT_TRUE(decoded_color_space.has_value());
-  EXPECT_EQ(*decoded_color_space, color_space);
-}
-
 TEST_F(GenericDecoderTest, PassesPacketInfos) {
   RtpPacketInfos packet_infos = CreatePacketInfos(3);
   VCMEncodedFrame encoded_frame;

@@ -1664,16 +1664,19 @@ int VP9DecoderImpl::Decode(const EncodedImage& input_image,
   vpx_codec_err_t vpx_ret =
       vpx_codec_control(decoder_, VPXD_GET_LAST_QUANTIZER, &qp);
   RTC_DCHECK_EQ(vpx_ret, VPX_CODEC_OK);
-  int ret = ReturnFrame(img, input_image.Timestamp(), qp);
+  int ret =
+      ReturnFrame(img, input_image.Timestamp(), qp, input_image.ColorSpace());
   if (ret != 0) {
     return ret;
   }
   return WEBRTC_VIDEO_CODEC_OK;
 }
 
-int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img,
-                                uint32_t timestamp,
-                                int qp) {
+int VP9DecoderImpl::ReturnFrame(
+    const vpx_image_t* img,
+    uint32_t timestamp,
+    int qp,
+    const webrtc::ColorSpace* explicit_color_space) {
   if (img == nullptr) {
     // Decoder OK and nullptr image => No show frame.
     return WEBRTC_VIDEO_CODEC_NO_OUTPUT;
@@ -1717,10 +1720,13 @@ int VP9DecoderImpl::ReturnFrame(const vpx_image_t* img,
 
   auto builder = VideoFrame::Builder()
                      .set_video_frame_buffer(img_wrapped_buffer)
-                     .set_timestamp_rtp(timestamp)
-                     .set_color_space(ExtractVP9ColorSpace(img->cs, img->range,
-                                                           img->bit_depth));
-
+                     .set_timestamp_rtp(timestamp);
+  if (explicit_color_space) {
+    builder.set_color_space(*explicit_color_space);
+  } else {
+    builder.set_color_space(
+        ExtractVP9ColorSpace(img->cs, img->range, img->bit_depth));
+  }
   VideoFrame decoded_image = builder.build();
 
   decode_complete_callback_->Decoded(decoded_image, absl::nullopt, qp);

@@ -35,8 +35,8 @@ struct VCMFrameInformation {
   VideoContentType content_type;
   EncodedImage::Timing timing;
   int64_t ntp_time_ms;
-  absl::optional<ColorSpace> color_space;
   RtpPacketInfos packet_infos;
+  // ColorSpace is not storred here, as it might be modified by decoders.
 };
 
 class VCMDecodedFrameCallback : public DecodedImageCallback {
