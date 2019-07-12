@@ -140,8 +140,7 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
       nalu_ptr += segment_length;
     }
   } else {
-    if (video_header.is_first_packet_in_frame ||
-        h264_header.packetization_type == kH264SingleNalu) {
+    if (h264_header.nalus_length > 0) {
       required_size += sizeof(start_code_h264);
     }
     required_size += data_size;
@@ -204,8 +203,7 @@ H264SpsPpsTracker::PacketAction H264SpsPpsTracker::CopyAndFixBitstream(
       nalu_ptr += segment_length;
     }
   } else {
-    if (video_header.is_first_packet_in_frame ||
-        h264_header.packetization_type == kH264SingleNalu) {
+    if (h264_header.nalus_length > 0) {
       memcpy(insert_at, start_code_h264, sizeof(start_code_h264));
       insert_at += sizeof(start_code_h264);
     }
