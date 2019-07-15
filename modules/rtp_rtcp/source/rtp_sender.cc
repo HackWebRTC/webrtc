@@ -812,8 +812,13 @@ bool RTPSender::TrySendPacket(RtpPacketToSend* packet,
   // the FEC.
   int64_t now_ms = clock_->TimeInMilliseconds();
   int64_t diff_ms = now_ms - packet->capture_time_ms();
-  packet->SetExtension<TransmissionOffset>(kTimestampTicksPerMs * diff_ms);
-  packet->SetExtension<AbsoluteSendTime>(AbsoluteSendTime::MsTo24Bits(now_ms));
+  if (packet->IsExtensionReserved<TransmissionOffset>()) {
+    packet->SetExtension<TransmissionOffset>(kTimestampTicksPerMs * diff_ms);
+  }
+  if (packet->IsExtensionReserved<AbsoluteSendTime>()) {
+    packet->SetExtension<AbsoluteSendTime>(
+        AbsoluteSendTime::MsTo24Bits(now_ms));
+  }
 
   if (packet->HasExtension<VideoTimingExtension>()) {
     if (populate_network2_timestamp_) {
@@ -999,14 +1004,10 @@ std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
   // them and puts them in the pacer queue. Since this should incur
   // low overhead, keep the lock for the scope of the method in order
   // to make the code more readable.
-  rtc::CritScope lock(&send_critsect_);
-  if (!sending_media_) {
-    return {};
-  }
 
   std::vector<std::unique_ptr<RtpPacketToSend>> padding_packets;
   size_t bytes_left = target_size_bytes;
-  if ((rtx_ & kRtxRedundantPayloads) != 0) {
+  if (SupportsRtxPayloadPadding()) {
     while (bytes_left >= kMinPayloadPaddingBytes) {
       std::unique_ptr<RtpPacketToSend> packet =
           packet_history_.GetPayloadPaddingPacket(
@@ -1022,6 +1023,11 @@ std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
       packet->set_packet_type(RtpPacketToSend::Type::kPadding);
       padding_packets.push_back(std::move(packet));
     }
+  }
+
+  rtc::CritScope lock(&send_critsect_);
+  if (!sending_media_) {
+    return {};
   }
 
   size_t padding_bytes_in_packet;
@@ -1092,6 +1098,13 @@ std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
     if (rtp_header_extension_map_.IsRegistered(TransportSequenceNumber::kId)) {
       padding_packet->ReserveExtension<TransportSequenceNumber>();
     }
+    if (rtp_header_extension_map_.IsRegistered(TransmissionOffset::kId)) {
+      padding_packet->ReserveExtension<TransmissionOffset>();
+    }
+    if (rtp_header_extension_map_.IsRegistered(AbsoluteSendTime::kId)) {
+      padding_packet->ReserveExtension<AbsoluteSendTime>();
+    }
+
     padding_packet->SetPadding(padding_bytes_in_packet);
     bytes_left -= std::min(bytes_left, padding_bytes_in_packet);
     padding_packets.push_back(std::move(padding_packet));
