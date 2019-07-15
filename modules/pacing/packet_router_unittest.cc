@@ -978,7 +978,8 @@ TEST(PacketRouterTest, SendPacketAssignsTransportSequenceNumbers) {
   extension_manager.Register(kRtpExtensionTransportSequenceNumber,
                              kTransportSequenceNumberExtensionId);
 
-  uint16_t transport_sequence_number = 0;
+  // Transport sequence numbers start at 1, for historical reasons.
+  uint16_t transport_sequence_number = 1;
 
   auto packet = absl::make_unique<RtpPacketToSend>(&extension_manager);
   EXPECT_TRUE(packet->ReserveExtension<TransportSequenceNumber>());

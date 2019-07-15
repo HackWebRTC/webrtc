@@ -149,9 +149,8 @@ void PacketRouter::SendPacket(std::unique_ptr<RtpPacketToSend> packet,
   rtc::CritScope cs(&modules_crit_);
   // With the new pacer code path, transport sequence numbers are only set here,
   // on the pacer thread. Therefore we don't need atomics/synchronization.
-  if (packet->IsExtensionReserved<TransportSequenceNumber>() &&
-      packet->SetExtension<TransportSequenceNumber>(transport_seq_)) {
-    ++transport_seq_;
+  if (packet->IsExtensionReserved<TransportSequenceNumber>()) {
+    packet->SetExtension<TransportSequenceNumber>(++transport_seq_);
   }
 
   auto it = rtp_module_cache_map_.find(packet->Ssrc());
