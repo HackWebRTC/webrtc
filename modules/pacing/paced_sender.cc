@@ -338,13 +338,16 @@ void PacedSender::Process() {
       critsect_.Enter();
       OnPaddingSent(bytes_sent);
     } else {
+      size_t keepalive_bytes_sent = 0;
       critsect_.Leave();
       std::vector<std::unique_ptr<RtpPacketToSend>> keepalive_packets =
           packet_router_->GeneratePadding(1);
-      critsect_.Enter();
       for (auto& packet : keepalive_packets) {
-        EnqueuePacket(std::move(packet));
+        keepalive_bytes_sent += packet->payload_size() + packet->padding_size();
+        packet_router_->SendPacket(std::move(packet), PacedPacketInfo());
       }
+      critsect_.Enter();
+      OnPaddingSent(keepalive_bytes_sent);
     }
   }
 

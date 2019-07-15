@@ -13,6 +13,8 @@
 #include <list>
 #include <memory>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "absl/memory/memory.h"
 #include "modules/pacing/packet_router.h"
@@ -50,7 +52,71 @@ namespace test {
 
 static const int kTargetBitrateBps = 800000;
 
+enum class PacerMode { kReferencePackets, kOwnPackets };
+std::string GetFieldTrialStirng(PacerMode mode) {
+  std::string field_trial = "WebRTC-Pacer-LegacyPacketReferencing/";
+  switch (mode) {
+    case PacerMode::kOwnPackets:
+      field_trial += "Disabled";
+      break;
+    case PacerMode::kReferencePackets:
+      field_trial += "Enabled";
+      break;
+  }
+  field_trial += "/";
+  return field_trial;
+}
+
+// Mock callback proxy, where both new and old api redirects to common mock
+// methods that focus on core aspects.
 class MockPacedSenderCallback : public PacketRouter {
+ public:
+  RtpPacketSendResult TimeToSendPacket(uint32_t ssrc,
+                                       uint16_t sequence_number,
+                                       int64_t capture_timestamp,
+                                       bool retransmission,
+                                       const PacedPacketInfo& packet_info) {
+    SendPacket(ssrc, sequence_number, capture_timestamp, retransmission, false);
+    return RtpPacketSendResult::kSuccess;
+  }
+
+  void SendPacket(std::unique_ptr<RtpPacketToSend> packet,
+                  const PacedPacketInfo& cluster_info) override {
+    SendPacket(packet->Ssrc(), packet->SequenceNumber(),
+               packet->capture_time_ms(),
+               packet->packet_type() == RtpPacketToSend::Type::kRetransmission,
+               packet->packet_type() == RtpPacketToSend::Type::kPadding);
+  }
+
+  size_t TimeToSendPadding(size_t bytes,
+                           const PacedPacketInfo& packet_info) override {
+    return SendPadding(bytes);
+  }
+
+  std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
+      size_t target_size_bytes) override {
+    std::vector<std::unique_ptr<RtpPacketToSend>> ret;
+    size_t padding_size = SendPadding(target_size_bytes);
+    if (padding_size > 0) {
+      auto packet = absl::make_unique<RtpPacketToSend>(nullptr);
+      packet->SetPayloadSize(padding_size);
+      packet->set_packet_type(RtpPacketToSend::Type::kPadding);
+      ret.emplace_back(std::move(packet));
+    }
+    return ret;
+  }
+
+  MOCK_METHOD5(SendPacket,
+               void(uint32_t ssrc,
+                    uint16_t sequence_number,
+                    int64_t capture_timestamp,
+                    bool retransmission,
+                    bool padding));
+  MOCK_METHOD1(SendPadding, size_t(size_t target_size));
+};
+
+// Mock callback implementing the raw api.
+class MockCallback : public PacketRouter {
  public:
   MOCK_METHOD5(TimeToSendPacket,
                RtpPacketSendResult(uint32_t ssrc,
@@ -58,15 +124,54 @@ class MockPacedSenderCallback : public PacketRouter {
                                    int64_t capture_time_ms,
                                    bool retransmission,
                                    const PacedPacketInfo& pacing_info));
-  MOCK_METHOD2(SendPacket,
-               void(std::unique_ptr<RtpPacketToSend> packet,
-                    const PacedPacketInfo& pacing_info));
   MOCK_METHOD2(TimeToSendPadding,
                size_t(size_t bytes, const PacedPacketInfo& pacing_info));
+
+  MOCK_METHOD2(SendPacket,
+               void(std::unique_ptr<RtpPacketToSend> packet,
+                    const PacedPacketInfo& cluster_info));
+  MOCK_METHOD1(
+      GeneratePadding,
+      std::vector<std::unique_ptr<RtpPacketToSend>>(size_t target_size_bytes));
 };
+
+// TODO(bugs.webrtc.org/10633): Remove when packets are always owned by pacer.
+RtpPacketSender::Priority PacketTypeToPriority(RtpPacketToSend::Type type) {
+  switch (type) {
+    case RtpPacketToSend::Type::kAudio:
+      return RtpPacketSender::Priority::kHighPriority;
+    case RtpPacketToSend::Type::kVideo:
+      return RtpPacketSender::Priority::kLowPriority;
+    case RtpPacketToSend::Type::kRetransmission:
+      return RtpPacketSender::Priority::kNormalPriority;
+    case RtpPacketToSend::Type::kForwardErrorCorrection:
+      return RtpPacketSender::Priority::kLowPriority;
+      break;
+    case RtpPacketToSend::Type::kPadding:
+      RTC_NOTREACHED() << "Unexpected type for legacy path: kPadding";
+      break;
+  }
+  return RtpPacketSender::Priority::kLowPriority;
+}
+
+std::unique_ptr<RtpPacketToSend> BuildPacket(RtpPacketToSend::Type type,
+                                             uint32_t ssrc,
+                                             uint16_t sequence_number,
+                                             int64_t capture_time_ms,
+                                             size_t size) {
+  auto packet = absl::make_unique<RtpPacketToSend>(nullptr);
+  packet->set_packet_type(type);
+  packet->SetSsrc(ssrc);
+  packet->SetSequenceNumber(sequence_number);
+  packet->set_capture_time_ms(capture_time_ms);
+  packet->SetPayloadSize(size);
+  return packet;
+}
 
 class PacedSenderPadding : public PacketRouter {
  public:
+  static const size_t kPaddingPacketSize = 224;
+
   PacedSenderPadding() : padding_sent_(0) {}
 
   RtpPacketSendResult TimeToSendPacket(
@@ -78,12 +183,28 @@ class PacedSenderPadding : public PacketRouter {
     return RtpPacketSendResult::kSuccess;
   }
 
+  void SendPacket(std::unique_ptr<RtpPacketToSend> packet,
+                  const PacedPacketInfo& pacing_info) override {}
+
   size_t TimeToSendPadding(size_t bytes,
                            const PacedPacketInfo& pacing_info) override {
-    const size_t kPaddingPacketSize = 224;
     size_t num_packets = (bytes + kPaddingPacketSize - 1) / kPaddingPacketSize;
     padding_sent_ += kPaddingPacketSize * num_packets;
     return kPaddingPacketSize * num_packets;
+  }
+
+  std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
+      size_t target_size_bytes) override {
+    size_t num_packets =
+        (target_size_bytes + kPaddingPacketSize - 1) / kPaddingPacketSize;
+    std::vector<std::unique_ptr<RtpPacketToSend>> packets;
+    for (size_t i = 0; i < num_packets; ++i) {
+      packets.emplace_back(absl::make_unique<RtpPacketToSend>(nullptr));
+      packets.back()->SetPadding(kPaddingPacketSize);
+      packets.back()->set_packet_type(RtpPacketToSend::Type::kPadding);
+      padding_sent_ += kPaddingPacketSize;
+    }
+    return packets;
   }
 
   size_t padding_sent() { return padding_sent_; }
@@ -102,14 +223,31 @@ class PacedSenderProbing : public PacketRouter {
       int64_t capture_time_ms,
       bool retransmission,
       const PacedPacketInfo& pacing_info) override {
-    packets_sent_++;
+    ++packets_sent_;
     return RtpPacketSendResult::kSuccess;
+  }
+
+  void SendPacket(std::unique_ptr<RtpPacketToSend> packet,
+                  const PacedPacketInfo& pacing_info) override {
+    if (packet->packet_type() != RtpPacketToSend::Type::kPadding) {
+      ++packets_sent_;
+    }
   }
 
   size_t TimeToSendPadding(size_t bytes,
                            const PacedPacketInfo& pacing_info) override {
     padding_sent_ += bytes;
     return padding_sent_;
+  }
+
+  std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
+      size_t target_size_bytes) override {
+    std::vector<std::unique_ptr<RtpPacketToSend>> packets;
+    packets.emplace_back(absl::make_unique<RtpPacketToSend>(nullptr));
+    packets.back()->SetPadding(target_size_bytes);
+    packets.back()->set_packet_type(RtpPacketToSend::Type::kPadding);
+    padding_sent_ += target_size_bytes;
+    return packets;
   }
 
   int packets_sent() const { return packets_sent_; }
@@ -121,12 +259,17 @@ class PacedSenderProbing : public PacketRouter {
   int padding_sent_;
 };
 
-class PacedSenderTest : public ::testing::TestWithParam<std::string> {
+class PacedSenderTest : public ::testing::TestWithParam<PacerMode> {
  protected:
-  PacedSenderTest() : clock_(123456) {
+  PacedSenderTest()
+      : clock_(123456), field_trial_(GetFieldTrialStirng(GetParam())) {
     srand(0);
     // Need to initialize PacedSender after we initialize clock.
-    send_bucket_.reset(new PacedSender(&clock_, &callback_, nullptr));
+    send_bucket_ = absl::make_unique<PacedSender>(&clock_, &callback_, nullptr);
+    Init();
+  }
+
+  void Init() {
     send_bucket_->CreateProbeCluster(kFirstClusterBps, /*cluster_id=*/0);
     send_bucket_->CreateProbeCluster(kSecondClusterBps, /*cluster_id=*/1);
     // Default to bitrate probing disabled for testing purposes. Probing tests
@@ -138,18 +281,38 @@ class PacedSenderTest : public ::testing::TestWithParam<std::string> {
     clock_.AdvanceTimeMilliseconds(send_bucket_->TimeUntilNextProcess());
   }
 
-  void SendAndExpectPacket(PacedSender::Priority priority,
+  void Send(RtpPacketToSend::Type type,
+            uint32_t ssrc,
+            uint16_t sequence_number,
+            int64_t capture_time_ms,
+            size_t size) {
+    if (GetParam() == PacerMode::kReferencePackets) {
+      send_bucket_->InsertPacket(
+          PacketTypeToPriority(type), ssrc, sequence_number, capture_time_ms,
+          size, type == RtpPacketToSend::Type::kRetransmission);
+    } else {
+      send_bucket_->EnqueuePacket(
+          BuildPacket(type, ssrc, sequence_number, capture_time_ms, size));
+    }
+  }
+
+  void SendAndExpectPacket(RtpPacketToSend::Type type,
                            uint32_t ssrc,
                            uint16_t sequence_number,
                            int64_t capture_time_ms,
-                           size_t size,
-                           bool retransmission) {
-    send_bucket_->InsertPacket(priority, ssrc, sequence_number, capture_time_ms,
-                               size, retransmission);
-    EXPECT_CALL(callback_, TimeToSendPacket(ssrc, sequence_number,
-                                            capture_time_ms, retransmission, _))
-        .Times(1)
-        .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
+                           size_t size) {
+    Send(type, ssrc, sequence_number, capture_time_ms, size);
+    EXPECT_CALL(
+        callback_,
+        SendPacket(ssrc, sequence_number, capture_time_ms,
+                   type == RtpPacketToSend::Type::kRetransmission, false))
+        .Times(1);
+  }
+
+  void ExpectSendPadding() {
+    if (GetParam() == PacerMode::kOwnPackets) {
+      EXPECT_CALL(callback_, SendPacket(_, _, _, _, true)).Times(1);
+    }
   }
 
   std::unique_ptr<RtpPacketToSend> BuildRtpPacket(RtpPacketToSend::Type type) {
@@ -176,14 +339,15 @@ class PacedSenderTest : public ::testing::TestWithParam<std::string> {
   }
 
   SimulatedClock clock_;
+  ScopedFieldTrials field_trial_;
   MockPacedSenderCallback callback_;
   std::unique_ptr<PacedSender> send_bucket_;
 };
 
-class PacedSenderFieldTrialTest : public ::testing::Test {
+class PacedSenderFieldTrialTest : public ::testing::TestWithParam<PacerMode> {
  protected:
   struct MediaStream {
-    const RtpPacketSender::Priority priority;
+    const RtpPacketToSend::Type type;
     const uint32_t ssrc;
     const size_t packet_size;
     uint16_t seq_num;
@@ -193,137 +357,146 @@ class PacedSenderFieldTrialTest : public ::testing::Test {
 
   PacedSenderFieldTrialTest() : clock_(123456) {}
   void InsertPacket(PacedSender* pacer, MediaStream* stream) {
-    pacer->InsertPacket(stream->priority, stream->ssrc, stream->seq_num++,
-                        clock_.TimeInMilliseconds(), stream->packet_size,
-                        false);
+    if (GetParam() == PacerMode::kReferencePackets) {
+      pacer->InsertPacket(PacketTypeToPriority(stream->type), stream->ssrc,
+                          stream->seq_num++, clock_.TimeInMilliseconds(),
+                          stream->packet_size, false);
+    } else {
+      pacer->EnqueuePacket(
+          BuildPacket(stream->type, stream->ssrc, stream->seq_num++,
+                      clock_.TimeInMilliseconds(), stream->packet_size));
+    }
   }
   void ProcessNext(PacedSender* pacer) {
     clock_.AdvanceTimeMilliseconds(5);
     pacer->Process();
   }
-  MediaStream audio{/*priority*/ PacedSender::kHighPriority,
+  MediaStream audio{/*type*/ RtpPacketToSend::Type::kAudio,
                     /*ssrc*/ 3333, /*packet_size*/ 100, /*seq_num*/ 1000};
-  MediaStream video{/*priority*/ PacedSender::kNormalPriority,
+  MediaStream video{/*type*/ RtpPacketToSend::Type::kVideo,
                     /*ssrc*/ 4444, /*packet_size*/ 1000, /*seq_num*/ 1000};
   SimulatedClock clock_;
   MockPacedSenderCallback callback_;
 };
 
-TEST_F(PacedSenderFieldTrialTest, DefaultNoPaddingInSilence) {
+TEST_P(PacedSenderFieldTrialTest, DefaultNoPaddingInSilence) {
   PacedSender pacer(&clock_, &callback_, nullptr);
   pacer.SetPacingRates(kTargetBitrateBps, 0);
   // Video packet to reset last send time and provide padding data.
   InsertPacket(&pacer, &video);
-  EXPECT_CALL(callback_, TimeToSendPacket)
-      .WillOnce(Return(RtpPacketSendResult::kSuccess));
+  EXPECT_CALL(callback_, SendPacket).Times(1);
   clock_.AdvanceTimeMilliseconds(5);
   pacer.Process();
-  EXPECT_CALL(callback_, TimeToSendPadding).Times(0);
+  EXPECT_CALL(callback_, SendPadding).Times(0);
   // Waiting 500 ms should not trigger sending of padding.
   clock_.AdvanceTimeMilliseconds(500);
   pacer.Process();
 }
 
-TEST_F(PacedSenderFieldTrialTest, PaddingInSilenceWithTrial) {
-  ScopedFieldTrials trial("WebRTC-Pacer-PadInSilence/Enabled/");
+TEST_P(PacedSenderFieldTrialTest, PaddingInSilenceWithTrial) {
+  ScopedFieldTrials trial(GetFieldTrialStirng(GetParam()) +
+                          "WebRTC-Pacer-PadInSilence/Enabled/");
   PacedSender pacer(&clock_, &callback_, nullptr);
   pacer.SetPacingRates(kTargetBitrateBps, 0);
   // Video packet to reset last send time and provide padding data.
   InsertPacket(&pacer, &video);
-  EXPECT_CALL(callback_, TimeToSendPacket)
-      .WillOnce(Return(RtpPacketSendResult::kSuccess));
+  if (GetParam() == PacerMode::kReferencePackets) {
+    // Only payload, not padding, sent by pacer in legacy mode.
+    EXPECT_CALL(callback_, SendPacket).Times(1);
+  } else {
+    EXPECT_CALL(callback_, SendPacket).Times(2);
+  }
   clock_.AdvanceTimeMilliseconds(5);
   pacer.Process();
-  EXPECT_CALL(callback_, TimeToSendPadding).WillOnce(Return(1000));
+  EXPECT_CALL(callback_, SendPadding).WillOnce(Return(1000));
   // Waiting 500 ms should trigger sending of padding.
   clock_.AdvanceTimeMilliseconds(500);
   pacer.Process();
 }
 
-TEST_F(PacedSenderFieldTrialTest, DefaultCongestionWindowAffectsAudio) {
-  EXPECT_CALL(callback_, TimeToSendPadding).Times(0);
+TEST_P(PacedSenderFieldTrialTest, DefaultCongestionWindowAffectsAudio) {
+  EXPECT_CALL(callback_, SendPadding).Times(0);
   PacedSender pacer(&clock_, &callback_, nullptr);
   pacer.SetPacingRates(10000000, 0);
   pacer.SetCongestionWindow(800);
   pacer.UpdateOutstandingData(0);
   // Video packet fills congestion window.
   InsertPacket(&pacer, &video);
-  EXPECT_CALL(callback_, TimeToSendPacket)
-      .WillOnce(Return(RtpPacketSendResult::kSuccess));
+  EXPECT_CALL(callback_, SendPacket).Times(1);
   ProcessNext(&pacer);
   // Audio packet blocked due to congestion.
   InsertPacket(&pacer, &audio);
-  EXPECT_CALL(callback_, TimeToSendPacket).Times(0);
+  EXPECT_CALL(callback_, SendPacket).Times(0);
   ProcessNext(&pacer);
   ProcessNext(&pacer);
   // Audio packet unblocked when congestion window clear.
   ::testing::Mock::VerifyAndClearExpectations(&callback_);
   pacer.UpdateOutstandingData(0);
-  EXPECT_CALL(callback_, TimeToSendPacket)
-      .WillOnce(Return(RtpPacketSendResult::kSuccess));
+  EXPECT_CALL(callback_, SendPacket).Times(1);
   ProcessNext(&pacer);
 }
 
-TEST_F(PacedSenderFieldTrialTest, CongestionWindowDoesNotAffectAudioInTrial) {
-  ScopedFieldTrials trial("WebRTC-Pacer-BlockAudio/Disabled/");
-  EXPECT_CALL(callback_, TimeToSendPadding).Times(0);
+TEST_P(PacedSenderFieldTrialTest, CongestionWindowDoesNotAffectAudioInTrial) {
+  ScopedFieldTrials trial(GetFieldTrialStirng(GetParam()) +
+                          "WebRTC-Pacer-BlockAudio/Disabled/");
+  EXPECT_CALL(callback_, SendPadding).Times(0);
   PacedSender pacer(&clock_, &callback_, nullptr);
   pacer.SetPacingRates(10000000, 0);
   pacer.SetCongestionWindow(800);
   pacer.UpdateOutstandingData(0);
   // Video packet fills congestion window.
   InsertPacket(&pacer, &video);
-  EXPECT_CALL(callback_, TimeToSendPacket)
-      .WillOnce(Return(RtpPacketSendResult::kSuccess));
+  EXPECT_CALL(callback_, SendPacket).Times(1);
   ProcessNext(&pacer);
   // Audio not blocked due to congestion.
   InsertPacket(&pacer, &audio);
-  EXPECT_CALL(callback_, TimeToSendPacket)
-      .WillOnce(Return(RtpPacketSendResult::kSuccess));
+  EXPECT_CALL(callback_, SendPacket).Times(1);
   ProcessNext(&pacer);
 }
 
-TEST_F(PacedSenderFieldTrialTest, DefaultBudgetAffectsAudio) {
+TEST_P(PacedSenderFieldTrialTest, DefaultBudgetAffectsAudio) {
   PacedSender pacer(&clock_, &callback_, nullptr);
   pacer.SetPacingRates(video.packet_size / 3 * 8 * kProcessIntervalsPerSecond,
                        0);
   // Video fills budget for following process periods.
   InsertPacket(&pacer, &video);
-  EXPECT_CALL(callback_, TimeToSendPacket)
-      .WillOnce(Return(RtpPacketSendResult::kSuccess));
+  EXPECT_CALL(callback_, SendPacket).Times(1);
   ProcessNext(&pacer);
   // Audio packet blocked due to budget limit.
-  EXPECT_CALL(callback_, TimeToSendPacket).Times(0);
+  EXPECT_CALL(callback_, SendPacket).Times(0);
   InsertPacket(&pacer, &audio);
   ProcessNext(&pacer);
   ProcessNext(&pacer);
   ::testing::Mock::VerifyAndClearExpectations(&callback_);
   // Audio packet unblocked when the budget has recovered.
-  EXPECT_CALL(callback_, TimeToSendPacket)
-      .WillOnce(Return(RtpPacketSendResult::kSuccess));
+  EXPECT_CALL(callback_, SendPacket).Times(1);
   ProcessNext(&pacer);
   ProcessNext(&pacer);
 }
 
-TEST_F(PacedSenderFieldTrialTest, BudgetDoesNotAffectAudioInTrial) {
-  ScopedFieldTrials trial("WebRTC-Pacer-BlockAudio/Disabled/");
-  EXPECT_CALL(callback_, TimeToSendPadding).Times(0);
+TEST_P(PacedSenderFieldTrialTest, BudgetDoesNotAffectAudioInTrial) {
+  ScopedFieldTrials trial(GetFieldTrialStirng(GetParam()) +
+                          "WebRTC-Pacer-BlockAudio/Disabled/");
+  EXPECT_CALL(callback_, SendPadding).Times(0);
   PacedSender pacer(&clock_, &callback_, nullptr);
   pacer.SetPacingRates(video.packet_size / 3 * 8 * kProcessIntervalsPerSecond,
                        0);
   // Video fills budget for following process periods.
   InsertPacket(&pacer, &video);
-  EXPECT_CALL(callback_, TimeToSendPacket)
-      .WillOnce(Return(RtpPacketSendResult::kSuccess));
+  EXPECT_CALL(callback_, SendPacket).Times(1);
   ProcessNext(&pacer);
   // Audio packet not blocked due to budget limit.
-  EXPECT_CALL(callback_, TimeToSendPacket)
-      .WillOnce(Return(RtpPacketSendResult::kSuccess));
+  EXPECT_CALL(callback_, SendPacket).Times(1);
   InsertPacket(&pacer, &audio);
   ProcessNext(&pacer);
 }
 
-TEST_F(PacedSenderTest, FirstSentPacketTimeIsSet) {
+INSTANTIATE_TEST_SUITE_P(ReferencingAndOwningPackets,
+                         PacedSenderFieldTrialTest,
+                         ::testing::Values(PacerMode::kReferencePackets,
+                                           PacerMode::kOwnPackets));
+
+TEST_P(PacedSenderTest, FirstSentPacketTimeIsSet) {
   uint16_t sequence_number = 1234;
   const uint32_t kSsrc = 12345;
   const size_t kSizeBytes = 250;
@@ -334,15 +507,15 @@ TEST_F(PacedSenderTest, FirstSentPacketTimeIsSet) {
   EXPECT_EQ(-1, send_bucket_->FirstSentPacketTimeMs());
 
   for (size_t i = 0; i < kPacketToSend; ++i) {
-    SendAndExpectPacket(PacedSender::kNormalPriority, kSsrc, sequence_number++,
-                        clock_.TimeInMilliseconds(), kSizeBytes, false);
+    SendAndExpectPacket(RtpPacketToSend::Type::kVideo, kSsrc, sequence_number++,
+                        clock_.TimeInMilliseconds(), kSizeBytes);
     send_bucket_->Process();
     clock_.AdvanceTimeMilliseconds(send_bucket_->TimeUntilNextProcess());
   }
   EXPECT_EQ(kStartMs, send_bucket_->FirstSentPacketTimeMs());
 }
 
-TEST_F(PacedSenderTest, QueuePacket) {
+TEST_P(PacedSenderTest, QueuePacket) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
   // Due to the multiplicative factor we can send 5 packets during a send
@@ -351,27 +524,25 @@ TEST_F(PacedSenderTest, QueuePacket) {
   const size_t packets_to_send =
       kTargetBitrateBps * kPaceMultiplier / (8 * 250 * 200);
   for (size_t i = 0; i < packets_to_send; ++i) {
-    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                        clock_.TimeInMilliseconds(), 250, false);
+    SendAndExpectPacket(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+                        clock_.TimeInMilliseconds(), 250);
   }
 
   int64_t queued_packet_timestamp = clock_.TimeInMilliseconds();
-  send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                             sequence_number, queued_packet_timestamp, 250,
-                             false);
+  Send(RtpPacketToSend::Type::kVideo, ssrc, sequence_number,
+       queued_packet_timestamp, 250);
   EXPECT_EQ(packets_to_send + 1, send_bucket_->QueueSizePackets());
   send_bucket_->Process();
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
+  EXPECT_CALL(callback_, SendPadding).Times(0);
   clock_.AdvanceTimeMilliseconds(4);
   EXPECT_EQ(1, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(1);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   EXPECT_EQ(1u, send_bucket_->QueueSizePackets());
-  EXPECT_CALL(callback_, TimeToSendPacket(ssrc, sequence_number++,
-                                          queued_packet_timestamp, false, _))
-      .Times(1)
-      .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
+  EXPECT_CALL(callback_, SendPacket(ssrc, sequence_number++,
+                                    queued_packet_timestamp, false, false))
+      .Times(1);
   send_bucket_->Process();
   sequence_number++;
   EXPECT_EQ(0u, send_bucket_->QueueSizePackets());
@@ -379,18 +550,17 @@ TEST_F(PacedSenderTest, QueuePacket) {
   // We can send packets_to_send -1 packets of size 250 during the current
   // interval since one packet has already been sent.
   for (size_t i = 0; i < packets_to_send - 1; ++i) {
-    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                        clock_.TimeInMilliseconds(), 250, false);
+    SendAndExpectPacket(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+                        clock_.TimeInMilliseconds(), 250);
   }
-  send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                             sequence_number++, clock_.TimeInMilliseconds(),
-                             250, false);
+  Send(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+       clock_.TimeInMilliseconds(), 250);
   EXPECT_EQ(packets_to_send, send_bucket_->QueueSizePackets());
   send_bucket_->Process();
   EXPECT_EQ(1u, send_bucket_->QueueSizePackets());
 }
 
-TEST_F(PacedSenderTest, PaceQueuedPackets) {
+TEST_P(PacedSenderTest, PaceQueuedPackets) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
 
@@ -400,27 +570,25 @@ TEST_F(PacedSenderTest, PaceQueuedPackets) {
   const size_t packets_to_send_per_interval =
       kTargetBitrateBps * kPaceMultiplier / (8 * 250 * 200);
   for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
-    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                        clock_.TimeInMilliseconds(), 250, false);
+    SendAndExpectPacket(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+                        clock_.TimeInMilliseconds(), 250);
   }
 
   for (size_t j = 0; j < packets_to_send_per_interval * 10; ++j) {
-    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                               sequence_number++, clock_.TimeInMilliseconds(),
-                               250, false);
+    Send(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+         clock_.TimeInMilliseconds(), 250);
   }
   EXPECT_EQ(packets_to_send_per_interval + packets_to_send_per_interval * 10,
             send_bucket_->QueueSizePackets());
   send_bucket_->Process();
   EXPECT_EQ(packets_to_send_per_interval * 10,
             send_bucket_->QueueSizePackets());
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
+  EXPECT_CALL(callback_, SendPadding).Times(0);
   for (int k = 0; k < 10; ++k) {
     EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
     clock_.AdvanceTimeMilliseconds(5);
-    EXPECT_CALL(callback_, TimeToSendPacket(ssrc, _, _, false, _))
-        .Times(packets_to_send_per_interval)
-        .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
+    EXPECT_CALL(callback_, SendPacket(ssrc, _, _, false, false))
+        .Times(packets_to_send_per_interval);
     EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
     send_bucket_->Process();
   }
@@ -432,46 +600,47 @@ TEST_F(PacedSenderTest, PaceQueuedPackets) {
   send_bucket_->Process();
 
   for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
-    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                        clock_.TimeInMilliseconds(), 250, false);
+    SendAndExpectPacket(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+                        clock_.TimeInMilliseconds(), 250);
   }
-  send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                             sequence_number, clock_.TimeInMilliseconds(), 250,
-                             false);
+  Send(RtpPacketToSend::Type::kVideo, ssrc, sequence_number,
+       clock_.TimeInMilliseconds(), 250);
   send_bucket_->Process();
   EXPECT_EQ(1u, send_bucket_->QueueSizePackets());
 }
 
-TEST_F(PacedSenderTest, RepeatedRetransmissionsAllowed) {
+TEST_P(PacedSenderTest, RepeatedRetransmissionsAllowed) {
   // Send one packet, then two retransmissions of that packet.
   for (size_t i = 0; i < 3; i++) {
     constexpr uint32_t ssrc = 333;
     constexpr uint16_t sequence_number = 444;
     constexpr size_t bytes = 250;
     bool is_retransmission = (i != 0);  // Original followed by retransmissions.
-    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number,
-                        clock_.TimeInMilliseconds(), bytes, is_retransmission);
+    SendAndExpectPacket(
+        is_retransmission ? RtpPacketToSend::Type::kRetransmission
+                          : RtpPacketToSend::Type::kVideo,
+        ssrc, sequence_number, clock_.TimeInMilliseconds(), bytes);
     clock_.AdvanceTimeMilliseconds(5);
   }
   send_bucket_->Process();
 }
 
-TEST_F(PacedSenderTest, CanQueuePacketsWithSameSequenceNumberOnDifferentSsrcs) {
+TEST_P(PacedSenderTest, CanQueuePacketsWithSameSequenceNumberOnDifferentSsrcs) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
 
-  SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number,
-                      clock_.TimeInMilliseconds(), 250, false);
+  SendAndExpectPacket(RtpPacketToSend::Type::kVideo, ssrc, sequence_number,
+                      clock_.TimeInMilliseconds(), 250);
 
   // Expect packet on second ssrc to be queued and sent as well.
-  SendAndExpectPacket(PacedSender::kNormalPriority, ssrc + 1, sequence_number,
-                      clock_.TimeInMilliseconds(), 250, false);
+  SendAndExpectPacket(RtpPacketToSend::Type::kVideo, ssrc + 1, sequence_number,
+                      clock_.TimeInMilliseconds(), 250);
 
   clock_.AdvanceTimeMilliseconds(1000);
   send_bucket_->Process();
 }
 
-TEST_F(PacedSenderTest, Padding) {
+TEST_P(PacedSenderTest, Padding) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
 
@@ -484,38 +653,37 @@ TEST_F(PacedSenderTest, Padding) {
   const size_t packets_to_send_per_interval =
       kTargetBitrateBps * kPaceMultiplier / (8 * 250 * 200);
   for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
-    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                        clock_.TimeInMilliseconds(), 250, false);
+    SendAndExpectPacket(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+                        clock_.TimeInMilliseconds(), 250);
   }
   // No padding is expected since we have sent too much already.
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
+  EXPECT_CALL(callback_, SendPadding).Times(0);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   send_bucket_->Process();
   EXPECT_EQ(0u, send_bucket_->QueueSizePackets());
 
   // 5 milliseconds later should not send padding since we filled the buffers
   // initially.
-  EXPECT_CALL(callback_, TimeToSendPadding(250, _)).Times(0);
+  EXPECT_CALL(callback_, SendPadding(250)).Times(0);
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   send_bucket_->Process();
 
   // 5 milliseconds later we have enough budget to send some padding.
-  EXPECT_CALL(callback_, TimeToSendPadding(250, _))
-      .Times(1)
-      .WillOnce(Return(250));
+  EXPECT_CALL(callback_, SendPadding(250)).WillOnce(Return(250));
+  ExpectSendPadding();
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(5);
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
   send_bucket_->Process();
 }
 
-TEST_F(PacedSenderTest, NoPaddingBeforeNormalPacket) {
+TEST_P(PacedSenderTest, NoPaddingBeforeNormalPacket) {
   send_bucket_->SetPacingRates(kTargetBitrateBps * kPaceMultiplier,
                                kTargetBitrateBps);
 
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
+  EXPECT_CALL(callback_, SendPadding).Times(0);
   send_bucket_->Process();
   clock_.AdvanceTimeMilliseconds(send_bucket_->TimeUntilNextProcess());
 
@@ -526,15 +694,14 @@ TEST_F(PacedSenderTest, NoPaddingBeforeNormalPacket) {
   uint16_t sequence_number = 1234;
   int64_t capture_time_ms = 56789;
 
-  SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                      capture_time_ms, 250, false);
-  EXPECT_CALL(callback_, TimeToSendPadding(250, _))
-      .Times(1)
-      .WillOnce(Return(250));
+  SendAndExpectPacket(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+                      capture_time_ms, 250);
+  EXPECT_CALL(callback_, SendPadding(250)).WillOnce(Return(250));
+  ExpectSendPadding();
   send_bucket_->Process();
 }
 
-TEST_F(PacedSenderTest, VerifyPaddingUpToBitrate) {
+TEST_P(PacedSenderTest, VerifyPaddingUpToBitrate) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
   int64_t capture_time_ms = 56789;
@@ -545,17 +712,16 @@ TEST_F(PacedSenderTest, VerifyPaddingUpToBitrate) {
 
   int64_t start_time = clock_.TimeInMilliseconds();
   while (clock_.TimeInMilliseconds() - start_time < kBitrateWindow) {
-    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                        capture_time_ms, 250, false);
-    EXPECT_CALL(callback_, TimeToSendPadding(250, _))
-        .Times(1)
-        .WillOnce(Return(250));
+    SendAndExpectPacket(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+                        capture_time_ms, 250);
+    EXPECT_CALL(callback_, SendPadding(250)).WillOnce(Return(250));
+    ExpectSendPadding();
     send_bucket_->Process();
     clock_.AdvanceTimeMilliseconds(kTimeStep);
   }
 }
 
-TEST_F(PacedSenderTest, VerifyAverageBitrateVaryingMediaPayload) {
+TEST_P(PacedSenderTest, VerifyAverageBitrateVaryingMediaPayload) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
   int64_t capture_time_ms = 56789;
@@ -572,9 +738,8 @@ TEST_F(PacedSenderTest, VerifyAverageBitrateVaryingMediaPayload) {
   while (clock_.TimeInMilliseconds() - start_time < kBitrateWindow) {
     int rand_value = rand();  // NOLINT (rand_r instead of rand)
     size_t media_payload = rand_value % 100 + 200;  // [200, 300] bytes.
-    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                               sequence_number++, capture_time_ms,
-                               media_payload, false);
+    Send(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+         capture_time_ms, media_payload);
     media_bytes += media_payload;
     clock_.AdvanceTimeMilliseconds(kTimeStep);
     send_bucket_->Process();
@@ -585,7 +750,7 @@ TEST_F(PacedSenderTest, VerifyAverageBitrateVaryingMediaPayload) {
               1);
 }
 
-TEST_F(PacedSenderTest, Priority) {
+TEST_P(PacedSenderTest, Priority) {
   uint32_t ssrc_low_priority = 12345;
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
@@ -598,29 +763,27 @@ TEST_F(PacedSenderTest, Priority) {
   const size_t packets_to_send_per_interval =
       kTargetBitrateBps * kPaceMultiplier / (8 * 250 * 200);
   for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
-    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                        clock_.TimeInMilliseconds(), 250, false);
+    SendAndExpectPacket(RtpPacketToSend::Type::kRetransmission, ssrc,
+                        sequence_number++, clock_.TimeInMilliseconds(), 250);
   }
   send_bucket_->Process();
   EXPECT_EQ(0u, send_bucket_->QueueSizePackets());
 
   // Expect normal and low priority to be queued and high to pass through.
-  send_bucket_->InsertPacket(PacedSender::kLowPriority, ssrc_low_priority,
-                             sequence_number++, capture_time_ms_low_priority,
-                             250, false);
+  Send(RtpPacketToSend::Type::kVideo, ssrc_low_priority, sequence_number++,
+       capture_time_ms_low_priority, 250);
 
   for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
-    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                               sequence_number++, capture_time_ms, 250, false);
+    Send(RtpPacketToSend::Type::kRetransmission, ssrc, sequence_number++,
+         capture_time_ms, 250);
   }
-  send_bucket_->InsertPacket(PacedSender::kHighPriority, ssrc,
-                             sequence_number++, capture_time_ms, 250, false);
+  Send(RtpPacketToSend::Type::kAudio, ssrc, sequence_number++, capture_time_ms,
+       250);
 
   // Expect all high and normal priority to be sent out first.
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
-  EXPECT_CALL(callback_, TimeToSendPacket(ssrc, _, capture_time_ms, false, _))
-      .Times(packets_to_send_per_interval + 1)
-      .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
+  EXPECT_CALL(callback_, SendPadding).Times(0);
+  EXPECT_CALL(callback_, SendPacket(ssrc, _, capture_time_ms, _, _))
+      .Times(packets_to_send_per_interval + 1);
 
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(5);
@@ -628,11 +791,9 @@ TEST_F(PacedSenderTest, Priority) {
   send_bucket_->Process();
   EXPECT_EQ(1u, send_bucket_->QueueSizePackets());
 
-  EXPECT_CALL(callback_,
-              TimeToSendPacket(ssrc_low_priority, _,
-                               capture_time_ms_low_priority, false, _))
-      .Times(1)
-      .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
+  EXPECT_CALL(callback_, SendPacket(ssrc_low_priority, _,
+                                    capture_time_ms_low_priority, _, _))
+      .Times(1);
 
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(5);
@@ -640,7 +801,7 @@ TEST_F(PacedSenderTest, Priority) {
   send_bucket_->Process();
 }
 
-TEST_F(PacedSenderTest, RetransmissionPriority) {
+TEST_P(PacedSenderTest, RetransmissionPriority) {
   uint32_t ssrc = 12345;
   uint16_t sequence_number = 1234;
   int64_t capture_time_ms = 45678;
@@ -656,22 +817,20 @@ TEST_F(PacedSenderTest, RetransmissionPriority) {
 
   // Alternate retransmissions and normal packets.
   for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
-    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                               sequence_number++,
-                               capture_time_ms_retransmission, 250, true);
-    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                               sequence_number++, capture_time_ms, 250, false);
+    Send(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+         capture_time_ms, 250);
+    Send(RtpPacketToSend::Type::kRetransmission, ssrc, sequence_number++,
+         capture_time_ms_retransmission, 250);
   }
   EXPECT_EQ(2 * packets_to_send_per_interval, send_bucket_->QueueSizePackets());
 
   // Expect all retransmissions to be sent out first despite having a later
   // capture time.
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
-  EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, false, _)).Times(0);
-  EXPECT_CALL(callback_, TimeToSendPacket(
-                             ssrc, _, capture_time_ms_retransmission, true, _))
-      .Times(packets_to_send_per_interval)
-      .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
+  EXPECT_CALL(callback_, SendPadding).Times(0);
+  EXPECT_CALL(callback_, SendPacket(_, _, _, false, _)).Times(0);
+  EXPECT_CALL(callback_,
+              SendPacket(ssrc, _, capture_time_ms_retransmission, true, _))
+      .Times(packets_to_send_per_interval);
 
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(5);
@@ -680,11 +839,10 @@ TEST_F(PacedSenderTest, RetransmissionPriority) {
   EXPECT_EQ(packets_to_send_per_interval, send_bucket_->QueueSizePackets());
 
   // Expect the remaining (non-retransmission) packets to be sent.
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
-  EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, true, _)).Times(0);
-  EXPECT_CALL(callback_, TimeToSendPacket(ssrc, _, capture_time_ms, false, _))
-      .Times(packets_to_send_per_interval)
-      .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
+  EXPECT_CALL(callback_, SendPadding).Times(0);
+  EXPECT_CALL(callback_, SendPacket(_, _, _, true, _)).Times(0);
+  EXPECT_CALL(callback_, SendPacket(ssrc, _, capture_time_ms, false, _))
+      .Times(packets_to_send_per_interval);
 
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(5);
@@ -694,7 +852,7 @@ TEST_F(PacedSenderTest, RetransmissionPriority) {
   EXPECT_EQ(0u, send_bucket_->QueueSizePackets());
 }
 
-TEST_F(PacedSenderTest, HighPrioDoesntAffectBudget) {
+TEST_P(PacedSenderTest, HighPrioDoesntAffectBudget) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
   int64_t capture_time_ms = 56789;
@@ -702,8 +860,8 @@ TEST_F(PacedSenderTest, HighPrioDoesntAffectBudget) {
   // As high prio packets doesn't affect the budget, we should be able to send
   // a high number of them at once.
   for (int i = 0; i < 25; ++i) {
-    SendAndExpectPacket(PacedSender::kHighPriority, ssrc, sequence_number++,
-                        capture_time_ms, 250, false);
+    SendAndExpectPacket(RtpPacketToSend::Type::kAudio, ssrc, sequence_number++,
+                        capture_time_ms, 250);
   }
   send_bucket_->Process();
   // Low prio packets does affect the budget.
@@ -713,26 +871,25 @@ TEST_F(PacedSenderTest, HighPrioDoesntAffectBudget) {
   const size_t packets_to_send_per_interval =
       kTargetBitrateBps * kPaceMultiplier / (8 * 250 * 200);
   for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
-    SendAndExpectPacket(PacedSender::kLowPriority, ssrc, sequence_number++,
-                        clock_.TimeInMilliseconds(), 250, false);
+    SendAndExpectPacket(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+                        clock_.TimeInMilliseconds(), 250);
   }
-  send_bucket_->InsertPacket(PacedSender::kLowPriority, ssrc, sequence_number,
-                             capture_time_ms, 250, false);
+  Send(RtpPacketToSend::Type::kVideo, ssrc, sequence_number, capture_time_ms,
+       250);
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(5);
   send_bucket_->Process();
   EXPECT_EQ(1u, send_bucket_->QueueSizePackets());
-  EXPECT_CALL(callback_, TimeToSendPacket(ssrc, sequence_number++,
-                                          capture_time_ms, false, _))
-      .Times(1)
-      .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
+  EXPECT_CALL(callback_,
+              SendPacket(ssrc, sequence_number++, capture_time_ms, false, _))
+      .Times(1);
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(5);
   send_bucket_->Process();
   EXPECT_EQ(0u, send_bucket_->QueueSizePackets());
 }
 
-TEST_F(PacedSenderTest, SendsOnlyPaddingWhenCongested) {
+TEST_P(PacedSenderTest, SendsOnlyPaddingWhenCongested) {
   uint32_t ssrc = 202020;
   uint16_t sequence_number = 1000;
   int kPacketSize = 250;
@@ -743,40 +900,39 @@ TEST_F(PacedSenderTest, SendsOnlyPaddingWhenCongested) {
   int sent_data = 0;
   while (sent_data < kCongestionWindow) {
     sent_data += kPacketSize;
-    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                        clock_.TimeInMilliseconds(), kPacketSize, false);
+    SendAndExpectPacket(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+                        clock_.TimeInMilliseconds(), kPacketSize);
     clock_.AdvanceTimeMilliseconds(5);
     send_bucket_->Process();
   }
   ::testing::Mock::VerifyAndClearExpectations(&callback_);
-  EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, _, _)).Times(0);
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
+  EXPECT_CALL(callback_, SendPacket).Times(0);
+  EXPECT_CALL(callback_, SendPadding).Times(0);
 
   size_t blocked_packets = 0;
   int64_t expected_time_until_padding = 500;
   while (expected_time_until_padding > 5) {
-    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                               sequence_number++, clock_.TimeInMilliseconds(),
-                               kPacketSize, false);
+    Send(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+         clock_.TimeInMilliseconds(), kPacketSize);
     blocked_packets++;
     clock_.AdvanceTimeMilliseconds(5);
     send_bucket_->Process();
     expected_time_until_padding -= 5;
   }
   ::testing::Mock::VerifyAndClearExpectations(&callback_);
-  EXPECT_CALL(callback_, TimeToSendPadding(1, _)).Times(1);
+  EXPECT_CALL(callback_, SendPadding(1)).WillOnce(Return(1));
+  ExpectSendPadding();
   clock_.AdvanceTimeMilliseconds(5);
   send_bucket_->Process();
   EXPECT_EQ(blocked_packets, send_bucket_->QueueSizePackets());
 }
 
-TEST_F(PacedSenderTest, DoesNotAllowOveruseAfterCongestion) {
+TEST_P(PacedSenderTest, DoesNotAllowOveruseAfterCongestion) {
   uint32_t ssrc = 202020;
   uint16_t seq_num = 1000;
-  RtpPacketSender::Priority prio = PacedSender::kNormalPriority;
   int size = 1000;
   auto now_ms = [this] { return clock_.TimeInMilliseconds(); };
-  EXPECT_CALL(callback_, TimeToSendPadding).Times(0);
+  EXPECT_CALL(callback_, SendPadding).Times(0);
   // The pacing rate is low enough that the budget should not allow two packets
   // to be sent in a row.
   send_bucket_->SetPacingRates(400 * 8 * 1000 / 5, 0);
@@ -784,37 +940,35 @@ TEST_F(PacedSenderTest, DoesNotAllowOveruseAfterCongestion) {
   send_bucket_->SetCongestionWindow(800);
   send_bucket_->UpdateOutstandingData(0);
   // Not yet budget limited or congested, packet is sent.
-  send_bucket_->InsertPacket(prio, ssrc, seq_num++, now_ms(), size, false);
-  EXPECT_CALL(callback_, TimeToSendPacket)
-      .WillOnce(Return(RtpPacketSendResult::kSuccess));
+  Send(RtpPacketToSend::Type::kVideo, ssrc, seq_num++, now_ms(), size);
+  EXPECT_CALL(callback_, SendPacket).Times(1);
   clock_.AdvanceTimeMilliseconds(5);
   send_bucket_->Process();
   // Packet blocked due to congestion.
-  send_bucket_->InsertPacket(prio, ssrc, seq_num++, now_ms(), size, false);
-  EXPECT_CALL(callback_, TimeToSendPacket).Times(0);
+  Send(RtpPacketToSend::Type::kVideo, ssrc, seq_num++, now_ms(), size);
+  EXPECT_CALL(callback_, SendPacket).Times(0);
   clock_.AdvanceTimeMilliseconds(5);
   send_bucket_->Process();
   // Packet blocked due to congestion.
-  send_bucket_->InsertPacket(prio, ssrc, seq_num++, now_ms(), size, false);
-  EXPECT_CALL(callback_, TimeToSendPacket).Times(0);
+  Send(RtpPacketToSend::Type::kVideo, ssrc, seq_num++, now_ms(), size);
+  EXPECT_CALL(callback_, SendPacket).Times(0);
   clock_.AdvanceTimeMilliseconds(5);
   send_bucket_->Process();
   send_bucket_->UpdateOutstandingData(0);
   // Congestion removed and budget has recovered, packet is sent.
-  send_bucket_->InsertPacket(prio, ssrc, seq_num++, now_ms(), size, false);
-  EXPECT_CALL(callback_, TimeToSendPacket)
-      .WillOnce(Return(RtpPacketSendResult::kSuccess));
+  Send(RtpPacketToSend::Type::kVideo, ssrc, seq_num++, now_ms(), size);
+  EXPECT_CALL(callback_, SendPacket).Times(1);
   clock_.AdvanceTimeMilliseconds(5);
   send_bucket_->Process();
   send_bucket_->UpdateOutstandingData(0);
   // Should be blocked due to budget limitation as congestion has be removed.
-  send_bucket_->InsertPacket(prio, ssrc, seq_num++, now_ms(), size, false);
-  EXPECT_CALL(callback_, TimeToSendPacket).Times(0);
+  Send(RtpPacketToSend::Type::kVideo, ssrc, seq_num++, now_ms(), size);
+  EXPECT_CALL(callback_, SendPacket).Times(0);
   clock_.AdvanceTimeMilliseconds(5);
   send_bucket_->Process();
 }
 
-TEST_F(PacedSenderTest, ResumesSendingWhenCongestionEnds) {
+TEST_P(PacedSenderTest, ResumesSendingWhenCongestionEnds) {
   uint32_t ssrc = 202020;
   uint16_t sequence_number = 1000;
   int64_t kPacketSize = 250;
@@ -827,18 +981,17 @@ TEST_F(PacedSenderTest, ResumesSendingWhenCongestionEnds) {
   int sent_data = 0;
   while (sent_data < kCongestionWindow) {
     sent_data += kPacketSize;
-    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                        clock_.TimeInMilliseconds(), kPacketSize, false);
+    SendAndExpectPacket(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+                        clock_.TimeInMilliseconds(), kPacketSize);
     clock_.AdvanceTimeMilliseconds(5);
     send_bucket_->Process();
   }
   ::testing::Mock::VerifyAndClearExpectations(&callback_);
-  EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, _, _)).Times(0);
+  EXPECT_CALL(callback_, SendPacket).Times(0);
   int unacked_packets = 0;
   for (int duration = 0; duration < kCongestionTimeMs; duration += 5) {
-    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                               sequence_number++, clock_.TimeInMilliseconds(),
-                               kPacketSize, false);
+    Send(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+         clock_.TimeInMilliseconds(), kPacketSize);
     unacked_packets++;
     clock_.AdvanceTimeMilliseconds(5);
     send_bucket_->Process();
@@ -848,9 +1001,7 @@ TEST_F(PacedSenderTest, ResumesSendingWhenCongestionEnds) {
   // First mark half of the congested packets as cleared and make sure that just
   // as many are sent
   int ack_count = kCongestionCount / 2;
-  EXPECT_CALL(callback_, TimeToSendPacket(ssrc, _, _, false, _))
-      .Times(ack_count)
-      .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
+  EXPECT_CALL(callback_, SendPacket(ssrc, _, _, false, _)).Times(ack_count);
   send_bucket_->UpdateOutstandingData(kCongestionWindow -
                                       kPacketSize * ack_count);
 
@@ -863,9 +1014,8 @@ TEST_F(PacedSenderTest, ResumesSendingWhenCongestionEnds) {
 
   // Second make sure all packets are sent if sent packets are continuously
   // marked as acked.
-  EXPECT_CALL(callback_, TimeToSendPacket(ssrc, _, _, false, _))
-      .Times(unacked_packets)
-      .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
+  EXPECT_CALL(callback_, SendPacket(ssrc, _, _, false, _))
+      .Times(unacked_packets);
   for (int duration = 0; duration < kCongestionTimeMs; duration += 5) {
     send_bucket_->UpdateOutstandingData(0);
     clock_.AdvanceTimeMilliseconds(5);
@@ -873,7 +1023,7 @@ TEST_F(PacedSenderTest, ResumesSendingWhenCongestionEnds) {
   }
 }
 
-TEST_F(PacedSenderTest, Pause) {
+TEST_P(PacedSenderTest, Pause) {
   uint32_t ssrc_low_priority = 12345;
   uint32_t ssrc = 12346;
   uint32_t ssrc_high_priority = 12347;
@@ -888,8 +1038,8 @@ TEST_F(PacedSenderTest, Pause) {
   const size_t packets_to_send_per_interval =
       kTargetBitrateBps * kPaceMultiplier / (8 * 250 * 200);
   for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
-    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                        clock_.TimeInMilliseconds(), 250, false);
+    SendAndExpectPacket(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+                        clock_.TimeInMilliseconds(), 250);
   }
 
   send_bucket_->Process();
@@ -897,25 +1047,22 @@ TEST_F(PacedSenderTest, Pause) {
   send_bucket_->Pause();
 
   for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
-    send_bucket_->InsertPacket(PacedSender::kLowPriority, ssrc_low_priority,
-                               sequence_number++, capture_time_ms, 250, false);
-    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                               sequence_number++, capture_time_ms, 250, false);
-    send_bucket_->InsertPacket(PacedSender::kHighPriority, ssrc_high_priority,
-                               sequence_number++, capture_time_ms, 250, false);
+    Send(RtpPacketToSend::Type::kVideo, ssrc_low_priority, sequence_number++,
+         capture_time_ms, 250);
+    Send(RtpPacketToSend::Type::kRetransmission, ssrc, sequence_number++,
+         capture_time_ms, 250);
+    Send(RtpPacketToSend::Type::kAudio, ssrc_high_priority, sequence_number++,
+         capture_time_ms, 250);
   }
   clock_.AdvanceTimeMilliseconds(10000);
   int64_t second_capture_time_ms = clock_.TimeInMilliseconds();
   for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
-    send_bucket_->InsertPacket(PacedSender::kLowPriority, ssrc_low_priority,
-                               sequence_number++, second_capture_time_ms, 250,
-                               false);
-    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                               sequence_number++, second_capture_time_ms, 250,
-                               false);
-    send_bucket_->InsertPacket(PacedSender::kHighPriority, ssrc_high_priority,
-                               sequence_number++, second_capture_time_ms, 250,
-                               false);
+    Send(RtpPacketToSend::Type::kVideo, ssrc_low_priority, sequence_number++,
+         second_capture_time_ms, 250);
+    Send(RtpPacketToSend::Type::kRetransmission, ssrc, sequence_number++,
+         second_capture_time_ms, 250);
+    Send(RtpPacketToSend::Type::kAudio, ssrc_high_priority, sequence_number++,
+         second_capture_time_ms, 250);
   }
 
   // Expect everything to be queued.
@@ -923,18 +1070,21 @@ TEST_F(PacedSenderTest, Pause) {
             send_bucket_->QueueInMs());
 
   EXPECT_EQ(0, send_bucket_->TimeUntilNextProcess());
-  EXPECT_CALL(callback_, TimeToSendPadding(1, _)).Times(1);
+  EXPECT_CALL(callback_, SendPadding(1)).WillOnce(Return(1));
+  ExpectSendPadding();
   send_bucket_->Process();
 
   int64_t expected_time_until_send = 500;
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
+  EXPECT_CALL(callback_, SendPadding).Times(0);
   while (expected_time_until_send >= 5) {
     send_bucket_->Process();
     clock_.AdvanceTimeMilliseconds(5);
     expected_time_until_send -= 5;
   }
+
   ::testing::Mock::VerifyAndClearExpectations(&callback_);
-  EXPECT_CALL(callback_, TimeToSendPadding(1, _)).Times(1);
+  EXPECT_CALL(callback_, SendPadding(1)).WillOnce(Return(1));
+  ExpectSendPadding();
   clock_.AdvanceTimeMilliseconds(5);
   send_bucket_->Process();
   ::testing::Mock::VerifyAndClearExpectations(&callback_);
@@ -944,36 +1094,29 @@ TEST_F(PacedSenderTest, Pause) {
   {
     ::testing::InSequence sequence;
     EXPECT_CALL(callback_,
-                TimeToSendPacket(ssrc_high_priority, _, capture_time_ms, _, _))
-        .Times(packets_to_send_per_interval)
-        .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
-    EXPECT_CALL(callback_, TimeToSendPacket(ssrc_high_priority, _,
-                                            second_capture_time_ms, _, _))
-        .Times(packets_to_send_per_interval)
-        .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
+                SendPacket(ssrc_high_priority, _, capture_time_ms, _, _))
+        .Times(packets_to_send_per_interval);
+    EXPECT_CALL(callback_,
+                SendPacket(ssrc_high_priority, _, second_capture_time_ms, _, _))
+        .Times(packets_to_send_per_interval);
 
     for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
-      EXPECT_CALL(callback_, TimeToSendPacket(ssrc, _, capture_time_ms, _, _))
-          .Times(1)
-          .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
+      EXPECT_CALL(callback_, SendPacket(ssrc, _, capture_time_ms, _, _))
+          .Times(1);
+    }
+    for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
+      EXPECT_CALL(callback_, SendPacket(ssrc, _, second_capture_time_ms, _, _))
+          .Times(1);
     }
     for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
       EXPECT_CALL(callback_,
-                  TimeToSendPacket(ssrc, _, second_capture_time_ms, _, _))
-          .Times(1)
-          .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
+                  SendPacket(ssrc_low_priority, _, capture_time_ms, _, _))
+          .Times(1);
     }
     for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
-      EXPECT_CALL(callback_,
-                  TimeToSendPacket(ssrc_low_priority, _, capture_time_ms, _, _))
-          .Times(1)
-          .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
-    }
-    for (size_t i = 0; i < packets_to_send_per_interval; ++i) {
-      EXPECT_CALL(callback_, TimeToSendPacket(ssrc_low_priority, _,
-                                              second_capture_time_ms, _, _))
-          .Times(1)
-          .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
+      EXPECT_CALL(callback_, SendPacket(ssrc_low_priority, _,
+                                        second_capture_time_ms, _, _))
+          .Times(1);
     }
   }
   send_bucket_->Resume();
@@ -993,7 +1136,18 @@ TEST_F(PacedSenderTest, Pause) {
   EXPECT_EQ(0, send_bucket_->QueueInMs());
 }
 
-TEST_F(PacedSenderTest, ResendPacket) {
+TEST_P(PacedSenderTest, ResendPacket) {
+  if (GetParam() == PacerMode::kOwnPackets) {
+    // This test only makes sense when re-sending is supported.
+    return;
+  }
+
+  MockCallback callback;
+
+  // Need to initialize PacedSender after we initialize clock.
+  send_bucket_ = absl::make_unique<PacedSender>(&clock_, &callback, nullptr);
+  Init();
+
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
   int64_t capture_time_ms = clock_.TimeInMilliseconds();
@@ -1009,8 +1163,8 @@ TEST_F(PacedSenderTest, ResendPacket) {
   EXPECT_EQ(clock_.TimeInMilliseconds() - capture_time_ms,
             send_bucket_->QueueInMs());
   // Fails to send first packet so only one call.
-  EXPECT_CALL(callback_, TimeToSendPacket(ssrc, sequence_number,
-                                          capture_time_ms, false, _))
+  EXPECT_CALL(callback, TimeToSendPacket(ssrc, sequence_number, capture_time_ms,
+                                         false, _))
       .Times(1)
       .WillOnce(Return(RtpPacketSendResult::kTransportUnavailable));
   clock_.AdvanceTimeMilliseconds(10000);
@@ -1021,13 +1175,11 @@ TEST_F(PacedSenderTest, ResendPacket) {
             send_bucket_->QueueInMs());
 
   // Fails to send second packet.
-  EXPECT_CALL(callback_, TimeToSendPacket(ssrc, sequence_number,
-                                          capture_time_ms, false, _))
-      .Times(1)
+  EXPECT_CALL(callback, TimeToSendPacket(ssrc, sequence_number, capture_time_ms,
+                                         false, _))
       .WillOnce(Return(RtpPacketSendResult::kSuccess));
-  EXPECT_CALL(callback_, TimeToSendPacket(ssrc, sequence_number + 1,
-                                          capture_time_ms + 1, false, _))
-      .Times(1)
+  EXPECT_CALL(callback, TimeToSendPacket(ssrc, sequence_number + 1,
+                                         capture_time_ms + 1, false, _))
       .WillOnce(Return(RtpPacketSendResult::kTransportUnavailable));
   clock_.AdvanceTimeMilliseconds(10000);
   send_bucket_->Process();
@@ -1037,16 +1189,15 @@ TEST_F(PacedSenderTest, ResendPacket) {
             send_bucket_->QueueInMs());
 
   // Send second packet and queue becomes empty.
-  EXPECT_CALL(callback_, TimeToSendPacket(ssrc, sequence_number + 1,
-                                          capture_time_ms + 1, false, _))
-      .Times(1)
+  EXPECT_CALL(callback, TimeToSendPacket(ssrc, sequence_number + 1,
+                                         capture_time_ms + 1, false, _))
       .WillOnce(Return(RtpPacketSendResult::kSuccess));
   clock_.AdvanceTimeMilliseconds(10000);
   send_bucket_->Process();
   EXPECT_EQ(0, send_bucket_->QueueInMs());
 }
 
-TEST_F(PacedSenderTest, ExpectedQueueTimeMs) {
+TEST_P(PacedSenderTest, ExpectedQueueTimeMs) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
   const size_t kNumPackets = 60;
@@ -1056,8 +1207,8 @@ TEST_F(PacedSenderTest, ExpectedQueueTimeMs) {
 
   send_bucket_->SetPacingRates(30000 * kPaceMultiplier, 0);
   for (size_t i = 0; i < kNumPackets; ++i) {
-    SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                        clock_.TimeInMilliseconds(), kPacketSize, false);
+    SendAndExpectPacket(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+                        clock_.TimeInMilliseconds(), kPacketSize);
   }
 
   // Queue in ms = 1000 * (bytes in queue) *8 / (bits per second)
@@ -1083,14 +1234,14 @@ TEST_F(PacedSenderTest, ExpectedQueueTimeMs) {
               static_cast<int64_t>(1000 * kPacketSize * 8 / kMaxBitrate));
 }
 
-TEST_F(PacedSenderTest, QueueTimeGrowsOverTime) {
+TEST_P(PacedSenderTest, QueueTimeGrowsOverTime) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
   EXPECT_EQ(0, send_bucket_->QueueInMs());
 
   send_bucket_->SetPacingRates(30000 * kPaceMultiplier, 0);
-  SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number,
-                      clock_.TimeInMilliseconds(), 1200, false);
+  SendAndExpectPacket(RtpPacketToSend::Type::kVideo, ssrc, sequence_number,
+                      clock_.TimeInMilliseconds(), 1200);
 
   clock_.AdvanceTimeMilliseconds(500);
   EXPECT_EQ(500, send_bucket_->QueueInMs());
@@ -1098,7 +1249,7 @@ TEST_F(PacedSenderTest, QueueTimeGrowsOverTime) {
   EXPECT_EQ(0, send_bucket_->QueueInMs());
 }
 
-TEST_F(PacedSenderTest, ProbingWithInsertedPackets) {
+TEST_P(PacedSenderTest, ProbingWithInsertedPackets) {
   const size_t kPacketSize = 1200;
   const int kInitialBitrateBps = 300000;
   uint32_t ssrc = 12346;
@@ -1111,9 +1262,8 @@ TEST_F(PacedSenderTest, ProbingWithInsertedPackets) {
   send_bucket_->SetPacingRates(kInitialBitrateBps * kPaceMultiplier, 0);
 
   for (int i = 0; i < 10; ++i) {
-    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                               sequence_number++, clock_.TimeInMilliseconds(),
-                               kPacketSize, false);
+    Send(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+         clock_.TimeInMilliseconds(), kPacketSize);
   }
 
   int64_t start = clock_.TimeInMilliseconds();
@@ -1144,7 +1294,7 @@ TEST_F(PacedSenderTest, ProbingWithInsertedPackets) {
               kSecondClusterBps, kBitrateProbingError);
 }
 
-TEST_F(PacedSenderTest, ProbingWithPaddingSupport) {
+TEST_P(PacedSenderTest, ProbingWithPaddingSupport) {
   const size_t kPacketSize = 1200;
   const int kInitialBitrateBps = 300000;
   uint32_t ssrc = 12346;
@@ -1156,9 +1306,8 @@ TEST_F(PacedSenderTest, ProbingWithPaddingSupport) {
   send_bucket_->SetPacingRates(kInitialBitrateBps * kPaceMultiplier, 0);
 
   for (int i = 0; i < 3; ++i) {
-    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                               sequence_number++, clock_.TimeInMilliseconds(),
-                               kPacketSize, false);
+    Send(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+         clock_.TimeInMilliseconds(), kPacketSize);
   }
 
   int64_t start = clock_.TimeInMilliseconds();
@@ -1180,7 +1329,7 @@ TEST_F(PacedSenderTest, ProbingWithPaddingSupport) {
               kFirstClusterBps, kBitrateProbingError);
 }
 
-TEST_F(PacedSenderTest, PaddingOveruse) {
+TEST_P(PacedSenderTest, PaddingOveruse) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
   const size_t kPacketSize = 1200;
@@ -1188,8 +1337,8 @@ TEST_F(PacedSenderTest, PaddingOveruse) {
   send_bucket_->Process();
   send_bucket_->SetPacingRates(60000 * kPaceMultiplier, 0);
 
-  SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                      clock_.TimeInMilliseconds(), kPacketSize, false);
+  SendAndExpectPacket(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+                      clock_.TimeInMilliseconds(), kPacketSize);
   send_bucket_->Process();
 
   // Add 30kbit padding. When increasing budget, media budget will increase from
@@ -1197,63 +1346,20 @@ TEST_F(PacedSenderTest, PaddingOveruse) {
   clock_.AdvanceTimeMilliseconds(5);
   send_bucket_->SetPacingRates(60000 * kPaceMultiplier, 30000);
 
-  SendAndExpectPacket(PacedSender::kNormalPriority, ssrc, sequence_number++,
-                      clock_.TimeInMilliseconds(), kPacketSize, false);
+  SendAndExpectPacket(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+                      clock_.TimeInMilliseconds(), kPacketSize);
   EXPECT_LT(5u, send_bucket_->ExpectedQueueTimeMs());
   // Don't send padding if queue is non-empty, even if padding budget > 0.
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _)).Times(0);
+  EXPECT_CALL(callback_, SendPadding).Times(0);
   send_bucket_->Process();
 }
 
-// TODO(philipel): Move to PacketQueue2 unittests.
-#if 0
-TEST_F(PacedSenderTest, AverageQueueTime) {
-  uint32_t ssrc = 12346;
-  uint16_t sequence_number = 1234;
-  const size_t kPacketSize = 1200;
-  const int kBitrateBps = 10 * kPacketSize * 8;  // 10 packets per second.
+TEST_P(PacedSenderTest, ProbeClusterId) {
+  MockCallback callback;
 
-  send_bucket_->SetPacingRates(kBitrateBps * kPaceMultiplier, 0);
+  send_bucket_ = absl::make_unique<PacedSender>(&clock_, &callback, nullptr);
+  Init();
 
-  EXPECT_EQ(0, send_bucket_->AverageQueueTimeMs());
-
-  int64_t first_capture_time = clock_.TimeInMilliseconds();
-  send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                             sequence_number, first_capture_time, kPacketSize,
-                             false);
-  clock_.AdvanceTimeMilliseconds(10);
-  send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                             sequence_number + 1, clock_.TimeInMilliseconds(),
-                             kPacketSize, false);
-  clock_.AdvanceTimeMilliseconds(10);
-
-  EXPECT_EQ((20 + 10) / 2, send_bucket_->AverageQueueTimeMs());
-
-  // Only first packet (queued for 20ms) should be removed, leave the second
-  // packet (queued for 10ms) alone in the queue.
-  EXPECT_CALL(callback_, TimeToSendPacket(ssrc, sequence_number,
-                                          first_capture_time, false, _))
-      .Times(1)
-      .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
-  send_bucket_->Process();
-
-  EXPECT_EQ(10, send_bucket_->AverageQueueTimeMs());
-
-  clock_.AdvanceTimeMilliseconds(10);
-  EXPECT_CALL(callback_, TimeToSendPacket(ssrc, sequence_number + 1,
-                                          first_capture_time + 10, false, _))
-      .Times(1)
-      .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
-  for (int i = 0; i < 3; ++i) {
-    clock_.AdvanceTimeMilliseconds(30);  // Max delta.
-    send_bucket_->Process();
-  }
-
-  EXPECT_EQ(0, send_bucket_->AverageQueueTimeMs());
-}
-#endif
-
-TEST_F(PacedSenderTest, ProbeClusterId) {
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
   const size_t kPacketSize = 1200;
@@ -1262,28 +1368,41 @@ TEST_F(PacedSenderTest, ProbeClusterId) {
                                kTargetBitrateBps);
   send_bucket_->SetProbingEnabled(true);
   for (int i = 0; i < 10; ++i) {
-    send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                               sequence_number + i, clock_.TimeInMilliseconds(),
-                               kPacketSize, false);
+    Send(RtpPacketToSend::Type::kVideo, ssrc, sequence_number++,
+         clock_.TimeInMilliseconds(), kPacketSize);
   }
 
   // First probing cluster.
-  EXPECT_CALL(callback_,
-              TimeToSendPacket(_, _, _, _,
-                               Field(&PacedPacketInfo::probe_cluster_id, 0)))
-      .Times(5)
-      .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
+  if (GetParam() == PacerMode::kReferencePackets) {
+    EXPECT_CALL(callback,
+                TimeToSendPacket(_, _, _, _,
+                                 Field(&PacedPacketInfo::probe_cluster_id, 0)))
+        .Times(5)
+        .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
+  } else {
+    EXPECT_CALL(callback,
+                SendPacket(_, Field(&PacedPacketInfo::probe_cluster_id, 0)))
+        .Times(5);
+  }
+
   for (int i = 0; i < 5; ++i) {
     clock_.AdvanceTimeMilliseconds(20);
     send_bucket_->Process();
   }
 
   // Second probing cluster.
-  EXPECT_CALL(callback_,
-              TimeToSendPacket(_, _, _, _,
-                               Field(&PacedPacketInfo::probe_cluster_id, 1)))
-      .Times(5)
-      .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
+  if (GetParam() == PacerMode::kReferencePackets) {
+    EXPECT_CALL(callback,
+                TimeToSendPacket(_, _, _, _,
+                                 Field(&PacedPacketInfo::probe_cluster_id, 1)))
+        .Times(5)
+        .WillRepeatedly(Return(RtpPacketSendResult::kSuccess));
+  } else {
+    EXPECT_CALL(callback,
+                SendPacket(_, Field(&PacedPacketInfo::probe_cluster_id, 1)))
+        .Times(5);
+  }
+
   for (int i = 0; i < 5; ++i) {
     clock_.AdvanceTimeMilliseconds(20);
     send_bucket_->Process();
@@ -1292,15 +1411,38 @@ TEST_F(PacedSenderTest, ProbeClusterId) {
   // Needed for the Field comparer below.
   const int kNotAProbe = PacedPacketInfo::kNotAProbe;
   // No more probing packets.
-  EXPECT_CALL(callback_,
-              TimeToSendPadding(
-                  _, Field(&PacedPacketInfo::probe_cluster_id, kNotAProbe)))
-      .Times(1)
-      .WillRepeatedly(Return(500));
+  if (GetParam() == PacerMode::kReferencePackets) {
+    EXPECT_CALL(callback,
+                TimeToSendPadding(
+                    _, Field(&PacedPacketInfo::probe_cluster_id, kNotAProbe)))
+        .WillOnce(Return(500));
+  } else {
+    EXPECT_CALL(callback, GeneratePadding).WillOnce([&](size_t padding_bytes) {
+      std::vector<std::unique_ptr<RtpPacketToSend>> padding_packets;
+      padding_packets.emplace_back(
+          BuildPacket(RtpPacketToSend::Type::kPadding, ssrc, sequence_number++,
+                      clock_.TimeInMilliseconds(), padding_bytes));
+      return padding_packets;
+    });
+    EXPECT_CALL(
+        callback,
+        SendPacket(_, Field(&PacedPacketInfo::probe_cluster_id, kNotAProbe)))
+        .Times(1);
+  }
   send_bucket_->Process();
 }
 
-TEST_F(PacedSenderTest, AvoidBusyLoopOnSendFailure) {
+TEST_P(PacedSenderTest, AvoidBusyLoopOnSendFailure) {
+  if (GetParam() != PacerMode::kReferencePackets) {
+    // This test only makes sense when send failure is supported.
+    return;
+  }
+
+  MockCallback callback;
+
+  send_bucket_ = absl::make_unique<PacedSender>(&clock_, &callback, nullptr);
+  Init();
+
   uint32_t ssrc = 12346;
   uint16_t sequence_number = 1234;
   const size_t kPacketSize = kFirstClusterBps / (8000 / 10);
@@ -1308,19 +1450,16 @@ TEST_F(PacedSenderTest, AvoidBusyLoopOnSendFailure) {
   send_bucket_->SetPacingRates(kTargetBitrateBps * kPaceMultiplier,
                                kTargetBitrateBps);
   send_bucket_->SetProbingEnabled(true);
-  send_bucket_->InsertPacket(PacedSender::kNormalPriority, ssrc,
-                             sequence_number, clock_.TimeInMilliseconds(),
-                             kPacketSize, false);
+  Send(RtpPacketToSend::Type::kVideo, ssrc, sequence_number,
+       clock_.TimeInMilliseconds(), kPacketSize);
 
-  EXPECT_CALL(callback_, TimeToSendPacket(_, _, _, _, _))
+  EXPECT_CALL(callback, TimeToSendPacket)
       .WillOnce(Return(RtpPacketSendResult::kSuccess));
   send_bucket_->Process();
   EXPECT_EQ(10, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(9);
 
-  EXPECT_CALL(callback_, TimeToSendPadding(_, _))
-      .Times(2)
-      .WillRepeatedly(Return(0));
+  EXPECT_CALL(callback, TimeToSendPadding).Times(2).WillRepeatedly(Return(0));
   send_bucket_->Process();
   EXPECT_EQ(1, send_bucket_->TimeUntilNextProcess());
   clock_.AdvanceTimeMilliseconds(1);
@@ -1328,7 +1467,16 @@ TEST_F(PacedSenderTest, AvoidBusyLoopOnSendFailure) {
   EXPECT_EQ(5, send_bucket_->TimeUntilNextProcess());
 }
 
-TEST_F(PacedSenderTest, OwnedPacketPrioritizedOnType) {
+TEST_P(PacedSenderTest, OwnedPacketPrioritizedOnType) {
+  if (GetParam() != PacerMode::kOwnPackets) {
+    // This test only makes sense when using the new code path.
+    return;
+  }
+
+  MockCallback callback;
+  send_bucket_ = absl::make_unique<PacedSender>(&clock_, &callback, nullptr);
+  Init();
+
   // Insert a packet of each type, from low to high priority. Since priority
   // is weighted higher than insert order, these should come out of the pacer
   // in backwards order.
@@ -1342,91 +1490,29 @@ TEST_F(PacedSenderTest, OwnedPacketPrioritizedOnType) {
 
   ::testing::InSequence seq;
   EXPECT_CALL(
-      callback_,
+      callback,
       SendPacket(Pointee(Property(&RtpPacketToSend::Ssrc, kAudioSsrc)), _));
   EXPECT_CALL(
-      callback_,
+      callback,
       SendPacket(Pointee(Property(&RtpPacketToSend::Ssrc, kVideoRtxSsrc)), _));
   EXPECT_CALL(
-      callback_,
+      callback,
       SendPacket(Pointee(Property(&RtpPacketToSend::Ssrc, kVideoSsrc)), _));
   EXPECT_CALL(
-      callback_,
+      callback,
       SendPacket(Pointee(Property(&RtpPacketToSend::Ssrc, kFlexFecSsrc)), _));
   EXPECT_CALL(
-      callback_,
+      callback,
       SendPacket(Pointee(Property(&RtpPacketToSend::Ssrc, kVideoRtxSsrc)), _));
 
   clock_.AdvanceTimeMilliseconds(200);
   send_bucket_->Process();
 }
 
-// TODO(philipel): Move to PacketQueue2 unittests.
-#if 0
-TEST_F(PacedSenderTest, QueueTimeWithPause) {
-  const size_t kPacketSize = 1200;
-  const uint32_t kSsrc = 12346;
-  uint16_t sequence_number = 1234;
-
-  send_bucket_->InsertPacket(PacedSender::kNormalPriority, kSsrc,
-      sequence_number++, clock_.TimeInMilliseconds(),
-      kPacketSize, false);
-  send_bucket_->InsertPacket(PacedSender::kNormalPriority, kSsrc,
-      sequence_number++, clock_.TimeInMilliseconds(),
-      kPacketSize, false);
-
-  clock_.AdvanceTimeMilliseconds(100);
-  EXPECT_EQ(100, send_bucket_->AverageQueueTimeMs());
-
-  send_bucket_->Pause();
-  EXPECT_EQ(100, send_bucket_->AverageQueueTimeMs());
-
-  // In paused state, queue time should not increase.
-  clock_.AdvanceTimeMilliseconds(100);
-  EXPECT_EQ(100, send_bucket_->AverageQueueTimeMs());
-
-  send_bucket_->Resume();
-  EXPECT_EQ(100, send_bucket_->AverageQueueTimeMs());
-
-  clock_.AdvanceTimeMilliseconds(100);
-  EXPECT_EQ(200, send_bucket_->AverageQueueTimeMs());
-}
-
-TEST_F(PacedSenderTest, QueueTimePausedDuringPush) {
-  const size_t kPacketSize = 1200;
-  const uint32_t kSsrc = 12346;
-  uint16_t sequence_number = 1234;
-
-  send_bucket_->InsertPacket(PacedSender::kNormalPriority, kSsrc,
-      sequence_number++, clock_.TimeInMilliseconds(),
-      kPacketSize, false);
-  clock_.AdvanceTimeMilliseconds(100);
-  send_bucket_->Pause();
-  clock_.AdvanceTimeMilliseconds(100);
-  EXPECT_EQ(100, send_bucket_->AverageQueueTimeMs());
-
-  // Add a new packet during paused phase.
-  send_bucket_->InsertPacket(PacedSender::kNormalPriority, kSsrc,
-      sequence_number++, clock_.TimeInMilliseconds(),
-      kPacketSize, false);
-  // From a queue time perspective, packet inserted during pause will have zero
-  // queue time. Average queue time will then be (0 + 100) / 2 = 50.
-  EXPECT_EQ(50, send_bucket_->AverageQueueTimeMs());
-
-  clock_.AdvanceTimeMilliseconds(100);
-  EXPECT_EQ(50, send_bucket_->AverageQueueTimeMs());
-
-  send_bucket_->Resume();
-  EXPECT_EQ(50, send_bucket_->AverageQueueTimeMs());
-
-  clock_.AdvanceTimeMilliseconds(100);
-  EXPECT_EQ(150, send_bucket_->AverageQueueTimeMs());
-}
-#endif
-
-// TODO(sprang): Extract PacketQueue from PacedSender so that we can test
-// removing elements while paused. (This is possible, but only because of semi-
-// racy condition so can't easily be tested).
+INSTANTIATE_TEST_SUITE_P(ReferencingAndOwningPackets,
+                         PacedSenderTest,
+                         ::testing::Values(PacerMode::kReferencePackets,
+                                           PacerMode::kOwnPackets));
 
 }  // namespace test
 }  // namespace webrtc
