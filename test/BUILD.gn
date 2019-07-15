@@ -937,6 +937,9 @@ if (!build_with_chromium && is_android) {
 }
 
 rtc_source_set("call_config_utils") {
+  # TODO(bugs.webrtc.org/10814): Remove rtc_json_suppressions as soon as it
+  # gets removed upstream.
+  public_configs = [ "../rtc_base:rtc_json_suppressions" ]
   sources = [
     "call_config_utils.cc",
     "call_config_utils.h",
