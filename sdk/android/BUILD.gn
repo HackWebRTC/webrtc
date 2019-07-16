@@ -840,7 +840,9 @@ if (is_android) {
       ":libvpx_vp9_jni",
     ]
   }
+}
 
+if (current_os == "linux" || is_android) {
   ######################
   # Native API targets #
   ######################
@@ -877,7 +879,9 @@ if (is_android) {
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
+}
 
+if (is_android) {
   rtc_static_library("native_api_base") {
     visibility = [ "*" ]
     sources = [
@@ -1011,7 +1015,9 @@ if (is_android) {
       "//rtc_base:base_java",
     ]
   }
+}
 
+if (current_os == "linux" || is_android) {
   # Internal code that is needed by native_api_jni. The code cannot be placed in
   # base_jni because native_api_jni depends on the code (and base_jni depends on
   # native_api_jni).
@@ -1025,7 +1031,9 @@ if (is_android) {
       "../../rtc_base:checks",
     ]
   }
+}
 
+if (is_android) {
   rtc_static_library("videoframe_jni") {
     sources = [
       "src/jni/video_frame.cc",
@@ -1163,7 +1171,9 @@ if (is_android) {
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
+}
 
+if (current_os == "linux" || is_android) {
   #########################
   # Generated JNI targets #
   #########################
@@ -1344,7 +1354,9 @@ if (is_android) {
     namespace = "webrtc::jni"
     jni_generator_include = "//sdk/android/src/jni/jni_generator_helper.h"
   }
+}
 
+if (is_android) {
   ################
   # Test targets #
   ################
