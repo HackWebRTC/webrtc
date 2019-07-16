@@ -72,8 +72,8 @@ int main(int argc, char* argv[]) {
 
   // InitFieldTrialsFromString stores the char*, so the char array must outlive
   // the application.
-  webrtc::field_trial::InitFieldTrialsFromString(
-      absl::GetFlag(FLAGS_force_fieldtrials).c_str());
+  const std::string force_field_trials = absl::GetFlag(FLAGS_force_fieldtrials);
+  webrtc::field_trial::InitFieldTrialsFromString(force_field_trials.c_str());
 
   int port = absl::GetFlag(FLAGS_port);
 

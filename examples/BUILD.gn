@@ -707,6 +707,8 @@ if (is_linux || is_win) {
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_json",
       "../test:video_test_common",
+      "//third_party/abseil-cpp/absl/flags:flag",
+      "//third_party/abseil-cpp/absl/flags:parse",
       "//third_party/libyuv",
     ]
   }
@@ -870,6 +872,8 @@ if (!build_with_chromium) {
       "../rtc_base",
       "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
+      "//third_party/abseil-cpp/absl/flags:flag",
+      "//third_party/abseil-cpp/absl/flags:parse",
     ]
   }
 }
