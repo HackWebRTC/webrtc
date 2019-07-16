@@ -16,14 +16,16 @@
 #include <memory>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "absl/algorithm/container.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/flags.h"
 #include "rtc_tools/event_log_visualizer/analyzer.h"
 #include "rtc_tools/event_log_visualizer/plot_base.h"
 #include "rtc_tools/event_log_visualizer/plot_protobuf.h"
@@ -32,58 +34,63 @@
 #include "test/field_trial.h"
 #include "test/testsupport/file_utils.h"
 
-WEBRTC_DEFINE_string(
-    plot,
-    "default",
-    "A comma separated list of plot names. See below for valid options.");
+ABSL_FLAG(std::string,
+          plot,
+          "default",
+          "A comma separated list of plot names. See below for valid options.");
 
-WEBRTC_DEFINE_string(
+ABSL_FLAG(
+    std::string,
     force_fieldtrials,
     "",
     "Field trials control experimental feature code which can be forced. "
     "E.g. running with --force_fieldtrials=WebRTC-FooFeature/Enabled/"
     " will assign the group Enabled to field trial WebRTC-FooFeature. Multiple "
     "trials are separated by \"/\"");
-WEBRTC_DEFINE_string(wav_filename,
-                     "",
-                     "Path to wav file used for simulation of jitter buffer");
-WEBRTC_DEFINE_bool(help, false, "prints this message");
+ABSL_FLAG(std::string,
+          wav_filename,
+          "",
+          "Path to wav file used for simulation of jitter buffer");
 
-WEBRTC_DEFINE_bool(
-    show_detector_state,
-    false,
-    "Show the state of the delay based BWE detector on the total "
-    "bitrate graph");
+ABSL_FLAG(bool,
+          show_detector_state,
+          false,
+          "Show the state of the delay based BWE detector on the total "
+          "bitrate graph");
 
-WEBRTC_DEFINE_bool(show_alr_state,
-                   false,
-                   "Show the state ALR state on the total bitrate graph");
+ABSL_FLAG(bool,
+          show_alr_state,
+          false,
+          "Show the state ALR state on the total bitrate graph");
 
-WEBRTC_DEFINE_bool(
-    parse_unconfigured_header_extensions,
-    true,
-    "Attempt to parse unconfigured header extensions using the default "
-    "WebRTC mapping. This can give very misleading results if the "
-    "application negotiates a different mapping.");
+ABSL_FLAG(bool,
+          parse_unconfigured_header_extensions,
+          true,
+          "Attempt to parse unconfigured header extensions using the default "
+          "WebRTC mapping. This can give very misleading results if the "
+          "application negotiates a different mapping.");
 
-WEBRTC_DEFINE_bool(print_triage_alerts,
-                   false,
-                   "Print triage alerts, i.e. a list of potential problems.");
+ABSL_FLAG(bool,
+          print_triage_alerts,
+          false,
+          "Print triage alerts, i.e. a list of potential problems.");
 
-WEBRTC_DEFINE_bool(
-    normalize_time,
-    true,
-    "Normalize the log timestamps so that the call starts at time 0.");
+ABSL_FLAG(bool,
+          normalize_time,
+          true,
+          "Normalize the log timestamps so that the call starts at time 0.");
 
-WEBRTC_DEFINE_bool(shared_xaxis,
-                   false,
-                   "Share x-axis between all plots so that zooming in one plot "
-                   "updates all the others too. A downside is that certain "
-                   "operations like panning become much slower.");
+ABSL_FLAG(bool,
+          shared_xaxis,
+          false,
+          "Share x-axis between all plots so that zooming in one plot "
+          "updates all the others too. A downside is that certain "
+          "operations like panning become much slower.");
 
-WEBRTC_DEFINE_bool(protobuf_output,
-                   false,
-                   "Output charts as protobuf instead of python code.");
+ABSL_FLAG(bool,
+          protobuf_output,
+          false,
+          "Output charts as protobuf instead of python code.");
 
 using webrtc::Plot;
 
@@ -175,7 +182,14 @@ int main(int argc, char* argv[]) {
       program_name + " <logfile> | python\n" + "Run " + program_name +
       " --help for a list of command line options\n";
 
-  rtc::FlagList::SetFlagsFromCommandLine(&argc, argv, true);
+  std::vector<char*> args = absl::ParseCommandLine(argc, argv);
+
+  // TODO(bugs.webrtc.org/10616): Add program usage message when Abseil
+  // flags supports it.
+  if (args.size() != 2) {
+    std::cerr << "TODO(bugs.webrtc.org/10616): Print flag list again when "
+                 "Abseil supports it.\n";
+  }
 
   // Flag replacements
   std::map<std::string, std::vector<std::string>> flag_aliases = {
@@ -206,34 +220,38 @@ int main(int argc, char* argv[]) {
         "simulated_neteq_accelerate_rate", "simulated_neteq_speech_expand_rate",
         "simulated_neteq_expand_rate"}}};
 
-  std::vector<std::string> plot_flags = StrSplit(FLAG_plot, ",");
+  std::vector<std::string> plot_flags =
+      StrSplit(absl::GetFlag(FLAGS_plot), ",");
 
   // InitFieldTrialsFromString stores the char*, so the char array must outlive
   // the application.
-  webrtc::field_trial::InitFieldTrialsFromString(FLAG_force_fieldtrials);
+  const std::string field_trials = absl::GetFlag(FLAGS_force_fieldtrials);
+  webrtc::field_trial::InitFieldTrialsFromString(field_trials.c_str());
 
   webrtc::ParsedRtcEventLog::UnconfiguredHeaderExtensions header_extensions =
       webrtc::ParsedRtcEventLog::UnconfiguredHeaderExtensions::kDontParse;
-  if (FLAG_parse_unconfigured_header_extensions) {
+  if (absl::GetFlag(FLAGS_parse_unconfigured_header_extensions)) {
     header_extensions = webrtc::ParsedRtcEventLog::
         UnconfiguredHeaderExtensions::kAttemptWebrtcDefaultConfig;
   }
   webrtc::ParsedRtcEventLog parsed_log(header_extensions);
 
-  if (argc == 2) {
-    std::string filename = argv[1];
+  if (args.size() == 2) {
+    std::string filename = args[1];
     if (!parsed_log.ParseFile(filename)) {
       std::cerr << "Could not parse the entire log file." << std::endl;
       std::cerr << "Only the parsable events will be analyzed." << std::endl;
     }
   }
 
-  webrtc::EventLogAnalyzer analyzer(parsed_log, FLAG_normalize_time);
+  webrtc::EventLogAnalyzer analyzer(parsed_log,
+                                    absl::GetFlag(FLAGS_normalize_time));
   std::unique_ptr<webrtc::PlotCollection> collection;
-  if (FLAG_protobuf_output) {
+  if (absl::GetFlag(FLAGS_protobuf_output)) {
     collection.reset(new webrtc::ProtobufPlotCollection());
   } else {
-    collection.reset(new webrtc::PythonPlotCollection(FLAG_shared_xaxis));
+    collection.reset(
+        new webrtc::PythonPlotCollection(absl::GetFlag(FLAGS_shared_xaxis)));
   }
 
   PlotMap plots;
@@ -277,8 +295,9 @@ int main(int argc, char* argv[]) {
     analyzer.CreateTotalIncomingBitrateGraph(plot);
   });
   plots.RegisterPlot("outgoing_bitrate", [&](Plot* plot) {
-    analyzer.CreateTotalOutgoingBitrateGraph(plot, FLAG_show_detector_state,
-                                             FLAG_show_alr_state);
+    analyzer.CreateTotalOutgoingBitrateGraph(
+        plot, absl::GetFlag(FLAGS_show_detector_state),
+        absl::GetFlag(FLAGS_show_alr_state));
   });
   plots.RegisterPlot("incoming_stream_bitrate", [&](Plot* plot) {
     analyzer.CreateStreamBitrateGraph(webrtc::kIncomingPacket, plot);
@@ -407,8 +426,8 @@ int main(int argc, char* argv[]) {
   });
 
   std::string wav_path;
-  if (FLAG_wav_filename[0] != '\0') {
-    wav_path = FLAG_wav_filename;
+  if (!absl::GetFlag(FLAGS_wav_filename).empty()) {
+    wav_path = absl::GetFlag(FLAGS_wav_filename);
   } else {
     wav_path = webrtc::test::ResourcePath(
         "audio_processing/conversational_speech/EN_script2_F_sp2_B1", "wav");
@@ -510,32 +529,32 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  if (argc != 2 || FLAG_help) {
-    // Print usage information.
-    std::cerr << usage;
-    if (FLAG_help) {
-      rtc::FlagList::Print(nullptr, false);
-      std::cerr << "List of registered plots (for use with the --plot flag):"
-                << std::endl;
-      for (const auto& plot : plots) {
-        // TODO(terelius): Also print a help text.
-        std::cerr << "  " << plot.label << std::endl;
-      }
-      // The following flag doesn't fit the model used for the other plots.
-      std::cerr << "simulated_neteq_jitter_buffer_delay" << std::endl;
-      std::cerr << "List of plot aliases (for use with the --plot flag):"
-                << std::endl;
-      std::cerr << "  all = every registered plot" << std::endl;
-      for (const auto& alias : flag_aliases) {
-        std::cerr << "  " << alias.first << " = ";
-        for (const auto& replacement : alias.second) {
-          std::cerr << replacement << ",";
-        }
-        std::cerr << std::endl;
-      }
-    }
-    return 0;
-  }
+  // if (argc != 2) {
+  //   // Print usage information.
+  //   std::cerr << usage;
+  //   if (FLAG_help) {
+  //     rtc::FlagList::Print(nullptr, false);
+  //     std::cerr << "List of registered plots (for use with the --plot flag):"
+  //               << std::endl;
+  //     for (const auto& plot : plots) {
+  //       // TODO(terelius): Also print a help text.
+  //       std::cerr << "  " << plot.label << std::endl;
+  //     }
+  //     // The following flag doesn't fit the model used for the other plots.
+  //     std::cerr << "simulated_neteq_jitter_buffer_delay" << std::endl;
+  //     std::cerr << "List of plot aliases (for use with the --plot flag):"
+  //               << std::endl;
+  //     std::cerr << "  all = every registered plot" << std::endl;
+  //     for (const auto& alias : flag_aliases) {
+  //       std::cerr << "  " << alias.first << " = ";
+  //       for (const auto& replacement : alias.second) {
+  //         std::cerr << replacement << ",";
+  //       }
+  //       std::cerr << std::endl;
+  //     }
+  //   }
+  //   return 0;
+  // }
 
   for (const auto& plot : plots) {
     if (plot.enabled) {
@@ -565,7 +584,7 @@ int main(int argc, char* argv[]) {
 
   collection->Draw();
 
-  if (FLAG_print_triage_alerts) {
+  if (absl::GetFlag(FLAGS_print_triage_alerts)) {
     analyzer.CreateTriageNotifications();
     analyzer.PrintNotifications(stderr);
   }
