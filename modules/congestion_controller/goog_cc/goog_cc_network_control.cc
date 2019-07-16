@@ -98,7 +98,6 @@ GoogCcNetworkController::GoogCcNetworkController(NetworkControllerConfig config,
                                          network_state_predictor_.get())),
       acknowledged_bitrate_estimator_(
           absl::make_unique<AcknowledgedBitrateEstimator>(key_value_config_)),
-      overuse_predictor_(key_value_config_),
       initial_config_(config),
       last_raw_target_rate_(*config.constraints.starting_rate),
       last_pushback_target_rate_(last_raw_target_rate_),
@@ -254,16 +253,7 @@ NetworkControlUpdate GoogCcNetworkController::OnSentPacket(
   }
   bandwidth_estimation_->OnSentPacket(sent_packet);
   bool network_changed = false;
-  if (overuse_predictor_.Enabled()) {
-    overuse_predictor_.OnSentPacket(sent_packet);
-    if (estimate_ && overuse_predictor_.PredictOveruse(*estimate_)) {
-      DataRate new_target = delay_based_bwe_->TriggerOveruse(
-          sent_packet.send_time, acknowledged_bitrate_estimator_->bitrate());
-      bandwidth_estimation_->UpdateDelayBasedEstimate(sent_packet.send_time,
-                                                      new_target);
-      network_changed = true;
-    }
-  }
+
   if (congestion_window_pushback_controller_) {
     congestion_window_pushback_controller_->UpdateOutstandingData(
         sent_packet.data_in_flight.bytes());

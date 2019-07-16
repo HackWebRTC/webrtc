@@ -21,8 +21,6 @@ rtc_static_library("goog_cc") {
   sources = [
     "goog_cc_network_control.cc",
     "goog_cc_network_control.h",
-    "overuse_predictor.cc",
-    "overuse_predictor.h",
   ]
 
   deps = [
