@@ -236,11 +236,10 @@ struct NetworkStateEstimate {
 
   // Total estimated link capacity.
   DataRate link_capacity = DataRate::MinusInfinity();
-  // Lower bound of link capacity estimate.
+  // Used as a safe measure of available capacity.
   DataRate link_capacity_lower = DataRate::MinusInfinity();
-  // Expected available capacity for sending data after cross traffic is taken
-  // into consideration.
-  DataRate available_capacity = DataRate::MinusInfinity();
+  // Used as limit for increasing bitrate.
+  DataRate link_capacity_upper = DataRate::MinusInfinity();
 
   TimeDelta pre_link_buffer_delay = TimeDelta::MinusInfinity();
   TimeDelta post_link_buffer_delay = TimeDelta::MinusInfinity();
