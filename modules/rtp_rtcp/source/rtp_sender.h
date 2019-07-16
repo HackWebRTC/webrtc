@@ -320,12 +320,6 @@ class RTPSender {
   const bool send_side_bwe_with_overhead_;
   const bool legacy_packet_history_storage_mode_;
 
-  // Set by field trial "WebRTC-PayloadPadding-UseMostUsefulPacket". If set
-  // to "Enabled" this field will be true and
-  // packet_history_.GetPayloadPaddingPacket() will be called instead of
-  // packet_history_.GetBestFittingPacket() in TrySendRedundantPayloads().
-  const bool payload_padding_prefer_useful_packets_;
-
   // If true, PacedSender should only reference packets as in legacy mode.
   // If false, PacedSender may have direct ownership of RtpPacketToSend objects.
   // Defaults to true, will be changed to default false soon.

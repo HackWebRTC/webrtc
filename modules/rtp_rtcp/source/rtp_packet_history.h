@@ -108,11 +108,6 @@ class RtpPacketHistory {
   // current state for packet, and never updates internal state.
   absl::optional<PacketState> GetPacketState(uint16_t sequence_number) const;
 
-  // Get the packet (if any) from the history, with size closest to
-  // |packet_size|. The exact size of the packet is not guaranteed.
-  std::unique_ptr<RtpPacketToSend> GetBestFittingPacket(
-      size_t packet_size) const;
-
   // Get the packet (if any) from the history, that is deemed most likely to
   // the remote side. This is calculated from heuristics such as packet age
   // and times retransmitted. Updated the send time of the packet, so is not
@@ -203,8 +198,6 @@ class RtpPacketHistory {
 
   // Map from rtp sequence numbers to stored packet.
   std::map<uint16_t, StoredPacket> packet_history_ RTC_GUARDED_BY(lock_);
-  // Map from packet size to sequence number.
-  std::map<size_t, uint16_t> packet_size_ RTC_GUARDED_BY(lock_);
 
   // Total number of packets with StorageType::kAllowsRetransmission inserted.
   uint64_t retransmittable_packets_inserted_ RTC_GUARDED_BY(lock_);

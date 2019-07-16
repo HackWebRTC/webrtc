@@ -1229,8 +1229,6 @@ TEST_P(RtpSenderTest, OnSendPacketNotUpdatedWithoutSeqNumAllocator) {
   EXPECT_EQ(1, transport_.packets_sent());
 }
 
-// TODO(bugs.webrtc.org/8975): Remove this test when non-useful padding is
-// removed.
 TEST_P(RtpSenderTest, SendRedundantPayloads) {
   if (!GetParam().pacer_references_packets) {
     // If PacedSender owns the RTP packets, GeneratePadding() family of methods
@@ -1238,109 +1236,6 @@ TEST_P(RtpSenderTest, SendRedundantPayloads) {
     return;
   }
 
-  test::ScopedFieldTrials field_trials(
-      "WebRTC-PayloadPadding-UseMostUsefulPacket/Disabled/");
-  MockTransport transport;
-  RtpRtcp::Configuration config;
-  config.clock = &fake_clock_;
-  config.outgoing_transport = &transport;
-  config.paced_sender = &mock_paced_sender_;
-  config.media_send_ssrc = kSsrc;
-  config.rtx_send_ssrc = kRtxSsrc;
-  config.event_log = &mock_rtc_event_log_;
-  config.retransmission_rate_limiter = &retransmission_rate_limiter_;
-  rtp_sender_ = absl::make_unique<RTPSender>(config);
-
-  rtp_sender_->SetSequenceNumber(kSeqNum);
-  rtp_sender_->SetRtxPayloadType(kRtxPayload, kPayload);
-
-  uint16_t seq_num = kSeqNum;
-  rtp_sender_->SetStorePacketsStatus(true, 10);
-  int32_t rtp_header_len = kRtpHeaderSize;
-  EXPECT_EQ(
-      0, rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionAbsoluteSendTime,
-                                                 kAbsoluteSendTimeExtensionId));
-  rtp_header_len += 4;  // 4 bytes extension.
-  rtp_header_len += 4;  // 4 extra bytes common to all extension headers.
-
-  rtp_sender_->SetRtxStatus(kRtxRetransmitted | kRtxRedundantPayloads);
-
-  const size_t kNumPayloadSizes = 10;
-  const size_t kPayloadSizes[kNumPayloadSizes] = {500, 550, 600, 650, 700,
-                                                  750, 800, 850, 900, 950};
-  // Expect all packets go through the pacer.
-  EXPECT_CALL(mock_rtc_event_log_,
-              LogProxy(SameRtcEventTypeAs(RtcEvent::Type::RtpPacketOutgoing)))
-      .Times(kNumPayloadSizes);
-
-  // Send 10 packets of increasing size.
-  for (size_t i = 0; i < kNumPayloadSizes; ++i) {
-    int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
-
-    EXPECT_CALL(transport, SendRtp(_, _, _)).WillOnce(::testing::Return(true));
-
-    if (GetParam().pacer_references_packets) {
-      EXPECT_CALL(mock_paced_sender_, InsertPacket(_, kSsrc, seq_num, _, _, _));
-      SendPacket(capture_time_ms, kPayloadSizes[i]);
-      rtp_sender_->TimeToSendPacket(kSsrc, seq_num,
-                                    fake_clock_.TimeInMilliseconds(), false,
-                                    PacedPacketInfo());
-    } else {
-      EXPECT_CALL(
-          mock_paced_sender_,
-          EnqueuePacket(AllOf(
-              Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc)),
-              Pointee(Property(&RtpPacketToSend::SequenceNumber, seq_num)))));
-      auto packet = SendPacket(capture_time_ms, kPayloadSizes[i]);
-      packet->set_packet_type(RtpPacketToSend::Type::kVideo);
-      rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
-    }
-
-    ++seq_num;
-    fake_clock_.AdvanceTimeMilliseconds(33);
-  }
-
-  EXPECT_CALL(mock_rtc_event_log_,
-              LogProxy(SameRtcEventTypeAs(RtcEvent::Type::RtpPacketOutgoing)))
-      .Times(AtLeast(4));
-
-  // The amount of padding to send it too small to send a payload packet.
-  EXPECT_CALL(transport, SendRtp(_, kMaxPaddingSize + rtp_header_len, _))
-      .WillOnce(Return(true));
-  EXPECT_EQ(kMaxPaddingSize,
-            rtp_sender_->TimeToSendPadding(49, PacedPacketInfo()));
-
-  PacketOptions options;
-  EXPECT_CALL(transport,
-              SendRtp(_, kPayloadSizes[0] + rtp_header_len + kRtxHeaderSize, _))
-      .WillOnce(DoAll(SaveArg<2>(&options), Return(true)));
-  EXPECT_EQ(kPayloadSizes[0],
-            rtp_sender_->TimeToSendPadding(500, PacedPacketInfo()));
-  EXPECT_TRUE(options.is_retransmit);
-
-  EXPECT_CALL(transport, SendRtp(_,
-                                 kPayloadSizes[kNumPayloadSizes - 1] +
-                                     rtp_header_len + kRtxHeaderSize,
-                                 _))
-      .WillOnce(Return(true));
-
-  options.is_retransmit = false;
-  EXPECT_CALL(transport, SendRtp(_, kMaxPaddingSize + rtp_header_len, _))
-      .WillOnce(DoAll(SaveArg<2>(&options), Return(true)));
-  EXPECT_EQ(kPayloadSizes[kNumPayloadSizes - 1] + kMaxPaddingSize,
-            rtp_sender_->TimeToSendPadding(999, PacedPacketInfo()));
-  EXPECT_FALSE(options.is_retransmit);
-}
-
-TEST_P(RtpSenderTest, SendRedundantPayloadsUsefulPadding) {
-  if (!GetParam().pacer_references_packets) {
-    // If PacedSender owns the RTP packets, GeneratePadding() family of methods
-    // will be called instead and this test makes no sense.
-    return;
-  }
-
-  test::ScopedFieldTrials field_trials(
-      "WebRTC-PayloadPadding-UseMostUsefulPacket/Enabled/");
   MockTransport transport;
   RtpRtcp::Configuration config;
   config.clock = &fake_clock_;

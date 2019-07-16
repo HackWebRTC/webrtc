@@ -201,9 +201,6 @@ RTPSender::RTPSender(const RtpRtcp::Configuration& config)
       legacy_packet_history_storage_mode_(
           IsEnabled("WebRTC-UseRtpPacketHistoryLegacyStorageMode",
                     config.field_trials)),
-      payload_padding_prefer_useful_packets_(
-          !IsDisabled("WebRTC-PayloadPadding-UseMostUsefulPacket",
-                      config.field_trials)),
       pacer_legacy_packet_referencing_(
           !IsDisabled("WebRTC-Pacer-LegacyPacketReferencing",
                       config.field_trials)) {
@@ -293,9 +290,6 @@ RTPSender::RTPSender(
       legacy_packet_history_storage_mode_(
           field_trials.Lookup("WebRTC-UseRtpPacketHistoryLegacyStorageMode")
               .find("Enabled") == 0),
-      payload_padding_prefer_useful_packets_(
-          field_trials.Lookup("WebRTC-PayloadPadding-UseMostUsefulPacket")
-              .find("Disabled") != 0),
       pacer_legacy_packet_referencing_(
           field_trials.Lookup("WebRTC-Pacer-LegacyPacketReferencing")
               .find("Disabled") != 0) {
@@ -441,12 +435,8 @@ size_t RTPSender::TrySendRedundantPayloads(size_t bytes_to_send,
 
   int bytes_left = static_cast<int>(bytes_to_send);
   while (bytes_left >= kMinPayloadPaddingBytes) {
-    std::unique_ptr<RtpPacketToSend> packet;
-    if (payload_padding_prefer_useful_packets_) {
-      packet = packet_history_.GetPayloadPaddingPacket();
-    } else {
-      packet = packet_history_.GetBestFittingPacket(bytes_left);
-    }
+    std::unique_ptr<RtpPacketToSend> packet =
+        packet_history_.GetPayloadPaddingPacket();
 
     if (!packet)
       break;

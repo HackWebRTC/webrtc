@@ -21,16 +21,6 @@
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
-namespace {
-// Utility function to get the absolute difference in size between the provided
-// target size and the size of packet.
-size_t SizeDiff(size_t packet_size, size_t size) {
-  if (packet_size > size) {
-    return packet_size - size;
-  }
-  return size - packet_size;
-}
-}  // namespace
 
 constexpr size_t RtpPacketHistory::kMaxCapacity;
 constexpr int64_t RtpPacketHistory::kMinPacketDurationMs;
@@ -150,16 +140,6 @@ void RtpPacketHistory::PutRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
                                    : 0));
   RTC_DCHECK(it.second) << "Failed to insert packet in history.";
   StoredPacket& stored_packet = it.first->second;
-  if (stored_packet.packet_) {
-    // It is an error if this happen. But it can happen if the sequence numbers
-    // for some reason restart without that the history has been reset.
-    auto size_iterator = packet_size_.find(stored_packet.packet_->size());
-    if (size_iterator != packet_size_.end() &&
-        size_iterator->second == stored_packet.packet_->SequenceNumber()) {
-      packet_size_.erase(size_iterator);
-    }
-  }
-
   if (stored_packet.packet_->capture_time_ms() <= 0) {
     stored_packet.packet_->set_capture_time_ms(now_ms);
   }
@@ -170,7 +150,6 @@ void RtpPacketHistory::PutRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
 
   // Store the sequence number of the last send packet with this size.
   if (type != StorageType::kDontRetransmit) {
-    packet_size_[stored_packet.packet_->size()] = rtp_seq_no;
     auto it = padding_priority_.insert(&stored_packet);
     RTC_DCHECK(it.second) << "Failed to insert packet into prio set.";
   }
@@ -317,45 +296,6 @@ bool RtpPacketHistory::VerifyRtt(const RtpPacketHistory::StoredPacket& packet,
   return true;
 }
 
-std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetBestFittingPacket(
-    size_t packet_length) const {
-  rtc::CritScope cs(&lock_);
-  if (packet_size_.empty()) {
-    return nullptr;
-  }
-
-  auto size_iter_upper = packet_size_.upper_bound(packet_length);
-  auto size_iter_lower = size_iter_upper;
-  if (size_iter_upper == packet_size_.end()) {
-    --size_iter_upper;
-  }
-  if (size_iter_lower != packet_size_.begin()) {
-    --size_iter_lower;
-  }
-  const size_t upper_bound_diff =
-      SizeDiff(size_iter_upper->first, packet_length);
-  const size_t lower_bound_diff =
-      SizeDiff(size_iter_lower->first, packet_length);
-
-  const uint16_t seq_no = upper_bound_diff < lower_bound_diff
-                              ? size_iter_upper->second
-                              : size_iter_lower->second;
-  auto history_it = packet_history_.find(seq_no);
-  if (history_it == packet_history_.end()) {
-    RTC_LOG(LS_ERROR) << "Can't find packet in history with seq_no" << seq_no;
-    RTC_DCHECK(false);
-    return nullptr;
-  }
-  if (!history_it->second.packet_) {
-    RTC_LOG(LS_ERROR) << "Packet pointer is null in history for seq_no"
-                      << seq_no;
-    RTC_DCHECK(false);
-    return nullptr;
-  }
-  RtpPacketToSend* best_packet = history_it->second.packet_.get();
-  return absl::make_unique<RtpPacketToSend>(*best_packet);
-}
-
 std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetPayloadPaddingPacket() {
   // Default implementation always just returns a copy of the packet.
   return GetPayloadPaddingPacket([](const RtpPacketToSend& packet) {
@@ -423,7 +363,6 @@ bool RtpPacketHistory::SetPendingTransmission(uint16_t sequence_number) {
 
 void RtpPacketHistory::Reset() {
   packet_history_.clear();
-  packet_size_.clear();
   padding_priority_.clear();
   start_seqno_.reset();
 }
@@ -506,12 +445,6 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::RemovePacket(
     } else {
       start_seqno_.reset();
     }
-  }
-
-  auto size_iterator = packet_size_.find(rtp_packet->size());
-  if (size_iterator != packet_size_.end() &&
-      size_iterator->second == rtp_packet->SequenceNumber()) {
-    packet_size_.erase(size_iterator);
   }
 
   return rtp_packet;
