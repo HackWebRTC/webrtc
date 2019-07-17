@@ -90,6 +90,9 @@ class AudioAllocationSettings {
   FieldTrialOptional<DataRate> min_bitrate_;
   FieldTrialOptional<DataRate> max_bitrate_;
   FieldTrialParameter<DataRate> priority_bitrate_;
+  // By default the priority_bitrate is compensated for packet overhead.
+  // Use this flag to configure a raw value instead.
+  FieldTrialOptional<DataRate> priority_bitrate_raw_;
   FieldTrialOptional<double> bitrate_priority_;
 };
 }  // namespace webrtc

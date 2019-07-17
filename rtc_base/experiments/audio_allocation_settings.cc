@@ -9,6 +9,7 @@
  */
 #include "rtc_base/experiments/audio_allocation_settings.h"
 
+#include "rtc_base/logging.h"
 #include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
@@ -29,16 +30,22 @@ AudioAllocationSettings::AudioAllocationSettings()
       min_bitrate_("min"),
       max_bitrate_("max"),
       priority_bitrate_("prio_rate", DataRate::Zero()),
+      priority_bitrate_raw_("prio_rate_raw"),
       bitrate_priority_("rate_prio") {
-  ParseFieldTrial(
-      {&min_bitrate_, &max_bitrate_, &priority_bitrate_, &bitrate_priority_},
-      field_trial::FindFullName("WebRTC-Audio-Allocation"));
+  ParseFieldTrial({&min_bitrate_, &max_bitrate_, &priority_bitrate_,
+                   &priority_bitrate_raw_, &bitrate_priority_},
+                  field_trial::FindFullName("WebRTC-Audio-Allocation"));
 
   // TODO(mflodman): Keep testing this and set proper values.
   // Note: This is an early experiment currently only supported by Opus.
   if (send_side_bwe_with_overhead_) {
     constexpr int kMaxPacketSizeMs = WEBRTC_OPUS_SUPPORT_120MS_PTIME ? 120 : 60;
     min_overhead_bps_ = kOverheadPerPacket * 8 * 1000 / kMaxPacketSizeMs;
+  }
+  // priority_bitrate_raw will override priority_bitrate.
+  if (priority_bitrate_raw_ && !priority_bitrate_->IsZero()) {
+    RTC_LOG(LS_WARNING) << "'priority_bitrate' and '_raw' are mutually "
+                           "exclusive but both were configured.";
   }
 }
 
@@ -111,6 +118,9 @@ absl::optional<DataRate> AudioAllocationSettings::MaxBitrate() const {
 }
 DataRate AudioAllocationSettings::DefaultPriorityBitrate() const {
   DataRate max_overhead = DataRate::Zero();
+  if (priority_bitrate_raw_) {
+    return *priority_bitrate_raw_;
+  }
   if (send_side_bwe_with_overhead_) {
     const TimeDelta kMinPacketDuration = TimeDelta::ms(20);
     max_overhead = DataSize::bytes(kOverheadPerPacket) / kMinPacketDuration;
