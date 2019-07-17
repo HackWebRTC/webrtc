@@ -131,6 +131,23 @@ absl::optional<int> GetDecelerationTargetLevelOffsetMs() {
   return absl::nullopt;
 }
 
+absl::optional<int> GetExtraDelayMs() {
+  constexpr char kExtraDelayFieldTrial[] = "WebRTC-Audio-NetEqExtraDelay";
+  if (!webrtc::field_trial::IsEnabled(kExtraDelayFieldTrial)) {
+    return absl::nullopt;
+  }
+
+  const auto field_trial_string =
+      webrtc::field_trial::FindFullName(kExtraDelayFieldTrial);
+  int extra_delay_ms = -1;
+  sscanf(field_trial_string.c_str(), "Enabled-%d", &extra_delay_ms);
+  if (extra_delay_ms >= 0) {
+    RTC_LOG(LS_INFO) << "NetEq extra delay in milliseconds: " << extra_delay_ms;
+    return extra_delay_ms;
+  }
+  return absl::nullopt;
+}
+
 }  // namespace
 
 namespace webrtc {
@@ -166,7 +183,8 @@ DelayManager::DelayManager(size_t max_packets_in_buffer,
           field_trial::IsEnabled("WebRTC-Audio-NetEqFramelengthExperiment")),
       enable_rtx_handling_(enable_rtx_handling),
       deceleration_target_level_offset_ms_(
-          GetDecelerationTargetLevelOffsetMs()) {
+          GetDecelerationTargetLevelOffsetMs()),
+      extra_delay_ms_(GetExtraDelayMs()) {
   assert(peak_detector);  // Should never be NULL.
   RTC_CHECK(histogram_);
   RTC_DCHECK_GE(base_minimum_delay_ms_, 0);
@@ -385,6 +403,10 @@ int DelayManager::CalculateTargetLevel(int iat_packets, bool reordered) {
   target_level = std::max(target_level, 1);
   // Scale to Q8 and assign to member variable.
   target_level_ = target_level << 8;
+  if (extra_delay_ms_ && packet_len_ms_ > 0) {
+    int extra_delay = (extra_delay_ms_.value() << 8) / packet_len_ms_;
+    target_level_ += extra_delay;
+  }
   return target_level_;
 }
 
