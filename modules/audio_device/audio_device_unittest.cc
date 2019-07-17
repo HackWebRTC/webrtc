@@ -69,19 +69,19 @@ namespace {
 
 // Don't run these tests in combination with sanitizers.
 // TODO(webrtc:9778): Re-enable on THREAD_SANITIZER?
-#if !defined(ADDRESS_SANITIZER) && !defined(MEMORY_SANITIZER) && \
-    !defined(THREAD_SANITIZER)
+#if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER) || \
+    defined(THREAD_SANITIZER)
 #define SKIP_TEST_IF_NOT(requirements_satisfied) \
   do {                                           \
-    if (!requirements_satisfied) {               \
-      return;                                    \
-    }                                            \
+    GTEST_SKIP() << "Skipped for sanitizers.";   \
   } while (false)
 #else
 // Or if other audio-related requirements are not met.
-#define SKIP_TEST_IF_NOT(requirements_satisfied) \
-  do {                                           \
-    return;                                      \
+#define SKIP_TEST_IF_NOT(requirements_satisfied)         \
+  do {                                                   \
+    if (!requirements_satisfied) {                       \
+      GTEST_SKIP() << "Skipped. No audio device found."; \
+    }                                                    \
   } while (false)
 #endif
 
