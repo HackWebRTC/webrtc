@@ -507,6 +507,22 @@ TEST_F(SimulcastRateAllocatorTest, ThreeStreamsMiddleInactive) {
   }
 }
 
+TEST_F(SimulcastRateAllocatorTest, NonConferenceModeScreenshare) {
+  codec_.mode = VideoCodecMode::kScreensharing;
+  SetupCodec3SL3TL({true, true, true});
+  CreateAllocator();
+
+  // Make sure we have enough bitrate for all 3 simulcast layers
+  const uint32_t bitrate = codec_.simulcastStream[0].maxBitrate +
+                           codec_.simulcastStream[1].maxBitrate +
+                           codec_.simulcastStream[2].maxBitrate;
+  const VideoBitrateAllocation alloc = GetAllocation(bitrate);
+
+  EXPECT_EQ(alloc.GetTemporalLayerAllocation(0).size(), 3u);
+  EXPECT_EQ(alloc.GetTemporalLayerAllocation(1).size(), 3u);
+  EXPECT_EQ(alloc.GetTemporalLayerAllocation(2).size(), 3u);
+}
+
 class ScreenshareRateAllocationTest : public SimulcastRateAllocatorTest {
  public:
   void SetupConferenceScreenshare(bool use_simulcast, bool active = true) {
