@@ -10,18 +10,19 @@
 // #ifndef AUDIO_TEST_LOW_BANDWIDTH_AUDIO_TEST_FLAGS_H_
 // #define AUDIO_TEST_LOW_BANDWIDTH_AUDIO_TEST_FLAGS_H_
 
-#include "rtc_base/flags.h"
+#include "absl/flags/flag.h"
 
-WEBRTC_DEFINE_int(sample_rate_hz,
-                  16000,
-                  "Sample rate (Hz) of the produced audio files.");
+ABSL_FLAG(int,
+          sample_rate_hz,
+          16000,
+          "Sample rate (Hz) of the produced audio files.");
 
-WEBRTC_DEFINE_bool(
-    quick,
-    false,
-    "Don't do the full audio recording. "
-    "Used to quickly check that the test runs without crashing.");
+ABSL_FLAG(bool,
+          quick,
+          false,
+          "Don't do the full audio recording. "
+          "Used to quickly check that the test runs without crashing.");
 
-WEBRTC_DEFINE_string(test_case_prefix, "", "Test case prefix.");
+ABSL_FLAG(std::string, test_case_prefix, "", "Test case prefix.");
 
 // #endif  // AUDIO_TEST_LOW_BANDWIDTH_AUDIO_TEST_FLAGS_H_

@@ -130,7 +130,9 @@ if (rtc_include_tests) {
       ":audio_mixer_impl",
       "../../api/audio:audio_mixer_api",
       "../../common_audio",
-      "../../rtc_base:rtc_base_approved",
+      "../../rtc_base:stringutils",
+      "//third_party/abseil-cpp/absl/flags:flag",
+      "//third_party/abseil-cpp/absl/flags:parse",
     ]
   }
 }

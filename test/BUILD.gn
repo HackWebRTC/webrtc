@@ -256,6 +256,8 @@ if (rtc_include_tests) {
       "../system_wrappers:field_trial",
       "../system_wrappers:metrics",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/flags:flag",
+      "//third_party/abseil-cpp/absl/flags:parse",
       "//third_party/abseil-cpp/absl/memory",
 
       # TODO(bugs.webrtc.org/9792): This is needed for downstream projects on
@@ -331,6 +333,8 @@ if (rtc_include_tests) {
       ":fileutils",
       "../rtc_base:rtc_base_approved",
       "../rtc_base/system:file_wrapper",
+      "//third_party/abseil-cpp/absl/flags:flag",
+      "//third_party/abseil-cpp/absl/flags:parse",
     ]
   }
 
@@ -389,6 +393,7 @@ if (rtc_include_tests) {
       "time_controller:time_controller_unittests",
       "//testing/gmock",
       "//testing/gtest",
+      "//third_party/abseil-cpp/absl/flags:flag",
       "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/strings",
     ]

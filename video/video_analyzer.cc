@@ -13,11 +13,12 @@
 #include <utility>
 
 #include "absl/algorithm/container.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "modules/rtp_rtcp/source/rtp_format.h"
 #include "modules/rtp_rtcp/source/rtp_utility.h"
 #include "rtc_base/cpu_time.h"
-#include "rtc_base/flags.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/memory_usage.h"
 #include "system_wrappers/include/cpu_info.h"
@@ -27,11 +28,11 @@
 #include "test/testsupport/perf_test.h"
 #include "test/testsupport/test_artifacts.h"
 
-WEBRTC_DEFINE_bool(
-    save_worst_frame,
-    false,
-    "Enable saving a frame with the lowest PSNR to a jpeg file in the "
-    "test_artifacts_dir");
+ABSL_FLAG(bool,
+          save_worst_frame,
+          false,
+          "Enable saving a frame with the lowest PSNR to a jpeg file in the "
+          "test_artifacts_dir");
 
 namespace webrtc {
 namespace {
@@ -718,7 +719,7 @@ void VideoAnalyzer::PrintResults() {
   // Saving only the worst frame for manual analysis. Intention here is to
   // only detect video corruptions and not to track picture quality. Thus,
   // jpeg is used here.
-  if (FLAG_save_worst_frame && worst_frame_) {
+  if (absl::GetFlag(FLAGS_save_worst_frame) && worst_frame_) {
     std::string output_dir;
     test::GetTestArtifactsDir(&output_dir);
     std::string output_path =

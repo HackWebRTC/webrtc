@@ -12,6 +12,7 @@
 
 #include <memory>
 
+#include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
 #include "api/rtc_event_log/rtc_event_log_factory.h"
 #include "api/rtc_event_log_output_file.h"
@@ -19,7 +20,6 @@
 #include "api/task_queue/task_queue_factory.h"
 #include "call/fake_network_pipe.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/flags.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/string_encode.h"
@@ -27,6 +27,11 @@
 #include "test/field_trial.h"
 #include "test/gtest.h"
 #include "test/testsupport/perf_test.h"
+
+ABSL_FLAG(std::string,
+          ramp_dump_name,
+          "",
+          "Filename for dumped received RTP stream.");
 
 namespace webrtc {
 namespace {
@@ -46,10 +51,6 @@ std::vector<uint32_t> GenerateSsrcs(size_t num_streams, uint32_t ssrc_offset) {
   return ssrcs;
 }
 }  // namespace
-
-WEBRTC_DEFINE_string(ramp_dump_name,
-                     "",
-                     "Filename for dumped received RTP stream.");
 
 RampUpTester::RampUpTester(size_t num_video_streams,
                            size_t num_audio_streams,
@@ -583,7 +584,7 @@ class RampUpTest : public test::CallTest {
   RampUpTest()
       : task_queue_factory_(CreateDefaultTaskQueueFactory()),
         rtc_event_log_factory_(task_queue_factory_.get()) {
-    std::string dump_name(FLAG_ramp_dump_name);
+    std::string dump_name(absl::GetFlag(FLAGS_ramp_dump_name));
     if (!dump_name.empty()) {
       send_event_log_ = rtc_event_log_factory_.CreateRtcEventLog(
           RtcEventLog::EncodingType::Legacy);

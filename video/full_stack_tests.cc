@@ -12,6 +12,8 @@
 #include <utility>
 #include <vector>
 
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/test/simulated_network.h"
@@ -22,39 +24,26 @@
 #include "api/video_codecs/video_encoder_config.h"
 #include "media/base/vp9_profile.h"
 #include "modules/video_coding/codecs/vp9/include/vp9.h"
-#include "rtc_base/flags.h"
 #include "system_wrappers/include/field_trial.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 #include "video/video_quality_test.h"
 
-namespace webrtc {
-namespace flags {
-
-WEBRTC_DEFINE_string(rtc_event_log_name,
-                     "",
-                     "Filename for rtc event log. Two files "
-                     "with \"_send\" and \"_recv\" suffixes will be created.");
-std::string RtcEventLogName() {
-  return static_cast<std::string>(FLAG_rtc_event_log_name);
-}
-WEBRTC_DEFINE_string(rtp_dump_name,
-                     "",
-                     "Filename for dumped received RTP stream.");
-std::string RtpDumpName() {
-  return static_cast<std::string>(FLAG_rtp_dump_name);
-}
-WEBRTC_DEFINE_string(
-    encoded_frame_path,
-    "",
-    "The base path for encoded frame logs. Created files will have "
-    "the form <encoded_frame_path>.<n>.(recv|send.<m>).ivf");
-std::string EncodedFramePath() {
-  return static_cast<std::string>(FLAG_encoded_frame_path);
-}
-}  // namespace flags
-}  // namespace webrtc
+ABSL_FLAG(std::string,
+          rtc_event_log_name,
+          "",
+          "Filename for rtc event log. Two files "
+          "with \"_send\" and \"_recv\" suffixes will be created.");
+ABSL_FLAG(std::string,
+          rtp_dump_name,
+          "",
+          "Filename for dumped received RTP stream.");
+ABSL_FLAG(std::string,
+          encoded_frame_path,
+          "",
+          "The base path for encoded frame logs. Created files will have "
+          "the form <encoded_frame_path>.<n>.(recv|send.<m>).ivf");
 
 namespace webrtc {
 
@@ -67,8 +56,9 @@ struct ParamsWithLogging : public VideoQualityTest::Params {
  public:
   ParamsWithLogging() {
     // Use these logging flags by default, for everything.
-    logging = {flags::RtcEventLogName(), flags::RtpDumpName(),
-               flags::EncodedFramePath()};
+    logging = {absl::GetFlag(FLAGS_rtc_event_log_name),
+               absl::GetFlag(FLAGS_rtp_dump_name),
+               absl::GetFlag(FLAGS_encoded_frame_path)};
     this->config = BuiltInNetworkBehaviorConfig();
   }
 };

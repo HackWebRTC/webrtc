@@ -18,7 +18,6 @@
 #include "absl/flags/parse.h"
 #include "modules/audio_coding/neteq/tools/packet.h"
 #include "modules/audio_coding/neteq/tools/rtp_file_source.h"
-#include "rtc_base/flags.h"
 
 ABSL_FLAG(int, red, 117, "RTP payload type for RED");
 ABSL_FLAG(int,

@@ -22,9 +22,10 @@ rtc_executable("conversational_speech_generator") {
   ]
   deps = [
     ":lib",
-    "../../../../rtc_base:rtc_base_approved",
     "../../../../test:fileutils",
     "../../../../test:test_support",
+    "//third_party/abseil-cpp/absl/flags:flag",
+    "//third_party/abseil-cpp/absl/flags:parse",
     "//third_party/abseil-cpp/absl/memory",
   ]
 }

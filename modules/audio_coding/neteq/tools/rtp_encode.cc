@@ -35,7 +35,6 @@
 #include "modules/audio_coding/codecs/cng/audio_encoder_cng.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
-#include "rtc_base/flags.h"
 #include "rtc_base/numerics/safe_conversions.h"
 
 ABSL_FLAG(bool, list_codecs, false, "Enumerate all codecs");

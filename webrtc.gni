@@ -376,6 +376,10 @@ all_poison_types = [
 absl_include_config = "//third_party/abseil-cpp:absl_include_config"
 absl_define_config = "//third_party/abseil-cpp:absl_define_config"
 
+# Abseil Flags are testonly, so this config will only be applied to WebRTC targets
+# that are testonly.
+absl_flags_config = webrtc_root + ":absl_flags_configs"
+
 template("rtc_test") {
   test(target_name) {
     forward_variables_from(invoker,
@@ -398,6 +402,7 @@ template("rtc_test") {
       rtc_common_inherited_config,
       absl_include_config,
       absl_define_config,
+      absl_flags_config,
     ]
     if (defined(invoker.public_configs)) {
       public_configs += invoker.public_configs
@@ -476,6 +481,9 @@ template("rtc_source_set") {
       absl_include_config,
       absl_define_config,
     ]
+    if (defined(testonly) && testonly) {
+      public_configs += [ absl_flags_config ]
+    }
     if (defined(invoker.public_configs)) {
       public_configs += invoker.public_configs
     }
@@ -507,6 +515,9 @@ template("rtc_executable") {
       absl_include_config,
       absl_define_config,
     ]
+    if (defined(testonly) && testonly) {
+      public_configs += [ absl_flags_config ]
+    }
     if (defined(invoker.public_configs)) {
       public_configs += invoker.public_configs
     }
@@ -585,6 +596,9 @@ template("rtc_static_library") {
       absl_include_config,
       absl_define_config,
     ]
+    if (defined(testonly) && testonly) {
+      public_configs += [ absl_flags_config ]
+    }
     if (defined(invoker.public_configs)) {
       public_configs += invoker.public_configs
     }
@@ -652,6 +666,9 @@ template("rtc_shared_library") {
       absl_include_config,
       absl_define_config,
     ]
+    if (defined(testonly) && testonly) {
+      public_configs += [ absl_flags_config ]
+    }
     if (defined(invoker.public_configs)) {
       public_configs += invoker.public_configs
     }

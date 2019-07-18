@@ -8,6 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
 #include "api/test/create_network_emulation_manager.h"
 #include "api/test/create_peerconnection_quality_test_fixture.h"
@@ -15,15 +16,14 @@
 #include "api/test/peerconnection_quality_test_fixture.h"
 #include "api/test/simulated_network.h"
 #include "call/simulated_network.h"
-#include "rtc_base/flags.h"
 #include "test/gtest.h"
 #include "test/pc/e2e/network_quality_metrics_reporter.h"
 #include "test/testsupport/file_utils.h"
 #include "test/testsupport/perf_test.h"
 
-WEBRTC_DECLARE_string(test_case_prefix);
-WEBRTC_DECLARE_int(sample_rate_hz);
-WEBRTC_DECLARE_bool(quick);
+ABSL_DECLARE_FLAG(std::string, test_case_prefix);
+ABSL_DECLARE_FLAG(int, sample_rate_hz);
+ABSL_DECLARE_FLAG(bool, quick);
 
 namespace webrtc {
 namespace test {
@@ -42,11 +42,11 @@ constexpr int kQuickTestDurationSec = 1;
 std::string GetMetricTestCaseName() {
   const ::testing::TestInfo* const test_info =
       ::testing::UnitTest::GetInstance()->current_test_info();
-  std::string test_case_prefix(FLAG_test_case_prefix);
+  std::string test_case_prefix(absl::GetFlag(FLAGS_test_case_prefix));
   if (test_case_prefix.empty()) {
     return test_info->name();
   }
-  return std::string(FLAG_test_case_prefix) + "_" + test_info->name();
+  return test_case_prefix + "_" + test_info->name();
 }
 
 std::pair<EmulatedNetworkManagerInterface*, EmulatedNetworkManagerInterface*>
@@ -87,7 +87,7 @@ CreateTestFixture(const std::string& test_case_name,
 }
 
 std::string FileSampleRateSuffix() {
-  return std::to_string(FLAG_sample_rate_hz / 1000);
+  return std::to_string(absl::GetFlag(FLAGS_sample_rate_hz) / 1000);
 }
 
 std::string AudioInputFile() {
@@ -135,12 +135,12 @@ TEST(PCLowBandwidthAudioTest, PCGoodNetworkHighBitrate) {
         audio.mode = AudioConfig::Mode::kFile;
         audio.input_file_name = AudioInputFile();
         audio.output_dump_file_name = AudioOutputFile();
-        audio.sampling_frequency_in_hz = FLAG_sample_rate_hz;
+        audio.sampling_frequency_in_hz = absl::GetFlag(FLAGS_sample_rate_hz);
         alice->SetAudioConfig(std::move(audio));
       },
       [](PeerConfigurer* bob) {});
-  fixture->Run(RunParams(TimeDelta::seconds(FLAG_quick ? kQuickTestDurationSec
-                                                       : kTestDurationSec)));
+  fixture->Run(RunParams(TimeDelta::seconds(
+      absl::GetFlag(FLAGS_quick) ? kQuickTestDurationSec : kTestDurationSec)));
   LogTestResults();
 }
 
@@ -160,12 +160,12 @@ TEST(PCLowBandwidthAudioTest, PCMobile2GNetwork) {
         audio.mode = AudioConfig::Mode::kFile;
         audio.input_file_name = AudioInputFile();
         audio.output_dump_file_name = AudioOutputFile();
-        audio.sampling_frequency_in_hz = FLAG_sample_rate_hz;
+        audio.sampling_frequency_in_hz = absl::GetFlag(FLAGS_sample_rate_hz);
         alice->SetAudioConfig(std::move(audio));
       },
       [](PeerConfigurer* bob) {});
-  fixture->Run(RunParams(TimeDelta::seconds(FLAG_quick ? kQuickTestDurationSec
-                                                       : kTestDurationSec)));
+  fixture->Run(RunParams(TimeDelta::seconds(
+      absl::GetFlag(FLAGS_quick) ? kQuickTestDurationSec : kTestDurationSec)));
   LogTestResults();
 }
 

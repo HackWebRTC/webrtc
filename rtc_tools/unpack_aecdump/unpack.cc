@@ -28,7 +28,6 @@
 #include "common_audio/wav_file.h"
 #include "modules/audio_processing/test/protobuf_utils.h"
 #include "modules/audio_processing/test/test_utils.h"
-#include "rtc_base/flags.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/ignore_wundef.h"
 #include "rtc_base/strings/string_builder.h"

@@ -20,6 +20,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/flags/flag.h"
 #include "api/audio/audio_frame.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_coding/codecs/pcm16b/pcm16b.h"
@@ -40,9 +41,6 @@
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 
-// This must come after test/gtest.h
-#include "rtc_base/flags.h"  // NOLINT(build/include)
-
 #ifdef WEBRTC_NETEQ_UNITTEST_BITEXACT
 RTC_PUSH_IGNORING_WUNDEF()
 #ifdef WEBRTC_ANDROID_PLATFORM_BUILD
@@ -53,7 +51,7 @@ RTC_PUSH_IGNORING_WUNDEF()
 RTC_POP_IGNORING_WUNDEF()
 #endif
 
-WEBRTC_DEFINE_bool(gen_ref, false, "Generate reference files.");
+ABSL_FLAG(bool, gen_ref, false, "Generate reference files.");
 
 namespace webrtc {
 
@@ -470,7 +468,7 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
                        "3689c9f0ab9e50cefab3e44c37c3d7aa0de82ca4");
 
   DecodeAndCompare(input_rtp_file, output_checksum, network_stats_checksum,
-                   FLAG_gen_ref);
+                   absl::GetFlag(FLAGS_gen_ref));
 }
 
 #if !defined(WEBRTC_IOS) && defined(WEBRTC_NETEQ_UNITTEST_BITEXACT) && \
@@ -499,7 +497,7 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
                        "0b3d34baffaf651812ffaf06ea1b5ce45ea1c47a");
 
   DecodeAndCompare(input_rtp_file, output_checksum, network_stats_checksum,
-                   FLAG_gen_ref);
+                   absl::GetFlag(FLAGS_gen_ref));
 }
 
 #if !defined(WEBRTC_IOS) && defined(WEBRTC_NETEQ_UNITTEST_BITEXACT) && \
@@ -523,7 +521,7 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusDtxBitExactness) {
       "bab58dc587d956f326056d7340c96eb9d2d3cc21";
 
   DecodeAndCompare(input_rtp_file, output_checksum, network_stats_checksum,
-                   FLAG_gen_ref);
+                   absl::GetFlag(FLAGS_gen_ref));
 }
 
 // Use fax mode to avoid time-scaling. This is to simplify the testing of

@@ -83,6 +83,13 @@ if (!build_with_chromium) {
   }
 }
 
+# Abseil Flags by default doesn't register command line flags on mobile
+# platforms, WebRTC tests requires them (e.g. on simualtors) so this
+# config will be applied to testonly targets globally (see webrtc.gni).
+config("absl_flags_configs") {
+  defines = [ "ABSL_FLAGS_STRIP_NAMES=0" ]
+}
+
 config("library_impl_config") {
   # Build targets that contain WebRTC implementation need this macro to
   # be defined in order to correctly export symbols when is_component_build

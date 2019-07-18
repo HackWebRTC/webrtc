@@ -190,7 +190,6 @@ if (rtc_include_tests) {
         "../api:simulated_network_api",
         "../call:simulated_network",
         "../common_audio",
-        "../rtc_base:rtc_base_approved",
         "../system_wrappers",
         "../test:fileutils",
         "../test:perf_test",
@@ -199,7 +198,8 @@ if (rtc_include_tests) {
         "../test:test_support",
         "../test/pc/e2e:network_quality_metrics_reporter",
         "//testing/gtest",
-        "//third_party/abseil-cpp/absl/memory:memory",
+        "//third_party/abseil-cpp/absl/flags:flag",
+        "//third_party/abseil-cpp/absl/memory",
       ]
       if (is_android) {
         deps += [ "//testing/android/native_test:native_test_native_code" ]

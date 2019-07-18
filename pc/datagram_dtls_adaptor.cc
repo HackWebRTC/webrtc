@@ -29,7 +29,6 @@
 #include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/dscp.h"
-#include "rtc_base/flags.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/message_queue.h"
 #include "rtc_base/rtc_certificate.h"
