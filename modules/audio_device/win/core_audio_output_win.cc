@@ -156,7 +156,9 @@ int CoreAudioOutput::StartPlayout() {
   }
 
   fine_audio_buffer_->ResetPlayout();
-  audio_device_buffer_->StartPlayout();
+  if (!IsRestarting()) {
+    audio_device_buffer_->StartPlayout();
+  }
 
   if (!core_audio_utility::FillRenderEndpointBufferWithSilence(
           audio_client_.Get(), audio_render_client_.Get())) {
@@ -193,8 +195,10 @@ int CoreAudioOutput::StopPlayout() {
     return -1;
   }
 
-  RTC_DCHECK(audio_device_buffer_);
-  audio_device_buffer_->StopPlayout();
+  if (!IsRestarting()) {
+    RTC_DCHECK(audio_device_buffer_);
+    audio_device_buffer_->StopPlayout();
+  }
 
   // Release all allocated resources to allow for a restart without
   // intermediate destruction.

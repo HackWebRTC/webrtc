@@ -160,7 +160,9 @@ int CoreAudioInput::StartRecording() {
   }
 
   fine_audio_buffer_->ResetRecord();
-  audio_device_buffer_->StartRecording();
+  if (!IsRestarting()) {
+    audio_device_buffer_->StartRecording();
+  }
 
   if (!Start()) {
     return -1;
@@ -190,8 +192,10 @@ int CoreAudioInput::StopRecording() {
     return -1;
   }
 
-  RTC_DCHECK(audio_device_buffer_);
-  audio_device_buffer_->StopRecording();
+  if (!IsRestarting()) {
+    RTC_DCHECK(audio_device_buffer_);
+    audio_device_buffer_->StopRecording();
+  }
 
   // Release all allocated resources to allow for a restart without
   // intermediate destruction.
