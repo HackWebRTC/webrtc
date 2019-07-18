@@ -136,6 +136,8 @@ class PeerConnectionE2EQualityTestFixture {
     //    spatial layer and all layers below, including target one will be
     //    processed. All layers above target one will be dropped.
     int target_spatial_index;
+    // If true will set conference mode in SDP media section for this track.
+    bool use_conference_mode = false;
   };
 
   // Contains properties of single video stream.

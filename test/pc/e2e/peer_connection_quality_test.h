@@ -167,6 +167,8 @@ class PeerConnectionE2EQualityTest
       PeerConnectionE2EQualityTestFixture::VideoGeneratorType;
   using RunParams = PeerConnectionE2EQualityTestFixture::RunParams;
   using VideoConfig = PeerConnectionE2EQualityTestFixture::VideoConfig;
+  using VideoSimulcastConfig =
+      PeerConnectionE2EQualityTestFixture::VideoSimulcastConfig;
   using PeerConfigurer = PeerConnectionE2EQualityTestFixture::PeerConfigurer;
   using QualityMetricsReporter =
       PeerConnectionE2EQualityTestFixture::QualityMetricsReporter;
