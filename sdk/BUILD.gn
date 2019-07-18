@@ -373,6 +373,7 @@ if (is_ios || is_mac) {
       ]
       libs = [
         "VideoToolbox.framework",
+        "CoreGraphics.framework",
         "CoreVideo.framework",
       ]
     }

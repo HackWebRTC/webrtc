@@ -583,6 +583,7 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
 
     libs = [
       "CFNetwork.framework",
+      "Security.framework",
       "icucore",
     ]
   }
