@@ -496,6 +496,7 @@ class WindowsAudioDeviceModule : public AudioDeviceModuleForTest {
   const std::unique_ptr<AudioOutput> output_;
 
   TaskQueueFactory* const task_queue_factory_;
+
   // The AudioDeviceBuffer (ADB) instance is needed for sending/receiving audio
   // to/from the WebRTC layer. Created and owned by this object. Used by
   // both |input_| and |output_| but they use orthogonal parts of the ADB.

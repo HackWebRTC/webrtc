@@ -26,10 +26,12 @@ enum AudioDeviceMessageType : uint32_t {
   kMessageInputStreamDisconnected,
 };
 
-CoreAudioInput::CoreAudioInput()
-    : CoreAudioBase(CoreAudioBase::Direction::kInput,
-                    [this](uint64_t freq) { return OnDataCallback(freq); },
-                    [this](ErrorType err) { return OnErrorCallback(err); }) {
+CoreAudioInput::CoreAudioInput(bool automatic_restart)
+    : CoreAudioBase(
+          CoreAudioBase::Direction::kInput,
+          automatic_restart,
+          [this](uint64_t freq) { return OnDataCallback(freq); },
+          [this](ErrorType err) { return OnErrorCallback(err); }) {
   RTC_DLOG(INFO) << __FUNCTION__;
   RTC_DCHECK_RUN_ON(&thread_checker_);
   thread_checker_audio_.Detach();
@@ -149,14 +151,16 @@ int CoreAudioInput::InitRecording() {
 int CoreAudioInput::StartRecording() {
   RTC_DLOG(INFO) << __FUNCTION__;
   RTC_DCHECK(!Recording());
+  RTC_DCHECK(fine_audio_buffer_);
+  RTC_DCHECK(audio_device_buffer_);
   if (!initialized_) {
     RTC_DLOG(LS_WARNING)
         << "Recording can not start since InitRecording must succeed first";
     return 0;
   }
-  if (fine_audio_buffer_) {
-    fine_audio_buffer_->ResetRecord();
-  }
+
+  fine_audio_buffer_->ResetRecord();
+  audio_device_buffer_->StartRecording();
 
   if (!Start()) {
     return -1;
@@ -185,6 +189,9 @@ int CoreAudioInput::StopRecording() {
     RTC_LOG(LS_ERROR) << "StopRecording failed";
     return -1;
   }
+
+  RTC_DCHECK(audio_device_buffer_);
+  audio_device_buffer_->StopRecording();
 
   // Release all allocated resources to allow for a restart without
   // intermediate destruction.
@@ -405,6 +412,7 @@ absl::optional<int> CoreAudioInput::EstimateLatencyMillis(
 bool CoreAudioInput::HandleStreamDisconnected() {
   RTC_DLOG(INFO) << "<<<--- " << __FUNCTION__;
   RTC_DCHECK_RUN_ON(&thread_checker_audio_);
+  RTC_DCHECK(automatic_restart());
 
   if (StopRecording() != 0) {
     return false;
