@@ -144,6 +144,8 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
     return nullptr;
   }
 
+  void RestartIce() override {}
+
   void CreateOffer(CreateSessionDescriptionObserver* observer,
                    const RTCOfferAnswerOptions& options) override {}
 

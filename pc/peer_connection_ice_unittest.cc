@@ -225,6 +225,26 @@ class PeerConnectionIceBaseTest : public ::testing::Test {
     return cricket::ICEROLE_UNKNOWN;
   }
 
+  // Returns a list of (ufrag, pwd) pairs in the order that they appear in
+  // |description|, or the empty list if |description| is null.
+  std::vector<std::pair<std::string, std::string>> GetIceCredentials(
+      const SessionDescriptionInterface* description) {
+    std::vector<std::pair<std::string, std::string>> ice_credentials;
+    if (!description)
+      return ice_credentials;
+    const auto* desc = description->description();
+    for (const auto& content_info : desc->contents()) {
+      const auto* transport_info =
+          desc->GetTransportInfoByName(content_info.name);
+      if (transport_info) {
+        ice_credentials.push_back(
+            std::make_pair(transport_info->description.ice_ufrag,
+                           transport_info->description.ice_pwd));
+      }
+    }
+    return ice_credentials;
+  }
+
   bool AddCandidateToFirstTransport(cricket::Candidate* candidate,
                                     SessionDescriptionInterface* sdesc) {
     auto* desc = sdesc->description();
@@ -811,6 +831,209 @@ TEST_P(PeerConnectionIceTest, LaterAnswerHasSameIceCredentialsIfNoIceRestart) {
 
   EXPECT_EQ(answer_transport_desc->ice_ufrag, local_transport_desc->ice_ufrag);
   EXPECT_EQ(answer_transport_desc->ice_pwd, local_transport_desc->ice_pwd);
+}
+
+TEST_P(PeerConnectionIceTest, RestartIceGeneratesNewCredentials) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  auto initial_ice_credentials =
+      GetIceCredentials(caller->pc()->local_description());
+  caller->pc()->RestartIce();
+  ASSERT_TRUE(caller->CreateOfferAndSetAsLocal());
+  auto restarted_ice_credentials =
+      GetIceCredentials(caller->pc()->local_description());
+  EXPECT_NE(initial_ice_credentials, restarted_ice_credentials);
+}
+
+TEST_P(PeerConnectionIceTest,
+       RestartIceWhileLocalOfferIsPendingGeneratesNewCredentialsInNextOffer) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+  auto initial_ice_credentials =
+      GetIceCredentials(caller->pc()->local_description());
+  // ICE restart becomes needed while an O/A is pending and |caller| is the
+  // offerer.
+  caller->pc()->RestartIce();
+  ASSERT_TRUE(
+      caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal()));
+  ASSERT_TRUE(caller->CreateOfferAndSetAsLocal());
+  auto restarted_ice_credentials =
+      GetIceCredentials(caller->pc()->local_description());
+  EXPECT_NE(initial_ice_credentials, restarted_ice_credentials);
+}
+
+TEST_P(PeerConnectionIceTest,
+       RestartIceWhileRemoteOfferIsPendingGeneratesNewCredentialsInNextOffer) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  auto initial_ice_credentials =
+      GetIceCredentials(caller->pc()->local_description());
+  ASSERT_TRUE(caller->SetRemoteDescription(callee->CreateOfferAndSetAsLocal()));
+  // ICE restart becomes needed while an O/A is pending and |caller| is the
+  // answerer.
+  caller->pc()->RestartIce();
+  ASSERT_TRUE(
+      callee->SetRemoteDescription(caller->CreateAnswerAndSetAsLocal()));
+  ASSERT_TRUE(caller->CreateOfferAndSetAsLocal());
+  auto restarted_ice_credentials =
+      GetIceCredentials(caller->pc()->local_description());
+  EXPECT_NE(initial_ice_credentials, restarted_ice_credentials);
+}
+
+TEST_P(PeerConnectionIceTest, RestartIceTriggeredByRemoteSide) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  auto initial_ice_credentials =
+      GetIceCredentials(caller->pc()->local_description());
+
+  // Remote restart and O/A exchange with |caller| as the answerer should
+  // restart ICE locally as well.
+  callee->pc()->RestartIce();
+  ASSERT_TRUE(callee->ExchangeOfferAnswerWith(caller.get()));
+
+  auto restarted_ice_credentials =
+      GetIceCredentials(caller->pc()->local_description());
+  EXPECT_NE(initial_ice_credentials, restarted_ice_credentials);
+}
+
+TEST_P(PeerConnectionIceTest, RestartIceCausesNegotiationNeeded) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  caller->observer()->clear_negotiation_needed();
+  caller->pc()->RestartIce();
+  EXPECT_TRUE(caller->observer()->negotiation_needed());
+}
+
+// In Unified Plan, "onnegotiationneeded" is spec-compliant, including not
+// firing multipe times in a row, or firing when returning to the stable
+// signaling state if negotiation is still needed. In Plan B it fires any time
+// something changes. As such, some tests are SdpSemantics-specific.
+class PeerConnectionIceTestUnifiedPlan : public PeerConnectionIceBaseTest {
+ protected:
+  PeerConnectionIceTestUnifiedPlan()
+      : PeerConnectionIceBaseTest(SdpSemantics::kUnifiedPlan) {}
+};
+
+TEST_F(PeerConnectionIceTestUnifiedPlan,
+       RestartIceWhileLocalOfferIsPendingCausesNegotiationNeededWhenStable) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+  // ICE restart becomes needed while an O/A is pending and |caller| is the
+  // offerer.
+  caller->observer()->clear_negotiation_needed();
+  caller->pc()->RestartIce();
+  // In Unified Plan, the event should not fire until we are back in the stable
+  // signaling state.
+  EXPECT_FALSE(caller->observer()->negotiation_needed());
+  ASSERT_TRUE(
+      caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal()));
+  EXPECT_TRUE(caller->observer()->negotiation_needed());
+}
+
+TEST_F(PeerConnectionIceTestUnifiedPlan,
+       RestartIceWhileRemoteOfferIsPendingCausesNegotiationNeededWhenStable) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  // Establish initial credentials as the caller.
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  ASSERT_TRUE(caller->SetRemoteDescription(callee->CreateOfferAndSetAsLocal()));
+  // ICE restart becomes needed while an O/A is pending and |caller| is the
+  // answerer.
+  caller->observer()->clear_negotiation_needed();
+  caller->pc()->RestartIce();
+  // In Unified Plan, the event should not fire until we are back in the stable
+  // signaling state.
+  EXPECT_FALSE(caller->observer()->negotiation_needed());
+  ASSERT_TRUE(
+      callee->SetRemoteDescription(caller->CreateAnswerAndSetAsLocal()));
+  EXPECT_TRUE(caller->observer()->negotiation_needed());
+}
+
+TEST_F(PeerConnectionIceTestUnifiedPlan,
+       RestartIceTriggeredByRemoteSideCauseNegotiationNotNeeded) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  // Local restart.
+  caller->pc()->RestartIce();
+  caller->observer()->clear_negotiation_needed();
+  // Remote restart and O/A exchange with |caller| as the answerer should
+  // restart ICE locally as well.
+  callee->pc()->RestartIce();
+  ASSERT_TRUE(callee->ExchangeOfferAnswerWith(caller.get()));
+  // Having restarted ICE by the remote offer, we do not need to renegotiate ICE
+  // credentials when back in the stable signaling state.
+  EXPECT_FALSE(caller->observer()->negotiation_needed());
+}
+
+TEST_F(PeerConnectionIceTestUnifiedPlan,
+       RestartIceTwiceDoesNotFireNegotiationNeededTwice) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  caller->pc()->RestartIce();
+  EXPECT_TRUE(caller->observer()->negotiation_needed());
+  caller->observer()->clear_negotiation_needed();
+  caller->pc()->RestartIce();
+  EXPECT_FALSE(caller->observer()->negotiation_needed());
+}
+
+// In Plan B, "onnegotiationneeded" is not spec-compliant, firing based on if
+// something changed rather than if negotiation is needed. In Unified Plan it
+// fires according to spec. As such, some tests are SdpSemantics-specific.
+class PeerConnectionIceTestPlanB : public PeerConnectionIceBaseTest {
+ protected:
+  PeerConnectionIceTestPlanB()
+      : PeerConnectionIceBaseTest(SdpSemantics::kPlanB) {}
+};
+
+TEST_F(PeerConnectionIceTestPlanB,
+       RestartIceWhileOfferIsPendingCausesNegotiationNeededImmediately) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  ASSERT_TRUE(callee->SetRemoteDescription(caller->CreateOfferAndSetAsLocal()));
+  caller->observer()->clear_negotiation_needed();
+  caller->pc()->RestartIce();
+  EXPECT_TRUE(caller->observer()->negotiation_needed());
+  caller->observer()->clear_negotiation_needed();
+  ASSERT_TRUE(
+      caller->SetRemoteDescription(callee->CreateAnswerAndSetAsLocal()));
+  // In Plan B, the event fired early so we don't expect it to fire now. This is
+  // not spec-compliant but follows the pattern of existing Plan B behavior.
+  EXPECT_FALSE(caller->observer()->negotiation_needed());
+}
+
+TEST_F(PeerConnectionIceTestPlanB,
+       RestartIceTwiceDoesFireNegotiationNeededTwice) {
+  auto caller = CreatePeerConnectionWithAudioVideo();
+  auto callee = CreatePeerConnectionWithAudioVideo();
+
+  ASSERT_TRUE(caller->ExchangeOfferAnswerWith(callee.get()));
+  caller->observer()->clear_negotiation_needed();
+  caller->pc()->RestartIce();
+  EXPECT_TRUE(caller->observer()->negotiation_needed());
+  caller->observer()->clear_negotiation_needed();
+  caller->pc()->RestartIce();
+  // In Plan B, the event fires every time something changed, even if we have
+  // already fired the event. This is not spec-compliant but follows the same
+  // pattern of existing Plan B behavior.
+  EXPECT_TRUE(caller->observer()->negotiation_needed());
 }
 
 // The following parameterized test verifies that if an offer is sent with a

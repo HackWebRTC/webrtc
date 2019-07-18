@@ -86,6 +86,7 @@ PROXY_CONSTMETHOD0(const SessionDescriptionInterface*,
                    pending_local_description)
 PROXY_CONSTMETHOD0(const SessionDescriptionInterface*,
                    pending_remote_description)
+PROXY_METHOD0(void, RestartIce)
 PROXY_METHOD2(void,
               CreateOffer,
               CreateSessionDescriptionObserver*,

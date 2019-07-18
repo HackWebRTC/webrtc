@@ -935,6 +935,14 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
   virtual const SessionDescriptionInterface* pending_local_description() const;
   virtual const SessionDescriptionInterface* pending_remote_description() const;
 
+  // Tells the PeerConnection that ICE should be restarted. This triggers a need
+  // for negotiation and subsequent CreateOffer() calls will act as if
+  // RTCOfferAnswerOptions::ice_restart is true.
+  // https://w3c.github.io/webrtc-pc/#dom-rtcpeerconnection-restartice
+  // TODO(hbos): Remove default implementation when downstream projects
+  // implement this.
+  virtual void RestartIce() {}
+
   // Create a new offer.
   // The CreateSessionDescriptionObserver callback will be called when done.
   virtual void CreateOffer(CreateSessionDescriptionObserver* observer,
