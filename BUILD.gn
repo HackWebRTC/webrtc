@@ -57,6 +57,7 @@ if (!build_with_chromium) {
         "modules/video_capture:video_capture_internal_impl",
         "pc:peerconnection_unittests",
         "pc:rtc_pc_unittests",
+        "rtc_tools:rtp_generator",
         "stats:rtc_stats_unittests",
         "system_wrappers:system_wrappers_unittests",
         "test",

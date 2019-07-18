@@ -178,7 +178,6 @@ RtpGenerator::RtpGenerator(const RtpGeneratorOptions& options)
     // Update some required to be unique values.
     stream_count++;
     video_config.rtp.mid = "mid-" + std::to_string(stream_count);
-    video_config.track_id = "track-" + std::to_string(stream_count);
 
     // Configure the video encoder configuration.
     VideoEncoderConfig encoder_config;
