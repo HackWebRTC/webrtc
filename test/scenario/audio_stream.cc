@@ -127,9 +127,6 @@ SendAudioStream::SendAudioStream(
         {RtpExtension::kAbsSendTimeUri, kAbsSendTimeExtensionId});
   }
 
-  if (config.encoder.priority_rate) {
-    send_config.track_id = sender->GetNextPriorityId();
-  }
   sender_->SendTask([&] {
     send_stream_ = sender_->call_->CreateAudioSendStream(send_config);
     if (field_trial::IsEnabled("WebRTC-SendSideBwe-WithOverhead")) {

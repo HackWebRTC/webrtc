@@ -29,8 +29,6 @@ const uint32_t kVideoRecvLocalSsrcs[kNumSsrcs] = {0xDAB001, 0xDAB002, 0xDAB003,
 const uint32_t kAudioSendSsrc = 0xDEADBEEF;
 const uint32_t kReceiverLocalAudioSsrc = 0x1234567;
 
-const char* kPriorityStreamId = "priority-track";
-
 constexpr int kEventLogOutputIntervalMs = 5000;
 
 CallClientFakeAudio InitAudio(TimeController* time_controller) {
@@ -315,11 +313,6 @@ uint32_t CallClient::GetNextAudioLocalSsrc() {
 uint32_t CallClient::GetNextRtxSsrc() {
   RTC_CHECK_LT(next_rtx_ssrc_index_, kNumSsrcs);
   return kSendRtxSsrcs[next_rtx_ssrc_index_++];
-}
-
-std::string CallClient::GetNextPriorityId() {
-  RTC_CHECK_LT(next_priority_index_++, 1);
-  return kPriorityStreamId;
 }
 
 void CallClient::AddExtensions(std::vector<RtpExtension> extensions) {

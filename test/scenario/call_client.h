@@ -128,7 +128,6 @@ class CallClient : public EmulatedNetworkReceiverInterface {
   uint32_t GetNextAudioSsrc();
   uint32_t GetNextAudioLocalSsrc();
   uint32_t GetNextRtxSsrc();
-  std::string GetNextPriorityId();
   void AddExtensions(std::vector<RtpExtension> extensions);
   void SendTask(std::function<void()> task);
 
@@ -150,7 +149,6 @@ class CallClient : public EmulatedNetworkReceiverInterface {
   int next_rtx_ssrc_index_ = 0;
   int next_audio_ssrc_index_ = 0;
   int next_audio_local_ssrc_index_ = 0;
-  int next_priority_index_ = 0;
   std::map<uint32_t, MediaType> ssrc_media_types_;
   // Defined last so it's destroyed first.
   TaskQueueForTest task_queue_;

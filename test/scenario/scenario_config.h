@@ -202,7 +202,6 @@ struct AudioStreamConfig {
     absl::optional<DataRate> fixed_rate;
     absl::optional<DataRate> min_rate;
     absl::optional<DataRate> max_rate;
-    absl::optional<DataRate> priority_rate;
     TimeDelta initial_frame_length = TimeDelta::ms(20);
   } encoder;
   struct Stream {
