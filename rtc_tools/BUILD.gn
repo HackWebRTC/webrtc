@@ -231,6 +231,7 @@ if (!build_with_chromium) {
       ":reference_less_video_analysis_lib",
       "//third_party/abseil-cpp/absl/flags:flag",
       "//third_party/abseil-cpp/absl/flags:parse",
+      "//third_party/abseil-cpp/absl/flags:usage",
     ]
   }
 

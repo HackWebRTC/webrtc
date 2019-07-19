@@ -14,6 +14,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/flags/usage.h"
 #include "rtc_tools/frame_analyzer/reference_less_video_analysis_lib.h"
 
 ABSL_FLAG(std::string,
@@ -23,18 +24,13 @@ ABSL_FLAG(std::string,
           "supported");
 
 int main(int argc, char* argv[]) {
+  absl::SetProgramUsageMessage(
+      "Outputs the freezing score by comparing "
+      "current frame with the previous frame.\n"
+      "Example usage:\n"
+      "./reference_less_video_analysis "
+      "--video_file=video_file.y4m\n");
   absl::ParseCommandLine(argc, argv);
-  // TODO(bugs.webrtc.org/10616): Add program usage message when Abseil
-  // flags supports it.
-  // This captures the freezing metrics for reference less video analysis.
-  // std::string usage =
-  //     "Outputs the freezing score by comparing current frame "
-  //     "with the previous frame.\nExample usage:\n" +
-  //     program_name +
-  //     " --video_file=video_file.y4m\n"
-  //     "Command line flags:\n"
-  //     "  - video_file(string): Path of the video "
-  //     "file to be analyzed. Only y4m file format is supported.\n";
 
   std::string video_file = absl::GetFlag(FLAGS_video_file);
   if (video_file.empty()) {
