@@ -520,7 +520,9 @@ if (is_android) {
       "//third_party/android_deps:com_android_support_support_annotations_java",
     ]
   }
+}
 
+if (current_os == "linux" || is_android) {
   ################################
   # JNI targets for Java modules #
   ################################
@@ -840,9 +842,7 @@ if (is_android) {
       ":libvpx_vp9_jni",
     ]
   }
-}
 
-if (current_os == "linux" || is_android) {
   ######################
   # Native API targets #
   ######################
@@ -879,9 +879,7 @@ if (current_os == "linux" || is_android) {
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
-}
 
-if (is_android) {
   rtc_static_library("native_api_base") {
     visibility = [ "*" ]
     sources = [
@@ -1015,9 +1013,7 @@ if (is_android) {
       "//rtc_base:base_java",
     ]
   }
-}
 
-if (current_os == "linux" || is_android) {
   # Internal code that is needed by native_api_jni. The code cannot be placed in
   # base_jni because native_api_jni depends on the code (and base_jni depends on
   # native_api_jni).
@@ -1031,9 +1027,7 @@ if (current_os == "linux" || is_android) {
       "../../rtc_base:checks",
     ]
   }
-}
 
-if (is_android) {
   rtc_static_library("videoframe_jni") {
     sources = [
       "src/jni/video_frame.cc",
@@ -1171,9 +1165,7 @@ if (is_android) {
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
-}
 
-if (current_os == "linux" || is_android) {
   #########################
   # Generated JNI targets #
   #########################
