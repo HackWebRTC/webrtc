@@ -19,8 +19,6 @@
 #include "modules/audio_coding/neteq/tools/neteq_test_factory.h"
 #include "rtc_base/checks.h"
 
-namespace {
-
 ABSL_FLAG(std::string,
           replacement_audio_file,
           "",
@@ -30,8 +28,6 @@ ABSL_FLAG(int,
           max_nr_packets_in_buffer,
           50,
           "Maximum allowed number of packets in the buffer");
-
-}  // namespace
 
 namespace webrtc {
 namespace test {
