@@ -21,7 +21,6 @@ group("rtc_tools") {
   ]
   if (!build_with_chromium) {
     deps += [
-      ":frame_editor",
       ":psnr_ssim_analyzer",
       ":rgba_to_i420_converter",
     ]
@@ -253,30 +252,6 @@ if (!build_with_chromium) {
     ]
   }
 
-  rtc_static_library("frame_editing_lib") {
-    sources = [
-      "frame_editing/frame_editing_lib.cc",
-      "frame_editing/frame_editing_lib.h",
-    ]
-
-    deps = [
-      "../common_video",
-    ]
-  }
-
-  rtc_executable("frame_editor") {
-    testonly = true
-    sources = [
-      "frame_editing/frame_editing.cc",
-    ]
-
-    deps = [
-      ":frame_editing_lib",
-      "//third_party/abseil-cpp/absl/flags:flag",
-      "//third_party/abseil-cpp/absl/flags:parse",
-    ]
-  }
-
   if (rtc_enable_protobuf) {
     proto_library("chart_proto") {
       visibility = [ "*" ]
@@ -394,7 +369,6 @@ if (rtc_include_tests) {
       "frame_analyzer/video_geometry_aligner_unittest.cc",
       "frame_analyzer/video_quality_analysis_unittest.cc",
       "frame_analyzer/video_temporal_aligner_unittest.cc",
-      "frame_editing/frame_editing_unittest.cc",
       "sanitizers_unittest.cc",
       "video_file_reader_unittest.cc",
       "video_file_writer_unittest.cc",
@@ -420,10 +394,7 @@ if (rtc_include_tests) {
     ]
 
     if (!build_with_chromium) {
-      deps += [
-        ":frame_editing_lib",
-        ":reference_less_video_analysis_lib",
-      ]
+      deps += [ ":reference_less_video_analysis_lib" ]
     }
 
     if (rtc_enable_protobuf) {
