@@ -62,11 +62,14 @@ struct LocalAndRemoteSdp {
 
 struct PatchingParams {
   PatchingParams(
+      std::string video_codec_name,
       std::map<std::string,
                PeerConnectionE2EQualityTestFixture::VideoSimulcastConfig>
           stream_label_to_simulcast_config)
-      : stream_label_to_simulcast_config(stream_label_to_simulcast_config) {}
+      : video_codec_name(video_codec_name),
+        stream_label_to_simulcast_config(stream_label_to_simulcast_config) {}
 
+  std::string video_codec_name;
   std::map<std::string,
            PeerConnectionE2EQualityTestFixture::VideoSimulcastConfig>
       stream_label_to_simulcast_config;
@@ -125,7 +128,16 @@ class SignalingInterceptor {
     std::vector<std::string> mids_order;
   };
 
-  void FillContext(SessionDescriptionInterface* offer);
+  LocalAndRemoteSdp PatchVp8Offer(
+      std::unique_ptr<SessionDescriptionInterface> offer);
+  LocalAndRemoteSdp PatchVp9Offer(
+      std::unique_ptr<SessionDescriptionInterface> offer);
+  LocalAndRemoteSdp PatchVp8Answer(
+      std::unique_ptr<SessionDescriptionInterface> offer);
+  LocalAndRemoteSdp PatchVp9Answer(
+      std::unique_ptr<SessionDescriptionInterface> offer);
+
+  void FillSimulcastContext(SessionDescriptionInterface* offer);
   std::unique_ptr<cricket::SessionDescription> RestoreMediaSectionsOrder(
       std::unique_ptr<cricket::SessionDescription> source);
 

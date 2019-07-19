@@ -90,7 +90,8 @@ std::vector<RtpCodecCapability> FilterVideoCodecCapabilities(
 // If offer has simulcast video sections - for each section creates
 // SimulcastSectionInfo and put it into |context_|. Also will set conference
 // mode if requested.
-void SignalingInterceptor::FillContext(SessionDescriptionInterface* offer) {
+void SignalingInterceptor::FillSimulcastContext(
+    SessionDescriptionInterface* offer) {
   for (auto& content : offer->description()->contents()) {
     context_.mids_order.push_back(content.mid());
     cricket::MediaContentDescription* media_desc = content.media_description();
@@ -160,7 +161,21 @@ void SignalingInterceptor::FillContext(SessionDescriptionInterface* offer) {
 
 LocalAndRemoteSdp SignalingInterceptor::PatchOffer(
     std::unique_ptr<SessionDescriptionInterface> offer) {
-  FillContext(offer.get());
+  if (params_.video_codec_name == cricket::kVp8CodecName) {
+    return PatchVp8Offer(std::move(offer));
+  }
+
+  if (params_.video_codec_name == cricket::kVp9CodecName) {
+    return PatchVp9Offer(std::move(offer));
+  }
+
+  auto offer_for_remote = CloneSessionDescription(offer.get());
+  return LocalAndRemoteSdp(std::move(offer), std::move(offer_for_remote));
+}
+
+LocalAndRemoteSdp SignalingInterceptor::PatchVp8Offer(
+    std::unique_ptr<SessionDescriptionInterface> offer) {
+  FillSimulcastContext(offer.get());
   if (!context_.HasSimulcast()) {
     auto offer_for_remote = CloneSessionDescription(offer.get());
     return LocalAndRemoteSdp(std::move(offer), std::move(offer_for_remote));
@@ -267,23 +282,76 @@ LocalAndRemoteSdp SignalingInterceptor::PatchOffer(
   return LocalAndRemoteSdp(std::move(offer), std::move(patched_offer));
 }
 
-std::unique_ptr<cricket::SessionDescription>
-SignalingInterceptor::RestoreMediaSectionsOrder(
-    std::unique_ptr<cricket::SessionDescription> source) {
-  std::unique_ptr<cricket::SessionDescription> out = source->Clone();
-  for (auto& mid : context_.mids_order) {
-    RTC_CHECK(out->RemoveContentByName(mid));
+LocalAndRemoteSdp SignalingInterceptor::PatchVp9Offer(
+    std::unique_ptr<SessionDescriptionInterface> offer) {
+  rtc::UniqueRandomIdGenerator ssrcs_generator;
+  for (auto& content : offer->description()->contents()) {
+    for (auto& stream : content.media_description()->streams()) {
+      for (auto& ssrc : stream.ssrcs) {
+        ssrcs_generator.AddKnownId(ssrc);
+      }
+    }
   }
-  RTC_CHECK_EQ(out->contents().size(), 0);
-  for (auto& mid : context_.mids_order) {
-    cricket::ContentInfo* content = source->GetContentByName(mid);
-    RTC_CHECK(content);
-    out->AddContent(mid, content->type, content->media_description()->Clone());
+
+  for (auto& content : offer->description()->contents()) {
+    if (content.media_description()->type() !=
+        cricket::MediaType::MEDIA_TYPE_VIDEO) {
+      // We are interested in only video tracks
+      continue;
+    }
+    if (content.media_description()->direction() ==
+        RtpTransceiverDirection::kRecvOnly) {
+      // If direction is receive only, then there is no media in this track from
+      // sender side, so we needn't to do anything with this track.
+      continue;
+    }
+    RTC_CHECK(content.media_description()->streams().size() == 1);
+    cricket::StreamParams& stream =
+        content.media_description()->mutable_streams()[0];
+    RTC_CHECK(stream.stream_ids().size() == 1)
+        << "Too many stream ids in video stream";
+    std::string stream_id = stream.stream_ids()[0];
+
+    auto it = params_.stream_label_to_simulcast_config.find(stream_id);
+    if (it == params_.stream_label_to_simulcast_config.end()) {
+      continue;
+    }
+    int svc_layers_count = it->second.simulcast_streams_count;
+
+    RTC_CHECK(stream.has_ssrc_groups()) << "Only SVC with RTX is supported";
+    RTC_CHECK(stream.ssrc_groups.size() == 1)
+        << "Too many ssrc groups in the track";
+    std::vector<uint32_t> primary_ssrcs;
+    stream.GetPrimarySsrcs(&primary_ssrcs);
+    RTC_CHECK(primary_ssrcs.size() == 1);
+    for (int i = 1; i < svc_layers_count; ++i) {
+      uint32_t ssrc = ssrcs_generator.GenerateId();
+      primary_ssrcs.push_back(ssrc);
+      stream.add_ssrc(ssrc);
+      stream.AddFidSsrc(ssrc, ssrcs_generator.GenerateId());
+    }
+    stream.ssrc_groups.push_back(
+        cricket::SsrcGroup(cricket::kSimSsrcGroupSemantics, primary_ssrcs));
   }
-  return out;
+  auto offer_for_remote = CloneSessionDescription(offer.get());
+  return LocalAndRemoteSdp(std::move(offer), std::move(offer_for_remote));
 }
 
 LocalAndRemoteSdp SignalingInterceptor::PatchAnswer(
+    std::unique_ptr<SessionDescriptionInterface> answer) {
+  if (params_.video_codec_name == cricket::kVp8CodecName) {
+    return PatchVp8Answer(std::move(answer));
+  }
+
+  if (params_.video_codec_name == cricket::kVp9CodecName) {
+    return PatchVp9Answer(std::move(answer));
+  }
+
+  auto answer_for_remote = CloneSessionDescription(answer.get());
+  return LocalAndRemoteSdp(std::move(answer), std::move(answer_for_remote));
+}
+
+LocalAndRemoteSdp SignalingInterceptor::PatchVp8Answer(
     std::unique_ptr<SessionDescriptionInterface> answer) {
   if (!context_.HasSimulcast()) {
     auto answer_for_remote = CloneSessionDescription(answer.get());
@@ -396,6 +464,28 @@ LocalAndRemoteSdp SignalingInterceptor::PatchAnswer(
   patched_answer->Initialize(std::move(desc), answer->session_id(),
                              answer->session_version());
   return LocalAndRemoteSdp(std::move(answer), std::move(patched_answer));
+}
+
+std::unique_ptr<cricket::SessionDescription>
+SignalingInterceptor::RestoreMediaSectionsOrder(
+    std::unique_ptr<cricket::SessionDescription> source) {
+  std::unique_ptr<cricket::SessionDescription> out = source->Clone();
+  for (auto& mid : context_.mids_order) {
+    RTC_CHECK(out->RemoveContentByName(mid));
+  }
+  RTC_CHECK_EQ(out->contents().size(), 0);
+  for (auto& mid : context_.mids_order) {
+    cricket::ContentInfo* content = source->GetContentByName(mid);
+    RTC_CHECK(content);
+    out->AddContent(mid, content->type, content->media_description()->Clone());
+  }
+  return out;
+}
+
+LocalAndRemoteSdp SignalingInterceptor::PatchVp9Answer(
+    std::unique_ptr<SessionDescriptionInterface> answer) {
+  auto answer_for_remote = CloneSessionDescription(answer.get());
+  return LocalAndRemoteSdp(std::move(answer), std::move(answer_for_remote));
 }
 
 std::vector<std::unique_ptr<IceCandidateInterface>>

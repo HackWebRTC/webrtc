@@ -81,7 +81,7 @@ EncodedImageExtractionResult SingleProcessEncodedImageDataInjector::ExtractData(
     // Extract frame id from first 2 bytes starting from insertion pos.
     uint16_t next_id = buffer[insertion_pos] + (buffer[insertion_pos + 1] << 8);
     // Extract frame sub id from second 3 byte starting from insertion pos.
-    uint16_t sub_id = buffer[insertion_pos + 2];
+    uint8_t sub_id = buffer[insertion_pos + 2];
     RTC_CHECK(!id || *id == next_id)
         << "Different frames encoded into single encoded image: " << *id
         << " vs " << next_id;
@@ -102,7 +102,7 @@ EncodedImageExtractionResult SingleProcessEncodedImageDataInjector::ExtractData(
     extraction_infos.push_back(info);
     // We need to discard encoded image only if all concatenated encoded images
     // have to be discarded.
-    discard = discard & info.discard;
+    discard = discard && info.discard;
     if (pos < info.length) {
       break;
     }

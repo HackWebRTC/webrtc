@@ -163,11 +163,13 @@ void DefaultVideoQualityAnalyzer::OnFrameEncoded(
   rtc::CritScope crit(&lock_);
   auto it = frame_stats_.find(frame_id);
   RTC_DCHECK(it != frame_stats_.end());
-  RTC_DCHECK(it->second.encoded_time.IsInfinite())
-      << "Received multiple spatial layers for stream_label="
-      << it->second.stream_label;
-  frame_counters_.encoded++;
-  stream_frame_counters_[it->second.stream_label].encoded++;
+  // For SVC we can receive multiple encoded images for one frame, so to cover
+  // all cases we have to pick the last encode time.
+  if (it->second.encoded_time.IsInfinite()) {
+    // Increase counters only when we meet this frame first time.
+    frame_counters_.encoded++;
+    stream_frame_counters_[it->second.stream_label].encoded++;
+  }
   it->second.encoded_time = Now();
 }
 

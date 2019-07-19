@@ -241,7 +241,7 @@ class PeerConnectionE2EQualityTest
       const VideoConfig& video_config);
   void MaybeAddAudio(TestPeer* peer);
   void SetPeerCodecPreferences(TestPeer* peer, const RunParams& run_params);
-  void SetupCall();
+  void SetupCall(const RunParams& run_params);
   void ExchangeOfferAnswer(SignalingInterceptor* signaling_interceptor);
   void ExchangeIceCandidates(SignalingInterceptor* signaling_interceptor);
   void StartVideo(

@@ -113,6 +113,18 @@ class PeerConnectionE2EQualityTestFixture {
 
   enum VideoGeneratorType { kDefault, kI420A, kI010 };
 
+  // Config for Vp8 simulcast or Vp9 SVC testing.
+  //
+  // SVC support is limited:
+  // During SVC testing there is no SFU, so framework will try to emulate SFU
+  // behavior in regular p2p call. Because of it there are such limitations:
+  //  * if |target_spatial_index| is not equal to the highest spatial layer
+  //    then no packet/frame drops are allowed.
+  //
+  //    If there will be any drops, that will affect requested layer, then
+  //    WebRTC SVC implementation will continue decoding only the highest
+  //    available layer and won't restore lower layers, so analyzer won't
+  //    receive required data which will cause wrong results or test failures.
   struct VideoSimulcastConfig {
     VideoSimulcastConfig(int simulcast_streams_count, int target_spatial_index)
         : simulcast_streams_count(simulcast_streams_count),

@@ -290,12 +290,10 @@ bool QualityAnalyzingVideoEncoder::ShouldDiscard(
   absl::optional<int> required_spatial_index =
       stream_required_spatial_index_[stream_label];
   if (required_spatial_index) {
-    RTC_CHECK(encoded_image.SpatialIndex())
-        << "Specific spatial layer/simulcast stream requested for track, but "
-           "now spatial layers/simulcast streams produced by encoder. "
-           "stream_label="
-        << stream_label
-        << "; required_spatial_index=" << *required_spatial_index;
+    absl::optional<int> cur_spatial_index = encoded_image.SpatialIndex();
+    if (!cur_spatial_index) {
+      cur_spatial_index = 0;
+    }
     RTC_CHECK(mode_ != SimulcastMode::kNormal)
         << "Analyzing encoder is in kNormal "
            "mode, but spatial layer/simulcast "
@@ -303,21 +301,21 @@ bool QualityAnalyzingVideoEncoder::ShouldDiscard(
     if (mode_ == SimulcastMode::kSimulcast) {
       // In simulcast mode only encoded images with required spatial index are
       // interested, so all others have to be discarded.
-      return *encoded_image.SpatialIndex() != *required_spatial_index;
+      return *cur_spatial_index != *required_spatial_index;
     } else if (mode_ == SimulcastMode::kSVC) {
       // In SVC mode encoded images with spatial indexes that are equal or
       // less than required one are interesting, so all above have to be
       // discarded.
-      return *encoded_image.SpatialIndex() > *required_spatial_index;
+      return *cur_spatial_index > *required_spatial_index;
     } else if (mode_ == SimulcastMode::kKSVC) {
       // In KSVC mode for key frame encoded images with spatial indexes that
       // are equal or less than required one are interesting, so all above
       // have to be discarded. For other frames only required spatial index
       // is interesting, so all others have to be discarded.
       if (encoded_image._frameType == VideoFrameType::kVideoFrameKey) {
-        return *encoded_image.SpatialIndex() > *required_spatial_index;
+        return *cur_spatial_index > *required_spatial_index;
       } else {
-        return *encoded_image.SpatialIndex() != *required_spatial_index;
+        return *cur_spatial_index != *required_spatial_index;
       }
     } else {
       RTC_NOTREACHED() << "Unsupported encoder mode";

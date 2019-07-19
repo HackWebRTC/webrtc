@@ -211,5 +211,45 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Simulcast) {
       });
 }
 
+// IOS debug builds can be quite slow, disabling to avoid issues with timeouts.
+#if defined(WEBRTC_IOS) && defined(WEBRTC_ARCH_ARM64) && !defined(NDEBUG)
+#define MAYBE_Svc DISABLED_Svc
+#else
+#define MAYBE_Svc Svc
+#endif
+TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Svc) {
+  RunParams run_params(TimeDelta::seconds(7));
+  run_params.video_codec_name = cricket::kVp9CodecName;
+  RunTest(
+      "simulcast", run_params,
+      [](PeerConfigurer* alice) {
+        VideoConfig simulcast(1280, 720, 30);
+        simulcast.stream_label = "alice-simulcast";
+        // Because we have network with packets loss we can analyze only the
+        // highest spatial layer in SVC mode.
+        simulcast.simulcast_config = VideoSimulcastConfig(3, 2);
+        alice->AddVideoConfig(std::move(simulcast));
+
+        AudioConfig audio;
+        audio.stream_label = "alice-audio";
+        audio.mode = AudioConfig::Mode::kFile;
+        audio.input_file_name =
+            test::ResourcePath("pc_quality_smoke_test_alice_source", "wav");
+        alice->SetAudioConfig(std::move(audio));
+      },
+      [](PeerConfigurer* bob) {
+        VideoConfig video(640, 360, 30);
+        video.stream_label = "bob-video";
+        bob->AddVideoConfig(std::move(video));
+
+        AudioConfig audio;
+        audio.stream_label = "bob-audio";
+        audio.mode = AudioConfig::Mode::kFile;
+        audio.input_file_name =
+            test::ResourcePath("pc_quality_smoke_test_bob_source", "wav");
+        bob->SetAudioConfig(std::move(audio));
+      });
+}
+
 }  // namespace webrtc_pc_e2e
 }  // namespace webrtc
