@@ -21,6 +21,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/flags/usage.h"
 #include "examples/peerconnection/server/data_socket.h"
 #include "examples/peerconnection/server/peer_channel.h"
 #include "system_wrappers/include/field_trial.h"
@@ -65,10 +66,9 @@ void HandleBrowserRequest(DataSocket* ds, bool* quit) {
 }
 
 int main(int argc, char* argv[]) {
+  absl::SetProgramUsageMessage(
+      "Example usage: ./peerconnection_server --port=8888\n");
   absl::ParseCommandLine(argc, argv);
-  // TODO(bugs.webrtc.org/10616): Add program usage message when Abseil
-  // flags supports it.
-  // std::string usage = "Example usage: " + program_name + " --port=8888";
 
   // InitFieldTrialsFromString stores the char*, so the char array must outlive
   // the application.

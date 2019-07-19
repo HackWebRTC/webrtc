@@ -731,6 +731,7 @@ if (is_linux || is_win) {
       "../test:field_trial",
       "//third_party/abseil-cpp/absl/flags:flag",
       "//third_party/abseil-cpp/absl/flags:parse",
+      "//third_party/abseil-cpp/absl/flags:usage",
     ]
   }
   rtc_executable("relayserver") {
