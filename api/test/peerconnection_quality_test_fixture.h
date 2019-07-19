@@ -148,8 +148,6 @@ class PeerConnectionE2EQualityTestFixture {
     //    spatial layer and all layers below, including target one will be
     //    processed. All layers above target one will be dropped.
     int target_spatial_index;
-    // If true will set conference mode in SDP media section for this track.
-    bool use_conference_mode = false;
   };
 
   // Contains properties of single video stream.
@@ -307,6 +305,9 @@ class PeerConnectionE2EQualityTestFixture {
     // estimated by WebRTC stack will be multiplied on this multiplier and then
     // provided into VideoEncoder::SetRates(...).
     double video_encoder_bitrate_multiplier = 1.0;
+    // If true will set conference mode in SDP media section for all video
+    // tracks for all peers.
+    bool use_conference_mode = false;
   };
 
   // Represent an entity that will report quality metrics after test.

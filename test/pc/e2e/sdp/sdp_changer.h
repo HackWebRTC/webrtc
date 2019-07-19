@@ -20,7 +20,6 @@
 #include "api/array_view.h"
 #include "api/jsep.h"
 #include "api/rtp_parameters.h"
-#include "api/test/peerconnection_quality_test_fixture.h"
 #include "media/base/rid_description.h"
 #include "pc/session_description.h"
 #include "pc/simulcast_description.h"
@@ -63,16 +62,16 @@ struct LocalAndRemoteSdp {
 struct PatchingParams {
   PatchingParams(
       std::string video_codec_name,
-      std::map<std::string,
-               PeerConnectionE2EQualityTestFixture::VideoSimulcastConfig>
-          stream_label_to_simulcast_config)
+      bool use_conference_mode,
+      std::map<std::string, int> stream_label_to_simulcast_streams_count)
       : video_codec_name(video_codec_name),
-        stream_label_to_simulcast_config(stream_label_to_simulcast_config) {}
+        use_conference_mode(use_conference_mode),
+        stream_label_to_simulcast_streams_count(
+            stream_label_to_simulcast_streams_count) {}
 
   std::string video_codec_name;
-  std::map<std::string,
-           PeerConnectionE2EQualityTestFixture::VideoSimulcastConfig>
-      stream_label_to_simulcast_config;
+  bool use_conference_mode;
+  std::map<std::string, int> stream_label_to_simulcast_streams_count;
 };
 
 class SignalingInterceptor {
@@ -96,12 +95,10 @@ class SignalingInterceptor {
   struct SimulcastSectionInfo {
     SimulcastSectionInfo(const std::string& mid,
                          cricket::MediaProtocolType media_protocol_type,
-                         const std::vector<cricket::RidDescription>& rids_desc,
-                         bool conference_mode);
+                         const std::vector<cricket::RidDescription>& rids_desc);
 
     const std::string mid;
     const cricket::MediaProtocolType media_protocol_type;
-    const bool conference_mode;
     std::vector<std::string> rids;
     cricket::SimulcastDescription simulcast_description;
     webrtc::RtpExtension mid_extension;

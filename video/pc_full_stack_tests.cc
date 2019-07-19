@@ -38,6 +38,10 @@ using AudioConfig =
     webrtc_pc_e2e::PeerConnectionE2EQualityTestFixture::AudioConfig;
 using VideoGeneratorType =
     webrtc_pc_e2e::PeerConnectionE2EQualityTestFixture::VideoGeneratorType;
+using ScreenShareConfig =
+    webrtc_pc_e2e::PeerConnectionE2EQualityTestFixture::ScreenShareConfig;
+using VideoSimulcastConfig =
+    webrtc_pc_e2e::PeerConnectionE2EQualityTestFixture::VideoSimulcastConfig;
 
 namespace {
 
@@ -822,8 +826,7 @@ TEST_P(PCGenericDescriptorTest, ForemanCif500kbps100msLimitedQueue) {
 
 /*
 // TODO(bugs.webrtc.org/10639) we need to disable send side bwe, but it isn't
-supported in
-// PC level framework.
+// supported in PC level framework.
 TEST(PCFullStackTest, ForemanCif500kbps100msLimitedQueueRecvBwe) {
   auto fixture = CreateVideoQualityTestFixture();
   ParamsWithLogging foreman_cif;
@@ -1076,55 +1079,104 @@ TEST(PCFullStackTest, ConferenceMotionHd2000kbps100msLimitedQueueVP9) {
 }
 #endif
 
-/*
-// TODO(bugs.webrtc.org/10639) requires simulcast/SVC support in PC framework
-TEST(PCFullStackTest, ScreenshareSlidesVP8_2TL) {
-  auto fixture = CreateVideoQualityTestFixture();
-  ParamsWithLogging screenshare;
-  screenshare.call.send_side_bwe = true;
-  screenshare.video[0] = {true,    1850,  1110,  5, 50000, 200000,
-                          1000000, false, "VP8", 2, 1,     400000,
-                          false,   false, false, ""};
-  screenshare.screenshare[0] = {true, false, 10};
-  screenshare.analyzer = {"screenshare_slides", 0.0, 0.0, kTestDurationSec};
-  fixture->RunWithAnalyzer(screenshare);
+TEST(PCFullStackTest, ScreenshareSlidesVP8_2TL_NoConferenceMode) {
+  std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
+      CreateNetworkEmulationManager();
+  auto fixture = CreateTestFixture(
+      "pc_screenshare_slides_no_conference_mode",
+      CreateTwoNetworkLinks(network_emulation_manager.get(),
+                            BuiltInNetworkBehaviorConfig()),
+      [](PeerConfigurer* alice) {
+        VideoConfig video(1850, 1110, 5);
+        video.screen_share_config = ScreenShareConfig(TimeDelta::seconds(10));
+        video.stream_label = "alice-video";
+        alice->AddVideoConfig(std::move(video));
+      },
+      [](PeerConfigurer* bob) {});
+  RunParams run_params(TimeDelta::seconds(kTestDurationSec));
+  run_params.video_codec_name = cricket::kVp8CodecName;
+  run_params.use_flex_fec = false;
+  run_params.use_ulp_fec = false;
+  fixture->Run(std::move(run_params));
 }
 
+TEST(PCFullStackTest, ScreenshareSlidesVP8_2TL) {
+  std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
+      CreateNetworkEmulationManager();
+  auto fixture = CreateTestFixture(
+      "pc_screenshare_slides",
+      CreateTwoNetworkLinks(network_emulation_manager.get(),
+                            BuiltInNetworkBehaviorConfig()),
+      [](PeerConfigurer* alice) {
+        VideoConfig video(1850, 1110, 5);
+        video.screen_share_config = ScreenShareConfig(TimeDelta::seconds(10));
+        video.stream_label = "alice-video";
+        alice->AddVideoConfig(std::move(video));
+      },
+      [](PeerConfigurer* bob) {});
+  RunParams run_params(TimeDelta::seconds(kTestDurationSec));
+  run_params.video_codec_name = cricket::kVp8CodecName;
+  run_params.use_flex_fec = false;
+  run_params.use_ulp_fec = false;
+  run_params.use_conference_mode = true;
+  fixture->Run(std::move(run_params));
+}
+
+// TODO(bugs.webrtc.org/9840): Investigate why is this test flaky on Win/Mac.
+#if !defined(WEBRTC_MAC) && !defined(WEBRTC_WIN)
+TEST(PCFullStackTest, ScreenshareSlidesVP8_2TL_Simulcast_NoConferenceMode) {
+  std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
+      CreateNetworkEmulationManager();
+  auto fixture = CreateTestFixture(
+      "pc_screenshare_slides_simulcast_no_conference_mode",
+      CreateTwoNetworkLinks(network_emulation_manager.get(),
+                            BuiltInNetworkBehaviorConfig()),
+      [](PeerConfigurer* alice) {
+        VideoConfig video(1850, 1110, 60);
+        video.screen_share_config = ScreenShareConfig(TimeDelta::seconds(10));
+        video.simulcast_config = VideoSimulcastConfig(2, 0);
+        video.stream_label = "alice-video";
+        alice->AddVideoConfig(std::move(video));
+      },
+      [](PeerConfigurer* bob) {});
+  RunParams run_params(TimeDelta::seconds(kTestDurationSec));
+  run_params.video_codec_name = cricket::kVp8CodecName;
+  run_params.use_flex_fec = false;
+  run_params.use_ulp_fec = false;
+  fixture->Run(std::move(run_params));
+}
+
+TEST(PCFullStackTest, ScreenshareSlidesVP8_2TL_Simulcast) {
+  std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
+      CreateNetworkEmulationManager();
+  auto fixture = CreateTestFixture(
+      "pc_screenshare_slides_simulcast",
+      CreateTwoNetworkLinks(network_emulation_manager.get(),
+                            BuiltInNetworkBehaviorConfig()),
+      [](PeerConfigurer* alice) {
+        VideoConfig video(1850, 1110, 60);
+        video.screen_share_config = ScreenShareConfig(TimeDelta::seconds(10));
+        video.simulcast_config = VideoSimulcastConfig(2, 0);
+        video.stream_label = "alice-video";
+        alice->AddVideoConfig(std::move(video));
+      },
+      [](PeerConfigurer* bob) {});
+  RunParams run_params(TimeDelta::seconds(kTestDurationSec));
+  run_params.video_codec_name = cricket::kVp8CodecName;
+  run_params.use_flex_fec = false;
+  run_params.use_ulp_fec = false;
+  run_params.use_conference_mode = true;
+  fixture->Run(std::move(run_params));
+}
+#endif  // !defined(WEBRTC_MAC) && !defined(WEBRTC_WIN)
+
+/*
 #if !defined(WEBRTC_MAC)
 // TODO(bugs.webrtc.org/9840): Investigate why is this test flaky on Win/Mac.
 #if !defined(WEBRTC_WIN)
 const char kScreenshareSimulcastVariableFramerateExperiment[] =
     "WebRTC-VP8VariableFramerateScreenshare/"
     "Enabled,min_fps:5.0,min_qp:15,undershoot:30/";
-// TODO(bugs.webrtc.org/10639) requires simulcast/SVC support in PC framework
-TEST(PCFullStackTest, ScreenshareSlidesVP8_2TL_Simulcast) {
-  auto fixture = CreateVideoQualityTestFixture();
-  ParamsWithLogging screenshare;
-  screenshare.call.send_side_bwe = true;
-  screenshare.screenshare[0] = {true, false, 10};
-  screenshare.video[0] = {true,    1850,  1110,  30, 800000, 2500000,
-                          2500000, false, "VP8", 2,  1,      400000,
-                          false,   false, false, ""};
-  screenshare.analyzer = {"screenshare_slides_simulcast", 0.0, 0.0,
-                          kTestDurationSec};
-  ParamsWithLogging screenshare_params_high;
-  screenshare_params_high.video[0] = {
-      true,  1850, 1110, 60,     600000, 1250000, 1250000, false,
-      "VP8", 2,    0,    400000, false,  false,   false,   ""};
-  VideoQualityTest::Params screenshare_params_low;
-  screenshare_params_low.video[0] = {true,    1850,  1110,  5, 30000, 200000,
-                                     1000000, false, "VP8", 2, 0,     400000,
-                                     false,   false, false, ""};
-
-  std::vector<VideoStream> streams = {
-      VideoQualityTest::DefaultVideoStream(screenshare_params_low, 0),
-      VideoQualityTest::DefaultVideoStream(screenshare_params_high, 0)};
-  screenshare.ss[0] = {
-      streams, 1, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
-      false};
-  fixture->RunWithAnalyzer(screenshare);
-}
-
 // TODO(bugs.webrtc.org/10639) requires simulcast/SVC support in PC framework
 TEST(PCFullStackTest, ScreenshareSlidesVP8_2TL_Simulcast_Variable_Framerate) {
   test::ScopedFieldTrials field_trial(
@@ -1494,6 +1546,7 @@ TEST(PCFullStackTest, VP9KSVC_3SL_Medium_Network_Restricted_Trusted_Rate) {
 #endif  // !defined(WEBRTC_MAC)
 
 #endif  // defined(RTC_ENABLE_VP9)
+*/
 
 // Android bots can't handle FullHD, so disable the test.
 // TODO(bugs.webrtc.org/9220): Investigate source of flakiness on Mac.
@@ -1502,107 +1555,108 @@ TEST(PCFullStackTest, VP9KSVC_3SL_Medium_Network_Restricted_Trusted_Rate) {
 #else
 #define MAYBE_SimulcastFullHdOveruse SimulcastFullHdOveruse
 #endif
-// TODO(bugs.webrtc.org/10639) requires simulcast/SVC support in PC framework
 TEST(PCFullStackTest, MAYBE_SimulcastFullHdOveruse) {
-  auto fixture = CreateVideoQualityTestFixture();
-  ParamsWithLogging simulcast;
-  simulcast.call.send_side_bwe = true;
-  simulcast.video[0] = {true,    1920,  1080,  30,         800000, 2500000,
-                        2500000, false, "VP8", 3,          2,      400000,
-                        false,   false, false, "Generator"};
-  simulcast.analyzer = {"simulcast_HD_high", 0.0, 0.0, kTestDurationSec};
-  simulcast.config->loss_percent = 0;
-  simulcast.config->queue_delay_ms = 100;
-  std::vector<VideoStream> streams = {
-      VideoQualityTest::DefaultVideoStream(simulcast, 0),
-      VideoQualityTest::DefaultVideoStream(simulcast, 0),
-      VideoQualityTest::DefaultVideoStream(simulcast, 0)};
-  simulcast.ss[0] = {
-      streams, 2, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
-      true};
   webrtc::test::ScopedFieldTrials override_trials(AppendFieldTrials(
       "WebRTC-ForceSimulatedOveruseIntervalMs/1000-50000-300/"));
-  fixture->RunWithAnalyzer(simulcast);
+  std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
+      CreateNetworkEmulationManager();
+  BuiltInNetworkBehaviorConfig config;
+  config.loss_percent = 0;
+  config.queue_delay_ms = 100;
+  auto fixture = CreateTestFixture(
+      "pc_simulcast_HD_high",
+      CreateTwoNetworkLinks(network_emulation_manager.get(), config),
+      [](PeerConfigurer* alice) {
+        VideoConfig video(1920, 1080, 30);
+        video.generator = VideoGeneratorType::kDefault;
+        video.simulcast_config = VideoSimulcastConfig(3, 2);
+        video.stream_label = "alice-video";
+        alice->AddVideoConfig(std::move(video));
+      },
+      [](PeerConfigurer* bob) {});
+  RunParams run_params(TimeDelta::seconds(kTestDurationSec));
+  run_params.video_codec_name = cricket::kVp8CodecName;
+  run_params.use_flex_fec = false;
+  run_params.use_ulp_fec = false;
+  fixture->Run(std::move(run_params));
 }
 
-// TODO(bugs.webrtc.org/10639) requires simulcast/SVC support in PC framework
 TEST(PCFullStackTest, SimulcastVP8_3SL_High) {
-  auto fixture = CreateVideoQualityTestFixture();
-  ParamsWithLogging simulcast;
-  simulcast.call.send_side_bwe = true;
-  simulcast.video[0] = SimulcastVp8VideoHigh();
-  simulcast.analyzer = {"simulcast_vp8_3sl_high", 0.0, 0.0, kTestDurationSec};
-  simulcast.config->loss_percent = 0;
-  simulcast.config->queue_delay_ms = 100;
-  ParamsWithLogging video_params_high;
-  video_params_high.video[0] = SimulcastVp8VideoHigh();
-  ParamsWithLogging video_params_medium;
-  video_params_medium.video[0] = SimulcastVp8VideoMedium();
-  ParamsWithLogging video_params_low;
-  video_params_low.video[0] = SimulcastVp8VideoLow();
-
-  std::vector<VideoStream> streams = {
-      VideoQualityTest::DefaultVideoStream(video_params_low, 0),
-      VideoQualityTest::DefaultVideoStream(video_params_medium, 0),
-      VideoQualityTest::DefaultVideoStream(video_params_high, 0)};
-  simulcast.ss[0] = {
-      streams, 2, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
-      false};
-  fixture->RunWithAnalyzer(simulcast);
+  std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
+      CreateNetworkEmulationManager();
+  BuiltInNetworkBehaviorConfig config;
+  config.loss_percent = 0;
+  config.queue_delay_ms = 100;
+  auto fixture = CreateTestFixture(
+      "pc_simulcast_vp8_3sl_high",
+      CreateTwoNetworkLinks(network_emulation_manager.get(), config),
+      [](PeerConfigurer* alice) {
+        VideoConfig video(1280, 720, 30);
+        video.input_file_name =
+            ClipNameToClipPath("ConferenceMotion_1280_720_50");
+        video.simulcast_config = VideoSimulcastConfig(3, 2);
+        video.stream_label = "alice-video";
+        alice->AddVideoConfig(std::move(video));
+      },
+      [](PeerConfigurer* bob) {});
+  RunParams run_params(TimeDelta::seconds(kTestDurationSec));
+  run_params.video_codec_name = cricket::kVp8CodecName;
+  run_params.use_flex_fec = false;
+  run_params.use_ulp_fec = false;
+  fixture->Run(std::move(run_params));
 }
 
-// TODO(bugs.webrtc.org/10639) requires simulcast/SVC support in PC framework
 TEST(PCFullStackTest, SimulcastVP8_3SL_Medium) {
-  auto fixture = CreateVideoQualityTestFixture();
-  ParamsWithLogging simulcast;
-  simulcast.call.send_side_bwe = true;
-  simulcast.video[0] = SimulcastVp8VideoHigh();
-  simulcast.analyzer = {"simulcast_vp8_3sl_medium", 0.0, 0.0, kTestDurationSec};
-  simulcast.config->loss_percent = 0;
-  simulcast.config->queue_delay_ms = 100;
-  ParamsWithLogging video_params_high;
-  video_params_high.video[0] = SimulcastVp8VideoHigh();
-  ParamsWithLogging video_params_medium;
-  video_params_medium.video[0] = SimulcastVp8VideoMedium();
-  ParamsWithLogging video_params_low;
-  video_params_low.video[0] = SimulcastVp8VideoLow();
-
-  std::vector<VideoStream> streams = {
-      VideoQualityTest::DefaultVideoStream(video_params_low, 0),
-      VideoQualityTest::DefaultVideoStream(video_params_medium, 0),
-      VideoQualityTest::DefaultVideoStream(video_params_high, 0)};
-  simulcast.ss[0] = {
-      streams, 1, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
-      false};
-  fixture->RunWithAnalyzer(simulcast);
+  std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
+      CreateNetworkEmulationManager();
+  BuiltInNetworkBehaviorConfig config;
+  config.loss_percent = 0;
+  config.queue_delay_ms = 100;
+  auto fixture = CreateTestFixture(
+      "pc_simulcast_vp8_3sl_medium",
+      CreateTwoNetworkLinks(network_emulation_manager.get(), config),
+      [](PeerConfigurer* alice) {
+        VideoConfig video(1280, 720, 30);
+        video.input_file_name =
+            ClipNameToClipPath("ConferenceMotion_1280_720_50");
+        video.simulcast_config = VideoSimulcastConfig(3, 1);
+        video.stream_label = "alice-video";
+        alice->AddVideoConfig(std::move(video));
+      },
+      [](PeerConfigurer* bob) {});
+  RunParams run_params(TimeDelta::seconds(kTestDurationSec));
+  run_params.video_codec_name = cricket::kVp8CodecName;
+  run_params.use_flex_fec = false;
+  run_params.use_ulp_fec = false;
+  fixture->Run(std::move(run_params));
 }
 
-// TODO(bugs.webrtc.org/10639) requires simulcast/SVC support in PC framework
 TEST(PCFullStackTest, SimulcastVP8_3SL_Low) {
-  auto fixture = CreateVideoQualityTestFixture();
-  ParamsWithLogging simulcast;
-  simulcast.call.send_side_bwe = true;
-  simulcast.video[0] = SimulcastVp8VideoHigh();
-  simulcast.analyzer = {"simulcast_vp8_3sl_low", 0.0, 0.0, kTestDurationSec};
-  simulcast.config->loss_percent = 0;
-  simulcast.config->queue_delay_ms = 100;
-  ParamsWithLogging video_params_high;
-  video_params_high.video[0] = SimulcastVp8VideoHigh();
-  ParamsWithLogging video_params_medium;
-  video_params_medium.video[0] = SimulcastVp8VideoMedium();
-  ParamsWithLogging video_params_low;
-  video_params_low.video[0] = SimulcastVp8VideoLow();
-
-  std::vector<VideoStream> streams = {
-      VideoQualityTest::DefaultVideoStream(video_params_low, 0),
-      VideoQualityTest::DefaultVideoStream(video_params_medium, 0),
-      VideoQualityTest::DefaultVideoStream(video_params_high, 0)};
-  simulcast.ss[0] = {
-      streams, 0, 1, 0, InterLayerPredMode::kOn, std::vector<SpatialLayer>(),
-      false};
-  fixture->RunWithAnalyzer(simulcast);
+  std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
+      CreateNetworkEmulationManager();
+  BuiltInNetworkBehaviorConfig config;
+  config.loss_percent = 0;
+  config.queue_delay_ms = 100;
+  auto fixture = CreateTestFixture(
+      "pc_simulcast_vp8_3sl_low",
+      CreateTwoNetworkLinks(network_emulation_manager.get(), config),
+      [](PeerConfigurer* alice) {
+        VideoConfig video(1280, 720, 30);
+        video.input_file_name =
+            ClipNameToClipPath("ConferenceMotion_1280_720_50");
+        video.simulcast_config = VideoSimulcastConfig(3, 0);
+        video.stream_label = "alice-video";
+        alice->AddVideoConfig(std::move(video));
+      },
+      [](PeerConfigurer* bob) {});
+  RunParams run_params(TimeDelta::seconds(kTestDurationSec));
+  run_params.video_codec_name = cricket::kVp8CodecName;
+  run_params.use_flex_fec = false;
+  run_params.use_ulp_fec = false;
+  fixture->Run(std::move(run_params));
 }
 
+/*
 // This test assumes ideal network conditions with target bandwidth being
 // available and exercises WebRTC calls with a high target bitrate(100 Mbps).
 // Android32 bots can't handle this high bitrate, so disable test for those.

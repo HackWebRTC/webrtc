@@ -487,7 +487,6 @@ rtc_source_set("sdp_changer") {
   deps = [
     "../../../api:array_view",
     "../../../api:libjingle_peerconnection_api",
-    "../../../api:peer_connection_quality_test_fixture_api",
     "../../../media:rtc_media_base",
     "../../../p2p:rtc_p2p",
     "../../../pc:peerconnection",

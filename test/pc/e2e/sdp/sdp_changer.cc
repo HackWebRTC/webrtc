@@ -88,12 +88,10 @@ std::vector<RtpCodecCapability> FilterVideoCodecCapabilities(
 // If offer has no simulcast video sections - do nothing.
 //
 // If offer has simulcast video sections - for each section creates
-// SimulcastSectionInfo and put it into |context_|. Also will set conference
-// mode if requested.
+// SimulcastSectionInfo and put it into |context_|.
 void SignalingInterceptor::FillSimulcastContext(
     SessionDescriptionInterface* offer) {
   for (auto& content : offer->description()->contents()) {
-    context_.mids_order.push_back(content.mid());
     cricket::MediaContentDescription* media_desc = content.media_description();
     if (media_desc->type() != cricket::MediaType::MEDIA_TYPE_VIDEO) {
       continue;
@@ -103,23 +101,9 @@ void SignalingInterceptor::FillSimulcastContext(
       RTC_CHECK_EQ(media_desc->mutable_streams().size(), 1);
       RTC_CHECK(media_desc->mutable_streams()[0].has_rids());
 
-      // Extract stream label, that was used when we added the stream.
-      cricket::StreamParams& stream = media_desc->mutable_streams()[0];
-      RTC_CHECK(stream.stream_ids().size() == 1)
-          << "Too many stream ids in video stream";
-      std::string stream_label = stream.stream_ids()[0];
-
-      bool conference_mode =
-          params_.stream_label_to_simulcast_config.at(stream_label)
-              .use_conference_mode;
-
       // Create SimulcastSectionInfo for this video section.
       SimulcastSectionInfo info(content.mid(), content.type,
-                                media_desc->mutable_streams()[0].rids(),
-                                conference_mode);
-
-      // Set conference mode if requested
-      media_desc->set_conference_mode(conference_mode);
+                                media_desc->mutable_streams()[0].rids());
 
       // Set new rids basing on created SimulcastSectionInfo.
       std::vector<cricket::RidDescription> rids;
@@ -161,6 +145,22 @@ void SignalingInterceptor::FillSimulcastContext(
 
 LocalAndRemoteSdp SignalingInterceptor::PatchOffer(
     std::unique_ptr<SessionDescriptionInterface> offer) {
+  for (auto& content : offer->description()->contents()) {
+    context_.mids_order.push_back(content.mid());
+    cricket::MediaContentDescription* media_desc = content.media_description();
+    if (media_desc->type() != cricket::MediaType::MEDIA_TYPE_VIDEO) {
+      continue;
+    }
+    if (content.media_description()->streams().size() == 0) {
+      // It means that this media section describes receive only media section
+      // in SDP.
+      RTC_CHECK_EQ(content.media_description()->direction(),
+                   RtpTransceiverDirection::kRecvOnly);
+      continue;
+    }
+    media_desc->set_conference_mode(params_.use_conference_mode);
+  }
+
   if (params_.video_codec_name == cricket::kVp8CodecName) {
     return PatchVp8Offer(std::move(offer));
   }
@@ -198,7 +198,6 @@ LocalAndRemoteSdp SignalingInterceptor::PatchVp8Offer(
     // because otherwise description will be deleted.
     std::unique_ptr<cricket::MediaContentDescription> prototype_media_desc =
         absl::WrapUnique(simulcast_content->media_description()->Copy());
-    prototype_media_desc->set_conference_mode(false);
 
     // Remove simulcast video section from offer.
     RTC_CHECK(desc->RemoveContentByName(simulcast_content->mid()));
@@ -305,21 +304,22 @@ LocalAndRemoteSdp SignalingInterceptor::PatchVp9Offer(
       // sender side, so we needn't to do anything with this track.
       continue;
     }
-    RTC_CHECK(content.media_description()->streams().size() == 1);
+    RTC_CHECK_EQ(content.media_description()->streams().size(), 1);
     cricket::StreamParams& stream =
         content.media_description()->mutable_streams()[0];
-    RTC_CHECK(stream.stream_ids().size() == 1)
+    RTC_CHECK_EQ(stream.stream_ids().size(), 1)
         << "Too many stream ids in video stream";
-    std::string stream_id = stream.stream_ids()[0];
+    std::string stream_label = stream.stream_ids()[0];
 
-    auto it = params_.stream_label_to_simulcast_config.find(stream_id);
-    if (it == params_.stream_label_to_simulcast_config.end()) {
+    auto it =
+        params_.stream_label_to_simulcast_streams_count.find(stream_label);
+    if (it == params_.stream_label_to_simulcast_streams_count.end()) {
       continue;
     }
-    int svc_layers_count = it->second.simulcast_streams_count;
+    int svc_layers_count = it->second;
 
     RTC_CHECK(stream.has_ssrc_groups()) << "Only SVC with RTX is supported";
-    RTC_CHECK(stream.ssrc_groups.size() == 1)
+    RTC_CHECK_EQ(stream.ssrc_groups.size(), 1)
         << "Too many ssrc groups in the track";
     std::vector<uint32_t> primary_ssrcs;
     stream.GetPrimarySsrcs(&primary_ssrcs);
@@ -417,9 +417,6 @@ LocalAndRemoteSdp SignalingInterceptor::PatchVp8Answer(
       simulcast_description.receive_layers().AddLayerWithAlternatives(layer);
     }
     media_desc->set_simulcast_description(simulcast_description);
-
-    // Set conference mode if requested.
-    media_desc->set_conference_mode(info.conference_mode);
 
     // Add simulcast media section.
     desc->AddContent(info.mid, info.media_protocol_type, std::move(media_desc));
@@ -536,11 +533,8 @@ SignalingInterceptor::PatchAnswererIceCandidates(
 SignalingInterceptor::SimulcastSectionInfo::SimulcastSectionInfo(
     const std::string& mid,
     cricket::MediaProtocolType media_protocol_type,
-    const std::vector<cricket::RidDescription>& rids_desc,
-    bool conference_mode)
-    : mid(mid),
-      media_protocol_type(media_protocol_type),
-      conference_mode(conference_mode) {
+    const std::vector<cricket::RidDescription>& rids_desc)
+    : mid(mid), media_protocol_type(media_protocol_type) {
   for (auto& rid : rids_desc) {
     rids.push_back(rid.rid);
   }

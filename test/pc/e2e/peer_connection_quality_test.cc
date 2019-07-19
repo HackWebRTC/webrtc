@@ -825,17 +825,19 @@ void PeerConnectionE2EQualityTest::SetPeerCodecPreferences(
 }
 
 void PeerConnectionE2EQualityTest::SetupCall(const RunParams& run_params) {
-  std::map<std::string, VideoSimulcastConfig> stream_label_to_simulcast_config;
+  std::map<std::string, int> stream_label_to_simulcast_streams_count;
   // We add only Alice here, because simulcast/svc is supported only from the
   // first peer.
   for (auto& video_config : alice_->params()->video_configs) {
     if (video_config.simulcast_config) {
-      stream_label_to_simulcast_config.insert(
-          {*video_config.stream_label, *video_config.simulcast_config});
+      stream_label_to_simulcast_streams_count.insert(
+          {*video_config.stream_label,
+           video_config.simulcast_config->simulcast_streams_count});
     }
   }
   PatchingParams patching_params(run_params.video_codec_name,
-                                 stream_label_to_simulcast_config);
+                                 run_params.use_conference_mode,
+                                 stream_label_to_simulcast_streams_count);
   SignalingInterceptor signaling_interceptor(patching_params);
   // Connect peers.
   ExchangeOfferAnswer(&signaling_interceptor);
