@@ -56,6 +56,8 @@ rtc_source_set("yield_policy") {
     "yield_policy.h",
   ]
   deps = [
+    "..:checks",
+    "//third_party/abseil-cpp/absl/base:config",
     "//third_party/abseil-cpp/absl/base:core_headers",
   ]
 }
