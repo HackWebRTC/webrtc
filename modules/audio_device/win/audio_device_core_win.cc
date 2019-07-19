@@ -413,7 +413,6 @@ AudioDeviceWindowsCore::AudioDeviceWindowsCore()
       _playBlockSize(0),
       _playChannels(2),
       _sndCardPlayDelay(0),
-      _sndCardRecDelay(0),
       _writtenSamples(0),
       _readSamples(0),
       _recAudioFrameSize(0),
@@ -2471,9 +2470,6 @@ int32_t AudioDeviceWindowsCore::StopRecording() {
     }
   }
 
-  // Reset the recording delay value.
-  _sndCardRecDelay = 0;
-
   _UnLock();
 
   return err;
@@ -3286,8 +3282,6 @@ DWORD AudioDeviceWindowsCore::DoCaptureThread() {
             ((((UINT64)t1.QuadPart * _perfCounterFactor) - recTime) / 10000) +
             (10 * syncBufIndex) / _recBlockSize - 10);
         uint32_t sndCardPlayDelay = static_cast<uint32_t>(_sndCardPlayDelay);
-
-        _sndCardRecDelay = sndCardRecDelay;
 
         while (syncBufIndex >= _recBlockSize) {
           if (_ptrAudioBuffer) {

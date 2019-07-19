@@ -299,7 +299,6 @@ class AudioDeviceLinuxPulse : public AudioDeviceGeneric {
   bool quit_ RTC_GUARDED_BY(&_critSect);
 
   uint32_t _sndCardPlayDelay;
-  uint32_t _sndCardRecDelay;
 
   int32_t _writeErrors;
 

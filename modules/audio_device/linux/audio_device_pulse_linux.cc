@@ -50,7 +50,6 @@ AudioDeviceLinuxPulse::AudioDeviceLinuxPulse()
       update_speaker_volume_at_startup_(false),
       quit_(false),
       _sndCardPlayDelay(0),
-      _sndCardRecDelay(0),
       _writeErrors(0),
       _deviceIndex(-1),
       _numPlayDevices(0),
@@ -944,7 +943,6 @@ int32_t AudioDeviceLinuxPulse::InitPlayout() {
   // Mark playout side as initialized
   _playIsInitialized = true;
   _sndCardPlayDelay = 0;
-  _sndCardRecDelay = 0;
 
   return 0;
 }
@@ -1214,7 +1212,6 @@ int32_t AudioDeviceLinuxPulse::StopPlayout() {
   _playIsInitialized = false;
   _playing = false;
   _sndCardPlayDelay = 0;
-  _sndCardRecDelay = 0;
 
   RTC_LOG(LS_VERBOSE) << "stopping playback";
 
@@ -1891,8 +1888,6 @@ int32_t AudioDeviceLinuxPulse::ReadRecordedData(const void* bufferData,
       (uint32_t)((LatencyUsecs(_recStream) / 1000) +
                  10 * ((size + _recordBufferUsed) / _recordBufferSize));
 
-  _sndCardRecDelay = recDelay;
-
   if (_playStream) {
     // Get the playout delay.
     _sndCardPlayDelay = (uint32_t)(LatencyUsecs(_playStream) / 1000);
@@ -2256,8 +2251,6 @@ bool AudioDeviceLinuxPulse::RecThreadProcess() {
                           << LATE(pa_context_errno)(_paContext);
         break;
       }
-
-      _sndCardRecDelay = (uint32_t)(LatencyUsecs(_recStream) / 1000);
 
       // Drop lock for sigslot dispatch, which could take a while.
       PaUnLock();

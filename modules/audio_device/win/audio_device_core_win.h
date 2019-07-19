@@ -281,7 +281,6 @@ class AudioDeviceWindowsCore : public AudioDeviceGeneric {
   uint32_t _devicePlayBlockSize;
   uint32_t _playChannels;
   uint32_t _sndCardPlayDelay;
-  uint32_t _sndCardRecDelay;
   UINT64 _writtenSamples;
   UINT64 _readSamples;
 
