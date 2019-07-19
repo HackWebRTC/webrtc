@@ -555,6 +555,13 @@ class MAYBE_AudioDeviceTest
     }
   }
 
+  // This is needed by all tests using MockAudioTransport,
+  // since there is no way to unregister it.
+  // Without Terminate(), audio_device would still accesses
+  // the destructed mock via "webrtc_audio_module_rec_thread".
+  // An alternative would be for the mock to outlive audio_device.
+  void PreTearDown() { EXPECT_EQ(0, audio_device_->Terminate()); }
+
   virtual ~MAYBE_AudioDeviceTest() {
     if (audio_device_) {
       EXPECT_EQ(0, audio_device_->Terminate());
@@ -937,6 +944,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartStopPlayoutWithInternalRestart) {
   EXPECT_TRUE(audio_device()->Playing());
   // Stop playout and the audio thread after successful internal restart.
   StopPlayout();
+  PreTearDown();
 }
 
 // Tests Start/Stop recording followed by a second session (emulates a restart
@@ -983,6 +991,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartStopRecordingWithInternalRestart) {
   EXPECT_TRUE(audio_device()->Recording());
   // Stop recording and the audio thread after successful internal restart.
   StopRecording();
+  PreTearDown();
 }
 #endif  // #ifdef WEBRTC_WIN
 
@@ -1016,6 +1025,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartRecordingVerifyCallbacks) {
   StartRecording();
   event()->Wait(kTestTimeOutInMilliseconds);
   StopRecording();
+  PreTearDown();
 }
 
 // Start playout and recording (full-duplex audio) and verify that audio is
@@ -1035,6 +1045,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartPlayoutAndRecordingVerifyCallbacks) {
   event()->Wait(kTestTimeOutInMilliseconds);
   StopRecording();
   StopPlayout();
+  PreTearDown();
 }
 
 // Start playout and recording and store recorded data in an intermediate FIFO
@@ -1075,6 +1086,7 @@ TEST_P(MAYBE_AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
   // bots where relatively large average latencies can happen.
   EXPECT_LE(audio_stream.average_size(), 25u);
   PRINT("\n");
+  PreTearDown();
 }
 
 // Runs audio in full duplex until user hits Enter. Intended as a manual test
@@ -1104,6 +1116,7 @@ TEST_P(MAYBE_AudioDeviceTest,
   } while (getchar() != '\n');
   StopRecording();
   StopPlayout();
+  PreTearDown();
 }
 
 // Measures loopback latency and reports the min, max and average values for
@@ -1138,6 +1151,7 @@ TEST_P(MAYBE_AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
                 kImpulseFrequencyInHz * kMeasureLatencyTimeInSec - 2));
   // Print out min, max and average delay values for debugging purposes.
   audio_stream.PrintResults();
+  PreTearDown();
 }
 
 #ifdef WEBRTC_WIN
