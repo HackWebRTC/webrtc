@@ -14,21 +14,19 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/flags/usage.h"
 #include "rtc_tools/rtp_generator/rtp_generator.h"
 
 ABSL_FLAG(std::string, input_config, "", "JSON file with config");
 ABSL_FLAG(std::string, output_rtpdump, "", "Where to store the rtpdump");
 
 int main(int argc, char* argv[]) {
+  absl::SetProgramUsageMessage(
+      "Generates custom configured rtpdumps for the purpose of testing.\n"
+      "Example Usage:\n"
+      "./rtp_generator --input_config=sender_config.json\n"
+      "                --output_rtpdump=my.rtpdump\n");
   absl::ParseCommandLine(argc, argv);
-
-  // TODO(bugs.webrtc.org/10616): Add program usage message when Abseil
-  // flags supports it.
-  // const std::string usage =
-  //    "Generates custom configured rtpdumps for the purpose of testing.\n"
-  //    "Example Usage:\n"
-  //    "./rtp_generator --input_config=sender_config.json\n"
-  //    "                --output_rtpdump=my.rtpdump\n";
 
   const std::string config_path = absl::GetFlag(FLAGS_input_config);
   const std::string rtp_dump_path = absl::GetFlag(FLAGS_output_rtpdump);
