@@ -113,10 +113,12 @@ void RtpPacketHistory::SetRtt(int64_t rtt_ms) {
   rtc::CritScope cs(&lock_);
   RTC_DCHECK_GE(rtt_ms, 0);
   rtt_ms_ = rtt_ms;
-  // If kStoreAndCull mode is used, packets will be removed after a timeout
+  // If storage is not disabled,  packets will be removed after a timeout
   // that depends on the RTT. Changing the RTT may thus cause some packets
   // become "old" and subject to removal.
-  CullOldPackets(clock_->TimeInMilliseconds());
+  if (mode_ != StorageMode::kDisabled) {
+    CullOldPackets(clock_->TimeInMilliseconds());
+  }
 }
 
 void RtpPacketHistory::PutRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
@@ -336,12 +338,14 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetPayloadPaddingPacket(
 void RtpPacketHistory::CullAcknowledgedPackets(
     rtc::ArrayView<const uint16_t> sequence_numbers) {
   rtc::CritScope cs(&lock_);
-  if (mode_ == StorageMode::kStoreAndCull) {
-    for (uint16_t sequence_number : sequence_numbers) {
-      auto stored_packet_it = packet_history_.find(sequence_number);
-      if (stored_packet_it != packet_history_.end()) {
-        RemovePacket(stored_packet_it);
-      }
+  if (mode_ == StorageMode::kDisabled) {
+    return;
+  }
+
+  for (uint16_t sequence_number : sequence_numbers) {
+    auto stored_packet_it = packet_history_.find(sequence_number);
+    if (stored_packet_it != packet_history_.end()) {
+      RemovePacket(stored_packet_it);
     }
   }
 }
@@ -393,10 +397,9 @@ void RtpPacketHistory::CullOldPackets(int64_t now_ms) {
     }
 
     if (packet_history_.size() >= number_to_store_ ||
-        (mode_ == StorageMode::kStoreAndCull &&
-         *stored_packet.send_time_ms_ +
-                 (packet_duration_ms * kPacketCullingDelayFactor) <=
-             now_ms)) {
+        *stored_packet.send_time_ms_ +
+                (packet_duration_ms * kPacketCullingDelayFactor) <=
+            now_ms) {
       // Too many packets in history, or this packet has timed out. Remove it
       // and continue.
       RemovePacket(stored_packet_it);

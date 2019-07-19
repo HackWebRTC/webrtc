@@ -51,8 +51,8 @@ class RtpPacketHistoryTest : public ::testing::Test {
 
 TEST_F(RtpPacketHistoryTest, SetStoreStatus) {
   EXPECT_EQ(StorageMode::kDisabled, hist_.GetStorageMode());
-  hist_.SetStorePacketsStatus(StorageMode::kStore, 10);
-  EXPECT_EQ(StorageMode::kStore, hist_.GetStorageMode());
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
+  EXPECT_EQ(StorageMode::kStoreAndCull, hist_.GetStorageMode());
   hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
   EXPECT_EQ(StorageMode::kStoreAndCull, hist_.GetStorageMode());
   hist_.SetStorePacketsStatus(StorageMode::kDisabled, 0);
@@ -60,14 +60,14 @@ TEST_F(RtpPacketHistoryTest, SetStoreStatus) {
 }
 
 TEST_F(RtpPacketHistoryTest, ClearsHistoryAfterSetStoreStatus) {
-  hist_.SetStorePacketsStatus(StorageMode::kStore, 10);
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
   // Store a packet, but with send-time. It should then not be removed.
   hist_.PutRtpPacket(CreateRtpPacket(kStartSeqNum), kAllowRetransmission,
                      absl::nullopt);
   EXPECT_TRUE(hist_.GetPacketState(kStartSeqNum));
 
   // Changing store status, even to the current one, will clear the history.
-  hist_.SetStorePacketsStatus(StorageMode::kStore, 10);
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
   EXPECT_FALSE(hist_.GetPacketState(kStartSeqNum));
 }
 
@@ -109,12 +109,12 @@ TEST_F(RtpPacketHistoryTest, NoStoreStatus) {
 }
 
 TEST_F(RtpPacketHistoryTest, GetRtpPacket_NotStored) {
-  hist_.SetStorePacketsStatus(StorageMode::kStore, 10);
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
   EXPECT_FALSE(hist_.GetPacketState(0));
 }
 
 TEST_F(RtpPacketHistoryTest, PutRtpPacket) {
-  hist_.SetStorePacketsStatus(StorageMode::kStore, 10);
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
   std::unique_ptr<RtpPacketToSend> packet = CreateRtpPacket(kStartSeqNum);
 
   EXPECT_FALSE(hist_.GetPacketState(kStartSeqNum));
@@ -123,7 +123,7 @@ TEST_F(RtpPacketHistoryTest, PutRtpPacket) {
 }
 
 TEST_F(RtpPacketHistoryTest, GetRtpPacket) {
-  hist_.SetStorePacketsStatus(StorageMode::kStore, 10);
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
   int64_t capture_time_ms = 1;
   std::unique_ptr<RtpPacketToSend> packet = CreateRtpPacket(kStartSeqNum);
   packet->set_capture_time_ms(capture_time_ms);
@@ -138,7 +138,7 @@ TEST_F(RtpPacketHistoryTest, GetRtpPacket) {
 }
 
 TEST_F(RtpPacketHistoryTest, NoCaptureTime) {
-  hist_.SetStorePacketsStatus(StorageMode::kStore, 10);
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
   fake_clock_.AdvanceTimeMilliseconds(1);
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   std::unique_ptr<RtpPacketToSend> packet = CreateRtpPacket(kStartSeqNum);
@@ -154,7 +154,7 @@ TEST_F(RtpPacketHistoryTest, NoCaptureTime) {
 }
 
 TEST_F(RtpPacketHistoryTest, DontRetransmit) {
-  hist_.SetStorePacketsStatus(StorageMode::kStore, 10);
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   std::unique_ptr<RtpPacketToSend> packet = CreateRtpPacket(kStartSeqNum);
   rtc::CopyOnWriteBuffer buffer = packet->Buffer();
@@ -207,7 +207,7 @@ TEST_F(RtpPacketHistoryTest, PacketStateIsCorrect) {
 TEST_F(RtpPacketHistoryTest, MinResendTimeWithPacer) {
   static const int64_t kMinRetransmitIntervalMs = 100;
 
-  hist_.SetStorePacketsStatus(StorageMode::kStore, 10);
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
   hist_.SetRtt(kMinRetransmitIntervalMs);
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   std::unique_ptr<RtpPacketToSend> packet = CreateRtpPacket(kStartSeqNum);
@@ -248,7 +248,7 @@ TEST_F(RtpPacketHistoryTest, MinResendTimeWithPacer) {
 TEST_F(RtpPacketHistoryTest, MinResendTimeWithoutPacer) {
   static const int64_t kMinRetransmitIntervalMs = 100;
 
-  hist_.SetStorePacketsStatus(StorageMode::kStore, 10);
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
   hist_.SetRtt(kMinRetransmitIntervalMs);
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
   std::unique_ptr<RtpPacketToSend> packet = CreateRtpPacket(kStartSeqNum);
@@ -274,7 +274,7 @@ TEST_F(RtpPacketHistoryTest, MinResendTimeWithoutPacer) {
 
 TEST_F(RtpPacketHistoryTest, RemovesOldestSentPacketWhenAtMaxSize) {
   const size_t kMaxNumPackets = 10;
-  hist_.SetStorePacketsStatus(StorageMode::kStore, kMaxNumPackets);
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, kMaxNumPackets);
 
   // History does not allow removing packets within kMinPacketDurationMs,
   // so in order to test capacity, make sure insertion spans this time.
@@ -309,7 +309,7 @@ TEST_F(RtpPacketHistoryTest, RemovesOldestPacketWhenAtMaxCapacity) {
   // Tests the absolute upper bound on number of stored packets. Don't allow
   // storing more than this, even if packets have not yet been sent.
   const size_t kMaxNumPackets = RtpPacketHistory::kMaxCapacity;
-  hist_.SetStorePacketsStatus(StorageMode::kStore,
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull,
                               RtpPacketHistory::kMaxCapacity);
 
   // Add packets until the buffer is full.
@@ -336,7 +336,7 @@ TEST_F(RtpPacketHistoryTest, RemovesOldestPacketWhenAtMaxCapacity) {
 
 TEST_F(RtpPacketHistoryTest, DontRemoveUnsentPackets) {
   const size_t kMaxNumPackets = 10;
-  hist_.SetStorePacketsStatus(StorageMode::kStore, kMaxNumPackets);
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, kMaxNumPackets);
 
   // Add packets until the buffer is full.
   for (size_t i = 0; i < kMaxNumPackets; ++i) {
@@ -370,7 +370,7 @@ TEST_F(RtpPacketHistoryTest, DontRemoveUnsentPackets) {
 
 TEST_F(RtpPacketHistoryTest, DontRemoveTooRecentlyTransmittedPackets) {
   // Set size to remove old packets as soon as possible.
-  hist_.SetStorePacketsStatus(StorageMode::kStore, 1);
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 1);
 
   // Add a packet, marked as send, and advance time to just before removal time.
   hist_.PutRtpPacket(CreateRtpPacket(kStartSeqNum), kAllowRetransmission,
@@ -399,7 +399,7 @@ TEST_F(RtpPacketHistoryTest, DontRemoveTooRecentlyTransmittedPacketsHighRtt) {
       kRttMs * RtpPacketHistory::kMinPacketDurationRtt;
 
   // Set size to remove old packets as soon as possible.
-  hist_.SetStorePacketsStatus(StorageMode::kStore, 1);
+  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 1);
   hist_.SetRtt(kRttMs);
 
   // Add a packet, marked as send, and advance time to just before removal time.

@@ -198,9 +198,6 @@ RTPSender::RTPSender(const RtpRtcp::Configuration& config)
       populate_network2_timestamp_(config.populate_network2_timestamp),
       send_side_bwe_with_overhead_(
           IsEnabled("WebRTC-SendSideBwe-WithOverhead", config.field_trials)),
-      legacy_packet_history_storage_mode_(
-          IsEnabled("WebRTC-UseRtpPacketHistoryLegacyStorageMode",
-                    config.field_trials)),
       pacer_legacy_packet_referencing_(
           !IsDisabled("WebRTC-Pacer-LegacyPacketReferencing",
                       config.field_trials)) {
@@ -213,13 +210,9 @@ RTPSender::RTPSender(const RtpRtcp::Configuration& config)
   // Store FlexFEC packets in the packet history data structure, so they can
   // be found when paced.
   if (flexfec_ssrc_) {
-    RtpPacketHistory::StorageMode storage_mode =
-        legacy_packet_history_storage_mode_
-            ? RtpPacketHistory::StorageMode::kStore
-            : RtpPacketHistory::StorageMode::kStoreAndCull;
-
     flexfec_packet_history_.SetStorePacketsStatus(
-        storage_mode, kMinFlexfecPacketsToStoreForPacing);
+        RtpPacketHistory::StorageMode::kStoreAndCull,
+        kMinFlexfecPacketsToStoreForPacing);
   }
 }
 
@@ -287,9 +280,6 @@ RTPSender::RTPSender(
       send_side_bwe_with_overhead_(
           field_trials.Lookup("WebRTC-SendSideBwe-WithOverhead")
               .find("Enabled") == 0),
-      legacy_packet_history_storage_mode_(
-          field_trials.Lookup("WebRTC-UseRtpPacketHistoryLegacyStorageMode")
-              .find("Enabled") == 0),
       pacer_legacy_packet_referencing_(
           field_trials.Lookup("WebRTC-Pacer-LegacyPacketReferencing")
               .find("Disabled") != 0) {
@@ -302,13 +292,9 @@ RTPSender::RTPSender(
   // Store FlexFEC packets in the packet history data structure, so they can
   // be found when paced.
   if (flexfec_ssrc_) {
-    RtpPacketHistory::StorageMode storage_mode =
-        legacy_packet_history_storage_mode_
-            ? RtpPacketHistory::StorageMode::kStore
-            : RtpPacketHistory::StorageMode::kStoreAndCull;
-
     flexfec_packet_history_.SetStorePacketsStatus(
-        storage_mode, kMinFlexfecPacketsToStoreForPacing);
+        RtpPacketHistory::StorageMode::kStoreAndCull,
+        kMinFlexfecPacketsToStoreForPacing);
   }
 }
 
@@ -576,15 +562,10 @@ size_t RTPSender::SendPadData(size_t bytes,
 }
 
 void RTPSender::SetStorePacketsStatus(bool enable, uint16_t number_to_store) {
-  RtpPacketHistory::StorageMode mode;
-  if (enable) {
-    mode = legacy_packet_history_storage_mode_
-               ? RtpPacketHistory::StorageMode::kStore
-               : RtpPacketHistory::StorageMode::kStoreAndCull;
-  } else {
-    mode = RtpPacketHistory::StorageMode::kDisabled;
-  }
-  packet_history_.SetStorePacketsStatus(mode, number_to_store);
+  packet_history_.SetStorePacketsStatus(
+      enable ? RtpPacketHistory::StorageMode::kStoreAndCull
+             : RtpPacketHistory::StorageMode::kDisabled,
+      number_to_store);
 }
 
 bool RTPSender::StorePackets() const {

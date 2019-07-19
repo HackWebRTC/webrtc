@@ -31,7 +31,6 @@ class RtpPacketHistory {
  public:
   enum class StorageMode {
     kDisabled,     // Don't store any packets.
-    kStore,        // Store and keep at least |number_to_store| packets.
     kStoreAndCull  // Store up to |number_to_store| packets, but try to remove
                    // packets as they time out or as signaled as received.
   };
