@@ -248,6 +248,7 @@ if (!build_with_chromium) {
       "../common_video",
       "//third_party/abseil-cpp/absl/flags:flag",
       "//third_party/abseil-cpp/absl/flags:parse",
+      "//third_party/abseil-cpp/absl/flags:usage",
       "//third_party/libyuv",
     ]
   }

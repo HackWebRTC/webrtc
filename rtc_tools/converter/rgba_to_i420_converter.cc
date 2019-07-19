@@ -15,6 +15,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/flags/usage.h"
 #include "rtc_tools/converter/converter.h"
 
 ABSL_FLAG(int, width, -1, "Width in pixels of the frames in the input file");
@@ -41,24 +42,17 @@ ABSL_FLAG(bool,
  * --height=<height_of_input_frames>
  */
 int main(int argc, char* argv[]) {
+  absl::SetProgramUsageMessage(
+      "Converts RGBA raw image files to I420 frames "
+      "for YUV.\n"
+      "Example usage:\n"
+      "./rgba_to_i420_converter --frames_dir=. "
+      "--output_file=output.yuv --width=320 "
+      "--height=240\n"
+      "IMPORTANT: If you pass the --delete_frames "
+      "command line parameter, the tool will delete "
+      "the input frames after conversion.\n");
   absl::ParseCommandLine(argc, argv);
-  // TODO(bugs.webrtc.org/10616): Add program usage message when Abseil
-  // flags supports it.
-  // std::string usage =
-  //     "Converts RGBA raw image files to I420 frames for YUV.\n"
-  //     "Example usage:\n" +
-  //     program_name +
-  //     " --frames_dir=. --output_file=output.yuv --width=320 --height=240\n"
-  //     "IMPORTANT: If you pass the --delete_frames command line parameter, the
-  //     " "tool will delete the input frames after conversion.\n" "Command line
-  //     flags:\n" "  - width(int): Width in pixels of the frames in the input
-  //     file." " Default: -1\n" "  - height(int): Height in pixels of the
-  //     frames in the input file." " Default: -1\n" "  - frames_dir(string):
-  //     The path to the directory where the frames " "reside." " Default: .\n"
-  //     "  - output_file(string): The output file to which frames are written."
-  //     " Default: output.yuv\n"
-  //     "  - delete_frames(bool): Whether or not to delete the input frames
-  //     after" " the conversion. Default: false.\n";
 
   int width = absl::GetFlag(FLAGS_width);
   int height = absl::GetFlag(FLAGS_height);
