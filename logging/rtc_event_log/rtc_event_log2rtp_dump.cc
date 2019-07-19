@@ -19,6 +19,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/flags/usage.h"
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/array_view.h"
@@ -164,19 +165,14 @@ void ConvertRtpPacket(
 
 // This utility will convert a stored event log to the rtpdump format.
 int main(int argc, char* argv[]) {
-  // TODO(bugs.webrtc.org/10616): Add program usage message when Abseil
-  // flags supports it.
+  absl::SetProgramUsageMessage(
+      "Tool for converting an RtcEventLog file to an "
+      "RTP dump file.\n"
+      "Example usage:\n"
+      "./rtc_event_log2rtp_dump input.rel output.rtp\n");
   std::vector<char*> args = absl::ParseCommandLine(argc, argv);
-  std::string program_name = args[0];
-  std::string usage =
-      "Tool for converting an RtcEventLog file to an RTP dump file.\n"
-      "Run " +
-      program_name +
-      " --help for usage.\n"
-      "Example usage:\n" +
-      program_name + " input.rel output.rtp\n";
   if (args.size() != 3) {
-    std::cout << usage;
+    std::cout << absl::ProgramUsageMessage();
     return 1;
   }
 

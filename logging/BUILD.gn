@@ -411,6 +411,7 @@ if (rtc_enable_protobuf) {
         "../test:rtp_test_utils",
         "//third_party/abseil-cpp/absl/flags:flag",
         "//third_party/abseil-cpp/absl/flags:parse",
+        "//third_party/abseil-cpp/absl/flags:usage",
         "//third_party/abseil-cpp/absl/memory",
         "//third_party/abseil-cpp/absl/types:optional",
       ]
