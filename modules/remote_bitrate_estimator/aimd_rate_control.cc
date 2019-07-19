@@ -89,10 +89,13 @@ AimdRateControl::AimdRateControl(const WebRtcKeyValueConfig* key_value_config,
                     "WebRTC-DontIncreaseDelayBasedBweInAlr")),
       smoothing_experiment_(
           IsEnabled(*key_value_config, "WebRTC-Audio-BandwidthSmoothing")),
+      estimate_bounded_backoff_(
+          IsEnabled(*key_value_config, "WebRTC-Bwe-EstimateBoundedBackoff")),
+      estimate_bounded_increase_(
+          IsEnabled(*key_value_config, "WebRTC-Bwe-EstimateBoundedIncrease")),
       initial_backoff_interval_("initial_backoff_interval"),
       low_throughput_threshold_("low_throughput", DataRate::Zero()),
       capacity_deviation_ratio_threshold_("cap_thr", 0.2),
-      cross_traffic_factor_("cross", 1.0),
       capacity_limit_deviation_factor_("cap_lim", 1) {
   // E.g
   // WebRTC-BweAimdRateControlConfig/initial_backoff_interval:100ms,
@@ -105,8 +108,7 @@ AimdRateControl::AimdRateControl(const WebRtcKeyValueConfig* key_value_config,
   }
   RTC_LOG(LS_INFO) << "Using aimd rate control with back off factor " << beta_;
   ParseFieldTrial(
-      {&capacity_deviation_ratio_threshold_, &cross_traffic_factor_,
-       &capacity_limit_deviation_factor_},
+      {&capacity_deviation_ratio_threshold_, &capacity_limit_deviation_factor_},
       key_value_config->Lookup("WebRTC-Bwe-AimdRateControl-NetworkState"));
 }
 
@@ -304,26 +306,11 @@ DataRate AimdRateControl::ChangeBitrate(DataRate new_bitrate,
       break;
 
     case kRcDecrease:
-      if (network_estimate_ && capacity_deviation_ratio_threshold_) {
-        DataRate lower_bound = network_estimate_->link_capacity_lower;
-        // TODO(srte): Remove this when link_capacity_lower is available.
-        if (lower_bound.IsInfinite()) {
-          // If we have a low variance network estimate, we use it over the
-          // acknowledged rate to avoid dropping the bitrate too far. This
-          // avoids overcompensating when the send rate is lower than the
-          // capacity.
-          double deviation_ratio = network_estimate_->link_capacity_std_dev /
-                                   network_estimate_->link_capacity;
-          if (deviation_ratio < *capacity_deviation_ratio_threshold_) {
-            double available_ratio =
-                std::max(0.0, 1.0 - network_estimate_->cross_traffic_ratio *
-                                        cross_traffic_factor_);
-            lower_bound = network_estimate_->link_capacity * available_ratio;
-          }
-        }
-        if (lower_bound > DataRate::Zero()) {
-          estimated_throughput = std::max(lower_bound, estimated_throughput);
-        }
+      // TODO(srte): Remove when |estimate_bounded_backoff_| has been validated.
+      if (network_estimate_ && capacity_deviation_ratio_threshold_ &&
+          !estimate_bounded_backoff_) {
+        estimated_throughput = std::max(estimated_throughput,
+                                        network_estimate_->link_capacity_lower);
       }
       if (estimated_throughput > low_throughput_threshold_) {
         // Set bit rate to something slightly lower than the measured throughput
@@ -334,6 +321,10 @@ DataRate AimdRateControl::ChangeBitrate(DataRate new_bitrate,
           if (link_capacity_.has_estimate()) {
             new_bitrate = beta_ * link_capacity_.estimate();
           }
+        }
+        if (estimate_bounded_backoff_ && network_estimate_) {
+          new_bitrate = std::max(
+              new_bitrate, network_estimate_->link_capacity_lower * beta_);
         }
       } else {
         new_bitrate = estimated_throughput;
@@ -393,14 +384,9 @@ DataRate AimdRateControl::ClampBitrate(DataRate new_bitrate,
     }
   }
 
-  if (network_estimate_ && capacity_limit_deviation_factor_) {
+  if (network_estimate_ &&
+      (estimate_bounded_increase_ || capacity_limit_deviation_factor_)) {
     DataRate upper_bound = network_estimate_->link_capacity_upper;
-    // TODO(srte): Remove this when link_capacity_lower is available.
-    if (upper_bound.IsMinusInfinity()) {
-      upper_bound = network_estimate_->link_capacity +
-                    network_estimate_->link_capacity_std_dev *
-                        capacity_limit_deviation_factor_.Value();
-    }
     new_bitrate = std::min(new_bitrate, upper_bound);
   }
   new_bitrate = std::max(new_bitrate, min_configured_bitrate_);
