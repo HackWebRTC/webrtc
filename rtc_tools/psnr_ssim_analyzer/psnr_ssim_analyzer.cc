@@ -16,6 +16,7 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/flags/usage.h"
 #include "api/scoped_refptr.h"
 #include "api/video/video_frame_buffer.h"
 #include "rtc_tools/frame_analyzer/video_quality_analysis.h"
@@ -74,22 +75,13 @@ void CompareFiles(
  * --results_file=<name_of_file>
  */
 int main(int argc, char* argv[]) {
+  absl::SetProgramUsageMessage(
+      "Runs PSNR and SSIM on two I420 videos and write the"
+      "results in a file.\n"
+      "Example usage:\n"
+      "./psnr_ssim_analyzer --reference_file=ref.yuv "
+      "--test_file=test.yuv --results_file=results.txt\n");
   absl::ParseCommandLine(argc, argv);
-  // TODO(bugs.webrtc.org/10616): Add program usage message when Abseil
-  // flags supports it.
-  // std::string usage =
-  //     "Runs PSNR and SSIM on two I420 videos and write the"
-  //     "results in a file.\n"
-  //     "Example usage:\n" +
-  //     program_name +
-  //     " --reference_file=ref.yuv "
-  //     "--test_file=test.yuv --results_file=results.txt\n"
-  //     "Command line flags:\n"
-  //     "  - reference_file(string): The reference YUV file to compare
-  //     against." " Default: ref.yuv\n" "  - test_file(string): The test YUV
-  //     file to run the analysis for." " Default: test_file.yuv\n" "  -
-  //     results_file(string): The full name of the file where the results "
-  //     "will be written. Default: results.txt\n";
 
   rtc::scoped_refptr<webrtc::test::Video> reference_video =
       webrtc::test::OpenY4mFile(absl::GetFlag(FLAGS_reference_file));

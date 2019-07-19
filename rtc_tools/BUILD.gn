@@ -202,6 +202,7 @@ if (!build_with_chromium) {
       "../api/video:video_rtp_headers",
       "//third_party/abseil-cpp/absl/flags:flag",
       "//third_party/abseil-cpp/absl/flags:parse",
+      "//third_party/abseil-cpp/absl/flags:usage",
     ]
   }
 
