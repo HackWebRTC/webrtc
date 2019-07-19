@@ -132,13 +132,6 @@ bool IsEnabled(absl::string_view name,
   return trials.Lookup(name).find("Enabled") == 0;
 }
 
-bool IsDisabled(absl::string_view name,
-                const WebRtcKeyValueConfig* field_trials) {
-  FieldTrialBasedConfig default_trials;
-  auto& trials = field_trials ? *field_trials : default_trials;
-  return trials.Lookup(name).find("Disabled") == 0;
-}
-
 bool HasBweExtension(const RtpHeaderExtensionMap& extensions_map) {
   return extensions_map.IsRegistered(kRtpExtensionTransportSequenceNumber) ||
          extensions_map.IsRegistered(kRtpExtensionTransportSequenceNumber02) ||
@@ -199,8 +192,8 @@ RTPSender::RTPSender(const RtpRtcp::Configuration& config)
       send_side_bwe_with_overhead_(
           IsEnabled("WebRTC-SendSideBwe-WithOverhead", config.field_trials)),
       pacer_legacy_packet_referencing_(
-          !IsDisabled("WebRTC-Pacer-LegacyPacketReferencing",
-                      config.field_trials)) {
+          IsEnabled("WebRTC-Pacer-LegacyPacketReferencing",
+                    config.field_trials)) {
   // This random initialization is not intended to be cryptographic strong.
   timestamp_offset_ = random_.Rand<uint32_t>();
   // Random start, 16 bits. Can't be 0.
@@ -282,7 +275,7 @@ RTPSender::RTPSender(
               .find("Enabled") == 0),
       pacer_legacy_packet_referencing_(
           field_trials.Lookup("WebRTC-Pacer-LegacyPacketReferencing")
-              .find("Disabled") != 0) {
+              .find("Enabled") == 0) {
   // This random initialization is not intended to be cryptographic strong.
   timestamp_offset_ = random_.Rand<uint32_t>();
   // Random start, 16 bits. Can't be 0.

@@ -100,7 +100,7 @@ PacedSender::PacedSender(Clock* clock,
       queue_time_limit(kMaxQueueLengthMs),
       account_for_audio_(false),
       legacy_packet_referencing_(
-          !IsDisabled(*field_trials_, "WebRTC-Pacer-LegacyPacketReferencing")) {
+          IsEnabled(*field_trials_, "WebRTC-Pacer-LegacyPacketReferencing")) {
   if (!drain_large_queues_) {
     RTC_LOG(LS_WARNING) << "Pacer queues will not be drained,"
                            "pushback experiment must be enabled.";
