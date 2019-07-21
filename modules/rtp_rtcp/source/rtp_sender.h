@@ -134,6 +134,10 @@ class RTPSender {
 
   int32_t ReSendPacket(uint16_t packet_id);
 
+  // ACK.
+  void OnReceivedAckOnSsrc(int64_t extended_highest_sequence_number);
+  void OnReceivedAckOnRtxSsrc(int64_t extended_highest_sequence_number);
+
   // RTX.
   void SetRtxStatus(int mode);
   int RtxStatus() const;
@@ -300,6 +304,10 @@ class RTPSender {
   std::string rid_ RTC_GUARDED_BY(send_critsect_);
   // MID value to send in the MID header extension.
   std::string mid_ RTC_GUARDED_BY(send_critsect_);
+  // Track if any ACK has been received on the SSRC and RTX SSRC to indicate
+  // when to stop sending the MID and RID header extensions.
+  bool ssrc_has_acked_ RTC_GUARDED_BY(send_critsect_);
+  bool rtx_ssrc_has_acked_ RTC_GUARDED_BY(send_critsect_);
   uint32_t last_rtp_timestamp_ RTC_GUARDED_BY(send_critsect_);
   int64_t capture_time_ms_ RTC_GUARDED_BY(send_critsect_);
   int64_t last_timestamp_time_ms_ RTC_GUARDED_BY(send_critsect_);

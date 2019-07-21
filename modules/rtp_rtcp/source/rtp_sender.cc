@@ -176,6 +176,8 @@ RTPSender::RTPSender(const RtpRtcp::Configuration& config)
       // RTP variables
       sequence_number_forced_(false),
       ssrc_(config.media_send_ssrc),
+      ssrc_has_acked_(false),
+      rtx_ssrc_has_acked_(false),
       last_rtp_timestamp_(0),
       capture_time_ms_(0),
       last_timestamp_time_ms_(0),
@@ -258,6 +260,8 @@ RTPSender::RTPSender(
       bitrate_callback_(bitrate_callback),
       // RTP variables
       sequence_number_forced_(false),
+      ssrc_has_acked_(false),
+      rtx_ssrc_has_acked_(false),
       last_rtp_timestamp_(0),
       capture_time_ms_(0),
       last_timestamp_time_ms_(0),
@@ -649,6 +653,17 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
     return -1;
 
   return packet_size;
+}
+
+void RTPSender::OnReceivedAckOnSsrc(int64_t extended_highest_sequence_number) {
+  rtc::CritScope lock(&send_critsect_);
+  ssrc_has_acked_ = true;
+}
+
+void RTPSender::OnReceivedAckOnRtxSsrc(
+    int64_t extended_highest_sequence_number) {
+  rtc::CritScope lock(&send_critsect_);
+  rtx_ssrc_has_acked_ = true;
 }
 
 bool RTPSender::SendPacketToNetwork(const RtpPacketToSend& packet,
@@ -1336,13 +1351,24 @@ std::unique_ptr<RtpPacketToSend> RTPSender::AllocatePacket() const {
   packet->ReserveExtension<TransmissionOffset>();
   packet->ReserveExtension<TransportSequenceNumber>();
 
-  if (!mid_.empty()) {
-    // This is a no-op if the MID header extension is not registered.
-    packet->SetExtension<RtpMid>(mid_);
-  }
-  if (!rid_.empty()) {
-    // This is a no-op if the RID header extension is not registered.
-    packet->SetExtension<RtpStreamId>(rid_);
+  // BUNDLE requires that the receiver "bind" the received SSRC to the values
+  // in the MID and/or (R)RID header extensions if present. Therefore, the
+  // sender can reduce overhead by omitting these header extensions once it
+  // knows that the receiver has "bound" the SSRC.
+  //
+  // The algorithm here is fairly simple: Always attach a MID and/or RID (if
+  // configured) to the outgoing packets until an RTCP receiver report comes
+  // back for this SSRC. That feedback indicates the receiver must have
+  // received a packet with the SSRC and header extension(s), so the sender
+  // then stops attaching the MID and RID.
+  if (!ssrc_has_acked_) {
+    // These are no-ops if the corresponding header extension is not registered.
+    if (!mid_.empty()) {
+      packet->SetExtension<RtpMid>(mid_);
+    }
+    if (!rid_.empty()) {
+      packet->SetExtension<RtpStreamId>(rid_);
+    }
   }
   return packet;
 }
@@ -1443,6 +1469,7 @@ void RTPSender::SetRid(const std::string& rid) {
 void RTPSender::SetMid(const std::string& mid) {
   // This is configured via the API.
   rtc::CritScope lock(&send_critsect_);
+  RTC_DCHECK_LE(mid.length(), RtpMid::kMaxValueSizeBytes);
   mid_ = mid;
 }
 
@@ -1493,26 +1520,27 @@ static void CopyHeaderAndExtensionsToRtxPacket(const RtpPacketToSend& packet,
   // * Header extensions - replace Rid header with RepairedRid header.
   const std::vector<uint32_t> csrcs = packet.Csrcs();
   rtx_packet->SetCsrcs(csrcs);
-  for (int extension = kRtpExtensionNone + 1;
-       extension < kRtpExtensionNumberOfExtensions; ++extension) {
-    RTPExtensionType source_extension =
-        static_cast<RTPExtensionType>(extension);
-    // Rid header should be replaced with RepairedRid header
-    RTPExtensionType destination_extension =
-        source_extension == kRtpExtensionRtpStreamId
-            ? kRtpExtensionRepairedRtpStreamId
-            : source_extension;
+  for (int extension_num = kRtpExtensionNone + 1;
+       extension_num < kRtpExtensionNumberOfExtensions; ++extension_num) {
+    auto extension = static_cast<RTPExtensionType>(extension_num);
 
-    // Empty extensions should be supported, so not checking |source.empty()|.
-    if (!packet.HasExtension(source_extension)) {
+    // Stream ID header extensions (MID, RSID) are sent per-SSRC. Since RTX
+    // operates on a different SSRC, the presence and values of these header
+    // extensions should be determined separately and not blindly copied.
+    if (extension == kRtpExtensionMid ||
+        extension == kRtpExtensionRtpStreamId) {
       continue;
     }
 
-    rtc::ArrayView<const uint8_t> source =
-        packet.FindExtension(source_extension);
+    // Empty extensions should be supported, so not checking |source.empty()|.
+    if (!packet.HasExtension(extension)) {
+      continue;
+    }
+
+    rtc::ArrayView<const uint8_t> source = packet.FindExtension(extension);
 
     rtc::ArrayView<uint8_t> destination =
-        rtx_packet->AllocateExtension(destination_extension, source.size());
+        rtx_packet->AllocateExtension(extension, source.size());
 
     // Could happen if any:
     // 1. Extension has 0 length.
@@ -1556,19 +1584,22 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
 
     CopyHeaderAndExtensionsToRtxPacket(packet, rtx_packet.get());
 
-    // The spec indicates that it is possible for a sender to stop sending mids
-    // once the SSRCs have been bound on the receiver. As a result the source
-    // rtp packet might not have the MID header extension set.
-    // However, the SSRC of the RTX stream might not have been bound on the
-    // receiver. This means that we should include it here.
-    // The same argument goes for the Repaired RID extension.
-    if (!mid_.empty()) {
-      // This is a no-op if the MID header extension is not registered.
-      rtx_packet->SetExtension<RtpMid>(mid_);
-    }
-    if (!rid_.empty()) {
-      // This is a no-op if the Repaired-RID header extension is not registered.
-      // rtx_packet->SetExtension<RepairedRtpStreamId>(rid_);
+    // RTX packets are sent on an SSRC different from the main media, so the
+    // decision to attach MID and/or RRID header extensions is completely
+    // separate from that of the main media SSRC.
+    //
+    // Note that RTX packets must used the RepairedRtpStreamId (RRID) header
+    // extension instead of the RtpStreamId (RID) header extension even though
+    // the payload is identical.
+    if (!rtx_ssrc_has_acked_) {
+      // These are no-ops if the corresponding header extension is not
+      // registered.
+      if (!mid_.empty()) {
+        rtx_packet->SetExtension<RtpMid>(mid_);
+      }
+      if (!rid_.empty()) {
+        rtx_packet->SetExtension<RepairedRtpStreamId>(rid_);
+      }
     }
   }
   RTC_DCHECK(rtx_packet);
@@ -1619,6 +1650,7 @@ void RTPSender::SetRtpState(const RtpState& rtp_state) {
   capture_time_ms_ = rtp_state.capture_time_ms;
   last_timestamp_time_ms_ = rtp_state.last_timestamp_time_ms;
   media_has_been_sent_ = rtp_state.media_has_been_sent;
+  ssrc_has_acked_ = rtp_state.ssrc_has_acked;
 }
 
 RtpState RTPSender::GetRtpState() const {
@@ -1631,6 +1663,7 @@ RtpState RTPSender::GetRtpState() const {
   state.capture_time_ms = capture_time_ms_;
   state.last_timestamp_time_ms = last_timestamp_time_ms_;
   state.media_has_been_sent = media_has_been_sent_;
+  state.ssrc_has_acked = ssrc_has_acked_;
 
   return state;
 }
@@ -1638,6 +1671,7 @@ RtpState RTPSender::GetRtpState() const {
 void RTPSender::SetRtxRtpState(const RtpState& rtp_state) {
   rtc::CritScope lock(&send_critsect_);
   sequence_number_rtx_ = rtp_state.sequence_number;
+  rtx_ssrc_has_acked_ = rtp_state.ssrc_has_acked;
 }
 
 RtpState RTPSender::GetRtxRtpState() const {
@@ -1646,6 +1680,7 @@ RtpState RTPSender::GetRtxRtpState() const {
   RtpState state;
   state.sequence_number = sequence_number_rtx_;
   state.start_timestamp = timestamp_offset_;
+  state.ssrc_has_acked = rtx_ssrc_has_acked_;
 
   return state;
 }

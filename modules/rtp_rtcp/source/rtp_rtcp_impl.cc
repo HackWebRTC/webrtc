@@ -733,10 +733,19 @@ void ModuleRtpRtcpImpl::OnReceivedRtcpReportBlocks(
     const ReportBlockList& report_blocks) {
   if (ack_observer_) {
     uint32_t ssrc = SSRC();
+    absl::optional<uint32_t> rtx_ssrc;
+    if (rtp_sender_->RtxStatus() != kRtxOff) {
+      rtx_ssrc = rtp_sender_->RtxSsrc();
+    }
 
     for (const RTCPReportBlock& report_block : report_blocks) {
       if (ssrc == report_block.source_ssrc) {
+        rtp_sender_->OnReceivedAckOnSsrc(
+            report_block.extended_highest_sequence_number);
         ack_observer_->OnReceivedAck(
+            report_block.extended_highest_sequence_number);
+      } else if (rtx_ssrc && *rtx_ssrc == report_block.source_ssrc) {
+        rtp_sender_->OnReceivedAckOnRtxSsrc(
             report_block.extended_highest_sequence_number);
       }
     }
