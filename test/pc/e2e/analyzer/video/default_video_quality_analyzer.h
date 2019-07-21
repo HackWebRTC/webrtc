@@ -96,6 +96,8 @@ struct StreamStats {
 
   int64_t dropped_by_encoder = 0;
   int64_t dropped_before_encoder = 0;
+
+  int64_t bytes_sent = 0;
 };
 
 struct AnalyzerStats {
