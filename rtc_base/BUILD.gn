@@ -19,6 +19,27 @@ config("rtc_base_chromium_config") {
   defines = [ "NO_MAIN_THREAD_WRAPPING" ]
 }
 
+config("rtc_base_all_dependent_config") {
+  if (is_ios) {
+    libs = [
+      "CFNetwork.framework",
+      "Foundation.framework",
+      "Security.framework",
+      "SystemConfiguration.framework",
+      "UIKit.framework",
+    ]
+  }
+  if (is_mac) {
+    libs = [
+      "Cocoa.framework",
+      "Foundation.framework",
+      "IOKit.framework",
+      "Security.framework",
+      "SystemConfiguration.framework",
+    ]
+  }
+}
+
 if (!rtc_build_ssl) {
   config("external_ssl_library") {
     assert(rtc_ssl_root != "",
@@ -771,6 +792,8 @@ rtc_static_library("rtc_base") {
   ]
   public_configs = []
 
+  all_dependent_configs = [ ":rtc_base_all_dependent_config" ]
+
   sources = [
     "async_invoker.cc",
     "async_invoker.h",
@@ -935,22 +958,6 @@ rtc_static_library("rtc_base") {
     sources += [
       "mac_utils.cc",
       "mac_utils.h",
-    ]
-    libs += [
-      "Cocoa.framework",
-      "Foundation.framework",
-      "IOKit.framework",
-      "Security.framework",
-      "SystemConfiguration.framework",
-    ]
-  }
-  if (is_ios) {
-    libs += [
-      "CFNetwork.framework",
-      "Foundation.framework",
-      "Security.framework",
-      "SystemConfiguration.framework",
-      "UIKit.framework",
     ]
   }
 
