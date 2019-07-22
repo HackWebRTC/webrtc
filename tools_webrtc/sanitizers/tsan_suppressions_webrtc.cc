@@ -65,6 +65,9 @@ char kTSanDefaultSuppressions[] =
     "race:*RTCStatsIntegrationTest_GetsStatsWhileDestroyingPeerConnections_"
     "Test::TestBody\n"
 
+    // http://crbug.com/244856
+    "race:libpulsecommon*.so\n"
+
     // End of suppressions.
     ;  // Please keep this semicolon.
 
