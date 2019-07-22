@@ -38,12 +38,9 @@ GoogCcNetworkControllerFactory::Create(NetworkControllerConfig config) {
   goog_cc_config.feedback_only = factory_config_.feedback_only;
   if (factory_config_.network_state_estimator_factory) {
     RTC_DCHECK(config.key_value_config);
-    if (config.key_value_config->Lookup("WebRTC-SendSideEstimation")
-            .find("Enabled") == 0) {
-      goog_cc_config.network_state_estimator =
-          factory_config_.network_state_estimator_factory->Create(
-              config.key_value_config);
-    }
+    goog_cc_config.network_state_estimator =
+        factory_config_.network_state_estimator_factory->Create(
+            config.key_value_config);
   }
   if (factory_config_.network_state_predictor_factory) {
     goog_cc_config.network_state_predictor =
