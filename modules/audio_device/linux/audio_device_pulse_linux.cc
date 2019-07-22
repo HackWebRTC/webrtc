@@ -871,8 +871,11 @@ int32_t AudioDeviceLinuxPulse::InitPlayout() {
   playSampleSpec.rate = sample_rate_hz_;
 
   // Create a new play stream
-  _playStream =
-      LATE(pa_stream_new)(_paContext, "playStream", &playSampleSpec, NULL);
+  {
+    rtc::CritScope lock(&_critSect);
+    _playStream =
+        LATE(pa_stream_new)(_paContext, "playStream", &playSampleSpec, NULL);
+  }
 
   if (!_playStream) {
     RTC_LOG(LS_ERROR) << "failed to create play stream, err="
@@ -941,8 +944,11 @@ int32_t AudioDeviceLinuxPulse::InitPlayout() {
   LATE(pa_stream_set_state_callback)(_playStream, PaStreamStateCallback, this);
 
   // Mark playout side as initialized
-  _playIsInitialized = true;
-  _sndCardPlayDelay = 0;
+  {
+    rtc::CritScope lock(&_critSect);
+    _playIsInitialized = true;
+    _sndCardPlayDelay = 0;
+  }
 
   return 0;
 }

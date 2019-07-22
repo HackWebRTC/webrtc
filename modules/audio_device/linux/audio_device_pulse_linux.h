@@ -298,7 +298,7 @@ class AudioDeviceLinuxPulse : public AudioDeviceGeneric {
   bool update_speaker_volume_at_startup_;
   bool quit_ RTC_GUARDED_BY(&_critSect);
 
-  uint32_t _sndCardPlayDelay;
+  uint32_t _sndCardPlayDelay RTC_GUARDED_BY(&_critSect);
 
   int32_t _writeErrors;
 

@@ -1010,6 +1010,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartPlayoutVerifyCallbacks) {
   StartPlayout();
   event()->Wait(kTestTimeOutInMilliseconds);
   StopPlayout();
+  PreTearDown();
 }
 
 // Start recording and verify that the native audio layer starts providing real
@@ -1080,13 +1081,14 @@ TEST_P(MAYBE_AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
       std::max(kTestTimeOutInMilliseconds, 1000 * kFullDuplexTimeInSec)));
   StopRecording();
   StopPlayout();
+  // Avoid concurrent access to audio_stream.
+  PreTearDown();
   // This thresholds is set rather high to accommodate differences in hardware
   // in several devices. The main idea is to capture cases where a very large
   // latency is built up. See http://bugs.webrtc.org/7744 for examples on
   // bots where relatively large average latencies can happen.
   EXPECT_LE(audio_stream.average_size(), 25u);
   PRINT("\n");
-  PreTearDown();
 }
 
 // Runs audio in full duplex until user hits Enter. Intended as a manual test
@@ -1145,13 +1147,14 @@ TEST_P(MAYBE_AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
       std::max(kTestTimeOutInMilliseconds, 1000 * kMeasureLatencyTimeInSec)));
   StopRecording();
   StopPlayout();
+  // Avoid concurrent access to audio_stream.
+  PreTearDown();
   // Verify that a sufficient number of transmitted impulses are detected.
   EXPECT_GE(audio_stream.num_latency_values(),
             static_cast<size_t>(
                 kImpulseFrequencyInHz * kMeasureLatencyTimeInSec - 2));
   // Print out min, max and average delay values for debugging purposes.
   audio_stream.PrintResults();
-  PreTearDown();
 }
 
 #ifdef WEBRTC_WIN
