@@ -61,6 +61,8 @@ def _ParseArgs():
       help='Path to store perf results in chartjson format.')
   parser.add_argument('--isolated-script-test-output', default=None,
       help='Path to output an empty JSON file which Chromium infra requires.')
+  parser.add_argument('--extra-test-args', default=[], action='append',
+      help='Extra args to path to the test binary.')
 
   # Ignore Chromium-specific flags
   parser.add_argument('--test-launcher-summary-output',
@@ -258,7 +260,7 @@ def main():
         _LogCommand(test_command + [
             '--sample_rate_hz=%d' % analyzer.sample_rate_hz,
             '--test_case_prefix=%s' % analyzer.name
-          ]),
+          ] + args.extra_test_args),
         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     perf_results_file = None
     try:

@@ -36,8 +36,8 @@ using AudioConfig =
 
 namespace {
 
-constexpr int kTestDurationSec = 6;
-constexpr int kQuickTestDurationSec = 1;
+constexpr int kTestDurationMs = 5400;
+constexpr int kQuickTestDurationMs = 100;
 
 std::string GetMetricTestCaseName() {
   const ::testing::TestInfo* const test_info =
@@ -139,8 +139,8 @@ TEST(PCLowBandwidthAudioTest, PCGoodNetworkHighBitrate) {
         alice->SetAudioConfig(std::move(audio));
       },
       [](PeerConfigurer* bob) {});
-  fixture->Run(RunParams(TimeDelta::seconds(
-      absl::GetFlag(FLAGS_quick) ? kQuickTestDurationSec : kTestDurationSec)));
+  fixture->Run(RunParams(TimeDelta::ms(
+      absl::GetFlag(FLAGS_quick) ? kQuickTestDurationMs : kTestDurationMs)));
   LogTestResults();
 }
 
@@ -164,8 +164,8 @@ TEST(PCLowBandwidthAudioTest, PCMobile2GNetwork) {
         alice->SetAudioConfig(std::move(audio));
       },
       [](PeerConfigurer* bob) {});
-  fixture->Run(RunParams(TimeDelta::seconds(
-      absl::GetFlag(FLAGS_quick) ? kQuickTestDurationSec : kTestDurationSec)));
+  fixture->Run(RunParams(TimeDelta::ms(
+      absl::GetFlag(FLAGS_quick) ? kQuickTestDurationMs : kTestDurationMs)));
   LogTestResults();
 }
 
