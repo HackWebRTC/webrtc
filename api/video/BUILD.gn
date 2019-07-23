@@ -99,6 +99,7 @@ rtc_source_set("video_frame_i010") {
 }
 
 rtc_source_set("encoded_image") {
+  visibility = [ "*" ]
   sources = [
     "encoded_image.cc",
     "encoded_image.h",
