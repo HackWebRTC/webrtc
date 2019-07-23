@@ -155,6 +155,7 @@ constexpr int RtpExtension::kOneByteHeaderExtensionMaxValueSize;
 
 bool RtpExtension::IsSupportedForAudio(const std::string& uri) {
   return uri == webrtc::RtpExtension::kAudioLevelUri ||
+         uri == webrtc::RtpExtension::kAbsSendTimeUri ||
          // TODO(bugs.webrtc.org/10739): Uncomment once the audio impl is ready.
          // uri == webrtc::RtpExtension::kAbsoluteCaptureTimeUri ||
          uri == webrtc::RtpExtension::kTransportSequenceNumberUri ||
