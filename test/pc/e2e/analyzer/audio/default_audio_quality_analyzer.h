@@ -29,7 +29,6 @@ struct AudioStreamStats {
   SamplesStatsCounter preemptive_rate;
   SamplesStatsCounter speech_expand_rate;
   SamplesStatsCounter preferred_buffer_size_ms;
-  int64_t bytes_sent;
 };
 
 // TODO(bugs.webrtc.org/10430): Migrate to the new GetStats as soon as

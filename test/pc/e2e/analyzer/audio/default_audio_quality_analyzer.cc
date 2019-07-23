@@ -45,24 +45,10 @@ void DefaultAudioQualityAnalyzer::OnStatsReports(
     if (strcmp(media_type->static_string_val(), kStatsAudioMediaType) != 0) {
       continue;
     }
-
     if (stats_report->FindValue(
             webrtc::StatsReport::kStatsValueNameBytesSent)) {
-      // If kStatsValueNameBytesSent is present, it means it's a send stream.
-      // All we need from a send stream is bytes sent.
-      const webrtc::StatsReport::Value* bytes_sent = stats_report->FindValue(
-          StatsReport::StatsValueName::kStatsValueNameBytesSent);
-      const webrtc::StatsReport::Value* report_track_id =
-          stats_report->FindValue(
-              StatsReport::StatsValueName::kStatsValueNameTrackId);
-
-      rtc::CritScope crit(&lock_);
-      // Note: outgoing streams have their "stream label" directly in the
-      // report's track id field.  There is no need to look it up using
-      // GetStreamLabelFromStatsReport(), and in fact doing so will crash.
-      AudioStreamStats& audio_stream_stats =
-          streams_stats_[report_track_id->string_val()];
-      audio_stream_stats.bytes_sent = bytes_sent->int64_val();
+      // If kStatsValueNameBytesSent is present, it means it's a send stream,
+      // but we need audio metrics for receive stream, so skip it.
       continue;
     }
 
@@ -126,9 +112,6 @@ void DefaultAudioQualityAnalyzer::Stop() {
                  item.second.speech_expand_rate, "unitless");
     ReportResult("preferred_buffer_size_ms", item.first,
                  item.second.preferred_buffer_size_ms, "ms");
-    test::PrintResult("bytes_sent", "", GetTestCaseName(item.first),
-                      item.second.bytes_sent, "sizeInBytes",
-                      /*important=*/false);
   }
 }
 

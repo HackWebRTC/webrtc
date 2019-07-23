@@ -27,7 +27,6 @@ constexpr int kMaxActiveComparisons = 10;
 constexpr int kFreezeThresholdMs = 150;
 constexpr int kMicrosPerSecond = 1000000;
 constexpr int kBitsInByte = 8;
-constexpr char kStatsVideoMediaType[] = "video";
 
 void LogFrameCounters(const std::string& name, const FrameCounters& counters) {
   RTC_LOG(INFO) << "[" << name << "] Captured    : " << counters.captured;
@@ -374,28 +373,7 @@ void DefaultVideoQualityAnalyzer::OnStatsReports(
     const std::string& pc_label,
     const StatsReports& stats_reports) {
   for (const StatsReport* stats_report : stats_reports) {
-    // Record the number of video bytes sent from outgoing SSRC reports.
-    if (stats_report->type() == StatsReport::StatsType::kStatsReportTypeSsrc &&
-        strcmp(stats_report
-                   ->FindValue(
-                       StatsReport::StatsValueName::kStatsValueNameMediaType)
-                   ->static_string_val(),
-               kStatsVideoMediaType) == 0 &&
-        stats_report->FindValue(StatsReport::kStatsValueNameBytesSent)) {
-      const webrtc::StatsReport::Value* bytes_sent = stats_report->FindValue(
-          StatsReport::StatsValueName::kStatsValueNameBytesSent);
-      const webrtc::StatsReport::Value* track_id = stats_report->FindValue(
-          StatsReport::StatsValueName::kStatsValueNameTrackId);
-
-      rtc::CritScope crit(&comparison_lock_);
-      // Note: outgoing streams have their "stream label" directly in the
-      // report's track id field.  There is no need to look it up using
-      // GetStreamLabelFromStatsReport(), and in fact doing so will crash.
-      StreamStats& stream_stats = stream_stats_[track_id->string_val()];
-      stream_stats.bytes_sent = bytes_sent->int64_val();
-    }
-
-    // The only other stats collected by this analyzer are present in
+    // The only stats collected by this analyzer are present in
     // kStatsReportTypeBwe reports, so all other reports are just ignored.
     if (stats_report->type() != StatsReport::StatsType::kStatsReportTypeBwe) {
       continue;
@@ -651,8 +629,6 @@ void DefaultVideoQualityAnalyzer::ReportResults(
                     /*important=*/false);
   ReportResult("max_skipped", test_case_name, stats.skipped_between_rendered,
                "unitless");
-  test::PrintResult("bytes_sent", "", test_case_name, stats.bytes_sent,
-                    "sizeInBytes", /*important=*/false);
 }
 
 void DefaultVideoQualityAnalyzer::ReportResult(
