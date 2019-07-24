@@ -209,6 +209,12 @@ NetworkControlUpdate GoogCcNetworkController::OnProcessInterval(
       last_packet_received_time_.IsFinite() && !feedback_max_rtts_.empty()) {
     UpdateCongestionWindowSize(msg.at_time - last_packet_received_time_);
   }
+  if (congestion_window_pushback_controller_ && current_data_window_) {
+    congestion_window_pushback_controller_->SetDataWindow(
+        *current_data_window_);
+  } else {
+    update.congestion_window = current_data_window_;
+  }
   MaybeTriggerOnNetworkChanged(&update, msg.at_time);
   return update;
 }
