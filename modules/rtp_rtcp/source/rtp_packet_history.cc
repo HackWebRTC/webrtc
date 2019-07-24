@@ -142,9 +142,6 @@ void RtpPacketHistory::PutRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
                                    : 0));
   RTC_DCHECK(it.second) << "Failed to insert packet in history.";
   StoredPacket& stored_packet = it.first->second;
-  if (stored_packet.packet_->capture_time_ms() <= 0) {
-    stored_packet.packet_->set_capture_time_ms(now_ms);
-  }
 
   if (!start_seqno_) {
     start_seqno_ = rtp_seq_no;

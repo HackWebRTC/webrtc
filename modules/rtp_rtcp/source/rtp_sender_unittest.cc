@@ -2620,6 +2620,94 @@ TEST_P(RtpSenderTest, SupportsPadding) {
   }
 }
 
+TEST_P(RtpSenderTest, SetsCaptureTimeAndPopulatesTransmissionOffset) {
+  rtp_sender_->RegisterRtpHeaderExtension(kRtpExtensionTransmissionTimeOffset,
+                                          kTransmissionTimeOffsetExtensionId);
+
+  rtp_sender_->SetSendingMediaStatus(true);
+  rtp_sender_->SetRtxStatus(kRtxRetransmitted | kRtxRedundantPayloads);
+  rtp_sender_->SetRtxPayloadType(kRtxPayload, kPayload);
+  rtp_sender_->SetStorePacketsStatus(true, 10);
+
+  const int64_t kMissingCaptureTimeMs = 0;
+  const uint32_t kTimestampTicksPerMs = 90;
+  const int64_t kOffsetMs = 10;
+
+  if (GetParam().pacer_references_packets) {
+    EXPECT_CALL(mock_paced_sender_, InsertPacket);
+
+    auto packet =
+        BuildRtpPacket(kPayload, kMarkerBit, fake_clock_.TimeInMilliseconds(),
+                       kMissingCaptureTimeMs);
+    packet->set_packet_type(RtpPacketToSend::Type::kVideo);
+    packet->ReserveExtension<TransmissionOffset>();
+    packet->AllocatePayload(sizeof(kPayloadData));
+    EXPECT_TRUE(
+        rtp_sender_->SendToNetwork(std::move(packet), kAllowRetransmission));
+
+    fake_clock_.AdvanceTimeMilliseconds(kOffsetMs);
+
+    rtp_sender_->TimeToSendPacket(kSsrc, kSeqNum,
+                                  fake_clock_.TimeInMilliseconds(), false,
+                                  PacedPacketInfo());
+  } else {
+    auto packet =
+        BuildRtpPacket(kPayload, kMarkerBit, fake_clock_.TimeInMilliseconds(),
+                       kMissingCaptureTimeMs);
+    packet->set_packet_type(RtpPacketToSend::Type::kVideo);
+    packet->ReserveExtension<TransmissionOffset>();
+    packet->AllocatePayload(sizeof(kPayloadData));
+
+    std::unique_ptr<RtpPacketToSend> packet_to_pace;
+    EXPECT_CALL(mock_paced_sender_, EnqueuePacket)
+        .WillOnce([&](std::unique_ptr<RtpPacketToSend> packet) {
+          EXPECT_GT(packet->capture_time_ms(), 0);
+          packet_to_pace = std::move(packet);
+        });
+
+    EXPECT_TRUE(
+        rtp_sender_->SendToNetwork(std::move(packet), kAllowRetransmission));
+
+    fake_clock_.AdvanceTimeMilliseconds(kOffsetMs);
+
+    rtp_sender_->TrySendPacket(packet_to_pace.get(), PacedPacketInfo());
+  }
+
+  EXPECT_EQ(1, transport_.packets_sent());
+  absl::optional<int32_t> transmission_time_extension =
+      transport_.sent_packets_.back().GetExtension<TransmissionOffset>();
+  ASSERT_TRUE(transmission_time_extension.has_value());
+  EXPECT_EQ(*transmission_time_extension, kOffsetMs * kTimestampTicksPerMs);
+
+  // Retransmit packet. The RTX packet should get the same capture time as the
+  // original packet, so offset is delta from original packet to now.
+  fake_clock_.AdvanceTimeMilliseconds(kOffsetMs);
+
+  if (GetParam().pacer_references_packets) {
+    EXPECT_CALL(mock_paced_sender_, InsertPacket);
+    EXPECT_GT(rtp_sender_->ReSendPacket(kSeqNum), 0);
+    rtp_sender_->TimeToSendPacket(kSsrc, kSeqNum,
+                                  fake_clock_.TimeInMilliseconds(), true,
+                                  PacedPacketInfo());
+  } else {
+    std::unique_ptr<RtpPacketToSend> rtx_packet_to_pace;
+    EXPECT_CALL(mock_paced_sender_, EnqueuePacket)
+        .WillOnce([&](std::unique_ptr<RtpPacketToSend> packet) {
+          EXPECT_GT(packet->capture_time_ms(), 0);
+          rtx_packet_to_pace = std::move(packet);
+        });
+
+    EXPECT_GT(rtp_sender_->ReSendPacket(kSeqNum), 0);
+    rtp_sender_->TrySendPacket(rtx_packet_to_pace.get(), PacedPacketInfo());
+  }
+
+  EXPECT_EQ(2, transport_.packets_sent());
+  transmission_time_extension =
+      transport_.sent_packets_.back().GetExtension<TransmissionOffset>();
+  ASSERT_TRUE(transmission_time_extension.has_value());
+  EXPECT_EQ(*transmission_time_extension, 2 * kOffsetMs * kTimestampTicksPerMs);
+}
+
 INSTANTIATE_TEST_SUITE_P(WithAndWithoutOverhead,
                          RtpSenderTest,
                          ::testing::Values(TestConfig{false, false},

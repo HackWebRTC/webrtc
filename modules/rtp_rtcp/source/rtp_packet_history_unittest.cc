@@ -137,22 +137,6 @@ TEST_F(RtpPacketHistoryTest, GetRtpPacket) {
   EXPECT_EQ(capture_time_ms, packet_out->capture_time_ms());
 }
 
-TEST_F(RtpPacketHistoryTest, NoCaptureTime) {
-  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
-  fake_clock_.AdvanceTimeMilliseconds(1);
-  int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();
-  std::unique_ptr<RtpPacketToSend> packet = CreateRtpPacket(kStartSeqNum);
-  packet->set_capture_time_ms(-1);
-  rtc::CopyOnWriteBuffer buffer = packet->Buffer();
-  hist_.PutRtpPacket(std::move(packet), kAllowRetransmission, absl::nullopt);
-
-  std::unique_ptr<RtpPacketToSend> packet_out =
-      hist_.GetPacketAndSetSendTime(kStartSeqNum);
-  EXPECT_TRUE(packet_out);
-  EXPECT_EQ(buffer, packet_out->Buffer());
-  EXPECT_EQ(capture_time_ms, packet_out->capture_time_ms());
-}
-
 TEST_F(RtpPacketHistoryTest, DontRetransmit) {
   hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, 10);
   int64_t capture_time_ms = fake_clock_.TimeInMilliseconds();

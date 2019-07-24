@@ -1098,6 +1098,10 @@ bool RTPSender::SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
     auto packet_type = packet->packet_type();
     RTC_CHECK(packet_type) << "Packet type must be set before sending.";
 
+    if (packet->capture_time_ms() <= 0) {
+      packet->set_capture_time_ms(now_ms);
+    }
+
     if (pacer_legacy_packet_referencing_) {
       // If |pacer_reference_packets_| then pacer needs to find the packet in
       // the history when it is time to send, so move packet there.
@@ -1573,6 +1577,9 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
 
   // Add original application data.
   rtx_packet->set_application_data(packet.application_data());
+
+  // Copy capture time so e.g. TransmissionOffset is correctly set.
+  rtx_packet->set_capture_time_ms(packet.capture_time_ms());
 
   return rtx_packet;
 }
