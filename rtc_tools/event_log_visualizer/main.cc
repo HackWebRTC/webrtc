@@ -21,6 +21,9 @@
 #include "absl/algorithm/container.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
+#include "absl/flags/usage.h"
+#include "absl/flags/usage_config.h"
+#include "absl/strings/match.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
@@ -37,7 +40,8 @@
 ABSL_FLAG(std::string,
           plot,
           "default",
-          "A comma separated list of plot names. See below for valid options.");
+          "A comma separated list of plot names. See --list_plots for valid "
+          "options.");
 
 ABSL_FLAG(
     std::string,
@@ -91,6 +95,11 @@ ABSL_FLAG(bool,
           protobuf_output,
           false,
           "Output charts as protobuf instead of python code.");
+
+ABSL_FLAG(bool,
+          list_plots,
+          false,
+          "List of registered plots (for use with the --plot flag)");
 
 using webrtc::Plot;
 
@@ -172,24 +181,22 @@ class PlotMap {
 
   std::vector<PlotDeclaration> plots_;
 };
+
+bool ContainsHelppackageFlags(absl::string_view filename) {
+  return absl::EndsWith(filename, "main.cc");
+}
+
 }  // namespace
 
 int main(int argc, char* argv[]) {
-  std::string program_name = argv[0];
-  std::string usage =
+  absl::SetProgramUsageMessage(
       "A tool for visualizing WebRTC event logs.\n"
-      "Example usage:\n" +
-      program_name + " <logfile> | python\n" + "Run " + program_name +
-      " --help for a list of command line options\n";
-
+      "Example usage:\n"
+      "./event_log_visualizer <logfile> | python\n");
+  absl::FlagsUsageConfig config;
+  config.contains_help_flags = &ContainsHelppackageFlags;
+  absl::SetFlagsUsageConfig(config);
   std::vector<char*> args = absl::ParseCommandLine(argc, argv);
-
-  // TODO(bugs.webrtc.org/10616): Add program usage message when Abseil
-  // flags supports it.
-  if (args.size() != 2) {
-    std::cerr << "TODO(bugs.webrtc.org/10616): Print flag list again when "
-                 "Abseil supports it.\n";
-  }
 
   // Flag replacements
   std::map<std::string, std::vector<std::string>> flag_aliases = {
@@ -529,32 +536,32 @@ int main(int argc, char* argv[]) {
     }
   }
 
-  // if (argc != 2) {
-  //   // Print usage information.
-  //   std::cerr << usage;
-  //   if (FLAG_help) {
-  //     rtc::FlagList::Print(nullptr, false);
-  //     std::cerr << "List of registered plots (for use with the --plot flag):"
-  //               << std::endl;
-  //     for (const auto& plot : plots) {
-  //       // TODO(terelius): Also print a help text.
-  //       std::cerr << "  " << plot.label << std::endl;
-  //     }
-  //     // The following flag doesn't fit the model used for the other plots.
-  //     std::cerr << "simulated_neteq_jitter_buffer_delay" << std::endl;
-  //     std::cerr << "List of plot aliases (for use with the --plot flag):"
-  //               << std::endl;
-  //     std::cerr << "  all = every registered plot" << std::endl;
-  //     for (const auto& alias : flag_aliases) {
-  //       std::cerr << "  " << alias.first << " = ";
-  //       for (const auto& replacement : alias.second) {
-  //         std::cerr << replacement << ",";
-  //       }
-  //       std::cerr << std::endl;
-  //     }
-  //   }
-  //   return 0;
-  // }
+  if (absl::GetFlag(FLAGS_list_plots)) {
+    std::cerr << "List of registered plots (for use with the --plot flag):"
+              << std::endl;
+    for (const auto& plot : plots) {
+      // TODO(terelius): Also print a help text.
+      std::cerr << "  " << plot.label << std::endl;
+    }
+    // The following flag doesn't fit the model used for the other plots.
+    std::cerr << "simulated_neteq_jitter_buffer_delay" << std::endl;
+    std::cerr << "List of plot aliases (for use with the --plot flag):"
+              << std::endl;
+    std::cerr << "  all = every registered plot" << std::endl;
+    for (const auto& alias : flag_aliases) {
+      std::cerr << "  " << alias.first << " = ";
+      for (const auto& replacement : alias.second) {
+        std::cerr << replacement << ",";
+      }
+      std::cerr << std::endl;
+    }
+    return 0;
+  }
+  if (args.size() != 2) {
+    // Print usage information.
+    std::cerr << absl::ProgramUsageMessage();
+    return 1;
+  }
 
   for (const auto& plot : plots) {
     if (plot.enabled) {

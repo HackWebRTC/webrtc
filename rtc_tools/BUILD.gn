@@ -337,8 +337,11 @@ if (rtc_include_tests) {
         "../test:fileutils",
         "../test:test_support",
         "//third_party/abseil-cpp/absl/algorithm:container",
+        "//third_party/abseil-cpp/absl/flags:config",
         "//third_party/abseil-cpp/absl/flags:flag",
         "//third_party/abseil-cpp/absl/flags:parse",
+        "//third_party/abseil-cpp/absl/flags:usage",
+        "//third_party/abseil-cpp/absl/strings",
       ]
     }
   }
