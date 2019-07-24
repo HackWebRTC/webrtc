@@ -27,8 +27,7 @@
 #include "modules/pacing/interval_budget.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/pacing/round_robin_packet_queue.h"
-#include "modules/rtp_rtcp/include/rtp_packet_pacer.h"
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
+#include "modules/rtp_rtcp/include/rtp_packet_sender.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/critical_section.h"
@@ -39,7 +38,7 @@ namespace webrtc {
 class Clock;
 class RtcEventLog;
 
-class PacedSender : public Module, public RtpPacketPacer {
+class PacedSender : public Module, public RtpPacketSender {
  public:
   static constexpr int64_t kNoCongestionWindow = -1;
 
@@ -98,7 +97,7 @@ class PacedSender : public Module, public RtpPacketPacer {
   // With the introduction of audio BWE audio traffic will be accounted for
   // the pacer budget calculation. The audio traffic still will be injected
   // at high priority.
-  void SetAccountForAudioPackets(bool account_for_audio) override;
+  void SetAccountForAudioPackets(bool account_for_audio);
 
   // Returns the time since the oldest queued packet was enqueued.
   virtual int64_t QueueInMs() const;

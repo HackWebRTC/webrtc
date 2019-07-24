@@ -27,7 +27,7 @@
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
 #include "modules/rtp_rtcp/include/rtcp_statistics.h"
-#include "modules/rtp_rtcp/include/rtp_packet_pacer.h"
+#include "modules/rtp_rtcp/include/rtp_packet_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
 
@@ -119,7 +119,7 @@ class RtpTransportControllerSendInterface {
   virtual NetworkStateEstimateObserver* network_state_estimate_observer() = 0;
   virtual TransportFeedbackObserver* transport_feedback_observer() = 0;
 
-  virtual RtpPacketPacer* packet_sender() = 0;
+  virtual RtpPacketSender* packet_sender() = 0;
 
   // SetAllocatedSendBitrateLimits sets bitrates limits imposed by send codec
   // settings.
@@ -160,6 +160,8 @@ class RtpTransportControllerSendInterface {
 
   virtual void OnTransportOverheadChanged(
       size_t transport_overhead_per_packet) = 0;
+
+  virtual void AccountForAudioPacketsInPacedSender(bool account_for_audio) = 0;
 };
 
 }  // namespace webrtc

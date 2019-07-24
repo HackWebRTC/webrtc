@@ -22,7 +22,7 @@
 #include "modules/rtp_rtcp/include/rtp_cvo.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
-#include "modules/rtp_rtcp/include/rtp_packet_pacer.h"
+#include "modules/rtp_rtcp/include/rtp_packet_sender.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "modules/rtp_rtcp/source/rtp_format_video_generic.h"
@@ -166,7 +166,7 @@ std::string ToFieldTrialString(TestConfig config) {
 
 }  // namespace
 
-class MockRtpPacketPacer : public RtpPacketPacer {
+class MockRtpPacketPacer : public RtpPacketSender {
  public:
   MockRtpPacketPacer() {}
   virtual ~MockRtpPacketPacer() {}
@@ -180,6 +180,15 @@ class MockRtpPacketPacer : public RtpPacketPacer {
                     int64_t capture_time_ms,
                     size_t bytes,
                     bool retransmission));
+
+  MOCK_METHOD2(CreateProbeCluster, void(int bitrate_bps, int cluster_id));
+
+  MOCK_METHOD0(Pause, void());
+  MOCK_METHOD0(Resume, void());
+  MOCK_METHOD1(SetCongestionWindow,
+               void(absl::optional<int64_t> congestion_window_bytes));
+  MOCK_METHOD1(UpdateOutstandingData, void(int64_t outstanding_bytes));
+  MOCK_METHOD1(SetAccountForAudioPackets, void(bool account_for_audio));
 };
 
 class MockTransportSequenceNumberAllocator

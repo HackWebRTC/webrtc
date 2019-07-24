@@ -365,11 +365,11 @@ class TransportSequenceNumberProxy : public TransportSequenceNumberAllocator {
   TransportSequenceNumberAllocator* seq_num_allocator_ RTC_GUARDED_BY(&crit_);
 };
 
-class RtpPacketSenderProxy : public RtpPacketPacer {
+class RtpPacketSenderProxy : public RtpPacketSender {
  public:
   RtpPacketSenderProxy() : rtp_packet_pacer_(nullptr) {}
 
-  void SetPacketPacer(RtpPacketPacer* rtp_packet_pacer) {
+  void SetPacketPacer(RtpPacketSender* rtp_packet_pacer) {
     RTC_DCHECK(thread_checker_.IsCurrent());
     rtc::CritScope lock(&crit_);
     rtp_packet_pacer_ = rtp_packet_pacer;
@@ -394,14 +394,10 @@ class RtpPacketSenderProxy : public RtpPacketPacer {
     }
   }
 
-  void SetAccountForAudioPackets(bool account_for_audio) override {
-    RTC_NOTREACHED();
-  }
-
  private:
   rtc::ThreadChecker thread_checker_;
   rtc::CriticalSection crit_;
-  RtpPacketPacer* rtp_packet_pacer_ RTC_GUARDED_BY(&crit_);
+  RtpPacketSender* rtp_packet_pacer_ RTC_GUARDED_BY(&crit_);
 };
 
 class VoERtcpObserver : public RtcpBandwidthObserver {
@@ -1005,7 +1001,7 @@ void ChannelSend::RegisterSenderCongestionControlObjects(
     RtpTransportControllerSendInterface* transport,
     RtcpBandwidthObserver* bandwidth_observer) {
   RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  RtpPacketPacer* rtp_packet_pacer = transport->packet_sender();
+  RtpPacketSender* rtp_packet_pacer = transport->packet_sender();
   TransportFeedbackObserver* transport_feedback_observer =
       transport->transport_feedback_observer();
   PacketRouter* packet_router = transport->packet_router();

@@ -76,7 +76,7 @@ class RtpTransportControllerSend final
 
   NetworkStateEstimateObserver* network_state_estimate_observer() override;
   TransportFeedbackObserver* transport_feedback_observer() override;
-  RtpPacketPacer* packet_sender() override;
+  RtpPacketSender* packet_sender() override;
 
   void SetAllocatedSendBitrateLimits(int min_send_bitrate_bps,
                                      int max_padding_bitrate_bps,
@@ -105,6 +105,8 @@ class RtpTransportControllerSend final
 
   void OnTransportOverheadChanged(
       size_t transport_overhead_per_packet) override;
+
+  void AccountForAudioPacketsInPacedSender(bool account_for_audio) override;
 
   // Implements RtcpBandwidthObserver interface
   void OnReceivedEstimatedBitrate(uint32_t bitrate) override;

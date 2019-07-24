@@ -213,7 +213,7 @@ RTPSender::RTPSender(
     bool audio,
     Clock* clock,
     Transport* transport,
-    RtpPacketPacer* paced_sender,
+    RtpPacketSender* paced_sender,
     absl::optional<uint32_t> flexfec_ssrc,
     TransportSequenceNumberAllocator* sequence_number_allocator,
     TransportFeedbackObserver* transport_feedback_observer,

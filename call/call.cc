@@ -503,12 +503,13 @@ Call::~Call() {
     call_stats_->DeregisterStatsObserver(&receive_side_cc_);
   }
 
-  int64_t first_sent_packet_ms = transport_send_->GetFirstPacketTimeMs();
+  absl::optional<int64_t> first_sent_packet_ms =
+      transport_send_->GetFirstPacketTimeMs();
   // Only update histograms after process threads have been shut down, so that
   // they won't try to concurrently update stats.
-  {
+  if (first_sent_packet_ms) {
     rtc::CritScope lock(&bitrate_crit_);
-    UpdateSendHistograms(first_sent_packet_ms);
+    UpdateSendHistograms(*first_sent_packet_ms);
   }
   UpdateReceiveHistograms();
   UpdateHistograms();
@@ -619,8 +620,6 @@ void Call::UpdateHistograms() {
 }
 
 void Call::UpdateSendHistograms(int64_t first_sent_packet_ms) {
-  if (first_sent_packet_ms == -1)
-    return;
   int64_t elapsed_sec =
       (clock_->TimeInMilliseconds() - first_sent_packet_ms) / 1000;
   if (elapsed_sec < metrics::kMinRunTimeInSeconds)

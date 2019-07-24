@@ -48,7 +48,7 @@ class MockRtpTransportControllerSend
   MOCK_METHOD0(network_state_estimate_observer,
                NetworkStateEstimateObserver*());
   MOCK_METHOD0(transport_feedback_observer, TransportFeedbackObserver*());
-  MOCK_METHOD0(packet_sender, RtpPacketPacer*());
+  MOCK_METHOD0(packet_sender, RtpPacketSender*());
   MOCK_METHOD3(SetAllocatedSendBitrateLimits, void(int, int, int));
   MOCK_METHOD1(SetPacingFactor, void(float));
   MOCK_METHOD1(SetQueueTimeLimit, void(int));
@@ -67,6 +67,7 @@ class MockRtpTransportControllerSend
   MOCK_METHOD1(SetSdpBitrateParameters, void(const BitrateConstraints&));
   MOCK_METHOD1(SetClientBitratePreferences, void(const BitrateSettings&));
   MOCK_METHOD1(OnTransportOverheadChanged, void(size_t));
+  MOCK_METHOD1(AccountForAudioPacketsInPacedSender, void(bool));
   MOCK_METHOD1(OnReceivedPacket, void(const ReceivedPacket&));
 };
 }  // namespace webrtc

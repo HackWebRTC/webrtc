@@ -332,7 +332,7 @@ void AudioSendStream::Start() {
   if (allocation_settings_.IncludeAudioInAllocationOnStart(
           config_.min_bitrate_bps, config_.max_bitrate_bps, config_.has_dscp,
           TransportSeqNumId(config_))) {
-    rtp_transport_->packet_sender()->SetAccountForAudioPackets(true);
+    rtp_transport_->AccountForAudioPacketsInPacedSender(true);
     rtp_rtcp_module_->SetAsPartOfAllocation(true);
     rtc::Event thread_sync_event;
     worker_queue_->PostTask([&] {
@@ -796,7 +796,7 @@ void AudioSendStream::ReconfigureBitrateObserver(
   if (stream->allocation_settings_.IncludeAudioInAllocationOnReconfigure(
           new_config.min_bitrate_bps, new_config.max_bitrate_bps,
           new_config.has_dscp, TransportSeqNumId(new_config))) {
-    stream->rtp_transport_->packet_sender()->SetAccountForAudioPackets(true);
+    stream->rtp_transport_->AccountForAudioPacketsInPacedSender(true);
     rtc::Event thread_sync_event;
     stream->worker_queue_->PostTask([&] {
       RTC_DCHECK_RUN_ON(stream->worker_queue_);
@@ -813,7 +813,7 @@ void AudioSendStream::ReconfigureBitrateObserver(
     thread_sync_event.Wait(rtc::Event::kForever);
     stream->rtp_rtcp_module_->SetAsPartOfAllocation(true);
   } else {
-    stream->rtp_transport_->packet_sender()->SetAccountForAudioPackets(false);
+    stream->rtp_transport_->AccountForAudioPacketsInPacedSender(false);
     stream->RemoveBitrateObserver();
     stream->rtp_rtcp_module_->SetAsPartOfAllocation(false);
   }

@@ -212,10 +212,10 @@ void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
 
   RtpPacketToSend::Type type;
   switch (priority) {
-    case RtpPacketPacer::kHighPriority:
+    case RtpPacketSender::kHighPriority:
       type = RtpPacketToSend::Type::kAudio;
       break;
-    case RtpPacketPacer::kNormalPriority:
+    case RtpPacketSender::kNormalPriority:
       type = RtpPacketToSend::Type::kRetransmission;
       break;
     default:
