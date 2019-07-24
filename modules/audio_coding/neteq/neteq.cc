@@ -39,9 +39,10 @@ std::string NetEq::Config::ToString() const {
 // Return the new object.
 NetEq* NetEq::Create(
     const NetEq::Config& config,
+    Clock* clock,
     const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory) {
   return new NetEqImpl(config,
-                       NetEqImpl::Dependencies(config, decoder_factory));
+                       NetEqImpl::Dependencies(config, clock, decoder_factory));
 }
 
 }  // namespace webrtc

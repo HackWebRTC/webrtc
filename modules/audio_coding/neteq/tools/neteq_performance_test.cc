@@ -39,7 +39,9 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
   // Initialize NetEq instance.
   NetEq::Config config;
   config.sample_rate_hz = kSampRateHz;
-  NetEq* neteq = NetEq::Create(config, CreateBuiltinAudioDecoderFactory());
+  webrtc::Clock* clock = webrtc::Clock::GetRealTimeClock();
+  NetEq* neteq =
+      NetEq::Create(config, clock, CreateBuiltinAudioDecoderFactory());
   // Register decoder in |neteq|.
   if (!neteq->RegisterPayloadType(kPayloadType,
                                   SdpAudioFormat("l16", kSampRateHz, 1)))
@@ -72,7 +74,6 @@ int64_t NetEqPerformanceTest::Run(int runtime_ms,
   RTC_CHECK_EQ(sizeof(input_payload), payload_len);
 
   // Main loop.
-  webrtc::Clock* clock = webrtc::Clock::GetRealTimeClock();
   int64_t start_time_ms = clock->TimeInMilliseconds();
   AudioFrame out_frame;
   while (time_now_ms < runtime_ms) {

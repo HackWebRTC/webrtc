@@ -22,6 +22,7 @@
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "modules/audio_coding/neteq/tools/rtp_generator.h"
 #include "rtc_base/strings/string_builder.h"
+#include "system_wrappers/include/clock.h"
 #include "test/gtest.h"
 #include "test/testsupport/file_utils.h"
 
@@ -57,6 +58,7 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
         frame_size_samples_(
             static_cast<size_t>(frame_size_ms_ * samples_per_ms_)),
         output_size_samples_(10 * samples_per_ms_),
+        clock_(0),
         rtp_generator_mono_(samples_per_ms_),
         rtp_generator_(samples_per_ms_),
         payload_size_bytes_(0),
@@ -67,8 +69,8 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
     config.sample_rate_hz = sample_rate_hz_;
     rtc::scoped_refptr<AudioDecoderFactory> factory =
         CreateBuiltinAudioDecoderFactory();
-    neteq_mono_ = NetEq::Create(config, factory);
-    neteq_ = NetEq::Create(config, factory);
+    neteq_mono_ = NetEq::Create(config, &clock_, factory);
+    neteq_ = NetEq::Create(config, &clock_, factory);
     input_ = new int16_t[frame_size_samples_];
     encoded_ = new uint8_t[2 * frame_size_samples_];
     input_multi_channel_ = new int16_t[frame_size_samples_ * num_channels_];
@@ -196,6 +198,7 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
       ASSERT_NO_FATAL_FAILURE(VerifyOutput(output_size_samples_));
 
       time_now += kTimeStepMs;
+      clock_.AdvanceTimeMilliseconds(kTimeStepMs);
     }
   }
 
@@ -205,6 +208,7 @@ class NetEqStereoTest : public ::testing::TestWithParam<TestParameters> {
   const int frame_size_ms_;
   const size_t frame_size_samples_;
   const size_t output_size_samples_;
+  SimulatedClock clock_;
   NetEq* neteq_mono_;
   NetEq* neteq_;
   test::RtpGenerator rtp_generator_mono_;
