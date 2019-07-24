@@ -16,6 +16,7 @@
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/audio_coding/neteq/tools/rtp_generator.h"
 #include "rtc_base/ref_counted_object.h"
+#include "system_wrappers/include/clock.h"
 #include "test/audio_decoder_proxy_factory.h"
 #include "test/gmock.h"
 
@@ -162,7 +163,8 @@ class NetEqNetworkStatsTest {
         packet_loss_interval_(0xffffffff) {
     NetEq::Config config;
     config.sample_rate_hz = format.clockrate_hz;
-    neteq_ = absl::WrapUnique(NetEq::Create(config, decoder_factory_));
+    neteq_ = absl::WrapUnique(
+        NetEq::Create(config, Clock::GetRealTimeClock(), decoder_factory_));
     neteq_->RegisterPayloadType(kPayloadType, format);
   }
 

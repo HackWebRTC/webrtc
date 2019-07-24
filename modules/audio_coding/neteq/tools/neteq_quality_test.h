@@ -19,6 +19,7 @@
 #include "modules/audio_coding/neteq/tools/audio_sink.h"
 #include "modules/audio_coding/neteq/tools/input_audio_file.h"
 #include "modules/audio_coding/neteq/tools/rtp_generator.h"
+#include "system_wrappers/include/clock.h"
 #include "test/gtest.h"
 
 namespace webrtc {
