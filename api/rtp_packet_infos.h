@@ -76,6 +76,11 @@ class RtpPacketInfos {
   class Data : public rtc::RefCountedBase {
    public:
     static rtc::scoped_refptr<Data> Create(vector_type entries) {
+      // Performance optimization for the empty case.
+      if (entries.empty()) {
+        return nullptr;
+      }
+
       return new Data(entries);
     }
 
