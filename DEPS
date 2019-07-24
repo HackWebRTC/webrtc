@@ -5,7 +5,7 @@ vars = {
   # chromium waterfalls. More info at: crbug.com/570091.
   'checkout_configuration': 'default',
   'checkout_instrumented_libraries': 'checkout_linux and checkout_configuration == "default"',
-  'chromium_revision': 'aa9c65938b04694644f35f75210e44ffbea7371c',
+  'chromium_revision': '5f77ce89446616412306de115683bc9cd75bbeaa',
 }
 
 deps = {
@@ -23,13 +23,13 @@ deps = {
     'condition': 'checkout_android',
   },
   'src/ios': {
-    'url': 'https://chromium.googlesource.com/chromium/src/ios@418eee99a2c3851f59a398347837d3af51de6627',
+    'url': 'https://chromium.googlesource.com/chromium/src/ios@024c172496392661bde3118047ac66949bfb143a',
     'condition': 'checkout_ios',
   },
   'src/testing':
-    'https://chromium.googlesource.com/chromium/src/testing@505a71c6883795680bcaca4270c76c625efc34c3',
+    'https://chromium.googlesource.com/chromium/src/testing@0291c4b1ebab9328ffa9013d8b0d4b62f5441bbf',
   'src/third_party':
-    'https://chromium.googlesource.com/chromium/src/third_party@a7d7afb748993ae306a12acc23704391cc4de5c5',
+    'https://chromium.googlesource.com/chromium/src/third_party@618bf67a511a0e29dd680c5429ca5d6b6527c84e',
 
   'src/buildtools/linux64': {
     'packages': [
@@ -231,7 +231,7 @@ deps = {
   'src/third_party/yasm/source/patched-yasm':
     'https://chromium.googlesource.com/chromium/deps/yasm/patched-yasm.git@720b70524a4424b15fc57e82263568c8ba0496ad',
   'src/tools':
-    'https://chromium.googlesource.com/chromium/src/tools@9b5eea5ca343ff9a2b62211c9fac6cfae2fa3351',
+    'https://chromium.googlesource.com/chromium/src/tools@cc28e560d4deed8de901af92de6fee214424ab59',
   'src/tools/swarming_client':
     'https://chromium.googlesource.com/infra/luci/client-py.git@96f125709acfd0b48fc1e5dae7d6ea42291726ac',
 
