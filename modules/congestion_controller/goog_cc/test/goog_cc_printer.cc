@@ -124,6 +124,9 @@ std::deque<FieldLogger*> GoogCcStatePrinter::CreateLoggers() {
       Log("loss_based_rate", [=] { return loss_cont()->loss_based_bitrate_; }),
       Log("loss_ack_rate",
           [=] { return loss_cont()->acknowledged_bitrate_max_; }),
+      Log("data_window", [=] { return controller_->current_data_window_; }),
+      Log("pushback_target",
+          [=] { return controller_->last_pushback_target_rate_; }),
   });
   return loggers;
 }
