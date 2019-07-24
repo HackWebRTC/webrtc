@@ -1377,47 +1377,65 @@ ParamsWithLogging::Video SimulcastVp8VideoLow() {
       false,  ClipNameToClipPath("ConferenceMotion_1280_720_50")};
 }
 }  // namespace
+*/
 
 #if defined(RTC_ENABLE_VP9)
 
-// TODO(bugs.webrtc.org/10639) requires simulcast/SVC support in PC framework
 TEST(PCFullStackTest, ScreenshareSlidesVP9_3SL_High_Fps) {
-  auto fixture = CreateVideoQualityTestFixture();
-  ParamsWithLogging screenshare;
-  screenshare.call.send_side_bwe = true;
-  screenshare.video[0] = {true,    1850,  1110,  30, 50000, 200000,
-                          2000000, false, "VP9", 1,  0,     400000,
-                          false,   false, false, ""};
-  screenshare.screenshare[0] = {true, false, 10};
-  screenshare.analyzer = {"screenshare_slides_vp9_3sl_high_fps", 0.0, 0.0,
-                          kTestDurationSec};
-  screenshare.ss[0] = {
-      std::vector<VideoStream>(),  0,   3, 2, InterLayerPredMode::kOn,
-      std::vector<SpatialLayer>(), true};
-  fixture->RunWithAnalyzer(screenshare);
+  std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
+      CreateNetworkEmulationManager();
+  auto fixture = CreateTestFixture(
+      "pc_screenshare_slides_vp9_3sl_high_fps",
+      CreateTwoNetworkLinks(network_emulation_manager.get(),
+                            BuiltInNetworkBehaviorConfig()),
+      [](PeerConfigurer* alice) {
+        VideoConfig video(1850, 1110, 30);
+        video.stream_label = "alice-video";
+        video.screen_share_config = ScreenShareConfig(TimeDelta::seconds(10));
+        video.simulcast_config = VideoSimulcastConfig(3, 2);
+        alice->AddVideoConfig(std::move(video));
+      },
+      [](PeerConfigurer* bob) {});
+  RunParams run_params(TimeDelta::seconds(kTestDurationSec));
+  run_params.video_codec_name = cricket::kVp9CodecName;
+  run_params.video_codec_required_params = {
+      {kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile0)}};
+  run_params.use_flex_fec = false;
+  run_params.use_ulp_fec = false;
+  fixture->Run(std::move(run_params));
 }
 
-// TODO(bugs.webrtc.org/10639) requires simulcast/SVC support in PC framework
 TEST(PCFullStackTest, ScreenshareSlidesVP9_3SL_Variable_Fps) {
   webrtc::test::ScopedFieldTrials override_trials(
       AppendFieldTrials("WebRTC-VP9VariableFramerateScreenshare/"
                         "Enabled,min_qp:32,min_fps:5.0,undershoot:30,frames_"
                         "before_steady_state:5/"));
-  auto fixture = CreateVideoQualityTestFixture();
-  ParamsWithLogging screenshare;
-  screenshare.call.send_side_bwe = true;
-  screenshare.video[0] = {true,    1850,  1110,  30, 50000, 200000,
-                          2000000, false, "VP9", 1,  0,     400000,
-                          false,   false, false, ""};
-  screenshare.screenshare[0] = {true, false, 10};
-  screenshare.analyzer = {"screenshare_slides_vp9_3sl_variable_fps", 0.0, 0.0,
-                          kTestDurationSec};
-  screenshare.ss[0] = {
-      std::vector<VideoStream>(),  0,   3, 2, InterLayerPredMode::kOn,
-      std::vector<SpatialLayer>(), true};
-  fixture->RunWithAnalyzer(screenshare);
+  std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
+      CreateNetworkEmulationManager();
+  auto fixture = CreateTestFixture(
+      "pc_screenshare_slides_vp9_3sl_variable_fps",
+      CreateTwoNetworkLinks(network_emulation_manager.get(),
+                            BuiltInNetworkBehaviorConfig()),
+      [](PeerConfigurer* alice) {
+        VideoConfig video(1850, 1110, 30);
+        video.stream_label = "alice-video";
+        video.screen_share_config = ScreenShareConfig(TimeDelta::seconds(10));
+        video.simulcast_config = VideoSimulcastConfig(3, 2);
+        alice->AddVideoConfig(std::move(video));
+      },
+      [](PeerConfigurer* bob) {});
+  RunParams run_params(TimeDelta::seconds(kTestDurationSec));
+  run_params.video_codec_name = cricket::kVp9CodecName;
+  run_params.video_codec_required_params = {
+      {kVP9FmtpProfileId, VP9ProfileToString(VP9Profile::kProfile0)}};
+  run_params.use_flex_fec = false;
+  run_params.use_ulp_fec = false;
+  fixture->Run(std::move(run_params));
 }
 
+#endif  // defined(RTC_ENABLE_VP9)
+
+/*
 // TODO(bugs.webrtc.org/10639) requires simulcast/SVC support in PC framework
 TEST(PCFullStackTest, VP9SVC_3SL_High) {
   auto fixture = CreateVideoQualityTestFixture();
