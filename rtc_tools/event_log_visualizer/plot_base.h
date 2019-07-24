@@ -137,6 +137,9 @@ class Plot {
                          float bottom_margin = 0,
                          float top_margin = 0);
 
+  void SetYAxisTickLabels(
+      const std::vector<std::pair<float, std::string>>& labels);
+
   // Sets the title of the plot.
   void SetTitle(const std::string& title);
 
@@ -162,6 +165,7 @@ class Plot {
   float yaxis_min_;
   float yaxis_max_;
   std::string yaxis_label_;
+  std::vector<std::pair<float, std::string>> yaxis_tick_labels_;
   std::string title_;
   std::string id_;
   std::vector<TimeSeries> series_list_;

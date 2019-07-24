@@ -60,6 +60,12 @@ void ProtobufPlot::ExportProtobuf(webrtc::analytics::Chart* chart) {
   chart->set_yaxis_label(yaxis_label_);
   chart->set_title(title_);
   chart->set_id(id_);
+
+  for (const auto& kv : yaxis_tick_labels_) {
+    webrtc::analytics::TickLabel* tick = chart->add_yaxis_tick_labels();
+    tick->set_value(kv.first);
+    tick->set_label(kv.second);
+  }
 }
 
 ProtobufPlotCollection::ProtobufPlotCollection() {}

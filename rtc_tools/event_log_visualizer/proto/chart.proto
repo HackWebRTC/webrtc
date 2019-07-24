@@ -13,6 +13,11 @@ message DataSet {
   bool highlight_points = 5;
 }
 
+message TickLabel {
+  float value = 1;
+  string label = 2;
+}
+
 message Chart {
   repeated DataSet data_sets = 1;
   float xaxis_min = 2;
@@ -23,6 +28,7 @@ message Chart {
   string yaxis_label = 7;
   string title = 8;
   string id = 9;
+  repeated TickLabel yaxis_tick_labels = 10;
 }
 
 message ChartCollection {
