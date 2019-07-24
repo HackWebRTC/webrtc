@@ -32,6 +32,9 @@ class RemoteEstimateSerializer {
 // overhead of the serializer every time RemoteEstimate is created.
 const RemoteEstimateSerializer* GetRemoteEstimateSerializer();
 
+// The RemoteEstimate packet provides network estimation results from the
+// receive side. This functionality is experimental and subject to change
+// without notice.
 class RemoteEstimate : public App {
  public:
   RemoteEstimate();

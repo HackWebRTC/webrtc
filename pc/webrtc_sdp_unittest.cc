@@ -3232,6 +3232,25 @@ TEST_F(WebRtcSdpTest, SerializeSdpWithConferenceFlag) {
   EXPECT_TRUE(video->conference_mode());
 }
 
+TEST_F(WebRtcSdpTest, SerializeAndDeserializeRemoteNetEstimate) {
+  {
+    // By default remote estimates are disabled.
+    JsepSessionDescription dst(kDummyType);
+    SdpDeserialize(webrtc::SdpSerialize(jdesc_), &dst);
+    EXPECT_FALSE(cricket::GetFirstVideoContentDescription(dst.description())
+                     ->remote_estimate());
+  }
+  {
+    // When remote estimate is enabled, the setting is propagated via SDP.
+    cricket::GetFirstVideoContentDescription(jdesc_.description())
+        ->set_remote_estimate(true);
+    JsepSessionDescription dst(kDummyType);
+    SdpDeserialize(webrtc::SdpSerialize(jdesc_), &dst);
+    EXPECT_TRUE(cricket::GetFirstVideoContentDescription(dst.description())
+                    ->remote_estimate());
+  }
+}
+
 TEST_F(WebRtcSdpTest, DeserializeBrokenSdp) {
   const char kSdpDestroyer[] = "!@#$%^&";
   const char kSdpEmptyType[] = " =candidate";

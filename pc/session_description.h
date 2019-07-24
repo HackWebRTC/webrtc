@@ -113,6 +113,8 @@ class MediaContentDescription {
     rtcp_reduced_size_ = reduced_size;
   }
 
+  // Indicates support for the remote network estimate packet type. This
+  // functionality is experimental and subject to change without notice.
   virtual bool remote_estimate() const { return remote_estimate_; }
   virtual void set_remote_estimate(bool remote_estimate) {
     remote_estimate_ = remote_estimate;
