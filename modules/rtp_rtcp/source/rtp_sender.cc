@@ -1417,16 +1417,21 @@ uint32_t RTPSender::TimestampOffset() const {
 }
 
 void RTPSender::SetSSRC(uint32_t ssrc) {
-  // This is configured via the API.
-  rtc::CritScope lock(&send_critsect_);
+  {
+    rtc::CritScope lock(&send_critsect_);
+    if (ssrc_ == ssrc) {
+      return;  // Since it's the same SSRC, don't reset anything.
+    }
 
-  if (ssrc_ == ssrc) {
-    return;  // Since it's same ssrc, don't reset anything.
+    ssrc_.emplace(ssrc);
+    if (!sequence_number_forced_) {
+      sequence_number_ = random_.Rand(1, kMaxInitRtpSeqNumber);
+    }
   }
-  ssrc_.emplace(ssrc);
-  if (!sequence_number_forced_) {
-    sequence_number_ = random_.Rand(1, kMaxInitRtpSeqNumber);
-  }
+
+  // Clear RTP packet history, since any packets there belong to the old SSRC
+  // and they may conflict with packets from the new one.
+  packet_history_.Clear();
 }
 
 uint32_t RTPSender::SSRC() const {
@@ -1459,9 +1464,21 @@ void RTPSender::SetCsrcs(const std::vector<uint32_t>& csrcs) {
 }
 
 void RTPSender::SetSequenceNumber(uint16_t seq) {
-  rtc::CritScope lock(&send_critsect_);
-  sequence_number_forced_ = true;
-  sequence_number_ = seq;
+  bool updated_sequence_number = false;
+  {
+    rtc::CritScope lock(&send_critsect_);
+    sequence_number_forced_ = true;
+    if (sequence_number_ != seq) {
+      updated_sequence_number = true;
+    }
+    sequence_number_ = seq;
+  }
+
+  if (updated_sequence_number) {
+    // Sequence number series has been reset to a new value, clear RTP packet
+    // history, since any packets there may conflict with new ones.
+    packet_history_.Clear();
+  }
 }
 
 uint16_t RTPSender::SequenceNumber() const {

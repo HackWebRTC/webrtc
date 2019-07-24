@@ -129,6 +129,10 @@ class RtpPacketHistory {
   // Returns true if status was set, false if packet was not found.
   bool SetPendingTransmission(uint16_t sequence_number);
 
+  // Remove all pending packets from the history, but keep storage mode and
+  // capacity.
+  void Clear();
+
  private:
   struct MoreUseful;
   class StoredPacket;

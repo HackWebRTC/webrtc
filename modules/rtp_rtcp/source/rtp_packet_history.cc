@@ -362,6 +362,11 @@ bool RtpPacketHistory::SetPendingTransmission(uint16_t sequence_number) {
   return true;
 }
 
+void RtpPacketHistory::Clear() {
+  rtc::CritScope cs(&lock_);
+  Reset();
+}
+
 void RtpPacketHistory::Reset() {
   packet_history_.clear();
   padding_priority_.clear();
