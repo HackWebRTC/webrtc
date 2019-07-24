@@ -31,7 +31,6 @@ namespace webrtc {
 // Forward declarations.
 class AudioFrame;
 class AudioDecoderFactory;
-class Clock;
 
 struct NetEqNetworkStatistics {
   uint16_t current_buffer_size_ms;    // Current jitter buffer size in ms.
@@ -150,7 +149,6 @@ class NetEq {
   // method.
   static NetEq* Create(
       const NetEq::Config& config,
-      Clock* clock,
       const rtc::scoped_refptr<AudioDecoderFactory>& decoder_factory);
 
   virtual ~NetEq() {}
