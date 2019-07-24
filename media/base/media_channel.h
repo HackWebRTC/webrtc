@@ -719,6 +719,7 @@ struct DataMediaInfo {
 
 struct RtcpParameters {
   bool reduced_size = false;
+  bool remote_estimate = false;
 };
 
 template <class Codec>

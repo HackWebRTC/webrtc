@@ -113,6 +113,11 @@ class MediaContentDescription {
     rtcp_reduced_size_ = reduced_size;
   }
 
+  virtual bool remote_estimate() const { return remote_estimate_; }
+  virtual void set_remote_estimate(bool remote_estimate) {
+    remote_estimate_ = remote_estimate;
+  }
+
   virtual int bandwidth() const { return bandwidth_; }
   virtual void set_bandwidth(int bandwidth) { bandwidth_ = bandwidth; }
 
@@ -245,6 +250,7 @@ class MediaContentDescription {
  protected:
   bool rtcp_mux_ = false;
   bool rtcp_reduced_size_ = false;
+  bool remote_estimate_ = false;
   int bandwidth_ = kAutoBandwidth;
   std::string protocol_;
   std::vector<CryptoParams> cryptos_;

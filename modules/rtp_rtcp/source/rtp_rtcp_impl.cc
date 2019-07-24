@@ -676,6 +676,11 @@ bool ModuleRtpRtcpImpl::SendFeedbackPacket(
   return rtcp_sender_.SendFeedbackPacket(packet);
 }
 
+bool ModuleRtpRtcpImpl::SendNetworkStateEstimatePacket(
+    const rtcp::RemoteEstimate& packet) {
+  return rtcp_sender_.SendNetworkStateEstimatePacket(packet);
+}
+
 int32_t ModuleRtpRtcpImpl::SendLossNotification(uint16_t last_decoded_seq_num,
                                                 uint16_t last_received_seq_num,
                                                 bool decodability_flag,

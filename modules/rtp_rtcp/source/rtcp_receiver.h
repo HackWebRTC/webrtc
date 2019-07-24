@@ -176,6 +176,10 @@ class RTCPReceiver {
                   PacketInformation* packet_information)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(rtcp_receiver_lock_);
 
+  void HandleApp(const rtcp::CommonHeader& rtcp_block,
+                 PacketInformation* packet_information)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(rtcp_receiver_lock_);
+
   void HandleBye(const rtcp::CommonHeader& rtcp_block)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(rtcp_receiver_lock_);
 
@@ -215,6 +219,7 @@ class RTCPReceiver {
   RtcpBandwidthObserver* const rtcp_bandwidth_observer_;
   RtcpIntraFrameObserver* const rtcp_intra_frame_observer_;
   RtcpLossNotificationObserver* const rtcp_loss_notification_observer_;
+  NetworkStateEstimateObserver* const network_state_estimate_observer_;
   TransportFeedbackObserver* const transport_feedback_observer_;
   VideoBitrateAllocationObserver* const bitrate_allocation_observer_;
   const int report_interval_ms_;

@@ -111,6 +111,7 @@ void RtpParametersFromMediaDescription(
     params->extensions = extensions;
   }
   params->rtcp.reduced_size = desc->rtcp_reduced_size();
+  params->rtcp.remote_estimate = desc->remote_estimate();
 }
 
 template <class Codec>

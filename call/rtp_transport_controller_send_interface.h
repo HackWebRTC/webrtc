@@ -116,6 +116,7 @@ class RtpTransportControllerSendInterface {
   virtual void DestroyRtpVideoSender(
       RtpVideoSenderInterface* rtp_video_sender) = 0;
 
+  virtual NetworkStateEstimateObserver* network_state_estimate_observer() = 0;
   virtual TransportFeedbackObserver* transport_feedback_observer() = 0;
 
   virtual RtpPacketPacer* packet_sender() = 0;

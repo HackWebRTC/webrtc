@@ -997,4 +997,22 @@ bool RTCPSender::SendFeedbackPacket(const rtcp::TransportFeedback& packet) {
   return packet.Build(max_packet_size, callback) && !send_failure;
 }
 
+bool RTCPSender::SendNetworkStateEstimatePacket(
+    const rtcp::RemoteEstimate& packet) {
+  size_t max_packet_size;
+  {
+    rtc::CritScope lock(&critical_section_rtcp_sender_);
+    if (method_ == RtcpMode::kOff)
+      return false;
+    max_packet_size = max_packet_size_;
+  }
+
+  RTC_DCHECK_LE(max_packet_size, IP_PACKET_SIZE);
+  bool send_success = false;
+  auto callback = [&](rtc::ArrayView<const uint8_t> packet) {
+    send_success = transport_->SendRtcp(packet.data(), packet.size());
+  };
+  return packet.Build(max_packet_size, callback) && send_success;
+}
+
 }  // namespace webrtc

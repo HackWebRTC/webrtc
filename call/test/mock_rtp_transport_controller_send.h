@@ -45,6 +45,8 @@ class MockRtpTransportControllerSend
   MOCK_METHOD1(DestroyRtpVideoSender, void(RtpVideoSenderInterface*));
   MOCK_METHOD0(GetWorkerQueue, rtc::TaskQueue*());
   MOCK_METHOD0(packet_router, PacketRouter*());
+  MOCK_METHOD0(network_state_estimate_observer,
+               NetworkStateEstimateObserver*());
   MOCK_METHOD0(transport_feedback_observer, TransportFeedbackObserver*());
   MOCK_METHOD0(packet_sender, RtpPacketPacer*());
   MOCK_METHOD3(SetAllocatedSendBitrateLimits, void(int, int, int));

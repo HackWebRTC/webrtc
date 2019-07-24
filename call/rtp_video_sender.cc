@@ -86,6 +86,8 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
   configuration.rtcp_loss_notification_observer =
       rtcp_loss_notification_observer;
   configuration.bandwidth_callback = bandwidth_callback;
+  configuration.network_state_estimate_observer =
+      transport->network_state_estimate_observer();
   configuration.transport_feedback_callback =
       transport->transport_feedback_observer();
   configuration.rtt_stats = rtt_stats;

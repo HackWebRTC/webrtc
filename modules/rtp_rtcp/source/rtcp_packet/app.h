@@ -48,6 +48,12 @@ class App : public RtcpPacket {
               size_t max_length,
               PacketReadyCallback callback) const override;
 
+  static inline constexpr uint32_t NameToInt(const char name[5]) {
+    return static_cast<uint32_t>(name[0]) << 24 |
+           static_cast<uint32_t>(name[1]) << 16 |
+           static_cast<uint32_t>(name[2]) << 8 | static_cast<uint32_t>(name[3]);
+  }
+
  private:
   static constexpr size_t kAppBaseLength = 8;  // Ssrc and Name.
   static constexpr size_t kMaxDataSize = 0xffff * 4 - kAppBaseLength;

@@ -157,6 +157,11 @@ PacketRouter* RtpTransportControllerSend::packet_router() {
   return &packet_router_;
 }
 
+NetworkStateEstimateObserver*
+RtpTransportControllerSend::network_state_estimate_observer() {
+  return this;
+}
+
 TransportFeedbackObserver*
 RtpTransportControllerSend::transport_feedback_observer() {
   return this;
@@ -449,6 +454,16 @@ void RtpTransportControllerSend::OnTransportFeedback(
   }
   pacer_.UpdateOutstandingData(
       transport_feedback_adapter_.GetOutstandingData().bytes());
+}
+
+void RtpTransportControllerSend::OnRemoteNetworkEstimate(
+    NetworkStateEstimate estimate) {
+  estimate.update_time = Timestamp::ms(clock_->TimeInMilliseconds());
+  task_queue_.PostTask([this, estimate] {
+    RTC_DCHECK_RUN_ON(&task_queue_);
+    if (controller_)
+      controller_->OnNetworkStateEstimate(estimate);
+  });
 }
 
 void RtpTransportControllerSend::MaybeCreateControllers() {

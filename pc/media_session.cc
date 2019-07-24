@@ -1159,6 +1159,8 @@ static bool CreateMediaContentAnswer(
     answer->set_rtcp_reduced_size(offer->rtcp_reduced_size());
   }
 
+  answer->set_remote_estimate(offer->remote_estimate());
+
   if (sdes_policy != SEC_DISABLED) {
     CryptoParams crypto;
     if (SelectCrypto(offer, bundle_enabled, session_options.crypto_options,

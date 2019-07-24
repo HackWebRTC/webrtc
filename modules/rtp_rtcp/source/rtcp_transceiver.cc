@@ -129,6 +129,18 @@ bool RtcpTransceiver::SendFeedbackPacket(
   return true;
 }
 
+bool RtcpTransceiver::SendNetworkStateEstimatePacket(
+    const rtcp::RemoteEstimate& packet) {
+  RTC_CHECK(rtcp_transceiver_);
+  struct Closure {
+    void operator()() { ptr->SendRawPacket(raw_packet); }
+    RtcpTransceiverImpl* ptr;
+    rtc::Buffer raw_packet;
+  };
+  task_queue_->PostTask(Closure{rtcp_transceiver_.get(), packet.Build()});
+  return true;
+}
+
 void RtcpTransceiver::SendNack(uint32_t ssrc,
                                std::vector<uint16_t> sequence_numbers) {
   RTC_CHECK(rtcp_transceiver_);
