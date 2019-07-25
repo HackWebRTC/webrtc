@@ -7,6 +7,9 @@
 # in the file PATENTS.  All contributing project authors may
 # be found in the AUTHORS file in the root of the source tree.
 
+from __future__ import absolute_import
+from __future__ import division
+from __future__ import print_function
 import json
 import optparse
 import os
@@ -102,7 +105,7 @@ def _RunFrameAnalyzer(options, yuv_directory=None):
                                     stdout=sys.stdout, stderr=sys.stderr)
   frame_analyzer.wait()
   if frame_analyzer.returncode != 0:
-    print 'Failed to run frame analyzer.'
+    print('Failed to run frame analyzer.')
   return frame_analyzer.returncode
 
 
@@ -132,7 +135,7 @@ def _RunVmaf(options, yuv_directory, logfile):
                           stdout=sys.stdout, stderr=sys.stderr)
   vmaf.wait()
   if vmaf.returncode != 0:
-    print 'Failed to run VMAF.'
+    print('Failed to run VMAF.')
     return 1
 
   # Read per-frame scores from VMAF output and print.
@@ -141,7 +144,7 @@ def _RunVmaf(options, yuv_directory, logfile):
     vmaf_scores = []
     for frame in vmaf_data['frames']:
       vmaf_scores.append(frame['metrics']['vmaf'])
-    print 'RESULT VMAF: %s=' % options.label, vmaf_scores
+    print('RESULT VMAF: %s=' % options.label, vmaf_scores)
 
   return 0
 
