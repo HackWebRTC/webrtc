@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_tools/event_log_visualizer/plot_protobuf.h"
+#include "rtc_tools/rtc_event_log_visualizer/plot_protobuf.h"
 
 #include <stddef.h>
 

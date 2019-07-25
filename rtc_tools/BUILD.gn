@@ -256,26 +256,26 @@ if (!build_with_chromium) {
     proto_library("chart_proto") {
       visibility = [ "*" ]
       sources = [
-        "event_log_visualizer/proto/chart.proto",
-        "event_log_visualizer/proto/chart_enums.proto",
+        "rtc_event_log_visualizer/proto/chart.proto",
+        "rtc_event_log_visualizer/proto/chart_enums.proto",
       ]
-      proto_out_dir = "rtc_tools/event_log_visualizer/proto"
+      proto_out_dir = "rtc_tools/rtc_event_log_visualizer/proto"
     }
 
     rtc_static_library("event_log_visualizer_utils") {
       visibility = [ "*" ]
       sources = [
-        "event_log_visualizer/analyzer.cc",
-        "event_log_visualizer/analyzer.h",
-        "event_log_visualizer/log_simulation.cc",
-        "event_log_visualizer/log_simulation.h",
-        "event_log_visualizer/plot_base.cc",
-        "event_log_visualizer/plot_base.h",
-        "event_log_visualizer/plot_protobuf.cc",
-        "event_log_visualizer/plot_protobuf.h",
-        "event_log_visualizer/plot_python.cc",
-        "event_log_visualizer/plot_python.h",
-        "event_log_visualizer/triage_notifications.h",
+        "rtc_event_log_visualizer/analyzer.cc",
+        "rtc_event_log_visualizer/analyzer.h",
+        "rtc_event_log_visualizer/log_simulation.cc",
+        "rtc_event_log_visualizer/log_simulation.h",
+        "rtc_event_log_visualizer/plot_base.cc",
+        "rtc_event_log_visualizer/plot_base.h",
+        "rtc_event_log_visualizer/plot_protobuf.cc",
+        "rtc_event_log_visualizer/plot_protobuf.h",
+        "rtc_event_log_visualizer/plot_python.cc",
+        "rtc_event_log_visualizer/plot_python.h",
+        "rtc_event_log_visualizer/triage_notifications.h",
       ]
       defines = [ "ENABLE_RTC_EVENT_LOG" ]
       deps = [
@@ -319,7 +319,7 @@ if (rtc_include_tests) {
     rtc_executable("event_log_visualizer") {
       testonly = true
       sources = [
-        "event_log_visualizer/main.cc",
+        "rtc_event_log_visualizer/main.cc",
       ]
 
       defines = [ "ENABLE_RTC_EVENT_LOG" ]

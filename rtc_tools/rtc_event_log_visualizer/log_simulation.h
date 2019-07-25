@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef RTC_TOOLS_EVENT_LOG_VISUALIZER_LOG_SIMULATION_H_
-#define RTC_TOOLS_EVENT_LOG_VISUALIZER_LOG_SIMULATION_H_
+#ifndef RTC_TOOLS_RTC_EVENT_LOG_VISUALIZER_LOG_SIMULATION_H_
+#define RTC_TOOLS_RTC_EVENT_LOG_VISUALIZER_LOG_SIMULATION_H_
 
 #include <deque>
 #include <functional>
@@ -61,4 +61,4 @@ class LogBasedNetworkControllerSimulation {
 };
 }  // namespace webrtc
 
-#endif  // RTC_TOOLS_EVENT_LOG_VISUALIZER_LOG_SIMULATION_H_
+#endif  // RTC_TOOLS_RTC_EVENT_LOG_VISUALIZER_LOG_SIMULATION_H_

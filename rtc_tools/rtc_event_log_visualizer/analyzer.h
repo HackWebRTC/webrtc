@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef RTC_TOOLS_EVENT_LOG_VISUALIZER_ANALYZER_H_
-#define RTC_TOOLS_EVENT_LOG_VISUALIZER_ANALYZER_H_
+#ifndef RTC_TOOLS_RTC_EVENT_LOG_VISUALIZER_ANALYZER_H_
+#define RTC_TOOLS_RTC_EVENT_LOG_VISUALIZER_ANALYZER_H_
 
 #include <map>
 #include <memory>
@@ -21,8 +21,8 @@
 #include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "modules/audio_coding/neteq/tools/neteq_stats_getter.h"
 #include "rtc_base/strings/string_builder.h"
-#include "rtc_tools/event_log_visualizer/plot_base.h"
-#include "rtc_tools/event_log_visualizer/triage_notifications.h"
+#include "rtc_tools/rtc_event_log_visualizer/plot_base.h"
+#include "rtc_tools/rtc_event_log_visualizer/triage_notifications.h"
 
 namespace webrtc {
 
@@ -302,4 +302,4 @@ class EventLogAnalyzer {
 
 }  // namespace webrtc
 
-#endif  // RTC_TOOLS_EVENT_LOG_VISUALIZER_ANALYZER_H_
+#endif  // RTC_TOOLS_RTC_EVENT_LOG_VISUALIZER_ANALYZER_H_

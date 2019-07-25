@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "rtc_tools/event_log_visualizer/analyzer.h"
+#include "rtc_tools/rtc_event_log_visualizer/analyzer.h"
 
 #include <algorithm>
 #include <cmath>
@@ -59,7 +59,7 @@
 #include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/rate_statistics.h"
 #include "rtc_base/strings/string_builder.h"
-#include "rtc_tools/event_log_visualizer/log_simulation.h"
+#include "rtc_tools/rtc_event_log_visualizer/log_simulation.h"
 
 #ifndef BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
 #define BWE_TEST_LOGGING_COMPILE_TIME_ENABLE 0

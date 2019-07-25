@@ -7,10 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_PYTHON_H_
-#define RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_PYTHON_H_
+#ifndef RTC_TOOLS_RTC_EVENT_LOG_VISUALIZER_PLOT_PYTHON_H_
+#define RTC_TOOLS_RTC_EVENT_LOG_VISUALIZER_PLOT_PYTHON_H_
 
-#include "rtc_tools/event_log_visualizer/plot_base.h"
+#include "rtc_tools/rtc_event_log_visualizer/plot_base.h"
 
 namespace webrtc {
 
@@ -34,4 +34,4 @@ class PythonPlotCollection final : public PlotCollection {
 
 }  // namespace webrtc
 
-#endif  // RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_PYTHON_H_
+#endif  // RTC_TOOLS_RTC_EVENT_LOG_VISUALIZER_PLOT_PYTHON_H_

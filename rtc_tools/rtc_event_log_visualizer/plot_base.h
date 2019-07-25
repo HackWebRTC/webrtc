@@ -7,8 +7,8 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_BASE_H_
-#define RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_BASE_H_
+#ifndef RTC_TOOLS_RTC_EVENT_LOG_VISUALIZER_PLOT_BASE_H_
+#define RTC_TOOLS_RTC_EVENT_LOG_VISUALIZER_PLOT_BASE_H_
 
 #include <memory>
 #include <string>
@@ -179,9 +179,9 @@ class PlotCollection {
   virtual Plot* AppendNewPlot() = 0;
 
  protected:
-  std::vector<std::unique_ptr<Plot> > plots_;
+  std::vector<std::unique_ptr<Plot>> plots_;
 };
 
 }  // namespace webrtc
 
-#endif  // RTC_TOOLS_EVENT_LOG_VISUALIZER_PLOT_BASE_H_
+#endif  // RTC_TOOLS_RTC_EVENT_LOG_VISUALIZER_PLOT_BASE_H_

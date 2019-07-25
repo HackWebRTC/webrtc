@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "rtc_tools/event_log_visualizer/log_simulation.h"
+#include "rtc_tools/rtc_event_log_visualizer/log_simulation.h"
 
 #include <algorithm>
 #include <utility>
