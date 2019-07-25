@@ -57,12 +57,13 @@ int GetPriorityForType(RtpPacketToSend::Type type) {
       // Video has "normal" priority, in the old speak.
       return 2;
     case RtpPacketToSend::Type::kForwardErrorCorrection:
-      // Redundancy is OK to drop, but the content is hopefully not useless.
-      return 3;
+      // Send redundancy concurrently to video. If it is delayed it might have a
+      // lower chance of being useful.
+      return 2;
     case RtpPacketToSend::Type::kPadding:
       // Packets that are in themselves likely useless, only sent to keep the
       // BWE high.
-      return 4;
+      return 3;
   }
 }
 

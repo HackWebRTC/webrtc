@@ -1479,7 +1479,7 @@ TEST_P(PacedSenderTest, OwnedPacketPrioritizedOnType) {
 
   // Insert a packet of each type, from low to high priority. Since priority
   // is weighted higher than insert order, these should come out of the pacer
-  // in backwards order.
+  // in backwards order with the exception of FEC and Video.
   for (RtpPacketToSend::Type type :
        {RtpPacketToSend::Type::kPadding,
         RtpPacketToSend::Type::kForwardErrorCorrection,
@@ -1495,12 +1495,16 @@ TEST_P(PacedSenderTest, OwnedPacketPrioritizedOnType) {
   EXPECT_CALL(
       callback,
       SendPacket(Pointee(Property(&RtpPacketToSend::Ssrc, kVideoRtxSsrc)), _));
-  EXPECT_CALL(
-      callback,
-      SendPacket(Pointee(Property(&RtpPacketToSend::Ssrc, kVideoSsrc)), _));
+
+  // FEC and video actually have the same priority, so will come out in
+  // insertion order.
   EXPECT_CALL(
       callback,
       SendPacket(Pointee(Property(&RtpPacketToSend::Ssrc, kFlexFecSsrc)), _));
+  EXPECT_CALL(
+      callback,
+      SendPacket(Pointee(Property(&RtpPacketToSend::Ssrc, kVideoSsrc)), _));
+
   EXPECT_CALL(
       callback,
       SendPacket(Pointee(Property(&RtpPacketToSend::Ssrc, kVideoRtxSsrc)), _));
