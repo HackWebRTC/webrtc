@@ -278,7 +278,7 @@ void AccumulatePairs(
 // Calculates a moving average of |data| and stores the result in a TimeSeries.
 // A data point is generated every |step| microseconds from |begin_time|
 // to |end_time|. The value of each data point is the average of the data
-// during the preceeding |window_duration_us| microseconds.
+// during the preceding |window_duration_us| microseconds.
 template <typename DataType, typename ResultType, typename IterableType>
 void MovingAverage(
     rtc::FunctionView<absl::optional<ResultType>(const DataType&)> fy,
@@ -1268,7 +1268,7 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
   FieldTrialBasedConfig field_trial_config_;
   // The event_log_visualizer should normally not be compiled with
   // BWE_TEST_LOGGING_COMPILE_TIME_ENABLE since the normal plots won't work.
-  // However, compiling with BWE_TEST_LOGGING, runnning with --plot_sendside_bwe
+  // However, compiling with BWE_TEST_LOGGING, running with --plot_sendside_bwe
   // and piping the output to plot_dynamics.py can be used as a hack to get the
   // internal state of various BWE components. In this case, it is important
   // we don't instantiate the AcknowledgedBitrateEstimator both here and in
@@ -1473,7 +1473,7 @@ void EventLogAnalyzer::CreateNetworkDelayFeedbackGraph(Plot* plot) {
 
   // We assume that the base network delay (w/o queues) is equal to half
   // the minimum RTT. Therefore rescale the delays by subtracting the minimum
-  // observed 1-ways delay and add half the minumum RTT.
+  // observed 1-ways delay and add half the minimum RTT.
   const int64_t estimated_clock_offset_ms =
       min_send_receive_diff_ms - min_rtt_ms / 2;
   for (TimeSeriesPoint& point : time_series.points)

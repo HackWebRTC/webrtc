@@ -39,7 +39,7 @@ class AnalyzerConfig {
 
   // Window and step size used for calculating moving averages, e.g. bitrate.
   // The generated data points will be |step_| microseconds apart.
-  // Only events occuring at most |window_duration_| microseconds before the
+  // Only events occurring at most |window_duration_| microseconds before the
   // current data point will be part of the average.
   int64_t window_duration_;
   int64_t step_;
