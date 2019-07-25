@@ -25,6 +25,7 @@ class App : public RtcpPacket {
  public:
   static constexpr uint8_t kPacketType = 204;
   App();
+  App(App&&) = default;
   ~App() override;
 
   // Parse assumes header is already parsed and validated.

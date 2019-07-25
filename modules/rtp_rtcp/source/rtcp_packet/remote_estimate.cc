@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <cmath>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 #include "modules/rtp_rtcp/source/byte_io.h"
@@ -130,20 +131,10 @@ RemoteEstimate::RemoteEstimate() : serializer_(GetRemoteEstimateSerializer()) {
   SetSsrc(0);
 }
 
-bool RemoteEstimate::IsNetworkEstimate(const CommonHeader& packet) {
-  if (packet.fmt() != kSubType)
-    return false;
-  size_t kNameSize = sizeof(uint32_t);
-  if (packet.packet_size() < CommonHeader::kHeaderSizeBytes + kNameSize)
-    return false;
-  if (ByteReader<uint32_t>::ReadBigEndian(&packet.payload()[4]) != kName)
-    return false;
-  return true;
-}
+RemoteEstimate::RemoteEstimate(App&& app)
+    : App(std::move(app)), serializer_(GetRemoteEstimateSerializer()) {}
 
-bool RemoteEstimate::Parse(const CommonHeader& packet) {
-  if (!App::Parse(packet))
-    return false;
+bool RemoteEstimate::ParseData() {
   return serializer_->Parse({data(), data_size()}, &estimate_);
 }
 

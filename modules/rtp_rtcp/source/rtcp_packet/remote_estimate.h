@@ -38,13 +38,13 @@ const RemoteEstimateSerializer* GetRemoteEstimateSerializer();
 class RemoteEstimate : public App {
  public:
   RemoteEstimate();
+  explicit RemoteEstimate(App&& app);
   // Note, sub type must be unique among all app messages with "goog" name.
   static constexpr uint8_t kSubType = 13;
   static constexpr uint32_t kName = NameToInt("goog");
   static TimeDelta GetTimestampPeriod();
 
-  static bool IsNetworkEstimate(const CommonHeader& packet);
-  bool Parse(const CommonHeader& packet);
+  bool ParseData();
   void SetEstimate(NetworkStateEstimate estimate);
   NetworkStateEstimate estimate() const { return estimate_; }
 

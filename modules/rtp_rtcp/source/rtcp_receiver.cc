@@ -698,11 +698,15 @@ void RTCPReceiver::HandleNack(const CommonHeader& rtcp_block,
 
 void RTCPReceiver::HandleApp(const rtcp::CommonHeader& rtcp_block,
                              PacketInformation* packet_information) {
-  if (rtcp::RemoteEstimate::IsNetworkEstimate(rtcp_block)) {
-    rtcp::RemoteEstimate estimate;
-    if (estimate.Parse(rtcp_block)) {
-      packet_information->network_state_estimate = estimate.estimate();
-      return;
+  rtcp::App app;
+  if (app.Parse(rtcp_block)) {
+    if (app.name() == rtcp::RemoteEstimate::kName &&
+        app.sub_type() == rtcp::RemoteEstimate::kSubType) {
+      rtcp::RemoteEstimate estimate(std::move(app));
+      if (estimate.ParseData()) {
+        packet_information->network_state_estimate = estimate.estimate();
+        return;
+      }
     }
   }
   ++num_skipped_packets_;
