@@ -1488,7 +1488,7 @@ if (rtc_include_tests) {
       ]
     }
 
-    rtc_test("neteq_rtpplay") {
+    rtc_executable("neteq_rtpplay") {
       testonly = true
       visibility += [ "*" ]
       defines = []
