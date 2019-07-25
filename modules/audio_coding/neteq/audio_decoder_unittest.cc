@@ -357,7 +357,10 @@ class AudioDecoderIsacFloatTest : public AudioDecoderTest {
     config.frame_size_ms =
         1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
     audio_encoder_.reset(new AudioEncoderIsacFloatImpl(config));
-    decoder_ = new AudioDecoderIsacFloatImpl(codec_input_rate_hz_);
+
+    AudioDecoderIsacFloatImpl::Config decoder_config;
+    decoder_config.sample_rate_hz = codec_input_rate_hz_;
+    decoder_ = new AudioDecoderIsacFloatImpl(decoder_config);
   }
 };
 
@@ -374,7 +377,10 @@ class AudioDecoderIsacSwbTest : public AudioDecoderTest {
     config.frame_size_ms =
         1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
     audio_encoder_.reset(new AudioEncoderIsacFloatImpl(config));
-    decoder_ = new AudioDecoderIsacFloatImpl(codec_input_rate_hz_);
+
+    AudioDecoderIsacFloatImpl::Config decoder_config;
+    decoder_config.sample_rate_hz = codec_input_rate_hz_;
+    decoder_ = new AudioDecoderIsacFloatImpl(decoder_config);
   }
 };
 
@@ -391,7 +397,10 @@ class AudioDecoderIsacFixTest : public AudioDecoderTest {
     config.frame_size_ms =
         1000 * static_cast<int>(frame_size_) / codec_input_rate_hz_;
     audio_encoder_.reset(new AudioEncoderIsacFixImpl(config));
-    decoder_ = new AudioDecoderIsacFixImpl(codec_input_rate_hz_);
+
+    AudioDecoderIsacFixImpl::Config decoder_config;
+    decoder_config.sample_rate_hz = codec_input_rate_hz_;
+    decoder_ = new AudioDecoderIsacFixImpl(decoder_config);
   }
 };
 

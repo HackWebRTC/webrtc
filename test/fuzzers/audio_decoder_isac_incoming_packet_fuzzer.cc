@@ -16,7 +16,9 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   if (size > 20000) {
     return;
   }
-  AudioDecoderIsacFloatImpl dec(16000);
+  AudioDecoderIsacFloatImpl::Config c;
+  c.sample_rate_hz = 16000;
+  AudioDecoderIsacFloatImpl dec(c);
   FuzzAudioDecoderIncomingPacket(data, size, &dec);
 }
 }  // namespace webrtc

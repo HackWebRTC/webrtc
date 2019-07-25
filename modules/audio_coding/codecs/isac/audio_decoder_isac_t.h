@@ -24,10 +24,13 @@ namespace webrtc {
 template <typename T>
 class AudioDecoderIsacT final : public AudioDecoder {
  public:
-  explicit AudioDecoderIsacT(int sample_rate_hz);
-  AudioDecoderIsacT(int sample_rate_hz,
-                    const rtc::scoped_refptr<LockedIsacBandwidthInfo>& bwinfo);
-  ~AudioDecoderIsacT() override;
+  struct Config {
+    bool IsOk() const;
+    rtc::scoped_refptr<LockedIsacBandwidthInfo> bwinfo;
+    int sample_rate_hz = 16000;
+  };
+  explicit AudioDecoderIsacT(const Config& config);
+  virtual ~AudioDecoderIsacT() override;
 
   bool HasDecodePlc() const override;
   size_t DecodePlc(size_t num_frames, int16_t* decoded) override;
