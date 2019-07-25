@@ -88,7 +88,7 @@ void Plot::AppendIntervalSeries(IntervalSeries&& interval_series) {
 }
 
 void Plot::AppendTimeSeriesIfNotEmpty(TimeSeries&& time_series) {
-  if (time_series.points.size() > 0) {
+  if (!time_series.points.empty()) {
     series_list_.emplace_back(std::move(time_series));
   }
 }

@@ -80,7 +80,7 @@ std::string SsrcToString(uint32_t ssrc) {
 // Checks whether an SSRC is contained in the list of desired SSRCs.
 // Note that an empty SSRC list matches every SSRC.
 bool MatchingSsrc(uint32_t ssrc, const std::vector<uint32_t>& desired_ssrc) {
-  if (desired_ssrc.size() == 0)
+  if (desired_ssrc.empty())
     return true;
   return std::find(desired_ssrc.begin(), desired_ssrc.end(), ssrc) !=
          desired_ssrc.end();
@@ -707,7 +707,7 @@ void EventLogAnalyzer::CreateIncomingPacketLossGraph(Plot* plot) {
     const std::vector<LoggedRtpPacketIncoming>& packets =
         stream.incoming_packets;
     // Filter on SSRC.
-    if (!MatchingSsrc(stream.ssrc, desired_ssrc_) || packets.size() == 0) {
+    if (!MatchingSsrc(stream.ssrc, desired_ssrc_) || packets.empty()) {
       continue;
     }
 
