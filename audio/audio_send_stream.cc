@@ -236,6 +236,8 @@ void AudioSendStream::ConfigureStream(
   const auto& channel_send = stream->channel_send_;
   const auto& old_config = stream->config_;
 
+  stream->config_cs_.Enter();
+
   // Configuration parameters which cannot be changed.
   RTC_DCHECK(first_time ||
              old_config.send_transport == new_config.send_transport);
@@ -263,6 +265,9 @@ void AudioSendStream::ConfigureStream(
 
   const ExtensionIds old_ids = FindExtensionIds(old_config.rtp.extensions);
   const ExtensionIds new_ids = FindExtensionIds(new_config.rtp.extensions);
+
+  stream->config_cs_.Leave();
+
   // Audio level indication
   if (first_time || new_ids.audio_level != old_ids.audio_level) {
     channel_send->SetSendAudioLevelIndicationStatus(new_ids.audio_level != 0,
@@ -299,6 +304,7 @@ void AudioSendStream::ConfigureStream(
           stream->rtp_transport_, bandwidth_observer);
     }
   }
+  stream->config_cs_.Enter();
   // MID RTP header extension.
   if ((first_time || new_ids.mid != old_ids.mid ||
        new_config.rtp.mid != old_config.rtp.mid) &&
@@ -321,6 +327,7 @@ void AudioSendStream::ConfigureStream(
     ReconfigureBitrateObserver(stream, new_config);
   }
   stream->config_ = new_config;
+  stream->config_cs_.Leave();
 }
 
 void AudioSendStream::Start() {
@@ -487,7 +494,12 @@ uint32_t AudioSendStream::OnBitrateUpdated(BitrateAllocationUpdate update) {
 void AudioSendStream::OnPacketAdded(uint32_t ssrc, uint16_t seq_num) {
   RTC_DCHECK(pacer_thread_checker_.IsCurrent());
   // Only packets that belong to this stream are of interest.
-  if (ssrc == config_.rtp.ssrc) {
+  bool same_ssrc;
+  {
+    rtc::CritScope lock(&config_cs_);
+    same_ssrc = ssrc == config_.rtp.ssrc;
+  }
+  if (same_ssrc) {
     rtc::CritScope lock(&packet_loss_tracker_cs_);
     // TODO(eladalon): This function call could potentially reset the window,
     // setting both PLR and RPLR to unknown. Consider (during upcoming

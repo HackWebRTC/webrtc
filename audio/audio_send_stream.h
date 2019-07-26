@@ -153,6 +153,7 @@ class AudioSendStream final : public webrtc::AudioSendStream,
   rtc::RaceChecker audio_capture_race_checker_;
   rtc::TaskQueue* worker_queue_;
   const AudioAllocationSettings allocation_settings_;
+  rtc::CriticalSection config_cs_;
   webrtc::AudioSendStream::Config config_;
   rtc::scoped_refptr<webrtc::AudioState> audio_state_;
   const std::unique_ptr<voe::ChannelSendInterface> channel_send_;
