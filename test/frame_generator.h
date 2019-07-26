@@ -58,7 +58,13 @@ class FrameGenerator {
   // Change the capture resolution.
   virtual void ChangeResolution(size_t width, size_t height);
 
-  enum class OutputType { I420, I420A, I010 };
+  enum class OutputType {
+    kI420,
+    // TODO(srte): Remove alias when downstream is updated.
+    I420 = kI420,
+    kI420A,
+    kI010
+  };
 
   // Creates a frame generator that produces frames with small squares that
   // move randomly towards the lower right corner.

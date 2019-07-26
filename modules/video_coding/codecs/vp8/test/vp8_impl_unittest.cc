@@ -491,7 +491,7 @@ TEST_F(TestVp8Impl, DontDropKeyframes) {
   // details and high probability of overshoot.
   input_frame_generator_ = test::FrameGenerator::CreateSquareGenerator(
       codec_settings_.width, codec_settings_.height,
-      test::FrameGenerator::OutputType::I420,
+      test::FrameGenerator::OutputType::kI420,
       /* num_squares = */ absl::optional<int>(300));
 
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,

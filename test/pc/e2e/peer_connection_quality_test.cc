@@ -709,11 +709,11 @@ PeerConnectionE2EQualityTest::CreateFrameGenerator(
     absl::optional<test::FrameGenerator::OutputType> frame_generator_type =
         absl::nullopt;
     if (video_config.generator == VideoGeneratorType::kDefault) {
-      frame_generator_type = test::FrameGenerator::OutputType::I420;
+      frame_generator_type = test::FrameGenerator::OutputType::kI420;
     } else if (video_config.generator == VideoGeneratorType::kI420A) {
-      frame_generator_type = test::FrameGenerator::OutputType::I420A;
+      frame_generator_type = test::FrameGenerator::OutputType::kI420A;
     } else if (video_config.generator == VideoGeneratorType::kI010) {
-      frame_generator_type = test::FrameGenerator::OutputType::I010;
+      frame_generator_type = test::FrameGenerator::OutputType::kI010;
     }
     return test::FrameGenerator::CreateSquareGenerator(
         static_cast<int>(video_config.width),

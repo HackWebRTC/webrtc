@@ -1120,12 +1120,12 @@ void VideoQualityTest::CreateCapturers() {
       frame_generator = test::FrameGenerator::CreateSquareGenerator(
           static_cast<int>(params_.video[video_idx].width),
           static_cast<int>(params_.video[video_idx].height),
-          test::FrameGenerator::OutputType::I420A, absl::nullopt);
+          test::FrameGenerator::OutputType::kI420A, absl::nullopt);
     } else if (params_.video[video_idx].clip_path == "GeneratorI010") {
       frame_generator = test::FrameGenerator::CreateSquareGenerator(
           static_cast<int>(params_.video[video_idx].width),
           static_cast<int>(params_.video[video_idx].height),
-          test::FrameGenerator::OutputType::I010, absl::nullopt);
+          test::FrameGenerator::OutputType::kI010, absl::nullopt);
     } else if (params_.video[video_idx].clip_path.empty()) {
       video_sources_[video_idx] = test::CreateVideoCapturer(
           params_.video[video_idx].width, params_.video[video_idx].height,

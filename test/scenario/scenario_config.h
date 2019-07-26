@@ -103,7 +103,7 @@ struct VideoStreamConfig {
     } slides;
     struct Generator {
       using PixelFormat = FrameGenerator::OutputType;
-      PixelFormat pixel_format = PixelFormat::I420;
+      PixelFormat pixel_format = PixelFormat::kI420;
       int width = 320;
       int height = 180;
     } generator;

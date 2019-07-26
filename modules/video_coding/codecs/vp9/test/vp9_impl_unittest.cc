@@ -1374,7 +1374,7 @@ class TestVp9ImplProfile2 : public TestVp9Impl {
     TestVp9Impl::SetUp();
     input_frame_generator_ = test::FrameGenerator::CreateSquareGenerator(
         codec_settings_.width, codec_settings_.height,
-        test::FrameGenerator::OutputType::I010, absl::optional<int>());
+        test::FrameGenerator::OutputType::kI010, absl::optional<int>());
   }
 
   std::unique_ptr<VideoEncoder> CreateEncoder() override {

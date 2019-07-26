@@ -74,12 +74,12 @@ class SquareGenerator : public FrameGenerator {
 
     rtc::scoped_refptr<VideoFrameBuffer> buffer = nullptr;
     switch (type_) {
-      case OutputType::I420:
-      case OutputType::I010: {
+      case OutputType::kI420:
+      case OutputType::kI010: {
         buffer = CreateI420Buffer(width_, height_);
         break;
       }
-      case OutputType::I420A: {
+      case OutputType::kI420A: {
         rtc::scoped_refptr<I420Buffer> yuv_buffer =
             CreateI420Buffer(width_, height_);
         rtc::scoped_refptr<I420Buffer> axx_buffer =
@@ -92,12 +92,14 @@ class SquareGenerator : public FrameGenerator {
             rtc::Bind(&KeepBufferRefs, yuv_buffer, axx_buffer));
         break;
       }
+      default:
+        RTC_NOTREACHED() << "The given output format is not supported.";
     }
 
     for (const auto& square : squares_)
       square->Draw(buffer);
 
-    if (type_ == OutputType::I010) {
+    if (type_ == OutputType::kI010) {
       buffer = I010Buffer::Copy(*buffer->ToI420());
     }
 
@@ -519,7 +521,7 @@ std::unique_ptr<FrameGenerator> FrameGenerator::CreateSquareGenerator(
     absl::optional<OutputType> type,
     absl::optional<int> num_squares) {
   return std::unique_ptr<FrameGenerator>(
-      new SquareGenerator(width, height, type.value_or(OutputType::I420),
+      new SquareGenerator(width, height, type.value_or(OutputType::kI420),
                           num_squares.value_or(10)));
 }
 
