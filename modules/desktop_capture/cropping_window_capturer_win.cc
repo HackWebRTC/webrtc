@@ -9,6 +9,7 @@
  */
 
 #include "modules/desktop_capture/cropping_window_capturer.h"
+#include "modules/desktop_capture/desktop_capturer_differ_wrapper.h"
 #include "modules/desktop_capture/win/screen_capture_utils.h"
 #include "modules/desktop_capture/win/window_capture_utils.h"
 #include "rtc_base/logging.h"
@@ -263,8 +264,13 @@ DesktopRect CroppingWindowCapturerWin::GetWindowRectInVirtualScreen() {
 // static
 std::unique_ptr<DesktopCapturer> CroppingWindowCapturer::CreateCapturer(
     const DesktopCaptureOptions& options) {
-  return std::unique_ptr<DesktopCapturer>(
+  std::unique_ptr<DesktopCapturer> capturer(
       new CroppingWindowCapturerWin(options));
+  if (capturer && options.detect_updated_region()) {
+    capturer.reset(new DesktopCapturerDifferWrapper(std::move(capturer)));
+  }
+
+  return capturer;
 }
 
 }  // namespace webrtc
