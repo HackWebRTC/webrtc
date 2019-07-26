@@ -1553,13 +1553,17 @@ TEST_P(RtpSenderTest, NoFlexfecForTimingFrames) {
                                nullptr /* rtp_state */, &fake_clock_);
 
   // Reset |rtp_sender_| to use FlexFEC.
-  rtp_sender_.reset(new RTPSender(
-      false, &fake_clock_, &transport_, &mock_paced_sender_,
-      flexfec_sender.ssrc(), &seq_num_allocator_, nullptr, nullptr, nullptr,
-      &mock_rtc_event_log_, &send_packet_observer_,
-      &retransmission_rate_limiter_, nullptr, false, nullptr, false, false,
-      FieldTrialBasedConfig()));
-  rtp_sender_->SetSSRC(kSsrc);
+  RtpRtcp::Configuration config;
+  config.clock = &fake_clock_;
+  config.outgoing_transport = &transport_;
+  config.paced_sender = &mock_paced_sender_;
+  config.flexfec_sender = &flexfec_sender;
+  config.transport_sequence_number_allocator = &seq_num_allocator_;
+  config.event_log = &mock_rtc_event_log_;
+  config.send_packet_observer = &send_packet_observer_;
+  config.retransmission_rate_limiter = &retransmission_rate_limiter_;
+  config.media_send_ssrc = kSsrc;
+  rtp_sender_ = absl::make_unique<RTPSender>(config);
   rtp_sender_->SetSequenceNumber(kSeqNum);
   rtp_sender_->SetStorePacketsStatus(true, 10);
 
@@ -2891,7 +2895,6 @@ TEST_P(RtpSenderTestWithoutPacer, ClearHistoryOnSsrcChange) {
   rtp_sender_->SetRtxPayloadType(kRtxPayload, kPayload);
   rtp_sender_->SetStorePacketsStatus(true, 10);
   rtp_sender_->SetRtt(kRtt);
-  rtp_sender_->SetSSRC(kSsrc);
 
   // Send a packet and record its sequence numbers.
   SendGenericPacket();
