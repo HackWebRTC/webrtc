@@ -1078,8 +1078,13 @@ CallSendStatistics ChannelSend::GetRTCPStatistics() const {
   StreamDataCounters rtp_stats;
   StreamDataCounters rtx_stats;
   _rtpRtcpModule->GetSendStreamDataCounters(&rtp_stats, &rtx_stats);
+  // TODO(https://crbug.com/webrtc/10525): Bytes sent should only include
+  // payload bytes, not header and padding bytes.
   stats.bytesSent =
-      rtp_stats.transmitted.payload_bytes + rtx_stats.transmitted.payload_bytes;
+      rtp_stats.transmitted.payload_bytes +
+      rtp_stats.transmitted.padding_bytes + rtp_stats.transmitted.header_bytes +
+      rtx_stats.transmitted.payload_bytes +
+      rtx_stats.transmitted.padding_bytes + rtx_stats.transmitted.header_bytes;
   // TODO(https://crbug.com/webrtc/10555): RTX retransmissions should show up in
   // separate outbound-rtp stream objects.
   stats.retransmitted_bytes_sent = rtp_stats.retransmitted.payload_bytes;

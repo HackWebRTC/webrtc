@@ -2362,7 +2362,11 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
        it != stats.substreams.end(); ++it) {
     // TODO(pbos): Wire up additional stats, such as padding bytes.
     webrtc::VideoSendStream::StreamStats stream_stats = it->second;
-    info.bytes_sent += stream_stats.rtp_stats.transmitted.payload_bytes;
+    // TODO(http://crbug.com/webrtc/10525): Bytes sent should only include
+    // payload bytes, not header and padding bytes.
+    info.bytes_sent += stream_stats.rtp_stats.transmitted.payload_bytes +
+                       stream_stats.rtp_stats.transmitted.header_bytes +
+                       stream_stats.rtp_stats.transmitted.padding_bytes;
     info.packets_sent += stream_stats.rtp_stats.transmitted.packets;
     info.total_packet_send_delay_ms += stream_stats.total_packet_send_delay_ms;
     // TODO(https://crbug.com/webrtc/10555): RTX retransmissions should show up
@@ -2779,7 +2783,9 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
   if (stats.current_payload_type != -1) {
     info.codec_payload_type = stats.current_payload_type;
   }
-  info.bytes_rcvd = stats.rtp_stats.transmitted.payload_bytes;
+  info.bytes_rcvd = stats.rtp_stats.transmitted.payload_bytes +
+                    stats.rtp_stats.transmitted.header_bytes +
+                    stats.rtp_stats.transmitted.padding_bytes;
   info.packets_rcvd = stats.rtp_stats.transmitted.packets;
   info.packets_lost = stats.rtcp_stats.packets_lost;
 
