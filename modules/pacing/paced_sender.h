@@ -27,6 +27,7 @@
 #include "modules/pacing/interval_budget.h"
 #include "modules/pacing/packet_router.h"
 #include "modules/pacing/round_robin_packet_queue.h"
+#include "modules/pacing/rtp_packet_pacer.h"
 #include "modules/rtp_rtcp/include/rtp_packet_sender.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "modules/utility/include/process_thread.h"
@@ -38,10 +39,10 @@ namespace webrtc {
 class Clock;
 class RtcEventLog;
 
-class PacedSender : public Module, public RtpPacketSender {
+class PacedSender : public Module,
+                    public RtpPacketPacer,
+                    public RtpPacketSender {
  public:
-  static constexpr int64_t kNoCongestionWindow = -1;
-
   // Expected max pacer delay in ms. If ExpectedQueueTimeMs() is higher than
   // this value, the packet producers should wait (eg drop frames rather than
   // encoding them). Bitrate sent may temporarily exceed target set by
@@ -61,24 +62,7 @@ class PacedSender : public Module, public RtpPacketSender {
 
   ~PacedSender() override;
 
-  virtual void CreateProbeCluster(int bitrate_bps, int cluster_id);
-
-  // Temporarily pause all sending.
-  void Pause();
-
-  // Resume sending packets.
-  void Resume();
-
-  void SetCongestionWindow(int64_t congestion_window_bytes);
-  void UpdateOutstandingData(int64_t outstanding_bytes);
-
-  // Enable bitrate probing. Enabled by default, mostly here to simplify
-  // testing. Must be called before any packets are being sent to have an
-  // effect.
-  void SetProbingEnabled(bool enabled);
-
-  // Sets the pacing rates. Must be called once before packets can be sent.
-  void SetPacingRates(uint32_t pacing_rate_bps, uint32_t padding_rate_bps);
+  // Methods implementing RtpPacketSender.
 
   // Adds the packet information to the queue and calls TimeToSendPacket
   // when it's time to send.
@@ -88,30 +72,71 @@ class PacedSender : public Module, public RtpPacketSender {
                     int64_t capture_time_ms,
                     size_t bytes,
                     bool retransmission) override;
-
   // Adds the packet to the queue and calls PacketRouter::SendPacket() when
   // it's time to send.
   void EnqueuePacket(std::unique_ptr<RtpPacketToSend> packet) override;
+
+  // Methods implementing RtpPacketPacer:
+
+  void CreateProbeCluster(DataRate bitrate, int cluster_id) override;
+  // TODO(bugs.webrtc.org/10809): Remove once downstream usage is gone.
+  void CreateProbeCluster(int bitrate_bps, int cluster_id) {
+    CreateProbeCluster(DataRate::bps(bitrate_bps), cluster_id);
+  }
+
+  // Temporarily pause all sending.
+  void Pause() override;
+
+  // Resume sending packets.
+  void Resume() override;
+
+  void SetCongestionWindow(DataSize congestion_window_size) override;
+  void UpdateOutstandingData(DataSize outstanding_data) override;
+
+  // Sets the pacing rates. Must be called once before packets can be sent.
+  void SetPacingRates(DataRate pacing_rate, DataRate padding_rate) override;
+  // TODO(bugs.webrtc.org/10809): Remove once downstream usage is gone.
+  void SetPacingRates(uint32_t pacing_rate_bps, uint32_t padding_rate_bps) {
+    SetPacingRates(DataRate::bps(pacing_rate_bps),
+                   DataRate::bps(padding_rate_bps));
+  }
 
   // Currently audio traffic is not accounted by pacer and passed through.
   // With the introduction of audio BWE audio traffic will be accounted for
   // the pacer budget calculation. The audio traffic still will be injected
   // at high priority.
-  void SetAccountForAudioPackets(bool account_for_audio);
+  void SetAccountForAudioPackets(bool account_for_audio) override;
 
   // Returns the time since the oldest queued packet was enqueued.
-  virtual int64_t QueueInMs() const;
+  TimeDelta OldestPacketWaitTime() const override;
+  // TODO(bugs.webrtc.org/10809): Remove once downstream usage is gone.
+  int64_t QueueInMs() const { return OldestPacketWaitTime().ms(); }
 
-  virtual size_t QueueSizePackets() const;
-  virtual int64_t QueueSizeBytes() const;
+  size_t QueueSizePackets() const override;
+  DataSize QueueSizeData() const override;
 
-  // Returns the time when the first packet was sent, or -1 if no packet is
-  // sent.
-  virtual int64_t FirstSentPacketTimeMs() const;
+  // Returns the time when the first packet was sent;
+  absl::optional<Timestamp> FirstSentPacketTime() const override;
 
   // Returns the number of milliseconds it will take to send the current
   // packets in the queue, given the current size and bitrate, ignoring prio.
-  virtual int64_t ExpectedQueueTimeMs() const;
+  TimeDelta ExpectedQueueTime() const override;
+
+  void SetQueueTimeLimit(TimeDelta limit) override;
+  // TODO(bugs.webrtc.org/10809): Remove once downstream usage is gone.
+  void SetQueueTimeLimit(int limit_ms) {
+    SetQueueTimeLimit(TimeDelta::ms(limit_ms));
+  }
+
+  // Below are methods specific to this implementation, such as things related
+  // to module processing thread specifics or methods exposed for test.
+
+  // Enable bitrate probing. Enabled by default, mostly here to simplify
+  // testing. Must be called before any packets are being sent to have an
+  // effect.
+  void SetProbingEnabled(bool enabled);
+
+  // Methods implementing Module.
 
   // Returns the number of milliseconds until the module want a worker thread
   // to call Process.
@@ -122,7 +147,6 @@ class PacedSender : public Module, public RtpPacketSender {
 
   // Called when the prober is associated with a process thread.
   void ProcessThreadAttached(ProcessThread* process_thread) override;
-  void SetQueueTimeLimit(int limit_ms);
 
  private:
   int64_t UpdateTimeAndGetElapsedMs(int64_t now_us)
@@ -177,18 +201,17 @@ class PacedSender : public Module, public RtpPacketSender {
   BitrateProber prober_ RTC_GUARDED_BY(critsect_);
   bool probing_send_failure_ RTC_GUARDED_BY(critsect_);
 
-  uint32_t pacing_bitrate_kbps_ RTC_GUARDED_BY(critsect_);
+  DataRate pacing_bitrate_ RTC_GUARDED_BY(critsect_);
 
   int64_t time_last_process_us_ RTC_GUARDED_BY(critsect_);
   int64_t last_send_time_us_ RTC_GUARDED_BY(critsect_);
-  int64_t first_sent_packet_ms_ RTC_GUARDED_BY(critsect_);
+  absl::optional<Timestamp> first_sent_packet_time_ RTC_GUARDED_BY(critsect_);
 
   RoundRobinPacketQueue packets_ RTC_GUARDED_BY(critsect_);
   uint64_t packet_counter_ RTC_GUARDED_BY(critsect_);
 
-  int64_t congestion_window_bytes_ RTC_GUARDED_BY(critsect_) =
-      kNoCongestionWindow;
-  int64_t outstanding_bytes_ RTC_GUARDED_BY(critsect_) = 0;
+  DataSize congestion_window_size_ RTC_GUARDED_BY(critsect_);
+  DataSize outstanding_data_ RTC_GUARDED_BY(critsect_);
 
   // Lock to avoid race when attaching process thread. This can happen due to
   // the Call class setting network state on RtpTransportControllerSend, which
@@ -196,7 +219,7 @@ class PacedSender : public Module, public RtpPacketSender {
   // pacer process thread. If RtpTransportControllerSend is running on a task
   // queue separate from the thread used by Call, this causes a race.
   rtc::CriticalSection process_thread_lock_;
-  ProcessThread* process_thread_ RTC_GUARDED_BY(process_thread_lock_) = nullptr;
+  ProcessThread* process_thread_ RTC_GUARDED_BY(process_thread_lock_);
 
   int64_t queue_time_limit RTC_GUARDED_BY(critsect_);
   bool account_for_audio_ RTC_GUARDED_BY(critsect_);

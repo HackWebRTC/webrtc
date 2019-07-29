@@ -256,7 +256,7 @@ class Call final : public webrtc::Call,
                                  MediaType media_type)
       RTC_SHARED_LOCKS_REQUIRED(receive_crit_);
 
-  void UpdateSendHistograms(int64_t first_sent_packet_ms)
+  void UpdateSendHistograms(Timestamp first_sent_packet)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(&bitrate_crit_);
   void UpdateReceiveHistograms();
   void UpdateHistograms();
@@ -503,8 +503,8 @@ Call::~Call() {
     call_stats_->DeregisterStatsObserver(&receive_side_cc_);
   }
 
-  absl::optional<int64_t> first_sent_packet_ms =
-      transport_send_->GetFirstPacketTimeMs();
+  absl::optional<Timestamp> first_sent_packet_ms =
+      transport_send_->GetFirstPacketTime();
   // Only update histograms after process threads have been shut down, so that
   // they won't try to concurrently update stats.
   if (first_sent_packet_ms) {
@@ -619,9 +619,9 @@ void Call::UpdateHistograms() {
       (clock_->TimeInMilliseconds() - start_ms_) / 1000);
 }
 
-void Call::UpdateSendHistograms(int64_t first_sent_packet_ms) {
+void Call::UpdateSendHistograms(Timestamp first_sent_packet) {
   int64_t elapsed_sec =
-      (clock_->TimeInMilliseconds() - first_sent_packet_ms) / 1000;
+      (clock_->TimeInMilliseconds() - first_sent_packet.ms()) / 1000;
   if (elapsed_sec < metrics::kMinRunTimeInSeconds)
     return;
   const int kMinRequiredPeriodicSamples = 5;

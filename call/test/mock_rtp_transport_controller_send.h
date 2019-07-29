@@ -61,7 +61,7 @@ class MockRtpTransportControllerSend
   MOCK_METHOD1(OnNetworkAvailability, void(bool));
   MOCK_METHOD0(GetBandwidthObserver, RtcpBandwidthObserver*());
   MOCK_CONST_METHOD0(GetPacerQueuingDelayMs, int64_t());
-  MOCK_CONST_METHOD0(GetFirstPacketTimeMs, int64_t());
+  MOCK_CONST_METHOD0(GetFirstPacketTime, absl::optional<Timestamp>());
   MOCK_METHOD1(EnablePeriodicAlrProbing, void(bool));
   MOCK_METHOD1(OnSentPacket, void(const rtc::SentPacket&));
   MOCK_METHOD1(SetSdpBitrateParameters, void(const BitrateConstraints&));

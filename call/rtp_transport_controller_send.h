@@ -25,6 +25,7 @@
 #include "modules/congestion_controller/rtp/control_handler.h"
 #include "modules/congestion_controller/rtp/transport_feedback_adapter.h"
 #include "modules/pacing/packet_router.h"
+#include "modules/pacing/rtp_packet_pacer.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/network_route.h"
@@ -95,7 +96,7 @@ class RtpTransportControllerSend final
   void OnNetworkAvailability(bool network_available) override;
   RtcpBandwidthObserver* GetBandwidthObserver() override;
   int64_t GetPacerQueuingDelayMs() const override;
-  int64_t GetFirstPacketTimeMs() const override;
+  absl::optional<Timestamp> GetFirstPacketTime() const override;
   void EnablePeriodicAlrProbing(bool enable) override;
   void OnSentPacket(const rtc::SentPacket& sent_packet) override;
   void OnReceivedPacket(const ReceivedPacket& packet_msg) override;
@@ -135,6 +136,8 @@ class RtpTransportControllerSend final
       RTC_RUN_ON(task_queue_);
   void PostUpdates(NetworkControlUpdate update) RTC_RUN_ON(task_queue_);
   void UpdateControlState() RTC_RUN_ON(task_queue_);
+  RtpPacketPacer* pacer();
+  const RtpPacketPacer* pacer() const;
 
   Clock* const clock_;
   RtcEventLog* const event_log_;

@@ -23,6 +23,7 @@
 #include "api/crypto/crypto_options.h"
 #include "api/fec_controller.h"
 #include "api/transport/bitrate_settings.h"
+#include "api/units/timestamp.h"
 #include "call/rtp_config.h"
 #include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/rtp_rtcp/include/report_block_data.h"
@@ -148,7 +149,7 @@ class RtpTransportControllerSendInterface {
   virtual void OnNetworkAvailability(bool network_available) = 0;
   virtual RtcpBandwidthObserver* GetBandwidthObserver() = 0;
   virtual int64_t GetPacerQueuingDelayMs() const = 0;
-  virtual int64_t GetFirstPacketTimeMs() const = 0;
+  virtual absl::optional<Timestamp> GetFirstPacketTime() const = 0;
   virtual void EnablePeriodicAlrProbing(bool enable) = 0;
   virtual void OnSentPacket(const rtc::SentPacket& sent_packet) = 0;
   virtual void OnReceivedPacket(const ReceivedPacket& received_packet) = 0;

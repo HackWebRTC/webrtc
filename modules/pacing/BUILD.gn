@@ -23,6 +23,7 @@ rtc_static_library("pacing") {
     "packet_router.h",
     "round_robin_packet_queue.cc",
     "round_robin_packet_queue.h",
+    "rtp_packet_pacer.h",
   ]
 
   deps = [
@@ -32,6 +33,10 @@ rtc_static_library("pacing") {
     "../../api/transport:field_trial_based_config",
     "../../api/transport:network_control",
     "../../api/transport:webrtc_key_value_config",
+    "../../api/units:data_rate",
+    "../../api/units:data_size",
+    "../../api/units:time_delta",
+    "../../api/units:timestamp",
     "../../logging:rtc_event_bwe",
     "../../logging:rtc_event_log_api",
     "../../logging:rtc_event_pacing",
