@@ -251,7 +251,6 @@ VideoEncoderWrapper::GetResolutionBitrateLimits(JNIEnv* jni) const {
 
 void VideoEncoderWrapper::OnEncodedFrame(
     JNIEnv* jni,
-    const JavaRef<jobject>& j_caller,
     const JavaRef<jobject>& j_encoded_image) {
   EncodedImage frame = JavaToNativeEncodedImage(jni, j_encoded_image);
   int64_t capture_time_ns =

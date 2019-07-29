@@ -57,7 +57,6 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
   // NativeAndroidVideoTrackSource.FrameAdaptationParameters, or null if the
   // frame should be dropped.
   ScopedJavaLocalRef<jobject> AdaptFrame(JNIEnv* env,
-                                         const JavaRef<jobject>& j_caller,
                                          jint j_width,
                                          jint j_height,
                                          jint j_rotation,
@@ -68,17 +67,14 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
   // called first and that the delivered frame conforms to those parameters.
   // This function is thread safe and can be called from any thread.
   void OnFrameCaptured(JNIEnv* env,
-                       const JavaRef<jobject>& j_caller,
                        jint j_rotation,
                        jlong j_timestamp_ns,
                        const JavaRef<jobject>& j_video_frame_buffer);
 
   void SetState(JNIEnv* env,
-                const JavaRef<jobject>& j_caller,
                 jboolean j_is_live);
 
   void AdaptOutputFormat(JNIEnv* env,
-                         const JavaRef<jobject>& j_caller,
                          jint j_landscape_width,
                          jint j_landscape_height,
                          const JavaRef<jobject>& j_max_landscape_pixel_count,

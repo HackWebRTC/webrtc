@@ -83,7 +83,6 @@ AndroidCallClient::AndroidCallClient()
 AndroidCallClient::~AndroidCallClient() = default;
 
 void AndroidCallClient::Call(JNIEnv* env,
-                             const webrtc::JavaRef<jobject>& cls,
                              const webrtc::JavaRef<jobject>& local_sink,
                              const webrtc::JavaRef<jobject>& remote_sink) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
@@ -106,8 +105,7 @@ void AndroidCallClient::Call(JNIEnv* env,
   Connect();
 }
 
-void AndroidCallClient::Hangup(JNIEnv* env,
-                               const webrtc::JavaRef<jobject>& cls) {
+void AndroidCallClient::Hangup(JNIEnv* env) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
 
   call_started_ = false;
@@ -125,17 +123,14 @@ void AndroidCallClient::Hangup(JNIEnv* env,
   video_source_ = nullptr;
 }
 
-void AndroidCallClient::Delete(JNIEnv* env,
-                               const webrtc::JavaRef<jobject>& cls) {
+void AndroidCallClient::Delete(JNIEnv* env) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
 
   delete this;
 }
 
 webrtc::ScopedJavaLocalRef<jobject>
-AndroidCallClient::GetJavaVideoCapturerObserver(
-    JNIEnv* env,
-    const webrtc::JavaRef<jobject>& cls) {
+AndroidCallClient::GetJavaVideoCapturerObserver(JNIEnv* env) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
 
   return video_source_->GetJavaVideoCapturerObserver(env);

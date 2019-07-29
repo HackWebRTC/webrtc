@@ -155,7 +155,6 @@ const char* VideoDecoderWrapper::ImplementationName() const {
 
 void VideoDecoderWrapper::OnDecodedFrame(
     JNIEnv* env,
-    const JavaRef<jobject>& j_caller,
     const JavaRef<jobject>& j_frame,
     const JavaRef<jobject>& j_decode_time_ms,
     const JavaRef<jobject>& j_qp) {

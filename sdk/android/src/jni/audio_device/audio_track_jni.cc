@@ -184,7 +184,6 @@ void AudioTrackJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
 
 void AudioTrackJni::CacheDirectBufferAddress(
     JNIEnv* env,
-    const JavaParamRef<jobject>&,
     const JavaParamRef<jobject>& byte_buffer) {
   RTC_LOG(INFO) << "OnCacheDirectBufferAddress";
   RTC_DCHECK(thread_checker_.IsCurrent());
@@ -201,7 +200,6 @@ void AudioTrackJni::CacheDirectBufferAddress(
 // This method is called on a high-priority thread from Java. The name of
 // the thread is 'AudioRecordTrack'.
 void AudioTrackJni::GetPlayoutData(JNIEnv* env,
-                                   const JavaParamRef<jobject>&,
                                    size_t length) {
   RTC_DCHECK(thread_checker_java_.IsCurrent());
   const size_t bytes_per_frame = audio_parameters_.channels() * sizeof(int16_t);

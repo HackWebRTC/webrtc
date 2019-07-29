@@ -50,7 +50,6 @@ class VideoEncoderWrapper : public VideoEncoder {
 
   // Should only be called by JNI.
   void OnEncodedFrame(JNIEnv* jni,
-                      const JavaRef<jobject>& j_caller,
                       const JavaRef<jobject>& j_encoded_image);
 
  private:

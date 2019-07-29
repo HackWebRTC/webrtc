@@ -31,16 +31,13 @@ class AndroidCallClient {
   ~AndroidCallClient();
 
   void Call(JNIEnv* env,
-            const webrtc::JavaRef<jobject>& cls,
             const webrtc::JavaRef<jobject>& local_sink,
             const webrtc::JavaRef<jobject>& remote_sink);
-  void Hangup(JNIEnv* env, const webrtc::JavaRef<jobject>& cls);
+  void Hangup(JNIEnv* env);
   // A helper method for Java code to delete this object. Calls delete this.
-  void Delete(JNIEnv* env, const webrtc::JavaRef<jobject>& cls);
+  void Delete(JNIEnv* env);
 
-  webrtc::ScopedJavaLocalRef<jobject> GetJavaVideoCapturerObserver(
-      JNIEnv* env,
-      const webrtc::JavaRef<jobject>& cls);
+  webrtc::ScopedJavaLocalRef<jobject> GetJavaVideoCapturerObserver(JNIEnv* env);
 
  private:
   class PCObserver;
