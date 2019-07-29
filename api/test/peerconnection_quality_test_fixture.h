@@ -176,9 +176,11 @@ class PeerConnectionE2EQualityTestFixture {
     // If presented video will be transfered in simulcast/SVC mode depending on
     // which encoder is used.
     //
-    // Simulcast is supported only from 1st added peer and for now only for
-    // Vp8 encoder. Also RTX doesn't supported with simulcast and will
-    // automatically disabled for tracks with simulcast.
+    // Simulcast is supported only from 1st added peer. For VP8 simulcast only
+    // without RTX is supported so it will be automatically disabled for all
+    // simulcast tracks. For VP9 simulcast enables VP9 SVC mode and support RTX,
+    // but only on non-lossy networks. See more in documentation to
+    // VideoSimulcastConfig.
     absl::optional<VideoSimulcastConfig> simulcast_config;
     // If specified the input stream will be also copied to specified file.
     // It is actually one of the test's output file, which contains copy of what
