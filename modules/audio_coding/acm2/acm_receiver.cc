@@ -228,7 +228,7 @@ absl::optional<std::pair<int, SdpAudioFormat>> AcmReceiver::LastDecoder()
   return last_decoder_;
 }
 
-void AcmReceiver::GetNetworkStatistics(NetworkStatistics* acm_stat) {
+void AcmReceiver::GetNetworkStatistics(NetworkStatistics* acm_stat) const {
   NetEqNetworkStatistics neteq_stat;
   // NetEq function always returns zero, so we don't check the return value.
   neteq_->NetworkStatistics(&neteq_stat);

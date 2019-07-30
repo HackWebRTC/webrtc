@@ -27,7 +27,8 @@
 #include "api/rtp_receiver_interface.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "call/syncable.h"
-#include "modules/audio_coding/include/audio_coding_module.h"
+#include "modules/audio_coding/include/audio_coding_module_typedefs.h"
+#include "system_wrappers/include/clock.h"
 
 // TODO(solenberg, nisse): This file contains a few NOLINT marks, to silence
 // warnings about use of unsigned short.
