@@ -47,6 +47,8 @@ size_t strcpyn(char* buffer,
 #if defined(WEBRTC_WIN)
 
 inline std::wstring ToUtf16(const char* utf8, size_t len) {
+  if (len == 0)
+    return std::wstring();
   int len16 = ::MultiByteToWideChar(CP_UTF8, 0, utf8, static_cast<int>(len),
                                     nullptr, 0);
   std::wstring ws(len16, 0);
@@ -60,6 +62,8 @@ inline std::wstring ToUtf16(const std::string& str) {
 }
 
 inline std::string ToUtf8(const wchar_t* wide, size_t len) {
+  if (len == 0)
+    return std::string();
   int len8 = ::WideCharToMultiByte(CP_UTF8, 0, wide, static_cast<int>(len),
                                    nullptr, 0, nullptr, nullptr);
   std::string ns(len8, 0);

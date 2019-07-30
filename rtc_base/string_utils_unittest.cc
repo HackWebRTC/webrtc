@@ -28,4 +28,15 @@ TEST(string_toHexTest, ToHex) {
   EXPECT_EQ(ToHex(-20), "ffffffec");
 }
 
+#if defined(WEBRTC_WIN)
+
+TEST(string_toutf, Empty) {
+  char empty_string[] = "";
+  EXPECT_TRUE(ToUtf16(empty_string, 0u).empty());
+  wchar_t empty_wchar[] = L"";
+  EXPECT_TRUE(ToUtf8(empty_wchar, 0u).empty());
+}
+
+#endif  // WEBRTC_WIN
+
 }  // namespace rtc
