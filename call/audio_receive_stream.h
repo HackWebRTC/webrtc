@@ -72,9 +72,7 @@ class AudioReceiveStream {
     int32_t decoding_calls_to_silence_generator = 0;
     int32_t decoding_calls_to_neteq = 0;
     int32_t decoding_normal = 0;
-    // TODO(alexnarest): Consider decoding_neteq_plc for consistency
     int32_t decoding_plc = 0;
-    int32_t decoding_codec_plc = 0;
     int32_t decoding_cng = 0;
     int32_t decoding_plc_cng = 0;
     int32_t decoding_muted_output = 0;

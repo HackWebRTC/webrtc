@@ -203,11 +203,6 @@ void SetAudioFrameActivityAndType(bool vad_enabled,
       audio_frame->vad_activity_ = AudioFrame::kVadPassive;
       break;
     }
-    case NetEqImpl::OutputType::kCodecPLC: {
-      audio_frame->speech_type_ = AudioFrame::kCodecPLC;
-      audio_frame->vad_activity_ = last_vad_activity;
-      break;
-    }
     default:
       RTC_NOTREACHED();
   }
@@ -2093,8 +2088,6 @@ NetEqImpl::OutputType NetEqImpl::LastOutputType() {
     return OutputType::kPLC;
   } else if (vad_->running() && !vad_->active_speech()) {
     return OutputType::kVadPassive;
-  } else if (last_mode_ == kModeCodecPlc) {
-    return OutputType::kCodecPLC;
   } else {
     return OutputType::kNormalSpeech;
   }

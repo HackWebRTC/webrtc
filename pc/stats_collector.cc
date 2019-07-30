@@ -158,7 +158,6 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
        info.decoding_muted_output},
       {StatsReport::kStatsValueNameDecodingNormal, info.decoding_normal},
       {StatsReport::kStatsValueNameDecodingPLC, info.decoding_plc},
-      {StatsReport::kStatsValueNameDecodingCodecPLC, info.decoding_codec_plc},
       {StatsReport::kStatsValueNameDecodingPLCCNG, info.decoding_plc_cng},
       {StatsReport::kStatsValueNameJitterBufferMs, info.jitter_buffer_ms},
       {StatsReport::kStatsValueNameJitterReceived, info.jitter_ms},

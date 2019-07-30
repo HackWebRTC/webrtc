@@ -52,7 +52,6 @@ class AudioFrame {
     kPLC = 1,
     kCNG = 2,
     kPLCCNG = 3,
-    kCodecPLC = 5,
     kUndefined = 4
   };
 

@@ -163,7 +163,6 @@ class StatsReport {
     kStatsValueNameDecodingMutedOutput,
     kStatsValueNameDecodingNormal,
     kStatsValueNameDecodingPLC,
-    kStatsValueNameDecodingCodecPLC,
     kStatsValueNameDecodingPLCCNG,
     kStatsValueNameDer,
     kStatsValueNameDtlsCipher,

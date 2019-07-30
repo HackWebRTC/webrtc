@@ -374,9 +374,6 @@ void VerifyVoiceReceiverInfoReport(const StatsReport* report,
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameDecodingPLC,
                        &value_in_report));
   EXPECT_EQ(rtc::ToString(info.decoding_plc), value_in_report);
-  EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameDecodingCodecPLC,
-                       &value_in_report));
-  EXPECT_EQ(rtc::ToString(info.decoding_codec_plc), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameDecodingCNG,
                        &value_in_report));
   EXPECT_EQ(rtc::ToString(info.decoding_cng), value_in_report);

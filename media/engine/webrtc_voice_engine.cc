@@ -2279,7 +2279,6 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     rinfo.decoding_calls_to_neteq = stats.decoding_calls_to_neteq;
     rinfo.decoding_normal = stats.decoding_normal;
     rinfo.decoding_plc = stats.decoding_plc;
-    rinfo.decoding_codec_plc = stats.decoding_codec_plc;
     rinfo.decoding_cng = stats.decoding_cng;
     rinfo.decoding_plc_cng = stats.decoding_plc_cng;
     rinfo.decoding_muted_output = stats.decoding_muted_output;

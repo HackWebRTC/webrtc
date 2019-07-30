@@ -43,8 +43,7 @@ AudioDecodingCallStats MakeAudioDecodeStatsForTest() {
   audio_decode_stats.calls_to_silence_generator = 234;
   audio_decode_stats.calls_to_neteq = 567;
   audio_decode_stats.decoded_normal = 890;
-  audio_decode_stats.decoded_neteq_plc = 123;
-  audio_decode_stats.decoded_codec_plc = 124;
+  audio_decode_stats.decoded_plc = 123;
   audio_decode_stats.decoded_cng = 456;
   audio_decode_stats.decoded_plc_cng = 789;
   audio_decode_stats.decoded_muted_output = 987;
@@ -307,8 +306,7 @@ TEST(AudioReceiveStreamTest, GetStats) {
             stats.decoding_calls_to_silence_generator);
   EXPECT_EQ(kAudioDecodeStats.calls_to_neteq, stats.decoding_calls_to_neteq);
   EXPECT_EQ(kAudioDecodeStats.decoded_normal, stats.decoding_normal);
-  EXPECT_EQ(kAudioDecodeStats.decoded_neteq_plc, stats.decoding_plc);
-  EXPECT_EQ(kAudioDecodeStats.decoded_codec_plc, stats.decoding_codec_plc);
+  EXPECT_EQ(kAudioDecodeStats.decoded_plc, stats.decoding_plc);
   EXPECT_EQ(kAudioDecodeStats.decoded_cng, stats.decoding_cng);
   EXPECT_EQ(kAudioDecodeStats.decoded_plc_cng, stats.decoding_plc_cng);
   EXPECT_EQ(kAudioDecodeStats.decoded_muted_output,
