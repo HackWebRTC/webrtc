@@ -697,7 +697,18 @@ PeerConnectionE2EQualityTest::MaybeAddVideo(TestPeer* peer) {
     if (video_config.screen_share_config) {
       track->set_content_hint(VideoTrackInterface::ContentHint::kText);
     }
-    peer->AddTrack(track, {video_config.stream_label.value()});
+    RTCErrorOr<rtc::scoped_refptr<RtpSenderInterface>> sender =
+        peer->AddTrack(track, {video_config.stream_label.value()});
+    RTC_CHECK(sender.ok());
+    if (video_config.temporal_layers_count) {
+      RtpParameters rtp_parameters = sender.value()->GetParameters();
+      for (auto& encoding_parameters : rtp_parameters.encodings) {
+        encoding_parameters.num_temporal_layers =
+            video_config.temporal_layers_count;
+      }
+      RTCError res = sender.value()->SetParameters(rtp_parameters);
+      RTC_CHECK(res.ok()) << "Failed to set RTP parameters";
+    }
   }
   return out;
 }

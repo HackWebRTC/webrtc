@@ -182,6 +182,10 @@ class PeerConnectionE2EQualityTestFixture {
     // but only on non-lossy networks. See more in documentation to
     // VideoSimulcastConfig.
     absl::optional<VideoSimulcastConfig> simulcast_config;
+    // Count of temporal layers for video stream. This value will be set into
+    // each RtpEncodingParameters of RtpParameters of corresponding
+    // RtpSenderInterface for this video stream.
+    absl::optional<int> temporal_layers_count;
     // If specified the input stream will be also copied to specified file.
     // It is actually one of the test's output file, which contains copy of what
     // was captured during the test for this video stream on sender side.

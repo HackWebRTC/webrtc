@@ -154,6 +154,7 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
       [](PeerConfigurer* bob) {
         VideoConfig video(640, 360, 30);
         video.stream_label = "bob-video";
+        video.temporal_layers_count = 2;
         bob->AddVideoConfig(std::move(video));
 
         VideoConfig screenshare(640, 360, 30);
