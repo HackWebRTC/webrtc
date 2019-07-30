@@ -85,15 +85,11 @@ BOOL CALLBACK TopWindowVerifier(HWND hwnd, LPARAM param) {
     return TRUE;
   }
 
-  // Ignore descendant windows since we want to capture them.
-  // This check does not work for tooltips and context menus. Drop down menus
-  // and popup windows are fine.
-  //
-  // GA_ROOT returns the root window instead of the owner. I.e. for a dialog
-  // window, GA_ROOT returns the dialog window itself. GA_ROOTOWNER returns the
-  // application main window which opens the dialog window. Since we are sharing
-  // the application main window, GA_ROOT should be used here.
-  if (GetAncestor(hwnd, GA_ROOT) == context->selected_window) {
+  // Ignore descendant/owned windows since we want to capture them. This check
+  // works for drop-down menus, pop-up (dialog) windows, and child (confined)
+  // windows. It doesn't work for tooltips or context menus, which are handled
+  // differently below.
+  if (GetAncestor(hwnd, GA_ROOTOWNER) == context->selected_window) {
     return TRUE;
   }
 
@@ -101,9 +97,6 @@ BOOL CALLBACK TopWindowVerifier(HWND hwnd, LPARAM param) {
   // Window Media Player consisting of several sibling windows) and belongs to
   // the same process, assume it's a tooltip or context menu or sibling window
   // from the selected window and ignore it.
-  // TODO(zijiehe): This check cannot cover the case where tooltip or context
-  // menu of the child-window is covering the main window. See
-  // https://bugs.chromium.org/p/webrtc/issues/detail?id=8062 for details.
   WCHAR window_title[kTitleLength];
   GetWindowTextW(hwnd, window_title, kTitleLength);
   if (wcsnlen_s(window_title, kTitleLength) == 0 ||
@@ -227,17 +220,7 @@ bool CroppingWindowCapturerWin::ShouldUseScreenCapturer() {
   TopWindowVerifierContext context(selected,
                                    reinterpret_cast<HWND>(excluded_window()),
                                    content_rect, &window_capture_helper_);
-  const LPARAM enum_param = reinterpret_cast<LPARAM>(&context);
-  EnumWindows(&TopWindowVerifier, enum_param);
-  if (!context.is_top_window) {
-    return false;
-  }
-
-  // If |selected| is not covered by other windows, check whether it is
-  // covered by its own child windows. Note: EnumChildWindows() enumerates child
-  // windows in all generations, but does not include any controls like buttons
-  // or textboxes.
-  EnumChildWindows(selected, &TopWindowVerifier, enum_param);
+  EnumWindows(&TopWindowVerifier, reinterpret_cast<LPARAM>(&context));
   return context.is_top_window;
 }
 
