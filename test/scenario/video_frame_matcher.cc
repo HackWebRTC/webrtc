@@ -128,6 +128,16 @@ void VideoFrameMatcher::Finalize() {
   }
 }
 
+CapturedFrameTap::CapturedFrameTap(Clock* clock, VideoFrameMatcher* matcher)
+    : clock_(clock), matcher_(matcher) {}
+
+void CapturedFrameTap::OnFrame(const VideoFrame& frame) {
+  matcher_->OnCapturedFrame(frame, clock_->CurrentTime());
+}
+void CapturedFrameTap::OnDiscardedFrame() {
+  discarded_count_++;
+}
+
 ForwardingCapturedFrameTap::ForwardingCapturedFrameTap(
     Clock* clock,
     VideoFrameMatcher* matcher,
