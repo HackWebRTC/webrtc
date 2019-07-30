@@ -131,6 +131,32 @@ std::string ChannelMaskToString(DWORD channel_mask) {
   return ss;
 }
 
+#if !defined(KSAUDIO_SPEAKER_1POINT1)
+// These values are only defined in ksmedia.h after a certain version, to build
+// cleanly for older windows versions this just defines the ones that are
+// missing.
+#define KSAUDIO_SPEAKER_1POINT1 (SPEAKER_FRONT_CENTER | SPEAKER_LOW_FREQUENCY)
+#define KSAUDIO_SPEAKER_2POINT1 \
+  (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | SPEAKER_LOW_FREQUENCY)
+#define KSAUDIO_SPEAKER_3POINT0 \
+  (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | SPEAKER_FRONT_CENTER)
+#define KSAUDIO_SPEAKER_3POINT1                                      \
+  (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | SPEAKER_FRONT_CENTER | \
+   SPEAKER_LOW_FREQUENCY)
+#define KSAUDIO_SPEAKER_5POINT0                                      \
+  (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | SPEAKER_FRONT_CENTER | \
+   SPEAKER_SIDE_LEFT | SPEAKER_SIDE_RIGHT)
+#define KSAUDIO_SPEAKER_7POINT0                                      \
+  (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT | SPEAKER_FRONT_CENTER | \
+   SPEAKER_BACK_LEFT | SPEAKER_BACK_RIGHT | SPEAKER_SIDE_LEFT |      \
+   SPEAKER_SIDE_RIGHT)
+#endif
+
+#if !defined(AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY)
+#define AUDCLNT_STREAMFLAGS_SRC_DEFAULT_QUALITY 0x08000000
+#define AUDCLNT_STREAMFLAGS_AUTOCONVERTPCM 0x80000000
+#endif
+
 // Converts from channel mask to DirectSound speaker configuration.
 // The values below are copied from ksmedia.h.
 // Example: KSAUDIO_SPEAKER_STEREO = (SPEAKER_FRONT_LEFT | SPEAKER_FRONT_RIGHT).
@@ -809,6 +835,9 @@ HRESULT SetClientProperties(IAudioClient2* client) {
   }
   RTC_DLOG(INFO) << "supports_offload: " << supports_offload;
   props.bIsOffload = false;
+#if (NTDDI_VERSION < NTDDI_WINBLUE)
+  RTC_DLOG(INFO) << "options: Not supported in this build";
+#else
   // TODO(henrika): pros and cons compared with AUDCLNT_STREAMOPTIONS_NONE?
   props.Options |= AUDCLNT_STREAMOPTIONS_NONE;
   // Requires System.Devices.AudioDevice.RawProcessingSupported.
@@ -825,6 +854,7 @@ HRESULT SetClientProperties(IAudioClient2* client) {
   // This interface is mainly meant for pro audio scenarios.
   // props.Options |= AUDCLNT_STREAMOPTIONS_MATCH_FORMAT;
   RTC_DLOG(INFO) << "options: 0x" << rtc::ToHex(props.Options);
+#endif
   error = client->SetClientProperties(&props);
   if (FAILED(error.Error())) {
     RTC_LOG(LS_ERROR) << "IAudioClient2::SetClientProperties failed: "
