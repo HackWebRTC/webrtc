@@ -278,6 +278,7 @@ class RtpSenderTest : public ::testing::TestWithParam<TestConfig> {
                                                   int64_t capture_time_ms) {
     auto packet = rtp_sender_->AllocatePacket();
     packet->SetPayloadType(payload_type);
+    packet->set_packet_type(RtpPacketToSend::Type::kVideo);
     packet->SetMarker(marker_bit);
     packet->SetTimestamp(timestamp);
     packet->set_capture_time_ms(capture_time_ms);
@@ -294,8 +295,7 @@ class RtpSenderTest : public ::testing::TestWithParam<TestConfig> {
 
     // Packet should be stored in a send bucket.
     EXPECT_TRUE(rtp_sender_->SendToNetwork(
-        absl::make_unique<RtpPacketToSend>(*packet), kAllowRetransmission,
-        RtpPacketSender::kNormalPriority));
+        absl::make_unique<RtpPacketToSend>(*packet), kAllowRetransmission));
     return packet;
   }
 
@@ -2941,6 +2941,56 @@ TEST_P(RtpSenderTestWithoutPacer, ClearHistoryOnSequenceNumberCange) {
   rtp_sender_->SetSequenceNumber(rtp_sender_->SequenceNumber() - 1);
   fake_clock_.AdvanceTimeMilliseconds(kRtt);
   EXPECT_EQ(rtp_sender_->ReSendPacket(packet_seqence_number), 0);
+}
+
+TEST_P(RtpSenderTest, IgnoresNackAfterDisablingMedia) {
+  const int64_t kRtt = 10;
+
+  rtp_sender_->SetSendingMediaStatus(true);
+  rtp_sender_->SetRtxStatus(kRtxRetransmitted | kRtxRedundantPayloads);
+  rtp_sender_->SetRtxPayloadType(kRtxPayload, kPayload);
+  rtp_sender_->SetStorePacketsStatus(true, 10);
+  rtp_sender_->SetRtt(kRtt);
+
+  // Send a packet so it is in the packet history.
+  if (GetParam().pacer_references_packets) {
+    EXPECT_CALL(mock_paced_sender_, InsertPacket);
+    SendGenericPacket();
+    rtp_sender_->TimeToSendPacket(kSsrc, kSeqNum,
+                                  fake_clock_.TimeInMilliseconds(), false,
+                                  PacedPacketInfo());
+    ASSERT_EQ(1u, transport_.sent_packets_.size());
+
+    // Disable media sending and try to retransmit the packet, it should be put
+    // in the pacer queue.
+    rtp_sender_->SetSendingMediaStatus(false);
+    fake_clock_.AdvanceTimeMilliseconds(kRtt);
+    EXPECT_CALL(mock_paced_sender_, InsertPacket);
+    EXPECT_GT(rtp_sender_->ReSendPacket(kSeqNum), 0);
+
+    // Time to send the retransmission. It should fail and the send packet
+    // counter should not increase.
+    rtp_sender_->TimeToSendPacket(kSsrc, kSeqNum,
+                                  fake_clock_.TimeInMilliseconds(), true,
+                                  PacedPacketInfo());
+    ASSERT_EQ(1u, transport_.sent_packets_.size());
+  } else {
+    std::unique_ptr<RtpPacketToSend> packet_to_pace;
+    EXPECT_CALL(mock_paced_sender_, EnqueuePacket)
+        .WillOnce([&](std::unique_ptr<RtpPacketToSend> packet) {
+          packet_to_pace = std::move(packet);
+        });
+
+    SendGenericPacket();
+    rtp_sender_->TrySendPacket(packet_to_pace.get(), PacedPacketInfo());
+
+    ASSERT_EQ(1u, transport_.sent_packets_.size());
+
+    // Disable media sending and try to retransmit the packet, it should fail.
+    rtp_sender_->SetSendingMediaStatus(false);
+    fake_clock_.AdvanceTimeMilliseconds(kRtt);
+    EXPECT_LT(rtp_sender_->ReSendPacket(kSeqNum), 0);
+  }
 }
 
 INSTANTIATE_TEST_SUITE_P(WithAndWithoutOverhead,

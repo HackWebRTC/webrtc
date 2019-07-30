@@ -620,8 +620,10 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
                   retransmit_packet =
                       absl::make_unique<RtpPacketToSend>(stored_packet);
                 }
-                retransmit_packet->set_retransmitted_sequence_number(
-                    stored_packet.SequenceNumber());
+                if (retransmit_packet) {
+                  retransmit_packet->set_retransmitted_sequence_number(
+                      stored_packet.SequenceNumber());
+                }
                 return retransmit_packet;
               });
       if (!packet) {
