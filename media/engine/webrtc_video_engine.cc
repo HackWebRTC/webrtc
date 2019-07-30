@@ -45,6 +45,11 @@ namespace {
 
 const int kMinLayerSize = 16;
 
+// Field trial which controls whether to report standard-compliant bytes
+// sent/received per stream.  If enabled, padding and headers are not included
+// in bytes sent or received.
+constexpr char kUseStandardBytesStats[] = "WebRTC-UseStandardBytesStats";
+
 // If this field trial is enabled, we will enable sending FlexFEC and disable
 // sending ULPFEC whenever the former has been negotiated in the SDPs.
 bool IsFlexfecFieldTrialEnabled() {
@@ -1795,7 +1800,9 @@ WebRtcVideoChannel::WebRtcVideoSendStream::WebRtcVideoSendStream(
       encoder_sink_(nullptr),
       parameters_(std::move(config), options, max_bitrate_bps, codec_settings),
       rtp_parameters_(CreateRtpParametersWithEncodings(sp)),
-      sending_(false) {
+      sending_(false),
+      use_standard_bytes_stats_(
+          webrtc::field_trial::IsEnabled(kUseStandardBytesStats)) {
   // Maximum packet size may come in RtpConfig from external transport, for
   // example from QuicTransportInterface implementation, so do not exceed
   // given max_packet_size.
@@ -2362,11 +2369,13 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
        it != stats.substreams.end(); ++it) {
     // TODO(pbos): Wire up additional stats, such as padding bytes.
     webrtc::VideoSendStream::StreamStats stream_stats = it->second;
-    // TODO(http://crbug.com/webrtc/10525): Bytes sent should only include
-    // payload bytes, not header and padding bytes.
-    info.bytes_sent += stream_stats.rtp_stats.transmitted.payload_bytes +
-                       stream_stats.rtp_stats.transmitted.header_bytes +
-                       stream_stats.rtp_stats.transmitted.padding_bytes;
+    if (use_standard_bytes_stats_) {
+      info.bytes_sent += stream_stats.rtp_stats.transmitted.payload_bytes;
+    } else {
+      info.bytes_sent += stream_stats.rtp_stats.transmitted.payload_bytes +
+                         stream_stats.rtp_stats.transmitted.header_bytes +
+                         stream_stats.rtp_stats.transmitted.padding_bytes;
+    }
     info.packets_sent += stream_stats.rtp_stats.transmitted.packets;
     info.total_packet_send_delay_ms += stream_stats.total_packet_send_delay_ms;
     // TODO(https://crbug.com/webrtc/10555): RTX retransmissions should show up
@@ -2482,7 +2491,9 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::WebRtcVideoReceiveStream(
       decoder_factory_(decoder_factory),
       sink_(NULL),
       first_frame_timestamp_(-1),
-      estimated_remote_start_ntp_time_ms_(0) {
+      estimated_remote_start_ntp_time_ms_(0),
+      use_standard_bytes_stats_(
+          webrtc::field_trial::IsEnabled(kUseStandardBytesStats)) {
   config_.renderer = this;
   ConfigureCodecs(recv_codecs);
   ConfigureFlexfecCodec(flexfec_config.payload_type);
@@ -2783,9 +2794,13 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
   if (stats.current_payload_type != -1) {
     info.codec_payload_type = stats.current_payload_type;
   }
-  info.bytes_rcvd = stats.rtp_stats.transmitted.payload_bytes +
-                    stats.rtp_stats.transmitted.header_bytes +
-                    stats.rtp_stats.transmitted.padding_bytes;
+  if (use_standard_bytes_stats_) {
+    info.bytes_rcvd = stats.rtp_stats.transmitted.payload_bytes;
+  } else {
+    info.bytes_rcvd = stats.rtp_stats.transmitted.payload_bytes +
+                      stats.rtp_stats.transmitted.header_bytes +
+                      stats.rtp_stats.transmitted.padding_bytes;
+  }
   info.packets_rcvd = stats.rtp_stats.transmitted.packets;
   info.packets_lost = stats.rtcp_stats.packets_lost;
 

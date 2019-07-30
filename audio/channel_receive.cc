@@ -44,6 +44,7 @@
 #include "rtc_base/race_checker.h"
 #include "rtc_base/thread_checker.h"
 #include "rtc_base/time_utils.h"
+#include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 
 namespace webrtc {
@@ -56,6 +57,11 @@ constexpr double kAudioSampleDurationSeconds = 0.01;
 // Video Sync.
 constexpr int kVoiceEngineMinMinPlayoutDelayMs = 0;
 constexpr int kVoiceEngineMaxMinPlayoutDelayMs = 10000;
+
+// Field trial which controls whether to report standard-compliant bytes
+// sent/received per stream.  If enabled, padding and headers are not included
+// in bytes sent or received.
+constexpr char kUseStandardBytesStats[] = "WebRTC-UseStandardBytesStats";
 
 RTPHeader CreateRTPHeaderForMediaTransportFrame(
     const MediaTransportEncodedAudioFrame& frame,
@@ -265,6 +271,8 @@ class ChannelReceive : public ChannelReceiveInterface,
   // E2EE Audio Frame Decryption
   rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor_;
   webrtc::CryptoOptions crypto_options_;
+
+  const bool use_standard_bytes_stats_;
 };
 
 int32_t ChannelReceive::OnReceivedPayloadData(const uint8_t* payloadData,
@@ -466,7 +474,9 @@ ChannelReceive::ChannelReceive(
       associated_send_channel_(nullptr),
       media_transport_config_(media_transport_config),
       frame_decryptor_(frame_decryptor),
-      crypto_options_(crypto_options) {
+      crypto_options_(crypto_options),
+      use_standard_bytes_stats_(
+          webrtc::field_trial::IsEnabled(kUseStandardBytesStats)) {
   // TODO(nisse): Use _moduleProcessThreadPtr instead?
   module_process_thread_checker_.Detach();
 
@@ -767,11 +777,13 @@ CallReceiveStatistics ChannelReceive::GetRTCPStatistics() const {
   if (statistician) {
     StreamDataCounters data_counters;
     statistician->GetReceiveStreamDataCounters(&data_counters);
-    // TODO(http://crbug.com/webrtc/10525): Bytes received should only include
-    // payload bytes, not header and padding bytes.
-    stats.bytesReceived = data_counters.transmitted.payload_bytes +
-                          data_counters.transmitted.header_bytes +
-                          data_counters.transmitted.padding_bytes;
+    if (use_standard_bytes_stats_) {
+      stats.bytesReceived = data_counters.transmitted.payload_bytes;
+    } else {
+      stats.bytesReceived = data_counters.transmitted.payload_bytes +
+                            data_counters.transmitted.header_bytes +
+                            data_counters.transmitted.padding_bytes;
+    }
     stats.packetsReceived = data_counters.transmitted.packets;
     stats.last_packet_received_timestamp_ms =
         data_counters.last_packet_received_timestamp_ms;

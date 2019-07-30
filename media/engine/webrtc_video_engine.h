@@ -378,6 +378,8 @@ class WebRtcVideoChannel : public VideoMediaChannel,
 
     bool sending_ RTC_GUARDED_BY(&thread_checker_);
 
+    const bool use_standard_bytes_stats_;
+
     // In order for the |invoker_| to protect other members from being
     // destructed as they are used in asynchronous tasks it has to be destructed
     // first.
@@ -468,6 +470,8 @@ class WebRtcVideoChannel : public VideoMediaChannel,
     // Start NTP time is estimated as current remote NTP time (estimated from
     // RTCP) minus the elapsed time, as soon as remote NTP time is available.
     int64_t estimated_remote_start_ntp_time_ms_ RTC_GUARDED_BY(sink_lock_);
+
+    const bool use_standard_bytes_stats_;
   };
 
   void Construct(webrtc::Call* call, WebRtcVideoEngine* engine);

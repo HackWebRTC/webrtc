@@ -53,6 +53,11 @@ namespace {
 constexpr int64_t kMaxRetransmissionWindowMs = 1000;
 constexpr int64_t kMinRetransmissionWindowMs = 30;
 
+// Field trial which controls whether to report standard-compliant bytes
+// sent/received per stream.  If enabled, padding and headers are not included
+// in bytes sent or received.
+constexpr char kUseStandardBytesStats[] = "WebRTC-UseStandardBytesStats";
+
 MediaTransportEncodedAudioFrame::FrameType
 MediaTransportFrameTypeForWebrtcFrameType(webrtc::AudioFrameType frame_type) {
   switch (frame_type) {
@@ -266,6 +271,7 @@ class ChannelSend : public ChannelSendInterface,
   rtc::ThreadChecker construction_thread_;
 
   const bool use_twcc_plr_for_ana_;
+  const bool use_standard_bytes_stats_;
 
   bool encoder_queue_is_active_ RTC_GUARDED_BY(encoder_queue_) = false;
 
@@ -654,6 +660,8 @@ ChannelSend::ChannelSend(Clock* clock,
           new RateLimiter(clock, kMaxRetransmissionWindowMs)),
       use_twcc_plr_for_ana_(
           webrtc::field_trial::FindFullName("UseTwccPlrForAna") == "Enabled"),
+      use_standard_bytes_stats_(
+          webrtc::field_trial::IsEnabled(kUseStandardBytesStats)),
       media_transport_config_(media_transport_config),
       frame_encryptor_(frame_encryptor),
       crypto_options_(crypto_options),
@@ -1078,13 +1086,17 @@ CallSendStatistics ChannelSend::GetRTCPStatistics() const {
   StreamDataCounters rtp_stats;
   StreamDataCounters rtx_stats;
   _rtpRtcpModule->GetSendStreamDataCounters(&rtp_stats, &rtx_stats);
-  // TODO(https://crbug.com/webrtc/10525): Bytes sent should only include
-  // payload bytes, not header and padding bytes.
-  stats.bytesSent =
-      rtp_stats.transmitted.payload_bytes +
-      rtp_stats.transmitted.padding_bytes + rtp_stats.transmitted.header_bytes +
-      rtx_stats.transmitted.payload_bytes +
-      rtx_stats.transmitted.padding_bytes + rtx_stats.transmitted.header_bytes;
+  if (use_standard_bytes_stats_) {
+    stats.bytesSent = rtp_stats.transmitted.payload_bytes +
+                      rtx_stats.transmitted.payload_bytes;
+  } else {
+    stats.bytesSent = rtp_stats.transmitted.payload_bytes +
+                      rtp_stats.transmitted.padding_bytes +
+                      rtp_stats.transmitted.header_bytes +
+                      rtx_stats.transmitted.payload_bytes +
+                      rtx_stats.transmitted.padding_bytes +
+                      rtx_stats.transmitted.header_bytes;
+  }
   // TODO(https://crbug.com/webrtc/10555): RTX retransmissions should show up in
   // separate outbound-rtp stream objects.
   stats.retransmitted_bytes_sent = rtp_stats.retransmitted.payload_bytes;
