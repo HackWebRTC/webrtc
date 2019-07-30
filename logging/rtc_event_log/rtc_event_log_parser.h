@@ -220,6 +220,38 @@ class PacketView {
   size_t element_size_;
 };
 
+// Conversion functions for version 2 of the wire format.
+BandwidthUsage GetRuntimeDetectorState(
+    rtclog2::DelayBasedBweUpdates::DetectorState detector_state);
+
+ProbeFailureReason GetRuntimeProbeFailureReason(
+    rtclog2::BweProbeResultFailure::FailureReason failure);
+
+DtlsTransportState GetRuntimeDtlsTransportState(
+    rtclog2::DtlsTransportStateEvent::DtlsTransportState state);
+
+IceCandidatePairConfigType GetRuntimeIceCandidatePairConfigType(
+    rtclog2::IceCandidatePairConfig::IceCandidatePairConfigType type);
+
+IceCandidateType GetRuntimeIceCandidateType(
+    rtclog2::IceCandidatePairConfig::IceCandidateType type);
+
+IceCandidatePairProtocol GetRuntimeIceCandidatePairProtocol(
+    rtclog2::IceCandidatePairConfig::Protocol protocol);
+
+IceCandidatePairAddressFamily GetRuntimeIceCandidatePairAddressFamily(
+    rtclog2::IceCandidatePairConfig::AddressFamily address_family);
+
+IceCandidateNetworkType GetRuntimeIceCandidateNetworkType(
+    rtclog2::IceCandidatePairConfig::NetworkType network_type);
+
+IceCandidatePairEventType GetRuntimeIceCandidatePairEventType(
+    rtclog2::IceCandidatePairEvent::IceCandidatePairEventType type);
+
+std::vector<RtpExtension> GetRuntimeRtpHeaderExtensionConfig(
+    const rtclog2::RtpHeaderExtensionConfig& proto_header_extensions);
+// End of conversion functions.
+
 class ParsedRtcEventLog {
  public:
   enum class MediaType { ANY, AUDIO, VIDEO, DATA };

@@ -240,196 +240,6 @@ IceCandidatePairEventType GetRuntimeIceCandidatePairEventType(
   return IceCandidatePairEventType::kCheckSent;
 }
 
-// Conversion functions for version 2 of the wire format.
-BandwidthUsage GetRuntimeDetectorState(
-    rtclog2::DelayBasedBweUpdates::DetectorState detector_state) {
-  switch (detector_state) {
-    case rtclog2::DelayBasedBweUpdates::BWE_NORMAL:
-      return BandwidthUsage::kBwNormal;
-    case rtclog2::DelayBasedBweUpdates::BWE_UNDERUSING:
-      return BandwidthUsage::kBwUnderusing;
-    case rtclog2::DelayBasedBweUpdates::BWE_OVERUSING:
-      return BandwidthUsage::kBwOverusing;
-    case rtclog2::DelayBasedBweUpdates::BWE_UNKNOWN_STATE:
-      break;
-  }
-  RTC_NOTREACHED();
-  return BandwidthUsage::kBwNormal;
-}
-
-ProbeFailureReason GetRuntimeProbeFailureReason(
-    rtclog2::BweProbeResultFailure::FailureReason failure) {
-  switch (failure) {
-    case rtclog2::BweProbeResultFailure::INVALID_SEND_RECEIVE_INTERVAL:
-      return ProbeFailureReason::kInvalidSendReceiveInterval;
-    case rtclog2::BweProbeResultFailure::INVALID_SEND_RECEIVE_RATIO:
-      return ProbeFailureReason::kInvalidSendReceiveRatio;
-    case rtclog2::BweProbeResultFailure::TIMEOUT:
-      return ProbeFailureReason::kTimeout;
-    case rtclog2::BweProbeResultFailure::UNKNOWN:
-      break;
-  }
-  RTC_NOTREACHED();
-  return ProbeFailureReason::kTimeout;
-}
-
-DtlsTransportState GetRuntimeDtlsTransportState(
-    rtclog2::DtlsTransportStateEvent::DtlsTransportState state) {
-  switch (state) {
-    case rtclog2::DtlsTransportStateEvent::DTLS_TRANSPORT_NEW:
-      return DtlsTransportState::kNew;
-    case rtclog2::DtlsTransportStateEvent::DTLS_TRANSPORT_CONNECTING:
-      return DtlsTransportState::kConnecting;
-    case rtclog2::DtlsTransportStateEvent::DTLS_TRANSPORT_CONNECTED:
-      return DtlsTransportState::kConnected;
-    case rtclog2::DtlsTransportStateEvent::DTLS_TRANSPORT_CLOSED:
-      return DtlsTransportState::kClosed;
-    case rtclog2::DtlsTransportStateEvent::DTLS_TRANSPORT_FAILED:
-      return DtlsTransportState::kFailed;
-    case rtclog2::DtlsTransportStateEvent::UNKNOWN_DTLS_TRANSPORT_STATE:
-      RTC_NOTREACHED();
-      return DtlsTransportState::kNumValues;
-  }
-  RTC_NOTREACHED();
-  return DtlsTransportState::kNumValues;
-}
-
-IceCandidatePairConfigType GetRuntimeIceCandidatePairConfigType(
-    rtclog2::IceCandidatePairConfig::IceCandidatePairConfigType type) {
-  switch (type) {
-    case rtclog2::IceCandidatePairConfig::ADDED:
-      return IceCandidatePairConfigType::kAdded;
-    case rtclog2::IceCandidatePairConfig::UPDATED:
-      return IceCandidatePairConfigType::kUpdated;
-    case rtclog2::IceCandidatePairConfig::DESTROYED:
-      return IceCandidatePairConfigType::kDestroyed;
-    case rtclog2::IceCandidatePairConfig::SELECTED:
-      return IceCandidatePairConfigType::kSelected;
-    case rtclog2::IceCandidatePairConfig::UNKNOWN_CONFIG_TYPE:
-      break;
-  }
-  RTC_NOTREACHED();
-  return IceCandidatePairConfigType::kAdded;
-}
-
-IceCandidateType GetRuntimeIceCandidateType(
-    rtclog2::IceCandidatePairConfig::IceCandidateType type) {
-  switch (type) {
-    case rtclog2::IceCandidatePairConfig::LOCAL:
-      return IceCandidateType::kLocal;
-    case rtclog2::IceCandidatePairConfig::STUN:
-      return IceCandidateType::kStun;
-    case rtclog2::IceCandidatePairConfig::PRFLX:
-      return IceCandidateType::kPrflx;
-    case rtclog2::IceCandidatePairConfig::RELAY:
-      return IceCandidateType::kRelay;
-    case rtclog2::IceCandidatePairConfig::UNKNOWN_CANDIDATE_TYPE:
-      return IceCandidateType::kUnknown;
-  }
-  RTC_NOTREACHED();
-  return IceCandidateType::kUnknown;
-}
-
-IceCandidatePairProtocol GetRuntimeIceCandidatePairProtocol(
-    rtclog2::IceCandidatePairConfig::Protocol protocol) {
-  switch (protocol) {
-    case rtclog2::IceCandidatePairConfig::UDP:
-      return IceCandidatePairProtocol::kUdp;
-    case rtclog2::IceCandidatePairConfig::TCP:
-      return IceCandidatePairProtocol::kTcp;
-    case rtclog2::IceCandidatePairConfig::SSLTCP:
-      return IceCandidatePairProtocol::kSsltcp;
-    case rtclog2::IceCandidatePairConfig::TLS:
-      return IceCandidatePairProtocol::kTls;
-    case rtclog2::IceCandidatePairConfig::UNKNOWN_PROTOCOL:
-      return IceCandidatePairProtocol::kUnknown;
-  }
-  RTC_NOTREACHED();
-  return IceCandidatePairProtocol::kUnknown;
-}
-
-IceCandidatePairAddressFamily GetRuntimeIceCandidatePairAddressFamily(
-    rtclog2::IceCandidatePairConfig::AddressFamily address_family) {
-  switch (address_family) {
-    case rtclog2::IceCandidatePairConfig::IPV4:
-      return IceCandidatePairAddressFamily::kIpv4;
-    case rtclog2::IceCandidatePairConfig::IPV6:
-      return IceCandidatePairAddressFamily::kIpv6;
-    case rtclog2::IceCandidatePairConfig::UNKNOWN_ADDRESS_FAMILY:
-      return IceCandidatePairAddressFamily::kUnknown;
-  }
-  RTC_NOTREACHED();
-  return IceCandidatePairAddressFamily::kUnknown;
-}
-
-IceCandidateNetworkType GetRuntimeIceCandidateNetworkType(
-    rtclog2::IceCandidatePairConfig::NetworkType network_type) {
-  switch (network_type) {
-    case rtclog2::IceCandidatePairConfig::ETHERNET:
-      return IceCandidateNetworkType::kEthernet;
-    case rtclog2::IceCandidatePairConfig::LOOPBACK:
-      return IceCandidateNetworkType::kLoopback;
-    case rtclog2::IceCandidatePairConfig::WIFI:
-      return IceCandidateNetworkType::kWifi;
-    case rtclog2::IceCandidatePairConfig::VPN:
-      return IceCandidateNetworkType::kVpn;
-    case rtclog2::IceCandidatePairConfig::CELLULAR:
-      return IceCandidateNetworkType::kCellular;
-    case rtclog2::IceCandidatePairConfig::UNKNOWN_NETWORK_TYPE:
-      return IceCandidateNetworkType::kUnknown;
-  }
-  RTC_NOTREACHED();
-  return IceCandidateNetworkType::kUnknown;
-}
-
-IceCandidatePairEventType GetRuntimeIceCandidatePairEventType(
-    rtclog2::IceCandidatePairEvent::IceCandidatePairEventType type) {
-  switch (type) {
-    case rtclog2::IceCandidatePairEvent::CHECK_SENT:
-      return IceCandidatePairEventType::kCheckSent;
-    case rtclog2::IceCandidatePairEvent::CHECK_RECEIVED:
-      return IceCandidatePairEventType::kCheckReceived;
-    case rtclog2::IceCandidatePairEvent::CHECK_RESPONSE_SENT:
-      return IceCandidatePairEventType::kCheckResponseSent;
-    case rtclog2::IceCandidatePairEvent::CHECK_RESPONSE_RECEIVED:
-      return IceCandidatePairEventType::kCheckResponseReceived;
-    case rtclog2::IceCandidatePairEvent::UNKNOWN_CHECK_TYPE:
-      break;
-  }
-  RTC_NOTREACHED();
-  return IceCandidatePairEventType::kCheckSent;
-}
-
-std::vector<RtpExtension> GetRuntimeRtpHeaderExtensionConfig(
-    const rtclog2::RtpHeaderExtensionConfig& proto_header_extensions) {
-  std::vector<RtpExtension> rtp_extensions;
-  if (proto_header_extensions.has_transmission_time_offset_id()) {
-    rtp_extensions.emplace_back(
-        RtpExtension::kTimestampOffsetUri,
-        proto_header_extensions.transmission_time_offset_id());
-  }
-  if (proto_header_extensions.has_absolute_send_time_id()) {
-    rtp_extensions.emplace_back(
-        RtpExtension::kAbsSendTimeUri,
-        proto_header_extensions.absolute_send_time_id());
-  }
-  if (proto_header_extensions.has_transport_sequence_number_id()) {
-    rtp_extensions.emplace_back(
-        RtpExtension::kTransportSequenceNumberUri,
-        proto_header_extensions.transport_sequence_number_id());
-  }
-  if (proto_header_extensions.has_audio_level_id()) {
-    rtp_extensions.emplace_back(RtpExtension::kAudioLevelUri,
-                                proto_header_extensions.audio_level_id());
-  }
-  if (proto_header_extensions.has_video_rotation_id()) {
-    rtp_extensions.emplace_back(RtpExtension::kVideoRotationUri,
-                                proto_header_extensions.video_rotation_id());
-  }
-  return rtp_extensions;
-}
-// End of conversion functions.
-
 // Reads a VarInt from |stream| and returns it. Also writes the read bytes to
 // |buffer| starting |bytes_written| bytes into the buffer. |bytes_written| is
 // incremented for each written byte.
@@ -877,6 +687,196 @@ void StoreRtcpBlocks(
 }
 
 }  // namespace
+
+// Conversion functions for version 2 of the wire format.
+BandwidthUsage GetRuntimeDetectorState(
+    rtclog2::DelayBasedBweUpdates::DetectorState detector_state) {
+  switch (detector_state) {
+    case rtclog2::DelayBasedBweUpdates::BWE_NORMAL:
+      return BandwidthUsage::kBwNormal;
+    case rtclog2::DelayBasedBweUpdates::BWE_UNDERUSING:
+      return BandwidthUsage::kBwUnderusing;
+    case rtclog2::DelayBasedBweUpdates::BWE_OVERUSING:
+      return BandwidthUsage::kBwOverusing;
+    case rtclog2::DelayBasedBweUpdates::BWE_UNKNOWN_STATE:
+      break;
+  }
+  RTC_NOTREACHED();
+  return BandwidthUsage::kBwNormal;
+}
+
+ProbeFailureReason GetRuntimeProbeFailureReason(
+    rtclog2::BweProbeResultFailure::FailureReason failure) {
+  switch (failure) {
+    case rtclog2::BweProbeResultFailure::INVALID_SEND_RECEIVE_INTERVAL:
+      return ProbeFailureReason::kInvalidSendReceiveInterval;
+    case rtclog2::BweProbeResultFailure::INVALID_SEND_RECEIVE_RATIO:
+      return ProbeFailureReason::kInvalidSendReceiveRatio;
+    case rtclog2::BweProbeResultFailure::TIMEOUT:
+      return ProbeFailureReason::kTimeout;
+    case rtclog2::BweProbeResultFailure::UNKNOWN:
+      break;
+  }
+  RTC_NOTREACHED();
+  return ProbeFailureReason::kTimeout;
+}
+
+DtlsTransportState GetRuntimeDtlsTransportState(
+    rtclog2::DtlsTransportStateEvent::DtlsTransportState state) {
+  switch (state) {
+    case rtclog2::DtlsTransportStateEvent::DTLS_TRANSPORT_NEW:
+      return DtlsTransportState::kNew;
+    case rtclog2::DtlsTransportStateEvent::DTLS_TRANSPORT_CONNECTING:
+      return DtlsTransportState::kConnecting;
+    case rtclog2::DtlsTransportStateEvent::DTLS_TRANSPORT_CONNECTED:
+      return DtlsTransportState::kConnected;
+    case rtclog2::DtlsTransportStateEvent::DTLS_TRANSPORT_CLOSED:
+      return DtlsTransportState::kClosed;
+    case rtclog2::DtlsTransportStateEvent::DTLS_TRANSPORT_FAILED:
+      return DtlsTransportState::kFailed;
+    case rtclog2::DtlsTransportStateEvent::UNKNOWN_DTLS_TRANSPORT_STATE:
+      RTC_NOTREACHED();
+      return DtlsTransportState::kNumValues;
+  }
+  RTC_NOTREACHED();
+  return DtlsTransportState::kNumValues;
+}
+
+IceCandidatePairConfigType GetRuntimeIceCandidatePairConfigType(
+    rtclog2::IceCandidatePairConfig::IceCandidatePairConfigType type) {
+  switch (type) {
+    case rtclog2::IceCandidatePairConfig::ADDED:
+      return IceCandidatePairConfigType::kAdded;
+    case rtclog2::IceCandidatePairConfig::UPDATED:
+      return IceCandidatePairConfigType::kUpdated;
+    case rtclog2::IceCandidatePairConfig::DESTROYED:
+      return IceCandidatePairConfigType::kDestroyed;
+    case rtclog2::IceCandidatePairConfig::SELECTED:
+      return IceCandidatePairConfigType::kSelected;
+    case rtclog2::IceCandidatePairConfig::UNKNOWN_CONFIG_TYPE:
+      break;
+  }
+  RTC_NOTREACHED();
+  return IceCandidatePairConfigType::kAdded;
+}
+
+IceCandidateType GetRuntimeIceCandidateType(
+    rtclog2::IceCandidatePairConfig::IceCandidateType type) {
+  switch (type) {
+    case rtclog2::IceCandidatePairConfig::LOCAL:
+      return IceCandidateType::kLocal;
+    case rtclog2::IceCandidatePairConfig::STUN:
+      return IceCandidateType::kStun;
+    case rtclog2::IceCandidatePairConfig::PRFLX:
+      return IceCandidateType::kPrflx;
+    case rtclog2::IceCandidatePairConfig::RELAY:
+      return IceCandidateType::kRelay;
+    case rtclog2::IceCandidatePairConfig::UNKNOWN_CANDIDATE_TYPE:
+      return IceCandidateType::kUnknown;
+  }
+  RTC_NOTREACHED();
+  return IceCandidateType::kUnknown;
+}
+
+IceCandidatePairProtocol GetRuntimeIceCandidatePairProtocol(
+    rtclog2::IceCandidatePairConfig::Protocol protocol) {
+  switch (protocol) {
+    case rtclog2::IceCandidatePairConfig::UDP:
+      return IceCandidatePairProtocol::kUdp;
+    case rtclog2::IceCandidatePairConfig::TCP:
+      return IceCandidatePairProtocol::kTcp;
+    case rtclog2::IceCandidatePairConfig::SSLTCP:
+      return IceCandidatePairProtocol::kSsltcp;
+    case rtclog2::IceCandidatePairConfig::TLS:
+      return IceCandidatePairProtocol::kTls;
+    case rtclog2::IceCandidatePairConfig::UNKNOWN_PROTOCOL:
+      return IceCandidatePairProtocol::kUnknown;
+  }
+  RTC_NOTREACHED();
+  return IceCandidatePairProtocol::kUnknown;
+}
+
+IceCandidatePairAddressFamily GetRuntimeIceCandidatePairAddressFamily(
+    rtclog2::IceCandidatePairConfig::AddressFamily address_family) {
+  switch (address_family) {
+    case rtclog2::IceCandidatePairConfig::IPV4:
+      return IceCandidatePairAddressFamily::kIpv4;
+    case rtclog2::IceCandidatePairConfig::IPV6:
+      return IceCandidatePairAddressFamily::kIpv6;
+    case rtclog2::IceCandidatePairConfig::UNKNOWN_ADDRESS_FAMILY:
+      return IceCandidatePairAddressFamily::kUnknown;
+  }
+  RTC_NOTREACHED();
+  return IceCandidatePairAddressFamily::kUnknown;
+}
+
+IceCandidateNetworkType GetRuntimeIceCandidateNetworkType(
+    rtclog2::IceCandidatePairConfig::NetworkType network_type) {
+  switch (network_type) {
+    case rtclog2::IceCandidatePairConfig::ETHERNET:
+      return IceCandidateNetworkType::kEthernet;
+    case rtclog2::IceCandidatePairConfig::LOOPBACK:
+      return IceCandidateNetworkType::kLoopback;
+    case rtclog2::IceCandidatePairConfig::WIFI:
+      return IceCandidateNetworkType::kWifi;
+    case rtclog2::IceCandidatePairConfig::VPN:
+      return IceCandidateNetworkType::kVpn;
+    case rtclog2::IceCandidatePairConfig::CELLULAR:
+      return IceCandidateNetworkType::kCellular;
+    case rtclog2::IceCandidatePairConfig::UNKNOWN_NETWORK_TYPE:
+      return IceCandidateNetworkType::kUnknown;
+  }
+  RTC_NOTREACHED();
+  return IceCandidateNetworkType::kUnknown;
+}
+
+IceCandidatePairEventType GetRuntimeIceCandidatePairEventType(
+    rtclog2::IceCandidatePairEvent::IceCandidatePairEventType type) {
+  switch (type) {
+    case rtclog2::IceCandidatePairEvent::CHECK_SENT:
+      return IceCandidatePairEventType::kCheckSent;
+    case rtclog2::IceCandidatePairEvent::CHECK_RECEIVED:
+      return IceCandidatePairEventType::kCheckReceived;
+    case rtclog2::IceCandidatePairEvent::CHECK_RESPONSE_SENT:
+      return IceCandidatePairEventType::kCheckResponseSent;
+    case rtclog2::IceCandidatePairEvent::CHECK_RESPONSE_RECEIVED:
+      return IceCandidatePairEventType::kCheckResponseReceived;
+    case rtclog2::IceCandidatePairEvent::UNKNOWN_CHECK_TYPE:
+      break;
+  }
+  RTC_NOTREACHED();
+  return IceCandidatePairEventType::kCheckSent;
+}
+
+std::vector<RtpExtension> GetRuntimeRtpHeaderExtensionConfig(
+    const rtclog2::RtpHeaderExtensionConfig& proto_header_extensions) {
+  std::vector<RtpExtension> rtp_extensions;
+  if (proto_header_extensions.has_transmission_time_offset_id()) {
+    rtp_extensions.emplace_back(
+        RtpExtension::kTimestampOffsetUri,
+        proto_header_extensions.transmission_time_offset_id());
+  }
+  if (proto_header_extensions.has_absolute_send_time_id()) {
+    rtp_extensions.emplace_back(
+        RtpExtension::kAbsSendTimeUri,
+        proto_header_extensions.absolute_send_time_id());
+  }
+  if (proto_header_extensions.has_transport_sequence_number_id()) {
+    rtp_extensions.emplace_back(
+        RtpExtension::kTransportSequenceNumberUri,
+        proto_header_extensions.transport_sequence_number_id());
+  }
+  if (proto_header_extensions.has_audio_level_id()) {
+    rtp_extensions.emplace_back(RtpExtension::kAudioLevelUri,
+                                proto_header_extensions.audio_level_id());
+  }
+  if (proto_header_extensions.has_video_rotation_id()) {
+    rtp_extensions.emplace_back(RtpExtension::kVideoRotationUri,
+                                proto_header_extensions.video_rotation_id());
+  }
+  return rtp_extensions;
+}
+// End of conversion functions.
 
 LoggedRtcpPacket::LoggedRtcpPacket(uint64_t timestamp_us,
                                    const uint8_t* packet,
