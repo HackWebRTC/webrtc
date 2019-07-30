@@ -21,6 +21,7 @@
 #include <set>
 
 #include "absl/types/optional.h"
+#include "api/transport/webrtc_key_value_config.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "system_wrappers/include/clock.h"
@@ -29,7 +30,8 @@ namespace webrtc {
 
 class RoundRobinPacketQueue {
  public:
-  explicit RoundRobinPacketQueue(int64_t start_time_us);
+  RoundRobinPacketQueue(int64_t start_time_us,
+                        const WebRtcKeyValueConfig* field_trials);
   ~RoundRobinPacketQueue();
 
   struct QueuedPacket {
@@ -187,6 +189,8 @@ class RoundRobinPacketQueue {
   // end iterator of this list if queue does not have direct ownership of the
   // packet.
   std::list<std::unique_ptr<RtpPacketToSend>> rtp_packets_;
+
+  const bool send_side_bwe_with_overhead_;
 };
 }  // namespace webrtc
 

@@ -71,8 +71,19 @@ RoundRobinPacketQueue::Stream::Stream() : bytes(0), ssrc(0) {}
 RoundRobinPacketQueue::Stream::Stream(const Stream& stream) = default;
 RoundRobinPacketQueue::Stream::~Stream() {}
 
-RoundRobinPacketQueue::RoundRobinPacketQueue(int64_t start_time_us)
-    : time_last_updated_ms_(start_time_us / 1000) {}
+bool IsEnabled(const WebRtcKeyValueConfig* field_trials, const char* name) {
+  if (!field_trials) {
+    return false;
+  }
+  return field_trials->Lookup(name).find("Enabled") == 0;
+}
+
+RoundRobinPacketQueue::RoundRobinPacketQueue(
+    int64_t start_time_us,
+    const WebRtcKeyValueConfig* field_trials)
+    : time_last_updated_ms_(start_time_us / 1000),
+      send_side_bwe_with_overhead_(
+          IsEnabled(field_trials, "WebRTC-SendSideBwe-WithOverhead")) {}
 
 RoundRobinPacketQueue::~RoundRobinPacketQueue() {}
 
@@ -98,7 +109,9 @@ void RoundRobinPacketQueue::Push(int priority,
   uint32_t ssrc = packet->Ssrc();
   uint16_t sequence_number = packet->SequenceNumber();
   int64_t capture_time_ms = packet->capture_time_ms();
-  size_t size_bytes = packet->payload_size() + packet->padding_size();
+  size_t size_bytes = send_side_bwe_with_overhead_
+                          ? packet->size()
+                          : packet->payload_size() + packet->padding_size();
   auto type = packet->packet_type();
   RTC_DCHECK(type.has_value());
 
