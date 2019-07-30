@@ -193,6 +193,10 @@ class VideoAnalyzer : public PacketReceiver,
   void PrintResults();
   void PerformFrameComparison(const FrameComparison& comparison);
   void PrintResult(const char* result_type, Statistics stats, const char* unit);
+  void PrintResultWithExternalMean(const char* result_type,
+                                   double mean,
+                                   Statistics stats,
+                                   const char* unit);
   void PrintSamplesToFile(void);
   double GetAverageMediaBitrateBps();
   void AddCapturedFrameForComparison(const VideoFrame& video_frame);
@@ -224,6 +228,7 @@ class VideoAnalyzer : public PacketReceiver,
   Statistics encode_frame_rate_ RTC_GUARDED_BY(comparison_lock_);
   Statistics encode_time_ms_ RTC_GUARDED_BY(comparison_lock_);
   Statistics encode_usage_percent_ RTC_GUARDED_BY(comparison_lock_);
+  double mean_decode_time_ms_ RTC_GUARDED_BY(comparison_lock_);
   Statistics decode_time_ms_ RTC_GUARDED_BY(comparison_lock_);
   Statistics decode_time_max_ms_ RTC_GUARDED_BY(comparison_lock_);
   Statistics media_bitrate_bps_ RTC_GUARDED_BY(comparison_lock_);

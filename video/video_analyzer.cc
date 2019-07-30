@@ -82,6 +82,7 @@ VideoAnalyzer::VideoAnalyzer(
       selected_stream_(selected_stream),
       selected_sl_(selected_sl),
       selected_tl_(selected_tl),
+      mean_decode_time_ms_(0.0),
       freeze_count_(0),
       total_freezes_duration_ms_(0),
       total_frames_duration_ms_(0),
@@ -509,6 +510,12 @@ void VideoAnalyzer::PollStats() {
 
   if (receive_stream_ != nullptr) {
     VideoReceiveStream::Stats receive_stats = receive_stream_->GetStats();
+    // |total_decode_time_ms| gives a good estimate of the mean decode time,
+    // |decode_ms| is used to keep track of the standard deviation.
+    if (receive_stats.frames_decoded > 0)
+      mean_decode_time_ms_ =
+          static_cast<double>(receive_stats.total_decode_time_ms) /
+          receive_stats.frames_decoded;
     if (receive_stats.decode_ms > 0)
       decode_time_ms_.AddSample(receive_stats.decode_ms);
     if (receive_stats.max_decode_ms > 0)
@@ -700,7 +707,8 @@ void VideoAnalyzer::PrintResults() {
   }
 
   if (receive_stream_ != nullptr) {
-    PrintResult("decode_time", decode_time_ms_, " ms");
+    PrintResultWithExternalMean("decode_time", mean_decode_time_ms_,
+                                decode_time_ms_, " ms");
   }
   dropped_frames_ += dropped_frames_before_first_encode_ +
                      dropped_frames_before_rendering_ + frames_left;
@@ -819,6 +827,21 @@ void VideoAnalyzer::PrintResult(const char* result_type,
   test::PrintResultMeanAndError(
       result_type, "", test_label_.c_str(), stats.GetMean().value_or(0),
       stats.GetStandardDeviation().value_or(0), unit, false);
+}
+
+void VideoAnalyzer::PrintResultWithExternalMean(const char* result_type,
+                                                double mean,
+                                                Statistics stats,
+                                                const char* unit) {
+  // If the true mean is different than the sample mean, the sample variance is
+  // too low. The sample variance given a known mean is obtained by adding the
+  // squared error between the true mean and the sample mean.
+  double compensated_variance =
+      stats.Size() > 0
+          ? *stats.GetVariance() + pow(mean - *stats.GetMean(), 2.0)
+          : 0.0;
+  test::PrintResultMeanAndError(result_type, "", test_label_.c_str(), mean,
+                                std::sqrt(compensated_variance), unit, false);
 }
 
 void VideoAnalyzer::PrintSamplesToFile() {
