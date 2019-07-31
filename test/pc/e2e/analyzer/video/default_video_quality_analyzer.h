@@ -225,14 +225,6 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
 
   enum State { kNew, kActive, kStopped };
 
-  // Returns last rendered frame for stream if there is one or nullptr
-  // otherwise.
-  VideoFrame* GetLastRenderedFrame(const std::string& stream_label)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
-  void SetLastRenderedFrame(const std::string& stream_label,
-                            const VideoFrame& frame)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(lock_);
-
   void AddComparison(absl::optional<VideoFrame> captured,
                      absl::optional<VideoFrame> rendered,
                      bool dropped,
