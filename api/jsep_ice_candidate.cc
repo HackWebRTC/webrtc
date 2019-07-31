@@ -10,9 +10,11 @@
 
 #include "api/jsep_ice_candidate.h"
 
+#include <memory>
 #include <utility>
 
 #include "absl/algorithm/container.h"
+#include "absl/memory/memory.h"
 
 namespace webrtc {
 
@@ -42,41 +44,29 @@ size_t JsepCandidateCollection::count() const {
 }
 
 void JsepCandidateCollection::add(JsepIceCandidate* candidate) {
-  candidates_.push_back(candidate);
+  candidates_.push_back(absl::WrapUnique(candidate));
 }
 
 const IceCandidateInterface* JsepCandidateCollection::at(size_t index) const {
-  return candidates_[index];
-}
-
-JsepCandidateCollection::~JsepCandidateCollection() {
-  for (std::vector<JsepIceCandidate*>::iterator it = candidates_.begin();
-       it != candidates_.end(); ++it) {
-    delete *it;
-  }
+  return candidates_[index].get();
 }
 
 bool JsepCandidateCollection::HasCandidate(
     const IceCandidateInterface* candidate) const {
-  bool ret = false;
-  for (std::vector<JsepIceCandidate*>::const_iterator it = candidates_.begin();
-       it != candidates_.end(); ++it) {
-    if ((*it)->sdp_mid() == candidate->sdp_mid() &&
-        (*it)->sdp_mline_index() == candidate->sdp_mline_index() &&
-        (*it)->candidate().IsEquivalent(candidate->candidate())) {
-      ret = true;
-      break;
-    }
-  }
-  return ret;
+  return absl::c_any_of(
+      candidates_, [&](const std::unique_ptr<JsepIceCandidate>& entry) {
+        return entry->sdp_mid() == candidate->sdp_mid() &&
+               entry->sdp_mline_index() == candidate->sdp_mline_index() &&
+               entry->candidate().IsEquivalent(candidate->candidate());
+      });
 }
 
 size_t JsepCandidateCollection::remove(const cricket::Candidate& candidate) {
-  auto iter = absl::c_find_if(candidates_, [&](JsepIceCandidate* c) {
-    return candidate.MatchesForRemoval(c->candidate());
-  });
+  auto iter = absl::c_find_if(
+      candidates_, [&](const std::unique_ptr<JsepIceCandidate>& c) {
+        return candidate.MatchesForRemoval(c->candidate());
+      });
   if (iter != candidates_.end()) {
-    delete *iter;
     candidates_.erase(iter);
     return 1;
   }
