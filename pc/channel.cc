@@ -95,6 +95,20 @@ static void SafeSetError(const std::string& message, std::string* error_desc) {
 }
 
 template <class Codec>
+std::vector<Codec> SanitizeCodecList(const std::vector<Codec>& codecs) {
+  std::vector<Codec> sanitized;
+  for (const Codec& codec : codecs) {
+    if (absl::c_any_of(sanitized, [&](const Codec& other) {
+          return codec.Matches(other);
+        })) {
+      continue;
+    }
+    sanitized.push_back(codec);
+  }
+  return sanitized;
+}
+
+template <class Codec>
 void RtpParametersFromMediaDescription(
     const MediaContentDescriptionImpl<Codec>* desc,
     const RtpHeaderExtensions& extensions,
@@ -103,7 +117,7 @@ void RtpParametersFromMediaDescription(
   // a description without codecs. Currently the ORTC implementation is relying
   // on this.
   if (desc->has_codecs()) {
-    params->codecs = desc->codecs();
+    params->codecs = SanitizeCodecList(desc->codecs());
   }
   // TODO(pthatcher): See if we really need
   // rtp_header_extensions_set() and remove it if we don't.
