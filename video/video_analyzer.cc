@@ -637,19 +637,19 @@ void VideoAnalyzer::PrintResults() {
     frames_left = frames_.size();
   }
   rtc::CritScope crit(&comparison_lock_);
-  PrintResult("psnr", psnr_, " dB");
-  PrintResult("ssim", ssim_, " score");
-  PrintResult("sender_time", sender_time_, " ms");
-  PrintResult("receiver_time", receiver_time_, " ms");
-  PrintResult("network_time", network_time_, " ms");
-  PrintResult("total_delay_incl_network", end_to_end_, " ms");
-  PrintResult("time_between_rendered_frames", rendered_delta_, " ms");
-  PrintResult("encode_frame_rate", encode_frame_rate_, " fps");
-  PrintResult("encode_time", encode_time_ms_, " ms");
-  PrintResult("media_bitrate", media_bitrate_bps_, " bps");
-  PrintResult("fec_bitrate", fec_bitrate_bps_, " bps");
-  PrintResult("send_bandwidth", send_bandwidth_bps_, " bps");
-  PrintResult("pixels_per_frame", pixels_, " px");
+  PrintResult("psnr", psnr_, "dB");
+  PrintResult("ssim", ssim_, "unitless");
+  PrintResult("sender_time", sender_time_, "ms");
+  PrintResult("receiver_time", receiver_time_, "ms");
+  PrintResult("network_time", network_time_, "ms");
+  PrintResult("total_delay_incl_network", end_to_end_, "ms");
+  PrintResult("time_between_rendered_frames", rendered_delta_, "ms");
+  PrintResult("encode_frame_rate", encode_frame_rate_, "fps");
+  PrintResult("encode_time", encode_time_ms_, "ms");
+  PrintResult("media_bitrate", media_bitrate_bps_, "bps");
+  PrintResult("fec_bitrate", fec_bitrate_bps_, "bps");
+  PrintResult("send_bandwidth", send_bandwidth_bps_, "bps");
+  PrintResult("pixels_per_frame", pixels_, "count");
 
   test::PrintResult("decode_frame_rate", "", test_label_.c_str(),
                     decode_frame_rate_, "fps", false);
@@ -662,7 +662,7 @@ void VideoAnalyzer::PrintResults() {
   time_between_freezes_.AddSample(last_render_time_ - last_unfreeze_time_ms_);
 
   // Freeze metrics.
-  PrintResult("time_between_freezes", time_between_freezes_, " ms");
+  PrintResult("time_between_freezes", time_between_freezes_, "ms");
 
   const double freeze_count_double = static_cast<double>(freeze_count_);
   const double total_freezes_duration_ms_double =
@@ -673,8 +673,8 @@ void VideoAnalyzer::PrintResults() {
   if (total_frames_duration_ms_double > 0) {
     test::PrintResult(
         "freeze_duration_ratio", "", test_label_.c_str(),
-        total_freezes_duration_ms_double / total_frames_duration_ms_double, "",
-        false);
+        total_freezes_duration_ms_double / total_frames_duration_ms_double,
+        "unitless", false);
     RTC_DCHECK_LE(total_freezes_duration_ms_double,
                   total_frames_duration_ms_double);
 
@@ -684,7 +684,7 @@ void VideoAnalyzer::PrintResults() {
     if (total_frames_duration_min > 0) {
       test::PrintResult("freeze_count_per_minute", "", test_label_.c_str(),
                         freeze_count_double / total_frames_duration_min,
-                        "freezes", false);
+                        "unitless", false);
     }
   }
 
@@ -698,7 +698,7 @@ void VideoAnalyzer::PrintResults() {
     test::PrintResult(
         "harmonic_frame_rate", "", test_label_.c_str(),
         total_frames_duration_ms_double / (1000 * sum_squared_frame_durations_),
-        "", false);
+        "fps", false);
   }
 
   if (worst_frame_) {
@@ -708,12 +708,12 @@ void VideoAnalyzer::PrintResults() {
 
   if (receive_stream_ != nullptr) {
     PrintResultWithExternalMean("decode_time", mean_decode_time_ms_,
-                                decode_time_ms_, " ms");
+                                decode_time_ms_, "ms");
   }
   dropped_frames_ += dropped_frames_before_first_encode_ +
                      dropped_frames_before_rendering_ + frames_left;
   test::PrintResult("dropped_frames", "", test_label_.c_str(), dropped_frames_,
-                    "frames", false);
+                    "count", false);
   test::PrintResult("cpu_usage", "", test_label_.c_str(), GetCpuUsagePercent(),
                     "%", false);
 
@@ -721,7 +721,7 @@ void VideoAnalyzer::PrintResults() {
   // On Linux and Mac in Resident Set some unused pages may be counted.
   // Therefore this metric will depend on order in which tests are run and
   // will be flaky.
-  PrintResult("memory_usage", memory_usage_, " bytes");
+  PrintResult("memory_usage", memory_usage_, "sizeInBytes");
 #endif
 
   // Saving only the worst frame for manual analysis. Intention here is to
@@ -739,9 +739,9 @@ void VideoAnalyzer::PrintResults() {
   }
 
   if (audio_receive_stream_ != nullptr) {
-    PrintResult("audio_expand_rate", audio_expand_rate_, "");
-    PrintResult("audio_accelerate_rate", audio_accelerate_rate_, "");
-    PrintResult("audio_jitter_buffer", audio_jitter_buffer_ms_, " ms");
+    PrintResult("audio_expand_rate", audio_expand_rate_, "unitless");
+    PrintResult("audio_accelerate_rate", audio_accelerate_rate_, "unitless");
+    PrintResult("audio_jitter_buffer", audio_jitter_buffer_ms_, "ms");
   }
 
   //  Disable quality check for quick test, as quality checks may fail
