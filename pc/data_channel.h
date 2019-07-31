@@ -142,6 +142,7 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   virtual std::string protocol() const { return config_.protocol; }
   virtual bool negotiated() const { return config_.negotiated; }
   virtual int id() const { return config_.id; }
+  virtual int internal_id() const { return internal_id_; }
   virtual uint64_t buffered_amount() const;
   virtual void Close();
   virtual DataState state() const { return state_; }
@@ -214,6 +215,10 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   // channel's sid is free.
   sigslot::signal1<DataChannel*> SignalClosed;
 
+  // Reset the allocator for internal ID values for testing, so that
+  // the internal IDs generated are predictable. Test only.
+  static void ResetInternalIdAllocatorForTesting(int new_value);
+
  protected:
   DataChannel(DataChannelProviderInterface* client,
               cricket::DataChannelType dct,
@@ -267,6 +272,7 @@ class DataChannel : public DataChannelInterface, public sigslot::has_slots<> {
   void QueueControlMessage(const rtc::CopyOnWriteBuffer& buffer);
   bool SendControlMessage(const rtc::CopyOnWriteBuffer& buffer);
 
+  const int internal_id_;
   std::string label_;
   InternalDataChannelInit config_;
   DataChannelObserver* observer_;

@@ -942,7 +942,20 @@ TEST_F(RTCStatsCollectorTest, CollectRTCCertificateStatsChain) {
   ExpectReportContainsCertificateInfo(report, *remote_certinfo);
 }
 
+TEST_F(RTCStatsCollectorTest, CollectTwoRTCDataChannelStatsWithPendingId) {
+  pc_->AddSctpDataChannel(
+      new MockDataChannel(/*id=*/-1, DataChannelInterface::kConnecting));
+  pc_->AddSctpDataChannel(
+      new MockDataChannel(/*id=*/-1, DataChannelInterface::kConnecting));
+
+  rtc::scoped_refptr<const RTCStatsReport> report = stats_->GetStatsReport();
+}
+
 TEST_F(RTCStatsCollectorTest, CollectRTCDataChannelStats) {
+  // Note: The test assumes data channel IDs are predictable.
+  // This is not a safe assumption, but in order to make it work for
+  // the test, we reset the ID allocator at test start.
+  DataChannel::ResetInternalIdAllocatorForTesting(-1);
   pc_->AddSctpDataChannel(new MockDataChannel(0, "MockDataChannel0",
                                               DataChannelInterface::kConnecting,
                                               "udp", 1, 2, 3, 4));
