@@ -393,9 +393,6 @@ std::string GetTrackIdBySsrc(
       return it->second;
     }
   }
-  RTC_LOG(LS_INFO) << "Missing track ID for "
-                   << (direction == StatsReport::kSend ? "send" : "recv")
-                   << " SSRC=" << ssrc << ".";
   return "";
 }
 
