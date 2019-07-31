@@ -619,16 +619,16 @@ void DefaultVideoQualityAnalyzer::ReportResults(
                stats.time_between_freezes_ms, "ms");
   ReportResult("freeze_time_ms", test_case_name, stats.freeze_time_ms, "ms");
   ReportResult("pixels_per_frame", test_case_name,
-               stats.resolution_of_rendered_frame, "unitless");
+               stats.resolution_of_rendered_frame, "count");
   test::PrintResult("min_psnr", "", test_case_name,
                     stats.psnr.IsEmpty() ? 0 : stats.psnr.GetMin(), "dB",
                     /*important=*/false);
   ReportResult("decode_time", test_case_name, stats.decode_time_ms, "ms");
   test::PrintResult("dropped_frames", "", test_case_name,
-                    frame_counters.dropped, "unitless",
+                    frame_counters.dropped, "count",
                     /*important=*/false);
   ReportResult("max_skipped", test_case_name, stats.skipped_between_rendered,
-               "unitless");
+               "count");
 }
 
 void DefaultVideoQualityAnalyzer::ReportResult(
