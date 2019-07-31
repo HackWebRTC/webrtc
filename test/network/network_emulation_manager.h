@@ -31,6 +31,7 @@
 #include "test/network/emulated_network_manager.h"
 #include "test/network/fake_network_socket_server.h"
 #include "test/network/network_emulation.h"
+#include "test/network/simulated_network_node.h"
 #include "test/network/traffic_route.h"
 #include "test/time_controller/time_controller.h"
 
@@ -47,6 +48,8 @@ class NetworkEmulationManagerImpl : public NetworkEmulationManager {
       BuiltInNetworkBehaviorConfig config) override;
   EmulatedNetworkNode* CreateEmulatedNode(
       std::unique_ptr<NetworkBehaviorInterface> network_behavior) override;
+
+  SimulatedNetworkNode::Builder NodeBuilder();
 
   EmulatedEndpoint* CreateEndpoint(EmulatedEndpointConfig config) override;
   void EnableEndpoint(EmulatedEndpoint* endpoint) override;

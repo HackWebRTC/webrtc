@@ -87,6 +87,10 @@ EmulatedNetworkNode* NetworkEmulationManagerImpl::CreateEmulatedNode(
   return out;
 }
 
+SimulatedNetworkNode::Builder NetworkEmulationManagerImpl::NodeBuilder() {
+  return SimulatedNetworkNode::Builder(this);
+}
+
 EmulatedEndpoint* NetworkEmulationManagerImpl::CreateEndpoint(
     EmulatedEndpointConfig config) {
   absl::optional<rtc::IPAddress> ip = config.ip;

@@ -30,6 +30,8 @@ rtc_source_set("emulated_network") {
     "network_emulation.h",
     "network_emulation_manager.cc",
     "network_emulation_manager.h",
+    "simulated_network_node.cc",
+    "simulated_network_node.h",
     "traffic_route.cc",
     "traffic_route.h",
   ]
