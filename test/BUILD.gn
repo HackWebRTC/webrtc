@@ -52,6 +52,7 @@ rtc_source_set("video_test_common") {
   ]
 
   deps = [
+    ":fileutils",
     "../api:libjingle_peerconnection_api",
     "../api:scoped_refptr",
     "../api/task_queue",
@@ -390,6 +391,7 @@ if (rtc_include_tests) {
       "../test:single_threaded_task_queue",
       "pc/e2e:e2e_unittests",
       "scenario:scenario_unittests",
+      "time_controller",
       "time_controller:time_controller_unittests",
       "//testing/gmock",
       "//testing/gtest",
@@ -401,6 +403,7 @@ if (rtc_include_tests) {
       "call_config_utils_unittest.cc",
       "direct_transport_unittest.cc",
       "fake_vp8_encoder_unittest.cc",
+      "frame_generator_capturer_unittest.cc",
       "frame_generator_unittest.cc",
       "rtp_file_reader_unittest.cc",
       "rtp_file_writer_unittest.cc",

@@ -17,14 +17,71 @@
 #include "api/video/video_frame.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/task_queue.h"
+#include "rtc_base/task_utils/repeating_task.h"
 #include "test/frame_generator.h"
 #include "test/test_video_capturer.h"
 
 namespace webrtc {
 
 namespace test {
+namespace frame_gen_cap_impl {
+template <typename T>
+class AutoOpt : public absl::optional<T> {
+ public:
+  T* operator->() {
+    if (!absl::optional<T>::has_value())
+      this->emplace(T());
+    return absl::optional<T>::operator->();
+  }
+};
+}  // namespace frame_gen_cap_impl
+struct FrameGeneratorCapturerConfig {
+  struct SquaresVideo {
+    int framerate = 30;
+    FrameGenerator::OutputType pixel_format = FrameGenerator::OutputType::I420;
+    int width = 320;
+    int height = 180;
+    int num_squares = 10;
+  };
 
-class FrameGenerator;
+  struct SquareSlides {
+    int framerate = 30;
+    TimeDelta change_interval = TimeDelta::seconds(10);
+    int width = 1600;
+    int height = 1200;
+  };
+
+  struct VideoFile {
+    int framerate = 30;
+    std::string name;
+    // Must be set to width and height of the source video file.
+    int width = 0;
+    int height = 0;
+  };
+
+  struct ImageSlides {
+    int framerate = 30;
+    TimeDelta change_interval = TimeDelta::seconds(10);
+    struct Crop {
+      TimeDelta scroll_duration = TimeDelta::seconds(0);
+      absl::optional<int> width;
+      absl::optional<int> height;
+    } crop;
+    int width = 1850;
+    int height = 1110;
+    std::vector<std::string> paths = {
+        "web_screenshot_1850_1110",
+        "presentation_1850_1110",
+        "photo_1850_1110",
+        "difficult_photo_1850_1110",
+    };
+  };
+
+  frame_gen_cap_impl::AutoOpt<SquaresVideo> squares_video;
+  frame_gen_cap_impl::AutoOpt<SquareSlides> squares_slides;
+  frame_gen_cap_impl::AutoOpt<VideoFile> video_file;
+  frame_gen_cap_impl::AutoOpt<ImageSlides> image_slides;
+};
 
 class FrameGeneratorCapturer : public TestVideoCapturer {
  public:
@@ -44,6 +101,27 @@ class FrameGeneratorCapturer : public TestVideoCapturer {
                          int target_fps,
                          TaskQueueFactory& task_queue_factory);
   virtual ~FrameGeneratorCapturer();
+
+  static std::unique_ptr<FrameGeneratorCapturer> Create(
+      Clock* clock,
+      TaskQueueFactory& task_queue_factory,
+      FrameGeneratorCapturerConfig::SquaresVideo config);
+  static std::unique_ptr<FrameGeneratorCapturer> Create(
+      Clock* clock,
+      TaskQueueFactory& task_queue_factory,
+      FrameGeneratorCapturerConfig::SquareSlides config);
+  static std::unique_ptr<FrameGeneratorCapturer> Create(
+      Clock* clock,
+      TaskQueueFactory& task_queue_factory,
+      FrameGeneratorCapturerConfig::VideoFile config);
+  static std::unique_ptr<FrameGeneratorCapturer> Create(
+      Clock* clock,
+      TaskQueueFactory& task_queue_factory,
+      FrameGeneratorCapturerConfig::ImageSlides config);
+  static std::unique_ptr<FrameGeneratorCapturer> Create(
+      Clock* clock,
+      TaskQueueFactory& task_queue_factory,
+      const FrameGeneratorCapturerConfig& config);
 
   void Start();
   void Stop();
@@ -71,6 +149,7 @@ class FrameGeneratorCapturer : public TestVideoCapturer {
   void UpdateFps(int max_fps) RTC_EXCLUSIVE_LOCKS_REQUIRED(&lock_);
 
   Clock* const clock_;
+  RepeatingTaskHandle frame_task_;
   bool sending_;
   SinkWantsObserver* sink_wants_observer_ RTC_GUARDED_BY(&lock_);
 
