@@ -956,7 +956,7 @@ test::VideoFrameWriter* PeerConnectionE2EQualityTest::MaybeCreateVideoWriter(
     return nullptr;
   }
   // TODO(titovartem) create only one file writer for simulcast video track.
-  auto video_writer = absl::make_unique<test::VideoFrameWriter>(
+  auto video_writer = absl::make_unique<test::Y4mVideoFrameWriterImpl>(
       file_name.value(), config.width, config.height, config.fps);
   test::VideoFrameWriter* out = video_writer.get();
   video_writers_.push_back(std::move(video_writer));

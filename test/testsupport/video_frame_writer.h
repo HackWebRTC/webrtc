@@ -22,27 +22,46 @@
 namespace webrtc {
 namespace test {
 
-// Writes webrtc::VideoFrame to specified file with y4m frame writer
 class VideoFrameWriter {
  public:
-  VideoFrameWriter(std::string output_file_name,
-                   int width,
-                   int height,
-                   int fps);
-  virtual ~VideoFrameWriter();
+  virtual ~VideoFrameWriter() = default;
 
-  bool WriteFrame(const webrtc::VideoFrame& frame);
-  void Close();
+  virtual bool WriteFrame(const webrtc::VideoFrame& frame) = 0;
+
+  virtual void Close() = 0;
+};
+
+// Writes webrtc::VideoFrame to specified file with y4m frame writer
+class Y4mVideoFrameWriterImpl : public VideoFrameWriter {
+ public:
+  Y4mVideoFrameWriterImpl(std::string output_file_name,
+                          int width,
+                          int height,
+                          int fps);
+  ~Y4mVideoFrameWriterImpl() override = default;
+
+  bool WriteFrame(const webrtc::VideoFrame& frame) override;
+  void Close() override;
 
  private:
-  rtc::Buffer ExtractI420BufferWithSize(const VideoFrame& frame,
-                                        int width,
-                                        int height);
-
-  const std::string output_file_name_;
   const int width_;
   const int height_;
-  const int fps_;
+
+  std::unique_ptr<FrameWriter> frame_writer_;
+};
+
+// Writes webrtc::VideoFrame to specified file with yuv frame writer
+class YuvVideoFrameWriterImpl : public VideoFrameWriter {
+ public:
+  YuvVideoFrameWriterImpl(std::string output_file_name, int width, int height);
+  ~YuvVideoFrameWriterImpl() override = default;
+
+  bool WriteFrame(const webrtc::VideoFrame& frame) override;
+  void Close() override;
+
+ private:
+  const int width_;
+  const int height_;
 
   std::unique_ptr<FrameWriter> frame_writer_;
 };

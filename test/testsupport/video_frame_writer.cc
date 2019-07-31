@@ -23,40 +23,11 @@
 
 namespace webrtc {
 namespace test {
+namespace {
 
-VideoFrameWriter::VideoFrameWriter(std::string output_file_name,
-                                   int width,
-                                   int height,
-                                   int fps)
-    // We will move string here to prevent extra copy. We won't use const ref
-    // to not corrupt caller variable with move and don't assume that caller's
-    // variable won't be destructed before writer.
-    : output_file_name_(std::move(output_file_name)),
-      width_(width),
-      height_(height),
-      fps_(fps),
-      frame_writer_(absl::make_unique<Y4mFrameWriterImpl>(output_file_name_,
-                                                          width_,
-                                                          height_,
-                                                          fps_)) {
-  // Init underlying frame writer and ensure that it is operational.
-  RTC_CHECK(frame_writer_->Init());
-}
-VideoFrameWriter::~VideoFrameWriter() = default;
-
-bool VideoFrameWriter::WriteFrame(const webrtc::VideoFrame& frame) {
-  rtc::Buffer frame_buffer = ExtractI420BufferWithSize(frame, width_, height_);
-  RTC_CHECK_EQ(frame_buffer.size(), frame_writer_->FrameLength());
-  return frame_writer_->WriteFrame(frame_buffer.data());
-}
-
-void VideoFrameWriter::Close() {
-  frame_writer_->Close();
-}
-
-rtc::Buffer VideoFrameWriter::ExtractI420BufferWithSize(const VideoFrame& frame,
-                                                        int width,
-                                                        int height) {
+rtc::Buffer ExtractI420BufferWithSize(const VideoFrame& frame,
+                                      int width,
+                                      int height) {
   if (frame.width() != width || frame.height() != height) {
     RTC_CHECK_LE(std::abs(static_cast<double>(width) / height -
                           static_cast<double>(frame.width()) / frame.height()),
@@ -78,6 +49,62 @@ rtc::Buffer VideoFrameWriter::ExtractI420BufferWithSize(const VideoFrame& frame,
   rtc::Buffer buffer(length);
   RTC_CHECK_NE(ExtractBuffer(frame, length, buffer.data()), -1);
   return buffer;
+}
+
+}  // namespace
+
+Y4mVideoFrameWriterImpl::Y4mVideoFrameWriterImpl(std::string output_file_name,
+                                                 int width,
+                                                 int height,
+                                                 int fps)
+    // We will move string here to prevent extra copy. We won't use const ref
+    // to not corrupt caller variable with move and don't assume that caller's
+    // variable won't be destructed before writer.
+    : width_(width),
+      height_(height),
+      frame_writer_(
+          absl::make_unique<Y4mFrameWriterImpl>(std::move(output_file_name),
+                                                width_,
+                                                height_,
+                                                fps)) {
+  // Init underlying frame writer and ensure that it is operational.
+  RTC_CHECK(frame_writer_->Init());
+}
+
+bool Y4mVideoFrameWriterImpl::WriteFrame(const webrtc::VideoFrame& frame) {
+  rtc::Buffer frame_buffer = ExtractI420BufferWithSize(frame, width_, height_);
+  RTC_CHECK_EQ(frame_buffer.size(), frame_writer_->FrameLength());
+  return frame_writer_->WriteFrame(frame_buffer.data());
+}
+
+void Y4mVideoFrameWriterImpl::Close() {
+  frame_writer_->Close();
+}
+
+YuvVideoFrameWriterImpl::YuvVideoFrameWriterImpl(std::string output_file_name,
+                                                 int width,
+                                                 int height)
+    // We will move string here to prevent extra copy. We won't use const ref
+    // to not corrupt caller variable with move and don't assume that caller's
+    // variable won't be destructed before writer.
+    : width_(width),
+      height_(height),
+      frame_writer_(
+          absl::make_unique<YuvFrameWriterImpl>(std::move(output_file_name),
+                                                width_,
+                                                height_)) {
+  // Init underlying frame writer and ensure that it is operational.
+  RTC_CHECK(frame_writer_->Init());
+}
+
+bool YuvVideoFrameWriterImpl::WriteFrame(const webrtc::VideoFrame& frame) {
+  rtc::Buffer frame_buffer = ExtractI420BufferWithSize(frame, width_, height_);
+  RTC_CHECK_EQ(frame_buffer.size(), frame_writer_->FrameLength());
+  return frame_writer_->WriteFrame(frame_buffer.data());
+}
+
+void YuvVideoFrameWriterImpl::Close() {
+  frame_writer_->Close();
 }
 
 }  // namespace test
