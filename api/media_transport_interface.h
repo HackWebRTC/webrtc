@@ -23,6 +23,7 @@
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
+#include "api/data_channel_transport_interface.h"
 #include "api/rtc_error.h"
 #include "api/transport/media/audio_transport.h"
 #include "api/transport/media/video_transport.h"
@@ -135,70 +136,9 @@ class MediaTransportRttObserver {
   virtual void OnRttUpdated(int64_t rtt_ms) = 0;
 };
 
-// Supported types of application data messages.
-enum class DataMessageType {
-  // Application data buffer with the binary bit unset.
-  kText,
-
-  // Application data buffer with the binary bit set.
-  kBinary,
-
-  // Transport-agnostic control messages, such as open or open-ack messages.
-  kControl,
-};
-
-// Parameters for sending data.  The parameters may change from message to
-// message, even within a single channel.  For example, control messages may be
-// sent reliably and in-order, even if the data channel is configured for
-// unreliable delivery.
-struct SendDataParams {
-  SendDataParams();
-  SendDataParams(const SendDataParams&);
-
-  DataMessageType type = DataMessageType::kText;
-
-  // Whether to deliver the message in order with respect to other ordered
-  // messages with the same channel_id.
-  bool ordered = false;
-
-  // If set, the maximum number of times this message may be
-  // retransmitted by the transport before it is dropped.
-  // Setting this value to zero disables retransmission.
-  // Must be non-negative. |max_rtx_count| and |max_rtx_ms| may not be set
-  // simultaneously.
-  absl::optional<int> max_rtx_count;
-
-  // If set, the maximum number of milliseconds for which the transport
-  // may retransmit this message before it is dropped.
-  // Setting this value to zero disables retransmission.
-  // Must be non-negative. |max_rtx_count| and |max_rtx_ms| may not be set
-  // simultaneously.
-  absl::optional<int> max_rtx_ms;
-};
-
-// Sink for callbacks related to a data channel.
-class DataChannelSink {
- public:
-  virtual ~DataChannelSink() = default;
-
-  // Callback issued when data is received by the transport.
-  virtual void OnDataReceived(int channel_id,
-                              DataMessageType type,
-                              const rtc::CopyOnWriteBuffer& buffer) = 0;
-
-  // Callback issued when a remote data channel begins the closing procedure.
-  // Messages sent after the closing procedure begins will not be transmitted.
-  virtual void OnChannelClosing(int channel_id) = 0;
-
-  // Callback issued when a (remote or local) data channel completes the closing
-  // procedure.  Closing channels become closed after all pending data has been
-  // transmitted.
-  virtual void OnChannelClosed(int channel_id) = 0;
-};
-
 // Media transport interface for sending / receiving encoded audio/video frames
 // and receiving bandwidth estimate update from congestion control.
-class MediaTransportInterface {
+class MediaTransportInterface : public DataChannelTransportInterface {
  public:
   MediaTransportInterface();
   virtual ~MediaTransportInterface();
@@ -330,27 +270,6 @@ class MediaTransportInterface {
   // TODO(psla): Make abstract when downstream implementation implement it.
   virtual void SetTargetBitrateLimits(
       const MediaTransportTargetRateConstraints& target_rate_constraints) {}
-
-  // Opens a data |channel_id| for sending.  May return an error if the
-  // specified |channel_id| is unusable.  Must be called before |SendData|.
-  virtual RTCError OpenChannel(int channel_id) = 0;
-
-  // Sends a data buffer to the remote endpoint using the given send parameters.
-  // |buffer| may not be larger than 256 KiB. Returns an error if the send
-  // fails.
-  virtual RTCError SendData(int channel_id,
-                            const SendDataParams& params,
-                            const rtc::CopyOnWriteBuffer& buffer) = 0;
-
-  // Closes |channel_id| gracefully.  Returns an error if |channel_id| is not
-  // open.  Data sent after the closing procedure begins will not be
-  // transmitted. The channel becomes closed after pending data is transmitted.
-  virtual RTCError CloseChannel(int channel_id) = 0;
-
-  // Sets a sink for data messages and channel state callbacks. Before media
-  // transport is destroyed, the sink must be unregistered by setting it to
-  // nullptr.
-  virtual void SetDataSink(DataChannelSink* sink) = 0;
 
   // TODO(sukhanov): RtcEventLogs.
 };

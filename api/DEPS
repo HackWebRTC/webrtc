@@ -72,6 +72,10 @@ specific_include_rules = {
     "+rtc_base/ref_count.h",
   ],
 
+  "data_channel_transport_interface\.h": [
+    "+rtc_base/copy_on_write_buffer.h",
+  ],
+
   "dtls_transport_interface\.h": [
     "+rtc_base/ref_count.h",
     "+rtc_base/ssl_certificate.h",

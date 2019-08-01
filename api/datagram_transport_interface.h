@@ -19,6 +19,7 @@
 #include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/congestion_control_interface.h"
+#include "api/data_channel_transport_interface.h"
 #include "api/media_transport_interface.h"
 #include "api/rtc_error.h"
 #include "api/units/data_rate.h"
@@ -68,7 +69,7 @@ class DatagramSinkInterface {
 // CongestionControlInterface). The idea is to send RTP packets as datagrams and
 // have underlying implementation of datagram transport to use QUIC datagram
 // protocol.
-class DatagramTransportInterface {
+class DatagramTransportInterface : public DataChannelTransportInterface {
  public:
   virtual ~DatagramTransportInterface() = default;
 
