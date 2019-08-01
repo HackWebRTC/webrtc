@@ -382,7 +382,9 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
   }
 
   rtcp_feedback_buffer_.SendBufferedRtcpFeedback();
-  packet_buffer_->InsertPacket(&packet);
+  if (!packet_buffer_->InsertPacket(&packet)) {
+    RequestKeyFrame();
+  }
   return 0;
 }
 

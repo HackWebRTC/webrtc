@@ -560,6 +560,32 @@ TEST_F(RtpVideoStreamReceiverTest, RequestKeyframeIfFirstFrameIsDelta) {
       data.data(), data.size(), rtp_header, video_header, absl::nullopt, false);
 }
 
+TEST_F(RtpVideoStreamReceiverTest, RequestKeyframeWhenPacketBufferGetsFull) {
+  constexpr int kPacketBufferMaxSize = 2048;
+
+  RTPHeader rtp_header;
+  RTPVideoHeader video_header;
+  const std::vector<uint8_t> data({1, 2, 3, 4});
+  video_header.is_first_packet_in_frame = true;
+  // Incomplete frames so that the packet buffer is filling up.
+  video_header.is_last_packet_in_frame = false;
+  video_header.codec = kVideoCodecGeneric;
+  video_header.frame_type = VideoFrameType::kVideoFrameDelta;
+  uint16_t start_sequence_number = 1234;
+  rtp_header.sequenceNumber = start_sequence_number;
+  while (rtp_header.sequenceNumber - start_sequence_number <
+         kPacketBufferMaxSize) {
+    rtp_video_stream_receiver_->OnReceivedPayloadData(data.data(), data.size(),
+                                                      rtp_header, video_header,
+                                                      absl::nullopt, false);
+    rtp_header.sequenceNumber += 2;
+  }
+
+  EXPECT_CALL(mock_key_frame_request_sender_, RequestKeyFrame());
+  rtp_video_stream_receiver_->OnReceivedPayloadData(
+      data.data(), data.size(), rtp_header, video_header, absl::nullopt, false);
+}
+
 TEST_F(RtpVideoStreamReceiverTest, SecondarySinksGetRtpNotifications) {
   rtp_video_stream_receiver_->StartReceive();
 

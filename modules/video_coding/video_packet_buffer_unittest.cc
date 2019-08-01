@@ -153,7 +153,7 @@ TEST_F(TestPacketBuffer, InsertOldPackets) {
   EXPECT_TRUE(Insert(seq_num + 2, kDeltaFrame, kFirst, kLast));
 
   packet_buffer_->ClearTo(seq_num + 2);
-  EXPECT_FALSE(Insert(seq_num + 2, kDeltaFrame, kFirst, kLast));
+  EXPECT_TRUE(Insert(seq_num + 2, kDeltaFrame, kFirst, kLast));
   EXPECT_TRUE(Insert(seq_num + 3, kDeltaFrame, kFirst, kLast));
   ASSERT_EQ(2UL, frames_from_callback_.size());
 }
@@ -246,21 +246,20 @@ TEST_F(TestPacketBuffer, HasHistoryOfUniqueFrames) {
   const uint32_t timestamp = 0xFFFFFFF0;  // Large enough to cause wrap-around.
 
   for (int i = 0; i < kNumFrames; ++i) {
-    EXPECT_TRUE(Insert(seq_num + i, kKeyFrame, kFirst, kNotLast, 0, nullptr,
-                       timestamp + 10 * i));
+    Insert(seq_num + i, kKeyFrame, kFirst, kNotLast, 0, nullptr,
+           timestamp + 10 * i);
   }
   ASSERT_EQ(kNumFrames, packet_buffer_->GetUniqueFramesSeen());
 
   // Old packets within history should not affect number of seen unique frames.
   for (int i = kNumFrames - kRequiredHistoryLength; i < kNumFrames; ++i) {
-    EXPECT_TRUE(Insert(seq_num + i, kKeyFrame, kFirst, kNotLast, 0, nullptr,
-                       timestamp + 10 * i));
+    Insert(seq_num + i, kKeyFrame, kFirst, kNotLast, 0, nullptr,
+           timestamp + 10 * i);
   }
   ASSERT_EQ(kNumFrames, packet_buffer_->GetUniqueFramesSeen());
 
   // Very old packets should be treated as unique.
-  EXPECT_TRUE(
-      Insert(seq_num, kKeyFrame, kFirst, kNotLast, 0, nullptr, timestamp));
+  Insert(seq_num, kKeyFrame, kFirst, kNotLast, 0, nullptr, timestamp);
   ASSERT_EQ(kNumFrames + 1, packet_buffer_->GetUniqueFramesSeen());
 }
 
@@ -289,7 +288,7 @@ TEST_F(TestPacketBuffer, ExpandBufferOverflow) {
 
   for (int i = 0; i < kMaxSize; ++i)
     EXPECT_TRUE(Insert(seq_num + i, kKeyFrame, kFirst, kLast));
-  EXPECT_TRUE(Insert(seq_num + kMaxSize + 1, kKeyFrame, kFirst, kLast));
+  EXPECT_FALSE(Insert(seq_num + kMaxSize + 1, kKeyFrame, kFirst, kLast));
 }
 
 TEST_F(TestPacketBuffer, OnePacketOneFrame) {
@@ -728,10 +727,10 @@ TEST_F(TestPacketBuffer, DontLeakPayloadData) {
 
   // Expect to free data3 upon insertion (old packet).
   packet_buffer_->ClearTo(1);
-  EXPECT_FALSE(Insert(1, kKeyFrame, kFirst, kNotLast, 5, data3));
+  EXPECT_TRUE(Insert(1, kKeyFrame, kFirst, kNotLast, 5, data3));
 
   // Expect to free data4 upon insertion (packet buffer is full).
-  EXPECT_TRUE(Insert(2 + kMaxSize, kKeyFrame, kFirst, kNotLast, 5, data4));
+  EXPECT_FALSE(Insert(2 + kMaxSize, kKeyFrame, kFirst, kNotLast, 5, data4));
 }
 
 TEST_F(TestPacketBuffer, ContinuousSeqNumDoubleMarkerBit) {

@@ -82,11 +82,11 @@ bool PacketBuffer::InsertPacket(VCMPacket* packet) {
       first_packet_received_ = true;
     } else if (AheadOf(first_seq_num_, seq_num)) {
       // If we have explicitly cleared past this packet then it's old,
-      // don't insert it.
+      // don't insert it, just silently ignore it.
       if (is_cleared_to_first_seq_num_) {
         delete[] packet->dataPtr;
         packet->dataPtr = nullptr;
-        return false;
+        return true;
       }
 
       first_seq_num_ = seq_num;
@@ -105,8 +105,12 @@ bool PacketBuffer::InsertPacket(VCMPacket* packet) {
       }
       index = seq_num % size_;
 
-      // Packet buffer is still full.
+      // Packet buffer is still full since we were unable to expand the buffer.
       if (sequence_buffer_[index].used) {
+        // Clear the buffer, delete payload, and return false to signal that a
+        // new keyframe is needed.
+        RTC_LOG(LS_WARNING) << "Clear PacketBuffer and request key frame.";
+        Clear();
         delete[] packet->dataPtr;
         packet->dataPtr = nullptr;
         return false;
@@ -224,8 +228,7 @@ int PacketBuffer::GetUniqueFramesSeen() const {
 bool PacketBuffer::ExpandBufferSize() {
   if (size_ == max_size_) {
     RTC_LOG(LS_WARNING) << "PacketBuffer is already at max size (" << max_size_
-                        << "), failed to increase size. Clearing PacketBuffer.";
-    Clear();
+                        << "), failed to increase size.";
     return false;
   }
 
