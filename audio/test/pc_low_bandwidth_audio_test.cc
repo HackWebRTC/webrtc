@@ -144,13 +144,14 @@ TEST(PCLowBandwidthAudioTest, PCGoodNetworkHighBitrate) {
   LogTestResults();
 }
 
-TEST(PCLowBandwidthAudioTest, PCMobile2GNetwork) {
+TEST(PCLowBandwidthAudioTest, PC40kbpsNetwork) {
   std::unique_ptr<NetworkEmulationManager> network_emulation_manager =
       CreateNetworkEmulationManager();
   BuiltInNetworkBehaviorConfig config;
-  config.link_capacity_kbps = 12;
+  config.link_capacity_kbps = 40;
   config.queue_length_packets = 1500;
   config.queue_delay_ms = 400;
+  config.loss_percent = 1;
   auto fixture = CreateTestFixture(
       GetMetricTestCaseName(),
       CreateTwoNetworkLinks(network_emulation_manager.get(), config),
