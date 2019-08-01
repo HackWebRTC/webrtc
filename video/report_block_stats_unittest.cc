@@ -9,6 +9,7 @@
  */
 
 #include "video/report_block_stats.h"
+#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 
 #include "test/gtest.h"
 
@@ -16,7 +17,7 @@ namespace webrtc {
 
 class ReportBlockStatsTest : public ::testing::Test {
  protected:
-  ReportBlockStatsTest() : kSsrc1(0x12345), kSsrc2(0x23456) {}
+  ReportBlockStatsTest() : kSsrc1(0x12345) {}
 
   void SetUp() override {
     // kSsrc1: block 1-3.
@@ -35,24 +36,6 @@ class ReportBlockStatsTest : public ::testing::Test {
     block1_3_.extended_highest_sequence_number = 24200;
     block1_3_.jitter = 333;
     block1_3_.source_ssrc = kSsrc1;
-    // kSsrc2: block 1,2.
-    block2_1_.packets_lost = 111;
-    block2_1_.fraction_lost = 222;
-    block2_1_.extended_highest_sequence_number = 8500;
-    block2_1_.jitter = 555;
-    block2_1_.source_ssrc = kSsrc2;
-    block2_2_.packets_lost = 136;
-    block2_2_.fraction_lost = 0;
-    block2_2_.extended_highest_sequence_number = 8800;
-    block2_2_.jitter = 888;
-    block2_2_.source_ssrc = kSsrc2;
-
-    ssrc1block1_.push_back(block1_1_);
-    ssrc1block2_.push_back(block1_2_);
-    ssrc12block1_.push_back(block1_1_);
-    ssrc12block1_.push_back(block2_1_);
-    ssrc12block2_.push_back(block1_2_);
-    ssrc12block2_.push_back(block2_2_);
   }
 
   RtcpStatistics RtcpReportBlockToRtcpStatistics(const RTCPReportBlock& stats) {
@@ -66,31 +49,23 @@ class ReportBlockStatsTest : public ::testing::Test {
   }
 
   const uint32_t kSsrc1;
-  const uint32_t kSsrc2;
   RTCPReportBlock block1_1_;
   RTCPReportBlock block1_2_;
   RTCPReportBlock block1_3_;
-  RTCPReportBlock block2_1_;
-  RTCPReportBlock block2_2_;
-  std::vector<RTCPReportBlock> ssrc1block1_;
-  std::vector<RTCPReportBlock> ssrc1block2_;
-  std::vector<RTCPReportBlock> ssrc12block1_;
-  std::vector<RTCPReportBlock> ssrc12block2_;
 };
 
 TEST_F(ReportBlockStatsTest, StoreAndGetFractionLost) {
-  const uint32_t kRemoteSsrc = 1;
   ReportBlockStats stats;
   EXPECT_EQ(-1, stats.FractionLostInPercent());
 
   // First block.
-  stats.Store(RtcpReportBlockToRtcpStatistics(block1_1_), kRemoteSsrc, kSsrc1);
+  stats.Store(kSsrc1, RtcpReportBlockToRtcpStatistics(block1_1_));
   EXPECT_EQ(-1, stats.FractionLostInPercent());
   // fl: 100 * (15-10) / (24100-24000) = 5%
-  stats.Store(RtcpReportBlockToRtcpStatistics(block1_2_), kRemoteSsrc, kSsrc1);
+  stats.Store(kSsrc1, RtcpReportBlockToRtcpStatistics(block1_2_));
   EXPECT_EQ(5, stats.FractionLostInPercent());
   // fl: 100 * (50-10) / (24200-24000) = 20%
-  stats.Store(RtcpReportBlockToRtcpStatistics(block1_3_), kRemoteSsrc, kSsrc1);
+  stats.Store(kSsrc1, RtcpReportBlockToRtcpStatistics(block1_3_));
   EXPECT_EQ(20, stats.FractionLostInPercent());
 }
 

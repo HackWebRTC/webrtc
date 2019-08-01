@@ -674,12 +674,10 @@ void ReceiveStatisticsProxy::StatisticsUpdated(
     const webrtc::RtcpStatistics& statistics,
     uint32_t ssrc) {
   rtc::CritScope lock(&crit_);
-  // TODO(pbos): Handle both local and remote ssrcs here and RTC_DCHECK that we
-  // receive stats from one of them.
   if (stats_.ssrc != ssrc)
     return;
   stats_.rtcp_stats = statistics;
-  report_block_stats_.Store(statistics, ssrc, 0);
+  report_block_stats_.Store(0, statistics);
 
   if (first_report_block_time_ms_ == -1)
     first_report_block_time_ms_ = clock_->TimeInMilliseconds();

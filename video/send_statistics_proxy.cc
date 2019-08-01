@@ -1158,7 +1158,7 @@ void SendStatisticsProxy::StatisticsUpdated(const RtcpStatistics& statistics,
     return;
 
   stats->rtcp_stats = statistics;
-  uma_container_->report_block_stats_.Store(statistics, 0, ssrc);
+  uma_container_->report_block_stats_.Store(ssrc, statistics);
 }
 
 void SendStatisticsProxy::CNameChanged(const char* cname, uint32_t ssrc) {}
