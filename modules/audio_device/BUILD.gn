@@ -300,16 +300,9 @@ rtc_source_set("audio_device_impl") {
           "mac/audio_mixer_manager_mac.cc",
           "mac/audio_mixer_manager_mac.h",
         ]
-        deps += [ "../third_party/portaudio:mac_portaudio" ]
-        libs = [
-          # Needed for CoreGraphics:
-          "ApplicationServices.framework",
-
-          "AudioToolbox.framework",
-          "CoreAudio.framework",
-
-          # Needed for CGEventSourceKeyState in audio_device_mac.cc:
-          "CoreGraphics.framework",
+        deps += [
+          ":audio_device_impl_frameworks",
+          "../third_party/portaudio:mac_portaudio",
         ]
       }
       if (is_win) {
@@ -336,6 +329,22 @@ rtc_source_set("audio_device_impl") {
       # Do not link these into Chrome since they contain static data.
       "dummy/file_audio_device_factory.cc",
       "dummy/file_audio_device_factory.h",
+    ]
+  }
+}
+
+if (is_mac) {
+  rtc_source_set("audio_device_impl_frameworks") {
+    visibility = [ ":*" ]
+    libs = [
+      # Needed for CoreGraphics:
+      "ApplicationServices.framework",
+
+      "AudioToolbox.framework",
+      "CoreAudio.framework",
+
+      # Needed for CGEventSourceKeyState in audio_device_mac.cc:
+      "CoreGraphics.framework",
     ]
   }
 }
