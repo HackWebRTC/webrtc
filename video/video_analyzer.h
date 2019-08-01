@@ -161,7 +161,7 @@ class VideoAnalyzer : public PacketReceiver,
     VideoSourceInterface<VideoFrame>* video_source_;
     Clock* clock_;
     int captured_frames_ RTC_GUARDED_BY(crit_);
-    int frames_to_process_ RTC_GUARDED_BY(crit_);
+    const int frames_to_process_;
   };
 
   struct FrameWithPsnr {
@@ -198,7 +198,6 @@ class VideoAnalyzer : public PacketReceiver,
                                    Statistics stats,
                                    const char* unit);
   void PrintSamplesToFile(void);
-  double GetAverageMediaBitrateBps();
   void AddCapturedFrameForComparison(const VideoFrame& video_frame);
 
   Call* call_;
@@ -253,26 +252,23 @@ class VideoAnalyzer : public PacketReceiver,
 
   size_t last_fec_bytes_;
 
+  rtc::CriticalSection crit_;
   const int frames_to_process_;
-  int frames_recorded_;
-  int frames_processed_;
-  int dropped_frames_;
-  int captured_frames_;
-  int dropped_frames_before_first_encode_;
-  int dropped_frames_before_rendering_;
-  int64_t last_render_time_;
-  int64_t last_render_delta_ms_;
-  int64_t last_unfreeze_time_ms_;
-  uint32_t rtp_timestamp_delta_;
-  int64_t total_media_bytes_;
-  int64_t first_sending_time_;
-  int64_t last_sending_time_;
+  int frames_recorded_ RTC_GUARDED_BY(comparison_lock_);
+  int frames_processed_ RTC_GUARDED_BY(comparison_lock_);
+  int captured_frames_ RTC_GUARDED_BY(comparison_lock_);
+  int dropped_frames_ RTC_GUARDED_BY(comparison_lock_);
+  int dropped_frames_before_first_encode_ RTC_GUARDED_BY(crit_);
+  int dropped_frames_before_rendering_ RTC_GUARDED_BY(crit_);
+  int64_t last_render_time_ RTC_GUARDED_BY(comparison_lock_);
+  int64_t last_render_delta_ms_ RTC_GUARDED_BY(comparison_lock_);
+  int64_t last_unfreeze_time_ms_ RTC_GUARDED_BY(comparison_lock_);
+  uint32_t rtp_timestamp_delta_ RTC_GUARDED_BY(crit_);
 
   rtc::CriticalSection cpu_measurement_lock_;
   int64_t cpu_time_ RTC_GUARDED_BY(cpu_measurement_lock_);
   int64_t wallclock_time_ RTC_GUARDED_BY(cpu_measurement_lock_);
 
-  rtc::CriticalSection crit_;
   std::deque<VideoFrame> frames_ RTC_GUARDED_BY(crit_);
   absl::optional<VideoFrame> last_rendered_frame_ RTC_GUARDED_BY(crit_);
   rtc::TimestampWrapAroundHandler wrap_handler_ RTC_GUARDED_BY(crit_);
