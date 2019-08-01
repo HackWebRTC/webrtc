@@ -18,6 +18,7 @@
 #include "media/base/adapted_video_track_source.h"
 #include "rtc_base/async_invoker.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/thread.h"
 #include "rtc_base/timestamp_aligner.h"
 #include "sdk/android/src/jni/video_frame.h"
 
@@ -84,11 +85,8 @@ class AndroidVideoTrackSource : public rtc::AdaptedVideoTrackSource {
                          const JavaRef<jobject>& j_max_fps);
 
  private:
-  void InternalSetState(SourceState state);
-
   rtc::Thread* signaling_thread_;
-  rtc::AsyncInvoker invoker_;
-  SourceState state_;
+  std::atomic<SourceState> state_;
   const bool is_screencast_;
   rtc::TimestampAligner timestamp_aligner_;
   const bool align_timestamps_;
