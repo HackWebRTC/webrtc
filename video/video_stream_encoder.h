@@ -31,6 +31,7 @@
 #include "rtc_base/critical_section.h"
 #include "rtc_base/event.h"
 #include "rtc_base/experiments/balanced_degradation_settings.h"
+#include "rtc_base/experiments/quality_scaler_settings.h"
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/rate_statistics.h"
@@ -238,6 +239,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   EncoderSink* sink_;
   const VideoStreamEncoderSettings settings_;
   const RateControlSettings rate_control_settings_;
+  const QualityScalerSettings quality_scaler_settings_;
 
   const std::unique_ptr<OveruseFrameDetector> overuse_detector_
       RTC_PT_GUARDED_BY(&encoder_queue_);
@@ -271,6 +273,9 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   int crop_width_ RTC_GUARDED_BY(&encoder_queue_);
   int crop_height_ RTC_GUARDED_BY(&encoder_queue_);
   uint32_t encoder_start_bitrate_bps_ RTC_GUARDED_BY(&encoder_queue_);
+  int set_start_bitrate_bps_ RTC_GUARDED_BY(&encoder_queue_);
+  int64_t set_start_bitrate_time_ms_ RTC_GUARDED_BY(&encoder_queue_);
+  bool has_seen_first_bwe_drop_ RTC_GUARDED_BY(&encoder_queue_);
   size_t max_data_payload_length_ RTC_GUARDED_BY(&encoder_queue_);
   absl::optional<EncoderRateSettings> last_encoder_rate_settings_
       RTC_GUARDED_BY(&encoder_queue_);

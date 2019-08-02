@@ -24,6 +24,8 @@ class QualityScalerSettings final {
   absl::optional<int> MinFrames() const;
   absl::optional<double> InitialScaleFactor() const;
   absl::optional<double> ScaleFactor() const;
+  absl::optional<int> InitialBitrateIntervalMs() const;
+  absl::optional<double> InitialBitrateFactor() const;
 
  private:
   explicit QualityScalerSettings(
@@ -32,6 +34,8 @@ class QualityScalerSettings final {
   FieldTrialOptional<int> min_frames_;
   FieldTrialOptional<double> initial_scale_factor_;
   FieldTrialOptional<double> scale_factor_;
+  FieldTrialOptional<int> initial_bitrate_interval_ms_;
+  FieldTrialOptional<double> initial_bitrate_factor_;
 };
 
 }  // namespace webrtc

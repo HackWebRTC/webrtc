@@ -479,6 +479,7 @@ VideoStreamEncoder::VideoStreamEncoder(
       sink_(nullptr),
       settings_(settings),
       rate_control_settings_(RateControlSettings::ParseFromFieldTrials()),
+      quality_scaler_settings_(QualityScalerSettings::ParseFromFieldTrials()),
       overuse_detector_(std::move(overuse_detector)),
       encoder_stats_observer_(encoder_stats_observer),
       encoder_initialized_(false),
@@ -488,6 +489,9 @@ VideoStreamEncoder::VideoStreamEncoder(
       crop_width_(0),
       crop_height_(0),
       encoder_start_bitrate_bps_(0),
+      set_start_bitrate_bps_(0),
+      set_start_bitrate_time_ms_(0),
+      has_seen_first_bwe_drop_(false),
       max_data_payload_length_(0),
       encoder_paused_and_dropped_frame_(false),
       was_encode_called_since_last_initialization_(false),
@@ -612,6 +616,8 @@ void VideoStreamEncoder::SetStartBitrate(int start_bitrate_bps) {
   encoder_queue_.PostTask([this, start_bitrate_bps] {
     RTC_DCHECK_RUN_ON(&encoder_queue_);
     encoder_start_bitrate_bps_ = start_bitrate_bps;
+    set_start_bitrate_bps_ = start_bitrate_bps;
+    set_start_bitrate_time_ms_ = clock_->TimeInMilliseconds();
   });
 }
 
@@ -1688,6 +1694,7 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
                       << " link allocation bitrate = " << link_allocation.bps()
                       << " packet loss " << static_cast<int>(fraction_lost)
                       << " rtt " << round_trip_time_ms;
+
   // On significant changes to BWE at the start of the call,
   // enable frame drops to quickly react to jumps in available bandwidth.
   if (encoder_start_bitrate_bps_ != 0 &&
@@ -1700,6 +1707,21 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
     // without an actual BW estimate.
     initial_framedrop_ = 0;
     has_seen_first_significant_bwe_change_ = true;
+  }
+  if (set_start_bitrate_bps_ > 0 && !has_seen_first_bwe_drop_ &&
+      quality_scaler_ && quality_scaler_settings_.InitialBitrateIntervalMs() &&
+      quality_scaler_settings_.InitialBitrateFactor()) {
+    int64_t diff_ms = clock_->TimeInMilliseconds() - set_start_bitrate_time_ms_;
+    if (diff_ms < quality_scaler_settings_.InitialBitrateIntervalMs().value() &&
+        (target_bitrate.bps() <
+         (set_start_bitrate_bps_ *
+          quality_scaler_settings_.InitialBitrateFactor().value()))) {
+      RTC_LOG(LS_INFO) << "Reset initial_framedrop_. Start bitrate: "
+                       << set_start_bitrate_bps_
+                       << ", target bitrate: " << target_bitrate.bps();
+      initial_framedrop_ = 0;
+      has_seen_first_bwe_drop_ = true;
+    }
   }
 
   if (encoder_) {

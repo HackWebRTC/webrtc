@@ -23,9 +23,12 @@ QualityScalerSettings::QualityScalerSettings(
     const WebRtcKeyValueConfig* const key_value_config)
     : min_frames_("min_frames"),
       initial_scale_factor_("initial_scale_factor"),
-      scale_factor_("scale_factor") {
+      scale_factor_("scale_factor"),
+      initial_bitrate_interval_ms_("initial_bitrate_interval_ms"),
+      initial_bitrate_factor_("initial_bitrate_factor") {
   ParseFieldTrial(
-      {&min_frames_, &initial_scale_factor_, &scale_factor_},
+      {&min_frames_, &initial_scale_factor_, &scale_factor_,
+       &initial_bitrate_interval_ms_, &initial_bitrate_factor_},
       key_value_config->Lookup("WebRTC-Video-QualityScalerSettings"));
 }
 
@@ -57,6 +60,24 @@ absl::optional<double> QualityScalerSettings::ScaleFactor() const {
     return absl::nullopt;
   }
   return scale_factor_.GetOptional();
+}
+
+absl::optional<int> QualityScalerSettings::InitialBitrateIntervalMs() const {
+  if (initial_bitrate_interval_ms_ &&
+      initial_bitrate_interval_ms_.Value() < 0) {
+    RTC_LOG(LS_WARNING) << "Unsupported bitrate_interval value, ignored.";
+    return absl::nullopt;
+  }
+  return initial_bitrate_interval_ms_.GetOptional();
+}
+
+absl::optional<double> QualityScalerSettings::InitialBitrateFactor() const {
+  if (initial_bitrate_factor_ &&
+      initial_bitrate_factor_.Value() < kMinScaleFactor) {
+    RTC_LOG(LS_WARNING) << "Unsupported initial_bitrate_factor value, ignored.";
+    return absl::nullopt;
+  }
+  return initial_bitrate_factor_.GetOptional();
 }
 
 }  // namespace webrtc

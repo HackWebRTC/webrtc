@@ -17,10 +17,12 @@ namespace webrtc {
 namespace {
 
 TEST(QualityScalerSettingsTest, ValuesNotSetByDefault) {
-  EXPECT_FALSE(QualityScalerSettings::ParseFromFieldTrials().MinFrames());
-  EXPECT_FALSE(
-      QualityScalerSettings::ParseFromFieldTrials().InitialScaleFactor());
-  EXPECT_FALSE(QualityScalerSettings::ParseFromFieldTrials().ScaleFactor());
+  const auto settings = QualityScalerSettings::ParseFromFieldTrials();
+  EXPECT_FALSE(settings.MinFrames());
+  EXPECT_FALSE(settings.InitialScaleFactor());
+  EXPECT_FALSE(settings.ScaleFactor());
+  EXPECT_FALSE(settings.InitialBitrateIntervalMs());
+  EXPECT_FALSE(settings.InitialBitrateFactor());
 }
 
 TEST(QualityScalerSettingsTest, ParseMinFrames) {
@@ -42,34 +44,59 @@ TEST(QualityScalerSettingsTest, ParseScaleFactor) {
   EXPECT_EQ(1.1, QualityScalerSettings::ParseFromFieldTrials().ScaleFactor());
 }
 
+TEST(QualityScalerSettingsTest, ParseInitialBitrateInterval) {
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-Video-QualityScalerSettings/initial_bitrate_interval_ms:1000/");
+  EXPECT_EQ(
+      1000,
+      QualityScalerSettings::ParseFromFieldTrials().InitialBitrateIntervalMs());
+}
+
+TEST(QualityScalerSettingsTest, ParseInitialBitrateFactor) {
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-Video-QualityScalerSettings/initial_bitrate_factor:0.75/");
+  EXPECT_EQ(
+      0.75,
+      QualityScalerSettings::ParseFromFieldTrials().InitialBitrateFactor());
+}
+
 TEST(QualityScalerSettingsTest, ParseAll) {
   test::ScopedFieldTrials field_trials(
       "WebRTC-Video-QualityScalerSettings/"
-      "min_frames:100,initial_scale_factor:1.5,scale_factor:0.9/");
+      "min_frames:100,initial_scale_factor:1.5,scale_factor:0.9,"
+      "initial_bitrate_interval_ms:5500,initial_bitrate_factor:0.7/");
   const auto settings = QualityScalerSettings::ParseFromFieldTrials();
   EXPECT_EQ(100, settings.MinFrames());
   EXPECT_EQ(1.5, settings.InitialScaleFactor());
   EXPECT_EQ(0.9, settings.ScaleFactor());
+  EXPECT_EQ(5500, settings.InitialBitrateIntervalMs());
+  EXPECT_EQ(0.7, settings.InitialBitrateFactor());
 }
 
 TEST(QualityScalerSettingsTest, DoesNotParseIncorrectValue) {
   test::ScopedFieldTrials field_trials(
       "WebRTC-Video-QualityScalerSettings/"
-      "min_frames:a,initial_scale_factor:b,scale_factor:c/");
+      "min_frames:a,initial_scale_factor:b,scale_factor:c,"
+      "initial_bitrate_interval_ms:d,initial_bitrate_factor:e/");
   const auto settings = QualityScalerSettings::ParseFromFieldTrials();
   EXPECT_FALSE(settings.MinFrames());
   EXPECT_FALSE(settings.InitialScaleFactor());
   EXPECT_FALSE(settings.ScaleFactor());
+  EXPECT_FALSE(settings.InitialBitrateIntervalMs());
+  EXPECT_FALSE(settings.InitialBitrateFactor());
 }
 
 TEST(QualityScalerSettingsTest, DoesNotReturnTooSmallValue) {
   test::ScopedFieldTrials field_trials(
       "WebRTC-Video-QualityScalerSettings/"
-      "min_frames:0,initial_scale_factor:0.0,scale_factor:0.0/");
+      "min_frames:0,initial_scale_factor:0.0,scale_factor:0.0,"
+      "initial_bitrate_interval_ms:-1,initial_bitrate_factor:0.0/");
   const auto settings = QualityScalerSettings::ParseFromFieldTrials();
   EXPECT_FALSE(settings.MinFrames());
   EXPECT_FALSE(settings.InitialScaleFactor());
   EXPECT_FALSE(settings.ScaleFactor());
+  EXPECT_FALSE(settings.InitialBitrateIntervalMs());
+  EXPECT_FALSE(settings.InitialBitrateFactor());
 }
 
 }  // namespace
