@@ -52,10 +52,6 @@ VideoQualityObserver::VideoQualityObserver(VideoContentType content_type)
       content_type_(content_type),
       is_paused_(false) {}
 
-VideoQualityObserver::~VideoQualityObserver() {
-  UpdateHistograms();
-}
-
 void VideoQualityObserver::UpdateHistograms() {
   // Don't report anything on an empty video stream.
   if (num_frames_rendered_ == 0) {

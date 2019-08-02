@@ -28,7 +28,6 @@
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
 #include "video/quality_threshold.h"
-#include "video/report_block_stats.h"
 #include "video/stats_counter.h"
 #include "video/video_quality_observer.h"
 
@@ -45,7 +44,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
  public:
   ReceiveStatisticsProxy(const VideoReceiveStream::Config* config,
                          Clock* clock);
-  ~ReceiveStatisticsProxy() override;
+  ~ReceiveStatisticsProxy() = default;
 
   VideoReceiveStream::Stats GetStats() const;
 
@@ -99,6 +98,10 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   void DecoderThreadStarting();
   void DecoderThreadStopped();
 
+  // Produce histograms. Must be called after DecoderThreadStopped(), typically
+  // at the end of the call.
+  void UpdateHistograms(absl::optional<int> fraction_lost);
+
  private:
   struct QpCounters {
     rtc::SampleCounter vp8;
@@ -120,8 +123,6 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
     FrameCounts frame_counts;
     rtc::HistogramPercentileCounter interframe_delay_percentiles;
   };
-
-  void UpdateHistograms() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   void QualitySample() RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
@@ -167,8 +168,6 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   std::map<VideoContentType, ContentSpecificStats> content_specific_stats_
       RTC_GUARDED_BY(crit_);
   MaxCounter freq_offset_counter_ RTC_GUARDED_BY(crit_);
-  int64_t first_report_block_time_ms_ RTC_GUARDED_BY(crit_);
-  ReportBlockStats report_block_stats_ RTC_GUARDED_BY(crit_);
   QpCounters qp_counters_ RTC_GUARDED_BY(decode_thread_);
   std::map<uint32_t, StreamDataCounters> rtx_stats_ RTC_GUARDED_BY(crit_);
   int64_t avg_rtt_ms_ RTC_GUARDED_BY(crit_);

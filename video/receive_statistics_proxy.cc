@@ -110,7 +110,6 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
           new VideoQualityObserver(VideoContentType::UNSPECIFIED)),
       interframe_delay_max_moving_(kMovingMaxWindowMs),
       freq_offset_counter_(clock, nullptr, kFreqOffsetProcessIntervalMs),
-      first_report_block_time_ms_(-1),
       avg_rtt_ms_(0),
       last_content_type_(VideoContentType::UNSPECIFIED),
       last_codec_type_(kVideoCodecVP8),
@@ -127,20 +126,16 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
   }
 }
 
-ReceiveStatisticsProxy::~ReceiveStatisticsProxy() {
-  RTC_DCHECK_RUN_ON(&main_thread_);
-  // In case you're reading this wondering "hmm... we're on the main thread but
-  // calling a method that needs to be called on the decoder thread...", then
-  // here's what's going on:
-  // - The decoder thread has been stopped and DecoderThreadStopped() has been
-  //   called.
-  // - The decode_thread_ thread checker has been detached, and will now become
-  //   attached to the current thread, which is OK since we're in the dtor.
-  UpdateHistograms();
-}
-
-void ReceiveStatisticsProxy::UpdateHistograms() {
+void ReceiveStatisticsProxy::UpdateHistograms(
+    absl::optional<int> fraction_lost) {
+  // Not actually running on the decoder thread, but must be called after
+  // DecoderThreadStopped, which detaches the thread checker. It is therefore
+  // safe to access |qp_counters_|, which were updated on the decode thread
+  // earlier.
   RTC_DCHECK_RUN_ON(&decode_thread_);
+
+  rtc::CritScope lock(&crit_);
+
   char log_stream_buf[8 * 1024];
   rtc::SimpleStringBuilder log_stream(log_stream_buf);
   int stream_duration_sec = (clock_->TimeInMilliseconds() - start_ms_) / 1000;
@@ -162,16 +157,11 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
                << '\n';
   }
 
-  if (first_report_block_time_ms_ != -1 &&
-      ((clock_->TimeInMilliseconds() - first_report_block_time_ms_) / 1000) >=
-          metrics::kMinRunTimeInSeconds) {
-    int fraction_lost = report_block_stats_.FractionLostInPercent();
-    if (fraction_lost != -1) {
-      RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.ReceivedPacketsLostInPercent",
-                               fraction_lost);
-      log_stream << "WebRTC.Video.ReceivedPacketsLostInPercent "
-                 << fraction_lost << '\n';
-    }
+  if (fraction_lost && stream_duration_sec >= metrics::kMinRunTimeInSeconds) {
+    RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.ReceivedPacketsLostInPercent",
+                             *fraction_lost);
+    log_stream << "WebRTC.Video.ReceivedPacketsLostInPercent " << *fraction_lost
+               << '\n';
   }
 
   if (first_decoded_frame_time_ms_) {
@@ -489,6 +479,7 @@ void ReceiveStatisticsProxy::UpdateHistograms() {
   }
 
   RTC_LOG(LS_INFO) << log_stream.str();
+  video_quality_observer_->UpdateHistograms();
 }
 
 void ReceiveStatisticsProxy::QualitySample() {
@@ -677,10 +668,6 @@ void ReceiveStatisticsProxy::StatisticsUpdated(
   if (stats_.ssrc != ssrc)
     return;
   stats_.rtcp_stats = statistics;
-  report_block_stats_.Store(0, statistics);
-
-  if (first_report_block_time_ms_ == -1)
-    first_report_block_time_ms_ = clock_->TimeInMilliseconds();
 }
 
 void ReceiveStatisticsProxy::CNameChanged(const char* cname, uint32_t ssrc) {
@@ -726,8 +713,9 @@ void ReceiveStatisticsProxy::OnDecodedFrame(const VideoFrame& frame,
 
   if (videocontenttypehelpers::IsScreenshare(content_type) !=
       videocontenttypehelpers::IsScreenshare(last_content_type_)) {
-    // Reset the quality observer if content type is switched. This will
-    // report stats for the previous part of the call.
+    // Reset the quality observer if content type is switched. But first report
+    // stats for the previous part of the call.
+    video_quality_observer_->UpdateHistograms();
     video_quality_observer_.reset(new VideoQualityObserver(content_type));
   }
 

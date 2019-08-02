@@ -302,6 +302,20 @@ void StreamStatisticianImpl::GetDataCounters(size_t* bytes_received,
   }
 }
 
+absl::optional<int> StreamStatisticianImpl::GetFractionLostInPercent() const {
+  rtc::CritScope cs(&stream_lock_);
+  if (received_seq_max_ < 0) {
+    return absl::nullopt;
+  }
+  int64_t expected_packets = 1 + received_seq_max_ - received_seq_first_;
+  if (expected_packets <= 0) {
+    return absl::nullopt;
+  }
+  // Spec allows negative cumulative loss, but implementation uses uint32_t, so
+  // this expression is always non-negative.
+  return 100 * static_cast<int64_t>(cumulative_loss_) / expected_packets;
+}
+
 void StreamStatisticianImpl::GetReceiveStreamDataCounters(
     StreamDataCounters* data_counters) const {
   rtc::CritScope cs(&stream_lock_);

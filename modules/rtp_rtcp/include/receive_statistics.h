@@ -15,6 +15,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/types/optional.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "modules/include/module.h"
 #include "modules/include/module_common_types.h"
@@ -43,6 +44,9 @@ class StreamStatistician {
   virtual bool GetStatistics(RtcpStatistics* statistics, bool reset) = 0;
   virtual void GetDataCounters(size_t* bytes_received,
                                uint32_t* packets_received) const = 0;
+
+  // Returns average over the stream life time.
+  virtual absl::optional<int> GetFractionLostInPercent() const = 0;
 
   // Gets received stream data counters (includes reset counter values).
   virtual void GetReceiveStreamDataCounters(
