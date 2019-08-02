@@ -200,8 +200,9 @@ int SimulcastEncoderAdapter::InitEncode(
 
   codec_ = *inst;
   SimulcastRateAllocator rate_allocator(codec_);
-  VideoBitrateAllocation allocation = rate_allocator.GetAllocation(
-      codec_.startBitrate * 1000, codec_.maxFramerate);
+  VideoBitrateAllocation allocation =
+      rate_allocator.Allocate(VideoBitrateAllocationParameters(
+          codec_.startBitrate * 1000, codec_.maxFramerate));
   std::vector<uint32_t> start_bitrates;
   for (int i = 0; i < kMaxSimulcastStreams; ++i) {
     uint32_t stream_bitrate = allocation.GetSpatialLayerSum(i) / 1000;

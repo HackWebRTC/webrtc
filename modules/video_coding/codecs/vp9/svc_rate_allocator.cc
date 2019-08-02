@@ -103,18 +103,18 @@ SvcRateAllocator::SvcRateAllocator(const VideoCodec& codec) : codec_(codec) {
   RTC_DCHECK_GT(codec.VP9().numberOfTemporalLayers, 0u);
 }
 
-VideoBitrateAllocation SvcRateAllocator::GetAllocation(
-    uint32_t total_bitrate_bps,
-    uint32_t framerate_fps) {
+VideoBitrateAllocation SvcRateAllocator::Allocate(
+    VideoBitrateAllocationParameters parameters) {
+  DataRate total_bitrate = parameters.total_bitrate;
   if (codec_.maxBitrate != 0) {
-    total_bitrate_bps = std::min(total_bitrate_bps, codec_.maxBitrate * 1000);
+    total_bitrate = std::min(total_bitrate, DataRate::kbps(codec_.maxBitrate));
   }
 
   if (codec_.spatialLayers[0].targetBitrate == 0) {
     // Delegate rate distribution to VP9 encoder wrapper if bitrate thresholds
     // are not set.
     VideoBitrateAllocation bitrate_allocation;
-    bitrate_allocation.SetBitrate(0, 0, total_bitrate_bps);
+    bitrate_allocation.SetBitrate(0, 0, total_bitrate.bps());
     return bitrate_allocation;
   }
 
@@ -124,9 +124,9 @@ VideoBitrateAllocation SvcRateAllocator::GetAllocation(
   }
 
   if (codec_.mode == VideoCodecMode::kRealtimeVideo) {
-    return GetAllocationNormalVideo(total_bitrate_bps, num_spatial_layers);
+    return GetAllocationNormalVideo(total_bitrate.bps(), num_spatial_layers);
   } else {
-    return GetAllocationScreenSharing(total_bitrate_bps, num_spatial_layers);
+    return GetAllocationScreenSharing(total_bitrate.bps(), num_spatial_layers);
   }
 }
 

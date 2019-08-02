@@ -26,8 +26,8 @@ class SvcRateAllocator : public VideoBitrateAllocator {
  public:
   explicit SvcRateAllocator(const VideoCodec& codec);
 
-  VideoBitrateAllocation GetAllocation(uint32_t total_bitrate_bps,
-                                       uint32_t framerate_fps) override;
+  VideoBitrateAllocation Allocate(
+      VideoBitrateAllocationParameters parameters) override;
 
   static uint32_t GetMaxBitrateBps(const VideoCodec& codec);
   static uint32_t GetPaddingBitrateBps(const VideoCodec& codec);

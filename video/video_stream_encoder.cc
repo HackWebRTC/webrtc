@@ -1103,9 +1103,9 @@ VideoStreamEncoder::UpdateBitrateAllocationAndNotifyObserver(
   // Only call allocators if bitrate > 0 (ie, not suspended), otherwise they
   // might cap the bitrate to the min bitrate configured.
   if (rate_allocator_ && rate_settings.encoder_target > DataRate::Zero()) {
-    new_allocation = rate_allocator_->GetAllocation(
+    new_allocation = rate_allocator_->Allocate(VideoBitrateAllocationParameters(
         rate_settings.encoder_target.bps(),
-        static_cast<uint32_t>(rate_settings.framerate_fps + 0.5));
+        static_cast<uint32_t>(rate_settings.framerate_fps + 0.5)));
   }
 
   if (bitrate_observer_ && new_allocation.get_sum_bps() > 0) {

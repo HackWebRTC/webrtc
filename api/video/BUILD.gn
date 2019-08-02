@@ -159,10 +159,12 @@ rtc_source_set("video_bitrate_allocation") {
 rtc_source_set("video_bitrate_allocator") {
   visibility = [ "*" ]
   sources = [
+    "video_bitrate_allocator.cc",
     "video_bitrate_allocator.h",
   ]
   deps = [
     ":video_bitrate_allocation",
+    "../units:data_rate",
   ]
 }
 

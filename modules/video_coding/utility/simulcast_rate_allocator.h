@@ -28,8 +28,8 @@ class SimulcastRateAllocator : public VideoBitrateAllocator {
   explicit SimulcastRateAllocator(const VideoCodec& codec);
   ~SimulcastRateAllocator() override;
 
-  VideoBitrateAllocation GetAllocation(uint32_t total_bitrate_bps,
-                                       uint32_t framerate) override;
+  VideoBitrateAllocation Allocate(
+      VideoBitrateAllocationParameters parameters) override;
   const VideoCodec& GetCodec() const;
 
   static float GetTemporalRateAllocation(int num_layers, int temporal_id);

@@ -13,6 +13,7 @@
 #include <stdio.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <numeric>
 #include <string>
@@ -63,13 +64,13 @@ SimulcastRateAllocator::SimulcastRateAllocator(const VideoCodec& codec)
 
 SimulcastRateAllocator::~SimulcastRateAllocator() = default;
 
-VideoBitrateAllocation SimulcastRateAllocator::GetAllocation(
-    uint32_t total_bitrate_bps,
-    uint32_t framerate) {
+VideoBitrateAllocation SimulcastRateAllocator::Allocate(
+    VideoBitrateAllocationParameters parameters) {
   VideoBitrateAllocation allocated_bitrates_bps;
-  DistributeAllocationToSimulcastLayers(total_bitrate_bps,
+  DistributeAllocationToSimulcastLayers(parameters.total_bitrate.bps(),
                                         &allocated_bitrates_bps);
-  DistributeAllocationToTemporalLayers(framerate, &allocated_bitrates_bps);
+  DistributeAllocationToTemporalLayers(std::ceil(parameters.framerate),
+                                       &allocated_bitrates_bps);
   return allocated_bitrates_bps;
 }
 

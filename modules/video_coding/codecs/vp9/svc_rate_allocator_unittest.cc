@@ -52,7 +52,8 @@ TEST(SvcRateAllocatorTest, SingleLayerFor320x180Input) {
   VideoCodec codec = Configure(320, 180, 3, 3, false);
   SvcRateAllocator allocator = SvcRateAllocator(codec);
 
-  VideoBitrateAllocation allocation = allocator.GetAllocation(1000 * 1000, 30);
+  VideoBitrateAllocation allocation =
+      allocator.Allocate(VideoBitrateAllocationParameters(1000 * 1000, 30));
 
   EXPECT_GT(allocation.GetSpatialLayerSum(0), 0u);
   EXPECT_EQ(allocation.GetSpatialLayerSum(1), 0u);
@@ -62,7 +63,8 @@ TEST(SvcRateAllocatorTest, TwoLayersFor640x360Input) {
   VideoCodec codec = Configure(640, 360, 3, 3, false);
   SvcRateAllocator allocator = SvcRateAllocator(codec);
 
-  VideoBitrateAllocation allocation = allocator.GetAllocation(1000 * 1000, 30);
+  VideoBitrateAllocation allocation =
+      allocator.Allocate(VideoBitrateAllocationParameters(1000 * 1000, 30));
 
   EXPECT_GT(allocation.GetSpatialLayerSum(0), 0u);
   EXPECT_GT(allocation.GetSpatialLayerSum(1), 0u);
@@ -73,7 +75,8 @@ TEST(SvcRateAllocatorTest, ThreeLayersFor1280x720Input) {
   VideoCodec codec = Configure(1280, 720, 3, 3, false);
   SvcRateAllocator allocator = SvcRateAllocator(codec);
 
-  VideoBitrateAllocation allocation = allocator.GetAllocation(1000 * 1000, 30);
+  VideoBitrateAllocation allocation =
+      allocator.Allocate(VideoBitrateAllocationParameters(1000 * 1000, 30));
 
   EXPECT_GT(allocation.GetSpatialLayerSum(0), 0u);
   EXPECT_GT(allocation.GetSpatialLayerSum(1), 0u);
@@ -87,8 +90,8 @@ TEST(SvcRateAllocatorTest,
 
   const SpatialLayer* layers = codec.spatialLayers;
 
-  VideoBitrateAllocation allocation =
-      allocator.GetAllocation(layers[0].minBitrate * 1000 / 2, 30);
+  VideoBitrateAllocation allocation = allocator.Allocate(
+      VideoBitrateAllocationParameters(layers[0].minBitrate * 1000 / 2, 30));
 
   EXPECT_GT(allocation.GetSpatialLayerSum(0), 0u);
   EXPECT_LT(allocation.GetSpatialLayerSum(0), layers[0].minBitrate * 1000);
@@ -104,8 +107,9 @@ TEST(SvcRateAllocatorTest, Disable640x360Layer) {
   size_t min_bitrate_for_640x360_layer_kbps =
       layers[0].minBitrate + layers[1].minBitrate;
 
-  VideoBitrateAllocation allocation = allocator.GetAllocation(
-      min_bitrate_for_640x360_layer_kbps * 1000 - 1, 30);
+  VideoBitrateAllocation allocation =
+      allocator.Allocate(VideoBitrateAllocationParameters(
+          min_bitrate_for_640x360_layer_kbps * 1000 - 1, 30));
 
   EXPECT_GT(allocation.GetSpatialLayerSum(0), 0u);
   EXPECT_EQ(allocation.GetSpatialLayerSum(1), 0u);
@@ -120,8 +124,9 @@ TEST(SvcRateAllocatorTest, Disable1280x720Layer) {
   size_t min_bitrate_for_1280x720_layer_kbps =
       layers[0].minBitrate + layers[1].minBitrate + layers[2].minBitrate;
 
-  VideoBitrateAllocation allocation = allocator.GetAllocation(
-      min_bitrate_for_1280x720_layer_kbps * 1000 - 1, 30);
+  VideoBitrateAllocation allocation =
+      allocator.Allocate(VideoBitrateAllocationParameters(
+          min_bitrate_for_1280x720_layer_kbps * 1000 - 1, 30));
 
   EXPECT_GT(allocation.GetSpatialLayerSum(0), 0u);
   EXPECT_GT(allocation.GetSpatialLayerSum(1), 0u);
@@ -135,8 +140,8 @@ TEST(SvcRateAllocatorTest, BitrateIsCapped) {
   const SpatialLayer* layers = codec.spatialLayers;
 
   const uint32_t link_mbps = 100;
-  VideoBitrateAllocation allocation =
-      allocator.GetAllocation(link_mbps * 1000000, 30);
+  VideoBitrateAllocation allocation = allocator.Allocate(
+      VideoBitrateAllocationParameters(link_mbps * 1000000, 30));
 
   EXPECT_EQ(allocation.get_sum_kbps(),
             layers[0].maxBitrate + layers[1].maxBitrate + layers[2].maxBitrate);
@@ -153,13 +158,13 @@ TEST(SvcRateAllocatorTest, MinBitrateToGetQualityLayer) {
 
   EXPECT_LE(codec.VP9()->numberOfSpatialLayers, 3U);
 
-  VideoBitrateAllocation allocation =
-      allocator.GetAllocation(layers[0].minBitrate * 1000, 30);
+  VideoBitrateAllocation allocation = allocator.Allocate(
+      VideoBitrateAllocationParameters(layers[0].minBitrate * 1000, 30));
   EXPECT_EQ(allocation.GetSpatialLayerSum(0) / 1000, layers[0].minBitrate);
   EXPECT_EQ(allocation.GetSpatialLayerSum(1), 0UL);
 
-  allocation = allocator.GetAllocation(
-      (layers[0].targetBitrate + layers[1].minBitrate) * 1000, 30);
+  allocation = allocator.Allocate(VideoBitrateAllocationParameters(
+      (layers[0].targetBitrate + layers[1].minBitrate) * 1000, 30));
   EXPECT_EQ(allocation.GetSpatialLayerSum(0) / 1000, layers[0].targetBitrate);
   EXPECT_EQ(allocation.GetSpatialLayerSum(1) / 1000, layers[1].minBitrate);
 }
@@ -173,8 +178,8 @@ TEST(SvcRateAllocatorTest, DeativateLayers) {
 
     SvcRateAllocator allocator = SvcRateAllocator(codec);
 
-    VideoBitrateAllocation allocation =
-        allocator.GetAllocation(10 * 1000 * 1000, 30);
+    VideoBitrateAllocation allocation = allocator.Allocate(
+        VideoBitrateAllocationParameters(10 * 1000 * 1000, 30));
 
     // Ensure layers spatial_idx < deactivated_idx are activated.
     for (int spatial_idx = 0; spatial_idx < deactivated_idx; ++spatial_idx) {
@@ -227,14 +232,15 @@ TEST_P(SvcRateAllocatorTestParametrizedContentType, PaddingBitrate) {
 
   uint32_t padding_bitrate_bps = SvcRateAllocator::GetPaddingBitrateBps(codec);
 
-  VideoBitrateAllocation allocation =
-      allocator.GetAllocation(padding_bitrate_bps, 30);
+  VideoBitrateAllocation allocation = allocator.Allocate(
+      VideoBitrateAllocationParameters(padding_bitrate_bps, 30));
   EXPECT_GT(allocation.GetSpatialLayerSum(0), 0UL);
   EXPECT_GT(allocation.GetSpatialLayerSum(1), 0UL);
   EXPECT_GT(allocation.GetSpatialLayerSum(2), 0UL);
 
   // Allocate 90% of padding bitrate. Top layer should be disabled.
-  allocation = allocator.GetAllocation(9 * padding_bitrate_bps / 10, 30);
+  allocation = allocator.Allocate(
+      VideoBitrateAllocationParameters(9 * padding_bitrate_bps / 10, 30));
   EXPECT_GT(allocation.GetSpatialLayerSum(0), 0UL);
   EXPECT_GT(allocation.GetSpatialLayerSum(1), 0UL);
   EXPECT_EQ(allocation.GetSpatialLayerSum(2), 0UL);
@@ -243,12 +249,14 @@ TEST_P(SvcRateAllocatorTestParametrizedContentType, PaddingBitrate) {
   codec.spatialLayers[2].active = false;
 
   padding_bitrate_bps = SvcRateAllocator::GetPaddingBitrateBps(codec);
-  allocation = allocator.GetAllocation(padding_bitrate_bps, 30);
+  allocation = allocator.Allocate(
+      VideoBitrateAllocationParameters(padding_bitrate_bps, 30));
   EXPECT_GT(allocation.GetSpatialLayerSum(0), 0UL);
   EXPECT_GT(allocation.GetSpatialLayerSum(1), 0UL);
   EXPECT_EQ(allocation.GetSpatialLayerSum(2), 0UL);
 
-  allocation = allocator.GetAllocation(9 * padding_bitrate_bps / 10, 30);
+  allocation = allocator.Allocate(
+      VideoBitrateAllocationParameters(9 * padding_bitrate_bps / 10, 30));
   EXPECT_GT(allocation.GetSpatialLayerSum(0), 0UL);
   EXPECT_EQ(allocation.GetSpatialLayerSum(1), 0UL);
   EXPECT_EQ(allocation.GetSpatialLayerSum(2), 0UL);

@@ -217,7 +217,9 @@ void VideoEncoderSoftwareFallbackWrapperTest::UtilizeFallbackEncoder() {
   EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
             fallback_wrapper_->InitEncode(&codec_, kSettings));
   fallback_wrapper_->SetRates(VideoEncoder::RateControlParameters(
-      rate_allocator_->GetAllocation(300000, kFramerate), kFramerate));
+      rate_allocator_->Allocate(
+          VideoBitrateAllocationParameters(300000, kFramerate)),
+      kFramerate));
 
   int callback_count = callback_.callback_count_;
   int encode_count = fake_encoder_->encode_count_;
@@ -236,7 +238,9 @@ void VideoEncoderSoftwareFallbackWrapperTest::FallbackFromEncodeRequest() {
   rate_allocator_.reset(new SimulcastRateAllocator(codec_));
   fallback_wrapper_->InitEncode(&codec_, kSettings);
   fallback_wrapper_->SetRates(VideoEncoder::RateControlParameters(
-      rate_allocator_->GetAllocation(300000, kFramerate), kFramerate));
+      rate_allocator_->Allocate(
+          VideoBitrateAllocationParameters(300000, kFramerate)),
+      kFramerate));
   EXPECT_EQ(1, fake_encoder_->init_encode_count_);
 
   // Have the non-fallback encoder request a software fallback.
@@ -395,7 +399,8 @@ class ForcedFallbackTest : public VideoEncoderSoftwareFallbackWrapperTest {
 
   void SetRateAllocation(uint32_t bitrate_kbps) {
     fallback_wrapper_->SetRates(VideoEncoder::RateControlParameters(
-        rate_allocator_->GetAllocation(bitrate_kbps * 1000, kFramerate),
+        rate_allocator_->Allocate(
+            VideoBitrateAllocationParameters(bitrate_kbps * 1000, kFramerate)),
         kFramerate));
   }
 
