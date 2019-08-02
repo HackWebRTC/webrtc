@@ -23,6 +23,7 @@
 #include "modules/video_coding/utility/simulcast_rate_allocator.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/experiments/experimental_screenshare_settings.h"
 #include "rtc_base/experiments/normalize_simulcast_size_experiment.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/field_trial.h"
@@ -315,6 +316,13 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
   // more normal layout, with the regular 3 temporal layer pattern and no fps
   // restrictions. The base simulcast layer will still use legacy setup.
   if (num_simulcast_layers == kMaxScreenshareSimulcastLayers) {
+    auto experimental_settings =
+        webrtc::ExperimentalScreenshareSettings::ParseFromFieldTrials();
+    if (temporal_layers_supported &&
+        experimental_settings.BaseLayerMaxBitrate().has_value()) {
+      layers[0].max_bitrate_bps = *experimental_settings.BaseLayerMaxBitrate();
+    }
+
     // Add optional upper simulcast layer.
     const int num_temporal_layers = DefaultNumberOfTemporalLayers(1, true);
     int max_bitrate_bps;
@@ -330,7 +338,8 @@ std::vector<webrtc::VideoStream> GetScreenshareLayers(
                webrtc::field_trial::IsEnabled(
                    kUseBaseHeavyVP8TL3RateAllocationFieldTrial)) {
       // Experimental temporal layer mode used, use increased max bitrate.
-      max_bitrate_bps = kScreenshareHighStreamMaxBitrateBps;
+      max_bitrate_bps = experimental_settings.TopLayerMaxBitrate().value_or(
+          kScreenshareHighStreamMaxBitrateBps);
       using_boosted_bitrate = true;
     } else {
       // Keep current bitrates with default 3tl/8 frame settings.
