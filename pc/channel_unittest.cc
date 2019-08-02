@@ -45,7 +45,6 @@ using cricket::FakeVoiceMediaChannel;
 using cricket::RidDescription;
 using cricket::RidDirection;
 using cricket::StreamParams;
-using testing::ElementsAre;
 using webrtc::RtpTransceiverDirection;
 using webrtc::SdpType;
 
@@ -2267,27 +2266,6 @@ TEST_F(VideoChannelSingleThreadTest,
   EXPECT_THAT(media_channel1_->recv_codecs(), testing::IsEmpty());
   ASSERT_THAT(media_channel1_->send_codecs(), testing::SizeIs(1));
   EXPECT_EQ(media_channel1_->send_codecs()[0].packetization, absl::nullopt);
-}
-
-// Test that if the session description has the same codec assigned to two
-// payload types then the MediaChannel will only receive the one that comes
-// first in the list.
-TEST_F(VideoChannelSingleThreadTest, TestFilterDuplicateDynamicCodecs) {
-  const char kCodecName[] = "VP8";
-  cricket::VideoCodec codec(98, kCodecName);
-  cricket::VideoCodec duplicate(99, kCodecName);
-  cricket::VideoContentDescription video_content;
-  video_content.set_codecs({codec, duplicate});
-
-  CreateChannels(0, 0);
-
-  EXPECT_TRUE(
-      channel1_->SetRemoteContent(&video_content, SdpType::kOffer, NULL));
-  EXPECT_TRUE(
-      channel1_->SetLocalContent(&video_content, SdpType::kAnswer, NULL));
-
-  EXPECT_THAT(media_channel1_->recv_codecs(), ElementsAre(codec));
-  EXPECT_THAT(media_channel1_->send_codecs(), ElementsAre(codec));
 }
 
 // VideoChannelDoubleThreadTest
