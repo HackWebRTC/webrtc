@@ -906,7 +906,7 @@ int main(int argc, char* argv[]) {
 #endif
   }
   printf("\n");
-  printf("total bits               = %" PRIuS " bits\n", totalbits);
+  printf("total bits               = %" RTC_PRIuS " bits\n", totalbits);
   printf("measured average bitrate = %0.3f kbits/s\n",
          (double)totalbits * (sampFreqKHz) / totalsmpls);
   if (doTransCoding) {
@@ -925,11 +925,13 @@ int main(int argc, char* argv[]) {
          (100 * runtime / length_file));
 
   if (maxStreamLen30 != 0) {
-    printf("Maximum payload size 30ms Frames %" PRIuS " bytes (%0.3f kbps)\n",
+    printf("Maximum payload size 30ms Frames %" RTC_PRIuS
+           " bytes (%0.3f kbps)\n",
            maxStreamLen30, maxStreamLen30 * 8 / 30.);
   }
   if (maxStreamLen60 != 0) {
-    printf("Maximum payload size 60ms Frames %" PRIuS " bytes (%0.3f kbps)\n",
+    printf("Maximum payload size 60ms Frames %" RTC_PRIuS
+           " bytes (%0.3f kbps)\n",
            maxStreamLen60, maxStreamLen60 * 8 / 60.);
   }
   // fprintf(stderr, "\n");
@@ -938,11 +940,11 @@ int main(int argc, char* argv[]) {
   fprintf(stderr, "   %0.1f kbps",
           (double)totalbits * (sampFreqKHz) / totalsmpls);
   if (maxStreamLen30 != 0) {
-    fprintf(stderr, "   plmax-30ms %" PRIuS " bytes (%0.0f kbps)",
+    fprintf(stderr, "   plmax-30ms %" RTC_PRIuS " bytes (%0.0f kbps)",
             maxStreamLen30, maxStreamLen30 * 8 / 30.);
   }
   if (maxStreamLen60 != 0) {
-    fprintf(stderr, "   plmax-60ms %" PRIuS " bytes (%0.0f kbps)",
+    fprintf(stderr, "   plmax-60ms %" RTC_PRIuS " bytes (%0.0f kbps)",
             maxStreamLen60, maxStreamLen60 * 8 / 60.);
   }
   if (doTransCoding) {

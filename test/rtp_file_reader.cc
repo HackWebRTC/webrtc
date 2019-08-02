@@ -287,14 +287,14 @@ class PcapReader : public RtpFileReaderImpl {
     }
 
     printf("Total packets in file: %d\n", total_packet_count);
-    printf("Total RTP/RTCP packets: %" PRIuS "\n", packets_.size());
+    printf("Total RTP/RTCP packets: %" RTC_PRIuS "\n", packets_.size());
 
     for (SsrcMapIterator mit = packets_by_ssrc_.begin();
          mit != packets_by_ssrc_.end(); ++mit) {
       uint32_t ssrc = mit->first;
       const std::vector<uint32_t>& packet_indices = mit->second;
       uint8_t pt = packets_[packet_indices[0]].rtp_header.payloadType;
-      printf("SSRC: %08x, %" PRIuS " packets, pt=%d\n", ssrc,
+      printf("SSRC: %08x, %" RTC_PRIuS " packets, pt=%d\n", ssrc,
              packet_indices.size(), pt);
     }
 

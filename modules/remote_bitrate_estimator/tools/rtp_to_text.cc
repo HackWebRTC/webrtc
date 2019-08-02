@@ -47,7 +47,7 @@ int main(int argc, char* argv[]) {
       ss << static_cast<int64_t>(packet.time_ms) * 1000000;
       fprintf(stdout, "%s\n", ss.str().c_str());
     } else {
-      fprintf(stdout, "%u %u %d %u %u %d %u %" PRIuS " %" PRIuS "\n",
+      fprintf(stdout, "%u %u %d %u %u %d %u %" RTC_PRIuS " %" RTC_PRIuS "\n",
               header.sequenceNumber, header.timestamp,
               header.extension.transmissionTimeOffset,
               header.extension.absoluteSendTime, packet.time_ms,

@@ -21,7 +21,7 @@
 //
 // To print a size_t value in a portable way:
 //   size_t size;
-//   printf("xyz: %" PRIuS, size);
+//   printf("xyz: %" RTC_PRIuS, size);
 // The "u" in the macro corresponds to %u, and S is for "size".
 
 #if defined(WEBRTC_POSIX)
@@ -39,13 +39,15 @@
 
 #include "rtc_base/system/arch.h"
 
-#if !defined(PRIuS)
-#define PRIuS "zu"
-#endif
+#define RTC_PRIuS "zu"
 
 #else  // WEBRTC_WIN
 
 #include <inttypes.h>
+
+// These are being defined without the RTC_ prefix because this is just filling
+// the holes from what's supposed to be already present as part of the C
+// standard, but missing on older MSVC versions.
 
 #if !defined(PRId64)
 #define PRId64 "I64d"
@@ -59,9 +61,10 @@
 #define PRIx64 "I64x"
 #endif
 
-#if !defined(PRIuS)
-#define PRIuS "Iu"
-#endif
+// PRI*64 were added in MSVC 2013, while "%zu" is supported since MSVC 2015
+// (so needs to be special-cased to "%Iu" instead).
+
+#define RTC_PRIuS "Iu"
 
 #endif
 

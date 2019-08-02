@@ -70,7 +70,8 @@ class OpusFecTest : public TestWithParam<coding_param> {
 void OpusFecTest::SetUp() {
   channels_ = get<0>(GetParam());
   bit_rate_ = get<1>(GetParam());
-  printf("Coding %" PRIuS " channel signal at %d bps.\n", channels_, bit_rate_);
+  printf("Coding %" RTC_PRIuS " channel signal at %d bps.\n", channels_,
+         bit_rate_);
 
   in_filename_ = test::ResourcePath(get<2>(GetParam()), get<3>(GetParam()));
 

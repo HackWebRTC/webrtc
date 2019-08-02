@@ -140,7 +140,7 @@ float ComputeSNR(const AudioFrame& ref_frame,
       best_delay = delay;
     }
   }
-  printf("SNR=%.1f dB at delay=%" PRIuS "\n", best_snr, best_delay);
+  printf("SNR=%.1f dB at delay=%" RTC_PRIuS "\n", best_snr, best_delay);
   return best_snr;
 }
 

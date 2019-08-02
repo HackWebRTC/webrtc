@@ -844,7 +844,7 @@ void VideoAnalyzer::PrintSamplesToFile() {
   });
 
   fprintf(out, "%s\n", graph_title_.c_str());
-  fprintf(out, "%" PRIuS "\n", samples_.size());
+  fprintf(out, "%" RTC_PRIuS "\n", samples_.size());
   fprintf(out,
           "dropped "
           "input_time_ms "
@@ -857,7 +857,7 @@ void VideoAnalyzer::PrintSamplesToFile() {
           "encode_time_ms\n");
   for (const Sample& sample : samples_) {
     fprintf(out,
-            "%d %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " %" PRIuS
+            "%d %" PRId64 " %" PRId64 " %" PRId64 " %" PRId64 " %" RTC_PRIuS
             " %lf %lf\n",
             sample.dropped, sample.input_time_ms, sample.send_time_ms,
             sample.recv_time_ms, sample.render_time_ms,

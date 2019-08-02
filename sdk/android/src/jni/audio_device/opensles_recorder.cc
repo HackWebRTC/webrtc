@@ -188,7 +188,7 @@ void OpenSLESRecorder::AttachAudioBuffer(AudioDeviceBuffer* audio_buffer) {
   // Ensure that the audio device buffer is informed about the number of
   // channels preferred by the OS on the recording side.
   const size_t channels = audio_parameters_.channels();
-  ALOGD("SetRecordingChannels(%" PRIuS ")", channels);
+  ALOGD("SetRecordingChannels(%" RTC_PRIuS ")", channels);
   audio_device_buffer_->SetRecordingChannels(channels);
   // Allocated memory for internal data buffers given existing audio parameters.
   AllocateDataBuffers();
@@ -345,11 +345,11 @@ void OpenSLESRecorder::AllocateDataBuffers() {
   // Create a modified audio buffer class which allows us to deliver any number
   // of samples (and not only multiple of 10ms) to match the native audio unit
   // buffer size.
-  ALOGD("frames per native buffer: %" PRIuS,
+  ALOGD("frames per native buffer: %" RTC_PRIuS,
         audio_parameters_.frames_per_buffer());
-  ALOGD("frames per 10ms buffer: %" PRIuS,
+  ALOGD("frames per 10ms buffer: %" RTC_PRIuS,
         audio_parameters_.frames_per_10ms_buffer());
-  ALOGD("bytes per native buffer: %" PRIuS,
+  ALOGD("bytes per native buffer: %" RTC_PRIuS,
         audio_parameters_.GetBytesPerBuffer());
   ALOGD("native sample rate: %d", audio_parameters_.sample_rate());
   RTC_DCHECK(audio_device_buffer_);
