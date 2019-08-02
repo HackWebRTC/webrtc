@@ -370,6 +370,8 @@ class AudioProcessing : public rtc::RefCountInterface {
       }
       return *this;
     }
+
+    std::string ToString() const;
   };
 
   // TODO(mgraczyk): Remove once all methods that use ChannelLayout are gone.
