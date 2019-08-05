@@ -37,9 +37,24 @@ std::function<void(const VideoFramePair&)> VideoQualityAnalyzer::Handler() {
   return [this](VideoFramePair pair) { HandleFramePair(pair); };
 }
 
-void VideoQualityAnalyzer::HandleFramePair(VideoFramePair sample) {
-  layer_analyzers_[sample.layer_id].HandleFramePair(sample, writer_.get());
+void VideoQualityAnalyzer::HandleFramePair(VideoFramePair sample, double psnr) {
+  layer_analyzers_[sample.layer_id].HandleFramePair(sample, psnr,
+                                                    writer_.get());
   cached_.reset();
+}
+
+void VideoQualityAnalyzer::HandleFramePair(VideoFramePair sample) {
+  double psnr = NAN;
+  if (sample.decoded)
+    psnr = I420PSNR(*sample.captured->ToI420(), *sample.decoded->ToI420());
+
+  if (config_.thread) {
+    config_.thread->PostTask(RTC_FROM_HERE, [this, sample, psnr] {
+      HandleFramePair(std::move(sample), psnr);
+    });
+  } else {
+    HandleFramePair(std::move(sample), psnr);
+  }
 }
 
 std::vector<VideoQualityStats> VideoQualityAnalyzer::layer_stats() const {
@@ -59,8 +74,8 @@ VideoQualityStats& VideoQualityAnalyzer::stats() {
 }
 
 void VideoLayerAnalyzer::HandleFramePair(VideoFramePair sample,
+                                         double psnr,
                                          RtcEventLogOutput* writer) {
-  double psnr = NAN;
   RTC_CHECK(sample.captured);
   HandleCapturedFrame(sample);
   if (!sample.decoded) {
@@ -69,7 +84,6 @@ void VideoLayerAnalyzer::HandleFramePair(VideoFramePair sample,
     ++stats_.lost_count;
     ++skip_count_;
   } else {
-    psnr = I420PSNR(*sample.captured->ToI420(), *sample.decoded->ToI420());
     stats_.psnr_with_freeze.AddSample(psnr);
     if (sample.repeated) {
       ++stats_.freeze_count;
