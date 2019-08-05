@@ -749,7 +749,9 @@ TEST_F(StatsEndToEndTest, CallReportsRttForSender) {
 
   int64_t start_time_ms = clock_->TimeInMilliseconds();
   while (true) {
-    Call::Stats stats = sender_call_->GetStats();
+    Call::Stats stats;
+    task_queue_.SendTask(
+        [this, &stats]() { stats = sender_call_->GetStats(); });
     ASSERT_GE(start_time_ms + kDefaultTimeoutMs, clock_->TimeInMilliseconds())
         << "No RTT stats before timeout!";
     if (stats.rtt_ms != -1) {
