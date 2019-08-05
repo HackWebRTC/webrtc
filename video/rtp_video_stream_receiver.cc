@@ -225,7 +225,7 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
     rtp_rtcp_->SetRtcpXrRrtrStatus(true);
 
   // Stats callback for CNAME changes.
-  rtp_rtcp_->RegisterRtcpStatisticsCallback(receive_stats_proxy);
+  rtp_rtcp_->RegisterRtcpCnameCallback(receive_stats_proxy);
 
   process_thread_->RegisterModule(rtp_rtcp_.get(), RTC_FROM_HERE);
 

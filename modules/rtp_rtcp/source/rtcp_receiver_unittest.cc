@@ -84,7 +84,11 @@ class MockRtcpLossNotificationObserver : public RtcpLossNotificationObserver {
 class MockRtcpCallbackImpl : public RtcpStatisticsCallback {
  public:
   MOCK_METHOD2(StatisticsUpdated, void(const RtcpStatistics&, uint32_t));
-  MOCK_METHOD2(CNameChanged, void(const char*, uint32_t));
+};
+
+class MockCnameCallbackImpl : public RtcpCnameCallback {
+ public:
+  MOCK_METHOD2(OnCname, void(uint32_t, absl::string_view));
 };
 
 class MockReportBlockDataObserverImpl : public ReportBlockDataObserver {
@@ -584,12 +588,12 @@ TEST_F(RtcpReceiverTest, InjectApp) {
 
 TEST_F(RtcpReceiverTest, InjectSdesWithOneChunk) {
   const char kCname[] = "alice@host";
-  MockRtcpCallbackImpl callback;
-  rtcp_receiver_.RegisterRtcpStatisticsCallback(&callback);
+  MockCnameCallbackImpl callback;
+  rtcp_receiver_.RegisterRtcpCnameCallback(&callback);
   rtcp::Sdes sdes;
   sdes.AddCName(kSenderSsrc, kCname);
 
-  EXPECT_CALL(callback, CNameChanged(StrEq(kCname), kSenderSsrc));
+  EXPECT_CALL(callback, OnCname(kSenderSsrc, StrEq(kCname)));
   InjectRtcpPacket(sdes);
 
   char cName[RTCP_CNAME_SIZE];

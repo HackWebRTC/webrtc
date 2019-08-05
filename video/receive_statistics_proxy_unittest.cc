@@ -485,13 +485,13 @@ TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsRtcpStats) {
 
 TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsCName) {
   const char* kName = "cName";
-  statistics_proxy_->CNameChanged(kName, kRemoteSsrc);
+  statistics_proxy_->OnCname(kRemoteSsrc, kName);
   EXPECT_STREQ(kName, statistics_proxy_->GetStats().c_name.c_str());
 }
 
 TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsNoCNameForUnknownSsrc) {
   const char* kName = "cName";
-  statistics_proxy_->CNameChanged(kName, kRemoteSsrc + 1);
+  statistics_proxy_->OnCname(kRemoteSsrc + 1, kName);
   EXPECT_STREQ("", statistics_proxy_->GetStats().c_name.c_str());
 }
 

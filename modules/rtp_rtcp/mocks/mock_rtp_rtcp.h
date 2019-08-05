@@ -153,6 +153,7 @@ class MockRtpRtcp : public RtpRtcp {
   MOCK_CONST_METHOD0(StorePackets, bool());
   MOCK_METHOD1(RegisterRtcpStatisticsCallback, void(RtcpStatisticsCallback*));
   MOCK_METHOD0(GetRtcpStatisticsCallback, RtcpStatisticsCallback*());
+  MOCK_METHOD1(RegisterRtcpCnameCallback, void(RtcpCnameCallback*));
   MOCK_METHOD1(SetReportBlockDataObserver, void(ReportBlockDataObserver*));
   MOCK_METHOD1(SendFeedbackPacket, bool(const rtcp::TransportFeedback& packet));
   MOCK_METHOD1(SendNetworkStateEstimatePacket,

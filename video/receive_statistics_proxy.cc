@@ -670,13 +670,13 @@ void ReceiveStatisticsProxy::StatisticsUpdated(
   stats_.rtcp_stats = statistics;
 }
 
-void ReceiveStatisticsProxy::CNameChanged(const char* cname, uint32_t ssrc) {
+void ReceiveStatisticsProxy::OnCname(uint32_t ssrc, absl::string_view cname) {
   rtc::CritScope lock(&crit_);
   // TODO(pbos): Handle both local and remote ssrcs here and RTC_DCHECK that we
   // receive stats from one of them.
   if (stats_.ssrc != ssrc)
     return;
-  stats_.c_name = cname;
+  stats_.c_name = std::string(cname);
 }
 
 void ReceiveStatisticsProxy::DataCountersUpdated(

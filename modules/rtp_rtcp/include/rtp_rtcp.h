@@ -426,9 +426,13 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
   // getters or only callbacks. If we decide on getters, the
   // ReportBlockDataObserver should also be removed in favor of
   // GetLatestReportBlockData().
+  // TODO(nisse): Replace RegisterRtcpStatisticsCallback and
+  // RegisterRtcpCnameCallback with construction-time settings in
+  // RtpRtcp::Configuration.
   virtual void RegisterRtcpStatisticsCallback(
       RtcpStatisticsCallback* callback) = 0;
   virtual RtcpStatisticsCallback* GetRtcpStatisticsCallback() = 0;
+  virtual void RegisterRtcpCnameCallback(RtcpCnameCallback* callback) = 0;
   // TODO(https://crbug.com/webrtc/10680): When callbacks are registered at
   // construction, remove this setter.
   virtual void SetReportBlockDataObserver(

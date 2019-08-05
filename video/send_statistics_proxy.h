@@ -95,7 +95,6 @@ class SendStatisticsProxy : public VideoStreamEncoderObserver,
   // From RtcpStatisticsCallback.
   void StatisticsUpdated(const RtcpStatistics& statistics,
                          uint32_t ssrc) override;
-  void CNameChanged(const char* cname, uint32_t ssrc) override;
   // From ReportBlockDataObserver.
   void OnReportBlockDataUpdated(ReportBlockData report_block_data) override;
   // From RtcpPacketTypeCounterObserver.

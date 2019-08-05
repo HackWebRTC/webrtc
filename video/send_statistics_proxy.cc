@@ -1161,8 +1161,6 @@ void SendStatisticsProxy::StatisticsUpdated(const RtcpStatistics& statistics,
   uma_container_->report_block_stats_.Store(ssrc, statistics);
 }
 
-void SendStatisticsProxy::CNameChanged(const char* cname, uint32_t ssrc) {}
-
 void SendStatisticsProxy::OnReportBlockDataUpdated(
     ReportBlockData report_block_data) {
   rtc::CritScope lock(&crit_);

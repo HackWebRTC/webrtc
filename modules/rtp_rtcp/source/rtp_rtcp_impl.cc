@@ -666,6 +666,10 @@ RtcpStatisticsCallback* ModuleRtpRtcpImpl::GetRtcpStatisticsCallback() {
   return rtcp_receiver_.GetRtcpStatisticsCallback();
 }
 
+void ModuleRtpRtcpImpl::RegisterRtcpCnameCallback(RtcpCnameCallback* callback) {
+  rtcp_receiver_.RegisterRtcpCnameCallback(callback);
+}
+
 void ModuleRtpRtcpImpl::SetReportBlockDataObserver(
     ReportBlockDataObserver* observer) {
   return rtcp_receiver_.SetReportBlockDataObserver(observer);

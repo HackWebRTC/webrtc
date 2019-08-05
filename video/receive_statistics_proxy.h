@@ -38,6 +38,7 @@ struct CodecSpecificInfo;
 
 class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
                                public RtcpStatisticsCallback,
+                               public RtcpCnameCallback,
                                public RtcpPacketTypeCounterObserver,
                                public StreamDataCountersCallback,
                                public CallStatsObserver {
@@ -80,7 +81,8 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   // Overrides RtcpStatisticsCallback.
   void StatisticsUpdated(const webrtc::RtcpStatistics& statistics,
                          uint32_t ssrc) override;
-  void CNameChanged(const char* cname, uint32_t ssrc) override;
+  // Overrides RtcpCnameCallback.
+  void OnCname(uint32_t ssrc, absl::string_view cname) override;
 
   // Overrides RtcpPacketTypeCounterObserver.
   void RtcpPacketTypesCounterUpdated(

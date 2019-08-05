@@ -13,6 +13,8 @@
 
 #include <stdint.h>
 
+#include "absl/strings/string_view.h"
+
 namespace webrtc {
 
 // Statistics for an RTCP channel
@@ -29,7 +31,6 @@ class RtcpStatisticsCallback {
 
   virtual void StatisticsUpdated(const RtcpStatistics& statistics,
                                  uint32_t ssrc) = 0;
-  virtual void CNameChanged(const char* cname, uint32_t ssrc) = 0;
 };
 
 // Statistics for RTCP packet types.
@@ -96,6 +97,14 @@ class RtcpPacketTypeCounterObserver {
   virtual void RtcpPacketTypesCounterUpdated(
       uint32_t ssrc,
       const RtcpPacketTypeCounter& packet_counter) = 0;
+};
+
+// Invoked for each cname passed in RTCP SDES blocks.
+class RtcpCnameCallback {
+ public:
+  virtual ~RtcpCnameCallback() = default;
+
+  virtual void OnCname(uint32_t ssrc, absl::string_view cname) = 0;
 };
 
 }  // namespace webrtc

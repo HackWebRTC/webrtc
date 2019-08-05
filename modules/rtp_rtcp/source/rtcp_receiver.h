@@ -111,6 +111,7 @@ class RTCPReceiver {
   void NotifyTmmbrUpdated();
 
   void RegisterRtcpStatisticsCallback(RtcpStatisticsCallback* callback);
+  void RegisterRtcpCnameCallback(RtcpCnameCallback* callback);
   RtcpStatisticsCallback* GetRtcpStatisticsCallback();
   void SetReportBlockDataObserver(ReportBlockDataObserver* observer);
 
@@ -265,6 +266,7 @@ class RTCPReceiver {
   int64_t last_increased_sequence_number_ms_;
 
   RtcpStatisticsCallback* stats_callback_ RTC_GUARDED_BY(feedbacks_lock_);
+  RtcpCnameCallback* cname_callback_ RTC_GUARDED_BY(feedbacks_lock_);
   // TODO(hbos): Remove RtcpStatisticsCallback in favor of
   // ReportBlockDataObserver; the ReportBlockData contains a superset of the
   // RtcpStatistics data.
