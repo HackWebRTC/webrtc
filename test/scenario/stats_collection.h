@@ -23,16 +23,13 @@ namespace test {
 
 struct VideoQualityAnalyzerConfig {
   double psnr_coverage = 1;
-  rtc::Thread* thread = nullptr;
 };
 
 class VideoLayerAnalyzer {
  public:
   void HandleCapturedFrame(const VideoFramePair& sample);
   void HandleRenderedFrame(const VideoFramePair& sample);
-  void HandleFramePair(VideoFramePair sample,
-                       double psnr,
-                       RtcEventLogOutput* writer);
+  void HandleFramePair(VideoFramePair sample, RtcEventLogOutput* writer);
   VideoQualityStats stats_;
   Timestamp last_capture_time_ = Timestamp::MinusInfinity();
   Timestamp last_render_time_ = Timestamp::MinusInfinity();
@@ -54,7 +51,6 @@ class VideoQualityAnalyzer {
   std::function<void(const VideoFramePair&)> Handler();
 
  private:
-  void HandleFramePair(VideoFramePair sample, double psnr);
   const VideoQualityAnalyzerConfig config_;
   std::map<int, VideoLayerAnalyzer> layer_analyzers_;
   const std::unique_ptr<RtcEventLogOutput> writer_;

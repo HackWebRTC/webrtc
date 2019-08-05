@@ -390,7 +390,6 @@ if (rtc_include_tests) {
       "../rtc_base/system:file_wrapper",
       "../test:single_threaded_task_queue",
       "pc/e2e:e2e_unittests",
-      "peer_scenario/tests",
       "scenario:scenario_unittests",
       "time_controller",
       "time_controller:time_controller_unittests",
