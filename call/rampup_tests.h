@@ -42,7 +42,8 @@ class RampUpTester : public test::EndToEndTest {
                const std::string& extension_type,
                bool rtx,
                bool red,
-               bool report_perf_stats);
+               bool report_perf_stats,
+               test::SingleThreadedTaskQueueForTesting* task_queue);
   ~RampUpTester() override;
 
   size_t GetNumVideoStreams() const override;
@@ -101,8 +102,6 @@ class RampUpTester : public test::EndToEndTest {
       std::vector<FlexfecReceiveStream::Config>* receive_configs) override;
   void OnCallsCreated(Call* sender_call, Call* receiver_call) override;
 
-  static void BitrateStatsPollingThread(void* obj);
-
   const int start_bitrate_bps_;
   const int64_t min_run_time_ms_;
   int expected_bitrate_bps_;
@@ -114,7 +113,9 @@ class RampUpTester : public test::EndToEndTest {
   std::vector<uint32_t> video_rtx_ssrcs_;
   std::vector<uint32_t> audio_ssrcs_;
 
-  rtc::PlatformThread poller_thread_;
+ protected:
+  test::SingleThreadedTaskQueueForTesting* const task_queue_;
+  test::SingleThreadedTaskQueueForTesting::TaskId pending_task_ = -1;
 };
 
 class RampUpDownUpTester : public RampUpTester {
@@ -127,7 +128,8 @@ class RampUpDownUpTester : public RampUpTester {
                      bool rtx,
                      bool red,
                      const std::vector<int>& loss_rates,
-                     bool report_perf_stats);
+                     bool report_perf_stats,
+                     test::SingleThreadedTaskQueueForTesting* task_queue);
   ~RampUpDownUpTester() override;
 
  protected:
