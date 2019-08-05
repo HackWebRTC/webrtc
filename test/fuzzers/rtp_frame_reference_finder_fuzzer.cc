@@ -123,9 +123,16 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   video_coding::RtpFrameReferenceFinder reference_finder(&cb);
 
   while (reader.MoreToRead()) {
+    // Make sure that these packets fulfill the contract of RtpFrameObject.
+    uint16_t first_seq_num = reader.GetNum<uint16_t>();
+    uint16_t last_seq_num = reader.GetNum<uint16_t>();
+    VCMPacket* first_packet = pb->GetPacket(first_seq_num);
+    VCMPacket* last_packet = pb->GetPacket(last_seq_num);
+    first_packet->video_header.is_first_packet_in_frame = true;
+    last_packet->video_header.is_last_packet_in_frame = true;
+
     auto frame = absl::make_unique<video_coding::RtpFrameObject>(
-        pb, reader.GetNum<uint16_t>(), reader.GetNum<uint16_t>(), 0, 0, 0, 0,
-        RtpPacketInfos());
+        pb, first_seq_num, last_seq_num, 0, 0, 0, 0, RtpPacketInfos());
     reference_finder.ManageFrame(std::move(frame));
   }
 }
