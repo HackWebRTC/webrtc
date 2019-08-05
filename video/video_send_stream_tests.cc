@@ -1709,7 +1709,9 @@ TEST_F(VideoSendStreamTest, ChangingNetworkRoute) {
     }
 
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
-      if (call_->GetStats().send_bandwidth_bps > kStartBitrateBps) {
+      Call::Stats stats;
+      task_queue_->SendTask([this, &stats]() { stats = call_->GetStats(); });
+      if (stats.send_bandwidth_bps > kStartBitrateBps) {
         observation_complete_.Set();
       }
 
@@ -1834,14 +1836,17 @@ class MaxPaddingSetTest : public test::SendTest {
   static const uint32_t kActualEncodeBitrateBps = 40000;
   static const uint32_t kMinPacketsToSend = 50;
 
-  explicit MaxPaddingSetTest(bool test_switch_content_type, T* stream_reset_fun)
+  MaxPaddingSetTest(bool test_switch_content_type,
+                    T* stream_reset_fun,
+                    test::SingleThreadedTaskQueueForTesting* task_queue)
       : SendTest(test::CallTest::kDefaultTimeoutMs),
         call_(nullptr),
         send_stream_(nullptr),
         send_stream_config_(nullptr),
         packets_sent_(0),
         running_without_padding_(test_switch_content_type),
-        stream_resetter_(stream_reset_fun) {
+        stream_resetter_(stream_reset_fun),
+        task_queue_(task_queue) {
     RTC_DCHECK(stream_resetter_);
   }
 
@@ -1873,10 +1878,16 @@ class MaxPaddingSetTest : public test::SendTest {
     call_ = sender_call;
   }
 
+  // Called on the pacer thread.
   Action OnSendRtp(const uint8_t* packet, size_t length) override {
+    // GetStats() needs to be called from the construction thread of call_.
+    Call::Stats stats;
+    task_queue_->SendTask([this, &stats]() { stats = call_->GetStats(); });
+
     rtc::CritScope lock(&crit_);
+
     if (running_without_padding_)
-      EXPECT_EQ(0, call_->GetStats().max_padding_bitrate_bps);
+      EXPECT_EQ(0, stats.max_padding_bitrate_bps);
 
     // Wait until at least kMinPacketsToSend frames have been encoded, so that
     // we have reliable data.
@@ -1896,7 +1907,7 @@ class MaxPaddingSetTest : public test::SendTest {
     }
 
     // Make sure the pacer has been configured with a min transmit bitrate.
-    if (call_->GetStats().max_padding_bitrate_bps > 0)
+    if (stats.max_padding_bitrate_bps > 0)
       observation_complete_.Set();
 
     return SEND_PACKET;
@@ -1927,12 +1938,13 @@ class MaxPaddingSetTest : public test::SendTest {
   uint32_t packets_sent_ RTC_GUARDED_BY(crit_);
   bool running_without_padding_;
   T* const stream_resetter_;
+  test::SingleThreadedTaskQueueForTesting* task_queue_;
 };
 
 TEST_F(VideoSendStreamTest, RespectsMinTransmitBitrate) {
   auto reset_fun = [](const VideoSendStream::Config& send_stream_config,
                       const VideoEncoderConfig& encoder_config) {};
-  MaxPaddingSetTest<decltype(reset_fun)> test(false, &reset_fun);
+  MaxPaddingSetTest<decltype(reset_fun)> test(false, &reset_fun, &task_queue_);
   RunBaseTest(&test);
 }
 
@@ -1950,7 +1962,7 @@ TEST_F(VideoSendStreamTest, RespectsMinTransmitBitrateAfterContentSwitch) {
       Start();
     });
   };
-  MaxPaddingSetTest<decltype(reset_fun)> test(true, &reset_fun);
+  MaxPaddingSetTest<decltype(reset_fun)> test(true, &reset_fun, &task_queue_);
   RunBaseTest(&test);
 }
 
