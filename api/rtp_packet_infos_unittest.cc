@@ -27,9 +27,9 @@ RtpPacketInfos::vector_type ToVector(Iterator begin, Iterator end) {
 }  // namespace
 
 TEST(RtpPacketInfosTest, BasicFunctionality) {
-  RtpPacketInfo p0(123, {1, 2}, 89, 5, 7);
-  RtpPacketInfo p1(456, {3, 4}, 89, 4, 1);
-  RtpPacketInfo p2(789, {5, 6}, 88, 1, 7);
+  RtpPacketInfo p0(123, {1, 2}, 89, 5, AbsoluteCaptureTime{45, 78}, 7);
+  RtpPacketInfo p1(456, {3, 4}, 89, 4, AbsoluteCaptureTime{13, 21}, 1);
+  RtpPacketInfo p2(789, {5, 6}, 88, 1, AbsoluteCaptureTime{99, 78}, 7);
 
   RtpPacketInfos x({p0, p1, p2});
 
@@ -52,9 +52,9 @@ TEST(RtpPacketInfosTest, BasicFunctionality) {
 }
 
 TEST(RtpPacketInfosTest, CopyShareData) {
-  RtpPacketInfo p0(123, {1, 2}, 89, 5, 7);
-  RtpPacketInfo p1(456, {3, 4}, 89, 4, 1);
-  RtpPacketInfo p2(789, {5, 6}, 88, 1, 7);
+  RtpPacketInfo p0(123, {1, 2}, 89, 5, AbsoluteCaptureTime{45, 78}, 7);
+  RtpPacketInfo p1(456, {3, 4}, 89, 4, AbsoluteCaptureTime{13, 21}, 1);
+  RtpPacketInfo p2(789, {5, 6}, 88, 1, AbsoluteCaptureTime{99, 78}, 7);
 
   RtpPacketInfos lhs({p0, p1, p2});
   RtpPacketInfos rhs = lhs;

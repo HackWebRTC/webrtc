@@ -92,6 +92,7 @@ rtc_source_set("rtp_packet_info") {
     ":rtp_headers",
     ":scoped_refptr",
     "..:webrtc_common",
+    "../rtc_base:deprecation",
     "../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/types:optional",
   ]

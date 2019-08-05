@@ -109,6 +109,7 @@ class SourceTrackerRandomTest
     for (size_t i = 0; i < count; ++i) {
       packet_infos.emplace_back(GenerateSsrc(), GenerateCsrcs(),
                                 GenerateRtpTimestamp(), GenerateAudioLevel(),
+                                GenerateAbsoluteCaptureTime(),
                                 GenerateReceiveTimeMs());
     }
 
@@ -170,6 +171,26 @@ class SourceTrackerRandomTest
         std::uniform_int_distribution<uint16_t>()(generator_));
   }
 
+  absl::optional<AbsoluteCaptureTime> GenerateAbsoluteCaptureTime() {
+    if (std::bernoulli_distribution(0.25)(generator_)) {
+      return absl::nullopt;
+    }
+
+    AbsoluteCaptureTime value;
+
+    value.absolute_capture_timestamp =
+        std::uniform_int_distribution<uint64_t>()(generator_);
+
+    if (std::bernoulli_distribution(0.5)(generator_)) {
+      value.estimated_capture_clock_offset = absl::nullopt;
+    } else {
+      value.estimated_capture_clock_offset =
+          std::uniform_int_distribution<int64_t>()(generator_);
+    }
+
+    return value;
+  }
+
   int64_t GenerateReceiveTimeMs() {
     return std::uniform_int_distribution<int64_t>()(generator_);
   }
@@ -223,13 +244,15 @@ TEST(SourceTrackerTest, OnFrameDeliveredRecordsSources) {
   constexpr uint32_t kCsrcs1 = 21;
   constexpr uint32_t kRtpTimestamp = 40;
   constexpr absl::optional<uint8_t> kAudioLevel = 50;
+  constexpr absl::optional<AbsoluteCaptureTime> kAbsoluteCaptureTime = {};
   constexpr int64_t kReceiveTimeMs = 60;
 
   SimulatedClock clock(1000000000000ULL);
   SourceTracker tracker(&clock);
 
-  tracker.OnFrameDelivered(RtpPacketInfos({RtpPacketInfo(
-      kSsrc, {kCsrcs0, kCsrcs1}, kRtpTimestamp, kAudioLevel, kReceiveTimeMs)}));
+  tracker.OnFrameDelivered(RtpPacketInfos(
+      {RtpPacketInfo(kSsrc, {kCsrcs0, kCsrcs1}, kRtpTimestamp, kAudioLevel,
+                     kAbsoluteCaptureTime, kReceiveTimeMs)}));
 
   int64_t timestamp_ms = clock.TimeInMilliseconds();
 
@@ -251,23 +274,24 @@ TEST(SourceTrackerTest, OnFrameDeliveredUpdatesSources) {
   constexpr uint32_t kRtpTimestamp1 = 41;
   constexpr absl::optional<uint8_t> kAudioLevel0 = 50;
   constexpr absl::optional<uint8_t> kAudioLevel1 = absl::nullopt;
+  constexpr absl::optional<AbsoluteCaptureTime> kAbsoluteCaptureTime = {};
   constexpr int64_t kReceiveTimeMs0 = 60;
   constexpr int64_t kReceiveTimeMs1 = 61;
 
   SimulatedClock clock(1000000000000ULL);
   SourceTracker tracker(&clock);
 
-  tracker.OnFrameDelivered(
-      RtpPacketInfos({RtpPacketInfo(kSsrc, {kCsrcs0, kCsrcs1}, kRtpTimestamp0,
-                                    kAudioLevel0, kReceiveTimeMs0)}));
+  tracker.OnFrameDelivered(RtpPacketInfos(
+      {RtpPacketInfo(kSsrc, {kCsrcs0, kCsrcs1}, kRtpTimestamp0, kAudioLevel0,
+                     kAbsoluteCaptureTime, kReceiveTimeMs0)}));
 
   int64_t timestamp_ms_0 = clock.TimeInMilliseconds();
 
   clock.AdvanceTimeMilliseconds(17);
 
-  tracker.OnFrameDelivered(
-      RtpPacketInfos({RtpPacketInfo(kSsrc, {kCsrcs0, kCsrcs2}, kRtpTimestamp1,
-                                    kAudioLevel1, kReceiveTimeMs1)}));
+  tracker.OnFrameDelivered(RtpPacketInfos(
+      {RtpPacketInfo(kSsrc, {kCsrcs0, kCsrcs2}, kRtpTimestamp1, kAudioLevel1,
+                     kAbsoluteCaptureTime, kReceiveTimeMs1)}));
 
   int64_t timestamp_ms_1 = clock.TimeInMilliseconds();
 
@@ -292,21 +316,22 @@ TEST(SourceTrackerTest, TimedOutSourcesAreRemoved) {
   constexpr uint32_t kRtpTimestamp1 = 41;
   constexpr absl::optional<uint8_t> kAudioLevel0 = 50;
   constexpr absl::optional<uint8_t> kAudioLevel1 = absl::nullopt;
+  constexpr absl::optional<AbsoluteCaptureTime> kAbsoluteCaptureTime = {};
   constexpr int64_t kReceiveTimeMs0 = 60;
   constexpr int64_t kReceiveTimeMs1 = 61;
 
   SimulatedClock clock(1000000000000ULL);
   SourceTracker tracker(&clock);
 
-  tracker.OnFrameDelivered(
-      RtpPacketInfos({RtpPacketInfo(kSsrc, {kCsrcs0, kCsrcs1}, kRtpTimestamp0,
-                                    kAudioLevel0, kReceiveTimeMs0)}));
+  tracker.OnFrameDelivered(RtpPacketInfos(
+      {RtpPacketInfo(kSsrc, {kCsrcs0, kCsrcs1}, kRtpTimestamp0, kAudioLevel0,
+                     kAbsoluteCaptureTime, kReceiveTimeMs0)}));
 
   clock.AdvanceTimeMilliseconds(17);
 
-  tracker.OnFrameDelivered(
-      RtpPacketInfos({RtpPacketInfo(kSsrc, {kCsrcs0, kCsrcs2}, kRtpTimestamp1,
-                                    kAudioLevel1, kReceiveTimeMs1)}));
+  tracker.OnFrameDelivered(RtpPacketInfos(
+      {RtpPacketInfo(kSsrc, {kCsrcs0, kCsrcs2}, kRtpTimestamp1, kAudioLevel1,
+                     kAbsoluteCaptureTime, kReceiveTimeMs1)}));
 
   int64_t timestamp_ms_1 = clock.TimeInMilliseconds();
 

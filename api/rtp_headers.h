@@ -79,6 +79,18 @@ struct AbsoluteCaptureTime {
   absl::optional<int64_t> estimated_capture_clock_offset;
 };
 
+inline bool operator==(const AbsoluteCaptureTime& lhs,
+                       const AbsoluteCaptureTime& rhs) {
+  return (lhs.absolute_capture_timestamp == rhs.absolute_capture_timestamp) &&
+         (lhs.estimated_capture_clock_offset ==
+          rhs.estimated_capture_clock_offset);
+}
+
+inline bool operator!=(const AbsoluteCaptureTime& lhs,
+                       const AbsoluteCaptureTime& rhs) {
+  return !(lhs == rhs);
+}
+
 struct RTPHeaderExtension {
   RTPHeaderExtension();
   RTPHeaderExtension(const RTPHeaderExtension& other);

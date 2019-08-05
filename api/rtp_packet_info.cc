@@ -18,16 +18,31 @@ namespace webrtc {
 RtpPacketInfo::RtpPacketInfo()
     : ssrc_(0), rtp_timestamp_(0), receive_time_ms_(-1) {}
 
+RtpPacketInfo::RtpPacketInfo(
+    uint32_t ssrc,
+    std::vector<uint32_t> csrcs,
+    uint32_t rtp_timestamp,
+    absl::optional<uint8_t> audio_level,
+    absl::optional<AbsoluteCaptureTime> absolute_capture_time,
+    int64_t receive_time_ms)
+    : ssrc_(ssrc),
+      csrcs_(std::move(csrcs)),
+      rtp_timestamp_(rtp_timestamp),
+      audio_level_(audio_level),
+      absolute_capture_time_(absolute_capture_time),
+      receive_time_ms_(receive_time_ms) {}
+
 RtpPacketInfo::RtpPacketInfo(uint32_t ssrc,
                              std::vector<uint32_t> csrcs,
                              uint32_t rtp_timestamp,
                              absl::optional<uint8_t> audio_level,
                              int64_t receive_time_ms)
-    : ssrc_(ssrc),
-      csrcs_(std::move(csrcs)),
-      rtp_timestamp_(rtp_timestamp),
-      audio_level_(audio_level),
-      receive_time_ms_(receive_time_ms) {}
+    : RtpPacketInfo(ssrc,
+                    std::move(csrcs),
+                    rtp_timestamp,
+                    audio_level,
+                    /*absolute_capture_time=*/absl::nullopt,
+                    receive_time_ms) {}
 
 RtpPacketInfo::RtpPacketInfo(const RTPHeader& rtp_header,
                              int64_t receive_time_ms)
@@ -42,12 +57,15 @@ RtpPacketInfo::RtpPacketInfo(const RTPHeader& rtp_header,
   if (extension.hasAudioLevel) {
     audio_level_ = extension.audioLevel;
   }
+
+  absolute_capture_time_ = extension.absolute_capture_time;
 }
 
 bool operator==(const RtpPacketInfo& lhs, const RtpPacketInfo& rhs) {
   return (lhs.ssrc() == rhs.ssrc()) && (lhs.csrcs() == rhs.csrcs()) &&
          (lhs.rtp_timestamp() == rhs.rtp_timestamp()) &&
          (lhs.audio_level() == rhs.audio_level()) &&
+         (lhs.absolute_capture_time() == rhs.absolute_capture_time()) &&
          (lhs.receive_time_ms() == rhs.receive_time_ms());
 }
 
