@@ -183,7 +183,8 @@ int GetTotalMaxBitrateBps(const std::vector<webrtc::VideoStream>& layers) {
 }
 
 int LimitSimulcastLayerCount(int width, int height, int layer_count) {
-  if (webrtc::field_trial::IsEnabled(kUseLegacySimulcastLayerLimitFieldTrial)) {
+  if (!webrtc::field_trial::IsDisabled(
+          kUseLegacySimulcastLayerLimitFieldTrial)) {
     int adaptive_layer_count =
         kSimulcastFormats[FindSimulcastFormatIndex(width, height)].max_layers;
     if (layer_count > adaptive_layer_count) {
