@@ -157,6 +157,9 @@ RTC_NORETURN void FatalLog(const char* file,
   fflush(stdout);
   fprintf(stderr, "%s", output);
   fflush(stderr);
+#if defined(WEBRTC_WIN)
+  DebugBreak();
+#endif
   abort();
 }
 
