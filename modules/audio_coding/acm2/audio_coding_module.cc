@@ -203,11 +203,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // Current encoder stack, provided by a call to RegisterEncoder.
   std::unique_ptr<AudioEncoder> encoder_stack_ RTC_GUARDED_BY(acm_crit_sect_);
 
-  std::unique_ptr<AudioDecoder> isac_decoder_16k_
-      RTC_GUARDED_BY(acm_crit_sect_);
-  std::unique_ptr<AudioDecoder> isac_decoder_32k_
-      RTC_GUARDED_BY(acm_crit_sect_);
-
   // This is to keep track of CN instances where we can send DTMFs.
   uint8_t previous_pltype_ RTC_GUARDED_BY(acm_crit_sect_);
 
