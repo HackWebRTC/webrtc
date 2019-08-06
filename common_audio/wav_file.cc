@@ -34,40 +34,38 @@ constexpr size_t kBytesPerSample = 2;
 // Doesn't take ownership of the file handle and won't close it.
 class ReadableWavFile : public ReadableWav {
  public:
-  explicit ReadableWavFile(FILE* file) : file_(file) {}
+  explicit ReadableWavFile(FileWrapper* file) : file_(file) {}
   ReadableWavFile(const ReadableWavFile&) = delete;
   ReadableWavFile& operator=(const ReadableWavFile&) = delete;
   size_t Read(void* buf, size_t num_bytes) override {
-    return fread(buf, 1, num_bytes, file_);
+    size_t count = file_->Read(buf, num_bytes);
+    pos_ += count;
+    return count;
   }
   bool SeekForward(uint32_t num_bytes) override {
-    return fseek(file_, num_bytes, SEEK_CUR) == 0;
+    bool success = file_->SeekRelative(num_bytes);
+    if (success) {
+      pos_ += num_bytes;
+    }
+    return success;
   }
+  int64_t GetPosition() { return pos_; }
 
  private:
-  FILE* file_;
+  FileWrapper* file_;
+  int64_t pos_ = 0;
 };
 
 }  // namespace
 
 WavReader::WavReader(const std::string& filename)
-    : WavReader(rtc::OpenPlatformFileReadOnly(filename)) {}
+    : WavReader(FileWrapper::OpenReadOnly(filename)) {}
 
-WavReader::WavReader(rtc::PlatformFile file) {
-  RTC_CHECK_NE(file, rtc::kInvalidPlatformFileValue)
+WavReader::WavReader(FileWrapper file) : file_(std::move(file)) {
+  RTC_CHECK(file_.is_open())
       << "Invalid file. Could not create file handle for wav file.";
-  file_handle_ = rtc::FdopenPlatformFile(file, "rb");
-  if (!file_handle_) {
-    RTC_LOG(LS_ERROR) << "Could not open wav file for reading: " << errno;
-    // Even though we failed to open a FILE*, the file is still open
-    // and needs to be closed.
-    if (!rtc::ClosePlatformFile(file)) {
-      RTC_LOG(LS_ERROR) << "Can't close file.";
-    }
-    FATAL() << "Could not open wav file for reading.";
-  }
 
-  ReadableWavFile readable(file_handle_);
+  ReadableWavFile readable(&file_);
   WavFormat format;
   size_t bytes_per_sample;
   RTC_CHECK(ReadWavHeader(&readable, &num_channels_, &sample_rate_, &format,
@@ -75,8 +73,7 @@ WavReader::WavReader(rtc::PlatformFile file) {
   num_samples_remaining_ = num_samples_;
   RTC_CHECK_EQ(kWavFormat, format);
   RTC_CHECK_EQ(kBytesPerSample, bytes_per_sample);
-  RTC_CHECK_EQ(0, fgetpos(file_handle_, &data_start_pos_))
-      << "Failed to get WAV data position from file";
+  data_start_pos_ = readable.GetPosition();
 }
 
 WavReader::~WavReader() {
@@ -84,7 +81,7 @@ WavReader::~WavReader() {
 }
 
 void WavReader::Reset() {
-  RTC_CHECK_EQ(0, fsetpos(file_handle_, &data_start_pos_))
+  RTC_CHECK(file_.SeekTo(data_start_pos_))
       << "Failed to set position in the file to WAV data start position";
   num_samples_remaining_ = num_samples_;
 }
@@ -107,13 +104,16 @@ size_t WavReader::ReadSamples(size_t num_samples, int16_t* samples) {
 #endif
   // There could be metadata after the audio; ensure we don't read it.
   num_samples = std::min(num_samples, num_samples_remaining_);
-  const size_t read =
-      fread(samples, sizeof(*samples), num_samples, file_handle_);
+  const size_t num_bytes = num_samples * sizeof(*samples);
+  const size_t read_bytes = file_.Read(samples, num_bytes);
   // If we didn't read what was requested, ensure we've reached the EOF.
-  RTC_CHECK(read == num_samples || feof(file_handle_));
-  RTC_CHECK_LE(read, num_samples_remaining_);
-  num_samples_remaining_ -= read;
-  return read;
+  RTC_CHECK(read_bytes == num_bytes || file_.ReadEof());
+  RTC_CHECK_EQ(read_bytes % 2, 0)
+      << "End of file in the middle of a 16-bit sample";
+  const size_t read_samples = read_bytes / 2;
+  RTC_CHECK_LE(read_samples, num_samples_remaining_);
+  num_samples_remaining_ -= read_samples;
+  return read_samples;
 }
 
 size_t WavReader::ReadSamples(size_t num_samples, float* samples) {
@@ -131,14 +131,13 @@ size_t WavReader::ReadSamples(size_t num_samples, float* samples) {
 }
 
 void WavReader::Close() {
-  RTC_CHECK_EQ(0, fclose(file_handle_));
-  file_handle_ = nullptr;
+  file_.Close();
 }
 
 WavWriter::WavWriter(const std::string& filename,
                      int sample_rate,
                      size_t num_channels)
-    // Unlike plain fopen, CreatePlatformFile takes care of filename utf8 ->
+    // Unlike plain fopen, OpenWriteOnly takes care of filename utf8 ->
     // wchar conversion on windows.
     : WavWriter(FileWrapper::OpenWriteOnly(filename),
                 sample_rate,
@@ -149,7 +148,7 @@ WavWriter::WavWriter(FileWrapper file, int sample_rate, size_t num_channels)
       num_channels_(num_channels),
       num_samples_(0),
       file_(std::move(file)) {
-  // Handle errors from the CreatePlatformFile call in above constructor.
+  // Handle errors from the OpenWriteOnly call in above constructor.
   RTC_CHECK(file_.is_open()) << "Invalid file. Could not create wav file.";
 
   RTC_CHECK(CheckWavParameters(num_channels_, sample_rate_, kWavFormat,

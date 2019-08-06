@@ -9,6 +9,7 @@
  */
 
 #include "rtc_base/system/file_wrapper.h"
+#include "rtc_base/numerics/safe_conversions.h"
 
 #include <cerrno>
 
@@ -78,9 +79,14 @@ FileWrapper& FileWrapper::operator=(FileWrapper&& other) {
   return *this;
 }
 
-bool FileWrapper::Rewind() {
+bool FileWrapper::SeekRelative(int64_t offset) {
   RTC_DCHECK(file_);
-  return fseek(file_, 0, SEEK_SET) == 0;
+  return fseek(file_, rtc::checked_cast<long>(offset), SEEK_CUR) == 0;
+}
+
+bool FileWrapper::SeekTo(int64_t position) {
+  RTC_DCHECK(file_);
+  return fseek(file_, rtc::checked_cast<long>(position), SEEK_SET) == 0;
 }
 
 bool FileWrapper::Flush() {
@@ -91,6 +97,11 @@ bool FileWrapper::Flush() {
 size_t FileWrapper::Read(void* buf, size_t length) {
   RTC_DCHECK(file_);
   return fread(buf, 1, length, file_);
+}
+
+bool FileWrapper::ReadEof() const {
+  RTC_DCHECK(file_);
+  return feof(file_);
 }
 
 bool FileWrapper::Write(const void* buf, size_t length) {
