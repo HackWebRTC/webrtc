@@ -45,11 +45,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   void ModifyEncoder(rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)>
                          modifier) override;
 
-  // Sets the bitrate to the specified value in bits/sec. In case the codec does
-  // not support the requested value it will choose an appropriate value
-  // instead.
-  void SetBitRate(int bitrate_bps) override;
-
   // Register a transport callback which will be
   // called to deliver the encoded buffers.
   int RegisterTransportCallback(AudioPacketizationCallback* transport) override;
@@ -405,13 +400,6 @@ void AudioCodingModuleImpl::ModifyEncoder(
     rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) {
   rtc::CritScope lock(&acm_crit_sect_);
   modifier(&encoder_stack_);
-}
-
-void AudioCodingModuleImpl::SetBitRate(int bitrate_bps) {
-  rtc::CritScope lock(&acm_crit_sect_);
-  if (encoder_stack_) {
-    encoder_stack_->OnReceivedUplinkBandwidth(bitrate_bps, absl::nullopt);
-  }
 }
 
 // Register a transport callback which will be called to deliver

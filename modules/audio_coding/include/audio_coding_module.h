@@ -92,14 +92,6 @@ class AudioCodingModule {
     });
   }
 
-  ///////////////////////////////////////////////////////////////////////////
-  // Sets the bitrate to the specified value in bits/sec. If the value is not
-  // supported by the codec, it will choose another appropriate value.
-  //
-  // This is only used in test code that rely on old ACM APIs.
-  // TODO(minyue): Remove it when possible.
-  virtual void SetBitRate(int bitrate_bps) = 0;
-
   // int32_t RegisterTransportCallback()
   // Register a transport callback which will be called to deliver
   // the encoded buffers whenever Process() is called and a
