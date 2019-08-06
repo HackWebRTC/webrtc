@@ -535,6 +535,8 @@ JsepTransportController::CreateDtlsTransport(
       this, &JsepTransportController::OnTransportStateChanged_n);
   dtls->ice_transport()->SignalIceTransportStateChanged.connect(
       this, &JsepTransportController::OnTransportStateChanged_n);
+  dtls->ice_transport()->SignalCandidatePairChanged.connect(
+      this, &JsepTransportController::OnTransportCandidatePairChanged_n);
   return dtls;
 }
 
@@ -1400,6 +1402,12 @@ void JsepTransportController::OnTransportCandidatesRemoved_n(
   invoker_.AsyncInvoke<void>(
       RTC_FROM_HERE, signaling_thread_,
       [this, candidates] { SignalIceCandidatesRemoved(candidates); });
+}
+void JsepTransportController::OnTransportCandidatePairChanged_n(
+    const cricket::CandidatePairChangeEvent& event) {
+  invoker_.AsyncInvoke<void>(RTC_FROM_HERE, signaling_thread_, [this, event] {
+    SignalIceCandidatePairChanged(event);
+  });
 }
 
 void JsepTransportController::OnTransportRoleConflict_n(

@@ -285,6 +285,9 @@ class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
   // SignalNetworkRouteChanged.
   sigslot::signal2<IceTransportInternal*, const Candidate&> SignalRouteChange;
 
+  sigslot::signal1<const cricket::CandidatePairChangeEvent&>
+      SignalCandidatePairChanged;
+
   // Invoked when there is conflict in the ICE role between local and remote
   // agents.
   sigslot::signal1<IceTransportInternal*> SignalRoleConflict;

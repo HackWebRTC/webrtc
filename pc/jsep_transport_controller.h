@@ -248,6 +248,9 @@ class JsepTransportController : public sigslot::has_slots<> {
   sigslot::signal1<const std::vector<cricket::Candidate>&>
       SignalIceCandidatesRemoved;
 
+  sigslot::signal1<const cricket::CandidatePairChangeEvent&>
+      SignalIceCandidatePairChanged;
+
   sigslot::signal1<rtc::SSLHandshakeError> SignalDtlsHandshakeError;
 
   sigslot::signal<> SignalMediaTransportStateChanged;
@@ -394,6 +397,8 @@ class JsepTransportController : public sigslot::has_slots<> {
   void OnTransportRoleConflict_n(cricket::IceTransportInternal* transport);
   void OnTransportStateChanged_n(cricket::IceTransportInternal* transport);
   void OnMediaTransportStateChanged_n();
+  void OnTransportCandidatePairChanged_n(
+      const cricket::CandidatePairChangeEvent& event);
 
   void UpdateAggregateStates_n();
 

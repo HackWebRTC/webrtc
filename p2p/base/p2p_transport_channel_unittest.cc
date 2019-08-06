@@ -3147,6 +3147,8 @@ class P2PTransportChannelPingTest : public ::testing::Test,
                                   &P2PTransportChannelPingTest::OnReadyToSend);
     ch->SignalStateChanged.connect(
         this, &P2PTransportChannelPingTest::OnChannelStateChanged);
+    ch->SignalCandidatePairChanged.connect(
+        this, &P2PTransportChannelPingTest::OnCandidatePairChanged);
   }
 
   Connection* WaitForConnectionTo(
@@ -3280,6 +3282,9 @@ class P2PTransportChannelPingTest : public ::testing::Test,
   void OnChannelStateChanged(IceTransportInternal* channel) {
     channel_state_ = channel->GetState();
   }
+  void OnCandidatePairChanged(const CandidatePairChangeEvent& event) {
+    last_candidate_change_event_ = event;
+  }
 
   int last_sent_packet_id() { return last_sent_packet_id_; }
   bool channel_ready_to_send() { return channel_ready_to_send_; }
@@ -3303,12 +3308,27 @@ class P2PTransportChannelPingTest : public ::testing::Test,
     }
   }
 
+  bool ConnectionMatchesChangeEvent(Connection* conn, std::string reason) {
+    if (!conn) {
+      return !last_candidate_change_event_.has_value();
+    } else {
+      return last_candidate_change_event_->local_candidate.IsEquivalent(
+                 conn->local_candidate()) &&
+             last_candidate_change_event_->remote_candidate.IsEquivalent(
+                 conn->remote_candidate()) &&
+             last_candidate_change_event_->last_data_received_ms ==
+                 conn->last_data_received() &&
+             last_candidate_change_event_->reason == reason;
+    }
+  }
+
  private:
   std::unique_ptr<rtc::VirtualSocketServer> vss_;
   rtc::AutoSocketServerThread thread_;
   int selected_candidate_pair_switches_ = 0;
   int last_sent_packet_id_ = -1;
   bool channel_ready_to_send_ = false;
+  absl::optional<CandidatePairChangeEvent> last_candidate_change_event_;
   IceTransportState channel_state_ = IceTransportState::STATE_INIT;
   absl::optional<rtc::NetworkRoute> last_network_route_;
 };
@@ -3712,6 +3732,8 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   conn1->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_EQ_WAIT(conn1, ch.selected_connection(), kDefaultTimeout);
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn1));
+  EXPECT_TRUE(ConnectionMatchesChangeEvent(
+      conn1, "remote candidate generation maybe changed"));
   EXPECT_EQ(len, SendData(&ch, data, len, ++last_packet_id));
 
   // When a higher priority candidate comes in, the new connection is chosen
@@ -3722,6 +3744,8 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   conn2->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_EQ_WAIT(conn2, ch.selected_connection(), kDefaultTimeout);
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn2));
+  EXPECT_TRUE(
+      ConnectionMatchesChangeEvent(conn2, "candidate pair state changed"));
   EXPECT_TRUE(channel_ready_to_send());
   EXPECT_EQ(last_packet_id, last_sent_packet_id());
 
@@ -3740,6 +3764,8 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   NominateConnection(conn3);
   EXPECT_EQ(conn3, ch.selected_connection());
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn3));
+  EXPECT_TRUE(
+      ConnectionMatchesChangeEvent(conn3, "nomination on the controlled side"));
   EXPECT_EQ(last_packet_id, last_sent_packet_id());
   EXPECT_TRUE(channel_ready_to_send());
 
@@ -3761,6 +3787,8 @@ TEST_F(P2PTransportChannelPingTest, TestSelectConnectionBeforeNomination) {
   conn4->ReceivedPingResponse(LOW_RTT, "id");
   EXPECT_EQ_WAIT(conn4, ch.selected_connection(), kDefaultTimeout);
   EXPECT_TRUE(CandidatePairMatchesNetworkRoute(conn4));
+  EXPECT_TRUE(
+      ConnectionMatchesChangeEvent(conn4, "candidate pair state changed"));
   EXPECT_EQ(last_packet_id, last_sent_packet_id());
   // SignalReadyToSend is fired again because conn4 is writable.
   EXPECT_TRUE(channel_ready_to_send());

@@ -267,7 +267,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   bool PresumedWritable(const cricket::Connection* conn) const;
 
   void SortConnectionsAndUpdateState(const std::string& reason_to_sort);
-  void SwitchSelectedConnection(Connection* conn);
+  void SwitchSelectedConnection(Connection* conn, const std::string& reason);
   void UpdateState();
   void HandleAllTimedOut();
   void MaybeStopPortAllocatorSessions();

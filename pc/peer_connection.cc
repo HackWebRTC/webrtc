@@ -1139,6 +1139,8 @@ bool PeerConnection::Initialize(
       this, &PeerConnection::OnTransportControllerCandidatesRemoved);
   transport_controller_->SignalDtlsHandshakeError.connect(
       this, &PeerConnection::OnTransportControllerDtlsHandshakeError);
+  transport_controller_->SignalIceCandidatePairChanged.connect(
+      this, &PeerConnection::OnTransportControllerCandidateChanged);
 
   sctp_factory_ = factory_->CreateSctpTransportInternalFactory();
 
@@ -4273,6 +4275,14 @@ void PeerConnection::OnIceCandidatesRemoved(
   Observer()->OnIceCandidatesRemoved(candidates);
 }
 
+void PeerConnection::OnSelectedCandidatePairChanged(
+    const cricket::CandidatePairChangeEvent& event) {
+  if (IsClosed()) {
+    return;
+  }
+  Observer()->OnIceSelectedCandidatePairChanged(event);
+}
+
 void PeerConnection::ChangeSignalingState(
     PeerConnectionInterface::SignalingState signaling_state) {
   if (signaling_state_ == signaling_state) {
@@ -6244,6 +6254,11 @@ void PeerConnection::OnTransportControllerCandidatesRemoved(
     mutable_local_description()->RemoveCandidates(candidates);
   }
   OnIceCandidatesRemoved(candidates);
+}
+
+void PeerConnection::OnTransportControllerCandidateChanged(
+    const cricket::CandidatePairChangeEvent& event) {
+  OnSelectedCandidatePairChanged(event);
 }
 
 void PeerConnection::OnTransportControllerDtlsHandshakeError(
