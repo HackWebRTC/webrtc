@@ -33,44 +33,20 @@
 #include "call/simulated_network.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
-#include "modules/include/module.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/network/sent_packet.h"
+#include "rtc_base/task_queue.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
-class FakeNetworkPipeModule : public Module {
- public:
-  FakeNetworkPipeModule(
-      Clock* clock,
-      std::unique_ptr<NetworkBehaviorInterface> network_behavior,
-      Transport* transport);
-  ~FakeNetworkPipeModule() override;
-  void SendRtp(const uint8_t* packet,
-               size_t length,
-               const PacketOptions& options);
-  void SendRtcp(const uint8_t* packet, size_t length);
-
-  // Implements Module interface
-  int64_t TimeUntilNextProcess() override;
-  void ProcessThreadAttached(ProcessThread* process_thread) override;
-  void Process() override;
-
- private:
-  void MaybeResumeProcess();
-  FakeNetworkPipe pipe_;
-  rtc::CriticalSection process_thread_lock_;
-  ProcessThread* process_thread_ RTC_GUARDED_BY(process_thread_lock_) = nullptr;
-  bool pending_process_ RTC_GUARDED_BY(process_thread_lock_) = false;
-};
-
 class DegradedCall : public Call, private Transport, private PacketReceiver {
  public:
   explicit DegradedCall(
       std::unique_ptr<Call> call,
       absl::optional<BuiltInNetworkBehaviorConfig> send_config,
-      absl::optional<BuiltInNetworkBehaviorConfig> receive_config);
+      absl::optional<BuiltInNetworkBehaviorConfig> receive_config,
+      TaskQueueFactory* task_queue_factory);
   ~DegradedCall() override;
 
   // Implements Call.
@@ -125,17 +101,40 @@ class DegradedCall : public Call, private Transport, private PacketReceiver {
                                int64_t packet_time_us) override;
 
  private:
+  class FakeNetworkPipeOnTaskQueue {
+   public:
+    FakeNetworkPipeOnTaskQueue(
+        TaskQueueFactory* task_queue_factory,
+        Clock* clock,
+        std::unique_ptr<NetworkBehaviorInterface> network_behavior,
+        Transport* transport);
+
+    void SendRtp(const uint8_t* packet,
+                 size_t length,
+                 const PacketOptions& options);
+    void SendRtcp(const uint8_t* packet, size_t length);
+
+   private:
+    // Try to process packets on the fake network queue.
+    // Returns true if call resulted in a delayed process, false if queue empty.
+    bool Process();
+
+    Clock* const clock_;
+    rtc::TaskQueue task_queue_;
+    FakeNetworkPipe pipe_;
+    absl::optional<int64_t> next_process_ms_ RTC_GUARDED_BY(&task_queue_);
+  };
+
   Clock* const clock_;
   const std::unique_ptr<Call> call_;
+  TaskQueueFactory* const task_queue_factory_;
 
   void MediaTransportChange(MediaTransportInterface* media_transport) override;
   void SetClientBitratePreferences(
       const webrtc::BitrateSettings& preferences) override {}
   const absl::optional<BuiltInNetworkBehaviorConfig> send_config_;
-  const std::unique_ptr<ProcessThread> send_process_thread_;
   SimulatedNetwork* send_simulated_network_;
-  std::unique_ptr<FakeNetworkPipeModule> send_pipe_;
-  size_t num_send_streams_;
+  std::unique_ptr<FakeNetworkPipeOnTaskQueue> send_pipe_;
 
   const absl::optional<BuiltInNetworkBehaviorConfig> receive_config_;
   SimulatedNetwork* receive_simulated_network_;

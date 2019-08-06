@@ -17,64 +17,68 @@
 
 namespace webrtc {
 
-namespace {
-constexpr int64_t kDoNothingProcessIntervalMs = 5000;
-}  // namespace
-
-FakeNetworkPipeModule::~FakeNetworkPipeModule() = default;
-
-FakeNetworkPipeModule::FakeNetworkPipeModule(
+DegradedCall::FakeNetworkPipeOnTaskQueue::FakeNetworkPipeOnTaskQueue(
+    TaskQueueFactory* task_queue_factory,
     Clock* clock,
     std::unique_ptr<NetworkBehaviorInterface> network_behavior,
     Transport* transport)
-    : pipe_(clock, std::move(network_behavior), transport) {}
+    : clock_(clock),
+      task_queue_(task_queue_factory->CreateTaskQueue(
+          "DegradedSendQueue",
+          TaskQueueFactory::Priority::NORMAL)),
+      pipe_(clock, std::move(network_behavior), transport) {}
 
-void FakeNetworkPipeModule::SendRtp(const uint8_t* packet,
-                                    size_t length,
-                                    const PacketOptions& options) {
+void DegradedCall::FakeNetworkPipeOnTaskQueue::SendRtp(
+    const uint8_t* packet,
+    size_t length,
+    const PacketOptions& options) {
   pipe_.SendRtp(packet, length, options);
-  MaybeResumeProcess();
+  Process();
 }
 
-void FakeNetworkPipeModule::SendRtcp(const uint8_t* packet, size_t length) {
+void DegradedCall::FakeNetworkPipeOnTaskQueue::SendRtcp(const uint8_t* packet,
+                                                        size_t length) {
   pipe_.SendRtcp(packet, length);
-  MaybeResumeProcess();
+  Process();
 }
 
-void FakeNetworkPipeModule::MaybeResumeProcess() {
-  rtc::CritScope cs(&process_thread_lock_);
-  if (!pending_process_ && pipe_.TimeUntilNextProcess() && process_thread_) {
-    process_thread_->WakeUp(nullptr);
-  }
-}
-
-int64_t FakeNetworkPipeModule::TimeUntilNextProcess() {
-  auto delay = pipe_.TimeUntilNextProcess();
-  rtc::CritScope cs(&process_thread_lock_);
-  pending_process_ = delay.has_value();
-  return delay.value_or(kDoNothingProcessIntervalMs);
-}
-
-void FakeNetworkPipeModule::ProcessThreadAttached(
-    ProcessThread* process_thread) {
-  rtc::CritScope cs(&process_thread_lock_);
-  process_thread_ = process_thread;
-}
-
-void FakeNetworkPipeModule::Process() {
+bool DegradedCall::FakeNetworkPipeOnTaskQueue::Process() {
   pipe_.Process();
+  auto time_to_next = pipe_.TimeUntilNextProcess();
+  if (!time_to_next) {
+    // Packet was probably sent immediately.
+    return false;
+  }
+
+  task_queue_.PostTask([this, time_to_next]() {
+    RTC_DCHECK_RUN_ON(&task_queue_);
+    int64_t next_process_time = *time_to_next + clock_->TimeInMilliseconds();
+    if (!next_process_ms_ || next_process_time < *next_process_ms_) {
+      next_process_ms_ = next_process_time;
+      task_queue_.PostDelayedTask(
+          [this]() {
+            RTC_DCHECK_RUN_ON(&task_queue_);
+            if (!Process()) {
+              next_process_ms_.reset();
+            }
+          },
+          *time_to_next);
+    }
+  });
+
+  return true;
 }
 
 DegradedCall::DegradedCall(
     std::unique_ptr<Call> call,
     absl::optional<BuiltInNetworkBehaviorConfig> send_config,
-    absl::optional<BuiltInNetworkBehaviorConfig> receive_config)
+    absl::optional<BuiltInNetworkBehaviorConfig> receive_config,
+    TaskQueueFactory* task_queue_factory)
     : clock_(Clock::GetRealTimeClock()),
       call_(std::move(call)),
+      task_queue_factory_(task_queue_factory),
       send_config_(send_config),
-      send_process_thread_(
-          send_config_ ? ProcessThread::Create("DegradedSendThread") : nullptr),
-      num_send_streams_(0),
+      send_simulated_network_(nullptr),
       receive_config_(receive_config) {
   if (receive_config_) {
     auto network = absl::make_unique<SimulatedNetwork>(*receive_config_);
@@ -83,19 +87,9 @@ DegradedCall::DegradedCall(
         absl::make_unique<webrtc::FakeNetworkPipe>(clock_, std::move(network));
     receive_pipe_->SetReceiver(call_->Receiver());
   }
-  if (send_process_thread_) {
-    send_process_thread_->Start();
-  }
 }
 
-DegradedCall::~DegradedCall() {
-  if (send_pipe_) {
-    send_process_thread_->DeRegisterModule(send_pipe_.get());
-  }
-  if (send_process_thread_) {
-    send_process_thread_->Stop();
-  }
-}
+DegradedCall::~DegradedCall() = default;
 
 AudioSendStream* DegradedCall::CreateAudioSendStream(
     const AudioSendStream::Config& config) {
@@ -122,12 +116,10 @@ VideoSendStream* DegradedCall::CreateVideoSendStream(
   if (send_config_ && !send_pipe_) {
     auto network = absl::make_unique<SimulatedNetwork>(*send_config_);
     send_simulated_network_ = network.get();
-    send_pipe_ = absl::make_unique<FakeNetworkPipeModule>(
-        clock_, std::move(network), config.send_transport);
+    send_pipe_ = absl::make_unique<FakeNetworkPipeOnTaskQueue>(
+        task_queue_factory_, clock_, std::move(network), config.send_transport);
     config.send_transport = this;
-    send_process_thread_->RegisterModule(send_pipe_.get(), RTC_FROM_HERE);
   }
-  ++num_send_streams_;
   return call_->CreateVideoSendStream(std::move(config),
                                       std::move(encoder_config));
 }
@@ -139,25 +131,16 @@ VideoSendStream* DegradedCall::CreateVideoSendStream(
   if (send_config_ && !send_pipe_) {
     auto network = absl::make_unique<SimulatedNetwork>(*send_config_);
     send_simulated_network_ = network.get();
-    send_pipe_ = absl::make_unique<FakeNetworkPipeModule>(
-        clock_, std::move(network), config.send_transport);
+    send_pipe_ = absl::make_unique<FakeNetworkPipeOnTaskQueue>(
+        task_queue_factory_, clock_, std::move(network), config.send_transport);
     config.send_transport = this;
-    send_process_thread_->RegisterModule(send_pipe_.get(), RTC_FROM_HERE);
   }
-  ++num_send_streams_;
   return call_->CreateVideoSendStream(
       std::move(config), std::move(encoder_config), std::move(fec_controller));
 }
 
 void DegradedCall::DestroyVideoSendStream(VideoSendStream* send_stream) {
   call_->DestroyVideoSendStream(send_stream);
-  if (send_pipe_ && num_send_streams_ > 0) {
-    --num_send_streams_;
-    if (num_send_streams_ == 0) {
-      send_process_thread_->DeRegisterModule(send_pipe_.get());
-      send_pipe_.reset();
-    }
-  }
 }
 
 VideoReceiveStream* DegradedCall::CreateVideoReceiveStream(
