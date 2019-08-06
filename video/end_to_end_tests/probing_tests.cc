@@ -63,10 +63,13 @@ TEST_F(ProbingEndToEndTest, DISABLED_InitialProbing) {
 #else
 TEST_F(ProbingEndToEndTest, InitialProbing) {
 #endif
+
   class InitialProbingTest : public ProbingTest {
    public:
-    explicit InitialProbingTest(bool* success)
-        : ProbingTest(300000), success_(success) {
+    explicit InitialProbingTest(
+        bool* success,
+        test::SingleThreadedTaskQueueForTesting* task_queue)
+        : ProbingTest(300000), success_(success), task_queue_(task_queue) {
       *success_ = false;
     }
 
@@ -76,7 +79,9 @@ TEST_F(ProbingEndToEndTest, InitialProbing) {
         if (clock_->TimeInMilliseconds() - start_time_ms > kTimeoutMs)
           break;
 
-        Call::Stats stats = sender_call_->GetStats();
+        Call::Stats stats;
+        task_queue_->SendTask(
+            [this, &stats]() { stats = sender_call_->GetStats(); });
         // Initial probing is done with a x3 and x6 multiplier of the start
         // bitrate, so a x4 multiplier is a high enough threshold.
         if (stats.send_bandwidth_bps > 4 * 300000) {
@@ -89,12 +94,13 @@ TEST_F(ProbingEndToEndTest, InitialProbing) {
    private:
     const int kTimeoutMs = 1000;
     bool* const success_;
+    test::SingleThreadedTaskQueueForTesting* const task_queue_;
   };
 
   bool success = false;
   const int kMaxAttempts = 3;
   for (int i = 0; i < kMaxAttempts; ++i) {
-    InitialProbingTest test(&success);
+    InitialProbingTest test(&success, &task_queue_);
     RunBaseTest(&test);
     if (success)
       return;
@@ -127,7 +133,9 @@ TEST_F(ProbingEndToEndTest, TriggerMidCallProbing) {
         if (clock_->TimeInMilliseconds() - start_time_ms > kTimeoutMs)
           break;
 
-        Call::Stats stats = sender_call_->GetStats();
+        Call::Stats stats;
+        task_queue_->SendTask(
+            [this, &stats]() { stats = sender_call_->GetStats(); });
 
         switch (state_) {
           case 0:
@@ -230,7 +238,9 @@ TEST_F(ProbingEndToEndTest, ProbeOnVideoEncoderReconfiguration) {
         if (clock_->TimeInMilliseconds() - start_time_ms > kTimeoutMs)
           break;
 
-        Call::Stats stats = sender_call_->GetStats();
+        Call::Stats stats;
+        task_queue_->SendTask(
+            [this, &stats]() { stats = sender_call_->GetStats(); });
 
         switch (state_) {
           case 0:

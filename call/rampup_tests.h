@@ -66,7 +66,6 @@ class RampUpTester : public test::EndToEndTest {
                     const std::string& units) const;
   void TriggerTestDone();
 
-  rtc::Event stop_event_;
   Clock* const clock_;
   BuiltInNetworkBehaviorConfig forward_transport_config_;
   const size_t num_video_streams_;
