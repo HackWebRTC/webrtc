@@ -63,12 +63,8 @@ void SetMandatoryEntities(InjectableComponents* components) {
   }
 }
 
-struct TestPeerComponents {
-
-  rtc::scoped_refptr<PeerConnectionFactoryInterface> peer_connection_factory;
-  rtc::scoped_refptr<PeerConnectionInterface> peer_connection;
-  rtc::scoped_refptr<AudioProcessing> audio_processing;
-
+class TestPeerComponents {
+ public:
   TestPeerComponents(std::unique_ptr<InjectableComponents> components,
                      const Params& params,
                      MockPeerConnectionObserver* observer,
@@ -76,13 +72,18 @@ struct TestPeerComponents {
                      rtc::Thread* signaling_thread,
                      absl::optional<RemotePeerAudioConfig> remote_audio_config,
                      double bitrate_multiplier,
-                     rtc::TaskQueue* task_queue) {
-    std::map<std::string, absl::optional<int>> stream_required_spatial_index;
+                     rtc::TaskQueue* task_queue)
+      : audio_config_opt_(params.audio_config),
+        observer_(observer),
+        video_analyzer_helper_(video_analyzer_helper),
+        signaling_thread_(signaling_thread),
+        remote_audio_config_(std::move(remote_audio_config)),
+        bitrate_multiplier_(bitrate_multiplier) {
     for (auto& video_config : params.video_configs) {
       // Stream label should be set by fixture implementation here.
       RTC_DCHECK(video_config.stream_label);
       bool res =
-          stream_required_spatial_index
+          stream_required_spatial_index_
               .insert({*video_config.stream_label,
                        video_config.simulcast_config
                            ? absl::optional<int>(video_config.simulcast_config
@@ -95,155 +96,49 @@ struct TestPeerComponents {
 
     // Create audio processing, that will be used to create media engine that
     // then will be added into peer connection. See CreateMediaEngine(...).
-    audio_processing = webrtc::AudioProcessingBuilder().Create();
+    audio_processing_ = webrtc::AudioProcessingBuilder().Create();
     if (params.aec_dump_path) {
-      audio_processing->AttachAecDump(
+      audio_processing_->AttachAecDump(
           AecDumpFactory::Create(*params.aec_dump_path, -1, task_queue));
     }
 
     // Create peer connection factory.
     PeerConnectionFactoryDependencies pcf_deps = CreatePCFDependencies(
-        std::move(components->pcf_dependencies), params.audio_config,
-        bitrate_multiplier, std::move(stream_required_spatial_index),
-        video_analyzer_helper, components->network_thread, signaling_thread,
-        std::move(remote_audio_config), task_queue);
-    peer_connection_factory =
+        std::move(components->pcf_dependencies), components->network_thread);
+    peer_connection_factory_ =
         CreateModularPeerConnectionFactory(std::move(pcf_deps));
 
     // Create peer connection.
     PeerConnectionDependencies pc_deps =
-        CreatePCDependencies(std::move(components->pc_dependencies), observer);
-    peer_connection = peer_connection_factory->CreatePeerConnection(
+        CreatePCDependencies(std::move(components->pc_dependencies));
+    peer_connection_ = peer_connection_factory_->CreatePeerConnection(
         params.rtc_configuration, std::move(pc_deps));
-    peer_connection->SetBitrate(params.bitrate_params);
+    peer_connection_->SetBitrate(params.bitrate_params);
   }
 
-  std::unique_ptr<TestAudioDeviceModule::Capturer> CreateAudioCapturer(
-      AudioConfig audio_config) {
-    if (audio_config.mode == AudioConfig::Mode::kGenerated) {
-      return TestAudioDeviceModule::CreatePulsedNoiseCapturer(
-          kGeneratedAudioMaxAmplitude, audio_config.sampling_frequency_in_hz);
-    }
-    if (audio_config.mode == AudioConfig::Mode::kFile) {
-      RTC_DCHECK(audio_config.input_file_name);
-      return TestAudioDeviceModule::CreateWavFileReader(
-          audio_config.input_file_name.value(), /*repeat=*/true);
-    }
-    RTC_NOTREACHED() << "Unknown audio_config->mode";
-    return nullptr;
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> peer_connection_factory()
+      const {
+    return peer_connection_factory_;
+  }
+  rtc::scoped_refptr<PeerConnectionInterface> peer_connection() const {
+    return peer_connection_;
+  }
+  rtc::scoped_refptr<AudioProcessing> audio_processing() const {
+    return audio_processing_;
   }
 
-  rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModule(
-      TaskQueueFactory* task_queue_factory,
-      absl::optional<AudioConfig> audio_config,
-      absl::optional<RemotePeerAudioConfig> remote_audio_config) {
-    std::unique_ptr<TestAudioDeviceModule::Capturer> capturer;
-    if (audio_config) {
-      capturer = CreateAudioCapturer(audio_config.value());
-    } else {
-      // If we have no audio config we still need to provide some audio device.
-      // In such case use generated capturer. Despite of we provided audio here,
-      // in test media setup audio stream won't be added into peer connection.
-      capturer = TestAudioDeviceModule::CreatePulsedNoiseCapturer(
-          kGeneratedAudioMaxAmplitude, kDefaultSamplingFrequencyInHz);
-    }
-    RTC_DCHECK(capturer);
-
-    if (audio_config && audio_config->input_dump_file_name) {
-      capturer = absl::make_unique<test::CopyToFileAudioCapturer>(
-          std::move(capturer), audio_config->input_dump_file_name.value());
-    }
-
-    std::unique_ptr<TestAudioDeviceModule::Renderer> renderer;
-    if (remote_audio_config && remote_audio_config->output_file_name) {
-      renderer = TestAudioDeviceModule::CreateBoundedWavFileWriter(
-          remote_audio_config->output_file_name.value(),
-          remote_audio_config->sampling_frequency_in_hz);
-    } else {
-      renderer = TestAudioDeviceModule::CreateDiscardRenderer(
-          kDefaultSamplingFrequencyInHz);
-    }
-
-    return TestAudioDeviceModule::Create(task_queue_factory,
-                                         std::move(capturer),
-                                         std::move(renderer), /*speed=*/1.f);
-  }
-
-  std::unique_ptr<VideoEncoderFactory> CreateVideoEncoderFactory(
-      PeerConnectionFactoryComponents* pcf_dependencies,
-      VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
-      double bitrate_multiplier,
-      std::map<std::string, absl::optional<int>>
-          stream_required_spatial_index) {
-    std::unique_ptr<VideoEncoderFactory> video_encoder_factory;
-    if (pcf_dependencies->video_encoder_factory != nullptr) {
-      video_encoder_factory =
-          std::move(pcf_dependencies->video_encoder_factory);
-    } else {
-      video_encoder_factory = CreateBuiltinVideoEncoderFactory();
-    }
-    return video_analyzer_helper->WrapVideoEncoderFactory(
-        std::move(video_encoder_factory), bitrate_multiplier,
-        std::move(stream_required_spatial_index));
-  }
-
-  std::unique_ptr<VideoDecoderFactory> CreateVideoDecoderFactory(
-      PeerConnectionFactoryComponents* pcf_dependencies,
-      VideoQualityAnalyzerInjectionHelper* video_analyzer_helper) {
-    std::unique_ptr<VideoDecoderFactory> video_decoder_factory;
-    if (pcf_dependencies->video_decoder_factory != nullptr) {
-      video_decoder_factory =
-          std::move(pcf_dependencies->video_decoder_factory);
-    } else {
-      video_decoder_factory = CreateBuiltinVideoDecoderFactory();
-    }
-    return video_analyzer_helper->WrapVideoDecoderFactory(
-        std::move(video_decoder_factory));
-  }
-
-  std::unique_ptr<cricket::MediaEngineInterface> CreateMediaEngine(
-      PeerConnectionFactoryComponents* pcf_dependencies,
-      absl::optional<AudioConfig> audio_config,
-      double bitrate_multiplier,
-      std::map<std::string, absl::optional<int>> stream_required_spatial_index,
-      VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
-      absl::optional<RemotePeerAudioConfig> remote_audio_config) {
-    cricket::MediaEngineDependencies media_deps;
-    media_deps.task_queue_factory = pcf_dependencies->task_queue_factory.get();
-    media_deps.adm = CreateAudioDeviceModule(media_deps.task_queue_factory,
-                                             std::move(audio_config),
-                                             std::move(remote_audio_config));
-    media_deps.audio_processing = audio_processing;
-    media_deps.video_encoder_factory = CreateVideoEncoderFactory(
-        pcf_dependencies, video_analyzer_helper, bitrate_multiplier,
-        std::move(stream_required_spatial_index));
-    media_deps.video_decoder_factory =
-        CreateVideoDecoderFactory(pcf_dependencies, video_analyzer_helper);
-    webrtc::SetMediaEngineDefaults(&media_deps);
-    return cricket::CreateMediaEngine(std::move(media_deps));
-  }
-
+ private:
   // Creates PeerConnectionFactoryDependencies objects, providing entities
   // from InjectableComponents::PeerConnectionFactoryComponents and also
   // creating entities, that are required for correct injection of media quality
   // analyzers.
   PeerConnectionFactoryDependencies CreatePCFDependencies(
       std::unique_ptr<PeerConnectionFactoryComponents> pcf_dependencies,
-      absl::optional<AudioConfig> audio_config,
-      double bitrate_multiplier,
-      std::map<std::string, absl::optional<int>> stream_required_spatial_index,
-      VideoQualityAnalyzerInjectionHelper* video_analyzer_helper,
-      rtc::Thread* network_thread,
-      rtc::Thread* signaling_thread,
-      absl::optional<RemotePeerAudioConfig> remote_audio_config,
-      rtc::TaskQueue* task_queue) {
+      rtc::Thread* network_thread) {
     PeerConnectionFactoryDependencies pcf_deps;
     pcf_deps.network_thread = network_thread;
-    pcf_deps.signaling_thread = signaling_thread;
-    pcf_deps.media_engine = CreateMediaEngine(
-        pcf_dependencies.get(), std::move(audio_config), bitrate_multiplier,
-        std::move(stream_required_spatial_index), video_analyzer_helper,
-        std::move(remote_audio_config));
+    pcf_deps.signaling_thread = signaling_thread_;
+    pcf_deps.media_engine = CreateMediaEngine(pcf_dependencies.get());
 
     pcf_deps.call_factory = std::move(pcf_dependencies->call_factory);
     pcf_deps.event_log_factory = std::move(pcf_dependencies->event_log_factory);
@@ -266,12 +161,101 @@ struct TestPeerComponents {
     return pcf_deps;
   }
 
+  std::unique_ptr<cricket::MediaEngineInterface> CreateMediaEngine(
+      PeerConnectionFactoryComponents* pcf_dependencies) {
+    cricket::MediaEngineDependencies media_deps;
+    media_deps.task_queue_factory = pcf_dependencies->task_queue_factory.get();
+    media_deps.adm = CreateAudioDeviceModule(media_deps.task_queue_factory);
+    media_deps.audio_processing = audio_processing_;
+    media_deps.video_encoder_factory =
+        CreateVideoEncoderFactory(pcf_dependencies);
+    media_deps.video_decoder_factory =
+        CreateVideoDecoderFactory(pcf_dependencies);
+    webrtc::SetMediaEngineDefaults(&media_deps);
+    return cricket::CreateMediaEngine(std::move(media_deps));
+  }
+
+  rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModule(
+      TaskQueueFactory* task_queue_factory) {
+    std::unique_ptr<TestAudioDeviceModule::Capturer> capturer;
+    if (audio_config_opt_) {
+      capturer = CreateAudioCapturer(*audio_config_opt_);
+      if (audio_config_opt_->input_dump_file_name) {
+        capturer = absl::make_unique<test::CopyToFileAudioCapturer>(
+            std::move(capturer),
+            audio_config_opt_->input_dump_file_name.value());
+      }
+    } else {
+      // If we have no audio config we still need to provide some audio device.
+      // In such case use generated capturer. Despite of we provided audio here,
+      // in test media setup audio stream won't be added into peer connection.
+      capturer = TestAudioDeviceModule::CreatePulsedNoiseCapturer(
+          kGeneratedAudioMaxAmplitude, kDefaultSamplingFrequencyInHz);
+    }
+    RTC_DCHECK(capturer);
+
+    std::unique_ptr<TestAudioDeviceModule::Renderer> renderer;
+    if (remote_audio_config_ && remote_audio_config_->output_file_name) {
+      renderer = TestAudioDeviceModule::CreateBoundedWavFileWriter(
+          remote_audio_config_->output_file_name.value(),
+          remote_audio_config_->sampling_frequency_in_hz);
+    } else {
+      renderer = TestAudioDeviceModule::CreateDiscardRenderer(
+          kDefaultSamplingFrequencyInHz);
+    }
+
+    return TestAudioDeviceModule::Create(task_queue_factory,
+                                         std::move(capturer),
+                                         std::move(renderer), /*speed=*/1.f);
+  }
+
+  std::unique_ptr<TestAudioDeviceModule::Capturer> CreateAudioCapturer(
+      const AudioConfig& audio_config) {
+    if (audio_config.mode == AudioConfig::Mode::kGenerated) {
+      return TestAudioDeviceModule::CreatePulsedNoiseCapturer(
+          kGeneratedAudioMaxAmplitude, audio_config.sampling_frequency_in_hz);
+    }
+    if (audio_config.mode == AudioConfig::Mode::kFile) {
+      RTC_DCHECK(audio_config.input_file_name);
+      return TestAudioDeviceModule::CreateWavFileReader(
+          audio_config.input_file_name.value(), /*repeat=*/true);
+    }
+    RTC_NOTREACHED() << "Unknown audio_config->mode";
+    return nullptr;
+  }
+
+  std::unique_ptr<VideoEncoderFactory> CreateVideoEncoderFactory(
+      PeerConnectionFactoryComponents* pcf_dependencies) {
+    std::unique_ptr<VideoEncoderFactory> video_encoder_factory;
+    if (pcf_dependencies->video_encoder_factory != nullptr) {
+      video_encoder_factory =
+          std::move(pcf_dependencies->video_encoder_factory);
+    } else {
+      video_encoder_factory = CreateBuiltinVideoEncoderFactory();
+    }
+    return video_analyzer_helper_->WrapVideoEncoderFactory(
+        std::move(video_encoder_factory), bitrate_multiplier_,
+        stream_required_spatial_index_);
+  }
+
+  std::unique_ptr<VideoDecoderFactory> CreateVideoDecoderFactory(
+      PeerConnectionFactoryComponents* pcf_dependencies) {
+    std::unique_ptr<VideoDecoderFactory> video_decoder_factory;
+    if (pcf_dependencies->video_decoder_factory != nullptr) {
+      video_decoder_factory =
+          std::move(pcf_dependencies->video_decoder_factory);
+    } else {
+      video_decoder_factory = CreateBuiltinVideoDecoderFactory();
+    }
+    return video_analyzer_helper_->WrapVideoDecoderFactory(
+        std::move(video_decoder_factory));
+  }
+
   // Creates PeerConnectionDependencies objects, providing entities
   // from InjectableComponents::PeerConnectionComponents.
   PeerConnectionDependencies CreatePCDependencies(
-      std::unique_ptr<PeerConnectionComponents> pc_dependencies,
-      PeerConnectionObserver* observer) {
-    PeerConnectionDependencies pc_deps(observer);
+      std::unique_ptr<PeerConnectionComponents> pc_dependencies) {
+    PeerConnectionDependencies pc_deps(observer_);
 
     auto port_allocator = absl::make_unique<cricket::BasicPortAllocator>(
         pc_dependencies->network_manager);
@@ -294,6 +278,18 @@ struct TestPeerComponents {
     }
     return pc_deps;
   }
+
+  rtc::scoped_refptr<PeerConnectionFactoryInterface> peer_connection_factory_;
+  rtc::scoped_refptr<PeerConnectionInterface> peer_connection_;
+  rtc::scoped_refptr<AudioProcessing> audio_processing_;
+
+  std::map<std::string, absl::optional<int>> stream_required_spatial_index_;
+  absl::optional<AudioConfig> audio_config_opt_;
+  MockPeerConnectionObserver* observer_;
+  VideoQualityAnalyzerInjectionHelper* video_analyzer_helper_;
+  rtc::Thread* signaling_thread_;
+  absl::optional<RemotePeerAudioConfig> remote_audio_config_;
+  double bitrate_multiplier_;
 };
 
 }  // namespace
@@ -326,8 +322,8 @@ std::unique_ptr<TestPeer> TestPeer::CreateTestPeer(
                          task_queue);
 
   return absl::WrapUnique(new TestPeer(
-      tpc.peer_connection_factory, tpc.peer_connection, std::move(observer),
-      std::move(params), tpc.audio_processing));
+      tpc.peer_connection_factory(), tpc.peer_connection(), std::move(observer),
+      std::move(params), tpc.audio_processing()));
 }
 
 bool TestPeer::AddIceCandidates(
