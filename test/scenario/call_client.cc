@@ -241,7 +241,10 @@ ColumnPrinter CallClient::StatsPrinter() {
 }
 
 Call::Stats CallClient::GetStats() {
-  return call_->GetStats();
+  // This call needs to be made on the thread that |call_| was constructed on.
+  Call::Stats stats;
+  SendTask([this, &stats] { stats = call_->GetStats(); });
+  return stats;
 }
 
 DataRate CallClient::target_rate() const {
