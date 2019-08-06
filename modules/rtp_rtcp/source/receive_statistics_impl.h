@@ -30,7 +30,6 @@ class StreamStatisticianImpl : public StreamStatistician,
   StreamStatisticianImpl(uint32_t ssrc,
                          Clock* clock,
                          int max_reordering_threshold,
-                         RtcpStatisticsCallback* rtcp_callback,
                          StreamDataCountersCallback* rtp_callback);
   ~StreamStatisticianImpl() override;
 
@@ -104,14 +103,12 @@ class StreamStatisticianImpl : public StreamStatistician,
   RtcpStatistics last_reported_statistics_ RTC_GUARDED_BY(&stream_lock_);
 
   // stream_lock_ shouldn't be held when calling callbacks.
-  RtcpStatisticsCallback* const rtcp_callback_;
   StreamDataCountersCallback* const rtp_callback_;
 };
 
 class ReceiveStatisticsImpl : public ReceiveStatistics {
  public:
   ReceiveStatisticsImpl(Clock* clock,
-                        RtcpStatisticsCallback* rtcp_callback,
                         StreamDataCountersCallback* rtp_callback);
 
   ~ReceiveStatisticsImpl() override;
@@ -141,7 +138,6 @@ class ReceiveStatisticsImpl : public ReceiveStatistics {
   std::map<uint32_t, StreamStatisticianImpl*> statisticians_
       RTC_GUARDED_BY(receive_statistics_lock_);
 
-  RtcpStatisticsCallback* const rtcp_stats_callback_;
   StreamDataCountersCallback* const rtp_stats_callback_;
 };
 }  // namespace webrtc

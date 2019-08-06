@@ -463,26 +463,6 @@ TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsFrameCounts) {
   EXPECT_EQ(kDeltaFrames, stats.frame_counts.delta_frames);
 }
 
-TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsRtcpStats) {
-  const uint8_t kFracLost = 0;
-  const int32_t kCumLost = 1;
-  const uint32_t kExtSeqNum = 10;
-  const uint32_t kJitter = 4;
-
-  RtcpStatistics rtcp_stats;
-  rtcp_stats.fraction_lost = kFracLost;
-  rtcp_stats.packets_lost = kCumLost;
-  rtcp_stats.extended_highest_sequence_number = kExtSeqNum;
-  rtcp_stats.jitter = kJitter;
-  statistics_proxy_->StatisticsUpdated(rtcp_stats, kRemoteSsrc);
-
-  VideoReceiveStream::Stats stats = statistics_proxy_->GetStats();
-  EXPECT_EQ(kFracLost, stats.rtcp_stats.fraction_lost);
-  EXPECT_EQ(kCumLost, stats.rtcp_stats.packets_lost);
-  EXPECT_EQ(kExtSeqNum, stats.rtcp_stats.extended_highest_sequence_number);
-  EXPECT_EQ(kJitter, stats.rtcp_stats.jitter);
-}
-
 TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsCName) {
   const char* kName = "cName";
   statistics_proxy_->OnCname(kRemoteSsrc, kName);

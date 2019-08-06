@@ -65,16 +65,11 @@ void IncrementSequenceNumber(RtpPacketReceived* packet) {
   IncrementSequenceNumber(packet, 1);
 }
 
-void IncrementTimestamp(RtpPacketReceived* packet, uint32_t incr) {
-  packet->SetTimestamp(packet->Timestamp() + incr);
-}
-
 class ReceiveStatisticsTest : public ::testing::Test {
  public:
   ReceiveStatisticsTest()
       : clock_(0),
-        receive_statistics_(
-            ReceiveStatistics::Create(&clock_, nullptr, nullptr)) {
+        receive_statistics_(ReceiveStatistics::Create(&clock_, nullptr)) {
     packet1_ = CreateRtpPacket(kSsrc1, kPacketSize1);
     packet2_ = CreateRtpPacket(kSsrc2, kPacketSize2);
   }
@@ -231,67 +226,6 @@ TEST_F(ReceiveStatisticsTest, GetReceiveStreamDataCounters) {
   statistician->GetReceiveStreamDataCounters(&counters);
   EXPECT_GT(counters.first_packet_time_ms, -1);
   EXPECT_EQ(2u, counters.transmitted.packets);
-}
-
-TEST_F(ReceiveStatisticsTest, RtcpCallbacks) {
-  class TestCallback : public RtcpStatisticsCallback {
-   public:
-    TestCallback()
-        : RtcpStatisticsCallback(), num_calls_(0), ssrc_(0), stats_() {}
-    ~TestCallback() override {}
-
-    void StatisticsUpdated(const RtcpStatistics& statistics,
-                           uint32_t ssrc) override {
-      ssrc_ = ssrc;
-      stats_ = statistics;
-      ++num_calls_;
-    }
-
-    uint32_t num_calls_;
-    uint32_t ssrc_;
-    RtcpStatistics stats_;
-  } callback;
-
-  receive_statistics_ = ReceiveStatistics::Create(&clock_, &callback, nullptr);
-  receive_statistics_->EnableRetransmitDetection(kSsrc1, true);
-
-  // Add some arbitrary data, with loss and jitter.
-  packet1_.SetSequenceNumber(1);
-  clock_.AdvanceTimeMilliseconds(7);
-  IncrementTimestamp(&packet1_, 3);
-  receive_statistics_->OnRtpPacket(packet1_);
-  IncrementSequenceNumber(&packet1_, 2);
-  clock_.AdvanceTimeMilliseconds(9);
-  IncrementTimestamp(&packet1_, 9);
-  receive_statistics_->OnRtpPacket(packet1_);
-  IncrementSequenceNumber(&packet1_, -1);
-  clock_.AdvanceTimeMilliseconds(13);
-  IncrementTimestamp(&packet1_, 47);
-  receive_statistics_->OnRtpPacket(packet1_);
-  IncrementSequenceNumber(&packet1_, 3);
-  clock_.AdvanceTimeMilliseconds(11);
-  IncrementTimestamp(&packet1_, 17);
-  receive_statistics_->OnRtpPacket(packet1_);
-  IncrementSequenceNumber(&packet1_);
-
-  EXPECT_EQ(0u, callback.num_calls_);
-
-  // Call GetStatistics, simulating a timed rtcp sender thread.
-  RtcpStatistics statistics;
-  receive_statistics_->GetStatistician(kSsrc1)->GetStatistics(&statistics,
-                                                              true);
-
-  EXPECT_EQ(1u, callback.num_calls_);
-  EXPECT_EQ(callback.ssrc_, kSsrc1);
-  EXPECT_EQ(statistics.packets_lost, callback.stats_.packets_lost);
-  EXPECT_EQ(statistics.extended_highest_sequence_number,
-            callback.stats_.extended_highest_sequence_number);
-  EXPECT_EQ(statistics.fraction_lost, callback.stats_.fraction_lost);
-  EXPECT_EQ(statistics.jitter, callback.stats_.jitter);
-  EXPECT_EQ(51, statistics.fraction_lost);
-  EXPECT_EQ(1, statistics.packets_lost);
-  EXPECT_EQ(5u, statistics.extended_highest_sequence_number);
-  EXPECT_EQ(177u, statistics.jitter);
 }
 
 TEST_F(ReceiveStatisticsTest, SimpleLossComputation) {
@@ -558,7 +492,7 @@ class RtpTestCallback : public StreamDataCountersCallback {
 
 TEST_F(ReceiveStatisticsTest, RtpCallbacks) {
   RtpTestCallback callback;
-  receive_statistics_ = ReceiveStatistics::Create(&clock_, nullptr, &callback);
+  receive_statistics_ = ReceiveStatistics::Create(&clock_, &callback);
   receive_statistics_->EnableRetransmitDetection(kSsrc1, true);
 
   const size_t kHeaderLength = 20;
@@ -621,7 +555,7 @@ TEST_F(ReceiveStatisticsTest, RtpCallbacks) {
 
 TEST_F(ReceiveStatisticsTest, LastPacketReceivedTimestamp) {
   RtpTestCallback callback;
-  receive_statistics_ = ReceiveStatistics::Create(&clock_, nullptr, &callback);
+  receive_statistics_ = ReceiveStatistics::Create(&clock_, &callback);
 
   clock_.AdvanceTimeMilliseconds(42);
   receive_statistics_->OnRtpPacket(packet1_);
@@ -634,7 +568,7 @@ TEST_F(ReceiveStatisticsTest, LastPacketReceivedTimestamp) {
 
 TEST_F(ReceiveStatisticsTest, RtpCallbacksFecFirst) {
   RtpTestCallback callback;
-  receive_statistics_ = ReceiveStatistics::Create(&clock_, nullptr, &callback);
+  receive_statistics_ = ReceiveStatistics::Create(&clock_, &callback);
 
   const uint32_t kHeaderLength = 20;
   RtpPacketReceived packet =

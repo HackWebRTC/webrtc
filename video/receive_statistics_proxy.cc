@@ -661,15 +661,6 @@ void ReceiveStatisticsProxy::RtcpPacketTypesCounterUpdated(
   stats_.rtcp_packet_type_counts = packet_counter;
 }
 
-void ReceiveStatisticsProxy::StatisticsUpdated(
-    const webrtc::RtcpStatistics& statistics,
-    uint32_t ssrc) {
-  rtc::CritScope lock(&crit_);
-  if (stats_.ssrc != ssrc)
-    return;
-  stats_.rtcp_stats = statistics;
-}
-
 void ReceiveStatisticsProxy::OnCname(uint32_t ssrc, absl::string_view cname) {
   rtc::CritScope lock(&crit_);
   // TODO(pbos): Handle both local and remote ssrcs here and RTC_DCHECK that we

@@ -37,7 +37,6 @@ class Clock;
 struct CodecSpecificInfo;
 
 class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
-                               public RtcpStatisticsCallback,
                                public RtcpCnameCallback,
                                public RtcpPacketTypeCounterObserver,
                                public StreamDataCountersCallback,
@@ -78,9 +77,6 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
 
   void OnTimingFrameInfoUpdated(const TimingFrameInfo& info) override;
 
-  // Overrides RtcpStatisticsCallback.
-  void StatisticsUpdated(const webrtc::RtcpStatistics& statistics,
-                         uint32_t ssrc) override;
   // Overrides RtcpCnameCallback.
   void OnCname(uint32_t ssrc, absl::string_view cname) override;
 
