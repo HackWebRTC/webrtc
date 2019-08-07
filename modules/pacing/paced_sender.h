@@ -79,10 +79,6 @@ class PacedSender : public Module,
   // Methods implementing RtpPacketPacer:
 
   void CreateProbeCluster(DataRate bitrate, int cluster_id) override;
-  // TODO(bugs.webrtc.org/10809): Remove once downstream usage is gone.
-  void CreateProbeCluster(int bitrate_bps, int cluster_id) {
-    CreateProbeCluster(DataRate::bps(bitrate_bps), cluster_id);
-  }
 
   // Temporarily pause all sending.
   void Pause() override;
@@ -95,11 +91,6 @@ class PacedSender : public Module,
 
   // Sets the pacing rates. Must be called once before packets can be sent.
   void SetPacingRates(DataRate pacing_rate, DataRate padding_rate) override;
-  // TODO(bugs.webrtc.org/10809): Remove once downstream usage is gone.
-  void SetPacingRates(uint32_t pacing_rate_bps, uint32_t padding_rate_bps) {
-    SetPacingRates(DataRate::bps(pacing_rate_bps),
-                   DataRate::bps(padding_rate_bps));
-  }
 
   // Currently audio traffic is not accounted by pacer and passed through.
   // With the introduction of audio BWE audio traffic will be accounted for
@@ -109,8 +100,6 @@ class PacedSender : public Module,
 
   // Returns the time since the oldest queued packet was enqueued.
   TimeDelta OldestPacketWaitTime() const override;
-  // TODO(bugs.webrtc.org/10809): Remove once downstream usage is gone.
-  int64_t QueueInMs() const { return OldestPacketWaitTime().ms(); }
 
   size_t QueueSizePackets() const override;
   DataSize QueueSizeData() const override;
