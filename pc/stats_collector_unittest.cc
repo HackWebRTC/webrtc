@@ -374,6 +374,9 @@ void VerifyVoiceReceiverInfoReport(const StatsReport* report,
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameDecodingPLC,
                        &value_in_report));
   EXPECT_EQ(rtc::ToString(info.decoding_plc), value_in_report);
+  EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameDecodingCodecPLC,
+                       &value_in_report));
+  EXPECT_EQ(rtc::ToString(info.decoding_codec_plc), value_in_report);
   EXPECT_TRUE(GetValue(report, StatsReport::kStatsValueNameDecodingCNG,
                        &value_in_report));
   EXPECT_EQ(rtc::ToString(info.decoding_cng), value_in_report);
@@ -577,6 +580,7 @@ void InitVoiceReceiverInfo(cricket::VoiceReceiverInfo* voice_receiver_info) {
   voice_receiver_info->accelerate_rate = 124;
   voice_receiver_info->preemptive_expand_rate = 125;
   voice_receiver_info->secondary_discarded_rate = 126;
+  voice_receiver_info->decoding_codec_plc = 127;
 }
 
 class StatsCollectorForTest : public StatsCollector {

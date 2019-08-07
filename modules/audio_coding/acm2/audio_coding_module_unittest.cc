@@ -266,7 +266,7 @@ TEST_F(AudioCodingModuleTestOldApi, MAYBE_InitializedToZero) {
   EXPECT_EQ(0, stats.calls_to_silence_generator);
   EXPECT_EQ(0, stats.decoded_normal);
   EXPECT_EQ(0, stats.decoded_cng);
-  EXPECT_EQ(0, stats.decoded_plc);
+  EXPECT_EQ(0, stats.decoded_neteq_plc);
   EXPECT_EQ(0, stats.decoded_plc_cng);
   EXPECT_EQ(0, stats.decoded_muted_output);
 }
@@ -292,7 +292,7 @@ TEST_F(AudioCodingModuleTestOldApi, MAYBE_NetEqCalls) {
   EXPECT_EQ(0, stats.calls_to_silence_generator);
   EXPECT_EQ(kNumNormalCalls, stats.decoded_normal);
   EXPECT_EQ(0, stats.decoded_cng);
-  EXPECT_EQ(0, stats.decoded_plc);
+  EXPECT_EQ(0, stats.decoded_neteq_plc);
   EXPECT_EQ(0, stats.decoded_plc_cng);
   EXPECT_EQ(0, stats.decoded_muted_output);
 
@@ -308,7 +308,7 @@ TEST_F(AudioCodingModuleTestOldApi, MAYBE_NetEqCalls) {
   EXPECT_EQ(0, stats.calls_to_silence_generator);
   EXPECT_EQ(kNumNormalCalls, stats.decoded_normal);
   EXPECT_EQ(0, stats.decoded_cng);
-  EXPECT_EQ(kNumPlc, stats.decoded_plc);
+  EXPECT_EQ(kNumPlc, stats.decoded_neteq_plc);
   EXPECT_EQ(kNumPlcCng, stats.decoded_plc_cng);
   EXPECT_EQ(0, stats.decoded_muted_output);
   // TODO(henrik.lundin) Add a test with muted state enabled.

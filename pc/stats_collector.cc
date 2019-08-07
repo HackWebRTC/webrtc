@@ -176,6 +176,9 @@ void ExtractStats(const cricket::VoiceReceiverInfo& info, StatsReport* report) {
     report->AddInt(StatsReport::kStatsValueNameAudioOutputLevel,
                    info.audio_level);
   }
+  if (info.decoding_codec_plc)
+    report->AddInt(StatsReport::kStatsValueNameDecodingCodecPLC,
+                   info.decoding_codec_plc);
 
   report->AddInt64(StatsReport::kStatsValueNameBytesReceived, info.bytes_rcvd);
   if (info.capture_start_ntp_time_ms >= 0) {

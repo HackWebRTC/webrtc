@@ -239,7 +239,8 @@ webrtc::AudioReceiveStream::Stats AudioReceiveStream::GetStats() const {
   stats.decoding_calls_to_silence_generator = ds.calls_to_silence_generator;
   stats.decoding_calls_to_neteq = ds.calls_to_neteq;
   stats.decoding_normal = ds.decoded_normal;
-  stats.decoding_plc = ds.decoded_plc;
+  stats.decoding_plc = ds.decoded_neteq_plc;
+  stats.decoding_codec_plc = ds.decoded_codec_plc;
   stats.decoding_cng = ds.decoded_cng;
   stats.decoding_plc_cng = ds.decoded_plc_cng;
   stats.decoding_muted_output = ds.decoded_muted_output;

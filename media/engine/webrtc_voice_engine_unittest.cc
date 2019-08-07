@@ -670,6 +670,7 @@ class WebRtcVoiceEngineTestFake : public ::testing::Test {
     stats.decoding_calls_to_neteq = 345;
     stats.decoding_normal = 67890;
     stats.decoding_plc = 1234;
+    stats.decoding_codec_plc = 1236;
     stats.decoding_cng = 5678;
     stats.decoding_plc_cng = 9012;
     stats.decoding_muted_output = 3456;
@@ -719,6 +720,7 @@ class WebRtcVoiceEngineTestFake : public ::testing::Test {
     EXPECT_EQ(info.decoding_calls_to_neteq, stats.decoding_calls_to_neteq);
     EXPECT_EQ(info.decoding_normal, stats.decoding_normal);
     EXPECT_EQ(info.decoding_plc, stats.decoding_plc);
+    EXPECT_EQ(info.decoding_codec_plc, stats.decoding_codec_plc);
     EXPECT_EQ(info.decoding_cng, stats.decoding_cng);
     EXPECT_EQ(info.decoding_plc_cng, stats.decoding_plc_cng);
     EXPECT_EQ(info.decoding_muted_output, stats.decoding_muted_output);

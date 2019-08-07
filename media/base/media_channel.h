@@ -522,7 +522,9 @@ struct VoiceReceiverInfo : public MediaReceiverInfo {
   int decoding_calls_to_silence_generator = 0;
   int decoding_calls_to_neteq = 0;
   int decoding_normal = 0;
+  // TODO(alexnarest): Consider decoding_neteq_plc for consistency
   int decoding_plc = 0;
+  int decoding_codec_plc = 0;
   int decoding_cng = 0;
   int decoding_plc_cng = 0;
   int decoding_muted_output = 0;
