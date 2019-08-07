@@ -323,47 +323,6 @@ class AudioCodingModule {
                                   bool* muted) = 0;
 
   ///////////////////////////////////////////////////////////////////////////
-  //   Codec specific
-  //
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int SetOpusMaxPlaybackRate()
-  // If current send codec is Opus, informs it about maximum playback rate the
-  // receiver will render. Opus can use this information to optimize the bit
-  // rate and increase the computation efficiency.
-  //
-  // Input:
-  //   -frequency_hz            : maximum playback rate in Hz.
-  //
-  // Return value:
-  //   -1 if current send codec is not Opus or
-  //      error occurred in setting the maximum playback rate,
-  //    0 if maximum bandwidth is set successfully.
-  //
-  virtual int SetOpusMaxPlaybackRate(int frequency_hz) = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // EnableOpusDtx()
-  // Enable the DTX, if current send codec is Opus.
-  //
-  // Return value:
-  //   -1 if current send codec is not Opus or error occurred in enabling the
-  //      Opus DTX.
-  //    0 if Opus DTX is enabled successfully.
-  //
-  virtual int EnableOpusDtx() = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
-  // int DisableOpusDtx()
-  // If current send codec is Opus, disables its internal DTX.
-  //
-  // Return value:
-  //   -1 if current send codec is not Opus or error occurred in disabling DTX.
-  //    0 if Opus DTX is disabled successfully.
-  //
-  virtual int DisableOpusDtx() = 0;
-
-  ///////////////////////////////////////////////////////////////////////////
   //   statistics
   //
 

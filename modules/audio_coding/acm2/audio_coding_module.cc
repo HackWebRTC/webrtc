@@ -118,14 +118,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
 
   int GetNetworkStatistics(NetworkStatistics* statistics) override;
 
-  // If current send codec is Opus, informs it about the maximum playback rate
-  // the receiver will render.
-  int SetOpusMaxPlaybackRate(int frequency_hz) override;
-
-  int EnableOpusDtx() override;
-
-  int DisableOpusDtx() override;
-
   int EnableNack(size_t max_nack_list_size) override;
 
   void DisableNack() override;
@@ -708,32 +700,6 @@ int AudioCodingModuleImpl::RegisterVADCallback(ACMVADCallback* vad_callback) {
   rtc::CritScope lock(&callback_crit_sect_);
   vad_callback_ = vad_callback;
   return 0;
-}
-
-// Informs Opus encoder of the maximum playback rate the receiver will render.
-int AudioCodingModuleImpl::SetOpusMaxPlaybackRate(int frequency_hz) {
-  rtc::CritScope lock(&acm_crit_sect_);
-  if (!HaveValidEncoder("SetOpusMaxPlaybackRate")) {
-    return -1;
-  }
-  encoder_stack_->SetMaxPlaybackRate(frequency_hz);
-  return 0;
-}
-
-int AudioCodingModuleImpl::EnableOpusDtx() {
-  rtc::CritScope lock(&acm_crit_sect_);
-  if (!HaveValidEncoder("EnableOpusDtx")) {
-    return -1;
-  }
-  return encoder_stack_->SetDtx(true) ? 0 : -1;
-}
-
-int AudioCodingModuleImpl::DisableOpusDtx() {
-  rtc::CritScope lock(&acm_crit_sect_);
-  if (!HaveValidEncoder("DisableOpusDtx")) {
-    return -1;
-  }
-  return encoder_stack_->SetDtx(false) ? 0 : -1;
 }
 
 absl::optional<uint32_t> AudioCodingModuleImpl::PlayoutTimestamp() {

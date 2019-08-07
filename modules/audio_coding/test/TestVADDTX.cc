@@ -209,23 +209,22 @@ void TestWebRtcVadDtx::Test(bool new_outfile, bool expect_dtx_enabled) {
 
 // Following is the implementation of TestOpusDtx.
 void TestOpusDtx::Perform() {
-  // If we set other codec than Opus, DTX cannot be switched on.
-  RegisterCodec({"ISAC", 16000, 1}, absl::nullopt);
-  EXPECT_EQ(-1, acm_send_->EnableOpusDtx());
-  EXPECT_EQ(0, acm_send_->DisableOpusDtx());
-
   int expects[] = {0, 1, 0, 0, 0};
 
   // Register Opus as send codec
   std::string out_filename =
       webrtc::test::OutputPath() + "testOpusDtx_outFile_mono.pcm";
   RegisterCodec({"opus", 48000, 2}, absl::nullopt);
-  EXPECT_EQ(0, acm_send_->DisableOpusDtx());
+  acm_send_->ModifyEncoder([](std::unique_ptr<AudioEncoder>* encoder_ptr) {
+    (*encoder_ptr)->SetDtx(false);
+  });
 
   Run(webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm"), 32000, 1,
       out_filename, false, expects);
 
-  EXPECT_EQ(0, acm_send_->EnableOpusDtx());
+  acm_send_->ModifyEncoder([](std::unique_ptr<AudioEncoder>* encoder_ptr) {
+    (*encoder_ptr)->SetDtx(true);
+  });
   expects[static_cast<int>(AudioFrameType::kEmptyFrame)] = 1;
   expects[static_cast<int>(AudioFrameType::kAudioFrameCN)] = 1;
   Run(webrtc::test::ResourcePath("audio_coding/testfile32kHz", "pcm"), 32000, 1,
@@ -234,13 +233,17 @@ void TestOpusDtx::Perform() {
   // Register stereo Opus as send codec
   out_filename = webrtc::test::OutputPath() + "testOpusDtx_outFile_stereo.pcm";
   RegisterCodec({"opus", 48000, 2, {{"stereo", "1"}}}, absl::nullopt);
-  EXPECT_EQ(0, acm_send_->DisableOpusDtx());
+  acm_send_->ModifyEncoder([](std::unique_ptr<AudioEncoder>* encoder_ptr) {
+    (*encoder_ptr)->SetDtx(false);
+  });
   expects[static_cast<int>(AudioFrameType::kEmptyFrame)] = 0;
   expects[static_cast<int>(AudioFrameType::kAudioFrameCN)] = 0;
   Run(webrtc::test::ResourcePath("audio_coding/teststereo32kHz", "pcm"), 32000,
       2, out_filename, false, expects);
 
-  EXPECT_EQ(0, acm_send_->EnableOpusDtx());
+  acm_send_->ModifyEncoder([](std::unique_ptr<AudioEncoder>* encoder_ptr) {
+    (*encoder_ptr)->SetDtx(true);
+  });
 
   expects[static_cast<int>(AudioFrameType::kEmptyFrame)] = 1;
   expects[static_cast<int>(AudioFrameType::kAudioFrameCN)] = 1;
