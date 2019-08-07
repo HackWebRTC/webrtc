@@ -15,6 +15,7 @@
 
 #include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "api/test/simulated_network.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video/video_bitrate_allocation.h"
@@ -23,7 +24,6 @@
 #include "call/call.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/audio_device/include/test_audio_device.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"

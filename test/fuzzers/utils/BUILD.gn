@@ -15,13 +15,13 @@ rtc_source_set("rtp_replayer") {
     "rtp_replayer.h",
   ]
   deps = [
+    "../../../api/rtc_event_log",
     "../../../api/task_queue:default_task_queue_factory",
     "../../../api/test/video:function_video_factory",
     "../../../api/video_codecs:video_codecs_api",
     "../../../call",
     "../../../call:call_interfaces",
     "../../../common_video",
-    "../../../logging:rtc_event_log_api",
     "../../../media:rtc_internal_video_codecs",
     "../../../modules/rtp_rtcp",
     "../../../rtc_base:checks",

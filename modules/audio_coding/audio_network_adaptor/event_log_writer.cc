@@ -18,9 +18,9 @@
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "logging/rtc_event_log/events/rtc_event.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_network_adaptation.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {

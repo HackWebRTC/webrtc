@@ -22,9 +22,9 @@
 #include "api/network_state_predictor.h"
 #include "api/peer_connection_factory_proxy.h"
 #include "api/peer_connection_proxy.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "api/turn_customizer.h"
 #include "api/video_track_source_proxy.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/base/rtp_data_engine.h"
 #include "media/sctp/sctp_transport.h"
 #include "p2p/base/basic_packet_socket_factory.h"
@@ -327,7 +327,7 @@ std::unique_ptr<RtcEventLog> PeerConnectionFactory::CreateRtcEventLog_w() {
     encoding_type = RtcEventLog::EncodingType::NewFormat;
   return event_log_factory_
              ? event_log_factory_->CreateRtcEventLog(encoding_type)
-             : absl::make_unique<RtcEventLogNullImpl>();
+             : absl::make_unique<RtcEventLogNull>();
 }
 
 std::unique_ptr<Call> PeerConnectionFactory::CreateCall_w(

@@ -18,11 +18,11 @@
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/media_transport_config.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "call/call.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/base/fake_media_engine.h"
 #include "media/base/fake_network_interface.h"
 #include "media/base/fake_rtp.h"
@@ -3449,7 +3449,7 @@ TEST(WebRtcVoiceEngineTest, StartupShutdown) {
       webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
       webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr, apm);
   engine.Init();
-  webrtc::RtcEventLogNullImpl event_log;
+  webrtc::RtcEventLogNull event_log;
   webrtc::Call::Config call_config(&event_log);
   call_config.task_queue_factory = task_queue_factory.get();
   auto call = absl::WrapUnique(webrtc::Call::Create(call_config));
@@ -3477,7 +3477,7 @@ TEST(WebRtcVoiceEngineTest, StartupShutdownWithExternalADM) {
         webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
         webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr, apm);
     engine.Init();
-    webrtc::RtcEventLogNullImpl event_log;
+    webrtc::RtcEventLogNull event_log;
     webrtc::Call::Config call_config(&event_log);
     call_config.task_queue_factory = task_queue_factory.get();
     auto call = absl::WrapUnique(webrtc::Call::Create(call_config));
@@ -3551,7 +3551,7 @@ TEST(WebRtcVoiceEngineTest, Has32Channels) {
       webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
       webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr, apm);
   engine.Init();
-  webrtc::RtcEventLogNullImpl event_log;
+  webrtc::RtcEventLogNull event_log;
   webrtc::Call::Config call_config(&event_log);
   call_config.task_queue_factory = task_queue_factory.get();
   auto call = absl::WrapUnique(webrtc::Call::Create(call_config));
@@ -3594,7 +3594,7 @@ TEST(WebRtcVoiceEngineTest, SetRecvCodecs) {
       webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
       webrtc::CreateBuiltinAudioDecoderFactory(), nullptr, apm);
   engine.Init();
-  webrtc::RtcEventLogNullImpl event_log;
+  webrtc::RtcEventLogNull event_log;
   webrtc::Call::Config call_config(&event_log);
   call_config.task_queue_factory = task_queue_factory.get();
   auto call = absl::WrapUnique(webrtc::Call::Create(call_config));

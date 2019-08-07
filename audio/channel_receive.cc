@@ -18,11 +18,11 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "audio/audio_level.h"
 #include "audio/channel_send.h"
 #include "audio/utility/audio_frame_operations.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_playout.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/audio_coding/acm2/acm_receiver.h"
 #include "modules/audio_coding/audio_network_adaptor/include/audio_network_adaptor_config.h"
 #include "modules/audio_device/include/audio_device.h"

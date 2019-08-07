@@ -14,11 +14,11 @@
 #include <memory>
 #include <string>
 
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "api/transport/goog_cc_factory.h"
 #include "api/transport/network_control.h"
 #include "api/transport/network_types.h"
 #include "api/units/timestamp.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/congestion_controller/goog_cc/goog_cc_network_control.h"
 #include "test/logging/log_writer.h"
 

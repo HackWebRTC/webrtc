@@ -20,6 +20,7 @@
 
 #include "absl/types/optional.h"
 #include "api/fec_controller.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "api/video/encoded_image.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_bitrate_allocator.h"
@@ -30,7 +31,6 @@
 #include "call/rtp_config.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "call/rtp_video_sender_interface.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/include/module_common_types.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/utility/include/process_thread.h"

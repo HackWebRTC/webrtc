@@ -24,6 +24,7 @@ rtc_static_library("bitrate_controller") {
   }
 
   deps = [
+    "../../api/rtc_event_log",
     "../../api/transport:network_control",
     "../../api/units:data_rate",
     "../../api/units:time_delta",

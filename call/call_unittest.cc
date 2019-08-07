@@ -17,13 +17,13 @@
 
 #include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/fake_media_transport.h"
 #include "api/test/mock_audio_mixer.h"
 #include "audio/audio_receive_stream.h"
 #include "audio/audio_send_stream.h"
 #include "call/audio_state.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/audio_device/include/mock_audio_device.h"
 #include "modules/audio_processing/include/mock_audio_processing.h"
 #include "modules/pacing/mock/mock_paced_sender.h"
@@ -54,7 +54,7 @@ struct CallHelper {
   webrtc::Call* operator->() { return call_.get(); }
 
  private:
-  webrtc::RtcEventLogNullImpl event_log_;
+  webrtc::RtcEventLogNull event_log_;
   std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory_;
   std::unique_ptr<webrtc::Call> call_;
 };

@@ -32,6 +32,7 @@ rtc_static_library("goog_cc") {
     "../..:module_api",
     "../../..:webrtc_common",
     "../../../api:network_state_predictor_api",
+    "../../../api/rtc_event_log",
     "../../../api/transport:field_trial_based_config",
     "../../../api/transport:network_control",
     "../../../api/transport:webrtc_key_value_config",
@@ -39,7 +40,6 @@ rtc_static_library("goog_cc") {
     "../../../api/units:data_size",
     "../../../api/units:time_delta",
     "../../../api/units:timestamp",
-    "../../../logging:rtc_event_log_api",
     "../../../logging:rtc_event_pacing",
     "../../../rtc_base:checks",
     "../../../rtc_base:logging",
@@ -88,6 +88,7 @@ rtc_source_set("alr_detector") {
     "alr_detector.h",
   ]
   deps = [
+    "../../../api/rtc_event_log",
     "../../../api/transport:field_trial_based_config",
     "../../../api/transport:webrtc_key_value_config",
     "../../../logging:rtc_event_log_api",
@@ -120,12 +121,12 @@ rtc_source_set("estimators") {
 
   deps = [
     "../../../api:network_state_predictor_api",
+    "../../../api/rtc_event_log",
     "../../../api/transport:network_control",
     "../../../api/transport:webrtc_key_value_config",
     "../../../api/units:data_rate",
     "../../../api/units:timestamp",
     "../../../logging:rtc_event_bwe",
-    "../../../logging:rtc_event_log_api",
     "../../../rtc_base:checks",
     "../../../rtc_base:logging",
     "../../../rtc_base:macromagic",
@@ -149,6 +150,7 @@ rtc_source_set("delay_based_bwe") {
   deps = [
     ":estimators",
     "../../../api:network_state_predictor_api",
+    "../../../api/rtc_event_log",
     "../../../api/transport:network_control",
     "../../../api/transport:network_control",
     "../../../api/transport:webrtc_key_value_config",
@@ -172,13 +174,13 @@ rtc_source_set("probe_controller") {
   ]
 
   deps = [
+    "../../../api/rtc_event_log",
     "../../../api/transport:network_control",
     "../../../api/transport:webrtc_key_value_config",
     "../../../api/units:data_rate",
     "../../../api/units:time_delta",
     "../../../api/units:timestamp",
     "../../../logging:rtc_event_bwe",
-    "../../../logging:rtc_event_log_api",
     "../../../logging:rtc_event_pacing",
     "../../../rtc_base:checks",
     "../../../rtc_base:logging",
@@ -204,10 +206,10 @@ if (rtc_include_tests) {
       ":delay_based_bwe",
       ":estimators",
       ":goog_cc",
+      "../../../api/rtc_event_log",
       "../../../api/transport:goog_cc",
       "../../../api/transport:network_control",
       "../../../api/units:timestamp",
-      "../../../logging:rtc_event_log_api",
       "../../../rtc_base:checks",
       "../../../test/logging:log_writer",
       "../../remote_bitrate_estimator",

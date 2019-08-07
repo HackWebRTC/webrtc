@@ -24,7 +24,7 @@
 #include "absl/flags/usage.h"
 #include "absl/flags/usage_config.h"
 #include "absl/strings/match.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "logging/rtc_event_log/rtc_event_log_parser.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"

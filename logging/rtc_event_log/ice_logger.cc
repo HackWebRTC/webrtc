@@ -11,7 +11,7 @@
 #include "logging/rtc_event_log/ice_logger.h"
 
 #include "absl/memory/memory.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 
 namespace webrtc {
 

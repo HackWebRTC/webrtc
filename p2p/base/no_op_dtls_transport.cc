@@ -15,9 +15,9 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "logging/rtc_event_log/events/rtc_event_dtls_transport_state.h"
 #include "logging/rtc_event_log/events/rtc_event_dtls_writable_state.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "p2p/base/packet_transport_internal.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"

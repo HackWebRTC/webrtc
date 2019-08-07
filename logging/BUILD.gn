@@ -30,7 +30,6 @@ rtc_source_set("rtc_event_log_api") {
   sources = [
     "rtc_event_log/encoder/rtc_event_log_encoder.h",
     "rtc_event_log/events/rtc_event.h",
-    "rtc_event_log/rtc_event_log.h",
     "rtc_event_log/rtc_event_log_factory_interface.h",
   ]
 
@@ -277,6 +276,7 @@ rtc_source_set("fake_rtc_event_log") {
   deps = [
     ":ice_log",
     ":rtc_event_log_api",
+    "../api/rtc_event_log",
     "../rtc_base",
     "../rtc_base:checks",
   ]
@@ -314,13 +314,13 @@ if (rtc_enable_protobuf) {
       ":ice_log",
       ":rtc_event_bwe",
       ":rtc_event_log2_proto",
-      ":rtc_event_log_api",
       ":rtc_event_log_impl_encoder",
       ":rtc_event_log_proto",
       ":rtc_stream_config",
       "../api:function_view",
       "../api:libjingle_peerconnection_api",
       "../api:rtp_headers",
+      "../api/rtc_event_log",
       "../api/units:data_rate",
       "../api/units:time_delta",
       "../api/units:timestamp",
@@ -361,7 +361,6 @@ if (rtc_enable_protobuf) {
         ":rtc_event_bwe",
         ":rtc_event_generic_packet_events",
         ":rtc_event_log2_proto",
-        ":rtc_event_log_api",
         ":rtc_event_log_impl_encoder",
         ":rtc_event_log_parser",
         ":rtc_event_log_proto",
@@ -373,6 +372,7 @@ if (rtc_enable_protobuf) {
         "../api:libjingle_peerconnection_api",
         "../api:rtc_event_log_output_file",
         "../api:rtp_headers",
+        "../api/rtc_event_log",
         "../api/rtc_event_log:rtc_event_log_factory",
         "../api/task_queue:default_task_queue_factory",
         "../call",
@@ -398,11 +398,11 @@ if (rtc_enable_protobuf) {
         "rtc_event_log/rtc_event_log2rtp_dump.cc",
       ]
       deps = [
-        ":rtc_event_log_api",
         ":rtc_event_log_parser",
         "../api:array_view",
         "../api:libjingle_peerconnection_api",
         "../api:rtp_headers",
+        "../api/rtc_event_log",
         "../modules/rtp_rtcp",
         "../modules/rtp_rtcp:rtp_rtcp_format",
         "../rtc_base:checks",
@@ -437,6 +437,7 @@ rtc_source_set("ice_log") {
     ":rtc_event_log_api",
     "../api:libjingle_logging_api",
     "../api:libjingle_peerconnection_api",
+    "../api/rtc_event_log",
     "../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/memory",
   ]
@@ -450,7 +451,7 @@ if (rtc_include_tests) {
       "rtc_event_log/mock/mock_rtc_event_log.h",
     ]
     deps = [
-      ":rtc_event_log_api",
+      "../api/rtc_event_log",
       "../test:test_support",
     ]
   }

@@ -17,6 +17,7 @@
 
 #include "api/call/transport.h"
 #include "api/media_types.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video_codecs/video_decoder_factory.h"
@@ -25,7 +26,6 @@
 #include "call/call.h"
 #include "call/rtp_config.h"
 #include "call/video_send_stream.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/engine/webrtc_video_engine.h"
 #include "rtc_base/constructor_magic.h"
 #include "test/frame_generator.h"

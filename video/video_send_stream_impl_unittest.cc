@@ -14,10 +14,10 @@
 
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "call/rtp_video_sender.h"
 #include "call/test/mock_bitrate_allocator.h"
 #include "call/test/mock_rtp_transport_controller_send.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/rtp_rtcp/source/rtp_sequence_number_map.h"
 #include "modules/utility/include/process_thread.h"
 #include "modules/video_coding/fec_controller_default.h"
@@ -142,7 +142,7 @@ class VideoSendStreamImplTest : public ::testing::Test {
 
   bool rtp_video_sender_active_ = false;
   SimulatedClock clock_;
-  RtcEventLogNullImpl event_log_;
+  RtcEventLogNull event_log_;
   VideoSendStream::Config config_;
   SendDelayStats send_delay_stats_;
   TaskQueueForTest test_queue_;

@@ -155,6 +155,7 @@ if (!build_with_chromium) {
     deps = [
       "../api:libjingle_peerconnection_api",
       "../api:transport_api",
+      "../api/rtc_event_log",
       "../api/task_queue:default_task_queue_factory",
       "../api/task_queue:task_queue",
       "../api/video:builtin_video_bitrate_allocator_factory",
@@ -169,7 +170,6 @@ if (!build_with_chromium) {
       "../call:simulated_network",
       "../call:simulated_packet_receiver",
       "../call:video_stream_api",
-      "../logging:rtc_event_log_api",
       "../media:rtc_audio_video",
       "../media:rtc_media_base",
       "../rtc_base",
@@ -289,7 +289,6 @@ if (!build_with_chromium) {
         "../api/transport:network_control",
         "../call:call_interfaces",
         "../call:video_stream_api",
-        "../logging:rtc_event_log_api",
         "../logging:rtc_event_log_parser",
         "../logging:rtc_stream_config",
         "../modules/audio_coding:ana_debug_dump_proto",
@@ -325,7 +324,7 @@ if (rtc_include_tests) {
       defines = [ "ENABLE_RTC_EVENT_LOG" ]
       deps = [
         ":event_log_visualizer_utils",
-        "../logging:rtc_event_log_api",
+        "../api/rtc_event_log",
         "../logging:rtc_event_log_parser",
         "../modules/audio_coding:neteq",
         "../modules/rtp_rtcp:rtp_rtcp_format",

@@ -13,9 +13,9 @@
 #include <algorithm>
 
 #include "absl/memory/memory.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "logging/rtc_event_log/events/rtc_event.h"
 #include "logging/rtc_event_log/events/rtc_event_probe_cluster_created.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "system_wrappers/include/metrics.h"

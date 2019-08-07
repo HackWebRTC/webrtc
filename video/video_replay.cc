@@ -17,11 +17,11 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/memory/memory.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "api/test/video/function_video_decoder_factory.h"
 #include "api/video_codecs/video_decoder.h"
 #include "call/call.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/engine/internal_decoder_factory.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "rtc_base/checks.h"
@@ -262,7 +262,7 @@ class RtpReplayer final {
   // Replay a rtp dump with an optional json configuration.
   static void Replay(const std::string& replay_config_path,
                      const std::string& rtp_dump_path) {
-    webrtc::RtcEventLogNullImpl event_log;
+    webrtc::RtcEventLogNull event_log;
     Call::Config call_config(&event_log);
     std::unique_ptr<Call> call(Call::Create(call_config));
     std::unique_ptr<StreamState> stream_state;

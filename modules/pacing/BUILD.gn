@@ -30,6 +30,7 @@ rtc_static_library("pacing") {
     ":interval_budget",
     "..:module_api",
     "../../api:function_view",
+    "../../api/rtc_event_log",
     "../../api/transport:field_trial_based_config",
     "../../api/transport:network_control",
     "../../api/transport:webrtc_key_value_config",

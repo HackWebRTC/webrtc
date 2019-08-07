@@ -17,9 +17,9 @@
 #include <vector>
 
 #include "absl/types/optional.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "api/transport/network_control.h"
 #include "api/transport/webrtc_key_value_config.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/system/unused.h"

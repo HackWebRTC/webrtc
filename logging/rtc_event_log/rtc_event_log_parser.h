@@ -18,10 +18,10 @@
 #include <utility>  // pair
 #include <vector>
 
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
 #include "logging/rtc_event_log/logged_events.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/common_header.h"
 #include "rtc_base/ignore_wundef.h"

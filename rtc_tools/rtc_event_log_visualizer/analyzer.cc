@@ -1218,7 +1218,7 @@ void EventLogAnalyzer::CreateSendSideBweSimulationGraph(Plot* plot) {
 
   SimulatedClock clock(0);
   BitrateObserver observer;
-  RtcEventLogNullImpl null_event_log;
+  RtcEventLogNull null_event_log;
   PacketRouter packet_router;
   PacedSender pacer(&clock, &packet_router, &null_event_log);
   TransportFeedbackAdapter transport_feedback;

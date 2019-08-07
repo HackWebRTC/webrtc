@@ -20,6 +20,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "api/media_transport_config.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "api/rtp_parameters.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/fake_media_transport.h"
@@ -39,7 +40,6 @@
 #include "api/video_codecs/video_encoder_factory.h"
 #include "call/flexfec_receive_stream.h"
 #include "common_video/h264/profile_level_id.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/base/fake_frame_source.h"
 #include "media/base/fake_network_interface.h"
 #include "media/base/fake_video_renderer.h"
@@ -272,7 +272,7 @@ class WebRtcVideoEngineTest : public ::testing::Test {
   // race condition in the clock access.
   rtc::ScopedFakeClock fake_clock_;
   std::unique_ptr<webrtc::test::ScopedFieldTrials> override_field_trials_;
-  webrtc::RtcEventLogNullImpl event_log_;
+  webrtc::RtcEventLogNull event_log_;
   std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory_;
   // Used in WebRtcVideoEngineVoiceTest, but defined here so it's properly
   // initialized when the constructor is called.
@@ -1146,7 +1146,7 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, Vp8) {
       .WillOnce(::testing::Return(decoder));
 
   // Create a call.
-  webrtc::RtcEventLogNullImpl event_log;
+  webrtc::RtcEventLogNull event_log;
   auto task_queue_factory = webrtc::CreateDefaultTaskQueueFactory();
   webrtc::Call::Config call_config(&event_log);
   call_config.task_queue_factory = task_queue_factory.get();
@@ -1216,7 +1216,7 @@ TEST(WebRtcVideoEngineNewVideoCodecFactoryTest, NullDecoder) {
       .WillOnce(::testing::Return(nullptr));
 
   // Create a call.
-  webrtc::RtcEventLogNullImpl event_log;
+  webrtc::RtcEventLogNull event_log;
   auto task_queue_factory = webrtc::CreateDefaultTaskQueueFactory();
   webrtc::Call::Config call_config(&event_log);
   call_config.task_queue_factory = task_queue_factory.get();
@@ -1491,7 +1491,7 @@ class WebRtcVideoChannelBaseTest : public ::testing::Test {
     return cricket::StreamParams::CreateLegacy(kSsrc);
   }
 
-  webrtc::RtcEventLogNullImpl event_log_;
+  webrtc::RtcEventLogNull event_log_;
   std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory_;
   std::unique_ptr<webrtc::Call> call_;
   std::unique_ptr<webrtc::VideoBitrateAllocatorFactory>
@@ -7539,7 +7539,7 @@ class WebRtcVideoChannelSimulcastTest : public ::testing::Test {
     return streams[streams.size() - 1];
   }
 
-  webrtc::RtcEventLogNullImpl event_log_;
+  webrtc::RtcEventLogNull event_log_;
   FakeCall fake_call_;
   cricket::FakeWebRtcVideoEncoderFactory* encoder_factory_;
   cricket::FakeWebRtcVideoDecoderFactory* decoder_factory_;

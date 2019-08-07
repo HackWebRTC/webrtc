@@ -26,12 +26,12 @@
 #include "api/dtmf_sender_interface.h"
 #include "api/media_stream_interface.h"
 #include "api/rtc_error.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
 #include "api/test/fake_frame_decryptor.h"
 #include "api/test/fake_frame_encryptor.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "media/base/codec.h"
 #include "media/base/fake_media_engine.h"
 #include "media/base/media_channel.h"
@@ -489,7 +489,7 @@ class RtpSenderReceiverTest
  protected:
   rtc::Thread* const network_thread_;
   rtc::Thread* const worker_thread_;
-  webrtc::RtcEventLogNullImpl event_log_;
+  webrtc::RtcEventLogNull event_log_;
   // The |rtp_dtls_transport_| and |rtp_transport_| should be destroyed after
   // the |channel_manager|.
   std::unique_ptr<cricket::DtlsTransportInternal> rtp_dtls_transport_;

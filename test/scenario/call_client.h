@@ -16,8 +16,8 @@
 #include <utility>
 #include <vector>
 
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "call/call.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "modules/audio_device/include/test_audio_device.h"
 #include "modules/congestion_controller/goog_cc/test/goog_cc_printer.h"
 #include "modules/rtp_rtcp/include/rtp_header_parser.h"

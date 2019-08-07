@@ -16,10 +16,10 @@
 #include <utility>
 #include <vector>
 
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "api/test/simulated_network.h"
 #include "call/call.h"
 #include "call/simulated_network.h"
-#include "logging/rtc_event_log/rtc_event_log.h"
 #include "rtc_base/event.h"
 #include "test/call_test.h"
 

@@ -51,7 +51,7 @@ void RtpReplayer::Replay(
   }
 
   // Setup the video streams based on the configuration.
-  webrtc::RtcEventLogNullImpl event_log;
+  webrtc::RtcEventLogNull event_log;
   std::unique_ptr<TaskQueueFactory> task_queue_factory =
       CreateDefaultTaskQueueFactory();
   Call::Config call_config(&event_log);

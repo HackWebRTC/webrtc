@@ -8,8 +8,6 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "logging/rtc_event_log/rtc_event_log.h"
-
 #include <algorithm>
 #include <limits>
 #include <map>
@@ -20,6 +18,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/rtc_event_log/rtc_event_log.h"
 #include "api/rtc_event_log/rtc_event_log_factory.h"
 #include "api/rtc_event_log_output_file.h"
 #include "api/task_queue/default_task_queue_factory.h"

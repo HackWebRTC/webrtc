@@ -50,7 +50,6 @@ rtc_static_library("audio_coding") {
     "../../api/audio_codecs:audio_codecs_api",
     "../../common_audio",
     "../../common_audio:common_audio_c",
-    "../../logging:rtc_event_log_api",
     "../../rtc_base:audio_format_to_string",
     "../../rtc_base:checks",
     "../../rtc_base:deprecation",
@@ -917,6 +916,7 @@ rtc_static_library("audio_network_adaptor") {
 
   deps = [
     "../../api/audio_codecs:audio_codecs_api",
+    "../../api/rtc_event_log",
     "../../common_audio",
     "../../logging:rtc_event_audio",
     "../../logging:rtc_event_log_api",
