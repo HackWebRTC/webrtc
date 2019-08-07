@@ -3848,6 +3848,28 @@ TEST_F(WebRtcVideoChannelFlexfecRecvTest,
   EXPECT_EQ(1, video_stream.GetNumRemovedSecondarySinks());
 }
 
+TEST_F(WebRtcVideoChannelFlexfecRecvTest, DuplicateFlexfecCodecIsDropped) {
+  constexpr int kUnusedPayloadType1 = 127;
+
+  cricket::VideoRecvParameters recv_parameters;
+  recv_parameters.codecs.push_back(GetEngineCodec("VP8"));
+  recv_parameters.codecs.push_back(GetEngineCodec("flexfec-03"));
+  cricket::VideoCodec duplicate = GetEngineCodec("flexfec-03");
+  duplicate.id = kUnusedPayloadType1;
+  recv_parameters.codecs.push_back(duplicate);
+  ASSERT_TRUE(channel_->SetRecvParameters(recv_parameters));
+
+  AddRecvStream(
+      CreatePrimaryWithFecFrStreamParams("cname", kSsrcs1[0], kFlexfecSsrc));
+
+  const std::vector<FakeFlexfecReceiveStream*>& streams =
+      fake_call_->GetFlexfecReceiveStreams();
+  ASSERT_EQ(1U, streams.size());
+  const FakeFlexfecReceiveStream* stream = streams.front();
+  const webrtc::FlexfecReceiveStream::Config& config = stream->GetConfig();
+  EXPECT_EQ(GetEngineCodec("flexfec-03").id, config.payload_type);
+}
+
 // TODO(brandtr): When FlexFEC is no longer behind a field trial, merge all
 // tests that use this test fixture into the corresponding "non-field trial"
 // tests.
@@ -4553,6 +4575,40 @@ TEST_F(WebRtcVideoChannelTest, SetRecvCodecsWithPacketizationRecreatesStream) {
   parameters.codecs.back().packetization.reset();
   EXPECT_TRUE(channel_->SetRecvParameters(parameters));
   EXPECT_EQ(fake_call_->GetNumCreatedReceiveStreams(), 2);
+}
+
+TEST_F(WebRtcVideoChannelTest, DuplicateUlpfecCodecIsDropped) {
+  constexpr int kFirstUlpfecPayloadType = 126;
+  constexpr int kSecondUlpfecPayloadType = 127;
+
+  cricket::VideoRecvParameters parameters;
+  parameters.codecs.push_back(GetEngineCodec("VP8"));
+  parameters.codecs.push_back(
+      cricket::VideoCodec(kFirstUlpfecPayloadType, cricket::kUlpfecCodecName));
+  parameters.codecs.push_back(
+      cricket::VideoCodec(kSecondUlpfecPayloadType, cricket::kUlpfecCodecName));
+  ASSERT_TRUE(channel_->SetRecvParameters(parameters));
+
+  FakeVideoReceiveStream* recv_stream = AddRecvStream();
+  EXPECT_EQ(kFirstUlpfecPayloadType,
+            recv_stream->GetConfig().rtp.ulpfec_payload_type);
+}
+
+TEST_F(WebRtcVideoChannelTest, DuplicateRedCodecIsDropped) {
+  constexpr int kFirstRedPayloadType = 126;
+  constexpr int kSecondRedPayloadType = 127;
+
+  cricket::VideoRecvParameters parameters;
+  parameters.codecs.push_back(GetEngineCodec("VP8"));
+  parameters.codecs.push_back(
+      cricket::VideoCodec(kFirstRedPayloadType, cricket::kRedCodecName));
+  parameters.codecs.push_back(
+      cricket::VideoCodec(kSecondRedPayloadType, cricket::kRedCodecName));
+  ASSERT_TRUE(channel_->SetRecvParameters(parameters));
+
+  FakeVideoReceiveStream* recv_stream = AddRecvStream();
+  EXPECT_EQ(kFirstRedPayloadType,
+            recv_stream->GetConfig().rtp.red_payload_type);
 }
 
 TEST_F(WebRtcVideoChannelTest, SetRecvCodecsWithChangedRtxPayloadType) {

@@ -227,8 +227,8 @@ class WebRtcVideoChannel : public VideoMediaChannel,
 
     VideoCodec codec;
     webrtc::UlpfecConfig ulpfec;
-    int flexfec_payload_type;
-    int rtx_payload_type;
+    int flexfec_payload_type;  // -1 if absent.
+    int rtx_payload_type;      // -1 if absent.
   };
 
   struct ChangedSendParameters {
@@ -481,6 +481,10 @@ class WebRtcVideoChannel : public VideoMediaChannel,
                const webrtc::PacketOptions& options) override;
   bool SendRtcp(const uint8_t* data, size_t len) override;
 
+  // Generate the list of codec parameters to pass down based on the negotiated
+  // "codecs". Note that VideoCodecSettings correspond to concrete codecs like
+  // VP8, VP9, H264 while VideoCodecs correspond also to "virtual" codecs like
+  // RTX, ULPFEC, FLEXFEC.
   static std::vector<VideoCodecSettings> MapCodecs(
       const std::vector<VideoCodec>& codecs);
   // Get all codecs that are compatible with the receiver.

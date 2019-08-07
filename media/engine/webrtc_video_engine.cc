@@ -2887,46 +2887,58 @@ WebRtcVideoChannel::MapCodecs(const std::vector<VideoCodec>& codecs) {
   RTC_DCHECK(!codecs.empty());
 
   std::vector<VideoCodecSettings> video_codecs;
-  std::map<int, bool> payload_used;
   std::map<int, VideoCodec::CodecType> payload_codec_type;
   // |rtx_mapping| maps video payload type to rtx payload type.
   std::map<int, int> rtx_mapping;
 
   webrtc::UlpfecConfig ulpfec_config;
-  int flexfec_payload_type = -1;
+  absl::optional<int> flexfec_payload_type;
 
-  for (size_t i = 0; i < codecs.size(); ++i) {
-    const VideoCodec& in_codec = codecs[i];
-    int payload_type = in_codec.id;
+  for (const VideoCodec& in_codec : codecs) {
+    const int payload_type = in_codec.id;
 
-    if (payload_used[payload_type]) {
+    if (payload_codec_type.find(payload_type) != payload_codec_type.end()) {
       RTC_LOG(LS_ERROR) << "Payload type already registered: "
                         << in_codec.ToString();
-      return std::vector<VideoCodecSettings>();
+      return {};
     }
-    payload_used[payload_type] = true;
     payload_codec_type[payload_type] = in_codec.GetCodecType();
 
     switch (in_codec.GetCodecType()) {
       case VideoCodec::CODEC_RED: {
-        // RED payload type, should not have duplicates.
-        RTC_DCHECK_EQ(-1, ulpfec_config.red_payload_type);
-        ulpfec_config.red_payload_type = in_codec.id;
-        continue;
+        if (ulpfec_config.red_payload_type != -1) {
+          RTC_LOG(LS_ERROR)
+              << "Duplicate RED codec: ignoring PT=" << payload_type
+              << " in favor of PT=" << ulpfec_config.red_payload_type
+              << " which was specified first.";
+          break;
+        }
+        ulpfec_config.red_payload_type = payload_type;
+        break;
       }
 
       case VideoCodec::CODEC_ULPFEC: {
-        // ULPFEC payload type, should not have duplicates.
-        RTC_DCHECK_EQ(-1, ulpfec_config.ulpfec_payload_type);
-        ulpfec_config.ulpfec_payload_type = in_codec.id;
-        continue;
+        if (ulpfec_config.ulpfec_payload_type != -1) {
+          RTC_LOG(LS_ERROR)
+              << "Duplicate ULPFEC codec: ignoring PT=" << payload_type
+              << " in favor of PT=" << ulpfec_config.ulpfec_payload_type
+              << " which was specified first.";
+          break;
+        }
+        ulpfec_config.ulpfec_payload_type = payload_type;
+        break;
       }
 
       case VideoCodec::CODEC_FLEXFEC: {
-        // FlexFEC payload type, should not have duplicates.
-        RTC_DCHECK_EQ(-1, flexfec_payload_type);
-        flexfec_payload_type = in_codec.id;
-        continue;
+        if (flexfec_payload_type) {
+          RTC_LOG(LS_ERROR)
+              << "Duplicate FLEXFEC codec: ignoring PT=" << payload_type
+              << " in favor of PT=" << *flexfec_payload_type
+              << " which was specified first.";
+          break;
+        }
+        flexfec_payload_type = payload_type;
+        break;
       }
 
       case VideoCodec::CODEC_RTX: {
@@ -2937,49 +2949,57 @@ WebRtcVideoChannel::MapCodecs(const std::vector<VideoCodec>& codecs) {
           RTC_LOG(LS_ERROR)
               << "RTX codec with invalid or no associated payload type: "
               << in_codec.ToString();
-          return std::vector<VideoCodecSettings>();
+          return {};
         }
-        rtx_mapping[associated_payload_type] = in_codec.id;
-        continue;
+        rtx_mapping[associated_payload_type] = payload_type;
+        break;
       }
 
-      case VideoCodec::CODEC_VIDEO:
+      case VideoCodec::CODEC_VIDEO: {
+        video_codecs.emplace_back();
+        video_codecs.back().codec = in_codec;
         break;
+      }
     }
-
-    video_codecs.push_back(VideoCodecSettings());
-    video_codecs.back().codec = in_codec;
   }
 
   // One of these codecs should have been a video codec. Only having FEC
   // parameters into this code is a logic error.
   RTC_DCHECK(!video_codecs.empty());
 
-  for (std::map<int, int>::const_iterator it = rtx_mapping.begin();
-       it != rtx_mapping.end(); ++it) {
-    if (!payload_used[it->first]) {
-      RTC_LOG(LS_ERROR) << "RTX mapped to payload not in codec list.";
-      return std::vector<VideoCodecSettings>();
+  for (const auto& entry : rtx_mapping) {
+    const int associated_payload_type = entry.first;
+    const int rtx_payload_type = entry.second;
+    auto it = payload_codec_type.find(associated_payload_type);
+    if (it == payload_codec_type.end()) {
+      RTC_LOG(LS_ERROR) << "RTX codec (PT=" << rtx_payload_type
+                        << ") mapped to PT=" << associated_payload_type
+                        << " which is not in the codec list.";
+      return {};
     }
-    if (payload_codec_type[it->first] != VideoCodec::CODEC_VIDEO &&
-        payload_codec_type[it->first] != VideoCodec::CODEC_RED) {
+    const VideoCodec::CodecType associated_codec_type = it->second;
+    if (associated_codec_type != VideoCodec::CODEC_VIDEO &&
+        associated_codec_type != VideoCodec::CODEC_RED) {
       RTC_LOG(LS_ERROR)
-          << "RTX not mapped to regular video codec or RED codec.";
-      return std::vector<VideoCodecSettings>();
+          << "RTX PT=" << rtx_payload_type
+          << " not mapped to regular video codec or RED codec (PT="
+          << associated_payload_type << ").";
+      return {};
     }
 
-    if (it->first == ulpfec_config.red_payload_type) {
-      ulpfec_config.red_rtx_payload_type = it->second;
+    if (associated_payload_type == ulpfec_config.red_payload_type) {
+      ulpfec_config.red_rtx_payload_type = rtx_payload_type;
     }
   }
 
-  for (size_t i = 0; i < video_codecs.size(); ++i) {
-    video_codecs[i].ulpfec = ulpfec_config;
-    video_codecs[i].flexfec_payload_type = flexfec_payload_type;
-    if (rtx_mapping[video_codecs[i].codec.id] != 0 &&
-        rtx_mapping[video_codecs[i].codec.id] !=
-            ulpfec_config.red_payload_type) {
-      video_codecs[i].rtx_payload_type = rtx_mapping[video_codecs[i].codec.id];
+  for (VideoCodecSettings& codec_settings : video_codecs) {
+    const int payload_type = codec_settings.codec.id;
+    codec_settings.ulpfec = ulpfec_config;
+    codec_settings.flexfec_payload_type = flexfec_payload_type.value_or(-1);
+    auto it = rtx_mapping.find(payload_type);
+    if (it != rtx_mapping.end()) {
+      const int rtx_payload_type = it->second;
+      codec_settings.rtx_payload_type = rtx_payload_type;
     }
   }
 
