@@ -45,20 +45,8 @@
 
 #include <inttypes.h>
 
-// These are being defined without the RTC_ prefix because this is just filling
-// the holes from what's supposed to be already present as part of the C
-// standard, but missing on older MSVC versions.
-
-#if !defined(PRId64)
-#define PRId64 "I64d"
-#endif
-
-#if !defined(PRIu64)
-#define PRIu64 "I64u"
-#endif
-
-#if !defined(PRIx64)
-#define PRIx64 "I64x"
+#if !defined(PRId64) || !defined(PRIu64) || !defined(PRIx64)
+#error "inttypes.h provided by win toolchain should define these."
 #endif
 
 // PRI*64 were added in MSVC 2013, while "%zu" is supported since MSVC 2015
