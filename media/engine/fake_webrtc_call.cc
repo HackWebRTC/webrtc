@@ -644,7 +644,4 @@ void FakeCall::OnSentPacket(const rtc::SentPacket& sent_packet) {
   }
 }
 
-void FakeCall::MediaTransportChange(
-    webrtc::MediaTransportInterface* media_transport_interface) {}
-
 }  // namespace cricket

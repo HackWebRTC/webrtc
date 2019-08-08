@@ -295,30 +295,4 @@ TEST(CallTest, RecreatingAudioStreamWithSameSsrcReusesRtpState) {
   EXPECT_EQ(rtp_state1.media_has_been_sent, rtp_state2.media_has_been_sent);
 }
 
-TEST(CallTest, RegisterMediaTransportBitrateCallbacksInCreateStream) {
-  CallHelper call;
-  MediaTransportSettings settings;
-  webrtc::FakeMediaTransport fake_media_transport(settings);
-
-  EXPECT_EQ(0, fake_media_transport.target_rate_observers_size());
-  // TODO(solenberg): This test shouldn't require a Transport, but currently
-  //                  RTCPSender requires one.
-  MockTransport send_transport;
-  AudioSendStream::Config config(&send_transport,
-                                 MediaTransportConfig(&fake_media_transport));
-
-  call->MediaTransportChange(&fake_media_transport);
-  AudioSendStream* stream = call->CreateAudioSendStream(config);
-
-  // We get 2 subscribers: one subscriber from call.cc, and one from
-  // ChannelSend.
-  EXPECT_EQ(2, fake_media_transport.target_rate_observers_size());
-
-  call->DestroyAudioSendStream(stream);
-  EXPECT_EQ(1, fake_media_transport.target_rate_observers_size());
-
-  call->MediaTransportChange(nullptr);
-  EXPECT_EQ(0, fake_media_transport.target_rate_observers_size());
-}
-
 }  // namespace webrtc

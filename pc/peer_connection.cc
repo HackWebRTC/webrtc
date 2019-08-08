@@ -7305,9 +7305,7 @@ bool PeerConnection::OnTransportChanged(
   }
 
   if (use_media_transport_) {
-    // Only pass media transport to call object if media transport is used
-    // for media (and not data channel).
-    call_ptr_->MediaTransportChange(media_transport);
+    RTC_LOG(LS_ERROR) << "Media transport isn't supported.";
   }
 
   return ret;
