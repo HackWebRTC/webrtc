@@ -37,7 +37,8 @@ struct TopWindowVerifierContext {
     RTC_DCHECK_NE(selected_window, excluded_window);
 
     GetWindowTextW(selected_window, selected_window_title, kTitleLength);
-    GetWindowThreadProcessId(selected_window, &selected_window_process_id);
+    selected_window_thread_id =
+        GetWindowThreadProcessId(selected_window, &selected_window_process_id);
   }
 
   const HWND selected_window;
@@ -46,6 +47,7 @@ struct TopWindowVerifierContext {
   WindowCaptureHelperWin* window_capture_helper;
   WCHAR selected_window_title[kTitleLength];
   DWORD selected_window_process_id;
+  DWORD selected_window_thread_id;
   bool is_top_window;
 };
 
@@ -93,19 +95,15 @@ BOOL CALLBACK TopWindowVerifier(HWND hwnd, LPARAM param) {
     return TRUE;
   }
 
-  // If |hwnd| has no title or has same title as the selected window (i.e.
-  // Window Media Player consisting of several sibling windows) and belongs to
-  // the same process, assume it's a tooltip or context menu or sibling window
-  // from the selected window and ignore it.
-  WCHAR window_title[kTitleLength];
-  GetWindowTextW(hwnd, window_title, kTitleLength);
-  if (wcsnlen_s(window_title, kTitleLength) == 0 ||
-      wcscmp(window_title, context->selected_window_title) == 0) {
-    DWORD enumerated_window_process_id;
-    GetWindowThreadProcessId(hwnd, &enumerated_window_process_id);
-    if (context->selected_window_process_id == enumerated_window_process_id) {
-      return TRUE;
-    }
+  // Ignore windows that belong to the same thread since we want to capture
+  // them. This check works for tooltips & context menus.
+  DWORD enumerated_window_process_id = 0;
+  DWORD enumerated_window_thread_id =
+      GetWindowThreadProcessId(hwnd, &enumerated_window_process_id);
+  if (enumerated_window_thread_id != 0 &&
+      enumerated_window_process_id == context->selected_window_process_id &&
+      enumerated_window_thread_id == context->selected_window_thread_id) {
+    return TRUE;
   }
 
   // Checks whether current window |hwnd| intersects with
