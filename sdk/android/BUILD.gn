@@ -701,7 +701,6 @@ if (current_os == "linux" || is_android) {
     visibility = [ "*" ]
 
     sources = [
-      "src/jni/android_network_monitor_jni.h",
       "src/jni/pc/android_network_monitor.h",
       "src/jni/pc/audio_track.cc",
       "src/jni/pc/call_session_file_rotating_log_sink.cc",
