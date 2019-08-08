@@ -129,6 +129,22 @@ absl::optional<std::string> ParseTypedParameter<std::string>(std::string str) {
   return std::move(str);
 }
 
+template <>
+absl::optional<absl::optional<bool>> ParseTypedParameter<absl::optional<bool>>(
+    std::string str) {
+  return ParseOptionalParameter<bool>(str);
+}
+template <>
+absl::optional<absl::optional<int>> ParseTypedParameter<absl::optional<int>>(
+    std::string str) {
+  return ParseOptionalParameter<int>(str);
+}
+template <>
+absl::optional<absl::optional<double>>
+ParseTypedParameter<absl::optional<double>>(std::string str) {
+  return ParseOptionalParameter<double>(str);
+}
+
 FieldTrialFlag::FieldTrialFlag(std::string key) : FieldTrialFlag(key, false) {}
 
 FieldTrialFlag::FieldTrialFlag(std::string key, bool default_value)

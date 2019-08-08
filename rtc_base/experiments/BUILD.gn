@@ -47,6 +47,8 @@ rtc_static_library("field_trial_parser") {
     "field_trial_parser.h",
     "field_trial_units.cc",
     "field_trial_units.h",
+    "struct_parameters_parser.cc",
+    "struct_parameters_parser.h",
   ]
   deps = [
     "../../api/units:data_rate",
@@ -55,6 +57,8 @@ rtc_static_library("field_trial_parser") {
     "../../rtc_base:checks",
     "../../rtc_base:logging",
     "../../rtc_base:stringutils",
+    "//third_party/abseil-cpp/absl/memory:memory",
+    "//third_party/abseil-cpp/absl/strings:strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -208,6 +212,7 @@ if (rtc_include_tests) {
       "quality_scaling_experiment_unittest.cc",
       "rate_control_settings_unittest.cc",
       "rtt_mult_experiment_unittest.cc",
+      "struct_parameters_parser_unittest.cc",
     ]
     deps = [
       ":balanced_degradation_settings",

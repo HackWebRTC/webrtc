@@ -16,6 +16,14 @@
 #include "rtc_base/experiments/field_trial_parser.h"
 
 namespace webrtc {
+
+template <>
+absl::optional<DataRate> ParseTypedParameter<DataRate>(std::string str);
+template <>
+absl::optional<DataSize> ParseTypedParameter<DataSize>(std::string str);
+template <>
+absl::optional<TimeDelta> ParseTypedParameter<TimeDelta>(std::string str);
+
 extern template class FieldTrialParameter<DataRate>;
 extern template class FieldTrialParameter<DataSize>;
 extern template class FieldTrialParameter<TimeDelta>;
