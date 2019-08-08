@@ -136,7 +136,6 @@ if (rtc_include_tests) {
       ":packet_number_indexed_queue",
       ":rtt_stats",
       ":windowed_filter",
-      "../../../api/transport:network_control_test",
       "../../../api/units:data_rate",
       "../../../api/units:time_delta",
       "../../../api/units:timestamp",

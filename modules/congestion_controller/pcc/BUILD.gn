@@ -119,7 +119,6 @@ if (rtc_include_tests) {
       ":rtt_tracker",
       ":utility_function",
       "../../../api/transport:network_control",
-      "../../../api/transport:network_control_test",
       "../../../api/units:data_rate",
       "../../../api/units:data_size",
       "../../../api/units:time_delta",

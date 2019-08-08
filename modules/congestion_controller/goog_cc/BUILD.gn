@@ -242,7 +242,6 @@ if (rtc_include_tests) {
       "../../../api/transport:field_trial_based_config",
       "../../../api/transport:goog_cc",
       "../../../api/transport:network_control",
-      "../../../api/transport:network_control_test",
       "../../../api/transport:webrtc_key_value_config",
       "../../../api/units:data_rate",
       "../../../api/units:timestamp",
