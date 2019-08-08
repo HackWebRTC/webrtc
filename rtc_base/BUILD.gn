@@ -926,19 +926,6 @@ rtc_static_library("rtc_base") {
     ]
   }
 
-  if (is_mac) {
-    sources += [
-      "mac_utils.cc",
-      "mac_utils.h",
-    ]
-    libs += [
-      "Cocoa.framework",
-      "Foundation.framework",
-      "IOKit.framework",
-      "Security.framework",
-      "SystemConfiguration.framework",
-    ]
-  }
   if (is_ios) {
     libs += [
       "CFNetwork.framework",
