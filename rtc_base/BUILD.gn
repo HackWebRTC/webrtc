@@ -792,7 +792,6 @@ rtc_static_library("rtc_base") {
     "dscp.h",
     "file_rotating_stream.cc",
     "file_rotating_stream.h",
-    "gunit_prod.h",
     "helpers.cc",
     "helpers.h",
     "http_common.cc",
