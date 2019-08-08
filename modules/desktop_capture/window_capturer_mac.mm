@@ -27,7 +27,6 @@
 #include "modules/desktop_capture/window_finder_mac.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/mac_utils.h"
 #include "rtc_base/trace_event.h"
 
 namespace webrtc {
