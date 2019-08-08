@@ -136,10 +136,9 @@ void AecState::Update(
       active_render && !SaturatedCapture() ? 1 : 0;
 
   std::array<float, kFftLengthBy2Plus1> X2_reverb;
-  render_reverb_.Apply(
-      render_buffer.GetSpectrumBuffer(), delay_state_.DirectPathFilterDelay(),
-      config_.ep_strength.reverb_based_on_render ? ReverbDecay() : 0.f,
-      X2_reverb);
+  render_reverb_.Apply(render_buffer.GetSpectrumBuffer(),
+                       delay_state_.DirectPathFilterDelay(), ReverbDecay(),
+                       X2_reverb);
 
   if (config_.echo_audibility.use_stationarity_properties) {
     // Update the echo audibility evaluator.

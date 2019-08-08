@@ -17,7 +17,6 @@
 
 #include "api/array_view.h"
 #include "modules/audio_processing/aec3/reverb_model.h"
-#include "modules/audio_processing/aec3/reverb_model_fallback.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -48,12 +47,6 @@ void GetRenderIndexesToAnalyze(
 
 ResidualEchoEstimator::ResidualEchoEstimator(const EchoCanceller3Config& config)
     : config_(config) {
-  if (config_.ep_strength.reverb_based_on_render) {
-    echo_reverb_.reset(new ReverbModel());
-  } else {
-    echo_reverb_fallback.reset(
-        new ReverbModelFallback(config_.filter.main.length_blocks));
-  }
   Reset();
 }
 
@@ -83,18 +76,9 @@ void ResidualEchoEstimator::Estimate(
 
     // Adds the estimated unmodelled echo power to the residual echo power
     // estimate.
-    if (echo_reverb_) {
-      echo_reverb_->AddReverb(
-          render_buffer.Spectrum(aec_state.FilterLengthBlocks() + 1),
-          aec_state.GetReverbFrequencyResponse(), aec_state.ReverbDecay(), *R2);
-
-    } else {
-      RTC_DCHECK(echo_reverb_fallback);
-      echo_reverb_fallback->AddEchoReverb(S2_linear,
-                                          aec_state.FilterDelayBlocks(),
-                                          aec_state.ReverbDecay(), R2);
-    }
-
+    echo_reverb_.AddReverb(
+        render_buffer.Spectrum(aec_state.FilterLengthBlocks() + 1),
+        aec_state.GetReverbFrequencyResponse(), aec_state.ReverbDecay(), *R2);
   } else {
     // Estimate the echo generating signal power.
     std::array<float, kFftLengthBy2Plus1> X2;
@@ -123,16 +107,9 @@ void ResidualEchoEstimator::Estimate(
     }
 
     if (!(aec_state.TransparentMode())) {
-      if (echo_reverb_) {
-        echo_reverb_->AddReverbNoFreqShaping(
-            render_buffer.Spectrum(aec_state.FilterDelayBlocks() + 1),
-            echo_path_gain * echo_path_gain, aec_state.ReverbDecay(), *R2);
-      } else {
-        RTC_DCHECK(echo_reverb_fallback);
-        echo_reverb_fallback->AddEchoReverb(*R2,
-                                            config_.filter.main.length_blocks,
-                                            aec_state.ReverbDecay(), R2);
-      }
+      echo_reverb_.AddReverbNoFreqShaping(
+          render_buffer.Spectrum(aec_state.FilterDelayBlocks() + 1),
+          echo_path_gain * echo_path_gain, aec_state.ReverbDecay(), *R2);
     }
   }
 
@@ -147,12 +124,7 @@ void ResidualEchoEstimator::Estimate(
 }
 
 void ResidualEchoEstimator::Reset() {
-  if (echo_reverb_) {
-    echo_reverb_->Reset();
-  } else {
-    RTC_DCHECK(echo_reverb_fallback);
-    echo_reverb_fallback->Reset();
-  }
+  echo_reverb_.Reset();
   X2_noise_floor_counter_.fill(config_.echo_model.noise_floor_hold);
   X2_noise_floor_.fill(config_.echo_model.min_noise_floor_power);
 }

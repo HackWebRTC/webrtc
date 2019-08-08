@@ -200,8 +200,6 @@ void Aec3ConfigFromJsonString(absl::string_view json_string,
   if (rtc::GetValueFromJsonObject(aec3_root, "ep_strength", &section)) {
     ReadParam(section, "default_gain", &cfg.ep_strength.default_gain);
     ReadParam(section, "default_len", &cfg.ep_strength.default_len);
-    ReadParam(section, "reverb_based_on_render",
-              &cfg.ep_strength.reverb_based_on_render);
     ReadParam(section, "echo_can_saturate", &cfg.ep_strength.echo_can_saturate);
     ReadParam(section, "bounded_erl", &cfg.ep_strength.bounded_erl);
   }
@@ -410,8 +408,6 @@ std::string Aec3ConfigToJsonString(const EchoCanceller3Config& config) {
   ost << "\"ep_strength\": {";
   ost << "\"default_gain\": " << config.ep_strength.default_gain << ",";
   ost << "\"default_len\": " << config.ep_strength.default_len << ",";
-  ost << "\"reverb_based_on_render\": "
-      << (config.ep_strength.reverb_based_on_render ? "true" : "false") << ",";
   ost << "\"echo_can_saturate\": "
       << (config.ep_strength.echo_can_saturate ? "true" : "false") << ",";
   ost << "\"bounded_erl\": "
