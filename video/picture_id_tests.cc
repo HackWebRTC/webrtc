@@ -230,6 +230,7 @@ class PictureIdTest : public test::CallTest,
 
   void SetupEncoder(VideoEncoderFactory* encoder_factory,
                     const std::string& payload_name);
+  void SetVideoEncoderConfig(int num_streams);
   void TestPictureIdContinuousAfterReconfigure(
       const std::vector<int>& ssrc_counts);
   void TestPictureIdIncreaseAfterRecreateStreams(
@@ -243,52 +244,6 @@ class PictureIdTest : public test::CallTest,
 INSTANTIATE_TEST_SUITE_P(TemporalLayers,
                          PictureIdTest,
                          ::testing::ValuesIn(kNumTemporalLayers));
-
-// Use a special stream factory to ensure that all simulcast streams are being
-// sent.
-class VideoStreamFactory
-    : public VideoEncoderConfig::VideoStreamFactoryInterface {
- public:
-  explicit VideoStreamFactory(size_t num_temporal_layers)
-      : num_of_temporal_layers_(num_temporal_layers) {}
-
- private:
-  std::vector<VideoStream> CreateEncoderStreams(
-      int width,
-      int height,
-      const VideoEncoderConfig& encoder_config) override {
-    std::vector<VideoStream> streams =
-        test::CreateVideoStreams(width, height, encoder_config);
-
-    // Always divide the same total bitrate across all streams so that sending a
-    // single stream avoids lowering the bitrate estimate and requiring a
-    // subsequent rampup.
-    const int encoder_stream_bps =
-        kEncoderBitrateBps /
-        rtc::checked_cast<int>(encoder_config.number_of_streams);
-
-    for (size_t i = 0; i < encoder_config.number_of_streams; ++i) {
-      // Reduce the min bitrate by 10% to account for overhead that might
-      // otherwise cause streams to not be enabled.
-      streams[i].min_bitrate_bps = static_cast<int>(encoder_stream_bps * 0.9);
-      streams[i].target_bitrate_bps = encoder_stream_bps;
-      streams[i].max_bitrate_bps = encoder_stream_bps;
-      streams[i].num_temporal_layers = num_of_temporal_layers_;
-      // test::CreateVideoStreams does not return frame sizes for the lower
-      // streams that are accepted by VP8Impl::InitEncode.
-      // TODO(brandtr): Fix the problem in test::CreateVideoStreams, rather
-      // than overriding the values here.
-      streams[i].width =
-          width / (1 << (encoder_config.number_of_streams - 1 - i));
-      streams[i].height =
-          height / (1 << (encoder_config.number_of_streams - 1 - i));
-    }
-
-    return streams;
-  }
-
-  const size_t num_of_temporal_layers_;
-};
 
 void PictureIdTest::SetupEncoder(VideoEncoderFactory* encoder_factory,
                                  const std::string& payload_name) {
@@ -310,10 +265,30 @@ void PictureIdTest::SetupEncoder(VideoEncoderFactory* encoder_factory,
     GetVideoSendConfig()->rtp.payload_name = payload_name;
     GetVideoEncoderConfig()->codec_type =
         PayloadStringToCodecType(payload_name);
-    GetVideoEncoderConfig()->video_stream_factory =
-        new rtc::RefCountedObject<VideoStreamFactory>(num_temporal_layers_);
-    GetVideoEncoderConfig()->number_of_streams = 1;
+    SetVideoEncoderConfig(/* number_of_streams */ 1);
   });
+}
+
+void PictureIdTest::SetVideoEncoderConfig(int num_streams) {
+  GetVideoEncoderConfig()->number_of_streams = num_streams;
+  GetVideoEncoderConfig()->max_bitrate_bps = kEncoderBitrateBps;
+
+  // Always divide the same total bitrate across all streams so that sending a
+  // single stream avoids lowering the bitrate estimate and requiring a
+  // subsequent rampup.
+  const int encoder_stream_bps = kEncoderBitrateBps / num_streams;
+  double scale_factor = 1.0;
+  for (int i = num_streams - 1; i >= 0; --i) {
+    VideoStream& stream = GetVideoEncoderConfig()->simulcast_layers[i];
+    // Reduce the min bitrate by 10% to account for overhead that might
+    // otherwise cause streams to not be enabled.
+    stream.min_bitrate_bps = static_cast<int>(encoder_stream_bps * 0.9);
+    stream.target_bitrate_bps = encoder_stream_bps;
+    stream.max_bitrate_bps = encoder_stream_bps;
+    stream.num_temporal_layers = num_temporal_layers_;
+    stream.scale_resolution_down_by = scale_factor;
+    scale_factor *= 2.0;
+  }
 }
 
 void PictureIdTest::TestPictureIdContinuousAfterReconfigure(
@@ -332,7 +307,7 @@ void PictureIdTest::TestPictureIdContinuousAfterReconfigure(
   // Expect continuously increasing picture id, equivalent to no gaps.
   observer_->SetMaxExpectedPictureIdGap(0);
   for (int ssrc_count : ssrc_counts) {
-    GetVideoEncoderConfig()->number_of_streams = ssrc_count;
+    SetVideoEncoderConfig(ssrc_count);
     observer_->SetExpectedSsrcs(ssrc_count);
     observer_->ResetObservedSsrcs();
     // Make sure the picture_id sequence is continuous on reinit and recreate.
@@ -369,7 +344,7 @@ void PictureIdTest::TestPictureIdIncreaseAfterRecreateStreams(
     task_queue_.SendTask([this, &ssrc_count]() {
       DestroyVideoSendStreams();
 
-      GetVideoEncoderConfig()->number_of_streams = ssrc_count;
+      SetVideoEncoderConfig(ssrc_count);
       observer_->SetExpectedSsrcs(ssrc_count);
       observer_->ResetObservedSsrcs();
 

@@ -87,6 +87,10 @@ std::vector<VideoStream> CreateVideoStreams(
         RTC_DCHECK_GE(*stream.num_temporal_layers, 1);
         stream_settings[i].num_temporal_layers = stream.num_temporal_layers;
       }
+      if (stream.scale_resolution_down_by >= 1.0) {
+        stream_settings[i].width = width / stream.scale_resolution_down_by;
+        stream_settings[i].height = height / stream.scale_resolution_down_by;
+      }
     } else {
       max_bitrate_bps = std::min(
           bitrate_left_bps, DefaultVideoStreamFactory::kMaxBitratePerStream[i]);
