@@ -341,34 +341,6 @@ class AudioCodingModule {
   virtual int32_t GetNetworkStatistics(
       NetworkStatistics* network_statistics) = 0;
 
-  //
-  // Enable NACK and set the maximum size of the NACK list. If NACK is already
-  // enable then the maximum NACK list size is modified accordingly.
-  //
-  // If the sequence number of last received packet is N, the sequence numbers
-  // of NACK list are in the range of [N - |max_nack_list_size|, N).
-  //
-  // |max_nack_list_size| should be positive (none zero) and less than or
-  // equal to |Nack::kNackListSizeLimit|. Otherwise, No change is applied and -1
-  // is returned. 0 is returned at success.
-  //
-  virtual int EnableNack(size_t max_nack_list_size) = 0;
-
-  // Disable NACK.
-  virtual void DisableNack() = 0;
-
-  //
-  // Get a list of packets to be retransmitted. |round_trip_time_ms| is an
-  // estimate of the round-trip-time (in milliseconds). Missing packets which
-  // will be playout in a shorter time than the round-trip-time (with respect
-  // to the time this API is called) will not be included in the list.
-  //
-  // Negative |round_trip_time_ms| results is an error message and empty list
-  // is returned.
-  //
-  virtual std::vector<uint16_t> GetNackList(
-      int64_t round_trip_time_ms) const = 0;
-
   virtual void GetDecodingCallStatistics(
       AudioDecodingCallStats* call_stats) const = 0;
 

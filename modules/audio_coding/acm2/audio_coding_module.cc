@@ -118,12 +118,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
 
   int GetNetworkStatistics(NetworkStatistics* statistics) override;
 
-  int EnableNack(size_t max_nack_list_size) override;
-
-  void DisableNack() override;
-
-  std::vector<uint16_t> GetNackList(int64_t round_trip_time_ms) const override;
-
   void GetDecodingCallStatistics(AudioDecodingCallStats* stats) const override;
 
   ANAStats GetANAStats() const override;
@@ -720,19 +714,6 @@ bool AudioCodingModuleImpl::HaveValidEncoder(const char* caller_name) const {
     return false;
   }
   return true;
-}
-
-int AudioCodingModuleImpl::EnableNack(size_t max_nack_list_size) {
-  return receiver_.EnableNack(max_nack_list_size);
-}
-
-void AudioCodingModuleImpl::DisableNack() {
-  receiver_.DisableNack();
-}
-
-std::vector<uint16_t> AudioCodingModuleImpl::GetNackList(
-    int64_t round_trip_time_ms) const {
-  return receiver_.GetNackList(round_trip_time_ms);
 }
 
 void AudioCodingModuleImpl::GetDecodingCallStatistics(
