@@ -122,6 +122,8 @@ void CallStats::Process() {
   int64_t now = clock_->TimeInMilliseconds();
   last_process_time_ = now;
 
+  // |avg_rtt_ms_| is allowed to be read on the process thread since that's the
+  // only thread that modifies the value.
   int64_t avg_rtt_ms = avg_rtt_ms_;
   RemoveOldReports(now, &reports_);
   max_rtt_ms_ = GetMaxRttMs(reports_);
@@ -171,20 +173,26 @@ void CallStats::DeregisterStatsObserver(CallStatsObserver* observer) {
 }
 
 int64_t CallStats::LastProcessedRtt() const {
+  // TODO(tommi): This currently gets called from the construction thread of
+  // Call as well as from the process thread. Look into restricting this to
+  // allow only reading this from the process thread (or TQ once we get there)
+  // so that the lock isn't necessary.
+
   rtc::CritScope cs(&avg_rtt_ms_lock_);
   return avg_rtt_ms_;
 }
 
 void CallStats::OnRttUpdate(int64_t rtt) {
-  int64_t now_ms = clock_->TimeInMilliseconds();
-  process_thread_->PostTask(ToQueuedTask([rtt, now_ms, this]() {
-    RTC_DCHECK_RUN_ON(&process_thread_checker_);
-    reports_.push_back(RttTime(rtt, now_ms));
-    if (time_of_first_rtt_ms_ == -1)
-      time_of_first_rtt_ms_ = now_ms;
+  RTC_DCHECK_RUN_ON(&process_thread_checker_);
 
-    process_thread_->WakeUp(this);
-  }));
+  int64_t now_ms = clock_->TimeInMilliseconds();
+  reports_.push_back(RttTime(rtt, now_ms));
+  if (time_of_first_rtt_ms_ == -1)
+    time_of_first_rtt_ms_ = now_ms;
+
+  // Make sure Process() will be called and deliver the updates asynchronously.
+  last_process_time_ -= kUpdateIntervalMs;
+  process_thread_->WakeUp(this);
 }
 
 void CallStats::UpdateHistograms() {
