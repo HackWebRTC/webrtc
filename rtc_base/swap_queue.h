@@ -200,6 +200,16 @@ class SwapQueue {
     return true;
   }
 
+  // Returns the current number of elements in the queue. Since elements may be
+  // concurrently added to the queue, the caller must treat this as a lower
+  // bound, not an exact count.
+  // May only be called by the consumer.
+  size_t SizeAtLeast() const {
+    // Acquire memory ordering ensures that we wait for the producer to finish
+    // inserting any element in progress.
+    return std::atomic_load_explicit(&num_elements_, std::memory_order_acquire);
+  }
+
  private:
   // Verify that the queue slots complies with the ItemVerifier test. This
   // function is not thread-safe and can only be used in the constructors.

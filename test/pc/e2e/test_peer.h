@@ -36,6 +36,8 @@ class TestPeer final : public PeerConnectionWrapper {
   using PeerConnectionWrapper::PeerConnectionWrapper;
   using VideoConfig = PeerConnectionE2EQualityTestFixture::VideoConfig;
   using AudioConfig = PeerConnectionE2EQualityTestFixture::AudioConfig;
+  using EchoEmulationConfig =
+      PeerConnectionE2EQualityTestFixture::EchoEmulationConfig;
 
   struct RemotePeerAudioConfig {
     RemotePeerAudioConfig(AudioConfig config)
@@ -55,11 +57,8 @@ class TestPeer final : public PeerConnectionWrapper {
   // injection.
   //
   // |signaling_thread| will be provided by test fixture implementation.
-  // |params| - describes current peer paramters, like current peer video
+  // |params| - describes current peer parameters, like current peer video
   // streams and audio streams
-  // |audio_outpu_file_name| - the name of output file, where incoming audio
-  // stream should be written. It should be provided from remote peer
-  // |params.audio_config.output_file_name|
   static std::unique_ptr<TestPeer> CreateTestPeer(
       std::unique_ptr<InjectableComponents> components,
       std::unique_ptr<Params> params,
@@ -68,6 +67,7 @@ class TestPeer final : public PeerConnectionWrapper {
       rtc::Thread* signaling_thread,
       absl::optional<RemotePeerAudioConfig> remote_audio_config,
       double bitrate_multiplier,
+      absl::optional<EchoEmulationConfig> echo_emulation_config,
       rtc::TaskQueue* task_queue);
 
   Params* params() const { return params_.get(); }
