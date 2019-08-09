@@ -481,17 +481,18 @@ if (is_ios || is_mac) {
             "objc/components/renderer/metal/RTCMTLVideoView.m",
           ]
         }
-        if (is_mac) {
-          sources += [
-            "objc/components/renderer/metal/RTCMTLNSVideoView.h",
-            "objc/components/renderer/metal/RTCMTLNSVideoView.m",
-          ]
-        }
         libs = [
           "CoreVideo.framework",
           "Metal.framework",
           "MetalKit.framework",
         ]
+        if (is_mac) {
+          sources += [
+            "objc/components/renderer/metal/RTCMTLNSVideoView.h",
+            "objc/components/renderer/metal/RTCMTLNSVideoView.m",
+          ]
+          libs += [ "AppKit.framework" ]
+        }
         deps = [
           ":base_objc",
           ":peerconnectionfactory_base_objc",
