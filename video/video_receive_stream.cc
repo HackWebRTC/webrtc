@@ -459,10 +459,19 @@ void VideoReceiveStream::Stop() {
 
 VideoReceiveStream::Stats VideoReceiveStream::GetStats() const {
   VideoReceiveStream::Stats stats = stats_proxy_.GetStats();
+  stats.total_bitrate_bps = 0;
   StreamStatistician* statistician =
       rtp_receive_statistics_->GetStatistician(stats.ssrc);
-  if (statistician)
+  if (statistician) {
     statistician->GetStatistics(&stats.rtcp_stats, /*reset=*/false);
+    stats.total_bitrate_bps = statistician->BitrateReceived();
+  }
+  if (config_.rtp.rtx_ssrc) {
+    StreamStatistician* rtx_statistician =
+        rtp_receive_statistics_->GetStatistician(config_.rtp.rtx_ssrc);
+    if (rtx_statistician)
+      stats.total_bitrate_bps += rtx_statistician->BitrateReceived();
+  }
   return stats;
 }
 

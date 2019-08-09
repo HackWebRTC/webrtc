@@ -105,7 +105,6 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
       renders_fps_estimator_(1000, 1000),
       render_fps_tracker_(100, 10u),
       render_pixel_tracker_(100, 10u),
-      total_byte_tracker_(100, 10u),  // bucket_interval_ms, bucket_count
       video_quality_observer_(
           new VideoQualityObserver(VideoContentType::UNSPECIFIED)),
       interframe_delay_max_moving_(kMovingMaxWindowMs),
@@ -571,8 +570,6 @@ VideoReceiveStream::Stats ReceiveStatisticsProxy::GetStats() const {
   UpdateFramerate(now_ms);
   stats_.render_frame_rate = renders_fps_estimator_.Rate(now_ms).value_or(0);
   stats_.decode_frame_rate = decode_fps_estimator_.Rate(now_ms).value_or(0);
-  stats_.total_bitrate_bps =
-      static_cast<int>(total_byte_tracker_.ComputeRate() * 8);
   stats_.interframe_delay_max_ms =
       interframe_delay_max_moving_.Max(now_ms).value_or(-1);
   stats_.freeze_count = video_quality_observer_->NumFreezes();
@@ -673,25 +670,17 @@ void ReceiveStatisticsProxy::OnCname(uint32_t ssrc, absl::string_view cname) {
 void ReceiveStatisticsProxy::DataCountersUpdated(
     const webrtc::StreamDataCounters& counters,
     uint32_t ssrc) {
-  size_t last_total_bytes = 0;
-  size_t total_bytes = 0;
   rtc::CritScope lock(&crit_);
   if (ssrc == stats_.ssrc) {
-    last_total_bytes = stats_.rtp_stats.transmitted.TotalBytes();
-    total_bytes = counters.transmitted.TotalBytes();
     stats_.rtp_stats = counters;
   } else {
     auto it = rtx_stats_.find(ssrc);
     if (it != rtx_stats_.end()) {
-      last_total_bytes = it->second.transmitted.TotalBytes();
-      total_bytes = counters.transmitted.TotalBytes();
       it->second = counters;
     } else {
       RTC_NOTREACHED() << "Unexpected stream ssrc: " << ssrc;
     }
   }
-  if (total_bytes > last_total_bytes)
-    total_byte_tracker_.AddSamples(total_bytes - last_total_bytes);
 }
 
 void ReceiveStatisticsProxy::OnDecodedFrame(const VideoFrame& frame,
