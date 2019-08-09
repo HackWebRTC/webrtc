@@ -898,8 +898,7 @@ int NetEqImpl::GetAudioInternal(AudioFrame* audio_frame,
 
   // We treat it as if all packets referenced to by |last_decoded_packet_infos_|
   // were mashed together when creating the samples in |algorithm_buffer_|.
-  RtpPacketInfos packet_infos(std::move(last_decoded_packet_infos_));
-  last_decoded_packet_infos_.clear();
+  RtpPacketInfos packet_infos(last_decoded_packet_infos_);
 
   // Copy samples from |algorithm_buffer_| to |sync_buffer_|.
   //
