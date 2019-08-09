@@ -43,7 +43,7 @@ class PacedSender : public Module,
                     public RtpPacketPacer,
                     public RtpPacketSender {
  public:
-  // Expected max pacer delay in ms. If ExpectedQueueTimeMs() is higher than
+  // Expected max pacer delay in ms. If ExpectedQueueTime() is higher than
   // this value, the packet producers should wait (eg drop frames rather than
   // encoding them). Bitrate sent may temporarily exceed target set by
   // UpdateBitrate() so that this limit will be upheld.
@@ -134,19 +134,19 @@ class PacedSender : public Module,
   void ProcessThreadAttached(ProcessThread* process_thread) override;
 
  private:
-  int64_t UpdateTimeAndGetElapsedMs(int64_t now_us)
+  TimeDelta UpdateTimeAndGetElapsed(Timestamp now)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  bool ShouldSendKeepalive(int64_t at_time_us) const
+  bool ShouldSendKeepalive(Timestamp now) const
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   // Updates the number of bytes that can be sent for the next time interval.
-  void UpdateBudgetWithElapsedTime(int64_t delta_time_in_ms)
+  void UpdateBudgetWithElapsedTime(TimeDelta delta)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  void UpdateBudgetWithBytesSent(size_t bytes)
+  void UpdateBudgetWithSentData(DataSize size)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
-  size_t PaddingBytesToAdd(absl::optional<size_t> recommended_probe_size,
-                           size_t bytes_sent)
+  DataSize PaddingToAdd(absl::optional<DataSize> recommended_probe_size,
+                        DataSize data_sent)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   RoundRobinPacketQueue::QueuedPacket* GetPendingPacket(
@@ -154,11 +154,11 @@ class PacedSender : public Module,
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
   void OnPacketSent(RoundRobinPacketQueue::QueuedPacket* packet)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  void OnPaddingSent(size_t padding_sent)
+  void OnPaddingSent(DataSize padding_sent)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   bool Congested() const RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  int64_t TimeMilliseconds() const RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  Timestamp CurrentTime() const RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   Clock* const clock_;
   PacketRouter* const packet_router_;
@@ -168,12 +168,12 @@ class PacedSender : public Module,
   const bool drain_large_queues_;
   const bool send_padding_if_silent_;
   const bool pace_audio_;
-  FieldTrialParameter<int> min_packet_limit_ms_;
+  TimeDelta min_packet_limit_;
 
   rtc::CriticalSection critsect_;
   // TODO(webrtc:9716): Remove this when we are certain clocks are monotonic.
   // The last millisecond timestamp returned by |clock_|.
-  mutable int64_t last_timestamp_ms_ RTC_GUARDED_BY(critsect_);
+  mutable Timestamp last_timestamp_ RTC_GUARDED_BY(critsect_);
   bool paused_ RTC_GUARDED_BY(critsect_);
   // This is the media budget, keeping track of how many bits of media
   // we can pace out during the current interval.
@@ -188,8 +188,8 @@ class PacedSender : public Module,
 
   DataRate pacing_bitrate_ RTC_GUARDED_BY(critsect_);
 
-  int64_t time_last_process_us_ RTC_GUARDED_BY(critsect_);
-  int64_t last_send_time_us_ RTC_GUARDED_BY(critsect_);
+  Timestamp time_last_process_ RTC_GUARDED_BY(critsect_);
+  Timestamp last_send_time_ RTC_GUARDED_BY(critsect_);
   absl::optional<Timestamp> first_sent_packet_time_ RTC_GUARDED_BY(critsect_);
 
   RoundRobinPacketQueue packets_ RTC_GUARDED_BY(critsect_);
@@ -206,7 +206,7 @@ class PacedSender : public Module,
   rtc::CriticalSection process_thread_lock_;
   ProcessThread* process_thread_ RTC_GUARDED_BY(process_thread_lock_);
 
-  int64_t queue_time_limit RTC_GUARDED_BY(critsect_);
+  TimeDelta queue_time_limit RTC_GUARDED_BY(critsect_);
   bool account_for_audio_ RTC_GUARDED_BY(critsect_);
 
   // If true, PacedSender should only reference packets as in legacy mode.

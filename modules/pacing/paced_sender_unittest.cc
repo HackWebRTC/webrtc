@@ -506,7 +506,7 @@ TEST_P(PacedSenderTest, FirstSentPacketTimeIsSet) {
   const uint32_t kSsrc = 12345;
   const size_t kSizeBytes = 250;
   const size_t kPacketToSend = 3;
-  const int64_t kStartMs = clock_.TimeInMilliseconds();
+  const Timestamp kStartTime = clock_.CurrentTime();
 
   // No packet sent.
   EXPECT_FALSE(send_bucket_->FirstSentPacketTime().has_value());
@@ -517,7 +517,7 @@ TEST_P(PacedSenderTest, FirstSentPacketTimeIsSet) {
     send_bucket_->Process();
     clock_.AdvanceTimeMilliseconds(send_bucket_->TimeUntilNextProcess());
   }
-  EXPECT_EQ(Timestamp::ms(kStartMs), send_bucket_->FirstSentPacketTime());
+  EXPECT_EQ(kStartTime, send_bucket_->FirstSentPacketTime());
 }
 
 TEST_P(PacedSenderTest, QueuePacket) {
