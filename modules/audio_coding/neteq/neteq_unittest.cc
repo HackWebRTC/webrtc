@@ -486,16 +486,23 @@ TEST_F(NetEqDecodingTest, MAYBE_TestOpusBitExactness) {
   const std::string maybe_sse =
       "6b602683ca7285a98118b4824d72f4257952c18f|"
       "eb0b68bddcac00fc85403df64f83126f8ea9bc93";
+  // The neon implementation may differ.
+  const std::string maybe_neon =
+      "f95f2a220c9ca5d60b81c4653d46e0de2bee159f|"
+      "63651b8cc7711a66c9491d6b6ce94b774b64a0ce";
   const std::string output_checksum = PlatformChecksum(
-      maybe_sse, "f95f2a220c9ca5d60b81c4653d46e0de2bee159f",
-      "6f288a03d34958f62496f18fa85655593eef4dbe", maybe_sse, maybe_sse);
+      maybe_sse, maybe_neon, "6f288a03d34958f62496f18fa85655593eef4dbe",
+      maybe_sse, maybe_sse);
 
-  const std::string network_stats_checksum =
-      PlatformChecksum("0b3d34baffaf651812ffaf06ea1b5ce45ea1c47a",
-                       "a71dce66c7bea85ba22d4e29a5298f606f810444",
-                       "7c64e1e915bace7c4bf583484efd64eaf234552f",
-                       "0b3d34baffaf651812ffaf06ea1b5ce45ea1c47a",
-                       "0b3d34baffaf651812ffaf06ea1b5ce45ea1c47a");
+  // The neon implementation may differ.
+  const std::string stats_maybe_neon =
+      "a71dce66c7bea85ba22d4e29a5298f606f810444|"
+      "889cae8977da9ad7563864726f4eeb5ae66ac7da";
+  const std::string network_stats_checksum = PlatformChecksum(
+      "0b3d34baffaf651812ffaf06ea1b5ce45ea1c47a", stats_maybe_neon,
+      "7c64e1e915bace7c4bf583484efd64eaf234552f",
+      "0b3d34baffaf651812ffaf06ea1b5ce45ea1c47a",
+      "0b3d34baffaf651812ffaf06ea1b5ce45ea1c47a");
 
   DecodeAndCompare(input_rtp_file, output_checksum, network_stats_checksum,
                    absl::GetFlag(FLAGS_gen_ref));
