@@ -112,10 +112,6 @@ class PacedSender : public Module,
   TimeDelta ExpectedQueueTime() const override;
 
   void SetQueueTimeLimit(TimeDelta limit) override;
-  // TODO(bugs.webrtc.org/10809): Remove once downstream usage is gone.
-  void SetQueueTimeLimit(int limit_ms) {
-    SetQueueTimeLimit(TimeDelta::ms(limit_ms));
-  }
 
   // Below are methods specific to this implementation, such as things related
   // to module processing thread specifics or methods exposed for test.
