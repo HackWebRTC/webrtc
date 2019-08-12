@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include <map>
 #include <memory>
 
 #include "absl/types/optional.h"
@@ -40,7 +41,7 @@
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {
-class DegradedCall : public Call, private Transport, private PacketReceiver {
+class DegradedCall : public Call, private PacketReceiver {
  public:
   explicit DegradedCall(
       std::unique_ptr<Call> call,
@@ -88,13 +89,6 @@ class DegradedCall : public Call, private Transport, private PacketReceiver {
   void OnSentPacket(const rtc::SentPacket& sent_packet) override;
 
  protected:
-  // Implements Transport.
-  bool SendRtp(const uint8_t* packet,
-               size_t length,
-               const PacketOptions& options) override;
-
-  bool SendRtcp(const uint8_t* packet, size_t length) override;
-
   // Implements PacketReceiver.
   DeliveryStatus DeliverPacket(MediaType media_type,
                                rtc::CopyOnWriteBuffer packet,
@@ -106,13 +100,16 @@ class DegradedCall : public Call, private Transport, private PacketReceiver {
     FakeNetworkPipeOnTaskQueue(
         TaskQueueFactory* task_queue_factory,
         Clock* clock,
-        std::unique_ptr<NetworkBehaviorInterface> network_behavior,
-        Transport* transport);
+        std::unique_ptr<NetworkBehaviorInterface> network_behavior);
 
     void SendRtp(const uint8_t* packet,
                  size_t length,
-                 const PacketOptions& options);
-    void SendRtcp(const uint8_t* packet, size_t length);
+                 const PacketOptions& options,
+                 Transport* transport);
+    void SendRtcp(const uint8_t* packet, size_t length, Transport* transport);
+
+    void AddActiveTransport(Transport* transport);
+    void RemoveActiveTransport(Transport* transport);
 
    private:
     // Try to process packets on the fake network queue.
@@ -125,15 +122,44 @@ class DegradedCall : public Call, private Transport, private PacketReceiver {
     absl::optional<int64_t> next_process_ms_ RTC_GUARDED_BY(&task_queue_);
   };
 
+  // For audio/video send stream, a TransportAdapter instance is used to
+  // intercept packets to be sent, and put them into a common FakeNetworkPipe
+  // in such as way that they will eventually (unless dropped) be forwarded to
+  // the correct Transport for that stream.
+  class FakeNetworkPipeTransportAdapter : public Transport {
+   public:
+    FakeNetworkPipeTransportAdapter(FakeNetworkPipeOnTaskQueue* fake_network,
+                                    Call* call,
+                                    Clock* clock,
+                                    Transport* real_transport);
+    ~FakeNetworkPipeTransportAdapter();
+
+    bool SendRtp(const uint8_t* packet,
+                 size_t length,
+                 const PacketOptions& options) override;
+    bool SendRtcp(const uint8_t* packet, size_t length) override;
+
+   private:
+    FakeNetworkPipeOnTaskQueue* const network_pipe_;
+    Call* const call_;
+    Clock* const clock_;
+    Transport* const real_transport_;
+  };
+
   Clock* const clock_;
   const std::unique_ptr<Call> call_;
   TaskQueueFactory* const task_queue_factory_;
 
   void SetClientBitratePreferences(
       const webrtc::BitrateSettings& preferences) override {}
+
   const absl::optional<BuiltInNetworkBehaviorConfig> send_config_;
   SimulatedNetwork* send_simulated_network_;
   std::unique_ptr<FakeNetworkPipeOnTaskQueue> send_pipe_;
+  std::map<AudioSendStream*, std::unique_ptr<FakeNetworkPipeTransportAdapter>>
+      audio_send_transport_adapters_;
+  std::map<VideoSendStream*, std::unique_ptr<FakeNetworkPipeTransportAdapter>>
+      video_send_transport_adapters_;
 
   const absl::optional<BuiltInNetworkBehaviorConfig> receive_config_;
   SimulatedNetwork* receive_simulated_network_;

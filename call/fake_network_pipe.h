@@ -41,7 +41,8 @@ class NetworkPacket {
                 absl::optional<PacketOptions> packet_options,
                 bool is_rtcp,
                 MediaType media_type,
-                absl::optional<int64_t> packet_time_us);
+                absl::optional<int64_t> packet_time_us,
+                Transport* transport);
 
   // Disallow copy constructor and copy assignment (no deep copies of |data_|).
   NetworkPacket(const NetworkPacket&) = delete;
@@ -65,6 +66,7 @@ class NetworkPacket {
   bool is_rtcp() const { return is_rtcp_; }
   MediaType media_type() const { return media_type_; }
   absl::optional<int64_t> packet_time_us() const { return packet_time_us_; }
+  Transport* transport() const { return transport_; }
 
  private:
   rtc::CopyOnWriteBuffer packet_;
@@ -82,6 +84,7 @@ class NetworkPacket {
   // network pipe.
   MediaType media_type_;
   absl::optional<int64_t> packet_time_us_;
+  Transport* transport_;
 };
 
 // Class faking a network link, internally is uses an implementation of a
@@ -89,7 +92,6 @@ class NetworkPacket {
 class FakeNetworkPipe : public SimulatedPacketReceiverInterface {
  public:
   // Will keep |network_behavior| alive while pipe is alive itself.
-  // Use these constructors if you plan to insert packets using DeliverPacket().
   FakeNetworkPipe(Clock* clock,
                   std::unique_ptr<NetworkBehaviorInterface> network_behavior);
   FakeNetworkPipe(Clock* clock,
@@ -112,6 +114,12 @@ class FakeNetworkPipe : public SimulatedPacketReceiverInterface {
   // Must not be called in parallel with DeliverPacket or Process.
   void SetReceiver(PacketReceiver* receiver) override;
 
+  // Adds/subtracts references to Transport instances. If a Transport is
+  // destroyed we cannot use to forward a potential delayed packet, these
+  // methods are used to maintain a map of which instances are live.
+  void AddActiveTransport(Transport* transport);
+  void RemoveActiveTransport(Transport* transport);
+
   // Implements Transport interface. When/if packets are delivered, they will
   // be passed to the transport instance given in SetReceiverTransport(). These
   // methods should only be called if a Transport instance was provided in the
@@ -120,6 +128,15 @@ class FakeNetworkPipe : public SimulatedPacketReceiverInterface {
                size_t length,
                const PacketOptions& options);
   bool SendRtcp(const uint8_t* packet, size_t length);
+
+  // Methods for use with Transport interface. When/if packets are delivered,
+  // they will be passed to the instance specified by the |transport| parameter.
+  // Note that that instance must be in the map of active transports.
+  bool SendRtp(const uint8_t* packet,
+               size_t length,
+               const PacketOptions& options,
+               Transport* transport);
+  bool SendRtcp(const uint8_t* packet, size_t length, Transport* transport);
 
   // Implements the PacketReceiver interface. When/if packets are delivered,
   // they will be passed directly to the receiver instance given in
@@ -163,22 +180,26 @@ class FakeNetworkPipe : public SimulatedPacketReceiverInterface {
     StoredPacket() = delete;
   };
 
-  // Returns true if enqueued, or false if packet was dropped.
-  virtual bool EnqueuePacket(rtc::CopyOnWriteBuffer packet,
-                             absl::optional<PacketOptions> options,
-                             bool is_rtcp,
-                             MediaType media_type,
-                             absl::optional<int64_t> packet_time_us);
-
+  // Returns true if enqueued, or false if packet was dropped. Use this method
+  // when enqueueing packets that should be received by PacketReceiver instance.
   bool EnqueuePacket(rtc::CopyOnWriteBuffer packet,
                      absl::optional<PacketOptions> options,
                      bool is_rtcp,
-                     MediaType media_type) {
-    return EnqueuePacket(packet, options, is_rtcp, media_type, absl::nullopt);
-  }
+                     MediaType media_type,
+                     absl::optional<int64_t> packet_time_us);
+
+  // Returns true if enqueued, or false if packet was dropped. Use this method
+  // when enqueueing packets that should be received by Transport instance.
+  bool EnqueuePacket(rtc::CopyOnWriteBuffer packet,
+                     absl::optional<PacketOptions> options,
+                     bool is_rtcp,
+                     Transport* transport);
+
+  bool EnqueuePacket(NetworkPacket&& net_packet)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(process_lock_);
+
   void DeliverNetworkPacket(NetworkPacket* packet)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(config_lock_);
-  bool HasTransport() const;
   bool HasReceiver() const;
 
   Clock* const clock_;
@@ -186,7 +207,7 @@ class FakeNetworkPipe : public SimulatedPacketReceiverInterface {
   rtc::CriticalSection config_lock_;
   const std::unique_ptr<NetworkBehaviorInterface> network_behavior_;
   PacketReceiver* receiver_ RTC_GUARDED_BY(config_lock_);
-  Transport* const transport_ RTC_GUARDED_BY(config_lock_);
+  Transport* const global_transport_;
 
   // |process_lock| guards the data structures involved in delay and loss
   // processes, such as the packet queues.
@@ -205,6 +226,8 @@ class FakeNetworkPipe : public SimulatedPacketReceiverInterface {
   size_t sent_packets_ RTC_GUARDED_BY(process_lock_);
   int64_t total_packet_delay_us_ RTC_GUARDED_BY(process_lock_);
   int64_t last_log_time_us_;
+
+  std::map<Transport*, size_t> active_transports_ RTC_GUARDED_BY(config_lock_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(FakeNetworkPipe);
 };

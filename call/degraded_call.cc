@@ -20,26 +20,37 @@ namespace webrtc {
 DegradedCall::FakeNetworkPipeOnTaskQueue::FakeNetworkPipeOnTaskQueue(
     TaskQueueFactory* task_queue_factory,
     Clock* clock,
-    std::unique_ptr<NetworkBehaviorInterface> network_behavior,
-    Transport* transport)
+    std::unique_ptr<NetworkBehaviorInterface> network_behavior)
     : clock_(clock),
       task_queue_(task_queue_factory->CreateTaskQueue(
           "DegradedSendQueue",
           TaskQueueFactory::Priority::NORMAL)),
-      pipe_(clock, std::move(network_behavior), transport) {}
+      pipe_(clock, std::move(network_behavior)) {}
 
 void DegradedCall::FakeNetworkPipeOnTaskQueue::SendRtp(
     const uint8_t* packet,
     size_t length,
-    const PacketOptions& options) {
-  pipe_.SendRtp(packet, length, options);
+    const PacketOptions& options,
+    Transport* transport) {
+  pipe_.SendRtp(packet, length, options, transport);
   Process();
 }
 
 void DegradedCall::FakeNetworkPipeOnTaskQueue::SendRtcp(const uint8_t* packet,
-                                                        size_t length) {
-  pipe_.SendRtcp(packet, length);
+                                                        size_t length,
+                                                        Transport* transport) {
+  pipe_.SendRtcp(packet, length, transport);
   Process();
+}
+
+void DegradedCall::FakeNetworkPipeOnTaskQueue::AddActiveTransport(
+    Transport* transport) {
+  pipe_.AddActiveTransport(transport);
+}
+
+void DegradedCall::FakeNetworkPipeOnTaskQueue::RemoveActiveTransport(
+    Transport* transport) {
+  pipe_.RemoveActiveTransport(transport);
 }
 
 bool DegradedCall::FakeNetworkPipeOnTaskQueue::Process() {
@@ -69,6 +80,51 @@ bool DegradedCall::FakeNetworkPipeOnTaskQueue::Process() {
   return true;
 }
 
+DegradedCall::FakeNetworkPipeTransportAdapter::FakeNetworkPipeTransportAdapter(
+    FakeNetworkPipeOnTaskQueue* fake_network,
+    Call* call,
+    Clock* clock,
+    Transport* real_transport)
+    : network_pipe_(fake_network),
+      call_(call),
+      clock_(clock),
+      real_transport_(real_transport) {
+  network_pipe_->AddActiveTransport(real_transport);
+}
+
+DegradedCall::FakeNetworkPipeTransportAdapter::
+    ~FakeNetworkPipeTransportAdapter() {
+  network_pipe_->RemoveActiveTransport(real_transport_);
+}
+
+bool DegradedCall::FakeNetworkPipeTransportAdapter::SendRtp(
+    const uint8_t* packet,
+    size_t length,
+    const PacketOptions& options) {
+  // A call here comes from the RTP stack (probably pacer). We intercept it and
+  // put it in the fake network pipe instead, but report to Call that is has
+  // been sent, so that the bandwidth estimator sees the delay we add.
+  network_pipe_->SendRtp(packet, length, options, real_transport_);
+  if (options.packet_id != -1) {
+    rtc::SentPacket sent_packet;
+    sent_packet.packet_id = options.packet_id;
+    sent_packet.send_time_ms = clock_->TimeInMilliseconds();
+    sent_packet.info.included_in_feedback = options.included_in_feedback;
+    sent_packet.info.included_in_allocation = options.included_in_allocation;
+    sent_packet.info.packet_size_bytes = length;
+    sent_packet.info.packet_type = rtc::PacketType::kData;
+    call_->OnSentPacket(sent_packet);
+  }
+  return true;
+}
+
+bool DegradedCall::FakeNetworkPipeTransportAdapter::SendRtcp(
+    const uint8_t* packet,
+    size_t length) {
+  network_pipe_->SendRtcp(packet, length, real_transport_);
+  return true;
+}
+
 DegradedCall::DegradedCall(
     std::unique_ptr<Call> call,
     absl::optional<BuiltInNetworkBehaviorConfig> send_config,
@@ -87,17 +143,36 @@ DegradedCall::DegradedCall(
         absl::make_unique<webrtc::FakeNetworkPipe>(clock_, std::move(network));
     receive_pipe_->SetReceiver(call_->Receiver());
   }
+  if (send_config_) {
+    auto network = absl::make_unique<SimulatedNetwork>(*send_config_);
+    send_simulated_network_ = network.get();
+    send_pipe_ = absl::make_unique<FakeNetworkPipeOnTaskQueue>(
+        task_queue_factory_, clock_, std::move(network));
+  }
 }
 
 DegradedCall::~DegradedCall() = default;
 
 AudioSendStream* DegradedCall::CreateAudioSendStream(
     const AudioSendStream::Config& config) {
+  if (send_config_) {
+    auto transport_adapter = absl::make_unique<FakeNetworkPipeTransportAdapter>(
+        send_pipe_.get(), call_.get(), clock_, config.send_transport);
+    AudioSendStream::Config degrade_config = config;
+    degrade_config.send_transport = transport_adapter.get();
+    AudioSendStream* send_stream = call_->CreateAudioSendStream(degrade_config);
+    if (send_stream) {
+      audio_send_transport_adapters_[send_stream] =
+          std::move(transport_adapter);
+    }
+    return send_stream;
+  }
   return call_->CreateAudioSendStream(config);
 }
 
 void DegradedCall::DestroyAudioSendStream(AudioSendStream* send_stream) {
   call_->DestroyAudioSendStream(send_stream);
+  audio_send_transport_adapters_.erase(send_stream);
 }
 
 AudioReceiveStream* DegradedCall::CreateAudioReceiveStream(
@@ -113,34 +188,41 @@ void DegradedCall::DestroyAudioReceiveStream(
 VideoSendStream* DegradedCall::CreateVideoSendStream(
     VideoSendStream::Config config,
     VideoEncoderConfig encoder_config) {
-  if (send_config_ && !send_pipe_) {
-    auto network = absl::make_unique<SimulatedNetwork>(*send_config_);
-    send_simulated_network_ = network.get();
-    send_pipe_ = absl::make_unique<FakeNetworkPipeOnTaskQueue>(
-        task_queue_factory_, clock_, std::move(network), config.send_transport);
-    config.send_transport = this;
+  std::unique_ptr<FakeNetworkPipeTransportAdapter> transport_adapter;
+  if (send_config_) {
+    transport_adapter = absl::make_unique<FakeNetworkPipeTransportAdapter>(
+        send_pipe_.get(), call_.get(), clock_, config.send_transport);
+    config.send_transport = transport_adapter.get();
   }
-  return call_->CreateVideoSendStream(std::move(config),
-                                      std::move(encoder_config));
+  VideoSendStream* send_stream = call_->CreateVideoSendStream(
+      std::move(config), std::move(encoder_config));
+  if (send_stream && transport_adapter) {
+    video_send_transport_adapters_[send_stream] = std::move(transport_adapter);
+  }
+  return send_stream;
 }
 
 VideoSendStream* DegradedCall::CreateVideoSendStream(
     VideoSendStream::Config config,
     VideoEncoderConfig encoder_config,
     std::unique_ptr<FecController> fec_controller) {
-  if (send_config_ && !send_pipe_) {
-    auto network = absl::make_unique<SimulatedNetwork>(*send_config_);
-    send_simulated_network_ = network.get();
-    send_pipe_ = absl::make_unique<FakeNetworkPipeOnTaskQueue>(
-        task_queue_factory_, clock_, std::move(network), config.send_transport);
-    config.send_transport = this;
+  std::unique_ptr<FakeNetworkPipeTransportAdapter> transport_adapter;
+  if (send_config_) {
+    transport_adapter = absl::make_unique<FakeNetworkPipeTransportAdapter>(
+        send_pipe_.get(), call_.get(), clock_, config.send_transport);
+    config.send_transport = transport_adapter.get();
   }
-  return call_->CreateVideoSendStream(
+  VideoSendStream* send_stream = call_->CreateVideoSendStream(
       std::move(config), std::move(encoder_config), std::move(fec_controller));
+  if (send_stream && transport_adapter) {
+    video_send_transport_adapters_[send_stream] = std::move(transport_adapter);
+  }
+  return send_stream;
 }
 
 void DegradedCall::DestroyVideoSendStream(VideoSendStream* send_stream) {
   call_->DestroyVideoSendStream(send_stream);
+  video_send_transport_adapters_.erase(send_stream);
 }
 
 VideoReceiveStream* DegradedCall::CreateVideoReceiveStream(
@@ -199,31 +281,6 @@ void DegradedCall::OnSentPacket(const rtc::SentPacket& sent_packet) {
   call_->OnSentPacket(sent_packet);
 }
 
-bool DegradedCall::SendRtp(const uint8_t* packet,
-                           size_t length,
-                           const PacketOptions& options) {
-  // A call here comes from the RTP stack (probably pacer). We intercept it and
-  // put it in the fake network pipe instead, but report to Call that is has
-  // been sent, so that the bandwidth estimator sees the delay we add.
-  send_pipe_->SendRtp(packet, length, options);
-  if (options.packet_id != -1) {
-    rtc::SentPacket sent_packet;
-    sent_packet.packet_id = options.packet_id;
-    sent_packet.send_time_ms = clock_->TimeInMilliseconds();
-    sent_packet.info.included_in_feedback = options.included_in_feedback;
-    sent_packet.info.included_in_allocation = options.included_in_allocation;
-    sent_packet.info.packet_size_bytes = length;
-    sent_packet.info.packet_type = rtc::PacketType::kData;
-    call_->OnSentPacket(sent_packet);
-  }
-  return true;
-}
-
-bool DegradedCall::SendRtcp(const uint8_t* packet, size_t length) {
-  send_pipe_->SendRtcp(packet, length);
-  return true;
-}
-
 PacketReceiver::DeliveryStatus DegradedCall::DeliverPacket(
     MediaType media_type,
     rtc::CopyOnWriteBuffer packet,
@@ -233,7 +290,7 @@ PacketReceiver::DeliveryStatus DegradedCall::DeliverPacket(
   // This is not optimal, but there are many places where there are thread
   // checks that fail if we're not using the worker thread call into this
   // method. If we want to fix this we probably need a task queue to do handover
-  // of all overriden methods, which feels like overikill for the current use
+  // of all overriden methods, which feels like overkill for the current use
   // case.
   // By just having this thread call out via the Process() method we work around
   // that, with the tradeoff that a non-zero delay may become a little larger
@@ -241,5 +298,4 @@ PacketReceiver::DeliveryStatus DegradedCall::DeliverPacket(
   receive_pipe_->Process();
   return status;
 }
-
 }  // namespace webrtc
