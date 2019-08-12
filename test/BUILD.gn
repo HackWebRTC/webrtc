@@ -278,6 +278,8 @@ if (rtc_include_tests) {
 
     deps = [
       ":test_main_lib",
+      "//third_party/abseil-cpp/absl/debugging:failure_signal_handler",
+      "//third_party/abseil-cpp/absl/debugging:symbolize",
     ]
   }
 
