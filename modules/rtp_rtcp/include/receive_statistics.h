@@ -49,8 +49,7 @@ class StreamStatistician {
   virtual absl::optional<int> GetFractionLostInPercent() const = 0;
 
   // Gets received stream data counters (includes reset counter values).
-  virtual void GetReceiveStreamDataCounters(
-      StreamDataCounters* data_counters) const = 0;
+  virtual StreamDataCounters GetReceiveStreamDataCounters() const = 0;
 
   virtual uint32_t BitrateReceived() const = 0;
 };

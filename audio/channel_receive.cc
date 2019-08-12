@@ -747,8 +747,8 @@ CallReceiveStatistics ChannelReceive::GetRTCPStatistics() const {
 
   // --- Data counters
   if (statistician) {
-    StreamDataCounters data_counters;
-    statistician->GetReceiveStreamDataCounters(&data_counters);
+    StreamDataCounters data_counters =
+        statistician->GetReceiveStreamDataCounters();
     if (use_standard_bytes_stats_) {
       stats.bytesReceived = data_counters.transmitted.payload_bytes;
     } else {

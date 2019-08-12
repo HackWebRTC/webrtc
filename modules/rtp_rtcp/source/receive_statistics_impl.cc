@@ -306,10 +306,10 @@ absl::optional<int> StreamStatisticianImpl::GetFractionLostInPercent() const {
   return 100 * static_cast<int64_t>(cumulative_loss_) / expected_packets;
 }
 
-void StreamStatisticianImpl::GetReceiveStreamDataCounters(
-    StreamDataCounters* data_counters) const {
+StreamDataCounters StreamStatisticianImpl::GetReceiveStreamDataCounters()
+    const {
   rtc::CritScope cs(&stream_lock_);
-  *data_counters = receive_counters_;
+  return receive_counters_;
 }
 
 uint32_t StreamStatisticianImpl::BitrateReceived() const {

@@ -217,13 +217,12 @@ TEST_F(ReceiveStatisticsTest, GetReceiveStreamDataCounters) {
       receive_statistics_->GetStatistician(kSsrc1);
   ASSERT_TRUE(statistician != NULL);
 
-  StreamDataCounters counters;
-  statistician->GetReceiveStreamDataCounters(&counters);
+  StreamDataCounters counters = statistician->GetReceiveStreamDataCounters();
   EXPECT_GT(counters.first_packet_time_ms, -1);
   EXPECT_EQ(1u, counters.transmitted.packets);
 
   receive_statistics_->OnRtpPacket(packet1_);
-  statistician->GetReceiveStreamDataCounters(&counters);
+  counters = statistician->GetReceiveStreamDataCounters();
   EXPECT_GT(counters.first_packet_time_ms, -1);
   EXPECT_EQ(2u, counters.transmitted.packets);
 }

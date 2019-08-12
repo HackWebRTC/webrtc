@@ -39,8 +39,7 @@ class StreamStatisticianImpl : public StreamStatistician,
   void GetDataCounters(size_t* bytes_received,
                        uint32_t* packets_received) const override;
   absl::optional<int> GetFractionLostInPercent() const override;
-  void GetReceiveStreamDataCounters(
-      StreamDataCounters* data_counters) const override;
+  StreamDataCounters GetReceiveStreamDataCounters() const override;
   uint32_t BitrateReceived() const override;
 
   // Implements RtpPacketSinkInterface
