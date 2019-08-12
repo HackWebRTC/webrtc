@@ -627,6 +627,11 @@ void DefaultVideoQualityAnalyzer::ReportResults(
   test::PrintResult("dropped_frames", "", test_case_name,
                     frame_counters.dropped, "count",
                     /*important=*/false);
+  test::PrintResult("frames_in_flight", "", test_case_name,
+                    frame_counters.captured - frame_counters.rendered -
+                        frame_counters.dropped,
+                    "count",
+                    /*important=*/false);
   ReportResult("max_skipped", test_case_name, stats.skipped_between_rendered,
                "count");
 }
