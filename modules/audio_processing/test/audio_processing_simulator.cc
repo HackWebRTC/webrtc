@@ -222,9 +222,12 @@ void AudioProcessingSimulator::ProcessStream(bool fixed_interface) {
   if (settings_.simulate_mic_gain) {
     fake_recording_device_.SetMicLevel(analog_mic_level_);
   }
-
-  if (buffer_writer_) {
-    buffer_writer_->Write(*out_buf_);
+  if (buffer_memory_writer_) {
+    RTC_CHECK(!buffer_file_writer_);
+    buffer_memory_writer_->Write(*out_buf_);
+  } else if (buffer_file_writer_) {
+    RTC_CHECK(!buffer_memory_writer_);
+    buffer_file_writer_->Write(*out_buf_);
   }
 
   if (residual_echo_likelihood_graph_writer_.is_open()) {
@@ -254,8 +257,8 @@ void AudioProcessingSimulator::ProcessReverseStream(bool fixed_interface) {
                      reverse_out_config_, reverse_out_buf_->channels()));
   }
 
-  if (reverse_buffer_writer_) {
-    reverse_buffer_writer_->Write(*reverse_out_buf_);
+  if (reverse_buffer_file_writer_) {
+    reverse_buffer_file_writer_->Write(*reverse_out_buf_);
   }
 
   ++num_reverse_process_stream_calls_;
@@ -336,7 +339,10 @@ void AudioProcessingSimulator::SetupOutput() {
     std::unique_ptr<WavWriter> out_file(
         new WavWriter(filename, out_config_.sample_rate_hz(),
                       static_cast<size_t>(out_config_.num_channels())));
-    buffer_writer_.reset(new ChannelBufferWavWriter(std::move(out_file)));
+    buffer_file_writer_.reset(new ChannelBufferWavWriter(std::move(out_file)));
+  } else if (settings_.aec_dump_input_string.has_value()) {
+    buffer_memory_writer_ = absl::make_unique<ChannelBufferVectorWriter>(
+        settings_.processed_capture_samples);
   }
 
   if (settings_.reverse_output_filename) {
@@ -351,7 +357,7 @@ void AudioProcessingSimulator::SetupOutput() {
     std::unique_ptr<WavWriter> reverse_out_file(
         new WavWriter(filename, reverse_out_config_.sample_rate_hz(),
                       static_cast<size_t>(reverse_out_config_.num_channels())));
-    reverse_buffer_writer_.reset(
+    reverse_buffer_file_writer_.reset(
         new ChannelBufferWavWriter(std::move(reverse_out_file)));
   }
 

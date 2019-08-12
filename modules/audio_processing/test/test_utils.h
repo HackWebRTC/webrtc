@@ -77,6 +77,26 @@ class ChannelBufferWavWriter final {
   RTC_DISALLOW_COPY_AND_ASSIGN(ChannelBufferWavWriter);
 };
 
+// Takes a pointer to a vector. Allows appending the samples of channel buffers
+// to the given vector, by interleaving the samples and converting them to float
+// S16.
+class ChannelBufferVectorWriter final {
+ public:
+  explicit ChannelBufferVectorWriter(std::vector<float>* output);
+  ChannelBufferVectorWriter(const ChannelBufferVectorWriter&) = delete;
+  ChannelBufferVectorWriter& operator=(const ChannelBufferVectorWriter&) =
+      delete;
+  ~ChannelBufferVectorWriter();
+
+  // Creates an interleaved copy of |buffer|, converts the samples to float S16
+  // and appends the result to output_.
+  void Write(const ChannelBuffer<float>& buffer);
+
+ private:
+  std::vector<float> interleaved_buffer_;
+  std::vector<float>* output_;
+};
+
 void WriteIntData(const int16_t* data,
                   size_t length,
                   WavWriter* wav_file,

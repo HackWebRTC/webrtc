@@ -212,8 +212,6 @@ void AecDumpBasedSimulator::PrepareReverseProcessStreamCall(
 
 void AecDumpBasedSimulator::Process() {
   CreateAudioProcessor();
-  dump_input_file_ = OpenFile(settings_.aec_dump_input_filename->c_str(), "rb");
-
   if (settings_.artificial_nearend_filename) {
     std::unique_ptr<WavReader> artificial_nearend_file(
         new WavReader(settings_.artificial_nearend_filename->c_str()));
@@ -231,37 +229,50 @@ void AecDumpBasedSimulator::Process() {
 
   webrtc::audioproc::Event event_msg;
   int num_forward_chunks_processed = 0;
-  while (ReadMessageFromFile(dump_input_file_, &event_msg)) {
-    switch (event_msg.type()) {
-      case webrtc::audioproc::Event::INIT:
-        RTC_CHECK(event_msg.has_init());
-        HandleMessage(event_msg.init());
-        break;
-      case webrtc::audioproc::Event::STREAM:
-        RTC_CHECK(event_msg.has_stream());
-        HandleMessage(event_msg.stream());
-        ++num_forward_chunks_processed;
-        break;
-      case webrtc::audioproc::Event::REVERSE_STREAM:
-        RTC_CHECK(event_msg.has_reverse_stream());
-        HandleMessage(event_msg.reverse_stream());
-        break;
-      case webrtc::audioproc::Event::CONFIG:
-        RTC_CHECK(event_msg.has_config());
-        HandleMessage(event_msg.config());
-        break;
-      case webrtc::audioproc::Event::RUNTIME_SETTING:
-        HandleMessage(event_msg.runtime_setting());
-        break;
-      case webrtc::audioproc::Event::UNKNOWN_EVENT:
-        RTC_CHECK(false);
-        break;
-    }
+  if (settings_.aec_dump_input_string.has_value()) {
+    std::stringstream input;
+    input << settings_.aec_dump_input_string.value();
+    while (ReadMessageFromString(&input, &event_msg))
+      HandleEvent(event_msg, &num_forward_chunks_processed);
+  } else {
+    dump_input_file_ =
+        OpenFile(settings_.aec_dump_input_filename->c_str(), "rb");
+    while (ReadMessageFromFile(dump_input_file_, &event_msg))
+      HandleEvent(event_msg, &num_forward_chunks_processed);
+    fclose(dump_input_file_);
   }
 
-  fclose(dump_input_file_);
-
   DestroyAudioProcessor();
+}
+
+void AecDumpBasedSimulator::HandleEvent(
+    const webrtc::audioproc::Event& event_msg,
+    int* num_forward_chunks_processed) {
+  switch (event_msg.type()) {
+    case webrtc::audioproc::Event::INIT:
+      RTC_CHECK(event_msg.has_init());
+      HandleMessage(event_msg.init());
+      break;
+    case webrtc::audioproc::Event::STREAM:
+      RTC_CHECK(event_msg.has_stream());
+      HandleMessage(event_msg.stream());
+      ++num_forward_chunks_processed;
+      break;
+    case webrtc::audioproc::Event::REVERSE_STREAM:
+      RTC_CHECK(event_msg.has_reverse_stream());
+      HandleMessage(event_msg.reverse_stream());
+      break;
+    case webrtc::audioproc::Event::CONFIG:
+      RTC_CHECK(event_msg.has_config());
+      HandleMessage(event_msg.config());
+      break;
+    case webrtc::audioproc::Event::RUNTIME_SETTING:
+      HandleMessage(event_msg.runtime_setting());
+      break;
+    case webrtc::audioproc::Event::UNKNOWN_EVENT:
+      RTC_CHECK(false);
+      break;
+  }
 }
 
 void AecDumpBasedSimulator::HandleMessage(
