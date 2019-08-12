@@ -143,6 +143,9 @@ public class PeerConnectionTest {
     @Override
     public void onIceCandidatesRemoved(IceCandidate[] candidates) {}
 
+    @Override
+    public void onSelectedCandidatePairChanged(CandidatePairChangeEvent event) {}
+
     // TODO(bugs.webrtc.org/8491): Remove NoSynchronizedMethodCheck suppression.
     @SuppressWarnings("NoSynchronizedMethodCheck")
     public synchronized void setExpectedResolution(int width, int height) {

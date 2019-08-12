@@ -41,6 +41,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
+#include "sdk/android/generated_peerconnection_jni/CandidatePairChangeEvent_jni.h"
 #include "sdk/android/generated_peerconnection_jni/PeerConnection_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/jni_helpers.h"
@@ -118,6 +119,16 @@ SdpSemantics JavaToNativeSdpSemantics(JNIEnv* jni,
 
   RTC_NOTREACHED();
   return SdpSemantics::kPlanB;
+}
+
+ScopedJavaLocalRef<jobject> NativeToJavaCandidatePairChange(
+    JNIEnv* env,
+    const cricket::CandidatePairChangeEvent& event) {
+  return Java_CandidatePairChangeEvent_Constructor(
+      env, NativeToJavaCandidate(env, event.local_candidate),
+      NativeToJavaCandidate(env, event.remote_candidate),
+      static_cast<int>(event.last_data_received_ms),
+      NativeToJavaString(env, event.reason));
 }
 
 }  // namespace
@@ -323,6 +334,13 @@ void PeerConnectionObserverJni::OnIceConnectionReceivingChange(bool receiving) {
   JNIEnv* env = AttachCurrentThreadIfNeeded();
   Java_Observer_onIceConnectionReceivingChange(env, j_observer_global_,
                                                receiving);
+}
+
+void PeerConnectionObserverJni::OnIceSelectedCandidatePairChanged(
+    const cricket::CandidatePairChangeEvent& event) {
+  JNIEnv* env = AttachCurrentThreadIfNeeded();
+  Java_Observer_onSelectedCandidatePairChanged(
+      env, j_observer_global_, NativeToJavaCandidatePairChange(env, event));
 }
 
 void PeerConnectionObserverJni::OnIceGatheringChange(

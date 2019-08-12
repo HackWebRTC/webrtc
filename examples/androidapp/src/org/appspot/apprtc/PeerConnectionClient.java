@@ -40,6 +40,7 @@ import org.appspot.apprtc.RecordedAudioToFileController;
 import org.webrtc.AudioSource;
 import org.webrtc.AudioTrack;
 import org.webrtc.CameraVideoCapturer;
+import org.webrtc.CandidatePairChangeEvent;
 import org.webrtc.DataChannel;
 import org.webrtc.DefaultVideoDecoderFactory;
 import org.webrtc.DefaultVideoEncoderFactory;
@@ -1212,6 +1213,11 @@ public class PeerConnectionClient {
     @Override
     public void onIceConnectionReceivingChange(boolean receiving) {
       Log.d(TAG, "IceConnectionReceiving changed to " + receiving);
+    }
+
+    @Override
+    public void onSelectedCandidatePairChanged(CandidatePairChangeEvent event) {
+      Log.d(TAG, "Selected candidate pair changed because: " + event);
     }
 
     @Override

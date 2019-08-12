@@ -940,6 +940,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
       const cricket::CandidatePairChangeEvent& event) {
     ice_candidate_pair_change_history_.push_back(event);
   }
+
   void OnIceCandidate(const webrtc::IceCandidateInterface* candidate) override {
     RTC_LOG(LS_INFO) << debug_name_ << ": OnIceCandidate";
 

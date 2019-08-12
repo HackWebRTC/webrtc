@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import org.webrtc.CandidatePairChangeEvent;
 import org.webrtc.DataChannel;
 import org.webrtc.MediaStreamTrack;
 import org.webrtc.RtpTransceiver;
@@ -117,6 +118,10 @@ public class PeerConnection {
 
     /** Triggered when some ICE candidates have been removed. */
     @CalledByNative("Observer") void onIceCandidatesRemoved(IceCandidate[] candidates);
+
+    /** Triggered when the ICE candidate pair is changed. */
+    @CalledByNative("Observer")
+    default void onSelectedCandidatePairChanged(CandidatePairChangeEvent event) {}
 
     /** Triggered when media is received on a new stream from remote peer. */
     @CalledByNative("Observer") void onAddStream(MediaStream stream);
