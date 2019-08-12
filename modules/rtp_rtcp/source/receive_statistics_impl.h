@@ -36,8 +36,6 @@ class StreamStatisticianImpl : public StreamStatistician,
   // |reset| here and in next method restarts calculation of fraction_lost stat.
   bool GetStatistics(RtcpStatistics* statistics, bool reset) override;
   bool GetActiveStatisticsAndReset(RtcpStatistics* statistics);
-  void GetDataCounters(size_t* bytes_received,
-                       uint32_t* packets_received) const override;
   absl::optional<int> GetFractionLostInPercent() const override;
   StreamDataCounters GetReceiveStreamDataCounters() const override;
   uint32_t BitrateReceived() const override;

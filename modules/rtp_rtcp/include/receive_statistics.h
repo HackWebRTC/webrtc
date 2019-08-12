@@ -42,8 +42,6 @@ class StreamStatistician {
   virtual ~StreamStatistician();
 
   virtual bool GetStatistics(RtcpStatistics* statistics, bool reset) = 0;
-  virtual void GetDataCounters(size_t* bytes_received,
-                               uint32_t* packets_received) const = 0;
 
   // Returns average over the stream life time.
   virtual absl::optional<int> GetFractionLostInPercent() const = 0;

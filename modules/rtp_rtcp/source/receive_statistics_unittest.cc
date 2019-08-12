@@ -96,18 +96,20 @@ TEST_F(ReceiveStatisticsTest, TwoIncomingSsrcs) {
       receive_statistics_->GetStatistician(kSsrc1);
   ASSERT_TRUE(statistician != NULL);
   EXPECT_GT(statistician->BitrateReceived(), 0u);
-  size_t bytes_received = 0;
-  uint32_t packets_received = 0;
-  statistician->GetDataCounters(&bytes_received, &packets_received);
-  EXPECT_EQ(200u, bytes_received);
-  EXPECT_EQ(2u, packets_received);
+  StreamDataCounters counters = statistician->GetReceiveStreamDataCounters();
+  EXPECT_EQ(176u, counters.transmitted.payload_bytes);
+  EXPECT_EQ(24u, counters.transmitted.header_bytes);
+  EXPECT_EQ(0u, counters.transmitted.padding_bytes);
+  EXPECT_EQ(2u, counters.transmitted.packets);
 
   statistician = receive_statistics_->GetStatistician(kSsrc2);
   ASSERT_TRUE(statistician != NULL);
   EXPECT_GT(statistician->BitrateReceived(), 0u);
-  statistician->GetDataCounters(&bytes_received, &packets_received);
-  EXPECT_EQ(600u, bytes_received);
-  EXPECT_EQ(2u, packets_received);
+  counters = statistician->GetReceiveStreamDataCounters();
+  EXPECT_EQ(576u, counters.transmitted.payload_bytes);
+  EXPECT_EQ(24u, counters.transmitted.header_bytes);
+  EXPECT_EQ(0u, counters.transmitted.padding_bytes);
+  EXPECT_EQ(2u, counters.transmitted.packets);
 
   EXPECT_EQ(2u, receive_statistics_->RtcpReportBlocks(3).size());
   // Add more incoming packets and verify that they are registered in both
@@ -117,14 +119,19 @@ TEST_F(ReceiveStatisticsTest, TwoIncomingSsrcs) {
   receive_statistics_->OnRtpPacket(packet2_);
   IncrementSequenceNumber(&packet2_);
 
-  receive_statistics_->GetStatistician(kSsrc1)->GetDataCounters(
-      &bytes_received, &packets_received);
-  EXPECT_EQ(300u, bytes_received);
-  EXPECT_EQ(3u, packets_received);
-  receive_statistics_->GetStatistician(kSsrc2)->GetDataCounters(
-      &bytes_received, &packets_received);
-  EXPECT_EQ(900u, bytes_received);
-  EXPECT_EQ(3u, packets_received);
+  counters = receive_statistics_->GetStatistician(kSsrc1)
+                 ->GetReceiveStreamDataCounters();
+  EXPECT_EQ(264u, counters.transmitted.payload_bytes);
+  EXPECT_EQ(36u, counters.transmitted.header_bytes);
+  EXPECT_EQ(0u, counters.transmitted.padding_bytes);
+  EXPECT_EQ(3u, counters.transmitted.packets);
+
+  counters = receive_statistics_->GetStatistician(kSsrc2)
+                 ->GetReceiveStreamDataCounters();
+  EXPECT_EQ(864u, counters.transmitted.payload_bytes);
+  EXPECT_EQ(36u, counters.transmitted.header_bytes);
+  EXPECT_EQ(0u, counters.transmitted.padding_bytes);
+  EXPECT_EQ(3u, counters.transmitted.packets);
 }
 
 TEST_F(ReceiveStatisticsTest,
@@ -193,11 +200,11 @@ TEST_F(ReceiveStatisticsTest, ActiveStatisticians) {
   StreamStatistician* statistician =
       receive_statistics_->GetStatistician(kSsrc1);
   ASSERT_TRUE(statistician != NULL);
-  size_t bytes_received = 0;
-  uint32_t packets_received = 0;
-  statistician->GetDataCounters(&bytes_received, &packets_received);
-  EXPECT_EQ(200u, bytes_received);
-  EXPECT_EQ(2u, packets_received);
+  StreamDataCounters counters = statistician->GetReceiveStreamDataCounters();
+  EXPECT_EQ(176u, counters.transmitted.payload_bytes);
+  EXPECT_EQ(24u, counters.transmitted.header_bytes);
+  EXPECT_EQ(0u, counters.transmitted.padding_bytes);
+  EXPECT_EQ(2u, counters.transmitted.packets);
 }
 
 TEST_F(ReceiveStatisticsTest,
