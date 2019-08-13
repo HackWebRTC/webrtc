@@ -501,19 +501,10 @@ class MockAudioTransport : public test::MockAudioTransport {
 
 // AudioDeviceTest test fixture.
 
-// Don't run these tests in combination with sanitizers.
-// TODO(webrtc:9778): Re-enable on THREAD_SANITIZER?
-#if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER) || \
-    defined(THREAD_SANITIZER)
-#define MAYBE_AudioDeviceTest DISABLED_AudioDeviceTest
-#else
-#define MAYBE_AudioDeviceTest AudioDeviceTest
-#endif
-
-class MAYBE_AudioDeviceTest
+class AudioDeviceTest
     : public ::testing::TestWithParam<webrtc::AudioDeviceModule::AudioLayer> {
  protected:
-  MAYBE_AudioDeviceTest()
+  AudioDeviceTest()
       : audio_layer_(GetParam()),
         task_queue_factory_(CreateDefaultTaskQueueFactory()) {
     rtc::LogMessage::LogToDebug(rtc::LS_INFO);
@@ -562,7 +553,7 @@ class MAYBE_AudioDeviceTest
   // An alternative would be for the mock to outlive audio_device.
   void PreTearDown() { EXPECT_EQ(0, audio_device_->Terminate()); }
 
-  virtual ~MAYBE_AudioDeviceTest() {
+  virtual ~AudioDeviceTest() {
     if (audio_device_) {
       EXPECT_EQ(0, audio_device_->Terminate());
     }
@@ -700,9 +691,9 @@ TEST(AudioDeviceTestWin, ConstructDestructWithFactory) {
 }
 
 // Uses the test fixture to create, initialize and destruct the ADM.
-TEST_P(MAYBE_AudioDeviceTest, ConstructDestructDefault) {}
+TEST_P(AudioDeviceTest, ConstructDestructDefault) {}
 
-TEST_P(MAYBE_AudioDeviceTest, InitTerminate) {
+TEST_P(AudioDeviceTest, InitTerminate) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   // Initialization is part of the test fixture.
   EXPECT_TRUE(audio_device()->Initialized());
@@ -711,7 +702,7 @@ TEST_P(MAYBE_AudioDeviceTest, InitTerminate) {
 }
 
 // Enumerate all available and active output devices.
-TEST_P(MAYBE_AudioDeviceTest, PlayoutDeviceNames) {
+TEST_P(AudioDeviceTest, PlayoutDeviceNames) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   char device_name[kAdmMaxDeviceNameSize];
   char unique_id[kAdmMaxGuidSize];
@@ -728,7 +719,7 @@ TEST_P(MAYBE_AudioDeviceTest, PlayoutDeviceNames) {
 }
 
 // Enumerate all available and active input devices.
-TEST_P(MAYBE_AudioDeviceTest, RecordingDeviceNames) {
+TEST_P(AudioDeviceTest, RecordingDeviceNames) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   char device_name[kAdmMaxDeviceNameSize];
   char unique_id[kAdmMaxGuidSize];
@@ -746,7 +737,7 @@ TEST_P(MAYBE_AudioDeviceTest, RecordingDeviceNames) {
 }
 
 // Counts number of active output devices and ensure that all can be selected.
-TEST_P(MAYBE_AudioDeviceTest, SetPlayoutDevice) {
+TEST_P(AudioDeviceTest, SetPlayoutDevice) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   int num_devices = audio_device()->PlayoutDevices();
   if (NewWindowsAudioDeviceModuleIsUsed()) {
@@ -769,7 +760,7 @@ TEST_P(MAYBE_AudioDeviceTest, SetPlayoutDevice) {
 }
 
 // Counts number of active input devices and ensure that all can be selected.
-TEST_P(MAYBE_AudioDeviceTest, SetRecordingDevice) {
+TEST_P(AudioDeviceTest, SetRecordingDevice) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   int num_devices = audio_device()->RecordingDevices();
   if (NewWindowsAudioDeviceModuleIsUsed()) {
@@ -792,14 +783,14 @@ TEST_P(MAYBE_AudioDeviceTest, SetRecordingDevice) {
 }
 
 // Tests Start/Stop playout without any registered audio callback.
-TEST_P(MAYBE_AudioDeviceTest, StartStopPlayout) {
+TEST_P(AudioDeviceTest, StartStopPlayout) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   StartPlayout();
   StopPlayout();
 }
 
 // Tests Start/Stop recording without any registered audio callback.
-TEST_P(MAYBE_AudioDeviceTest, StartStopRecording) {
+TEST_P(AudioDeviceTest, StartStopRecording) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   StartRecording();
   StopRecording();
@@ -808,7 +799,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartStopRecording) {
 // Tests Init/Stop/Init recording without any registered audio callback.
 // See https://bugs.chromium.org/p/webrtc/issues/detail?id=8041 for details
 // on why this test is useful.
-TEST_P(MAYBE_AudioDeviceTest, InitStopInitRecording) {
+TEST_P(AudioDeviceTest, InitStopInitRecording) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   EXPECT_EQ(0, audio_device()->InitRecording());
   EXPECT_TRUE(audio_device()->RecordingIsInitialized());
@@ -819,7 +810,7 @@ TEST_P(MAYBE_AudioDeviceTest, InitStopInitRecording) {
 
 // Verify that additional attempts to initialize or start recording while
 // already being active works. Additional calls should just be ignored.
-TEST_P(MAYBE_AudioDeviceTest, StartInitRecording) {
+TEST_P(AudioDeviceTest, StartInitRecording) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   StartRecording();
   // An additional attempt to initialize at this stage should be ignored.
@@ -831,7 +822,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartInitRecording) {
 
 // Verify that additional attempts to initialize or start playou while
 // already being active works. Additional calls should just be ignored.
-TEST_P(MAYBE_AudioDeviceTest, StartInitPlayout) {
+TEST_P(AudioDeviceTest, StartInitPlayout) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   StartPlayout();
   // An additional attempt to initialize at this stage should be ignored.
@@ -842,7 +833,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartInitPlayout) {
 }
 
 // Tests Init/Stop/Init recording while playout is active.
-TEST_P(MAYBE_AudioDeviceTest, InitStopInitRecordingWhilePlaying) {
+TEST_P(AudioDeviceTest, InitStopInitRecordingWhilePlaying) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   StartPlayout();
   EXPECT_EQ(0, audio_device()->InitRecording());
@@ -854,7 +845,7 @@ TEST_P(MAYBE_AudioDeviceTest, InitStopInitRecordingWhilePlaying) {
 }
 
 // Tests Init/Stop/Init playout without any registered audio callback.
-TEST_P(MAYBE_AudioDeviceTest, InitStopInitPlayout) {
+TEST_P(AudioDeviceTest, InitStopInitPlayout) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   EXPECT_EQ(0, audio_device()->InitPlayout());
   EXPECT_TRUE(audio_device()->PlayoutIsInitialized());
@@ -864,7 +855,7 @@ TEST_P(MAYBE_AudioDeviceTest, InitStopInitPlayout) {
 }
 
 // Tests Init/Stop/Init playout while recording is active.
-TEST_P(MAYBE_AudioDeviceTest, InitStopInitPlayoutWhileRecording) {
+TEST_P(AudioDeviceTest, InitStopInitPlayoutWhileRecording) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   StartRecording();
   EXPECT_EQ(0, audio_device()->InitPlayout());
@@ -880,7 +871,7 @@ TEST_P(MAYBE_AudioDeviceTest, InitStopInitPlayoutWhileRecording) {
 #ifdef WEBRTC_WIN
 // Tests Start/Stop playout followed by a second session (emulates a restart
 // triggered by a user using public APIs).
-TEST_P(MAYBE_AudioDeviceTest, StartStopPlayoutWithExternalRestart) {
+TEST_P(AudioDeviceTest, StartStopPlayoutWithExternalRestart) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   StartPlayout();
   StopPlayout();
@@ -892,7 +883,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartStopPlayoutWithExternalRestart) {
 
 // Tests Start/Stop recording followed by a second session (emulates a restart
 // triggered by a user using public APIs).
-TEST_P(MAYBE_AudioDeviceTest, StartStopRecordingWithExternalRestart) {
+TEST_P(AudioDeviceTest, StartStopRecordingWithExternalRestart) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   StartRecording();
   StopRecording();
@@ -906,7 +897,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartStopRecordingWithExternalRestart) {
 // triggered by an internal callback e.g. corresponding to a device switch).
 // Note that, internal restart is only supported in combination with the latest
 // Windows ADM.
-TEST_P(MAYBE_AudioDeviceTest, StartStopPlayoutWithInternalRestart) {
+TEST_P(AudioDeviceTest, StartStopPlayoutWithInternalRestart) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   if (audio_layer() != AudioDeviceModule::kWindowsCoreAudio2) {
     return;
@@ -951,7 +942,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartStopPlayoutWithInternalRestart) {
 // triggered by an internal callback e.g. corresponding to a device switch).
 // Note that, internal restart is only supported in combination with the latest
 // Windows ADM.
-TEST_P(MAYBE_AudioDeviceTest, StartStopRecordingWithInternalRestart) {
+TEST_P(AudioDeviceTest, StartStopRecordingWithInternalRestart) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   if (audio_layer() != AudioDeviceModule::kWindowsCoreAudio2) {
     return;
@@ -1000,7 +991,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartStopRecordingWithInternalRestart) {
 // Note that we can't add expectations on audio parameters in EXPECT_CALL
 // since parameter are not provided in the each callback. We therefore test and
 // verify the parameters in the fake audio transport implementation instead.
-TEST_P(MAYBE_AudioDeviceTest, StartPlayoutVerifyCallbacks) {
+TEST_P(AudioDeviceTest, StartPlayoutVerifyCallbacks) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   MockAudioTransport mock(TransportType::kPlay);
   mock.HandleCallbacks(event(), nullptr, kNumCallbacks);
@@ -1013,9 +1004,26 @@ TEST_P(MAYBE_AudioDeviceTest, StartPlayoutVerifyCallbacks) {
   PreTearDown();
 }
 
+// Don't run these tests in combination with sanitizers.
+// They are already flaky *without* sanitizers.
+// Sanitizers seem to increase flakiness (which brings noise),
+// without reporting anything.
+// TODO(webrtc:10867): Re-enable when flakiness fixed.
+#if defined(ADDRESS_SANITIZER) || defined(MEMORY_SANITIZER) || \
+    defined(THREAD_SANITIZER)
+#define MAYBE_StartRecordingVerifyCallbacks \
+  DISABLED_StartRecordingVerifyCallbacks
+#define MAYBE_StartPlayoutAndRecordingVerifyCallbacks \
+  DISABLED_StartPlayoutAndRecordingVerifyCallbacks
+#else
+#define MAYBE_StartRecordingVerifyCallbacks StartRecordingVerifyCallbacks
+#define MAYBE_StartPlayoutAndRecordingVerifyCallbacks \
+  StartPlayoutAndRecordingVerifyCallbacks
+#endif
+
 // Start recording and verify that the native audio layer starts providing real
 // audio samples using the RecordedDataIsAvailable() callback.
-TEST_P(MAYBE_AudioDeviceTest, StartRecordingVerifyCallbacks) {
+TEST_P(AudioDeviceTest, MAYBE_StartRecordingVerifyCallbacks) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   MockAudioTransport mock(TransportType::kRecord);
   mock.HandleCallbacks(event(), nullptr, kNumCallbacks);
@@ -1031,7 +1039,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartRecordingVerifyCallbacks) {
 
 // Start playout and recording (full-duplex audio) and verify that audio is
 // active in both directions.
-TEST_P(MAYBE_AudioDeviceTest, StartPlayoutAndRecordingVerifyCallbacks) {
+TEST_P(AudioDeviceTest, MAYBE_StartPlayoutAndRecordingVerifyCallbacks) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   MockAudioTransport mock(TransportType::kPlayAndRecord);
   mock.HandleCallbacks(event(), nullptr, kNumCallbacks);
@@ -1061,7 +1069,7 @@ TEST_P(MAYBE_AudioDeviceTest, StartPlayoutAndRecordingVerifyCallbacks) {
 // sequence by running in loopback for a few seconds while measuring the size
 // (max and average) of the FIFO. The size of the FIFO is increased by the
 // recording side and decreased by the playout side.
-TEST_P(MAYBE_AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
+TEST_P(AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   NiceMock<MockAudioTransport> mock(TransportType::kPlayAndRecord);
   FifoAudioStream audio_stream;
@@ -1094,7 +1102,7 @@ TEST_P(MAYBE_AudioDeviceTest, RunPlayoutAndRecordingInFullDuplex) {
 // Runs audio in full duplex until user hits Enter. Intended as a manual test
 // to ensure that the audio quality is good and that real device switches works
 // as intended.
-TEST_P(MAYBE_AudioDeviceTest,
+TEST_P(AudioDeviceTest,
        DISABLED_RunPlayoutAndRecordingInFullDuplexAndWaitForEnterKey) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   if (audio_layer() != AudioDeviceModule::kWindowsCoreAudio2) {
@@ -1132,7 +1140,7 @@ TEST_P(MAYBE_AudioDeviceTest,
 // some sort of audio feedback loop. E.g. a headset where the mic is placed
 // close to the speaker to ensure highest possible echo. It is also recommended
 // to run the test at highest possible output volume.
-TEST_P(MAYBE_AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
+TEST_P(AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
   SKIP_TEST_IF_NOT(requirements_satisfied());
   NiceMock<MockAudioTransport> mock(TransportType::kPlayAndRecord);
   LatencyAudioStream audio_stream;
@@ -1162,14 +1170,14 @@ TEST_P(MAYBE_AudioDeviceTest, DISABLED_MeasureLoopbackLatency) {
 // implementations) for Windows.
 INSTANTIATE_TEST_SUITE_P(
     AudioLayerWin,
-    MAYBE_AudioDeviceTest,
+    AudioDeviceTest,
     ::testing::Values(AudioDeviceModule::kPlatformDefaultAudio,
                       AudioDeviceModule::kWindowsCoreAudio2));
 #else
 // For all platforms but Windows, only test the default audio layer.
 INSTANTIATE_TEST_SUITE_P(
     AudioLayer,
-    MAYBE_AudioDeviceTest,
+    AudioDeviceTest,
     ::testing::Values(AudioDeviceModule::kPlatformDefaultAudio));
 #endif
 
