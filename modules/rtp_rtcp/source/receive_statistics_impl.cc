@@ -325,22 +325,6 @@ std::unique_ptr<ReceiveStatistics> ReceiveStatistics::Create(Clock* clock) {
   return absl::make_unique<ReceiveStatisticsImpl>(clock);
 }
 
-std::unique_ptr<ReceiveStatistics> ReceiveStatistics::Create(
-    Clock* clock,
-    StreamDataCountersCallback* rtp_callback) {
-  RTC_CHECK(rtp_callback == nullptr);
-  return Create(clock);
-}
-
-std::unique_ptr<ReceiveStatistics> ReceiveStatistics::Create(
-    Clock* clock,
-    RtcpStatisticsCallback* rtcp_callback,
-    StreamDataCountersCallback* rtp_callback) {
-  RTC_CHECK(rtcp_callback == nullptr);
-  RTC_CHECK(rtp_callback == nullptr);
-  return Create(clock);
-}
-
 ReceiveStatisticsImpl::ReceiveStatisticsImpl(Clock* clock)
     : clock_(clock),
       last_returned_ssrc_(0),

@@ -22,7 +22,6 @@
 #include "modules/rtp_rtcp/include/rtcp_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
-#include "rtc_base/deprecation.h"
 
 namespace webrtc {
 
@@ -58,17 +57,6 @@ class ReceiveStatistics : public ReceiveStatisticsProvider,
   ~ReceiveStatistics() override = default;
 
   static std::unique_ptr<ReceiveStatistics> Create(Clock* clock);
-
-  RTC_DEPRECATED
-  static std::unique_ptr<ReceiveStatistics> Create(
-      Clock* clock,
-      StreamDataCountersCallback* rtp_callback);
-
-  RTC_DEPRECATED
-  static std::unique_ptr<ReceiveStatistics> Create(
-      Clock* clock,
-      RtcpStatisticsCallback* rtcp_callback,
-      StreamDataCountersCallback* rtp_callback);
 
   // Increment counter for number of FEC packets received.
   virtual void FecPacketReceived(const RtpPacketReceived& packet) = 0;
