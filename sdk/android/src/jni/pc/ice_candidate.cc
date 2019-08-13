@@ -16,21 +16,23 @@
 #include "sdk/android/generated_peerconnection_jni/IceCandidate_jni.h"
 #include "sdk/android/native_api/jni/java_types.h"
 #include "sdk/android/src/jni/pc/media_stream_track.h"
+#include "sdk/android/src/jni/pc/peer_connection.h"
 
 namespace webrtc {
 namespace jni {
 
 namespace {
 
-ScopedJavaLocalRef<jobject> CreateJavaIceCandidate(
-    JNIEnv* env,
-    const std::string& sdp_mid,
-    int sdp_mline_index,
-    const std::string& sdp,
-    const std::string server_url) {
+ScopedJavaLocalRef<jobject> CreateJavaIceCandidate(JNIEnv* env,
+                                                   const std::string& sdp_mid,
+                                                   int sdp_mline_index,
+                                                   const std::string& sdp,
+                                                   const std::string server_url,
+                                                   int adapterType) {
   return Java_IceCandidate_Constructor(
       env, NativeToJavaString(env, sdp_mid), sdp_mline_index,
-      NativeToJavaString(env, sdp), NativeToJavaString(env, server_url));
+      NativeToJavaString(env, sdp), NativeToJavaString(env, server_url),
+      NativeToJavaAdapterType(env, adapterType));
 }
 
 }  // namespace
@@ -56,7 +58,7 @@ ScopedJavaLocalRef<jobject> NativeToJavaCandidate(
   // sdp_mline_index is not used, pass an invalid value -1.
   return CreateJavaIceCandidate(env, candidate.transport_name(),
                                 -1 /* sdp_mline_index */, sdp,
-                                "" /* server_url */);
+                                "" /* server_url */, candidate.network_type());
 }
 
 ScopedJavaLocalRef<jobject> NativeToJavaIceCandidate(
@@ -66,7 +68,7 @@ ScopedJavaLocalRef<jobject> NativeToJavaIceCandidate(
   RTC_CHECK(candidate.ToString(&sdp)) << "got so far: " << sdp;
   return CreateJavaIceCandidate(env, candidate.sdp_mid(),
                                 candidate.sdp_mline_index(), sdp,
-                                candidate.candidate().url());
+                                candidate.candidate().url(), 0);
 }
 
 ScopedJavaLocalRef<jobjectArray> NativeToJavaCandidateArray(

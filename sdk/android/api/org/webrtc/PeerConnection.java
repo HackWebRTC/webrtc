@@ -14,7 +14,9 @@ import android.support.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.webrtc.CandidatePairChangeEvent;
 import org.webrtc.DataChannel;
 import org.webrtc.MediaStreamTrack;
@@ -374,12 +376,29 @@ public class PeerConnection {
 
   // Keep in sync with webrtc/rtc_base/network_constants.h.
   public enum AdapterType {
-    UNKNOWN,
-    ETHERNET,
-    WIFI,
-    CELLULAR,
-    VPN,
-    LOOPBACK,
+    UNKNOWN(0),
+    ETHERNET(1 << 0),
+    WIFI(1 << 1),
+    CELLULAR(1 << 2),
+    VPN(1 << 3),
+    LOOPBACK(1 << 4),
+    ADAPTER_TYPE_ANY(1 << 5);
+
+    public final Integer bitMask;
+    private AdapterType(Integer bitMask) {
+      this.bitMask = bitMask;
+    }
+    private static final Map<Integer, AdapterType> BY_BITMASK = new HashMap<>();
+    static {
+      for (AdapterType t : values()) {
+        BY_BITMASK.put(t.bitMask, t);
+      }
+    }
+
+    @CalledByNative("AdapterType")
+    static AdapterType fromNativeIndex(int nativeIndex) {
+      return BY_BITMASK.get(nativeIndex);
+    }
   }
 
   /** Java version of rtc::KeyType */

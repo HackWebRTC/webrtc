@@ -133,6 +133,11 @@ ScopedJavaLocalRef<jobject> NativeToJavaCandidatePairChange(
 
 }  // namespace
 
+ScopedJavaLocalRef<jobject> NativeToJavaAdapterType(JNIEnv* env,
+                                                    int adapterType) {
+  return Java_AdapterType_fromNativeIndex(env, adapterType);
+}
+
 void JavaToNativeRTCConfiguration(
     JNIEnv* jni,
     const JavaRef<jobject>& j_rtc_config,

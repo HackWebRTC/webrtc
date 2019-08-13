@@ -34,6 +34,9 @@ void JavaToNativeRTCConfiguration(
 rtc::KeyType GetRtcConfigKeyType(JNIEnv* env,
                                  const JavaRef<jobject>& j_rtc_config);
 
+ScopedJavaLocalRef<jobject> NativeToJavaAdapterType(JNIEnv* env,
+                                                    int adapterType);
+
 // Adapter between the C++ PeerConnectionObserver interface and the Java
 // PeerConnection.Observer interface.  Wraps an instance of the Java interface
 // and dispatches C++ callbacks to Java.
