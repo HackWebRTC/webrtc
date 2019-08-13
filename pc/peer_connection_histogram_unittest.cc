@@ -18,7 +18,6 @@
 #include "absl/types/optional.h"
 #include "api/call/call_factory_interface.h"
 #include "api/jsep.h"
-#include "api/jsep_session_description.h"
 #include "api/peer_connection_interface.h"
 #include "api/peer_connection_proxy.h"
 #include "api/rtc_error.h"
@@ -33,7 +32,6 @@
 #include "pc/peer_connection_wrapper.h"
 #include "pc/sdp_utils.h"
 #include "pc/test/mock_peer_connection_observers.h"
-#include "pc/webrtc_sdp.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/fake_mdns_responder.h"
@@ -206,10 +204,6 @@ class PeerConnectionWrapperForUsageHistogramTest
     }
     EXPECT_TRUE_WAIT(observer()->ice_gathering_complete_, kDefaultTimeout);
     return true;
-  }
-
-  webrtc::PeerConnectionInterface::IceGatheringState ice_gathering_state() {
-    return pc()->ice_gathering_state();
   }
 
  private:
@@ -669,77 +663,6 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintWithPrivateIPCallee) {
 
 #ifndef WEBRTC_ANDROID
 #ifdef HAVE_SCTP
-// Test that the usage pattern bits for adding remote private or mDNS candidates
-// are set when the remote candidates are retrieved from Offer/Answer SDP
-// instead of trickled ICE messages.
-TEST_F(PeerConnectionUsageHistogramTest,
-       AddRemoteCandidatesFromRemoteDescription) {
-  // We construct the following data-channel-only scenario. The caller collects
-  // private local candidates and appends them in the Offer as in non-trickled
-  // sessions. The callee collects mDNS candidates. Only Offer is signaled to
-  // the callee and we expect a connection with prflx candidates.
-  auto caller = CreatePeerConnectionWithPrivateLocalAddresses();
-  auto callee = CreatePeerConnectionWithMdns(RTCConfiguration());
-  caller->CreateDataChannel("test_channel");
-  ASSERT_TRUE(caller->SetLocalDescription(caller->CreateOffer()));
-  // Wait until the gathering completes (or at least having gathered one
-  // candidate) so that the session description would have contained ICE
-  // candidates.
-  EXPECT_EQ_WAIT(webrtc::PeerConnectionInterface::kIceGatheringComplete,
-                 caller->ice_gathering_state(), kDefaultTimeout);
-  // Get the current offer that contains candidates and pass it to the callee.
-  //
-  // Note that we cannot use CloneSessionDescription on |cur_offer| to obtain an
-  // SDP with candidates. The method above does not strictly copy everything, in
-  // particular, not copying the ICE candidates.
-  // TODO(qingsi): Technically, this is a bug. Fix it.
-  auto cur_offer = caller->pc()->local_description();
-  ASSERT_TRUE(cur_offer);
-  std::string sdp_with_candidates_str;
-  cur_offer->ToString(&sdp_with_candidates_str);
-  auto offer = absl::make_unique<JsepSessionDescription>(SdpType::kOffer);
-  ASSERT_TRUE(SdpDeserialize(sdp_with_candidates_str, offer.get(),
-                             nullptr /* error */));
-  ASSERT_TRUE(callee->SetRemoteDescription(std::move(offer)));
-
-  auto answer = callee->CreateAnswer();
-  callee->SetLocalDescription(CloneSessionDescription(answer.get()));
-  caller->SetRemoteDescription(std::move(answer));
-  EXPECT_TRUE_WAIT(caller->IsConnected(), kDefaultTimeout);
-  EXPECT_TRUE_WAIT(callee->IsConnected(), kDefaultTimeout);
-  // The callee needs to process the open message to have the data channel open.
-  EXPECT_TRUE_WAIT(callee->observer()->last_datachannel_ != nullptr,
-                   kDefaultTimeout);
-  caller->pc()->Close();
-  callee->pc()->Close();
-
-  int expected_fingerprint_caller = MakeUsageFingerprint(
-      {PeerConnection::UsageEvent::DATA_ADDED,
-       PeerConnection::UsageEvent::SET_LOCAL_DESCRIPTION_CALLED,
-       PeerConnection::UsageEvent::SET_REMOTE_DESCRIPTION_CALLED,
-       PeerConnection::UsageEvent::CANDIDATE_COLLECTED,
-       PeerConnection::UsageEvent::PRIVATE_CANDIDATE_COLLECTED,
-       PeerConnection::UsageEvent::ICE_STATE_CONNECTED,
-       PeerConnection::UsageEvent::CLOSE_CALLED});
-
-  int expected_fingerprint_callee = MakeUsageFingerprint(
-      {PeerConnection::UsageEvent::DATA_ADDED,
-       PeerConnection::UsageEvent::SET_LOCAL_DESCRIPTION_CALLED,
-       PeerConnection::UsageEvent::SET_REMOTE_DESCRIPTION_CALLED,
-       PeerConnection::UsageEvent::CANDIDATE_COLLECTED,
-       PeerConnection::UsageEvent::MDNS_CANDIDATE_COLLECTED,
-       PeerConnection::UsageEvent::REMOTE_CANDIDATE_ADDED,
-       PeerConnection::UsageEvent::REMOTE_PRIVATE_CANDIDATE_ADDED,
-       PeerConnection::UsageEvent::ICE_STATE_CONNECTED,
-       PeerConnection::UsageEvent::CLOSE_CALLED});
-
-  EXPECT_EQ(2, webrtc::metrics::NumSamples(kUsagePatternMetric));
-  EXPECT_EQ(1, webrtc::metrics::NumEvents(kUsagePatternMetric,
-                                          expected_fingerprint_caller));
-  EXPECT_EQ(1, webrtc::metrics::NumEvents(kUsagePatternMetric,
-                                          expected_fingerprint_callee));
-}
-
 TEST_F(PeerConnectionUsageHistogramTest, NotableUsageNoted) {
   auto caller = CreatePeerConnection();
   caller->CreateDataChannel("foo");

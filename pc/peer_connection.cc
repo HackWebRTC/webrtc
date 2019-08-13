@@ -3695,6 +3695,13 @@ bool PeerConnection::AddIceCandidate(
   if (ready) {
     bool result = UseCandidate(ice_candidate);
     if (result) {
+      NoteUsageEvent(UsageEvent::REMOTE_CANDIDATE_ADDED);
+      if (ice_candidate->candidate().address().IsUnresolvedIP()) {
+        NoteUsageEvent(UsageEvent::REMOTE_MDNS_CANDIDATE_ADDED);
+      }
+      if (ice_candidate->candidate().address().IsPrivateIP()) {
+        NoteUsageEvent(UsageEvent::REMOTE_PRIVATE_CANDIDATE_ADDED);
+      }
       NoteAddIceCandidateResult(kAddIceCandidateSuccess);
     } else {
       NoteAddIceCandidateResult(kAddIceCandidateFailNotUsable);
@@ -6337,13 +6344,6 @@ bool PeerConnection::UseCandidate(const IceCandidateInterface* candidate) {
   RTCError error = transport_controller_->AddRemoteCandidates(
       result.value()->name, candidates);
   if (error.ok()) {
-    NoteUsageEvent(UsageEvent::REMOTE_CANDIDATE_ADDED);
-    if (candidate->candidate().address().IsUnresolvedIP()) {
-      NoteUsageEvent(UsageEvent::REMOTE_MDNS_CANDIDATE_ADDED);
-    }
-    if (candidate->candidate().address().IsPrivateIP()) {
-      NoteUsageEvent(UsageEvent::REMOTE_PRIVATE_CANDIDATE_ADDED);
-    }
     // Candidates successfully submitted for checking.
     if (ice_connection_state_ == PeerConnectionInterface::kIceConnectionNew ||
         ice_connection_state_ ==
