@@ -52,6 +52,7 @@ class FeedbackGeneratorImpl
 
   TransportPacketsFeedback builder_;
   std::vector<TransportPacketsFeedback> feedback_;
+  int64_t sequence_number_ = 1;
 };
 }  // namespace webrtc
 #endif  // TEST_NETWORK_FEEDBACK_GENERATOR_H_
