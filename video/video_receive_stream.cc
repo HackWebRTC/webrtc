@@ -193,7 +193,7 @@ VideoReceiveStream::VideoReceiveStream(
       call_stats_(call_stats),
       source_tracker_(clock_),
       stats_proxy_(&config_, clock_),
-      rtp_receive_statistics_(ReceiveStatistics::Create(clock_, &stats_proxy_)),
+      rtp_receive_statistics_(ReceiveStatistics::Create(clock_)),
       timing_(timing),
       video_receiver_(clock_, timing_.get()),
       rtp_video_stream_receiver_(clock_,
@@ -464,6 +464,7 @@ VideoReceiveStream::Stats VideoReceiveStream::GetStats() const {
       rtp_receive_statistics_->GetStatistician(stats.ssrc);
   if (statistician) {
     statistician->GetStatistics(&stats.rtcp_stats, /*reset=*/false);
+    stats.rtp_stats = statistician->GetReceiveStreamDataCounters();
     stats.total_bitrate_bps = statistician->BitrateReceived();
   }
   if (config_.rtp.rtx_ssrc) {
@@ -477,12 +478,24 @@ VideoReceiveStream::Stats VideoReceiveStream::GetStats() const {
 
 void VideoReceiveStream::UpdateHistograms() {
   absl::optional<int> fraction_lost;
+  StreamDataCounters rtp_stats;
   StreamStatistician* statistician =
       rtp_receive_statistics_->GetStatistician(config_.rtp.remote_ssrc);
   if (statistician) {
     fraction_lost = statistician->GetFractionLostInPercent();
+    rtp_stats = statistician->GetReceiveStreamDataCounters();
   }
-  stats_proxy_.UpdateHistograms(fraction_lost);
+  if (config_.rtp.rtx_ssrc) {
+    StreamStatistician* rtx_statistician =
+        rtp_receive_statistics_->GetStatistician(config_.rtp.rtx_ssrc);
+    if (rtx_statistician) {
+      StreamDataCounters rtx_stats =
+          rtx_statistician->GetReceiveStreamDataCounters();
+      stats_proxy_.UpdateHistograms(fraction_lost, rtp_stats, &rtx_stats);
+      return;
+    }
+  }
+  stats_proxy_.UpdateHistograms(fraction_lost, rtp_stats, nullptr);
 }
 
 void VideoReceiveStream::AddSecondarySink(RtpPacketSinkInterface* sink) {

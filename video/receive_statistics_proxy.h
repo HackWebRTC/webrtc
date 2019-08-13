@@ -39,7 +39,6 @@ struct CodecSpecificInfo;
 class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
                                public RtcpCnameCallback,
                                public RtcpPacketTypeCounterObserver,
-                               public StreamDataCountersCallback,
                                public CallStatsObserver {
  public:
   ReceiveStatisticsProxy(const VideoReceiveStream::Config* config,
@@ -84,9 +83,6 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   void RtcpPacketTypesCounterUpdated(
       uint32_t ssrc,
       const RtcpPacketTypeCounter& packet_counter) override;
-  // Overrides StreamDataCountersCallback.
-  void DataCountersUpdated(const webrtc::StreamDataCounters& counters,
-                           uint32_t ssrc) override;
 
   // Implements CallStatsObserver.
   void OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) override;
@@ -98,7 +94,9 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
 
   // Produce histograms. Must be called after DecoderThreadStopped(), typically
   // at the end of the call.
-  void UpdateHistograms(absl::optional<int> fraction_lost);
+  void UpdateHistograms(absl::optional<int> fraction_lost,
+                        const StreamDataCounters& rtp_stats,
+                        const StreamDataCounters* rtx_stats);
 
  private:
   struct QpCounters {
@@ -147,6 +145,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   rtc::SampleCounter qp_sample_ RTC_GUARDED_BY(crit_);
   int num_bad_states_ RTC_GUARDED_BY(crit_);
   int num_certain_states_ RTC_GUARDED_BY(crit_);
+  // Note: The |stats_.rtp_stats| member is not used or populated by this class.
   mutable VideoReceiveStream::Stats stats_ RTC_GUARDED_BY(crit_);
   RateStatistics decode_fps_estimator_ RTC_GUARDED_BY(crit_);
   RateStatistics renders_fps_estimator_ RTC_GUARDED_BY(crit_);
@@ -166,7 +165,6 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
       RTC_GUARDED_BY(crit_);
   MaxCounter freq_offset_counter_ RTC_GUARDED_BY(crit_);
   QpCounters qp_counters_ RTC_GUARDED_BY(decode_thread_);
-  std::map<uint32_t, StreamDataCounters> rtx_stats_ RTC_GUARDED_BY(crit_);
   int64_t avg_rtt_ms_ RTC_GUARDED_BY(crit_);
   mutable std::map<int64_t, size_t> frame_window_ RTC_GUARDED_BY(&crit_);
   VideoContentType last_content_type_ RTC_GUARDED_BY(&crit_);

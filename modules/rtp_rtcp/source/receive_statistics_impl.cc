@@ -30,11 +30,9 @@ const int64_t kStatisticsProcessIntervalMs = 1000;
 
 StreamStatistician::~StreamStatistician() {}
 
-StreamStatisticianImpl::StreamStatisticianImpl(
-    uint32_t ssrc,
-    Clock* clock,
-    int max_reordering_threshold,
-    StreamDataCountersCallback* rtp_callback)
+StreamStatisticianImpl::StreamStatisticianImpl(uint32_t ssrc,
+                                               Clock* clock,
+                                               int max_reordering_threshold)
     : ssrc_(ssrc),
       clock_(clock),
       incoming_bitrate_(kStatisticsProcessIntervalMs,
@@ -49,15 +47,12 @@ StreamStatisticianImpl::StreamStatisticianImpl(
       received_seq_max_(-1),
       last_report_inorder_packets_(0),
       last_report_old_packets_(0),
-      last_report_seq_max_(-1),
-      rtp_callback_(rtp_callback) {}
+      last_report_seq_max_(-1) {}
 
 StreamStatisticianImpl::~StreamStatisticianImpl() = default;
 
 void StreamStatisticianImpl::OnRtpPacket(const RtpPacketReceived& packet) {
-  StreamDataCounters counters = UpdateCounters(packet);
-  if (rtp_callback_)
-    rtp_callback_->DataCountersUpdated(counters, ssrc_);
+  UpdateCounters(packet);
 }
 
 bool StreamStatisticianImpl::UpdateOutOfOrder(const RtpPacketReceived& packet,
@@ -156,14 +151,8 @@ void StreamStatisticianImpl::UpdateJitter(const RtpPacketReceived& packet,
 
 void StreamStatisticianImpl::FecPacketReceived(
     const RtpPacketReceived& packet) {
-  StreamDataCounters counters;
-  {
-    rtc::CritScope cs(&stream_lock_);
-    receive_counters_.fec.AddPacket(packet);
-    counters = receive_counters_;
-  }
-  if (rtp_callback_)
-    rtp_callback_->DataCountersUpdated(counters, ssrc_);
+  rtc::CritScope cs(&stream_lock_);
+  receive_counters_.fec.AddPacket(packet);
 }
 
 void StreamStatisticianImpl::SetMaxReorderingThreshold(
@@ -332,10 +321,15 @@ bool StreamStatisticianImpl::IsRetransmitOfOldPacket(
   return time_diff_ms > rtp_time_stamp_diff_ms + max_delay_ms;
 }
 
+std::unique_ptr<ReceiveStatistics> ReceiveStatistics::Create(Clock* clock) {
+  return absl::make_unique<ReceiveStatisticsImpl>(clock);
+}
+
 std::unique_ptr<ReceiveStatistics> ReceiveStatistics::Create(
     Clock* clock,
     StreamDataCountersCallback* rtp_callback) {
-  return absl::make_unique<ReceiveStatisticsImpl>(clock, rtp_callback);
+  RTC_CHECK(rtp_callback == nullptr);
+  return Create(clock);
 }
 
 std::unique_ptr<ReceiveStatistics> ReceiveStatistics::Create(
@@ -343,16 +337,14 @@ std::unique_ptr<ReceiveStatistics> ReceiveStatistics::Create(
     RtcpStatisticsCallback* rtcp_callback,
     StreamDataCountersCallback* rtp_callback) {
   RTC_CHECK(rtcp_callback == nullptr);
-  return Create(clock, rtp_callback);
+  RTC_CHECK(rtp_callback == nullptr);
+  return Create(clock);
 }
 
-ReceiveStatisticsImpl::ReceiveStatisticsImpl(
-    Clock* clock,
-    StreamDataCountersCallback* rtp_callback)
+ReceiveStatisticsImpl::ReceiveStatisticsImpl(Clock* clock)
     : clock_(clock),
       last_returned_ssrc_(0),
-      max_reordering_threshold_(kDefaultMaxReorderingThreshold),
-      rtp_stats_callback_(rtp_callback) {}
+      max_reordering_threshold_(kDefaultMaxReorderingThreshold) {}
 
 ReceiveStatisticsImpl::~ReceiveStatisticsImpl() {
   while (!statisticians_.empty()) {
@@ -391,8 +383,7 @@ StreamStatisticianImpl* ReceiveStatisticsImpl::GetOrCreateStatistician(
   rtc::CritScope cs(&receive_statistics_lock_);
   StreamStatisticianImpl*& impl = statisticians_[ssrc];
   if (impl == nullptr) {  // new element
-    impl = new StreamStatisticianImpl(ssrc, clock_, max_reordering_threshold_,
-                                      rtp_stats_callback_);
+    impl = new StreamStatisticianImpl(ssrc, clock_, max_reordering_threshold_);
   }
   return impl;
 }

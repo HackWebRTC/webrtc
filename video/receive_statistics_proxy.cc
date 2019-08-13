@@ -118,15 +118,12 @@ ReceiveStatisticsProxy::ReceiveStatisticsProxy(
   decode_thread_.Detach();
   network_thread_.Detach();
   stats_.ssrc = config_.rtp.remote_ssrc;
-  // TODO(brandtr): Replace |rtx_stats_| with a single instance of
-  // StreamDataCounters.
-  if (config_.rtp.rtx_ssrc) {
-    rtx_stats_[config_.rtp.rtx_ssrc] = StreamDataCounters();
-  }
 }
 
 void ReceiveStatisticsProxy::UpdateHistograms(
-    absl::optional<int> fraction_lost) {
+    absl::optional<int> fraction_lost,
+    const StreamDataCounters& rtp_stats,
+    const StreamDataCounters* rtx_stats) {
   // Not actually running on the decoder thread, but must be called after
   // DecoderThreadStopped, which detaches the thread checker. It is therefore
   // safe to access |qp_counters_|, which were updated on the decode thread
@@ -404,42 +401,42 @@ void ReceiveStatisticsProxy::UpdateHistograms(
     }
   }
 
-  StreamDataCounters rtp = stats_.rtp_stats;
-  StreamDataCounters rtx;
-  for (auto it : rtx_stats_)
-    rtx.Add(it.second);
-  StreamDataCounters rtp_rtx = rtp;
-  rtp_rtx.Add(rtx);
+  StreamDataCounters rtp_rtx_stats = rtp_stats;
+  if (rtx_stats)
+    rtp_rtx_stats.Add(*rtx_stats);
   int64_t elapsed_sec =
-      rtp_rtx.TimeSinceFirstPacketInMs(clock_->TimeInMilliseconds()) / 1000;
+      rtp_rtx_stats.TimeSinceFirstPacketInMs(clock_->TimeInMilliseconds()) /
+      1000;
   if (elapsed_sec >= metrics::kMinRunTimeInSeconds) {
     RTC_HISTOGRAM_COUNTS_10000(
         "WebRTC.Video.BitrateReceivedInKbps",
-        static_cast<int>(rtp_rtx.transmitted.TotalBytes() * 8 / elapsed_sec /
-                         1000));
-    int media_bitrate_kbs =
-        static_cast<int>(rtp.MediaPayloadBytes() * 8 / elapsed_sec / 1000);
+        static_cast<int>(rtp_rtx_stats.transmitted.TotalBytes() * 8 /
+                         elapsed_sec / 1000));
+    int media_bitrate_kbs = static_cast<int>(rtp_stats.MediaPayloadBytes() * 8 /
+                                             elapsed_sec / 1000);
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.MediaBitrateReceivedInKbps",
                                media_bitrate_kbs);
     log_stream << "WebRTC.Video.MediaBitrateReceivedInKbps "
                << media_bitrate_kbs << '\n';
     RTC_HISTOGRAM_COUNTS_10000(
         "WebRTC.Video.PaddingBitrateReceivedInKbps",
-        static_cast<int>(rtp_rtx.transmitted.padding_bytes * 8 / elapsed_sec /
-                         1000));
+        static_cast<int>(rtp_rtx_stats.transmitted.padding_bytes * 8 /
+                         elapsed_sec / 1000));
     RTC_HISTOGRAM_COUNTS_10000(
         "WebRTC.Video.RetransmittedBitrateReceivedInKbps",
-        static_cast<int>(rtp_rtx.retransmitted.TotalBytes() * 8 / elapsed_sec /
-                         1000));
-    if (!rtx_stats_.empty()) {
-      RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.RtxBitrateReceivedInKbps",
-                                 static_cast<int>(rtx.transmitted.TotalBytes() *
-                                                  8 / elapsed_sec / 1000));
+        static_cast<int>(rtp_rtx_stats.retransmitted.TotalBytes() * 8 /
+                         elapsed_sec / 1000));
+    if (rtx_stats) {
+      RTC_HISTOGRAM_COUNTS_10000(
+          "WebRTC.Video.RtxBitrateReceivedInKbps",
+          static_cast<int>(rtx_stats->transmitted.TotalBytes() * 8 /
+                           elapsed_sec / 1000));
     }
     if (config_.rtp.ulpfec_payload_type != -1) {
       RTC_HISTOGRAM_COUNTS_10000(
           "WebRTC.Video.FecBitrateReceivedInKbps",
-          static_cast<int>(rtp_rtx.fec.TotalBytes() * 8 / elapsed_sec / 1000));
+          static_cast<int>(rtp_rtx_stats.fec.TotalBytes() * 8 / elapsed_sec /
+                           1000));
     }
     const RtcpPacketTypeCounter& counters = stats_.rtcp_packet_type_counts;
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.NackPacketsSentPerMinute",
@@ -665,22 +662,6 @@ void ReceiveStatisticsProxy::OnCname(uint32_t ssrc, absl::string_view cname) {
   if (stats_.ssrc != ssrc)
     return;
   stats_.c_name = std::string(cname);
-}
-
-void ReceiveStatisticsProxy::DataCountersUpdated(
-    const webrtc::StreamDataCounters& counters,
-    uint32_t ssrc) {
-  rtc::CritScope lock(&crit_);
-  if (ssrc == stats_.ssrc) {
-    stats_.rtp_stats = counters;
-  } else {
-    auto it = rtx_stats_.find(ssrc);
-    if (it != rtx_stats_.end()) {
-      it->second = counters;
-    } else {
-      RTC_NOTREACHED() << "Unexpected stream ssrc: " << ssrc;
-    }
-  }
 }
 
 void ReceiveStatisticsProxy::OnDecodedFrame(const VideoFrame& frame,

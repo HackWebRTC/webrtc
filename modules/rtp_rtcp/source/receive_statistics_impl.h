@@ -29,8 +29,7 @@ class StreamStatisticianImpl : public StreamStatistician,
  public:
   StreamStatisticianImpl(uint32_t ssrc,
                          Clock* clock,
-                         int max_reordering_threshold,
-                         StreamDataCountersCallback* rtp_callback);
+                         int max_reordering_threshold);
   ~StreamStatisticianImpl() override;
 
   // |reset| here and in next method restarts calculation of fraction_lost stat.
@@ -98,15 +97,11 @@ class StreamStatisticianImpl : public StreamStatistician,
   uint32_t last_report_old_packets_ RTC_GUARDED_BY(&stream_lock_);
   int64_t last_report_seq_max_ RTC_GUARDED_BY(&stream_lock_);
   RtcpStatistics last_reported_statistics_ RTC_GUARDED_BY(&stream_lock_);
-
-  // stream_lock_ shouldn't be held when calling callbacks.
-  StreamDataCountersCallback* const rtp_callback_;
 };
 
 class ReceiveStatisticsImpl : public ReceiveStatistics {
  public:
-  ReceiveStatisticsImpl(Clock* clock,
-                        StreamDataCountersCallback* rtp_callback);
+  explicit ReceiveStatisticsImpl(Clock* clock);
 
   ~ReceiveStatisticsImpl() override;
 
@@ -134,8 +129,6 @@ class ReceiveStatisticsImpl : public ReceiveStatistics {
   int max_reordering_threshold_ RTC_GUARDED_BY(receive_statistics_lock_);
   std::map<uint32_t, StreamStatisticianImpl*> statisticians_
       RTC_GUARDED_BY(receive_statistics_lock_);
-
-  StreamDataCountersCallback* const rtp_stats_callback_;
 };
 }  // namespace webrtc
 #endif  // MODULES_RTP_RTCP_SOURCE_RECEIVE_STATISTICS_IMPL_H_
