@@ -24,6 +24,7 @@
 #include "api/peer_connection_proxy.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/turn_customizer.h"
+#include "api/units/data_rate.h"
 #include "api/video_track_source_proxy.h"
 #include "media/base/rtp_data_engine.h"
 #include "media/sctp/sctp_transport.h"
@@ -37,6 +38,9 @@
 #include "pc/video_track.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/experiments/field_trial_parser.h"
+#include "rtc_base/experiments/field_trial_units.h"
+#include "rtc_base/numerics/safe_conversions.h"
 #include "rtc_base/system/file_wrapper.h"
 #include "system_wrappers/include/field_trial.h"
 
@@ -334,19 +338,25 @@ std::unique_ptr<Call> PeerConnectionFactory::CreateCall_w(
     RtcEventLog* event_log) {
   RTC_DCHECK_RUN_ON(worker_thread_);
 
-  const int kMinBandwidthBps = 30000;
-  const int kStartBandwidthBps = 300000;
-  const int kMaxBandwidthBps = 2000000;
-
   webrtc::Call::Config call_config(event_log);
   if (!channel_manager_->media_engine() || !call_factory_) {
     return nullptr;
   }
   call_config.audio_state =
       channel_manager_->media_engine()->voice().GetAudioState();
-  call_config.bitrate_config.min_bitrate_bps = kMinBandwidthBps;
-  call_config.bitrate_config.start_bitrate_bps = kStartBandwidthBps;
-  call_config.bitrate_config.max_bitrate_bps = kMaxBandwidthBps;
+
+  FieldTrialParameter<DataRate> min_bandwidth("min", DataRate::kbps(30));
+  FieldTrialParameter<DataRate> start_bandwidth("start", DataRate::kbps(300));
+  FieldTrialParameter<DataRate> max_bandwidth("max", DataRate::kbps(2000));
+  ParseFieldTrial({&min_bandwidth, &start_bandwidth, &max_bandwidth},
+                  field_trial::FindFullName("WebRTC-PcFactoryDefaultBitrates"));
+
+  call_config.bitrate_config.min_bitrate_bps =
+      rtc::saturated_cast<int>(min_bandwidth->bps());
+  call_config.bitrate_config.start_bitrate_bps =
+      rtc::saturated_cast<int>(start_bandwidth->bps());
+  call_config.bitrate_config.max_bitrate_bps =
+      rtc::saturated_cast<int>(max_bandwidth->bps());
 
   call_config.fec_controller_factory = fec_controller_factory_.get();
   call_config.task_queue_factory = task_queue_factory_.get();

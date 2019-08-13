@@ -221,6 +221,7 @@ rtc_static_library("peerconnection") {
     "../api:scoped_refptr",
     "../api/rtc_event_log",
     "../api/task_queue",
+    "../api/units:data_rate",
     "../api/video:builtin_video_bitrate_allocator_factory",
     "../api/video:video_frame",
     "../api/video:video_rtp_headers",
