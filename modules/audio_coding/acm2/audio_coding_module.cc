@@ -74,37 +74,12 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
   // Initialize receiver, resets codec database etc.
   int InitializeReceiver() override;
 
-  // Get current receive frequency.
-  int ReceiveFrequency() const override;
-
-  // Get current playout frequency.
-  int PlayoutFrequency() const override;
-
   void SetReceiveCodecs(const std::map<int, SdpAudioFormat>& codecs) override;
-
-  // Get current received codec.
-  absl::optional<std::pair<int, SdpAudioFormat>> ReceiveCodec() const override;
 
   // Incoming packet from network parsed and ready for decode.
   int IncomingPacket(const uint8_t* incoming_payload,
                      const size_t payload_length,
                      const RTPHeader& rtp_info) override;
-
-  // Minimum playout delay.
-  int SetMinimumPlayoutDelay(int time_ms) override;
-
-  // Maximum playout delay.
-  int SetMaximumPlayoutDelay(int time_ms) override;
-
-  bool SetBaseMinimumPlayoutDelayMs(int delay_ms) override;
-
-  int GetBaseMinimumPlayoutDelayMs() const override;
-
-  absl::optional<uint32_t> PlayoutTimestamp() override;
-
-  int FilteredCurrentDelayMs() const override;
-
-  int TargetDelayMs() const override;
 
   // Get 10 milliseconds of raw audio data to play out, and
   // automatic resample to the requested frequency if > 0.
@@ -605,28 +580,10 @@ int AudioCodingModuleImpl::InitializeReceiverSafe() {
   return 0;
 }
 
-// Get current receive frequency.
-int AudioCodingModuleImpl::ReceiveFrequency() const {
-  const auto last_packet_sample_rate = receiver_.last_packet_sample_rate_hz();
-  return last_packet_sample_rate ? *last_packet_sample_rate
-                                 : receiver_.last_output_sample_rate_hz();
-}
-
-// Get current playout frequency.
-int AudioCodingModuleImpl::PlayoutFrequency() const {
-  return receiver_.last_output_sample_rate_hz();
-}
-
 void AudioCodingModuleImpl::SetReceiveCodecs(
     const std::map<int, SdpAudioFormat>& codecs) {
   rtc::CritScope lock(&acm_crit_sect_);
   receiver_.SetCodecs(codecs);
-}
-
-absl::optional<std::pair<int, SdpAudioFormat>>
-AudioCodingModuleImpl::ReceiveCodec() const {
-  rtc::CritScope lock(&acm_crit_sect_);
-  return receiver_.LastDecoder();
 }
 
 // Incoming packet from network parsed and ready for decode.
@@ -637,32 +594,6 @@ int AudioCodingModuleImpl::IncomingPacket(const uint8_t* incoming_payload,
   return receiver_.InsertPacket(
       rtp_header,
       rtc::ArrayView<const uint8_t>(incoming_payload, payload_length));
-}
-
-// Minimum playout delay (Used for lip-sync).
-int AudioCodingModuleImpl::SetMinimumPlayoutDelay(int time_ms) {
-  if ((time_ms < 0) || (time_ms > 10000)) {
-    RTC_LOG(LS_ERROR) << "Delay must be in the range of 0-10000 milliseconds.";
-    return -1;
-  }
-  return receiver_.SetMinimumDelay(time_ms);
-}
-
-int AudioCodingModuleImpl::SetMaximumPlayoutDelay(int time_ms) {
-  if ((time_ms < 0) || (time_ms > 10000)) {
-    RTC_LOG(LS_ERROR) << "Delay must be in the range of 0-10000 milliseconds.";
-    return -1;
-  }
-  return receiver_.SetMaximumDelay(time_ms);
-}
-
-bool AudioCodingModuleImpl::SetBaseMinimumPlayoutDelayMs(int delay_ms) {
-  // All necessary validation happens on NetEq level.
-  return receiver_.SetBaseMinimumDelayMs(delay_ms);
-}
-
-int AudioCodingModuleImpl::GetBaseMinimumPlayoutDelayMs() const {
-  return receiver_.GetBaseMinimumDelayMs();
 }
 
 // Get 10 milliseconds of raw audio data to play out.
@@ -694,18 +625,6 @@ int AudioCodingModuleImpl::RegisterVADCallback(ACMVADCallback* vad_callback) {
   rtc::CritScope lock(&callback_crit_sect_);
   vad_callback_ = vad_callback;
   return 0;
-}
-
-absl::optional<uint32_t> AudioCodingModuleImpl::PlayoutTimestamp() {
-  return receiver_.GetPlayoutTimestamp();
-}
-
-int AudioCodingModuleImpl::FilteredCurrentDelayMs() const {
-  return receiver_.FilteredCurrentDelayMs();
-}
-
-int AudioCodingModuleImpl::TargetDelayMs() const {
-  return receiver_.TargetDelayMs();
 }
 
 bool AudioCodingModuleImpl::HaveValidEncoder(const char* caller_name) const {

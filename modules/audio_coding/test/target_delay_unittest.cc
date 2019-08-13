@@ -12,6 +12,7 @@
 
 #include "api/audio/audio_frame.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
+#include "modules/audio_coding/acm2/acm_receiver.h"
 #include "modules/audio_coding/codecs/pcm16b/pcm16b.h"
 #include "modules/audio_coding/include/audio_coding_module.h"
 #include "modules/include/module_common_types.h"
@@ -23,19 +24,16 @@ namespace webrtc {
 class TargetDelayTest : public ::testing::Test {
  protected:
   TargetDelayTest()
-      : acm_(AudioCodingModule::Create(
-            AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory()))) {}
+      : receiver_(
+            AudioCodingModule::Config(CreateBuiltinAudioDecoderFactory())) {}
 
   ~TargetDelayTest() {}
 
   void SetUp() {
-    EXPECT_TRUE(acm_.get() != NULL);
-
-    ASSERT_EQ(0, acm_->InitializeReceiver());
     constexpr int pltype = 108;
     std::map<int, SdpAudioFormat> receive_codecs = {
         {pltype, {"L16", kSampleRateHz, 1}}};
-    acm_->SetReceiveCodecs(receive_codecs);
+    receiver_.SetCodecs(receive_codecs);
 
     rtp_header_.payloadType = pltype;
     rtp_header_.timestamp = 0;
@@ -99,8 +97,9 @@ class TargetDelayTest : public ::testing::Test {
   void Push() {
     rtp_header_.timestamp += kFrameSizeSamples;
     rtp_header_.sequenceNumber++;
-    ASSERT_EQ(
-        0, acm_->IncomingPacket(payload_, kFrameSizeSamples * 2, rtp_header_));
+    ASSERT_EQ(0, receiver_.InsertPacket(rtp_header_,
+                                        rtc::ArrayView<const uint8_t>(
+                                            payload_, kFrameSizeSamples * 2)));
   }
 
   // Pull audio equivalent to the amount of audio in one RTP packet.
@@ -108,7 +107,7 @@ class TargetDelayTest : public ::testing::Test {
     AudioFrame frame;
     bool muted;
     for (int k = 0; k < kNum10msPerFrame; ++k) {  // Pull one frame.
-      ASSERT_EQ(0, acm_->PlayoutData10Ms(-1, &frame, &muted));
+      ASSERT_EQ(0, receiver_.GetAudio(-1, &frame, &muted));
       ASSERT_FALSE(muted);
       // Had to use ASSERT_TRUE, ASSERT_EQ generated error.
       ASSERT_TRUE(kSampleRateHz == frame.sample_rate_hz_);
@@ -135,20 +134,20 @@ class TargetDelayTest : public ::testing::Test {
   }
 
   int SetMinimumDelay(int delay_ms) {
-    return acm_->SetMinimumPlayoutDelay(delay_ms);
+    return receiver_.SetMinimumDelay(delay_ms);
   }
 
   int SetMaximumDelay(int delay_ms) {
-    return acm_->SetMaximumPlayoutDelay(delay_ms);
+    return receiver_.SetMaximumDelay(delay_ms);
   }
 
   int GetCurrentOptimalDelayMs() {
     NetworkStatistics stats;
-    acm_->GetNetworkStatistics(&stats);
+    receiver_.GetNetworkStatistics(&stats);
     return stats.preferredBufferSize;
   }
 
-  std::unique_ptr<AudioCodingModule> acm_;
+  acm2::AcmReceiver receiver_;
   RTPHeader rtp_header_;
   uint8_t payload_[kPayloadLenBytes];
 };
