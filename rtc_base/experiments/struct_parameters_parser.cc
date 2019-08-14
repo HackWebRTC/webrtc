@@ -9,13 +9,9 @@
  */
 #include "rtc_base/experiments/struct_parameters_parser.h"
 
-#include <algorithm>
-
 #include "rtc_base/logging.h"
-#include "rtc_base/strings/string_builder.h"
 
 namespace webrtc {
-namespace struct_parser_impl {
 namespace {
 size_t FindOrEnd(absl::string_view str, size_t start, char delimiter) {
   size_t pos = str.find(delimiter, start);
@@ -24,44 +20,105 @@ size_t FindOrEnd(absl::string_view str, size_t start, char delimiter) {
 }
 }  // namespace
 
-void ParseConfigParams(
-    absl::string_view config_str,
-    std::map<std::string, std::function<bool(absl::string_view)>> field_map) {
+namespace struct_parser_impl {
+namespace {
+inline void StringEncode(std::string* target, bool val) {
+  *target += rtc::ToString(val);
+}
+inline void StringEncode(std::string* target, double val) {
+  *target += rtc::ToString(val);
+}
+inline void StringEncode(std::string* target, int val) {
+  *target += rtc::ToString(val);
+}
+inline void StringEncode(std::string* target, DataRate val) {
+  *target += webrtc::ToString(val);
+}
+inline void StringEncode(std::string* target, DataSize val) {
+  *target += webrtc::ToString(val);
+}
+inline void StringEncode(std::string* target, TimeDelta val) {
+  *target += webrtc::ToString(val);
+}
+
+template <typename T>
+inline void StringEncode(std::string* sb, absl::optional<T> val) {
+  if (val)
+    StringEncode(sb, *val);
+}
+}  // namespace
+template <typename T>
+bool TypedParser<T>::Parse(absl::string_view src, void* target) {
+  auto parsed = ParseTypedParameter<T>(std::string(src));
+  if (parsed.has_value())
+    *reinterpret_cast<T*>(target) = *parsed;
+  return parsed.has_value();
+}
+template <typename T>
+void TypedParser<T>::Encode(const void* src, std::string* target) {
+  StringEncode(target, *reinterpret_cast<const T*>(src));
+}
+
+template class TypedParser<bool>;
+template class TypedParser<double>;
+template class TypedParser<int>;
+template class TypedParser<absl::optional<double>>;
+template class TypedParser<absl::optional<int>>;
+
+template class TypedParser<DataRate>;
+template class TypedParser<DataSize>;
+template class TypedParser<TimeDelta>;
+template class TypedParser<absl::optional<DataRate>>;
+template class TypedParser<absl::optional<DataSize>>;
+template class TypedParser<absl::optional<TimeDelta>>;
+}  // namespace struct_parser_impl
+
+StructParametersParser::StructParametersParser(
+    std::vector<struct_parser_impl::MemberParameter> members)
+    : members_(std::move(members)) {}
+
+void StructParametersParser::Parse(absl::string_view src) {
   size_t i = 0;
-  while (i < config_str.length()) {
-    size_t val_end = FindOrEnd(config_str, i, ',');
-    size_t colon_pos = FindOrEnd(config_str, i, ':');
+  while (i < src.length()) {
+    size_t val_end = FindOrEnd(src, i, ',');
+    size_t colon_pos = FindOrEnd(src, i, ':');
     size_t key_end = std::min(val_end, colon_pos);
     size_t val_begin = key_end + 1u;
-    std::string key(config_str.substr(i, key_end - i));
+    absl::string_view key(src.substr(i, key_end - i));
     absl::string_view opt_value;
     if (val_end >= val_begin)
-      opt_value = config_str.substr(val_begin, val_end - val_begin);
+      opt_value = src.substr(val_begin, val_end - val_begin);
     i = val_end + 1u;
-    auto field = field_map.find(key);
-    if (field != field_map.end()) {
-      if (!field->second(opt_value)) {
-        RTC_LOG(LS_WARNING) << "Failed to read field with key: '" << key
-                            << "' in trial: \"" << config_str << "\"";
+    bool found = false;
+    for (auto& member : members_) {
+      if (key == member.key) {
+        found = true;
+        if (!member.parser.parse(opt_value, member.member_ptr)) {
+          RTC_LOG(LS_WARNING) << "Failed to read field with key: '" << key
+                              << "' in trial: \"" << src << "\"";
+        }
+        break;
       }
-    } else {
+    }
+    if (!found) {
       RTC_LOG(LS_INFO) << "No field with key: '" << key
-                       << "' (found in trial: \"" << config_str << "\")";
+                       << "' (found in trial: \"" << src << "\")";
     }
   }
 }
 
-std::string EncodeStringStringMap(std::map<std::string, std::string> mapping) {
-  rtc::StringBuilder sb;
+std::string StructParametersParser::Encode() const {
+  std::string res;
   bool first = true;
-  for (const auto& kv : mapping) {
+  for (const auto& member : members_) {
     if (!first)
-      sb << ",";
-    sb << kv.first << ":" << kv.second;
+      res += ",";
+    res += member.key;
+    res += ":";
+    member.parser.encode(member.member_ptr, &res);
     first = false;
   }
-  return sb.Release();
+  return res;
 }
-}  // namespace struct_parser_impl
 
 }  // namespace webrtc

@@ -15,10 +15,38 @@
 #include "api/transport/webrtc_key_value_config.h"
 #include "api/video_codecs/video_codec.h"
 #include "api/video_codecs/video_encoder_config.h"
-#include "rtc_base/experiments/field_trial_parser.h"
-#include "rtc_base/experiments/field_trial_units.h"
+#include "rtc_base/experiments/struct_parameters_parser.h"
 
 namespace webrtc {
+
+struct CongestionWindowConfig {
+  static constexpr char kKey[] = "WebRTC-CongestionWindow";
+  absl::optional<int> queue_size_ms;
+  absl::optional<int> min_bitrate_bps;
+  std::unique_ptr<StructParametersParser> Parser();
+  static CongestionWindowConfig Parse(absl::string_view config);
+};
+
+struct VideoRateControlConfig {
+  static constexpr char kKey[] = "WebRTC-VideoRateControl";
+  absl::optional<double> pacing_factor;
+  bool alr_probing = false;
+  absl::optional<int> vp8_qp_max;
+  absl::optional<int> vp8_min_pixels;
+  bool trust_vp8 = false;
+  bool trust_vp9 = false;
+  double video_hysteresis = 1.0;
+  // Default to 35% hysteresis for simulcast screenshare.
+  double screenshare_hysteresis = 1.35;
+  bool probe_max_allocation = true;
+  bool bitrate_adjuster = false;
+  bool adjuster_use_headroom = false;
+  bool vp8_s0_boost = true;
+  bool vp8_dynamic_rate = false;
+  bool vp9_dynamic_rate = false;
+
+  std::unique_ptr<StructParametersParser> Parser();
+};
 
 class RateControlSettings final {
  public:
@@ -62,25 +90,8 @@ class RateControlSettings final {
   explicit RateControlSettings(
       const WebRtcKeyValueConfig* const key_value_config);
 
-  double GetSimulcastVideoHysteresisFactor() const;
-  double GetSimulcastScreenshareHysteresisFactor() const;
-
-  FieldTrialOptional<int> congestion_window_;
-  FieldTrialOptional<int> congestion_window_pushback_;
-  FieldTrialOptional<double> pacing_factor_;
-  FieldTrialParameter<bool> alr_probing_;
-  FieldTrialOptional<int> vp8_qp_max_;
-  FieldTrialOptional<int> vp8_min_pixels_;
-  FieldTrialParameter<bool> trust_vp8_;
-  FieldTrialParameter<bool> trust_vp9_;
-  FieldTrialParameter<double> video_hysteresis_;
-  FieldTrialParameter<double> screenshare_hysteresis_;
-  FieldTrialParameter<bool> probe_max_allocation_;
-  FieldTrialParameter<bool> bitrate_adjuster_;
-  FieldTrialParameter<bool> adjuster_use_headroom_;
-  FieldTrialParameter<bool> vp8_s0_boost_;
-  FieldTrialParameter<bool> vp8_dynamic_rate_;
-  FieldTrialParameter<bool> vp9_dynamic_rate_;
+  const CongestionWindowConfig congestion_window_config_;
+  VideoRateControlConfig video_config_;
 };
 
 }  // namespace webrtc

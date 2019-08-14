@@ -243,6 +243,8 @@ absl::optional<bool> ParseTypedParameter<bool>(std::string str);
 template <>
 absl::optional<double> ParseTypedParameter<double>(std::string str);
 template <>
+absl::optional<int> ParseTypedParameter<int>(std::string str);
+template <>
 absl::optional<std::string> ParseTypedParameter<std::string>(std::string str);
 
 template <>
