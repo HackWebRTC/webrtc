@@ -208,6 +208,18 @@ TEST(BalancedDegradationSettings, GetsGenericFps) {
             settings.MaxFps(kVideoCodecGeneric, 3000));
 }
 
+TEST(BalancedDegradationSettings, GetsUnlimitedForMaxValidFps) {
+  webrtc::test::ScopedFieldTrials field_trials(
+      "WebRTC-Video-BalancedDegradationSettings/"
+      "pixels:1000|2000|3000,fps:5|15|100,vp8_fps:30|100|100/");
+  const int kUnlimitedFps = std::numeric_limits<int>::max();
+  BalancedDegradationSettings settings;
+  EXPECT_EQ(15, settings.MinFps(kVideoCodecH264, 2000));
+  EXPECT_EQ(kUnlimitedFps, settings.MinFps(kVideoCodecH264, 2001));
+  EXPECT_EQ(30, settings.MinFps(kVideoCodecVP8, 1000));
+  EXPECT_EQ(kUnlimitedFps, settings.MinFps(kVideoCodecVP8, 1001));
+}
+
 TEST(BalancedDegradationSettings, QpThresholdsNotSetByDefault) {
   webrtc::test::ScopedFieldTrials field_trials(
       "WebRTC-Video-BalancedDegradationSettings/"

@@ -21,7 +21,7 @@ namespace webrtc {
 namespace {
 constexpr char kFieldTrial[] = "WebRTC-Video-BalancedDegradationSettings";
 constexpr int kMinFps = 1;
-constexpr int kMaxFps = 100;
+constexpr int kMaxFps = 100;  // 100 means unlimited fps.
 
 std::vector<BalancedDegradationSettings::Config> DefaultConfigs() {
   return {{320 * 240, 7, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
@@ -164,7 +164,9 @@ int GetFps(VideoCodecType type,
       break;
   }
 
-  return fps.value_or(config->fps);
+  const int framerate = fps.value_or(config->fps);
+
+  return (framerate == kMaxFps) ? std::numeric_limits<int>::max() : framerate;
 }
 }  // namespace
 
