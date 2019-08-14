@@ -51,7 +51,6 @@ constexpr int kFrameworkUsedThreads = 2;
 constexpr int kMaxVideoAnalyzerThreads = 8;
 
 constexpr TimeDelta kStatsUpdateInterval = TimeDelta::Seconds<1>();
-constexpr TimeDelta kStatsPollingStopTimeout = TimeDelta::Seconds<1>();
 
 constexpr TimeDelta kAliveMessageLogInterval = TimeDelta::Seconds<30>();
 
@@ -367,15 +366,10 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
     done.Wait(run_params.run_duration.ms());
   }
 
-  rtc::Event stats_polling_stopped;
-  task_queue_->PostTask([&stats_polling_stopped, this]() {
+  task_queue_->SendTask([this]() {
     RTC_DCHECK_RUN_ON(task_queue_.get());
     stats_polling_task_.Stop();
-    stats_polling_stopped.Set();
   });
-  bool no_timeout = stats_polling_stopped.Wait(kStatsPollingStopTimeout.ms());
-  RTC_CHECK(no_timeout) << "Failed to stop Stats polling after "
-                        << kStatsPollingStopTimeout.seconds() << " seconds.";
 
   // We need to detach AEC dumping from peers, because dump uses |task_queue_|
   // inside.
