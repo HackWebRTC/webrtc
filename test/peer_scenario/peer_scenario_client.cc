@@ -241,7 +241,7 @@ void PeerScenarioClient::CreateAndSetSdp(
       SdpCreateObserver([=](SessionDescriptionInterface* offer) {
         std::string sdp_offer;
         offer->ToString(&sdp_offer);
-        printf("%s\n", sdp_offer.c_str());
+        RTC_LOG(LS_INFO) << sdp_offer;
         peer_connection_->SetLocalDescription(
             SdpSetObserver([sdp_offer, offer_handler]() {
               offer_handler(std::move(sdp_offer));
@@ -261,7 +261,7 @@ void PeerScenarioClient::SetSdpOfferAndGetAnswer(
             SdpCreateObserver([=](SessionDescriptionInterface* answer) {
               std::string sdp_answer;
               answer->ToString(&sdp_answer);
-              printf("%s\n", sdp_answer.c_str());
+              RTC_LOG(LS_INFO) << sdp_answer;
               peer_connection_->SetLocalDescription(
                   SdpSetObserver([answer_handler, sdp_answer]() {
                     answer_handler(sdp_answer);

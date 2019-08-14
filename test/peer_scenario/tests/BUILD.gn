@@ -17,7 +17,9 @@ if (rtc_include_tests) {
     ]
     deps = [
       "..:peer_scenario",
+      "../../:field_trial",
       "../../:test_support",
+      "../../../modules/rtp_rtcp:rtp_rtcp",
       "../../../pc:rtc_pc_base",
     ]
   }

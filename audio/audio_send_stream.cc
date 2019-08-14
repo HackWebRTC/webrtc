@@ -207,6 +207,8 @@ AudioSendStream::ExtensionIds AudioSendStream::FindExtensionIds(
   for (const auto& extension : extensions) {
     if (extension.uri == RtpExtension::kAudioLevelUri) {
       ids.audio_level = extension.id;
+    } else if (extension.uri == RtpExtension::kAbsSendTimeUri) {
+      ids.abs_send_time = extension.id;
     } else if (extension.uri == RtpExtension::kTransportSequenceNumberUri) {
       ids.transport_sequence_number = extension.id;
     } else if (extension.uri == RtpExtension::kMidUri) {
@@ -273,6 +275,16 @@ void AudioSendStream::ConfigureStream(
     channel_send->SetSendAudioLevelIndicationStatus(new_ids.audio_level != 0,
                                                     new_ids.audio_level);
   }
+
+  if (first_time || new_ids.abs_send_time != old_ids.abs_send_time) {
+    channel_send->GetRtpRtcp()->DeregisterSendRtpHeaderExtension(
+        kRtpExtensionAbsoluteSendTime);
+    if (new_ids.abs_send_time) {
+      channel_send->GetRtpRtcp()->RegisterSendRtpHeaderExtension(
+          kRtpExtensionAbsoluteSendTime, new_ids.abs_send_time);
+    }
+  }
+
   bool transport_seq_num_id_changed =
       new_ids.transport_sequence_number != old_ids.transport_sequence_number;
   if (first_time || (transport_seq_num_id_changed &&
