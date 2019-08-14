@@ -1965,15 +1965,17 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn,
   }
 
   // Create event for candidate pair change.
-  CandidatePairChangeEvent pair_change;
-  pair_change.reason = reason;
+
   if (selected_connection_) {
+    CandidatePairChangeEvent pair_change;
+    pair_change.reason = reason;
     pair_change.local_candidate = selected_connection_->local_candidate();
     pair_change.remote_candidate = selected_connection_->remote_candidate();
     pair_change.last_data_received_ms =
         selected_connection_->last_data_received();
+    SignalCandidatePairChanged(pair_change);
   }
-  SignalCandidatePairChanged(pair_change);
+
   SignalNetworkRouteChanged(network_route_);
 }
 
