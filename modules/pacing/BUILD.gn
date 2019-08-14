@@ -19,6 +19,8 @@ rtc_static_library("pacing") {
     "bitrate_prober.h",
     "paced_sender.cc",
     "paced_sender.h",
+    "pacing_controller.cc",
+    "pacing_controller.h",
     "packet_router.cc",
     "packet_router.h",
     "round_robin_packet_queue.cc",
@@ -75,11 +77,13 @@ if (rtc_include_tests) {
       "bitrate_prober_unittest.cc",
       "interval_budget_unittest.cc",
       "paced_sender_unittest.cc",
+      "pacing_controller_unittest.cc",
       "packet_router_unittest.cc",
     ]
     deps = [
       ":interval_budget",
       ":pacing",
+      "../../api/units:data_rate",
       "../../api/units:time_delta",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",

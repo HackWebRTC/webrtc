@@ -16,6 +16,7 @@
 
 #include <atomic>
 #include <memory>
+#include <vector>
 
 #include "absl/types/optional.h"
 #include "api/function_view.h"
@@ -25,14 +26,13 @@
 #include "modules/include/module.h"
 #include "modules/pacing/bitrate_prober.h"
 #include "modules/pacing/interval_budget.h"
+#include "modules/pacing/pacing_controller.h"
 #include "modules/pacing/packet_router.h"
-#include "modules/pacing/round_robin_packet_queue.h"
 #include "modules/pacing/rtp_packet_pacer.h"
 #include "modules/rtp_rtcp/include/rtp_packet_sender.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/critical_section.h"
-#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/thread_annotations.h"
 
 namespace webrtc {
@@ -41,7 +41,8 @@ class RtcEventLog;
 
 class PacedSender : public Module,
                     public RtpPacketPacer,
-                    public RtpPacketSender {
+                    public RtpPacketSender,
+                    private PacingController::PacketSender {
  public:
   // Expected max pacer delay in ms. If ExpectedQueueTime() is higher than
   // this value, the packet producers should wait (eg drop frames rather than
@@ -116,6 +117,7 @@ class PacedSender : public Module,
   // Below are methods specific to this implementation, such as things related
   // to module processing thread specifics or methods exposed for test.
 
+  // TODO(bugs.webrtc.org/10809): Remove when cleanup up unit tests.
   // Enable bitrate probing. Enabled by default, mostly here to simplify
   // testing. Must be called before any packets are being sent to have an
   // effect.
@@ -134,69 +136,30 @@ class PacedSender : public Module,
   void ProcessThreadAttached(ProcessThread* process_thread) override;
 
  private:
-  TimeDelta UpdateTimeAndGetElapsed(Timestamp now)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  bool ShouldSendKeepalive(Timestamp now) const
+  // Methods implementing PacedSenderController:PacketSender.
+
+  void SendRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
+                     const PacedPacketInfo& cluster_info) override
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
-  // Updates the number of bytes that can be sent for the next time interval.
-  void UpdateBudgetWithElapsedTime(TimeDelta delta)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  void UpdateBudgetWithSentData(DataSize size)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
+      DataSize size) override RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
-  DataSize PaddingToAdd(absl::optional<DataSize> recommended_probe_size,
-                        DataSize data_sent)
+  // TODO(bugs.webrtc.org/10633): Remove these when old code path is gone.
+  RtpPacketSendResult TimeToSendPacket(uint32_t ssrc,
+                                       uint16_t sequence_number,
+                                       int64_t capture_timestamp,
+                                       bool retransmission,
+                                       const PacedPacketInfo& packet_info)
+      override RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
+  DataSize TimeToSendPadding(DataSize size,
+                             const PacedPacketInfo& pacing_info) override
       RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-
-  RoundRobinPacketQueue::QueuedPacket* GetPendingPacket(
-      const PacedPacketInfo& pacing_info)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  void OnPacketSent(RoundRobinPacketQueue::QueuedPacket* packet)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  void OnPaddingSent(DataSize padding_sent)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-
-  bool Congested() const RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  Timestamp CurrentTime() const RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-
-  Clock* const clock_;
-  PacketRouter* const packet_router_;
-  const std::unique_ptr<FieldTrialBasedConfig> fallback_field_trials_;
-  const WebRtcKeyValueConfig* field_trials_;
-
-  const bool drain_large_queues_;
-  const bool send_padding_if_silent_;
-  const bool pace_audio_;
-  TimeDelta min_packet_limit_;
 
   rtc::CriticalSection critsect_;
-  // TODO(webrtc:9716): Remove this when we are certain clocks are monotonic.
-  // The last millisecond timestamp returned by |clock_|.
-  mutable Timestamp last_timestamp_ RTC_GUARDED_BY(critsect_);
-  bool paused_ RTC_GUARDED_BY(critsect_);
-  // This is the media budget, keeping track of how many bits of media
-  // we can pace out during the current interval.
-  IntervalBudget media_budget_ RTC_GUARDED_BY(critsect_);
-  // This is the padding budget, keeping track of how many bits of padding we're
-  // allowed to send out during the current interval. This budget will be
-  // utilized when there's no media to send.
-  IntervalBudget padding_budget_ RTC_GUARDED_BY(critsect_);
+  PacingController pacing_controller_ RTC_GUARDED_BY(critsect_);
 
-  BitrateProber prober_ RTC_GUARDED_BY(critsect_);
-  bool probing_send_failure_ RTC_GUARDED_BY(critsect_);
-
-  DataRate pacing_bitrate_ RTC_GUARDED_BY(critsect_);
-
-  Timestamp time_last_process_ RTC_GUARDED_BY(critsect_);
-  Timestamp last_send_time_ RTC_GUARDED_BY(critsect_);
-  absl::optional<Timestamp> first_sent_packet_time_ RTC_GUARDED_BY(critsect_);
-
-  RoundRobinPacketQueue packets_ RTC_GUARDED_BY(critsect_);
-  uint64_t packet_counter_ RTC_GUARDED_BY(critsect_);
-
-  DataSize congestion_window_size_ RTC_GUARDED_BY(critsect_);
-  DataSize outstanding_data_ RTC_GUARDED_BY(critsect_);
+  PacketRouter* const packet_router_;
 
   // Lock to avoid race when attaching process thread. This can happen due to
   // the Call class setting network state on RtpTransportControllerSend, which
@@ -205,14 +168,6 @@ class PacedSender : public Module,
   // queue separate from the thread used by Call, this causes a race.
   rtc::CriticalSection process_thread_lock_;
   ProcessThread* process_thread_ RTC_GUARDED_BY(process_thread_lock_);
-
-  TimeDelta queue_time_limit RTC_GUARDED_BY(critsect_);
-  bool account_for_audio_ RTC_GUARDED_BY(critsect_);
-
-  // If true, PacedSender should only reference packets as in legacy mode.
-  // If false, PacedSender may have direct ownership of RtpPacketToSend objects.
-  // Defaults to true, will be changed to default false soon.
-  const bool legacy_packet_referencing_;
 };
 }  // namespace webrtc
 #endif  // MODULES_PACING_PACED_SENDER_H_
