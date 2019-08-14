@@ -313,7 +313,13 @@ TEST_F(VideoReceiveStreamTestWithFakeDecoder, PassesPacketInfos) {
   EXPECT_THAT(fake_renderer_.packet_infos(), ElementsAreArray(packet_infos));
 }
 
+// TODO(crbug.com/webrtc/10872): Re-enable on iOS
+#if defined(WEBRTC_IOS)
+TEST_F(VideoReceiveStreamTestWithFakeDecoder,
+       DISABLED_RenderedFrameUpdatesGetSources) {
+#else
 TEST_F(VideoReceiveStreamTestWithFakeDecoder, RenderedFrameUpdatesGetSources) {
+#endif
   constexpr uint32_t kSsrc = 1111;
   constexpr uint32_t kCsrc = 9001;
   constexpr uint32_t kRtpTimestamp = 12345;
