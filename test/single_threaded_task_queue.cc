@@ -80,12 +80,14 @@ SingleThreadedTaskQueueForTesting::PostDelayedTask(Task task,
 }
 
 void SingleThreadedTaskQueueForTesting::SendTask(Task task) {
+  RTC_DCHECK(!IsCurrent());
   rtc::Event done;
   PostTask([&task, &done]() {
     task();
     done.Set();
   });
-  done.Wait(rtc::Event::kForever);
+  // Give up after 30 seconds, warn after 10.
+  RTC_CHECK(done.Wait(30000, 10000));
 }
 
 bool SingleThreadedTaskQueueForTesting::CancelTask(TaskId task_id) {
@@ -97,6 +99,10 @@ bool SingleThreadedTaskQueueForTesting::CancelTask(TaskId task_id) {
     }
   }
   return false;
+}
+
+bool SingleThreadedTaskQueueForTesting::IsCurrent() {
+  return rtc::IsThreadRefEqual(thread_.GetThreadRef(), rtc::CurrentThreadRef());
 }
 
 void SingleThreadedTaskQueueForTesting::Run(void* obj) {

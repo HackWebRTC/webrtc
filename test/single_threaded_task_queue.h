@@ -56,6 +56,9 @@ class SingleThreadedTaskQueueForTesting {
   // only for invalid task IDs, or for tasks which have already been executed.
   bool CancelTask(TaskId task_id);
 
+  // Returns true iff called on the thread associated with the task queue.
+  bool IsCurrent();
+
  private:
   struct QueuedTask {
     QueuedTask(TaskId task_id, int64_t earliest_execution_time, Task task);
