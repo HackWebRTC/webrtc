@@ -466,13 +466,18 @@ class FakeReceiveStatistics : public ReceiveStatisticsProvider {
 
 class UlpfecObserver : public test::EndToEndTest {
  public:
+  // Some of the test cases are expected to time out.
+  // Use a shorter timeout window than the default one for those.
+  static constexpr int kReducedTimeoutMs = 10000;
+
   UlpfecObserver(bool header_extensions_enabled,
                  bool use_nack,
                  bool expect_red,
                  bool expect_ulpfec,
                  const std::string& codec,
                  VideoEncoderFactory* encoder_factory)
-      : EndToEndTest(kTimeoutMs),
+      : EndToEndTest(expect_ulpfec ? VideoSendStreamTest::kDefaultTimeoutMs
+                                   : kReducedTimeoutMs),
         encoder_factory_(encoder_factory),
         payload_name_(codec),
         use_nack_(use_nack),
@@ -486,10 +491,6 @@ class UlpfecObserver : public test::EndToEndTest {
     parser_->RegisterRtpHeaderExtension(kRtpExtensionTransportSequenceNumber,
                                         kTransportSequenceNumberExtensionId);
   }
-
-  // Some of the test cases are expected to time out and thus we are using
-  // a shorter timeout window than the default here.
-  static constexpr size_t kTimeoutMs = 10000;
 
  private:
   Action OnSendRtp(const uint8_t* packet, size_t length) override {
@@ -665,8 +666,7 @@ TEST_F(VideoSendStreamTest, DoesUtilizeUlpfecForH264WithoutNackEnabled) {
   RunBaseTest(&test);
 }
 
-// Disabled as flaky, see https://crbug.com/webrtc/7285 for details.
-TEST_F(VideoSendStreamTest, DISABLED_DoesUtilizeUlpfecForVp8WithNackEnabled) {
+TEST_F(VideoSendStreamTest, DoesUtilizeUlpfecForVp8WithNackEnabled) {
   test::FunctionVideoEncoderFactory encoder_factory(
       []() { return VP8Encoder::Create(); });
   UlpfecObserver test(false, true, true, true, "VP8", &encoder_factory);
@@ -674,8 +674,7 @@ TEST_F(VideoSendStreamTest, DISABLED_DoesUtilizeUlpfecForVp8WithNackEnabled) {
 }
 
 #if defined(RTC_ENABLE_VP9)
-// Disabled as flaky, see https://crbug.com/webrtc/7285 for details.
-TEST_F(VideoSendStreamTest, DISABLED_DoesUtilizeUlpfecForVp9WithNackEnabled) {
+TEST_F(VideoSendStreamTest, DoesUtilizeUlpfecForVp9WithNackEnabled) {
   test::FunctionVideoEncoderFactory encoder_factory(
       []() { return VP9Encoder::Create(); });
   UlpfecObserver test(false, true, true, true, "VP9", &encoder_factory);
