@@ -13,6 +13,8 @@ rtc_static_library("common_video") {
 
   sources = [
     "bitrate_adjuster.cc",
+    "frame_rate_estimator.cc",
+    "frame_rate_estimator.h",
     "h264/h264_bitstream_parser.cc",
     "h264/h264_bitstream_parser.h",
     "h264/h264_common.cc",
@@ -42,6 +44,8 @@ rtc_static_library("common_video") {
   deps = [
     "../api:scoped_refptr",
     "../api/task_queue",
+    "../api/units:time_delta",
+    "../api/units:timestamp",
     "../api/video:encoded_image",
     "../api/video:video_bitrate_allocation",
     "../api/video:video_bitrate_allocator",
@@ -78,6 +82,7 @@ if (rtc_include_tests) {
 
     sources = [
       "bitrate_adjuster_unittest.cc",
+      "frame_rate_estimator_unittest.cc",
       "h264/h264_bitstream_parser_unittest.cc",
       "h264/pps_parser_unittest.cc",
       "h264/profile_level_id_unittest.cc",
@@ -102,6 +107,7 @@ if (rtc_include_tests) {
       "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
       "../rtc_base:rtc_base_tests_utils",
+      "../system_wrappers:system_wrappers",
       "../test:fileutils",
       "../test:test_main",
       "../test:test_support",
