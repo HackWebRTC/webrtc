@@ -23,24 +23,6 @@ RtpSource::RtpSource(int64_t timestamp_ms,
       audio_level_(audio_level),
       rtp_timestamp_(rtp_timestamp) {}
 
-RtpSource::RtpSource(int64_t timestamp_ms,
-                     uint32_t source_id,
-                     RtpSourceType source_type)
-    : timestamp_ms_(timestamp_ms),
-      source_id_(source_id),
-      source_type_(source_type),
-      rtp_timestamp_(0) {}
-
-RtpSource::RtpSource(int64_t timestamp_ms,
-                     uint32_t source_id,
-                     RtpSourceType source_type,
-                     uint8_t audio_level)
-    : timestamp_ms_(timestamp_ms),
-      source_id_(source_id),
-      source_type_(source_type),
-      audio_level_(audio_level),
-      rtp_timestamp_(0) {}
-
 RtpSource::RtpSource(const RtpSource&) = default;
 RtpSource& RtpSource::operator=(const RtpSource&) = default;
 RtpSource::~RtpSource() = default;

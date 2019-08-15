@@ -44,16 +44,6 @@ class RtpSource {
             absl::optional<uint8_t> audio_level,
             uint32_t rtp_timestamp);
 
-  // DEPRECATED: Will be removed after 2019-07-31.
-  RTC_DEPRECATED RtpSource(int64_t timestamp_ms,
-                           uint32_t source_id,
-                           RtpSourceType source_type);
-  // DEPRECATED: Will be removed after 2019-07-31.
-  RTC_DEPRECATED RtpSource(int64_t timestamp_ms,
-                           uint32_t source_id,
-                           RtpSourceType source_type,
-                           uint8_t audio_level);
-
   RtpSource(const RtpSource&);
   RtpSource& operator=(const RtpSource&);
   ~RtpSource();
