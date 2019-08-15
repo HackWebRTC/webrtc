@@ -27,15 +27,6 @@ const size_t kSamplesPer16kHzChannel = 160;
 const size_t kSamplesPer32kHzChannel = 320;
 const size_t kSamplesPer48kHzChannel = 480;
 
-int KeyboardChannelIndex(const StreamConfig& stream_config) {
-  if (!stream_config.has_keyboard()) {
-    RTC_NOTREACHED();
-    return 0;
-  }
-
-  return stream_config.num_channels();
-}
-
 size_t NumBandsFromSamplesPerChannel(size_t num_frames) {
   size_t num_bands = 1;
   if (num_frames == kSamplesPer32kHzChannel ||
@@ -60,10 +51,6 @@ AudioBuffer::AudioBuffer(size_t input_num_frames,
       num_channels_(num_process_channels),
       num_bands_(NumBandsFromSamplesPerChannel(proc_num_frames_)),
       num_split_frames_(rtc::CheckedDivExact(proc_num_frames_, num_bands_)),
-      mixed_low_pass_valid_(false),
-      reference_copied_(false),
-      activity_(AudioFrame::kVadUnknown),
-      keyboard_data_(NULL),
       data_(new IFChannelBuffer(proc_num_frames_, num_proc_channels_)),
       output_buffer_(new IFChannelBuffer(output_num_frames_, num_channels_)) {
   RTC_DCHECK_GT(input_num_frames_, 0);
@@ -116,10 +103,6 @@ void AudioBuffer::CopyFrom(const float* const* data,
   if (need_to_downmix && !input_buffer_) {
     input_buffer_.reset(
         new IFChannelBuffer(input_num_frames_, num_proc_channels_));
-  }
-
-  if (stream_config.has_keyboard()) {
-    keyboard_data_ = data[KeyboardChannelIndex(stream_config)];
   }
 
   // Downmix.
@@ -179,10 +162,6 @@ void AudioBuffer::CopyTo(const StreamConfig& stream_config,
 }
 
 void AudioBuffer::InitForNewData() {
-  keyboard_data_ = NULL;
-  mixed_low_pass_valid_ = false;
-  reference_copied_ = false;
-  activity_ = AudioFrame::kVadUnknown;
   num_channels_ = num_proc_channels_;
   data_->set_num_channels(num_proc_channels_);
   if (split_data_.get()) {
@@ -195,7 +174,6 @@ const int16_t* const* AudioBuffer::channels_const() const {
 }
 
 int16_t* const* AudioBuffer::channels() {
-  mixed_low_pass_valid_ = false;
   return data_->ibuf()->channels();
 }
 
@@ -205,7 +183,6 @@ const int16_t* const* AudioBuffer::split_bands_const(size_t channel) const {
 }
 
 int16_t* const* AudioBuffer::split_bands(size_t channel) {
-  mixed_low_pass_valid_ = false;
   return split_data_.get() ? split_data_->ibuf()->bands(channel)
                            : data_->ibuf()->bands(channel);
 }
@@ -218,39 +195,11 @@ const int16_t* const* AudioBuffer::split_channels_const(Band band) const {
   }
 }
 
-int16_t* const* AudioBuffer::split_channels(Band band) {
-  mixed_low_pass_valid_ = false;
-  if (split_data_.get()) {
-    return split_data_->ibuf()->channels(band);
-  } else {
-    return band == kBand0To8kHz ? data_->ibuf()->channels() : nullptr;
-  }
-}
-
-ChannelBuffer<int16_t>* AudioBuffer::data() {
-  mixed_low_pass_valid_ = false;
-  return data_->ibuf();
-}
-
-const ChannelBuffer<int16_t>* AudioBuffer::data() const {
-  return data_->ibuf_const();
-}
-
-ChannelBuffer<int16_t>* AudioBuffer::split_data() {
-  mixed_low_pass_valid_ = false;
-  return split_data_.get() ? split_data_->ibuf() : data_->ibuf();
-}
-
-const ChannelBuffer<int16_t>* AudioBuffer::split_data() const {
-  return split_data_.get() ? split_data_->ibuf_const() : data_->ibuf_const();
-}
-
 const float* const* AudioBuffer::channels_const_f() const {
   return data_->fbuf_const()->channels();
 }
 
 float* const* AudioBuffer::channels_f() {
-  mixed_low_pass_valid_ = false;
   return data_->fbuf()->channels();
 }
 
@@ -260,83 +209,8 @@ const float* const* AudioBuffer::split_bands_const_f(size_t channel) const {
 }
 
 float* const* AudioBuffer::split_bands_f(size_t channel) {
-  mixed_low_pass_valid_ = false;
   return split_data_.get() ? split_data_->fbuf()->bands(channel)
                            : data_->fbuf()->bands(channel);
-}
-
-const float* const* AudioBuffer::split_channels_const_f(Band band) const {
-  if (split_data_.get()) {
-    return split_data_->fbuf_const()->channels(band);
-  } else {
-    return band == kBand0To8kHz ? data_->fbuf_const()->channels() : nullptr;
-  }
-}
-
-float* const* AudioBuffer::split_channels_f(Band band) {
-  mixed_low_pass_valid_ = false;
-  if (split_data_.get()) {
-    return split_data_->fbuf()->channels(band);
-  } else {
-    return band == kBand0To8kHz ? data_->fbuf()->channels() : nullptr;
-  }
-}
-
-ChannelBuffer<float>* AudioBuffer::data_f() {
-  mixed_low_pass_valid_ = false;
-  return data_->fbuf();
-}
-
-const ChannelBuffer<float>* AudioBuffer::data_f() const {
-  return data_->fbuf_const();
-}
-
-ChannelBuffer<float>* AudioBuffer::split_data_f() {
-  mixed_low_pass_valid_ = false;
-  return split_data_.get() ? split_data_->fbuf() : data_->fbuf();
-}
-
-const ChannelBuffer<float>* AudioBuffer::split_data_f() const {
-  return split_data_.get() ? split_data_->fbuf_const() : data_->fbuf_const();
-}
-
-const int16_t* AudioBuffer::mixed_low_pass_data() {
-  if (num_proc_channels_ == 1) {
-    return split_bands_const(0)[kBand0To8kHz];
-  }
-
-  if (!mixed_low_pass_valid_) {
-    if (!mixed_low_pass_channels_.get()) {
-      mixed_low_pass_channels_.reset(
-          new ChannelBuffer<int16_t>(num_split_frames_, 1));
-    }
-
-    DownmixToMono<int16_t, int32_t>(split_channels_const(kBand0To8kHz),
-                                    num_split_frames_, num_channels_,
-                                    mixed_low_pass_channels_->channels()[0]);
-    mixed_low_pass_valid_ = true;
-  }
-  return mixed_low_pass_channels_->channels()[0];
-}
-
-const int16_t* AudioBuffer::low_pass_reference(int channel) const {
-  if (!reference_copied_) {
-    return NULL;
-  }
-
-  return low_pass_reference_channels_->channels()[channel];
-}
-
-const float* AudioBuffer::keyboard_data() const {
-  return keyboard_data_;
-}
-
-void AudioBuffer::set_activity(AudioFrame::VADActivity activity) {
-  activity_ = activity;
-}
-
-AudioFrame::VADActivity AudioBuffer::activity() const {
-  return activity_;
 }
 
 size_t AudioBuffer::num_channels() const {
@@ -359,17 +233,12 @@ size_t AudioBuffer::num_frames_per_band() const {
   return num_split_frames_;
 }
 
-size_t AudioBuffer::num_keyboard_frames() const {
-  // We don't resample the keyboard channel.
-  return input_num_frames_;
-}
-
 size_t AudioBuffer::num_bands() const {
   return num_bands_;
 }
 
 // The resampler is only for supporting 48kHz to 16kHz in the reverse stream.
-void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
+void AudioBuffer::DeinterleaveFrom(const AudioFrame* frame) {
   RTC_DCHECK_EQ(frame->num_channels_, num_input_channels_);
   RTC_DCHECK_EQ(frame->samples_per_channel_, input_num_frames_);
   InitForNewData();
@@ -378,7 +247,6 @@ void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
     input_buffer_.reset(
         new IFChannelBuffer(input_num_frames_, num_proc_channels_));
   }
-  activity_ = frame->vad_activity_;
 
   int16_t* const* deinterleaved;
   if (input_num_frames_ == proc_num_frames_) {
@@ -407,12 +275,7 @@ void AudioBuffer::DeinterleaveFrom(AudioFrame* frame) {
   }
 }
 
-void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) const {
-  frame->vad_activity_ = activity_;
-  if (!data_changed) {
-    return;
-  }
-
+void AudioBuffer::InterleaveTo(AudioFrame* frame) const {
   RTC_DCHECK(frame->num_channels_ == num_channels_ || num_channels_ == 1);
   RTC_DCHECK_EQ(frame->samples_per_channel_, output_num_frames_);
 
@@ -434,21 +297,6 @@ void AudioBuffer::InterleaveTo(AudioFrame* frame, bool data_changed) const {
   } else {
     UpmixMonoToInterleaved(data_ptr->ibuf()->channels()[0], output_num_frames_,
                            frame->num_channels_, frame->mutable_data());
-  }
-}
-
-void AudioBuffer::CopyLowPassToReference() {
-  reference_copied_ = true;
-  if (!low_pass_reference_channels_.get() ||
-      low_pass_reference_channels_->num_channels() != num_channels_) {
-    low_pass_reference_channels_.reset(
-        new ChannelBuffer<int16_t>(num_split_frames_, num_proc_channels_));
-  }
-  for (size_t i = 0; i < num_proc_channels_; i++) {
-    memcpy(low_pass_reference_channels_->channels()[i],
-           split_bands_const(i)[kBand0To8kHz],
-           low_pass_reference_channels_->num_frames_per_band() *
-               sizeof(split_bands_const(i)[kBand0To8kHz][0]));
   }
 }
 

@@ -54,30 +54,42 @@ void VoiceDetectionImpl::Initialize(int sample_rate_hz) {
   set_likelihood(likelihood_);
 }
 
-void VoiceDetectionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
+bool VoiceDetectionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   rtc::CritScope cs(crit_);
-  if (!enabled_) {
-    return;
-  }
-  if (using_external_vad_) {
-    using_external_vad_ = false;
-    return;
-  }
+  RTC_DCHECK(enabled_);
 
   RTC_DCHECK_GE(160, audio->num_frames_per_band());
-  // TODO(ajm): concatenate data in frame buffer here.
-  int vad_ret =
-      WebRtcVad_Process(vad_->state(), sample_rate_hz_,
-                        audio->mixed_low_pass_data(), frame_size_samples_);
+  std::array<int16_t, 160> mixed_low_pass_data;
+  rtc::ArrayView<const int16_t> mixed_low_pass;
+  if (audio->num_proc_channels() == 1) {
+    mixed_low_pass =
+        rtc::ArrayView<const int16_t>(audio->split_bands_const(0)[kBand0To8kHz],
+                                      audio->num_frames_per_band());
+  } else {
+    const int num_channels = static_cast<int>(audio->num_channels());
+    for (size_t i = 0; i < audio->num_frames_per_band(); ++i) {
+      int32_t value = audio->split_channels_const(kBand0To8kHz)[0][i];
+      for (int j = 1; j < num_channels; ++j) {
+        value += audio->split_channels_const(kBand0To8kHz)[j][i];
+      }
+      mixed_low_pass_data[i] = value / num_channels;
+    }
+    mixed_low_pass = rtc::ArrayView<const int16_t>(
+        mixed_low_pass_data.data(), audio->num_frames_per_band());
+  }
+
+  int vad_ret = WebRtcVad_Process(vad_->state(), sample_rate_hz_,
+                                  mixed_low_pass.data(), frame_size_samples_);
   if (vad_ret == 0) {
     stream_has_voice_ = false;
-    audio->set_activity(AudioFrame::kVadPassive);
+    return false;
   } else if (vad_ret == 1) {
     stream_has_voice_ = true;
-    audio->set_activity(AudioFrame::kVadActive);
   } else {
     RTC_NOTREACHED();
   }
+
+  return stream_has_voice_;
 }
 
 int VoiceDetectionImpl::Enable(bool enable) {

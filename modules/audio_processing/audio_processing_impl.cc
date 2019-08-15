@@ -949,6 +949,7 @@ int AudioProcessingImpl::ProcessStream(const float* const* src,
     RecordUnprocessedCaptureStream(src);
   }
 
+  capture_.keyboard_info.Extract(src, formats_.api_format.input_stream());
   capture_.capture_audio->CopyFrom(src, formats_.api_format.input_stream());
   RETURN_ON_ERR(ProcessCaptureStreamLocked());
   capture_.capture_audio->CopyTo(formats_.api_format.output_stream(), dest);
@@ -1243,11 +1244,14 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
     RecordUnprocessedCaptureStream(*frame);
   }
 
+  capture_.vad_activity = frame->vad_activity_;
   capture_.capture_audio->DeinterleaveFrom(frame);
   RETURN_ON_ERR(ProcessCaptureStreamLocked());
-  capture_.capture_audio->InterleaveTo(
-      frame, submodule_states_.CaptureMultiBandProcessingActive() ||
-                 submodule_states_.CaptureFullBandProcessingActive());
+  if (submodule_states_.CaptureMultiBandProcessingActive() ||
+      submodule_states_.CaptureFullBandProcessingActive()) {
+    capture_.capture_audio->InterleaveTo(frame);
+  }
+  frame->vad_activity_ = capture_.vad_activity;
 
   if (aec_dump_) {
     RecordProcessedCaptureStream(*frame);
@@ -1361,7 +1365,8 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     }
 
     if (public_submodules_->noise_suppression->is_enabled()) {
-      capture_buffer->CopyLowPassToReference();
+      private_submodules_->echo_control_mobile->CopyLowPassReference(
+          capture_buffer);
     }
 
     public_submodules_->noise_suppression->ProcessCaptureAudio(capture_buffer);
@@ -1393,7 +1398,15 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     public_submodules_->noise_suppression->ProcessCaptureAudio(capture_buffer);
   }
 
-  public_submodules_->voice_detection->ProcessCaptureAudio(capture_buffer);
+  if (public_submodules_->voice_detection->is_enabled() &&
+      !public_submodules_->voice_detection->using_external_vad()) {
+    bool voice_active =
+        public_submodules_->voice_detection->ProcessCaptureAudio(
+            capture_buffer);
+    capture_.vad_activity =
+        voice_active ? AudioFrame::kVadActive : AudioFrame::kVadPassive;
+  }
+
   if (config_.voice_detection.enabled) {
     private_submodules_->voice_detector->ProcessCaptureAudio(capture_buffer);
     capture_.stats.voice_detected =
@@ -1440,8 +1453,9 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
         capture_buffer->channels_f()[0], capture_buffer->num_frames(),
         capture_buffer->num_channels(),
         capture_buffer->split_bands_const_f(0)[kBand0To8kHz],
-        capture_buffer->num_frames_per_band(), capture_buffer->keyboard_data(),
-        capture_buffer->num_keyboard_frames(), voice_probability,
+        capture_buffer->num_frames_per_band(),
+        capture_.keyboard_info.keyboard_data,
+        capture_.keyboard_info.num_keyboard_frames, voice_probability,
         capture_.key_pressed);
   }
 
@@ -1598,9 +1612,10 @@ int AudioProcessingImpl::ProcessReverseStream(AudioFrame* frame) {
 
   render_.render_audio->DeinterleaveFrom(frame);
   RETURN_ON_ERR(ProcessRenderStreamLocked());
-  render_.render_audio->InterleaveTo(
-      frame, submodule_states_.RenderMultiBandProcessingActive() ||
-                 submodule_states_.RenderFullBandProcessingActive());
+  if (submodule_states_.RenderMultiBandProcessingActive() ||
+      submodule_states_.RenderFullBandProcessingActive()) {
+    render_.render_audio->InterleaveTo(frame);
+  }
   return kNoError;
 }
 
@@ -2116,6 +2131,17 @@ AudioProcessingImpl::ApmCaptureState::ApmCaptureState(
       prev_playout_volume(-1) {}
 
 AudioProcessingImpl::ApmCaptureState::~ApmCaptureState() = default;
+
+void AudioProcessingImpl::ApmCaptureState::KeyboardInfo::Extract(
+    const float* const* data,
+    const StreamConfig& stream_config) {
+  if (stream_config.has_keyboard()) {
+    keyboard_data = data[stream_config.num_channels()];
+  } else {
+    keyboard_data = NULL;
+  }
+  num_keyboard_frames = stream_config.num_frames();
+}
 
 AudioProcessingImpl::ApmRenderState::ApmRenderState() = default;
 

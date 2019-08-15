@@ -21,10 +21,6 @@ const size_t kStereo = 2u;
 const size_t kMono = 1u;
 
 void ExpectNumChannels(const AudioBuffer& ab, size_t num_channels) {
-  EXPECT_EQ(ab.data()->num_channels(), num_channels);
-  EXPECT_EQ(ab.data_f()->num_channels(), num_channels);
-  EXPECT_EQ(ab.split_data()->num_channels(), num_channels);
-  EXPECT_EQ(ab.split_data_f()->num_channels(), num_channels);
   EXPECT_EQ(ab.num_channels(), num_channels);
 }
 

@@ -31,7 +31,14 @@ class VoiceDetectionImpl : public VoiceDetection {
 
   // TODO(peah): Fold into ctor, once public API is removed.
   void Initialize(int sample_rate_hz);
-  void ProcessCaptureAudio(AudioBuffer* audio);
+
+  // Returns the VAD activity.
+  bool ProcessCaptureAudio(AudioBuffer* audio);
+
+  bool using_external_vad() const {
+    rtc::CritScope cs(crit_);
+    return using_external_vad_;
+  }
 
   // VoiceDetection implementation.
   int Enable(bool enable) override;

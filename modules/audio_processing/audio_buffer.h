@@ -40,10 +40,10 @@ class AudioBuffer {
   virtual ~AudioBuffer();
 
   size_t num_channels() const;
+  size_t num_proc_channels() const { return num_proc_channels_; }
   void set_num_channels(size_t num_channels);
   size_t num_frames() const;
   size_t num_frames_per_band() const;
-  size_t num_keyboard_frames() const;
   size_t num_bands() const;
 
   // Returns a pointer array to the full-band channels.
@@ -76,44 +76,17 @@ class AudioBuffer {
   // 0 <= band < |num_bands_|
   // 0 <= channel < |num_proc_channels_|
   // 0 <= sample < |num_split_frames_|
-  int16_t* const* split_channels(Band band);
   const int16_t* const* split_channels_const(Band band) const;
-  float* const* split_channels_f(Band band);
-  const float* const* split_channels_const_f(Band band) const;
-
-  // Returns a pointer to the ChannelBuffer that encapsulates the full-band
-  // data.
-  ChannelBuffer<int16_t>* data();
-  const ChannelBuffer<int16_t>* data() const;
-  ChannelBuffer<float>* data_f();
-  const ChannelBuffer<float>* data_f() const;
-
-  // Returns a pointer to the ChannelBuffer that encapsulates the split data.
-  ChannelBuffer<int16_t>* split_data();
-  const ChannelBuffer<int16_t>* split_data() const;
-  ChannelBuffer<float>* split_data_f();
-  const ChannelBuffer<float>* split_data_f() const;
-
-  // Returns a pointer to the low-pass data downmixed to mono. If this data
-  // isn't already available it re-calculates it.
-  const int16_t* mixed_low_pass_data();
-  const int16_t* low_pass_reference(int channel) const;
-
-  const float* keyboard_data() const;
-
-  void set_activity(AudioFrame::VADActivity activity);
-  AudioFrame::VADActivity activity() const;
 
   // Use for int16 interleaved data.
-  void DeinterleaveFrom(AudioFrame* audioFrame);
+  void DeinterleaveFrom(const AudioFrame* audioFrame);
   // If |data_changed| is false, only the non-audio data members will be copied
   // to |frame|.
-  void InterleaveTo(AudioFrame* frame, bool data_changed) const;
+  void InterleaveTo(AudioFrame* frame) const;
 
   // Use for float deinterleaved data.
   void CopyFrom(const float* const* data, const StreamConfig& stream_config);
   void CopyTo(const StreamConfig& stream_config, float* const* data);
-  void CopyLowPassToReference();
 
   // Splits the signal into different bands.
   void SplitIntoFrequencyBands();
@@ -142,16 +115,10 @@ class AudioBuffer {
 
   size_t num_bands_;
   size_t num_split_frames_;
-  bool mixed_low_pass_valid_;
-  bool reference_copied_;
-  AudioFrame::VADActivity activity_;
 
-  const float* keyboard_data_;
   std::unique_ptr<IFChannelBuffer> data_;
   std::unique_ptr<IFChannelBuffer> split_data_;
   std::unique_ptr<SplittingFilter> splitting_filter_;
-  std::unique_ptr<ChannelBuffer<int16_t>> mixed_low_pass_channels_;
-  std::unique_ptr<ChannelBuffer<int16_t>> low_pass_reference_channels_;
   std::unique_ptr<IFChannelBuffer> input_buffer_;
   std::unique_ptr<IFChannelBuffer> output_buffer_;
   std::unique_ptr<ChannelBuffer<float>> process_buffer_;

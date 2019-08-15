@@ -120,10 +120,28 @@ void GainControlImpl::PackRenderAudioBuffer(
     std::vector<int16_t>* packed_buffer) {
   RTC_DCHECK_GE(160, audio->num_frames_per_band());
 
+  std::array<int16_t, 160> mixed_low_pass_data;
+  rtc::ArrayView<const int16_t> mixed_low_pass;
+  if (audio->num_proc_channels() == 1) {
+    mixed_low_pass =
+        rtc::ArrayView<const int16_t>(audio->split_bands_const(0)[kBand0To8kHz],
+                                      audio->num_frames_per_band());
+  } else {
+    const int num_channels = static_cast<int>(audio->num_channels());
+    for (size_t i = 0; i < audio->num_frames_per_band(); ++i) {
+      int32_t value = audio->split_channels_const(kBand0To8kHz)[0][i];
+      for (int j = 1; j < num_channels; ++j) {
+        value += audio->split_channels_const(kBand0To8kHz)[j][i];
+      }
+      mixed_low_pass_data[i] = value / num_channels;
+    }
+    mixed_low_pass = rtc::ArrayView<const int16_t>(
+        mixed_low_pass_data.data(), audio->num_frames_per_band());
+  }
+
   packed_buffer->clear();
-  packed_buffer->insert(
-      packed_buffer->end(), audio->mixed_low_pass_data(),
-      (audio->mixed_low_pass_data() + audio->num_frames_per_band()));
+  packed_buffer->insert(packed_buffer->end(), mixed_low_pass.data(),
+                        (mixed_low_pass.data() + audio->num_frames_per_band()));
 }
 
 int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {

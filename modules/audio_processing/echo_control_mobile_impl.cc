@@ -101,7 +101,10 @@ class EchoControlMobileImpl::Canceller {
 };
 
 EchoControlMobileImpl::EchoControlMobileImpl()
-    : routing_mode_(kSpeakerphone), comfort_noise_enabled_(false) {}
+    : routing_mode_(kSpeakerphone), comfort_noise_enabled_(false) {
+  low_pass_reference_[0].fill(0);
+  low_pass_reference_[1].fill(0);
+}
 
 EchoControlMobileImpl::~EchoControlMobileImpl() {}
 
@@ -168,7 +171,9 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio,
   for (size_t capture = 0; capture < audio->num_channels(); ++capture) {
     // TODO(ajm): improve how this works, possibly inside AECM.
     //            This is kind of hacked up.
-    const int16_t* noisy = audio->low_pass_reference(capture);
+    RTC_DCHECK_LT(capture, low_pass_reference_.size());
+    const int16_t* noisy =
+        reference_copied_ ? low_pass_reference_[capture].data() : nullptr;
     const int16_t* clean = audio->split_bands_const(capture)[kBand0To8kHz];
     if (noisy == NULL) {
       noisy = clean;
@@ -195,6 +200,16 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio,
   return AudioProcessing::kNoError;
 }
 
+void EchoControlMobileImpl::CopyLowPassReference(AudioBuffer* audio) {
+  RTC_DCHECK_LE(audio->num_channels(), low_pass_reference_.size());
+  reference_copied_ = true;
+  for (size_t capture = 0; capture < audio->num_channels(); ++capture) {
+    memcpy(low_pass_reference_[capture].data(),
+           audio->split_bands_const(capture)[kBand0To8kHz],
+           audio->num_frames_per_band() * sizeof(int16_t));
+  }
+}
+
 int EchoControlMobileImpl::set_routing_mode(RoutingMode mode) {
   if (MapSetting(mode) == -1) {
     return AudioProcessing::kBadParameterError;
@@ -219,6 +234,9 @@ bool EchoControlMobileImpl::is_comfort_noise_enabled() const {
 void EchoControlMobileImpl::Initialize(int sample_rate_hz,
                                        size_t num_reverse_channels,
                                        size_t num_output_channels) {
+  low_pass_reference_[0].fill(0);
+  low_pass_reference_[1].fill(0);
+
   stream_properties_.reset(new StreamProperties(
       sample_rate_hz, num_reverse_channels, num_output_channels));
 
