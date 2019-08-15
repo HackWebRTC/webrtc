@@ -4991,6 +4991,59 @@ TEST_F(P2PTransportChannelTest,
   DestroyChannels();
 }
 
+// A similar test as above to check the selected candidate pair is sanitized
+// when it is queried via GetSelectedCandidatePair.
+TEST_F(P2PTransportChannelTest,
+       SelectedCandidatePairSanitizedWhenMdnsObfuscationEnabled) {
+  NiceMock<rtc::MockAsyncResolver> mock_async_resolver;
+  webrtc::MockAsyncResolverFactory mock_async_resolver_factory;
+  EXPECT_CALL(mock_async_resolver_factory, Create())
+      .WillOnce(Return(&mock_async_resolver));
+
+  // ep1 and ep2 will gather host candidates with addresses
+  // kPublicAddrs[0] and kPublicAddrs[1], respectively.
+  ConfigureEndpoints(OPEN, OPEN, kOnlyLocalPorts, kOnlyLocalPorts);
+  // ICE parameter will be set up when creating the channels.
+  set_remote_ice_parameter_source(FROM_SETICEPARAMETERS);
+  GetEndpoint(0)->network_manager_.set_mdns_responder(
+      absl::make_unique<webrtc::FakeMdnsResponder>(rtc::Thread::Current()));
+  GetEndpoint(1)->async_resolver_factory_ = &mock_async_resolver_factory;
+  CreateChannels();
+  // Pause sending candidates from both endpoints until we find out what port
+  // number is assigned to ep1's host candidate.
+  PauseCandidates(0);
+  PauseCandidates(1);
+  ASSERT_EQ_WAIT(1u, GetEndpoint(0)->saved_candidates_.size(), kMediumTimeout);
+  const auto& candidates_data = GetEndpoint(0)->saved_candidates_[0];
+  ASSERT_EQ(1u, candidates_data->candidates.size());
+  const auto& local_candidate_ep1 = candidates_data->candidates[0];
+  ASSERT_TRUE(local_candidate_ep1.type() == LOCAL_PORT_TYPE);
+  // This is the underlying private IP address of the same candidate at ep1,
+  // and let the mock resolver of ep2 receive the correct resolution.
+  rtc::SocketAddress resolved_address_ep1(local_candidate_ep1.address());
+  resolved_address_ep1.SetResolvedIP(kPublicAddrs[0].ipaddr());
+  EXPECT_CALL(mock_async_resolver, GetResolvedAddress(_, _))
+      .WillOnce(DoAll(SetArgPointee<1>(resolved_address_ep1), Return(true)));
+  ResumeCandidates(0);
+  ResumeCandidates(1);
+
+  ASSERT_TRUE_WAIT(ep1_ch1()->selected_connection() != nullptr &&
+                       ep2_ch1()->selected_connection() != nullptr,
+                   kMediumTimeout);
+
+  const auto pair_ep1 = ep1_ch1()->GetSelectedCandidatePair();
+  ASSERT_TRUE(pair_ep1.has_value());
+  EXPECT_EQ(LOCAL_PORT_TYPE, pair_ep1->local_candidate().type());
+  EXPECT_TRUE(pair_ep1->local_candidate().address().IsUnresolvedIP());
+
+  const auto pair_ep2 = ep2_ch1()->GetSelectedCandidatePair();
+  ASSERT_TRUE(pair_ep2.has_value());
+  EXPECT_EQ(LOCAL_PORT_TYPE, pair_ep2->remote_candidate().type());
+  EXPECT_TRUE(pair_ep2->remote_candidate().address().IsUnresolvedIP());
+
+  DestroyChannels();
+}
+
 class MockMdnsResponder : public webrtc::MdnsResponderInterface {
  public:
   MOCK_METHOD2(CreateNameForAddress,

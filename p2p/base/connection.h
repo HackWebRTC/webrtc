@@ -36,6 +36,16 @@ class Port;
 // Forward declaration so that a ConnectionRequest can contain a Connection.
 class Connection;
 
+struct CandidatePair final : public CandidatePairInterface {
+  ~CandidatePair() override = default;
+
+  const Candidate& local_candidate() const override { return local; }
+  const Candidate& remote_candidate() const override { return remote; }
+
+  Candidate local;
+  Candidate remote;
+};
+
 // A ConnectionRequest is a simple STUN ping used to determine writability.
 class ConnectionRequest : public StunRequest {
  public:
@@ -227,6 +237,10 @@ class Connection : public CandidatePairInterface,
   // connectivity check from the peer.
   void HandlePiggybackCheckAcknowledgementIfAny(StunMessage* msg);
   int64_t last_data_received() const { return last_data_received_; }
+
+  // Returns the equivalent candidate pair and sanitizes the local and the
+  // remote candidates if necessary.
+  CandidatePair ToCandidatePairAndSanitizeIfNecessary() const;
 
   // Debugging description of this connection
   std::string ToDebugId() const;

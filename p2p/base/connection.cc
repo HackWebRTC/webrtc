@@ -720,6 +720,38 @@ void Connection::HandlePiggybackCheckAcknowledgementIfAny(StunMessage* msg) {
   }
 }
 
+CandidatePair Connection::ToCandidatePairAndSanitizeIfNecessary() const {
+  auto get_sanitized_copy = [](const Candidate& c) {
+    bool use_hostname_address = c.type() == LOCAL_PORT_TYPE;
+    bool filter_related_address = c.type() == STUN_PORT_TYPE;
+    return c.ToSanitizedCopy(use_hostname_address, filter_related_address);
+  };
+
+  CandidatePair pair;
+  if (port_->Network()->GetMdnsResponder() != nullptr) {
+    // When the mDNS obfuscation of local IPs is enabled, we sanitize local
+    // candidates.
+    pair.local = get_sanitized_copy(local_candidate());
+  } else {
+    pair.local = local_candidate();
+  }
+
+  if (!remote_candidate().address().hostname().empty()) {
+    // If the remote endpoint signaled us a hostname candidate, we assume it is
+    // supposed to be sanitized in the stats.
+    //
+    // A prflx remote candidate should not have a hostname set.
+    RTC_DCHECK(remote_candidate().type() != PRFLX_PORT_TYPE);
+    // A remote hostname candidate should have a resolved IP before we can form
+    // a candidate pair.
+    RTC_DCHECK(!remote_candidate().address().IsUnresolvedIP());
+    pair.remote = get_sanitized_copy(remote_candidate());
+  } else {
+    pair.remote = remote_candidate();
+  }
+  return pair;
+}
+
 void Connection::ReceivedPingResponse(
     int rtt,
     const std::string& request_id,
@@ -1107,33 +1139,9 @@ void Connection::MaybeUpdateLocalCandidate(ConnectionRequest* request,
 }
 
 void Connection::CopyCandidatesToStatsAndSanitizeIfNecessary() {
-  auto get_sanitized_copy = [](const Candidate& c) {
-    bool use_hostname_address = c.type() == LOCAL_PORT_TYPE;
-    bool filter_related_address = c.type() == STUN_PORT_TYPE;
-    return c.ToSanitizedCopy(use_hostname_address, filter_related_address);
-  };
-
-  if (port_->Network()->GetMdnsResponder() != nullptr) {
-    // When the mDNS obfuscation of local IPs is enabled, we sanitize local
-    // candidates.
-    stats_.local_candidate = get_sanitized_copy(local_candidate());
-  } else {
-    stats_.local_candidate = local_candidate();
-  }
-
-  if (!remote_candidate().address().hostname().empty()) {
-    // If the remote endpoint signaled us a hostname candidate, we assume it is
-    // supposed to be sanitized in the stats.
-    //
-    // A prflx remote candidate should not have a hostname set.
-    RTC_DCHECK(remote_candidate().type() != PRFLX_PORT_TYPE);
-    // A remote hostname candidate should have a resolved IP before we can form
-    // a candidate pair.
-    RTC_DCHECK(!remote_candidate().address().IsUnresolvedIP());
-    stats_.remote_candidate = get_sanitized_copy(remote_candidate());
-  } else {
-    stats_.remote_candidate = remote_candidate();
-  }
+  auto pair = ToCandidatePairAndSanitizeIfNecessary();
+  stats_.local_candidate = pair.local_candidate();
+  stats_.remote_candidate = pair.remote_candidate();
 }
 
 bool Connection::rtt_converged() const {

@@ -263,7 +263,13 @@ class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
   // absl::optional if there is none.
   virtual absl::optional<int> GetRttEstimate() = 0;
 
+  // TODO(qingsi): Remove this method once Chrome does not depend on it anymore.
   virtual const Connection* selected_connection() const = 0;
+
+  // Returns the selected candidate pair, or an empty absl::optional if there is
+  // none.
+  virtual absl::optional<const CandidatePair> GetSelectedCandidatePair()
+      const = 0;
 
   sigslot::signal1<IceTransportInternal*> SignalGatheringState;
 

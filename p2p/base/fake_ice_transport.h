@@ -207,6 +207,10 @@ class FakeIceTransport : public IceTransportInternal {
   absl::optional<int> GetRttEstimate() override { return absl::nullopt; }
 
   const Connection* selected_connection() const override { return nullptr; }
+  absl::optional<const CandidatePair> GetSelectedCandidatePair()
+      const override {
+    return absl::nullopt;
+  }
 
   // Fake PacketTransportInternal implementation.
   bool writable() const override { return writable_; }

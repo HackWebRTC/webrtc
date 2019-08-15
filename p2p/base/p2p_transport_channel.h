@@ -135,6 +135,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
                 std::vector<CandidateStats>* candidate_stats_list) override;
   absl::optional<int> GetRttEstimate() override;
   const Connection* selected_connection() const override;
+  absl::optional<const CandidatePair> GetSelectedCandidatePair() const override;
 
   // TODO(honghaiz): Remove this method once the reference of it in
   // Chromoting is removed.

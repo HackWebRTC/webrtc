@@ -380,6 +380,16 @@ absl::optional<int> P2PTransportChannel::GetRttEstimate() {
   }
 }
 
+absl::optional<const CandidatePair>
+P2PTransportChannel::GetSelectedCandidatePair() const {
+  RTC_DCHECK_RUN_ON(network_thread_);
+  if (selected_connection_ == nullptr) {
+    return absl::nullopt;
+  }
+
+  return selected_connection_->ToCandidatePairAndSanitizeIfNecessary();
+}
+
 // A channel is considered ICE completed once there is at most one active
 // connection per network and at least one active connection.
 IceTransportState P2PTransportChannel::ComputeState() const {
@@ -1965,7 +1975,6 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn,
   }
 
   // Create event for candidate pair change.
-
   if (selected_connection_) {
     CandidatePairChangeEvent pair_change;
     pair_change.reason = reason;
@@ -1975,7 +1984,6 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn,
         selected_connection_->last_data_received();
     SignalCandidatePairChanged(pair_change);
   }
-
   SignalNetworkRouteChanged(network_route_);
 }
 
