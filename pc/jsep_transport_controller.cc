@@ -1486,28 +1486,33 @@ void JsepTransportController::UpdateAggregateStates_n() {
     ice_state_counts[dtls->ice_transport()->GetIceTransportState()]++;
   }
 
-  for (auto it = jsep_transports_by_name_.begin();
-       it != jsep_transports_by_name_.end(); ++it) {
-    auto jsep_transport = it->second.get();
-    if (!jsep_transport->media_transport()) {
-      continue;
-    }
+  // Don't indicate that the call failed or isn't connected due to media
+  // transport state unless the media transport is used for media.  If it's only
+  // used for data channels, it will signal those separately.
+  if (config_.use_media_transport_for_media || config_.use_datagram_transport) {
+    for (auto it = jsep_transports_by_name_.begin();
+         it != jsep_transports_by_name_.end(); ++it) {
+      auto jsep_transport = it->second.get();
+      if (!jsep_transport->media_transport()) {
+        continue;
+      }
 
-    // There is no 'kIceConnectionDisconnected', so we only need to handle
-    // connected and completed.
-    // We treat kClosed as failed, because if it happens before shutting down
-    // media transports it means that there was a failure.
-    // MediaTransportInterface allows to flip back and forth between kWritable
-    // and kPending, but there does not exist an implementation that does that,
-    // and the contract of jsep transport controller doesn't quite expect that.
-    // When this happens, we would go from connected to connecting state, but
-    // this may change in future.
-    any_failed |= jsep_transport->media_transport_state() ==
-                  webrtc::MediaTransportState::kClosed;
-    all_completed &= jsep_transport->media_transport_state() ==
-                     webrtc::MediaTransportState::kWritable;
-    all_connected &= jsep_transport->media_transport_state() ==
-                     webrtc::MediaTransportState::kWritable;
+      // There is no 'kIceConnectionDisconnected', so we only need to handle
+      // connected and completed.
+      // We treat kClosed as failed, because if it happens before shutting down
+      // media transports it means that there was a failure.
+      // MediaTransportInterface allows to flip back and forth between kWritable
+      // and kPending, but there does not exist an implementation that does
+      // that, and the contract of jsep transport controller doesn't quite
+      // expect that. When this happens, we would go from connected to
+      // connecting state, but this may change in future.
+      any_failed |= jsep_transport->media_transport_state() ==
+                    webrtc::MediaTransportState::kClosed;
+      all_completed &= jsep_transport->media_transport_state() ==
+                       webrtc::MediaTransportState::kWritable;
+      all_connected &= jsep_transport->media_transport_state() ==
+                       webrtc::MediaTransportState::kWritable;
+    }
   }
 
   if (any_failed) {
