@@ -96,7 +96,8 @@ WEBRTC_RTCSTATS_IMPL(RTCCodecStats, RTCStats, "codec",
     &mime_type,
     &clock_rate,
     &channels,
-    &sdp_fmtp_line)
+    &sdp_fmtp_line,
+    &implementation)
 // clang-format on
 
 RTCCodecStats::RTCCodecStats(const std::string& id, int64_t timestamp_us)
@@ -108,7 +109,8 @@ RTCCodecStats::RTCCodecStats(std::string&& id, int64_t timestamp_us)
       mime_type("mimeType"),
       clock_rate("clockRate"),
       channels("channels"),
-      sdp_fmtp_line("sdpFmtpLine") {}
+      sdp_fmtp_line("sdpFmtpLine"),
+      implementation("implementation") {}
 
 RTCCodecStats::RTCCodecStats(const RTCCodecStats& other)
     : RTCStats(other.id(), other.timestamp_us()),
@@ -116,7 +118,8 @@ RTCCodecStats::RTCCodecStats(const RTCCodecStats& other)
       mime_type(other.mime_type),
       clock_rate(other.clock_rate),
       channels(other.channels),
-      sdp_fmtp_line(other.sdp_fmtp_line) {}
+      sdp_fmtp_line(other.sdp_fmtp_line),
+      implementation(other.implementation) {}
 
 RTCCodecStats::~RTCCodecStats() {}
 
@@ -612,8 +615,7 @@ WEBRTC_RTCSTATS_IMPL(
     &frames_decoded,
     &key_frames_decoded,
     &total_decode_time,
-    &content_type,
-    &decoder_implementation)
+    &content_type)
 // clang-format on
 
 RTCInboundRTPStreamStats::RTCInboundRTPStreamStats(const std::string& id,
@@ -644,8 +646,7 @@ RTCInboundRTPStreamStats::RTCInboundRTPStreamStats(std::string&& id,
       frames_decoded("framesDecoded"),
       key_frames_decoded("keyFramesDecoded"),
       total_decode_time("totalDecodeTime"),
-      content_type("contentType"),
-      decoder_implementation("decoderImplementation") {}
+      content_type("contentType") {}
 
 RTCInboundRTPStreamStats::RTCInboundRTPStreamStats(
     const RTCInboundRTPStreamStats& other)
@@ -671,8 +672,7 @@ RTCInboundRTPStreamStats::RTCInboundRTPStreamStats(
       frames_decoded(other.frames_decoded),
       key_frames_decoded(other.key_frames_decoded),
       total_decode_time(other.total_decode_time),
-      content_type(other.content_type),
-      decoder_implementation(other.decoder_implementation) {}
+      content_type(other.content_type) {}
 
 RTCInboundRTPStreamStats::~RTCInboundRTPStreamStats() {}
 
@@ -691,8 +691,7 @@ WEBRTC_RTCSTATS_IMPL(
     &total_encoded_bytes_target,
     &total_packet_send_delay,
     &quality_limitation_reason,
-    &content_type,
-    &encoder_implementation)
+    &content_type)
 // clang-format on
 
 RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(const std::string& id,
@@ -714,8 +713,7 @@ RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(std::string&& id,
       total_encoded_bytes_target("totalEncodedBytesTarget"),
       total_packet_send_delay("totalPacketSendDelay"),
       quality_limitation_reason("qualityLimitationReason"),
-      content_type("contentType"),
-      encoder_implementation("encoderImplementation") {}
+      content_type("contentType") {}
 
 RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
     const RTCOutboundRTPStreamStats& other)
@@ -732,8 +730,7 @@ RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
       total_encoded_bytes_target(other.total_encoded_bytes_target),
       total_packet_send_delay(other.total_packet_send_delay),
       quality_limitation_reason(other.quality_limitation_reason),
-      content_type(other.content_type),
-      encoder_implementation(other.encoder_implementation) {}
+      content_type(other.content_type) {}
 
 RTCOutboundRTPStreamStats::~RTCOutboundRTPStreamStats() {}
 

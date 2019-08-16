@@ -122,6 +122,8 @@ class RTC_EXPORT RTCCodecStats final : public RTCStats {
   RTCStatsMember<uint32_t> channels;
   // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7061
   RTCStatsMember<std::string> sdp_fmtp_line;
+  // TODO(hbos): Collect and populate this value. https://bugs.webrtc.org/7061
+  RTCStatsMember<std::string> implementation;
 };
 
 // https://w3c.github.io/webrtc-stats/#dcstats-dict*
@@ -445,9 +447,6 @@ class RTC_EXPORT RTCInboundRTPStreamStats final : public RTCRTPStreamStats {
   RTCStatsMember<double> total_decode_time;
   // https://henbos.github.io/webrtc-provisional-stats/#dom-rtcinboundrtpstreamstats-contenttype
   RTCStatsMember<std::string> content_type;
-  // TODO(hbos): This is only implemented for video; implement it for audio as
-  // well.
-  RTCStatsMember<std::string> decoder_implementation;
 };
 
 // https://w3c.github.io/webrtc-stats/#outboundrtpstats-dict*
@@ -483,9 +482,6 @@ class RTC_EXPORT RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
   RTCStatsMember<std::string> quality_limitation_reason;
   // https://henbos.github.io/webrtc-provisional-stats/#dom-rtcoutboundrtpstreamstats-contenttype
   RTCStatsMember<std::string> content_type;
-  // TODO(hbos): This is only implemented for video; implement it for audio as
-  // well.
-  RTCStatsMember<std::string> encoder_implementation;
 };
 
 // TODO(https://crbug.com/webrtc/10671): Refactor the stats dictionaries to have

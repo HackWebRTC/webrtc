@@ -546,6 +546,7 @@ struct VideoSenderInfo : public MediaSenderInfo {
   VideoSenderInfo();
   ~VideoSenderInfo();
   std::vector<SsrcGroup> ssrc_groups;
+  // TODO(hbos): Move this to |VideoMediaInfo::send_codecs|?
   std::string encoder_implementation_name;
   int firs_rcvd = 0;
   int plis_rcvd = 0;
@@ -583,6 +584,7 @@ struct VideoReceiverInfo : public MediaReceiverInfo {
   VideoReceiverInfo();
   ~VideoReceiverInfo();
   std::vector<SsrcGroup> ssrc_groups;
+  // TODO(hbos): Move this to |VideoMediaInfo::receive_codecs|?
   std::string decoder_implementation_name;
   int packets_concealed = 0;
   int firs_sent = 0;
