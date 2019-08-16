@@ -169,6 +169,10 @@ absl::optional<uint32_t> AudioTrackJni::SpeakerVolume() const {
   return volume;
 }
 
+int AudioTrackJni::GetPlayoutUnderrunCount() {
+  return Java_WebRtcAudioTrack_GetPlayoutUnderrunCount(env_, j_audio_track_);
+}
+
 // TODO(henrika): possibly add stereo support.
 void AudioTrackJni::AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) {
   RTC_LOG(INFO) << "AttachAudioBuffer";

@@ -2267,6 +2267,7 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     info->receive_codecs.insert(
         std::make_pair(codec_params.payload_type, std::move(codec_params)));
   }
+  info->device_underrun_count = engine_->adm()->GetPlayoutUnderrunCount();
 
   return true;
 }

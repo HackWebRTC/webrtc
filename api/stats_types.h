@@ -238,6 +238,7 @@ class StatsReport {
     kStatsValueNameTransportType,
     kStatsValueNameTypingNoiseState,
     kStatsValueNameWritable,
+    kStatsValueNameAudioDeviceUnderrunCounter,
   };
 
   class IdBase : public rtc::RefCountInterface {

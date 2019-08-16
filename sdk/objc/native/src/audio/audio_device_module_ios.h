@@ -125,6 +125,8 @@ class AudioDeviceModuleIOS : public AudioDeviceModule {
   bool BuiltInNSIsAvailable() const override;
   int32_t EnableBuiltInNS(bool enable) override;
 
+  int32_t GetPlayoutUnderrunCount() const override;
+
 #if defined(WEBRTC_IOS)
   int GetPlayoutAudioParameters(AudioParameters* params) const override;
   int GetRecordAudioParameters(AudioParameters* params) const override;

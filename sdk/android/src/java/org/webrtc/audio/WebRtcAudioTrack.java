@@ -342,6 +342,19 @@ class WebRtcAudioTrack {
     return audioManager.getStreamVolume(AudioManager.STREAM_VOICE_CALL);
   }
 
+  @CalledByNative
+  private int GetPlayoutUnderrunCount() {
+    if (Build.VERSION.SDK_INT >= 24) {
+      if (audioTrack != null) {
+        return audioTrack.getUnderrunCount();
+      } else {
+        return -1;
+      }
+    } else {
+      return -2;
+    }
+  }
+
   private void logMainParameters() {
     Logging.d(TAG,
         "AudioTrack: "

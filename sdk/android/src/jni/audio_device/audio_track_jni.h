@@ -65,6 +65,7 @@ class AudioTrackJni : public AudioOutput {
   absl::optional<uint32_t> SpeakerVolume() const override;
   absl::optional<uint32_t> MaxSpeakerVolume() const override;
   absl::optional<uint32_t> MinSpeakerVolume() const override;
+  int GetPlayoutUnderrunCount() override;
 
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 

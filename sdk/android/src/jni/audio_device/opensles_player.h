@@ -82,6 +82,8 @@ class OpenSLESPlayer : public AudioOutput {
 
   void AttachAudioBuffer(AudioDeviceBuffer* audioBuffer) override;
 
+  int GetPlayoutUnderrunCount() override { return -1; }
+
  private:
   // These callback methods are called when data is required for playout.
   // They are both called from an internal "OpenSL ES thread" which is not

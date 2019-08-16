@@ -146,6 +146,10 @@ class AudioDeviceModule : public rtc::RefCountInterface {
   virtual int32_t EnableBuiltInAGC(bool enable) = 0;
   virtual int32_t EnableBuiltInNS(bool enable) = 0;
 
+  // Play underrun count. Only supported on Android.
+  // TODO(alexnarest): Make it abstract after upstream projects support it.
+  virtual int32_t GetPlayoutUnderrunCount() const { return -1; }
+
 // Only supported on iOS.
 #if defined(WEBRTC_IOS)
   virtual int GetPlayoutAudioParameters(AudioParameters* params) const = 0;

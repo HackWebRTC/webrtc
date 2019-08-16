@@ -44,6 +44,11 @@ int32_t AudioDeviceGeneric::EnableBuiltInNS(bool enable) {
   return -1;
 }
 
+int32_t AudioDeviceGeneric::GetPlayoutUnderrunCount() const {
+  RTC_LOG_F(LS_ERROR) << "Not supported on this platform";
+  return -1;
+}
+
 #if defined(WEBRTC_IOS)
 int AudioDeviceGeneric::GetPlayoutAudioParameters(
     AudioParameters* params) const {

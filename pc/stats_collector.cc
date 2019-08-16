@@ -636,6 +636,14 @@ StatsReport* StatsCollector::PrepareReport(bool local,
   return report;
 }
 
+StatsReport* StatsCollector::PrepareADMReport() {
+  RTC_DCHECK(pc_->signaling_thread()->IsCurrent());
+  StatsReport::Id id(StatsReport::NewTypedId(
+      StatsReport::kStatsReportTypeSession, pc_->session_id()));
+  StatsReport* report = reports_.FindOrAddNew(id);
+  return report;
+}
+
 bool StatsCollector::IsValidTrack(const std::string& track_id) {
   return reports_.Find(StatsReport::NewTypedId(
              StatsReport::kStatsReportTypeTrack, track_id)) != nullptr;
@@ -956,6 +964,12 @@ class VoiceMediaChannelStatsGatherer final : public MediaChannelStatsGatherer {
   void ExtractStats(StatsCollector* collector) const override {
     ExtractSenderReceiverStats(collector, voice_media_info.receivers,
                                voice_media_info.senders);
+    if (voice_media_info.device_underrun_count == -2 ||
+        voice_media_info.device_underrun_count > 0) {
+      StatsReport* report = collector->PrepareADMReport();
+      report->AddInt(StatsReport::kStatsValueNameAudioDeviceUnderrunCounter,
+                     voice_media_info.device_underrun_count);
+    }
   }
 
   bool HasRemoteAudio() const override {

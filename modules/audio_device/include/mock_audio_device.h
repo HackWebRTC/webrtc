@@ -91,6 +91,7 @@ class MockAudioDeviceModule : public AudioDeviceModule {
   MOCK_METHOD1(EnableBuiltInAEC, int32_t(bool enable));
   MOCK_METHOD1(EnableBuiltInAGC, int32_t(bool enable));
   MOCK_METHOD1(EnableBuiltInNS, int32_t(bool enable));
+  MOCK_CONST_METHOD0(GetPlayoutUnderrunCount, int32_t());
 #if defined(WEBRTC_IOS)
   MOCK_CONST_METHOD1(GetPlayoutAudioParameters, int(AudioParameters* params));
   MOCK_CONST_METHOD1(GetRecordAudioParameters, int(AudioParameters* params));

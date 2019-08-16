@@ -687,6 +687,7 @@ struct VoiceMediaInfo {
   std::vector<VoiceReceiverInfo> receivers;
   RtpCodecParametersMap send_codecs;
   RtpCodecParametersMap receive_codecs;
+  int32_t device_underrun_count = 0;
 };
 
 struct VideoMediaInfo {

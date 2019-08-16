@@ -642,6 +642,14 @@ AudioDeviceModuleIOS::AudioDeviceModuleIOS()
     return ok;
   }
 
+  int32_t AudioDeviceModuleIOS::GetPlayoutUnderrunCount() const {
+    RTC_LOG(INFO) << __FUNCTION__;
+    CHECKinitialized_();
+    int32_t ok = audio_device_->GetPlayoutUnderrunCount();
+    RTC_LOG(INFO) << "output: " << ok;
+    return ok;
+  }
+
 #if defined(WEBRTC_IOS)
   int AudioDeviceModuleIOS::GetPlayoutAudioParameters(
       AudioParameters* params) const {

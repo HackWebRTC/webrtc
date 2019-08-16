@@ -910,6 +910,14 @@ int32_t AudioDeviceModuleImpl::EnableBuiltInNS(bool enable) {
   return ok;
 }
 
+int32_t AudioDeviceModuleImpl::GetPlayoutUnderrunCount() const {
+  RTC_LOG(INFO) << __FUNCTION__;
+  CHECKinitialized_();
+  int32_t underrunCount = audio_device_->GetPlayoutUnderrunCount();
+  RTC_LOG(INFO) << "output: " << underrunCount;
+  return underrunCount;
+}
+
 #if defined(WEBRTC_IOS)
 int AudioDeviceModuleImpl::GetPlayoutAudioParameters(
     AudioParameters* params) const {

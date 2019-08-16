@@ -584,6 +584,12 @@ class AndroidAudioDeviceModule : public AudioDeviceModule {
     return result;
   }
 
+  int32_t GetPlayoutUnderrunCount() const override {
+    if (!initialized_)
+      return -1;
+    return output_->GetPlayoutUnderrunCount();
+  }
+
   int32_t AttachAudioBuffer() {
     RTC_LOG(INFO) << __FUNCTION__;
     output_->AttachAudioBuffer(audio_device_buffer_.get());
