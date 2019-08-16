@@ -67,11 +67,9 @@ class FrameLengthController final : public Controller {
   void MakeDecision(AudioEncoderRuntimeConfig* config) override;
 
  private:
-  bool FrameLengthIncreasingDecision(
-      const AudioEncoderRuntimeConfig& config) const;
+  bool FrameLengthIncreasingDecision(const AudioEncoderRuntimeConfig& config);
 
-  bool FrameLengthDecreasingDecision(
-      const AudioEncoderRuntimeConfig& config) const;
+  bool FrameLengthDecreasingDecision(const AudioEncoderRuntimeConfig& config);
 
   const Config config_;
 
