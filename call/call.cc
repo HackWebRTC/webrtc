@@ -401,8 +401,8 @@ std::string Call::Stats::ToString(int64_t time_ms) const {
 
 Call* Call::Create(const Call::Config& config) {
   return Create(config, Clock::GetRealTimeClock(),
-                ProcessThread::Create("PacerThread"),
-                ProcessThread::Create("ModuleProcessThread"));
+                ProcessThread::Create("ModuleProcessThread"),
+                ProcessThread::Create("PacerThread"));
 }
 
 Call* Call::Create(const Call::Config& config,
