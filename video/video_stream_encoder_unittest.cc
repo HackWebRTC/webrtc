@@ -148,7 +148,10 @@ class VideoStreamEncoderUnderTest : public VideoStreamEncoder {
   void PostTaskAndWait(bool down, AdaptReason reason) {
     rtc::Event event;
     encoder_queue()->PostTask([this, &event, reason, down] {
-      down ? AdaptDown(reason) : AdaptUp(reason);
+      if (down)
+        AdaptDown(reason);
+      else
+        AdaptUp(reason);
       event.Set();
     });
     ASSERT_TRUE(event.Wait(5000));

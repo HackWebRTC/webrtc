@@ -37,7 +37,9 @@ class AdaptationObserverInterface {
   // Called to signal that we can handle larger or more frequent frames.
   virtual void AdaptUp(AdaptReason reason) = 0;
   // Called to signal that the source should reduce the resolution or framerate.
-  virtual void AdaptDown(AdaptReason reason) = 0;
+  // Returns false if a downgrade was requested but the request did not result
+  // in a new limiting resolution or fps.
+  virtual bool AdaptDown(AdaptReason reason) = 0;
 
  protected:
   virtual ~AdaptationObserverInterface() {}
@@ -101,7 +103,8 @@ class QualityScaler {
   const size_t min_frames_needed_;
   const double initial_scale_factor_;
   const absl::optional<double> scale_factor_;
-  bool last_adapted_ RTC_GUARDED_BY(&task_checker_);
+  bool adapt_called_ RTC_GUARDED_BY(&task_checker_);
+  bool adapt_failed_ RTC_GUARDED_BY(&task_checker_);
 };
 }  // namespace webrtc
 

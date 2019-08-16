@@ -103,7 +103,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // AdaptationObserverInterface implementation.
   // These methods are protected for easier testing.
   void AdaptUp(AdaptReason reason) override;
-  void AdaptDown(AdaptReason reason) override;
+  bool AdaptDown(AdaptReason reason) override;
 
  private:
   class VideoSourceProxy;

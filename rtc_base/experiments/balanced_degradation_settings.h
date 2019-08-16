@@ -20,6 +20,8 @@ namespace webrtc {
 
 class BalancedDegradationSettings {
  public:
+  static constexpr int kNoFpsDiff = -100;
+
   BalancedDegradationSettings();
   ~BalancedDegradationSettings();
 
@@ -45,6 +47,7 @@ class BalancedDegradationSettings {
     Config(int pixels,
            int fps,
            int kbps,
+           int fps_diff,
            CodecTypeSpecific vp8,
            CodecTypeSpecific vp9,
            CodecTypeSpecific h264,
@@ -52,14 +55,17 @@ class BalancedDegradationSettings {
 
     bool operator==(const Config& o) const {
       return pixels == o.pixels && fps == o.fps && kbps == o.kbps &&
-             vp8 == o.vp8 && vp9 == o.vp9 && h264 == o.h264 &&
-             generic == o.generic;
+             fps_diff == o.fps_diff && vp8 == o.vp8 && vp9 == o.vp9 &&
+             h264 == o.h264 && generic == o.generic;
     }
 
     int pixels = 0;  // Video frame size.
     // If the frame size is less than or equal to |pixels|:
     int fps = 0;   // Min framerate to be used.
     int kbps = 0;  // Min bitrate needed to adapt up to this resolution.
+    int fps_diff = kNoFpsDiff;  // Min fps reduction needed (input fps - |fps|)
+                                // w/o triggering a new subsequent downgrade
+                                // check.
     CodecTypeSpecific vp8;
     CodecTypeSpecific vp9;
     CodecTypeSpecific h264;
@@ -75,6 +81,9 @@ class BalancedDegradationSettings {
 
   // Gets the bitrate for the first resolution above |pixels|.
   absl::optional<int> NextHigherBitrateKbps(int pixels) const;
+
+  // Gets the min framerate diff from |configs_| based on |pixels|.
+  absl::optional<int> MinFpsDiff(int pixels) const;
 
   // Gets QpThresholds for the codec |type| based on |pixels|.
   absl::optional<VideoEncoder::QpThresholds> GetQpThresholds(

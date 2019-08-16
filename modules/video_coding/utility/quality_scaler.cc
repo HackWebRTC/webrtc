@@ -96,7 +96,8 @@ QualityScaler::QualityScaler(rtc::TaskQueue* task_queue,
                                 .value_or(kSamplePeriodScaleFactor)),
       scale_factor_(
           QualityScalerSettings::ParseFromFieldTrials().ScaleFactor()),
-      last_adapted_(false) {
+      adapt_called_(false),
+      adapt_failed_(false) {
   RTC_DCHECK_RUN_ON(&task_checker_);
   if (experiment_enabled_) {
     config_ = QualityScalingExperiment::GetConfig();
@@ -127,8 +128,12 @@ int64_t QualityScaler::GetSamplingPeriodMs() const {
     // Use half the interval while waiting for enough frames.
     return sampling_period_ms_ / 2;
   }
-  if (scale_factor_ && !last_adapted_) {
-    // Last check did not result in a AdaptDown/Up, possibly reduce interval.
+  if (adapt_failed_) {
+    // Check shortly again.
+    return sampling_period_ms_ / 8;
+  }
+  if (scale_factor_ && !adapt_called_) {
+    // Last CheckQp did not call AdaptDown/Up, possibly reduce interval.
     return sampling_period_ms_ * scale_factor_.value();
   }
   return sampling_period_ms_ * initial_scale_factor_;
@@ -165,7 +170,8 @@ void QualityScaler::CheckQp() {
   RTC_DCHECK_RUN_ON(&task_checker_);
   // Should be set through InitEncode -> Should be set by now.
   RTC_DCHECK_GE(thresholds_.low, 0);
-  last_adapted_ = false;
+  adapt_failed_ = false;
+  adapt_called_ = false;
 
   // If we have not observed at least this many frames we can't make a good
   // scaling decision.
@@ -215,18 +221,24 @@ void QualityScaler::ReportQpLow() {
   RTC_DCHECK_RUN_ON(&task_checker_);
   ClearSamples();
   observer_->AdaptUp(AdaptationObserverInterface::AdaptReason::kQuality);
-  last_adapted_ = true;
+  adapt_called_ = true;
 }
 
 void QualityScaler::ReportQpHigh() {
   RTC_DCHECK_RUN_ON(&task_checker_);
-  ClearSamples();
-  observer_->AdaptDown(AdaptationObserverInterface::AdaptReason::kQuality);
+
+  if (observer_->AdaptDown(
+          AdaptationObserverInterface::AdaptReason::kQuality)) {
+    ClearSamples();
+  } else {
+    adapt_failed_ = true;
+  }
+
   // If we've scaled down, wait longer before scaling up again.
   if (fast_rampup_) {
     fast_rampup_ = false;
   }
-  last_adapted_ = true;
+  adapt_called_ = true;
 }
 
 void QualityScaler::ClearSamples() {

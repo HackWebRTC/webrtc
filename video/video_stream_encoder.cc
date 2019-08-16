@@ -1781,7 +1781,7 @@ bool VideoStreamEncoder::DropDueToSize(uint32_t pixel_count) const {
   return false;
 }
 
-void VideoStreamEncoder::AdaptDown(AdaptReason reason) {
+bool VideoStreamEncoder::AdaptDown(AdaptReason reason) {
   RTC_DCHECK_RUN_ON(&encoder_queue_);
   AdaptationRequest adaptation_request = {
       last_frame_info_->pixel_count(),
@@ -1792,6 +1792,8 @@ void VideoStreamEncoder::AdaptDown(AdaptReason reason) {
       last_adaptation_request_ &&
       last_adaptation_request_->mode_ == AdaptationRequest::Mode::kAdaptDown;
 
+  bool did_adapt = true;
+
   switch (degradation_preference_) {
     case DegradationPreference::BALANCED:
       break;
@@ -1801,7 +1803,7 @@ void VideoStreamEncoder::AdaptDown(AdaptReason reason) {
               last_adaptation_request_->input_pixel_count_) {
         // Don't request lower resolution if the current resolution is not
         // lower than the last time we asked for the resolution to be lowered.
-        return;
+        return true;
       }
       break;
     case DegradationPreference::MAINTAIN_RESOLUTION:
@@ -1814,11 +1816,11 @@ void VideoStreamEncoder::AdaptDown(AdaptReason reason) {
         // we have to estimate, and can fluctuate naturally over time, don't
         // make the same kind of limitations as for resolution, but trust the
         // overuse detector to not trigger too often.
-        return;
+        return true;
       }
       break;
     case DegradationPreference::DISABLED:
-      return;
+      return true;
   }
 
   switch (degradation_preference_) {
@@ -1828,6 +1830,15 @@ void VideoStreamEncoder::AdaptDown(AdaptReason reason) {
                                           last_frame_info_->pixel_count());
       if (source_proxy_->RestrictFramerate(fps)) {
         GetAdaptCounter().IncrementFramerate(reason);
+        // Check if requested fps is higher (or close to) input fps.
+        absl::optional<int> min_diff =
+            balanced_settings_.MinFpsDiff(last_frame_info_->pixel_count());
+        if (min_diff && adaptation_request.framerate_fps_ > 0) {
+          int fps_diff = adaptation_request.framerate_fps_ - fps;
+          if (fps_diff < min_diff.value()) {
+            did_adapt = false;
+          }
+        }
         break;
       }
       // Scale down resolution.
@@ -1842,7 +1853,7 @@ void VideoStreamEncoder::AdaptDown(AdaptReason reason) {
               &min_pixels_reached)) {
         if (min_pixels_reached)
           encoder_stats_observer_->OnMinPixelLimitReached();
-        return;
+        return true;
       }
       GetAdaptCounter().IncrementResolution(reason);
       break;
@@ -1852,7 +1863,7 @@ void VideoStreamEncoder::AdaptDown(AdaptReason reason) {
       const int requested_framerate = source_proxy_->RequestFramerateLowerThan(
           adaptation_request.framerate_fps_);
       if (requested_framerate == -1)
-        return;
+        return true;
       RTC_DCHECK_NE(max_framerate_, -1);
       overuse_detector_->OnTargetFramerateUpdated(
           std::min(max_framerate_, requested_framerate));
@@ -1868,6 +1879,7 @@ void VideoStreamEncoder::AdaptDown(AdaptReason reason) {
   UpdateAdaptationStats(reason);
 
   RTC_LOG(LS_INFO) << GetConstAdaptCounter().ToString();
+  return did_adapt;
 }
 
 void VideoStreamEncoder::AdaptUp(AdaptReason reason) {

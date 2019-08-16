@@ -42,7 +42,7 @@ class MockCpuOveruseObserver : public AdaptationObserverInterface {
   virtual ~MockCpuOveruseObserver() {}
 
   MOCK_METHOD1(AdaptUp, void(AdaptReason));
-  MOCK_METHOD1(AdaptDown, void(AdaptReason));
+  MOCK_METHOD1(AdaptDown, bool(AdaptReason));
 };
 
 class CpuOveruseObserverImpl : public AdaptationObserverInterface {
@@ -50,7 +50,10 @@ class CpuOveruseObserverImpl : public AdaptationObserverInterface {
   CpuOveruseObserverImpl() : overuse_(0), normaluse_(0) {}
   virtual ~CpuOveruseObserverImpl() {}
 
-  void AdaptDown(AdaptReason) { ++overuse_; }
+  bool AdaptDown(AdaptReason) {
+    ++overuse_;
+    return true;
+  }
   void AdaptUp(AdaptReason) { ++normaluse_; }
 
   int overuse_;

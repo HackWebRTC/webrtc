@@ -24,9 +24,30 @@ constexpr int kMinFps = 1;
 constexpr int kMaxFps = 100;  // 100 means unlimited fps.
 
 std::vector<BalancedDegradationSettings::Config> DefaultConfigs() {
-  return {{320 * 240, 7, 0, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
-          {480 * 270, 10, 0, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}},
-          {640 * 480, 15, 0, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}, {0, 0, 0}}};
+  return {{320 * 240,
+           7,
+           0,
+           BalancedDegradationSettings::kNoFpsDiff,
+           {0, 0, 0},
+           {0, 0, 0},
+           {0, 0, 0},
+           {0, 0, 0}},
+          {480 * 270,
+           10,
+           0,
+           BalancedDegradationSettings::kNoFpsDiff,
+           {0, 0, 0},
+           {0, 0, 0},
+           {0, 0, 0},
+           {0, 0, 0}},
+          {640 * 480,
+           15,
+           0,
+           BalancedDegradationSettings::kNoFpsDiff,
+           {0, 0, 0},
+           {0, 0, 0},
+           {0, 0, 0},
+           {0, 0, 0}}};
 }
 
 bool IsValidConfig(
@@ -200,6 +221,7 @@ BalancedDegradationSettings::Config::Config() = default;
 BalancedDegradationSettings::Config::Config(int pixels,
                                             int fps,
                                             int kbps,
+                                            int fps_diff,
                                             CodecTypeSpecific vp8,
                                             CodecTypeSpecific vp9,
                                             CodecTypeSpecific h264,
@@ -207,6 +229,7 @@ BalancedDegradationSettings::Config::Config(int pixels,
     : pixels(pixels),
       fps(fps),
       kbps(kbps),
+      fps_diff(fps_diff),
       vp8(vp8),
       vp9(vp9),
       h264(h264),
@@ -217,6 +240,8 @@ BalancedDegradationSettings::BalancedDegradationSettings() {
       {FieldTrialStructMember("pixels", [](Config* c) { return &c->pixels; }),
        FieldTrialStructMember("fps", [](Config* c) { return &c->fps; }),
        FieldTrialStructMember("kbps", [](Config* c) { return &c->kbps; }),
+       FieldTrialStructMember("fps_diff",
+                              [](Config* c) { return &c->fps_diff; }),
        FieldTrialStructMember("vp8_qp_low",
                               [](Config* c) { return &c->vp8.qp_low; }),
        FieldTrialStructMember("vp8_qp_high",
@@ -286,6 +311,17 @@ absl::optional<int> BalancedDegradationSettings::NextHigherBitrateKbps(
     if (pixels <= configs_[i].pixels) {
       return (configs_[i + 1].kbps > 0)
                  ? absl::optional<int>(configs_[i + 1].kbps)
+                 : absl::nullopt;
+    }
+  }
+  return absl::nullopt;
+}
+
+absl::optional<int> BalancedDegradationSettings::MinFpsDiff(int pixels) const {
+  for (const auto& config : configs_) {
+    if (pixels <= config.pixels) {
+      return (config.fps_diff > kNoFpsDiff)
+                 ? absl::optional<int>(config.fps_diff)
                  : absl::nullopt;
     }
   }
