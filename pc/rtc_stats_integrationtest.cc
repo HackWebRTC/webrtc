@@ -446,7 +446,6 @@ class RTCStatsReportVerifier {
     verifier.TestMemberIsPositive<uint32_t>(codec.clock_rate);
     verifier.TestMemberIsUndefined(codec.channels);
     verifier.TestMemberIsUndefined(codec.sdp_fmtp_line);
-    verifier.TestMemberIsUndefined(codec.implementation);
     return verifier.ExpectAllMembersSuccessfullyTested();
   }
 
@@ -772,8 +771,10 @@ class RTCStatsReportVerifier {
     if (inbound_stream.media_type.is_defined() &&
         *inbound_stream.media_type == "video") {
       verifier.TestMemberIsNonNegative<uint64_t>(inbound_stream.qp_sum);
+      verifier.TestMemberIsDefined(inbound_stream.decoder_implementation);
     } else {
       verifier.TestMemberIsUndefined(inbound_stream.qp_sum);
+      verifier.TestMemberIsUndefined(inbound_stream.decoder_implementation);
     }
     verifier.TestMemberIsNonNegative<uint32_t>(inbound_stream.packets_received);
     if (inbound_stream.media_type.is_defined() &&
@@ -859,6 +860,7 @@ class RTCStatsReportVerifier {
       // The integration test is not set up to test screen share; don't require
       // this to be present.
       verifier.MarkMemberTested(outbound_stream.content_type, true);
+      verifier.TestMemberIsDefined(outbound_stream.encoder_implementation);
     } else {
       verifier.TestMemberIsUndefined(outbound_stream.frames_encoded);
       verifier.TestMemberIsUndefined(outbound_stream.key_frames_encoded);
@@ -869,6 +871,8 @@ class RTCStatsReportVerifier {
       verifier.TestMemberIsUndefined(outbound_stream.total_packet_send_delay);
       verifier.TestMemberIsUndefined(outbound_stream.quality_limitation_reason);
       verifier.TestMemberIsUndefined(outbound_stream.content_type);
+      // TODO(hbos): Implement for audio as well.
+      verifier.TestMemberIsUndefined(outbound_stream.encoder_implementation);
     }
     return verifier.ExpectAllMembersSuccessfullyTested();
   }

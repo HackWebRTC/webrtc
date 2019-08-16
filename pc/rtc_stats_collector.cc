@@ -325,6 +325,10 @@ void SetInboundRTPStreamStatsFromVideoReceiverInfo(
   // optional, support the "unspecified" value.
   if (video_receiver_info.content_type == VideoContentType::SCREENSHARE)
     inbound_video->content_type = RTCContentType::kScreenshare;
+  if (!video_receiver_info.decoder_implementation_name.empty()) {
+    inbound_video->decoder_implementation =
+        video_receiver_info.decoder_implementation_name;
+  }
 }
 
 // Provides the media independent counters (both audio and video).
@@ -398,6 +402,10 @@ void SetOutboundRTPStreamStatsFromVideoSenderInfo(
   // optional, support the "unspecified" value.
   if (video_sender_info.content_type == VideoContentType::SCREENSHARE)
     outbound_video->content_type = RTCContentType::kScreenshare;
+  if (!video_sender_info.encoder_implementation_name.empty()) {
+    outbound_video->encoder_implementation =
+        video_sender_info.encoder_implementation_name;
+  }
 }
 
 std::unique_ptr<RTCRemoteInboundRtpStreamStats>
