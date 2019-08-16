@@ -33,18 +33,6 @@ T DBFS(T x) {
   return 20 * std::log10(x);
 }
 
-void FloatToS16(const float* src, size_t size, int16_t* dest) {
-  for (size_t i = 0; i < size; ++i) {
-    RTC_DCHECK_GE(32767.f, src[i]);
-    RTC_DCHECK_LE(-32768.f, src[i]);
-    if (src[i] >= 1.f)
-      dest[i] = 32767;
-    if (src[i] <= -1.f)
-      dest[i] = -32768;
-    dest[i] = static_cast<int16_t>(src[i] * 32767.5f);
-  }
-}
-
 }  // namespace
 
 class PushSincResamplerTest : public ::testing::TestWithParam<
@@ -334,14 +322,14 @@ INSTANTIATE_TEST_SUITE_P(
         ::testing::make_tuple(32000, 16000, -18.48, -28.59),
         ::testing::make_tuple(44100, 16000, -19.30, -19.67),
         ::testing::make_tuple(48000, 16000, -19.81, -18.11),
-        ::testing::make_tuple(96000, 16000, -20.95, -10.9596),
+        ::testing::make_tuple(96000, 16000, -20.95, -10.96),
 
         // To 32 kHz
         ::testing::make_tuple(8000, 32000, kResamplingRMSError, -70.30),
         ::testing::make_tuple(16000, 32000, kResamplingRMSError, -75.51),
         ::testing::make_tuple(32000, 32000, kResamplingRMSError, -75.51),
-        ::testing::make_tuple(44100, 32000, -16.44, -51.0349),
-        ::testing::make_tuple(48000, 32000, -16.90, -43.9967),
+        ::testing::make_tuple(44100, 32000, -16.44, -51.10),
+        ::testing::make_tuple(48000, 32000, -16.90, -44.03),
         ::testing::make_tuple(96000, 32000, -19.61, -18.04),
         ::testing::make_tuple(192000, 32000, -21.02, -10.94)));
 

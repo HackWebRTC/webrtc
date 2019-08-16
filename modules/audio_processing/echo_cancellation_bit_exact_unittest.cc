@@ -324,8 +324,8 @@ TEST(EchoCancellationBitExactnessTest,
      DISABLED_Stereo32kHz_HighLevel_NoDrift_StreamDelay0) {
 #endif
 #if defined(WEBRTC_MAC)
-  const float kOutputReference[] = {-0.000458f, 0.000214f, 0.000122f,
-                                    -0.000458f, 0.000214f, 0.000122f};
+  const float kOutputReference[] = {-0.000458f, 0.000244f, 0.000153f,
+                                    -0.000458f, 0.000244f, 0.000153f};
 #else
   const float kOutputReference[] = {-0.000427f, 0.000183f, 0.000183f,
                                     -0.000427f, 0.000183f, 0.000183f};
