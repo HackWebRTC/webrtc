@@ -12,11 +12,6 @@
 
 namespace webrtc {
 
-void FloatToS16(const float* src, size_t size, int16_t* dest) {
-  for (size_t i = 0; i < size; ++i)
-    dest[i] = FloatToS16(src[i]);
-}
-
 void S16ToFloat(const int16_t* src, size_t size, float* dest) {
   for (size_t i = 0; i < size; ++i)
     dest[i] = S16ToFloat(src[i]);
