@@ -416,8 +416,6 @@ TEST(AudioSendStreamTest, GetStats) {
   EXPECT_EQ(kReportBlock.cumulative_num_packets_lost, stats.packets_lost);
   EXPECT_EQ(Q8ToFloat(kReportBlock.fraction_lost), stats.fraction_lost);
   EXPECT_EQ(kIsacFormat.name, stats.codec_name);
-  EXPECT_EQ(static_cast<int32_t>(kReportBlock.extended_highest_sequence_number),
-            stats.ext_seqnum);
   EXPECT_EQ(static_cast<int32_t>(kReportBlock.interarrival_jitter /
                                  (kIsacFormat.clockrate_hz / 1000)),
             stats.jitter_ms);

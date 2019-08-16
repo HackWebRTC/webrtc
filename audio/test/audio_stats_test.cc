@@ -100,7 +100,6 @@ class NoLossTest : public AudioEndToEndTest {
     // Match these stats between caller and receiver.
     EXPECT_EQ(send_stats.local_ssrc, recv_stats.remote_ssrc);
     EXPECT_EQ(*send_stats.codec_payload_type, *recv_stats.codec_payload_type);
-    EXPECT_TRUE(rtc::SafeEq(send_stats.ext_seqnum, recv_stats.ext_seqnum));
   }
 };
 }  // namespace

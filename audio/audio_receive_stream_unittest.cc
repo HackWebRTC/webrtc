@@ -63,7 +63,7 @@ const unsigned int kSpeechOutputLevel = 99;
 const double kTotalOutputEnergy = 0.25;
 const double kTotalOutputDuration = 0.5;
 
-const CallReceiveStatistics kCallStats = {678, 901, 234, -12, 567, 890, 123};
+const CallReceiveStatistics kCallStats = {678, 234, -12, 567, 890, 123};
 const std::pair<int, SdpAudioFormat> kReceiveCodec = {
     123,
     {"codec_name_recv", 96000, 0}};
@@ -271,7 +271,6 @@ TEST(AudioReceiveStreamTest, GetStats) {
             stats.packets_rcvd);
   EXPECT_EQ(kCallStats.cumulativeLost, stats.packets_lost);
   EXPECT_EQ(kReceiveCodec.second.name, stats.codec_name);
-  EXPECT_EQ(kCallStats.extendedMax, stats.ext_seqnum);
   EXPECT_EQ(
       kCallStats.jitterSamples / (kReceiveCodec.second.clockrate_hz / 1000),
       stats.jitter_ms);

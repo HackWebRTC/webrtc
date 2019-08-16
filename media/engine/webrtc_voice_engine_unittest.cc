@@ -572,7 +572,6 @@ class WebRtcVoiceEngineTestFake : public ::testing::Test {
     stats.fraction_lost = 34.56f;
     stats.codec_name = "codec_name_send";
     stats.codec_payload_type = 42;
-    stats.ext_seqnum = 789;
     stats.jitter_ms = 12;
     stats.rtt_ms = 345;
     stats.audio_level = 678;
@@ -607,7 +606,6 @@ class WebRtcVoiceEngineTestFake : public ::testing::Test {
     EXPECT_EQ(info.fraction_lost, stats.fraction_lost);
     EXPECT_EQ(info.codec_name, stats.codec_name);
     EXPECT_EQ(info.codec_payload_type, stats.codec_payload_type);
-    EXPECT_EQ(info.ext_seqnum, stats.ext_seqnum);
     EXPECT_EQ(info.jitter_ms, stats.jitter_ms);
     EXPECT_EQ(info.rtt_ms, stats.rtt_ms);
     EXPECT_EQ(info.audio_level, stats.audio_level);
@@ -649,7 +647,6 @@ class WebRtcVoiceEngineTestFake : public ::testing::Test {
     stats.packets_lost = 101;
     stats.codec_name = "codec_name_recv";
     stats.codec_payload_type = 42;
-    stats.ext_seqnum = 678;
     stats.jitter_ms = 901;
     stats.jitter_buffer_ms = 234;
     stats.jitter_buffer_preferred_ms = 567;
@@ -692,8 +689,6 @@ class WebRtcVoiceEngineTestFake : public ::testing::Test {
               stats.packets_lost);
     EXPECT_EQ(info.codec_name, stats.codec_name);
     EXPECT_EQ(info.codec_payload_type, stats.codec_payload_type);
-    EXPECT_EQ(rtc::checked_cast<unsigned int>(info.ext_seqnum),
-              stats.ext_seqnum);
     EXPECT_EQ(rtc::checked_cast<unsigned int>(info.jitter_ms), stats.jitter_ms);
     EXPECT_EQ(rtc::checked_cast<unsigned int>(info.jitter_buffer_ms),
               stats.jitter_buffer_ms);

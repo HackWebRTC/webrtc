@@ -52,7 +52,6 @@ class RtpRtcp;
 
 struct CallReceiveStatistics {
   unsigned int cumulativeLost;
-  unsigned int extendedMax;
   unsigned int jitterSamples;
   int64_t rttMs;
   size_t bytesReceived;

@@ -2169,7 +2169,6 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     sinfo.fraction_lost = stats.fraction_lost;
     sinfo.codec_name = stats.codec_name;
     sinfo.codec_payload_type = stats.codec_payload_type;
-    sinfo.ext_seqnum = stats.ext_seqnum;
     sinfo.jitter_ms = stats.jitter_ms;
     sinfo.rtt_ms = stats.rtt_ms;
     sinfo.audio_level = stats.audio_level;
@@ -2212,7 +2211,6 @@ bool WebRtcVoiceMediaChannel::GetStats(VoiceMediaInfo* info) {
     rinfo.packets_lost = stats.packets_lost;
     rinfo.codec_name = stats.codec_name;
     rinfo.codec_payload_type = stats.codec_payload_type;
-    rinfo.ext_seqnum = stats.ext_seqnum;
     rinfo.jitter_ms = stats.jitter_ms;
     rinfo.jitter_buffer_ms = stats.jitter_buffer_ms;
     rinfo.jitter_buffer_preferred_ms = stats.jitter_buffer_preferred_ms;

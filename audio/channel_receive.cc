@@ -733,7 +733,6 @@ CallReceiveStatistics ChannelReceive::GetRTCPStatistics() const {
   }
 
   stats.cumulativeLost = statistics.packets_lost;
-  stats.extendedMax = statistics.extended_highest_sequence_number;
   stats.jitterSamples = statistics.jitter;
 
   // --- RTT

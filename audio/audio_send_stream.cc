@@ -444,7 +444,6 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
       if (block.source_SSRC == stats.local_ssrc) {
         stats.packets_lost = block.cumulative_num_packets_lost;
         stats.fraction_lost = Q8ToFloat(block.fraction_lost);
-        stats.ext_seqnum = block.extended_highest_sequence_number;
         // Convert timestamps to milliseconds.
         if (spec.format.clockrate_hz / 1000 > 0) {
           stats.jitter_ms =

@@ -53,7 +53,6 @@ class AudioSendStream {
     float fraction_lost = -1.0f;
     std::string codec_name;
     absl::optional<int> codec_payload_type;
-    int32_t ext_seqnum = -1;
     int32_t jitter_ms = -1;
     int64_t rtt_ms = -1;
     int16_t audio_level = 0;

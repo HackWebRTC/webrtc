@@ -535,7 +535,6 @@ void InitVoiceSenderInfo(cricket::VoiceSenderInfo* voice_sender_info,
   voice_sender_info->fraction_lost = 103;
   voice_sender_info->jitter_ms = 104;
   voice_sender_info->packets_lost = 105;
-  voice_sender_info->ext_seqnum = 106;
   voice_sender_info->audio_level = 107;
   voice_sender_info->apm_statistics.echo_return_loss = 108;
   voice_sender_info->apm_statistics.echo_return_loss_enhancement = 109;
@@ -568,7 +567,6 @@ void InitVoiceReceiverInfo(cricket::VoiceReceiverInfo* voice_receiver_info) {
   voice_receiver_info->bytes_rcvd = 110;
   voice_receiver_info->packets_rcvd = 111;
   voice_receiver_info->packets_lost = 114;
-  voice_receiver_info->ext_seqnum = 115;
   voice_receiver_info->jitter_ms = 116;
   voice_receiver_info->jitter_buffer_ms = 117;
   voice_receiver_info->jitter_buffer_preferred_ms = 118;

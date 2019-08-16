@@ -43,7 +43,6 @@ class AudioReceiveStream {
     uint32_t packets_lost = 0;
     std::string codec_name;
     absl::optional<int> codec_payload_type;
-    uint32_t ext_seqnum = 0;
     uint32_t jitter_ms = 0;
     uint32_t jitter_buffer_ms = 0;
     uint32_t jitter_buffer_preferred_ms = 0;
