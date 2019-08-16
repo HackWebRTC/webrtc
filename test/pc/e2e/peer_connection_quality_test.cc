@@ -330,6 +330,8 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
                                       return kAliveMessageLogInterval;
                                     });
 
+  RTC_LOG(INFO) << "Configuration is done. Now Alice is calling to Bob...";
+
   // Setup call.
   signaling_thread->Invoke<void>(
       RTC_FROM_HERE,
@@ -366,6 +368,8 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
     done.Wait(run_params.run_duration.ms());
   }
 
+  RTC_LOG(INFO) << "Test is done, initiating disconnect sequence.";
+
   task_queue_->SendTask([this]() {
     RTC_DCHECK_RUN_ON(task_queue_.get());
     stats_polling_task_.Stop();
@@ -390,6 +394,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
       rtc::Bind(&PeerConnectionE2EQualityTest::TearDownCallOnSignalingThread,
                 this));
   Timestamp end_time = Now();
+  RTC_LOG(INFO) << "All peers are disconnected.";
   {
     rtc::CritScope crit(&lock_);
     real_test_duration_ = end_time - start_time_;
@@ -856,6 +861,7 @@ void PeerConnectionE2EQualityTest::SetupCall(const RunParams& run_params) {
   // This means that ICE and DTLS are connected.
   ASSERT_TRUE_WAIT(bob_->IsIceConnected(), kDefaultTimeoutMs);
   ASSERT_TRUE_WAIT(alice_->IsIceConnected(), kDefaultTimeoutMs);
+  RTC_LOG(INFO) << "Call is started (all peers are connected).";
 }
 
 void PeerConnectionE2EQualityTest::ExchangeOfferAnswer(
