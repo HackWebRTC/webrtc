@@ -540,9 +540,10 @@ void VideoReceiveStream::OnFrame(const VideoFrame& video_frame) {
     // TODO(tommi): OnSyncOffsetUpdated grabs a lock.
     stats_proxy_.OnSyncOffsetUpdated(sync_offset_ms, estimated_freq_khz);
   }
+  source_tracker_.OnFrameDelivered(video_frame.packet_infos());
+
   config_.renderer->OnFrame(video_frame);
 
-  source_tracker_.OnFrameDelivered(video_frame.packet_infos());
   // TODO(tommi): OnRenderFrame grabs a lock too.
   stats_proxy_.OnRenderedFrame(video_frame);
 }
