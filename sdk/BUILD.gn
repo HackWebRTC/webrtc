@@ -1127,8 +1127,7 @@ if (is_ios || is_mac) {
             "objc/unittests/main.mm",
           ]
 
-          _bundle_id_suffix = ios_generic_test_bundle_id_suffix
-          extra_substitutions = [ "GTEST_BUNDLE_ID_SUFFIX=$_bundle_id_suffix" ]
+          extra_substitutions = [ "GTEST_BUNDLE_ID_SUFFIX=generic-unit-test" ]
           deps = [
             ":peerconnectionfactory_base_objc",
             ":sdk_unittests_bundle_data",
@@ -1147,8 +1146,7 @@ if (is_ios || is_mac) {
             "objc/unittests/main.mm",
           ]
 
-          _bundle_id_suffix = ios_generic_test_bundle_id_suffix
-          extra_substitutions = [ "GTEST_BUNDLE_ID_SUFFIX=$_bundle_id_suffix" ]
+          extra_substitutions = [ "GTEST_BUNDLE_ID_SUFFIX=generic-unit-test" ]
           deps = [
             ":framework_objc+link",
             ":ios_framework_bundle",
