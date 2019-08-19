@@ -46,18 +46,6 @@ std::unique_ptr<RtpRtcp> RtpRtcp::Create(const Configuration& configuration) {
   return absl::make_unique<ModuleRtpRtcpImpl>(configuration);
 }
 
-RtpRtcp* RtpRtcp::CreateRtpRtcp(const RtpRtcp::Configuration& configuration) {
-  if (configuration.clock) {
-    return new ModuleRtpRtcpImpl(configuration);
-  } else {
-    // No clock implementation provided, use default clock.
-    RtpRtcp::Configuration configuration_copy;
-    memcpy(&configuration_copy, &configuration, sizeof(RtpRtcp::Configuration));
-    configuration_copy.clock = Clock::GetRealTimeClock();
-    return new ModuleRtpRtcpImpl(configuration_copy);
-  }
-}
-
 ModuleRtpRtcpImpl::ModuleRtpRtcpImpl(const Configuration& configuration)
     : rtcp_sender_(configuration),
       rtcp_receiver_(configuration, this),

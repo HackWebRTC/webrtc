@@ -133,9 +133,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
 
   // Creates an RTP/RTCP module object using provided |configuration|.
   static std::unique_ptr<RtpRtcp> Create(const Configuration& configuration);
-  // Prefer factory function just above.
-  RTC_DEPRECATED
-  static RtpRtcp* CreateRtpRtcp(const RtpRtcp::Configuration& configuration);
 
   // **************************************************************************
   // Receiver functions
