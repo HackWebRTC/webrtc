@@ -238,10 +238,6 @@ class Connection : public CandidatePairInterface,
   void HandlePiggybackCheckAcknowledgementIfAny(StunMessage* msg);
   int64_t last_data_received() const { return last_data_received_; }
 
-  // Returns the equivalent candidate pair and sanitizes the local and the
-  // remote candidates if necessary.
-  CandidatePair ToCandidatePairAndSanitizeIfNecessary() const;
-
   // Debugging description of this connection
   std::string ToDebugId() const;
   std::string ToString() const;
@@ -345,8 +341,6 @@ class Connection : public CandidatePairInterface,
   // If the local candidate changed, fires SignalStateChange.
   void MaybeUpdateLocalCandidate(ConnectionRequest* request,
                                  StunMessage* response);
-
-  void CopyCandidatesToStatsAndSanitizeIfNecessary();
 
   void LogCandidatePairConfig(webrtc::IceCandidatePairConfigType type);
   void LogCandidatePairEvent(webrtc::IceCandidatePairEventType type,

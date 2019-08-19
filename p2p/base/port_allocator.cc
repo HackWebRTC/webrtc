@@ -83,27 +83,6 @@ bool PortAllocatorSession::IsStopped() const {
   return false;
 }
 
-void PortAllocatorSession::GetCandidateStatsFromReadyPorts(
-    CandidateStatsList* candidate_stats_list) const {
-  auto ports = ReadyPorts();
-  for (auto* port : ports) {
-    auto candidates = port->Candidates();
-    for (const auto& candidate : candidates) {
-      CandidateStats candidate_stats(candidate);
-      port->GetStunStats(&candidate_stats.stun_stats);
-      bool mdns_obfuscation_enabled =
-          port->Network()->GetMdnsResponder() != nullptr;
-      if (mdns_obfuscation_enabled) {
-        bool use_hostname_address = candidate.type() == LOCAL_PORT_TYPE;
-        bool filter_related_address = candidate.type() == STUN_PORT_TYPE;
-        candidate_stats.candidate = candidate_stats.candidate.ToSanitizedCopy(
-            use_hostname_address, filter_related_address);
-      }
-      candidate_stats_list->push_back(std::move(candidate_stats));
-    }
-  }
-}
-
 uint32_t PortAllocatorSession::generation() {
   return generation_;
 }
@@ -316,6 +295,27 @@ std::vector<IceParameters> PortAllocator::GetPooledIceCredentials() {
         IceParameters(session->ice_ufrag(), session->ice_pwd(), false));
   }
   return list;
+}
+
+Candidate PortAllocator::SanitizeCandidate(const Candidate& c) const {
+  CheckRunOnValidThreadAndInitialized();
+  // For a local host candidate, we need to conceal its IP address candidate if
+  // the mDNS obfuscation is enabled.
+  bool use_hostname_address =
+      c.type() == LOCAL_PORT_TYPE && MdnsObfuscationEnabled();
+  // If adapter enumeration is disabled or host candidates are disabled,
+  // clear the raddr of STUN candidates to avoid local address leakage.
+  bool filter_stun_related_address =
+      ((flags() & PORTALLOCATOR_DISABLE_ADAPTER_ENUMERATION) &&
+       (flags() & PORTALLOCATOR_DISABLE_DEFAULT_LOCAL_CANDIDATE)) ||
+      !(candidate_filter_ & CF_HOST) || MdnsObfuscationEnabled();
+  // If the candidate filter doesn't allow reflexive addresses, empty TURN raddr
+  // to avoid reflexive address leakage.
+  bool filter_turn_related_address = !(candidate_filter_ & CF_REFLEXIVE);
+  bool filter_related_address =
+      ((c.type() == STUN_PORT_TYPE && filter_stun_related_address) ||
+       (c.type() == RELAY_PORT_TYPE && filter_turn_related_address));
+  return c.ToSanitizedCopy(use_hostname_address, filter_related_address);
 }
 
 }  // namespace cricket

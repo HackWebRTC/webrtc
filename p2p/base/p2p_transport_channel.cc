@@ -387,7 +387,11 @@ P2PTransportChannel::GetSelectedCandidatePair() const {
     return absl::nullopt;
   }
 
-  return selected_connection_->ToCandidatePairAndSanitizeIfNecessary();
+  CandidatePair pair;
+  pair.local = SanitizeLocalCandidate(selected_connection_->local_candidate());
+  pair.remote =
+      SanitizeRemoteCandidate(selected_connection_->remote_candidate());
+  return pair;
 }
 
 // A channel is considered ICE completed once there is at most one active
@@ -1502,9 +1506,11 @@ bool P2PTransportChannel::GetStats(ConnectionInfos* candidate_pair_stats_list,
 
   // TODO(qingsi): Remove naming inconsistency for candidate pair/connection.
   for (Connection* connection : connections_) {
-    ConnectionInfo candidate_pair_stats = connection->stats();
-    candidate_pair_stats.best_connection = (selected_connection_ == connection);
-    candidate_pair_stats_list->push_back(std::move(candidate_pair_stats));
+    ConnectionInfo stats = connection->stats();
+    stats.local_candidate = SanitizeLocalCandidate(stats.local_candidate);
+    stats.remote_candidate = SanitizeRemoteCandidate(stats.remote_candidate);
+    stats.best_connection = (selected_connection_ == connection);
+    candidate_pair_stats_list->push_back(std::move(stats));
     connection->set_reported(true);
   }
 
@@ -2643,6 +2649,27 @@ void P2PTransportChannel::SetReceiving(bool receiving) {
   }
   receiving_ = receiving;
   SignalReceivingState(this);
+}
+
+Candidate P2PTransportChannel::SanitizeLocalCandidate(
+    const Candidate& c) const {
+  RTC_DCHECK_RUN_ON(network_thread_);
+  // Delegates to the port allocator.
+  return allocator_->SanitizeCandidate(c);
+}
+
+Candidate P2PTransportChannel::SanitizeRemoteCandidate(
+    const Candidate& c) const {
+  RTC_DCHECK_RUN_ON(network_thread_);
+  // If the remote endpoint signaled us a hostname host candidate, we assume it
+  // is supposed to be sanitized.
+  bool use_hostname_address =
+      c.type() == LOCAL_PORT_TYPE && !c.address().hostname().empty();
+  // Remove the address for prflx remote candidates. See
+  // https://w3c.github.io/webrtc-stats/#dom-rtcicecandidatestats.
+  use_hostname_address |= c.type() == PRFLX_PORT_TYPE;
+  return c.ToSanitizedCopy(use_hostname_address,
+                           false /* filter_related_address */);
 }
 
 void P2PTransportChannel::LogCandidatePairConfig(

@@ -244,7 +244,7 @@ class RTC_EXPORT PortAllocatorSession : public sigslot::has_slots<> {
   // Get candidate-level stats from all candidates on the ready ports and return
   // the stats to the given list.
   virtual void GetCandidateStatsFromReadyPorts(
-      CandidateStatsList* candidate_stats_list) const;
+      CandidateStatsList* candidate_stats_list) const {}
   // Set the interval at which STUN candidates will resend STUN binding requests
   // on the underlying ports to keep NAT bindings open.
   // The default value of the interval in implementation is restored if a null
@@ -430,6 +430,13 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
   // Discard any remaining pooled sessions.
   void DiscardCandidatePool();
 
+  // Clears the address and the related address fields of a local candidate to
+  // avoid IP leakage. This is applicable in several scenarios:
+  // 1. Sanitization is configured via the candidate filter.
+  // 2. Sanitization is configured via the port allocator flags.
+  // 3. mDNS concealment of private IPs is enabled.
+  Candidate SanitizeCandidate(const Candidate& c) const;
+
   uint32_t flags() const {
     CheckRunOnValidThreadIfInitialized();
     return flags_;
@@ -593,6 +600,9 @@ class RTC_EXPORT PortAllocator : public sigslot::has_slots<> {
   const std::vector<std::unique_ptr<PortAllocatorSession>>& pooled_sessions() {
     return pooled_sessions_;
   }
+
+  // Returns true if there is an mDNS responder attached to the network manager.
+  virtual bool MdnsObfuscationEnabled() const { return false; }
 
   // The following thread checks are only done in DCHECK for the consistency
   // with the exsiting thread checks.

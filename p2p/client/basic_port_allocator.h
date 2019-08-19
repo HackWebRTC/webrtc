@@ -88,6 +88,8 @@ class RTC_EXPORT BasicPortAllocator : public PortAllocator {
   // This function makes sure that relay_port_factory_ is set properly.
   void InitRelayPortFactory(RelayPortFactoryInterface* relay_port_factory);
 
+  bool MdnsObfuscationEnabled() const override;
+
   rtc::NetworkManager* network_manager_;
   rtc::PacketSocketFactory* socket_factory_;
   bool allow_tcp_listen_;
@@ -147,6 +149,8 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession,
   bool CandidatesAllocationDone() const override;
   void RegatherOnFailedNetworks() override;
   void RegatherOnAllNetworks() override;
+  void GetCandidateStatsFromReadyPorts(
+      CandidateStatsList* candidate_stats_list) const override;
   void SetStunKeepaliveIntervalForReadyPorts(
       const absl::optional<int>& stun_keepalive_interval) override;
   void PruneAllPorts() override;
@@ -247,14 +251,6 @@ class RTC_EXPORT BasicPortAllocatorSession : public PortAllocatorSession,
 
   bool CheckCandidateFilter(const Candidate& c) const;
   bool CandidatePairable(const Candidate& c, const Port* port) const;
-
-  // Returns true if there is an mDNS responder attached to the network manager
-  bool MdnsObfuscationEnabled() const;
-
-  // Clears 1) the address if the candidate is supposedly a hostname candidate;
-  // 2) the related address according to the flags and candidate filter in order
-  // to avoid leaking any information.
-  Candidate SanitizeCandidate(const Candidate& c) const;
 
   std::vector<PortData*> GetUnprunedPorts(
       const std::vector<rtc::Network*>& networks);
