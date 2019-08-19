@@ -118,7 +118,7 @@ void UpdatesTargetRateBasedOnLinkCapacity(std::string test_name = "") {
   truth->PrintRow();
   s.RunFor(TimeDelta::seconds(50));
   truth->PrintRow();
-  EXPECT_NEAR(client->target_rate().kbps(), 90, 20);
+  EXPECT_NEAR(client->target_rate().kbps(), 90, 25);
 }
 }  // namespace
 
