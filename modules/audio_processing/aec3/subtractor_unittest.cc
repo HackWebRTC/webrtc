@@ -43,7 +43,7 @@ float RunSubtractorTest(int num_blocks_to_process,
   SubtractorOutput output;
   config.delay.default_delay = 1;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, 3));
+      RenderDelayBuffer::Create(config, 48000));
   RenderSignalAnalyzer render_signal_analyzer(config);
   Random random_generator(42U);
   Aec3Fft fft;
@@ -126,7 +126,7 @@ TEST(Subtractor, DISABLED_NullOutput) {
   EchoCanceller3Config config;
   Subtractor subtractor(config, &data_dumper, DetectOptimization());
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, 3));
+      RenderDelayBuffer::Create(config, 48000));
   RenderSignalAnalyzer render_signal_analyzer(config);
   std::vector<float> y(kBlockSize, 0.f);
 
@@ -142,7 +142,7 @@ TEST(Subtractor, WrongCaptureSize) {
   EchoCanceller3Config config;
   Subtractor subtractor(config, &data_dumper, DetectOptimization());
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, 3));
+      RenderDelayBuffer::Create(config, 48000));
   RenderSignalAnalyzer render_signal_analyzer(config);
   std::vector<float> y(kBlockSize - 1, 0.f);
   SubtractorOutput output;

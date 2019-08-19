@@ -56,7 +56,7 @@ TEST(RenderDelayController, NoRenderSignal) {
       for (auto rate : {8000, 16000, 32000, 48000}) {
         SCOPED_TRACE(ProduceDebugText(rate));
         std::unique_ptr<RenderDelayBuffer> delay_buffer(
-            RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
+            RenderDelayBuffer::Create(config, rate));
         std::unique_ptr<RenderDelayController> delay_controller(
             RenderDelayController::Create(config, rate));
         for (size_t k = 0; k < 100; ++k) {
@@ -84,7 +84,7 @@ TEST(RenderDelayController, BasicApiCalls) {
         std::vector<std::vector<float>> render_block(
             NumBandsForRate(rate), std::vector<float>(kBlockSize, 0.f));
         std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-            RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
+            RenderDelayBuffer::Create(config, rate));
         std::unique_ptr<RenderDelayController> delay_controller(
             RenderDelayController::Create(EchoCanceller3Config(), rate));
         for (size_t k = 0; k < 10; ++k) {
@@ -122,7 +122,7 @@ TEST(RenderDelayController, Alignment) {
           absl::optional<DelayEstimate> delay_blocks;
           SCOPED_TRACE(ProduceDebugText(rate, delay_samples));
           std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-              RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
+              RenderDelayBuffer::Create(config, rate));
           std::unique_ptr<RenderDelayController> delay_controller(
               RenderDelayController::Create(config, rate));
           DelayBuffer<float> signal_delay_buffer(delay_samples);
@@ -169,7 +169,7 @@ TEST(RenderDelayController, NonCausalAlignment) {
           absl::optional<DelayEstimate> delay_blocks;
           SCOPED_TRACE(ProduceDebugText(rate, -delay_samples));
           std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-              RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
+              RenderDelayBuffer::Create(config, rate));
           std::unique_ptr<RenderDelayController> delay_controller(
               RenderDelayController::Create(EchoCanceller3Config(), rate));
           DelayBuffer<float> signal_delay_buffer(-delay_samples);
@@ -209,7 +209,7 @@ TEST(RenderDelayController, AlignmentWithJitter) {
           absl::optional<DelayEstimate> delay_blocks;
           SCOPED_TRACE(ProduceDebugText(rate, delay_samples));
           std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-              RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
+              RenderDelayBuffer::Create(config, rate));
           std::unique_ptr<RenderDelayController> delay_controller(
               RenderDelayController::Create(config, rate));
           DelayBuffer<float> signal_delay_buffer(delay_samples);
@@ -262,7 +262,7 @@ TEST(RenderDelayController, InitialHeadroom) {
       for (auto rate : {8000, 16000, 32000, 48000}) {
         SCOPED_TRACE(ProduceDebugText(rate));
         std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-            RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
+            RenderDelayBuffer::Create(config, rate));
 
         std::unique_ptr<RenderDelayController> delay_controller(
             RenderDelayController::Create(config, rate));
@@ -280,7 +280,7 @@ TEST(RenderDelayController, WrongCaptureSize) {
   for (auto rate : {8000, 16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-        RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
+        RenderDelayBuffer::Create(config, rate));
     EXPECT_DEATH(
         std::unique_ptr<RenderDelayController>(
             RenderDelayController::Create(EchoCanceller3Config(), rate))
@@ -298,7 +298,7 @@ TEST(RenderDelayController, DISABLED_WrongSampleRate) {
     SCOPED_TRACE(ProduceDebugText(rate));
     EchoCanceller3Config config;
     std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-        RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
+        RenderDelayBuffer::Create(config, rate));
     EXPECT_DEATH(
         std::unique_ptr<RenderDelayController>(
             RenderDelayController::Create(EchoCanceller3Config(), rate)),

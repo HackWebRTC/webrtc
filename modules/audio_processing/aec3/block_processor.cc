@@ -232,7 +232,7 @@ void BlockProcessorImpl::SetAudioBufferDelay(size_t delay_ms) {
 BlockProcessor* BlockProcessor::Create(const EchoCanceller3Config& config,
                                        int sample_rate_hz) {
   std::unique_ptr<RenderDelayBuffer> render_buffer(
-      RenderDelayBuffer::Create(config, NumBandsForRate(sample_rate_hz)));
+      RenderDelayBuffer::Create(config, sample_rate_hz));
   std::unique_ptr<RenderDelayController> delay_controller;
   if (!config.delay.use_external_delay_estimator) {
     delay_controller.reset(

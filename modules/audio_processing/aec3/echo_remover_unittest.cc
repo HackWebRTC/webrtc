@@ -48,8 +48,8 @@ TEST(EchoRemover, BasicApiCalls) {
     SCOPED_TRACE(ProduceDebugText(rate));
     std::unique_ptr<EchoRemover> remover(
         EchoRemover::Create(EchoCanceller3Config(), rate));
-    std::unique_ptr<RenderDelayBuffer> render_buffer(RenderDelayBuffer::Create(
-        EchoCanceller3Config(), NumBandsForRate(rate)));
+    std::unique_ptr<RenderDelayBuffer> render_buffer(
+        RenderDelayBuffer::Create(EchoCanceller3Config(), rate));
 
     std::vector<std::vector<float>> render(NumBandsForRate(rate),
                                            std::vector<float>(kBlockSize, 0.f));
@@ -89,8 +89,8 @@ TEST(EchoRemover, WrongCaptureBlockSize) {
     SCOPED_TRACE(ProduceDebugText(rate));
     std::unique_ptr<EchoRemover> remover(
         EchoRemover::Create(EchoCanceller3Config(), rate));
-    std::unique_ptr<RenderDelayBuffer> render_buffer(RenderDelayBuffer::Create(
-        EchoCanceller3Config(), NumBandsForRate(rate)));
+    std::unique_ptr<RenderDelayBuffer> render_buffer(
+        RenderDelayBuffer::Create(EchoCanceller3Config(), rate));
     std::vector<std::vector<float>> capture(
         NumBandsForRate(rate), std::vector<float>(kBlockSize - 1, 0.f));
     EchoPathVariability echo_path_variability(
@@ -111,8 +111,8 @@ TEST(EchoRemover, DISABLED_WrongCaptureNumBands) {
     SCOPED_TRACE(ProduceDebugText(rate));
     std::unique_ptr<EchoRemover> remover(
         EchoRemover::Create(EchoCanceller3Config(), rate));
-    std::unique_ptr<RenderDelayBuffer> render_buffer(RenderDelayBuffer::Create(
-        EchoCanceller3Config(), NumBandsForRate(rate)));
+    std::unique_ptr<RenderDelayBuffer> render_buffer(
+        RenderDelayBuffer::Create(EchoCanceller3Config(), rate));
     std::vector<std::vector<float>> capture(
         NumBandsForRate(rate == 48000 ? 16000 : rate + 16000),
         std::vector<float>(kBlockSize, 0.f));
@@ -131,7 +131,7 @@ TEST(EchoRemover, NullCapture) {
   std::unique_ptr<EchoRemover> remover(
       EchoRemover::Create(EchoCanceller3Config(), 8000));
   std::unique_ptr<RenderDelayBuffer> render_buffer(
-      RenderDelayBuffer::Create(EchoCanceller3Config(), 3));
+      RenderDelayBuffer::Create(EchoCanceller3Config(), 8000));
   EchoPathVariability echo_path_variability(
       false, EchoPathVariability::DelayAdjustment::kNone, false);
   EXPECT_DEATH(
@@ -160,7 +160,7 @@ TEST(EchoRemover, BasicEchoRemoval) {
       EchoCanceller3Config config;
       std::unique_ptr<EchoRemover> remover(EchoRemover::Create(config, rate));
       std::unique_ptr<RenderDelayBuffer> render_buffer(
-          RenderDelayBuffer::Create(config, NumBandsForRate(rate)));
+          RenderDelayBuffer::Create(config, rate));
       render_buffer->AlignFromDelay(delay_samples / kBlockSize);
 
       std::vector<std::unique_ptr<DelayBuffer<float>>> delay_buffers(x.size());

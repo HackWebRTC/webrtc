@@ -109,7 +109,7 @@ TEST(ErleEstimator, VerifyErleIncreaseAndHold) {
   std::vector<std::array<float, kFftLengthBy2Plus1>> filter_frequency_response(
       config.filter.main.length_blocks);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, 3));
+      RenderDelayBuffer::Create(config, 48000));
 
   GetFilterFreq(filter_frequency_response, config.delay.delay_headroom_samples);
 
@@ -153,7 +153,7 @@ TEST(ErleEstimator, VerifyErleTrackingOnOnsets) {
       config.filter.main.length_blocks);
 
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, 3));
+      RenderDelayBuffer::Create(config, 48000));
 
   GetFilterFreq(filter_frequency_response, config.delay.delay_headroom_samples);
 

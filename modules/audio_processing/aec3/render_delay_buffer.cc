@@ -39,7 +39,7 @@ namespace {
 
 class RenderDelayBufferImpl final : public RenderDelayBuffer {
  public:
-  RenderDelayBufferImpl(const EchoCanceller3Config& config, size_t num_bands);
+  RenderDelayBufferImpl(const EchoCanceller3Config& config, int sample_rate_hz);
   RenderDelayBufferImpl() = delete;
   ~RenderDelayBufferImpl() override;
 
@@ -90,7 +90,7 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   bool external_audio_buffer_delay_verified_after_reset_ = false;
   size_t min_latency_blocks_ = 0;
   size_t excess_render_detection_counter_ = 0;
-  size_t num_bands_;
+  int sample_rate_hz_;
 
   int MapDelayToTotalDelay(size_t delay) const;
   int ComputeDelay() const;
@@ -109,7 +109,7 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
 int RenderDelayBufferImpl::instance_count_ = 0;
 
 RenderDelayBufferImpl::RenderDelayBufferImpl(const EchoCanceller3Config& config,
-                                             size_t num_bands)
+                                             int sample_rate_hz)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       optimization_(DetectOptimization()),
@@ -121,7 +121,7 @@ RenderDelayBufferImpl::RenderDelayBufferImpl(const EchoCanceller3Config& config,
       blocks_(GetRenderDelayBufferSize(down_sampling_factor_,
                                        config.delay.num_filters,
                                        config.filter.main.length_blocks),
-              num_bands,
+              NumBandsForRate(sample_rate_hz),
               kBlockSize),
       spectra_(blocks_.buffer.size(), kFftLengthBy2Plus1),
       ffts_(blocks_.buffer.size()),
@@ -133,7 +133,8 @@ RenderDelayBufferImpl::RenderDelayBufferImpl(const EchoCanceller3Config& config,
       fft_(),
       render_ds_(sub_block_size_, 0.f),
       buffer_headroom_(config.filter.main.length_blocks),
-      num_bands_(num_bands) {
+      sample_rate_hz_(sample_rate_hz) {
+  RTC_DCHECK_GE(sample_rate_hz, 8000);
   RTC_DCHECK_EQ(blocks_.buffer.size(), ffts_.buffer.size());
   RTC_DCHECK_EQ(spectra_.buffer.size(), ffts_.buffer.size());
 
@@ -314,7 +315,8 @@ void RenderDelayBufferImpl::SetAudioBufferDelay(size_t delay_ms) {
   }
 
   // Convert delay from milliseconds to blocks (rounded down).
-  external_audio_buffer_delay_ = delay_ms >> ((num_bands_ == 1) ? 1 : 2);
+  external_audio_buffer_delay_ =
+      delay_ms >> ((sample_rate_hz_ == 8000) ? 1 : 2);
 }
 
 bool RenderDelayBufferImpl::HasReceivedBufferDelay() {
@@ -455,8 +457,8 @@ bool RenderDelayBufferImpl::RenderUnderrun() {
 }  // namespace
 
 RenderDelayBuffer* RenderDelayBuffer::Create(const EchoCanceller3Config& config,
-                                             size_t num_bands) {
-  return new RenderDelayBufferImpl(config, num_bands);
+                                             int sample_rate_hz) {
+  return new RenderDelayBufferImpl(config, sample_rate_hz);
 }
 
 }  // namespace webrtc

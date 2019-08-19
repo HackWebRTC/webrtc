@@ -25,7 +25,7 @@ TEST(AecState, NormalUsage) {
   absl::optional<DelayEstimate> delay_estimate =
       DelayEstimate(DelayEstimate::Quality::kRefined, 10);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, 3));
+      RenderDelayBuffer::Create(config, 48000));
   std::array<float, kFftLengthBy2Plus1> E2_main = {};
   std::array<float, kFftLengthBy2Plus1> Y2 = {};
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
@@ -179,7 +179,7 @@ TEST(AecState, ConvergedFilterDelay) {
   EchoCanceller3Config config;
   AecState state(config);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, 3));
+      RenderDelayBuffer::Create(config, 48000));
   absl::optional<DelayEstimate> delay_estimate;
   std::array<float, kFftLengthBy2Plus1> E2_main;
   std::array<float, kFftLengthBy2Plus1> Y2;

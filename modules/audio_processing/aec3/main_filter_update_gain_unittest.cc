@@ -65,7 +65,7 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   std::vector<float> y(kBlockSize, 0.f);
   config.delay.default_delay = 1;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, 3));
+      RenderDelayBuffer::Create(config, 48000));
   AecState aec_state(config);
   RenderSignalAnalyzer render_signal_analyzer(config);
   absl::optional<DelayEstimate> delay_estimate;

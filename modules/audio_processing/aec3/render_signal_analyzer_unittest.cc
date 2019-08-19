@@ -61,7 +61,7 @@ TEST(RenderSignalAnalyzer, NoFalseDetectionOfNarrowBands) {
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   std::array<float, kBlockSize> x_old;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(EchoCanceller3Config(), 3));
+      RenderDelayBuffer::Create(EchoCanceller3Config(), 48000));
   std::array<float, kFftLengthBy2Plus1> mask;
   x_old.fill(0.f);
 
@@ -94,7 +94,7 @@ TEST(RenderSignalAnalyzer, NarrowBandDetection) {
   Aec3Fft fft;
   EchoCanceller3Config config;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, 3));
+      RenderDelayBuffer::Create(config, 48000));
 
   std::array<float, kFftLengthBy2Plus1> mask;
   x_old.fill(0.f);

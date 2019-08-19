@@ -54,7 +54,7 @@ std::string ProduceDebugText(size_t delay) {
 // their reference counterparts.
 TEST(AdaptiveFirFilter, FilterAdaptationNeonOptimizations) {
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(EchoCanceller3Config(), 3));
+      RenderDelayBuffer::Create(EchoCanceller3Config(), 48000));
   Random random_generator(42U);
   std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   FftData S_C;
@@ -165,7 +165,7 @@ TEST(AdaptiveFirFilter, FilterAdaptationSse2Optimizations) {
   bool use_sse2 = (WebRtc_GetCPUInfo(kSSE2) != 0);
   if (use_sse2) {
     std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-        RenderDelayBuffer::Create(EchoCanceller3Config(), 3));
+        RenderDelayBuffer::Create(EchoCanceller3Config(), 48000));
     Random random_generator(42U);
     std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
     FftData S_C;
@@ -281,7 +281,7 @@ TEST(AdaptiveFirFilter, NullFilterOutput) {
   ApmDataDumper data_dumper(42);
   AdaptiveFirFilter filter(9, 9, 250, DetectOptimization(), &data_dumper);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(EchoCanceller3Config(), 3));
+      RenderDelayBuffer::Create(EchoCanceller3Config(), 48000));
   EXPECT_DEATH(filter.Filter(*render_delay_buffer->GetRenderBuffer(), nullptr),
                "");
 }
@@ -320,7 +320,7 @@ TEST(AdaptiveFirFilter, FilterAndAdapt) {
   Aec3Fft fft;
   config.delay.default_delay = 1;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, 3));
+      RenderDelayBuffer::Create(config, 48000));
   ShadowFilterUpdateGain gain(config.filter.shadow,
                               config.filter.config_change_duration_blocks);
   Random random_generator(42U);

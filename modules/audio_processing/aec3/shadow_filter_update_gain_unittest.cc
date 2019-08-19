@@ -52,7 +52,7 @@ void RunFilterUpdateTest(int num_blocks_to_process,
 
   config.delay.default_delay = 1;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, 3));
+      RenderDelayBuffer::Create(config, 48000));
 
   std::array<float, kBlockSize> x_old;
   x_old.fill(0.f);
