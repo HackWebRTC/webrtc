@@ -26,7 +26,6 @@
 #include "modules/audio_processing/include/audio_processing.h"
 #include "p2p/client/basic_port_allocator.h"
 #include "rtc_base/location.h"
-#include "test/pc/e2e/echo/echo_emulation.h"
 #include "test/testsupport/copy_to_file_audio_capturer.h"
 
 namespace webrtc {
@@ -37,8 +36,6 @@ using RemotePeerAudioConfig =
     ::webrtc::webrtc_pc_e2e::TestPeer::RemotePeerAudioConfig;
 using AudioConfig =
     ::webrtc::webrtc_pc_e2e::PeerConnectionE2EQualityTestFixture::AudioConfig;
-using EchoEmulationConfig = ::webrtc::webrtc_pc_e2e::
-    PeerConnectionE2EQualityTestFixture::EchoEmulationConfig;
 
 constexpr int16_t kGeneratedAudioMaxAmplitude = 32000;
 constexpr int kDefaultSamplingFrequencyInHz = 48000;
@@ -75,15 +72,13 @@ class TestPeerComponents {
                      rtc::Thread* signaling_thread,
                      absl::optional<RemotePeerAudioConfig> remote_audio_config,
                      double bitrate_multiplier,
-                     absl::optional<EchoEmulationConfig> echo_emulation_config,
                      rtc::TaskQueue* task_queue)
       : audio_config_opt_(params.audio_config),
         observer_(observer),
         video_analyzer_helper_(video_analyzer_helper),
         signaling_thread_(signaling_thread),
         remote_audio_config_(std::move(remote_audio_config)),
-        bitrate_multiplier_(bitrate_multiplier),
-        echo_emulation_config_(std::move(echo_emulation_config)) {
+        bitrate_multiplier_(bitrate_multiplier) {
     for (auto& video_config : params.video_configs) {
       // Stream label should be set by fixture implementation here.
       RTC_DCHECK(video_config.stream_label);
@@ -182,26 +177,31 @@ class TestPeerComponents {
 
   rtc::scoped_refptr<AudioDeviceModule> CreateAudioDeviceModule(
       TaskQueueFactory* task_queue_factory) {
-    std::unique_ptr<TestAudioDeviceModule::Renderer> renderer =
-        CreateAudioRenderer(remote_audio_config_);
-    std::unique_ptr<TestAudioDeviceModule::Capturer> capturer =
-        CreateAudioCapturer(audio_config_opt_);
-    RTC_DCHECK(renderer);
+    std::unique_ptr<TestAudioDeviceModule::Capturer> capturer;
+    if (audio_config_opt_) {
+      capturer = CreateAudioCapturer(*audio_config_opt_);
+      if (audio_config_opt_->input_dump_file_name) {
+        capturer = absl::make_unique<test::CopyToFileAudioCapturer>(
+            std::move(capturer),
+            audio_config_opt_->input_dump_file_name.value());
+      }
+    } else {
+      // If we have no audio config we still need to provide some audio device.
+      // In such case use generated capturer. Despite of we provided audio here,
+      // in test media setup audio stream won't be added into peer connection.
+      capturer = TestAudioDeviceModule::CreatePulsedNoiseCapturer(
+          kGeneratedAudioMaxAmplitude, kDefaultSamplingFrequencyInHz);
+    }
     RTC_DCHECK(capturer);
 
-    // Setup echo emulation if required.
-    if (echo_emulation_config_) {
-      capturer = absl::make_unique<EchoEmulatingCapturer>(
-          std::move(capturer), *echo_emulation_config_);
-      renderer = absl::make_unique<EchoEmulatingRenderer>(
-          std::move(renderer),
-          static_cast<EchoEmulatingCapturer*>(capturer.get()));
-    }
-
-    // Setup input stream dumping if required.
-    if (audio_config_opt_ && audio_config_opt_->input_dump_file_name) {
-      capturer = absl::make_unique<test::CopyToFileAudioCapturer>(
-          std::move(capturer), audio_config_opt_->input_dump_file_name.value());
+    std::unique_ptr<TestAudioDeviceModule::Renderer> renderer;
+    if (remote_audio_config_ && remote_audio_config_->output_file_name) {
+      renderer = TestAudioDeviceModule::CreateBoundedWavFileWriter(
+          remote_audio_config_->output_file_name.value(),
+          remote_audio_config_->sampling_frequency_in_hz);
+    } else {
+      renderer = TestAudioDeviceModule::CreateDiscardRenderer(
+          kDefaultSamplingFrequencyInHz);
     }
 
     return TestAudioDeviceModule::Create(task_queue_factory,
@@ -209,41 +209,19 @@ class TestPeerComponents {
                                          std::move(renderer), /*speed=*/1.f);
   }
 
-  std::unique_ptr<TestAudioDeviceModule::Renderer> CreateAudioRenderer(
-      const absl::optional<RemotePeerAudioConfig>& config) {
-    if (!config) {
-      // Return default renderer because we always require some renderer.
-      return TestAudioDeviceModule::CreateDiscardRenderer(
-          kDefaultSamplingFrequencyInHz);
-    }
-    if (config->output_file_name) {
-      return TestAudioDeviceModule::CreateBoundedWavFileWriter(
-          config->output_file_name.value(), config->sampling_frequency_in_hz);
-    }
-    return TestAudioDeviceModule::CreateDiscardRenderer(
-        config->sampling_frequency_in_hz);
-  }
-
   std::unique_ptr<TestAudioDeviceModule::Capturer> CreateAudioCapturer(
-      const absl::optional<AudioConfig>& audio_config) {
-    if (!audio_config) {
-      // If we have no audio config we still need to provide some audio device.
-      // In such case use generated capturer. Despite of we provided audio here,
-      // in test media setup audio stream won't be added into peer connection.
+      const AudioConfig& audio_config) {
+    if (audio_config.mode == AudioConfig::Mode::kGenerated) {
       return TestAudioDeviceModule::CreatePulsedNoiseCapturer(
-          kGeneratedAudioMaxAmplitude, kDefaultSamplingFrequencyInHz);
+          kGeneratedAudioMaxAmplitude, audio_config.sampling_frequency_in_hz);
     }
-
-    switch (audio_config->mode) {
-      case AudioConfig::Mode::kGenerated:
-        return TestAudioDeviceModule::CreatePulsedNoiseCapturer(
-            kGeneratedAudioMaxAmplitude,
-            audio_config->sampling_frequency_in_hz);
-      case AudioConfig::Mode::kFile:
-        RTC_DCHECK(audio_config->input_file_name);
-        return TestAudioDeviceModule::CreateWavFileReader(
-            audio_config->input_file_name.value(), /*repeat=*/true);
+    if (audio_config.mode == AudioConfig::Mode::kFile) {
+      RTC_DCHECK(audio_config.input_file_name);
+      return TestAudioDeviceModule::CreateWavFileReader(
+          audio_config.input_file_name.value(), /*repeat=*/true);
     }
+    RTC_NOTREACHED() << "Unknown audio_config->mode";
+    return nullptr;
   }
 
   std::unique_ptr<VideoEncoderFactory> CreateVideoEncoderFactory(
@@ -312,7 +290,6 @@ class TestPeerComponents {
   rtc::Thread* signaling_thread_;
   absl::optional<RemotePeerAudioConfig> remote_audio_config_;
   double bitrate_multiplier_;
-  absl::optional<EchoEmulationConfig> echo_emulation_config_;
 };
 
 }  // namespace
@@ -333,7 +310,6 @@ std::unique_ptr<TestPeer> TestPeer::CreateTestPeer(
     rtc::Thread* signaling_thread,
     absl::optional<RemotePeerAudioConfig> remote_audio_config,
     double bitrate_multiplier,
-    absl::optional<EchoEmulationConfig> echo_emulation_config,
     rtc::TaskQueue* task_queue) {
   RTC_DCHECK(components);
   RTC_DCHECK(params);
@@ -343,7 +319,7 @@ std::unique_ptr<TestPeer> TestPeer::CreateTestPeer(
   TestPeerComponents tpc(std::move(components), *params, observer.get(),
                          video_analyzer_helper, signaling_thread,
                          std::move(remote_audio_config), bitrate_multiplier,
-                         echo_emulation_config, task_queue);
+                         task_queue);
 
   return absl::WrapUnique(new TestPeer(
       tpc.peer_connection_factory(), tpc.peer_connection(), std::move(observer),

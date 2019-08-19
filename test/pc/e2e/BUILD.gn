@@ -203,20 +203,6 @@ if (rtc_include_tests) {
     ]
   }
 
-  rtc_source_set("echo_emulation") {
-    visibility = [ "*" ]
-    testonly = true
-    sources = [
-      "echo/echo_emulation.cc",
-      "echo/echo_emulation.h",
-    ]
-    deps = [
-      "../../../api:peer_connection_quality_test_fixture_api",
-      "../../../modules/audio_device:audio_device_impl",
-      "../../../rtc_base:rtc_base_approved",
-    ]
-  }
-
   rtc_source_set("test_peer") {
     visibility = [ "*" ]
     testonly = true
@@ -225,7 +211,6 @@ if (rtc_include_tests) {
       "test_peer.h",
     ]
     deps = [
-      ":echo_emulation",
       ":peer_connection_quality_test_params",
       ":video_quality_analyzer_injection_helper",
       "../../../api:peer_connection_quality_test_fixture_api",
