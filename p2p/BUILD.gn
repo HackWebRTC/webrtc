@@ -70,7 +70,6 @@ rtc_static_library("rtc_p2p") {
     "base/stun_request.h",
     "base/tcp_port.cc",
     "base/tcp_port.h",
-    "base/transport.h",
     "base/transport_description.cc",
     "base/transport_description.h",
     "base/transport_description_factory.cc",
