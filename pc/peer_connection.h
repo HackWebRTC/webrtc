@@ -64,23 +64,45 @@ class PeerConnection : public PeerConnectionInternal,
                        public rtc::MessageHandler,
                        public sigslot::has_slots<> {
  public:
+  // A bit in the usage pattern is registered when its defining event occurs at
+  // least once.
   enum class UsageEvent : int {
     TURN_SERVER_ADDED = 0x01,
     STUN_SERVER_ADDED = 0x02,
     DATA_ADDED = 0x04,
     AUDIO_ADDED = 0x08,
     VIDEO_ADDED = 0x10,
-    SET_LOCAL_DESCRIPTION_CALLED = 0x20,
-    SET_REMOTE_DESCRIPTION_CALLED = 0x40,
+    // |SetLocalDescription| returns successfully.
+    SET_LOCAL_DESCRIPTION_SUCCEEDED = 0x20,
+    // |SetRemoteDescription| returns successfully.
+    SET_REMOTE_DESCRIPTION_SUCCEEDED = 0x40,
+    // A local candidate (with type host, server-reflexive, or relay) is
+    // collected.
     CANDIDATE_COLLECTED = 0x80,
-    REMOTE_CANDIDATE_ADDED = 0x100,
+    // A remote candidate is successfully added via |AddIceCandidate|.
+    ADD_ICE_CANDIDATE_SUCCEEDED = 0x100,
     ICE_STATE_CONNECTED = 0x200,
     CLOSE_CALLED = 0x400,
+    // A local candidate with private IP is collected.
     PRIVATE_CANDIDATE_COLLECTED = 0x800,
+    // A remote candidate with private IP is added, either via AddiceCandidate
+    // or from the remote description.
     REMOTE_PRIVATE_CANDIDATE_ADDED = 0x1000,
+    // A local mDNS candidate is collected.
     MDNS_CANDIDATE_COLLECTED = 0x2000,
+    // A remote mDNS candidate is added, either via AddIceCandidate or from the
+    // remote description.
     REMOTE_MDNS_CANDIDATE_ADDED = 0x4000,
-    MAX_VALUE = 0x8000,
+    // A local candidate with IPv6 address is collected.
+    IPV6_CANDIDATE_COLLECTED = 0x8000,
+    // A remote candidate with IPv6 address is added, either via AddIceCandidate
+    // or from the remote description.
+    REMOTE_IPV6_CANDIDATE_ADDED = 0x10000,
+    // A remote candidate (with type host, server-reflexive, or relay) is
+    // successfully added, either via AddIceCandidate or from the remote
+    // description.
+    REMOTE_CANDIDATE_ADDED = 0x20000,
+    MAX_VALUE = 0x40000,
   };
 
   explicit PeerConnection(PeerConnectionFactory* factory,
@@ -1069,6 +1091,10 @@ class PeerConnection : public PeerConnectionInternal,
 
   void ReportNegotiatedCiphers(const cricket::TransportStats& stats,
                                const std::set<cricket::MediaType>& media_types)
+      RTC_RUN_ON(signaling_thread());
+  void ReportIceCandidateCollected(const cricket::Candidate& candidate)
+      RTC_RUN_ON(signaling_thread());
+  void ReportRemoteIceCandidateAdded(const cricket::Candidate& candidate)
       RTC_RUN_ON(signaling_thread());
 
   void NoteUsageEvent(UsageEvent event);
