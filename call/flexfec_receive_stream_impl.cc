@@ -122,15 +122,16 @@ std::unique_ptr<FlexfecReceiver> MaybeCreateFlexfecReceiver(
 std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
     Clock* clock,
     ReceiveStatistics* receive_statistics,
-    Transport* rtcp_send_transport,
+    const FlexfecReceiveStreamImpl::Config& config,
     RtcpRttStats* rtt_stats) {
   RtpRtcp::Configuration configuration;
   configuration.audio = false;
   configuration.receiver_only = true;
   configuration.clock = clock;
   configuration.receive_statistics = receive_statistics;
-  configuration.outgoing_transport = rtcp_send_transport;
+  configuration.outgoing_transport = config.rtcp_send_transport;
   configuration.rtt_stats = rtt_stats;
+  configuration.media_send_ssrc = config.local_ssrc;
   return RtpRtcp::Create(configuration);
 }
 
@@ -150,14 +151,13 @@ FlexfecReceiveStreamImpl::FlexfecReceiveStreamImpl(
       rtp_receive_statistics_(ReceiveStatistics::Create(clock)),
       rtp_rtcp_(CreateRtpRtcpModule(clock,
                                     rtp_receive_statistics_.get(),
-                                    config_.rtcp_send_transport,
+                                    config_,
                                     rtt_stats)),
       process_thread_(process_thread) {
   RTC_LOG(LS_INFO) << "FlexfecReceiveStreamImpl: " << config_.ToString();
 
   // RTCP reporting.
   rtp_rtcp_->SetRTCPStatus(config_.rtcp_mode);
-  rtp_rtcp_->SetSSRC(config_.local_ssrc);
   process_thread_->RegisterModule(rtp_rtcp_.get(), RTC_FROM_HERE);
 
   // Register with transport.

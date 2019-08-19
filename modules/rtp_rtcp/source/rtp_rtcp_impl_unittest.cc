@@ -180,7 +180,6 @@ class RtpRtcpImplTest : public ::testing::Test {
 
   void SetUp() override {
     // Send module.
-    sender_.impl_->SetSSRC(kSenderSsrc);
     EXPECT_EQ(0, sender_.impl_->SetSendingStatus(true));
     sender_.impl_->SetSendingMediaStatus(true);
     sender_.SetRemoteSsrc(kReceiverSsrc);
