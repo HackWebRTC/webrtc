@@ -1229,8 +1229,7 @@ TEST_F(PeerConnectionIceConfigTest, SetStunCandidateKeepaliveInterval) {
       port_allocator_->stun_candidate_keepalive_interval();
   EXPECT_EQ(actual_stun_keepalive_interval.value_or(-1), 123);
   config.stun_candidate_keepalive_interval = 321;
-  RTCError error;
-  pc_->SetConfiguration(config, &error);
+  ASSERT_TRUE(pc_->SetConfiguration(config).ok());
   actual_stun_keepalive_interval =
       port_allocator_->stun_candidate_keepalive_interval();
   EXPECT_EQ(actual_stun_keepalive_interval.value_or(-1), 321);

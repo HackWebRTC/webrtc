@@ -111,7 +111,7 @@ class MockPeerConnectionInterface
                bool(const PeerConnectionInterface::RTCConfiguration&,
                     RTCError*));
   MOCK_METHOD1(SetConfiguration,
-               bool(const PeerConnectionInterface::RTCConfiguration&));
+               RTCError(const PeerConnectionInterface::RTCConfiguration&));
   MOCK_METHOD1(AddIceCandidate, bool(const IceCandidateInterface*));
   MOCK_METHOD1(RemoveIceCandidates,
                bool(const std::vector<cricket::Candidate>&));

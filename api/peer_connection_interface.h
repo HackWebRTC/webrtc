@@ -996,15 +996,15 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
   // - INVALID_PARAMETER if a TURN server is missing |username| or |password|.
   // - INTERNAL_ERROR if an unexpected error occurred.
   //
-  // TODO(deadbeef): Make this pure virtual once all Chrome subclasses of
-  // PeerConnectionInterface implement it.
+  // TODO(nisse): Deprecated, migrate to the method with an RTCError return
+  // value, then delete this one.
   virtual bool SetConfiguration(
       const PeerConnectionInterface::RTCConfiguration& config,
       RTCError* error);
 
-  // Version without error output param for backwards compatibility.
-  // TODO(deadbeef): Remove once chromium is updated.
-  virtual bool SetConfiguration(
+  // TODO(nisse): Make this pure virtual once all Chrome subclasses of
+  // PeerConnectionInterface implement it.
+  virtual RTCError SetConfiguration(
       const PeerConnectionInterface::RTCConfiguration& config);
 
   // Provides a remote candidate to the ICE Agent.
@@ -1100,7 +1100,7 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
   virtual bool StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output);
 
   // Stops logging the RtcEventLog.
-  // TODO(ivoc): Make this pure virtual when Chrome is updated.
+  // TODO(ivoc): Make this pure virtual when Chrome is updat ed.
   virtual void StopRtcEventLog() {}
 
   // Terminates all media, closes the transports, and in general releases any

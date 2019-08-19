@@ -256,22 +256,6 @@ uint32_t ConvertIceTransportTypeToCandidateFilter(
   return cricket::CF_NONE;
 }
 
-// Helper to set an error and return from a method.
-bool SafeSetError(webrtc::RTCErrorType type, webrtc::RTCError* error) {
-  if (error) {
-    error->set_type(type);
-  }
-  return type == webrtc::RTCErrorType::NONE;
-}
-
-bool SafeSetError(webrtc::RTCError error, webrtc::RTCError* error_out) {
-  bool ok = error.ok();
-  if (error_out) {
-    *error_out = std::move(error);
-  }
-  return ok;
-}
-
 std::string GetSignalingStateString(
     PeerConnectionInterface::SignalingState state) {
   switch (state) {
@@ -3469,12 +3453,22 @@ PeerConnectionInterface::RTCConfiguration PeerConnection::GetConfiguration() {
 
 bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
                                       RTCError* error) {
+  RTCError result = SetConfiguration(configuration);
+  bool success = result.ok();
+  if (error) {
+    *error = std::move(result);
+  }
+  return success;
+}
+
+RTCError PeerConnection::SetConfiguration(
+    const RTCConfiguration& configuration) {
   RTC_DCHECK_RUN_ON(signaling_thread());
   RTC_DCHECK_RUNS_SERIALIZED(&use_media_transport_race_checker_);
   TRACE_EVENT0("webrtc", "PeerConnection::SetConfiguration");
   if (IsClosed()) {
-    RTC_LOG(LS_ERROR) << "SetConfiguration: PeerConnection is closed.";
-    return SafeSetError(RTCErrorType::INVALID_STATE, error);
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_STATE,
+                         "SetConfiguration: PeerConnection is closed.");
   }
 
   // According to JSEP, after setLocalDescription, changing the candidate pool
@@ -3482,60 +3476,60 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
   // in new candidates being gathered.
   if (local_description() && configuration.ice_candidate_pool_size !=
                                  configuration_.ice_candidate_pool_size) {
-    RTC_LOG(LS_ERROR) << "Can't change candidate pool size after calling "
-                         "SetLocalDescription.";
-    return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
+                         "Can't change candidate pool size after calling "
+                         "SetLocalDescription.");
   }
 
   if (local_description() &&
       configuration.use_media_transport != configuration_.use_media_transport) {
-    RTC_LOG(LS_ERROR) << "Can't change media_transport after calling "
-                         "SetLocalDescription.";
-    return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
+                         "Can't change media_transport after calling "
+                         "SetLocalDescription.");
   }
 
   if (remote_description() &&
       configuration.use_media_transport != configuration_.use_media_transport) {
-    RTC_LOG(LS_ERROR) << "Can't change media_transport after calling "
-                         "SetRemoteDescription.";
-    return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
+                         "Can't change media_transport after calling "
+                         "SetRemoteDescription.");
   }
 
   if (local_description() &&
       configuration.use_media_transport_for_data_channels !=
           configuration_.use_media_transport_for_data_channels) {
-    RTC_LOG(LS_ERROR) << "Can't change media_transport_for_data_channels "
-                         "after calling SetLocalDescription.";
-    return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
+                         "Can't change media_transport_for_data_channels "
+                         "after calling SetLocalDescription.");
   }
 
   if (remote_description() &&
       configuration.use_media_transport_for_data_channels !=
           configuration_.use_media_transport_for_data_channels) {
-    RTC_LOG(LS_ERROR) << "Can't change media_transport_for_data_channels "
-                         "after calling SetRemoteDescription.";
-    return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
+                         "Can't change media_transport_for_data_channels "
+                         "after calling SetRemoteDescription.");
   }
 
   if (local_description() &&
       configuration.crypto_options != configuration_.crypto_options) {
-    RTC_LOG(LS_ERROR) << "Can't change crypto_options after calling "
-                         "SetLocalDescription.";
-    return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
+                         "Can't change crypto_options after calling "
+                         "SetLocalDescription.");
   }
 
   if (local_description() && configuration.use_datagram_transport !=
                                  configuration_.use_datagram_transport) {
-    RTC_LOG(LS_ERROR) << "Can't change use_datagram_transport "
-                         "after calling SetLocalDescription.";
-    return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
+                         "Can't change use_datagram_transport "
+                         "after calling SetLocalDescription.");
   }
 
   if (remote_description() && configuration.use_datagram_transport !=
                                   configuration_.use_datagram_transport) {
-    RTC_LOG(LS_ERROR) << "Can't change use_datagram_transport "
-                         "after calling SetRemoteDescription.";
-    return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
+                         "Can't change use_datagram_transport "
+                         "after calling SetRemoteDescription.");
   }
 
   if (configuration.use_media_transport_for_data_channels ||
@@ -3578,21 +3572,21 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
       configuration.use_media_transport_for_data_channels;
   modified_config.use_datagram_transport = configuration.use_datagram_transport;
   if (configuration != modified_config) {
-    RTC_LOG(LS_ERROR) << "Modifying the configuration in an unsupported way.";
-    return SafeSetError(RTCErrorType::INVALID_MODIFICATION, error);
+    LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
+                         "Modifying the configuration in an unsupported way.");
   }
 
   // Validate the modified configuration.
   RTCError validate_error = ValidateConfiguration(modified_config);
   if (!validate_error.ok()) {
-    return SafeSetError(std::move(validate_error), error);
+    return validate_error;
   }
 
   // Note that this isn't possible through chromium, since it's an unsigned
   // short in WebIDL.
   if (configuration.ice_candidate_pool_size < 0 ||
       configuration.ice_candidate_pool_size > static_cast<int>(UINT16_MAX)) {
-    return SafeSetError(RTCErrorType::INVALID_RANGE, error);
+    return RTCError(RTCErrorType::INVALID_RANGE);
   }
 
   // Parse ICE servers before hopping to network thread.
@@ -3601,7 +3595,7 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
   RTCErrorType parse_error =
       ParseIceServers(configuration.servers, &stun_servers, &turn_servers);
   if (parse_error != RTCErrorType::NONE) {
-    return SafeSetError(parse_error, error);
+    return RTCError(parse_error);
   }
   // Note if STUN or TURN servers were supplied.
   if (!stun_servers.empty()) {
@@ -3621,8 +3615,8 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
                     modified_config.turn_customizer,
                     modified_config.stun_candidate_keepalive_interval,
                     static_cast<bool>(local_description())))) {
-    RTC_LOG(LS_ERROR) << "Failed to apply configuration to PortAllocator.";
-    return SafeSetError(RTCErrorType::INTERNAL_ERROR, error);
+    LOG_AND_RETURN_ERROR(RTCErrorType::INTERNAL_ERROR,
+                         "Failed to apply configuration to PortAllocator.");
   }
 
   // As described in JSEP, calling setConfiguration with new ICE servers or
@@ -3652,7 +3646,7 @@ bool PeerConnection::SetConfiguration(const RTCConfiguration& configuration,
 
   configuration_ = modified_config;
   use_media_transport_ = configuration.use_media_transport;
-  return SafeSetError(RTCErrorType::NONE, error);
+  return RTCError::OK();
 }
 
 bool PeerConnection::AddIceCandidate(

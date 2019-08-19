@@ -378,7 +378,7 @@ void PeerConnectionDelegateAdapter::OnRemoveTrack(
   }
   CopyConstraintsIntoRtcConfiguration(_nativeConstraints.get(),
                                       config.get());
-  return _peerConnection->SetConfiguration(*config);
+  return _peerConnection->SetConfiguration(*config).ok();
 }
 
 - (RTCConfiguration *)configuration {

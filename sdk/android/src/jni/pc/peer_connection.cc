@@ -592,7 +592,7 @@ static jboolean JNI_PeerConnection_SetConfiguration(
   if (owned_pc->constraints()) {
     CopyConstraintsIntoRtcConfiguration(owned_pc->constraints(), &rtc_config);
   }
-  return owned_pc->pc()->SetConfiguration(rtc_config);
+  return owned_pc->pc()->SetConfiguration(rtc_config).ok();
 }
 
 static jboolean JNI_PeerConnection_AddIceCandidate(

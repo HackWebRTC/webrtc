@@ -1423,7 +1423,7 @@ TEST_P(PeerConnectionInterfaceTest, GetConfigurationAfterSetConfiguration) {
   config.type = PeerConnectionInterface::kRelay;
   config.use_media_transport = true;
   config.use_media_transport_for_data_channels = true;
-  EXPECT_TRUE(pc_->SetConfiguration(config));
+  EXPECT_TRUE(pc_->SetConfiguration(config).ok());
 
   PeerConnectionInterface::RTCConfiguration returned_config =
       pc_->GetConfiguration();
@@ -1438,7 +1438,7 @@ TEST_P(PeerConnectionInterfaceTest, SetConfigurationFailsAfterClose) {
   pc_->Close();
 
   EXPECT_FALSE(
-      pc_->SetConfiguration(PeerConnectionInterface::RTCConfiguration()));
+      pc_->SetConfiguration(PeerConnectionInterface::RTCConfiguration()).ok());
 }
 
 TEST_F(PeerConnectionInterfaceTestPlanB, AddStreams) {
@@ -2429,7 +2429,7 @@ TEST_P(PeerConnectionInterfaceTest, SetConfigurationChangesIceServers) {
   PeerConnectionInterface::IceServer server;
   server.uri = "stun:test_hostname";
   config.servers.push_back(server);
-  EXPECT_TRUE(pc_->SetConfiguration(config));
+  EXPECT_TRUE(pc_->SetConfiguration(config).ok());
 
   EXPECT_EQ(1u, port_allocator_->stun_servers().size());
   EXPECT_EQ("test_hostname",
@@ -2440,7 +2440,7 @@ TEST_P(PeerConnectionInterfaceTest, SetConfigurationChangesCandidateFilter) {
   CreatePeerConnection();
   PeerConnectionInterface::RTCConfiguration config = pc_->GetConfiguration();
   config.type = PeerConnectionInterface::kRelay;
-  EXPECT_TRUE(pc_->SetConfiguration(config));
+  EXPECT_TRUE(pc_->SetConfiguration(config).ok());
   EXPECT_EQ(cricket::CF_RELAY, port_allocator_->candidate_filter());
 }
 
@@ -2452,7 +2452,7 @@ TEST_P(PeerConnectionInterfaceTest, SetConfigurationChangesPruneTurnPortsFlag) {
   EXPECT_FALSE(port_allocator_->prune_turn_ports());
 
   config.prune_turn_ports = true;
-  EXPECT_TRUE(pc_->SetConfiguration(config));
+  EXPECT_TRUE(pc_->SetConfiguration(config).ok());
   EXPECT_TRUE(port_allocator_->prune_turn_ports());
 }
 
@@ -2465,7 +2465,7 @@ TEST_P(PeerConnectionInterfaceTest, SetConfigurationChangesIceCheckInterval) {
   CreatePeerConnection(config);
   config = pc_->GetConfiguration();
   config.ice_check_min_interval = 100;
-  EXPECT_TRUE(pc_->SetConfiguration(config));
+  EXPECT_TRUE(pc_->SetConfiguration(config).ok());
   config = pc_->GetConfiguration();
   EXPECT_EQ(config.ice_check_min_interval, 100);
 }
@@ -2479,7 +2479,7 @@ TEST_P(PeerConnectionInterfaceTest,
   EXPECT_FALSE(config.surface_ice_candidates_on_ice_transport_type_changed);
 
   config.surface_ice_candidates_on_ice_transport_type_changed = true;
-  EXPECT_TRUE(pc_->SetConfiguration(config));
+  EXPECT_TRUE(pc_->SetConfiguration(config).ok());
   config = pc_->GetConfiguration();
   EXPECT_TRUE(config.surface_ice_candidates_on_ice_transport_type_changed);
 }
@@ -2495,7 +2495,7 @@ TEST_P(PeerConnectionInterfaceTest,
   server.uri = kStunAddressOnly;
   config.servers.push_back(server);
   config.type = PeerConnectionInterface::kRelay;
-  EXPECT_TRUE(pc_->SetConfiguration(config));
+  EXPECT_TRUE(pc_->SetConfiguration(config).ok());
 
   const cricket::FakePortAllocatorSession* session =
       static_cast<const cricket::FakePortAllocatorSession*>(
@@ -2512,18 +2512,17 @@ TEST_P(PeerConnectionInterfaceTest,
   // Start by setting a size of 1.
   PeerConnectionInterface::RTCConfiguration config = pc_->GetConfiguration();
   config.ice_candidate_pool_size = 1;
-  EXPECT_TRUE(pc_->SetConfiguration(config));
+  EXPECT_TRUE(pc_->SetConfiguration(config).ok());
 
   // Set remote offer; can still change pool size at this point.
   CreateOfferAsRemoteDescription();
   config.ice_candidate_pool_size = 2;
-  EXPECT_TRUE(pc_->SetConfiguration(config));
+  EXPECT_TRUE(pc_->SetConfiguration(config).ok());
 
   // Set local answer; now it's too late.
   CreateAnswerAsLocalDescription();
   config.ice_candidate_pool_size = 3;
-  RTCError error;
-  EXPECT_FALSE(pc_->SetConfiguration(config, &error));
+  RTCError error = pc_->SetConfiguration(config);
   EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION, error.type());
 }
 
@@ -2536,7 +2535,7 @@ TEST_P(PeerConnectionInterfaceTest,
   // Set a larger-than-necessary size.
   PeerConnectionInterface::RTCConfiguration config = pc_->GetConfiguration();
   config.ice_candidate_pool_size = 4;
-  EXPECT_TRUE(pc_->SetConfiguration(config));
+  EXPECT_TRUE(pc_->SetConfiguration(config).ok());
 
   // Do offer/answer.
   CreateOfferAsRemoteDescription();
@@ -2555,7 +2554,7 @@ TEST_P(PeerConnectionInterfaceTest, PooledSessionsDiscardedAfterClose) {
 
   PeerConnectionInterface::RTCConfiguration config = pc_->GetConfiguration();
   config.ice_candidate_pool_size = 3;
-  EXPECT_TRUE(pc_->SetConfiguration(config));
+  EXPECT_TRUE(pc_->SetConfiguration(config).ok());
   pc_->Close();
 
   // Expect no pooled sessions to be left.
@@ -2578,22 +2577,19 @@ TEST_P(PeerConnectionInterfaceTest,
       pc_->GetConfiguration();
   modified_config.bundle_policy =
       PeerConnectionInterface::kBundlePolicyMaxBundle;
-  RTCError error;
-  EXPECT_FALSE(pc_->SetConfiguration(modified_config, &error));
+  RTCError error = pc_->SetConfiguration(modified_config);
   EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION, error.type());
 
   modified_config = pc_->GetConfiguration();
   modified_config.rtcp_mux_policy =
       PeerConnectionInterface::kRtcpMuxPolicyRequire;
-  error.set_type(RTCErrorType::NONE);
-  EXPECT_FALSE(pc_->SetConfiguration(modified_config, &error));
+  error = pc_->SetConfiguration(modified_config);
   EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION, error.type());
 
   modified_config = pc_->GetConfiguration();
   modified_config.continual_gathering_policy =
       PeerConnectionInterface::GATHER_CONTINUALLY;
-  error.set_type(RTCErrorType::NONE);
-  EXPECT_FALSE(pc_->SetConfiguration(modified_config, &error));
+  error = pc_->SetConfiguration(modified_config);
   EXPECT_EQ(RTCErrorType::INVALID_MODIFICATION, error.type());
 }
 
@@ -2606,13 +2602,11 @@ TEST_P(PeerConnectionInterfaceTest,
   config = pc_->GetConfiguration();
 
   config.ice_candidate_pool_size = -1;
-  RTCError error;
-  EXPECT_FALSE(pc_->SetConfiguration(config, &error));
+  RTCError error = pc_->SetConfiguration(config);
   EXPECT_EQ(RTCErrorType::INVALID_RANGE, error.type());
 
   config.ice_candidate_pool_size = INT_MAX;
-  error.set_type(RTCErrorType::NONE);
-  EXPECT_FALSE(pc_->SetConfiguration(config, &error));
+  error = pc_->SetConfiguration(config);
   EXPECT_EQ(RTCErrorType::INVALID_RANGE, error.type());
 }
 
@@ -2627,8 +2621,7 @@ TEST_P(PeerConnectionInterfaceTest,
   PeerConnectionInterface::IceServer bad_server;
   bad_server.uri = "stunn:www.example.com";
   config.servers.push_back(bad_server);
-  RTCError error;
-  EXPECT_FALSE(pc_->SetConfiguration(config, &error));
+  RTCError error = pc_->SetConfiguration(config);
   EXPECT_EQ(RTCErrorType::SYNTAX_ERROR, error.type());
 }
 
@@ -3294,7 +3287,7 @@ TEST_P(PeerConnectionInterfaceTest, SetConfigurationCausingIceRestart) {
 
   // Change ICE policy, which should trigger an ICE restart on the next offer.
   config.type = PeerConnectionInterface::kAll;
-  EXPECT_TRUE(pc_->SetConfiguration(config));
+  EXPECT_TRUE(pc_->SetConfiguration(config).ok());
   CreateOfferAsLocalDescription();
 
   // Grab the new ufrags.
@@ -3328,7 +3321,7 @@ TEST_P(PeerConnectionInterfaceTest, SetConfigurationNotCausingIceRestart) {
 
   // Call SetConfiguration with a config identical to what the PC was
   // constructed with.
-  EXPECT_TRUE(pc_->SetConfiguration(config));
+  EXPECT_TRUE(pc_->SetConfiguration(config).ok());
   CreateOfferAsLocalDescription();
 
   // Grab the new ufrags.
@@ -3359,7 +3352,7 @@ TEST_P(PeerConnectionInterfaceTest, SetConfigurationCausingPartialIceRestart) {
 
   // Change ICE policy, which should set the "needs-ice-restart" flag.
   config.type = PeerConnectionInterface::kAll;
-  EXPECT_TRUE(pc_->SetConfiguration(config));
+  EXPECT_TRUE(pc_->SetConfiguration(config).ok());
 
   // Do ICE restart for the first m= section, initiated by remote peer.
   std::unique_ptr<webrtc::SessionDescriptionInterface> remote_offer(

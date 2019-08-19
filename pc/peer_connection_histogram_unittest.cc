@@ -587,9 +587,7 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintStunTurnInReconfiguration) {
   configuration.servers.push_back(server);
   auto caller = CreatePeerConnection();
   ASSERT_TRUE(caller);
-  RTCError error;
-  caller->pc()->SetConfiguration(configuration, &error);
-  ASSERT_TRUE(error.ok());
+  ASSERT_TRUE(caller->pc()->SetConfiguration(configuration).ok());
   caller->pc()->Close();
   int expected_fingerprint =
       MakeUsageFingerprint({PeerConnection::UsageEvent::STUN_SERVER_ADDED,

@@ -135,9 +135,9 @@ bool PeerConnectionInterface::SetConfiguration(
   return false;
 }
 
-bool PeerConnectionInterface::SetConfiguration(
+RTCError PeerConnectionInterface::SetConfiguration(
     const PeerConnectionInterface::RTCConfiguration& config) {
-  return false;
+  return RTCError();
 }
 
 bool PeerConnectionInterface::RemoveIceCandidates(

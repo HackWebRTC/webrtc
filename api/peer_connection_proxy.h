@@ -112,7 +112,7 @@ PROXY_METHOD2(bool,
               SetConfiguration,
               const PeerConnectionInterface::RTCConfiguration&,
               RTCError*)
-PROXY_METHOD1(bool,
+PROXY_METHOD1(RTCError,
               SetConfiguration,
               const PeerConnectionInterface::RTCConfiguration&)
 PROXY_METHOD1(bool, AddIceCandidate, const IceCandidateInterface*)
