@@ -26,6 +26,7 @@
 #include "api/task_queue/task_queue_factory.h"
 #include "api/test/audio_quality_analyzer_interface.h"
 #include "api/test/simulated_network.h"
+#include "api/test/stats_observer_interface.h"
 #include "api/test/video_quality_analyzer_interface.h"
 #include "api/transport/network_control.h"
 #include "api/units/time_delta.h"
@@ -317,7 +318,7 @@ class PeerConnectionE2EQualityTestFixture {
   };
 
   // Represent an entity that will report quality metrics after test.
-  class QualityMetricsReporter {
+  class QualityMetricsReporter : public StatsObserverInterface {
    public:
     virtual ~QualityMetricsReporter() = default;
 

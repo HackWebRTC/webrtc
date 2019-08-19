@@ -29,6 +29,8 @@ class NetworkQualityMetricsReporter
 
   // Network stats must be empty when this method will be invoked.
   void Start(absl::string_view test_case_name) override;
+  void OnStatsReports(const std::string& pc_label,
+                      const StatsReports& reports) override {}
   void StopAndReportResults() override;
 
  private:

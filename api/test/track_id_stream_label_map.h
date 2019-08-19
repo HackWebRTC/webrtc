@@ -16,7 +16,7 @@
 namespace webrtc {
 namespace webrtc_pc_e2e {
 
-// Instances of |TrackIdStreamLabelMap| provide bookkeeing capabilities that
+// Instances of |TrackIdStreamLabelMap| provide bookkeeping capabilities that
 // are useful to associate stats reports track_ids to the remote stream_id.
 class TrackIdStreamLabelMap {
  public:

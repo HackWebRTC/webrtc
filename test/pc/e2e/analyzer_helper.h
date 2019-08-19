@@ -21,7 +21,7 @@
 namespace webrtc {
 namespace webrtc_pc_e2e {
 
-// This class is a utility that provides bookkeeing capabilities that
+// This class is a utility that provides bookkeeping capabilities that
 // are useful to associate stats reports track_ids to the remote stream_id.
 // The framework will populate an instance of this class and it will pass
 // it to the Start method of Media Quality Analyzers.
