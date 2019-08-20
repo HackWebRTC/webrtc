@@ -124,11 +124,6 @@ declare_args() {
   # NDK r16 or above.
   rtc_enable_android_aaudio = false
 
-  # Link-Time Optimizations.
-  # Executes code generation at link-time instead of compile-time.
-  # https://gcc.gnu.org/wiki/LinkTimeOptimization
-  rtc_use_lto = false
-
   # Set to "func", "block", "edge" for coverage generation.
   # At unit test runtime set UBSAN_OPTIONS="coverage=1".
   # It is recommend to set include_examples=0.

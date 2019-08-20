@@ -67,15 +67,6 @@ rtc_source_set("ooura_fft") {
       suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
       cflags += [ "-mfpu=neon" ]
     }
-
-    # Disable LTO on NEON targets due to compiler bug.
-    # TODO(fdegans): Enable this. See crbug.com/408997.
-    if (rtc_use_lto) {
-      cflags -= [
-        "-flto",
-        "-ffat-lto-objects",
-      ]
-    }
   }
 
   if (current_cpu == "mipsel" && mips_float_abi == "hard") {
