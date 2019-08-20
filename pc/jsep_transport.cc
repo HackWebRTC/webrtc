@@ -99,10 +99,9 @@ JsepTransport::JsepTransport(
     std::unique_ptr<webrtc::RtpTransport> unencrypted_rtp_transport,
     std::unique_ptr<webrtc::SrtpTransport> sdes_transport,
     std::unique_ptr<webrtc::DtlsSrtpTransport> dtls_srtp_transport,
-    std::unique_ptr<webrtc::RtpTransport> datagram_rtp_transport,
+    std::unique_ptr<webrtc::RtpTransportInternal> datagram_rtp_transport,
     std::unique_ptr<DtlsTransportInternal> rtp_dtls_transport,
     std::unique_ptr<DtlsTransportInternal> rtcp_dtls_transport,
-    std::unique_ptr<DtlsTransportInternal> datagram_dtls_transport,
     std::unique_ptr<webrtc::MediaTransportInterface> media_transport,
     std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport)
     : network_thread_(rtc::Thread::Current()),
@@ -122,11 +121,6 @@ JsepTransport::JsepTransport(
           rtcp_dtls_transport
               ? new rtc::RefCountedObject<webrtc::DtlsTransport>(
                     std::move(rtcp_dtls_transport))
-              : nullptr),
-      datagram_dtls_transport_(
-          datagram_dtls_transport
-              ? new rtc::RefCountedObject<webrtc::DtlsTransport>(
-                    std::move(datagram_dtls_transport))
               : nullptr),
       media_transport_(std::move(media_transport)),
       datagram_transport_(std::move(datagram_transport)) {
@@ -176,13 +170,8 @@ JsepTransport::~JsepTransport() {
     rtcp_dtls_transport_->Clear();
   }
 
-  // Datagram dtls transport must be disconnected before the datagram transport
-  // is released.
-  if (datagram_dtls_transport_) {
-    datagram_dtls_transport_->Clear();
-  }
-
-  // Delete datagram transport before ICE, but after DTLS transport.
+  // Delete datagram transport before ICE, but after its RTP transport.
+  datagram_rtp_transport_.reset();
   datagram_transport_.reset();
 
   // ICE will be the last transport to be deleted.
@@ -533,9 +522,6 @@ void JsepTransport::ActivateRtcpMux() {
   }
   {
     rtc::CritScope scope(&accessor_lock_);
-    if (datagram_rtp_transport_) {
-      datagram_rtp_transport_->SetRtcpPacketTransport(nullptr);
-    }
     if (unencrypted_rtp_transport_) {
       RTC_DCHECK(!sdes_transport_);
       RTC_DCHECK(!dtls_srtp_transport_);
@@ -822,9 +808,6 @@ void JsepTransport::NegotiateRtpTransport(SdpType type) {
     RTC_LOG(INFO) << "Datagram transport rejected";
     composite_rtp_transport_->RemoveTransport(datagram_rtp_transport_.get());
     datagram_rtp_transport_ = nullptr;
-    // This one is ref-counted, so it can't be deleted directly.
-    datagram_dtls_transport_->Clear();
-    datagram_dtls_transport_ = nullptr;
     datagram_transport_ = nullptr;
   }
 }

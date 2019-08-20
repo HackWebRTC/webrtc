@@ -111,7 +111,6 @@ class JsepTransport2Test : public ::testing::Test, public sigslot::has_slots<> {
         std::move(sdes_transport), std::move(dtls_srtp_transport),
         /*datagram_rtp_transport=*/nullptr, std::move(rtp_dtls_transport),
         std::move(rtcp_dtls_transport),
-        /*datagram_dtls_transport=*/nullptr,
         /*media_transport=*/nullptr,
         /*datagram_transport=*/nullptr);
 

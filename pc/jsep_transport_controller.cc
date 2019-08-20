@@ -20,7 +20,7 @@
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/no_op_dtls_transport.h"
 #include "p2p/base/port.h"
-#include "pc/datagram_dtls_adaptor.h"
+#include "pc/datagram_rtp_transport.h"
 #include "pc/srtp_filter.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/checks.h"
@@ -483,11 +483,6 @@ JsepTransportController::CreateDtlsTransport(
 
   if (datagram_transport) {
     RTC_DCHECK(config_.use_datagram_transport);
-
-    // Create DTLS wrapper around DatagramTransportInterface.
-    dtls = absl::make_unique<cricket::DatagramDtlsAdaptor>(
-        content_info.media_description()->rtp_header_extensions(), ice,
-        datagram_transport, config_.crypto_options, config_.event_log);
   } else if (config_.media_transport_factory &&
              config_.use_media_transport_for_media &&
              config_.use_media_transport_for_data_channels) {
@@ -1164,11 +1159,8 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
 
   std::unique_ptr<DatagramTransportInterface> datagram_transport =
       MaybeCreateDatagramTransport(content_info, description, local);
-  std::unique_ptr<cricket::DtlsTransportInternal> datagram_dtls_transport;
   if (datagram_transport) {
     datagram_transport->Connect(ice.get());
-    datagram_dtls_transport =
-        CreateDtlsTransport(content_info, ice.get(), datagram_transport.get());
   }
 
   std::unique_ptr<cricket::DtlsTransportInternal> rtp_dtls_transport =
@@ -1178,7 +1170,7 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
   std::unique_ptr<RtpTransport> unencrypted_rtp_transport;
   std::unique_ptr<SrtpTransport> sdes_transport;
   std::unique_ptr<DtlsSrtpTransport> dtls_srtp_transport;
-  std::unique_ptr<RtpTransport> datagram_rtp_transport;
+  std::unique_ptr<RtpTransportInternal> datagram_rtp_transport;
 
   std::unique_ptr<cricket::IceTransportInternal> rtcp_ice;
   if (config_.rtcp_mux_policy !=
@@ -1202,8 +1194,9 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
     RTC_LOG(LS_INFO) << "Creating UnencryptedRtpTransport, because datagram "
                         "transport is used.";
     RTC_DCHECK(!rtcp_dtls_transport);
-    datagram_rtp_transport = CreateUnencryptedRtpTransport(
-        content_info.name, datagram_dtls_transport.get(), nullptr);
+    datagram_rtp_transport = absl::make_unique<DatagramRtpTransport>(
+        content_info.media_description()->rtp_header_extensions(), ice.get(),
+        datagram_transport.get());
   }
 
   if (config_.disable_encryption) {
@@ -1227,8 +1220,7 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
           std::move(unencrypted_rtp_transport), std::move(sdes_transport),
           std::move(dtls_srtp_transport), std::move(datagram_rtp_transport),
           std::move(rtp_dtls_transport), std::move(rtcp_dtls_transport),
-          std::move(datagram_dtls_transport), std::move(media_transport),
-          std::move(datagram_transport));
+          std::move(media_transport), std::move(datagram_transport));
 
   jsep_transport->SignalRtcpMuxActive.connect(
       this, &JsepTransportController::UpdateAggregateStates_n);

@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef PC_DATAGRAM_DTLS_ADAPTOR_H_
-#define PC_DATAGRAM_DTLS_ADAPTOR_H_
+#ifndef PC_DATAGRAM_RTP_TRANSPORT_H_
+#define PC_DATAGRAM_RTP_TRANSPORT_H_
 
 #include <map>
 #include <memory>
@@ -20,9 +20,9 @@
 #include "api/datagram_transport_interface.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/source/rtp_header_extensions.h"
-#include "p2p/base/dtls_transport_internal.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/packet_transport_internal.h"
+#include "pc/rtp_transport_internal.h"
 #include "rtc_base/buffer.h"
 #include "rtc_base/buffer_queue.h"
 #include "rtc_base/constructor_magic.h"
@@ -31,31 +31,22 @@
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/thread_checker.h"
 
-namespace cricket {
+namespace webrtc {
 
 constexpr int kDatagramDtlsAdaptorComponent = -1;
 
-// DTLS wrapper around DatagramTransportInterface.
-// Does not encrypt.
-// Owns Datagram and Ice transports.
-class DatagramDtlsAdaptor : public DtlsTransportInternal,
-                            public webrtc::DatagramSinkInterface,
-                            public webrtc::MediaTransportStateCallback {
+// RTP transport which uses the DatagramTransportInterface to send and receive
+// packets.
+class DatagramRtpTransport : public RtpTransportInternal,
+                             public webrtc::DatagramSinkInterface,
+                             public webrtc::MediaTransportStateCallback {
  public:
-  // TODO(sukhanov): Taking crypto options, because DtlsTransportInternal
-  // has a virtual getter crypto_options(). Consider removing getter and
-  // removing crypto_options from DatagramDtlsAdaptor.
-  DatagramDtlsAdaptor(
+  DatagramRtpTransport(
       const std::vector<webrtc::RtpExtension>& rtp_header_extensions,
-      IceTransportInternal* ice_transport,
-      webrtc::DatagramTransportInterface* datagram_transport,
-      const webrtc::CryptoOptions& crypto_options,
-      webrtc::RtcEventLog* event_log);
+      cricket::IceTransportInternal* ice_transport,
+      DatagramTransportInterface* datagram_transport);
 
-  ~DatagramDtlsAdaptor() override;
-
-  // Connects to ICE transport callbacks.
-  void ConnectToIceTransport();
+  ~DatagramRtpTransport() override;
 
   // =====================================================
   // Overrides for webrtc::DatagramTransportSinkInterface
@@ -72,35 +63,38 @@ class DatagramDtlsAdaptor : public DtlsTransportInternal,
   void OnStateChanged(webrtc::MediaTransportState state) override;
 
   // =====================================================
-  // DtlsTransportInternal overrides
+  // RtpTransportInternal overrides
   // =====================================================
-  const webrtc::CryptoOptions& crypto_options() const override;
-  DtlsTransportState dtls_state() const override;
-  int component() const override;
-  bool IsDtlsActive() const override;
-  bool GetDtlsRole(rtc::SSLRole* role) const override;
-  bool SetDtlsRole(rtc::SSLRole role) override;
-  bool GetSrtpCryptoSuite(int* cipher) override;
-  bool GetSslCipherSuite(int* cipher) override;
-  rtc::scoped_refptr<rtc::RTCCertificate> GetLocalCertificate() const override;
-  bool SetLocalCertificate(
-      const rtc::scoped_refptr<rtc::RTCCertificate>& certificate) override;
-  std::unique_ptr<rtc::SSLCertChain> GetRemoteSSLCertChain() const override;
-  bool ExportKeyingMaterial(const std::string& label,
-                            const uint8_t* context,
-                            size_t context_len,
-                            bool use_context,
-                            uint8_t* result,
-                            size_t result_len) override;
-  bool SetRemoteFingerprint(const std::string& digest_alg,
-                            const uint8_t* digest,
-                            size_t digest_len) override;
-  bool SetSslMaxProtocolVersion(rtc::SSLProtocolVersion version) override;
-  IceTransportInternal* ice_transport() override;
+  bool SendRtpPacket(rtc::CopyOnWriteBuffer* packet,
+                     const rtc::PacketOptions& options,
+                     int flags) override;
+
+  bool SendRtcpPacket(rtc::CopyOnWriteBuffer* packet,
+                      const rtc::PacketOptions& options,
+                      int flags) override;
 
   const std::string& transport_name() const override;
-  bool writable() const override;
-  bool receiving() const override;
+
+  // Datagram transport always muxes RTCP.
+  bool rtcp_mux_enabled() const override { return true; }
+  void SetRtcpMuxEnabled(bool enable) override {}
+
+  int SetRtpOption(rtc::Socket::Option opt, int value) override;
+  int SetRtcpOption(rtc::Socket::Option opt, int value) override;
+
+  bool IsReadyToSend() const override;
+
+  bool IsWritable(bool rtcp) const override;
+
+  bool IsSrtpActive() const override { return false; }
+
+  void UpdateRtpHeaderExtensionMap(
+      const cricket::RtpHeaderExtensions& header_extensions) override;
+
+  bool RegisterRtpDemuxerSink(const RtpDemuxerCriteria& criteria,
+                              RtpPacketSinkInterface* sink) override;
+
+  bool UnregisterRtpDemuxerSink(RtpPacketSinkInterface* sink) override;
 
  private:
   // RTP/RTCP packet info stored for each sent packet.
@@ -137,60 +131,19 @@ class DatagramDtlsAdaptor : public DtlsTransportInternal,
                                   SentPacketInfo* sent_packet_info);
 
   // Sends datagram to datagram_transport.
-  int SendDatagram(rtc::ArrayView<const uint8_t> data,
-                   webrtc::DatagramId datagram_id);
+  bool SendDatagram(rtc::ArrayView<const uint8_t> data,
+                    webrtc::DatagramId datagram_id);
 
-  void set_receiving(bool receiving);
-  void set_writable(bool writable);
-  void set_dtls_state(DtlsTransportState state);
-
-  // Forwards incoming packet up the stack.
-  void PropagateReadPacket(rtc::ArrayView<const uint8_t> data,
-                           const int64_t& packet_time_us);
-
-  // Signals SentPacket notification.
-  void PropagateOnSentNotification(const rtc::SentPacket& sent_packet);
-
-  // Listens to read packet notifications from ICE (only used in bypass mode).
-  void OnReadPacket(rtc::PacketTransportInternal* transport,
-                    const char* data,
-                    size_t size,
-                    const int64_t& packet_time_us,
-                    int flags);
-
-  void OnReadyToSend(rtc::PacketTransportInternal* transport);
-  void OnWritableState(rtc::PacketTransportInternal* transport);
+  // Propagates network route changes from ICE.
   void OnNetworkRouteChanged(absl::optional<rtc::NetworkRoute> network_route);
-  void OnReceivingState(rtc::PacketTransportInternal* transport);
-
-  int SendPacket(const char* data,
-                 size_t len,
-                 const rtc::PacketOptions& options,
-                 int flags) override;
-  int SetOption(rtc::Socket::Option opt, int value) override;
-  int GetError() override;
-  void OnSentPacket(rtc::PacketTransportInternal* transport,
-                    const rtc::SentPacket& sent_packet);
 
   rtc::ThreadChecker thread_checker_;
-  webrtc::CryptoOptions crypto_options_;
-  IceTransportInternal* ice_transport_;
-
+  cricket::IceTransportInternal* ice_transport_;
   webrtc::DatagramTransportInterface* datagram_transport_;
 
-  // Current ICE writable state. Must be modified by calling set_ice_writable(),
-  // which propagates change notifications.
-  bool writable_ = false;
+  RtpDemuxer rtp_demuxer_;
 
-  // Current receiving state. Must be modified by calling set_receiving(), which
-  // propagates change notifications.
-  bool receiving_ = false;
-
-  // Current DTLS state. Must be modified by calling set_dtls_state(), which
-  // propagates change notifications.
-  DtlsTransportState dtls_state_ = DTLS_TRANSPORT_NEW;
-
-  webrtc::RtcEventLog* const event_log_;
+  MediaTransportState state_ = MediaTransportState::kPending;
 
   // Extension map for parsing transport sequence numbers.
   webrtc::RtpHeaderExtensionMap rtp_header_extension_map_;
@@ -214,6 +167,6 @@ class DatagramDtlsAdaptor : public DtlsTransportInternal,
   const bool disable_datagram_to_rtcp_feeback_translation_;
 };
 
-}  // namespace cricket
+}  // namespace webrtc
 
-#endif  // PC_DATAGRAM_DTLS_ADAPTOR_H_
+#endif  // PC_DATAGRAM_RTP_TRANSPORT_H_

@@ -93,10 +93,9 @@ class JsepTransport : public sigslot::has_slots<>,
       std::unique_ptr<webrtc::RtpTransport> unencrypted_rtp_transport,
       std::unique_ptr<webrtc::SrtpTransport> sdes_transport,
       std::unique_ptr<webrtc::DtlsSrtpTransport> dtls_srtp_transport,
-      std::unique_ptr<webrtc::RtpTransport> datagram_rtp_transport,
+      std::unique_ptr<webrtc::RtpTransportInternal> datagram_rtp_transport,
       std::unique_ptr<DtlsTransportInternal> rtp_dtls_transport,
       std::unique_ptr<DtlsTransportInternal> rtcp_dtls_transport,
-      std::unique_ptr<DtlsTransportInternal> datagram_dtls_transport,
       std::unique_ptr<webrtc::MediaTransportInterface> media_transport,
       std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport);
 
@@ -349,7 +348,7 @@ class JsepTransport : public sigslot::has_slots<>,
       RTC_GUARDED_BY(accessor_lock_);
   std::unique_ptr<webrtc::DtlsSrtpTransport> dtls_srtp_transport_
       RTC_GUARDED_BY(accessor_lock_);
-  std::unique_ptr<webrtc::RtpTransport> datagram_rtp_transport_
+  std::unique_ptr<webrtc::RtpTransportInternal> datagram_rtp_transport_
       RTC_GUARDED_BY(accessor_lock_);
 
   // If multiple RTP transports are in use, |composite_rtp_transport_| will be
