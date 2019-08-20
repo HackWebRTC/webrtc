@@ -4177,25 +4177,7 @@ void AudioDeviceWindowsCore::_TraceCOMError(HRESULT hr) const {
   RTC_LOG(LS_ERROR) << "Core Audio method failed (hr=" << hr << ")";
   StringCchPrintfW(buf, MAXERRORLENGTH, L"Error details: ");
   StringCchCatW(buf, MAXERRORLENGTH, errorText);
-  RTC_LOG(LS_ERROR) << WideToUTF8(buf);
-}
-
-// ----------------------------------------------------------------------------
-//  WideToUTF8
-// ----------------------------------------------------------------------------
-
-char* AudioDeviceWindowsCore::WideToUTF8(const wchar_t* src) const {
-  const size_t kStrLen = sizeof(_str);
-  memset(_str, 0, kStrLen);
-  // Get required size (in bytes) to be able to complete the conversion.
-  unsigned int required_size =
-      (unsigned int)WideCharToMultiByte(CP_UTF8, 0, src, -1, _str, 0, 0, 0);
-  if (required_size <= kStrLen) {
-    // Process the entire input string, including the terminating null char.
-    if (WideCharToMultiByte(CP_UTF8, 0, src, -1, _str, kStrLen, 0, 0) == 0)
-      memset(_str, 0, kStrLen);
-  }
-  return _str;
+  RTC_LOG(LS_ERROR) << rtc::ToUtf8(buf);
 }
 
 bool AudioDeviceWindowsCore::KeyPressed() const {

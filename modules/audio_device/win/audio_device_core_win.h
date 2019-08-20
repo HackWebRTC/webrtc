@@ -233,10 +233,6 @@ class AudioDeviceWindowsCore : public AudioDeviceGeneric {
   int32_t _GetDefaultDevice(EDataFlow dir, ERole role, IMMDevice** ppDevice);
   int32_t _GetListDevice(EDataFlow dir, int index, IMMDevice** ppDevice);
 
-  // Converts from wide-char to UTF-8 if UNICODE is defined.
-  // Does nothing if UNICODE is undefined.
-  char* WideToUTF8(const wchar_t* src) const;
-
   int32_t InitRecordingDMO();
 
   ScopedCOMInitializer _comInit;
@@ -310,8 +306,6 @@ class AudioDeviceWindowsCore : public AudioDeviceGeneric {
   AudioDeviceModule::WindowsDeviceType _outputDevice;
   uint16_t _inputDeviceIndex;
   uint16_t _outputDeviceIndex;
-
-  mutable char _str[512];
 };
 
 #endif  // #if (_MSC_VER >= 1400)
