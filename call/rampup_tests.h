@@ -112,7 +112,21 @@ class RampUpTester : public test::EndToEndTest {
   std::vector<uint32_t> video_rtx_ssrcs_;
   std::vector<uint32_t> audio_ssrcs_;
 
+  // Initially zero, then set to the target time in milliseconds for when
+  // PollStats() will next be called.
+  int64_t next_scheduled_poll_time_ms_ = 0;
+
  protected:
+  // Call from within PollStats to ensure that initial PollStats() timestamp
+  // is captured.
+  void EnsurePollTimeSet();
+
+  // Calculates the interval from now and until when PollStats() next should be
+  // called. Internally updates a timestamp, so each call will yield the
+  // subsequent timestamp (in milliseconds).
+  // Must be called from the |task_queue_|.
+  int64_t GetIntervalForNextPoll();
+
   test::SingleThreadedTaskQueueForTesting* const task_queue_;
   test::SingleThreadedTaskQueueForTesting::TaskId pending_task_ = -1;
 };

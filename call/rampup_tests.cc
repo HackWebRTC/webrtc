@@ -23,6 +23,7 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
 #include "rtc_base/string_encode.h"
+#include "rtc_base/time_utils.h"
 #include "test/encoder_settings.h"
 #include "test/field_trial.h"
 #include "test/gtest.h"
@@ -323,6 +324,10 @@ void RampUpTester::OnCallsCreated(Call* sender_call, Call* receiver_call) {
 }
 
 void RampUpTester::PollStats() {
+  RTC_DCHECK_RUN_ON(task_queue_);
+
+  EnsurePollTimeSet();
+
   pending_task_ = -1;
   Call::Stats stats = sender_call_->GetStats();
   EXPECT_GE(expected_bitrate_bps_, 0);
@@ -334,7 +339,7 @@ void RampUpTester::PollStats() {
     observation_complete_.Set();
   } else {
     pending_task_ = task_queue_->PostDelayedTask([this]() { PollStats(); },
-                                                 kPollIntervalMs);
+                                                 GetIntervalForNextPoll());
   }
 }
 
@@ -422,6 +427,22 @@ void RampUpTester::PerformTest() {
   TriggerTestDone();
 }
 
+void RampUpTester::EnsurePollTimeSet() {
+  RTC_DCHECK_RUN_ON(task_queue_);
+  if (!next_scheduled_poll_time_ms_)
+    next_scheduled_poll_time_ms_ = rtc::TimeMillis();
+}
+
+int64_t RampUpTester::GetIntervalForNextPoll() {
+  RTC_DCHECK_RUN_ON(task_queue_);
+  RTC_DCHECK_NE(next_scheduled_poll_time_ms_, 0)
+      << "No call to EnsurePollTimeSet()";
+  auto now = rtc::TimeMillis();
+  next_scheduled_poll_time_ms_ += kPollIntervalMs;
+  auto interval = next_scheduled_poll_time_ms_ - now;
+  return interval > 0 ? interval : 0;
+}
+
 RampUpDownUpTester::RampUpDownUpTester(
     size_t num_video_streams,
     size_t num_audio_streams,
@@ -460,6 +481,8 @@ RampUpDownUpTester::RampUpDownUpTester(
 RampUpDownUpTester::~RampUpDownUpTester() {}
 
 void RampUpDownUpTester::PollStats() {
+  EnsurePollTimeSet();
+
   pending_task_ = -1;
   bool last_round = (test_state_ == kTestEnd);
 
@@ -482,7 +505,7 @@ void RampUpDownUpTester::PollStats() {
 
   if (!last_round) {
     pending_task_ = task_queue_->PostDelayedTask([this]() { PollStats(); },
-                                                 kPollIntervalMs);
+                                                 GetIntervalForNextPoll());
   }
 }
 
