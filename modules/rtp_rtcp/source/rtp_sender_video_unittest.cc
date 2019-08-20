@@ -147,7 +147,7 @@ class RtpSenderVideoTest : public ::testing::TestWithParam<bool> {
           config.outgoing_transport = &transport_;
           config.retransmission_rate_limiter = &retransmission_rate_limiter_;
           config.field_trials = &field_trials_;
-          config.media_send_ssrc = kSsrc;
+          config.local_media_ssrc = kSsrc;
           return config;
         }()),
         rtp_sender_video_(&fake_clock_, &rtp_sender_, nullptr, field_trials_) {

@@ -152,7 +152,7 @@ class RtcpReceiverTest : public ::testing::Test {
               config.bitrate_allocation_observer =
                   &bitrate_allocation_observer_;
               config.rtcp_report_interval_ms = kRtcpIntervalMs;
-              config.media_send_ssrc = kReceiverMainSsrc;
+              config.local_media_ssrc = kReceiverMainSsrc;
               config.rtx_send_ssrc = kReceiverExtraSsrc;
               return config;
             }(),

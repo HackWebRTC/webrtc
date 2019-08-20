@@ -701,7 +701,7 @@ ChannelSend::ChannelSend(Clock* clock,
   configuration.extmap_allow_mixed = extmap_allow_mixed;
   configuration.rtcp_report_interval_ms = rtcp_report_interval_ms;
 
-  configuration.media_send_ssrc = ssrc;
+  configuration.local_media_ssrc = ssrc;
 
   _rtpRtcpModule = RtpRtcp::Create(configuration);
   _rtpRtcpModule->SetSendingMediaStatus(false);

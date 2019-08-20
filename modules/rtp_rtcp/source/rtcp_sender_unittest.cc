@@ -92,7 +92,7 @@ class RtcpSenderTest : public ::testing::Test {
     configuration.retransmission_rate_limiter = &retransmission_rate_limiter_;
     configuration.rtcp_report_interval_ms = 1000;
     configuration.receive_statistics = receive_statistics_.get();
-    configuration.media_send_ssrc = kSenderSsrc;
+    configuration.local_media_ssrc = kSenderSsrc;
     return configuration;
   }
 
@@ -195,7 +195,7 @@ TEST_F(RtcpSenderTest, DoNotSendSrBeforeRtp) {
   config.receive_statistics = receive_statistics_.get();
   config.outgoing_transport = &test_transport_;
   config.rtcp_report_interval_ms = 1000;
-  config.media_send_ssrc = kSenderSsrc;
+  config.local_media_ssrc = kSenderSsrc;
   rtcp_sender_.reset(new RTCPSender(config));
   rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
   rtcp_sender_->SetRTCPStatus(RtcpMode::kReducedSize);
@@ -217,7 +217,7 @@ TEST_F(RtcpSenderTest, DoNotSendCompundBeforeRtp) {
   config.receive_statistics = receive_statistics_.get();
   config.outgoing_transport = &test_transport_;
   config.rtcp_report_interval_ms = 1000;
-  config.media_send_ssrc = kSenderSsrc;
+  config.local_media_ssrc = kSenderSsrc;
   rtcp_sender_.reset(new RTCPSender(config));
   rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
   rtcp_sender_->SetRTCPStatus(RtcpMode::kCompound);
@@ -695,7 +695,7 @@ TEST_F(RtcpSenderTest, ByeMustBeLast) {
   config.receive_statistics = receive_statistics_.get();
   config.outgoing_transport = &mock_transport;
   config.rtcp_report_interval_ms = 1000;
-  config.media_send_ssrc = kSenderSsrc;
+  config.local_media_ssrc = kSenderSsrc;
   rtcp_sender_.reset(new RTCPSender(config));
 
   rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);
@@ -827,7 +827,7 @@ TEST_F(RtcpSenderTest, DoesntSchedulesInitialReportWhenSsrcSetOnConstruction) {
 TEST_F(RtcpSenderTest, DoesntSchedulesInitialReportOnFirstSetSsrc) {
   // Set up without first SSRC not set at construction.
   RtpRtcp::Configuration configuration = GetDefaultConfig();
-  configuration.media_send_ssrc = absl::nullopt;
+  configuration.local_media_ssrc = absl::nullopt;
 
   rtcp_sender_.reset(new RTCPSender(configuration));
   rtcp_sender_->SetRemoteSSRC(kRemoteSsrc);

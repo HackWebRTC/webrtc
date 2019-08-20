@@ -245,7 +245,7 @@ class RtpSenderTest : public ::testing::TestWithParam<TestConfig> {
     RtpRtcp::Configuration config;
     config.clock = &fake_clock_;
     config.outgoing_transport = &transport_;
-    config.media_send_ssrc = kSsrc;
+    config.local_media_ssrc = kSsrc;
     config.rtx_send_ssrc = kRtxSsrc;
     config.flexfec_sender = &flexfec_sender_;
     config.transport_sequence_number_allocator = &seq_num_allocator_;
@@ -426,7 +426,7 @@ TEST_P(RtpSenderTest, AssignSequenceNumberAllowsPaddingOnAudio) {
   config.clock = &fake_clock_;
   config.outgoing_transport = &transport;
   config.paced_sender = &mock_paced_sender_;
-  config.media_send_ssrc = kSsrc;
+  config.local_media_ssrc = kSsrc;
   config.event_log = &mock_rtc_event_log_;
   config.retransmission_rate_limiter = &retransmission_rate_limiter_;
   rtp_sender_ = absl::make_unique<RTPSender>(config);
@@ -476,7 +476,7 @@ TEST_P(RtpSenderTestWithoutPacer,
   RtpRtcp::Configuration config;
   config.clock = &fake_clock_;
   config.outgoing_transport = &transport_;
-  config.media_send_ssrc = kSsrc;
+  config.local_media_ssrc = kSsrc;
   config.transport_sequence_number_allocator = &seq_num_allocator_;
   config.transport_feedback_callback = &feedback_observer_;
   config.event_log = &mock_rtc_event_log_;
@@ -515,7 +515,7 @@ TEST_P(RtpSenderTestWithoutPacer, SendsPacketsWithTransportSequenceNumber) {
   RtpRtcp::Configuration config;
   config.clock = &fake_clock_;
   config.outgoing_transport = &transport_;
-  config.media_send_ssrc = kSsrc;
+  config.local_media_ssrc = kSsrc;
   config.transport_sequence_number_allocator = &seq_num_allocator_;
   config.transport_feedback_callback = &feedback_observer_;
   config.event_log = &mock_rtc_event_log_;
@@ -557,7 +557,7 @@ TEST_P(RtpSenderTestWithoutPacer, PacketOptionsNoRetransmission) {
   RtpRtcp::Configuration config;
   config.clock = &fake_clock_;
   config.outgoing_transport = &transport_;
-  config.media_send_ssrc = kSsrc;
+  config.local_media_ssrc = kSsrc;
   config.transport_sequence_number_allocator = &seq_num_allocator_;
   config.transport_feedback_callback = &feedback_observer_;
   config.event_log = &mock_rtc_event_log_;
@@ -617,7 +617,7 @@ TEST_P(RtpSenderTestWithoutPacer, OnSendSideDelayUpdated) {
   RtpRtcp::Configuration config;
   config.clock = &fake_clock_;
   config.outgoing_transport = &transport_;
-  config.media_send_ssrc = kSsrc;
+  config.local_media_ssrc = kSsrc;
   config.send_side_delay_observer = &send_side_delay_observer_;
   config.event_log = &mock_rtc_event_log_;
   rtp_sender_ = absl::make_unique<RTPSender>(config);
@@ -707,7 +707,7 @@ TEST_P(RtpSenderTest, SendsPacketsWithTransportSequenceNumber) {
   config.clock = &fake_clock_;
   config.outgoing_transport = &transport_;
   config.paced_sender = &mock_paced_sender_;
-  config.media_send_ssrc = kSsrc;
+  config.local_media_ssrc = kSsrc;
   config.transport_sequence_number_allocator = &seq_num_allocator_;
   config.transport_feedback_callback = &feedback_observer_;
   config.event_log = &mock_rtc_event_log_;
@@ -1244,7 +1244,7 @@ TEST_P(RtpSenderTest, OnSendPacketNotUpdatedWithoutSeqNumAllocator) {
   config.clock = &fake_clock_;
   config.outgoing_transport = &transport_;
   config.paced_sender = &mock_paced_sender_;
-  config.media_send_ssrc = kSsrc;
+  config.local_media_ssrc = kSsrc;
   config.send_packet_observer = &send_packet_observer_;
   config.retransmission_rate_limiter = &retransmission_rate_limiter_;
   rtp_sender_ = absl::make_unique<RTPSender>(config);
@@ -1280,7 +1280,7 @@ TEST_P(RtpSenderTest, SendRedundantPayloads) {
   config.clock = &fake_clock_;
   config.outgoing_transport = &transport;
   config.paced_sender = &mock_paced_sender_;
-  config.media_send_ssrc = kSsrc;
+  config.local_media_ssrc = kSsrc;
   config.rtx_send_ssrc = kRtxSsrc;
   config.event_log = &mock_rtc_event_log_;
   config.retransmission_rate_limiter = &retransmission_rate_limiter_;
@@ -1448,7 +1448,7 @@ TEST_P(RtpSenderTest, SendFlexfecPackets) {
   config.clock = &fake_clock_;
   config.outgoing_transport = &transport_;
   config.paced_sender = &mock_paced_sender_;
-  config.media_send_ssrc = kSsrc;
+  config.local_media_ssrc = kSsrc;
   config.flexfec_sender = &flexfec_sender_;
   config.transport_sequence_number_allocator = &seq_num_allocator_;
   config.event_log = &mock_rtc_event_log_;
@@ -1562,7 +1562,7 @@ TEST_P(RtpSenderTest, NoFlexfecForTimingFrames) {
   config.event_log = &mock_rtc_event_log_;
   config.send_packet_observer = &send_packet_observer_;
   config.retransmission_rate_limiter = &retransmission_rate_limiter_;
-  config.media_send_ssrc = kSsrc;
+  config.local_media_ssrc = kSsrc;
   rtp_sender_ = absl::make_unique<RTPSender>(config);
   rtp_sender_->SetSequenceNumber(kSeqNum);
   rtp_sender_->SetStorePacketsStatus(true, 10);
@@ -1723,7 +1723,7 @@ TEST_P(RtpSenderTestWithoutPacer, SendFlexfecPackets) {
   RtpRtcp::Configuration config;
   config.clock = &fake_clock_;
   config.outgoing_transport = &transport_;
-  config.media_send_ssrc = kSsrc;
+  config.local_media_ssrc = kSsrc;
   config.flexfec_sender = &flexfec_sender;
   config.transport_sequence_number_allocator = &seq_num_allocator_;
   config.event_log = &mock_rtc_event_log_;
@@ -1992,7 +1992,7 @@ TEST_P(RtpSenderTest, FecOverheadRate) {
   config.clock = &fake_clock_;
   config.outgoing_transport = &transport_;
   config.paced_sender = &mock_paced_sender_;
-  config.media_send_ssrc = kSsrc;
+  config.local_media_ssrc = kSsrc;
   config.flexfec_sender = &flexfec_sender;
   config.transport_sequence_number_allocator = &seq_num_allocator_;
   config.event_log = &mock_rtc_event_log_;
@@ -2075,7 +2075,7 @@ TEST_P(RtpSenderTest, BitrateCallbacks) {
   RtpRtcp::Configuration config;
   config.clock = &fake_clock_;
   config.outgoing_transport = &transport_;
-  config.media_send_ssrc = kSsrc;
+  config.local_media_ssrc = kSsrc;
   config.send_bitrate_observer = &callback;
   config.retransmission_rate_limiter = &retransmission_rate_limiter_;
   rtp_sender_ = absl::make_unique<RTPSender>(config);
@@ -2314,7 +2314,7 @@ TEST_P(RtpSenderTest, OnOverheadChanged) {
   RtpRtcp::Configuration config;
   config.clock = &fake_clock_;
   config.outgoing_transport = &transport_;
-  config.media_send_ssrc = kSsrc;
+  config.local_media_ssrc = kSsrc;
   config.retransmission_rate_limiter = &retransmission_rate_limiter_;
   config.overhead_observer = &mock_overhead_observer;
   rtp_sender_ = absl::make_unique<RTPSender>(config);
@@ -2337,7 +2337,7 @@ TEST_P(RtpSenderTest, DoesNotUpdateOverheadOnEqualSize) {
   RtpRtcp::Configuration config;
   config.clock = &fake_clock_;
   config.outgoing_transport = &transport_;
-  config.media_send_ssrc = kSsrc;
+  config.local_media_ssrc = kSsrc;
   config.retransmission_rate_limiter = &retransmission_rate_limiter_;
   config.overhead_observer = &mock_overhead_observer;
   rtp_sender_ = absl::make_unique<RTPSender>(config);
@@ -2560,7 +2560,7 @@ TEST_P(RtpSenderTest, TrySendPacketUpdatesStats) {
   RtpRtcp::Configuration config;
   config.clock = &fake_clock_;
   config.outgoing_transport = &transport_;
-  config.media_send_ssrc = kSsrc;
+  config.local_media_ssrc = kSsrc;
   config.rtx_send_ssrc = kRtxSsrc;
   config.flexfec_sender = &flexfec_sender_;
   config.send_side_delay_observer = &send_side_delay_observer;

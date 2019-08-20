@@ -137,7 +137,8 @@ RTCPReceiver::RTCPReceiver(const RtpRtcp::Configuration& config,
                               ? config.rtcp_report_interval_ms
                               : (config.audio ? kDefaultAudioReportInterval
                                               : kDefaultVideoReportInterval)),
-      main_ssrc_(config.media_send_ssrc.value_or(0)),
+      // TODO(bugs.webrtc.org/10774): Remove fallback.
+      main_ssrc_(config.get_local_media_ssrc().value_or(0)),
       remote_ssrc_(0),
       remote_sender_rtp_time_(0),
       xr_rrtr_status_(false),
@@ -152,8 +153,8 @@ RTCPReceiver::RTCPReceiver(const RtpRtcp::Configuration& config,
       num_skipped_packets_(0),
       last_skipped_packets_warning_ms_(clock_->TimeInMilliseconds()) {
   RTC_DCHECK(owner);
-  if (config.media_send_ssrc) {
-    registered_ssrcs_.insert(*config.media_send_ssrc);
+  if (config.get_local_media_ssrc()) {
+    registered_ssrcs_.insert(*config.get_local_media_ssrc());
   }
   if (config.rtx_send_ssrc) {
     registered_ssrcs_.insert(*config.rtx_send_ssrc);

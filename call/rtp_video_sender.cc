@@ -113,11 +113,11 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
   RTC_DCHECK(rtp_config.rtx.ssrcs.empty() ||
              rtp_config.rtx.ssrcs.size() == rtp_config.rtx.ssrcs.size());
   for (size_t i = 0; i < rtp_config.ssrcs.size(); ++i) {
-    configuration.media_send_ssrc = rtp_config.ssrcs[i];
+    configuration.local_media_ssrc = rtp_config.ssrcs[i];
     bool enable_flexfec = flexfec_sender != nullptr &&
                           std::find(flexfec_protected_ssrcs.begin(),
                                     flexfec_protected_ssrcs.end(),
-                                    *configuration.media_send_ssrc) !=
+                                    *configuration.local_media_ssrc) !=
                               flexfec_protected_ssrcs.end();
     configuration.flexfec_sender = enable_flexfec ? flexfec_sender : nullptr;
     auto playout_delay_oracle = absl::make_unique<PlayoutDelayOracle>();

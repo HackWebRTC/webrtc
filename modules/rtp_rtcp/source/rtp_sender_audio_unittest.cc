@@ -70,7 +70,7 @@ class RtpSenderAudioTest : public ::testing::Test {
           config.audio = true;
           config.clock = &fake_clock_;
           config.outgoing_transport = &transport_;
-          config.media_send_ssrc = kSsrc;
+          config.local_media_ssrc = kSsrc;
           return config;
         }()),
         rtp_sender_audio_(&fake_clock_, &rtp_sender_) {

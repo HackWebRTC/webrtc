@@ -175,7 +175,7 @@ RTPSender::RTPSender(const RtpRtcp::Configuration& config)
       bitrate_callback_(config.send_bitrate_observer),
       // RTP variables
       sequence_number_forced_(false),
-      ssrc_(config.media_send_ssrc),
+      ssrc_(config.get_local_media_ssrc()),
       ssrc_has_acked_(false),
       rtx_ssrc_has_acked_(false),
       last_rtp_timestamp_(0),

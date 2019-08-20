@@ -131,7 +131,7 @@ std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
   configuration.receive_statistics = receive_statistics;
   configuration.outgoing_transport = config.rtcp_send_transport;
   configuration.rtt_stats = rtt_stats;
-  configuration.media_send_ssrc = config.local_ssrc;
+  configuration.local_media_ssrc = config.local_ssrc;
   return RtpRtcp::Create(configuration);
 }
 

@@ -135,7 +135,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     configuration.receive_statistics = receive_statistics_.get();
     configuration.outgoing_transport = &transport_;
     configuration.retransmission_rate_limiter = &retransmission_rate_limiter_;
-    configuration.media_send_ssrc = kTestSsrc;
+    configuration.local_media_ssrc = kTestSsrc;
     rtp_rtcp_module_ = RtpRtcp::Create(configuration);
     rtp_sender_video_ = absl::make_unique<RTPSenderVideo>(
         &fake_clock, rtp_rtcp_module_->RtpSender(), nullptr,
