@@ -56,10 +56,10 @@ class AgcManagerDirect final {
   ~AgcManagerDirect();
 
   int Initialize();
-  void AnalyzePreProcess(int16_t* audio,
+  void AnalyzePreProcess(float* audio,
                          int num_channels,
                          size_t samples_per_channel);
-  void Process(const int16_t* audio, size_t length, int sample_rate_hz);
+  void Process(const float* audio, size_t length, int sample_rate_hz);
 
   // Call when the capture stream has been muted/unmuted. This causes the
   // manager to disregard all incoming audio; chances are good it's background

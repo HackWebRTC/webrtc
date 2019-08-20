@@ -43,6 +43,13 @@ static inline int16_t FloatS16ToS16(float v) {
   return static_cast<int16_t>(v + std::copysign(0.5f, v));
 }
 
+static inline int16_t FloatToS16(float v) {
+  v *= 32768.f;
+  v = std::min(v, 32767.f);
+  v = std::max(v, -32768.f);
+  return static_cast<int16_t>(v + std::copysign(0.5f, v));
+}
+
 static inline float FloatToFloatS16(float v) {
   v = std::min(v, 1.f);
   v = std::max(v, -1.f);
@@ -56,7 +63,9 @@ static inline float FloatS16ToFloat(float v) {
   return v * kScaling;
 }
 
+void FloatToS16(const float* src, size_t size, int16_t* dest);
 void S16ToFloat(const int16_t* src, size_t size, float* dest);
+void S16ToFloatS16(const int16_t* src, size_t size, float* dest);
 void FloatS16ToS16(const float* src, size_t size, int16_t* dest);
 void FloatToFloatS16(const float* src, size_t size, float* dest);
 void FloatS16ToFloat(const float* src, size_t size, float* dest);

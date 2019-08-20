@@ -52,8 +52,6 @@ class AudioBuffer {
   // Where:
   // 0 <= channel < |num_proc_channels_|
   // 0 <= sample < |proc_num_frames_|
-  int16_t* const* channels();
-  const int16_t* const* channels_const() const;
   float* const* channels_f();
   const float* const* channels_const_f() const;
 
@@ -64,8 +62,6 @@ class AudioBuffer {
   // 0 <= channel < |num_proc_channels_|
   // 0 <= band < |num_bands_|
   // 0 <= sample < |num_split_frames_|
-  int16_t* const* split_bands(size_t channel);
-  const int16_t* const* split_bands_const(size_t channel) const;
   float* const* split_bands_f(size_t channel);
   const float* const* split_bands_const_f(size_t channel) const;
 
@@ -76,7 +72,7 @@ class AudioBuffer {
   // 0 <= band < |num_bands_|
   // 0 <= channel < |num_proc_channels_|
   // 0 <= sample < |num_split_frames_|
-  const int16_t* const* split_channels_const(Band band) const;
+  const float* const* split_channels_const_f(Band band) const;
 
   // Use for int16 interleaved data.
   void DeinterleaveFrom(const AudioFrame* audioFrame);
@@ -92,6 +88,17 @@ class AudioBuffer {
   void SplitIntoFrequencyBands();
   // Recombine the different bands into one signal.
   void MergeFrequencyBands();
+
+  // Copies the split bands data into the integer two-dimensional array.
+  void CopySplitChannelDataTo(size_t channel, int16_t* const* split_band_data);
+
+  // Copies the data in the integer two-dimensional array into the split_bands
+  // data.
+  void CopySplitChannelDataFrom(size_t channel,
+                                const int16_t* const* split_band_data);
+
+  static const size_t kMaxSplitFrameLength = 160;
+  static const size_t kMaxNumBands = 3;
 
  private:
   FRIEND_TEST_ALL_PREFIXES(AudioBufferTest,

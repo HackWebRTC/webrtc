@@ -1279,8 +1279,8 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
         capture_buffer->num_frames()));
   }
 
-  capture_input_rms_.Analyze(rtc::ArrayView<const int16_t>(
-      capture_buffer->channels_const()[0],
+  capture_input_rms_.Analyze(rtc::ArrayView<const float>(
+      capture_buffer->channels_const_f()[0],
       capture_nonlocked_.capture_processing_format.num_frames()));
   const bool log_rms = ++capture_rms_interval_counter_ >= 1000;
   if (log_rms) {
@@ -1323,12 +1323,12 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   if (constants_.use_experimental_agc &&
       public_submodules_->gain_control->is_enabled()) {
     private_submodules_->agc_manager->AnalyzePreProcess(
-        capture_buffer->channels()[0], capture_buffer->num_channels(),
+        capture_buffer->channels_f()[0], capture_buffer->num_channels(),
         capture_nonlocked_.capture_processing_format.num_frames());
 
     if (constants_.use_experimental_agc_process_before_aec) {
       private_submodules_->agc_manager->Process(
-          capture_buffer->channels()[0],
+          capture_buffer->channels_const_f()[0],
           capture_nonlocked_.capture_processing_format.num_frames(),
           capture_nonlocked_.capture_processing_format.sample_rate_hz());
     }
@@ -1419,7 +1419,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
       public_submodules_->gain_control->is_enabled() &&
       !constants_.use_experimental_agc_process_before_aec) {
     private_submodules_->agc_manager->Process(
-        capture_buffer->split_bands_const(0)[kBand0To8kHz],
+        capture_buffer->split_bands_const_f(0)[kBand0To8kHz],
         capture_buffer->num_frames_per_band(), capture_nonlocked_.split_rate);
   }
   // TODO(peah): Add reporting from AEC3 whether there is echo.
@@ -1484,8 +1484,8 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     capture_.stats.output_rms_dbfs = absl::nullopt;
   }
 
-  capture_output_rms_.Analyze(rtc::ArrayView<const int16_t>(
-      capture_buffer->channels_const()[0],
+  capture_output_rms_.Analyze(rtc::ArrayView<const float>(
+      capture_buffer->channels_const_f()[0],
       capture_nonlocked_.capture_processing_format.num_frames()));
   if (log_rms) {
     RmsLevel::Levels levels = capture_output_rms_.AverageAndPeak();

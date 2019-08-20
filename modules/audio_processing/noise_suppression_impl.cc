@@ -101,8 +101,16 @@ void NoiseSuppressionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
     WebRtcNs_Process(suppressors_[i]->state(), audio->split_bands_const_f(i),
                      audio->num_bands(), audio->split_bands_f(i));
 #elif defined(WEBRTC_NS_FIXED)
-    WebRtcNsx_Process(suppressors_[i]->state(), audio->split_bands_const(i),
-                      audio->num_bands(), audio->split_bands(i));
+    int16_t split_band_data[AudioBuffer::kMaxNumBands]
+                           [AudioBuffer::kMaxSplitFrameLength];
+    int16_t* split_bands[AudioBuffer::kMaxNumBands] = {
+        split_band_data[0], split_band_data[1], split_band_data[2]};
+    audio->CopySplitChannelDataTo(i, split_bands);
+
+    WebRtcNsx_Process(suppressors_[i]->state(), split_bands, audio->num_bands(),
+                      split_bands);
+
+    audio->CopySplitChannelDataFrom(i, split_bands);
 #endif
   }
 }

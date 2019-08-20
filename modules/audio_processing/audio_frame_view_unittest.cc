@@ -43,9 +43,9 @@ TEST(AudioFrameTest, ConstructFromAudioBuffer) {
   // But not the other way. The following will fail:
   // non_const_view = other_const_view;
 
-  AudioFrameView<int16_t> non_const_int16_view(
-      buffer.channels(), buffer.num_channels(), buffer.num_frames());
-  non_const_int16_view.channel(0)[0] = kIntConstant;
-  EXPECT_EQ(buffer.channels()[0][0], kIntConstant);
+  AudioFrameView<float> non_const_float_view(
+      buffer.channels_f(), buffer.num_channels(), buffer.num_frames());
+  non_const_float_view.channel(0)[0] = kIntConstant;
+  EXPECT_EQ(buffer.channels_f()[0][0], kIntConstant);
 }
 }  // namespace webrtc

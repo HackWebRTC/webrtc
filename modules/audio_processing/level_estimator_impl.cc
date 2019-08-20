@@ -40,8 +40,8 @@ void LevelEstimatorImpl::ProcessStream(AudioBuffer* audio) {
   }
 
   for (size_t i = 0; i < audio->num_channels(); i++) {
-    rms_->Analyze(rtc::ArrayView<const int16_t>(audio->channels_const()[i],
-                                                audio->num_frames()));
+    rms_->Analyze(rtc::ArrayView<const float>(audio->channels_const_f()[i],
+                                              audio->num_frames()));
   }
 }
 

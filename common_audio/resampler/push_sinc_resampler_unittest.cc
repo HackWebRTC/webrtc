@@ -33,18 +33,6 @@ T DBFS(T x) {
   return 20 * std::log10(x);
 }
 
-void FloatToS16(const float* src, size_t size, int16_t* dest) {
-  for (size_t i = 0; i < size; ++i) {
-    RTC_DCHECK_GE(32767.f, src[i]);
-    RTC_DCHECK_LE(-32768.f, src[i]);
-    if (src[i] >= 1.f)
-      dest[i] = 32767;
-    if (src[i] <= -1.f)
-      dest[i] = -32768;
-    dest[i] = static_cast<int16_t>(src[i] * 32767.5f);
-  }
-}
-
 }  // namespace
 
 class PushSincResamplerTest : public ::testing::TestWithParam<

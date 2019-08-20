@@ -118,25 +118,25 @@ void GainControlImpl::ProcessRenderAudio(
 void GainControlImpl::PackRenderAudioBuffer(
     AudioBuffer* audio,
     std::vector<int16_t>* packed_buffer) {
-  RTC_DCHECK_GE(160, audio->num_frames_per_band());
-
-  std::array<int16_t, 160> mixed_low_pass_data;
-  rtc::ArrayView<const int16_t> mixed_low_pass;
+  RTC_DCHECK_GE(AudioBuffer::kMaxSplitFrameLength,
+                audio->num_frames_per_band());
+  std::array<int16_t, AudioBuffer::kMaxSplitFrameLength> mixed_low_pass_data;
+  rtc::ArrayView<const int16_t> mixed_low_pass(mixed_low_pass_data.data(),
+                                               audio->num_frames_per_band());
   if (audio->num_proc_channels() == 1) {
-    mixed_low_pass =
-        rtc::ArrayView<const int16_t>(audio->split_bands_const(0)[kBand0To8kHz],
-                                      audio->num_frames_per_band());
+    FloatS16ToS16(audio->split_bands_const_f(0)[kBand0To8kHz],
+                  audio->num_frames_per_band(), mixed_low_pass_data.data());
   } else {
     const int num_channels = static_cast<int>(audio->num_channels());
     for (size_t i = 0; i < audio->num_frames_per_band(); ++i) {
-      int32_t value = audio->split_channels_const(kBand0To8kHz)[0][i];
+      int32_t value =
+          FloatS16ToS16(audio->split_channels_const_f(kBand0To8kHz)[0][i]);
       for (int j = 1; j < num_channels; ++j) {
-        value += audio->split_channels_const(kBand0To8kHz)[j][i];
+        value +=
+            FloatS16ToS16(audio->split_channels_const_f(kBand0To8kHz)[j][i]);
       }
       mixed_low_pass_data[i] = value / num_channels;
     }
-    mixed_low_pass = rtc::ArrayView<const int16_t>(
-        mixed_low_pass_data.data(), audio->num_frames_per_band());
   }
 
   packed_buffer->clear();
@@ -150,17 +150,28 @@ int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
   }
 
   RTC_DCHECK(num_proc_channels_);
-  RTC_DCHECK_GE(160, audio->num_frames_per_band());
+  RTC_DCHECK_GE(AudioBuffer::kMaxSplitFrameLength,
+                audio->num_frames_per_band());
   RTC_DCHECK_EQ(audio->num_channels(), *num_proc_channels_);
   RTC_DCHECK_LE(*num_proc_channels_, gain_controllers_.size());
+
+  int16_t split_band_data[AudioBuffer::kMaxNumBands]
+                         [AudioBuffer::kMaxSplitFrameLength];
+  int16_t* split_bands[AudioBuffer::kMaxNumBands] = {
+      split_band_data[0], split_band_data[1], split_band_data[2]};
 
   if (mode_ == kAdaptiveAnalog) {
     int capture_channel = 0;
     for (auto& gain_controller : gain_controllers_) {
       gain_controller->set_capture_level(analog_capture_level_);
-      int err = WebRtcAgc_AddMic(
-          gain_controller->state(), audio->split_bands(capture_channel),
-          audio->num_bands(), audio->num_frames_per_band());
+
+      audio->CopySplitChannelDataTo(capture_channel, split_bands);
+
+      int err =
+          WebRtcAgc_AddMic(gain_controller->state(), split_bands,
+                           audio->num_bands(), audio->num_frames_per_band());
+
+      audio->CopySplitChannelDataFrom(capture_channel, split_bands);
 
       if (err != AudioProcessing::kNoError) {
         return AudioProcessing::kUnspecifiedError;
@@ -171,10 +182,15 @@ int GainControlImpl::AnalyzeCaptureAudio(AudioBuffer* audio) {
     int capture_channel = 0;
     for (auto& gain_controller : gain_controllers_) {
       int32_t capture_level_out = 0;
-      int err = WebRtcAgc_VirtualMic(
-          gain_controller->state(), audio->split_bands(capture_channel),
-          audio->num_bands(), audio->num_frames_per_band(),
-          analog_capture_level_, &capture_level_out);
+
+      audio->CopySplitChannelDataTo(capture_channel, split_bands);
+
+      int err =
+          WebRtcAgc_VirtualMic(gain_controller->state(), split_bands,
+                               audio->num_bands(), audio->num_frames_per_band(),
+                               analog_capture_level_, &capture_level_out);
+
+      audio->CopySplitChannelDataFrom(capture_channel, split_bands);
 
       gain_controller->set_capture_level(capture_level_out);
 
@@ -199,7 +215,8 @@ int GainControlImpl::ProcessCaptureAudio(AudioBuffer* audio,
   }
 
   RTC_DCHECK(num_proc_channels_);
-  RTC_DCHECK_GE(160, audio->num_frames_per_band());
+  RTC_DCHECK_GE(AudioBuffer::kMaxSplitFrameLength,
+                audio->num_frames_per_band());
   RTC_DCHECK_EQ(audio->num_channels(), *num_proc_channels_);
 
   stream_is_saturated_ = false;
@@ -208,14 +225,21 @@ int GainControlImpl::ProcessCaptureAudio(AudioBuffer* audio,
     int32_t capture_level_out = 0;
     uint8_t saturation_warning = 0;
 
+    int16_t split_band_data[AudioBuffer::kMaxNumBands]
+                           [AudioBuffer::kMaxSplitFrameLength];
+    int16_t* split_bands[AudioBuffer::kMaxNumBands] = {
+        split_band_data[0], split_band_data[1], split_band_data[2]};
+    audio->CopySplitChannelDataTo(capture_channel, split_bands);
+
     // The call to stream_has_echo() is ok from a deadlock perspective
     // as the capture lock is allready held.
     int err = WebRtcAgc_Process(
-        gain_controller->state(), audio->split_bands_const(capture_channel),
-        audio->num_bands(), audio->num_frames_per_band(),
-        audio->split_bands(capture_channel),
+        gain_controller->state(), split_bands, audio->num_bands(),
+        audio->num_frames_per_band(), split_bands,
         gain_controller->get_capture_level(), &capture_level_out,
         stream_has_echo, &saturation_warning);
+
+    audio->CopySplitChannelDataFrom(capture_channel, split_bands);
 
     if (err != AudioProcessing::kNoError) {
       return AudioProcessing::kUnspecifiedError;
