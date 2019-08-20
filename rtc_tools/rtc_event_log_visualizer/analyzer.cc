@@ -156,13 +156,13 @@ absl::optional<uint32_t> EstimateRtpClockFrequency(
   double estimated_frequency =
       (last_rtp_timestamp - first_rtp_timestamp) / duration;
   for (uint32_t f : {8000, 16000, 32000, 48000, 90000}) {
-    if (std::fabs(estimated_frequency - f) < 0.05 * f) {
+    if (std::fabs(estimated_frequency - f) < 0.15 * f) {
       return f;
     }
   }
   RTC_LOG(LS_WARNING) << "Failed to estimate RTP clock frequency: Estimate "
                       << estimated_frequency
-                      << "not close to any stardard RTP frequency.";
+                      << " not close to any stardard RTP frequency.";
   return absl::nullopt;
 }
 
