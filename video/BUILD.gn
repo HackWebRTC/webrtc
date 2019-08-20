@@ -163,6 +163,7 @@ rtc_source_set("frame_dumping_decoder") {
     "../modules/video_coding:video_codec_interface",
     "../modules/video_coding:video_coding_utility",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base/system:file_wrapper",
     "//third_party/abseil-cpp/absl/memory",
   ]
 }

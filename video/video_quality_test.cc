@@ -286,7 +286,7 @@ std::unique_ptr<VideoDecoder> VideoQualityTest::CreateVideoDecoder(
     str << receive_logs_++;
     std::string path =
         params_.logging.encoded_frame_base_path + "." + str.str() + ".recv.ivf";
-    decoder = absl::make_unique<FrameDumpingDecoder>(
+    decoder = CreateFrameDumpingDecoderWrapper(
         std::move(decoder), FileWrapper::OpenWriteOnly(path));
   }
   return decoder;
