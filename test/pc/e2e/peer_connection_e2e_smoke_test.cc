@@ -38,6 +38,8 @@ class PeerConnectionE2EQualityTestSmokeTest : public ::testing::Test {
   using ScrollingParams = PeerConnectionE2EQualityTestFixture::ScrollingParams;
   using VideoSimulcastConfig =
       PeerConnectionE2EQualityTestFixture::VideoSimulcastConfig;
+  using EchoEmulationConfig =
+      PeerConnectionE2EQualityTestFixture::EchoEmulationConfig;
 
   void RunTest(const std::string& test_case_name,
                const RunParams& run_params,
@@ -165,6 +167,36 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Smoke) {
             TimeDelta::ms(1800), kDefaultSlidesWidth, kDefaultSlidesHeight);
         bob->AddVideoConfig(screenshare);
 
+        AudioConfig audio;
+        audio.stream_label = "bob-audio";
+        audio.mode = AudioConfig::Mode::kFile;
+        audio.input_file_name =
+            test::ResourcePath("pc_quality_smoke_test_bob_source", "wav");
+        bob->SetAudioConfig(std::move(audio));
+      });
+}
+
+// IOS debug builds can be quite slow, disabling to avoid issues with timeouts.
+#if defined(WEBRTC_IOS) && defined(WEBRTC_ARCH_ARM64) && !defined(NDEBUG)
+#define MAYBE_Echo DISABLED_Echo
+#else
+#define MAYBE_Echo Echo
+#endif
+TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Echo) {
+  RunParams run_params(TimeDelta::seconds(7));
+  run_params.echo_emulation_config = EchoEmulationConfig();
+  RunTest(
+      "smoke", run_params,
+      [](PeerConfigurer* alice) {
+        AudioConfig audio;
+        audio.stream_label = "alice-audio";
+        audio.mode = AudioConfig::Mode::kFile;
+        audio.input_file_name =
+            test::ResourcePath("pc_quality_smoke_test_alice_source", "wav");
+        audio.sampling_frequency_in_hz = 48000;
+        alice->SetAudioConfig(std::move(audio));
+      },
+      [](PeerConfigurer* bob) {
         AudioConfig audio;
         audio.stream_label = "bob-audio";
         audio.mode = AudioConfig::Mode::kFile;

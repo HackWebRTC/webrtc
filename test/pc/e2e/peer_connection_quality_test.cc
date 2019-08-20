@@ -276,7 +276,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
           [this]() { StartVideo(alice_video_sources_); }),
       video_quality_analyzer_injection_helper_.get(), signaling_thread.get(),
       alice_remote_audio_config, run_params.video_encoder_bitrate_multiplier,
-      task_queue_.get());
+      run_params.echo_emulation_config, task_queue_.get());
   bob_ = TestPeer::CreateTestPeer(
       std::move(bob_components), std::move(bob_params),
       absl::make_unique<FixturePeerConnectionObserver>(
@@ -287,7 +287,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
           [this]() { StartVideo(bob_video_sources_); }),
       video_quality_analyzer_injection_helper_.get(), signaling_thread.get(),
       bob_remote_audio_config, run_params.video_encoder_bitrate_multiplier,
-      task_queue_.get());
+      run_params.echo_emulation_config, task_queue_.get());
 
   int num_cores = CpuInfo::DetectNumberOfCores();
   RTC_DCHECK_GE(num_cores, 1);

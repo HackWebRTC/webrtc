@@ -280,6 +280,13 @@ class PeerConnectionE2EQualityTestFixture {
         PeerConnectionInterface::BitrateParameters bitrate_params) = 0;
   };
 
+  // Contains configuration for echo emulator.
+  struct EchoEmulationConfig {
+    // Delay which represents the echo path delay, i.e. how soon rendered signal
+    // should reach capturer.
+    TimeDelta echo_delay = TimeDelta::ms(50);
+  };
+
   // Contains parameters, that describe how long framework should run quality
   // test.
   struct RunParams {
@@ -315,6 +322,10 @@ class PeerConnectionE2EQualityTestFixture {
     // If true will set conference mode in SDP media section for all video
     // tracks for all peers.
     bool use_conference_mode = false;
+    // If specified echo emulation will be done, by mixing the render audio into
+    // the capture signal. In such case input signal will be reduced by half to
+    // avoid saturation or compression in the echo path simulation.
+    absl::optional<EchoEmulationConfig> echo_emulation_config;
   };
 
   // Represent an entity that will report quality metrics after test.
