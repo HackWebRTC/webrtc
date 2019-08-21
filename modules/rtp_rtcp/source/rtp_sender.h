@@ -176,11 +176,6 @@ class RTPSender {
   bool SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
                      StorageType storage);
 
-  // Fallback that infers PacketType from Priority.
-  bool SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
-                     StorageType storage,
-                     RtpPacketSender::Priority priority);
-
   // Called on update of RTP statistics.
   void RegisterRtpStatisticsCallback(StreamDataCountersCallback* callback);
   StreamDataCountersCallback* GetRtpStatisticsCallback() const;
@@ -204,17 +199,10 @@ class RTPSender {
   // time.
   typedef std::map<int64_t, int> SendDelayMap;
 
-  size_t SendPadData(size_t bytes, const PacedPacketInfo& pacing_info);
-
   bool PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
                             bool send_over_rtx,
                             bool is_retransmit,
                             const PacedPacketInfo& pacing_info);
-
-  // Return the number of bytes sent.  Note that both of these functions may
-  // return a larger value that their argument.
-  size_t TrySendRedundantPayloads(size_t bytes,
-                                  const PacedPacketInfo& pacing_info);
 
   std::unique_ptr<RtpPacketToSend> BuildRtxPacket(
       const RtpPacketToSend& packet);
@@ -269,9 +257,6 @@ class RTPSender {
       RTC_GUARDED_BY(send_critsect_);
 
   RtpPacketHistory packet_history_;
-  // TODO(brandtr): Remove |flexfec_packet_history_| when the FlexfecSender
-  // is hooked up to the PacedSender.
-  RtpPacketHistory flexfec_packet_history_;
 
   // Statistics
   rtc::CriticalSection statistics_crit_;
@@ -326,11 +311,6 @@ class RTPSender {
   const bool populate_network2_timestamp_;
 
   const bool send_side_bwe_with_overhead_;
-
-  // If true, PacedSender should only reference packets as in legacy mode.
-  // If false, PacedSender may have direct ownership of RtpPacketToSend objects.
-  // Defaults to true, will be changed to default false soon.
-  const bool pacer_legacy_packet_referencing_;
 
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RTPSender);
 };

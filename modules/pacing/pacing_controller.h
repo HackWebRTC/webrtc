@@ -51,16 +51,6 @@ class PacingController {
                                const PacedPacketInfo& cluster_info) = 0;
     virtual std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
         DataSize size) = 0;
-
-    // TODO(bugs.webrtc.org/10633): Remove these when old code path is gone.
-    virtual RtpPacketSendResult TimeToSendPacket(
-        uint32_t ssrc,
-        uint16_t sequence_number,
-        int64_t capture_timestamp,
-        bool retransmission,
-        const PacedPacketInfo& packet_info) = 0;
-    virtual DataSize TimeToSendPadding(DataSize size,
-                                       const PacedPacketInfo& pacing_info) = 0;
   };
 
   // Expected max pacer delay. If ExpectedQueueTime() is higher than
@@ -210,11 +200,6 @@ class PacingController {
 
   TimeDelta queue_time_limit;
   bool account_for_audio_;
-
-  // If true, PacedSender should only reference packets as in legacy mode.
-  // If false, PacedSender may have direct ownership of RtpPacketToSend objects.
-  // Defaults to true, will be changed to default false soon.
-  const bool legacy_packet_referencing_;
 };
 }  // namespace webrtc
 

@@ -117,12 +117,6 @@ class PacedSender : public Module,
   // Below are methods specific to this implementation, such as things related
   // to module processing thread specifics or methods exposed for test.
 
-  // TODO(bugs.webrtc.org/10809): Remove when cleanup up unit tests.
-  // Enable bitrate probing. Enabled by default, mostly here to simplify
-  // testing. Must be called before any packets are being sent to have an
-  // effect.
-  void SetProbingEnabled(bool enabled);
-
   // Methods implementing Module.
 
   // Returns the number of milliseconds until the module want a worker thread
@@ -144,17 +138,6 @@ class PacedSender : public Module,
 
   std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
       DataSize size) override RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-
-  // TODO(bugs.webrtc.org/10633): Remove these when old code path is gone.
-  RtpPacketSendResult TimeToSendPacket(uint32_t ssrc,
-                                       uint16_t sequence_number,
-                                       int64_t capture_timestamp,
-                                       bool retransmission,
-                                       const PacedPacketInfo& packet_info)
-      override RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
-  DataSize TimeToSendPadding(DataSize size,
-                             const PacedPacketInfo& pacing_info) override
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(critsect_);
 
   rtc::CriticalSection critsect_;
   PacingController pacing_controller_ RTC_GUARDED_BY(critsect_);

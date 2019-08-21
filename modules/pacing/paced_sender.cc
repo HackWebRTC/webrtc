@@ -78,11 +78,6 @@ void PacedSender::UpdateOutstandingData(DataSize outstanding_data) {
   pacing_controller_.UpdateOutstandingData(outstanding_data);
 }
 
-void PacedSender::SetProbingEnabled(bool enabled) {
-  rtc::CritScope cs(&critsect_);
-  pacing_controller_.SetProbingEnabled(enabled);
-}
-
 void PacedSender::SetPacingRates(DataRate pacing_rate, DataRate padding_rate) {
   rtc::CritScope cs(&critsect_);
   pacing_controller_.SetPacingRates(pacing_rate, padding_rate);
@@ -186,29 +181,4 @@ std::vector<std::unique_ptr<RtpPacketToSend>> PacedSender::GeneratePadding(
   critsect_.Enter();
   return padding_packets;
 }
-
-RtpPacketSendResult PacedSender::TimeToSendPacket(
-    uint32_t ssrc,
-    uint16_t sequence_number,
-    int64_t capture_timestamp,
-    bool retransmission,
-    const PacedPacketInfo& packet_info) {
-  RtpPacketSendResult result;
-  critsect_.Leave();
-  result = packet_router_->TimeToSendPacket(
-      ssrc, sequence_number, capture_timestamp, retransmission, packet_info);
-  critsect_.Enter();
-  return result;
-}
-
-DataSize PacedSender::TimeToSendPadding(DataSize size,
-                                        const PacedPacketInfo& pacing_info) {
-  size_t padding_bytes_sent;
-  critsect_.Leave();
-  padding_bytes_sent =
-      packet_router_->TimeToSendPadding(size.bytes(), pacing_info);
-  critsect_.Enter();
-  return DataSize::bytes(padding_bytes_sent);
-}
-
 }  // namespace webrtc

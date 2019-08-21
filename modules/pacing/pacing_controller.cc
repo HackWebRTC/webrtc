@@ -104,9 +104,7 @@ PacingController::PacingController(Clock* clock,
       congestion_window_size_(DataSize::PlusInfinity()),
       outstanding_data_(DataSize::Zero()),
       queue_time_limit(kMaxExpectedQueueLength),
-      account_for_audio_(false),
-      legacy_packet_referencing_(
-          IsEnabled(*field_trials_, "WebRTC-Pacer-LegacyPacketReferencing")) {
+      account_for_audio_(false) {
   if (!drain_large_queues_) {
     RTC_LOG(LS_WARNING) << "Pacer queues will not be drained,"
                            "pushback experiment must be enabled.";
@@ -192,29 +190,7 @@ void PacingController::InsertPacket(RtpPacketSender::Priority priority,
                                     int64_t capture_time_ms,
                                     size_t bytes,
                                     bool retransmission) {
-  RTC_DCHECK(pacing_bitrate_ > DataRate::Zero())
-      << "SetPacingRate must be called before InsertPacket.";
-
-  Timestamp now = CurrentTime();
-  prober_.OnIncomingPacket(bytes);
-
-  if (capture_time_ms < 0)
-    capture_time_ms = now.ms();
-
-  RtpPacketToSend::Type type;
-  switch (priority) {
-    case RtpPacketSender::kHighPriority:
-      type = RtpPacketToSend::Type::kAudio;
-      break;
-    case RtpPacketSender::kNormalPriority:
-      type = RtpPacketToSend::Type::kRetransmission;
-      break;
-    default:
-      type = RtpPacketToSend::Type::kVideo;
-  }
-  packet_queue_.Push(GetPriorityForType(type), type, ssrc, sequence_number,
-                     capture_time_ms, now, DataSize::bytes(bytes),
-                     retransmission, packet_counter_++);
+  RTC_NOTREACHED();
 }
 
 void PacingController::EnqueuePacket(std::unique_ptr<RtpPacketToSend> packet) {
@@ -316,20 +292,15 @@ void PacingController::ProcessPackets() {
   Timestamp now = CurrentTime();
   TimeDelta elapsed_time = UpdateTimeAndGetElapsed(now);
   if (ShouldSendKeepalive(now)) {
-    if (legacy_packet_referencing_) {
-      OnPaddingSent(packet_sender_->TimeToSendPadding(DataSize::bytes(1),
-                                                      PacedPacketInfo()));
-    } else {
-      DataSize keepalive_data_sent = DataSize::Zero();
-      std::vector<std::unique_ptr<RtpPacketToSend>> keepalive_packets =
-          packet_sender_->GeneratePadding(DataSize::bytes(1));
-      for (auto& packet : keepalive_packets) {
-        keepalive_data_sent +=
-            DataSize::bytes(packet->payload_size() + packet->padding_size());
-        packet_sender_->SendRtpPacket(std::move(packet), PacedPacketInfo());
-      }
-      OnPaddingSent(keepalive_data_sent);
+    DataSize keepalive_data_sent = DataSize::Zero();
+    std::vector<std::unique_ptr<RtpPacketToSend>> keepalive_packets =
+        packet_sender_->GeneratePadding(DataSize::bytes(1));
+    for (auto& packet : keepalive_packets) {
+      keepalive_data_sent +=
+          DataSize::bytes(packet->payload_size() + packet->padding_size());
+      packet_sender_->SendRtpPacket(std::move(packet), PacedPacketInfo());
     }
+    OnPaddingSent(keepalive_data_sent);
   }
 
   if (paused_)
@@ -375,22 +346,19 @@ void PacingController::ProcessPackets() {
     auto* packet = GetPendingPacket(pacing_info);
     if (packet == nullptr) {
       // No packet available to send, check if we should send padding.
-      if (!legacy_packet_referencing_) {
-        DataSize padding_to_add =
-            PaddingToAdd(recommended_probe_size, data_sent);
-        if (padding_to_add > DataSize::Zero()) {
-          std::vector<std::unique_ptr<RtpPacketToSend>> padding_packets =
-              packet_sender_->GeneratePadding(padding_to_add);
-          if (padding_packets.empty()) {
-            // No padding packets were generated, quite send loop.
-            break;
-          }
-          for (auto& packet : padding_packets) {
-            EnqueuePacket(std::move(packet));
-          }
-          // Continue loop to send the padding that was just added.
-          continue;
+      DataSize padding_to_add = PaddingToAdd(recommended_probe_size, data_sent);
+      if (padding_to_add > DataSize::Zero()) {
+        std::vector<std::unique_ptr<RtpPacketToSend>> padding_packets =
+            packet_sender_->GeneratePadding(padding_to_add);
+        if (padding_packets.empty()) {
+          // No padding packets were generated, quite send loop.
+          break;
         }
+        for (auto& packet : padding_packets) {
+          EnqueuePacket(std::move(packet));
+        }
+        // Continue loop to send the padding that was just added.
+        continue;
       }
 
       // Can't fetch new packet and no padding to send, exit send loop.
@@ -398,55 +366,14 @@ void PacingController::ProcessPackets() {
     }
 
     std::unique_ptr<RtpPacketToSend> rtp_packet = packet->ReleasePacket();
-    const bool owned_rtp_packet = rtp_packet != nullptr;
-    RtpPacketSendResult success;
+    RTC_DCHECK(rtp_packet);
+    packet_sender_->SendRtpPacket(std::move(rtp_packet), pacing_info);
 
-    if (rtp_packet != nullptr) {
-      packet_sender_->SendRtpPacket(std::move(rtp_packet), pacing_info);
-      success = RtpPacketSendResult::kSuccess;
-    } else {
-      success = packet_sender_->TimeToSendPacket(
-          packet->ssrc(), packet->sequence_number(), packet->capture_time_ms(),
-          packet->is_retransmission(), pacing_info);
-    }
-
-    if (success == RtpPacketSendResult::kSuccess ||
-        success == RtpPacketSendResult::kPacketNotFound) {
-      // Packet sent or invalid packet, remove it from queue.
-      // TODO(webrtc:8052): Don't consume media budget on kInvalid.
-      data_sent += packet->size();
-      // Send succeeded, remove it from the queue.
-      OnPacketSent(packet);
-      if (recommended_probe_size && data_sent > *recommended_probe_size)
-        break;
-    } else if (owned_rtp_packet) {
-      // Send failed, but we can't put it back in the queue, remove it without
-      // consuming budget.
-      packet_queue_.FinalizePop();
+    data_sent += packet->size();
+    // Send succeeded, remove it from the queue.
+    OnPacketSent(packet);
+    if (recommended_probe_size && data_sent > *recommended_probe_size)
       break;
-    } else {
-      // Send failed, put it back into the queue.
-      packet_queue_.CancelPop();
-      break;
-    }
-  }
-
-  if (legacy_packet_referencing_ && packet_queue_.Empty() && !Congested()) {
-    // We can not send padding unless a normal packet has first been sent. If we
-    // do, timestamps get messed up.
-    if (packet_counter_ > 0) {
-      DataSize padding_needed =
-          (recommended_probe_size && *recommended_probe_size > data_sent)
-              ? (*recommended_probe_size - data_sent)
-              : DataSize::bytes(padding_budget_.bytes_remaining());
-      if (padding_needed > DataSize::Zero()) {
-        DataSize padding_sent = DataSize::Zero();
-        padding_sent =
-            packet_sender_->TimeToSendPadding(padding_needed, pacing_info);
-        data_sent += padding_sent;
-        OnPaddingSent(padding_sent);
-      }
-    }
   }
 
   if (is_probing) {

@@ -28,7 +28,6 @@ using ::testing::_;
 using ::testing::Return;
 
 namespace {
-static const int kTargetBitrateBps = 800000;
 constexpr uint32_t kAudioSsrc = 12345;
 constexpr uint32_t kVideoSsrc = 234565;
 constexpr uint32_t kVideoRtxSsrc = 34567;
@@ -83,47 +82,6 @@ std::unique_ptr<RtpPacketToSend> BuildRtpPacket(RtpPacketToSend::Type type) {
   return packet;
 }
 
-TEST(PacedSenderTest, PacesPacketsLegacyWay) {
-  SimulatedClock clock(0);
-  MockCallback callback;
-  ScopedFieldTrials field_trials(
-      "WebRTC-Pacer-LegacyPacketReferencing/Enabled/");
-  PacedSender pacer(&clock, &callback, nullptr, nullptr);
-
-  // Insert a number of packets over one second.
-  static constexpr size_t kPacketsToSend = 42;
-  pacer.SetPacingRates(DataRate::bps(kDefaultPacketSize * 8 * kPacketsToSend),
-                       DataRate::Zero());
-  for (size_t i = 0; i < kPacketsToSend; ++i) {
-    pacer.InsertPacket(RtpPacketSender::Priority::kNormalPriority, kVideoSsrc,
-                       i, clock.TimeInMilliseconds(), kDefaultPacketSize,
-                       false);
-  }
-
-  // Expect all of them to be sent.
-  size_t packets_sent = 0;
-  clock.AdvanceTimeMilliseconds(pacer.TimeUntilNextProcess());
-  EXPECT_CALL(callback, TimeToSendPacket)
-      .WillRepeatedly([&](uint32_t ssrc, uint16_t sequence_number,
-                          int64_t capture_time_ms, bool retransmission,
-                          const PacedPacketInfo& pacing_info) {
-        ++packets_sent;
-        return RtpPacketSendResult::kSuccess;
-      });
-
-  const Timestamp start_time = clock.CurrentTime();
-
-  while (packets_sent < kPacketsToSend) {
-    clock.AdvanceTimeMilliseconds(pacer.TimeUntilNextProcess());
-    pacer.Process();
-  }
-
-  // Packets should be sent over a period of close to 1s. Expect a little lower
-  // than this since initial probing is a bit quicker.
-  TimeDelta duration = clock.CurrentTime() - start_time;
-  EXPECT_GT(duration, TimeDelta::ms(900));
-}
-
 TEST(PacedSenderTest, PacesPackets) {
   SimulatedClock clock(0);
   MockCallback callback;
@@ -156,50 +114,6 @@ TEST(PacedSenderTest, PacesPackets) {
   // than this since initial probing is a bit quicker.
   TimeDelta duration = clock.CurrentTime() - start_time;
   EXPECT_GT(duration, TimeDelta::ms(900));
-}
-
-TEST(PacedSenderTest, AvoidBusyLoopOnSendFailure) {
-  // This test only makes sense for legacy packet referencing mode, since we
-  // don't handle send failure and more.
-
-  ScopedFieldTrials field_trials(
-      "WebRTC-Pacer-LegacyPacketReferencing/Enabled/");
-  MockCallback callback;
-  SimulatedClock clock(0);
-  PacedSender pacer(&clock, &callback, nullptr, nullptr);
-
-  // Configure up to full target bitrate of padding.
-  pacer.SetPacingRates(DataRate::bps(kTargetBitrateBps),
-                       DataRate::bps(kTargetBitrateBps));
-
-  // Insert a number of packets, covering the initial probe.
-  static constexpr size_t kPacketsToSend = 8;
-  for (size_t i = 0; i < kPacketsToSend; ++i) {
-    pacer.EnqueuePacket(BuildRtpPacket(RtpPacketToSend::Type::kVideo));
-  }
-
-  // Expect all of them to be sent.
-  size_t packets_sent = 0;
-  clock.AdvanceTimeMilliseconds(pacer.TimeUntilNextProcess());
-  EXPECT_CALL(callback, SendPacket)
-      .WillRepeatedly(
-          [&](std::unique_ptr<RtpPacketToSend> packet,
-              const PacedPacketInfo& cluster_info) { ++packets_sent; });
-  while (packets_sent < kPacketsToSend) {
-    clock.AdvanceTimeMilliseconds(pacer.TimeUntilNextProcess());
-    pacer.Process();
-  }
-
-  // Make sure we have budget for padding.
-  clock.AdvanceTimeMilliseconds(500);
-
-  // If sending padding fails, wait the standard 5ms until trying again.
-  EXPECT_CALL(callback, TimeToSendPadding).Times(2).WillRepeatedly(Return(0));
-  pacer.Process();
-  EXPECT_EQ(5, pacer.TimeUntilNextProcess());
-  clock.AdvanceTimeMilliseconds(5);
-  pacer.Process();
-  EXPECT_EQ(5, pacer.TimeUntilNextProcess());
 }
 
 }  // namespace test
