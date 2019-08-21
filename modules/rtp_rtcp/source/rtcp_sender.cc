@@ -130,7 +130,7 @@ RTCPSender::RTCPSender(const RtpRtcp::Configuration& config)
       timestamp_offset_(0),
       last_rtp_timestamp_(0),
       last_frame_capture_time_ms_(-1),
-      ssrc_(config.get_local_media_ssrc().value_or(0)),
+      ssrc_(config.local_media_ssrc.value_or(0)),
       remote_ssrc_(0),
       receive_statistics_(config.receive_statistics),
 
