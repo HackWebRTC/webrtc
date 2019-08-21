@@ -69,8 +69,7 @@ VideoBitrateAllocation SimulcastRateAllocator::Allocate(
   VideoBitrateAllocation allocated_bitrates_bps;
   DistributeAllocationToSimulcastLayers(parameters.total_bitrate.bps(),
                                         &allocated_bitrates_bps);
-  DistributeAllocationToTemporalLayers(std::ceil(parameters.framerate),
-                                       &allocated_bitrates_bps);
+  DistributeAllocationToTemporalLayers(&allocated_bitrates_bps);
   return allocated_bitrates_bps;
 }
 
@@ -187,7 +186,6 @@ void SimulcastRateAllocator::DistributeAllocationToSimulcastLayers(
 }
 
 void SimulcastRateAllocator::DistributeAllocationToTemporalLayers(
-    uint32_t framerate,
     VideoBitrateAllocation* allocated_bitrates_bps) const {
   const int num_spatial_streams =
       std::max(1, static_cast<int>(codec_.numberOfSimulcastStreams));
@@ -237,10 +235,10 @@ void SimulcastRateAllocator::DistributeAllocationToTemporalLayers(
     } else {
       if (conference_screenshare_mode) {
         tl_allocation = ScreenshareTemporalLayerAllocation(
-            target_bitrate_kbps, max_bitrate_kbps, framerate, simulcast_id);
+            target_bitrate_kbps, max_bitrate_kbps, simulcast_id);
       } else {
         tl_allocation = DefaultTemporalLayerAllocation(
-            target_bitrate_kbps, max_bitrate_kbps, framerate, simulcast_id);
+            target_bitrate_kbps, max_bitrate_kbps, simulcast_id);
       }
     }
     RTC_DCHECK_GT(tl_allocation.size(), 0);
@@ -262,7 +260,6 @@ void SimulcastRateAllocator::DistributeAllocationToTemporalLayers(
 std::vector<uint32_t> SimulcastRateAllocator::DefaultTemporalLayerAllocation(
     int bitrate_kbps,
     int max_bitrate_kbps,
-    int framerate,
     int simulcast_id) const {
   const size_t num_temporal_layers = NumTemporalStreams(simulcast_id);
   std::vector<uint32_t> bitrates;
@@ -294,11 +291,10 @@ std::vector<uint32_t>
 SimulcastRateAllocator::ScreenshareTemporalLayerAllocation(
     int bitrate_kbps,
     int max_bitrate_kbps,
-    int framerate,
     int simulcast_id) const {
   if (simulcast_id > 0) {
     return DefaultTemporalLayerAllocation(bitrate_kbps, max_bitrate_kbps,
-                                          framerate, simulcast_id);
+                                          simulcast_id);
   }
   std::vector<uint32_t> allocation;
   allocation.push_back(bitrate_kbps);

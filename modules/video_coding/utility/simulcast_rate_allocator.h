@@ -39,16 +39,13 @@ class SimulcastRateAllocator : public VideoBitrateAllocator {
       uint32_t total_bitrate_bps,
       VideoBitrateAllocation* allocated_bitrates_bps);
   void DistributeAllocationToTemporalLayers(
-      uint32_t framerate,
       VideoBitrateAllocation* allocated_bitrates_bps) const;
   std::vector<uint32_t> DefaultTemporalLayerAllocation(int bitrate_kbps,
                                                        int max_bitrate_kbps,
-                                                       int framerate,
                                                        int simulcast_id) const;
   std::vector<uint32_t> ScreenshareTemporalLayerAllocation(
       int bitrate_kbps,
       int max_bitrate_kbps,
-      int framerate,
       int simulcast_id) const;
   int NumTemporalStreams(size_t simulcast_id) const;
 
