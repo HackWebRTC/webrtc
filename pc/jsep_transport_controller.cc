@@ -151,8 +151,10 @@ MediaTransportConfig JsepTransportController::GetMediaTransportConfig(
     media_transport = jsep_transport->media_transport();
   }
 
-  DatagramTransportInterface* datagram_transport =
-      jsep_transport->datagram_transport();
+  DatagramTransportInterface* datagram_transport = nullptr;
+  if (config_.use_datagram_transport) {
+    datagram_transport = jsep_transport->datagram_transport();
+  }
 
   // Media transport and datagram transports can not be used together.
   RTC_DCHECK(!media_transport || !datagram_transport);
@@ -167,15 +169,20 @@ MediaTransportConfig JsepTransportController::GetMediaTransportConfig(
   }
 }
 
-MediaTransportInterface*
-JsepTransportController::GetMediaTransportForDataChannel(
+DataChannelTransportInterface* JsepTransportController::GetDataChannelTransport(
     const std::string& mid) const {
   auto jsep_transport = GetJsepTransportForMid(mid);
-  if (!jsep_transport || !config_.use_media_transport_for_data_channels) {
+  if (!jsep_transport) {
     return nullptr;
   }
 
-  return jsep_transport->media_transport();
+  if (config_.use_media_transport_for_data_channels) {
+    return jsep_transport->media_transport();
+  } else if (config_.use_datagram_transport_for_data_channels) {
+    return jsep_transport->datagram_transport();
+  }
+  // Not configured to use a data channel transport.
+  return nullptr;
 }
 
 MediaTransportState JsepTransportController::GetMediaTransportState(
@@ -437,7 +444,8 @@ void JsepTransportController::SetActiveResetSrtpParams(
 void JsepTransportController::SetMediaTransportSettings(
     bool use_media_transport_for_media,
     bool use_media_transport_for_data_channels,
-    bool use_datagram_transport) {
+    bool use_datagram_transport,
+    bool use_datagram_transport_for_data_channels) {
   RTC_DCHECK(use_media_transport_for_media ==
                  config_.use_media_transport_for_media ||
              jsep_transports_by_name_.empty())
@@ -454,6 +462,8 @@ void JsepTransportController::SetMediaTransportSettings(
   config_.use_media_transport_for_data_channels =
       use_media_transport_for_data_channels;
   config_.use_datagram_transport = use_datagram_transport;
+  config_.use_datagram_transport_for_data_channels =
+      use_datagram_transport_for_data_channels;
 }
 
 std::unique_ptr<cricket::IceTransportInternal>
@@ -482,7 +492,8 @@ JsepTransportController::CreateDtlsTransport(
   std::unique_ptr<cricket::DtlsTransportInternal> dtls;
 
   if (datagram_transport) {
-    RTC_DCHECK(config_.use_datagram_transport);
+    RTC_DCHECK(config_.use_datagram_transport ||
+               config_.use_datagram_transport_for_data_channels);
   } else if (config_.media_transport_factory &&
              config_.use_media_transport_for_media &&
              config_.use_media_transport_for_data_channels) {
@@ -862,12 +873,13 @@ bool JsepTransportController::SetTransportForMid(
   mid_to_transport_[mid] = jsep_transport;
   return config_.transport_observer->OnTransportChanged(
       mid, jsep_transport->rtp_transport(), jsep_transport->RtpDtlsTransport(),
-      jsep_transport->media_transport());
+      jsep_transport->media_transport(), jsep_transport->datagram_transport(),
+      NegotiationState::kInitial);
 }
 
 void JsepTransportController::RemoveTransportForMid(const std::string& mid) {
-  bool ret = config_.transport_observer->OnTransportChanged(mid, nullptr,
-                                                            nullptr, nullptr);
+  bool ret = config_.transport_observer->OnTransportChanged(
+      mid, nullptr, nullptr, nullptr, nullptr, NegotiationState::kFinal);
   // Calling OnTransportChanged with nullptr should always succeed, since it is
   // only expected to fail when adding media to a transport (not removing).
   RTC_DCHECK(ret);
@@ -1076,7 +1088,8 @@ JsepTransportController::MaybeCreateDatagramTransport(
     return nullptr;
   }
 
-  if (!config_.use_datagram_transport) {
+  if (!(config_.use_datagram_transport ||
+        config_.use_datagram_transport_for_data_channels)) {
     return nullptr;
   }
 
@@ -1226,6 +1239,8 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
       this, &JsepTransportController::UpdateAggregateStates_n);
   jsep_transport->SignalMediaTransportStateChanged.connect(
       this, &JsepTransportController::OnMediaTransportStateChanged_n);
+  jsep_transport->SignalDataChannelTransportNegotiated.connect(
+      this, &JsepTransportController::OnDataChannelTransportNegotiated_n);
   SetTransportForMid(content_info.name, jsep_transport.get());
 
   jsep_transports_by_name_[content_info.name] = std::move(jsep_transport);
@@ -1256,8 +1271,9 @@ void JsepTransportController::DestroyAllJsepTransports_n() {
   RTC_DCHECK(network_thread_->IsCurrent());
 
   for (const auto& jsep_transport : jsep_transports_by_name_) {
-    config_.transport_observer->OnTransportChanged(jsep_transport.first,
-                                                   nullptr, nullptr, nullptr);
+    config_.transport_observer->OnTransportChanged(
+        jsep_transport.first, nullptr, nullptr, nullptr, nullptr,
+        NegotiationState::kFinal);
   }
 
   jsep_transports_by_name_.clear();
@@ -1431,6 +1447,21 @@ void JsepTransportController::OnTransportStateChanged_n(
 void JsepTransportController::OnMediaTransportStateChanged_n() {
   SignalMediaTransportStateChanged();
   UpdateAggregateStates_n();
+}
+
+void JsepTransportController::OnDataChannelTransportNegotiated_n(
+    cricket::JsepTransport* transport,
+    DataChannelTransportInterface* data_channel_transport,
+    bool provisional) {
+  for (auto it : mid_to_transport_) {
+    if (it.second == transport) {
+      config_.transport_observer->OnTransportChanged(
+          it.first, transport->rtp_transport(), transport->RtpDtlsTransport(),
+          transport->media_transport(), data_channel_transport,
+          provisional ? NegotiationState::kProvisional
+                      : NegotiationState::kFinal);
+    }
+  }
 }
 
 void JsepTransportController::UpdateAggregateStates_n() {
@@ -1723,7 +1754,8 @@ JsepTransportController::GenerateOrGetLastMediaTransportOffer() {
 
 absl::optional<cricket::OpaqueTransportParameters>
 JsepTransportController::GetTransportParameters(const std::string& mid) {
-  if (!config_.use_datagram_transport) {
+  if (!(config_.use_datagram_transport ||
+        config_.use_datagram_transport_for_data_channels)) {
     return absl::nullopt;
   }
 

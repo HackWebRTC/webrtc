@@ -47,6 +47,18 @@ namespace webrtc {
 
 class JsepTransportController : public sigslot::has_slots<> {
  public:
+  // State of negotiation for a transport.
+  enum class NegotiationState {
+    // Transport is in its initial state, not negotiated at all.
+    kInitial = 0,
+
+    // Transport is negotiated, but not finalized.
+    kProvisional = 1,
+
+    // Negotiation has completed for this transport.
+    kFinal = 2,
+  };
+
   // Used when the RtpTransport/DtlsTransport of the m= section is changed
   // because the section is rejected or BUNDLE is enabled.
   class Observer {
@@ -56,11 +68,24 @@ class JsepTransportController : public sigslot::has_slots<> {
     // Returns true if media associated with |mid| was successfully set up to be
     // demultiplexed on |rtp_transport|. Could return false if two bundled m=
     // sections use the same SSRC, for example.
+    //
+    // If a data channel transport must be negotiated, |data_channel_transport|
+    // and |negotiation_state| indicate negotiation status.  If
+    // |data_channel_transport| is null, the data channel transport should not
+    // be used.  Otherwise, the value is a pointer to the transport to be used
+    // for data channels on |mid|, if any.
+    //
+    // The observer should not send data on |data_channel_transport| until
+    // |negotiation_state| is provisional or final.  It should not delete
+    // |data_channel_transport| or any fallback transport until
+    // |negotiation_state| is final.
     virtual bool OnTransportChanged(
         const std::string& mid,
         RtpTransportInternal* rtp_transport,
         rtc::scoped_refptr<DtlsTransport> dtls_transport,
-        MediaTransportInterface* media_transport) = 0;
+        MediaTransportInterface* media_transport,
+        DataChannelTransportInterface* data_channel_transport,
+        NegotiationState negotiation_state) = 0;
   };
 
   struct Config {
@@ -96,6 +121,9 @@ class JsepTransportController : public sigslot::has_slots<> {
 
     // Use encrypted datagram transport to send packets.
     bool use_datagram_transport = false;
+
+    // Use datagram transport's implementation of data channels instead of SCTP.
+    bool use_datagram_transport_for_data_channels = false;
 
     // Optional media transport factory (experimental). If provided it will be
     // used to create media_transport (as long as either
@@ -139,7 +167,7 @@ class JsepTransportController : public sigslot::has_slots<> {
 
   MediaTransportConfig GetMediaTransportConfig(const std::string& mid) const;
 
-  MediaTransportInterface* GetMediaTransportForDataChannel(
+  DataChannelTransportInterface* GetDataChannelTransport(
       const std::string& mid) const;
 
   // TODO(sukhanov): Deprecate, return only config.
@@ -204,7 +232,8 @@ class JsepTransportController : public sigslot::has_slots<> {
   // Jsep transport is created, you can't change this setting.
   void SetMediaTransportSettings(bool use_media_transport_for_media,
                                  bool use_media_transport_for_data_channels,
-                                 bool use_datagram_transport);
+                                 bool use_datagram_transport,
+                                 bool use_datagram_transport_for_data_channels);
 
   // If media transport is present enabled and supported,
   // when this method is called, it creates a media transport and generates its
@@ -253,6 +282,8 @@ class JsepTransportController : public sigslot::has_slots<> {
 
   sigslot::signal1<rtc::SSLHandshakeError> SignalDtlsHandshakeError;
 
+  // TODO(mellem): Delete this signal once PeerConnection no longer
+  // uses it to determine data channel state.
   sigslot::signal<> SignalMediaTransportStateChanged;
 
  private:
@@ -399,6 +430,10 @@ class JsepTransportController : public sigslot::has_slots<> {
   void OnMediaTransportStateChanged_n();
   void OnTransportCandidatePairChanged_n(
       const cricket::CandidatePairChangeEvent& event);
+  void OnDataChannelTransportNegotiated_n(
+      cricket::JsepTransport* transport,
+      DataChannelTransportInterface* data_channel_transport,
+      bool provisional);
 
   void UpdateAggregateStates_n();
 

@@ -31,4 +31,10 @@ RTCError DataChannelTransportInterface::CloseChannel(int channel_id) {
 
 void DataChannelTransportInterface::SetDataSink(DataChannelSink* /*sink*/) {}
 
+bool DataChannelTransportInterface::IsReadyToSend() const {
+  return false;
+}
+
+void DataChannelSink::OnReadyToSend() {}
+
 }  // namespace webrtc

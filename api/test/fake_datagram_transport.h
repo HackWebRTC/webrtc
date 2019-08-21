@@ -55,6 +55,8 @@ class FakeDatagramTransport : public DatagramTransportInterface {
 
   void SetDatagramSink(DatagramSinkInterface* sink) override {}
 
+  bool IsReadyToSend() const override { return false; }
+
   std::string GetTransportParameters() const override {
     if (settings_.remote_transport_parameters) {
       return *settings_.remote_transport_parameters;

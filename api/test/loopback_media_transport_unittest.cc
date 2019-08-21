@@ -44,6 +44,7 @@ class MockDataChannelSink : public DataChannelSink {
                void(int, DataMessageType, const rtc::CopyOnWriteBuffer&));
   MOCK_METHOD1(OnChannelClosing, void(int));
   MOCK_METHOD1(OnChannelClosed, void(int));
+  MOCK_METHOD0(OnReadyToSend, void());
 };
 
 class MockStateCallback : public MediaTransportStateCallback {
@@ -203,8 +204,8 @@ TEST(LoopbackMediaTransport, InitialStateDeliveredWhenCallbackSet) {
   MediaTransportPair transport_pair(thread.get());
 
   MockStateCallback state_callback;
-
   EXPECT_CALL(state_callback, OnStateChanged(MediaTransportState::kPending));
+
   transport_pair.first()->SetMediaTransportStateCallback(&state_callback);
   transport_pair.FlushAsyncInvokes();
 }
@@ -236,6 +237,49 @@ TEST(LoopbackMediaTransport, StateChangeDeliveredToCallback) {
   transport_pair.first()->SetMediaTransportStateCallback(&state_callback);
   transport_pair.SetState(MediaTransportState::kWritable);
   transport_pair.FlushAsyncInvokes();
+}
+
+TEST(LoopbackMediaTransport, NotReadyToSendWhenDataSinkSet) {
+  std::unique_ptr<rtc::Thread> thread = rtc::Thread::Create();
+  thread->Start();
+  MediaTransportPair transport_pair(thread.get());
+
+  MockDataChannelSink data_channel_sink;
+  EXPECT_CALL(data_channel_sink, OnReadyToSend()).Times(0);
+
+  transport_pair.first()->SetDataSink(&data_channel_sink);
+  transport_pair.FlushAsyncInvokes();
+  transport_pair.first()->SetDataSink(nullptr);
+}
+
+TEST(LoopbackMediaTransport, ReadyToSendWhenDataSinkSet) {
+  std::unique_ptr<rtc::Thread> thread = rtc::Thread::Create();
+  thread->Start();
+  MediaTransportPair transport_pair(thread.get());
+
+  transport_pair.SetState(MediaTransportState::kWritable);
+  transport_pair.FlushAsyncInvokes();
+
+  MockDataChannelSink data_channel_sink;
+  EXPECT_CALL(data_channel_sink, OnReadyToSend());
+
+  transport_pair.first()->SetDataSink(&data_channel_sink);
+  transport_pair.FlushAsyncInvokes();
+  transport_pair.first()->SetDataSink(nullptr);
+}
+
+TEST(LoopbackMediaTransport, StateChangeDeliveredToDataSink) {
+  std::unique_ptr<rtc::Thread> thread = rtc::Thread::Create();
+  thread->Start();
+  MediaTransportPair transport_pair(thread.get());
+
+  MockDataChannelSink data_channel_sink;
+  EXPECT_CALL(data_channel_sink, OnReadyToSend());
+
+  transport_pair.first()->SetDataSink(&data_channel_sink);
+  transport_pair.SetState(MediaTransportState::kWritable);
+  transport_pair.FlushAsyncInvokes();
+  transport_pair.first()->SetDataSink(nullptr);
 }
 
 }  // namespace webrtc

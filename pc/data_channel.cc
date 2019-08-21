@@ -148,7 +148,9 @@ rtc::scoped_refptr<DataChannel> DataChannel::Create(
 }
 
 bool DataChannel::IsSctpLike(cricket::DataChannelType type) {
-  return type == cricket::DCT_SCTP || type == cricket::DCT_MEDIA_TRANSPORT;
+  return type == cricket::DCT_SCTP || type == cricket::DCT_MEDIA_TRANSPORT ||
+         type == cricket::DCT_DATA_CHANNEL_TRANSPORT ||
+         type == cricket::DCT_DATA_CHANNEL_TRANSPORT_SCTP;
 }
 
 DataChannel::DataChannel(DataChannelProviderInterface* provider,

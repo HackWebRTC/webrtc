@@ -74,6 +74,8 @@ class FakeMediaTransport : public MediaTransportInterface {
 
   void SetDataSink(DataChannelSink* sink) override {}
 
+  bool IsReadyToSend() const override { return false; }
+
   void SetMediaTransportStateCallback(
       MediaTransportStateCallback* callback) override {
     state_callback_ = callback;

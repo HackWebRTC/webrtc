@@ -77,6 +77,14 @@ class DataChannelSink {
   // procedure.  Closing channels become closed after all pending data has been
   // transmitted.
   virtual void OnChannelClosed(int channel_id) = 0;
+
+  // Callback issued when the data channel becomes ready to send.
+  // This callback will be issued immediately when the data channel sink is
+  // registered if the transport is ready at that time.  This callback may be
+  // invoked again following send errors (eg. due to the transport being
+  // temporarily blocked or unavailable).
+  // TODO(mellem):  Make pure virtual when downstream sinks override this.
+  virtual void OnReadyToSend();
 };
 
 // Transport for data channels.
@@ -104,6 +112,12 @@ class DataChannelTransportInterface {
   // transport is destroyed, the sink must be unregistered by setting it to
   // nullptr.
   virtual void SetDataSink(DataChannelSink* sink);
+
+  // Returns whether this data channel transport is ready to send.
+  // Note: the default implementation always returns false (as it assumes no one
+  // has implemented the interface).  This default implementation is temporary.
+  // TODO(mellem):  Change this to pure virtual.
+  virtual bool IsReadyToSend() const;
 };
 
 }  // namespace webrtc

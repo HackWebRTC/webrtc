@@ -246,7 +246,7 @@ webrtc::RTCError JsepTransport::SetLocalJsepTransportDescription(
   // If PRANSWER/ANSWER is set, we should decide transport protocol type.
   if (type == SdpType::kPrAnswer || type == SdpType::kAnswer) {
     error = NegotiateAndSetDtlsParameters(type);
-    NegotiateRtpTransport(type);
+    NegotiateDatagramTransport(type);
   }
   if (!error.ok()) {
     local_description_.reset();
@@ -317,7 +317,7 @@ webrtc::RTCError JsepTransport::SetRemoteJsepTransportDescription(
   // If PRANSWER/ANSWER is set, we should decide transport protocol type.
   if (type == SdpType::kPrAnswer || type == SdpType::kAnswer) {
     error = NegotiateAndSetDtlsParameters(SdpType::kOffer);
-    NegotiateRtpTransport(type);
+    NegotiateDatagramTransport(type);
   }
   if (!error.ok()) {
     remote_description_.reset();
@@ -766,7 +766,7 @@ void JsepTransport::OnStateChanged(webrtc::MediaTransportState state) {
   SignalMediaTransportStateChanged();
 }
 
-void JsepTransport::NegotiateRtpTransport(SdpType type) {
+void JsepTransport::NegotiateDatagramTransport(SdpType type) {
   RTC_DCHECK(type == SdpType::kAnswer || type == SdpType::kPrAnswer);
   rtc::CritScope lock(&accessor_lock_);
   if (!composite_rtp_transport_) {
@@ -778,6 +778,8 @@ void JsepTransport::NegotiateRtpTransport(SdpType type) {
       remote_description_->transport_desc.opaque_parameters ==
           local_description_->transport_desc.opaque_parameters;
 
+  // A provisional or full or answer lets the peer start sending on one of the
+  // transports.
   if (use_datagram_transport) {
     RTC_LOG(INFO) << "Datagram transport provisionally activated";
     composite_rtp_transport_->SetSendTransport(datagram_rtp_transport_.get());
@@ -789,11 +791,19 @@ void JsepTransport::NegotiateRtpTransport(SdpType type) {
   if (type != SdpType::kAnswer) {
     // A provisional answer lets the peer start sending on the chosen
     // transport, but does not allow it to destroy other transports yet.
+    SignalDataChannelTransportNegotiated(
+        this, use_datagram_transport ? datagram_transport_.get() : nullptr,
+        /*provisional=*/true);
     return;
   }
 
-  // A full answer lets the peer send on the chosen transport and delete the
-  // rest.
+  // A full answer lets the peer delete the remaining transports.
+  // First, signal that the transports will be deleted so the application can
+  // stop using them.
+  SignalDataChannelTransportNegotiated(
+      this, use_datagram_transport ? datagram_transport_.get() : nullptr,
+      /*provisional=*/false);
+
   if (use_datagram_transport) {
     RTC_LOG(INFO) << "Datagram transport activated";
     composite_rtp_transport_->RemoveTransport(default_rtp_transport());

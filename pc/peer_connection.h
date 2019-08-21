@@ -18,6 +18,7 @@
 #include <utility>
 #include <vector>
 
+#include "api/data_channel_transport_interface.h"
 #include "api/media_transport_interface.h"
 #include "api/peer_connection_interface.h"
 #include "api/turn_customizer.h"
@@ -353,6 +354,28 @@ class PeerConnection : public PeerConnectionInternal,
     // Whether the datagram transport is enabled or disabled by default.
     // Defaults to false, meaning that applications must configure use of
     // datagram transport through RTCConfiguration.  If set to true,
+    // applications will use the datagram transport by default (but may still
+    // explicitly configure themselves not to use it through RTCConfiguration).
+    FieldTrialFlag default_value;
+  };
+
+  // Field-trial based configuration for datagram transport data channels.
+  struct DatagramTransportDataChannelConfig {
+    explicit DatagramTransportDataChannelConfig(const std::string& field_trial)
+        : enabled("enabled", true), default_value("default_value", false) {
+      ParseFieldTrial({&enabled, &default_value}, field_trial);
+    }
+
+    // Whether datagram transport data channel support is enabled at all.
+    // Defaults to true, allowing datagram transport to be used if (a) the
+    // application provides a factory for it and (b) the configuration specifies
+    // its use.  This flag provides a kill-switch to force-disable datagram
+    // transport across all applications, without code changes.
+    FieldTrialFlag enabled;
+
+    // Whether the datagram transport data channels are enabled or disabled by
+    // default. Defaults to false, meaning that applications must configure use
+    // of datagram transport through RTCConfiguration.  If set to true,
     // applications will use the datagram transport by default (but may still
     // explicitly configure themselves not to use it through RTCConfiguration).
     FieldTrialFlag default_value;
@@ -906,6 +929,7 @@ class PeerConnection : public PeerConnectionInternal,
                       const rtc::CopyOnWriteBuffer& buffer) override;
   void OnChannelClosing(int channel_id) override;
   void OnChannelClosed(int channel_id) override;
+  void OnReadyToSend() override;
 
   // Called when an RTCCertificate is generated or retrieved by
   // WebRTCSessionDescriptionFactory. Should happen before setLocalDescription.
@@ -997,6 +1021,10 @@ class PeerConnection : public PeerConnectionInternal,
   cricket::VideoChannel* CreateVideoChannel(const std::string& mid)
       RTC_RUN_ON(signaling_thread());
   bool CreateDataChannel(const std::string& mid) RTC_RUN_ON(signaling_thread());
+  bool CreateSctpDataChannel(const std::string& mid)
+      RTC_RUN_ON(signaling_thread());
+  bool SetupDataChannelTransport(const std::string& mid)
+      RTC_RUN_ON(signaling_thread());
 
   bool CreateSctpTransport_n(const std::string& mid);
   // For bundling.
@@ -1016,10 +1044,10 @@ class PeerConnection : public PeerConnectionInternal,
   void OnSctpClosingProcedureStartedRemotely_n(int sid);
   void OnSctpClosingProcedureComplete_n(int sid);
 
-  bool SetupMediaTransportForDataChannels_n(const std::string& mid)
+  bool SetupDataChannelTransport_n(const std::string& mid)
       RTC_RUN_ON(network_thread());
   void OnMediaTransportStateChanged_n() RTC_RUN_ON(network_thread());
-  void TeardownMediaTransportForDataChannels_n() RTC_RUN_ON(network_thread());
+  void TeardownDataChannelTransport_n() RTC_RUN_ON(network_thread());
 
   bool ValidateBundleSettings(const cricket::SessionDescription* desc);
   bool HasRtcpMuxEnabled(const cricket::ContentInfo* content);
@@ -1122,10 +1150,13 @@ class PeerConnection : public PeerConnectionInternal,
   // from a session description, and the mapping from m= sections to transports
   // changed (as a result of BUNDLE negotiation, or m= sections being
   // rejected).
-  bool OnTransportChanged(const std::string& mid,
-                          RtpTransportInternal* rtp_transport,
-                          rtc::scoped_refptr<DtlsTransport> dtls_transport,
-                          MediaTransportInterface* media_transport) override;
+  bool OnTransportChanged(
+      const std::string& mid,
+      RtpTransportInternal* rtp_transport,
+      rtc::scoped_refptr<DtlsTransport> dtls_transport,
+      MediaTransportInterface* media_transport,
+      DataChannelTransportInterface* data_channel_transport,
+      JsepTransportController::NegotiationState negotiation_state) override;
 
   // RtpSenderBase::SetStreamsObserver override.
   void OnSetStreams() override;
@@ -1185,8 +1216,16 @@ class PeerConnection : public PeerConnectionInternal,
   // Field-trial based configuration for datagram transport.
   const DatagramTransportConfig datagram_transport_config_;
 
+  // Field-trial based configuration for datagram transport data channels.
+  const DatagramTransportConfig datagram_transport_data_channel_config_;
+
   // Final, resolved value for whether datagram transport is in use.
   bool use_datagram_transport_ RTC_GUARDED_BY(signaling_thread()) = false;
+
+  // Equivalent of |use_datagram_transport_|, but for its use with data
+  // channels.
+  bool use_datagram_transport_for_data_channels_
+      RTC_GUARDED_BY(signaling_thread()) = false;
 
   // Cache configuration_.use_media_transport so that we can access it from
   // other threads.
@@ -1296,6 +1335,9 @@ class PeerConnection : public PeerConnectionInternal,
                         // signaling and network thread.
 
   // |sctp_mid_| is the content name (MID) in SDP.
+  // Note: this is used as the data channel MID by both SCTP and data channel
+  // transports.  It is set when either transport is initialized and unset when
+  // both transports are deleted.
   absl::optional<std::string>
       sctp_mid_;  // TODO(bugs.webrtc.org/9987): Accessed on both signaling
                   // and network thread.
@@ -1303,6 +1345,9 @@ class PeerConnection : public PeerConnectionInternal,
   // Value cached on signaling thread. Only updated when SctpReadyToSendData
   // fires on the signaling thread.
   bool sctp_ready_to_send_data_ RTC_GUARDED_BY(signaling_thread()) = false;
+
+  // Whether the use of SCTP has been successfully negotiated.
+  bool sctp_negotiated_ RTC_GUARDED_BY(signaling_thread()) = false;
 
   // Same as signals provided by SctpTransport, but these are guaranteed to
   // fire on the signaling thread, whereas SctpTransport fires on the networking
@@ -1328,33 +1373,34 @@ class PeerConnection : public PeerConnectionInternal,
   // Whether this peer is the caller. Set when the local description is applied.
   absl::optional<bool> is_caller_ RTC_GUARDED_BY(signaling_thread());
 
-  // Content name (MID) for media transport data channels in SDP.
-  absl::optional<std::string>
-      media_transport_data_mid_;  // TODO(bugs.webrtc.org/9987): Accessed on
-                                  // both signaling and network thread.
-
-  // Media transport used for data channels.  Thread-safe.
-  MediaTransportInterface* media_transport_ =
+  // Plugin transport used for data channels.  Thread-safe.
+  DataChannelTransportInterface* data_channel_transport_ =
       nullptr;  // TODO(bugs.webrtc.org/9987): Object is thread safe, but
                 // pointer accessed on both signaling and network thread.
 
-  // Cached value of whether the media transport is ready to send.
-  bool media_transport_ready_to_send_data_ RTC_GUARDED_BY(signaling_thread()) =
+  // Cached value of whether the data channel transport is ready to send.
+  bool data_channel_transport_ready_to_send_
+      RTC_GUARDED_BY(signaling_thread()) = false;
+
+  // Whether the use of the data channel transport has been successfully
+  // negotiated.
+  bool data_channel_transport_negotiated_ RTC_GUARDED_BY(signaling_thread()) =
       false;
 
-  // Used to invoke media transport signals on the signaling thread.
-  std::unique_ptr<rtc::AsyncInvoker> media_transport_invoker_
+  // Used to invoke data channel transport signals on the signaling thread.
+  std::unique_ptr<rtc::AsyncInvoker> data_channel_transport_invoker_
       RTC_GUARDED_BY(network_thread());
 
   // Identical to the signals for SCTP, but from media transport:
-  sigslot::signal1<bool> SignalMediaTransportWritable_s
+  sigslot::signal1<bool> SignalDataChannelTransportWritable_s
       RTC_GUARDED_BY(signaling_thread());
   sigslot::signal2<const cricket::ReceiveDataParams&,
                    const rtc::CopyOnWriteBuffer&>
-      SignalMediaTransportReceivedData_s RTC_GUARDED_BY(signaling_thread());
-  sigslot::signal1<int> SignalMediaTransportChannelClosing_s
+      SignalDataChannelTransportReceivedData_s
+          RTC_GUARDED_BY(signaling_thread());
+  sigslot::signal1<int> SignalDataChannelTransportChannelClosing_s
       RTC_GUARDED_BY(signaling_thread());
-  sigslot::signal1<int> SignalMediaTransportChannelClosed_s
+  sigslot::signal1<int> SignalDataChannelTransportChannelClosed_s
       RTC_GUARDED_BY(signaling_thread());
 
   std::unique_ptr<SessionDescriptionInterface> current_local_description_
