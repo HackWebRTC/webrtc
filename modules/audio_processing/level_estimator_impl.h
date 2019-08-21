@@ -29,7 +29,7 @@ class LevelEstimatorImpl : public LevelEstimator {
 
   // TODO(peah): Fold into ctor, once public API is removed.
   void Initialize();
-  void ProcessStream(const AudioBuffer& audio);
+  void ProcessStream(AudioBuffer* audio);
 
   // LevelEstimator implementation.
   int Enable(bool enable) override;

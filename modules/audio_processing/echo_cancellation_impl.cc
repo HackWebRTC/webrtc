@@ -157,11 +157,11 @@ int EchoCancellationImpl::ProcessCaptureAudio(AudioBuffer* audio,
   stream_has_echo_ = false;
   for (size_t i = 0; i < audio->num_channels(); i++) {
     for (size_t j = 0; j < stream_properties_->num_reverse_channels; j++) {
-      err =
-          WebRtcAec_Process(cancellers_[handle_index]->state(),
-                            audio->split_bands_const(i), audio->num_bands(),
-                            audio->split_bands(i), audio->num_frames_per_band(),
-                            stream_delay_ms_use, stream_drift_samples_);
+      err = WebRtcAec_Process(cancellers_[handle_index]->state(),
+                              audio->split_bands_const_f(i), audio->num_bands(),
+                              audio->split_bands_f(i),
+                              audio->num_frames_per_band(), stream_delay_ms_use,
+                              stream_drift_samples_);
 
       if (err != AudioProcessing::kNoError) {
         err = MapError(err);
@@ -383,8 +383,8 @@ void EchoCancellationImpl::PackRenderAudioBuffer(
     for (size_t j = 0; j < audio->num_channels(); j++) {
       // Buffer the samples in the render queue.
       packed_buffer->insert(packed_buffer->end(),
-                            audio->split_bands_const(j)[kBand0To8kHz],
-                            (audio->split_bands_const(j)[kBand0To8kHz] +
+                            audio->split_bands_const_f(j)[kBand0To8kHz],
+                            (audio->split_bands_const_f(j)[kBand0To8kHz] +
                              audio->num_frames_per_band()));
     }
   }

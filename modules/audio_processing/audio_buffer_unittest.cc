@@ -16,7 +16,7 @@ namespace webrtc {
 
 namespace {
 
-const size_t kSampleRateHz = 48000u;
+const size_t kNumFrames = 480u;
 const size_t kStereo = 2u;
 const size_t kMono = 1u;
 
@@ -27,17 +27,17 @@ void ExpectNumChannels(const AudioBuffer& ab, size_t num_channels) {
 }  // namespace
 
 TEST(AudioBufferTest, SetNumChannelsSetsChannelBuffersNumChannels) {
-  AudioBuffer ab(kSampleRateHz, kStereo, kSampleRateHz, kStereo, kSampleRateHz);
+  AudioBuffer ab(kNumFrames, kStereo, kNumFrames, kStereo, kNumFrames);
   ExpectNumChannels(ab, kStereo);
-  ab.set_num_channels(1);
+  ab.set_num_channels(kMono);
   ExpectNumChannels(ab, kMono);
-  ab.RestoreNumChannels();
+  ab.InitForNewData();
   ExpectNumChannels(ab, kStereo);
 }
 
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 TEST(AudioBufferTest, SetNumChannelsDeathTest) {
-  AudioBuffer ab(kSampleRateHz, kMono, kSampleRateHz, kMono, kSampleRateHz);
+  AudioBuffer ab(kNumFrames, kMono, kNumFrames, kMono, kNumFrames);
   EXPECT_DEATH(ab.set_num_channels(kStereo), "num_channels");
 }
 #endif

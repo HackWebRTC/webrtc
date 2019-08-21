@@ -142,7 +142,7 @@ void EchoControlMobileImpl::PackRenderAudioBuffer(
   for (size_t i = 0; i < num_output_channels; i++) {
     for (size_t j = 0; j < audio->num_channels(); j++) {
       std::array<int16_t, AudioBuffer::kMaxSplitFrameLength> data_to_buffer;
-      FloatS16ToS16(audio->split_bands_const(render_channel)[kBand0To8kHz],
+      FloatS16ToS16(audio->split_bands_const_f(render_channel)[kBand0To8kHz],
                     audio->num_frames_per_band(), data_to_buffer.data());
 
       // Buffer the samples in the render queue.
@@ -185,8 +185,8 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio,
     std::array<int16_t, AudioBuffer::kMaxSplitFrameLength> split_bands_data;
     int16_t* split_bands = split_bands_data.data();
     const int16_t* clean = split_bands_data.data();
-    if (audio->split_bands(capture)[kBand0To8kHz]) {
-      FloatS16ToS16(audio->split_bands(capture)[kBand0To8kHz],
+    if (audio->split_bands_f(capture)[kBand0To8kHz]) {
+      FloatS16ToS16(audio->split_bands_f(capture)[kBand0To8kHz],
                     audio->num_frames_per_band(), split_bands_data.data());
     } else {
       clean = nullptr;
@@ -205,7 +205,7 @@ int EchoControlMobileImpl::ProcessCaptureAudio(AudioBuffer* audio,
 
       if (split_bands) {
         S16ToFloatS16(split_bands, audio->num_frames_per_band(),
-                      audio->split_bands(capture)[kBand0To8kHz]);
+                      audio->split_bands_f(capture)[kBand0To8kHz]);
       }
 
       if (err != AudioProcessing::kNoError) {
@@ -227,7 +227,7 @@ void EchoControlMobileImpl::CopyLowPassReference(AudioBuffer* audio) {
   RTC_DCHECK_LE(audio->num_channels(), low_pass_reference_.size());
   reference_copied_ = true;
   for (size_t capture = 0; capture < audio->num_channels(); ++capture) {
-    FloatS16ToS16(audio->split_bands_const(capture)[kBand0To8kHz],
+    FloatS16ToS16(audio->split_bands_const_f(capture)[kBand0To8kHz],
                   audio->num_frames_per_band(),
                   low_pass_reference_[capture].data());
   }

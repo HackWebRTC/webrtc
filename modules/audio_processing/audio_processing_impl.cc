@@ -495,17 +495,17 @@ int AudioProcessingImpl::MaybeInitializeRender(
 int AudioProcessingImpl::InitializeLocked() {
   UpdateActiveSubmoduleStates();
 
-  const int render_audiobuffer_sample_rate_hz =
+  const int render_audiobuffer_num_output_frames =
       formats_.api_format.reverse_output_stream().num_frames() == 0
-          ? formats_.render_processing_format.sample_rate_hz()
-          : formats_.api_format.reverse_output_stream().sample_rate_hz();
+          ? formats_.render_processing_format.num_frames()
+          : formats_.api_format.reverse_output_stream().num_frames();
   if (formats_.api_format.reverse_input_stream().num_channels() > 0) {
     render_.render_audio.reset(new AudioBuffer(
-        formats_.api_format.reverse_input_stream().sample_rate_hz(),
+        formats_.api_format.reverse_input_stream().num_frames(),
         formats_.api_format.reverse_input_stream().num_channels(),
-        formats_.render_processing_format.sample_rate_hz(),
+        formats_.render_processing_format.num_frames(),
         formats_.render_processing_format.num_channels(),
-        render_audiobuffer_sample_rate_hz));
+        render_audiobuffer_num_output_frames));
     if (formats_.api_format.reverse_input_stream() !=
         formats_.api_format.reverse_output_stream()) {
       render_.render_converter = AudioConverter::Create(
@@ -521,12 +521,12 @@ int AudioProcessingImpl::InitializeLocked() {
     render_.render_converter.reset(nullptr);
   }
 
-  capture_.capture_audio.reset(new AudioBuffer(
-      formats_.api_format.input_stream().sample_rate_hz(),
-      formats_.api_format.input_stream().num_channels(),
-      capture_nonlocked_.capture_processing_format.sample_rate_hz(),
-      formats_.api_format.output_stream().num_channels(),
-      formats_.api_format.output_stream().sample_rate_hz()));
+  capture_.capture_audio.reset(
+      new AudioBuffer(formats_.api_format.input_stream().num_frames(),
+                      formats_.api_format.input_stream().num_channels(),
+                      capture_nonlocked_.capture_processing_format.num_frames(),
+                      formats_.api_format.output_stream().num_channels(),
+                      formats_.api_format.output_stream().num_frames()));
 
   AllocateRenderQueue();
 
@@ -1244,11 +1244,11 @@ int AudioProcessingImpl::ProcessStream(AudioFrame* frame) {
   }
 
   capture_.vad_activity = frame->vad_activity_;
-  capture_.capture_audio->CopyFrom(frame);
+  capture_.capture_audio->DeinterleaveFrom(frame);
   RETURN_ON_ERR(ProcessCaptureStreamLocked());
   if (submodule_states_.CaptureMultiBandProcessingActive() ||
       submodule_states_.CaptureFullBandProcessingActive()) {
-    capture_.capture_audio->CopyTo(frame);
+    capture_.capture_audio->InterleaveTo(frame);
   }
   frame->vad_activity_ = capture_.vad_activity;
 
@@ -1274,12 +1274,12 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
 
   if (private_submodules_->pre_amplifier) {
     private_submodules_->pre_amplifier->ApplyGain(AudioFrameView<float>(
-        capture_buffer->channels(), capture_buffer->num_channels(),
+        capture_buffer->channels_f(), capture_buffer->num_channels(),
         capture_buffer->num_frames()));
   }
 
   capture_input_rms_.Analyze(rtc::ArrayView<const float>(
-      capture_buffer->channels_const()[0],
+      capture_buffer->channels_const_f()[0],
       capture_nonlocked_.capture_processing_format.num_frames()));
   const bool log_rms = ++capture_rms_interval_counter_ >= 1000;
   if (log_rms) {
@@ -1327,7 +1327,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
 
     if (constants_.use_experimental_agc_process_before_aec) {
       private_submodules_->agc_manager->Process(
-          capture_buffer->channels_const()[0],
+          capture_buffer->channels_const_f()[0],
           capture_nonlocked_.capture_processing_format.num_frames(),
           capture_nonlocked_.capture_processing_format.sample_rate_hz());
     }
@@ -1436,7 +1436,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   if (config_.residual_echo_detector.enabled) {
     RTC_DCHECK(private_submodules_->echo_detector);
     private_submodules_->echo_detector->AnalyzeCaptureAudio(
-        rtc::ArrayView<const float>(capture_buffer->channels()[0],
+        rtc::ArrayView<const float>(capture_buffer->channels_f()[0],
                                     capture_buffer->num_frames()));
   }
 
@@ -1449,9 +1449,9 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
             : 1.f;
 
     public_submodules_->transient_suppressor->Suppress(
-        capture_buffer->channels()[0], capture_buffer->num_frames(),
+        capture_buffer->channels_f()[0], capture_buffer->num_frames(),
         capture_buffer->num_channels(),
-        capture_buffer->split_bands_const(0)[kBand0To8kHz],
+        capture_buffer->split_bands_const_f(0)[kBand0To8kHz],
         capture_buffer->num_frames_per_band(),
         capture_.keyboard_info.keyboard_data,
         capture_.keyboard_info.num_keyboard_frames, voice_probability,
@@ -1474,9 +1474,9 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   }
 
   // The level estimator operates on the recombined data.
-  public_submodules_->level_estimator->ProcessStream(*capture_buffer);
+  public_submodules_->level_estimator->ProcessStream(capture_buffer);
   if (config_.level_estimation.enabled) {
-    private_submodules_->output_level_estimator->ProcessStream(*capture_buffer);
+    private_submodules_->output_level_estimator->ProcessStream(capture_buffer);
     capture_.stats.output_rms_dbfs =
         private_submodules_->output_level_estimator->RMS();
   } else {
@@ -1484,7 +1484,7 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
   }
 
   capture_output_rms_.Analyze(rtc::ArrayView<const float>(
-      capture_buffer->channels_const()[0],
+      capture_buffer->channels_const_f()[0],
       capture_nonlocked_.capture_processing_format.num_frames()));
   if (log_rms) {
     RmsLevel::Levels levels = capture_output_rms_.AverageAndPeak();
@@ -1609,11 +1609,11 @@ int AudioProcessingImpl::ProcessReverseStream(AudioFrame* frame) {
     aec_dump_->WriteRenderStreamMessage(*frame);
   }
 
-  render_.render_audio->CopyFrom(frame);
+  render_.render_audio->DeinterleaveFrom(frame);
   RETURN_ON_ERR(ProcessRenderStreamLocked());
   if (submodule_states_.RenderMultiBandProcessingActive() ||
       submodule_states_.RenderFullBandProcessingActive()) {
-    render_.render_audio->CopyTo(frame);
+    render_.render_audio->InterleaveTo(frame);
   }
   return kNoError;
 }

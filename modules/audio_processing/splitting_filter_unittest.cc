@@ -42,19 +42,19 @@ TEST(SplittingFilterTest, SplitsIntoThreeBandsAndReconstructs) {
   static const size_t kChunks = 8;
   SplittingFilter splitting_filter(kChannels, kNumBands,
                                    kSamplesPer48kHzChannel);
-  ChannelBuffer<float> in_data(kSamplesPer48kHzChannel, kChannels, kNumBands);
-  ChannelBuffer<float> bands(kSamplesPer48kHzChannel, kChannels, kNumBands);
-  ChannelBuffer<float> out_data(kSamplesPer48kHzChannel, kChannels, kNumBands);
+  IFChannelBuffer in_data(kSamplesPer48kHzChannel, kChannels, kNumBands);
+  IFChannelBuffer bands(kSamplesPer48kHzChannel, kChannels, kNumBands);
+  IFChannelBuffer out_data(kSamplesPer48kHzChannel, kChannels, kNumBands);
   for (size_t i = 0; i < kChunks; ++i) {
     // Input signal generation.
     bool is_present[kNumBands];
-    memset(in_data.channels()[0], 0,
-           kSamplesPer48kHzChannel * sizeof(in_data.channels()[0][0]));
+    memset(in_data.fbuf()->channels()[0], 0,
+           kSamplesPer48kHzChannel * sizeof(in_data.fbuf()->channels()[0][0]));
     for (size_t j = 0; j < kNumBands; ++j) {
       is_present[j] = i & (static_cast<size_t>(1) << j);
       float amplitude = is_present[j] ? kAmplitude : 0.f;
       for (size_t k = 0; k < kSamplesPer48kHzChannel; ++k) {
-        in_data.channels()[0][k] +=
+        in_data.fbuf()->channels()[0][k] +=
             amplitude * sin(2.f * M_PI * kFrequenciesHz[j] *
                             (i * kSamplesPer48kHzChannel + k) / kSampleRateHz);
       }
@@ -66,7 +66,8 @@ TEST(SplittingFilterTest, SplitsIntoThreeBandsAndReconstructs) {
     for (size_t j = 0; j < kNumBands; ++j) {
       energy[j] = 0.f;
       for (size_t k = 0; k < kSamplesPer16kHzChannel; ++k) {
-        energy[j] += bands.channels(j)[0][k] * bands.channels(j)[0][k];
+        energy[j] += bands.fbuf_const()->channels(j)[0][k] *
+                     bands.fbuf_const()->channels(j)[0][k];
       }
       energy[j] /= kSamplesPer16kHzChannel;
       if (is_present[j]) {
@@ -82,7 +83,8 @@ TEST(SplittingFilterTest, SplitsIntoThreeBandsAndReconstructs) {
     for (size_t delay = 0; delay < kSamplesPer48kHzChannel; ++delay) {
       float tmpcorr = 0.f;
       for (size_t j = delay; j < kSamplesPer48kHzChannel; ++j) {
-        tmpcorr += in_data.channels()[0][j - delay] * out_data.channels()[0][j];
+        tmpcorr += in_data.fbuf_const()->channels()[0][j - delay] *
+                   out_data.fbuf_const()->channels()[0][j];
       }
       tmpcorr /= kSamplesPer48kHzChannel;
       if (tmpcorr > xcorr) {

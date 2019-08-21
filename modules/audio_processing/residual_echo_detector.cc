@@ -202,8 +202,8 @@ void ResidualEchoDetector::Initialize(int /*capture_sample_rate_hz*/,
 void EchoDetector::PackRenderAudioBuffer(AudioBuffer* audio,
                                          std::vector<float>* packed_buffer) {
   packed_buffer->clear();
-  packed_buffer->insert(packed_buffer->end(), audio->channels()[0],
-                        audio->channels()[0] + audio->num_frames());
+  packed_buffer->insert(packed_buffer->end(), audio->channels_f()[0],
+                        audio->channels_f()[0] + audio->num_frames());
 }
 
 EchoDetector::Metrics ResidualEchoDetector::GetMetrics() const {

@@ -128,7 +128,7 @@ class TestRenderPreProcessor : public CustomProcessing {
   void Initialize(int sample_rate_hz, int num_channels) override {}
   void Process(AudioBuffer* audio) override {
     for (size_t k = 0; k < audio->num_channels(); ++k) {
-      rtc::ArrayView<float> channel_view(audio->channels()[k],
+      rtc::ArrayView<float> channel_view(audio->channels_f()[k],
                                          audio->num_frames());
       std::transform(channel_view.begin(), channel_view.end(),
                      channel_view.begin(), ProcessSample);

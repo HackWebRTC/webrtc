@@ -28,7 +28,8 @@ namespace {
 void SetAudioBufferSamples(float value, AudioBuffer* ab) {
   // Sets all the samples in |ab| to |value|.
   for (size_t k = 0; k < ab->num_channels(); ++k) {
-    std::fill(ab->channels()[k], ab->channels()[k] + ab->num_frames(), value);
+    std::fill(ab->channels_f()[k], ab->channels_f()[k] + ab->num_frames(),
+              value);
   }
 }
 
@@ -37,7 +38,7 @@ float RunAgc2WithConstantInput(GainController2* agc2,
                                size_t num_frames,
                                int sample_rate) {
   const int num_samples = rtc::CheckedDivExact(sample_rate, 100);
-  AudioBuffer ab(sample_rate, 1, sample_rate, 1, sample_rate);
+  AudioBuffer ab(num_samples, 1, num_samples, 1, num_samples);
 
   // Give time to the level estimator to converge.
   for (size_t i = 0; i < num_frames + 1; ++i) {
@@ -46,7 +47,7 @@ float RunAgc2WithConstantInput(GainController2* agc2,
   }
 
   // Return the last sample from the last processed frame.
-  return ab.channels()[0][num_samples - 1];
+  return ab.channels_f()[0][num_samples - 1];
 }
 
 AudioProcessing::Config::GainController2 CreateAgc2FixedDigitalModeConfig(
@@ -73,9 +74,9 @@ float GainAfterProcessingFile(GainController2* gain_controller) {
   constexpr size_t kStereo = 2u;
   const StreamConfig capture_config(AudioProcessing::kSampleRate48kHz, kStereo,
                                     false);
-  AudioBuffer ab(capture_config.sample_rate_hz(), capture_config.num_channels(),
-                 capture_config.sample_rate_hz(), capture_config.num_channels(),
-                 capture_config.sample_rate_hz());
+  AudioBuffer ab(capture_config.num_frames(), capture_config.num_channels(),
+                 capture_config.num_frames(), capture_config.num_channels(),
+                 capture_config.num_frames());
   test::InputAudioFile capture_file(
       test::GetApmCaptureTestVectorFileName(AudioProcessing::kSampleRate48kHz));
   std::vector<float> capture_input(capture_config.num_frames() *
@@ -98,7 +99,7 @@ float GainAfterProcessingFile(GainController2* gain_controller) {
   constexpr float sample_value = 1.f;
   SetAudioBufferSamples(sample_value, &ab);
   gain_controller->Process(&ab);
-  return ab.channels()[0][0];
+  return ab.channels_f()[0][0];
 }
 
 }  // namespace

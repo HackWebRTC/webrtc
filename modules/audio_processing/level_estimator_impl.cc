@@ -32,15 +32,16 @@ void LevelEstimatorImpl::Initialize() {
   rms_->Reset();
 }
 
-void LevelEstimatorImpl::ProcessStream(const AudioBuffer& audio) {
+void LevelEstimatorImpl::ProcessStream(AudioBuffer* audio) {
+  RTC_DCHECK(audio);
   rtc::CritScope cs(crit_);
   if (!enabled_) {
     return;
   }
 
-  for (size_t i = 0; i < audio.num_channels(); i++) {
-    rms_->Analyze(rtc::ArrayView<const float>(audio.channels_const()[i],
-                                              audio.num_frames()));
+  for (size_t i = 0; i < audio->num_channels(); i++) {
+    rms_->Analyze(rtc::ArrayView<const float>(audio->channels_const_f()[i],
+                                              audio->num_frames()));
   }
 }
 

@@ -52,7 +52,7 @@ void FillSubFrameView(AudioBuffer* frame,
   RTC_DCHECK_EQ(frame->num_bands(), sub_frame_view->size());
   for (size_t k = 0; k < sub_frame_view->size(); ++k) {
     (*sub_frame_view)[k] = rtc::ArrayView<float>(
-        &frame->split_bands(0)[k][sub_frame_index * kSubFrameLength],
+        &frame->split_bands_f(0)[k][sub_frame_index * kSubFrameLength],
         kSubFrameLength);
   }
 }
@@ -131,7 +131,7 @@ void CopyBufferIntoFrame(AudioBuffer* buffer,
   RTC_DCHECK_EQ(num_bands, frame->size());
   RTC_DCHECK_EQ(frame_length, (*frame)[0].size());
   for (size_t k = 0; k < num_bands; ++k) {
-    rtc::ArrayView<float> buffer_view(&buffer->split_bands(0)[k][0],
+    rtc::ArrayView<float> buffer_view(&buffer->split_bands_f(0)[k][0],
                                       frame_length);
     std::copy(buffer_view.begin(), buffer_view.end(), (*frame)[k].begin());
   }
@@ -206,7 +206,7 @@ void EchoCanceller3::RenderWriter::Insert(AudioBuffer* input) {
     return;
 
   data_dumper_->DumpWav("aec3_render_input", frame_length_,
-                        &input->split_bands(0)[0][0],
+                        &input->split_bands_f(0)[0][0],
                         LowestBandRate(sample_rate_hz_), 1);
 
   CopyBufferIntoFrame(input, num_bands_, frame_length_,
@@ -297,12 +297,12 @@ void EchoCanceller3::AnalyzeCapture(AudioBuffer* capture) {
   RTC_DCHECK_RUNS_SERIALIZED(&capture_race_checker_);
   RTC_DCHECK(capture);
   data_dumper_->DumpWav("aec3_capture_analyze_input", capture->num_frames(),
-                        capture->channels()[0], sample_rate_hz_, 1);
+                        capture->channels_f()[0], sample_rate_hz_, 1);
 
   saturated_microphone_signal_ = false;
   for (size_t k = 0; k < capture->num_channels(); ++k) {
     saturated_microphone_signal_ |=
-        DetectSaturation(rtc::ArrayView<const float>(capture->channels()[k],
+        DetectSaturation(rtc::ArrayView<const float>(capture->channels_f()[k],
                                                      capture->num_frames()));
     if (saturated_microphone_signal_) {
       break;
@@ -329,7 +329,7 @@ void EchoCanceller3::ProcessCapture(AudioBuffer* capture, bool level_change) {
   }
 
   rtc::ArrayView<float> capture_lower_band =
-      rtc::ArrayView<float>(&capture->split_bands(0)[0][0], frame_length_);
+      rtc::ArrayView<float>(&capture->split_bands_f(0)[0][0], frame_length_);
 
   data_dumper_->DumpWav("aec3_capture_input", capture_lower_band,
                         LowestBandRate(sample_rate_hz_), 1);
@@ -356,7 +356,7 @@ void EchoCanceller3::ProcessCapture(AudioBuffer* capture, bool level_change) {
       &output_framer_, block_processor_.get(), &block_);
 
   data_dumper_->DumpWav("aec3_capture_output", frame_length_,
-                        &capture->split_bands(0)[0][0],
+                        &capture->split_bands_f(0)[0][0],
                         LowestBandRate(sample_rate_hz_), 1);
 }
 

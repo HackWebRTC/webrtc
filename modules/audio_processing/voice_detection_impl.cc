@@ -63,16 +63,17 @@ bool VoiceDetectionImpl::ProcessCaptureAudio(AudioBuffer* audio) {
   std::array<int16_t, AudioBuffer::kMaxSplitFrameLength> mixed_low_pass_data;
   rtc::ArrayView<const int16_t> mixed_low_pass(mixed_low_pass_data.data(),
                                                audio->num_frames_per_band());
-  if (audio->num_channels() == 1) {
-    FloatS16ToS16(audio->split_bands_const(0)[kBand0To8kHz],
+  if (audio->num_proc_channels() == 1) {
+    FloatS16ToS16(audio->split_bands_const_f(0)[kBand0To8kHz],
                   audio->num_frames_per_band(), mixed_low_pass_data.data());
   } else {
     const int num_channels = static_cast<int>(audio->num_channels());
     for (size_t i = 0; i < audio->num_frames_per_band(); ++i) {
       int32_t value =
-          FloatS16ToS16(audio->split_channels_const(kBand0To8kHz)[0][i]);
+          FloatS16ToS16(audio->split_channels_const_f(kBand0To8kHz)[0][i]);
       for (int j = 1; j < num_channels; ++j) {
-        value += FloatS16ToS16(audio->split_channels_const(kBand0To8kHz)[j][i]);
+        value +=
+            FloatS16ToS16(audio->split_channels_const_f(kBand0To8kHz)[j][i]);
       }
       mixed_low_pass_data[i] = value / num_channels;
     }
