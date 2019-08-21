@@ -144,7 +144,8 @@ void MouseCursorMonitorWin::Capture() {
   if (window_) {
     DesktopRect original_rect;
     DesktopRect cropped_rect;
-    if (!GetCroppedWindowRect(window_, &cropped_rect, &original_rect)) {
+    if (!GetCroppedWindowRect(window_, /*avoid_cropping_border*/ false,
+                              &cropped_rect, &original_rect)) {
       position.set(0, 0);
       inside = false;
     } else {

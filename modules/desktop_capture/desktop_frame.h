@@ -85,6 +85,16 @@ class RTC_EXPORT DesktopFrame {
                       const DesktopVector& src_pos,
                       const DesktopRect& dest_rect);
 
+  // Copies pixels from another frame, with the copied & overwritten regions
+  // representing the intersection between the two frames. Returns true if
+  // pixels were copied, or false if there's no intersection. The scale factors
+  // represent the ratios between pixel space & offset coordinate space (e.g.
+  // 2.0 would indicate the frames are scaled down by 50% for display, so any
+  // offset between their origins should be doubled).
+  bool CopyIntersectingPixelsFrom(const DesktopFrame& src_frame,
+                                  double horizontal_scale,
+                                  double vertical_scale);
+
   // A helper to return the data pointer of a frame at the specified position.
   uint8_t* GetFrameDataAtPos(const DesktopVector& pos) const;
 

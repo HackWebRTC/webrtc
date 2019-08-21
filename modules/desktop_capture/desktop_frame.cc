@@ -12,6 +12,7 @@
 
 #include <string.h>
 
+#include <cmath>
 #include <utility>
 
 #include "absl/memory/memory.h"
@@ -59,6 +60,47 @@ void DesktopFrame::CopyPixelsFrom(const DesktopFrame& src_frame,
 
   CopyPixelsFrom(src_frame.GetFrameDataAtPos(src_pos), src_frame.stride(),
                  dest_rect);
+}
+
+bool DesktopFrame::CopyIntersectingPixelsFrom(const DesktopFrame& src_frame,
+                                              double horizontal_scale,
+                                              double vertical_scale) {
+  const DesktopVector& origin = top_left();
+  const DesktopVector& src_frame_origin = src_frame.top_left();
+
+  DesktopVector src_frame_offset = src_frame_origin.subtract(origin);
+
+  // Determine the intersection, first adjusting its origin to account for any
+  // DPI scaling.
+  DesktopRect intersection_rect = src_frame.rect();
+  if (horizontal_scale != 1.0 || vertical_scale != 1.0) {
+    DesktopVector origin_adjustment(
+        static_cast<int>(
+            std::round((horizontal_scale - 1.0) * src_frame_offset.x())),
+        static_cast<int>(
+            std::round((vertical_scale - 1.0) * src_frame_offset.y())));
+
+    intersection_rect.Translate(origin_adjustment);
+
+    src_frame_offset = src_frame_offset.add(origin_adjustment);
+  }
+
+  intersection_rect.IntersectWith(rect());
+  if (intersection_rect.is_empty()) {
+    return false;
+  }
+
+  // Translate the intersection rect to be relative to the outer rect.
+  intersection_rect.Translate(-origin.x(), -origin.y());
+
+  // Determine source position for the copy (offsets of outer frame from
+  // source origin, if positive).
+  int32_t src_pos_x = std::max(0, -src_frame_offset.x());
+  int32_t src_pos_y = std::max(0, -src_frame_offset.y());
+
+  CopyPixelsFrom(src_frame, DesktopVector(src_pos_x, src_pos_y),
+                 intersection_rect);
+  return true;
 }
 
 DesktopRect DesktopFrame::rect() const {

@@ -36,6 +36,7 @@ bool GetWindowRect(HWND window, DesktopRect* result) {
 }
 
 bool GetCroppedWindowRect(HWND window,
+                          bool avoid_cropping_border,
                           DesktopRect* cropped_rect,
                           DesktopRect* original_rect) {
   DesktopRect window_rect;
@@ -53,13 +54,30 @@ bool GetCroppedWindowRect(HWND window,
     return false;
   }
 
-  // After Windows8, transparent borders will be added by OS at
-  // left/bottom/right sides of a window. If the cropped window
+  // As of Windows8, transparent resize borders are added by the OS at
+  // left/bottom/right sides of a resizeable window. If the cropped window
   // doesn't remove these borders, the background will be exposed a bit.
   if (rtc::IsWindows8OrLater() || is_maximized) {
-    const int width = GetSystemMetrics(SM_CXSIZEFRAME);
-    const int height = GetSystemMetrics(SM_CYSIZEFRAME);
-    cropped_rect->Extend(-width, 0, -width, -height);
+    // Only apply this cropping to windows with a resize border (otherwise,
+    // it'd clip the edges of captured pop-up windows without this border).
+    LONG style = GetWindowLong(window, GWL_STYLE);
+    if (style & WS_THICKFRAME || style & DS_MODALFRAME) {
+      int width = GetSystemMetrics(SM_CXSIZEFRAME);
+      int bottom_height = GetSystemMetrics(SM_CYSIZEFRAME);
+      const int visible_border_height = GetSystemMetrics(SM_CYBORDER);
+      int top_height = visible_border_height;
+
+      // If requested, avoid cropping the visible window border. This is used
+      // for pop-up windows to include their border, but not for the outermost
+      // window (where a partially-transparent border may expose the
+      // background a bit).
+      if (avoid_cropping_border) {
+        width = std::max(0, width - GetSystemMetrics(SM_CXBORDER));
+        bottom_height = std::max(0, bottom_height - visible_border_height);
+        top_height = 0;
+      }
+      cropped_rect->Extend(-width, -top_height, -width, -bottom_height);
+    }
   }
 
   return true;

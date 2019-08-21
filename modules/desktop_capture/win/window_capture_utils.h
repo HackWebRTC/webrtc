@@ -8,6 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#ifndef MODULES_DESKTOP_CAPTURE_WIN_WINDOW_CAPTURE_UTILS_H_
+#define MODULES_DESKTOP_CAPTURE_WIN_WINDOW_CAPTURE_UTILS_H_
+
 #include <shlobj.h>
 #include <windows.h>
 #include <wrl/client.h>
@@ -23,7 +26,10 @@ namespace webrtc {
 bool GetWindowRect(HWND window, DesktopRect* result);
 
 // Outputs the window rect, with the left/right/bottom frame border cropped if
-// the window is maximized. |cropped_rect| is the cropped rect relative to the
+// the window is maximized or has a transparent resize border.
+// |avoid_cropping_border| may be set to true to avoid cropping the visible
+// border when cropping any resize border.
+// |cropped_rect| is the cropped rect relative to the
 // desktop. |original_rect| is the original rect returned from GetWindowRect.
 // Returns true if all API calls succeeded. The returned DesktopRect is in
 // system coordinates, i.e. the primary monitor on the system always starts from
@@ -37,6 +43,7 @@ bool GetWindowRect(HWND window, DesktopRect* result);
 // WindowCapturerWin to crop out the borders or shadow according to their
 // scenarios. But this function is too generic and easy to be misused.
 bool GetCroppedWindowRect(HWND window,
+                          bool avoid_cropping_border,
                           DesktopRect* cropped_rect,
                           DesktopRect* original_rect);
 
@@ -91,3 +98,5 @@ class WindowCaptureHelperWin {
 };
 
 }  // namespace webrtc
+
+#endif  // MODULES_DESKTOP_CAPTURE_WIN_WINDOW_CAPTURE_UTILS_H_
