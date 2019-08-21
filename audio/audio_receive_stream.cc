@@ -78,8 +78,9 @@ std::unique_ptr<voe::ChannelReceiveInterface> CreateChannelReceive(
   return voe::CreateChannelReceive(
       clock, module_process_thread, internal_audio_state->audio_device_module(),
       config.media_transport_config, config.rtcp_send_transport, event_log,
-      config.rtp.remote_ssrc, config.jitter_buffer_max_packets,
-      config.jitter_buffer_fast_accelerate, config.jitter_buffer_min_delay_ms,
+      config.rtp.local_ssrc, config.rtp.remote_ssrc,
+      config.jitter_buffer_max_packets, config.jitter_buffer_fast_accelerate,
+      config.jitter_buffer_min_delay_ms,
       config.jitter_buffer_enable_rtx_handling, config.decoder_factory,
       config.codec_pair_id, config.frame_decryptor, config.crypto_options);
 }
@@ -381,12 +382,9 @@ void AudioReceiveStream::ConfigureStream(AudioReceiveStream* stream,
   RTC_DCHECK(first_time ||
              old_config.decoder_factory == new_config.decoder_factory);
 
-  if (first_time || old_config.rtp.local_ssrc != new_config.rtp.local_ssrc) {
-    channel_receive->SetLocalSSRC(new_config.rtp.local_ssrc);
-  }
-
   if (!first_time) {
-    // Remote ssrc can't be changed mid-stream.
+    // SSRC can't be changed mid-stream.
+    RTC_DCHECK_EQ(old_config.rtp.local_ssrc, new_config.rtp.local_ssrc);
     RTC_DCHECK_EQ(old_config.rtp.remote_ssrc, new_config.rtp.remote_ssrc);
   }
 

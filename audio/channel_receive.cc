@@ -102,6 +102,7 @@ class ChannelReceive : public ChannelReceiveInterface,
                  const MediaTransportConfig& media_transport_config,
                  Transport* rtcp_send_transport,
                  RtcEventLog* rtc_event_log,
+                 uint32_t local_ssrc,
                  uint32_t remote_ssrc,
                  size_t jitter_buffer_max_packets,
                  bool jitter_buffer_fast_playout,
@@ -154,9 +155,6 @@ class ChannelReceive : public ChannelReceiveInterface,
 
   // Produces the transport-related timestamps; current_delay_ms is left unset.
   absl::optional<Syncable::Info> GetSyncInfo() const override;
-
-  // RTP+RTCP
-  void SetLocalSSRC(unsigned int ssrc) override;
 
   void RegisterReceiverCongestionControlObjects(
       PacketRouter* packet_router) override;
@@ -456,6 +454,7 @@ ChannelReceive::ChannelReceive(
     const MediaTransportConfig& media_transport_config,
     Transport* rtcp_send_transport,
     RtcEventLog* rtc_event_log,
+    uint32_t local_ssrc,
     uint32_t remote_ssrc,
     size_t jitter_buffer_max_packets,
     bool jitter_buffer_fast_playout,
@@ -508,8 +507,8 @@ ChannelReceive::ChannelReceive(
   configuration.receiver_only = true;
   configuration.outgoing_transport = rtcp_send_transport;
   configuration.receive_statistics = rtp_receive_statistics_.get();
-
   configuration.event_log = event_log_;
+  configuration.local_media_ssrc = local_ssrc;
 
   _rtpRtcpModule = RtpRtcp::Create(configuration);
   _rtpRtcpModule->SetSendingMediaStatus(false);
@@ -699,11 +698,6 @@ void ChannelReceive::SetChannelOutputVolumeScaling(float scaling) {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
   rtc::CritScope cs(&volume_settings_critsect_);
   _outputGain = scaling;
-}
-
-void ChannelReceive::SetLocalSSRC(uint32_t ssrc) {
-  RTC_DCHECK(worker_thread_checker_.IsCurrent());
-  _rtpRtcpModule->SetSSRC(ssrc);
 }
 
 void ChannelReceive::RegisterReceiverCongestionControlObjects(
@@ -959,6 +953,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
     const MediaTransportConfig& media_transport_config,
     Transport* rtcp_send_transport,
     RtcEventLog* rtc_event_log,
+    uint32_t local_ssrc,
     uint32_t remote_ssrc,
     size_t jitter_buffer_max_packets,
     bool jitter_buffer_fast_playout,
@@ -970,7 +965,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
     const webrtc::CryptoOptions& crypto_options) {
   return absl::make_unique<ChannelReceive>(
       clock, module_process_thread, audio_device_module, media_transport_config,
-      rtcp_send_transport, rtc_event_log, remote_ssrc,
+      rtcp_send_transport, rtc_event_log, local_ssrc, remote_ssrc,
       jitter_buffer_max_packets, jitter_buffer_fast_playout,
       jitter_buffer_min_delay_ms, jitter_buffer_enable_rtx_handling,
       decoder_factory, codec_pair_id, frame_decryptor, crypto_options);

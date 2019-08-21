@@ -142,7 +142,6 @@ class ChannelSend : public ChannelSendInterface,
                                         int payload_frequency) override;
 
   // RTP+RTCP
-  void SetLocalSSRC(uint32_t ssrc) override;
   void SetRid(const std::string& rid,
               int extension_id,
               int repaired_extension_id) override;
@@ -279,7 +278,7 @@ class ChannelSend : public ChannelSendInterface,
   int media_transport_sequence_number_ RTC_GUARDED_BY(encoder_queue_) = 0;
 
   rtc::CriticalSection media_transport_lock_;
-  // Currently set by SetLocalSSRC.
+  // Currently set to local SSRC at construction.
   uint64_t media_transport_channel_id_ RTC_GUARDED_BY(&media_transport_lock_) =
       0;
   // Cache payload type and sampling frequency from most recent call to
@@ -702,6 +701,10 @@ ChannelSend::ChannelSend(Clock* clock,
   configuration.rtcp_report_interval_ms = rtcp_report_interval_ms;
 
   configuration.local_media_ssrc = ssrc;
+  if (media_transport_config_.media_transport) {
+    rtc::CritScope cs(&media_transport_lock_);
+    media_transport_channel_id_ = ssrc;
+  }
 
   _rtpRtcpModule = RtpRtcp::Create(configuration);
   _rtpRtcpModule->SetSendingMediaStatus(false);
@@ -949,17 +952,6 @@ void ChannelSend::SetSendTelephoneEventPayloadType(int payload_type,
   _rtpRtcpModule->RegisterSendPayloadFrequency(payload_type, payload_frequency);
   rtp_sender_audio_->RegisterAudioPayload("telephone-event", payload_type,
                                           payload_frequency, 0, 0);
-}
-
-void ChannelSend::SetLocalSSRC(uint32_t ssrc) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-  RTC_DCHECK(!sending_);
-
-  if (media_transport_config_.media_transport) {
-    rtc::CritScope cs(&media_transport_lock_);
-    media_transport_channel_id_ = ssrc;
-  }
-  _rtpRtcpModule->SetSSRC(ssrc);
 }
 
 void ChannelSend::SetRid(const std::string& rid,

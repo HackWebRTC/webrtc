@@ -77,7 +77,6 @@ class ChannelSendInterface {
       rtc::FunctionView<void(std::unique_ptr<AudioEncoder>*)> modifier) = 0;
   virtual void CallEncoder(rtc::FunctionView<void(AudioEncoder*)> modifier) = 0;
 
-  virtual void SetLocalSSRC(uint32_t ssrc) = 0;
   // Use 0 to indicate that the extension should not be registered.
   virtual void SetRid(const std::string& rid,
                       int extension_id,

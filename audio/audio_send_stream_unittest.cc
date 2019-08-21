@@ -208,7 +208,7 @@ struct ConfigHelper {
     EXPECT_CALL(*channel_send_, GetRtpRtcp()).WillRepeatedly(Invoke([this]() {
       return &this->rtp_rtcp_;
     }));
-    EXPECT_CALL(*channel_send_, SetLocalSSRC(kSsrc)).Times(1);
+    EXPECT_CALL(rtp_rtcp_, SSRC).WillRepeatedly(Return(kSsrc));
     EXPECT_CALL(*channel_send_, SetRTCP_CNAME(StrEq(kCName))).Times(1);
     EXPECT_CALL(*channel_send_, SetFrameEncryptor(_)).Times(1);
     EXPECT_CALL(*channel_send_, SetExtmapAllowMixed(false)).Times(1);

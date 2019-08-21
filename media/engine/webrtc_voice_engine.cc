@@ -1065,8 +1065,10 @@ class WebRtcVoiceMediaChannel::WebRtcAudioReceiveStream {
 
   void SetLocalSsrc(uint32_t local_ssrc) {
     RTC_DCHECK(worker_thread_checker_.IsCurrent());
-    config_.rtp.local_ssrc = local_ssrc;
-    ReconfigureAudioReceiveStream();
+    if (local_ssrc != config_.rtp.local_ssrc) {
+      config_.rtp.local_ssrc = local_ssrc;
+      RecreateAudioReceiveStream();
+    }
   }
 
   void SetUseTransportCcAndRecreateStream(bool use_transport_cc,
