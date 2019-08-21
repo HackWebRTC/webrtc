@@ -1200,8 +1200,8 @@ TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabled) {
 
 TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabledFloat) {
   // Test that ProcessStream copies input to output even with no processing.
-  const size_t kSamples = 80;
-  const int sample_rate = 8000;
+  const size_t kSamples = 160;
+  const int sample_rate = 16000;
   const float src[kSamples] = {-1.0f, 0.0f, 1.0f};
   float dest[kSamples] = {};
 
