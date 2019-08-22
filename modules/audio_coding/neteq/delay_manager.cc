@@ -38,9 +38,8 @@ constexpr int kIatFactor = 32745;  // 0.9993 in Q15.
 constexpr int kMaxIat = 64;        // Max inter-arrival time to register.
 constexpr int kMaxReorderedPackets =
     10;  // Max number of consecutive reordered packets.
-constexpr int kMaxHistoryPackets =
-    100;  // Max number of packets used to calculate relative packet arrival
-          // delay.
+constexpr int kMaxHistoryMs = 2000;  // Oldest packet to include in history to
+                                     // calculate relative packet arrival delay.
 constexpr int kDelayBuckets = 100;
 constexpr int kBucketSizeMs = 20;
 
@@ -284,7 +283,7 @@ int DelayManager::Update(uint16_t sequence_number,
     if (reordered) {
       relative_delay = std::max(iat_delay, 0);
     } else {
-      UpdateDelayHistory(iat_delay);
+      UpdateDelayHistory(iat_delay, timestamp, sample_rate_hz);
       relative_delay = CalculateRelativePacketArrivalDelay();
     }
     statistics_->RelativePacketArrivalDelay(relative_delay);
@@ -325,9 +324,15 @@ int DelayManager::Update(uint16_t sequence_number,
   return 0;
 }
 
-void DelayManager::UpdateDelayHistory(int iat_delay) {
-  delay_history_.push_back(iat_delay);
-  if (delay_history_.size() > kMaxHistoryPackets) {
+void DelayManager::UpdateDelayHistory(int iat_delay_ms,
+                                      uint32_t timestamp,
+                                      int sample_rate_hz) {
+  PacketDelay delay;
+  delay.iat_delay_ms = iat_delay_ms;
+  delay.timestamp = timestamp;
+  delay_history_.push_back(delay);
+  while (timestamp - delay_history_.front().timestamp >
+         static_cast<uint32_t>(kMaxHistoryMs * sample_rate_hz / 1000)) {
     delay_history_.pop_front();
   }
 }
@@ -338,8 +343,8 @@ int DelayManager::CalculateRelativePacketArrivalDelay() const {
   // smaller than zero, it means the reference packet is invalid, and we
   // move the reference.
   int relative_delay = 0;
-  for (int delay : delay_history_) {
-    relative_delay += delay;
+  for (const PacketDelay& delay : delay_history_) {
+    relative_delay += delay.iat_delay_ms;
     relative_delay = std::max(relative_delay, 0);
   }
   return relative_delay;
@@ -382,7 +387,10 @@ int DelayManager::CalculateTargetLevel(int iat_packets, bool reordered) {
   int target_level;
   switch (histogram_mode_) {
     case RELATIVE_ARRIVAL_DELAY: {
-      target_level = 1 + bucket_index * kBucketSizeMs / packet_len_ms_;
+      target_level = 1;
+      if (packet_len_ms_ > 0) {
+        target_level += bucket_index * kBucketSizeMs / packet_len_ms_;
+      }
       base_target_level_ = target_level;
       break;
     }
@@ -432,6 +440,7 @@ void DelayManager::Reset() {
   packet_len_ms_ = 0;  // Packet size unknown.
   peak_detector_.Reset();
   histogram_->Reset();
+  delay_history_.clear();
   base_target_level_ = 4;
   target_level_ = base_target_level_ << 8;
   packet_iat_stopwatch_ = tick_timer_->GetNewStopwatch();

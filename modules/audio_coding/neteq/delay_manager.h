@@ -151,7 +151,9 @@ class DelayManager {
   int MaxBufferTimeQ75() const;
 
   // Updates |delay_history_|.
-  void UpdateDelayHistory(int iat_delay);
+  void UpdateDelayHistory(int iat_delay_ms,
+                          uint32_t timestamp,
+                          int sample_rate_hz);
 
   // Calculate relative packet arrival delay from |delay_history_|.
   int CalculateRelativePacketArrivalDelay() const;
@@ -203,7 +205,13 @@ class DelayManager {
   const bool frame_length_change_experiment_;
   const bool enable_rtx_handling_;
   int num_reordered_packets_ = 0;  // Number of consecutive reordered packets.
-  std::deque<int> delay_history_;
+
+  struct PacketDelay {
+    int iat_delay_ms;
+    uint32_t timestamp;
+  };
+  std::deque<PacketDelay> delay_history_;
+
   // When current buffer level is more than
   // |deceleration_target_level_offset_ms_| below the target level, NetEq will
   // impose deceleration to increase the buffer level. The value is in Q8, and

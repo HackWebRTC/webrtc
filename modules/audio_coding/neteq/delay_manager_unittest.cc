@@ -748,6 +748,28 @@ TEST_F(DelayManagerTest, RelativeArrivalDelayMode) {
   EXPECT_EQ(0, dm_->Update(seq_no_, ts_, kFs));
 }
 
+TEST_F(DelayManagerTest, MaxDelayHistory) {
+  histogram_mode_ = DelayManager::HistogramMode::RELATIVE_ARRIVAL_DELAY;
+  use_mock_histogram_ = true;
+  RecreateDelayManager();
+
+  SetPacketAudioLength(kFrameSizeMs);
+  InsertNextPacket();
+
+  // Insert 20 ms iat delay in the delay history.
+  IncreaseTime(2 * kFrameSizeMs);
+  EXPECT_CALL(*mock_histogram_, Add(1));  // 20ms delayed.
+  InsertNextPacket();
+
+  // Insert next packet with a timestamp difference larger than maximum history
+  // size. This removes the previously inserted iat delay from the history.
+  constexpr int kMaxHistoryMs = 2000;
+  IncreaseTime(kMaxHistoryMs + kFrameSizeMs);
+  ts_ += kFs * kMaxHistoryMs / 1000;
+  EXPECT_CALL(*mock_histogram_, Add(0));  // Not delayed.
+  EXPECT_EQ(0, dm_->Update(seq_no_, ts_, kFs));
+}
+
 TEST_F(DelayManagerTest, RelativeArrivalDelayStatistic) {
   SetPacketAudioLength(kFrameSizeMs);
   InsertNextPacket();
