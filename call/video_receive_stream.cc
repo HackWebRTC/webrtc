@@ -58,8 +58,7 @@ std::string VideoReceiveStream::Stats::ToString(int64_t time_ms) const {
   ss << "jb_emitted_count: " << jitter_buffer_emitted_count << ", ";
   ss << "min_playout_delay_ms: " << min_playout_delay_ms << ", ";
   ss << "sync_offset_ms: " << sync_offset_ms << ", ";
-  ss << "cum_loss: " << rtcp_stats.packets_lost << ", ";
-  ss << "max_ext_seq: " << rtcp_stats.extended_highest_sequence_number << ", ";
+  ss << "cum_loss: " << rtp_stats.packets_lost << ", ";
   ss << "nack: " << rtcp_packet_type_counts.nack_packets << ", ";
   ss << "fir: " << rtcp_packet_type_counts.fir_packets << ", ";
   ss << "pli: " << rtcp_packet_type_counts.pli_packets;

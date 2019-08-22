@@ -444,6 +444,20 @@ class StreamDataCountersCallback {
                                    uint32_t ssrc) = 0;
 };
 
+// Information exposed through the GetStats api.
+struct RtpReceiveStats {
+  // |packets_lost| and |jitter| are defined by RFC 3550, and exposed in the
+  // RTCReceivedRtpStreamStats dictionary, see
+  // https://w3c.github.io/webrtc-stats/#receivedrtpstats-dict*
+  int32_t packets_lost = 0;
+  uint32_t jitter = 0;
+
+  // Timestamp and counters exposed in RTCInboundRtpStreamStats, see
+  // https://w3c.github.io/webrtc-stats/#inboundrtpstats-dict*
+  absl::optional<int64_t> last_packet_received_timestamp_ms;
+  RtpPacketCounter packet_counter;
+};
+
 class RtcpAckObserver {
  public:
   // This method is called on received report blocks matching the sender ssrc.

@@ -2795,14 +2795,12 @@ WebRtcVideoChannel::WebRtcVideoReceiveStream::GetVideoReceiverInfo(
     info.codec_payload_type = stats.current_payload_type;
   }
   if (use_standard_bytes_stats_) {
-    info.bytes_rcvd = stats.rtp_stats.transmitted.payload_bytes;
+    info.bytes_rcvd = stats.rtp_stats.packet_counter.payload_bytes;
   } else {
-    info.bytes_rcvd = stats.rtp_stats.transmitted.payload_bytes +
-                      stats.rtp_stats.transmitted.header_bytes +
-                      stats.rtp_stats.transmitted.padding_bytes;
+    info.bytes_rcvd = stats.rtp_stats.packet_counter.TotalBytes();
   }
-  info.packets_rcvd = stats.rtp_stats.transmitted.packets;
-  info.packets_lost = stats.rtcp_stats.packets_lost;
+  info.packets_rcvd = stats.rtp_stats.packet_counter.packets;
+  info.packets_lost = stats.rtp_stats.packets_lost;
 
   info.framerate_rcvd = stats.network_frame_rate;
   info.framerate_decoded = stats.decode_frame_rate;

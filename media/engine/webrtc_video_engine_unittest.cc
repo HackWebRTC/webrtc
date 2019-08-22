@@ -5233,21 +5233,20 @@ TEST_F(WebRtcVideoChannelTest, GetStatsTranslatesReceivePacketStatsCorrectly) {
 
   FakeVideoReceiveStream* stream = AddRecvStream();
   webrtc::VideoReceiveStream::Stats stats;
-  stats.rtp_stats.transmitted.payload_bytes = 2;
-  stats.rtp_stats.transmitted.header_bytes = 3;
-  stats.rtp_stats.transmitted.padding_bytes = 4;
-  stats.rtp_stats.transmitted.packets = 5;
-  stats.rtcp_stats.packets_lost = 6;
-  stats.rtcp_stats.fraction_lost = 7;
+  stats.rtp_stats.packet_counter.payload_bytes = 2;
+  stats.rtp_stats.packet_counter.header_bytes = 3;
+  stats.rtp_stats.packet_counter.padding_bytes = 4;
+  stats.rtp_stats.packet_counter.packets = 5;
+  stats.rtp_stats.packets_lost = 6;
   stream->SetStats(stats);
 
   cricket::VideoMediaInfo info;
   ASSERT_TRUE(channel_->GetStats(&info));
-  EXPECT_EQ(stats.rtp_stats.transmitted.payload_bytes,
+  EXPECT_EQ(stats.rtp_stats.packet_counter.payload_bytes,
             rtc::checked_cast<size_t>(info.receivers[0].bytes_rcvd));
-  EXPECT_EQ(stats.rtp_stats.transmitted.packets,
+  EXPECT_EQ(stats.rtp_stats.packet_counter.packets,
             rtc::checked_cast<unsigned int>(info.receivers[0].packets_rcvd));
-  EXPECT_EQ(stats.rtcp_stats.packets_lost, info.receivers[0].packets_lost);
+  EXPECT_EQ(stats.rtp_stats.packets_lost, info.receivers[0].packets_lost);
 }
 
 TEST_F(WebRtcVideoChannelTest, TranslatesCallStatsCorrectly) {

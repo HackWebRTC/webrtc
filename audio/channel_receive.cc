@@ -724,34 +724,29 @@ CallReceiveStatistics ChannelReceive::GetRTCPStatistics() const {
 
   // The jitter statistics is updated for each received RTP packet and is
   // based on received packets.
-  RtcpStatistics statistics;
+  RtpReceiveStats rtp_stats;
   StreamStatistician* statistician =
       rtp_receive_statistics_->GetStatistician(remote_ssrc_);
   if (statistician) {
-    statistician->GetStatistics(&statistics,
-                                _rtpRtcpModule->RTCP() == RtcpMode::kOff);
+    rtp_stats = statistician->GetStats();
   }
 
-  stats.cumulativeLost = statistics.packets_lost;
-  stats.jitterSamples = statistics.jitter;
+  stats.cumulativeLost = rtp_stats.packets_lost;
+  stats.jitterSamples = rtp_stats.jitter;
 
   // --- RTT
   stats.rttMs = GetRTT();
 
   // --- Data counters
   if (statistician) {
-    StreamDataCounters data_counters =
-        statistician->GetReceiveStreamDataCounters();
     if (use_standard_bytes_stats_) {
-      stats.bytesReceived = data_counters.transmitted.payload_bytes;
+      stats.bytesReceived = rtp_stats.packet_counter.payload_bytes;
     } else {
-      stats.bytesReceived = data_counters.transmitted.payload_bytes +
-                            data_counters.transmitted.header_bytes +
-                            data_counters.transmitted.padding_bytes;
+      stats.bytesReceived = rtp_stats.packet_counter.TotalBytes();
     }
-    stats.packetsReceived = data_counters.transmitted.packets;
+    stats.packetsReceived = rtp_stats.packet_counter.packets;
     stats.last_packet_received_timestamp_ms =
-        data_counters.last_packet_received_timestamp_ms;
+        rtp_stats.last_packet_received_timestamp_ms;
   } else {
     stats.bytesReceived = 0;
     stats.packetsReceived = 0;

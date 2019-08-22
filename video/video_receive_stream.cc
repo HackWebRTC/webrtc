@@ -463,8 +463,7 @@ VideoReceiveStream::Stats VideoReceiveStream::GetStats() const {
   StreamStatistician* statistician =
       rtp_receive_statistics_->GetStatistician(stats.ssrc);
   if (statistician) {
-    statistician->GetStatistics(&stats.rtcp_stats, /*reset=*/false);
-    stats.rtp_stats = statistician->GetReceiveStreamDataCounters();
+    stats.rtp_stats = statistician->GetStats();
     stats.total_bitrate_bps = statistician->BitrateReceived();
   }
   if (config_.rtp.rtx_ssrc) {

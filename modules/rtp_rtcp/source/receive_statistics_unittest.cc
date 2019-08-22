@@ -243,13 +243,16 @@ TEST_F(ReceiveStatisticsTest, SimpleLossComputation) {
   packet1_.SetSequenceNumber(5);
   receive_statistics_->OnRtpPacket(packet1_);
 
+  std::vector<rtcp::ReportBlock> report_blocks =
+      receive_statistics_->RtcpReportBlocks(1);
+  ASSERT_THAT(report_blocks, SizeIs(1));
+  EXPECT_EQ(kSsrc1, report_blocks[0].source_ssrc());
+
+  // 20% = 51/255.
+  EXPECT_EQ(51u, report_blocks[0].fraction_lost());
+  EXPECT_EQ(1, report_blocks[0].cumulative_lost_signed());
   StreamStatistician* statistician =
       receive_statistics_->GetStatistician(kSsrc1);
-  RtcpStatistics statistics;
-  statistician->GetStatistics(&statistics, true);
-  // 20% = 51/255.
-  EXPECT_EQ(51u, statistics.fraction_lost);
-  EXPECT_EQ(1, statistics.packets_lost);
   EXPECT_EQ(20, statistician->GetFractionLostInPercent());
 }
 
@@ -263,13 +266,16 @@ TEST_F(ReceiveStatisticsTest, LossComputationWithReordering) {
   packet1_.SetSequenceNumber(5);
   receive_statistics_->OnRtpPacket(packet1_);
 
+  std::vector<rtcp::ReportBlock> report_blocks =
+      receive_statistics_->RtcpReportBlocks(1);
+  ASSERT_THAT(report_blocks, SizeIs(1));
+  EXPECT_EQ(kSsrc1, report_blocks[0].source_ssrc());
+
+  // 20% = 51/255.
+  EXPECT_EQ(51u, report_blocks[0].fraction_lost());
+  EXPECT_EQ(1, report_blocks[0].cumulative_lost_signed());
   StreamStatistician* statistician =
       receive_statistics_->GetStatistician(kSsrc1);
-  RtcpStatistics statistics;
-  statistician->GetStatistics(&statistics, true);
-  // 20% = 51/255.
-  EXPECT_EQ(51u, statistics.fraction_lost);
-  EXPECT_EQ(1, statistics.packets_lost);
   EXPECT_EQ(20, statistician->GetFractionLostInPercent());
 }
 
@@ -285,13 +291,16 @@ TEST_F(ReceiveStatisticsTest, LossComputationWithDuplicates) {
   packet1_.SetSequenceNumber(5);
   receive_statistics_->OnRtpPacket(packet1_);
 
+  std::vector<rtcp::ReportBlock> report_blocks =
+      receive_statistics_->RtcpReportBlocks(1);
+  ASSERT_THAT(report_blocks, SizeIs(1));
+  EXPECT_EQ(kSsrc1, report_blocks[0].source_ssrc());
+
+  // 20% = 51/255.
+  EXPECT_EQ(51u, report_blocks[0].fraction_lost());
+  EXPECT_EQ(1, report_blocks[0].cumulative_lost_signed());
   StreamStatistician* statistician =
       receive_statistics_->GetStatistician(kSsrc1);
-  RtcpStatistics statistics;
-  statistician->GetStatistics(&statistics, true);
-  // 20% = 51/255.
-  EXPECT_EQ(51u, statistics.fraction_lost);
-  EXPECT_EQ(1, statistics.packets_lost);
   EXPECT_EQ(20, statistician->GetFractionLostInPercent());
 }
 
@@ -308,28 +317,34 @@ TEST_F(ReceiveStatisticsTest, LossComputationWithSequenceNumberWrapping) {
   receive_statistics_->OnRtpPacket(packet1_);
 
   // Only one packet was actually lost, 0xffff.
+  std::vector<rtcp::ReportBlock> report_blocks =
+      receive_statistics_->RtcpReportBlocks(1);
+  ASSERT_THAT(report_blocks, SizeIs(1));
+  EXPECT_EQ(kSsrc1, report_blocks[0].source_ssrc());
+
+  // 20% = 51/255.
+  EXPECT_EQ(51u, report_blocks[0].fraction_lost());
+  EXPECT_EQ(1, report_blocks[0].cumulative_lost_signed());
   StreamStatistician* statistician =
       receive_statistics_->GetStatistician(kSsrc1);
-  RtcpStatistics statistics;
-  statistician->GetStatistics(&statistics, true);
-  // 20% = 51/255.
-  EXPECT_EQ(51u, statistics.fraction_lost);
-  EXPECT_EQ(1, statistics.packets_lost);
   EXPECT_EQ(20, statistician->GetFractionLostInPercent());
 
   // Now test losing one packet *after* the rollover.
   packet1_.SetSequenceNumber(3);
   receive_statistics_->OnRtpPacket(packet1_);
-  statistician->GetStatistics(&statistics, true);
+
+  report_blocks = receive_statistics_->RtcpReportBlocks(1);
+  ASSERT_THAT(report_blocks, SizeIs(1));
+  EXPECT_EQ(kSsrc1, report_blocks[0].source_ssrc());
+
   // 50% = 127/255.
-  EXPECT_EQ(127u, statistics.fraction_lost);
-  EXPECT_EQ(2, statistics.packets_lost);
+  EXPECT_EQ(127u, report_blocks[0].fraction_lost());
+  EXPECT_EQ(2, report_blocks[0].cumulative_lost_signed());
   // 2 packets lost, 7 expected
   EXPECT_EQ(28, statistician->GetFractionLostInPercent());
 }
 
 TEST_F(ReceiveStatisticsTest, StreamRestartDoesntCountAsLoss) {
-  RtcpStatistics statistics;
   receive_statistics_->SetMaxReorderingThreshold(kSsrc1, 200);
 
   packet1_.SetSequenceNumber(0);
@@ -339,23 +354,30 @@ TEST_F(ReceiveStatisticsTest, StreamRestartDoesntCountAsLoss) {
 
   packet1_.SetSequenceNumber(400);
   receive_statistics_->OnRtpPacket(packet1_);
+
+  std::vector<rtcp::ReportBlock> report_blocks =
+      receive_statistics_->RtcpReportBlocks(1);
+  ASSERT_THAT(report_blocks, SizeIs(1));
+  EXPECT_EQ(kSsrc1, report_blocks[0].source_ssrc());
+
+  EXPECT_EQ(0, report_blocks[0].fraction_lost());
+  EXPECT_EQ(0, report_blocks[0].cumulative_lost_signed());
   StreamStatistician* statistician =
       receive_statistics_->GetStatistician(kSsrc1);
-  statistician->GetStatistics(&statistics, true);
-  EXPECT_EQ(0, statistics.fraction_lost);
-  EXPECT_EQ(0, statistics.packets_lost);
   EXPECT_EQ(0, statistician->GetFractionLostInPercent());
 
   packet1_.SetSequenceNumber(401);
   receive_statistics_->OnRtpPacket(packet1_);
-  statistician->GetStatistics(&statistics, true);
-  EXPECT_EQ(0, statistics.fraction_lost);
-  EXPECT_EQ(0, statistics.packets_lost);
+  report_blocks = receive_statistics_->RtcpReportBlocks(1);
+  ASSERT_THAT(report_blocks, SizeIs(1));
+  EXPECT_EQ(kSsrc1, report_blocks[0].source_ssrc());
+
+  EXPECT_EQ(0, report_blocks[0].fraction_lost());
+  EXPECT_EQ(0, report_blocks[0].cumulative_lost_signed());
   EXPECT_EQ(0, statistician->GetFractionLostInPercent());
 }
 
 TEST_F(ReceiveStatisticsTest, CountsLossAfterStreamRestart) {
-  RtcpStatistics statistics;
   receive_statistics_->SetMaxReorderingThreshold(kSsrc1, 200);
 
   packet1_.SetSequenceNumber(0);
@@ -370,17 +392,20 @@ TEST_F(ReceiveStatisticsTest, CountsLossAfterStreamRestart) {
   packet1_.SetSequenceNumber(403);
   receive_statistics_->OnRtpPacket(packet1_);
 
+  std::vector<rtcp::ReportBlock> report_blocks =
+      receive_statistics_->RtcpReportBlocks(1);
+  ASSERT_THAT(report_blocks, SizeIs(1));
+  EXPECT_EQ(kSsrc1, report_blocks[0].source_ssrc());
+
+  EXPECT_EQ(1, report_blocks[0].cumulative_lost_signed());
+
   StreamStatistician* statistician =
       receive_statistics_->GetStatistician(kSsrc1);
-
-  statistician->GetStatistics(&statistics, true);
-  EXPECT_EQ(1, statistics.packets_lost);
   // Is this reasonable? */
   EXPECT_EQ(0, statistician->GetFractionLostInPercent());
 }
 
 TEST_F(ReceiveStatisticsTest, StreamCanRestartAtSequenceNumberWrapAround) {
-  RtcpStatistics statistics;
   receive_statistics_->SetMaxReorderingThreshold(kSsrc1, 200);
 
   packet1_.SetSequenceNumber(0xffff - 401);
@@ -395,13 +420,15 @@ TEST_F(ReceiveStatisticsTest, StreamCanRestartAtSequenceNumberWrapAround) {
   packet1_.SetSequenceNumber(2);
   receive_statistics_->OnRtpPacket(packet1_);
 
-  receive_statistics_->GetStatistician(kSsrc1)->GetStatistics(&statistics,
-                                                              true);
-  EXPECT_EQ(1, statistics.packets_lost);
+  std::vector<rtcp::ReportBlock> report_blocks =
+      receive_statistics_->RtcpReportBlocks(1);
+  ASSERT_THAT(report_blocks, SizeIs(1));
+  EXPECT_EQ(kSsrc1, report_blocks[0].source_ssrc());
+
+  EXPECT_EQ(1, report_blocks[0].cumulative_lost_signed());
 }
 
 TEST_F(ReceiveStatisticsTest, StreamRestartNeedsTwoConsecutivePackets) {
-  RtcpStatistics statistics;
   receive_statistics_->SetMaxReorderingThreshold(kSsrc1, 200);
 
   packet1_.SetSequenceNumber(400);
@@ -413,38 +440,53 @@ TEST_F(ReceiveStatisticsTest, StreamRestartNeedsTwoConsecutivePackets) {
   receive_statistics_->OnRtpPacket(packet1_);
   packet1_.SetSequenceNumber(3);
   receive_statistics_->OnRtpPacket(packet1_);
-  receive_statistics_->GetStatistician(kSsrc1)->GetStatistics(&statistics,
-                                                              true);
-  EXPECT_EQ(401u, statistics.extended_highest_sequence_number);
+
+  std::vector<rtcp::ReportBlock> report_blocks =
+      receive_statistics_->RtcpReportBlocks(1);
+  ASSERT_THAT(report_blocks, SizeIs(1));
+  EXPECT_EQ(kSsrc1, report_blocks[0].source_ssrc());
+
+  EXPECT_EQ(401u, report_blocks[0].extended_high_seq_num());
 
   packet1_.SetSequenceNumber(4);
   receive_statistics_->OnRtpPacket(packet1_);
-  receive_statistics_->GetStatistician(kSsrc1)->GetStatistics(&statistics,
-                                                              true);
-  EXPECT_EQ(4u, statistics.extended_highest_sequence_number);
+
+  report_blocks = receive_statistics_->RtcpReportBlocks(1);
+  ASSERT_THAT(report_blocks, SizeIs(1));
+  EXPECT_EQ(kSsrc1, report_blocks[0].source_ssrc());
+
+  EXPECT_EQ(4u, report_blocks[0].extended_high_seq_num());
 }
 
 TEST_F(ReceiveStatisticsTest, WrapsAroundExtendedHighestSequenceNumber) {
-  RtcpStatistics statistics;
   packet1_.SetSequenceNumber(0xffff);
   receive_statistics_->OnRtpPacket(packet1_);
-  receive_statistics_->GetStatistician(kSsrc1)->GetStatistics(&statistics,
-                                                              true);
-  EXPECT_EQ(0xffffu, statistics.extended_highest_sequence_number);
+
+  std::vector<rtcp::ReportBlock> report_blocks =
+      receive_statistics_->RtcpReportBlocks(1);
+  ASSERT_THAT(report_blocks, SizeIs(1));
+  EXPECT_EQ(kSsrc1, report_blocks[0].source_ssrc());
+
+  EXPECT_EQ(0xffffu, report_blocks[0].extended_high_seq_num());
 
   // Wrap around.
   packet1_.SetSequenceNumber(1);
   receive_statistics_->OnRtpPacket(packet1_);
-  receive_statistics_->GetStatistician(kSsrc1)->GetStatistics(&statistics,
-                                                              true);
-  EXPECT_EQ(0x10001u, statistics.extended_highest_sequence_number);
+
+  report_blocks = receive_statistics_->RtcpReportBlocks(1);
+  ASSERT_THAT(report_blocks, SizeIs(1));
+  EXPECT_EQ(kSsrc1, report_blocks[0].source_ssrc());
+
+  EXPECT_EQ(0x10001u, report_blocks[0].extended_high_seq_num());
 
   // Should be treated as out of order; shouldn't increment highest extended
   // sequence number.
   packet1_.SetSequenceNumber(0x10000 - 6);
-  receive_statistics_->GetStatistician(kSsrc1)->GetStatistics(&statistics,
-                                                              true);
-  EXPECT_EQ(0x10001u, statistics.extended_highest_sequence_number);
+  report_blocks = receive_statistics_->RtcpReportBlocks(1);
+  ASSERT_THAT(report_blocks, SizeIs(1));
+  EXPECT_EQ(kSsrc1, report_blocks[0].source_ssrc());
+
+  EXPECT_EQ(0x10001u, report_blocks[0].extended_high_seq_num());
 
   // Receive a couple packets then wrap around again.
   receive_statistics_->SetMaxReorderingThreshold(kSsrc1, 200);
@@ -454,9 +496,11 @@ TEST_F(ReceiveStatisticsTest, WrapsAroundExtendedHighestSequenceNumber) {
   }
   packet1_.SetSequenceNumber(1);
   receive_statistics_->OnRtpPacket(packet1_);
-  receive_statistics_->GetStatistician(kSsrc1)->GetStatistics(&statistics,
-                                                              true);
-  EXPECT_EQ(0x20001u, statistics.extended_highest_sequence_number);
+  report_blocks = receive_statistics_->RtcpReportBlocks(1);
+  ASSERT_THAT(report_blocks, SizeIs(1));
+  EXPECT_EQ(kSsrc1, report_blocks[0].source_ssrc());
+
+  EXPECT_EQ(0x20001u, report_blocks[0].extended_high_seq_num());
 }
 
 TEST_F(ReceiveStatisticsTest, StreamDataCounters) {

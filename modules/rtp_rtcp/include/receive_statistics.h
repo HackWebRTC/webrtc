@@ -22,6 +22,7 @@
 #include "modules/rtp_rtcp/include/rtcp_statistics.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/report_block.h"
+#include "rtc_base/deprecation.h"
 
 namespace webrtc {
 
@@ -40,11 +41,16 @@ class StreamStatistician {
  public:
   virtual ~StreamStatistician();
 
+  virtual RtpReceiveStats GetStats() const = 0;
+
+  // TODO(nisse): Delete, migrate users to the above the GetStats method.
+  RTC_DEPRECATED
   virtual bool GetStatistics(RtcpStatistics* statistics, bool reset) = 0;
 
   // Returns average over the stream life time.
   virtual absl::optional<int> GetFractionLostInPercent() const = 0;
 
+  // TODO(nisse): Delete, migrate users to the above the GetStats method.
   // Gets received stream data counters (includes reset counter values).
   virtual StreamDataCounters GetReceiveStreamDataCounters() const = 0;
 

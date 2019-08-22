@@ -110,9 +110,8 @@ class VideoReceiveStream {
 
     uint32_t ssrc = 0;
     std::string c_name;
-    StreamDataCounters rtp_stats;
+    RtpReceiveStats rtp_stats;
     RtcpPacketTypeCounter rtcp_packet_type_counts;
-    RtcpStatistics rtcp_stats;
 
     // Timing frame info: all important timestamps for a full lifetime of a
     // single 'timing frame'.
