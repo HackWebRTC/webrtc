@@ -182,6 +182,7 @@ struct RTC_EXPORT RelayServerConfig {
   std::vector<std::string> tls_alpn_protocols;
   std::vector<std::string> tls_elliptic_curves;
   rtc::SSLCertificateVerifier* tls_cert_verifier = nullptr;
+  std::string turn_logging_id;
 };
 
 class RTC_EXPORT PortAllocatorSession : public sigslot::has_slots<> {

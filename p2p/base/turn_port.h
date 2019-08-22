@@ -33,6 +33,7 @@ class TurnCustomizer;
 
 namespace cricket {
 
+extern const int STUN_ATTR_TURN_LOGGING_ID;
 extern const char TURN_PORT_TYPE[];
 class TurnAllocateRequest;
 class TurnEntry;
@@ -147,6 +148,8 @@ class TurnPort : public Port {
 
   virtual TlsCertPolicy GetTlsCertPolicy() const;
   virtual void SetTlsCertPolicy(TlsCertPolicy tls_cert_policy);
+
+  void SetTurnLoggingId(const std::string& turn_logging_id);
 
   virtual std::vector<std::string> GetTlsAlpnProtocols() const;
   virtual std::vector<std::string> GetTlsEllipticCurves() const;
@@ -347,6 +350,8 @@ class TurnPort : public Port {
   // Reconstruct the URL of the server which the candidate is gathered from.
   std::string ReconstructedServerUrl(bool use_hostname);
 
+  void MaybeAddTurnLoggingId(StunMessage* message);
+
   void TurnCustomizerMaybeModifyOutgoingStunMessage(StunMessage* message);
   bool TurnCustomizerAllowChannelData(const void* data,
                                       size_t size,
@@ -387,6 +392,14 @@ class TurnPort : public Port {
   // Optional TurnCustomizer that can modify outgoing messages. Once set, this
   // must outlive the TurnPort's lifetime.
   webrtc::TurnCustomizer* turn_customizer_ = nullptr;
+
+  // Optional TurnLoggingId.
+  // An identifier set by application that is added to TURN_ALLOCATE_REQUEST
+  // and can be used to match client/backend logs.
+  // TODO(jonaso): This should really be initialized in constructor,
+  // but that is currently so terrible. Fix once constructor is changed
+  // to be more easy to work with.
+  std::string turn_logging_id_;
 
   friend class TurnEntry;
   friend class TurnAllocateRequest;

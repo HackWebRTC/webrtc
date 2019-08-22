@@ -16,6 +16,7 @@
 #include <utility>
 #include <vector>
 
+#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/units/time_delta.h"
 #include "p2p/base/basic_packet_socket_factory.h"
@@ -802,6 +803,54 @@ TEST_F(TurnPortTest, TestReconstructedServerUrlForTls) {
 TEST_F(TurnPortTest, TestTurnAllocate) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
   EXPECT_EQ(0, turn_port_->SetOption(rtc::Socket::OPT_SNDBUF, 10 * 1024));
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_SIMULATED_WAIT(turn_ready_, kSimulatedRtt * 2, fake_clock_);
+  ASSERT_EQ(1U, turn_port_->Candidates().size());
+  EXPECT_EQ(kTurnUdpExtAddr.ipaddr(),
+            turn_port_->Candidates()[0].address().ipaddr());
+  EXPECT_NE(0, turn_port_->Candidates()[0].address().port());
+}
+
+class TurnLoggingIdValidator : public StunMessageObserver {
+ public:
+  explicit TurnLoggingIdValidator(const char* expect_val)
+      : expect_val_(expect_val) {}
+  ~TurnLoggingIdValidator() {}
+  void ReceivedMessage(const TurnMessage* msg) override {
+    if (msg->type() == cricket::STUN_ALLOCATE_REQUEST) {
+      const StunByteStringAttribute* attr =
+          msg->GetByteString(cricket::STUN_ATTR_TURN_LOGGING_ID);
+      if (expect_val_) {
+        ASSERT_NE(nullptr, attr);
+        ASSERT_EQ(expect_val_, attr->GetString());
+      } else {
+        EXPECT_EQ(nullptr, attr);
+      }
+    }
+  }
+  void ReceivedChannelData(const char* data, size_t size) override {}
+
+ private:
+  const char* expect_val_;
+};
+
+TEST_F(TurnPortTest, TestTurnAllocateWithLoggingId) {
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
+  turn_port_->SetTurnLoggingId("KESO");
+  turn_server_.server()->SetStunMessageObserver(
+      absl::make_unique<TurnLoggingIdValidator>("KESO"));
+  turn_port_->PrepareAddress();
+  EXPECT_TRUE_SIMULATED_WAIT(turn_ready_, kSimulatedRtt * 2, fake_clock_);
+  ASSERT_EQ(1U, turn_port_->Candidates().size());
+  EXPECT_EQ(kTurnUdpExtAddr.ipaddr(),
+            turn_port_->Candidates()[0].address().ipaddr());
+  EXPECT_NE(0, turn_port_->Candidates()[0].address().port());
+}
+
+TEST_F(TurnPortTest, TestTurnAllocateWithoutLoggingId) {
+  CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
+  turn_server_.server()->SetStunMessageObserver(
+      absl::make_unique<TurnLoggingIdValidator>(nullptr));
   turn_port_->PrepareAddress();
   EXPECT_TRUE_SIMULATED_WAIT(turn_ready_, kSimulatedRtt * 2, fake_clock_);
   ASSERT_EQ(1U, turn_port_->Candidates().size());

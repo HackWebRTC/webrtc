@@ -33,7 +33,11 @@ namespace cricket {
 // TODO(juberti): Move to stun.h when relay messages have been renamed.
 static const int TURN_ALLOCATE_REQUEST = STUN_ALLOCATE_REQUEST;
 
+// Attributes in comprehension-optional range,
+// ignored by TURN server that doesn't know about them.
+// https://tools.ietf.org/html/rfc5389#section-18.2
 static const int STUN_ATTR_MULTI_MAPPING = 0xff04;
+const int STUN_ATTR_TURN_LOGGING_ID = 0xff05;
 
 // TODO(juberti): Extract to turnmessage.h
 static const int TURN_DEFAULT_PORT = 3478;
@@ -312,6 +316,10 @@ TlsCertPolicy TurnPort::GetTlsCertPolicy() const {
 
 void TurnPort::SetTlsCertPolicy(TlsCertPolicy tls_cert_policy) {
   tls_cert_policy_ = tls_cert_policy;
+}
+
+void TurnPort::SetTurnLoggingId(const std::string& turn_logging_id) {
+  turn_logging_id_ = turn_logging_id;
 }
 
 std::vector<std::string> TurnPort::GetTlsAlpnProtocols() const {
@@ -1313,6 +1321,13 @@ bool TurnPort::TurnCustomizerAllowChannelData(const void* data,
   return turn_customizer_->AllowChannelData(this, data, size, payload);
 }
 
+void TurnPort::MaybeAddTurnLoggingId(StunMessage* msg) {
+  if (!turn_logging_id_.empty()) {
+    msg->AddAttribute(absl::make_unique<StunByteStringAttribute>(
+        STUN_ATTR_TURN_LOGGING_ID, turn_logging_id_));
+  }
+}
+
 TurnAllocateRequest::TurnAllocateRequest(TurnPort* port)
     : StunRequest(new TurnMessage()), port_(port) {}
 
@@ -1326,6 +1341,7 @@ void TurnAllocateRequest::Prepare(StunMessage* request) {
   if (!port_->hash().empty()) {
     port_->AddRequestAuthInfo(request);
   }
+  port_->MaybeAddTurnLoggingId(request);
   port_->TurnCustomizerMaybeModifyOutgoingStunMessage(request);
 }
 
