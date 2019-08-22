@@ -131,6 +131,10 @@ rtc_static_library("rtp_rtcp") {
     "include/rtp_header_parser.h",
     "include/rtp_rtcp.h",
     "include/ulpfec_receiver.h",
+    "source/absolute_capture_time_receiver.cc",
+    "source/absolute_capture_time_receiver.h",
+    "source/absolute_capture_time_sender.cc",
+    "source/absolute_capture_time_sender.h",
     "source/dtmf_queue.cc",
     "source/dtmf_queue.h",
     "source/fec_private_tables_bursty.cc",
@@ -224,6 +228,8 @@ rtc_static_library("rtp_rtcp") {
     "../../api/rtc_event_log",
     "../../api/transport:field_trial_based_config",
     "../../api/transport:webrtc_key_value_config",
+    "../../api/units:time_delta",
+    "../../api/units:timestamp",
     "../../api/video:video_bitrate_allocation",
     "../../api/video:video_bitrate_allocator",
     "../../api/video:video_frame",
@@ -385,6 +391,8 @@ if (rtc_include_tests) {
     testonly = true
 
     sources = [
+      "source/absolute_capture_time_receiver_unittest.cc",
+      "source/absolute_capture_time_sender_unittest.cc",
       "source/byte_io_unittest.cc",
       "source/fec_private_tables_bursty_unittest.cc",
       "source/flexfec_header_reader_writer_unittest.cc",
