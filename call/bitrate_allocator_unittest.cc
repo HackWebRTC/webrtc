@@ -75,7 +75,8 @@ class BitrateAllocatorForTest : public BitrateAllocator {
                         int64_t rtt,
                         int64_t bwe_period_ms) {
     BitrateAllocator::OnNetworkChanged(target_bitrate_bps, target_bitrate_bps,
-                                       fraction_loss, rtt, bwe_period_ms);
+                                       target_bitrate_bps, fraction_loss, rtt,
+                                       bwe_period_ms);
   }
 };
 

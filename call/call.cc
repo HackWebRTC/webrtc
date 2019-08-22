@@ -1082,15 +1082,16 @@ void Call::OnTargetTransferRate(TargetTransferRate msg) {
   int64_t rtt_ms = msg.network_estimate.round_trip_time.ms();
   int64_t probing_interval_ms = msg.network_estimate.bwe_period.ms();
   uint32_t bandwidth_bps = msg.network_estimate.bandwidth.bps();
+  uint32_t stable_target_rate_bps = msg.stable_target_rate.bps();
   {
     rtc::CritScope cs(&last_bandwidth_bps_crit_);
     last_bandwidth_bps_ = bandwidth_bps;
   }
   // For controlling the rate of feedback messages.
   receive_side_cc_.OnBitrateChanged(target_bitrate_bps);
-  bitrate_allocator_->OnNetworkChanged(target_bitrate_bps, bandwidth_bps,
-                                       fraction_loss, rtt_ms,
-                                       probing_interval_ms);
+  bitrate_allocator_->OnNetworkChanged(
+      target_bitrate_bps, stable_target_rate_bps, bandwidth_bps, fraction_loss,
+      rtt_ms, probing_interval_ms);
 
   // Ignore updates if bitrate is zero (the aggregate network state is down).
   if (target_bitrate_bps == 0) {

@@ -202,6 +202,7 @@ struct TargetTransferRate {
   // The estimate on which the target rate is based on.
   NetworkEstimate network_estimate;
   DataRate target_rate = DataRate::Zero();
+  DataRate stable_target_rate = DataRate::Zero();
 };
 
 // Contains updates of network controller comand state. Using optionals to

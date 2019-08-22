@@ -67,8 +67,6 @@ GoogCcNetworkController::GoogCcNetworkController(NetworkControllerConfig config,
       packet_feedback_only_(goog_cc_config.feedback_only),
       safe_reset_on_route_change_("Enabled"),
       safe_reset_acknowledged_rate_("ack"),
-      use_stable_bandwidth_estimate_(
-          IsEnabled(key_value_config_, "WebRTC-Bwe-StableBandwidthEstimate")),
       use_downlink_delay_for_congestion_window_(
           IsEnabled(key_value_config_,
                     "WebRTC-Bwe-CongestionWindowDownlinkDelay")),
@@ -571,14 +569,11 @@ NetworkControlUpdate GoogCcNetworkController::OnNetworkStateEstimate(
 
 NetworkControlUpdate GoogCcNetworkController::GetNetworkState(
     Timestamp at_time) const {
-  DataRate bandwidth = use_stable_bandwidth_estimate_
-                           ? bandwidth_estimation_->GetEstimatedLinkCapacity()
-                           : last_raw_target_rate_;
   TimeDelta rtt = TimeDelta::ms(last_estimated_rtt_ms_);
   NetworkControlUpdate update;
   update.target_rate = TargetTransferRate();
   update.target_rate->network_estimate.at_time = at_time;
-  update.target_rate->network_estimate.bandwidth = bandwidth;
+  update.target_rate->network_estimate.bandwidth = last_raw_target_rate_;
   update.target_rate->network_estimate.loss_rate_ratio =
       last_estimated_fraction_loss_ / 255.0;
   update.target_rate->network_estimate.round_trip_time = rtt;
@@ -586,7 +581,9 @@ NetworkControlUpdate GoogCcNetworkController::GetNetworkState(
       delay_based_bwe_->GetExpectedBwePeriod();
 
   update.target_rate->at_time = at_time;
-  update.target_rate->target_rate = bandwidth;
+  update.target_rate->target_rate = last_raw_target_rate_;
+  update.target_rate->stable_target_rate =
+      bandwidth_estimation_->GetEstimatedLinkCapacity();
   update.pacer_config = GetPacingRates(at_time);
   update.congestion_window = current_data_window_;
   return update;
@@ -629,18 +626,17 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
     alr_detector_->SetEstimatedBitrate(estimated_bitrate_bps);
 
     last_raw_target_rate_ = DataRate::bps(estimated_bitrate_bps);
-    DataRate bandwidth = use_stable_bandwidth_estimate_
-                             ? bandwidth_estimation_->GetEstimatedLinkCapacity()
-                             : last_raw_target_rate_;
 
     TimeDelta bwe_period = delay_based_bwe_->GetExpectedBwePeriod();
 
     TargetTransferRate target_rate_msg;
     target_rate_msg.at_time = at_time;
     target_rate_msg.target_rate = target_rate;
+    target_rate_msg.stable_target_rate =
+        bandwidth_estimation_->GetEstimatedLinkCapacity();
     target_rate_msg.network_estimate.at_time = at_time;
     target_rate_msg.network_estimate.round_trip_time = TimeDelta::ms(rtt_ms);
-    target_rate_msg.network_estimate.bandwidth = bandwidth;
+    target_rate_msg.network_estimate.bandwidth = last_raw_target_rate_;
     target_rate_msg.network_estimate.loss_rate_ratio = fraction_loss / 255.0f;
     target_rate_msg.network_estimate.bwe_period = bwe_period;
 

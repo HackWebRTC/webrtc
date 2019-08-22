@@ -659,7 +659,6 @@ TEST_F(VideoSendStreamImplTest, CallsVideoStreamEncoderOnBitrateUpdate) {
         DataRate::bps(qvga_stream.target_bitrate_bps);
     BitrateAllocationUpdate update;
     update.target_bitrate = network_constrained_rate;
-    update.link_capacity = network_constrained_rate;
     update.round_trip_time = TimeDelta::ms(1);
     EXPECT_CALL(rtp_video_sender_,
                 OnBitrateUpdated(network_constrained_rate.bps(), _,
@@ -686,7 +685,6 @@ TEST_F(VideoSendStreamImplTest, CallsVideoStreamEncoderOnBitrateUpdate) {
     EXPECT_CALL(video_stream_encoder_,
                 OnBitrateUpdated(qvga_max_bitrate, rate_with_headroom, 0, _));
     update.target_bitrate = rate_with_headroom;
-    update.link_capacity = rate_with_headroom;
     static_cast<BitrateAllocatorObserver*>(vss_impl.get())
         ->OnBitrateUpdated(update);
 
