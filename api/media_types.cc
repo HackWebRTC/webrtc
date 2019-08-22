@@ -33,17 +33,4 @@ std::string MediaTypeToString(MediaType type) {
   return "";
 }
 
-MediaType MediaTypeFromString(const std::string& type_str) {
-  if (type_str == webrtc::MediaStreamTrackInterface::kAudioKind) {
-    return MEDIA_TYPE_AUDIO;
-  } else if (type_str == webrtc::MediaStreamTrackInterface::kVideoKind) {
-    return MEDIA_TYPE_VIDEO;
-  } else if (type_str == kMediaTypeData) {
-    return MEDIA_TYPE_DATA;
-  }
-  FATAL();
-  // Not reachable; avoids compile warning.
-  return static_cast<MediaType>(-1);
-}
-
 }  // namespace cricket

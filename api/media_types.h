@@ -23,9 +23,6 @@ namespace cricket {
 enum MediaType { MEDIA_TYPE_AUDIO, MEDIA_TYPE_VIDEO, MEDIA_TYPE_DATA };
 
 RTC_EXPORT std::string MediaTypeToString(MediaType type);
-// Aborts on invalid string. Only expected to be used on strings that are
-// guaranteed to be valid, such as MediaStreamTrackInterface::kind().
-MediaType MediaTypeFromString(const std::string& type_str);
 
 }  // namespace cricket
 
