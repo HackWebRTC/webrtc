@@ -70,16 +70,16 @@ void RunBitexactnessTest(int sample_rate_hz,
   const int samples_per_channel = rtc::CheckedDivExact(sample_rate_hz, 100);
   const StreamConfig render_config(sample_rate_hz, num_channels, false);
   AudioBuffer render_buffer(
-      render_config.num_frames(), render_config.num_channels(),
-      render_config.num_frames(), 1, render_config.num_frames());
+      render_config.sample_rate_hz(), render_config.num_channels(),
+      render_config.sample_rate_hz(), 1, render_config.sample_rate_hz(), 1);
   test::InputAudioFile render_file(
       test::GetApmRenderTestVectorFileName(sample_rate_hz));
   std::vector<float> render_input(samples_per_channel * num_channels);
 
   const StreamConfig capture_config(sample_rate_hz, num_channels, false);
   AudioBuffer capture_buffer(
-      capture_config.num_frames(), capture_config.num_channels(),
-      capture_config.num_frames(), 1, capture_config.num_frames());
+      capture_config.sample_rate_hz(), capture_config.num_channels(),
+      capture_config.sample_rate_hz(), 1, capture_config.sample_rate_hz(), 1);
   test::InputAudioFile capture_file(
       test::GetApmCaptureTestVectorFileName(sample_rate_hz));
   std::vector<float> capture_input(samples_per_channel * num_channels);
