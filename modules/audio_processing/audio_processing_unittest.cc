@@ -65,7 +65,7 @@ namespace {
 // When false, this will compare the output data with the results stored to
 // file. This is the typical case. When the file should be updated, it can
 // be set to true with the command-line switch --write_ref_data.
-bool write_ref_data = true;
+bool write_ref_data = false;
 const int32_t kChannels[] = {1, 2};
 const int kSampleRates[] = {8000, 16000, 32000, 48000};
 
@@ -1200,8 +1200,8 @@ TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabled) {
 
 TEST_F(ApmTest, NoProcessingWhenAllComponentsDisabledFloat) {
   // Test that ProcessStream copies input to output even with no processing.
-  const size_t kSamples = 160;
-  const int sample_rate = 16000;
+  const size_t kSamples = 80;
+  const int sample_rate = 8000;
   const float src[kSamples] = {-1.0f, 0.0f, 1.0f};
   float dest[kSamples] = {};
 
