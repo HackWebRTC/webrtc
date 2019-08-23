@@ -196,6 +196,20 @@ rtc_static_library("experimental_screenshare_settings") {
   ]
 }
 
+rtc_static_library("stable_target_rate_experiment") {
+  sources = [
+    "stable_target_rate_experiment.cc",
+    "stable_target_rate_experiment.h",
+  ]
+  deps = [
+    ":field_trial_parser",
+    ":rate_control_settings",
+    "../../api/transport:field_trial_based_config",
+    "../../api/transport:webrtc_key_value_config",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
 if (rtc_include_tests) {
   rtc_source_set("experiments_unittests") {
     testonly = true
@@ -212,6 +226,7 @@ if (rtc_include_tests) {
       "quality_scaling_experiment_unittest.cc",
       "rate_control_settings_unittest.cc",
       "rtt_mult_experiment_unittest.cc",
+      "stable_target_rate_experiment_unittest.cc",
       "struct_parameters_parser_unittest.cc",
     ]
     deps = [
@@ -224,6 +239,7 @@ if (rtc_include_tests) {
       ":quality_scaling_experiment",
       ":rate_control_settings",
       ":rtt_mult_experiment",
+      ":stable_target_rate_experiment",
       "..:gunit_helpers",
       "../:rtc_base_tests_utils",
       "../../api/video_codecs:video_codecs_api",
