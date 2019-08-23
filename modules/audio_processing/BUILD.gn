@@ -87,6 +87,24 @@ rtc_static_library("audio_buffer") {
   ]
 }
 
+rtc_static_library("high_pass_filter") {
+  visibility = [ "*" ]
+
+  sources = [
+    "high_pass_filter.cc",
+    "high_pass_filter.h",
+  ]
+
+  defines = []
+
+  deps = [
+    ":audio_buffer",
+    "../../api:array_view",
+    "../../rtc_base:checks",
+    "utility:cascaded_biquad_filter",
+  ]
+}
+
 rtc_static_library("audio_processing") {
   visibility = [ "*" ]
   configs += [ ":apm_debug_dump" ]
@@ -116,8 +134,6 @@ rtc_static_library("audio_processing") {
     "include/aec_dump.h",
     "level_estimator_impl.cc",
     "level_estimator_impl.h",
-    "low_cut_filter.cc",
-    "low_cut_filter.h",
     "noise_suppression_impl.cc",
     "noise_suppression_impl.h",
     "render_queue_item_verifier.h",
@@ -156,6 +172,7 @@ rtc_static_library("audio_processing") {
     ":config",
     ":gain_control_config_proxy",
     ":gain_control_interface",
+    ":high_pass_filter",
     ":noise_suppression_proxy",
     "../../api:array_view",
     "../../api:function_view",
@@ -384,6 +401,7 @@ if (rtc_include_tests) {
     ]
     deps = [
       ":api",
+      ":audio_buffer",
       ":audio_processing",
       ":audio_processing_statistics",
       "../../test:test_support",
@@ -445,6 +463,7 @@ if (rtc_include_tests) {
       ":config",
       ":file_audio_generator_unittests",
       ":gain_control_config_proxy",
+      ":high_pass_filter",
       ":mocks",
       "../../api:array_view",
       "../../api:scoped_refptr",
@@ -522,8 +541,8 @@ if (rtc_include_tests) {
         "echo_detector/moving_max_unittest.cc",
         "echo_detector/normalized_covariance_estimator_unittest.cc",
         "gain_control_unittest.cc",
+        "high_pass_filter_unittest.cc",
         "level_estimator_unittest.cc",
-        "low_cut_filter_unittest.cc",
         "noise_suppression_unittest.cc",
         "residual_echo_detector_unittest.cc",
         "rms_level_unittest.cc",

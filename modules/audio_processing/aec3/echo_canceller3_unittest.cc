@@ -21,6 +21,8 @@
 #include "modules/audio_processing/aec3/frame_blocker.h"
 #include "modules/audio_processing/aec3/mock/mock_block_processor.h"
 #include "modules/audio_processing/audio_buffer.h"
+#include "modules/audio_processing/high_pass_filter.h"
+#include "modules/audio_processing/utility/cascaded_biquad_filter.h"
 #include "rtc_base/strings/string_builder.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -82,6 +84,20 @@ bool VerifyOutputFrameBitexactness(size_t frame_length,
     }
   }
 
+  return true;
+}
+
+bool VerifyOutputFrameBitexactness(rtc::ArrayView<const float> reference,
+                                   rtc::ArrayView<const float> frame,
+                                   int offset) {
+  for (size_t k = 0; k < frame.size(); ++k) {
+    int reference_index = static_cast<int>(k) + offset;
+    if (reference_index >= 0) {
+      if (reference[reference_index] != frame[k]) {
+        return false;
+      }
+    }
+  }
   return true;
 }
 
@@ -166,7 +182,7 @@ class EchoCanceller3Tester {
   // output.
   void RunCaptureTransportVerificationTest() {
     EchoCanceller3 aec3(
-        EchoCanceller3Config(), sample_rate_hz_, false,
+        EchoCanceller3Config(), sample_rate_hz_,
         std::unique_ptr<BlockProcessor>(
             new CaptureTransportVerificationProcessor(num_bands_)));
 
@@ -191,10 +207,12 @@ class EchoCanceller3Tester {
   // block processor.
   void RunRenderTransportVerificationTest() {
     EchoCanceller3 aec3(
-        EchoCanceller3Config(), sample_rate_hz_, false,
+        EchoCanceller3Config(), sample_rate_hz_,
         std::unique_ptr<BlockProcessor>(
             new RenderTransportVerificationProcessor(num_bands_)));
 
+    std::vector<float> render_input;
+    std::vector<float> capture_output;
     for (size_t frame_index = 0; frame_index < kNumFramesToProcess;
          ++frame_index) {
       aec3.AnalyzeCapture(&capture_buffer_);
@@ -204,12 +222,20 @@ class EchoCanceller3Tester {
       PopulateInputFrame(frame_length_, num_bands_, frame_index,
                          &render_buffer_.split_bands(0)[0], 0);
 
+      for (size_t k = 0; k < frame_length_; ++k) {
+        render_input.push_back(render_buffer_.split_bands(0)[0][k]);
+      }
       aec3.AnalyzeRender(&render_buffer_);
       aec3.ProcessCapture(&capture_buffer_, false);
-      EXPECT_TRUE(VerifyOutputFrameBitexactness(
-          frame_length_, num_bands_, frame_index,
-          &capture_buffer_.split_bands(0)[0], -64));
+      for (size_t k = 0; k < frame_length_; ++k) {
+        capture_output.push_back(capture_buffer_.split_bands(0)[0][k]);
+      }
     }
+    HighPassFilter hp_filter(1);
+    hp_filter.Process(render_input);
+
+    EXPECT_TRUE(
+        VerifyOutputFrameBitexactness(render_input, capture_output, -64));
   }
 
   // Verifies that information about echo path changes are properly propagated
@@ -255,7 +281,7 @@ class EchoCanceller3Tester {
         break;
     }
 
-    EchoCanceller3 aec3(EchoCanceller3Config(), sample_rate_hz_, false,
+    EchoCanceller3 aec3(EchoCanceller3Config(), sample_rate_hz_,
                         std::move(block_processor_mock));
 
     for (size_t frame_index = 0; frame_index < kNumFramesToProcess;
@@ -337,7 +363,7 @@ class EchoCanceller3Tester {
       } break;
     }
 
-    EchoCanceller3 aec3(EchoCanceller3Config(), sample_rate_hz_, false,
+    EchoCanceller3 aec3(EchoCanceller3Config(), sample_rate_hz_,
                         std::move(block_processor_mock));
 
     for (size_t frame_index = 0; frame_index < kNumFramesToProcess;
@@ -426,7 +452,7 @@ class EchoCanceller3Tester {
       } break;
     }
 
-    EchoCanceller3 aec3(EchoCanceller3Config(), sample_rate_hz_, false,
+    EchoCanceller3 aec3(EchoCanceller3Config(), sample_rate_hz_,
                         std::move(block_processor_mock));
     for (size_t frame_index = 0; frame_index < kNumFramesToProcess;
          ++frame_index) {
@@ -466,9 +492,12 @@ class EchoCanceller3Tester {
   void RunRenderSwapQueueVerificationTest() {
     const EchoCanceller3Config config;
     EchoCanceller3 aec3(
-        config, sample_rate_hz_, false,
+        config, sample_rate_hz_,
         std::unique_ptr<BlockProcessor>(
             new RenderTransportVerificationProcessor(num_bands_)));
+
+    std::vector<float> render_input;
+    std::vector<float> capture_output;
 
     for (size_t frame_index = 0; frame_index < kRenderTransferQueueSizeFrames;
          ++frame_index) {
@@ -482,6 +511,9 @@ class EchoCanceller3Tester {
         render_buffer_.SplitIntoFrequencyBands();
       }
 
+      for (size_t k = 0; k < frame_length_; ++k) {
+        render_input.push_back(render_buffer_.split_bands(0)[0][k]);
+      }
       aec3.AnalyzeRender(&render_buffer_);
     }
 
@@ -496,16 +528,21 @@ class EchoCanceller3Tester {
                          &capture_buffer_.split_bands(0)[0], 0);
 
       aec3.ProcessCapture(&capture_buffer_, false);
-      EXPECT_TRUE(VerifyOutputFrameBitexactness(
-          frame_length_, num_bands_, frame_index,
-          &capture_buffer_.split_bands(0)[0], -64));
+      for (size_t k = 0; k < frame_length_; ++k) {
+        capture_output.push_back(capture_buffer_.split_bands(0)[0][k]);
+      }
     }
+    HighPassFilter hp_filter(1);
+    hp_filter.Process(render_input);
+
+    EXPECT_TRUE(
+        VerifyOutputFrameBitexactness(render_input, capture_output, -64));
   }
 
   // This test verifies that a buffer overrun in the render swapqueue is
   // properly reported.
   void RunRenderPipelineSwapQueueOverrunReturnValueTest() {
-    EchoCanceller3 aec3(EchoCanceller3Config(), sample_rate_hz_, false);
+    EchoCanceller3 aec3(EchoCanceller3Config(), sample_rate_hz_);
 
     constexpr size_t kRenderTransferQueueSize = 30;
     for (size_t k = 0; k < 2; ++k) {
@@ -517,11 +554,7 @@ class EchoCanceller3Tester {
         PopulateInputFrame(frame_length_, frame_index,
                            &render_buffer_.channels()[0][0], 0);
 
-        if (k == 0) {
-          aec3.AnalyzeRender(&render_buffer_);
-        } else {
-          aec3.AnalyzeRender(&render_buffer_);
-        }
+        aec3.AnalyzeRender(&render_buffer_);
       }
     }
   }
@@ -534,7 +567,7 @@ class EchoCanceller3Tester {
     // Set aec3_sample_rate_hz to be different from sample_rate_hz_ in such a
     // way that the number of bands for the rates are different.
     const int aec3_sample_rate_hz = sample_rate_hz_ == 48000 ? 32000 : 48000;
-    EchoCanceller3 aec3(EchoCanceller3Config(), aec3_sample_rate_hz, false);
+    EchoCanceller3 aec3(EchoCanceller3Config(), aec3_sample_rate_hz);
     PopulateInputFrame(frame_length_, 0, &render_buffer_.channels_f()[0][0], 0);
 
     EXPECT_DEATH(aec3.AnalyzeRender(&render_buffer_), "");
@@ -547,7 +580,7 @@ class EchoCanceller3Tester {
     // Set aec3_sample_rate_hz to be different from sample_rate_hz_ in such a
     // way that the number of bands for the rates are different.
     const int aec3_sample_rate_hz = sample_rate_hz_ == 48000 ? 32000 : 48000;
-    EchoCanceller3 aec3(EchoCanceller3Config(), aec3_sample_rate_hz, false);
+    EchoCanceller3 aec3(EchoCanceller3Config(), aec3_sample_rate_hz);
     PopulateInputFrame(frame_length_, num_bands_, 0,
                        &capture_buffer_.split_bands_f(0)[0], 100);
     EXPECT_DEATH(aec3.ProcessCapture(&capture_buffer_, false), "");
@@ -560,7 +593,7 @@ class EchoCanceller3Tester {
     // Set aec3_sample_rate_hz to be different from sample_rate_hz_ in such a
     // way that the band frame lengths are different.
     const int aec3_sample_rate_hz = sample_rate_hz_ == 8000 ? 16000 : 8000;
-    EchoCanceller3 aec3(EchoCanceller3Config(), aec3_sample_rate_hz, false);
+    EchoCanceller3 aec3(EchoCanceller3Config(), aec3_sample_rate_hz);
 
     OptionalBandSplit();
     PopulateInputFrame(frame_length_, 0, &render_buffer_.channels_f()[0][0], 0);
@@ -575,7 +608,7 @@ class EchoCanceller3Tester {
     // Set aec3_sample_rate_hz to be different from sample_rate_hz_ in such a
     // way that the band frame lengths are different.
     const int aec3_sample_rate_hz = sample_rate_hz_ == 8000 ? 16000 : 8000;
-    EchoCanceller3 aec3(EchoCanceller3Config(), aec3_sample_rate_hz, false);
+    EchoCanceller3 aec3(EchoCanceller3Config(), aec3_sample_rate_hz);
 
     OptionalBandSplit();
     PopulateInputFrame(frame_length_, num_bands_, 0,
@@ -713,26 +746,10 @@ TEST(EchoCanceller3InputCheck, WrongCaptureFrameLengthCheckVerification) {
   }
 }
 
-// Verifiers that the verification for null input to the render analysis api
-// call works.
-TEST(EchoCanceller3InputCheck, NullRenderAnalysisParameter) {
-  EXPECT_DEATH(EchoCanceller3(EchoCanceller3Config(), 8000, false)
-                   .AnalyzeRender(nullptr),
-               "");
-}
-
-// Verifiers that the verification for null input to the capture analysis api
-// call works.
-TEST(EchoCanceller3InputCheck, NullCaptureAnalysisParameter) {
-  EXPECT_DEATH(EchoCanceller3(EchoCanceller3Config(), 8000, false)
-                   .AnalyzeCapture(nullptr),
-               "");
-}
-
 // Verifiers that the verification for null input to the capture processing api
 // call works.
 TEST(EchoCanceller3InputCheck, NullCaptureProcessingParameter) {
-  EXPECT_DEATH(EchoCanceller3(EchoCanceller3Config(), 8000, false)
+  EXPECT_DEATH(EchoCanceller3(EchoCanceller3Config(), 16000)
                    .ProcessCapture(nullptr, false),
                "");
 }
@@ -742,7 +759,7 @@ TEST(EchoCanceller3InputCheck, NullCaptureProcessingParameter) {
 // tests on test bots has been fixed.
 TEST(EchoCanceller3InputCheck, DISABLED_WrongSampleRate) {
   ApmDataDumper data_dumper(0);
-  EXPECT_DEATH(EchoCanceller3(EchoCanceller3Config(), 8001, false), "");
+  EXPECT_DEATH(EchoCanceller3(EchoCanceller3Config(), 8001), "");
 }
 
 #endif

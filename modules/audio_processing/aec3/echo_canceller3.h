@@ -23,7 +23,6 @@
 #include "modules/audio_processing/aec3/block_delay_buffer.h"
 #include "modules/audio_processing/aec3/block_framer.h"
 #include "modules/audio_processing/aec3/block_processor.h"
-#include "modules/audio_processing/aec3/cascaded_biquad_filter.h"
 #include "modules/audio_processing/aec3/frame_blocker.h"
 #include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
@@ -74,20 +73,19 @@ class Aec3RenderQueueItemVerifier {
 class EchoCanceller3 : public EchoControl {
  public:
   // Normal c-tor to use.
-  EchoCanceller3(const EchoCanceller3Config& config,
-                 int sample_rate_hz,
-                 bool use_highpass_filter);
+  EchoCanceller3(const EchoCanceller3Config& config, int sample_rate_hz);
   // Testing c-tor that is used only for testing purposes.
   EchoCanceller3(const EchoCanceller3Config& config,
                  int sample_rate_hz,
-                 bool use_highpass_filter,
                  std::unique_ptr<BlockProcessor> block_processor);
   ~EchoCanceller3() override;
   // Analyzes and stores an internal copy of the split-band domain render
   // signal.
-  void AnalyzeRender(AudioBuffer* farend) override;
+  void AnalyzeRender(AudioBuffer* render) override { AnalyzeRender(*render); }
   // Analyzes the full-band domain capture signal to detect signal saturation.
-  void AnalyzeCapture(AudioBuffer* capture) override;
+  void AnalyzeCapture(AudioBuffer* capture) override {
+    AnalyzeCapture(*capture);
+  }
   // Processes the split-band domain capture signal in order to remove any echo
   // present in the signal.
   void ProcessCapture(AudioBuffer* capture, bool level_change) override;
@@ -111,6 +109,12 @@ class EchoCanceller3 : public EchoControl {
   // Empties the render SwapQueue.
   void EmptyRenderQueue();
 
+  // Analyzes and stores an internal copy of the split-band domain render
+  // signal.
+  void AnalyzeRender(const AudioBuffer& render);
+  // Analyzes the full-band domain capture signal to detect signal saturation.
+  void AnalyzeCapture(const AudioBuffer& capture);
+
   rtc::RaceChecker capture_race_checker_;
   rtc::RaceChecker render_race_checker_;
 
@@ -133,8 +137,6 @@ class EchoCanceller3 : public EchoControl {
   std::unique_ptr<BlockProcessor> block_processor_
       RTC_GUARDED_BY(capture_race_checker_);
   std::vector<std::vector<float>> render_queue_output_frame_
-      RTC_GUARDED_BY(capture_race_checker_);
-  std::unique_ptr<CascadedBiQuadFilter> capture_highpass_filter_
       RTC_GUARDED_BY(capture_race_checker_);
   bool saturated_microphone_signal_ RTC_GUARDED_BY(capture_race_checker_) =
       false;

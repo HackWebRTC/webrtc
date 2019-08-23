@@ -239,13 +239,13 @@ TEST(AudioProcessingImplTest,
 
   MockEchoControl* echo_control_mock = echo_control_factory_ptr->GetNext();
 
-  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(NotNull())).Times(1);
+  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(testing::_)).Times(1);
   EXPECT_CALL(*echo_control_mock,
               ProcessCapture(NotNull(), /*echo_path_change=*/false))
       .Times(1);
   apm->ProcessStream(&frame);
 
-  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(NotNull())).Times(1);
+  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(testing::_)).Times(1);
   EXPECT_CALL(*echo_control_mock,
               ProcessCapture(NotNull(), /*echo_path_change=*/true))
       .Times(1);
@@ -282,7 +282,7 @@ TEST(AudioProcessingImplTest,
   MockEchoControl* echo_control_mock = echo_control_factory_ptr->GetNext();
 
   const int initial_analog_gain = apm->gain_control()->stream_analog_level();
-  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(NotNull())).Times(1);
+  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(testing::_)).Times(1);
   EXPECT_CALL(*echo_control_mock, ProcessCapture(NotNull(), false)).Times(1);
   apm->ProcessStream(&frame);
 
@@ -291,7 +291,7 @@ TEST(AudioProcessingImplTest,
     apm->gain_control()->set_stream_analog_level(initial_analog_gain + 1);
   }
 
-  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(NotNull())).Times(1);
+  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(testing::_)).Times(1);
   EXPECT_CALL(*echo_control_mock, ProcessCapture(NotNull(), true)).Times(1);
   apm->ProcessStream(&frame);
 }
@@ -318,21 +318,13 @@ TEST(AudioProcessingImplTest, EchoControllerObservesPlayoutVolumeChange) {
 
   MockEchoControl* echo_control_mock = echo_control_factory_ptr->GetNext();
 
-  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(NotNull())).Times(1);
+  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(testing::_)).Times(1);
   EXPECT_CALL(*echo_control_mock,
               ProcessCapture(NotNull(), /*echo_path_change=*/false))
       .Times(1);
   apm->ProcessStream(&frame);
 
-  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(NotNull())).Times(1);
-  EXPECT_CALL(*echo_control_mock,
-              ProcessCapture(NotNull(), /*echo_path_change=*/false))
-      .Times(1);
-  apm->SetRuntimeSetting(
-      AudioProcessing::RuntimeSetting::CreatePlayoutVolumeChange(50));
-  apm->ProcessStream(&frame);
-
-  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(NotNull())).Times(1);
+  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(testing::_)).Times(1);
   EXPECT_CALL(*echo_control_mock,
               ProcessCapture(NotNull(), /*echo_path_change=*/false))
       .Times(1);
@@ -340,7 +332,15 @@ TEST(AudioProcessingImplTest, EchoControllerObservesPlayoutVolumeChange) {
       AudioProcessing::RuntimeSetting::CreatePlayoutVolumeChange(50));
   apm->ProcessStream(&frame);
 
-  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(NotNull())).Times(1);
+  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(testing::_)).Times(1);
+  EXPECT_CALL(*echo_control_mock,
+              ProcessCapture(NotNull(), /*echo_path_change=*/false))
+      .Times(1);
+  apm->SetRuntimeSetting(
+      AudioProcessing::RuntimeSetting::CreatePlayoutVolumeChange(50));
+  apm->ProcessStream(&frame);
+
+  EXPECT_CALL(*echo_control_mock, AnalyzeCapture(testing::_)).Times(1);
   EXPECT_CALL(*echo_control_mock,
               ProcessCapture(NotNull(), /*echo_path_change=*/true))
       .Times(1);

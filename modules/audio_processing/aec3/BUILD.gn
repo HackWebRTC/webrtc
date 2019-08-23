@@ -30,8 +30,6 @@ rtc_static_library("aec3") {
     "block_processor.h",
     "block_processor_metrics.cc",
     "block_processor_metrics.h",
-    "cascaded_biquad_filter.cc",
-    "cascaded_biquad_filter.h",
     "clockdrift_detector.cc",
     "clockdrift_detector.h",
     "comfort_noise_generator.cc",
@@ -130,6 +128,7 @@ rtc_static_library("aec3") {
   deps = [
     "..:apm_logging",
     "..:audio_buffer",
+    "..:high_pass_filter",
     "../../../api:array_view",
     "../../../api/audio:aec3_config",
     "../../../api/audio:echo_control",
@@ -141,6 +140,7 @@ rtc_static_library("aec3") {
     "../../../system_wrappers:cpu_features_api",
     "../../../system_wrappers:field_trial",
     "../../../system_wrappers:metrics",
+    "../utility:cascaded_biquad_filter",
     "../utility:ooura_fft",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -168,6 +168,7 @@ if (rtc_include_tests) {
       "..:audio_buffer",
       "..:audio_processing",
       "..:audio_processing_unittests",
+      "..:high_pass_filter",
       "../../../api:array_view",
       "../../../api/audio:aec3_config",
       "../../../rtc_base:checks",
@@ -176,6 +177,7 @@ if (rtc_include_tests) {
       "../../../rtc_base/system:arch",
       "../../../system_wrappers:cpu_features_api",
       "../../../test:test_support",
+      "../utility:cascaded_biquad_filter",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
 
@@ -191,7 +193,6 @@ if (rtc_include_tests) {
         "block_framer_unittest.cc",
         "block_processor_metrics_unittest.cc",
         "block_processor_unittest.cc",
-        "cascaded_biquad_filter_unittest.cc",
         "clockdrift_detector_unittest.cc",
         "comfort_noise_generator_unittest.cc",
         "decimator_unittest.cc",

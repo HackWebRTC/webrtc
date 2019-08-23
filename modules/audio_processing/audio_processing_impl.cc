@@ -32,10 +32,10 @@
 #include "modules/audio_processing/gain_control_for_experimental_agc.h"
 #include "modules/audio_processing/gain_control_impl.h"
 #include "modules/audio_processing/gain_controller2.h"
+#include "modules/audio_processing/high_pass_filter.h"
 #include "modules/audio_processing/include/audio_frame_view.h"
 #include "modules/audio_processing/level_estimator_impl.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
-#include "modules/audio_processing/low_cut_filter.h"
 #include "modules/audio_processing/noise_suppression_impl.h"
 #include "modules/audio_processing/noise_suppression_proxy.h"
 #include "modules/audio_processing/residual_echo_detector.h"
@@ -252,7 +252,8 @@ bool AudioProcessingImpl::ApmSubmoduleStates::RenderMultiBandProcessingActive()
   return false;
 }
 
-bool AudioProcessingImpl::ApmSubmoduleStates::LowCutFilteringRequired() const {
+bool AudioProcessingImpl::ApmSubmoduleStates::HighPassFilteringRequired()
+    const {
   return high_pass_filter_enabled_ || echo_canceller_enabled_ ||
          mobile_echo_controller_enabled_ || noise_suppressor_enabled_;
 }
@@ -287,7 +288,7 @@ struct AudioProcessingImpl::ApmPrivateSubmodules {
   // Accessed internally from capture or during initialization
   std::unique_ptr<AgcManagerDirect> agc_manager;
   std::unique_ptr<GainController2> gain_controller2;
-  std::unique_ptr<LowCutFilter> low_cut_filter;
+  std::unique_ptr<HighPassFilter> high_pass_filter;
   rtc::scoped_refptr<EchoDetector> echo_detector;
   std::unique_ptr<EchoCancellationImpl> echo_cancellation;
   std::unique_ptr<EchoControl> echo_controller;
@@ -547,7 +548,7 @@ int AudioProcessingImpl::InitializeLocked() {
     public_submodules_->gain_control_for_experimental_agc->Initialize();
   }
   InitializeTransient();
-  InitializeLowCutFilter();
+  InitializeHighPassFilter();
   public_submodules_->noise_suppression->Initialize(num_proc_channels(),
                                                     proc_sample_rate_hz());
   public_submodules_->voice_detection->Initialize(proc_split_sample_rate_hz());
@@ -694,7 +695,7 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
   public_submodules_->noise_suppression->set_level(
       NsConfigLevelToInterfaceLevel(config.noise_suppression.level));
 
-  InitializeLowCutFilter();
+  InitializeHighPassFilter();
 
   RTC_LOG(LS_INFO) << "Highpass filter activated: "
                    << config_.high_pass_filter.enabled;
@@ -1348,10 +1349,8 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     capture_buffer->set_num_channels(1);
   }
 
-  // TODO(peah): Move the AEC3 low-cut filter to this place.
-  if (private_submodules_->low_cut_filter &&
-      !private_submodules_->echo_controller) {
-    private_submodules_->low_cut_filter->Process(capture_buffer);
+  if (private_submodules_->high_pass_filter) {
+    private_submodules_->high_pass_filter->Process(capture_buffer);
   }
   RETURN_ON_ERR(
       public_submodules_->gain_control->AnalyzeCaptureAudio(capture_buffer));
@@ -1828,12 +1827,12 @@ void AudioProcessingImpl::InitializeTransient() {
   }
 }
 
-void AudioProcessingImpl::InitializeLowCutFilter() {
-  if (submodule_states_.LowCutFilteringRequired()) {
-    private_submodules_->low_cut_filter.reset(
-        new LowCutFilter(num_proc_channels(), proc_sample_rate_hz()));
+void AudioProcessingImpl::InitializeHighPassFilter() {
+  if (submodule_states_.HighPassFilteringRequired()) {
+    private_submodules_->high_pass_filter.reset(
+        new HighPassFilter(num_proc_channels()));
   } else {
-    private_submodules_->low_cut_filter.reset();
+    private_submodules_->high_pass_filter.reset();
   }
 }
 
@@ -1850,7 +1849,7 @@ void AudioProcessingImpl::InitializeEchoController() {
           echo_control_factory_->Create(proc_sample_rate_hz());
     } else {
       private_submodules_->echo_controller = absl::make_unique<EchoCanceller3>(
-          EchoCanceller3Config(), proc_sample_rate_hz(), true);
+          EchoCanceller3Config(), proc_sample_rate_hz());
     }
 
     capture_nonlocked_.echo_controller_enabled = true;

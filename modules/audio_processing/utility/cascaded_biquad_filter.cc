@@ -7,7 +7,7 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#include "modules/audio_processing/aec3/cascaded_biquad_filter.h"
+#include "modules/audio_processing/utility/cascaded_biquad_filter.h"
 
 #include <algorithm>
 
@@ -53,10 +53,14 @@ CascadedBiQuadFilter::BiQuad::BiQuad(
   coefficients.a[1] = p_r * p_r + p_i * p_i;
 }
 
+void CascadedBiQuadFilter::BiQuad::BiQuad::Reset() {
+  x[0] = x[1] = y[0] = y[1] = 0.f;
+}
+
 CascadedBiQuadFilter::CascadedBiQuadFilter(
     const CascadedBiQuadFilter::BiQuadCoefficients& coefficients,
     size_t num_biquads)
-    : biquads_(num_biquads, coefficients) {}
+    : biquads_(num_biquads, BiQuad(coefficients)) {}
 
 CascadedBiQuadFilter::CascadedBiQuadFilter(
     const std::vector<CascadedBiQuadFilter::BiQuadParam>& biquad_params) {
@@ -82,6 +86,12 @@ void CascadedBiQuadFilter::Process(rtc::ArrayView<const float> x,
 void CascadedBiQuadFilter::Process(rtc::ArrayView<float> y) {
   for (auto& biquad : biquads_) {
     ApplyBiQuad(y, y, &biquad);
+  }
+}
+
+void CascadedBiQuadFilter::Reset() {
+  for (auto& biquad : biquads_) {
+    biquad.Reset();
   }
 }
 

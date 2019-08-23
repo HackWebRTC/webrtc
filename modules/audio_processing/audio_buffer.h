@@ -32,6 +32,7 @@ enum Band { kBand0To8kHz = 0, kBand8To16kHz = 1, kBand16To24kHz = 2 };
 // operate on it in a controlled manner.
 class AudioBuffer {
  public:
+  static const int kSplitBandSize = 160;
   AudioBuffer(size_t input_rate,
               size_t input_num_channels,
               size_t buffer_rate,

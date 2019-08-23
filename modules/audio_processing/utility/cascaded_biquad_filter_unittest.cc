@@ -70,6 +70,23 @@ TEST(CascadedBiquadFilter, HighPassConfiguration) {
   }
 }
 
+// Verifies that the reset functionality works as intended.
+TEST(CascadedBiquadFilter, HighPassConfiguration) {
+  CascadedBiQuadFilter filter(kHighPassFilterCoefficients, 2);
+
+  std::vector<float> values1(100, 1.f);
+  filter.Process(values1);
+
+  filter.Reset();
+
+  std::vector<float> values2(100, 1.f);
+  filter.Process(values2);
+
+  for (size_t k = 0; k < values1.size(); ++k) {
+    EXPECT_EQ(values1[k], values2[k]);
+  }
+}
+
 // Verifies that the filter is able to produce a transparent effect with no
 // impact on the data when the proper coefficients are applied. The test also
 // verifies that the non-in-place Process API call works as intended.
