@@ -1912,14 +1912,10 @@ void VideoStreamEncoder::AdaptUp(AdaptReason reason) {
 
   switch (degradation_preference_) {
     case DegradationPreference::BALANCED: {
-      // Do not adapt up if bwe is less than min bitrate for next resolution.
-      absl::optional<int> next_layer_min_kbps =
-          balanced_settings_.NextHigherBitrateKbps(
-              last_frame_info_->pixel_count());
-      if (next_layer_min_kbps && encoder_start_bitrate_bps_ > 0 &&
-          reason == kQuality &&
-          encoder_start_bitrate_bps_ <
-              static_cast<uint32_t>(next_layer_min_kbps.value() * 1000)) {
+      // Check if quality should be increased based on bitrate.
+      if (reason == kQuality &&
+          !balanced_settings_.CanAdaptUp(last_frame_info_->pixel_count(),
+                                         encoder_start_bitrate_bps_)) {
         return;
       }
       // Try scale up framerate, if higher.

@@ -82,6 +82,9 @@ class BalancedDegradationSettings {
   // Gets the bitrate for the first resolution above |pixels|.
   absl::optional<int> NextHigherBitrateKbps(int pixels) const;
 
+  // Checks if quality can be increased based on |pixels| and |bitrate_bps|.
+  bool CanAdaptUp(int pixels, uint32_t bitrate_bps) const;
+
   // Gets the min framerate diff from |configs_| based on |pixels|.
   absl::optional<int> MinFpsDiff(int pixels) const;
 

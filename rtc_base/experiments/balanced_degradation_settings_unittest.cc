@@ -359,6 +359,20 @@ TEST(BalancedDegradationSettings, GetsNextHigherBitrateWithUnsetValue) {
   EXPECT_FALSE(settings.NextHigherBitrateKbps(2001));
 }
 
+TEST(BalancedDegradationSettings, CanAdaptUpIfBitrateGeNextHigherKbpsLimit) {
+  webrtc::test::ScopedFieldTrials field_trials(
+      "WebRTC-Video-BalancedDegradationSettings/"
+      "pixels:1000|2000|3000|4000,fps:5|15|25|30,kbps:0|80|0|90/");
+  BalancedDegradationSettings settings;
+  EXPECT_TRUE(settings.CanAdaptUp(1000, 0));  // No bitrate provided.
+  EXPECT_FALSE(settings.CanAdaptUp(1000, 79000));
+  EXPECT_TRUE(settings.CanAdaptUp(1000, 80000));
+  EXPECT_TRUE(settings.CanAdaptUp(1001, 1));  // No limit configured.
+  EXPECT_FALSE(settings.CanAdaptUp(3000, 89000));
+  EXPECT_TRUE(settings.CanAdaptUp(3000, 90000));
+  EXPECT_TRUE(settings.CanAdaptUp(3001, 1));  // No limit.
+}
+
 TEST(BalancedDegradationSettings, GetsFpsDiff) {
   webrtc::test::ScopedFieldTrials field_trials(
       "WebRTC-Video-BalancedDegradationSettings/"

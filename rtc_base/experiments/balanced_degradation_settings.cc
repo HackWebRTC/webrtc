@@ -317,6 +317,16 @@ absl::optional<int> BalancedDegradationSettings::NextHigherBitrateKbps(
   return absl::nullopt;
 }
 
+bool BalancedDegradationSettings::CanAdaptUp(int pixels,
+                                             uint32_t bitrate_bps) const {
+  absl::optional<int> next_layer_min_kbps = NextHigherBitrateKbps(pixels);
+  if (!next_layer_min_kbps.has_value() || bitrate_bps == 0) {
+    return true;  // No limit configured or bitrate provided.
+  }
+  return bitrate_bps >=
+         static_cast<uint32_t>(next_layer_min_kbps.value() * 1000);
+}
+
 absl::optional<int> BalancedDegradationSettings::MinFpsDiff(int pixels) const {
   for (const auto& config : configs_) {
     if (pixels <= config.pixels) {
