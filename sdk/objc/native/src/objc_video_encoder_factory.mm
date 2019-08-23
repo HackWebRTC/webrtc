@@ -121,12 +121,24 @@ id<RTCVideoEncoderFactory> ObjCVideoEncoderFactory::wrapped_encoder_factory() co
 
 std::vector<SdpVideoFormat> ObjCVideoEncoderFactory::GetSupportedFormats() const {
   std::vector<SdpVideoFormat> supported_formats;
-  for (RTCVideoCodecInfo *supportedCodec in encoder_factory_.supportedCodecs) {
+  for (RTCVideoCodecInfo *supportedCodec in [encoder_factory_ supportedCodecs]) {
     SdpVideoFormat format = [supportedCodec nativeSdpVideoFormat];
     supported_formats.push_back(format);
   }
 
   return supported_formats;
+}
+
+std::vector<SdpVideoFormat> ObjCVideoEncoderFactory::GetImplementations() const {
+  if ([encoder_factory_ respondsToSelector:SEL("implementations")]) {
+    std::vector<SdpVideoFormat> supported_formats;
+    for (RTCVideoCodecInfo *supportedCodec in [encoder_factory_ implementations]) {
+      SdpVideoFormat format = [supportedCodec nativeSdpVideoFormat];
+      supported_formats.push_back(format);
+    }
+    return supported_formats;
+  }
+  return GetSupportedFormats();
 }
 
 VideoEncoderFactory::CodecInfo ObjCVideoEncoderFactory::QueryVideoEncoder(

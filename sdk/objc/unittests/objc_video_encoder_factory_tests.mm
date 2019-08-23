@@ -122,3 +122,17 @@ TEST(ObjCVideoEncoderFactoryTest, ReleaseEncodeReturnsErrorOnFail) {
 
   EXPECT_EQ(encoder->Release(), WEBRTC_VIDEO_CODEC_ERROR);
 }
+
+TEST(ObjCVideoEncoderFactoryTest, GetSupportedFormats) {
+  webrtc::ObjCVideoEncoderFactory encoder_factory(CreateOKEncoderFactory());
+  std::vector<webrtc::SdpVideoFormat> supportedFormats = encoder_factory.GetSupportedFormats();
+  EXPECT_EQ(supportedFormats.size(), 1u);
+  EXPECT_EQ(supportedFormats[0].name, "H264");
+}
+
+TEST(ObjCVideoEncoderFactoryTest, GetImplementations) {
+  webrtc::ObjCVideoEncoderFactory encoder_factory(CreateOKEncoderFactory());
+  std::vector<webrtc::SdpVideoFormat> supportedFormats = encoder_factory.GetImplementations();
+  EXPECT_EQ(supportedFormats.size(), 1u);
+  EXPECT_EQ(supportedFormats[0].name, "H264");
+}
