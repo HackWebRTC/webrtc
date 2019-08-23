@@ -463,6 +463,56 @@ TEST_F(JsepTransportControllerTest,
          "should be created.";
 }
 
+TEST_F(JsepTransportControllerTest,
+       DtlsIsStillCreatedIfDatagramTransportIsOnlyUsedForDataChannels) {
+  FakeMediaTransportFactory fake_media_transport_factory("transport_params");
+  JsepTransportController::Config config;
+
+  config.rtcp_mux_policy = PeerConnectionInterface::kRtcpMuxPolicyRequire;
+  config.bundle_policy = PeerConnectionInterface::kBundlePolicyMaxBundle;
+  config.media_transport_factory = &fake_media_transport_factory;
+  config.use_datagram_transport_for_data_channels = true;
+  CreateJsepTransportController(config);
+
+  auto description = CreateSessionDescriptionWithBundleGroup();
+  AddCryptoSettings(description.get());
+  absl::optional<cricket::OpaqueTransportParameters> params =
+      transport_controller_->GetTransportParameters(kAudioMid1);
+  for (auto& info : description->transport_infos()) {
+    info.description.opaque_parameters = params;
+  }
+
+  EXPECT_TRUE(transport_controller_
+                  ->SetLocalDescription(SdpType::kOffer, description.get())
+                  .ok());
+  EXPECT_TRUE(transport_controller_
+                  ->SetRemoteDescription(SdpType::kAnswer, description.get())
+                  .ok());
+
+  FakeDatagramTransport* datagram_transport =
+      static_cast<FakeDatagramTransport*>(
+          transport_controller_->GetDataChannelTransport(kAudioMid1));
+
+  ASSERT_NE(nullptr, datagram_transport);
+
+  EXPECT_EQ(cricket::ICE_CANDIDATE_COMPONENT_RTP,
+            transport_controller_->GetDtlsTransport(kAudioMid1)->component())
+      << "Datagram transport for media was not enabled, and so DTLS transport "
+         "should be created.";
+
+  // Datagram transport is not used for media, so no max packet size is
+  // specified.
+  EXPECT_EQ(transport_controller_->GetMediaTransportConfig(kAudioMid1)
+                .rtp_max_packet_size,
+            absl::nullopt);
+
+  // Since datagram transport is not used for RTP, setting it to writable should
+  // not make the RTP transport writable.
+  datagram_transport->set_state(MediaTransportState::kWritable);
+  EXPECT_FALSE(transport_controller_->GetRtpTransport(kAudioMid1)
+                   ->IsWritable(/*rtcp=*/false));
+}
+
 TEST_F(JsepTransportControllerTest, GetMediaTransportInCaller) {
   FakeMediaTransportFactory fake_media_transport_factory;
   JsepTransportController::Config config;

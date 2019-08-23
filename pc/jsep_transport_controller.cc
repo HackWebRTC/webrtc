@@ -1196,7 +1196,9 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
                                               /*datagram_transport=*/nullptr);
   }
 
-  if (datagram_transport) {
+  // Only create a datagram RTP transport if the datagram transport should be
+  // used for RTP.
+  if (datagram_transport && config_.use_datagram_transport) {
     // TODO(sukhanov): We use unencrypted RTP transport over DatagramTransport,
     // because MediaTransport encrypts. In the future we may want to
     // implement our own version of RtpTransport over MediaTransport, because

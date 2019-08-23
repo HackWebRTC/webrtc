@@ -769,8 +769,8 @@ void JsepTransport::OnStateChanged(webrtc::MediaTransportState state) {
 void JsepTransport::NegotiateDatagramTransport(SdpType type) {
   RTC_DCHECK(type == SdpType::kAnswer || type == SdpType::kPrAnswer);
   rtc::CritScope lock(&accessor_lock_);
-  if (!composite_rtp_transport_) {
-    return;  // No need to negotiate which RTP transport to use.
+  if (!datagram_transport_) {
+    return;  // No need to negotiate the use of datagram transport.
   }
 
   bool use_datagram_transport =
@@ -778,14 +778,16 @@ void JsepTransport::NegotiateDatagramTransport(SdpType type) {
       remote_description_->transport_desc.opaque_parameters ==
           local_description_->transport_desc.opaque_parameters;
 
+  RTC_LOG(LS_INFO) << "Negotiating datagram transport, use_datagram_transport="
+                   << use_datagram_transport << " answer type="
+                   << (type == SdpType::kAnswer ? "answer" : "pr_answer");
+
   // A provisional or full or answer lets the peer start sending on one of the
   // transports.
-  if (use_datagram_transport) {
-    RTC_LOG(INFO) << "Datagram transport provisionally activated";
-    composite_rtp_transport_->SetSendTransport(datagram_rtp_transport_.get());
-  } else {
-    RTC_LOG(INFO) << "Datagram transport provisionally rejected";
-    composite_rtp_transport_->SetSendTransport(default_rtp_transport());
+  if (composite_rtp_transport_) {
+    composite_rtp_transport_->SetSendTransport(
+        use_datagram_transport ? datagram_rtp_transport_.get()
+                               : default_rtp_transport());
   }
 
   if (type != SdpType::kAnswer) {
@@ -805,18 +807,22 @@ void JsepTransport::NegotiateDatagramTransport(SdpType type) {
       /*provisional=*/false);
 
   if (use_datagram_transport) {
-    RTC_LOG(INFO) << "Datagram transport activated";
-    composite_rtp_transport_->RemoveTransport(default_rtp_transport());
-    if (unencrypted_rtp_transport_) {
-      unencrypted_rtp_transport_ = nullptr;
-    } else if (sdes_transport_) {
-      sdes_transport_ = nullptr;
-    } else {
-      dtls_srtp_transport_ = nullptr;
+    if (composite_rtp_transport_) {
+      // Remove and delete the non-datagram RTP transport.
+      composite_rtp_transport_->RemoveTransport(default_rtp_transport());
+      if (unencrypted_rtp_transport_) {
+        unencrypted_rtp_transport_ = nullptr;
+      } else if (sdes_transport_) {
+        sdes_transport_ = nullptr;
+      } else {
+        dtls_srtp_transport_ = nullptr;
+      }
     }
   } else {
-    RTC_LOG(INFO) << "Datagram transport rejected";
-    composite_rtp_transport_->RemoveTransport(datagram_rtp_transport_.get());
+    // Remove and delete the datagram transport.
+    if (composite_rtp_transport_) {
+      composite_rtp_transport_->RemoveTransport(datagram_rtp_transport_.get());
+    }
     datagram_rtp_transport_ = nullptr;
     datagram_transport_ = nullptr;
   }
