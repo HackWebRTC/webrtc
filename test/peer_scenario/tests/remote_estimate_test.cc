@@ -72,6 +72,8 @@ TEST(RemoteEstimateEndToEnd, OfferedCapabilityIsInAnswer) {
 
 TEST(RemoteEstimateEndToEnd, AudioUsesAbsSendTimeExtension) {
   ScopedFieldTrials trials("WebRTC-KeepAbsSendTimeExtension/Enabled/");
+  // Defined before PeerScenario so it gets destructed after, to avoid use after free.
+  rtc::Event received_abs_send_time;
   PeerScenario s;
 
   auto* caller = s.CreateClient(PeerScenarioClient::Config());
@@ -99,7 +101,6 @@ TEST(RemoteEstimateEndToEnd, AudioUsesAbsSendTimeExtension) {
         offer_exchange_done.Set();
       });
   EXPECT_TRUE(s.WaitAndProcess(&offer_exchange_done));
-  rtc::Event received_abs_send_time;
   send_node->router()->SetWatcher(
       [extension_map, &received_abs_send_time](const EmulatedIpPacket& packet) {
         auto extensions = GetRtpPacketExtensions(packet.data, extension_map);
