@@ -52,6 +52,10 @@ int32_t VideoStreamDecoder::FrameToRender(VideoFrame& video_frame,
   return 0;
 }
 
+void VideoStreamDecoder::OnDroppedFrames(uint32_t frames_dropped) {
+  receive_stats_callback_->OnDroppedFrames(frames_dropped);
+}
+
 void VideoStreamDecoder::OnIncomingPayloadType(int payload_type) {
   receive_stats_callback_->OnIncomingPayloadType(payload_type);
 }

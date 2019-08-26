@@ -67,6 +67,8 @@ class VCMReceiveCallback {
     return FrameToRender(videoFrame, qp, content_type);
   }
 
+  virtual void OnDroppedFrames(uint32_t frames_dropped);
+
   // Called when the current receive codec changes.
   virtual void OnIncomingPayloadType(int payload_type);
   virtual void OnDecoderImplementationName(const char* implementation_name);
@@ -82,6 +84,8 @@ class VCMReceiveStatisticsCallback {
   virtual void OnCompleteFrame(bool is_keyframe,
                                size_t size_bytes,
                                VideoContentType content_type) = 0;
+
+  virtual void OnDroppedFrames(uint32_t frames_dropped) = 0;
 
   virtual void OnFrameBufferTimingsUpdated(int max_decode_ms,
                                            int current_delay_ms,

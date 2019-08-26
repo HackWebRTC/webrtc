@@ -691,10 +691,7 @@ ProduceMediaStreamTrackStatsFromVideoReceiverInfo(
   // received from. Since we don't support that, this is correct and is the same
   // value as "RTCInboundRTPStreamStats.framesDecoded". https://crbug.com/659137
   video_track_stats->frames_decoded = video_receiver_info.frames_decoded;
-  RTC_DCHECK_GE(video_receiver_info.frames_received,
-                video_receiver_info.frames_rendered);
-  video_track_stats->frames_dropped =
-      video_receiver_info.frames_received - video_receiver_info.frames_rendered;
+  video_track_stats->frames_dropped = video_receiver_info.frames_dropped;
   video_track_stats->freeze_count = video_receiver_info.freeze_count;
   video_track_stats->pause_count = video_receiver_info.pause_count;
   video_track_stats->total_freezes_duration =

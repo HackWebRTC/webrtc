@@ -803,6 +803,11 @@ void ReceiveStatisticsProxy::OnCompleteFrame(bool is_keyframe,
   UpdateFramerate(now_ms);
 }
 
+void ReceiveStatisticsProxy::OnDroppedFrames(uint32_t frames_dropped) {
+  rtc::CritScope lock(&crit_);
+  stats_.frames_dropped += frames_dropped;
+}
+
 void ReceiveStatisticsProxy::OnPreDecode(VideoCodecType codec_type, int qp) {
   RTC_DCHECK_RUN_ON(&decode_thread_);
   rtc::CritScope lock(&crit_);

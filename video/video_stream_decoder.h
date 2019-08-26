@@ -44,6 +44,7 @@ class VideoStreamDecoder : public VCMReceiveCallback {
                         absl::optional<uint8_t> qp,
                         int32_t decode_time_ms,
                         VideoContentType content_type) override;
+  void OnDroppedFrames(uint32_t frames_dropped) override;
   void OnIncomingPayloadType(int payload_type) override;
   void OnDecoderImplementationName(const char* implementation_name) override;
 

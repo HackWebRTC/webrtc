@@ -78,6 +78,7 @@ void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
   if (frameInfo == NULL) {
     RTC_LOG(LS_WARNING) << "Too many frames backed up in the decoder, dropping "
                            "this one.";
+    _receiveCallback->OnDroppedFrames(1);
     return;
   }
 
@@ -163,6 +164,7 @@ int32_t VCMDecodedFrameCallback::Pop(uint32_t timestamp) {
   if (_timestampMap.Pop(timestamp) == NULL) {
     return VCM_GENERAL_ERROR;
   }
+  _receiveCallback->OnDroppedFrames(1);
   return VCM_OK;
 }
 

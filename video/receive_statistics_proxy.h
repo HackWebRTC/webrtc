@@ -67,6 +67,7 @@ class ReceiveStatisticsProxy : public VCMReceiveStatisticsCallback,
   void OnCompleteFrame(bool is_keyframe,
                        size_t size_bytes,
                        VideoContentType content_type) override;
+  void OnDroppedFrames(uint32_t frames_dropped) override;
   void OnFrameBufferTimingsUpdated(int max_decode_ms,
                                    int current_delay_ms,
                                    int target_delay_ms,

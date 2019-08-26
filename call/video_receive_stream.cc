@@ -44,6 +44,7 @@ std::string VideoReceiveStream::Stats::ToString(int64_t time_ms) const {
   ss << "height: " << height << ", ";
   ss << "key: " << frame_counts.key_frames << ", ";
   ss << "delta: " << frame_counts.delta_frames << ", ";
+  ss << "frames_dropped: " << frames_dropped << ", ";
   ss << "network_fps: " << network_frame_rate << ", ";
   ss << "decode_fps: " << decode_frame_rate << ", ";
   ss << "render_fps: " << render_frame_rate << ", ";

@@ -286,6 +286,17 @@ EncodedFrame* FrameBuffer::GetNextFrame() {
     decoded_frames_history_.InsertDecoded(frame_it->first, frame->Timestamp());
 
     // Remove decoded frame and all undecoded frames before it.
+    if (stats_callback_) {
+      unsigned int dropped_frames = std::count_if(
+          frames_.begin(), frame_it,
+          [](const std::pair<const VideoLayerFrameId, FrameInfo>& frame) {
+            return frame.second.frame != nullptr;
+          });
+      if (dropped_frames > 0) {
+        stats_callback_->OnDroppedFrames(dropped_frames);
+      }
+    }
+
     frames_.erase(frames_.begin(), ++frame_it);
 
     frames_out.push_back(frame);
@@ -723,6 +734,16 @@ void FrameBuffer::UpdateTimingFrameInfo() {
 
 void FrameBuffer::ClearFramesAndHistory() {
   TRACE_EVENT0("webrtc", "FrameBuffer::ClearFramesAndHistory");
+  if (stats_callback_) {
+    unsigned int dropped_frames = std::count_if(
+        frames_.begin(), frames_.end(),
+        [](const std::pair<const VideoLayerFrameId, FrameInfo>& frame) {
+          return frame.second.frame != nullptr;
+        });
+    if (dropped_frames > 0) {
+      stats_callback_->OnDroppedFrames(dropped_frames);
+    }
+  }
   frames_.clear();
   last_continuous_frame_.reset();
   frames_to_decode_.clear();

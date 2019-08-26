@@ -399,6 +399,16 @@ TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsOnCompleteFrame) {
   EXPECT_EQ(0, stats.frame_counts.delta_frames);
 }
 
+TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsOnDroppedFrame) {
+  unsigned int dropped_frames = 0;
+  for (int i = 0; i < 10; ++i) {
+    statistics_proxy_->OnDroppedFrames(i);
+    dropped_frames += i;
+  }
+  VideoReceiveStream::Stats stats = statistics_proxy_->GetStats();
+  EXPECT_EQ(dropped_frames, stats.frames_dropped);
+}
+
 TEST_F(ReceiveStatisticsProxyTest, GetStatsReportsDecodeTimingStats) {
   const int kMaxDecodeMs = 2;
   const int kCurrentDelayMs = 3;
