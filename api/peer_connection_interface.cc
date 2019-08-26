@@ -129,12 +129,6 @@ PeerConnectionInterface::GetConfiguration() {
   return PeerConnectionInterface::RTCConfiguration();
 }
 
-bool PeerConnectionInterface::SetConfiguration(
-    const PeerConnectionInterface::RTCConfiguration& config,
-    RTCError* error) {
-  return false;
-}
-
 RTCError PeerConnectionInterface::SetConfiguration(
     const PeerConnectionInterface::RTCConfiguration& config) {
   return RTCError();

@@ -759,8 +759,7 @@ TEST_P(PeerConnectionEndToEndTest, CanRestartIce) {
   auto config = caller_->pc()->GetConfiguration();
   ASSERT_NE(PeerConnectionInterface::kRelay, config.type);
   config.type = PeerConnectionInterface::kRelay;
-  webrtc::RTCError error;
-  ASSERT_TRUE(caller_->pc()->SetConfiguration(config, &error));
+  ASSERT_TRUE(caller_->pc()->SetConfiguration(config).ok());
   // When solving https://crbug.com/webrtc/10504, all we need to check
   // is that we do not crash. We should also be testing that restart happens.
 }

@@ -1008,12 +1008,6 @@ class RTC_EXPORT PeerConnectionInterface : public rtc::RefCountInterface {
   // - INVALID_PARAMETER if a TURN server is missing |username| or |password|.
   // - INTERNAL_ERROR if an unexpected error occurred.
   //
-  // TODO(nisse): Deprecated, migrate to the method with an RTCError return
-  // value, then delete this one.
-  virtual bool SetConfiguration(
-      const PeerConnectionInterface::RTCConfiguration& config,
-      RTCError* error);
-
   // TODO(nisse): Make this pure virtual once all Chrome subclasses of
   // PeerConnectionInterface implement it.
   virtual RTCError SetConfiguration(

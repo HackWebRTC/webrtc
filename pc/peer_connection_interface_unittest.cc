@@ -2639,8 +2639,8 @@ TEST_P(PeerConnectionInterfaceTest,
   bad_server.username = "foo";
   config.servers.push_back(bad_server);
   RTCError error;
-  EXPECT_FALSE(pc_->SetConfiguration(config, &error));
-  EXPECT_EQ(RTCErrorType::INVALID_PARAMETER, error.type());
+  EXPECT_EQ(pc_->SetConfiguration(config).type(),
+            RTCErrorType::INVALID_PARAMETER);
 }
 
 // Test that PeerConnection::Close changes the states to closed and all remote

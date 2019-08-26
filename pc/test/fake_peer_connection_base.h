@@ -165,11 +165,6 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
 
   RTCConfiguration GetConfiguration() override { return RTCConfiguration(); }
 
-  bool SetConfiguration(const PeerConnectionInterface::RTCConfiguration& config,
-                        RTCError* error) override {
-    return false;
-  }
-
   RTCError SetConfiguration(
       const PeerConnectionInterface::RTCConfiguration& config) override {
     return RTCError();

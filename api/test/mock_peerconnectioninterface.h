@@ -107,9 +107,6 @@ class MockPeerConnectionInterface
                void(std::unique_ptr<SessionDescriptionInterface>,
                     rtc::scoped_refptr<SetRemoteDescriptionObserverInterface>));
   MOCK_METHOD0(GetConfiguration, PeerConnectionInterface::RTCConfiguration());
-  MOCK_METHOD2(SetConfiguration,
-               bool(const PeerConnectionInterface::RTCConfiguration&,
-                    RTCError*));
   MOCK_METHOD1(SetConfiguration,
                RTCError(const PeerConnectionInterface::RTCConfiguration&));
   MOCK_METHOD1(AddIceCandidate, bool(const IceCandidateInterface*));
