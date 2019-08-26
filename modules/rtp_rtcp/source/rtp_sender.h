@@ -48,26 +48,6 @@ class RTPSender {
  public:
   explicit RTPSender(const RtpRtcp::Configuration& config);
 
-  // TODO(bugs.webrtc.org/10774): Remove once downstream projects are fixed.
-  RTPSender(bool audio,
-            Clock* clock,
-            Transport* transport,
-            RtpPacketSender* paced_sender,
-            absl::optional<uint32_t> flexfec_ssrc,
-            TransportSequenceNumberAllocator* sequence_number_allocator,
-            TransportFeedbackObserver* transport_feedback_callback,
-            BitrateStatisticsObserver* bitrate_callback,
-            SendSideDelayObserver* send_side_delay_observer,
-            RtcEventLog* event_log,
-            SendPacketObserver* send_packet_observer,
-            RateLimiter* nack_rate_limiter,
-            OverheadObserver* overhead_observer,
-            bool populate_network2_timestamp,
-            FrameEncryptorInterface* frame_encryptor,
-            bool require_frame_encryption,
-            bool extmap_allow_mixed,
-            const WebRtcKeyValueConfig& field_trials);
-
   ~RTPSender();
 
   void ProcessBitrate();
