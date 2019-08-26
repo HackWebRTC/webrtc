@@ -173,10 +173,19 @@ class RTPSender {
   // time.
   typedef std::map<int64_t, int> SendDelayMap;
 
-  bool PrepareAndSendPacket(std::unique_ptr<RtpPacketToSend> packet,
-                            bool send_over_rtx,
-                            bool is_retransmit,
-                            const PacedPacketInfo& pacing_info);
+  // Helper class that redirects packets directly to the send part of this class
+  // without passing through an actual paced sender.
+  class NonPacedPacketSender : public RtpPacketSender {
+   public:
+    explicit NonPacedPacketSender(RTPSender* rtp_sender);
+    virtual ~NonPacedPacketSender();
+
+    void EnqueuePacket(std::unique_ptr<RtpPacketToSend> packet) override;
+
+   private:
+    uint16_t transport_sequence_number_;
+    RTPSender* const rtp_sender_;
+  };
 
   std::unique_ptr<RtpPacketToSend> BuildRtxPacket(
       const RtpPacketToSend& packet);
@@ -215,6 +224,7 @@ class RTPSender {
 
   const absl::optional<uint32_t> flexfec_ssrc_;
 
+  const std::unique_ptr<NonPacedPacketSender> non_paced_packet_sender_;
   RtpPacketSender* const paced_sender_;
   TransportSequenceNumberAllocator* const transport_sequence_number_allocator_;
   TransportFeedbackObserver* const transport_feedback_observer_;
