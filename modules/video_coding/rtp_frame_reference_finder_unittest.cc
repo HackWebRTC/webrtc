@@ -43,10 +43,6 @@ class FakePacketBuffer : public PacketBuffer {
     return true;
   }
 
-  void ReturnFrame(RtpFrameObject* frame) override {
-    packets_.erase(frame->first_seq_num());
-  }
-
  private:
   std::map<uint16_t, VCMPacket> packets_;
 };

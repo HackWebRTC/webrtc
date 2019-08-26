@@ -99,10 +99,10 @@ RtpFrameReferenceFinder::ManageFrameInternal(RtpFrameObject* frame) {
       return ManageFrameH264(frame);
     default: {
       // Use 15 first bits of frame ID as picture ID if available.
-      absl::optional<RTPVideoHeader> video_header = frame->GetRtpVideoHeader();
+      const RTPVideoHeader& video_header = frame->GetRtpVideoHeader();
       int picture_id = kNoPictureId;
-      if (video_header && video_header->generic)
-        picture_id = video_header->generic->frame_id & 0x7fff;
+      if (video_header.generic)
+        picture_id = video_header.generic->frame_id & 0x7fff;
 
       return ManageFramePidOrSeqNum(frame, picture_id);
     }
@@ -265,13 +265,8 @@ RtpFrameReferenceFinder::ManageFramePidOrSeqNum(RtpFrameObject* frame,
 
 RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp8(
     RtpFrameObject* frame) {
-  absl::optional<RTPVideoHeader> video_header = frame->GetRtpVideoHeader();
-  if (!video_header) {
-    RTC_LOG(LS_WARNING)
-        << "Failed to get codec header from frame, dropping frame.";
-    return kDrop;
-  }
-  RTPVideoTypeHeader rtp_codec_header = video_header->video_type_header;
+  const RTPVideoHeader& video_header = frame->GetRtpVideoHeader();
+  RTPVideoTypeHeader rtp_codec_header = video_header.video_type_header;
 
   const RTPVideoHeaderVP8& codec_header =
       absl::get<RTPVideoHeaderVP8>(rtp_codec_header);
@@ -415,13 +410,8 @@ void RtpFrameReferenceFinder::UpdateLayerInfoVp8(RtpFrameObject* frame,
 
 RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameVp9(
     RtpFrameObject* frame) {
-  absl::optional<RTPVideoHeader> video_header = frame->GetRtpVideoHeader();
-  if (!video_header) {
-    RTC_LOG(LS_WARNING)
-        << "Failed to get codec header from frame, dropping frame.";
-    return kDrop;
-  }
-  RTPVideoTypeHeader rtp_codec_header = video_header->video_type_header;
+  const RTPVideoHeader& video_header = frame->GetRtpVideoHeader();
+  RTPVideoTypeHeader rtp_codec_header = video_header.video_type_header;
 
   const RTPVideoHeaderVP9& codec_header =
       absl::get<RTPVideoHeaderVP9>(rtp_codec_header);
@@ -675,13 +665,10 @@ void RtpFrameReferenceFinder::UnwrapPictureIds(RtpFrameObject* frame) {
 
 RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameH264(
     RtpFrameObject* frame) {
-  absl::optional<FrameMarking> rtp_frame_marking = frame->GetFrameMarking();
-  if (!rtp_frame_marking) {
-    return ManageFramePidOrSeqNum(std::move(frame), kNoPictureId);
-  }
+  const FrameMarking& rtp_frame_marking = frame->GetFrameMarking();
 
-  uint8_t tid = rtp_frame_marking->temporal_id;
-  bool blSync = rtp_frame_marking->base_layer_sync;
+  uint8_t tid = rtp_frame_marking.temporal_id;
+  bool blSync = rtp_frame_marking.base_layer_sync;
 
   if (tid == kNoTemporalIdx)
     return ManageFramePidOrSeqNum(std::move(frame), kNoPictureId);
@@ -712,7 +699,7 @@ RtpFrameReferenceFinder::FrameDecision RtpFrameReferenceFinder::ManageFrameH264(
     }
   }
 
-  int64_t unwrapped_tl0 = tl0_unwrapper_.Unwrap(rtp_frame_marking->tl0_pic_idx);
+  int64_t unwrapped_tl0 = tl0_unwrapper_.Unwrap(rtp_frame_marking.tl0_pic_idx);
 
   // Clean up info for base layers that are too old.
   int64_t old_tl0_pic_idx = unwrapped_tl0 - kMaxLayerInfo;

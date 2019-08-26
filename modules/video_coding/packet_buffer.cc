@@ -182,6 +182,23 @@ void PacketBuffer::ClearTo(uint16_t seq_num) {
   }
 }
 
+void PacketBuffer::ClearInterval(uint16_t start_seq_num,
+                                 uint16_t stop_seq_num) {
+  size_t iterations = ForwardDiff<uint16_t>(start_seq_num, stop_seq_num + 1);
+  RTC_DCHECK_LE(iterations, size_);
+  uint16_t seq_num = start_seq_num;
+  for (size_t i = 0; i < iterations; ++i) {
+    size_t index = seq_num % size_;
+    RTC_DCHECK_EQ(sequence_buffer_[index].seq_num, seq_num);
+    RTC_DCHECK_EQ(sequence_buffer_[index].seq_num, data_buffer_[index].seqNum);
+    delete[] data_buffer_[index].dataPtr;
+    data_buffer_[index].dataPtr = nullptr;
+    sequence_buffer_[index].used = false;
+
+    ++seq_num;
+  }
+}
+
 void PacketBuffer::Clear() {
   rtc::CritScope lock(&crit_);
   for (size_t i = 0; i < size_; ++i) {
@@ -423,31 +440,11 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
           new RtpFrameObject(this, start_seq_num, seq_num, frame_size,
                              max_nack_count, min_recv_time, max_recv_time,
                              RtpPacketInfos(std::move(packet_infos))));
+      ClearInterval(start_seq_num, seq_num);
     }
     ++seq_num;
   }
   return found_frames;
-}
-
-void PacketBuffer::ReturnFrame(RtpFrameObject* frame) {
-  rtc::CritScope lock(&crit_);
-  size_t index = frame->first_seq_num() % size_;
-  size_t end = (frame->last_seq_num() + 1) % size_;
-  uint16_t seq_num = frame->first_seq_num();
-  uint32_t timestamp = frame->Timestamp();
-  while (index != end) {
-    // Check both seq_num and timestamp to handle the case when seq_num wraps
-    // around too quickly for high packet rates.
-    if (sequence_buffer_[index].seq_num == seq_num &&
-        data_buffer_[index].timestamp == timestamp) {
-      delete[] data_buffer_[index].dataPtr;
-      data_buffer_[index].dataPtr = nullptr;
-      sequence_buffer_[index].used = false;
-    }
-
-    index = (index + 1) % size_;
-    ++seq_num;
-  }
 }
 
 bool PacketBuffer::GetBitstream(const RtpFrameObject& frame,

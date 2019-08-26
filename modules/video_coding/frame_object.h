@@ -41,13 +41,14 @@ class RtpFrameObject : public EncodedFrame {
   int64_t ReceivedTime() const override;
   int64_t RenderTime() const override;
   bool delayed_by_retransmission() const override;
-  absl::optional<RTPVideoHeader> GetRtpVideoHeader() const;
-  absl::optional<RtpGenericFrameDescriptor> GetGenericFrameDescriptor() const;
-  absl::optional<FrameMarking> GetFrameMarking() const;
+  const RTPVideoHeader& GetRtpVideoHeader() const;
+  const absl::optional<RtpGenericFrameDescriptor>& GetGenericFrameDescriptor()
+      const;
+  const FrameMarking& GetFrameMarking() const;
 
  private:
-  rtc::scoped_refptr<PacketBuffer> packet_buffer_;
-  VideoFrameType frame_type_;
+  RTPVideoHeader rtp_video_header_;
+  absl::optional<RtpGenericFrameDescriptor> rtp_generic_frame_descriptor_;
   VideoCodecType codec_type_;
   uint16_t first_seq_num_;
   uint16_t last_seq_num_;

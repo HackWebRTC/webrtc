@@ -32,16 +32,17 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
                                int64_t first_packet_received_time,
                                int64_t last_packet_received_time,
                                RtpPacketInfos packet_infos)
-    : packet_buffer_(packet_buffer),
-      first_seq_num_(first_seq_num),
+    : first_seq_num_(first_seq_num),
       last_seq_num_(last_seq_num),
       last_packet_received_time_(last_packet_received_time),
       times_nacked_(times_nacked) {
-  VCMPacket* first_packet = packet_buffer_->GetPacket(first_seq_num);
+  VCMPacket* first_packet = packet_buffer->GetPacket(first_seq_num);
   RTC_CHECK(first_packet);
 
+  rtp_video_header_ = first_packet->video_header;
+  rtp_generic_frame_descriptor_ = first_packet->generic_descriptor;
+
   // EncodedFrame members
-  frame_type_ = first_packet->video_header.frame_type;
   codec_type_ = first_packet->codec();
 
   // TODO(philipel): Remove when encoded image is replaced by EncodedFrame.
@@ -59,7 +60,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
 
   // TODO(nisse): Change GetBitstream to return the buffer?
   SetEncodedData(EncodedImageBuffer::Create(frame_size));
-  bool bitstream_copied = packet_buffer_->GetBitstream(*this, data());
+  bool bitstream_copied = packet_buffer->GetBitstream(*this, data());
   RTC_DCHECK(bitstream_copied);
   _encodedWidth = first_packet->width();
   _encodedHeight = first_packet->height();
@@ -68,7 +69,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   SetTimestamp(first_packet->timestamp);
   SetPacketInfos(std::move(packet_infos));
 
-  VCMPacket* last_packet = packet_buffer_->GetPacket(last_seq_num);
+  VCMPacket* last_packet = packet_buffer->GetPacket(last_seq_num);
   RTC_CHECK(last_packet);
   RTC_CHECK(last_packet->is_last_packet_in_frame());
   // http://www.etsi.org/deliver/etsi_ts/126100_126199/126114/12.07.00_60/
@@ -111,7 +112,6 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
 }
 
 RtpFrameObject::~RtpFrameObject() {
-  packet_buffer_->ReturnFrame(this);
 }
 
 uint16_t RtpFrameObject::first_seq_num() const {
@@ -127,7 +127,7 @@ int RtpFrameObject::times_nacked() const {
 }
 
 VideoFrameType RtpFrameObject::frame_type() const {
-  return frame_type_;
+  return rtp_video_header_.frame_type;
 }
 
 VideoCodecType RtpFrameObject::codec_type() const {
@@ -146,29 +146,17 @@ bool RtpFrameObject::delayed_by_retransmission() const {
   return times_nacked() > 0;
 }
 
-absl::optional<RTPVideoHeader> RtpFrameObject::GetRtpVideoHeader() const {
-  rtc::CritScope lock(&packet_buffer_->crit_);
-  VCMPacket* packet = packet_buffer_->GetPacket(first_seq_num_);
-  if (!packet)
-    return absl::nullopt;
-  return packet->video_header;
+const RTPVideoHeader& RtpFrameObject::GetRtpVideoHeader() const {
+  return rtp_video_header_;
 }
 
-absl::optional<RtpGenericFrameDescriptor>
+const absl::optional<RtpGenericFrameDescriptor>&
 RtpFrameObject::GetGenericFrameDescriptor() const {
-  rtc::CritScope lock(&packet_buffer_->crit_);
-  VCMPacket* packet = packet_buffer_->GetPacket(first_seq_num_);
-  if (!packet)
-    return absl::nullopt;
-  return packet->generic_descriptor;
+  return rtp_generic_frame_descriptor_;
 }
 
-absl::optional<FrameMarking> RtpFrameObject::GetFrameMarking() const {
-  rtc::CritScope lock(&packet_buffer_->crit_);
-  VCMPacket* packet = packet_buffer_->GetPacket(first_seq_num_);
-  if (!packet)
-    return absl::nullopt;
-  return packet->video_header.frame_marking;
+const FrameMarking& RtpFrameObject::GetFrameMarking() const {
+  return rtp_video_header_.frame_marking;
 }
 
 }  // namespace video_coding

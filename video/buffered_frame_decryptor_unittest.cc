@@ -47,10 +47,6 @@ class FakePacketBuffer : public video_coding::PacketBuffer {
     return true;
   }
 
-  void ReturnFrame(video_coding::RtpFrameObject* frame) override {
-    packets_.erase(frame->first_seq_num());
-  }
-
  private:
   std::map<uint16_t, VCMPacket> packets_;
 };

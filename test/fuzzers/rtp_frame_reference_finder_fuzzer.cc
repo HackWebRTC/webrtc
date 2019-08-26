@@ -104,8 +104,6 @@ class FuzzyPacketBuffer : public video_coding::PacketBuffer {
     return true;
   }
 
-  void ReturnFrame(video_coding::RtpFrameObject* frame) override {}
-
  private:
   std::map<uint16_t, VCMPacket> packets;
   VideoCodecType codec;

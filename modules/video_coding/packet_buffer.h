@@ -123,9 +123,10 @@ class PacketBuffer {
   virtual VCMPacket* GetPacket(uint16_t seq_num)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  // Mark all slots used by |frame| as not used.
-  // Virtual for testing.
-  virtual void ReturnFrame(RtpFrameObject* frame);
+  // Clears the packet buffer from |start_seq_num| to |stop_seq_num| where the
+  // endpoints are inclusive.
+  void ClearInterval(uint16_t start_seq_num, uint16_t stop_seq_num)
+      RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   void UpdateMissingPackets(uint16_t seq_num)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
