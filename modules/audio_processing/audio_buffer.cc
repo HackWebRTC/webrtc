@@ -46,11 +46,11 @@ AudioBuffer::AudioBuffer(size_t input_rate,
                          size_t buffer_num_channels,
                          size_t output_rate,
                          size_t output_num_channels)
-    : AudioBuffer(rtc::CheckedDivExact(static_cast<int>(input_rate), 100),
+    : AudioBuffer(static_cast<int>(input_rate) / 100,
                   input_num_channels,
-                  rtc::CheckedDivExact(static_cast<int>(buffer_rate), 100),
+                  static_cast<int>(buffer_rate) / 100,
                   buffer_num_channels,
-                  rtc::CheckedDivExact(static_cast<int>(output_rate), 100)) {}
+                  static_cast<int>(output_rate) / 100) {}
 
 AudioBuffer::AudioBuffer(size_t input_num_frames,
                          size_t input_num_channels,
