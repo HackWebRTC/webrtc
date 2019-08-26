@@ -282,21 +282,11 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
                                  int payload_type,
                                  bool force_sender_report) = 0;
 
-  virtual RtpPacketSendResult TimeToSendPacket(
-      uint32_t ssrc,
-      uint16_t sequence_number,
-      int64_t capture_time_ms,
-      bool retransmission,
-      const PacedPacketInfo& pacing_info) = 0;
-
   // Try to send the provided packet. Returns true iff packet matches any of
   // the SSRCs for this module (media/rtx/fec etc) and was forwarded to the
   // transport.
   virtual bool TrySendPacket(RtpPacketToSend* packet,
                              const PacedPacketInfo& pacing_info) = 0;
-
-  virtual size_t TimeToSendPadding(size_t bytes,
-                                   const PacedPacketInfo& pacing_info) = 0;
 
   virtual std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
       size_t target_size_bytes) = 0;

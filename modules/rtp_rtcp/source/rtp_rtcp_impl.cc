@@ -354,16 +354,6 @@ bool ModuleRtpRtcpImpl::OnSendingRtpFrame(uint32_t timestamp,
   return true;
 }
 
-RtpPacketSendResult ModuleRtpRtcpImpl::TimeToSendPacket(
-    uint32_t ssrc,
-    uint16_t sequence_number,
-    int64_t capture_time_ms,
-    bool retransmission,
-    const PacedPacketInfo& pacing_info) {
-  return rtp_sender_->TimeToSendPacket(ssrc, sequence_number, capture_time_ms,
-                                       retransmission, pacing_info);
-}
-
 bool ModuleRtpRtcpImpl::TrySendPacket(RtpPacketToSend* packet,
                                       const PacedPacketInfo& pacing_info) {
   return rtp_sender_->TrySendPacket(packet, pacing_info);
@@ -375,12 +365,6 @@ bool ModuleRtpRtcpImpl::SupportsPadding() const {
 
 bool ModuleRtpRtcpImpl::SupportsRtxPayloadPadding() const {
   return rtp_sender_->SupportsRtxPayloadPadding();
-}
-
-size_t ModuleRtpRtcpImpl::TimeToSendPadding(
-    size_t bytes,
-    const PacedPacketInfo& pacing_info) {
-  return rtp_sender_->TimeToSendPadding(bytes, pacing_info);
 }
 
 std::vector<std::unique_ptr<RtpPacketToSend>>

@@ -184,15 +184,6 @@ void PacingController::SetPacingRates(DataRate pacing_rate,
                       << " padding_budget_kbps=" << padding_rate.kbps();
 }
 
-void PacingController::InsertPacket(RtpPacketSender::Priority priority,
-                                    uint32_t ssrc,
-                                    uint16_t sequence_number,
-                                    int64_t capture_time_ms,
-                                    size_t bytes,
-                                    bool retransmission) {
-  RTC_NOTREACHED();
-}
-
 void PacingController::EnqueuePacket(std::unique_ptr<RtpPacketToSend> packet) {
   RTC_DCHECK(pacing_bitrate_ > DataRate::Zero())
       << "SetPacingRate must be called before InsertPacket.";

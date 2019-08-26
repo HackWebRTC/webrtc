@@ -76,14 +76,6 @@ class PacingController {
 
   ~PacingController();
 
-  // Adds the packet information to the queue and calls TimeToSendPacket
-  // when it's time to send.
-  void InsertPacket(RtpPacketSender::Priority priority,
-                    uint32_t ssrc,
-                    uint16_t sequence_number,
-                    int64_t capture_time_ms,
-                    size_t bytes,
-                    bool retransmission);
   // Adds the packet to the queue and calls PacketRouter::SendPacket() when
   // it's time to send.
   void EnqueuePacket(std::unique_ptr<RtpPacketToSend> packet);

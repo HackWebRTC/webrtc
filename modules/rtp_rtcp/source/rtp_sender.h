@@ -111,16 +111,10 @@ class RTPSender {
 
   // Returns an RtpPacketSendResult indicating success, network unavailable,
   // or packet not found.
-  RtpPacketSendResult TimeToSendPacket(uint32_t ssrc,
-                                       uint16_t sequence_number,
-                                       int64_t capture_time_ms,
-                                       bool retransmission,
-                                       const PacedPacketInfo& pacing_info);
   bool TrySendPacket(RtpPacketToSend* packet,
                      const PacedPacketInfo& pacing_info);
   bool SupportsPadding() const;
   bool SupportsRtxPayloadPadding() const;
-  size_t TimeToSendPadding(size_t bytes, const PacedPacketInfo& pacing_info);
   std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
       size_t target_size_bytes);
 

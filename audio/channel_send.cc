@@ -385,20 +385,6 @@ class RtpPacketSenderProxy : public RtpPacketSender {
     rtp_packet_pacer_->EnqueuePacket(std::move(packet));
   }
 
-  // Implements RtpPacketSender.
-  void InsertPacket(Priority priority,
-                    uint32_t ssrc,
-                    uint16_t sequence_number,
-                    int64_t capture_time_ms,
-                    size_t bytes,
-                    bool retransmission) override {
-    rtc::CritScope lock(&crit_);
-    if (rtp_packet_pacer_) {
-      rtp_packet_pacer_->InsertPacket(priority, ssrc, sequence_number,
-                                      capture_time_ms, bytes, retransmission);
-    }
-  }
-
  private:
   rtc::ThreadChecker thread_checker_;
   rtc::CriticalSection crit_;

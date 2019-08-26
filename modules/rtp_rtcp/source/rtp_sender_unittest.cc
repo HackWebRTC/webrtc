@@ -165,14 +165,6 @@ class MockRtpPacketPacer : public RtpPacketSender {
 
   MOCK_METHOD1(EnqueuePacket, void(std::unique_ptr<RtpPacketToSend>));
 
-  MOCK_METHOD6(InsertPacket,
-               void(Priority priority,
-                    uint32_t ssrc,
-                    uint16_t sequence_number,
-                    int64_t capture_time_ms,
-                    size_t bytes,
-                    bool retransmission));
-
   MOCK_METHOD2(CreateProbeCluster, void(int bitrate_bps, int cluster_id));
 
   MOCK_METHOD0(Pause, void());
@@ -296,6 +288,15 @@ class RtpSenderTest : public ::testing::TestWithParam<TestConfig> {
     return SendPacket(kCaptureTimeMs, sizeof(kPayloadData));
   }
 
+  size_t GenerateAndSendPadding(size_t target_size_bytes) {
+    size_t generated_bytes = 0;
+    for (auto& packet : rtp_sender_->GeneratePadding(target_size_bytes)) {
+      generated_bytes += packet->payload_size() + packet->padding_size();
+      rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
+    }
+    return generated_bytes;
+  }
+
   // The following are helpers for configuring the RTPSender. They must be
   // called before sending any packets.
 
@@ -399,16 +400,16 @@ TEST_P(RtpSenderTestWithoutPacer, AssignSequenceNumberMayAllowPaddingOnVideo) {
   auto packet = rtp_sender_->AllocatePacket();
   ASSERT_TRUE(packet);
 
-  ASSERT_FALSE(rtp_sender_->TimeToSendPadding(kPaddingSize, PacedPacketInfo()));
+  ASSERT_TRUE(rtp_sender_->GeneratePadding(kPaddingSize).empty());
   packet->SetMarker(false);
   ASSERT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
   // Packet without marker bit doesn't allow padding on video stream.
-  EXPECT_FALSE(rtp_sender_->TimeToSendPadding(kPaddingSize, PacedPacketInfo()));
+  ASSERT_TRUE(rtp_sender_->GeneratePadding(kPaddingSize).empty());
 
   packet->SetMarker(true);
   ASSERT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
   // Packet with marker bit allows send padding.
-  EXPECT_TRUE(rtp_sender_->TimeToSendPadding(kPaddingSize, PacedPacketInfo()));
+  ASSERT_FALSE(rtp_sender_->GeneratePadding(kPaddingSize).empty());
 }
 
 TEST_P(RtpSenderTest, AssignSequenceNumberAllowsPaddingOnAudio) {
@@ -434,15 +435,13 @@ TEST_P(RtpSenderTest, AssignSequenceNumberAllowsPaddingOnAudio) {
   const size_t kPaddingSize = 59;
   EXPECT_CALL(transport, SendRtp(_, kPaddingSize + kRtpHeaderSize, _))
       .WillOnce(Return(true));
-  EXPECT_EQ(kPaddingSize,
-            rtp_sender_->TimeToSendPadding(kPaddingSize, PacedPacketInfo()));
+  EXPECT_EQ(kPaddingSize, GenerateAndSendPadding(kPaddingSize));
 
   // Requested padding size is too small, will send a larger one.
   const size_t kMinPaddingSize = 50;
   EXPECT_CALL(transport, SendRtp(_, kMinPaddingSize + kRtpHeaderSize, _))
       .WillOnce(Return(true));
-  EXPECT_EQ(kMinPaddingSize, rtp_sender_->TimeToSendPadding(kMinPaddingSize - 5,
-                                                            PacedPacketInfo()));
+  EXPECT_EQ(kMinPaddingSize, GenerateAndSendPadding(kMinPaddingSize - 5));
 }
 
 TEST_P(RtpSenderTestWithoutPacer, AssignSequenceNumberSetPaddingTimestamps) {
@@ -453,11 +452,11 @@ TEST_P(RtpSenderTestWithoutPacer, AssignSequenceNumberSetPaddingTimestamps) {
   packet->SetTimestamp(kTimestamp);
 
   ASSERT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
-  ASSERT_TRUE(rtp_sender_->TimeToSendPadding(kPaddingSize, PacedPacketInfo()));
+  auto padding_packets = rtp_sender_->GeneratePadding(kPaddingSize);
 
-  ASSERT_EQ(1u, transport_.sent_packets_.size());
+  ASSERT_EQ(1u, padding_packets.size());
   // Verify padding packet timestamp.
-  EXPECT_EQ(kTimestamp, transport_.last_sent_packet().Timestamp());
+  EXPECT_EQ(kTimestamp, padding_packets[0]->Timestamp());
 }
 
 TEST_P(RtpSenderTestWithoutPacer,
@@ -1003,8 +1002,7 @@ TEST_P(RtpSenderTest, SendPadding) {
     const size_t kPaddingBytes = 100;
     const size_t kMaxPaddingLength = 224;  // Value taken from rtp_sender.cc.
     // Padding will be forced to full packets.
-    EXPECT_EQ(kMaxPaddingLength,
-              rtp_sender_->TimeToSendPadding(kPaddingBytes, PacedPacketInfo()));
+    EXPECT_EQ(kMaxPaddingLength, GenerateAndSendPadding(kPaddingBytes));
 
     // Process send bucket. Padding should now be sent.
     EXPECT_EQ(++total_packets_sent, transport_.packets_sent());
@@ -1878,7 +1876,7 @@ TEST_P(RtpSenderTestWithoutPacer, StreamDataCountersCallbacks) {
   callback.Matches(ssrc, expected);
 
   // Send padding.
-  rtp_sender_->TimeToSendPadding(kMaxPaddingSize, PacedPacketInfo());
+  GenerateAndSendPadding(kMaxPaddingSize);
   expected.transmitted.payload_bytes = 12;
   expected.transmitted.header_bytes = 36;
   expected.transmitted.padding_bytes = kMaxPaddingSize;
@@ -1913,8 +1911,8 @@ TEST_P(RtpSenderTestWithoutPacer, BytesReportedCorrectly) {
 
   SendGenericPacket();
   // Will send 2 full-size padding packets.
-  rtp_sender_->TimeToSendPadding(1, PacedPacketInfo());
-  rtp_sender_->TimeToSendPadding(1, PacedPacketInfo());
+  GenerateAndSendPadding(1);
+  GenerateAndSendPadding(1);
 
   StreamDataCounters rtp_stats;
   StreamDataCounters rtx_stats;

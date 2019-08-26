@@ -83,17 +83,6 @@ void PacedSender::SetPacingRates(DataRate pacing_rate, DataRate padding_rate) {
   pacing_controller_.SetPacingRates(pacing_rate, padding_rate);
 }
 
-void PacedSender::InsertPacket(RtpPacketSender::Priority priority,
-                               uint32_t ssrc,
-                               uint16_t sequence_number,
-                               int64_t capture_time_ms,
-                               size_t bytes,
-                               bool retransmission) {
-  rtc::CritScope cs(&critsect_);
-  pacing_controller_.InsertPacket(priority, ssrc, sequence_number,
-                                  capture_time_ms, bytes, retransmission);
-}
-
 void PacedSender::EnqueuePacket(std::unique_ptr<RtpPacketToSend> packet) {
   rtc::CritScope cs(&critsect_);
   pacing_controller_.EnqueuePacket(std::move(packet));

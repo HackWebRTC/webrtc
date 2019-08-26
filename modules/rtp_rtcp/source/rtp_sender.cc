@@ -472,17 +472,6 @@ void RTPSender::OnReceivedNack(
 }
 
 // Called from pacer when we can send the packet.
-RtpPacketSendResult RTPSender::TimeToSendPacket(
-    uint32_t ssrc,
-    uint16_t sequence_number,
-    int64_t capture_time_ms,
-    bool retransmission,
-    const PacedPacketInfo& pacing_info) {
-  RTC_NOTREACHED();
-  return RtpPacketSendResult::kSuccess;
-}
-
-// Called from pacer when we can send the packet.
 bool RTPSender::TrySendPacket(RtpPacketToSend* packet,
                               const PacedPacketInfo& pacing_info) {
   RTC_DCHECK(packet);
@@ -713,19 +702,6 @@ void RTPSender::UpdateRtpStats(const RtpPacketToSend& packet,
 
   if (rtp_stats_callback_)
     rtp_stats_callback_->DataCountersUpdated(*counters, packet.Ssrc());
-}
-
-size_t RTPSender::TimeToSendPadding(size_t bytes,
-                                    const PacedPacketInfo& pacing_info) {
-  // TODO(bugs.webrtc.org/10633): Remove when downstream test usage is gone.
-  size_t padding_bytes_sent = 0;
-  for (auto& packet : GeneratePadding(bytes)) {
-    const size_t packet_size = packet->payload_size() + packet->padding_size();
-    if (TrySendPacket(packet.get(), pacing_info)) {
-      padding_bytes_sent += packet_size;
-    }
-  }
-  return padding_bytes_sent;
 }
 
 std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(

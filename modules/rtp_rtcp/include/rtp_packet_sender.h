@@ -18,27 +18,9 @@
 
 namespace webrtc {
 
-// TODO(bugs.webrtc.org/10633): Remove Priority and InsertPacket when old pacer
-// code path is gone.
 class RtpPacketSender {
  public:
   virtual ~RtpPacketSender() = default;
-
-  // These are part of the legacy PacedSender interface and will be removed.
-  enum Priority {
-    kHighPriority = 0,    // Pass through; will be sent immediately.
-    kNormalPriority = 2,  // Put in back of the line.
-    kLowPriority = 3,     // Put in back of the low priority line.
-  };
-
-  // Adds the packet information to the queue and call TimeToSendPacket when
-  // it's time to send.
-  virtual void InsertPacket(Priority priority,
-                            uint32_t ssrc,
-                            uint16_t sequence_number,
-                            int64_t capture_time_ms,
-                            size_t bytes,
-                            bool retransmission) = 0;
 
   // Insert packet into queue, for eventual transmission. Based on the type of
   // the packet, it will be prioritized and scheduled relative to other packets

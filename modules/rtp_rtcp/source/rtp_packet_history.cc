@@ -314,7 +314,7 @@ std::unique_ptr<RtpPacketToSend> RtpPacketHistory::GetPayloadPaddingPacket(
   StoredPacket* best_packet = *best_packet_it;
   if (best_packet->pending_transmission_) {
     // Because PacedSender releases it's lock when it calls
-    // TimeToSendPadding() there is the potential for a race where a new
+    // GeneratePadding() there is the potential for a race where a new
     // packet ends up here instead of the regular transmit path. In such a
     // case, just return empty and it will be picked up on the next
     // Process() call.

@@ -53,18 +53,8 @@ class PacketRouter : public TransportSequenceNumberAllocator,
                            bool remb_candidate);
   void RemoveReceiveRtpModule(RtcpFeedbackSenderInterface* rtcp_sender);
 
-  virtual RtpPacketSendResult TimeToSendPacket(
-      uint32_t ssrc,
-      uint16_t sequence_number,
-      int64_t capture_timestamp,
-      bool retransmission,
-      const PacedPacketInfo& packet_info);
-
   virtual void SendPacket(std::unique_ptr<RtpPacketToSend> packet,
                           const PacedPacketInfo& cluster_info);
-
-  virtual size_t TimeToSendPadding(size_t bytes,
-                                   const PacedPacketInfo& packet_info);
 
   virtual std::vector<std::unique_ptr<RtpPacketToSend>> GeneratePadding(
       size_t target_size_bytes);

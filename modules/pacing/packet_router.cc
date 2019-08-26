@@ -54,7 +54,7 @@ void PacketRouter::AddSendRtpModule(RtpRtcp* rtp_module, bool remb_candidate) {
                        rtp_module) == rtp_send_modules_.end());
   // Put modules which can use regular payload packets (over rtx) instead of
   // padding first as it's less of a waste
-  if ((rtp_module->RtxSendStatus() & kRtxRedundantPayloads) > 0) {
+  if (rtp_module->SupportsRtxPayloadPadding()) {
     rtp_send_modules_.push_front(rtp_module);
   } else {
     rtp_send_modules_.push_back(rtp_module);
@@ -102,29 +102,6 @@ void PacketRouter::RemoveReceiveRtpModule(
   rtcp_feedback_senders_.erase(it);
 }
 
-RtpPacketSendResult PacketRouter::TimeToSendPacket(
-    uint32_t ssrc,
-    uint16_t sequence_number,
-    int64_t capture_timestamp,
-    bool retransmission,
-    const PacedPacketInfo& pacing_info) {
-  rtc::CritScope cs(&modules_crit_);
-  RtpRtcp* rtp_module = FindRtpModule(ssrc);
-  if (rtp_module == nullptr || !rtp_module->SendingMedia()) {
-    return RtpPacketSendResult::kPacketNotFound;
-  }
-
-  RtpPacketSendResult result = rtp_module->TimeToSendPacket(
-      ssrc, sequence_number, capture_timestamp, retransmission, pacing_info);
-  if (result == RtpPacketSendResult::kSuccess &&
-      rtp_module->SupportsRtxPayloadPadding()) {
-    // This is now the last module to send media, and has the desired
-    // properties needed for payload based padding. Cache it for later use.
-    last_send_module_ = rtp_module;
-  }
-  return result;
-}
-
 RtpRtcp* PacketRouter::FindRtpModule(uint32_t ssrc) {
   auto it = rtp_module_cache_map_.find(ssrc);
   if (it != rtp_module_cache_map_.end()) {
@@ -150,7 +127,7 @@ void PacketRouter::SendPacket(std::unique_ptr<RtpPacketToSend> packet,
   // With the new pacer code path, transport sequence numbers are only set here,
   // on the pacer thread. Therefore we don't need atomics/synchronization.
   if (packet->IsExtensionReserved<TransportSequenceNumber>()) {
-    packet->SetExtension<TransportSequenceNumber>(++transport_seq_);
+    packet->SetExtension<TransportSequenceNumber>(AllocateSequenceNumber());
   }
 
   auto it = rtp_module_cache_map_.find(packet->Ssrc());
@@ -173,41 +150,6 @@ void PacketRouter::SendPacket(std::unique_ptr<RtpPacketToSend> packet,
                          "or transport error. SSRC = "
                       << packet->Ssrc() << ", sequence number "
                       << packet->SequenceNumber();
-}
-
-size_t PacketRouter::TimeToSendPadding(size_t bytes_to_send,
-                                       const PacedPacketInfo& pacing_info) {
-  size_t total_bytes_sent = 0;
-  rtc::CritScope cs(&modules_crit_);
-  // First try on the last rtp module to have sent media. This increases the
-  // the chance that any payload based padding will be useful as it will be
-  // somewhat distributed over modules according the packet rate, even if it
-  // will be more skewed towards the highest bitrate stream. At the very least
-  // this prevents sending payload padding on a disabled stream where it's
-  // guaranteed not to be useful.
-  if (last_send_module_ != nullptr &&
-      last_send_module_->SupportsRtxPayloadPadding()) {
-    RTC_DCHECK(std::find(rtp_send_modules_.begin(), rtp_send_modules_.end(),
-                         last_send_module_) != rtp_send_modules_.end());
-    total_bytes_sent += last_send_module_->TimeToSendPadding(
-        bytes_to_send - total_bytes_sent, pacing_info);
-    if (total_bytes_sent >= bytes_to_send) {
-      return total_bytes_sent;
-    }
-  }
-
-  // Rtp modules are ordered by which stream can most benefit from padding.
-  // Don't require RTX payload padding in the general case.
-  for (RtpRtcp* module : rtp_send_modules_) {
-    if (module->SupportsPadding()) {
-      size_t bytes_sent = module->TimeToSendPadding(
-          bytes_to_send - total_bytes_sent, pacing_info);
-      total_bytes_sent += bytes_sent;
-      if (total_bytes_sent >= bytes_to_send)
-        break;
-    }
-  }
-  return total_bytes_sent;
 }
 
 std::vector<std::unique_ptr<RtpPacketToSend>> PacketRouter::GeneratePadding(

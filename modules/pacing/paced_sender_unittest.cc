@@ -42,15 +42,6 @@ namespace test {
 // Mock callback implementing the raw api.
 class MockCallback : public PacketRouter {
  public:
-  MOCK_METHOD5(TimeToSendPacket,
-               RtpPacketSendResult(uint32_t ssrc,
-                                   uint16_t sequence_number,
-                                   int64_t capture_time_ms,
-                                   bool retransmission,
-                                   const PacedPacketInfo& pacing_info));
-  MOCK_METHOD2(TimeToSendPadding,
-               size_t(size_t bytes, const PacedPacketInfo& pacing_info));
-
   MOCK_METHOD2(SendPacket,
                void(std::unique_ptr<RtpPacketToSend> packet,
                     const PacedPacketInfo& cluster_info));
