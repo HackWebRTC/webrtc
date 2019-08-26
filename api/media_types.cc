@@ -10,21 +10,20 @@
 
 #include "api/media_types.h"
 
-#include "api/media_stream_interface.h"
 #include "rtc_base/checks.h"
 
-namespace {
-static const char* kMediaTypeData = "data";
-}  // namespace
-
 namespace cricket {
+
+const char kMediaTypeVideo[] = "video";
+const char kMediaTypeAudio[] = "audio";
+const char kMediaTypeData[] = "data";
 
 std::string MediaTypeToString(MediaType type) {
   switch (type) {
     case MEDIA_TYPE_AUDIO:
-      return webrtc::MediaStreamTrackInterface::kAudioKind;
+      return kMediaTypeAudio;
     case MEDIA_TYPE_VIDEO:
-      return webrtc::MediaStreamTrackInterface::kVideoKind;
+      return kMediaTypeVideo;
     case MEDIA_TYPE_DATA:
       return kMediaTypeData;
   }

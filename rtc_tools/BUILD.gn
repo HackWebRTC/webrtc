@@ -153,7 +153,7 @@ if (!build_with_chromium) {
     ]
 
     deps = [
-      "../api:libjingle_peerconnection_api",
+      "../api:rtp_parameters",
       "../api:transport_api",
       "../api/rtc_event_log",
       "../api/task_queue:default_task_queue_factory",

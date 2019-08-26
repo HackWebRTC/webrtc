@@ -34,7 +34,7 @@ rtc_source_set("rtc_event_log_api") {
   ]
 
   deps = [
-    "../api:libjingle_logging_api",
+    "../api:rtp_parameters",
     "../api:scoped_refptr",
     "../api/rtc_event_log",
     "../api/task_queue",
@@ -53,6 +53,7 @@ rtc_source_set("rtc_stream_config") {
     ":rtc_event_log_api",
     "../api:libjingle_peerconnection_api",
     "../api:rtp_headers",
+    "../api:rtp_parameters",
   ]
 }
 
@@ -190,8 +191,8 @@ rtc_static_library("rtc_event_log_impl_encoder") {
   defines = []
 
   deps = [
-    "../api:libjingle_peerconnection_api",
     "../api:rtp_headers",
+    "../api:rtp_parameters",
     "../api/transport:network_control",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
@@ -318,8 +319,8 @@ if (rtc_enable_protobuf) {
       ":rtc_event_log_proto",
       ":rtc_stream_config",
       "../api:function_view",
-      "../api:libjingle_peerconnection_api",
       "../api:rtp_headers",
+      "../api:rtp_parameters",
       "../api/rtc_event_log",
       "../api/units:data_rate",
       "../api/units:time_delta",
@@ -369,9 +370,9 @@ if (rtc_enable_protobuf) {
         ":rtc_event_video",
         ":rtc_stream_config",
         "../api:array_view",
-        "../api:libjingle_peerconnection_api",
         "../api:rtc_event_log_output_file",
         "../api:rtp_headers",
+        "../api:rtp_parameters",
         "../api/rtc_event_log",
         "../api/rtc_event_log:rtc_event_log_factory",
         "../api/task_queue:default_task_queue_factory",

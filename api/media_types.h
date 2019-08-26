@@ -22,6 +22,10 @@ namespace cricket {
 
 enum MediaType { MEDIA_TYPE_AUDIO, MEDIA_TYPE_VIDEO, MEDIA_TYPE_DATA };
 
+extern const char kMediaTypeAudio[];
+extern const char kMediaTypeVideo[];
+extern const char kMediaTypeData[];
+
 RTC_EXPORT std::string MediaTypeToString(MediaType type);
 
 }  // namespace cricket

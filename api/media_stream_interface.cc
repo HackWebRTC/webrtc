@@ -9,11 +9,14 @@
  */
 
 #include "api/media_stream_interface.h"
+#include "api/media_types.h"
 
 namespace webrtc {
 
-const char MediaStreamTrackInterface::kVideoKind[] = "video";
-const char MediaStreamTrackInterface::kAudioKind[] = "audio";
+const char* const MediaStreamTrackInterface::kVideoKind =
+    cricket::kMediaTypeVideo;
+const char* const MediaStreamTrackInterface::kAudioKind =
+    cricket::kMediaTypeAudio;
 
 VideoTrackInterface::ContentHint VideoTrackInterface::content_hint() const {
   return ContentHint::kNone;
