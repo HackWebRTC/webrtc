@@ -31,7 +31,7 @@ constexpr int kPixelsInHighResolution =
     960 * 540;  // CPU-adapted HD still counts.
 constexpr int kPixelsInMediumResolution = 640 * 360;
 constexpr int kBlockyQpThresholdVp8 = 70;
-constexpr int kBlockyQpThresholdVp9 = 60;  // TODO(ilnik): tune this value.
+constexpr int kBlockyQpThresholdVp9 = 180;
 constexpr int kMaxNumCachedBlockyFrames = 100;
 // TODO(ilnik): Add H264/HEVC thresholds.
 }  // namespace
