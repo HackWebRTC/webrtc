@@ -37,13 +37,7 @@ SingleThreadedTaskQueueForTesting::SingleThreadedTaskQueueForTesting(
 }
 
 SingleThreadedTaskQueueForTesting::~SingleThreadedTaskQueueForTesting() {
-  RTC_DCHECK_RUN_ON(&owner_thread_checker_);
-  {
-    rtc::CritScope lock(&cs_);
-    running_ = false;
-  }
-  wake_up_.Set();
-  thread_.Stop();
+  Stop();
 }
 
 SingleThreadedTaskQueueForTesting::TaskId
@@ -57,6 +51,8 @@ SingleThreadedTaskQueueForTesting::PostDelayedTask(Task task,
   int64_t earliest_exec_time = rtc::TimeAfter(delay_ms);
 
   rtc::CritScope lock(&cs_);
+  if (!running_)
+    return kInvalidTaskId;
 
   TaskId id = next_task_id_++;
 
@@ -82,10 +78,12 @@ SingleThreadedTaskQueueForTesting::PostDelayedTask(Task task,
 void SingleThreadedTaskQueueForTesting::SendTask(Task task) {
   RTC_DCHECK(!IsCurrent());
   rtc::Event done;
-  PostTask([&task, &done]() {
-    task();
-    done.Set();
-  });
+  if (PostTask([&task, &done]() {
+        task();
+        done.Set();
+      }) == kInvalidTaskId) {
+    return;
+  }
   // Give up after 30 seconds, warn after 10.
   RTC_CHECK(done.Wait(30000, 10000));
 }
@@ -103,6 +101,32 @@ bool SingleThreadedTaskQueueForTesting::CancelTask(TaskId task_id) {
 
 bool SingleThreadedTaskQueueForTesting::IsCurrent() {
   return rtc::IsThreadRefEqual(thread_.GetThreadRef(), rtc::CurrentThreadRef());
+}
+
+bool SingleThreadedTaskQueueForTesting::IsRunning() {
+  RTC_DCHECK_RUN_ON(&owner_thread_checker_);
+  // We could check the |running_| flag here, but this is equivalent for the
+  // purposes of this function.
+  return thread_.IsRunning();
+}
+
+bool SingleThreadedTaskQueueForTesting::HasPendingTasks() const {
+  rtc::CritScope lock(&cs_);
+  return !tasks_.empty();
+}
+
+void SingleThreadedTaskQueueForTesting::Stop() {
+  RTC_DCHECK_RUN_ON(&owner_thread_checker_);
+  if (!thread_.IsRunning())
+    return;
+
+  {
+    rtc::CritScope lock(&cs_);
+    running_ = false;
+  }
+
+  wake_up_.Set();
+  thread_.Stop();
 }
 
 void SingleThreadedTaskQueueForTesting::Run(void* obj) {
