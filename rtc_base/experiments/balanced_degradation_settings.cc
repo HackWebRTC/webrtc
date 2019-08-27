@@ -27,6 +27,7 @@ std::vector<BalancedDegradationSettings::Config> DefaultConfigs() {
   return {{320 * 240,
            7,
            0,
+           0,
            BalancedDegradationSettings::kNoFpsDiff,
            {0, 0, 0},
            {0, 0, 0},
@@ -35,6 +36,7 @@ std::vector<BalancedDegradationSettings::Config> DefaultConfigs() {
           {480 * 270,
            10,
            0,
+           0,
            BalancedDegradationSettings::kNoFpsDiff,
            {0, 0, 0},
            {0, 0, 0},
@@ -42,6 +44,7 @@ std::vector<BalancedDegradationSettings::Config> DefaultConfigs() {
            {0, 0, 0}},
           {640 * 480,
            15,
+           0,
            0,
            BalancedDegradationSettings::kNoFpsDiff,
            {0, 0, 0},
@@ -221,6 +224,7 @@ BalancedDegradationSettings::Config::Config() = default;
 BalancedDegradationSettings::Config::Config(int pixels,
                                             int fps,
                                             int kbps,
+                                            int kbps_res,
                                             int fps_diff,
                                             CodecTypeSpecific vp8,
                                             CodecTypeSpecific vp9,
@@ -229,6 +233,7 @@ BalancedDegradationSettings::Config::Config(int pixels,
     : pixels(pixels),
       fps(fps),
       kbps(kbps),
+      kbps_res(kbps_res),
       fps_diff(fps_diff),
       vp8(vp8),
       vp9(vp9),
@@ -240,6 +245,8 @@ BalancedDegradationSettings::BalancedDegradationSettings() {
       {FieldTrialStructMember("pixels", [](Config* c) { return &c->pixels; }),
        FieldTrialStructMember("fps", [](Config* c) { return &c->fps; }),
        FieldTrialStructMember("kbps", [](Config* c) { return &c->kbps; }),
+       FieldTrialStructMember("kbps_res",
+                              [](Config* c) { return &c->kbps_res; }),
        FieldTrialStructMember("fps_diff",
                               [](Config* c) { return &c->fps_diff; }),
        FieldTrialStructMember("vp8_qp_low",
@@ -317,9 +324,33 @@ absl::optional<int> BalancedDegradationSettings::NextHigherBitrateKbps(
   return absl::nullopt;
 }
 
+absl::optional<int>
+BalancedDegradationSettings::ResolutionNextHigherBitrateKbps(int pixels) const {
+  for (size_t i = 0; i < configs_.size() - 1; ++i) {
+    if (pixels <= configs_[i].pixels) {
+      return (configs_[i + 1].kbps_res > 0)
+                 ? absl::optional<int>(configs_[i + 1].kbps_res)
+                 : absl::nullopt;
+    }
+  }
+  return absl::nullopt;
+}
+
 bool BalancedDegradationSettings::CanAdaptUp(int pixels,
                                              uint32_t bitrate_bps) const {
   absl::optional<int> next_layer_min_kbps = NextHigherBitrateKbps(pixels);
+  if (!next_layer_min_kbps.has_value() || bitrate_bps == 0) {
+    return true;  // No limit configured or bitrate provided.
+  }
+  return bitrate_bps >=
+         static_cast<uint32_t>(next_layer_min_kbps.value() * 1000);
+}
+
+bool BalancedDegradationSettings::CanAdaptUpResolution(
+    int pixels,
+    uint32_t bitrate_bps) const {
+  absl::optional<int> next_layer_min_kbps =
+      ResolutionNextHigherBitrateKbps(pixels);
   if (!next_layer_min_kbps.has_value() || bitrate_bps == 0) {
     return true;  // No limit configured or bitrate provided.
   }

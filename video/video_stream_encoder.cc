@@ -1931,6 +1931,12 @@ void VideoStreamEncoder::AdaptUp(AdaptReason reason) {
         }
         break;
       }
+      // Check if resolution should be increased based on bitrate.
+      if (reason == kQuality &&
+          !balanced_settings_.CanAdaptUpResolution(
+              last_frame_info_->pixel_count(), encoder_start_bitrate_bps_)) {
+        return;
+      }
       // Scale up resolution.
       RTC_FALLTHROUGH();
     }
