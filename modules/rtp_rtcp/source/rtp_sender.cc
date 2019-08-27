@@ -129,8 +129,6 @@ RTPSender::RTPSender(const RtpRtcp::Configuration& config)
           config.paced_sender ? nullptr : new NonPacedPacketSender(this)),
       paced_sender_(config.paced_sender ? config.paced_sender
                                         : non_paced_packet_sender_.get()),
-      transport_sequence_number_allocator_(
-          config.transport_sequence_number_allocator),
       transport_feedback_observer_(config.transport_feedback_callback),
       transport_(config.outgoing_transport),
       sending_media_(true),  // Default to sending media.
@@ -875,24 +873,6 @@ bool RTPSender::AssignSequenceNumber(RtpPacketToSend* packet) {
   last_rtp_timestamp_ = packet->Timestamp();
   last_timestamp_time_ms_ = clock_->TimeInMilliseconds();
   capture_time_ms_ = packet->capture_time_ms();
-  return true;
-}
-
-bool RTPSender::UpdateTransportSequenceNumber(RtpPacketToSend* packet,
-                                              int* packet_id) {
-  RTC_DCHECK(packet);
-  RTC_DCHECK(packet_id);
-  if (!rtp_header_extension_map_.IsRegistered(TransportSequenceNumber::kId))
-    return false;
-
-  if (!transport_sequence_number_allocator_)
-    return false;
-
-  *packet_id = transport_sequence_number_allocator_->AllocateSequenceNumber();
-
-  if (!packet->SetExtension<TransportSequenceNumber>(*packet_id))
-    return false;
-
   return true;
 }
 

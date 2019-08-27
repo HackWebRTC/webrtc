@@ -39,8 +39,7 @@ class TransportFeedback;
 // module if possible (sender report), otherwise on receive module
 // (receiver report). For the latter case, we also keep track of the
 // receive modules.
-class PacketRouter : public TransportSequenceNumberAllocator,
-                     public RemoteBitrateObserver,
+class PacketRouter : public RemoteBitrateObserver,
                      public TransportFeedbackSenderInterface {
  public:
   PacketRouter();
@@ -60,7 +59,7 @@ class PacketRouter : public TransportSequenceNumberAllocator,
       size_t target_size_bytes);
 
   void SetTransportWideSequenceNumber(uint16_t sequence_number);
-  uint16_t AllocateSequenceNumber() override;
+  uint16_t AllocateSequenceNumber();
 
   // Called every time there is a new bitrate estimate for a receive channel
   // group. This call will trigger a new RTCP REMB packet if the bitrate

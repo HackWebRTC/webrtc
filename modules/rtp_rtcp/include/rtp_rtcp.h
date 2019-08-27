@@ -95,8 +95,6 @@ class RtpRtcp : public Module, public RtcpFeedbackSenderInterface {
     // TODO(brandtr): Remove when FlexfecSender is wired up to PacedSender.
     FlexfecSender* flexfec_sender = nullptr;
 
-    TransportSequenceNumberAllocator* transport_sequence_number_allocator =
-        nullptr;
     BitrateStatisticsObserver* send_bitrate_observer = nullptr;
     SendSideDelayObserver* send_side_delay_observer = nullptr;
     RtcEventLog* event_log = nullptr;

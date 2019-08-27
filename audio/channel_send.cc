@@ -263,7 +263,6 @@ class ChannelSend : public ChannelSendInterface,
   PacketRouter* packet_router_ RTC_GUARDED_BY(&worker_thread_checker_) =
       nullptr;
   const std::unique_ptr<TransportFeedbackProxy> feedback_observer_proxy_;
-  const std::unique_ptr<TransportSequenceNumberProxy> seq_num_allocator_proxy_;
   const std::unique_ptr<RtpPacketSenderProxy> rtp_packet_pacer_proxy_;
   const std::unique_ptr<RateLimiter> retransmission_rate_limiter_;
 
@@ -339,35 +338,6 @@ class TransportFeedbackProxy : public TransportFeedbackObserver {
   rtc::ThreadChecker pacer_thread_;
   rtc::ThreadChecker network_thread_;
   TransportFeedbackObserver* feedback_observer_ RTC_GUARDED_BY(&crit_);
-};
-
-class TransportSequenceNumberProxy : public TransportSequenceNumberAllocator {
- public:
-  TransportSequenceNumberProxy() : seq_num_allocator_(nullptr) {
-    pacer_thread_.Detach();
-  }
-
-  void SetSequenceNumberAllocator(
-      TransportSequenceNumberAllocator* seq_num_allocator) {
-    RTC_DCHECK(thread_checker_.IsCurrent());
-    rtc::CritScope lock(&crit_);
-    seq_num_allocator_ = seq_num_allocator;
-  }
-
-  // Implements TransportSequenceNumberAllocator.
-  uint16_t AllocateSequenceNumber() override {
-    RTC_DCHECK(pacer_thread_.IsCurrent());
-    rtc::CritScope lock(&crit_);
-    if (!seq_num_allocator_)
-      return 0;
-    return seq_num_allocator_->AllocateSequenceNumber();
-  }
-
- private:
-  rtc::CriticalSection crit_;
-  rtc::ThreadChecker thread_checker_;
-  rtc::ThreadChecker pacer_thread_;
-  TransportSequenceNumberAllocator* seq_num_allocator_ RTC_GUARDED_BY(&crit_);
 };
 
 class RtpPacketSenderProxy : public RtpPacketSender {
@@ -639,7 +609,6 @@ ChannelSend::ChannelSend(Clock* clock,
       _includeAudioLevelIndication(false),
       rtcp_observer_(new VoERtcpObserver(this)),
       feedback_observer_proxy_(new TransportFeedbackProxy()),
-      seq_num_allocator_proxy_(new TransportSequenceNumberProxy()),
       rtp_packet_pacer_proxy_(new RtpPacketSenderProxy()),
       retransmission_rate_limiter_(
           new RateLimiter(clock, kMaxRetransmissionWindowMs)),
@@ -676,8 +645,6 @@ ChannelSend::ChannelSend(Clock* clock,
   configuration.outgoing_transport = rtp_transport;
 
   configuration.paced_sender = rtp_packet_pacer_proxy_.get();
-  configuration.transport_sequence_number_allocator =
-      seq_num_allocator_proxy_.get();
 
   configuration.event_log = event_log_;
   configuration.rtt_stats = rtcp_rtt_stats;
@@ -999,7 +966,6 @@ void ChannelSend::RegisterSenderCongestionControlObjects(
   rtcp_observer_->SetBandwidthObserver(bandwidth_observer);
   feedback_observer_proxy_->SetTransportFeedbackObserver(
       transport_feedback_observer);
-  seq_num_allocator_proxy_->SetSequenceNumberAllocator(packet_router);
   rtp_packet_pacer_proxy_->SetPacketPacer(rtp_packet_pacer);
   _rtpRtcpModule->SetStorePacketsStatus(true, 600);
   constexpr bool remb_candidate = false;
@@ -1013,7 +979,6 @@ void ChannelSend::ResetSenderCongestionControlObjects() {
   _rtpRtcpModule->SetStorePacketsStatus(false, 600);
   rtcp_observer_->SetBandwidthObserver(nullptr);
   feedback_observer_proxy_->SetTransportFeedbackObserver(nullptr);
-  seq_num_allocator_proxy_->SetSequenceNumberAllocator(nullptr);
   packet_router_->RemoveSendRtpModule(_rtpRtcpModule.get());
   packet_router_ = nullptr;
   rtp_packet_pacer_proxy_->SetPacketPacer(nullptr);

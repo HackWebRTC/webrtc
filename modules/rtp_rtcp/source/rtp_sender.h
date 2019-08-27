@@ -211,9 +211,6 @@ class RTPSender {
                           int64_t capture_time_ms,
                           uint32_t ssrc);
 
-  bool UpdateTransportSequenceNumber(RtpPacketToSend* packet, int* packet_id)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(send_critsect_);
-
   void UpdateRtpStats(const RtpPacketToSend& packet,
                       bool is_rtx,
                       bool is_retransmit);
@@ -234,7 +231,6 @@ class RTPSender {
 
   const std::unique_ptr<NonPacedPacketSender> non_paced_packet_sender_;
   RtpPacketSender* const paced_sender_;
-  TransportSequenceNumberAllocator* const transport_sequence_number_allocator_;
   TransportFeedbackObserver* const transport_feedback_observer_;
   rtc::CriticalSection send_critsect_;
 

@@ -93,8 +93,6 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
   configuration.rtt_stats = rtt_stats;
   configuration.rtcp_packet_type_counter_observer = rtcp_type_observer;
   configuration.paced_sender = transport->packet_sender();
-  configuration.transport_sequence_number_allocator =
-      transport->packet_router();
   configuration.send_bitrate_observer = bitrate_observer;
   configuration.send_side_delay_observer = send_delay_observer;
   configuration.send_packet_observer = send_packet_observer;

@@ -343,14 +343,6 @@ class RtcpRttStats {
   virtual ~RtcpRttStats() {}
 };
 
-class TransportSequenceNumberAllocator {
- public:
-  TransportSequenceNumberAllocator() {}
-  virtual ~TransportSequenceNumberAllocator() {}
-
-  virtual uint16_t AllocateSequenceNumber() = 0;
-};
-
 struct RtpPacketCounter {
   RtpPacketCounter()
       : header_bytes(0), payload_bytes(0), padding_bytes(0), packets(0) {}
