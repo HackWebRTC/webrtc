@@ -149,12 +149,6 @@ void StreamStatisticianImpl::UpdateJitter(const RtpPacketReceived& packet,
   }
 }
 
-void StreamStatisticianImpl::FecPacketReceived(
-    const RtpPacketReceived& packet) {
-  rtc::CritScope cs(&stream_lock_);
-  receive_counters_.fec.AddPacket(packet);
-}
-
 void StreamStatisticianImpl::SetMaxReorderingThreshold(
     int max_reordering_threshold) {
   rtc::CritScope cs(&stream_lock_);
@@ -356,14 +350,6 @@ void ReceiveStatisticsImpl::OnRtpPacket(const RtpPacketReceived& packet) {
   // it's own locking so don't hold receive_statistics_lock_ (potential
   // deadlock).
   GetOrCreateStatistician(packet.Ssrc())->OnRtpPacket(packet);
-}
-
-void ReceiveStatisticsImpl::FecPacketReceived(const RtpPacketReceived& packet) {
-  StreamStatisticianImpl* impl = GetStatistician(packet.Ssrc());
-  // Ignore FEC if it is the first packet.
-  if (impl) {
-    impl->FecPacketReceived(packet);
-  }
 }
 
 StreamStatisticianImpl* ReceiveStatisticsImpl::GetStatistician(

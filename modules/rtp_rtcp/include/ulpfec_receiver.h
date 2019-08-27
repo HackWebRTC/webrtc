@@ -20,16 +20,13 @@
 namespace webrtc {
 
 struct FecPacketCounter {
-  FecPacketCounter()
-      : num_packets(0),
-        num_fec_packets(0),
-        num_recovered_packets(0),
-        first_packet_time_ms(-1) {}
-
-  size_t num_packets;            // Number of received packets.
-  size_t num_fec_packets;        // Number of received FEC packets.
-  size_t num_recovered_packets;  // Number of recovered media packets using FEC.
-  int64_t first_packet_time_ms;  // Time when first packet is received.
+  FecPacketCounter() = default;
+  size_t num_packets = 0;  // Number of received packets.
+  size_t num_bytes = 0;
+  size_t num_fec_packets = 0;  // Number of received FEC packets.
+  size_t num_recovered_packets =
+      0;  // Number of recovered media packets using FEC.
+  int64_t first_packet_time_ms = -1;  // Time when first packet is received.
 };
 
 class UlpfecReceiver {

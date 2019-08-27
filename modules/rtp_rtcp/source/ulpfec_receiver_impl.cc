@@ -122,6 +122,7 @@ int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
   }
 
   ++packet_counter_.num_packets;
+  packet_counter_.num_bytes += packet_length;
   if (packet_counter_.first_packet_time_ms == -1) {
     packet_counter_.first_packet_time_ms = rtc::TimeMillis();
   }

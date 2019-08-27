@@ -725,7 +725,6 @@ void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(
   if (packet.PayloadType() == config_.rtp.red_payload_type &&
       packet.payload_size() > 0) {
     if (packet.payload()[0] == config_.rtp.ulpfec_payload_type) {
-      rtp_receive_statistics_->FecPacketReceived(packet);
       // Notify video_receiver about received FEC packets to avoid NACKing these
       // packets.
       NotifyReceiverOfEmptyPacket(packet.SequenceNumber());
@@ -865,6 +864,11 @@ void RtpVideoStreamReceiver::UpdateHistograms() {
     RTC_HISTOGRAM_PERCENTAGE("WebRTC.Video.RecoveredMediaPacketsInPercentOfFec",
                              static_cast<int>(counter.num_recovered_packets *
                                               100 / counter.num_fec_packets));
+  }
+  if (config_.rtp.ulpfec_payload_type != -1) {
+    RTC_HISTOGRAM_COUNTS_10000(
+        "WebRTC.Video.FecBitrateReceivedInKbps",
+        static_cast<int>(counter.num_bytes * 8 / elapsed_sec / 1000));
   }
 }
 

@@ -44,7 +44,6 @@ class StreamStatisticianImpl : public StreamStatistician,
   // Implements RtpPacketSinkInterface
   void OnRtpPacket(const RtpPacketReceived& packet) override;
 
-  void FecPacketReceived(const RtpPacketReceived& packet);
   void SetMaxReorderingThreshold(int max_reordering_threshold);
   void EnableRetransmitDetection(bool enable);
 
@@ -114,7 +113,6 @@ class ReceiveStatisticsImpl : public ReceiveStatistics {
   void OnRtpPacket(const RtpPacketReceived& packet) override;
 
   // Implements ReceiveStatistics.
-  void FecPacketReceived(const RtpPacketReceived& packet) override;
   // Note: More specific return type for use in the implementation.
   StreamStatisticianImpl* GetStatistician(uint32_t ssrc) const override;
   void SetMaxReorderingThreshold(int max_reordering_threshold) override;

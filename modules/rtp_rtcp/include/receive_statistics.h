@@ -64,9 +64,6 @@ class ReceiveStatistics : public ReceiveStatisticsProvider,
 
   static std::unique_ptr<ReceiveStatistics> Create(Clock* clock);
 
-  // Increment counter for number of FEC packets received.
-  virtual void FecPacketReceived(const RtpPacketReceived& packet) = 0;
-
   // Returns a pointer to the statistician of an ssrc.
   virtual StreamStatistician* GetStatistician(uint32_t ssrc) const = 0;
 

@@ -432,12 +432,6 @@ void ReceiveStatisticsProxy::UpdateHistograms(
           static_cast<int>(rtx_stats->transmitted.TotalBytes() * 8 /
                            elapsed_sec / 1000));
     }
-    if (config_.rtp.ulpfec_payload_type != -1) {
-      RTC_HISTOGRAM_COUNTS_10000(
-          "WebRTC.Video.FecBitrateReceivedInKbps",
-          static_cast<int>(rtp_rtx_stats.fec.TotalBytes() * 8 / elapsed_sec /
-                           1000));
-    }
     const RtcpPacketTypeCounter& counters = stats_.rtcp_packet_type_counts;
     RTC_HISTOGRAM_COUNTS_10000("WebRTC.Video.NackPacketsSentPerMinute",
                                counters.nack_packets * 60 / elapsed_sec);

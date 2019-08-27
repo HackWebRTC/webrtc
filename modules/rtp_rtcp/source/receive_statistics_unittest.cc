@@ -552,20 +552,6 @@ TEST_F(ReceiveStatisticsTest, StreamDataCounters) {
   EXPECT_EQ(counters.retransmitted.header_bytes, kHeaderLength);
   EXPECT_EQ(counters.retransmitted.padding_bytes, kPaddingLength);
   EXPECT_EQ(counters.retransmitted.packets, 1u);
-
-  // One FEC packet.
-  packet1.SetSequenceNumber(packet2.SequenceNumber() + 1);
-  clock_.AdvanceTimeMilliseconds(5);
-  receive_statistics_->OnRtpPacket(packet1);
-  receive_statistics_->FecPacketReceived(packet1);
-  counters = receive_statistics_->GetStatistician(kSsrc1)
-                 ->GetReceiveStreamDataCounters();
-  EXPECT_EQ(counters.transmitted.payload_bytes, kPacketSize1 * 4);
-  EXPECT_EQ(counters.transmitted.header_bytes, kHeaderLength * 4);
-  EXPECT_EQ(counters.transmitted.packets, 4u);
-  EXPECT_EQ(counters.fec.payload_bytes, kPacketSize1);
-  EXPECT_EQ(counters.fec.header_bytes, kHeaderLength);
-  EXPECT_EQ(counters.fec.packets, 1u);
 }
 
 TEST_F(ReceiveStatisticsTest, LastPacketReceivedTimestamp) {
@@ -583,38 +569,6 @@ TEST_F(ReceiveStatisticsTest, LastPacketReceivedTimestamp) {
   counters = receive_statistics_->GetStatistician(kSsrc1)
                  ->GetReceiveStreamDataCounters();
   EXPECT_EQ(45, counters.last_packet_received_timestamp_ms);
-}
-
-TEST_F(ReceiveStatisticsTest, FecFirst) {
-  receive_statistics_ = ReceiveStatistics::Create(&clock_);
-
-  const uint32_t kHeaderLength = 20;
-  RtpPacketReceived packet =
-      CreateRtpPacket(kSsrc1, kHeaderLength, kPacketSize1, 0);
-  // If first packet is FEC, ignore it.
-  receive_statistics_->FecPacketReceived(packet);
-
-  EXPECT_EQ(receive_statistics_->GetStatistician(kSsrc1), nullptr);
-
-  receive_statistics_->OnRtpPacket(packet);
-  StreamDataCounters counters = receive_statistics_->GetStatistician(kSsrc1)
-                                    ->GetReceiveStreamDataCounters();
-  EXPECT_EQ(counters.transmitted.payload_bytes, kPacketSize1);
-  EXPECT_EQ(counters.transmitted.header_bytes, kHeaderLength);
-  EXPECT_EQ(counters.transmitted.padding_bytes, 0u);
-  EXPECT_EQ(counters.transmitted.packets, 1u);
-  EXPECT_EQ(counters.fec.packets, 0u);
-
-  receive_statistics_->FecPacketReceived(packet);
-  counters = receive_statistics_->GetStatistician(kSsrc1)
-                 ->GetReceiveStreamDataCounters();
-  EXPECT_EQ(counters.transmitted.payload_bytes, kPacketSize1);
-  EXPECT_EQ(counters.transmitted.header_bytes, kHeaderLength);
-  EXPECT_EQ(counters.transmitted.padding_bytes, 0u);
-  EXPECT_EQ(counters.transmitted.packets, 1u);
-  EXPECT_EQ(counters.fec.payload_bytes, kPacketSize1);
-  EXPECT_EQ(counters.fec.header_bytes, kHeaderLength);
-  EXPECT_EQ(counters.fec.packets, 1u);
 }
 
 }  // namespace
