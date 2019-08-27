@@ -27,6 +27,7 @@
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
 #include "call/call.h"
+#include "media/engine/constants.h"
 #include "media/engine/simulcast.h"
 #include "media/engine/webrtc_media_engine.h"
 #include "media/engine/webrtc_voice_engine.h"
@@ -328,9 +329,6 @@ absl::optional<int> GetFallbackMinBpsFromFieldTrial(
 }
 
 int GetMinVideoBitrateBps(webrtc::VideoCodecType type) {
-  if (webrtc::field_trial::IsEnabled(kMinVideoBitrateExperiment)) {
-    return MinVideoBitrateConfig().min_video_bitrate->bps();
-  }
   return GetFallbackMinBpsFromFieldTrial(type).value_or(kMinVideoBitrateBps);
 }
 }  // namespace
