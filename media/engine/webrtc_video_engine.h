@@ -29,12 +29,15 @@
 #include "call/video_receive_stream.h"
 #include "call/video_send_stream.h"
 #include "media/base/media_engine.h"
+#include "media/engine/constants.h"
 #include "media/engine/unhandled_packets_buffer.h"
 #include "rtc_base/async_invoker.h"
 #include "rtc_base/critical_section.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/network_route.h"
 #include "rtc_base/thread_annotations.h"
 #include "rtc_base/thread_checker.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 class VideoDecoderFactory;
@@ -47,6 +50,17 @@ class Thread;
 }  // namespace rtc
 
 namespace cricket {
+
+struct MinVideoBitrateConfig {
+  webrtc::FieldTrialParameter<webrtc::DataRate> min_video_bitrate;
+
+  MinVideoBitrateConfig()
+      : min_video_bitrate("br", webrtc::DataRate::KilobitsPerSec<30>()) {
+    webrtc::ParseFieldTrial(
+        {&min_video_bitrate},
+        webrtc::field_trial::FindFullName(kMinVideoBitrateExperiment));
+  }
+};
 
 class WebRtcVideoChannel;
 
