@@ -74,7 +74,6 @@ class RtpPacketHistory {
   // If |send_time| is set, packet was sent without using pacer, so state will
   // be set accordingly.
   void PutRtpPacket(std::unique_ptr<RtpPacketToSend> packet,
-                    StorageType type,
                     absl::optional<int64_t> send_time_ms);
 
   // Gets stored RTP packet corresponding to the input |sequence number|.
@@ -141,14 +140,12 @@ class RtpPacketHistory {
   class StoredPacket {
    public:
     StoredPacket(std::unique_ptr<RtpPacketToSend> packet,
-                 StorageType storage_type,
                  absl::optional<int64_t> send_time_ms,
                  uint64_t insert_order);
     StoredPacket(StoredPacket&&);
     StoredPacket& operator=(StoredPacket&&);
     ~StoredPacket();
 
-    StorageType storage_type() const { return storage_type_; }
     uint64_t insert_order() const { return insert_order_; }
     size_t times_retransmitted() const { return times_retransmitted_; }
     void IncrementTimesRetransmitted(PacketPrioritySet* priority_set);
@@ -163,10 +160,6 @@ class RtpPacketHistory {
     bool pending_transmission_;
 
    private:
-    // Storing a packet with |storage_type| = kDontRetransmit indicates this is
-    // only used as temporary storage until sent by the pacer sender.
-    StorageType storage_type_;
-
     // Unique number per StoredPacket, incremented by one for each added
     // packet. Used to sort on insert order.
     uint64_t insert_order_;
@@ -202,10 +195,10 @@ class RtpPacketHistory {
   // Map from rtp sequence numbers to stored packet.
   std::map<uint16_t, StoredPacket> packet_history_ RTC_GUARDED_BY(lock_);
 
-  // Total number of packets with StorageType::kAllowsRetransmission inserted.
-  uint64_t retransmittable_packets_inserted_ RTC_GUARDED_BY(lock_);
-  // Retransmittable objects from |packet_history_| ordered by
-  // "most likely to be useful", used in GetPayloadPaddingPacket().
+  // Total number of packets with inserted.
+  uint64_t packets_inserted_ RTC_GUARDED_BY(lock_);
+  // Objects from |packet_history_| ordered by "most likely to be useful", used
+  // in GetPayloadPaddingPacket().
   PacketPrioritySet padding_priority_ RTC_GUARDED_BY(lock_);
 
   // The earliest packet in the history. This might not be the lowest sequence

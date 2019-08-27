@@ -268,10 +268,11 @@ class RtpSenderTest : public ::testing::TestWithParam<TestConfig> {
     auto packet =
         BuildRtpPacket(kPayload, kMarkerBit, timestamp, capture_time_ms);
     packet->AllocatePayload(payload_length);
+    packet->set_allow_retransmission(true);
 
     // Packet should be stored in a send bucket.
     EXPECT_TRUE(rtp_sender_->SendToNetwork(
-        absl::make_unique<RtpPacketToSend>(*packet), kAllowRetransmission));
+        absl::make_unique<RtpPacketToSend>(*packet)));
     return packet;
   }
 
@@ -739,10 +740,11 @@ TEST_P(RtpSenderTest, WritesPacerExitToTimingExtension) {
 
   const int kStoredTimeInMs = 100;
   packet->set_packet_type(RtpPacketToSend::Type::kVideo);
+  packet->set_allow_retransmission(true);
   EXPECT_CALL(mock_paced_sender_,
               EnqueuePacket(Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc))));
-  EXPECT_TRUE(rtp_sender_->SendToNetwork(
-      absl::make_unique<RtpPacketToSend>(*packet), kAllowRetransmission));
+  EXPECT_TRUE(
+      rtp_sender_->SendToNetwork(absl::make_unique<RtpPacketToSend>(*packet)));
   fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
   rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
   EXPECT_EQ(1, transport_.packets_sent());
@@ -774,11 +776,12 @@ TEST_P(RtpSenderTest, WritesNetwork2ToTimingExtensionWithPacer) {
   const int kStoredTimeInMs = 100;
 
     packet->set_packet_type(RtpPacketToSend::Type::kVideo);
+    packet->set_allow_retransmission(true);
     EXPECT_CALL(
         mock_paced_sender_,
         EnqueuePacket(Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc))));
     EXPECT_TRUE(rtp_sender_->SendToNetwork(
-        absl::make_unique<RtpPacketToSend>(*packet), kAllowRetransmission));
+        absl::make_unique<RtpPacketToSend>(*packet)));
     fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
     rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
 
@@ -801,14 +804,14 @@ TEST_P(RtpSenderTest, WritesNetwork2ToTimingExtensionWithoutPacer) {
   packet->set_capture_time_ms(fake_clock_.TimeInMilliseconds());
   const VideoSendTiming kVideoTiming = {0u, 0u, 0u, 0u, 0u, 0u, true};
   packet->SetExtension<VideoTimingExtension>(kVideoTiming);
+  packet->set_allow_retransmission(true);
   EXPECT_TRUE(rtp_sender_->AssignSequenceNumber(packet.get()));
   packet->set_packet_type(RtpPacketToSend::Type::kVideo);
 
   const int kPropagateTimeMs = 10;
   fake_clock_.AdvanceTimeMilliseconds(kPropagateTimeMs);
 
-  EXPECT_TRUE(
-      rtp_sender_->SendToNetwork(std::move(packet), kAllowRetransmission));
+  EXPECT_TRUE(rtp_sender_->SendToNetwork(std::move(packet)));
 
   EXPECT_EQ(1, transport_.packets_sent());
   absl::optional<VideoSendTiming> video_timing =
@@ -840,8 +843,9 @@ TEST_P(RtpSenderTest, TrafficSmoothingWithExtensions) {
             Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc)),
             Pointee(Property(&RtpPacketToSend::SequenceNumber, kSeqNum)))));
     packet->set_packet_type(RtpPacketToSend::Type::kVideo);
+    packet->set_allow_retransmission(true);
     EXPECT_TRUE(rtp_sender_->SendToNetwork(
-        absl::make_unique<RtpPacketToSend>(*packet), kAllowRetransmission));
+        absl::make_unique<RtpPacketToSend>(*packet)));
     EXPECT_EQ(0, transport_.packets_sent());
     fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
     rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
@@ -885,7 +889,7 @@ TEST_P(RtpSenderTest, TrafficSmoothingRetransmits) {
     packet->set_packet_type(RtpPacketToSend::Type::kVideo);
     packet->set_allow_retransmission(true);
     EXPECT_TRUE(rtp_sender_->SendToNetwork(
-        absl::make_unique<RtpPacketToSend>(*packet), kAllowRetransmission));
+        absl::make_unique<RtpPacketToSend>(*packet)));
     // Immediately process send bucket and send packet.
     rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
 
@@ -964,7 +968,7 @@ TEST_P(RtpSenderTest, SendPadding) {
     packet->set_packet_type(RtpPacketToSend::Type::kVideo);
     packet->set_allow_retransmission(true);
     EXPECT_TRUE(rtp_sender_->SendToNetwork(
-        absl::make_unique<RtpPacketToSend>(*packet), kAllowRetransmission));
+        absl::make_unique<RtpPacketToSend>(*packet)));
     EXPECT_EQ(total_packets_sent, transport_.packets_sent());
     fake_clock_.AdvanceTimeMilliseconds(kStoredTimeInMs);
     rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
@@ -1011,13 +1015,14 @@ TEST_P(RtpSenderTest, SendPadding) {
   packet_size = packet->size();
 
     packet->set_packet_type(RtpPacketToSend::Type::kVideo);
+    packet->set_allow_retransmission(true);
     EXPECT_CALL(
         mock_paced_sender_,
         EnqueuePacket(AllOf(
             Pointee(Property(&RtpPacketToSend::Ssrc, kSsrc)),
             Pointee(Property(&RtpPacketToSend::SequenceNumber, seq_num)))));
     EXPECT_TRUE(rtp_sender_->SendToNetwork(
-        absl::make_unique<RtpPacketToSend>(*packet), kAllowRetransmission));
+        absl::make_unique<RtpPacketToSend>(*packet)));
     rtp_sender_->TrySendPacket(packet.get(), PacedPacketInfo());
 
   // Process send bucket.
@@ -2465,8 +2470,8 @@ TEST_P(RtpSenderTest, SetsCaptureTimeAndPopulatesTransmissionOffset) {
           packet_to_pace = std::move(packet);
         });
 
-    EXPECT_TRUE(
-        rtp_sender_->SendToNetwork(std::move(packet), kAllowRetransmission));
+    packet->set_allow_retransmission(true);
+    EXPECT_TRUE(rtp_sender_->SendToNetwork(std::move(packet)));
 
     fake_clock_.AdvanceTimeMilliseconds(kOffsetMs);
 

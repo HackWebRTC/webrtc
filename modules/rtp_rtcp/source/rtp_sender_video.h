@@ -110,9 +110,9 @@ class RTPSenderVideo {
 
  protected:
   static uint8_t GetTemporalId(const RTPVideoHeader& header);
-  StorageType GetStorageType(uint8_t temporal_id,
-                             int32_t retransmission_settings,
-                             int64_t expected_retransmission_time_ms);
+  bool AllowRetransmission(uint8_t temporal_id,
+                           int32_t retransmission_settings,
+                           int64_t expected_retransmission_time_ms);
 
  private:
   struct TemporalLayerStats {
@@ -128,22 +128,18 @@ class RTPSenderVideo {
 
   size_t CalculateFecPacketOverhead() const RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  void SendVideoPacket(std::unique_ptr<RtpPacketToSend> packet,
-                       StorageType storage);
+  void SendVideoPacket(std::unique_ptr<RtpPacketToSend> packet);
 
   void SendVideoPacketAsRedMaybeWithUlpfec(
       std::unique_ptr<RtpPacketToSend> media_packet,
-      StorageType media_packet_storage,
       bool protect_media_packet);
 
   // TODO(brandtr): Remove the FlexFEC functions when FlexfecSender has been
   // moved to PacedSender.
   void SendVideoPacketWithFlexfec(std::unique_ptr<RtpPacketToSend> media_packet,
-                                  StorageType media_packet_storage,
                                   bool protect_media_packet);
 
-  bool LogAndSendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
-                           StorageType storage);
+  bool LogAndSendToNetwork(std::unique_ptr<RtpPacketToSend> packet);
 
   bool red_enabled() const RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_) {
     return red_payload_type_ >= 0;
