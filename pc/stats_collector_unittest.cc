@@ -1296,7 +1296,7 @@ TEST_F(StatsCollectorTest, IceCandidateReport) {
   connection_info.local_candidate = local;
   connection_info.remote_candidate = remote;
   TransportChannelStats channel_stats;
-  channel_stats.connection_infos.push_back(connection_info);
+  channel_stats.ice_transport_stats.connection_infos.push_back(connection_info);
 
   pc->AddVoiceChannel("audio", kTransportName);
   pc->SetTransportStats(kTransportName, channel_stats);

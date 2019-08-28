@@ -865,13 +865,13 @@ void StatsCollector::ExtractSessionInfo() {
       // not paired. Also, the candidate report generated in
       // AddConnectionInfoReport do not report port stats like StunStats.
       for (const cricket::CandidateStats& stats :
-           channel_iter.candidate_stats_list) {
+           channel_iter.ice_transport_stats.candidate_stats_list) {
         AddCandidateReport(stats, true);
       }
 
       int connection_id = 0;
       for (const cricket::ConnectionInfo& info :
-           channel_iter.connection_infos) {
+           channel_iter.ice_transport_stats.connection_infos) {
         StatsReport* connection_report = AddConnectionInfoReport(
             transport_name, channel_iter.component, connection_id++,
             channel_report->id(), info);

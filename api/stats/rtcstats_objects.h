@@ -594,6 +594,7 @@ class RTC_EXPORT RTCTransportStats final : public RTCStats {
   RTCStatsMember<std::string> selected_candidate_pair_id;
   RTCStatsMember<std::string> local_certificate_id;
   RTCStatsMember<std::string> remote_certificate_id;
+  RTCStatsMember<uint32_t> selected_candidate_pair_changes;
 };
 
 }  // namespace webrtc

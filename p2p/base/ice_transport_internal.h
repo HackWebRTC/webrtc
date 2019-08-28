@@ -30,6 +30,15 @@
 
 namespace cricket {
 
+struct IceTransportStats {
+  CandidateStatsList candidate_stats_list;
+  ConnectionInfos connection_infos;
+  // Number of times the selected candidate pair has changed
+  // Initially 0 and 1 once the first candidate pair has been selected.
+  // The counter is increase also when "unselecting" a connection.
+  uint32_t selected_candidate_pair_changes = 0;
+};
+
 typedef std::vector<Candidate> Candidates;
 
 enum IceConnectionState {
@@ -256,8 +265,7 @@ class RTC_EXPORT IceTransportInternal : public rtc::PacketTransportInternal {
   virtual IceGatheringState gathering_state() const = 0;
 
   // Returns the current stats for this connection.
-  virtual bool GetStats(ConnectionInfos* candidate_pair_stats_list,
-                        CandidateStatsList* candidate_stats_list) = 0;
+  virtual bool GetStats(IceTransportStats* ice_transport_stats) = 0;
 
   // Returns RTT estimate over the currently active connection, or an empty
   // absl::optional if there is none.

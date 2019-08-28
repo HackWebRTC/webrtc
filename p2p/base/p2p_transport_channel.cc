@@ -1493,15 +1493,15 @@ int P2PTransportChannel::SendPacket(const char* data,
   return sent;
 }
 
-bool P2PTransportChannel::GetStats(ConnectionInfos* candidate_pair_stats_list,
-                                   CandidateStatsList* candidate_stats_list) {
+bool P2PTransportChannel::GetStats(IceTransportStats* ice_transport_stats) {
   RTC_DCHECK_RUN_ON(network_thread_);
   // Gather candidate and candidate pair stats.
-  candidate_stats_list->clear();
-  candidate_pair_stats_list->clear();
+  ice_transport_stats->candidate_stats_list.clear();
+  ice_transport_stats->connection_infos.clear();
 
   if (!allocator_sessions_.empty()) {
-    allocator_session()->GetCandidateStatsFromReadyPorts(candidate_stats_list);
+    allocator_session()->GetCandidateStatsFromReadyPorts(
+        &ice_transport_stats->candidate_stats_list);
   }
 
   // TODO(qingsi): Remove naming inconsistency for candidate pair/connection.
@@ -1510,10 +1510,12 @@ bool P2PTransportChannel::GetStats(ConnectionInfos* candidate_pair_stats_list,
     stats.local_candidate = SanitizeLocalCandidate(stats.local_candidate);
     stats.remote_candidate = SanitizeRemoteCandidate(stats.remote_candidate);
     stats.best_connection = (selected_connection_ == connection);
-    candidate_pair_stats_list->push_back(std::move(stats));
+    ice_transport_stats->connection_infos.push_back(std::move(stats));
     connection->set_reported(true);
   }
 
+  ice_transport_stats->selected_candidate_pair_changes =
+      selected_candidate_pair_changes_;
   return true;
 }
 
@@ -1991,6 +1993,8 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn,
     SignalCandidatePairChanged(pair_change);
   }
   SignalNetworkRouteChanged(network_route_);
+
+  ++selected_candidate_pair_changes_;
 }
 
 // Warning: UpdateState should eventually be called whenever a connection

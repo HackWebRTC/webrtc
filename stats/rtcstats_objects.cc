@@ -868,7 +868,8 @@ WEBRTC_RTCSTATS_IMPL(RTCTransportStats, RTCStats, "transport",
     &dtls_state,
     &selected_candidate_pair_id,
     &local_certificate_id,
-    &remote_certificate_id)
+    &remote_certificate_id,
+    &selected_candidate_pair_changes)
 // clang-format on
 
 RTCTransportStats::RTCTransportStats(const std::string& id,
@@ -883,7 +884,8 @@ RTCTransportStats::RTCTransportStats(std::string&& id, int64_t timestamp_us)
       dtls_state("dtlsState"),
       selected_candidate_pair_id("selectedCandidatePairId"),
       local_certificate_id("localCertificateId"),
-      remote_certificate_id("remoteCertificateId") {}
+      remote_certificate_id("remoteCertificateId"),
+      selected_candidate_pair_changes("selectedCandidatePairChanges") {}
 
 RTCTransportStats::RTCTransportStats(const RTCTransportStats& other)
     : RTCStats(other.id(), other.timestamp_us()),
@@ -893,7 +895,8 @@ RTCTransportStats::RTCTransportStats(const RTCTransportStats& other)
       dtls_state(other.dtls_state),
       selected_candidate_pair_id(other.selected_candidate_pair_id),
       local_certificate_id(other.local_certificate_id),
-      remote_certificate_id(other.remote_certificate_id) {}
+      remote_certificate_id(other.remote_certificate_id),
+      selected_candidate_pair_changes(other.selected_candidate_pair_changes) {}
 
 RTCTransportStats::~RTCTransportStats() {}
 

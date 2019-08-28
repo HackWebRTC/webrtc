@@ -1231,13 +1231,13 @@ TEST_F(P2PTransportChannelTest, GetStats) {
                                  ep2_ch1()->writable(),
                              kMediumTimeout, clock);
   TestSendRecv(&clock);
-  ConnectionInfos infos;
-  CandidateStatsList candidate_stats_list;
-  ASSERT_TRUE(ep1_ch1()->GetStats(&infos, &candidate_stats_list));
-  ASSERT_GE(infos.size(), 1u);
-  ASSERT_GE(candidate_stats_list.size(), 1u);
+  IceTransportStats ice_transport_stats;
+  ASSERT_TRUE(ep1_ch1()->GetStats(&ice_transport_stats));
+  ASSERT_GE(ice_transport_stats.connection_infos.size(), 1u);
+  ASSERT_GE(ice_transport_stats.candidate_stats_list.size(), 1u);
+  EXPECT_EQ(ice_transport_stats.selected_candidate_pair_changes, 1u);
   ConnectionInfo* best_conn_info = nullptr;
-  for (ConnectionInfo& info : infos) {
+  for (ConnectionInfo& info : ice_transport_stats.connection_infos) {
     if (info.best_connection) {
       best_conn_info = &info;
       break;
@@ -1582,13 +1582,16 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveRemoteCandidateIsSanitized) {
   EXPECT_EQ(PRFLX_PORT_TYPE, pair_ep1->remote_candidate().type());
   EXPECT_TRUE(pair_ep1->remote_candidate().address().ipaddr().IsNil());
 
-  ConnectionInfos pair_stats;
-  CandidateStatsList candidate_stats;
-  ep1_ch1()->GetStats(&pair_stats, &candidate_stats);
+  IceTransportStats ice_transport_stats;
+  ep1_ch1()->GetStats(&ice_transport_stats);
   // Check the candidate pair stats.
-  ASSERT_EQ(1u, pair_stats.size());
-  EXPECT_EQ(PRFLX_PORT_TYPE, pair_stats[0].remote_candidate.type());
-  EXPECT_TRUE(pair_stats[0].remote_candidate.address().ipaddr().IsNil());
+  ASSERT_EQ(1u, ice_transport_stats.connection_infos.size());
+  EXPECT_EQ(PRFLX_PORT_TYPE,
+            ice_transport_stats.connection_infos[0].remote_candidate.type());
+  EXPECT_TRUE(ice_transport_stats.connection_infos[0]
+                  .remote_candidate.address()
+                  .ipaddr()
+                  .IsNil());
 
   // Let ep1 receive the remote candidate to update its type from prflx to host.
   ResumeCandidates(1);
@@ -1608,12 +1611,14 @@ TEST_F(P2PTransportChannelTest, PeerReflexiveRemoteCandidateIsSanitized) {
   EXPECT_TRUE(
       updated_pair_ep1->remote_candidate().address().EqualIPs(kPublicAddrs[1]));
 
-  ep1_ch1()->GetStats(&pair_stats, &candidate_stats);
+  ep1_ch1()->GetStats(&ice_transport_stats);
   // Check the candidate pair stats.
-  ASSERT_EQ(1u, pair_stats.size());
-  EXPECT_EQ(LOCAL_PORT_TYPE, pair_stats[0].remote_candidate.type());
-  EXPECT_TRUE(
-      pair_stats[0].remote_candidate.address().EqualIPs(kPublicAddrs[1]));
+  ASSERT_EQ(1u, ice_transport_stats.connection_infos.size());
+  EXPECT_EQ(LOCAL_PORT_TYPE,
+            ice_transport_stats.connection_infos[0].remote_candidate.type());
+  EXPECT_TRUE(ice_transport_stats.connection_infos[0]
+                  .remote_candidate.address()
+                  .EqualIPs(kPublicAddrs[1]));
 
   DestroyChannels();
 }
@@ -5010,17 +5015,15 @@ TEST_F(P2PTransportChannelTest,
   ASSERT_EQ_WAIT(3u, ep1_ch1()->connections().size(), kMediumTimeout);
   ASSERT_EQ_WAIT(3u, ep2_ch1()->connections().size(), kMediumTimeout);
 
-  ConnectionInfos connection_infos_ep1;
-  CandidateStatsList candidate_stats_list_ep1;
-  ConnectionInfos connection_infos_ep2;
-  CandidateStatsList candidate_stats_list_ep2;
-  ep1_ch1()->GetStats(&connection_infos_ep1, &candidate_stats_list_ep1);
-  ep2_ch1()->GetStats(&connection_infos_ep2, &candidate_stats_list_ep2);
-  EXPECT_EQ(3u, connection_infos_ep1.size());
-  EXPECT_EQ(3u, candidate_stats_list_ep1.size());
-  EXPECT_EQ(3u, connection_infos_ep2.size());
+  IceTransportStats ice_transport_stats1;
+  IceTransportStats ice_transport_stats2;
+  ep1_ch1()->GetStats(&ice_transport_stats1);
+  ep2_ch1()->GetStats(&ice_transport_stats2);
+  EXPECT_EQ(3u, ice_transport_stats1.connection_infos.size());
+  EXPECT_EQ(3u, ice_transport_stats1.candidate_stats_list.size());
+  EXPECT_EQ(3u, ice_transport_stats2.connection_infos.size());
   // Check the stats of ep1 seen by ep1.
-  for (const auto& connection_info : connection_infos_ep1) {
+  for (const auto& connection_info : ice_transport_stats1.connection_infos) {
     const auto& local_candidate = connection_info.local_candidate;
     if (local_candidate.type() == LOCAL_PORT_TYPE) {
       EXPECT_TRUE(local_candidate.address().IsUnresolvedIP());
@@ -5037,7 +5040,7 @@ TEST_F(P2PTransportChannelTest,
     }
   }
   // Check the stats of ep1 seen by ep2.
-  for (const auto& connection_info : connection_infos_ep2) {
+  for (const auto& connection_info : ice_transport_stats2.connection_infos) {
     const auto& remote_candidate = connection_info.remote_candidate;
     if (remote_candidate.type() == LOCAL_PORT_TYPE) {
       EXPECT_TRUE(remote_candidate.address().IsUnresolvedIP());
@@ -5050,6 +5053,96 @@ TEST_F(P2PTransportChannelTest,
       FAIL();
     }
   }
+  DestroyChannels();
+}
+
+TEST_F(P2PTransportChannelTest,
+       ConnectingIncreasesSelectedCandidatePairChanges) {
+  rtc::ScopedFakeClock clock;
+  ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
+                     kDefaultPortAllocatorFlags);
+  CreateChannels();
+
+  IceTransportStats ice_transport_stats;
+  ASSERT_TRUE(ep1_ch1()->GetStats(&ice_transport_stats));
+  EXPECT_EQ(0u, ice_transport_stats.selected_candidate_pair_changes);
+
+  // Let the channels connect.
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->selected_connection() != nullptr,
+                             kMediumTimeout, clock);
+
+  ASSERT_TRUE(ep1_ch1()->GetStats(&ice_transport_stats));
+  EXPECT_EQ(1u, ice_transport_stats.selected_candidate_pair_changes);
+
+  DestroyChannels();
+}
+
+TEST_F(P2PTransportChannelTest,
+       DisconnectedIncreasesSelectedCandidatePairChanges) {
+  rtc::ScopedFakeClock clock;
+  ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
+                     kDefaultPortAllocatorFlags);
+  CreateChannels();
+
+  IceTransportStats ice_transport_stats;
+  ASSERT_TRUE(ep1_ch1()->GetStats(&ice_transport_stats));
+  EXPECT_EQ(0u, ice_transport_stats.selected_candidate_pair_changes);
+
+  // Let the channels connect.
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->selected_connection() != nullptr,
+                             kMediumTimeout, clock);
+
+  ASSERT_TRUE(ep1_ch1()->GetStats(&ice_transport_stats));
+  EXPECT_EQ(1u, ice_transport_stats.selected_candidate_pair_changes);
+
+  // Prune connections and wait for disconnect.
+  for (Connection* con : ep1_ch1()->connections()) {
+    con->Prune();
+  }
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->selected_connection() == nullptr,
+                             kMediumTimeout, clock);
+
+  ASSERT_TRUE(ep1_ch1()->GetStats(&ice_transport_stats));
+  EXPECT_EQ(2u, ice_transport_stats.selected_candidate_pair_changes);
+
+  DestroyChannels();
+}
+
+TEST_F(P2PTransportChannelTest,
+       NewSelectionIncreasesSelectedCandidatePairChanges) {
+  rtc::ScopedFakeClock clock;
+  ConfigureEndpoints(OPEN, OPEN, kDefaultPortAllocatorFlags,
+                     kDefaultPortAllocatorFlags);
+  CreateChannels();
+
+  IceTransportStats ice_transport_stats;
+  ASSERT_TRUE(ep1_ch1()->GetStats(&ice_transport_stats));
+  EXPECT_EQ(0u, ice_transport_stats.selected_candidate_pair_changes);
+
+  // Let the channels connect.
+  EXPECT_TRUE_SIMULATED_WAIT(ep1_ch1()->selected_connection() != nullptr,
+                             kMediumTimeout, clock);
+
+  ASSERT_TRUE(ep1_ch1()->GetStats(&ice_transport_stats));
+  EXPECT_EQ(1u, ice_transport_stats.selected_candidate_pair_changes);
+
+  // Prune the currently selected connection and wait for selection
+  // of a new one.
+  const Connection* selected_connection = ep1_ch1()->selected_connection();
+  for (Connection* con : ep1_ch1()->connections()) {
+    if (con == selected_connection) {
+      con->Prune();
+    }
+  }
+  EXPECT_TRUE_SIMULATED_WAIT(
+      ep1_ch1()->selected_connection() != nullptr &&
+          (ep1_ch1()->GetStats(&ice_transport_stats),
+           ice_transport_stats.selected_candidate_pair_changes >= 2u),
+      kMediumTimeout, clock);
+
+  ASSERT_TRUE(ep1_ch1()->GetStats(&ice_transport_stats));
+  EXPECT_GE(ice_transport_stats.selected_candidate_pair_changes, 2u);
+
   DestroyChannels();
 }
 

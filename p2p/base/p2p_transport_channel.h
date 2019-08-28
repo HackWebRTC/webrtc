@@ -131,8 +131,7 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   int SetOption(rtc::Socket::Option opt, int value) override;
   bool GetOption(rtc::Socket::Option opt, int* value) override;
   int GetError() override;
-  bool GetStats(std::vector<ConnectionInfo>* candidate_pair_stats_list,
-                std::vector<CandidateStats>* candidate_stats_list) override;
+  bool GetStats(IceTransportStats* ice_transport_stats) override;
   absl::optional<int> GetRttEstimate() override;
   const Connection* selected_connection() const override;
   absl::optional<const CandidatePair> GetSelectedCandidatePair() const override;
@@ -498,6 +497,9 @@ class RTC_EXPORT P2PTransportChannel : public IceTransportInternal {
   void OnCandidateResolved(rtc::AsyncResolverInterface* resolver);
   void AddRemoteCandidateWithResolver(Candidate candidate,
                                       rtc::AsyncResolverInterface* resolver);
+
+  // Number of times the selected_connection_ has been modified.
+  uint32_t selected_candidate_pair_changes_ = 0;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(P2PTransportChannel);
 };

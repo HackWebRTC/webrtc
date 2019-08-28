@@ -7251,7 +7251,7 @@ void PeerConnection::ReportBestConnectionState(
   for (const cricket::TransportChannelStats& channel_stats :
        stats.channel_stats) {
     for (const cricket::ConnectionInfo& connection_info :
-         channel_stats.connection_infos) {
+         channel_stats.ice_transport_stats.connection_infos) {
       if (!connection_info.best_connection) {
         continue;
       }

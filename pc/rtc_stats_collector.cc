@@ -1258,7 +1258,7 @@ void RTCStatsCollector::ProduceIceCandidateAndPairStats_n(
       std::string transport_id = RTCTransportStatsIDFromTransportChannel(
           transport_name, channel_stats.component);
       for (const cricket::ConnectionInfo& info :
-           channel_stats.connection_infos) {
+           channel_stats.ice_transport_stats.connection_infos) {
         std::unique_ptr<RTCIceCandidatePairStats> candidate_pair_stats(
             new RTCIceCandidatePairStats(
                 RTCIceCandidatePairStatsIDFromConnectionInfo(info),
@@ -1689,8 +1689,10 @@ void RTCStatsCollector::ProduceTransportStats_n(
       transport_stats->bytes_received = 0;
       transport_stats->dtls_state =
           DtlsTransportStateToRTCDtlsTransportState(channel_stats.dtls_state);
+      transport_stats->selected_candidate_pair_changes =
+          channel_stats.ice_transport_stats.selected_candidate_pair_changes;
       for (const cricket::ConnectionInfo& info :
-           channel_stats.connection_infos) {
+           channel_stats.ice_transport_stats.connection_infos) {
         *transport_stats->bytes_sent += info.sent_total_bytes;
         *transport_stats->bytes_received += info.recv_total_bytes;
         if (info.best_connection) {
