@@ -114,7 +114,7 @@ class ForwardingCapturedFrameTap
   Clock* const clock_;
   VideoFrameMatcher* const matcher_;
   rtc::VideoSourceInterface<VideoFrame>* const source_;
-  VideoSinkInterface<VideoFrame>* sink_;
+  VideoSinkInterface<VideoFrame>* sink_ = nullptr;
   int discarded_count_ = 0;
 };
 

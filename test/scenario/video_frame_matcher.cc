@@ -158,7 +158,9 @@ void ForwardingCapturedFrameTap::OnDiscardedFrame() {
 void ForwardingCapturedFrameTap::AddOrUpdateSink(
     VideoSinkInterface<VideoFrame>* sink,
     const rtc::VideoSinkWants& wants) {
-  sink_ = sink;
+  if (!sink_)
+    sink_ = sink;
+  RTC_DCHECK_EQ(sink_, sink);
   source_->AddOrUpdateSink(this, wants);
 }
 void ForwardingCapturedFrameTap::RemoveSink(
