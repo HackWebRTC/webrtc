@@ -168,7 +168,7 @@ TEST_F(VideoReceiveStreamTest, CreateFrameFromH264FmtpSpropAndIdr) {
 }
 
 TEST_F(VideoReceiveStreamTest, PlayoutDelay) {
-  const PlayoutDelay kPlayoutDelayMs = {123, 321};
+  const PlayoutDelay kPlayoutDelayMs = {123, 621};
   std::unique_ptr<FrameObjectFake> test_frame(new FrameObjectFake());
   test_frame->id.picture_id = 0;
   test_frame->SetPlayoutDelay(kPlayoutDelayMs);
@@ -196,9 +196,10 @@ TEST_F(VideoReceiveStreamTest, PlayoutDelay) {
   EXPECT_EQ(123, timing_->min_playout_delay());
 }
 
-TEST_F(VideoReceiveStreamTest, PlayoutDelayPreservesDefaultMaxValue) {
+TEST_F(VideoReceiveStreamTest, PlayoutDelayPreservesDefaultValues) {
+  const int default_min_playout_latency = timing_->min_playout_delay();
   const int default_max_playout_latency = timing_->max_playout_delay();
-  const PlayoutDelay kPlayoutDelayMs = {123, -1};
+  const PlayoutDelay kPlayoutDelayMs = {-1, -1};
 
   std::unique_ptr<FrameObjectFake> test_frame(new FrameObjectFake());
   test_frame->id.picture_id = 0;
@@ -206,26 +207,64 @@ TEST_F(VideoReceiveStreamTest, PlayoutDelayPreservesDefaultMaxValue) {
 
   video_receive_stream_->OnCompleteFrame(std::move(test_frame));
 
-  // Ensure that -1 preserves default maximum value from |timing_|.
-  EXPECT_EQ(kPlayoutDelayMs.min_ms, timing_->min_playout_delay());
-  EXPECT_NE(kPlayoutDelayMs.max_ms, timing_->max_playout_delay());
+  // Ensure that -1 preserves default minimum and maximum value from |timing_|.
+  EXPECT_EQ(default_min_playout_latency, timing_->min_playout_delay());
   EXPECT_EQ(default_max_playout_latency, timing_->max_playout_delay());
 }
 
-TEST_F(VideoReceiveStreamTest, PlayoutDelayPreservesDefaultMinValue) {
-  const int default_min_playout_latency = timing_->min_playout_delay();
-  const PlayoutDelay kPlayoutDelayMs = {-1, 321};
+TEST_F(VideoReceiveStreamTest, ZeroMinMaxPlayoutDelayOverridesSyncAndBase) {
+  const PlayoutDelay kPlayoutDelayMs = {0, 0};
 
   std::unique_ptr<FrameObjectFake> test_frame(new FrameObjectFake());
   test_frame->id.picture_id = 0;
   test_frame->SetPlayoutDelay(kPlayoutDelayMs);
 
-  video_receive_stream_->OnCompleteFrame(std::move(test_frame));
+  video_receive_stream_->SetMinimumPlayoutDelay(400);
+  EXPECT_EQ(400, timing_->min_playout_delay());
 
-  // Ensure that -1 preserves default minimum value from |timing_|.
-  EXPECT_NE(kPlayoutDelayMs.min_ms, timing_->min_playout_delay());
-  EXPECT_EQ(kPlayoutDelayMs.max_ms, timing_->max_playout_delay());
-  EXPECT_EQ(default_min_playout_latency, timing_->min_playout_delay());
+  video_receive_stream_->OnCompleteFrame(std::move(test_frame));
+  EXPECT_EQ(0, timing_->min_playout_delay());
+  EXPECT_EQ(0, timing_->max_playout_delay());
+
+  video_receive_stream_->SetBaseMinimumPlayoutDelayMs(1234);
+  EXPECT_EQ(0, timing_->min_playout_delay());
+  EXPECT_EQ(0, timing_->max_playout_delay());
+}
+
+TEST_F(VideoReceiveStreamTest, PlayoutDelayFromFrameIsCached) {
+  // Expect the playout delay from one frame to be used until there's a new
+  // frame with a valid value.
+
+  const PlayoutDelay kPlayoutDelay1Ms = {100, 1000};
+  const PlayoutDelay kPlayoutDelay2Ms = {120, 900};
+
+  // Frame 1 with playout delay set.
+  std::unique_ptr<FrameObjectFake> frame1(new FrameObjectFake());
+  frame1->id.picture_id = 0;
+  frame1->SetPlayoutDelay(kPlayoutDelay1Ms);
+
+  video_receive_stream_->OnCompleteFrame(std::move(frame1));
+  EXPECT_EQ(kPlayoutDelay1Ms.min_ms, timing_->min_playout_delay());
+  EXPECT_EQ(kPlayoutDelay1Ms.max_ms, timing_->max_playout_delay());
+
+  // Frame 2 without playout delay set.
+  std::unique_ptr<FrameObjectFake> frame2_without_playout_delay(
+      new FrameObjectFake());
+  frame2_without_playout_delay->id.picture_id = 1;
+  video_receive_stream_->OnCompleteFrame(
+      std::move(frame2_without_playout_delay));
+  video_receive_stream_->SetBaseMinimumPlayoutDelayMs(40);
+  video_receive_stream_->SetMinimumPlayoutDelay(50);
+  EXPECT_EQ(kPlayoutDelay1Ms.min_ms, timing_->min_playout_delay());
+  EXPECT_EQ(kPlayoutDelay1Ms.max_ms, timing_->max_playout_delay());
+
+  // Frame 3 with tighter playout delay bounds.
+  std::unique_ptr<FrameObjectFake> frame3(new FrameObjectFake());
+  frame3->id.picture_id = 2;
+  frame3->SetPlayoutDelay(kPlayoutDelay2Ms);
+  video_receive_stream_->OnCompleteFrame(std::move(frame3));
+  EXPECT_EQ(kPlayoutDelay2Ms.min_ms, timing_->min_playout_delay());
+  EXPECT_EQ(kPlayoutDelay2Ms.max_ms, timing_->max_playout_delay());
 }
 
 class VideoReceiveStreamTestWithFakeDecoder : public ::testing::Test {
