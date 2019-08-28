@@ -47,18 +47,6 @@ namespace webrtc {
 
 class JsepTransportController : public sigslot::has_slots<> {
  public:
-  // State of negotiation for a transport.
-  enum class NegotiationState {
-    // Transport is in its initial state, not negotiated at all.
-    kInitial = 0,
-
-    // Transport is negotiated, but not finalized.
-    kProvisional = 1,
-
-    // Negotiation has completed for this transport.
-    kFinal = 2,
-  };
-
   // Used when the RtpTransport/DtlsTransport of the m= section is changed
   // because the section is rejected or BUNDLE is enabled.
   class Observer {
@@ -84,8 +72,7 @@ class JsepTransportController : public sigslot::has_slots<> {
         RtpTransportInternal* rtp_transport,
         rtc::scoped_refptr<DtlsTransport> dtls_transport,
         MediaTransportInterface* media_transport,
-        DataChannelTransportInterface* data_channel_transport,
-        NegotiationState negotiation_state) = 0;
+        DataChannelTransportInterface* data_channel_transport) = 0;
   };
 
   struct Config {
@@ -108,6 +95,9 @@ class JsepTransportController : public sigslot::has_slots<> {
     Observer* transport_observer = nullptr;
     bool active_reset_srtp_params = false;
     RtcEventLog* event_log = nullptr;
+
+    // Factory for SCTP transports.
+    cricket::SctpTransportInternalFactory* sctp_factory = nullptr;
 
     // Whether media transport is used for media.
     bool use_media_transport_for_media = false;
@@ -164,6 +154,8 @@ class JsepTransportController : public sigslot::has_slots<> {
   // Gets the externally sharable version of the DtlsTransport.
   rtc::scoped_refptr<webrtc::DtlsTransport> LookupDtlsTransportByMid(
       const std::string& mid);
+  rtc::scoped_refptr<SctpTransport> GetSctpTransport(
+      const std::string& mid) const;
 
   MediaTransportConfig GetMediaTransportConfig(const std::string& mid) const;
 
@@ -432,8 +424,7 @@ class JsepTransportController : public sigslot::has_slots<> {
       const cricket::CandidatePairChangeEvent& event);
   void OnDataChannelTransportNegotiated_n(
       cricket::JsepTransport* transport,
-      DataChannelTransportInterface* data_channel_transport,
-      bool provisional);
+      DataChannelTransportInterface* data_channel_transport);
 
   void UpdateAggregateStates_n();
 

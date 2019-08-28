@@ -1021,28 +1021,6 @@ class PeerConnection : public PeerConnectionInternal,
   cricket::VideoChannel* CreateVideoChannel(const std::string& mid)
       RTC_RUN_ON(signaling_thread());
   bool CreateDataChannel(const std::string& mid) RTC_RUN_ON(signaling_thread());
-  bool CreateSctpDataChannel(const std::string& mid)
-      RTC_RUN_ON(signaling_thread());
-  bool SetupDataChannelTransport(const std::string& mid)
-      RTC_RUN_ON(signaling_thread());
-
-  bool CreateSctpTransport_n(const std::string& mid);
-  // For bundling.
-  void DestroySctpTransport_n();
-  // SctpTransport signal handlers. Needed to marshal signals from the network
-  // to signaling thread.
-  void OnSctpTransportReadyToSendData_n();
-  // This may be called with "false" if the direction of the m= section causes
-  // us to tear down the SCTP connection.
-  void OnSctpTransportReadyToSendData_s(bool ready);
-  void OnSctpTransportDataReceived_n(const cricket::ReceiveDataParams& params,
-                                     const rtc::CopyOnWriteBuffer& payload);
-  // Beyond just firing the signal to the signaling thread, listens to SCTP
-  // CONTROL messages on unused SIDs and processes them as OPEN messages.
-  void OnSctpTransportDataReceived_s(const cricket::ReceiveDataParams& params,
-                                     const rtc::CopyOnWriteBuffer& payload);
-  void OnSctpClosingProcedureStartedRemotely_n(int sid);
-  void OnSctpClosingProcedureComplete_n(int sid);
 
   bool SetupDataChannelTransport_n(const std::string& mid)
       RTC_RUN_ON(network_thread());
@@ -1155,8 +1133,7 @@ class PeerConnection : public PeerConnectionInternal,
       RtpTransportInternal* rtp_transport,
       rtc::scoped_refptr<DtlsTransport> dtls_transport,
       MediaTransportInterface* media_transport,
-      DataChannelTransportInterface* data_channel_transport,
-      JsepTransportController::NegotiationState negotiation_state) override;
+      DataChannelTransportInterface* data_channel_transport) override;
 
   // RtpSenderBase::SetStreamsObserver override.
   void OnSetStreams() override;
@@ -1327,13 +1304,6 @@ class PeerConnection : public PeerConnectionInternal,
       nullptr;  // TODO(bugs.webrtc.org/9987): Accessed on both
                 // signaling and some other thread.
 
-  cricket::SctpTransportInternal* cricket_sctp_transport() {
-    return sctp_transport_->internal();
-  }
-  rtc::scoped_refptr<SctpTransport>
-      sctp_transport_;  // TODO(bugs.webrtc.org/9987): Accessed on both
-                        // signaling and network thread.
-
   // |sctp_mid_| is the content name (MID) in SDP.
   // Note: this is used as the data channel MID by both SCTP and data channel
   // transports.  It is set when either transport is initialized and unset when
@@ -1342,56 +1312,25 @@ class PeerConnection : public PeerConnectionInternal,
       sctp_mid_;  // TODO(bugs.webrtc.org/9987): Accessed on both signaling
                   // and network thread.
 
-  // Value cached on signaling thread. Only updated when SctpReadyToSendData
-  // fires on the signaling thread.
-  bool sctp_ready_to_send_data_ RTC_GUARDED_BY(signaling_thread()) = false;
-
-  // Whether the use of SCTP has been successfully negotiated.
-  bool sctp_negotiated_ RTC_GUARDED_BY(signaling_thread()) = false;
-
-  // Same as signals provided by SctpTransport, but these are guaranteed to
-  // fire on the signaling thread, whereas SctpTransport fires on the networking
-  // thread.
-  // |sctp_invoker_| is used so that any signals queued on the signaling thread
-  // from the network thread are immediately discarded if the SctpTransport is
-  // destroyed (due to m= section being rejected).
-  // TODO(deadbeef): Use a proxy object to ensure that method calls/signals
-  // are marshalled to the right thread. Could almost use proxy.h for this,
-  // but it doesn't have a mechanism for marshalling sigslot::signals
-  std::unique_ptr<rtc::AsyncInvoker> sctp_invoker_
-      RTC_GUARDED_BY(network_thread());
-  sigslot::signal1<bool> SignalSctpReadyToSendData
-      RTC_GUARDED_BY(signaling_thread());
-  sigslot::signal2<const cricket::ReceiveDataParams&,
-                   const rtc::CopyOnWriteBuffer&>
-      SignalSctpDataReceived RTC_GUARDED_BY(signaling_thread());
-  sigslot::signal1<int> SignalSctpClosingProcedureStartedRemotely
-      RTC_GUARDED_BY(signaling_thread());
-  sigslot::signal1<int> SignalSctpClosingProcedureComplete
-      RTC_GUARDED_BY(signaling_thread());
-
   // Whether this peer is the caller. Set when the local description is applied.
   absl::optional<bool> is_caller_ RTC_GUARDED_BY(signaling_thread());
 
-  // Plugin transport used for data channels.  Thread-safe.
-  DataChannelTransportInterface* data_channel_transport_ =
-      nullptr;  // TODO(bugs.webrtc.org/9987): Object is thread safe, but
-                // pointer accessed on both signaling and network thread.
+  // Plugin transport used for data channels.  Pointer may be accessed and
+  // checked from any thread, but the object may only be touched on the
+  // network thread.
+  // TODO(bugs.webrtc.org/9987): Accessed on both signaling and network thread.
+  DataChannelTransportInterface* data_channel_transport_;
 
   // Cached value of whether the data channel transport is ready to send.
   bool data_channel_transport_ready_to_send_
       RTC_GUARDED_BY(signaling_thread()) = false;
 
-  // Whether the use of the data channel transport has been successfully
-  // negotiated.
-  bool data_channel_transport_negotiated_ RTC_GUARDED_BY(signaling_thread()) =
-      false;
-
   // Used to invoke data channel transport signals on the signaling thread.
   std::unique_ptr<rtc::AsyncInvoker> data_channel_transport_invoker_
       RTC_GUARDED_BY(network_thread());
 
-  // Identical to the signals for SCTP, but from media transport:
+  // Signals from |data_channel_transport_|.  These are invoked on the signaling
+  // thread.
   sigslot::signal1<bool> SignalDataChannelTransportWritable_s
       RTC_GUARDED_BY(signaling_thread());
   sigslot::signal2<const cricket::ReceiveDataParams&,

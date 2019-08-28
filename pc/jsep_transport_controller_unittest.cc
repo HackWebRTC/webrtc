@@ -310,8 +310,7 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
       RtpTransportInternal* rtp_transport,
       rtc::scoped_refptr<DtlsTransport> dtls_transport,
       MediaTransportInterface* media_transport,
-      DataChannelTransportInterface* data_channel_transport,
-      JsepTransportController::NegotiationState negotiation_state) override {
+      DataChannelTransportInterface* data_channel_transport) override {
     changed_rtp_transport_by_mid_[mid] = rtp_transport;
     if (dtls_transport) {
       changed_dtls_transport_by_mid_[mid] = dtls_transport->internal();
