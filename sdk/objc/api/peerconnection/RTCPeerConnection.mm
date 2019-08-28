@@ -235,14 +235,15 @@ void PeerConnectionDelegateAdapter::OnIceCandidatesRemoved(
 
 void PeerConnectionDelegateAdapter::OnIceSelectedCandidatePairChanged(
     const cricket::CandidatePairChangeEvent &event) {
-  std::unique_ptr<JsepIceCandidate> local_candidate_wrapper(
-      new JsepIceCandidate(event.local_candidate.transport_name(), -1, event.local_candidate));
+  const auto &selected_pair = event.selected_candidate_pair;
+  auto local_candidate_wrapper = absl::make_unique<JsepIceCandidate>(
+      selected_pair.local_candidate().transport_name(), -1, selected_pair.local_candidate());
   RTCIceCandidate *local_candidate =
-      [[RTCIceCandidate alloc] initWithNativeCandidate:local_candidate_wrapper.get()];
-  std::unique_ptr<JsepIceCandidate> remote_candidate_wrapper(
-      new JsepIceCandidate(event.remote_candidate.transport_name(), -1, event.remote_candidate));
+      [[RTCIceCandidate alloc] initWithNativeCandidate:local_candidate_wrapper.release()];
+  auto remote_candidate_wrapper = absl::make_unique<JsepIceCandidate>(
+      selected_pair.remote_candidate().transport_name(), -1, selected_pair.remote_candidate());
   RTCIceCandidate *remote_candidate =
-      [[RTCIceCandidate alloc] initWithNativeCandidate:remote_candidate_wrapper.get()];
+      [[RTCIceCandidate alloc] initWithNativeCandidate:remote_candidate_wrapper.release()];
   RTCPeerConnection *peer_connection = peer_connection_;
   NSString *nsstr_reason = [NSString stringForStdString:event.reason];
   if ([peer_connection.delegate

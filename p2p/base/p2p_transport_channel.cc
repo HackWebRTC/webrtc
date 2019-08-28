@@ -1981,18 +1981,17 @@ void P2PTransportChannel::SwitchSelectedConnection(Connection* conn,
   } else {
     RTC_LOG(LS_INFO) << ToString() << ": No selected connection";
   }
+  SignalNetworkRouteChanged(network_route_);
 
   // Create event for candidate pair change.
   if (selected_connection_) {
     CandidatePairChangeEvent pair_change;
     pair_change.reason = reason;
-    pair_change.local_candidate = selected_connection_->local_candidate();
-    pair_change.remote_candidate = selected_connection_->remote_candidate();
+    pair_change.selected_candidate_pair = *GetSelectedCandidatePair();
     pair_change.last_data_received_ms =
         selected_connection_->last_data_received();
     SignalCandidatePairChanged(pair_change);
   }
-  SignalNetworkRouteChanged(network_route_);
 
   ++selected_candidate_pair_changes_;
 }

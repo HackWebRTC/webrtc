@@ -124,9 +124,10 @@ SdpSemantics JavaToNativeSdpSemantics(JNIEnv* jni,
 ScopedJavaLocalRef<jobject> NativeToJavaCandidatePairChange(
     JNIEnv* env,
     const cricket::CandidatePairChangeEvent& event) {
+  const auto& selected_pair = event.selected_candidate_pair;
   return Java_CandidatePairChangeEvent_Constructor(
-      env, NativeToJavaCandidate(env, event.local_candidate),
-      NativeToJavaCandidate(env, event.remote_candidate),
+      env, NativeToJavaCandidate(env, selected_pair.local_candidate()),
+      NativeToJavaCandidate(env, selected_pair.remote_candidate()),
       static_cast<int>(event.last_data_received_ms),
       NativeToJavaString(env, event.reason));
 }

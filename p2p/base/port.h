@@ -149,8 +149,7 @@ struct IceCandidateErrorEvent {
 };
 
 struct CandidatePairChangeEvent {
-  Candidate local_candidate;
-  Candidate remote_candidate;
+  CandidatePair selected_candidate_pair;
   int64_t last_data_received_ms;
   std::string reason;
 };

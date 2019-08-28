@@ -3379,9 +3379,11 @@ class P2PTransportChannelPingTest : public ::testing::Test,
     if (!conn) {
       return !last_candidate_change_event_.has_value();
     } else {
-      return last_candidate_change_event_->local_candidate.IsEquivalent(
+      const auto& last_selected_pair =
+          last_candidate_change_event_->selected_candidate_pair;
+      return last_selected_pair.local_candidate().IsEquivalent(
                  conn->local_candidate()) &&
-             last_candidate_change_event_->remote_candidate.IsEquivalent(
+             last_selected_pair.remote_candidate().IsEquivalent(
                  conn->remote_candidate()) &&
              last_candidate_change_event_->last_data_received_ms ==
                  conn->last_data_received() &&
