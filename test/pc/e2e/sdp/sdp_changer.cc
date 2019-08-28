@@ -339,6 +339,18 @@ LocalAndRemoteSdp SignalingInterceptor::PatchVp9Offer(
 
 LocalAndRemoteSdp SignalingInterceptor::PatchAnswer(
     std::unique_ptr<SessionDescriptionInterface> answer) {
+  for (auto& content : answer->description()->contents()) {
+    cricket::MediaContentDescription* media_desc = content.media_description();
+    if (media_desc->type() != cricket::MediaType::MEDIA_TYPE_VIDEO) {
+      continue;
+    }
+    if (content.media_description()->direction() !=
+        RtpTransceiverDirection::kRecvOnly) {
+      continue;
+    }
+    media_desc->set_conference_mode(params_.use_conference_mode);
+  }
+
   if (params_.video_codec_name == cricket::kVp8CodecName) {
     return PatchVp8Answer(std::move(answer));
   }

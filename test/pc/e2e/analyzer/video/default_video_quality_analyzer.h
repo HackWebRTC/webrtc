@@ -268,6 +268,13 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   std::map<uint16_t, FrameStats> frame_stats_ RTC_GUARDED_BY(lock_);
   std::map<std::string, StreamState> stream_states_ RTC_GUARDED_BY(lock_);
 
+  // Stores history mapping between stream labels and frame ids. Updated when
+  // frame id overlap. It required to properly return stream label after 1st
+  // frame from simulcast streams was already rendered and last is still
+  // encoding.
+  std::map<std::string, std::set<uint16_t>> stream_to_frame_id_history_
+      RTC_GUARDED_BY(lock_);
+
   rtc::CriticalSection comparison_lock_;
   std::map<std::string, StreamStats> stream_stats_
       RTC_GUARDED_BY(comparison_lock_);

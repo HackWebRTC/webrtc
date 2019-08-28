@@ -143,6 +143,13 @@ uint16_t DefaultVideoQualityAnalyzer::OnFrameCaptured(
     captured_frames_in_flight_.at(frame_id).set_id(frame_id);
     frame_stats_.insert(std::pair<uint16_t, FrameStats>(
         frame_id, FrameStats(stream_label, /*captured_time=*/Now())));
+
+    // Update history stream<->frame mapping
+    for (auto it = stream_to_frame_id_history_.begin();
+         it != stream_to_frame_id_history_.end(); ++it) {
+      it->second.erase(frame_id);
+    }
+    stream_to_frame_id_history_[stream_label].insert(frame_id);
   }
   return frame_id;
 }
@@ -331,8 +338,17 @@ void DefaultVideoQualityAnalyzer::Stop() {
 std::string DefaultVideoQualityAnalyzer::GetStreamLabel(uint16_t frame_id) {
   rtc::CritScope crit1(&lock_);
   auto it = frame_stats_.find(frame_id);
-  RTC_DCHECK(it != frame_stats_.end()) << "Unknown frame_id=" << frame_id;
-  return it->second.stream_label;
+  if (it != frame_stats_.end()) {
+    return it->second.stream_label;
+  }
+  for (auto hist_it = stream_to_frame_id_history_.begin();
+       hist_it != stream_to_frame_id_history_.end(); ++hist_it) {
+    auto hist_set_it = hist_it->second.find(frame_id);
+    if (hist_set_it != hist_it->second.end()) {
+      return hist_it->first;
+    }
+  }
+  RTC_CHECK(false) << "Unknown frame_id=" << frame_id;
 }
 
 std::set<std::string> DefaultVideoQualityAnalyzer::GetKnownVideoStreams()

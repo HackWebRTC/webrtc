@@ -1132,9 +1132,10 @@ TEST(PCFullStackTest, ScreenshareSlidesVP8_2TL_Simulcast_NoConferenceMode) {
       CreateTwoNetworkLinks(network_emulation_manager.get(),
                             BuiltInNetworkBehaviorConfig()),
       [](PeerConfigurer* alice) {
-        VideoConfig video(1850, 1110, 60);
+        VideoConfig video(1850, 1110, 30);
         video.screen_share_config = ScreenShareConfig(TimeDelta::seconds(10));
-        video.simulcast_config = VideoSimulcastConfig(2, 0);
+        video.simulcast_config = VideoSimulcastConfig(2, 1);
+        video.temporal_layers_count = 2;
         video.stream_label = "alice-video";
         alice->AddVideoConfig(std::move(video));
       },
@@ -1154,9 +1155,10 @@ TEST(PCFullStackTest, ScreenshareSlidesVP8_2TL_Simulcast) {
       CreateTwoNetworkLinks(network_emulation_manager.get(),
                             BuiltInNetworkBehaviorConfig()),
       [](PeerConfigurer* alice) {
-        VideoConfig video(1850, 1110, 60);
+        VideoConfig video(1850, 1110, 30);
         video.screen_share_config = ScreenShareConfig(TimeDelta::seconds(10));
-        video.simulcast_config = VideoSimulcastConfig(2, 0);
+        video.simulcast_config = VideoSimulcastConfig(2, 1);
+        video.temporal_layers_count = 2;
         video.stream_label = "alice-video";
         alice->AddVideoConfig(std::move(video));
       },
@@ -1640,6 +1642,7 @@ TEST(PCFullStackTest, MAYBE_SimulcastFullHdOveruse) {
         VideoConfig video(1920, 1080, 30);
         video.generator = VideoGeneratorType::kDefault;
         video.simulcast_config = VideoSimulcastConfig(3, 2);
+        video.temporal_layers_count = 3;
         video.stream_label = "alice-video";
         alice->AddVideoConfig(std::move(video));
       },
