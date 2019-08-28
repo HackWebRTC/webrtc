@@ -558,6 +558,13 @@ public class PeerConnection {
      */
     @Nullable public CryptoOptions cryptoOptions;
 
+    /**
+     * An optional string that if set will be attached to the
+     * TURN_ALLOCATE_REQUEST which can be used to correlate client
+     * logs with backend logs
+     */
+    @Nullable public String turnLoggingId;
+
     // TODO(deadbeef): Instead of duplicating the defaults here, we should do
     // something to pick up the defaults from C++. The Objective-C equivalent
     // of RTCConfiguration does that.
@@ -601,6 +608,7 @@ public class PeerConnection {
       useMediaTransport = false;
       useMediaTransportForDataChannels = false;
       cryptoOptions = null;
+      turnLoggingId = null;
     }
 
     @CalledByNative("RTCConfiguration")
@@ -819,6 +827,12 @@ public class PeerConnection {
     @CalledByNative("RTCConfiguration")
     CryptoOptions getCryptoOptions() {
       return cryptoOptions;
+    }
+
+    @Nullable
+    @CalledByNative("RTCConfiguration")
+    String getTurnLoggingId() {
+      return turnLoggingId;
     }
   };
 
