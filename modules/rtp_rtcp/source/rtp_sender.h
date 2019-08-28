@@ -149,15 +149,6 @@ class RTPSender {
   // Sends packet to |transport_| or to the pacer, depending on configuration.
   bool SendToNetwork(std::unique_ptr<RtpPacketToSend> packet);
 
-  // TODO(bugs.webrtc.org/10633): Remove once StorageType is gone.
-  bool SendToNetwork(std::unique_ptr<RtpPacketToSend> packet,
-                     StorageType storage) {
-    if (storage == StorageType::kAllowRetransmission) {
-      packet->set_allow_retransmission(true);
-    }
-    return SendToNetwork(std::move(packet));
-  }
-
   // Called on update of RTP statistics.
   void RegisterRtpStatisticsCallback(StreamDataCountersCallback* callback);
   StreamDataCountersCallback* GetRtpStatisticsCallback() const;
