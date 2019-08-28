@@ -19,8 +19,6 @@ import android.support.annotation.Nullable;
  * release callback. ToI420() is implemented by providing a Handler and a YuvConverter.
  */
 public class TextureBufferImpl implements VideoFrame.TextureBuffer {
-  private static final int RELEASE_TIMEOUT_MS = 10000;
-
   // This is the full resolution the texture has in memory after applying the transformation matrix
   // that might include cropping. This resolution is useful to know when sampling the texture to
   // avoid downscaling artifacts.
@@ -62,7 +60,7 @@ public class TextureBufferImpl implements VideoFrame.TextureBuffer {
     this.transformMatrix = transformMatrix;
     this.toI420Handler = toI420Handler;
     this.yuvConverter = yuvConverter;
-    this.refCountDelegate = new RefCountDelegate(releaseCallback, RELEASE_TIMEOUT_MS);
+    this.refCountDelegate = new RefCountDelegate(releaseCallback);
   }
 
   @Override
