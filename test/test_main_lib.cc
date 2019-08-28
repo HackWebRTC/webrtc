@@ -17,6 +17,7 @@
 #include "absl/flags/parse.h"
 #include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/event_tracer.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ssl_adapter.h"
 #include "rtc_base/ssl_stream_adapter.h"
@@ -75,6 +76,12 @@ ABSL_FLAG(bool, logs, true, "print logs to stderr");
 ABSL_FLAG(bool, verbose, false, "verbose logs to stderr");
 
 ABSL_FLAG(std::string,
+          trace_event,
+          "",
+          "Path to collect trace events (json file) for chrome://tracing. "
+          "If not set, events aren't captured.");
+
+ABSL_FLAG(std::string,
           force_fieldtrials,
           "",
           "Field trials control experimental feature code which can be forced. "
@@ -101,6 +108,13 @@ class TestMainImpl : public TestMain {
 
     rtc::LogMessage::SetLogToStderr(absl::GetFlag(FLAGS_logs) ||
                                     absl::GetFlag(FLAGS_verbose));
+
+    std::string trace_event_path = absl::GetFlag(FLAGS_trace_event);
+    const bool capture_events = !trace_event_path.empty();
+    if (capture_events) {
+      rtc::tracing::SetupInternalTracer();
+      rtc::tracing::StartInternalCapture(trace_event_path.c_str());
+    }
 
     // TODO(bugs.webrtc.org/9792): we need to reference something from
     // fileutils.h so that our downstream hack where we replace fileutils.cc
@@ -131,6 +145,10 @@ class TestMainImpl : public TestMain {
     // automatically wrapped.
     rtc::ThreadManager::Instance()->WrapCurrentThread();
     RTC_CHECK(rtc::Thread::Current());
+
+    if (capture_events) {
+      rtc::tracing::StopInternalCapture();
+    }
     return 0;
   }
 
