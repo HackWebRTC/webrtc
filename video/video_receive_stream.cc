@@ -578,12 +578,14 @@ void VideoReceiveStream::OnCompleteFrame(
   last_complete_frame_time_ms_ = time_now_ms;
 
   const PlayoutDelay& playout_delay = frame->EncodedImage().playout_delay_;
-  // Both |min_ms| and |max_ms| must be valid if PlayoutDelay is set.
-  RTC_DCHECK((playout_delay.min_ms >= 0 && playout_delay.max_ms >= 0) ||
-             (playout_delay.min_ms < 0 && playout_delay.max_ms < 0));
-  if (playout_delay.min_ms >= 0 && playout_delay.max_ms >= 0) {
+  if (playout_delay.min_ms >= 0) {
     rtc::CritScope cs(&playout_delay_lock_);
     frame_minimum_playout_delay_ms_ = playout_delay.min_ms;
+    UpdatePlayoutDelays();
+  }
+
+  if (playout_delay.max_ms >= 0) {
+    rtc::CritScope cs(&playout_delay_lock_);
     frame_maximum_playout_delay_ms_ = playout_delay.max_ms;
     UpdatePlayoutDelays();
   }
@@ -761,18 +763,16 @@ void VideoReceiveStream::HandleFrameBufferTimeout() {
 }
 
 void VideoReceiveStream::UpdatePlayoutDelays() const {
-  int minimum_delay_ms =
+  const int minimum_delay_ms =
       std::max({frame_minimum_playout_delay_ms_, base_minimum_playout_delay_ms_,
                 syncable_minimum_playout_delay_ms_});
-  const int maximum_delay_ms = frame_maximum_playout_delay_ms_;
-  if (maximum_delay_ms >= 0) {
-    // Make sure that minimum_delay_ms <= maximum_delay_ms.
-    minimum_delay_ms = std::min(minimum_delay_ms, maximum_delay_ms);
-    timing_->set_max_playout_delay(maximum_delay_ms);
-  }
-
   if (minimum_delay_ms >= 0) {
     timing_->set_min_playout_delay(minimum_delay_ms);
+  }
+
+  const int maximum_delay_ms = frame_maximum_playout_delay_ms_;
+  if (maximum_delay_ms >= 0) {
+    timing_->set_max_playout_delay(maximum_delay_ms);
   }
 }
 
