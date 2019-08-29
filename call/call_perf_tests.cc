@@ -378,7 +378,7 @@ void CallPerfTest::TestCaptureNtpTime(
 
    private:
     test::PacketTransport* CreateSendTransport(
-        test::SingleThreadedTaskQueueForTesting* task_queue,
+        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
         Call* sender_call) override {
       return new test::PacketTransport(
           task_queue, sender_call, this, test::PacketTransport::kSender,
@@ -389,7 +389,8 @@ void CallPerfTest::TestCaptureNtpTime(
     }
 
     test::PacketTransport* CreateReceiveTransport(
-        test::SingleThreadedTaskQueueForTesting* task_queue) override {
+        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+        override {
       return new test::PacketTransport(
           task_queue, nullptr, this, test::PacketTransport::kReceiver,
           payload_type_map_,
@@ -868,7 +869,7 @@ void CallPerfTest::TestMinAudioVideoBitrate(int test_bitrate_from,
         int min_bwe,
         int start_bwe,
         int max_bwe,
-        test::SingleThreadedTaskQueueForTesting* task_queue)
+        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
         : EndToEndTest(),
           test_bitrate_from_(test_bitrate_from),
           test_bitrate_to_(test_bitrate_to),
@@ -886,7 +887,7 @@ void CallPerfTest::TestMinAudioVideoBitrate(int test_bitrate_from,
     }
 
     test::PacketTransport* CreateSendTransport(
-        test::SingleThreadedTaskQueueForTesting* task_queue,
+        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
         Call* sender_call) override {
       auto network =
           absl::make_unique<SimulatedNetwork>(GetFakeNetworkPipeConfig());
@@ -899,7 +900,8 @@ void CallPerfTest::TestMinAudioVideoBitrate(int test_bitrate_from,
     }
 
     test::PacketTransport* CreateReceiveTransport(
-        test::SingleThreadedTaskQueueForTesting* task_queue) override {
+        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
+        override {
       auto network =
           absl::make_unique<SimulatedNetwork>(GetFakeNetworkPipeConfig());
       receive_simulated_network_ = network.get();
@@ -982,7 +984,7 @@ void CallPerfTest::TestMinAudioVideoBitrate(int test_bitrate_from,
     SimulatedNetwork* send_simulated_network_;
     SimulatedNetwork* receive_simulated_network_;
     Call* sender_call_;
-    test::SingleThreadedTaskQueueForTesting* const task_queue_;
+    test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
   } test(test_bitrate_from, test_bitrate_to, test_bitrate_step, min_bwe,
          start_bwe, max_bwe, &task_queue_);
 

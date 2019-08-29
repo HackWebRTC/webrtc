@@ -37,7 +37,7 @@ MediaType Demuxer::GetMediaType(const uint8_t* packet_data,
 }
 
 DirectTransport::DirectTransport(
-    SingleThreadedTaskQueueForTesting* task_queue,
+    DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
     std::unique_ptr<SimulatedPacketReceiverInterface> pipe,
     Call* send_call,
     const std::map<uint8_t, MediaType>& payload_type_map)

@@ -66,7 +66,7 @@ VideoAnalyzer::VideoAnalyzer(
     bool is_quick_test_enabled,
     Clock* clock,
     std::string rtp_dump_name,
-    test::SingleThreadedTaskQueueForTesting* task_queue)
+    test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
     : transport_(transport),
       receiver_(nullptr),
       call_(nullptr),

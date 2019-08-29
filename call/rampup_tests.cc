@@ -53,16 +53,17 @@ std::vector<uint32_t> GenerateSsrcs(size_t num_streams, uint32_t ssrc_offset) {
 }
 }  // namespace
 
-RampUpTester::RampUpTester(size_t num_video_streams,
-                           size_t num_audio_streams,
-                           size_t num_flexfec_streams,
-                           unsigned int start_bitrate_bps,
-                           int64_t min_run_time_ms,
-                           const std::string& extension_type,
-                           bool rtx,
-                           bool red,
-                           bool report_perf_stats,
-                           test::SingleThreadedTaskQueueForTesting* task_queue)
+RampUpTester::RampUpTester(
+    size_t num_video_streams,
+    size_t num_audio_streams,
+    size_t num_flexfec_streams,
+    unsigned int start_bitrate_bps,
+    int64_t min_run_time_ms,
+    const std::string& extension_type,
+    bool rtx,
+    bool red,
+    bool report_perf_stats,
+    test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
     : EndToEndTest(test::CallTest::kLongTimeoutMs),
       clock_(Clock::GetRealTimeClock()),
       num_video_streams_(num_video_streams),
@@ -94,7 +95,8 @@ RampUpTester::~RampUpTester() {
   // Special case for WebRTC-QuickPerfTest/Enabled/
   task_queue_->SendTask([this]() {
     if (pending_task_ !=
-        static_cast<test::SingleThreadedTaskQueueForTesting::TaskId>(-1)) {
+        static_cast<test::DEPRECATED_SingleThreadedTaskQueueForTesting::TaskId>(
+            -1)) {
       task_queue_->CancelTask(pending_task_);
       pending_task_ = -1;
     }
@@ -116,7 +118,7 @@ void RampUpTester::OnVideoStreamsCreated(
 }
 
 test::PacketTransport* RampUpTester::CreateSendTransport(
-    test::SingleThreadedTaskQueueForTesting* task_queue,
+    test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
     Call* sender_call) {
   auto network = absl::make_unique<SimulatedNetwork>(forward_transport_config_);
   send_simulated_network_ = network.get();
@@ -380,7 +382,8 @@ void RampUpTester::TriggerTestDone() {
   // Corner case for field_trials=WebRTC-QuickPerfTest/Enabled/
   task_queue_->SendTask([this]() {
     if (pending_task_ !=
-        static_cast<test::SingleThreadedTaskQueueForTesting::TaskId>(-1)) {
+        static_cast<test::DEPRECATED_SingleThreadedTaskQueueForTesting::TaskId>(
+            -1)) {
       task_queue_->CancelTask(pending_task_);
       pending_task_ = -1;
     }
@@ -453,7 +456,7 @@ RampUpDownUpTester::RampUpDownUpTester(
     bool red,
     const std::vector<int>& loss_rates,
     bool report_perf_stats,
-    test::SingleThreadedTaskQueueForTesting* task_queue)
+    test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
     : RampUpTester(num_video_streams,
                    num_audio_streams,
                    num_flexfec_streams,

@@ -156,7 +156,7 @@ TEST_F(NetworkStateEndToEndTest, RespectsNetworkState) {
   class NetworkStateTest : public test::EndToEndTest, public test::FakeEncoder {
    public:
     explicit NetworkStateTest(
-        test::SingleThreadedTaskQueueForTesting* task_queue)
+        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
         : EndToEndTest(kDefaultTimeoutMs),
           FakeEncoder(Clock::GetRealTimeClock()),
           task_queue_(task_queue),
@@ -333,7 +333,7 @@ TEST_F(NetworkStateEndToEndTest, RespectsNetworkState) {
       }
     }
 
-    test::SingleThreadedTaskQueueForTesting* const task_queue_;
+    test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
     rtc::CriticalSection test_crit_;
     rtc::Event encoded_frames_;
     rtc::Event packet_event_;

@@ -43,7 +43,7 @@ class RampUpTester : public test::EndToEndTest {
                bool rtx,
                bool red,
                bool report_perf_stats,
-               test::SingleThreadedTaskQueueForTesting* task_queue);
+               test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue);
   ~RampUpTester() override;
 
   size_t GetNumVideoStreams() const override;
@@ -88,7 +88,7 @@ class RampUpTester : public test::EndToEndTest {
       VideoSendStream* send_stream,
       const std::vector<VideoReceiveStream*>& receive_streams) override;
   test::PacketTransport* CreateSendTransport(
-      test::SingleThreadedTaskQueueForTesting* task_queue,
+      test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
       Call* sender_call) override;
   void ModifyVideoConfigs(
       VideoSendStream::Config* send_config,
@@ -127,22 +127,23 @@ class RampUpTester : public test::EndToEndTest {
   // Must be called from the |task_queue_|.
   int64_t GetIntervalForNextPoll();
 
-  test::SingleThreadedTaskQueueForTesting* const task_queue_;
-  test::SingleThreadedTaskQueueForTesting::TaskId pending_task_ = -1;
+  test::DEPRECATED_SingleThreadedTaskQueueForTesting* const task_queue_;
+  test::DEPRECATED_SingleThreadedTaskQueueForTesting::TaskId pending_task_ = -1;
 };
 
 class RampUpDownUpTester : public RampUpTester {
  public:
-  RampUpDownUpTester(size_t num_video_streams,
-                     size_t num_audio_streams,
-                     size_t num_flexfec_streams,
-                     unsigned int start_bitrate_bps,
-                     const std::string& extension_type,
-                     bool rtx,
-                     bool red,
-                     const std::vector<int>& loss_rates,
-                     bool report_perf_stats,
-                     test::SingleThreadedTaskQueueForTesting* task_queue);
+  RampUpDownUpTester(
+      size_t num_video_streams,
+      size_t num_audio_streams,
+      size_t num_flexfec_streams,
+      unsigned int start_bitrate_bps,
+      const std::string& extension_type,
+      bool rtx,
+      bool red,
+      const std::vector<int>& loss_rates,
+      bool report_perf_stats,
+      test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue);
   ~RampUpDownUpTester() override;
 
  protected:

@@ -30,7 +30,7 @@ namespace test {
 class LayerFilteringTransport : public test::DirectTransport {
  public:
   LayerFilteringTransport(
-      SingleThreadedTaskQueueForTesting* task_queue,
+      DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
       std::unique_ptr<SimulatedPacketReceiverInterface> pipe,
       Call* send_call,
       uint8_t vp8_video_payload_type,
@@ -41,7 +41,7 @@ class LayerFilteringTransport : public test::DirectTransport {
       uint32_t ssrc_to_filter_min,
       uint32_t ssrc_to_filter_max);
   LayerFilteringTransport(
-      SingleThreadedTaskQueueForTesting* task_queue,
+      DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
       std::unique_ptr<SimulatedPacketReceiverInterface> pipe,
       Call* send_call,
       uint8_t vp8_video_payload_type,

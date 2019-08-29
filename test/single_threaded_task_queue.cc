@@ -20,34 +20,37 @@
 namespace webrtc {
 namespace test {
 
-SingleThreadedTaskQueueForTesting::QueuedTask::QueuedTask(
-    SingleThreadedTaskQueueForTesting::TaskId task_id,
+DEPRECATED_SingleThreadedTaskQueueForTesting::QueuedTask::QueuedTask(
+    DEPRECATED_SingleThreadedTaskQueueForTesting::TaskId task_id,
     int64_t earliest_execution_time,
-    SingleThreadedTaskQueueForTesting::Task task)
+    DEPRECATED_SingleThreadedTaskQueueForTesting::Task task)
     : task_id(task_id),
       earliest_execution_time(earliest_execution_time),
       task(task) {}
 
-SingleThreadedTaskQueueForTesting::QueuedTask::~QueuedTask() = default;
+DEPRECATED_SingleThreadedTaskQueueForTesting::QueuedTask::~QueuedTask() =
+    default;
 
-SingleThreadedTaskQueueForTesting::SingleThreadedTaskQueueForTesting(
-    const char* name)
+DEPRECATED_SingleThreadedTaskQueueForTesting::
+    DEPRECATED_SingleThreadedTaskQueueForTesting(const char* name)
     : thread_(Run, this, name), running_(true), next_task_id_(0) {
   thread_.Start();
 }
 
-SingleThreadedTaskQueueForTesting::~SingleThreadedTaskQueueForTesting() {
+DEPRECATED_SingleThreadedTaskQueueForTesting::
+    ~DEPRECATED_SingleThreadedTaskQueueForTesting() {
   Stop();
 }
 
-SingleThreadedTaskQueueForTesting::TaskId
-SingleThreadedTaskQueueForTesting::PostTask(Task task) {
+DEPRECATED_SingleThreadedTaskQueueForTesting::TaskId
+DEPRECATED_SingleThreadedTaskQueueForTesting::PostTask(Task task) {
   return PostDelayedTask(task, 0);
 }
 
-SingleThreadedTaskQueueForTesting::TaskId
-SingleThreadedTaskQueueForTesting::PostDelayedTask(Task task,
-                                                   int64_t delay_ms) {
+DEPRECATED_SingleThreadedTaskQueueForTesting::TaskId
+DEPRECATED_SingleThreadedTaskQueueForTesting::PostDelayedTask(
+    Task task,
+    int64_t delay_ms) {
   int64_t earliest_exec_time = rtc::TimeAfter(delay_ms);
 
   rtc::CritScope lock(&cs_);
@@ -75,7 +78,7 @@ SingleThreadedTaskQueueForTesting::PostDelayedTask(Task task,
   return id;
 }
 
-void SingleThreadedTaskQueueForTesting::SendTask(Task task) {
+void DEPRECATED_SingleThreadedTaskQueueForTesting::SendTask(Task task) {
   RTC_DCHECK(!IsCurrent());
   rtc::Event done;
   if (PostTask([&task, &done]() {
@@ -88,7 +91,7 @@ void SingleThreadedTaskQueueForTesting::SendTask(Task task) {
   RTC_CHECK(done.Wait(30000, 10000));
 }
 
-bool SingleThreadedTaskQueueForTesting::CancelTask(TaskId task_id) {
+bool DEPRECATED_SingleThreadedTaskQueueForTesting::CancelTask(TaskId task_id) {
   rtc::CritScope lock(&cs_);
   for (auto it = tasks_.begin(); it != tasks_.end(); it++) {
     if ((*it)->task_id == task_id) {
@@ -99,23 +102,23 @@ bool SingleThreadedTaskQueueForTesting::CancelTask(TaskId task_id) {
   return false;
 }
 
-bool SingleThreadedTaskQueueForTesting::IsCurrent() {
+bool DEPRECATED_SingleThreadedTaskQueueForTesting::IsCurrent() {
   return rtc::IsThreadRefEqual(thread_.GetThreadRef(), rtc::CurrentThreadRef());
 }
 
-bool SingleThreadedTaskQueueForTesting::IsRunning() {
+bool DEPRECATED_SingleThreadedTaskQueueForTesting::IsRunning() {
   RTC_DCHECK_RUN_ON(&owner_thread_checker_);
   // We could check the |running_| flag here, but this is equivalent for the
   // purposes of this function.
   return thread_.IsRunning();
 }
 
-bool SingleThreadedTaskQueueForTesting::HasPendingTasks() const {
+bool DEPRECATED_SingleThreadedTaskQueueForTesting::HasPendingTasks() const {
   rtc::CritScope lock(&cs_);
   return !tasks_.empty();
 }
 
-void SingleThreadedTaskQueueForTesting::Stop() {
+void DEPRECATED_SingleThreadedTaskQueueForTesting::Stop() {
   RTC_DCHECK_RUN_ON(&owner_thread_checker_);
   if (!thread_.IsRunning())
     return;
@@ -129,11 +132,11 @@ void SingleThreadedTaskQueueForTesting::Stop() {
   thread_.Stop();
 }
 
-void SingleThreadedTaskQueueForTesting::Run(void* obj) {
-  static_cast<SingleThreadedTaskQueueForTesting*>(obj)->RunLoop();
+void DEPRECATED_SingleThreadedTaskQueueForTesting::Run(void* obj) {
+  static_cast<DEPRECATED_SingleThreadedTaskQueueForTesting*>(obj)->RunLoop();
 }
 
-void SingleThreadedTaskQueueForTesting::RunLoop() {
+void DEPRECATED_SingleThreadedTaskQueueForTesting::RunLoop() {
   while (true) {
     std::unique_ptr<QueuedTask> queued_task;
 

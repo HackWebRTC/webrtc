@@ -160,7 +160,7 @@ class RtcpXrObserver : public test::EndToEndTest {
   }
 
   test::PacketTransport* CreateSendTransport(
-      test::SingleThreadedTaskQueueForTesting* task_queue,
+      test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
       Call* sender_call) {
     auto network =
         absl::make_unique<SimulatedNetwork>(forward_transport_config_);

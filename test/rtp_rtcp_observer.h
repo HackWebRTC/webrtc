@@ -33,7 +33,7 @@ namespace webrtc {
 namespace test {
 
 class PacketTransport;
-class SingleThreadedTaskQueueForTesting;
+class DEPRECATED_SingleThreadedTaskQueueForTesting;
 
 class RtpRtcpObserver {
  public:
@@ -85,7 +85,7 @@ class PacketTransport : public test::DirectTransport {
  public:
   enum TransportType { kReceiver, kSender };
 
-  PacketTransport(SingleThreadedTaskQueueForTesting* task_queue,
+  PacketTransport(DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
                   Call* send_call,
                   RtpRtcpObserver* observer,
                   TransportType transport_type,
