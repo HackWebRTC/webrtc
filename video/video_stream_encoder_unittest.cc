@@ -1075,6 +1075,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
   int codec_width_;
   int codec_height_;
   int max_framerate_;
+  rtc::ScopedFakeClock fake_clock_;
   const std::unique_ptr<TaskQueueFactory> task_queue_factory_;
   TestEncoder fake_encoder_;
   test::VideoEncoderProxyFactory encoder_factory_;
@@ -1083,7 +1084,6 @@ class VideoStreamEncoderTest : public ::testing::Test {
   TestSink sink_;
   AdaptingFrameForwarder video_source_;
   std::unique_ptr<VideoStreamEncoderUnderTest> video_stream_encoder_;
-  rtc::ScopedFakeClock fake_clock_;
 };
 
 TEST_F(VideoStreamEncoderTest, EncodeOneFrame) {
