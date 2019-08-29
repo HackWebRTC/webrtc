@@ -18,6 +18,7 @@
 #include "rtc_base/format_macros.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/platform_thread.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
@@ -26,7 +27,7 @@ AudioTrackJni::JavaAudioTrack::JavaAudioTrack(
     NativeRegistration* native_reg,
     std::unique_ptr<GlobalRef> audio_track)
     : audio_track_(std::move(audio_track)),
-      init_playout_(native_reg->GetMethodId("initPlayout", "(II)Z")),
+      init_playout_(native_reg->GetMethodId("initPlayout", "(IID)Z")),
       start_playout_(native_reg->GetMethodId("startPlayout", "()Z")),
       stop_playout_(native_reg->GetMethodId("stopPlayout", "()Z")),
       set_stream_volume_(native_reg->GetMethodId("setStreamVolume", "(I)Z")),
@@ -37,7 +38,15 @@ AudioTrackJni::JavaAudioTrack::JavaAudioTrack(
 AudioTrackJni::JavaAudioTrack::~JavaAudioTrack() {}
 
 bool AudioTrackJni::JavaAudioTrack::InitPlayout(int sample_rate, int channels) {
-  return audio_track_->CallBooleanMethod(init_playout_, sample_rate, channels);
+  double buffer_size_factor =
+      strtod(webrtc::field_trial::FindFullName(
+                 "WebRTC-AudioDevicePlayoutBufferSizeFactor")
+                 .c_str(),
+             nullptr);
+  if (buffer_size_factor == 0)
+    buffer_size_factor = 1.0;
+  return audio_track_->CallBooleanMethod(init_playout_, sample_rate, channels,
+                                         buffer_size_factor);
 }
 
 bool AudioTrackJni::JavaAudioTrack::StartPlayout() {

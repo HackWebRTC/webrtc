@@ -19,6 +19,7 @@
 #include "rtc_base/platform_thread.h"
 #include "sdk/android/generated_java_audio_device_module_native_jni/WebRtcAudioTrack_jni.h"
 #include "sdk/android/src/jni/jni_helpers.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
@@ -81,9 +82,16 @@ int32_t AudioTrackJni::InitPlayout() {
     return 0;
   }
   RTC_DCHECK(!playing_);
+  double buffer_size_factor =
+      strtod(webrtc::field_trial::FindFullName(
+                 "WebRTC-AudioDevicePlayoutBufferSizeFactor")
+                 .c_str(),
+             nullptr);
+  if (buffer_size_factor == 0)
+    buffer_size_factor = 1.0;
   if (!Java_WebRtcAudioTrack_initPlayout(
           env_, j_audio_track_, audio_parameters_.sample_rate(),
-          static_cast<int>(audio_parameters_.channels()))) {
+          static_cast<int>(audio_parameters_.channels()), buffer_size_factor)) {
     RTC_LOG(LS_ERROR) << "InitPlayout failed";
     return -1;
   }
