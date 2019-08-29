@@ -57,14 +57,14 @@ class RtpPacketToSend : public RtpPacket {
   void set_retransmitted_sequence_number(uint16_t sequence_number) {
     retransmitted_sequence_number_ = sequence_number;
   }
-  absl::optional<uint16_t> retransmitted_sequence_number() {
+  absl::optional<uint16_t> retransmitted_sequence_number() const {
     return retransmitted_sequence_number_;
   }
 
   void set_allow_retransmission(bool allow_retransmission) {
     allow_retransmission_ = allow_retransmission;
   }
-  bool allow_retransmission() { return allow_retransmission_; }
+  bool allow_retransmission() const { return allow_retransmission_; }
 
   // Additional data bound to the RTP packet for use in application code,
   // outside of WebRTC.

@@ -145,10 +145,10 @@ class PacingController {
   DataSize PaddingToAdd(absl::optional<DataSize> recommended_probe_size,
                         DataSize data_sent);
 
-  RoundRobinPacketQueue::QueuedPacket* GetPendingPacket(
-      const PacedPacketInfo& pacing_info);
-  void OnPacketSent(RoundRobinPacketQueue::QueuedPacket* packet);
   void OnPaddingSent(DataSize padding_sent);
+  DataSize PacketSize(const RtpPacketToSend& packet) const;
+  bool ShouldSendPacket(const RtpPacketToSend& packet,
+                        PacedPacketInfo pacing_info) const;
 
   Timestamp CurrentTime() const;
 
@@ -160,6 +160,7 @@ class PacingController {
   const bool drain_large_queues_;
   const bool send_padding_if_silent_;
   const bool pace_audio_;
+  const bool send_side_bwe_with_overhead_;
   TimeDelta min_packet_limit_;
 
   // TODO(webrtc:9716): Remove this when we are certain clocks are monotonic.
