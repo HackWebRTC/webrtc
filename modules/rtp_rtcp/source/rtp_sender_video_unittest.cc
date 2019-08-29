@@ -106,6 +106,7 @@ class TestRtpSenderVideo : public RTPSenderVideo {
                        nullptr,
                        false,
                        false,
+                       false,
                        field_trials) {}
   ~TestRtpSenderVideo() override {}
 

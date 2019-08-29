@@ -45,7 +45,8 @@ enum RetransmissionMode : uint8_t {
   kRetransmitOff = 0x0,
   kRetransmitBaseLayer = 0x2,
   kRetransmitHigherLayers = 0x4,
-  kConditionallyRetransmitHigherLayers = 0x8,
+  kRetransmitAllLayers = 0x6,
+  kConditionallyRetransmitHigherLayers = 0x8
 };
 
 class RTPSenderVideo {
@@ -59,6 +60,7 @@ class RTPSenderVideo {
                  FrameEncryptorInterface* frame_encryptor,
                  bool require_frame_encryption,
                  bool need_rtp_packet_infos,
+                 bool enable_retransmit_all_layers,
                  const WebRtcKeyValueConfig& field_trials);
   virtual ~RTPSenderVideo();
 

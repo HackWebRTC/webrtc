@@ -204,11 +204,14 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock,
                                FrameEncryptorInterface* frame_encryptor,
                                bool require_frame_encryption,
                                bool need_rtp_packet_infos,
+                               bool enable_retransmit_all_layers,
                                const WebRtcKeyValueConfig& field_trials)
     : rtp_sender_(rtp_sender),
       clock_(clock),
-      retransmission_settings_(kRetransmitBaseLayer |
-                               kConditionallyRetransmitHigherLayers),
+      retransmission_settings_(
+          enable_retransmit_all_layers
+              ? kRetransmitAllLayers
+              : (kRetransmitBaseLayer | kConditionallyRetransmitHigherLayers)),
       last_rotation_(kVideoRotation_0),
       transmit_color_space_next_frame_(false),
       playout_delay_oracle_(playout_delay_oracle),
