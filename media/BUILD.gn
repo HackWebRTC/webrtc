@@ -425,7 +425,6 @@ if (rtc_include_tests) {
       ":rtc_simulcast_encoder_adapter",
       "../api:call_api",
       "../api:fec_controller_api",
-      "../api:libjingle_peerconnection_api",
       "../api:scoped_refptr",
       "../api/video:encoded_image",
       "../api/video:video_bitrate_allocation",

@@ -291,6 +291,7 @@ rtc_source_set("stats_observer_interface") {
   ]
 
   deps = [
+    # For api/stats_types.h
     ":libjingle_peerconnection_api",
     ":rtp_parameters",
   ]
@@ -690,6 +691,7 @@ if (rtc_include_tests) {
       "test/mock_frame_encryptor.h",
     ]
     deps = [
+      # For api/crypto/frame_encryptor_interface.h
       ":libjingle_peerconnection_api",
       "../test:test_support",
     ]

@@ -51,7 +51,6 @@ rtc_source_set("rtc_stream_config") {
 
   deps = [
     ":rtc_event_log_api",
-    "../api:libjingle_peerconnection_api",
     "../api:rtp_headers",
     "../api:rtp_parameters",
   ]
@@ -401,7 +400,6 @@ if (rtc_enable_protobuf) {
       deps = [
         ":rtc_event_log_parser",
         "../api:array_view",
-        "../api:libjingle_peerconnection_api",
         "../api:rtp_headers",
         "../api/rtc_event_log",
         "../modules/rtp_rtcp",
@@ -437,6 +435,8 @@ rtc_source_set("ice_log") {
   deps = [
     ":rtc_event_log_api",
     "../api:libjingle_logging_api",
+
+    # For api/dtls_transport_interface.h
     "../api:libjingle_peerconnection_api",
     "../api/rtc_event_log",
     "../rtc_base:rtc_base_approved",
