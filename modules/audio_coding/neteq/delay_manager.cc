@@ -395,7 +395,7 @@ int DelayManager::CalculateTargetLevel(int iat_packets, bool reordered) {
       break;
     }
     case INTER_ARRIVAL_TIME: {
-      target_level = bucket_index;
+      target_level = std::max(bucket_index, 1);
       base_target_level_ = target_level;
       // Update detector for delay peaks.
       bool delay_peak_found =

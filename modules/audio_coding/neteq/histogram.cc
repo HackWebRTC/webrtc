@@ -116,14 +116,14 @@ int Histogram::Quantile(int probability) {
   int inverse_probability = (1 << 30) - probability;
   size_t index = 0;        // Start from the beginning of |buckets_|.
   int sum = 1 << 30;       // Assign to 1 in Q30.
-  sum -= buckets_[index];  // Ensure that target level is >= 1.
+  sum -= buckets_[index];
 
-  do {
+  while ((sum > inverse_probability) && (index < buckets_.size() - 1)) {
     // Subtract the probabilities one by one until the sum is no longer greater
     // than |inverse_probability|.
     ++index;
     sum -= buckets_[index];
-  } while ((sum > inverse_probability) && (index < buckets_.size() - 1));
+  }
   return static_cast<int>(index);
 }
 
