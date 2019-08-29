@@ -18,6 +18,7 @@
 
 #include "absl/memory/memory.h"
 #include "modules/pacing/packet_router.h"
+#include "modules/utility/include/mock/mock_process_thread.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"
 #include "test/field_trial.h"
@@ -26,6 +27,7 @@
 
 using ::testing::_;
 using ::testing::Return;
+using ::testing::SaveArg;
 
 namespace {
 constexpr uint32_t kAudioSsrc = 12345;
@@ -76,7 +78,12 @@ std::unique_ptr<RtpPacketToSend> BuildRtpPacket(RtpPacketToSend::Type type) {
 TEST(PacedSenderTest, PacesPackets) {
   SimulatedClock clock(0);
   MockCallback callback;
-  PacedSender pacer(&clock, &callback, nullptr, nullptr);
+  MockProcessThread process_thread;
+  Module* paced_module = nullptr;
+  EXPECT_CALL(process_thread, RegisterModule(_, _))
+      .WillOnce(SaveArg<0>(&paced_module));
+  PacedSender pacer(&clock, &callback, nullptr, nullptr, &process_thread);
+  EXPECT_CALL(process_thread, DeRegisterModule(paced_module)).Times(1);
 
   // Insert a number of packets, covering one second.
   static constexpr size_t kPacketsToSend = 42;
@@ -88,7 +95,7 @@ TEST(PacedSenderTest, PacesPackets) {
 
   // Expect all of them to be sent.
   size_t packets_sent = 0;
-  clock.AdvanceTimeMilliseconds(pacer.TimeUntilNextProcess());
+  clock.AdvanceTimeMilliseconds(paced_module->TimeUntilNextProcess());
   EXPECT_CALL(callback, SendPacket)
       .WillRepeatedly(
           [&](std::unique_ptr<RtpPacketToSend> packet,
@@ -97,8 +104,8 @@ TEST(PacedSenderTest, PacesPackets) {
   const Timestamp start_time = clock.CurrentTime();
 
   while (packets_sent < kPacketsToSend) {
-    clock.AdvanceTimeMilliseconds(pacer.TimeUntilNextProcess());
-    pacer.Process();
+    clock.AdvanceTimeMilliseconds(paced_module->TimeUntilNextProcess());
+    paced_module->Process();
   }
 
   // Packets should be sent over a period of close to 1s. Expect a little lower

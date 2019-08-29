@@ -22,7 +22,6 @@
 #include "call/rtp_video_sender.h"
 #include "logging/rtc_event_log/events/rtc_event_route_change.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/rate_limiter.h"
 #include "system_wrappers/include/field_trial.h"
@@ -67,9 +66,9 @@ RtpTransportControllerSend::RtpTransportControllerSend(
     TaskQueueFactory* task_queue_factory)
     : clock_(clock),
       event_log_(event_log),
-      pacer_(clock, &packet_router_, event_log),
       bitrate_configurator_(bitrate_config),
       process_thread_(std::move(process_thread)),
+      pacer_(clock, &packet_router_, event_log, nullptr, process_thread_.get()),
       observer_(nullptr),
       controller_factory_override_(controller_factory),
       controller_factory_fallback_(
@@ -96,13 +95,11 @@ RtpTransportControllerSend::RtpTransportControllerSend(
   pacer()->SetPacingRates(DataRate::bps(bitrate_config.start_bitrate_bps),
                           DataRate::Zero());
 
-  process_thread_->RegisterModule(&pacer_, RTC_FROM_HERE);
   process_thread_->Start();
 }
 
 RtpTransportControllerSend::~RtpTransportControllerSend() {
   process_thread_->Stop();
-  process_thread_->DeRegisterModule(&pacer_);
 }
 
 RtpVideoSenderInterface* RtpTransportControllerSend::CreateRtpVideoSender(

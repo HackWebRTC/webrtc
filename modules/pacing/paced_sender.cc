@@ -18,6 +18,7 @@
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "modules/utility/include/process_thread.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/location.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/clock.h"
@@ -29,15 +30,22 @@ const float PacedSender::kDefaultPaceMultiplier = 2.5f;
 PacedSender::PacedSender(Clock* clock,
                          PacketRouter* packet_router,
                          RtcEventLog* event_log,
-                         const WebRtcKeyValueConfig* field_trials)
+                         const WebRtcKeyValueConfig* field_trials,
+                         ProcessThread* process_thread)
     : pacing_controller_(clock,
                          static_cast<PacingController::PacketSender*>(this),
                          event_log,
                          field_trials),
       packet_router_(packet_router),
-      process_thread_(nullptr) {}
+      process_thread_(process_thread) {
+  if (process_thread_)
+    process_thread_->RegisterModule(&module_proxy_, RTC_FROM_HERE);
+}
 
-PacedSender::~PacedSender() = default;
+PacedSender::~PacedSender() {
+  if (process_thread_)
+    process_thread_->DeRegisterModule(&module_proxy_);
+}
 
 void PacedSender::CreateProbeCluster(DataRate bitrate, int cluster_id) {
   rtc::CritScope cs(&critsect_);
@@ -49,11 +57,11 @@ void PacedSender::Pause() {
     rtc::CritScope cs(&critsect_);
     pacing_controller_.Pause();
   }
-  rtc::CritScope cs(&process_thread_lock_);
+
   // Tell the process thread to call our TimeUntilNextProcess() method to get
   // a new (longer) estimate for when to call Process().
   if (process_thread_)
-    process_thread_->WakeUp(this);
+    process_thread_->WakeUp(&module_proxy_);
 }
 
 void PacedSender::Resume() {
@@ -61,11 +69,11 @@ void PacedSender::Resume() {
     rtc::CritScope cs(&critsect_);
     pacing_controller_.Resume();
   }
-  rtc::CritScope cs(&process_thread_lock_);
+
   // Tell the process thread to call our TimeUntilNextProcess() method to
   // refresh the estimate for when to call Process().
   if (process_thread_)
-    process_thread_->WakeUp(this);
+    process_thread_->WakeUp(&module_proxy_);
 }
 
 void PacedSender::SetCongestionWindow(DataSize congestion_window_size) {
@@ -146,8 +154,7 @@ void PacedSender::Process() {
 
 void PacedSender::ProcessThreadAttached(ProcessThread* process_thread) {
   RTC_LOG(LS_INFO) << "ProcessThreadAttached 0x" << process_thread;
-  rtc::CritScope cs(&process_thread_lock_);
-  process_thread_ = process_thread;
+  RTC_DCHECK(!process_thread || process_thread == process_thread_);
 }
 
 void PacedSender::SetQueueTimeLimit(TimeDelta limit) {
