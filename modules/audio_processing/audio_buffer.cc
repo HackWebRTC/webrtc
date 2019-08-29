@@ -25,8 +25,7 @@ namespace {
 
 constexpr size_t kSamplesPer32kHzChannel = 320;
 constexpr size_t kSamplesPer48kHzChannel = 480;
-constexpr size_t kSamplesPer192kHzChannel = 1920;
-constexpr size_t kMaxSamplesPerChannel = kSamplesPer192kHzChannel;
+constexpr size_t kMaxSamplesPerChannel = AudioBuffer::kMaxSampleRate / 100;
 
 size_t NumBandsFromFramesPerChannel(size_t num_frames) {
   if (num_frames == kSamplesPer32kHzChannel) {
@@ -123,7 +122,7 @@ void AudioBuffer::CopyFrom(const float* const* data,
   const bool resampling_needed = input_num_frames_ != buffer_num_frames_;
 
   if (downmix_needed) {
-    RTC_DCHECK_GT(kMaxSamplesPerChannel, input_num_frames_);
+    RTC_DCHECK_GE(kMaxSamplesPerChannel, input_num_frames_);
 
     std::array<float, kMaxSamplesPerChannel> downmix;
     if (downmix_by_averaging_) {
