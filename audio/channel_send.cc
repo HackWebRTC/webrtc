@@ -679,11 +679,6 @@ ChannelSend::ChannelSend(Clock* clock,
   _moduleProcessThreadPtr->RegisterModule(_rtpRtcpModule.get(), RTC_FROM_HERE);
 
   // Ensure that RTCP is enabled by default for the created channel.
-  // Note that, the module will keep generating RTCP until it is explicitly
-  // disabled by the user.
-  // After StopListen (when no sockets exists), RTCP packets will no longer
-  // be transmitted since the Transport object will then be invalid.
-  // RTCP is enabled by default.
   _rtpRtcpModule->SetRTCPStatus(RtcpMode::kCompound);
 
   int error = audio_coding_->RegisterTransportCallback(this);
@@ -1148,10 +1143,6 @@ int64_t ChannelSend::GetRTT() const {
       return target_rate.value().network_estimate.round_trip_time.ms();
     }
 
-    return 0;
-  }
-  RtcpMode method = _rtpRtcpModule->RTCP();
-  if (method == RtcpMode::kOff) {
     return 0;
   }
   std::vector<RTCPReportBlock> report_blocks;
