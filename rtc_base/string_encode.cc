@@ -89,9 +89,7 @@ std::string hex_encode_with_delimiter(const char* source,
                                       size_t srclen,
                                       char delimiter) {
   std::string s(hex_encode_output_length(srclen, delimiter), 0);
-  // TODO(nisse): When we can use C++17, switch the below hack with begin to
-  // just s.data().
-  hex_encode_with_delimiter(&*s.begin(), source, srclen, delimiter);
+  hex_encode_with_delimiter(&s[0], source, srclen, delimiter);
   return s;
 }
 
