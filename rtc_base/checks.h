@@ -83,9 +83,6 @@ RTC_NORETURN void rtc_FatalMessage(const char* file, int line, const char* msg);
 //   RTC_DCHECK.
 //
 // - FATAL() aborts unconditionally.
-//
-// TODO(ajm): Ideally, checks.h would be combined with logging.h, but
-// consolidation with system_wrappers/logging.h should happen first.
 
 namespace rtc {
 namespace webrtc_checks_impl {
