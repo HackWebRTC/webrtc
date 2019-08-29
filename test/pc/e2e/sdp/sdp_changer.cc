@@ -211,12 +211,12 @@ LocalAndRemoteSdp SignalingInterceptor::PatchVp8Offer(
     for (auto ext_it = extensions.begin(); ext_it != extensions.end();) {
       if (ext_it->uri == RtpExtension::kRidUri) {
         // We don't need rid extension for remote peer.
-        extensions.erase(ext_it);
+        ext_it = extensions.erase(ext_it);
         continue;
       }
       if (ext_it->uri == RtpExtension::kRepairedRidUri) {
         // We don't support RTX in simulcast.
-        extensions.erase(ext_it);
+        ext_it = extensions.erase(ext_it);
         continue;
       }
       if (ext_it->uri == RtpExtension::kMidUri) {
@@ -224,6 +224,7 @@ LocalAndRemoteSdp SignalingInterceptor::PatchVp8Offer(
       }
       ++ext_it;
     }
+
     prototype_media_desc->ClearRtpHeaderExtensions();
     prototype_media_desc->set_rtp_header_extensions(extensions);
 
@@ -256,16 +257,13 @@ LocalAndRemoteSdp SignalingInterceptor::PatchVp8Offer(
 
   // Update transport_infos to add TransportInfo for each new media section.
   std::vector<cricket::TransportInfo> transport_infos = desc->transport_infos();
-  for (auto info_it = transport_infos.begin();
-       info_it != transport_infos.end();) {
-    if (context_.simulcast_infos_by_mid.find(info_it->content_name) !=
-        context_.simulcast_infos_by_mid.end()) {
-      // Remove transport infos that correspond to simulcast video sections.
-      transport_infos.erase(info_it);
-    } else {
-      ++info_it;
-    }
-  }
+  transport_infos.erase(std::remove_if(
+      transport_infos.begin(), transport_infos.end(),
+      [this](const cricket::TransportInfo& ti) {
+        // Remove transport infos that correspond to simulcast video sections.
+        return context_.simulcast_infos_by_mid.find(ti.content_name) !=
+               context_.simulcast_infos_by_mid.end();
+      }));
   for (auto& info : context_.simulcast_infos) {
     for (auto& rid : info.rids) {
       transport_infos.emplace_back(rid, info.transport_description);
@@ -395,15 +393,14 @@ LocalAndRemoteSdp SignalingInterceptor::PatchVp8Answer(
     std::vector<webrtc::RtpExtension> extensions =
         media_desc->rtp_header_extensions();
     // First remove existing rid/mid header extensions.
-    for (auto ext_it = extensions.begin(); ext_it != extensions.end();) {
-      if (ext_it->uri == RtpExtension::kMidUri ||
-          ext_it->uri == RtpExtension::kRidUri ||
-          ext_it->uri == RtpExtension::kRepairedRidUri) {
-        extensions.erase(ext_it);
-        continue;
-      }
-      ++ext_it;
-    }
+    extensions.erase(std::remove_if(extensions.begin(), extensions.end(),
+                                    [](const webrtc::RtpExtension& e) {
+                                      return e.uri == RtpExtension::kMidUri ||
+                                             e.uri == RtpExtension::kRidUri ||
+                                             e.uri ==
+                                                 RtpExtension::kRepairedRidUri;
+                                    }));
+
     // Then add right ones.
     extensions.push_back(info.mid_extension);
     extensions.push_back(info.rid_extension);
@@ -457,7 +454,7 @@ LocalAndRemoteSdp SignalingInterceptor::PatchVp8Answer(
       // This transport info correspond to some extra added media section.
       mid_to_transport_description.insert(
           {it->second->mid, info_it->description});
-      transport_infos.erase(info_it);
+      info_it = transport_infos.erase(info_it);
     } else {
       ++info_it;
     }
