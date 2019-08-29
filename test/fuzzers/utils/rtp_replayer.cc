@@ -16,7 +16,6 @@
 
 #include "absl/memory/memory.h"
 #include "api/task_queue/default_task_queue_factory.h"
-#include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "rtc_base/strings/json.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/sleep.h"
@@ -24,6 +23,7 @@
 #include "test/encoder_settings.h"
 #include "test/fake_decoder.h"
 #include "test/rtp_file_reader.h"
+#include "test/rtp_header_parser.h"
 
 namespace webrtc {
 namespace test {
@@ -158,7 +158,8 @@ void RtpReplayer::ReplayPackets(Call* call, test::RtpFileReader* rtp_reader) {
         break;
       case PacketReceiver::DELIVERY_UNKNOWN_SSRC: {
         RTPHeader header;
-        std::unique_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+        std::unique_ptr<RtpHeaderParser> parser(
+            RtpHeaderParser::CreateForTest());
 
         parser->Parse(packet.data, packet.length, &header);
         if (unknown_packets[header.ssrc] == 0) {
@@ -171,7 +172,8 @@ void RtpReplayer::ReplayPackets(Call* call, test::RtpFileReader* rtp_reader) {
         RTC_LOG(LS_ERROR)
             << "Packet error, corrupt packets or incorrect setup?";
         RTPHeader header;
-        std::unique_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+        std::unique_ptr<RtpHeaderParser> parser(
+            RtpHeaderParser::CreateForTest());
         parser->Parse(packet.data, packet.length, &header);
         RTC_LOG(LS_ERROR) << "Packet packet_length=" << packet.length
                           << " payload_type=" << header.payloadType

@@ -13,21 +13,20 @@
 #include <memory>
 
 #include "modules/remote_bitrate_estimator/tools/bwe_rtp.h"
-#include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "rtc_base/format_macros.h"
 #include "rtc_base/strings/string_builder.h"
 #include "test/rtp_file_reader.h"
+#include "test/rtp_header_parser.h"
 
 int main(int argc, char* argv[]) {
-  webrtc::test::RtpFileReader* reader;
-  webrtc::RtpHeaderParser* parser;
-  if (!ParseArgsAndSetupEstimator(argc, argv, NULL, NULL, &reader, &parser,
-                                  NULL, NULL)) {
+  std::unique_ptr<webrtc::test::RtpFileReader> reader;
+  std::unique_ptr<webrtc::RtpHeaderParser> parser(ParseArgsAndSetupEstimator(
+      argc, argv, nullptr, nullptr, &reader, nullptr, nullptr));
+  if (!parser)
     return -1;
-  }
+
   bool arrival_time_only = (argc >= 5 && strncmp(argv[4], "-t", 2) == 0);
-  std::unique_ptr<webrtc::test::RtpFileReader> rtp_reader(reader);
-  std::unique_ptr<webrtc::RtpHeaderParser> rtp_parser(parser);
+
   fprintf(stdout,
           "seqnum timestamp ts_offset abs_sendtime recvtime "
           "markerbit ssrc size original_size\n");
@@ -35,7 +34,7 @@ int main(int argc, char* argv[]) {
   int non_zero_abs_send_time = 0;
   int non_zero_ts_offsets = 0;
   webrtc::test::RtpPacket packet;
-  while (rtp_reader->NextPacket(&packet)) {
+  while (reader->NextPacket(&packet)) {
     webrtc::RTPHeader header;
     parser->Parse(packet.data, packet.length, &header);
     if (header.extension.absoluteSendTime != 0)

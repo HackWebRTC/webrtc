@@ -7,8 +7,10 @@
  *  in the file PATENTS.  All contributing project authors may
  *  be found in the AUTHORS file in the root of the source tree.
  */
-#ifndef MODULES_RTP_RTCP_INCLUDE_RTP_HEADER_PARSER_H_
-#define MODULES_RTP_RTCP_INCLUDE_RTP_HEADER_PARSER_H_
+#ifndef TEST_RTP_HEADER_PARSER_H_
+#define TEST_RTP_HEADER_PARSER_H_
+
+#include <memory>
 
 #include "api/rtp_parameters.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -19,7 +21,7 @@ struct RTPHeader;
 
 class RtpHeaderParser {
  public:
-  static RtpHeaderParser* Create();
+  static std::unique_ptr<RtpHeaderParser> CreateForTest();
   virtual ~RtpHeaderParser() {}
 
   // Returns true if the packet is an RTCP packet, false otherwise.
@@ -48,4 +50,4 @@ class RtpHeaderParser {
   virtual bool DeregisterRtpHeaderExtension(RtpExtension extension) = 0;
 };
 }  // namespace webrtc
-#endif  // MODULES_RTP_RTCP_INCLUDE_RTP_HEADER_PARSER_H_
+#endif  // TEST_RTP_HEADER_PARSER_H_

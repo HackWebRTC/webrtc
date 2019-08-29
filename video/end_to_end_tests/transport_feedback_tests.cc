@@ -50,7 +50,7 @@ TEST_F(TransportFeedbackEndToEndTest, AssignsTransportSequenceNumbers) {
                                   BuiltInNetworkBehaviorConfig())),
                           sender_call,
                           payload_type_map),
-          parser_(RtpHeaderParser::Create()),
+          parser_(RtpHeaderParser::CreateForTest()),
           first_media_ssrc_(first_media_ssrc),
           rtx_to_media_ssrcs_(ssrc_map),
           padding_observed_(false),

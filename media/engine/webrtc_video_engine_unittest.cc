@@ -51,7 +51,6 @@
 #include "media/engine/fake_webrtc_video_engine.h"
 #include "media/engine/simulcast.h"
 #include "media/engine/webrtc_voice_engine.h"
-#include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/gunit.h"
@@ -60,6 +59,7 @@
 #include "test/field_trial.h"
 #include "test/frame_generator.h"
 #include "test/gmock.h"
+#include "test/rtp_header_parser.h"
 
 using ::testing::Field;
 using ::testing::IsEmpty;
@@ -1417,7 +1417,7 @@ class WebRtcVideoChannelBaseTest : public ::testing::Test {
   static bool ParseRtpPacket(const rtc::CopyOnWriteBuffer* p,
                              webrtc::RTPHeader* header) {
     std::unique_ptr<webrtc::RtpHeaderParser> parser(
-        webrtc::RtpHeaderParser::Create());
+        webrtc::RtpHeaderParser::CreateForTest());
     return parser->Parse(p->cdata(), p->size(), header);
   }
 

@@ -611,7 +611,8 @@ TEST_F(StatsEndToEndTest, VerifyNackStats) {
     Action OnSendRtp(const uint8_t* packet, size_t length) override {
       rtc::CritScope lock(&crit_);
       if (++sent_rtp_packets_ == kPacketNumberToDrop) {
-        std::unique_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+        std::unique_ptr<RtpHeaderParser> parser(
+            RtpHeaderParser::CreateForTest());
         RTPHeader header;
         EXPECT_TRUE(parser->Parse(packet, length, &header));
         dropped_rtp_packet_ = header.sequenceNumber;

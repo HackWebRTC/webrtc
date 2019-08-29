@@ -12,8 +12,8 @@
 #include "absl/memory/memory.h"
 #include "call/call.h"
 #include "call/fake_network_pipe.h"
-#include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "rtc_base/time_utils.h"
+#include "test/rtp_header_parser.h"
 #include "test/single_threaded_task_queue.h"
 
 namespace webrtc {

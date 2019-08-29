@@ -616,7 +616,7 @@ webrtc_fuzzer_test("rtp_header_parser_fuzzer") {
     "rtp_header_parser_fuzzer.cc",
   ]
   deps = [
-    "../../modules/rtp_rtcp",
+    "../:rtp_test_utils",
   ]
 }
 
@@ -625,7 +625,7 @@ webrtc_fuzzer_test("ssl_certificate_fuzzer") {
     "rtp_header_parser_fuzzer.cc",
   ]
   deps = [
-    "../../modules/rtp_rtcp",
+    "../:rtp_test_utils",
   ]
 }
 

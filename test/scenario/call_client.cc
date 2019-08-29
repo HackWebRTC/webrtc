@@ -203,7 +203,7 @@ CallClient::CallClient(
       clock_(time_controller->GetClock()),
       log_writer_factory_(std::move(log_writer_factory)),
       network_controller_factory_(log_writer_factory_.get(), config.transport),
-      header_parser_(RtpHeaderParser::Create()),
+      header_parser_(RtpHeaderParser::CreateForTest()),
       task_queue_(time_controller->GetTaskQueueFactory()->CreateTaskQueue(
           "CallClient",
           TaskQueueFactory::Priority::NORMAL)) {

@@ -71,12 +71,12 @@ const int kPayloadSizeBytes = kFrameSizeSamples * sizeof(int16_t);
 const uint8_t kPayloadType = 111;
 }  // namespace
 
-class RtpUtility {
+class RtpData {
  public:
-  RtpUtility(int samples_per_packet, uint8_t payload_type)
+  RtpData(int samples_per_packet, uint8_t payload_type)
       : samples_per_packet_(samples_per_packet), payload_type_(payload_type) {}
 
-  virtual ~RtpUtility() {}
+  virtual ~RtpData() {}
 
   void Populate(RTPHeader* rtp_header) {
     rtp_header->sequenceNumber = 0xABCD;
@@ -163,7 +163,7 @@ class PacketizationCallbackStubOldApi : public AudioPacketizationCallback {
 class AudioCodingModuleTestOldApi : public ::testing::Test {
  protected:
   AudioCodingModuleTestOldApi()
-      : rtp_utility_(new RtpUtility(kFrameSizeSamples, kPayloadType)),
+      : rtp_utility_(new RtpData(kFrameSizeSamples, kPayloadType)),
         clock_(Clock::GetRealTimeClock()) {}
 
   ~AudioCodingModuleTestOldApi() {}
@@ -239,7 +239,7 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
     VerifyEncoding();
   }
 
-  std::unique_ptr<RtpUtility> rtp_utility_;
+  std::unique_ptr<RtpData> rtp_utility_;
   std::unique_ptr<AudioCodingModule> acm_;
   PacketizationCallbackStubOldApi packet_cb_;
   RTPHeader rtp_header_;
