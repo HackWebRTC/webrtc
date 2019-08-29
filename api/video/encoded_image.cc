@@ -77,7 +77,7 @@ void EncodedImage::Retain() {
 }
 
 void EncodedImage::Allocate(size_t capacity) {
-  if (encoded_data_) {
+  if (encoded_data_ && encoded_data_->HasOneRef()) {
     encoded_data_->Realloc(capacity);
   } else {
     encoded_data_ = EncodedImageBuffer::Create(capacity);

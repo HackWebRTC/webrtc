@@ -47,6 +47,9 @@ class EncodedImageBufferInterface : public rtc::RefCountInterface {
   // EncodedImage::Allocate. Implemented properly only by the below concrete
   // class
   virtual void Realloc(size_t size) { RTC_NOTREACHED(); }
+  // Will be implemented by RefCountedObject, which also implements
+  // |rtc::RefCountInterface|.
+  virtual bool HasOneRef() const = 0;
 };
 
 // Basic implementation of EncodedImageBufferInterface.
