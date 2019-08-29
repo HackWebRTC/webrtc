@@ -91,7 +91,6 @@ class AudioReceiveStream final : public webrtc::AudioReceiveStream,
   void SetMinimumPlayoutDelay(int delay_ms) override;
 
   void AssociateSendStream(AudioSendStream* send_stream);
-  void SignalNetworkState(NetworkState state);
   void DeliverRtcp(const uint8_t* packet, size_t length);
   const webrtc::AudioReceiveStream::Config& config() const;
   const AudioSendStream* GetAssociatedSendStreamForTesting() const;

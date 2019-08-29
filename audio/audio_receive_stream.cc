@@ -325,10 +325,6 @@ void AudioReceiveStream::AssociateSendStream(AudioSendStream* send_stream) {
   associated_send_stream_ = send_stream;
 }
 
-void AudioReceiveStream::SignalNetworkState(NetworkState state) {
-  RTC_DCHECK_RUN_ON(&worker_thread_checker_);
-}
-
 void AudioReceiveStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   // TODO(solenberg): Tests call this function on a network thread, libjingle
   // calls on the worker thread. We should move towards always using a network

@@ -472,10 +472,6 @@ webrtc::AudioSendStream::Stats AudioSendStream::GetStats(
   return stats;
 }
 
-void AudioSendStream::SignalNetworkState(NetworkState state) {
-  RTC_DCHECK(worker_thread_checker_.IsCurrent());
-}
-
 void AudioSendStream::DeliverRtcp(const uint8_t* packet, size_t length) {
   // TODO(solenberg): Tests call this function on a network thread, libjingle
   // calls on the worker thread. We should move towards always using a network
