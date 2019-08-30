@@ -14,14 +14,16 @@
 #include <string>
 #include <vector>
 
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/proxy_info.h"
-#include "rtc_base/ssl_certificate.h"
 #include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
 
-// This structure contains options required to create TCP packet sockets.
+class SSLCertificateVerifier;
+class AsyncPacketSocket;
+class AsyncResolverInterface;
+
+// TODO(bugs.webrtc.org/7447): move this to basic_packet_socket_factory.
 struct PacketSocketTcpOptions {
   PacketSocketTcpOptions();
   ~PacketSocketTcpOptions();
@@ -30,12 +32,10 @@ struct PacketSocketTcpOptions {
   std::vector<std::string> tls_alpn_protocols;
   std::vector<std::string> tls_elliptic_curves;
   // An optional custom SSL certificate verifier that an API user can provide to
-  // inject their own certificate verification logic.
+  // inject their own certificate verification logic (not available to users
+  // outside of the WebRTC repo).
   SSLCertificateVerifier* tls_cert_verifier = nullptr;
 };
-
-class AsyncPacketSocket;
-class AsyncResolverInterface;
 
 class RTC_EXPORT PacketSocketFactory {
  public:
@@ -63,19 +63,21 @@ class RTC_EXPORT PacketSocketFactory {
       uint16_t max_port,
       int opts) = 0;
 
-  // TODO(deadbeef): |proxy_info| and |user_agent| should be set
-  // per-factory and not when socket is created.
+  // TODO(bugs.webrtc.org/7447): This should be the only CreateClientTcpSocket
+  // implementation left; the two other are deprecated.
+  virtual AsyncPacketSocket* CreateClientTcpSocket(
+      const SocketAddress& local_address,
+      const SocketAddress& remote_address);
+
+  // TODO(bugs.webrtc.org/7447): Deprecated, about to be removed.
   virtual AsyncPacketSocket* CreateClientTcpSocket(
       const SocketAddress& local_address,
       const SocketAddress& remote_address,
       const ProxyInfo& proxy_info,
       const std::string& user_agent,
-      int opts) = 0;
+      int opts);
 
-  // TODO(deadbeef): |proxy_info|, |user_agent| and |tcp_options| should
-  // be set per-factory and not when socket is created.
-  // TODO(deadbeef): Implement this method in all subclasses (namely those in
-  // Chromium), make pure virtual, and remove the old CreateClientTcpSocket.
+  // TODO(bugs.webrtc.org/7447): Deprecated, about to be removed.
   virtual AsyncPacketSocket* CreateClientTcpSocket(
       const SocketAddress& local_address,
       const SocketAddress& remote_address,
@@ -86,7 +88,8 @@ class RTC_EXPORT PacketSocketFactory {
   virtual AsyncResolverInterface* CreateAsyncResolver() = 0;
 
  private:
-  RTC_DISALLOW_COPY_AND_ASSIGN(PacketSocketFactory);
+  PacketSocketFactory(const PacketSocketFactory&) = delete;
+  PacketSocketFactory& operator=(const PacketSocketFactory&) = delete;
 };
 
 }  // namespace rtc

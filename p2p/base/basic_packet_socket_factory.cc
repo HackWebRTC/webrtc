@@ -102,18 +102,6 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
     const SocketAddress& remote_address,
     const ProxyInfo& proxy_info,
     const std::string& user_agent,
-    int opts) {
-  PacketSocketTcpOptions tcp_options;
-  tcp_options.opts = opts;
-  return CreateClientTcpSocket(local_address, remote_address, proxy_info,
-                               user_agent, tcp_options);
-}
-
-AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
-    const SocketAddress& local_address,
-    const SocketAddress& remote_address,
-    const ProxyInfo& proxy_info,
-    const std::string& user_agent,
     const PacketSocketTcpOptions& tcp_options) {
   AsyncSocket* socket =
       socket_factory()->CreateAsyncSocket(local_address.family(), SOCK_STREAM);
@@ -198,6 +186,25 @@ AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
   tcp_socket->SetOption(Socket::OPT_NODELAY, 1);
 
   return tcp_socket;
+}
+
+AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
+    const SocketAddress& local_address,
+    const SocketAddress& remote_address,
+    const ProxyInfo& proxy_info,
+    const std::string& user_agent,
+    int opts) {
+  PacketSocketTcpOptions tcp_options;
+  tcp_options.opts = opts;
+  return CreateClientTcpSocket(local_address, remote_address, proxy_info,
+                               user_agent, tcp_options);
+}
+
+AsyncPacketSocket* BasicPacketSocketFactory::CreateClientTcpSocket(
+    const SocketAddress& local_address,
+    const SocketAddress& remote_address) {
+  return CreateClientTcpSocket(local_address, remote_address, ProxyInfo(), "",
+                               PacketSocketTcpOptions());
 }
 
 AsyncResolverInterface* BasicPacketSocketFactory::CreateAsyncResolver() {
