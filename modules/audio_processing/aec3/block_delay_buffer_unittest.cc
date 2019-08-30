@@ -50,10 +50,10 @@ std::string ProduceDebugText(int sample_rate_hz, size_t delay) {
 // Verifies that the correct signal delay is achived.
 TEST(BlockDelayBuffer, CorrectDelayApplied) {
   for (size_t delay : {0, 1, 27, 160, 4321, 7021}) {
-    for (auto rate : {8000, 16000, 32000, 48000}) {
+    for (auto rate : {16000, 32000, 48000}) {
       SCOPED_TRACE(ProduceDebugText(rate, delay));
       size_t num_bands = NumBandsForRate(rate);
-      size_t subband_frame_length = rate == 8000 ? 80 : 160;
+      size_t subband_frame_length = 160;
 
       BlockDelayBuffer delay_buffer(num_bands, subband_frame_length, delay);
 

@@ -36,7 +36,8 @@ class RenderBuffer {
   ~RenderBuffer();
 
   // Get a block.
-  const std::vector<std::vector<float>>& Block(int buffer_offset_blocks) const {
+  const std::vector<std::vector<std::vector<float>>>& Block(
+      int buffer_offset_blocks) const {
     int position =
         block_buffer_->OffsetIndex(block_buffer_->read, buffer_offset_blocks);
     return block_buffer_->buffer[position];

@@ -2513,6 +2513,12 @@ class MyEchoControlFactory : public EchoControlFactory {
     EXPECT_CALL(*ec, ProcessCapture(::testing::_, ::testing::_)).Times(2);
     return std::unique_ptr<EchoControl>(ec);
   }
+
+  std::unique_ptr<EchoControl> Create(int sample_rate_hz,
+                                      size_t num_render_channels,
+                                      size_t num_capture_channels) {
+    return Create(sample_rate_hz);
+  }
 };
 
 TEST(ApmConfiguration, EchoControlInjection) {

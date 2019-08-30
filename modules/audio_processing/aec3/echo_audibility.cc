@@ -97,7 +97,7 @@ bool EchoAudibility::IsRenderTooLow(const MatrixBuffer& block_buffer) {
   } else {
     for (int idx = render_block_write_prev_; idx != render_block_write_current;
          idx = block_buffer.IncIndex(idx)) {
-      auto block = block_buffer.buffer[idx][0];
+      auto block = block_buffer.buffer[idx][0][0];
       auto r = std::minmax_element(block.cbegin(), block.cend());
       float max_abs = std::max(std::fabs(*r.first), std::fabs(*r.second));
       if (max_abs < 10) {
