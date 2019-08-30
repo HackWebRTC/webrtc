@@ -24,13 +24,13 @@ namespace test {
 
 class MockRenderDelayBuffer : public RenderDelayBuffer {
  public:
-  explicit MockRenderDelayBuffer(int sample_rate_hz);
+  MockRenderDelayBuffer(int sample_rate_hz, size_t num_channels);
   virtual ~MockRenderDelayBuffer();
 
   MOCK_METHOD0(Reset, void());
   MOCK_METHOD1(Insert,
                RenderDelayBuffer::BufferingEvent(
-                   const std::vector<std::vector<float>>& block));
+                   const std::vector<std::vector<std::vector<float>>>& block));
   MOCK_METHOD0(PrepareCaptureProcessing, RenderDelayBuffer::BufferingEvent());
   MOCK_METHOD1(AlignFromDelay, bool(size_t delay));
   MOCK_METHOD0(AlignFromExternalDelay, void());

@@ -90,7 +90,7 @@ void ProduceDecimatedSinusoidalOutputPower(int sample_rate_hz,
 TEST(Decimator, NoLeakageFromUpperFrequencies) {
   float input_power;
   float output_power;
-  for (auto rate : {8000, 16000, 32000, 48000}) {
+  for (auto rate : {16000, 32000, 48000}) {
     for (auto down_sampling_factor : kDownSamplingFactors) {
       ProduceDebugText(rate);
       ProduceDecimatedSinusoidalOutputPower(rate, down_sampling_factor,

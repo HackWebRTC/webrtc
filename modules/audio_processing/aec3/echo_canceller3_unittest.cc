@@ -109,12 +109,13 @@ class CaptureTransportVerificationProcessor : public BlockProcessor {
   explicit CaptureTransportVerificationProcessor(size_t num_bands) {}
   ~CaptureTransportVerificationProcessor() override = default;
 
-  void ProcessCapture(bool level_change,
-                      bool saturated_microphone_signal,
-                      std::vector<std::vector<float>>* capture_block) override {
-  }
+  void ProcessCapture(
+      bool level_change,
+      bool saturated_microphone_signal,
+      std::vector<std::vector<std::vector<float>>>* capture_block) override {}
 
-  void BufferRender(const std::vector<std::vector<float>>& block) override {}
+  void BufferRender(
+      const std::vector<std::vector<std::vector<float>>>& block) override {}
 
   void UpdateEchoLeakageStatus(bool leakage_detected) override {}
 
@@ -133,16 +134,18 @@ class RenderTransportVerificationProcessor : public BlockProcessor {
   explicit RenderTransportVerificationProcessor(size_t num_bands) {}
   ~RenderTransportVerificationProcessor() override = default;
 
-  void ProcessCapture(bool level_change,
-                      bool saturated_microphone_signal,
-                      std::vector<std::vector<float>>* capture_block) override {
-    std::vector<std::vector<float>> render_block =
+  void ProcessCapture(
+      bool level_change,
+      bool saturated_microphone_signal,
+      std::vector<std::vector<std::vector<float>>>* capture_block) override {
+    std::vector<std::vector<std::vector<float>>> render_block =
         received_render_blocks_.front();
     received_render_blocks_.pop_front();
     capture_block->swap(render_block);
   }
 
-  void BufferRender(const std::vector<std::vector<float>>& block) override {
+  void BufferRender(
+      const std::vector<std::vector<std::vector<float>>>& block) override {
     received_render_blocks_.push_back(block);
   }
 
@@ -153,7 +156,8 @@ class RenderTransportVerificationProcessor : public BlockProcessor {
   void SetAudioBufferDelay(size_t delay_ms) override {}
 
  private:
-  std::deque<std::vector<std::vector<float>>> received_render_blocks_;
+  std::deque<std::vector<std::vector<std::vector<float>>>>
+      received_render_blocks_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RenderTransportVerificationProcessor);
 };
 
@@ -162,7 +166,7 @@ class EchoCanceller3Tester {
   explicit EchoCanceller3Tester(int sample_rate_hz)
       : sample_rate_hz_(sample_rate_hz),
         num_bands_(NumBandsForRate(sample_rate_hz_)),
-        frame_length_(sample_rate_hz_ == 8000 ? 80 : 160),
+        frame_length_(160),
         fullband_frame_length_(rtc::CheckedDivExact(sample_rate_hz_, 100)),
         capture_buffer_(fullband_frame_length_ * 100,
                         1,
@@ -182,7 +186,7 @@ class EchoCanceller3Tester {
   // output.
   void RunCaptureTransportVerificationTest() {
     EchoCanceller3 aec3(
-        EchoCanceller3Config(), sample_rate_hz_,
+        EchoCanceller3Config(), sample_rate_hz_, 1, 1,
         std::unique_ptr<BlockProcessor>(
             new CaptureTransportVerificationProcessor(num_bands_)));
 
@@ -207,7 +211,7 @@ class EchoCanceller3Tester {
   // block processor.
   void RunRenderTransportVerificationTest() {
     EchoCanceller3 aec3(
-        EchoCanceller3Config(), sample_rate_hz_,
+        EchoCanceller3Config(), sample_rate_hz_, 1, 1,
         std::unique_ptr<BlockProcessor>(
             new RenderTransportVerificationProcessor(num_bands_)));
 
@@ -251,37 +255,34 @@ class EchoCanceller3Tester {
 
   void RunEchoPathChangeVerificationTest(
       EchoPathChangeTestVariant echo_path_change_test_variant) {
-    const size_t num_full_blocks_per_frame =
-        rtc::CheckedDivExact(LowestBandRate(sample_rate_hz_), 100) / kBlockSize;
-    const size_t expected_num_block_to_process =
-        (kNumFramesToProcess *
-         rtc::CheckedDivExact(LowestBandRate(sample_rate_hz_), 100)) /
-        kBlockSize;
+    constexpr size_t kNumFullBlocksPerFrame = 160 / kBlockSize;
+    constexpr size_t kExpectedNumBlocksToProcess =
+        (kNumFramesToProcess * 160) / kBlockSize;
     std::unique_ptr<testing::StrictMock<webrtc::test::MockBlockProcessor>>
         block_processor_mock(
             new StrictMock<webrtc::test::MockBlockProcessor>());
     EXPECT_CALL(*block_processor_mock, BufferRender(_))
-        .Times(expected_num_block_to_process);
+        .Times(kExpectedNumBlocksToProcess);
     EXPECT_CALL(*block_processor_mock, UpdateEchoLeakageStatus(_)).Times(0);
 
     switch (echo_path_change_test_variant) {
       case EchoPathChangeTestVariant::kNone:
         EXPECT_CALL(*block_processor_mock, ProcessCapture(false, _, _))
-            .Times(expected_num_block_to_process);
+            .Times(kExpectedNumBlocksToProcess);
         break;
       case EchoPathChangeTestVariant::kOneSticky:
         EXPECT_CALL(*block_processor_mock, ProcessCapture(true, _, _))
-            .Times(expected_num_block_to_process);
+            .Times(kExpectedNumBlocksToProcess);
         break;
       case EchoPathChangeTestVariant::kOneNonSticky:
         EXPECT_CALL(*block_processor_mock, ProcessCapture(true, _, _))
-            .Times(num_full_blocks_per_frame);
+            .Times(kNumFullBlocksPerFrame);
         EXPECT_CALL(*block_processor_mock, ProcessCapture(false, _, _))
-            .Times(expected_num_block_to_process - num_full_blocks_per_frame);
+            .Times(kExpectedNumBlocksToProcess - kNumFullBlocksPerFrame);
         break;
     }
 
-    EchoCanceller3 aec3(EchoCanceller3Config(), sample_rate_hz_,
+    EchoCanceller3 aec3(EchoCanceller3Config(), sample_rate_hz_, 1, 1,
                         std::move(block_processor_mock));
 
     for (size_t frame_index = 0; frame_index < kNumFramesToProcess;
@@ -330,17 +331,15 @@ class EchoCanceller3Tester {
 
   void RunEchoLeakageVerificationTest(
       EchoLeakageTestVariant leakage_report_variant) {
-    const size_t expected_num_block_to_process =
-        (kNumFramesToProcess *
-         rtc::CheckedDivExact(LowestBandRate(sample_rate_hz_), 100)) /
-        kBlockSize;
+    constexpr size_t kExpectedNumBlocksToProcess =
+        (kNumFramesToProcess * 160) / kBlockSize;
     std::unique_ptr<testing::StrictMock<webrtc::test::MockBlockProcessor>>
         block_processor_mock(
             new StrictMock<webrtc::test::MockBlockProcessor>());
     EXPECT_CALL(*block_processor_mock, BufferRender(_))
-        .Times(expected_num_block_to_process);
+        .Times(kExpectedNumBlocksToProcess);
     EXPECT_CALL(*block_processor_mock, ProcessCapture(_, _, _))
-        .Times(expected_num_block_to_process);
+        .Times(kExpectedNumBlocksToProcess);
 
     switch (leakage_report_variant) {
       case EchoLeakageTestVariant::kNone:
@@ -363,7 +362,7 @@ class EchoCanceller3Tester {
       } break;
     }
 
-    EchoCanceller3 aec3(EchoCanceller3Config(), sample_rate_hz_,
+    EchoCanceller3 aec3(EchoCanceller3Config(), sample_rate_hz_, 1, 1,
                         std::move(block_processor_mock));
 
     for (size_t frame_index = 0; frame_index < kNumFramesToProcess;
@@ -418,41 +417,38 @@ class EchoCanceller3Tester {
 
   void RunCaptureSaturationVerificationTest(
       SaturationTestVariant saturation_variant) {
-    const size_t num_full_blocks_per_frame =
-        rtc::CheckedDivExact(LowestBandRate(sample_rate_hz_), 100) / kBlockSize;
-    const size_t expected_num_block_to_process =
-        (kNumFramesToProcess *
-         rtc::CheckedDivExact(LowestBandRate(sample_rate_hz_), 100)) /
-        kBlockSize;
+    const size_t kNumFullBlocksPerFrame = 160 / kBlockSize;
+    const size_t kExpectedNumBlocksToProcess =
+        (kNumFramesToProcess * 160) / kBlockSize;
     std::unique_ptr<testing::StrictMock<webrtc::test::MockBlockProcessor>>
         block_processor_mock(
             new StrictMock<webrtc::test::MockBlockProcessor>());
     EXPECT_CALL(*block_processor_mock, BufferRender(_))
-        .Times(expected_num_block_to_process);
+        .Times(kExpectedNumBlocksToProcess);
     EXPECT_CALL(*block_processor_mock, UpdateEchoLeakageStatus(_)).Times(0);
 
     switch (saturation_variant) {
       case SaturationTestVariant::kNone:
         EXPECT_CALL(*block_processor_mock, ProcessCapture(_, false, _))
-            .Times(expected_num_block_to_process);
+            .Times(kExpectedNumBlocksToProcess);
         break;
       case SaturationTestVariant::kOneNegative: {
         ::testing::InSequence s;
         EXPECT_CALL(*block_processor_mock, ProcessCapture(_, true, _))
-            .Times(num_full_blocks_per_frame);
+            .Times(kNumFullBlocksPerFrame);
         EXPECT_CALL(*block_processor_mock, ProcessCapture(_, false, _))
-            .Times(expected_num_block_to_process - num_full_blocks_per_frame);
+            .Times(kExpectedNumBlocksToProcess - kNumFullBlocksPerFrame);
       } break;
       case SaturationTestVariant::kOnePositive: {
         ::testing::InSequence s;
         EXPECT_CALL(*block_processor_mock, ProcessCapture(_, true, _))
-            .Times(num_full_blocks_per_frame);
+            .Times(kNumFullBlocksPerFrame);
         EXPECT_CALL(*block_processor_mock, ProcessCapture(_, false, _))
-            .Times(expected_num_block_to_process - num_full_blocks_per_frame);
+            .Times(kExpectedNumBlocksToProcess - kNumFullBlocksPerFrame);
       } break;
     }
 
-    EchoCanceller3 aec3(EchoCanceller3Config(), sample_rate_hz_,
+    EchoCanceller3 aec3(EchoCanceller3Config(), sample_rate_hz_, 1, 1,
                         std::move(block_processor_mock));
     for (size_t frame_index = 0; frame_index < kNumFramesToProcess;
          ++frame_index) {
@@ -492,7 +488,7 @@ class EchoCanceller3Tester {
   void RunRenderSwapQueueVerificationTest() {
     const EchoCanceller3Config config;
     EchoCanceller3 aec3(
-        config, sample_rate_hz_,
+        config, sample_rate_hz_, 1, 1,
         std::unique_ptr<BlockProcessor>(
             new RenderTransportVerificationProcessor(num_bands_)));
 
@@ -542,7 +538,7 @@ class EchoCanceller3Tester {
   // This test verifies that a buffer overrun in the render swapqueue is
   // properly reported.
   void RunRenderPipelineSwapQueueOverrunReturnValueTest() {
-    EchoCanceller3 aec3(EchoCanceller3Config(), sample_rate_hz_);
+    EchoCanceller3 aec3(EchoCanceller3Config(), sample_rate_hz_, 1, 1);
 
     constexpr size_t kRenderTransferQueueSize = 30;
     for (size_t k = 0; k < 2; ++k) {
@@ -567,7 +563,7 @@ class EchoCanceller3Tester {
     // Set aec3_sample_rate_hz to be different from sample_rate_hz_ in such a
     // way that the number of bands for the rates are different.
     const int aec3_sample_rate_hz = sample_rate_hz_ == 48000 ? 32000 : 48000;
-    EchoCanceller3 aec3(EchoCanceller3Config(), aec3_sample_rate_hz);
+    EchoCanceller3 aec3(EchoCanceller3Config(), aec3_sample_rate_hz, 1, 1);
     PopulateInputFrame(frame_length_, 0, &render_buffer_.channels_f()[0][0], 0);
 
     EXPECT_DEATH(aec3.AnalyzeRender(&render_buffer_), "");
@@ -580,40 +576,9 @@ class EchoCanceller3Tester {
     // Set aec3_sample_rate_hz to be different from sample_rate_hz_ in such a
     // way that the number of bands for the rates are different.
     const int aec3_sample_rate_hz = sample_rate_hz_ == 48000 ? 32000 : 48000;
-    EchoCanceller3 aec3(EchoCanceller3Config(), aec3_sample_rate_hz);
+    EchoCanceller3 aec3(EchoCanceller3Config(), aec3_sample_rate_hz, 1, 1);
     PopulateInputFrame(frame_length_, num_bands_, 0,
                        &capture_buffer_.split_bands_f(0)[0], 100);
-    EXPECT_DEATH(aec3.ProcessCapture(&capture_buffer_, false), "");
-  }
-
-  // Verifies the that the check for the frame length in the AnalyzeRender input
-  // is correct by adjusting the sample rates of EchoCanceller3 and the input
-  // AudioBuffer to have a different frame lengths.
-  void RunAnalyzeRenderFrameLengthCheckVerification() {
-    // Set aec3_sample_rate_hz to be different from sample_rate_hz_ in such a
-    // way that the band frame lengths are different.
-    const int aec3_sample_rate_hz = sample_rate_hz_ == 8000 ? 16000 : 8000;
-    EchoCanceller3 aec3(EchoCanceller3Config(), aec3_sample_rate_hz);
-
-    OptionalBandSplit();
-    PopulateInputFrame(frame_length_, 0, &render_buffer_.channels_f()[0][0], 0);
-
-    EXPECT_DEATH(aec3.AnalyzeRender(&render_buffer_), "");
-  }
-
-  // Verifies the that the check for the frame length in the AnalyzeRender input
-  // is correct by adjusting the sample rates of EchoCanceller3 and the input
-  // AudioBuffer to have a different frame lengths.
-  void RunProcessCaptureFrameLengthCheckVerification() {
-    // Set aec3_sample_rate_hz to be different from sample_rate_hz_ in such a
-    // way that the band frame lengths are different.
-    const int aec3_sample_rate_hz = sample_rate_hz_ == 8000 ? 16000 : 8000;
-    EchoCanceller3 aec3(EchoCanceller3Config(), aec3_sample_rate_hz);
-
-    OptionalBandSplit();
-    PopulateInputFrame(frame_length_, num_bands_, 0,
-                       &capture_buffer_.split_bands_f(0)[0], 100);
-
     EXPECT_DEATH(aec3.ProcessCapture(&capture_buffer_, false), "");
   }
 
@@ -653,28 +618,25 @@ std::string ProduceDebugText(int sample_rate_hz, int variant) {
 }  // namespace
 
 TEST(EchoCanceller3Buffering, CaptureBitexactness) {
-  for (auto rate : {8000, 16000, 32000, 48000}) {
+  for (auto rate : {16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     EchoCanceller3Tester(rate).RunCaptureTransportVerificationTest();
   }
 }
 
 TEST(EchoCanceller3Buffering, RenderBitexactness) {
-  for (auto rate : {8000, 16000, 32000, 48000}) {
+  for (auto rate : {16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     EchoCanceller3Tester(rate).RunRenderTransportVerificationTest();
   }
 }
 
 TEST(EchoCanceller3Buffering, RenderSwapQueue) {
-  for (auto rate : {8000, 16000}) {
-    SCOPED_TRACE(ProduceDebugText(rate));
-    EchoCanceller3Tester(rate).RunRenderSwapQueueVerificationTest();
-  }
+  EchoCanceller3Tester(16000).RunRenderSwapQueueVerificationTest();
 }
 
 TEST(EchoCanceller3Buffering, RenderSwapQueueOverrunReturnValue) {
-  for (auto rate : {8000, 16000, 32000, 48000}) {
+  for (auto rate : {16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     EchoCanceller3Tester(rate)
         .RunRenderPipelineSwapQueueOverrunReturnValueTest();
@@ -685,7 +647,7 @@ TEST(EchoCanceller3Messaging, CaptureSaturation) {
   auto variants = {EchoCanceller3Tester::SaturationTestVariant::kNone,
                    EchoCanceller3Tester::SaturationTestVariant::kOneNegative,
                    EchoCanceller3Tester::SaturationTestVariant::kOnePositive};
-  for (auto rate : {8000, 16000, 32000, 48000}) {
+  for (auto rate : {16000, 32000, 48000}) {
     for (auto variant : variants) {
       SCOPED_TRACE(ProduceDebugText(rate, static_cast<int>(variant)));
       EchoCanceller3Tester(rate).RunCaptureSaturationVerificationTest(variant);
@@ -698,7 +660,7 @@ TEST(EchoCanceller3Messaging, EchoPathChange) {
       EchoCanceller3Tester::EchoPathChangeTestVariant::kNone,
       EchoCanceller3Tester::EchoPathChangeTestVariant::kOneSticky,
       EchoCanceller3Tester::EchoPathChangeTestVariant::kOneNonSticky};
-  for (auto rate : {8000, 16000, 32000, 48000}) {
+  for (auto rate : {16000, 32000, 48000}) {
     for (auto variant : variants) {
       SCOPED_TRACE(ProduceDebugText(rate, static_cast<int>(variant)));
       EchoCanceller3Tester(rate).RunEchoPathChangeVerificationTest(variant);
@@ -712,7 +674,7 @@ TEST(EchoCanceller3Messaging, EchoLeakage) {
       EchoCanceller3Tester::EchoLeakageTestVariant::kFalseSticky,
       EchoCanceller3Tester::EchoLeakageTestVariant::kTrueSticky,
       EchoCanceller3Tester::EchoLeakageTestVariant::kTrueNonSticky};
-  for (auto rate : {8000, 16000, 32000, 48000}) {
+  for (auto rate : {16000, 32000, 48000}) {
     for (auto variant : variants) {
       SCOPED_TRACE(ProduceDebugText(rate, static_cast<int>(variant)));
       EchoCanceller3Tester(rate).RunEchoLeakageVerificationTest(variant);
@@ -723,33 +685,16 @@ TEST(EchoCanceller3Messaging, EchoLeakage) {
 #if RTC_DCHECK_IS_ON && GTEST_HAS_DEATH_TEST && !defined(WEBRTC_ANDROID)
 
 TEST(EchoCanceller3InputCheck, WrongCaptureNumBandsCheckVerification) {
-  for (auto rate : {8000, 16000, 32000, 48000}) {
+  for (auto rate : {16000, 32000, 48000}) {
     SCOPED_TRACE(ProduceDebugText(rate));
     EchoCanceller3Tester(rate).RunProcessCaptureNumBandsCheckVerification();
-  }
-}
-
-// TODO(peah): Re-enable the test once the issue with memory leaks during DEATH
-// tests on test bots has been fixed.
-TEST(EchoCanceller3InputCheck,
-     DISABLED_WrongRenderFrameLengthCheckVerification) {
-  for (auto rate : {8000, 16000}) {
-    SCOPED_TRACE(ProduceDebugText(rate));
-    EchoCanceller3Tester(rate).RunAnalyzeRenderFrameLengthCheckVerification();
-  }
-}
-
-TEST(EchoCanceller3InputCheck, WrongCaptureFrameLengthCheckVerification) {
-  for (auto rate : {8000, 16000}) {
-    SCOPED_TRACE(ProduceDebugText(rate));
-    EchoCanceller3Tester(rate).RunProcessCaptureFrameLengthCheckVerification();
   }
 }
 
 // Verifiers that the verification for null input to the capture processing api
 // call works.
 TEST(EchoCanceller3InputCheck, NullCaptureProcessingParameter) {
-  EXPECT_DEATH(EchoCanceller3(EchoCanceller3Config(), 16000)
+  EXPECT_DEATH(EchoCanceller3(EchoCanceller3Config(), 16000, 1, 1)
                    .ProcessCapture(nullptr, false),
                "");
 }
@@ -759,7 +704,7 @@ TEST(EchoCanceller3InputCheck, NullCaptureProcessingParameter) {
 // tests on test bots has been fixed.
 TEST(EchoCanceller3InputCheck, DISABLED_WrongSampleRate) {
   ApmDataDumper data_dumper(0);
-  EXPECT_DEATH(EchoCanceller3(EchoCanceller3Config(), 8001), "");
+  EXPECT_DEATH(EchoCanceller3(EchoCanceller3Config(), 8001, 1, 1), "");
 }
 
 #endif

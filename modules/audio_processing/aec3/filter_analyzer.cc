@@ -96,8 +96,8 @@ void FilterAnalyzer::AnalyzeRegion(
   filter_length_blocks_ = filter_time_domain.size() * (1.f / kBlockSize);
 
   consistent_estimate_ = consistent_filter_detector_.Detect(
-      h_highpass_, region_, render_buffer.Block(-delay_blocks_)[0], peak_index_,
-      delay_blocks_);
+      h_highpass_, region_, render_buffer.Block(-delay_blocks_)[0][0],
+      peak_index_, delay_blocks_);
 }
 
 void FilterAnalyzer::UpdateFilterGain(

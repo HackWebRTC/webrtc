@@ -1849,7 +1849,8 @@ void AudioProcessingImpl::InitializeEchoController() {
           echo_control_factory_->Create(proc_sample_rate_hz());
     } else {
       private_submodules_->echo_controller = absl::make_unique<EchoCanceller3>(
-          EchoCanceller3Config(), proc_sample_rate_hz());
+          EchoCanceller3Config(), proc_sample_rate_hz(),
+          /*num_render_channels=*/1, /*num_capture_channels=*/1);
     }
 
     capture_nonlocked_.echo_controller_enabled = true;
