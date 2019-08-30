@@ -9,6 +9,8 @@
  */
 #include "rtc_base/experiments/field_trial_parser.h"
 
+#include <inttypes.h>
+
 #include <algorithm>
 #include <map>
 #include <type_traits>
@@ -16,6 +18,7 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/safe_conversions.h"
 
 namespace webrtc {
 namespace {
@@ -116,12 +119,24 @@ absl::optional<double> ParseTypedParameter<double>(std::string str) {
 
 template <>
 absl::optional<int> ParseTypedParameter<int>(std::string str) {
-  int value;
-  if (sscanf(str.c_str(), "%i", &value) == 1) {
-    return value;
-  } else {
-    return absl::nullopt;
+  int64_t value;
+  if (sscanf(str.c_str(), "%" SCNd64, &value) == 1) {
+    if (rtc::IsValueInRangeForNumericType<int, int64_t>(value)) {
+      return static_cast<int>(value);
+    }
   }
+  return absl::nullopt;
+}
+
+template <>
+absl::optional<unsigned> ParseTypedParameter<unsigned>(std::string str) {
+  int64_t value;
+  if (sscanf(str.c_str(), "%" SCNd64, &value) == 1) {
+    if (rtc::IsValueInRangeForNumericType<unsigned, int64_t>(value)) {
+      return static_cast<unsigned>(value);
+    }
+  }
+  return absl::nullopt;
 }
 
 template <>
@@ -138,6 +153,11 @@ template <>
 absl::optional<absl::optional<int>> ParseTypedParameter<absl::optional<int>>(
     std::string str) {
   return ParseOptionalParameter<int>(str);
+}
+template <>
+absl::optional<absl::optional<unsigned>>
+ParseTypedParameter<absl::optional<unsigned>>(std::string str) {
+  return ParseOptionalParameter<unsigned>(str);
 }
 template <>
 absl::optional<absl::optional<double>>
@@ -205,13 +225,16 @@ bool AbstractFieldTrialEnum::Parse(absl::optional<std::string> str_value) {
 template class FieldTrialParameter<bool>;
 template class FieldTrialParameter<double>;
 template class FieldTrialParameter<int>;
+template class FieldTrialParameter<unsigned>;
 template class FieldTrialParameter<std::string>;
 
 template class FieldTrialConstrained<double>;
 template class FieldTrialConstrained<int>;
+template class FieldTrialConstrained<unsigned>;
 
 template class FieldTrialOptional<double>;
 template class FieldTrialOptional<int>;
+template class FieldTrialOptional<unsigned>;
 template class FieldTrialOptional<bool>;
 template class FieldTrialOptional<std::string>;
 

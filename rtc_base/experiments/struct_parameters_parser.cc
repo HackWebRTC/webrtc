@@ -9,6 +9,8 @@
  */
 #include "rtc_base/experiments/struct_parameters_parser.h"
 
+#include <algorithm>
+
 #include "rtc_base/logging.h"
 
 namespace webrtc {
@@ -29,6 +31,9 @@ inline void StringEncode(std::string* target, double val) {
   *target += rtc::ToString(val);
 }
 inline void StringEncode(std::string* target, int val) {
+  *target += rtc::ToString(val);
+}
+inline void StringEncode(std::string* target, unsigned val) {
   *target += rtc::ToString(val);
 }
 inline void StringEncode(std::string* target, DataRate val) {
@@ -62,8 +67,10 @@ void TypedParser<T>::Encode(const void* src, std::string* target) {
 template class TypedParser<bool>;
 template class TypedParser<double>;
 template class TypedParser<int>;
+template class TypedParser<unsigned>;
 template class TypedParser<absl::optional<double>>;
 template class TypedParser<absl::optional<int>>;
+template class TypedParser<absl::optional<unsigned>>;
 
 template class TypedParser<DataRate>;
 template class TypedParser<DataSize>;

@@ -16,6 +16,7 @@ struct DummyConfig {
   bool enabled = false;
   double factor = 0.5;
   int retries = 5;
+  unsigned size = 3;
   bool ping = 0;
   absl::optional<TimeDelta> duration;
   absl::optional<TimeDelta> latency = TimeDelta::ms(100);
@@ -27,6 +28,7 @@ std::unique_ptr<StructParametersParser> DummyConfig::Parser() {
   return StructParametersParser::Create("e", &enabled,   //
                                         "f", &factor,    //
                                         "r", &retries,   //
+                                        "s", &size,      //
                                         "p", &ping,      //
                                         "d", &duration,  //
                                         "l", &latency);
@@ -35,10 +37,11 @@ std::unique_ptr<StructParametersParser> DummyConfig::Parser() {
 
 TEST(StructParametersParserTest, ParsesValidParameters) {
   DummyConfig exp;
-  exp.Parser()->Parse("e:1,f:-1.7,r:2,p:1,d:8,l:,");
+  exp.Parser()->Parse("e:1,f:-1.7,r:2,s:7,p:1,d:8,l:,");
   EXPECT_TRUE(exp.enabled);
   EXPECT_EQ(exp.factor, -1.7);
   EXPECT_EQ(exp.retries, 2);
+  EXPECT_EQ(exp.size, 7u);
   EXPECT_EQ(exp.ping, true);
   EXPECT_EQ(exp.duration.value().ms(), 8);
   EXPECT_FALSE(exp.latency);
@@ -50,6 +53,7 @@ TEST(StructParametersParserTest, UsesDefaults) {
   EXPECT_FALSE(exp.enabled);
   EXPECT_EQ(exp.factor, 0.5);
   EXPECT_EQ(exp.retries, 5);
+  EXPECT_EQ(exp.size, 3u);
   EXPECT_EQ(exp.ping, false);
 }
 
@@ -57,7 +61,7 @@ TEST(StructParametersParserTest, EncodeAll) {
   DummyConfig exp;
   auto encoded = exp.Parser()->Encode();
   // All parameters are encoded.
-  EXPECT_EQ(encoded, "e:false,f:0.5,r:5,p:false,d:,l:100 ms");
+  EXPECT_EQ(encoded, "e:false,f:0.5,r:5,s:3,p:false,d:,l:100 ms");
 }
 
 }  // namespace webrtc
