@@ -365,7 +365,9 @@ rtc_source_set("rtc_media_engine_defaults") {
 }
 
 rtc_static_library("rtc_data") {
-  defines = []
+  defines = [
+    # "SCTP_DEBUG" # Uncomment for SCTP debugging.
+  ]
   deps = [
     ":rtc_media_base",
     "..:webrtc_common",
@@ -377,6 +379,7 @@ rtc_static_library("rtc_data") {
     "../rtc_base/third_party/sigslot",
     "../system_wrappers",
     "//third_party/abseil-cpp/absl/algorithm:container",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 
   if (rtc_enable_sctp) {
