@@ -119,8 +119,6 @@ struct NetworkStatistics {
   // primary data, obsoleting the secondary data. It can also be caused by early
   // or late arrival of secondary data.
   uint16_t currentSecondaryDiscardedRate;
-  // clock-drift in parts-per-million (negative or positive)
-  int32_t clockDriftPPM;
   // average packet waiting time in the jitter buffer (ms)
   int meanWaitingTimeMs;
   // median packet waiting time in the jitter buffer (ms)

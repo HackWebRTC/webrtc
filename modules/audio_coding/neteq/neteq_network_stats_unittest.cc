@@ -147,7 +147,6 @@ class NetEqNetworkStatsTest {
     logic accelerate_rate;
     logic secondary_decoded_rate;
     logic secondary_discarded_rate;
-    logic clockdrift_ppm;
     logic added_zero_samples;
     NetEqNetworkStatistics stats_ref;
   };
@@ -216,7 +215,6 @@ class NetEqNetworkStatsTest {
     CHECK_NETEQ_NETWORK_STATS(accelerate_rate);
     CHECK_NETEQ_NETWORK_STATS(secondary_decoded_rate);
     CHECK_NETEQ_NETWORK_STATS(secondary_discarded_rate);
-    CHECK_NETEQ_NETWORK_STATS(clockdrift_ppm);
     CHECK_NETEQ_NETWORK_STATS(added_zero_samples);
 
 #undef CHECK_NETEQ_NETWORK_STATS
@@ -266,9 +264,8 @@ class NetEqNetworkStatsTest {
                                       kEqual,   // accelerate_rate
                                       kEqual,   // decoded_fec_rate
                                       kEqual,   // discarded_fec_rate
-                                      kIgnore,  // clockdrift_ppm
                                       kEqual,   // added_zero_samples
-                                      {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
+                                      {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
     RunTest(50, expects);
 
     // Next we introduce packet losses.
@@ -298,9 +295,8 @@ class NetEqNetworkStatsTest {
                                       kEqual,   // accelerate_rate
                                       kEqual,   // decoded_fec_rate
                                       kEqual,   // discard_fec_rate
-                                      kIgnore,  // clockdrift_ppm
                                       kEqual,   // added_zero_samples
-                                      {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
+                                      {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}};
     RunTest(50, expects);
 
     SetPacketLossRate(1);

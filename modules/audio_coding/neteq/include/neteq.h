@@ -51,8 +51,6 @@ struct NetEqNetworkStatistics {
                                       // decoding (in Q14).
   uint16_t secondary_discarded_rate;  // Fraction of discarded FEC/RED data (in
                                       // Q14).
-  int32_t clockdrift_ppm;     // Average clock-drift in parts-per-million
-                              // (positive or negative).
   size_t added_zero_samples;  // Number of zero samples added in "off" mode.
   // Statistics for packet waiting times, i.e., the time between a packet
   // arrives until it is decoded.

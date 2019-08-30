@@ -110,7 +110,6 @@ NetEqStatsGetter::Stats NetEqStatsGetter::AverageStats() const {
         a.accelerate_rate += b.accelerate_rate / 16384.0;
         a.secondary_decoded_rate += b.secondary_decoded_rate / 16384.0;
         a.secondary_discarded_rate += b.secondary_discarded_rate / 16384.0;
-        a.clockdrift_ppm += b.clockdrift_ppm;
         a.added_zero_samples += b.added_zero_samples;
         a.mean_waiting_time_ms += b.mean_waiting_time_ms;
         a.median_waiting_time_ms += b.median_waiting_time_ms;
@@ -131,7 +130,6 @@ NetEqStatsGetter::Stats NetEqStatsGetter::AverageStats() const {
   sum_stats.accelerate_rate /= stats_.size();
   sum_stats.secondary_decoded_rate /= stats_.size();
   sum_stats.secondary_discarded_rate /= stats_.size();
-  sum_stats.clockdrift_ppm /= stats_.size();
   sum_stats.added_zero_samples /= stats_.size();
   sum_stats.mean_waiting_time_ms /= stats_.size();
   sum_stats.median_waiting_time_ms /= stats_.size();

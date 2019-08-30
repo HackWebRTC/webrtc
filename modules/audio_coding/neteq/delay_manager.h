@@ -81,14 +81,6 @@ class DelayManager {
   // Resets the DelayManager and the associated DelayPeakDetector.
   virtual void Reset();
 
-  // Calculates the average inter-arrival time deviation from the histogram.
-  // The result is returned as parts-per-million deviation from the nominal
-  // inter-arrival time. That is, if the average inter-arrival time is equal to
-  // the nominal frame time, the return value is zero. A positive value
-  // corresponds to packet spacing being too large, while a negative value means
-  // that the packets arrive with less spacing than expected.
-  virtual double EstimatedClockDriftPpm() const;
-
   // Returns true if peak-mode is active. That is, delay peaks were observed
   // recently. This method simply asks for the same information from the
   // DelayPeakDetector object.

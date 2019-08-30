@@ -70,7 +70,7 @@ const std::pair<int, SdpAudioFormat> kReceiveCodec = {
 const NetworkStatistics kNetworkStats = {
     123, 456, false, 789012, 3456, 123, 456, 789, 543, 432,
     321, 123, 101,   0,      {},   789, 12,  345, 678, 901,
-    0,   -1,  -1,    -1,     -1,   -1,  0,   0,   0,   0};
+    0,   -1,  -1,    -1,     -1,   0,   0,   0,   0};
 const AudioDecodingCallStats kAudioDecodeStats = MakeAudioDecodeStatsForTest();
 
 struct ConfigHelper {

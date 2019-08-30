@@ -447,21 +447,6 @@ void DelayManager::Reset() {
   last_pack_cng_or_dtmf_ = 1;
 }
 
-double DelayManager::EstimatedClockDriftPpm() const {
-  double sum = 0.0;
-  // Calculate the expected value based on the probabilities in
-  // |histogram_|.
-  auto buckets = histogram_->buckets();
-  for (size_t i = 0; i < buckets.size(); ++i) {
-    sum += static_cast<double>(buckets[i]) * i;
-  }
-  // The probabilities in |histogram_| are in Q30. Divide by 1 << 30 to
-  // convert to Q0; subtract the nominal inter-arrival time (1) to make a zero
-  // clockdrift represent as 0; mulitply by 1000000 to produce parts-per-million
-  // (ppm).
-  return (sum / (1 << 30) - 1) * 1e6;
-}
-
 bool DelayManager::PeakFound() const {
   return peak_detector_.peak_found();
 }
