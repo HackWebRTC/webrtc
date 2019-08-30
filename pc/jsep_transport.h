@@ -21,17 +21,14 @@
 #include "api/datagram_transport_interface.h"
 #include "api/jsep.h"
 #include "api/media_transport_interface.h"
-#include "media/sctp/sctp_transport_internal.h"
 #include "p2p/base/dtls_transport.h"
 #include "p2p/base/p2p_constants.h"
 #include "p2p/base/transport_info.h"
-#include "pc/composite_data_channel_transport.h"
 #include "pc/composite_rtp_transport.h"
 #include "pc/dtls_srtp_transport.h"
 #include "pc/dtls_transport.h"
 #include "pc/rtcp_mux_filter.h"
 #include "pc/rtp_transport.h"
-#include "pc/sctp_transport.h"
 #include "pc/session_description.h"
 #include "pc/srtp_filter.h"
 #include "pc/srtp_transport.h"
@@ -99,10 +96,8 @@ class JsepTransport : public sigslot::has_slots<>,
       std::unique_ptr<webrtc::RtpTransportInternal> datagram_rtp_transport,
       std::unique_ptr<DtlsTransportInternal> rtp_dtls_transport,
       std::unique_ptr<DtlsTransportInternal> rtcp_dtls_transport,
-      std::unique_ptr<SctpTransportInternal> sctp_transport,
       std::unique_ptr<webrtc::MediaTransportInterface> media_transport,
-      std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport,
-      webrtc::DataChannelTransportInterface* data_channel_transport);
+      std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport);
 
   ~JsepTransport() override;
 
@@ -220,21 +215,6 @@ class JsepTransport : public sigslot::has_slots<>,
     return rtp_dtls_transport_;
   }
 
-  rtc::scoped_refptr<webrtc::SctpTransport> SctpTransport() const {
-    rtc::CritScope scope(&accessor_lock_);
-    return sctp_transport_;
-  }
-
-  webrtc::DataChannelTransportInterface* data_channel_transport() const {
-    rtc::CritScope scope(&accessor_lock_);
-    if (composite_data_channel_transport_) {
-      return composite_data_channel_transport_.get();
-    } else if (sctp_data_channel_transport_) {
-      return sctp_data_channel_transport_.get();
-    }
-    return data_channel_transport_;
-  }
-
   // Returns media transport, if available.
   // Note that media transport is owned by jseptransport and the pointer
   // to media transport will becomes invalid after destruction of jseptransport.
@@ -269,7 +249,7 @@ class JsepTransport : public sigslot::has_slots<>,
   // channel transport.  The third parameter (bool) indicates whether the
   // negotiation was provisional or final.  If true, it is provisional, if
   // false, it is final.
-  sigslot::signal2<JsepTransport*, webrtc::DataChannelTransportInterface*>
+  sigslot::signal3<JsepTransport*, webrtc::DataChannelTransportInterface*, bool>
       SignalDataChannelTransportNegotiated;
 
   // TODO(deadbeef): The methods below are only public for testing. Should make
@@ -395,11 +375,6 @@ class JsepTransport : public sigslot::has_slots<>,
   rtc::scoped_refptr<webrtc::DtlsTransport> datagram_dtls_transport_
       RTC_GUARDED_BY(accessor_lock_);
 
-  std::unique_ptr<webrtc::DataChannelTransportInterface>
-      sctp_data_channel_transport_ RTC_GUARDED_BY(accessor_lock_);
-  rtc::scoped_refptr<webrtc::SctpTransport> sctp_transport_
-      RTC_GUARDED_BY(accessor_lock_);
-
   SrtpFilter sdes_negotiator_ RTC_GUARDED_BY(network_thread_);
   RtcpMuxFilter rtcp_mux_negotiator_ RTC_GUARDED_BY(network_thread_);
 
@@ -416,16 +391,6 @@ class JsepTransport : public sigslot::has_slots<>,
   // Optional datagram transport (experimental).
   std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport_
       RTC_GUARDED_BY(accessor_lock_);
-
-  // Non-SCTP data channel transport.  Set to one of |media_transport_| or
-  // |datagram_transport_| if that transport should be used for data chanels.
-  // Unset if neither should be used for data channels.
-  webrtc::DataChannelTransportInterface* data_channel_transport_
-      RTC_GUARDED_BY(accessor_lock_) = nullptr;
-
-  // Composite data channel transport, used during negotiation.
-  std::unique_ptr<webrtc::CompositeDataChannelTransport>
-      composite_data_channel_transport_ RTC_GUARDED_BY(accessor_lock_);
 
   // If |media_transport_| is provided, this variable represents the state of
   // media transport.

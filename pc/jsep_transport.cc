@@ -22,7 +22,6 @@
 #include "api/candidate.h"
 #include "p2p/base/p2p_constants.h"
 #include "p2p/base/p2p_transport_channel.h"
-#include "pc/sctp_data_channel_transport.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/logging.h"
@@ -103,10 +102,8 @@ JsepTransport::JsepTransport(
     std::unique_ptr<webrtc::RtpTransportInternal> datagram_rtp_transport,
     std::unique_ptr<DtlsTransportInternal> rtp_dtls_transport,
     std::unique_ptr<DtlsTransportInternal> rtcp_dtls_transport,
-    std::unique_ptr<SctpTransportInternal> sctp_transport,
     std::unique_ptr<webrtc::MediaTransportInterface> media_transport,
-    std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport,
-    webrtc::DataChannelTransportInterface* data_channel_transport)
+    std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport)
     : network_thread_(rtc::Thread::Current()),
       mid_(mid),
       local_certificate_(local_certificate),
@@ -125,17 +122,8 @@ JsepTransport::JsepTransport(
               ? new rtc::RefCountedObject<webrtc::DtlsTransport>(
                     std::move(rtcp_dtls_transport))
               : nullptr),
-      sctp_data_channel_transport_(
-          sctp_transport ? absl::make_unique<webrtc::SctpDataChannelTransport>(
-                               sctp_transport.get())
-                         : nullptr),
-      sctp_transport_(sctp_transport
-                          ? new rtc::RefCountedObject<webrtc::SctpTransport>(
-                                std::move(sctp_transport))
-                          : nullptr),
       media_transport_(std::move(media_transport)),
-      datagram_transport_(std::move(datagram_transport)),
-      data_channel_transport_(data_channel_transport) {
+      datagram_transport_(std::move(datagram_transport)) {
   RTC_DCHECK(ice_transport_);
   RTC_DCHECK(rtp_dtls_transport_);
   // |rtcp_ice_transport_| must be present iff |rtcp_dtls_transport_| is
@@ -156,10 +144,6 @@ JsepTransport::JsepTransport(
     RTC_DCHECK(!sdes_transport);
   }
 
-  if (sctp_transport_) {
-    sctp_transport_->SetDtlsTransport(rtp_dtls_transport_);
-  }
-
   if (datagram_rtp_transport_ && default_rtp_transport()) {
     composite_rtp_transport_ = absl::make_unique<webrtc::CompositeRtpTransport>(
         std::vector<webrtc::RtpTransportInternal*>{
@@ -168,13 +152,6 @@ JsepTransport::JsepTransport(
 
   if (media_transport_) {
     media_transport_->SetMediaTransportStateCallback(this);
-  }
-
-  if (data_channel_transport_ && sctp_data_channel_transport_) {
-    composite_data_channel_transport_ =
-        absl::make_unique<webrtc::CompositeDataChannelTransport>(
-            std::vector<webrtc::DataChannelTransportInterface*>{
-                data_channel_transport_, sctp_data_channel_transport_.get()});
   }
 }
 
@@ -812,20 +789,26 @@ void JsepTransport::NegotiateDatagramTransport(SdpType type) {
         use_datagram_transport ? datagram_rtp_transport_.get()
                                : default_rtp_transport());
   }
-  if (composite_data_channel_transport_) {
-    composite_data_channel_transport_->SetSendTransport(
-        use_datagram_transport ? data_channel_transport_
-                               : sctp_data_channel_transport_.get());
-  }
 
   if (type != SdpType::kAnswer) {
+    // A provisional answer lets the peer start sending on the chosen
+    // transport, but does not allow it to destroy other transports yet.
+    SignalDataChannelTransportNegotiated(
+        this, use_datagram_transport ? datagram_transport_.get() : nullptr,
+        /*provisional=*/true);
     return;
   }
 
+  // A full answer lets the peer delete the remaining transports.
+  // First, signal that the transports will be deleted so the application can
+  // stop using them.
+  SignalDataChannelTransportNegotiated(
+      this, use_datagram_transport ? datagram_transport_.get() : nullptr,
+      /*provisional=*/false);
+
   if (use_datagram_transport) {
     if (composite_rtp_transport_) {
-      // Negotiated use of datagram transport for RTP, so remove the
-      // non-datagram RTP transport.
+      // Remove and delete the non-datagram RTP transport.
       composite_rtp_transport_->RemoveTransport(default_rtp_transport());
       if (unencrypted_rtp_transport_) {
         unencrypted_rtp_transport_ = nullptr;
@@ -835,29 +818,12 @@ void JsepTransport::NegotiateDatagramTransport(SdpType type) {
         dtls_srtp_transport_ = nullptr;
       }
     }
-    if (composite_data_channel_transport_) {
-      // Negotiated use of datagram transport for data channels, so remove the
-      // non-datagram data channel transport.
-      composite_data_channel_transport_->RemoveTransport(
-          sctp_data_channel_transport_.get());
-      sctp_data_channel_transport_ = nullptr;
-      sctp_transport_ = nullptr;
-    }
   } else {
     // Remove and delete the datagram transport.
     if (composite_rtp_transport_) {
       composite_rtp_transport_->RemoveTransport(datagram_rtp_transport_.get());
     }
-    if (composite_data_channel_transport_) {
-      composite_data_channel_transport_->RemoveTransport(
-          data_channel_transport_);
-    } else {
-      // If there's no composite data channel transport, we need to signal that
-      // the data channel is about to be deleted.
-      SignalDataChannelTransportNegotiated(this, nullptr);
-    }
     datagram_rtp_transport_ = nullptr;
-    data_channel_transport_ = nullptr;
     datagram_transport_ = nullptr;
   }
 }
