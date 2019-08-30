@@ -27,6 +27,7 @@
 #include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/constructor_magic.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/swap_queue.h"
 #include "rtc_base/thread_annotations.h"
@@ -37,25 +38,16 @@ namespace webrtc {
 // queue.
 class Aec3RenderQueueItemVerifier {
  public:
-  Aec3RenderQueueItemVerifier(size_t num_bands,
-                              size_t num_channels,
-                              size_t frame_length)
-      : num_bands_(num_bands),
-        num_channels_(num_channels),
-        frame_length_(frame_length) {}
+  explicit Aec3RenderQueueItemVerifier(size_t num_bands, size_t frame_length)
+      : num_bands_(num_bands), frame_length_(frame_length) {}
 
-  bool operator()(const std::vector<std::vector<std::vector<float>>>& v) const {
+  bool operator()(const std::vector<std::vector<float>>& v) const {
     if (v.size() != num_bands_) {
       return false;
     }
-    for (const auto& band : v) {
-      if (band.size() != num_channels_) {
+    for (const auto& v_k : v) {
+      if (v_k.size() != frame_length_) {
         return false;
-      }
-      for (const auto& channel : band) {
-        if (channel.size() != frame_length_) {
-          return false;
-        }
       }
     }
     return true;
@@ -63,7 +55,6 @@ class Aec3RenderQueueItemVerifier {
 
  private:
   const size_t num_bands_;
-  const size_t num_channels_;
   const size_t frame_length_;
 };
 
@@ -82,20 +73,12 @@ class Aec3RenderQueueItemVerifier {
 class EchoCanceller3 : public EchoControl {
  public:
   // Normal c-tor to use.
-  EchoCanceller3(const EchoCanceller3Config& config,
-                 int sample_rate_hz,
-                 size_t num_render_channels,
-                 size_t num_capture_channels);
+  EchoCanceller3(const EchoCanceller3Config& config, int sample_rate_hz);
   // Testing c-tor that is used only for testing purposes.
   EchoCanceller3(const EchoCanceller3Config& config,
                  int sample_rate_hz,
-                 size_t num_render_channels,
-                 size_t num_capture_channels,
                  std::unique_ptr<BlockProcessor> block_processor);
   ~EchoCanceller3() override;
-  EchoCanceller3(const EchoCanceller3&) = delete;
-  EchoCanceller3& operator=(const EchoCanceller3&) = delete;
-
   // Analyzes and stores an internal copy of the split-band domain render
   // signal.
   void AnalyzeRender(AudioBuffer* render) override { AnalyzeRender(*render); }
@@ -145,30 +128,25 @@ class EchoCanceller3 : public EchoControl {
   const EchoCanceller3Config config_;
   const int sample_rate_hz_;
   const int num_bands_;
-  const size_t num_render_channels_;
-  const size_t num_capture_channels_;
+  const size_t frame_length_;
   BlockFramer output_framer_ RTC_GUARDED_BY(capture_race_checker_);
   FrameBlocker capture_blocker_ RTC_GUARDED_BY(capture_race_checker_);
   FrameBlocker render_blocker_ RTC_GUARDED_BY(capture_race_checker_);
-  SwapQueue<std::vector<std::vector<std::vector<float>>>,
-            Aec3RenderQueueItemVerifier>
+  SwapQueue<std::vector<std::vector<float>>, Aec3RenderQueueItemVerifier>
       render_transfer_queue_;
   std::unique_ptr<BlockProcessor> block_processor_
       RTC_GUARDED_BY(capture_race_checker_);
-  std::vector<std::vector<std::vector<float>>> render_queue_output_frame_
+  std::vector<std::vector<float>> render_queue_output_frame_
       RTC_GUARDED_BY(capture_race_checker_);
   bool saturated_microphone_signal_ RTC_GUARDED_BY(capture_race_checker_) =
       false;
-  std::vector<std::vector<std::vector<float>>> render_block_
-      RTC_GUARDED_BY(capture_race_checker_);
-  std::vector<std::vector<std::vector<float>>> capture_block_
-      RTC_GUARDED_BY(capture_race_checker_);
-  std::vector<std::vector<rtc::ArrayView<float>>> render_sub_frame_view_
-      RTC_GUARDED_BY(capture_race_checker_);
-  std::vector<std::vector<rtc::ArrayView<float>>> capture_sub_frame_view_
+  std::vector<std::vector<float>> block_ RTC_GUARDED_BY(capture_race_checker_);
+  std::vector<rtc::ArrayView<float>> sub_frame_view_
       RTC_GUARDED_BY(capture_race_checker_);
   BlockDelayBuffer block_delay_buffer_ RTC_GUARDED_BY(capture_race_checker_);
   ApiCallJitterMetrics api_call_metrics_ RTC_GUARDED_BY(capture_race_checker_);
+
+  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(EchoCanceller3);
 };
 }  // namespace webrtc
 

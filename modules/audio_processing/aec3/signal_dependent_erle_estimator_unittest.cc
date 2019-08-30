@@ -24,7 +24,7 @@ namespace webrtc {
 
 namespace {
 
-void GetActiveFrame(std::vector<std::vector<std::vector<float>>>* x) {
+void GetActiveFrame(rtc::ArrayView<float> x) {
   const std::array<float, kBlockSize> frame = {
       7459.88, 17209.6, 17383,   20768.9, 16816.7, 18386.3, 4492.83, 9675.85,
       6665.52, 14808.6, 9342.3,  7483.28, 19261.7, 4145.98, 1622.18, 13475.2,
@@ -34,12 +34,8 @@ void GetActiveFrame(std::vector<std::vector<std::vector<float>>>* x) {
       11405,   15031.4, 14541.6, 19765.5, 18346.3, 19350.2, 3157.47, 18095.8,
       1743.68, 21328.2, 19727.5, 7295.16, 10332.4, 11055.5, 20107.4, 14708.4,
       12416.2, 16434,   2454.69, 9840.8,  6867.23, 1615.75, 6059.9,  8394.19};
-  for (size_t band = 0; band < x->size(); ++band) {
-    for (size_t channel = 0; channel < (*x)[band].size(); ++channel) {
-      RTC_DCHECK_GE((*x)[band][channel].size(), frame.size());
-      std::copy(frame.begin(), frame.end(), (*x)[band][channel].begin());
-    }
-  }
+  RTC_DCHECK_GE(x.size(), frame.size());
+  std::copy(frame.begin(), frame.end(), x.begin());
 }
 
 class TestInputs {
@@ -62,15 +58,13 @@ class TestInputs {
   std::array<float, kFftLengthBy2Plus1> Y2_;
   std::array<float, kFftLengthBy2Plus1> E2_;
   std::vector<std::array<float, kFftLengthBy2Plus1>> H2_;
-  std::vector<std::vector<std::vector<float>>> x_;
+  std::vector<std::vector<float>> x_;
 };
 
 TestInputs::TestInputs(const EchoCanceller3Config& cfg)
-    : render_delay_buffer_(RenderDelayBuffer::Create(cfg, 16000, 1)),
+    : render_delay_buffer_(RenderDelayBuffer::Create(cfg, 16000)),
       H2_(cfg.filter.main.length_blocks),
-      x_(1,
-         std::vector<std::vector<float>>(1,
-                                         std::vector<float>(kBlockSize, 0.f))) {
+      x_(1, std::vector<float>(kBlockSize, 0.f)) {
   render_delay_buffer_->AlignFromDelay(4);
   render_buffer_ = render_delay_buffer_->GetRenderBuffer();
   for (auto& H : H2_) {
@@ -83,9 +77,9 @@ TestInputs::~TestInputs() = default;
 
 void TestInputs::Update() {
   if (n_ % 2 == 0) {
-    std::fill(x_[0][0].begin(), x_[0][0].end(), 0.f);
+    std::fill(x_[0].begin(), x_[0].end(), 0.f);
   } else {
-    GetActiveFrame(&x_);
+    GetActiveFrame(x_[0]);
   }
 
   render_delay_buffer_->Insert(x_);

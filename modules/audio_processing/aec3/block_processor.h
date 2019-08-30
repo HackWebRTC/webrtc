@@ -28,21 +28,15 @@ namespace webrtc {
 class BlockProcessor {
  public:
   static BlockProcessor* Create(const EchoCanceller3Config& config,
-                                int sample_rate_hz,
-                                size_t num_render_channels,
-                                size_t num_capture_channels);
+                                int sample_rate_hz);
   // Only used for testing purposes.
   static BlockProcessor* Create(
       const EchoCanceller3Config& config,
       int sample_rate_hz,
-      size_t num_render_channels,
-      size_t num_capture_channels,
       std::unique_ptr<RenderDelayBuffer> render_buffer);
   static BlockProcessor* Create(
       const EchoCanceller3Config& config,
       int sample_rate_hz,
-      size_t num_render_channels,
-      size_t num_capture_channels,
       std::unique_ptr<RenderDelayBuffer> render_buffer,
       std::unique_ptr<RenderDelayController> delay_controller,
       std::unique_ptr<EchoRemover> echo_remover);
@@ -59,11 +53,11 @@ class BlockProcessor {
   virtual void ProcessCapture(
       bool echo_path_gain_change,
       bool capture_signal_saturation,
-      std::vector<std::vector<std::vector<float>>>* capture_block) = 0;
+      std::vector<std::vector<float>>* capture_block) = 0;
 
   // Buffers a block of render data supplied by a FrameBlocker object.
   virtual void BufferRender(
-      const std::vector<std::vector<std::vector<float>>>& render_block) = 0;
+      const std::vector<std::vector<float>>& render_block) = 0;
 
   // Reports whether echo leakage has been detected in the echo canceller
   // output.

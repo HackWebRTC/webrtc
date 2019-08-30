@@ -13,11 +13,9 @@
 namespace webrtc {
 namespace test {
 
-MockRenderDelayBuffer::MockRenderDelayBuffer(int sample_rate_hz,
-                                             size_t num_channels)
+MockRenderDelayBuffer::MockRenderDelayBuffer(int sample_rate_hz)
     : block_buffer_(GetRenderDelayBufferSize(4, 4, 12),
                     NumBandsForRate(sample_rate_hz),
-                    num_channels,
                     kBlockSize),
       spectrum_buffer_(block_buffer_.buffer.size(), kFftLengthBy2Plus1),
       fft_buffer_(block_buffer_.buffer.size()),

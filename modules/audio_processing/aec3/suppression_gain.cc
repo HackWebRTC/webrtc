@@ -108,7 +108,7 @@ float SuppressionGain::UpperBandsGain(
     const std::array<float, kFftLengthBy2Plus1>& comfort_noise_spectrum,
     const absl::optional<int>& narrow_peak_band,
     bool saturated_echo,
-    const std::vector<std::vector<std::vector<float>>>& render,
+    const std::vector<std::vector<float>>& render,
     const std::array<float, kFftLengthBy2Plus1>& low_band_gain) const {
   RTC_DCHECK_LT(0, render.size());
   if (render.size() == 1) {
@@ -131,12 +131,12 @@ float SuppressionGain::UpperBandsGain(
 
   // Compute the upper and lower band energies.
   const auto sum_of_squares = [](float a, float b) { return a + b * b; };
-  const float low_band_energy = std::accumulate(
-      render[0][0].begin(), render[0][0].end(), 0.f, sum_of_squares);
+  const float low_band_energy =
+      std::accumulate(render[0].begin(), render[0].end(), 0.f, sum_of_squares);
   float high_band_energy = 0.f;
   for (size_t k = 1; k < render.size(); ++k) {
-    const float energy = std::accumulate(
-        render[k][0].begin(), render[k][0].end(), 0.f, sum_of_squares);
+    const float energy = std::accumulate(render[k].begin(), render[k].end(),
+                                         0.f, sum_of_squares);
     high_band_energy = std::max(high_band_energy, energy);
   }
 
@@ -317,7 +317,7 @@ void SuppressionGain::GetGain(
     const std::array<float, kFftLengthBy2Plus1>& comfort_noise_spectrum,
     const RenderSignalAnalyzer& render_signal_analyzer,
     const AecState& aec_state,
-    const std::vector<std::vector<std::vector<float>>>& render,
+    const std::vector<std::vector<float>>& render,
     float* high_bands_gain,
     std::array<float, kFftLengthBy2Plus1>* low_band_gain) {
   RTC_DCHECK(high_bands_gain);
@@ -366,10 +366,10 @@ void SuppressionGain::SetInitialState(bool state) {
 // Detects when the render signal can be considered to have low power and
 // consist of stationary noise.
 bool SuppressionGain::LowNoiseRenderDetector::Detect(
-    const std::vector<std::vector<std::vector<float>>>& render) {
+    const std::vector<std::vector<float>>& render) {
   float x2_sum = 0.f;
   float x2_max = 0.f;
-  for (auto x_k : render[0][0]) {
+  for (auto x_k : render[0]) {
     const float x2 = x_k * x_k;
     x2_sum += x2;
     x2_max = std::max(x2_max, x2);

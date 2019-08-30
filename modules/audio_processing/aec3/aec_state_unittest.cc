@@ -19,21 +19,16 @@ namespace webrtc {
 
 // Verify the general functionality of AecState
 TEST(AecState, NormalUsage) {
-  constexpr size_t kNumChannels = 1;
-  constexpr int kSampleRateHz = 48000;
-  constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
   ApmDataDumper data_dumper(42);
   EchoCanceller3Config config;
   AecState state(config);
   absl::optional<DelayEstimate> delay_estimate =
       DelayEstimate(DelayEstimate::Quality::kRefined, 10);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, kSampleRateHz, kNumChannels));
+      RenderDelayBuffer::Create(config, 48000));
   std::array<float, kFftLengthBy2Plus1> E2_main = {};
   std::array<float, kFftLengthBy2Plus1> Y2 = {};
-  std::vector<std::vector<std::vector<float>>> x(
-      kNumBands, std::vector<std::vector<float>>(
-                     kNumChannels, std::vector<float>(kBlockSize, 0.f)));
+  std::vector<std::vector<float>> x(3, std::vector<float>(kBlockSize, 0.f));
   EchoPathVariability echo_path_variability(
       false, EchoPathVariability::DelayAdjustment::kNone, false);
   SubtractorOutput output;
@@ -58,11 +53,7 @@ TEST(AecState, NormalUsage) {
       GetTimeDomainLength(config.filter.main.length_blocks), 0.f);
 
   // Verify that linear AEC usability is true when the filter is converged
-  for (size_t band = 0; band < kNumBands; ++band) {
-    for (size_t channel = 0; channel < kNumChannels; ++channel) {
-      std::fill(x[band][channel].begin(), x[band][channel].end(), 101.f);
-    }
-  }
+  std::fill(x[0].begin(), x[0].end(), 101.f);
   for (int k = 0; k < 3000; ++k) {
     render_delay_buffer->Insert(x);
     output.ComputeMetrics(y);
@@ -83,7 +74,7 @@ TEST(AecState, NormalUsage) {
   EXPECT_FALSE(state.UsableLinearEstimate());
 
   // Verify that the active render detection works as intended.
-  std::fill(x[0][0].begin(), x[0][0].end(), 101.f);
+  std::fill(x[0].begin(), x[0].end(), 101.f);
   render_delay_buffer->Insert(x);
   output.ComputeMetrics(y);
   state.HandleEchoPathChange(EchoPathVariability(
@@ -103,13 +94,11 @@ TEST(AecState, NormalUsage) {
   EXPECT_TRUE(state.ActiveRender());
 
   // Verify that the ERL is properly estimated
-  for (auto& band : x) {
-    for (auto& channel : band) {
-      channel = std::vector<float>(kBlockSize, 0.f);
-    }
+  for (auto& x_k : x) {
+    x_k = std::vector<float>(kBlockSize, 0.f);
   }
 
-  x[0][0][0] = 5000.f;
+  x[0][0] = 5000.f;
   for (size_t k = 0;
        k < render_delay_buffer->GetRenderBuffer()->GetFftBuffer().size(); ++k) {
     render_delay_buffer->Insert(x);
@@ -190,7 +179,7 @@ TEST(AecState, ConvergedFilterDelay) {
   EchoCanceller3Config config;
   AecState state(config);
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, 48000, 1));
+      RenderDelayBuffer::Create(config, 48000));
   absl::optional<DelayEstimate> delay_estimate;
   std::array<float, kFftLengthBy2Plus1> E2_main;
   std::array<float, kFftLengthBy2Plus1> Y2;
