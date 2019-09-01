@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include <deque>
+#include <memory>
 #include <utility>
 
 #include "api/network_state_predictor.h"
@@ -21,23 +22,28 @@
 #include "modules/congestion_controller/goog_cc/delay_increase_detector_interface.h"
 #include "modules/remote_bitrate_estimator/include/bwe_defines.h"
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/experiments/struct_parameters_parser.h"
 
 namespace webrtc {
+
+struct BweIgnoreSmallPacketsSettings {
+  static constexpr char kKey[] = "WebRTC-BweIgnoreSmallPackets";
+
+  BweIgnoreSmallPacketsSettings() = default;
+  explicit BweIgnoreSmallPacketsSettings(
+      const WebRtcKeyValueConfig* key_value_config);
+
+  double smoothing_factor = 0.1;
+  double min_fraction_large_packets = 1.0;
+  unsigned large_packet_size = 0;
+  unsigned ignored_size = 0;
+
+  std::unique_ptr<StructParametersParser> Parser();
+};
 
 class TrendlineEstimator : public DelayIncreaseDetectorInterface {
  public:
   TrendlineEstimator(const WebRtcKeyValueConfig* key_value_config,
-                     NetworkStatePredictor* network_state_predictor);
-  // |window_size| is the number of points required to compute a trend line.
-  // |smoothing_coef| controls how much we smooth out the delay before fitting
-  // the trend line. |threshold_gain| is used to scale the trendline slope for
-  // comparison to the old threshold. Once the old estimator has been removed
-  // (or the thresholds been merged into the estimators), we can just set the
-  // threshold instead of setting a gain.|network_state_predictor| is used to
-  // bettter predict network state.
-  TrendlineEstimator(size_t window_size,
-                     double smoothing_coef,
-                     double threshold_gain,
                      NetworkStatePredictor* network_state_predictor);
 
   ~TrendlineEstimator() override;
@@ -48,13 +54,16 @@ class TrendlineEstimator : public DelayIncreaseDetectorInterface {
               double send_delta_ms,
               int64_t send_time_ms,
               int64_t arrival_time_ms,
+              size_t packet_size,
               bool calculated_deltas) override;
 
-  BandwidthUsage State() const override;
+  void UpdateTrendline(double recv_delta_ms,
+                       double send_delta_ms,
+                       int64_t send_time_ms,
+                       int64_t arrival_time_ms,
+                       size_t packet_size);
 
- protected:
-  // Used in unit tests.
-  double modified_trend() const { return prev_trend_ * threshold_gain_; }
+  BandwidthUsage State() const override;
 
  private:
   friend class GoogCcStatePrinter;
@@ -62,6 +71,11 @@ class TrendlineEstimator : public DelayIncreaseDetectorInterface {
   void Detect(double trend, double ts_delta, int64_t now_ms);
 
   void UpdateThreshold(double modified_offset, int64_t now_ms);
+
+  // Filtering out small packets. (Intention is to base the detection only
+  // on video packets even if we have TWCC sequence number for audio.)
+  BweIgnoreSmallPacketsSettings ignore_small_packets_;
+  double fraction_large_packets_;
 
   // Parameters.
   const size_t window_size_;
