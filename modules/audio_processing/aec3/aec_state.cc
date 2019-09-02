@@ -121,7 +121,7 @@ void AecState::Update(
   }
 
   const std::vector<float>& aligned_render_block =
-      render_buffer.Block(-delay_state_.DirectPathFilterDelay())[0][0];
+      render_buffer.Block(-delay_state_.DirectPathFilterDelay())[0];
 
   // Update render counters.
   const float render_energy = std::inner_product(

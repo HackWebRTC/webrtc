@@ -66,15 +66,13 @@ void IdentifyStrongNarrowBandComponent(const RenderBuffer& render_buffer,
   }
 
   // Assess the render signal strength.
-  const std::vector<std::vector<std::vector<float>>>& x_latest =
-      render_buffer.Block(0);
-  auto result0 =
-      std::minmax_element(x_latest[0][0].begin(), x_latest[0][0].end());
+  const std::vector<std::vector<float>>& x_latest = render_buffer.Block(0);
+  auto result0 = std::minmax_element(x_latest[0].begin(), x_latest[0].end());
   float max_abs = std::max(fabs(*result0.first), fabs(*result0.second));
 
   if (x_latest.size() > 1) {
     const auto result1 =
-        std::minmax_element(x_latest[1][0].begin(), x_latest[1][0].end());
+        std::minmax_element(x_latest[1].begin(), x_latest[1].end());
     max_abs =
         std::max(max_abs, static_cast<float>(std::max(fabs(*result1.first),
                                                       fabs(*result1.second))));

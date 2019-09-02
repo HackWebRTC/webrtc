@@ -21,12 +21,8 @@ namespace webrtc {
 
 // Struct for bundling a circular buffer of two dimensional vector objects
 // together with the read and write indices.
-// TODO(peah): Change name of this class to be more specific to what it does.
 struct MatrixBuffer {
-  MatrixBuffer(size_t size,
-               size_t num_bands,
-               size_t num_channels,
-               size_t frame_length);
+  MatrixBuffer(size_t size, size_t height, size_t width);
   ~MatrixBuffer();
 
   int IncIndex(int index) const {
@@ -53,7 +49,7 @@ struct MatrixBuffer {
   void DecReadIndex() { read = DecIndex(read); }
 
   const int size;
-  std::vector<std::vector<std::vector<std::vector<float>>>> buffer;
+  std::vector<std::vector<std::vector<float>>> buffer;
   int write = 0;
   int read = 0;
 };

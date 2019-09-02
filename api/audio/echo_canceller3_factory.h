@@ -28,15 +28,8 @@ class RTC_EXPORT EchoCanceller3Factory : public EchoControlFactory {
   // configuration.
   explicit EchoCanceller3Factory(const EchoCanceller3Config& config);
 
-  // Creates an EchoCanceller3 running at the specified sampling rate using a
-  // mono setup
+  // Creates an EchoCanceller3 running at the specified sampling rate.
   std::unique_ptr<EchoControl> Create(int sample_rate_hz) override;
-
-  // Creates an EchoCanceller3 running at the specified sampling rate and a
-  // specified number of channels.
-  std::unique_ptr<EchoControl> Create(int sample_rate_hz,
-                                      size_t num_render_channels,
-                                      size_t num_capture_channels) override;
 
  private:
   const EchoCanceller3Config config_;

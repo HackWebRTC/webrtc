@@ -84,10 +84,7 @@ void WindowedPaddedFft(const Aec3Fft& fft,
 // Class for removing the echo from the capture signal.
 class EchoRemoverImpl final : public EchoRemover {
  public:
-  EchoRemoverImpl(const EchoCanceller3Config& config,
-                  int sample_rate_hz,
-                  size_t num_render_channels,
-                  size_t num_capture_channels);
+  EchoRemoverImpl(const EchoCanceller3Config& config, int sample_rate_hz);
   ~EchoRemoverImpl() override;
 
   void GetMetrics(EchoControl::Metrics* metrics) const override;
@@ -95,12 +92,11 @@ class EchoRemoverImpl final : public EchoRemover {
   // Removes the echo from a block of samples from the capture signal. The
   // supplied render signal is assumed to be pre-aligned with the capture
   // signal.
-  void ProcessCapture(
-      EchoPathVariability echo_path_variability,
-      bool capture_signal_saturation,
-      const absl::optional<DelayEstimate>& external_delay,
-      RenderBuffer* render_buffer,
-      std::vector<std::vector<std::vector<float>>>* capture) override;
+  void ProcessCapture(EchoPathVariability echo_path_variability,
+                      bool capture_signal_saturation,
+                      const absl::optional<DelayEstimate>& external_delay,
+                      RenderBuffer* render_buffer,
+                      std::vector<std::vector<float>>* capture) override;
 
   // Updates the status on whether echo leakage is detected in the output of the
   // echo remover.
@@ -121,8 +117,6 @@ class EchoRemoverImpl final : public EchoRemover {
   std::unique_ptr<ApmDataDumper> data_dumper_;
   const Aec3Optimization optimization_;
   const int sample_rate_hz_;
-  const size_t num_render_channels_;
-  const size_t num_capture_channels_;
   const bool use_shadow_filter_output_;
   Subtractor subtractor_;
   SuppressionGain suppression_gain_;
@@ -147,17 +141,13 @@ class EchoRemoverImpl final : public EchoRemover {
 int EchoRemoverImpl::instance_count_ = 0;
 
 EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
-                                 int sample_rate_hz,
-                                 size_t num_render_channels,
-                                 size_t num_capture_channels)
+                                 int sample_rate_hz)
     : config_(config),
       fft_(),
       data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       optimization_(DetectOptimization()),
       sample_rate_hz_(sample_rate_hz),
-      num_render_channels_(num_render_channels),
-      num_capture_channels_(num_capture_channels),
       use_shadow_filter_output_(
           config_.filter.enable_shadow_filter_output_usage),
       subtractor_(config, data_dumper_.get(), optimization_),
@@ -171,8 +161,6 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
   x_old_.fill(0.f);
   y_old_.fill(0.f);
   e_old_.fill(0.f);
-  (void)num_render_channels_;
-  (void)num_capture_channels_;
 }
 
 EchoRemoverImpl::~EchoRemoverImpl() = default;
@@ -189,26 +177,23 @@ void EchoRemoverImpl::ProcessCapture(
     bool capture_signal_saturation,
     const absl::optional<DelayEstimate>& external_delay,
     RenderBuffer* render_buffer,
-    std::vector<std::vector<std::vector<float>>>* capture) {
+    std::vector<std::vector<float>>* capture) {
   ++block_counter_;
-  const std::vector<std::vector<std::vector<float>>>& x =
-      render_buffer->Block(0);
-  std::vector<std::vector<std::vector<float>>>* y = capture;
+  const std::vector<std::vector<float>>& x = render_buffer->Block(0);
+  std::vector<std::vector<float>>* y = capture;
   RTC_DCHECK(render_buffer);
   RTC_DCHECK(y);
   RTC_DCHECK_EQ(x.size(), NumBandsForRate(sample_rate_hz_));
   RTC_DCHECK_EQ(y->size(), NumBandsForRate(sample_rate_hz_));
-  RTC_DCHECK_EQ(x[0].size(), num_render_channels_);
-  RTC_DCHECK_EQ((*y)[0].size(), num_capture_channels_);
-  RTC_DCHECK_EQ(x[0][0].size(), kBlockSize);
-  RTC_DCHECK_EQ((*y)[0][0].size(), kBlockSize);
-  const std::vector<float>& x0 = x[0][0];
-  std::vector<float>& y0 = (*y)[0][0];
+  RTC_DCHECK_EQ(x[0].size(), kBlockSize);
+  RTC_DCHECK_EQ((*y)[0].size(), kBlockSize);
+  const std::vector<float>& x0 = x[0];
+  std::vector<float>& y0 = (*y)[0];
 
   data_dumper_->DumpWav("aec3_echo_remover_capture_input", kBlockSize, &y0[0],
-                        16000, 1);
+                        LowestBandRate(sample_rate_hz_), 1);
   data_dumper_->DumpWav("aec3_echo_remover_render_input", kBlockSize, &x0[0],
-                        16000, 1);
+                        LowestBandRate(sample_rate_hz_), 1);
   data_dumper_->DumpRaw("aec3_echo_remover_capture_input", y0);
   data_dumper_->DumpRaw("aec3_echo_remover_render_input", x0);
 
@@ -279,7 +264,8 @@ void EchoRemoverImpl::ProcessCapture(
                     subtractor_output, y0);
 
   // Choose the linear output.
-  data_dumper_->DumpWav("aec3_output_linear2", kBlockSize, &e[0], 16000, 1);
+  data_dumper_->DumpWav("aec3_output_linear2", kBlockSize, &e[0],
+                        LowestBandRate(sample_rate_hz_), 1);
   if (aec_state_.UseLinearFilterOutput()) {
     if (!linear_filter_output_last_selected_) {
       SignalTransition(y0, e, y0);
@@ -294,7 +280,8 @@ void EchoRemoverImpl::ProcessCapture(
   linear_filter_output_last_selected_ = aec_state_.UseLinearFilterOutput();
   const auto& Y_fft = aec_state_.UseLinearFilterOutput() ? E : Y;
 
-  data_dumper_->DumpWav("aec3_output_linear", kBlockSize, &y0[0], 16000, 1);
+  data_dumper_->DumpWav("aec3_output_linear", kBlockSize, &y0[0],
+                        LowestBandRate(sample_rate_hz_), 1);
 
   // Estimate the residual echo power.
   residual_echo_estimator_.Estimate(aec_state_, *render_buffer, S2_linear, Y2,
@@ -330,14 +317,16 @@ void EchoRemoverImpl::ProcessCapture(
 
   // Debug outputs for the purpose of development and analysis.
   data_dumper_->DumpWav("aec3_echo_estimate", kBlockSize,
-                        &subtractor_output.s_main[0], 16000, 1);
+                        &subtractor_output.s_main[0],
+                        LowestBandRate(sample_rate_hz_), 1);
   data_dumper_->DumpRaw("aec3_output", y0);
   data_dumper_->DumpRaw("aec3_narrow_render",
                         render_signal_analyzer_.NarrowPeakBand() ? 1 : 0);
   data_dumper_->DumpRaw("aec3_N2", cng_.NoiseSpectrum());
   data_dumper_->DumpRaw("aec3_suppressor_gain", G);
-  data_dumper_->DumpWav(
-      "aec3_output", rtc::ArrayView<const float>(&y0[0], kBlockSize), 16000, 1);
+  data_dumper_->DumpWav("aec3_output",
+                        rtc::ArrayView<const float>(&y0[0], kBlockSize),
+                        LowestBandRate(sample_rate_hz_), 1);
   data_dumper_->DumpRaw("aec3_using_subtractor_output",
                         aec_state_.UseLinearFilterOutput() ? 1 : 0);
   data_dumper_->DumpRaw("aec3_E2", E2);
@@ -401,11 +390,8 @@ void EchoRemoverImpl::FormLinearFilterOutput(
 }  // namespace
 
 EchoRemover* EchoRemover::Create(const EchoCanceller3Config& config,
-                                 int sample_rate_hz,
-                                 size_t num_render_channels,
-                                 size_t num_capture_channels) {
-  return new EchoRemoverImpl(config, sample_rate_hz, num_render_channels,
-                             num_capture_channels);
+                                 int sample_rate_hz) {
+  return new EchoRemoverImpl(config, sample_rate_hz);
 }
 
 }  // namespace webrtc

@@ -39,15 +39,12 @@ namespace {
 
 class RenderDelayBufferImpl final : public RenderDelayBuffer {
  public:
-  RenderDelayBufferImpl(const EchoCanceller3Config& config,
-                        int sample_rate_hz,
-                        size_t num_render_channels);
+  RenderDelayBufferImpl(const EchoCanceller3Config& config, int sample_rate_hz);
   RenderDelayBufferImpl() = delete;
   ~RenderDelayBufferImpl() override;
 
   void Reset() override;
-  BufferingEvent Insert(
-      const std::vector<std::vector<std::vector<float>>>& block) override;
+  BufferingEvent Insert(const std::vector<std::vector<float>>& block) override;
   BufferingEvent PrepareCaptureProcessing() override;
   bool AlignFromDelay(size_t delay) override;
   void AlignFromExternalDelay() override;
@@ -93,11 +90,12 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   bool external_audio_buffer_delay_verified_after_reset_ = false;
   size_t min_latency_blocks_ = 0;
   size_t excess_render_detection_counter_ = 0;
+  int sample_rate_hz_;
 
   int MapDelayToTotalDelay(size_t delay) const;
   int ComputeDelay() const;
   void ApplyTotalDelay(int delay);
-  void InsertBlock(const std::vector<std::vector<std::vector<float>>>& block,
+  void InsertBlock(const std::vector<std::vector<float>>& block,
                    int previous_write);
   bool DetectActiveRender(rtc::ArrayView<const float> x) const;
   bool DetectExcessRenderBlocks();
@@ -111,8 +109,7 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
 int RenderDelayBufferImpl::instance_count_ = 0;
 
 RenderDelayBufferImpl::RenderDelayBufferImpl(const EchoCanceller3Config& config,
-                                             int sample_rate_hz,
-                                             size_t num_render_channels)
+                                             int sample_rate_hz)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       optimization_(DetectOptimization()),
@@ -125,7 +122,6 @@ RenderDelayBufferImpl::RenderDelayBufferImpl(const EchoCanceller3Config& config,
                                        config.delay.num_filters,
                                        config.filter.main.length_blocks),
               NumBandsForRate(sample_rate_hz),
-              num_render_channels,
               kBlockSize),
       spectra_(blocks_.buffer.size(), kFftLengthBy2Plus1),
       ffts_(blocks_.buffer.size()),
@@ -136,7 +132,9 @@ RenderDelayBufferImpl::RenderDelayBufferImpl(const EchoCanceller3Config& config,
       render_decimator_(down_sampling_factor_),
       fft_(),
       render_ds_(sub_block_size_, 0.f),
-      buffer_headroom_(config.filter.main.length_blocks) {
+      buffer_headroom_(config.filter.main.length_blocks),
+      sample_rate_hz_(sample_rate_hz) {
+  RTC_DCHECK_GE(sample_rate_hz, 8000);
   RTC_DCHECK_EQ(blocks_.buffer.size(), ffts_.buffer.size());
   RTC_DCHECK_EQ(spectra_.buffer.size(), ffts_.buffer.size());
 
@@ -186,7 +184,7 @@ void RenderDelayBufferImpl::Reset() {
 
 // Inserts a new block into the render buffers.
 RenderDelayBuffer::BufferingEvent RenderDelayBufferImpl::Insert(
-    const std::vector<std::vector<std::vector<float>>>& block) {
+    const std::vector<std::vector<float>>& block) {
   ++render_call_counter_;
   if (delay_) {
     if (!last_call_was_render_) {
@@ -214,7 +212,7 @@ RenderDelayBuffer::BufferingEvent RenderDelayBufferImpl::Insert(
 
   // Detect and update render activity.
   if (!render_activity_) {
-    render_activity_counter_ += DetectActiveRender(block[0][0]) ? 1 : 0;
+    render_activity_counter_ += DetectActiveRender(block[0]) ? 1 : 0;
     render_activity_ = render_activity_counter_ >= 20;
   }
 
@@ -317,7 +315,8 @@ void RenderDelayBufferImpl::SetAudioBufferDelay(size_t delay_ms) {
   }
 
   // Convert delay from milliseconds to blocks (rounded down).
-  external_audio_buffer_delay_ = delay_ms >> 2;
+  external_audio_buffer_delay_ =
+      delay_ms >> ((sample_rate_hz_ == 8000) ? 1 : 2);
 }
 
 bool RenderDelayBufferImpl::HasReceivedBufferDelay() {
@@ -360,7 +359,7 @@ void RenderDelayBufferImpl::AlignFromExternalDelay() {
 
 // Inserts a block into the render buffers.
 void RenderDelayBufferImpl::InsertBlock(
-    const std::vector<std::vector<std::vector<float>>>& block,
+    const std::vector<std::vector<float>>& block,
     int previous_write) {
   auto& b = blocks_;
   auto& lr = low_rate_;
@@ -373,14 +372,13 @@ void RenderDelayBufferImpl::InsertBlock(
     std::copy(block[k].begin(), block[k].end(), b.buffer[b.write][k].begin());
   }
 
-  data_dumper_->DumpWav("aec3_render_decimator_input", block[0][0].size(),
-                        block[0][0].data(), 16000, 1);
-  render_decimator_.Decimate(block[0][0], ds);
+  data_dumper_->DumpWav("aec3_render_decimator_input", block[0].size(),
+                        block[0].data(), 16000, 1);
+  render_decimator_.Decimate(block[0], ds);
   data_dumper_->DumpWav("aec3_render_decimator_output", ds.size(), ds.data(),
                         16000 / down_sampling_factor_, 1);
   std::copy(ds.rbegin(), ds.rend(), lr.buffer.begin() + lr.write);
-  fft_.PaddedFft(block[0][0], b.buffer[previous_write][0][0],
-                 &f.buffer[f.write]);
+  fft_.PaddedFft(block[0], b.buffer[previous_write][0], &f.buffer[f.write]);
   f.buffer[f.write].Spectrum(optimization_, s.buffer[s.write]);
 }
 
@@ -459,9 +457,8 @@ bool RenderDelayBufferImpl::RenderUnderrun() {
 }  // namespace
 
 RenderDelayBuffer* RenderDelayBuffer::Create(const EchoCanceller3Config& config,
-                                             int sample_rate_hz,
-                                             size_t num_render_channels) {
-  return new RenderDelayBufferImpl(config, sample_rate_hz, num_render_channels);
+                                             int sample_rate_hz) {
+  return new RenderDelayBufferImpl(config, sample_rate_hz);
 }
 
 }  // namespace webrtc
