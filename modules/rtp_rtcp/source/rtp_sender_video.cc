@@ -313,8 +313,7 @@ void RTPSenderVideo::SendVideoPacketAsRedMaybeWithUlpfec(
         }
 
         ulpfec_generator_.AddRtpPacketAndGenerateFec(
-            media_packet->data(), media_packet->payload_size(),
-            media_packet->headers_size());
+            media_packet->Buffer(), media_packet->headers_size());
       }
       uint16_t num_fec_packets = ulpfec_generator_.NumAvailableFecPackets();
       if (num_fec_packets > 0) {

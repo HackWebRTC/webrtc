@@ -58,8 +58,7 @@ class UlpfecGenerator {
   // Adds a media packet to the internal buffer. When enough media packets
   // have been added, the FEC packets are generated and stored internally.
   // These FEC packets are then obtained by calling GetFecPacketsAsRed().
-  int AddRtpPacketAndGenerateFec(const uint8_t* data_buffer,
-                                 size_t payload_length,
+  int AddRtpPacketAndGenerateFec(const rtc::CopyOnWriteBuffer& data_buffer,
                                  size_t rtp_header_length);
 
   // Returns true if there are generated FEC packets available.

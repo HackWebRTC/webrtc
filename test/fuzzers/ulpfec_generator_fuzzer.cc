@@ -15,6 +15,7 @@
 #include "modules/rtp_rtcp/source/fec_test_helper.h"
 #include "modules/rtp_rtcp/source/ulpfec_generator.h"
 #include "rtc_base/checks.h"
+#include "rtc_base/copy_on_write_buffer.h"
 
 namespace webrtc {
 
@@ -38,10 +39,8 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     size_t payload_size = data[i++] % 10;
     if (i + payload_size + rtp_header_length + 2 > size)
       break;
-    std::unique_ptr<uint8_t[]> packet(
-        new uint8_t[payload_size + rtp_header_length]);
-    memcpy(packet.get(), &data[i], payload_size + rtp_header_length);
-
+    rtc::CopyOnWriteBuffer packet(&data[i], payload_size + rtp_header_length);
+    packet.EnsureCapacity(IP_PACKET_SIZE);
     // Make sure sequence numbers are increasing.
     ByteWriter<uint16_t>::WriteBigEndian(&packet[2], seq_num++);
     i += payload_size + rtp_header_length;
@@ -52,8 +51,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     // number became out of order.
     if (protect && IsNewerSequenceNumber(seq_num, prev_seq_num) &&
         seq_num < prev_seq_num + kUlpfecMaxMediaPackets) {
-      generator.AddRtpPacketAndGenerateFec(packet.get(), payload_size,
-                                           rtp_header_length);
+      generator.AddRtpPacketAndGenerateFec(packet, rtp_header_length);
       prev_seq_num = seq_num;
     }
     const size_t num_fec_packets = generator.NumAvailableFecPackets();

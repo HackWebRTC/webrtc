@@ -157,10 +157,7 @@ void RtpPacket::SetSsrc(uint32_t ssrc) {
   ByteWriter<uint32_t>::WriteBigEndian(WriteAt(8), ssrc);
 }
 
-void RtpPacket::CopyAndZeroMutableExtensions(
-    rtc::ArrayView<uint8_t> buffer) const {
-  RTC_CHECK_GE(buffer.size(), buffer_.size());
-  memcpy(buffer.data(), buffer_.cdata(), buffer_.size());
+void RtpPacket::ZeroMutableExtensions() {
   for (const ExtensionInfo& extension : extension_entries_) {
     switch (extensions_.GetType(extension.id)) {
       case RTPExtensionType::kRtpExtensionNone: {
@@ -170,9 +167,9 @@ void RtpPacket::CopyAndZeroMutableExtensions(
       case RTPExtensionType::kRtpExtensionVideoTiming: {
         // Nullify 3 last entries: packetization delay and 2 network timestamps.
         // Each of them is 2 bytes.
-        memset(buffer.data() + extension.offset +
-                   VideoSendTiming::kPacerExitDeltaOffset,
-               0, 6);
+        memset(
+            WriteAt(extension.offset + VideoSendTiming::kPacerExitDeltaOffset),
+            0, 6);
         break;
       }
       case RTPExtensionType::kRtpExtensionTransportSequenceNumber:
@@ -180,7 +177,7 @@ void RtpPacket::CopyAndZeroMutableExtensions(
       case RTPExtensionType::kRtpExtensionTransmissionTimeOffset:
       case RTPExtensionType::kRtpExtensionAbsoluteSendTime: {
         // Nullify whole extension, as it's filled in the pacer.
-        memset(buffer.data() + extension.offset, 0, extension.length);
+        memset(WriteAt(extension.offset), 0, extension.length);
         break;
       }
       case RTPExtensionType::kRtpExtensionAudioLevel:
