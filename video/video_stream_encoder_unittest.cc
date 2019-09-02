@@ -766,10 +766,11 @@ class VideoStreamEncoderTest : public ::testing::Test {
       expect_null_frame_ = true;
     }
 
-    absl::optional<VideoBitrateAllocation> GetAndResetLastBitrateAllocation() {
-      auto allocation = last_bitrate_allocation_;
-      last_bitrate_allocation_.reset();
-      return allocation;
+    absl::optional<VideoEncoder::RateControlParameters>
+    GetAndResetLastRateControlSettings() {
+      auto settings = last_rate_control_settings_;
+      last_rate_control_settings_.reset();
+      return settings;
     }
 
     int GetNumEncoderInitializations() const {
@@ -855,7 +856,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
         }
       }
       last_framerate_ = static_cast<uint32_t>(parameters.framerate_fps + 0.5);
-      last_bitrate_allocation_ = parameters.bitrate;
+      last_rate_control_settings_ = parameters;
       RateControlParameters adjusted_paramters = parameters;
       adjusted_paramters.bitrate = adjusted_rate_allocation;
       FakeEncoder::SetRates(adjusted_paramters);
@@ -884,7 +885,8 @@ class VideoStreamEncoderTest : public ::testing::Test {
     bool force_init_encode_failed_ RTC_GUARDED_BY(local_crit_sect_) = false;
     double rate_factor_ RTC_GUARDED_BY(local_crit_sect_) = 1.0;
     uint32_t last_framerate_ RTC_GUARDED_BY(local_crit_sect_) = 0;
-    absl::optional<VideoBitrateAllocation> last_bitrate_allocation_;
+    absl::optional<VideoEncoder::RateControlParameters>
+        last_rate_control_settings_;
     VideoFrame::UpdateRect last_update_rect_
         RTC_GUARDED_BY(local_crit_sect_) = {0, 0, 0, 0};
     std::vector<VideoFrameType> last_frame_types_;
@@ -3062,10 +3064,10 @@ TEST_F(VideoStreamEncoderTest, CallsBitrateObserver) {
   video_source_.IncomingCapturedFrame(
       CreateFrame(rtc::TimeMillis(), codec_width_, codec_height_));
   WaitForEncodedFrame(rtc::TimeMillis());
-  absl::optional<VideoBitrateAllocation> bitrate_allocation =
-      fake_encoder_.GetAndResetLastBitrateAllocation();
+  VideoBitrateAllocation bitrate_allocation =
+      fake_encoder_.GetAndResetLastRateControlSettings()->bitrate;
   // Check that encoder has been updated too, not just allocation observer.
-  EXPECT_EQ(bitrate_allocation->get_sum_bps(), kLowTargetBitrateBps);
+  EXPECT_EQ(bitrate_allocation.get_sum_bps(), kLowTargetBitrateBps);
   // TODO(srte): The use of millisecs here looks like an error, but the tests
   // fails using seconds, this should be investigated.
   fake_clock_.AdvanceTime(TimeDelta::ms(1) / kDefaultFps);
@@ -3092,7 +3094,7 @@ TEST_F(VideoStreamEncoderTest, CallsBitrateObserver) {
   }
 
   // Since rates are unchanged, encoder should not be reconfigured.
-  EXPECT_FALSE(fake_encoder_.GetAndResetLastBitrateAllocation().has_value());
+  EXPECT_FALSE(fake_encoder_.GetAndResetLastRateControlSettings().has_value());
 
   video_stream_encoder_->Stop();
 }
@@ -4663,6 +4665,45 @@ TEST_F(VideoStreamEncoderTest, CopiesVideoFrameMetadataAfterDownscale) {
 
   WaitForEncodedFrame(timestamp_ms);
   sink_.CheckLastFrameRotationMatches(kVideoRotation_180);
+
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, BandwidthAllocationLowerBound) {
+  const int kFrameWidth = 320;
+  const int kFrameHeight = 180;
+
+  // Initial rate.
+  video_stream_encoder_->OnBitrateUpdated(
+      /*target_bitrate=*/DataRate::kbps(300),
+      /*link_allocation=*/DataRate::kbps(300),
+      /*fraction_lost=*/0,
+      /*rtt_ms=*/0);
+
+  // Insert a first video frame so that encoder gets configured.
+  int64_t timestamp_ms = fake_clock_.TimeNanos() / rtc::kNumNanosecsPerMillisec;
+  VideoFrame frame = CreateFrame(timestamp_ms, kFrameWidth, kFrameHeight);
+  frame.set_rotation(kVideoRotation_270);
+  video_source_.IncomingCapturedFrame(frame);
+  WaitForEncodedFrame(timestamp_ms);
+
+  // Set a target rate below the minimum allowed by the codec settings.
+  VideoCodec codec_config = fake_encoder_.codec_config();
+  DataRate min_rate = DataRate::kbps(codec_config.minBitrate);
+  DataRate target_rate = min_rate - DataRate::kbps(1);
+  video_stream_encoder_->OnBitrateUpdated(
+      /*target_bitrate=*/target_rate,
+      /*link_allocation=*/target_rate,
+      /*fraction_lost=*/0,
+      /*rtt_ms=*/0);
+  video_stream_encoder_->WaitUntilTaskQueueIsIdle();
+
+  // Target bitrate and bandwidth allocation should both be capped at min_rate.
+  auto rate_settings = fake_encoder_.GetAndResetLastRateControlSettings();
+  ASSERT_TRUE(rate_settings.has_value());
+  DataRate allocation_sum = DataRate::bps(rate_settings->bitrate.get_sum_bps());
+  EXPECT_EQ(min_rate, allocation_sum);
+  EXPECT_EQ(rate_settings->bandwidth_allocation, min_rate);
 
   video_stream_encoder_->Stop();
 }

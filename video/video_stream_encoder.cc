@@ -1145,6 +1145,13 @@ VideoStreamEncoder::UpdateBitrateAllocationAndNotifyObserver(
 
   EncoderRateSettings new_rate_settings = rate_settings;
   new_rate_settings.bitrate = new_allocation;
+  // VideoBitrateAllocator subclasses may allocate a bitrate higher than the
+  // target in order to sustain the min bitrate of the video codec. In this
+  // case, make sure the bandwidth allocation is at least equal the allocation
+  // as that is part of the document contract for that field.
+  new_rate_settings.bandwidth_allocation =
+      std::max(new_rate_settings.bandwidth_allocation,
+               DataRate::bps(new_rate_settings.bitrate.get_sum_bps()));
 
   if (bitrate_adjuster_) {
     VideoBitrateAllocation adjusted_allocation =
