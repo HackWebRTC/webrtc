@@ -88,6 +88,7 @@ rtc_static_library("rtc_media_base") {
     "../common_video",
     "../modules/audio_processing:audio_processing_statistics",
     "../modules/rtp_rtcp:rtp_rtcp_format",
+    "../p2p:stun_types",
     "../rtc_base",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
@@ -135,10 +136,6 @@ rtc_static_library("rtc_media_base") {
     "base/video_source_base.cc",
     "base/video_source_base.h",
   ]
-
-  if (!build_with_mozilla) {
-    deps += [ "../p2p" ]
-  }
 }
 
 rtc_static_library("rtc_constants") {
