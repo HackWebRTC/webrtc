@@ -45,27 +45,36 @@ EchoCanceller3Config AdjustConfig(const EchoCanceller3Config& config) {
   return adjusted_cfg;
 }
 
-void FillSubFrameView(AudioBuffer* frame,
-                      size_t sub_frame_index,
-                      std::vector<rtc::ArrayView<float>>* sub_frame_view) {
+void FillSubFrameView(
+    AudioBuffer* frame,
+    size_t sub_frame_index,
+    std::vector<std::vector<rtc::ArrayView<float>>>* sub_frame_view) {
   RTC_DCHECK_GE(1, sub_frame_index);
   RTC_DCHECK_LE(0, sub_frame_index);
   RTC_DCHECK_EQ(frame->num_bands(), sub_frame_view->size());
-  for (size_t k = 0; k < sub_frame_view->size(); ++k) {
-    (*sub_frame_view)[k] = rtc::ArrayView<float>(
-        &frame->split_bands(0)[k][sub_frame_index * kSubFrameLength],
-        kSubFrameLength);
+  RTC_DCHECK_EQ(frame->num_channels(), (*sub_frame_view)[0].size());
+  for (size_t band = 0; band < sub_frame_view->size(); ++band) {
+    for (size_t channel = 0; channel < (*sub_frame_view)[0].size(); ++channel) {
+      (*sub_frame_view)[band][channel] = rtc::ArrayView<float>(
+          &frame->split_bands(channel)[band][sub_frame_index * kSubFrameLength],
+          kSubFrameLength);
+    }
   }
 }
 
-void FillSubFrameView(std::vector<std::vector<float>>* frame,
-                      size_t sub_frame_index,
-                      std::vector<rtc::ArrayView<float>>* sub_frame_view) {
+void FillSubFrameView(
+    std::vector<std::vector<std::vector<float>>>* frame,
+    size_t sub_frame_index,
+    std::vector<std::vector<rtc::ArrayView<float>>>* sub_frame_view) {
   RTC_DCHECK_GE(1, sub_frame_index);
   RTC_DCHECK_EQ(frame->size(), sub_frame_view->size());
-  for (size_t k = 0; k < frame->size(); ++k) {
-    (*sub_frame_view)[k] = rtc::ArrayView<float>(
-        &(*frame)[k][sub_frame_index * kSubFrameLength], kSubFrameLength);
+  RTC_DCHECK_EQ((*frame)[0].size(), (*sub_frame_view)[0].size());
+  for (size_t band = 0; band < frame->size(); ++band) {
+    for (size_t channel = 0; channel < (*frame)[band].size(); ++channel) {
+      (*sub_frame_view)[band][channel] = rtc::ArrayView<float>(
+          &(*frame)[band][channel][sub_frame_index * kSubFrameLength],
+          kSubFrameLength);
+    }
   }
 }
 
@@ -77,8 +86,8 @@ void ProcessCaptureFrameContent(
     FrameBlocker* capture_blocker,
     BlockFramer* output_framer,
     BlockProcessor* block_processor,
-    std::vector<std::vector<float>>* block,
-    std::vector<rtc::ArrayView<float>>* sub_frame_view) {
+    std::vector<std::vector<std::vector<float>>>* block,
+    std::vector<std::vector<rtc::ArrayView<float>>>* sub_frame_view) {
   FillSubFrameView(capture, sub_frame_index, sub_frame_view);
   capture_blocker->InsertSubFrameAndExtractBlock(*sub_frame_view, block);
   block_processor->ProcessCapture(level_change, saturated_microphone_signal,
@@ -92,7 +101,7 @@ void ProcessRemainingCaptureFrameContent(
     FrameBlocker* capture_blocker,
     BlockFramer* output_framer,
     BlockProcessor* block_processor,
-    std::vector<std::vector<float>>* block) {
+    std::vector<std::vector<std::vector<float>>>* block) {
   if (!capture_blocker->IsBlockAvailable()) {
     return;
   }
@@ -104,20 +113,21 @@ void ProcessRemainingCaptureFrameContent(
 }
 
 void BufferRenderFrameContent(
-    std::vector<std::vector<float>>* render_frame,
+    std::vector<std::vector<std::vector<float>>>* render_frame,
     size_t sub_frame_index,
     FrameBlocker* render_blocker,
     BlockProcessor* block_processor,
-    std::vector<std::vector<float>>* block,
-    std::vector<rtc::ArrayView<float>>* sub_frame_view) {
+    std::vector<std::vector<std::vector<float>>>* block,
+    std::vector<std::vector<rtc::ArrayView<float>>>* sub_frame_view) {
   FillSubFrameView(render_frame, sub_frame_index, sub_frame_view);
   render_blocker->InsertSubFrameAndExtractBlock(*sub_frame_view, block);
   block_processor->BufferRender(*block);
 }
 
-void BufferRemainingRenderFrameContent(FrameBlocker* render_blocker,
-                                       BlockProcessor* block_processor,
-                                       std::vector<std::vector<float>>* block) {
+void BufferRemainingRenderFrameContent(
+    FrameBlocker* render_blocker,
+    BlockProcessor* block_processor,
+    std::vector<std::vector<std::vector<float>>>* block) {
   if (!render_blocker->IsBlockAvailable()) {
     return;
   }
@@ -127,14 +137,19 @@ void BufferRemainingRenderFrameContent(FrameBlocker* render_blocker,
 
 void CopyBufferIntoFrame(const AudioBuffer& buffer,
                          size_t num_bands,
-                         size_t frame_length,
-                         std::vector<std::vector<float>>* frame) {
+                         size_t num_channels,
+                         std::vector<std::vector<std::vector<float>>>* frame) {
   RTC_DCHECK_EQ(num_bands, frame->size());
-  RTC_DCHECK_EQ(frame_length, (*frame)[0].size());
-  for (size_t k = 0; k < num_bands; ++k) {
-    rtc::ArrayView<const float> buffer_view(&buffer.split_bands_const(0)[k][0],
-                                            frame_length);
-    std::copy(buffer_view.begin(), buffer_view.end(), (*frame)[k].begin());
+  RTC_DCHECK_EQ(num_channels, (*frame)[0].size());
+  RTC_DCHECK_EQ(AudioBuffer::kSplitBandSize, (*frame)[0][0].size());
+  for (size_t band = 0; band < num_bands; ++band) {
+    for (size_t channel = 0; channel < num_channels; ++channel) {
+      rtc::ArrayView<const float> buffer_view(
+          &buffer.split_bands_const(channel)[band][0],
+          AudioBuffer::kSplitBandSize);
+      std::copy(buffer_view.begin(), buffer_view.end(),
+                (*frame)[band][channel].begin());
+    }
   }
 }
 
@@ -143,40 +158,39 @@ void CopyBufferIntoFrame(const AudioBuffer& buffer,
 class EchoCanceller3::RenderWriter {
  public:
   RenderWriter(ApmDataDumper* data_dumper,
-               SwapQueue<std::vector<std::vector<float>>,
+               SwapQueue<std::vector<std::vector<std::vector<float>>>,
                          Aec3RenderQueueItemVerifier>* render_transfer_queue,
-               int sample_rate_hz,
-               int frame_length,
-               int num_bands);
+               size_t num_bands,
+               size_t num_channels);
   ~RenderWriter();
   void Insert(const AudioBuffer& input);
 
  private:
   ApmDataDumper* data_dumper_;
-  const int sample_rate_hz_;
-  const size_t frame_length_;
-  const int num_bands_;
+  const size_t num_bands_;
+  const size_t num_channels_;
   HighPassFilter high_pass_filter_;
-  std::vector<std::vector<float>> render_queue_input_frame_;
-  SwapQueue<std::vector<std::vector<float>>, Aec3RenderQueueItemVerifier>*
-      render_transfer_queue_;
+  std::vector<std::vector<std::vector<float>>> render_queue_input_frame_;
+  SwapQueue<std::vector<std::vector<std::vector<float>>>,
+            Aec3RenderQueueItemVerifier>* render_transfer_queue_;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RenderWriter);
 };
 
 EchoCanceller3::RenderWriter::RenderWriter(
     ApmDataDumper* data_dumper,
-    SwapQueue<std::vector<std::vector<float>>, Aec3RenderQueueItemVerifier>*
-        render_transfer_queue,
-    int sample_rate_hz,
-    int frame_length,
-    int num_bands)
+    SwapQueue<std::vector<std::vector<std::vector<float>>>,
+              Aec3RenderQueueItemVerifier>* render_transfer_queue,
+    size_t num_bands,
+    size_t num_channels)
     : data_dumper_(data_dumper),
-      sample_rate_hz_(sample_rate_hz),
-      frame_length_(frame_length),
       num_bands_(num_bands),
-      high_pass_filter_(1),
-      render_queue_input_frame_(num_bands_,
-                                std::vector<float>(frame_length_, 0.f)),
+      num_channels_(num_channels),
+      high_pass_filter_(num_channels),
+      render_queue_input_frame_(
+          num_bands_,
+          std::vector<std::vector<float>>(
+              num_channels_,
+              std::vector<float>(AudioBuffer::kSplitBandSize, 0.f))),
       render_transfer_queue_(render_transfer_queue) {
   RTC_DCHECK(data_dumper);
 }
@@ -185,21 +199,21 @@ EchoCanceller3::RenderWriter::~RenderWriter() = default;
 
 void EchoCanceller3::RenderWriter::Insert(const AudioBuffer& input) {
   RTC_DCHECK_EQ(1, input.num_channels());
-  RTC_DCHECK_EQ(frame_length_, input.num_frames_per_band());
+  RTC_DCHECK_EQ(AudioBuffer::kSplitBandSize, input.num_frames_per_band());
   RTC_DCHECK_EQ(num_bands_, input.num_bands());
 
   // TODO(bugs.webrtc.org/8759) Temporary work-around.
-  if (num_bands_ != static_cast<int>(input.num_bands()))
+  if (num_bands_ != input.num_bands())
     return;
 
-  data_dumper_->DumpWav("aec3_render_input", frame_length_,
-                        &input.split_bands_const(0)[0][0],
-                        LowestBandRate(sample_rate_hz_), 1);
+  data_dumper_->DumpWav("aec3_render_input", AudioBuffer::kSplitBandSize,
+                        &input.split_bands_const(0)[0][0], 16000, 1);
 
-  CopyBufferIntoFrame(input, num_bands_, frame_length_,
+  CopyBufferIntoFrame(input, num_bands_, num_channels_,
                       &render_queue_input_frame_);
-
-  high_pass_filter_.Process(render_queue_input_frame_[0]);
+  for (size_t channel = 0; channel < num_channels_; ++channel) {
+    high_pass_filter_.Process(render_queue_input_frame_[0][channel]);
+  }
 
   static_cast<void>(render_transfer_queue_->Insert(&render_queue_input_frame_));
 }
@@ -207,43 +221,71 @@ void EchoCanceller3::RenderWriter::Insert(const AudioBuffer& input) {
 int EchoCanceller3::instance_count_ = 0;
 
 EchoCanceller3::EchoCanceller3(const EchoCanceller3Config& config,
-                               int sample_rate_hz)
-    : EchoCanceller3(
-          AdjustConfig(config),
-          sample_rate_hz,
-          std::unique_ptr<BlockProcessor>(
-              BlockProcessor::Create(AdjustConfig(config), sample_rate_hz))) {}
+                               int sample_rate_hz,
+                               size_t num_render_channels,
+                               size_t num_capture_channels)
+    : EchoCanceller3(AdjustConfig(config),
+                     sample_rate_hz,
+                     num_render_channels,
+                     num_capture_channels,
+                     std::unique_ptr<BlockProcessor>(
+                         BlockProcessor::Create(AdjustConfig(config),
+                                                sample_rate_hz,
+                                                num_render_channels,
+                                                num_capture_channels))) {}
 EchoCanceller3::EchoCanceller3(const EchoCanceller3Config& config,
                                int sample_rate_hz,
+                               size_t num_render_channels,
+                               size_t num_capture_channels,
                                std::unique_ptr<BlockProcessor> block_processor)
     : data_dumper_(
           new ApmDataDumper(rtc::AtomicOps::Increment(&instance_count_))),
       config_(config),
       sample_rate_hz_(sample_rate_hz),
       num_bands_(NumBandsForRate(sample_rate_hz_)),
-      frame_length_(rtc::CheckedDivExact(LowestBandRate(sample_rate_hz_), 100)),
-      output_framer_(num_bands_),
-      capture_blocker_(num_bands_),
-      render_blocker_(num_bands_),
+      num_render_channels_(num_render_channels),
+      num_capture_channels_(num_capture_channels),
+      output_framer_(num_bands_, num_capture_channels_),
+      capture_blocker_(num_bands_, num_capture_channels_),
+      render_blocker_(num_bands_, num_render_channels_),
       render_transfer_queue_(
           kRenderTransferQueueSizeFrames,
-          std::vector<std::vector<float>>(
+          std::vector<std::vector<std::vector<float>>>(
               num_bands_,
-              std::vector<float>(frame_length_, 0.f)),
-          Aec3RenderQueueItemVerifier(num_bands_, frame_length_)),
+              std::vector<std::vector<float>>(
+                  num_render_channels_,
+                  std::vector<float>(AudioBuffer::kSplitBandSize, 0.f))),
+          Aec3RenderQueueItemVerifier(num_bands_,
+                                      num_render_channels_,
+                                      AudioBuffer::kSplitBandSize)),
       block_processor_(std::move(block_processor)),
-      render_queue_output_frame_(num_bands_,
-                                 std::vector<float>(frame_length_, 0.f)),
-      block_(num_bands_, std::vector<float>(kBlockSize, 0.f)),
-      sub_frame_view_(num_bands_),
+      render_queue_output_frame_(
+          num_bands_,
+          std::vector<std::vector<float>>(
+              num_render_channels_,
+              std::vector<float>(AudioBuffer::kSplitBandSize, 0.f))),
+      render_block_(
+          num_bands_,
+          std::vector<std::vector<float>>(num_render_channels_,
+                                          std::vector<float>(kBlockSize, 0.f))),
+      capture_block_(
+          num_bands_,
+          std::vector<std::vector<float>>(num_capture_channels_,
+                                          std::vector<float>(kBlockSize, 0.f))),
+      render_sub_frame_view_(
+          num_bands_,
+          std::vector<rtc::ArrayView<float>>(num_render_channels_)),
+      capture_sub_frame_view_(
+          num_bands_,
+          std::vector<rtc::ArrayView<float>>(num_capture_channels_)),
       block_delay_buffer_(num_bands_,
-                          frame_length_,
+                          AudioBuffer::kSplitBandSize,
                           config_.delay.fixed_capture_delay_samples) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz_));
 
-  render_writer_.reset(
-      new RenderWriter(data_dumper_.get(), &render_transfer_queue_,
-                       sample_rate_hz_, frame_length_, num_bands_));
+  render_writer_.reset(new RenderWriter(data_dumper_.get(),
+                                        &render_transfer_queue_, num_bands_,
+                                        num_render_channels_));
 
   RTC_DCHECK_EQ(num_bands_, std::max(sample_rate_hz_, 16000) / 16000);
   RTC_DCHECK_GE(kMaxNumBands, num_bands_);
@@ -253,6 +295,7 @@ EchoCanceller3::~EchoCanceller3() = default;
 
 void EchoCanceller3::AnalyzeRender(const AudioBuffer& render) {
   RTC_DCHECK_RUNS_SERIALIZED(&render_race_checker_);
+  RTC_DCHECK_EQ(render.num_channels(), num_render_channels_);
   data_dumper_->DumpRaw("aec3_call_order",
                         static_cast<int>(EchoCanceller3ApiCall::kRender));
 
@@ -265,10 +308,10 @@ void EchoCanceller3::AnalyzeCapture(const AudioBuffer& capture) {
                         capture.channels_const()[0], sample_rate_hz_, 1);
 
   saturated_microphone_signal_ = false;
-  for (size_t k = 0; k < capture.num_channels(); ++k) {
+  for (size_t channel = 0; channel < capture.num_channels(); ++channel) {
     saturated_microphone_signal_ |=
         DetectSaturation(rtc::ArrayView<const float>(
-            capture.channels_const()[k], capture.num_frames()));
+            capture.channels_const()[channel], capture.num_frames()));
     if (saturated_microphone_signal_) {
       break;
     }
@@ -280,7 +323,8 @@ void EchoCanceller3::ProcessCapture(AudioBuffer* capture, bool level_change) {
   RTC_DCHECK(capture);
   RTC_DCHECK_EQ(1u, capture->num_channels());
   RTC_DCHECK_EQ(num_bands_, capture->num_bands());
-  RTC_DCHECK_EQ(frame_length_, capture->num_frames_per_band());
+  RTC_DCHECK_EQ(AudioBuffer::kSplitBandSize, capture->num_frames_per_band());
+  RTC_DCHECK_EQ(capture->num_channels(), num_capture_channels_);
   data_dumper_->DumpRaw("aec3_call_order",
                         static_cast<int>(EchoCanceller3ApiCall::kCapture));
 
@@ -293,32 +337,29 @@ void EchoCanceller3::ProcessCapture(AudioBuffer* capture, bool level_change) {
     block_delay_buffer_.DelaySignal(capture);
   }
 
-  rtc::ArrayView<float> capture_lower_band =
-      rtc::ArrayView<float>(&capture->split_bands(0)[0][0], frame_length_);
+  rtc::ArrayView<float> capture_lower_band = rtc::ArrayView<float>(
+      &capture->split_bands(0)[0][0], AudioBuffer::kSplitBandSize);
 
-  data_dumper_->DumpWav("aec3_capture_input", capture_lower_band,
-                        LowestBandRate(sample_rate_hz_), 1);
+  data_dumper_->DumpWav("aec3_capture_input", capture_lower_band, 16000, 1);
 
   EmptyRenderQueue();
 
-  ProcessCaptureFrameContent(
-      capture, level_change, saturated_microphone_signal_, 0, &capture_blocker_,
-      &output_framer_, block_processor_.get(), &block_, &sub_frame_view_);
+  ProcessCaptureFrameContent(capture, level_change,
+                             saturated_microphone_signal_, 0, &capture_blocker_,
+                             &output_framer_, block_processor_.get(),
+                             &capture_block_, &capture_sub_frame_view_);
 
-  if (sample_rate_hz_ != 8000) {
-    ProcessCaptureFrameContent(
-        capture, level_change, saturated_microphone_signal_, 1,
-        &capture_blocker_, &output_framer_, block_processor_.get(), &block_,
-        &sub_frame_view_);
-  }
+  ProcessCaptureFrameContent(capture, level_change,
+                             saturated_microphone_signal_, 1, &capture_blocker_,
+                             &output_framer_, block_processor_.get(),
+                             &capture_block_, &capture_sub_frame_view_);
 
   ProcessRemainingCaptureFrameContent(
       level_change, saturated_microphone_signal_, &capture_blocker_,
-      &output_framer_, block_processor_.get(), &block_);
+      &output_framer_, block_processor_.get(), &capture_block_);
 
-  data_dumper_->DumpWav("aec3_capture_output", frame_length_,
-                        &capture->split_bands(0)[0][0],
-                        LowestBandRate(sample_rate_hz_), 1);
+  data_dumper_->DumpWav("aec3_capture_output", AudioBuffer::kSplitBandSize,
+                        &capture->split_bands(0)[0][0], 16000, 1);
 }
 
 EchoControl::Metrics EchoCanceller3::GetMetrics() const {
@@ -342,16 +383,15 @@ void EchoCanceller3::EmptyRenderQueue() {
     api_call_metrics_.ReportRenderCall();
 
     BufferRenderFrameContent(&render_queue_output_frame_, 0, &render_blocker_,
-                             block_processor_.get(), &block_, &sub_frame_view_);
+                             block_processor_.get(), &render_block_,
+                             &render_sub_frame_view_);
 
-    if (sample_rate_hz_ != 8000) {
-      BufferRenderFrameContent(&render_queue_output_frame_, 1, &render_blocker_,
-                               block_processor_.get(), &block_,
-                               &sub_frame_view_);
-    }
+    BufferRenderFrameContent(&render_queue_output_frame_, 1, &render_blocker_,
+                             block_processor_.get(), &render_block_,
+                             &render_sub_frame_view_);
 
     BufferRemainingRenderFrameContent(&render_blocker_, block_processor_.get(),
-                                      &block_);
+                                      &render_block_);
 
     frame_to_buffer =
         render_transfer_queue_.Remove(&render_queue_output_frame_);

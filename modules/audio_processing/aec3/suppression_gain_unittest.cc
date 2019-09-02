@@ -47,8 +47,9 @@ TEST(SuppressionGain, NullOutputGains) {
       SuppressionGain(EchoCanceller3Config{}, DetectOptimization(), 16000)
           .GetGain(E2, S2, R2, N2,
                    RenderSignalAnalyzer((EchoCanceller3Config{})), aec_state,
-                   std::vector<std::vector<float>>(
-                       3, std::vector<float>(kBlockSize, 0.f)),
+                   std::vector<std::vector<std::vector<float>>>(
+                       3, std::vector<std::vector<float>>(
+                              1, std::vector<float>(kBlockSize, 0.f))),
                    &high_bands_gain, nullptr),
       "");
 }
@@ -57,8 +58,11 @@ TEST(SuppressionGain, NullOutputGains) {
 
 // Does a sanity check that the gains are correctly computed.
 TEST(SuppressionGain, BasicGainComputation) {
+  constexpr size_t kNumChannels = 1;
+  constexpr int kSampleRateHz = 16000;
+  constexpr size_t kNumBands = NumBandsForRate(kSampleRateHz);
   SuppressionGain suppression_gain(EchoCanceller3Config(), DetectOptimization(),
-                                   16000);
+                                   kSampleRateHz);
   RenderSignalAnalyzer analyzer(EchoCanceller3Config{});
   float high_bands_gain;
   std::array<float, kFftLengthBy2Plus1> E2;
@@ -69,13 +73,15 @@ TEST(SuppressionGain, BasicGainComputation) {
   std::array<float, kFftLengthBy2Plus1> g;
   SubtractorOutput output;
   std::array<float, kBlockSize> y;
-  std::vector<std::vector<float>> x(1, std::vector<float>(kBlockSize, 0.f));
+  std::vector<std::vector<std::vector<float>>> x(
+      kNumBands, std::vector<std::vector<float>>(
+                     kNumChannels, std::vector<float>(kBlockSize, 0.f)));
   EchoCanceller3Config config;
   AecState aec_state(config);
   ApmDataDumper data_dumper(42);
   Subtractor subtractor(config, &data_dumper, DetectOptimization());
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, 48000));
+      RenderDelayBuffer::Create(config, kSampleRateHz, kNumChannels));
   absl::optional<DelayEstimate> delay_estimate;
 
   // Ensure that a strong noise is detected to mask any echoes.
