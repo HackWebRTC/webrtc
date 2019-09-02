@@ -19,12 +19,14 @@
 
 #include "api/call/transport.h"
 #include "api/crypto/crypto_options.h"
+#include "api/crypto/frame_decryptor_interface.h"
 #include "api/media_transport_config.h"
 #include "api/media_transport_interface.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
-#include "api/rtp_receiver_interface.h"
+#include "api/transport/rtp/rtp_source.h"
 #include "api/video/video_content_type.h"
+#include "api/video/video_frame.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_timing.h"
 #include "api/video_codecs/sdp_video_format.h"
@@ -34,7 +36,6 @@
 
 namespace webrtc {
 
-class FrameDecryptorInterface;
 class RtpPacketSinkInterface;
 class VideoDecoderFactory;
 

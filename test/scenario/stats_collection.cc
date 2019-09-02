@@ -12,6 +12,7 @@
 
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "rtc_base/memory_usage.h"
+#include "rtc_base/thread.h"
 
 namespace webrtc {
 namespace test {

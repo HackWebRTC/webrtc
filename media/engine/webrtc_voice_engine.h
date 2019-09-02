@@ -17,9 +17,9 @@
 #include <vector>
 
 #include "api/audio_codecs/audio_encoder_factory.h"
-#include "api/rtp_receiver_interface.h"
 #include "api/scoped_refptr.h"
 #include "api/task_queue/task_queue_factory.h"
+#include "api/transport/rtp/rtp_source.h"
 #include "call/audio_state.h"
 #include "call/call.h"
 #include "media/base/media_engine.h"

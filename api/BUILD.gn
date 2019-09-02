@@ -177,6 +177,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     "transport:network_control",
     "transport/media:audio_interfaces",
     "transport/media:video_interfaces",
+    "transport/rtp:rtp_source",
     "units:data_rate",
     "units:timestamp",
     "video:encoded_image",

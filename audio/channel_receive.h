@@ -24,7 +24,7 @@
 #include "api/crypto/crypto_options.h"
 #include "api/media_transport_config.h"
 #include "api/media_transport_interface.h"
-#include "api/rtp_receiver_interface.h"
+#include "api/transport/rtp/rtp_source.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "call/syncable.h"
 #include "modules/audio_coding/include/audio_coding_module_typedefs.h"

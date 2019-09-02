@@ -54,6 +54,7 @@ rtc_static_library("audio") {
     "../api/audio_codecs:audio_codecs_api",
     "../api/rtc_event_log",
     "../api/task_queue",
+    "../api/transport/rtp:rtp_source",
     "../call:bitrate_allocator",
     "../call:call_interfaces",
     "../call:rtp_interfaces",

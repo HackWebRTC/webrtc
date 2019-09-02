@@ -19,7 +19,7 @@
 
 #include "absl/types/optional.h"
 #include "api/rtp_packet_infos.h"
-#include "api/rtp_receiver_interface.h"
+#include "api/transport/rtp/rtp_source.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/time_utils.h"
 #include "system_wrappers/include/clock.h"

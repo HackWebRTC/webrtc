@@ -18,6 +18,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/crypto/frame_decryptor_interface.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "audio/audio_level.h"
 #include "audio/channel_send.h"

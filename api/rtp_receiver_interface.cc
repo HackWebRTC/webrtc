@@ -12,21 +12,6 @@
 
 namespace webrtc {
 
-RtpSource::RtpSource(int64_t timestamp_ms,
-                     uint32_t source_id,
-                     RtpSourceType source_type,
-                     absl::optional<uint8_t> audio_level,
-                     uint32_t rtp_timestamp)
-    : timestamp_ms_(timestamp_ms),
-      source_id_(source_id),
-      source_type_(source_type),
-      audio_level_(audio_level),
-      rtp_timestamp_(rtp_timestamp) {}
-
-RtpSource::RtpSource(const RtpSource&) = default;
-RtpSource& RtpSource::operator=(const RtpSource&) = default;
-RtpSource::~RtpSource() = default;
-
 std::vector<std::string> RtpReceiverInterface::stream_ids() const {
   return {};
 }
