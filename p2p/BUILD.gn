@@ -15,6 +15,11 @@ group("p2p") {
   ]
 }
 
+# TODO(bugs.webrtc.org/8733): Move base/stun.{h,cc} into this target,
+# after downstream dependencies are updated.
+rtc_source_set("stun_types") {
+}
+
 rtc_static_library("rtc_p2p") {
   visibility = [ "*" ]
   sources = [
