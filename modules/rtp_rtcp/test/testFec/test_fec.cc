@@ -70,7 +70,9 @@ void ReceivePackets(
           new ForwardErrorCorrection::ReceivedPacket());
       *duplicate_packet = *received_packet;
       duplicate_packet->pkt = new ForwardErrorCorrection::Packet();
-      duplicate_packet->pkt->data = received_packet->pkt->data;
+      memcpy(duplicate_packet->pkt->data, received_packet->pkt->data,
+             received_packet->pkt->length);
+      duplicate_packet->pkt->length = received_packet->pkt->length;
 
       to_decode_list->push_back(std::move(duplicate_packet));
       random_variable = random->Rand<float>();
@@ -250,14 +252,12 @@ void RunTest(bool use_flexfec) {
               const uint32_t kMinPacketSize = 12;
               const uint32_t kMaxPacketSize = static_cast<uint32_t>(
                   IP_PACKET_SIZE - 12 - 28 - fec->MaxPacketOverhead());
-              size_t packet_length =
+              media_packet->length =
                   random.Rand(kMinPacketSize, kMaxPacketSize);
-              media_packet->data.SetSize(packet_length);
 
-              uint8_t* data = media_packet->data.data();
               // Generate random values for the first 2 bytes.
-              data[0] = random.Rand<uint8_t>();
-              data[1] = random.Rand<uint8_t>();
+              media_packet->data[0] = random.Rand<uint8_t>();
+              media_packet->data[1] = random.Rand<uint8_t>();
 
               // The first two bits are assumed to be 10 by the
               // FEC encoder. In fact the FEC decoder will set the
@@ -265,22 +265,25 @@ void RunTest(bool use_flexfec) {
               // actually were. Set the first two bits to 10
               // so that a memcmp can be performed for the
               // whole restored packet.
-              data[0] |= 0x80;
-              data[0] &= 0xbf;
+              media_packet->data[0] |= 0x80;
+              media_packet->data[0] &= 0xbf;
 
               // FEC is applied to a whole frame.
               // A frame is signaled by multiple packets without
               // the marker bit set followed by the last packet of
               // the frame for which the marker bit is set.
               // Only push one (fake) frame to the FEC.
-              data[1] &= 0x7f;
+              media_packet->data[1] &= 0x7f;
 
-              ByteWriter<uint16_t>::WriteBigEndian(&data[2], seq_num);
-              ByteWriter<uint32_t>::WriteBigEndian(&data[4], timestamp);
-              ByteWriter<uint32_t>::WriteBigEndian(&data[8], media_ssrc);
+              ByteWriter<uint16_t>::WriteBigEndian(&media_packet->data[2],
+                                                   seq_num);
+              ByteWriter<uint32_t>::WriteBigEndian(&media_packet->data[4],
+                                                   timestamp);
+              ByteWriter<uint32_t>::WriteBigEndian(&media_packet->data[8],
+                                                   media_ssrc);
               // Generate random values for payload
-              for (size_t j = 12; j < packet_length; ++j) {
-                data[j] = random.Rand<uint8_t>();
+              for (size_t j = 12; j < media_packet->length; ++j) {
+                media_packet->data[j] = random.Rand<uint8_t>();
               }
               media_packet_list.push_back(std::move(media_packet));
               seq_num++;
@@ -308,7 +311,9 @@ void RunTest(bool use_flexfec) {
                     received_packet(
                         new ForwardErrorCorrection::ReceivedPacket());
                 received_packet->pkt = new ForwardErrorCorrection::Packet();
-                received_packet->pkt->data = media_packet->data;
+                received_packet->pkt->length = media_packet->length;
+                memcpy(received_packet->pkt->data, media_packet->data,
+                       media_packet->length);
                 received_packet->ssrc = media_ssrc;
                 received_packet->seq_num =
                     ByteReader<uint16_t>::ReadBigEndian(&media_packet->data[2]);
@@ -328,7 +333,9 @@ void RunTest(bool use_flexfec) {
                     received_packet(
                         new ForwardErrorCorrection::ReceivedPacket());
                 received_packet->pkt = new ForwardErrorCorrection::Packet();
-                received_packet->pkt->data = fec_packet->data;
+                received_packet->pkt->length = fec_packet->length;
+                memcpy(received_packet->pkt->data, fec_packet->data,
+                       fec_packet->length);
                 received_packet->seq_num = fec_seq_num_offset + seq_num;
                 received_packet->is_fec = true;
                 received_packet->ssrc = fec_ssrc;
@@ -416,13 +423,11 @@ void RunTest(bool use_flexfec) {
                 ForwardErrorCorrection::RecoveredPacket* recovered_packet =
                     recovered_packet_list_it->get();
 
-                ASSERT_EQ(recovered_packet->pkt->data.size(),
-                          media_packet->data.size())
+                ASSERT_EQ(recovered_packet->pkt->length, media_packet->length)
                     << "Recovered packet length not identical to original "
                     << "media packet";
-                ASSERT_EQ(0, memcmp(recovered_packet->pkt->data.cdata(),
-                                    media_packet->data.cdata(),
-                                    media_packet->data.size()))
+                ASSERT_EQ(0, memcmp(recovered_packet->pkt->data,
+                                    media_packet->data, media_packet->length))
                     << "Recovered packet payload not identical to original "
                     << "media packet";
                 recovered_packet_list.pop_front();

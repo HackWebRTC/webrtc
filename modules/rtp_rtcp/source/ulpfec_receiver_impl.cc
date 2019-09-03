@@ -131,30 +131,31 @@ int32_t UlpfecReceiverImpl::AddReceivedRedPacket(
     ++packet_counter_.num_fec_packets;
 
     // everything behind the RED header
-    received_packet->pkt->data.SetData(
-        incoming_rtp_packet + header.headerLength + red_header_length,
-        payload_data_length - red_header_length);
+    memcpy(received_packet->pkt->data,
+           incoming_rtp_packet + header.headerLength + red_header_length,
+           payload_data_length - red_header_length);
+    received_packet->pkt->length = payload_data_length - red_header_length;
     received_packet->ssrc =
         ByteReader<uint32_t>::ReadBigEndian(&incoming_rtp_packet[8]);
 
   } else {
-    received_packet->pkt->data.SetSize(header.headerLength +
-                                       payload_data_length - red_header_length);
     // Copy RTP header.
-    memcpy(received_packet->pkt->data.data(), incoming_rtp_packet,
+    memcpy(received_packet->pkt->data, incoming_rtp_packet,
            header.headerLength);
+
     // Set payload type.
     received_packet->pkt->data[1] &= 0x80;          // Reset RED payload type.
     received_packet->pkt->data[1] += payload_type;  // Set media payload type.
+
     // Copy payload data.
-    if (payload_data_length > red_header_length) {
-      memcpy(received_packet->pkt->data.data() + header.headerLength,
-             incoming_rtp_packet + header.headerLength + red_header_length,
-             payload_data_length - red_header_length);
-    }
+    memcpy(received_packet->pkt->data + header.headerLength,
+           incoming_rtp_packet + header.headerLength + red_header_length,
+           payload_data_length - red_header_length);
+    received_packet->pkt->length =
+        header.headerLength + payload_data_length - red_header_length;
   }
 
-  if (received_packet->pkt->data.size() == 0) {
+  if (received_packet->pkt->length == 0) {
     return 0;
   }
 
@@ -182,18 +183,16 @@ int32_t UlpfecReceiverImpl::ProcessReceivedFec() {
     if (!received_packet->is_fec) {
       ForwardErrorCorrection::Packet* packet = received_packet->pkt;
       crit_sect_.Leave();
-      recovered_packet_callback_->OnRecoveredPacket(packet->data.data(),
-                                                    packet->data.size());
+      recovered_packet_callback_->OnRecoveredPacket(packet->data,
+                                                    packet->length);
       crit_sect_.Enter();
-      // Create a packet with the buffer to modify it.
       RtpPacketReceived rtp_packet;
-      rtp_packet.Parse(packet->data);
+      // TODO(ilnik): move extension nullifying out of RtpPacket, so there's no
+      // need to create one here, and avoid two memcpy calls below.
+      rtp_packet.Parse(packet->data, packet->length);  // Does memcopy.
       rtp_packet.IdentifyExtensions(extensions_);
-      // Reset buffer reference, so zeroing would work on a buffer with a
-      // single reference.
-      packet->data = rtc::CopyOnWriteBuffer(0);
-      rtp_packet.ZeroMutableExtensions();
-      packet->data = rtp_packet.Buffer();
+      rtp_packet.CopyAndZeroMutableExtensions(  // Does memcopy.
+          rtc::MakeArrayView(packet->data, packet->length));
     }
     fec_->DecodeFec(*received_packet, &recovered_packets_);
   }
@@ -210,8 +209,7 @@ int32_t UlpfecReceiverImpl::ProcessReceivedFec() {
     // header, OnRecoveredPacket will recurse back here.
     recovered_packet->returned = true;
     crit_sect_.Leave();
-    recovered_packet_callback_->OnRecoveredPacket(packet->data.data(),
-                                                  packet->data.size());
+    recovered_packet_callback_->OnRecoveredPacket(packet->data, packet->length);
     crit_sect_.Enter();
   }
 

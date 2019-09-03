@@ -22,7 +22,6 @@
 #include "modules/include/module_fec_types.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/forward_error_correction_internal.h"
-#include "rtc_base/copy_on_write_buffer.h"
 
 namespace webrtc {
 
@@ -53,7 +52,8 @@ class ForwardErrorCorrection {
     // reaches zero.
     virtual int32_t Release();
 
-    rtc::CopyOnWriteBuffer data;  // Packet data.
+    size_t length;                 // Length of packet in bytes.
+    uint8_t data[IP_PACKET_SIZE];  // Packet data.
 
    private:
     int32_t ref_count_;  // Counts the number of references to a packet.

@@ -126,16 +126,16 @@ void UlpfecReceiverTest::BuildAndAddRedMediaPacket(AugmentedPacket* packet) {
   std::unique_ptr<AugmentedPacket> red_packet(
       packet_generator_.BuildMediaRedPacket(*packet));
   EXPECT_EQ(0, receiver_fec_->AddReceivedRedPacket(
-                   red_packet->header, red_packet->data.cdata(),
-                   red_packet->data.size(), kFecPayloadType));
+                   red_packet->header, red_packet->data, red_packet->length,
+                   kFecPayloadType));
 }
 
 void UlpfecReceiverTest::BuildAndAddRedFecPacket(Packet* packet) {
   std::unique_ptr<AugmentedPacket> red_packet(
       packet_generator_.BuildUlpfecRedPacket(*packet));
   EXPECT_EQ(0, receiver_fec_->AddReceivedRedPacket(
-                   red_packet->header, red_packet->data.cdata(),
-                   red_packet->data.size(), kFecPayloadType));
+                   red_packet->header, red_packet->data, red_packet->length,
+                   kFecPayloadType));
 }
 
 void UlpfecReceiverTest::VerifyReconstructedMediaPacket(
@@ -144,10 +144,8 @@ void UlpfecReceiverTest::VerifyReconstructedMediaPacket(
   // Verify that the content of the reconstructed packet is equal to the
   // content of |packet|, and that the same content is received |times| number
   // of times in a row.
-  EXPECT_CALL(recovered_packet_receiver_,
-              OnRecoveredPacket(_, packet.data.size()))
-      .With(
-          Args<0, 1>(ElementsAreArray(packet.data.cdata(), packet.data.size())))
+  EXPECT_CALL(recovered_packet_receiver_, OnRecoveredPacket(_, packet.length))
+      .With(Args<0, 1>(ElementsAreArray(packet.data, packet.length)))
       .Times(times);
 }
 

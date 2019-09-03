@@ -53,34 +53,34 @@ ForwardErrorCorrection::PacketList MediaPacketGenerator::ConstructMediaPackets(
   for (int i = 0; i < num_media_packets; ++i) {
     std::unique_ptr<ForwardErrorCorrection::Packet> media_packet(
         new ForwardErrorCorrection::Packet());
-    media_packet->data.SetSize(
-        random_->Rand(min_packet_size_, max_packet_size_));
+    media_packet->length = random_->Rand(min_packet_size_, max_packet_size_);
 
-    uint8_t* data = media_packet->data.data();
     // Generate random values for the first 2 bytes
-    data[0] = random_->Rand<uint8_t>();
-    data[1] = random_->Rand<uint8_t>();
+    media_packet->data[0] = random_->Rand<uint8_t>();
+    media_packet->data[1] = random_->Rand<uint8_t>();
 
     // The first two bits are assumed to be 10 by the FEC encoder.
     // In fact the FEC decoder will set the two first bits to 10 regardless of
     // what they actually were. Set the first two bits to 10 so that a memcmp
     // can be performed for the whole restored packet.
-    data[0] |= 0x80;
-    data[0] &= 0xbf;
+    media_packet->data[0] |= 0x80;
+    media_packet->data[0] &= 0xbf;
 
     // FEC is applied to a whole frame.
     // A frame is signaled by multiple packets without the marker bit set
     // followed by the last packet of the frame for which the marker bit is set.
     // Only push one (fake) frame to the FEC.
-    data[1] &= 0x7f;
+    media_packet->data[1] &= 0x7f;
 
-    webrtc::ByteWriter<uint16_t>::WriteBigEndian(&data[2], seq_num);
-    webrtc::ByteWriter<uint32_t>::WriteBigEndian(&data[4], time_stamp);
-    webrtc::ByteWriter<uint32_t>::WriteBigEndian(&data[8], ssrc_);
+    webrtc::ByteWriter<uint16_t>::WriteBigEndian(&media_packet->data[2],
+                                                 seq_num);
+    webrtc::ByteWriter<uint32_t>::WriteBigEndian(&media_packet->data[4],
+                                                 time_stamp);
+    webrtc::ByteWriter<uint32_t>::WriteBigEndian(&media_packet->data[8], ssrc_);
 
     // Generate random values for payload.
-    for (size_t j = 12; j < media_packet->data.size(); ++j)
-      data[j] = random_->Rand<uint8_t>();
+    for (size_t j = 12; j < media_packet->length; ++j)
+      media_packet->data[j] = random_->Rand<uint8_t>();
     seq_num++;
     media_packets.push_back(std::move(media_packet));
   }
@@ -120,18 +120,16 @@ std::unique_ptr<AugmentedPacket> AugmentedPacketGenerator::NextPacket(
     size_t length) {
   std::unique_ptr<AugmentedPacket> packet(new AugmentedPacket());
 
-  packet->data.SetSize(length + kRtpHeaderSize);
-  uint8_t* data = packet->data.data();
   for (size_t i = 0; i < length; ++i)
-    data[i + kRtpHeaderSize] = offset + i;
-  packet->data.SetSize(length + kRtpHeaderSize);
+    packet->data[i + kRtpHeaderSize] = offset + i;
+  packet->length = length + kRtpHeaderSize;
   packet->header.headerLength = kRtpHeaderSize;
   packet->header.markerBit = (num_packets_ == 1);
   packet->header.payloadType = kVp8PayloadType;
   packet->header.sequenceNumber = seq_num_;
   packet->header.timestamp = timestamp_;
   packet->header.ssrc = ssrc_;
-  WriteRtpHeader(packet->header, packet->data.data());
+  WriteRtpHeader(packet->header, packet->data);
   ++seq_num_;
   --num_packets_;
 
@@ -157,7 +155,7 @@ FlexfecPacketGenerator::FlexfecPacketGenerator(uint32_t media_ssrc,
 
 std::unique_ptr<AugmentedPacket> FlexfecPacketGenerator::BuildFlexfecPacket(
     const ForwardErrorCorrection::Packet& packet) {
-  RTC_DCHECK_LE(packet.data.size(),
+  RTC_DCHECK_LE(packet.length,
                 static_cast<size_t>(IP_PACKET_SIZE - kRtpHeaderSize));
 
   RTPHeader header;
@@ -169,10 +167,10 @@ std::unique_ptr<AugmentedPacket> FlexfecPacketGenerator::BuildFlexfecPacket(
 
   std::unique_ptr<AugmentedPacket> packet_with_rtp_header(
       new AugmentedPacket());
-  packet_with_rtp_header->data.SetSize(kRtpHeaderSize + packet.data.size());
-  WriteRtpHeader(header, packet_with_rtp_header->data.data());
-  memcpy(packet_with_rtp_header->data.data() + kRtpHeaderSize,
-         packet.data.cdata(), packet.data.size());
+  WriteRtpHeader(header, packet_with_rtp_header->data);
+  memcpy(packet_with_rtp_header->data + kRtpHeaderSize, packet.data,
+         packet.length);
+  packet_with_rtp_header->length = kRtpHeaderSize + packet.length;
 
   return packet_with_rtp_header;
 }
@@ -186,13 +184,12 @@ std::unique_ptr<AugmentedPacket> UlpfecPacketGenerator::BuildMediaRedPacket(
 
   const size_t kHeaderLength = packet.header.headerLength;
   red_packet->header = packet.header;
-  red_packet->data.SetSize(packet.data.size() + 1);
+  red_packet->length = packet.length + 1;  // 1 byte RED header.
   // Copy RTP header.
-  memcpy(red_packet->data.data(), packet.data.cdata(), kHeaderLength);
+  memcpy(red_packet->data, packet.data, kHeaderLength);
   SetRedHeader(red_packet->data[1] & 0x7f, kHeaderLength, red_packet.get());
-  memcpy(red_packet->data.data() + kHeaderLength + 1,
-         packet.data.cdata() + kHeaderLength,
-         packet.data.size() - kHeaderLength);
+  memcpy(red_packet->data + kHeaderLength + 1, packet.data + kHeaderLength,
+         packet.length - kHeaderLength);
 
   return red_packet;
 }
@@ -202,14 +199,13 @@ std::unique_ptr<AugmentedPacket> UlpfecPacketGenerator::BuildUlpfecRedPacket(
   // Create a fake media packet to get a correct header. 1 byte RED header.
   ++num_packets_;
   std::unique_ptr<AugmentedPacket> red_packet =
-      NextPacket(0, packet.data.size() + 1);
+      NextPacket(0, packet.length + 1);
 
   red_packet->data[1] &= ~0x80;  // Clear marker bit.
   const size_t kHeaderLength = red_packet->header.headerLength;
-  red_packet->data.SetSize(kHeaderLength + 1 + packet.data.size());
   SetRedHeader(kFecPayloadType, kHeaderLength, red_packet.get());
-  memcpy(red_packet->data.data() + kHeaderLength + 1, packet.data.cdata(),
-         packet.data.size());
+  memcpy(red_packet->data + kHeaderLength + 1, packet.data, packet.length);
+  red_packet->length = kHeaderLength + 1 + packet.length;
 
   return red_packet;
 }
@@ -217,13 +213,12 @@ std::unique_ptr<AugmentedPacket> UlpfecPacketGenerator::BuildUlpfecRedPacket(
 void UlpfecPacketGenerator::SetRedHeader(uint8_t payload_type,
                                          size_t header_length,
                                          AugmentedPacket* red_packet) {
-  uint8_t* data = red_packet->data.data();
   // Replace payload type.
-  data[1] &= 0x80;             // Reset.
-  data[1] += kRedPayloadType;  // Replace.
+  red_packet->data[1] &= 0x80;             // Reset.
+  red_packet->data[1] += kRedPayloadType;  // Replace.
 
   // Add RED header, f-bit always 0.
-  data[header_length] = payload_type;
+  red_packet->data[header_length] = payload_type;
 }
 
 }  // namespace fec
