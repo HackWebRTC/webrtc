@@ -51,12 +51,12 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   config.filter.shadow.length_blocks = filter_length_blocks;
   AdaptiveFirFilter main_filter(config.filter.main.length_blocks,
                                 config.filter.main.length_blocks,
-                                config.filter.config_change_duration_blocks,
-                                DetectOptimization(), &data_dumper);
+                                config.filter.config_change_duration_blocks, 1,
+                                1, DetectOptimization(), &data_dumper);
   AdaptiveFirFilter shadow_filter(config.filter.shadow.length_blocks,
                                   config.filter.shadow.length_blocks,
                                   config.filter.config_change_duration_blocks,
-                                  DetectOptimization(), &data_dumper);
+                                  1, 1, DetectOptimization(), &data_dumper);
   Aec3Fft fft;
   std::array<float, kBlockSize> x_old;
   x_old.fill(0.f);
@@ -210,7 +210,7 @@ TEST(MainFilterUpdateGain, NullDataOutputGain) {
   EchoCanceller3Config config;
   AdaptiveFirFilter filter(config.filter.main.length_blocks,
                            config.filter.main.length_blocks,
-                           config.filter.config_change_duration_blocks,
+                           config.filter.config_change_duration_blocks, 1, 1,
                            DetectOptimization(), &data_dumper);
   RenderSignalAnalyzer analyzer(EchoCanceller3Config{});
   SubtractorOutput output;

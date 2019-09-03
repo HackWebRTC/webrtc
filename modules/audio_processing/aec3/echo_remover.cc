@@ -160,7 +160,11 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
       num_capture_channels_(num_capture_channels),
       use_shadow_filter_output_(
           config_.filter.enable_shadow_filter_output_usage),
-      subtractor_(config, data_dumper_.get(), optimization_),
+      subtractor_(config,
+                  num_render_channels_,
+                  num_capture_channels_,
+                  data_dumper_.get(),
+                  optimization_),
       suppression_gain_(config_, optimization_, sample_rate_hz),
       cng_(optimization_),
       suppression_filter_(optimization_, sample_rate_hz_),
@@ -171,8 +175,6 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
   x_old_.fill(0.f);
   y_old_.fill(0.f);
   e_old_.fill(0.f);
-  (void)num_render_channels_;
-  (void)num_capture_channels_;
 }
 
 EchoRemoverImpl::~EchoRemoverImpl() = default;

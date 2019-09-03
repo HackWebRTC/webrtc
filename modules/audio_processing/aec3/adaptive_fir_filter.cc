@@ -418,6 +418,8 @@ void ApplyFilter_SSE2(const RenderBuffer& render_buffer,
 AdaptiveFirFilter::AdaptiveFirFilter(size_t max_size_partitions,
                                      size_t initial_size_partitions,
                                      size_t size_change_duration_blocks,
+                                     size_t num_render_channels,
+                                     size_t num_capture_channels,
                                      Aec3Optimization optimization,
                                      ApmDataDumper* data_dumper)
     : data_dumper_(data_dumper),

@@ -39,6 +39,8 @@ namespace webrtc {
 class Subtractor {
  public:
   Subtractor(const EchoCanceller3Config& config,
+             size_t num_render_channels,
+             size_t num_capture_channels,
              ApmDataDumper* data_dumper,
              Aec3Optimization optimization);
   ~Subtractor();

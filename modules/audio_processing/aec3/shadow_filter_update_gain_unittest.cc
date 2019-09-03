@@ -43,12 +43,12 @@ void RunFilterUpdateTest(int num_blocks_to_process,
   config.filter.main.length_blocks = filter_length_blocks;
   AdaptiveFirFilter main_filter(config.filter.main.length_blocks,
                                 config.filter.main.length_blocks,
-                                config.filter.config_change_duration_blocks,
-                                DetectOptimization(), &data_dumper);
+                                config.filter.config_change_duration_blocks, 1,
+                                1, DetectOptimization(), &data_dumper);
   AdaptiveFirFilter shadow_filter(config.filter.shadow.length_blocks,
                                   config.filter.shadow.length_blocks,
                                   config.filter.config_change_duration_blocks,
-                                  DetectOptimization(), &data_dumper);
+                                  1, 1, DetectOptimization(), &data_dumper);
   Aec3Fft fft;
 
   constexpr int kSampleRateHz = 48000;

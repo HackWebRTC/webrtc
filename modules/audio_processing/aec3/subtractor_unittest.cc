@@ -38,7 +38,7 @@ float RunSubtractorTest(int num_blocks_to_process,
   config.filter.main.length_blocks = main_filter_length_blocks;
   config.filter.shadow.length_blocks = shadow_filter_length_blocks;
 
-  Subtractor subtractor(config, &data_dumper, DetectOptimization());
+  Subtractor subtractor(config, 1, 1, &data_dumper, DetectOptimization());
   absl::optional<DelayEstimate> delay_estimate;
   std::vector<std::vector<std::vector<float>>> x(
       kNumBands, std::vector<std::vector<float>>(
@@ -120,7 +120,8 @@ std::string ProduceDebugText(size_t delay, int filter_length_blocks) {
 // Verifies that the check for non data dumper works.
 TEST(Subtractor, NullDataDumper) {
   EXPECT_DEATH(
-      Subtractor(EchoCanceller3Config(), nullptr, DetectOptimization()), "");
+      Subtractor(EchoCanceller3Config(), 1, 1, nullptr, DetectOptimization()),
+      "");
 }
 
 // Verifies the check for null subtractor output.
@@ -129,7 +130,7 @@ TEST(Subtractor, NullDataDumper) {
 TEST(Subtractor, DISABLED_NullOutput) {
   ApmDataDumper data_dumper(42);
   EchoCanceller3Config config;
-  Subtractor subtractor(config, &data_dumper, DetectOptimization());
+  Subtractor subtractor(config, 1, 1, &data_dumper, DetectOptimization());
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, 48000, 1));
   RenderSignalAnalyzer render_signal_analyzer(config);
@@ -145,7 +146,7 @@ TEST(Subtractor, DISABLED_NullOutput) {
 TEST(Subtractor, WrongCaptureSize) {
   ApmDataDumper data_dumper(42);
   EchoCanceller3Config config;
-  Subtractor subtractor(config, &data_dumper, DetectOptimization());
+  Subtractor subtractor(config, 1, 1, &data_dumper, DetectOptimization());
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, 48000, 1));
   RenderSignalAnalyzer render_signal_analyzer(config);
