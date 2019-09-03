@@ -27,6 +27,7 @@
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/experiments/alr_experiment.h"
+#include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/experiments/rate_control_settings.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -57,6 +58,21 @@ bool TransportSeqNumExtensionConfigured(const VideoSendStream::Config& config) {
 const char kForcedFallbackFieldTrial[] =
     "WebRTC-VP8-Forced-Fallback-Encoder-v2";
 
+const int kDefaultEncoderMinBitrateBps = 30000;
+const char kMinVideoBitrateExperiment[] = "WebRTC-Video-MinVideoBitrate";
+
+struct MinVideoBitrateConfig {
+  webrtc::FieldTrialParameter<webrtc::DataRate> min_video_bitrate;
+
+  MinVideoBitrateConfig()
+      : min_video_bitrate("br",
+                          webrtc::DataRate::bps(kDefaultEncoderMinBitrateBps)) {
+    webrtc::ParseFieldTrial(
+        {&min_video_bitrate},
+        webrtc::field_trial::FindFullName(kMinVideoBitrateExperiment));
+  }
+};
+
 absl::optional<int> GetFallbackMinBpsFromFieldTrial(VideoCodecType type) {
   if (type != kVideoCodecVP8)
     return absl::nullopt;
@@ -84,9 +100,13 @@ absl::optional<int> GetFallbackMinBpsFromFieldTrial(VideoCodecType type) {
 }
 
 int GetEncoderMinBitrateBps(VideoCodecType type) {
-  const int kDefaultEncoderMinBitrateBps = 30000;
-  return GetFallbackMinBpsFromFieldTrial(type).value_or(
-      kDefaultEncoderMinBitrateBps);
+  if (GetFallbackMinBpsFromFieldTrial(type).has_value()) {
+    return GetFallbackMinBpsFromFieldTrial(type).value();
+  }
+  if (webrtc::field_trial::IsEnabled(kMinVideoBitrateExperiment)) {
+    return MinVideoBitrateConfig().min_video_bitrate->bps();
+  }
+  return kDefaultEncoderMinBitrateBps;
 }
 
 // Calculate max padding bitrate for a multi layer codec.
