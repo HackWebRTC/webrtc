@@ -55,7 +55,7 @@ struct MinVideoBitrateConfig {
   webrtc::FieldTrialParameter<webrtc::DataRate> min_video_bitrate;
 
   MinVideoBitrateConfig()
-      : min_video_bitrate("br", webrtc::DataRate::KilobitsPerSec<30>()) {
+      : min_video_bitrate("br", webrtc::DataRate::bps(kMinVideoBitrateBps)) {
     webrtc::ParseFieldTrial(
         {&min_video_bitrate},
         webrtc::field_trial::FindFullName(kMinVideoBitrateExperiment));

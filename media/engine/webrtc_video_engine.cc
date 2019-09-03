@@ -328,10 +328,13 @@ absl::optional<int> GetFallbackMinBpsFromFieldTrial(
 }
 
 int GetMinVideoBitrateBps(webrtc::VideoCodecType type) {
+  if (GetFallbackMinBpsFromFieldTrial(type).has_value()) {
+    return GetFallbackMinBpsFromFieldTrial(type).value();
+  }
   if (webrtc::field_trial::IsEnabled(kMinVideoBitrateExperiment)) {
     return MinVideoBitrateConfig().min_video_bitrate->bps();
   }
-  return GetFallbackMinBpsFromFieldTrial(type).value_or(kMinVideoBitrateBps);
+  return kMinVideoBitrateBps;
 }
 }  // namespace
 
