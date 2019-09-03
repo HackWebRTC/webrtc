@@ -25,8 +25,9 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   packet.pkt = rtc::scoped_refptr<Packet>(new Packet());
   const size_t packet_size =
       std::min(size, static_cast<size_t>(IP_PACKET_SIZE));
-  memcpy(packet.pkt->data, data, packet_size);
-  packet.pkt->length = packet_size;
+  packet.pkt->data.SetSize(packet_size);
+  packet.pkt->data.EnsureCapacity(IP_PACKET_SIZE);
+  memcpy(packet.pkt->data.data(), data, packet_size);
 
   UlpfecHeaderReader ulpfec_reader;
   ulpfec_reader.ReadFecHeader(&packet);

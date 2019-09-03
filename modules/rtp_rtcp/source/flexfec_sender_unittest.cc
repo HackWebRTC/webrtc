@@ -62,7 +62,7 @@ std::unique_ptr<RtpPacketToSend> GenerateSingleFlexfecPacket(
     std::unique_ptr<AugmentedPacket> packet =
         packet_generator.NextPacket(i, kPayloadLength);
     RtpPacketToSend rtp_packet(nullptr);  // No header extensions.
-    rtp_packet.Parse(packet->data, packet->length);
+    rtp_packet.Parse(packet->data);
     EXPECT_TRUE(sender->AddRtpPacketAndGenerateFec(rtp_packet));
   }
   EXPECT_TRUE(sender->FecAvailable());
@@ -133,7 +133,7 @@ TEST(FlexfecSenderTest, ProtectTwoFramesWithOneFecPacket) {
       std::unique_ptr<AugmentedPacket> packet =
           packet_generator.NextPacket(i, kPayloadLength);
       RtpPacketToSend rtp_packet(nullptr);
-      rtp_packet.Parse(packet->data, packet->length);
+      rtp_packet.Parse(packet->data);
       EXPECT_TRUE(sender.AddRtpPacketAndGenerateFec(rtp_packet));
     }
   }
@@ -173,7 +173,7 @@ TEST(FlexfecSenderTest, ProtectTwoFramesWithTwoFecPackets) {
       std::unique_ptr<AugmentedPacket> packet =
           packet_generator.NextPacket(i, kPayloadLength);
       RtpPacketToSend rtp_packet(nullptr);
-      rtp_packet.Parse(packet->data, packet->length);
+      rtp_packet.Parse(packet->data);
       EXPECT_TRUE(sender.AddRtpPacketAndGenerateFec(rtp_packet));
     }
     EXPECT_TRUE(sender.FecAvailable());
