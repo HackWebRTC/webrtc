@@ -694,7 +694,7 @@ void ModuleRtpRtcpImpl::OnReceivedNack(
   if (!rtp_sender_)
     return;
 
-  if (!rtp_sender_->StorePackets() || nack_sequence_numbers.size() == 0) {
+  if (!rtp_sender_->StorePackets() || nack_sequence_numbers.empty()) {
     return;
   }
   // Use RTT from RtcpRttStats class if provided.

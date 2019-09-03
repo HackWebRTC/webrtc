@@ -30,7 +30,6 @@ namespace {
 using ::testing::_;
 using ::testing::Args;
 using ::testing::ElementsAreArray;
-using ::testing::Return;
 
 using test::fec::AugmentedPacket;
 using Packet = ForwardErrorCorrection::Packet;

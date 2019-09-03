@@ -74,19 +74,12 @@ const char kNoMid[] = "";
 
 using ::testing::_;
 using ::testing::AllOf;
-using ::testing::AtLeast;
-using ::testing::DoAll;
-using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
 using ::testing::Field;
-using ::testing::Gt;
-using ::testing::Invoke;
 using ::testing::NiceMock;
 using ::testing::Pointee;
 using ::testing::Property;
 using ::testing::Return;
-using ::testing::SaveArg;
-using ::testing::SizeIs;
 using ::testing::StrictMock;
 
 uint64_t ConvertMsToAbsSendTime(int64_t time_ms) {

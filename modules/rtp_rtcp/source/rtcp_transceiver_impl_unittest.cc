@@ -32,7 +32,6 @@ namespace {
 
 using ::testing::_;
 using ::testing::ElementsAre;
-using ::testing::Invoke;
 using ::testing::Return;
 using ::testing::SizeIs;
 using ::testing::StrictMock;

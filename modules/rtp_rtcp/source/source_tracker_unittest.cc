@@ -31,7 +31,6 @@ using ::testing::Combine;
 using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
 using ::testing::IsEmpty;
-using ::testing::SizeIs;
 using ::testing::TestWithParam;
 using ::testing::Values;
 

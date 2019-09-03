@@ -33,12 +33,12 @@ bool IsTokenChar(char ch) {
 }  // namespace
 
 bool IsLegalMidName(absl::string_view name) {
-  return (name.size() <= kMidRsidMaxSize && name.size() > 0 &&
+  return (name.size() <= kMidRsidMaxSize && !name.empty() &&
           absl::c_all_of(name, IsTokenChar));
 }
 
 bool IsLegalRsidName(absl::string_view name) {
-  return (name.size() <= kMidRsidMaxSize && name.size() > 0 &&
+  return (name.size() <= kMidRsidMaxSize && !name.empty() &&
           absl::c_all_of(name, isalnum));
 }
 

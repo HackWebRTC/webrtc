@@ -14,11 +14,6 @@
 #include "test/gmock.h"
 #include "test/gtest.h"
 
-using ::testing::_;
-using ::testing::DoAll;
-using ::testing::Return;
-using ::testing::SetArgPointee;
-
 namespace webrtc {
 
 static const int64_t kTestRtt = 10;

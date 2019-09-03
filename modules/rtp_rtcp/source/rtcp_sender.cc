@@ -743,7 +743,7 @@ int32_t RTCPSender::SendCompoundRTCP(
 
       BuilderFunc func = builder_it->second;
       std::unique_ptr<rtcp::RtcpPacket> packet = (this->*func)(context);
-      if (packet.get() == nullptr)
+      if (packet == nullptr)
         return -1;
       // If there is a BYE, don't append now - save it and append it
       // at the end later.

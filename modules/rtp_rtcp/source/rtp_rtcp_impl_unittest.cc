@@ -29,11 +29,7 @@
 #include "test/rtcp_packet_parser.h"
 #include "test/rtp_header_parser.h"
 
-using ::testing::_;
 using ::testing::ElementsAre;
-using ::testing::NiceMock;
-using ::testing::Return;
-using ::testing::SaveArg;
 
 namespace webrtc {
 namespace {

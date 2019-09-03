@@ -30,7 +30,6 @@ using ::testing::Contains;
 using ::testing::Each;
 using ::testing::ElementsAreArray;
 using ::testing::Le;
-using ::testing::SizeIs;
 
 constexpr RtpPacketizer::PayloadSizeLimits kNoSizeLimits;
 
