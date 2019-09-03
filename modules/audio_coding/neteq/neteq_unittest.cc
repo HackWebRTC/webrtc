@@ -456,16 +456,16 @@ TEST_F(NetEqDecodingTest, MAYBE_TestBitExactness) {
       webrtc::test::ResourcePath("audio_coding/neteq_universal_new", "rtp");
 
   const std::string output_checksum =
-      PlatformChecksum("998be2e5a707e636af0b6298f54bedfabe72aae1",
-                       "61e238ece4cd3b67d66a0b7047e06b20607dcb79", "not used",
-                       "998be2e5a707e636af0b6298f54bedfabe72aae1",
-                       "4116ac2a6e75baac3194b712d6fabe28b384275e");
+      PlatformChecksum("6ae9f643dc3e5f3452d28a772eef7e00e74158bc",
+                       "f4374430e870d66268c1b8e22fb700eb072d567e", "not used",
+                       "6ae9f643dc3e5f3452d28a772eef7e00e74158bc",
+                       "8d73c98645917cdeaaa01c20cf095ccc5a10b2b5");
 
   const std::string network_stats_checksum =
-      PlatformChecksum("5e5230b2d5042eccd197dac29edade1cc233586c",
-                       "2183564f11b53259ba7f86f48f4df3d7d653c678", "not used",
-                       "5e5230b2d5042eccd197dac29edade1cc233586c",
-                       "5e5230b2d5042eccd197dac29edade1cc233586c");
+      PlatformChecksum("3d186ea7e243abfdbd3d39b8ebf8f02a318117e4",
+                       "0b725774133da5dd823f2046663c12a76e0dbd79", "not used",
+                       "3d186ea7e243abfdbd3d39b8ebf8f02a318117e4",
+                       "3d186ea7e243abfdbd3d39b8ebf8f02a318117e4");
 
   DecodeAndCompare(input_rtp_file, output_checksum, network_stats_checksum,
                    absl::GetFlag(FLAGS_gen_ref));
@@ -733,7 +733,7 @@ TEST_F(NetEqDecodingTest, LongCngWithPositiveClockDrift) {
   const double kDriftFactor = 1000.0 / (1000.0 - 25.0);
   const double kNetworkFreezeTimeMs = 0.0;
   const bool kGetAudioDuringFreezeRecovery = false;
-  const int kDelayToleranceMs = 20;
+  const int kDelayToleranceMs = 40;
   const int kMaxTimeToSpeechMs = 100;
   LongCngWithClockDrift(kDriftFactor, kNetworkFreezeTimeMs,
                         kGetAudioDuringFreezeRecovery, kDelayToleranceMs,
@@ -757,7 +757,7 @@ TEST_F(NetEqDecodingTest, LongCngWithPositiveClockDriftNetworkFreeze) {
   const double kDriftFactor = 1000.0 / (1000.0 - 25.0);
   const double kNetworkFreezeTimeMs = 5000.0;
   const bool kGetAudioDuringFreezeRecovery = false;
-  const int kDelayToleranceMs = 20;
+  const int kDelayToleranceMs = 40;
   const int kMaxTimeToSpeechMs = 100;
   LongCngWithClockDrift(kDriftFactor, kNetworkFreezeTimeMs,
                         kGetAudioDuringFreezeRecovery, kDelayToleranceMs,
@@ -769,7 +769,7 @@ TEST_F(NetEqDecodingTest, LongCngWithPositiveClockDriftNetworkFreezeExtraPull) {
   const double kDriftFactor = 1000.0 / (1000.0 - 25.0);
   const double kNetworkFreezeTimeMs = 5000.0;
   const bool kGetAudioDuringFreezeRecovery = true;
-  const int kDelayToleranceMs = 20;
+  const int kDelayToleranceMs = 40;
   const int kMaxTimeToSpeechMs = 100;
   LongCngWithClockDrift(kDriftFactor, kNetworkFreezeTimeMs,
                         kGetAudioDuringFreezeRecovery, kDelayToleranceMs,
