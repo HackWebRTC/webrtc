@@ -10,6 +10,7 @@
 
 package org.webrtc.audio;
 
+import android.annotation.TargetApi;
 import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioManager;
@@ -237,15 +238,22 @@ class WebRtcAudioRecord {
     int bufferSizeInBytes = Math.max(BUFFER_SIZE_FACTOR * minBufferSize, byteBuffer.capacity());
     Logging.d(TAG, "bufferSizeInBytes: " + bufferSizeInBytes);
     try {
-      audioRecord =
-          new AudioRecord(audioSource, sampleRate, channelConfig, audioFormat, bufferSizeInBytes);
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        // Use the AudioRecord.Builder class on Android M (23) and above.
+        audioRecord = createAudioRecordOnMOrHigher(
+            audioSource, sampleRate, channelConfig, audioFormat, bufferSizeInBytes);
+      } else {
+        // Use the old AudioRecord constructor for API levels below 23.
+        audioRecord = createAudioRecordOnLowerThanM(
+            audioSource, sampleRate, channelConfig, audioFormat, bufferSizeInBytes);
+      }
     } catch (IllegalArgumentException e) {
-      reportWebRtcAudioRecordInitError("AudioRecord ctor error: " + e.getMessage());
+      reportWebRtcAudioRecordInitError("AudioRecord build error: " + e.getMessage());
       releaseAudioResources();
       return -1;
     }
     if (audioRecord == null || audioRecord.getState() != AudioRecord.STATE_INITIALIZED) {
-      reportWebRtcAudioRecordInitError("Failed to create a new AudioRecord instance");
+      reportWebRtcAudioRecordInitError("Creation or initialization of audio recorder failed.");
       releaseAudioResources();
       return -1;
     }
@@ -269,7 +277,7 @@ class WebRtcAudioRecord {
     }
     if (audioRecord.getRecordingState() != AudioRecord.RECORDSTATE_RECORDING) {
       reportWebRtcAudioRecordStartError(AudioRecordStartErrorCode.AUDIO_RECORD_START_STATE_MISMATCH,
-          "AudioRecord.startRecording failed - incorrect state :"
+          "AudioRecord.startRecording failed - incorrect state: "
               + audioRecord.getRecordingState());
       return false;
     }
@@ -291,6 +299,27 @@ class WebRtcAudioRecord {
     effects.release();
     releaseAudioResources();
     return true;
+  }
+
+  @TargetApi(Build.VERSION_CODES.M)
+  private static AudioRecord createAudioRecordOnMOrHigher(
+      int audioSource, int sampleRate, int channelConfig, int audioFormat, int bufferSizeInBytes) {
+    Logging.d(TAG, "createAudioRecordOnMOrHigher");
+    return new AudioRecord.Builder()
+        .setAudioSource(audioSource)
+        .setAudioFormat(new AudioFormat.Builder()
+                            .setEncoding(audioFormat)
+                            .setSampleRate(sampleRate)
+                            .setChannelMask(channelConfig)
+                            .build())
+        .setBufferSizeInBytes(bufferSizeInBytes)
+        .build();
+  }
+
+  private static AudioRecord createAudioRecordOnLowerThanM(
+      int audioSource, int sampleRate, int channelConfig, int audioFormat, int bufferSizeInBytes) {
+    Logging.d(TAG, "createAudioRecordOnLowerThanM");
+    return new AudioRecord(audioSource, sampleRate, channelConfig, audioFormat, bufferSizeInBytes);
   }
 
   private void logMainParameters() {
