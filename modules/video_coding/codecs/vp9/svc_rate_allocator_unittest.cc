@@ -283,7 +283,9 @@ TEST_P(SvcRateAllocatorTestParametrizedContentType, PaddingBitrate) {
 }
 
 TEST_P(SvcRateAllocatorTestParametrizedContentType, StableBitrate) {
-  ScopedFieldTrials field_trial("WebRTC-StableTargetRate/enabled:true/");
+  ScopedFieldTrials field_trial(
+      "WebRTC-StableTargetRate/enabled:true,video_hysteresis_factor:1.0,"
+      "screenshare_hysteresis_factor:1.0/");
 
   const VideoCodec codec = Configure(1280, 720, 3, 1, is_screen_sharing_);
   const auto start_rates = SvcRateAllocator::GetLayerStartBitrates(codec);

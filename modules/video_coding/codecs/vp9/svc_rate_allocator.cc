@@ -200,15 +200,11 @@ VideoBitrateAllocation SvcRateAllocator::Allocate(
   // Figure out how many spatial layers should be active.
   if (experiment_settings_.IsEnabled() &&
       parameters.stable_bitrate > DataRate::Zero()) {
-    double hysteresis_factor = 1.0;
+    double hysteresis_factor;
     if (codec_.mode == VideoCodecMode::kScreensharing) {
-      hysteresis_factor =
-          experiment_settings_.GetScreenshareHysteresisFactor().value_or(
-              hysteresis_factor);
+      hysteresis_factor = experiment_settings_.GetScreenshareHysteresisFactor();
     } else {
-      hysteresis_factor =
-          experiment_settings_.GetVideoHysteresisFactor().value_or(
-              hysteresis_factor);
+      hysteresis_factor = experiment_settings_.GetVideoHysteresisFactor();
     }
 
     DataRate stable_rate =

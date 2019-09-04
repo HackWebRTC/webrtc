@@ -20,8 +20,8 @@ constexpr char kFieldTrialName[] = "WebRTC-StableTargetRate";
 
 StableTargetRateExperiment::StableTargetRateExperiment(
     const WebRtcKeyValueConfig* const key_value_config,
-    absl::optional<double> default_video_hysteresis,
-    absl::optional<double> default_screenshare_hysteresis)
+    double default_video_hysteresis,
+    double default_screenshare_hysteresis)
     : enabled_("enabled", false),
       video_hysteresis_factor_("video_hysteresis_factor",
                                default_video_hysteresis),
@@ -44,31 +44,25 @@ StableTargetRateExperiment StableTargetRateExperiment::ParseFromFieldTrials() {
 
 StableTargetRateExperiment StableTargetRateExperiment::ParseFromKeyValueConfig(
     const WebRtcKeyValueConfig* const key_value_config) {
-  if (key_value_config->Lookup("WebRTC-VideoRateControl") != "") {
-    RateControlSettings rate_control =
-        RateControlSettings::ParseFromKeyValueConfig(key_value_config);
-    return StableTargetRateExperiment(key_value_config,
-                                      rate_control.GetSimulcastHysteresisFactor(
-                                          VideoCodecMode::kRealtimeVideo),
-                                      rate_control.GetSimulcastHysteresisFactor(
-                                          VideoCodecMode::kScreensharing));
-  }
-  return StableTargetRateExperiment(key_value_config, absl::nullopt,
-                                    absl::nullopt);
+  RateControlSettings rate_control =
+      RateControlSettings::ParseFromKeyValueConfig(key_value_config);
+  return StableTargetRateExperiment(
+      key_value_config,
+      rate_control.GetSimulcastHysteresisFactor(VideoCodecMode::kRealtimeVideo),
+      rate_control.GetSimulcastHysteresisFactor(
+          VideoCodecMode::kScreensharing));
 }
 
 bool StableTargetRateExperiment::IsEnabled() const {
   return enabled_.Get();
 }
 
-absl::optional<double> StableTargetRateExperiment::GetVideoHysteresisFactor()
-    const {
-  return video_hysteresis_factor_.GetOptional();
+double StableTargetRateExperiment::GetVideoHysteresisFactor() const {
+  return video_hysteresis_factor_.Get();
 }
 
-absl::optional<double>
-StableTargetRateExperiment::GetScreenshareHysteresisFactor() const {
-  return screenshare_hysteresis_factor_.GetOptional();
+double StableTargetRateExperiment::GetScreenshareHysteresisFactor() const {
+  return screenshare_hysteresis_factor_.Get();
 }
 
 }  // namespace webrtc

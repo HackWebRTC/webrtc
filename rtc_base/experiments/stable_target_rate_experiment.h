@@ -25,18 +25,18 @@ class StableTargetRateExperiment {
       const WebRtcKeyValueConfig* const key_value_config);
 
   bool IsEnabled() const;
-  absl::optional<double> GetVideoHysteresisFactor() const;
-  absl::optional<double> GetScreenshareHysteresisFactor() const;
+  double GetVideoHysteresisFactor() const;
+  double GetScreenshareHysteresisFactor() const;
 
  private:
   explicit StableTargetRateExperiment(
       const WebRtcKeyValueConfig* const key_value_config,
-      absl::optional<double> default_video_hysteresis,
-      absl::optional<double> default_screenshare_hysteresis);
+      double default_video_hysteresis,
+      double default_screenshare_hysteresis);
 
   FieldTrialParameter<bool> enabled_;
-  FieldTrialOptional<double> video_hysteresis_factor_;
-  FieldTrialOptional<double> screenshare_hysteresis_factor_;
+  FieldTrialParameter<double> video_hysteresis_factor_;
+  FieldTrialParameter<double> screenshare_hysteresis_factor_;
 };
 
 }  // namespace webrtc

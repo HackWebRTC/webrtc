@@ -264,6 +264,7 @@ rtc_source_set("video_coding_utility") {
     "../../rtc_base/experiments:quality_scaler_settings",
     "../../rtc_base/experiments:quality_scaling_experiment",
     "../../rtc_base/experiments:rate_control_settings",
+    "../../rtc_base/experiments:stable_target_rate_experiment",
     "../../rtc_base/synchronization:sequence_checker",
     "../../rtc_base/system:arch",
     "../../rtc_base/system:file_wrapper",
