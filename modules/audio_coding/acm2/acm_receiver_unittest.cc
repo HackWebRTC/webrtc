@@ -371,6 +371,92 @@ TEST_F(AcmReceiverTestOldApi, MAYBE_LastAudioCodec) {
 }
 #endif
 
+// Check if the statistics are initialized correctly. Before any call to ACM
+// all fields have to be zero.
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_InitializedToZero DISABLED_InitializedToZero
+#else
+#define MAYBE_InitializedToZero InitializedToZero
+#endif
+TEST_F(AcmReceiverTestOldApi, MAYBE_InitializedToZero) {
+  AudioDecodingCallStats stats;
+  receiver_->GetDecodingCallStatistics(&stats);
+  EXPECT_EQ(0, stats.calls_to_neteq);
+  EXPECT_EQ(0, stats.calls_to_silence_generator);
+  EXPECT_EQ(0, stats.decoded_normal);
+  EXPECT_EQ(0, stats.decoded_cng);
+  EXPECT_EQ(0, stats.decoded_neteq_plc);
+  EXPECT_EQ(0, stats.decoded_plc_cng);
+  EXPECT_EQ(0, stats.decoded_muted_output);
+}
+
+// Insert some packets and pull audio. Check statistics are valid. Then,
+// simulate packet loss and check if PLC and PLC-to-CNG statistics are
+// correctly updated.
+#if defined(WEBRTC_ANDROID)
+#define MAYBE_NetEqCalls DISABLED_NetEqCalls
+#else
+#define MAYBE_NetEqCalls NetEqCalls
+#endif
+TEST_F(AcmReceiverTestOldApi, MAYBE_NetEqCalls) {
+  AudioDecodingCallStats stats;
+  const int kNumNormalCalls = 10;
+  const int kSampleRateHz = 16000;
+  const int kNumSamples10ms = kSampleRateHz / 100;
+  const int kFrameSizeMs = 10;  // Multiple of 10.
+  const int kFrameSizeSamples = kFrameSizeMs / 10 * kNumSamples10ms;
+  const int kPayloadSizeBytes = kFrameSizeSamples * sizeof(int16_t);
+  const uint8_t kPayloadType = 111;
+  RTPHeader rtp_header;
+  AudioFrame audio_frame;
+  bool muted;
+
+  receiver_->SetCodecs(
+      {{kPayloadType, SdpAudioFormat("L16", kSampleRateHz, 1)}});
+  rtp_header.sequenceNumber = 0xABCD;
+  rtp_header.timestamp = 0xABCDEF01;
+  rtp_header.payloadType = kPayloadType;
+  rtp_header.markerBit = false;
+  rtp_header.ssrc = 0x1234;
+  rtp_header.numCSRCs = 0;
+  rtp_header.payload_type_frequency = kSampleRateHz;
+
+  for (int num_calls = 0; num_calls < kNumNormalCalls; ++num_calls) {
+    const uint8_t kPayload[kPayloadSizeBytes] = {0};
+    ASSERT_EQ(0, receiver_->InsertPacket(rtp_header, kPayload));
+    ++rtp_header.sequenceNumber;
+    rtp_header.timestamp += kFrameSizeSamples;
+    ASSERT_EQ(0, receiver_->GetAudio(-1, &audio_frame, &muted));
+    EXPECT_FALSE(muted);
+  }
+  receiver_->GetDecodingCallStatistics(&stats);
+  EXPECT_EQ(kNumNormalCalls, stats.calls_to_neteq);
+  EXPECT_EQ(0, stats.calls_to_silence_generator);
+  EXPECT_EQ(kNumNormalCalls, stats.decoded_normal);
+  EXPECT_EQ(0, stats.decoded_cng);
+  EXPECT_EQ(0, stats.decoded_neteq_plc);
+  EXPECT_EQ(0, stats.decoded_plc_cng);
+  EXPECT_EQ(0, stats.decoded_muted_output);
+
+  const int kNumPlc = 3;
+  const int kNumPlcCng = 5;
+
+  // Simulate packet-loss. NetEq first performs PLC then PLC fades to CNG.
+  for (int n = 0; n < kNumPlc + kNumPlcCng; ++n) {
+    ASSERT_EQ(0, receiver_->GetAudio(-1, &audio_frame, &muted));
+    EXPECT_FALSE(muted);
+  }
+  receiver_->GetDecodingCallStatistics(&stats);
+  EXPECT_EQ(kNumNormalCalls + kNumPlc + kNumPlcCng, stats.calls_to_neteq);
+  EXPECT_EQ(0, stats.calls_to_silence_generator);
+  EXPECT_EQ(kNumNormalCalls, stats.decoded_normal);
+  EXPECT_EQ(0, stats.decoded_cng);
+  EXPECT_EQ(kNumPlc, stats.decoded_neteq_plc);
+  EXPECT_EQ(kNumPlcCng, stats.decoded_plc_cng);
+  EXPECT_EQ(0, stats.decoded_muted_output);
+  // TODO(henrik.lundin) Add a test with muted state enabled.
+}
+
 }  // namespace acm2
 
 }  // namespace webrtc

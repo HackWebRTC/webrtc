@@ -250,9 +250,6 @@ class AudioCodingModule {
   virtual int32_t GetNetworkStatistics(
       NetworkStatistics* network_statistics) = 0;
 
-  virtual void GetDecodingCallStatistics(
-      AudioDecodingCallStats* call_stats) const = 0;
-
   virtual ANAStats GetANAStats() const = 0;
 };
 

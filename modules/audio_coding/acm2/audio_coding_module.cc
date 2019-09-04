@@ -93,8 +93,6 @@ class AudioCodingModuleImpl final : public AudioCodingModule {
 
   int GetNetworkStatistics(NetworkStatistics* statistics) override;
 
-  void GetDecodingCallStatistics(AudioDecodingCallStats* stats) const override;
-
   ANAStats GetANAStats() const override;
 
  private:
@@ -633,11 +631,6 @@ bool AudioCodingModuleImpl::HaveValidEncoder(const char* caller_name) const {
     return false;
   }
   return true;
-}
-
-void AudioCodingModuleImpl::GetDecodingCallStatistics(
-    AudioDecodingCallStats* call_stats) const {
-  receiver_.GetDecodingCallStatistics(call_stats);
 }
 
 ANAStats AudioCodingModuleImpl::GetANAStats() const {

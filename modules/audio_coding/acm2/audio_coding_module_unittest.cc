@@ -251,69 +251,6 @@ class AudioCodingModuleTestOldApi : public ::testing::Test {
   Clock* clock_;
 };
 
-// Check if the statistics are initialized correctly. Before any call to ACM
-// all fields have to be zero.
-#if defined(WEBRTC_ANDROID)
-#define MAYBE_InitializedToZero DISABLED_InitializedToZero
-#else
-#define MAYBE_InitializedToZero InitializedToZero
-#endif
-TEST_F(AudioCodingModuleTestOldApi, MAYBE_InitializedToZero) {
-  RegisterCodec();
-  AudioDecodingCallStats stats;
-  acm_->GetDecodingCallStatistics(&stats);
-  EXPECT_EQ(0, stats.calls_to_neteq);
-  EXPECT_EQ(0, stats.calls_to_silence_generator);
-  EXPECT_EQ(0, stats.decoded_normal);
-  EXPECT_EQ(0, stats.decoded_cng);
-  EXPECT_EQ(0, stats.decoded_neteq_plc);
-  EXPECT_EQ(0, stats.decoded_plc_cng);
-  EXPECT_EQ(0, stats.decoded_muted_output);
-}
-
-// Insert some packets and pull audio. Check statistics are valid. Then,
-// simulate packet loss and check if PLC and PLC-to-CNG statistics are
-// correctly updated.
-#if defined(WEBRTC_ANDROID)
-#define MAYBE_NetEqCalls DISABLED_NetEqCalls
-#else
-#define MAYBE_NetEqCalls NetEqCalls
-#endif
-TEST_F(AudioCodingModuleTestOldApi, MAYBE_NetEqCalls) {
-  RegisterCodec();
-  AudioDecodingCallStats stats;
-  const int kNumNormalCalls = 10;
-
-  for (int num_calls = 0; num_calls < kNumNormalCalls; ++num_calls) {
-    InsertPacketAndPullAudio();
-  }
-  acm_->GetDecodingCallStatistics(&stats);
-  EXPECT_EQ(kNumNormalCalls, stats.calls_to_neteq);
-  EXPECT_EQ(0, stats.calls_to_silence_generator);
-  EXPECT_EQ(kNumNormalCalls, stats.decoded_normal);
-  EXPECT_EQ(0, stats.decoded_cng);
-  EXPECT_EQ(0, stats.decoded_neteq_plc);
-  EXPECT_EQ(0, stats.decoded_plc_cng);
-  EXPECT_EQ(0, stats.decoded_muted_output);
-
-  const int kNumPlc = 3;
-  const int kNumPlcCng = 5;
-
-  // Simulate packet-loss. NetEq first performs PLC then PLC fades to CNG.
-  for (int n = 0; n < kNumPlc + kNumPlcCng; ++n) {
-    PullAudio();
-  }
-  acm_->GetDecodingCallStatistics(&stats);
-  EXPECT_EQ(kNumNormalCalls + kNumPlc + kNumPlcCng, stats.calls_to_neteq);
-  EXPECT_EQ(0, stats.calls_to_silence_generator);
-  EXPECT_EQ(kNumNormalCalls, stats.decoded_normal);
-  EXPECT_EQ(0, stats.decoded_cng);
-  EXPECT_EQ(kNumPlc, stats.decoded_neteq_plc);
-  EXPECT_EQ(kNumPlcCng, stats.decoded_plc_cng);
-  EXPECT_EQ(0, stats.decoded_muted_output);
-  // TODO(henrik.lundin) Add a test with muted state enabled.
-}
-
 TEST_F(AudioCodingModuleTestOldApi, VerifyOutputFrame) {
   AudioFrame audio_frame;
   const int kSampleRateHz = 32000;
