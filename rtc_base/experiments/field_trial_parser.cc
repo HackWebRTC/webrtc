@@ -140,11 +140,6 @@ absl::optional<unsigned> ParseTypedParameter<unsigned>(std::string str) {
 }
 
 template <>
-absl::optional<std::string> ParseTypedParameter<std::string>(std::string str) {
-  return std::move(str);
-}
-
-template <>
 absl::optional<absl::optional<bool>> ParseTypedParameter<absl::optional<bool>>(
     std::string str) {
   return ParseOptionalParameter<bool>(str);
@@ -226,7 +221,6 @@ template class FieldTrialParameter<bool>;
 template class FieldTrialParameter<double>;
 template class FieldTrialParameter<int>;
 template class FieldTrialParameter<unsigned>;
-template class FieldTrialParameter<std::string>;
 
 template class FieldTrialConstrained<double>;
 template class FieldTrialConstrained<int>;
@@ -236,6 +230,5 @@ template class FieldTrialOptional<double>;
 template class FieldTrialOptional<int>;
 template class FieldTrialOptional<unsigned>;
 template class FieldTrialOptional<bool>;
-template class FieldTrialOptional<std::string>;
 
 }  // namespace webrtc

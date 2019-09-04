@@ -25,17 +25,13 @@ struct DummyExperiment {
   FieldTrialParameter<int> retries = FieldTrialParameter<int>("r", 5);
   FieldTrialParameter<unsigned> size = FieldTrialParameter<unsigned>("s", 3);
   FieldTrialParameter<bool> ping = FieldTrialParameter<bool>("p", 0);
-  FieldTrialParameter<std::string> hash =
-      FieldTrialParameter<std::string>("h", "a80");
 
   explicit DummyExperiment(std::string field_trial) {
-    ParseFieldTrial({&enabled, &factor, &retries, &size, &ping, &hash},
-                    field_trial);
+    ParseFieldTrial({&enabled, &factor, &retries, &size, &ping}, field_trial);
   }
   DummyExperiment() {
     std::string trial_string = field_trial::FindFullName(kDummyExperiment);
-    ParseFieldTrial({&enabled, &factor, &retries, &size, &ping, &hash},
-                    trial_string);
+    ParseFieldTrial({&enabled, &factor, &retries, &size, &ping}, trial_string);
   }
 };
 
@@ -48,18 +44,17 @@ enum class CustomEnum {
 }  // namespace
 
 TEST(FieldTrialParserTest, ParsesValidParameters) {
-  DummyExperiment exp("Enabled,f:-1.7,r:2,s:10,p:1,h:x7c");
+  DummyExperiment exp("Enabled,f:-1.7,r:2,s:10,p:1");
   EXPECT_TRUE(exp.enabled.Get());
   EXPECT_EQ(exp.factor.Get(), -1.7);
   EXPECT_EQ(exp.retries.Get(), 2);
   EXPECT_EQ(exp.size.Get(), 10u);
   EXPECT_EQ(exp.ping.Get(), true);
-  EXPECT_EQ(exp.hash.Get(), "x7c");
 }
 TEST(FieldTrialParserTest, InitializesFromFieldTrial) {
   test::ScopedFieldTrials field_trials(
       "WebRTC-OtherExperiment/Disabled/"
-      "WebRTC-DummyExperiment/Enabled,f:-1.7,r:2,s:10,p:1,h:x7c/"
+      "WebRTC-DummyExperiment/Enabled,f:-1.7,r:2,s:10,p:1/"
       "WebRTC-AnotherExperiment/Enabled,f:-3.1,otherstuff:beef/");
   DummyExperiment exp;
   EXPECT_TRUE(exp.enabled.Get());
@@ -67,7 +62,6 @@ TEST(FieldTrialParserTest, InitializesFromFieldTrial) {
   EXPECT_EQ(exp.retries.Get(), 2);
   EXPECT_EQ(exp.size.Get(), 10u);
   EXPECT_EQ(exp.ping.Get(), true);
-  EXPECT_EQ(exp.hash.Get(), "x7c");
 }
 TEST(FieldTrialParserTest, UsesDefaults) {
   DummyExperiment exp("");
@@ -76,7 +70,6 @@ TEST(FieldTrialParserTest, UsesDefaults) {
   EXPECT_EQ(exp.retries.Get(), 5);
   EXPECT_EQ(exp.size.Get(), 3u);
   EXPECT_EQ(exp.ping.Get(), false);
-  EXPECT_EQ(exp.hash.Get(), "a80");
 }
 TEST(FieldTrialParserTest, CanHandleMixedInput) {
   DummyExperiment exp("p:true,h:,Enabled");
@@ -85,7 +78,6 @@ TEST(FieldTrialParserTest, CanHandleMixedInput) {
   EXPECT_EQ(exp.retries.Get(), 5);
   EXPECT_EQ(exp.size.Get(), 3u);
   EXPECT_EQ(exp.ping.Get(), true);
-  EXPECT_EQ(exp.hash.Get(), "");
 }
 TEST(FieldTrialParserTest, ParsesDoubleParameter) {
   FieldTrialParameter<double> double_param("f", 0.0);
@@ -109,7 +101,6 @@ TEST(FieldTrialParserTest, IgnoresInvalid) {
   EXPECT_EQ(exp.retries.Get(), 5);
   EXPECT_EQ(exp.size.Get(), 3u);
   EXPECT_EQ(exp.ping.Get(), false);
-  EXPECT_EQ(exp.hash.Get(), "a80");
 }
 TEST(FieldTrialParserTest, IgnoresOutOfRange) {
   FieldTrialConstrained<double> low("low", 10, absl::nullopt, 100);
@@ -159,11 +150,6 @@ TEST(FieldTrialParserTest, ParsesOptionalParameters) {
   ParseFieldTrial({&max_size}, "c:20");
   EXPECT_EQ(max_size.GetOptional().value(), 20u);
 
-  FieldTrialOptional<std::string> optional_string("s", std::string("ab"));
-  ParseFieldTrial({&optional_string}, "s:");
-  EXPECT_EQ(optional_string.GetOptional().value(), "");
-  ParseFieldTrial({&optional_string}, "s");
-  EXPECT_FALSE(optional_string.GetOptional().has_value());
 }
 TEST(FieldTrialParserTest, ParsesCustomEnumParameter) {
   FieldTrialEnum<CustomEnum> my_enum("e", CustomEnum::kDefault,

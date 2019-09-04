@@ -20,14 +20,14 @@ namespace webrtc {
 
 struct Garment {
   int price = 0;
-  std::string color = "";
+  TimeDelta age = TimeDelta::Zero();
 
   // Only needed for testing.
   Garment() = default;
-  Garment(int p, std::string c) : price(p), color(c) {}
+  Garment(int p, TimeDelta a) : price(p), age(a) {}
 
   bool operator==(const Garment& other) const {
-    return price == other.price && color == other.color;
+    return price == other.price && age == other.age;
   }
 };
 
@@ -43,34 +43,23 @@ TEST(FieldTrialListTest, ParsesListParameter) {
   EXPECT_THAT(my_list.Get(), ElementsAre(1, 2, 3));
   ParseFieldTrial({&my_list}, "l:-1");
   EXPECT_THAT(my_list.Get(), ElementsAre(-1));
-
-  FieldTrialList<std::string> another_list("l", {"hat"});
-  EXPECT_THAT(another_list.Get(), ElementsAre("hat"));
-  ParseFieldTrial({&another_list}, "l");
-  EXPECT_THAT(another_list.Get(), IsEmpty());
-  ParseFieldTrial({&another_list}, "l:");
-  EXPECT_THAT(another_list.Get(), ElementsAre(""));
-  ParseFieldTrial({&another_list}, "l:scarf|hat|mittens");
-  EXPECT_THAT(another_list.Get(), ElementsAre("scarf", "hat", "mittens"));
-  ParseFieldTrial({&another_list}, "l:scarf");
-  EXPECT_THAT(another_list.Get(), ElementsAre("scarf"));
 }
 
 // Normal usage.
 TEST(FieldTrialListTest, ParsesStructList) {
   FieldTrialStructList<Garment> my_list(
-      {FieldTrialStructMember("color", [](Garment* g) { return &g->color; }),
+      {FieldTrialStructMember("age", [](Garment* g) { return &g->age; }),
        FieldTrialStructMember("price", [](Garment* g) { return &g->price; })},
-      {{1, "blue"}, {2, "red"}});
+      {{1, TimeDelta::seconds(100)}, {2, TimeDelta::PlusInfinity()}});
 
   ParseFieldTrial({&my_list},
-                  "color:mauve|red|gold,"
+                  "age:inf|10s|80ms,"
                   "price:10|20|30,"
                   "other_param:asdf");
 
-  ASSERT_THAT(my_list.Get(),
-              ElementsAre(Garment{10, "mauve"}, Garment{20, "red"},
-                          Garment{30, "gold"}));
+  ASSERT_THAT(my_list.Get(), ElementsAre(Garment{10, TimeDelta::PlusInfinity()},
+                                         Garment{20, TimeDelta::seconds(10)},
+                                         Garment{30, TimeDelta::ms(80)}));
 }
 
 // One FieldTrialList has the wrong length, so we use the user-provided default
@@ -78,54 +67,57 @@ TEST(FieldTrialListTest, ParsesStructList) {
 TEST(FieldTrialListTest, StructListKeepsDefaultWithMismatchingLength) {
   FieldTrialStructList<Garment> my_list(
       {FieldTrialStructMember("wrong_length",
-                              [](Garment* g) { return &g->color; }),
+                              [](Garment* g) { return &g->age; }),
        FieldTrialStructMember("price", [](Garment* g) { return &g->price; })},
-      {{1, "blue"}, {2, "red"}});
+      {{1, TimeDelta::seconds(100)}, {2, TimeDelta::PlusInfinity()}});
 
   ParseFieldTrial({&my_list},
-                  "wrong_length:mauve|magenta|chartreuse|indigo,"
+                  "wrong_length:3|2|4|3,"
                   "garment:hat|hat|crown,"
                   "price:10|20|30");
 
   ASSERT_THAT(my_list.Get(),
-              ElementsAre(Garment{1, "blue"}, Garment{2, "red"}));
+              ElementsAre(Garment{1, TimeDelta::seconds(100)},
+                          Garment{2, TimeDelta::PlusInfinity()}));
 }
 
 // One list is missing. We set the values we're given, and the others remain
 // as whatever the Garment default constructor set them to.
 TEST(FieldTrialListTest, StructListUsesDefaultForMissingList) {
   FieldTrialStructList<Garment> my_list(
-      {FieldTrialStructMember("color", [](Garment* g) { return &g->color; }),
+      {FieldTrialStructMember("age", [](Garment* g) { return &g->age; }),
        FieldTrialStructMember("price", [](Garment* g) { return &g->price; })},
-      {{1, "blue"}, {2, "red"}});
+      {{1, TimeDelta::seconds(100)}, {2, TimeDelta::PlusInfinity()}});
 
   ParseFieldTrial({&my_list}, "price:10|20|30");
 
-  ASSERT_THAT(my_list.Get(),
-              ElementsAre(Garment{10, ""}, Garment{20, ""}, Garment{30, ""}));
+  ASSERT_THAT(my_list.Get(), ElementsAre(Garment{10, TimeDelta::Zero()},
+                                         Garment{20, TimeDelta::Zero()},
+                                         Garment{30, TimeDelta::Zero()}));
 }
 
 // The user haven't provided values for any lists, so we use the default list.
 TEST(FieldTrialListTest, StructListUsesDefaultListWithoutValues) {
   FieldTrialStructList<Garment> my_list(
-      {FieldTrialStructMember("color", [](Garment* g) { return &g->color; }),
+      {FieldTrialStructMember("age", [](Garment* g) { return &g->age; }),
        FieldTrialStructMember("price", [](Garment* g) { return &g->price; })},
-      {{1, "blue"}, {2, "red"}});
+      {{1, TimeDelta::seconds(100)}, {2, TimeDelta::PlusInfinity()}});
 
   ParseFieldTrial({&my_list}, "");
 
   ASSERT_THAT(my_list.Get(),
-              ElementsAre(Garment{1, "blue"}, Garment{2, "red"}));
+              ElementsAre(Garment{1, TimeDelta::seconds(100)},
+                          Garment{2, TimeDelta::PlusInfinity()}));
 }
 
 // Some lists are provided and all are empty, so we return a empty list.
 TEST(FieldTrialListTest, StructListHandlesEmptyLists) {
   FieldTrialStructList<Garment> my_list(
-      {FieldTrialStructMember("color", [](Garment* g) { return &g->color; }),
+      {FieldTrialStructMember("age", [](Garment* g) { return &g->age; }),
        FieldTrialStructMember("price", [](Garment* g) { return &g->price; })},
-      {{1, "blue"}, {2, "red"}});
+      {{1, TimeDelta::seconds(100)}, {2, TimeDelta::PlusInfinity()}});
 
-  ParseFieldTrial({&my_list}, "color,price");
+  ParseFieldTrial({&my_list}, "age,price");
 
   ASSERT_EQ(my_list.Get().size(), 0u);
 }
