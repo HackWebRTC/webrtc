@@ -29,6 +29,9 @@ def main(argv):
 
   output_dir = os.path.abspath(argv[1])
 
+  if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
   download_apprtc_path = os.path.join(SCRIPT_DIR, 'download_apprtc.py')
   utils.RunSubprocessWithRetry([sys.executable, download_apprtc_path,
                                 output_dir])
