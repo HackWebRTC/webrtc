@@ -35,7 +35,7 @@ class LinkCapacityTracker {
  public:
   LinkCapacityTracker();
   ~LinkCapacityTracker();
-  void OnOveruse(DataRate acknowledged_rate, Timestamp at_time);
+  void OnOveruse(DataRate delay_based_bitrate, Timestamp at_time);
   void OnStartingRate(DataRate start_rate);
   void OnRateUpdate(DataRate acknowledged, Timestamp at_time);
   void OnRttBackoff(DataRate backoff_rate, Timestamp at_time);

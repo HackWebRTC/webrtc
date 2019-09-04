@@ -508,18 +508,20 @@ TEST_F(GoogCcNetworkControllerTest, StableEstimateDoesNotVaryInSteadyState) {
 
   // Measure variation in steady state.
   for (int i = 0; i < 20; ++i) {
-    min_stable_target =
-        std::min(min_stable_target, client->stable_target_rate());
-    max_stable_target =
-        std::max(max_stable_target, client->stable_target_rate());
-    min_target = std::min(min_target, client->link_capacity());
-    max_target = std::max(max_target, client->link_capacity());
+    auto stable_target_rate = client->stable_target_rate();
+    auto target_rate = client->link_capacity();
+    EXPECT_LE(stable_target_rate, target_rate);
+
+    min_stable_target = std::min(min_stable_target, stable_target_rate);
+    max_stable_target = std::max(max_stable_target, stable_target_rate);
+    min_target = std::min(min_target, target_rate);
+    max_target = std::max(max_target, target_rate);
     s.RunFor(TimeDelta::seconds(1));
   }
-  // We expect no variation under the trial in steady state.
-  EXPECT_GT(min_stable_target / max_stable_target, 0.95);
   // We should expect drops by at least 15% (default backoff.)
   EXPECT_LT(min_target / max_target, 0.85);
+  // We should expect the stable target to be more stable than the immediate one
+  EXPECT_GE(min_stable_target / max_stable_target, min_target / max_target);
 }
 
 TEST_F(GoogCcNetworkControllerTest,

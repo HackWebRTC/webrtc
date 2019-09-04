@@ -632,8 +632,8 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
     TargetTransferRate target_rate_msg;
     target_rate_msg.at_time = at_time;
     target_rate_msg.target_rate = target_rate;
-    target_rate_msg.stable_target_rate =
-        bandwidth_estimation_->GetEstimatedLinkCapacity();
+    target_rate_msg.stable_target_rate = std::min(
+        bandwidth_estimation_->GetEstimatedLinkCapacity(), target_rate);
     target_rate_msg.network_estimate.at_time = at_time;
     target_rate_msg.network_estimate.round_trip_time = TimeDelta::ms(rtt_ms);
     target_rate_msg.network_estimate.bandwidth = last_raw_target_rate_;
