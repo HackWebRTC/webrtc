@@ -45,6 +45,7 @@ rtc_static_library("video_capture_module") {
 
 if (!build_with_chromium) {
   rtc_source_set("video_capture_internal_impl") {
+    visibility = [ "*" ]
     deps = [
       ":video_capture_module",
       "../../api:scoped_refptr",
