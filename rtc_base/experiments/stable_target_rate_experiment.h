@@ -18,6 +18,7 @@ namespace webrtc {
 
 class StableTargetRateExperiment {
  public:
+  StableTargetRateExperiment(const StableTargetRateExperiment&);
   StableTargetRateExperiment(StableTargetRateExperiment&&);
   static StableTargetRateExperiment ParseFromFieldTrials();
   static StableTargetRateExperiment ParseFromKeyValueConfig(

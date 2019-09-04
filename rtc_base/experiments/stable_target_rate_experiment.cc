@@ -33,6 +33,8 @@ StableTargetRateExperiment::StableTargetRateExperiment(
 }
 
 StableTargetRateExperiment::StableTargetRateExperiment(
+    const StableTargetRateExperiment&) = default;
+StableTargetRateExperiment::StableTargetRateExperiment(
     StableTargetRateExperiment&&) = default;
 
 StableTargetRateExperiment StableTargetRateExperiment::ParseFromFieldTrials() {
