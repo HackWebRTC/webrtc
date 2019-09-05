@@ -3900,17 +3900,11 @@ PeerConnection::GetFirstAudioTransceiver() const {
 
 bool PeerConnection::StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output,
                                       int64_t output_period_ms) {
-  // TODO(eladalon): In C++14, this can be done with a lambda.
-  struct Functor {
-    bool operator()() {
-      return pc->StartRtcEventLog_w(std::move(output), output_period_ms);
-    }
-    PeerConnection* const pc;
-    std::unique_ptr<RtcEventLogOutput> output;
-    const int64_t output_period_ms;
-  };
   return worker_thread()->Invoke<bool>(
-      RTC_FROM_HERE, Functor{this, std::move(output), output_period_ms});
+      RTC_FROM_HERE,
+      [this, output = std::move(output), output_period_ms]() mutable {
+        return StartRtcEventLog_w(std::move(output), output_period_ms);
+      });
 }
 
 bool PeerConnection::StartRtcEventLog(
