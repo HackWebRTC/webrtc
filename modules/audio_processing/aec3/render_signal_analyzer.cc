@@ -34,7 +34,8 @@ void IdentifySmallNarrowBandRegions(
     return;
   }
 
-  rtc::ArrayView<const float> X2 = render_buffer.Spectrum(*delay_partitions);
+  rtc::ArrayView<const float> X2 =
+      render_buffer.Spectrum(*delay_partitions, /*channel=*/0);
   RTC_DCHECK_EQ(kFftLengthBy2Plus1, X2.size());
 
   for (size_t k = 1; k < (X2.size() - 1); ++k) {
@@ -49,7 +50,7 @@ void IdentifyStrongNarrowBandComponent(const RenderBuffer& render_buffer,
                                        int strong_peak_freeze_duration,
                                        absl::optional<int>* narrow_peak_band,
                                        size_t* narrow_peak_counter) {
-  const auto X2_latest = render_buffer.Spectrum(0);
+  const auto X2_latest = render_buffer.Spectrum(0, /*channel=*/0);
 
   // Identify the spectral peak.
   const int peak_bin = static_cast<int>(

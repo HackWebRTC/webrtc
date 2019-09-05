@@ -14,11 +14,18 @@
 
 namespace webrtc {
 
-VectorBuffer::VectorBuffer(size_t size, size_t height)
+VectorBuffer::VectorBuffer(size_t size,
+                           size_t num_channels,
+                           size_t spectrum_length)
     : size(static_cast<int>(size)),
-      buffer(size, std::vector<float>(height, 0.f)) {
-  for (auto& c : buffer) {
-    std::fill(c.begin(), c.end(), 0.f);
+      buffer(size,
+             std::vector<std::vector<float>>(
+                 num_channels,
+                 std::vector<float>(spectrum_length, 0.f))) {
+  for (auto& channel : buffer) {
+    for (auto& c : channel) {
+      std::fill(c.begin(), c.end(), 0.f);
+    }
   }
 }
 

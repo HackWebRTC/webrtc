@@ -34,11 +34,12 @@ void RenderReverbModel::Apply(const VectorBuffer& spectrum_buffer,
   int idx_at_delay =
       spectrum_buffer.OffsetIndex(spectrum_buffer.read, delay_blocks);
   int idx_past = spectrum_buffer.IncIndex(idx_at_delay);
-  const auto& X2 = spectrum_buffer.buffer[idx_at_delay];
+  const auto& X2 = spectrum_buffer.buffer[idx_at_delay][/*channel=*/0];
   RTC_DCHECK_EQ(X2.size(), reverb_power_spectrum.size());
   std::copy(X2.begin(), X2.end(), reverb_power_spectrum.begin());
-  render_reverb_.AddReverbNoFreqShaping(spectrum_buffer.buffer[idx_past], 1.0f,
-                                        reverb_decay, reverb_power_spectrum);
+  render_reverb_.AddReverbNoFreqShaping(
+      spectrum_buffer.buffer[idx_past][/*channel=*/0], 1.0f, reverb_decay,
+      reverb_power_spectrum);
 }
 
 }  // namespace webrtc

@@ -153,7 +153,8 @@ void AecState::Update(
     erle_estimator_.Reset(false);
   }
 
-  const auto& X2 = render_buffer.Spectrum(delay_state_.DirectPathFilterDelay());
+  const auto& X2 = render_buffer.Spectrum(delay_state_.DirectPathFilterDelay(),
+                                          /*channel=*/0);
   const auto& X2_input_erle = X2_reverb;
 
   erle_estimator_.Update(render_buffer, adaptive_filter_frequency_response,

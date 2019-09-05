@@ -77,7 +77,8 @@ void ResidualEchoEstimator::Estimate(
     // Adds the estimated unmodelled echo power to the residual echo power
     // estimate.
     echo_reverb_.AddReverb(
-        render_buffer.Spectrum(aec_state.FilterLengthBlocks() + 1),
+        render_buffer.Spectrum(aec_state.FilterLengthBlocks() + 1,
+                               /*channel=*/0),
         aec_state.GetReverbFrequencyResponse(), aec_state.ReverbDecay(), *R2);
   } else {
     // Estimate the echo generating signal power.
@@ -108,7 +109,8 @@ void ResidualEchoEstimator::Estimate(
 
     if (!(aec_state.TransparentMode())) {
       echo_reverb_.AddReverbNoFreqShaping(
-          render_buffer.Spectrum(aec_state.FilterDelayBlocks() + 1),
+          render_buffer.Spectrum(aec_state.FilterDelayBlocks() + 1,
+                                 /*channel=*/0),
           echo_path_gain * echo_path_gain, aec_state.ReverbDecay(), *R2);
     }
   }
@@ -171,7 +173,8 @@ void ResidualEchoEstimator::EchoGeneratingPower(
 
   X2->fill(0.f);
   for (int k = idx_start; k != idx_stop; k = spectrum_buffer.IncIndex(k)) {
-    std::transform(X2->begin(), X2->end(), spectrum_buffer.buffer[k].begin(),
+    std::transform(X2->begin(), X2->end(),
+                   spectrum_buffer.buffer[k][/*channel=*/0].begin(),
                    X2->begin(),
                    [](float a, float b) { return std::max(a, b); });
   }
@@ -194,7 +197,7 @@ void ResidualEchoEstimator::RenderNoisePower(
   RTC_DCHECK(X2_noise_floor);
   RTC_DCHECK(X2_noise_floor_counter);
 
-  const auto render_power = render_buffer.Spectrum(0);
+  const auto render_power = render_buffer.Spectrum(0, /*channel=*/0);
   RTC_DCHECK_EQ(X2_noise_floor->size(), render_power.size());
   RTC_DCHECK_EQ(X2_noise_floor_counter->size(), render_power.size());
 

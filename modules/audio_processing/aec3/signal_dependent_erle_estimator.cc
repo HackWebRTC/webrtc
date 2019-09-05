@@ -332,9 +332,10 @@ void SignalDependentErleEstimator::ComputeEchoEstimatePerFilterSection(
                                         filter_frequency_response.size());
     for (size_t block = section_boundaries_blocks_[section];
          block < block_limit; ++block) {
-      std::transform(X2_section.begin(), X2_section.end(),
-                     spectrum_render_buffer.buffer[idx_render].begin(),
-                     X2_section.begin(), std::plus<float>());
+      std::transform(
+          X2_section.begin(), X2_section.end(),
+          spectrum_render_buffer.buffer[idx_render][/*channel=*/0].begin(),
+          X2_section.begin(), std::plus<float>());
       std::transform(H2_section.begin(), H2_section.end(),
                      filter_frequency_response[block].begin(),
                      H2_section.begin(), std::plus<float>());

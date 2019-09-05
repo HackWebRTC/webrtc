@@ -127,7 +127,7 @@ RenderDelayBufferImpl::RenderDelayBufferImpl(const EchoCanceller3Config& config,
               NumBandsForRate(sample_rate_hz),
               num_render_channels,
               kBlockSize),
-      spectra_(blocks_.buffer.size(), kFftLengthBy2Plus1),
+      spectra_(blocks_.buffer.size(), num_render_channels, kFftLengthBy2Plus1),
       ffts_(blocks_.buffer.size()),
       delay_(config_.delay.default_delay),
       echo_remover_buffer_(&blocks_, &spectra_, &ffts_),
@@ -381,7 +381,9 @@ void RenderDelayBufferImpl::InsertBlock(
   std::copy(ds.rbegin(), ds.rend(), lr.buffer.begin() + lr.write);
   fft_.PaddedFft(block[0][0], b.buffer[previous_write][0][0],
                  &f.buffer[f.write]);
-  f.buffer[f.write].Spectrum(optimization_, s.buffer[s.write]);
+  // TODO(http://bugs.webrtc.org/10913): Loop over all channels when FftBuffer
+  // supports multi-channel.
+  f.buffer[f.write].Spectrum(optimization_, s.buffer[s.write][/*channel=*/0]);
 }
 
 bool RenderDelayBufferImpl::DetectActiveRender(

@@ -105,7 +105,7 @@ bool StationarityEstimator::EstimateBandStationarity(
   constexpr float kThrStationarity = 10.f;
   float acum_power = 0.f;
   for (auto idx : indexes) {
-    acum_power += spectrum_buffer.buffer[idx][band];
+    acum_power += spectrum_buffer.buffer[idx][/*channel=*/0][band];
   }
   acum_power += reverb[band];
   float noise = kWindowLength * GetStationarityPowerBand(band);

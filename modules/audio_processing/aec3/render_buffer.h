@@ -44,10 +44,11 @@ class RenderBuffer {
   }
 
   // Get the spectrum from one of the FFTs in the buffer.
-  rtc::ArrayView<const float> Spectrum(int buffer_offset_ffts) const {
+  rtc::ArrayView<const float> Spectrum(int buffer_offset_ffts,
+                                       size_t channel) const {
     int position = spectrum_buffer_->OffsetIndex(spectrum_buffer_->read,
                                                  buffer_offset_ffts);
-    return spectrum_buffer_->buffer[position];
+    return spectrum_buffer_->buffer[position][channel];
   }
 
   // Returns the circular fft buffer.

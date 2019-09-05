@@ -83,7 +83,8 @@ void EchoAudibility::UpdateRenderNoiseEstimator(
     for (int idx = render_spectrum_write_prev_.value();
          idx != render_spectrum_write_current;
          idx = spectrum_buffer.DecIndex(idx)) {
-      render_stationarity_.UpdateNoiseEstimator(spectrum_buffer.buffer[idx]);
+      render_stationarity_.UpdateNoiseEstimator(
+          spectrum_buffer.buffer[idx][/*channel=*/0]);
     }
   }
   render_spectrum_write_prev_ = render_spectrum_write_current;

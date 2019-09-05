@@ -99,8 +99,8 @@ void TestInputs::UpdateCurrentPowerSpectra() {
       render_buffer_->GetSpectrumBuffer();
   size_t idx = render_buffer_->Position();
   size_t prev_idx = spectrum_render_buffer.OffsetIndex(idx, 1);
-  auto& X2 = spectrum_render_buffer.buffer[idx];
-  auto& X2_prev = spectrum_render_buffer.buffer[prev_idx];
+  auto& X2 = spectrum_render_buffer.buffer[idx][/*channel=*/0];
+  auto& X2_prev = spectrum_render_buffer.buffer[prev_idx][/*channel=*/0];
   std::copy(X2.begin(), X2.end(), X2_.begin());
   RTC_DCHECK_EQ(X2.size(), Y2_.size());
   for (size_t k = 0; k < X2.size(); ++k) {

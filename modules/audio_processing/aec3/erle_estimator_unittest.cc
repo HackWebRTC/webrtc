@@ -70,7 +70,8 @@ void FormFarendFrame(const RenderBuffer& render_buffer,
                      std::array<float, kFftLengthBy2Plus1>* Y2,
                      float erle) {
   const auto& spectrum_buffer = render_buffer.GetSpectrumBuffer();
-  const auto& X2_from_buffer = spectrum_buffer.buffer[spectrum_buffer.write];
+  const auto& X2_from_buffer =
+      spectrum_buffer.buffer[spectrum_buffer.write][/*channel=*/0];
   std::copy(X2_from_buffer.begin(), X2_from_buffer.end(), X2->begin());
   std::transform(X2->begin(), X2->end(), Y2->begin(),
                  [](float a) { return a * kEchoPathGain * kEchoPathGain; });

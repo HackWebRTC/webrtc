@@ -21,8 +21,9 @@ namespace webrtc {
 
 // Struct for bundling a circular buffer of one dimensional vector objects
 // together with the read and write indices.
+// TODO(peah): Change name of this class to be more specific to what it does.
 struct VectorBuffer {
-  VectorBuffer(size_t size, size_t height);
+  VectorBuffer(size_t size, size_t num_channels, size_t spectrum_length);
   ~VectorBuffer();
 
   int IncIndex(int index) const {
@@ -50,7 +51,7 @@ struct VectorBuffer {
   void DecReadIndex() { read = DecIndex(read); }
 
   const int size;
-  std::vector<std::vector<float>> buffer;
+  std::vector<std::vector<std::vector<float>>> buffer;
   int write = 0;
   int read = 0;
 };
