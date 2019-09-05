@@ -14,8 +14,8 @@
 #include <cstdio>
 
 #include "absl/memory/memory.h"
+#include "api/rtc_event_log/rtc_event.h"
 #include "api/rtc_event_log/rtc_event_log.h"
-#include "logging/rtc_event_log/events/rtc_event.h"
 #include "logging/rtc_event_log/events/rtc_event_alr_state.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/numerics/safe_conversions.h"

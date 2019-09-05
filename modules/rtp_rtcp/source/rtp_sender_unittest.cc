@@ -14,10 +14,10 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "api/rtc_event_log/rtc_event.h"
 #include "api/transport/field_trial_based_config.h"
 #include "api/video/video_codec_constants.h"
 #include "api/video/video_timing.h"
-#include "logging/rtc_event_log/events/rtc_event.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "modules/rtp_rtcp/include/rtp_cvo.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"

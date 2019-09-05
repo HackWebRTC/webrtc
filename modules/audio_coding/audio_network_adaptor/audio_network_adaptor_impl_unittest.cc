@@ -13,7 +13,7 @@
 #include <utility>
 #include <vector>
 
-#include "logging/rtc_event_log/events/rtc_event.h"
+#include "api/rtc_event_log/rtc_event.h"
 #include "logging/rtc_event_log/events/rtc_event_audio_network_adaptation.h"
 #include "logging/rtc_event_log/mock/mock_rtc_event_log.h"
 #include "modules/audio_coding/audio_network_adaptor/mock/mock_controller.h"

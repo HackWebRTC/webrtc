@@ -49,7 +49,6 @@ rtc_source_set("rtc_stream_config") {
   ]
 
   deps = [
-    ":rtc_event_log_api",
     "../api:rtp_headers",
     "../api:rtp_parameters",
   ]
@@ -62,8 +61,8 @@ rtc_source_set("rtc_event_pacing") {
   ]
 
   deps = [
-    ":rtc_event_log_api",
     "../api:scoped_refptr",
+    "../api/rtc_event_log",
     "//third_party/abseil-cpp/absl/memory",
   ]
 }
@@ -81,9 +80,9 @@ rtc_source_set("rtc_event_audio") {
   ]
 
   deps = [
-    ":rtc_event_log_api",
     ":rtc_stream_config",
     "../api:scoped_refptr",
+    "../api/rtc_event_log",
     "../modules/audio_coding:audio_network_adaptor_config",
     "../rtc_base:checks",
     "//third_party/abseil-cpp/absl/memory",
@@ -107,8 +106,8 @@ rtc_source_set("rtc_event_bwe") {
   ]
 
   deps = [
-    ":rtc_event_log_api",
     "../api:scoped_refptr",
+    "../api/rtc_event_log",
     "../modules/remote_bitrate_estimator",
     "//third_party/abseil-cpp/absl/memory",
   ]
@@ -125,7 +124,7 @@ rtc_source_set("rtc_event_generic_packet_events") {
     "rtc_event_log/events/rtc_event_generic_packet_sent.h",
   ]
   deps = [
-    ":rtc_event_log_api",
+    "../api/rtc_event_log",
     "../rtc_base:timeutils",
     "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
@@ -145,9 +144,9 @@ rtc_source_set("rtc_event_rtp_rtcp") {
   ]
 
   deps = [
-    ":rtc_event_log_api",
     "../api:array_view",
     "../api:scoped_refptr",
+    "../api/rtc_event_log",
     "../modules/rtp_rtcp:rtp_rtcp_format",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
@@ -164,9 +163,9 @@ rtc_source_set("rtc_event_video") {
   ]
 
   deps = [
-    ":rtc_event_log_api",
     ":rtc_stream_config",
     "../api:scoped_refptr",
+    "../api/rtc_event_log",
     "../rtc_base:checks",
     "//third_party/abseil-cpp/absl/memory",
   ]
@@ -274,7 +273,6 @@ rtc_source_set("fake_rtc_event_log") {
 
   deps = [
     ":ice_log",
-    ":rtc_event_log_api",
     "../api/rtc_event_log",
     "../rtc_base",
     "../rtc_base:checks",
@@ -432,11 +430,8 @@ rtc_source_set("ice_log") {
   ]
 
   deps = [
-    ":rtc_event_log_api",
     "../api:libjingle_logging_api",
-
-    # For api/dtls_transport_interface.h
-    "../api:libjingle_peerconnection_api",
+    "../api:libjingle_peerconnection_api",  # For api/dtls_transport_interface.h
     "../api/rtc_event_log",
     "../rtc_base:rtc_base_approved",
     "//third_party/abseil-cpp/absl/memory",
