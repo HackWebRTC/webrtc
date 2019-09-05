@@ -15,6 +15,7 @@
 #include <X11/Xlib.h>
 #include <X11/extensions/Xdamage.h>
 #include <X11/extensions/Xfixes.h>
+#include <X11/extensions/Xrandr.h>
 
 #include <memory>
 
@@ -64,6 +65,8 @@ class ScreenCapturerX11 : public DesktopCapturer,
   bool HandleXEvent(const XEvent& event) override;
 
   void InitXDamage();
+  void InitXrandr();
+  void UpdateMonitors();
 
   // Capture screen pixels to the current buffer in the queue. In the DAMAGE
   // case, the ScreenCapturerHelper already holds the list of invalid rectangles
@@ -91,6 +94,14 @@ class ScreenCapturerX11 : public DesktopCapturer,
   // X11 graphics context.
   GC gc_ = nullptr;
   Window root_window_ = BadValue;
+
+  // XRandR 1.5 monitors.
+  bool use_randr_ = false;
+  int randr_event_base_ = 0;
+  XRRMonitorInfo* monitors_ = nullptr;
+  int num_monitors_ = 0;
+  DesktopRect selected_monitor_rect_;
+  Atom selected_monitor_name_ = 0;
 
   // XFixes.
   bool has_xfixes_ = false;
