@@ -154,25 +154,25 @@ __inline static float MulIm(float aRe, float aIm, float bRe, float bIm) {
 PowerLevel::PowerLevel()
     : framelevel(kSubCountLen + 1), averagelevel(kCountLen + 1) {}
 
-BlockBuffer::BlockBuffer() {
+Aec2BlockBuffer::Aec2BlockBuffer() {
   buffer_ = WebRtc_CreateBuffer(kBufferSizeBlocks, sizeof(float) * PART_LEN);
   RTC_CHECK(buffer_);
   ReInit();
 }
 
-BlockBuffer::~BlockBuffer() {
+Aec2BlockBuffer::~Aec2BlockBuffer() {
   WebRtc_FreeBuffer(buffer_);
 }
 
-void BlockBuffer::ReInit() {
+void Aec2BlockBuffer::ReInit() {
   WebRtc_InitBuffer(buffer_);
 }
 
-void BlockBuffer::Insert(const float block[PART_LEN]) {
+void Aec2BlockBuffer::Insert(const float block[PART_LEN]) {
   WebRtc_WriteBuffer(buffer_, block, 1);
 }
 
-void BlockBuffer::ExtractExtendedBlock(float extended_block[PART_LEN2]) {
+void Aec2BlockBuffer::ExtractExtendedBlock(float extended_block[PART_LEN2]) {
   float* block_ptr = NULL;
   RTC_DCHECK_LT(0, AvaliableSpace());
 
@@ -197,15 +197,15 @@ void BlockBuffer::ExtractExtendedBlock(float extended_block[PART_LEN2]) {
   }
 }
 
-int BlockBuffer::AdjustSize(int buffer_size_decrease) {
+int Aec2BlockBuffer::AdjustSize(int buffer_size_decrease) {
   return WebRtc_MoveReadPtr(buffer_, buffer_size_decrease);
 }
 
-size_t BlockBuffer::Size() {
+size_t Aec2BlockBuffer::Size() {
   return static_cast<int>(WebRtc_available_read(buffer_));
 }
 
-size_t BlockBuffer::AvaliableSpace() {
+size_t Aec2BlockBuffer::AvaliableSpace() {
   return WebRtc_available_write(buffer_);
 }
 

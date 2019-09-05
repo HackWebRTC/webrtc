@@ -8,16 +8,16 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/aec3/matrix_buffer.h"
+#include "modules/audio_processing/aec3/block_buffer.h"
 
 #include <algorithm>
 
 namespace webrtc {
 
-MatrixBuffer::MatrixBuffer(size_t size,
-                           size_t num_bands,
-                           size_t num_channels,
-                           size_t frame_length)
+BlockBuffer::BlockBuffer(size_t size,
+                         size_t num_bands,
+                         size_t num_channels,
+                         size_t frame_length)
     : size(static_cast<int>(size)),
       buffer(size,
              std::vector<std::vector<std::vector<float>>>(
@@ -34,6 +34,6 @@ MatrixBuffer::MatrixBuffer(size_t size,
   }
 }
 
-MatrixBuffer::~MatrixBuffer() = default;
+BlockBuffer::~BlockBuffer() = default;
 
 }  // namespace webrtc

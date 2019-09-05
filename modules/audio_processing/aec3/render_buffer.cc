@@ -18,8 +18,8 @@
 
 namespace webrtc {
 
-RenderBuffer::RenderBuffer(MatrixBuffer* block_buffer,
-                           VectorBuffer* spectrum_buffer,
+RenderBuffer::RenderBuffer(BlockBuffer* block_buffer,
+                           SpectrumBuffer* spectrum_buffer,
                            FftBuffer* fft_buffer)
     : block_buffer_(block_buffer),
       spectrum_buffer_(spectrum_buffer),

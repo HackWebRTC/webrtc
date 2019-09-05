@@ -95,7 +95,7 @@ void TestInputs::Update() {
 }
 
 void TestInputs::UpdateCurrentPowerSpectra() {
-  const VectorBuffer& spectrum_render_buffer =
+  const SpectrumBuffer& spectrum_render_buffer =
       render_buffer_->GetSpectrumBuffer();
   size_t idx = render_buffer_->Position();
   size_t prev_idx = spectrum_render_buffer.OffsetIndex(idx, 1);

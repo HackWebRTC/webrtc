@@ -25,7 +25,7 @@ namespace {
 // Computes the indexes that will be used for computing spectral power over
 // the blocks surrounding the delay.
 void GetRenderIndexesToAnalyze(
-    const VectorBuffer& spectrum_buffer,
+    const SpectrumBuffer& spectrum_buffer,
     const EchoCanceller3Config::EchoModel& echo_model,
     int filter_delay_blocks,
     int* idx_start,
@@ -160,7 +160,7 @@ void ResidualEchoEstimator::NonLinearEstimate(
 }
 
 void ResidualEchoEstimator::EchoGeneratingPower(
-    const VectorBuffer& spectrum_buffer,
+    const SpectrumBuffer& spectrum_buffer,
     const EchoCanceller3Config::EchoModel& echo_model,
     int filter_delay_blocks,
     bool apply_noise_gating,

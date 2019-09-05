@@ -8,8 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#ifndef MODULES_AUDIO_PROCESSING_AEC3_MATRIX_BUFFER_H_
-#define MODULES_AUDIO_PROCESSING_AEC3_MATRIX_BUFFER_H_
+#ifndef MODULES_AUDIO_PROCESSING_AEC3_SPECTRUM_BUFFER_H_
+#define MODULES_AUDIO_PROCESSING_AEC3_SPECTRUM_BUFFER_H_
 
 #include <stddef.h>
 
@@ -19,15 +19,12 @@
 
 namespace webrtc {
 
-// Struct for bundling a circular buffer of two dimensional vector objects
+// Struct for bundling a circular buffer of one dimensional vector objects
 // together with the read and write indices.
 // TODO(peah): Change name of this class to be more specific to what it does.
-struct MatrixBuffer {
-  MatrixBuffer(size_t size,
-               size_t num_bands,
-               size_t num_channels,
-               size_t frame_length);
-  ~MatrixBuffer();
+struct SpectrumBuffer {
+  SpectrumBuffer(size_t size, size_t num_channels, size_t spectrum_length);
+  ~SpectrumBuffer();
 
   int IncIndex(int index) const {
     RTC_DCHECK_EQ(buffer.size(), static_cast<size_t>(size));
@@ -40,8 +37,9 @@ struct MatrixBuffer {
   }
 
   int OffsetIndex(int index, int offset) const {
-    RTC_DCHECK_EQ(buffer.size(), static_cast<size_t>(size));
     RTC_DCHECK_GE(size, offset);
+    RTC_DCHECK_EQ(buffer.size(), static_cast<size_t>(size));
+    RTC_DCHECK_GE(size + index + offset, 0);
     return (size + index + offset) % size;
   }
 
@@ -53,11 +51,11 @@ struct MatrixBuffer {
   void DecReadIndex() { read = DecIndex(read); }
 
   const int size;
-  std::vector<std::vector<std::vector<std::vector<float>>>> buffer;
+  std::vector<std::vector<std::vector<float>>> buffer;
   int write = 0;
   int read = 0;
 };
 
 }  // namespace webrtc
 
-#endif  // MODULES_AUDIO_PROCESSING_AEC3_MATRIX_BUFFER_H_
+#endif  // MODULES_AUDIO_PROCESSING_AEC3_SPECTRUM_BUFFER_H_

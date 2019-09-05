@@ -82,10 +82,10 @@ typedef struct PowerLevel {
   float minlevel;
 } PowerLevel;
 
-class BlockBuffer {
+class Aec2BlockBuffer {
  public:
-  BlockBuffer();
-  ~BlockBuffer();
+  Aec2BlockBuffer();
+  ~Aec2BlockBuffer();
   void ReInit();
   void Insert(const float block[PART_LEN]);
   void ExtractExtendedBlock(float extended_block[PART_LEN]);
@@ -183,7 +183,7 @@ struct AecCore {
 
   int xfBufBlockPos;
 
-  BlockBuffer farend_block_buffer_;
+  Aec2BlockBuffer farend_block_buffer_;
 
   int system_delay;  // Current system delay buffered in AEC.
 

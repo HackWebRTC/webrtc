@@ -27,7 +27,7 @@ void RenderReverbModel::Reset() {
   render_reverb_.Reset();
 }
 
-void RenderReverbModel::Apply(const VectorBuffer& spectrum_buffer,
+void RenderReverbModel::Apply(const SpectrumBuffer& spectrum_buffer,
                               int delay_blocks,
                               float reverb_decay,
                               rtc::ArrayView<float> reverb_power_spectrum) {

@@ -14,7 +14,7 @@
 #include <functional>
 #include <numeric>
 
-#include "modules/audio_processing/aec3/vector_buffer.h"
+#include "modules/audio_processing/aec3/spectrum_buffer.h"
 #include "rtc_base/numerics/safe_minmax.h"
 
 namespace webrtc {
@@ -314,7 +314,7 @@ void SignalDependentErleEstimator::ComputeEchoEstimatePerFilterSection(
     const RenderBuffer& render_buffer,
     const std::vector<std::array<float, kFftLengthBy2Plus1>>&
         filter_frequency_response) {
-  const VectorBuffer& spectrum_render_buffer =
+  const SpectrumBuffer& spectrum_render_buffer =
       render_buffer.GetSpectrumBuffer();
 
   RTC_DCHECK_EQ(S2_section_accum_.size() + 1,

@@ -16,7 +16,7 @@
 
 #include "api/array_view.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
-#include "modules/audio_processing/aec3/vector_buffer.h"
+#include "modules/audio_processing/aec3/spectrum_buffer.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomic_ops.h"
 
@@ -53,7 +53,7 @@ void StationarityEstimator::UpdateNoiseEstimator(
 }
 
 void StationarityEstimator::UpdateStationarityFlags(
-    const VectorBuffer& spectrum_buffer,
+    const SpectrumBuffer& spectrum_buffer,
     rtc::ArrayView<const float> render_reverb_contribution_spectrum,
     int idx_current,
     int num_lookahead) {
@@ -98,7 +98,7 @@ bool StationarityEstimator::IsBlockStationary() const {
 }
 
 bool StationarityEstimator::EstimateBandStationarity(
-    const VectorBuffer& spectrum_buffer,
+    const SpectrumBuffer& spectrum_buffer,
     rtc::ArrayView<const float> reverb,
     const std::array<int, kWindowLength>& indexes,
     size_t band) const {

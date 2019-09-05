@@ -14,7 +14,7 @@
 
 #include "api/array_view.h"
 #include "modules/audio_processing/aec3/render_delay_buffer.h"
-#include "modules/audio_processing/aec3/vector_buffer.h"
+#include "modules/audio_processing/aec3/spectrum_buffer.h"
 #include "rtc_base/random.h"
 #include "test/gtest.h"
 

@@ -16,9 +16,9 @@
 #include <vector>
 
 #include "api/array_view.h"
-#include "modules/audio_processing/aec3/matrix_buffer.h"
+#include "modules/audio_processing/aec3/block_buffer.h"
+#include "modules/audio_processing/aec3/spectrum_buffer.h"
 #include "modules/audio_processing/aec3/stationarity_estimator.h"
-#include "modules/audio_processing/aec3/vector_buffer.h"
 
 namespace webrtc {
 
@@ -54,7 +54,7 @@ void EchoAudibility::UpdateRenderStationarityFlags(
     const RenderBuffer& render_buffer,
     rtc::ArrayView<const float> render_reverb_contribution_spectrum,
     int delay_blocks) {
-  const VectorBuffer& spectrum_buffer = render_buffer.GetSpectrumBuffer();
+  const SpectrumBuffer& spectrum_buffer = render_buffer.GetSpectrumBuffer();
   int idx_at_delay =
       spectrum_buffer.OffsetIndex(spectrum_buffer.read, delay_blocks);
 
@@ -67,8 +67,8 @@ void EchoAudibility::UpdateRenderStationarityFlags(
 }
 
 void EchoAudibility::UpdateRenderNoiseEstimator(
-    const VectorBuffer& spectrum_buffer,
-    const MatrixBuffer& block_buffer,
+    const SpectrumBuffer& spectrum_buffer,
+    const BlockBuffer& block_buffer,
     bool external_delay_seen) {
   if (!render_spectrum_write_prev_) {
     render_spectrum_write_prev_ = spectrum_buffer.write;
@@ -90,7 +90,7 @@ void EchoAudibility::UpdateRenderNoiseEstimator(
   render_spectrum_write_prev_ = render_spectrum_write_current;
 }
 
-bool EchoAudibility::IsRenderTooLow(const MatrixBuffer& block_buffer) {
+bool EchoAudibility::IsRenderTooLow(const BlockBuffer& block_buffer) {
   bool too_low = false;
   const int render_block_write_current = block_buffer.write;
   if (render_block_write_current == render_block_write_prev_) {

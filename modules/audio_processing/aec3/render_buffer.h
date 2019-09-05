@@ -18,10 +18,10 @@
 
 #include "api/array_view.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
+#include "modules/audio_processing/aec3/block_buffer.h"
 #include "modules/audio_processing/aec3/fft_buffer.h"
 #include "modules/audio_processing/aec3/fft_data.h"
-#include "modules/audio_processing/aec3/matrix_buffer.h"
-#include "modules/audio_processing/aec3/vector_buffer.h"
+#include "modules/audio_processing/aec3/spectrum_buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
 
@@ -30,8 +30,8 @@ namespace webrtc {
 // Provides a buffer of the render data for the echo remover.
 class RenderBuffer {
  public:
-  RenderBuffer(MatrixBuffer* block_buffer,
-               VectorBuffer* spectrum_buffer,
+  RenderBuffer(BlockBuffer* block_buffer,
+               SpectrumBuffer* spectrum_buffer,
                FftBuffer* fft_buffer);
   ~RenderBuffer();
 
@@ -95,14 +95,14 @@ class RenderBuffer {
   }
 
   // Returns a reference to the spectrum buffer.
-  const VectorBuffer& GetSpectrumBuffer() const { return *spectrum_buffer_; }
+  const SpectrumBuffer& GetSpectrumBuffer() const { return *spectrum_buffer_; }
 
   // Returns a reference to the block buffer.
-  const MatrixBuffer& GetBlockBuffer() const { return *block_buffer_; }
+  const BlockBuffer& GetBlockBuffer() const { return *block_buffer_; }
 
  private:
-  const MatrixBuffer* const block_buffer_;
-  const VectorBuffer* const spectrum_buffer_;
+  const BlockBuffer* const block_buffer_;
+  const SpectrumBuffer* const spectrum_buffer_;
   const FftBuffer* const fft_buffer_;
   bool render_activity_ = false;
   RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(RenderBuffer);

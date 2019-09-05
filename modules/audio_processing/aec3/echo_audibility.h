@@ -15,10 +15,10 @@
 
 #include "absl/types/optional.h"
 #include "api/array_view.h"
-#include "modules/audio_processing/aec3/matrix_buffer.h"
+#include "modules/audio_processing/aec3/block_buffer.h"
 #include "modules/audio_processing/aec3/render_buffer.h"
+#include "modules/audio_processing/aec3/spectrum_buffer.h"
 #include "modules/audio_processing/aec3/stationarity_estimator.h"
-#include "modules/audio_processing/aec3/vector_buffer.h"
 #include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
@@ -64,13 +64,13 @@ class EchoAudibility {
 
   // Updates the noise estimator with the new render data since the previous
   // call to this method.
-  void UpdateRenderNoiseEstimator(const VectorBuffer& spectrum_buffer,
-                                  const MatrixBuffer& block_buffer,
+  void UpdateRenderNoiseEstimator(const SpectrumBuffer& spectrum_buffer,
+                                  const BlockBuffer& block_buffer,
                                   bool external_delay_seen);
 
   // Returns a bool being true if the render signal contains just close to zero
   // values.
-  bool IsRenderTooLow(const MatrixBuffer& block_buffer);
+  bool IsRenderTooLow(const BlockBuffer& block_buffer);
 
   absl::optional<int> render_spectrum_write_prev_;
   int render_block_write_prev_;

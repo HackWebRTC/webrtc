@@ -8,15 +8,15 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/audio_processing/aec3/vector_buffer.h"
+#include "modules/audio_processing/aec3/spectrum_buffer.h"
 
 #include <algorithm>
 
 namespace webrtc {
 
-VectorBuffer::VectorBuffer(size_t size,
-                           size_t num_channels,
-                           size_t spectrum_length)
+SpectrumBuffer::SpectrumBuffer(size_t size,
+                               size_t num_channels,
+                               size_t spectrum_length)
     : size(static_cast<int>(size)),
       buffer(size,
              std::vector<std::vector<float>>(
@@ -29,6 +29,6 @@ VectorBuffer::VectorBuffer(size_t size,
   }
 }
 
-VectorBuffer::~VectorBuffer() = default;
+SpectrumBuffer::~SpectrumBuffer() = default;
 
 }  // namespace webrtc

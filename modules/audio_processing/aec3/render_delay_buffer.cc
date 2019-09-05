@@ -22,13 +22,13 @@
 #include "api/audio/echo_canceller3_config.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
 #include "modules/audio_processing/aec3/aec3_fft.h"
+#include "modules/audio_processing/aec3/block_buffer.h"
 #include "modules/audio_processing/aec3/decimator.h"
 #include "modules/audio_processing/aec3/downsampled_render_buffer.h"
 #include "modules/audio_processing/aec3/fft_buffer.h"
 #include "modules/audio_processing/aec3/fft_data.h"
-#include "modules/audio_processing/aec3/matrix_buffer.h"
 #include "modules/audio_processing/aec3/render_buffer.h"
-#include "modules/audio_processing/aec3/vector_buffer.h"
+#include "modules/audio_processing/aec3/spectrum_buffer.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
@@ -72,8 +72,8 @@ class RenderDelayBufferImpl final : public RenderDelayBuffer {
   const EchoCanceller3Config config_;
   size_t down_sampling_factor_;
   const int sub_block_size_;
-  MatrixBuffer blocks_;
-  VectorBuffer spectra_;
+  BlockBuffer blocks_;
+  SpectrumBuffer spectra_;
   FftBuffer ffts_;
   absl::optional<size_t> delay_;
   RenderBuffer echo_remover_buffer_;

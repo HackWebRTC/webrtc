@@ -20,7 +20,7 @@
 #include "modules/audio_processing/aec3/aec_state.h"
 #include "modules/audio_processing/aec3/render_buffer.h"
 #include "modules/audio_processing/aec3/reverb_model.h"
-#include "modules/audio_processing/aec3/vector_buffer.h"
+#include "modules/audio_processing/aec3/spectrum_buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
 
@@ -61,7 +61,7 @@ class ResidualEchoEstimator {
 
   // Estimates the echo generating signal power as gated maximal power over a
   // time window.
-  void EchoGeneratingPower(const VectorBuffer& spectrum_buffer,
+  void EchoGeneratingPower(const SpectrumBuffer& spectrum_buffer,
                            const EchoCanceller3Config::EchoModel& echo_model,
                            int filter_delay_blocks,
                            bool apply_noise_gating,

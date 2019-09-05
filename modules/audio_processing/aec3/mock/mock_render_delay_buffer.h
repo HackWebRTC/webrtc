@@ -48,8 +48,8 @@ class MockRenderDelayBuffer : public RenderDelayBuffer {
   const DownsampledRenderBuffer& FakeGetDownsampledRenderBuffer() const {
     return downsampled_render_buffer_;
   }
-  MatrixBuffer block_buffer_;
-  VectorBuffer spectrum_buffer_;
+  BlockBuffer block_buffer_;
+  SpectrumBuffer spectrum_buffer_;
   FftBuffer fft_buffer_;
   RenderBuffer render_buffer_;
   DownsampledRenderBuffer downsampled_render_buffer_;
