@@ -1034,13 +1034,12 @@ class FakePacketSocketFactory : public rtc::PacketSocketFactory {
     return result;
   }
 
-  // TODO(?): |proxy_info| and |user_agent| should be set
-  // per-factory and not when socket is created.
-  AsyncPacketSocket* CreateClientTcpSocket(const SocketAddress& local_address,
-                                           const SocketAddress& remote_address,
-                                           const rtc::ProxyInfo& proxy_info,
-                                           const std::string& user_agent,
-                                           int opts) override {
+  AsyncPacketSocket* CreateClientTcpSocket(
+      const SocketAddress& local_address,
+      const SocketAddress& remote_address,
+      const rtc::ProxyInfo& proxy_info,
+      const std::string& user_agent,
+      const rtc::PacketSocketTcpOptions& opts) override {
     EXPECT_TRUE(next_client_tcp_socket_ != NULL);
     AsyncPacketSocket* result = next_client_tcp_socket_;
     next_client_tcp_socket_ = NULL;

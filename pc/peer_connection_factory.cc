@@ -229,7 +229,7 @@ PeerConnectionFactory::CreatePeerConnection(
     std::unique_ptr<cricket::PortAllocator> allocator,
     std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator,
     PeerConnectionObserver* observer) {
-  // Convert the legacy API into the new depnedency structure.
+  // Convert the legacy API into the new dependency structure.
   PeerConnectionDependencies dependencies(observer);
   dependencies.allocator = std::move(allocator);
   dependencies.cert_generator = std::move(cert_generator);
@@ -242,6 +242,9 @@ PeerConnectionFactory::CreatePeerConnection(
     const PeerConnectionInterface::RTCConfiguration& configuration,
     PeerConnectionDependencies dependencies) {
   RTC_DCHECK(signaling_thread_->IsCurrent());
+  RTC_DCHECK(!(dependencies.allocator && dependencies.packet_socket_factory))
+      << "You can't set both allocator and packet_socket_factory; "
+         "the former is going away (see bugs.webrtc.org/7447";
 
   // Set internal defaults if optional dependencies are not set.
   if (!dependencies.cert_generator) {
@@ -250,10 +253,17 @@ PeerConnectionFactory::CreatePeerConnection(
                                                         network_thread_);
   }
   if (!dependencies.allocator) {
+    rtc::PacketSocketFactory* packet_socket_factory;
+    if (dependencies.packet_socket_factory)
+      packet_socket_factory = dependencies.packet_socket_factory.get();
+    else
+      packet_socket_factory = default_socket_factory_.get();
+
     network_thread_->Invoke<void>(RTC_FROM_HERE, [this, &configuration,
-                                                  &dependencies]() {
+                                                  &dependencies,
+                                                  &packet_socket_factory]() {
       dependencies.allocator = absl::make_unique<cricket::BasicPortAllocator>(
-          default_network_manager_.get(), default_socket_factory_.get(),
+          default_network_manager_.get(), packet_socket_factory,
           configuration.turn_customizer);
     });
   }

@@ -50,7 +50,6 @@ rtc_static_library("rtc_p2p") {
     "base/p2p_constants.h",
     "base/p2p_transport_channel.cc",
     "base/p2p_transport_channel.h",
-    "base/packet_socket_factory.cc",
     "base/packet_socket_factory.h",
     "base/packet_transport_interface.h",
     "base/packet_transport_internal.cc",
@@ -93,6 +92,7 @@ rtc_static_library("rtc_p2p") {
 
   deps = [
     "../api:libjingle_peerconnection_api",
+    "../api:packet_socket_factory",
     "../api:scoped_refptr",
     "../api/rtc_event_log",
     "../api/transport:enums",
@@ -164,6 +164,7 @@ if (rtc_include_tests) {
       ":p2p_server_utils",
       ":rtc_p2p",
       "../api:libjingle_peerconnection_api",
+      "../api:packet_socket_factory",
       "../rtc_base",
       "../rtc_base:gunit_helpers",
       "../rtc_base:rtc_base_approved",

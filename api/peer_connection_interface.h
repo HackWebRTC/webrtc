@@ -86,6 +86,7 @@
 #include "api/media_stream_interface.h"
 #include "api/media_transport_interface.h"
 #include "api/network_state_predictor.h"
+#include "api/packet_socket_factory.h"
 #include "api/rtc_error.h"
 #include "api/rtc_event_log/rtc_event_log_factory_interface.h"
 #include "api/rtc_event_log_output.h"
@@ -1255,7 +1256,11 @@ struct PeerConnectionDependencies final {
   // Mandatory dependencies
   PeerConnectionObserver* observer = nullptr;
   // Optional dependencies
+  // TODO(bugs.webrtc.org/7447): remove port allocator once downstream is
+  // updated. For now, you can only set one of allocator and
+  // packet_socket_factory, not both.
   std::unique_ptr<cricket::PortAllocator> allocator;
+  std::unique_ptr<rtc::PacketSocketFactory> packet_socket_factory;
   std::unique_ptr<webrtc::AsyncResolverFactory> async_resolver_factory;
   std::unique_ptr<rtc::RTCCertificateGeneratorInterface> cert_generator;
   std::unique_ptr<rtc::SSLCertificateVerifier> tls_cert_verifier;

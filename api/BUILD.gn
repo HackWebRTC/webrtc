@@ -135,6 +135,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     "media_transport_interface.cc",
     "media_transport_interface.h",
     "notifier.h",
+    "packet_socket_factory.h",
     "peer_connection_factory_proxy.h",
     "peer_connection_interface.cc",
     "peer_connection_interface.h",
@@ -165,6 +166,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     ":fec_controller_api",
     ":libjingle_logging_api",
     ":network_state_predictor_api",
+    ":packet_socket_factory",
     ":rtc_stats_api",
     ":rtp_packet_info",
     ":rtp_parameters",
@@ -198,6 +200,20 @@ rtc_static_library("libjingle_peerconnection_api") {
     "../rtc_base:checks",
     "../rtc_base:deprecation",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base/system:rtc_export",
+  ]
+}
+
+rtc_source_set("packet_socket_factory") {
+  visibility = [ "*" ]
+  sources = [
+    # TODO(bugs.webrtc.org/7447: remove .h files from the api target once
+    # downstream is updated to use the new target.
+    "async_resolver_factory.h",
+    "packet_socket_factory.h",
+  ]
+  deps = [
+    "../rtc_base:rtc_base",
     "../rtc_base/system:rtc_export",
   ]
 }

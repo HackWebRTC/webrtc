@@ -519,9 +519,11 @@ void RelayEntry::Connect() {
     int opts = (ra->proto == PROTO_SSLTCP)
                    ? rtc::PacketSocketFactory::OPT_TLS_FAKE
                    : 0;
+    rtc::PacketSocketTcpOptions tcp_opts;
+    tcp_opts.opts = opts;
     socket = port_->socket_factory()->CreateClientTcpSocket(
         rtc::SocketAddress(port_->Network()->GetBestIP(), 0), ra->address,
-        port_->proxy(), port_->user_agent(), opts);
+        port_->proxy(), port_->user_agent(), tcp_opts);
   } else {
     RTC_LOG(LS_WARNING) << "Unknown protocol: " << ra->proto;
   }

@@ -550,10 +550,12 @@ void TCPConnection::CreateOutgoingTcpSocket() {
   int opts = (remote_candidate().protocol() == SSLTCP_PROTOCOL_NAME)
                  ? rtc::PacketSocketFactory::OPT_TLS_FAKE
                  : 0;
+  rtc::PacketSocketTcpOptions tcp_opts;
+  tcp_opts.opts = opts;
   socket_.reset(port()->socket_factory()->CreateClientTcpSocket(
       rtc::SocketAddress(port()->Network()->GetBestIP(), 0),
       remote_candidate().address(), port()->proxy(), port()->user_agent(),
-      opts));
+      tcp_opts));
   if (socket_) {
     RTC_LOG(LS_VERBOSE) << ToString() << ": Connecting from "
                         << socket_->GetLocalAddress().ToSensitiveString()

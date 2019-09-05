@@ -52,6 +52,7 @@ rtc_source_set("peer_connection_quality_test_params") {
     "../../../api:callfactory_api",
     "../../../api:fec_controller_api",
     "../../../api:libjingle_peerconnection_api",
+    "../../../api:packet_socket_factory",
     "../../../api:peer_connection_quality_test_fixture_api",
     "../../../api/rtc_event_log",
     "../../../api/task_queue",
