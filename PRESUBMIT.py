@@ -910,13 +910,14 @@ def CheckApiDepsFileIsUpToDate(input_api, output_api):
     deps_content = _ParseDeps(f.read())
 
   include_rules = deps_content.get('include_rules', [])
+  dirs_to_skip = set(['api', 'docs'])
 
   # Only check top level directories affected by the current CL.
   dirs_to_check = set()
   for f in input_api.AffectedFiles():
     path_tokens = [t for t in f.LocalPath().split(os.sep) if t]
     if len(path_tokens) > 1:
-      if (path_tokens[0] != 'api' and
+      if (path_tokens[0] not in dirs_to_skip and
           os.path.isdir(os.path.join(input_api.PresubmitLocalPath(),
                                      path_tokens[0]))):
         dirs_to_check.add(path_tokens[0])
