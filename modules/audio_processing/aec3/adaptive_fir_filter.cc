@@ -136,11 +136,11 @@ void UpdateErlEstimator_SSE2(
 void AdaptPartitions(const RenderBuffer& render_buffer,
                      const FftData& G,
                      rtc::ArrayView<FftData> H) {
-  rtc::ArrayView<const FftData> render_buffer_data =
+  rtc::ArrayView<const std::vector<FftData>> render_buffer_data =
       render_buffer.GetFftBuffer();
   size_t index = render_buffer.Position();
   for (auto& H_j : H) {
-    const FftData& X = render_buffer_data[index];
+    const FftData& X = render_buffer_data[index][/*channel=*/0];
     for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
       H_j.re[k] += X.re[k] * G.re[k] + X.im[k] * G.im[k];
       H_j.im[k] += X.re[k] * G.im[k] - X.im[k] * G.re[k];
@@ -155,23 +155,25 @@ void AdaptPartitions(const RenderBuffer& render_buffer,
 void AdaptPartitions_NEON(const RenderBuffer& render_buffer,
                           const FftData& G,
                           rtc::ArrayView<FftData> H) {
-  rtc::ArrayView<const FftData> render_buffer_data =
+  rtc::ArrayView<const std::vector<FftData>> render_buffer_data =
       render_buffer.GetFftBuffer();
   const int lim1 =
       std::min(render_buffer_data.size() - render_buffer.Position(), H.size());
   const int lim2 = H.size();
   constexpr int kNumFourBinBands = kFftLengthBy2 / 4;
   FftData* H_j = &H[0];
-  const FftData* X = &render_buffer_data[render_buffer.Position()];
+  const std::vector<FftData>* X_channels =
+      &render_buffer_data[render_buffer.Position()];
   int limit = lim1;
   int j = 0;
   do {
-    for (; j < limit; ++j, ++H_j, ++X) {
+    for (; j < limit; ++j, ++H_j, ++X_channels) {
+      const FftData& X = (*X_channels)[/*channel=*/0];
       for (int k = 0, n = 0; n < kNumFourBinBands; ++n, k += 4) {
         const float32x4_t G_re = vld1q_f32(&G.re[k]);
         const float32x4_t G_im = vld1q_f32(&G.im[k]);
-        const float32x4_t X_re = vld1q_f32(&X->re[k]);
-        const float32x4_t X_im = vld1q_f32(&X->im[k]);
+        const float32x4_t X_re = vld1q_f32(&X.re[k]);
+        const float32x4_t X_im = vld1q_f32(&X.im[k]);
         const float32x4_t H_re = vld1q_f32(&H_j->re[k]);
         const float32x4_t H_im = vld1q_f32(&H_j->im[k]);
         const float32x4_t a = vmulq_f32(X_re, G_re);
@@ -186,23 +188,24 @@ void AdaptPartitions_NEON(const RenderBuffer& render_buffer,
       }
     }
 
-    X = &render_buffer_data[0];
+    X_channels = &render_buffer_data[0];
     limit = lim2;
   } while (j < lim2);
 
   H_j = &H[0];
-  X = &render_buffer_data[render_buffer.Position()];
+  X_channels = &render_buffer_data[render_buffer.Position()];
   limit = lim1;
   j = 0;
   do {
-    for (; j < limit; ++j, ++H_j, ++X) {
-      H_j->re[kFftLengthBy2] += X->re[kFftLengthBy2] * G.re[kFftLengthBy2] +
-                                X->im[kFftLengthBy2] * G.im[kFftLengthBy2];
-      H_j->im[kFftLengthBy2] += X->re[kFftLengthBy2] * G.im[kFftLengthBy2] -
-                                X->im[kFftLengthBy2] * G.re[kFftLengthBy2];
+    for (; j < limit; ++j, ++H_j, ++X_channels) {
+      const FftData& X = (*X_channels)[/*channel=*/0];
+      H_j->re[kFftLengthBy2] += X.re[kFftLengthBy2] * G.re[kFftLengthBy2] +
+                                X.im[kFftLengthBy2] * G.im[kFftLengthBy2];
+      H_j->im[kFftLengthBy2] += X.re[kFftLengthBy2] * G.im[kFftLengthBy2] -
+                                X.im[kFftLengthBy2] * G.re[kFftLengthBy2];
     }
 
-    X = &render_buffer_data[0];
+    X_channels = &render_buffer_data[0];
     limit = lim2;
   } while (j < lim2);
 }
@@ -213,14 +216,14 @@ void AdaptPartitions_NEON(const RenderBuffer& render_buffer,
 void AdaptPartitions_SSE2(const RenderBuffer& render_buffer,
                           const FftData& G,
                           rtc::ArrayView<FftData> H) {
-  rtc::ArrayView<const FftData> render_buffer_data =
+  rtc::ArrayView<const std::vector<FftData>> render_buffer_data =
       render_buffer.GetFftBuffer();
   const int lim1 =
       std::min(render_buffer_data.size() - render_buffer.Position(), H.size());
   const int lim2 = H.size();
   constexpr int kNumFourBinBands = kFftLengthBy2 / 4;
   FftData* H_j;
-  const FftData* X;
+  const std::vector<FftData>* X_channels;
   int limit;
   int j;
   for (int k = 0, n = 0; n < kNumFourBinBands; ++n, k += 4) {
@@ -228,13 +231,14 @@ void AdaptPartitions_SSE2(const RenderBuffer& render_buffer,
     const __m128 G_im = _mm_loadu_ps(&G.im[k]);
 
     H_j = &H[0];
-    X = &render_buffer_data[render_buffer.Position()];
+    X_channels = &render_buffer_data[render_buffer.Position()];
     limit = lim1;
     j = 0;
     do {
-      for (; j < limit; ++j, ++H_j, ++X) {
-        const __m128 X_re = _mm_loadu_ps(&X->re[k]);
-        const __m128 X_im = _mm_loadu_ps(&X->im[k]);
+      for (; j < limit; ++j, ++H_j, ++X_channels) {
+        const FftData& X = (*X_channels)[/*channel=*/0];
+        const __m128 X_re = _mm_loadu_ps(&X.re[k]);
+        const __m128 X_im = _mm_loadu_ps(&X.im[k]);
         const __m128 H_re = _mm_loadu_ps(&H_j->re[k]);
         const __m128 H_im = _mm_loadu_ps(&H_j->im[k]);
         const __m128 a = _mm_mul_ps(X_re, G_re);
@@ -249,24 +253,25 @@ void AdaptPartitions_SSE2(const RenderBuffer& render_buffer,
         _mm_storeu_ps(&H_j->im[k], h);
       }
 
-      X = &render_buffer_data[0];
+      X_channels = &render_buffer_data[0];
       limit = lim2;
     } while (j < lim2);
   }
 
   H_j = &H[0];
-  X = &render_buffer_data[render_buffer.Position()];
+  X_channels = &render_buffer_data[render_buffer.Position()];
   limit = lim1;
   j = 0;
   do {
-    for (; j < limit; ++j, ++H_j, ++X) {
-      H_j->re[kFftLengthBy2] += X->re[kFftLengthBy2] * G.re[kFftLengthBy2] +
-                                X->im[kFftLengthBy2] * G.im[kFftLengthBy2];
-      H_j->im[kFftLengthBy2] += X->re[kFftLengthBy2] * G.im[kFftLengthBy2] -
-                                X->im[kFftLengthBy2] * G.re[kFftLengthBy2];
+    for (; j < limit; ++j, ++H_j, ++X_channels) {
+      const FftData& X = (*X_channels)[/*channel=*/0];
+      H_j->re[kFftLengthBy2] += X.re[kFftLengthBy2] * G.re[kFftLengthBy2] +
+                                X.im[kFftLengthBy2] * G.im[kFftLengthBy2];
+      H_j->im[kFftLengthBy2] += X.re[kFftLengthBy2] * G.im[kFftLengthBy2] -
+                                X.im[kFftLengthBy2] * G.re[kFftLengthBy2];
     }
 
-    X = &render_buffer_data[0];
+    X_channels = &render_buffer_data[0];
     limit = lim2;
   } while (j < lim2);
 }
@@ -279,11 +284,11 @@ void ApplyFilter(const RenderBuffer& render_buffer,
   S->re.fill(0.f);
   S->im.fill(0.f);
 
-  rtc::ArrayView<const FftData> render_buffer_data =
+  rtc::ArrayView<const std::vector<FftData>> render_buffer_data =
       render_buffer.GetFftBuffer();
   size_t index = render_buffer.Position();
   for (auto& H_j : H) {
-    const FftData& X = render_buffer_data[index];
+    const FftData& X = render_buffer_data[index][0];
     for (size_t k = 0; k < kFftLengthBy2Plus1; ++k) {
       S->re[k] += X.re[k] * H_j.re[k] - X.im[k] * H_j.im[k];
       S->im[k] += X.re[k] * H_j.im[k] + X.im[k] * H_j.re[k];
@@ -300,22 +305,24 @@ void ApplyFilter_NEON(const RenderBuffer& render_buffer,
   RTC_DCHECK_GE(H.size(), H.size() - 1);
   S->Clear();
 
-  rtc::ArrayView<const FftData> render_buffer_data =
+  rtc::ArrayView<const std::vector<FftData>> render_buffer_data =
       render_buffer.GetFftBuffer();
   const int lim1 =
       std::min(render_buffer_data.size() - render_buffer.Position(), H.size());
   const int lim2 = H.size();
   constexpr int kNumFourBinBands = kFftLengthBy2 / 4;
   const FftData* H_j = &H[0];
-  const FftData* X = &render_buffer_data[render_buffer.Position()];
+  const std::vector<FftData>* X_channels =
+      &render_buffer_data[render_buffer.Position()];
 
   int j = 0;
   int limit = lim1;
   do {
-    for (; j < limit; ++j, ++H_j, ++X) {
+    for (; j < limit; ++j, ++H_j, ++X_channels) {
+      const FftData& X = (*X_channels)[/*channel=*/0];
       for (int k = 0, n = 0; n < kNumFourBinBands; ++n, k += 4) {
-        const float32x4_t X_re = vld1q_f32(&X->re[k]);
-        const float32x4_t X_im = vld1q_f32(&X->im[k]);
+        const float32x4_t X_re = vld1q_f32(&X.re[k]);
+        const float32x4_t X_im = vld1q_f32(&X.im[k]);
         const float32x4_t H_re = vld1q_f32(&H_j->re[k]);
         const float32x4_t H_im = vld1q_f32(&H_j->im[k]);
         const float32x4_t S_re = vld1q_f32(&S->re[k]);
@@ -331,22 +338,23 @@ void ApplyFilter_NEON(const RenderBuffer& render_buffer,
       }
     }
     limit = lim2;
-    X = &render_buffer_data[0];
+    X_channels = &render_buffer_data[0];
   } while (j < lim2);
 
   H_j = &H[0];
-  X = &render_buffer_data[render_buffer.Position()];
+  X_channels = &render_buffer_data[render_buffer.Position()];
   j = 0;
   limit = lim1;
   do {
-    for (; j < limit; ++j, ++H_j, ++X) {
-      S->re[kFftLengthBy2] += X->re[kFftLengthBy2] * H_j->re[kFftLengthBy2] -
-                              X->im[kFftLengthBy2] * H_j->im[kFftLengthBy2];
-      S->im[kFftLengthBy2] += X->re[kFftLengthBy2] * H_j->im[kFftLengthBy2] +
-                              X->im[kFftLengthBy2] * H_j->re[kFftLengthBy2];
+    for (; j < limit; ++j, ++H_j, ++X_channels) {
+      const FftData& X = (*X_channels)[/*channel=*/0];
+      S->re[kFftLengthBy2] += X.re[kFftLengthBy2] * H_j->re[kFftLengthBy2] -
+                              X.im[kFftLengthBy2] * H_j->im[kFftLengthBy2];
+      S->im[kFftLengthBy2] += X.re[kFftLengthBy2] * H_j->im[kFftLengthBy2] +
+                              X.im[kFftLengthBy2] * H_j->re[kFftLengthBy2];
     }
     limit = lim2;
-    X = &render_buffer_data[0];
+    X_channels = &render_buffer_data[0];
   } while (j < lim2);
 }
 #endif
@@ -360,22 +368,24 @@ void ApplyFilter_SSE2(const RenderBuffer& render_buffer,
   S->re.fill(0.f);
   S->im.fill(0.f);
 
-  rtc::ArrayView<const FftData> render_buffer_data =
+  rtc::ArrayView<const std::vector<FftData>> render_buffer_data =
       render_buffer.GetFftBuffer();
   const int lim1 =
       std::min(render_buffer_data.size() - render_buffer.Position(), H.size());
   const int lim2 = H.size();
   constexpr int kNumFourBinBands = kFftLengthBy2 / 4;
   const FftData* H_j = &H[0];
-  const FftData* X = &render_buffer_data[render_buffer.Position()];
+  const std::vector<FftData>* X_channels =
+      &render_buffer_data[render_buffer.Position()];
 
   int j = 0;
   int limit = lim1;
   do {
-    for (; j < limit; ++j, ++H_j, ++X) {
+    for (; j < limit; ++j, ++H_j, ++X_channels) {
+      const FftData& X = (*X_channels)[/*channel=*/0];
       for (int k = 0, n = 0; n < kNumFourBinBands; ++n, k += 4) {
-        const __m128 X_re = _mm_loadu_ps(&X->re[k]);
-        const __m128 X_im = _mm_loadu_ps(&X->im[k]);
+        const __m128 X_re = _mm_loadu_ps(&X.re[k]);
+        const __m128 X_im = _mm_loadu_ps(&X.im[k]);
         const __m128 H_re = _mm_loadu_ps(&H_j->re[k]);
         const __m128 H_im = _mm_loadu_ps(&H_j->im[k]);
         const __m128 S_re = _mm_loadu_ps(&S->re[k]);
@@ -393,22 +403,23 @@ void ApplyFilter_SSE2(const RenderBuffer& render_buffer,
       }
     }
     limit = lim2;
-    X = &render_buffer_data[0];
+    X_channels = &render_buffer_data[0];
   } while (j < lim2);
 
   H_j = &H[0];
-  X = &render_buffer_data[render_buffer.Position()];
+  X_channels = &render_buffer_data[render_buffer.Position()];
   j = 0;
   limit = lim1;
   do {
-    for (; j < limit; ++j, ++H_j, ++X) {
-      S->re[kFftLengthBy2] += X->re[kFftLengthBy2] * H_j->re[kFftLengthBy2] -
-                              X->im[kFftLengthBy2] * H_j->im[kFftLengthBy2];
-      S->im[kFftLengthBy2] += X->re[kFftLengthBy2] * H_j->im[kFftLengthBy2] +
-                              X->im[kFftLengthBy2] * H_j->re[kFftLengthBy2];
+    for (; j < limit; ++j, ++H_j, ++X_channels) {
+      const FftData& X = (*X_channels)[/*channel=*/0];
+      S->re[kFftLengthBy2] += X.re[kFftLengthBy2] * H_j->re[kFftLengthBy2] -
+                              X.im[kFftLengthBy2] * H_j->im[kFftLengthBy2];
+      S->im[kFftLengthBy2] += X.re[kFftLengthBy2] * H_j->im[kFftLengthBy2] +
+                              X.im[kFftLengthBy2] * H_j->re[kFftLengthBy2];
     }
     limit = lim2;
-    X = &render_buffer_data[0];
+    X_channels = &render_buffer_data[0];
   } while (j < lim2);
 }
 #endif

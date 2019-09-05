@@ -52,7 +52,7 @@ class RenderBuffer {
   }
 
   // Returns the circular fft buffer.
-  rtc::ArrayView<const FftData> GetFftBuffer() const {
+  rtc::ArrayView<const std::vector<FftData>> GetFftBuffer() const {
     return fft_buffer_->buffer;
   }
 

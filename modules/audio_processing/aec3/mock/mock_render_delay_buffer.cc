@@ -22,7 +22,7 @@ MockRenderDelayBuffer::MockRenderDelayBuffer(int sample_rate_hz,
       spectrum_buffer_(block_buffer_.buffer.size(),
                        num_channels,
                        kFftLengthBy2Plus1),
-      fft_buffer_(block_buffer_.buffer.size()),
+      fft_buffer_(block_buffer_.buffer.size(), num_channels),
       render_buffer_(&block_buffer_, &spectrum_buffer_, &fft_buffer_),
       downsampled_render_buffer_(GetDownSampledBufferSize(4, 4)) {
   ON_CALL(*this, GetRenderBuffer())
