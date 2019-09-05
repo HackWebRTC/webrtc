@@ -14,9 +14,11 @@
 
 #include "absl/memory/memory.h"
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/critical_section.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/null_socket_server.h"
 #include "rtc_base/thread.h"
+#include "rtc_base/thread_annotations.h"
 #include "test/gtest.h"
 
 namespace rtc {
@@ -146,17 +148,24 @@ class OwnerThread : public Thread, public sigslot::has_slots<> {
     signal_thread->Release();
     // Delete |signal_thread|.
     signal_thread->Destroy(true);
-    has_run_ = true;
+    {
+      rtc::CritScope cs(&crit_);
+      has_run_ = true;
+    }
   }
 
-  bool has_run() { return has_run_; }
-  void OnWorkDone(SignalThread* signal_thread) {
+  bool has_run() {
+    rtc::CritScope cs(&crit_);
+    return has_run_;
+  }
+  void OnWorkDone(SignalThread* /*signal_thread*/) {
     FAIL() << " This shouldn't get called.";
   }
 
  private:
+  rtc::CriticalSection crit_;
   SignalThreadTest* harness_;
-  bool has_run_;
+  bool has_run_ RTC_GUARDED_BY(crit_);
   RTC_DISALLOW_COPY_AND_ASSIGN(OwnerThread);
 };
 
