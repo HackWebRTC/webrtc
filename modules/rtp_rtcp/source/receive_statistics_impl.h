@@ -33,8 +33,6 @@ class StreamStatisticianImpl : public StreamStatistician {
 
   RtpReceiveStats GetStats() const override;
 
-  // |reset| here and in next method restarts calculation of fraction_lost stat.
-  bool GetStatistics(RtcpStatistics* statistics, bool reset) override;
   bool GetActiveStatisticsAndReset(RtcpStatistics* statistics);
   absl::optional<int> GetFractionLostInPercent() const override;
   StreamDataCounters GetReceiveStreamDataCounters() const override;
@@ -99,7 +97,6 @@ class StreamStatisticianImpl : public StreamStatistician {
   // Counter values when we sent the last report.
   int32_t last_report_cumulative_loss_ RTC_GUARDED_BY(&stream_lock_);
   int64_t last_report_seq_max_ RTC_GUARDED_BY(&stream_lock_);
-  RtcpStatistics last_reported_statistics_ RTC_GUARDED_BY(&stream_lock_);
 };
 
 class ReceiveStatisticsImpl : public ReceiveStatistics {

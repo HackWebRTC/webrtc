@@ -182,28 +182,6 @@ RtpReceiveStats StreamStatisticianImpl::GetStats() const {
   return stats;
 }
 
-bool StreamStatisticianImpl::GetStatistics(RtcpStatistics* statistics,
-                                           bool reset) {
-  rtc::CritScope cs(&stream_lock_);
-  if (!ReceivedRtpPacket()) {
-    return false;
-  }
-
-  if (!reset) {
-    if (!ReceivedRtpPacket()) {
-      // No report.
-      return false;
-    }
-    // Just get last report.
-    *statistics = last_reported_statistics_;
-    return true;
-  }
-
-  *statistics = CalculateRtcpStatistics();
-
-  return true;
-}
-
 bool StreamStatisticianImpl::GetActiveStatisticsAndReset(
     RtcpStatistics* statistics) {
   rtc::CritScope cs(&stream_lock_);
@@ -249,9 +227,6 @@ RtcpStatistics StreamStatisticianImpl::CalculateRtcpStatistics() {
       static_cast<uint32_t>(received_seq_max_);
   // Note: internal jitter value is in Q4 and needs to be scaled by 1/16.
   stats.jitter = jitter_q4_ >> 4;
-
-  // Store this report.
-  last_reported_statistics_ = stats;
 
   // Only for report blocks in RTCP SR and RR.
   last_report_cumulative_loss_ = cumulative_loss_;

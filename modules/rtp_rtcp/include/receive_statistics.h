@@ -43,10 +43,6 @@ class StreamStatistician {
 
   virtual RtpReceiveStats GetStats() const = 0;
 
-  // TODO(nisse): Delete, migrate users to the above the GetStats method.
-  RTC_DEPRECATED
-  virtual bool GetStatistics(RtcpStatistics* statistics, bool reset) = 0;
-
   // Returns average over the stream life time.
   virtual absl::optional<int> GetFractionLostInPercent() const = 0;
 
