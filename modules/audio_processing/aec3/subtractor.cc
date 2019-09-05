@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "api/array_view.h"
+#include "modules/audio_processing/aec3/adaptive_fir_filter_erl.h"
 #include "modules/audio_processing/aec3/fft_data.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
@@ -81,8 +82,16 @@ Subtractor::Subtractor(const EchoCanceller3Config& config,
       G_main_(config_.filter.main_initial,
               config_.filter.config_change_duration_blocks),
       G_shadow_(config_.filter.shadow_initial,
-                config.filter.config_change_duration_blocks) {
+                config.filter.config_change_duration_blocks),
+      main_frequency_response_(main_filter_.max_filter_size_partitions(),
+                               std::array<float, kFftLengthBy2Plus1>()),
+      main_impulse_response_(
+          GetTimeDomainLength(main_filter_.max_filter_size_partitions()),
+          0.f) {
   RTC_DCHECK(data_dumper_);
+  for (auto& H2_k : main_frequency_response_) {
+    H2_k.fill(0.f);
+  }
 }
 
 Subtractor::~Subtractor() = default;
@@ -150,6 +159,9 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
   if (filter_misadjustment_estimator_.IsAdjustmentNeeded()) {
     float scale = filter_misadjustment_estimator_.GetMisadjustment();
     main_filter_.ScaleFilter(scale);
+    for (auto& h_k : main_impulse_response_) {
+      h_k *= scale;
+    }
     ScaleFilterOutput(y, scale, e_main, output->s_main);
     filter_misadjustment_estimator_.Reset();
     main_filter_adjusted = true;
@@ -184,13 +196,18 @@ void Subtractor::Process(const RenderBuffer& render_buffer,
 
   // Update the main filter.
   if (!main_filter_adjusted) {
-    G_main_.Compute(X2_main, render_signal_analyzer, *output, main_filter_,
-                    aec_state.SaturatedCapture(), &G);
+    std::array<float, kFftLengthBy2Plus1> erl;
+    ComputeErl(optimization_, main_frequency_response_, erl);
+    G_main_.Compute(X2_main, render_signal_analyzer, *output, erl,
+                    main_filter_.SizePartitions(), aec_state.SaturatedCapture(),
+                    &G);
   } else {
     G.re.fill(0.f);
     G.im.fill(0.f);
   }
-  main_filter_.Adapt(render_buffer, G);
+  main_filter_.Adapt(render_buffer, G, &main_impulse_response_);
+  main_filter_.ComputeFrequencyResponse(&main_frequency_response_);
+
   data_dumper_->DumpRaw("aec3_subtractor_G_main", G.re);
   data_dumper_->DumpRaw("aec3_subtractor_G_main", G.im);
 

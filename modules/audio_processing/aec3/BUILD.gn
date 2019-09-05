@@ -14,6 +14,8 @@ rtc_static_library("aec3") {
   sources = [
     "adaptive_fir_filter.cc",
     "adaptive_fir_filter.h",
+    "adaptive_fir_filter_erl.cc",
+    "adaptive_fir_filter_erl.h",
     "aec3_common.cc",
     "aec3_common.h",
     "aec3_fft.cc",
@@ -185,6 +187,7 @@ if (rtc_include_tests) {
 
     if (rtc_enable_protobuf) {
       sources += [
+        "adaptive_fir_filter_erl_unittest.cc",
         "adaptive_fir_filter_unittest.cc",
         "aec3_fft_unittest.cc",
         "aec_state_unittest.cc",

@@ -70,7 +70,8 @@ void MainFilterUpdateGain::Compute(
     const std::array<float, kFftLengthBy2Plus1>& render_power,
     const RenderSignalAnalyzer& render_signal_analyzer,
     const SubtractorOutput& subtractor_output,
-    const AdaptiveFirFilter& filter,
+    rtc::ArrayView<const float> erl,
+    size_t size_partitions,
     bool saturated_capture_signal,
     FftData* gain_fft) {
   RTC_DCHECK(gain_fft);
@@ -79,9 +80,8 @@ void MainFilterUpdateGain::Compute(
   const auto& E2_main = subtractor_output.E2_main;
   const auto& E2_shadow = subtractor_output.E2_shadow;
   FftData* G = gain_fft;
-  const size_t size_partitions = filter.SizePartitions();
   auto X2 = render_power;
-  const auto& erl = filter.Erl();
+
   ++call_counter_;
 
   UpdateCurrentConfig();

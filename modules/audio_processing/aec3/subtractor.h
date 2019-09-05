@@ -31,7 +31,6 @@
 #include "modules/audio_processing/aec3/subtractor_output.h"
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
 
@@ -44,6 +43,8 @@ class Subtractor {
              ApmDataDumper* data_dumper,
              Aec3Optimization optimization);
   ~Subtractor();
+  Subtractor(const Subtractor&) = delete;
+  Subtractor& operator=(const Subtractor&) = delete;
 
   // Performs the echo subtraction.
   void Process(const RenderBuffer& render_buffer,
@@ -60,18 +61,22 @@ class Subtractor {
   // Returns the block-wise frequency response for the main adaptive filter.
   const std::vector<std::array<float, kFftLengthBy2Plus1>>&
   FilterFrequencyResponse() const {
-    return main_filter_.FilterFrequencyResponse();
+    return main_frequency_response_;
   }
 
   // Returns the estimate of the impulse response for the main adaptive filter.
   const std::vector<float>& FilterImpulseResponse() const {
-    return main_filter_.FilterImpulseResponse();
+    return main_impulse_response_;
   }
 
   void DumpFilters() {
-    main_filter_.DumpFilter("aec3_subtractor_H_main", "aec3_subtractor_h_main");
-    shadow_filter_.DumpFilter("aec3_subtractor_H_shadow",
-                              "aec3_subtractor_h_shadow");
+    size_t current_size = main_impulse_response_.size();
+    main_impulse_response_.resize(main_impulse_response_.capacity());
+    data_dumper_->DumpRaw("aec3_subtractor_h_main", main_impulse_response_);
+    main_impulse_response_.resize(current_size);
+
+    main_filter_.DumpFilter("aec3_subtractor_H_main");
+    shadow_filter_.DumpFilter("aec3_subtractor_H_shadow");
   }
 
  private:
@@ -117,7 +122,8 @@ class Subtractor {
   ShadowFilterUpdateGain G_shadow_;
   FilterMisadjustmentEstimator filter_misadjustment_estimator_;
   size_t poor_shadow_filter_counter_ = 0;
-  RTC_DISALLOW_IMPLICIT_CONSTRUCTORS(Subtractor);
+  std::vector<std::array<float, kFftLengthBy2Plus1>> main_frequency_response_;
+  std::vector<float> main_impulse_response_;
 };
 
 }  // namespace webrtc
