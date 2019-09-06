@@ -20,7 +20,6 @@
 #include "call/simulated_network.h"
 #include "rtc_base/event.h"
 #include "rtc_base/gunit.h"
-#include "rtc_base/logging.h"
 #include "system_wrappers/include/sleep.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
@@ -298,22 +297,26 @@ TEST(NetworkEmulationManagerTest, ThroughputStats) {
   s1->Connect(s2->GetLocalAddress());
   s2->Connect(s1->GetLocalAddress());
 
-  // Send 10 packets for 1
+  // Send 11 packets, totalizing 1 second between the first and the last.
+  const int kNumPacketsSent = 11;
+  const int kDelayMs = 100;
   rtc::Event wait;
-  for (uint64_t i = 0; i < 11; i++) {
+  for (int i = 0; i < kNumPacketsSent; i++) {
     nt1->network_thread()->PostTask(
         RTC_FROM_HERE, [&]() { s1->Send(data.data(), data.size()); });
     nt2->network_thread()->PostTask(
         RTC_FROM_HERE, [&]() { s2->Send(data.data(), data.size()); });
-    wait.Wait(100);
+    wait.Wait(kDelayMs);
   }
 
   std::atomic<int> received_stats_count{0};
   nt1->GetStats([&](EmulatedNetworkStats st) {
-    EXPECT_EQ(st.packets_sent, 11l);
-    EXPECT_EQ(st.bytes_sent.bytes(), single_packet_size * 11l);
+    EXPECT_EQ(st.packets_sent, kNumPacketsSent);
+    EXPECT_EQ(st.bytes_sent.bytes(), single_packet_size * kNumPacketsSent);
+
+    const double tolerance = 0.99;  // Accept 1% tolerance for timing.
     EXPECT_GE(st.last_packet_sent_time - st.first_packet_sent_time,
-              TimeDelta::seconds(1));
+              TimeDelta::ms((kNumPacketsSent - 1) * kDelayMs * tolerance));
     EXPECT_GT(st.AverageSendRate().bps(), 0);
     received_stats_count++;
   });
