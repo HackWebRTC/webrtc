@@ -67,7 +67,7 @@ TEST(RemoteEstimateEndToEnd, OfferedCapabilityIsInAnswer) {
         }
         offer_exchange_done.Set();
       });
-  EXPECT_TRUE(s.WaitAndProcess(&offer_exchange_done));
+  RTC_CHECK(s.WaitAndProcess(&offer_exchange_done));
 }
 
 TEST(RemoteEstimateEndToEnd, AudioUsesAbsSendTimeExtension) {
@@ -100,16 +100,22 @@ TEST(RemoteEstimateEndToEnd, AudioUsesAbsSendTimeExtension) {
             kRtpExtensionAbsoluteSendTime));
         offer_exchange_done.Set();
       });
-  EXPECT_TRUE(s.WaitAndProcess(&offer_exchange_done));
+  RTC_CHECK(s.WaitAndProcess(&offer_exchange_done));
   send_node->router()->SetWatcher(
       [extension_map, &received_abs_send_time](const EmulatedIpPacket& packet) {
-        auto extensions = GetRtpPacketExtensions(packet.data, extension_map);
-        if (extensions) {
-          EXPECT_TRUE(extensions->hasAbsoluteSendTime);
-          received_abs_send_time.Set();
+        // The dummy packets used by the fake signaling are filled with 0. We
+        // want to ignore those and we can do that on the basis that the first
+        // byte of RTP packets are guaranteed to not be 0.
+        // TODO(srte): Find a more elegant way to check for RTP traffic.
+        if (packet.size() > 1 && packet.cdata()[0] != 0) {
+          auto extensions = GetRtpPacketExtensions(packet.data, extension_map);
+          if (extensions) {
+            EXPECT_TRUE(extensions->hasAbsoluteSendTime);
+            received_abs_send_time.Set();
+          }
         }
       });
-  EXPECT_TRUE(s.WaitAndProcess(&received_abs_send_time));
+  RTC_CHECK(s.WaitAndProcess(&received_abs_send_time));
 }
 }  // namespace test
 }  // namespace webrtc
