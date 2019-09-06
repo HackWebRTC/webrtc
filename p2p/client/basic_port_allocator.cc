@@ -174,12 +174,17 @@ BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager)
 }
 
 BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager,
+                                       const ServerAddresses& stun_servers)
+    : BasicPortAllocator(network_manager,
+                         /*socket_factory=*/nullptr,
+                         stun_servers) {}
+
+BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager,
                                        rtc::PacketSocketFactory* socket_factory,
                                        const ServerAddresses& stun_servers)
     : network_manager_(network_manager), socket_factory_(socket_factory) {
   InitRelayPortFactory(nullptr);
   RTC_DCHECK(relay_port_factory_ != nullptr);
-  RTC_DCHECK(socket_factory_ != NULL);
   SetConfiguration(stun_servers, std::vector<RelayServerConfig>(), 0, false,
                    nullptr);
   Construct();

@@ -37,6 +37,8 @@ class RTC_EXPORT BasicPortAllocator : public PortAllocator {
                      RelayPortFactoryInterface* relay_port_factory = nullptr);
   explicit BasicPortAllocator(rtc::NetworkManager* network_manager);
   BasicPortAllocator(rtc::NetworkManager* network_manager,
+                     const ServerAddresses& stun_servers);
+  BasicPortAllocator(rtc::NetworkManager* network_manager,
                      rtc::PacketSocketFactory* socket_factory,
                      const ServerAddresses& stun_servers);
   BasicPortAllocator(rtc::NetworkManager* network_manager,
