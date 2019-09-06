@@ -467,21 +467,21 @@ void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
                       })) {
     if (socket->GetLocalAddress().IsLoopbackIP()) {
       RTC_LOG(LS_WARNING) << "Socket is bound to the address:"
-                          << socket_address.ipaddr().ToString()
+                          << socket_address.ipaddr().ToSensitiveString()
                           << ", rather than an address associated with network:"
                           << Network()->ToString()
                           << ". Still allowing it since it's localhost.";
     } else if (IPIsAny(Network()->GetBestIP())) {
       RTC_LOG(LS_WARNING)
           << "Socket is bound to the address:"
-          << socket_address.ipaddr().ToString()
+          << socket_address.ipaddr().ToSensitiveString()
           << ", rather than an address associated with network:"
           << Network()->ToString()
           << ". Still allowing it since it's the 'any' address"
              ", possibly caused by multiple_routes being disabled.";
     } else {
       RTC_LOG(LS_WARNING) << "Socket is bound to the address:"
-                          << socket_address.ipaddr().ToString()
+                          << socket_address.ipaddr().ToSensitiveString()
                           << ", rather than an address associated with network:"
                           << Network()->ToString() << ". Discarding TURN port.";
       OnAllocateError(
@@ -497,7 +497,8 @@ void TurnPort::OnSocketConnect(rtc::AsyncPacketSocket* socket) {
   }
 
   RTC_LOG(LS_INFO) << "TurnPort connected to "
-                   << socket->GetRemoteAddress().ToString() << " using tcp.";
+                   << socket->GetRemoteAddress().ToSensitiveString()
+                   << " using tcp.";
   SendRequest(new TurnAllocateRequest(this), 0);
 }
 
@@ -619,7 +620,7 @@ int TurnPort::SendTo(const void* data,
   TurnEntry* entry = FindEntry(addr);
   if (!entry) {
     RTC_LOG(LS_ERROR) << "Did not find the TurnEntry for address "
-                      << addr.ToString();
+                      << addr.ToSensitiveString();
     return 0;
   }
 
@@ -663,8 +664,9 @@ bool TurnPort::HandleIncomingPacket(rtc::AsyncPacketSocket* socket,
   if (remote_addr != server_address_.address) {
     RTC_LOG(LS_WARNING) << ToString()
                         << ": Discarding TURN message from unknown address: "
-                        << remote_addr.ToString() << " server_address_: "
-                        << server_address_.address.ToString();
+                        << remote_addr.ToSensitiveString()
+                        << " server_address_: "
+                        << server_address_.address.ToSensitiveString();
     return false;
   }
 

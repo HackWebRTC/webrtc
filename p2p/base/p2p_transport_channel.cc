@@ -1026,7 +1026,7 @@ void P2PTransportChannel::OnUnknownAddress(PortInterface* port,
     if (port_muxed) {
       RTC_LOG(LS_INFO) << "Connection already exists for peer reflexive "
                           "candidate: "
-                       << remote_candidate.ToString();
+                       << remote_candidate.ToSensitiveString();
       return;
     } else {
       RTC_NOTREACHED();
@@ -1049,7 +1049,7 @@ void P2PTransportChannel::OnUnknownAddress(PortInterface* port,
   RTC_LOG(LS_INFO) << "Adding connection from "
                    << (remote_candidate_is_new ? "peer reflexive"
                                                : "resurrected")
-                   << " candidate: " << remote_candidate.ToString();
+                   << " candidate: " << remote_candidate.ToSensitiveString();
   AddConnection(connection);
   connection->HandleBindingRequest(stun_msg);
 
@@ -1259,7 +1259,7 @@ void P2PTransportChannel::RemoveRemoteCandidate(
                      });
   if (iter != remote_candidates_.end()) {
     RTC_LOG(LS_VERBOSE) << "Removed remote candidate "
-                        << cand_to_remove.ToString();
+                        << cand_to_remove.ToSensitiveString();
     remote_candidates_.erase(iter, remote_candidates_.end());
   }
 }
@@ -1352,8 +1352,9 @@ bool P2PTransportChannel::CreateConnection(PortInterface* port,
   if (!remote_candidate.IsEquivalent(connection->remote_candidate())) {
     RTC_LOG(INFO) << "Attempt to change a remote candidate."
                      " Existing remote candidate: "
-                  << connection->remote_candidate().ToString()
-                  << "New remote candidate: " << remote_candidate.ToString();
+                  << connection->remote_candidate().ToSensitiveString()
+                  << "New remote candidate: "
+                  << remote_candidate.ToSensitiveString();
   }
   return false;
 }
@@ -1415,7 +1416,8 @@ void P2PTransportChannel::RememberRemoteCandidate(
 
   // Make sure this candidate is not a duplicate.
   if (IsDuplicateRemoteCandidate(remote_candidate)) {
-    RTC_LOG(INFO) << "Duplicate candidate: " << remote_candidate.ToString();
+    RTC_LOG(INFO) << "Duplicate candidate: "
+                  << remote_candidate.ToSensitiveString();
     return;
   }
 

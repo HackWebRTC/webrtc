@@ -351,7 +351,7 @@ TCPConnection::TCPConnection(TCPPort* port,
     // Incoming connections should match one of the network addresses. Same as
     // what's being checked in OnConnect, but just DCHECKing here.
     RTC_LOG(LS_VERBOSE) << ToString() << ": socket ipaddr: "
-                        << socket_->GetLocalAddress().ToString()
+                        << socket_->GetLocalAddress().ToSensitiveString()
                         << ", port() Network:" << port->Network()->ToString();
     RTC_DCHECK(absl::c_any_of(
         port_->Network()->GetIPs(), [this](const rtc::InterfaceAddress& addr) {
@@ -446,21 +446,21 @@ void TCPConnection::OnConnect(rtc::AsyncPacketSocket* socket) {
   } else {
     if (socket->GetLocalAddress().IsLoopbackIP()) {
       RTC_LOG(LS_WARNING) << "Socket is bound to the address:"
-                          << socket_address.ipaddr().ToString()
+                          << socket_address.ipaddr().ToSensitiveString()
                           << ", rather than an address associated with network:"
                           << port_->Network()->ToString()
                           << ". Still allowing it since it's localhost.";
     } else if (IPIsAny(port_->Network()->GetBestIP())) {
       RTC_LOG(LS_WARNING)
           << "Socket is bound to the address:"
-          << socket_address.ipaddr().ToString()
+          << socket_address.ipaddr().ToSensitiveString()
           << ", rather than an address associated with network:"
           << port_->Network()->ToString()
           << ". Still allowing it since it's the 'any' address"
              ", possibly caused by multiple_routes being disabled.";
     } else {
       RTC_LOG(LS_WARNING) << "Dropping connection as TCP socket bound to IP "
-                          << socket_address.ipaddr().ToString()
+                          << socket_address.ipaddr().ToSensitiveString()
                           << ", rather than an address associated with network:"
                           << port_->Network()->ToString();
       OnClose(socket, 0);

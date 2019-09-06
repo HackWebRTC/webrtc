@@ -603,7 +603,8 @@ bool TurnServerConnection::operator<(const TurnServerConnection& c) const {
 std::string TurnServerConnection::ToString() const {
   const char* const kProtos[] = {"unknown", "udp", "tcp", "ssltcp"};
   rtc::StringBuilder ost;
-  ost << src_.ToString() << "-" << dst_.ToString() << ":" << kProtos[proto_];
+  ost << src_.ToSensitiveString() << "-" << dst_.ToSensitiveString() << ":"
+      << kProtos[proto_];
   return ost.Release();
 }
 
@@ -744,7 +745,7 @@ void TurnServerAllocation::HandleSendIndication(const TurnMessage* msg) {
     RTC_LOG(LS_WARNING) << ToString()
                         << ": Received send indication without permission"
                            " peer="
-                        << peer_attr->GetAddress().ToString();
+                        << peer_attr->GetAddress().ToSensitiveString();
   }
 }
 
@@ -768,7 +769,7 @@ void TurnServerAllocation::HandleCreatePermissionRequest(
   AddPermission(peer_attr->GetAddress().ipaddr());
 
   RTC_LOG(LS_INFO) << ToString() << ": Created permission, peer="
-                   << peer_attr->GetAddress().ToString();
+                   << peer_attr->GetAddress().ToSensitiveString();
 
   // Send a success response.
   TurnMessage response;
@@ -817,7 +818,7 @@ void TurnServerAllocation::HandleChannelBindRequest(const TurnMessage* msg) {
   AddPermission(peer_attr->GetAddress().ipaddr());
 
   RTC_LOG(LS_INFO) << ToString() << ": Bound channel, id=" << channel_id
-                   << ", peer=" << peer_attr->GetAddress().ToString();
+                   << ", peer=" << peer_attr->GetAddress().ToSensitiveString();
 
   // Send a success response.
   TurnMessage response;
@@ -869,7 +870,7 @@ void TurnServerAllocation::OnExternalPacket(
   } else {
     RTC_LOG(LS_WARNING)
         << ToString() << ": Received external packet without permission, peer="
-        << addr.ToString();
+        << addr.ToSensitiveString();
   }
 }
 

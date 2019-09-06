@@ -362,7 +362,7 @@ void Port::AddOrReplaceConnection(Connection* conn) {
         << ToString()
         << ": A new connection was created on an existing remote address. "
            "New remote candidate: "
-        << conn->remote_candidate().ToString();
+        << conn->remote_candidate().ToSensitiveString();
     ret.first->second->SignalDestroyed.disconnect(this);
     ret.first->second->Destroy();
     ret.first->second = conn;

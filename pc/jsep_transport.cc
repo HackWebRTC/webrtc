@@ -345,7 +345,8 @@ webrtc::RTCError JsepTransport::AddRemoteCandidates(
     if (!transport) {
       return webrtc::RTCError(webrtc::RTCErrorType::INVALID_PARAMETER,
                               "Candidate has an unknown component: " +
-                                  candidate.ToString() + " for mid " + mid());
+                                  candidate.ToSensitiveString() + " for mid " +
+                                  mid());
     }
     RTC_DCHECK(transport->internal() && transport->internal()->ice_transport());
     transport->internal()->ice_transport()->AddRemoteCandidate(candidate);

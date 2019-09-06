@@ -1581,8 +1581,8 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
       RTC_LOG(LS_INFO)
           << "Server and local address families are not compatible. "
              "Server address: "
-          << relay_port->address.ipaddr().ToString()
-          << " Local address: " << network_->GetBestIP().ToString();
+          << relay_port->address.ipaddr().ToSensitiveString()
+          << " Local address: " << network_->GetBestIP().ToSensitiveString();
       continue;
     }
 
@@ -1609,7 +1609,7 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
 
       if (!port) {
         RTC_LOG(LS_WARNING) << "Failed to create relay port with "
-                            << args.server_address->address.ToString();
+                            << args.server_address->address.ToSensitiveString();
         continue;
       }
 
@@ -1624,7 +1624,7 @@ void AllocationSequence::CreateTurnPort(const RelayServerConfig& config) {
 
       if (!port) {
         RTC_LOG(LS_WARNING) << "Failed to create relay port with "
-                            << args.server_address->address.ToString();
+                            << args.server_address->address.ToSensitiveString();
         continue;
       }
     }

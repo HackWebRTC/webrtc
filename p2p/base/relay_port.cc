@@ -456,7 +456,7 @@ void RelayConnection::OnSendPacket(const void* data,
   int sent = socket_->SendTo(data, size, GetAddress(), options);
   if (sent <= 0) {
     RTC_LOG(LS_VERBOSE) << "OnSendPacket: failed sending to "
-                        << GetAddress().ToString()
+                        << GetAddress().ToSensitiveString()
                         << strerror(socket_->GetError());
     RTC_DCHECK(sent < 0);
   }
@@ -669,7 +669,7 @@ void RelayEntry::OnMessage(rtc::Message* pmsg) {
   if (current_connection_) {
     const ProtocolAddress* ra = current_connection_->protocol_address();
     RTC_LOG(LS_WARNING) << "Relay " << ra->proto << " connection to "
-                        << ra->address.ToString() << " timed out";
+                        << ra->address.ToSensitiveString() << " timed out";
 
     // Currently we connect to each server address in sequence. If we
     // have more addresses to try, treat this is an error and move on to

@@ -382,7 +382,7 @@ RTCError JsepTransportController::RemoveRemoteCandidates(
     } else {
       RTC_LOG(LS_ERROR) << "Not removing candidate because it does not have a "
                            "transport name set: "
-                        << cand.ToString();
+                        << cand.ToSensitiveString();
     }
   }
 
