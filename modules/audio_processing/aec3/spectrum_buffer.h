@@ -21,7 +21,6 @@ namespace webrtc {
 
 // Struct for bundling a circular buffer of one dimensional vector objects
 // together with the read and write indices.
-// TODO(peah): Change name of this class to be more specific to what it does.
 struct SpectrumBuffer {
   SpectrumBuffer(size_t size, size_t num_channels, size_t spectrum_length);
   ~SpectrumBuffer();
