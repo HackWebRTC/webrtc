@@ -197,6 +197,8 @@ class PeerConnectionE2EQualityTestFixture {
     // output files will be appended with indexes. The produced files contains
     // what was rendered for this video stream on receiver side.
     absl::optional<std::string> output_dump_file_name;
+    // If true will display input and output video on the user's screen.
+    bool show_on_screen = false;
   };
 
   // Contains properties for audio in the call.

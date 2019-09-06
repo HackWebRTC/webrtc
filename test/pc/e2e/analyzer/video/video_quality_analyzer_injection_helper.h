@@ -15,6 +15,7 @@
 #include <memory>
 #include <string>
 
+#include "api/test/peerconnection_quality_test_fixture.h"
 #include "api/test/stats_observer_interface.h"
 #include "api/test/video_quality_analyzer_interface.h"
 #include "api/video/video_frame.h"
@@ -33,6 +34,8 @@ namespace webrtc_pc_e2e {
 // VideoQualityAnalyzerInterface into PeerConnection pipeline.
 class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
  public:
+  using VideoConfig = PeerConnectionE2EQualityTestFixture::VideoConfig;
+
   VideoQualityAnalyzerInjectionHelper(
       std::unique_ptr<VideoQualityAnalyzerInterface> analyzer,
       EncodedImageDataInjector* injector,
@@ -55,13 +58,14 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
   // captured frames. If |writer| in not nullptr, will dump captured frames
   // with provided writer.
   std::unique_ptr<test::FrameGenerator> WrapFrameGenerator(
-      std::string stream_label,
+      const VideoConfig& config,
       std::unique_ptr<test::FrameGenerator> delegate,
       test::VideoFrameWriter* writer) const;
   // Creates sink, that will allow video quality analyzer to get access to the
   // rendered frames. If |writer| in not nullptr, will dump rendered frames
   // with provided writer.
   std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> CreateVideoSink(
+      const VideoConfig& config,
       test::VideoFrameWriter* writer) const;
 
   void Start(std::string test_case_name, int max_threads_count);

@@ -590,7 +590,8 @@ void PeerConnectionE2EQualityTest::OnTrackCallback(
   // track->kind() is kVideoKind.
   auto* video_track = static_cast<VideoTrackInterface*>(track.get());
   std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> video_sink =
-      video_quality_analyzer_injection_helper_->CreateVideoSink(writer);
+      video_quality_analyzer_injection_helper_->CreateVideoSink(*video_config,
+                                                                writer);
   video_track->AddOrUpdateSink(video_sink.get(), rtc::VideoSinkWants());
   output_video_sinks_.push_back(std::move(video_sink));
 }
@@ -680,8 +681,7 @@ PeerConnectionE2EQualityTest::MaybeAddVideo(TestPeer* peer) {
         MaybeCreateVideoWriter(video_config.input_dump_file_name, video_config);
     frame_generator =
         video_quality_analyzer_injection_helper_->WrapFrameGenerator(
-            video_config.stream_label.value(), std::move(frame_generator),
-            writer);
+            video_config, std::move(frame_generator), writer);
 
     // Setup FrameGenerator into peer connection.
     auto capturer = absl::make_unique<test::FrameGeneratorCapturer>(

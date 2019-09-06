@@ -16,6 +16,7 @@
 #include "test/pc/e2e/analyzer/video/quality_analyzing_video_decoder.h"
 #include "test/pc/e2e/analyzer/video/quality_analyzing_video_encoder.h"
 #include "test/pc/e2e/analyzer/video/simulcast_dummy_buffer_helper.h"
+#include "test/video_renderer.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
@@ -58,8 +59,8 @@ class AnalyzingFrameGenerator final : public test::FrameGenerator {
     uint16_t frame_id = analyzer_->OnFrameCaptured(stream_label_, *frame);
     frame->set_id(frame_id);
 
-    for (auto& listener : sinks_) {
-      listener->OnFrame(*frame);
+    for (auto& sink : sinks_) {
+      sink->OnFrame(*frame);
     }
     return frame;
   }
@@ -94,8 +95,8 @@ class AnalyzingVideoSink final : public rtc::VideoSinkInterface<VideoFrame> {
       return;
     }
     analyzer_->OnFrameRendered(frame);
-    for (auto& listener : sinks_) {
-      listener->OnFrame(frame);
+    for (auto& sink : sinks_) {
+      sink->OnFrame(frame);
     }
   }
 
@@ -143,24 +144,35 @@ VideoQualityAnalyzerInjectionHelper::WrapVideoDecoderFactory(
 
 std::unique_ptr<test::FrameGenerator>
 VideoQualityAnalyzerInjectionHelper::WrapFrameGenerator(
-    std::string stream_label,
+    const VideoConfig& config,
     std::unique_ptr<test::FrameGenerator> delegate,
     test::VideoFrameWriter* writer) const {
   std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>> sinks;
   if (writer) {
     sinks.push_back(absl::make_unique<VideoWriter>(writer));
   }
+  if (config.show_on_screen) {
+    sinks.push_back(absl::WrapUnique(
+        test::VideoRenderer::Create((*config.stream_label + "-capture").c_str(),
+                                    config.width, config.height)));
+  }
   return absl::make_unique<AnalyzingFrameGenerator>(
-      std::move(stream_label), std::move(delegate), analyzer_.get(),
+      std::move(*config.stream_label), std::move(delegate), analyzer_.get(),
       std::move(sinks));
 }
 
 std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>
 VideoQualityAnalyzerInjectionHelper::CreateVideoSink(
+    const VideoConfig& config,
     test::VideoFrameWriter* writer) const {
   std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>> sinks;
   if (writer) {
     sinks.push_back(absl::make_unique<VideoWriter>(writer));
+  }
+  if (config.show_on_screen) {
+    sinks.push_back(absl::WrapUnique(
+        test::VideoRenderer::Create((*config.stream_label + "-render").c_str(),
+                                    config.width, config.height)));
   }
   return absl::make_unique<AnalyzingVideoSink>(analyzer_.get(),
                                                std::move(sinks));

@@ -193,6 +193,8 @@ if (rtc_include_tests) {
       ":quality_analyzing_video_decoder",
       ":quality_analyzing_video_encoder",
       ":simulcast_dummy_buffer_helper",
+      "../..:test_renderer",
+      "../../../api:peer_connection_quality_test_fixture_api",
       "../../../api:stats_observer_interface",
       "../../../api:video_quality_analyzer_api",
       "../../../api/video:video_frame",
