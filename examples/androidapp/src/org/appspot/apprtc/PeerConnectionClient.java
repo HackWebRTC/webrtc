@@ -75,7 +75,9 @@ import org.webrtc.VideoTrack;
 import org.webrtc.audio.AudioDeviceModule;
 import org.webrtc.audio.JavaAudioDeviceModule;
 import org.webrtc.audio.JavaAudioDeviceModule.AudioRecordErrorCallback;
+import org.webrtc.audio.JavaAudioDeviceModule.AudioRecordStateCallback;
 import org.webrtc.audio.JavaAudioDeviceModule.AudioTrackErrorCallback;
+import org.webrtc.audio.JavaAudioDeviceModule.AudioTrackStateCallback;
 
 /**
  * Peer connection client implementation.
@@ -501,12 +503,40 @@ public class PeerConnectionClient {
       }
     };
 
+    // Set audio record state callbacks.
+    AudioRecordStateCallback audioRecordStateCallback = new AudioRecordStateCallback() {
+      @Override
+      public void onWebRtcAudioRecordStart() {
+        Log.i(TAG, "Audio recording starts");
+      }
+
+      @Override
+      public void onWebRtcAudioRecordStop() {
+        Log.i(TAG, "Audio recording stops");
+      }
+    };
+
+    // Set audio track state callbacks.
+    AudioTrackStateCallback audioTrackStateCallback = new AudioTrackStateCallback() {
+      @Override
+      public void onWebRtcAudioTrackStart() {
+        Log.i(TAG, "Audio playout starts");
+      }
+
+      @Override
+      public void onWebRtcAudioTrackStop() {
+        Log.i(TAG, "Audio playout stops");
+      }
+    };
+
     return JavaAudioDeviceModule.builder(appContext)
         .setSamplesReadyCallback(saveRecordedAudioToFile)
         .setUseHardwareAcousticEchoCanceler(!peerConnectionParameters.disableBuiltInAEC)
         .setUseHardwareNoiseSuppressor(!peerConnectionParameters.disableBuiltInNS)
         .setAudioRecordErrorCallback(audioRecordErrorCallback)
         .setAudioTrackErrorCallback(audioTrackErrorCallback)
+        .setAudioRecordStateCallback(audioRecordStateCallback)
+        .setAudioTrackStateCallback(audioTrackStateCallback)
         .createAudioDeviceModule();
   }
 

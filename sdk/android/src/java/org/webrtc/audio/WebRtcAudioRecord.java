@@ -28,6 +28,7 @@ import org.webrtc.Logging;
 import org.webrtc.ThreadUtils;
 import org.webrtc.audio.JavaAudioDeviceModule.AudioRecordErrorCallback;
 import org.webrtc.audio.JavaAudioDeviceModule.AudioRecordStartErrorCode;
+import org.webrtc.audio.JavaAudioDeviceModule.AudioRecordStateCallback;
 import org.webrtc.audio.JavaAudioDeviceModule.SamplesReadyCallback;
 
 class WebRtcAudioRecord {
@@ -54,6 +55,12 @@ class WebRtcAudioRecord {
   // Guaranteed to be supported by all devices.
   public static final int DEFAULT_AUDIO_FORMAT = AudioFormat.ENCODING_PCM_16BIT;
 
+  // Indicates AudioRecord has started recording audio.
+  private static final int AUDIO_RECORD_START = 0;
+
+  // Indicates AudioRecord has stopped recording audio.
+  private static final int AUDIO_RECORD_STOP = 1;
+
   private final Context context;
   private final AudioManager audioManager;
   private final int audioSource;
@@ -72,6 +79,7 @@ class WebRtcAudioRecord {
   private byte[] emptyBytes;
 
   private final @Nullable AudioRecordErrorCallback errorCallback;
+  private final @Nullable AudioRecordStateCallback stateCallback;
   private final @Nullable SamplesReadyCallback audioSamplesReadyCallback;
   private final boolean isAcousticEchoCancelerSupported;
   private final boolean isNoiseSuppressorSupported;
@@ -94,6 +102,9 @@ class WebRtcAudioRecord {
       Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
       Logging.d(TAG, "AudioRecordThread" + WebRtcAudioUtils.getThreadInfo());
       assertTrue(audioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING);
+
+      // Audio recording has started and the client is informed about it.
+      doAudioRecordStateCallback(AUDIO_RECORD_START);
 
       long lastTime = System.nanoTime();
       while (keepAlive) {
@@ -131,6 +142,7 @@ class WebRtcAudioRecord {
       try {
         if (audioRecord != null) {
           audioRecord.stop();
+          doAudioRecordStateCallback(AUDIO_RECORD_STOP);
         }
       } catch (IllegalStateException e) {
         Logging.e(TAG, "AudioRecord.stop failed: " + e.getMessage());
@@ -148,13 +160,14 @@ class WebRtcAudioRecord {
   @CalledByNative
   WebRtcAudioRecord(Context context, AudioManager audioManager) {
     this(context, audioManager, DEFAULT_AUDIO_SOURCE, DEFAULT_AUDIO_FORMAT,
-        null /* errorCallback */, null /* audioSamplesReadyCallback */,
+        null /* errorCallback */, null /* stateCallback */, null /* audioSamplesReadyCallback */,
         WebRtcAudioEffects.isAcousticEchoCancelerSupported(),
         WebRtcAudioEffects.isNoiseSuppressorSupported());
   }
 
   public WebRtcAudioRecord(Context context, AudioManager audioManager, int audioSource,
       int audioFormat, @Nullable AudioRecordErrorCallback errorCallback,
+      @Nullable AudioRecordStateCallback stateCallback,
       @Nullable SamplesReadyCallback audioSamplesReadyCallback,
       boolean isAcousticEchoCancelerSupported, boolean isNoiseSuppressorSupported) {
     if (isAcousticEchoCancelerSupported && !WebRtcAudioEffects.isAcousticEchoCancelerSupported()) {
@@ -168,6 +181,7 @@ class WebRtcAudioRecord {
     this.audioSource = audioSource;
     this.audioFormat = audioFormat;
     this.errorCallback = errorCallback;
+    this.stateCallback = stateCallback;
     this.audioSamplesReadyCallback = audioSamplesReadyCallback;
     this.isAcousticEchoCancelerSupported = isAcousticEchoCancelerSupported;
     this.isNoiseSuppressorSupported = isNoiseSuppressorSupported;
@@ -392,6 +406,19 @@ class WebRtcAudioRecord {
     WebRtcAudioUtils.logAudioState(TAG, context, audioManager);
     if (errorCallback != null) {
       errorCallback.onWebRtcAudioRecordError(errorMessage);
+    }
+  }
+
+  private void doAudioRecordStateCallback(int audioState) {
+    Logging.d(TAG, "doAudioRecordStateCallback: " + audioState);
+    if (stateCallback != null) {
+      if (audioState == WebRtcAudioRecord.AUDIO_RECORD_START) {
+        stateCallback.onWebRtcAudioRecordStart();
+      } else if (audioState == WebRtcAudioRecord.AUDIO_RECORD_STOP) {
+        stateCallback.onWebRtcAudioRecordStop();
+      } else {
+        Logging.e(TAG, "Invalid audio state");
+      }
     }
   }
 

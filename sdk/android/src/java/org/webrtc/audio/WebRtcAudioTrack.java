@@ -26,6 +26,7 @@ import org.webrtc.Logging;
 import org.webrtc.ThreadUtils;
 import org.webrtc.audio.JavaAudioDeviceModule.AudioTrackErrorCallback;
 import org.webrtc.audio.JavaAudioDeviceModule.AudioTrackStartErrorCode;
+import org.webrtc.audio.JavaAudioDeviceModule.AudioTrackStateCallback;
 
 class WebRtcAudioTrack {
   private static final String TAG = "WebRtcAudioTrackExternal";
@@ -57,6 +58,12 @@ class WebRtcAudioTrack {
     }
   }
 
+  // Indicates the AudioTrack has started playing audio.
+  private static final int AUDIO_TRACK_START = 0;
+
+  // Indicates the AudioTrack has stopped playing audio.
+  private static final int AUDIO_TRACK_STOP = 1;
+
   private long nativeAudioTrack;
   private final Context context;
   private final AudioManager audioManager;
@@ -74,6 +81,7 @@ class WebRtcAudioTrack {
   private byte[] emptyBytes;
 
   private final @Nullable AudioTrackErrorCallback errorCallback;
+  private final @Nullable AudioTrackStateCallback stateCallback;
 
   /**
    * Audio thread which keeps calling AudioTrack.write() to stream audio.
@@ -93,6 +101,9 @@ class WebRtcAudioTrack {
       Process.setThreadPriority(Process.THREAD_PRIORITY_URGENT_AUDIO);
       Logging.d(TAG, "AudioTrackThread" + WebRtcAudioUtils.getThreadInfo());
       assertTrue(audioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING);
+
+      // Audio playout has started and the client is informed about it.
+      doAudioTrackStateCallback(AUDIO_TRACK_START);
 
       // Fixed size in bytes of each 10ms block of audio data that we ask for
       // using callbacks to the native WebRTC client.
@@ -140,6 +151,7 @@ class WebRtcAudioTrack {
         try {
           audioTrack.stop();
           Logging.d(TAG, "AudioTrack.stop is done.");
+          doAudioTrackStateCallback(AUDIO_TRACK_STOP);
         } catch (IllegalStateException e) {
           Logging.e(TAG, "AudioTrack.stop failed: " + e.getMessage());
         }
@@ -164,15 +176,17 @@ class WebRtcAudioTrack {
 
   @CalledByNative
   WebRtcAudioTrack(Context context, AudioManager audioManager) {
-    this(context, audioManager, null /* errorCallback */);
+    this(context, audioManager, null /* errorCallback */, null /* stateCallback */);
   }
 
-  WebRtcAudioTrack(
-      Context context, AudioManager audioManager, @Nullable AudioTrackErrorCallback errorCallback) {
+  WebRtcAudioTrack(Context context, AudioManager audioManager,
+      @Nullable AudioTrackErrorCallback errorCallback,
+      @Nullable AudioTrackStateCallback stateCallback) {
     threadChecker.detachThread();
     this.context = context;
     this.audioManager = audioManager;
     this.errorCallback = errorCallback;
+    this.stateCallback = stateCallback;
     this.volumeLogger = new VolumeLogger(audioManager);
   }
 
@@ -491,6 +505,19 @@ class WebRtcAudioTrack {
     WebRtcAudioUtils.logAudioState(TAG, context, audioManager);
     if (errorCallback != null) {
       errorCallback.onWebRtcAudioTrackError(errorMessage);
+    }
+  }
+
+  private void doAudioTrackStateCallback(int audioState) {
+    Logging.d(TAG, "doAudioTrackStateCallback: " + audioState);
+    if (stateCallback != null) {
+      if (audioState == WebRtcAudioTrack.AUDIO_TRACK_START) {
+        stateCallback.onWebRtcAudioTrackStart();
+      } else if (audioState == WebRtcAudioTrack.AUDIO_TRACK_STOP) {
+        stateCallback.onWebRtcAudioTrackStop();
+      } else {
+        Logging.e(TAG, "Invalid audio state");
+      }
     }
   }
 }
