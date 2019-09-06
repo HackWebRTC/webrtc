@@ -22,41 +22,14 @@ namespace webrtc_pc_e2e {
 
 namespace {
 
-class VideoFrameInterceptor {
+class VideoWriter final : public rtc::VideoSinkInterface<VideoFrame> {
  public:
-  virtual ~VideoFrameInterceptor() = default;
-
-  // Performs desired actions with video frame. It may change video frame.
-  virtual void OnVideoFrame(VideoFrame* frame) = 0;
-};
-
-class VideoAnalyzerCapturingInterceptor : public VideoFrameInterceptor {
- public:
-  VideoAnalyzerCapturingInterceptor(std::string stream_label,
-                                    VideoQualityAnalyzerInterface* analyzer)
-      : stream_label_(std::move(stream_label)), analyzer_(analyzer) {
-    RTC_DCHECK(analyzer_);
-  }
-  ~VideoAnalyzerCapturingInterceptor() override = default;
-
-  void OnVideoFrame(VideoFrame* frame) override {
-    uint16_t frame_id = analyzer_->OnFrameCaptured(stream_label_, *frame);
-    frame->set_id(frame_id);
-  }
-
- private:
-  const std::string stream_label_;
-  VideoQualityAnalyzerInterface* analyzer_;
-};
-
-class VideoWriterInterceptor : public VideoFrameInterceptor {
- public:
-  VideoWriterInterceptor(test::VideoFrameWriter* video_writer)
+  VideoWriter(test::VideoFrameWriter* video_writer)
       : video_writer_(video_writer) {}
-  ~VideoWriterInterceptor() override = default;
+  ~VideoWriter() override = default;
 
-  void OnVideoFrame(VideoFrame* frame) override {
-    bool result = video_writer_->WriteFrame(*frame);
+  void OnFrame(const VideoFrame& frame) override {
+    bool result = video_writer_->WriteFrame(frame);
     RTC_CHECK(result) << "Failed to write frame";
   }
 
@@ -65,20 +38,28 @@ class VideoWriterInterceptor : public VideoFrameInterceptor {
 };
 
 // Intercepts generated frames and passes them also to video quality analyzer
-// and into video frame writer, if the last one is provided.
-class InterceptingFrameGenerator : public test::FrameGenerator {
+// and to provided sinks.
+class AnalyzingFrameGenerator final : public test::FrameGenerator {
  public:
-  InterceptingFrameGenerator(
+  AnalyzingFrameGenerator(
+      std::string stream_label,
       std::unique_ptr<test::FrameGenerator> delegate,
-      std::vector<std::unique_ptr<VideoFrameInterceptor>> interceptors)
-      : delegate_(std::move(delegate)),
-        interceptors_(std::move(interceptors)) {}
-  ~InterceptingFrameGenerator() override = default;
+      VideoQualityAnalyzerInterface* analyzer,
+      std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>> sinks)
+      : stream_label_(std::move(stream_label)),
+        delegate_(std::move(delegate)),
+        analyzer_(analyzer),
+        sinks_(std::move(sinks)) {}
+  ~AnalyzingFrameGenerator() override = default;
 
   VideoFrame* NextFrame() override {
     VideoFrame* frame = delegate_->NextFrame();
-    for (auto& interceptor : interceptors_) {
-      interceptor->OnVideoFrame(frame);
+
+    uint16_t frame_id = analyzer_->OnFrameCaptured(stream_label_, *frame);
+    frame->set_id(frame_id);
+
+    for (auto& listener : sinks_) {
+      listener->OnFrame(*frame);
     }
     return frame;
   }
@@ -88,17 +69,21 @@ class InterceptingFrameGenerator : public test::FrameGenerator {
   }
 
  private:
+  const std::string stream_label_;
   std::unique_ptr<test::FrameGenerator> delegate_;
-  std::vector<std::unique_ptr<VideoFrameInterceptor>> interceptors_;
+  VideoQualityAnalyzerInterface* const analyzer_;
+  const std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>
+      sinks_;
 };
 
 // Implements the video sink, that forwards rendered frames to the video quality
-// analyzer and to the video frame writer, if the last one is provided.
-class AnalyzingVideoSink : public rtc::VideoSinkInterface<VideoFrame> {
+// analyzer and provided sinks.
+class AnalyzingVideoSink final : public rtc::VideoSinkInterface<VideoFrame> {
  public:
-  AnalyzingVideoSink(VideoQualityAnalyzerInterface* analyzer,
-                     test::VideoFrameWriter* video_writer)
-      : analyzer_(analyzer), video_writer_(video_writer) {
+  AnalyzingVideoSink(
+      VideoQualityAnalyzerInterface* analyzer,
+      std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>> sinks)
+      : analyzer_(analyzer), sinks_(std::move(sinks)) {
     RTC_DCHECK(analyzer_);
   }
   ~AnalyzingVideoSink() override = default;
@@ -109,16 +94,15 @@ class AnalyzingVideoSink : public rtc::VideoSinkInterface<VideoFrame> {
       return;
     }
     analyzer_->OnFrameRendered(frame);
-    if (video_writer_) {
-      bool result = video_writer_->WriteFrame(frame);
-      RTC_CHECK(result) << "Failed to write frame";
+    for (auto& listener : sinks_) {
+      listener->OnFrame(frame);
     }
   }
-  void OnDiscardedFrame() override {}
 
  private:
-  VideoQualityAnalyzerInterface* analyzer_;
-  test::VideoFrameWriter* video_writer_;
+  VideoQualityAnalyzerInterface* const analyzer_;
+  const std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>
+      sinks_;
 };
 
 }  // namespace
@@ -162,20 +146,24 @@ VideoQualityAnalyzerInjectionHelper::WrapFrameGenerator(
     std::string stream_label,
     std::unique_ptr<test::FrameGenerator> delegate,
     test::VideoFrameWriter* writer) const {
-  std::vector<std::unique_ptr<VideoFrameInterceptor>> interceptors;
-  interceptors.push_back(absl::make_unique<VideoAnalyzerCapturingInterceptor>(
-      std::move(stream_label), analyzer_.get()));
+  std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>> sinks;
   if (writer) {
-    interceptors.push_back(absl::make_unique<VideoWriterInterceptor>(writer));
+    sinks.push_back(absl::make_unique<VideoWriter>(writer));
   }
-  return absl::make_unique<InterceptingFrameGenerator>(std::move(delegate),
-                                                       std::move(interceptors));
+  return absl::make_unique<AnalyzingFrameGenerator>(
+      std::move(stream_label), std::move(delegate), analyzer_.get(),
+      std::move(sinks));
 }
 
 std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>
 VideoQualityAnalyzerInjectionHelper::CreateVideoSink(
     test::VideoFrameWriter* writer) const {
-  return absl::make_unique<AnalyzingVideoSink>(analyzer_.get(), writer);
+  std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>> sinks;
+  if (writer) {
+    sinks.push_back(absl::make_unique<VideoWriter>(writer));
+  }
+  return absl::make_unique<AnalyzingVideoSink>(analyzer_.get(),
+                                               std::move(sinks));
 }
 
 void VideoQualityAnalyzerInjectionHelper::Start(std::string test_case_name,
