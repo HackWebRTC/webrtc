@@ -281,6 +281,8 @@ class BaseChannel : public ChannelInterface,
 
   void AddHandledPayloadType(int payload_type);
 
+  void ClearHandledPayloadTypes();
+
   void UpdateRtpHeaderExtensionMap(
       const RtpHeaderExtensions& header_extensions);
 

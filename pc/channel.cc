@@ -770,6 +770,10 @@ void BaseChannel::AddHandledPayloadType(int payload_type) {
   demuxer_criteria_.payload_types.insert(static_cast<uint8_t>(payload_type));
 }
 
+void BaseChannel::ClearHandledPayloadTypes() {
+  demuxer_criteria_.payload_types.clear();
+}
+
 void BaseChannel::FlushRtcpMessages_n() {
   // Flush all remaining RTCP messages. This should only be called in
   // destructor.
@@ -889,13 +893,16 @@ bool VoiceChannel::SetLocalContent_w(const MediaContentDescription* content,
                  error_desc);
     return false;
   }
-  for (const AudioCodec& codec : audio->codecs()) {
-    AddHandledPayloadType(codec.id);
-  }
-  // Need to re-register the sink to update the handled payload.
-  if (!RegisterRtpDemuxerSink()) {
-    RTC_LOG(LS_ERROR) << "Failed to set up audio demuxing.";
-    return false;
+
+  if (webrtc::RtpTransceiverDirectionHasRecv(audio->direction())) {
+    for (const AudioCodec& codec : audio->codecs()) {
+      AddHandledPayloadType(codec.id);
+    }
+    // Need to re-register the sink to update the handled payload.
+    if (!RegisterRtpDemuxerSink()) {
+      RTC_LOG(LS_ERROR) << "Failed to set up audio demuxing.";
+      return false;
+    }
   }
 
   last_recv_params_ = recv_params;
@@ -944,6 +951,16 @@ bool VoiceChannel::SetRemoteContent_w(const MediaContentDescription* content,
     return false;
   }
   last_send_params_ = send_params;
+
+  if (!webrtc::RtpTransceiverDirectionHasSend(content->direction())) {
+    RTC_DLOG(LS_VERBOSE) << "SetRemoteContent_w: remote side will not send - "
+                            "disable payload type demuxing";
+    ClearHandledPayloadTypes();
+    if (!RegisterRtpDemuxerSink()) {
+      RTC_LOG(LS_ERROR) << "Failed to update audio demuxing.";
+      return false;
+    }
+  }
 
   // TODO(pthatcher): Move remote streams into AudioRecvParameters,
   // and only give it to the media channel once we have a local
@@ -1047,13 +1064,16 @@ bool VideoChannel::SetLocalContent_w(const MediaContentDescription* content,
                  error_desc);
     return false;
   }
-  for (const VideoCodec& codec : video->codecs()) {
-    AddHandledPayloadType(codec.id);
-  }
-  // Need to re-register the sink to update the handled payload.
-  if (!RegisterRtpDemuxerSink()) {
-    RTC_LOG(LS_ERROR) << "Failed to set up video demuxing.";
-    return false;
+
+  if (webrtc::RtpTransceiverDirectionHasRecv(video->direction())) {
+    for (const VideoCodec& codec : video->codecs()) {
+      AddHandledPayloadType(codec.id);
+    }
+    // Need to re-register the sink to update the handled payload.
+    if (!RegisterRtpDemuxerSink()) {
+      RTC_LOG(LS_ERROR) << "Failed to set up video demuxing.";
+      return false;
+    }
   }
 
   last_recv_params_ = recv_params;
@@ -1138,6 +1158,16 @@ bool VideoChannel::SetRemoteContent_w(const MediaContentDescription* content,
       return false;
     }
     last_recv_params_ = recv_params;
+  }
+
+  if (!webrtc::RtpTransceiverDirectionHasSend(content->direction())) {
+    RTC_DLOG(LS_VERBOSE) << "SetRemoteContent_w: remote side will not send - "
+                            "disable payload type demuxing";
+    ClearHandledPayloadTypes();
+    if (!RegisterRtpDemuxerSink()) {
+      RTC_LOG(LS_ERROR) << "Failed to update video demuxing.";
+      return false;
+    }
   }
 
   // TODO(pthatcher): Move remote streams into VideoRecvParameters,
