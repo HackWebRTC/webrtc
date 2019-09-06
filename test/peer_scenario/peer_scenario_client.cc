@@ -137,9 +137,9 @@ PeerScenarioClient::PeerScenarioClient(NetworkEmulationManager* net,
       });
   handlers_.on_signaling_change.push_back(
       [this](PeerConnectionInterface::SignalingState state) {
+        RTC_DCHECK_RUN_ON(signaling_thread_);
         if (state == PeerConnectionInterface::SignalingState::kStable &&
             peer_connection_->current_remote_description()) {
-          RTC_DCHECK_RUN_ON(signaling_thread_);
           for (const auto& candidate : pending_ice_candidates_) {
             RTC_CHECK(peer_connection_->AddIceCandidate(candidate.get()));
           }
@@ -203,6 +203,7 @@ EmulatedEndpoint* PeerScenarioClient::endpoint(int index) {
 PeerScenarioClient::AudioSendTrack PeerScenarioClient::CreateAudio(
     std::string track_id,
     cricket::AudioOptions options) {
+  RTC_DCHECK_RUN_ON(signaling_thread_);
   AudioSendTrack res;
   auto source = pc_factory_->CreateAudioSource(options);
   auto track = pc_factory_->CreateAudioTrack(track_id, source);
@@ -214,6 +215,7 @@ PeerScenarioClient::AudioSendTrack PeerScenarioClient::CreateAudio(
 PeerScenarioClient::VideoSendTrack PeerScenarioClient::CreateVideo(
     std::string track_id,
     VideoSendTrackConfig config) {
+  RTC_DCHECK_RUN_ON(signaling_thread_);
   VideoSendTrack res;
   auto capturer = FrameGeneratorCapturer::Create(clock(), *task_queue_factory_,
                                                  config.generator);
@@ -237,15 +239,16 @@ void PeerScenarioClient::AddVideoReceiveSink(
 
 void PeerScenarioClient::CreateAndSetSdp(
     std::function<void(std::string)> offer_handler) {
+  RTC_DCHECK_RUN_ON(signaling_thread_);
   peer_connection_->CreateOffer(
       SdpCreateObserver([=](SessionDescriptionInterface* offer) {
+        RTC_DCHECK_RUN_ON(signaling_thread_);
         std::string sdp_offer;
         offer->ToString(&sdp_offer);
         RTC_LOG(LS_INFO) << sdp_offer;
         peer_connection_->SetLocalDescription(
-            SdpSetObserver([sdp_offer, offer_handler]() {
-              offer_handler(std::move(sdp_offer));
-            }),
+            SdpSetObserver(
+                [sdp_offer, offer_handler]() { offer_handler(sdp_offer); }),
             offer);
       }),
       PeerConnectionInterface::RTCOfferAnswerOptions());
@@ -254,11 +257,20 @@ void PeerScenarioClient::CreateAndSetSdp(
 void PeerScenarioClient::SetSdpOfferAndGetAnswer(
     std::string remote_offer,
     std::function<void(std::string)> answer_handler) {
+  if (!signaling_thread_->IsCurrent()) {
+    signaling_thread_->PostTask(RTC_FROM_HERE, [=] {
+      SetSdpOfferAndGetAnswer(remote_offer, answer_handler);
+    });
+    return;
+  }
+  RTC_DCHECK_RUN_ON(signaling_thread_);
   peer_connection_->SetRemoteDescription(
       CreateSessionDescription(SdpType::kOffer, remote_offer),
       SdpSetObserver([=]() {
+        RTC_DCHECK_RUN_ON(signaling_thread_);
         peer_connection_->CreateAnswer(
             SdpCreateObserver([=](SessionDescriptionInterface* answer) {
+              RTC_DCHECK_RUN_ON(signaling_thread_);
               std::string sdp_answer;
               answer->ToString(&sdp_answer);
               RTC_LOG(LS_INFO) << sdp_answer;
@@ -275,6 +287,12 @@ void PeerScenarioClient::SetSdpOfferAndGetAnswer(
 void PeerScenarioClient::SetSdpAnswer(
     std::string remote_answer,
     std::function<void(const SessionDescriptionInterface&)> done_handler) {
+  if (!signaling_thread_->IsCurrent()) {
+    signaling_thread_->PostTask(
+        RTC_FROM_HERE, [=] { SetSdpAnswer(remote_answer, done_handler); });
+    return;
+  }
+  RTC_DCHECK_RUN_ON(signaling_thread_);
   peer_connection_->SetRemoteDescription(
       CreateSessionDescription(SdpType::kAnswer, remote_answer),
       SdpSetObserver([remote_answer, done_handler] {
@@ -285,12 +303,12 @@ void PeerScenarioClient::SetSdpAnswer(
 
 void PeerScenarioClient::AddIceCandidate(
     std::unique_ptr<IceCandidateInterface> candidate) {
+  RTC_DCHECK_RUN_ON(signaling_thread_);
   if (peer_connection_->signaling_state() ==
           PeerConnectionInterface::SignalingState::kStable &&
       peer_connection_->current_remote_description()) {
     RTC_CHECK(peer_connection_->AddIceCandidate(candidate.get()));
   } else {
-    RTC_DCHECK_RUN_ON(signaling_thread_);
     pending_ice_candidates_.push_back(std::move(candidate));
   }
 }

@@ -107,7 +107,10 @@ class PeerScenarioClient {
                      Config config);
 
   PeerConnectionFactoryInterface* factory() { return pc_factory_.get(); }
-  PeerConnectionInterface* pc() { return peer_connection_.get(); }
+  PeerConnectionInterface* pc() {
+    RTC_DCHECK_RUN_ON(signaling_thread_);
+    return peer_connection_.get();
+  }
   rtc::Thread* thread() { return signaling_thread_; }
   Clock* clock() { return Clock::GetRealTimeClock(); }
 
@@ -150,7 +153,8 @@ class PeerScenarioClient {
       RTC_GUARDED_BY(signaling_thread_);
 
   rtc::scoped_refptr<PeerConnectionFactoryInterface> pc_factory_;
-  rtc::scoped_refptr<PeerConnectionInterface> peer_connection_;
+  rtc::scoped_refptr<PeerConnectionInterface> peer_connection_
+      RTC_GUARDED_BY(signaling_thread_);
 };
 
 }  // namespace test
