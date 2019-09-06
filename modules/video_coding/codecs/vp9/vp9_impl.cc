@@ -47,7 +47,7 @@ uint8_t kUpdBufIdx[4] = {0, 0, 1, 0};
 int kMaxNumTiles4kVideo = 8;
 
 // Maximum allowed PID difference for differnet per-layer frame-rate case.
-const int kMaxAllowedPidDIff = 30;
+const int kMaxAllowedPidDiff = 30;
 
 constexpr double kLowRateFactor = 1.0;
 constexpr double kHighRateFactor = 2.0;
@@ -1331,16 +1331,13 @@ vpx_svc_ref_frame_config_t VP9EncoderImpl::SetReferences(
       // not supposed to be used for temporal prediction.
       RTC_DCHECK_LT(buf_idx, kNumVp9Buffers - 1);
 
-      // Sanity check that reference picture number is smaller than current
-      // picture number.
-      RTC_DCHECK_LT(ref_buf_[buf_idx].pic_num, curr_pic_num);
-      const size_t pid_diff = curr_pic_num - ref_buf_[buf_idx].pic_num;
+      const int pid_diff = curr_pic_num - ref_buf_[buf_idx].pic_num;
       // Incorrect spatial layer may be in the buffer due to a key-frame.
       const bool same_spatial_layer =
           ref_buf_[buf_idx].spatial_layer_id == sl_idx;
       bool correct_pid = false;
       if (is_flexible_mode_) {
-        correct_pid = pid_diff < kMaxAllowedPidDIff;
+        correct_pid = pid_diff > 0 && pid_diff < kMaxAllowedPidDiff;
       } else {
         // Below code assumes single temporal referecence.
         RTC_DCHECK_EQ(gof_.num_ref_pics[gof_idx], 1);

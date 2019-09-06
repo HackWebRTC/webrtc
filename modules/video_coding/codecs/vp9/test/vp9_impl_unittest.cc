@@ -1439,4 +1439,78 @@ TEST_F(TestVp9Impl, EncodeWithDynamicRate) {
   ASSERT_TRUE(WaitForEncodedFrame(&encoded_frame, &codec_specific_info));
 }
 
+TEST_F(TestVp9Impl, ReenablingUpperLayerAfterKFWithInterlayerPredIsEnabled) {
+  const size_t num_spatial_layers = 2;
+  const int num_frames_to_encode = 10;
+  codec_settings_.VP9()->flexibleMode = true;
+  codec_settings_.VP9()->frameDroppingOn = false;
+  codec_settings_.VP9()->numberOfSpatialLayers = num_spatial_layers;
+  codec_settings_.VP9()->numberOfTemporalLayers = 1;
+  codec_settings_.VP9()->interLayerPred = InterLayerPredMode::kOn;
+  // Force low frame-rate, so all layers are present for all frames.
+  codec_settings_.maxFramerate = 5;
+
+  ConfigureSvc(num_spatial_layers);
+
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->InitEncode(&codec_settings_, kSettings));
+
+  VideoBitrateAllocation bitrate_allocation;
+  for (size_t sl_idx = 0; sl_idx < num_spatial_layers; ++sl_idx) {
+    bitrate_allocation.SetBitrate(
+        sl_idx, 0, codec_settings_.spatialLayers[sl_idx].targetBitrate * 1000);
+  }
+  encoder_->SetRates(VideoEncoder::RateControlParameters(
+      bitrate_allocation, codec_settings_.maxFramerate));
+
+  std::vector<EncodedImage> encoded_frames;
+  std::vector<CodecSpecificInfo> codec_specific;
+
+  for (int i = 0; i < num_frames_to_encode; ++i) {
+    SetWaitForEncodedFramesThreshold(num_spatial_layers);
+    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+              encoder_->Encode(*NextInputFrame(), nullptr));
+    ASSERT_TRUE(WaitForEncodedFrames(&encoded_frames, &codec_specific));
+    EXPECT_EQ(encoded_frames.size(), num_spatial_layers);
+  }
+
+  // Disable the last layer.
+  bitrate_allocation.SetBitrate(num_spatial_layers - 1, 0, 0);
+  encoder_->SetRates(VideoEncoder::RateControlParameters(
+      bitrate_allocation, codec_settings_.maxFramerate));
+
+  for (int i = 0; i < num_frames_to_encode; ++i) {
+    SetWaitForEncodedFramesThreshold(num_spatial_layers - 1);
+    EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+              encoder_->Encode(*NextInputFrame(), nullptr));
+    ASSERT_TRUE(WaitForEncodedFrames(&encoded_frames, &codec_specific));
+    EXPECT_EQ(encoded_frames.size(), num_spatial_layers - 1);
+  }
+
+  std::vector<VideoFrameType> frame_types = {VideoFrameType::kVideoFrameKey};
+
+  // Force a key-frame with the last layer still disabled.
+  SetWaitForEncodedFramesThreshold(num_spatial_layers - 1);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*NextInputFrame(), &frame_types));
+  ASSERT_TRUE(WaitForEncodedFrames(&encoded_frames, &codec_specific));
+  EXPECT_EQ(encoded_frames.size(), num_spatial_layers - 1);
+  ASSERT_EQ(encoded_frames[0]._frameType, VideoFrameType::kVideoFrameKey);
+
+  // Re-enable the last layer.
+  bitrate_allocation.SetBitrate(
+      num_spatial_layers - 1, 0,
+      codec_settings_.spatialLayers[num_spatial_layers - 1].targetBitrate *
+          1000);
+  encoder_->SetRates(VideoEncoder::RateControlParameters(
+      bitrate_allocation, codec_settings_.maxFramerate));
+
+  SetWaitForEncodedFramesThreshold(num_spatial_layers);
+  EXPECT_EQ(WEBRTC_VIDEO_CODEC_OK,
+            encoder_->Encode(*NextInputFrame(), nullptr));
+  ASSERT_TRUE(WaitForEncodedFrames(&encoded_frames, &codec_specific));
+  EXPECT_EQ(encoded_frames.size(), num_spatial_layers);
+  EXPECT_EQ(encoded_frames[0]._frameType, VideoFrameType::kVideoFrameDelta);
+}
+
 }  // namespace webrtc
