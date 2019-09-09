@@ -438,23 +438,28 @@ class VideoStreamEncoder::VideoSourceProxy {
 };
 
 VideoStreamEncoder::EncoderRateSettings::EncoderRateSettings()
-    : VideoEncoder::RateControlParameters(), encoder_target(DataRate::Zero()) {}
+    : VideoEncoder::RateControlParameters(),
+      encoder_target(DataRate::Zero()),
+      stable_encoder_target(DataRate::Zero()) {}
 
 VideoStreamEncoder::EncoderRateSettings::EncoderRateSettings(
     const VideoBitrateAllocation& bitrate,
     double framerate_fps,
     DataRate bandwidth_allocation,
-    DataRate encoder_target)
+    DataRate encoder_target,
+    DataRate stable_encoder_target)
     : VideoEncoder::RateControlParameters(bitrate,
                                           framerate_fps,
                                           bandwidth_allocation),
-      encoder_target(encoder_target) {}
+      encoder_target(encoder_target),
+      stable_encoder_target(stable_encoder_target) {}
 
 bool VideoStreamEncoder::EncoderRateSettings::operator==(
     const EncoderRateSettings& rhs) const {
   return bitrate == rhs.bitrate && framerate_fps == rhs.framerate_fps &&
          bandwidth_allocation == rhs.bandwidth_allocation &&
-         encoder_target == rhs.encoder_target;
+         encoder_target == rhs.encoder_target &&
+         stable_encoder_target == rhs.stable_encoder_target;
 }
 
 bool VideoStreamEncoder::EncoderRateSettings::operator!=(
@@ -1123,8 +1128,8 @@ VideoStreamEncoder::UpdateBitrateAllocationAndNotifyObserver(
   // might cap the bitrate to the min bitrate configured.
   if (rate_allocator_ && rate_settings.encoder_target > DataRate::Zero()) {
     new_allocation = rate_allocator_->Allocate(VideoBitrateAllocationParameters(
-        rate_settings.encoder_target.bps(),
-        static_cast<uint32_t>(rate_settings.framerate_fps + 0.5)));
+        rate_settings.encoder_target, rate_settings.stable_encoder_target,
+        rate_settings.framerate_fps));
   }
 
   if (bitrate_observer_ && new_allocation.get_sum_bps() > 0) {
@@ -1695,15 +1700,17 @@ void VideoStreamEncoder::OnDroppedFrame(DropReason reason) {
 }
 
 void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
+                                          DataRate stable_target_bitrate,
                                           DataRate link_allocation,
                                           uint8_t fraction_lost,
                                           int64_t round_trip_time_ms) {
   RTC_DCHECK_GE(link_allocation, target_bitrate);
   if (!encoder_queue_.IsCurrent()) {
-    encoder_queue_.PostTask([this, target_bitrate, link_allocation,
-                             fraction_lost, round_trip_time_ms] {
-      OnBitrateUpdated(target_bitrate, link_allocation, fraction_lost,
-                       round_trip_time_ms);
+    encoder_queue_.PostTask([this, target_bitrate, stable_target_bitrate,
+                             link_allocation, fraction_lost,
+                             round_trip_time_ms] {
+      OnBitrateUpdated(target_bitrate, stable_target_bitrate, link_allocation,
+                       fraction_lost, round_trip_time_ms);
     });
     return;
   }
@@ -1711,6 +1718,7 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
   RTC_DCHECK(sink_) << "sink_ must be set before the encoder is active.";
 
   RTC_LOG(LS_VERBOSE) << "OnBitrateUpdated, bitrate " << target_bitrate.bps()
+                      << " stable bitrate = " << stable_target_bitrate.bps()
                       << " link allocation bitrate = " << link_allocation.bps()
                       << " packet loss " << static_cast<int>(fraction_lost)
                       << " rtt " << round_trip_time_ms;
@@ -1754,9 +1762,9 @@ void VideoStreamEncoder::OnBitrateUpdated(DataRate target_bitrate,
   const bool video_is_suspended = target_bitrate == DataRate::Zero();
   const bool video_suspension_changed = video_is_suspended != EncoderPaused();
 
-  EncoderRateSettings new_rate_settings{VideoBitrateAllocation(),
-                                        static_cast<double>(framerate_fps),
-                                        link_allocation, target_bitrate};
+  EncoderRateSettings new_rate_settings{
+      VideoBitrateAllocation(), static_cast<double>(framerate_fps),
+      link_allocation, target_bitrate, stable_target_bitrate};
   SetEncoderRates(UpdateBitrateAllocationAndNotifyObserver(new_rate_settings));
 
   encoder_start_bitrate_bps_ = target_bitrate.bps() != 0

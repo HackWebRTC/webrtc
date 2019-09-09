@@ -91,6 +91,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
       const VideoEncoder::LossNotification& loss_notification) override;
 
   void OnBitrateUpdated(DataRate target_bitrate,
+                        DataRate stable_target_bitrate,
                         DataRate target_headroom,
                         uint8_t fraction_lost,
                         int64_t round_trip_time_ms) override;
@@ -123,7 +124,8 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
     EncoderRateSettings(const VideoBitrateAllocation& bitrate,
                         double framerate_fps,
                         DataRate bandwidth_allocation,
-                        DataRate encoder_target);
+                        DataRate encoder_target,
+                        DataRate stable_encoder_target);
     bool operator==(const EncoderRateSettings& rhs) const;
     bool operator!=(const EncoderRateSettings& rhs) const;
 
@@ -134,6 +136,7 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
     // |using last_encoder_rate_setings_->bitrate.get_sum_bps()|, may trick it
     // into thinking the available bitrate has decreased since the last call.
     DataRate encoder_target;
+    DataRate stable_encoder_target;
   };
 
   void ConfigureEncoderOnTaskQueue(VideoEncoderConfig config,
