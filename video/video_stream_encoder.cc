@@ -11,6 +11,7 @@
 #include "video/video_stream_encoder.h"
 
 #include <algorithm>
+#include <array>
 #include <limits>
 #include <numeric>
 #include <utility>
@@ -20,6 +21,7 @@
 #include "api/video/encoded_image.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_bitrate_allocator_factory.h"
+#include "api/video/video_codec_constants.h"
 #include "api/video_codecs/video_encoder.h"
 #include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
 #include "modules/video_coding/include/video_codec_initializer.h"
@@ -1168,6 +1170,9 @@ VideoStreamEncoder::UpdateBitrateAllocationAndNotifyObserver(
                         << adjusted_allocation.ToString();
     new_rate_settings.bitrate = adjusted_allocation;
   }
+
+  encoder_stats_observer_->OnBitrateAllocationUpdated(
+      send_codec_, new_rate_settings.bitrate);
 
   return new_rate_settings;
 }

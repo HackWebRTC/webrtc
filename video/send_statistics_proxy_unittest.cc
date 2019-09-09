@@ -18,6 +18,10 @@
 
 #include "absl/algorithm/container.h"
 #include "api/units/timestamp.h"
+#include "api/video/video_bitrate_allocation.h"
+#include "api/video/video_codec_type.h"
+#include "api/video_codecs/video_codec.h"
+#include "api/video_codecs/video_encoder_config.h"
 #include "rtc_base/fake_clock.h"
 #include "system_wrappers/include/metrics.h"
 #include "test/field_trial.h"
@@ -1204,6 +1208,167 @@ TEST_F(SendStatisticsProxyTest, QualityLimitationDurationIncreasesWithTime) {
       quality_limitation_durations_ms[QualityLimitationReason::kBandwidth]);
   EXPECT_EQ(0,
             quality_limitation_durations_ms[QualityLimitationReason::kOther]);
+}
+
+TEST_F(SendStatisticsProxyTest, QualityLimitationResolutionChangesDefaultZero) {
+  EXPECT_EQ(
+      0u, statistics_proxy_->GetStats().quality_limitation_resolution_changes);
+}
+
+TEST_F(SendStatisticsProxyTest,
+       QualityLimitationResolutionChangesNotChangesWithOnlyDefaultAllocation) {
+  VideoCodec codec;
+  VideoBitrateAllocation allocation;
+  statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
+  EXPECT_EQ(
+      0u, statistics_proxy_->GetStats().quality_limitation_resolution_changes);
+}
+
+TEST_F(SendStatisticsProxyTest,
+       QualityLimitationResolutionChangesDoesNotIncreaseOnFirstAllocation) {
+  VideoCodec codec;
+  codec.simulcastStream[0].active = true;
+  codec.simulcastStream[1].active = true;
+  codec.simulcastStream[2].active = true;
+  VideoBitrateAllocation allocation;
+  allocation.SetBitrate(0, 0, 100);
+  statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
+  EXPECT_EQ(
+      0u, statistics_proxy_->GetStats().quality_limitation_resolution_changes);
+}
+
+TEST_F(SendStatisticsProxyTest,
+       QualityLimitationResolutionChangesWhenNewLayerGetsBandwidth) {
+  VideoCodec codec;
+  codec.simulcastStream[0].active = true;
+  codec.simulcastStream[1].active = true;
+  codec.simulcastStream[2].active = true;
+  VideoBitrateAllocation allocation;
+  allocation.SetBitrate(0, 0, 100);
+  statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
+  allocation.SetBitrate(1, 0, 100);
+  statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
+  EXPECT_EQ(
+      1u, statistics_proxy_->GetStats().quality_limitation_resolution_changes);
+}
+
+TEST_F(SendStatisticsProxyTest,
+       QualityLimitationResolutionDoesNotChangeWhenLayerSame) {
+  VideoCodec codec;
+  codec.simulcastStream[0].active = true;
+  VideoBitrateAllocation allocation;
+  allocation.SetBitrate(0, 0, 100);
+  statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
+  // Layer 0 got more bandwidth, but still only one layer on
+  allocation.SetBitrate(0, 0, 200);
+  statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
+  EXPECT_EQ(
+      0u, statistics_proxy_->GetStats().quality_limitation_resolution_changes);
+}
+
+TEST_F(SendStatisticsProxyTest,
+       QualityLimitationResolutionChangesWithTogglingLayers) {
+  VideoCodec codec;
+  codec.simulcastStream[0].active = true;
+  codec.simulcastStream[1].active = true;
+  codec.simulcastStream[2].active = true;
+  VideoBitrateAllocation allocation;
+  allocation.SetBitrate(0, 0, 100);
+  statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
+  EXPECT_EQ(
+      0u, statistics_proxy_->GetStats().quality_limitation_resolution_changes);
+  allocation.SetBitrate(1, 0, 300);
+  allocation.SetBitrate(2, 0, 500);
+  statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
+  EXPECT_EQ(
+      1u, statistics_proxy_->GetStats().quality_limitation_resolution_changes);
+  // Layer 2 off
+  allocation.SetBitrate(2, 0, 0);
+  statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
+  EXPECT_EQ(
+      2u, statistics_proxy_->GetStats().quality_limitation_resolution_changes);
+  // Layer 2 back on
+  allocation.SetBitrate(2, 0, 500);
+  statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
+  EXPECT_EQ(
+      3u, statistics_proxy_->GetStats().quality_limitation_resolution_changes);
+  allocation.SetBitrate(0, 0, 0);
+  allocation.SetBitrate(1, 0, 0);
+  allocation.SetBitrate(2, 0, 0);
+  // All layers off
+  statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
+  EXPECT_EQ(
+      4u, statistics_proxy_->GetStats().quality_limitation_resolution_changes);
+}
+
+TEST_F(SendStatisticsProxyTest,
+       QualityLimitationResolutionDoesNotUpdateOnCodecSimulcastStreamChanges) {
+  VideoCodec codec;
+  // 3 layers
+  codec.simulcastStream[0].active = true;
+  codec.simulcastStream[1].active = true;
+  codec.simulcastStream[2].active = true;
+  VideoBitrateAllocation allocation;
+  allocation.SetBitrate(0, 0, 500);
+  allocation.SetBitrate(1, 0, 500);
+  allocation.SetBitrate(2, 0, 500);
+  statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
+  EXPECT_EQ(
+      0u, statistics_proxy_->GetStats().quality_limitation_resolution_changes);
+
+  // Down to one layer now, triggered by a config change
+  codec.numberOfSimulcastStreams = 1;
+  codec.simulcastStream[1].active = false;
+  codec.simulcastStream[2].active = false;
+  allocation.SetBitrate(0, 0, 100);
+  statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
+  EXPECT_EQ(
+      0u, statistics_proxy_->GetStats().quality_limitation_resolution_changes);
+
+  // Up to 3 layers again.
+  codec.numberOfSimulcastStreams = 3;
+  codec.simulcastStream[1].active = true;
+  codec.simulcastStream[2].active = true;
+  allocation.SetBitrate(0, 0, 500);
+  allocation.SetBitrate(1, 0, 500);
+  allocation.SetBitrate(2, 0, 500);
+  statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
+  EXPECT_EQ(
+      0u, statistics_proxy_->GetStats().quality_limitation_resolution_changes);
+}
+
+TEST_F(SendStatisticsProxyTest,
+       QualityLimitationResolutionDoesNotUpdateForSpatialLayerChanges) {
+  VideoCodec codec;
+  codec.simulcastStream[0].active = true;
+  codec.spatialLayers[0].active = true;
+  codec.spatialLayers[1].active = true;
+  codec.spatialLayers[2].active = true;
+  VideoBitrateAllocation allocation;
+  allocation.SetBitrate(0, 0, 500);
+  allocation.SetBitrate(1, 0, 500);
+  allocation.SetBitrate(2, 0, 500);
+  statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
+  EXPECT_EQ(
+      0u, statistics_proxy_->GetStats().quality_limitation_resolution_changes);
+
+  // Down to one layer now, triggered by a config change
+  codec.spatialLayers[1].active = false;
+  codec.spatialLayers[2].active = false;
+  allocation.SetBitrate(0, 0, 100);
+  statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
+  EXPECT_EQ(
+      0u, statistics_proxy_->GetStats().quality_limitation_resolution_changes);
+
+  // Up to 3 layers again.
+  codec.spatialLayers[1].active = true;
+  codec.spatialLayers[2].active = true;
+  allocation.SetBitrate(0, 0, 500);
+  allocation.SetBitrate(1, 0, 500);
+  allocation.SetBitrate(2, 0, 500);
+  statistics_proxy_->OnBitrateAllocationUpdated(codec, allocation);
+  EXPECT_EQ(
+      0u, statistics_proxy_->GetStats().quality_limitation_resolution_changes);
 }
 
 TEST_F(SendStatisticsProxyTest, SwitchContentTypeUpdatesHistograms) {

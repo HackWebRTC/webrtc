@@ -2343,6 +2343,8 @@ VideoSenderInfo WebRtcVideoChannel::WebRtcVideoSendStream::GetVideoSenderInfo(
 
   info.quality_limitation_reason = stats.quality_limitation_reason;
   info.quality_limitation_durations_ms = stats.quality_limitation_durations_ms;
+  info.quality_limitation_resolution_changes =
+      stats.quality_limitation_resolution_changes;
   info.encoder_implementation_name = stats.encoder_implementation_name;
   info.ssrc_groups = ssrc_groups_;
   info.framerate_input = stats.input_frame_rate;

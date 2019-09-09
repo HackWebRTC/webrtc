@@ -694,6 +694,7 @@ WEBRTC_RTCSTATS_IMPL(
     &total_encoded_bytes_target,
     &total_packet_send_delay,
     &quality_limitation_reason,
+    &quality_limitation_resolution_changes,
     &content_type,
     &encoder_implementation)
 // clang-format on
@@ -717,6 +718,8 @@ RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(std::string&& id,
       total_encoded_bytes_target("totalEncodedBytesTarget"),
       total_packet_send_delay("totalPacketSendDelay"),
       quality_limitation_reason("qualityLimitationReason"),
+      quality_limitation_resolution_changes(
+          "qualityLimitationResolutionChanges"),
       content_type("contentType"),
       encoder_implementation("encoderImplementation") {}
 
@@ -735,6 +738,8 @@ RTCOutboundRTPStreamStats::RTCOutboundRTPStreamStats(
       total_encoded_bytes_target(other.total_encoded_bytes_target),
       total_packet_send_delay(other.total_packet_send_delay),
       quality_limitation_reason(other.quality_limitation_reason),
+      quality_limitation_resolution_changes(
+          other.quality_limitation_resolution_changes),
       content_type(other.content_type),
       encoder_implementation(other.encoder_implementation) {}
 

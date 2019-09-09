@@ -481,6 +481,8 @@ class RTC_EXPORT RTCOutboundRTPStreamStats final : public RTCRTPStreamStats {
   // qualityLimitationDurations. Requires RTCStatsMember support for
   // "record<DOMString, double>", see https://crbug.com/webrtc/10685.
   RTCStatsMember<std::string> quality_limitation_reason;
+  // https://w3c.github.io/webrtc-stats/#dom-rtcoutboundrtpstreamstats-qualitylimitationresolutionchanges
+  RTCStatsMember<uint32_t> quality_limitation_resolution_changes;
   // https://henbos.github.io/webrtc-provisional-stats/#dom-rtcoutboundrtpstreamstats-contenttype
   RTCStatsMember<std::string> content_type;
   // TODO(hbos): This is only implemented for video; implement it for audio as

@@ -223,8 +223,10 @@ rtc_source_set("video_stream_encoder") {
   ]
 
   deps = [
+    ":video_bitrate_allocation",
     ":video_bitrate_allocator",
     ":video_bitrate_allocator_factory",
+    ":video_codec_constants",
     ":video_frame",
     "..:rtp_parameters",
     "../:fec_controller_api",
