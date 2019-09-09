@@ -291,38 +291,6 @@ TEST_F(RtpPacketHistoryTest, RemovesOldestPacketWhenAtMaxCapacity) {
   EXPECT_TRUE(hist_.GetPacketState(To16u(kStartSeqNum + 1)));
 }
 
-TEST_F(RtpPacketHistoryTest, RemovesLowestPrioPaddingWhenAtMaxCapacity) {
-  // Tests the absolute upper bound on number of packets in the prioritized
-  // set of potential padding packets.
-  const size_t kMaxNumPackets = RtpPacketHistory::kMaxPaddingtHistory;
-  hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, kMaxNumPackets * 2);
-  hist_.SetRtt(1);
-
-  // Add packets until the max is reached, and then yet another one.
-  for (size_t i = 0; i < kMaxNumPackets + 1; ++i) {
-    std::unique_ptr<RtpPacketToSend> packet =
-        CreateRtpPacket(To16u(kStartSeqNum + i));
-    // Don't mark packets as sent, preventing them from being removed.
-    hist_.PutRtpPacket(std::move(packet), fake_clock_.TimeInMilliseconds());
-  }
-
-  // Advance time to allow retransmission/padding.
-  fake_clock_.AdvanceTimeMilliseconds(1);
-
-  // The oldest packet will be least prioritized and has fallen out of the
-  // priority set.
-  for (size_t i = kMaxNumPackets - 1; i > 0; --i) {
-    auto packet = hist_.GetPayloadPaddingPacket();
-    ASSERT_TRUE(packet);
-    EXPECT_EQ(packet->SequenceNumber(), To16u(kStartSeqNum + i + 1));
-  }
-
-  // Wrap around to newest padding packet again.
-  auto packet = hist_.GetPayloadPaddingPacket();
-  ASSERT_TRUE(packet);
-  EXPECT_EQ(packet->SequenceNumber(), To16u(kStartSeqNum + kMaxNumPackets));
-}
-
 TEST_F(RtpPacketHistoryTest, DontRemoveUnsentPackets) {
   const size_t kMaxNumPackets = 10;
   hist_.SetStorePacketsStatus(StorageMode::kStoreAndCull, kMaxNumPackets);
