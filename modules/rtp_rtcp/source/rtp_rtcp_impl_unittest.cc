@@ -99,27 +99,22 @@ class SendTransport : public Transport {
 
 class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
  public:
-  explicit RtpRtcpModule(SimulatedClock* clock)
-      : receive_statistics_(ReceiveStatistics::Create(clock)),
-        remote_ssrc_(0),
+  RtpRtcpModule(SimulatedClock* clock, bool is_sender)
+      : is_sender_(is_sender),
+        receive_statistics_(ReceiveStatistics::Create(clock)),
         clock_(clock) {
     CreateModuleImpl();
     transport_.SimulateNetworkDelay(kOneWayNetworkDelayMs, clock);
   }
 
+  const bool is_sender_;
   RtcpPacketTypeCounter packets_sent_;
   RtcpPacketTypeCounter packets_received_;
   std::unique_ptr<ReceiveStatistics> receive_statistics_;
   SendTransport transport_;
   RtcpRttStatsTestImpl rtt_stats_;
   std::unique_ptr<ModuleRtpRtcpImpl> impl_;
-  uint32_t remote_ssrc_;
   int rtcp_report_interval_ms_ = 0;
-
-  void SetRemoteSsrc(uint32_t ssrc) {
-    remote_ssrc_ = ssrc;
-    impl_->SetRemoteSSRC(ssrc);
-  }
 
   void RtcpPacketTypesCounterUpdated(
       uint32_t ssrc,
@@ -129,7 +124,7 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
 
   RtcpPacketTypeCounter RtcpSent() {
     // RTCP counters for remote SSRC.
-    return counter_map_[remote_ssrc_];
+    return counter_map_[is_sender_ ? kReceiverSsrc : kSenderSsrc];
   }
 
   RtcpPacketTypeCounter RtcpReceived() {
@@ -158,9 +153,10 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
     config.rtcp_packet_type_counter_observer = this;
     config.rtt_stats = &rtt_stats_;
     config.rtcp_report_interval_ms = rtcp_report_interval_ms_;
-    config.local_media_ssrc = kSenderSsrc;
+    config.local_media_ssrc = is_sender_ ? kSenderSsrc : kReceiverSsrc;
 
     impl_.reset(new ModuleRtpRtcpImpl(config));
+    impl_->SetRemoteSSRC(is_sender_ ? kReceiverSsrc : kSenderSsrc);
     impl_->SetRTCPStatus(RtcpMode::kCompound);
   }
 
@@ -172,13 +168,14 @@ class RtpRtcpModule : public RtcpPacketTypeCounterObserver {
 class RtpRtcpImplTest : public ::testing::Test {
  protected:
   RtpRtcpImplTest()
-      : clock_(133590000000000), sender_(&clock_), receiver_(&clock_) {}
+      : clock_(133590000000000),
+        sender_(&clock_, /*is_sender=*/true),
+        receiver_(&clock_, /*is_sender=*/false) {}
 
   void SetUp() override {
     // Send module.
     EXPECT_EQ(0, sender_.impl_->SetSendingStatus(true));
     sender_.impl_->SetSendingMediaStatus(true);
-    sender_.SetRemoteSsrc(kReceiverSsrc);
     sender_.impl_->SetSequenceNumber(kSequenceNumber);
     sender_.impl_->SetStorePacketsStatus(true, 100);
 
@@ -196,8 +193,6 @@ class RtpRtcpImplTest : public ::testing::Test {
     // Receive module.
     EXPECT_EQ(0, receiver_.impl_->SetSendingStatus(false));
     receiver_.impl_->SetSendingMediaStatus(false);
-    receiver_.impl_->SetSSRC(kReceiverSsrc);
-    receiver_.SetRemoteSsrc(kSenderSsrc);
     // Transport settings.
     sender_.transport_.SetRtpRtcpModule(receiver_.impl_.get());
     receiver_.transport_.SetRtpRtcpModule(sender_.impl_.get());
