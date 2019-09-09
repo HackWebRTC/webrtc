@@ -240,6 +240,20 @@ TEST_P(PeerConnectionDataChannelTest,
   EXPECT_FALSE(caller->sctp_transport_factory()->last_fake_sctp_transport());
 }
 
+TEST_P(PeerConnectionDataChannelTest, InternalSctpTransportDeletedOnTeardown) {
+  auto caller = CreatePeerConnectionWithDataChannel();
+
+  ASSERT_TRUE(caller->SetLocalDescription(caller->CreateOffer()));
+  EXPECT_TRUE(caller->sctp_transport_factory()->last_fake_sctp_transport());
+
+  rtc::scoped_refptr<SctpTransportInterface> sctp_transport =
+      caller->GetInternalPeerConnection()->GetSctpTransport();
+
+  caller.reset();
+  EXPECT_EQ(static_cast<SctpTransport*>(sctp_transport.get())->internal(),
+            nullptr);
+}
+
 // Test that sctp_content_name/sctp_transport_name (used for stats) are correct
 // before and after BUNDLE is negotiated.
 TEST_P(PeerConnectionDataChannelTest, SctpContentAndTransportNameSetCorrectly) {
