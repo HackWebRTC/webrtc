@@ -110,6 +110,9 @@ class PeerConnectionE2EQualityTestFixture {
     // must be equal to |kDefaultSlidesWidth| and
     // |ScrollingParams::source_height| must be equal to |kDefaultSlidesHeight|.
     std::vector<std::string> slides_yuv_file_names;
+    // If true will set VideoTrackInterface::ContentHint::kText for current
+    // video track.
+    bool use_text_content_hint = true;
   };
 
   enum VideoGeneratorType { kDefault, kI420A, kI010 };
