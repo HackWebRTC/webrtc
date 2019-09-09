@@ -233,6 +233,7 @@ VP9EncoderImpl::VP9EncoderImpl(const cricket::VideoCodec& codec)
                                    .LibvpxVp9TrustedRateController()),
       dynamic_rate_settings_(
           RateControlSettings::ParseFromFieldTrials().Vp9DynamicRateSettings()),
+      layer_buffering_(false),
       full_superframe_drop_(true),
       first_frame_in_picture_(true),
       ss_info_needed_(false),
@@ -703,27 +704,31 @@ int VP9EncoderImpl::InitAndSetControlSettings(const VideoCodec* inst) {
     }
 
     memset(&svc_drop_frame_, 0, sizeof(svc_drop_frame_));
-    dropping_only_base_layer_ = inter_layer_pred_ == InterLayerPredMode::kOn &&
-                                codec_.mode == VideoCodecMode::kScreensharing &&
-                                num_spatial_layers_ > 1;
-    if (dropping_only_base_layer_) {
-      // Screenshare dropping mode: only the base spatial layer
-      // can be dropped and it doesn't affect other spatial layers.
-      // This mode is preferable because base layer has low bitrate targets
-      // and more likely to drop frames. It shouldn't reduce framerate on other
-      // layers.
-      svc_drop_frame_.framedrop_mode = LAYER_DROP;
+    const bool reverse_constrained_drop_mode =
+        inter_layer_pred_ == InterLayerPredMode::kOn &&
+        codec_.mode == VideoCodecMode::kScreensharing &&
+        num_spatial_layers_ > 1;
+    if (reverse_constrained_drop_mode) {
+      // Screenshare dropping mode: drop a layer only together with all lower
+      // layers. This ensures that drops on lower layers won't reduce frame-rate
+      // for higher layers and reference structure is RTP-compatible.
+      svc_drop_frame_.framedrop_mode = CONSTRAINED_FROM_ABOVE_DROP;
       svc_drop_frame_.max_consec_drop = 5;
-      svc_drop_frame_.framedrop_thresh[0] = config_->rc_dropframe_thresh;
-      for (size_t i = 1; i < num_spatial_layers_; ++i) {
-        svc_drop_frame_.framedrop_thresh[i] = 0;
+      for (size_t i = 0; i < num_spatial_layers_; ++i) {
+        svc_drop_frame_.framedrop_thresh[i] = config_->rc_dropframe_thresh;
       }
+      // No buffering is needed because the highest layer is always present in
+      // all frames in CONSTRAINED_FROM_ABOVE drop mode.
+      layer_buffering_ = false;
     } else {
       // Configure encoder to drop entire superframe whenever it needs to drop
       // a layer. This mode is preferred over per-layer dropping which causes
       // quality flickering and is not compatible with RTP non-flexible mode.
       svc_drop_frame_.framedrop_mode =
           full_superframe_drop_ ? FULL_SUPERFRAME_DROP : CONSTRAINED_LAYER_DROP;
+      // Buffering is needed only for constrained layer drop, as it's not clear
+      // which frame is the last.
+      layer_buffering_ = !full_superframe_drop_;
       svc_drop_frame_.max_consec_drop = std::numeric_limits<int>::max();
       for (size_t i = 0; i < num_spatial_layers_; ++i) {
         svc_drop_frame_.framedrop_thresh[i] = config_->rc_dropframe_thresh;
@@ -1017,7 +1022,7 @@ int VP9EncoderImpl::Encode(const VideoFrame& input_image,
   }
   timestamp_ += duration;
 
-  if (!full_superframe_drop_) {
+  if (layer_buffering_) {
     const bool end_of_picture = true;
     DeliverBufferedFrame(end_of_picture);
   }
@@ -1399,7 +1404,7 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   vpx_svc_layer_id_t layer_id = {0};
   vpx_codec_control(encoder_, VP9E_GET_SVC_LAYER_ID, &layer_id);
 
-  if (!full_superframe_drop_) {
+  if (layer_buffering_) {
     // Deliver buffered low spatial layer frame.
     const bool end_of_picture = false;
     DeliverBufferedFrame(end_of_picture);
@@ -1441,7 +1446,7 @@ int VP9EncoderImpl::GetEncodedLayerFrame(const vpx_codec_cx_pkt* pkt) {
   vpx_codec_control(encoder_, VP8E_GET_LAST_QUANTIZER, &qp);
   encoded_image_.qp_ = qp;
 
-  if (full_superframe_drop_) {
+  if (!layer_buffering_) {
     const bool end_of_picture = encoded_image_.SpatialIndex().value_or(0) + 1 ==
                                 num_active_spatial_layers_;
     DeliverBufferedFrame(end_of_picture);
@@ -1455,10 +1460,8 @@ void VP9EncoderImpl::DeliverBufferedFrame(bool end_of_picture) {
     if (num_spatial_layers_ > 1) {
       // Restore frame dropping settings, as dropping may be temporary forbidden
       // due to dynamically enabled layers.
-      svc_drop_frame_.framedrop_thresh[0] = config_->rc_dropframe_thresh;
-      for (size_t i = 1; i < num_spatial_layers_; ++i) {
-        svc_drop_frame_.framedrop_thresh[i] =
-            dropping_only_base_layer_ ? 0 : config_->rc_dropframe_thresh;
+      for (size_t i = 0; i < num_spatial_layers_; ++i) {
+        svc_drop_frame_.framedrop_thresh[i] = config_->rc_dropframe_thresh;
       }
     }
 

@@ -125,8 +125,8 @@ class VP9EncoderImpl : public VP9Encoder {
   bool external_ref_control_;
   const bool trusted_rate_controller_;
   const bool dynamic_rate_settings_;
+  bool layer_buffering_;
   const bool full_superframe_drop_;
-  bool dropping_only_base_layer_;
   vpx_svc_frame_drop_t svc_drop_frame_;
   bool first_frame_in_picture_;
   VideoBitrateAllocation current_bitrate_allocation_;
