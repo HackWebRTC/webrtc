@@ -22,7 +22,7 @@
 #include "modules/rtp_rtcp/include/flexfec_receiver.h"
 #include "modules/rtp_rtcp/source/source_tracker.h"
 #include "modules/video_coding/frame_buffer2.h"
-#include "modules/video_coding/video_coding_impl.h"
+#include "modules/video_coding/video_receiver2.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 #include "rtc_base/task_queue.h"
 #include "system_wrappers/include/clock.h"
@@ -173,7 +173,7 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   const std::unique_ptr<ReceiveStatistics> rtp_receive_statistics_;
 
   std::unique_ptr<VCMTiming> timing_;  // Jitter buffer experiment.
-  vcm::VideoReceiver video_receiver_;
+  VideoReceiver2 video_receiver_;
   std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> incoming_video_stream_;
   RtpVideoStreamReceiver rtp_video_stream_receiver_;
   std::unique_ptr<VideoStreamDecoder> video_stream_decoder_;

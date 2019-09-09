@@ -140,6 +140,8 @@ rtc_static_library("video_coding") {
     "video_coding_impl.cc",
     "video_coding_impl.h",
     "video_receiver.cc",
+    "video_receiver2.cc",
+    "video_receiver2.h",
   ]
 
   deps += [
