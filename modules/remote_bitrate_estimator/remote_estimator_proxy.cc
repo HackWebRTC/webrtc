@@ -57,10 +57,55 @@ void RemoteEstimatorProxy::IncomingPacket(int64_t arrival_time_ms,
            "is missing the transport sequence number extension!";
     return;
   }
+  if (arrival_time_ms < 0 || arrival_time_ms > kMaxTimeMs) {
+    RTC_LOG(LS_WARNING) << "Arrival time out of bounds: " << arrival_time_ms;
+    return;
+  }
   rtc::CritScope cs(&lock_);
   media_ssrc_ = header.ssrc;
-  OnPacketArrival(header.extension.transportSequenceNumber, arrival_time_ms,
-                  header.extension.feedback_request);
+
+  int64_t seq = unwrapper_.Unwrap(header.extension.transportSequenceNumber);
+
+  if (send_periodic_feedback_) {
+    if (periodic_window_start_seq_ &&
+        packet_arrival_times_.lower_bound(*periodic_window_start_seq_) ==
+            packet_arrival_times_.end()) {
+      // Start new feedback packet, cull old packets.
+      for (auto it = packet_arrival_times_.begin();
+           it != packet_arrival_times_.end() && it->first < seq &&
+           arrival_time_ms - it->second >= send_config_.back_window->ms();) {
+        it = packet_arrival_times_.erase(it);
+      }
+    }
+    if (!periodic_window_start_seq_ || seq < *periodic_window_start_seq_) {
+      periodic_window_start_seq_ = seq;
+    }
+  }
+
+  // We are only interested in the first time a packet is received.
+  if (packet_arrival_times_.find(seq) != packet_arrival_times_.end())
+    return;
+
+  packet_arrival_times_[seq] = arrival_time_ms;
+
+  // Limit the range of sequence numbers to send feedback for.
+  auto first_arrival_time_to_keep = packet_arrival_times_.lower_bound(
+      packet_arrival_times_.rbegin()->first - kMaxNumberOfPackets);
+  if (first_arrival_time_to_keep != packet_arrival_times_.begin()) {
+    packet_arrival_times_.erase(packet_arrival_times_.begin(),
+                                first_arrival_time_to_keep);
+    if (send_periodic_feedback_) {
+      // |packet_arrival_times_| cannot be empty since we just added one element
+      // and the last element is not deleted.
+      RTC_DCHECK(!packet_arrival_times_.empty());
+      periodic_window_start_seq_ = packet_arrival_times_.begin()->first;
+    }
+  }
+
+  if (header.extension.feedback_request) {
+    // Send feedback packet immediately.
+    SendFeedbackOnRequest(seq, header.extension.feedback_request.value());
+  }
 }
 
 bool RemoteEstimatorProxy::LatestEstimate(std::vector<unsigned int>* ssrcs,
@@ -115,59 +160,6 @@ void RemoteEstimatorProxy::SetSendPeriodicFeedback(
     bool send_periodic_feedback) {
   rtc::CritScope cs(&lock_);
   send_periodic_feedback_ = send_periodic_feedback;
-}
-
-void RemoteEstimatorProxy::OnPacketArrival(
-    uint16_t sequence_number,
-    int64_t arrival_time,
-    absl::optional<FeedbackRequest> feedback_request) {
-  if (arrival_time < 0 || arrival_time > kMaxTimeMs) {
-    RTC_LOG(LS_WARNING) << "Arrival time out of bounds: " << arrival_time;
-    return;
-  }
-
-  int64_t seq = unwrapper_.Unwrap(sequence_number);
-
-  if (send_periodic_feedback_) {
-    if (periodic_window_start_seq_ &&
-        packet_arrival_times_.lower_bound(*periodic_window_start_seq_) ==
-            packet_arrival_times_.end()) {
-      // Start new feedback packet, cull old packets.
-      for (auto it = packet_arrival_times_.begin();
-           it != packet_arrival_times_.end() && it->first < seq &&
-           arrival_time - it->second >= send_config_.back_window->ms();) {
-        it = packet_arrival_times_.erase(it);
-      }
-    }
-    if (!periodic_window_start_seq_ || seq < *periodic_window_start_seq_) {
-      periodic_window_start_seq_ = seq;
-    }
-  }
-
-  // We are only interested in the first time a packet is received.
-  if (packet_arrival_times_.find(seq) != packet_arrival_times_.end())
-    return;
-
-  packet_arrival_times_[seq] = arrival_time;
-
-  // Limit the range of sequence numbers to send feedback for.
-  auto first_arrival_time_to_keep = packet_arrival_times_.lower_bound(
-      packet_arrival_times_.rbegin()->first - kMaxNumberOfPackets);
-  if (first_arrival_time_to_keep != packet_arrival_times_.begin()) {
-    packet_arrival_times_.erase(packet_arrival_times_.begin(),
-                                first_arrival_time_to_keep);
-    if (send_periodic_feedback_) {
-      // |packet_arrival_times_| cannot be empty since we just added one element
-      // and the last element is not deleted.
-      RTC_DCHECK(!packet_arrival_times_.empty());
-      periodic_window_start_seq_ = packet_arrival_times_.begin()->first;
-    }
-  }
-
-  if (feedback_request) {
-    // Send feedback packet immediately.
-    SendFeedbackOnRequest(seq, *feedback_request);
-  }
 }
 
 void RemoteEstimatorProxy::SendPeriodicFeedbacks() {

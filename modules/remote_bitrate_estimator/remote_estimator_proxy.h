@@ -69,10 +69,7 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
   };
 
   static const int kMaxNumberOfPackets;
-  void OnPacketArrival(uint16_t sequence_number,
-                       int64_t arrival_time,
-                       absl::optional<FeedbackRequest> feedback_request)
-      RTC_EXCLUSIVE_LOCKS_REQUIRED(&lock_);
+
   void SendPeriodicFeedbacks() RTC_EXCLUSIVE_LOCKS_REQUIRED(&lock_);
   void SendFeedbackOnRequest(int64_t sequence_number,
                              const FeedbackRequest& feedback_request)
