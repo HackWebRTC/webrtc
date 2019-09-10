@@ -75,6 +75,7 @@ rtc_static_library("rtc_media_base") {
     "../api:array_view",
     "../api:audio_options_api",
     "../api:libjingle_peerconnection_api",
+    "../api:rtc_error",
     "../api:rtp_parameters",
     "../api:scoped_refptr",
     "../api/audio_codecs:audio_codecs_api",

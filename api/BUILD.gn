@@ -142,8 +142,6 @@ rtc_static_library("libjingle_peerconnection_api") {
     "peer_connection_proxy.h",
     "proxy.cc",
     "proxy.h",
-    "rtc_error.cc",
-    "rtc_error.h",
     "rtp_receiver_interface.cc",
     "rtp_receiver_interface.h",
     "rtp_sender_interface.cc",
@@ -167,6 +165,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     ":libjingle_logging_api",
     ":network_state_predictor_api",
     ":packet_socket_factory",
+    ":rtc_error",
     ":rtc_stats_api",
     ":rtp_packet_info",
     ":rtp_parameters",
@@ -206,8 +205,17 @@ rtc_static_library("libjingle_peerconnection_api") {
 
 rtc_source_set("rtc_error") {
   visibility = [ "*" ]
-  # Placeholder target for the migration of rtc_error.{h,cc} out of
-  # libjingle_peerconnection_api.
+  sources = [
+    "rtc_error.cc",
+    "rtc_error.h",
+  ]
+  deps = [
+    "../rtc_base:checks",
+    "../rtc_base:logging",
+    "../rtc_base:macromagic",
+    "../rtc_base/system:rtc_export",
+    "//third_party/abseil-cpp/absl/strings",
+  ]
 }
 
 rtc_source_set("packet_socket_factory") {
@@ -908,6 +916,7 @@ if (rtc_include_tests) {
       ":function_view",
       ":libjingle_peerconnection_api",
       ":loopback_media_transport",
+      ":rtc_error",
       ":rtc_event_log_output_file",
       ":rtp_packet_info",
       ":rtp_parameters",
