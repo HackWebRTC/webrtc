@@ -461,7 +461,6 @@ void VideoCodecTestFixtureImpl::AnalyzeAllFrames(
     const std::vector<RateControlThresholds>* rc_thresholds,
     const std::vector<QualityThresholds>* quality_thresholds,
     const BitstreamThresholds* bs_thresholds) {
-  rtc::StringBuilder log_output;
 
   for (size_t rate_profile_idx = 0; rate_profile_idx < rate_profiles.size();
        ++rate_profile_idx) {
@@ -474,14 +473,14 @@ void VideoCodecTestFixtureImpl::AnalyzeAllFrames(
 
     VideoStatistics send_stat = stats_.SliceAndCalcAggregatedVideoStatistic(
         first_frame_num, last_frame_num);
-    log_output << "==> Send stats\n";
-    log_output << send_stat.ToString("send_") << "\n\n";
+    RTC_LOG(LS_INFO) << "==> Send stats";
+    RTC_LOG(LS_INFO) << send_stat.ToString("send_") << "\n";
 
     std::vector<VideoStatistics> layer_stats =
         stats_.SliceAndCalcLayerVideoStatistic(first_frame_num, last_frame_num);
-    log_output << "==> Receive stats\n";
+    RTC_LOG(LS_INFO) << "==> Receive stats";
     for (const auto& layer_stat : layer_stats) {
-      log_output << layer_stat.ToString("recv_") << "\n\n";
+      RTC_LOG(LS_INFO) << layer_stat.ToString("recv_") << "\n";
 
       // For perf dashboard.
       char modifier_buf[256];
@@ -533,15 +532,14 @@ void VideoCodecTestFixtureImpl::AnalyzeAllFrames(
   }
 
   if (config_.print_frame_level_stats) {
-    log_output << "==> Frame stats\n";
+    RTC_LOG(LS_INFO) << "==> Frame stats";
     std::vector<VideoCodecTestStats::FrameStatistics> frame_stats =
         stats_.GetFrameStatistics();
     for (const auto& frame_stat : frame_stats) {
-      log_output << frame_stat.ToString() << "\n";
+      RTC_LOG(LS_INFO) << frame_stat.ToString();
     }
   }
 
-  RTC_LOG(LS_INFO) << log_output.str();
   cpu_process_time_->Print();
 }
 
@@ -721,22 +719,18 @@ void VideoCodecTestFixtureImpl::ReleaseAndCloseObjects(
 
 void VideoCodecTestFixtureImpl::PrintSettings(
     TaskQueueForTest* task_queue) const {
-  rtc::StringBuilder log_output;
+  RTC_LOG(LS_INFO) << "==> Config";
+  RTC_LOG(LS_INFO) << config_.ToString();
 
-  log_output << "==> Config\n";
-  log_output << config_.ToString() << "\n";
-
-  log_output << "==> Codec names\n";
+  RTC_LOG(LS_INFO) << "==> Codec names";
   std::string encoder_name;
   std::string decoder_name;
   task_queue->SendTask([this, &encoder_name, &decoder_name] {
     encoder_name = encoder_->GetEncoderInfo().implementation_name;
     decoder_name = decoders_.at(0)->ImplementationName();
   });
-  log_output << "enc_impl_name: " << encoder_name << "\n";
-  log_output << "dec_impl_name: " << decoder_name << "\n";
-
-  RTC_LOG(LS_INFO) << log_output.str();
+  RTC_LOG(LS_INFO) << "enc_impl_name: " << encoder_name;
+  RTC_LOG(LS_INFO) << "dec_impl_name: " << decoder_name;
 }
 
 }  // namespace test
