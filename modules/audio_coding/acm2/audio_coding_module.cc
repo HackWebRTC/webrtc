@@ -381,7 +381,7 @@ int AudioCodingModuleImpl::Add10MsDataInternal(const AudioFrame& audio_frame,
     return -1;
   }
 
-  if (audio_frame.sample_rate_hz_ > 48000) {
+  if (audio_frame.sample_rate_hz_ > 192000) {
     assert(false);
     RTC_LOG(LS_ERROR) << "Cannot Add 10 ms audio, input frequency not valid";
     return -1;
