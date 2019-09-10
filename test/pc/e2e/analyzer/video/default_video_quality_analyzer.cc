@@ -63,8 +63,10 @@ double RateCounter::GetEventsPerSecond() const {
          (event_last_time_ - event_first_time_).us() * kMicrosPerSecond;
 }
 
-DefaultVideoQualityAnalyzer::DefaultVideoQualityAnalyzer()
-    : clock_(Clock::GetRealTimeClock()) {}
+DefaultVideoQualityAnalyzer::DefaultVideoQualityAnalyzer(
+    bool heavy_metrics_computation_enabled)
+    : heavy_metrics_computation_enabled_(heavy_metrics_computation_enabled),
+      clock_(Clock::GetRealTimeClock()) {}
 DefaultVideoQualityAnalyzer::~DefaultVideoQualityAnalyzer() {
   Stop();
 }
@@ -497,7 +499,8 @@ void DefaultVideoQualityAnalyzer::ProcessComparison(
   // Perform expensive psnr and ssim calculations while not holding lock.
   double psnr = -1.0;
   double ssim = -1.0;
-  if (comparison.captured && !comparison.dropped) {
+  if (heavy_metrics_computation_enabled_ && comparison.captured &&
+      !comparison.dropped) {
     psnr = I420PSNR(&*comparison.captured, &*comparison.rendered);
     ssim = I420SSIM(&*comparison.captured, &*comparison.rendered);
   }

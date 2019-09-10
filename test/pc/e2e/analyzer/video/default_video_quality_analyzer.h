@@ -122,7 +122,8 @@ struct VideoBweStats {
 
 class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
  public:
-  DefaultVideoQualityAnalyzer();
+  explicit DefaultVideoQualityAnalyzer(
+      bool heavy_metrics_computation_enabled = true);
   ~DefaultVideoQualityAnalyzer() override;
 
   void Start(std::string test_case_name, int max_threads_count) override;
@@ -248,6 +249,7 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   std::string GetTestCaseName(const std::string& stream_label) const;
   Timestamp Now();
 
+  const bool heavy_metrics_computation_enabled_;
   webrtc::Clock* const clock_;
   std::atomic<uint16_t> next_frame_id_{0};
 
