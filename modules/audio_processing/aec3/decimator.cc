@@ -69,14 +69,32 @@ Decimator::Decimator(size_t down_sampling_factor)
              down_sampling_factor_ == 8);
 }
 
-void Decimator::Decimate(rtc::ArrayView<const float> in,
+void Decimator::Decimate(const std::vector<std::vector<float>>& in,
+                         bool downmix,
                          rtc::ArrayView<float> out) {
-  RTC_DCHECK_EQ(kBlockSize, in.size());
+  RTC_DCHECK_EQ(kBlockSize, in[0].size());
   RTC_DCHECK_EQ(kBlockSize / down_sampling_factor_, out.size());
+  std::array<float, kBlockSize> in_downmixed;
   std::array<float, kBlockSize> x;
 
+  // Mix channels before decimation.
+  std::copy(in[0].begin(), in[0].end(), in_downmixed.begin());
+  if (downmix && in.size() > 1) {
+    for (size_t channel = 1; channel < in.size(); channel++) {
+      const auto& data = in[channel];
+      for (size_t i = 0; i < kBlockSize; i++) {
+        in_downmixed[i] += data[i];
+      }
+    }
+
+    const float one_by_num_channels = 1.f / in.size();
+    for (size_t i = 0; i < kBlockSize; i++) {
+      in_downmixed[i] *= one_by_num_channels;
+    }
+  }
+
   // Limit the frequency content of the signal to avoid aliasing.
-  anti_aliasing_filter_.Process(in, x);
+  anti_aliasing_filter_.Process(in_downmixed, x);
 
   // Reduce the impact of near-end noise.
   noise_reduction_filter_.Process(x);

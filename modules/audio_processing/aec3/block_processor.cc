@@ -165,7 +165,7 @@ void BlockProcessorImpl::ProcessCapture(
     // alignment.
     estimated_delay_ = delay_controller_->GetDelay(
         render_buffer_->GetDownsampledRenderBuffer(), render_buffer_->Delay(),
-        (*capture_block)[0][0]);
+        (*capture_block)[0]);
 
     if (estimated_delay_) {
       bool delay_change =

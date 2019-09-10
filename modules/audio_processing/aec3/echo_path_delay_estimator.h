@@ -42,7 +42,7 @@ class EchoPathDelayEstimator {
   // Produce a delay estimate if such is avaliable.
   absl::optional<DelayEstimate> EstimateDelay(
       const DownsampledRenderBuffer& render_buffer,
-      rtc::ArrayView<const float> capture);
+      const std::vector<std::vector<float>>& capture);
 
   // Log delay estimator properties.
   void LogDelayEstimationProperties(int sample_rate_hz, size_t shift) const {
@@ -65,6 +65,7 @@ class EchoPathDelayEstimator {
   absl::optional<DelayEstimate> old_aggregated_lag_;
   size_t consistent_estimate_counter_ = 0;
   ClockdriftDetector clockdrift_detector_;
+  bool downmix_;
 
   // Internal reset method with more granularity.
   void Reset(bool reset_lag_aggregator, bool reset_delay_confidence);

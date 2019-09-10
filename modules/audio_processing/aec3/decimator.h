@@ -12,6 +12,7 @@
 #define MODULES_AUDIO_PROCESSING_AEC3_DECIMATOR_H_
 
 #include <array>
+#include <vector>
 
 #include "api/array_view.h"
 #include "modules/audio_processing/aec3/aec3_common.h"
@@ -26,7 +27,9 @@ class Decimator {
   explicit Decimator(size_t down_sampling_factor);
 
   // Downsamples the signal.
-  void Decimate(rtc::ArrayView<const float> in, rtc::ArrayView<float> out);
+  void Decimate(const std::vector<std::vector<float>>& in,
+                bool downmix,
+                rtc::ArrayView<float> out);
 
  private:
   const size_t down_sampling_factor_;

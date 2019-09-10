@@ -42,7 +42,8 @@ EchoPathDelayEstimator::EchoPathDelayEstimator(
           config.delay.delay_candidate_detection_threshold),
       matched_filter_lag_aggregator_(data_dumper_,
                                      matched_filter_.GetMaxFilterLag(),
-                                     config.delay.delay_selection_thresholds) {
+                                     config.delay.delay_selection_thresholds),
+      downmix_(config.delay.downmix_before_delay_estimation) {
   RTC_DCHECK(data_dumper);
   RTC_DCHECK(down_sampling_factor_ > 0);
 }
@@ -55,15 +56,13 @@ void EchoPathDelayEstimator::Reset(bool reset_delay_confidence) {
 
 absl::optional<DelayEstimate> EchoPathDelayEstimator::EstimateDelay(
     const DownsampledRenderBuffer& render_buffer,
-    rtc::ArrayView<const float> capture) {
-  RTC_DCHECK_EQ(kBlockSize, capture.size());
+    const std::vector<std::vector<float>>& capture) {
+  RTC_DCHECK_EQ(kBlockSize, capture[0].size());
 
   std::array<float, kBlockSize> downsampled_capture_data;
   rtc::ArrayView<float> downsampled_capture(downsampled_capture_data.data(),
                                             sub_block_size_);
-  data_dumper_->DumpWav("aec3_capture_decimator_input", capture.size(),
-                        capture.data(), 16000, 1);
-  capture_decimator_.Decimate(capture, downsampled_capture);
+  capture_decimator_.Decimate(capture, downmix_, downsampled_capture);
   data_dumper_->DumpWav("aec3_capture_decimator_output",
                         downsampled_capture.size(), downsampled_capture.data(),
                         16000 / down_sampling_factor_, 1);

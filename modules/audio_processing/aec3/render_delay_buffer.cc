@@ -377,9 +377,8 @@ void RenderDelayBufferImpl::InsertBlock(
     std::copy(block[k].begin(), block[k].end(), b.buffer[b.write][k].begin());
   }
 
-  data_dumper_->DumpWav("aec3_render_decimator_input", block[0][0].size(),
-                        block[0][0].data(), 16000, 1);
-  render_decimator_.Decimate(block[0][0], ds);
+  render_decimator_.Decimate(block[0],
+                             config_.delay.downmix_before_delay_estimation, ds);
   data_dumper_->DumpWav("aec3_render_decimator_output", ds.size(), ds.data(),
                         16000 / down_sampling_factor_, 1);
   std::copy(ds.rbegin(), ds.rend(), lr.buffer.begin() + lr.write);
