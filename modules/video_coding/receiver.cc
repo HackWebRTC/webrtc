@@ -46,20 +46,11 @@ VCMReceiver::VCMReceiver(VCMTiming* timing,
       timing_(timing),
       render_wait_event_(std::move(receiver_event)),
       max_video_delay_ms_(kMaxVideoDelayMs) {
-  Reset();
+  jitter_buffer_.Start();
 }
 
 VCMReceiver::~VCMReceiver() {
   render_wait_event_->Set();
-}
-
-void VCMReceiver::Reset() {
-  rtc::CritScope cs(&crit_sect_);
-  if (!jitter_buffer_.Running()) {
-    jitter_buffer_.Start();
-  } else {
-    jitter_buffer_.Flush();
-  }
 }
 
 int32_t VCMReceiver::InsertPacket(const VCMPacket& packet) {
@@ -82,11 +73,6 @@ int32_t VCMReceiver::InsertPacket(const VCMPacket& packet) {
     timing_->IncomingTimestamp(packet.timestamp, clock_->TimeInMilliseconds());
   }
   return VCM_OK;
-}
-
-void VCMReceiver::TriggerDecoderShutdown() {
-  jitter_buffer_.Stop();
-  render_wait_event_->Set();
 }
 
 VCMEncodedFrame* VCMReceiver::FrameForDecoding(uint16_t max_wait_time_ms,

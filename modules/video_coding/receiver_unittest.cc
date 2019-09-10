@@ -37,7 +37,7 @@ class TestVCMReceiver : public ::testing::Test {
         new StreamGenerator(0, clock_->TimeInMilliseconds()));
   }
 
-  virtual void SetUp() { receiver_.Reset(); }
+  virtual void SetUp() {}
 
   int32_t InsertPacket(int index) {
     VCMPacket packet;
@@ -378,7 +378,7 @@ class VCMReceiverTimingTest : public ::testing::Test {
             std::unique_ptr<EventWrapper>(
                 new FrameInjectEvent(&clock_, true))) {}
 
-  virtual void SetUp() { receiver_.Reset(); }
+  virtual void SetUp() {}
 
   SimulatedClockWithFrames clock_;
   StreamGenerator stream_generator_;
