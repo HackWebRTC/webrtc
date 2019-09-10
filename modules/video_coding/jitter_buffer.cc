@@ -15,7 +15,6 @@
 #include <limits>
 #include <utility>
 
-#include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/video_coding/frame_buffer.h"
 #include "modules/video_coding/include/video_coding.h"
 #include "modules/video_coding/inter_frame_delay.h"
@@ -25,7 +24,6 @@
 #include "modules/video_coding/packet.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/system/fallthrough.h"
 #include "system_wrappers/include/clock.h"
 
 namespace webrtc {

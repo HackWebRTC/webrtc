@@ -15,7 +15,6 @@
 
 #include "api/video/encoded_image.h"
 #include "api/video/video_timing.h"
-#include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/packet.h"
 #include "rtc_base/checks.h"
