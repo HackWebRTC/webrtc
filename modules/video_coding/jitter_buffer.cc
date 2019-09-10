@@ -27,7 +27,6 @@
 #include "rtc_base/logging.h"
 #include "rtc_base/system/fallthrough.h"
 #include "system_wrappers/include/clock.h"
-#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 // Use this rtt if no value has been reported.

@@ -25,7 +25,6 @@
 #include "api/video_codecs/video_encoder.h"
 #include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
 #include "modules/video_coding/include/video_codec_initializer.h"
-#include "modules/video_coding/include/video_coding.h"
 #include "modules/video_coding/utility/default_video_bitrate_allocator.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
@@ -66,6 +65,8 @@ const float kFramedropThreshold = 0.3;
 const int64_t kFrameRateAvergingWindowSizeMs = (1000 / 30) * 90;
 
 const size_t kDefaultPayloadSize = 1440;
+
+const int64_t kParameterUpdateIntervalMs = 1000;
 
 uint32_t abs_diff(uint32_t a, uint32_t b) {
   return (a < b) ? b - a : a - b;
@@ -1258,7 +1259,7 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
     last_parameters_update_ms_.emplace(now_ms);
   } else if (!last_parameters_update_ms_ ||
              now_ms - *last_parameters_update_ms_ >=
-                 vcm::VCMProcessTimer::kDefaultProcessIntervalMs) {
+                 kParameterUpdateIntervalMs) {
     if (last_encoder_rate_settings_) {
       // Clone rate settings before update, so that SetEncoderRates() will
       // actually detect the change between the input and

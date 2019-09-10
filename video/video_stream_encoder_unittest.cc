@@ -63,6 +63,7 @@ const uint32_t kLowTargetBitrateBps = kTargetBitrateBps / 10;
 const int kMaxInitialFramedrop = 4;
 const int kDefaultFramerate = 30;
 const int64_t kFrameIntervalMs = rtc::kNumMillisecsPerSec / kDefaultFramerate;
+const int64_t kProcessIntervalMs = 1000;
 
 uint8_t optimal_sps[] = {0,    0,    0,    1,    H264::NaluType::kSps,
                          0x00, 0x00, 0x03, 0x03, 0xF4,
@@ -3126,8 +3127,6 @@ TEST_F(VideoStreamEncoderTest, CallsBitrateObserver) {
   fake_clock_.AdvanceTime(TimeDelta::ms(1) / kDefaultFps);
 
   // Called after a process interval.
-  const int64_t kProcessIntervalMs =
-      vcm::VCMProcessTimer::kDefaultProcessIntervalMs;
   EXPECT_CALL(bitrate_observer, OnBitrateAllocationUpdated(expected_bitrate))
       .Times(1);
   const int64_t start_time_ms = rtc::TimeMillis();
@@ -4259,8 +4258,7 @@ TEST_F(VideoStreamEncoderTest, PeriodicallyUpdatesChannelParameters) {
   EXPECT_EQ(kLowFps, fake_encoder_.GetConfiguredInputFramerate());
 
   // Insert 30fps frames for just a little more than the forced update period.
-  const int kVcmTimerIntervalFrames =
-      (vcm::VCMProcessTimer::kDefaultProcessIntervalMs * kHighFps) / 1000;
+  const int kVcmTimerIntervalFrames = (kProcessIntervalMs * kHighFps) / 1000;
   const int kFrameIntervalMs = 1000 / kHighFps;
   max_framerate_ = kHighFps;
   for (int i = 0; i < kVcmTimerIntervalFrames + 2; ++i) {
@@ -4305,9 +4303,8 @@ TEST_F(VideoStreamEncoderTest, DoesNotUpdateBitrateAllocationWhenSuspended) {
                                           DataRate::bps(0), 0, 1);
 
   // Skip ahead until a new periodic parameter update should have occured.
-  timestamp_ms += vcm::VCMProcessTimer::kDefaultProcessIntervalMs;
-  fake_clock_.AdvanceTime(
-      TimeDelta::ms(vcm::VCMProcessTimer::kDefaultProcessIntervalMs));
+  timestamp_ms += kProcessIntervalMs;
+  fake_clock_.AdvanceTime(TimeDelta::ms(kProcessIntervalMs));
 
   // Bitrate observer should not be called.
   EXPECT_CALL(bitrate_observer, OnBitrateAllocationUpdated(_)).Times(0);

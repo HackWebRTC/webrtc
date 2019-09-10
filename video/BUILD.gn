@@ -223,6 +223,7 @@ rtc_source_set("video_stream_encoder_impl") {
     "../rtc_base/synchronization:sequence_checker",
     "../rtc_base/system:fallthrough",
     "../rtc_base/task_utils:repeating_task",
+    "../system_wrappers",
     "../system_wrappers:field_trial",
     "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/memory",
