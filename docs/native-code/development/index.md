@@ -9,7 +9,7 @@ pages for build instructions and example applications specific to these mobile p
 
 First, be sure to install the [prerequisite software][webrtc-prerequisite-sw].
 
-[webrtc-prerequitite-sw]: https://webrtc.googlesource.com/src/+/refs/heads/master/docs/native-code/development/prerequisite-sw/index.md
+[webrtc-prerequisite-sw]: https://webrtc.googlesource.com/src/+/refs/heads/master/docs/native-code/development/prerequisite-sw/index.md
 
 
 ## Getting the Code

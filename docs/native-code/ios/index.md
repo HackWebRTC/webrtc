@@ -156,7 +156,7 @@ and press _edit scheme..._ at the bottom of the target dropdown menu. From there
 click _Run_ in the sidebar and add `--gtest_filter` to the _Arguments passed on
 Launch_ list.
 
-If deploying to a device via the command line using [`ios-deploy`][7],
+If deploying to a device via the command line using [`ios-deploy`][ios-deploy],
 use the `-a` flag to pass arguments to the executable on launch.
 
 ## Deploying to Device
@@ -204,11 +204,11 @@ Please note that you can not ship the FAT framework binary with your app
 if you intend to distribute it through the app store.
 To solve this either remove "x86-64" from the list of architectures in
 the [build script][framework-script] or split the binary and recreate it without x86-64.
-For instructions on how to do this see [here][strip-arch]
+For instructions on how to do this see [here][strip-arch].
 
 
 [cocoapods]: https://cocoapods.org/pods/GoogleWebRTC
-[webrtc-prerequitite-sw]: https://webrtc.googlesource.com/src/+/refs/heads/master/docs/native-code/development/prerequisite-sw/index.md
+[webrtc-prerequisite-sw]: https://webrtc.googlesource.com/src/+/refs/heads/master/docs/native-code/development/prerequisite-sw/index.md
 [webrtc-development]: https://webrtc.googlesource.com/src/+/refs/heads/master/docs/native-code/development/index.md
 [framework-script]: https://chromium.googlesource.com/external/webrtc/+/master/tools_webrtc/ios/build_ios_libs.py
 [ninja]: https://ninja-build.org/
