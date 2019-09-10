@@ -134,8 +134,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
  private:
   int64_t GetWaitMs() const;
   void StartNextDecode() RTC_RUN_ON(decode_queue_);
-  static void DecodeThreadFunction(void* ptr);
-  bool Decode();
   void HandleEncodedFrame(std::unique_ptr<video_coding::EncodedFrame> frame);
   void HandleFrameBufferTimeout();
 
@@ -156,10 +154,6 @@ class VideoReceiveStream : public webrtc::VideoReceiveStream,
   const int num_cpu_cores_;
   ProcessThread* const process_thread_;
   Clock* const clock_;
-
-  const bool use_task_queue_;
-
-  rtc::PlatformThread decode_thread_;
 
   CallStats* const call_stats_;
 
