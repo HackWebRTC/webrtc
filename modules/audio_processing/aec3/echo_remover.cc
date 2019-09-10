@@ -35,12 +35,28 @@
 #include "modules/audio_processing/logging/apm_data_dumper.h"
 #include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/constructor_magic.h"
 #include "rtc_base/logging.h"
 
 namespace webrtc {
 
 namespace {
+
+// Maximum number of channels for which the capture channel data is stored on
+// the stack. If the number of channels are larger than this, they are stored
+// using scratch memory that is pre-allocated on the heap. The reason for this
+// partitioning is not to waste heap space for handling the more common numbers
+// of channels, while at the same time not limiting the support for higher
+// numbers of channels by enforcing the capture channel data to be stored on the
+// stack using a fixed maximum value.
+constexpr size_t kMaxNumChannelsOnStack = 2;
+
+// Chooses the number of channels to store on the heap when that is required due
+// to the number of capture channels being larger than the pre-defined number
+// of channels to store on the stack.
+size_t NumChannelsOnHeap(size_t num_capture_channels) {
+  return num_capture_channels > kMaxNumChannelsOnStack ? num_capture_channels
+                                                       : 0;
+}
 
 void LinearEchoPower(const FftData& E,
                      const FftData& Y,
@@ -89,6 +105,8 @@ class EchoRemoverImpl final : public EchoRemover {
                   size_t num_render_channels,
                   size_t num_capture_channels);
   ~EchoRemoverImpl() override;
+  EchoRemoverImpl(const EchoRemoverImpl&) = delete;
+  EchoRemoverImpl& operator=(const EchoRemoverImpl&) = delete;
 
   void GetMetrics(EchoControl::Metrics* metrics) const override;
 
@@ -141,7 +159,15 @@ class EchoRemoverImpl final : public EchoRemover {
   bool main_filter_output_last_selected_ = true;
   bool linear_filter_output_last_selected_ = true;
 
-  RTC_DISALLOW_COPY_AND_ASSIGN(EchoRemoverImpl);
+  std::vector<std::array<float, kFftLengthBy2Plus1>> Y2_heap_;
+  std::vector<std::array<float, kFftLengthBy2Plus1>> E2_heap_;
+  std::vector<std::array<float, kFftLengthBy2Plus1>> R2_heap_;
+  std::vector<std::array<float, kFftLengthBy2Plus1>> S2_linear_heap_;
+  std::vector<FftData> Y_heap_;
+  std::vector<FftData> E_heap_;
+  std::vector<FftData> comfort_noise_heap_;
+  std::vector<FftData> high_band_comfort_noise_heap_;
+  std::vector<SubtractorOutput> subtractor_output_heap_;
 };
 
 int EchoRemoverImpl::instance_count_ = 0;
@@ -170,7 +196,16 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
       suppression_filter_(optimization_, sample_rate_hz_),
       render_signal_analyzer_(config_),
       residual_echo_estimator_(config_),
-      aec_state_(config_) {
+      aec_state_(config_),
+      Y2_heap_(NumChannelsOnHeap(num_capture_channels_)),
+      E2_heap_(NumChannelsOnHeap(num_capture_channels_)),
+      R2_heap_(NumChannelsOnHeap(num_capture_channels_)),
+      S2_linear_heap_(NumChannelsOnHeap(num_capture_channels_)),
+      Y_heap_(NumChannelsOnHeap(num_capture_channels_)),
+      E_heap_(NumChannelsOnHeap(num_capture_channels_)),
+      comfort_noise_heap_(NumChannelsOnHeap(num_capture_channels_)),
+      high_band_comfort_noise_heap_(NumChannelsOnHeap(num_capture_channels_)),
+      subtractor_output_heap_(NumChannelsOnHeap(num_capture_channels_)) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz));
   x_old_.fill(0.f);
   y_old_.fill(0.f);
@@ -204,6 +239,59 @@ void EchoRemoverImpl::ProcessCapture(
   RTC_DCHECK_EQ((*y)[0].size(), num_capture_channels_);
   RTC_DCHECK_EQ(x[0][0].size(), kBlockSize);
   RTC_DCHECK_EQ((*y)[0][0].size(), kBlockSize);
+
+  // Stack allocated data to use when the number of channels is low.
+  std::array<std::array<float, kFftLengthBy2Plus1>, kMaxNumChannelsOnStack>
+      Y2_stack;
+  std::array<std::array<float, kFftLengthBy2Plus1>, kMaxNumChannelsOnStack>
+      E2_stack;
+  std::array<std::array<float, kFftLengthBy2Plus1>, kMaxNumChannelsOnStack>
+      R2_stack;
+  std::array<std::array<float, kFftLengthBy2Plus1>, kMaxNumChannelsOnStack>
+      S2_linear_stack;
+  std::array<FftData, kMaxNumChannelsOnStack> Y_stack;
+  std::array<FftData, kMaxNumChannelsOnStack> E_stack;
+  std::array<FftData, kMaxNumChannelsOnStack> comfort_noise_stack;
+  std::array<FftData, kMaxNumChannelsOnStack> high_band_comfort_noise_stack;
+  std::array<SubtractorOutput, kMaxNumChannelsOnStack> subtractor_output_stack;
+
+  rtc::ArrayView<std::array<float, kFftLengthBy2Plus1>> Y2(
+      Y2_stack.data(), num_capture_channels_);
+  rtc::ArrayView<std::array<float, kFftLengthBy2Plus1>> E2(
+      E2_stack.data(), num_capture_channels_);
+  rtc::ArrayView<std::array<float, kFftLengthBy2Plus1>> R2(
+      R2_stack.data(), num_capture_channels_);
+  rtc::ArrayView<std::array<float, kFftLengthBy2Plus1>> S2_linear(
+      S2_linear_stack.data(), num_capture_channels_);
+  rtc::ArrayView<FftData> Y(Y_stack.data(), num_capture_channels_);
+  rtc::ArrayView<FftData> E(E_stack.data(), num_capture_channels_);
+  rtc::ArrayView<FftData> comfort_noise(comfort_noise_stack.data(),
+                                        num_capture_channels_);
+  rtc::ArrayView<FftData> high_band_comfort_noise(
+      high_band_comfort_noise_stack.data(), num_capture_channels_);
+  rtc::ArrayView<SubtractorOutput> subtractor_output(
+      subtractor_output_stack.data(), num_capture_channels_);
+  if (NumChannelsOnHeap(num_capture_channels_) > 0) {
+    // If the stack-allocated space is too small, use the heap for storing the
+    // microphone data.
+    Y2 = rtc::ArrayView<std::array<float, kFftLengthBy2Plus1>>(
+        Y2_heap_.data(), num_capture_channels_);
+    E2 = rtc::ArrayView<std::array<float, kFftLengthBy2Plus1>>(
+        E2_heap_.data(), num_capture_channels_);
+    R2 = rtc::ArrayView<std::array<float, kFftLengthBy2Plus1>>(
+        R2_heap_.data(), num_capture_channels_);
+    S2_linear = rtc::ArrayView<std::array<float, kFftLengthBy2Plus1>>(
+        S2_linear_heap_.data(), num_capture_channels_);
+    Y = rtc::ArrayView<FftData>(Y_heap_.data(), num_capture_channels_);
+    E = rtc::ArrayView<FftData>(E_heap_.data(), num_capture_channels_);
+    comfort_noise = rtc::ArrayView<FftData>(comfort_noise_heap_.data(),
+                                            num_capture_channels_);
+    high_band_comfort_noise = rtc::ArrayView<FftData>(
+        high_band_comfort_noise_heap_.data(), num_capture_channels_);
+    subtractor_output = rtc::ArrayView<SubtractorOutput>(
+        subtractor_output_heap_.data(), num_capture_channels_);
+  }
+
   const std::vector<float>& x0 = x[0][0];
   std::vector<float>& y0 = (*y)[0][0];
 
@@ -240,17 +328,8 @@ void EchoRemoverImpl::ProcessCapture(
     --gain_change_hangover_;
   }
 
-  std::array<float, kFftLengthBy2Plus1> Y2;
-  std::array<float, kFftLengthBy2Plus1> E2;
-  std::array<float, kFftLengthBy2Plus1> R2;
-  std::array<float, kFftLengthBy2Plus1> S2_linear;
-  std::array<float, kFftLengthBy2Plus1> G;
   float high_bands_gain;
-  FftData Y;
-  FftData E;
-  FftData comfort_noise;
-  FftData high_band_comfort_noise;
-  SubtractorOutput subtractor_output;
+  std::array<float, kFftLengthBy2Plus1> G;
 
   // Analyze the render signal.
   render_signal_analyzer_.Update(*render_buffer,
@@ -264,21 +343,21 @@ void EchoRemoverImpl::ProcessCapture(
 
   // If the delay is known, use the echo subtractor.
   subtractor_.Process(*render_buffer, y0, render_signal_analyzer_, aec_state_,
-                      &subtractor_output);
+                      &subtractor_output[0]);
   std::array<float, kBlockSize> e;
-  FormLinearFilterOutput(subtractor_output, e);
+  FormLinearFilterOutput(subtractor_output[0], e);
 
   // Compute spectra.
-  WindowedPaddedFft(fft_, y0, y_old_, &Y);
-  WindowedPaddedFft(fft_, e, e_old_, &E);
-  LinearEchoPower(E, Y, &S2_linear);
-  Y.Spectrum(optimization_, Y2);
-  E.Spectrum(optimization_, E2);
+  WindowedPaddedFft(fft_, y0, y_old_, &Y[0]);
+  WindowedPaddedFft(fft_, e, e_old_, &E[0]);
+  LinearEchoPower(E[0], Y[0], &S2_linear[0]);
+  Y[0].Spectrum(optimization_, Y2[0]);
+  E[0].Spectrum(optimization_, E2[0]);
 
   // Update the AEC state information.
   aec_state_.Update(external_delay, subtractor_.FilterFrequencyResponse(),
-                    subtractor_.FilterImpulseResponse(), *render_buffer, E2, Y2,
-                    subtractor_output, y0);
+                    subtractor_.FilterImpulseResponse(), *render_buffer, E2[0],
+                    Y2[0], subtractor_output[0], y0);
 
   // Choose the linear output.
   data_dumper_->DumpWav("aec3_output_linear2", kBlockSize, &e[0], 16000, 1);
@@ -294,37 +373,38 @@ void EchoRemoverImpl::ProcessCapture(
     }
   }
   linear_filter_output_last_selected_ = aec_state_.UseLinearFilterOutput();
-  const auto& Y_fft = aec_state_.UseLinearFilterOutput() ? E : Y;
+  const auto& Y_fft = aec_state_.UseLinearFilterOutput() ? E[0] : Y[0];
 
   data_dumper_->DumpWav("aec3_output_linear", kBlockSize, &y0[0], 16000, 1);
 
   // Estimate the residual echo power.
-  residual_echo_estimator_.Estimate(aec_state_, *render_buffer, S2_linear, Y2,
-                                    &R2);
+  residual_echo_estimator_.Estimate(aec_state_, *render_buffer, S2_linear[0],
+                                    Y2[0], &R2[0]);
 
   // Estimate the comfort noise.
-  cng_.Compute(aec_state_, Y2, &comfort_noise, &high_band_comfort_noise);
+  cng_.Compute(aec_state_, Y2[0], &comfort_noise[0],
+               &high_band_comfort_noise[0]);
 
   // Suppressor echo estimate.
   const auto& echo_spectrum =
-      aec_state_.UsableLinearEstimate() ? S2_linear : R2;
+      aec_state_.UsableLinearEstimate() ? S2_linear[0] : R2[0];
 
   // Suppressor nearend estimate.
   std::array<float, kFftLengthBy2Plus1> nearend_spectrum_bounded;
   if (aec_state_.UsableLinearEstimate()) {
-    std::transform(E2.begin(), E2.end(), Y2.begin(),
+    std::transform(E2[0].begin(), E2[0].end(), Y2[0].begin(),
                    nearend_spectrum_bounded.begin(),
                    [](float a, float b) { return std::min(a, b); });
   }
-  auto& nearend_spectrum =
-      aec_state_.UsableLinearEstimate() ? nearend_spectrum_bounded : Y2;
+  const auto& nearend_spectrum =
+      aec_state_.UsableLinearEstimate() ? nearend_spectrum_bounded : Y2[0];
 
   // Compute and apply the suppression gain.
-  suppression_gain_.GetGain(nearend_spectrum, echo_spectrum, R2,
+  suppression_gain_.GetGain(nearend_spectrum, echo_spectrum, R2[0],
                             cng_.NoiseSpectrum(), render_signal_analyzer_,
                             aec_state_, x, &high_bands_gain, &G);
 
-  suppression_filter_.ApplyGain(comfort_noise, high_band_comfort_noise, G,
+  suppression_filter_.ApplyGain(comfort_noise[0], high_band_comfort_noise[0], G,
                                 high_bands_gain, Y_fft, y);
 
   // Update the metrics.
@@ -332,7 +412,7 @@ void EchoRemoverImpl::ProcessCapture(
 
   // Debug outputs for the purpose of development and analysis.
   data_dumper_->DumpWav("aec3_echo_estimate", kBlockSize,
-                        &subtractor_output.s_main[0], 16000, 1);
+                        &subtractor_output[0].s_main[0], 16000, 1);
   data_dumper_->DumpRaw("aec3_output", y0);
   data_dumper_->DumpRaw("aec3_narrow_render",
                         render_signal_analyzer_.NarrowPeakBand() ? 1 : 0);
@@ -340,15 +420,15 @@ void EchoRemoverImpl::ProcessCapture(
   data_dumper_->DumpRaw("aec3_suppressor_gain", G);
   data_dumper_->DumpWav(
       "aec3_output", rtc::ArrayView<const float>(&y0[0], kBlockSize), 16000, 1);
-  data_dumper_->DumpRaw("aec3_using_subtractor_output",
+  data_dumper_->DumpRaw("aec3_using_subtractor_output[0]",
                         aec_state_.UseLinearFilterOutput() ? 1 : 0);
-  data_dumper_->DumpRaw("aec3_E2", E2);
-  data_dumper_->DumpRaw("aec3_S2_linear", S2_linear);
-  data_dumper_->DumpRaw("aec3_Y2", Y2);
+  data_dumper_->DumpRaw("aec3_E2", E2[0]);
+  data_dumper_->DumpRaw("aec3_S2_linear", S2_linear[0]);
+  data_dumper_->DumpRaw("aec3_Y2", Y2[0]);
   data_dumper_->DumpRaw(
       "aec3_X2",
       render_buffer->Spectrum(aec_state_.FilterDelayBlocks(), /*channel=*/0));
-  data_dumper_->DumpRaw("aec3_R2", R2);
+  data_dumper_->DumpRaw("aec3_R2", R2[0]);
   data_dumper_->DumpRaw("aec3_R2_reverb",
                         residual_echo_estimator_.GetReverbPowerSpectrum());
   data_dumper_->DumpRaw("aec3_filter_delay", aec_state_.FilterDelayBlocks());
