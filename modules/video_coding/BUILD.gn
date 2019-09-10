@@ -209,6 +209,10 @@ rtc_source_set("video_codec_interface") {
   ]
 }
 
+rtc_source_set("video_coding_legacy") {
+  visibility = [ ":video_coding_unittests" ]
+}
+
 rtc_source_set("codec_globals_headers") {
   visibility = [ "*" ]
   sources = [
