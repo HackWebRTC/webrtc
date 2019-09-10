@@ -78,6 +78,8 @@ class PacketRouter : public RemoteBitrateObserver,
 
   // Send transport feedback packet to send-side.
   bool SendTransportFeedback(rtcp::TransportFeedback* packet) override;
+  // Send RemoteEstimate packet to send-side.
+  void SendNetworkStateEstimatePacket(rtcp::RemoteEstimate* packet) override;
 
  private:
   RtpRtcp* FindRtpModule(uint32_t ssrc)

@@ -14,6 +14,7 @@
 #include <map>
 #include <vector>
 
+#include "api/transport/network_control.h"
 #include "api/transport/webrtc_key_value_config.h"
 #include "modules/remote_bitrate_estimator/include/remote_bitrate_estimator.h"
 #include "rtc_base/critical_section.h"
@@ -36,7 +37,8 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
  public:
   RemoteEstimatorProxy(Clock* clock,
                        TransportFeedbackSenderInterface* feedback_sender,
-                       const WebRtcKeyValueConfig* key_value_config);
+                       const WebRtcKeyValueConfig* key_value_config,
+                       NetworkStateEstimator* network_state_estimator);
   ~RemoteEstimatorProxy() override;
 
   void IncomingPacket(int64_t arrival_time_ms,
@@ -90,7 +92,9 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
   int64_t last_process_time_ms_;
 
   rtc::CriticalSection lock_;
-
+  //  |network_state_estimator_| may be null.
+  NetworkStateEstimator* const network_state_estimator_
+      RTC_PT_GUARDED_BY(&lock_);
   uint32_t media_ssrc_ RTC_GUARDED_BY(&lock_);
   uint8_t feedback_packet_count_ RTC_GUARDED_BY(&lock_);
   SeqNumUnwrapper<uint16_t> unwrapper_ RTC_GUARDED_BY(&lock_);
@@ -99,6 +103,10 @@ class RemoteEstimatorProxy : public RemoteBitrateEstimator {
   std::map<int64_t, int64_t> packet_arrival_times_ RTC_GUARDED_BY(&lock_);
   int64_t send_interval_ms_ RTC_GUARDED_BY(&lock_);
   bool send_periodic_feedback_ RTC_GUARDED_BY(&lock_);
+
+  // Unwraps absolute send times.
+  uint32_t previous_abs_send_time_ RTC_GUARDED_BY(&lock_);
+  Timestamp abs_send_timestamp_ RTC_GUARDED_BY(&lock_);
 };
 
 }  // namespace webrtc

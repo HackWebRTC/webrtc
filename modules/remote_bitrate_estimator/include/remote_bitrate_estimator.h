@@ -43,6 +43,7 @@ class TransportFeedbackSenderInterface {
  public:
   virtual ~TransportFeedbackSenderInterface() = default;
   virtual bool SendTransportFeedback(rtcp::TransportFeedback* packet) = 0;
+  virtual void SendNetworkStateEstimatePacket(rtcp::RemoteEstimate* packet) = 0;
 };
 
 // TODO(holmer): Remove when all implementations have been updated.
