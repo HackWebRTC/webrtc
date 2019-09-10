@@ -175,7 +175,14 @@ DataChannelTransportInterface* JsepTransportController::GetDataChannelTransport(
   if (!jsep_transport) {
     return nullptr;
   }
-  return jsep_transport->data_channel_transport();
+
+  if (config_.use_media_transport_for_data_channels) {
+    return jsep_transport->media_transport();
+  } else if (config_.use_datagram_transport_for_data_channels) {
+    return jsep_transport->datagram_transport();
+  }
+  // Not configured to use a data channel transport.
+  return nullptr;
 }
 
 MediaTransportState JsepTransportController::GetMediaTransportState(
@@ -212,15 +219,6 @@ JsepTransportController::LookupDtlsTransportByMid(const std::string& mid) {
     return nullptr;
   }
   return jsep_transport->RtpDtlsTransport();
-}
-
-rtc::scoped_refptr<SctpTransport> JsepTransportController::GetSctpTransport(
-    const std::string& mid) const {
-  auto jsep_transport = GetJsepTransportForMid(mid);
-  if (!jsep_transport) {
-    return nullptr;
-  }
-  return jsep_transport->SctpTransport();
 }
 
 void JsepTransportController::SetIceConfig(const cricket::IceConfig& config) {
@@ -875,13 +873,13 @@ bool JsepTransportController::SetTransportForMid(
   mid_to_transport_[mid] = jsep_transport;
   return config_.transport_observer->OnTransportChanged(
       mid, jsep_transport->rtp_transport(), jsep_transport->RtpDtlsTransport(),
-      jsep_transport->media_transport(),
-      jsep_transport->data_channel_transport());
+      jsep_transport->media_transport(), jsep_transport->datagram_transport(),
+      NegotiationState::kInitial);
 }
 
 void JsepTransportController::RemoveTransportForMid(const std::string& mid) {
   bool ret = config_.transport_observer->OnTransportChanged(
-      mid, nullptr, nullptr, nullptr, nullptr);
+      mid, nullptr, nullptr, nullptr, nullptr, NegotiationState::kFinal);
   // Calling OnTransportChanged with nullptr should always succeed, since it is
   // only expected to fail when adding media to a transport (not removing).
   RTC_DCHECK(ret);
@@ -1231,27 +1229,13 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
         content_info.name, rtp_dtls_transport.get(), rtcp_dtls_transport.get());
   }
 
-  std::unique_ptr<cricket::SctpTransportInternal> sctp_transport;
-  if (config_.sctp_factory) {
-    sctp_transport =
-        config_.sctp_factory->CreateSctpTransport(rtp_dtls_transport.get());
-  }
-
-  DataChannelTransportInterface* data_channel_transport = nullptr;
-  if (config_.use_datagram_transport_for_data_channels) {
-    data_channel_transport = datagram_transport.get();
-  } else if (config_.use_media_transport_for_data_channels) {
-    data_channel_transport = media_transport.get();
-  }
-
   std::unique_ptr<cricket::JsepTransport> jsep_transport =
       absl::make_unique<cricket::JsepTransport>(
           content_info.name, certificate_, std::move(ice), std::move(rtcp_ice),
           std::move(unencrypted_rtp_transport), std::move(sdes_transport),
           std::move(dtls_srtp_transport), std::move(datagram_rtp_transport),
           std::move(rtp_dtls_transport), std::move(rtcp_dtls_transport),
-          std::move(sctp_transport), std::move(media_transport),
-          std::move(datagram_transport), data_channel_transport);
+          std::move(media_transport), std::move(datagram_transport));
 
   jsep_transport->SignalRtcpMuxActive.connect(
       this, &JsepTransportController::UpdateAggregateStates_n);
@@ -1290,7 +1274,8 @@ void JsepTransportController::DestroyAllJsepTransports_n() {
 
   for (const auto& jsep_transport : jsep_transports_by_name_) {
     config_.transport_observer->OnTransportChanged(
-        jsep_transport.first, nullptr, nullptr, nullptr, nullptr);
+        jsep_transport.first, nullptr, nullptr, nullptr, nullptr,
+        NegotiationState::kFinal);
   }
 
   jsep_transports_by_name_.clear();
@@ -1468,12 +1453,15 @@ void JsepTransportController::OnMediaTransportStateChanged_n() {
 
 void JsepTransportController::OnDataChannelTransportNegotiated_n(
     cricket::JsepTransport* transport,
-    DataChannelTransportInterface* data_channel_transport) {
+    DataChannelTransportInterface* data_channel_transport,
+    bool provisional) {
   for (auto it : mid_to_transport_) {
     if (it.second == transport) {
       config_.transport_observer->OnTransportChanged(
           it.first, transport->rtp_transport(), transport->RtpDtlsTransport(),
-          transport->media_transport(), data_channel_transport);
+          transport->media_transport(), data_channel_transport,
+          provisional ? NegotiationState::kProvisional
+                      : NegotiationState::kFinal);
     }
   }
 }
