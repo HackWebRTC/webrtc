@@ -204,6 +204,12 @@ rtc_static_library("libjingle_peerconnection_api") {
   ]
 }
 
+rtc_source_set("rtc_error") {
+  visibility = [ "*" ]
+  # Placeholder target for the migration of rtc_error.{h,cc} out of
+  # libjingle_peerconnection_api.
+}
+
 rtc_source_set("packet_socket_factory") {
   visibility = [ "*" ]
   sources = [
