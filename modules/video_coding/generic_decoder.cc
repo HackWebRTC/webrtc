@@ -18,17 +18,25 @@
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/thread.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
 #include "system_wrappers/include/clock.h"
+#include "system_wrappers/include/field_trial.h"
 
 namespace webrtc {
 
 VCMDecodedFrameCallback::VCMDecodedFrameCallback(VCMTiming* timing,
                                                  Clock* clock)
-    : _clock(clock), _timing(timing), _timestampMap(kDecoderFrameMemoryLength) {
+    : _clock(clock),
+      _timing(timing),
+      _timestampMap(kDecoderFrameMemoryLength),
+      _extra_decode_time("t", absl::nullopt) {
   ntp_offset_ =
       _clock->CurrentNtpInMilliseconds() - _clock->TimeInMilliseconds();
+
+  ParseFieldTrial({&_extra_decode_time},
+                  field_trial::FindFullName("WebRTC-SlowDownDecoder"));
 }
 
 VCMDecodedFrameCallback::~VCMDecodedFrameCallback() {}
@@ -64,6 +72,11 @@ int32_t VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
 void VCMDecodedFrameCallback::Decoded(VideoFrame& decodedImage,
                                       absl::optional<int32_t> decode_time_ms,
                                       absl::optional<uint8_t> qp) {
+  // Wait some extra time to simulate a slow decoder.
+  if (_extra_decode_time) {
+    rtc::Thread::SleepMs(_extra_decode_time->ms());
+  }
+
   RTC_DCHECK(_receiveCallback) << "Callback must not be null at this point";
   TRACE_EVENT_INSTANT1("webrtc", "VCMDecodedFrameCallback::Decoded",
                        "timestamp", decodedImage.timestamp());
