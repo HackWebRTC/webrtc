@@ -93,6 +93,7 @@ class DelayBasedBwe {
   bool uma_recorded_;
   AimdRateControl rate_control_;
   DataRate prev_bitrate_;
+  bool has_once_detected_overuse_;
   BandwidthUsage prev_state_;
   bool alr_limited_backoff_enabled_;
 

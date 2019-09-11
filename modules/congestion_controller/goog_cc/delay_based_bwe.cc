@@ -71,6 +71,7 @@ DelayBasedBwe::DelayBasedBwe(const WebRtcKeyValueConfig* key_value_config,
       uma_recorded_(false),
       rate_control_(key_value_config, /*send_side=*/true),
       prev_bitrate_(DataRate::Zero()),
+      has_once_detected_overuse_(false),
       prev_state_(BandwidthUsage::kBwNormal),
       alr_limited_backoff_enabled_(
           key_value_config->Lookup("WebRTC-Bwe-AlrLimitedBackoff")
@@ -181,7 +182,7 @@ DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(
 
   // Currently overusing the bandwidth.
   if (delay_detector_->State() == BandwidthUsage::kBwOverusing) {
-    if (in_alr && alr_limited_backoff_enabled_) {
+    if (has_once_detected_overuse_ && in_alr && alr_limited_backoff_enabled_) {
       if (rate_control_.TimeToReduceFurther(at_time, prev_bitrate_)) {
         result.updated =
             UpdateEstimate(at_time, prev_bitrate_, &result.target_bitrate);
@@ -202,6 +203,7 @@ DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(
       result.probe = false;
       result.target_bitrate = rate_control_.LatestEstimate();
     }
+    has_once_detected_overuse_ = true;
   } else {
     if (probe_bitrate) {
       result.probe = true;
