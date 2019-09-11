@@ -563,6 +563,7 @@ rtc_static_library("rtc_numerics") {
     ":rtc_base_approved",
     ":safe_compare",
     "../api:array_view",
+    "../api/units:timestamp",
     "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
