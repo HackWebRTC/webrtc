@@ -2901,13 +2901,15 @@ RTCError PeerConnection::ApplyRemoteDescription(
       }
       if (!content->rejected &&
           RtpTransceiverDirectionHasRecv(local_direction)) {
-        // Set ssrc to 0 in the case of an unsignalled ssrc.
-        uint32_t ssrc = 0;
         if (!media_desc->streams().empty() &&
             media_desc->streams()[0].has_ssrcs()) {
-          ssrc = media_desc->streams()[0].first_ssrc();
+          uint32_t ssrc = media_desc->streams()[0].first_ssrc();
+          transceiver->internal()->receiver_internal()->SetupMediaChannel(ssrc);
+        } else {
+          transceiver->internal()
+              ->receiver_internal()
+              ->SetupUnsignaledMediaChannel();
         }
-        transceiver->internal()->receiver_internal()->SetupMediaChannel(ssrc);
       }
     }
     // Once all processing has finished, fire off callbacks.
@@ -4101,7 +4103,11 @@ void PeerConnection::CreateAudioReceiver(
   auto* audio_receiver = new AudioRtpReceiver(
       worker_thread(), remote_sender_info.sender_id, streams);
   audio_receiver->SetMediaChannel(voice_media_channel());
-  audio_receiver->SetupMediaChannel(remote_sender_info.first_ssrc);
+  if (remote_sender_info.sender_id == kDefaultAudioSenderId) {
+    audio_receiver->SetupUnsignaledMediaChannel();
+  } else {
+    audio_receiver->SetupMediaChannel(remote_sender_info.first_ssrc);
+  }
   auto receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
       signaling_thread(), audio_receiver);
   GetAudioTransceiver()->internal()->AddReceiver(receiver);
@@ -4119,7 +4125,11 @@ void PeerConnection::CreateVideoReceiver(
   auto* video_receiver = new VideoRtpReceiver(
       worker_thread(), remote_sender_info.sender_id, streams);
   video_receiver->SetMediaChannel(video_media_channel());
-  video_receiver->SetupMediaChannel(remote_sender_info.first_ssrc);
+  if (remote_sender_info.sender_id == kDefaultVideoSenderId) {
+    video_receiver->SetupUnsignaledMediaChannel();
+  } else {
+    video_receiver->SetupMediaChannel(remote_sender_info.first_ssrc);
+  }
   auto receiver = RtpReceiverProxyWithInternal<RtpReceiverInternal>::Create(
       signaling_thread(), video_receiver);
   GetVideoTransceiver()->internal()->AddReceiver(receiver);

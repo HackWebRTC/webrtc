@@ -86,6 +86,7 @@ class AudioRtpReceiver : public ObserverInterface,
   // RtpReceiverInternal implementation.
   void Stop() override;
   void SetupMediaChannel(uint32_t ssrc) override;
+  void SetupUnsignaledMediaChannel() override;
   uint32_t ssrc() const override { return ssrc_.value_or(0); }
   void NotifyFirstPacketReceived() override;
   void set_stream_ids(std::vector<std::string> stream_ids) override;
@@ -106,6 +107,7 @@ class AudioRtpReceiver : public ObserverInterface,
   int AttachmentId() const override { return attachment_id_; }
 
  private:
+  void RestartMediaChannel(absl::optional<uint32_t> ssrc);
   void Reconfigure();
   bool SetOutputVolume(double volume);
 
@@ -118,7 +120,7 @@ class AudioRtpReceiver : public ObserverInterface,
   std::vector<rtc::scoped_refptr<MediaStreamInterface>> streams_;
   bool cached_track_enabled_;
   double cached_volume_ = 1;
-  bool stopped_ = false;
+  bool stopped_ = true;
   RtpReceiverObserverInterface* observer_ = nullptr;
   bool received_first_packet_ = false;
   int attachment_id_ = 0;
