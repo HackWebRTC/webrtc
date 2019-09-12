@@ -18,12 +18,12 @@
 #include "absl/flags/parse.h"
 #include "absl/memory/memory.h"
 #include "api/rtc_event_log/rtc_event_log.h"
+#include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/video/function_video_decoder_factory.h"
 #include "api/video_codecs/video_decoder.h"
 #include "call/call.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "media/engine/internal_decoder_factory.h"
-#include "modules/rtp_rtcp/include/rtp_header_parser.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/string_to_number.h"
 #include "rtc_base/strings/json.h"
@@ -37,6 +37,7 @@
 #include "test/gtest.h"
 #include "test/null_transport.h"
 #include "test/rtp_file_reader.h"
+#include "test/rtp_header_parser.h"
 #include "test/run_loop.h"
 #include "test/run_test.h"
 #include "test/test_video_capturer.h"
@@ -262,8 +263,11 @@ class RtpReplayer final {
   // Replay a rtp dump with an optional json configuration.
   static void Replay(const std::string& replay_config_path,
                      const std::string& rtp_dump_path) {
+    std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory =
+        webrtc::CreateDefaultTaskQueueFactory();
     webrtc::RtcEventLogNull event_log;
     Call::Config call_config(&event_log);
+    call_config.task_queue_factory = task_queue_factory.get();
     std::unique_ptr<Call> call(Call::Create(call_config));
     std::unique_ptr<StreamState> stream_state;
     // Attempt to load the configuration
@@ -459,7 +463,8 @@ class RtpReplayer final {
           break;
         case PacketReceiver::DELIVERY_UNKNOWN_SSRC: {
           RTPHeader header;
-          std::unique_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+          std::unique_ptr<RtpHeaderParser> parser(
+              RtpHeaderParser::CreateForTest());
           parser->Parse(packet.data, packet.length, &header);
           if (unknown_packets[header.ssrc] == 0)
             fprintf(stderr, "Unknown SSRC: %u!\n", header.ssrc);
@@ -470,7 +475,8 @@ class RtpReplayer final {
           fprintf(stderr,
                   "Packet error, corrupt packets or incorrect setup?\n");
           RTPHeader header;
-          std::unique_ptr<RtpHeaderParser> parser(RtpHeaderParser::Create());
+          std::unique_ptr<RtpHeaderParser> parser(
+              RtpHeaderParser::CreateForTest());
           parser->Parse(packet.data, packet.length, &header);
           fprintf(stderr, "Packet len=%zu pt=%u seq=%u ts=%u ssrc=0x%8x\n",
                   packet.length, header.payloadType, header.sequenceNumber,
