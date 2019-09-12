@@ -23,6 +23,11 @@ namespace webrtc {
 // Randomizes the elements in a vector with values -32767.f:32767.f.
 void RandomizeSampleVector(Random* random_generator, rtc::ArrayView<float> v);
 
+// Randomizes the elements in a vector with values -amplitude:amplitude.
+void RandomizeSampleVector(Random* random_generator,
+                           rtc::ArrayView<float> v,
+                           float amplitude);
+
 // Class for delaying a signal a fixed number of samples.
 template <typename T>
 class DelayBuffer {
