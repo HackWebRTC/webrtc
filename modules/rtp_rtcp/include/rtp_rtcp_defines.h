@@ -492,13 +492,5 @@ class SendPacketObserver {
                             int64_t capture_time_ms,
                             uint32_t ssrc) = 0;
 };
-
-// Status returned from TimeToSendPacket() family of callbacks.
-enum class RtpPacketSendResult {
-  kSuccess,               // Packet sent OK.
-  kTransportUnavailable,  // Network unavailable, try again later.
-  kPacketNotFound  // SSRC/sequence number does not map to an available packet.
-};
-
 }  // namespace webrtc
 #endif  // MODULES_RTP_RTCP_INCLUDE_RTP_RTCP_DEFINES_H_

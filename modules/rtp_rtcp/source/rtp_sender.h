@@ -89,8 +89,9 @@ class RTPSender {
   bool IsRtpHeaderExtensionRegistered(RTPExtensionType type) const;
   int32_t DeregisterRtpHeaderExtension(RTPExtensionType type);
 
-  // Returns an RtpPacketSendResult indicating success, network unavailable,
-  // or packet not found.
+  // Tries to send packet to transport. Also updates any timing extensions,
+  // calls observers waiting for packet send events, and updates stats.
+  // Returns true if packet belongs to this RTP module, false otherwise.
   bool TrySendPacket(RtpPacketToSend* packet,
                      const PacedPacketInfo& pacing_info);
   bool SupportsPadding() const;
