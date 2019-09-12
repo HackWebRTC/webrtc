@@ -227,9 +227,6 @@ class BaseChannel : public ChannelInterface,
   void OnPacketReceived(bool rtcp,
                         const rtc::CopyOnWriteBuffer& packet,
                         int64_t packet_time_us);
-  void ProcessPacket(bool rtcp,
-                     const rtc::CopyOnWriteBuffer& packet,
-                     int64_t packet_time_us);
 
   void EnableMedia_w();
   void DisableMedia_w();
@@ -294,7 +291,6 @@ class BaseChannel : public ChannelInterface,
   bool ConnectToRtpTransport();
   void DisconnectFromRtpTransport();
   void SignalSentPacket_n(const rtc::SentPacket& sent_packet);
-  void SignalSentPacket_w(const rtc::SentPacket& sent_packet);
   bool IsReadyToSendMedia_n() const;
 
   // MediaTransportNetworkChangeCallback override.

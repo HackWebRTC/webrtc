@@ -526,20 +526,14 @@ void BaseChannel::OnPacketReceived(bool rtcp,
   }
 
   invoker_.AsyncInvoke<void>(
-      RTC_FROM_HERE, worker_thread_,
-      Bind(&BaseChannel::ProcessPacket, this, rtcp, packet, packet_time_us));
-}
-
-void BaseChannel::ProcessPacket(bool rtcp,
-                                const rtc::CopyOnWriteBuffer& packet,
-                                int64_t packet_time_us) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
-
-  if (rtcp) {
-    media_channel_->OnRtcpReceived(packet, packet_time_us);
-  } else {
-    media_channel_->OnPacketReceived(packet, packet_time_us);
-  }
+      RTC_FROM_HERE, worker_thread_, [this, rtcp, packet, packet_time_us] {
+        RTC_DCHECK(worker_thread_->IsCurrent());
+        if (rtcp) {
+          media_channel_->OnRtcpReceived(packet, packet_time_us);
+        } else {
+          media_channel_->OnPacketReceived(packet, packet_time_us);
+        }
+      });
 }
 
 void BaseChannel::EnableMedia_w() {
@@ -788,14 +782,11 @@ void BaseChannel::FlushRtcpMessages_n() {
 
 void BaseChannel::SignalSentPacket_n(const rtc::SentPacket& sent_packet) {
   RTC_DCHECK(network_thread_->IsCurrent());
-  invoker_.AsyncInvoke<void>(
-      RTC_FROM_HERE, worker_thread_,
-      rtc::Bind(&BaseChannel::SignalSentPacket_w, this, sent_packet));
-}
-
-void BaseChannel::SignalSentPacket_w(const rtc::SentPacket& sent_packet) {
-  RTC_DCHECK(worker_thread_->IsCurrent());
-  SignalSentPacket(sent_packet);
+  invoker_.AsyncInvoke<void>(RTC_FROM_HERE, worker_thread_,
+                             [this, sent_packet] {
+                               RTC_DCHECK(worker_thread_->IsCurrent());
+                               SignalSentPacket(sent_packet);
+                             });
 }
 
 VoiceChannel::VoiceChannel(rtc::Thread* worker_thread,
@@ -827,9 +818,8 @@ VoiceChannel::~VoiceChannel() {
 
 void BaseChannel::UpdateMediaSendRecvState() {
   RTC_DCHECK(network_thread_->IsCurrent());
-  invoker_.AsyncInvoke<void>(
-      RTC_FROM_HERE, worker_thread_,
-      Bind(&BaseChannel::UpdateMediaSendRecvState_w, this));
+  invoker_.AsyncInvoke<void>(RTC_FROM_HERE, worker_thread_,
+                             [this] { UpdateMediaSendRecvState_w(); });
 }
 
 void BaseChannel::OnNetworkRouteChanged(
