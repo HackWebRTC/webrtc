@@ -170,6 +170,7 @@ rtc_source_set("perf_test") {
     "../api:array_view",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
+    "../rtc_base:rtc_numerics",
   ]
 }
 

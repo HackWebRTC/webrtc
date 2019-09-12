@@ -660,11 +660,8 @@ void DefaultVideoQualityAnalyzer::ReportResult(
     const std::string& test_case_name,
     const SamplesStatsCounter& counter,
     const std::string& unit) {
-  test::PrintResultMeanAndError(
-      metric_name, /*modifier=*/"", test_case_name,
-      counter.IsEmpty() ? 0 : counter.GetAverage(),
-      counter.IsEmpty() ? 0 : counter.GetStandardDeviation(), unit,
-      /*important=*/false);
+  test::PrintResult(metric_name, /*modifier=*/"", test_case_name, counter, unit,
+                    /*important=*/false);
 }
 
 std::string DefaultVideoQualityAnalyzer::GetTestCaseName(

@@ -70,6 +70,14 @@ ABSL_FLAG(
     "https://github.com/catapult-project/catapult/blob/master/dashboard/docs/"
     "data-format.md.");
 
+constexpr char kPlotAllMetrics[] = "all";
+ABSL_FLAG(std::vector<std::string>,
+          plot,
+          {},
+          "List of metrics that should be exported for plotting (if they are "
+          "available). Example: psnr,ssim,encode_time. To plot all available "
+          " metrics pass 'all' as flag value");
+
 #endif
 
 ABSL_FLAG(bool, logs, true, "print logs to stderr");
@@ -165,6 +173,14 @@ class TestMainImpl : public TestMain {
         absl::GetFlag(FLAGS_isolated_script_test_perf_output);
     if (!chartjson_result_file.empty()) {
       webrtc::test::WritePerfResults(chartjson_result_file);
+    }
+    std::vector<std::string> metrics_to_plot = absl::GetFlag(FLAGS_plot);
+    if (!metrics_to_plot.empty()) {
+      if (metrics_to_plot.size() == 1 &&
+          metrics_to_plot[0] == kPlotAllMetrics) {
+        metrics_to_plot.clear();
+      }
+      webrtc::test::PrintPlottableResults(metrics_to_plot);
     }
 
     std::string result_filename =

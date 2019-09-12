@@ -13,8 +13,10 @@
 
 #include <sstream>
 #include <string>
+#include <vector>
 
 #include "api/array_view.h"
+#include "rtc_base/numerics/samples_stats_counter.h"
 
 namespace webrtc {
 namespace test {
@@ -61,9 +63,24 @@ void PrintResultList(const std::string& measurement,
                      const std::string& units,
                      bool important);
 
+// Like PrintResult(), but prints a (mean, standard deviation) from stats
+// counter. Also add specified metric to the plotable metrics output.
+void PrintResult(const std::string& measurement,
+                 const std::string& modifier,
+                 const std::string& trace,
+                 const SamplesStatsCounter& counter,
+                 const std::string& units,
+                 const bool important);
+
 // Returns all perf results to date in a JSON string formatted as described in
 // https://github.com/catapult-project/catapult/blob/master/dashboard/docs/data-format.md
 std::string GetPerfResultsJSON();
+
+// Print into stdout plottable metrics for further post processing.
+// |desired_graphs| - list of metrics, that should be plotted. If empty - all
+// available metrics will be plotted. If some of |desired_graphs| are missing
+// they will be skipped.
+void PrintPlottableResults(const std::vector<std::string>& desired_graphs);
 
 // Writes the JSON representation of the perf results returned by
 // GetPerfResultsJSON() to the file in output_path.
