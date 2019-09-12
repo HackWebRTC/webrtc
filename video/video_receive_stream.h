@@ -14,8 +14,8 @@
 #include <memory>
 #include <vector>
 
-#include "api/media_transport_interface.h"
 #include "api/task_queue/task_queue_factory.h"
+#include "api/transport/media/media_transport_interface.h"
 #include "call/rtp_packet_sink_interface.h"
 #include "call/syncable.h"
 #include "call/video_receive_stream.h"

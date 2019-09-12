@@ -114,7 +114,6 @@ rtc_static_library("libjingle_peerconnection_api") {
     "crypto_params.h",
     "data_channel_interface.cc",
     "data_channel_interface.h",
-    "data_channel_transport_interface.cc",
     "data_channel_transport_interface.h",
     "datagram_transport_interface.h",
     "dtls_transport_interface.cc",
@@ -130,9 +129,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     "media_stream_interface.h",
     "media_stream_proxy.h",
     "media_stream_track_proxy.h",
-    "media_transport_config.cc",
     "media_transport_config.h",
-    "media_transport_interface.cc",
     "media_transport_interface.h",
     "notifier.h",
     "packet_socket_factory.h",
@@ -175,8 +172,10 @@ rtc_static_library("libjingle_peerconnection_api") {
     "rtc_event_log",
     "task_queue",
     "transport:bitrate_settings",
+    "transport:datagram_transport_interface",
     "transport:network_control",
     "transport/media:audio_interfaces",
+    "transport/media:media_transport_interface",
     "transport/media:video_interfaces",
     "transport/rtp:rtp_source",
     "units:data_rate",
@@ -256,6 +255,7 @@ rtc_source_set("video_quality_test_fixture_api") {
     "../test:test_common",
     "../test:video_test_common",
     "transport:network_control",
+    "transport/media:media_transport_interface",
     "video_codecs:video_codecs_api",
   ]
 }
@@ -350,6 +350,7 @@ rtc_source_set("peer_connection_quality_test_fixture_api") {
     "rtc_event_log",
     "task_queue",
     "transport:network_control",
+    "transport/media:media_transport_interface",
     "units:time_delta",
     "video_codecs:video_codecs_api",
     "//third_party/abseil-cpp/absl/memory",
@@ -873,8 +874,9 @@ if (rtc_include_tests) {
     ]
 
     deps = [
-      ":libjingle_peerconnection_api",
       "../rtc_base:checks",
+      "transport:datagram_transport_interface",
+      "transport/media:media_transport_interface",
       "//third_party/abseil-cpp/absl/algorithm:container",
       "//third_party/abseil-cpp/absl/memory",
     ]
@@ -889,9 +891,10 @@ if (rtc_include_tests) {
     ]
 
     deps = [
-      ":libjingle_peerconnection_api",
       "../rtc_base",
       "../rtc_base:checks",
+      "transport:datagram_transport_interface",
+      "transport/media:media_transport_interface",
       "//third_party/abseil-cpp/absl/algorithm:container",
       "//third_party/abseil-cpp/absl/memory",
     ]

@@ -15,12 +15,12 @@
 // enable different media transport implementations, including QUIC-based
 // media transport.
 
-#include "api/media_transport_interface.h"
+#include "api/transport/media/media_transport_interface.h"
 
 #include <cstdint>
 #include <utility>
 
-#include "api/datagram_transport_interface.h"
+#include "api/transport/datagram_transport_interface.h"
 
 namespace webrtc {
 

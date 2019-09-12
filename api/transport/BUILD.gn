@@ -69,6 +69,25 @@ rtc_source_set("field_trial_based_config") {
   ]
 }
 
+rtc_source_set("datagram_transport_interface") {
+  visibility = [ "*" ]
+  sources = [
+    "congestion_control_interface.h",
+    "data_channel_transport_interface.cc",
+    "data_channel_transport_interface.h",
+    "datagram_transport_interface.h",
+  ]
+  deps = [
+    ":network_control",
+    "..:array_view",
+    "..:rtc_error",
+    "../../rtc_base:rtc_base_approved",
+    "../units:data_rate",
+    "../units:timestamp",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
 rtc_static_library("goog_cc") {
   visibility = [ "*" ]
   sources = [

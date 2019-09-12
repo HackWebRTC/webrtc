@@ -15,8 +15,8 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
-#include "api/datagram_transport_interface.h"
-#include "api/media_transport_interface.h"
+#include "api/transport/datagram_transport_interface.h"
+#include "api/transport/media/media_transport_interface.h"
 #include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/no_op_dtls_transport.h"
 #include "p2p/base/port.h"

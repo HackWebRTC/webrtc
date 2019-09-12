@@ -19,7 +19,7 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/strings/match.h"
-#include "api/datagram_transport_interface.h"
+#include "api/transport/datagram_transport_interface.h"
 #include "api/video/video_codec_constants.h"
 #include "api/video/video_codec_type.h"
 #include "api/video_codecs/sdp_video_format.h"

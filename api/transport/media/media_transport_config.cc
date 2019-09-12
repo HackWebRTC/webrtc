@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/media_transport_config.h"
+#include "api/transport/media/media_transport_config.h"
 
 #include "rtc_base/checks.h"
 #include "rtc_base/strings/string_builder.h"

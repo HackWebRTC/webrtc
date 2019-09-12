@@ -12,7 +12,7 @@
 
 #include <vector>
 
-#include "api/media_transport_interface.h"
+#include "api/transport/media/media_transport_interface.h"
 #include "api/video/video_stream_encoder_interface.h"
 #include "call/rtp_video_sender_interface.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"

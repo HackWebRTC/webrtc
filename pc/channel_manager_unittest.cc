@@ -13,9 +13,9 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
-#include "api/media_transport_config.h"
 #include "api/rtc_error.h"
 #include "api/test/fake_media_transport.h"
+#include "api/transport/media/media_transport_config.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "media/base/fake_media_engine.h"
 #include "media/base/test_utils.h"

@@ -19,10 +19,10 @@
 
 #include "api/candidate.h"
 #include "api/crypto/crypto_options.h"
-#include "api/media_transport_config.h"
-#include "api/media_transport_interface.h"
 #include "api/peer_connection_interface.h"
 #include "api/rtc_event_log/rtc_event_log.h"
+#include "api/transport/media/media_transport_config.h"
+#include "api/transport/media/media_transport_interface.h"
 #include "media/sctp/sctp_transport_internal.h"
 #include "p2p/base/dtls_transport.h"
 #include "p2p/base/p2p_transport_channel.h"

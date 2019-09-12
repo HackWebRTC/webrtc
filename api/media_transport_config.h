@@ -9,39 +9,8 @@
 #ifndef API_MEDIA_TRANSPORT_CONFIG_H_
 #define API_MEDIA_TRANSPORT_CONFIG_H_
 
-#include <memory>
-#include <string>
-#include <utility>
-
-#include "absl/types/optional.h"
-
-namespace webrtc {
-
-class MediaTransportInterface;
-
-// Media transport config is made available to both transport and audio / video
-// layers, but access to individual interfaces should not be open without
-// necessity.
-struct MediaTransportConfig {
-  // Default constructor for no-media transport scenarios.
-  MediaTransportConfig() = default;
-
-  // Constructor for media transport scenarios.
-  // Note that |media_transport| may not be nullptr.
-  explicit MediaTransportConfig(MediaTransportInterface* media_transport);
-
-  // Constructor for datagram transport scenarios.
-  explicit MediaTransportConfig(size_t rtp_max_packet_size);
-
-  std::string DebugString() const;
-
-  // If provided, all media is sent through media_transport.
-  MediaTransportInterface* media_transport = nullptr;
-
-  // If provided, limits RTP packet size (excludes ICE, IP or network overhead).
-  absl::optional<size_t> rtp_max_packet_size;
-};
-
-}  // namespace webrtc
+// TODO(bugs.webrtc.org/8733): Delete once users are updated for the new
+// location.
+#include "api/transport/media/media_transport_config.h"
 
 #endif  // API_MEDIA_TRANSPORT_CONFIG_H_

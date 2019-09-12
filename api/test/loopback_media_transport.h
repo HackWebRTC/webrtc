@@ -17,8 +17,8 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
-#include "api/datagram_transport_interface.h"
-#include "api/media_transport_interface.h"
+#include "api/transport/datagram_transport_interface.h"
+#include "api/transport/media/media_transport_interface.h"
 #include "rtc_base/async_invoker.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/thread.h"

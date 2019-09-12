@@ -14,7 +14,8 @@
 #include <cstddef>
 #include <string>
 
-#include "api/datagram_transport_interface.h"
+#include "api/transport/datagram_transport_interface.h"
+#include "api/transport/media/media_transport_interface.h"
 
 namespace webrtc {
 

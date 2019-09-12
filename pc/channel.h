@@ -20,8 +20,8 @@
 
 #include "api/call/audio_sink.h"
 #include "api/jsep.h"
-#include "api/media_transport_config.h"
 #include "api/rtp_receiver_interface.h"
+#include "api/transport/media/media_transport_config.h"
 #include "api/video/video_sink_interface.h"
 #include "api/video/video_source_interface.h"
 #include "call/rtp_packet_sink_interface.h"

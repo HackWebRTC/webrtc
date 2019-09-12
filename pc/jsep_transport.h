@@ -18,9 +18,9 @@
 
 #include "absl/types/optional.h"
 #include "api/candidate.h"
-#include "api/datagram_transport_interface.h"
 #include "api/jsep.h"
-#include "api/media_transport_interface.h"
+#include "api/transport/datagram_transport_interface.h"
+#include "api/transport/media/media_transport_interface.h"
 #include "p2p/base/dtls_transport.h"
 #include "p2p/base/p2p_constants.h"
 #include "p2p/base/transport_info.h"

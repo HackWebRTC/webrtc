@@ -7,7 +7,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "api/data_channel_transport_interface.h"
+#include "api/transport/data_channel_transport_interface.h"
 
 namespace webrtc {
 

@@ -18,8 +18,8 @@
 
 #include "absl/algorithm/container.h"
 #include "absl/memory/memory.h"
-#include "api/media_transport_interface.h"
 #include "api/test/fake_datagram_transport.h"
+#include "api/transport/media/media_transport_interface.h"
 
 namespace webrtc {
 

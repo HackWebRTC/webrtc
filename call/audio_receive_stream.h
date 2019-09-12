@@ -21,9 +21,9 @@
 #include "api/call/transport.h"
 #include "api/crypto/crypto_options.h"
 #include "api/crypto/frame_decryptor_interface.h"
-#include "api/media_transport_config.h"
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
+#include "api/transport/media/media_transport_config.h"
 #include "api/transport/rtp/rtp_source.h"
 #include "call/rtp_config.h"
 
