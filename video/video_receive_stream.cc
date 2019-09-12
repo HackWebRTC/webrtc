@@ -382,10 +382,6 @@ void VideoReceiveStream::Start() {
   // |video_stream_decoder_|.
   call_stats_->RegisterStatsObserver(this);
 
-  // NOTE: *Not* registering video_receiver_ on process_thread_. Its Process
-  // method does nothing that is useful for us, since we no longer use the old
-  // jitter buffer.
-
   // Start decoding on task queue.
   video_receiver_.DecoderThreadStarting();
   stats_proxy_.DecoderThreadStarting();
@@ -410,11 +406,6 @@ void VideoReceiveStream::Stop() {
   call_stats_->DeregisterStatsObserver(this);
 
   if (decoder_running_) {
-    // TriggerDecoderShutdown will release any waiting decoder thread and make
-    // it stop immediately, instead of waiting for a timeout. Needs to be called
-    // before joining the decoder thread.
-    video_receiver_.TriggerDecoderShutdown();
-
     rtc::Event done;
     decode_queue_.PostTask([this, &done] {
       RTC_DCHECK_RUN_ON(&decode_queue_);

@@ -40,8 +40,6 @@ class VideoReceiver2 {
 
   int32_t Decode(const webrtc::VCMEncodedFrame* frame);
 
-  void TriggerDecoderShutdown();
-
   // Notification methods that are used to check our internal state and validate
   // threading assumptions. These are called by VideoReceiveStream.
   // See |IsDecoderThreadRunning()| for more details.

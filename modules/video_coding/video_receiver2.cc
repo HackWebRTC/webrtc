@@ -64,11 +64,6 @@ void VideoReceiver2::RegisterExternalDecoder(VideoDecoder* externalDecoder,
   codecDataBase_.RegisterExternalDecoder(externalDecoder, payloadType);
 }
 
-void VideoReceiver2::TriggerDecoderShutdown() {
-  RTC_DCHECK_RUN_ON(&construction_thread_checker_);
-  RTC_DCHECK(IsDecoderThreadRunning());
-}
-
 void VideoReceiver2::DecoderThreadStarting() {
   RTC_DCHECK_RUN_ON(&construction_thread_checker_);
   RTC_DCHECK(!IsDecoderThreadRunning());
