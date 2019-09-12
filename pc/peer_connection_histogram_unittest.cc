@@ -416,6 +416,7 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintAudioVideo) {
        PeerConnection::UsageEvent::ADD_ICE_CANDIDATE_SUCCEEDED,
        PeerConnection::UsageEvent::ICE_STATE_CONNECTED,
        PeerConnection::UsageEvent::REMOTE_CANDIDATE_ADDED,
+       PeerConnection::UsageEvent::DIRECT_CONNECTION_SELECTED,
        PeerConnection::UsageEvent::CLOSE_CALLED});
   // In this case, we may or may not have PRIVATE_CANDIDATE_COLLECTED,
   // depending on the machine configuration.
@@ -456,8 +457,12 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintWithMdnsCaller) {
        PeerConnection::UsageEvent::ADD_ICE_CANDIDATE_SUCCEEDED,
        PeerConnection::UsageEvent::ICE_STATE_CONNECTED,
        PeerConnection::UsageEvent::REMOTE_CANDIDATE_ADDED,
+       PeerConnection::UsageEvent::DIRECT_CONNECTION_SELECTED,
        PeerConnection::UsageEvent::CLOSE_CALLED});
 
+  // Without a resolver, the callee cannot resolve the received mDNS candidate
+  // but can still connect with the caller via a prflx candidate. As a result,
+  // the bit for the direct connection should not be logged.
   int expected_fingerprint_callee = MakeUsageFingerprint(
       {PeerConnection::UsageEvent::AUDIO_ADDED,
        PeerConnection::UsageEvent::VIDEO_ADDED,
@@ -492,6 +497,8 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintWithMdnsCallee) {
   caller->pc()->Close();
   callee->pc()->Close();
 
+  // Similar to the test above, the caller connects with the callee via a prflx
+  // candidate.
   int expected_fingerprint_caller = MakeUsageFingerprint(
       {PeerConnection::UsageEvent::AUDIO_ADDED,
        PeerConnection::UsageEvent::VIDEO_ADDED,
@@ -514,6 +521,7 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintWithMdnsCallee) {
        PeerConnection::UsageEvent::ADD_ICE_CANDIDATE_SUCCEEDED,
        PeerConnection::UsageEvent::ICE_STATE_CONNECTED,
        PeerConnection::UsageEvent::REMOTE_CANDIDATE_ADDED,
+       PeerConnection::UsageEvent::DIRECT_CONNECTION_SELECTED,
        PeerConnection::UsageEvent::CLOSE_CALLED});
 
   EXPECT_EQ(2, webrtc::metrics::NumSamples(kUsagePatternMetric));
@@ -540,6 +548,7 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintDataOnly) {
        PeerConnection::UsageEvent::ADD_ICE_CANDIDATE_SUCCEEDED,
        PeerConnection::UsageEvent::ICE_STATE_CONNECTED,
        PeerConnection::UsageEvent::REMOTE_CANDIDATE_ADDED,
+       PeerConnection::UsageEvent::DIRECT_CONNECTION_SELECTED,
        PeerConnection::UsageEvent::CLOSE_CALLED});
   EXPECT_EQ(2, webrtc::metrics::NumSamples(kUsagePatternMetric));
   EXPECT_TRUE(
@@ -615,6 +624,7 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintWithPrivateIPCaller) {
        PeerConnection::UsageEvent::ADD_ICE_CANDIDATE_SUCCEEDED,
        PeerConnection::UsageEvent::ICE_STATE_CONNECTED,
        PeerConnection::UsageEvent::REMOTE_CANDIDATE_ADDED,
+       PeerConnection::UsageEvent::DIRECT_CONNECTION_SELECTED,
        PeerConnection::UsageEvent::CLOSE_CALLED});
 
   int expected_fingerprint_callee = MakeUsageFingerprint(
@@ -626,6 +636,7 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintWithPrivateIPCaller) {
        PeerConnection::UsageEvent::REMOTE_PRIVATE_CANDIDATE_ADDED,
        PeerConnection::UsageEvent::ICE_STATE_CONNECTED,
        PeerConnection::UsageEvent::REMOTE_CANDIDATE_ADDED,
+       PeerConnection::UsageEvent::DIRECT_CONNECTION_SELECTED,
        PeerConnection::UsageEvent::CLOSE_CALLED});
 
   EXPECT_EQ(2, webrtc::metrics::NumSamples(kUsagePatternMetric));
@@ -653,6 +664,7 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintWithPrivateIpv6Callee) {
        PeerConnection::UsageEvent::ICE_STATE_CONNECTED,
        PeerConnection::UsageEvent::REMOTE_CANDIDATE_ADDED,
        PeerConnection::UsageEvent::REMOTE_IPV6_CANDIDATE_ADDED,
+       PeerConnection::UsageEvent::DIRECT_CONNECTION_SELECTED,
        PeerConnection::UsageEvent::CLOSE_CALLED});
 
   int expected_fingerprint_callee = MakeUsageFingerprint(
@@ -665,6 +677,7 @@ TEST_F(PeerConnectionUsageHistogramTest, FingerprintWithPrivateIpv6Callee) {
        PeerConnection::UsageEvent::ADD_ICE_CANDIDATE_SUCCEEDED,
        PeerConnection::UsageEvent::REMOTE_CANDIDATE_ADDED,
        PeerConnection::UsageEvent::ICE_STATE_CONNECTED,
+       PeerConnection::UsageEvent::DIRECT_CONNECTION_SELECTED,
        PeerConnection::UsageEvent::CLOSE_CALLED});
 
   EXPECT_EQ(2, webrtc::metrics::NumSamples(kUsagePatternMetric));
@@ -724,7 +737,9 @@ TEST_F(PeerConnectionUsageHistogramTest,
   callee->pc()->Close();
 
   // The caller should not have added any remote candidate either via
-  // AddIceCandidate or from the remote description.
+  // AddIceCandidate or from the remote description. Also, the caller connects
+  // with the callee via a prflx candidate and hence no direct connection bit
+  // should be set.
   int expected_fingerprint_caller = MakeUsageFingerprint(
       {PeerConnection::UsageEvent::DATA_ADDED,
        PeerConnection::UsageEvent::SET_LOCAL_DESCRIPTION_SUCCEEDED,
@@ -745,6 +760,7 @@ TEST_F(PeerConnectionUsageHistogramTest,
        PeerConnection::UsageEvent::REMOTE_PRIVATE_CANDIDATE_ADDED,
        PeerConnection::UsageEvent::REMOTE_IPV6_CANDIDATE_ADDED,
        PeerConnection::UsageEvent::ICE_STATE_CONNECTED,
+       PeerConnection::UsageEvent::DIRECT_CONNECTION_SELECTED,
        PeerConnection::UsageEvent::CLOSE_CALLED});
 
   EXPECT_EQ(2, webrtc::metrics::NumSamples(kUsagePatternMetric));

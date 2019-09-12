@@ -103,7 +103,13 @@ class PeerConnection : public PeerConnectionInternal,
     // successfully added, either via AddIceCandidate or from the remote
     // description.
     REMOTE_CANDIDATE_ADDED = 0x20000,
-    MAX_VALUE = 0x40000,
+    // An explicit host-host candidate pair is selected, i.e. both the local and
+    // the remote candidates have the host type. This does not include candidate
+    // pairs formed with equivalent prflx remote candidates, e.g. a host-prflx
+    // pair where the prflx candidate has the same base as a host candidate of
+    // the remote peer.
+    DIRECT_CONNECTION_SELECTED = 0x40000,
+    MAX_VALUE = 0x80000,
   };
 
   explicit PeerConnection(PeerConnectionFactory* factory,
