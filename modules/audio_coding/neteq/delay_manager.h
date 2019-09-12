@@ -124,11 +124,6 @@ class DelayManager {
     return effective_minimum_delay_ms_;
   }
 
-  // This accessor is only intended for testing purposes.
-  absl::optional<int> deceleration_target_level_offset_ms() const {
-    return deceleration_target_level_offset_ms_;
-  }
-
   // These accessors are only intended for testing purposes.
   HistogramMode histogram_mode() const { return histogram_mode_; }
   int histogram_quantile() const { return histogram_quantile_; }
@@ -204,11 +199,6 @@ class DelayManager {
   };
   std::deque<PacketDelay> delay_history_;
 
-  // When current buffer level is more than
-  // |deceleration_target_level_offset_ms_| below the target level, NetEq will
-  // impose deceleration to increase the buffer level. The value is in Q8, and
-  // measured in milliseconds.
-  const absl::optional<int> deceleration_target_level_offset_ms_;
   const absl::optional<int> extra_delay_ms_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(DelayManager);
