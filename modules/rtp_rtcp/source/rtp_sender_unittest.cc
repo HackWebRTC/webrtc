@@ -89,26 +89,24 @@ uint64_t ConvertMsToAbsSendTime(int64_t time_ms) {
 class LoopbackTransportTest : public webrtc::Transport {
  public:
   LoopbackTransportTest() : total_bytes_sent_(0) {
-    receivers_extensions_.Register(kRtpExtensionTransmissionTimeOffset,
-                                   kTransmissionTimeOffsetExtensionId);
-    receivers_extensions_.Register(kRtpExtensionAbsoluteSendTime,
-                                   kAbsoluteSendTimeExtensionId);
-    receivers_extensions_.Register(kRtpExtensionTransportSequenceNumber,
-                                   kTransportSequenceNumberExtensionId);
-    receivers_extensions_.Register(kRtpExtensionVideoRotation,
-                                   kVideoRotationExtensionId);
-    receivers_extensions_.Register(kRtpExtensionAudioLevel,
-                                   kAudioLevelExtensionId);
-    receivers_extensions_.Register(kRtpExtensionVideoTiming,
-                                   kVideoTimingExtensionId);
-    receivers_extensions_.Register(kRtpExtensionMid, kMidExtensionId);
-    receivers_extensions_.Register(kRtpExtensionGenericFrameDescriptor00,
-                                   kGenericDescriptorId00);
-    receivers_extensions_.Register(kRtpExtensionGenericFrameDescriptor01,
-                                   kGenericDescriptorId01);
-    receivers_extensions_.Register(kRtpExtensionRtpStreamId, kRidExtensionId);
-    receivers_extensions_.Register(kRtpExtensionRepairedRtpStreamId,
-                                   kRepairedRidExtensionId);
+    receivers_extensions_.Register<TransmissionOffset>(
+        kTransmissionTimeOffsetExtensionId);
+    receivers_extensions_.Register<AbsoluteSendTime>(
+        kAbsoluteSendTimeExtensionId);
+    receivers_extensions_.Register<TransportSequenceNumber>(
+        kTransportSequenceNumberExtensionId);
+    receivers_extensions_.Register<VideoOrientation>(kVideoRotationExtensionId);
+    receivers_extensions_.Register<AudioLevel>(kAudioLevelExtensionId);
+    receivers_extensions_.Register<VideoTimingExtension>(
+        kVideoTimingExtensionId);
+    receivers_extensions_.Register<RtpMid>(kMidExtensionId);
+    receivers_extensions_.Register<RtpGenericFrameDescriptorExtension00>(
+        kGenericDescriptorId00);
+    receivers_extensions_.Register<RtpGenericFrameDescriptorExtension01>(
+        kGenericDescriptorId01);
+    receivers_extensions_.Register<RtpStreamId>(kRidExtensionId);
+    receivers_extensions_.Register<RepairedRtpStreamId>(
+        kRepairedRidExtensionId);
   }
 
   bool SendRtp(const uint8_t* data,

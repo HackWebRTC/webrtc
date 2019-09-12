@@ -38,8 +38,7 @@ using ::testing::ElementsAreArray;
 class LoopbackTransportTest : public webrtc::Transport {
  public:
   LoopbackTransportTest() {
-    receivers_extensions_.Register(kRtpExtensionAudioLevel,
-                                   kAudioLevelExtensionId);
+    receivers_extensions_.Register<AudioLevel>(kAudioLevelExtensionId);
   }
 
   bool SendRtp(const uint8_t* data,

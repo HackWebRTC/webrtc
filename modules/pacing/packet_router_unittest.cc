@@ -52,9 +52,7 @@ constexpr int kProbeMinBytes = 1000;
 class PacketRouterTest : public ::testing::Test {
  public:
   PacketRouterTest() {
-    const int kTransportSequenceNumberExtensionId = 1;
-    extension_manager.Register(kRtpExtensionTransportSequenceNumber,
-                               kTransportSequenceNumberExtensionId);
+    extension_manager.Register<TransportSequenceNumber>(/*id=*/1);
   }
 
  protected:
