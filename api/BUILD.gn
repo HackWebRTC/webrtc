@@ -107,10 +107,6 @@ rtc_static_library("libjingle_peerconnection_api") {
     "candidate.cc",
     "candidate.h",
     "congestion_control_interface.h",
-    "crypto/crypto_options.cc",
-    "crypto/crypto_options.h",
-    "crypto/frame_decryptor_interface.h",
-    "crypto/frame_encryptor_interface.h",
     "crypto_params.h",
     "data_channel_interface.cc",
     "data_channel_interface.h",
@@ -169,6 +165,9 @@ rtc_static_library("libjingle_peerconnection_api") {
     ":scoped_refptr",
     "audio:audio_mixer_api",
     "audio_codecs:audio_codecs_api",
+    "crypto:frame_decryptor_interface",
+    "crypto:frame_encryptor_interface",
+    "crypto:options",
     "rtc_event_log",
     "task_queue",
     "transport:bitrate_settings",
@@ -726,6 +725,7 @@ if (rtc_include_tests) {
       # For api/crypto/frame_encryptor_interface.h
       ":libjingle_peerconnection_api",
       "../test:test_support",
+      "crypto:frame_encryptor_interface",
     ]
   }
 
@@ -738,6 +738,7 @@ if (rtc_include_tests) {
     deps = [
       ":libjingle_peerconnection_api",
       "../test:test_support",
+      "crypto:frame_decryptor_interface",
     ]
   }
 
@@ -754,6 +755,7 @@ if (rtc_include_tests) {
       "..:webrtc_common",
       "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
+      "crypto:frame_encryptor_interface",
     ]
   }
 
@@ -770,6 +772,7 @@ if (rtc_include_tests) {
       "..:webrtc_common",
       "../rtc_base:checks",
       "../rtc_base:rtc_base_approved",
+      "crypto:frame_decryptor_interface",
     ]
   }
 

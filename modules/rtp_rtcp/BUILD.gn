@@ -225,6 +225,7 @@ rtc_static_library("rtp_rtcp") {
     "../../api:scoped_refptr",
     "../../api:transport_api",
     "../../api/audio_codecs:audio_codecs_api",
+    "../../api/crypto:frame_encryptor_interface",
     "../../api/rtc_event_log",
     "../../api/transport:field_trial_based_config",
     "../../api/transport:webrtc_key_value_config",

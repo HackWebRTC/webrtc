@@ -31,17 +31,18 @@ rtc_source_set("call_interfaces") {
     ":rtp_interfaces",
     ":video_stream_api",
     "../api:fec_controller_api",
-    "../api:rtc_error",
-
-    # For api/crypto/crypto_options.h
-    "../api:libjingle_peerconnection_api",
+    "../api:libjingle_peerconnection_api",  # For api/bitrate_constraints.h
     "../api:network_state_predictor_api",
+    "../api:rtc_error",
     "../api:rtp_headers",
     "../api:rtp_parameters",
     "../api:scoped_refptr",
     "../api:transport_api",
     "../api/audio:audio_mixer_api",
     "../api/audio_codecs:audio_codecs_api",
+    "../api/crypto:frame_decryptor_interface",
+    "../api/crypto:frame_encryptor_interface",
+    "../api/crypto:options",
     "../api/task_queue",
     "../api/transport:network_control",
     "../api/transport/media:media_transport_interface",
@@ -80,11 +81,10 @@ rtc_source_set("rtp_interfaces") {
   deps = [
     "../api:array_view",
     "../api:fec_controller_api",
-
-    # For api/crypto/crypto_options.h
-    "../api:libjingle_peerconnection_api",
+    "../api:libjingle_peerconnection_api",  # For api/bitrate_constraints.h
     "../api:rtp_headers",
     "../api:rtp_parameters",
+    "../api/crypto:options",
     "../api/rtc_event_log",
     "../api/transport:bitrate_settings",
     "../api/units:timestamp",
@@ -283,10 +283,12 @@ rtc_source_set("video_stream_api") {
   ]
   deps = [
     ":rtp_interfaces",
-    "../api:libjingle_peerconnection_api",
     "../api:rtp_headers",
     "../api:rtp_parameters",
     "../api:transport_api",
+    "../api/crypto:frame_decryptor_interface",
+    "../api/crypto:frame_encryptor_interface",
+    "../api/crypto:options",
     "../api/transport/media:media_transport_interface",
     "../api/transport/rtp:rtp_source",
     "../api/video:video_frame",
@@ -488,6 +490,8 @@ if (rtc_include_tests) {
     deps = [
       ":rtp_interfaces",
       "../api:libjingle_peerconnection_api",
+      "../api/crypto:frame_encryptor_interface",
+      "../api/crypto:options",
       "../modules/pacing",
       "../rtc_base",
       "../rtc_base:rate_limiter",
