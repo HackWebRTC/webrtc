@@ -72,6 +72,7 @@ PROXY_METHOD2(void,
               GetStats,
               rtc::scoped_refptr<RtpReceiverInterface>,
               rtc::scoped_refptr<RTCStatsCollectorCallback>)
+PROXY_METHOD0(void, ClearStatsCache)
 PROXY_METHOD2(rtc::scoped_refptr<DataChannelInterface>,
               CreateDataChannel,
               const std::string&,

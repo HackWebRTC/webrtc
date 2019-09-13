@@ -52,6 +52,11 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
 
   bool RemoveTrack(RtpSenderInterface* sender) override { return false; }
 
+  RTCError RemoveTrackNew(
+      rtc::scoped_refptr<RtpSenderInterface> sender) override {
+    return RTCError(RTCErrorType::UNSUPPORTED_OPERATION);
+  }
+
   RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>> AddTransceiver(
       rtc::scoped_refptr<MediaStreamTrackInterface> track) override {
     return RTCError(RTCErrorType::UNSUPPORTED_OPERATION, "Not implemented");
@@ -200,12 +205,24 @@ class FakePeerConnectionBase : public PeerConnectionInternal {
     return IceConnectionState::kIceConnectionNew;
   }
 
+  IceConnectionState standardized_ice_connection_state() override {
+    return IceConnectionState::kIceConnectionNew;
+  }
+
+  PeerConnectionState peer_connection_state() override {
+    return PeerConnectionState::kNew;
+  }
+
   IceGatheringState ice_gathering_state() override {
     return IceGatheringState::kIceGatheringNew;
   }
 
   bool StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output,
                         int64_t output_period_ms) override {
+    return false;
+  }
+
+  bool StartRtcEventLog(std::unique_ptr<RtcEventLogOutput> output) override {
     return false;
   }
 
