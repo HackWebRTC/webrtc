@@ -928,7 +928,10 @@ class RTCStatsReportVerifier {
   bool VerifyRTCAudioSourceStats(const RTCAudioSourceStats& audio_source) {
     RTCStatsVerifier verifier(report_, &audio_source);
     VerifyRTCMediaSourceStats(audio_source, &verifier);
-    verifier.TestMemberIsPositive<double>(audio_source.audio_level);
+    // Audio level, unlike audio energy, only gets updated at a certain
+    // frequency, so we don't require that one to be positive to avoid a race
+    // (https://crbug.com/webrtc/10962).
+    verifier.TestMemberIsNonNegative<double>(audio_source.audio_level);
     verifier.TestMemberIsPositive<double>(audio_source.total_audio_energy);
     verifier.TestMemberIsPositive<double>(audio_source.total_samples_duration);
     return verifier.ExpectAllMembersSuccessfullyTested();
