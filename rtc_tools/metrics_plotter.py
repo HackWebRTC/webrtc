@@ -62,7 +62,7 @@ def main():
       y_values.append(sample['value'])
 
     plt.ylabel('%s (%s)' % (metric[GRAPH_NAME], metric[UNITS]))
-    plt.xlabel('time (ms)')
+    plt.xlabel('time (s)')
     plt.title(metric[GRAPH_NAME])
     plt.plot(x_values, y_values)
 
