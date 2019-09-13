@@ -379,7 +379,6 @@ void CallTest::AddMatchingVideoReceiveConfigs(
     int rtp_history_ms) {
   RTC_DCHECK(!video_send_config.rtp.ssrcs.empty());
   VideoReceiveStream::Config default_config(rtcp_send_transport);
-  default_config.rtp.remb = !send_side_bwe;
   default_config.rtp.transport_cc = send_side_bwe;
   default_config.rtp.local_ssrc = kReceiverLocalVideoSsrc;
   for (const RtpExtension& extension : video_send_config.rtp.extensions)

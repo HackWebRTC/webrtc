@@ -49,7 +49,6 @@ TEST_F(BandwidthEndToEndTest, ReceiveStreamSendsRemb) {
       send_config->rtp.extensions.clear();
       send_config->rtp.extensions.push_back(
           RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeExtensionId));
-      (*receive_configs)[0].rtp.remb = true;
       (*receive_configs)[0].rtp.transport_cc = false;
     }
 
@@ -97,7 +96,6 @@ class BandwidthStatsTest : public test::EndToEndTest {
       send_config->rtp.extensions.clear();
       send_config->rtp.extensions.push_back(
           RtpExtension(RtpExtension::kAbsSendTimeUri, kAbsSendTimeExtensionId));
-      (*receive_configs)[0].rtp.remb = true;
       (*receive_configs)[0].rtp.transport_cc = false;
     }
   }

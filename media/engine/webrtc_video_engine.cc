@@ -842,7 +842,7 @@ bool WebRtcVideoChannel::ApplyChangedParams(
       RTC_DCHECK(kv.second != nullptr);
       kv.second->SetFeedbackParameters(
           HasLntf(send_codec_->codec), HasNack(send_codec_->codec),
-          HasRemb(send_codec_->codec), HasTransportCc(send_codec_->codec),
+          HasTransportCc(send_codec_->codec),
           send_params_.rtcp.reduced_size ? webrtc::RtcpMode::kReducedSize
                                          : webrtc::RtcpMode::kCompound);
     }
@@ -1340,7 +1340,6 @@ void WebRtcVideoChannel::ConfigureReceiverRtp(
                               ? webrtc::RtcpMode::kReducedSize
                               : webrtc::RtcpMode::kCompound;
 
-  config->rtp.remb = send_codec_ ? HasRemb(send_codec_->codec) : false;
   config->rtp.transport_cc =
       send_codec_ ? HasTransportCc(send_codec_->codec) : false;
 
@@ -2613,24 +2612,20 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::SetLocalSsrc(
 void WebRtcVideoChannel::WebRtcVideoReceiveStream::SetFeedbackParameters(
     bool lntf_enabled,
     bool nack_enabled,
-    bool remb_enabled,
     bool transport_cc_enabled,
     webrtc::RtcpMode rtcp_mode) {
   int nack_history_ms = nack_enabled ? kNackHistoryMs : 0;
   if (config_.rtp.lntf.enabled == lntf_enabled &&
       config_.rtp.nack.rtp_history_ms == nack_history_ms &&
-      config_.rtp.remb == remb_enabled &&
       config_.rtp.transport_cc == transport_cc_enabled &&
       config_.rtp.rtcp_mode == rtcp_mode) {
     RTC_LOG(LS_INFO)
         << "Ignoring call to SetFeedbackParameters because parameters are "
            "unchanged; lntf="
         << lntf_enabled << ", nack=" << nack_enabled
-        << ", remb=" << remb_enabled
         << ", transport_cc=" << transport_cc_enabled;
     return;
   }
-  config_.rtp.remb = remb_enabled;
   config_.rtp.lntf.enabled = lntf_enabled;
   config_.rtp.nack.rtp_history_ms = nack_history_ms;
   config_.rtp.transport_cc = transport_cc_enabled;
@@ -2641,8 +2636,7 @@ void WebRtcVideoChannel::WebRtcVideoReceiveStream::SetFeedbackParameters(
   flexfec_config_.rtcp_mode = config_.rtp.rtcp_mode;
   RTC_LOG(LS_INFO)
       << "RecreateWebRtcStream (recv) because of SetFeedbackParameters; nack="
-      << nack_enabled << ", remb=" << remb_enabled
-      << ", transport_cc=" << transport_cc_enabled;
+      << nack_enabled << ", transport_cc=" << transport_cc_enabled;
   MaybeRecreateWebRtcFlexfecStream();
   RecreateWebRtcVideoStream();
 }

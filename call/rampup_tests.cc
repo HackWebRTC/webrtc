@@ -228,7 +228,6 @@ void RampUpTester::ModifyVideoConfigs(
 
   size_t i = 0;
   for (VideoReceiveStream::Config& recv_config : *receive_configs) {
-    recv_config.rtp.remb = remb;
     recv_config.rtp.transport_cc = transport_cc;
     recv_config.rtp.extensions = send_config->rtp.extensions;
     recv_config.decoders.reserve(1);

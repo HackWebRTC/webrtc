@@ -318,7 +318,6 @@ VideoReceiveStream::Config CreateVideoReceiveStreamConfig(
     uint32_t ssrc,
     uint32_t rtx_ssrc) {
   VideoReceiveStream::Config recv(feedback_transport);
-  recv.rtp.remb = !config.stream.packet_feedback;
   recv.rtp.transport_cc = config.stream.packet_feedback;
   recv.rtp.local_ssrc = local_ssrc;
   recv.rtp.extensions = GetVideoRtpExtensions(config);
