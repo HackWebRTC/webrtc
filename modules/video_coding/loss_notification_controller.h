@@ -15,7 +15,7 @@
 
 #include "absl/types/optional.h"
 #include "modules/include/module_common_types.h"
-#include "modules/video_coding/packet.h"
+#include "modules/rtp_rtcp/source/rtp_generic_frame_descriptor.h"
 #include "rtc_base/numerics/sequence_number_util.h"
 #include "rtc_base/synchronization/sequence_checker.h"
 
@@ -28,7 +28,8 @@ class LossNotificationController {
   ~LossNotificationController();
 
   // An RTP packet was received from the network.
-  void OnReceivedPacket(const VCMPacket& packet);
+  void OnReceivedPacket(uint16_t sequence_number,
+                        const RtpGenericFrameDescriptor& generic_descriptor);
 
   // A frame was assembled from packets previously received.
   // (Should be called even if the frame was composed of a single packet.)
