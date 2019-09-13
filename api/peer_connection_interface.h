@@ -81,6 +81,7 @@
 #include "api/call/call_factory_interface.h"
 #include "api/crypto/crypto_options.h"
 #include "api/data_channel_interface.h"
+#include "api/dtls_transport_interface.h"
 #include "api/fec_controller.h"
 #include "api/jsep.h"
 #include "api/media_stream_interface.h"
@@ -92,6 +93,7 @@
 #include "api/rtp_receiver_interface.h"
 #include "api/rtp_sender_interface.h"
 #include "api/rtp_transceiver_interface.h"
+#include "api/sctp_transport_interface.h"
 #include "api/set_remote_description_observer_interface.h"
 #include "api/stats/rtc_stats_collector_callback.h"
 #include "api/stats_types.h"
@@ -115,18 +117,10 @@
 #include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
-class SSLIdentity;
 class Thread;
 }  // namespace rtc
 
 namespace webrtc {
-class AudioDeviceModule;
-class AudioMixer;
-class AudioProcessing;
-class DtlsTransportInterface;
-class SctpTransportInterface;
-class VideoDecoderFactory;
-class VideoEncoderFactory;
 
 // MediaStream container interface.
 class StreamCollectionInterface : public rtc::RefCountInterface {
