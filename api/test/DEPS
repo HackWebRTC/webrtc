@@ -5,6 +5,9 @@ specific_include_rules = {
   ".*": [
     "+video"
   ],
+  "dummy_peer_connection\.h": [
+    "+rtc_base/ref_counted_object.h",
+  ],
   "fake_constraints\.h": [
     "+rtc_base/string_encode.h",
   ],
