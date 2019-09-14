@@ -85,15 +85,11 @@ bool SampleRateSupportsMultiBand(int sample_rate_hz) {
 }
 
 // Identify the native processing rate that best handles a sample rate.
-int SuitableProcessRate(int minimum_rate, bool band_splitting_required) {
-#ifdef WEBRTC_ARCH_ARM_FAMILY
-  constexpr int kMaxSplittingRate = 32000;
-#else
-  constexpr int kMaxSplittingRate = 48000;
-#endif
-  static_assert(kMaxSplittingRate <= 48000, "");
+int SuitableProcessRate(int minimum_rate,
+                        int max_splitting_rate,
+                        bool band_splitting_required) {
   const int uppermost_native_rate =
-      band_splitting_required ? kMaxSplittingRate : 48000;
+      band_splitting_required ? max_splitting_rate : 48000;
   for (auto rate : {16000, 32000, 48000}) {
     if (rate >= uppermost_native_rate) {
       return uppermost_native_rate;
@@ -591,9 +587,18 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
 
   formats_.api_format = config;
 
+  // Choose maximum rate to use for the split filtering.
+  RTC_DCHECK(config_.pipeline.maximum_internal_processing_rate == 48000 ||
+             config_.pipeline.maximum_internal_processing_rate == 32000);
+  int max_splitting_rate = 48000;
+  if (config_.pipeline.maximum_internal_processing_rate == 32000) {
+    max_splitting_rate = config_.pipeline.maximum_internal_processing_rate;
+  }
+
   int capture_processing_rate = SuitableProcessRate(
       std::min(formats_.api_format.input_stream().sample_rate_hz(),
                formats_.api_format.output_stream().sample_rate_hz()),
+      max_splitting_rate,
       submodule_states_.CaptureMultiBandSubModulesActive() ||
           submodule_states_.RenderMultiBandSubModulesActive());
   RTC_DCHECK_NE(8000, capture_processing_rate);
@@ -606,19 +611,11 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
     render_processing_rate = SuitableProcessRate(
         std::min(formats_.api_format.reverse_input_stream().sample_rate_hz(),
                  formats_.api_format.reverse_output_stream().sample_rate_hz()),
+        max_splitting_rate,
         submodule_states_.CaptureMultiBandSubModulesActive() ||
             submodule_states_.RenderMultiBandSubModulesActive());
   } else {
     render_processing_rate = capture_processing_rate;
-  }
-
-  // TODO(aluebs): Remove this restriction once we figure out why the 3-band
-  // splitting filter degrades the AEC performance.
-  if (render_processing_rate > kSampleRate32kHz &&
-      !capture_nonlocked_.echo_controller_enabled) {
-    render_processing_rate = submodule_states_.RenderMultiBandProcessingActive()
-                                 ? kSampleRate32kHz
-                                 : kSampleRate16kHz;
   }
 
   // If the forward sample rate is 8 kHz, the render stream is also processed

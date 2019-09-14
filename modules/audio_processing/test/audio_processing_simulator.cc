@@ -470,6 +470,11 @@ void AudioProcessingSimulator::CreateAudioProcessor() {
     apm_config.residual_echo_detector.enabled = *settings_.use_ed;
   }
 
+  if (settings_.maximum_internal_processing_rate) {
+    apm_config.pipeline.maximum_internal_processing_rate =
+        *settings_.maximum_internal_processing_rate;
+  }
+
   RTC_CHECK(ap_builder_);
   if (echo_control_factory) {
     ap_builder_->SetEchoControlFactory(std::move(echo_control_factory));

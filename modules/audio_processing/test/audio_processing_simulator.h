@@ -81,6 +81,7 @@ struct SimulationSettings {
   absl::optional<float> pre_amplifier_gain_factor;
   absl::optional<int> vad_likelihood;
   absl::optional<int> ns_level;
+  absl::optional<int> maximum_internal_processing_rate;
   absl::optional<bool> use_refined_adaptive_filter;
   int initial_mic_level;
   bool simulate_mic_gain = false;

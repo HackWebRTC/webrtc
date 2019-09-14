@@ -245,6 +245,17 @@ class AudioProcessing : public rtc::RefCountInterface {
   // submodule resets, affecting the audio quality. Use the RuntimeSetting
   // construct for runtime configuration.
   struct Config {
+    // Sets the properties of the audio processing pipeline.
+    struct Pipeline {
+      Pipeline();
+
+      // Maximum allowed processing rate used internally. May only be set to
+      // 32000 or 48000 and any differing values will be treated as 48000. The
+      // default rate is currently selected based on the CPU architecture, but
+      // that logic may change.
+      int maximum_internal_processing_rate;
+    } pipeline;
+
     // Enabled the pre-amplifier. It amplifies the capture signal
     // before any other processing is done.
     struct PreAmplifier {

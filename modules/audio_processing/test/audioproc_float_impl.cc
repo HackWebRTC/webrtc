@@ -194,6 +194,11 @@ ABSL_FLAG(int,
           kParameterNotSpecifiedValue,
           "Specify the NS level (0-3)");
 ABSL_FLAG(int,
+          maximum_internal_processing_rate,
+          kParameterNotSpecifiedValue,
+          "Set a maximum internal processing rate (32000 or 48000) to override "
+          "the default rate");
+ABSL_FLAG(int,
           stream_delay,
           kParameterNotSpecifiedValue,
           "Specify the stream delay in ms to use");
@@ -417,6 +422,8 @@ SimulationSettings CreateSettings() {
   SetSettingIfSpecified(absl::GetFlag(FLAGS_vad_likelihood),
                         &settings.vad_likelihood);
   SetSettingIfSpecified(absl::GetFlag(FLAGS_ns_level), &settings.ns_level);
+  SetSettingIfSpecified(absl::GetFlag(FLAGS_maximum_internal_processing_rate),
+                        &settings.maximum_internal_processing_rate);
   SetSettingIfSpecified(absl::GetFlag(FLAGS_stream_delay),
                         &settings.stream_delay);
   SetSettingIfFlagSet(absl::GetFlag(FLAGS_use_stream_delay),
