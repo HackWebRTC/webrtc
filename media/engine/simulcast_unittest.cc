@@ -262,7 +262,7 @@ TEST(SimulcastTest, GetConfigForScreenshareSimulcastWithLimitedMaxLayers) {
 TEST(SimulcastTest, SimulcastScreenshareMaxBitrateAdjustedForResolution) {
   constexpr int kScreenshareHighStreamMinBitrateBps = 600000;
   constexpr int kScreenshareHighStreamMaxBitrateBps = 1250000;
-  constexpr int kMaxBitrate960_540 = 900000;
+  constexpr int kMaxBitrate960_540 = 1200000;
 
   // Normal case, max bitrate not limited by resolution.
   const size_t kMaxLayers = 2;
@@ -289,6 +289,42 @@ TEST(SimulcastTest, SimulcastScreenshareMaxBitrateAdjustedForResolution) {
   EXPECT_EQ(streams[1].max_bitrate_bps, kScreenshareHighStreamMinBitrateBps);
   EXPECT_EQ(streams[1].min_bitrate_bps, kScreenshareHighStreamMinBitrateBps);
   EXPECT_GE(streams[1].max_bitrate_bps, streams[1].min_bitrate_bps);
+}
+
+TEST(SimulcastTest, AveragesBitratesForNonStandardResolution) {
+  const size_t kMaxLayers = 3;
+  std::vector<VideoStream> streams = cricket::GetSimulcastConfig(
+      kMaxLayers, 900, 800, kBitratePriority, kQpMax, !kScreenshare);
+
+  EXPECT_EQ(kMaxLayers, streams.size());
+  EXPECT_EQ(900u, streams[2].width);
+  EXPECT_EQ(800u, streams[2].height);
+  EXPECT_EQ(1850000, streams[2].max_bitrate_bps);
+  EXPECT_EQ(1850000, streams[2].target_bitrate_bps);
+  EXPECT_EQ(475000, streams[2].min_bitrate_bps);
+}
+
+TEST(SimulcastTest, BitratesForCloseToStandardResolution) {
+  const size_t kMaxLayers = 3;
+  // Resolution very close to 720p in number of pixels
+  const size_t kWidth = 1280;
+  const size_t kHeight = 716;
+  const std::vector<VideoStream> kExpectedNear = GetSimulcastBitrates720p();
+
+  std::vector<VideoStream> streams = cricket::GetSimulcastConfig(
+      kMaxLayers, kWidth, kHeight, kBitratePriority, kQpMax, !kScreenshare);
+
+  EXPECT_EQ(kMaxLayers, streams.size());
+  EXPECT_EQ(kWidth, streams[2].width);
+  EXPECT_EQ(kHeight, streams[2].height);
+  for (size_t i = 0; i < streams.size(); ++i) {
+    EXPECT_NEAR(kExpectedNear[i].max_bitrate_bps, streams[i].max_bitrate_bps,
+                20000);
+    EXPECT_NEAR(kExpectedNear[i].target_bitrate_bps,
+                streams[i].target_bitrate_bps, 20000);
+    EXPECT_NEAR(kExpectedNear[i].min_bitrate_bps, streams[i].min_bitrate_bps,
+                20000);
+  }
 }
 
 }  // namespace webrtc

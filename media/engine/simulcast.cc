@@ -74,7 +74,7 @@ struct SimulcastFormat {
 const SimulcastFormat kSimulcastFormats[] = {
   {1920, 1080, 3, 5000, 4000, 800},
   {1280, 720, 3, 2500, 2500, 600},
-  {960, 540, 3, 900, 900, 450},
+  {960, 540, 3, 1200, 1200, 350},
   {640, 360, 2, 700, 500, 150},
   {480, 270, 2, 450, 350, 150},
   {320, 180, 1, 200, 150, 30},
@@ -143,19 +143,46 @@ int NormalizeSimulcastSize(int size, size_t simulcast_layers) {
   return ((size >> base2_exponent) << base2_exponent);
 }
 
+SimulcastFormat InterpolateSimulcastFormat(int width, int height) {
+  const int index = FindSimulcastFormatIndex(width, height);
+  if (index == 0)
+    return kSimulcastFormats[index];
+  const int total_pixels_up =
+      kSimulcastFormats[index - 1].width * kSimulcastFormats[index - 1].height;
+  const int total_pixels_down =
+      kSimulcastFormats[index].width * kSimulcastFormats[index].height;
+  const int total_pixels = width * height;
+  const float rate = (total_pixels_up - total_pixels) /
+                     static_cast<float>(total_pixels_up - total_pixels_down);
+  SimulcastFormat res;
+  res.width = width;
+  res.height = height;
+  res.max_layers = kSimulcastFormats[index].max_layers;
+  res.max_bitrate_kbps =
+      kSimulcastFormats[index - 1].max_bitrate_kbps * (1.0 - rate) +
+      kSimulcastFormats[index].max_bitrate_kbps * rate;
+  res.target_bitrate_kbps =
+      kSimulcastFormats[index - 1].target_bitrate_kbps * (1.0 - rate) +
+      kSimulcastFormats[index].target_bitrate_kbps * rate;
+  res.min_bitrate_kbps =
+      kSimulcastFormats[index - 1].min_bitrate_kbps * (1.0 - rate) +
+      kSimulcastFormats[index].min_bitrate_kbps * rate;
+  return res;
+}
+
 int FindSimulcastMaxBitrateBps(int width, int height) {
-  const int format_index = FindSimulcastFormatIndex(width, height);
-  return kSimulcastFormats[format_index].max_bitrate_kbps * 1000;
+  const SimulcastFormat format = InterpolateSimulcastFormat(width, height);
+  return format.max_bitrate_kbps * 1000;
 }
 
 int FindSimulcastTargetBitrateBps(int width, int height) {
-  const int format_index = FindSimulcastFormatIndex(width, height);
-  return kSimulcastFormats[format_index].target_bitrate_kbps * 1000;
+  const SimulcastFormat format = InterpolateSimulcastFormat(width, height);
+  return format.target_bitrate_kbps * 1000;
 }
 
 int FindSimulcastMinBitrateBps(int width, int height) {
-  const int format_index = FindSimulcastFormatIndex(width, height);
-  return kSimulcastFormats[format_index].min_bitrate_kbps * 1000;
+  const SimulcastFormat format = InterpolateSimulcastFormat(width, height);
+  return format.min_bitrate_kbps * 1000;
 }
 
 void BoostMaxSimulcastLayer(int max_bitrate_bps,
