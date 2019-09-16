@@ -139,7 +139,7 @@ TEST_P(TaskQueueTest, PostDelayedAfterDestruct) {
   // Destroy the queue.
   queue = nullptr;
   // Task might outlive the TaskQueue, but still should be deleted.
-  EXPECT_TRUE(deleted.Wait(200));
+  EXPECT_TRUE(deleted.Wait(1000));
   EXPECT_FALSE(run.Wait(0));  // and should not run.
 }
 
