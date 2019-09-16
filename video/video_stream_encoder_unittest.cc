@@ -49,6 +49,9 @@ namespace webrtc {
 
 using ScaleReason = AdaptationObserverInterface::AdaptReason;
 using ::testing::_;
+using ::testing::AllOf;
+using ::testing::Field;
+using ::testing::StrictMock;
 
 namespace {
 const int kMinPixelsPerFrame = 320 * 180;
@@ -4783,6 +4786,91 @@ TEST_F(VideoStreamEncoderTest, BandwidthAllocationLowerBound) {
   DataRate allocation_sum = DataRate::bps(rate_settings->bitrate.get_sum_bps());
   EXPECT_EQ(min_rate, allocation_sum);
   EXPECT_EQ(rate_settings->bandwidth_allocation, min_rate);
+
+  video_stream_encoder_->Stop();
+}
+
+struct MockEncoderSwitchRequestCallback : public EncoderSwitchRequestCallback {
+  MOCK_METHOD0(RequestEncoderFallback, void());
+  MOCK_METHOD1(RequestEncoderSwitch, void(const Config& conf));
+};
+
+TEST_F(VideoStreamEncoderTest, BitrateEncoderSwitch) {
+  constexpr int kDontCare = 100;
+
+  StrictMock<MockEncoderSwitchRequestCallback> switch_callback;
+  video_send_config_.encoder_settings.encoder_switch_request_callback =
+      &switch_callback;
+  VideoEncoderConfig encoder_config = video_encoder_config_.Copy();
+  encoder_config.codec_type = kVideoCodecVP8;
+  webrtc::test::ScopedFieldTrials field_trial(
+      "WebRTC-NetworkCondition-EncoderSwitch/"
+      "codec_thresholds:VP8;100;-1|H264;-1;30000,"
+      "to_codec:AV1,to_param:ping,to_value:pong,window:2.0/");
+
+  // Reset encoder for new configuration to take effect.
+  ConfigureEncoder(std::move(encoder_config));
+
+  // Send one frame to trigger ReconfigureEncoder.
+  video_source_.IncomingCapturedFrame(
+      CreateFrame(kDontCare, kDontCare, kDontCare));
+
+  using Config = EncoderSwitchRequestCallback::Config;
+  EXPECT_CALL(switch_callback,
+              RequestEncoderSwitch(AllOf(Field(&Config::codec_name, "AV1"),
+                                         Field(&Config::param, "ping"),
+                                         Field(&Config::value, "pong"))));
+
+  video_stream_encoder_->OnBitrateUpdated(
+      /*target_bitrate=*/DataRate::kbps(50),
+      /*stable_target_bitrate=*/DataRate::kbps(kDontCare),
+      /*link_allocation=*/DataRate::kbps(kDontCare),
+      /*fraction_lost=*/0,
+      /*rtt_ms=*/0);
+
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest, ResolutionEncoderSwitch) {
+  constexpr int kSufficientBitrateToNotDrop = 1000;
+  constexpr int kHighRes = 500;
+  constexpr int kLowRes = 100;
+
+  StrictMock<MockEncoderSwitchRequestCallback> switch_callback;
+  video_send_config_.encoder_settings.encoder_switch_request_callback =
+      &switch_callback;
+  webrtc::test::ScopedFieldTrials field_trial(
+      "WebRTC-NetworkCondition-EncoderSwitch/"
+      "codec_thresholds:VP8;120;-1|H264;-1;30000,"
+      "to_codec:AV1,to_param:ping,to_value:pong,window:2.0/");
+  VideoEncoderConfig encoder_config = video_encoder_config_.Copy();
+  encoder_config.codec_type = kVideoCodecH264;
+
+  // Reset encoder for new configuration to take effect.
+  ConfigureEncoder(std::move(encoder_config));
+
+  // The VideoStreamEncoder needs some bitrate before it can start encoding,
+  // setting some bitrate so that subsequent calls to WaitForEncodedFrame does
+  // not fail.
+  video_stream_encoder_->OnBitrateUpdated(
+      /*target_bitrate=*/DataRate::kbps(kSufficientBitrateToNotDrop),
+      /*stable_target_bitrate=*/DataRate::kbps(kSufficientBitrateToNotDrop),
+      /*link_allocation=*/DataRate::kbps(kSufficientBitrateToNotDrop),
+      /*fraction_lost=*/0,
+      /*rtt_ms=*/0);
+
+  // Send one frame to trigger ReconfigureEncoder.
+  video_source_.IncomingCapturedFrame(CreateFrame(1, kHighRes, kHighRes));
+  WaitForEncodedFrame(1);
+
+  using Config = EncoderSwitchRequestCallback::Config;
+  EXPECT_CALL(switch_callback,
+              RequestEncoderSwitch(AllOf(Field(&Config::codec_name, "AV1"),
+                                         Field(&Config::param, "ping"),
+                                         Field(&Config::value, "pong"))));
+
+  video_source_.IncomingCapturedFrame(CreateFrame(2, kLowRes, kLowRes));
+  WaitForEncodedFrame(2);
 
   video_stream_encoder_->Stop();
 }

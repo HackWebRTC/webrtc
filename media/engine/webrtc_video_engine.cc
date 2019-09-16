@@ -32,6 +32,7 @@
 #include "media/engine/webrtc_voice_engine.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/experiments/field_trial_parser.h"
+#include "rtc_base/experiments/field_trial_units.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/time_utils.h"
@@ -738,7 +739,7 @@ bool WebRtcVideoChannel::SetSendParameters(const VideoSendParameters& params) {
   return ApplyChangedParams(changed_params);
 }
 
-void WebRtcVideoChannel::OnEncoderFailure() {
+void WebRtcVideoChannel::RequestEncoderFallback() {
   invoker_.AsyncInvoke<void>(
       RTC_FROM_HERE, worker_thread_, [this] {
         RTC_DCHECK_RUN_ON(&thread_checker_);
@@ -754,6 +755,45 @@ void WebRtcVideoChannel::OnEncoderFailure() {
         params.send_codec = params.negotiated_codecs->front();
         ApplyChangedParams(params);
       });
+}
+
+void WebRtcVideoChannel::RequestEncoderSwitch(
+    const EncoderSwitchRequestCallback::Config& conf) {
+  invoker_.AsyncInvoke<void>(RTC_FROM_HERE, worker_thread_, [this, conf] {
+    RTC_DCHECK_RUN_ON(&thread_checker_);
+
+    for (VideoCodecSettings codec_setting : negotiated_codecs_) {
+      if (codec_setting.codec.name == conf.codec_name) {
+        if (conf.param) {
+          auto it = codec_setting.codec.params.find(*conf.param);
+
+          if (it == codec_setting.codec.params.end()) {
+            continue;
+          }
+
+          if (conf.value && it->second != *conf.value) {
+            continue;
+          }
+        }
+
+        if (send_codec_ == codec_setting) {
+          // Already using this codec, no switch required.
+          return;
+        }
+
+        ChangedSendParameters params;
+        params.send_codec = codec_setting;
+        ApplyChangedParams(params);
+        return;
+      }
+    }
+
+    RTC_LOG(LS_WARNING) << "Requested encoder with codec_name:"
+                        << conf.codec_name
+                        << ", param:" << conf.param.value_or("none")
+                        << " and value:" << conf.value.value_or("none")
+                        << "not found. No switch performed.";
+  });
 }
 
 bool WebRtcVideoChannel::ApplyChangedParams(
@@ -1172,7 +1212,7 @@ bool WebRtcVideoChannel::AddSendStream(const StreamParams& sp) {
   config.encoder_settings.encoder_factory = encoder_factory_;
   config.encoder_settings.bitrate_allocator_factory =
       bitrate_allocator_factory_;
-  config.encoder_settings.encoder_failure_callback = this;
+  config.encoder_settings.encoder_switch_request_callback = this;
   config.crypto_options = crypto_options_;
   config.rtp.extmap_allow_mixed = ExtmapAllowMixed();
   config.rtcp_report_interval_ms = video_config_.rtcp_report_interval_ms;

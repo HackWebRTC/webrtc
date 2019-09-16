@@ -17,6 +17,7 @@
 #include <string>
 #include <vector>
 
+#include "api/units/data_rate.h"
 #include "api/video/video_bitrate_allocator.h"
 #include "api/video/video_rotation.h"
 #include "api/video/video_sink_interface.h"
@@ -32,6 +33,7 @@
 #include "rtc_base/experiments/balanced_degradation_settings.h"
 #include "rtc_base/experiments/quality_scaler_settings.h"
 #include "rtc_base/experiments/rate_control_settings.h"
+#include "rtc_base/numerics/exp_filter.h"
 #include "rtc_base/race_checker.h"
 #include "rtc_base/rate_statistics.h"
 #include "rtc_base/synchronization/sequence_checker.h"
@@ -389,6 +391,42 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
   // All public methods are proxied to |encoder_queue_|. It must must be
   // destroyed first to make sure no tasks are run that use other members.
   rtc::TaskQueue encoder_queue_;
+
+  struct EncoderSwitchExperiment {
+    struct Thresholds {
+      absl::optional<DataRate> bitrate;
+      absl::optional<int> pixel_count;
+    };
+
+    // Codec --> switching thresholds
+    std::map<VideoCodecType, Thresholds> codec_thresholds;
+
+    // To smooth out the target bitrate so that we don't trigger a switch
+    // too easily.
+    rtc::ExpFilter bitrate_filter{1.0};
+
+    // Codec/implementation to switch to
+    std::string to_codec;
+    absl::optional<std::string> to_param;
+    absl::optional<std::string> to_value;
+
+    // Thresholds for the currently used codecs.
+    Thresholds current_thresholds;
+
+    // Updates the |bitrate_filter|, so not const.
+    bool IsBitrateBelowThreshold(const DataRate& target_bitrate);
+    bool IsPixelCountBelowThreshold(int pixel_count) const;
+    void SetCodec(VideoCodecType codec);
+  };
+
+  EncoderSwitchExperiment ParseEncoderSwitchFieldTrial() const;
+
+  EncoderSwitchExperiment encoder_switch_experiment_
+      RTC_GUARDED_BY(&encoder_queue_);
+
+  // An encoder switch is only requested once, this variable is used to keep
+  // track of whether a request has been made or not.
+  bool encoder_switch_requested_ RTC_GUARDED_BY(&encoder_queue_);
 
   RTC_DISALLOW_COPY_AND_ASSIGN(VideoStreamEncoder);
 };

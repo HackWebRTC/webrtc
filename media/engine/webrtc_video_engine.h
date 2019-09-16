@@ -122,7 +122,7 @@ class WebRtcVideoEngine : public VideoEngineInterface {
 
 class WebRtcVideoChannel : public VideoMediaChannel,
                            public webrtc::Transport,
-                           public webrtc::EncoderFailureCallback {
+                           public webrtc::EncoderSwitchRequestCallback {
  public:
   WebRtcVideoChannel(
       webrtc::Call* call,
@@ -221,8 +221,10 @@ class WebRtcVideoChannel : public VideoMediaChannel,
   // This method does nothing unless unknown_ssrc_packet_buffer_ is configured.
   void BackfillBufferedPackets(rtc::ArrayView<const uint32_t> ssrcs);
 
-  // Implements webrtc::EncoderFailureCallback.
-  void OnEncoderFailure() override;
+  // Implements webrtc::EncoderSwitchRequestCallback.
+  void RequestEncoderFallback() override;
+  void RequestEncoderSwitch(
+      const EncoderSwitchRequestCallback::Config& conf) override;
 
  private:
   class WebRtcVideoReceiveStream;
