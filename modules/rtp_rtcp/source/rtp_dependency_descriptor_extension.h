@@ -15,7 +15,6 @@
 #include "api/array_view.h"
 #include "common_video/generic_frame_descriptor/generic_frame_info.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
-#include "modules/rtp_rtcp/source/rtp_dependency_descriptor_reader.h"
 #include "modules/rtp_rtcp/source/rtp_dependency_descriptor_writer.h"
 
 namespace webrtc {
@@ -32,10 +31,8 @@ class RtpDependencyDescriptorExtension {
       "generic-frame-descriptor-02";
 
   static bool Parse(rtc::ArrayView<const uint8_t> data,
-                    RtpDependencyDescriptorReader* reader,
-                    DependencyDescriptor* descriptor) {
-    return reader->Parse(data, descriptor);
-  }
+                    const FrameDependencyStructure* structure,
+                    DependencyDescriptor* descriptor);
 
   static size_t ValueSize(RtpDependencyDescriptorWriter* writer,
                           const DependencyDescriptor& descriptor) {
