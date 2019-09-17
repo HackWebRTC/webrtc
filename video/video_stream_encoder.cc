@@ -630,49 +630,35 @@ void VideoStreamEncoder::SetStartBitrate(int start_bitrate_bps) {
 
 void VideoStreamEncoder::ConfigureEncoder(VideoEncoderConfig config,
                                           size_t max_data_payload_length) {
-  // TODO(srte): This struct should be replaced by a lambda with move capture
-  // when C++14 lambda is allowed.
-  struct ConfigureEncoderTask {
-    void operator()() {
-      encoder->ConfigureEncoderOnTaskQueue(std::move(config),
-                                           max_data_payload_length);
-    }
-    VideoStreamEncoder* encoder;
-    VideoEncoderConfig config;
-    size_t max_data_payload_length;
-  };
   encoder_queue_.PostTask(
-      ConfigureEncoderTask{this, std::move(config), max_data_payload_length});
-}
+      [this, config = std::move(config), max_data_payload_length]() mutable {
+        RTC_DCHECK_RUN_ON(&encoder_queue_);
+        RTC_DCHECK(sink_);
+        RTC_LOG(LS_INFO) << "ConfigureEncoder requested.";
 
-void VideoStreamEncoder::ConfigureEncoderOnTaskQueue(
-    VideoEncoderConfig config,
-    size_t max_data_payload_length) {
-  RTC_DCHECK_RUN_ON(&encoder_queue_);
-  RTC_DCHECK(sink_);
-  RTC_LOG(LS_INFO) << "ConfigureEncoder requested.";
+        pending_encoder_creation_ =
+            (!encoder_ || encoder_config_.video_format != config.video_format ||
+             max_data_payload_length_ != max_data_payload_length);
+        encoder_config_ = std::move(config);
+        max_data_payload_length_ = max_data_payload_length;
+        pending_encoder_reconfiguration_ = true;
 
-  pending_encoder_creation_ =
-      (!encoder_ || encoder_config_.video_format != config.video_format ||
-       max_data_payload_length_ != max_data_payload_length);
-  encoder_config_ = std::move(config);
-  max_data_payload_length_ = max_data_payload_length;
-  pending_encoder_reconfiguration_ = true;
-
-  // Reconfigure the encoder now if the encoder has an internal source or
-  // if the frame resolution is known. Otherwise, the reconfiguration is
-  // deferred until the next frame to minimize the number of reconfigurations.
-  // The codec configuration depends on incoming video frame size.
-  if (last_frame_info_) {
-    ReconfigureEncoder();
-  } else {
-    codec_info_ = settings_.encoder_factory->QueryVideoEncoder(
-        encoder_config_.video_format);
-    if (HasInternalSource()) {
-      last_frame_info_ = VideoFrameInfo(176, 144, false);
-      ReconfigureEncoder();
-    }
-  }
+        // Reconfigure the encoder now if the encoder has an internal source or
+        // if the frame resolution is known. Otherwise, the reconfiguration is
+        // deferred until the next frame to minimize the number of
+        // reconfigurations. The codec configuration depends on incoming video
+        // frame size.
+        if (last_frame_info_) {
+          ReconfigureEncoder();
+        } else {
+          codec_info_ = settings_.encoder_factory->QueryVideoEncoder(
+              encoder_config_.video_format);
+          if (HasInternalSource()) {
+            last_frame_info_ = VideoFrameInfo(176, 144, false);
+            ReconfigureEncoder();
+          }
+        }
+      });
 }
 
 static absl::optional<VideoEncoder::ResolutionBitrateLimits>

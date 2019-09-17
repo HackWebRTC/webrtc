@@ -142,8 +142,6 @@ class VideoStreamEncoder : public VideoStreamEncoderInterface,
     DataRate stable_encoder_target;
   };
 
-  void ConfigureEncoderOnTaskQueue(VideoEncoderConfig config,
-                                   size_t max_data_payload_length);
   void ReconfigureEncoder() RTC_RUN_ON(&encoder_queue_);
 
   void ConfigureQualityScaler(const VideoEncoder::EncoderInfo& encoder_info);

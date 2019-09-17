@@ -28,18 +28,6 @@ using ::testing::MockFunction;
 using ::testing::NiceMock;
 using ::testing::Return;
 constexpr Timestamp kStartTime = Timestamp::Seconds<1000>();
-
-// Helper closure class to stop repeating task on a task queue. This is
-// equivalent to [handle{move(handle)}] { handle.Stop(); } in c++14.
-class TaskHandleStopper {
- public:
-  explicit TaskHandleStopper(RepeatingTaskHandle handle)
-      : handle_(std::move(handle)) {}
-  void operator()() { handle_.Stop(); }
-
- private:
-  RepeatingTaskHandle handle_;
-};
 }  // namespace
 
 TEST(SimulatedTimeControllerTest, TaskIsStoppedOnStop) {
@@ -61,7 +49,9 @@ TEST(SimulatedTimeControllerTest, TaskIsStoppedOnStop) {
   time_simulation.Sleep(kShortInterval * (kShortIntervalCount + kMargin));
   EXPECT_EQ(counter.load(), kShortIntervalCount);
 
-  task_queue.PostTask(TaskHandleStopper(std::move(handle)));
+  task_queue.PostTask(
+      [handle = std::move(handle)]() mutable { handle.Stop(); });
+
   // Sleep long enough that the task would run at least once more if not
   // stopped.
   time_simulation.Sleep(kLongInterval * 2);
@@ -108,9 +98,12 @@ TEST(SimulatedTimeControllerTest, Example) {
   RepeatingTaskHandle handle;
   object->StartPeriodicTask(&handle, &task_queue);
   // Restart the task
-  task_queue.PostTask(TaskHandleStopper(std::move(handle)));
+  task_queue.PostTask(
+      [handle = std::move(handle)]() mutable { handle.Stop(); });
   object->StartPeriodicTask(&handle, &task_queue);
-  task_queue.PostTask(TaskHandleStopper(std::move(handle)));
+  task_queue.PostTask(
+      [handle = std::move(handle)]() mutable { handle.Stop(); });
+
   struct Destructor {
     void operator()() { object.reset(); }
     std::unique_ptr<ObjectOnTaskQueue> object;

@@ -138,28 +138,26 @@ void ScenarioIceConnectionImpl::SendRtpPacket(
     rtc::ArrayView<const uint8_t> packet_view) {
   rtc::CopyOnWriteBuffer packet(packet_view.data(), packet_view.size(),
                                 ::cricket::kMaxRtpPacketLen);
-  // TODO(srte): Move |packet| into lambda when we have c++14.
-  network_thread_->PostTask(RTC_FROM_HERE, [this, packet]() mutable {
-    RTC_DCHECK_RUN_ON(network_thread_);
-    if (rtp_transport_ == nullptr)
-      return;
-    rtp_transport_->SendRtpPacket(&packet, rtc::PacketOptions(),
-                                  cricket::PF_SRTP_BYPASS);
-  });
+  network_thread_->PostTask(
+      RTC_FROM_HERE, [this, packet = std::move(packet)]() mutable {
+        RTC_DCHECK_RUN_ON(network_thread_);
+        if (rtp_transport_ != nullptr)
+          rtp_transport_->SendRtpPacket(&packet, rtc::PacketOptions(),
+                                        cricket::PF_SRTP_BYPASS);
+      });
 }
 
 void ScenarioIceConnectionImpl::SendRtcpPacket(
     rtc::ArrayView<const uint8_t> packet_view) {
   rtc::CopyOnWriteBuffer packet(packet_view.data(), packet_view.size(),
                                 ::cricket::kMaxRtpPacketLen);
-  // TODO(srte): Move |packet| into lambda when we have c++14.
-  network_thread_->PostTask(RTC_FROM_HERE, [this, packet]() mutable {
-    RTC_DCHECK_RUN_ON(network_thread_);
-    if (rtp_transport_ == nullptr)
-      return;
-    rtp_transport_->SendRtcpPacket(&packet, rtc::PacketOptions(),
-                                   cricket::PF_SRTP_BYPASS);
-  });
+  network_thread_->PostTask(
+      RTC_FROM_HERE, [this, packet = std::move(packet)]() mutable {
+        RTC_DCHECK_RUN_ON(network_thread_);
+        if (rtp_transport_ != nullptr)
+          rtp_transport_->SendRtcpPacket(&packet, rtc::PacketOptions(),
+                                         cricket::PF_SRTP_BYPASS);
+      });
 }
 void ScenarioIceConnectionImpl::SetRemoteSdp(SdpType type,
                                              const std::string& remote_sdp) {
