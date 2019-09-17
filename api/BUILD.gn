@@ -98,6 +98,13 @@ rtc_source_set("rtp_packet_info") {
   ]
 }
 
+rtc_source_set("media_stream_interface") {
+  visibility = [ "*" ]
+  # TODO(bugs.webrtc.org/8733): The files "media_stream_interface.cc",
+  # "media_stream_interface.h", and "notifier.h" should be moved into
+  # this target.
+}
+
 rtc_static_library("libjingle_peerconnection_api") {
   visibility = [ "*" ]
   cflags = []
