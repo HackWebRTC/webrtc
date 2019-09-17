@@ -41,21 +41,23 @@ class BitrateAllocatorObserver {
 };
 
 // Struct describing parameters for how a media stream should get bitrate
-// allocated to it. |min_bitrate_bps| = 0 equals no min bitrate.
-// |max_bitrate_bps| = 0 equals no max bitrate.
-// |enforce_min_bitrate| = 'true' will allocate at least |min_bitrate_bps| for
-//    this observer, even if the BWE is too low, 'false' will allocate 0 to
-//    the observer if BWE doesn't allow |min_bitrate_bps|.
-// Note that |observer|->OnBitrateUpdated() will be called
-// within the scope of this method with the current rtt, fraction_loss and
-// available bitrate and that the bitrate in OnBitrateUpdated will be zero if
-// the |observer| is currently not allowed to send data.
+// allocated to it.
+
 struct MediaStreamAllocationConfig {
+  // Minimum bitrate supported by track. 0 equals no min bitrate.
   uint32_t min_bitrate_bps;
+  // Maximum bitrate supported by track. 0 equals no max bitrate.
   uint32_t max_bitrate_bps;
   uint32_t pad_up_bitrate_bps;
   int64_t priority_bitrate_bps;
+  // True means track may not be paused by allocating 0 bitrate will allocate at
+  // least |min_bitrate_bps| for this observer, even if the BWE is too low,
+  // false will allocate 0 to the observer if BWE doesn't allow
+  // |min_bitrate_bps|.
   bool enforce_min_bitrate;
+  // The amount of bitrate allocated to this observer relative to all other
+  // observers. If an observer has twice the bitrate_priority of other
+  // observers, it should be allocated twice the bitrate above its min.
   double bitrate_priority;
 };
 
@@ -104,6 +106,10 @@ class BitrateAllocator : public BitrateAllocatorInterface {
   // Set the configuration used by the bandwidth management.
   // |observer| updates bitrates if already in use.
   // |config| is the configuration to use for allocation.
+  // Note that |observer|->OnBitrateUpdated() will be called
+  // within the scope of this method with the current rtt, fraction_loss and
+  // available bitrate and that the bitrate in OnBitrateUpdated will be zero if
+  // the |observer| is currently not allowed to send data.
   void AddObserver(BitrateAllocatorObserver* observer,
                    MediaStreamAllocationConfig config) override;
 
@@ -116,42 +122,17 @@ class BitrateAllocator : public BitrateAllocatorInterface {
   int GetStartBitrate(BitrateAllocatorObserver* observer) const override;
 
  private:
-  struct ObserverConfig {
-    ObserverConfig(BitrateAllocatorObserver* observer,
-                   uint32_t min_bitrate_bps,
-                   uint32_t max_bitrate_bps,
-                   uint32_t pad_up_bitrate_bps,
-                   int64_t priority_bitrate_bps,
-                   bool enforce_min_bitrate,
-                   double bitrate_priority)
+  struct AllocatableTrack {
+    AllocatableTrack(BitrateAllocatorObserver* observer,
+                     MediaStreamAllocationConfig allocation_config)
         : observer(observer),
-          pad_up_bitrate_bps(pad_up_bitrate_bps),
-          priority_bitrate_bps(priority_bitrate_bps),
+          config(allocation_config),
           allocated_bitrate_bps(-1),
-          media_ratio(1.0),
-          bitrate_priority(bitrate_priority),
-          min_bitrate_bps(min_bitrate_bps),
-          max_bitrate_bps(max_bitrate_bps),
-          enforce_min_bitrate(enforce_min_bitrate) {}
-
+          media_ratio(1.0) {}
     BitrateAllocatorObserver* observer;
-    uint32_t pad_up_bitrate_bps;
-    int64_t priority_bitrate_bps;
+    MediaStreamAllocationConfig config;
     int64_t allocated_bitrate_bps;
     double media_ratio;  // Part of the total bitrate used for media [0.0, 1.0].
-    // The amount of bitrate allocated to this observer relative to all other
-    // observers. If an observer has twice the bitrate_priority of other
-    // observers, it should be allocated twice the bitrate above its min.
-    double bitrate_priority;
-
-    // Minimum bitrate supported by track.
-    uint32_t min_bitrate_bps;
-
-    // Maximum bitrate supported by track.
-    uint32_t max_bitrate_bps;
-
-    // True means track may not be paused by allocating 0 bitrate.
-    bool enforce_min_bitrate;
 
     uint32_t LastAllocatedBitrate() const;
     // The minimum bitrate required by this observer, including
@@ -163,14 +144,7 @@ class BitrateAllocator : public BitrateAllocatorInterface {
   // calls LimitObserver::OnAllocationLimitsChanged.
   void UpdateAllocationLimits() RTC_RUN_ON(&sequenced_checker_);
 
-  typedef std::vector<ObserverConfig> ObserverConfigs;
-  ObserverConfigs::const_iterator FindObserverConfig(
-      const BitrateAllocatorObserver* observer) const
-      RTC_RUN_ON(&sequenced_checker_);
-  ObserverConfigs::iterator FindObserverConfig(
-      const BitrateAllocatorObserver* observer) RTC_RUN_ON(&sequenced_checker_);
-
-  typedef std::multimap<uint32_t, const ObserverConfig*> ObserverSortingMap;
+  typedef std::multimap<uint32_t, const AllocatableTrack*> ObserverSortingMap;
   typedef std::map<BitrateAllocatorObserver*, int> ObserverAllocation;
 
   ObserverAllocation AllocateBitrates(uint32_t bitrate) const
@@ -227,7 +201,8 @@ class BitrateAllocator : public BitrateAllocatorInterface {
   SequenceChecker sequenced_checker_;
   LimitObserver* const limit_observer_ RTC_GUARDED_BY(&sequenced_checker_);
   // Stored in a list to keep track of the insertion order.
-  ObserverConfigs bitrate_observer_configs_ RTC_GUARDED_BY(&sequenced_checker_);
+  std::vector<AllocatableTrack> allocatable_tracks_
+      RTC_GUARDED_BY(&sequenced_checker_);
   uint32_t last_target_bps_ RTC_GUARDED_BY(&sequenced_checker_);
   uint32_t last_stable_target_bps_ RTC_GUARDED_BY(&sequenced_checker_);
   uint32_t last_bandwidth_bps_ RTC_GUARDED_BY(&sequenced_checker_);
