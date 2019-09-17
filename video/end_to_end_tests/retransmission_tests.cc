@@ -8,8 +8,9 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "absl/algorithm/container.h"
-#include "absl/memory/memory.h"
 #include "api/test/simulated_network.h"
 #include "api/test/video/function_video_encoder_factory.h"
 #include "call/fake_network_pipe.h"
@@ -142,8 +143,8 @@ TEST_F(RetransmissionEndToEndTest, ReceivesNackAndRetransmitsAudio) {
       test::PacketTransport* receive_transport = new test::PacketTransport(
           task_queue, nullptr, this, test::PacketTransport::kReceiver,
           payload_type_map_,
-          absl::make_unique<FakeNetworkPipe>(
-              Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
+          std::make_unique<FakeNetworkPipe>(
+              Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
                                              BuiltInNetworkBehaviorConfig())));
       receive_transport_ = receive_transport;
       return receive_transport;

@@ -11,7 +11,7 @@
 
 #include <utility>
 
-#include "absl/memory/memory.h"
+#include <memory>
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/rtc_event_log/rtc_event_log_factory.h"
 #include "modules/audio_mixer/audio_mixer_impl.h"
@@ -74,7 +74,7 @@ std::unique_ptr<RtcEventLog> CreateEventLog(
     TaskQueueFactory* task_queue_factory,
     LogWriterFactoryInterface* log_writer_factory) {
   if (!log_writer_factory) {
-    return absl::make_unique<RtcEventLogNull>();
+    return std::make_unique<RtcEventLogNull>();
   }
   auto event_log = RtcEventLogFactory(task_queue_factory)
                        .CreateRtcEventLog(RtcEventLog::EncodingType::NewFormat);
@@ -185,8 +185,8 @@ NetworkControlUpdate LoggingNetworkControllerFactory::GetUpdate() const {
 
 std::unique_ptr<NetworkControllerInterface>
 LoggingNetworkControllerFactory::Create(NetworkControllerConfig config) {
-  auto controller = absl::make_unique<NetworkControleUpdateCache>(
-      cc_factory_->Create(config));
+  auto controller =
+      std::make_unique<NetworkControleUpdateCache>(cc_factory_->Create(config));
   last_controller_ = controller.get();
   return controller;
 }
@@ -214,7 +214,7 @@ CallClient::CallClient(
     call_.reset(CreateCall(time_controller_, event_log_.get(), config,
                            &network_controller_factory_,
                            fake_audio_setup_.audio_state));
-    transport_ = absl::make_unique<NetworkNodeTransport>(clock_, call_.get());
+    transport_ = std::make_unique<NetworkNodeTransport>(clock_, call_.get());
   });
 }
 

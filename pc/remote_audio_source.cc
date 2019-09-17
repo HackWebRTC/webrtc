@@ -12,10 +12,10 @@
 
 #include <stddef.h>
 
+#include <memory>
 #include <string>
 
 #include "absl/algorithm/container.h"
-#include "absl/memory/memory.h"
 #include "api/scoped_refptr.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/constructor_magic.h"
@@ -72,7 +72,7 @@ void RemoteAudioSource::Start(cricket::VoiceMediaChannel* media_channel,
   // is destroyed).
   worker_thread_->Invoke<void>(RTC_FROM_HERE, [&] {
     media_channel->SetRawAudioSink(ssrc,
-                                   absl::make_unique<AudioDataProxy>(this));
+                                   std::make_unique<AudioDataProxy>(this));
   });
 }
 

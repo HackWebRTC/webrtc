@@ -204,7 +204,7 @@ static void JNI_PeerConnectionFactory_InitializeFieldTrials(
     field_trial::InitFieldTrialsFromString(nullptr);
     return;
   }
-  field_trials_init_string = absl::make_unique<std::string>(
+  field_trials_init_string = std::make_unique<std::string>(
       JavaToNativeString(jni, j_trials_init_string));
   RTC_LOG(LS_INFO) << "initializeFieldTrials: " << *field_trials_init_string;
   field_trial::InitFieldTrialsFromString(field_trials_init_string->c_str());
@@ -302,7 +302,7 @@ ScopedJavaLocalRef<jobject> CreatePeerConnectionFactoryForJava(
   dependencies.signaling_thread = signaling_thread.get();
   dependencies.task_queue_factory = CreateDefaultTaskQueueFactory();
   dependencies.call_factory = CreateCallFactory();
-  dependencies.event_log_factory = absl::make_unique<RtcEventLogFactory>(
+  dependencies.event_log_factory = std::make_unique<RtcEventLogFactory>(
       dependencies.task_queue_factory.get());
   dependencies.fec_controller_factory = std::move(fec_controller_factory);
   dependencies.network_controller_factory =
@@ -476,7 +476,7 @@ static jlong JNI_PeerConnectionFactory_CreatePeerConnection(
   PeerConnectionDependencies peer_connection_dependencies(observer.get());
   if (!j_sslCertificateVerifier.is_null()) {
     peer_connection_dependencies.tls_cert_verifier =
-        absl::make_unique<SSLCertificateVerifierWrapper>(
+        std::make_unique<SSLCertificateVerifierWrapper>(
             jni, j_sslCertificateVerifier);
   }
 
@@ -531,7 +531,7 @@ static void JNI_PeerConnectionFactory_InjectLoggable(
   if (jni_log_sink) {
     rtc::LogMessage::RemoveLogToStream(jni_log_sink.get());
   }
-  jni_log_sink = absl::make_unique<JNILogSink>(jni, j_logging);
+  jni_log_sink = std::make_unique<JNILogSink>(jni, j_logging);
   rtc::LogMessage::AddLogToStream(
       jni_log_sink.get(), static_cast<rtc::LoggingSeverity>(nativeSeverity));
   rtc::LogMessage::LogToDebug(rtc::LS_NONE);

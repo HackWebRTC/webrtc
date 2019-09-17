@@ -22,7 +22,6 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
-#include "absl/memory/memory.h"
 #include "api/media_stream_interface.h"
 #include "api/peer_connection_interface.h"
 #include "api/peer_connection_proxy.h"
@@ -625,7 +624,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
       pc_factory_dependencies.event_log_factory = std::move(event_log_factory);
     } else {
       pc_factory_dependencies.event_log_factory =
-          absl::make_unique<webrtc::RtcEventLogFactory>(
+          std::make_unique<webrtc::RtcEventLogFactory>(
               pc_factory_dependencies.task_queue_factory.get());
     }
     if (media_transport_factory) {
@@ -905,7 +904,7 @@ class PeerConnectionWrapper : public webrtc::PeerConnectionObserver,
       ASSERT_TRUE(fake_video_renderers_.find(video_track->id()) ==
                   fake_video_renderers_.end());
       fake_video_renderers_[video_track->id()] =
-          absl::make_unique<FakeVideoTrackRenderer>(video_track);
+          std::make_unique<FakeVideoTrackRenderer>(video_track);
     }
   }
   void OnRemoveTrack(
@@ -1235,7 +1234,7 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
     modified_config.sdp_semantics = sdp_semantics_;
     if (!dependencies.cert_generator) {
       dependencies.cert_generator =
-          absl::make_unique<FakeRTCCertificateGenerator>();
+          std::make_unique<FakeRTCCertificateGenerator>();
     }
     std::unique_ptr<PeerConnectionWrapper> client(
         new PeerConnectionWrapper(debug_name));
@@ -1384,7 +1383,7 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
         network_thread()->Invoke<std::unique_ptr<cricket::TestTurnServer>>(
             RTC_FROM_HERE,
             [thread, internal_address, external_address, type, common_name] {
-              return absl::make_unique<cricket::TestTurnServer>(
+              return std::make_unique<cricket::TestTurnServer>(
                   thread, internal_address, external_address, type,
                   /*ignore_bad_certs=*/true, common_name);
             });
@@ -1397,7 +1396,7 @@ class PeerConnectionIntegrationBaseTest : public ::testing::Test {
     std::unique_ptr<cricket::TestTurnCustomizer> turn_customizer =
         network_thread()->Invoke<std::unique_ptr<cricket::TestTurnCustomizer>>(
             RTC_FROM_HERE,
-            [] { return absl::make_unique<cricket::TestTurnCustomizer>(); });
+            [] { return std::make_unique<cricket::TestTurnCustomizer>(); });
     turn_customizers_.push_back(std::move(turn_customizer));
     // Interactions with the turn customizer should be done on the network
     // thread.
@@ -4072,9 +4071,9 @@ constexpr int kOnlyLocalPorts = cricket::PORTALLOCATOR_DISABLE_STUN |
 TEST_P(PeerConnectionIntegrationTest,
        IceStatesReachCompletionWithRemoteHostname) {
   auto caller_resolver_factory =
-      absl::make_unique<NiceMock<webrtc::MockAsyncResolverFactory>>();
+      std::make_unique<NiceMock<webrtc::MockAsyncResolverFactory>>();
   auto callee_resolver_factory =
-      absl::make_unique<NiceMock<webrtc::MockAsyncResolverFactory>>();
+      std::make_unique<NiceMock<webrtc::MockAsyncResolverFactory>>();
   NiceMock<rtc::MockAsyncResolver> callee_async_resolver;
   NiceMock<rtc::MockAsyncResolver> caller_async_resolver;
 
@@ -4102,9 +4101,9 @@ TEST_P(PeerConnectionIntegrationTest,
 
   // Enable hostname candidates with mDNS names.
   caller()->SetMdnsResponder(
-      absl::make_unique<webrtc::FakeMdnsResponder>(network_thread()));
+      std::make_unique<webrtc::FakeMdnsResponder>(network_thread()));
   callee()->SetMdnsResponder(
-      absl::make_unique<webrtc::FakeMdnsResponder>(network_thread()));
+      std::make_unique<webrtc::FakeMdnsResponder>(network_thread()));
 
   SetPortAllocatorFlags(kOnlyLocalPorts, kOnlyLocalPorts);
 
@@ -5127,7 +5126,7 @@ TEST_P(PeerConnectionIntegrationTest, RtcEventLogOutputWriteCalled) {
   ASSERT_TRUE(CreatePeerConnectionWrappers());
   ConnectFakeSignaling();
 
-  auto output = absl::make_unique<testing::NiceMock<MockRtcEventLogOutput>>();
+  auto output = std::make_unique<testing::NiceMock<MockRtcEventLogOutput>>();
   ON_CALL(*output, IsActive()).WillByDefault(::testing::Return(true));
   ON_CALL(*output, Write(::testing::_)).WillByDefault(::testing::Return(true));
   EXPECT_CALL(*output, Write(::testing::_)).Times(::testing::AtLeast(1));

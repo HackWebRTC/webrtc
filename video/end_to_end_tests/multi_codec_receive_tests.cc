@@ -8,7 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "api/test/simulated_network.h"
 #include "api/test/video/function_video_encoder_factory.h"
 #include "call/fake_network_pipe.h"
@@ -131,16 +132,16 @@ class MultiCodecReceiveTest : public test::CallTest {
       send_transport_.reset(new test::PacketTransport(
           &task_queue_, sender_call_.get(), &observer_,
           test::PacketTransport::kSender, kPayloadTypeMap,
-          absl::make_unique<FakeNetworkPipe>(
-              Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
+          std::make_unique<FakeNetworkPipe>(
+              Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
                                              BuiltInNetworkBehaviorConfig()))));
       send_transport_->SetReceiver(receiver_call_->Receiver());
 
       receive_transport_.reset(new test::PacketTransport(
           &task_queue_, receiver_call_.get(), &observer_,
           test::PacketTransport::kReceiver, kPayloadTypeMap,
-          absl::make_unique<FakeNetworkPipe>(
-              Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
+          std::make_unique<FakeNetworkPipe>(
+              Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
                                              BuiltInNetworkBehaviorConfig()))));
       receive_transport_->SetReceiver(sender_call_->Receiver());
     });

@@ -21,7 +21,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/units/time_delta.h"
 #include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
 #include "modules/congestion_controller/goog_cc/alr_detector.h"
@@ -80,13 +79,13 @@ GoogCcNetworkController::GoogCcNetworkController(NetworkControllerConfig config,
           new ProbeController(key_value_config_, config.event_log)),
       congestion_window_pushback_controller_(
           rate_control_settings_.UseCongestionWindowPushback()
-              ? absl::make_unique<CongestionWindowPushbackController>(
+              ? std::make_unique<CongestionWindowPushbackController>(
                     key_value_config_)
               : nullptr),
       bandwidth_estimation_(
-          absl::make_unique<SendSideBandwidthEstimation>(event_log_)),
+          std::make_unique<SendSideBandwidthEstimation>(event_log_)),
       alr_detector_(
-          absl::make_unique<AlrDetector>(key_value_config_, config.event_log)),
+          std::make_unique<AlrDetector>(key_value_config_, config.event_log)),
       probe_bitrate_estimator_(new ProbeBitrateEstimator(config.event_log)),
       network_estimator_(std::move(goog_cc_config.network_state_estimator)),
       network_state_predictor_(
@@ -95,7 +94,7 @@ GoogCcNetworkController::GoogCcNetworkController(NetworkControllerConfig config,
                                          event_log_,
                                          network_state_predictor_.get())),
       acknowledged_bitrate_estimator_(
-          absl::make_unique<AcknowledgedBitrateEstimator>(key_value_config_)),
+          std::make_unique<AcknowledgedBitrateEstimator>(key_value_config_)),
       initial_config_(config),
       last_raw_target_rate_(*config.constraints.starting_rate),
       last_pushback_target_rate_(last_raw_target_rate_),

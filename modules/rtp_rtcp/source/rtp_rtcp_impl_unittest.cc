@@ -14,7 +14,6 @@
 #include <memory>
 #include <set>
 
-#include "absl/memory/memory.h"
 #include "api/transport/field_trial_based_config.h"
 #include "api/video_codecs/video_codec.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -179,7 +178,7 @@ class RtpRtcpImplTest : public ::testing::Test {
     sender_.impl_->SetSequenceNumber(kSequenceNumber);
     sender_.impl_->SetStorePacketsStatus(true, 100);
 
-    sender_video_ = absl::make_unique<RTPSenderVideo>(
+    sender_video_ = std::make_unique<RTPSenderVideo>(
         &clock_, sender_.impl_->RtpSender(), nullptr, &playout_delay_oracle_,
         nullptr, false, false, false, FieldTrialBasedConfig());
 

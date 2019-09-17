@@ -12,7 +12,6 @@
 
 #include <memory>
 
-#include "absl/memory/memory.h"
 #include "api/video/encoded_image.h"
 #include "api/video/i420_buffer.h"
 #include "modules/video_coding/utility/quality_scaler.h"
@@ -77,7 +76,7 @@ class OveruseFrameDetectorTest : public ::testing::Test,
   void SetUp() override {
     observer_ = &mock_observer_;
     options_.min_process_count = 0;
-    overuse_detector_ = absl::make_unique<OveruseFrameDetectorUnderTest>(this);
+    overuse_detector_ = std::make_unique<OveruseFrameDetectorUnderTest>(this);
     // Unfortunately, we can't call SetOptions here, since that would break
     // single-threading requirements in the RunOnTqNormalUsage test.
   }

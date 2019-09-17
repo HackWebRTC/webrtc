@@ -11,7 +11,6 @@
 #include <cstdint>
 #include <memory>
 
-#include "absl/memory/memory.h"
 #include "api/test/create_network_emulation_manager.h"
 #include "api/test/create_peerconnection_quality_test_fixture.h"
 #include "api/test/network_emulation_manager.h"
@@ -50,15 +49,14 @@ class PeerConnectionE2EQualityTestSmokeTest : public ::testing::Test {
         CreateNetworkEmulationManager();
 
     auto alice_network_behavior =
-        absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig());
+        std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig());
     SimulatedNetwork* alice_network_behavior_ptr = alice_network_behavior.get();
     EmulatedNetworkNode* alice_node =
         network_emulation_manager->CreateEmulatedNode(
             std::move(alice_network_behavior));
     EmulatedNetworkNode* bob_node =
         network_emulation_manager->CreateEmulatedNode(
-            absl::make_unique<SimulatedNetwork>(
-                BuiltInNetworkBehaviorConfig()));
+            std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
     auto* alice_endpoint =
         network_emulation_manager->CreateEndpoint(EmulatedEndpointConfig());
     EmulatedEndpoint* bob_endpoint =
@@ -70,7 +68,7 @@ class PeerConnectionE2EQualityTestSmokeTest : public ::testing::Test {
 
     // Create analyzers.
     std::unique_ptr<VideoQualityAnalyzerInterface> video_quality_analyzer =
-        absl::make_unique<DefaultVideoQualityAnalyzer>();
+        std::make_unique<DefaultVideoQualityAnalyzer>();
     // This is only done for the sake of smoke testing. In general there should
     // be no need to explicitly pull data from analyzers after the run.
     auto* video_analyzer_ptr =
@@ -100,8 +98,8 @@ class PeerConnectionE2EQualityTestSmokeTest : public ::testing::Test {
     fixture->AddPeer(bob_network->network_thread(),
                      bob_network->network_manager(), bob_configurer);
     fixture->AddQualityMetricsReporter(
-        absl::make_unique<NetworkQualityMetricsReporter>(alice_network,
-                                                         bob_network));
+        std::make_unique<NetworkQualityMetricsReporter>(alice_network,
+                                                        bob_network));
 
     fixture->Run(run_params);
 

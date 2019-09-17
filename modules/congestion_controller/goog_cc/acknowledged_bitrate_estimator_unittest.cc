@@ -10,9 +10,9 @@
 
 #include "modules/congestion_controller/goog_cc/acknowledged_bitrate_estimator.h"
 
+#include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/transport/field_trial_based_config.h"
 #include "rtc_base/fake_clock.h"
 #include "test/gmock.h"
@@ -50,10 +50,10 @@ struct AcknowledgedBitrateEstimatorTestStates {
 AcknowledgedBitrateEstimatorTestStates CreateTestStates() {
   AcknowledgedBitrateEstimatorTestStates states;
   auto mock_bitrate_estimator =
-      absl::make_unique<MockBitrateEstimator>(&states.field_trial_config);
+      std::make_unique<MockBitrateEstimator>(&states.field_trial_config);
   states.mock_bitrate_estimator = mock_bitrate_estimator.get();
   states.acknowledged_bitrate_estimator =
-      absl::make_unique<AcknowledgedBitrateEstimator>(
+      std::make_unique<AcknowledgedBitrateEstimator>(
           &states.field_trial_config, std::move(mock_bitrate_estimator));
   return states;
 }

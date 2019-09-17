@@ -273,7 +273,7 @@ LocalAndRemoteSdp SignalingInterceptor::PatchVp8Offer(
 
   // Create patched offer.
   auto patched_offer =
-      absl::make_unique<JsepSessionDescription>(SdpType::kOffer);
+      std::make_unique<JsepSessionDescription>(SdpType::kOffer);
   patched_offer->Initialize(std::move(desc), offer->session_id(),
                             offer->session_version());
   return LocalAndRemoteSdp(std::move(offer), std::move(patched_offer));
@@ -466,7 +466,7 @@ LocalAndRemoteSdp SignalingInterceptor::PatchVp8Answer(
   desc->set_transport_infos(transport_infos);
 
   auto patched_answer =
-      absl::make_unique<JsepSessionDescription>(SdpType::kAnswer);
+      std::make_unique<JsepSessionDescription>(SdpType::kAnswer);
   patched_answer->Initialize(std::move(desc), answer->session_id(),
                              answer->session_version());
   return LocalAndRemoteSdp(std::move(answer), std::move(patched_answer));

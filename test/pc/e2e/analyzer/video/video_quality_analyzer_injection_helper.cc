@@ -115,7 +115,7 @@ VideoQualityAnalyzerInjectionHelper::VideoQualityAnalyzerInjectionHelper(
     : analyzer_(std::move(analyzer)),
       injector_(injector),
       extractor_(extractor),
-      encoding_entities_id_generator_(absl::make_unique<IntIdGenerator>(1)) {
+      encoding_entities_id_generator_(std::make_unique<IntIdGenerator>(1)) {
   RTC_DCHECK(injector_);
   RTC_DCHECK(extractor_);
 }
@@ -128,7 +128,7 @@ VideoQualityAnalyzerInjectionHelper::WrapVideoEncoderFactory(
     double bitrate_multiplier,
     std::map<std::string, absl::optional<int>> stream_required_spatial_index)
     const {
-  return absl::make_unique<QualityAnalyzingVideoEncoderFactory>(
+  return std::make_unique<QualityAnalyzingVideoEncoderFactory>(
       std::move(delegate), bitrate_multiplier,
       std::move(stream_required_spatial_index),
       encoding_entities_id_generator_.get(), injector_, analyzer_.get());
@@ -137,7 +137,7 @@ VideoQualityAnalyzerInjectionHelper::WrapVideoEncoderFactory(
 std::unique_ptr<VideoDecoderFactory>
 VideoQualityAnalyzerInjectionHelper::WrapVideoDecoderFactory(
     std::unique_ptr<VideoDecoderFactory> delegate) const {
-  return absl::make_unique<QualityAnalyzingVideoDecoderFactory>(
+  return std::make_unique<QualityAnalyzingVideoDecoderFactory>(
       std::move(delegate), encoding_entities_id_generator_.get(), extractor_,
       analyzer_.get());
 }
@@ -149,14 +149,14 @@ VideoQualityAnalyzerInjectionHelper::WrapFrameGenerator(
     test::VideoFrameWriter* writer) const {
   std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>> sinks;
   if (writer) {
-    sinks.push_back(absl::make_unique<VideoWriter>(writer));
+    sinks.push_back(std::make_unique<VideoWriter>(writer));
   }
   if (config.show_on_screen) {
     sinks.push_back(absl::WrapUnique(
         test::VideoRenderer::Create((*config.stream_label + "-capture").c_str(),
                                     config.width, config.height)));
   }
-  return absl::make_unique<AnalyzingFrameGenerator>(
+  return std::make_unique<AnalyzingFrameGenerator>(
       std::move(*config.stream_label), std::move(delegate), analyzer_.get(),
       std::move(sinks));
 }
@@ -167,15 +167,15 @@ VideoQualityAnalyzerInjectionHelper::CreateVideoSink(
     test::VideoFrameWriter* writer) const {
   std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>> sinks;
   if (writer) {
-    sinks.push_back(absl::make_unique<VideoWriter>(writer));
+    sinks.push_back(std::make_unique<VideoWriter>(writer));
   }
   if (config.show_on_screen) {
     sinks.push_back(absl::WrapUnique(
         test::VideoRenderer::Create((*config.stream_label + "-render").c_str(),
                                     config.width, config.height)));
   }
-  return absl::make_unique<AnalyzingVideoSink>(analyzer_.get(),
-                                               std::move(sinks));
+  return std::make_unique<AnalyzingVideoSink>(analyzer_.get(),
+                                              std::move(sinks));
 }
 
 void VideoQualityAnalyzerInjectionHelper::Start(std::string test_case_name,

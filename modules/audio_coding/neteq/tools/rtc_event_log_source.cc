@@ -14,10 +14,10 @@
 
 #include <iostream>
 #include <limits>
+#include <memory>
 #include <set>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "logging/rtc_event_log/rtc_event_processor.h"
 #include "modules/audio_coding/neteq/tools/packet.h"
 #include "rtc_base/checks.h"
@@ -96,7 +96,7 @@ bool RtcEventLogSource::Initialize(const ParsedRtcEventLog& parsed_log,
        &packet_ssrcs](const webrtc::LoggedRtpPacketIncoming& incoming) {
         if (!filter_.test(incoming.rtp.header.payloadType) &&
             incoming.log_time_us() < first_log_end_time_us) {
-          rtp_packets_.emplace_back(absl::make_unique<Packet>(
+          rtp_packets_.emplace_back(std::make_unique<Packet>(
               incoming.rtp.header, incoming.rtp.total_length,
               incoming.rtp.total_length - incoming.rtp.header_length,
               static_cast<double>(incoming.log_time_ms())));

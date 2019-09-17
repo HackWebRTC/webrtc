@@ -14,7 +14,6 @@
 #include <memory>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/test/create_simulcast_test_fixture.h"
 #include "api/test/simulcast_test_fixture.h"
 #include "api/test/video/function_video_decoder_factory.h"
@@ -51,14 +50,14 @@ const VideoEncoder::Settings kSettings(kCapabilities, 1, 1200);
 std::unique_ptr<SimulcastTestFixture> CreateSpecificSimulcastTestFixture(
     VideoEncoderFactory* internal_encoder_factory) {
   std::unique_ptr<VideoEncoderFactory> encoder_factory =
-      absl::make_unique<FunctionVideoEncoderFactory>(
+      std::make_unique<FunctionVideoEncoderFactory>(
           [internal_encoder_factory]() {
-            return absl::make_unique<SimulcastEncoderAdapter>(
+            return std::make_unique<SimulcastEncoderAdapter>(
                 internal_encoder_factory,
                 SdpVideoFormat(cricket::kVp8CodecName));
           });
   std::unique_ptr<VideoDecoderFactory> decoder_factory =
-      absl::make_unique<FunctionVideoDecoderFactory>(
+      std::make_unique<FunctionVideoDecoderFactory>(
           []() { return VP8Decoder::Create(); });
   return CreateSimulcastTestFixture(std::move(encoder_factory),
                                     std::move(decoder_factory),

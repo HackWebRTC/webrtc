@@ -16,7 +16,6 @@
 #include <utility>
 
 #include "absl/algorithm/container.h"
-#include "absl/memory/memory.h"
 #include "api/array_view.h"
 #include "api/transport/field_trial_based_config.h"
 #include "call/rtp_transport_controller_send_interface.h"
@@ -118,7 +117,7 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
                                     *configuration.local_media_ssrc) !=
                               flexfec_protected_ssrcs.end();
     configuration.flexfec_sender = enable_flexfec ? flexfec_sender : nullptr;
-    auto playout_delay_oracle = absl::make_unique<PlayoutDelayOracle>();
+    auto playout_delay_oracle = std::make_unique<PlayoutDelayOracle>();
 
     configuration.ack_observer = playout_delay_oracle.get();
     if (rtp_config.rtx.ssrcs.size() > i) {
@@ -130,7 +129,7 @@ std::vector<RtpStreamSender> CreateRtpStreamSenders(
     rtp_rtcp->SetSendingMediaStatus(false);
     rtp_rtcp->SetRTCPStatus(RtcpMode::kCompound);
 
-    auto sender_video = absl::make_unique<RTPSenderVideo>(
+    auto sender_video = std::make_unique<RTPSenderVideo>(
         configuration.clock, rtp_rtcp->RtpSender(),
         configuration.flexfec_sender, playout_delay_oracle.get(),
         frame_encryptor, crypto_options.sframe.require_frame_encryption,
@@ -192,7 +191,7 @@ std::unique_ptr<FlexfecSender> MaybeCreateFlexfecSender(
   }
 
   RTC_DCHECK_EQ(1U, rtp.flexfec.protected_media_ssrcs.size());
-  return absl::make_unique<FlexfecSender>(
+  return std::make_unique<FlexfecSender>(
       rtp.flexfec.payload_type, rtp.flexfec.ssrc,
       rtp.flexfec.protected_media_ssrcs[0], rtp.mid, rtp.extensions,
       RTPSender::FecExtensionSizes(), rtp_state, clock);

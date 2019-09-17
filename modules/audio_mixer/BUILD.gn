@@ -52,7 +52,6 @@ rtc_static_library("audio_mixer_impl") {
     "../audio_processing:apm_logging",
     "../audio_processing:audio_frame_view",
     "../audio_processing/agc2:fixed_digital",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -116,7 +115,6 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:task_queue_for_test",
       "../../test:test_support",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 

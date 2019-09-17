@@ -18,7 +18,6 @@ rtc_static_library("pcc") {
     "../../../api/transport:network_control",
     "../../../api/units:time_delta",
     "../../../rtc_base:rtc_base_approved",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -38,7 +37,6 @@ rtc_static_library("pcc_controller") {
     "../../../api/units:timestamp",
     "../../../rtc_base:checks",
     "../../../rtc_base:rtc_base_approved",
-    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -96,7 +94,6 @@ rtc_static_library("bitrate_controller") {
     "../../../api/transport:network_control",
     "../../../api/units:data_rate",
     "../../../rtc_base:rtc_base_approved",
-    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -126,7 +123,6 @@ if (rtc_include_tests) {
       "../../../rtc_base:rtc_base_approved",
       "../../../test:test_support",
       "../../../test/scenario",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 }

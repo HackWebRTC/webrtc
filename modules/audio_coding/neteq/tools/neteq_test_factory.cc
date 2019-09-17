@@ -22,7 +22,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_coding/neteq/include/neteq.h"
 #include "modules/audio_coding/neteq/tools/audio_sink.h"
@@ -194,19 +193,19 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
   // If an output file is requested, open it.
   std::unique_ptr<AudioSink> output;
   if (!config.output_audio_filename.has_value()) {
-    output = absl::make_unique<VoidAudioSink>();
+    output = std::make_unique<VoidAudioSink>();
     std::cout << "No output audio file" << std::endl;
   } else if (config.output_audio_filename->size() >= 4 &&
              config.output_audio_filename->substr(
                  config.output_audio_filename->size() - 4) == ".wav") {
     // Open a wav file with the known sample rate.
-    output = absl::make_unique<OutputWavFile>(*config.output_audio_filename,
-                                              *sample_rate_hz);
+    output = std::make_unique<OutputWavFile>(*config.output_audio_filename,
+                                             *sample_rate_hz);
     std::cout << "Output WAV file: " << *config.output_audio_filename
               << std::endl;
   } else {
     // Open a pcm file.
-    output = absl::make_unique<OutputAudioFile>(*config.output_audio_filename);
+    output = std::make_unique<OutputAudioFile>(*config.output_audio_filename);
     std::cout << "Output PCM file: " << *config.output_audio_filename
               << std::endl;
   }
@@ -254,9 +253,8 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
           std::unique_ptr<AudioDecoder> decoder =
               decoder_factory->MakeAudioDecoder(format, codec_pair_id);
           if (!decoder && format.name == "replacement") {
-            decoder = absl::make_unique<FakeDecodeFromFile>(
-                absl::make_unique<InputAudioFile>(
-                    config.replacement_audio_file),
+            decoder = std::make_unique<FakeDecodeFromFile>(
+                std::make_unique<InputAudioFile>(config.replacement_audio_file),
                 format.clockrate_hz, format.num_channels > 1);
           }
           return decoder;
@@ -274,11 +272,11 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
   // Create a text log file if needed.
   std::unique_ptr<std::ofstream> text_log;
   if (config.textlog_filename.has_value()) {
-    text_log = absl::make_unique<std::ofstream>(*config.textlog_filename);
+    text_log = std::make_unique<std::ofstream>(*config.textlog_filename);
   }
 
   NetEqTest::Callbacks callbacks;
-  stats_plotter_ = absl::make_unique<NetEqStatsPlotter>(
+  stats_plotter_ = std::make_unique<NetEqStatsPlotter>(
       config.matlabplot, config.pythonplot, config.concealment_events,
       config.plot_scripts_basename.value_or(""));
 
@@ -291,9 +289,9 @@ std::unique_ptr<NetEqTest> NetEqTestFactory::InitializeTest(
   neteq_config.sample_rate_hz = *sample_rate_hz;
   neteq_config.max_packets_in_buffer = config.max_nr_packets_in_buffer;
   neteq_config.enable_fast_accelerate = config.enable_fast_accelerate;
-  return absl::make_unique<NetEqTest>(neteq_config, decoder_factory, codecs,
-                                      std::move(text_log), std::move(input),
-                                      std::move(output), callbacks);
+  return std::make_unique<NetEqTest>(neteq_config, decoder_factory, codecs,
+                                     std::move(text_log), std::move(input),
+                                     std::move(output), callbacks);
 }
 
 }  // namespace test

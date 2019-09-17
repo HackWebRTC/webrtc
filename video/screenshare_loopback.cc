@@ -16,7 +16,6 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/bitrate_constraints.h"
 #include "api/test/simulated_network.h"
@@ -367,7 +366,7 @@ void Loopback() {
       &params, 0, stream_descriptors, NumStreams(), SelectedStream(),
       NumSpatialLayers(), SelectedSL(), InterLayerPred(), SL_descriptors);
 
-  auto fixture = absl::make_unique<VideoQualityTest>(nullptr);
+  auto fixture = std::make_unique<VideoQualityTest>(nullptr);
   if (DurationSecs()) {
     fixture->RunWithAnalyzer(params);
   } else {

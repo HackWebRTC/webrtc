@@ -20,7 +20,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/video/video_bitrate_allocation.h"
@@ -379,8 +378,8 @@ class VideoCodecTestFixtureImpl::CpuProcessTime final {
 };
 
 VideoCodecTestFixtureImpl::VideoCodecTestFixtureImpl(Config config)
-    : encoder_factory_(absl::make_unique<InternalEncoderFactory>()),
-      decoder_factory_(absl::make_unique<InternalDecoderFactory>()),
+    : encoder_factory_(std::make_unique<InternalEncoderFactory>()),
+      decoder_factory_(std::make_unique<InternalDecoderFactory>()),
       config_(config) {}
 
 VideoCodecTestFixtureImpl::VideoCodecTestFixtureImpl(
@@ -689,7 +688,7 @@ void VideoCodecTestFixtureImpl::SetUpAndInitObjects(
 
   task_queue->SendTask([this]() {
     CreateEncoderAndDecoder();
-    processor_ = absl::make_unique<VideoProcessor>(
+    processor_ = std::make_unique<VideoProcessor>(
         encoder_.get(), &decoders_, source_frame_reader_.get(), config_,
         &stats_, &encoded_frame_writers_,
         decoded_frame_writers_.empty() ? nullptr : &decoded_frame_writers_);

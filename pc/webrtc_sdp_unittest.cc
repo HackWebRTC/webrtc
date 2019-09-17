@@ -4691,7 +4691,7 @@ TEST_F(WebRtcSdpTest, ParseMediaTransportIgnoreNonsenseAttributeLines) {
 }
 
 TEST_F(WebRtcSdpTest, SerializeMediaTransportSettings) {
-  auto description = absl::make_unique<cricket::SessionDescription>();
+  auto description = std::make_unique<cricket::SessionDescription>();
 
   JsepSessionDescription output(SdpType::kOffer);
   // JsepSessionDescription takes ownership of the description.

@@ -11,8 +11,8 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <memory>
 
-#include "absl/memory/memory.h"
 #include "modules/congestion_controller/goog_cc/delay_based_bwe.h"
 #include "rtc_base/checks.h"
 
@@ -149,8 +149,7 @@ DelayBasedBweTest::DelayBasedBweTest()
     : field_trial(),
       clock_(100000000),
       acknowledged_bitrate_estimator_(
-          absl::make_unique<AcknowledgedBitrateEstimator>(
-              &field_trial_config_)),
+          std::make_unique<AcknowledgedBitrateEstimator>(&field_trial_config_)),
       probe_bitrate_estimator_(new ProbeBitrateEstimator(nullptr)),
       bitrate_estimator_(
           new DelayBasedBwe(&field_trial_config_, nullptr, nullptr)),
@@ -161,11 +160,10 @@ DelayBasedBweTest::DelayBasedBweTest()
 
 DelayBasedBweTest::DelayBasedBweTest(const std::string& field_trial_string)
     : field_trial(
-          absl::make_unique<test::ScopedFieldTrials>(field_trial_string)),
+          std::make_unique<test::ScopedFieldTrials>(field_trial_string)),
       clock_(100000000),
       acknowledged_bitrate_estimator_(
-          absl::make_unique<AcknowledgedBitrateEstimator>(
-              &field_trial_config_)),
+          std::make_unique<AcknowledgedBitrateEstimator>(&field_trial_config_)),
       probe_bitrate_estimator_(new ProbeBitrateEstimator(nullptr)),
       bitrate_estimator_(
           new DelayBasedBwe(&field_trial_config_, nullptr, nullptr)),

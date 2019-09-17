@@ -18,7 +18,6 @@ rtc_static_library("bbr") {
     "../../../api/transport:network_control",
     "../../../api/units:time_delta",
     "../../../rtc_base:rtc_base_approved",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 

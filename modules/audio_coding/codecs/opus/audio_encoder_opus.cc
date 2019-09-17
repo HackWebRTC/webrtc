@@ -12,10 +12,10 @@
 
 #include <algorithm>
 #include <iterator>
+#include <memory>
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "modules/audio_coding/audio_network_adaptor/audio_network_adaptor_impl.h"
 #include "modules/audio_coding/audio_network_adaptor/controller_manager.h"
@@ -244,15 +244,13 @@ GetNewPacketLossRateOptimizer() {
     if (sscanf(field_trial_string.c_str(), "Enabled-%d-%d-%f", &min_rate,
                &max_rate, &slope) == 3 &&
         IsValidPacketLossRate(min_rate) && IsValidPacketLossRate(max_rate)) {
-      return absl::make_unique<
-          AudioEncoderOpusImpl::NewPacketLossRateOptimizer>(
+      return std::make_unique<AudioEncoderOpusImpl::NewPacketLossRateOptimizer>(
           ToFraction(min_rate), ToFraction(max_rate), slope);
     }
     RTC_LOG(LS_WARNING) << "Invalid parameters for "
                         << kPacketLossOptimizationName
                         << ", using default values.";
-    return absl::make_unique<
-        AudioEncoderOpusImpl::NewPacketLossRateOptimizer>();
+    return std::make_unique<AudioEncoderOpusImpl::NewPacketLossRateOptimizer>();
   }
   return nullptr;
 }
@@ -300,7 +298,7 @@ std::unique_ptr<AudioEncoder> AudioEncoderOpusImpl::MakeAudioEncoder(
     const AudioEncoderOpusConfig& config,
     int payload_type) {
   RTC_DCHECK(config.IsOk());
-  return absl::make_unique<AudioEncoderOpusImpl>(config, payload_type);
+  return std::make_unique<AudioEncoderOpusImpl>(config, payload_type);
 }
 
 absl::optional<AudioEncoderOpusConfig> AudioEncoderOpusImpl::SdpToConfig(
@@ -417,7 +415,7 @@ AudioEncoderOpusImpl::AudioEncoderOpusImpl(const AudioEncoderOpusConfig& config,
             return DefaultAudioNetworkAdaptorCreator(config_string, event_log);
           },
           // We choose 5sec as initial time constant due to empirical data.
-          absl::make_unique<SmoothingFilterImpl>(5000)) {}
+          std::make_unique<SmoothingFilterImpl>(5000)) {}
 
 AudioEncoderOpusImpl::AudioEncoderOpusImpl(
     const AudioEncoderOpusConfig& config,

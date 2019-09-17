@@ -99,7 +99,6 @@ rtc_static_library("goog_cc") {
     "..:network_state_predictor_api",
     "../../modules/congestion_controller/goog_cc",
     "../../rtc_base:deprecation",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -125,7 +124,6 @@ if (rtc_include_tests) {
       ":network_control",
       ":test_feedback_generator_interface",
       "../../test/network:feedback_generator",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 }

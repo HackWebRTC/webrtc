@@ -10,7 +10,8 @@
 
 #include "call/rtp_stream_receiver_controller.h"
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "rtc_base/logging.h"
 
 namespace webrtc {
@@ -46,7 +47,7 @@ RtpStreamReceiverController::~RtpStreamReceiverController() = default;
 std::unique_ptr<RtpStreamReceiverInterface>
 RtpStreamReceiverController::CreateReceiver(uint32_t ssrc,
                                             RtpPacketSinkInterface* sink) {
-  return absl::make_unique<Receiver>(this, ssrc, sink);
+  return std::make_unique<Receiver>(this, ssrc, sink);
 }
 
 bool RtpStreamReceiverController::OnRtpPacket(const RtpPacketReceived& packet) {

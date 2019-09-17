@@ -12,7 +12,6 @@
 
 #include <memory>
 
-#include "absl/memory/memory.h"
 #include "api/scoped_refptr.h"
 #include "api/test/mock_video_decoder.h"
 #include "api/test/mock_video_encoder.h"
@@ -56,7 +55,7 @@ class VideoProcessorTest : public ::testing::Test {
     EXPECT_CALL(frame_reader_mock_, FrameLength())
         .WillRepeatedly(Return(kFrameSize));
     q_.SendTask([this] {
-      video_processor_ = absl::make_unique<VideoProcessor>(
+      video_processor_ = std::make_unique<VideoProcessor>(
           &encoder_mock_, &decoders_, &frame_reader_mock_, config_, &stats_,
           &encoded_frame_writers_, /*decoded_frame_writers=*/nullptr);
     });

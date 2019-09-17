@@ -16,7 +16,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/units/time_delta.h"
 #include "p2p/base/basic_packet_socket_factory.h"
@@ -838,7 +837,7 @@ TEST_F(TurnPortTest, TestTurnAllocateWithLoggingId) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
   turn_port_->SetTurnLoggingId("KESO");
   turn_server_.server()->SetStunMessageObserver(
-      absl::make_unique<TurnLoggingIdValidator>("KESO"));
+      std::make_unique<TurnLoggingIdValidator>("KESO"));
   turn_port_->PrepareAddress();
   EXPECT_TRUE_SIMULATED_WAIT(turn_ready_, kSimulatedRtt * 2, fake_clock_);
   ASSERT_EQ(1U, turn_port_->Candidates().size());
@@ -850,7 +849,7 @@ TEST_F(TurnPortTest, TestTurnAllocateWithLoggingId) {
 TEST_F(TurnPortTest, TestTurnAllocateWithoutLoggingId) {
   CreateTurnPort(kTurnUsername, kTurnPassword, kTurnUdpProtoAddr);
   turn_server_.server()->SetStunMessageObserver(
-      absl::make_unique<TurnLoggingIdValidator>(nullptr));
+      std::make_unique<TurnLoggingIdValidator>(nullptr));
   turn_port_->PrepareAddress();
   EXPECT_TRUE_SIMULATED_WAIT(turn_ready_, kSimulatedRtt * 2, fake_clock_);
   ASSERT_EQ(1U, turn_port_->Candidates().size());

@@ -14,7 +14,6 @@
 #include <utility>
 
 #include "absl/algorithm/container.h"
-#include "absl/memory/memory.h"
 #include "api/transport/datagram_transport_interface.h"
 #include "api/transport/media/media_transport_interface.h"
 #include "p2p/base/ice_transport_internal.h"
@@ -476,7 +475,7 @@ JsepTransportController::CreateIceTransport(const std::string transport_name,
     return config_.external_transport_factory->CreateIceTransport(
         transport_name, component);
   } else {
-    return absl::make_unique<cricket::P2PTransportChannel>(
+    return std::make_unique<cricket::P2PTransportChannel>(
         transport_name, component, port_allocator_, async_resolver_factory_,
         config_.event_log);
   }
@@ -500,14 +499,14 @@ JsepTransportController::CreateDtlsTransport(
     // If media transport is used for both media and data channels,
     // then we don't need to create DTLS.
     // Otherwise, DTLS is still created.
-    dtls = absl::make_unique<cricket::NoOpDtlsTransport>(
-        ice, config_.crypto_options);
+    dtls = std::make_unique<cricket::NoOpDtlsTransport>(ice,
+                                                        config_.crypto_options);
   } else if (config_.external_transport_factory) {
     dtls = config_.external_transport_factory->CreateDtlsTransport(
         ice, config_.crypto_options);
   } else {
-    dtls = absl::make_unique<cricket::DtlsTransport>(
-        ice, config_.crypto_options, config_.event_log);
+    dtls = std::make_unique<cricket::DtlsTransport>(ice, config_.crypto_options,
+                                                    config_.event_log);
   }
 
   RTC_DCHECK(dtls);
@@ -553,7 +552,7 @@ JsepTransportController::CreateUnencryptedRtpTransport(
     rtc::PacketTransportInternal* rtcp_packet_transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
   auto unencrypted_rtp_transport =
-      absl::make_unique<RtpTransport>(rtcp_packet_transport == nullptr);
+      std::make_unique<RtpTransport>(rtcp_packet_transport == nullptr);
   unencrypted_rtp_transport->SetRtpPacketTransport(rtp_packet_transport);
   if (rtcp_packet_transport) {
     unencrypted_rtp_transport->SetRtcpPacketTransport(rtcp_packet_transport);
@@ -568,7 +567,7 @@ JsepTransportController::CreateSdesTransport(
     cricket::DtlsTransportInternal* rtcp_dtls_transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
   auto srtp_transport =
-      absl::make_unique<webrtc::SrtpTransport>(rtcp_dtls_transport == nullptr);
+      std::make_unique<webrtc::SrtpTransport>(rtcp_dtls_transport == nullptr);
   RTC_DCHECK(rtp_dtls_transport);
   srtp_transport->SetRtpPacketTransport(rtp_dtls_transport);
   if (rtcp_dtls_transport) {
@@ -586,7 +585,7 @@ JsepTransportController::CreateDtlsSrtpTransport(
     cricket::DtlsTransportInternal* rtp_dtls_transport,
     cricket::DtlsTransportInternal* rtcp_dtls_transport) {
   RTC_DCHECK(network_thread_->IsCurrent());
-  auto dtls_srtp_transport = absl::make_unique<webrtc::DtlsSrtpTransport>(
+  auto dtls_srtp_transport = std::make_unique<webrtc::DtlsSrtpTransport>(
       rtcp_dtls_transport == nullptr);
   if (config_.enable_external_auth) {
     dtls_srtp_transport->EnableExternalAuth();
@@ -1209,7 +1208,7 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
     RTC_LOG(LS_INFO) << "Creating UnencryptedRtpTransport, because datagram "
                         "transport is used.";
     RTC_DCHECK(!rtcp_dtls_transport);
-    datagram_rtp_transport = absl::make_unique<DatagramRtpTransport>(
+    datagram_rtp_transport = std::make_unique<DatagramRtpTransport>(
         content_info.media_description()->rtp_header_extensions(), ice.get(),
         datagram_transport.get());
   }
@@ -1230,7 +1229,7 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
   }
 
   std::unique_ptr<cricket::JsepTransport> jsep_transport =
-      absl::make_unique<cricket::JsepTransport>(
+      std::make_unique<cricket::JsepTransport>(
           content_info.name, certificate_, std::move(ice), std::move(rtcp_ice),
           std::move(unencrypted_rtp_transport), std::move(sdes_transport),
           std::move(dtls_srtp_transport), std::move(datagram_rtp_transport),

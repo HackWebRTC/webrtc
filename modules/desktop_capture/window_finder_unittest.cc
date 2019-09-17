@@ -21,7 +21,6 @@
 #include "test/gtest.h"
 
 #if defined(USE_X11)
-#include "absl/memory/memory.h"
 #include "modules/desktop_capture/linux/shared_x_display.h"
 #include "modules/desktop_capture/linux/x_atom_cache.h"
 #endif
@@ -97,7 +96,7 @@ TEST(WindowFinderTest, FindDrawerWindow) {
   std::unique_ptr<XAtomCache> cache;
   const auto shared_x_display = SharedXDisplay::CreateDefault();
   if (shared_x_display) {
-    cache = absl::make_unique<XAtomCache>(shared_x_display->display());
+    cache = std::make_unique<XAtomCache>(shared_x_display->display());
     options.cache = cache.get();
   }
 #endif
@@ -153,7 +152,7 @@ TEST(WindowFinderTest, ShouldReturnNullWindowIfSpotIsOutOfScreen) {
   std::unique_ptr<XAtomCache> cache;
   const auto shared_x_display = SharedXDisplay::CreateDefault();
   if (shared_x_display) {
-    cache = absl::make_unique<XAtomCache>(shared_x_display->display());
+    cache = std::make_unique<XAtomCache>(shared_x_display->display());
     options.cache = cache.get();
   }
 #endif

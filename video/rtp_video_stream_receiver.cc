@@ -232,13 +232,13 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
 
   if (config_.rtp.lntf.enabled) {
     loss_notification_controller_ =
-        absl::make_unique<LossNotificationController>(&rtcp_feedback_buffer_,
-                                                      &rtcp_feedback_buffer_);
+        std::make_unique<LossNotificationController>(&rtcp_feedback_buffer_,
+                                                     &rtcp_feedback_buffer_);
   }
 
   if (config_.rtp.nack.rtp_history_ms != 0) {
-    nack_module_ = absl::make_unique<NackModule>(clock_, &rtcp_feedback_buffer_,
-                                                 &rtcp_feedback_buffer_);
+    nack_module_ = std::make_unique<NackModule>(clock_, &rtcp_feedback_buffer_,
+                                                &rtcp_feedback_buffer_);
     process_thread_->RegisterModule(nack_module_.get(), RTC_FROM_HERE);
   }
 
@@ -259,12 +259,12 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
   packet_buffer_ = video_coding::PacketBuffer::Create(
       clock_, kPacketBufferStartSize, packet_buffer_max_size, this);
   reference_finder_ =
-      absl::make_unique<video_coding::RtpFrameReferenceFinder>(this);
+      std::make_unique<video_coding::RtpFrameReferenceFinder>(this);
 
   // Only construct the encrypted receiver if frame encryption is enabled.
   if (config_.crypto_options.sframe.require_frame_encryption) {
     buffered_frame_decryptor_ =
-        absl::make_unique<BufferedFrameDecryptor>(this, this);
+        std::make_unique<BufferedFrameDecryptor>(this, this);
     if (frame_decryptor != nullptr) {
       buffered_frame_decryptor_->SetFrameDecryptor(std::move(frame_decryptor));
     }
@@ -569,7 +569,7 @@ void RtpVideoStreamReceiver::SetFrameDecryptor(
   RTC_DCHECK_RUN_ON(&network_tc_);
   if (buffered_frame_decryptor_ == nullptr) {
     buffered_frame_decryptor_ =
-        absl::make_unique<BufferedFrameDecryptor>(this, this);
+        std::make_unique<BufferedFrameDecryptor>(this, this);
   }
   buffered_frame_decryptor_->SetFrameDecryptor(std::move(frame_decryptor));
 }

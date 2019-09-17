@@ -33,7 +33,6 @@ rtc_source_set("control_handler") {
     "../../../rtc_base/synchronization:sequence_checker",
     "../../../system_wrappers:field_trial",
     "../../pacing",
-    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 

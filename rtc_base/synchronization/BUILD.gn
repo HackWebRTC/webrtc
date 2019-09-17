@@ -89,7 +89,6 @@ if (rtc_include_tests) {
       "../../api:function_view",
       "../../test:test_main",
       "../../test:test_support",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 }

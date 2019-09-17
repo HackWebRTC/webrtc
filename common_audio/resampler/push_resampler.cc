@@ -13,8 +13,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <memory>
+
 #include "absl/container/inlined_vector.h"
-#include "absl/memory/memory.h"
 #include "common_audio/include/audio_util.h"
 #include "common_audio/resampler/push_sinc_resampler.h"
 #include "rtc_base/checks.h"
@@ -93,7 +94,7 @@ int PushResampler<T>::InitializeIfNeeded(int src_sample_rate_hz,
   for (size_t i = 0; i < num_channels; ++i) {
     channel_resamplers_.push_back(ChannelResampler());
     auto channel_resampler = channel_resamplers_.rbegin();
-    channel_resampler->resampler = absl::make_unique<PushSincResampler>(
+    channel_resampler->resampler = std::make_unique<PushSincResampler>(
         src_size_10ms_mono, dst_size_10ms_mono);
     channel_resampler->source.resize(src_size_10ms_mono);
     channel_resampler->destination.resize(dst_size_10ms_mono);

@@ -14,7 +14,6 @@
 #include <memory>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/video_codecs/video_encoder.h"
 #include "api/video_codecs/video_encoder_factory.h"
 
@@ -54,7 +53,7 @@ class VideoEncoderProxyFactory final : public VideoEncoderFactory {
     max_num_simultaneous_encoder_instances_ =
         std::max(max_num_simultaneous_encoder_instances_,
                  num_simultaneous_encoder_instances_);
-    return absl::make_unique<EncoderProxy>(encoder_, this);
+    return std::make_unique<EncoderProxy>(encoder_, this);
   }
 
   void SetIsHardwareAccelerated(bool is_hardware_accelerated) {

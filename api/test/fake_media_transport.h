@@ -17,7 +17,6 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
-#include "absl/memory/memory.h"
 #include "api/test/fake_datagram_transport.h"
 #include "api/transport/media/media_transport_interface.h"
 
@@ -165,7 +164,7 @@ class FakeMediaTransportFactory : public MediaTransportFactory {
       rtc::Thread* network_thread,
       const MediaTransportSettings& settings) override {
     std::unique_ptr<MediaTransportInterface> media_transport =
-        absl::make_unique<FakeMediaTransport>(settings, transport_offer_);
+        std::make_unique<FakeMediaTransport>(settings, transport_offer_);
     media_transport->Connect(packet_transport);
     return std::move(media_transport);
   }
@@ -174,7 +173,7 @@ class FakeMediaTransportFactory : public MediaTransportFactory {
       rtc::Thread* network_thread,
       const MediaTransportSettings& settings) override {
     std::unique_ptr<MediaTransportInterface> media_transport =
-        absl::make_unique<FakeMediaTransport>(
+        std::make_unique<FakeMediaTransport>(
             settings, transport_offer_, settings.remote_transport_parameters);
     return std::move(media_transport);
   }

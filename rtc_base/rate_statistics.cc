@@ -11,8 +11,8 @@
 #include "rtc_base/rate_statistics.h"
 
 #include <algorithm>
+#include <memory>
 
-#include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 
 namespace webrtc {
@@ -35,7 +35,7 @@ RateStatistics::RateStatistics(const RateStatistics& other)
       scale_(other.scale_),
       max_window_size_ms_(other.max_window_size_ms_),
       current_window_size_ms_(other.current_window_size_ms_) {
-  buckets_ = absl::make_unique<Bucket[]>(other.max_window_size_ms_);
+  buckets_ = std::make_unique<Bucket[]>(other.max_window_size_ms_);
   std::copy(other.buckets_.get(),
             other.buckets_.get() + other.max_window_size_ms_, buckets_.get());
 }

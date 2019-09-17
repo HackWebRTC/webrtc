@@ -13,7 +13,6 @@
 #include <atomic>
 #include <memory>
 
-#include "absl/memory/memory.h"
 #include "rtc_base/task_queue.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "test/gmock.h"
@@ -104,7 +103,7 @@ TEST(SimulatedTimeControllerTest, Example) {
   rtc::TaskQueue task_queue(
       time_simulation.GetTaskQueueFactory()->CreateTaskQueue(
           "TestQueue", TaskQueueFactory::Priority::NORMAL));
-  auto object = absl::make_unique<ObjectOnTaskQueue>();
+  auto object = std::make_unique<ObjectOnTaskQueue>();
   // Create and start the periodic task.
   RepeatingTaskHandle handle;
   object->StartPeriodicTask(&handle, &task_queue);

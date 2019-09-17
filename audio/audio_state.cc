@@ -11,10 +11,10 @@
 #include "audio/audio_state.h"
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "audio/audio_receive_stream.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "rtc_base/checks.h"
@@ -130,8 +130,7 @@ void AudioState::SetPlayout(bool enabled) {
       }
     } else {
       config_.audio_device_module->StopPlayout();
-      null_audio_poller_ =
-          absl::make_unique<NullAudioPoller>(&audio_transport_);
+      null_audio_poller_ = std::make_unique<NullAudioPoller>(&audio_transport_);
     }
   }
 }

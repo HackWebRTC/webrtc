@@ -13,11 +13,11 @@
 #include <stdint.h>
 
 #include <cstdio>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/fec_controller_override.h"
 #include "api/video/video_bitrate_allocation.h"
@@ -395,7 +395,7 @@ void VideoEncoderSoftwareFallbackWrapper::ValidateSettingsForForcedFallback() {
 std::unique_ptr<VideoEncoder> CreateVideoEncoderSoftwareFallbackWrapper(
     std::unique_ptr<VideoEncoder> sw_fallback_encoder,
     std::unique_ptr<VideoEncoder> hw_encoder) {
-  return absl::make_unique<VideoEncoderSoftwareFallbackWrapper>(
+  return std::make_unique<VideoEncoderSoftwareFallbackWrapper>(
       std::move(sw_fallback_encoder), std::move(hw_encoder));
 }
 

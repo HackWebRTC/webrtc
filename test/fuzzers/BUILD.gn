@@ -452,7 +452,6 @@ webrtc_fuzzer_test("mdns_parser_fuzzer") {
   deps = [
     "../../p2p:rtc_p2p",
     "../../rtc_base:rtc_base_approved",
-    "//third_party/abseil-cpp/absl/memory",
   ]
   seed_corpus = "corpora/mdns-corpus"
 }
@@ -529,7 +528,6 @@ webrtc_fuzzer_test("agc_fuzzer") {
     "../../modules/audio_processing:audio_buffer",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base:safe_minmax",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 
   seed_corpus = "corpora/agc-corpus"
@@ -555,7 +553,6 @@ webrtc_fuzzer_test("rtp_frame_reference_finder_fuzzer") {
     "../../api:scoped_refptr",
     "../../modules/video_coding/",
     "../../system_wrappers",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -637,7 +634,6 @@ webrtc_fuzzer_test("vp8_replay_fuzzer") {
   deps = [
     "../../rtc_base:rtc_base_approved",
     "utils:rtp_replayer",
-    "//third_party/abseil-cpp/absl/memory",
   ]
   seed_corpus = "corpora/rtpdump-corpus/vp8"
 }
@@ -649,7 +645,6 @@ webrtc_fuzzer_test("vp9_replay_fuzzer") {
   deps = [
     "../../rtc_base:rtc_base_approved",
     "utils:rtp_replayer",
-    "//third_party/abseil-cpp/absl/memory",
   ]
   seed_corpus = "corpora/rtpdump-corpus/vp9"
 }

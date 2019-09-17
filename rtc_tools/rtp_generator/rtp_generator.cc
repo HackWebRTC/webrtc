@@ -11,9 +11,9 @@
 #include "rtc_tools/rtp_generator/rtp_generator.h"
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/video_codecs/builtin_video_decoder_factory.h"
 #include "api/video_codecs/builtin_video_encoder_factory.h"
@@ -161,7 +161,7 @@ RtpGenerator::RtpGenerator(const RtpGeneratorOptions& options)
       video_decoder_factory_(CreateBuiltinVideoDecoderFactory()),
       video_bitrate_allocator_factory_(
           CreateBuiltinVideoBitrateAllocatorFactory()),
-      event_log_(absl::make_unique<RtcEventLogNull>()),
+      event_log_(std::make_unique<RtcEventLogNull>()),
       call_(Call::Create(CallConfig(event_log_.get()))),
       task_queue_(CreateDefaultTaskQueueFactory()) {
   constexpr int kMinBitrateBps = 30000;    // 30 Kbps
@@ -222,7 +222,7 @@ RtpGenerator::RtpGenerator(const RtpGeneratorOptions& options)
 
     // Setup the fake video stream for this.
     std::unique_ptr<test::FrameGeneratorCapturer> frame_generator =
-        absl::make_unique<test::FrameGeneratorCapturer>(
+        std::make_unique<test::FrameGeneratorCapturer>(
             Clock::GetRealTimeClock(),
             test::FrameGenerator::CreateSquareGenerator(
                 send_config.video_width, send_config.video_height,

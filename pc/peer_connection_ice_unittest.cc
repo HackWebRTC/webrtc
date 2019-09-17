@@ -8,6 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
+#include <memory>
+
 #include "p2p/base/fake_port_allocator.h"
 #include "p2p/base/test_stun_server.h"
 #include "p2p/client/basic_port_allocator.h"
@@ -18,7 +20,6 @@
 #ifdef WEBRTC_ANDROID
 #include "pc/test/android_test_initializer.h"
 #endif
-#include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/create_peerconnection_factory.h"
@@ -115,13 +116,13 @@ class PeerConnectionIceBaseTest : public ::testing::Test {
   WrapperPtr CreatePeerConnection(const RTCConfiguration& config) {
     auto* fake_network = NewFakeNetwork();
     auto port_allocator =
-        absl::make_unique<cricket::BasicPortAllocator>(fake_network);
+        std::make_unique<cricket::BasicPortAllocator>(fake_network);
     port_allocator->set_flags(cricket::PORTALLOCATOR_DISABLE_TCP |
                               cricket::PORTALLOCATOR_DISABLE_RELAY);
     port_allocator->set_step_delay(cricket::kMinimumStepDelay);
     RTCConfiguration modified_config = config;
     modified_config.sdp_semantics = sdp_semantics_;
-    auto observer = absl::make_unique<MockPeerConnectionObserver>();
+    auto observer = std::make_unique<MockPeerConnectionObserver>();
     auto port_allocator_copy = port_allocator.get();
     auto pc = pc_factory_->CreatePeerConnection(
         modified_config, std::move(port_allocator), nullptr, observer.get());
@@ -130,7 +131,7 @@ class PeerConnectionIceBaseTest : public ::testing::Test {
     }
 
     observer->SetPeerConnectionInterface(pc.get());
-    auto wrapper = absl::make_unique<PeerConnectionWrapperForIceTest>(
+    auto wrapper = std::make_unique<PeerConnectionWrapperForIceTest>(
         pc_factory_, pc, std::move(observer));
     wrapper->set_network(fake_network);
     wrapper->port_allocator_ = port_allocator_copy;

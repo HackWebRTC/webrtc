@@ -10,9 +10,9 @@
 #include "test/peer_scenario/peer_scenario_client.h"
 
 #include <limits>
+#include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/rtc_event_log/rtc_event_log_factory.h"
@@ -160,7 +160,7 @@ PeerScenarioClient::PeerScenarioClient(NetworkEmulationManager* net,
   pcf_deps.task_queue_factory = CreateDefaultTaskQueueFactory();
   task_queue_factory_ = pcf_deps.task_queue_factory.get();
   pcf_deps.event_log_factory =
-      absl::make_unique<RtcEventLogFactory>(task_queue_factory_);
+      std::make_unique<RtcEventLogFactory>(task_queue_factory_);
 
   cricket::MediaEngineDependencies media_deps;
   media_deps.task_queue_factory = task_queue_factory_;
@@ -187,8 +187,8 @@ PeerScenarioClient::PeerScenarioClient(NetworkEmulationManager* net,
   pc_factory_ = CreateModularPeerConnectionFactory(std::move(pcf_deps));
 
   PeerConnectionDependencies pc_deps(observer_.get());
-  pc_deps.allocator = absl::make_unique<cricket::BasicPortAllocator>(
-      manager->network_manager());
+  pc_deps.allocator =
+      std::make_unique<cricket::BasicPortAllocator>(manager->network_manager());
   pc_deps.allocator->set_flags(pc_deps.allocator->flags() |
                                cricket::PORTALLOCATOR_DISABLE_TCP);
   peer_connection_ =

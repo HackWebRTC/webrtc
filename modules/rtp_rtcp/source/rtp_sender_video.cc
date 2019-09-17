@@ -18,7 +18,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "api/crypto/frame_encryptor_interface.h"
 #include "modules/remote_bitrate_estimator/test/bwe_test_logging.h"
@@ -216,7 +215,7 @@ RTPSenderVideo::RTPSenderVideo(Clock* clock,
       transmit_color_space_next_frame_(false),
       playout_delay_oracle_(playout_delay_oracle),
       rtp_sequence_number_map_(need_rtp_packet_infos
-                                   ? absl::make_unique<RtpSequenceNumberMap>(
+                                   ? std::make_unique<RtpSequenceNumberMap>(
                                          kRtpSequenceNumberMapMaxEntries)
                                    : nullptr),
       red_payload_type_(-1),
@@ -552,9 +551,9 @@ bool RTPSenderVideo::SendVideo(
   single_packet->SetTimestamp(rtp_timestamp);
   single_packet->set_capture_time_ms(capture_time_ms);
 
-  auto first_packet = absl::make_unique<RtpPacketToSend>(*single_packet);
-  auto middle_packet = absl::make_unique<RtpPacketToSend>(*single_packet);
-  auto last_packet = absl::make_unique<RtpPacketToSend>(*single_packet);
+  auto first_packet = std::make_unique<RtpPacketToSend>(*single_packet);
+  auto middle_packet = std::make_unique<RtpPacketToSend>(*single_packet);
+  auto last_packet = std::make_unique<RtpPacketToSend>(*single_packet);
   // Simplest way to estimate how much extensions would occupy is to set them.
   AddRtpHeaderExtensions(*video_header, playout_delay, frame_type,
                          set_video_rotation, set_color_space, set_frame_marking,
@@ -706,7 +705,7 @@ bool RTPSenderVideo::SendVideo(
       expected_payload_capacity =
           limits.max_payload_len - limits.last_packet_reduction_len;
     } else {
-      packet = absl::make_unique<RtpPacketToSend>(*middle_packet);
+      packet = std::make_unique<RtpPacketToSend>(*middle_packet);
       expected_payload_capacity = limits.max_payload_len;
     }
 

@@ -14,12 +14,12 @@
 #include <string.h>
 
 #include <algorithm>
+#include <memory>
 #include <set>
 #include <string>
 #include <utility>
 
 #include "absl/algorithm/container.h"
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "api/crypto/frame_decryptor_interface.h"
@@ -246,7 +246,7 @@ VideoReceiveStream::VideoReceiveStream(
     media_receiver_ = receiver_controller->CreateReceiver(
         config_.rtp.remote_ssrc, &rtp_video_stream_receiver_);
     if (config_.rtp.rtx_ssrc) {
-      rtx_receive_stream_ = absl::make_unique<RtxReceiveStream>(
+      rtx_receive_stream_ = std::make_unique<RtxReceiveStream>(
           &rtp_video_stream_receiver_, config.rtp.rtx_associated_payload_types,
           config_.rtp.remote_ssrc, rtp_receive_statistics_.get());
       rtx_receiver_ = receiver_controller->CreateReceiver(
@@ -338,7 +338,7 @@ void VideoReceiveStream::Start() {
     // old decoder factory interface doesn't have a way to query supported
     // codecs.
     if (!video_decoder) {
-      video_decoder = absl::make_unique<NullVideoDecoder>();
+      video_decoder = std::make_unique<NullVideoDecoder>();
     }
 
     std::string decoded_output_file =
@@ -573,7 +573,7 @@ void VideoReceiveStream::OnCompleteFrame(
 void VideoReceiveStream::OnData(uint64_t channel_id,
                                 MediaTransportEncodedVideoFrame frame) {
   OnCompleteFrame(
-      absl::make_unique<EncodedFrameForMediaTransport>(std::move(frame)));
+      std::make_unique<EncodedFrameForMediaTransport>(std::move(frame)));
 }
 
 void VideoReceiveStream::OnRttUpdate(int64_t avg_rtt_ms, int64_t max_rtt_ms) {

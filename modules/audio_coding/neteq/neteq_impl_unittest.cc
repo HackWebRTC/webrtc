@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "modules/audio_coding/neteq/accelerate.h"
 #include "modules/audio_coding/neteq/expand.h"
@@ -109,7 +108,7 @@ class NetEqImplTest : public ::testing::Test {
           config_.max_packets_in_buffer, config_.min_delay_ms, 1020054733,
           DelayManager::HistogramMode::INTER_ARRIVAL_TIME,
           config_.enable_rtx_handling, delay_peak_detector_, tick_timer_,
-          deps.stats.get(), absl::make_unique<Histogram>(50, 32745)));
+          deps.stats.get(), std::make_unique<Histogram>(50, 32745)));
       mock_delay_manager_ = mock.get();
       deps.delay_manager = std::move(mock);
     }
@@ -1567,7 +1566,7 @@ class NetEqImplTest120ms : public NetEqImplTest {
         new rtc::RefCountedObject<test::FunctionAudioDecoderFactory>(
             [sampling_freq, speech_type]() {
               std::unique_ptr<AudioDecoder> decoder =
-                  absl::make_unique<Decoder120ms>(sampling_freq, speech_type);
+                  std::make_unique<Decoder120ms>(sampling_freq, speech_type);
               RTC_CHECK_EQ(2, decoder->Channels());
               return decoder;
             });

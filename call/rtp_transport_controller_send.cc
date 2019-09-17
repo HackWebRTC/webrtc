@@ -9,10 +9,10 @@
  */
 #include "call/rtp_transport_controller_send.h"
 
+#include <memory>
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/transport/goog_cc_factory.h"
 #include "api/transport/network_types.h"
@@ -72,7 +72,7 @@ RtpTransportControllerSend::RtpTransportControllerSend(
       observer_(nullptr),
       controller_factory_override_(controller_factory),
       controller_factory_fallback_(
-          absl::make_unique<GoogCcNetworkControllerFactory>(predictor_factory)),
+          std::make_unique<GoogCcNetworkControllerFactory>(predictor_factory)),
       process_interval_(controller_factory_fallback_->GetProcessInterval()),
       last_report_block_time_(Timestamp::ms(clock_->TimeInMilliseconds())),
       reset_feedback_on_route_change_(
@@ -112,7 +112,7 @@ RtpVideoSenderInterface* RtpTransportControllerSend::CreateRtpVideoSender(
     RtcEventLog* event_log,
     std::unique_ptr<FecController> fec_controller,
     const RtpSenderFrameEncryptionConfig& frame_encryption_config) {
-  video_rtp_senders_.push_back(absl::make_unique<RtpVideoSender>(
+  video_rtp_senders_.push_back(std::make_unique<RtpVideoSender>(
       clock_, suspended_ssrcs, states, rtp_config, rtcp_report_interval_ms,
       send_transport, observers,
       // TODO(holmer): Remove this circular dependency by injecting
@@ -265,7 +265,7 @@ void RtpTransportControllerSend::OnNetworkRouteChanged(
     transport_overhead_bytes_per_packet_ = network_route.packet_overhead;
 
     if (event_log_) {
-      event_log_->Log(absl::make_unique<RtcEventRouteChange>(
+      event_log_->Log(std::make_unique<RtcEventRouteChange>(
           network_route.connected, network_route.packet_overhead));
     }
     NetworkRouteChange msg;
@@ -490,7 +490,7 @@ void RtpTransportControllerSend::MaybeCreateControllers() {
 
   if (!network_available_ || !observer_)
     return;
-  control_handler_ = absl::make_unique<CongestionControlHandler>();
+  control_handler_ = std::make_unique<CongestionControlHandler>();
 
   initial_config_.constraints.at_time =
       Timestamp::ms(clock_->TimeInMilliseconds());

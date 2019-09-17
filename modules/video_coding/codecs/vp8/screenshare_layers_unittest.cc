@@ -17,7 +17,6 @@
 #include <memory>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/video_codecs/vp8_frame_config.h"
 #include "modules/video_coding/codecs/interface/common_constants.h"
 #include "modules/video_coding/codecs/vp8/libvpx_vp8_encoder.h"
@@ -204,7 +203,7 @@ class ScreenshareLayerTest : public ::testing::Test {
   bool config_updated_;
 
   CodecSpecificInfo* IgnoredCodecSpecificInfo() {
-    ignored_codec_specific_info_ = absl::make_unique<CodecSpecificInfo>();
+    ignored_codec_specific_info_ = std::make_unique<CodecSpecificInfo>();
     return ignored_codec_specific_info_.get();
   }
 
@@ -218,14 +217,14 @@ TEST_F(ScreenshareLayerTest, 1Layer) {
   // One layer screenshare should not use the frame dropper as all frames will
   // belong to the base layer.
   const int kSingleLayerFlags = 0;
-  auto info = absl::make_unique<CodecSpecificInfo>();
+  auto info = std::make_unique<CodecSpecificInfo>();
   int flags = EncodeFrame(false, info.get());
   timestamp_ += kTimestampDelta5Fps;
   EXPECT_EQ(static_cast<uint8_t>(kNoTemporalIdx),
             info->codecSpecific.VP8.temporalIdx);
   EXPECT_FALSE(info->codecSpecific.VP8.layerSync);
 
-  info = absl::make_unique<CodecSpecificInfo>();
+  info = std::make_unique<CodecSpecificInfo>();
   flags = EncodeFrame(false, info.get());
   EXPECT_EQ(kSingleLayerFlags, flags);
   EXPECT_EQ(static_cast<uint8_t>(kNoTemporalIdx),

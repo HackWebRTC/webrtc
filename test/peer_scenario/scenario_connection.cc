@@ -77,7 +77,7 @@ class ScenarioIceConnectionImpl : public ScenarioIceConnection,
 std::unique_ptr<ScenarioIceConnection> ScenarioIceConnection::Create(
     webrtc::test::NetworkEmulationManagerImpl* net,
     IceConnectionObserver* observer) {
-  return absl::make_unique<ScenarioIceConnectionImpl>(net, observer);
+  return std::make_unique<ScenarioIceConnectionImpl>(net, observer);
 }
 
 ScenarioIceConnectionImpl::ScenarioIceConnectionImpl(

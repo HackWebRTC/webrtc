@@ -10,11 +10,11 @@
 
 #include "p2p/base/turn_server.h"
 
+#include <memory>
 #include <tuple>  // for std::tie
 #include <utility>
 
 #include "absl/algorithm/container.h"
-#include "absl/memory/memory.h"
 #include "api/packet_socket_factory.h"
 #include "p2p/base/async_stun_tcp_socket.h"
 #include "p2p/base/stun.h"
@@ -116,7 +116,7 @@ static bool InitErrorResponse(const StunMessage* req,
     return false;
   resp->SetType(resp_type);
   resp->SetTransactionID(req->transaction_id());
-  resp->AddAttribute(absl::make_unique<cricket::StunErrorCodeAttribute>(
+  resp->AddAttribute(std::make_unique<cricket::StunErrorCodeAttribute>(
       STUN_ATTR_ERROR_CODE, code, reason));
   return true;
 }
@@ -375,7 +375,7 @@ void TurnServer::HandleBindingRequest(TurnServerConnection* conn,
   InitResponse(req, &response);
 
   // Tell the user the address that we received their request from.
-  auto mapped_addr_attr = absl::make_unique<StunXorAddressAttribute>(
+  auto mapped_addr_attr = std::make_unique<StunXorAddressAttribute>(
       STUN_ATTR_XOR_MAPPED_ADDRESS, conn->src());
   response.AddAttribute(std::move(mapped_addr_attr));
 
@@ -503,10 +503,10 @@ void TurnServer::SendErrorResponseWithRealmAndNonce(TurnServerConnection* conn,
     timestamp = ts_for_next_nonce_;
     ts_for_next_nonce_ = 0;
   }
-  resp.AddAttribute(absl::make_unique<StunByteStringAttribute>(
+  resp.AddAttribute(std::make_unique<StunByteStringAttribute>(
       STUN_ATTR_NONCE, GenerateNonce(timestamp)));
   resp.AddAttribute(
-      absl::make_unique<StunByteStringAttribute>(STUN_ATTR_REALM, realm_));
+      std::make_unique<StunByteStringAttribute>(STUN_ATTR_REALM, realm_));
   SendStun(conn, &resp);
 }
 
@@ -518,8 +518,8 @@ void TurnServer::SendErrorResponseWithAlternateServer(
   TurnMessage resp;
   InitErrorResponse(msg, STUN_ERROR_TRY_ALTERNATE,
                     STUN_ERROR_REASON_TRY_ALTERNATE_SERVER, &resp);
-  resp.AddAttribute(absl::make_unique<StunAddressAttribute>(
-      STUN_ATTR_ALTERNATE_SERVER, addr));
+  resp.AddAttribute(
+      std::make_unique<StunAddressAttribute>(STUN_ATTR_ALTERNATE_SERVER, addr));
   SendStun(conn, &resp);
 }
 
@@ -528,7 +528,7 @@ void TurnServer::SendStun(TurnServerConnection* conn, StunMessage* msg) {
   rtc::ByteBufferWriter buf;
   // Add a SOFTWARE attribute if one is set.
   if (!software_.empty()) {
-    msg->AddAttribute(absl::make_unique<StunByteStringAttribute>(
+    msg->AddAttribute(std::make_unique<StunByteStringAttribute>(
         STUN_ATTR_SOFTWARE, software_));
   }
   msg->Write(&buf);
@@ -691,12 +691,12 @@ void TurnServerAllocation::HandleAllocateRequest(const TurnMessage* msg) {
   TurnMessage response;
   InitResponse(msg, &response);
 
-  auto mapped_addr_attr = absl::make_unique<StunXorAddressAttribute>(
+  auto mapped_addr_attr = std::make_unique<StunXorAddressAttribute>(
       STUN_ATTR_XOR_MAPPED_ADDRESS, conn_.src());
-  auto relayed_addr_attr = absl::make_unique<StunXorAddressAttribute>(
+  auto relayed_addr_attr = std::make_unique<StunXorAddressAttribute>(
       STUN_ATTR_XOR_RELAYED_ADDRESS, external_socket_->GetLocalAddress());
   auto lifetime_attr =
-      absl::make_unique<StunUInt32Attribute>(STUN_ATTR_LIFETIME, lifetime_secs);
+      std::make_unique<StunUInt32Attribute>(STUN_ATTR_LIFETIME, lifetime_secs);
   response.AddAttribute(std::move(mapped_addr_attr));
   response.AddAttribute(std::move(relayed_addr_attr));
   response.AddAttribute(std::move(lifetime_attr));
@@ -721,7 +721,7 @@ void TurnServerAllocation::HandleRefreshRequest(const TurnMessage* msg) {
   InitResponse(msg, &response);
 
   auto lifetime_attr =
-      absl::make_unique<StunUInt32Attribute>(STUN_ATTR_LIFETIME, lifetime_secs);
+      std::make_unique<StunUInt32Attribute>(STUN_ATTR_LIFETIME, lifetime_secs);
   response.AddAttribute(std::move(lifetime_attr));
 
   SendResponse(&response);
@@ -862,10 +862,10 @@ void TurnServerAllocation::OnExternalPacket(
     TurnMessage msg;
     msg.SetType(TURN_DATA_INDICATION);
     msg.SetTransactionID(rtc::CreateRandomString(kStunTransactionIdLength));
-    msg.AddAttribute(absl::make_unique<StunXorAddressAttribute>(
+    msg.AddAttribute(std::make_unique<StunXorAddressAttribute>(
         STUN_ATTR_XOR_PEER_ADDRESS, addr));
     msg.AddAttribute(
-        absl::make_unique<StunByteStringAttribute>(STUN_ATTR_DATA, data, size));
+        std::make_unique<StunByteStringAttribute>(STUN_ATTR_DATA, data, size));
     server_->SendStun(&conn_, &msg);
   } else {
     RTC_LOG(LS_WARNING)

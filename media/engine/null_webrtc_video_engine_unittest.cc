@@ -13,7 +13,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "media/engine/webrtc_voice_engine.h"
@@ -31,14 +30,14 @@ TEST(NullWebRtcVideoEngineTest, CheckInterface) {
   std::unique_ptr<webrtc::TaskQueueFactory> task_queue_factory =
       webrtc::CreateDefaultTaskQueueFactory();
   ::testing::NiceMock<webrtc::test::MockAudioDeviceModule> adm;
-  auto audio_engine = absl::make_unique<WebRtcVoiceEngine>(
+  auto audio_engine = std::make_unique<WebRtcVoiceEngine>(
       task_queue_factory.get(), &adm,
       webrtc::MockAudioEncoderFactory::CreateUnusedFactory(),
       webrtc::MockAudioDecoderFactory::CreateUnusedFactory(), nullptr,
       webrtc::AudioProcessingBuilder().Create());
 
   CompositeMediaEngine engine(std::move(audio_engine),
-                              absl::make_unique<NullWebRtcVideoEngine>());
+                              std::make_unique<NullWebRtcVideoEngine>());
 
   EXPECT_TRUE(engine.Init());
 }

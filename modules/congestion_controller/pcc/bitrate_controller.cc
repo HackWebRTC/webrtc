@@ -13,10 +13,10 @@
 #include <algorithm>
 #include <cmath>
 #include <cstdlib>
+#include <memory>
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 
 namespace webrtc {
 namespace pcc {
@@ -33,7 +33,7 @@ PccBitrateController::PccBitrateController(double initial_conversion_factor,
     : PccBitrateController(initial_conversion_factor,
                            initial_dynamic_boundary,
                            dynamic_boundary_increment,
-                           absl::make_unique<ModifiedVivaceUtilityFunction>(
+                           std::make_unique<ModifiedVivaceUtilityFunction>(
                                rtt_gradient_coefficient,
                                loss_coefficient,
                                throughput_coefficient,

@@ -12,9 +12,9 @@
 
 #include <algorithm>
 #include <initializer_list>
+#include <memory>
 #include <string>
 
-#include "absl/memory/memory.h"
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
@@ -82,7 +82,7 @@ void MaybeLogProbeClusterCreated(RtcEventLog* event_log,
 
   size_t min_bytes = static_cast<int32_t>(probe.target_data_rate.bps() *
                                           probe.target_duration.ms() / 8000);
-  event_log->Log(absl::make_unique<RtcEventProbeClusterCreated>(
+  event_log->Log(std::make_unique<RtcEventProbeClusterCreated>(
       probe.id, probe.target_data_rate.bps(), probe.target_probe_count,
       min_bytes));
 }

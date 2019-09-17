@@ -13,7 +13,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "rtc_base/bit_buffer.h"
 #include "rtc_base/checks.h"
 
@@ -65,7 +64,7 @@ uint32_t RtpDependencyDescriptorReader::ReadNonSymmetric(size_t num_values) {
 
 void RtpDependencyDescriptorReader::ReadTemplateDependencyStructure() {
   descriptor_->attached_structure =
-      absl::make_unique<FrameDependencyStructure>();
+      std::make_unique<FrameDependencyStructure>();
   descriptor_->attached_structure->structure_id = ReadBits(6);
   descriptor_->attached_structure->num_decode_targets = ReadBits(5) + 1;
 

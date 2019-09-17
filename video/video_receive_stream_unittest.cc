@@ -11,10 +11,10 @@
 #include "video/video_receive_stream.h"
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/video/function_video_decoder_factory.h"
 #include "api/video_codecs/video_decoder.h"
@@ -115,7 +115,7 @@ class VideoReceiveStreamTest : public ::testing::Test {
     timing_ = new VCMTiming(clock_);
 
     video_receive_stream_ =
-        absl::make_unique<webrtc::internal::VideoReceiveStream>(
+        std::make_unique<webrtc::internal::VideoReceiveStream>(
             task_queue_factory_.get(), &rtp_stream_receiver_controller_,
             kDefaultNumCpuCores, &packet_router_, config_.Copy(),
             process_thread_.get(), &call_stats_, clock_, timing_);
@@ -232,7 +232,7 @@ class VideoReceiveStreamTestWithFakeDecoder : public ::testing::Test {
  public:
   VideoReceiveStreamTestWithFakeDecoder()
       : fake_decoder_factory_(
-            []() { return absl::make_unique<test::FakeDecoder>(); }),
+            []() { return std::make_unique<test::FakeDecoder>(); }),
         process_thread_(ProcessThread::Create("TestThread")),
         task_queue_factory_(CreateDefaultTaskQueueFactory()),
         config_(&mock_transport_),
@@ -274,7 +274,7 @@ class VideoReceiveStreamTestWithFakeDecoder : public ::testing::Test {
 
 TEST_F(VideoReceiveStreamTestWithFakeDecoder, PassesNtpTime) {
   const int64_t kNtpTimestamp = 12345;
-  auto test_frame = absl::make_unique<FrameObjectFake>();
+  auto test_frame = std::make_unique<FrameObjectFake>();
   test_frame->SetPayloadType(99);
   test_frame->id.picture_id = 0;
   test_frame->SetNtpTime(kNtpTimestamp);
@@ -287,7 +287,7 @@ TEST_F(VideoReceiveStreamTestWithFakeDecoder, PassesNtpTime) {
 
 TEST_F(VideoReceiveStreamTestWithFakeDecoder, PassesRotation) {
   const webrtc::VideoRotation kRotation = webrtc::kVideoRotation_180;
-  auto test_frame = absl::make_unique<FrameObjectFake>();
+  auto test_frame = std::make_unique<FrameObjectFake>();
   test_frame->SetPayloadType(99);
   test_frame->id.picture_id = 0;
   test_frame->SetRotation(kRotation);
@@ -300,7 +300,7 @@ TEST_F(VideoReceiveStreamTestWithFakeDecoder, PassesRotation) {
 }
 
 TEST_F(VideoReceiveStreamTestWithFakeDecoder, PassesPacketInfos) {
-  auto test_frame = absl::make_unique<FrameObjectFake>();
+  auto test_frame = std::make_unique<FrameObjectFake>();
   test_frame->SetPayloadType(99);
   test_frame->id.picture_id = 0;
   RtpPacketInfos packet_infos = CreatePacketInfos(3);
@@ -319,7 +319,7 @@ TEST_F(VideoReceiveStreamTestWithFakeDecoder, RenderedFrameUpdatesGetSources) {
   constexpr uint32_t kRtpTimestamp = 12345;
 
   // Prepare one video frame with per-packet information.
-  auto test_frame = absl::make_unique<FrameObjectFake>();
+  auto test_frame = std::make_unique<FrameObjectFake>();
   test_frame->SetPayloadType(99);
   test_frame->id.picture_id = 0;
   RtpPacketInfos packet_infos;

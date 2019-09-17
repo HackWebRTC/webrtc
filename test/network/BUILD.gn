@@ -77,7 +77,6 @@ rtc_source_set("network_emulation_unittest") {
     "../../rtc_base:logging",
     "../../rtc_base:rtc_event",
     "../../system_wrappers:system_wrappers",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -106,7 +105,6 @@ rtc_source_set("network_emulation_pc_unittest") {
     "../../rtc_base:gunit_helpers",
     "../../rtc_base:logging",
     "../../rtc_base:rtc_event",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 

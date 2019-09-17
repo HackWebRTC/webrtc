@@ -12,9 +12,9 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/units/time_delta.h"
 #include "modules/rtp_rtcp/include/rtp_header_extension_map.h"
 #include "modules/rtp_rtcp/mocks/mock_rtp_rtcp.h"
@@ -58,7 +58,7 @@ class PacketRouterTest : public ::testing::Test {
  protected:
   std::unique_ptr<RtpPacketToSend> BuildRtpPacket(uint32_t ssrc) {
     std::unique_ptr<RtpPacketToSend> packet =
-        absl::make_unique<RtpPacketToSend>(&extension_manager);
+        std::make_unique<RtpPacketToSend>(&extension_manager);
     packet->SetSsrc(ssrc);
     return packet;
   }
@@ -265,7 +265,7 @@ TEST_F(PacketRouterTest, SendPacketWithoutTransportSequenceNumbers) {
   // Send a packet without TransportSequenceNumber extension registered,
   // packets sent should not have the extension set.
   RtpHeaderExtensionMap extension_manager;
-  auto packet = absl::make_unique<RtpPacketToSend>(&extension_manager);
+  auto packet = std::make_unique<RtpPacketToSend>(&extension_manager);
   packet->SetSsrc(kSsrc1);
   EXPECT_CALL(
       rtp_1,

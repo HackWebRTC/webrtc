@@ -8,7 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "api/audio_codecs/audio_decoder_factory_template.h"
 #include "api/audio_codecs/audio_encoder_factory_template.h"
 #include "api/audio_codecs/opus/audio_decoder_opus.h"
@@ -85,8 +86,8 @@ TEST(AudioWithMediaTransport, DeliversAudio) {
           task_queue_factory.get(),
           TestAudioDeviceModule::CreatePulsedNoiseCapturer(
               /* max_amplitude= */ 10000, kSamplingFrequency, kNumChannels),
-          absl::make_unique<TestRenderer>(kSamplingFrequency, kNumChannels,
-                                          kWantedSamples));
+          std::make_unique<TestRenderer>(kSamplingFrequency, kNumChannels,
+                                         kWantedSamples));
 
   AudioState::Config audio_config;
   audio_config.audio_mixer = AudioMixerImpl::Create();

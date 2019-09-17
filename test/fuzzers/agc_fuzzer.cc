@@ -8,7 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "modules/audio_processing/audio_buffer.h"
 #include "modules/audio_processing/gain_control_impl.h"
 #include "modules/audio_processing/include/audio_processing.h"
@@ -113,7 +114,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     return;
   }
   test::FuzzDataHelper fuzz_data(rtc::ArrayView<const uint8_t>(data, size));
-  auto gci = absl::make_unique<GainControlImpl>();
+  auto gci = std::make_unique<GainControlImpl>();
   FuzzGainController(&fuzz_data, gci.get());
 }
 }  // namespace webrtc

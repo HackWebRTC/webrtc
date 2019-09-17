@@ -12,7 +12,6 @@
 
 #include <memory>
 
-#include "absl/memory/memory.h"
 #include "modules/desktop_capture/cropped_desktop_frame.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/desktop_frame_win.h"
@@ -442,7 +441,7 @@ WindowCapturerWin::CaptureResults WindowCapturerWin::CaptureFrame(
 
       if (!owned_windows_.empty()) {
         if (!owned_window_capturer_) {
-          owned_window_capturer_ = absl::make_unique<WindowCapturerWin>();
+          owned_window_capturer_ = std::make_unique<WindowCapturerWin>();
         }
 
         // Owned windows are stored in top-down z-order, so this iterates in

@@ -11,10 +11,10 @@
 #include "test/fuzzers/utils/rtp_replayer.h"
 
 #include <algorithm>
+#include <memory>
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "rtc_base/strings/json.h"
 #include "system_wrappers/include/clock.h"
@@ -31,7 +31,7 @@ namespace test {
 void RtpReplayer::Replay(const std::string& replay_config_filepath,
                          const uint8_t* rtp_dump_data,
                          size_t rtp_dump_size) {
-  auto stream_state = absl::make_unique<StreamState>();
+  auto stream_state = std::make_unique<StreamState>();
   std::vector<VideoReceiveStream::Config> receive_stream_configs =
       ReadConfigFromFile(replay_config_filepath, &(stream_state->transport));
   return Replay(std::move(stream_state), std::move(receive_stream_configs),
@@ -96,7 +96,7 @@ void RtpReplayer::SetupVideoStreams(
     std::vector<VideoReceiveStream::Config>* receive_stream_configs,
     StreamState* stream_state,
     Call* call) {
-  stream_state->decoder_factory = absl::make_unique<InternalDecoderFactory>();
+  stream_state->decoder_factory = std::make_unique<InternalDecoderFactory>();
   for (auto& receive_config : *receive_stream_configs) {
     // Attach the decoder for the corresponding payload type in the config.
     for (auto& decoder : receive_config.decoders) {

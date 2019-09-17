@@ -10,9 +10,9 @@
 
 #include "video/encoder_bitrate_adjuster.h"
 
+#include <memory>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/units/data_rate.h"
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/numerics/safe_conversions.h"
@@ -80,7 +80,7 @@ class EncoderBitrateAdjusterTest : public ::testing::Test {
       }
     }
 
-    adjuster_ = absl::make_unique<EncoderBitrateAdjuster>(codec_);
+    adjuster_ = std::make_unique<EncoderBitrateAdjuster>(codec_);
     adjuster_->OnEncoderInfo(encoder_info_);
     current_adjusted_allocation_ =
         adjuster_->AdjustRateAllocation(VideoEncoder::RateControlParameters(

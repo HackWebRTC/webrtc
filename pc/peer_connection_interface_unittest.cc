@@ -19,7 +19,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/str_replace.h"
 #include "absl/types/optional.h"
 #include "api/audio/audio_mixer.h"
@@ -656,7 +655,7 @@ class PeerConnectionFactoryForTest : public webrtc::PeerConnectionFactory {
     dependencies.media_engine =
         cricket::CreateMediaEngine(std::move(media_deps));
     dependencies.call_factory = webrtc::CreateCallFactory();
-    dependencies.event_log_factory = absl::make_unique<RtcEventLogFactory>(
+    dependencies.event_log_factory = std::make_unique<RtcEventLogFactory>(
         dependencies.task_queue_factory.get());
 
     return new rtc::RefCountedObject<PeerConnectionFactoryForTest>(
@@ -3463,7 +3462,7 @@ TEST_P(PeerConnectionInterfaceTest,
   pc_->Close();
 
   EXPECT_FALSE(
-      pc_->StartRtcEventLog(absl::make_unique<webrtc::RtcEventLogOutputNull>(),
+      pc_->StartRtcEventLog(std::make_unique<webrtc::RtcEventLogOutputNull>(),
                             webrtc::RtcEventLog::kImmediateOutput));
   pc_->StopRtcEventLog();
 }

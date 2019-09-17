@@ -182,7 +182,7 @@ TEST_P(TaskQueueTest, PostAndReuse) {
   };
 
   auto task =
-      absl::make_unique<ReusedTask>(&call_count, reply_queue.get(), &event);
+      std::make_unique<ReusedTask>(&call_count, reply_queue.get(), &event);
   post_queue->PostTask(std::move(task));
   EXPECT_TRUE(event.Wait(1000));
 }

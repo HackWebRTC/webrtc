@@ -13,11 +13,11 @@
 #include <algorithm>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/audio/echo_canceller3_config_json.h"
 #include "api/audio/echo_canceller3_factory.h"
 #include "common_audio/include/audio_util.h"
@@ -139,7 +139,7 @@ AudioProcessingSimulator::AudioProcessingSimulator(
     std::unique_ptr<AudioProcessingBuilder> ap_builder)
     : settings_(settings),
       ap_builder_(ap_builder ? std::move(ap_builder)
-                             : absl::make_unique<AudioProcessingBuilder>()),
+                             : std::make_unique<AudioProcessingBuilder>()),
       analog_mic_level_(settings.initial_mic_level),
       fake_recording_device_(
           settings.initial_mic_level,
@@ -341,7 +341,7 @@ void AudioProcessingSimulator::SetupOutput() {
                       static_cast<size_t>(out_config_.num_channels())));
     buffer_file_writer_.reset(new ChannelBufferWavWriter(std::move(out_file)));
   } else if (settings_.aec_dump_input_string.has_value()) {
-    buffer_memory_writer_ = absl::make_unique<ChannelBufferVectorWriter>(
+    buffer_memory_writer_ = std::make_unique<ChannelBufferVectorWriter>(
         settings_.processed_capture_samples);
   }
 

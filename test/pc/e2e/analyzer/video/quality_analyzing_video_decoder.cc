@@ -12,9 +12,9 @@
 
 #include <cstdint>
 #include <cstring>
+#include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/video/i420_buffer.h"
 #include "modules/video_coding/include/video_error_codes.h"
@@ -35,7 +35,7 @@ QualityAnalyzingVideoDecoder::QualityAnalyzingVideoDecoder(
       delegate_(std::move(delegate)),
       extractor_(extractor),
       analyzer_(analyzer) {
-  analyzing_callback_ = absl::make_unique<DecoderCallback>(this);
+  analyzing_callback_ = std::make_unique<DecoderCallback>(this);
 }
 QualityAnalyzingVideoDecoder::~QualityAnalyzingVideoDecoder() = default;
 
@@ -242,7 +242,7 @@ std::unique_ptr<VideoDecoder>
 QualityAnalyzingVideoDecoderFactory::CreateVideoDecoder(
     const SdpVideoFormat& format) {
   std::unique_ptr<VideoDecoder> decoder = delegate_->CreateVideoDecoder(format);
-  return absl::make_unique<QualityAnalyzingVideoDecoder>(
+  return std::make_unique<QualityAnalyzingVideoDecoder>(
       id_generator_->GetNextId(), std::move(decoder), extractor_, analyzer_);
 }
 
@@ -252,7 +252,7 @@ QualityAnalyzingVideoDecoderFactory::LegacyCreateVideoDecoder(
     const std::string& receive_stream_id) {
   std::unique_ptr<VideoDecoder> decoder =
       delegate_->LegacyCreateVideoDecoder(format, receive_stream_id);
-  return absl::make_unique<QualityAnalyzingVideoDecoder>(
+  return std::make_unique<QualityAnalyzingVideoDecoder>(
       id_generator_->GetNextId(), std::move(decoder), extractor_, analyzer_);
 }
 

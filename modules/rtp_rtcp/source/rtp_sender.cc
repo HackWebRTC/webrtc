@@ -12,10 +12,10 @@
 
 #include <algorithm>
 #include <limits>
+#include <memory>
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "api/array_view.h"
 #include "api/rtc_event_log/rtc_event_log.h"
@@ -329,7 +329,7 @@ int32_t RTPSender::ReSendPacket(uint16_t packet_id) {
               retransmit_packet = BuildRtxPacket(stored_packet);
             } else {
               retransmit_packet =
-                  absl::make_unique<RtpPacketToSend>(stored_packet);
+                  std::make_unique<RtpPacketToSend>(stored_packet);
             }
             if (retransmit_packet) {
               retransmit_packet->set_retransmitted_sequence_number(
@@ -367,7 +367,7 @@ bool RTPSender::SendPacketToNetwork(const RtpPacketToSend& packet,
                      ? static_cast<int>(packet.size())
                      : -1;
     if (event_log_ && bytes_sent > 0) {
-      event_log_->Log(absl::make_unique<RtcEventRtpPacketOutgoing>(
+      event_log_->Log(std::make_unique<RtcEventRtpPacketOutgoing>(
           packet, pacing_info.probe_cluster_id));
     }
   }
@@ -492,7 +492,7 @@ bool RTPSender::TrySendPacket(RtpPacketToSend* packet,
   // Put packet in retransmission history or update pending status even if
   // actual sending fails.
   if (is_media && packet->allow_retransmission()) {
-    packet_history_.PutRtpPacket(absl::make_unique<RtpPacketToSend>(*packet),
+    packet_history_.PutRtpPacket(std::make_unique<RtpPacketToSend>(*packet),
                                  now_ms);
   } else if (packet->retransmitted_sequence_number()) {
     packet_history_.MarkPacketAsSent(*packet->retransmitted_sequence_number());
@@ -599,7 +599,7 @@ std::vector<std::unique_ptr<RtpPacketToSend>> RTPSender::GeneratePadding(
 
   while (bytes_left > 0) {
     auto padding_packet =
-        absl::make_unique<RtpPacketToSend>(&rtp_header_extension_map_);
+        std::make_unique<RtpPacketToSend>(&rtp_header_extension_map_);
     padding_packet->set_packet_type(RtpPacketToSend::Type::kPadding);
     padding_packet->SetMarker(false);
     padding_packet->SetTimestamp(last_rtp_timestamp_);
@@ -825,7 +825,7 @@ std::unique_ptr<RtpPacketToSend> RTPSender::AllocatePacket() const {
   // While sending slightly oversized packet increase chance of dropped packet,
   // it is better than crash on drop packet without trying to send it.
   static constexpr int kExtraCapacity = 16;
-  auto packet = absl::make_unique<RtpPacketToSend>(
+  auto packet = std::make_unique<RtpPacketToSend>(
       &rtp_header_extension_map_, max_packet_size_ + kExtraCapacity);
   RTC_DCHECK(ssrc_);
   packet->SetSsrc(*ssrc_);
@@ -1037,8 +1037,8 @@ std::unique_ptr<RtpPacketToSend> RTPSender::BuildRtxPacket(
     if (kv == rtx_payload_type_map_.end())
       return nullptr;
 
-    rtx_packet = absl::make_unique<RtpPacketToSend>(&rtp_header_extension_map_,
-                                                    max_packet_size_);
+    rtx_packet = std::make_unique<RtpPacketToSend>(&rtp_header_extension_map_,
+                                                   max_packet_size_);
 
     rtx_packet->SetPayloadType(kv->second);
 

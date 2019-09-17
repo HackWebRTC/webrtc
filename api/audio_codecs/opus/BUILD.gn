@@ -72,7 +72,6 @@ rtc_static_library("audio_decoder_opus") {
     "../../../modules/audio_coding:webrtc_opus",
     "../../../rtc_base:rtc_base_approved",
     "../../../rtc_base/system:rtc_export",
-    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]

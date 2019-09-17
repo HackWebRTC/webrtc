@@ -13,7 +13,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "system_wrappers/include/clock.h"
@@ -600,7 +599,7 @@ TEST_F(RtpPacketHistoryTest, GetPacketWithEncapsulation) {
       hist_.GetPacketAndMarkAsPending(
           kStartSeqNum, [](const RtpPacketToSend& packet) {
             auto encapsulated_packet =
-                absl::make_unique<RtpPacketToSend>(packet);
+                std::make_unique<RtpPacketToSend>(packet);
             encapsulated_packet->SetSsrc(packet.Ssrc() + 1);
             return encapsulated_packet;
           });
@@ -728,7 +727,7 @@ TEST_F(RtpPacketHistoryTest, PayloadPaddingWithEncapsulation) {
   // Get copy of packet, but with sequence number modified.
   auto padding_packet =
       hist_.GetPayloadPaddingPacket([&](const RtpPacketToSend& packet) {
-        auto encapsulated_packet = absl::make_unique<RtpPacketToSend>(packet);
+        auto encapsulated_packet = std::make_unique<RtpPacketToSend>(packet);
         encapsulated_packet->SetSequenceNumber(kStartSeqNum + 1);
         return encapsulated_packet;
       });

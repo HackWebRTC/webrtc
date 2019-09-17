@@ -12,10 +12,10 @@
 
 #include <functional>
 #include <limits>
+#include <memory>
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/task_queue/queued_task.h"
 #include "api/task_queue/task_queue_base.h"
@@ -61,10 +61,10 @@ std::unique_ptr<RtcEventLogEncoder> CreateEncoder(
   switch (type) {
     case RtcEventLog::EncodingType::Legacy:
       RTC_LOG(LS_INFO) << "Creating legacy encoder for RTC event log.";
-      return absl::make_unique<RtcEventLogEncoderLegacy>();
+      return std::make_unique<RtcEventLogEncoderLegacy>();
     case RtcEventLog::EncodingType::NewFormat:
       RTC_LOG(LS_INFO) << "Creating new format encoder for RTC event log.";
-      return absl::make_unique<RtcEventLogEncoderNewFormat>();
+      return std::make_unique<RtcEventLogEncoderNewFormat>();
     default:
       RTC_LOG(LS_ERROR) << "Unknown RtcEventLog encoder type (" << int(type)
                         << ")";
@@ -82,7 +82,7 @@ RtcEventLogImpl::RtcEventLogImpl(RtcEventLog::EncodingType encoding_type,
       output_scheduled_(false),
       logging_state_started_(false),
       task_queue_(
-          absl::make_unique<rtc::TaskQueue>(task_queue_factory->CreateTaskQueue(
+          std::make_unique<rtc::TaskQueue>(task_queue_factory->CreateTaskQueue(
               "rtc_event_log",
               TaskQueueFactory::Priority::NORMAL))) {}
 
@@ -128,9 +128,8 @@ bool RtcEventLogImpl::StartLogging(std::unique_ptr<RtcEventLogOutput> output,
   RTC_DCHECK_RUN_ON(&logging_state_checker_);
   logging_state_started_ = true;
 
-  task_queue_->PostTask(
-      absl::make_unique<ResourceOwningTask<RtcEventLogOutput>>(
-          std::move(output), start));
+  task_queue_->PostTask(std::make_unique<ResourceOwningTask<RtcEventLogOutput>>(
+      std::move(output), start));
 
   return true;
 }
@@ -176,7 +175,7 @@ void RtcEventLogImpl::Log(std::unique_ptr<RtcEvent> event) {
       ScheduleOutput();
   };
 
-  task_queue_->PostTask(absl::make_unique<ResourceOwningTask<RtcEvent>>(
+  task_queue_->PostTask(std::make_unique<ResourceOwningTask<RtcEvent>>(
       std::move(event), event_handler));
 }
 

@@ -13,11 +13,11 @@
 #include <math.h>
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 #include <vector>
 
 #include "absl/algorithm/container.h"
-#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "p2p/base/connection.h"
 #include "p2p/base/port_allocator.h"
@@ -683,7 +683,7 @@ void Port::SendBindingResponse(StunMessage* request,
   if (retransmit_attr) {
     // Inherit the incoming retransmit value in the response so the other side
     // can see our view of lost pings.
-    response.AddAttribute(absl::make_unique<StunUInt32Attribute>(
+    response.AddAttribute(std::make_unique<StunUInt32Attribute>(
         STUN_ATTR_RETRANSMIT_COUNT, retransmit_attr->value()));
 
     if (retransmit_attr->value() > CONNECTION_WRITE_CONNECT_FAILURES) {
@@ -694,7 +694,7 @@ void Port::SendBindingResponse(StunMessage* request,
     }
   }
 
-  response.AddAttribute(absl::make_unique<StunXorAddressAttribute>(
+  response.AddAttribute(std::make_unique<StunXorAddressAttribute>(
       STUN_ATTR_XOR_MAPPED_ADDRESS, addr));
   response.AddMessageIntegrity(password_);
   response.AddFingerprint();

@@ -13,7 +13,6 @@
 #include <memory>
 
 #include "absl/flags/flag.h"
-#include "absl/memory/memory.h"
 #include "api/rtc_event_log/rtc_event_log_factory.h"
 #include "api/rtc_event_log_output_file.h"
 #include "api/task_queue/default_task_queue_factory.h"
@@ -120,13 +119,13 @@ void RampUpTester::OnVideoStreamsCreated(
 test::PacketTransport* RampUpTester::CreateSendTransport(
     test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
     Call* sender_call) {
-  auto network = absl::make_unique<SimulatedNetwork>(forward_transport_config_);
+  auto network = std::make_unique<SimulatedNetwork>(forward_transport_config_);
   send_simulated_network_ = network.get();
   send_transport_ = new test::PacketTransport(
       task_queue, sender_call, this, test::PacketTransport::kSender,
       test::CallTest::payload_type_map_,
-      absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
-                                         std::move(network)));
+      std::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
+                                        std::move(network)));
   return send_transport_;
 }
 
@@ -641,11 +640,11 @@ class RampUpTest : public test::CallTest {
           RtcEventLog::EncodingType::Legacy);
       bool event_log_started =
           send_event_log_->StartLogging(
-              absl::make_unique<RtcEventLogOutputFile>(
+              std::make_unique<RtcEventLogOutputFile>(
                   dump_name + ".send.rtc.dat", RtcEventLog::kUnlimitedOutput),
               RtcEventLog::kImmediateOutput) &&
           recv_event_log_->StartLogging(
-              absl::make_unique<RtcEventLogOutputFile>(
+              std::make_unique<RtcEventLogOutputFile>(
                   dump_name + ".recv.rtc.dat", RtcEventLog::kUnlimitedOutput),
               RtcEventLog::kImmediateOutput);
       RTC_DCHECK(event_log_started);

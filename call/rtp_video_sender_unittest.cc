@@ -13,7 +13,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/memory/memory.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "call/rtp_transport_controller_send.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
@@ -137,7 +136,7 @@ class RtpVideoSenderTestFixture {
                      VideoEncoderConfig::ContentType::kRealtimeVideo),
         retransmission_rate_limiter_(&clock_, kRetransmitWindowSizeMs) {
     std::map<uint32_t, RtpState> suspended_ssrcs;
-    router_ = absl::make_unique<RtpVideoSender>(
+    router_ = std::make_unique<RtpVideoSender>(
         &clock_, suspended_ssrcs, suspended_payload_states, config_.rtp,
         config_.rtcp_report_interval_ms, &transport_,
         CreateObservers(&call_stats_, &encoder_feedback_, &stats_proxy_,
@@ -145,7 +144,7 @@ class RtpVideoSenderTestFixture {
                         frame_count_observer, &stats_proxy_, &stats_proxy_,
                         &send_delay_stats_),
         &transport_controller_, &event_log_, &retransmission_rate_limiter_,
-        absl::make_unique<FecControllerDefault>(&clock_), nullptr,
+        std::make_unique<FecControllerDefault>(&clock_), nullptr,
         CryptoOptions{});
   }
   RtpVideoSenderTestFixture(

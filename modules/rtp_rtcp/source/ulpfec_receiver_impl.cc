@@ -15,7 +15,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/scoped_refptr.h"
 #include "modules/rtp_rtcp/source/byte_io.h"
 #include "modules/rtp_rtcp/source/rtp_packet_received.h"
@@ -28,7 +27,7 @@ std::unique_ptr<UlpfecReceiver> UlpfecReceiver::Create(
     uint32_t ssrc,
     RecoveredPacketReceiver* callback,
     rtc::ArrayView<const RtpExtension> extensions) {
-  return absl::make_unique<UlpfecReceiverImpl>(ssrc, callback, extensions);
+  return std::make_unique<UlpfecReceiverImpl>(ssrc, callback, extensions);
 }
 
 UlpfecReceiverImpl::UlpfecReceiverImpl(

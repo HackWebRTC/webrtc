@@ -43,7 +43,7 @@ if (rtc_include_tests) {
       "../../pc:rtc_pc_base",
       "..//network:emulated_network",
       "../scenario",
-      "//third_party/abseil-cpp/absl/memory:memory",
+      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 }

@@ -14,7 +14,6 @@
 #include <memory>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/test/mock_frame_decryptor.h"
 #include "modules/video_coding/packet_buffer.h"
 #include "rtc_base/ref_counted_object.h"
@@ -115,7 +114,7 @@ class BufferedFrameDecryptorTest
     seq_num_ = 0;
     mock_frame_decryptor_ = new rtc::RefCountedObject<MockFrameDecryptor>();
     buffered_frame_decryptor_ =
-        absl::make_unique<BufferedFrameDecryptor>(this, this);
+        std::make_unique<BufferedFrameDecryptor>(this, this);
     buffered_frame_decryptor_->SetFrameDecryptor(mock_frame_decryptor_.get());
   }
 

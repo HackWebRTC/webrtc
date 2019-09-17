@@ -17,7 +17,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/rtc_event_log/rtc_event_log_factory.h"
 #include "api/rtc_event_log_output_file.h"
@@ -331,7 +330,7 @@ void RtcEventLogSession::WriteLog(EventCounts count,
     if (remaining_events == remaining_events_at_start) {
       clock_.AdvanceTime(TimeDelta::ms(prng_.Rand(20)));
       event_log->StartLogging(
-          absl::make_unique<RtcEventLogOutputFile>(temp_filename_, 10000000),
+          std::make_unique<RtcEventLogOutputFile>(temp_filename_, 10000000),
           output_period_ms_);
       start_time_us_ = rtc::TimeMicros();
       utc_start_time_us_ = rtc::TimeUTCMicros();
@@ -843,7 +842,7 @@ TEST_P(RtcEventLogCircularBufferTest, KeepsMostRecentEvents) {
   const std::string temp_filename = test::OutputPath() + test_name;
 
   std::unique_ptr<rtc::ScopedFakeClock> fake_clock =
-      absl::make_unique<rtc::ScopedFakeClock>();
+      std::make_unique<rtc::ScopedFakeClock>();
   fake_clock->SetTime(Timestamp::seconds(kStartTimeSeconds));
 
   auto task_queue_factory = CreateDefaultTaskQueueFactory();
@@ -860,14 +859,14 @@ TEST_P(RtcEventLogCircularBufferTest, KeepsMostRecentEvents) {
     // simplicity.
     // We base the various values on the index. We use this for some basic
     // consistency checks when we read back.
-    log_dumper->Log(absl::make_unique<RtcEventProbeResultSuccess>(
+    log_dumper->Log(std::make_unique<RtcEventProbeResultSuccess>(
         i, kStartBitrate + i * 1000));
     fake_clock->AdvanceTime(TimeDelta::ms(10));
   }
   int64_t start_time_us = rtc::TimeMicros();
   int64_t utc_start_time_us = rtc::TimeUTCMicros();
   log_dumper->StartLogging(
-      absl::make_unique<RtcEventLogOutputFile>(temp_filename, 10000000),
+      std::make_unique<RtcEventLogOutputFile>(temp_filename, 10000000),
       RtcEventLog::kImmediateOutput);
   fake_clock->AdvanceTime(TimeDelta::ms(10));
   int64_t stop_time_us = rtc::TimeMicros();
@@ -901,7 +900,7 @@ TEST_P(RtcEventLogCircularBufferTest, KeepsMostRecentEvents) {
   // recreate the clock. However we must ensure that the old fake_clock is
   // destroyed before the new one is created, so we have to reset() first.
   fake_clock.reset();
-  fake_clock = absl::make_unique<rtc::ScopedFakeClock>();
+  fake_clock = std::make_unique<rtc::ScopedFakeClock>();
   fake_clock->SetTime(Timestamp::us(first_timestamp_us));
   for (size_t i = 1; i < probe_success_events.size(); i++) {
     fake_clock->AdvanceTime(TimeDelta::ms(10));

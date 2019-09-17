@@ -133,10 +133,10 @@ bool SimplePeerConnection::InitializePeerConnection(const char** turn_urls,
         webrtc::CreateBuiltinAudioDecoderFactory(),
         std::unique_ptr<webrtc::VideoEncoderFactory>(
             new webrtc::MultiplexEncoderFactory(
-                absl::make_unique<webrtc::InternalEncoderFactory>())),
+                std::make_unique<webrtc::InternalEncoderFactory>())),
         std::unique_ptr<webrtc::VideoDecoderFactory>(
             new webrtc::MultiplexDecoderFactory(
-                absl::make_unique<webrtc::InternalDecoderFactory>())),
+                std::make_unique<webrtc::InternalDecoderFactory>())),
         nullptr, nullptr);
   }
   if (!g_peer_connection_factory.get()) {

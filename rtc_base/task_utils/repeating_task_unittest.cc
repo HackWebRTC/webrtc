@@ -15,7 +15,6 @@
 #include <memory>
 #include <thread>  // Not allowed in production per Chromium style guide.
 
-#include "absl/memory/memory.h"
 #include "rtc_base/event.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "test/gmock.h"
@@ -219,7 +218,7 @@ TEST(RepeatingTaskTest, Example) {
     }
   };
   TaskQueueForTest task_queue("queue");
-  auto object = absl::make_unique<ObjectOnTaskQueue>();
+  auto object = std::make_unique<ObjectOnTaskQueue>();
   // Create and start the periodic task.
   RepeatingTaskHandle handle;
   object->StartPeriodicTask(&handle, task_queue.Get());

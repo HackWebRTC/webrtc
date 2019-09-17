@@ -13,10 +13,10 @@
 #include <algorithm>
 #include <cmath>
 #include <limits>
+#include <memory>
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/logging.h"
@@ -69,7 +69,7 @@ std::unique_ptr<FrameGeneratorCapturer> FrameGeneratorCapturer::Create(
     Clock* clock,
     TaskQueueFactory& task_queue_factory,
     FrameGeneratorCapturerConfig::SquaresVideo config) {
-  return absl::make_unique<FrameGeneratorCapturer>(
+  return std::make_unique<FrameGeneratorCapturer>(
       clock,
       FrameGenerator::CreateSquareGenerator(
           config.width, config.height, config.pixel_format, config.num_squares),
@@ -79,7 +79,7 @@ std::unique_ptr<FrameGeneratorCapturer> FrameGeneratorCapturer::Create(
     Clock* clock,
     TaskQueueFactory& task_queue_factory,
     FrameGeneratorCapturerConfig::SquareSlides config) {
-  return absl::make_unique<FrameGeneratorCapturer>(
+  return std::make_unique<FrameGeneratorCapturer>(
       clock,
       FrameGenerator::CreateSlideGenerator(
           config.width, config.height,
@@ -92,7 +92,7 @@ std::unique_ptr<FrameGeneratorCapturer> FrameGeneratorCapturer::Create(
     TaskQueueFactory& task_queue_factory,
     FrameGeneratorCapturerConfig::VideoFile config) {
   RTC_CHECK(config.width && config.height);
-  return absl::make_unique<FrameGeneratorCapturer>(
+  return std::make_unique<FrameGeneratorCapturer>(
       clock,
       FrameGenerator::CreateFromYuvFile({TransformFilePath(config.name)},
                                         config.width, config.height,
@@ -126,7 +126,7 @@ std::unique_ptr<FrameGeneratorCapturer> FrameGeneratorCapturer::Create(
         /*frame_repeat_count*/ config.change_interval.seconds<double>() *
             config.framerate);
   }
-  return absl::make_unique<FrameGeneratorCapturer>(
+  return std::make_unique<FrameGeneratorCapturer>(
       clock, std::move(slides_generator), config.framerate, task_queue_factory);
 }
 

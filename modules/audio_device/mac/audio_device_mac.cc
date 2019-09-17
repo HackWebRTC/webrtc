@@ -15,7 +15,8 @@
 #include <mach/mach.h>         // mach_task_self()
 #include <sys/sysctl.h>        // sysctlbyname()
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "modules/audio_device/audio_device_config.h"
 #include "modules/third_party/portaudio/pa_ringbuffer.h"
 #include "rtc_base/arraysize.h"
@@ -1557,7 +1558,7 @@ int32_t AudioDeviceMac::GetNumberDevices(const AudioObjectPropertyScope scope,
   }
 
   UInt32 numberDevices = size / sizeof(AudioDeviceID);
-  const auto deviceIds = absl::make_unique<AudioDeviceID[]>(numberDevices);
+  const auto deviceIds = std::make_unique<AudioDeviceID[]>(numberDevices);
   AudioBufferList* bufferList = NULL;
   UInt32 numberScopedDevices = 0;
 

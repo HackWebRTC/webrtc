@@ -148,7 +148,6 @@ rtc_source_set("audio_device_module_from_input_and_output") {
       "../../api/task_queue",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
-      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
@@ -181,7 +180,6 @@ rtc_source_set("audio_device_impl") {
     "../../system_wrappers:field_trial",
     "../../system_wrappers:metrics",
     "../utility",
-    "//third_party/abseil-cpp/absl/memory",
   ]
   if (rtc_include_internal_audio_device && is_ios) {
     deps += [ "../../sdk:audio_device" ]
@@ -393,7 +391,6 @@ if (rtc_include_tests) {
     ]
     if (is_linux || is_mac || is_win) {
       sources += [ "audio_device_unittest.cc" ]
-      deps += [ "//third_party/abseil-cpp/absl/memory" ]
     }
     if (is_win) {
       sources += [ "win/core_audio_utility_win_unittest.cc" ]

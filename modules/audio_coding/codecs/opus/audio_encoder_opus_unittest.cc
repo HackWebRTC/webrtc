@@ -14,7 +14,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "common_audio/mocks/mock_smoothing_filter.h"
 #include "modules/audio_coding/audio_network_adaptor/mock/mock_audio_network_adaptor.h"
 #include "modules/audio_coding/codecs/opus/audio_encoder_opus.h"
@@ -55,7 +54,7 @@ struct AudioEncoderOpusStates {
 std::unique_ptr<AudioEncoderOpusStates> CreateCodec(int sample_rate_hz,
                                                     size_t num_channels) {
   std::unique_ptr<AudioEncoderOpusStates> states =
-      absl::make_unique<AudioEncoderOpusStates>();
+      std::make_unique<AudioEncoderOpusStates>();
   states->mock_audio_network_adaptor = nullptr;
   states->fake_clock.reset(new rtc::ScopedFakeClock());
   states->fake_clock->SetTime(Timestamp::us(kInitialTimeUs));

@@ -10,9 +10,9 @@
 
 #include "modules/audio_processing/aec_dump/aec_dump_impl.h"
 
+#include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "modules/audio_processing/aec_dump/aec_dump_factory.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/event.h"
@@ -212,8 +212,8 @@ void AecDumpImpl::WriteRuntimeSetting(
 }
 
 std::unique_ptr<WriteToFileTask> AecDumpImpl::CreateWriteToFileTask() {
-  return absl::make_unique<WriteToFileTask>(&debug_file_,
-                                            &num_bytes_left_for_log_);
+  return std::make_unique<WriteToFileTask>(&debug_file_,
+                                           &num_bytes_left_for_log_);
 }
 
 std::unique_ptr<AecDump> AecDumpFactory::Create(webrtc::FileWrapper file,
@@ -223,8 +223,8 @@ std::unique_ptr<AecDump> AecDumpFactory::Create(webrtc::FileWrapper file,
   if (!file.is_open())
     return nullptr;
 
-  return absl::make_unique<AecDumpImpl>(std::move(file), max_log_size_bytes,
-                                        worker_queue);
+  return std::make_unique<AecDumpImpl>(std::move(file), max_log_size_bytes,
+                                       worker_queue);
 }
 
 std::unique_ptr<AecDump> AecDumpFactory::Create(std::string file_name,

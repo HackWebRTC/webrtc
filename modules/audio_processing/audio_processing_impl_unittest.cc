@@ -12,7 +12,6 @@
 
 #include <memory>
 
-#include "absl/memory/memory.h"
 #include "api/scoped_refptr.h"
 #include "modules/audio_processing/include/audio_processing.h"
 #include "modules/audio_processing/test/echo_control_mock.h"
@@ -51,12 +50,12 @@ class MockInitialize : public AudioProcessingImpl {
 // to the creation of a new EchoControl object.
 class MockEchoControlFactory : public EchoControlFactory {
  public:
-  MockEchoControlFactory() : next_mock_(absl::make_unique<MockEchoControl>()) {}
+  MockEchoControlFactory() : next_mock_(std::make_unique<MockEchoControl>()) {}
   // Returns a pointer to the next MockEchoControl that this factory creates.
   MockEchoControl* GetNext() const { return next_mock_.get(); }
   std::unique_ptr<EchoControl> Create(int sample_rate_hz) override {
     std::unique_ptr<EchoControl> mock = std::move(next_mock_);
-    next_mock_ = absl::make_unique<MockEchoControl>();
+    next_mock_ = std::make_unique<MockEchoControl>();
     return mock;
   }
 
@@ -215,7 +214,7 @@ TEST(AudioProcessingImplTest,
      EchoControllerObservesPreAmplifierEchoPathGainChange) {
   // Tests that the echo controller observes an echo path gain change when the
   // pre-amplifier submodule changes the gain.
-  auto echo_control_factory = absl::make_unique<MockEchoControlFactory>();
+  auto echo_control_factory = std::make_unique<MockEchoControlFactory>();
   const auto* echo_control_factory_ptr = echo_control_factory.get();
 
   std::unique_ptr<AudioProcessing> apm(
@@ -258,7 +257,7 @@ TEST(AudioProcessingImplTest,
      EchoControllerObservesAnalogAgc1EchoPathGainChange) {
   // Tests that the echo controller observes an echo path gain change when the
   // AGC1 analog adaptive submodule changes the analog gain.
-  auto echo_control_factory = absl::make_unique<MockEchoControlFactory>();
+  auto echo_control_factory = std::make_unique<MockEchoControlFactory>();
   const auto* echo_control_factory_ptr = echo_control_factory.get();
 
   std::unique_ptr<AudioProcessing> apm(
@@ -299,7 +298,7 @@ TEST(AudioProcessingImplTest,
 TEST(AudioProcessingImplTest, EchoControllerObservesPlayoutVolumeChange) {
   // Tests that the echo controller observes an echo path gain change when a
   // playout volume change is reported.
-  auto echo_control_factory = absl::make_unique<MockEchoControlFactory>();
+  auto echo_control_factory = std::make_unique<MockEchoControlFactory>();
   const auto* echo_control_factory_ptr = echo_control_factory.get();
 
   std::unique_ptr<AudioProcessing> apm(

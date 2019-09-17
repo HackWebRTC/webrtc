@@ -14,7 +14,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/async_resolver_factory.h"
 #include "api/call/call_factory_interface.h"
 #include "api/fec_controller.h"
@@ -83,9 +82,9 @@ struct InjectableComponents {
   explicit InjectableComponents(rtc::Thread* network_thread,
                                 rtc::NetworkManager* network_manager)
       : network_thread(network_thread),
-        pcf_dependencies(absl::make_unique<PeerConnectionFactoryComponents>()),
+        pcf_dependencies(std::make_unique<PeerConnectionFactoryComponents>()),
         pc_dependencies(
-            absl::make_unique<PeerConnectionComponents>(network_manager)) {
+            std::make_unique<PeerConnectionComponents>(network_manager)) {
     RTC_CHECK(network_thread);
   }
 

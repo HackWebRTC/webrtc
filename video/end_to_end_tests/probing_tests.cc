@@ -8,7 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "api/test/simulated_network.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
@@ -223,13 +224,13 @@ TEST_F(ProbingEndToEndTest, ProbeOnVideoEncoderReconfiguration) {
         test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
         Call* sender_call) override {
       auto network =
-          absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig());
+          std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig());
       send_simulated_network_ = network.get();
       return new test::PacketTransport(
           task_queue, sender_call, this, test::PacketTransport::kSender,
           CallTest::payload_type_map_,
-          absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
-                                             std::move(network)));
+          std::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
+                                            std::move(network)));
     }
 
     void PerformTest() override {

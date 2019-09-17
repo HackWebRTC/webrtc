@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/call/call_factory_interface.h"
 #include "api/jsep.h"
@@ -81,7 +80,7 @@ class PeerConnectionFactoryForUsageHistogramTest
           dependencies.signaling_thread = rtc::Thread::Current();
           dependencies.task_queue_factory = CreateDefaultTaskQueueFactory();
           dependencies.media_engine =
-              absl::make_unique<cricket::FakeMediaEngine>();
+              std::make_unique<cricket::FakeMediaEngine>();
           dependencies.call_factory = CreateCallFactory();
           return dependencies;
         }()) {}
@@ -255,13 +254,13 @@ class PeerConnectionUsageHistogramTest : public ::testing::Test {
 
   WrapperPtr CreatePeerConnectionWithMdns(const RTCConfiguration& config) {
     auto resolver_factory =
-        absl::make_unique<NiceMock<webrtc::MockAsyncResolverFactory>>();
+        std::make_unique<NiceMock<webrtc::MockAsyncResolverFactory>>();
 
     webrtc::PeerConnectionDependencies deps(nullptr /* observer_in */);
 
     auto fake_network = NewFakeNetwork();
     fake_network->set_mdns_responder(
-        absl::make_unique<webrtc::FakeMdnsResponder>(rtc::Thread::Current()));
+        std::make_unique<webrtc::FakeMdnsResponder>(rtc::Thread::Current()));
     fake_network->AddInterface(NextLocalAddress());
 
     std::unique_ptr<cricket::BasicPortAllocator> port_allocator(
@@ -287,7 +286,7 @@ class PeerConnectionUsageHistogramTest : public ::testing::Test {
     fake_network->AddInterface(kPrivateLocalAddress);
 
     auto port_allocator =
-        absl::make_unique<cricket::BasicPortAllocator>(fake_network);
+        std::make_unique<cricket::BasicPortAllocator>(fake_network);
 
     return CreatePeerConnection(RTCConfiguration(),
                                 PeerConnectionFactoryInterface::Options(),
@@ -300,7 +299,7 @@ class PeerConnectionUsageHistogramTest : public ::testing::Test {
     fake_network->AddInterface(kPrivateIpv6LocalAddress);
 
     auto port_allocator =
-        absl::make_unique<cricket::BasicPortAllocator>(fake_network);
+        std::make_unique<cricket::BasicPortAllocator>(fake_network);
 
     return CreatePeerConnection(RTCConfiguration(),
                                 PeerConnectionFactoryInterface::Options(),
@@ -338,10 +337,10 @@ class PeerConnectionUsageHistogramTest : public ::testing::Test {
       auto fake_network = NewFakeNetwork();
       fake_network->AddInterface(NextLocalAddress());
       deps.allocator =
-          absl::make_unique<cricket::BasicPortAllocator>(fake_network);
+          std::make_unique<cricket::BasicPortAllocator>(fake_network);
     }
 
-    auto observer = absl::make_unique<ObserverForUsageHistogramTest>();
+    auto observer = std::make_unique<ObserverForUsageHistogramTest>();
     deps.observer = observer.get();
 
     auto pc = pc_factory->CreatePeerConnection(config, std::move(deps));
@@ -350,9 +349,8 @@ class PeerConnectionUsageHistogramTest : public ::testing::Test {
     }
 
     observer->SetPeerConnectionInterface(pc.get());
-    auto wrapper =
-        absl::make_unique<PeerConnectionWrapperForUsageHistogramTest>(
-            pc_factory, pc, std::move(observer));
+    auto wrapper = std::make_unique<PeerConnectionWrapperForUsageHistogramTest>(
+        pc_factory, pc, std::move(observer));
     return wrapper;
   }
 
@@ -369,7 +367,7 @@ class PeerConnectionUsageHistogramTest : public ::testing::Test {
   // Therefore, the test fixture will own all the fake networks even though
   // tests should access the fake network through the PeerConnectionWrapper.
   rtc::FakeNetworkManager* NewFakeNetwork() {
-    fake_networks_.emplace_back(absl::make_unique<rtc::FakeNetworkManager>());
+    fake_networks_.emplace_back(std::make_unique<rtc::FakeNetworkManager>());
     return fake_networks_.back().get();
   }
 
@@ -719,7 +717,7 @@ TEST_F(PeerConnectionUsageHistogramTest,
   ASSERT_TRUE(cur_offer);
   std::string sdp_with_candidates_str;
   cur_offer->ToString(&sdp_with_candidates_str);
-  auto offer = absl::make_unique<JsepSessionDescription>(SdpType::kOffer);
+  auto offer = std::make_unique<JsepSessionDescription>(SdpType::kOffer);
   ASSERT_TRUE(SdpDeserialize(sdp_with_candidates_str, offer.get(),
                              nullptr /* error */));
   ASSERT_TRUE(callee->SetRemoteDescription(std::move(offer)));

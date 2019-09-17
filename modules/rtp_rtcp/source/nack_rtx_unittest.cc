@@ -14,7 +14,6 @@
 #include <set>
 
 #include "absl/algorithm/container.h"
-#include "absl/memory/memory.h"
 #include "api/call/transport.h"
 #include "api/transport/field_trial_based_config.h"
 #include "call/rtp_stream_receiver_controller.h"
@@ -137,7 +136,7 @@ class RtpRtcpRtxNackTest : public ::testing::Test {
     configuration.retransmission_rate_limiter = &retransmission_rate_limiter_;
     configuration.local_media_ssrc = kTestSsrc;
     rtp_rtcp_module_ = RtpRtcp::Create(configuration);
-    rtp_sender_video_ = absl::make_unique<RTPSenderVideo>(
+    rtp_sender_video_ = std::make_unique<RTPSenderVideo>(
         &fake_clock, rtp_rtcp_module_->RtpSender(), nullptr,
         &playout_delay_oracle_, nullptr, false, false, false,
         FieldTrialBasedConfig());

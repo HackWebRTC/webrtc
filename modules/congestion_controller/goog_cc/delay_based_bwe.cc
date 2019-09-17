@@ -13,10 +13,10 @@
 #include <algorithm>
 #include <cstdint>
 #include <cstdio>
+#include <memory>
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/rtc_event_log/rtc_event.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "logging/rtc_event_log/events/rtc_event_bwe_update_delay_based.h"
@@ -224,7 +224,7 @@ DelayBasedBwe::Result DelayBasedBwe::MaybeUpdateEstimate(
     BWE_TEST_LOGGING_PLOT(1, "target_bitrate_bps", at_time.ms(), bitrate.bps());
 
     if (event_log_) {
-      event_log_->Log(absl::make_unique<RtcEventBweUpdateDelayBased>(
+      event_log_->Log(std::make_unique<RtcEventBweUpdateDelayBased>(
           bitrate.bps(), detector_state));
     }
 

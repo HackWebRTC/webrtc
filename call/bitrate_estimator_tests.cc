@@ -12,7 +12,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/memory/memory.h"
 #include "call/call.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
@@ -108,15 +107,15 @@ class BitrateEstimatorTest : public test::CallTest {
 
       send_transport_.reset(new test::DirectTransport(
           &task_queue_,
-          absl::make_unique<FakeNetworkPipe>(
-              Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
+          std::make_unique<FakeNetworkPipe>(
+              Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
                                              BuiltInNetworkBehaviorConfig())),
           sender_call_.get(), payload_type_map_));
       send_transport_->SetReceiver(receiver_call_->Receiver());
       receive_transport_.reset(new test::DirectTransport(
           &task_queue_,
-          absl::make_unique<FakeNetworkPipe>(
-              Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
+          std::make_unique<FakeNetworkPipe>(
+              Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
                                              BuiltInNetworkBehaviorConfig())),
           receiver_call_.get(), payload_type_map_));
       receive_transport_->SetReceiver(sender_call_->Receiver());
@@ -171,14 +170,14 @@ class BitrateEstimatorTest : public test::CallTest {
           send_stream_(nullptr),
           frame_generator_capturer_(),
           decoder_factory_(
-              []() { return absl::make_unique<test::FakeDecoder>(); }) {
+              []() { return std::make_unique<test::FakeDecoder>(); }) {
       test_->GetVideoSendConfig()->rtp.ssrcs[0]++;
       send_stream_ = test_->sender_call_->CreateVideoSendStream(
           test_->GetVideoSendConfig()->Copy(),
           test_->GetVideoEncoderConfig()->Copy());
       RTC_DCHECK_EQ(1, test_->GetVideoEncoderConfig()->number_of_streams);
       frame_generator_capturer_ =
-          absl::make_unique<test::FrameGeneratorCapturer>(
+          std::make_unique<test::FrameGeneratorCapturer>(
               test->clock_,
               test::FrameGenerator::CreateSquareGenerator(
                   kDefaultWidth, kDefaultHeight, absl::nullopt, absl::nullopt),

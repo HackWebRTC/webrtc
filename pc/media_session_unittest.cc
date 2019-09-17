@@ -485,7 +485,7 @@ class MediaSessionDescriptionFactoryTest : public ::testing::Test {
     std::unique_ptr<SessionDescription> current_desc;
     std::unique_ptr<SessionDescription> desc;
     if (has_current_desc) {
-      current_desc = absl::make_unique<SessionDescription>();
+      current_desc = std::make_unique<SessionDescription>();
       current_desc->AddTransportInfo(TransportInfo(
           "audio",
           TransportDescription(current_audio_ufrag, current_audio_pwd)));
@@ -3283,7 +3283,7 @@ TEST(MediaSessionDescription, CopySessionDescription) {
   cricket::ContentGroup group(cricket::CN_AUDIO);
   source.AddGroup(group);
   std::unique_ptr<AudioContentDescription> acd =
-      absl::make_unique<AudioContentDescription>();
+      std::make_unique<AudioContentDescription>();
   acd->set_codecs(MAKE_VECTOR(kAudioCodecs1));
   acd->AddLegacyStream(1);
   std::unique_ptr<AudioContentDescription> acd_passed =
@@ -3291,7 +3291,7 @@ TEST(MediaSessionDescription, CopySessionDescription) {
   source.AddContent(cricket::CN_AUDIO, MediaProtocolType::kRtp,
                     std::move(acd_passed));
   std::unique_ptr<VideoContentDescription> vcd =
-      absl::make_unique<VideoContentDescription>();
+      std::make_unique<VideoContentDescription>();
   vcd->set_codecs(MAKE_VECTOR(kVideoCodecs1));
   vcd->AddLegacyStream(2);
   std::unique_ptr<VideoContentDescription> vcd_passed =

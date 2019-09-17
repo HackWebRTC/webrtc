@@ -17,7 +17,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/fec_controller_override.h"
 #include "api/scoped_refptr.h"
@@ -193,11 +192,11 @@ void VideoEncoderSoftwareFallbackWrapperTest::EncodeFrame(int expected_ret) {
   std::vector<VideoFrameType> types(1, VideoFrameType::kVideoFrameKey);
 
   frame_ =
-      absl::make_unique<VideoFrame>(VideoFrame::Builder()
-                                        .set_video_frame_buffer(buffer)
-                                        .set_rotation(webrtc::kVideoRotation_0)
-                                        .set_timestamp_us(0)
-                                        .build());
+      std::make_unique<VideoFrame>(VideoFrame::Builder()
+                                       .set_video_frame_buffer(buffer)
+                                       .set_rotation(webrtc::kVideoRotation_0)
+                                       .set_timestamp_us(0)
+                                       .build());
   EXPECT_EQ(expected_ret, fallback_wrapper_->Encode(*frame_, &types));
 }
 

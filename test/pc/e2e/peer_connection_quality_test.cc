@@ -10,10 +10,10 @@
 #include "test/pc/e2e/peer_connection_quality_test.h"
 
 #include <algorithm>
+#include <memory>
 #include <set>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/jsep.h"
 #include "api/media_stream_interface.h"
 #include "api/peer_connection_interface.h"
@@ -119,17 +119,17 @@ PeerConnectionE2EQualityTest::PeerConnectionE2EQualityTest(
   // even if there are no video streams, because it will be installed into video
   // encoder/decoder factories.
   if (video_quality_analyzer == nullptr) {
-    video_quality_analyzer = absl::make_unique<DefaultVideoQualityAnalyzer>();
+    video_quality_analyzer = std::make_unique<DefaultVideoQualityAnalyzer>();
   }
   encoded_image_id_controller_ =
-      absl::make_unique<SingleProcessEncodedImageDataInjector>();
+      std::make_unique<SingleProcessEncodedImageDataInjector>();
   video_quality_analyzer_injection_helper_ =
-      absl::make_unique<VideoQualityAnalyzerInjectionHelper>(
+      std::make_unique<VideoQualityAnalyzerInjectionHelper>(
           std::move(video_quality_analyzer), encoded_image_id_controller_.get(),
           encoded_image_id_controller_.get());
 
   if (audio_quality_analyzer == nullptr) {
-    audio_quality_analyzer = absl::make_unique<DefaultAudioQualityAnalyzer>();
+    audio_quality_analyzer = std::make_unique<DefaultAudioQualityAnalyzer>();
   }
   audio_quality_analyzer_.swap(audio_quality_analyzer);
 }
@@ -217,7 +217,7 @@ void PeerConnectionE2EQualityTest::AddPeer(
     rtc::NetworkManager* network_manager,
     rtc::FunctionView<void(PeerConfigurer*)> configurer) {
   peer_configurations_.push_back(
-      absl::make_unique<PeerConfigurerImpl>(network_thread, network_manager));
+      std::make_unique<PeerConfigurerImpl>(network_thread, network_manager));
   configurer(peer_configurations_.back().get());
 }
 
@@ -252,7 +252,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   signaling_thread->Start();
 
   // Create a |task_queue_|.
-  task_queue_ = absl::make_unique<TaskQueueForTest>("pc_e2e_quality_test");
+  task_queue_ = std::make_unique<TaskQueueForTest>("pc_e2e_quality_test");
 
   // Create call participants: Alice and Bob.
   // Audio streams are intercepted in AudioDeviceModule, so if it is required to
@@ -268,7 +268,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
 
   alice_ = TestPeer::CreateTestPeer(
       std::move(alice_components), std::move(alice_params),
-      absl::make_unique<FixturePeerConnectionObserver>(
+      std::make_unique<FixturePeerConnectionObserver>(
           [this, bob_video_configs](
               rtc::scoped_refptr<RtpTransceiverInterface> transceiver) {
             OnTrackCallback(transceiver, bob_video_configs);
@@ -279,7 +279,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
       run_params.echo_emulation_config, task_queue_.get());
   bob_ = TestPeer::CreateTestPeer(
       std::move(bob_components), std::move(bob_params),
-      absl::make_unique<FixturePeerConnectionObserver>(
+      std::make_unique<FixturePeerConnectionObserver>(
           [this, alice_video_configs](
               rtc::scoped_refptr<RtpTransceiverInterface> transceiver) {
             OnTrackCallback(transceiver, alice_video_configs);
@@ -310,13 +310,13 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
 
   // Start RTCEventLog recording if requested.
   if (alice_->params()->rtc_event_log_path) {
-    auto alice_rtc_event_log = absl::make_unique<webrtc::RtcEventLogOutputFile>(
+    auto alice_rtc_event_log = std::make_unique<webrtc::RtcEventLogOutputFile>(
         alice_->params()->rtc_event_log_path.value());
     alice_->pc()->StartRtcEventLog(std::move(alice_rtc_event_log),
                                    webrtc::RtcEventLog::kImmediateOutput);
   }
   if (bob_->params()->rtc_event_log_path) {
-    auto bob_rtc_event_log = absl::make_unique<webrtc::RtcEventLogOutputFile>(
+    auto bob_rtc_event_log = std::make_unique<webrtc::RtcEventLogOutputFile>(
         bob_->params()->rtc_event_log_path.value());
     bob_->pc()->StartRtcEventLog(std::move(bob_rtc_event_log),
                                  webrtc::RtcEventLog::kImmediateOutput);
@@ -559,7 +559,7 @@ void PeerConnectionE2EQualityTest::SetupRequiredFieldTrials(
     field_trials += kFlexFecEnabledFieldTrials;
   }
   if (!field_trials.empty()) {
-    override_field_trials_ = absl::make_unique<test::ScopedFieldTrials>(
+    override_field_trials_ = std::make_unique<test::ScopedFieldTrials>(
         field_trial::GetFieldTrialString() + field_trials);
   }
 }
@@ -684,7 +684,7 @@ PeerConnectionE2EQualityTest::MaybeAddVideo(TestPeer* peer) {
             video_config, std::move(frame_generator), writer);
 
     // Setup FrameGenerator into peer connection.
-    auto capturer = absl::make_unique<test::FrameGeneratorCapturer>(
+    auto capturer = std::make_unique<test::FrameGeneratorCapturer>(
         clock_, std::move(frame_generator), video_config.fps,
         *task_queue_factory_);
     capturer->Init();
@@ -974,7 +974,7 @@ test::VideoFrameWriter* PeerConnectionE2EQualityTest::MaybeCreateVideoWriter(
     return nullptr;
   }
   // TODO(titovartem) create only one file writer for simulcast video track.
-  auto video_writer = absl::make_unique<test::Y4mVideoFrameWriterImpl>(
+  auto video_writer = std::make_unique<test::Y4mVideoFrameWriterImpl>(
       file_name.value(), config.width, config.height, config.fps);
   test::VideoFrameWriter* out = video_writer.get();
   video_writers_.push_back(std::move(video_writer));

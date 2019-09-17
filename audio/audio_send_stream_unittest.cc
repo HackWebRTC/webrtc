@@ -10,12 +10,12 @@
 
 #include "audio/audio_send_stream.h"
 
+#include <memory>
 #include <string>
 #include <thread>
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/mock_frame_encryptor.h"
 #include "audio/audio_state.h"
@@ -331,7 +331,7 @@ std::unique_ptr<AudioFrame> CreateAudioFrame1kHzSineWave(int16_t audio_level,
                                                          size_t num_channels) {
   size_t samples_per_channel = sample_rate_hz / (1000 / duration_ms);
   std::vector<int16_t> audio_data(samples_per_channel * num_channels, 0);
-  std::unique_ptr<AudioFrame> audio_frame = absl::make_unique<AudioFrame>();
+  std::unique_ptr<AudioFrame> audio_frame = std::make_unique<AudioFrame>();
   audio_frame->UpdateFrame(0 /* RTP timestamp */, &audio_data[0],
                            samples_per_channel, sample_rate_hz,
                            AudioFrame::SpeechType::kNormalSpeech,

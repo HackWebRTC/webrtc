@@ -14,7 +14,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "modules/audio_coding/codecs/cng/webrtc_cng.h"
 #include "rtc_base/checks.h"
 
@@ -317,7 +316,7 @@ bool AudioEncoderCngConfig::IsOk() const {
 
 std::unique_ptr<AudioEncoder> CreateComfortNoiseEncoder(
     AudioEncoderCngConfig&& config) {
-  return absl::make_unique<AudioEncoderCng>(std::move(config));
+  return std::make_unique<AudioEncoderCng>(std::move(config));
 }
 
 }  // namespace webrtc

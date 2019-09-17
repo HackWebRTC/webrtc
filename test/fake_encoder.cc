@@ -17,7 +17,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/memory/memory.h"
 #include "api/task_queue/queued_task.h"
 #include "api/video/video_content_type.h"
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
@@ -287,7 +286,7 @@ std::unique_ptr<RTPFragmentationHeader> FakeH264Encoder::EncodeHook(
     current_idr_counter = idr_counter_;
     ++idr_counter_;
   }
-  auto fragmentation = absl::make_unique<RTPFragmentationHeader>();
+  auto fragmentation = std::make_unique<RTPFragmentationHeader>();
 
   if (current_idr_counter % kIdrFrequency == 0 &&
       encoded_image->size() > kSpsSize + kPpsSize + 1) {
@@ -412,8 +411,7 @@ int32_t MultithreadedFakeH264Encoder::Encode(
     return WEBRTC_VIDEO_CODEC_UNINITIALIZED;
   }
 
-  queue->PostTask(
-      absl::make_unique<EncodeTask>(this, input_image, frame_types));
+  queue->PostTask(std::make_unique<EncodeTask>(this, input_image, frame_types));
 
   return WEBRTC_VIDEO_CODEC_OK;
 }

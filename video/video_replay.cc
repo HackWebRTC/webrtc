@@ -16,7 +16,6 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "absl/memory/memory.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/video/function_video_decoder_factory.h"
@@ -310,7 +309,7 @@ class RtpReplayer final {
   static std::unique_ptr<StreamState> ConfigureFromFile(
       const std::string& config_path,
       Call* call) {
-    auto stream_state = absl::make_unique<StreamState>();
+    auto stream_state = std::make_unique<StreamState>();
     // Parse the configuration file.
     std::ifstream config_file(config_path);
     std::stringstream raw_json_buffer;
@@ -324,7 +323,7 @@ class RtpReplayer final {
       return nullptr;
     }
 
-    stream_state->decoder_factory = absl::make_unique<InternalDecoderFactory>();
+    stream_state->decoder_factory = std::make_unique<InternalDecoderFactory>();
     size_t config_count = 0;
     for (const auto& json : json_configs) {
       // Create the configuration and parse the JSON into the config.
@@ -353,14 +352,14 @@ class RtpReplayer final {
   static std::unique_ptr<StreamState> ConfigureFromFlags(
       const std::string& rtp_dump_path,
       Call* call) {
-    auto stream_state = absl::make_unique<StreamState>();
+    auto stream_state = std::make_unique<StreamState>();
     // Create the video renderers. We must add both to the stream state to keep
     // them from deallocating.
     std::stringstream window_title;
     window_title << "Playback Video (" << rtp_dump_path << ")";
     std::unique_ptr<test::VideoRenderer> playback_video(
         test::VideoRenderer::Create(window_title.str().c_str(), 640, 480));
-    auto file_passthrough = absl::make_unique<FileRenderPassthrough>(
+    auto file_passthrough = std::make_unique<FileRenderPassthrough>(
         OutBase(), playback_video.get());
     stream_state->sinks.push_back(std::move(playback_video));
     stream_state->sinks.push_back(std::move(file_passthrough));
@@ -391,13 +390,13 @@ class RtpReplayer final {
     decoder = test::CreateMatchingDecoder(MediaPayloadType(), Codec());
     if (DecoderBitstreamFilename().empty()) {
       stream_state->decoder_factory =
-          absl::make_unique<InternalDecoderFactory>();
+          std::make_unique<InternalDecoderFactory>();
     } else {
       // Replace decoder with file writer if we're writing the bitstream to a
       // file instead.
       stream_state->decoder_factory =
-          absl::make_unique<test::FunctionVideoDecoderFactory>([]() {
-            return absl::make_unique<DecoderBitstreamFileWriter>(
+          std::make_unique<test::FunctionVideoDecoderFactory>([]() {
+            return std::make_unique<DecoderBitstreamFileWriter>(
                 DecoderBitstreamFilename().c_str());
           });
     }

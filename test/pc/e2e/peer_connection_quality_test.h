@@ -15,7 +15,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "api/test/audio_quality_analyzer_interface.h"
 #include "api/test/peerconnection_quality_test_fixture.h"
@@ -44,9 +43,9 @@ class PeerConfigurerImpl final
  public:
   PeerConfigurerImpl(rtc::Thread* network_thread,
                      rtc::NetworkManager* network_manager)
-      : components_(absl::make_unique<InjectableComponents>(network_thread,
-                                                            network_manager)),
-        params_(absl::make_unique<Params>()) {}
+      : components_(std::make_unique<InjectableComponents>(network_thread,
+                                                           network_manager)),
+        params_(std::make_unique<Params>()) {}
 
   PeerConfigurer* SetTaskQueueFactory(
       std::unique_ptr<TaskQueueFactory> task_queue_factory) override {

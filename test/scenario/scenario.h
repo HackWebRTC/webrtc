@@ -14,7 +14,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/fake_clock.h"
 #include "rtc_base/task_queue.h"
@@ -148,7 +147,7 @@ class Scenario {
       std::string name) {
     if (!log_writer_factory_ || name.empty())
       return nullptr;
-    return absl::make_unique<LogWriterFactoryAddPrefix>(
+    return std::make_unique<LogWriterFactoryAddPrefix>(
         log_writer_factory_.get(), name);
   }
 

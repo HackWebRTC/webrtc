@@ -12,10 +12,10 @@
 
 #include <stdint.h>
 
+#include <memory>
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/video/encoded_image.h"
 #include "api/video_codecs/video_codec.h"
 #include "modules/video_coding/include/video_error_codes.h"
@@ -225,7 +225,7 @@ VideoDecoder& VideoDecoderSoftwareFallbackWrapper::active_decoder() const {
 std::unique_ptr<VideoDecoder> CreateVideoDecoderSoftwareFallbackWrapper(
     std::unique_ptr<VideoDecoder> sw_fallback_decoder,
     std::unique_ptr<VideoDecoder> hw_decoder) {
-  return absl::make_unique<VideoDecoderSoftwareFallbackWrapper>(
+  return std::make_unique<VideoDecoderSoftwareFallbackWrapper>(
       std::move(sw_fallback_decoder), std::move(hw_decoder));
 }
 

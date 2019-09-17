@@ -11,9 +11,9 @@
 #include "modules/audio_device/win/core_audio_base_win.h"
 #include "modules/audio_device/audio_device_buffer.h"
 
+#include <memory>
 #include <string>
 
-#include "absl/memory/memory.h"
 #include "rtc_base/arraysize.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -516,7 +516,7 @@ bool CoreAudioBase::Start() {
   // Start an audio thread but only if one does not already exist (which is the
   // case during restart).
   if (!audio_thread_) {
-    audio_thread_ = absl::make_unique<rtc::PlatformThread>(
+    audio_thread_ = std::make_unique<rtc::PlatformThread>(
         Run, this, IsInput() ? "wasapi_capture_thread" : "wasapi_render_thread",
         rtc::kRealtimePriority);
     RTC_DCHECK(audio_thread_);

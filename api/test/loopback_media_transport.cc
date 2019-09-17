@@ -10,8 +10,9 @@
 
 #include "api/test/loopback_media_transport.h"
 
+#include <memory>
+
 #include "absl/algorithm/container.h"
-#include "absl/memory/memory.h"
 #include "rtc_base/time_utils.h"
 
 namespace webrtc {
@@ -182,7 +183,7 @@ WrapperMediaTransportFactory::CreateMediaTransport(
     return wrapped_factory_->CreateMediaTransport(packet_transport,
                                                   network_thread, settings);
   }
-  return {absl::make_unique<WrapperMediaTransport>(wrapped_media_transport_)};
+  return {std::make_unique<WrapperMediaTransport>(wrapped_media_transport_)};
 }
 
 RTCErrorOr<std::unique_ptr<DatagramTransportInterface>>
@@ -194,7 +195,7 @@ WrapperMediaTransportFactory::CreateDatagramTransport(
     return wrapped_factory_->CreateDatagramTransport(network_thread, settings);
   }
   return {
-      absl::make_unique<WrapperDatagramTransport>(wrapped_datagram_transport_)};
+      std::make_unique<WrapperDatagramTransport>(wrapped_datagram_transport_)};
 }
 
 std::string WrapperMediaTransportFactory::GetTransportName() const {
@@ -216,7 +217,7 @@ WrapperMediaTransportFactory::CreateMediaTransport(
   if (wrapped_factory_) {
     return wrapped_factory_->CreateMediaTransport(network_thread, settings);
   }
-  return {absl::make_unique<WrapperMediaTransport>(wrapped_media_transport_)};
+  return {std::make_unique<WrapperMediaTransport>(wrapped_media_transport_)};
 }
 
 MediaTransportPair::MediaTransportPair(rtc::Thread* thread)

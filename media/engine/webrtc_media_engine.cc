@@ -10,10 +10,10 @@
 
 #include "media/engine/webrtc_media_engine.h"
 
+#include <memory>
 #include <utility>
 
 #include "absl/algorithm/container.h"
-#include "absl/memory/memory.h"
 #include "media/engine/webrtc_voice_engine.h"
 #include "system_wrappers/include/field_trial.h"
 
@@ -27,21 +27,21 @@ namespace cricket {
 
 std::unique_ptr<MediaEngineInterface> CreateMediaEngine(
     MediaEngineDependencies dependencies) {
-  auto audio_engine = absl::make_unique<WebRtcVoiceEngine>(
+  auto audio_engine = std::make_unique<WebRtcVoiceEngine>(
       dependencies.task_queue_factory, std::move(dependencies.adm),
       std::move(dependencies.audio_encoder_factory),
       std::move(dependencies.audio_decoder_factory),
       std::move(dependencies.audio_mixer),
       std::move(dependencies.audio_processing));
 #ifdef HAVE_WEBRTC_VIDEO
-  auto video_engine = absl::make_unique<WebRtcVideoEngine>(
+  auto video_engine = std::make_unique<WebRtcVideoEngine>(
       std::move(dependencies.video_encoder_factory),
       std::move(dependencies.video_decoder_factory));
 #else
-  auto video_engine = absl::make_unique<NullWebRtcVideoEngine>();
+  auto video_engine = std::make_unique<NullWebRtcVideoEngine>();
 #endif
-  return absl::make_unique<CompositeMediaEngine>(std::move(audio_engine),
-                                                 std::move(video_engine));
+  return std::make_unique<CompositeMediaEngine>(std::move(audio_engine),
+                                                std::move(video_engine));
 }
 
 namespace {

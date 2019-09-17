@@ -10,12 +10,12 @@
 
 #include "api/test/neteq_simulator_factory.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "absl/memory/memory.h"
 #include "modules/audio_coding/neteq/tools/neteq_test_factory.h"
 #include "rtc_base/checks.h"
 
@@ -33,7 +33,7 @@ namespace webrtc {
 namespace test {
 
 NetEqSimulatorFactory::NetEqSimulatorFactory()
-    : factory_(absl::make_unique<NetEqTestFactory>()) {}
+    : factory_(std::make_unique<NetEqTestFactory>()) {}
 
 NetEqSimulatorFactory::~NetEqSimulatorFactory() = default;
 

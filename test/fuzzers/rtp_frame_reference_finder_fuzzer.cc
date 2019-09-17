@@ -8,7 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "api/rtp_packet_infos.h"
 #include "modules/video_coding/frame_object.h"
 #include "modules/video_coding/packet_buffer.h"
@@ -129,7 +130,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     first_packet->video_header.is_first_packet_in_frame = true;
     last_packet->video_header.is_last_packet_in_frame = true;
 
-    auto frame = absl::make_unique<video_coding::RtpFrameObject>(
+    auto frame = std::make_unique<video_coding::RtpFrameObject>(
         pb, first_seq_num, last_seq_num, 0, 0, 0, 0, RtpPacketInfos());
     reference_finder.ManageFrame(std::move(frame));
   }

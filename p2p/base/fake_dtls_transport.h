@@ -16,7 +16,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/crypto/crypto_options.h"
 #include "p2p/base/dtls_transport_internal.h"
 #include "p2p/base/fake_ice_transport.h"
@@ -57,8 +56,8 @@ class FakeDtlsTransport : public DtlsTransportInternal {
   // If this constructor is called, a new fake ICE transport will be created,
   // and this FakeDtlsTransport will take the ownership.
   explicit FakeDtlsTransport(const std::string& name, int component)
-      : FakeDtlsTransport(
-            absl::make_unique<FakeIceTransport>(name, component)) {}
+      : FakeDtlsTransport(std::make_unique<FakeIceTransport>(name, component)) {
+  }
 
   ~FakeDtlsTransport() override {
     if (dest_ && dest_->dest_ == this) {
@@ -195,7 +194,7 @@ class FakeDtlsTransport : public DtlsTransportInternal {
     if (!remote_cert_) {
       return nullptr;
     }
-    return absl::make_unique<rtc::SSLCertChain>(remote_cert_->Clone());
+    return std::make_unique<rtc::SSLCertChain>(remote_cert_->Clone());
   }
   bool ExportKeyingMaterial(const std::string& label,
                             const uint8_t* context,

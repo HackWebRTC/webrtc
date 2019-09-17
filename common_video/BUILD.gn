@@ -113,7 +113,6 @@ if (rtc_include_tests) {
       "../test:test_support",
       "../test:video_test_common",
       "//testing/gtest",
-      "//third_party/abseil-cpp/absl/memory",
       "//third_party/libyuv",
     ]
 

@@ -80,7 +80,6 @@ rtc_source_set("aec3_factory") {
     "../../modules/audio_processing/aec3",
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base/system:rtc_export",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 

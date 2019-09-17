@@ -16,7 +16,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/rtp_headers.h"
 #include "api/test/simulated_network.h"
@@ -163,13 +162,13 @@ class RtcpXrObserver : public test::EndToEndTest {
       test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
       Call* sender_call) {
     auto network =
-        absl::make_unique<SimulatedNetwork>(forward_transport_config_);
+        std::make_unique<SimulatedNetwork>(forward_transport_config_);
     send_simulated_network_ = network.get();
     return new test::PacketTransport(
         task_queue, sender_call, this, test::PacketTransport::kSender,
         test::CallTest::payload_type_map_,
-        absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
-                                           std::move(network)));
+        std::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
+                                          std::move(network)));
   }
 
   void ModifyVideoConfigs(

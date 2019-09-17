@@ -8,7 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "api/test/simulated_network.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
@@ -283,18 +284,18 @@ void RtpRtcpEndToEndTest::TestRtpStatePreservation(
                         &one_stream, use_rtx]() {
     CreateCalls();
 
-    send_transport = absl::make_unique<test::PacketTransport>(
+    send_transport = std::make_unique<test::PacketTransport>(
         &task_queue_, sender_call_.get(), &observer,
         test::PacketTransport::kSender, payload_type_map_,
-        absl::make_unique<FakeNetworkPipe>(
-            Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
-                                           BuiltInNetworkBehaviorConfig())));
-    receive_transport = absl::make_unique<test::PacketTransport>(
+        std::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
+                                          std::make_unique<SimulatedNetwork>(
+                                              BuiltInNetworkBehaviorConfig())));
+    receive_transport = std::make_unique<test::PacketTransport>(
         &task_queue_, nullptr, &observer, test::PacketTransport::kReceiver,
         payload_type_map_,
-        absl::make_unique<FakeNetworkPipe>(
-            Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
-                                           BuiltInNetworkBehaviorConfig())));
+        std::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
+                                          std::make_unique<SimulatedNetwork>(
+                                              BuiltInNetworkBehaviorConfig())));
     send_transport->SetReceiver(receiver_call_->Receiver());
     receive_transport->SetReceiver(sender_call_->Receiver());
 
@@ -482,21 +483,21 @@ TEST_F(RtpRtcpEndToEndTest, DISABLED_TestFlexfecRtpStatePreservation) {
     lossy_delayed_link.loss_percent = 2;
     lossy_delayed_link.queue_delay_ms = 50;
 
-    send_transport = absl::make_unique<test::PacketTransport>(
+    send_transport = std::make_unique<test::PacketTransport>(
         &task_queue_, sender_call_.get(), &observer,
         test::PacketTransport::kSender, payload_type_map_,
-        absl::make_unique<FakeNetworkPipe>(
+        std::make_unique<FakeNetworkPipe>(
             Clock::GetRealTimeClock(),
-            absl::make_unique<SimulatedNetwork>(lossy_delayed_link)));
+            std::make_unique<SimulatedNetwork>(lossy_delayed_link)));
     send_transport->SetReceiver(receiver_call_->Receiver());
 
     BuiltInNetworkBehaviorConfig flawless_link;
-    receive_transport = absl::make_unique<test::PacketTransport>(
+    receive_transport = std::make_unique<test::PacketTransport>(
         &task_queue_, nullptr, &observer, test::PacketTransport::kReceiver,
         payload_type_map_,
-        absl::make_unique<FakeNetworkPipe>(
+        std::make_unique<FakeNetworkPipe>(
             Clock::GetRealTimeClock(),
-            absl::make_unique<SimulatedNetwork>(flawless_link)));
+            std::make_unique<SimulatedNetwork>(flawless_link)));
     receive_transport->SetReceiver(sender_call_->Receiver());
 
     // For reduced flakyness, we use a real VP8 encoder together with NACK

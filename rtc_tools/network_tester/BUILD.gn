@@ -53,7 +53,6 @@ if (rtc_enable_protobuf) {
       "../../rtc_base:rtc_task_queue",
       "../../rtc_base/synchronization:sequence_checker",
       "../../rtc_base/third_party/sigslot",
-      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }

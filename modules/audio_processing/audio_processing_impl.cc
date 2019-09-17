@@ -12,11 +12,11 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <memory>
 #include <string>
 #include <type_traits>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/array_view.h"
 #include "common_audio/audio_converter.h"
@@ -1845,7 +1845,7 @@ void AudioProcessingImpl::InitializeEchoController() {
       private_submodules_->echo_controller =
           echo_control_factory_->Create(proc_sample_rate_hz());
     } else {
-      private_submodules_->echo_controller = absl::make_unique<EchoCanceller3>(
+      private_submodules_->echo_controller = std::make_unique<EchoCanceller3>(
           EchoCanceller3Config(), proc_sample_rate_hz(),
           /*num_render_channels=*/1, /*num_capture_channels=*/1);
     }

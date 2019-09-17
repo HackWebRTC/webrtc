@@ -14,7 +14,6 @@
 
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/test/simulated_network.h"
 #include "api/test/test_dependency_factory.h"
@@ -68,7 +67,7 @@ CreateVideoQualityTestFixture() {
   // The components will normally be nullptr (= use defaults), but it's possible
   // for external test runners to override the list of injected components.
   auto components = TestDependencyFactory::GetInstance().CreateComponents();
-  return absl::make_unique<VideoQualityTest>(std::move(components));
+  return std::make_unique<VideoQualityTest>(std::move(components));
 }
 
 // Takes the current active field trials set, and appends some new trials.

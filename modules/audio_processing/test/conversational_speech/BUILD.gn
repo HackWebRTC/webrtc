@@ -26,7 +26,6 @@ rtc_executable("conversational_speech_generator") {
     "../../../../test:test_support",
     "//third_party/abseil-cpp/absl/flags:flag",
     "//third_party/abseil-cpp/absl/flags:parse",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -52,7 +51,6 @@ rtc_static_library("lib") {
     "../../../../rtc_base:checks",
     "../../../../rtc_base:rtc_base_approved",
     "../../../../test:fileutils",
-    "//third_party/abseil-cpp/absl/memory",
   ]
   visibility = [ ":*" ]  # Only targets in this file can depend on this.
 }

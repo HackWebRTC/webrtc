@@ -33,7 +33,6 @@ if (rtc_include_tests) {
       "../../rtc_base/synchronization:yield_policy",
       "../../rtc_base/task_utils:to_queued_task",
       "../../system_wrappers",
-      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/strings",
     ]
   }
@@ -48,7 +47,6 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:rtc_task_queue",
       "../../rtc_base/task_utils:repeating_task",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 }

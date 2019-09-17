@@ -24,7 +24,6 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
-#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "api/candidate.h"
 #include "api/crypto_params.h"
@@ -987,7 +986,7 @@ bool SdpDeserialize(const std::string& message,
   TransportDescription session_td("", "");
   RtpHeaderExtensions session_extmaps;
   rtc::SocketAddress session_connection_addr;
-  auto desc = absl::make_unique<cricket::SessionDescription>();
+  auto desc = std::make_unique<cricket::SessionDescription>();
   size_t current_pos = 0;
 
   // Session Description
@@ -2658,7 +2657,7 @@ static std::unique_ptr<C> ParseContentDescription(
     TransportDescription* transport,
     std::vector<std::unique_ptr<JsepIceCandidate>>* candidates,
     webrtc::SdpParseError* error) {
-  auto media_desc = absl::make_unique<C>();
+  auto media_desc = std::make_unique<C>();
   if (!ParseContent(message, media_type, mline_index, protocol, payload_types,
                     pos, content_name, bundle_only, msid_signaling,
                     media_desc.get(), transport, candidates, error)) {
@@ -2771,7 +2770,7 @@ bool ParseMediaDescription(
         // The draft-26 format is:
         // m=application <port> UDP/DTLS/SCTP webrtc-datachannel
         // use_sctpmap should be false.
-        auto data_desc = absl::make_unique<SctpDataContentDescription>();
+        auto data_desc = std::make_unique<SctpDataContentDescription>();
         // Default max message size is 64K
         // according to draft-ietf-mmusic-sctp-sdp-26
         data_desc->set_max_message_size(kDefaultSctpMaxMessageSize);
@@ -3457,7 +3456,7 @@ bool ParseContent(const std::string& message,
     RTC_DCHECK(candidate.password().empty());
     candidate.set_password(transport->ice_pwd);
     candidates->push_back(
-        absl::make_unique<JsepIceCandidate>(mline_id, mline_index, candidate));
+        std::make_unique<JsepIceCandidate>(mline_id, mline_index, candidate));
   }
 
   return true;

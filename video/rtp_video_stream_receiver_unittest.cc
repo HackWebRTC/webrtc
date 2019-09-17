@@ -10,7 +10,8 @@
 
 #include "video/rtp_video_stream_receiver.h"
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "api/video/video_codec_type.h"
 #include "api/video/video_frame_type.h"
 #include "common_video/h264/h264_common.h"
@@ -116,7 +117,7 @@ constexpr uint16_t kSequenceNumber = 222;
 std::unique_ptr<RtpPacketReceived> CreateRtpPacketReceived(
     uint32_t ssrc = kSsrc,
     uint16_t sequence_number = kSequenceNumber) {
-  auto packet = absl::make_unique<RtpPacketReceived>();
+  auto packet = std::make_unique<RtpPacketReceived>();
   packet->SetSsrc(ssrc);
   packet->SetSequenceNumber(sequence_number);
   return packet;
@@ -140,7 +141,7 @@ class RtpVideoStreamReceiverTest : public ::testing::Test {
   void SetUp() {
     rtp_receive_statistics_ =
         ReceiveStatistics::Create(Clock::GetRealTimeClock());
-    rtp_video_stream_receiver_ = absl::make_unique<RtpVideoStreamReceiver>(
+    rtp_video_stream_receiver_ = std::make_unique<RtpVideoStreamReceiver>(
         Clock::GetRealTimeClock(), &mock_transport_, nullptr, nullptr, &config_,
         rtp_receive_statistics_.get(), nullptr, process_thread_.get(),
         &mock_nack_sender_, &mock_key_frame_request_sender_,

@@ -8,7 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "api/test/simulated_network.h"
 #include "api/test/video/function_video_encoder_factory.h"
 #include "call/fake_network_pipe.h"
@@ -256,8 +257,8 @@ void PictureIdTest::SetupEncoder(VideoEncoderFactory* encoder_factory,
     send_transport_.reset(new test::PacketTransport(
         &task_queue_, sender_call_.get(), observer_.get(),
         test::PacketTransport::kSender, payload_type_map_,
-        absl::make_unique<FakeNetworkPipe>(
-            Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
+        std::make_unique<FakeNetworkPipe>(
+            Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
                                            BuiltInNetworkBehaviorConfig()))));
 
     CreateSendConfig(kNumSimulcastStreams, 0, 0, send_transport_.get());
@@ -389,7 +390,7 @@ TEST_P(PictureIdTest, ContinuousAfterReconfigureSimulcastEncoderAdapter) {
   InternalEncoderFactory internal_encoder_factory;
   test::FunctionVideoEncoderFactory encoder_factory(
       [&internal_encoder_factory]() {
-        return absl::make_unique<SimulcastEncoderAdapter>(
+        return std::make_unique<SimulcastEncoderAdapter>(
             &internal_encoder_factory, SdpVideoFormat("VP8"));
       });
   SetupEncoder(&encoder_factory, "VP8");
@@ -400,7 +401,7 @@ TEST_P(PictureIdTest, IncreasingAfterRecreateStreamSimulcastEncoderAdapter) {
   InternalEncoderFactory internal_encoder_factory;
   test::FunctionVideoEncoderFactory encoder_factory(
       [&internal_encoder_factory]() {
-        return absl::make_unique<SimulcastEncoderAdapter>(
+        return std::make_unique<SimulcastEncoderAdapter>(
             &internal_encoder_factory, SdpVideoFormat("VP8"));
       });
   SetupEncoder(&encoder_factory, "VP8");
@@ -411,7 +412,7 @@ TEST_P(PictureIdTest, ContinuousAfterStreamCountChangeSimulcastEncoderAdapter) {
   InternalEncoderFactory internal_encoder_factory;
   test::FunctionVideoEncoderFactory encoder_factory(
       [&internal_encoder_factory]() {
-        return absl::make_unique<SimulcastEncoderAdapter>(
+        return std::make_unique<SimulcastEncoderAdapter>(
             &internal_encoder_factory, SdpVideoFormat("VP8"));
       });
   // Make sure that the picture id is not reset if the stream count goes

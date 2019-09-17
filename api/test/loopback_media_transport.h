@@ -16,7 +16,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/transport/datagram_transport_interface.h"
 #include "api/transport/media/media_transport_interface.h"
 #include "rtc_base/async_invoker.h"
@@ -98,11 +97,11 @@ class MediaTransportPair {
   }
 
   std::unique_ptr<MediaTransportFactory> first_factory() {
-    return absl::make_unique<WrapperMediaTransportFactory>(&first_factory_);
+    return std::make_unique<WrapperMediaTransportFactory>(&first_factory_);
   }
 
   std::unique_ptr<MediaTransportFactory> second_factory() {
-    return absl::make_unique<WrapperMediaTransportFactory>(&second_factory_);
+    return std::make_unique<WrapperMediaTransportFactory>(&second_factory_);
   }
 
   void SetState(MediaTransportState state) {

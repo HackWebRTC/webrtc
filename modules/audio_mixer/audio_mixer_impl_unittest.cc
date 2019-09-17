@@ -17,7 +17,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/audio/audio_mixer.h"
 #include "modules/audio_mixer/default_output_rate_calculator.h"
 #include "rtc_base/bind.h"
@@ -611,7 +610,7 @@ TEST(AudioMixer, MultipleChannelsAndHighRate) {
       AudioFrame::kMaxDataSizeSamples / kSamplesPerChannel;
   MockMixerAudioSource source;
   const auto mixer = AudioMixerImpl::Create(
-      absl::make_unique<HighOutputRateCalculator>(), true);
+      std::make_unique<HighOutputRateCalculator>(), true);
   mixer->AddSource(&source);
   ResetFrame(source.fake_frame());
   mixer->Mix(1, &frame_for_mixing);

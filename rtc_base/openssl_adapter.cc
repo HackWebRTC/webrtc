@@ -18,7 +18,8 @@
 #include <string.h>
 #include <time.h>
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "rtc_base/checks.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
@@ -943,7 +944,7 @@ OpenSSLAdapter* OpenSSLAdapterFactory::CreateAdapter(AsyncSocket* socket) {
     }
     // The OpenSSLSessionCache will upref the ssl_ctx.
     ssl_session_cache_ =
-        absl::make_unique<OpenSSLSessionCache>(ssl_mode_, ssl_ctx);
+        std::make_unique<OpenSSLSessionCache>(ssl_mode_, ssl_ctx);
     SSL_CTX_free(ssl_ctx);
   }
   return new OpenSSLAdapter(socket, ssl_session_cache_.get(),

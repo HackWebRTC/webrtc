@@ -17,7 +17,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/crypto/frame_decryptor_interface.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "audio/audio_level.h"
@@ -339,7 +338,7 @@ AudioMixer::Source::AudioFrameInfo ChannelReceive::GetAudioFrameWithInfo(
   RTC_DCHECK_RUNS_SERIALIZED(&audio_thread_race_checker_);
   audio_frame->sample_rate_hz_ = sample_rate_hz;
 
-  event_log_->Log(absl::make_unique<RtcEventAudioPlayout>(remote_ssrc_));
+  event_log_->Log(std::make_unique<RtcEventAudioPlayout>(remote_ssrc_));
 
   // Get 10ms raw PCM data from the ACM (mixer limits output frequency)
   bool muted;
@@ -949,7 +948,7 @@ std::unique_ptr<ChannelReceiveInterface> CreateChannelReceive(
     absl::optional<AudioCodecPairId> codec_pair_id,
     rtc::scoped_refptr<FrameDecryptorInterface> frame_decryptor,
     const webrtc::CryptoOptions& crypto_options) {
-  return absl::make_unique<ChannelReceive>(
+  return std::make_unique<ChannelReceive>(
       clock, module_process_thread, audio_device_module, media_transport_config,
       rtcp_send_transport, rtc_event_log, local_ssrc, remote_ssrc,
       jitter_buffer_max_packets, jitter_buffer_fast_playout,

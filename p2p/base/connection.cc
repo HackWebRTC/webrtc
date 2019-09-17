@@ -18,7 +18,6 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
-#include "absl/memory/memory.h"
 #include "absl/strings/match.h"
 #include "p2p/base/port_allocator.h"
 #include "rtc_base/checks.h"
@@ -156,45 +155,45 @@ void ConnectionRequest::Prepare(StunMessage* request) {
   // receiver side. The attribute is retrieved then by iterating and matching
   // over all parsed attributes. See StunMessage::GetAttribute.
   request->AddAttribute(
-      absl::make_unique<StunByteStringAttribute>(STUN_ATTR_USERNAME, username));
+      std::make_unique<StunByteStringAttribute>(STUN_ATTR_USERNAME, username));
 
   // connection_ already holds this ping, so subtract one from count.
   if (connection_->port()->send_retransmit_count_attribute()) {
-    request->AddAttribute(absl::make_unique<StunUInt32Attribute>(
+    request->AddAttribute(std::make_unique<StunUInt32Attribute>(
         STUN_ATTR_RETRANSMIT_COUNT,
         static_cast<uint32_t>(connection_->pings_since_last_response_.size() -
                               1)));
   }
   uint32_t network_info = connection_->port()->Network()->id();
   network_info = (network_info << 16) | connection_->port()->network_cost();
-  request->AddAttribute(absl::make_unique<StunUInt32Attribute>(
+  request->AddAttribute(std::make_unique<StunUInt32Attribute>(
       STUN_ATTR_NETWORK_INFO, network_info));
 
   if (webrtc::field_trial::IsEnabled(
           "WebRTC-PiggybackIceCheckAcknowledgement") &&
       connection_->last_ping_id_received()) {
-    request->AddAttribute(absl::make_unique<StunByteStringAttribute>(
+    request->AddAttribute(std::make_unique<StunByteStringAttribute>(
         STUN_ATTR_LAST_ICE_CHECK_RECEIVED,
         connection_->last_ping_id_received().value()));
   }
 
   // Adding ICE_CONTROLLED or ICE_CONTROLLING attribute based on the role.
   if (connection_->port()->GetIceRole() == ICEROLE_CONTROLLING) {
-    request->AddAttribute(absl::make_unique<StunUInt64Attribute>(
+    request->AddAttribute(std::make_unique<StunUInt64Attribute>(
         STUN_ATTR_ICE_CONTROLLING, connection_->port()->IceTiebreaker()));
     // We should have either USE_CANDIDATE attribute or ICE_NOMINATION
     // attribute but not both. That was enforced in p2ptransportchannel.
     if (connection_->use_candidate_attr()) {
       request->AddAttribute(
-          absl::make_unique<StunByteStringAttribute>(STUN_ATTR_USE_CANDIDATE));
+          std::make_unique<StunByteStringAttribute>(STUN_ATTR_USE_CANDIDATE));
     }
     if (connection_->nomination() &&
         connection_->nomination() != connection_->acked_nomination()) {
-      request->AddAttribute(absl::make_unique<StunUInt32Attribute>(
+      request->AddAttribute(std::make_unique<StunUInt32Attribute>(
           STUN_ATTR_NOMINATION, connection_->nomination()));
     }
   } else if (connection_->port()->GetIceRole() == ICEROLE_CONTROLLED) {
-    request->AddAttribute(absl::make_unique<StunUInt64Attribute>(
+    request->AddAttribute(std::make_unique<StunUInt64Attribute>(
         STUN_ATTR_ICE_CONTROLLED, connection_->port()->IceTiebreaker()));
   } else {
     RTC_NOTREACHED();
@@ -213,7 +212,7 @@ void ConnectionRequest::Prepare(StunMessage* request) {
   uint32_t prflx_priority =
       type_preference << 24 |
       (connection_->local_candidate().priority() & 0x00FFFFFF);
-  request->AddAttribute(absl::make_unique<StunUInt32Attribute>(
+  request->AddAttribute(std::make_unique<StunUInt32Attribute>(
       STUN_ATTR_PRIORITY, prflx_priority));
 
   // Adding Message Integrity attribute.

@@ -24,7 +24,6 @@ rtc_source_set("stun_types") {
     "../rtc_base:checks",
     "../rtc_base:rtc_base",
     "../rtc_base:rtc_base_approved",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -107,6 +106,7 @@ rtc_static_library("rtc_p2p") {
     "../logging:ice_log",
     "../rtc_base",
     "../rtc_base:checks",
+    "//third_party/abseil-cpp/absl/memory",
 
     # Needed by pseudo_tcp, which should move to a separate target.
     "../rtc_base:safe_minmax",
@@ -119,7 +119,6 @@ rtc_static_library("rtc_p2p") {
     "../system_wrappers:field_trial",
     "../system_wrappers:metrics",
     "//third_party/abseil-cpp/absl/algorithm:container",
-    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -182,7 +181,6 @@ if (rtc_include_tests) {
       "../rtc_base/third_party/sigslot",
       "../test:test_support",
       "//third_party/abseil-cpp/absl/algorithm:container",
-      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
@@ -261,7 +259,6 @@ rtc_source_set("p2p_server_utils") {
     "../rtc_base:rtc_base_tests_utils",
     "../rtc_base/third_party/sigslot",
     "//third_party/abseil-cpp/absl/algorithm:container",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 

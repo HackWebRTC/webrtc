@@ -21,7 +21,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/scoped_refptr.h"
 #include "api/video/video_content_type.h"
 #include "api/video/video_frame_buffer.h"
@@ -229,7 +228,7 @@ std::unique_ptr<VideoEncoder> VP8Encoder::Create() {
 std::unique_ptr<VideoEncoder> VP8Encoder::Create(
     std::unique_ptr<Vp8FrameBufferControllerFactory>
         frame_buffer_controller_factory) {
-  return absl::make_unique<LibvpxVp8Encoder>(
+  return std::make_unique<LibvpxVp8Encoder>(
       std::move(frame_buffer_controller_factory));
 }
 

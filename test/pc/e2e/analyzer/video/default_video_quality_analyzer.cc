@@ -11,9 +11,9 @@
 #include "test/pc/e2e/analyzer/video/default_video_quality_analyzer.h"
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/units/time_delta.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "rtc_base/logging.h"
@@ -75,7 +75,7 @@ void DefaultVideoQualityAnalyzer::Start(std::string test_case_name,
                                         int max_threads_count) {
   test_label_ = std::move(test_case_name);
   for (int i = 0; i < max_threads_count; i++) {
-    auto thread = absl::make_unique<rtc::PlatformThread>(
+    auto thread = std::make_unique<rtc::PlatformThread>(
         &DefaultVideoQualityAnalyzer::ProcessComparisonsThread, this,
         ("DefaultVideoQualityAnalyzerWorker-" + std::to_string(i)).data(),
         rtc::ThreadPriority::kNormalPriority);

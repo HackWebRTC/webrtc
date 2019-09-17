@@ -33,7 +33,6 @@ rtc_static_library("primitives") {
     "../../api:scoped_refptr",
     "../../rtc_base:checks",
     "../../rtc_base/system:rtc_export",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 
   if (!build_with_mozilla) {
@@ -50,7 +49,6 @@ if (rtc_include_tests) {
       "../../api:function_view",
       "../../api:scoped_refptr",
       "../../rtc_base:checks",
-      "//third_party/abseil-cpp/absl/memory",
     ]
     if (rtc_desktop_capture_supported) {
       deps += [
@@ -105,7 +103,6 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:cpu_features_api",
       "../../test:test_support",
-      "//third_party/abseil-cpp/absl/memory",
     ]
     if (rtc_desktop_capture_supported) {
       sources += [
@@ -139,7 +136,6 @@ if (rtc_include_tests) {
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers",
-      "//third_party/abseil-cpp/absl/memory",
     ]
 
     if (is_posix || is_fuchsia) {
@@ -247,7 +243,6 @@ if (is_mac) {
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base/synchronization:rw_lock_wrapper",
       "../../sdk:helpers_objc",
-      "//third_party/abseil-cpp/absl/memory",
     ]
     libs = [
       "AppKit.framework",

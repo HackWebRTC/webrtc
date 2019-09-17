@@ -15,7 +15,6 @@
 #include <memory>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/video/encoded_image.h"
 #include "api/video_codecs/sdp_video_format.h"
 #include "api/video_codecs/video_encoder.h"
@@ -288,7 +287,7 @@ void SimulcastTestFixtureImpl::SetUpCodec(const int* temporal_layer_profile) {
   EXPECT_EQ(0, decoder_->InitDecode(&settings_, 1));
   input_buffer_ = I420Buffer::Create(kDefaultWidth, kDefaultHeight);
   input_buffer_->InitializeData();
-  input_frame_ = absl::make_unique<webrtc::VideoFrame>(
+  input_frame_ = std::make_unique<webrtc::VideoFrame>(
       webrtc::VideoFrame::Builder()
           .set_video_frame_buffer(input_buffer_)
           .set_rotation(webrtc::kVideoRotation_0)
@@ -615,7 +614,7 @@ void SimulcastTestFixtureImpl::SwitchingToOneStream(int width, int height) {
   input_buffer_ = I420Buffer::Create(settings_.width, settings_.height);
   input_buffer_->InitializeData();
 
-  input_frame_ = absl::make_unique<webrtc::VideoFrame>(
+  input_frame_ = std::make_unique<webrtc::VideoFrame>(
       webrtc::VideoFrame::Builder()
           .set_video_frame_buffer(input_buffer_)
           .set_rotation(webrtc::kVideoRotation_0)
@@ -660,7 +659,7 @@ void SimulcastTestFixtureImpl::SwitchingToOneStream(int width, int height) {
   // Resize |input_frame_| to the new resolution.
   input_buffer_ = I420Buffer::Create(settings_.width, settings_.height);
   input_buffer_->InitializeData();
-  input_frame_ = absl::make_unique<webrtc::VideoFrame>(
+  input_frame_ = std::make_unique<webrtc::VideoFrame>(
       webrtc::VideoFrame::Builder()
           .set_video_frame_buffer(input_buffer_)
           .set_rotation(webrtc::kVideoRotation_0)
@@ -824,7 +823,7 @@ void SimulcastTestFixtureImpl::TestStrideEncodeDecode() {
   int stride_uv = ((kDefaultWidth + 1) / 2) + 5;
   input_buffer_ = I420Buffer::Create(kDefaultWidth, kDefaultHeight, stride_y,
                                      stride_uv, stride_uv);
-  input_frame_ = absl::make_unique<webrtc::VideoFrame>(
+  input_frame_ = std::make_unique<webrtc::VideoFrame>(
       webrtc::VideoFrame::Builder()
           .set_video_frame_buffer(input_buffer_)
           .set_rotation(webrtc::kVideoRotation_0)

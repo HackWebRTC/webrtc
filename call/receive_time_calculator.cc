@@ -10,10 +10,10 @@
 
 #include "call/receive_time_calculator.h"
 
+#include <memory>
 #include <string>
 #include <type_traits>
 
-#include "absl/memory/memory.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 #include "rtc_base/numerics/safe_minmax.h"
 #include "system_wrappers/include/field_trial.h"
@@ -47,7 +47,7 @@ std::unique_ptr<ReceiveTimeCalculator>
 ReceiveTimeCalculator::CreateFromFieldTrial() {
   if (!IsEnabled(kBweReceiveTimeCorrection))
     return nullptr;
-  return absl::make_unique<ReceiveTimeCalculator>();
+  return std::make_unique<ReceiveTimeCalculator>();
 }
 
 int64_t ReceiveTimeCalculator::ReconcileReceiveTimes(int64_t packet_time_us,

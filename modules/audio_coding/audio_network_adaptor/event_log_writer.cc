@@ -14,9 +14,9 @@
 
 #include <algorithm>
 #include <cstdlib>
+#include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/rtc_event_log/rtc_event.h"
 #include "api/rtc_event_log/rtc_event_log.h"
@@ -69,9 +69,9 @@ void EventLogWriter::MaybeLogEncoderConfig(
 }
 
 void EventLogWriter::LogEncoderConfig(const AudioEncoderRuntimeConfig& config) {
-  auto config_copy = absl::make_unique<AudioEncoderRuntimeConfig>(config);
-  event_log_->Log(absl::make_unique<RtcEventAudioNetworkAdaptation>(
-      std::move(config_copy)));
+  auto config_copy = std::make_unique<AudioEncoderRuntimeConfig>(config);
+  event_log_->Log(
+      std::make_unique<RtcEventAudioNetworkAdaptation>(std::move(config_copy)));
   last_logged_config_ = config;
 }
 

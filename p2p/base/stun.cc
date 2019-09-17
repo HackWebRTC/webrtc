@@ -16,7 +16,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "rtc_base/byte_order.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/crc32.h"
@@ -265,7 +264,7 @@ bool StunMessage::AddMessageIntegrity(const std::string& password) {
 bool StunMessage::AddMessageIntegrity(const char* key, size_t keylen) {
   // Add the attribute with a dummy value. Since this is a known attribute, it
   // can't fail.
-  auto msg_integrity_attr_ptr = absl::make_unique<StunByteStringAttribute>(
+  auto msg_integrity_attr_ptr = std::make_unique<StunByteStringAttribute>(
       STUN_ATTR_MESSAGE_INTEGRITY, std::string(kStunMessageIntegritySize, '0'));
   auto* msg_integrity_attr = msg_integrity_attr_ptr.get();
   AddAttribute(std::move(msg_integrity_attr_ptr));
@@ -326,7 +325,7 @@ bool StunMessage::AddFingerprint() {
   // Add the attribute with a dummy value. Since this is a known attribute,
   // it can't fail.
   auto fingerprint_attr_ptr =
-      absl::make_unique<StunUInt32Attribute>(STUN_ATTR_FINGERPRINT, 0);
+      std::make_unique<StunUInt32Attribute>(STUN_ATTR_FINGERPRINT, 0);
   auto* fingerprint_attr = fingerprint_attr_ptr.get();
   AddAttribute(std::move(fingerprint_attr_ptr));
 
@@ -546,38 +545,38 @@ StunAttribute* StunAttribute::Create(StunAttributeValueType value_type,
 
 std::unique_ptr<StunAddressAttribute> StunAttribute::CreateAddress(
     uint16_t type) {
-  return absl::make_unique<StunAddressAttribute>(type, 0);
+  return std::make_unique<StunAddressAttribute>(type, 0);
 }
 
 std::unique_ptr<StunXorAddressAttribute> StunAttribute::CreateXorAddress(
     uint16_t type) {
-  return absl::make_unique<StunXorAddressAttribute>(type, 0, nullptr);
+  return std::make_unique<StunXorAddressAttribute>(type, 0, nullptr);
 }
 
 std::unique_ptr<StunUInt64Attribute> StunAttribute::CreateUInt64(
     uint16_t type) {
-  return absl::make_unique<StunUInt64Attribute>(type);
+  return std::make_unique<StunUInt64Attribute>(type);
 }
 
 std::unique_ptr<StunUInt32Attribute> StunAttribute::CreateUInt32(
     uint16_t type) {
-  return absl::make_unique<StunUInt32Attribute>(type);
+  return std::make_unique<StunUInt32Attribute>(type);
 }
 
 std::unique_ptr<StunByteStringAttribute> StunAttribute::CreateByteString(
     uint16_t type) {
-  return absl::make_unique<StunByteStringAttribute>(type, 0);
+  return std::make_unique<StunByteStringAttribute>(type, 0);
 }
 
 std::unique_ptr<StunErrorCodeAttribute> StunAttribute::CreateErrorCode() {
-  return absl::make_unique<StunErrorCodeAttribute>(
+  return std::make_unique<StunErrorCodeAttribute>(
       STUN_ATTR_ERROR_CODE, StunErrorCodeAttribute::MIN_SIZE);
 }
 
 std::unique_ptr<StunUInt16ListAttribute>
 StunAttribute::CreateUnknownAttributes() {
-  return absl::make_unique<StunUInt16ListAttribute>(
-      STUN_ATTR_UNKNOWN_ATTRIBUTES, 0);
+  return std::make_unique<StunUInt16ListAttribute>(STUN_ATTR_UNKNOWN_ATTRIBUTES,
+                                                   0);
 }
 
 StunAddressAttribute::StunAddressAttribute(uint16_t type,

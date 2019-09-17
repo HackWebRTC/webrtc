@@ -8,7 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "api/test/simulated_network.h"
 #include "api/video_codecs/video_encoder.h"
 #include "call/fake_network_pipe.h"
@@ -118,11 +119,11 @@ void NetworkStateEndToEndTest::VerifyNewVideoReceiveStreamsRespectNetworkState(
                         transport]() {
     CreateCalls();
     receiver_call_->SignalChannelNetworkState(network_to_bring_up, kNetworkUp);
-    sender_transport = absl::make_unique<test::DirectTransport>(
+    sender_transport = std::make_unique<test::DirectTransport>(
         &task_queue_,
-        absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
-                                           absl::make_unique<SimulatedNetwork>(
-                                               BuiltInNetworkBehaviorConfig())),
+        std::make_unique<FakeNetworkPipe>(
+            Clock::GetRealTimeClock(),
+            std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())),
         sender_call_.get(), payload_type_map_);
     sender_transport->SetReceiver(receiver_call_->Receiver());
     CreateSendConfig(1, 0, 0, sender_transport.get());

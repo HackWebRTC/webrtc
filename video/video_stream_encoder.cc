@@ -13,11 +13,11 @@
 #include <algorithm>
 #include <array>
 #include <limits>
+#include <memory>
 #include <numeric>
 #include <utility>
 
 #include "absl/algorithm/container.h"
-#include "absl/memory/memory.h"
 #include "api/video/encoded_image.h"
 #include "api/video/i420_buffer.h"
 #include "api/video/video_bitrate_allocator_factory.h"
@@ -938,7 +938,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
 
   VideoEncoder::EncoderInfo info = encoder_->GetEncoderInfo();
   if (rate_control_settings_.UseEncoderBitrateAdjuster()) {
-    bitrate_adjuster_ = absl::make_unique<EncoderBitrateAdjuster>(codec);
+    bitrate_adjuster_ = std::make_unique<EncoderBitrateAdjuster>(codec);
     bitrate_adjuster_->OnEncoderInfo(info);
   }
 
@@ -989,10 +989,10 @@ void VideoStreamEncoder::ConfigureQualityScaler(
         experimental_thresholds = QualityScalingExperiment::GetQpThresholds(
             encoder_config_.codec_type);
       }
-      // Since the interface is non-public, absl::make_unique can't do this
+      // Since the interface is non-public, std::make_unique can't do this
       // upcast.
       AdaptationObserverInterface* observer = this;
-      quality_scaler_ = absl::make_unique<QualityScaler>(
+      quality_scaler_ = std::make_unique<QualityScaler>(
           &encoder_queue_, observer,
           experimental_thresholds ? *experimental_thresholds
                                   : *(scaling_settings.thresholds));
@@ -1627,7 +1627,7 @@ EncodedImageCallback::Result VideoStreamEncoder::OnEncodedImage(
 
     if (codec_specific_info && codec_specific_info->generic_frame_info) {
       codec_info_copy =
-          absl::make_unique<CodecSpecificInfo>(*codec_specific_info);
+          std::make_unique<CodecSpecificInfo>(*codec_specific_info);
       GenericFrameInfo& generic_info = *codec_info_copy->generic_frame_info;
       generic_info.frame_id = next_frame_id_++;
 

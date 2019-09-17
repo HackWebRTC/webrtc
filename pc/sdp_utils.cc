@@ -10,10 +10,10 @@
 
 #include "pc/sdp_utils.h"
 
+#include <memory>
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/jsep_session_description.h"
 
 namespace webrtc {
@@ -28,7 +28,7 @@ std::unique_ptr<SessionDescriptionInterface> CloneSessionDescriptionAsType(
     const SessionDescriptionInterface* sdesc,
     SdpType type) {
   RTC_DCHECK(sdesc);
-  auto clone = absl::make_unique<JsepSessionDescription>(type);
+  auto clone = std::make_unique<JsepSessionDescription>(type);
   clone->Initialize(sdesc->description()->Clone(), sdesc->session_id(),
                     sdesc->session_version());
   // As of writing, our version of GCC does not allow returning a unique_ptr of

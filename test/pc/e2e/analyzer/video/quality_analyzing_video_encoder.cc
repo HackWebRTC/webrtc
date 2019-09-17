@@ -11,9 +11,9 @@
 #include "test/pc/e2e/analyzer/video/quality_analyzing_video_encoder.h"
 
 #include <cmath>
+#include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/video/video_codec_type.h"
 #include "api/video_codecs/video_encoder.h"
 #include "modules/video_coding/include/video_error_codes.h"
@@ -354,7 +354,7 @@ QualityAnalyzingVideoEncoderFactory::QueryVideoEncoder(
 std::unique_ptr<VideoEncoder>
 QualityAnalyzingVideoEncoderFactory::CreateVideoEncoder(
     const SdpVideoFormat& format) {
-  return absl::make_unique<QualityAnalyzingVideoEncoder>(
+  return std::make_unique<QualityAnalyzingVideoEncoder>(
       id_generator_->GetNextId(), delegate_->CreateVideoEncoder(format),
       bitrate_multiplier_, stream_required_spatial_index_, injector_,
       analyzer_);

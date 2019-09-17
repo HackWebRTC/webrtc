@@ -13,7 +13,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/function_view.h"
 #include "rtc_base/event.h"
 #include "rtc_base/platform_thread.h"
@@ -67,7 +66,7 @@ TEST(SequenceCheckerTest, CallsAllowedOnSameThread) {
 }
 
 TEST(SequenceCheckerTest, DestructorAllowedOnDifferentThread) {
-  auto sequence_checker = absl::make_unique<SequenceChecker>();
+  auto sequence_checker = std::make_unique<SequenceChecker>();
   RunOnDifferentThread([&] {
     // Verify that the destructor doesn't assert when called on a different
     // thread.

@@ -15,7 +15,6 @@
 #include <cstdio>
 #include <memory>
 
-#include "absl/memory/memory.h"
 #include "api/scoped_refptr.h"
 #include "api/video/i010_buffer.h"
 #include "api/video/i420_buffer.h"
@@ -103,12 +102,12 @@ class SquareGenerator : public FrameGenerator {
       buffer = I010Buffer::Copy(*buffer->ToI420());
     }
 
-    frame_ = absl::make_unique<VideoFrame>(
-        VideoFrame::Builder()
-            .set_video_frame_buffer(buffer)
-            .set_rotation(webrtc::kVideoRotation_0)
-            .set_timestamp_us(0)
-            .build());
+    frame_ =
+        std::make_unique<VideoFrame>(VideoFrame::Builder()
+                                         .set_video_frame_buffer(buffer)
+                                         .set_rotation(webrtc::kVideoRotation_0)
+                                         .set_timestamp_us(0)
+                                         .build());
     return frame_.get();
   }
 
@@ -219,7 +218,7 @@ class YuvFileGenerator : public FrameGenerator {
     if (++current_display_count_ >= frame_display_count_)
       current_display_count_ = 0;
 
-    temp_frame_ = absl::make_unique<VideoFrame>(
+    temp_frame_ = std::make_unique<VideoFrame>(
         VideoFrame::Builder()
             .set_video_frame_buffer(last_read_buffer_)
             .set_rotation(webrtc::kVideoRotation_0)
@@ -288,12 +287,12 @@ class SlideGenerator : public FrameGenerator {
     if (++current_display_count_ >= frame_display_count_)
       current_display_count_ = 0;
 
-    frame_ = absl::make_unique<VideoFrame>(
-        VideoFrame::Builder()
-            .set_video_frame_buffer(buffer_)
-            .set_rotation(webrtc::kVideoRotation_0)
-            .set_timestamp_us(0)
-            .build());
+    frame_ =
+        std::make_unique<VideoFrame>(VideoFrame::Builder()
+                                         .set_video_frame_buffer(buffer_)
+                                         .set_rotation(webrtc::kVideoRotation_0)
+                                         .set_timestamp_us(0)
+                                         .build());
     return frame_.get();
   }
 

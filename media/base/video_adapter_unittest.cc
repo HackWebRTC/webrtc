@@ -14,7 +14,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/video/video_frame.h"
 #include "media/base/fake_frame_source.h"
 #include "rtc_base/time_utils.h"
@@ -31,12 +30,12 @@ class VideoAdapterTest : public ::testing::Test,
                          public ::testing::WithParamInterface<bool> {
  public:
   VideoAdapterTest()
-      : frame_source_(absl::make_unique<FakeFrameSource>(
+      : frame_source_(std::make_unique<FakeFrameSource>(
             kWidth,
             kHeight,
             VideoFormat::FpsToInterval(kDefaultFps) /
                 rtc::kNumNanosecsPerMicrosec)),
-        adapter_wrapper_(absl::make_unique<VideoAdapterWrapper>(&adapter_)),
+        adapter_wrapper_(std::make_unique<VideoAdapterWrapper>(&adapter_)),
         use_new_format_request_(GetParam()) {}
 
  protected:

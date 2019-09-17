@@ -13,7 +13,6 @@
 #include <algorithm>
 #include <memory>
 
-#include "absl/memory/memory.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "call/simulated_network.h"
@@ -48,7 +47,7 @@ class ResourceOwningTask final : public QueuedTask {
 template <typename T, typename Closure>
 std::unique_ptr<QueuedTask> CreateResourceOwningTask(T resource,
                                                      Closure&& closure) {
-  return absl::make_unique<ResourceOwningTask<T, Closure>>(
+  return std::make_unique<ResourceOwningTask<T, Closure>>(
       std::forward<T>(resource), std::forward<Closure>(closure));
 }
 }  // namespace
@@ -72,12 +71,12 @@ NetworkEmulationManagerImpl::~NetworkEmulationManagerImpl() = default;
 
 EmulatedNetworkNode* NetworkEmulationManagerImpl::CreateEmulatedNode(
     BuiltInNetworkBehaviorConfig config) {
-  return CreateEmulatedNode(absl::make_unique<SimulatedNetwork>(config));
+  return CreateEmulatedNode(std::make_unique<SimulatedNetwork>(config));
 }
 
 EmulatedNetworkNode* NetworkEmulationManagerImpl::CreateEmulatedNode(
     std::unique_ptr<NetworkBehaviorInterface> network_behavior) {
-  auto node = absl::make_unique<EmulatedNetworkNode>(
+  auto node = std::make_unique<EmulatedNetworkNode>(
       clock_, &task_queue_, std::move(network_behavior));
   EmulatedNetworkNode* out = node.get();
   task_queue_.PostTask(CreateResourceOwningTask(
@@ -110,7 +109,7 @@ EmulatedEndpoint* NetworkEmulationManagerImpl::CreateEndpoint(
 
   bool res = used_ip_addresses_.insert(*ip).second;
   RTC_CHECK(res) << "IP=" << ip->ToString() << " already in use";
-  auto node = absl::make_unique<EmulatedEndpoint>(
+  auto node = std::make_unique<EmulatedEndpoint>(
       next_node_id_++, *ip, config.start_as_enabled, &task_queue_, clock_);
   EmulatedEndpoint* out = node.get();
   endpoints_.push_back(std::move(node));
@@ -148,7 +147,7 @@ EmulatedRoute* NetworkEmulationManagerImpl::CreateRoute(
   cur_node->router()->SetReceiver(to->GetPeerLocalAddress(), to);
 
   std::unique_ptr<EmulatedRoute> route =
-      absl::make_unique<EmulatedRoute>(from, std::move(via_nodes), to);
+      std::make_unique<EmulatedRoute>(from, std::move(via_nodes), to);
   EmulatedRoute* out = route.get();
   routes_.push_back(std::move(route));
   return out;
@@ -190,7 +189,7 @@ TrafficRoute* NetworkEmulationManagerImpl::CreateTrafficRoute(
   cur_node->router()->SetReceiver(endpoint->GetPeerLocalAddress(), endpoint);
 
   std::unique_ptr<TrafficRoute> traffic_route =
-      absl::make_unique<TrafficRoute>(clock_, via_nodes[0], endpoint);
+      std::make_unique<TrafficRoute>(clock_, via_nodes[0], endpoint);
   TrafficRoute* out = traffic_route.get();
   traffic_routes_.push_back(std::move(traffic_route));
   return out;
@@ -201,7 +200,7 @@ NetworkEmulationManagerImpl::CreateRandomWalkCrossTraffic(
     TrafficRoute* traffic_route,
     RandomWalkConfig config) {
   auto traffic =
-      absl::make_unique<RandomWalkCrossTraffic>(config, traffic_route);
+      std::make_unique<RandomWalkCrossTraffic>(config, traffic_route);
   RandomWalkCrossTraffic* out = traffic.get();
 
   task_queue_.PostTask(CreateResourceOwningTask(
@@ -223,7 +222,7 @@ NetworkEmulationManagerImpl::CreatePulsedPeaksCrossTraffic(
     TrafficRoute* traffic_route,
     PulsedPeaksConfig config) {
   auto traffic =
-      absl::make_unique<PulsedPeaksCrossTraffic>(config, traffic_route);
+      std::make_unique<PulsedPeaksCrossTraffic>(config, traffic_route);
   PulsedPeaksCrossTraffic* out = traffic.get();
   task_queue_.PostTask(CreateResourceOwningTask(
       std::move(traffic),
@@ -245,7 +244,7 @@ void NetworkEmulationManagerImpl::StartFakeTcpCrossTraffic(
     FakeTcpConfig config) {
   task_queue_.PostTask([=]() {
     auto traffic =
-        absl::make_unique<FakeTcpCrossTraffic>(config, send_route, ret_route);
+        std::make_unique<FakeTcpCrossTraffic>(config, send_route, ret_route);
     auto* traffic_ptr = traffic.get();
     tcp_cross_traffics_.push_back(std::move(traffic));
     TimeDelta process_interval = config.process_interval;
@@ -260,8 +259,8 @@ void NetworkEmulationManagerImpl::StartFakeTcpCrossTraffic(
 EmulatedNetworkManagerInterface*
 NetworkEmulationManagerImpl::CreateEmulatedNetworkManagerInterface(
     const std::vector<EmulatedEndpoint*>& endpoints) {
-  auto endpoints_container = absl::make_unique<EndpointsContainer>(endpoints);
-  auto network_manager = absl::make_unique<EmulatedNetworkManager>(
+  auto endpoints_container = std::make_unique<EndpointsContainer>(endpoints);
+  auto network_manager = std::make_unique<EmulatedNetworkManager>(
       clock_, &task_queue_, endpoints_container.get());
   for (auto* endpoint : endpoints) {
     // Associate endpoint with network manager.

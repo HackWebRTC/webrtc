@@ -483,7 +483,6 @@ if (is_ios || (is_mac && target_cpu != "x86")) {
         "../sdk:ui_objc",
         "../sdk:videocapture_objc",
         "../sdk:videotoolbox_objc",
-        "//third_party/abseil-cpp/absl/memory",
       ]
 
       if (current_cpu == "arm64") {

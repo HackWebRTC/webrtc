@@ -13,9 +13,9 @@
 #include <algorithm>
 #include <cstdio>
 #include <limits>
+#include <memory>
 #include <string>
 
-#include "absl/memory/memory.h"
 #include "api/rtc_event_log/rtc_event.h"
 #include "api/rtc_event_log/rtc_event_log.h"
 #include "logging/rtc_event_log/events/rtc_event_bwe_update_loss_based.h"
@@ -653,7 +653,7 @@ void SendSideBandwidthEstimation::CapBitrateToThresholds(Timestamp at_time,
   if (bitrate != current_bitrate_ ||
       last_fraction_loss_ != last_logged_fraction_loss_ ||
       at_time - last_rtc_event_log_ > kRtcEventLogPeriod) {
-    event_log_->Log(absl::make_unique<RtcEventBweUpdateLossBased>(
+    event_log_->Log(std::make_unique<RtcEventBweUpdateLossBased>(
         bitrate.bps(), last_fraction_loss_,
         expected_packets_since_last_loss_update_));
     last_logged_fraction_loss_ = last_fraction_loss_;

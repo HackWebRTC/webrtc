@@ -15,7 +15,6 @@
 #include <set>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "p2p/base/fake_ice_transport.h"
 #include "p2p/base/packet_transport_internal.h"
 #include "rtc_base/checks.h"
@@ -88,9 +87,9 @@ class DtlsTestClient : public sigslot::has_slots<> {
     fake_ice_transport_->SignalReadPacket.connect(
         this, &DtlsTestClient::OnFakeIceTransportReadPacket);
 
-    dtls_transport_ = absl::make_unique<DtlsTransport>(
-        fake_ice_transport_.get(), webrtc::CryptoOptions(),
-        /*event_log=*/nullptr);
+    dtls_transport_ = std::make_unique<DtlsTransport>(fake_ice_transport_.get(),
+                                                      webrtc::CryptoOptions(),
+                                                      /*event_log=*/nullptr);
     dtls_transport_->SetSslMaxProtocolVersion(ssl_max_version_);
     // Note: Certificate may be null here if testing passthrough.
     dtls_transport_->SetLocalCertificate(certificate_);

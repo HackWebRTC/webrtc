@@ -12,7 +12,6 @@
 
 #include <memory>
 
-#include "absl/memory/memory.h"
 #include "rtc_base/async_invoker.h"
 #include "rtc_base/async_udp_socket.h"
 #include "rtc_base/event.h"
@@ -518,7 +517,7 @@ TEST_F(AsyncInvokeTest, KillInvokerDuringExecuteWithReentrantInvoke) {
   bool reentrant_functor_run = false;
 
   Thread* main = Thread::Current();
-  Thread thread(absl::make_unique<NullSocketServer>());
+  Thread thread(std::make_unique<NullSocketServer>());
   thread.Start();
   {
     AsyncInvoker invoker;

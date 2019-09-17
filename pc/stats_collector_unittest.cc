@@ -15,7 +15,6 @@
 #include <memory>
 
 #include "absl/algorithm/container.h"
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/candidate.h"
@@ -600,7 +599,7 @@ class StatsCollectorTest : public ::testing::Test {
 
   std::unique_ptr<StatsCollectorForTest> CreateStatsCollector(
       PeerConnectionInternal* pc) {
-    return absl::make_unique<StatsCollectorForTest>(pc);
+    return std::make_unique<StatsCollectorForTest>(pc);
   }
 
   void VerifyAudioTrackStats(FakeAudioTrack* audio_track,

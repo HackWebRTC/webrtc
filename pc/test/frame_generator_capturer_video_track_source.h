@@ -14,7 +14,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "pc/video_track_source.h"
@@ -46,7 +45,7 @@ class FrameGeneratorCapturerVideoTrackSource : public VideoTrackSource {
       : VideoTrackSource(false /* remote */),
         task_queue_factory_(CreateDefaultTaskQueueFactory()),
         is_screencast_(is_screencast) {
-    video_capturer_ = absl::make_unique<test::FrameGeneratorCapturer>(
+    video_capturer_ = std::make_unique<test::FrameGeneratorCapturer>(
         clock,
         test::FrameGenerator::CreateSquareGenerator(
             config.width, config.height, absl::nullopt,

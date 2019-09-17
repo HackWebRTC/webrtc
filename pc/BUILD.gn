@@ -260,7 +260,6 @@ rtc_static_library("peerconnection") {
     "../system_wrappers:field_trial",
     "../system_wrappers:metrics",
     "//third_party/abseil-cpp/absl/algorithm:container",
-    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -387,7 +386,6 @@ if (rtc_include_tests) {
       "../system_wrappers",
       "../test:perf_test",
       "../test:test_support",
-      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
@@ -482,7 +480,6 @@ if (rtc_include_tests) {
       "../rtc_base/third_party/sigslot",
       "../test:test_support",
       "../test:video_test_common",
-      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }

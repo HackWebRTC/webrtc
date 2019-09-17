@@ -14,7 +14,6 @@
 #include <memory>
 #include <set>
 
-#include "absl/memory/memory.h"
 #include "api/test/simulated_network.h"
 #include "api/units/time_delta.h"
 #include "call/simulated_network.h"
@@ -149,7 +148,7 @@ class NetworkEmulationManagerThreeNodesRoutingTest : public ::testing::Test {
 EmulatedNetworkNode* CreateEmulatedNodeWithDefaultBuiltInConfig(
     NetworkEmulationManager* emulation) {
   return emulation->CreateEmulatedNode(
-      absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
+      std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
 }
 
 }  // namespace
@@ -186,9 +185,9 @@ TEST(NetworkEmulationManagerTest, Run) {
   NetworkEmulationManagerImpl network_manager;
 
   EmulatedNetworkNode* alice_node = network_manager.CreateEmulatedNode(
-      absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
+      std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
   EmulatedNetworkNode* bob_node = network_manager.CreateEmulatedNode(
-      absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
+      std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
   EmulatedEndpoint* alice_endpoint =
       network_manager.CreateEndpoint(EmulatedEndpointConfig());
   EmulatedEndpoint* bob_endpoint =
@@ -263,9 +262,9 @@ TEST(NetworkEmulationManagerTest, ThroughputStats) {
   NetworkEmulationManagerImpl network_manager;
 
   EmulatedNetworkNode* alice_node = network_manager.CreateEmulatedNode(
-      absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
+      std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
   EmulatedNetworkNode* bob_node = network_manager.CreateEmulatedNode(
-      absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
+      std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig()));
   EmulatedEndpoint* alice_endpoint =
       network_manager.CreateEndpoint(EmulatedEndpointConfig());
   EmulatedEndpoint* bob_endpoint =

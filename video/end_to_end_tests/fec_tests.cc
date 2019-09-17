@@ -8,7 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "api/test/simulated_network.h"
 #include "api/test/video/function_video_encoder_factory.h"
 #include "call/fake_network_pipe.h"
@@ -255,9 +256,9 @@ class FlexfecRenderObserver : public test::EndToEndTest,
     return new test::PacketTransport(
         task_queue, sender_call, this, test::PacketTransport::kSender,
         test::CallTest::payload_type_map_,
-        absl::make_unique<FakeNetworkPipe>(
+        std::make_unique<FakeNetworkPipe>(
             Clock::GetRealTimeClock(),
-            absl::make_unique<SimulatedNetwork>(config)));
+            std::make_unique<SimulatedNetwork>(config)));
   }
 
   void OnFrame(const VideoFrame& video_frame) override {
@@ -441,9 +442,9 @@ TEST_F(FecEndToEndTest, ReceivedUlpfecPacketsNotNacked) {
       return new test::PacketTransport(
           task_queue, sender_call, this, test::PacketTransport::kSender,
           payload_type_map_,
-          absl::make_unique<FakeNetworkPipe>(
+          std::make_unique<FakeNetworkPipe>(
               Clock::GetRealTimeClock(),
-              absl::make_unique<SimulatedNetwork>(config)));
+              std::make_unique<SimulatedNetwork>(config)));
     }
 
     // TODO(holmer): Investigate why we don't send FEC packets when the bitrate

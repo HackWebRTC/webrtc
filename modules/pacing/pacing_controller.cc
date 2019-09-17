@@ -11,10 +11,10 @@
 #include "modules/pacing/pacing_controller.h"
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "modules/pacing/bitrate_prober.h"
 #include "modules/pacing/interval_budget.h"
 #include "modules/utility/include/process_thread.h"
@@ -81,7 +81,7 @@ PacingController::PacingController(Clock* clock,
     : clock_(clock),
       packet_sender_(packet_sender),
       fallback_field_trials_(
-          !field_trials ? absl::make_unique<FieldTrialBasedConfig>() : nullptr),
+          !field_trials ? std::make_unique<FieldTrialBasedConfig>() : nullptr),
       field_trials_(field_trials ? field_trials : fallback_field_trials_.get()),
       drain_large_queues_(
           !IsDisabled(*field_trials_, "WebRTC-Pacer-DrainQueue")),

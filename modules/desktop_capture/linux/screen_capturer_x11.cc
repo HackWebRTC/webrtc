@@ -20,7 +20,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "modules/desktop_capture/desktop_capture_options.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/desktop_frame.h"
@@ -53,7 +52,7 @@ bool ScreenCapturerX11::Init(const DesktopCaptureOptions& options) {
   TRACE_EVENT0("webrtc", "ScreenCapturerX11::Init");
   options_ = options;
 
-  atom_cache_ = absl::make_unique<XAtomCache>(display());
+  atom_cache_ = std::make_unique<XAtomCache>(display());
 
   root_window_ = RootWindow(display(), DefaultScreen(display()));
   if (root_window_ == BadValue) {

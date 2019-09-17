@@ -14,7 +14,6 @@
 #include <tuple>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "media/base/fake_rtp.h"
 #include "p2p/base/fake_dtls_transport.h"
 #include "p2p/base/fake_ice_transport.h"
@@ -46,7 +45,7 @@ class JsepTransport2Test : public ::testing::Test, public sigslot::has_slots<> {
   std::unique_ptr<webrtc::SrtpTransport> CreateSdesTransport(
       rtc::PacketTransportInternal* rtp_packet_transport,
       rtc::PacketTransportInternal* rtcp_packet_transport) {
-    auto srtp_transport = absl::make_unique<webrtc::SrtpTransport>(
+    auto srtp_transport = std::make_unique<webrtc::SrtpTransport>(
         rtcp_packet_transport == nullptr);
 
     srtp_transport->SetRtpPacketTransport(rtp_packet_transport);
@@ -59,7 +58,7 @@ class JsepTransport2Test : public ::testing::Test, public sigslot::has_slots<> {
   std::unique_ptr<webrtc::DtlsSrtpTransport> CreateDtlsSrtpTransport(
       cricket::DtlsTransportInternal* rtp_dtls_transport,
       cricket::DtlsTransportInternal* rtcp_dtls_transport) {
-    auto dtls_srtp_transport = absl::make_unique<webrtc::DtlsSrtpTransport>(
+    auto dtls_srtp_transport = std::make_unique<webrtc::DtlsSrtpTransport>(
         rtcp_dtls_transport == nullptr);
     dtls_srtp_transport->SetDtlsTransports(rtp_dtls_transport,
                                            rtcp_dtls_transport);
@@ -70,17 +69,16 @@ class JsepTransport2Test : public ::testing::Test, public sigslot::has_slots<> {
   // FakeIceTransport.
   std::unique_ptr<JsepTransport> CreateJsepTransport2(bool rtcp_mux_enabled,
                                                       SrtpMode srtp_mode) {
-    auto ice = absl::make_unique<FakeIceTransport>(kTransportName,
-                                                   ICE_CANDIDATE_COMPONENT_RTP);
-    auto rtp_dtls_transport = absl::make_unique<FakeDtlsTransport>(ice.get());
+    auto ice = std::make_unique<FakeIceTransport>(kTransportName,
+                                                  ICE_CANDIDATE_COMPONENT_RTP);
+    auto rtp_dtls_transport = std::make_unique<FakeDtlsTransport>(ice.get());
 
     std::unique_ptr<FakeIceTransport> rtcp_ice;
     std::unique_ptr<FakeDtlsTransport> rtcp_dtls_transport;
     if (!rtcp_mux_enabled) {
-      rtcp_ice = absl::make_unique<FakeIceTransport>(
+      rtcp_ice = std::make_unique<FakeIceTransport>(
           kTransportName, ICE_CANDIDATE_COMPONENT_RTCP);
-      rtcp_dtls_transport =
-          absl::make_unique<FakeDtlsTransport>(rtcp_ice.get());
+      rtcp_dtls_transport = std::make_unique<FakeDtlsTransport>(rtcp_ice.get());
     }
 
     std::unique_ptr<webrtc::RtpTransport> unencrypted_rtp_transport;
@@ -105,7 +103,7 @@ class JsepTransport2Test : public ::testing::Test, public sigslot::has_slots<> {
     // media_transport = nullptr. In the future we will probably add
     // more logic that require unit tests. Note that creation of media_transport
     // is covered in jseptransportcontroller_unittest.
-    auto jsep_transport = absl::make_unique<JsepTransport>(
+    auto jsep_transport = std::make_unique<JsepTransport>(
         kTransportName, /*local_certificate=*/nullptr, std::move(ice),
         std::move(rtcp_ice), std::move(unencrypted_rtp_transport),
         std::move(sdes_transport), std::move(dtls_srtp_transport),

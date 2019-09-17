@@ -177,7 +177,6 @@ if (rtc_include_tests) {
       "../../test:test_support",
       "../logging:log_writer",
       "//testing/gmock",
-      "//third_party/abseil-cpp/absl/memory",
     ]
     data = scenario_unittest_resources
     if (is_ios) {

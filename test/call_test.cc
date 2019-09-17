@@ -11,8 +11,8 @@
 #include "test/call_test.h"
 
 #include <algorithm>
+#include <memory>
 
-#include "absl/memory/memory.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/task_queue/default_task_queue_factory.h"
@@ -32,22 +32,22 @@ namespace test {
 CallTest::CallTest()
     : clock_(Clock::GetRealTimeClock()),
       task_queue_factory_(CreateDefaultTaskQueueFactory()),
-      send_event_log_(absl::make_unique<RtcEventLogNull>()),
-      recv_event_log_(absl::make_unique<RtcEventLogNull>()),
+      send_event_log_(std::make_unique<RtcEventLogNull>()),
+      recv_event_log_(std::make_unique<RtcEventLogNull>()),
       audio_send_config_(/*send_transport=*/nullptr, MediaTransportConfig()),
       audio_send_stream_(nullptr),
       frame_generator_capturer_(nullptr),
       fake_encoder_factory_([this]() {
         std::unique_ptr<FakeEncoder> fake_encoder;
         if (video_encoder_configs_[0].codec_type == kVideoCodecVP8) {
-          fake_encoder = absl::make_unique<FakeVP8Encoder>(clock_);
+          fake_encoder = std::make_unique<FakeVP8Encoder>(clock_);
         } else {
-          fake_encoder = absl::make_unique<FakeEncoder>(clock_);
+          fake_encoder = std::make_unique<FakeEncoder>(clock_);
         }
         fake_encoder->SetMaxBitrate(fake_encoder_max_bitrate_);
         return fake_encoder;
       }),
-      fake_decoder_factory_([]() { return absl::make_unique<FakeDecoder>(); }),
+      fake_decoder_factory_([]() { return std::make_unique<FakeDecoder>(); }),
       bitrate_allocator_factory_(CreateBuiltinVideoBitrateAllocatorFactory()),
       num_video_streams_(1),
       num_audio_streams_(0),
@@ -483,7 +483,7 @@ void CallTest::CreateFrameGeneratorCapturerWithDrift(Clock* clock,
                                                      int height) {
   video_sources_.clear();
   auto frame_generator_capturer =
-      absl::make_unique<test::FrameGeneratorCapturer>(
+      std::make_unique<test::FrameGeneratorCapturer>(
           clock,
           test::FrameGenerator::CreateSquareGenerator(
               width, height, absl::nullopt, absl::nullopt),
@@ -499,7 +499,7 @@ void CallTest::CreateFrameGeneratorCapturer(int framerate,
                                             int height) {
   video_sources_.clear();
   auto frame_generator_capturer =
-      absl::make_unique<test::FrameGeneratorCapturer>(
+      std::make_unique<test::FrameGeneratorCapturer>(
           clock_,
           test::FrameGenerator::CreateSquareGenerator(
               width, height, absl::nullopt, absl::nullopt),
@@ -782,9 +782,9 @@ test::PacketTransport* BaseTest::CreateSendTransport(
   return new PacketTransport(
       task_queue, sender_call, this, test::PacketTransport::kSender,
       CallTest::payload_type_map_,
-      absl::make_unique<FakeNetworkPipe>(
+      std::make_unique<FakeNetworkPipe>(
           Clock::GetRealTimeClock(),
-          absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())));
+          std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())));
 }
 
 test::PacketTransport* BaseTest::CreateReceiveTransport(
@@ -792,9 +792,9 @@ test::PacketTransport* BaseTest::CreateReceiveTransport(
   return new PacketTransport(
       task_queue, nullptr, this, test::PacketTransport::kReceiver,
       CallTest::payload_type_map_,
-      absl::make_unique<FakeNetworkPipe>(
+      std::make_unique<FakeNetworkPipe>(
           Clock::GetRealTimeClock(),
-          absl::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())));
+          std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())));
 }
 
 size_t BaseTest::GetNumVideoStreams() const {

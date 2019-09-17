@@ -8,7 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "api/test/simulated_network.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
@@ -81,20 +82,20 @@ TEST_F(SsrcEndToEndTest, UnknownRtpPacketGivesUnknownSsrcReturnCode) {
       [this, &send_transport, &receive_transport, &input_observer]() {
         CreateCalls();
 
-        send_transport = absl::make_unique<test::DirectTransport>(
+        send_transport = std::make_unique<test::DirectTransport>(
             &task_queue_,
-            absl::make_unique<FakeNetworkPipe>(
-                Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
+            std::make_unique<FakeNetworkPipe>(
+                Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
                                                BuiltInNetworkBehaviorConfig())),
             sender_call_.get(), payload_type_map_);
-        receive_transport = absl::make_unique<test::DirectTransport>(
+        receive_transport = std::make_unique<test::DirectTransport>(
             &task_queue_,
-            absl::make_unique<FakeNetworkPipe>(
-                Clock::GetRealTimeClock(), absl::make_unique<SimulatedNetwork>(
+            std::make_unique<FakeNetworkPipe>(
+                Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
                                                BuiltInNetworkBehaviorConfig())),
             receiver_call_.get(), payload_type_map_);
         input_observer =
-            absl::make_unique<PacketInputObserver>(receiver_call_->Receiver());
+            std::make_unique<PacketInputObserver>(receiver_call_->Receiver());
         send_transport->SetReceiver(input_observer.get());
         receive_transport->SetReceiver(sender_call_->Receiver());
 

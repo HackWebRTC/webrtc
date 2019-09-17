@@ -60,7 +60,6 @@ rtc_source_set("rtc_base_approved") {
     "system:arch",
     "system:unused",
     "third_party/base64",
-    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
   public_deps = []  # no-presubmit-check TODO(webrtc:8603)
@@ -463,7 +462,6 @@ if (rtc_enable_libevent) {
       ":safe_conversions",
       ":timeutils",
       "../api/task_queue",
-      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/strings",
     ]
     if (rtc_build_libevent) {
@@ -483,7 +481,6 @@ if (is_mac || is_ios) {
       ":checks",
       ":logging",
       "../api/task_queue",
-      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/strings",
     ]
   }
@@ -506,7 +503,6 @@ if (is_win) {
       ":safe_conversions",
       ":timeutils",
       "../api/task_queue",
-      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/strings",
     ]
   }
@@ -527,7 +523,6 @@ rtc_source_set("rtc_task_queue_stdlib") {
     ":safe_conversions",
     ":timeutils",
     "../api/task_queue",
-    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/strings",
   ]
 }
@@ -1003,7 +998,6 @@ rtc_source_set("testclient") {
     ":rtc_base",
     ":rtc_base_tests_utils",
     ":timeutils",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -1228,7 +1222,6 @@ if (rtc_include_tests) {
       ":weak_ptr",
       "../test:test_main",
       "../test:test_support",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 

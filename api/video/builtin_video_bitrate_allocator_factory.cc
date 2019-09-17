@@ -10,7 +10,8 @@
 
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "api/video/video_bitrate_allocator.h"
 #include "api/video_codecs/video_codec.h"
 #include "modules/video_coding/codecs/vp9/svc_rate_allocator.h"
@@ -51,7 +52,7 @@ class BuiltinVideoBitrateAllocatorFactory
 
 std::unique_ptr<VideoBitrateAllocatorFactory>
 CreateBuiltinVideoBitrateAllocatorFactory() {
-  return absl::make_unique<BuiltinVideoBitrateAllocatorFactory>();
+  return std::make_unique<BuiltinVideoBitrateAllocatorFactory>();
 }
 
 }  // namespace webrtc

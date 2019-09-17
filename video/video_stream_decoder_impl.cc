@@ -10,7 +10,8 @@
 
 #include "video/video_stream_decoder_impl.h"
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "api/task_queue/queued_task.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/mod_ops.h"
@@ -64,7 +65,7 @@ void VideoStreamDecoderImpl::OnFrame(
     };
 
     bookkeeping_queue_.PostTask(
-        absl::make_unique<OnFrameTask>(std::move(frame), this));
+        std::make_unique<OnFrameTask>(std::move(frame), this));
     return;
   }
 

@@ -9,9 +9,11 @@
  */
 #include "test/logging/memory_log_writer.h"
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+
 namespace webrtc {
 namespace {
 class MemoryLogWriter final : public RtcEventLogOutput {
@@ -45,7 +47,7 @@ class MemoryLogWriterFactory : public LogWriterFactoryInterface {
       : target_(target) {}
   ~MemoryLogWriterFactory() final {}
   std::unique_ptr<RtcEventLogOutput> Create(std::string filename) override {
-    return absl::make_unique<MemoryLogWriter>(target_, filename);
+    return std::make_unique<MemoryLogWriter>(target_, filename);
   }
 
  private:
@@ -59,7 +61,7 @@ MemoryLogStorage::MemoryLogStorage() {}
 MemoryLogStorage::~MemoryLogStorage() {}
 
 std::unique_ptr<LogWriterFactoryInterface> MemoryLogStorage::CreateFactory() {
-  return absl::make_unique<MemoryLogWriterFactory>(&logs_);
+  return std::make_unique<MemoryLogWriterFactory>(&logs_);
 }
 
 // namespace webrtc_impl

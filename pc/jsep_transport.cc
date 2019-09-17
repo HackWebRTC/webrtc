@@ -17,7 +17,6 @@
 #include <type_traits>
 #include <utility>  // for std::pair
 
-#include "absl/memory/memory.h"
 #include "api/array_view.h"
 #include "api/candidate.h"
 #include "p2p/base/p2p_constants.h"
@@ -145,7 +144,7 @@ JsepTransport::JsepTransport(
   }
 
   if (datagram_rtp_transport_ && default_rtp_transport()) {
-    composite_rtp_transport_ = absl::make_unique<webrtc::CompositeRtpTransport>(
+    composite_rtp_transport_ = std::make_unique<webrtc::CompositeRtpTransport>(
         std::vector<webrtc::RtpTransportInternal*>{
             datagram_rtp_transport_.get(), default_rtp_transport()});
   }
@@ -606,7 +605,7 @@ webrtc::RTCError JsepTransport::NegotiateAndSetDtlsParameters(
   rtc::SSLFingerprint* remote_fp =
       remote_description_->transport_desc.identity_fingerprint.get();
   if (remote_fp && local_fp) {
-    remote_fingerprint = absl::make_unique<rtc::SSLFingerprint>(*remote_fp);
+    remote_fingerprint = std::make_unique<rtc::SSLFingerprint>(*remote_fp);
     webrtc::RTCError error =
         NegotiateDtlsRole(local_description_type,
                           local_description_->transport_desc.connection_role,
@@ -621,7 +620,7 @@ webrtc::RTCError JsepTransport::NegotiateAndSetDtlsParameters(
         "Local fingerprint supplied when caller didn't offer DTLS.");
   } else {
     // We are not doing DTLS
-    remote_fingerprint = absl::make_unique<rtc::SSLFingerprint>(
+    remote_fingerprint = std::make_unique<rtc::SSLFingerprint>(
         "", rtc::ArrayView<const uint8_t>());
   }
   // Now that we have negotiated everything, push it downward.

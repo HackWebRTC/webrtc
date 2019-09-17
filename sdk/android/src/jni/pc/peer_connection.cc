@@ -32,7 +32,6 @@
 #include <string>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/peer_connection_interface.h"
 #include "api/rtc_event_log_output_file.h"
 #include "api/rtp_receiver_interface.h"
@@ -786,7 +785,7 @@ static jboolean JNI_PeerConnection_StartRtcEventLog(
     return false;
   }
   return ExtractNativePC(jni, j_pc)->StartRtcEventLog(
-      absl::make_unique<RtcEventLogOutputFile>(f, max_size));
+      std::make_unique<RtcEventLogOutputFile>(f, max_size));
 }
 
 static void JNI_PeerConnection_StopRtcEventLog(

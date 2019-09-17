@@ -117,7 +117,6 @@ rtc_source_set("rtp_receiver") {
     "../modules/rtp_rtcp:rtp_rtcp_format",
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
-    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -170,7 +169,6 @@ rtc_source_set("rtp_sender") {
     "../system_wrappers:field_trial",
     "//third_party/abseil-cpp/absl/algorithm:container",
     "//third_party/abseil-cpp/absl/container:inlined_vector",
-    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
     "//third_party/abseil-cpp/absl/types:variant",
   ]
@@ -269,7 +267,6 @@ rtc_static_library("call") {
     "../system_wrappers:field_trial",
     "../system_wrappers:metrics",
     "../video",
-    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -317,7 +314,6 @@ rtc_source_set("simulated_network") {
     "../rtc_base:checks",
     "../rtc_base:rtc_base_approved",
     "../rtc_base/synchronization:sequence_checker",
-    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -349,7 +345,6 @@ rtc_source_set("fake_network") {
     "../rtc_base:rtc_base_approved",
     "../rtc_base/synchronization:sequence_checker",
     "../system_wrappers",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -475,7 +470,6 @@ if (rtc_include_tests) {
       "../video",
       "//testing/gtest",
       "//third_party/abseil-cpp/absl/flags:flag",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 
@@ -537,7 +531,6 @@ if (rtc_include_tests) {
       "../test:test_support",
       "//testing/gtest",
       "//third_party/abseil-cpp/absl/algorithm:container",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 }

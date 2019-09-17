@@ -10,11 +10,11 @@
 
 #include "audio/audio_send_stream.h"
 
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/audio_codecs/audio_encoder_factory.h"
 #include "api/audio_codecs/audio_format.h"
@@ -69,14 +69,14 @@ void UpdateEventLogStreamConfig(RtcEventLog* event_log,
     return;
   }
 
-  auto rtclog_config = absl::make_unique<rtclog::StreamConfig>();
+  auto rtclog_config = std::make_unique<rtclog::StreamConfig>();
   rtclog_config->local_ssrc = config.rtp.ssrc;
   rtclog_config->rtp_extensions = config.rtp.extensions;
   if (config.send_codec_spec) {
     rtclog_config->codecs.emplace_back(config.send_codec_spec->format.name,
                                        config.send_codec_spec->payload_type, 0);
   }
-  event_log->Log(absl::make_unique<RtcEventAudioSendStreamConfig>(
+  event_log->Log(std::make_unique<RtcEventAudioSendStreamConfig>(
       std::move(rtclog_config)));
 }
 

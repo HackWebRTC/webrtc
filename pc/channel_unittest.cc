@@ -14,7 +14,6 @@
 #include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/array_view.h"
 #include "api/audio_options.h"
 #include "api/rtp_parameters.h"
@@ -132,9 +131,9 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
   }
 
   void CreateChannels(int flags1, int flags2) {
-    CreateChannels(absl::make_unique<typename T::MediaChannel>(
+    CreateChannels(std::make_unique<typename T::MediaChannel>(
                        nullptr, typename T::Options()),
-                   absl::make_unique<typename T::MediaChannel>(
+                   std::make_unique<typename T::MediaChannel>(
                        nullptr, typename T::Options()),
                    flags1, flags2);
   }
@@ -262,7 +261,7 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
       webrtc::RtpTransportInternal* rtp_transport,
       int flags) {
     rtc::Thread* signaling_thread = rtc::Thread::Current();
-    auto channel = absl::make_unique<typename T::Channel>(
+    auto channel = std::make_unique<typename T::Channel>(
         worker_thread, network_thread, signaling_thread, std::move(ch),
         cricket::CN_AUDIO, (flags & DTLS) != 0, webrtc::CryptoOptions(),
         &ssrc_generator_);
@@ -297,7 +296,7 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
   std::unique_ptr<webrtc::RtpTransport> CreateUnencryptedTransport(
       rtc::PacketTransportInternal* rtp_packet_transport,
       rtc::PacketTransportInternal* rtcp_packet_transport) {
-    auto rtp_transport = absl::make_unique<webrtc::RtpTransport>(
+    auto rtp_transport = std::make_unique<webrtc::RtpTransport>(
         rtcp_packet_transport == nullptr);
 
     rtp_transport->SetRtpPacketTransport(rtp_packet_transport);
@@ -310,7 +309,7 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
   std::unique_ptr<webrtc::DtlsSrtpTransport> CreateDtlsSrtpTransport(
       cricket::DtlsTransportInternal* rtp_dtls_transport,
       cricket::DtlsTransportInternal* rtcp_dtls_transport) {
-    auto dtls_srtp_transport = absl::make_unique<webrtc::DtlsSrtpTransport>(
+    auto dtls_srtp_transport = std::make_unique<webrtc::DtlsSrtpTransport>(
         rtcp_dtls_transport == nullptr);
 
     dtls_srtp_transport->SetDtlsTransports(rtp_dtls_transport,
@@ -959,8 +958,8 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
         T::MediaChannel::SendRtcp(kRtcpReport, sizeof(kRtcpReport));
       }
     };
-    CreateChannels(absl::make_unique<LastWordMediaChannel>(),
-                   absl::make_unique<LastWordMediaChannel>(), RTCP_MUX,
+    CreateChannels(std::make_unique<LastWordMediaChannel>(),
+                   std::make_unique<LastWordMediaChannel>(), RTCP_MUX,
                    RTCP_MUX);
     EXPECT_TRUE(SendInitiate());
     EXPECT_TRUE(SendAccept());
@@ -1621,7 +1620,7 @@ std::unique_ptr<cricket::VideoChannel> ChannelTest<VideoTraits>::CreateChannel(
     webrtc::RtpTransportInternal* rtp_transport,
     int flags) {
   rtc::Thread* signaling_thread = rtc::Thread::Current();
-  auto channel = absl::make_unique<cricket::VideoChannel>(
+  auto channel = std::make_unique<cricket::VideoChannel>(
       worker_thread, network_thread, signaling_thread, std::move(ch),
       cricket::CN_VIDEO, (flags & DTLS) != 0, webrtc::CryptoOptions(),
       &ssrc_generator_);
@@ -2440,7 +2439,7 @@ std::unique_ptr<cricket::RtpDataChannel> ChannelTest<DataTraits>::CreateChannel(
     webrtc::RtpTransportInternal* rtp_transport,
     int flags) {
   rtc::Thread* signaling_thread = rtc::Thread::Current();
-  auto channel = absl::make_unique<cricket::RtpDataChannel>(
+  auto channel = std::make_unique<cricket::RtpDataChannel>(
       worker_thread, network_thread, signaling_thread, std::move(ch),
       cricket::CN_DATA, (flags & DTLS) != 0, webrtc::CryptoOptions(),
       &ssrc_generator_);

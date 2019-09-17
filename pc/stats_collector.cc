@@ -15,7 +15,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "pc/channel.h"
 #include "pc/peer_connection.h"
 #include "rtc_base/checks.h"
@@ -1009,11 +1008,11 @@ std::unique_ptr<MediaChannelStatsGatherer> CreateMediaChannelStatsGatherer(
     cricket::MediaChannel* channel) {
   RTC_DCHECK(channel);
   if (channel->media_type() == cricket::MEDIA_TYPE_AUDIO) {
-    return absl::make_unique<VoiceMediaChannelStatsGatherer>(
+    return std::make_unique<VoiceMediaChannelStatsGatherer>(
         static_cast<cricket::VoiceMediaChannel*>(channel));
   } else {
     RTC_DCHECK_EQ(channel->media_type(), cricket::MEDIA_TYPE_VIDEO);
-    return absl::make_unique<VideoMediaChannelStatsGatherer>(
+    return std::make_unique<VideoMediaChannelStatsGatherer>(
         static_cast<cricket::VideoMediaChannel*>(channel));
   }
 }

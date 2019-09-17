@@ -12,7 +12,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/test/create_network_emulation_manager.h"
 #include "api/test/create_peerconnection_quality_test_fixture.h"
 #include "api/test/network_emulation_manager.h"
@@ -53,7 +52,7 @@ EmulatedNetworkNode* CreateEmulatedNodeWithConfig(
     NetworkEmulationManager* emulation,
     const BuiltInNetworkBehaviorConfig& config) {
   return emulation->CreateEmulatedNode(
-      absl::make_unique<SimulatedNetwork>(config));
+      std::make_unique<SimulatedNetwork>(config));
 }
 
 std::pair<EmulatedNetworkManagerInterface*, EmulatedNetworkManagerInterface*>
@@ -88,7 +87,7 @@ CreateTestFixture(const std::string& test_case_name,
   fixture->AddPeer(network_links.second->network_thread(),
                    network_links.second->network_manager(), bob_configurer);
   fixture->AddQualityMetricsReporter(
-      absl::make_unique<webrtc_pc_e2e::NetworkQualityMetricsReporter>(
+      std::make_unique<webrtc_pc_e2e::NetworkQualityMetricsReporter>(
           network_links.first, network_links.second));
   return fixture;
 }

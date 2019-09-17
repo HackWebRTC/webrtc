@@ -14,7 +14,6 @@
 #include <limits>
 #include <memory>
 
-#include "absl/memory/memory.h"
 #include "api/units/data_size.h"
 #include "rtc_base/bind.h"
 #include "rtc_base/logging.h"
@@ -190,7 +189,7 @@ EmulatedEndpoint::EmulatedEndpoint(uint64_t id,
     prefix_length = kIPv6NetworkPrefixLength;
   }
   rtc::IPAddress prefix = TruncateIP(ip, prefix_length);
-  network_ = absl::make_unique<rtc::Network>(
+  network_ = std::make_unique<rtc::Network>(
       ip.ToString(), "Endpoint id=" + std::to_string(id_), prefix,
       prefix_length, rtc::AdapterType::ADAPTER_TYPE_UNKNOWN);
   network_->AddIP(ip);
@@ -371,7 +370,7 @@ EndpointsContainer::GetEnabledNetworks() const {
   for (auto* endpoint : endpoints_) {
     if (endpoint->Enabled()) {
       networks.emplace_back(
-          absl::make_unique<rtc::Network>(endpoint->network()));
+          std::make_unique<rtc::Network>(endpoint->network()));
     }
   }
   return networks;

@@ -12,7 +12,6 @@
 
 #include <memory>
 
-#include "absl/memory/memory.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/sender_report.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/transport_feedback.h"
 #include "rtc_base/event.h"
@@ -79,7 +78,7 @@ TEST(RtcpTransceiverTest, SendsRtcpOnTaskQueueWhenCreatedOnTaskQueue) {
 
   std::unique_ptr<RtcpTransceiver> rtcp_transceiver;
   queue.PostTask([&] {
-    rtcp_transceiver = absl::make_unique<RtcpTransceiver>(config);
+    rtcp_transceiver = std::make_unique<RtcpTransceiver>(config);
     rtcp_transceiver->SendCompoundPacket();
   });
   WaitPostedTasks(&queue);
@@ -91,7 +90,7 @@ TEST(RtcpTransceiverTest, CanBeDestroyedOnTaskQueue) {
   RtcpTransceiverConfig config;
   config.outgoing_transport = &outgoing_transport;
   config.task_queue = &queue;
-  auto rtcp_transceiver = absl::make_unique<RtcpTransceiver>(config);
+  auto rtcp_transceiver = std::make_unique<RtcpTransceiver>(config);
 
   queue.PostTask([&] {
     // Insert a packet just before destruction to test for races.
@@ -162,7 +161,7 @@ TEST(RtcpTransceiverTest, DoesntPostToRtcpObserverAfterCallToRemove) {
   RtcpTransceiver rtcp_transceiver(config);
   rtc::Event observer_deleted;
 
-  auto observer = absl::make_unique<MockMediaReceiverRtcpObserver>();
+  auto observer = std::make_unique<MockMediaReceiverRtcpObserver>();
   EXPECT_CALL(*observer, OnSenderReport(kRemoteSsrc, _, 1));
   EXPECT_CALL(*observer, OnSenderReport(kRemoteSsrc, _, 2)).Times(0);
 
@@ -187,7 +186,7 @@ TEST(RtcpTransceiverTest, RemoveMediaReceiverRtcpObserverIsNonBlocking) {
   config.outgoing_transport = &null_transport;
   config.task_queue = &queue;
   RtcpTransceiver rtcp_transceiver(config);
-  auto observer = absl::make_unique<MockMediaReceiverRtcpObserver>();
+  auto observer = std::make_unique<MockMediaReceiverRtcpObserver>();
   rtcp_transceiver.AddMediaReceiverRtcpObserver(kRemoteSsrc, observer.get());
 
   rtc::Event queue_blocker;
@@ -241,7 +240,7 @@ TEST(RtcpTransceiverTest, DoesntSendPacketsAfterStopCallback) {
   config.task_queue = &queue;
   config.schedule_periodic_compound_packets = true;
 
-  auto rtcp_transceiver = absl::make_unique<RtcpTransceiver>(config);
+  auto rtcp_transceiver = std::make_unique<RtcpTransceiver>(config);
   rtc::Event done;
   rtcp_transceiver->SendCompoundPacket();
   rtcp_transceiver->Stop([&] {

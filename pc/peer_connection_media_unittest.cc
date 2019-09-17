@@ -12,6 +12,7 @@
 // PeerConnection and the underlying media engine, as well as tests that check
 // the media-related aspects of SDP.
 
+#include <memory>
 #include <tuple>
 
 #include "absl/algorithm/container.h"
@@ -29,7 +30,6 @@
 #ifdef WEBRTC_ANDROID
 #include "pc/test/android_test_initializer.h"
 #endif
-#include "absl/memory/memory.h"
 #include "pc/test/fake_rtc_certificate_generator.h"
 #include "rtc_base/gunit.h"
 #include "rtc_base/virtual_socket_server.h"
@@ -76,7 +76,7 @@ class PeerConnectionMediaBaseTest : public ::testing::Test {
   }
 
   WrapperPtr CreatePeerConnection(const RTCConfiguration& config) {
-    return CreatePeerConnection(config, absl::make_unique<FakeMediaEngine>());
+    return CreatePeerConnection(config, std::make_unique<FakeMediaEngine>());
   }
 
   WrapperPtr CreatePeerConnection(
@@ -101,17 +101,17 @@ class PeerConnectionMediaBaseTest : public ::testing::Test {
     factory_dependencies.media_engine = std::move(media_engine);
     factory_dependencies.call_factory = CreateCallFactory();
     factory_dependencies.event_log_factory =
-        absl::make_unique<RtcEventLogFactory>(
+        std::make_unique<RtcEventLogFactory>(
             factory_dependencies.task_queue_factory.get());
     factory_dependencies.media_transport_factory =
-        absl::make_unique<FakeMediaTransportFactory>();
+        std::make_unique<FakeMediaTransportFactory>();
 
     auto pc_factory =
         CreateModularPeerConnectionFactory(std::move(factory_dependencies));
 
-    auto fake_port_allocator = absl::make_unique<cricket::FakePortAllocator>(
+    auto fake_port_allocator = std::make_unique<cricket::FakePortAllocator>(
         rtc::Thread::Current(), nullptr);
-    auto observer = absl::make_unique<MockPeerConnectionObserver>();
+    auto observer = std::make_unique<MockPeerConnectionObserver>();
     auto modified_config = config;
     modified_config.sdp_semantics = sdp_semantics_;
     auto pc = pc_factory->CreatePeerConnection(modified_config,
@@ -122,7 +122,7 @@ class PeerConnectionMediaBaseTest : public ::testing::Test {
     }
 
     observer->SetPeerConnectionInterface(pc.get());
-    auto wrapper = absl::make_unique<PeerConnectionWrapperForMediaTest>(
+    auto wrapper = std::make_unique<PeerConnectionWrapperForMediaTest>(
         pc_factory, pc, std::move(observer));
     wrapper->set_media_engine(media_engine_ptr);
     return wrapper;
@@ -530,7 +530,7 @@ TEST_P(PeerConnectionMediaTest, RawPacketizationNotSetInOffer) {
   fake_codecs.push_back(cricket::VideoCodec(113, cricket::kVp9CodecName));
   fake_codecs.push_back(cricket::VideoCodec(114, cricket::kH264CodecName));
   fake_codecs.push_back(cricket::VideoCodec(115, "HEVC"));
-  auto caller_fake_engine = absl::make_unique<FakeMediaEngine>();
+  auto caller_fake_engine = std::make_unique<FakeMediaEngine>();
   caller_fake_engine->SetVideoCodecs(fake_codecs);
 
   auto caller = CreatePeerConnectionWithVideo(std::move(caller_fake_engine));
@@ -552,9 +552,9 @@ TEST_P(PeerConnectionMediaTest, RawPacketizationSetInOfferAndAnswer) {
   fake_codecs.push_back(cricket::VideoCodec(113, cricket::kVp9CodecName));
   fake_codecs.push_back(cricket::VideoCodec(114, cricket::kH264CodecName));
   fake_codecs.push_back(cricket::VideoCodec(115, "HEVC"));
-  auto caller_fake_engine = absl::make_unique<FakeMediaEngine>();
+  auto caller_fake_engine = std::make_unique<FakeMediaEngine>();
   caller_fake_engine->SetVideoCodecs(fake_codecs);
-  auto callee_fake_engine = absl::make_unique<FakeMediaEngine>();
+  auto callee_fake_engine = std::make_unique<FakeMediaEngine>();
   callee_fake_engine->SetVideoCodecs(fake_codecs);
 
   RTCOfferAnswerOptions options;
@@ -595,9 +595,9 @@ TEST_P(PeerConnectionMediaTest,
   fake_codecs.push_back(cricket::VideoCodec(113, cricket::kVp9CodecName));
   fake_codecs.push_back(cricket::VideoCodec(114, cricket::kH264CodecName));
   fake_codecs.push_back(cricket::VideoCodec(115, "HEVC"));
-  auto caller_fake_engine = absl::make_unique<FakeMediaEngine>();
+  auto caller_fake_engine = std::make_unique<FakeMediaEngine>();
   caller_fake_engine->SetVideoCodecs(fake_codecs);
-  auto callee_fake_engine = absl::make_unique<FakeMediaEngine>();
+  auto callee_fake_engine = std::make_unique<FakeMediaEngine>();
   callee_fake_engine->SetVideoCodecs(fake_codecs);
 
   RTCOfferAnswerOptions caller_options;
@@ -1398,7 +1398,7 @@ bool CompareCodecs(const std::vector<webrtc::RtpCodecCapability>& capabilities,
 
 TEST_F(PeerConnectionMediaTestUnifiedPlan,
        SetCodecPreferencesAudioMissingRecvCodec) {
-  auto fake_engine = absl::make_unique<FakeMediaEngine>();
+  auto fake_engine = std::make_unique<FakeMediaEngine>();
   auto send_codecs = fake_engine->voice().send_codecs();
   send_codecs.push_back(cricket::AudioCodec(send_codecs.back().id + 1,
                                             "send_only_codec", 0, 0, 1));
@@ -1422,7 +1422,7 @@ TEST_F(PeerConnectionMediaTestUnifiedPlan,
 
 TEST_F(PeerConnectionMediaTestUnifiedPlan,
        SetCodecPreferencesAudioMissingSendCodec) {
-  auto fake_engine = absl::make_unique<FakeMediaEngine>();
+  auto fake_engine = std::make_unique<FakeMediaEngine>();
   auto recv_codecs = fake_engine->voice().recv_codecs();
   recv_codecs.push_back(cricket::AudioCodec(recv_codecs.back().id + 1,
                                             "recv_only_codec", 0, 0, 1));
@@ -1463,7 +1463,7 @@ TEST_F(PeerConnectionMediaTestUnifiedPlan,
 
 TEST_F(PeerConnectionMediaTestUnifiedPlan,
        SetCodecPreferencesAudioRejectsOnlyRtxRedFec) {
-  auto fake_engine = absl::make_unique<FakeMediaEngine>();
+  auto fake_engine = std::make_unique<FakeMediaEngine>();
   auto audio_codecs = fake_engine->voice().send_codecs();
   audio_codecs.push_back(cricket::AudioCodec(audio_codecs.back().id + 1,
                                              cricket::kRtxCodecName, 0, 0, 1));
@@ -1560,7 +1560,7 @@ TEST_F(PeerConnectionMediaTestUnifiedPlan,
 
 TEST_F(PeerConnectionMediaTestUnifiedPlan,
        SetCodecPreferencesVideoRejectsOnlyRtxRedFec) {
-  auto fake_engine = absl::make_unique<FakeMediaEngine>();
+  auto fake_engine = std::make_unique<FakeMediaEngine>();
   auto video_codecs = fake_engine->video().codecs();
   video_codecs.push_back(
       cricket::VideoCodec(video_codecs.back().id + 1, cricket::kRtxCodecName));
@@ -1666,7 +1666,7 @@ TEST_F(PeerConnectionMediaTestUnifiedPlan,
 }
 
 TEST_F(PeerConnectionMediaTestUnifiedPlan, SetCodecPreferencesVideoWithRtx) {
-  auto caller_fake_engine = absl::make_unique<FakeMediaEngine>();
+  auto caller_fake_engine = std::make_unique<FakeMediaEngine>();
   auto caller_video_codecs = caller_fake_engine->video().codecs();
   caller_video_codecs.push_back(cricket::VideoCodec(
       caller_video_codecs.back().id + 1, cricket::kVp8CodecName));
@@ -1718,7 +1718,7 @@ TEST_F(PeerConnectionMediaTestUnifiedPlan, SetCodecPreferencesVideoWithRtx) {
 
 TEST_F(PeerConnectionMediaTestUnifiedPlan,
        SetCodecPreferencesVideoCodecsNegotiation) {
-  auto caller_fake_engine = absl::make_unique<FakeMediaEngine>();
+  auto caller_fake_engine = std::make_unique<FakeMediaEngine>();
   auto caller_video_codecs = caller_fake_engine->video().codecs();
   caller_video_codecs.push_back(cricket::VideoCodec(
       caller_video_codecs.back().id + 1, cricket::kVp8CodecName));
@@ -1734,7 +1734,7 @@ TEST_F(PeerConnectionMediaTestUnifiedPlan,
       std::to_string(caller_video_codecs.back().id - 1);
   caller_fake_engine->SetVideoCodecs(caller_video_codecs);
 
-  auto callee_fake_engine = absl::make_unique<FakeMediaEngine>();
+  auto callee_fake_engine = std::make_unique<FakeMediaEngine>();
   callee_fake_engine->SetVideoCodecs(caller_video_codecs);
 
   auto caller = CreatePeerConnectionWithVideo(std::move(caller_fake_engine));
@@ -1792,7 +1792,7 @@ TEST_F(PeerConnectionMediaTestUnifiedPlan,
 
 TEST_F(PeerConnectionMediaTestUnifiedPlan,
        SetCodecPreferencesVideoCodecsNegotiationReverseOrder) {
-  auto caller_fake_engine = absl::make_unique<FakeMediaEngine>();
+  auto caller_fake_engine = std::make_unique<FakeMediaEngine>();
   auto caller_video_codecs = caller_fake_engine->video().codecs();
   caller_video_codecs.push_back(cricket::VideoCodec(
       caller_video_codecs.back().id + 1, cricket::kVp8CodecName));
@@ -1808,7 +1808,7 @@ TEST_F(PeerConnectionMediaTestUnifiedPlan,
       std::to_string(caller_video_codecs.back().id - 1);
   caller_fake_engine->SetVideoCodecs(caller_video_codecs);
 
-  auto callee_fake_engine = absl::make_unique<FakeMediaEngine>();
+  auto callee_fake_engine = std::make_unique<FakeMediaEngine>();
   callee_fake_engine->SetVideoCodecs(caller_video_codecs);
 
   auto caller = CreatePeerConnectionWithVideo(std::move(caller_fake_engine));

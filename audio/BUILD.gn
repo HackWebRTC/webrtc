@@ -108,7 +108,6 @@ if (rtc_include_tests) {
       "../system_wrappers",
       "../test:test_common",
       "../test:test_support",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 
@@ -174,7 +173,6 @@ if (rtc_include_tests) {
       "../test:test_support",
       "utility:utility_tests",
       "//testing/gtest",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 
@@ -206,7 +204,6 @@ if (rtc_include_tests) {
         "../test/pc/e2e:network_quality_metrics_reporter",
         "//testing/gtest",
         "//third_party/abseil-cpp/absl/flags:flag",
-        "//third_party/abseil-cpp/absl/memory",
       ]
       if (is_android) {
         deps += [ "//testing/android/native_test:native_test_native_code" ]
@@ -281,7 +278,6 @@ if (rtc_include_tests) {
       "../test:test_main",
       "../test:test_support",
       "//testing/gtest",
-      "//third_party/abseil-cpp/absl/memory",
     ]
 
     data = [

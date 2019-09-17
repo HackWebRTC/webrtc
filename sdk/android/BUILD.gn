@@ -556,7 +556,6 @@ if (current_os == "linux" || is_android) {
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:metrics",
-      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
@@ -795,7 +794,6 @@ if (current_os == "linux" || is_android) {
       ":base_jni",
       ":generated_java_audio_jni",
       ":java_audio_device_module",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 
@@ -896,7 +894,6 @@ if (current_os == "linux" || is_android) {
       ":native_api_jni",
       "//rtc_base",
       "//rtc_base:checks",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 
@@ -920,7 +917,6 @@ if (current_os == "linux" || is_android) {
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers",
       "../../system_wrappers:metrics",
-      "//third_party/abseil-cpp/absl/memory",
     ]
     if (rtc_enable_android_aaudio) {
       deps += [ ":aaudio_audio_device_module" ]
@@ -944,7 +940,6 @@ if (current_os == "linux" || is_android) {
       "//api/video_codecs:video_codecs_api",
       "//rtc_base:checks",
       "//rtc_base:rtc_base_approved",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 
@@ -999,7 +994,6 @@ if (current_os == "linux" || is_android) {
       "//api/video:video_rtp_headers",
       "//rtc_base",
       "//rtc_base:rtc_base_approved",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 
@@ -1087,7 +1081,6 @@ if (current_os == "linux" || is_android) {
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
       "../../system_wrappers:metrics",
-      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
@@ -1164,7 +1157,6 @@ if (current_os == "linux" || is_android) {
       "../../modules/audio_device:audio_device_buffer",
       "../../rtc_base:checks",
       "../../rtc_base:rtc_base_approved",
-      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }

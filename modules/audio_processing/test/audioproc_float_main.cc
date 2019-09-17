@@ -8,11 +8,12 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "api/test/audioproc_float.h"
 #include "modules/audio_processing/include/audio_processing.h"
 
 int main(int argc, char* argv[]) {
   return webrtc::test::AudioprocFloat(
-      absl::make_unique<webrtc::AudioProcessingBuilder>(), argc, argv);
+      std::make_unique<webrtc::AudioProcessingBuilder>(), argc, argv);
 }

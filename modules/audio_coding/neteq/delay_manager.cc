@@ -15,10 +15,10 @@
 #include <stdlib.h>
 
 #include <algorithm>
+#include <memory>
 #include <numeric>
 #include <string>
 
-#include "absl/memory/memory.h"
 #include "modules/audio_coding/neteq/delay_peak_detector.h"
 #include "modules/audio_coding/neteq/histogram.h"
 #include "modules/audio_coding/neteq/statistics_calculator.h"
@@ -149,9 +149,9 @@ std::unique_ptr<DelayManager> DelayManager::Create(
   const HistogramMode mode = RELATIVE_ARRIVAL_DELAY;
   DelayHistogramConfig config = GetDelayHistogramConfig();
   const int quantile = config.quantile;
-  std::unique_ptr<Histogram> histogram = absl::make_unique<Histogram>(
+  std::unique_ptr<Histogram> histogram = std::make_unique<Histogram>(
       kDelayBuckets, config.forget_factor, config.start_forget_weight);
-  return absl::make_unique<DelayManager>(
+  return std::make_unique<DelayManager>(
       max_packets_in_buffer, base_minimum_delay_ms, quantile, mode,
       enable_rtx_handling, peak_detector, tick_timer, statistics,
       std::move(histogram));

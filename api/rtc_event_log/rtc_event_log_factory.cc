@@ -10,9 +10,9 @@
 
 #include "api/rtc_event_log/rtc_event_log_factory.h"
 
+#include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "rtc_base/checks.h"
 
 #ifdef ENABLE_RTC_EVENT_LOG
@@ -29,9 +29,9 @@ RtcEventLogFactory::RtcEventLogFactory(TaskQueueFactory* task_queue_factory)
 std::unique_ptr<RtcEventLog> RtcEventLogFactory::CreateRtcEventLog(
     RtcEventLog::EncodingType encoding_type) {
 #ifdef ENABLE_RTC_EVENT_LOG
-  return absl::make_unique<RtcEventLogImpl>(encoding_type, task_queue_factory_);
+  return std::make_unique<RtcEventLogImpl>(encoding_type, task_queue_factory_);
 #else
-  return absl::make_unique<RtcEventLogNull>();
+  return std::make_unique<RtcEventLogNull>();
 #endif
 }
 

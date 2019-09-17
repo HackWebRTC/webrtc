@@ -36,7 +36,6 @@ rtc_static_library("bitrate_controller") {
     "../../system_wrappers:field_trial",
     "../../system_wrappers:metrics",
     "../remote_bitrate_estimator",
-    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }

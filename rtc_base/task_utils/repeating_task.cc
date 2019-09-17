@@ -10,6 +10,7 @@
 
 #include "rtc_base/task_utils/repeating_task.h"
 
+#include "absl/memory/memory.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/task_utils/to_queued_task.h"
 #include "rtc_base/time_utils.h"

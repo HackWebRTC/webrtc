@@ -13,9 +13,9 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "modules/desktop_capture/desktop_capturer.h"
 #include "modules/desktop_capture/desktop_frame.h"
 #include "modules/desktop_capture/mouse_cursor.h"
@@ -185,7 +185,7 @@ void DesktopAndCursorComposer::OnCaptureResult(
       relative_position.set(relative_position.x() * scale,
                             relative_position.y() * scale);
 #endif
-      frame = absl::make_unique<DesktopFrameWithCursor>(
+      frame = std::make_unique<DesktopFrameWithCursor>(
           std::move(frame), *cursor_, relative_position);
     }
   }

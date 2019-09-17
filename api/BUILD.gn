@@ -59,7 +59,6 @@ if (!build_with_chromium) {
       "audio_codecs:audio_codecs_api",
       "task_queue:default_task_queue_factory",
       "video_codecs:video_codecs_api",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 }
@@ -372,7 +371,6 @@ rtc_source_set("test_dependency_factory") {
     ":video_quality_test_fixture_api",
     "../rtc_base:checks",
     "../rtc_base:thread_checker",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -390,7 +388,6 @@ if (rtc_include_tests) {
       ":scoped_refptr",
       ":video_quality_test_fixture_api",
       "../video:video_quality_test",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 
@@ -404,7 +401,6 @@ if (rtc_include_tests) {
     deps = [
       ":network_emulation_manager_api",
       "../test/network:emulated_network",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 
@@ -421,7 +417,6 @@ if (rtc_include_tests) {
       ":peer_connection_quality_test_fixture_api",
       ":video_quality_analyzer_api",
       "../test/pc/e2e:peerconnection_quality_test",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 }
@@ -581,7 +576,6 @@ rtc_source_set("ice_transport_factory") {
     "../rtc_base",
     "../rtc_base/system:rtc_export",
     "rtc_event_log:rtc_event_log",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -633,7 +627,6 @@ if (rtc_include_tests) {
         "../rtc_base:checks",
         "//third_party/abseil-cpp/absl/flags:flag",
         "//third_party/abseil-cpp/absl/flags:parse",
-        "//third_party/abseil-cpp/absl/memory",
         "//third_party/abseil-cpp/absl/strings",
       ]
     }
@@ -659,7 +652,6 @@ if (rtc_include_tests) {
       "../modules/video_coding:simulcast_test_fixture_impl",
       "../rtc_base:rtc_base_approved",
       "video_codecs:video_codecs_api",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 
@@ -693,7 +685,6 @@ if (rtc_include_tests) {
       "../modules/video_coding:videocodec_test_impl",
       "../rtc_base:rtc_base_approved",
       "video_codecs:video_codecs_api",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 
@@ -901,7 +892,6 @@ if (rtc_include_tests) {
       "transport:datagram_transport_interface",
       "transport/media:media_transport_interface",
       "//third_party/abseil-cpp/absl/algorithm:container",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 
@@ -919,7 +909,6 @@ if (rtc_include_tests) {
       "transport:datagram_transport_interface",
       "transport/media:media_transport_interface",
       "//third_party/abseil-cpp/absl/algorithm:container",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 
@@ -954,7 +943,6 @@ if (rtc_include_tests) {
       "task_queue:task_queue_default_factory_unittests",
       "units:units_unittests",
       "video:video_unittests",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 

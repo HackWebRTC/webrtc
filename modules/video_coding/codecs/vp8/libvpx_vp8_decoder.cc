@@ -14,9 +14,9 @@
 #include <string.h>
 
 #include <algorithm>
+#include <memory>
 #include <string>
 
-#include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "api/scoped_refptr.h"
 #include "api/video/i420_buffer.h"
@@ -69,7 +69,7 @@ void GetPostProcParamsFromFieldTrialGroup(
 }  // namespace
 
 std::unique_ptr<VideoDecoder> VP8Decoder::Create() {
-  return absl::make_unique<LibvpxVp8Decoder>();
+  return std::make_unique<LibvpxVp8Decoder>();
 }
 
 class LibvpxVp8Decoder::QpSmoother {

@@ -17,7 +17,6 @@
 #include <memory>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/audio_codecs/audio_encoder.h"
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
@@ -1663,7 +1662,7 @@ TEST_F(AcmSenderBitExactnessOldApi, External_Pcmu_20ms) {
   config.num_channels = 1;
   config.payload_type = 0;
   AudioEncoderPcmU encoder(config);
-  auto mock_encoder = absl::make_unique<MockAudioEncoder>();
+  auto mock_encoder = std::make_unique<MockAudioEncoder>();
   // Set expectations on the mock encoder and also delegate the calls to the
   // real encoder.
   EXPECT_CALL(*mock_encoder, SampleRateHz())

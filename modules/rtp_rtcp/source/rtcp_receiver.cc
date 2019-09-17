@@ -18,7 +18,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/video/video_bitrate_allocation.h"
 #include "api/video/video_bitrate_allocator.h"
 #include "modules/rtp_rtcp/source/rtcp_packet/bye.h"
@@ -911,7 +910,7 @@ void RTCPReceiver::HandlePsfbApp(const CommonHeader& rtcp_block,
   }
 
   {
-    auto loss_notification = absl::make_unique<rtcp::LossNotification>();
+    auto loss_notification = std::make_unique<rtcp::LossNotification>();
     if (loss_notification->Parse(rtcp_block)) {
       packet_information->packet_type_flags |= kRtcpLossNotification;
       packet_information->loss_notification = std::move(loss_notification);

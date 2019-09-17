@@ -8,7 +8,8 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "call/call.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
@@ -44,9 +45,9 @@ TEST_F(TransportFeedbackEndToEndTest, AssignsTransportSequenceNumbers) {
         const std::map<uint32_t, uint32_t>& ssrc_map,
         const std::map<uint8_t, MediaType>& payload_type_map)
         : DirectTransport(task_queue,
-                          absl::make_unique<FakeNetworkPipe>(
+                          std::make_unique<FakeNetworkPipe>(
                               Clock::GetRealTimeClock(),
-                              absl::make_unique<SimulatedNetwork>(
+                              std::make_unique<SimulatedNetwork>(
                                   BuiltInNetworkBehaviorConfig())),
                           sender_call,
                           payload_type_map),

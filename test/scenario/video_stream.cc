@@ -10,9 +10,9 @@
 #include "test/scenario/video_stream.h"
 
 #include <algorithm>
+#include <memory>
 #include <utility>
 
-#include "absl/memory/memory.h"
 #include "api/test/video/function_video_encoder_factory.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "media/base/media_constants.h"
@@ -350,7 +350,7 @@ SendVideoStream::SendVideoStream(CallClient* sender,
                                  Transport* send_transport,
                                  VideoFrameMatcher* matcher)
     : sender_(sender), config_(config) {
-  video_capturer_ = absl::make_unique<FrameGeneratorCapturer>(
+  video_capturer_ = std::make_unique<FrameGeneratorCapturer>(
       sender_->clock_, CreateFrameGenerator(sender_->clock_, config.source),
       config.source.framerate,
       *sender->time_controller_->GetTaskQueueFactory());
@@ -361,14 +361,13 @@ SendVideoStream::SendVideoStream(CallClient* sender,
   switch (config.encoder.implementation) {
     case Encoder::Implementation::kFake:
       encoder_factory_ =
-          absl::make_unique<FunctionVideoEncoderFactory>([this]() {
+          std::make_unique<FunctionVideoEncoderFactory>([this]() {
             rtc::CritScope cs(&crit_);
             std::unique_ptr<FakeEncoder> encoder;
             if (config_.encoder.codec == Codec::kVideoCodecVP8) {
-              encoder =
-                  absl::make_unique<test::FakeVP8Encoder>(sender_->clock_);
+              encoder = std::make_unique<test::FakeVP8Encoder>(sender_->clock_);
             } else if (config_.encoder.codec == Codec::kVideoCodecGeneric) {
-              encoder = absl::make_unique<test::FakeEncoder>(sender_->clock_);
+              encoder = std::make_unique<test::FakeEncoder>(sender_->clock_);
             } else {
               RTC_NOTREACHED();
             }
@@ -412,7 +411,7 @@ SendVideoStream::SendVideoStream(CallClient* sender,
     }
 
     if (matcher->Active()) {
-      frame_tap_ = absl::make_unique<ForwardingCapturedFrameTap>(
+      frame_tap_ = std::make_unique<ForwardingCapturedFrameTap>(
           sender_->clock_, matcher, video_capturer_.get());
       send_stream_->SetSource(frame_tap_.get(),
                               config.encoder.degradation_preference);
@@ -513,10 +512,10 @@ ReceiveVideoStream::ReceiveVideoStream(CallClient* receiver,
     : receiver_(receiver), config_(config) {
   if (config.encoder.codec ==
       VideoStreamConfig::Encoder::Codec::kVideoCodecGeneric) {
-    decoder_factory_ = absl::make_unique<FunctionVideoDecoderFactory>(
-        []() { return absl::make_unique<FakeDecoder>(); });
+    decoder_factory_ = std::make_unique<FunctionVideoDecoderFactory>(
+        []() { return std::make_unique<FakeDecoder>(); });
   } else {
-    decoder_factory_ = absl::make_unique<InternalDecoderFactory>();
+    decoder_factory_ = std::make_unique<InternalDecoderFactory>();
   }
 
   VideoReceiveStream::Decoder decoder =
@@ -530,7 +529,7 @@ ReceiveVideoStream::ReceiveVideoStream(CallClient* receiver,
     rtc::VideoSinkInterface<VideoFrame>* renderer = &fake_renderer_;
     if (matcher->Active()) {
       render_taps_.emplace_back(
-          absl::make_unique<DecodedFrameTap>(receiver_->clock_, matcher, i));
+          std::make_unique<DecodedFrameTap>(receiver_->clock_, matcher, i));
       renderer = render_taps_.back().get();
     }
     auto recv_config = CreateVideoReceiveStreamConfig(

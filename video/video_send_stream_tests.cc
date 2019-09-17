@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "absl/algorithm/container.h"
-#include "absl/memory/memory.h"
 #include "api/task_queue/default_task_queue_factory.h"
 #include "api/test/simulated_network.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
@@ -229,7 +228,7 @@ TEST_F(VideoSendStreamTest, SupportsTransmissionTimeOffset) {
    public:
     TransmissionTimeOffsetObserver()
         : SendTest(kDefaultTimeoutMs), encoder_factory_([]() {
-            return absl::make_unique<test::DelayedEncoder>(
+            return std::make_unique<test::DelayedEncoder>(
                 Clock::GetRealTimeClock(), kEncodeDelayMs);
           }) {
       EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
@@ -276,7 +275,7 @@ TEST_F(VideoSendStreamTest, SupportsTransportWideSequenceNumbers) {
    public:
     TransportWideSequenceNumberObserver()
         : SendTest(kDefaultTimeoutMs), encoder_factory_([]() {
-            return absl::make_unique<test::FakeEncoder>(
+            return std::make_unique<test::FakeEncoder>(
                 Clock::GetRealTimeClock());
           }) {
       EXPECT_TRUE(parser_->RegisterRtpHeaderExtension(
@@ -567,9 +566,9 @@ class UlpfecObserver : public test::EndToEndTest {
     return new test::PacketTransport(
         task_queue, sender_call, this, test::PacketTransport::kSender,
         VideoSendStreamTest::payload_type_map_,
-        absl::make_unique<FakeNetworkPipe>(
+        std::make_unique<FakeNetworkPipe>(
             Clock::GetRealTimeClock(),
-            absl::make_unique<SimulatedNetwork>(config)));
+            std::make_unique<SimulatedNetwork>(config)));
   }
 
   void ModifyVideoConfigs(
@@ -652,7 +651,7 @@ TEST_F(VideoSendStreamWithoutUlpfecTest, NoUlpfecIfDisabledThroughFieldTrial) {
 // that the received state is actually decodable.
 TEST_F(VideoSendStreamTest, DoesNotUtilizeUlpfecForH264WithNackEnabled) {
   test::FunctionVideoEncoderFactory encoder_factory([]() {
-    return absl::make_unique<test::FakeH264Encoder>(Clock::GetRealTimeClock());
+    return std::make_unique<test::FakeH264Encoder>(Clock::GetRealTimeClock());
   });
   UlpfecObserver test(false, true, false, false, "H264", &encoder_factory);
   RunBaseTest(&test);
@@ -661,7 +660,7 @@ TEST_F(VideoSendStreamTest, DoesNotUtilizeUlpfecForH264WithNackEnabled) {
 // Without retransmissions FEC for H264 is fine.
 TEST_F(VideoSendStreamTest, DoesUtilizeUlpfecForH264WithoutNackEnabled) {
   test::FunctionVideoEncoderFactory encoder_factory([]() {
-    return absl::make_unique<test::FakeH264Encoder>(Clock::GetRealTimeClock());
+    return std::make_unique<test::FakeH264Encoder>(Clock::GetRealTimeClock());
   });
   UlpfecObserver test(false, false, true, true, "H264", &encoder_factory);
   RunBaseTest(&test);
@@ -687,7 +686,7 @@ TEST_F(VideoSendStreamTest, SupportsUlpfecWithMultithreadedH264) {
   std::unique_ptr<TaskQueueFactory> task_queue_factory =
       CreateDefaultTaskQueueFactory();
   test::FunctionVideoEncoderFactory encoder_factory([&]() {
-    return absl::make_unique<test::MultithreadedFakeH264Encoder>(
+    return std::make_unique<test::MultithreadedFakeH264Encoder>(
         Clock::GetRealTimeClock(), task_queue_factory.get());
   });
   UlpfecObserver test(false, false, true, true, "H264", &encoder_factory);
@@ -764,9 +763,9 @@ class FlexfecObserver : public test::EndToEndTest {
     return new test::PacketTransport(
         task_queue, sender_call, this, test::PacketTransport::kSender,
         VideoSendStreamTest::payload_type_map_,
-        absl::make_unique<FakeNetworkPipe>(
+        std::make_unique<FakeNetworkPipe>(
             Clock::GetRealTimeClock(),
-            absl::make_unique<SimulatedNetwork>(config)));
+            std::make_unique<SimulatedNetwork>(config)));
   }
 
   void ModifyVideoConfigs(
@@ -852,7 +851,7 @@ TEST_F(VideoSendStreamTest, SupportsFlexfecWithNackVp9) {
 
 TEST_F(VideoSendStreamTest, SupportsFlexfecH264) {
   test::FunctionVideoEncoderFactory encoder_factory([]() {
-    return absl::make_unique<test::FakeH264Encoder>(Clock::GetRealTimeClock());
+    return std::make_unique<test::FakeH264Encoder>(Clock::GetRealTimeClock());
   });
   FlexfecObserver test(false, false, "H264", &encoder_factory, 1);
   RunBaseTest(&test);
@@ -860,7 +859,7 @@ TEST_F(VideoSendStreamTest, SupportsFlexfecH264) {
 
 TEST_F(VideoSendStreamTest, SupportsFlexfecWithNackH264) {
   test::FunctionVideoEncoderFactory encoder_factory([]() {
-    return absl::make_unique<test::FakeH264Encoder>(Clock::GetRealTimeClock());
+    return std::make_unique<test::FakeH264Encoder>(Clock::GetRealTimeClock());
   });
   FlexfecObserver test(false, true, "H264", &encoder_factory, 1);
   RunBaseTest(&test);
@@ -870,7 +869,7 @@ TEST_F(VideoSendStreamTest, SupportsFlexfecWithMultithreadedH264) {
   std::unique_ptr<TaskQueueFactory> task_queue_factory =
       CreateDefaultTaskQueueFactory();
   test::FunctionVideoEncoderFactory encoder_factory([&]() {
-    return absl::make_unique<test::MultithreadedFakeH264Encoder>(
+    return std::make_unique<test::MultithreadedFakeH264Encoder>(
         Clock::GetRealTimeClock(), task_queue_factory.get());
   });
 
@@ -1543,9 +1542,9 @@ TEST_F(VideoSendStreamTest, PaddingIsPrimarilyRetransmissions) {
       return new test::PacketTransport(
           task_queue, sender_call, this, test::PacketTransport::kSender,
           payload_type_map_,
-          absl::make_unique<FakeNetworkPipe>(
+          std::make_unique<FakeNetworkPipe>(
               Clock::GetRealTimeClock(),
-              absl::make_unique<SimulatedNetwork>(config)));
+              std::make_unique<SimulatedNetwork>(config)));
     }
 
     void ModifyVideoConfigs(

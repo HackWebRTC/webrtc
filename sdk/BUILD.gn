@@ -947,7 +947,6 @@ if (is_ios || is_mac) {
         "../rtc_base:checks",
         "../system_wrappers:field_trial",
         "../system_wrappers:metrics",
-        "//third_party/abseil-cpp/absl/memory",
       ]
 
       if (is_ios) {
@@ -1616,7 +1615,6 @@ if (is_ios || is_mac) {
         "../modules/video_coding:video_codec_interface",
         "../rtc_base",
         "../rtc_base:checks",
-        "//third_party/abseil-cpp/absl/memory",
       ]
     }
 

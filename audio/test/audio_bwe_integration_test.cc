@@ -10,7 +10,8 @@
 
 #include "audio/test/audio_bwe_integration_test.h"
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "api/task_queue/queued_task.h"
 #include "api/task_queue/task_queue_base.h"
 #include "call/fake_network_pipe.h"
@@ -63,9 +64,9 @@ test::PacketTransport* AudioBweTest::CreateSendTransport(
   return new test::PacketTransport(
       task_queue, sender_call, this, test::PacketTransport::kSender,
       test::CallTest::payload_type_map_,
-      absl::make_unique<FakeNetworkPipe>(
+      std::make_unique<FakeNetworkPipe>(
           Clock::GetRealTimeClock(),
-          absl::make_unique<SimulatedNetwork>(GetNetworkPipeConfig())));
+          std::make_unique<SimulatedNetwork>(GetNetworkPipeConfig())));
 }
 
 test::PacketTransport* AudioBweTest::CreateReceiveTransport(
@@ -73,9 +74,9 @@ test::PacketTransport* AudioBweTest::CreateReceiveTransport(
   return new test::PacketTransport(
       task_queue, nullptr, this, test::PacketTransport::kReceiver,
       test::CallTest::payload_type_map_,
-      absl::make_unique<FakeNetworkPipe>(
+      std::make_unique<FakeNetworkPipe>(
           Clock::GetRealTimeClock(),
-          absl::make_unique<SimulatedNetwork>(GetNetworkPipeConfig())));
+          std::make_unique<SimulatedNetwork>(GetNetworkPipeConfig())));
 }
 
 void AudioBweTest::PerformTest() {
@@ -143,8 +144,8 @@ class NoBandwidthDropAfterDtx : public AudioBweTest {
   }
 
   void PerformTest() override {
-    stats_poller_.PostDelayedTask(
-        absl::make_unique<StatsPollTask>(sender_call_), 100);
+    stats_poller_.PostDelayedTask(std::make_unique<StatsPollTask>(sender_call_),
+                                  100);
     sender_call_->OnAudioTransportOverheadChanged(0);
     AudioBweTest::PerformTest();
   }

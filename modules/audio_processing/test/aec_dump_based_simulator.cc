@@ -11,8 +11,8 @@
 #include "modules/audio_processing/test/aec_dump_based_simulator.h"
 
 #include <iostream>
+#include <memory>
 
-#include "absl/memory/memory.h"
 #include "modules/audio_processing/echo_cancellation_impl.h"
 #include "modules/audio_processing/echo_control_mobile_impl.h"
 #include "modules/audio_processing/test/protobuf_utils.h"
@@ -609,7 +609,7 @@ void AecDumpBasedSimulator::MaybeOpenCallOrderFile() {
                                            "_" +
                                            std::to_string(output_reset_counter_)
                                      : *settings_.call_order_output_filename;
-    call_order_output_file_ = absl::make_unique<std::ofstream>(filename);
+    call_order_output_file_ = std::make_unique<std::ofstream>(filename);
   }
 }
 

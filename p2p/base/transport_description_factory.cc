@@ -15,7 +15,6 @@
 #include <memory>
 #include <string>
 
-#include "absl/memory/memory.h"
 #include "p2p/base/transport_description.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/ssl_fingerprint.h"
@@ -31,7 +30,7 @@ std::unique_ptr<TransportDescription> TransportDescriptionFactory::CreateOffer(
     const TransportOptions& options,
     const TransportDescription* current_description,
     IceCredentialsIterator* ice_credentials) const {
-  auto desc = absl::make_unique<TransportDescription>();
+  auto desc = std::make_unique<TransportDescription>();
 
   // Generate the ICE credentials if we don't already have them.
   if (!current_description || options.ice_restart) {
@@ -74,7 +73,7 @@ std::unique_ptr<TransportDescription> TransportDescriptionFactory::CreateAnswer(
     return NULL;
   }
 
-  auto desc = absl::make_unique<TransportDescription>();
+  auto desc = std::make_unique<TransportDescription>();
   // Generate the ICE credentials if we don't already have them or ice is
   // being restarted.
   if (!current_description || options.ice_restart) {

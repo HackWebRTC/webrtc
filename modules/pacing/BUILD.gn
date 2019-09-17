@@ -96,7 +96,6 @@ if (rtc_include_tests) {
       "../rtp_rtcp",
       "../rtp_rtcp:mock_rtp_rtcp",
       "../rtp_rtcp:rtp_rtcp_format",
-      "//third_party/abseil-cpp/absl/memory",
     ]
   }
 

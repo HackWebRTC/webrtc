@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "absl/memory/memory.h"
+#include <memory>
 #include "api/test/simulated_network.h"
 #include "call/fake_network_pipe.h"
 #include "call/simulated_network.h"
@@ -97,17 +97,17 @@ TEST_F(CallOperationEndToEndTest, RendersSingleDelayedFrame) {
                         &receiver_transport]() {
     CreateCalls();
 
-    sender_transport = absl::make_unique<test::DirectTransport>(
+    sender_transport = std::make_unique<test::DirectTransport>(
         &task_queue_,
-        absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
-                                           absl::make_unique<SimulatedNetwork>(
-                                               BuiltInNetworkBehaviorConfig())),
+        std::make_unique<FakeNetworkPipe>(
+            Clock::GetRealTimeClock(),
+            std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())),
         sender_call_.get(), payload_type_map_);
-    receiver_transport = absl::make_unique<test::DirectTransport>(
+    receiver_transport = std::make_unique<test::DirectTransport>(
         &task_queue_,
-        absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
-                                           absl::make_unique<SimulatedNetwork>(
-                                               BuiltInNetworkBehaviorConfig())),
+        std::make_unique<FakeNetworkPipe>(
+            Clock::GetRealTimeClock(),
+            std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())),
         receiver_call_.get(), payload_type_map_);
     sender_transport->SetReceiver(receiver_call_->Receiver());
     receiver_transport->SetReceiver(sender_call_->Receiver());
@@ -163,17 +163,17 @@ TEST_F(CallOperationEndToEndTest, TransmitsFirstFrame) {
                         &sender_transport, &receiver_transport]() {
     CreateCalls();
 
-    sender_transport = absl::make_unique<test::DirectTransport>(
+    sender_transport = std::make_unique<test::DirectTransport>(
         &task_queue_,
-        absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
-                                           absl::make_unique<SimulatedNetwork>(
-                                               BuiltInNetworkBehaviorConfig())),
+        std::make_unique<FakeNetworkPipe>(
+            Clock::GetRealTimeClock(),
+            std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())),
         sender_call_.get(), payload_type_map_);
-    receiver_transport = absl::make_unique<test::DirectTransport>(
+    receiver_transport = std::make_unique<test::DirectTransport>(
         &task_queue_,
-        absl::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
-                                           absl::make_unique<SimulatedNetwork>(
-                                               BuiltInNetworkBehaviorConfig())),
+        std::make_unique<FakeNetworkPipe>(
+            Clock::GetRealTimeClock(),
+            std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())),
         receiver_call_.get(), payload_type_map_);
     sender_transport->SetReceiver(receiver_call_->Receiver());
     receiver_transport->SetReceiver(sender_call_->Receiver());

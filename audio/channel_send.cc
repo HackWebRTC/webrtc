@@ -17,7 +17,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "api/array_view.h"
 #include "api/call/transport.h"
 #include "api/crypto/frame_encryptor_interface.h"
@@ -662,7 +661,7 @@ ChannelSend::ChannelSend(Clock* clock,
   _rtpRtcpModule = RtpRtcp::Create(configuration);
   _rtpRtcpModule->SetSendingMediaStatus(false);
 
-  rtp_sender_audio_ = absl::make_unique<RTPSenderAudio>(
+  rtp_sender_audio_ = std::make_unique<RTPSenderAudio>(
       configuration.clock, _rtpRtcpModule->RtpSender());
 
   // We want to invoke the 'TargetRateObserver' and |OnOverheadChanged|
@@ -1204,7 +1203,7 @@ std::unique_ptr<ChannelSendInterface> CreateChannelSend(
     bool extmap_allow_mixed,
     int rtcp_report_interval_ms,
     uint32_t ssrc) {
-  return absl::make_unique<ChannelSend>(
+  return std::make_unique<ChannelSend>(
       clock, task_queue_factory, module_process_thread, media_transport_config,
       overhead_observer, rtp_transport, rtcp_rtt_stats, rtc_event_log,
       frame_encryptor, crypto_options, extmap_allow_mixed,

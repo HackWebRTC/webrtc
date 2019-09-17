@@ -14,7 +14,8 @@
 
 #include <math.h>
 
-#include "absl/memory/memory.h"
+#include <memory>
+
 #include "modules/audio_coding/neteq/histogram.h"
 #include "modules/audio_coding/neteq/mock/mock_delay_peak_detector.h"
 #include "modules/audio_coding/neteq/mock/mock_histogram.h"
@@ -80,7 +81,7 @@ void DelayManagerTest::RecreateDelayManager() {
   if (use_mock_histogram_) {
     mock_histogram_ = new MockHistogram(kMaxIat, kForgetFactor);
     std::unique_ptr<Histogram> histogram(mock_histogram_);
-    dm_ = absl::make_unique<DelayManager>(
+    dm_ = std::make_unique<DelayManager>(
         kMaxNumberOfPackets, kMinDelayMs, kDefaultHistogramQuantile,
         histogram_mode_, enable_rtx_handling_, &detector_, &tick_timer_,
         &stats_, std::move(histogram));

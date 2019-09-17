@@ -58,7 +58,6 @@ rtc_source_set("api") {
     "../../rtc_base:rtc_base_approved",
     "../../rtc_base/system:arch",
     "../../rtc_base/system:rtc_export",
-    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
@@ -202,7 +201,6 @@ rtc_static_library("audio_processing") {
     "agc2:fixed_digital",
     "agc2:gain_applier",
     "vad",
-    "//third_party/abseil-cpp/absl/memory",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
 
@@ -301,7 +299,6 @@ rtc_source_set("audio_generator_factory") {
     "../../common_audio",
     "../../rtc_base:rtc_base_approved",
     "../../system_wrappers",
-    "//third_party/abseil-cpp/absl/memory",
   ]
 }
 
@@ -503,7 +500,6 @@ if (rtc_include_tests) {
       "utility:pffft_wrapper_unittest",
       "vad:vad_unittests",
       "//testing/gtest",
-      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
 
@@ -609,7 +605,6 @@ if (rtc_include_tests) {
       "../../rtc_base:rtc_base_approved",
       "../../rtc_base:safe_minmax",
       "agc:gain_map",
-      "//third_party/abseil-cpp/absl/memory",
       "//third_party/abseil-cpp/absl/types:optional",
     ]
   }
@@ -655,7 +650,6 @@ if (rtc_include_tests) {
         "//testing/gtest",
         "//third_party/abseil-cpp/absl/flags:flag",
         "//third_party/abseil-cpp/absl/flags:parse",
-        "//third_party/abseil-cpp/absl/memory",
         "//third_party/abseil-cpp/absl/strings",
         "//third_party/abseil-cpp/absl/types:optional",
       ]
@@ -670,7 +664,6 @@ if (rtc_include_tests) {
         ":audio_processing",
         "../../api:audioproc_f_api",
         "../../rtc_base:rtc_base_approved",
-        "//third_party/abseil-cpp/absl/memory",
       ]
     }  # audioproc_f
   }
@@ -766,7 +759,6 @@ if (rtc_include_tests) {
         "../../rtc_base:protobuf_utils",
         "../../rtc_base:rtc_base_approved",
         "../../rtc_base/system:arch",
-        "//third_party/abseil-cpp/absl/memory:memory",
       ]
     }
 
