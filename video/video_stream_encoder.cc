@@ -441,7 +441,7 @@ class VideoStreamEncoder::VideoSourceProxy {
 };
 
 VideoStreamEncoder::EncoderRateSettings::EncoderRateSettings()
-    : VideoEncoder::RateControlParameters(),
+    : rate_control(),
       encoder_target(DataRate::Zero()),
       stable_encoder_target(DataRate::Zero()) {}
 
@@ -451,16 +451,13 @@ VideoStreamEncoder::EncoderRateSettings::EncoderRateSettings(
     DataRate bandwidth_allocation,
     DataRate encoder_target,
     DataRate stable_encoder_target)
-    : VideoEncoder::RateControlParameters(bitrate,
-                                          framerate_fps,
-                                          bandwidth_allocation),
+    : rate_control(bitrate, framerate_fps, bandwidth_allocation),
       encoder_target(encoder_target),
       stable_encoder_target(stable_encoder_target) {}
 
 bool VideoStreamEncoder::EncoderRateSettings::operator==(
     const EncoderRateSettings& rhs) const {
-  return bitrate == rhs.bitrate && framerate_fps == rhs.framerate_fps &&
-         bandwidth_allocation == rhs.bandwidth_allocation &&
+  return rate_control == rhs.rate_control &&
          encoder_target == rhs.encoder_target &&
          stable_encoder_target == rhs.stable_encoder_target;
 }
@@ -948,7 +945,8 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   if (rate_allocator_ && last_encoder_rate_settings_) {
     // We have a new rate allocator instance and already configured target
     // bitrate. Update the rate allocation and notify observers.
-    last_encoder_rate_settings_->framerate_fps = GetInputFramerateFps();
+    last_encoder_rate_settings_->rate_control.framerate_fps =
+        GetInputFramerateFps();
     SetEncoderRates(
         UpdateBitrateAllocationAndNotifyObserver(*last_encoder_rate_settings_));
   }
@@ -1149,7 +1147,7 @@ VideoStreamEncoder::UpdateBitrateAllocationAndNotifyObserver(
   if (rate_allocator_ && rate_settings.encoder_target > DataRate::Zero()) {
     new_allocation = rate_allocator_->Allocate(VideoBitrateAllocationParameters(
         rate_settings.encoder_target, rate_settings.stable_encoder_target,
-        rate_settings.framerate_fps));
+        rate_settings.rate_control.framerate_fps));
   }
 
   if (bitrate_observer_ && new_allocation.get_sum_bps() > 0) {
@@ -1170,27 +1168,27 @@ VideoStreamEncoder::UpdateBitrateAllocationAndNotifyObserver(
   }
 
   EncoderRateSettings new_rate_settings = rate_settings;
-  new_rate_settings.bitrate = new_allocation;
+  new_rate_settings.rate_control.bitrate = new_allocation;
   // VideoBitrateAllocator subclasses may allocate a bitrate higher than the
   // target in order to sustain the min bitrate of the video codec. In this
   // case, make sure the bandwidth allocation is at least equal the allocation
   // as that is part of the document contract for that field.
-  new_rate_settings.bandwidth_allocation =
-      std::max(new_rate_settings.bandwidth_allocation,
-               DataRate::bps(new_rate_settings.bitrate.get_sum_bps()));
+  new_rate_settings.rate_control.bandwidth_allocation = std::max(
+      new_rate_settings.rate_control.bandwidth_allocation,
+      DataRate::bps(new_rate_settings.rate_control.bitrate.get_sum_bps()));
 
   if (bitrate_adjuster_) {
     VideoBitrateAllocation adjusted_allocation =
-        bitrate_adjuster_->AdjustRateAllocation(new_rate_settings);
+        bitrate_adjuster_->AdjustRateAllocation(new_rate_settings.rate_control);
     RTC_LOG(LS_VERBOSE) << "Adjusting allocation, fps = "
-                        << rate_settings.framerate_fps << ", from "
+                        << rate_settings.rate_control.framerate_fps << ", from "
                         << new_allocation.ToString() << ", to "
                         << adjusted_allocation.ToString();
-    new_rate_settings.bitrate = adjusted_allocation;
+    new_rate_settings.rate_control.bitrate = adjusted_allocation;
   }
 
   encoder_stats_observer_->OnBitrateAllocationUpdated(
-      send_codec_, new_rate_settings.bitrate);
+      send_codec_, new_rate_settings.rate_control.bitrate);
 
   return new_rate_settings;
 }
@@ -1207,10 +1205,11 @@ uint32_t VideoStreamEncoder::GetInputFramerateFps() {
 
 void VideoStreamEncoder::SetEncoderRates(
     const EncoderRateSettings& rate_settings) {
-  RTC_DCHECK_GT(rate_settings.framerate_fps, 0.0);
-  const bool settings_changes = !last_encoder_rate_settings_ ||
-                                rate_settings != *last_encoder_rate_settings_;
-  if (settings_changes) {
+  RTC_DCHECK_GT(rate_settings.rate_control.framerate_fps, 0.0);
+  bool rate_control_changed =
+      (!last_encoder_rate_settings_.has_value() ||
+       last_encoder_rate_settings_->rate_control != rate_settings.rate_control);
+  if (last_encoder_rate_settings_ != rate_settings) {
     last_encoder_rate_settings_ = rate_settings;
   }
 
@@ -1226,15 +1225,16 @@ void VideoStreamEncoder::SetEncoderRates(
   // bitrate.
   // TODO(perkj): Make sure all known encoder implementations handle zero
   // target bitrate and remove this check.
-  if (!HasInternalSource() && rate_settings.bitrate.get_sum_bps() == 0) {
+  if (!HasInternalSource() &&
+      rate_settings.rate_control.bitrate.get_sum_bps() == 0) {
     return;
   }
 
-  if (settings_changes) {
-    encoder_->SetRates(rate_settings);
+  if (rate_control_changed) {
+    encoder_->SetRates(rate_settings.rate_control);
     frame_encode_metadata_writer_.OnSetRates(
-        rate_settings.bitrate,
-        static_cast<uint32_t>(rate_settings.framerate_fps + 0.5));
+        rate_settings.rate_control.bitrate,
+        static_cast<uint32_t>(rate_settings.rate_control.framerate_fps + 0.5));
   }
 }
 
@@ -1283,7 +1283,8 @@ void VideoStreamEncoder::MaybeEncodeVideoFrame(const VideoFrame& video_frame,
       // |last_encoder_rate_setings_|, triggering the call to SetRate() on the
       // encoder.
       EncoderRateSettings new_rate_settings = *last_encoder_rate_settings_;
-      new_rate_settings.framerate_fps = static_cast<double>(framerate_fps);
+      new_rate_settings.rate_control.framerate_fps =
+          static_cast<double>(framerate_fps);
       SetEncoderRates(
           UpdateBitrateAllocationAndNotifyObserver(new_rate_settings));
     }

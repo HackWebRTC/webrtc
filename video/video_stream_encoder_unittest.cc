@@ -782,6 +782,11 @@ class VideoStreamEncoderTest : public ::testing::Test {
       return num_encoder_initializations_;
     }
 
+    int GetNumSetRates() const {
+      rtc::CritScope lock(&local_crit_sect_);
+      return num_set_rates_;
+    }
+
    private:
     int32_t Encode(const VideoFrame& input_image,
                    const std::vector<VideoFrameType>* frame_types) override {
@@ -848,6 +853,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
 
     void SetRates(const RateControlParameters& parameters) {
       rtc::CritScope lock(&local_crit_sect_);
+      num_set_rates_++;
       VideoBitrateAllocation adjusted_rate_allocation;
       for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
         for (size_t ti = 0; ti < kMaxTemporalStreams; ++ti) {
@@ -901,6 +907,7 @@ class VideoStreamEncoderTest : public ::testing::Test {
     int num_encoder_initializations_ RTC_GUARDED_BY(local_crit_sect_) = 0;
     std::vector<ResolutionBitrateLimits> resolution_bitrate_limits_
         RTC_GUARDED_BY(local_crit_sect_);
+    int num_set_rates_ RTC_GUARDED_BY(local_crit_sect_) = 0;
   };
 
   class TestSink : public VideoStreamEncoder::EncoderSink {
@@ -4872,6 +4879,77 @@ TEST_F(VideoStreamEncoderTest, ResolutionEncoderSwitch) {
   video_source_.IncomingCapturedFrame(CreateFrame(2, kLowRes, kLowRes));
   WaitForEncodedFrame(2);
 
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest,
+       AllocationPropegratedToEncoderWhenTargetRateChanged) {
+  const int kFrameWidth = 320;
+  const int kFrameHeight = 180;
+
+  // Set initial rate.
+  auto rate = DataRate::kbps(100);
+  video_stream_encoder_->OnBitrateUpdated(
+      /*target_bitrate=*/rate,
+      /*stable_target_bitrate=*/rate,
+      /*link_allocation=*/rate,
+      /*fraction_lost=*/0,
+      /*rtt_ms=*/0);
+
+  // Insert a first video frame so that encoder gets configured.
+  int64_t timestamp_ms = fake_clock_.TimeNanos() / rtc::kNumNanosecsPerMillisec;
+  VideoFrame frame = CreateFrame(timestamp_ms, kFrameWidth, kFrameHeight);
+  frame.set_rotation(kVideoRotation_270);
+  video_source_.IncomingCapturedFrame(frame);
+  WaitForEncodedFrame(timestamp_ms);
+  EXPECT_EQ(1, fake_encoder_.GetNumSetRates());
+
+  // Change of target bitrate propagates to the encoder.
+  auto new_stable_rate = rate - DataRate::kbps(5);
+  video_stream_encoder_->OnBitrateUpdated(
+      /*target_bitrate=*/new_stable_rate,
+      /*stable_target_bitrate=*/new_stable_rate,
+      /*link_allocation=*/rate,
+      /*fraction_lost=*/0,
+      /*rtt_ms=*/0);
+  video_stream_encoder_->WaitUntilTaskQueueIsIdle();
+  EXPECT_EQ(2, fake_encoder_.GetNumSetRates());
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(VideoStreamEncoderTest,
+       AllocationNotPropegratedToEncoderWhenTargetRateUnchanged) {
+  const int kFrameWidth = 320;
+  const int kFrameHeight = 180;
+
+  // Set initial rate.
+  auto rate = DataRate::kbps(100);
+  video_stream_encoder_->OnBitrateUpdated(
+      /*target_bitrate=*/rate,
+      /*stable_target_bitrate=*/rate,
+      /*link_allocation=*/rate,
+      /*fraction_lost=*/0,
+      /*rtt_ms=*/0);
+
+  // Insert a first video frame so that encoder gets configured.
+  int64_t timestamp_ms = fake_clock_.TimeNanos() / rtc::kNumNanosecsPerMillisec;
+  VideoFrame frame = CreateFrame(timestamp_ms, kFrameWidth, kFrameHeight);
+  frame.set_rotation(kVideoRotation_270);
+  video_source_.IncomingCapturedFrame(frame);
+  WaitForEncodedFrame(timestamp_ms);
+  EXPECT_EQ(1, fake_encoder_.GetNumSetRates());
+
+  // Set a higher target rate without changing the link_allocation. Should not
+  // reset encoder's rate.
+  auto new_stable_rate = rate - DataRate::kbps(5);
+  video_stream_encoder_->OnBitrateUpdated(
+      /*target_bitrate=*/rate,
+      /*stable_target_bitrate=*/new_stable_rate,
+      /*link_allocation=*/rate,
+      /*fraction_lost=*/0,
+      /*rtt_ms=*/0);
+  video_stream_encoder_->WaitUntilTaskQueueIsIdle();
+  EXPECT_EQ(1, fake_encoder_.GetNumSetRates());
   video_stream_encoder_->Stop();
 }
 
