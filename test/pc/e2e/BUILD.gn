@@ -277,6 +277,7 @@ if (rtc_include_tests) {
       "../..:field_trial",
       "../../../api:audio_quality_analyzer_api",
       "../../../api:libjingle_peerconnection_api",
+      "../../../api:media_stream_interface",
       "../../../api:peer_connection_quality_test_fixture_api",
       "../../../api:rtc_event_log_output_file",
       "../../../api:scoped_refptr",

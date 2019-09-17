@@ -83,6 +83,7 @@ if (!build_with_chromium) {
       deps = [
         ":video_test_common",
         "../api:libjingle_peerconnection_api",
+        "../api:media_stream_interface",
         "../api:scoped_refptr",
         "../modules/video_capture:video_capture_module",
         "../rtc_base",

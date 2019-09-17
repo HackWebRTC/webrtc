@@ -11,8 +11,7 @@
 // This file contains interfaces for MediaStream, MediaTrack and MediaSource.
 // These interfaces are used for implementing MediaStream and MediaTrack as
 // defined in http://dev.w3.org/2011/webrtc/editor/webrtc.html#stream-api. These
-// interfaces must be used only with PeerConnection. PeerConnectionManager
-// interface provides the factory methods to create MediaStream and MediaTracks.
+// interfaces must be used only with PeerConnection.
 
 #ifndef API_MEDIA_STREAM_INTERFACE_H_
 #define API_MEDIA_STREAM_INTERFACE_H_
