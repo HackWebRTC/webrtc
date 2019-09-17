@@ -27,47 +27,40 @@ EmulatedIpPacket::EmulatedIpPacket(const rtc::SocketAddress& from,
     : from(from), to(to), data(data), arrival_time(arrival_time) {}
 
 void LinkEmulation::OnPacketReceived(EmulatedIpPacket packet) {
-  struct Closure {
-    void operator()() {
-      RTC_DCHECK_RUN_ON(link->task_queue_);
-      link->HandlePacketReceived(std::move(packet));
-    }
-    LinkEmulation* link;
-    EmulatedIpPacket packet;
-  };
-  task_queue_->PostTask(Closure{this, std::move(packet)});
-}
+  task_queue_->PostTask([this, packet = std::move(packet)]() mutable {
+    RTC_DCHECK_RUN_ON(task_queue_);
 
-void LinkEmulation::HandlePacketReceived(EmulatedIpPacket packet) {
-  uint64_t packet_id = next_packet_id_++;
-  bool sent = network_behavior_->EnqueuePacket(
-      PacketInFlightInfo(packet.size(), packet.arrival_time.us(), packet_id));
-  if (sent) {
-    packets_.emplace_back(StoredPacket{packet_id, std::move(packet), false});
-  }
-  if (process_task_.Running())
-    return;
-  absl::optional<int64_t> next_time_us =
-      network_behavior_->NextDeliveryTimeUs();
-  if (!next_time_us)
-    return;
-  Timestamp current_time = clock_->CurrentTime();
-  process_task_ = RepeatingTaskHandle::DelayedStart(
-      task_queue_->Get(),
-      std::max(TimeDelta::Zero(), Timestamp::us(*next_time_us) - current_time),
-      [this]() {
-        RTC_DCHECK_RUN_ON(task_queue_);
-        Timestamp current_time = clock_->CurrentTime();
-        Process(current_time);
-        absl::optional<int64_t> next_time_us =
-            network_behavior_->NextDeliveryTimeUs();
-        if (!next_time_us) {
-          process_task_.Stop();
-          return TimeDelta::Zero();  // This is ignored.
-        }
-        RTC_DCHECK_GE(*next_time_us, current_time.us());
-        return Timestamp::us(*next_time_us) - current_time;
-      });
+    uint64_t packet_id = next_packet_id_++;
+    bool sent = network_behavior_->EnqueuePacket(
+        PacketInFlightInfo(packet.size(), packet.arrival_time.us(), packet_id));
+    if (sent) {
+      packets_.emplace_back(StoredPacket{packet_id, std::move(packet), false});
+    }
+    if (process_task_.Running())
+      return;
+    absl::optional<int64_t> next_time_us =
+        network_behavior_->NextDeliveryTimeUs();
+    if (!next_time_us)
+      return;
+    Timestamp current_time = clock_->CurrentTime();
+    process_task_ = RepeatingTaskHandle::DelayedStart(
+        task_queue_->Get(),
+        std::max(TimeDelta::Zero(),
+                 Timestamp::us(*next_time_us) - current_time),
+        [this]() {
+          RTC_DCHECK_RUN_ON(task_queue_);
+          Timestamp current_time = clock_->CurrentTime();
+          Process(current_time);
+          absl::optional<int64_t> next_time_us =
+              network_behavior_->NextDeliveryTimeUs();
+          if (!next_time_us) {
+            process_task_.Stop();
+            return TimeDelta::Zero();  // This is ignored.
+          }
+          RTC_DCHECK_GE(*next_time_us, current_time.us());
+          return Timestamp::us(*next_time_us) - current_time;
+        });
+  });
 }
 
 void LinkEmulation::Process(Timestamp at_time) {
@@ -204,19 +197,23 @@ uint64_t EmulatedEndpoint::GetId() const {
 
 void EmulatedEndpoint::SendPacket(const rtc::SocketAddress& from,
                                   const rtc::SocketAddress& to,
-                                  rtc::CopyOnWriteBuffer packet) {
+                                  rtc::CopyOnWriteBuffer packet_data) {
   RTC_CHECK(from.ipaddr() == peer_local_addr_);
-  struct Closure {
-    void operator()() {
-      endpoint->UpdateSendStats(packet);
-      endpoint->router_.OnPacketReceived(std::move(packet));
+  EmulatedIpPacket packet(from, to, std::move(packet_data),
+                          clock_->CurrentTime());
+  task_queue_->PostTask([this, packet = std::move(packet)]() mutable {
+    RTC_DCHECK_RUN_ON(task_queue_);
+    Timestamp current_time = clock_->CurrentTime();
+    if (stats_.first_packet_sent_time.IsInfinite()) {
+      stats_.first_packet_sent_time = current_time;
+      stats_.first_sent_packet_size = DataSize::bytes(packet.size());
     }
-    EmulatedEndpoint* endpoint;
-    EmulatedIpPacket packet;
-  };
-  task_queue_->PostTask(Closure{
-      this,
-      EmulatedIpPacket(from, to, std::move(packet), clock_->CurrentTime())});
+    stats_.last_packet_sent_time = current_time;
+    stats_.packets_sent++;
+    stats_.bytes_sent += DataSize::bytes(packet.size());
+
+    router_.OnPacketReceived(std::move(packet));
+  });
 }
 
 absl::optional<uint16_t> EmulatedEndpoint::BindReceiver(
@@ -314,18 +311,6 @@ bool EmulatedEndpoint::Enabled() const {
 EmulatedNetworkStats EmulatedEndpoint::stats() {
   RTC_DCHECK_RUN_ON(task_queue_);
   return stats_;
-}
-
-void EmulatedEndpoint::UpdateSendStats(const EmulatedIpPacket& packet) {
-  RTC_DCHECK_RUN_ON(task_queue_);
-  Timestamp current_time = clock_->CurrentTime();
-  if (stats_.first_packet_sent_time.IsInfinite()) {
-    stats_.first_packet_sent_time = current_time;
-    stats_.first_sent_packet_size = DataSize::bytes(packet.size());
-  }
-  stats_.last_packet_sent_time = current_time;
-  stats_.packets_sent++;
-  stats_.bytes_sent += DataSize::bytes(packet.size());
 }
 
 void EmulatedEndpoint::UpdateReceiveStats(const EmulatedIpPacket& packet) {

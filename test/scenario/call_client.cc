@@ -278,16 +278,11 @@ void CallClient::OnPacketReceived(EmulatedIpPacket packet) {
     RTC_CHECK(ssrc.has_value());
     media_type = ssrc_media_types_[*ssrc];
   }
-  struct Closure {
-    void operator()() {
-      call->Receiver()->DeliverPacket(media_type, packet.data,
-                                      packet.arrival_time.us());
-    }
-    Call* call;
-    MediaType media_type;
-    EmulatedIpPacket packet;
-  };
-  task_queue_.PostTask(Closure{call_.get(), media_type, std::move(packet)});
+  task_queue_.PostTask(
+      [call = call_.get(), media_type, packet = std::move(packet)]() mutable {
+        call->Receiver()->DeliverPacket(media_type, packet.data,
+                                        packet.arrival_time.us());
+      });
 }
 
 std::unique_ptr<RtcEventLogOutput> CallClient::GetLogWriter(std::string name) {
