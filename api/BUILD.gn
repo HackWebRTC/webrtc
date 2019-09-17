@@ -109,7 +109,6 @@ rtc_static_library("libjingle_peerconnection_api") {
   visibility = [ "*" ]
   cflags = []
   sources = [
-    "async_resolver_factory.h",
     "bitrate_constraints.h",
     "candidate.cc",
     "candidate.h",
@@ -135,7 +134,6 @@ rtc_static_library("libjingle_peerconnection_api") {
     "media_transport_config.h",
     "media_transport_interface.h",
     "notifier.h",
-    "packet_socket_factory.h",
     "peer_connection_factory_proxy.h",
     "peer_connection_interface.cc",
     "peer_connection_interface.h",
@@ -226,8 +224,6 @@ rtc_source_set("rtc_error") {
 rtc_source_set("packet_socket_factory") {
   visibility = [ "*" ]
   sources = [
-    # TODO(bugs.webrtc.org/7447: remove .h files from the api target once
-    # downstream is updated to use the new target.
     "async_resolver_factory.h",
     "packet_socket_factory.h",
   ]
@@ -348,6 +344,7 @@ rtc_source_set("peer_connection_quality_test_fixture_api") {
     ":function_view",
     ":libjingle_peerconnection_api",
     ":network_state_predictor_api",
+    ":packet_socket_factory",
     ":simulated_network_api",
     ":stats_observer_interface",
     ":video_quality_analyzer_api",
@@ -578,6 +575,7 @@ rtc_source_set("ice_transport_factory") {
   ]
   deps = [
     ":libjingle_peerconnection_api",
+    ":packet_socket_factory",
     ":scoped_refptr",
     "../p2p:rtc_p2p",
     "../rtc_base",

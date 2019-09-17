@@ -16,7 +16,7 @@
 #include <string>
 #include <utility>
 
-#include "p2p/base/packet_socket_factory.h"
+#include "api/packet_socket_factory.h"
 #include "p2p/base/stun.h"
 #include "rtc_base/async_packet_socket.h"
 #include "rtc_base/async_resolver_interface.h"
