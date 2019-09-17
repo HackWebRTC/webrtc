@@ -269,6 +269,7 @@ rtc_static_library("rtc_audio_video") {
     "../api/audio:audio_mixer_api",
     "../api/audio_codecs:audio_codecs_api",
     "../api/task_queue",
+    "../api/transport:bitrate_settings",
     "../api/transport:datagram_transport_interface",
     "../api/transport/media:media_transport_interface",
     "../api/transport/rtp:rtp_source",

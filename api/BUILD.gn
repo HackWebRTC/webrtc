@@ -108,7 +108,6 @@ rtc_static_library("libjingle_peerconnection_api") {
   visibility = [ "*" ]
   cflags = []
   sources = [
-    "bitrate_constraints.h",
     "candidate.cc",
     "candidate.h",
     "congestion_control_interface.h",
@@ -255,6 +254,7 @@ rtc_source_set("video_quality_test_fixture_api") {
     "../call:rtp_interfaces",
     "../test:test_common",
     "../test:video_test_common",
+    "transport:bitrate_settings",
     "transport:network_control",
     "transport/media:media_transport_interface",
     "video_codecs:video_codecs_api",

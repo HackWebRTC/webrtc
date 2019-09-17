@@ -16,9 +16,9 @@
 #include <string>
 #include <vector>
 
-#include "api/bitrate_constraints.h"
 #include "api/crypto/crypto_options.h"
 #include "api/crypto/frame_encryptor_interface.h"
+#include "api/transport/bitrate_settings.h"
 #include "call/rtp_transport_controller_send_interface.h"
 #include "modules/pacing/packet_router.h"
 #include "rtc_base/network/sent_packet.h"
