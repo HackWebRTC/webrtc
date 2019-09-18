@@ -12,7 +12,7 @@ adds the first use.
 ## **Allowed**
 
 * `absl::InlinedVector`
-* `absl::make_unique` and `absl::WrapUnique`
+* `absl::WrapUnique`
 * `absl::optional` and related stuff from `absl/types/optional.h`.
 * `absl::string_view`
 * The functions in `absl/strings/ascii.h`, `absl/strings/match.h`,
@@ -27,6 +27,10 @@ adds the first use.
   `absl/base/macros.h`.
 
 ## **Disallowed**
+
+### `absl::make_unique`
+
+*Use `std::make_unique` instead.*
 
 ### `absl::Mutex`
 
