@@ -245,6 +245,7 @@ rtc_static_library("rtp_rtcp") {
     "../../modules/audio_coding:audio_coding_module_typedefs",
     "../../rtc_base:checks",
     "../../rtc_base:deprecation",
+    "../../rtc_base:divide_round",
     "../../rtc_base:gtest_prod",
     "../../rtc_base:rate_limiter",
     "../../rtc_base:rtc_base_approved",
