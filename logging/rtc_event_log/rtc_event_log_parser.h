@@ -426,6 +426,10 @@ class ParsedRtcEventLog {
     return route_change_events_;
   }
 
+  const std::vector<LoggedRemoteEstimateEvent>& remote_estimate_events() const {
+    return remote_estimate_events_;
+  }
+
   // RTP
   const std::vector<LoggedRtpStreamIncoming>& incoming_rtp_packets_by_ssrc()
       const {
@@ -656,6 +660,7 @@ class ParsedRtcEventLog {
   void StoreOutgoingRtpPackets(const rtclog2::OutgoingRtpPackets& proto);
   void StoreParsedNewFormatEvent(const rtclog2::EventStream& event);
   void StoreRouteChangeEvent(const rtclog2::RouteChange& proto);
+  void StoreRemoteEstimateEvent(const rtclog2::RemoteEstimates& proto);
   void StoreStartEvent(const rtclog2::BeginLogEvent& proto);
   void StoreStopEvent(const rtclog2::EndLogEvent& proto);
   void StoreVideoRecvConfig(const rtclog2::VideoRecvStreamConfig& proto);
@@ -771,6 +776,7 @@ class ParsedRtcEventLog {
   std::vector<LoggedGenericAckReceived> generic_acks_received_;
 
   std::vector<LoggedRouteChangeEvent> route_change_events_;
+  std::vector<LoggedRemoteEstimateEvent> remote_estimate_events_;
 
   uint8_t last_incoming_rtcp_packet_[IP_PACKET_SIZE];
   uint8_t last_incoming_rtcp_packet_length_;

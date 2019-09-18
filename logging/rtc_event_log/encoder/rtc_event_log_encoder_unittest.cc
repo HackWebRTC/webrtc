@@ -239,6 +239,28 @@ TEST_P(RtcEventLogEncoderTest, RtcEventRouteChange) {
   }
 }
 
+TEST_P(RtcEventLogEncoderTest, RtcEventRemoteEstimate) {
+  if (!new_encoding_) {
+    return;
+  }
+  std::vector<std::unique_ptr<RtcEventRemoteEstimate>> events(event_count_);
+  for (size_t i = 0; i < event_count_; ++i) {
+    events[i] = (i == 0 || !force_repeated_fields_)
+                    ? gen_.NewRemoteEstimate()
+                    : std::make_unique<RtcEventRemoteEstimate>(*events[0]);
+    history_.push_back(std::make_unique<RtcEventRemoteEstimate>(*events[i]));
+  }
+
+  std::string encoded = encoder_->EncodeBatch(history_.begin(), history_.end());
+  ASSERT_TRUE(parsed_log_.ParseString(encoded));
+  const auto& parsed_events = parsed_log_.remote_estimate_events();
+
+  ASSERT_EQ(parsed_events.size(), event_count_);
+  for (size_t i = 0; i < event_count_; ++i) {
+    verifier_.VerifyLoggedRemoteEstimateEvent(*events[i], parsed_events[i]);
+  }
+}
+
 TEST_P(RtcEventLogEncoderTest, RtcEventAudioNetworkAdaptationBitrate) {
   std::vector<std::unique_ptr<RtcEventAudioNetworkAdaptation>> events(
       event_count_);

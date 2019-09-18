@@ -20,6 +20,7 @@
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
 #include "call/rtp_video_sender.h"
+#include "logging/rtc_event_log/events/rtc_event_remote_estimate.h"
 #include "logging/rtc_event_log/events/rtc_event_route_change.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
@@ -472,6 +473,10 @@ void RtpTransportControllerSend::OnTransportFeedback(
 
 void RtpTransportControllerSend::OnRemoteNetworkEstimate(
     NetworkStateEstimate estimate) {
+  if (event_log_) {
+    event_log_->Log(std::make_unique<RtcEventRemoteEstimate>(
+        estimate.link_capacity_lower, estimate.link_capacity_upper));
+  }
   estimate.update_time = Timestamp::ms(clock_->TimeInMilliseconds());
   task_queue_.PostTask([this, estimate] {
     RTC_DCHECK_RUN_ON(&task_queue_);

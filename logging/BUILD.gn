@@ -95,6 +95,7 @@ rtc_source_set("rtc_event_bwe") {
     "rtc_event_log/events/rtc_event_probe_result_failure.h",
     "rtc_event_log/events/rtc_event_probe_result_success.cc",
     "rtc_event_log/events/rtc_event_probe_result_success.h",
+    "rtc_event_log/events/rtc_event_remote_estimate.h",
     "rtc_event_log/events/rtc_event_route_change.cc",
     "rtc_event_log/events/rtc_event_route_change.h",
   ]
@@ -102,8 +103,10 @@ rtc_source_set("rtc_event_bwe") {
   deps = [
     "../api:scoped_refptr",
     "../api/rtc_event_log",
+    "../api/units:data_rate",
     "../modules/remote_bitrate_estimator",
     "//third_party/abseil-cpp/absl/memory",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 

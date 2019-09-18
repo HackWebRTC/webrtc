@@ -239,6 +239,17 @@ struct LoggedRouteChangeEvent {
   uint32_t overhead;
 };
 
+struct LoggedRemoteEstimateEvent {
+  LoggedRemoteEstimateEvent() = default;
+
+  int64_t log_time_us() const { return timestamp_ms * 1000; }
+  int64_t log_time_ms() const { return timestamp_ms; }
+
+  int64_t timestamp_ms;
+  absl::optional<DataRate> link_capacity_lower;
+  absl::optional<DataRate> link_capacity_upper;
+};
+
 struct LoggedRtpPacket {
   LoggedRtpPacket(uint64_t timestamp_us,
                   RTPHeader header,

@@ -177,6 +177,7 @@ class RtcEventLogSession
   std::vector<std::unique_ptr<RtcEventProbeResultFailure>> probe_failure_list_;
   std::vector<std::unique_ptr<RtcEventProbeResultSuccess>> probe_success_list_;
   std::vector<std::unique_ptr<RtcEventRouteChange>> route_change_list_;
+  std::vector<std::unique_ptr<RtcEventRemoteEstimate>> remote_estimate_list_;
   std::vector<std::unique_ptr<RtcEventRtcpPacketIncoming>> incoming_rtcp_list_;
   std::vector<std::unique_ptr<RtcEventRtcpPacketOutgoing>> outgoing_rtcp_list_;
   std::map<uint32_t, std::vector<std::unique_ptr<RtcEventRtpPacketIncoming>>>

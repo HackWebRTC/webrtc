@@ -355,6 +355,12 @@ std::unique_ptr<RtcEventRouteChange> EventGenerator::NewRouteChange() {
                                                prng_.Rand(0, 128));
 }
 
+std::unique_ptr<RtcEventRemoteEstimate> EventGenerator::NewRemoteEstimate() {
+  return std::make_unique<RtcEventRemoteEstimate>(
+      DataRate::kbps(prng_.Rand(0, 100000)),
+      DataRate::kbps(prng_.Rand(0, 100000)));
+}
+
 std::unique_ptr<RtcEventRtcpPacketIncoming>
 EventGenerator::NewRtcpPacketIncoming() {
   enum class SupportedRtcpTypes {
@@ -930,6 +936,16 @@ void EventVerifier::VerifyLoggedRouteChangeEvent(
   EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
   EXPECT_EQ(original_event.connected(), logged_event.connected);
   EXPECT_EQ(original_event.overhead(), logged_event.overhead);
+}
+
+void EventVerifier::VerifyLoggedRemoteEstimateEvent(
+    const RtcEventRemoteEstimate& original_event,
+    const LoggedRemoteEstimateEvent& logged_event) const {
+  EXPECT_EQ(original_event.timestamp_ms(), logged_event.log_time_ms());
+  EXPECT_EQ(original_event.link_capacity_lower_,
+            logged_event.link_capacity_lower);
+  EXPECT_EQ(original_event.link_capacity_upper_,
+            logged_event.link_capacity_upper);
 }
 
 void EventVerifier::VerifyLoggedRtpPacketIncoming(
