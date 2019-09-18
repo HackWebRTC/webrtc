@@ -45,18 +45,6 @@ struct BitrateConstraints {
   static constexpr int kDefaultStartBitrateBps = 300000;
 };
 
-// Like std::min, but considers non-positive values to be unset.
-template <typename T>
-static T MinPositive(T a, T b) {
-  if (a <= 0) {
-    return b;
-  }
-  if (b <= 0) {
-    return a;
-  }
-  return std::min(a, b);
-}
-
 }  // namespace webrtc
 
 #endif  // API_TRANSPORT_BITRATE_SETTINGS_H_

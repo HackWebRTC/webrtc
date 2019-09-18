@@ -337,6 +337,19 @@ int GetMinVideoBitrateBps(webrtc::VideoCodecType type) {
   }
   return kMinVideoBitrateBps;
 }
+
+// Returns its smallest positive argument. If neither argument is positive,
+// returns an arbitrary nonpositive value.
+int MinPositive(int a, int b) {
+  if (a <= 0) {
+    return b;
+  }
+  if (b <= 0) {
+    return a;
+  }
+  return std::min(a, b);
+}
+
 }  // namespace
 
 // This constant is really an on/off, lower-level configurable NACK history
@@ -2217,8 +2230,8 @@ WebRtcVideoChannel::WebRtcVideoSendStream::CreateVideoEncoderConfig(
   if (rtp_parameters_.encodings[0].max_bitrate_bps &&
       rtp_parameters_.encodings.size() == 1) {
     stream_max_bitrate =
-        webrtc::MinPositive(*(rtp_parameters_.encodings[0].max_bitrate_bps),
-                            parameters_.max_bitrate_bps);
+        MinPositive(*(rtp_parameters_.encodings[0].max_bitrate_bps),
+                    parameters_.max_bitrate_bps);
   }
 
   // The codec max bitrate comes from the "x-google-max-bitrate" parameter

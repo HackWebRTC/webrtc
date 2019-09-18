@@ -141,6 +141,18 @@ absl::optional<std::string> GetAudioNetworkAdaptorConfig(
   return absl::nullopt;
 }
 
+// Returns its smallest positive argument. If neither argument is positive,
+// returns an arbitrary nonpositive value.
+int MinPositive(int a, int b) {
+  if (a <= 0) {
+    return b;
+  }
+  if (b <= 0) {
+    return a;
+  }
+  return std::min(a, b);
+}
+
 // |max_send_bitrate_bps| is the bitrate from "b=" in SDP.
 // |rtp_max_bitrate_bps| is the bitrate from RtpSender::SetParameters.
 absl::optional<int> ComputeSendBitrate(int max_send_bitrate_bps,
@@ -148,10 +160,9 @@ absl::optional<int> ComputeSendBitrate(int max_send_bitrate_bps,
                                        const webrtc::AudioCodecSpec& spec) {
   // If application-configured bitrate is set, take minimum of that and SDP
   // bitrate.
-  const int bps =
-      rtp_max_bitrate_bps
-          ? webrtc::MinPositive(max_send_bitrate_bps, *rtp_max_bitrate_bps)
-          : max_send_bitrate_bps;
+  const int bps = rtp_max_bitrate_bps
+                      ? MinPositive(max_send_bitrate_bps, *rtp_max_bitrate_bps)
+                      : max_send_bitrate_bps;
   if (bps <= 0) {
     return spec.info.default_bitrate_bps;
   }
