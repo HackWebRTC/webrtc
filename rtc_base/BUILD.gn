@@ -339,6 +339,16 @@ rtc_source_set("sanitizer") {
   ]
 }
 
+rtc_source_set("divide_round") {
+  sources = [
+    "numerics/divide_round.h",
+  ]
+  deps = [
+    ":checks",
+    ":safe_compare",
+  ]
+}
+
 rtc_source_set("safe_compare") {
   sources = [
     "numerics/safe_compare.h",
@@ -1132,6 +1142,7 @@ if (rtc_include_tests) {
       "event_tracer_unittest.cc",
       "event_unittest.cc",
       "logging_unittest.cc",
+      "numerics/divide_round_unittest.cc",
       "numerics/histogram_percentile_counter_unittest.cc",
       "numerics/mod_ops_unittest.cc",
       "numerics/moving_max_counter_unittest.cc",
@@ -1164,6 +1175,7 @@ if (rtc_include_tests) {
     }
     deps = [
       ":checks",
+      ":divide_round",
       ":gunit_helpers",
       ":rate_limiter",
       ":rtc_base",
