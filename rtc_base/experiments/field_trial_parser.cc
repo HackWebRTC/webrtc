@@ -86,6 +86,12 @@ void ParseFieldTrial(
     } else {
       RTC_LOG(LS_INFO) << "No field with key: '" << key
                        << "' (found in trial: \"" << trial_string << "\")";
+      std::string valid_keys;
+      for (const auto& f : field_map) {
+        valid_keys += f.first;
+        valid_keys += ", ";
+      }
+      RTC_LOG(LS_INFO) << "Valid keys are: " << valid_keys;
     }
   }
 
