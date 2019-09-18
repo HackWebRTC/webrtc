@@ -16,6 +16,8 @@
 #include "common_video/generic_frame_descriptor/generic_frame_info.h"
 #include "modules/rtp_rtcp/include/rtp_rtcp_defines.h"
 #include "modules/rtp_rtcp/source/rtp_dependency_descriptor_reader.h"
+#include "modules/rtp_rtcp/source/rtp_dependency_descriptor_writer.h"
+#include "rtc_base/numerics/divide_round.h"
 
 namespace webrtc {
 
@@ -28,6 +30,21 @@ bool RtpDependencyDescriptorExtension::Parse(
     DependencyDescriptor* descriptor) {
   RtpDependencyDescriptorReader reader(data, structure, descriptor);
   return reader.ParseSuccessful();
+}
+
+size_t RtpDependencyDescriptorExtension::ValueSize(
+    const FrameDependencyStructure& structure,
+    const DependencyDescriptor& descriptor) {
+  RtpDependencyDescriptorWriter writer(/*data=*/{}, structure, descriptor);
+  return DivideRoundUp(writer.ValueSizeBits(), 8);
+}
+
+bool RtpDependencyDescriptorExtension::Write(
+    rtc::ArrayView<uint8_t> data,
+    const FrameDependencyStructure& structure,
+    const DependencyDescriptor& descriptor) {
+  RtpDependencyDescriptorWriter writer(data, structure, descriptor);
+  return writer.Write();
 }
 
 }  // namespace webrtc
