@@ -79,9 +79,7 @@ class RtpTransportControllerSend final
   TransportFeedbackObserver* transport_feedback_observer() override;
   RtpPacketSender* packet_sender() override;
 
-  void SetAllocatedSendBitrateLimits(int min_send_bitrate_bps,
-                                     int max_padding_bitrate_bps,
-                                     int max_total_bitrate_bps) override;
+  void SetAllocatedSendBitrateLimits(BitrateAllocationLimits limits) override;
 
   void SetPacingFactor(float pacing_factor) override;
   void SetQueueTimeLimit(int limit_ms) override;

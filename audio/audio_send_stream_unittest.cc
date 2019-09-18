@@ -88,10 +88,7 @@ const DataRate kOverheadRate = kOverheadPerPacket / kMaxFrameLength;
 
 class MockLimitObserver : public BitrateAllocator::LimitObserver {
  public:
-  MOCK_METHOD3(OnAllocationLimitsChanged,
-               void(uint32_t min_send_bitrate_bps,
-                    uint32_t max_padding_bitrate_bps,
-                    uint32_t total_bitrate_bps));
+  MOCK_METHOD1(OnAllocationLimitsChanged, void(BitrateAllocationLimits));
 };
 
 std::unique_ptr<MockAudioEncoder> SetupAudioEncoderMock(

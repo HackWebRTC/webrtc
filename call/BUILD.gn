@@ -197,6 +197,7 @@ rtc_source_set("bitrate_allocator") {
   ]
   deps = [
     "../api:bitrate_allocation",
+    "../api/transport:network_control",
     "../api/units:data_rate",
     "../api/units:time_delta",
     "../rtc_base:checks",

@@ -49,7 +49,7 @@ class MockRtpTransportControllerSend
                NetworkStateEstimateObserver*());
   MOCK_METHOD0(transport_feedback_observer, TransportFeedbackObserver*());
   MOCK_METHOD0(packet_sender, RtpPacketSender*());
-  MOCK_METHOD3(SetAllocatedSendBitrateLimits, void(int, int, int));
+  MOCK_METHOD1(SetAllocatedSendBitrateLimits, void(BitrateAllocationLimits));
   MOCK_METHOD1(SetPacingFactor, void(float));
   MOCK_METHOD1(SetQueueTimeLimit, void(int));
   MOCK_METHOD1(RegisterPacketFeedbackObserver, void(PacketFeedbackObserver*));

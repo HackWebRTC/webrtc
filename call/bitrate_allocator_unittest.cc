@@ -19,24 +19,34 @@
 #include "test/gtest.h"
 
 using ::testing::_;
+using ::testing::AllOf;
+using ::testing::Field;
 using ::testing::NiceMock;
 
 namespace webrtc {
-// Emulating old interface for test suite compatibility.
-// TODO(srte): Update tests to reflect new interface.
-class LimitObserverWrapper : public BitrateAllocator::LimitObserver {
- public:
-  virtual void OnAllocationLimitsChanged(uint32_t min_send_bitrate_bps,
-                                         uint32_t max_padding_bitrate_bps,
-                                         uint32_t total_bitrate_bps) = 0;
-};
 
-class MockLimitObserver : public LimitObserverWrapper {
+auto AllocationLimitsEq(uint32_t min_allocatable_rate_bps,
+                        uint32_t max_padding_rate_bps,
+                        uint32_t max_allocatable_rate_bps) {
+  return AllOf(Field(&BitrateAllocationLimits::min_allocatable_rate,
+                     DataRate::bps(min_allocatable_rate_bps)),
+               Field(&BitrateAllocationLimits::max_allocatable_rate,
+                     DataRate::bps(max_allocatable_rate_bps)),
+               Field(&BitrateAllocationLimits::max_padding_rate,
+                     DataRate::bps(max_padding_rate_bps)));
+}
+
+auto AllocationLimitsEq(uint32_t min_allocatable_rate_bps,
+                        uint32_t max_padding_rate_bps) {
+  return AllOf(Field(&BitrateAllocationLimits::min_allocatable_rate,
+                     DataRate::bps(min_allocatable_rate_bps)),
+               Field(&BitrateAllocationLimits::max_padding_rate,
+                     DataRate::bps(max_padding_rate_bps)));
+}
+
+class MockLimitObserver : public BitrateAllocator::LimitObserver {
  public:
-  MOCK_METHOD3(OnAllocationLimitsChanged,
-               void(uint32_t min_send_bitrate_bps,
-                    uint32_t max_padding_bitrate_bps,
-                    uint32_t total_bitrate_bps));
+  MOCK_METHOD1(OnAllocationLimitsChanged, void(BitrateAllocationLimits));
 };
 
 class TestBitrateObserver : public BitrateAllocatorObserver {
@@ -161,8 +171,8 @@ TEST_F(BitrateAllocatorTest, UpdatingBitrateObserver) {
   const uint32_t kMaxBitrateBps = 1500000;
 
   EXPECT_CALL(limit_observer_,
-              OnAllocationLimitsChanged(kMinSendBitrateBps, kPadUpToBitrateBps,
-                                        kMaxBitrateBps));
+              OnAllocationLimitsChanged(AllocationLimitsEq(
+                  kMinSendBitrateBps, kPadUpToBitrateBps, kMaxBitrateBps)));
   AddObserver(&bitrate_observer, kMinSendBitrateBps, kMaxBitrateBps,
               kPadUpToBitrateBps, true, kDefaultBitratePriority);
   EXPECT_EQ(300000, allocator_->GetStartBitrate(&bitrate_observer));
@@ -175,12 +185,12 @@ TEST_F(BitrateAllocatorTest, UpdatingBitrateObserver) {
   EXPECT_EQ(3000000, allocator_->GetStartBitrate(&bitrate_observer));
 
   // Expect |max_padding_bitrate_bps| to change to 0 if the observer is updated.
-  EXPECT_CALL(limit_observer_,
-              OnAllocationLimitsChanged(kMinSendBitrateBps, 0, _));
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(
+                                   AllocationLimitsEq(kMinSendBitrateBps, 0)));
   AddObserver(&bitrate_observer, kMinSendBitrateBps, 4000000, 0, true,
               kDefaultBitratePriority);
-  EXPECT_CALL(limit_observer_,
-              OnAllocationLimitsChanged(kMinSendBitrateBps, 0, _));
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(
+                                   AllocationLimitsEq(kMinSendBitrateBps, 0)));
   EXPECT_EQ(4000000, allocator_->GetStartBitrate(&bitrate_observer));
 
   AddObserver(&bitrate_observer, kMinSendBitrateBps, kMaxBitrateBps, 0, true,
@@ -199,16 +209,17 @@ TEST_F(BitrateAllocatorTest, TwoBitrateObserversOneRtcpObserver) {
   const uint32_t kObs1MaxBitrateBps = 300000;
   const uint32_t kObs2MaxBitrateBps = 300000;
 
-  EXPECT_CALL(
-      limit_observer_,
-      OnAllocationLimitsChanged(kObs1StartBitrateBps, 0, kObs1MaxBitrateBps));
+  EXPECT_CALL(limit_observer_,
+              OnAllocationLimitsChanged(AllocationLimitsEq(
+                  kObs1StartBitrateBps, 0, kObs1MaxBitrateBps)));
   AddObserver(&bitrate_observer_1, kObs1StartBitrateBps, kObs1MaxBitrateBps, 0,
               true, kDefaultBitratePriority);
   EXPECT_EQ(static_cast<int>(kObs1MaxBitrateBps),
             allocator_->GetStartBitrate(&bitrate_observer_1));
-  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(
-                                   kObs1StartBitrateBps + kObs2StartBitrateBps,
-                                   0, kObs1MaxBitrateBps + kObs2MaxBitrateBps));
+  EXPECT_CALL(limit_observer_,
+              OnAllocationLimitsChanged(AllocationLimitsEq(
+                  kObs1StartBitrateBps + kObs2StartBitrateBps, 0,
+                  kObs1MaxBitrateBps + kObs2MaxBitrateBps)));
   AddObserver(&bitrate_observer_2, kObs2StartBitrateBps, kObs2MaxBitrateBps, 0,
               true, kDefaultBitratePriority);
   EXPECT_EQ(static_cast<int>(kObs2StartBitrateBps),
@@ -256,11 +267,12 @@ TEST_F(BitrateAllocatorTest, RemoveObserverTriggersLimitObserver) {
   const uint32_t kMaxBitrateBps = 1500000;
 
   EXPECT_CALL(limit_observer_,
-              OnAllocationLimitsChanged(kMinSendBitrateBps, kPadUpToBitrateBps,
-                                        kMaxBitrateBps));
+              OnAllocationLimitsChanged(AllocationLimitsEq(
+                  kMinSendBitrateBps, kPadUpToBitrateBps, kMaxBitrateBps)));
   AddObserver(&bitrate_observer, kMinSendBitrateBps, kMaxBitrateBps,
               kPadUpToBitrateBps, true, kDefaultBitratePriority);
-  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0, _));
+  EXPECT_CALL(limit_observer_,
+              OnAllocationLimitsChanged(AllocationLimitsEq(0, 0)));
   allocator_->RemoveObserver(&bitrate_observer);
 }
 
@@ -293,8 +305,10 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserver) {
   TestBitrateObserver bitrate_observer_1;
   // Expect OnAllocationLimitsChanged with |min_send_bitrate_bps| = 0 since
   // AddObserver is called with |enforce_min_bitrate| = false.
-  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0, _));
-  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 120000, _));
+  EXPECT_CALL(limit_observer_,
+              OnAllocationLimitsChanged(AllocationLimitsEq(0, 0)));
+  EXPECT_CALL(limit_observer_,
+              OnAllocationLimitsChanged(AllocationLimitsEq(0, 120000)));
   AddObserver(&bitrate_observer_1, 100000, 400000, 0, false, "",
               kDefaultBitratePriority);
   EXPECT_EQ(300000, allocator_->GetStartBitrate(&bitrate_observer_1));
@@ -307,7 +321,8 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserver) {
   allocator_->OnNetworkChanged(10000, 0, 0, kDefaultProbingIntervalMs);
   EXPECT_EQ(0u, bitrate_observer_1.last_bitrate_bps_);
 
-  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0, _));
+  EXPECT_CALL(limit_observer_,
+              OnAllocationLimitsChanged(AllocationLimitsEq(0, 0)));
   allocator_->RemoveObserver(&bitrate_observer_1);
 }
 
@@ -385,7 +400,8 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserverWithPacketLoss) {
   // Expect OnAllocationLimitsChanged with |min_send_bitrate_bps| = 0 since
   // AddObserver is called with |enforce_min_bitrate| = false.
   TestBitrateObserver bitrate_observer;
-  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0, kMaxBitrateBps));
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(
+                                   AllocationLimitsEq(0, 0, kMaxBitrateBps)));
   AddObserver(&bitrate_observer, kMinBitrateBps, kMaxBitrateBps, 0, false, "",
               kDefaultBitratePriority);
   EXPECT_EQ(300000, allocator_->GetStartBitrate(&bitrate_observer));
@@ -409,8 +425,8 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserverWithPacketLoss) {
   const uint32_t kMinStartBitrateWithProtectionBps =
       static_cast<uint32_t>(kMinStartBitrateBps * (1 + kProtectionRatio));
   EXPECT_CALL(limit_observer_,
-              OnAllocationLimitsChanged(0, kMinStartBitrateWithProtectionBps,
-                                        kMaxBitrateBps));
+              OnAllocationLimitsChanged(AllocationLimitsEq(
+                  0, kMinStartBitrateWithProtectionBps, kMaxBitrateBps)));
   allocator_->OnNetworkChanged(kMinStartBitrateBps + 1000, 0, fraction_loss,
                                kDefaultProbingIntervalMs);
   EXPECT_EQ(0u, bitrate_observer.last_bitrate_bps_);
@@ -420,7 +436,8 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserverWithPacketLoss) {
   EXPECT_EQ(0u, bitrate_observer.last_bitrate_bps_);
 
   // Just enough to enable video again.
-  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0, kMaxBitrateBps));
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(
+                                   AllocationLimitsEq(0, 0, kMaxBitrateBps)));
   allocator_->OnNetworkChanged(kMinStartBitrateWithProtectionBps, 0,
                                fraction_loss, kDefaultProbingIntervalMs);
   EXPECT_EQ(kMinStartBitrateWithProtectionBps,
@@ -437,7 +454,8 @@ TEST_F(BitrateAllocatorTestNoEnforceMin, OneBitrateObserverWithPacketLoss) {
                                kDefaultProbingIntervalMs);
   EXPECT_EQ(kMinStartBitrateBps, bitrate_observer.last_bitrate_bps_);
 
-  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(0, 0, 0));
+  EXPECT_CALL(limit_observer_,
+              OnAllocationLimitsChanged(AllocationLimitsEq(0, 0, 0)));
   allocator_->RemoveObserver(&bitrate_observer);
 }
 
@@ -449,8 +467,8 @@ TEST_F(BitrateAllocatorTest,
   const uint32_t kMaxBitrateBps = 400000;
 
   // Register |bitrate_observer| and expect total allocation limits to change.
-  EXPECT_CALL(limit_observer_,
-              OnAllocationLimitsChanged(kMinBitrateBps, 0, kMaxBitrateBps))
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(AllocationLimitsEq(
+                                   kMinBitrateBps, 0, kMaxBitrateBps)))
       .Times(1);
   MediaStreamAllocationConfig allocation_config = DefaultConfig();
   allocation_config.min_bitrate_bps = kMinBitrateBps;
@@ -460,19 +478,19 @@ TEST_F(BitrateAllocatorTest,
   // Observer uses 20% of it's allocated bitrate for protection.
   bitrate_observer.SetBitrateProtectionRatio(/*protection_ratio=*/0.2);
   // Total allocation limits are unaffected by the protection rate change.
-  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(_, _, _)).Times(0);
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(_)).Times(0);
   allocator_->OnNetworkChanged(200000u, 0, 100, kDefaultProbingIntervalMs);
 
   // Observer uses 0% of it's allocated bitrate for protection.
   bitrate_observer.SetBitrateProtectionRatio(/*protection_ratio=*/0.0);
   // Total allocation limits are unaffected by the protection rate change.
-  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(_, _, _)).Times(0);
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(_)).Times(0);
   allocator_->OnNetworkChanged(200000u, 0, 100, kDefaultProbingIntervalMs);
 
   // Observer again uses 20% of it's allocated bitrate for protection.
   bitrate_observer.SetBitrateProtectionRatio(/*protection_ratio=*/0.2);
   // Total allocation limits are unaffected by the protection rate change.
-  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(_, _, _)).Times(0);
+  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(_)).Times(0);
   allocator_->OnNetworkChanged(200000u, 0, 100, kDefaultProbingIntervalMs);
 }
 
@@ -562,7 +580,8 @@ TEST_F(BitrateAllocatorTest, ThreeBitrateObserversLowBweEnforceMin) {
 
 TEST_F(BitrateAllocatorTest, AddObserverWhileNetworkDown) {
   TestBitrateObserver bitrate_observer_1;
-  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(50000, 0, _));
+  EXPECT_CALL(limit_observer_,
+              OnAllocationLimitsChanged(AllocationLimitsEq(50000, 0)));
 
   AddObserver(&bitrate_observer_1, 50000, 400000, 0, true,
               kDefaultBitratePriority);
@@ -575,7 +594,8 @@ TEST_F(BitrateAllocatorTest, AddObserverWhileNetworkDown) {
 
   TestBitrateObserver bitrate_observer_2;
   // Adding an observer while the network is down should not affect the limits.
-  EXPECT_CALL(limit_observer_, OnAllocationLimitsChanged(50000 + 50000, 0, _));
+  EXPECT_CALL(limit_observer_,
+              OnAllocationLimitsChanged(AllocationLimitsEq(50000 + 50000, 0)));
   AddObserver(&bitrate_observer_2, 50000, 400000, 0, true,
               kDefaultBitratePriority);
 

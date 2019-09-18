@@ -123,15 +123,8 @@ class RtpTransportControllerSendInterface {
 
   // SetAllocatedSendBitrateLimits sets bitrates limits imposed by send codec
   // settings.
-  // |min_send_bitrate_bps| is the total minimum send bitrate required by all
-  // sending streams.  This is the minimum bitrate the PacedSender will use.
-  // |max_padding_bitrate_bps| is the max
-  // bitrate the send streams request for padding. This can be higher than the
-  // current network estimate and tells the PacedSender how much it should max
-  // pad unless there is real packets to send.
-  virtual void SetAllocatedSendBitrateLimits(int min_send_bitrate_bps,
-                                             int max_padding_bitrate_bps,
-                                             int total_bitrate_bps) = 0;
+  virtual void SetAllocatedSendBitrateLimits(
+      BitrateAllocationLimits limits) = 0;
 
   virtual void SetPacingFactor(float pacing_factor) = 0;
   virtual void SetQueueTimeLimit(int limit_ms) = 0;

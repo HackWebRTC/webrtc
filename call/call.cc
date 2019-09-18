@@ -230,9 +230,7 @@ class Call final : public webrtc::Call,
   void OnStartRateUpdate(DataRate start_rate) override;
 
   // Implements BitrateAllocator::LimitObserver.
-  void OnAllocationLimitsChanged(uint32_t min_send_bitrate_bps,
-                                 uint32_t max_padding_bitrate_bps,
-                                 uint32_t total_bitrate_bps) override;
+  void OnAllocationLimitsChanged(BitrateAllocationLimits limits) override;
 
   void SetClientBitratePreferences(const BitrateSettings& preferences) override;
 
@@ -1113,19 +1111,16 @@ void Call::OnTargetTransferRate(TargetTransferRate msg) {
   pacer_bitrate_kbps_counter_.Add(pacer_bitrate_bps / 1000);
 }
 
-void Call::OnAllocationLimitsChanged(uint32_t min_send_bitrate_bps,
-                                     uint32_t max_padding_bitrate_bps,
-                                     uint32_t total_bitrate_bps) {
+void Call::OnAllocationLimitsChanged(BitrateAllocationLimits limits) {
   RTC_DCHECK(network_queue()->IsCurrent());
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
 
-  transport_send_ptr_->SetAllocatedSendBitrateLimits(
-      min_send_bitrate_bps, max_padding_bitrate_bps, total_bitrate_bps);
+  transport_send_ptr_->SetAllocatedSendBitrateLimits(limits);
 
-  min_allocated_send_bitrate_bps_ = min_send_bitrate_bps;
+  min_allocated_send_bitrate_bps_ = limits.min_allocatable_rate.bps();
 
   rtc::CritScope lock(&bitrate_crit_);
-  configured_max_padding_bitrate_bps_ = max_padding_bitrate_bps;
+  configured_max_padding_bitrate_bps_ = limits.max_padding_rate.bps();
 }
 
 void Call::ConfigureSync(const std::string& sync_group) {

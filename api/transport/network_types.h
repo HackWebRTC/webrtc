@@ -24,6 +24,19 @@ namespace webrtc {
 
 // Configuration
 
+// Represents constraints and rates related to the currently enabled streams.
+// This is used as input to the congestion controller via the StreamsConfig
+// struct.
+struct BitrateAllocationLimits {
+  // The total minimum send bitrate required by all sending streams.
+  DataRate min_allocatable_rate = DataRate::Zero();
+  // The total maximum allocatable bitrate for all currently available streams.
+  DataRate max_allocatable_rate = DataRate::Zero();
+  // The max bitrate to use for padding. The sum of the per-stream max padding
+  // rate.
+  DataRate max_padding_rate = DataRate::Zero();
+};
+
 // Use StreamsConfig for information about streams that is required for specific
 // adjustments to the algorithms in network controllers. Especially useful
 // for experiments.
@@ -35,6 +48,7 @@ struct StreamsConfig {
   absl::optional<bool> requests_alr_probing;
   absl::optional<double> pacing_factor;
 
+  // TODO(srte): Use BitrateAllocationLimits here.
   absl::optional<DataRate> min_total_allocated_bitrate;
   absl::optional<DataRate> max_padding_rate;
   absl::optional<DataRate> max_total_allocated_bitrate;
