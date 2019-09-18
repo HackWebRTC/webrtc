@@ -129,8 +129,10 @@ TrendlineEstimator::TrendlineEstimator(
       network_state_predictor_(network_state_predictor) {
   RTC_LOG(LS_INFO)
       << "Using Trendline filter for delay change estimation with window size "
-      << window_size_ << " and field trial "
-      << ignore_small_packets_.Parser()->Encode();
+      << window_size_ << ", field trial "
+      << ignore_small_packets_.Parser()->Encode() << " and "
+      << (network_state_predictor_ ? "injected" : "no")
+      << " network state predictor";
 }
 
 TrendlineEstimator::~TrendlineEstimator() {}
