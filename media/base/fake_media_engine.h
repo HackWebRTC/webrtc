@@ -230,6 +230,11 @@ class RtpHelper : public Base {
     num_network_route_changes_ = changes;
   }
 
+  void OnRtcpPacketReceived(rtc::CopyOnWriteBuffer* packet,
+                            int64_t packet_time_us) {
+    rtcp_packets_.push_back(std::string(packet->cdata<char>(), packet->size()));
+  }
+
  protected:
   bool MuteStream(uint32_t ssrc, bool mute) {
     if (!HasSendStream(ssrc) && ssrc != 0) {
@@ -270,10 +275,6 @@ class RtpHelper : public Base {
   virtual void OnPacketReceived(rtc::CopyOnWriteBuffer packet,
                                 int64_t packet_time_us) {
     rtp_packets_.push_back(std::string(packet.cdata<char>(), packet.size()));
-  }
-  virtual void OnRtcpReceived(rtc::CopyOnWriteBuffer packet,
-                              int64_t packet_time_us) {
-    rtcp_packets_.push_back(std::string(packet.cdata<char>(), packet.size()));
   }
   virtual void OnReadyToSend(bool ready) { ready_to_send_ = ready; }
 

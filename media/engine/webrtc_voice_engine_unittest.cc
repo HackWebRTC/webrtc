@@ -3275,8 +3275,6 @@ TEST_F(WebRtcVoiceEngineTestFake, DeliverAudioPacket_Call) {
   EXPECT_EQ(0, s->received_packets());
   channel_->OnPacketReceived(kPcmuPacket, /* packet_time_us */ -1);
   EXPECT_EQ(1, s->received_packets());
-  channel_->OnRtcpReceived(kRtcpPacket, /* packet_time_us */ -1);
-  EXPECT_EQ(2, s->received_packets());
 }
 
 // All receive channels should be associated with the first send channel,

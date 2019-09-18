@@ -89,6 +89,7 @@ JsepTransportController::JsepTransportController(
       config_(config) {
   // The |transport_observer| is assumed to be non-null.
   RTC_DCHECK(config_.transport_observer);
+  RTC_DCHECK(config_.rtcp_handler);
 }
 
 JsepTransportController::~JsepTransportController() {
@@ -1236,6 +1237,9 @@ RTCError JsepTransportController::MaybeCreateJsepTransport(
           std::move(rtp_dtls_transport), std::move(rtcp_dtls_transport),
           std::move(media_transport), std::move(datagram_transport));
 
+  jsep_transport->rtp_transport()->SignalRtcpPacketReceived.connect(
+      this, &JsepTransportController::OnRtcpPacketReceived_n);
+
   jsep_transport->SignalRtcpMuxActive.connect(
       this, &JsepTransportController::UpdateAggregateStates_n);
   jsep_transport->SignalMediaTransportStateChanged.connect(
@@ -1685,6 +1689,13 @@ void JsepTransportController::UpdateAggregateStates_n() {
                                  SignalIceGatheringState(new_gathering_state);
                                });
   }
+}
+
+void JsepTransportController::OnRtcpPacketReceived_n(
+    rtc::CopyOnWriteBuffer* packet,
+    int64_t packet_time_us) {
+  RTC_DCHECK(config_.rtcp_handler);
+  config_.rtcp_handler(*packet, packet_time_us);
 }
 
 void JsepTransportController::OnDtlsHandshakeError(

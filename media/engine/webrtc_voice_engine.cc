@@ -2099,15 +2099,6 @@ void WebRtcVoiceMediaChannel::OnPacketReceived(rtc::CopyOnWriteBuffer packet,
   RTC_DCHECK_NE(webrtc::PacketReceiver::DELIVERY_UNKNOWN_SSRC, delivery_result);
 }
 
-void WebRtcVoiceMediaChannel::OnRtcpReceived(rtc::CopyOnWriteBuffer packet,
-                                             int64_t packet_time_us) {
-  RTC_DCHECK(worker_thread_checker_.IsCurrent());
-
-  // Forward packet to Call as well.
-  call_->Receiver()->DeliverPacket(webrtc::MediaType::AUDIO, packet,
-                                   packet_time_us);
-}
-
 void WebRtcVoiceMediaChannel::OnNetworkRouteChanged(
     const std::string& transport_name,
     const rtc::NetworkRoute& network_route) {

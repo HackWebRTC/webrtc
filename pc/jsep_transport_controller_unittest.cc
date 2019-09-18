@@ -90,6 +90,8 @@ class JsepTransportControllerTest : public JsepTransportController::Observer,
       rtc::Thread* network_thread = rtc::Thread::Current(),
       cricket::PortAllocator* port_allocator = nullptr) {
     config.transport_observer = this;
+    config.rtcp_handler = [](const rtc::CopyOnWriteBuffer& packet,
+                             int64_t packet_time_us) { RTC_NOTREACHED(); };
     // The tests only works with |fake_transport_factory|;
     config.external_transport_factory = fake_transport_factory_.get();
     // TODO(zstein): Provide an AsyncResolverFactory once it is required.

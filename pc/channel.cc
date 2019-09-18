@@ -171,8 +171,6 @@ bool BaseChannel::ConnectToRtpTransport() {
   }
   rtp_transport_->SignalReadyToSend.connect(
       this, &BaseChannel::OnTransportReadyToSend);
-  rtp_transport_->SignalRtcpPacketReceived.connect(
-      this, &BaseChannel::OnRtcpPacketReceived);
 
   // If media transport is used, it's responsible for providing network
   // route changed callbacks.
@@ -193,7 +191,6 @@ void BaseChannel::DisconnectFromRtpTransport() {
   RTC_DCHECK(rtp_transport_);
   rtp_transport_->UnregisterRtpDemuxerSink(this);
   rtp_transport_->SignalReadyToSend.disconnect(this);
-  rtp_transport_->SignalRtcpPacketReceived.disconnect(this);
   rtp_transport_->SignalNetworkRouteChanged.disconnect(this);
   rtp_transport_->SignalWritableState.disconnect(this);
   rtp_transport_->SignalSentPacket.disconnect(this);
@@ -461,12 +458,40 @@ bool BaseChannel::SendPacket(bool rtcp,
 void BaseChannel::OnRtpPacket(const webrtc::RtpPacketReceived& parsed_packet) {
   // Take packet time from the |parsed_packet|.
   // RtpPacketReceived.arrival_time_ms = (timestamp_us + 500) / 1000;
-  int64_t timestamp_us = -1;
+  int64_t packet_time_us = -1;
   if (parsed_packet.arrival_time_ms() > 0) {
-    timestamp_us = parsed_packet.arrival_time_ms() * 1000;
+    packet_time_us = parsed_packet.arrival_time_ms() * 1000;
   }
 
-  OnPacketReceived(/*rtcp=*/false, parsed_packet.Buffer(), timestamp_us);
+  if (!has_received_packet_) {
+    has_received_packet_ = true;
+    signaling_thread()->Post(RTC_FROM_HERE, this, MSG_FIRSTPACKETRECEIVED);
+  }
+
+  if (!srtp_active() && srtp_required_) {
+    // Our session description indicates that SRTP is required, but we got a
+    // packet before our SRTP filter is active. This means either that
+    // a) we got SRTP packets before we received the SDES keys, in which case
+    //    we can't decrypt it anyway, or
+    // b) we got SRTP packets before DTLS completed on both the RTP and RTCP
+    //    transports, so we haven't yet extracted keys, even if DTLS did
+    //    complete on the transport that the packets are being sent on. It's
+    //    really good practice to wait for both RTP and RTCP to be good to go
+    //    before sending  media, to prevent weird failure modes, so it's fine
+    //    for us to just eat packets here. This is all sidestepped if RTCP mux
+    //    is used anyway.
+    RTC_LOG(LS_WARNING) << "Can't process incoming RTP packet when "
+                           "SRTP is inactive and crypto is required";
+    return;
+  }
+
+  auto packet_buffer = parsed_packet.Buffer();
+
+  invoker_.AsyncInvoke<void>(
+      RTC_FROM_HERE, worker_thread_, [this, packet_buffer, packet_time_us] {
+        RTC_DCHECK(worker_thread_->IsCurrent());
+        media_channel_->OnPacketReceived(packet_buffer, packet_time_us);
+      });
 }
 
 void BaseChannel::UpdateRtpHeaderExtensionMap(
@@ -490,50 +515,6 @@ bool BaseChannel::RegisterRtpDemuxerSink() {
   return network_thread_->Invoke<bool>(RTC_FROM_HERE, [this] {
     return rtp_transport_->RegisterRtpDemuxerSink(demuxer_criteria_, this);
   });
-}
-
-void BaseChannel::OnRtcpPacketReceived(rtc::CopyOnWriteBuffer* packet,
-                                       int64_t packet_time_us) {
-  OnPacketReceived(/*rtcp=*/true, *packet, packet_time_us);
-}
-
-void BaseChannel::OnPacketReceived(bool rtcp,
-                                   const rtc::CopyOnWriteBuffer& packet,
-                                   int64_t packet_time_us) {
-  if (!has_received_packet_ && !rtcp) {
-    has_received_packet_ = true;
-    signaling_thread()->Post(RTC_FROM_HERE, this, MSG_FIRSTPACKETRECEIVED);
-  }
-
-  if (!srtp_active() && srtp_required_) {
-    // Our session description indicates that SRTP is required, but we got a
-    // packet before our SRTP filter is active. This means either that
-    // a) we got SRTP packets before we received the SDES keys, in which case
-    //    we can't decrypt it anyway, or
-    // b) we got SRTP packets before DTLS completed on both the RTP and RTCP
-    //    transports, so we haven't yet extracted keys, even if DTLS did
-    //    complete on the transport that the packets are being sent on. It's
-    //    really good practice to wait for both RTP and RTCP to be good to go
-    //    before sending  media, to prevent weird failure modes, so it's fine
-    //    for us to just eat packets here. This is all sidestepped if RTCP mux
-    //    is used anyway.
-    RTC_LOG(LS_WARNING)
-        << "Can't process incoming "
-        << RtpPacketTypeToString(rtcp ? RtpPacketType::kRtcp
-                                      : RtpPacketType::kRtp)
-        << " packet when SRTP is inactive and crypto is required";
-    return;
-  }
-
-  invoker_.AsyncInvoke<void>(
-      RTC_FROM_HERE, worker_thread_, [this, rtcp, packet, packet_time_us] {
-        RTC_DCHECK(worker_thread_->IsCurrent());
-        if (rtcp) {
-          media_channel_->OnRtcpReceived(packet, packet_time_us);
-        } else {
-          media_channel_->OnPacketReceived(packet, packet_time_us);
-        }
-      });
 }
 
 void BaseChannel::EnableMedia_w() {

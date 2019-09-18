@@ -1077,6 +1077,25 @@ bool PeerConnection::Initialize(
                               ? *configuration.crypto_options
                               : options.crypto_options;
   config.transport_observer = this;
+  // It's safe to pass |this| and using |rtcp_invoker_| and the |call_| pointer
+  // since the  JsepTransportController instance is owned by this PeerConnection
+  // instance and is destroyed before both |rtcp_invoker_| and the |call_|
+  // pointer.
+  config.rtcp_handler = [this](const rtc::CopyOnWriteBuffer& packet,
+                               int64_t packet_time_us) {
+    RTC_DCHECK_RUN_ON(network_thread());
+    rtcp_invoker_.AsyncInvoke<void>(
+        RTC_FROM_HERE, worker_thread(), [this, packet, packet_time_us] {
+          RTC_DCHECK_RUN_ON(worker_thread());
+          // |call_| is reset on the worker thread in the PeerConnection
+          // destructor, so we check that it's still valid before propagating
+          // the packet.
+          if (call_) {
+            call_->Receiver()->DeliverPacket(MediaType::ANY, packet,
+                                             packet_time_us);
+          }
+        });
+  };
   config.event_log = event_log_ptr_;
 #if defined(ENABLE_EXTERNAL_AUTH)
   config.enable_external_auth = true;

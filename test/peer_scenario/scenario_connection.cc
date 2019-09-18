@@ -48,8 +48,6 @@ class ScenarioIceConnectionImpl : public ScenarioIceConnection,
       DataChannelTransportInterface* data_channel_transport,
       JsepTransportController::NegotiationState negotiation_state) override;
 
-  void OnRtcpPacketReceived(rtc::CopyOnWriteBuffer* packet_ptr,
-                            int64_t packet_time_us);
   void OnRtpPacket(const RtpPacketReceived& packet) override;
   void OnCandidates(const std::string& mid,
                     const std::vector<cricket::Candidate>& candidates);
@@ -131,6 +129,11 @@ JsepTransportController::Config ScenarioIceConnectionImpl::CreateJsepConfig() {
   config.transport_observer = this;
   config.bundle_policy =
       PeerConnectionInterface::BundlePolicy::kBundlePolicyMaxBundle;
+  config.rtcp_handler = [this](const rtc::CopyOnWriteBuffer& packet,
+                               int64_t packet_time_us) {
+    RTC_DCHECK_RUN_ON(network_thread_);
+    observer_->OnPacketReceived(packet);
+  };
   return config;
 }
 
@@ -210,27 +213,17 @@ bool ScenarioIceConnectionImpl::OnTransportChanged(
     JsepTransportController::NegotiationState negotiation_state) {
   RTC_DCHECK_RUN_ON(network_thread_);
   if (rtp_transport == nullptr) {
-    rtp_transport_->SignalRtcpPacketReceived.disconnect(this);
     rtp_transport_->UnregisterRtpDemuxerSink(this);
   } else {
     RTC_DCHECK(rtp_transport_ == nullptr || rtp_transport_ == rtp_transport);
     if (rtp_transport_ != rtp_transport) {
       rtp_transport_ = rtp_transport;
-      rtp_transport_->SignalRtcpPacketReceived.connect(
-          this, &ScenarioIceConnectionImpl::OnRtcpPacketReceived);
     }
     RtpDemuxerCriteria criteria;
     criteria.mid = mid;
     rtp_transport_->RegisterRtpDemuxerSink(criteria, this);
   }
   return true;
-}
-
-void ScenarioIceConnectionImpl::OnRtcpPacketReceived(
-    rtc::CopyOnWriteBuffer* packet,
-    int64_t packet_time_us) {
-  RTC_DCHECK_RUN_ON(network_thread_);
-  observer_->OnPacketReceived(*packet);
 }
 
 void ScenarioIceConnectionImpl::OnRtpPacket(const RtpPacketReceived& packet) {

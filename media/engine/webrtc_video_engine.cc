@@ -1644,17 +1644,6 @@ void WebRtcVideoChannel::BackfillBufferedPackets(
                    << " unknown: " << delivery_unknown_ssrc_cnt;
 }
 
-void WebRtcVideoChannel::OnRtcpReceived(rtc::CopyOnWriteBuffer packet,
-                                        int64_t packet_time_us) {
-  RTC_DCHECK_RUN_ON(&thread_checker_);
-  // TODO(pbos): Check webrtc::PacketReceiver::DELIVERY_OK once we deliver
-  // for both audio and video on the same path. Since BundleFilter doesn't
-  // filter RTCP anymore incoming RTCP packets could've been going to audio (so
-  // logging failures spam the log).
-  call_->Receiver()->DeliverPacket(webrtc::MediaType::VIDEO, packet,
-                                   packet_time_us);
-}
-
 void WebRtcVideoChannel::OnReadyToSend(bool ready) {
   RTC_DCHECK_RUN_ON(&thread_checker_);
   RTC_LOG(LS_VERBOSE) << "OnReadyToSend: " << (ready ? "Ready." : "Not ready.");

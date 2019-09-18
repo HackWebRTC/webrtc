@@ -259,15 +259,7 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
       rtc::Thread* network_thread,
       std::unique_ptr<typename T::MediaChannel> ch,
       webrtc::RtpTransportInternal* rtp_transport,
-      int flags) {
-    rtc::Thread* signaling_thread = rtc::Thread::Current();
-    auto channel = std::make_unique<typename T::Channel>(
-        worker_thread, network_thread, signaling_thread, std::move(ch),
-        cricket::CN_AUDIO, (flags & DTLS) != 0, webrtc::CryptoOptions(),
-        &ssrc_generator_);
-    channel->Init_w(rtp_transport, webrtc::MediaTransportConfig());
-    return channel;
-  }
+      int flags);
 
   std::unique_ptr<webrtc::RtpTransportInternal> CreateRtpTransportBasedOnFlags(
       rtc::PacketTransportInternal* rtp_packet_transport,
@@ -1546,6 +1538,25 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
 };
 
 template <>
+std::unique_ptr<cricket::VoiceChannel> ChannelTest<VoiceTraits>::CreateChannel(
+    rtc::Thread* worker_thread,
+    rtc::Thread* network_thread,
+    std::unique_ptr<cricket::FakeVoiceMediaChannel> ch,
+    webrtc::RtpTransportInternal* rtp_transport,
+    int flags) {
+  rtp_transport->SignalRtcpPacketReceived.connect(
+      static_cast<cricket::RtpHelper<cricket::VoiceMediaChannel>*>(ch.get()),
+      &cricket::RtpHelper<cricket::VoiceMediaChannel>::OnRtcpPacketReceived);
+  rtc::Thread* signaling_thread = rtc::Thread::Current();
+  auto channel = std::make_unique<cricket::VoiceChannel>(
+      worker_thread, network_thread, signaling_thread, std::move(ch),
+      cricket::CN_AUDIO, (flags & DTLS) != 0, webrtc::CryptoOptions(),
+      &ssrc_generator_);
+  channel->Init_w(rtp_transport, webrtc::MediaTransportConfig());
+  return channel;
+}
+
+template <>
 void ChannelTest<VoiceTraits>::CreateContent(
     int flags,
     const cricket::AudioCodec& audio_codec,
@@ -1619,6 +1630,9 @@ std::unique_ptr<cricket::VideoChannel> ChannelTest<VideoTraits>::CreateChannel(
     std::unique_ptr<cricket::FakeVideoMediaChannel> ch,
     webrtc::RtpTransportInternal* rtp_transport,
     int flags) {
+  rtp_transport->SignalRtcpPacketReceived.connect(
+      static_cast<cricket::RtpHelper<cricket::VideoMediaChannel>*>(ch.get()),
+      &cricket::RtpHelper<cricket::VideoMediaChannel>::OnRtcpPacketReceived);
   rtc::Thread* signaling_thread = rtc::Thread::Current();
   auto channel = std::make_unique<cricket::VideoChannel>(
       worker_thread, network_thread, signaling_thread, std::move(ch),
@@ -1936,10 +1950,6 @@ TEST_F(VoiceChannelDoubleThreadTest, TestSendPrAnswer) {
 
 TEST_F(VoiceChannelDoubleThreadTest, TestReceivePrAnswer) {
   Base::TestReceivePrAnswer();
-}
-
-TEST_F(VoiceChannelDoubleThreadTest, TestFlushRtcp) {
-  Base::TestFlushRtcp();
 }
 
 TEST_F(VoiceChannelDoubleThreadTest, TestOnTransportReadyToSend) {
@@ -2382,10 +2392,6 @@ TEST_F(VideoChannelDoubleThreadTest, TestReceivePrAnswer) {
   Base::TestReceivePrAnswer();
 }
 
-TEST_F(VideoChannelDoubleThreadTest, TestFlushRtcp) {
-  Base::TestFlushRtcp();
-}
-
 TEST_F(VideoChannelDoubleThreadTest, SendBundleToBundle) {
   Base::SendBundleToBundle(kVideoPts, arraysize(kVideoPts), false, false);
 }
@@ -2438,6 +2444,9 @@ std::unique_ptr<cricket::RtpDataChannel> ChannelTest<DataTraits>::CreateChannel(
     std::unique_ptr<cricket::FakeDataMediaChannel> ch,
     webrtc::RtpTransportInternal* rtp_transport,
     int flags) {
+  rtp_transport->SignalRtcpPacketReceived.connect(
+      static_cast<cricket::RtpHelper<cricket::DataMediaChannel>*>(ch.get()),
+      &cricket::RtpHelper<cricket::DataMediaChannel>::OnRtcpPacketReceived);
   rtc::Thread* signaling_thread = rtc::Thread::Current();
   auto channel = std::make_unique<cricket::RtpDataChannel>(
       worker_thread, network_thread, signaling_thread, std::move(ch),
