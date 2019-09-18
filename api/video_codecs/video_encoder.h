@@ -239,9 +239,6 @@ class RTC_EXPORT VideoEncoder {
     // |bitrate.get_sum_bps()|, but may be higher if the application is not
     // network constrained.
     DataRate bandwidth_allocation;
-
-    bool operator==(const RateControlParameters& rhs) const;
-    bool operator!=(const RateControlParameters& rhs) const;
   };
 
   struct LossNotification {
