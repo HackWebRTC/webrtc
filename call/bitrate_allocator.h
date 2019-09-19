@@ -89,18 +89,13 @@ class BitrateAllocator : public BitrateAllocatorInterface {
     virtual ~LimitObserver() = default;
   };
 
-  BitrateAllocator(Clock* clock, LimitObserver* limit_observer);
+  explicit BitrateAllocator(LimitObserver* limit_observer);
   ~BitrateAllocator() override;
 
   void UpdateStartRate(uint32_t start_rate_bps);
 
   // Allocate target_bitrate across the registered BitrateAllocatorObservers.
-  void OnNetworkChanged(uint32_t target_bitrate_bps,
-                        uint32_t stable_target_bitrate_bps,
-                        uint32_t bandwidth_bps,
-                        uint8_t fraction_loss,
-                        int64_t rtt,
-                        int64_t bwe_period_ms);
+  void OnNetworkEstimateChanged(TargetTransferRate msg);
 
   // Set the configuration used by the bandwidth management.
   // |observer| updates bitrates if already in use.
@@ -211,7 +206,6 @@ class BitrateAllocator : public BitrateAllocatorInterface {
   int64_t last_bwe_period_ms_ RTC_GUARDED_BY(&sequenced_checker_);
   // Number of mute events based on too low BWE, not network up/down.
   int num_pause_events_ RTC_GUARDED_BY(&sequenced_checker_);
-  Clock* const clock_ RTC_GUARDED_BY(&sequenced_checker_);
   int64_t last_bwe_log_time_ RTC_GUARDED_BY(&sequenced_checker_);
   BitrateAllocationLimits current_limits_ RTC_GUARDED_BY(&sequenced_checker_);
   const uint8_t transmission_max_bitrate_multiplier_;

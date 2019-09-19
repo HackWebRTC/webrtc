@@ -21,6 +21,7 @@
 #include "api/units/time_delta.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/numerics/safe_minmax.h"
 #include "system_wrappers/include/clock.h"
 #include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
@@ -51,7 +52,7 @@ double MediaRatio(uint32_t allocated_bitrate, uint32_t protection_bitrate) {
 
 }  // namespace
 
-BitrateAllocator::BitrateAllocator(Clock* clock, LimitObserver* limit_observer)
+BitrateAllocator::BitrateAllocator(LimitObserver* limit_observer)
     : limit_observer_(limit_observer),
       last_target_bps_(0),
       last_stable_target_bps_(0),
@@ -61,7 +62,6 @@ BitrateAllocator::BitrateAllocator(Clock* clock, LimitObserver* limit_observer)
       last_rtt_(0),
       last_bwe_period_ms_(1000),
       num_pause_events_(0),
-      clock_(clock),
       last_bwe_log_time_(0),
       transmission_max_bitrate_multiplier_(
           GetTransmissionMaxBitrateMultiplier()) {
@@ -92,33 +92,32 @@ uint8_t BitrateAllocator::GetTransmissionMaxBitrateMultiplier() {
   return kTransmissionMaxBitrateMultiplier;
 }
 
-void BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,
-                                        uint32_t stable_target_bitrate_bps,
-                                        uint32_t bandwidth_bps,
-                                        uint8_t fraction_loss,
-                                        int64_t rtt,
-                                        int64_t bwe_period_ms) {
+void BitrateAllocator::OnNetworkEstimateChanged(TargetTransferRate msg) {
   RTC_DCHECK_RUN_ON(&sequenced_checker_);
-  last_target_bps_ = target_bitrate_bps;
-  last_bandwidth_bps_ = bandwidth_bps;
-  last_stable_target_bps_ = stable_target_bitrate_bps;
+  last_target_bps_ = msg.target_rate.bps();
+  last_bandwidth_bps_ = msg.network_estimate.bandwidth.bps();
+  last_stable_target_bps_ = msg.stable_target_rate.bps();
   last_non_zero_bitrate_bps_ =
-      target_bitrate_bps > 0 ? target_bitrate_bps : last_non_zero_bitrate_bps_;
-  last_fraction_loss_ = fraction_loss;
-  last_rtt_ = rtt;
-  last_bwe_period_ms_ = bwe_period_ms;
+      last_target_bps_ > 0 ? last_target_bps_ : last_non_zero_bitrate_bps_;
+
+  int loss_ratio_255 = msg.network_estimate.loss_rate_ratio * 255;
+  last_fraction_loss_ =
+      rtc::dchecked_cast<uint8_t>(rtc::SafeClamp(loss_ratio_255, 0, 255));
+  last_rtt_ = msg.network_estimate.round_trip_time.ms();
+  last_bwe_period_ms_ = msg.network_estimate.bwe_period.ms();
 
   // Periodically log the incoming BWE.
-  int64_t now = clock_->TimeInMilliseconds();
+  int64_t now = msg.at_time.ms();
   if (now > last_bwe_log_time_ + kBweLogIntervalMs) {
-    RTC_LOG(LS_INFO) << "Current BWE " << target_bitrate_bps;
+    RTC_LOG(LS_INFO) << "Current BWE " << last_target_bps_;
     last_bwe_log_time_ = now;
   }
 
-  ObserverAllocation allocation = AllocateBitrates(target_bitrate_bps);
-  ObserverAllocation bandwidth_allocation = AllocateBitrates(bandwidth_bps);
+  ObserverAllocation allocation = AllocateBitrates(last_target_bps_);
+  ObserverAllocation bandwidth_allocation =
+      AllocateBitrates(last_bandwidth_bps_);
   ObserverAllocation stable_bitrate_allocation =
-      AllocateBitrates(stable_target_bitrate_bps);
+      AllocateBitrates(last_stable_target_bps_);
 
   for (auto& config : allocatable_tracks_) {
     uint32_t allocated_bitrate = allocation[config.observer];
@@ -135,7 +134,7 @@ void BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,
     uint32_t protection_bitrate = config.observer->OnBitrateUpdated(update);
 
     if (allocated_bitrate == 0 && config.allocated_bitrate_bps > 0) {
-      if (target_bitrate_bps > 0)
+      if (last_target_bps_ > 0)
         ++num_pause_events_;
       // The protection bitrate is an estimate based on the ratio between media
       // and protection used before this observer was muted.
@@ -144,11 +143,11 @@ void BitrateAllocator::OnNetworkChanged(uint32_t target_bitrate_bps,
       RTC_LOG(LS_INFO) << "Pausing observer " << config.observer
                        << " with configured min bitrate "
                        << config.config.min_bitrate_bps
-                       << " and current estimate of " << target_bitrate_bps
+                       << " and current estimate of " << last_target_bps_
                        << " and protection bitrate "
                        << predicted_protection_bps;
     } else if (allocated_bitrate > 0 && config.allocated_bitrate_bps == 0) {
-      if (target_bitrate_bps > 0)
+      if (last_target_bps_ > 0)
         ++num_pause_events_;
       RTC_LOG(LS_INFO) << "Resuming observer " << config.observer
                        << ", configured min bitrate "

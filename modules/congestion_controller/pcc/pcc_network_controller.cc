@@ -101,6 +101,7 @@ NetworkControlUpdate PccNetworkController::CreateRateUpdate(
 
   // Set up target rate to encoder.
   TargetTransferRate target_rate_msg;
+  target_rate_msg.at_time = at_time;
   target_rate_msg.network_estimate.at_time = at_time;
   target_rate_msg.network_estimate.round_trip_time = rtt_tracker_.GetRtt();
   target_rate_msg.network_estimate.bandwidth = bandwidth_estimate_;

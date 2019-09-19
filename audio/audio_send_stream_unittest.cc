@@ -141,7 +141,7 @@ struct ConfigHelper {
         task_queue_factory_(CreateDefaultTaskQueueFactory()),
         stream_config_(/*send_transport=*/nullptr, MediaTransportConfig()),
         audio_processing_(new rtc::RefCountedObject<MockAudioProcessing>()),
-        bitrate_allocator_(&clock_, &limit_observer_),
+        bitrate_allocator_(&limit_observer_),
         worker_queue_(task_queue_factory_->CreateTaskQueue(
             "ConfigHelper_worker_queue",
             TaskQueueFactory::Priority::NORMAL)),

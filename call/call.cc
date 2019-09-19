@@ -48,7 +48,6 @@
 #include "rtc_base/constructor_magic.h"
 #include "rtc_base/location.h"
 #include "rtc_base/logging.h"
-#include "rtc_base/numerics/safe_minmax.h"
 #include "rtc_base/strings/string_builder.h"
 #include "rtc_base/synchronization/rw_lock_wrapper.h"
 #include "rtc_base/synchronization/sequence_checker.h"
@@ -442,7 +441,7 @@ Call::Call(Clock* clock,
       num_cpu_cores_(CpuInfo::DetectNumberOfCores()),
       module_process_thread_(std::move(module_process_thread)),
       call_stats_(new CallStats(clock_, module_process_thread_.get())),
-      bitrate_allocator_(new BitrateAllocator(clock_, this)),
+      bitrate_allocator_(new BitrateAllocator(this)),
       config_(config),
       audio_network_state_(kNetworkDown),
       video_network_state_(kNetworkDown),
@@ -1064,24 +1063,15 @@ void Call::OnStartRateUpdate(DataRate start_rate) {
 void Call::OnTargetTransferRate(TargetTransferRate msg) {
   RTC_DCHECK(network_queue()->IsCurrent());
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
-
-  uint32_t target_bitrate_bps = msg.target_rate.bps();
-  int loss_ratio_255 = msg.network_estimate.loss_rate_ratio * 255;
-  uint8_t fraction_loss =
-      rtc::dchecked_cast<uint8_t>(rtc::SafeClamp(loss_ratio_255, 0, 255));
-  int64_t rtt_ms = msg.network_estimate.round_trip_time.ms();
-  int64_t probing_interval_ms = msg.network_estimate.bwe_period.ms();
-  uint32_t bandwidth_bps = msg.network_estimate.bandwidth.bps();
-  uint32_t stable_target_rate_bps = msg.stable_target_rate.bps();
   {
     rtc::CritScope cs(&last_bandwidth_bps_crit_);
-    last_bandwidth_bps_ = bandwidth_bps;
+    last_bandwidth_bps_ = msg.network_estimate.bandwidth.bps();
   }
+
+  uint32_t target_bitrate_bps = msg.target_rate.bps();
   // For controlling the rate of feedback messages.
   receive_side_cc_.OnBitrateChanged(target_bitrate_bps);
-  bitrate_allocator_->OnNetworkChanged(
-      target_bitrate_bps, stable_target_rate_bps, bandwidth_bps, fraction_loss,
-      rtt_ms, probing_interval_ms);
+  bitrate_allocator_->OnNetworkEstimateChanged(msg);
 
   // Ignore updates if bitrate is zero (the aggregate network state is down).
   if (target_bitrate_bps == 0) {
