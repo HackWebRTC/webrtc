@@ -538,16 +538,8 @@ TEST(IsacFixTest, Kenny) {
 
   /* Initialize the ISAC and BN structs */
   if (testNum != 8) {
-    if (1) {
-      err = WebRtcIsacfix_Create(&ISAC_main_inst);
-    } else {
-      /* Test the Assign functions */
-      int sss;
-      void* ppp;
-      err = WebRtcIsacfix_AssignSize(&sss);
-      ppp = malloc(sss);
-      err = WebRtcIsacfix_Assign(&ISAC_main_inst, ppp);
-    }
+    err = WebRtcIsacfix_Create(&ISAC_main_inst);
+
     /* Error check */
     if (err < 0) {
       printf("\n\n Error in create.\n\n");

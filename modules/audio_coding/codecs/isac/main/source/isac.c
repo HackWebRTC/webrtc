@@ -207,62 +207,6 @@ static void GetSendBandwidthInfo(ISACMainStruct* instISAC,
 
 
 /****************************************************************************
- * WebRtcIsac_AssignSize(...)
- *
- * This function returns the size of the ISAC instance, so that the instance
- * can be created out side iSAC.
- *
- * Output:
- *        - sizeinbytes       : number of bytes needed to allocate for the
- *                              instance.
- *
- * Return value               : 0 - Ok
- *                             -1 - Error
- */
-int16_t WebRtcIsac_AssignSize(int* sizeInBytes) {
-  *sizeInBytes = sizeof(ISACMainStruct) * 2 / sizeof(int16_t);
-  return 0;
-}
-
-
-/****************************************************************************
- * WebRtcIsac_Assign(...)
- *
- * This function assigns the memory already created to the ISAC instance.
- *
- * Input:
- *        - ISAC_main_inst    : address of the pointer to the coder instance.
- *        - instISAC_Addr     : the already allocated memory, where we put the
- *                              iSAC structure.
- *
- * Return value               : 0 - Ok
- *                             -1 - Error
- */
-int16_t WebRtcIsac_Assign(ISACStruct** ISAC_main_inst,
-                          void* instISAC_Addr) {
-  if (instISAC_Addr != NULL) {
-    ISACMainStruct* instISAC = (ISACMainStruct*)instISAC_Addr;
-    instISAC->errorCode = 0;
-    instISAC->initFlag = 0;
-
-    /* Assign the address. */
-    *ISAC_main_inst = (ISACStruct*)instISAC_Addr;
-
-    /* Default is wideband. */
-    instISAC->encoderSamplingRateKHz = kIsacWideband;
-    instISAC->decoderSamplingRateKHz = kIsacWideband;
-    instISAC->bandwidthKHz           = isac8kHz;
-    instISAC->in_sample_rate_hz = 16000;
-
-    WebRtcIsac_InitTransform(&instISAC->transform_tables);
-    return 0;
-  } else {
-    return -1;
-  }
-}
-
-
-/****************************************************************************
  * WebRtcIsac_Create(...)
  *
  * This function creates an ISAC instance, which will contain the state

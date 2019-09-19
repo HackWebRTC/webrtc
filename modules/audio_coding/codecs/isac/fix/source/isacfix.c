@@ -48,45 +48,6 @@ static void InitializeDecoderBitstream(size_t stream_size_bytes,
   memset(bitstream->stream, 0, sizeof(bitstream->stream));
 }
 
-/**************************************************************************
- * WebRtcIsacfix_AssignSize(...)
- *
- * Functions used when malloc is not allowed
- * Returns number of bytes needed to allocate for iSAC struct.
- *
- */
-
-int16_t WebRtcIsacfix_AssignSize(int *sizeinbytes) {
-  *sizeinbytes=sizeof(ISACFIX_SubStruct)*2/sizeof(int16_t);
-  return(0);
-}
-
-/***************************************************************************
- * WebRtcIsacfix_Assign(...)
- *
- * Functions used when malloc is not allowed
- * Place struct at given address
- *
- * If successful, Return 0, else Return -1
- */
-
-int16_t WebRtcIsacfix_Assign(ISACFIX_MainStruct **inst, void *ISACFIX_inst_Addr) {
-  if (ISACFIX_inst_Addr!=NULL) {
-    ISACFIX_SubStruct* self = ISACFIX_inst_Addr;
-    *inst = (ISACFIX_MainStruct*)self;
-    self->errorcode = 0;
-    self->initflag = 0;
-    self->ISACenc_obj.SaveEnc_ptr = NULL;
-    WebRtcIsacfix_InitBandwidthEstimator(&self->bwestimator_obj);
-    return(0);
-  } else {
-    return(-1);
-  }
-}
-
-
-#ifndef ISACFIX_NO_DYNAMIC_MEM
-
 /****************************************************************************
  * WebRtcIsacfix_Create(...)
  *
@@ -145,10 +106,6 @@ int16_t WebRtcIsacfix_CreateInternal(ISACFIX_MainStruct *ISAC_main_inst)
     return(-1);
   }
 }
-
-
-#endif
-
 
 
 /****************************************************************************

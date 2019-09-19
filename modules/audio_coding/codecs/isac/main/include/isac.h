@@ -22,42 +22,6 @@ extern "C" {
 #endif
 
 /******************************************************************************
- * WebRtcIsac_AssignSize(...)
- *
- * This function returns the size of the ISAC instance, so that the instance
- * can be created outside iSAC.
- *
- * Input:
- *        - samplingRate      : sampling rate of the input/output audio.
- *
- * Output:
- *        - sizeinbytes       : number of bytes needed to allocate for the
- *                              instance.
- *
- * Return value               : 0 - Ok
- *                             -1 - Error
- */
-
-int16_t WebRtcIsac_AssignSize(int* sizeinbytes);
-
-/******************************************************************************
- * WebRtcIsac_Assign(...)
- *
- * This function assignes the memory already created to the ISAC instance.
- *
- * Input:
- *        - *ISAC_main_inst   : a pointer to the coder instance.
- *        - samplingRate      : sampling rate of the input/output audio.
- *        - ISAC_inst_Addr    : the already allocated memory, where we put the
- *                              iSAC structure.
- *
- * Return value               : 0 - Ok
- *                             -1 - Error
- */
-
-int16_t WebRtcIsac_Assign(ISACStruct** ISAC_main_inst, void* ISAC_inst_Addr);
-
-/******************************************************************************
  * WebRtcIsac_Create(...)
  *
  * This function creates an ISAC instance, which will contain the state

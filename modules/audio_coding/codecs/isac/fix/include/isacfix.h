@@ -23,34 +23,6 @@ typedef struct {
 extern "C" {
 #endif
 
-/**************************************************************************
- * WebRtcIsacfix_AssignSize(...)
- *
- *  Functions used when malloc is not allowed
- *  Output the number of bytes needed to allocate for iSAC struct.
- *
- */
-
-int16_t WebRtcIsacfix_AssignSize(int* sizeinbytes);
-
-/**************************************************************************
- * WebRtcIsacfix_Assign(...)
- *
- * Functions used when malloc is not allowed, it
- * places a struct at the given address.
- *
- * Input:
- *      - *ISAC_main_inst   : a pointer to the coder instance.
- *      - ISACFIX_inst_Addr : address of the memory where a space is
- *                            for iSAC structure.
- *
- * Return value             : 0 - Ok
- *                           -1 - Error
- */
-
-int16_t WebRtcIsacfix_Assign(ISACFIX_MainStruct** inst,
-                             void* ISACFIX_inst_Addr);
-
 /****************************************************************************
  * WebRtcIsacfix_Create(...)
  *
