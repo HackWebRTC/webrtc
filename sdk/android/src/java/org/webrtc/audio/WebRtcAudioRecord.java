@@ -12,9 +12,11 @@ package org.webrtc.audio;
 
 import android.annotation.TargetApi;
 import android.content.Context;
+import android.media.AudioDeviceInfo;
 import android.media.AudioFormat;
 import android.media.AudioManager;
 import android.media.AudioRecord;
+import android.media.AudioRecordingConfiguration;
 import android.media.MediaRecorder.AudioSource;
 import android.os.Build;
 import android.os.Process;
@@ -22,6 +24,12 @@ import android.support.annotation.Nullable;
 import java.lang.System;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import org.webrtc.CalledByNative;
 import org.webrtc.Logging;
@@ -61,6 +69,11 @@ class WebRtcAudioRecord {
   // Indicates AudioRecord has stopped recording audio.
   private static final int AUDIO_RECORD_STOP = 1;
 
+  // Time to wait before checking recording status after start has been called. Tests have
+  // shown that the result can sometimes be invalid (our own status might be missing) if we check
+  // directly after start.
+  private static final int CHECK_REC_STATUS_DELAY_MS = 100;
+
   private final Context context;
   private final AudioManager audioManager;
   private final int audioSource;
@@ -75,7 +88,12 @@ class WebRtcAudioRecord {
   private @Nullable AudioRecord audioRecord;
   private @Nullable AudioRecordThread audioThread;
 
+  private @Nullable ScheduledExecutorService executor;
+  private @Nullable ScheduledFuture<String> future;
+
   private volatile boolean microphoneMute;
+  private boolean audioSourceMatchesRecordingSession;
+  private boolean audioConfigHasBeenVerified;
   private byte[] emptyBytes;
 
   private final @Nullable AudioRecordErrorCallback errorCallback;
@@ -185,6 +203,7 @@ class WebRtcAudioRecord {
     this.audioSamplesReadyCallback = audioSamplesReadyCallback;
     this.isAcousticEchoCancelerSupported = isAcousticEchoCancelerSupported;
     this.isNoiseSuppressorSupported = isNoiseSuppressorSupported;
+    Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
   }
 
   @CalledByNative
@@ -200,6 +219,19 @@ class WebRtcAudioRecord {
   @CalledByNative
   boolean isNoiseSuppressorSupported() {
     return isNoiseSuppressorSupported;
+  }
+
+  @CalledByNative
+  // Returns true if verifyAudioConfig() succeeds. This value is set after a specific delay when
+  // startRecording() has been called. Hence, should preferably be called in combination with
+  // stopRecording() to ensure that it has been set properly. |audioConfigHasBeenChecked| is
+  // enabled in WebRtcAudioRecord to ensure that the returned value is valid.
+  boolean isAudioSourceMatchingRecordingSession() {
+    if (!audioConfigHasBeenVerified) {
+      Logging.w(TAG, "Audio configuration has not yet been verified");
+      return false;
+    }
+    return audioSourceMatchesRecordingSession;
   }
 
   @CalledByNative
@@ -277,6 +309,16 @@ class WebRtcAudioRecord {
     effects.enable(audioRecord.getAudioSessionId());
     logMainParameters();
     logMainParametersExtended();
+    // Check number of active recording sessions. Should be zero but we have seen conflict cases
+    // and adding a log for it can help us figure out details about conflicting sessions.
+    final int numActiveRecordingSessions =
+        logRecordingConfigurations(false /* verifyAudioConfig */);
+    if (numActiveRecordingSessions != 0) {
+      // Log the conflict as a warning since initialization did in fact succeed. Most likely, the
+      // upcoming call to startRecording() will fail under these conditions.
+      Logging.w(
+          TAG, "Potential microphone conflict. Active sessions: " + numActiveRecordingSessions);
+    }
     return framesPerBuffer;
   }
 
@@ -300,6 +342,7 @@ class WebRtcAudioRecord {
     }
     audioThread = new AudioRecordThread("AudioRecordJavaThread");
     audioThread.start();
+    scheduleLogRecordingConfigurationsTask();
     return true;
   }
 
@@ -307,6 +350,17 @@ class WebRtcAudioRecord {
   private boolean stopRecording() {
     Logging.d(TAG, "stopRecording");
     assertTrue(audioThread != null);
+    if (future != null) {
+      if (!future.isDone()) {
+        // Might be needed if the client calls startRecording(), stopRecording() back-to-back.
+        future.cancel(true /* mayInterruptIfRunning */);
+      }
+      future = null;
+    }
+    if (executor != null) {
+      executor.shutdownNow();
+      executor = null;
+    }
     audioThread.stopThread();
     if (!ThreadUtils.joinUninterruptibly(audioThread, AUDIO_RECORD_THREAD_JOIN_TIMEOUT_MS)) {
       Logging.e(TAG, "Join of AudioRecordJavaThread timed out");
@@ -347,13 +401,43 @@ class WebRtcAudioRecord {
             + "sample rate: " + audioRecord.getSampleRate());
   }
 
+  @TargetApi(Build.VERSION_CODES.M)
   private void logMainParametersExtended() {
-    if (Build.VERSION.SDK_INT >= 23) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
       Logging.d(TAG,
           "AudioRecord: "
               // The frame count of the native AudioRecord buffer.
               + "buffer size in frames: " + audioRecord.getBufferSizeInFrames());
     }
+  }
+
+  @TargetApi(Build.VERSION_CODES.N)
+  // Checks the number of active recording sessions and logs the states of all active sessions.
+  // Returns number of active sessions.
+  private int logRecordingConfigurations(boolean verifyAudioConfig) {
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+      Logging.w(TAG, "AudioManager#getActiveRecordingConfigurations() requires N or higher");
+      return 0;
+    }
+    // Get a list of the currently active audio recording configurations of the device (can be more
+    // than one). An empty list indicates there is no recording active when queried.
+    List<AudioRecordingConfiguration> configs = audioManager.getActiveRecordingConfigurations();
+    final int numActiveRecordingSessions = configs.size();
+    Logging.d(TAG, "Number of active recording sessions: " + numActiveRecordingSessions);
+    if (numActiveRecordingSessions > 0) {
+      logActiveRecordingConfigs(audioRecord.getAudioSessionId(), configs);
+      if (verifyAudioConfig) {
+        // Run an extra check to verify that the existing audio source doing the recording (tied
+        // to the AudioRecord instance) is matching what the audio recording configuration lists
+        // as its client parameters. If these do not match, recording might work but under invalid
+        // conditions.
+        audioSourceMatchesRecordingSession =
+            verifyAudioConfig(audioRecord.getAudioSource(), audioRecord.getAudioSessionId(),
+                audioRecord.getFormat(), audioRecord.getRoutedDevice(), configs);
+        audioConfigHasBeenVerified = true;
+      }
+    }
+    return numActiveRecordingSessions;
   }
 
   // Helper method which throws an exception  when an assertion has failed.
@@ -390,6 +474,7 @@ class WebRtcAudioRecord {
   private void reportWebRtcAudioRecordInitError(String errorMessage) {
     Logging.e(TAG, "Init recording error: " + errorMessage);
     WebRtcAudioUtils.logAudioState(TAG, context, audioManager);
+    logRecordingConfigurations(false /* verifyAudioConfig */);
     if (errorCallback != null) {
       errorCallback.onWebRtcAudioRecordInitError(errorMessage);
     }
@@ -399,6 +484,7 @@ class WebRtcAudioRecord {
       AudioRecordStartErrorCode errorCode, String errorMessage) {
     Logging.e(TAG, "Start recording error: " + errorCode + ". " + errorMessage);
     WebRtcAudioUtils.logAudioState(TAG, context, audioManager);
+    logRecordingConfigurations(false /* verifyAudioConfig */);
     if (errorCallback != null) {
       errorCallback.onWebRtcAudioRecordStartError(errorCode, errorMessage);
     }
@@ -413,7 +499,7 @@ class WebRtcAudioRecord {
   }
 
   private void doAudioRecordStateCallback(int audioState) {
-    Logging.d(TAG, "doAudioRecordStateCallback: " + audioState);
+    Logging.d(TAG, "doAudioRecordStateCallback: " + audioStateToString(audioState));
     if (stateCallback != null) {
       if (audioState == WebRtcAudioRecord.AUDIO_RECORD_START) {
         stateCallback.onWebRtcAudioRecordStart();
@@ -441,6 +527,149 @@ class WebRtcAudioRecord {
       case AudioFormat.ENCODING_INVALID:
       default:
         throw new IllegalArgumentException("Bad audio format " + audioFormat);
+    }
+  }
+
+  // Use an ExecutorService to schedule a task after a given delay where the task consists of
+  // checking (by logging) the current status of active recording sessions.
+  private void scheduleLogRecordingConfigurationsTask() {
+    Logging.d(TAG, "scheduleLogRecordingConfigurationsTask");
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+      return;
+    }
+    if (executor != null) {
+      executor.shutdownNow();
+    }
+    executor = Executors.newSingleThreadScheduledExecutor();
+
+    Callable<String> callable = () -> {
+      logRecordingConfigurations(true /* verifyAudioConfig */);
+      return "Scheduled task is done";
+    };
+
+    if (future != null && !future.isDone()) {
+      future.cancel(true /* mayInterruptIfRunning */);
+    }
+    // Schedule call to logRecordingConfigurations() from executor thread after fixed delay.
+    future = executor.schedule(callable, CHECK_REC_STATUS_DELAY_MS, TimeUnit.MILLISECONDS);
+  };
+
+  @TargetApi(Build.VERSION_CODES.N)
+  private static boolean logActiveRecordingConfigs(
+      int session, List<AudioRecordingConfiguration> configs) {
+    assertTrue(!configs.isEmpty());
+    final Iterator<AudioRecordingConfiguration> it = configs.iterator();
+    Logging.d(TAG, "AudioRecordingConfigurations: ");
+    while (it.hasNext()) {
+      final AudioRecordingConfiguration config = it.next();
+      StringBuilder conf = new StringBuilder();
+      // The audio source selected by the client.
+      final int audioSource = config.getClientAudioSource();
+      conf.append("  client audio source=")
+          .append(WebRtcAudioUtils.audioSourceToString(audioSource))
+          .append(", client session id=")
+          .append(config.getClientAudioSessionId())
+          // Compare with our own id (based on AudioRecord#getAudioSessionId()).
+          .append(" (")
+          .append(session)
+          .append(")")
+          .append("\n");
+      // Audio format at which audio is recorded on this Android device. Note that it may differ
+      // from the client application recording format (see getClientFormat()).
+      AudioFormat format = config.getFormat();
+      conf.append("  Device AudioFormat: ")
+          .append("channel count=")
+          .append(format.getChannelCount())
+          .append(", channel index mask=")
+          .append(format.getChannelIndexMask())
+          // Only AudioFormat#CHANNEL_IN_MONO is guaranteed to work on all devices.
+          .append(", channel mask=")
+          .append(WebRtcAudioUtils.channelMaskToString(format.getChannelMask()))
+          .append(", encoding=")
+          .append(WebRtcAudioUtils.audioEncodingToString(format.getEncoding()))
+          .append(", sample rate=")
+          .append(format.getSampleRate())
+          .append("\n");
+      // Audio format at which the client application is recording audio.
+      format = config.getClientFormat();
+      conf.append("  Client AudioFormat: ")
+          .append("channel count=")
+          .append(format.getChannelCount())
+          .append(", channel index mask=")
+          .append(format.getChannelIndexMask())
+          // Only AudioFormat#CHANNEL_IN_MONO is guaranteed to work on all devices.
+          .append(", channel mask=")
+          .append(WebRtcAudioUtils.channelMaskToString(format.getChannelMask()))
+          .append(", encoding=")
+          .append(WebRtcAudioUtils.audioEncodingToString(format.getEncoding()))
+          .append(", sample rate=")
+          .append(format.getSampleRate())
+          .append("\n");
+      // Audio input device used for this recording session.
+      final AudioDeviceInfo device = config.getAudioDevice();
+      if (device != null) {
+        assertTrue(device.isSource());
+        conf.append("  AudioDevice: ")
+            .append("type=")
+            .append(WebRtcAudioUtils.deviceTypeToString(device.getType()))
+            .append(", id=")
+            .append(device.getId());
+      }
+      Logging.d(TAG, conf.toString());
+    }
+    return true;
+  }
+
+  // Verify that the client audio configuration (device and format) matches the requested
+  // configuration (same as AudioRecord's).
+  @TargetApi(Build.VERSION_CODES.N)
+  private static boolean verifyAudioConfig(int source, int session, AudioFormat format,
+      AudioDeviceInfo device, List<AudioRecordingConfiguration> configs) {
+    assertTrue(!configs.isEmpty());
+    final Iterator<AudioRecordingConfiguration> it = configs.iterator();
+    while (it.hasNext()) {
+      final AudioRecordingConfiguration config = it.next();
+      final AudioDeviceInfo configDevice = config.getAudioDevice();
+      if (configDevice == null) {
+        continue;
+      }
+      if ((config.getClientAudioSource() == source)
+          && (config.getClientAudioSessionId() == session)
+          // Check the client format (should match the format of the AudioRecord instance).
+          && (config.getClientFormat().getEncoding() == format.getEncoding())
+          && (config.getClientFormat().getSampleRate() == format.getSampleRate())
+          && (config.getClientFormat().getChannelMask() == format.getChannelMask())
+          && (config.getClientFormat().getChannelIndexMask() == format.getChannelIndexMask())
+          // Ensure that the device format is properly configured.
+          && (config.getFormat().getEncoding() != AudioFormat.ENCODING_INVALID)
+          && (config.getFormat().getSampleRate() > 0)
+          //  For the channel mask, either the position or index-based value must be valid.
+          && ((config.getFormat().getChannelMask() != AudioFormat.CHANNEL_INVALID)
+              || (config.getFormat().getChannelIndexMask() != AudioFormat.CHANNEL_INVALID))
+          && checkDeviceMatch(configDevice, device)) {
+        Logging.d(TAG, "verifyAudioConfig: PASS");
+        return true;
+      }
+    }
+    Logging.e(TAG, "verifyAudioConfig: FAILED");
+    return false;
+  }
+
+  @TargetApi(Build.VERSION_CODES.N)
+  // Returns true if device A parameters matches those of device B.
+  // TODO(henrika): can be improved by adding AudioDeviceInfo#getAddress() but it requires API 29.
+  private static boolean checkDeviceMatch(AudioDeviceInfo devA, AudioDeviceInfo devB) {
+    return ((devA.getId() == devB.getId() && (devA.getType() == devB.getType())));
+  }
+
+  private static String audioStateToString(int state) {
+    switch (state) {
+      case WebRtcAudioRecord.AUDIO_RECORD_START:
+        return "START";
+      case WebRtcAudioRecord.AUDIO_RECORD_STOP:
+        return "STOP";
+      default:
+        return "INVALID";
     }
   }
 }

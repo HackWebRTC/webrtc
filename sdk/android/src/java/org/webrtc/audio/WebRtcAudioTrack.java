@@ -188,6 +188,7 @@ class WebRtcAudioTrack {
     this.errorCallback = errorCallback;
     this.stateCallback = stateCallback;
     this.volumeLogger = new VolumeLogger(audioManager);
+    Logging.d(TAG, "ctor" + WebRtcAudioUtils.getThreadInfo());
   }
 
   @CalledByNative
@@ -238,7 +239,7 @@ class WebRtcAudioTrack {
       // Create an AudioTrack object and initialize its associated audio buffer.
       // The size of this buffer determines how long an AudioTrack can play
       // before running out of data.
-      if (Build.VERSION.SDK_INT >= 21) {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
         // If we are on API level 21 or higher, it is possible to use a special AudioTrack
         // constructor that uses AudioAttributes and AudioFormat as input. It allows us to
         // supersede the notion of stream types for defining the behavior of audio playback,
@@ -345,7 +346,7 @@ class WebRtcAudioTrack {
   }
 
   private boolean isVolumeFixed() {
-    if (Build.VERSION.SDK_INT < 21)
+    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP)
       return false;
     return audioManager.isVolumeFixed();
   }
@@ -385,7 +386,7 @@ class WebRtcAudioTrack {
   // Creates and AudioTrack instance using AudioAttributes and AudioFormat as input.
   // It allows certain platforms or routing policies to use this information for more
   // refined volume or routing decisions.
-  @TargetApi(21)
+  @TargetApi(Build.VERSION_CODES.LOLLIPOP)
   private static AudioTrack createAudioTrackOnLollipopOrHigher(
       int sampleRateInHz, int channelConfig, int bufferSizeInBytes) {
     Logging.d(TAG, "createAudioTrackOnLollipopOrHigher");
@@ -418,7 +419,7 @@ class WebRtcAudioTrack {
   }
 
   private void logBufferSizeInFrames() {
-    if (Build.VERSION.SDK_INT >= 23) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
       Logging.d(TAG,
           "AudioTrack: "
               // The effective size of the AudioTrack buffer that the app writes to.
@@ -427,7 +428,7 @@ class WebRtcAudioTrack {
   }
 
   private void logBufferCapacityInFrames() {
-    if (Build.VERSION.SDK_INT >= 24) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
       Logging.d(TAG,
           "AudioTrack: "
               // Maximum size of the AudioTrack buffer in frames.
@@ -447,7 +448,7 @@ class WebRtcAudioTrack {
   // TODO(henrika): keep track of this value in the field and possibly add new
   // UMA stat if needed.
   private void logUnderrunCount() {
-    if (Build.VERSION.SDK_INT >= 24) {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
       Logging.d(TAG, "underrun count: " + audioTrack.getUnderrunCount());
     }
   }
