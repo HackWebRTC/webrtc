@@ -81,6 +81,8 @@ struct StreamStats {
   RateCounter encode_frame_rate;
   SamplesStatsCounter encode_time_ms;
   SamplesStatsCounter decode_time_ms;
+  // Time from last packet of frame is received until it's sent to the renderer.
+  SamplesStatsCounter receive_to_render_time_ms;
   // Max frames skipped between two nearest.
   SamplesStatsCounter skipped_between_rendered;
   // In the next 2 metrics freeze is a pause that is longer, than maximum:
@@ -133,8 +135,8 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   void OnFrameEncoded(uint16_t frame_id,
                       const EncodedImage& encoded_image) override;
   void OnFrameDropped(EncodedImageCallback::DropReason reason) override;
-  void OnFrameReceived(uint16_t frame_id,
-                       const EncodedImage& input_image) override;
+  void OnFramePreDecode(uint16_t frame_id,
+                        const EncodedImage& input_image) override;
   void OnFrameDecoded(const VideoFrame& frame,
                       absl::optional<int32_t> decode_time_ms,
                       absl::optional<uint8_t> qp) override;
@@ -172,8 +174,10 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
     Timestamp captured_time;
     Timestamp pre_encode_time = Timestamp::MinusInfinity();
     Timestamp encoded_time = Timestamp::MinusInfinity();
+    // Time when last packet of a frame was received.
     Timestamp received_time = Timestamp::MinusInfinity();
-    Timestamp decoded_time = Timestamp::MinusInfinity();
+    Timestamp decode_start_time = Timestamp::MinusInfinity();
+    Timestamp decode_end_time = Timestamp::MinusInfinity();
     Timestamp rendered_time = Timestamp::MinusInfinity();
     Timestamp prev_frame_rendered_time = Timestamp::MinusInfinity();
 

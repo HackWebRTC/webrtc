@@ -87,7 +87,7 @@ int32_t QualityAnalyzingVideoDecoder::Decode(const EncodedImage& input_image,
   // We can safely dereference |origin_image|, because it can be removed from
   // the map only after |delegate_| Decode method will be invoked. Image will be
   // removed inside DecodedImageCallback, which can be done on separate thread.
-  analyzer_->OnFrameReceived(out.id, *origin_image);
+  analyzer_->OnFramePreDecode(out.id, *origin_image);
   int32_t result =
       delegate_->Decode(*origin_image, missing_frames, render_time_ms);
   if (result != WEBRTC_VIDEO_CODEC_OK) {
