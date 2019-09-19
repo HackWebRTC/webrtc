@@ -205,6 +205,7 @@ rtc_static_library("libjingle_peerconnection_api") {
     # targets like pnacl. API should not depend on anything outside of this
     # file, really. All these should arguably go away in time.
     "..:webrtc_common",
+    "../media:rtc_media_base",
     "../media:rtc_media_config",
     "../modules/audio_processing:audio_processing_statistics",
     "../rtc_base",

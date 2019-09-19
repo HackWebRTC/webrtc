@@ -103,10 +103,10 @@
 #include "api/transport/network_control.h"
 #include "api/turn_customizer.h"
 #include "media/base/media_config.h"
+#include "media/base/media_engine.h"
 // TODO(bugs.webrtc.org/7447): We plan to provide a way to let applications
 // inject a PacketSocketFactory and/or NetworkManager, and not expose
 // PortAllocator in the PeerConnection api.
-#include "media/base/media_engine.h"  // nogncheck
 #include "p2p/base/port_allocator.h"  // nogncheck
 #include "rtc_base/network.h"
 #include "rtc_base/rtc_certificate.h"
