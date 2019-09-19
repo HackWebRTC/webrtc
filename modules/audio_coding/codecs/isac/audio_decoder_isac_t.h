@@ -16,7 +16,6 @@
 #include "absl/types/optional.h"
 #include "api/audio_codecs/audio_decoder.h"
 #include "api/scoped_refptr.h"
-#include "modules/audio_coding/codecs/isac/locked_bandwidth_info.h"
 #include "rtc_base/constructor_magic.h"
 
 namespace webrtc {
@@ -26,7 +25,6 @@ class AudioDecoderIsacT final : public AudioDecoder {
  public:
   struct Config {
     bool IsOk() const;
-    rtc::scoped_refptr<LockedIsacBandwidthInfo> bwinfo;
     int sample_rate_hz = 16000;
   };
   explicit AudioDecoderIsacT(const Config& config);
@@ -52,7 +50,6 @@ class AudioDecoderIsacT final : public AudioDecoder {
  private:
   typename T::instance_type* isac_state_;
   int sample_rate_hz_;
-  rtc::scoped_refptr<LockedIsacBandwidthInfo> bwinfo_;
 
   RTC_DISALLOW_COPY_AND_ASSIGN(AudioDecoderIsacT);
 };

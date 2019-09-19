@@ -370,15 +370,13 @@ rtc_source_set("ilbc_c") {
   ]
 }
 
-rtc_static_library("isac_common") {
+rtc_source_set("isac_common") {
   poisonous = [ "audio_codecs" ]
   sources = [
     "codecs/isac/audio_decoder_isac_t.h",
     "codecs/isac/audio_decoder_isac_t_impl.h",
     "codecs/isac/audio_encoder_isac_t.h",
     "codecs/isac/audio_encoder_isac_t_impl.h",
-    "codecs/isac/locked_bandwidth_info.cc",
-    "codecs/isac/locked_bandwidth_info.h",
   ]
   deps = [
     ":isac_bwinfo",
