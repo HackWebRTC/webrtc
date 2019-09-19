@@ -114,8 +114,7 @@ class PacketBuffer {
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Copy the bitstream for |frame| to |destination|.
-  // Virtual for testing.
-  virtual bool GetBitstream(const RtpFrameObject& frame, uint8_t* destination);
+  bool GetBitstream(const RtpFrameObject& frame, uint8_t* destination);
 
   // Get the packet with sequence number |seq_num|.
   // Virtual for testing.

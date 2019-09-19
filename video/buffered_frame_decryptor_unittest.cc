@@ -41,11 +41,6 @@ class FakePacketBuffer : public video_coding::PacketBuffer {
     return true;
   }
 
-  bool GetBitstream(const video_coding::RtpFrameObject& frame,
-                    uint8_t* destination) override {
-    return true;
-  }
-
  private:
   std::map<uint16_t, VCMPacket> packets_;
 };

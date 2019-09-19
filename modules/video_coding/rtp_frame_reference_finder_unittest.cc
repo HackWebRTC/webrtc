@@ -40,11 +40,6 @@ class FakePacketBuffer : public PacketBuffer {
     return true;
   }
 
-  bool GetBitstream(const RtpFrameObject& frame,
-                    uint8_t* destination) override {
-    return true;
-  }
-
  private:
   std::map<uint16_t, VCMPacket> packets_;
 };
