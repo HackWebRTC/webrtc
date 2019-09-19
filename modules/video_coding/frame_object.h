@@ -23,6 +23,7 @@ class PacketBuffer;
 
 class RtpFrameObject : public EncodedFrame {
  public:
+  // TODO(philipel): Update the ctor to take an EncodedImageBuffer.
   RtpFrameObject(PacketBuffer* packet_buffer,
                  uint16_t first_seq_num,
                  uint16_t last_seq_num,

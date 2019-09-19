@@ -18,6 +18,7 @@
 
 #include "absl/types/variant.h"
 #include "api/video/encoded_frame.h"
+#include "api/video/encoded_image.h"
 #include "common_video/h264/h264_common.h"
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
@@ -436,10 +437,14 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
       missing_packets_.erase(missing_packets_.begin(),
                              missing_packets_.upper_bound(seq_num));
 
-      found_frames.emplace_back(
-          new RtpFrameObject(this, start_seq_num, seq_num, frame_size,
-                             max_nack_count, min_recv_time, max_recv_time,
-                             RtpPacketInfos(std::move(packet_infos))));
+      auto frame = std::make_unique<RtpFrameObject>(
+          this, start_seq_num, seq_num, frame_size, max_nack_count,
+          min_recv_time, max_recv_time,
+          RtpPacketInfos(std::move(packet_infos)));
+      frame->SetEncodedData(EncodedImageBuffer::Create(frame_size));
+      GetBitstream(*frame, frame->data());
+      found_frames.emplace_back(std::move(frame));
+
       ClearInterval(start_seq_num, seq_num);
     }
     ++seq_num;
@@ -447,6 +452,7 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
   return found_frames;
 }
 
+// TODO(philipel): Update function to not accept an RtpFrameObject.
 bool PacketBuffer::GetBitstream(const RtpFrameObject& frame,
                                 uint8_t* destination) {
   rtc::CritScope lock(&crit_);

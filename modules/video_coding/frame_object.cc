@@ -58,10 +58,6 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   // as of the first packet's.
   SetPlayoutDelay(first_packet->video_header.playout_delay);
 
-  // TODO(nisse): Change GetBitstream to return the buffer?
-  SetEncodedData(EncodedImageBuffer::Create(frame_size));
-  bool bitstream_copied = packet_buffer->GetBitstream(*this, data());
-  RTC_DCHECK(bitstream_copied);
   _encodedWidth = first_packet->width();
   _encodedHeight = first_packet->height();
 
