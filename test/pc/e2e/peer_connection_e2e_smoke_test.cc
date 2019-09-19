@@ -282,5 +282,57 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_Svc) {
       });
 }
 
+// IOS debug builds can be quite slow, disabling to avoid issues with timeouts.
+#if defined(WEBRTC_IOS) && defined(WEBRTC_ARCH_ARM64) && !defined(NDEBUG)
+#define MAYBE_HighBitrate DISABLED_HighBitrate
+#else
+#define MAYBE_HighBitrate HighBitrate
+#endif
+TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_HighBitrate) {
+  RunParams run_params(TimeDelta::seconds(7));
+  run_params.video_codec_name = cricket::kVp9CodecName;
+  run_params.video_codec_required_params = {{"profile-id", "0"}};
+
+  RunTest(
+      "smoke", run_params,
+      [](PeerConfigurer* alice) {
+        PeerConnectionInterface::BitrateParameters bitrate_params;
+        bitrate_params.current_bitrate_bps = 4000000;
+        bitrate_params.max_bitrate_bps = 8000000;
+        alice->SetBitrateParameters(bitrate_params);
+        VideoConfig video(1920, 1080, 30);
+        video.stream_label = "alice-video";
+        video.min_encode_bitrate_bps = 3000000;
+        video.max_encode_bitrate_bps = 6000000;
+        alice->AddVideoConfig(std::move(video));
+
+        AudioConfig audio;
+        audio.stream_label = "alice-audio";
+        audio.mode = AudioConfig::Mode::kFile;
+        audio.input_file_name =
+            test::ResourcePath("pc_quality_smoke_test_alice_source", "wav");
+        audio.sampling_frequency_in_hz = 48000;
+        alice->SetAudioConfig(std::move(audio));
+      },
+      [](PeerConfigurer* bob) {
+        PeerConnectionInterface::BitrateParameters bitrate_params;
+        bitrate_params.current_bitrate_bps = 4000000;
+        bitrate_params.max_bitrate_bps = 8000000;
+        bob->SetBitrateParameters(bitrate_params);
+        VideoConfig video(1920, 1080, 30);
+        video.stream_label = "bob-video";
+        video.min_encode_bitrate_bps = 3000000;
+        video.max_encode_bitrate_bps = 6000000;
+        bob->AddVideoConfig(std::move(video));
+
+        AudioConfig audio;
+        audio.stream_label = "bob-audio";
+        audio.mode = AudioConfig::Mode::kFile;
+        audio.input_file_name =
+            test::ResourcePath("pc_quality_smoke_test_bob_source", "wav");
+        bob->SetAudioConfig(std::move(audio));
+      });
+}
+
 }  // namespace webrtc_pc_e2e
 }  // namespace webrtc

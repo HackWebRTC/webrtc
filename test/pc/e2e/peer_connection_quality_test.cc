@@ -528,6 +528,10 @@ void PeerConnectionE2EQualityTest::ValidateParams(const RunParams& run_params,
         // We support simulcast only from caller.
         RTC_CHECK_EQ(i, 0)
             << "Only simulcast stream from first peer is supported";
+        RTC_CHECK(!video_config.max_encode_bitrate_bps)
+            << "Setting max encode bitrate is not implemented for simulcast.";
+        RTC_CHECK(!video_config.min_encode_bitrate_bps)
+            << "Setting min encode bitrate is not implemented for simulcast.";
       }
     }
     if (p->audio_config) {
@@ -615,9 +619,10 @@ void PeerConnectionE2EQualityTest::SetupCallOnSignalingThread(
     alice_transceivers_counter++;
   }
 
+  size_t alice_video_transceivers_non_simulcast_counter = 0;
   for (auto& video_config : alice_->params()->video_configs) {
+    RtpTransceiverInit transceiver_params;
     if (video_config.simulcast_config) {
-      RtpTransceiverInit transceiver_params;
       transceiver_params.direction = RtpTransceiverDirection::kSendOnly;
       if (run_params.video_codec_name == cricket::kVp8CodecName) {
         // For Vp8 simulcast we need to add as many RtpEncodingParameters to the
@@ -631,20 +636,34 @@ void PeerConnectionE2EQualityTest::SetupCallOnSignalingThread(
           transceiver_params.send_encodings.push_back(enc_params);
         }
       }
-      RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>> result =
-          alice_->AddTransceiver(cricket::MediaType::MEDIA_TYPE_VIDEO,
-                                 transceiver_params);
-      RTC_CHECK(result.ok());
-      alice_transceivers_counter++;
+    } else {
+      transceiver_params.direction = RtpTransceiverDirection::kSendRecv;
+      RtpEncodingParameters enc_params;
+      enc_params.max_bitrate_bps = video_config.max_encode_bitrate_bps;
+      enc_params.min_bitrate_bps = video_config.min_encode_bitrate_bps;
+      transceiver_params.send_encodings.push_back(enc_params);
+
+      alice_video_transceivers_non_simulcast_counter++;
     }
+    RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>> result =
+        alice_->AddTransceiver(cricket::MediaType::MEDIA_TYPE_VIDEO,
+                               transceiver_params);
+    RTC_CHECK(result.ok());
+
+    alice_transceivers_counter++;
   }
-  for (size_t i = 0; i < bob_->params()->video_configs.size(); ++i) {
+
+  // Add receive only transceivers in case Bob has more video_configs than
+  // Alice.
+  for (size_t i = alice_video_transceivers_non_simulcast_counter;
+       i < bob_->params()->video_configs.size(); ++i) {
     RTCErrorOr<rtc::scoped_refptr<RtpTransceiverInterface>> result =
         alice_->AddTransceiver(cricket::MediaType::MEDIA_TYPE_VIDEO,
                                receive_only_transceiver_init);
     RTC_CHECK(result.ok());
     alice_transceivers_counter++;
   }
+
   // Then add media for Alice and Bob
   alice_video_sources_ = MaybeAddMedia(alice_.get());
   bob_video_sources_ = MaybeAddMedia(bob_.get());
@@ -990,7 +1009,7 @@ PeerConnectionE2EQualityTest::ScheduledActivity::ScheduledActivity(
     absl::optional<TimeDelta> interval,
     std::function<void(TimeDelta)> func)
     : initial_delay_since_start(initial_delay_since_start),
-      interval(std::move(interval)),
+      interval(interval),
       func(std::move(func)) {}
 
 }  // namespace webrtc_pc_e2e
