@@ -1927,7 +1927,6 @@ if (rtc_include_tests) {
       "codecs/isac/fix/source/transform_unittest.cc",
       "codecs/isac/main/source/audio_encoder_isac_unittest.cc",
       "codecs/isac/main/source/isac_unittest.cc",
-      "codecs/isac/unittest.cc",
       "codecs/legacy_encoded_audio_frame_unittest.cc",
       "codecs/opus/audio_decoder_multi_channel_opus_unittest.cc",
       "codecs/opus/audio_encoder_multi_channel_opus_unittest.cc",

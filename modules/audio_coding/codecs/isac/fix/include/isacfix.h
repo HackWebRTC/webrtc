@@ -479,14 +479,6 @@ int16_t WebRtcIsacfix_ReadBwIndex(const uint8_t* encoded,
 
 int16_t WebRtcIsacfix_GetNewFrameLen(ISACFIX_MainStruct* ISAC_main_inst);
 
-/* Fills in an IsacBandwidthInfo struct. */
-void WebRtcIsacfix_GetBandwidthInfo(ISACFIX_MainStruct* ISAC_main_inst,
-                                    IsacBandwidthInfo* bwinfo);
-
-/* Uses the values from an IsacBandwidthInfo struct. */
-void WebRtcIsacfix_SetBandwidthInfo(ISACFIX_MainStruct* ISAC_main_inst,
-                                    const IsacBandwidthInfo* bwinfo);
-
 #if defined(__cplusplus)
 }
 #endif

@@ -2297,21 +2297,6 @@ uint16_t WebRtcIsac_DecSampRate(ISACStruct* ISAC_main_inst) {
   return instISAC->decoderSamplingRateKHz == kIsacWideband ? 16000 : 32000;
 }
 
-void WebRtcIsac_GetBandwidthInfo(ISACStruct* inst,
-                                 IsacBandwidthInfo* bwinfo) {
-  ISACMainStruct* instISAC = (ISACMainStruct*)inst;
-  RTC_DCHECK_NE(0, instISAC->initFlag & BIT_MASK_DEC_INIT);
-  WebRtcIsacBw_GetBandwidthInfo(&instISAC->bwestimator_obj,
-                                instISAC->decoderSamplingRateKHz, bwinfo);
-}
-
-void WebRtcIsac_SetBandwidthInfo(ISACStruct* inst,
-                                 const IsacBandwidthInfo* bwinfo) {
-  ISACMainStruct* instISAC = (ISACMainStruct*)inst;
-  RTC_DCHECK_NE(0, instISAC->initFlag & BIT_MASK_ENC_INIT);
-  WebRtcIsacBw_SetBandwidthInfo(&instISAC->bwestimator_obj, bwinfo);
-}
-
 void WebRtcIsac_SetEncSampRateInDecoder(ISACStruct* inst,
                                         int sample_rate_hz) {
   ISACMainStruct* instISAC = (ISACMainStruct*)inst;

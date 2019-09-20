@@ -1229,17 +1229,3 @@ void WebRtcIsacfix_version(char *version)
 {
   strcpy(version, "3.6.0");
 }
-
-void WebRtcIsacfix_GetBandwidthInfo(ISACFIX_MainStruct* ISAC_main_inst,
-                                    IsacBandwidthInfo* bwinfo) {
-  ISACFIX_SubStruct* inst = (ISACFIX_SubStruct*)ISAC_main_inst;
-  RTC_DCHECK_NE(0, inst->initflag & 1);  // Decoder initialized.
-  WebRtcIsacfixBw_GetBandwidthInfo(&inst->bwestimator_obj, bwinfo);
-}
-
-void WebRtcIsacfix_SetBandwidthInfo(ISACFIX_MainStruct* ISAC_main_inst,
-                                    const IsacBandwidthInfo* bwinfo) {
-  ISACFIX_SubStruct* inst = (ISACFIX_SubStruct*)ISAC_main_inst;
-  RTC_DCHECK_NE(0, inst->initflag & 2);  // Encoder initialized.
-  WebRtcIsacfixBw_SetBandwidthInfo(&inst->bwestimator_obj, bwinfo);
-}
