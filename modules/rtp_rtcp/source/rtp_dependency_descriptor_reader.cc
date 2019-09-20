@@ -66,6 +66,11 @@ void RtpDependencyDescriptorReader::ReadTemplateDependencyStructure() {
   descriptor_->attached_structure =
       std::make_unique<FrameDependencyStructure>();
   descriptor_->attached_structure->structure_id = ReadBits(6);
+  if (descriptor_->attached_structure->structure_id ==
+      kExtendedFieldsIndicator) {
+    parsing_failed_ = true;
+    return;
+  }
   descriptor_->attached_structure->num_decode_targets = ReadBits(5) + 1;
 
   ReadTemplateLayers();
