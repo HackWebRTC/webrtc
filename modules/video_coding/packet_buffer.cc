@@ -22,7 +22,6 @@
 #include "modules/rtp_rtcp/source/rtp_video_header.h"
 #include "modules/video_coding/codecs/h264/include/h264_globals.h"
 #include "modules/video_coding/frame_object.h"
-#include "rtc_base/atomic_ops.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/numerics/mod_ops.h"
@@ -31,15 +30,6 @@
 
 namespace webrtc {
 namespace video_coding {
-
-rtc::scoped_refptr<PacketBuffer> PacketBuffer::Create(
-    Clock* clock,
-    size_t start_buffer_size,
-    size_t max_buffer_size,
-    OnAssembledFrameCallback* assembled_frame_callback) {
-  return rtc::scoped_refptr<PacketBuffer>(new PacketBuffer(
-      clock, start_buffer_size, max_buffer_size, assembled_frame_callback));
-}
 
 PacketBuffer::PacketBuffer(Clock* clock,
                            size_t start_buffer_size,
@@ -481,18 +471,6 @@ VCMPacket* PacketBuffer::GetPacket(uint16_t seq_num) {
     return nullptr;
   }
   return &data_buffer_[index];
-}
-
-int PacketBuffer::AddRef() const {
-  return rtc::AtomicOps::Increment(&ref_count_);
-}
-
-int PacketBuffer::Release() const {
-  int count = rtc::AtomicOps::Decrement(&ref_count_);
-  if (!count) {
-    delete this;
-  }
-  return count;
 }
 
 void PacketBuffer::UpdateMissingPackets(uint16_t seq_num) {

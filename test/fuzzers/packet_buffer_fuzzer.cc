@@ -27,8 +27,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
   VCMPacket packet;
   NullCallback callback;
   SimulatedClock clock(0);
-  rtc::scoped_refptr<video_coding::PacketBuffer> packet_buffer(
-      video_coding::PacketBuffer::Create(&clock, 8, 1024, &callback));
+  video_coding::PacketBuffer packet_buffer(&clock, 8, 1024, &callback);
   test::FuzzDataHelper helper(rtc::ArrayView<const uint8_t>(data, size));
 
   while (helper.BytesLeft()) {
@@ -60,7 +59,7 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     packet.sizeBytes = payload_size;
     packet.dataPtr = new uint8_t[payload_size];
 
-    packet_buffer->InsertPacket(&packet);
+    packet_buffer.InsertPacket(&packet);
   }
 }
 

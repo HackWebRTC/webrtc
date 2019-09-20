@@ -90,20 +90,18 @@ class BufferedFrameDecryptorTest
                                          ? VideoFrameType::kVideoFrameKey
                                          : VideoFrameType::kVideoFrameDelta;
     packet.generic_descriptor = RtpGenericFrameDescriptor();
-    fake_packet_buffer_->InsertPacket(&packet);
+    fake_packet_buffer_.InsertPacket(&packet);
     packet.seqNum = seq_num_;
     packet.video_header.is_last_packet_in_frame = true;
-    fake_packet_buffer_->InsertPacket(&packet);
+    fake_packet_buffer_.InsertPacket(&packet);
 
-    return std::unique_ptr<video_coding::RtpFrameObject>(
-        new video_coding::RtpFrameObject(
-            fake_packet_buffer_.get(), seq_num_, seq_num_, 0, 0, 0, {},
-            EncodedImageBuffer::Create(/*size=*/0)));
+    return std::make_unique<video_coding::RtpFrameObject>(
+        &fake_packet_buffer_, seq_num_, seq_num_, 0, 0, 0, RtpPacketInfos(),
+        EncodedImageBuffer::Create(/*size=*/0));
   }
 
  protected:
-  BufferedFrameDecryptorTest() : fake_packet_buffer_(new FakePacketBuffer()) {}
-  void SetUp() override {
+  BufferedFrameDecryptorTest() {
     fake_packet_data_ = std::vector<uint8_t>(100);
     decrypted_frame_call_count_ = 0;
     decryption_status_change_count_ = 0;
@@ -117,7 +115,7 @@ class BufferedFrameDecryptorTest
   static const size_t kMaxStashedFrames;
 
   std::vector<uint8_t> fake_packet_data_;
-  rtc::scoped_refptr<FakePacketBuffer> fake_packet_buffer_;
+  FakePacketBuffer fake_packet_buffer_;
   rtc::scoped_refptr<MockFrameDecryptor> mock_frame_decryptor_;
   std::unique_ptr<BufferedFrameDecryptor> buffered_frame_decryptor_;
   size_t decrypted_frame_call_count_;

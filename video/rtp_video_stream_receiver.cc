@@ -49,6 +49,24 @@ namespace {
 //                 crbug.com/752886
 constexpr int kPacketBufferStartSize = 512;
 constexpr int kPacketBufferMaxSize = 2048;
+
+int PacketBufferMaxSize() {
+  // The group here must be a positive power of 2, in which case that is used as
+  // size. All other values shall result in the default value being used.
+  const std::string group_name =
+      webrtc::field_trial::FindFullName("WebRTC-PacketBufferMaxSize");
+  int packet_buffer_max_size = kPacketBufferMaxSize;
+  if (!group_name.empty() &&
+      (sscanf(group_name.c_str(), "%d", &packet_buffer_max_size) != 1 ||
+       packet_buffer_max_size <= 0 ||
+       // Verify that the number is a positive power of 2.
+       (packet_buffer_max_size & (packet_buffer_max_size - 1)) != 0)) {
+    RTC_LOG(LS_WARNING) << "Invalid packet buffer max size: " << group_name;
+    packet_buffer_max_size = kPacketBufferMaxSize;
+  }
+  return packet_buffer_max_size;
+}
+
 }  // namespace
 
 std::unique_ptr<RtpRtcp> CreateRtpRtcpModule(
@@ -192,6 +210,10 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
       // TODO(bugs.webrtc.org/10336): Let |rtcp_feedback_buffer_| communicate
       // directly with |rtp_rtcp_|.
       rtcp_feedback_buffer_(this, nack_sender, this),
+      packet_buffer_(clock_,
+                     kPacketBufferStartSize,
+                     PacketBufferMaxSize(),
+                     this),
       has_received_frame_(false),
       frames_decryptable_(false) {
   constexpr bool remb_candidate = true;
@@ -242,22 +264,6 @@ RtpVideoStreamReceiver::RtpVideoStreamReceiver(
     process_thread_->RegisterModule(nack_module_.get(), RTC_FROM_HERE);
   }
 
-  // The group here must be a positive power of 2, in which case that is used as
-  // size. All other values shall result in the default value being used.
-  const std::string group_name =
-      webrtc::field_trial::FindFullName("WebRTC-PacketBufferMaxSize");
-  int packet_buffer_max_size = kPacketBufferMaxSize;
-  if (!group_name.empty() &&
-      (sscanf(group_name.c_str(), "%d", &packet_buffer_max_size) != 1 ||
-       packet_buffer_max_size <= 0 ||
-       // Verify that the number is a positive power of 2.
-       (packet_buffer_max_size & (packet_buffer_max_size - 1)) != 0)) {
-    RTC_LOG(LS_WARNING) << "Invalid packet buffer max size: " << group_name;
-    packet_buffer_max_size = kPacketBufferMaxSize;
-  }
-
-  packet_buffer_ = video_coding::PacketBuffer::Create(
-      clock_, kPacketBufferStartSize, packet_buffer_max_size, this);
   reference_finder_ =
       std::make_unique<video_coding::RtpFrameReferenceFinder>(this);
 
@@ -387,7 +393,7 @@ int32_t RtpVideoStreamReceiver::OnReceivedPayloadData(
   }
 
   rtcp_feedback_buffer_.SendBufferedRtcpFeedback();
-  if (!packet_buffer_->InsertPacket(&packet)) {
+  if (!packet_buffer_.InsertPacket(&packet)) {
     RequestKeyFrame();
   }
   return 0;
@@ -580,12 +586,12 @@ void RtpVideoStreamReceiver::UpdateRtt(int64_t max_rtt_ms) {
 }
 
 absl::optional<int64_t> RtpVideoStreamReceiver::LastReceivedPacketMs() const {
-  return packet_buffer_->LastReceivedPacketMs();
+  return packet_buffer_.LastReceivedPacketMs();
 }
 
 absl::optional<int64_t> RtpVideoStreamReceiver::LastReceivedKeyframePacketMs()
     const {
-  return packet_buffer_->LastReceivedKeyframePacketMs();
+  return packet_buffer_.LastReceivedKeyframePacketMs();
 }
 
 void RtpVideoStreamReceiver::AddSecondarySink(RtpPacketSinkInterface* sink) {
@@ -745,7 +751,7 @@ void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(
 // correctly calculate frame references.
 void RtpVideoStreamReceiver::NotifyReceiverOfEmptyPacket(uint16_t seq_num) {
   reference_finder_->PaddingReceived(seq_num);
-  packet_buffer_->PaddingReceived(seq_num);
+  packet_buffer_.PaddingReceived(seq_num);
   if (nack_module_) {
     nack_module_->OnReceivedPacket(seq_num, /* is_keyframe = */ false,
                                    /* is _recovered = */ false);
@@ -821,7 +827,7 @@ void RtpVideoStreamReceiver::FrameDecoded(int64_t picture_id) {
     }
   }
   if (seq_num != -1) {
-    packet_buffer_->ClearTo(seq_num);
+    packet_buffer_.ClearTo(seq_num);
     reference_finder_->ClearTo(seq_num);
   }
 }
@@ -832,7 +838,7 @@ void RtpVideoStreamReceiver::SignalNetworkState(NetworkState state) {
 }
 
 int RtpVideoStreamReceiver::GetUniqueFramesSeen() const {
-  return packet_buffer_->GetUniqueFramesSeen();
+  return packet_buffer_.GetUniqueFramesSeen();
 }
 
 void RtpVideoStreamReceiver::StartReceive() {

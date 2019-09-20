@@ -16,7 +16,6 @@
 #include <set>
 #include <vector>
 
-#include "api/scoped_refptr.h"
 #include "api/video/encoded_image.h"
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/packet.h"
@@ -41,12 +40,11 @@ class OnAssembledFrameCallback {
 
 class PacketBuffer {
  public:
-  static rtc::scoped_refptr<PacketBuffer> Create(
-      Clock* clock,
-      size_t start_buffer_size,
-      size_t max_buffer_size,
-      OnAssembledFrameCallback* frame_callback);
-
+  // Both |start_buffer_size| and |max_buffer_size| must be a power of 2.
+  PacketBuffer(Clock* clock,
+               size_t start_buffer_size,
+               size_t max_buffer_size,
+               OnAssembledFrameCallback* frame_callback);
   virtual ~PacketBuffer();
 
   // Returns true unless the packet buffer is cleared, which means that a key
@@ -64,16 +62,6 @@ class PacketBuffer {
 
   // Returns number of different frames seen in the packet buffer
   int GetUniqueFramesSeen() const;
-
-  int AddRef() const;
-  int Release() const;
-
- protected:
-  // Both |start_buffer_size| and |max_buffer_size| must be a power of 2.
-  PacketBuffer(Clock* clock,
-               size_t start_buffer_size,
-               size_t max_buffer_size,
-               OnAssembledFrameCallback* frame_callback);
 
  private:
   friend RtpFrameObject;
@@ -181,8 +169,6 @@ class PacketBuffer {
   std::set<uint32_t> rtp_timestamps_history_set_ RTC_GUARDED_BY(crit_);
   // Stores the same unique timestamps in the order of insertion.
   std::queue<uint32_t> rtp_timestamps_history_queue_ RTC_GUARDED_BY(crit_);
-
-  mutable volatile int ref_count_ = 0;
 };
 
 }  // namespace video_coding
