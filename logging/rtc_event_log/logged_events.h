@@ -541,6 +541,8 @@ struct LoggedPacketInfo {
   uint32_t ssrc;
   uint16_t stream_seq_no;
   uint16_t size;
+  uint16_t payload_size;
+  uint16_t padding_size;
   uint16_t overhead = 0;
   uint8_t payload_type;
   LoggedMediaType media_type = LoggedMediaType::kUnknown;
@@ -555,6 +557,9 @@ struct LoggedPacketInfo {
   // The time the packet was logged. This is the receive time for incoming
   // packets and send time for outgoing.
   Timestamp log_packet_time;
+  // Send time as reported by abs-send-time extension, For outgoing packets this
+  // corresponds to log_packet_time, but might be measured using another clock.
+  Timestamp reported_send_time;
   // The receive time that was reported in feedback. For incoming packets this
   // corresponds to log_packet_time, but might be measured using another clock.
   // PlusInfinity indicates that the packet was lost.
