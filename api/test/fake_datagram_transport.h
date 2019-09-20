@@ -56,14 +56,30 @@ class FakeDatagramTransport : public DatagramTransportInterface {
 
   void SetDatagramSink(DatagramSinkInterface* sink) override {}
 
-  bool IsReadyToSend() const override { return false; }
-
   std::string GetTransportParameters() const override {
     if (settings_.remote_transport_parameters) {
       return *settings_.remote_transport_parameters;
     }
     return transport_parameters_;
   }
+
+  RTCError OpenChannel(int channel_id) override {
+    return RTCError(RTCErrorType::UNSUPPORTED_OPERATION);
+  }
+
+  RTCError SendData(int channel_id,
+                    const SendDataParams& params,
+                    const rtc::CopyOnWriteBuffer& buffer) override {
+    return RTCError(RTCErrorType::UNSUPPORTED_OPERATION);
+  }
+
+  RTCError CloseChannel(int channel_id) override {
+    return RTCError(RTCErrorType::UNSUPPORTED_OPERATION);
+  }
+
+  void SetDataSink(DataChannelSink* /*sink*/) override {}
+
+  bool IsReadyToSend() const override { return false; }
 
   rtc::PacketTransportInternal* packet_transport() { return packet_transport_; }
 

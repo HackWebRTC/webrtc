@@ -83,8 +83,7 @@ class DataChannelSink {
   // registered if the transport is ready at that time.  This callback may be
   // invoked again following send errors (eg. due to the transport being
   // temporarily blocked or unavailable).
-  // TODO(mellem):  Make pure virtual when downstream sinks override this.
-  virtual void OnReadyToSend();
+  virtual void OnReadyToSend() = 0;
 };
 
 // Transport for data channels.
@@ -94,30 +93,29 @@ class DataChannelTransportInterface {
 
   // Opens a data |channel_id| for sending.  May return an error if the
   // specified |channel_id| is unusable.  Must be called before |SendData|.
-  virtual RTCError OpenChannel(int channel_id);
+  virtual RTCError OpenChannel(int channel_id) = 0;
 
   // Sends a data buffer to the remote endpoint using the given send parameters.
   // |buffer| may not be larger than 256 KiB. Returns an error if the send
   // fails.
   virtual RTCError SendData(int channel_id,
                             const SendDataParams& params,
-                            const rtc::CopyOnWriteBuffer& buffer);
+                            const rtc::CopyOnWriteBuffer& buffer) = 0;
 
   // Closes |channel_id| gracefully.  Returns an error if |channel_id| is not
   // open.  Data sent after the closing procedure begins will not be
   // transmitted. The channel becomes closed after pending data is transmitted.
-  virtual RTCError CloseChannel(int channel_id);
+  virtual RTCError CloseChannel(int channel_id) = 0;
 
   // Sets a sink for data messages and channel state callbacks. Before media
   // transport is destroyed, the sink must be unregistered by setting it to
   // nullptr.
-  virtual void SetDataSink(DataChannelSink* sink);
+  virtual void SetDataSink(DataChannelSink* sink) = 0;
 
   // Returns whether this data channel transport is ready to send.
   // Note: the default implementation always returns false (as it assumes no one
   // has implemented the interface).  This default implementation is temporary.
-  // TODO(mellem):  Change this to pure virtual.
-  virtual bool IsReadyToSend() const;
+  virtual bool IsReadyToSend() const = 0;
 };
 
 }  // namespace webrtc
