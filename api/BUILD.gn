@@ -227,7 +227,6 @@ rtc_source_set("rtc_error") {
     "../rtc_base:logging",
     "../rtc_base:macromagic",
     "../rtc_base/system:rtc_export",
-    "//third_party/abseil-cpp/absl/strings",
   ]
 }
 

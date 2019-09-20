@@ -17,7 +17,6 @@
 #include <string>
 #include <utility>  // For std::move.
 
-#include "absl/strings/string_view.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/system/rtc_export.h"
@@ -130,9 +129,9 @@ class RTC_EXPORT RTCError {
 // Outputs the error as a friendly string. Update this method when adding a new
 // error type.
 //
-// Only intended to be used for logging/diagnostics. The string_view points
+// Only intended to be used for logging/diagnostics. The returned char* points
 // to literal string that lives for the whole duration of the program.
-absl::string_view ToString(RTCErrorType error);
+const char* ToString(RTCErrorType error);
 
 #ifdef UNIT_TEST
 inline std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)
