@@ -354,9 +354,10 @@ class AudioProcessingImpl : public AudioProcessing {
                  bool use_experimental_agc,
                  bool use_experimental_agc_agc2_level_estimation,
                  bool use_experimental_agc_agc2_digital_adaptive,
-                 bool use_experimental_agc_process_before_aec)
-        :  // Format of processing streams at input/output call sites.
-          agc_startup_min_volume(agc_startup_min_volume),
+                 bool use_experimental_agc_process_before_aec,
+                 bool experimental_multi_channel_render_support,
+                 bool experimental_multi_channel_capture_support)
+        : agc_startup_min_volume(agc_startup_min_volume),
           agc_clipped_level_min(agc_clipped_level_min),
           use_experimental_agc(use_experimental_agc),
           use_experimental_agc_agc2_level_estimation(
@@ -364,14 +365,19 @@ class AudioProcessingImpl : public AudioProcessing {
           use_experimental_agc_agc2_digital_adaptive(
               use_experimental_agc_agc2_digital_adaptive),
           use_experimental_agc_process_before_aec(
-              use_experimental_agc_process_before_aec) {}
+              use_experimental_agc_process_before_aec),
+          experimental_multi_channel_render_support(
+              experimental_multi_channel_render_support),
+          experimental_multi_channel_capture_support(
+              experimental_multi_channel_capture_support) {}
     int agc_startup_min_volume;
     int agc_clipped_level_min;
     bool use_experimental_agc;
     bool use_experimental_agc_agc2_level_estimation;
     bool use_experimental_agc_agc2_digital_adaptive;
     bool use_experimental_agc_process_before_aec;
-
+    bool experimental_multi_channel_render_support;
+    bool experimental_multi_channel_capture_support;
   } constants_;
 
   struct ApmCaptureState {

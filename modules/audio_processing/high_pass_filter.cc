@@ -45,9 +45,11 @@ void HighPassFilter::Process(AudioBuffer* audio) {
   }
 }
 
-void HighPassFilter::Process(rtc::ArrayView<float> audio) {
-  RTC_DCHECK_EQ(filters_.size(), 1);
-  filters_[0]->Process(audio);
+void HighPassFilter::Process(std::vector<std::vector<float>>* audio) {
+  RTC_DCHECK_EQ(filters_.size(), audio->size());
+  for (size_t k = 0; k < audio->size(); ++k) {
+    filters_[k]->Process((*audio)[k]);
+  }
 }
 
 void HighPassFilter::Reset() {

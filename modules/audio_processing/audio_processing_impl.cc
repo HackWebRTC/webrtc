@@ -48,6 +48,7 @@
 #include "rtc_base/ref_counted_object.h"
 #include "rtc_base/time_utils.h"
 #include "rtc_base/trace_event.h"
+#include "system_wrappers/include/field_trial.h"
 #include "system_wrappers/include/metrics.h"
 
 #define RETURN_ON_ERR(expr) \
@@ -348,8 +349,12 @@ AudioProcessing* AudioProcessingBuilder::Create(const webrtc::Config& config) {
 }
 
 AudioProcessingImpl::AudioProcessingImpl(const webrtc::Config& config)
-    : AudioProcessingImpl(config, nullptr, nullptr, nullptr, nullptr, nullptr) {
-}
+    : AudioProcessingImpl(config,
+                          /*capture_post_processor=*/nullptr,
+                          /*render_pre_processor=*/nullptr,
+                          /*echo_control_factory=*/nullptr,
+                          /*echo_detector=*/nullptr,
+                          /*capture_analyzer=*/nullptr) {}
 
 int AudioProcessingImpl::instance_count_ = 0;
 
@@ -382,13 +387,17 @@ AudioProcessingImpl::AudioProcessingImpl(
                  /* enabled= */ false,
                  /* enabled_agc2_level_estimator= */ false,
                  /* digital_adaptive_disabled= */ false,
-                 /* analyze_before_aec= */ false),
+                 /* analyze_before_aec= */ false,
 #else
                  config.Get<ExperimentalAgc>().enabled,
                  config.Get<ExperimentalAgc>().enabled_agc2_level_estimator,
                  config.Get<ExperimentalAgc>().digital_adaptive_disabled,
-                 config.Get<ExperimentalAgc>().analyze_before_aec),
+                 config.Get<ExperimentalAgc>().analyze_before_aec,
 #endif
+                 !field_trial::IsEnabled(
+                     "WebRTC-ApmExperimentalMultiChannelRenderKillSwitch"),
+                 !field_trial::IsEnabled(
+                     "WebRTC-ApmExperimentalMultiChannelCaptureKillSwitch")),
 #if defined(WEBRTC_ANDROID) || defined(WEBRTC_IOS)
       capture_(false),
 #else
@@ -630,10 +639,18 @@ int AudioProcessingImpl::InitializeLocked(const ProcessingConfig& config) {
 
   RTC_DCHECK_NE(8000, render_processing_rate);
 
-  // Always downmix the render stream to mono for analysis. This has been
-  // demonstrated to work well for AEC in most practical scenarios.
   if (submodule_states_.RenderMultiBandSubModulesActive()) {
-    formats_.render_processing_format = StreamConfig(render_processing_rate, 1);
+    // By default, downmix the render stream to mono for analysis. This has been
+    // demonstrated to work well for AEC in most practical scenarios.
+    const bool experimental_multi_channel_render =
+        config_.pipeline.experimental_multi_channel &&
+        constants_.experimental_multi_channel_render_support;
+    int render_processing_num_channels =
+        experimental_multi_channel_render
+            ? formats_.api_format.reverse_input_stream().num_channels()
+            : 1;
+    formats_.render_processing_format =
+        StreamConfig(render_processing_rate, render_processing_num_channels);
   } else {
     formats_.render_processing_format = StreamConfig(
         formats_.api_format.reverse_input_stream().sample_rate_hz(),
@@ -657,6 +674,10 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
   // Run in a single-threaded manner when applying the settings.
   rtc::CritScope cs_render(&crit_render_);
   rtc::CritScope cs_capture(&crit_capture_);
+
+  const bool pipeline_config_changed =
+      config_.pipeline.experimental_multi_channel !=
+      config.pipeline.experimental_multi_channel;
 
   const bool aec_config_changed =
       config_.echo_canceller.enabled != config.echo_canceller.enabled ||
@@ -732,6 +753,12 @@ void AudioProcessingImpl::ApplyConfig(const AudioProcessing::Config& config) {
         VoiceDetection::kVeryLowLikelihood);
     private_submodules_->voice_detector->Initialize(
         proc_split_sample_rate_hz());
+  }
+
+  // Reinitialization must happen after all submodule configuration to avoid
+  // additional reinitializations on the next capture / render processing call.
+  if (pipeline_config_changed) {
+    InitializeLocked(formats_.api_format);
   }
 }
 
@@ -809,7 +836,14 @@ size_t AudioProcessingImpl::num_input_channels() const {
 
 size_t AudioProcessingImpl::num_proc_channels() const {
   // Used as callback from submodules, hence locking is not allowed.
-  return capture_nonlocked_.echo_controller_enabled ? 1 : num_output_channels();
+  const bool experimental_multi_channel_capture =
+      config_.pipeline.experimental_multi_channel &&
+      constants_.experimental_multi_channel_capture_support;
+  if (capture_nonlocked_.echo_controller_enabled &&
+      !experimental_multi_channel_capture) {
+    return 1;
+  }
+  return num_output_channels();
 }
 
 size_t AudioProcessingImpl::num_output_channels() const {
@@ -1338,7 +1372,11 @@ int AudioProcessingImpl::ProcessCaptureStreamLocked() {
     capture_buffer->SplitIntoFrequencyBands();
   }
 
-  if (private_submodules_->echo_controller) {
+  const bool experimental_multi_channel_capture =
+      config_.pipeline.experimental_multi_channel &&
+      constants_.experimental_multi_channel_capture_support;
+  if (private_submodules_->echo_controller &&
+      !experimental_multi_channel_capture) {
     // Force down-mixing of the number of channels after the detection of
     // capture signal saturation.
     // TODO(peah): Look into ensuring that this kind of tampering with the
@@ -1846,8 +1884,8 @@ void AudioProcessingImpl::InitializeEchoController() {
           echo_control_factory_->Create(proc_sample_rate_hz());
     } else {
       private_submodules_->echo_controller = std::make_unique<EchoCanceller3>(
-          EchoCanceller3Config(), proc_sample_rate_hz(),
-          /*num_render_channels=*/1, /*num_capture_channels=*/1);
+          EchoCanceller3Config(), proc_sample_rate_hz(), num_reverse_channels(),
+          num_proc_channels());
     }
 
     capture_nonlocked_.echo_controller_enabled = true;

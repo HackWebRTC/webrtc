@@ -254,6 +254,9 @@ class AudioProcessing : public rtc::RefCountInterface {
       // default rate is currently selected based on the CPU architecture, but
       // that logic may change.
       int maximum_internal_processing_rate;
+      // Force multi-channel processing on playout and capture audio. This is an
+      // experimental feature, and is likely to change without warning.
+      bool experimental_multi_channel = false;
     } pipeline;
 
     // Enabled the pre-amplifier. It amplifies the capture signal

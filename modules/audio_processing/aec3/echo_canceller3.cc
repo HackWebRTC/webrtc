@@ -198,9 +198,9 @@ EchoCanceller3::RenderWriter::RenderWriter(
 EchoCanceller3::RenderWriter::~RenderWriter() = default;
 
 void EchoCanceller3::RenderWriter::Insert(const AudioBuffer& input) {
-  RTC_DCHECK_EQ(1, input.num_channels());
   RTC_DCHECK_EQ(AudioBuffer::kSplitBandSize, input.num_frames_per_band());
   RTC_DCHECK_EQ(num_bands_, input.num_bands());
+  RTC_DCHECK_EQ(num_channels_, input.num_channels());
 
   // TODO(bugs.webrtc.org/8759) Temporary work-around.
   if (num_bands_ != input.num_bands())
@@ -211,9 +211,7 @@ void EchoCanceller3::RenderWriter::Insert(const AudioBuffer& input) {
 
   CopyBufferIntoFrame(input, num_bands_, num_channels_,
                       &render_queue_input_frame_);
-  for (size_t channel = 0; channel < num_channels_; ++channel) {
-    high_pass_filter_.Process(render_queue_input_frame_[0][channel]);
-  }
+  high_pass_filter_.Process(&render_queue_input_frame_[0]);
 
   static_cast<void>(render_transfer_queue_->Insert(&render_queue_input_frame_));
 }
@@ -321,7 +319,6 @@ void EchoCanceller3::AnalyzeCapture(const AudioBuffer& capture) {
 void EchoCanceller3::ProcessCapture(AudioBuffer* capture, bool level_change) {
   RTC_DCHECK_RUNS_SERIALIZED(&capture_race_checker_);
   RTC_DCHECK(capture);
-  RTC_DCHECK_EQ(1u, capture->num_channels());
   RTC_DCHECK_EQ(num_bands_, capture->num_bands());
   RTC_DCHECK_EQ(AudioBuffer::kSplitBandSize, capture->num_frames_per_band());
   RTC_DCHECK_EQ(capture->num_channels(), num_capture_channels_);

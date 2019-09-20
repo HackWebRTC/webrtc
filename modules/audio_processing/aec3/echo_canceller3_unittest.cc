@@ -215,7 +215,7 @@ class EchoCanceller3Tester {
         std::unique_ptr<BlockProcessor>(
             new RenderTransportVerificationProcessor(num_bands_)));
 
-    std::vector<float> render_input;
+    std::vector<std::vector<float>> render_input(1);
     std::vector<float> capture_output;
     for (size_t frame_index = 0; frame_index < kNumFramesToProcess;
          ++frame_index) {
@@ -227,7 +227,7 @@ class EchoCanceller3Tester {
                          &render_buffer_.split_bands(0)[0], 0);
 
       for (size_t k = 0; k < frame_length_; ++k) {
-        render_input.push_back(render_buffer_.split_bands(0)[0][k]);
+        render_input[0].push_back(render_buffer_.split_bands(0)[0][k]);
       }
       aec3.AnalyzeRender(&render_buffer_);
       aec3.ProcessCapture(&capture_buffer_, false);
@@ -236,10 +236,10 @@ class EchoCanceller3Tester {
       }
     }
     HighPassFilter hp_filter(1);
-    hp_filter.Process(render_input);
+    hp_filter.Process(&render_input);
 
     EXPECT_TRUE(
-        VerifyOutputFrameBitexactness(render_input, capture_output, -64));
+        VerifyOutputFrameBitexactness(render_input[0], capture_output, -64));
   }
 
   // Verifies that information about echo path changes are properly propagated
@@ -492,7 +492,7 @@ class EchoCanceller3Tester {
         std::unique_ptr<BlockProcessor>(
             new RenderTransportVerificationProcessor(num_bands_)));
 
-    std::vector<float> render_input;
+    std::vector<std::vector<float>> render_input(1);
     std::vector<float> capture_output;
 
     for (size_t frame_index = 0; frame_index < kRenderTransferQueueSizeFrames;
@@ -508,7 +508,7 @@ class EchoCanceller3Tester {
       }
 
       for (size_t k = 0; k < frame_length_; ++k) {
-        render_input.push_back(render_buffer_.split_bands(0)[0][k]);
+        render_input[0].push_back(render_buffer_.split_bands(0)[0][k]);
       }
       aec3.AnalyzeRender(&render_buffer_);
     }
@@ -529,10 +529,10 @@ class EchoCanceller3Tester {
       }
     }
     HighPassFilter hp_filter(1);
-    hp_filter.Process(render_input);
+    hp_filter.Process(&render_input);
 
     EXPECT_TRUE(
-        VerifyOutputFrameBitexactness(render_input, capture_output, -64));
+        VerifyOutputFrameBitexactness(render_input[0], capture_output, -64));
   }
 
   // This test verifies that a buffer overrun in the render swapqueue is

@@ -30,9 +30,7 @@ class HighPassFilter {
   HighPassFilter& operator=(const HighPassFilter&) = delete;
 
   void Process(AudioBuffer* audio);
-  // Only to be used when the number of channels are 1.
-  // TODO(peah): Add support for more channels.
-  void Process(rtc::ArrayView<float> audio);
+  void Process(std::vector<std::vector<float>>* audio);
   void Reset();
   void Reset(size_t num_channels);
 

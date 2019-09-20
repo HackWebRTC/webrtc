@@ -85,6 +85,7 @@ struct SimulationSettings {
   absl::optional<bool> use_refined_adaptive_filter;
   int initial_mic_level;
   bool simulate_mic_gain = false;
+  absl::optional<bool> experimental_multi_channel;
   absl::optional<int> simulated_mic_kind;
   bool report_performance = false;
   absl::optional<std::string> performance_report_output_filename;
