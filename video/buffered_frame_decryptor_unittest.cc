@@ -97,7 +97,7 @@ class BufferedFrameDecryptorTest
 
     return std::unique_ptr<video_coding::RtpFrameObject>(
         new video_coding::RtpFrameObject(
-            fake_packet_buffer_.get(), seq_num_, seq_num_, 0, 0, 0, 0, {},
+            fake_packet_buffer_.get(), seq_num_, seq_num_, 0, 0, 0, {},
             EncodedImageBuffer::Create(/*size=*/0)));
   }
 

@@ -26,7 +26,6 @@ class RtpFrameObject : public EncodedFrame {
   RtpFrameObject(PacketBuffer* packet_buffer,
                  uint16_t first_seq_num,
                  uint16_t last_seq_num,
-                 size_t frame_size,
                  int times_nacked,
                  int64_t first_packet_received_time,
                  int64_t last_packet_received_time,

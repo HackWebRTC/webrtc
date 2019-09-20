@@ -437,8 +437,8 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
                              missing_packets_.upper_bound(seq_num));
 
       auto frame = std::make_unique<RtpFrameObject>(
-          this, start_seq_num, seq_num, frame_size, max_nack_count,
-          min_recv_time, max_recv_time, RtpPacketInfos(std::move(packet_infos)),
+          this, start_seq_num, seq_num, max_nack_count, min_recv_time,
+          max_recv_time, RtpPacketInfos(std::move(packet_infos)),
           GetEncodedImageBuffer(frame_size, start_seq_num, seq_num));
 
       found_frames.emplace_back(std::move(frame));
