@@ -173,12 +173,13 @@ TEST(SvcRateAllocatorTest, MinBitrateToGetQualityLayer) {
   EXPECT_EQ(allocation.GetSpatialLayerSum(1) / 1000, layers[1].minBitrate);
 }
 
-TEST(SvcRateAllocatorTest, DeativateLayers) {
+TEST(SvcRateAllocatorTest, DeactivateHigherLayers) {
   for (int deactivated_idx = 2; deactivated_idx >= 0; --deactivated_idx) {
     VideoCodec codec = Configure(1280, 720, 3, 1, false);
     EXPECT_LE(codec.VP9()->numberOfSpatialLayers, 3U);
 
-    codec.spatialLayers[deactivated_idx].active = false;
+    for (int i = deactivated_idx; i < 3; ++i)
+      codec.spatialLayers[i].active = false;
 
     SvcRateAllocator allocator = SvcRateAllocator(codec);
 
@@ -197,11 +198,39 @@ TEST(SvcRateAllocatorTest, DeativateLayers) {
   }
 }
 
+TEST(SvcRateAllocatorTest, DeactivateLowerLayers) {
+  for (int deactivated_idx = 0; deactivated_idx < 3; ++deactivated_idx) {
+    VideoCodec codec = Configure(1280, 720, 3, 1, false);
+    EXPECT_LE(codec.VP9()->numberOfSpatialLayers, 3U);
+
+    for (int i = deactivated_idx; i >= 0; --i)
+      codec.spatialLayers[i].active = false;
+
+    SvcRateAllocator allocator = SvcRateAllocator(codec);
+
+    VideoBitrateAllocation allocation = allocator.Allocate(
+        VideoBitrateAllocationParameters(10 * 1000 * 1000, 30));
+
+    // Ensure layers spatial_idx <= deactivated_idx are deactivated.
+    for (int spatial_idx = 0; spatial_idx <= deactivated_idx; ++spatial_idx) {
+      EXPECT_EQ(allocation.GetSpatialLayerSum(spatial_idx), 0UL);
+    }
+
+    // Ensure layers spatial_idx > deactivated_idx are activated.
+    for (int spatial_idx = deactivated_idx + 1; spatial_idx < 3;
+         ++spatial_idx) {
+      EXPECT_GT(allocation.GetSpatialLayerSum(spatial_idx), 0UL);
+    }
+  }
+}
+
 TEST(SvcRateAllocatorTest, NoPaddingIfAllLayersAreDeactivated) {
   VideoCodec codec = Configure(1280, 720, 3, 1, false);
   EXPECT_EQ(codec.VP9()->numberOfSpatialLayers, 3U);
   // Deactivation of base layer deactivates all layers.
   codec.spatialLayers[0].active = false;
+  codec.spatialLayers[1].active = false;
+  codec.spatialLayers[2].active = false;
   DataRate padding_rate = SvcRateAllocator::GetPaddingBitrate(codec);
   EXPECT_EQ(padding_rate, DataRate::Zero());
 }
@@ -280,6 +309,15 @@ TEST_P(SvcRateAllocatorTestParametrizedContentType, PaddingBitrate) {
   EXPECT_GT(allocation.GetSpatialLayerSum(0), 0UL);
   EXPECT_EQ(allocation.GetSpatialLayerSum(1), 0UL);
   EXPECT_EQ(allocation.GetSpatialLayerSum(2), 0UL);
+
+  // Deactivate all layers.
+  codec.spatialLayers[0].active = false;
+  codec.spatialLayers[1].active = false;
+  codec.spatialLayers[2].active = false;
+
+  padding_bitrate = SvcRateAllocator::GetPaddingBitrate(codec);
+  // No padding expected.
+  EXPECT_EQ(DataRate::Zero(), padding_bitrate);
 }
 
 TEST_P(SvcRateAllocatorTestParametrizedContentType, StableBitrate) {
