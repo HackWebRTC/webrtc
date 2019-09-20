@@ -11,6 +11,8 @@
 
 namespace webrtc {
 void FuzzOneInput(const uint8_t* data, size_t size) {
+  if (size > 200000)
+    return;
   RtpDepacketizerH264 depacketizer;
   RtpDepacketizer::ParsedPayload parsed_payload;
   depacketizer.Parse(&parsed_payload, data, size);
