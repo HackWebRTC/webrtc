@@ -23,7 +23,6 @@ class PacketBuffer;
 
 class RtpFrameObject : public EncodedFrame {
  public:
-  // TODO(philipel): Update the ctor to take an EncodedImageBuffer.
   RtpFrameObject(PacketBuffer* packet_buffer,
                  uint16_t first_seq_num,
                  uint16_t last_seq_num,
@@ -31,7 +30,8 @@ class RtpFrameObject : public EncodedFrame {
                  int times_nacked,
                  int64_t first_packet_received_time,
                  int64_t last_packet_received_time,
-                 RtpPacketInfos packet_infos);
+                 RtpPacketInfos packet_infos,
+                 rtc::scoped_refptr<EncodedImageBuffer> image_buffer);
 
   ~RtpFrameObject() override;
   uint16_t first_seq_num() const;

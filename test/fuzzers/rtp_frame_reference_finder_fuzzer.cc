@@ -126,7 +126,8 @@ void FuzzOneInput(const uint8_t* data, size_t size) {
     last_packet->video_header.is_last_packet_in_frame = true;
 
     auto frame = std::make_unique<video_coding::RtpFrameObject>(
-        pb, first_seq_num, last_seq_num, 0, 0, 0, 0, RtpPacketInfos());
+        pb, first_seq_num, last_seq_num, 0, 0, 0, 0, RtpPacketInfos(),
+        EncodedImageBuffer::Create(/*size=*/0));
     reference_finder.ManageFrame(std::move(frame));
   }
 }

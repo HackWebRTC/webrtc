@@ -24,14 +24,16 @@
 namespace webrtc {
 namespace video_coding {
 
-RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
-                               uint16_t first_seq_num,
-                               uint16_t last_seq_num,
-                               size_t frame_size,
-                               int times_nacked,
-                               int64_t first_packet_received_time,
-                               int64_t last_packet_received_time,
-                               RtpPacketInfos packet_infos)
+RtpFrameObject::RtpFrameObject(
+    PacketBuffer* packet_buffer,
+    uint16_t first_seq_num,
+    uint16_t last_seq_num,
+    size_t frame_size,
+    int times_nacked,
+    int64_t first_packet_received_time,
+    int64_t last_packet_received_time,
+    RtpPacketInfos packet_infos,
+    rtc::scoped_refptr<EncodedImageBuffer> image_buffer)
     : first_seq_num_(first_seq_num),
       last_seq_num_(last_seq_num),
       last_packet_received_time_(last_packet_received_time),
@@ -58,6 +60,7 @@ RtpFrameObject::RtpFrameObject(PacketBuffer* packet_buffer,
   // as of the first packet's.
   SetPlayoutDelay(first_packet->video_header.playout_delay);
 
+  SetEncodedData(std::move(image_buffer));
   _encodedWidth = first_packet->width();
   _encodedHeight = first_packet->height();
 

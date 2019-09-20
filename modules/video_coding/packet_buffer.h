@@ -17,6 +17,7 @@
 #include <vector>
 
 #include "api/scoped_refptr.h"
+#include "api/video/encoded_image.h"
 #include "modules/include/module_common_types.h"
 #include "modules/video_coding/packet.h"
 #include "rtc_base/critical_section.h"
@@ -113,8 +114,10 @@ class PacketBuffer {
   std::vector<std::unique_ptr<RtpFrameObject>> FindFrames(uint16_t seq_num)
       RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
-  // Copy the bitstream for |frame| to |destination|.
-  bool GetBitstream(const RtpFrameObject& frame, uint8_t* destination);
+  rtc::scoped_refptr<EncodedImageBuffer> GetEncodedImageBuffer(
+      size_t frame_size,
+      uint16_t first_seq_num,
+      uint16_t last_seq_num) RTC_EXCLUSIVE_LOCKS_REQUIRED(crit_);
 
   // Get the packet with sequence number |seq_num|.
   // Virtual for testing.
