@@ -548,7 +548,7 @@ void DefaultVideoQualityAnalyzer::ProcessComparison(
         *comparison.frame_stats.rendered_frame_width *
         *comparison.frame_stats.rendered_frame_height);
     stats->transport_time_ms.AddSample(
-        (frame_stats.received_time - frame_stats.encoded_time).ms());
+        (frame_stats.decode_start_time - frame_stats.encoded_time).ms());
     stats->total_delay_incl_transport_ms.AddSample(
         (frame_stats.rendered_time - frame_stats.captured_time).ms());
     stats->decode_time_ms.AddSample(
