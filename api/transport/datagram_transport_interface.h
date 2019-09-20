@@ -58,11 +58,10 @@ class DatagramSinkInterface {
   virtual void OnDatagramSent(DatagramId datagram_id) = 0;
 
   // Called when datagram is ACKed.
-  // TODO(sukhanov): Make pure virtual.
-  virtual void OnDatagramAcked(const DatagramAck& datagram_ack) {}
+  virtual void OnDatagramAcked(const DatagramAck& datagram_ack) = 0;
 
   // Called when a datagram is lost.
-  virtual void OnDatagramLost(DatagramId datagram_id) {}
+  virtual void OnDatagramLost(DatagramId datagram_id) = 0;
 };
 
 // Datagram transport allows to send and receive unreliable packets (datagrams)
@@ -140,9 +139,7 @@ class DatagramTransportInterface : public DataChannelTransportInterface {
   // For clients, the parameters echo the server configuration used to create
   // the client, possibly removing any fields or parameters which the client
   // does not understand.
-  //
-  // TODO(mellem): Make pure virtual.
-  virtual std::string GetTransportParameters() const { return ""; }
+  virtual std::string GetTransportParameters() const = 0;
 };
 
 }  // namespace webrtc
