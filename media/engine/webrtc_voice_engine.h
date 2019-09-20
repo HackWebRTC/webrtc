@@ -166,6 +166,7 @@ class WebRtcVoiceMediaChannel final : public VoiceMediaChannel,
   bool RemoveSendStream(uint32_t ssrc) override;
   bool AddRecvStream(const StreamParams& sp) override;
   bool RemoveRecvStream(uint32_t ssrc) override;
+  void ResetUnsignaledRecvStream() override;
 
   // E2EE Frame API
   // Set a frame decryptor to a particular ssrc that will intercept all

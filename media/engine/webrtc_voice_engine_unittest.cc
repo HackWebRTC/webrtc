@@ -2590,9 +2590,9 @@ TEST_F(WebRtcVoiceEngineTestFake, RecvUnsignaledSsrcWithSignaledStreamId) {
       GetRecvStream(kSsrc1).VerifyLastPacket(kPcmuFrame, sizeof(kPcmuFrame)));
   EXPECT_EQ(kSyncLabel, GetRecvStream(kSsrc1).GetConfig().sync_group);
 
-  // Removing the unsignaled stream clears the cached parameters. If a new
+  // Remset the unsignaled stream to clear the cached parameters. If a new
   // default unsignaled receive stream is created it will not have a sync group.
-  channel_->RemoveRecvStream(0);
+  channel_->ResetUnsignaledRecvStream();
   channel_->RemoveRecvStream(kSsrc1);
 
   DeliverPacket(kPcmuFrame, sizeof(kPcmuFrame));
@@ -2763,9 +2763,9 @@ TEST_F(WebRtcVoiceEngineTestFake, StreamCleanup) {
   EXPECT_EQ(0u, call_.GetAudioReceiveStreams().size());
 }
 
-TEST_F(WebRtcVoiceEngineTestFake, TestAddRecvStreamFailWithZeroSsrc) {
+TEST_F(WebRtcVoiceEngineTestFake, TestAddRecvStreamSuccessWithZeroSsrc) {
   EXPECT_TRUE(SetupSendStream());
-  EXPECT_FALSE(AddRecvStream(0));
+  EXPECT_TRUE(AddRecvStream(0));
 }
 
 TEST_F(WebRtcVoiceEngineTestFake, TestAddRecvStreamFailWithSameSsrc) {

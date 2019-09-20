@@ -580,6 +580,11 @@ bool BaseChannel::RemoveRecvStream_w(uint32_t ssrc) {
   return media_channel()->RemoveRecvStream(ssrc);
 }
 
+void BaseChannel::ResetUnsignaledRecvStream_w() {
+  RTC_DCHECK(worker_thread() == rtc::Thread::Current());
+  media_channel()->ResetUnsignaledRecvStream();
+}
+
 bool BaseChannel::UpdateLocalStreams_w(const std::vector<StreamParams>& streams,
                                        SdpType type,
                                        std::string* error_desc) {
@@ -666,8 +671,11 @@ bool BaseChannel::UpdateRemoteStreams_w(
   for (const StreamParams& old_stream : remote_streams_) {
     // If we no longer have an unsignaled stream, we would like to remove
     // the unsignaled stream params that are cached.
-    if ((!old_stream.has_ssrcs() && !HasStreamWithNoSsrcs(streams)) ||
-        !GetStreamBySsrc(streams, old_stream.first_ssrc())) {
+    if (!old_stream.has_ssrcs() && !HasStreamWithNoSsrcs(streams)) {
+      ResetUnsignaledRecvStream_w();
+      RTC_LOG(LS_INFO) << "Reset unsignaled remote stream.";
+    } else if (old_stream.has_ssrcs() &&
+               !GetStreamBySsrc(streams, old_stream.first_ssrc())) {
       if (RemoveRecvStream_w(old_stream.first_ssrc())) {
         RTC_LOG(LS_INFO) << "Remove remote ssrc: " << old_stream.first_ssrc();
       } else {
@@ -688,10 +696,16 @@ bool BaseChannel::UpdateRemoteStreams_w(
     if ((!new_stream.has_ssrcs() && !HasStreamWithNoSsrcs(remote_streams_)) ||
         !GetStreamBySsrc(remote_streams_, new_stream.first_ssrc())) {
       if (AddRecvStream_w(new_stream)) {
-        RTC_LOG(LS_INFO) << "Add remote ssrc: " << new_stream.first_ssrc();
+        RTC_LOG(LS_INFO) << "Add remote ssrc: "
+                         << (new_stream.has_ssrcs()
+                                 ? std::to_string(new_stream.first_ssrc())
+                                 : "unsignaled");
       } else {
         rtc::StringBuilder desc;
-        desc << "Failed to add remote stream ssrc: " << new_stream.first_ssrc();
+        desc << "Failed to add remote stream ssrc: "
+             << (new_stream.has_ssrcs()
+                     ? std::to_string(new_stream.first_ssrc())
+                     : "unsignaled");
         SafeSetError(desc.str(), error_desc);
         ret = false;
       }

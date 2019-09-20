@@ -1841,10 +1841,6 @@ bool WebRtcVoiceMediaChannel::AddRecvStream(const StreamParams& sp) {
   }
 
   const uint32_t ssrc = sp.first_ssrc();
-  if (ssrc == 0) {
-    RTC_DLOG(LS_WARNING) << "AddRecvStream with ssrc==0 is not supported.";
-    return false;
-  }
 
   // If this stream was previously received unsignaled, we promote it, possibly
   // recreating the AudioReceiveStream, if stream ids have changed.
@@ -1880,13 +1876,6 @@ bool WebRtcVoiceMediaChannel::RemoveRecvStream(uint32_t ssrc) {
   RTC_DCHECK(worker_thread_checker_.IsCurrent());
   RTC_LOG(LS_INFO) << "RemoveRecvStream: " << ssrc;
 
-  if (ssrc == 0) {
-    // This indicates that we need to remove the unsignaled stream parameters
-    // that are cached.
-    unsignaled_stream_params_ = StreamParams();
-    return true;
-  }
-
   const auto it = recv_streams_.find(ssrc);
   if (it == recv_streams_.end()) {
     RTC_LOG(LS_WARNING) << "Try to remove stream with ssrc " << ssrc
@@ -1900,6 +1889,12 @@ bool WebRtcVoiceMediaChannel::RemoveRecvStream(uint32_t ssrc) {
   delete it->second;
   recv_streams_.erase(it);
   return true;
+}
+
+void WebRtcVoiceMediaChannel::ResetUnsignaledRecvStream() {
+  RTC_DCHECK(worker_thread_checker_.IsCurrent());
+  RTC_LOG(LS_INFO) << "ResetUnsignaledRecvStream.";
+  unsignaled_stream_params_ = StreamParams();
 }
 
 bool WebRtcVoiceMediaChannel::SetLocalSource(uint32_t ssrc,
