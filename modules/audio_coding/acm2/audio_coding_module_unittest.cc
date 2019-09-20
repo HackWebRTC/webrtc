@@ -973,10 +973,6 @@ TEST_F(AcmReceiverBitExactnessOldApi, 48kHzOutputExternalDecoder) {
           fact_(CreateBuiltinAudioDecoderFactory()) {
       // Set expectations on the mock decoder and also delegate the calls to
       // the real decoder.
-      EXPECT_CALL(*mock_decoder_, IncomingPacket(_, _, _, _, _))
-          .Times(AtLeast(1))
-          .WillRepeatedly(
-              Invoke(&pcmu_decoder_, &AudioDecoderPcmU::IncomingPacket));
       EXPECT_CALL(*mock_decoder_, SampleRateHz())
           .Times(AtLeast(1))
           .WillRepeatedly(

@@ -65,18 +65,6 @@ void AudioDecoderIsacT<T>::Reset() {
 }
 
 template <typename T>
-int AudioDecoderIsacT<T>::IncomingPacket(const uint8_t* payload,
-                                         size_t payload_len,
-                                         uint16_t rtp_sequence_number,
-                                         uint32_t rtp_timestamp,
-                                         uint32_t arrival_timestamp) {
-  int ret = T::UpdateBwEstimate(isac_state_, payload, payload_len,
-                                rtp_sequence_number, rtp_timestamp,
-                                arrival_timestamp);
-  return ret;
-}
-
-template <typename T>
 int AudioDecoderIsacT<T>::ErrorCode() {
   return T::GetErrorCode(isac_state_);
 }

@@ -296,16 +296,6 @@ webrtc_fuzzer_test("audio_decoder_isac_fuzzer") {
   ]
 }
 
-webrtc_fuzzer_test("audio_decoder_isac_incoming_packet_fuzzer") {
-  sources = [
-    "audio_decoder_isac_incoming_packet_fuzzer.cc",
-  ]
-  deps = [
-    ":audio_decoder_fuzzer",
-    "../../modules/audio_coding:isac",
-  ]
-}
-
 webrtc_fuzzer_test("audio_decoder_isacfix_fuzzer") {
   sources = [
     "audio_decoder_isacfix_fuzzer.cc",

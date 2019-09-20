@@ -33,11 +33,6 @@ class AudioDecoderIsacT final : public AudioDecoder {
   bool HasDecodePlc() const override;
   size_t DecodePlc(size_t num_frames, int16_t* decoded) override;
   void Reset() override;
-  int IncomingPacket(const uint8_t* payload,
-                     size_t payload_len,
-                     uint16_t rtp_sequence_number,
-                     uint32_t rtp_timestamp,
-                     uint32_t arrival_timestamp) override;
   int ErrorCode() override;
   int SampleRateHz() const override;
   size_t Channels() const override;

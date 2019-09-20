@@ -90,15 +90,6 @@ class IsacFix {
                                              int bottleneck_bits_per_second) {
     WebRtcIsacfix_SetInitialBweBottleneck(inst, bottleneck_bits_per_second);
   }
-  static inline int16_t UpdateBwEstimate(instance_type* inst,
-                                         const uint8_t* encoded,
-                                         size_t packet_size,
-                                         uint16_t rtp_seq_number,
-                                         uint32_t send_ts,
-                                         uint32_t arr_ts) {
-    return WebRtcIsacfix_UpdateBwEstimate(inst, encoded, packet_size,
-                                          rtp_seq_number, send_ts, arr_ts);
-  }
   static inline int16_t SetMaxPayloadSize(instance_type* inst,
                                           int16_t max_payload_size_bytes) {
     return WebRtcIsacfix_SetMaxPayloadSize(inst, max_payload_size_bytes);
