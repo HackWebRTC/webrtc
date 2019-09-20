@@ -1450,7 +1450,6 @@ void JsepTransportController::OnTransportStateChanged_n(
 }
 
 void JsepTransportController::OnMediaTransportStateChanged_n() {
-  SignalMediaTransportStateChanged();
   UpdateAggregateStates_n();
 }
 

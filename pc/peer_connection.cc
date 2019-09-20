@@ -6825,13 +6825,6 @@ bool PeerConnection::SetupDataChannelTransport_n(const std::string& mid) {
   data_channel_transport_invoker_ = std::make_unique<rtc::AsyncInvoker>();
   data_channel_transport_->SetDataSink(this);
   sctp_mid_ = mid;
-  // TODO(mellem):  Handling data channel state through media transport is
-  // deprecated.  Delete these lines when downstream implementations call
-  // DataChannelSink::OnStateChanged().
-  transport_controller_->SignalMediaTransportStateChanged.connect(
-      this, &PeerConnection::OnMediaTransportStateChanged_n);
-  // Check the initial state right away, in case transport is already writable.
-  OnMediaTransportStateChanged_n();
   return true;
 }
 
@@ -6842,9 +6835,6 @@ void PeerConnection::TeardownDataChannelTransport_n() {
   RTC_LOG(LS_INFO) << "Tearing down data channel transport for mid="
                    << *sctp_mid_;
 
-  // TODO(mellem):  Delete this line when downstream implementations call
-  // DataChannelSink::OnStateChanged().
-  transport_controller_->SignalMediaTransportStateChanged.disconnect(this);
   // |sctp_mid_| may still be active through an SCTP transport.  If not, unset
   // it.
   if (!sctp_transport_) {
@@ -6853,25 +6843,6 @@ void PeerConnection::TeardownDataChannelTransport_n() {
   data_channel_transport_->SetDataSink(nullptr);
   data_channel_transport_invoker_ = nullptr;
   data_channel_transport_ = nullptr;
-}
-
-// TODO(mellem):  Handling of data channel state through the media transport
-// callback is deprecated.  This function should be deleted once downstream
-// implementations call DataChannelSink::OnStateChanged().
-void PeerConnection::OnMediaTransportStateChanged_n() {
-  if (!sctp_mid_ || transport_controller_->GetMediaTransportState(*sctp_mid_) !=
-                        MediaTransportState::kWritable) {
-    return;
-  }
-  data_channel_transport_invoker_->AsyncInvoke<void>(
-      RTC_FROM_HERE, signaling_thread(), [this] {
-        RTC_DCHECK_RUN_ON(signaling_thread());
-        data_channel_transport_ready_to_send_ = true;
-        if (data_channel_transport_negotiated_) {
-          SignalDataChannelTransportWritable_s(
-              data_channel_transport_ready_to_send_);
-        }
-      });
 }
 
 // Returns false if bundle is enabled and rtcp_mux is disabled.

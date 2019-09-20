@@ -287,10 +287,6 @@ class JsepTransportController : public sigslot::has_slots<> {
 
   sigslot::signal1<rtc::SSLHandshakeError> SignalDtlsHandshakeError;
 
-  // TODO(mellem): Delete this signal once PeerConnection no longer
-  // uses it to determine data channel state.
-  sigslot::signal<> SignalMediaTransportStateChanged;
-
  private:
   RTCError ApplyDescription_n(bool local,
                               SdpType type,
