@@ -187,6 +187,7 @@ webrtc_fuzzer_test("ulpfec_receiver_fuzzer") {
     "ulpfec_receiver_fuzzer.cc",
   ]
   deps = [
+    ":fuzz_data_helper",
     "../../modules/rtp_rtcp",
     "../../modules/rtp_rtcp:rtp_rtcp_format",
     "../../rtc_base:rtc_base_approved",

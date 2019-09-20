@@ -732,11 +732,8 @@ void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(
       // packets.
       NotifyReceiverOfEmptyPacket(packet.SequenceNumber());
     }
-    RTPHeader header;
-    packet.GetHeader(&header);
-    if (ulpfec_receiver_->AddReceivedRedPacket(
-            header, packet.data(), packet.size(),
-            config_.rtp.ulpfec_payload_type) != 0) {
+    if (!ulpfec_receiver_->AddReceivedRedPacket(
+            packet, config_.rtp.ulpfec_payload_type)) {
       return;
     }
     ulpfec_receiver_->ProcessReceivedFec();
