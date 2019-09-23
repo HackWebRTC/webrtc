@@ -34,8 +34,12 @@ ScopedJavaLocalRef<jobject> NativeToJavaEncodedImage(
   ScopedJavaLocalRef<jobject> qp;
   if (image.qp_ != -1)
     qp = NativeToJavaInteger(jni, image.qp_);
+  // TODO(bugs.webrtc.org/9378): Keep a reference to the C++ EncodedImage data,
+  // and use the releaseCallback to manage lifetime.
   return Java_EncodedImage_Constructor(
-      jni, buffer, static_cast<int>(image._encodedWidth),
+      jni, buffer, /*supportsRetain=*/true,
+      /*releaseCallback=*/ScopedJavaGlobalRef<jobject>(nullptr),
+      static_cast<int>(image._encodedWidth),
       static_cast<int>(image._encodedHeight),
       image.capture_time_ms_ * rtc::kNumNanosecsPerMillisec, frame_type,
       static_cast<jint>(image.rotation_), image._completeFrame, qp);

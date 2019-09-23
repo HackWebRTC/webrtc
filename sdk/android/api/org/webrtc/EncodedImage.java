@@ -18,7 +18,7 @@ import java.util.concurrent.TimeUnit;
  * An encoded frame from a video stream. Used as an input for decoders and as an output for
  * encoders.
  */
-public class EncodedImage {
+public class EncodedImage implements RefCounted {
   // Must be kept in sync with common_types.h FrameType.
   public enum FrameType {
     EmptyFrame(0),
@@ -46,6 +46,8 @@ public class EncodedImage {
     }
   }
 
+  private final RefCountDelegate refCountDelegate;
+  private final boolean supportsRetain;
   public final ByteBuffer buffer;
   public final int encodedWidth;
   public final int encodedHeight;
@@ -56,8 +58,31 @@ public class EncodedImage {
   public final boolean completeFrame;
   public final @Nullable Integer qp;
 
+  // TODO(bugs.webrtc.org/9378): Use retain and release from jni code.
+  @Override
+  public void retain() {
+    refCountDelegate.retain();
+  }
+
+  @Override
+  public void release() {
+    refCountDelegate.release();
+  }
+
+  // A false return value means that the encoder expects that the buffer is no longer used after
+  // VideoEncoder.Callback.onEncodedFrame returns.
+  boolean maybeRetain() {
+    if (supportsRetain) {
+      retain();
+      return true;
+    } else {
+      return false;
+    }
+  }
+
   @CalledByNative
-  private EncodedImage(ByteBuffer buffer, int encodedWidth, int encodedHeight, long captureTimeNs,
+  private EncodedImage(ByteBuffer buffer, boolean supportsRetain,
+      @Nullable Runnable releaseCallback, int encodedWidth, int encodedHeight, long captureTimeNs,
       FrameType frameType, int rotation, boolean completeFrame, @Nullable Integer qp) {
     this.buffer = buffer;
     this.encodedWidth = encodedWidth;
@@ -68,6 +93,8 @@ public class EncodedImage {
     this.rotation = rotation;
     this.completeFrame = completeFrame;
     this.qp = qp;
+    this.supportsRetain = supportsRetain;
+    this.refCountDelegate = new RefCountDelegate(releaseCallback);
   }
 
   @CalledByNative
@@ -116,6 +143,8 @@ public class EncodedImage {
 
   public static class Builder {
     private ByteBuffer buffer;
+    private boolean supportsRetain;
+    private @Nullable Runnable releaseCallback;
     private int encodedWidth;
     private int encodedHeight;
     private long captureTimeNs;
@@ -126,8 +155,18 @@ public class EncodedImage {
 
     private Builder() {}
 
+    @Deprecated
     public Builder setBuffer(ByteBuffer buffer) {
       this.buffer = buffer;
+      this.releaseCallback = null;
+      this.supportsRetain = false;
+      return this;
+    }
+
+    public Builder setBuffer(ByteBuffer buffer, @Nullable Runnable releaseCallback) {
+      this.buffer = buffer;
+      this.releaseCallback = releaseCallback;
+      this.supportsRetain = true;
       return this;
     }
 
@@ -173,8 +212,8 @@ public class EncodedImage {
     }
 
     public EncodedImage createEncodedImage() {
-      return new EncodedImage(buffer, encodedWidth, encodedHeight, captureTimeNs, frameType,
-          rotation, completeFrame, qp);
+      return new EncodedImage(buffer, supportsRetain, releaseCallback, encodedWidth, encodedHeight,
+          captureTimeNs, frameType, rotation, completeFrame, qp);
     }
   }
 }
