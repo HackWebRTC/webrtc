@@ -62,6 +62,26 @@ const int kAudioPts[] = {0, 8};
 const int kVideoPts[] = {97, 99};
 enum class NetworkIsWorker { Yes, No };
 
+// Helper to proxy received RTCP packets to the worker thread.  This is done by
+// the channel's caller (eg. PeerConnection) in production.
+class RtcpThreadHelper : public sigslot::has_slots<> {
+ public:
+  explicit RtcpThreadHelper(rtc::Thread* worker_thread)
+      : worker_thread_(worker_thread) {}
+
+  void OnRtcpPacketReceived(rtc::CopyOnWriteBuffer* packet,
+                            int64_t packet_time_us) {
+    worker_thread_->Invoke<void>(RTC_FROM_HERE, [this, packet, packet_time_us] {
+      SignalRtcpPacketReceived(packet, packet_time_us);
+    });
+  }
+
+  sigslot::signal2<rtc::CopyOnWriteBuffer*, int64_t> SignalRtcpPacketReceived;
+
+ private:
+  rtc::Thread* const worker_thread_;
+};
+
 }  // namespace
 
 template <class ChannelT,
@@ -1535,6 +1555,7 @@ class ChannelTest : public ::testing::Test, public sigslot::has_slots<> {
   int rtcp_mux_activated_callbacks2_ = 0;
   cricket::CandidatePairInterface* last_selected_candidate_pair_;
   rtc::UniqueRandomIdGenerator ssrc_generator_;
+  std::vector<std::unique_ptr<RtcpThreadHelper>> rtcp_thread_helpers_;
 };
 
 template <>
@@ -1544,9 +1565,13 @@ std::unique_ptr<cricket::VoiceChannel> ChannelTest<VoiceTraits>::CreateChannel(
     std::unique_ptr<cricket::FakeVoiceMediaChannel> ch,
     webrtc::RtpTransportInternal* rtp_transport,
     int flags) {
+  auto helper = std::make_unique<RtcpThreadHelper>(worker_thread);
   rtp_transport->SignalRtcpPacketReceived.connect(
+      helper.get(), &RtcpThreadHelper::OnRtcpPacketReceived);
+  helper->SignalRtcpPacketReceived.connect(
       static_cast<cricket::RtpHelper<cricket::VoiceMediaChannel>*>(ch.get()),
       &cricket::RtpHelper<cricket::VoiceMediaChannel>::OnRtcpPacketReceived);
+  rtcp_thread_helpers_.push_back(std::move(helper));
   rtc::Thread* signaling_thread = rtc::Thread::Current();
   auto channel = std::make_unique<cricket::VoiceChannel>(
       worker_thread, network_thread, signaling_thread, std::move(ch),
@@ -1630,9 +1655,13 @@ std::unique_ptr<cricket::VideoChannel> ChannelTest<VideoTraits>::CreateChannel(
     std::unique_ptr<cricket::FakeVideoMediaChannel> ch,
     webrtc::RtpTransportInternal* rtp_transport,
     int flags) {
+  auto helper = std::make_unique<RtcpThreadHelper>(worker_thread);
   rtp_transport->SignalRtcpPacketReceived.connect(
+      helper.get(), &RtcpThreadHelper::OnRtcpPacketReceived);
+  helper->SignalRtcpPacketReceived.connect(
       static_cast<cricket::RtpHelper<cricket::VideoMediaChannel>*>(ch.get()),
       &cricket::RtpHelper<cricket::VideoMediaChannel>::OnRtcpPacketReceived);
+  rtcp_thread_helpers_.push_back(std::move(helper));
   rtc::Thread* signaling_thread = rtc::Thread::Current();
   auto channel = std::make_unique<cricket::VideoChannel>(
       worker_thread, network_thread, signaling_thread, std::move(ch),
@@ -2444,9 +2473,13 @@ std::unique_ptr<cricket::RtpDataChannel> ChannelTest<DataTraits>::CreateChannel(
     std::unique_ptr<cricket::FakeDataMediaChannel> ch,
     webrtc::RtpTransportInternal* rtp_transport,
     int flags) {
+  auto helper = std::make_unique<RtcpThreadHelper>(worker_thread);
   rtp_transport->SignalRtcpPacketReceived.connect(
+      helper.get(), &RtcpThreadHelper::OnRtcpPacketReceived);
+  helper->SignalRtcpPacketReceived.connect(
       static_cast<cricket::RtpHelper<cricket::DataMediaChannel>*>(ch.get()),
       &cricket::RtpHelper<cricket::DataMediaChannel>::OnRtcpPacketReceived);
+  rtcp_thread_helpers_.push_back(std::move(helper));
   rtc::Thread* signaling_thread = rtc::Thread::Current();
   auto channel = std::make_unique<cricket::RtpDataChannel>(
       worker_thread, network_thread, signaling_thread, std::move(ch),
