@@ -116,7 +116,7 @@ class FrameObserver : public test::RtpRtcpObserver,
 
   rtc::CriticalSection crit_;
   absl::optional<uint32_t> last_timestamp_;
-  absl::optional<uint8_t> expected_payload_type_;
+  absl::optional<uint8_t> expected_payload_type_ RTC_GUARDED_BY(crit_);
   int num_sent_frames_ RTC_GUARDED_BY(crit_) = 0;
   int num_rendered_frames_ RTC_GUARDED_BY(crit_) = 0;
   std::vector<uint32_t> sent_timestamps_ RTC_GUARDED_BY(crit_);
@@ -212,6 +212,7 @@ void MultiCodecReceiveTest::RunTestWithCodecs(
     ConfigureEncoder(configs[0]);
     CreateMatchingReceiveConfigs(receive_transport_.get());
     video_receive_configs_[0].renderer = &observer_;
+    video_receive_configs_[0].enable_prerenderer_smoothing = false;
     ConfigureDecoders(configs);
     CreateVideoStreams();
     CreateFrameGeneratorCapturer(kFps, kWidth, kHeight);
