@@ -14,7 +14,6 @@
 #include <memory>
 
 #include "api/units/time_delta.h"
-#include "modules/include/module_common_types.h"
 #include "modules/video_coding/encoded_frame.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/timestamp_map.h"

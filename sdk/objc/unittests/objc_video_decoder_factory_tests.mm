@@ -16,7 +16,6 @@
 #import "base/RTCVideoDecoder.h"
 #import "base/RTCVideoDecoderFactory.h"
 #include "media/base/codec.h"
-#include "modules/include/module_common_types.h"
 #include "modules/video_coding/include/video_codec_interface.h"
 #include "modules/video_coding/include/video_error_codes.h"
 #include "rtc_base/gunit.h"

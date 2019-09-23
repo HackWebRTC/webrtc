@@ -18,6 +18,7 @@
 
 #include "absl/types/optional.h"
 #include "call/video_receive_stream.h"
+#include "modules/include/module_common_types.h"
 #include "modules/video_coding/include/video_coding_defines.h"
 #include "rtc_base/critical_section.h"
 #include "rtc_base/numerics/histogram_percentile_counter.h"

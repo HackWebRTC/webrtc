@@ -16,8 +16,6 @@
 #include <memory>
 #include <vector>
 
-#include "modules/include/module_common_types.h"
-
 namespace webrtc {
 
 class VCMPacket;

@@ -15,6 +15,7 @@
 #include <memory>
 #include <utility>
 
+#include "modules/include/module_common_types_public.h"
 #include "modules/rtp_rtcp/source/rtp_packet_to_send.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/logging.h"

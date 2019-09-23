@@ -14,8 +14,9 @@
 #include <map>
 #include <utility>
 
+#include "absl/types/optional.h"
 #include "api/units/data_size.h"
-#include "modules/include/module_common_types.h"
+#include "modules/include/module_common_types_public.h"
 #include "rtc_base/constructor_magic.h"
 
 namespace webrtc {

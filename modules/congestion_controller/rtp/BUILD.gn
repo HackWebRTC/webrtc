@@ -50,7 +50,7 @@ rtc_static_library("transport_feedback") {
   ]
 
   deps = [
-    "../..:module_api",
+    "../..:module_api_public",
     "../../../api/transport:network_control",
     "../../../api/units:data_size",
     "../../../api/units:timestamp",
@@ -60,6 +60,7 @@ rtc_static_library("transport_feedback") {
     "../../../system_wrappers",
     "../../../system_wrappers:field_trial",
     "../../rtp_rtcp:rtp_rtcp_format",
+    "//third_party/abseil-cpp/absl/types:optional",
   ]
 }
 
