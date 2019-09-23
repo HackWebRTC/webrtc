@@ -27,6 +27,7 @@
 #include "media/base/media_engine.h"
 #include "modules/audio_device/include/audio_device.h"
 #include "modules/audio_processing/include/audio_processing.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace cricket {
 
@@ -52,7 +53,7 @@ struct MediaEngineDependencies {
 // CreateMediaEngine may be called on any thread, though the engine is
 // only expected to be used on one thread, internally called the "worker
 // thread". This is the thread Init must be called on.
-std::unique_ptr<MediaEngineInterface> CreateMediaEngine(
+RTC_EXPORT std::unique_ptr<MediaEngineInterface> CreateMediaEngine(
     MediaEngineDependencies dependencies);
 
 // Verify that extension IDs are within 1-byte extension range and are not

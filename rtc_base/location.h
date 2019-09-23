@@ -14,6 +14,7 @@
 #include <string>
 
 #include "rtc_base/stringize_macros.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
 
@@ -21,7 +22,7 @@ namespace rtc {
 // significantly brought to life.
 // This is a stripped down version of:
 // https://code.google.com/p/chromium/codesearch#chromium/src/base/location.h
-class Location {
+class RTC_EXPORT Location {
  public:
   // Constructor should be called with a long-lived char*, such as __FILE__.
   // It assumes the provided value will persist as a global constant, and it

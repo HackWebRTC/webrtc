@@ -33,6 +33,9 @@ rtc_source_set("callfactory_api") {
   sources = [
     "call/call_factory_interface.h",
   ]
+  deps = [
+    "../rtc_base/system:rtc_export",
+  ]
 }
 
 if (!build_with_chromium) {

@@ -46,6 +46,7 @@ RTC_NORETURN void rtc_FatalMessage(const char* file, int line, const char* msg);
 #include "absl/strings/string_view.h"
 #include "rtc_base/numerics/safe_compare.h"
 #include "rtc_base/system/inline.h"
+#include "rtc_base/system/rtc_export.h"
 
 // The macros here print a message to stderr and abort under various
 // conditions. All will accept additional stream messages. For example:
@@ -108,11 +109,11 @@ enum class CheckArgType : int8_t {
   kCheckOp,
 };
 
-RTC_NORETURN void FatalLog(const char* file,
-                           int line,
-                           const char* message,
-                           const CheckArgType* fmt,
-                           ...);
+RTC_NORETURN RTC_EXPORT void FatalLog(const char* file,
+                                      int line,
+                                      const char* message,
+                                      const CheckArgType* fmt,
+                                      ...);
 
 // Wrapper for log arguments. Only ever make values of this type with the
 // MakeVal() functions.

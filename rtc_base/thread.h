@@ -27,6 +27,7 @@
 #include "rtc_base/message_queue.h"
 #include "rtc_base/platform_thread_types.h"
 #include "rtc_base/socket_server.h"
+#include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread_annotations.h"
 
 #if defined(WEBRTC_WIN)
@@ -77,7 +78,7 @@ class MessageHandlerWithTask final : public MessageHandler {
 
 }  // namespace rtc_thread_internal
 
-class ThreadManager {
+class RTC_EXPORT ThreadManager {
  public:
   static const int kForever = -1;
 
@@ -132,7 +133,7 @@ struct _SendMessage {
 
 // WARNING! SUBCLASSES MUST CALL Stop() IN THEIR DESTRUCTORS!  See ~Thread().
 
-class RTC_LOCKABLE Thread : public MessageQueue {
+class RTC_EXPORT RTC_LOCKABLE Thread : public MessageQueue {
  public:
   explicit Thread(SocketServer* ss);
   explicit Thread(std::unique_ptr<SocketServer> ss);

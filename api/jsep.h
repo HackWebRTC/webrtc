@@ -52,7 +52,7 @@ struct SdpParseError {
 // a time and is therefore not expected to be thread safe.
 //
 // An instance can be created by CreateIceCandidate.
-class IceCandidateInterface {
+class RTC_EXPORT IceCandidateInterface {
  public:
   virtual ~IceCandidateInterface() {}
   // If present, this is the value of the "a=mid" attribute of the candidate's

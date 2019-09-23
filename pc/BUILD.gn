@@ -119,6 +119,7 @@ rtc_static_library("rtc_pc_base") {
     "../rtc_base:rtc_task_queue",
     "../rtc_base:stringutils",
     "../rtc_base/system:file_wrapper",
+    "../rtc_base/system:rtc_export",
     "../rtc_base/third_party/base64",
     "../rtc_base/third_party/sigslot",
     "../system_wrappers:field_trial",

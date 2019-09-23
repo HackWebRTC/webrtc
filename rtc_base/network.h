@@ -23,6 +23,7 @@
 #include "rtc_base/mdns_responder_interface.h"
 #include "rtc_base/message_handler.h"
 #include "rtc_base/network_monitor.h"
+#include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 #if defined(WEBRTC_POSIX)
@@ -52,7 +53,7 @@ std::string MakeNetworkKey(const std::string& name,
 // Utility function that attempts to determine an adapter type by an interface
 // name (e.g., "wlan0"). Can be used by NetworkManager subclasses when other
 // mechanisms fail to determine the type.
-AdapterType GetAdapterTypeFromName(const char* network_name);
+RTC_EXPORT AdapterType GetAdapterTypeFromName(const char* network_name);
 
 class DefaultLocalAddressProvider {
  public:
@@ -84,8 +85,8 @@ class MdnsResponderProvider {
 //
 // This allows constructing a NetworkManager subclass on one thread and
 // passing it into an object that uses it on a different thread.
-class NetworkManager : public DefaultLocalAddressProvider,
-                       public MdnsResponderProvider {
+class RTC_EXPORT NetworkManager : public DefaultLocalAddressProvider,
+                                  public MdnsResponderProvider {
  public:
   typedef std::vector<Network*> NetworkList;
 
@@ -157,7 +158,7 @@ class NetworkManager : public DefaultLocalAddressProvider,
 };
 
 // Base class for NetworkManager implementations.
-class NetworkManagerBase : public NetworkManager {
+class RTC_EXPORT NetworkManagerBase : public NetworkManager {
  public:
   NetworkManagerBase();
   ~NetworkManagerBase() override;
@@ -215,9 +216,9 @@ class NetworkManagerBase : public NetworkManager {
 
 // Basic implementation of the NetworkManager interface that gets list
 // of networks using OS APIs.
-class BasicNetworkManager : public NetworkManagerBase,
-                            public MessageHandler,
-                            public sigslot::has_slots<> {
+class RTC_EXPORT BasicNetworkManager : public NetworkManagerBase,
+                                       public MessageHandler,
+                                       public sigslot::has_slots<> {
  public:
   BasicNetworkManager();
   ~BasicNetworkManager() override;
@@ -290,7 +291,7 @@ class BasicNetworkManager : public NetworkManagerBase,
 };
 
 // Represents a Unix-type network interface, with a name and single address.
-class Network {
+class RTC_EXPORT Network {
  public:
   Network(const std::string& name,
           const std::string& description,

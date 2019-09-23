@@ -61,6 +61,7 @@
 #include "rtc_base/message_handler.h"
 #include "rtc_base/message_queue.h"
 #include "rtc_base/ref_counted_object.h"
+#include "rtc_base/system/rtc_export.h"
 #include "rtc_base/thread.h"
 
 namespace rtc {
@@ -140,8 +141,8 @@ class ReturnType<void> {
 
 namespace internal {
 
-class SynchronousMethodCall : public rtc::MessageData,
-                              public rtc::MessageHandler {
+class RTC_EXPORT SynchronousMethodCall : public rtc::MessageData,
+                                         public rtc::MessageHandler {
  public:
   explicit SynchronousMethodCall(rtc::MessageHandler* proxy);
   ~SynchronousMethodCall() override;

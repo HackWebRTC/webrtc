@@ -13,12 +13,14 @@
 
 #include <vector>
 
+#include "rtc_base/system/rtc_export.h"
+
 namespace webrtc {
 
 // CryptoOptions defines advanced cryptographic settings for native WebRTC.
 // These settings must be passed into PeerConnectionFactoryInterface::Options
 // and are only applicable to native use cases of WebRTC.
-struct CryptoOptions {
+struct RTC_EXPORT CryptoOptions {
   CryptoOptions();
   CryptoOptions(const CryptoOptions& other);
   ~CryptoOptions();

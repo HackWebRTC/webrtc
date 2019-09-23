@@ -15,6 +15,7 @@
 #include "rtc_base/dscp.h"
 #include "rtc_base/network/sent_packet.h"
 #include "rtc_base/socket.h"
+#include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/time_utils.h"
 
@@ -36,7 +37,7 @@ struct PacketTimeUpdateParams {
 
 // This structure holds meta information for the packet which is about to send
 // over network.
-struct PacketOptions {
+struct RTC_EXPORT PacketOptions {
   PacketOptions();
   explicit PacketOptions(DiffServCodePoint dscp);
   PacketOptions(const PacketOptions& other);
@@ -53,7 +54,7 @@ struct PacketOptions {
 
 // Provides the ability to receive packets asynchronously. Sends are not
 // buffered since it is acceptable to drop packets under high load.
-class AsyncPacketSocket : public sigslot::has_slots<> {
+class RTC_EXPORT AsyncPacketSocket : public sigslot::has_slots<> {
  public:
   enum State {
     STATE_CLOSED,

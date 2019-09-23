@@ -29,6 +29,7 @@
 #if defined(WEBRTC_WIN)
 #include "rtc_base/win32.h"
 #endif
+#include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
 
@@ -46,7 +47,7 @@ enum IPv6AddressFlag {
 };
 
 // Version-agnostic IP address class, wraps a union of in_addr and in6_addr.
-class IPAddress {
+class RTC_EXPORT IPAddress {
  public:
   IPAddress() : family_(AF_UNSPEC) { ::memset(&u_, 0, sizeof(u_)); }
 
@@ -123,7 +124,7 @@ class IPAddress {
 
 // IP class which could represent IPv6 address flags which is only
 // meaningful in IPv6 case.
-class InterfaceAddress : public IPAddress {
+class RTC_EXPORT InterfaceAddress : public IPAddress {
  public:
   InterfaceAddress() : ipv6_flags_(IPV6_ADDRESS_FLAG_NONE) {}
 
@@ -150,8 +151,10 @@ class InterfaceAddress : public IPAddress {
 };
 
 bool IPFromAddrInfo(struct addrinfo* info, IPAddress* out);
-bool IPFromString(const std::string& str, IPAddress* out);
-bool IPFromString(const std::string& str, int flags, InterfaceAddress* out);
+RTC_EXPORT bool IPFromString(const std::string& str, IPAddress* out);
+RTC_EXPORT bool IPFromString(const std::string& str,
+                             int flags,
+                             InterfaceAddress* out);
 bool IPIsAny(const IPAddress& ip);
 bool IPIsLoopback(const IPAddress& ip);
 bool IPIsLinkLocal(const IPAddress& ip);
@@ -164,14 +167,14 @@ bool IPIsSharedNetwork(const IPAddress& ip);
 // Identify if an IP is "private", that is a loopback
 // or an address belonging to a link-local, a private network or a shared
 // network.
-bool IPIsPrivate(const IPAddress& ip);
+RTC_EXPORT bool IPIsPrivate(const IPAddress& ip);
 bool IPIsUnspec(const IPAddress& ip);
 size_t HashIP(const IPAddress& ip);
 
 // These are only really applicable for IPv6 addresses.
 bool IPIs6Bone(const IPAddress& ip);
 bool IPIs6To4(const IPAddress& ip);
-bool IPIsMacBased(const IPAddress& ip);
+RTC_EXPORT bool IPIsMacBased(const IPAddress& ip);
 bool IPIsSiteLocal(const IPAddress& ip);
 bool IPIsTeredo(const IPAddress& ip);
 bool IPIsULA(const IPAddress& ip);
@@ -182,7 +185,7 @@ bool IPIsV4Mapped(const IPAddress& ip);
 int IPAddressPrecedence(const IPAddress& ip);
 
 // Returns 'ip' truncated to be 'length' bits long.
-IPAddress TruncateIP(const IPAddress& ip, int length);
+RTC_EXPORT IPAddress TruncateIP(const IPAddress& ip, int length);
 
 IPAddress GetLoopbackIP(int family);
 IPAddress GetAnyIP(int family);

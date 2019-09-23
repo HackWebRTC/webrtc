@@ -14,4 +14,7 @@ rtc_source_set("base64") {
     "base64.cc",
     "base64.h",
   ]
+  deps = [
+    "../../system:rtc_export",
+  ]
 }

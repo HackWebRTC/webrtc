@@ -27,10 +27,11 @@
 #include "api/rtp_parameters.h"
 #include "api/scoped_refptr.h"
 #include "rtc_base/ref_count.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
-class RtpSenderInterface : public rtc::RefCountInterface {
+class RTC_EXPORT RtpSenderInterface : public rtc::RefCountInterface {
  public:
   // Returns true if successful in setting the track.
   // Fails if an audio track is set on a video RtpSender, or vice-versa.

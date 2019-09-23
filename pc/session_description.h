@@ -33,6 +33,7 @@
 #include "pc/simulcast_description.h"
 #include "rtc_base/deprecation.h"
 #include "rtc_base/socket_address.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace cricket {
 
@@ -420,7 +421,7 @@ constexpr MediaProtocolType NS_JINGLE_DRAFT_SCTP = MediaProtocolType::kSctp;
 // Represents a session description section. Most information about the section
 // is stored in the description, which is a subclass of MediaContentDescription.
 // Owns the description.
-class ContentInfo {
+class RTC_EXPORT ContentInfo {
  public:
   explicit ContentInfo(MediaProtocolType type) : type(type) {}
   ~ContentInfo();

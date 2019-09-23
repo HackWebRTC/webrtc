@@ -131,7 +131,7 @@ class RTC_EXPORT RTCError {
 //
 // Only intended to be used for logging/diagnostics. The returned char* points
 // to literal string that lives for the whole duration of the program.
-const char* ToString(RTCErrorType error);
+RTC_EXPORT const char* ToString(RTCErrorType error);
 
 #ifdef UNIT_TEST
 inline std::ostream& operator<<(  // no-presubmit-check TODO(webrtc:8982)

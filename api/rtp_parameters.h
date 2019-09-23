@@ -91,7 +91,7 @@ enum class DegradationPreference {
 
 RTC_EXPORT extern const double kDefaultBitratePriority;
 
-struct RtcpFeedback {
+struct RTC_EXPORT RtcpFeedback {
   RtcpFeedbackType type = RtcpFeedbackType::CCM;
 
   // Equivalent to ORTC "parameter" field with slight differences:
@@ -116,7 +116,7 @@ struct RtcpFeedback {
 // RtpCodecCapability is to RtpCodecParameters as RtpCapabilities is to
 // RtpParameters. This represents the static capabilities of an endpoint's
 // implementation of a codec.
-struct RtpCodecCapability {
+struct RTC_EXPORT RtpCodecCapability {
   RtpCodecCapability();
   ~RtpCodecCapability();
 
@@ -230,7 +230,7 @@ struct RtpHeaderExtensionCapability {
 };
 
 // RTP header extension, see RFC8285.
-struct RtpExtension {
+struct RTC_EXPORT RtpExtension {
   RtpExtension();
   RtpExtension(const std::string& uri, int id);
   RtpExtension(const std::string& uri, int id, bool encrypt);
@@ -332,7 +332,7 @@ struct RtpExtension {
 // TODO(deadbeef): This is missing the "encrypt" flag, which is unimplemented.
 typedef RtpExtension RtpHeaderExtensionParameters;
 
-struct RtpFecParameters {
+struct RTC_EXPORT RtpFecParameters {
   // If unset, a value is chosen by the implementation.
   // Works just like RtpEncodingParameters::ssrc.
   absl::optional<uint32_t> ssrc;
@@ -352,7 +352,7 @@ struct RtpFecParameters {
   bool operator!=(const RtpFecParameters& o) const { return !(*this == o); }
 };
 
-struct RtpRtxParameters {
+struct RTC_EXPORT RtpRtxParameters {
   // If unset, a value is chosen by the implementation.
   // Works just like RtpEncodingParameters::ssrc.
   absl::optional<uint32_t> ssrc;
@@ -502,7 +502,7 @@ struct RTC_EXPORT RtpEncodingParameters {
   }
 };
 
-struct RtpCodecParameters {
+struct RTC_EXPORT RtpCodecParameters {
   RtpCodecParameters();
   RtpCodecParameters(const RtpCodecParameters&);
   ~RtpCodecParameters();

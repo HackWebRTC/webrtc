@@ -23,10 +23,11 @@
 #include "rtc_base/buffer.h"
 #include "rtc_base/checks.h"
 #include "rtc_base/ref_counted_object.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
 
-class CopyOnWriteBuffer {
+class RTC_EXPORT CopyOnWriteBuffer {
  public:
   // An empty buffer.
   CopyOnWriteBuffer();

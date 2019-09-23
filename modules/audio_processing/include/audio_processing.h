@@ -226,7 +226,7 @@ struct ExperimentalNs {
 // // Close the application...
 // delete apm;
 //
-class AudioProcessing : public rtc::RefCountInterface {
+class RTC_EXPORT AudioProcessing : public rtc::RefCountInterface {
  public:
   // The struct below constitutes the new parameter scheme for the audio
   // processing. It is being introduced gradually and until it is fully

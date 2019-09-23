@@ -23,6 +23,7 @@
 #include "rtc_base/checks.h"
 #include "rtc_base/copy_on_write_buffer.h"
 #include "rtc_base/ref_count.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
@@ -96,7 +97,7 @@ class DataChannelObserver {
   virtual ~DataChannelObserver() = default;
 };
 
-class DataChannelInterface : public rtc::RefCountInterface {
+class RTC_EXPORT DataChannelInterface : public rtc::RefCountInterface {
  public:
   // C++ version of: https://www.w3.org/TR/webrtc/#idl-def-rtcdatachannelstate
   // Unlikely to change, but keep in sync with DataChannel.java:State and

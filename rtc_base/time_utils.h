@@ -18,6 +18,7 @@
 
 #include "rtc_base/checks.h"
 #include "rtc_base/strings/string_builder.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
 
@@ -54,10 +55,10 @@ class ClockInterface {
 // TODO(deadbeef): Instead of having functions that access this global
 // ClockInterface, we may want to pass the ClockInterface into everything
 // that uses it, eliminating the need for a global variable and this function.
-ClockInterface* SetClockForTesting(ClockInterface* clock);
+RTC_EXPORT ClockInterface* SetClockForTesting(ClockInterface* clock);
 
 // Returns previously set clock, or nullptr if no custom clock is being used.
-ClockInterface* GetClockForTesting();
+RTC_EXPORT ClockInterface* GetClockForTesting();
 
 #if defined(WINUWP)
 // Synchronizes the current clock based upon an NTP server's epoch in
@@ -74,17 +75,17 @@ int64_t SystemTimeMillis();
 uint32_t Time32();
 
 // Returns the current time in milliseconds in 64 bits.
-int64_t TimeMillis();
+RTC_EXPORT int64_t TimeMillis();
 // Deprecated. Do not use this in any new code.
 inline int64_t Time() {
   return TimeMillis();
 }
 
 // Returns the current time in microseconds.
-int64_t TimeMicros();
+RTC_EXPORT int64_t TimeMicros();
 
 // Returns the current time in nanoseconds.
-int64_t TimeNanos();
+RTC_EXPORT int64_t TimeNanos();
 
 // Returns a future timestamp, 'elapsed' milliseconds from now.
 int64_t TimeAfter(int64_t elapsed);

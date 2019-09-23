@@ -24,6 +24,7 @@ rtc_source_set("options") {
   ]
   deps = [
     "../../rtc_base:rtc_base",
+    "../../rtc_base/system:rtc_export",
   ]
 }
 

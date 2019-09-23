@@ -47,6 +47,7 @@ rtc_source_set("sequence_checker") {
     "..:macromagic",
     "..:platform_thread_types",
     "../../api/task_queue",
+    "../system:rtc_export",
   ]
 }
 

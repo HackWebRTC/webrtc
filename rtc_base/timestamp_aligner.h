@@ -14,6 +14,7 @@
 #include <stdint.h>
 
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
 
@@ -28,7 +29,7 @@ namespace rtc {
 
 // This class is not thread safe, so all calls to it must be synchronized
 // externally.
-class TimestampAligner {
+class RTC_EXPORT TimestampAligner {
  public:
   TimestampAligner();
   ~TimestampAligner();

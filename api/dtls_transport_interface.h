@@ -20,6 +20,7 @@
 #include "api/scoped_refptr.h"
 #include "rtc_base/ref_count.h"
 #include "rtc_base/ssl_certificate.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace webrtc {
 
@@ -37,7 +38,7 @@ enum class DtlsTransportState {
 
 // This object gives snapshot information about the changeable state of a
 // DTLSTransport.
-class DtlsTransportInformation {
+class RTC_EXPORT DtlsTransportInformation {
  public:
   DtlsTransportInformation();
   explicit DtlsTransportInformation(DtlsTransportState state);

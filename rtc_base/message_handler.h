@@ -14,6 +14,7 @@
 #include <utility>
 
 #include "rtc_base/constructor_magic.h"
+#include "rtc_base/system/rtc_export.h"
 
 namespace rtc {
 
@@ -21,7 +22,7 @@ struct Message;
 
 // Messages get dispatched to a MessageHandler
 
-class MessageHandler {
+class RTC_EXPORT MessageHandler {
  public:
   virtual ~MessageHandler();
   virtual void OnMessage(Message* msg) = 0;

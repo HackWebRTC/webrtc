@@ -25,6 +25,7 @@
 #include "rtc_base/location.h"
 #include "rtc_base/message_handler.h"
 #include "rtc_base/socket_server.h"
+#include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 #include "rtc_base/thread_annotations.h"
 
@@ -35,7 +36,7 @@ class MessageQueue;
 
 // MessageQueueManager does cleanup of of message queues
 
-class MessageQueueManager {
+class RTC_EXPORT MessageQueueManager {
  public:
   static void Add(MessageQueue* message_queue);
   static void Remove(MessageQueue* message_queue);
@@ -188,7 +189,7 @@ class DelayedMessage {
   Message msg_;
 };
 
-class MessageQueue {
+class RTC_EXPORT MessageQueue {
  public:
   static const int kForever = -1;
 

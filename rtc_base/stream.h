@@ -18,6 +18,7 @@
 #include "rtc_base/critical_section.h"
 #include "rtc_base/message_handler.h"
 #include "rtc_base/message_queue.h"
+#include "rtc_base/system/rtc_export.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 
 namespace rtc {
@@ -55,7 +56,7 @@ struct StreamEventData : public MessageData {
   StreamEventData(int ev, int er) : events(ev), error(er) {}
 };
 
-class StreamInterface : public MessageHandler {
+class RTC_EXPORT StreamInterface : public MessageHandler {
  public:
   enum { MSG_POST_EVENT = 0xF1F1, MSG_MAX = MSG_POST_EVENT };
 

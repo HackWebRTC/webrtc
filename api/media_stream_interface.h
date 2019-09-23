@@ -145,8 +145,9 @@ class VideoTrackSourceInterface : public MediaSourceInterface,
 // PeerConnectionFactory::CreateVideoTrack can be used for creating a VideoTrack
 // that ensures thread safety and that all methods are called on the right
 // thread.
-class VideoTrackInterface : public MediaStreamTrackInterface,
-                            public rtc::VideoSourceInterface<VideoFrame> {
+class RTC_EXPORT VideoTrackInterface
+    : public MediaStreamTrackInterface,
+      public rtc::VideoSourceInterface<VideoFrame> {
  public:
   // Video track content hint, used to override the source is_screencast
   // property.
@@ -235,7 +236,7 @@ class AudioProcessorInterface : public rtc::RefCountInterface {
   ~AudioProcessorInterface() override = default;
 };
 
-class AudioTrackInterface : public MediaStreamTrackInterface {
+class RTC_EXPORT AudioTrackInterface : public MediaStreamTrackInterface {
  public:
   // TODO(deadbeef): Figure out if the following interface should be const or
   // not.
