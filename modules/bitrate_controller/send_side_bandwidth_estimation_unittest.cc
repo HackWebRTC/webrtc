@@ -44,7 +44,9 @@ void TestProbing(bool use_delay_based) {
   const int kRembBps = 1000000;
   const int kSecondRembBps = kRembBps + 500000;
 
-  bwe.UpdateReceiverBlock(0, TimeDelta::ms(50), 1, Timestamp::ms(now_ms));
+  bwe.UpdatePacketsLost(/*packets_lost=*/0, /*number_of_packets=*/1,
+                        Timestamp::ms(now_ms));
+  bwe.UpdateRtt(TimeDelta::ms(50), Timestamp::ms(now_ms));
 
   // Initial REMB applies immediately.
   if (use_delay_based) {
@@ -110,8 +112,10 @@ TEST(SendSideBweTest, DoesntReapplyBitrateDecreaseWithoutFollowingRemb) {
   EXPECT_EQ(0, rtt_ms);
 
   // Signal heavy loss to go down in bitrate.
-  bwe.UpdateReceiverBlock(kFractionLoss, TimeDelta::ms(kRttMs), 100,
-                          Timestamp::ms(now_ms));
+  bwe.UpdatePacketsLost(/*packets_lost=*/50, /*number_of_packets=*/100,
+                        Timestamp::ms(now_ms));
+  bwe.UpdateRtt(TimeDelta::ms(kRttMs), Timestamp::ms(now_ms));
+
   // Trigger an update 2 seconds later to not be rate limited.
   now_ms += 1000;
   bwe.UpdateEstimate(Timestamp::ms(now_ms));

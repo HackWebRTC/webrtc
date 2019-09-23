@@ -89,12 +89,6 @@ class SendSideBandwidthEstimation {
   void UpdateDelayBasedEstimate(Timestamp at_time, DataRate bitrate);
 
   // Call when we receive a RTCP message with a ReceiveBlock.
-  void UpdateReceiverBlock(uint8_t fraction_loss,
-                           TimeDelta rtt_ms,
-                           int number_of_packets,
-                           Timestamp at_time);
-
-  // Call when we receive a RTCP message with a ReceiveBlock.
   void UpdatePacketsLost(int packets_lost,
                          int number_of_packets,
                          Timestamp at_time);

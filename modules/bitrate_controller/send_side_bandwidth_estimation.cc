@@ -353,18 +353,6 @@ void SendSideBandwidthEstimation::IncomingPacketFeedbackVector(
   }
 }
 
-void SendSideBandwidthEstimation::UpdateReceiverBlock(uint8_t fraction_loss,
-                                                      TimeDelta rtt,
-                                                      int number_of_packets,
-                                                      Timestamp at_time) {
-  const int kRoundingConstant = 128;
-  int packets_lost = (static_cast<int>(fraction_loss) * number_of_packets +
-                      kRoundingConstant) >>
-                     8;
-  UpdatePacketsLost(packets_lost, number_of_packets, at_time);
-  UpdateRtt(rtt, at_time);
-}
-
 void SendSideBandwidthEstimation::UpdatePacketsLost(int packets_lost,
                                                     int number_of_packets,
                                                     Timestamp at_time) {
