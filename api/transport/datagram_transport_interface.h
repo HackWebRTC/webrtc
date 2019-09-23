@@ -117,18 +117,6 @@ class DatagramTransportInterface : public DataChannelTransportInterface {
   // before new sink is set.
   virtual void SetDatagramSink(DatagramSinkInterface* sink) = 0;
 
-  // Retrieves callers config (i.e. media transport offer) that should be passed
-  // to the callee, before the call is connected. Such config is opaque to SDP
-  // (sdp just passes it through). The config is a binary blob, so SDP may
-  // choose to use base64 to serialize it (or any other approach that guarantees
-  // that the binary blob goes through). This should only be called for the
-  // caller's perspective.
-  //
-  // TODO(mellem): Delete.
-  virtual absl::optional<std::string> GetTransportParametersOffer() const {
-    return absl::nullopt;
-  }
-
   // Retrieves transport parameters for this datagram transport.  May be called
   // on either client- or server-perspective transports.
   //
