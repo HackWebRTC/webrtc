@@ -111,6 +111,16 @@ class MediaTransportPair {
     second_datagram_transport_.SetState(state);
   }
 
+  void SetFirstState(MediaTransportState state) {
+    first_.SetState(state);
+    first_datagram_transport_.SetState(state);
+  }
+
+  void SetSecondStateAfterConnect(MediaTransportState state) {
+    second_.SetState(state);
+    second_datagram_transport_.SetState(state);
+  }
+
   void SetFirstDatagramTransportParameters(const std::string& params) {
     first_datagram_transport_.set_transport_parameters(params);
   }
@@ -214,6 +224,10 @@ class MediaTransportPair {
 
     void SetState(MediaTransportState state);
 
+    // When Connect() is called, the media transport will enter this state.
+    // This is useful for mimicking zero-RTT connectivity, for example.
+    void SetStateAfterConnect(MediaTransportState state);
+
     RTCError OpenChannel(int channel_id) override;
 
     RTCError SendData(int channel_id,
@@ -270,6 +284,8 @@ class MediaTransportPair {
     MediaTransportState state_ RTC_GUARDED_BY(thread_) =
         MediaTransportState::kPending;
 
+    absl::optional<MediaTransportState> state_after_connect_;
+
     LoopbackMediaTransport* other_;
 
     Stats stats_ RTC_GUARDED_BY(stats_lock_);
@@ -306,6 +322,10 @@ class MediaTransportPair {
 
     // Loopback-specific functionality.
     void SetState(MediaTransportState state);
+
+    // When Connect() is called, the datagram transport will enter this state.
+    // This is useful for mimicking zero-RTT connectivity, for example.
+    void SetStateAfterConnect(MediaTransportState state);
     void FlushAsyncInvokes();
 
     void set_transport_parameters(const std::string& value) {
@@ -316,6 +336,8 @@ class MediaTransportPair {
     LoopbackDataChannelTransport dc_transport_;
 
     std::string transport_parameters_;
+
+    absl::optional<MediaTransportState> state_after_connect_;
   };
 
   LoopbackMediaTransport first_;

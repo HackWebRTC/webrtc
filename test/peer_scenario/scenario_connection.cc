@@ -45,8 +45,7 @@ class ScenarioIceConnectionImpl : public ScenarioIceConnection,
       RtpTransportInternal* rtp_transport,
       rtc::scoped_refptr<DtlsTransport> dtls_transport,
       MediaTransportInterface* media_transport,
-      DataChannelTransportInterface* data_channel_transport,
-      JsepTransportController::NegotiationState negotiation_state) override;
+      DataChannelTransportInterface* data_channel_transport) override;
 
   void OnRtpPacket(const RtpPacketReceived& packet) override;
   void OnCandidates(const std::string& mid,
@@ -209,8 +208,7 @@ bool ScenarioIceConnectionImpl::OnTransportChanged(
     RtpTransportInternal* rtp_transport,
     rtc::scoped_refptr<DtlsTransport> dtls_transport,
     MediaTransportInterface* media_transport,
-    DataChannelTransportInterface* data_channel_transport,
-    JsepTransportController::NegotiationState negotiation_state) {
+    DataChannelTransportInterface* data_channel_transport) {
   RTC_DCHECK_RUN_ON(network_thread_);
   if (rtp_transport == nullptr) {
     rtp_transport_->UnregisterRtpDemuxerSink(this);
