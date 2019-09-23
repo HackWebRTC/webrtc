@@ -28,6 +28,7 @@
 #include "rtc_base/numerics/samples_stats_counter.h"
 #include "rtc_base/platform_thread.h"
 #include "system_wrappers/include/clock.h"
+#include "test/testsupport/perf_test.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
@@ -248,7 +249,9 @@ class DefaultVideoQualityAnalyzer : public VideoQualityAnalyzerInterface {
   static void ReportResult(const std::string& metric_name,
                            const std::string& test_case_name,
                            const SamplesStatsCounter& counter,
-                           const std::string& unit);
+                           const std::string& unit,
+                           webrtc::test::ImproveDirection improve_direction =
+                               webrtc::test::ImproveDirection::kNone);
   // Returns name of current test case for reporting.
   std::string GetTestCaseName(const std::string& stream_label) const;
   Timestamp Now();

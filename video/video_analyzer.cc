@@ -622,6 +622,8 @@ bool VideoAnalyzer::FrameProcessed() {
 }
 
 void VideoAnalyzer::PrintResults() {
+  using ::webrtc::test::ImproveDirection;
+
   StopMeasuringCpuProcessTime();
   int dropped_frames_diff;
   {
@@ -630,24 +632,36 @@ void VideoAnalyzer::PrintResults() {
                           dropped_frames_before_rendering_ + frames_.size();
   }
   rtc::CritScope crit(&comparison_lock_);
-  PrintResult("psnr", psnr_, "dB");
-  PrintResult("ssim", ssim_, "unitless");
-  PrintResult("sender_time", sender_time_, "ms");
-  PrintResult("receiver_time", receiver_time_, "ms");
-  PrintResult("network_time", network_time_, "ms");
-  PrintResult("total_delay_incl_network", end_to_end_, "ms");
-  PrintResult("time_between_rendered_frames", rendered_delta_, "ms");
-  PrintResult("encode_frame_rate", encode_frame_rate_, "fps");
-  PrintResult("encode_time", encode_time_ms_, "ms");
-  PrintResult("media_bitrate", media_bitrate_bps_, "bps");
-  PrintResult("fec_bitrate", fec_bitrate_bps_, "bps");
-  PrintResult("send_bandwidth", send_bandwidth_bps_, "bps");
-  PrintResult("pixels_per_frame", pixels_, "count");
+  PrintResult("psnr", psnr_, "dB", ImproveDirection::kBiggerIsBetter);
+  PrintResult("ssim", ssim_, "unitless", ImproveDirection::kBiggerIsBetter);
+  PrintResult("sender_time", sender_time_, "ms",
+              ImproveDirection::kSmallerIsBetter);
+  PrintResult("receiver_time", receiver_time_, "ms",
+              ImproveDirection::kSmallerIsBetter);
+  PrintResult("network_time", network_time_, "ms",
+              ImproveDirection::kSmallerIsBetter);
+  PrintResult("total_delay_incl_network", end_to_end_, "ms",
+              ImproveDirection::kSmallerIsBetter);
+  PrintResult("time_between_rendered_frames", rendered_delta_, "ms",
+              ImproveDirection::kSmallerIsBetter);
+  PrintResult("encode_frame_rate", encode_frame_rate_, "fps",
+              ImproveDirection::kBiggerIsBetter);
+  PrintResult("encode_time", encode_time_ms_, "ms",
+              ImproveDirection::kSmallerIsBetter);
+  PrintResult("media_bitrate", media_bitrate_bps_, "bps",
+              ImproveDirection::kNone);
+  PrintResult("fec_bitrate", fec_bitrate_bps_, "bps", ImproveDirection::kNone);
+  PrintResult("send_bandwidth", send_bandwidth_bps_, "bps",
+              ImproveDirection::kNone);
+  PrintResult("pixels_per_frame", pixels_, "count",
+              ImproveDirection::kBiggerIsBetter);
 
   test::PrintResult("decode_frame_rate", "", test_label_.c_str(),
-                    decode_frame_rate_, "fps", false);
+                    decode_frame_rate_, "fps", false,
+                    ImproveDirection::kBiggerIsBetter);
   test::PrintResult("render_frame_rate", "", test_label_.c_str(),
-                    render_frame_rate_, "fps", false);
+                    render_frame_rate_, "fps", false,
+                    ImproveDirection::kBiggerIsBetter);
 
   // Record the time from the last freeze until the last rendered frame to
   // ensure we cover the full timespan of the session. Otherwise the metric
@@ -655,7 +669,8 @@ void VideoAnalyzer::PrintResults() {
   time_between_freezes_.AddSample(last_render_time_ - last_unfreeze_time_ms_);
 
   // Freeze metrics.
-  PrintResult("time_between_freezes", time_between_freezes_, "ms");
+  PrintResult("time_between_freezes", time_between_freezes_, "ms",
+              ImproveDirection::kBiggerIsBetter);
 
   const double freeze_count_double = static_cast<double>(freeze_count_);
   const double total_freezes_duration_ms_double =
@@ -667,7 +682,7 @@ void VideoAnalyzer::PrintResults() {
     test::PrintResult(
         "freeze_duration_ratio", "", test_label_.c_str(),
         total_freezes_duration_ms_double / total_frames_duration_ms_double,
-        "unitless", false);
+        "unitless", false, ImproveDirection::kSmallerIsBetter);
     RTC_DCHECK_LE(total_freezes_duration_ms_double,
                   total_frames_duration_ms_double);
 
@@ -677,7 +692,7 @@ void VideoAnalyzer::PrintResults() {
     if (total_frames_duration_min > 0) {
       test::PrintResult("freeze_count_per_minute", "", test_label_.c_str(),
                         freeze_count_double / total_frames_duration_min,
-                        "unitless", false);
+                        "unitless", false, ImproveDirection::kSmallerIsBetter);
     }
   }
 
@@ -685,35 +700,37 @@ void VideoAnalyzer::PrintResults() {
                     freeze_count_double > 0
                         ? total_freezes_duration_ms_double / freeze_count_double
                         : 0,
-                    "ms", false);
+                    "ms", false, ImproveDirection::kSmallerIsBetter);
 
   if (1000 * sum_squared_frame_durations_ > 0) {
     test::PrintResult(
         "harmonic_frame_rate", "", test_label_.c_str(),
         total_frames_duration_ms_double / (1000 * sum_squared_frame_durations_),
-        "fps", false);
+        "fps", false, ImproveDirection::kBiggerIsBetter);
   }
 
   if (worst_frame_) {
     test::PrintResult("min_psnr", "", test_label_.c_str(), worst_frame_->psnr,
-                      "dB", false);
+                      "dB", false, ImproveDirection::kBiggerIsBetter);
   }
 
   if (receive_stream_ != nullptr) {
     PrintResultWithExternalMean("decode_time", mean_decode_time_ms_,
-                                decode_time_ms_, "ms");
+                                decode_time_ms_, "ms",
+                                ImproveDirection::kSmallerIsBetter);
   }
   dropped_frames_ += dropped_frames_diff;
   test::PrintResult("dropped_frames", "", test_label_.c_str(), dropped_frames_,
-                    "count", false);
+                    "count", false, ImproveDirection::kSmallerIsBetter);
   test::PrintResult("cpu_usage", "", test_label_.c_str(), GetCpuUsagePercent(),
-                    "%", false);
+                    "%", false, ImproveDirection::kSmallerIsBetter);
 
 #if defined(WEBRTC_WIN)
   // On Linux and Mac in Resident Set some unused pages may be counted.
   // Therefore this metric will depend on order in which tests are run and
   // will be flaky.
-  PrintResult("memory_usage", memory_usage_, "sizeInBytes");
+  PrintResult("memory_usage", memory_usage_, "sizeInBytes",
+              ImproveDirection::kSmallerIsBetter);
 #endif
 
   // Saving only the worst frame for manual analysis. Intention here is to
@@ -731,9 +748,12 @@ void VideoAnalyzer::PrintResults() {
   }
 
   if (audio_receive_stream_ != nullptr) {
-    PrintResult("audio_expand_rate", audio_expand_rate_, "unitless");
-    PrintResult("audio_accelerate_rate", audio_accelerate_rate_, "unitless");
-    PrintResult("audio_jitter_buffer", audio_jitter_buffer_ms_, "ms");
+    PrintResult("audio_expand_rate", audio_expand_rate_, "unitless",
+                ImproveDirection::kSmallerIsBetter);
+    PrintResult("audio_accelerate_rate", audio_accelerate_rate_, "unitless",
+                ImproveDirection::kSmallerIsBetter);
+    PrintResult("audio_jitter_buffer", audio_jitter_buffer_ms_, "ms",
+                ImproveDirection::kNone);
   }
 
   //  Disable quality check for quick test, as quality checks may fail
@@ -813,18 +833,22 @@ void VideoAnalyzer::PerformFrameComparison(
   encoded_frame_size_.AddSample(comparison.encoded_frame_size);
 }
 
-void VideoAnalyzer::PrintResult(const char* result_type,
-                                Statistics stats,
-                                const char* unit) {
+void VideoAnalyzer::PrintResult(
+    const char* result_type,
+    Statistics stats,
+    const char* unit,
+    webrtc::test::ImproveDirection improve_direction) {
   test::PrintResultMeanAndError(
       result_type, "", test_label_.c_str(), stats.GetMean().value_or(0),
-      stats.GetStandardDeviation().value_or(0), unit, false);
+      stats.GetStandardDeviation().value_or(0), unit, false, improve_direction);
 }
 
-void VideoAnalyzer::PrintResultWithExternalMean(const char* result_type,
-                                                double mean,
-                                                Statistics stats,
-                                                const char* unit) {
+void VideoAnalyzer::PrintResultWithExternalMean(
+    const char* result_type,
+    double mean,
+    Statistics stats,
+    const char* unit,
+    webrtc::test::ImproveDirection improve_direction) {
   // If the true mean is different than the sample mean, the sample variance is
   // too low. The sample variance given a known mean is obtained by adding the
   // squared error between the true mean and the sample mean.
@@ -833,7 +857,8 @@ void VideoAnalyzer::PrintResultWithExternalMean(const char* result_type,
           ? *stats.GetVariance() + pow(mean - *stats.GetMean(), 2.0)
           : 0.0;
   test::PrintResultMeanAndError(result_type, "", test_label_.c_str(), mean,
-                                std::sqrt(compensated_variance), unit, false);
+                                std::sqrt(compensated_variance), unit, false,
+                                improve_direction);
 }
 
 void VideoAnalyzer::PrintSamplesToFile() {

@@ -17,7 +17,6 @@
 #include "api/units/time_delta.h"
 #include "common_video/libyuv/include/webrtc_libyuv.h"
 #include "rtc_base/logging.h"
-#include "test/testsupport/perf_test.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
@@ -633,49 +632,64 @@ void DefaultVideoQualityAnalyzer::ReportResults(
     const std::string& test_case_name,
     const StreamStats& stats,
     const FrameCounters& frame_counters) {
-  ReportResult("psnr", test_case_name, stats.psnr, "dB");
-  ReportResult("ssim", test_case_name, stats.ssim, "unitless");
-  ReportResult("transport_time", test_case_name, stats.transport_time_ms, "ms");
+  using ::webrtc::test::ImproveDirection;
+
+  ReportResult("psnr", test_case_name, stats.psnr, "dB",
+               ImproveDirection::kBiggerIsBetter);
+  ReportResult("ssim", test_case_name, stats.ssim, "unitless",
+               ImproveDirection::kBiggerIsBetter);
+  ReportResult("transport_time", test_case_name, stats.transport_time_ms, "ms",
+               ImproveDirection::kSmallerIsBetter);
   ReportResult("total_delay_incl_transport", test_case_name,
-               stats.total_delay_incl_transport_ms, "ms");
+               stats.total_delay_incl_transport_ms, "ms",
+               ImproveDirection::kSmallerIsBetter);
   ReportResult("time_between_rendered_frames", test_case_name,
-               stats.time_between_rendered_frames_ms, "ms");
+               stats.time_between_rendered_frames_ms, "ms",
+               ImproveDirection::kSmallerIsBetter);
   test::PrintResult("encode_frame_rate", "", test_case_name,
                     stats.encode_frame_rate.IsEmpty()
                         ? 0
                         : stats.encode_frame_rate.GetEventsPerSecond(),
-                    "fps", /*important=*/false);
-  ReportResult("encode_time", test_case_name, stats.encode_time_ms, "ms");
+                    "fps", /*important=*/false,
+                    ImproveDirection::kBiggerIsBetter);
+  ReportResult("encode_time", test_case_name, stats.encode_time_ms, "ms",
+               ImproveDirection::kSmallerIsBetter);
   ReportResult("time_between_freezes", test_case_name,
-               stats.time_between_freezes_ms, "ms");
-  ReportResult("freeze_time_ms", test_case_name, stats.freeze_time_ms, "ms");
+               stats.time_between_freezes_ms, "ms",
+               ImproveDirection::kBiggerIsBetter);
+  ReportResult("freeze_time_ms", test_case_name, stats.freeze_time_ms, "ms",
+               ImproveDirection::kSmallerIsBetter);
   ReportResult("pixels_per_frame", test_case_name,
-               stats.resolution_of_rendered_frame, "count");
+               stats.resolution_of_rendered_frame, "count",
+               ImproveDirection::kBiggerIsBetter);
   test::PrintResult("min_psnr", "", test_case_name,
                     stats.psnr.IsEmpty() ? 0 : stats.psnr.GetMin(), "dB",
-                    /*important=*/false);
-  ReportResult("decode_time", test_case_name, stats.decode_time_ms, "ms");
+                    /*important=*/false, ImproveDirection::kBiggerIsBetter);
+  ReportResult("decode_time", test_case_name, stats.decode_time_ms, "ms",
+               ImproveDirection::kSmallerIsBetter);
   ReportResult("receive_to_render_time", test_case_name,
-               stats.receive_to_render_time_ms, "ms");
+               stats.receive_to_render_time_ms, "ms",
+               ImproveDirection::kSmallerIsBetter);
   test::PrintResult("dropped_frames", "", test_case_name,
                     frame_counters.dropped, "count",
-                    /*important=*/false);
+                    /*important=*/false, ImproveDirection::kSmallerIsBetter);
   test::PrintResult("frames_in_flight", "", test_case_name,
                     frame_counters.captured - frame_counters.rendered -
                         frame_counters.dropped,
                     "count",
-                    /*important=*/false);
+                    /*important=*/false, ImproveDirection::kSmallerIsBetter);
   ReportResult("max_skipped", test_case_name, stats.skipped_between_rendered,
-               "count");
+               "count", ImproveDirection::kSmallerIsBetter);
 }
 
 void DefaultVideoQualityAnalyzer::ReportResult(
     const std::string& metric_name,
     const std::string& test_case_name,
     const SamplesStatsCounter& counter,
-    const std::string& unit) {
+    const std::string& unit,
+    webrtc::test::ImproveDirection improve_direction) {
   test::PrintResult(metric_name, /*modifier=*/"", test_case_name, counter, unit,
-                    /*important=*/false);
+                    /*important=*/false, improve_direction);
 }
 
 std::string DefaultVideoQualityAnalyzer::GetTestCaseName(

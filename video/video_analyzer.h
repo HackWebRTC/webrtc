@@ -21,6 +21,7 @@
 #include "rtc_base/time_utils.h"
 #include "test/layer_filtering_transport.h"
 #include "test/rtp_file_writer.h"
+#include "test/testsupport/perf_test.h"
 
 namespace webrtc {
 
@@ -192,11 +193,16 @@ class VideoAnalyzer : public PacketReceiver,
   bool FrameProcessed();
   void PrintResults();
   void PerformFrameComparison(const FrameComparison& comparison);
-  void PrintResult(const char* result_type, Statistics stats, const char* unit);
-  void PrintResultWithExternalMean(const char* result_type,
-                                   double mean,
-                                   Statistics stats,
-                                   const char* unit);
+  void PrintResult(const char* result_type,
+                   Statistics stats,
+                   const char* unit,
+                   webrtc::test::ImproveDirection improve_direction);
+  void PrintResultWithExternalMean(
+      const char* result_type,
+      double mean,
+      Statistics stats,
+      const char* unit,
+      webrtc::test::ImproveDirection improve_direction);
   void PrintSamplesToFile(void);
   void AddCapturedFrameForComparison(const VideoFrame& video_frame);
 

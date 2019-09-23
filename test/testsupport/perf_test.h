@@ -21,6 +21,16 @@
 namespace webrtc {
 namespace test {
 
+// Metrics improver direction.
+enum class ImproveDirection {
+  // Direction is undefined.
+  kNone,
+  // Smaller value is better.
+  kSmallerIsBetter,
+  // Bigger value is better.
+  kBiggerIsBetter,
+};
+
 // Prints numerical information to stdout in a controlled format, for
 // post-processing. |measurement| is a description of the quantity being
 // measured, e.g. "vm_peak"; |modifier| is provided as a convenience and
@@ -39,29 +49,34 @@ void PrintResult(const std::string& measurement,
                  const std::string& trace,
                  const double value,
                  const std::string& units,
-                 bool important);
+                 bool important,
+                 ImproveDirection improve_direction = ImproveDirection::kNone);
 
 // Like PrintResult(), but prints a (mean, standard deviation) result pair.
 // The |<values>| should be two comma-separated numbers, the mean and
 // standard deviation (or other error metric) of the measurement.
-void PrintResultMeanAndError(const std::string& measurement,
-                             const std::string& modifier,
-                             const std::string& trace,
-                             const double mean,
-                             const double error,
-                             const std::string& units,
-                             bool important);
+void PrintResultMeanAndError(
+    const std::string& measurement,
+    const std::string& modifier,
+    const std::string& trace,
+    const double mean,
+    const double error,
+    const std::string& units,
+    bool important,
+    ImproveDirection improve_direction = ImproveDirection::kNone);
 
 // Like PrintResult(), but prints an entire list of results. The |values|
 // will generally be a list of comma-separated numbers. A typical
 // post-processing step might produce plots of their mean and standard
 // deviation.
-void PrintResultList(const std::string& measurement,
-                     const std::string& modifier,
-                     const std::string& trace,
-                     rtc::ArrayView<const double> values,
-                     const std::string& units,
-                     bool important);
+void PrintResultList(
+    const std::string& measurement,
+    const std::string& modifier,
+    const std::string& trace,
+    rtc::ArrayView<const double> values,
+    const std::string& units,
+    bool important,
+    ImproveDirection improve_direction = ImproveDirection::kNone);
 
 // Like PrintResult(), but prints a (mean, standard deviation) from stats
 // counter. Also add specified metric to the plotable metrics output.
@@ -70,7 +85,8 @@ void PrintResult(const std::string& measurement,
                  const std::string& trace,
                  const SamplesStatsCounter& counter,
                  const std::string& units,
-                 const bool important);
+                 const bool important,
+                 ImproveDirection improve_direction = ImproveDirection::kNone);
 
 // Returns all perf results to date in a JSON string formatted as described in
 // https://github.com/catapult-project/catapult/blob/master/dashboard/docs/data-format.md
