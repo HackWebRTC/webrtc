@@ -297,13 +297,13 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_HighBitrate) {
       "smoke", run_params,
       [](PeerConfigurer* alice) {
         PeerConnectionInterface::BitrateParameters bitrate_params;
-        bitrate_params.current_bitrate_bps = 4000000;
-        bitrate_params.max_bitrate_bps = 8000000;
+        bitrate_params.current_bitrate_bps = 3'000'000;
+        bitrate_params.max_bitrate_bps = 3'000'000;
         alice->SetBitrateParameters(bitrate_params);
-        VideoConfig video(1920, 1080, 30);
+        VideoConfig video(800, 600, 30);
         video.stream_label = "alice-video";
-        video.min_encode_bitrate_bps = 3000000;
-        video.max_encode_bitrate_bps = 6000000;
+        video.min_encode_bitrate_bps = 500'000;
+        video.max_encode_bitrate_bps = 3'000'000;
         alice->AddVideoConfig(std::move(video));
 
         AudioConfig audio;
@@ -316,13 +316,13 @@ TEST_F(PeerConnectionE2EQualityTestSmokeTest, MAYBE_HighBitrate) {
       },
       [](PeerConfigurer* bob) {
         PeerConnectionInterface::BitrateParameters bitrate_params;
-        bitrate_params.current_bitrate_bps = 4000000;
-        bitrate_params.max_bitrate_bps = 8000000;
+        bitrate_params.current_bitrate_bps = 3'000'000;
+        bitrate_params.max_bitrate_bps = 3'000'000;
         bob->SetBitrateParameters(bitrate_params);
-        VideoConfig video(1920, 1080, 30);
+        VideoConfig video(800, 600, 30);
         video.stream_label = "bob-video";
-        video.min_encode_bitrate_bps = 3000000;
-        video.max_encode_bitrate_bps = 6000000;
+        video.min_encode_bitrate_bps = 500'000;
+        video.max_encode_bitrate_bps = 3'000'000;
         bob->AddVideoConfig(std::move(video));
 
         AudioConfig audio;
