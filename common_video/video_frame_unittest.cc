@@ -490,7 +490,7 @@ TEST_P(TestPlanarYuvBuffer, PastesIntoBuffer) {
   }
 }
 
-INSTANTIATE_TEST_SUITE_P(,
+INSTANTIATE_TEST_SUITE_P(All,
                          TestPlanarYuvBuffer,
                          ::testing::Values(VideoFrameBuffer::Type::kI420,
                                            VideoFrameBuffer::Type::kI010));

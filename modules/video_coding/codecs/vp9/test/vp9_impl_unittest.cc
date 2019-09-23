@@ -1248,7 +1248,7 @@ TEST_P(TestVp9ImplWithLayering, ExternalRefControl) {
   }
 }
 
-INSTANTIATE_TEST_SUITE_P(,
+INSTANTIATE_TEST_SUITE_P(All,
                          TestVp9ImplWithLayering,
                          ::testing::Combine(::testing::Values(1, 2, 3),
                                             ::testing::Values(1, 2, 3)));

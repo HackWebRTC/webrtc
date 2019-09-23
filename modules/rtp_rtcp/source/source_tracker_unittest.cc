@@ -225,7 +225,7 @@ TEST_P(SourceTrackerRandomTest, RandomOperations) {
   }
 }
 
-INSTANTIATE_TEST_SUITE_P(,
+INSTANTIATE_TEST_SUITE_P(All,
                          SourceTrackerRandomTest,
                          Combine(/*ssrcs_count_=*/Values(1, 2, 4),
                                  /*csrcs_count_=*/Values(0, 1, 3, 7)));

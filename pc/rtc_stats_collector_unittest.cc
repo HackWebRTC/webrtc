@@ -2633,7 +2633,7 @@ TEST_P(RTCStatsCollectorTestWithParamKind,
   EXPECT_TRUE(report->Get(*remote_inbound_rtp.transport_id));
 }
 
-INSTANTIATE_TEST_SUITE_P(,
+INSTANTIATE_TEST_SUITE_P(All,
                          RTCStatsCollectorTestWithParamKind,
                          ::testing::Values(cricket::MEDIA_TYPE_AUDIO,    // "/0"
                                            cricket::MEDIA_TYPE_VIDEO));  // "/1"
