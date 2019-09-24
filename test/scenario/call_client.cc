@@ -251,11 +251,6 @@ DataRate CallClient::target_rate() const {
   return network_controller_factory_.GetUpdate().target_rate->target_rate;
 }
 
-DataRate CallClient::link_capacity() const {
-  return network_controller_factory_.GetUpdate()
-      .target_rate->network_estimate.bandwidth;
-}
-
 DataRate CallClient::stable_target_rate() const {
   return network_controller_factory_.GetUpdate()
       .target_rate->stable_target_rate;

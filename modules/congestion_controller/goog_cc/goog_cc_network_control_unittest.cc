@@ -509,7 +509,7 @@ TEST_F(GoogCcNetworkControllerTest, StableEstimateDoesNotVaryInSteadyState) {
   // Measure variation in steady state.
   for (int i = 0; i < 20; ++i) {
     auto stable_target_rate = client->stable_target_rate();
-    auto target_rate = client->link_capacity();
+    auto target_rate = client->target_rate();
     EXPECT_LE(stable_target_rate, target_rate);
 
     min_stable_target = std::min(min_stable_target, stable_target_rate);

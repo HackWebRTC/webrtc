@@ -56,7 +56,6 @@ BitrateAllocator::BitrateAllocator(LimitObserver* limit_observer)
     : limit_observer_(limit_observer),
       last_target_bps_(0),
       last_stable_target_bps_(0),
-      last_bandwidth_bps_(0),
       last_non_zero_bitrate_bps_(kDefaultBitrateBps),
       last_fraction_loss_(0),
       last_rtt_(0),
@@ -95,7 +94,6 @@ uint8_t BitrateAllocator::GetTransmissionMaxBitrateMultiplier() {
 void BitrateAllocator::OnNetworkEstimateChanged(TargetTransferRate msg) {
   RTC_DCHECK_RUN_ON(&sequenced_checker_);
   last_target_bps_ = msg.target_rate.bps();
-  last_bandwidth_bps_ = msg.network_estimate.bandwidth.bps();
   last_stable_target_bps_ = msg.stable_target_rate.bps();
   last_non_zero_bitrate_bps_ =
       last_target_bps_ > 0 ? last_target_bps_ : last_non_zero_bitrate_bps_;
@@ -114,20 +112,16 @@ void BitrateAllocator::OnNetworkEstimateChanged(TargetTransferRate msg) {
   }
 
   ObserverAllocation allocation = AllocateBitrates(last_target_bps_);
-  ObserverAllocation bandwidth_allocation =
-      AllocateBitrates(last_bandwidth_bps_);
   ObserverAllocation stable_bitrate_allocation =
       AllocateBitrates(last_stable_target_bps_);
 
   for (auto& config : allocatable_tracks_) {
     uint32_t allocated_bitrate = allocation[config.observer];
-    uint32_t allocated_bandwidth = bandwidth_allocation[config.observer];
     uint32_t allocated_stable_target_rate =
         stable_bitrate_allocation[config.observer];
     BitrateAllocationUpdate update;
     update.target_bitrate = DataRate::bps(allocated_bitrate);
     update.stable_target_bitrate = DataRate::bps(allocated_stable_target_rate);
-    update.link_capacity = DataRate::bps(allocated_bandwidth);
     update.packet_loss_ratio = last_fraction_loss_ / 256.0;
     update.round_trip_time = TimeDelta::ms(last_rtt_);
     update.bwe_period = TimeDelta::ms(last_bwe_period_ms_);
@@ -183,19 +177,15 @@ void BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
     // Calculate a new allocation and update all observers.
 
     ObserverAllocation allocation = AllocateBitrates(last_target_bps_);
-    ObserverAllocation bandwidth_allocation =
-        AllocateBitrates(last_bandwidth_bps_);
     ObserverAllocation stable_bitrate_allocation =
         AllocateBitrates(last_stable_target_bps_);
     for (auto& config : allocatable_tracks_) {
       uint32_t allocated_bitrate = allocation[config.observer];
       uint32_t allocated_stable_bitrate =
           stable_bitrate_allocation[config.observer];
-      uint32_t bandwidth = bandwidth_allocation[config.observer];
       BitrateAllocationUpdate update;
       update.target_bitrate = DataRate::bps(allocated_bitrate);
       update.stable_target_bitrate = DataRate::bps(allocated_stable_bitrate);
-      update.link_capacity = DataRate::bps(bandwidth);
       update.packet_loss_ratio = last_fraction_loss_ / 256.0;
       update.round_trip_time = TimeDelta::ms(last_rtt_);
       update.bwe_period = TimeDelta::ms(last_bwe_period_ms_);
@@ -212,7 +202,6 @@ void BitrateAllocator::AddObserver(BitrateAllocatorObserver* observer,
     BitrateAllocationUpdate update;
     update.target_bitrate = DataRate::Zero();
     update.stable_target_bitrate = DataRate::Zero();
-    update.link_capacity = DataRate::Zero();
     update.packet_loss_ratio = last_fraction_loss_ / 256.0;
     update.round_trip_time = TimeDelta::ms(last_rtt_);
     update.bwe_period = TimeDelta::ms(last_bwe_period_ms_);

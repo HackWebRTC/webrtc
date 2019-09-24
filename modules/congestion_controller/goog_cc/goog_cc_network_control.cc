@@ -572,7 +572,6 @@ NetworkControlUpdate GoogCcNetworkController::GetNetworkState(
   NetworkControlUpdate update;
   update.target_rate = TargetTransferRate();
   update.target_rate->network_estimate.at_time = at_time;
-  update.target_rate->network_estimate.bandwidth = last_raw_target_rate_;
   update.target_rate->network_estimate.loss_rate_ratio =
       last_estimated_fraction_loss_ / 255.0;
   update.target_rate->network_estimate.round_trip_time = rtt;
@@ -635,7 +634,6 @@ void GoogCcNetworkController::MaybeTriggerOnNetworkChanged(
         bandwidth_estimation_->GetEstimatedLinkCapacity(), target_rate);
     target_rate_msg.network_estimate.at_time = at_time;
     target_rate_msg.network_estimate.round_trip_time = TimeDelta::ms(rtt_ms);
-    target_rate_msg.network_estimate.bandwidth = last_raw_target_rate_;
     target_rate_msg.network_estimate.loss_rate_ratio = fraction_loss / 255.0f;
     target_rate_msg.network_estimate.bwe_period = bwe_period;
 

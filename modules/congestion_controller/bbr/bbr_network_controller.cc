@@ -267,7 +267,6 @@ NetworkControlUpdate BbrNetworkController::CreateRateUpdate(
 
   TargetTransferRate target_rate_msg;
   target_rate_msg.network_estimate.at_time = at_time;
-  target_rate_msg.network_estimate.bandwidth = bandwidth;
   target_rate_msg.network_estimate.round_trip_time = rtt;
 
   // TODO(srte): Fill in field below with proper value.

@@ -91,7 +91,6 @@ std::deque<FieldLogger*> GoogCcStatePrinter::CreateLoggers() {
   };
   std::deque<FieldLogger*> loggers({
       Log("time", [=] { return target_.at_time; }),
-      Log("bandwidth", [=] { return target_.network_estimate.bandwidth; }),
       Log("rtt", [=] { return target_.network_estimate.round_trip_time; }),
       Log("target", [=] { return target_.target_rate; }),
       Log("pacing", [=] { return pacing_.data_rate(); }),

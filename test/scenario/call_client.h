@@ -108,7 +108,6 @@ class CallClient : public EmulatedNetworkReceiverInterface {
   }
   DataRate target_rate() const;
   DataRate stable_target_rate() const;
-  DataRate link_capacity() const;
   DataRate padding_rate() const;
 
   void OnPacketReceived(EmulatedIpPacket packet) override;

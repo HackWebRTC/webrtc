@@ -199,7 +199,6 @@ class BitrateAllocator : public BitrateAllocatorInterface {
       RTC_GUARDED_BY(&sequenced_checker_);
   uint32_t last_target_bps_ RTC_GUARDED_BY(&sequenced_checker_);
   uint32_t last_stable_target_bps_ RTC_GUARDED_BY(&sequenced_checker_);
-  uint32_t last_bandwidth_bps_ RTC_GUARDED_BY(&sequenced_checker_);
   uint32_t last_non_zero_bitrate_bps_ RTC_GUARDED_BY(&sequenced_checker_);
   uint8_t last_fraction_loss_ RTC_GUARDED_BY(&sequenced_checker_);
   int64_t last_rtt_ RTC_GUARDED_BY(&sequenced_checker_);

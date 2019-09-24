@@ -1065,7 +1065,7 @@ void Call::OnTargetTransferRate(TargetTransferRate msg) {
   RTC_DCHECK_RUN_ON(&worker_sequence_checker_);
   {
     rtc::CritScope cs(&last_bandwidth_bps_crit_);
-    last_bandwidth_bps_ = msg.network_estimate.bandwidth.bps();
+    last_bandwidth_bps_ = msg.target_rate.bps();
   }
 
   uint32_t target_bitrate_bps = msg.target_rate.bps();

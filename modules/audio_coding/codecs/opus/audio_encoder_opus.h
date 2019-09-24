@@ -174,7 +174,7 @@ class AudioEncoderOpusImpl final : public AudioEncoder {
   AudioEncoderOpusConfig config_;
   const int payload_type_;
   const bool send_side_bwe_with_overhead_;
-  const bool use_link_capacity_for_adaptation_;
+  const bool use_stable_target_for_adaptation_;
   const bool adjust_bandwidth_;
   bool bitrate_changed_;
   float packet_loss_rate_;
@@ -192,7 +192,6 @@ class AudioEncoderOpusImpl final : public AudioEncoder {
   absl::optional<size_t> overhead_bytes_per_packet_;
   const std::unique_ptr<SmoothingFilter> bitrate_smoother_;
   absl::optional<int64_t> bitrate_smoother_last_update_time_;
-  absl::optional<int64_t> link_capacity_allocation_bps_;
   int consecutive_dtx_frames_;
 
   friend struct AudioEncoderOpus;

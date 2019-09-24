@@ -32,8 +32,6 @@ struct BitrateAllocationUpdate {
   double packet_loss_ratio = 0;
   // Predicted round trip time.
   TimeDelta round_trip_time = TimeDelta::PlusInfinity();
-  // |link_capacity| is deprecated, use |stable_target_bitrate| instead.
-  DataRate link_capacity = DataRate::Zero();
   // |bwe_period| is deprecated, use |stable_target_bitrate| allocation instead.
   TimeDelta bwe_period = TimeDelta::PlusInfinity();
 };

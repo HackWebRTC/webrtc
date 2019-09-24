@@ -104,7 +104,6 @@ NetworkControlUpdate PccNetworkController::CreateRateUpdate(
   target_rate_msg.at_time = at_time;
   target_rate_msg.network_estimate.at_time = at_time;
   target_rate_msg.network_estimate.round_trip_time = rtt_tracker_.GetRtt();
-  target_rate_msg.network_estimate.bandwidth = bandwidth_estimate_;
   // TODO(koloskova): Add correct estimate.
   target_rate_msg.network_estimate.loss_rate_ratio = 0;
   target_rate_msg.network_estimate.bwe_period =
