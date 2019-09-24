@@ -10,8 +10,8 @@
  *  FEC and NACK added bitrate is handled outside class
  */
 
-#ifndef MODULES_BITRATE_CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_
-#define MODULES_BITRATE_CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_
+#ifndef MODULES_CONGESTION_CONTROLLER_GOOG_CC_SEND_SIDE_BANDWIDTH_ESTIMATION_H_
+#define MODULES_CONGESTION_CONTROLLER_GOOG_CC_SEND_SIDE_BANDWIDTH_ESTIMATION_H_
 
 #include <stdint.h>
 
@@ -24,7 +24,7 @@
 #include "api/units/data_rate.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
-#include "modules/bitrate_controller/loss_based_bandwidth_estimation.h"
+#include "modules/congestion_controller/goog_cc/loss_based_bandwidth_estimation.h"
 #include "rtc_base/experiments/field_trial_parser.h"
 
 namespace webrtc {
@@ -168,4 +168,4 @@ class SendSideBandwidthEstimation {
   LossBasedBandwidthEstimation loss_based_bandwidth_estimation_;
 };
 }  // namespace webrtc
-#endif  // MODULES_BITRATE_CONTROLLER_SEND_SIDE_BANDWIDTH_ESTIMATION_H_
+#endif  // MODULES_CONGESTION_CONTROLLER_GOOG_CC_SEND_SIDE_BANDWIDTH_ESTIMATION_H_

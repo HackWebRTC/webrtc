@@ -27,6 +27,7 @@ rtc_static_library("goog_cc") {
     ":alr_detector",
     ":delay_based_bwe",
     ":estimators",
+    ":loss_based_controller",
     ":probe_controller",
     ":pushback_controller",
     "../..:module_api",
@@ -48,7 +49,6 @@ rtc_static_library("goog_cc") {
     "../../../rtc_base/experiments:field_trial_parser",
     "../../../rtc_base/experiments:rate_control_settings",
     "../../../system_wrappers",
-    "../../bitrate_controller",
     "../../remote_bitrate_estimator",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -131,6 +131,31 @@ rtc_source_set("estimators") {
     "../../../rtc_base:safe_conversions",
     "../../../rtc_base:safe_minmax",
     "../../../rtc_base/experiments:field_trial_parser",
+    "../../remote_bitrate_estimator",
+    "//third_party/abseil-cpp/absl/types:optional",
+  ]
+}
+
+rtc_static_library("loss_based_controller") {
+  configs += [ ":bwe_test_logging" ]
+  sources = [
+    "loss_based_bandwidth_estimation.cc",
+    "loss_based_bandwidth_estimation.h",
+    "send_side_bandwidth_estimation.cc",
+    "send_side_bandwidth_estimation.h",
+  ]
+  deps = [
+    "../../../api/rtc_event_log",
+    "../../../api/transport:network_control",
+    "../../../api/units:data_rate",
+    "../../../api/units:time_delta",
+    "../../../api/units:timestamp",
+    "../../../logging:rtc_event_bwe",
+    "../../../rtc_base:checks",
+    "../../../rtc_base:logging",
+    "../../../rtc_base/experiments:field_trial_parser",
+    "../../../system_wrappers:field_trial",
+    "../../../system_wrappers:metrics",
     "../../remote_bitrate_estimator",
     "//third_party/abseil-cpp/absl/types:optional",
   ]
@@ -223,6 +248,7 @@ if (rtc_include_tests) {
       "median_slope_estimator_unittest.cc",
       "probe_bitrate_estimator_unittest.cc",
       "probe_controller_unittest.cc",
+      "send_side_bandwidth_estimation_unittest.cc",
       "trendline_estimator_unittest.cc",
     ]
     deps = [
@@ -230,8 +256,10 @@ if (rtc_include_tests) {
       ":delay_based_bwe",
       ":estimators",
       ":goog_cc",
+      ":loss_based_controller",
       ":probe_controller",
       ":pushback_controller",
+      "../../../api/rtc_event_log",
       "../../../api/transport:field_trial_based_config",
       "../../../api/transport:goog_cc",
       "../../../api/transport:network_control",
@@ -239,6 +267,7 @@ if (rtc_include_tests) {
       "../../../api/units:data_rate",
       "../../../api/units:timestamp",
       "../../../logging:mocks",
+      "../../../logging:rtc_event_bwe",
       "../../../rtc_base:checks",
       "../../../rtc_base:rtc_base_approved",
       "../../../rtc_base:rtc_base_tests_utils",

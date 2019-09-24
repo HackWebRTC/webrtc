@@ -83,7 +83,6 @@ rtc_static_library("video") {
     "../media:rtc_h264_profile_id",
     "../modules:module_api",
     "../modules:module_api_public",
-    "../modules/bitrate_controller",
     "../modules/pacing",
     "../modules/remote_bitrate_estimator",
     "../modules/rtp_rtcp",

@@ -8,7 +8,7 @@
  *  be found in the AUTHORS file in the root of the source tree.
  */
 
-#include "modules/bitrate_controller/send_side_bandwidth_estimation.h"
+#include "modules/congestion_controller/goog_cc/send_side_bandwidth_estimation.h"
 
 #include "api/rtc_event_log/rtc_event.h"
 #include "logging/rtc_event_log/events/rtc_event_bwe_update_loss_based.h"
