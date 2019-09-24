@@ -71,20 +71,25 @@ void LinearEchoPower(const FftData& E,
 void SignalTransition(rtc::ArrayView<const float> from,
                       rtc::ArrayView<const float> to,
                       rtc::ArrayView<float> out) {
-  constexpr size_t kTransitionSize = 30;
-  constexpr float kOneByTransitionSizePlusOne = 1.f / (kTransitionSize + 1);
+  if (from == to) {
+    RTC_DCHECK_EQ(to.size(), out.size());
+    std::copy(to.begin(), to.end(), out.begin());
+  } else {
+    constexpr size_t kTransitionSize = 30;
+    constexpr float kOneByTransitionSizePlusOne = 1.f / (kTransitionSize + 1);
 
-  RTC_DCHECK_EQ(from.size(), to.size());
-  RTC_DCHECK_EQ(from.size(), out.size());
-  RTC_DCHECK_LE(kTransitionSize, out.size());
+    RTC_DCHECK_EQ(from.size(), to.size());
+    RTC_DCHECK_EQ(from.size(), out.size());
+    RTC_DCHECK_LE(kTransitionSize, out.size());
 
-  for (size_t k = 0; k < kTransitionSize; ++k) {
-    float a = (k + 1) * kOneByTransitionSizePlusOne;
-    out[k] = a * to[k] + (1.f - a) * from[k];
+    for (size_t k = 0; k < kTransitionSize; ++k) {
+      float a = (k + 1) * kOneByTransitionSizePlusOne;
+      out[k] = a * to[k] + (1.f - a) * from[k];
+    }
+
+    std::copy(to.begin() + kTransitionSize, to.end(),
+              out.begin() + kTransitionSize);
   }
-
-  std::copy(to.begin() + kTransitionSize, to.end(),
-            out.begin() + kTransitionSize);
 }
 
 // Computes a windowed (square root Hanning) padded FFT and updates the related
@@ -157,9 +162,6 @@ class EchoRemoverImpl final : public EchoRemover {
   size_t block_counter_ = 0;
   int gain_change_hangover_ = 0;
   bool main_filter_output_last_selected_ = true;
-#if WEBRTC_APM_DEBUG_DUMP
-  bool linear_filter_output_last_selected_ = true;
-#endif
 
   std::vector<std::array<float, kFftLengthBy2Plus1>> Y2_heap_;
   std::vector<std::array<float, kFftLengthBy2Plus1>> E2_heap_;
@@ -382,21 +384,6 @@ void EchoRemoverImpl::ProcessCapture(
   // Choose the linear output.
   const auto& Y_fft = aec_state_.UseLinearFilterOutput() ? E : Y;
 
-#if WEBRTC_APM_DEBUG_DUMP
-  if (aec_state_.UseLinearFilterOutput()) {
-    if (!linear_filter_output_last_selected_) {
-      SignalTransition(y0, e_[0], y0);
-    } else {
-      std::copy(e_[0].begin(), e_[0].end(), y0.begin());
-    }
-  } else {
-    if (linear_filter_output_last_selected_) {
-      SignalTransition(e_[0], y0, y0);
-    }
-  }
-  linear_filter_output_last_selected_ = aec_state_.UseLinearFilterOutput();
-#endif
-
   data_dumper_->DumpWav("aec3_output_linear", kBlockSize, &y0[0], 16000, 1);
   data_dumper_->DumpWav("aec3_output_linear2", kBlockSize, &e_[0][0], 16000, 1);
 
@@ -498,23 +485,11 @@ void EchoRemoverImpl::FormLinearFilterOutput(
     }
   }
 
-  if (use_main_output) {
-    if (!main_filter_output_last_selected_) {
-      SignalTransition(subtractor_output.e_shadow, subtractor_output.e_main,
-                       output);
-    } else {
-      std::copy(subtractor_output.e_main.begin(),
-                subtractor_output.e_main.end(), output.begin());
-    }
-  } else {
-    if (main_filter_output_last_selected_) {
-      SignalTransition(subtractor_output.e_main, subtractor_output.e_shadow,
-                       output);
-    } else {
-      std::copy(subtractor_output.e_shadow.begin(),
-                subtractor_output.e_shadow.end(), output.begin());
-    }
-  }
+  SignalTransition(
+      main_filter_output_last_selected_ ? subtractor_output.e_main
+                                        : subtractor_output.e_shadow,
+      use_main_output ? subtractor_output.e_main : subtractor_output.e_shadow,
+      output);
   main_filter_output_last_selected_ = use_main_output;
 }
 
