@@ -24,6 +24,12 @@ CompositeDataChannelTransport::CompositeDataChannelTransport(
   }
 }
 
+CompositeDataChannelTransport::~CompositeDataChannelTransport() {
+  for (auto transport : transports_) {
+    transport->SetDataSink(nullptr);
+  }
+}
+
 void CompositeDataChannelTransport::SetSendTransport(
     DataChannelTransportInterface* send_transport) {
   if (!absl::c_linear_search(transports_, send_transport)) {

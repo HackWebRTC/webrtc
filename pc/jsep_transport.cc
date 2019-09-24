@@ -114,7 +114,6 @@ JsepTransport::JsepTransport(
       unencrypted_rtp_transport_(std::move(unencrypted_rtp_transport)),
       sdes_transport_(std::move(sdes_transport)),
       dtls_srtp_transport_(std::move(dtls_srtp_transport)),
-      datagram_rtp_transport_(std::move(datagram_rtp_transport)),
       rtp_dtls_transport_(
           rtp_dtls_transport ? new rtc::RefCountedObject<webrtc::DtlsTransport>(
                                    std::move(rtp_dtls_transport))
@@ -134,6 +133,7 @@ JsepTransport::JsepTransport(
                           : nullptr),
       media_transport_(std::move(media_transport)),
       datagram_transport_(std::move(datagram_transport)),
+      datagram_rtp_transport_(std::move(datagram_rtp_transport)),
       data_channel_transport_(data_channel_transport) {
   RTC_DCHECK(ice_transport_);
   RTC_DCHECK(rtp_dtls_transport_);
@@ -178,11 +178,9 @@ JsepTransport::JsepTransport(
 }
 
 JsepTransport::~JsepTransport() {
-  // Disconnect media transport state callbacks and  make sure we delete media
-  // transport before ICE.
+  // Disconnect media transport state callbacks.
   if (media_transport_) {
     media_transport_->SetMediaTransportStateCallback(nullptr);
-    media_transport_.reset();
   }
 
   if (sctp_transport_) {
@@ -195,10 +193,6 @@ JsepTransport::~JsepTransport() {
   if (rtcp_dtls_transport_) {
     rtcp_dtls_transport_->Clear();
   }
-
-  // Delete datagram transport before ICE, but after its RTP transport.
-  datagram_rtp_transport_.reset();
-  datagram_transport_.reset();
 
   // ICE will be the last transport to be deleted.
 }

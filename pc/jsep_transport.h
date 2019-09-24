@@ -378,8 +378,6 @@ class JsepTransport : public sigslot::has_slots<>,
       RTC_GUARDED_BY(accessor_lock_);
   std::unique_ptr<webrtc::DtlsSrtpTransport> dtls_srtp_transport_
       RTC_GUARDED_BY(accessor_lock_);
-  std::unique_ptr<webrtc::RtpTransportInternal> datagram_rtp_transport_
-      RTC_GUARDED_BY(accessor_lock_);
 
   // If multiple RTP transports are in use, |composite_rtp_transport_| will be
   // passed to callers.  This is only valid for offer-only, receive-only
@@ -415,6 +413,9 @@ class JsepTransport : public sigslot::has_slots<>,
 
   // Optional datagram transport (experimental).
   std::unique_ptr<webrtc::DatagramTransportInterface> datagram_transport_
+      RTC_GUARDED_BY(accessor_lock_);
+
+  std::unique_ptr<webrtc::RtpTransportInternal> datagram_rtp_transport_
       RTC_GUARDED_BY(accessor_lock_);
 
   // Non-SCTP data channel transport.  Set to one of |media_transport_| or

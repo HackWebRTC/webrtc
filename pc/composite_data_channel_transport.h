@@ -26,6 +26,7 @@ class CompositeDataChannelTransport : public DataChannelTransportInterface,
  public:
   explicit CompositeDataChannelTransport(
       std::vector<DataChannelTransportInterface*> transports);
+  ~CompositeDataChannelTransport() override;
 
   // Specifies which transport to be used for sending.  Must be called before
   // sending data.
