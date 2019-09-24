@@ -191,7 +191,9 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
       subtractors_(num_capture_channels_),
       suppression_gains_(num_capture_channels_),
       cngs_(num_capture_channels_),
-      suppression_filter_(optimization_, sample_rate_hz_),
+      suppression_filter_(optimization_,
+                          sample_rate_hz_,
+                          num_capture_channels_),
       render_signal_analyzer_(config_),
       residual_echo_estimators_(num_capture_channels_),
       aec_state_(config_),
@@ -378,7 +380,7 @@ void EchoRemoverImpl::ProcessCapture(
                     E2[0], Y2[0], subtractor_output[0], y0);
 
   // Choose the linear output.
-  const auto& Y_fft = aec_state_.UseLinearFilterOutput() ? E[0] : Y[0];
+  const auto& Y_fft = aec_state_.UseLinearFilterOutput() ? E : Y;
 
 #if WEBRTC_APM_DEBUG_DUMP
   if (aec_state_.UseLinearFilterOutput()) {
@@ -439,8 +441,7 @@ void EchoRemoverImpl::ProcessCapture(
                    [](float a, float b) { return std::min(a, b); });
   }
 
-  // TODO(bugs.webrtc.org/10913): Make ApplyGain handle multiple channels.
-  suppression_filter_.ApplyGain(comfort_noise[0], high_band_comfort_noise[0], G,
+  suppression_filter_.ApplyGain(comfort_noise, high_band_comfort_noise, G,
                                 high_bands_gain, Y_fft, y);
 
   // Update the metrics.
