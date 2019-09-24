@@ -75,12 +75,6 @@ static const SocketAddress kNatUdpAddr("77.77.77.77", rtc::NAT_SERVER_UDP_PORT);
 static const SocketAddress kNatTcpAddr("77.77.77.77", rtc::NAT_SERVER_TCP_PORT);
 static const SocketAddress kRemoteClientAddr("22.22.22.22", 0);
 static const SocketAddress kStunAddr("99.99.99.1", cricket::STUN_SERVER_PORT);
-static const SocketAddress kRelayUdpIntAddr("99.99.99.2", 5000);
-static const SocketAddress kRelayUdpExtAddr("99.99.99.3", 5001);
-static const SocketAddress kRelayTcpIntAddr("99.99.99.2", 5002);
-static const SocketAddress kRelayTcpExtAddr("99.99.99.3", 5003);
-static const SocketAddress kRelaySslTcpIntAddr("99.99.99.2", 5004);
-static const SocketAddress kRelaySslTcpExtAddr("99.99.99.3", 5005);
 static const SocketAddress kTurnUdpIntAddr("99.99.99.4", 3478);
 static const SocketAddress kTurnUdpIntIPv6Addr(
     "2402:fb00:4:1000:be30:5bff:fee5:c3",
@@ -159,25 +153,13 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
         nat_factory_(vss_.get(), kNatUdpAddr, kNatTcpAddr),
         nat_socket_factory_(new rtc::BasicPacketSocketFactory(&nat_factory_)),
         stun_server_(TestStunServer::Create(rtc::Thread::Current(), kStunAddr)),
-        relay_server_(rtc::Thread::Current(),
-                      kRelayUdpIntAddr,
-                      kRelayUdpExtAddr,
-                      kRelayTcpIntAddr,
-                      kRelayTcpExtAddr,
-                      kRelaySslTcpIntAddr,
-                      kRelaySslTcpExtAddr),
         turn_server_(rtc::Thread::Current(), kTurnUdpIntAddr, kTurnUdpExtAddr),
         candidate_allocation_done_(false) {
     ServerAddresses stun_servers;
     stun_servers.insert(kStunAddr);
-    // Passing the addresses of GTURN servers will enable GTURN in
-    // Basicportallocator.
-    // TODO(deadbeef): Stop using GTURN by default in this test... Either the
-    // configuration should be blank by default (preferred), or it should use
-    // TURN instead.
-    allocator_.reset(new BasicPortAllocator(&network_manager_, stun_servers,
-                                            kRelayUdpIntAddr, kRelayTcpIntAddr,
-                                            kRelaySslTcpIntAddr));
+
+    allocator_ =
+        std::make_unique<BasicPortAllocator>(&network_manager_, stun_servers);
     allocator_->Initialize();
     allocator_->set_step_delay(kMinimumStepDelay);
     webrtc::metrics::Reset();
@@ -502,7 +484,6 @@ class BasicPortAllocatorTestBase : public ::testing::Test,
   rtc::NATSocketFactory nat_factory_;
   std::unique_ptr<rtc::BasicPacketSocketFactory> nat_socket_factory_;
   std::unique_ptr<TestStunServer> stun_server_;
-  TestRelayServer relay_server_;
   TestTurnServer turn_server_;
   rtc::FakeNetworkManager network_manager_;
   std::unique_ptr<BasicPortAllocator> allocator_;
@@ -730,15 +711,8 @@ class BasicPortAllocatorTest : public FakeClockBase,
 TEST_F(BasicPortAllocatorTest, TestBasic) {
   EXPECT_EQ(&network_manager_, allocator().network_manager());
   EXPECT_EQ(kStunAddr, *allocator().stun_servers().begin());
-  ASSERT_EQ(1u, allocator().turn_servers().size());
-  EXPECT_EQ(RELAY_GTURN, allocator().turn_servers()[0].type);
-  // Empty relay credentials are used for GTURN.
-  EXPECT_TRUE(allocator().turn_servers()[0].credentials.username.empty());
-  EXPECT_TRUE(allocator().turn_servers()[0].credentials.password.empty());
-  EXPECT_TRUE(HasRelayAddress(ProtocolAddress(kRelayUdpIntAddr, PROTO_UDP)));
-  EXPECT_TRUE(HasRelayAddress(ProtocolAddress(kRelayTcpIntAddr, PROTO_TCP)));
-  EXPECT_TRUE(
-      HasRelayAddress(ProtocolAddress(kRelaySslTcpIntAddr, PROTO_SSLTCP)));
+  ASSERT_EQ(0u, allocator().turn_servers().size());
+
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   EXPECT_FALSE(session_->CandidatesAllocationDone());
 }
@@ -1028,16 +1002,11 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsWithMinimumStepDelay) {
   session_->StartGettingPorts();
   ASSERT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
                              kDefaultAllocationTimeout, fake_clock);
-  EXPECT_EQ(7U, candidates_.size());
-  EXPECT_EQ(4U, ports_.size());
+  EXPECT_EQ(3U, candidates_.size());
+  EXPECT_EQ(3U, ports_.size());
   EXPECT_TRUE(HasCandidate(candidates_, "local", "udp", kClientAddr));
   EXPECT_TRUE(HasCandidate(candidates_, "stun", "udp", kClientAddr));
-  EXPECT_TRUE(HasCandidate(candidates_, "relay", "udp", kRelayUdpIntAddr));
-  EXPECT_TRUE(HasCandidate(candidates_, "relay", "udp", kRelayUdpExtAddr));
-  EXPECT_TRUE(HasCandidate(candidates_, "relay", "tcp", kRelayTcpIntAddr));
   EXPECT_TRUE(HasCandidate(candidates_, "local", "tcp", kClientAddr));
-  EXPECT_TRUE(
-      HasCandidate(candidates_, "relay", "ssltcp", kRelaySslTcpIntAddr));
 }
 
 // Test that when the same network interface is brought down and up, the
@@ -1050,8 +1019,8 @@ TEST_F(BasicPortAllocatorTest, TestSameNetworkDownAndUpWhenSessionNotStopped) {
   session_->StartGettingPorts();
   ASSERT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
                              kDefaultAllocationTimeout, fake_clock);
-  EXPECT_EQ(7U, candidates_.size());
-  EXPECT_EQ(4U, ports_.size());
+  EXPECT_EQ(3U, candidates_.size());
+  EXPECT_EQ(3U, ports_.size());
   candidate_allocation_done_ = false;
   candidates_.clear();
   ports_.clear();
@@ -1065,6 +1034,7 @@ TEST_F(BasicPortAllocatorTest, TestSameNetworkDownAndUpWhenSessionNotStopped) {
   SIMULATED_WAIT(false, 1000, fake_clock);
   EXPECT_EQ(0U, candidates_.size());
   ports_.clear();
+  candidate_allocation_done_ = false;
 
   // When the same interfaces are added again, new candidates/ports should be
   // generated.
@@ -1073,8 +1043,9 @@ TEST_F(BasicPortAllocatorTest, TestSameNetworkDownAndUpWhenSessionNotStopped) {
   AddInterface(kClientAddr, if_name);
   ASSERT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
                              kDefaultAllocationTimeout, fake_clock);
-  EXPECT_EQ(7U, candidates_.size());
-  EXPECT_EQ(4U, ports_.size());
+  // TODO(nisse): Needs fixing, test fails with sizes == 0.
+  EXPECT_EQ(3U, candidates_.size());
+  EXPECT_EQ(3U, ports_.size());
 }
 
 // Test that when the same network interface is brought down and up, the
@@ -1087,8 +1058,8 @@ TEST_F(BasicPortAllocatorTest, TestSameNetworkDownAndUpWhenSessionStopped) {
   session_->StartGettingPorts();
   ASSERT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
                              kDefaultAllocationTimeout, fake_clock);
-  EXPECT_EQ(7U, candidates_.size());
-  EXPECT_EQ(4U, ports_.size());
+  EXPECT_EQ(3U, candidates_.size());
+  EXPECT_EQ(3U, ports_.size());
   session_->StopGettingPorts();
   candidates_.clear();
   ports_.clear();
@@ -1156,16 +1127,12 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsWithOneSecondStepDelay) {
   session_->StartGettingPorts();
   ASSERT_EQ_SIMULATED_WAIT(2U, candidates_.size(), 1000, fake_clock);
   EXPECT_EQ(2U, ports_.size());
-  ASSERT_EQ_SIMULATED_WAIT(6U, candidates_.size(), 2000, fake_clock);
+  ASSERT_EQ_SIMULATED_WAIT(3U, candidates_.size(), 2000, fake_clock);
   EXPECT_EQ(3U, ports_.size());
-  EXPECT_TRUE(HasCandidate(candidates_, "relay", "udp", kRelayUdpIntAddr));
-  EXPECT_TRUE(HasCandidate(candidates_, "relay", "udp", kRelayUdpExtAddr));
-  EXPECT_TRUE(HasCandidate(candidates_, "relay", "tcp", kRelayTcpIntAddr));
-  EXPECT_TRUE(
-      HasCandidate(candidates_, "relay", "ssltcp", kRelaySslTcpIntAddr));
-  ASSERT_EQ_SIMULATED_WAIT(7U, candidates_.size(), 1500, fake_clock);
+
+  ASSERT_EQ_SIMULATED_WAIT(3U, candidates_.size(), 1500, fake_clock);
   EXPECT_TRUE(HasCandidate(candidates_, "local", "tcp", kClientAddr));
-  EXPECT_EQ(4U, ports_.size());
+  EXPECT_EQ(3U, ports_.size());
   EXPECT_TRUE(candidate_allocation_done_);
   // If we Stop gathering now, we shouldn't get a second "done" callback.
   session_->StopGettingPorts();
@@ -1177,7 +1144,7 @@ TEST_F(BasicPortAllocatorTest, TestSetupVideoRtpPortsWithNormalSendBuffers) {
   session_->StartGettingPorts();
   ASSERT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
                              kDefaultAllocationTimeout, fake_clock);
-  EXPECT_EQ(7U, candidates_.size());
+  EXPECT_EQ(3U, candidates_.size());
   // If we Stop gathering now, we shouldn't get a second "done" callback.
   session_->StopGettingPorts();
 
@@ -1214,8 +1181,8 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsPortRange) {
   session_->StartGettingPorts();
   ASSERT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
                              kDefaultAllocationTimeout, fake_clock);
-  EXPECT_EQ(7U, candidates_.size());
-  EXPECT_EQ(4U, ports_.size());
+  EXPECT_EQ(3U, candidates_.size());
+  EXPECT_EQ(3U, ports_.size());
 
   int num_nonrelay_candidates = 0;
   for (const Candidate& candidate : candidates_) {
@@ -1226,9 +1193,6 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsPortRange) {
     }
   }
   EXPECT_EQ(3, num_nonrelay_candidates);
-  // Check the port number used to connect to the relay server.
-  EXPECT_TRUE(
-      CheckPort(relay_server_.GetConnection(0).source(), kMinPort, kMaxPort));
 }
 
 // Test that if we have no network adapters, we bind to the ANY address and
@@ -1418,14 +1382,9 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoUdpSockets) {
   session_->StartGettingPorts();
   ASSERT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
                              kDefaultAllocationTimeout, fake_clock);
-  EXPECT_EQ(5U, candidates_.size());
-  EXPECT_EQ(2U, ports_.size());
-  EXPECT_TRUE(HasCandidate(candidates_, "relay", "udp", kRelayUdpIntAddr));
-  EXPECT_TRUE(HasCandidate(candidates_, "relay", "udp", kRelayUdpExtAddr));
-  EXPECT_TRUE(HasCandidate(candidates_, "relay", "tcp", kRelayTcpIntAddr));
+  EXPECT_EQ(1U, candidates_.size());
+  EXPECT_EQ(1U, ports_.size());
   EXPECT_TRUE(HasCandidate(candidates_, "local", "tcp", kClientAddr));
-  EXPECT_TRUE(
-      HasCandidate(candidates_, "relay", "ssltcp", kRelaySslTcpIntAddr));
 }
 
 #endif  // if !defined(ADDRESS_SANITIZER)
@@ -1441,14 +1400,9 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoUdpSocketsNoTcpListen) {
   session_->StartGettingPorts();
   ASSERT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
                              kDefaultAllocationTimeout, fake_clock);
-  EXPECT_EQ(5U, candidates_.size());
-  EXPECT_EQ(2U, ports_.size());
-  EXPECT_TRUE(HasCandidate(candidates_, "relay", "udp", kRelayUdpIntAddr));
-  EXPECT_TRUE(HasCandidate(candidates_, "relay", "udp", kRelayUdpExtAddr));
-  EXPECT_TRUE(HasCandidate(candidates_, "relay", "tcp", kRelayTcpIntAddr));
+  EXPECT_EQ(1U, candidates_.size());
+  EXPECT_EQ(1U, ports_.size());
   EXPECT_TRUE(HasCandidate(candidates_, "local", "tcp", kClientAddr));
-  EXPECT_TRUE(
-      HasCandidate(candidates_, "relay", "ssltcp", kRelaySslTcpIntAddr));
 }
 
 // Test that we don't crash or malfunction if we can't create any sockets.
@@ -1476,20 +1430,12 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsNoUdpAllowed) {
   EXPECT_EQ(2U, ports_.size());
   EXPECT_TRUE(HasCandidate(candidates_, "local", "udp", kClientAddr));
   EXPECT_TRUE(HasCandidate(candidates_, "local", "tcp", kClientAddr));
-  // RelayPort connection timeout is 3sec. TCP connection with RelayServer
-  // will be tried after about 3 seconds.
-  EXPECT_EQ_SIMULATED_WAIT(6U, candidates_.size(), 3500, fake_clock);
-  EXPECT_EQ(3U, ports_.size());
-  EXPECT_TRUE(HasCandidate(candidates_, "relay", "udp", kRelayUdpIntAddr));
-  EXPECT_TRUE(HasCandidate(candidates_, "relay", "tcp", kRelayTcpIntAddr));
-  EXPECT_TRUE(
-      HasCandidate(candidates_, "relay", "ssltcp", kRelaySslTcpIntAddr));
-  EXPECT_TRUE(HasCandidate(candidates_, "relay", "udp", kRelayUdpExtAddr));
   // We wait at least for a full STUN timeout, which
-  // cricket::STUN_TOTAL_TIMEOUT seconds.  But since 3-3.5 seconds
-  // already passed (see above), we wait 3 seconds less than that.
+  // cricket::STUN_TOTAL_TIMEOUT seconds.
   EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
-                             cricket::STUN_TOTAL_TIMEOUT - 3000, fake_clock);
+                             cricket::STUN_TOTAL_TIMEOUT, fake_clock);
+  // No additional (STUN) candidates.
+  EXPECT_EQ(2U, candidates_.size());
 }
 
 TEST_F(BasicPortAllocatorTest, TestCandidatePriorityOfMultipleInterfaces) {
@@ -1516,8 +1462,8 @@ TEST_F(BasicPortAllocatorTest, TestGetAllPortsRestarts) {
   session_->StartGettingPorts();
   EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
                              kDefaultAllocationTimeout, fake_clock);
-  EXPECT_EQ(7U, candidates_.size());
-  EXPECT_EQ(4U, ports_.size());
+  EXPECT_EQ(3U, candidates_.size());
+  EXPECT_EQ(3U, ports_.size());
   // TODO(deadbeef): Extend this to verify ICE restart.
 }
 
@@ -1535,8 +1481,8 @@ TEST_F(BasicPortAllocatorTest, TestSessionUsesOwnCandidateFilter) {
   // TestGetAllPorts* tests).
   EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
                              kDefaultAllocationTimeout, fake_clock);
-  EXPECT_EQ(7U, candidates_.size());
-  EXPECT_EQ(4U, ports_.size());
+  EXPECT_EQ(3U, candidates_.size());
+  EXPECT_EQ(3U, ports_.size());
 }
 
 // Test ICE candidate filter mechanism with options Relay/Host/Reflexive.
@@ -1624,11 +1570,11 @@ TEST_F(BasicPortAllocatorTest, TestEnableSharedUfrag) {
   session_->StartGettingPorts();
   ASSERT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
                              kDefaultAllocationTimeout, fake_clock);
-  EXPECT_EQ(7U, candidates_.size());
+  EXPECT_EQ(3U, candidates_.size());
   EXPECT_TRUE(HasCandidate(candidates_, "local", "udp", kClientAddr));
   EXPECT_TRUE(HasCandidate(candidates_, "stun", "udp", kClientAddr));
   EXPECT_TRUE(HasCandidate(candidates_, "local", "tcp", kClientAddr));
-  EXPECT_EQ(4U, ports_.size());
+  EXPECT_EQ(3U, ports_.size());
   for (const Candidate& candidate : candidates_) {
     EXPECT_EQ(kIceUfrag0, candidate.username());
     EXPECT_EQ(kIcePwd0, candidate.password());
@@ -1645,9 +1591,9 @@ TEST_F(BasicPortAllocatorTest, TestSharedSocketWithoutNat) {
                         PORTALLOCATOR_ENABLE_SHARED_SOCKET);
   ASSERT_TRUE(CreateSession(ICE_CANDIDATE_COMPONENT_RTP));
   session_->StartGettingPorts();
-  ASSERT_EQ_SIMULATED_WAIT(6U, candidates_.size(), kDefaultAllocationTimeout,
+  ASSERT_EQ_SIMULATED_WAIT(2U, candidates_.size(), kDefaultAllocationTimeout,
                            fake_clock);
-  EXPECT_EQ(3U, ports_.size());
+  EXPECT_EQ(2U, ports_.size());
   EXPECT_TRUE(HasCandidate(candidates_, "local", "udp", kClientAddr));
   EXPECT_TRUE_SIMULATED_WAIT(candidate_allocation_done_,
                              kDefaultAllocationTimeout, fake_clock);

@@ -190,36 +190,6 @@ BasicPortAllocator::BasicPortAllocator(rtc::NetworkManager* network_manager,
   Construct();
 }
 
-BasicPortAllocator::BasicPortAllocator(
-    rtc::NetworkManager* network_manager,
-    const ServerAddresses& stun_servers,
-    const rtc::SocketAddress& relay_address_udp,
-    const rtc::SocketAddress& relay_address_tcp,
-    const rtc::SocketAddress& relay_address_ssl)
-    : network_manager_(network_manager), socket_factory_(NULL) {
-  InitRelayPortFactory(nullptr);
-  RTC_DCHECK(relay_port_factory_ != nullptr);
-  RTC_DCHECK(network_manager_ != nullptr);
-  std::vector<RelayServerConfig> turn_servers;
-  RelayServerConfig config(RELAY_GTURN);
-  if (!relay_address_udp.IsNil()) {
-    config.ports.push_back(ProtocolAddress(relay_address_udp, PROTO_UDP));
-  }
-  if (!relay_address_tcp.IsNil()) {
-    config.ports.push_back(ProtocolAddress(relay_address_tcp, PROTO_TCP));
-  }
-  if (!relay_address_ssl.IsNil()) {
-    config.ports.push_back(ProtocolAddress(relay_address_ssl, PROTO_SSLTCP));
-  }
-
-  if (!config.ports.empty()) {
-    turn_servers.push_back(config);
-  }
-
-  SetConfiguration(stun_servers, turn_servers, 0, false, nullptr);
-  Construct();
-}
-
 void BasicPortAllocator::Construct() {
   allow_tcp_listen_ = true;
 }
