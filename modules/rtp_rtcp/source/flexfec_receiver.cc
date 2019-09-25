@@ -109,10 +109,8 @@ FlexfecReceiver::AddReceivedPacket(const RtpPacketReceived& packet) {
     // Insert packet payload into erasure code.
     received_packet->pkt = rtc::scoped_refptr<ForwardErrorCorrection::Packet>(
         new ForwardErrorCorrection::Packet());
-    // TODO(ilnik): after slice capability is added to COW, use it here instead
-    // of initializing COW buffer with ArrayView.
-    auto payload = packet.payload();
-    received_packet->pkt->data.SetData(payload.data(), payload.size());
+    received_packet->pkt->data =
+        packet.Buffer().Slice(packet.headers_size(), packet.payload_size());
   } else {
     // This is a media packet, or a FlexFEC packet belonging to some
     // other FlexFEC stream.

@@ -119,13 +119,14 @@ bool UlpfecReceiverImpl::AddReceivedRedPacket(const RtpPacket& rtp_packet,
     packet_counter_.first_packet_time_ms = rtc::TimeMillis();
   }
 
-  auto red_payload = rtp_packet.payload().subview(kRedHeaderLength);
   if (received_packet->is_fec) {
     ++packet_counter_.num_fec_packets;
-
     // everything behind the RED header
-    received_packet->pkt->data.SetData(red_payload.data(), red_payload.size());
+    received_packet->pkt->data =
+        rtp_packet.Buffer().Slice(rtp_packet.headers_size() + kRedHeaderLength,
+                                  rtp_packet.payload_size() - kRedHeaderLength);
   } else {
+    auto red_payload = rtp_packet.payload().subview(kRedHeaderLength);
     received_packet->pkt->data.EnsureCapacity(rtp_packet.headers_size() +
                                               red_payload.size());
     // Copy RTP header.
@@ -170,6 +171,7 @@ int32_t UlpfecReceiverImpl::ProcessReceivedFec() {
       crit_sect_.Enter();
       // Create a packet with the buffer to modify it.
       RtpPacketReceived rtp_packet;
+      const uint8_t* const original_data = packet->data.cdata();
       rtp_packet.Parse(packet->data);
       rtp_packet.IdentifyExtensions(extensions_);
       // Reset buffer reference, so zeroing would work on a buffer with a
@@ -177,6 +179,8 @@ int32_t UlpfecReceiverImpl::ProcessReceivedFec() {
       packet->data = rtc::CopyOnWriteBuffer(0);
       rtp_packet.ZeroMutableExtensions();
       packet->data = rtp_packet.Buffer();
+      // Ensure that zeroing of extensions was done in place.
+      RTC_DCHECK_EQ(packet->data.cdata(), original_data);
     }
     fec_->DecodeFec(*received_packet, &recovered_packets_);
   }
