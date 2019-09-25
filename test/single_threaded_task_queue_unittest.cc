@@ -14,6 +14,7 @@
 #include <memory>
 #include <vector>
 
+#include "api/task_queue/task_queue_test.h"
 #include "rtc_base/event.h"
 #include "test/gtest.h"
 
@@ -351,6 +352,22 @@ TEST(DEPRECATED_SingleThreadedTaskQueueForTestingTest,
 
   EXPECT_LT(counter, tasks);
 }
+
+class SingleThreadedTaskQueueForTestingFactory : public TaskQueueFactory {
+ public:
+  std::unique_ptr<TaskQueueBase, TaskQueueDeleter> CreateTaskQueue(
+      absl::string_view /* name */,
+      Priority /*priority*/) const override {
+    return std::unique_ptr<TaskQueueBase, TaskQueueDeleter>(
+        new DEPRECATED_SingleThreadedTaskQueueForTesting("noname"));
+  }
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    DeprecatedSingleThreadedTaskQueueForTesting,
+    TaskQueueTest,
+    ::testing::Values(
+        std::make_unique<SingleThreadedTaskQueueForTestingFactory>));
 
 }  // namespace
 }  // namespace test
