@@ -35,9 +35,13 @@ class LinkCapacityTracker {
  public:
   LinkCapacityTracker();
   ~LinkCapacityTracker();
-  void OnOveruse(DataRate delay_based_bitrate, Timestamp at_time);
+  // Call when a new delay-based estimate is available.
+  void UpdateDelayBasedEstimate(Timestamp at_time,
+                                DataRate delay_based_bitrate);
   void OnStartingRate(DataRate start_rate);
-  void OnRateUpdate(DataRate acknowledged, Timestamp at_time);
+  void OnRateUpdate(absl::optional<DataRate> acknowledged,
+                    DataRate target,
+                    Timestamp at_time);
   void OnRttBackoff(DataRate backoff_rate, Timestamp at_time);
   DataRate estimate() const;
 
@@ -45,21 +49,19 @@ class LinkCapacityTracker {
   FieldTrialParameter<TimeDelta> tracking_rate;
   double capacity_estimate_bps_ = 0;
   Timestamp last_link_capacity_update_ = Timestamp::MinusInfinity();
+  DataRate last_delay_based_estimate_ = DataRate::PlusInfinity();
 };
 
 class RttBasedBackoff {
  public:
   RttBasedBackoff();
   ~RttBasedBackoff();
-  void OnRouteChange();
   void UpdatePropagationRtt(Timestamp at_time, TimeDelta propagation_rtt);
   TimeDelta CorrectedRtt(Timestamp at_time) const;
 
   FieldTrialParameter<TimeDelta> rtt_limit_;
   FieldTrialParameter<double> drop_fraction_;
   FieldTrialParameter<TimeDelta> drop_interval_;
-  FieldTrialFlag persist_on_route_change_;
-  FieldTrialParameter<bool> safe_timeout_;
   FieldTrialParameter<DataRate> bandwidth_floor_;
 
  public:
@@ -149,7 +151,6 @@ class SendSideBandwidthEstimation {
   bool has_decreased_since_last_fraction_loss_;
   Timestamp last_loss_feedback_;
   Timestamp last_loss_packet_report_;
-  Timestamp last_timeout_;
   uint8_t last_fraction_loss_;
   uint8_t last_logged_fraction_loss_;
   TimeDelta last_round_trip_time_;
@@ -165,7 +166,6 @@ class SendSideBandwidthEstimation {
   std::vector<bool> rampup_uma_stats_updated_;
   RtcEventLog* event_log_;
   Timestamp last_rtc_event_log_;
-  bool in_timeout_experiment_;
   float low_loss_threshold_;
   float high_loss_threshold_;
   DataRate bitrate_threshold_;
