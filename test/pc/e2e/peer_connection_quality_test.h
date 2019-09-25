@@ -20,7 +20,6 @@
 #include "api/test/peerconnection_quality_test_fixture.h"
 #include "api/units/time_delta.h"
 #include "api/units/timestamp.h"
-#include "pc/test/frame_generator_capturer_video_track_source.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/task_utils/repeating_task.h"
 #include "rtc_base/thread.h"
@@ -230,11 +229,11 @@ class PeerConnectionE2EQualityTest
   // Have to be run on the signaling thread.
   void SetupCallOnSignalingThread(const RunParams& run_params);
   void TearDownCallOnSignalingThread();
-  std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>
+  std::vector<rtc::scoped_refptr<TestVideoCapturerVideoTrackSource>>
   MaybeAddMedia(TestPeer* peer);
-  std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>
+  std::vector<rtc::scoped_refptr<TestVideoCapturerVideoTrackSource>>
   MaybeAddVideo(TestPeer* peer);
-  std::unique_ptr<test::FrameGenerator> CreateFrameGenerator(
+  std::unique_ptr<test::TestVideoCapturer> CreateVideoCapturer(
       const VideoConfig& video_config);
   std::unique_ptr<test::FrameGenerator> CreateScreenShareFrameGenerator(
       const VideoConfig& video_config);
@@ -244,8 +243,8 @@ class PeerConnectionE2EQualityTest
   void ExchangeOfferAnswer(SignalingInterceptor* signaling_interceptor);
   void ExchangeIceCandidates(SignalingInterceptor* signaling_interceptor);
   void StartVideo(
-      const std::vector<
-          rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>& sources);
+      const std::vector<rtc::scoped_refptr<TestVideoCapturerVideoTrackSource>>&
+          sources);
   void TearDownCall();
   test::VideoFrameWriter* MaybeCreateVideoWriter(
       absl::optional<std::string> file_name,
@@ -270,9 +269,9 @@ class PeerConnectionE2EQualityTest
   std::vector<std::unique_ptr<QualityMetricsReporter>>
       quality_metrics_reporters_;
 
-  std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>
+  std::vector<rtc::scoped_refptr<TestVideoCapturerVideoTrackSource>>
       alice_video_sources_;
-  std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>
+  std::vector<rtc::scoped_refptr<TestVideoCapturerVideoTrackSource>>
       bob_video_sources_;
   std::vector<std::unique_ptr<test::VideoFrameWriter>> video_writers_;
   std::vector<std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>>>

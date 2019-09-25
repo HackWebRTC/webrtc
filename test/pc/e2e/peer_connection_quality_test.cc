@@ -30,9 +30,11 @@
 #include "rtc_base/numerics/safe_conversions.h"
 #include "system_wrappers/include/cpu_info.h"
 #include "system_wrappers/include/field_trial.h"
+#include "test/frame_generator_capturer.h"
 #include "test/pc/e2e/analyzer/audio/default_audio_quality_analyzer.h"
 #include "test/pc/e2e/analyzer/video/default_video_quality_analyzer.h"
 #include "test/pc/e2e/stats_poller.h"
+#include "test/platform_video_capturer.h"
 #include "test/testsupport/file_utils.h"
 
 namespace webrtc {
@@ -67,7 +69,9 @@ std::string VideoConfigSourcePresenceToString(const VideoConfig& video_config) {
           << "; video_config.input_file_name="
           << video_config.input_file_name.has_value()
           << "; video_config.screen_share_config="
-          << video_config.screen_share_config.has_value() << ";";
+          << video_config.screen_share_config.has_value()
+          << "; video_config.capturing_device_index="
+          << video_config.capturing_device_index.has_value() << ";";
   return builder.str();
 }
 
@@ -418,7 +422,7 @@ void PeerConnectionE2EQualityTest::Run(RunParams run_params) {
   // Audio dumps.
   RTC_CHECK(!alice_);
   RTC_CHECK(!bob_);
-  // Ensuring that FrameGeneratorCapturerVideoTrackSource and VideoFrameWriter
+  // Ensuring that TestVideoCapturerVideoTrackSource and VideoFrameWriter
   // are destroyed on the right thread.
   RTC_CHECK(alice_video_sources_.empty());
   RTC_CHECK(bob_video_sources_.empty());
@@ -434,7 +438,8 @@ void PeerConnectionE2EQualityTest::SetDefaultValuesForMissingParams(
   for (auto* p : params) {
     for (auto& video_config : p->video_configs) {
       if (!video_config.generator && !video_config.input_file_name &&
-          !video_config.screen_share_config) {
+          !video_config.screen_share_config &&
+          !video_config.capturing_device_index) {
         video_config.generator = VideoGeneratorType::kDefault;
       }
       if (!video_config.stream_label) {
@@ -483,15 +488,16 @@ void PeerConnectionE2EQualityTest::ValidateParams(const RunParams& run_params,
           video_labels.insert(video_config.stream_label.value()).second;
       RTC_CHECK(inserted) << "Duplicate video_config.stream_label="
                           << video_config.stream_label.value();
-      RTC_CHECK(video_config.generator || video_config.input_file_name ||
-                video_config.screen_share_config)
-          << VideoConfigSourcePresenceToString(video_config);
-      RTC_CHECK(!(video_config.input_file_name && video_config.generator))
-          << VideoConfigSourcePresenceToString(video_config);
-      RTC_CHECK(
-          !(video_config.input_file_name && video_config.screen_share_config))
-          << VideoConfigSourcePresenceToString(video_config);
-      RTC_CHECK(!(video_config.screen_share_config && video_config.generator))
+      int input_sources_count = 0;
+      if (video_config.generator)
+        ++input_sources_count;
+      if (video_config.input_file_name)
+        ++input_sources_count;
+      if (video_config.screen_share_config)
+        ++input_sources_count;
+      if (video_config.capturing_device_index)
+        ++input_sources_count;
+      RTC_CHECK_EQ(input_sources_count, 1)
           << VideoConfigSourcePresenceToString(video_config);
 
       if (video_config.screen_share_config) {
@@ -678,38 +684,26 @@ void PeerConnectionE2EQualityTest::TearDownCallOnSignalingThread() {
   TearDownCall();
 }
 
-std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>
+std::vector<rtc::scoped_refptr<TestVideoCapturerVideoTrackSource>>
 PeerConnectionE2EQualityTest::MaybeAddMedia(TestPeer* peer) {
   MaybeAddAudio(peer);
   return MaybeAddVideo(peer);
 }
 
-std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>
+std::vector<rtc::scoped_refptr<TestVideoCapturerVideoTrackSource>>
 PeerConnectionE2EQualityTest::MaybeAddVideo(TestPeer* peer) {
   // Params here valid because of pre-run validation.
   Params* params = peer->params();
-  std::vector<rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>> out;
+  std::vector<rtc::scoped_refptr<TestVideoCapturerVideoTrackSource>> out;
   for (auto video_config : params->video_configs) {
-    // Create video generator.
-    std::unique_ptr<test::FrameGenerator> frame_generator =
-        CreateFrameGenerator(video_config);
-
-    // Wrap it to inject video quality analyzer and enable dump of input video
-    // if required.
+    // Setup input video source into peer connection.
+    std::unique_ptr<test::TestVideoCapturer> capturer =
+        CreateVideoCapturer(video_config);
     test::VideoFrameWriter* writer =
         MaybeCreateVideoWriter(video_config.input_dump_file_name, video_config);
-    frame_generator =
-        video_quality_analyzer_injection_helper_->WrapFrameGenerator(
-            video_config, std::move(frame_generator), writer);
-
-    // Setup FrameGenerator into peer connection.
-    auto capturer = std::make_unique<test::FrameGeneratorCapturer>(
-        clock_, std::move(frame_generator), video_config.fps,
-        *task_queue_factory_);
-    capturer->Init();
-    rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource> source =
-        new rtc::RefCountedObject<FrameGeneratorCapturerVideoTrackSource>(
-            std::move(capturer),
+    rtc::scoped_refptr<TestVideoCapturerVideoTrackSource> source =
+        video_quality_analyzer_injection_helper_->CreateVideoTrackSource(
+            video_config, std::move(capturer), writer,
             /*is_screencast=*/video_config.screen_share_config &&
                 video_config.screen_share_config->use_text_content_hint);
     out.push_back(source);
@@ -738,9 +732,21 @@ PeerConnectionE2EQualityTest::MaybeAddVideo(TestPeer* peer) {
   return out;
 }
 
-std::unique_ptr<test::FrameGenerator>
-PeerConnectionE2EQualityTest::CreateFrameGenerator(
+std::unique_ptr<test::TestVideoCapturer>
+PeerConnectionE2EQualityTest::CreateVideoCapturer(
     const VideoConfig& video_config) {
+  if (video_config.capturing_device_index) {
+    std::unique_ptr<test::TestVideoCapturer> capturer =
+        test::CreateVideoCapturer(video_config.width, video_config.height,
+                                  video_config.fps,
+                                  *video_config.capturing_device_index);
+    RTC_CHECK(capturer)
+        << "Failed to obtain input stream from capturing device #"
+        << *video_config.capturing_device_index;
+    return capturer;
+  }
+
+  std::unique_ptr<test::FrameGenerator> frame_generator = nullptr;
   if (video_config.generator) {
     absl::optional<test::FrameGenerator::OutputType> frame_generator_type =
         absl::nullopt;
@@ -751,22 +757,27 @@ PeerConnectionE2EQualityTest::CreateFrameGenerator(
     } else if (video_config.generator == VideoGeneratorType::kI010) {
       frame_generator_type = test::FrameGenerator::OutputType::kI010;
     }
-    return test::FrameGenerator::CreateSquareGenerator(
+    frame_generator = test::FrameGenerator::CreateSquareGenerator(
         static_cast<int>(video_config.width),
         static_cast<int>(video_config.height), frame_generator_type,
         absl::nullopt);
   }
   if (video_config.input_file_name) {
-    return test::FrameGenerator::CreateFromYuvFile(
+    frame_generator = test::FrameGenerator::CreateFromYuvFile(
         std::vector<std::string>(/*count=*/1,
                                  video_config.input_file_name.value()),
         video_config.width, video_config.height, /*frame_repeat_count=*/1);
   }
   if (video_config.screen_share_config) {
-    return CreateScreenShareFrameGenerator(video_config);
+    frame_generator = CreateScreenShareFrameGenerator(video_config);
   }
-  RTC_NOTREACHED() << "Unsupported video_config input source";
-  return nullptr;
+  RTC_CHECK(frame_generator) << "Unsupported video_config input source";
+
+  auto capturer = std::make_unique<test::FrameGeneratorCapturer>(
+      clock_, std::move(frame_generator), video_config.fps,
+      *task_queue_factory_);
+  capturer->Init();
+  return capturer;
 }
 
 std::unique_ptr<test::FrameGenerator>
@@ -955,8 +966,8 @@ void PeerConnectionE2EQualityTest::ExchangeIceCandidates(
 }
 
 void PeerConnectionE2EQualityTest::StartVideo(
-    const std::vector<
-        rtc::scoped_refptr<FrameGeneratorCapturerVideoTrackSource>>& sources) {
+    const std::vector<rtc::scoped_refptr<TestVideoCapturerVideoTrackSource>>&
+        sources) {
   for (auto& source : sources) {
     if (source->state() != MediaSourceInterface::SourceState::kLive) {
       source->Start();
