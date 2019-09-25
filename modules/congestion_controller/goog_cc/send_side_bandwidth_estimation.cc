@@ -307,12 +307,8 @@ int SendSideBandwidthEstimation::GetMinBitrate() const {
   return min_bitrate_configured_.bps<int>();
 }
 
-void SendSideBandwidthEstimation::CurrentEstimate(int* bitrate,
-                                                  uint8_t* loss,
-                                                  int64_t* rtt) const {
-  *bitrate = std::max<int32_t>(current_bitrate_.bps<int>(), GetMinBitrate());
-  *loss = last_fraction_loss_;
-  *rtt = last_round_trip_time_.ms<int64_t>();
+DataRate SendSideBandwidthEstimation::target_rate() const {
+  return std::max(min_bitrate_configured_, current_bitrate_);
 }
 
 DataRate SendSideBandwidthEstimation::GetEstimatedLinkCapacity() const {

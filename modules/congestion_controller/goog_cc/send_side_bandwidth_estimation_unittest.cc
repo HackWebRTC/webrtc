@@ -56,11 +56,7 @@ void TestProbing(bool use_delay_based) {
     bwe.UpdateReceiverEstimate(Timestamp::ms(now_ms), DataRate::bps(kRembBps));
   }
   bwe.UpdateEstimate(Timestamp::ms(now_ms));
-  int bitrate;
-  uint8_t fraction_loss;
-  int64_t rtt;
-  bwe.CurrentEstimate(&bitrate, &fraction_loss, &rtt);
-  EXPECT_EQ(kRembBps, bitrate);
+  EXPECT_EQ(kRembBps, bwe.target_rate().bps());
 
   // Second REMB doesn't apply immediately.
   now_ms += 2001;
@@ -72,9 +68,7 @@ void TestProbing(bool use_delay_based) {
                                DataRate::bps(kSecondRembBps));
   }
   bwe.UpdateEstimate(Timestamp::ms(now_ms));
-  bitrate = 0;
-  bwe.CurrentEstimate(&bitrate, &fraction_loss, &rtt);
-  EXPECT_EQ(kRembBps, bitrate);
+  EXPECT_EQ(kRembBps, bwe.target_rate().bps());
 }
 
 TEST(SendSideBweTest, InitialRembWithProbing) {
@@ -103,13 +97,9 @@ TEST(SendSideBweTest, DoesntReapplyBitrateDecreaseWithoutFollowingRemb) {
   static const int64_t kRttMs = 50;
   now_ms += 10000;
 
-  int bitrate_bps;
-  uint8_t fraction_loss;
-  int64_t rtt_ms;
-  bwe.CurrentEstimate(&bitrate_bps, &fraction_loss, &rtt_ms);
-  EXPECT_EQ(kInitialBitrateBps, bitrate_bps);
-  EXPECT_EQ(0, fraction_loss);
-  EXPECT_EQ(0, rtt_ms);
+  EXPECT_EQ(kInitialBitrateBps, bwe.target_rate().bps());
+  EXPECT_EQ(0, bwe.fraction_loss());
+  EXPECT_EQ(0, bwe.round_trip_time().ms());
 
   // Signal heavy loss to go down in bitrate.
   bwe.UpdatePacketsLost(/*packets_lost=*/50, /*number_of_packets=*/100,
@@ -119,30 +109,27 @@ TEST(SendSideBweTest, DoesntReapplyBitrateDecreaseWithoutFollowingRemb) {
   // Trigger an update 2 seconds later to not be rate limited.
   now_ms += 1000;
   bwe.UpdateEstimate(Timestamp::ms(now_ms));
-
-  bwe.CurrentEstimate(&bitrate_bps, &fraction_loss, &rtt_ms);
-  EXPECT_LT(bitrate_bps, kInitialBitrateBps);
+  EXPECT_LT(bwe.target_rate().bps(), kInitialBitrateBps);
   // Verify that the obtained bitrate isn't hitting the min bitrate, or this
   // test doesn't make sense. If this ever happens, update the thresholds or
   // loss rates so that it doesn't hit min bitrate after one bitrate update.
-  EXPECT_GT(bitrate_bps, kMinBitrateBps);
-  EXPECT_EQ(kFractionLoss, fraction_loss);
-  EXPECT_EQ(kRttMs, rtt_ms);
+  EXPECT_GT(bwe.target_rate().bps(), kMinBitrateBps);
+  EXPECT_EQ(kFractionLoss, bwe.fraction_loss());
+  EXPECT_EQ(kRttMs, bwe.round_trip_time().ms());
 
   // Triggering an update shouldn't apply further downgrade nor upgrade since
   // there's no intermediate receiver block received indicating whether this is
   // currently good or not.
-  int last_bitrate_bps = bitrate_bps;
+  int last_bitrate_bps = bwe.target_rate().bps();
   // Trigger an update 2 seconds later to not be rate limited (but it still
   // shouldn't update).
   now_ms += 1000;
   bwe.UpdateEstimate(Timestamp::ms(now_ms));
-  bwe.CurrentEstimate(&bitrate_bps, &fraction_loss, &rtt_ms);
 
-  EXPECT_EQ(last_bitrate_bps, bitrate_bps);
+  EXPECT_EQ(last_bitrate_bps, bwe.target_rate().bps());
   // The old loss rate should still be applied though.
-  EXPECT_EQ(kFractionLoss, fraction_loss);
-  EXPECT_EQ(kRttMs, rtt_ms);
+  EXPECT_EQ(kFractionLoss, bwe.fraction_loss());
+  EXPECT_EQ(kRttMs, bwe.round_trip_time().ms());
 }
 
 TEST(SendSideBweTest, SettingSendBitrateOverridesDelayBasedEstimate) {
@@ -155,9 +142,6 @@ TEST(SendSideBweTest, SettingSendBitrateOverridesDelayBasedEstimate) {
   static const int kForcedHighBitrate = 2500000;
 
   int64_t now_ms = 0;
-  int bitrate_bps;
-  uint8_t fraction_loss;
-  int64_t rtt_ms;
 
   bwe.SetMinMaxBitrate(DataRate::bps(kMinBitrateBps),
                        DataRate::bps(kMaxBitrateBps));
@@ -166,13 +150,11 @@ TEST(SendSideBweTest, SettingSendBitrateOverridesDelayBasedEstimate) {
   bwe.UpdateDelayBasedEstimate(Timestamp::ms(now_ms),
                                DataRate::bps(kDelayBasedBitrateBps));
   bwe.UpdateEstimate(Timestamp::ms(now_ms));
-  bwe.CurrentEstimate(&bitrate_bps, &fraction_loss, &rtt_ms);
-  EXPECT_GE(bitrate_bps, kInitialBitrateBps);
-  EXPECT_LE(bitrate_bps, kDelayBasedBitrateBps);
+  EXPECT_GE(bwe.target_rate().bps(), kInitialBitrateBps);
+  EXPECT_LE(bwe.target_rate().bps(), kDelayBasedBitrateBps);
 
   bwe.SetSendBitrate(DataRate::bps(kForcedHighBitrate), Timestamp::ms(now_ms));
-  bwe.CurrentEstimate(&bitrate_bps, &fraction_loss, &rtt_ms);
-  EXPECT_EQ(bitrate_bps, kForcedHighBitrate);
+  EXPECT_EQ(bwe.target_rate().bps(), kForcedHighBitrate);
 }
 
 }  // namespace webrtc

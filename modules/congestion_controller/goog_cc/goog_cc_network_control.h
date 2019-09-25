@@ -118,12 +118,11 @@ class GoogCcNetworkController : public NetworkControllerInterface {
 
   std::deque<int64_t> feedback_max_rtts_;
 
-  DataRate last_raw_target_rate_;
+  DataRate last_loss_based_target_rate_;
   DataRate last_pushback_target_rate_;
 
-  int32_t last_estimated_bitrate_bps_ = 0;
-  uint8_t last_estimated_fraction_loss_ = 0;
-  int64_t last_estimated_rtt_ms_ = 0;
+  absl::optional<uint8_t> last_estimated_fraction_loss_ = 0;
+  TimeDelta last_estimated_round_trip_time_ = TimeDelta::PlusInfinity();
   Timestamp last_packet_received_time_ = Timestamp::MinusInfinity();
 
   double pacing_factor_;
