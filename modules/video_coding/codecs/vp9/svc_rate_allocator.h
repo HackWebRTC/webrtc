@@ -38,12 +38,10 @@ class SvcRateAllocator : public VideoBitrateAllocator {
  private:
   VideoBitrateAllocation GetAllocationNormalVideo(
       DataRate total_bitrate,
-      size_t first_active_layer,
       size_t num_spatial_layers) const;
 
   VideoBitrateAllocation GetAllocationScreenSharing(
       DataRate total_bitrate,
-      size_t first_active_layer,
       size_t num_spatial_layers) const;
 
   // Returns the number of layers that are active and have enough bitrate to
