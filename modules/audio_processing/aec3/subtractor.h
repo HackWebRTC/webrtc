@@ -48,35 +48,40 @@ class Subtractor {
 
   // Performs the echo subtraction.
   void Process(const RenderBuffer& render_buffer,
-               const rtc::ArrayView<const float> capture,
+               const std::vector<std::vector<float>>& capture,
                const RenderSignalAnalyzer& render_signal_analyzer,
                const AecState& aec_state,
-               SubtractorOutput* output);
+               rtc::ArrayView<SubtractorOutput> outputs);
 
   void HandleEchoPathChange(const EchoPathVariability& echo_path_variability);
 
   // Exits the initial state.
   void ExitInitialState();
 
-  // Returns the block-wise frequency response for the main adaptive filter.
+  // Returns the block-wise frequency responses for the main adaptive filters.
+  // TODO(bugs.webrtc.org/10913): Return the frequency responses for all capture
+  // channels.
   const std::vector<std::array<float, kFftLengthBy2Plus1>>&
   FilterFrequencyResponse() const {
-    return main_frequency_response_;
+    return main_frequency_response_[0];
   }
 
-  // Returns the estimate of the impulse response for the main adaptive filter.
+  // Returns the estimates of the impulse responses for the main adaptive
+  // filters.
+  // TODO(bugs.webrtc.org/10913): Return the impulse responses for all capture
+  // channels.
   const std::vector<float>& FilterImpulseResponse() const {
-    return main_impulse_response_;
+    return main_impulse_response_[0];
   }
 
   void DumpFilters() {
-    size_t current_size = main_impulse_response_.size();
-    main_impulse_response_.resize(main_impulse_response_.capacity());
-    data_dumper_->DumpRaw("aec3_subtractor_h_main", main_impulse_response_);
-    main_impulse_response_.resize(current_size);
+    size_t current_size = main_impulse_response_[0].size();
+    main_impulse_response_[0].resize(main_impulse_response_[0].capacity());
+    data_dumper_->DumpRaw("aec3_subtractor_h_main", main_impulse_response_[0]);
+    main_impulse_response_[0].resize(current_size);
 
-    main_filter_.DumpFilter("aec3_subtractor_H_main");
-    shadow_filter_.DumpFilter("aec3_subtractor_H_shadow");
+    main_filter_[0]->DumpFilter("aec3_subtractor_H_main");
+    shadow_filter_[0]->DumpFilter("aec3_subtractor_H_shadow");
   }
 
  private:
@@ -115,15 +120,17 @@ class Subtractor {
   ApmDataDumper* data_dumper_;
   const Aec3Optimization optimization_;
   const EchoCanceller3Config config_;
+  const size_t num_capture_channels_;
 
-  AdaptiveFirFilter main_filter_;
-  AdaptiveFirFilter shadow_filter_;
-  MainFilterUpdateGain G_main_;
-  ShadowFilterUpdateGain G_shadow_;
-  FilterMisadjustmentEstimator filter_misadjustment_estimator_;
-  size_t poor_shadow_filter_counter_ = 0;
-  std::vector<std::array<float, kFftLengthBy2Plus1>> main_frequency_response_;
-  std::vector<float> main_impulse_response_;
+  std::vector<std::unique_ptr<AdaptiveFirFilter>> main_filter_;
+  std::vector<std::unique_ptr<AdaptiveFirFilter>> shadow_filter_;
+  std::vector<std::unique_ptr<MainFilterUpdateGain>> G_main_;
+  std::vector<std::unique_ptr<ShadowFilterUpdateGain>> G_shadow_;
+  std::vector<FilterMisadjustmentEstimator> filter_misadjustment_estimator_;
+  std::vector<size_t> poor_shadow_filter_counter_;
+  std::vector<std::vector<std::array<float, kFftLengthBy2Plus1>>>
+      main_frequency_response_;
+  std::vector<std::vector<float>> main_impulse_response_;
 };
 
 }  // namespace webrtc

@@ -147,7 +147,7 @@ class EchoRemoverImpl final : public EchoRemover {
   const size_t num_render_channels_;
   const size_t num_capture_channels_;
   const bool use_shadow_filter_output_;
-  std::vector<std::unique_ptr<Subtractor>> subtractors_;
+  Subtractor subtractor_;
   std::vector<std::unique_ptr<SuppressionGain>> suppression_gains_;
   std::vector<std::unique_ptr<ComfortNoiseGenerator>> cngs_;
   SuppressionFilter suppression_filter_;
@@ -190,7 +190,11 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
       num_capture_channels_(num_capture_channels),
       use_shadow_filter_output_(
           config_.filter.enable_shadow_filter_output_usage),
-      subtractors_(num_capture_channels_),
+      subtractor_(config,
+                  num_render_channels_,
+                  num_capture_channels_,
+                  data_dumper_.get(),
+                  optimization_),
       suppression_gains_(num_capture_channels_),
       cngs_(num_capture_channels_),
       suppression_filter_(optimization_,
@@ -219,9 +223,6 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
   for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
     residual_echo_estimators_[ch] =
         std::make_unique<ResidualEchoEstimator>(config_);
-    subtractors_[ch] = std::make_unique<Subtractor>(
-        config, num_render_channels_, num_capture_channels_, data_dumper_.get(),
-        optimization_);
     suppression_gains_[ch] = std::make_unique<SuppressionGain>(
         config_, optimization_, sample_rate_hz);
     cngs_[ch] = std::make_unique<ComfortNoiseGenerator>(optimization_);
@@ -339,9 +340,7 @@ void EchoRemoverImpl::ProcessCapture(
       }
     }
 
-    for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
-      subtractors_[ch]->HandleEchoPathChange(echo_path_variability);
-    }
+    subtractor_.HandleEchoPathChange(echo_path_variability);
     aec_state_.HandleEchoPathChange(echo_path_variability);
 
     if (echo_path_variability.delay_change !=
@@ -359,20 +358,20 @@ void EchoRemoverImpl::ProcessCapture(
   render_signal_analyzer_.Update(*render_buffer,
                                  aec_state_.FilterDelayBlocks());
 
-  // Perform linear echo cancellation.
+  // State transition.
   if (aec_state_.TransitionTriggered()) {
+    subtractor_.ExitInitialState();
     for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
-      subtractors_[ch]->ExitInitialState();
       suppression_gains_[ch]->SetInitialState(false);
     }
   }
 
+  // Perform linear echo cancellation.
+  subtractor_.Process(*render_buffer, (*y)[0], render_signal_analyzer_,
+                      aec_state_, subtractor_output);
+
   for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
     auto& y_low = (*y)[0][ch];
-
-    // If the delay is known, use the echo subtractor.
-    subtractors_[ch]->Process(*render_buffer, y_low, render_signal_analyzer_,
-                              aec_state_, &subtractor_output[ch]);
 
     // Compute spectra.
     FormLinearFilterOutput(subtractor_output[ch], e[ch]);
@@ -385,9 +384,9 @@ void EchoRemoverImpl::ProcessCapture(
 
   // Update the AEC state information.
   // TODO(bugs.webrtc.org/10913): Take all subtractors into account.
-  aec_state_.Update(external_delay, subtractors_[0]->FilterFrequencyResponse(),
-                    subtractors_[0]->FilterImpulseResponse(), *render_buffer,
-                    E2[0], Y2[0], subtractor_output[0], y0);
+  aec_state_.Update(external_delay, subtractor_.FilterFrequencyResponse(),
+                    subtractor_.FilterImpulseResponse(), *render_buffer, E2[0],
+                    Y2[0], subtractor_output[0], y0);
 
   // Choose the linear output.
   const auto& Y_fft = aec_state_.UseLinearFilterOutput() ? E : Y;

@@ -43,9 +43,9 @@ float RunSubtractorTest(int num_blocks_to_process,
   std::vector<std::vector<std::vector<float>>> x(
       kNumBands, std::vector<std::vector<float>>(
                      kNumChannels, std::vector<float>(kBlockSize, 0.f)));
-  std::vector<float> y(kBlockSize, 0.f);
+  std::vector<std::vector<float>> y(1, std::vector<float>(kBlockSize, 0.f));
   std::array<float, kBlockSize> x_old;
-  SubtractorOutput output;
+  std::array<SubtractorOutput, 1> output;
   config.delay.default_delay = 1;
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, kSampleRateHz, kNumChannels));
@@ -65,9 +65,9 @@ float RunSubtractorTest(int num_blocks_to_process,
   for (int k = 0; k < num_blocks_to_process; ++k) {
     RandomizeSampleVector(&random_generator, x[0][0]);
     if (uncorrelated_inputs) {
-      RandomizeSampleVector(&random_generator, y);
+      RandomizeSampleVector(&random_generator, y[0]);
     } else {
-      delay_buffer.Delay(x[0][0], y);
+      delay_buffer.Delay(x[0][0], y[0]);
     }
     render_delay_buffer->Insert(x);
     if (k == 0) {
@@ -86,19 +86,21 @@ float RunSubtractorTest(int num_blocks_to_process,
           false));
     }
     subtractor.Process(*render_delay_buffer->GetRenderBuffer(), y,
-                       render_signal_analyzer, aec_state, &output);
+                       render_signal_analyzer, aec_state, output);
 
     aec_state.HandleEchoPathChange(EchoPathVariability(
         false, EchoPathVariability::DelayAdjustment::kNone, false));
     aec_state.Update(delay_estimate, subtractor.FilterFrequencyResponse(),
                      subtractor.FilterImpulseResponse(),
                      *render_delay_buffer->GetRenderBuffer(), E2_main, Y2,
-                     output, y);
+                     output[0], y[0]);
   }
 
-  const float output_power = std::inner_product(
-      output.e_main.begin(), output.e_main.end(), output.e_main.begin(), 0.f);
-  const float y_power = std::inner_product(y.begin(), y.end(), y.begin(), 0.f);
+  const float output_power =
+      std::inner_product(output[0].e_main.begin(), output[0].e_main.end(),
+                         output[0].e_main.begin(), 0.f);
+  const float y_power =
+      std::inner_product(y[0].begin(), y[0].end(), y[0].begin(), 0.f);
   if (y_power == 0.f) {
     ADD_FAILURE();
     return -1.0;
@@ -124,24 +126,6 @@ TEST(Subtractor, NullDataDumper) {
       "");
 }
 
-// Verifies the check for null subtractor output.
-// TODO(peah): Re-enable the test once the issue with memory leaks during DEATH
-// tests on test bots has been fixed.
-TEST(Subtractor, DISABLED_NullOutput) {
-  ApmDataDumper data_dumper(42);
-  EchoCanceller3Config config;
-  Subtractor subtractor(config, 1, 1, &data_dumper, DetectOptimization());
-  std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
-      RenderDelayBuffer::Create(config, 48000, 1));
-  RenderSignalAnalyzer render_signal_analyzer(config);
-  std::vector<float> y(kBlockSize, 0.f);
-
-  EXPECT_DEATH(
-      subtractor.Process(*render_delay_buffer->GetRenderBuffer(), y,
-                         render_signal_analyzer, AecState(config), nullptr),
-      "");
-}
-
 // Verifies the check for the capture signal size.
 TEST(Subtractor, WrongCaptureSize) {
   ApmDataDumper data_dumper(42);
@@ -150,12 +134,12 @@ TEST(Subtractor, WrongCaptureSize) {
   std::unique_ptr<RenderDelayBuffer> render_delay_buffer(
       RenderDelayBuffer::Create(config, 48000, 1));
   RenderSignalAnalyzer render_signal_analyzer(config);
-  std::vector<float> y(kBlockSize - 1, 0.f);
-  SubtractorOutput output;
+  std::vector<std::vector<float>> y(1, std::vector<float>(kBlockSize - 1, 0.f));
+  std::array<SubtractorOutput, 1> output;
 
   EXPECT_DEATH(
       subtractor.Process(*render_delay_buffer->GetRenderBuffer(), y,
-                         render_signal_analyzer, AecState(config), &output),
+                         render_signal_analyzer, AecState(config), output),
       "");
 }
 
