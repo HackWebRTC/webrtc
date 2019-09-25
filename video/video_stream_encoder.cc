@@ -1365,9 +1365,65 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
 
   TraceFrameDropEnd();
 
+  // Encoder metadata needs to be updated before encode complete callback.
+  VideoEncoder::EncoderInfo info = encoder_->GetEncoderInfo();
+  if (info.implementation_name != encoder_info_.implementation_name) {
+    encoder_stats_observer_->OnEncoderImplementationChanged(
+        info.implementation_name);
+    if (bitrate_adjuster_) {
+      // Encoder implementation changed, reset overshoot detector states.
+      bitrate_adjuster_->Reset();
+    }
+  }
+
+  if (bitrate_adjuster_) {
+    for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
+      if (info.fps_allocation[si] != encoder_info_.fps_allocation[si]) {
+        bitrate_adjuster_->OnEncoderInfo(info);
+        break;
+      }
+    }
+  }
+  encoder_info_ = info;
+  last_encode_info_ms_ = clock_->TimeInMilliseconds();
+
   VideoFrame out_frame(video_frame);
+
+  const VideoFrameBuffer::Type buffer_type =
+      out_frame.video_frame_buffer()->type();
+  const bool is_buffer_type_supported =
+      buffer_type == VideoFrameBuffer::Type::kI420 ||
+      (buffer_type == VideoFrameBuffer::Type::kNative &&
+       info.supports_native_handle);
+
+  if (!is_buffer_type_supported) {
+    // This module only supports software encoding.
+    rtc::scoped_refptr<I420BufferInterface> converted_buffer(
+        out_frame.video_frame_buffer()->ToI420());
+
+    if (!converted_buffer) {
+      RTC_LOG(LS_ERROR) << "Frame conversion failed, dropping frame.";
+      return;
+    }
+
+    VideoFrame::UpdateRect update_rect = out_frame.update_rect();
+    if (!update_rect.IsEmpty() &&
+        out_frame.video_frame_buffer()->GetI420() == nullptr) {
+      // UpdatedRect is reset to full update if it's not empty, and buffer was
+      // converted, therefore we can't guarantee that pixels outside of
+      // UpdateRect didn't change comparing to the previous frame.
+      update_rect =
+          VideoFrame::UpdateRect{0, 0, out_frame.width(), out_frame.height()};
+    }
+
+    out_frame.set_video_frame_buffer(converted_buffer);
+    out_frame.set_update_rect(update_rect);
+  }
+
   // Crop frame if needed.
-  if (crop_width_ > 0 || crop_height_ > 0) {
+  if ((crop_width_ > 0 || crop_height_ > 0) &&
+      out_frame.video_frame_buffer()->type() !=
+          VideoFrameBuffer::Type::kNative) {
     // If the frame can't be converted to I420, drop it.
     auto i420_buffer = video_frame.video_frame_buffer()->ToI420();
     if (!i420_buffer) {
@@ -1424,60 +1480,14 @@ void VideoStreamEncoder::EncodeVideoFrame(const VideoFrame& video_frame,
 
   overuse_detector_->FrameCaptured(out_frame, time_when_posted_us);
 
-  // Encoder metadata needs to be updated before encode complete callback.
-  VideoEncoder::EncoderInfo info = encoder_->GetEncoderInfo();
-  if (info.implementation_name != encoder_info_.implementation_name) {
-    encoder_stats_observer_->OnEncoderImplementationChanged(
-        info.implementation_name);
-    if (bitrate_adjuster_) {
-      // Encoder implementation changed, reset overshoot detector states.
-      bitrate_adjuster_->Reset();
-    }
-  }
-
-  if (bitrate_adjuster_) {
-    for (size_t si = 0; si < kMaxSpatialLayers; ++si) {
-      if (info.fps_allocation[si] != encoder_info_.fps_allocation[si]) {
-        bitrate_adjuster_->OnEncoderInfo(info);
-        break;
-      }
-    }
-  }
-
-  encoder_info_ = info;
-  last_encode_info_ms_ = clock_->TimeInMilliseconds();
-  RTC_DCHECK_EQ(send_codec_.width, out_frame.width());
-  RTC_DCHECK_EQ(send_codec_.height, out_frame.height());
-  const VideoFrameBuffer::Type buffer_type =
-      out_frame.video_frame_buffer()->type();
-  const bool is_buffer_type_supported =
-      buffer_type == VideoFrameBuffer::Type::kI420 ||
-      (buffer_type == VideoFrameBuffer::Type::kNative &&
-       info.supports_native_handle);
-
-  if (!is_buffer_type_supported) {
-    // This module only supports software encoding.
-    rtc::scoped_refptr<I420BufferInterface> converted_buffer(
-        out_frame.video_frame_buffer()->ToI420());
-
-    if (!converted_buffer) {
-      RTC_LOG(LS_ERROR) << "Frame conversion failed, dropping frame.";
-      return;
-    }
-
-    VideoFrame::UpdateRect update_rect = out_frame.update_rect();
-    if (!update_rect.IsEmpty() &&
-        out_frame.video_frame_buffer()->GetI420() == nullptr) {
-      // UpdatedRect is reset to full update if it's not empty, and buffer was
-      // converted, therefore we can't guarantee that pixels outside of
-      // UpdateRect didn't change comparing to the previous frame.
-      update_rect =
-          VideoFrame::UpdateRect{0, 0, out_frame.width(), out_frame.height()};
-    }
-
-    out_frame.set_video_frame_buffer(converted_buffer);
-    out_frame.set_update_rect(update_rect);
-  }
+  RTC_DCHECK_LE(send_codec_.width, out_frame.width());
+  RTC_DCHECK_LE(send_codec_.height, out_frame.height());
+  // Native frames should be scaled by the client.
+  // For internal encoders we scale everything in one place here.
+  RTC_DCHECK((out_frame.video_frame_buffer()->type() ==
+              VideoFrameBuffer::Type::kNative) ||
+             (send_codec_.width == out_frame.width() &&
+              send_codec_.height == out_frame.height()));
 
   TRACE_EVENT1("webrtc", "VCMGenericEncoder::Encode", "timestamp",
                out_frame.timestamp());
