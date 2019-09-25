@@ -156,13 +156,13 @@ class EchoRemoverImpl final : public EchoRemover {
   bool echo_leakage_detected_ = false;
   AecState aec_state_;
   EchoRemoverMetrics metrics_;
-  std::vector<std::array<float, kFftLengthBy2>> e_;
   std::vector<std::array<float, kFftLengthBy2>> e_old_;
   std::vector<std::array<float, kFftLengthBy2>> y_old_;
   size_t block_counter_ = 0;
   int gain_change_hangover_ = 0;
   bool main_filter_output_last_selected_ = true;
 
+  std::vector<std::array<float, kFftLengthBy2>> e_heap_;
   std::vector<std::array<float, kFftLengthBy2Plus1>> Y2_heap_;
   std::vector<std::array<float, kFftLengthBy2Plus1>> E2_heap_;
   std::vector<std::array<float, kFftLengthBy2Plus1>> R2_heap_;
@@ -199,9 +199,9 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
       render_signal_analyzer_(config_),
       residual_echo_estimators_(num_capture_channels_),
       aec_state_(config_),
-      e_(num_capture_channels_),
       e_old_(num_capture_channels_),
       y_old_(num_capture_channels_),
+      e_heap_(NumChannelsOnHeap(num_capture_channels_)),
       Y2_heap_(NumChannelsOnHeap(num_capture_channels_)),
       E2_heap_(NumChannelsOnHeap(num_capture_channels_)),
       R2_heap_(NumChannelsOnHeap(num_capture_channels_)),
@@ -212,6 +212,10 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
       high_band_comfort_noise_heap_(NumChannelsOnHeap(num_capture_channels_)),
       subtractor_output_heap_(NumChannelsOnHeap(num_capture_channels_)) {
   RTC_DCHECK(ValidFullBandRate(sample_rate_hz));
+  for (auto& e_k : e_heap_) {
+    e_k.fill(0.f);
+  }
+
   for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
     residual_echo_estimators_[ch] =
         std::make_unique<ResidualEchoEstimator>(config_);
@@ -221,7 +225,6 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
     suppression_gains_[ch] = std::make_unique<SuppressionGain>(
         config_, optimization_, sample_rate_hz);
     cngs_[ch] = std::make_unique<ComfortNoiseGenerator>(optimization_);
-    e_[ch].fill(0.f);
     e_old_[ch].fill(0.f);
     y_old_[ch].fill(0.f);
   }
@@ -256,6 +259,7 @@ void EchoRemoverImpl::ProcessCapture(
   RTC_DCHECK_EQ((*y)[0][0].size(), kBlockSize);
 
   // Stack allocated data to use when the number of channels is low.
+  std::array<std::array<float, kFftLengthBy2>, kMaxNumChannelsOnStack> e_stack;
   std::array<std::array<float, kFftLengthBy2Plus1>, kMaxNumChannelsOnStack>
       Y2_stack;
   std::array<std::array<float, kFftLengthBy2Plus1>, kMaxNumChannelsOnStack>
@@ -270,6 +274,8 @@ void EchoRemoverImpl::ProcessCapture(
   std::array<FftData, kMaxNumChannelsOnStack> high_band_comfort_noise_stack;
   std::array<SubtractorOutput, kMaxNumChannelsOnStack> subtractor_output_stack;
 
+  rtc::ArrayView<std::array<float, kFftLengthBy2>> e(e_stack.data(),
+                                                     num_capture_channels_);
   rtc::ArrayView<std::array<float, kFftLengthBy2Plus1>> Y2(
       Y2_stack.data(), num_capture_channels_);
   rtc::ArrayView<std::array<float, kFftLengthBy2Plus1>> E2(
@@ -289,6 +295,8 @@ void EchoRemoverImpl::ProcessCapture(
   if (NumChannelsOnHeap(num_capture_channels_) > 0) {
     // If the stack-allocated space is too small, use the heap for storing the
     // microphone data.
+    e = rtc::ArrayView<std::array<float, kFftLengthBy2>>(e_heap_.data(),
+                                                         num_capture_channels_);
     Y2 = rtc::ArrayView<std::array<float, kFftLengthBy2Plus1>>(
         Y2_heap_.data(), num_capture_channels_);
     E2 = rtc::ArrayView<std::array<float, kFftLengthBy2Plus1>>(
@@ -367,9 +375,9 @@ void EchoRemoverImpl::ProcessCapture(
                               aec_state_, &subtractor_output[ch]);
 
     // Compute spectra.
-    FormLinearFilterOutput(subtractor_output[ch], e_[ch]);
+    FormLinearFilterOutput(subtractor_output[ch], e[ch]);
     WindowedPaddedFft(fft_, y_low, y_old_[ch], &Y[ch]);
-    WindowedPaddedFft(fft_, e_[ch], e_old_[ch], &E[ch]);
+    WindowedPaddedFft(fft_, e[ch], e_old_[ch], &E[ch]);
     LinearEchoPower(E[ch], Y[ch], &S2_linear[ch]);
     Y[ch].Spectrum(optimization_, Y2[ch]);
     E[ch].Spectrum(optimization_, E2[ch]);
@@ -385,7 +393,7 @@ void EchoRemoverImpl::ProcessCapture(
   const auto& Y_fft = aec_state_.UseLinearFilterOutput() ? E : Y;
 
   data_dumper_->DumpWav("aec3_output_linear", kBlockSize, &y0[0], 16000, 1);
-  data_dumper_->DumpWav("aec3_output_linear2", kBlockSize, &e_[0][0], 16000, 1);
+  data_dumper_->DumpWav("aec3_output_linear2", kBlockSize, &e[0][0], 16000, 1);
 
   float high_bands_gain = 1.f;
   std::array<float, kFftLengthBy2Plus1> G;
