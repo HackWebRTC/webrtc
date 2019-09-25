@@ -934,9 +934,13 @@ void VideoStreamEncoder::ReconfigureEncoder() {
   if (rate_allocator_ && last_encoder_rate_settings_) {
     // We have a new rate allocator instance and already configured target
     // bitrate. Update the rate allocation and notify observers.
-    last_encoder_rate_settings_->framerate_fps = GetInputFramerateFps();
-    SetEncoderRates(
-        UpdateBitrateAllocationAndNotifyObserver(*last_encoder_rate_settings_));
+    // We must invalidate the last_encoder_rate_settings_ to ensure
+    // the changes get propagated to all listeners.
+    EncoderRateSettings rate_settings = *last_encoder_rate_settings_;
+    last_encoder_rate_settings_.reset();
+    rate_settings.framerate_fps = GetInputFramerateFps();
+
+    SetEncoderRates(UpdateBitrateAllocationAndNotifyObserver(rate_settings));
   }
 
   encoder_stats_observer_->OnEncoderReconfigured(encoder_config_, streams);

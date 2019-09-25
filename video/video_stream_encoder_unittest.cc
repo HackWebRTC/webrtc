@@ -4900,6 +4900,51 @@ TEST_F(VideoStreamEncoderTest, BandwidthAllocationLowerBound) {
   video_stream_encoder_->Stop();
 }
 
+TEST_F(VideoStreamEncoderTest, EncoderRatesPropegatedOnReconfigure) {
+  video_stream_encoder_->OnBitrateUpdated(
+      DataRate::bps(kTargetBitrateBps), DataRate::bps(kTargetBitrateBps),
+      DataRate::bps(kTargetBitrateBps), 0, 0);
+  // Capture a frame and wait for it to synchronize with the encoder thread.
+  int64_t timestamp_ms = fake_clock_.TimeNanos() / rtc::kNumNanosecsPerMillisec;
+  video_source_.IncomingCapturedFrame(CreateFrame(timestamp_ms, nullptr));
+  WaitForEncodedFrame(1);
+
+  auto prev_rate_settings = fake_encoder_.GetAndResetLastRateControlSettings();
+  ASSERT_TRUE(prev_rate_settings.has_value());
+  EXPECT_EQ(static_cast<int>(prev_rate_settings->framerate_fps),
+            kDefaultFramerate);
+
+  // Send 1s of video to ensure the framerate is stable at kDefaultFramerate.
+  for (int i = 0; i < 2 * kDefaultFramerate; i++) {
+    timestamp_ms += 1000 / kDefaultFramerate;
+    video_source_.IncomingCapturedFrame(CreateFrame(timestamp_ms, nullptr));
+    WaitForEncodedFrame(timestamp_ms);
+  }
+  EXPECT_EQ(static_cast<int>(fake_encoder_.GetLastFramerate()),
+            kDefaultFramerate);
+  // Capture larger frame to trigger a reconfigure.
+  codec_height_ *= 2;
+  codec_width_ *= 2;
+  timestamp_ms += 1000 / kDefaultFramerate;
+  video_source_.IncomingCapturedFrame(CreateFrame(timestamp_ms, nullptr));
+  WaitForEncodedFrame(timestamp_ms);
+
+  EXPECT_EQ(2, sink_.number_of_reconfigurations());
+  auto current_rate_settings =
+      fake_encoder_.GetAndResetLastRateControlSettings();
+  // Ensure we have actually reconfigured twice
+  // The rate settings should have been set again even though
+  // they haven't changed.
+  ASSERT_TRUE(current_rate_settings.has_value());
+  EXPECT_EQ(prev_rate_settings->bitrate, current_rate_settings->bitrate);
+  EXPECT_EQ(prev_rate_settings->framerate_fps,
+            current_rate_settings->framerate_fps);
+  EXPECT_EQ(prev_rate_settings->bandwidth_allocation,
+            current_rate_settings->bandwidth_allocation);
+
+  video_stream_encoder_->Stop();
+}
+
 struct MockEncoderSwitchRequestCallback : public EncoderSwitchRequestCallback {
   MOCK_METHOD0(RequestEncoderFallback, void());
   MOCK_METHOD1(RequestEncoderSwitch, void(const Config& conf));
