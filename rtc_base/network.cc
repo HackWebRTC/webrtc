@@ -211,8 +211,13 @@ AdapterType GetAdapterTypeFromName(const char* network_name) {
     // an ifaddr struct. See ConvertIfAddrs in this file.
     return ADAPTER_TYPE_LOOPBACK;
   }
+
   if (MatchTypeNameWithIndexPattern(network_name, "eth")) {
     return ADAPTER_TYPE_ETHERNET;
+  }
+
+  if (MatchTypeNameWithIndexPattern(network_name, "wlan")) {
+    return ADAPTER_TYPE_WIFI;
   }
 
   if (MatchTypeNameWithIndexPattern(network_name, "ipsec") ||
@@ -240,9 +245,6 @@ AdapterType GetAdapterTypeFromName(const char* network_name) {
       MatchTypeNameWithIndexPattern(network_name, "v4-rmnet_data") ||
       MatchTypeNameWithIndexPattern(network_name, "clat")) {
     return ADAPTER_TYPE_CELLULAR;
-  }
-  if (MatchTypeNameWithIndexPattern(network_name, "wlan")) {
-    return ADAPTER_TYPE_WIFI;
   }
 #endif
 
