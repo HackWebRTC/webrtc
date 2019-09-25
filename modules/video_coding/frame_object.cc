@@ -24,6 +24,7 @@
 namespace webrtc {
 namespace video_coding {
 
+// TODO(philipel): Remove this ctor.
 RtpFrameObject::RtpFrameObject(
     PacketBuffer* packet_buffer,
     uint16_t first_seq_num,
@@ -107,6 +108,78 @@ RtpFrameObject::RtpFrameObject(
   timing_.receive_finish_ms = last_packet_received_time;
   timing_.flags = last_packet->video_header.video_timing.flags;
   is_last_spatial_layer = last_packet->markerBit;
+}
+
+RtpFrameObject::RtpFrameObject(
+    uint16_t first_seq_num,
+    uint16_t last_seq_num,
+    bool markerBit,
+    int times_nacked,
+    int64_t first_packet_received_time,
+    int64_t last_packet_received_time,
+    uint32_t rtp_timestamp,
+    int64_t ntp_time_ms,
+    const VideoSendTiming& timing,
+    uint8_t payload_type,
+    VideoCodecType codec,
+    VideoRotation rotation,
+    VideoContentType content_type,
+    const RTPVideoHeader& video_header,
+    const absl::optional<webrtc::ColorSpace>& color_space,
+    const absl::optional<RtpGenericFrameDescriptor>& generic_descriptor,
+    RtpPacketInfos packet_infos,
+    rtc::scoped_refptr<EncodedImageBuffer> image_buffer)
+    : first_seq_num_(first_seq_num),
+      last_seq_num_(last_seq_num),
+      last_packet_received_time_(last_packet_received_time),
+      times_nacked_(times_nacked) {
+  rtp_video_header_ = video_header;
+  rtp_generic_frame_descriptor_ = generic_descriptor;
+
+  // EncodedFrame members
+  codec_type_ = codec;
+
+  // TODO(philipel): Remove when encoded image is replaced by EncodedFrame.
+  // VCMEncodedFrame members
+  CopyCodecSpecific(&rtp_video_header_);
+  _completeFrame = true;
+  _payloadType = payload_type;
+  SetTimestamp(rtp_timestamp);
+  ntp_time_ms_ = ntp_time_ms;
+  _frameType = rtp_video_header_.frame_type;
+
+  // Setting frame's playout delays to the same values
+  // as of the first packet's.
+  SetPlayoutDelay(rtp_video_header_.playout_delay);
+
+  SetEncodedData(std::move(image_buffer));
+  _encodedWidth = rtp_video_header_.width;
+  _encodedHeight = rtp_video_header_.height;
+
+  // EncodedFrame members
+  SetPacketInfos(std::move(packet_infos));
+
+  rotation_ = rotation;
+  SetColorSpace(color_space);
+  _rotation_set = true;
+  content_type_ = content_type;
+  if (timing.flags != VideoSendTiming::kInvalid) {
+    // ntp_time_ms_ may be -1 if not estimated yet. This is not a problem,
+    // as this will be dealt with at the time of reporting.
+    timing_.encode_start_ms = ntp_time_ms_ + timing.encode_start_delta_ms;
+    timing_.encode_finish_ms = ntp_time_ms_ + timing.encode_finish_delta_ms;
+    timing_.packetization_finish_ms =
+        ntp_time_ms_ + timing.packetization_finish_delta_ms;
+    timing_.pacer_exit_ms = ntp_time_ms_ + timing.pacer_exit_delta_ms;
+    timing_.network_timestamp_ms =
+        ntp_time_ms_ + timing.network_timestamp_delta_ms;
+    timing_.network2_timestamp_ms =
+        ntp_time_ms_ + timing.network2_timestamp_delta_ms;
+  }
+  timing_.receive_start_ms = first_packet_received_time;
+  timing_.receive_finish_ms = last_packet_received_time;
+  timing_.flags = timing.flags;
+  is_last_spatial_layer = markerBit;
 }
 
 RtpFrameObject::~RtpFrameObject() {

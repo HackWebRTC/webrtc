@@ -426,9 +426,18 @@ std::vector<std::unique_ptr<RtpFrameObject>> PacketBuffer::FindFrames(
       missing_packets_.erase(missing_packets_.begin(),
                              missing_packets_.upper_bound(seq_num));
 
+      const VCMPacket* first_packet = GetPacket(start_seq_num);
+      const VCMPacket* last_packet = GetPacket(seq_num);
       auto frame = std::make_unique<RtpFrameObject>(
-          this, start_seq_num, seq_num, max_nack_count, min_recv_time,
-          max_recv_time, RtpPacketInfos(std::move(packet_infos)),
+          start_seq_num, seq_num, last_packet->markerBit, max_nack_count,
+          min_recv_time, max_recv_time, first_packet->timestamp,
+          first_packet->ntp_time_ms_, last_packet->video_header.video_timing,
+          first_packet->payloadType, first_packet->codec(),
+          last_packet->video_header.rotation,
+          last_packet->video_header.content_type, first_packet->video_header,
+          last_packet->video_header.color_space,
+          first_packet->generic_descriptor,
+          RtpPacketInfos(std::move(packet_infos)),
           GetEncodedImageBuffer(frame_size, start_seq_num, seq_num));
 
       found_frames.emplace_back(std::move(frame));

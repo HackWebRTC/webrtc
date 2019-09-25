@@ -22,6 +22,7 @@ class PacketBuffer;
 
 class RtpFrameObject : public EncodedFrame {
  public:
+  // TODO(philipel): Remove this ctor.
   RtpFrameObject(PacketBuffer* packet_buffer,
                  uint16_t first_seq_num,
                  uint16_t last_seq_num,
@@ -30,6 +31,26 @@ class RtpFrameObject : public EncodedFrame {
                  int64_t last_packet_received_time,
                  RtpPacketInfos packet_infos,
                  rtc::scoped_refptr<EncodedImageBuffer> image_buffer);
+
+  RtpFrameObject(
+      uint16_t first_seq_num,
+      uint16_t last_seq_num,
+      bool markerBit,
+      int times_nacked,
+      int64_t first_packet_received_time,
+      int64_t last_packet_received_time,
+      uint32_t rtp_timestamp,
+      int64_t ntp_time_ms,
+      const VideoSendTiming& timing,
+      uint8_t payload_type,
+      VideoCodecType codec,
+      VideoRotation rotation,
+      VideoContentType content_type,
+      const RTPVideoHeader& video_header,
+      const absl::optional<webrtc::ColorSpace>& color_space,
+      const absl::optional<RtpGenericFrameDescriptor>& generic_descriptor,
+      RtpPacketInfos packet_infos,
+      rtc::scoped_refptr<EncodedImageBuffer> image_buffer);
 
   ~RtpFrameObject() override;
   uint16_t first_seq_num() const;
