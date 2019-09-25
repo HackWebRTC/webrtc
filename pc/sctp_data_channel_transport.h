@@ -11,7 +11,7 @@
 #ifndef PC_SCTP_DATA_CHANNEL_TRANSPORT_H_
 #define PC_SCTP_DATA_CHANNEL_TRANSPORT_H_
 
-#include "api/data_channel_transport_interface.h"
+#include "api/transport/data_channel_transport_interface.h"
 #include "media/sctp/sctp_transport_internal.h"
 #include "rtc_base/third_party/sigslot/sigslot.h"
 

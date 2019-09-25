@@ -14,7 +14,7 @@
 #include <string>
 
 #include "api/data_channel_interface.h"
-#include "api/data_channel_transport_interface.h"
+#include "api/transport/data_channel_transport_interface.h"
 #include "media/base/media_channel.h"
 
 namespace rtc {

@@ -13,7 +13,7 @@
 
 #include <vector>
 
-#include "api/data_channel_transport_interface.h"
+#include "api/transport/data_channel_transport_interface.h"
 #include "rtc_base/critical_section.h"
 
 namespace webrtc {
