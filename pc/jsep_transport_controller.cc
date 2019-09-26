@@ -447,7 +447,8 @@ void JsepTransportController::SetMediaTransportSettings(
     bool use_media_transport_for_media,
     bool use_media_transport_for_data_channels,
     bool use_datagram_transport,
-    bool use_datagram_transport_for_data_channels) {
+    bool use_datagram_transport_for_data_channels,
+    bool use_datagram_transport_for_data_channels_receive_only) {
   RTC_DCHECK(use_media_transport_for_media ==
                  config_.use_media_transport_for_media ||
              jsep_transports_by_name_.empty())
@@ -466,6 +467,8 @@ void JsepTransportController::SetMediaTransportSettings(
   config_.use_datagram_transport = use_datagram_transport;
   config_.use_datagram_transport_for_data_channels =
       use_datagram_transport_for_data_channels;
+  config_.use_datagram_transport_for_data_channels_receive_only =
+      use_datagram_transport_for_data_channels_receive_only;
 }
 
 std::unique_ptr<cricket::IceTransportInternal>
@@ -1794,6 +1797,10 @@ JsepTransportController::GetTransportParameters(const std::string& mid) {
 
   RTC_DCHECK(!local_desc_ && !remote_desc_)
       << "JsepTransport should exist for every mid once any description is set";
+
+  if (config_.use_datagram_transport_for_data_channels_receive_only) {
+    return absl::nullopt;
+  }
 
   // Need to generate a transport for the offer.
   if (!offer_datagram_transport_) {

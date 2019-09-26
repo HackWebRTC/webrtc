@@ -365,8 +365,10 @@ class PeerConnection : public PeerConnectionInternal,
   // Field-trial based configuration for datagram transport data channels.
   struct DatagramTransportDataChannelConfig {
     explicit DatagramTransportDataChannelConfig(const std::string& field_trial)
-        : enabled("enabled", true), default_value("default_value", false) {
-      ParseFieldTrial({&enabled, &default_value}, field_trial);
+        : enabled("enabled", true),
+          default_value("default_value", false),
+          receive_only("receive_only", false) {
+      ParseFieldTrial({&enabled, &default_value, &receive_only}, field_trial);
     }
 
     // Whether datagram transport data channel support is enabled at all.
@@ -382,6 +384,11 @@ class PeerConnection : public PeerConnectionInternal,
     // applications will use the datagram transport by default (but may still
     // explicitly configure themselves not to use it through RTCConfiguration).
     FieldTrialFlag default_value;
+
+    // Whether the datagram transport is enabled in receive-only mode.  If true,
+    // and if the datagram transport is enabled, it will only be used when
+    // receiving incoming calls, not when placing outgoing calls.
+    FieldTrialFlag receive_only;
   };
 
   // Implements MessageHandler.
@@ -1196,7 +1203,8 @@ class PeerConnection : public PeerConnectionInternal,
   const DatagramTransportConfig datagram_transport_config_;
 
   // Field-trial based configuration for datagram transport data channels.
-  const DatagramTransportConfig datagram_transport_data_channel_config_;
+  const DatagramTransportDataChannelConfig
+      datagram_transport_data_channel_config_;
 
   // Final, resolved value for whether datagram transport is in use.
   bool use_datagram_transport_ RTC_GUARDED_BY(signaling_thread()) = false;
@@ -1204,6 +1212,10 @@ class PeerConnection : public PeerConnectionInternal,
   // Equivalent of |use_datagram_transport_|, but for its use with data
   // channels.
   bool use_datagram_transport_for_data_channels_
+      RTC_GUARDED_BY(signaling_thread()) = false;
+
+  // Resolved value of whether to use data channels only for incoming calls.
+  bool use_datagram_transport_for_data_channels_receive_only_
       RTC_GUARDED_BY(signaling_thread()) = false;
 
   // Cache configuration_.use_media_transport so that we can access it from

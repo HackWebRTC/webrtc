@@ -120,6 +120,11 @@ class JsepTransportController : public sigslot::has_slots<> {
     // Use datagram transport's implementation of data channels instead of SCTP.
     bool use_datagram_transport_for_data_channels = false;
 
+    // Whether |use_datagram_transport_for_data_channels| applies to outgoing
+    // calls.  If true, |use_datagram_transport_for_data_channels| applies only
+    // to incoming calls.
+    bool use_datagram_transport_for_data_channels_receive_only = false;
+
     // Optional media transport factory (experimental). If provided it will be
     // used to create media_transport (as long as either
     // |use_media_transport_for_media| or
@@ -227,10 +232,12 @@ class JsepTransportController : public sigslot::has_slots<> {
   // media transport configuration on the jsep transport controller, as long as
   // you did not call 'GetMediaTransport' or 'MaybeCreateJsepTransport'. Once
   // Jsep transport is created, you can't change this setting.
-  void SetMediaTransportSettings(bool use_media_transport_for_media,
-                                 bool use_media_transport_for_data_channels,
-                                 bool use_datagram_transport,
-                                 bool use_datagram_transport_for_data_channels);
+  void SetMediaTransportSettings(
+      bool use_media_transport_for_media,
+      bool use_media_transport_for_data_channels,
+      bool use_datagram_transport,
+      bool use_datagram_transport_for_data_channels,
+      bool use_datagram_transport_for_data_channels_receive_only);
 
   // If media transport is present enabled and supported,
   // when this method is called, it creates a media transport and generates its

@@ -778,6 +778,7 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
     bool use_media_transport_for_data_channels;
     absl::optional<bool> use_datagram_transport;
     absl::optional<bool> use_datagram_transport_for_data_channels;
+    absl::optional<bool> use_datagram_transport_for_data_channels_receive_only;
     absl::optional<CryptoOptions> crypto_options;
     bool offer_extmap_allow_mixed;
     std::string turn_logging_id;
@@ -842,6 +843,8 @@ bool PeerConnectionInterface::RTCConfiguration::operator==(
          use_datagram_transport == o.use_datagram_transport &&
          use_datagram_transport_for_data_channels ==
              o.use_datagram_transport_for_data_channels &&
+         use_datagram_transport_for_data_channels_receive_only ==
+             o.use_datagram_transport_for_data_channels_receive_only &&
          crypto_options == o.crypto_options &&
          offer_extmap_allow_mixed == o.offer_extmap_allow_mixed &&
          turn_logging_id == o.turn_logging_id;
@@ -1080,6 +1083,9 @@ bool PeerConnection::Initialize(
       datagram_transport_data_channel_config_.enabled &&
       configuration.use_datagram_transport_for_data_channels.value_or(
           datagram_transport_data_channel_config_.default_value);
+  use_datagram_transport_for_data_channels_receive_only_ =
+      configuration.use_datagram_transport_for_data_channels_receive_only
+          .value_or(datagram_transport_data_channel_config_.receive_only);
   if (use_datagram_transport_ || use_datagram_transport_for_data_channels_ ||
       configuration.use_media_transport ||
       configuration.use_media_transport_for_data_channels) {
@@ -1114,6 +1120,8 @@ bool PeerConnection::Initialize(
     config.use_datagram_transport = use_datagram_transport_;
     config.use_datagram_transport_for_data_channels =
         use_datagram_transport_for_data_channels_;
+    config.use_datagram_transport_for_data_channels_receive_only =
+        use_datagram_transport_for_data_channels_receive_only_;
     config.media_transport_factory = factory_->media_transport_factory();
   }
 
@@ -3573,6 +3581,26 @@ RTCError PeerConnection::SetConfiguration(
         "after calling SetRemoteDescription.");
   }
 
+  if (local_description() &&
+      configuration.use_datagram_transport_for_data_channels_receive_only !=
+          configuration_
+              .use_datagram_transport_for_data_channels_receive_only) {
+    LOG_AND_RETURN_ERROR(
+        RTCErrorType::INVALID_MODIFICATION,
+        "Can't change use_datagram_transport_for_data_channels_receive_only "
+        "after calling SetLocalDescription.");
+  }
+
+  if (remote_description() &&
+      configuration.use_datagram_transport_for_data_channels_receive_only !=
+          configuration_
+              .use_datagram_transport_for_data_channels_receive_only) {
+    LOG_AND_RETURN_ERROR(
+        RTCErrorType::INVALID_MODIFICATION,
+        "Can't change use_datagram_transport_for_data_channels_receive_only "
+        "after calling SetRemoteDescription.");
+  }
+
   if (configuration.use_media_transport_for_data_channels ||
       configuration.use_media_transport ||
       (configuration.use_datagram_transport &&
@@ -3616,6 +3644,8 @@ RTCError PeerConnection::SetConfiguration(
   modified_config.use_datagram_transport = configuration.use_datagram_transport;
   modified_config.use_datagram_transport_for_data_channels =
       configuration.use_datagram_transport_for_data_channels;
+  modified_config.use_datagram_transport_for_data_channels_receive_only =
+      configuration.use_datagram_transport_for_data_channels_receive_only;
   modified_config.turn_logging_id = configuration.turn_logging_id;
   if (configuration != modified_config) {
     LOG_AND_RETURN_ERROR(RTCErrorType::INVALID_MODIFICATION,
@@ -3688,10 +3718,14 @@ RTCError PeerConnection::SetConfiguration(
       datagram_transport_data_channel_config_.enabled &&
       modified_config.use_datagram_transport_for_data_channels.value_or(
           datagram_transport_data_channel_config_.default_value);
+  use_datagram_transport_for_data_channels_receive_only_ =
+      modified_config.use_datagram_transport_for_data_channels_receive_only
+          .value_or(datagram_transport_data_channel_config_.receive_only);
   transport_controller_->SetMediaTransportSettings(
       modified_config.use_media_transport,
       modified_config.use_media_transport_for_data_channels,
-      use_datagram_transport_, use_datagram_transport_for_data_channels_);
+      use_datagram_transport_, use_datagram_transport_for_data_channels_,
+      use_datagram_transport_for_data_channels_receive_only_);
 
   if (configuration_.active_reset_srtp_params !=
       modified_config.active_reset_srtp_params) {
