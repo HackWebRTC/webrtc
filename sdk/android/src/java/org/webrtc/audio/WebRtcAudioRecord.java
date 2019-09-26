@@ -93,7 +93,7 @@ class WebRtcAudioRecord {
 
   private volatile boolean microphoneMute;
   private boolean audioSourceMatchesRecordingSession;
-  private boolean audioConfigHasBeenVerified;
+  private boolean isAudioConfigVerified;
   private byte[] emptyBytes;
 
   private final @Nullable AudioRecordErrorCallback errorCallback;
@@ -221,13 +221,20 @@ class WebRtcAudioRecord {
     return isNoiseSuppressorSupported;
   }
 
+  // Returns true if a valid call to verifyAudioConfig() has been done. Should always be
+  // checked before using the returned value of isAudioSourceMatchingRecordingSession().
   @CalledByNative
+  boolean isAudioConfigVerified() {
+    return isAudioConfigVerified;
+  }
+
   // Returns true if verifyAudioConfig() succeeds. This value is set after a specific delay when
   // startRecording() has been called. Hence, should preferably be called in combination with
-  // stopRecording() to ensure that it has been set properly. |audioConfigHasBeenChecked| is
+  // stopRecording() to ensure that it has been set properly. |isAudioConfigVerified| is
   // enabled in WebRtcAudioRecord to ensure that the returned value is valid.
+  @CalledByNative
   boolean isAudioSourceMatchingRecordingSession() {
-    if (!audioConfigHasBeenVerified) {
+    if (!isAudioConfigVerified) {
       Logging.w(TAG, "Audio configuration has not yet been verified");
       return false;
     }
@@ -434,7 +441,7 @@ class WebRtcAudioRecord {
         audioSourceMatchesRecordingSession =
             verifyAudioConfig(audioRecord.getAudioSource(), audioRecord.getAudioSessionId(),
                 audioRecord.getFormat(), audioRecord.getRoutedDevice(), configs);
-        audioConfigHasBeenVerified = true;
+        isAudioConfigVerified = true;
       }
     }
     return numActiveRecordingSessions;
