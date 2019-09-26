@@ -143,7 +143,7 @@ class SendSideBandwidthEstimation {
   int expected_packets_since_last_loss_update_;
 
   absl::optional<DataRate> acknowledged_rate_;
-  DataRate current_bitrate_;
+  DataRate current_target_;
   DataRate min_bitrate_configured_;
   DataRate max_bitrate_configured_;
   Timestamp last_low_bitrate_log_;
@@ -155,8 +155,11 @@ class SendSideBandwidthEstimation {
   uint8_t last_logged_fraction_loss_;
   TimeDelta last_round_trip_time_;
 
-  DataRate bwe_incoming_;
-  DataRate delay_based_bitrate_;
+  // The max bitrate as set by the receiver in the call. This is typically
+  // signalled using the REMB RTCP message and is used when we don't have any
+  // send side delay based estimate.
+  DataRate receiver_limit_;
+  DataRate delay_based_limit_;
   Timestamp time_last_decrease_;
   Timestamp first_report_time_;
   int initially_lost_packets_;
@@ -164,7 +167,7 @@ class SendSideBandwidthEstimation {
   UmaState uma_update_state_;
   UmaState uma_rtt_state_;
   std::vector<bool> rampup_uma_stats_updated_;
-  RtcEventLog* event_log_;
+  RtcEventLog* const event_log_;
   Timestamp last_rtc_event_log_;
   float low_loss_threshold_;
   float high_loss_threshold_;
