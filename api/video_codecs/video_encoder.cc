@@ -116,6 +116,17 @@ VideoEncoder::RateControlParameters::RateControlParameters(
       framerate_fps(framerate_fps),
       bandwidth_allocation(bandwidth_allocation) {}
 
+bool VideoEncoder::RateControlParameters::operator==(
+    const VideoEncoder::RateControlParameters& rhs) const {
+  return std::tie(bitrate, framerate_fps, bandwidth_allocation) ==
+         std::tie(rhs.bitrate, rhs.framerate_fps, rhs.bandwidth_allocation);
+}
+
+bool VideoEncoder::RateControlParameters::operator!=(
+    const VideoEncoder::RateControlParameters& rhs) const {
+  return !(rhs == *this);
+}
+
 VideoEncoder::RateControlParameters::~RateControlParameters() = default;
 
 void VideoEncoder::SetFecControllerOverride(
