@@ -130,11 +130,6 @@ class VCMEncodedFrame : protected EncodedImage {
   bool _missingFrame;
   CodecSpecificInfo _codecSpecificInfo;
   webrtc::VideoCodecType _codec;
-
-  // Video rotation is only set along with the last packet for each frame
-  // (same as marker bit). This |_rotation_set| is only for debugging purpose
-  // to ensure we don't set it twice for a frame.
-  bool _rotation_set;
 };
 
 }  // namespace webrtc

@@ -79,7 +79,6 @@ RtpFrameObject::RtpFrameObject(
   // (HEVC)).
   rotation_ = last_packet->video_header.rotation;
   SetColorSpace(last_packet->video_header.color_space);
-  _rotation_set = true;
   content_type_ = last_packet->video_header.content_type;
   if (last_packet->video_header.video_timing.flags !=
       VideoSendTiming::kInvalid) {
@@ -161,7 +160,6 @@ RtpFrameObject::RtpFrameObject(
 
   rotation_ = rotation;
   SetColorSpace(color_space);
-  _rotation_set = true;
   content_type_ = content_type;
   if (timing.flags != VideoSendTiming::kInvalid) {
     // ntp_time_ms_ may be -1 if not estimated yet. This is not a problem,
