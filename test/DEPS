@@ -65,8 +65,5 @@ specific_include_rules = {
   ".*sdp_changer\.(h|cc)": [
     "+pc",
     "+p2p",
-  ],
-  ".*video_quality_analyzer_injection_helper\.(h|cc)": [
-    "+pc",
   ]
 }

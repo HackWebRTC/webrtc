@@ -22,42 +22,13 @@
 #include "api/video/video_sink_interface.h"
 #include "api/video_codecs/video_decoder_factory.h"
 #include "api/video_codecs/video_encoder_factory.h"
-#include "pc/video_track_source.h"
 #include "test/frame_generator.h"
 #include "test/pc/e2e/analyzer/video/encoded_image_data_injector.h"
 #include "test/pc/e2e/analyzer/video/id_generator.h"
-#include "test/test_video_capturer.h"
 #include "test/testsupport/video_frame_writer.h"
 
 namespace webrtc {
 namespace webrtc_pc_e2e {
-
-class TestVideoCapturerVideoTrackSource : public VideoTrackSource {
- public:
-  TestVideoCapturerVideoTrackSource(
-      std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>> source,
-      bool is_screencast)
-      : VideoTrackSource(false /* remote */),
-        source_(std::move(source)),
-        is_screencast_(is_screencast) {}
-
-  ~TestVideoCapturerVideoTrackSource() = default;
-
-  void Start() { SetState(kLive); }
-
-  void Stop() { SetState(kMuted); }
-
-  bool is_screencast() const override { return is_screencast_; }
-
- protected:
-  rtc::VideoSourceInterface<VideoFrame>* source() override {
-    return source_.get();
-  }
-
- private:
-  std::unique_ptr<rtc::VideoSourceInterface<VideoFrame>> source_;
-  const bool is_screencast_;
-};
 
 // Provides factory methods for components, that will be used to inject
 // VideoQualityAnalyzerInterface into PeerConnection pipeline.
@@ -83,18 +54,16 @@ class VideoQualityAnalyzerInjectionHelper : public StatsObserverInterface {
   std::unique_ptr<VideoDecoderFactory> WrapVideoDecoderFactory(
       std::unique_ptr<VideoDecoderFactory> delegate) const;
 
-  // Creates video track source, that will allow video quality analyzer to get
-  // access to captured frames. If |writer| in not nullptr, will dump rendered
-  // frames with provided writer.
-  rtc::scoped_refptr<TestVideoCapturerVideoTrackSource> CreateVideoTrackSource(
+  // Wraps frame generator, so video quality analyzer will gain access to the
+  // captured frames. If |writer| in not nullptr, will dump captured frames
+  // with provided writer.
+  std::unique_ptr<test::FrameGenerator> WrapFrameGenerator(
       const VideoConfig& config,
-      std::unique_ptr<test::TestVideoCapturer> capturer,
-      test::VideoFrameWriter* writer,
-      bool is_screencast) const;
-
-  // Creates sink, that will allow video quality analyzer to get access to
-  // the rendered frames. If |writer| in not nullptr, will dump rendered
-  // frames with provided writer.
+      std::unique_ptr<test::FrameGenerator> delegate,
+      test::VideoFrameWriter* writer) const;
+  // Creates sink, that will allow video quality analyzer to get access to the
+  // rendered frames. If |writer| in not nullptr, will dump rendered frames
+  // with provided writer.
   std::unique_ptr<rtc::VideoSinkInterface<VideoFrame>> CreateVideoSink(
       const VideoConfig& config,
       test::VideoFrameWriter* writer) const;
