@@ -799,6 +799,40 @@ void VideoStreamEncoder::ReconfigureEncoder() {
         SvcRateAllocator::GetPaddingBitrate(codec).bps<int>();
   }
 
+  char log_stream_buf[4 * 1024];
+  rtc::SimpleStringBuilder log_stream(log_stream_buf);
+  log_stream << "ReconfigureEncoder:\n";
+  log_stream << "Simulcast streams:\n";
+  for (size_t i = 0; i < codec.numberOfSimulcastStreams; ++i) {
+    log_stream << i << ": " << codec.simulcastStream[i].width << "x"
+               << codec.simulcastStream[i].height
+               << " fps: " << codec.simulcastStream[i].maxFramerate
+               << " min_bps: " << codec.simulcastStream[i].minBitrate
+               << " target_bps: " << codec.simulcastStream[i].targetBitrate
+               << " max_bps: " << codec.simulcastStream[i].maxBitrate
+               << " max_qp: " << codec.simulcastStream[i].qpMax
+               << " num_tl: " << codec.simulcastStream[i].numberOfTemporalLayers
+               << " active: "
+               << (codec.simulcastStream[i].active ? "true" : "false") << "\n";
+  }
+  if (encoder_config_.codec_type == kVideoCodecVP9) {
+    size_t num_spatial_layers = codec.VP9()->numberOfSpatialLayers;
+    log_stream << "Spatial layers:\n";
+    for (size_t i = 0; i < num_spatial_layers; ++i) {
+      log_stream << i << ": " << codec.spatialLayers[i].width << "x"
+                 << codec.spatialLayers[i].height
+                 << " fps: " << codec.spatialLayers[i].maxFramerate
+                 << " min_bps: " << codec.spatialLayers[i].minBitrate
+                 << " target_bps: " << codec.spatialLayers[i].targetBitrate
+                 << " max_bps: " << codec.spatialLayers[i].maxBitrate
+                 << " max_qp: " << codec.spatialLayers[i].qpMax
+                 << " num_tl: " << codec.spatialLayers[i].numberOfTemporalLayers
+                 << " active: "
+                 << (codec.spatialLayers[i].active ? "true" : "false") << "\n";
+    }
+  }
+  RTC_LOG(LS_INFO) << log_stream.str();
+
   codec.startBitrate =
       std::max(encoder_start_bitrate_bps_ / 1000, codec.minBitrate);
   codec.startBitrate = std::min(codec.startBitrate, codec.maxBitrate);
