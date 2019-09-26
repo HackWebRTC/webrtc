@@ -25,17 +25,21 @@ namespace video_coding {
 
 RtpFrameReferenceFinder::RtpFrameReferenceFinder(
     OnCompleteFrameCallback* frame_callback)
+    : RtpFrameReferenceFinder(frame_callback, 0) {}
+
+RtpFrameReferenceFinder::RtpFrameReferenceFinder(
+    OnCompleteFrameCallback* frame_callback,
+    int64_t picture_id_offset)
     : last_picture_id_(-1),
       current_ss_idx_(0),
       cleared_to_seq_num_(-1),
-      frame_callback_(frame_callback) {}
+      frame_callback_(frame_callback),
+      picture_id_offset_(picture_id_offset) {}
 
 RtpFrameReferenceFinder::~RtpFrameReferenceFinder() = default;
 
 void RtpFrameReferenceFinder::ManageFrame(
     std::unique_ptr<RtpFrameObject> frame) {
-  rtc::CritScope lock(&crit_);
-
   // If we have cleared past this frame, drop it.
   if (cleared_to_seq_num_ != -1 &&
       AheadOf<uint16_t>(cleared_to_seq_num_, frame->first_seq_num())) {
@@ -51,7 +55,7 @@ void RtpFrameReferenceFinder::ManageFrame(
       stashed_frames_.push_front(std::move(frame));
       break;
     case kHandOff:
-      frame_callback_->OnCompleteFrame(std::move(frame));
+      HandOffFrame(std::move(frame));
       RetryStashedFrames();
       break;
     case kDrop:
@@ -73,13 +77,23 @@ void RtpFrameReferenceFinder::RetryStashedFrames() {
           break;
         case kHandOff:
           complete_frame = true;
-          frame_callback_->OnCompleteFrame(std::move(*frame_it));
+          HandOffFrame(std::move(*frame_it));
           RTC_FALLTHROUGH();
         case kDrop:
           frame_it = stashed_frames_.erase(frame_it);
       }
     }
   } while (complete_frame);
+}
+
+void RtpFrameReferenceFinder::HandOffFrame(
+    std::unique_ptr<RtpFrameObject> frame) {
+  frame->id.picture_id += picture_id_offset_;
+  for (size_t i = 0; i < frame->num_references; ++i) {
+    frame->references[i] += picture_id_offset_;
+  }
+
+  frame_callback_->OnCompleteFrame(std::move(frame));
 }
 
 RtpFrameReferenceFinder::FrameDecision
@@ -110,7 +124,6 @@ RtpFrameReferenceFinder::ManageFrameInternal(RtpFrameObject* frame) {
 }
 
 void RtpFrameReferenceFinder::PaddingReceived(uint16_t seq_num) {
-  rtc::CritScope lock(&crit_);
   auto clean_padding_to =
       stashed_padding_.lower_bound(seq_num - kMaxPaddingAge);
   stashed_padding_.erase(stashed_padding_.begin(), clean_padding_to);
@@ -120,7 +133,6 @@ void RtpFrameReferenceFinder::PaddingReceived(uint16_t seq_num) {
 }
 
 void RtpFrameReferenceFinder::ClearTo(uint16_t seq_num) {
-  rtc::CritScope lock(&crit_);
   cleared_to_seq_num_ = seq_num;
 
   auto it = stashed_frames_.begin();

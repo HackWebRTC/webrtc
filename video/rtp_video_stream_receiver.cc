@@ -10,6 +10,8 @@
 
 #include "video/rtp_video_stream_receiver.h"
 
+#include <algorithm>
+#include <limits>
 #include <utility>
 #include <vector>
 
@@ -539,6 +541,37 @@ void RtpVideoStreamReceiver::OnAssembledFrame(
     has_received_frame_ = true;
   }
 
+  rtc::CritScope lock(&reference_finder_lock_);
+  // Reset |reference_finder_| if |frame| is new and the codec have changed.
+  if (current_codec_) {
+    bool frame_is_newer =
+        AheadOf(frame->Timestamp(), last_assembled_frame_rtp_timestamp_);
+
+    if (frame->codec_type() != current_codec_) {
+      if (frame_is_newer) {
+        // When we reset the |reference_finder_| we don't want new picture ids
+        // to overlap with old picture ids. To ensure that doesn't happen we
+        // start from the |last_completed_picture_id_| and add an offset in case
+        // of reordering.
+        reference_finder_ =
+            std::make_unique<video_coding::RtpFrameReferenceFinder>(
+                this, last_completed_picture_id_ +
+                          std::numeric_limits<uint16_t>::max());
+        current_codec_ = frame->codec_type();
+      } else {
+        // Old frame from before the codec switch, discard it.
+        return;
+      }
+    }
+
+    if (frame_is_newer) {
+      last_assembled_frame_rtp_timestamp_ = frame->Timestamp();
+    }
+  } else {
+    current_codec_ = frame->codec_type();
+    last_assembled_frame_rtp_timestamp_ = frame->Timestamp();
+  }
+
   if (buffered_frame_decryptor_ == nullptr) {
     reference_finder_->ManageFrame(std::move(frame));
   } else {
@@ -555,11 +588,14 @@ void RtpVideoStreamReceiver::OnCompleteFrame(
     last_seq_num_for_pic_id_[rtp_frame->id.picture_id] =
         rtp_frame->last_seq_num();
   }
+  last_completed_picture_id_ =
+      std::max(last_completed_picture_id_, frame->id.picture_id);
   complete_frame_callback_->OnCompleteFrame(std::move(frame));
 }
 
 void RtpVideoStreamReceiver::OnDecryptedFrame(
     std::unique_ptr<video_coding::RtpFrameObject> frame) {
+  rtc::CritScope lock(&reference_finder_lock_);
   reference_finder_->ManageFrame(std::move(frame));
 }
 
@@ -750,7 +786,10 @@ void RtpVideoStreamReceiver::ParseAndHandleEncapsulatingHeader(
 // RtpFrameReferenceFinder will need to know about padding to
 // correctly calculate frame references.
 void RtpVideoStreamReceiver::NotifyReceiverOfEmptyPacket(uint16_t seq_num) {
-  reference_finder_->PaddingReceived(seq_num);
+  {
+    rtc::CritScope lock(&reference_finder_lock_);
+    reference_finder_->PaddingReceived(seq_num);
+  }
   packet_buffer_.PaddingReceived(seq_num);
   if (nack_module_) {
     nack_module_->OnReceivedPacket(seq_num, /* is_keyframe = */ false,
@@ -828,6 +867,7 @@ void RtpVideoStreamReceiver::FrameDecoded(int64_t picture_id) {
   }
   if (seq_num != -1) {
     packet_buffer_.ClearTo(seq_num);
+    rtc::CritScope lock(&reference_finder_lock_);
     reference_finder_->ClearTo(seq_num);
   }
 }
