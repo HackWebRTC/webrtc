@@ -26,23 +26,43 @@
 namespace webrtc {
 namespace video_coding {
 
-class FakePacketBuffer : public PacketBuffer {
- public:
-  FakePacketBuffer() : PacketBuffer(nullptr, 0, 0, nullptr) {}
+namespace {
+std::unique_ptr<RtpFrameObject> CreateFrame(
+    uint16_t seq_num_start,
+    uint16_t seq_num_end,
+    bool keyframe,
+    VideoCodecType codec,
+    const RTPVideoTypeHeader& video_type_header,
+    const FrameMarking& frame_markings) {
+  RTPVideoHeader video_header;
+  video_header.frame_type = keyframe ? VideoFrameType::kVideoFrameKey
+                                     : VideoFrameType::kVideoFrameDelta;
+  video_header.video_type_header = video_type_header;
+  video_header.frame_marking = frame_markings;
 
-  VCMPacket* GetPacket(uint16_t seq_num) override {
-    auto packet_it = packets_.find(seq_num);
-    return packet_it == packets_.end() ? nullptr : &packet_it->second;
-  }
-
-  bool InsertPacket(VCMPacket* packet) override {
-    packets_[packet->seqNum] = *packet;
-    return true;
-  }
-
- private:
-  std::map<uint16_t, VCMPacket> packets_;
-};
+  // clang-format off
+  return std::make_unique<RtpFrameObject>(
+      seq_num_start,
+      seq_num_end,
+      /*markerBit=*/true,
+      /*times_nacked=*/0,
+      /*first_packet_received_time=*/0,
+      /*last_packet_received_time=*/0,
+      /*rtp_timestamp=*/0,
+      /*ntp_time_ms=*/0,
+      VideoSendTiming(),
+      /*payload_type=*/0,
+      codec,
+      kVideoRotation_0,
+      VideoContentType::UNSPECIFIED,
+      video_header,
+      /*color_space=*/absl::nullopt,
+      /*generic_descriptor=*/absl::nullopt,
+      RtpPacketInfos(),
+      EncodedImageBuffer::Create(/*size=*/0));
+  // clang-format on
+}
+}  // namespace
 
 class TestRtpFrameReferenceFinder : public ::testing::Test,
                                     public OnCompleteFrameCallback {
@@ -71,21 +91,10 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
   void InsertGeneric(uint16_t seq_num_start,
                      uint16_t seq_num_end,
                      bool keyframe) {
-    VCMPacket packet;
-    packet.video_header.codec = kVideoCodecGeneric;
-    packet.seqNum = seq_num_start;
-    packet.video_header.frame_type = keyframe
-                                         ? VideoFrameType::kVideoFrameKey
-                                         : VideoFrameType::kVideoFrameDelta;
-    packet_buffer_.InsertPacket(&packet);
+    std::unique_ptr<RtpFrameObject> frame =
+        CreateFrame(seq_num_start, seq_num_end, keyframe, kVideoCodecGeneric,
+                    RTPVideoTypeHeader(), FrameMarking());
 
-    packet.seqNum = seq_num_end;
-    packet.video_header.is_last_packet_in_frame = true;
-    packet_buffer_.InsertPacket(&packet);
-
-    auto frame = std::make_unique<RtpFrameObject>(
-        &packet_buffer_, seq_num_start, seq_num_end, 0, 0, 0, RtpPacketInfos(),
-        EncodedImageBuffer::Create(/*size=*/0));
     reference_finder_->ManageFrame(std::move(frame));
   }
 
@@ -96,31 +105,16 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
                  uint8_t tid = kNoTemporalIdx,
                  int32_t tl0 = kNoTl0PicIdx,
                  bool sync = false) {
-    VCMPacket packet;
-    packet.video_header.codec = kVideoCodecVP8;
-    packet.seqNum = seq_num_start;
-    packet.video_header.is_last_packet_in_frame =
-        (seq_num_start == seq_num_end);
-    packet.video_header.frame_type = keyframe
-                                         ? VideoFrameType::kVideoFrameKey
-                                         : VideoFrameType::kVideoFrameDelta;
-    auto& vp8_header =
-        packet.video_header.video_type_header.emplace<RTPVideoHeaderVP8>();
+    RTPVideoHeaderVP8 vp8_header{};
     vp8_header.pictureId = pid % (1 << 15);
     vp8_header.temporalIdx = tid;
     vp8_header.tl0PicIdx = tl0;
     vp8_header.layerSync = sync;
-    packet_buffer_.InsertPacket(&packet);
 
-    if (seq_num_start != seq_num_end) {
-      packet.seqNum = seq_num_end;
-      packet.video_header.is_last_packet_in_frame = true;
-      packet_buffer_.InsertPacket(&packet);
-    }
+    std::unique_ptr<RtpFrameObject> frame =
+        CreateFrame(seq_num_start, seq_num_end, keyframe, kVideoCodecVP8,
+                    vp8_header, FrameMarking());
 
-    auto frame = std::make_unique<RtpFrameObject>(
-        &packet_buffer_, seq_num_start, seq_num_end, 0, 0, 0, RtpPacketInfos(),
-        EncodedImageBuffer::Create(/*size=*/0));
     reference_finder_->ManageFrame(std::move(frame));
   }
 
@@ -134,17 +128,7 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
                     bool up_switch = false,
                     bool inter_pic_predicted = true,
                     GofInfoVP9* ss = nullptr) {
-    VCMPacket packet;
-    auto& vp9_header =
-        packet.video_header.video_type_header.emplace<RTPVideoHeaderVP9>();
-    packet.timestamp = pid;
-    packet.video_header.codec = kVideoCodecVP9;
-    packet.seqNum = seq_num_start;
-    packet.video_header.is_last_packet_in_frame =
-        (seq_num_start == seq_num_end);
-    packet.video_header.frame_type = keyframe
-                                         ? VideoFrameType::kVideoFrameKey
-                                         : VideoFrameType::kVideoFrameDelta;
+    RTPVideoHeaderVP9 vp9_header{};
     vp9_header.flexible_mode = false;
     vp9_header.picture_id = pid % (1 << 15);
     vp9_header.temporal_idx = tid;
@@ -156,18 +140,11 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
       vp9_header.ss_data_available = true;
       vp9_header.gof = *ss;
     }
-    packet_buffer_.InsertPacket(&packet);
 
-    if (seq_num_start != seq_num_end) {
-      packet.video_header.is_last_packet_in_frame = true;
-      vp9_header.ss_data_available = false;
-      packet.seqNum = seq_num_end;
-      packet_buffer_.InsertPacket(&packet);
-    }
+    std::unique_ptr<RtpFrameObject> frame =
+        CreateFrame(seq_num_start, seq_num_end, keyframe, kVideoCodecVP9,
+                    vp9_header, FrameMarking());
 
-    auto frame = std::make_unique<RtpFrameObject>(
-        &packet_buffer_, seq_num_start, seq_num_end, 0, 0, 0, RtpPacketInfos(),
-        EncodedImageBuffer::Create(/*size=*/0));
     reference_finder_->ManageFrame(std::move(frame));
   }
 
@@ -179,17 +156,7 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
                      uint8_t tid = kNoTemporalIdx,
                      bool inter = false,
                      std::vector<uint8_t> refs = std::vector<uint8_t>()) {
-    VCMPacket packet;
-    auto& vp9_header =
-        packet.video_header.video_type_header.emplace<RTPVideoHeaderVP9>();
-    packet.timestamp = pid;
-    packet.video_header.codec = kVideoCodecVP9;
-    packet.seqNum = seq_num_start;
-    packet.video_header.is_last_packet_in_frame =
-        (seq_num_start == seq_num_end);
-    packet.video_header.frame_type = keyframe
-                                         ? VideoFrameType::kVideoFrameKey
-                                         : VideoFrameType::kVideoFrameDelta;
+    RTPVideoHeaderVP9 vp9_header{};
     vp9_header.inter_layer_predicted = inter;
     vp9_header.flexible_mode = true;
     vp9_header.picture_id = pid % (1 << 15);
@@ -199,17 +166,10 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
     vp9_header.num_ref_pics = refs.size();
     for (size_t i = 0; i < refs.size(); ++i)
       vp9_header.pid_diff[i] = refs[i];
-    packet_buffer_.InsertPacket(&packet);
 
-    if (seq_num_start != seq_num_end) {
-      packet.seqNum = seq_num_end;
-      packet.video_header.is_last_packet_in_frame = true;
-      packet_buffer_.InsertPacket(&packet);
-    }
-
-    auto frame = std::make_unique<RtpFrameObject>(
-        &packet_buffer_, seq_num_start, seq_num_end, 0, 0, 0, RtpPacketInfos(),
-        EncodedImageBuffer::Create(/*size=*/0));
+    std::unique_ptr<RtpFrameObject> frame =
+        CreateFrame(seq_num_start, seq_num_end, keyframe, kVideoCodecVP9,
+                    vp9_header, FrameMarking());
     reference_finder_->ManageFrame(std::move(frame));
   }
 
@@ -219,28 +179,14 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
                   uint8_t tid = kNoTemporalIdx,
                   int32_t tl0 = kNoTl0PicIdx,
                   bool sync = false) {
-    VCMPacket packet;
-    packet.video_header.frame_type = keyframe
-                                         ? VideoFrameType::kVideoFrameKey
-                                         : VideoFrameType::kVideoFrameDelta;
-    packet.seqNum = seq_num_start;
-    packet.video_header.is_last_packet_in_frame =
-        (seq_num_start == seq_num_end);
-    packet.video_header.codec = kVideoCodecH264;
-    packet.video_header.frame_marking.temporal_id = tid;
-    packet.video_header.frame_marking.tl0_pic_idx = tl0;
-    packet.video_header.frame_marking.base_layer_sync = sync;
-    packet_buffer_.InsertPacket(&packet);
+    FrameMarking frame_marking{};
+    frame_marking.temporal_id = tid;
+    frame_marking.tl0_pic_idx = tl0;
+    frame_marking.base_layer_sync = sync;
 
-    if (seq_num_start != seq_num_end) {
-      packet.seqNum = seq_num_end;
-      packet.video_header.is_last_packet_in_frame = true;
-      packet_buffer_.InsertPacket(&packet);
-    }
-
-    auto frame = std::make_unique<RtpFrameObject>(
-        &packet_buffer_, seq_num_start, seq_num_end, 0, 0, 0, RtpPacketInfos(),
-        EncodedImageBuffer::Create(/*size=*/0));
+    std::unique_ptr<RtpFrameObject> frame =
+        CreateFrame(seq_num_start, seq_num_end, keyframe, kVideoCodecH264,
+                    RTPVideoTypeHeader(), frame_marking);
     reference_finder_->ManageFrame(std::move(frame));
   }
 
@@ -298,7 +244,6 @@ class TestRtpFrameReferenceFinder : public ::testing::Test,
   void RefsToSet(std::set<int64_t>* m) const {}
 
   Random rand_;
-  FakePacketBuffer packet_buffer_;
   std::unique_ptr<RtpFrameReferenceFinder> reference_finder_;
   struct FrameComp {
     bool operator()(const std::pair<int64_t, uint8_t> f1,
