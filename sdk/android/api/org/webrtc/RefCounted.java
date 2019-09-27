@@ -24,5 +24,5 @@ public interface RefCounted {
    * Decreases ref count by one. When the ref count reaches zero, resources related to the object
    * will be freed.
    */
-  void release();
+  @CalledByNative void release();
 }
