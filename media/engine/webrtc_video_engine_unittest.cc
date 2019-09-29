@@ -3450,7 +3450,7 @@ TEST_P(Vp9SettingsTestWithFieldTrial, VerifyCodecSettings) {
 }
 
 INSTANTIATE_TEST_SUITE_P(
-    ,
+    All,
     Vp9SettingsTestWithFieldTrial,
     ::testing::Values(
         std::make_tuple("", 1, 1, webrtc::InterLayerPredMode::kOnKeyPic),
