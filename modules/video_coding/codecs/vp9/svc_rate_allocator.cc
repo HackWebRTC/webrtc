@@ -316,12 +316,15 @@ VideoBitrateAllocation SvcRateAllocator::GetAllocationScreenSharing(
     DataRate total_bitrate,
     size_t first_active_layer,
     size_t num_spatial_layers) const {
+  VideoBitrateAllocation bitrate_allocation;
+
   if (num_spatial_layers == 0 ||
       total_bitrate <
           DataRate::kbps(codec_.spatialLayers[first_active_layer].minBitrate)) {
-    return VideoBitrateAllocation();
+    // Always enable at least one layer.
+    bitrate_allocation.SetBitrate(first_active_layer, 0, total_bitrate.bps());
+    return bitrate_allocation;
   }
-  VideoBitrateAllocation bitrate_allocation;
 
   DataRate allocated_rate = DataRate::Zero();
   DataRate top_layer_rate = DataRate::Zero();

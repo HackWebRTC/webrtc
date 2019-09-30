@@ -151,7 +151,7 @@ std::string VideoBitrateAllocation::ToString() const {
       break;
 
     const uint32_t layer_sum = GetSpatialLayerSum(si);
-    if (layer_sum == sum_) {
+    if (layer_sum == sum_ && si == 0) {
       ssb << " [";
     } else {
       if (si > 0)
