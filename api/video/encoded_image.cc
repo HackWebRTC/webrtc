@@ -52,6 +52,11 @@ size_t EncodedImageBuffer::size() const {
 }
 
 void EncodedImageBuffer::Realloc(size_t size) {
+  // Calling realloc with size == 0 is equivalent to free, and returns nullptr.
+  // Which is confusing on systems where malloc(0) doesn't return a nullptr.
+  // More specifically, it breaks expectations of
+  // VCMSessionInfo::UpdateDataPointers.
+  RTC_DCHECK(size > 0);
   buffer_ = static_cast<uint8_t*>(realloc(buffer_, size));
   size_ = size;
 }
