@@ -2679,9 +2679,13 @@ class BalancedDegradationTest : public VideoStreamEncoderTest {
                                             DataRate::bps(bitrate_bps), 0, 0);
   }
 
-  void IncomingCapturedFrame() {
+  void InsertFrame() {
     timestamp_ms_ += kFrameIntervalMs;
     source_.IncomingCapturedFrame(CreateFrame(timestamp_ms_, kWidth, kHeight));
+  }
+
+  void InsertFrameAndWaitForEncoded() {
+    InsertFrame();
     sink_.WaitForEncodedFrame(timestamp_ms_);
   }
 
@@ -2704,7 +2708,7 @@ TEST_F(BalancedDegradationTest, AdaptDownReturnsFalseIfFpsDiffLtThreshold) {
   stats.input_frame_rate = kInputFps;
   stats_proxy_->SetMockStats(stats);
 
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsMaxResolutionMax(source_.sink_wants());
 
   // Trigger adapt down, expect scaled down framerate (640x360@24fps).
@@ -2727,7 +2731,7 @@ TEST_F(BalancedDegradationTest, AdaptDownReturnsTrueIfFpsDiffGeThreshold) {
   stats.input_frame_rate = kInputFps;
   stats_proxy_->SetMockStats(stats);
 
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsMaxResolutionMax(source_.sink_wants());
 
   // Trigger adapt down, expect scaled down framerate (640x360@24fps).
@@ -2746,7 +2750,7 @@ TEST_F(BalancedDegradationTest, AdaptDownUsesCodecSpecificFps) {
 
   EXPECT_EQ(kVideoCodecVP8, video_encoder_config_.codec_type);
 
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsMaxResolutionMax(source_.sink_wants());
 
   // Trigger adapt down, expect scaled down framerate (640x360@22fps).
@@ -2766,40 +2770,71 @@ TEST_F(BalancedDegradationTest, NoAdaptUpIfBwEstimateIsLessThanMinBitrate) {
   const int kTooLowMinBitrateBps = 424000;
   OnBitrateUpdated(kTooLowMinBitrateBps);
 
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsMaxResolutionMax(source_.sink_wants());
   EXPECT_EQ(0, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt down, expect scaled down framerate (640x360@14fps).
   video_stream_encoder_->TriggerQualityLow();
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsEqResolutionMax(source_.sink_wants(), 14);
   EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt down, expect scaled down resolution (480x270@14fps).
   video_stream_encoder_->TriggerQualityLow();
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsEqResolutionLt(source_.sink_wants(), source_.last_wants());
   EXPECT_EQ(2, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt down, expect scaled down framerate (480x270@10fps).
   video_stream_encoder_->TriggerQualityLow();
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsLtResolutionEq(source_.sink_wants(), source_.last_wants());
   EXPECT_EQ(source_.sink_wants().max_framerate_fps, 10);
   EXPECT_EQ(3, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt up, expect no upscale in fps (target bitrate < min bitrate).
   video_stream_encoder_->TriggerQualityHigh();
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   EXPECT_EQ(3, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt up, expect upscaled fps (target bitrate == min bitrate).
   OnBitrateUpdated(kMinBitrateBps);
   video_stream_encoder_->TriggerQualityHigh();
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   EXPECT_EQ(source_.sink_wants().max_framerate_fps, 14);
   EXPECT_EQ(4, stats_proxy_->GetStats().number_of_quality_adapt_changes);
+
+  video_stream_encoder_->Stop();
+}
+
+TEST_F(BalancedDegradationTest,
+       InitialFrameDropAdaptsFpsAndResolutionInOneStep) {
+  test::ScopedFieldTrials field_trials(
+      "WebRTC-Video-BalancedDegradationSettings/"
+      "pixels:57600|129600|230400,fps:7|24|24/");
+  SetupTest();
+  OnBitrateUpdated(kLowTargetBitrateBps);
+
+  VerifyNoLimitation(source_.sink_wants());
+
+  // Insert frame, expect scaled down:
+  // framerate (640x360@24fps) -> resolution (480x270@24fps).
+  InsertFrame();
+  EXPECT_FALSE(WaitForFrame(1000));
+  EXPECT_LT(source_.sink_wants().max_pixel_count, kWidth * kHeight);
+  EXPECT_EQ(source_.sink_wants().max_framerate_fps, 24);
+
+  // Insert frame, expect scaled down:
+  // resolution (320x180@24fps).
+  InsertFrame();
+  EXPECT_FALSE(WaitForFrame(1000));
+  EXPECT_LT(source_.sink_wants().max_pixel_count,
+            source_.last_wants().max_pixel_count);
+  EXPECT_EQ(source_.sink_wants().max_framerate_fps, 24);
+
+  // Frame should not be dropped (min pixels per frame reached).
+  InsertFrameAndWaitForEncoded();
 
   video_stream_encoder_->Stop();
 }
@@ -2815,43 +2850,43 @@ TEST_F(BalancedDegradationTest,
   const int kTooLowMinResolutionBitrateBps = 434000;
   OnBitrateUpdated(kTooLowMinResolutionBitrateBps);
 
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsMaxResolutionMax(source_.sink_wants());
   EXPECT_EQ(0, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt down, expect scaled down framerate (640x360@14fps).
   video_stream_encoder_->TriggerQualityLow();
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsEqResolutionMax(source_.sink_wants(), 14);
   EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt down, expect scaled down resolution (480x270@14fps).
   video_stream_encoder_->TriggerQualityLow();
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsEqResolutionLt(source_.sink_wants(), source_.last_wants());
   EXPECT_EQ(2, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt down, expect scaled down framerate (480x270@10fps).
   video_stream_encoder_->TriggerQualityLow();
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsLtResolutionEq(source_.sink_wants(), source_.last_wants());
   EXPECT_EQ(3, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt up, expect upscaled fps (no bitrate limit) (480x270@14fps).
   video_stream_encoder_->TriggerQualityHigh();
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsGtResolutionEq(source_.sink_wants(), source_.last_wants());
   EXPECT_EQ(4, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt up, expect no upscale in res (target bitrate < min bitrate).
   video_stream_encoder_->TriggerQualityHigh();
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   EXPECT_EQ(4, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt up, expect upscaled res (target bitrate == min bitrate).
   OnBitrateUpdated(kResolutionMinBitrateBps);
   video_stream_encoder_->TriggerQualityHigh();
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsEqResolutionGt(source_.sink_wants(), source_.last_wants());
   EXPECT_EQ(5, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
@@ -2871,50 +2906,50 @@ TEST_F(BalancedDegradationTest,
   const int kTooLowMinResolutionBitrateBps = 434000;
   OnBitrateUpdated(kTooLowMinBitrateBps);
 
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsMaxResolutionMax(source_.sink_wants());
   EXPECT_EQ(0, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt down, expect scaled down framerate (640x360@14fps).
   video_stream_encoder_->TriggerQualityLow();
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsEqResolutionMax(source_.sink_wants(), 14);
   EXPECT_EQ(1, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt down, expect scaled down resolution (480x270@14fps).
   video_stream_encoder_->TriggerQualityLow();
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsEqResolutionLt(source_.sink_wants(), source_.last_wants());
   EXPECT_EQ(2, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt down, expect scaled down framerate (480x270@10fps).
   video_stream_encoder_->TriggerQualityLow();
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsLtResolutionEq(source_.sink_wants(), source_.last_wants());
   EXPECT_EQ(3, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt up, expect no upscale (target bitrate < min bitrate).
   video_stream_encoder_->TriggerQualityHigh();
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   EXPECT_EQ(3, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt up, expect upscaled fps (target bitrate == min bitrate).
   OnBitrateUpdated(kMinBitrateBps);
   video_stream_encoder_->TriggerQualityHigh();
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsGtResolutionEq(source_.sink_wants(), source_.last_wants());
   EXPECT_EQ(4, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt up, expect no upscale in res (target bitrate < min bitrate).
   OnBitrateUpdated(kTooLowMinResolutionBitrateBps);
   video_stream_encoder_->TriggerQualityHigh();
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   EXPECT_EQ(4, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
   // Trigger adapt up, expect upscaled res (target bitrate == min bitrate).
   OnBitrateUpdated(kResolutionMinBitrateBps);
   video_stream_encoder_->TriggerQualityHigh();
-  IncomingCapturedFrame();
+  InsertFrameAndWaitForEncoded();
   VerifyFpsEqResolutionGt(source_.sink_wants(), source_.last_wants());
   EXPECT_EQ(5, stats_proxy_->GetStats().number_of_quality_adapt_changes);
 
