@@ -129,9 +129,23 @@ class SendSideBandwidthEstimation {
 
   DataRate MaybeRampupOrBackoff(DataRate new_bitrate, Timestamp at_time);
 
+  // Gets the upper limit for the target bitrate. This is the minimum of the
+  // delay based limit, the receiver limit and the loss based controller limit.
+  DataRate GetUpperLimit() const;
+  // Prints a warning if |bitrate| if sufficiently long time has past since last
+  // warning.
+  void MaybeLogLowBitrateWarning(DataRate bitrate, Timestamp at_time);
+  // Stores an update to the event log if the loss rate has changed, the target
+  // has changed, or sufficient time has passed since last stored event.
+  void MaybeLogLossBasedEvent(Timestamp at_time);
+
   // Cap |bitrate| to [min_bitrate_configured_, max_bitrate_configured_] and
   // set |current_bitrate_| to the capped value and updates the event log.
-  void CapBitrateToThresholds(Timestamp at_time, DataRate bitrate);
+  void UpdateTargetBitrate(DataRate bitrate, Timestamp at_time);
+  // Applies lower and upper bounds to the current target rate.
+  // TODO(srte): This seems to be called even when limits haven't changed, that
+  // should be cleaned up.
+  void ApplyTargetLimits(Timestamp at_time);
 
   RttBasedBackoff rtt_backoff_;
   LinkCapacityTracker link_capacity_;
@@ -144,6 +158,7 @@ class SendSideBandwidthEstimation {
 
   absl::optional<DataRate> acknowledged_rate_;
   DataRate current_target_;
+  DataRate last_logged_target_;
   DataRate min_bitrate_configured_;
   DataRate max_bitrate_configured_;
   Timestamp last_low_bitrate_log_;
