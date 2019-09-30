@@ -82,7 +82,7 @@ void FuzzGainController(test::FuzzDataHelper* fuzz_data, GainControlImpl* gci) {
   const auto sample_rate_hz =
       static_cast<size_t>(fuzz_data->SelectOneOf(rate_kinds));
   const size_t samples_per_frame = sample_rate_hz / 100;
-  const bool num_channels = fuzz_data->ReadOrDefaultValue(true) ? 2 : 1;
+  const size_t num_channels = fuzz_data->ReadOrDefaultValue(true) ? 2 : 1;
 
   gci->Initialize(num_channels, sample_rate_hz);
   FuzzGainControllerConfig(fuzz_data, gci);
