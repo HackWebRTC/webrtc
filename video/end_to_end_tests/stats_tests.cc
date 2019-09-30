@@ -11,6 +11,7 @@
 #include <memory>
 
 #include "absl/algorithm/container.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/test/simulated_network.h"
 #include "api/test/video/function_video_encoder_factory.h"
 #include "call/fake_network_pipe.h"
@@ -232,12 +233,12 @@ TEST_F(StatsEndToEndTest, GetStats) {
       return true;
     }
 
-    test::PacketTransport* CreateSendTransport(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
+    std::unique_ptr<test::PacketTransport> CreateSendTransport(
+        TaskQueueBase* task_queue,
         Call* sender_call) override {
       BuiltInNetworkBehaviorConfig network_config;
       network_config.loss_percent = 5;
-      return new test::PacketTransport(
+      return std::make_unique<test::PacketTransport>(
           task_queue, sender_call, this, test::PacketTransport::kSender,
           payload_type_map_,
           std::make_unique<FakeNetworkPipe>(
@@ -530,9 +531,9 @@ TEST_F(StatsEndToEndTest, MAYBE_ContentTypeSwitches) {
     CreateSenderCall(send_config);
     CreateReceiverCall(recv_config);
 
-    receive_transport_.reset(test.CreateReceiveTransport(&task_queue_));
-    send_transport_.reset(
-        test.CreateSendTransport(&task_queue_, sender_call_.get()));
+    receive_transport_ = test.CreateReceiveTransport(&task_queue_);
+    send_transport_ =
+        test.CreateSendTransport(&task_queue_, sender_call_.get());
     send_transport_->SetReceiver(receiver_call_->Receiver());
     receive_transport_->SetReceiver(sender_call_->Receiver());
 

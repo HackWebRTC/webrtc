@@ -16,6 +16,7 @@
 #include "api/rtc_event_log/rtc_event_log_factory.h"
 #include "api/rtc_event_log_output_file.h"
 #include "api/task_queue/default_task_queue_factory.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "call/fake_network_pipe.h"
 #include "rtc_base/checks.h"
@@ -116,17 +117,18 @@ void RampUpTester::OnVideoStreamsCreated(
   send_stream_ = send_stream;
 }
 
-test::PacketTransport* RampUpTester::CreateSendTransport(
-    test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
+std::unique_ptr<test::PacketTransport> RampUpTester::CreateSendTransport(
+    TaskQueueBase* task_queue,
     Call* sender_call) {
   auto network = std::make_unique<SimulatedNetwork>(forward_transport_config_);
   send_simulated_network_ = network.get();
-  send_transport_ = new test::PacketTransport(
+  auto send_transport = std::make_unique<test::PacketTransport>(
       task_queue, sender_call, this, test::PacketTransport::kSender,
       test::CallTest::payload_type_map_,
       std::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
                                         std::move(network)));
-  return send_transport_;
+  send_transport_ = send_transport.get();
+  return send_transport;
 }
 
 size_t RampUpTester::GetNumVideoStreams() const {

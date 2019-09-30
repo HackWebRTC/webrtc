@@ -58,10 +58,10 @@ void AudioBweTest::OnFakeAudioDevicesCreated(
   send_audio_device_ = send_audio_device;
 }
 
-test::PacketTransport* AudioBweTest::CreateSendTransport(
-    DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
+std::unique_ptr<test::PacketTransport> AudioBweTest::CreateSendTransport(
+    TaskQueueBase* task_queue,
     Call* sender_call) {
-  return new test::PacketTransport(
+  return std::make_unique<test::PacketTransport>(
       task_queue, sender_call, this, test::PacketTransport::kSender,
       test::CallTest::payload_type_map_,
       std::make_unique<FakeNetworkPipe>(
@@ -69,9 +69,9 @@ test::PacketTransport* AudioBweTest::CreateSendTransport(
           std::make_unique<SimulatedNetwork>(GetNetworkPipeConfig())));
 }
 
-test::PacketTransport* AudioBweTest::CreateReceiveTransport(
-    DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue) {
-  return new test::PacketTransport(
+std::unique_ptr<test::PacketTransport> AudioBweTest::CreateReceiveTransport(
+    TaskQueueBase* task_queue) {
+  return std::make_unique<test::PacketTransport>(
       task_queue, nullptr, this, test::PacketTransport::kReceiver,
       test::CallTest::payload_type_map_,
       std::make_unique<FakeNetworkPipe>(

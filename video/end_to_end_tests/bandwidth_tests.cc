@@ -10,6 +10,7 @@
 
 #include <memory>
 
+#include "api/task_queue/task_queue_base.h"
 #include "api/test/simulated_network.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video/video_bitrate_allocation.h"
@@ -170,16 +171,16 @@ TEST_F(BandwidthEndToEndTest, RembWithSendSideBwe) {
 
     ~BweObserver() {}
 
-    test::PacketTransport* CreateReceiveTransport(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
-        override {
-      receive_transport_ = new test::PacketTransport(
+    std::unique_ptr<test::PacketTransport> CreateReceiveTransport(
+        TaskQueueBase* task_queue) override {
+      auto receive_transport = std::make_unique<test::PacketTransport>(
           task_queue, nullptr, this, test::PacketTransport::kReceiver,
           payload_type_map_,
           std::make_unique<FakeNetworkPipe>(
               Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
                                              BuiltInNetworkBehaviorConfig())));
-      return receive_transport_;
+      receive_transport_ = receive_transport.get();
+      return receive_transport;
     }
 
     void ModifySenderBitrateConfig(

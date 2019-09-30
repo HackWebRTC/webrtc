@@ -11,6 +11,7 @@
 #include <memory>
 
 #include "absl/algorithm/container.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/test/simulated_network.h"
 #include "api/test/video/function_video_encoder_factory.h"
 #include "call/fake_network_pipe.h"
@@ -137,16 +138,15 @@ TEST_F(RetransmissionEndToEndTest, ReceivesNackAndRetransmitsAudio) {
     size_t GetNumVideoStreams() const override { return 0; }
     size_t GetNumAudioStreams() const override { return 1; }
 
-    test::PacketTransport* CreateReceiveTransport(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
-        override {
-      test::PacketTransport* receive_transport = new test::PacketTransport(
+    std::unique_ptr<test::PacketTransport> CreateReceiveTransport(
+        TaskQueueBase* task_queue) override {
+      auto receive_transport = std::make_unique<test::PacketTransport>(
           task_queue, nullptr, this, test::PacketTransport::kReceiver,
           payload_type_map_,
           std::make_unique<FakeNetworkPipe>(
               Clock::GetRealTimeClock(), std::make_unique<SimulatedNetwork>(
                                              BuiltInNetworkBehaviorConfig())));
-      receive_transport_ = receive_transport;
+      receive_transport_ = receive_transport.get();
       return receive_transport;
     }
 

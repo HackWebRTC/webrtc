@@ -17,6 +17,7 @@
 
 #include "api/fec_controller.h"
 #include "api/rtc_event_log/rtc_event_log_factory.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "api/test/video_quality_test_fixture.h"
 #include "api/video/video_bitrate_allocator_factory.h"

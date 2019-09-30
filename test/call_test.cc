@@ -16,6 +16,7 @@
 #include "api/audio_codecs/builtin_audio_decoder_factory.h"
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/task_queue/default_task_queue_factory.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video_codecs/video_encoder_config.h"
 #include "call/fake_network_pipe.h"
@@ -133,9 +134,9 @@ void CallTest::RunBaseTest(BaseTest* test) {
       CreateReceiverCall(recv_config);
     }
     test->OnCallsCreated(sender_call_.get(), receiver_call_.get());
-    receive_transport_.reset(test->CreateReceiveTransport(&task_queue_));
-    send_transport_.reset(
-        test->CreateSendTransport(&task_queue_, sender_call_.get()));
+    receive_transport_ = test->CreateReceiveTransport(&task_queue_);
+    send_transport_ =
+        test->CreateSendTransport(&task_queue_, sender_call_.get());
 
     if (test->ShouldCreateReceivers()) {
       send_transport_->SetReceiver(receiver_call_->Receiver());
@@ -776,10 +777,10 @@ void BaseTest::ModifyReceiverBitrateConfig(BitrateConstraints* bitrate_config) {
 
 void BaseTest::OnCallsCreated(Call* sender_call, Call* receiver_call) {}
 
-test::PacketTransport* BaseTest::CreateSendTransport(
-    DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
+std::unique_ptr<PacketTransport> BaseTest::CreateSendTransport(
+    TaskQueueBase* task_queue,
     Call* sender_call) {
-  return new PacketTransport(
+  return std::make_unique<PacketTransport>(
       task_queue, sender_call, this, test::PacketTransport::kSender,
       CallTest::payload_type_map_,
       std::make_unique<FakeNetworkPipe>(
@@ -787,9 +788,9 @@ test::PacketTransport* BaseTest::CreateSendTransport(
           std::make_unique<SimulatedNetwork>(BuiltInNetworkBehaviorConfig())));
 }
 
-test::PacketTransport* BaseTest::CreateReceiveTransport(
-    DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue) {
-  return new PacketTransport(
+std::unique_ptr<PacketTransport> BaseTest::CreateReceiveTransport(
+    TaskQueueBase* task_queue) {
+  return std::make_unique<PacketTransport>(
       task_queue, nullptr, this, test::PacketTransport::kReceiver,
       CallTest::payload_type_map_,
       std::make_unique<FakeNetworkPipe>(

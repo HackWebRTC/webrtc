@@ -85,7 +85,7 @@ class PacketTransport : public test::DirectTransport {
  public:
   enum TransportType { kReceiver, kSender };
 
-  PacketTransport(DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
+  PacketTransport(TaskQueueBase* task_queue,
                   Call* send_call,
                   RtpRtcpObserver* observer,
                   TransportType transport_type,

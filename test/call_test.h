@@ -17,6 +17,7 @@
 
 #include "absl/types/optional.h"
 #include "api/rtc_event_log/rtc_event_log.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/task_queue/task_queue_factory.h"
 #include "api/test/video/function_video_decoder_factory.h"
 #include "api/test/video/function_video_encoder_factory.h"
@@ -260,11 +261,11 @@ class BaseTest : public RtpRtcpObserver {
 
   virtual void OnCallsCreated(Call* sender_call, Call* receiver_call);
 
-  virtual test::PacketTransport* CreateSendTransport(
-      DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
+  virtual std::unique_ptr<test::PacketTransport> CreateSendTransport(
+      TaskQueueBase* task_queue,
       Call* sender_call);
-  virtual test::PacketTransport* CreateReceiveTransport(
-      DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue);
+  virtual std::unique_ptr<test::PacketTransport> CreateReceiveTransport(
+      TaskQueueBase* task_queue);
 
   virtual void ModifyVideoConfigs(
       VideoSendStream::Config* send_config,

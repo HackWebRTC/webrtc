@@ -15,6 +15,7 @@
 
 #include "api/audio_codecs/builtin_audio_encoder_factory.h"
 #include "api/rtc_event_log/rtc_event_log.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/test/simulated_network.h"
 #include "api/video/builtin_video_bitrate_allocator_factory.h"
 #include "api/video/video_bitrate_allocation.h"
@@ -376,10 +377,10 @@ void CallPerfTest::TestCaptureNtpTime(
           rtp_start_timestamp_(0) {}
 
    private:
-    test::PacketTransport* CreateSendTransport(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
+    std::unique_ptr<test::PacketTransport> CreateSendTransport(
+        TaskQueueBase* task_queue,
         Call* sender_call) override {
-      return new test::PacketTransport(
+      return std::make_unique<test::PacketTransport>(
           task_queue, sender_call, this, test::PacketTransport::kSender,
           payload_type_map_,
           std::make_unique<FakeNetworkPipe>(
@@ -387,10 +388,9 @@ void CallPerfTest::TestCaptureNtpTime(
               std::make_unique<SimulatedNetwork>(net_config_)));
     }
 
-    test::PacketTransport* CreateReceiveTransport(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
-        override {
-      return new test::PacketTransport(
+    std::unique_ptr<test::PacketTransport> CreateReceiveTransport(
+        TaskQueueBase* task_queue) override {
+      return std::make_unique<test::PacketTransport>(
           task_queue, nullptr, this, test::PacketTransport::kReceiver,
           payload_type_map_,
           std::make_unique<FakeNetworkPipe>(
@@ -885,26 +885,25 @@ void CallPerfTest::TestMinAudioVideoBitrate(int test_bitrate_from,
       return pipe_config;
     }
 
-    test::PacketTransport* CreateSendTransport(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
+    std::unique_ptr<test::PacketTransport> CreateSendTransport(
+        TaskQueueBase* task_queue,
         Call* sender_call) override {
       auto network =
           std::make_unique<SimulatedNetwork>(GetFakeNetworkPipeConfig());
       send_simulated_network_ = network.get();
-      return new test::PacketTransport(
+      return std::make_unique<test::PacketTransport>(
           task_queue, sender_call, this, test::PacketTransport::kSender,
           test::CallTest::payload_type_map_,
           std::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),
                                             std::move(network)));
     }
 
-    test::PacketTransport* CreateReceiveTransport(
-        test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue)
-        override {
+    std::unique_ptr<test::PacketTransport> CreateReceiveTransport(
+        TaskQueueBase* task_queue) override {
       auto network =
           std::make_unique<SimulatedNetwork>(GetFakeNetworkPipeConfig());
       receive_simulated_network_ = network.get();
-      return new test::PacketTransport(
+      return std::make_unique<test::PacketTransport>(
           task_queue, nullptr, this, test::PacketTransport::kReceiver,
           test::CallTest::payload_type_map_,
           std::make_unique<FakeNetworkPipe>(Clock::GetRealTimeClock(),

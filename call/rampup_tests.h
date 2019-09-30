@@ -12,11 +12,13 @@
 #define CALL_RAMPUP_TESTS_H_
 
 #include <map>
+#include <memory>
 #include <string>
 #include <utility>
 #include <vector>
 
 #include "api/rtc_event_log/rtc_event_log.h"
+#include "api/task_queue/task_queue_base.h"
 #include "api/test/simulated_network.h"
 #include "call/call.h"
 #include "call/simulated_network.h"
@@ -87,8 +89,8 @@ class RampUpTester : public test::EndToEndTest {
   void OnVideoStreamsCreated(
       VideoSendStream* send_stream,
       const std::vector<VideoReceiveStream*>& receive_streams) override;
-  test::PacketTransport* CreateSendTransport(
-      test::DEPRECATED_SingleThreadedTaskQueueForTesting* task_queue,
+  std::unique_ptr<test::PacketTransport> CreateSendTransport(
+      TaskQueueBase* task_queue,
       Call* sender_call) override;
   void ModifyVideoConfigs(
       VideoSendStream::Config* send_config,
