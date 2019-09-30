@@ -172,15 +172,18 @@ int32_t UlpfecReceiverImpl::ProcessReceivedFec() {
       // Create a packet with the buffer to modify it.
       RtpPacketReceived rtp_packet;
       const uint8_t* const original_data = packet->data.cdata();
-      rtp_packet.Parse(packet->data);
-      rtp_packet.IdentifyExtensions(extensions_);
-      // Reset buffer reference, so zeroing would work on a buffer with a
-      // single reference.
-      packet->data = rtc::CopyOnWriteBuffer(0);
-      rtp_packet.ZeroMutableExtensions();
-      packet->data = rtp_packet.Buffer();
-      // Ensure that zeroing of extensions was done in place.
-      RTC_DCHECK_EQ(packet->data.cdata(), original_data);
+      if (!rtp_packet.Parse(packet->data)) {
+        RTC_LOG(LS_WARNING) << "Corrupted media packet";
+      } else {
+        rtp_packet.IdentifyExtensions(extensions_);
+        // Reset buffer reference, so zeroing would work on a buffer with a
+        // single reference.
+        packet->data = rtc::CopyOnWriteBuffer(0);
+        rtp_packet.ZeroMutableExtensions();
+        packet->data = rtp_packet.Buffer();
+        // Ensure that zeroing of extensions was done in place.
+        RTC_DCHECK_EQ(packet->data.cdata(), original_data);
+      }
     }
     fec_->DecodeFec(*received_packet, &recovered_packets_);
   }
