@@ -267,10 +267,24 @@ void RTPSenderVideo::RegisterPayloadType(int8_t payload_type,
   }
 }
 
-void RTPSenderVideo::AppendAsRedMaybeWithUlpfec(
+void RTPSenderVideo::SendVideoPacket(std::unique_ptr<RtpPacketToSend> packet) {
+  // Remember some values about the packet before sending it away.
+  size_t packet_size = packet->size();
+  uint16_t seq_num = packet->SequenceNumber();
+  packet->set_packet_type(RtpPacketToSend::Type::kVideo);
+  if (!LogAndSendToNetwork(std::move(packet))) {
+    RTC_LOG(LS_WARNING) << "Failed to send video packet " << seq_num;
+    return;
+  }
+  rtc::CritScope cs(&stats_crit_);
+  video_bitrate_.Update(packet_size, clock_->TimeInMilliseconds());
+}
+
+void RTPSenderVideo::SendVideoPacketAsRedMaybeWithUlpfec(
     std::unique_ptr<RtpPacketToSend> media_packet,
-    bool protect_media_packet,
-    std::vector<std::unique_ptr<RtpPacketToSend>>* packets) {
+    bool protect_media_packet) {
+  uint16_t media_seq_num = media_packet->SequenceNumber();
+
   std::unique_ptr<RtpPacketToSend> red_packet(
       new RtpPacketToSend(*media_packet));
   BuildRedPayload(*media_packet, red_packet.get());
@@ -313,12 +327,16 @@ void RTPSenderVideo::AppendAsRedMaybeWithUlpfec(
       }
     }
   }
-
   // Send |red_packet| instead of |packet| for allocated sequence number.
+  size_t red_packet_size = red_packet->size();
   red_packet->set_packet_type(RtpPacketToSend::Type::kVideo);
   red_packet->set_allow_retransmission(media_packet->allow_retransmission());
-  packets->emplace_back(std::move(red_packet));
-
+  if (LogAndSendToNetwork(std::move(red_packet))) {
+    rtc::CritScope cs(&stats_crit_);
+    video_bitrate_.Update(red_packet_size, clock_->TimeInMilliseconds());
+  } else {
+    RTC_LOG(LS_WARNING) << "Failed to send RED packet " << media_seq_num;
+  }
   for (const auto& fec_packet : fec_packets) {
     // TODO(danilchap): Make ulpfec_generator_ generate RtpPacketToSend to avoid
     // reparsing them.
@@ -327,71 +345,61 @@ void RTPSenderVideo::AppendAsRedMaybeWithUlpfec(
     RTC_CHECK(rtp_packet->Parse(fec_packet->data(), fec_packet->length()));
     rtp_packet->set_capture_time_ms(media_packet->capture_time_ms());
     rtp_packet->set_packet_type(RtpPacketToSend::Type::kForwardErrorCorrection);
+    uint16_t fec_sequence_number = rtp_packet->SequenceNumber();
     rtp_packet->set_allow_retransmission(false);
-    RTC_DCHECK_EQ(fec_packet->length(), rtp_packet->size());
-    packets->emplace_back(std::move(rtp_packet));
+    if (LogAndSendToNetwork(std::move(rtp_packet))) {
+      rtc::CritScope cs(&stats_crit_);
+      fec_bitrate_.Update(fec_packet->length(), clock_->TimeInMilliseconds());
+    } else {
+      RTC_LOG(LS_WARNING) << "Failed to send ULPFEC packet "
+                          << fec_sequence_number;
+    }
   }
 }
 
-void RTPSenderVideo::GenerateAndAppendFlexfec(
-    std::vector<std::unique_ptr<RtpPacketToSend>>* packets) {
+void RTPSenderVideo::SendVideoPacketWithFlexfec(
+    std::unique_ptr<RtpPacketToSend> media_packet,
+    bool protect_media_packet) {
   RTC_DCHECK(flexfec_sender_);
+
+  if (protect_media_packet)
+    flexfec_sender_->AddRtpPacketAndGenerateFec(*media_packet);
+
+  SendVideoPacket(std::move(media_packet));
 
   if (flexfec_sender_->FecAvailable()) {
     std::vector<std::unique_ptr<RtpPacketToSend>> fec_packets =
         flexfec_sender_->GetFecPackets();
     for (auto& fec_packet : fec_packets) {
+      size_t packet_length = fec_packet->size();
+      uint16_t seq_num = fec_packet->SequenceNumber();
       fec_packet->set_packet_type(
           RtpPacketToSend::Type::kForwardErrorCorrection);
       fec_packet->set_allow_retransmission(false);
-      packets->emplace_back(std::move(fec_packet));
+      if (LogAndSendToNetwork(std::move(fec_packet))) {
+        rtc::CritScope cs(&stats_crit_);
+        fec_bitrate_.Update(packet_length, clock_->TimeInMilliseconds());
+      } else {
+        RTC_LOG(LS_WARNING) << "Failed to send FlexFEC packet " << seq_num;
+      }
     }
   }
 }
 
-void RTPSenderVideo::LogAndSendToNetwork(
-    std::vector<std::unique_ptr<RtpPacketToSend>> packets,
-    size_t unpacketized_payload_size) {
-  int64_t now_ms = clock_->TimeInMilliseconds();
+bool RTPSenderVideo::LogAndSendToNetwork(
+    std::unique_ptr<RtpPacketToSend> packet) {
 #if BWE_TEST_LOGGING_COMPILE_TIME_ENABLE
-  for (const auto& packet : packets) {
-    const uint32_t ssrc = packet->Ssrc();
-    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoTotBitrate_kbps", now_ms,
-                                    rtp_sender_->ActualSendBitrateKbit(), ssrc);
-    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoFecBitrate_kbps", now_ms,
-                                    FecOverheadRate() / 1000, ssrc);
-    BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoNackBitrate_kbps", now_ms,
-                                    rtp_sender_->NackOverheadRate() / 1000,
-                                    ssrc);
-  }
+  int64_t now_ms = clock_->TimeInMilliseconds();
+  BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoTotBitrate_kbps", now_ms,
+                                  rtp_sender_->ActualSendBitrateKbit(),
+                                  packet->Ssrc());
+  BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoFecBitrate_kbps", now_ms,
+                                  FecOverheadRate() / 1000, packet->Ssrc());
+  BWE_TEST_LOGGING_PLOT_WITH_SSRC(1, "VideoNackBitrate_kbps", now_ms,
+                                  rtp_sender_->NackOverheadRate() / 1000,
+                                  packet->Ssrc());
 #endif
-
-  {
-    rtc::CritScope cs(&stats_crit_);
-    size_t packetized_payload_size = 0;
-    for (const auto& packet : packets) {
-      switch (*packet->packet_type()) {
-        case RtpPacketToSend::Type::kVideo:
-          video_bitrate_.Update(packet->size(), now_ms);
-          packetized_payload_size += packet->payload_size();
-          break;
-        case RtpPacketToSend::Type::kForwardErrorCorrection:
-          fec_bitrate_.Update(packet->size(), clock_->TimeInMilliseconds());
-          break;
-        default:
-          continue;
-      }
-    }
-    RTC_DCHECK_GE(packetized_payload_size, unpacketized_payload_size);
-    packetization_overhead_bitrate_.Update(
-        packetized_payload_size - unpacketized_payload_size,
-        clock_->TimeInMilliseconds());
-  }
-
-  // TODO(sprang): Replace with bulk send method.
-  for (auto& packet : packets) {
-    rtp_sender_->SendToNetwork(std::move(packet));
-  }
+  return rtp_sender_->SendToNetwork(std::move(packet));
 }
 
 void RTPSenderVideo::SetUlpfecConfig(int red_payload_type,
@@ -673,13 +681,13 @@ bool RTPSenderVideo::SendVideo(
   } else {
     unpacketized_payload_size = payload_size;
   }
+  size_t packetized_payload_size = 0;
 
   if (num_packets == 0)
     return false;
 
   uint16_t first_sequence_number;
   bool first_frame = first_frame_sent_();
-  std::vector<std::unique_ptr<RtpPacketToSend>> rtp_packets;
   for (size_t i = 0; i < num_packets; ++i) {
     std::unique_ptr<RtpPacketToSend> packet;
     int expected_payload_capacity;
@@ -706,6 +714,7 @@ bool RTPSenderVideo::SendVideo(
     RTC_DCHECK_LE(packet->payload_size(), expected_payload_capacity);
     if (!rtp_sender_->AssignSequenceNumber(packet.get()))
       return false;
+    packetized_payload_size += packet->payload_size();
 
     if (rtp_sequence_number_map_ && i == 0) {
       first_sequence_number = packet->SequenceNumber();
@@ -732,21 +741,14 @@ bool RTPSenderVideo::SendVideo(
       protect_packet = false;
     }
 
-    if (red_enabled) {
-      AppendAsRedMaybeWithUlpfec(std::move(packet), protect_packet,
-                                 &rtp_packets);
+    if (flexfec_enabled()) {
+      // TODO(brandtr): Remove the FlexFEC code path when FlexfecSender
+      // is wired up to PacedSender instead.
+      SendVideoPacketWithFlexfec(std::move(packet), protect_packet);
+    } else if (red_enabled) {
+      SendVideoPacketAsRedMaybeWithUlpfec(std::move(packet), protect_packet);
     } else {
-      packet->set_packet_type(RtpPacketToSend::Type::kVideo);
-      const RtpPacketToSend& media_packet = *packet;
-      rtp_packets.emplace_back(std::move(packet));
-      if (flexfec_enabled()) {
-        // TODO(brandtr): Remove the FlexFEC code path when FlexfecSender
-        // is wired up to PacedSender instead.
-        if (protect_packet) {
-          flexfec_sender_->AddRtpPacketAndGenerateFec(media_packet);
-        }
-        GenerateAndAppendFlexfec(&rtp_packets);
-      }
+      SendVideoPacket(std::move(packet));
     }
 
     if (first_frame) {
@@ -768,7 +770,11 @@ bool RTPSenderVideo::SendVideo(
                                           timestamp);
   }
 
-  LogAndSendToNetwork(std::move(rtp_packets), unpacketized_payload_size);
+  rtc::CritScope cs(&stats_crit_);
+  RTC_DCHECK_GE(packetized_payload_size, unpacketized_payload_size);
+  packetization_overhead_bitrate_.Update(
+      packetized_payload_size - unpacketized_payload_size,
+      clock_->TimeInMilliseconds());
 
   TRACE_EVENT_ASYNC_END1("webrtc", "Video", capture_time_ms, "timestamp",
                          rtp_timestamp);
