@@ -41,7 +41,7 @@ void EstimateComfortNoise(const std::array<float, kFftLengthBy2Plus1>& N2,
 // Generates the comfort noise.
 class ComfortNoiseGenerator {
  public:
-  explicit ComfortNoiseGenerator(Aec3Optimization optimization);
+  ComfortNoiseGenerator(Aec3Optimization optimization, uint32_t seed);
   ~ComfortNoiseGenerator();
 
   // Computes the comfort noise.

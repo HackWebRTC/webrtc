@@ -220,12 +220,14 @@ EchoRemoverImpl::EchoRemoverImpl(const EchoCanceller3Config& config,
     e_k.fill(0.f);
   }
 
+  uint32_t cng_seed = 42;
   for (size_t ch = 0; ch < num_capture_channels_; ++ch) {
     residual_echo_estimators_[ch] =
         std::make_unique<ResidualEchoEstimator>(config_);
     suppression_gains_[ch] = std::make_unique<SuppressionGain>(
         config_, optimization_, sample_rate_hz);
-    cngs_[ch] = std::make_unique<ComfortNoiseGenerator>(optimization_);
+    cngs_[ch] =
+        std::make_unique<ComfortNoiseGenerator>(optimization_, cng_seed++);
     e_old_[ch].fill(0.f);
     y_old_[ch].fill(0.f);
   }

@@ -92,9 +92,10 @@ void GenerateComfortNoise(Aec3Optimization optimization,
 
 }  // namespace
 
-ComfortNoiseGenerator::ComfortNoiseGenerator(Aec3Optimization optimization)
+ComfortNoiseGenerator::ComfortNoiseGenerator(Aec3Optimization optimization,
+                                             uint32_t seed)
     : optimization_(optimization),
-      seed_(42),
+      seed_(seed),
       N2_initial_(new std::array<float, kFftLengthBy2Plus1>()) {
   N2_initial_->fill(0.f);
   Y2_smoothed_.fill(0.f);
